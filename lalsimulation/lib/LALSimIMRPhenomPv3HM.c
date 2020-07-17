@@ -414,13 +414,13 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     if (!(hptilde))
         XLAL_ERROR(XLAL_EFUNC);
     memset((*hptilde)->data->data, 0, npts * sizeof(COMPLEX16));
-    XLALUnitDivide(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
+    XLALUnitMultiply(&(*hptilde)->sampleUnits, &(*hptilde)->sampleUnits, &lalSecondUnit);
 
     *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tC, 0.0, deltaF, &lalStrainUnit, npts);
     if (!(hctilde))
         XLAL_ERROR(XLAL_EFUNC);
     memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
-    XLALUnitDivide(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
+    XLALUnitMultiply(&(*hctilde)->sampleUnits, &(*hctilde)->sampleUnits, &lalSecondUnit);
 
     /* Frequency domain amplitude pre-factor */
     const REAL8 amp0 = XLALSimPhenomUtilsFDamp0(Mtot_Msun, distance);
