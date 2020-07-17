@@ -10,6 +10,7 @@ bin_PROGRAMS = \
 	lalapps_WeaveSetup \
 	lalapps_Weave \
 	lalapps_WeaveCompare \
+	lalapps_WeaveConcat \
 	$(END_OF_LIST)
 
 lalapps_WeaveSetup_SOURCES = \
@@ -59,6 +60,23 @@ lalapps_WeaveCompare_SOURCES = \
 	WeaveCompare.c \
 	$(END_OF_LIST)
 
+lalapps_WeaveConcat_SOURCES = \
+	CacheResults.c \
+	CacheResults.h \
+	ComputeResults.c \
+	ComputeResults.h \
+	OutputResults.c \
+	OutputResults.h \
+	ResultsToplist.c \
+	ResultsToplist.h \
+	SearchTiming.c \
+	SearchTiming.h \
+	Statistics.c \
+	Statistics.h \
+	Weave.h \
+	WeaveConcat.c \
+	$(END_OF_LIST)
+
 noinst_LTLIBRARIES =
 
 if CUDA
@@ -79,6 +97,7 @@ test_scripts += testWeave_cache_max_size.sh
 test_scripts += testWeave_checkpointing.sh
 test_scripts += testWeave_partitioning.sh
 test_scripts += testWeave_histograms.sh
+test_scripts += testWeave_concatenation.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
