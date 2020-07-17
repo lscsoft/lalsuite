@@ -230,6 +230,15 @@ int XLALSetLatticeTilingRandomOriginOffsets(
   );
 
 ///
+/// Set the tiled (i.e. not a single point) dimensions of a lattice from a reference lattice.
+/// This is an optional setting and should generally not be used unless specifically required.
+///
+int XLALSetTiledLatticeDimensionsFromTiling(
+  LatticeTiling *tiling,                ///< [in] Lattice tiling to set tiled dimensions on
+  const LatticeTiling *ref_tiling       ///< [in] Reference lattice tiling for tiled dimensions
+  );
+
+///
 /// Set the tiling lattice, parameter-space metric, and maximum prescribed mismatch.  The lattice
 /// tiling \c tiling is now fully initialised, and can be used to create tiling iterators [via
 /// XLALCreateLatticeTilingIterator()] and locators [via XLALCreateLatticeTilingLocator()].
@@ -249,7 +258,7 @@ size_t XLALTotalLatticeTilingDimensions(
   );
 
 ///
-/// Return the number of tiled (i.e. not a single point) dimensions of the lattice tiling.
+/// Return the number of tiled dimensions of the lattice tiling.
 ///
 size_t XLALTiledLatticeTilingDimensions(
   const LatticeTiling *tiling           ///< [in] Lattice tiling
