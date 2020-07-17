@@ -1957,7 +1957,7 @@ static int IMRPhenomXPHM_OneMode(
 
   /* Initialize hlmneg according to hlmpos. */
   size_t npts = (*hlmpos)->data->length;
-  *hlmneg = XLALCreateCOMPLEX16FrequencySeries("hlmneg: FD waveform", &ligotimegps_zero, (*hlmpos)->f0, pWF->deltaF, &lalStrainUnit, npts);
+  *hlmneg = XLALCreateCOMPLEX16FrequencySeries("hlmneg: FD waveform", &(*hlmpos)->epoch, (*hlmpos)->f0, pWF->deltaF, &lalStrainUnit, npts);
   XLAL_CHECK (*hlmneg, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu.", npts);
   memset((*hlmneg)->data->data, 0, npts * sizeof(COMPLEX16));
   XLALUnitMultiply(&((*hlmneg)->sampleUnits), &((*hlmneg)->sampleUnits), &lalSecondUnit);
