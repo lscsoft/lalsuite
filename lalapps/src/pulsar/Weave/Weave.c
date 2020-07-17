@@ -680,6 +680,9 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALSetLatticeTilingRandomOriginOffsets( tiling[i], rand_par ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
+    // Ensure that coherent and semicoherent lattice tilings have the same tiled/non-tiled dimensions
+    XLAL_CHECK_MAIN( XLALSetTiledLatticeDimensionsFromTiling( tiling[i], tiling[isemi] ) == XLAL_SUCCESS, XLAL_EFUNC );
+
     // Set coherent parameter-space lattice and metric
     XLAL_CHECK_MAIN( XLALSetTilingLatticeAndMetric( tiling[i], uvar->lattice, rssky_metric[i], coh_max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
 
