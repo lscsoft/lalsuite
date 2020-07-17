@@ -234,7 +234,7 @@ class NRSur7dq4Remnant(NRFits):
             chiA_PN, chiB_PN, omega_PN
 
     #-------------------------------------------------------------------------
-    def _evolve_spins(self, q, chiA0, chiB0, omega0, omega_switch_IG=0, \
+    def _evolve_spins(self, q, chiA0, chiB0, omega0, omega_switch_IG=0.03, \
             t_sur_switch=-4000, return_spin_evolution=False, \
             unlimited_extrapolation=False):
         """ Uses PN and surrogate spin evolution to evolve spins of the
@@ -256,20 +256,11 @@ class NRSur7dq4Remnant(NRFits):
                         from PN spin evolution to the surrogate.
                 If omega0 >= omega_switch_IG:
                         PN evolution is not required and the surrogate dynamics
-                        are used to evolve the spin until t=-100M.
-
-                        IMPORTANT NOTE:
-                        Default: 0, this is a temporary measure to disable the
-                        PN spin evolution due to some non-smooth behavior in
-                        the transition from PN to surrogate spin evolution. If
-                        omega0 is below ~ 0.02 the surrogate is not long
-                        enough and an error is raised.
-
-                        Once the above issue fixed, the default value for
-                        omega_switch_IG should be 0.03 which is expected to be
-                        large enough for q<=6.  NOTE FOR LATER: If you get
-                        errors about omega0 being too small for the surrogate,
-                        try increasing omega_switch_IG.
+                        are used to evolve the spin until t=-100M. Default
+                        value for omega_switch_IG is 0.03 which is expected to
+                        be large enough for q<=6.  NOTE: If you get errors
+                        about omega0 being too small for the surrogate, try
+                        increasing omega_switch_IG.
                 If omega0 < omega_switch_IG:
                         Use PN to evolve the spins until the surrogate becomes
                         valid. The surrogate is in time domain, so it is not
