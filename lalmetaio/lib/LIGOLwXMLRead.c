@@ -294,7 +294,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 	column_pos.jobid = XLALLIGOLwFindColumn(&env, "jobid", METAIO_TYPE_INT_4S, 1);
 	column_pos.domain = XLALLIGOLwFindColumn(&env, "domain", METAIO_TYPE_LSTRING, 1);
 	column_pos.ifos = XLALLIGOLwFindColumn(&env, "ifos", METAIO_TYPE_LSTRING, 1);
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
 
 	/* check for failure (== a required column is missing) */
 
@@ -338,11 +338,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 		row->jobid = env.ligo_lw.table.elt[column_pos.jobid].data.int_4s;
 		strncpy(row->domain, env.ligo_lw.table.elt[column_pos.domain].data.lstring.data, sizeof(row->domain) - 1);
 		strncpy(row->ifos, env.ligo_lw.table.elt[column_pos.ifos].data.lstring.data, sizeof(row->ifos) - 1);
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroyProcessTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
 	}
 	if(miostatus < 0) {
 		XLALDestroyProcessTable(head);
@@ -402,7 +398,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 
 	XLALClearErrno();
 	column_pos.program = XLALLIGOLwFindColumn(&env, "program", METAIO_TYPE_LSTRING, 1);
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
 	column_pos.param = XLALLIGOLwFindColumn(&env, "param", METAIO_TYPE_LSTRING, 1);
 	column_pos.type = XLALLIGOLwFindColumn(&env, "type", METAIO_TYPE_LSTRING, 1);
 	column_pos.value = XLALLIGOLwFindColumn(&env, "value", METAIO_TYPE_LSTRING, 1);
@@ -436,11 +432,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 		/* populate the columns */
 
 		strncpy(row->program, env.ligo_lw.table.elt[column_pos.program].data.lstring.data, sizeof(row->program) - 1);
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroyProcessParamsTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
 		strncpy(row->param, env.ligo_lw.table.elt[column_pos.param].data.lstring.data, sizeof(row->param) - 1);
 		strncpy(row->type, env.ligo_lw.table.elt[column_pos.type].data.lstring.data, sizeof(row->type) - 1);
 		strncpy(row->value, env.ligo_lw.table.elt[column_pos.value].data.lstring.data, sizeof(row->value) - 1);
@@ -503,8 +495,8 @@ XLALTimeSlideTableFromLIGOLw (
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
-	column_pos.time_slide_id = XLALLIGOLwFindColumn(&env, "time_slide_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
+	column_pos.time_slide_id = XLALLIGOLwFindColumn(&env, "time_slide_id", METAIO_TYPE_INT_8S, 1);
 	column_pos.instrument = XLALLIGOLwFindColumn(&env, "instrument", METAIO_TYPE_LSTRING, 1);
 	column_pos.offset = XLALLIGOLwFindColumn(&env, "offset", METAIO_TYPE_REAL_8, 1);
 
@@ -536,16 +528,8 @@ XLALTimeSlideTableFromLIGOLw (
 
 		/* populate the columns */
 
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroyTimeSlideTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
-		if((row->time_slide_id = XLALLIGOLwParseIlwdChar(&env, column_pos.time_slide_id, "time_slide", "time_slide_id")) < 0) {
-			XLALDestroyTimeSlideTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
+		row->time_slide_id = env.ligo_lw.table.elt[column_pos.time_slide_id].data.int_8s;
 		strncpy(row->instrument, env.ligo_lw.table.elt[column_pos.instrument].data.lstring.data, sizeof(row->instrument) - 1);
 		row->offset = env.ligo_lw.table.elt[column_pos.offset].data.real_8;
 	}
@@ -617,7 +601,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
 	column_pos.shared_object = XLALLIGOLwFindColumn(&env, "shared_object", METAIO_TYPE_LSTRING, 1);
 	column_pos.lalwrapper_cvs_tag = XLALLIGOLwFindColumn(&env, "lalwrapper_cvs_tag", METAIO_TYPE_LSTRING, 1);
 	column_pos.lal_cvs_tag = XLALLIGOLwFindColumn(&env, "lal_cvs_tag", METAIO_TYPE_LSTRING, 1);
@@ -662,11 +646,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 
 		/* populate the columns */
 
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroySearchSummaryTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
 		/* FIXME:  structure definition does not include elements
 		 * for these columns */
 		/*strncpy(row->shared_object, env.ligo_lw.table.elt[column_pos.shared_object].data.lstring.data, sizeof(row->shared_object) - 1);*/
