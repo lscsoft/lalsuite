@@ -1273,30 +1273,33 @@ int XLALSimBurstGaussian(
 	return 0;
 }
 
+
 /*
  * ============================================================================
  *
- *                                String Cusp
+ *                                  Strings
  *
  * ============================================================================
  */
 
 
 /**
- * @brief Generates cosmic string cusp waveforms.
+ * @brief Function for generating cosmic string waveforms.
  *
  * @details
  * Generates the \f$h_{+}\f$ and \f$h_{\times}\f$ components of a cosmic
- * string cusp waveform.  These waveforms are linearly polarized and placed
- * in the \f$h_{+}\f$ compnent.  The \f$h_{\times}\f$ component is set to
- * 0.  The waveform peaks at t = 0 (as defined by the epoch and deltaT).
+ * string cusp, kink, and kink-kink waveform.  These waveforms are linearly
+ * polarized and placed in the \f$h_{+}\f$ compnent.  The \f$h_{\times}\f$
+ * component is set to 0.  The waveform peaks at t = 0 (as defined by the
+ * epoch and deltaT)
  *
- * In the frequency domain, the waveform is \f$A f^{-\frac{4}{3}}\f$ with a
+ * In the frequency domain, the waveform is \f$A f^{-q}\f$ with a
  * (non-physical) low-frequency cut-off and a (physical) high-frequency
- * cut-off.
+ * cut-off. For kink-kinks the high-frequency cutoff doesn't exist, and
+ * the argument given is ignored. 
  * \f{equation}{
  * \tilde{h}_{+}(f)
- *    = A f^{-\frac{4}{3}} \left(1 +
+ *    = A f^{-q} \left(1 +
  *    \frac{f_{\mathrm{low}}^{2}}{f^{2}}\right)^{-4} \begin{cases} \exp(1 -
  *    f/f_{\mathrm{high}}) & f > f_{\mathrm{high}} \\ 1 & f \leq
  *    f_{\mathrm{high}} \end{cases}
@@ -1318,6 +1321,8 @@ int XLALSimBurstGaussian(
  * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
  * on failure.
  *
+ * @param[in] waveform Name of waveform. Should be cusp, kink, or kinkkink. 
+ *
  * @param[in] amplitude Waveform's amplitude parameter, \f$A\f$, in units
  * of \f$\mathrm{strain}\,\mathrm{s}^{-\frac{1}{3}}\f$.
  *
@@ -1331,9 +1336,10 @@ int XLALSimBurstGaussian(
  */
 
 
-int XLALGenerateStringCusp(
+static int XLALGenerateString(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
+	const char *waveform,
 	REAL8 amplitude,
 	REAL8 f_high,
 	REAL8 delta_t
@@ -1352,6 +1358,11 @@ int XLALGenerateStringCusp(
 
 	if(amplitude < 0 || f_high < f_low || delta_t <= 0) {
 		XLALPrintError("%s(): invalid input parameters\n", __func__);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(XLAL_EINVAL);
+	}
+	if(strcmp( waveform, "cusp" ) != 0 && strcmp( waveform, "kink" ) != 0 && strcmp( waveform, "kinkkink" ) != 0) {
+		XLALPrintError("%s(): invalid waveform. must be cusp, kink, or kinkkink\n", __func__);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(XLAL_EINVAL);
 	}
@@ -1391,16 +1402,42 @@ int XLALGenerateStringCusp(
 
 	/* construct the waveform in the frequency domain */
 
-	for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
-		double f = tilde_h->f0 + i * tilde_h->deltaF;
+	if(strcmp( waveform, "cusp" ) == 0) {
+		for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
+			double f = tilde_h->f0 + i * tilde_h->deltaF;
 
-		/* frequency-domain wave form.  includes taper factor above
-		 * h_high, and phase shift to put waveform's peak on the
-		 * middle sample of the time series */
+			/* frequency-domain wave form.  includes taper factor above
+			 * h_high, and phase shift to put waveform's peak on the
+			 * middle sample of the time series */
 
-		double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -4. / 3.) * (f > f_high ? exp(1. - f / f_high) : 1.);
+			double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -4. / 3.) * (f > f_high ? exp(1. - f / f_high) : 1.);
 
-		tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
+			tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
+		}
+	} else if(strcmp( waveform, "kink" ) == 0) {
+		for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
+			double f = tilde_h->f0 + i * tilde_h->deltaF;
+
+			/* frequency-domain wave form.  includes taper factor above
+			 * h_high, and phase shift to put waveform's peak on the
+			 * middle sample of the time series */
+
+			double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -5. / 3.) * (f > f_high ? exp(1. - f / f_high) : 1.);
+
+			tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
+		}
+	} else if(strcmp( waveform, "kinkkink" ) == 0) {
+		for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
+			double f = tilde_h->f0 + i * tilde_h->deltaF;
+
+			/* frequency-domain wave form.  includes taper factor above
+			 * h_high, and phase shift to put waveform's peak on the
+			 * middle sample of the time series */
+
+			double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -2.0);
+
+			tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
+		}
 	}
 
 	/* set DC and Nyquist to zero */
@@ -1446,6 +1483,57 @@ int XLALGenerateStringCusp(
 /*
  * ============================================================================
  *
+ *                                String Cusp
+ *
+ * ============================================================================
+ */
+
+
+/**
+ * @brief Generates cosmic string cusp waveforms.
+ *
+ * @details
+ * Generates the \f$h_{+}\f$ and \f$h_{\times}\f$ components of a cosmic
+ * string cusp waveform.
+ *
+ * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
+ * failure.
+ *
+ * @param[out] hcross Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
+ * on failure.
+ *
+ * @param[in] amplitude Waveform's amplitude parameter, \f$A\f$, in units
+ * of \f$\mathrm{strain}\,\mathrm{s}^{-\frac{1}{3}}\f$.
+ *
+ * @param[in] f_high High frequency cut-off, \f$f_{\mathrm{high}}\f$, in
+ * Hertz.
+ *
+ * @param[in] delta_t Sample period of output time series in seconds.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ */
+
+
+int XLALGenerateStringCusp(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 amplitude,
+	REAL8 f_high,
+	REAL8 delta_t
+)
+{
+	/* call waveform generator function */
+	XLALGenerateString(hplus, hcross, "cusp", amplitude, f_high, delta_t); 
+
+	return 0;
+}
+
+/*
+ * ============================================================================
+ *
  *                                String Kink
  *
  * ============================================================================
@@ -1457,25 +1545,7 @@ int XLALGenerateStringCusp(
  *
  * @details
  * Generates the \f$h_{+}\f$ and \f$h_{\times}\f$ components of a cosmic
- * string kink waveform. These waveforms are linearly polarized and placed
- * in the \f$h_{+}\f$ compnent.  The \f$h_{\times}\f$ component is set to
- * 0.  The waveform peaks at t = 0 (as defined by the epoch and deltaT).
- *
- * In the frequency domain, the waveform is \f$A f^{-\frac{5}{3}}\f$ with a
- * (non-physical) low-frequency cut-off and a (physical) high-frequency
- * cut-off.
- * \f{equation}{
- * \tilde{h}_{+}(f)
- *    = A f^{-\frac{5}{3}} \left(1 +
- *    \frac{f_{\mathrm{low}}^{2}}{f^{2}}\right)^{-4} \begin{cases} \exp(1 -
- *    f/f_{\mathrm{high}}) & f > f_{\mathrm{high}} \\ 1 & f \leq
- *    f_{\mathrm{high}} \end{cases}
- * \f}
- *
- * The output has a Tukey window applied to force it to go to 0 smoothly at
- * the start and end.  The low frequnecy cut-off is fixed at
- * \f$f_{\mathrm{low}} = 1 \mathrm{Hz}\f$, so these waveforms should be
- * high-pass filtered before being used as injections or search templates.
+ * string kink waveform.
  *
  * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
  * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
@@ -1506,106 +1576,8 @@ int XLALGenerateStringKink(
 	REAL8 delta_t
 )
 {
-	COMPLEX16FrequencySeries *tilde_h;
-	REAL8FFTPlan *plan;
-	REAL8Window *window;
-	LIGOTimeGPS epoch;
-	int length;
-	int i;
-	/* low frequency cut-off in Hertz */
-	const double f_low = 1.0;
-
-	/* check input */
-
-	if(amplitude < 0 || f_high < f_low || delta_t <= 0) {
-		XLALPrintError("%s(): invalid input parameters\n", __func__);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EINVAL);
-	}
-
-	/* length of the injection time series is 9 / f_low, rounded to
-	 * the nearest odd integer.  at that length the waveform's
-	 * amplitude has decayed to the level of numerical noise in the FFT
-	 * so there's no advantage in making it longer. */
-
-	length = (int) (9.0 / f_low / delta_t / 2.0);
-	length = 2 * length + 1;
-
-	/* the middle sample is t = 0 */
-
-	if(!XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t))
-		XLAL_ERROR(XLAL_EFUNC);
-
-	/* allocate time and frequency series and FFT plan */
-
-	*hplus = XLALCreateREAL8TimeSeries("string kink +", &epoch, 0.0, delta_t, &lalStrainUnit, length);
-	*hcross = XLALCreateREAL8TimeSeries("string kink x", &epoch, 0.0, delta_t, &lalStrainUnit, length);
-	tilde_h = XLALCreateCOMPLEX16FrequencySeries("string kink +", &epoch, 0.0, 1.0 / (length * delta_t), &lalDimensionlessUnit, length / 2 + 1);
-	plan = XLALCreateReverseREAL8FFTPlan(length, 0);
-	if(!*hplus || !*hcross || !tilde_h || !plan) {
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-		XLALDestroyREAL8FFTPlan(plan);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	XLALUnitMultiply(&tilde_h->sampleUnits, &(*hplus)->sampleUnits, &lalSecondUnit);
-
-	/* zero the x time series, injection is done in + only */
-
-	memset((*hcross)->data->data, 0, (*hcross)->data->length * sizeof(*(*hcross)->data->data));
-
-	/* construct the waveform in the frequency domain */
-
-	for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
-		double f = tilde_h->f0 + i * tilde_h->deltaF;
-
-		/* frequency-domain wave form.  includes taper factor above
-		 * h_high, and phase shift to put waveform's peak on the
-		 * middle sample of the time series */
-
-		double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -5. / 3.) * (f > f_high ? exp(1. - f / f_high) : 1.);
-
-		tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
-	}
-
-	/* set DC and Nyquist to zero */
-
-	tilde_h->data->data[0] = tilde_h->data->data[tilde_h->data->length - 1] = 0;
-
-	/* transform to time domain */
-
-	i = XLALREAL8FreqTimeFFT(*hplus, tilde_h, plan);
-	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-	XLALDestroyREAL8FFTPlan(plan);
-	if(i) {
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-
-	/* force the sample rate incase round-off has shifted it a bit */
-
-	(*hplus)->deltaT = (*hcross)->deltaT = delta_t;
-
-	/* apply a Tukey window for continuity at the start and end of the
-	 * injection.  the window's shape parameter sets what fraction of
-	 * the window is used by the tapers */
-
-	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
-	if(!window) {
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	for(i = 0; i < (int) window->data->length; i++)
-		(*hplus)->data->data[i] *= window->data->data[i];
-	XLALDestroyREAL8Window(window);
-
-	/* done */
+	/* call waveform generator function */
+	XLALGenerateString(hplus, hcross, "kink", amplitude, f_high, delta_t); 
 
 	return 0;
 }
@@ -1624,21 +1596,7 @@ int XLALGenerateStringKink(
  *
  * @details
  * Generates the \f$h_{+}\f$ and \f$h_{\times}\f$ components of a cosmic
- * string kink waveform. These waveforms are linearly polarized and placed
- * in the \f$h_{+}\f$ compnent.  The \f$h_{\times}\f$ component is set to
- * 0.  The waveform peaks at t = 0 (as defined by the epoch and deltaT).
- *
- * In the frequency domain, the waveform is \f$A f^{-2}\f$ with a
- * (non-physical) low-frequency cut-off.
- * \f{equation}{
- * \tilde{h}_{+}(f)
- *    = A f^{-2} \left(1+\frac{f_{\mathrm{low}}^{2}}{f^{2}}\right)^{-4}
- * \f}
- *
- * The output has a Tukey window applied to force it to go to 0 smoothly at
- * the start and end.  The low frequnecy cut-off is fixed at
- * \f$f_{\mathrm{low}} = 1 \mathrm{Hz}\f$, so these waveforms should be
- * high-pass filtered before being used as injections or search templates.
+ * string kink waveform.
  *
  * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
  * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
@@ -1665,106 +1623,14 @@ int XLALGenerateStringKinkKink(
 	REAL8 delta_t
 )
 {
-	COMPLEX16FrequencySeries *tilde_h;
-	REAL8FFTPlan *plan;
-	REAL8Window *window;
-	LIGOTimeGPS epoch;
-	int length;
-	int i;
-	/* low frequency cut-off in Hertz */
-	const double f_low = 1.0;
+	/*
+	 * set a random f_high in Hz that will not be lower than f_low.
+	 * this will be ignored when calculating the spectrum.
+	 */
+	const double f_high = 8196.;
 
-	/* check input */
-
-	if(amplitude < 0 || delta_t <= 0) {
-		XLALPrintError("%s(): invalid input parameters\n", __func__);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EINVAL);
-	}
-
-	/* length of the injection time series is 9 / f_low, rounded to
-	 * the nearest odd integer.  at that length the waveform's
-	 * amplitude has decayed to the level of numerical noise in the FFT
-	 * so there's no advantage in making it longer. */
-
-	length = (int) (9.0 / f_low / delta_t / 2.0);
-	length = 2 * length + 1;
-
-	/* the middle sample is t = 0 */
-
-	if(!XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * delta_t))
-		XLAL_ERROR(XLAL_EFUNC);
-
-	/* allocate time and frequency series and FFT plan */
-
-	*hplus = XLALCreateREAL8TimeSeries("string kinkkink +", &epoch, 0.0, delta_t, &lalStrainUnit, length);
-	*hcross = XLALCreateREAL8TimeSeries("string kinkkink x", &epoch, 0.0, delta_t, &lalStrainUnit, length);
-	tilde_h = XLALCreateCOMPLEX16FrequencySeries("string kinkkink +", &epoch, 0.0, 1.0 / (length * delta_t), &lalDimensionlessUnit, length / 2 + 1);
-	plan = XLALCreateReverseREAL8FFTPlan(length, 0);
-	if(!*hplus || !*hcross || !tilde_h || !plan) {
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-		XLALDestroyREAL8FFTPlan(plan);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	XLALUnitMultiply(&tilde_h->sampleUnits, &(*hplus)->sampleUnits, &lalSecondUnit);
-
-	/* zero the x time series, injection is done in + only */
-
-	memset((*hcross)->data->data, 0, (*hcross)->data->length * sizeof(*(*hcross)->data->data));
-
-	/* construct the waveform in the frequency domain */
-
-	for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
-		double f = tilde_h->f0 + i * tilde_h->deltaF;
-
-		/* frequency-domain wave form.  includes taper factor above
-		 * h_high, and phase shift to put waveform's peak on the
-		 * middle sample of the time series */
-
-		double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -2.0);
-
-		tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
-	}
-
-	/* set DC and Nyquist to zero */
-
-	tilde_h->data->data[0] = tilde_h->data->data[tilde_h->data->length - 1] = 0;
-
-	/* transform to time domain */
-
-	i = XLALREAL8FreqTimeFFT(*hplus, tilde_h, plan);
-	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-	XLALDestroyREAL8FFTPlan(plan);
-	if(i) {
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-
-	/* force the sample rate incase round-off has shifted it a bit */
-
-	(*hplus)->deltaT = (*hcross)->deltaT = delta_t;
-
-	/* apply a Tukey window for continuity at the start and end of the
-	 * injection.  the window's shape parameter sets what fraction of
-	 * the window is used by the tapers */
-
-	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
-	if(!window) {
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	for(i = 0; i < (int) window->data->length; i++)
-		(*hplus)->data->data[i] *= window->data->data[i];
-	XLALDestroyREAL8Window(window);
-
-	/* done */
+	/* call waveform generator function */
+	XLALGenerateString(hplus, hcross, "kinkkink", amplitude, f_high, delta_t); 
 
 	return 0;
 }
