@@ -13,7 +13,6 @@ rc('font',size=big)
 rc('legend', fontsize=small)
 rc('xtick', labelsize=small)
 rc('ytick', labelsize=small)
-rc('text.latex', unicode=True)
 
 from lalinference.plot import make_disk_plot
 
