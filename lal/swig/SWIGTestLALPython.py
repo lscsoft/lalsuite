@@ -1218,7 +1218,9 @@ print("PASSED LALUnit operations")
 # determine what module the SWIG wrapped objects were in.
 #
 if lal.swig_version >= 0x030011:
-    print("checking pickle ...")
+
+    # check pickling
+    print("checking pickling (Python specific) ...")
     for datatype in ['INT2', 'INT4', 'INT8', 'UINT2', 'UINT4', 'UINT8',
                      'REAL4', 'REAL8', 'COMPLEX8', 'COMPLEX16']:
 
@@ -1249,7 +1251,7 @@ if lal.swig_version >= 0x030011:
         assert a.deltaT == b.deltaT
         assert a.sampleUnits == b.sampleUnits
         assert (a.data.data == b.data.data).all()
-    print("PASSED pickle")
+    print("PASSED pickling (Python specific)")
 
 # passed all tests!
 print("PASSED all tests")
