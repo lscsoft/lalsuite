@@ -477,10 +477,14 @@ typedef struct {
 ///
 
 ///
-/// Specialised input typemaps for ::LALUnit structs.  Accepts a SWIG-wrapped ::LALUnit or
-/// power-of-10 double as input.
+/// Specialised input typemaps for ::LALUnit structs.  Accepts a SWIG-wrapped ::LALUnit,
+/// a unit string, or a dimensionless power-of-10 double as input.
 ///
-%fragment("swiglal_specialised_tagLALUnit", "header", fragment="SWIG_AsCharPtr", fragment=SWIG_AsVal_frag(double)) {
+%fragment("swiglal_specialised_tagLALUnit", "header",
+          fragment="SWIG_AsCharPtr",
+          fragment=SWIG_AsVal_frag(double)
+  )
+{
   int swiglal_specialised_tagLALUnit(SWIG_Object in, LALUnit *out) {
     char *str = 0;
     int alloc = 0;
