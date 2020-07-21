@@ -31,14 +31,14 @@ BuildRequires: libmetaio-devel
 BuildRequires: make
 
 # swig
-BuildRequires: swig >= 3.0.9
+BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python2
 BuildRequires: python2-rpm-macros
 BuildRequires: python-devel
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-mock
-BuildRequires: python2-numpy
+BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python-pathlib
 BuildRequires: pytest
 
@@ -48,7 +48,7 @@ BuildRequires: python3-rpm-macros
 BuildRequires: epel-rpm-macros
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
 
 # octave
@@ -85,7 +85,7 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
-Requires: python2-numpy
+Requires: python2-numpy >= @MIN_NUMPY_VERSION@
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
@@ -100,7 +100,7 @@ Group: LAL
 Requires: %{name} = %{version}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-numpy
+Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.

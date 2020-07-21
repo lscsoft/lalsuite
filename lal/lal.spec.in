@@ -34,7 +34,7 @@ BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
-BuildRequires: swig >= 3.0.9
+BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python2
 BuildRequires: python2-rpm-macros
@@ -45,7 +45,7 @@ BuildRequires: python2-freezegun
 BuildRequires: python2-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python2-ligo-segments
 BuildRequires: python2-mock
-BuildRequires: python2-numpy
+BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python-pathlib
 BuildRequires: pytest
 BuildRequires: python2-six
@@ -61,7 +61,7 @@ BuildRequires: python%{python3_pkgversion}-dateutil
 BuildRequires: python%{python3_pkgversion}-freezegun
 BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python%{python3_pkgversion}-ligo-segments
-BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
 BuildRequires: python%{python3_pkgversion}-six
 BuildRequires: python%{python3_pkgversion}-scipy
@@ -105,7 +105,7 @@ Requires: python
 Requires: python2-dateutil
 Requires: python2-glue >= @MIN_GLUE_VERSION@
 Requires: python2-ligo-segments
-Requires: python2-numpy
+Requires: python2-numpy >= @MIN_NUMPY_VERSION@
 Requires: python2-scipy
 Requires: python2-six
 Provides: %{name}-python = %{version}-%{release}
@@ -124,7 +124,7 @@ Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-dateutil
 Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
 Requires: python%{python3_pkgversion}-ligo-segments
-Requires: python%{python3_pkgversion}-numpy
+Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-scipy
 Requires: python%{python3_pkgversion}-six
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}

@@ -9,6 +9,9 @@
 {% set url = "file://@TARBALL@" %}
 {% set sha256 = "@SHA256@" %}
 
+{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
+
 package:
   name: {{ name }}
   version: {{ version }}
@@ -35,7 +38,7 @@ requirements:
     - pkg-config >=0.18.0
     - make
     - bc
-    - swig >=3.0.9
+    - swig >={{ swig_version }}
   host:
     - fftw * nompi*  # [fft_impl == "fftw"]
     - gsl
@@ -73,7 +76,7 @@ outputs:
         - {{ compiler('c') }}
         - make
         - pkg-config >=0.18.0
-        - swig >=3.0.9
+        - swig >={{ swig_version }}
       host:
         - gsl
         - {{ pin_subpackage('lal', exact=True) }}

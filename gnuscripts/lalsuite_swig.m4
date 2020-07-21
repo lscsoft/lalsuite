@@ -2,7 +2,14 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 108
+# serial 109
+
+AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
+  # $0: minimum version of SWIG and other dependencies
+  AC_SUBST([MIN_SWIG_VERSION],[3.0.10])
+  AC_SUBST([MIN_NUMPY_VERSION],[1.7])
+  # end $0
+])
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
   # $0: check the version of $1, and store it in ${swig_version}
@@ -135,31 +142,31 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
 
 AC_DEFUN([LALSUITE_USE_SWIG],[
   # $0: configure enabled SWIG bindings
+  AC_REQUIRE([_LALSUITE_MIN_SWIG_VERSION])
   AS_IF([test "${swig_build_iface}" = true],[
 
     # configure SWIG binding languages
-    swig_min_version=2.0.12
-    swig_min_version_info=""
+    min_swig_version_info=""
     LALSUITE_USE_SWIG_OCTAVE
     LALSUITE_USE_SWIG_PYTHON
 
-    # check for SWIG binary with version ${swig_min_version} or later;
+    # check for SWIG binary with version ${MIN_SWIG_VERSION} or later;
     # use ${SWIG} if set, otherwise check common SWIG binary names
     AC_ARG_VAR([SWIG],[the SWIG tool])
     AS_IF([test "x${SWIG}" != x],[
-      AC_MSG_CHECKING([if ${SWIG} version is at least ${swig_min_version}])
+      AC_MSG_CHECKING([if ${SWIG} version is at least ${MIN_SWIG_VERSION}])
       _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
-      LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${swig_min_version}],[
+      LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${MIN_SWIG_VERSION}],[
         AC_MSG_RESULT([no (${swig_version})])
-        AC_MSG_ERROR([[SWIG version ${swig_min_version} or later is required ${swig_min_version_info}
+        AC_MSG_ERROR([[SWIG version ${MIN_SWIG_VERSION} or later is required ${min_swig_version_info}
 SWIG support can be disabled by using the --disable-swig configure option]])
       ])
       AC_MSG_RESULT([yes (${swig_version})])
     ],[
-      AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig2.0 swig3.0],[
-        AC_MSG_CHECKING([if ${ac_path_SWIG} version is at least ${swig_min_version}])
+      AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig3.0],[
+        AC_MSG_CHECKING([if ${ac_path_SWIG} version is at least ${MIN_SWIG_VERSION}])
         _LALSUITE_CHECK_SWIG_VERSION([${ac_path_SWIG}])
-        LALSUITE_VERSION_COMPARE([${swig_version}],[>=],[${swig_min_version}],[
+        LALSUITE_VERSION_COMPARE([${swig_version}],[>=],[${MIN_SWIG_VERSION}],[
           ac_path_SWIG_found=true
           AC_MSG_RESULT([yes (${swig_version})])
           ac_cv_path_SWIG="${ac_path_SWIG}"
@@ -168,14 +175,14 @@ SWIG support can be disabled by using the --disable-swig configure option]])
           AC_MSG_RESULT([no (${swig_version})])
         ])
       ],[
-        AC_MSG_ERROR([[SWIG version ${swig_min_version} or later is required ${swig_min_version_info}
+        AC_MSG_ERROR([[SWIG version ${MIN_SWIG_VERSION} or later is required ${min_swig_version_info}
 SWIG support can be disabled by using the --disable-swig configure option]])
       ])
       SWIG="${ac_cv_path_SWIG}"
     ])
-    AS_IF([test "x${swig_min_recommend_version}" != x],[
-      LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${swig_min_recommend_version}],[
-        AC_MSG_WARN([SWIG version ${swig_min_recommend_version} or later is recommended ${swig_min_version_info}])
+    AS_IF([test "x${min_swig_recommend_version}" != x],[
+      LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${min_swig_recommend_version}],[
+        AC_MSG_WARN([SWIG version ${min_swig_recommend_version} or later is recommended ${min_swig_version_info}])
       ])
     ])
 
@@ -337,23 +344,17 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
     ])
 
     # set minimum SWIG version requirements based on Octave version
-    LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.0.0],[
-      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.7],[
-        swig_min_version=3.0.7
-        swig_min_version_info="for Octave version ${octave_version}"
-      ])
-    ])
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.2.0],[
-      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.12],[
-        swig_min_version=3.0.12
-        swig_min_version_info="for Octave version ${octave_version}"
+      LALSUITE_VERSION_COMPARE([${MIN_SWIG_VERSION}],[<],[3.0.12],[
+        MIN_SWIG_VERSION=3.0.12
+        min_swig_version_info="for Octave version ${octave_version}"
       ])
     ])
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.4.0],[
-      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[4.0.2],[
-        # TODO: once SWIG 4.0.2 is released and widely available, replace 'swig_min_recommend_version' with 'swig_min_version'
-        swig_min_recommend_version=4.0.2
-        swig_min_version_info="for Octave version ${octave_version}"
+      LALSUITE_VERSION_COMPARE([${MIN_SWIG_VERSION}],[<],[4.0.2],[
+        # TODO: once SWIG 4.0.2 is released and widely available, replace 'min_swig_recommend_version' with 'MIN_SWIG_VERSION'
+        min_swig_recommend_version=4.0.2
+        min_swig_version_info="for Octave version ${octave_version}"
       ])
     ])
 
@@ -518,12 +519,6 @@ AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
       AC_MSG_ERROR([could not determine ${PYTHON} version])
     ])
     AC_MSG_RESULT([${PYTHON_VERSION}])
-    LALSUITE_VERSION_COMPARE([${PYTHON_VERSION}],[>=],[3.0.0],[
-      LALSUITE_VERSION_COMPARE([${swig_min_version}],[<],[3.0.9],[
-        swig_min_version=3.0.9
-        swig_min_version_info="for Python version ${PYTHON_VERSION}"
-      ])
-    ])
 
     # check for distutils
     AC_MSG_CHECKING([for distutils])
@@ -536,7 +531,6 @@ EOD
     AC_MSG_RESULT([yes])
 
     # check for NumPy
-    numpy_min_version=1.3
     AC_MSG_CHECKING([for NumPy])
     numpy_version=[`cat <<EOD | ${PYTHON} - 2>/dev/null
 import numpy
@@ -549,10 +543,10 @@ EOD`]
 
     # check NumPy version
     AC_MSG_CHECKING([NumPy version])
-    LALSUITE_VERSION_COMPARE([${numpy_version}],[<],[${numpy_min_version}],[
-      AC_MSG_ERROR([NumPy version ${numpy_min_version} or later is required])
-    ])
     AC_MSG_RESULT([${numpy_version}])
+    LALSUITE_VERSION_COMPARE([${numpy_version}],[<],[${MIN_NUMPY_VERSION}],[
+      AC_MSG_ERROR([NumPy version ${MIN_NUMPY_VERSION} or later is required])
+    ])
 
     # determine Python preprocessor flags
     AC_SUBST([SWIG_PYTHON_CPPFLAGS],[])
@@ -643,39 +637,14 @@ EOD`]
     ])
     LALSUITE_POP_UVARS
 
-    # remove deprecated code in NumPy API >= 1.7
-    SWIG_PYTHON_CPPFLAGS="${SWIG_PYTHON_CPPFLAGS} -DNPY_NO_DEPRECATED_API=NPY_1_7_API_VERSION"
-
-    # check for declarations which may need compatibility code for NumPy API < 1.7
-    LALSUITE_PUSH_UVARS
-    CPPFLAGS="${SWIG_PYTHON_CPPFLAGS}"
-    AC_CHECK_DECL([NPY_ARRAY_WRITEABLE],[
-      SWIG_PYTHON_CPPFLAGS="${SWIG_PYTHON_CPPFLAGS} -DSWIGLAL_HAVE_NPY_ARRAY_WRITEABLE"
-    ],[],[
-      AC_INCLUDES_DEFAULT
-      #include <Python.h>
-      #include <numpy/arrayobject.h>
-    ])
-    AC_CHECK_DECL([PyArray_SetBaseObject],[
-      SWIG_PYTHON_CPPFLAGS="${SWIG_PYTHON_CPPFLAGS} -DSWIGLAL_HAVE_PyArray_SetBaseObject"
-    ],[],[
-      AC_INCLUDES_DEFAULT
-      #include <Python.h>
-      #include <numpy/arrayobject.h>
-    ])
-    LALSUITE_POP_UVARS
+    # ensure code is clean against minimum NumPy API
+    min_numpy_api_version=[`echo "NPY_${MIN_NUMPY_VERSION}_API_VERSION" | ${SED} -e 's|\.|_|g'`]
+    SWIG_PYTHON_CPPFLAGS="${SWIG_PYTHON_CPPFLAGS} -DNPY_NO_DEPRECATED_API=${min_numpy_api_version}"
 
   ],[
 
     # determine SWIG Python flags
-    AC_SUBST([SWIG_PYTHON_FLAGS],["-O -builtin -globals globalvar"])
-    AC_MSG_CHECKING([if SWIG supports relative Python imports])
-    LALSUITE_VERSION_COMPARE([${swig_version}],[<],[3.0.0],[
-      AC_MSG_RESULT([no])
-    ],[
-      AC_MSG_RESULT([yes])
-      SWIG_PYTHON_FLAGS="-py3 -relativeimport ${SWIG_PYTHON_FLAGS}"
-    ])
+    AC_SUBST([SWIG_PYTHON_FLAGS],["-py3 -relativeimport -O -builtin -globals globalvar"])
 
   ])
   # end $0
