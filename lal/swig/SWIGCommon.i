@@ -1947,6 +1947,8 @@ if (strides[I-1] == 0) {
 /// other value, and if successful store it in <tt>struct TAGNAME OUTPUT</tt>.  Otherwise, raise a
 /// SWIG error. Separate typemaps are needed for <tt>struct TAGNAME</tt> and pointers to <tt>struct
 /// TAGNAME</tt>. Typecheck typemaps are used by overloaded functions, e.g. constructors.
+/// The \c %swiglal_specialised_typemaps() macro handles flat structs, while the
+/// \c %swiglal_specialised_ptr_typemaps() macro handles structs allocated with dynamic memory.
 ///
 %define %swiglal_specialised_typemaps(TAGNAME, FRAGMENT)
 %typemap(in, noblock=1, fragment=FRAGMENT)
@@ -2007,6 +2009,40 @@ if (strides[I-1] == 0) {
     struct TAGNAME temp_struct;
     res = swiglal_specialised_##TAGNAME($input, &temp_struct);
     $1 = SWIG_CheckState(res);
+  }
+}
+%enddef
+%define %swiglal_specialised_ptr_typemaps(TAGNAME, FRAGMENT)
+%typemap(in, noblock=1, fragment=FRAGMENT)
+  struct TAGNAME* (struct TAGNAME* temp_ptr = 0, void *argp = 0, int res = 0),
+  const struct TAGNAME* (struct TAGNAME* temp_ptr = 0, void *argp = 0, int res = 0)
+{
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, $disown | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+    res = swiglal_specialised_ptr_##TAGNAME($input, &temp_ptr);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res, "$type", $symname, $argnum);
+    } else {
+      $1 = %reinterpret_cast(temp_ptr, $ltype);
+    }
+  } else {
+    $1 = %reinterpret_cast(argp, $ltype);
+  }
+}
+%typemap(freearg) struct TAGNAME*, const struct TAGNAME* {
+  if (temp_ptr$argnum) {
+    swiglal_specialised_ptr_##TAGNAME##_destroy(temp_ptr$argnum);
+  }
+}
+%typemap(typecheck, fragment=FRAGMENT, precedence=SWIG_TYPECHECK_SWIGOBJECT) struct TAGNAME*, const struct TAGNAME* {
+  void *argp = 0;
+  int res = SWIG_ConvertPtr($input, &argp, $descriptor, 0);
+  $1 = SWIG_CheckState(res);
+  if (!$1) {
+    struct TAGNAME* temp_ptr;
+    res = swiglal_specialised_##TAGNAME($input, &temp_ptr);
+    $1 = SWIG_CheckState(res);
+    swiglal_specialised_ptr_##TAGNAME##_destroy(temp_ptr);
   }
 }
 %enddef
