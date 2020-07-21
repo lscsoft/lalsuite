@@ -1973,16 +1973,16 @@ if (strides[I-1] == 0) {
 }
 %typemap(freearg) struct TAGNAME, const struct TAGNAME "";
 %typemap(in, noblock=1, fragment=FRAGMENT)
-  struct TAGNAME* (struct TAGNAME tmp, void *argp = 0, int res = 0),
-  const struct TAGNAME* (struct TAGNAME tmp, void *argp = 0, int res = 0)
+  struct TAGNAME* (struct TAGNAME temp_struct, void *argp = 0, int res = 0),
+  const struct TAGNAME* (struct TAGNAME temp_struct, void *argp = 0, int res = 0)
 {
   res = SWIG_ConvertPtr($input, &argp, $descriptor, $disown | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
-    res = swiglal_specialised_##TAGNAME($input, &tmp);
+    res = swiglal_specialised_##TAGNAME($input, &temp_struct);
     if (!SWIG_IsOK(res)) {
       %argument_fail(res, "$type", $symname, $argnum);
     } else {
-      $1 = %reinterpret_cast(&tmp, $ltype);
+      $1 = %reinterpret_cast(&temp_struct, $ltype);
     }
   } else {
     $1 = %reinterpret_cast(argp, $ltype);
@@ -1994,8 +1994,8 @@ if (strides[I-1] == 0) {
   int res = SWIG_ConvertPtr($input, &argp, $&descriptor, 0);
   $1 = SWIG_CheckState(res);
   if (!$1) {
-    struct TAGNAME tmp;
-    res = swiglal_specialised_##TAGNAME($input, &tmp);
+    struct TAGNAME temp_struct;
+    res = swiglal_specialised_##TAGNAME($input, &temp_struct);
     $1 = SWIG_CheckState(res);
   }
 }
@@ -2004,8 +2004,8 @@ if (strides[I-1] == 0) {
   int res = SWIG_ConvertPtr($input, &argp, $descriptor, 0);
   $1 = SWIG_CheckState(res);
   if (!$1) {
-    struct TAGNAME tmp;
-    res = swiglal_specialised_##TAGNAME($input, &tmp);
+    struct TAGNAME temp_struct;
+    res = swiglal_specialised_##TAGNAME($input, &temp_struct);
     $1 = SWIG_CheckState(res);
   }
 }
