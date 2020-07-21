@@ -1253,5 +1253,36 @@ if lal.swig_version >= 0x030011:
         assert (a.data.data == b.data.data).all()
     print("PASSED pickling (Python specific)")
 
+# test Python dict to LALDict typemap
+print("checking Python dict to LALDict typemap (Python specific) ...")
+pydict = {
+    "str": "A string value",
+    "2-byte-unsigned:UINT2": 32767,
+    "4-byte-unsigned:UINT4": 123456,
+    "8-byte-unsigned:UINT8": 9223372036854775807,
+    "2-byte-signed:INT2": -32768,
+    "4-byte-signed:INT4": -123456,
+    "8-byte-signed:INT8": 9223372036854775807,
+    "single:REAL4": 987e6,
+    "double:REAL8": -543e-21,
+    "single complex:COMPLEX8": complex(987e6, -123e4),
+    "double complex:COMPLEX16": complex(-543e-21, 345e43)
+}
+laldict = lal.CreateDict()
+lal.DictInsertStringValue(laldict, "str", pydict["str"])
+lal.DictInsertUINT2Value(laldict, "2-byte-unsigned", pydict["2-byte-unsigned:UINT2"])
+lal.DictInsertUINT4Value(laldict, "4-byte-unsigned", pydict["4-byte-unsigned:UINT4"])
+lal.DictInsertUINT8Value(laldict, "8-byte-unsigned", pydict["8-byte-unsigned:UINT8"])
+lal.DictInsertINT2Value(laldict, "2-byte-signed", pydict["2-byte-signed:INT2"])
+lal.DictInsertINT4Value(laldict, "4-byte-signed", pydict["4-byte-signed:INT4"])
+lal.DictInsertINT8Value(laldict, "8-byte-signed", pydict["8-byte-signed:INT8"])
+lal.DictInsertREAL4Value(laldict, "single", pydict["single:REAL4"])
+lal.DictInsertREAL8Value(laldict, "double", pydict["double:REAL8"])
+lal.DictInsertCOMPLEX8Value(laldict, "single complex", pydict["single complex:COMPLEX8"])
+lal.DictInsertCOMPLEX16Value(laldict, "double complex", pydict["double complex:COMPLEX16"])
+lal.swig_lal_test_pydict_to_laldict(laldict)
+lal.swig_lal_test_pydict_to_laldict(pydict)
+print("PASSED Python dict to LALDict typemap (Python specific)")
+
 # passed all tests!
 print("PASSED all tests")

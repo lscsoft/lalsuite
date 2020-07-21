@@ -604,3 +604,66 @@ int swig_lal_test_typemaps_string_ptrptr(
 REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps) {
   return XLALGPSGetREAL8(&gps);
 }
+
+// Test Python dict to LALDict typemap
+int swig_lal_test_pydict_to_laldict(LALDict *laldict) {
+  XLAL_CHECK( laldict != NULL, XLAL_EFAULT );
+  {
+    const char *str = XLALDictLookupStringValue(laldict, "str");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( strcmp(str, "A string value") == 0, XLAL_EFUNC );
+  }
+  {
+    UINT2 val = XLALDictLookupUINT2Value(laldict, "2-byte-unsigned");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( val == 32767, XLAL_EFUNC );
+  }
+  {
+    UINT4 val = XLALDictLookupUINT4Value(laldict, "4-byte-unsigned");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( val == 123456, XLAL_EFUNC );
+  }
+  {
+    UINT8 val = XLALDictLookupUINT8Value(laldict, "8-byte-unsigned");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( val == 9223372036854775807, XLAL_EFUNC );
+  }
+  {
+    INT2 val = XLALDictLookupINT2Value(laldict, "2-byte-signed");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( val == -32768, XLAL_EFUNC );
+  }
+  {
+    INT4 val = XLALDictLookupINT4Value(laldict, "4-byte-signed");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( val == -123456, XLAL_EFUNC );
+  }
+  {
+    INT8 val = XLALDictLookupINT8Value(laldict, "8-byte-signed");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( val == 9223372036854775807, XLAL_EFUNC );
+  }
+  {
+    REAL4 val = XLALDictLookupREAL4Value(laldict, "single");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( val == 987e6, XLAL_EFUNC );
+  }
+  {
+    REAL8 val = XLALDictLookupREAL8Value(laldict, "double");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( val == -543e-21, XLAL_EFUNC );
+  }
+  {
+    COMPLEX8 val = XLALDictLookupCOMPLEX8Value(laldict, "single complex");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( crealf(val) == 987e6, XLAL_EFUNC );
+    XLAL_CHECK( cimagf(val) == -123e4, XLAL_EFUNC );
+  }
+  {
+    COMPLEX16 val = XLALDictLookupCOMPLEX16Value(laldict, "double complex");
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLAL_CHECK( creal(val) == -543e-21, XLAL_EFUNC );
+    XLAL_CHECK( cimag(val) == 345e43, XLAL_EFUNC );
+  }
+  return XLAL_SUCCESS;
+}
