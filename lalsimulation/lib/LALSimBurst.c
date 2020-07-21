@@ -32,6 +32,7 @@
 #include <gsl/gsl_randist.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALError.h>
 #include <lal/LALSimBurst.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
@@ -1296,7 +1297,7 @@ int XLALSimBurstGaussian(
  * In the frequency domain, the waveform is \f$A f^{-q}\f$ with a
  * (non-physical) low-frequency cut-off and a (physical) high-frequency
  * cut-off. For kink-kinks the high-frequency cutoff doesn't exist, and
- * the argument given is ignored. 
+ * the argument given is ignored.
  * \f{equation}{
  * \tilde{h}_{+}(f)
  *    = A f^{-q} \left(1 +
@@ -1321,7 +1322,7 @@ int XLALSimBurstGaussian(
  * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
  * on failure.
  *
- * @param[in] waveform Name of waveform. Should be cusp, kink, or kinkkink. 
+ * @param[in] waveform Name of waveform. Should be cusp, kink, or kinkkink.
  *
  * @param[in] amplitude Waveform's amplitude parameter, \f$A\f$, in units
  * of \f$\mathrm{strain}\,\mathrm{s}^{-\frac{1}{3}}\f$.
@@ -1358,11 +1359,6 @@ static int XLALGenerateString(
 
 	if(amplitude < 0 || f_high < f_low || delta_t <= 0) {
 		XLALPrintError("%s(): invalid input parameters\n", __func__);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EINVAL);
-	}
-	if(strcmp( waveform, "cusp" ) != 0 && strcmp( waveform, "kink" ) != 0 && strcmp( waveform, "kinkkink" ) != 0) {
-		XLALPrintError("%s(): invalid waveform. must be cusp, kink, or kinkkink\n", __func__);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(XLAL_EINVAL);
 	}
@@ -1438,6 +1434,10 @@ static int XLALGenerateString(
 
 			tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
 		}
+	} else {
+		XLALPrintError("%s(): invalid waveform. must be cusp, kink, or kinkkink\n", __func__);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/* set DC and Nyquist to zero */
@@ -1526,7 +1526,7 @@ int XLALGenerateStringCusp(
 )
 {
 	/* call waveform generator function */
-	XLALGenerateString(hplus, hcross, "cusp", amplitude, f_high, delta_t); 
+	XLALGenerateString(hplus, hcross, "cusp", amplitude, f_high, delta_t);
 
 	return 0;
 }
@@ -1577,7 +1577,7 @@ int XLALGenerateStringKink(
 )
 {
 	/* call waveform generator function */
-	XLALGenerateString(hplus, hcross, "kink", amplitude, f_high, delta_t); 
+	XLALGenerateString(hplus, hcross, "kink", amplitude, f_high, delta_t);
 
 	return 0;
 }
@@ -1623,14 +1623,9 @@ int XLALGenerateStringKinkKink(
 	REAL8 delta_t
 )
 {
-	/*
-	 * set a random f_high in Hz that will not be lower than f_low.
-	 * this will be ignored when calculating the spectrum.
-	 */
-	const double f_high = 8196.;
-
-	/* call waveform generator function */
-	XLALGenerateString(hplus, hcross, "kinkkink", amplitude, f_high, delta_t); 
+	/* call waveform generator function. the f_high parameter is set as
+	 * NaN, which will be ignored when calculating the spectrum */
+	XLALGenerateString(hplus, hcross, "kinkkink", amplitude, XLAL_REAL8_FAIL_NAN, delta_t);
 
 	return 0;
 }
