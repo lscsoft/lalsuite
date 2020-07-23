@@ -29,6 +29,7 @@
 #endif // SWIGLAL_HAVE_LIBGSL
 
 #include <lal/LALDatatypes.h>
+#include <lal/LALDict.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -359,6 +360,9 @@ typedef struct tagswig_lal_test_gps {
   LIGOTimeGPS t;
 } swig_lal_test_gps;
 REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps);
+
+// Test Python dict to LALDict typemap
+int swig_lal_test_pydict_to_laldict(LALDict *laldict);
 
 #ifdef __cplusplus
 }

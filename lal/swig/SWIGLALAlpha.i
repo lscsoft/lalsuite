@@ -477,10 +477,14 @@ typedef struct {
 ///
 
 ///
-/// Specialised input typemaps for ::LALUnit structs.  Accepts a SWIG-wrapped ::LALUnit or
-/// power-of-10 double as input.
+/// Specialised input typemaps for ::LALUnit structs.  Accepts a SWIG-wrapped ::LALUnit,
+/// a unit string, or a dimensionless power-of-10 double as input.
 ///
-%fragment("swiglal_specialised_tagLALUnit", "header", fragment="SWIG_AsCharPtr", fragment=SWIG_AsVal_frag(double)) {
+%fragment("swiglal_specialised_tagLALUnit", "header",
+          fragment="SWIG_AsCharPtr",
+          fragment=SWIG_AsVal_frag(double)
+  )
+{
   int swiglal_specialised_tagLALUnit(SWIG_Object in, LALUnit *out) {
     char *str = 0;
     int alloc = 0;
@@ -517,6 +521,122 @@ typedef struct {
   }
 }
 %swiglal_specialised_typemaps(tagLALUnit, "swiglal_specialised_tagLALUnit");
+
+///
+/// # Specialised typemaps for <tt>LALDict</tt>
+///
+
+///
+/// Specialised input typemaps for <tt>LALDict</tt>. Accepts a SWIG-wrapped <tt>LALDict</tt>, or:
+///
+/// - For Python, a native dictionary with keys of the form <tt>"key[:type]"</tt>, where
+///   <tt>"type"</tt> specifies the type of the <tt>LALDict</tt> entry:
+//    <tt>"[U]INT{2,4,8}"</tt> for integer values,
+///   <tt>"REAL{4,8}"</tt> for real values, and
+///   <tt>"COMPLEX{8,16}"</tt> for complex values.
+///   If <tt>"type"</tt> is absent, the entry is assumed to be a string.
+///
+%fragment("swiglal_specialised_ptr_tagLALDict", "header",
+          fragment="SWIG_AsCharPtr",
+          fragment=SWIG_AsVal_frag(uint16_t),
+          fragment=SWIG_AsVal_frag(int16_t),
+          fragment=SWIG_AsVal_frag(uint32_t),
+          fragment=SWIG_AsVal_frag(int32_t),
+          fragment=SWIG_AsVal_frag(uint64_t),
+          fragment=SWIG_AsVal_frag(int64_t),
+          fragment=SWIG_AsVal_frag(float),
+          fragment=SWIG_AsVal_frag(double),
+          fragment=SWIG_AsVal_frag(COMPLEX8),
+          fragment=SWIG_AsVal_frag(COMPLEX16)
+  )
+{
+  int swiglal_specialised_ptr_tagLALDict(SWIG_Object in, LALDict **out) {
+    int res = SWIG_ValueError;
+    char *keyname, *valuestr = 0;
+    int keyalloc, valuealloc = 0;
+    *out = XLALCreateDict();
+    if (*out == NULL) {
+      goto fail;
+    }
+#ifdef SWIGPYTHON
+    if (!PyDict_Check(in)) {
+      return SWIG_ValueError;
+    }
+    PyObject *key, *value;
+    Py_ssize_t pos = 0;
+    while (PyDict_Next(in, &pos, &key, &value)) {
+      if (!SWIG_IsOK(SWIG_AsCharPtr(key, &keyname, &keyalloc))) {
+        break;
+      }
+      char *keytype = strrchr(keyname, ':');
+      if (keytype == NULL) {
+        keytype = keyname + strlen(keyname);
+      } else {
+        *keytype = 0;
+        ++keytype;
+      }
+      do {
+#define SWIGLAL_LALDICT_HANDLE_TYPE(LALTYPESTR, LALTYPE, CTYPE, FMT, ...) \
+        if (XLALStringCaseCompare(keytype, LALTYPESTR) == 0) { \
+          CTYPE v = 0; \
+          if (SWIG_IsOK(SWIG_AsVal(CTYPE)(value, &v))) { \
+            if (XLALDictInsert##LALTYPE##Value(*out, keyname, v) != XLAL_SUCCESS) { \
+              goto fail; \
+            } \
+            XLALPrintInfo("%s: dict=%p, key=%s, type=%s, value=" FMT "\n", __func__, in, keyname, keytype, __VA_ARGS__); \
+            break; \
+          } \
+        }
+        SWIGLAL_LALDICT_HANDLE_TYPE("UINT2",     UINT2,     uint16_t,  "%" LAL_UINT2_FORMAT, v);
+        SWIGLAL_LALDICT_HANDLE_TYPE("INT2",      INT2,      int16_t,   "%" LAL_INT2_FORMAT,  v);
+        SWIGLAL_LALDICT_HANDLE_TYPE("UINT4",     UINT4,     uint32_t,  "%" LAL_UINT4_FORMAT, v);
+        SWIGLAL_LALDICT_HANDLE_TYPE("INT4",      INT4,      int32_t,   "%" LAL_INT4_FORMAT,  v);
+        SWIGLAL_LALDICT_HANDLE_TYPE("UINT8",     UINT8,     uint64_t,  "%" LAL_UINT8_FORMAT, v);
+        SWIGLAL_LALDICT_HANDLE_TYPE("INT8",      INT8,      int64_t,   "%" LAL_INT8_FORMAT,  v);
+        SWIGLAL_LALDICT_HANDLE_TYPE("REAL4",     REAL4,     float,     "%" LAL_REAL4_FORMAT, v);
+        SWIGLAL_LALDICT_HANDLE_TYPE("REAL8",     REAL8,     double,    "%" LAL_REAL8_FORMAT, v);
+        SWIGLAL_LALDICT_HANDLE_TYPE("COMPLEX8",  COMPLEX8,  COMPLEX8,  "(%" LAL_REAL4_FORMAT ",%" LAL_REAL4_FORMAT ")", crealf(v), cimagf(v));
+        SWIGLAL_LALDICT_HANDLE_TYPE("COMPLEX16", COMPLEX16, COMPLEX16, "(%" LAL_REAL8_FORMAT ",%" LAL_REAL8_FORMAT ")", creal (v), cimag (v));
+#undef SWIGLAL_LALDICT_GIVEN_TYPE
+        if (SWIG_IsOK(SWIG_AsCharPtr(value, &valuestr, &valuealloc))) {
+          if (XLALDictInsertStringValue(*out, keyname, valuestr) != XLAL_SUCCESS) {
+            goto fail;
+          }
+          XLALPrintInfo("%s: dict=%p, key=%s, type=string, value='%s'\n", __func__, in, keyname, valuestr);
+          if (valuealloc == SWIG_NEWOBJ) {
+            %delete_array(valuestr);
+            valuealloc = 0;
+          }
+        } else {
+          XLALPrintInfo("%s: dict=%p, key=%s, type=unknown\n", __func__, in, keyname);
+          goto fail;
+        }
+      } while(0);
+      if (keyalloc == SWIG_NEWOBJ) {
+        %delete_array(keyname);
+        keyalloc = 0;
+      }
+    }
+    res = SWIG_OK;
+#endif
+  fail:
+    if (!SWIG_IsOK(res)) {
+      XLALDestroyDict(*out);
+      *out = NULL;
+    }
+    if (keyalloc == SWIG_NEWOBJ) {
+      %delete_array(keyname);
+    }
+    if (valuealloc == SWIG_NEWOBJ) {
+      %delete_array(valuestr);
+    }
+    return res;
+  }
+  void swiglal_specialised_ptr_tagLALDict_destroy(LALDict *tmp) {
+    XLALDestroyDict(tmp);
+  }
+}
+%swiglal_specialised_ptr_typemaps(tagLALDict, "swiglal_specialised_ptr_tagLALDict");
 
 // Local Variables:
 // mode: c
