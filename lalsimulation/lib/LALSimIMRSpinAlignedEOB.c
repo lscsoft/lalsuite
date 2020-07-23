@@ -789,8 +789,8 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       {
 
 	postAdiabaticFlag = 1;
-	XLALDictInsertUINT4Value(PAParams, "PAFlag",postAdiabaticFlag);
-	XLALDictInsertUINT4Value(PAParams, "PAOrder",6);
+	XLALDictInsertUINT4Value(PAParams, "PAFlag", postAdiabaticFlag);
+	// XLALDictInsertUINT4Value(PAParams, "PAOrder",6);
 	
       }
     /* If we want SEOBNRv4HM, then reset SpinAlignedEOBversion=4 and set use_hm=1 */
@@ -1565,11 +1565,11 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     REAL8 tStepInterp = deltaT / mTScaled;
     const INT4 nInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp);
 
-    double tVecInterp[200];
-    double rVecInterp[200];
-    double phiVecInterp[200];
-    double prVecInterp[200];
-    double pphiVecInterp[200];
+    double tVecInterp[10000];
+    double rVecInterp[10000];
+    double phiVecInterp[10000];
+    double prVecInterp[10000];
+    double pphiVecInterp[10000];
 
     for (i = 0; i < PALen; i++)
     {
@@ -1581,21 +1581,20 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     }
 
     gsl_interp_accel *acc1 = gsl_interp_accel_alloc();
-    gsl_spline *spline1 = gsl_spline_alloc(gsl_interp_cspline, 200);
-    gsl_spline_init(spline1, tVecInterp, rVecInterp, 200);
+    gsl_spline *spline1 = gsl_spline_alloc(gsl_interp_cspline, PALen);
+    gsl_spline_init(spline1, tVecInterp, rVecInterp, PALen);
 
     gsl_interp_accel *acc2 = gsl_interp_accel_alloc();
-    gsl_spline *spline2 = gsl_spline_alloc(gsl_interp_cspline, 200);
-    gsl_spline_init(spline2, tVecInterp, phiVecInterp, 200);
+    gsl_spline *spline2 = gsl_spline_alloc(gsl_interp_cspline, PALen);
+    gsl_spline_init(spline2, tVecInterp, phiVecInterp, PALen);
 
     gsl_interp_accel *acc3 = gsl_interp_accel_alloc();
-    gsl_spline *spline3 = gsl_spline_alloc(gsl_interp_cspline, 200);
-    gsl_spline_init(spline3, tVecInterp, prVecInterp, 200);
+    gsl_spline *spline3 = gsl_spline_alloc(gsl_interp_cspline, PALen);
+    gsl_spline_init(spline3, tVecInterp, prVecInterp, PALen);
 
     gsl_interp_accel *acc4 = gsl_interp_accel_alloc();
-    gsl_spline *spline4 = gsl_spline_alloc(gsl_interp_cspline, 200);
-    gsl_spline_init(spline4, tVecInterp, pphiVecInterp, 200);
-
+    gsl_spline *spline4 = gsl_spline_alloc(gsl_interp_cspline, PALen);
+    gsl_spline_init(spline4, tVecInterp, pphiVecInterp, PALen);
 
     REAL8Array *interpDynamicsPA = NULL;
     interpDynamicsPA = XLALCreateREAL8ArrayL(2, 5, nInterp);

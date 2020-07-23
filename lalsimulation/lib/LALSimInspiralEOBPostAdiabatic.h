@@ -166,23 +166,24 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
 struct PostAdiabaticRootSolveParams
 {
     REAL8 r;
-    REAL8 rc;
-    REAL8 drcBydr;
-    REAL8 uc2;
-    REAL8 ducBydr;
+    REAL8 dr;
+    // REAL8 rc;
+    // REAL8 drcBydr;
+    // REAL8 uc2;
+    // REAL8 ducBydr;
     REAL8 prstar;
+    REAL8 dprstar;
     REAL8 dprstarBydr;
     REAL8 phi;
     REAL8 pphi;
     REAL8 dpphiBydr;
-    REAL8 A;
-    REAL8 dA;
-    REAL8 B;
-    REAL8 dAuc2Bydr;
-    REAL8 HeffOrb;
-    REAL8 dGBydr;
-    REAL8 dGBydprstar;
-    REAL8 dr;
+    // REAL8 A;
+    // REAL8 dA;
+    // REAL8 B;
+    // REAL8 dAuc2Bydr;
+    // REAL8 HeffOrb;
+    // REAL8 dGBydr;
+    // REAL8 dGBydprstar;
     REAL8 omega;
     REAL8 csi;
     SpinEOBParams *seobParams;
@@ -205,7 +206,8 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
     REAL8 x_lower,
     REAL8 x_upper,
     REAL8 absTol,
-    REAL8 relTol
+    REAL8 relTol,
+    INT2 parity
 );
 
 int
