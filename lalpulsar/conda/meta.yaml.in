@@ -74,13 +74,9 @@ outputs:
         - pkg-config
         - swig >={{ swig_version }}
       host:
-        - astropy
-        - gsl
-        - lal >={{ lal_version }}a0
         - {{ pin_subpackage('lalpulsar', exact=True) }}
         - numpy
         - python
-        - python-lal >={{ lal_version }}a0
       run:
         - astropy
         - cfitsio

@@ -27,9 +27,6 @@ export CFITSIO_LIBS="-L${PREFIX}/lib -lcfitsio"
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C swig
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C python
 
-# test
-make -j ${CPU_COUNT} V=1 VERBOSE=1 -C test check
-
 # install
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C swig install-exec-am  # swig bindings
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C python install  # pure-python extras
