@@ -1477,7 +1477,7 @@ static int XLALGenerateString(
 
 	/* done */
 
-	return 0;
+	return XLAL_SUCCESS;
 }
 
 /*
@@ -1526,9 +1526,9 @@ int XLALGenerateStringCusp(
 )
 {
 	/* call waveform generator function */
-	XLALGenerateString(hplus, hcross, "cusp", amplitude, f_high, delta_t);
+	XLAL_CHECK(XLALGenerateString(hplus, hcross, "cusp", amplitude, f_high, delta_t) == XLAL_SUCCESS, XLAL_EFUNC);
 
-	return 0;
+	return XLAL_SUCCESS;
 }
 
 /*
@@ -1577,9 +1577,9 @@ int XLALGenerateStringKink(
 )
 {
 	/* call waveform generator function */
-	XLALGenerateString(hplus, hcross, "kink", amplitude, f_high, delta_t);
+	XLAL_CHECK(XLALGenerateString(hplus, hcross, "kink", amplitude, f_high, delta_t) == XLAL_SUCCESS, XLAL_EFUNC);
 
-	return 0;
+	return XLAL_SUCCESS;
 }
 
 /*
@@ -1625,7 +1625,7 @@ int XLALGenerateStringKinkKink(
 {
 	/* call waveform generator function. the f_high parameter is set as
 	 * NaN, which will be ignored when calculating the spectrum */
-	XLALGenerateString(hplus, hcross, "kinkkink", amplitude, XLAL_REAL8_FAIL_NAN, delta_t);
+	XLAL_CHECK(XLALGenerateString(hplus, hcross, "kinkkink", amplitude, XLAL_REAL8_FAIL_NAN, delta_t) == XLAL_SUCCESS, XLAL_EFUNC);
 
-	return 0;
+	return XLAL_SUCCESS;
 }
