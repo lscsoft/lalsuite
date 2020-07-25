@@ -12,6 +12,8 @@
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set framel_version = "@MIN_FRAMEL_VERSION@" %}
 {% set framecpp_version = "@MIN_FRAMECPPC_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
   name: "{{ name }}"
@@ -30,7 +32,7 @@ requirements:
     - {{ compiler('c') }}
     - make
     - pkg-config
-    - swig >=3.0.9
+    - swig >={{ swig_version }}
   host:
     - lal >={{ lal_version }}
     - ldas-tools-framecpp >={{ framecpp_version }}
@@ -73,7 +75,7 @@ outputs:
         - {{ compiler('c') }}
         - make
         - pkg-config
-        - swig >=3.0.9
+        - swig >={{ swig_version }}
       host:
         - {{ pin_subpackage('lalframe', exact=True) }}
         - numpy

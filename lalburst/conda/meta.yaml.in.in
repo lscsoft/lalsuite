@@ -13,7 +13,8 @@
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
-{% set swig_version = "3.0.9" %}
+{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
   name: "{{ name }}"

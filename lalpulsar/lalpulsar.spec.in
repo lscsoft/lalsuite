@@ -33,7 +33,7 @@ BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
-BuildRequires: swig >= 3.0.9
+BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python2
 BuildRequires: python2-rpm-macros
@@ -41,7 +41,7 @@ BuildRequires: python-devel
 BuildRequires: python2-astropy
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
 BuildRequires: python2-mock
-BuildRequires: python2-numpy
+BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python-pathlib
 BuildRequires: pytest
 
@@ -53,7 +53,7 @@ BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-astropy
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
 
 # octave
@@ -96,7 +96,7 @@ Requires: %{name} = %{version}
 Requires: python
 Requires: python2-astropy
 Requires: python2-lal >= @MIN_LAL_VERSION@
-Requires: python2-numpy
+Requires: python2-numpy >= @MIN_NUMPY_VERSION@
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
@@ -111,7 +111,7 @@ Requires: %{name} = %{version}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-astropy
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-numpy
+Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
 This package provides the Python %{python3_version} bindings for LALPulsar.

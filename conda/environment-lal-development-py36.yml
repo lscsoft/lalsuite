@@ -26,6 +26,6 @@ dependencies:
   - python = 3.6
   - scipy
   - six
-  - swig >= 3.0.12
+  - swig >= 3.0.10
   - texlive-core
   - zlib

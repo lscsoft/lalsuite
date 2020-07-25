@@ -36,7 +36,7 @@ BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
-BuildRequires: swig >= 3.0.9
+BuildRequires: swig >= @MIN_SWIG_VERSION@
 
 # python2
 BuildRequires: python2-rpm-macros
@@ -50,7 +50,7 @@ BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python2-ligo-lw
 BuildRequires: python2-mock
-BuildRequires: python2-numpy
+BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python-pathlib
 BuildRequires: pytest
 
@@ -67,7 +67,7 @@ BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python%{python3_pkgversion}-ligo-lw
-BuildRequires: python%{python3_pkgversion}-numpy
+BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
 
 # octave
@@ -123,7 +123,7 @@ Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-ligo-lw
-Requires: python2-numpy
+Requires: python2-numpy >= @MIN_NUMPY_VERSION@
 Provides: %{name}-python = %{version}-%{release}
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
@@ -144,7 +144,7 @@ Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python%{python3_pkgversion}-ligo-lw
-Requires: python%{python3_pkgversion}-numpy
+Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
 This package provides the Python bindings for LALInspiral.

@@ -10,7 +10,8 @@
 {% set sha256 = "@SHA256@" %}
 
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
-{% set swig_version = "3.0.9" %}
+{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
   name: "{{ name }}"
@@ -74,13 +75,9 @@ outputs:
         - pkg-config
         - swig >={{ swig_version }}
       host:
-        - astropy
-        - gsl
-        - lal >={{ lal_version }}
         - {{ pin_subpackage('lalpulsar', exact=True) }}
         - numpy
         - python
-        - python-lal >={{ lal_version }}
       run:
         - astropy
         - cfitsio
