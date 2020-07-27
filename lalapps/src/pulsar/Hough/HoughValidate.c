@@ -58,8 +58,6 @@ Input shoud be from
 
 #include "./MCInjectComputeHough.h" /* proper path*/
 
-#include "SFTfileIOv1.h"
-
 #define VALIDATEOUT "./outHM1/skypatch_1/HM1validate"
 #define VALIDATEIN  "./outHM1/skypatch_1/HM1templates"
 

@@ -30,8 +30,6 @@
 #include <lal/ComputeSky.h>
 #include <gsl/gsl_cdf.h>
 
-#include "SFTfileIOv1.h"
-
 /* defaults */
 #define EARTHEPHEMERIS ".earth00-40-DE405.dat"
 #define SUNEPHEMERIS "sun00-40-DE405.dat"
@@ -272,8 +270,13 @@ int main( int argc, char *argv[]){
     tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
     strcpy(tempDir, uvar_sftDir);
     strcat(tempDir, "/*SFT*.*"); 
-    sftBand = 0.5; 
-    LAL_CALL( LALReadSFTfiles ( &status, &inputSFTs, uvar_f0 - sftBand, uvar_f0 + sftBand, nfSizeCylinder + uvar_blocksRngMed , tempDir), &status);
+    sftBand = 0.5;
+    SFTCatalog *catalog = XLALSFTdataFind( tempDir, NULL );
+    XLAL_CHECK_MAIN( catalog != NULL, XLAL_EFUNC );
+    double catalog_deltaF = catalog->data[0].header.deltaF;
+    sftBand += ( nfSizeCylinder + uvar_blocksRngMed ) * catalog_deltaF;
+    inputSFTs = XLALLoadSFTs( catalog, uvar_f0 - sftBand, uvar_f0 + sftBand );
+    XLAL_CHECK_MAIN( inputSFTs != NULL, XLAL_EFUNC );
     LALFree(tempDir);
   }
 

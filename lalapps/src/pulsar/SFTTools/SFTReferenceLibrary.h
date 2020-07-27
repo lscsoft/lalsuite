@@ -28,17 +28,6 @@
 #ifndef REFERENCESFTLIBRARY_H_
 #define REFERENCESFTLIBRARY_H_
 
-/* header for version 1 SFTs (not part of SPEC, but here for backwards
-   compatibility and clarity) */
-struct headertag1 {
-  double version;
-  int    gps_sec;
-  int    gps_nsec;
-  double tbase;
-  int    firstfreqindex;
-  int    nsamples;
-};
-
 /* header for version 2 SFTs */
 struct headertag2 {
   double              version;

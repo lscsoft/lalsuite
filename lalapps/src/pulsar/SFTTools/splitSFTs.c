@@ -23,7 +23,7 @@
  * \ingroup lalapps_pulsar_SFTTools
  * \author Bernd Machenschalk, Bruce Allen
  *
- * \brief This program reads in binary SFTs (v1 and v2) and writes out narrow-banded merged SFTs (v2).
+ * \brief This program reads in binary SFTs (v2) and writes out narrow-banded merged SFTs (v2).
  *
  * Writen by Bernd Machenschalk for Einstein\@home 2008
  *
@@ -182,14 +182,10 @@ static void destroy_SFT_RECORD( void *x )
   }
 }
 
-static int move_to_next_SFT ( FILE *fpin, int nsamples, int comment_length, double version )
+static int move_to_next_SFT ( FILE *fpin, int nsamples, int comment_length )
 {
   int move;
-  if ( version == 1 ) {
-    move = sizeof( struct headertag1 ) + nsamples * 2 * sizeof( float );
-  } else {
-    move = sizeof( struct headertag2 ) + nsamples * 2 * sizeof( float ) + comment_length;
-  }
+  move = sizeof( struct headertag2 ) + nsamples * 2 * sizeof( float ) + comment_length;
   fseek( fpin, move, SEEK_CUR );
   return XLAL_SUCCESS;
 }
@@ -212,7 +208,6 @@ int main( int argc, char **argv )
   char *outdir = ( char * )outdir0; /* output filename prefix */
   char *detector = NULL;          /* detector name */
   double factor = 1.0;            /* "mystery" factor */
-  double conversion_factor = 1.0; /* extra factor needed when converting from v1 SFTs */
   int firstfile = TRUE;           /* are we processing the first input SFT file? */
   int allcomments = FALSE;        /* write comment into _every_ SFT in the file */
   int add_comment = CMT_FULL;     /* add VCS ID and full command-line to every SFT file */
@@ -265,7 +260,7 @@ int main( int argc, char **argv )
              "  [-n|--output-directory <outputdirectory>]\n"
              "  [--] <inputfile> ...\n"
              "\n"
-             "  This program reads in binary SFTs (v1 and v2) and writes out narrow-banded\n"
+             "  This program reads in binary SFTs (v2) and writes out narrow-banded\n"
              "  merged SFTs (v2).\n"
              "\n"
              "  The frequency bands of the ouput SFTs (first frequency bin of first output SFT,\n"
@@ -277,9 +272,6 @@ int main( int argc, char **argv )
              "  A 'mystery factor' can be specified with '-m' option.\n"
              "\n"
              "  '-v' skips validation of the CRC checksum of the input files\n"
-             "\n"
-             "  In case of reading v1 SFTs (which don't support detector information in the header)\n"
-             "  the detector needs to be specified on the command-line using '-d' option.\n"
              "\n"
              "  The name of the output SFT follows the standard SFT filename convention, with\n"
              "  information specific to narrow-band SFTs included in the description:\n"
@@ -547,7 +539,7 @@ int main( int argc, char **argv )
       XLAL_CHECK_MAIN ( !( firstread && ( inRange == 1 ) ), XLAL_EIO, "First timestamp %d in file was after user constraint [%s)!", hd.gps_sec, constraint_str );
       firstread = FALSE;
       if ( inRange == -1 ) { /* input timestamp too early, skip */
-        XLAL_CHECK_MAIN ( move_to_next_SFT ( fpin, hd.nsamples, hd.comment_length, hd.version ) == XLAL_SUCCESS, XLAL_EIO );
+        XLAL_CHECK_MAIN ( move_to_next_SFT ( fpin, hd.nsamples, hd.comment_length ) == XLAL_SUCCESS, XLAL_EIO );
         continue;
       }
       if ( inRange == 1 ) { /* input timestamp too late, stop with this file */
@@ -619,14 +611,8 @@ int main( int argc, char **argv )
 
       } /* else (add_comment == CMT_NONE) and (comment == NULL) i.e. no comment at all */
 
-      /* get the detector name from SFT header if present there (in v2 SFTs),
-         or else it needs to have been set on the command-line */
-      if ( *hd.detector ) {
-        detector = hd.detector;
-      }
-
-      /* if no detector has been specified, issue an error */
-      XLAL_CHECK_MAIN( detector != NULL && *detector != 0, XLAL_EINVAL, "When reading v1 SFTs a detector needs to be specified with -d" );
+      /* get the detector name from SFT header */
+      detector = hd.detector;
 
       /* calculate number of bins to actually read (from width + overlap) */
       /* add width-overlap samples as lon as they are < the total number og bins to write */
@@ -643,16 +629,9 @@ int main( int argc, char **argv )
       sfterrno = ReadSFTData( fpin, data, startBin, nactivesamples, NULL, NULL );
       XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not read SFT data: %s", SFTErrorMessage( sfterrno ) );
 
-      /* if reading v1 SFTs set up a factor to be applied for normalization conversion */
-      if ( hd.version == 1.0 ) {
-        conversion_factor = 0.5 * hd.tbase / hd.nsamples;
-      } else {
-        conversion_factor = 1.0;
-      }
-
       /* apply mystery factor and possibly normalization factor */
       for ( bin = 0; bin < 2 * nactivesamples; bin++ ) {
-        data[bin] *= factor * conversion_factor;
+        data[bin] *= factor;
       }
 
       /* loop over start bins for output SFTs */
@@ -748,7 +727,7 @@ int main( int argc, char **argv )
       firstfile = FALSE;
 
       /* Move forward to next SFT in merged file */
-      XLAL_CHECK_MAIN ( move_to_next_SFT ( fpin, hd.nsamples, hd.comment_length, hd.version ) == XLAL_SUCCESS, XLAL_EIO );
+      XLAL_CHECK_MAIN ( move_to_next_SFT ( fpin, hd.nsamples, hd.comment_length ) == XLAL_SUCCESS, XLAL_EIO );
 
     } /* end loop over SFTs in this file */
 

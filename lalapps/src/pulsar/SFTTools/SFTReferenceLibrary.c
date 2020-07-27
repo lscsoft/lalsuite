@@ -245,7 +245,6 @@ static int validate_sizes(void) {
       sizeof(char) != 1      ||
       sizeof(int) != 4       ||
       sizeof(long long) != 8 ||
-      sizeof(struct headertag1) != 32 ||
       sizeof(struct headertag2) != 48
       )
     return SFTESIZEWRONG;
@@ -268,7 +267,7 @@ const char *SFTErrorMessage(int errorcode) {
   case SFTEREAD:
     return "SFT fread() failed in stream";
   case SFTEUNKNOWN:
-    return "SFT version in header is unknown (not 1 or 2)";
+    return "SFT version in header is unknown (not 2)";
   case SFTEGPSNSEC:
     return "SFT header GPS nsec not in range 0 to 10^9-1";
   case SFTEBADCOMMENT:
@@ -442,7 +441,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
 {
   struct headertag2 header,header_unswapped;
   int swap=0;
-  int what, version, retval=0;
+  int what, retval=0;
   fpos_t streamposition;
   char *mycomment=NULL;
 
@@ -461,11 +460,8 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
   if (fgetpos(fp, &streamposition))
     return SFTEGETSTREAMPOS;
   
-  /* read in header.  Note that for v1 SFTs this reads 16 bytes past
-     the header -- not important since old SFTs are much longer.  Note
-     also that the second and third arguments to fread() are reversed
-     from conventional practice, so that we can see if the file is
-     zero length */
+  /* read in header.  Note that the second and third arguments to fread() are reversed
+     from conventional practice, so that we can see if the file is zero length */
   if (sizeof(header) != (what=fread((void *)&header, 1, sizeof(header), fp))) {
     if (!what && feof(fp))
       retval=SFTENONE;
@@ -478,7 +474,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
   header_unswapped=header;
 
   /* check endian ordering, and swap if needed */
-  if (header.version != 1 && header.version != 2) {
+  if (header.version != 2) {
     swap8((char *)&header.version);
     swap4((char *)&header.gps_sec);
     swap4((char *)&header.gps_nsec);
@@ -491,18 +487,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
   }
   
   /* check if header version is recognized */
-  if (header.version == 1) {
-    version = 1;
-    header.crc64          = 0;
-    header.detector[0]    = 0;
-    header.detector[1]    = 0;
-    header.padding[0]     = 0;
-    header.padding[1]     = 0;
-    header.comment_length = 0;
-  }
-  else if (header.version == 2)
-    version = 2;
-  else {
+  if (header.version != 2) {
     retval=SFTEUNKNOWN;
     goto error;
   }
@@ -523,7 +508,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
   /* validate crc64 checksum ??  Do this BEFORE other checks since if
      a problem occurs it is more likely file corruption than a bad
      SFT */
-  if (version !=1 && validate) {
+  if (validate) {
     unsigned long long crc;
     unsigned long long crc64save=header.crc64;
     int total_length = header.comment_length + 2*sizeof(float)*header.nsamples;
@@ -612,7 +597,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
   }
 
   /* check that detector type is known */
-  if (header.version!=1 && unknownDetector(header.detector))
+  if (unknownDetector(header.detector))
     return SFTEINSTRUMENTUNKNOWN;
 
   /* if user has asked for comment, store it */
@@ -718,10 +703,7 @@ int ReadSFTData(FILE *fp,                /* data file.  Position left unchanged 
   }
 
   /* seek to start of data (skip comment if present) */
-  if (myinfo.version == 1)
-    seekforward=sizeof(struct headertag1)+firstbin*2*sizeof(float);
-  else
-    seekforward=sizeof(struct headertag2)+myinfo.comment_length+firstbin*2*sizeof(float);
+  seekforward=sizeof(struct headertag2)+myinfo.comment_length+firstbin*2*sizeof(float);
   if (fseek(fp, seekforward, SEEK_CUR)) {
     retval=SFTESEEK;
     goto error2;
