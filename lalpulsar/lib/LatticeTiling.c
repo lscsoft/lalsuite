@@ -1064,6 +1064,35 @@ int XLALSetLatticeTilingRandomOriginOffsets(
 
 }
 
+int XLALSetTiledLatticeDimensionsFromTiling(
+  LatticeTiling *tiling,
+  const LatticeTiling *ref_tiling
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice == TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( ref_tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ref_tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( tiling->ndim == ref_tiling->ndim, XLAL_EINVAL );
+
+  const size_t n = tiling->ndim;
+
+  // Check that all parameter-space dimensions are bounded
+  for ( size_t i = 0; i < n; ++i ) {
+    XLAL_CHECK( tiling->bounds[i].func != NULL, XLAL_EFAILED, "Lattice tiling dimension #%zu is unbounded", i );
+  }
+
+  // Set the tiled dimensions of 'tiling' to match 'ref_tiling'
+  for ( size_t i = 0; i < n; ++i ) {
+    tiling->bounds[i].is_tiled = ref_tiling->bounds[i].is_tiled;
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
 int XLALSetTilingLatticeAndMetric(
   LatticeTiling *tiling,
   const TilingLattice lattice,
