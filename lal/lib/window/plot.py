@@ -16,21 +16,21 @@ from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 import numpy
 from scipy import fftpack
 
-from pylal.window import *
+import lal
 
 def make_windows(n, kaiser_beta, creighton_beta, tukey_beta, gauss_beta):
 	return {
-		"rectangle": XLALCreateRectangularREAL8Window(n),
-		"Hann": XLALCreateHannREAL8Window(n),
-		"Welch": XLALCreateWelchREAL8Window(n),
-		"Bartlett": XLALCreateBartlettREAL8Window(n),
-		"Parzen": XLALCreateParzenREAL8Window(n),
-		"Papoulis": XLALCreatePapoulisREAL8Window(n),
-		"Hamming": XLALCreateHammingREAL8Window(n),
-		"Kaiser": XLALCreateKaiserREAL8Window(n, kaiser_beta),
-		"Creighton": XLALCreateCreightonREAL8Window(n, creighton_beta),
-		"Tukey": XLALCreateTukeyREAL8Window(n, tukey_beta),
-		"Gauss": XLALCreateGaussREAL8Window(n, gauss_beta)
+		"rectangle": lal.CreateRectangularREAL8Window(n),
+		"Hann": lal.CreateHannREAL8Window(n),
+		"Welch": lal.CreateWelchREAL8Window(n),
+		"Bartlett": lal.CreateBartlettREAL8Window(n),
+		"Parzen": lal.CreateParzenREAL8Window(n),
+		"Papoulis": lal.CreatePapoulisREAL8Window(n),
+		"Hamming": lal.CreateHammingREAL8Window(n),
+		"Kaiser": lal.CreateKaiserREAL8Window(n, kaiser_beta),
+		"Creighton": lal.CreateCreightonREAL8Window(n, creighton_beta),
+		"Tukey": lal.CreateTukeyREAL8Window(n, tukey_beta),
+		"Gauss": lal.CreateGaussREAL8Window(n, gauss_beta)
 	}
 
 def plot_windows_t(x, windows):
@@ -43,8 +43,10 @@ def plot_windows_t(x, windows):
 	axes.set_ylabel(r"$w(y)$")
 
 	for window in windows.values():
-		axes.plot(x, window.data)
+		axes.plot(x, window.data.data)
 	axes.legend(windows.keys())
+
+	fig.tight_layout()
 
 	return fig
 
@@ -64,7 +66,7 @@ def plot_windows_f(x, windows):
 	for window in windows.values():
 		# get window data, and pad with zeros to make its length
 		# pad_factor * L
-		w = numpy.hstack((window.data, padding))
+		w = numpy.hstack((window.data.data, padding))
 
 		# Fourier transform, and extract the bit to plot
 		w = fftpack.fft(w)[:4 * L]
@@ -78,11 +80,13 @@ def plot_windows_f(x, windows):
 	axes.set_ylim([1e-7, 1e+0])
 	axes.legend(windows.keys())
 
+	fig.tight_layout()
+
 	return fig
 
 L = 1001
 x = numpy.arange(L) / ((L - 1) / 2.0) - 1
 windows = make_windows(L, 6, 2, 0.5, 3)
 
-plot_windows_t(x, windows).savefig("window_t.eps")
-plot_windows_f(x, windows).savefig("window_f.eps")
+plot_windows_t(x, windows).savefig("window_t.png")
+plot_windows_f(x, windows).savefig("window_f.png")
