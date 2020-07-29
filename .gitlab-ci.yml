@@ -215,14 +215,14 @@ cache:
   conda config --add channels conda-forge
   retry conda update -n base conda setuptools
   conda activate base
-  retry conda install -n base "conda-build!=3.18.10" conda-forge-pinning conda-smithy conda-verify
+  retry conda install -n base "conda-build!=3.18.10" conda-forge-pinning "conda-smithy>=3.7.5" conda-verify
   conda info --all
 
 .conda-build: &conda-build
   image: igwn/base:conda
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
-    CONDA_CONFIG: "linux_"
+    CONDA_CONFIG: "linux_64_"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
     GIT_STRATEGY: none
   before_script:
@@ -421,7 +421,7 @@ lal:conda:fftw:
     - make-dist
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
-    CONDA_CONFIG: "linux_fft_implfftw"
+    CONDA_CONFIG: "linux_64_fft_implfftw"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 lal:conda:mkl:
@@ -431,7 +431,7 @@ lal:conda:mkl:
     - make-dist
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
-    CONDA_CONFIG: "linux_fft_implmkl"
+    CONDA_CONFIG: "linux_64_fft_implmkl"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 # -- lalframe------------------------------------
@@ -676,7 +676,7 @@ lalapps:conda:
     - lalinference:conda
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
-    CONDA_CONFIG: "linux_python3.7.____cpython"
+    CONDA_CONFIG: "linux_64_python3.7.____cpython"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 # -- integration tests --------------------------
