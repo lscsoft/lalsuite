@@ -483,7 +483,7 @@ for n, filename in enumerate(ligolw_utils.sort_files_by_size(filenames, options.
 	if options.verbose:
 		print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 	working_filename = dbtables.get_connection_filename(filename, tmp_path = options.tmp_space, verbose = options.verbose)
-	database = SnglBurstUtils.CoincDatabase(sqlite3.connect(working_filename), options.live_time_program, search = "StringCusp")
+	database = SnglBurstUtils.CoincDatabase(sqlite3.connect(str(working_filename)), options.live_time_program, search = "StringCusp")
 	if options.verbose:
 		SnglBurstUtils.summarize_coinc_database(database)
 	is_injection_db = "sim_burst" in dbtables.get_table_names(database.connection)

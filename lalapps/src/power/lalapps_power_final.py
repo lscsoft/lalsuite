@@ -607,7 +607,7 @@ def measure_threshold(filenames, n_survivors, live_time_program = "lalapps_power
 		if verbose:
 			print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 		working_filename = dbtables.get_connection_filename(filename, tmp_path = tmp_path, verbose = verbose)
-		database = SnglBurstUtils.CoincDatabase(sqlite3.connect(working_filename), live_time_program)
+		database = SnglBurstUtils.CoincDatabase(sqlite3.connect(str(working_filename)), live_time_program)
 		if verbose:
 			SnglBurstUtils.summarize_coinc_database(database)
 
@@ -989,7 +989,7 @@ def measure_efficiency(filenames, threshold, live_time_program = "lalapps_power"
 		if verbose:
 			print("%d/%d: %s" % (n + 1, len(filenames), filename), file=sys.stderr)
 		working_filename = dbtables.get_connection_filename(filename, tmp_path = tmp_path, verbose = verbose)
-		connection = sqlite3.connect(working_filename)
+		connection = sqlite3.connect(str(working_filename))
 		connection.create_function("coinc_detection_statistic", 2, coinc_detection_statistic)
 		database = SnglBurstUtils.CoincDatabase(connection, live_time_program)
 		if verbose:

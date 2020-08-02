@@ -792,7 +792,7 @@ def process_file(filename, products, live_time_program, tmp_path = None, veto_se
 	#
 
 	working_filename = dbtables.get_connection_filename(filename, tmp_path = tmp_path, verbose = verbose)
-	contents = SnglBurstUtils.CoincDatabase(sqlite3.connect(working_filename), live_time_program, search = "StringCusp", veto_segments_name = veto_segments_name)
+	contents = SnglBurstUtils.CoincDatabase(sqlite3.connect(str(working_filename)), live_time_program, search = "StringCusp", veto_segments_name = veto_segments_name)
 	if verbose:
 		SnglBurstUtils.summarize_coinc_database(contents, filename = working_filename)
 
