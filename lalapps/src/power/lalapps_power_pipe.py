@@ -1,5 +1,7 @@
 #
-# Copyright (C) 2006  Kipp C. Cannon
+# Copyright (C) 2005--2010,2013,2015,2016,2019  Kipp Cannon
+# Copyright (C) 2004--2006  Saikat Ray-Majumder
+# Copyright (C) 2003--2005  Duncan Brown
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -121,7 +123,7 @@ def parse_config_file(options):
 	seglistdict = segments.segmentlistdict()
 	tiling_phase = {}
 	for ifo in config.get("pipeline", "ifos").split():
-		seglistdict[ifo] = segmentsUtils.fromsegwizard(file(config.get("pipeline", "seglist_%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
+		seglistdict[ifo] = segmentsUtils.fromsegwizard(open(config.get("pipeline", "seglist_%s" % ifo)), coltype = LIGOTimeGPS).coalesce()
 		try:
 			offset = config.getfloat("pipeline", "tiling_phase_%s" % ifo)
 		except NoOptionError:
