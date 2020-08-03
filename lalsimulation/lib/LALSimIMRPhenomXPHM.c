@@ -1652,6 +1652,10 @@ static int IMRPhenomXPHMTwistUp(
 *
 * All the flags for IMRPhenomXP apply here plus the following ones:
 *
+*   TwistPhenomHM: option to twist-up the AS model PhenomHM instead of PhenomXHM. It is only available for the polarizations, not for individual modes.
+*       - 0: (DEFAULT) twist-up PhenomXHM
+*       - 1: twist-up PhenomHM
+*
 *   UseModes: Determine how the polarizations hp, hc are computed.
 *       - 0: (DEFAULT) Compute the non-precessing modes once and do the twistin up as in eq. 3.5-3.7 in the Precessing paper.
 *       - 1: Compute first the individual precessing modes in the inertial J-frame and sum them to get the polarizations.
@@ -1666,8 +1670,9 @@ static int IMRPhenomXPHMTwistUp(
 *
 * Multibanding flags:
 *
-*   PrecThresholdMband: Determines the accuracy and speed of the Multibanding algorithm for the Euler angles.
-*        - 0: Switch off the multibanding. Default threshold is set to 0.001 for MSA angles and 0.0001 for NNLO.
+*   PrecThresholdMband: Determines the accuracy and speed of the Multibanding algorithm for the Euler angles. The higher the threshold the faster is the algorithm but also less accurate.
+*        - 0.001 (DEFAULT)
+*        - 0: Switch off the multibanding.
 *
 *   MBandPrecVersion: Determines the algorithm to build the non-uniform frequency grid for the Euler angles.
 *        - 0: (DEFAULT) Not use multibanding.  Activated to 1 when PrecThresholdMband is non-zero.
