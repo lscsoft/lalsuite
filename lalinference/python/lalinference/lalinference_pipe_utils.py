@@ -52,6 +52,8 @@ def findSegmentsToAnalyze(ifo, frametype, state_vector_channel, bits, gpsstart, 
         from glue.lal import Cache
         from gwdatafind import find_urls
         import gwpy
+        import gwpy.timeseries
+        import gwpy.segments
     except ImportError:
         print('Unable to import necessary modules. Querying science segments not possible. Please try installing gwdatafind and gwpy')
         raise
