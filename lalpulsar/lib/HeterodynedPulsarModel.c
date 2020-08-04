@@ -284,7 +284,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     }
 
     /* get change in phase from glitches */
-    if ( glphase != NULL && fixglph != NULL ){ deltaphi += (glph->data[i] - fixglph->data[i]); }
+    if ( glph != NULL && fixglph != NULL ){ deltaphi += (glph->data[i] - fixglph->data[i]); }
     else if ( fixglph != NULL ){ deltaphi += fixglph->data[i]; }
 
     /* get change in phase from FITWAVES parameters */
