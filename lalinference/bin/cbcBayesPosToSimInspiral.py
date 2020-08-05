@@ -28,9 +28,9 @@ Populate a sim_inspiral table with random draws from an ASCII table.
 from optparse import Option, OptionParser
 from six.moves import range
 import numpy as np
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import ilwd
 import matplotlib
 matplotlib.use("Agg") # Needed to run on the CIT cluster
 from lalinference import bayespputils as bppu

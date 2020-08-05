@@ -32,9 +32,9 @@ Populate a sim_inspiral table with random draws from an ASCII table.
 from optparse import Option, OptionParser
 from six.moves import range
 import numpy as np
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import ilwd
 
 # Create a datatype for all relavent fields to be filled in the sim_inspiral table
 sim_inspiral_dt = [
