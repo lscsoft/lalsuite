@@ -121,7 +121,7 @@ outputs:
         - python-lalpulsar >={{ lalpulsar_version }}
         - scipy >=0.9.0
         - python-ligo-lw
-        - python-ligo-segments
+        - ligo-segments
       run:
         - astropy >=1.1.1
         - gsl
