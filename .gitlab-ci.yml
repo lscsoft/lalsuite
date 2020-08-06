@@ -916,13 +916,6 @@ docker:tags:stretch:
     reports:
       junit: "*/test/python/junit*.xml"
 
-clang:8:
-  <<: *clang-build
-  image: igwn/lalsuite-dev-clang:8
-  variables:
-    CLANG: clang-8
-    CLANGXX: clang++-8
-
 clang:9:
   <<: *clang-build
   image: igwn/lalsuite-dev-clang:9
