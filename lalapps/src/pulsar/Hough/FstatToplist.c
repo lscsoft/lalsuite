@@ -741,8 +741,8 @@ int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEA
     LogPrintf(LOG_CRITICAL,"Couldn't allocate tmpfilename\n");
     return(-2);
   }
-  strncpy(tmpfilename,filename,len);
-  strncat(tmpfilename,TMP_EXT,len);
+  strcpy(tmpfilename,filename);
+  strcat(tmpfilename,TMP_EXT);
 
   /* calculate checksum */
   checksum = 0;
