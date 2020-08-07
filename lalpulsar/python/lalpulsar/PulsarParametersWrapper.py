@@ -696,7 +696,7 @@ class PulsarParametersPy(object):
         """
 
         # output string format (set so that values should line up)
-        mkl = max([len(kn) for kn in self.keys()]) + 2  # max key length for output alignment
+        mkl = max([len(kn) for kn in self.keys()]) + 5  # max key length for output alignment
         vlb = precision + 10  # allow extra space for minus sign/exponents
         outputstr = "{{name: <{0}}}{{value: <{1}}}{{fitflag}}\t{{error}}".format(mkl, vlb)
 
