@@ -1033,6 +1033,35 @@ platform:macos:sierra:
     reports:
       junit: "*/test/python/junit*.xml"
 
+# -- conda
+
+platform:conda:linux:
+  image: igwn/base:conda
+  stage: platform tests
+  before_script:
+    - source /opt/conda/etc/profile.d/conda.sh
+    - conda env create
+          --file conda/environment-lal-development-py37.yml
+          --name lalsuite-platform-tests
+          --quiet
+    - conda info --all
+    - conda list --name lalsuite-platform-tests
+  script:
+    - conda activate lalsuite-platform-tests
+    - ./00boot
+    - ./configure
+          --disable-swig-octave
+    - make -j4
+    - make -j4 VERBOSE=1 check
+  needs: []
+  only:
+    - schedules
+    - web
+  artifacts:
+    reports:
+      junit: "*/test/python/junit*.xml"
+  allow_failure: true
+
 # -- wheels -------------------------------------
 
 # Build receipe for standalone wheels on Linux
