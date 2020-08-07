@@ -35,6 +35,7 @@ import numpy as np
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import ilwd
+import ligo.lw.utils.process
 
 # Create a datatype for all relavent fields to be filled in the sim_inspiral table
 sim_inspiral_dt = [
@@ -194,11 +195,12 @@ if __name__ == "__main__":
     # Create a new XML document
     xmldoc = ligolw.Document()
     xmldoc.appendChild(ligolw.LIGO_LW())
+    proc = ligo.lw.utils.process.register_to_xmldoc(doc, sys.argv[0], {})
+
     #create timeslide table and set offsets to 0
     timeslide_table = lsctables.New(lsctables.TimeSlideTable)
-    p=lsctables.Process
-    p.process_id=ilwd.ilwdchar("process:process_id:{0:d}".format(0))
-    timeslide_table.append_offsetvector({'H1':0,'V1':0,'L1':0,'H2':0},p)
+    timeslide_id = timeslide_table.append_offsetvector(
+        {'H1':0,'V1':0,'L1':0,'H2':0}, proc)
 
     sim_table = lsctables.New(lsctables.SimBurstTable)
     xmldoc.childNodes[0].appendChild(timeslide_table)
@@ -212,9 +214,9 @@ if __name__ == "__main__":
 
     # Fill in IDs
     for i,row in enumerate(sim_table):
-        row.process_id = ilwd.ilwdchar("process:process_id:{0:d}".format(i))
-        row.simulation_id = ilwd.ilwdchar("sim_burst:simulation_id:{0:d}".format(ids[i]))
-        row.time_slide_id = ilwd.ilwdchar("time_slide:time_slide_id:{0:d}".format(0))
+        row.process_id = proc.process_id
+        row.simulation_id = sim_table.get_next_id()
+        row.time_slide_id = timeslide_id
     # Fill rows
     for field in injections.dtype.names:
         vals = injections[field]
