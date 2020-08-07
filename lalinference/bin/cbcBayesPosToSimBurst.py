@@ -34,7 +34,6 @@ from six.moves import range
 import numpy as np
 from ligo.lw import ligolw
 from ligo.lw import lsctables
-from ligo.lw import ilwd
 import ligo.lw.utils.process
 
 # Create a datatype for all relavent fields to be filled in the sim_inspiral table
