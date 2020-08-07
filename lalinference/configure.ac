@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[2.0.2.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[2.0.3.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([lib/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -88,7 +88,7 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[21])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBREVISION],[2])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
