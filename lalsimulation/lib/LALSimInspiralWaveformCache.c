@@ -940,11 +940,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case TaylorF2:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
-                ABORT_NONDEFAULT_FRAME_AXIS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
-                ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
 
             /* Call the waveform driver routine */
             ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
@@ -968,15 +968,15 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv1_ROM_EffectiveSpin:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if (!checkAlignedSpinsEqual(S1z, S2z))
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if( !checkTidesZero(lambda1, lambda2) )
-                ABORT_NONZERO_TIDES(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
             if( !checkTidesZero(lambda1, lambda2) )
-                ABORT_NONZERO_TIDES(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             ret = XLALSimIMRSEOBNRv1ROMEffectiveSpinFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, distance, inclination, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z));
@@ -985,11 +985,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv1_ROM_DoubleSpin:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if( !checkTidesZero(lambda1, lambda2) )
-                ABORT_NONZERO_TIDES(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             ret = XLALSimIMRSEOBNRv1ROMDoubleSpinFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z);
@@ -998,11 +998,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv2_ROM_EffectiveSpin:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if( !checkTidesZero(lambda1, lambda2) )
-                ABORT_NONZERO_TIDES(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             ret = XLALSimIMRSEOBNRv2ROMEffectiveSpinFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, distance, inclination, m1, m2, XLALSimIMRPhenomBComputeChi(m1, m2, S1z, S2z));
@@ -1011,11 +1011,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv2_ROM_DoubleSpin:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if( !checkTidesZero(lambda1, lambda2) )
-                ABORT_NONZERO_TIDES(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             ret = XLALSimIMRSEOBNRv2ROMDoubleSpinFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z);
@@ -1024,11 +1024,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv2_ROM_DoubleSpin_HI:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if( !checkTidesZero(lambda1, lambda2) )
-                ABORT_NONZERO_TIDES(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             ret = XLALSimIMRSEOBNRv2ROMDoubleSpinHIFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, -1);
@@ -1037,11 +1037,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv4_ROM:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if( !checkTidesZero(lambda1, lambda2) )
-                ABORT_NONZERO_TIDES(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             ret = XLALSimIMRSEOBNRv4ROMFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, LALpars, NoNRT_V);
@@ -1050,9 +1050,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv4_ROM_NRTidal:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
 
             ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
             XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for SEOBNRv4_ROM_NRTidal");
@@ -1064,9 +1064,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv4_ROM_NRTidalv2:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
 
             ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
             XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for SEOBNRv4_ROM_NRTidalv2");
@@ -1078,9 +1078,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv4_ROM_NRTidalv2_NSBH:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if (m1 < m2)
                 XLAL_ERROR(XLAL_EFUNC, "m1 = %e, m2=%e. m1 should be greater than or equal to m2 for SEOBNRv4_ROM_NRTidalv2_NSBH", m1,m2);
             if( lambda1 != 0 )
@@ -1107,9 +1107,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case SEOBNRv4T_surrogate:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
 
             ret = XLALSimIMRSEOBNRv4TSurrogateFrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, distance, inclination,
@@ -1120,9 +1120,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case Lackey_Tidal_2013_SEOBNRv2_ROM:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
 
             ret = XLALSimIMRLackeyTidal2013FrequencySequence(hptilde, hctilde, frequencies,
                     phiRef, f_ref, distance, inclination, m1, m2, S1z, lambda2);
@@ -1131,12 +1131,12 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case IMRPhenomP:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
-                ABORT_NONDEFAULT_FRAME_AXIS(LALpars);/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
-                ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
           /* Default is (2,2) or l=2 modes. */
             if( !checkTidesZero(lambda1, lambda2) )
-                ABORT_NONZERO_TIDES(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
             /* Tranform to model parameters */
             if(f_ref==0.0)
                 f_ref = f_min; /* Default reference frequency is minimum frequency */
@@ -1163,12 +1163,12 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case IMRPhenomPv2:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
-                ABORT_NONDEFAULT_FRAME_AXIS(LALpars);/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
-                ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
           /* Default is (2,2) or l=2 modes. */
             if( !checkTidesZero(lambda1, lambda2) )
-	        ABORT_NONZERO_TIDES(LALpars);
+	        XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
             /* Tranform to model parameters */
             if(f_ref==0.0)
 	      f_ref = f_min; /* Default reference frequency is minimum frequency */
@@ -1195,11 +1195,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case IMRPhenomD:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if( !checkTidesZero(lambda1, lambda2) )
-	        ABORT_NONZERO_TIDES(LALpars);
+	        XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             ret = XLALSimIMRPhenomDFrequencySequence(hptilde, frequencies,
                 phiRef, f_ref, m1, m2, S1z, S2z, distance, LALpars, NoNRT_V);
@@ -1217,9 +1217,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case IMRPhenomD_NRTidal:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
 
             ret = XLALSimIMRPhenomDNRTidalFrequencySequence(hptilde, frequencies,
                 phiRef, f_ref, distance, m1, m2, S1z, S2z, lambda1, lambda2, LALpars, NRTidal_V);
@@ -1237,9 +1237,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case IMRPhenomD_NRTidalv2:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
 
             ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
             XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for IMRPhenomD_NRTidalv2");
@@ -1260,9 +1260,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case IMRPhenomPv2_NRTidal:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
-                ABORT_NONDEFAULT_FRAME_AXIS(LALpars);/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
-                ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
             /* Tranform to model parameters */
             if(f_ref==0.0)
               f_ref = f_min; /* Default reference frequency is minimum frequency */
@@ -1287,9 +1287,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case IMRPhenomPv2_NRTidalv2:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
-                ABORT_NONDEFAULT_FRAME_AXIS(LALpars);/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
             if( !XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars) )
-                ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
             /* Tranform to model parameters */
             if(f_ref==0.0)
               f_ref = f_min; /* Default reference frequency is minimum frequency */
@@ -1313,9 +1313,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
 
         case IMRPhenomHM:
             if (!checkTransverseSpinsZero(S1x, S1y, S2x, S2y))
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if (!checkTidesZero(lambda1, lambda2))
-                ABORT_NONZERO_TIDES(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
             ret = XLALSimIMRPhenomHM(hptilde, hctilde, frequencies, m1, m2,
                                      S1z, S2z, distance, inclination, phiRef, 0., f_ref,
                                      LALpars);
@@ -1326,11 +1326,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
 	      case IMRPhenomXAS:
               /* Waveform-specific sanity checks */
               if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-              ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+              XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
               if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-              ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+              XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
               if( !checkTidesZero(lambda1, lambda2) )
-              ABORT_NONZERO_TIDES(LALpars);
+              XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
               /*
               This is the factor that comes from Y_22star + (-1)^l * Y_2-2 without the dependence in inclination, that is included in pfac and cfac
@@ -1359,11 +1359,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
           case IMRPhenomXHM:
     					/* Waveform-specific sanity checks */
     					if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-    							ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+    							XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
     					if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-    							ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+    							XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
     					if( !checkTidesZero(lambda1, lambda2) )
-    							ABORT_NONZERO_TIDES(LALpars);
+    							XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
 
             	ret = XLALSimIMRPhenomXHMFrequencySequence(hptilde, hctilde, frequencies,
@@ -1378,16 +1378,16 @@ int XLALSimInspiralChooseFDWaveformSequence(
 						if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
 						{
 							/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
-							ABORT_NONDEFAULT_FRAME_AXIS(LALpars);
+							XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");
 						}
 						if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars))
 						{
 							/* Default is (2,2) or l=2 modes. */
-							ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+							XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
 						}
 						if( !checkTidesZero(lambda1, lambda2) )
 						{
-							ABORT_NONZERO_TIDES(LALpars);
+							XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 						}
 						if(f_ref==0.0)
 						{
@@ -1419,16 +1419,16 @@ int XLALSimInspiralChooseFDWaveformSequence(
 					if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALpars) )
 					{
 						/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
-						ABORT_NONDEFAULT_FRAME_AXIS(LALpars);
+						XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");
 					}
 					if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALpars))
 					{
 						/* Default is (2,2) or l=2 modes. */
-						ABORT_NONDEFAULT_MODES_CHOICE(LALpars);
+						XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
 					}
 					if( !checkTidesZero(lambda1, lambda2) )
 					{
-						ABORT_NONZERO_TIDES(LALpars);
+						XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 					}
 					// if(f_ref==0.0)
 					// {
@@ -1455,9 +1455,9 @@ int XLALSimInspiralChooseFDWaveformSequence(
         case IMRPhenomNSBH:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                ABORT_NONDEFAULT_LALDICT_FLAGS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                ABORT_NONZERO_TRANSVERSE_SPINS(LALpars);
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if(f_ref==0.0)
                 f_ref = f_min;
 
