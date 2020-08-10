@@ -679,8 +679,8 @@ int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplis
     LogPrintf(LOG_CRITICAL,"Couldn't allocate tmpfilename\n");
     return(-2);
   }
-  strncpy(tmpfilename,filename,len);
-  strncat(tmpfilename,TMP_EXT,len);
+  strcpy(tmpfilename,filename);
+  strcat(tmpfilename,TMP_EXT);
 
   /* open tempfile */
   fp=fopen(tmpfilename,"wb");
