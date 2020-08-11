@@ -118,9 +118,9 @@ static void print_gsl_error(
 
 
 // Draw a random quadratic polynomial for the amplitude:
-//   - It has an absolute maximum at t_max, which is in [-1, +1].
+//   - It has an absolute maximum at t_max, which is in (-1, +1).
 //   - The value at the maximum is amp_max.
-//   - It is greater than or equal to zero over the range [-window, window].
+//   - It is greater than zero over the range (-window, window).
 static void ran_amp_poly_quadratic(
     gsl_rng *rng,
     double poly[3],
