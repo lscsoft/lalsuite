@@ -32,6 +32,8 @@
 
 #include <lal/TriggerInterpolate.h>
 
+#define STRINGIZE(s) #s
+
 
 /*
  * General functions
@@ -237,14 +239,19 @@ static int poly_fit(double *a, size_t na, const double *x, const double *y, size
  */
 
 
+#define CUBIC_SPLINE_WINDOW_SIZE 2
+
+
 int XLALTriggerInterpolateCubicSpline(
     double *t,
     double complex *y,
     const double complex *data,
     unsigned int window)
 {
-    if (window < 2)
-        GSL_ERROR("Window size must be >= 2", GSL_EINVAL);
+    if (window < CUBIC_SPLINE_WINDOW_SIZE)
+        GSL_ERROR(
+            "Window size must be >= " STRINGIZE(CUBIC_SPLINE_WINDOW_SIZE),
+            GSL_EINVAL);
 
     int result;
 
@@ -323,12 +330,18 @@ int XLALTriggerInterpolateCubicSplineAmpPhase(
     const double complex *data,
     unsigned int window)
 {
-    if (window < 2)
-        GSL_ERROR("Window size must be >= 2", GSL_EINVAL);
+    if (window < CUBIC_SPLINE_WINDOW_SIZE)
+        GSL_ERROR(
+            "Window size must be >= " STRINGIZE(CUBIC_SPLINE_WINDOW_SIZE),
+            GSL_EINVAL);
 
-    double amps[5], args[5];
+    double amps[2 * CUBIC_SPLINE_WINDOW_SIZE + 1];
+    double args[2 * CUBIC_SPLINE_WINDOW_SIZE + 1];
     double t_max, amp_max, arg_max;
-    cabs_carg_unwrapped(amps, args, data - 2, 5);
+    cabs_carg_unwrapped(
+        amps, args,
+        data - CUBIC_SPLINE_WINDOW_SIZE,
+        2 * CUBIC_SPLINE_WINDOW_SIZE + 1);
 
     /* Find which among samples -1, 0, +1 has the maximum amplitude. */
     t_max = -1;
