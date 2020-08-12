@@ -1565,36 +1565,35 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     REAL8 tStepInterp = deltaT / mTScaled;
     const INT4 nInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp);
 
-    double tVecInterp[10000];
-    double rVecInterp[10000];
-    double phiVecInterp[10000];
-    double prVecInterp[10000];
-    double pphiVecInterp[10000];
-
+    REAL8Vector *tVecInterp = XLALCreateREAL8Vector(PALen);
+    REAL8Vector *rVecInterp = XLALCreateREAL8Vector(PALen);
+    REAL8Vector *phiVecInterp = XLALCreateREAL8Vector(PALen);
+    REAL8Vector *prVecInterp = XLALCreateREAL8Vector(PALen);
+    REAL8Vector *pphiVecInterp = XLALCreateREAL8Vector(PALen);
     for (i = 0; i < PALen; i++)
     {
-      tVecInterp[i] = dynamicsPA->data[i];
-      rVecInterp[i] = dynamicsPA->data[PALen + i];
-      phiVecInterp[i] = dynamicsPA->data[2*PALen + i];
-      prVecInterp[i] = dynamicsPA->data[3*PALen + i];
-      pphiVecInterp[i] = dynamicsPA->data[4*PALen + i];
+      tVecInterp->data[i] = dynamicsPA->data[i];
+      rVecInterp->data[i] = dynamicsPA->data[PALen + i];
+      phiVecInterp->data[i] = dynamicsPA->data[2*PALen + i];
+      prVecInterp->data[i] = dynamicsPA->data[3*PALen + i];
+      pphiVecInterp->data[i] = dynamicsPA->data[4*PALen + i];
     }
 
     gsl_interp_accel *acc1 = gsl_interp_accel_alloc();
-    gsl_spline *spline1 = gsl_spline_alloc(gsl_interp_cspline, PALen);
-    gsl_spline_init(spline1, tVecInterp, rVecInterp, PALen);
+    gsl_spline *spline1 = gsl_spline_alloc(gsl_interp_cspline, tVecInterp->length);
+    gsl_spline_init(spline1, tVecInterp->data, rVecInterp->data, tVecInterp->length);
 
     gsl_interp_accel *acc2 = gsl_interp_accel_alloc();
-    gsl_spline *spline2 = gsl_spline_alloc(gsl_interp_cspline, PALen);
-    gsl_spline_init(spline2, tVecInterp, phiVecInterp, PALen);
+    gsl_spline *spline2 = gsl_spline_alloc(gsl_interp_cspline, tVecInterp->length);
+    gsl_spline_init(spline2, tVecInterp->data, phiVecInterp->data, tVecInterp->length);
 
     gsl_interp_accel *acc3 = gsl_interp_accel_alloc();
-    gsl_spline *spline3 = gsl_spline_alloc(gsl_interp_cspline, PALen);
-    gsl_spline_init(spline3, tVecInterp, prVecInterp, PALen);
+    gsl_spline *spline3 = gsl_spline_alloc(gsl_interp_cspline, tVecInterp->length);
+    gsl_spline_init(spline3, tVecInterp->data, prVecInterp->data, tVecInterp->length);
 
     gsl_interp_accel *acc4 = gsl_interp_accel_alloc();
-    gsl_spline *spline4 = gsl_spline_alloc(gsl_interp_cspline, PALen);
-    gsl_spline_init(spline4, tVecInterp, pphiVecInterp, PALen);
+    gsl_spline *spline4 = gsl_spline_alloc(gsl_interp_cspline, tVecInterp->length);
+    gsl_spline_init(spline4, tVecInterp->data, pphiVecInterp->data, tVecInterp->length);
 
     REAL8Array *interpDynamicsPA = NULL;
     interpDynamicsPA = XLALCreateREAL8ArrayL(2, 5, nInterp);
@@ -1609,6 +1608,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     }
 
     REAL8 tOffset = interpDynamicsPA->data[nInterp - 1];
+    //printf("Initializing PA dynamics from t=%.17f\n",tOffset);
     REAL8 phiOffset = interpDynamicsPA->data[3*nInterp - 1];
 
     const INT4 combinedLen = nInterp + retLen - 1;
