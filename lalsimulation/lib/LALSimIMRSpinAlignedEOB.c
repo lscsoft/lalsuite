@@ -1558,6 +1558,11 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       XLAL_ERROR (XLAL_EFUNC);
     }
 
+  REAL8Vector *tVecInterp=NULL;
+  REAL8Vector *rVecInterp=NULL;
+  REAL8Vector *phiVecInterp=NULL;
+  REAL8Vector *prVecInterp=NULL;
+  REAL8Vector *pphiVecInterp=NULL;
   if (postAdiabaticFlag)
   {
     const INT4 PALen = dynamicsPA->dimLength->data[1];
@@ -1565,11 +1570,11 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     REAL8 tStepInterp = deltaT / mTScaled;
     const INT4 nInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp);
 
-    REAL8Vector *tVecInterp = XLALCreateREAL8Vector(PALen);
-    REAL8Vector *rVecInterp = XLALCreateREAL8Vector(PALen);
-    REAL8Vector *phiVecInterp = XLALCreateREAL8Vector(PALen);
-    REAL8Vector *prVecInterp = XLALCreateREAL8Vector(PALen);
-    REAL8Vector *pphiVecInterp = XLALCreateREAL8Vector(PALen);
+    tVecInterp = XLALCreateREAL8Vector(PALen);
+    rVecInterp = XLALCreateREAL8Vector(PALen);
+    phiVecInterp = XLALCreateREAL8Vector(PALen);
+    prVecInterp = XLALCreateREAL8Vector(PALen);
+    pphiVecInterp = XLALCreateREAL8Vector(PALen);
     for (i = 0; i < PALen; i++)
     {
       tVecInterp->data[i] = dynamicsPA->data[i];
@@ -3252,6 +3257,16 @@ for ( UINT4 k = 0; k<nModes; k++) {
       if ( hamVHi )
           XLALDestroyREAL8Vector (hamVHi);
 
+      if ( tVecInterp)
+        XLALDestroyREAL8Vector(tVecInterp);
+      if ( phiVecInterp)
+        XLALDestroyREAL8Vector(phiVecInterp);
+      if ( rVecInterp)
+        XLALDestroyREAL8Vector(rVecInterp);
+      if ( prVecInterp)
+        XLALDestroyREAL8Vector(prVecInterp);
+      if ( pphiVecInterp)
+        XLALDestroyREAL8Vector(pphiVecInterp);
       //SM
       // Copy dynamics to output in the form of a REAL8Vector (required for SWIG wrapping, REAL8Array does not work)
       *dynamics_out = XLALCreateREAL8Vector(5 * retLen_out);
