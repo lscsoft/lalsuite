@@ -1613,7 +1613,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     }
 
     REAL8 tOffset = interpDynamicsPA->data[nInterp - 1];
-    //printf("Initializing PA dynamics from t=%.17f\n",tOffset);
+    printf("Initializing PA dynamics from t=%.17f\n",tOffset);
     REAL8 phiOffset = interpDynamicsPA->data[3*nInterp - 1];
 
     const INT4 combinedLen = nInterp + retLen - 1;

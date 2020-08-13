@@ -26,6 +26,9 @@
 #include "LALSimIMREOBNewtonianMultipole.c"
 #include "LALSimIMRSpinEOBFactorizedFlux_PA.c"
 
+
+#define PA_AD_THRS 8.0e-3
+
 int
 XLALSimInspiralEOBPACalculateRadialGrid(
 	REAL8Vector *rVec,
@@ -286,6 +289,28 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 
 	gsl_root_fsolver_free (solver);
     return XLAL_SUCCESS;
+}
+
+static REAL8 XLALSimInspiralEOBPACalculateAdibaticParameter(REAL8 r,REAL8 prstar,REAL8 pphi,SpinEOBHCoeffs * seobCoeffs,
+	REAL8 csi,LALDict *LALParams,
+	REAL8 omega, REAL8 domegadr){
+	// Compute the adiabatic parameter \dot{\Omega}/2\Omega^{2}
+	// where \Omega is the *orbital* frequency
+
+	// We compute dOmega/dt = dOmega/dr * dr/dt
+	
+	//dr/dt = dHdpr
+	REAL8 partialHBypartialprstar;
+	partialHBypartialprstar = XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
+													1e-4,
+													r,
+													prstar,
+													pphi,
+													seobCoeffs,
+													LALParams
+												);
+	REAL8 drdt = partialHBypartialprstar*csi;
+	return drdt*domegadr/(2*omega*omega);
 }
 
 int
@@ -1177,8 +1202,9 @@ XLALSimInspiralEOBPostAdiabatic(
 	rFinal = XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	UINT4 rSize;
-	rSize = 400;
-
+	//rSize = 400;
+	rSize = ceil((rInitial-rFinal)/0.05)+1;
+	
 	REAL8 dr;
 	dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
 
@@ -1246,6 +1272,9 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8Vector *omegaVec = XLALCreateREAL8Vector(rSize);
 	memset(omegaVec->data, 0, omegaVec->length * sizeof(REAL8));
 
+	REAL8Vector *omegaReverseVec = XLALCreateREAL8Vector(rSize);
+	memset(omegaReverseVec->data, 0, omegaReverseVec->length * sizeof(REAL8));
+
 	REAL8Vector *fluxVec = XLALCreateREAL8Vector(rSize);
 	memset(fluxVec->data, 0, fluxVec->length * sizeof(REAL8));
 
@@ -1278,6 +1307,14 @@ XLALSimInspiralEOBPostAdiabatic(
 
     REAL8Vector *dprstarBydrReverseVec = XLALCreateREAL8Vector(rSize);
     memset(dprstarBydrReverseVec->data, 0, dprstarBydrReverseVec->length * sizeof(REAL8));
+
+	REAL8Vector *domegadrVec = XLALCreateREAL8Vector(rSize);
+	memset(domegadrVec->data, 0, domegadrVec->length * sizeof(REAL8));
+	REAL8Vector *domegadrReverseVec = XLALCreateREAL8Vector(rSize);
+	memset(domegadrReverseVec->data, 0, domegadrReverseVec->length * sizeof(REAL8));
+
+	REAL8Vector *adiabatic_param_Vec = XLALCreateREAL8Vector(rSize);
+	memset(adiabatic_param_Vec->data, 0, adiabatic_param_Vec->length * sizeof(REAL8));
 
  	XLALSimInspiralEOBPACalculateRadialGrid(
  		rVec,
@@ -1324,29 +1361,52 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	XLALCumulativeIntegral3(rVec, dphiBydrVec, phiVec);
 
-    UINT4 i;
-    
-    // FILE *out = fopen ("pa_dyn.dat", "w");
-
-    // for (i = 0; i < rSize; i++)
-    // {
-
-    //     fprintf(out,"%.18e %.18e %.18e %.18e %.18e %.18e\n", tVec->data[i], rVec->data[i],
-    //             phiVec->data[i], prstarVec->data[i], pphiVec->data[i],dtBydrVec->data[i]);
-    // }
-
-    // fclose (out);
-   
-	REAL8Array *outputDynamics = NULL;
-	outputDynamics = XLALCreateREAL8ArrayL(2, 5, rSize);
-
+    UINT4 i,j;
+	XLALReverseREAL8Vector(omegaVec,omegaReverseVec);
+	XLALFDDerivative1Order8(rReverseVec, omegaReverseVec,domegadrReverseVec);
+	XLALReverseREAL8Vector(domegadrReverseVec,domegadrVec);
+    FILE *out = fopen ("pa_dyn.dat", "w");
+	// Figure out where we are going to stop
+	REAL8 adiabatic_param = 0.0;
+	REAL8 r,prstar,pphi,csi,omega,domegadr;
+	UINT4 idx_stop = 0;
+	for(j=0; j<rSize;j++){
+		r = rVec->data[j];
+		prstar = prstarVec->data[j];
+		pphi = pphiVec->data[j];
+		csi = csiVec->data[j];
+		omega = omegaVec->data[j];
+		domegadr = domegadrVec->data[j];
+		adiabatic_param = XLALSimInspiralEOBPACalculateAdibaticParameter(r,prstar,pphi,seobParams->seobCoeffs,csi,LALparams, omega, domegadr);
+		adiabatic_param_Vec->data[j]=adiabatic_param;
+		//printf("r=%.17f, omega=%.17f,domegadr=%.17f, adibatic_param = %.17f\n",r,omega,domegadr,adiabatic_param_Vec->data[j]);
+		if(idx_stop==0 && adiabatic_param>PA_AD_THRS){
+			printf("r=%.18e Q = %.18e\n",r,adiabatic_param);
+			idx_stop = j;
+		}
+	}
+	if (idx_stop == 0){
+		idx_stop=rSize-1;
+	}
 	for (i = 0; i < rSize; i++)
     {
+
+        fprintf(out,"%.18e %.18e %.18e %.18e %.18e %.18e %.18e %.18e\n", tVec->data[i], rVec->data[i],
+                phiVec->data[i], prstarVec->data[i], pphiVec->data[i],dtBydrVec->data[i], domegadrVec->data[i],adiabatic_param_Vec->data[i]);
+    }
+
+    fclose (out);
+  	UINT4 outSize = idx_stop;
+	REAL8Array *outputDynamics = NULL;
+	outputDynamics = XLALCreateREAL8ArrayL(2, 5, outSize);
+
+	for (i = 0; i < outSize; i++)
+    {
     	outputDynamics->data[i] = tVec->data[i];
-    	outputDynamics->data[rSize + i] = rVec->data[i];
-    	outputDynamics->data[2*rSize + i] = phiVec->data[i];
-    	outputDynamics->data[3*rSize + i] = prstarVec->data[i];
-    	outputDynamics->data[4*rSize + i] = pphiVec->data[i];
+    	outputDynamics->data[outSize + i] = rVec->data[i];
+    	outputDynamics->data[2*outSize + i] = phiVec->data[i];
+    	outputDynamics->data[3*outSize + i] = prstarVec->data[i];
+    	outputDynamics->data[4*outSize + i] = pphiVec->data[i];
     } 
 
 	*dynamics = outputDynamics;
