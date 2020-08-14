@@ -10,6 +10,7 @@ Tsft=1800;
 startTime=711595934
 duration=144000		## 40 hours
 endTime=$(echo $startTime $duration | awk '{printf "%.1f", $1 + $2}');
+maxStartTime=$(echo $endTime $Tsft | awk '{printf "%.1f", $1 - $2}');
 mfd_FreqBand=2.0;
 
 Alpha=2.0
@@ -123,7 +124,7 @@ resPFS2=`echo $tmp | awk '{printf "%g", $1}'`
 
 ## ---------- Run PredictFstat{minStartTime+maxStartTime,assumeSqrtSX} ----------
 outfile_pfs3="__tmp_PFS3.dat";
-pfs_CL="${pfs_CL_common} --minStartTime=$startTime --maxStartTime=$endTime --Tsft=$Tsft --outputFstat=$outfile_pfs3 --assumeSqrtSX=${noiseSqrtSh} --IFOs=$IFO"
+pfs_CL="${pfs_CL_common} --minStartTime=$startTime --maxStartTime=$maxStartTime --Tsft=$Tsft --outputFstat=$outfile_pfs3 --assumeSqrtSX=${noiseSqrtSh} --IFOs=$IFO"
 cmdline="$pfs_code $pfs_CL"
 echo $cmdline
 echo -n "Running ${pfs_code}{minStartTime+maxStartTime,assumeSqrtSX} ... "
@@ -149,6 +150,7 @@ awk_reldevPercent='{printf "%.4f", 100.0 * sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }
 awk_isgtr='{if($1>$2) {print "1"}}'
 tolerance0=1	## percent
 tolerance1=20	## percent
+tolerance2=0.0001	## percent
 
 eps0=$(echo $resSAF $resPFS0 | awk "$awk_reldevPercent");
 eps1=$(echo $resPFS0 $resPFS1 | awk "$awk_reldevPercent");
@@ -158,8 +160,8 @@ eps3=$(echo $resPFS0 $resPFS3 | awk "$awk_reldevPercent");
 res=0;
 fail0=$(echo $eps0 $tolerance0 | awk "$awk_isgtr")
 fail1=$(echo $eps1 $tolerance1 | awk "$awk_isgtr")
-fail2=$(echo $eps2 $tolerance0 | awk "$awk_isgtr")
-fail3=$(echo $eps3 $tolerance0 | awk "$awk_isgtr")
+fail2=$(echo $eps2 $tolerance2 | awk "$awk_isgtr")
+fail3=$(echo $eps3 $tolerance2 | awk "$awk_isgtr")
 
 echo -n "Relative deviation 2F_PF{assumeSqrtSX} wrt 2F_SA = ${eps0}% (tolerance = ${tolerance0}%)"
 if [ "$fail0" ]; then
@@ -176,14 +178,14 @@ if [ "$fail1" ]; then
 else
     echo " ==> OK."
 fi
-echo -n "Relative deviation 2F_PF{timestamps,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps2}% (tolerance = ${tolerance0}%)"
+echo -n "Relative deviation 2F_PF{timestamps,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps2}% (tolerance = ${tolerance2}%)"
 if [ "$fail2" ]; then
     echo " ==> FAILED."
     res=1;
 else
     echo " ==> OK."
 fi
-echo -n "Relative deviation 2F_PF{minStartTime+maxStartTime,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps3}% (tolerance = ${tolerance0}%)"
+echo -n "Relative deviation 2F_PF{minStartTime+maxStartTime,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps3}% (tolerance = ${tolerance2}%)"
 if [ "$fail3" ]; then
     echo " ==> FAILED."
     res=1;
