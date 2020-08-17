@@ -1409,6 +1409,8 @@ XLALSimInspiralEOBPostAdiabatic(
     	outputDynamics->data[4*outSize + i] = pphiVec->data[i];
     } 
 
+    printf("t_f = %.18e\n", tVec->data[rSize-1]*50.0*LAL_MTSUN_SI);
+
 	*dynamics = outputDynamics;
 
 	XLALDestroyREAL8Vector(tVec);
@@ -1436,5 +1438,6 @@ XLALSimInspiralEOBPostAdiabatic(
 	XLALDestroyREAL8Vector(dtBydrReverseVec);
 
 	XLALDestroyDict(LALparams);
+	
     return XLAL_SUCCESS;
 }
