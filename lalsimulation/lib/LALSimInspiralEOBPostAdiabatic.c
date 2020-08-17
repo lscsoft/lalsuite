@@ -291,9 +291,17 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
     return XLAL_SUCCESS;
 }
 
-static REAL8 XLALSimInspiralEOBPACalculateAdibaticParameter(REAL8 r,REAL8 prstar,REAL8 pphi,SpinEOBHCoeffs * seobCoeffs,
-	REAL8 csi,LALDict *LALParams,
-	REAL8 omega, REAL8 domegadr){
+UNUSED REAL8 XLALSimInspiralEOBPACalculateAdibaticParameter(
+	REAL8 r,
+	REAL8 prstar,
+	REAL8 pphi,
+	SpinEOBHCoeffs * seobCoeffs,
+	REAL8 csi,
+	LALDict *LALParams,
+	REAL8 omega,
+	REAL8 domegadr
+)
+{
 	// Compute the adiabatic parameter \dot{\Omega}/2\Omega^{2}
 	// where \Omega is the *orbital* frequency
 
@@ -1125,10 +1133,8 @@ XLALSimInspiralEOBPAFluxWrapper(
 
 int
 XLALSimInspiralEOBPostAdiabatic(
-	UNUSED REAL8Array **dynamics,
+	REAL8Array **dynamics,
 	/**<< OUTPUT, real part of the modes */
-	UNUSED REAL8 deltaT,
-	/**<< sampling time step */
 	const REAL8 m1,
 	/**<< mass-1 */
 	const REAL8 m2,
@@ -1199,11 +1205,12 @@ XLALSimInspiralEOBPostAdiabatic(
 	rInitial = initVals.data[0];
 
 	REAL8 rFinal;
-	rFinal = XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
+	REAL8 rFinalPrefactor = XLALDictLookupREAL8Value(PAParams, "rFinal");
+	rFinal = rFinalPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	UINT4 rSize;
-	//rSize = 400;
-	rSize = ceil((rInitial-rFinal)/0.05)+1;
+	rSize = XLALDictLookupUINT4Value(PAParams, "rSize");
+	//rSize = ceil((rInitial-rFinal)/0.05)+1;
 	
 	REAL8 dr;
 	dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
@@ -1367,30 +1374,49 @@ XLALSimInspiralEOBPostAdiabatic(
 	XLALReverseREAL8Vector(domegadrReverseVec,domegadrVec);
     FILE *out = fopen ("pa_dyn.dat", "w");
 	// Figure out where we are going to stop
-	REAL8 adiabatic_param = 0.0;
-	REAL8 r,prstar,pphi,csi,omega,domegadr;
+	UNUSED REAL8 adiabatic_param = 0.0;
+	UNUSED REAL8 r,prstar,pphi,csi,omega,domegadr;
+
 	UINT4 idx_stop = 0;
-	for(j=0; j<rSize;j++){
+
+	// for (j=0; j<rSize; j++)
+	// {
+	// 	r = rVec->data[j];
+	// 	prstar = prstarVec->data[j];
+	// 	pphi = pphiVec->data[j];
+	// 	csi = csiVec->data[j];
+	// 	omega = omegaVec->data[j];
+	// 	domegadr = domegadrVec->data[j];
+	// 	adiabatic_param = XLALSimInspiralEOBPACalculateAdibaticParameter(r,prstar,pphi,seobParams->seobCoeffs,csi,LALparams, omega, domegadr);
+	// 	adiabatic_param_Vec->data[j]=adiabatic_param;
+	// 	//printf("r=%.17f, omega=%.17f,domegadr=%.17f, adibatic_param = %.17f\n",r,omega,domegadr,adiabatic_param_Vec->data[j]);
+	// 	if(idx_stop==0 && adiabatic_param>PA_AD_THRS){
+	// 		printf("r=%.18e Q = %.18e\n",r,adiabatic_param);
+	// 		idx_stop = j;
+	// 	}
+	// }
+
+	REAL8 rSwitch;
+	rSwitch = XLALDictLookupREAL8Value(PAParams, "rSwitch");
+
+	for (j=0; j<rSize; j++)
+	{
 		r = rVec->data[j];
-		prstar = prstarVec->data[j];
-		pphi = pphiVec->data[j];
-		csi = csiVec->data[j];
-		omega = omegaVec->data[j];
-		domegadr = domegadrVec->data[j];
-		adiabatic_param = XLALSimInspiralEOBPACalculateAdibaticParameter(r,prstar,pphi,seobParams->seobCoeffs,csi,LALparams, omega, domegadr);
-		adiabatic_param_Vec->data[j]=adiabatic_param;
-		//printf("r=%.17f, omega=%.17f,domegadr=%.17f, adibatic_param = %.17f\n",r,omega,domegadr,adiabatic_param_Vec->data[j]);
-		if(idx_stop==0 && adiabatic_param>PA_AD_THRS){
-			printf("r=%.18e Q = %.18e\n",r,adiabatic_param);
-			idx_stop = j;
+
+		if (idx_stop == 0 && rSwitch > r)
+		{
+			idx_stop = j-1;
+			break;
 		}
 	}
-	if (idx_stop == 0){
-		idx_stop=rSize-1;
+
+	if (idx_stop == 0)
+	{
+		idx_stop = rSize - 1;
 	}
+
 	for (i = 0; i < rSize; i++)
     {
-
         fprintf(out,"%.18e %.18e %.18e %.18e %.18e %.18e %.18e %.18e\n", tVec->data[i], rVec->data[i],
                 phiVec->data[i], prstarVec->data[i], pphiVec->data[i],dtBydrVec->data[i], domegadrVec->data[i],adiabatic_param_Vec->data[i]);
     }

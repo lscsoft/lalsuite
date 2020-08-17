@@ -176,7 +176,7 @@ XLALSimInspiralEOBPostAdiabaticFinalRadius(
 	aTotal = XLALSimInspiralEOBPostAdiabaticTotalSpin(q, a1, a2);
 
 	rISCO = XLALSimRadiusKerrISCO(aTotal);
-	finalRadiusPrefactor = 1.6;
+	finalRadiusPrefactor = 1.0;
 
 	rFinal = finalRadiusPrefactor * rISCO;
 

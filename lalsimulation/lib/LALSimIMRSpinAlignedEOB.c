@@ -1453,7 +1453,6 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
     XLALSimInspiralEOBPostAdiabatic(
       &dynamicsPA,
-      deltaT,
       m1,
       m2,
       spin1z,

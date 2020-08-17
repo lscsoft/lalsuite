@@ -10,7 +10,7 @@
 int
 XLALSimInspiralEOBPostAdiabatic(
     REAL8Array ** dynamics,
-    REAL8 deltaT,
+    // REAL8 deltaT,
     const REAL8 m1,
     const REAL8 m2,
     const REAL8 spin1z,
@@ -20,6 +20,18 @@ XLALSimInspiralEOBPostAdiabatic(
     SpinEOBParams *seobParams,
     EOBNonQCCoeffs *nqcCoeffs,
     LALDict *PAParams
+);
+
+REAL8
+XLALSimInspiralEOBPACalculateAdibaticParameter(
+    REAL8 r,
+    REAL8 prstar,
+    REAL8 pphi,
+    SpinEOBHCoeffs * seobCoeffs,
+    REAL8 csi,
+    LALDict *LALParams,
+    REAL8 omega,
+    REAL8 domegadr
 );
 
 REAL8
