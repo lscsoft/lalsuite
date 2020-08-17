@@ -382,7 +382,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       XLALPrintInfo ( "Finding all SFTs to load ... ");
       XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
       XLALPrintInfo ( "done. (found %d SFTs)\n", catalog->length );
-      XLAL_CHECK ( catalog->length > 0, XLAL_EINVAL, "No matching SFTs for pattern '%s'!\n", uvar->DataFiles );
+      XLAL_CHECK ( catalog->length > 0, XLAL_EINVAL, "No matching SFTs for pattern '%s' and GPS constraints [%d,%d)!\n", uvar->DataFiles, uvar->minStartTime.gpsSeconds, uvar->maxStartTime.gpsSeconds );
 
       /* ----- deduce start- and end-time of the observation spanned by the data */
       Tsft = 1.0 / catalog->data[0].header.deltaF;
