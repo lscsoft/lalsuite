@@ -95,8 +95,9 @@ typedef struct {
   CHAR *DataFiles;	/**< SFT input-files to use to determine startTime, duration, IFOs and for noise-floor estimation */
   CHAR *outputFstat;	/**< output file to write F-stat estimation results into */
   BOOLEAN printFstat;	/**< print F-stat estimation results to terminal? */
-  LIGOTimeGPS minStartTime;	/**< Limit duration to this earliest GPS SFT start-time */
-  LIGOTimeGPS maxStartTime;	/**< Limit duration to this latest GPS SFT start-time */
+  LIGOTimeGPS minStartTime;	/**< SFT timestamps (from DataFiles or generated internally) must be >= this GPS timestamp */
+  LIGOTimeGPS maxStartTime;	/**< SFT timestamps (from DataFiles) must be < this GPS timestamp */
+  REAL8 duration;	/**< SFT timestamps (generated internally) will be < minStartTime+duration */
 
   LALStringVector *timestampsFiles; /**< Names of timestamps files, one per detector */
   LALStringVector* IFOs;	/**< list of detector-names "H1,H2,L1,.." */
@@ -235,6 +236,7 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->minStartTime.gpsSeconds = 0;
   uvar->maxStartTime.gpsSeconds = LAL_INT4_MAX;
+  uvar->duration = 0;
 
   uvar->PureSignal = 0;
 
@@ -265,7 +267,7 @@ initUserVars ( UserInput_t *uvar )
 
   lalUserVarHelpOptionSubsection = "Data and noise properties";
   XLALRegisterUvarMember( DataFiles,     STRING,     'D', NODEFAULT,"Per-detector SFTs (for detectors, timestamps and noise-estimate)\n"
-                          "(Alternatives: " UVAR_STR(assumeSqrtSX)", "UVAR_STR(timestampsFiles)", "UVAR_STR(IFOs) ", "UVAR_STR2AND(minStartTime,maxStartTime)").");
+                          "(Alternatives: " UVAR_STR2AND(assumeSqrtSX,IFOs)" and one of "UVAR_STR(timestampsFiles)" or "UVAR_STR2AND(minStartTime,duration)").");
   XLALRegisterUvarMember( Freq,          REAL8,      'F', NODEFAULT,"Frequency for noise-floor estimation (required if not given " UVAR_STR(assumeSqrtSX) ").");
   XLALRegisterUvarMember( RngMedWindow,  INT4,       'k', OPTIONAL, "Running median size for noise-floor estimation (only used if not given " UVAR_STR(assumeSqrtSX) ").");
 
@@ -274,8 +276,9 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( IFOs,          STRINGVector,0,  NODEFAULT,"CSV list of detectors, eg. \"H1,L1,...\" (required if not given " UVAR_STR(DataFiles)").");
   XLALRegisterUvarMember(timestampsFiles,STRINGVector,0,  NODEFAULT,"CSV list of SFT timestamps files, one per detector (conflicts with " UVAR_STR(DataFiles) ").");
-  XLALRegisterUvarMember( minStartTime,  EPOCH,       0,  OPTIONAL, "Limit duration to [" UVAR_STR(minStartTime) ", " UVAR_STR(maxStartTime) " + " UVAR_STR(Tsft) ").");
-  XLALRegisterUvarMember( maxStartTime,  EPOCH,       0,  OPTIONAL, "Limit duration to [" UVAR_STR(minStartTime) ", " UVAR_STR(maxStartTime) " + " UVAR_STR(Tsft) ").");
+  XLALRegisterUvarMember( minStartTime,  EPOCH,       0,  OPTIONAL, "SFT timestamps must be >= this GPS timestamp.");
+  XLALRegisterUvarMember( maxStartTime,  EPOCH,       0,  OPTIONAL, "SFT timestamps must be < this GPS timestamp (only valid with " UVAR_STR(DataFiles) ").");
+  XLALRegisterUvarMember( duration,      REAL8,       0,  OPTIONAL, "SFT timestamps will be < " UVAR_STR(minStartTime) "+" UVAR_STR(duration) " (only valid without " UVAR_STR(DataFiles) ").");
 
   XLALRegisterUvarMember( Tsft,          REAL8,       0,  OPTIONAL, "Time baseline of SFTs in seconds (conflicts with " UVAR_STR(DataFiles) ")." );
 
@@ -352,19 +355,25 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
   XLAL_CHECK ( (have_IFOs || have_SFTs) && !(have_IFOs && have_SFTs), XLAL_EINVAL, "Need exactly one of " UVAR_STR2OR(IFOs,DataFiles) " to determine detectors\n");
   XLAL_CHECK ( !(have_SFTs && have_Tsft), XLAL_EINVAL, UVAR_STR(Tsft) " cannot be specified with " UVAR_STR(DataFiles) ".");
 
-  // ----- get timestamps from EITHER one of --timestampsFiles, --minStartTime,maxStartTime or --SFTs
-  BOOLEAN have_timeSpan     = UVAR_SET2(minStartTime,maxStartTime);
+  // ----- get timestamps from EITHER one of --timestampsFiles, (--minStartTime,--duration) or --SFTs
+  BOOLEAN have_timeSpan     = UVAR_SET2(minStartTime,duration);
+  BOOLEAN have_maxStartTime = UVAR_SET(maxStartTime);
+  BOOLEAN have_duration     = UVAR_SET(duration);
   BOOLEAN have_timestamps   = UVAR_SET(timestampsFiles);
-  BOOLEAN have_assumeSqrtSX = UVAR_SET(assumeSqrtSX);
-  BOOLEAN have_Freq         = UVAR_SET(Freq);
-  // need BOTH --minStartTime and --maxStartTime or none
-  XLAL_CHECK ( have_timeSpan == 2 || have_timeSpan == 0, XLAL_EINVAL, "Need either both " UVAR_STR2AND(minStartTime,maxStartTime) " or none\n");
-  // at least one of {startTime,timestamps,SFTs} required
-  XLAL_CHECK ( have_timestamps || have_timeSpan || have_SFTs, XLAL_EINVAL,
-               "Need at least one of {" UVAR_STR(timestampsFiles)", "UVAR_STR2AND(minStartTime,maxStartTime)", or "UVAR_STR(DataFiles)"}." );
+  // at least one of {timestamps,minStartTime+duration,SFTs} required
+  XLAL_CHECK ( have_timestamps || have_timeSpan == 2 || have_SFTs, XLAL_EINVAL,
+               "Need at least one of {" UVAR_STR(timestampsFiles)", "UVAR_STR2AND(minStartTime,duration)", or "UVAR_STR(DataFiles)"}." );
   // don't allow timestamps AND SFTs
   XLAL_CHECK ( !(have_timestamps && have_SFTs), XLAL_EINVAL, UVAR_STR(timestampsFiles) " is incompatible with " UVAR_STR(DataFiles) ".");
+  // don't allow maxStartTime WITHOUT SFTs because the old behaviour in that case
+  // was inconsistent and we now require duration instead to avoid ambiguity
+  XLAL_CHECK ( !(have_maxStartTime && !have_SFTs), XLAL_EINVAL, "Using " UVAR_STR(maxStartTime) " is incompatible with NOT providing " UVAR_STR(DataFiles) ", please use " UVAR_STR2AND(minStartTime,duration) " instead." );
+  // don't allow duration AND SFTs either
+  XLAL_CHECK ( !(have_duration && have_SFTs), XLAL_EINVAL, "Using " UVAR_STR(duration) " is incompatible with " UVAR_STR(DataFiles) "; if you want to set constraints on the loaded SFTs, please use " UVAR_STR(maxStartTime) " instead." );
+
   // if we don't have SFTs, then we need assumeSqrtSX
+  BOOLEAN have_assumeSqrtSX = UVAR_SET(assumeSqrtSX);
+  BOOLEAN have_Freq         = UVAR_SET(Freq);
   XLAL_CHECK ( have_SFTs || have_assumeSqrtSX, XLAL_EINVAL, "Need at least one of " UVAR_STR2OR(assumeSqrtSX,DataFiles) " for noise-floor.");
   // need --Freq for noise-floor estimation if we don't have --assumeSqrtSX
   XLAL_CHECK ( have_assumeSqrtSX || have_Freq, XLAL_EINVAL, "Need at least one of " UVAR_STR2OR(assumeSqrtSX,Freq) " for noise-floor.");
@@ -424,16 +433,21 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
 
       if ( have_timestamps )
         {
-          XLAL_CHECK ( (mTS = XLALReadMultiTimestampsFilesConstrained ( uvar->timestampsFiles, &(uvar->minStartTime), &(uvar->maxStartTime) )) != NULL, XLAL_EFUNC );
+          LIGOTimeGPS *endTimeGPS = NULL;
+          if ( have_duration ) {
+            LIGOTimeGPS tempGPS = uvar->minStartTime;
+            XLALGPSAdd( &tempGPS, uvar->duration);
+            endTimeGPS = &tempGPS;
+          }
+          XLAL_CHECK ( (mTS = XLALReadMultiTimestampsFilesConstrained ( uvar->timestampsFiles, &(uvar->minStartTime), endTimeGPS )) != NULL, XLAL_EFUNC );
           XLAL_CHECK ( (mTS->length > 0) && (mTS->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
           for ( UINT4 X=0; X < mTS->length; X ++ ) {
             mTS->data[X]->deltaT = Tsft;	// Tsft information not given by timestamps-file
           }
         } // if have_timestamps
-      else if ( have_timeSpan ) // if timespan only
+      else if ( have_timeSpan == 2 ) // if timespan only
         {
-          REAL8 duration = XLALGPSDiff( &(uvar->maxStartTime), &(uvar->minStartTime)) + Tsft;
-          XLAL_CHECK ( ( mTS = XLALMakeMultiTimestamps ( uvar->minStartTime, duration, Tsft, 0, numDetectors )) != NULL, XLAL_EFUNC );
+          XLAL_CHECK ( ( mTS = XLALMakeMultiTimestamps ( uvar->minStartTime, uvar->duration, Tsft, 0, numDetectors )) != NULL, XLAL_EFUNC );
         } // have_timeSpan
       else {
         XLAL_ERROR (XLAL_EINVAL, "Something has gone wrong: couldn't deduce timestamps");
