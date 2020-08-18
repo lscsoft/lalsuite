@@ -45,7 +45,7 @@ import functools
 import sys
 
 
-from glue import iterutils
+from lal import iterutils
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw.utils import coincs as ligolw_coincs

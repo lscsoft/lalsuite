@@ -25,7 +25,7 @@ from six.moves import range
 
 import numpy as np
 
-from glue.iterutils import inorder, uniq
+from lal.iterutils import inorder, uniq
 from lalinspiral import CreateSBankWorkspaceCache
 from .psds import get_neighborhood_ASD, get_PSD, get_neighborhood_df_fmax
 from . import waveforms
