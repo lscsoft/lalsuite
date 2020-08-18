@@ -28,8 +28,8 @@ import math
 import sys
 
 
-from glue import iterutils
 from glue.text_progress_bar import ProgressBar
+from lal import iterutils
 from ligo import segments
 
 

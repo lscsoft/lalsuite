@@ -19,6 +19,7 @@ pymodule_PYTHON = \
 	antenna.py \
 	git_version.py \
 	gpstime.py \
+	iterutils.py \
 	rate.py \
 	series.py \
 	$(END_OF_LIST)

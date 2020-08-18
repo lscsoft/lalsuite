@@ -64,12 +64,12 @@ from scipy.signal import signaltools
 
 from ligo import segments
 
-from glue import iterutils
 from glue.ligolw import ligolw
 from glue.ligolw import array as ligolw_array
 from glue.ligolw import param as ligolw_param
 from glue.ligolw import types as ligolw_types
 import lal
+from . import iterutils
 from . import git_version
 
 
@@ -191,7 +191,7 @@ class Bins(object):
 		drawn uniformly from within a bin, which has been drawn
 		from a distribution whose CDF goes as [bin index]^{n}.  For
 		more information on how bins are drawn, see
-		glue.iterutils.randindex.
+		lal.iterutils.randindex.
 
 		If a domain is given, the values returned fall within
 		[start, stop].  If start or stop is None, the corresponding

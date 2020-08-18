@@ -39,9 +39,9 @@ import time
 
 from ligo import segments
 from ligo.segments import utils as segmentsUtils
-from glue import iterutils
 from glue import pipeline
 import lal
+from lal import iterutils
 from lal.utils import CacheEntry
 import lalburst
 from lalburst import cafe

@@ -84,8 +84,8 @@ import sqlite3
 import sys
 
 
-from glue import iterutils
 from ligo.lw import dbtables
+from lal import iterutils
 from lal import rate
 from lalburst import git_version
 from lalburst import SimBurstUtils
