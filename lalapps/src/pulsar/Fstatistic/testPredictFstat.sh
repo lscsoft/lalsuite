@@ -9,7 +9,7 @@ Ftolerance=0.05
 Tsft=1800;
 startTime=711595934
 duration=144000		## 40 hours
-endTime=$(echo $startTime $duration | awk '{printf "%.1f", $1 + $2}');
+maxStartTime=$(echo $startTime $duration | awk '{printf "%.1f", $1 + $2}'); ## convention is [minStartTime,maxStartTime) so maxStartTime==endTime will yield the full set of SFTs
 mfd_FreqBand=2.0;
 
 Alpha=2.0
@@ -91,6 +91,21 @@ else
 fi
 resPFS1=`echo $tmp | awk '{printf "%g", $1}'`
 
+## ---------- Run PredictFstat{NoiseWeights,maxStartTime} (testing one-sided constraints) ----------
+outfile_pfs1a="__tmp_PFS1a.dat";
+pfs_CL="${pfs_CL_common} --DataFiles=\"./*.sft\" --Freq=$Freq --outputFstat=$outfile_pfs1a --maxStartTime=$maxStartTime"
+cmdline="$pfs_code $pfs_CL"
+echo $cmdline
+echo -n "Running ${pfs_code}{NoiseWeights,maxStartTime} ... "
+if ! tmp=`eval ${cmdline}`; then
+    echo "FAILED:"
+    echo $cmdline
+    exit 1;
+else
+    echo "OK."
+fi
+resPFS1a=`echo $tmp | awk '{printf "%g", $1}'`
+
 ## ---------- Run PredictFstat{assumeSqrtSX} ----------
 outfile_pfs0="__tmp_PFS0.dat";
 pfs_CL="${pfs_CL_common} --DataFiles=\"./*.sft\" --outputFstat=$outfile_pfs0 --assumeSqrtSX=${noiseSqrtSh}"
@@ -121,12 +136,12 @@ else
 fi
 resPFS2=`echo $tmp | awk '{printf "%g", $1}'`
 
-## ---------- Run PredictFstat{minStartTime+maxStartTime,assumeSqrtSX} ----------
+## ---------- Run PredictFstat{minStartTime+duration,assumeSqrtSX} ----------
 outfile_pfs3="__tmp_PFS3.dat";
-pfs_CL="${pfs_CL_common} --minStartTime=$startTime --maxStartTime=$endTime --Tsft=$Tsft --outputFstat=$outfile_pfs3 --assumeSqrtSX=${noiseSqrtSh} --IFOs=$IFO"
+pfs_CL="${pfs_CL_common} --minStartTime=$startTime --duration=$duration --Tsft=$Tsft --outputFstat=$outfile_pfs3 --assumeSqrtSX=${noiseSqrtSh} --IFOs=$IFO"
 cmdline="$pfs_code $pfs_CL"
 echo $cmdline
-echo -n "Running ${pfs_code}{minStartTime+maxStartTime,assumeSqrtSX} ... "
+echo -n "Running ${pfs_code}{minStartTime+duration,assumeSqrtSX} ... "
 if ! tmp=`eval $cmdline`; then
     echo "FAILED:"
     echo $cmdline
@@ -141,25 +156,29 @@ echo
 echo "SemiAnalyticF:              2F_SA  = $resSAF"
 echo "PredictFstat{assumeSqrtSX}: 2F_PF0 = $resPFS0"
 echo "PredictFstat{NoiseWeights}: 2F_PF1 = $resPFS1"
+echo "PredictFstat{NoiseWeights,maxStartTime}: 2F_PF1a = $resPFS1a"
 echo "PredictFstat{timestamps,assumeSqrtSX}: 2F_PF2 = $resPFS2"
-echo "PredictFstat{minStartTime+maxStartTime,assumeSqrtSX}: 2F_PF2 = $resPFS3"
+echo "PredictFstat{minStartTime+duration,assumeSqrtSX}: 2F_PF2 = $resPFS3"
 echo
 
 awk_reldevPercent='{printf "%.4f", 100.0 * sqrt(($1-$2)*($1-$2))/(0.5*($1+$2)) }'
 awk_isgtr='{if($1>$2) {print "1"}}'
 tolerance0=1	## percent
 tolerance1=20	## percent
+tolerance2=0.0001	## percent
 
 eps0=$(echo $resSAF $resPFS0 | awk "$awk_reldevPercent");
 eps1=$(echo $resPFS0 $resPFS1 | awk "$awk_reldevPercent");
+eps1a=$(echo $resPFS1 $resPFS1a | awk "$awk_reldevPercent");
 eps2=$(echo $resPFS0 $resPFS2 | awk "$awk_reldevPercent");
 eps3=$(echo $resPFS0 $resPFS3 | awk "$awk_reldevPercent");
 
 res=0;
 fail0=$(echo $eps0 $tolerance0 | awk "$awk_isgtr")
 fail1=$(echo $eps1 $tolerance1 | awk "$awk_isgtr")
-fail2=$(echo $eps2 $tolerance0 | awk "$awk_isgtr")
-fail3=$(echo $eps3 $tolerance0 | awk "$awk_isgtr")
+fail1a=$(echo $eps1a $tolerance2 | awk "$awk_isgtr")
+fail2=$(echo $eps2 $tolerance2 | awk "$awk_isgtr")
+fail3=$(echo $eps3 $tolerance2 | awk "$awk_isgtr")
 
 echo -n "Relative deviation 2F_PF{assumeSqrtSX} wrt 2F_SA = ${eps0}% (tolerance = ${tolerance0}%)"
 if [ "$fail0" ]; then
@@ -176,14 +195,24 @@ if [ "$fail1" ]; then
 else
     echo " ==> OK."
 fi
-echo -n "Relative deviation 2F_PF{timestamps,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps2}% (tolerance = ${tolerance0}%)"
+
+echo -n "Relative deviation 2F_PF{NoiseWeights,maxStartTime} wrt 2F_PF{NoiseWeights} = ${eps1a}% (tolerance = ${tolerance2}%)"
+if [ "$fail1a" ]; then
+    echo " ==> FAILED."
+    res=1;
+else
+    echo " ==> OK."
+fi
+
+echo -n "Relative deviation 2F_PF{timestamps,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps2}% (tolerance = ${tolerance2}%)"
 if [ "$fail2" ]; then
     echo " ==> FAILED."
     res=1;
 else
     echo " ==> OK."
 fi
-echo -n "Relative deviation 2F_PF{minStartTime+maxStartTime,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps3}% (tolerance = ${tolerance0}%)"
+
+echo -n "Relative deviation 2F_PF{minStartTime+duration,assumeSqrtSX} wrt 2F_PF{assumeSqrtSX} = ${eps3}% (tolerance = ${tolerance2}%)"
 if [ "$fail3" ]; then
     echo " ==> FAILED."
     res=1;
