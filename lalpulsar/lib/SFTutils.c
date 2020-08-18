@@ -391,16 +391,22 @@ XLALDestroyTimestampVector ( LIGOTimeGPSVector *vect)
 
 /**
  * Given a start-time, Tspan, Tsft and Toverlap, returns a list of timestamps
- * covering this time-stretch (allowing for overlapping SFT timestamps).
+ * covering this time-stretch (allowing for overlapping SFTs).
  *
- * NOTE: boundary-handling: the returned list of timestamps are guaranteed to *cover* the
- * interval [tStart, tStart+duration), assuming a each timestamp covers a length of 'Tsft'
- * This implies that the actual timestamps-coverage can extend up to 'Tsft' beyond 'tStart+duration'.
+ * NOTE: boundary-handling: the returned list of timestamps fall within the
+ * interval [tStart, tStart+Tspan),
+ * consistent with the convention defined in XLALCWGPSinRange().
+ * Assuming each SFT covers a stretch of data of length 'Tsft',
+ * the returned timestamps correspond to a set of SFTs that is guaranteed
+ * to *cover* all data between 'tStart' and 'tStart+Tspan'.
+ * This implies that, while the last timestamp returned will always be
+ * 'ret->data[numSFTs-1] < tStart+Tspan',
+ * the actual data coverage can extend up to 'Tsft' beyond 'tStart+duration'.
  */
 LIGOTimeGPSVector *
 XLALMakeTimestamps ( LIGOTimeGPS tStart,	/**< GPS start-time */
                      REAL8 Tspan, 		/**< total duration to cover, in seconds */
-                     REAL8 Tsft,		/**< Tsft: SFT length of each timestamp, in seconds */
+                     REAL8 Tsft,		/**< length of the SFT corresponding to each timestamp, in seconds */
                      REAL8 Toverlap		/**< time to overlap successive SFTs by, in seconds */
                      )
 {
