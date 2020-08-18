@@ -2159,9 +2159,6 @@ XLALReadSFDB(
 
     }
 
-    UINT4 f_min_bin = floor(f_min*Tcoh + 0.5);
-    UINT4 f_max_bin = floor(f_max*Tcoh + 0.5);
-
     UINT4 numSFTsTotal = 0;
     for (UINT4 Y = SFDB_DET_FIRST; Y < SFDB_DET_LAST; Y++) {
         numSFTsTotal += numSFTsY[Y];
@@ -2204,8 +2201,12 @@ XLALReadSFDB(
     inputSFTs = XLALCalloc(1, sizeof(*inputSFTs));
     inputSFTs->data = XLALCalloc ( numIFOs, sizeof(*inputSFTs->data));
     inputSFTs->length = numIFOs;
+    // Calling XLALFindCoveringSFTBins() guarantees we use the same bandwidth
+    // conventions as e.g. XLALCWMakeFakeMultiData().
+    UINT4 firstBinExt, numBinsExt;
+    XLAL_CHECK_NULL ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, f_min, f_max-f_min, Tcoh ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( UINT4 X = 0; X < numIFOs; X++) {
-        inputSFTs->data[X] = XLALCreateSFTVector( numSFTsX[X], f_max_bin-f_min_bin );
+        inputSFTs->data[X] = XLALCreateSFTVector( numSFTsX[X], numBinsExt );
     }
 
     // the actual number loaded, i.e. found in science segments
@@ -2279,7 +2280,7 @@ XLALReadSFDB(
                 thisSFT = inputSFTs->data[X]->data + numSFTsX_loaded[X]-1;
 
                 COMPLEX8 *in;
-                UINT4 length = f_max_bin-f_min_bin;//inputSFTs->data[0]->data->data->length;
+                UINT4 length = inputSFTs->data[0]->data->data->length;
                 LIGOTimeGPS gpps;
                 XLALGPSSetREAL8( &gpps, header.gps_sec);
                 thisSFT->epoch = gpps;
@@ -2292,7 +2293,7 @@ XLALReadSFDB(
 
                 // Copy to the SFT structure the complex values in the frequency bins (multiplied by some normalization factors in order to agree with the SFT specification)
                 in = thisSFT->data->data;
-                for (jjj=f_min_bin; jjj<(length+f_min_bin); jjj++) {
+                for (jjj=firstBinExt; jjj<(length+firstBinExt); jjj++) {
                     *in = crectf(buffer3[2*jjj],buffer3[2*jjj+1])*header.einstein*header.tsamplu*header.normw;
                     ++in;
                 }
@@ -2318,7 +2319,7 @@ XLALReadSFDB(
     }
 
     return inputSFTs;
-}
+} /* XLALReadSFDB() */
 
 
 /*================================================================================
