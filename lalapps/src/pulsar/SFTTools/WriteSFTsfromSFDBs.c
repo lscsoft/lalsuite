@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
         XLAL_CHECK_MAIN ( (fnames = XLALFindFiles (uvar.outSFTnames)) != NULL, XLAL_EFUNC, "Failed to parse file(s) with pattern '%s'.\n\n", uvar.outSFTnames );
     }
     else {
-        XLAL_CHECK_MAIN ( is_directory ( uvar.outSFTdir ) == XLAL_SUCCESS, XLAL_EFUNC, "Directory '%s' is not valid\n", uvar.outSFTdir );
+        XLAL_CHECK_MAIN ( is_directory ( uvar.outSFTdir ), XLAL_EFUNC, "Directory '%s' is not valid\n", uvar.outSFTdir );
     }
 
     /* generate comment string */
