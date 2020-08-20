@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2020 Pep Covas, David Keitel
+ * Copyright (C) 2020 Pep Covas, David Keitel, Rodrigo Tenorio
  * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
@@ -2018,7 +2018,6 @@ XLALReadSFDB(
     LALStringVector *fnames_timestampsSt = NULL;
     LALStringVector *fnames_timestampsFi = NULL;
 
-    FILE  *fp = NULL, *fp2 = NULL;
     REAL8 Tcoh = 1800;  // Initialization
     MultiLIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL;
 
@@ -2036,67 +2035,39 @@ XLALReadSFDB(
       UINT4 numFiles_timestampsSt = fnames_timestampsSt->length;
       XLAL_CHECK_NULL ( numFiles_timestampsSt == fnames_timestampsFi->length, XLAL_EINVAL );
       XLAL_CHECK_NULL ( numFiles_timestampsSt > 0, XLAL_EINVAL );
+  
+      ts1 = XLALReadMultiTimestampsFiles(fnames_timestampsSt);
+      ts2 = XLALReadMultiTimestampsFiles(fnames_timestampsFi);
 
-      ts1 = XLALCalloc(1, sizeof(*ts1));
-      ts2 = XLALCalloc(1, sizeof(*ts2));
-      ts1->length = numFiles_timestampsSt;
-      ts1->data = XLALCalloc (1, numFiles_timestampsSt * sizeof(*ts1->data));
-      ts2->length = numFiles_timestampsSt;
-      ts2->data = XLALCalloc (1, numFiles_timestampsSt * sizeof(*ts2->data));
+      for (UINT4 X = 0; X < numFiles_timestampsSt; ++X){
 
-      for ( UINT4 X = 0; X < numFiles_timestampsSt; X++ )   // Loop over the number of detectors, each having a different timestamps file
-      {
-        const CHAR *filenameSt = fnames_timestampsSt->data[X];
-        const CHAR *filenameFi = fnames_timestampsFi->data[X];
-        XLAL_CHECK_NULL((fp = fopen(filenameSt, "r"))!=NULL,XLAL_EIO,"Failed to open file '%s' with starting timestamps.", filenameSt );
-        XLAL_CHECK_NULL((fp2 = fopen(filenameFi, "r"))!=NULL,XLAL_EIO,"Failed to open file '%s' with finishing timestamps.", filenameFi );
-        for ( UINT4 Y = SFDB_DET_FIRST; Y < SFDB_DET_LAST; Y++ ) {
-          if ( strstr(filenameSt, SFDB_detector_names[Y]) ) {
-            XLAL_CHECK_NULL ( (detectors = XLALAppendString2Vector ( detectors, SFDB_detector_names[Y] )) != NULL, XLAL_EFUNC );  // This will add the detectors with timestamps in alphabetical order
+          /* Retrieve IFO names in alphabetical order, as prescribed by LAL */
+          CHAR *filenameSt = fnames_timestampsSt->data[X];
+          for (UINT4 Y = SFDB_DET_FIRST; Y < SFDB_DET_LAST; Y++){
+              if ( strstr(filenameSt, SFDB_detector_names[Y]) ){
+                    XLAL_CHECK_NULL (
+                            (detectors = XLALAppendString2Vector(detectors, 
+                                                                 SFDB_detector_names[Y])
+                             ) != NULL,
+                            XLAL_EFUNC 
+                    );
+              }
           }
-        }
 
-        // count number of timestamps
-        UINT4 numTimeStamps = 0;
-        UINT4 numTimeStamps2 = 0;
-        INT4 r = 0;
-        REAL8 temp1;
+          /* Time stamp stanity check */
+          UINT4 numStartStamps = ts1->data[X]->length;
+          UINT4 numEndStamps = ts2->data[X]->length;
+          XLAL_CHECK_NULL (
+                  numStartStamps == numEndStamps,
+                  XLAL_EINVAL,
+                  "Got %u starting and %u finishing timestamps at %s, lengths must be equal.",
+                  numStartStamps,
+                  numEndStamps,
+                  filenameSt
+                  );
 
-        do {
-          r = fscanf(fp,"%lf\n", &temp1);
-          // make sure the line has the right number of entries or is EOF
-          if (r==1) numTimeStamps++;
-        } while ( r != EOF);
-        rewind(fp);
-        do {
-          r = fscanf(fp2,"%lf\n", &temp1);
-          // make sure the line has the right number of entries or is EOF
-          if (r==1) numTimeStamps2++;
-        } while ( r != EOF);
-        rewind(fp2);
+      }/* -- IFO < numFiles_timestampsST -- */
 
-        XLAL_CHECK_NULL ( numTimeStamps == numTimeStamps2, XLAL_EINVAL, "Got %d starting and %d finishing timestamps, lengths must be equal.", numTimeStamps, numTimeStamps2 );
-
-        ts1->data[X] = XLALCalloc(1, sizeof(*ts1->data[X]));
-        ts2->data[X] = XLALCalloc(1, sizeof(*ts2->data[X]));
-        ts1->data[X]->length = numTimeStamps;
-        ts1->data[X]->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
-        ts2->data[X]->length = numTimeStamps;
-        ts2->data[X]->data = XLALCalloc (1, numTimeStamps * sizeof(LIGOTimeGPS));
-
-        for (UINT4 j = 0; j < ts1->length; j++)
-        {
-          r = fscanf(fp,"%lf\n", &temp1);
-          ts1->data[X]->data[j].gpsSeconds = (INT4)temp1;
-          ts1->data[X]->data[j].gpsNanoSeconds = 0;
-          r = fscanf(fp2,"%lf\n", &temp1);
-          ts2->data[X]->data[j].gpsSeconds = (INT4)temp1;
-          ts2->data[X]->data[j].gpsNanoSeconds = 0;
-        }
-
-        fclose(fp);
-        fclose(fp2);
-      }
     }
 
     // from here on, Y indices loop over the SFDB detector ordering convention
