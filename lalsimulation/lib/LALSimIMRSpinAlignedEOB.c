@@ -1557,11 +1557,12 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       XLAL_ERROR (XLAL_EFUNC);
     }
 
-  REAL8Vector *tVecInterp=NULL;
-  REAL8Vector *rVecInterp=NULL;
-  REAL8Vector *phiVecInterp=NULL;
-  REAL8Vector *prVecInterp=NULL;
-  REAL8Vector *pphiVecInterp=NULL;
+  REAL8Vector *tVecInterp = NULL;
+  REAL8Vector *rVecInterp = NULL;
+  REAL8Vector *phiVecInterp = NULL;
+  REAL8Vector *prVecInterp = NULL;
+  REAL8Vector *pphiVecInterp = NULL;
+
   if (postAdiabaticFlag)
   {
     const INT4 PALen = dynamicsPA->dimLength->data[1];
@@ -1610,6 +1611,18 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       interpDynamicsPA->data[3*nInterp + i] = gsl_spline_eval(spline3, interpDynamicsPA->data[i], acc3);
       interpDynamicsPA->data[4*nInterp + i] = gsl_spline_eval(spline4, interpDynamicsPA->data[i], acc4);
     }
+
+    gsl_spline_free (spline1);
+    gsl_interp_accel_free (acc1);
+
+    gsl_spline_free (spline2);
+    gsl_interp_accel_free (acc2);
+
+    gsl_spline_free (spline3);
+    gsl_interp_accel_free (acc3);
+
+    gsl_spline_free (spline4);
+    gsl_interp_accel_free (acc4);
 
     REAL8 tOffset = interpDynamicsPA->data[nInterp - 1];
     printf("Initializing PA dynamics from t=%.17f\n",tOffset);
