@@ -2018,7 +2018,7 @@ XLALReadSFDB(
     LALStringVector *fnames_timestampsSt = NULL;
     LALStringVector *fnames_timestampsFi = NULL;
 
-    REAL8 Tcoh = 1800;  // Initialization
+    REAL8 Tcoh = 0;
     MultiLIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL;
 
     BOOLEAN flag_timestamps;  // This flag is FALSE if no timestamps are used, and TRUE if timestamps to only load SFDBs within science segments are used
