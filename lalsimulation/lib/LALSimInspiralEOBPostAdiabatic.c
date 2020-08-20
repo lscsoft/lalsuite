@@ -1397,7 +1397,8 @@ XLALSimInspiralEOBPostAdiabatic(
 	// }
 
 	REAL8 rSwitch;
-	rSwitch = XLALDictLookupREAL8Value(PAParams, "rSwitch");
+	REAL8 rSwitchPrefactor = XLALDictLookupREAL8Value(PAParams, "rSwitch");
+	rSwitch = rSwitchPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	for (j=0; j<rSize; j++)
 	{
@@ -1417,8 +1418,18 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	for (i = 0; i < rSize; i++)
     {
-        fprintf(out,"%.18e %.18e %.18e %.18e %.18e %.18e %.18e %.18e\n", tVec->data[i], rVec->data[i],
-                phiVec->data[i], prstarVec->data[i], pphiVec->data[i],dtBydrVec->data[i], domegadrVec->data[i],adiabatic_param_Vec->data[i]);
+        fprintf(
+        	out,
+        	"%.18e %.18e %.18e %.18e %.18e %.18e %.18e %.18e\n",
+        	tVec->data[i],
+        	rVec->data[i],
+            phiVec->data[i],
+            prstarVec->data[i],
+            pphiVec->data[i],
+            dtBydrVec->data[i],
+            domegadrVec->data[i],
+            adiabatic_param_Vec->data[i]
+        );
     }
 
     fclose (out);

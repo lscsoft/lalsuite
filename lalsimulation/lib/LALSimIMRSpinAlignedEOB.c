@@ -3269,15 +3269,15 @@ for ( UINT4 k = 0; k<nModes; k++) {
       if ( hamVHi )
           XLALDestroyREAL8Vector (hamVHi);
 
-      if ( tVecInterp)
+      if (tVecInterp)
         XLALDestroyREAL8Vector(tVecInterp);
-      if ( phiVecInterp)
+      if (phiVecInterp)
         XLALDestroyREAL8Vector(phiVecInterp);
-      if ( rVecInterp)
+      if (rVecInterp)
         XLALDestroyREAL8Vector(rVecInterp);
-      if ( prVecInterp)
+      if (prVecInterp)
         XLALDestroyREAL8Vector(prVecInterp);
-      if ( pphiVecInterp)
+      if (pphiVecInterp)
         XLALDestroyREAL8Vector(pphiVecInterp);
       //SM
       // Copy dynamics to output in the form of a REAL8Vector (required for SWIG wrapping, REAL8Array does not work)
