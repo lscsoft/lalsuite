@@ -1235,6 +1235,11 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
+    // Write list of injections
+    if ( injections != NULL ) {
+      XLAL_CHECK_MAIN( XLALFITSWritePulsarParamsVector( file, "injections", injections) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
     // Write various segment information from coherent input data
     if ( uvar->segment_info ) {
       XLAL_CHECK_MAIN( XLALWeaveCohInputWriteSegInfo( file, nsegments, statistics_params->coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
