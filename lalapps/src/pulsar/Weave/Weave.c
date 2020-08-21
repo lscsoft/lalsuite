@@ -59,6 +59,7 @@ int main( int argc, char *argv[] )
     LALStringVector *sft_timestamps_files, *sft_noise_sqrtSX, *injections, *Fstat_assume_sqrtSX, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
+    REAL8Vector *random_injection;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, f1dot_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size;
     int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics, recalc_statistics;
   } uvar_struct = {
@@ -128,6 +129,15 @@ int main( int argc, char *argv[] )
     injections, STRINGVector, 'J', NODEFAULT,
     "%s", InjectionSourcesHelpString
     );
+  XLALRegisterUvarMember(
+    random_injection, REAL8Vector, 'H', NODEFAULT,
+    "Inject a simulated signal, with phase parameters drawn randomly from the search parameter space, "
+    "and with a randomly-generated polarisation angle (psi) and initial phase (phi0). "
+    "The amplitude of the injection is specified by either 1 or 2 arguments to " UVAR_STR( random_injection ) ":\n"
+    " - h0: generate a random cosine of inclination angle (cosi), then set aPlus=0.5*h0*(1+cosi^2), aCross=h0*cosi;\n"
+    " - aPlus,aCross: use the given plus- and cross-polarisation amplitudes."
+    );
+
   //
   // - Search parameter space
   //
@@ -366,6 +376,12 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_timebase ) || uvar->sft_timebase > 0,
                     UVAR_STR( sft_timebase ) " must be strictly positive" );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_ALLSET2( injections, random_injection ),
+                    UVAR_STR( injections ) " and " UVAR_STR( random_injection ) " are mutually exclusive" );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_SET( random_injection ) || uvar->random_injection->length <= 2,
+                    UVAR_STR( random_injection ) " must be passed either 1 or 2 arguments" );
   //
   // - Search parameter space
   //
@@ -806,11 +822,44 @@ int main( int argc, char *argv[] )
     LogPrintf( LOG_NORMAL, "Simulating search with %s memory usage; no results will be computed\n", simulation_level & WEAVE_SIMULATE_MIN_MEM ? "minimal" : "full" );
   }
 
-  // Parse signal injection string
+  // Set up injections
   PulsarParamsVector *injections = NULL;
   if ( UVAR_SET( injections ) ) {
+
+    // Parse signal injection string
     injections = XLALPulsarParamsFromUserInput( uvar->injections, &setup.ref_time );
     XLAL_CHECK_MAIN( injections != NULL, XLAL_EFUNC );
+
+  } else if ( UVAR_SET( random_injection ) ) {
+
+    // Create injection parameters vector
+    injections = XLALCreatePulsarParamsVector(1);
+    XLAL_CHECK_MAIN( injections != NULL, XLAL_EFUNC );
+    PulsarParams *const inj = &injections->data[0];
+    strcpy( inj->name, "random_injection" );
+
+    // Draw random phase parameters from search parameter space
+    {
+      double XLAL_INIT_DECL( random_point, [ndim] );
+      gsl_matrix_view random_point_matrix = gsl_matrix_view_array( random_point, ndim, 1 );
+      XLAL_CHECK_MAIN( XLALRandomLatticeTilingPoints( tiling[isemi], 0, rand_par, &random_point_matrix.matrix ) == XLAL_SUCCESS, XLAL_EFUNC );
+      gsl_vector_view random_point_vector = gsl_vector_view_array( random_point, ndim );
+      XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysicalPoint( &inj->Doppler, &random_point_vector.vector, NULL, rssky_transf[isemi] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Randomly generate and set amplitude parameters
+    inj->Amp.psi = LAL_TWOPI * XLALUniformDeviate( rand_par );
+    inj->Amp.phi0 = LAL_TWOPI * XLALUniformDeviate( rand_par );
+    if ( uvar->random_injection->length == 1 ) {
+      const REAL8 h0 = uvar->random_injection->data[0];
+      const REAL8 cosi = -1 + 2 * XLALUniformDeviate( rand_par );
+      inj->Amp.aPlus = 0.5 * h0 * (1.0 + cosi * cosi);
+      inj->Amp.aCross = h0 * cosi;
+    } else {
+      inj->Amp.aPlus = uvar->random_injection->data[0];
+      inj->Amp.aCross = uvar->random_injection->data[1];
+    }
+
   }
 
   // Set F-statistic optional arguments
@@ -1286,9 +1335,11 @@ int main( int argc, char *argv[] )
   // Cleanup random number generator
   XLALDestroyRandomParams( rand_par );
 
+  // Cleanup injection parameters vector
+  XLALDestroyPulsarParamsVector( injections );
+
   // Cleanup memory from user input
   XLALDestroyUserVars();
-  XLALDestroyPulsarParamsVector( injections );
 
   // Check for memory leaks
   LALCheckMemoryLeaks();

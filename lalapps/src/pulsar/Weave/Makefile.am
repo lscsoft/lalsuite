@@ -98,6 +98,7 @@ test_scripts += testWeave_checkpointing.sh
 test_scripts += testWeave_partitioning.sh
 test_scripts += testWeave_histograms.sh
 test_scripts += testWeave_concatenation.sh
+test_scripts += testWeave_random_injection.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
