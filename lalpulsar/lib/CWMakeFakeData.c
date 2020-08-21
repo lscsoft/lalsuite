@@ -1168,3 +1168,50 @@ XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, const PulsarParamsVecto
   return ret;
 
 } // XLALPulsarParamsVectorAppend()
+
+/**
+ * Write a PulsarParamsVector to a FITS file
+ */
+int
+XLALFITSWritePulsarParamsVector ( FITSFile *file, const CHAR *tableName, const PulsarParamsVector *list )
+{
+  XLAL_CHECK ( file != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( tableName != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( list != NULL, XLAL_EFAULT );
+
+  // Begin FITS table
+  XLAL_CHECK ( XLALFITSTableOpenWrite ( file, tableName, "list of injections" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Describe FITS table
+  XLAL_FITS_TABLE_COLUMN_BEGIN( PulsarParams );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_ARRAY( file, CHAR, name ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Amp.psi, "psi [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Amp.phi0, "phi0 [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Amp.aPlus, "aPlus" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Amp.aCross, "aCross" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, Doppler.refTime, "refTime" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Doppler.Alpha, "Alpha [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Doppler.Delta, "Delta [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Doppler.fkdot[0], "Freq [Hz]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  for ( size_t k = 1; k < PULSAR_MAX_SPINS; ++k ) {
+    char col_name[64];
+    snprintf( col_name, sizeof( col_name ), "f%zudot [Hz/s^%zu]", k, k );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Doppler.fkdot[k], col_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Doppler.asini, "orbitasini [s]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Doppler.period, "orbitPeriod [s]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Doppler.ecc, "orbitEcc" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, GPSTime, Doppler.tp, "orbitTp" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, REAL8, Doppler.argp, "orbitArgp [rad]" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT4, Transient.type, "transientWindowType" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT4, Transient.t0, "transientStartTime" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLAL_FITS_TABLE_COLUMN_ADD_NAMED( file, UINT4, Transient.tau, "transientTau" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Write FITS table
+  for ( size_t i = 0; i < list->length; ++i ) {
+    XLAL_CHECK( XLALFITSTableWriteRow( file, &list->data[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALFITSWritePulsarParamsVector()
