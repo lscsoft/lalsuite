@@ -409,13 +409,12 @@ int toplist_fill_completionloop_stats(
     }
 
     if ( stage_stats & WEAVE_STATISTIC_MEAN2F ) {
-      item->stage[istage].mean2F = item->stage[istage].sum2F / stats_params->nsum2F;
+      item->stage[istage].mean2F = item->stage[istage].sum2F / nsegments;
     }
 
     if ( stage_stats & WEAVE_STATISTIC_MEAN2F_DET ) {
       for ( size_t X = 0; X < ndetectors; ++X ) {
-        UINT4 nsum2F_X = stats_params->nsum2F_det[X];
-        item->stage[istage].mean2F_det[X] = (nsum2F_X > 0) ? (item->stage[istage].sum2F_det[X] / nsum2F_X) : 0;
+        item->stage[istage].mean2F_det[X] = item->stage[istage].sum2F_det[X] / stats_params->n2F_det[X];
       }
     }
 

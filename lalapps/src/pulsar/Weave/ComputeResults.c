@@ -113,7 +113,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   const LALStringVector *sft_noise_sqrtSX,
   const LALStringVector *Fstat_assume_sqrtSX,
   FstatOptionalArgs *Fstat_opt_args,
-  const WeaveStatisticsParams *statistics_params,
+  WeaveStatisticsParams *statistics_params,
   BOOLEAN recalc_stage
   )
 {
@@ -204,6 +204,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   // Map detectors in F-statistic data in the given segment to their index in the coherent results
   // - This is important when segments contain data from a subset of detectors
   // - Map entry 'i' in 'Fstat_detector_info' (F-statistic data) to entry 'idx' in 'detectors' (coherent results)
+  // The array 'n2F_det[idx]' counts the total number of F-statistics computed for detector 'idx' across all segments
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
     const MultiLALDetector *Fstat_detector_info = XLALGetFstatInputDetectors( coh_input->Fstat_input );
     coh_input->Fstat_ndetectors = Fstat_detector_info->length;
@@ -213,6 +214,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
       const int idx = XLALFindStringInVector( prefix, statistics_params->detectors );
       XLAL_CHECK_NULL( idx >= 0, XLAL_EFAILED, "Detector '%s' from F-statistic data not found in list of detectors '%s'", prefix, statistics_detectors_string );
       coh_input->Fstat_res_idx[i] = idx;
+      statistics_params->n2F_det[idx] += 1;
     }
     XLALFree( statistics_detectors_string );
   }
@@ -604,9 +606,6 @@ int XLALWeaveSemiResultsInit(
   // Initialise number of coherent results
   ( *semi_res )->ncoh_res = 0;
 
-  // Initialise number of max-over-segments to multi- and per-detector F-statistics
-  ( *semi_res )->nmax2F = 0;
-  XLAL_INIT_MEM( ( *semi_res )->nmax2F_det );
   // If we need max2F in "main loop": Reallocate vector of max-over-segments of multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
     if ( ( *semi_res )->max2F == NULL || ( *semi_res )->max2F->length < ( *semi_res )->nfreqs ) {
@@ -624,9 +623,6 @@ int XLALWeaveSemiResultsInit(
     }
   }
 
-  // Initialise number of additions to multi- and per-detector F-statistics
-  ( *semi_res )->nsum2F = 0;
-  XLAL_INIT_MEM( ( *semi_res )->nsum2F_det );
   // If we need sum2F in "main loop": Reallocate vector of sum of multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
     if ( ( *semi_res )->sum2F == NULL || ( *semi_res )->sum2F->length < ( *semi_res )->nfreqs ) {
@@ -755,7 +751,6 @@ int XLALWeaveSemiResultsComputeSegs(
     for ( size_t j = 1; j < nsegments; ++j ) {
       XLAL_CHECK( XLALVectorMaxREAL4( semi_res->max2F->data, semi_res->max2F->data, semi_res->coh2F[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    semi_res->nmax2F = nsegments;
   }
 
   // Switch timed statistic
@@ -768,7 +763,6 @@ int XLALWeaveSemiResultsComputeSegs(
       for ( size_t j = 0; j < nsegments; ++j ) {
         if ( coh_res[j]->coh2F_det[i] != NULL ) {
           XLAL_CHECK( XLALVectorMaxREAL4( semi_res->max2F_det[i]->data, semi_res->max2F_det[i]->data, coh_res[j]->coh2F_det[i]->data + coh_offset[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-          semi_res->nmax2F_det[i]++;
         }
       }
     }
@@ -783,7 +777,6 @@ int XLALWeaveSemiResultsComputeSegs(
     for ( size_t j = 1; j < nsegments; ++j ) {
       XLAL_CHECK( XLALVectorAddREAL4( semi_res->sum2F->data, semi_res->sum2F->data, semi_res->coh2F[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    semi_res->nsum2F = nsegments;
   }
 
   // Switch timed statistic
@@ -799,7 +792,6 @@ int XLALWeaveSemiResultsComputeSegs(
         if ( mainloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
           XLAL_CHECK( XLALVectorAddREAL4( semi_res->sum2F_det[i]->data, semi_res->sum2F_det[i]->data, coh_res[j]->coh2F_det[i]->data + coh_offset[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
-        semi_res->nsum2F_det[i]++;
       }
     }
   }
@@ -855,7 +847,7 @@ int XLALWeaveSemiResultsComputeMain(
 
   // Compute mean multi-detector F-statistics per frequency:
   if ( mainloop_stats & WEAVE_STATISTIC_MEAN2F ) {
-    XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F->data, 1.0 / semi_res->nsum2F, sum2F, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F->data, 1.0 / semi_res->nsegments, sum2F, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Switch timed statistic

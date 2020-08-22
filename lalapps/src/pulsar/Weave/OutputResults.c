@@ -261,14 +261,6 @@ int XLALWeaveOutputResultsAdd(
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // Store main-loop parameters relevant for completion-loop statistics calculation
-  static BOOLEAN firstTime = 1;
-  if ( firstTime ) {
-    out->statistics_params->nsum2F = semi_res->nsum2F;
-    memcpy( out->statistics_params->nsum2F_det, semi_res->nsum2F_det, sizeof( semi_res->nsum2F_det ) );
-    firstTime = 0;
-  }
-
   // Add results to toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
     XLAL_CHECK( XLALWeaveResultsToplistAdd( out->toplists[i], semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );

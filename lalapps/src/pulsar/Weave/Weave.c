@@ -818,9 +818,15 @@ int main( int argc, char *argv[] )
   const LALStringVector *sft_noise_sqrtSX = UVAR_SET( sft_noise_sqrtSX ) ? uvar->sft_noise_sqrtSX : NULL;
   const LALStringVector *Fstat_assume_sqrtSX = UVAR_SET( Fstat_assume_sqrtSX ) ? uvar->Fstat_assume_sqrtSX : NULL;
   LogPrintf( LOG_NORMAL, "Loading input data for coherent results ...\n" );
+  XLAL_INIT_MEM( statistics_params->n2F_det );
   for ( size_t i = 0; i < nsegments; ++i ) {
     statistics_params->coh_input[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], dfreq, setup.ephemerides, sft_noise_sqrtSX, Fstat_assume_sqrtSX, &Fstat_opt_args, statistics_params, 0 );
     XLAL_CHECK_MAIN( statistics_params->coh_input[i] != NULL, XLAL_EFUNC );
+  }
+  if ( !( simulation_level & WEAVE_SIMULATE_MIN_MEM ) && ( statistics_params->mainloop_statistics & WEAVE_STATISTIC_COH2F_DET ) ) {
+    for ( size_t i = 0; i < ndetectors; ++i ) {
+      XLAL_CHECK_MAIN( 0 < statistics_params->n2F_det[i] && statistics_params->n2F_det[i] <= nsegments, XLAL_EFAILED, "Invalid number of per-detector F-statistics (%u) for detector '%s'", statistics_params->n2F_det[i], setup.detectors->data[i] );
+    }
   }
 
   LogPrintf( LOG_NORMAL, "Finished loading input data for coherent results\n" );
@@ -1121,9 +1127,15 @@ int main( int argc, char *argv[] )
     FstatOptionalArgs Fstat_opt_args_recalc = Fstat_opt_args;
     Fstat_opt_args_recalc.FstatMethod = FMETHOD_DEMOD_BEST;
     Fstat_opt_args_recalc.prevInput = NULL;
+    XLAL_INIT_MEM( statistics_params->n2F_det );
     for ( size_t i = 0; i < nsegments; ++i ) {
       statistics_params->coh_input_recalc[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], 0, setup.ephemerides, sft_noise_sqrtSX, Fstat_assume_sqrtSX, &Fstat_opt_args_recalc, statistics_params, 1 );
       XLAL_CHECK_MAIN( statistics_params->coh_input_recalc[i] != NULL, XLAL_EFUNC );
+    }
+    if ( !( simulation_level & WEAVE_SIMULATE_MIN_MEM ) && ( statistics_params->completionloop_statistics[1] & WEAVE_STATISTIC_COH2F_DET ) ) {
+      for ( size_t i = 0; i < ndetectors; ++i ) {
+        XLAL_CHECK_MAIN( 0 < statistics_params->n2F_det[i] && statistics_params->n2F_det[i] <= nsegments, XLAL_EFAILED, "Invalid number of per-detector F-statistics (%u) for detector '%s'", statistics_params->n2F_det[i], setup.detectors->data[i] );
+      }
     }
   }
 
