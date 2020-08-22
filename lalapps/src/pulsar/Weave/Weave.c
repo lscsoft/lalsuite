@@ -481,6 +481,7 @@ int main( int argc, char *argv[] )
   statistics_params->detectors = XLALCopyStringVector( setup.detectors );
   XLAL_CHECK_MAIN( statistics_params->detectors != NULL, XLAL_EFUNC );
   statistics_params->nsegments = nsegments;
+  statistics_params->ref_time = setup.ref_time;
 
   //
   // Figure out which statistics need to be computed, and when, in order to
@@ -814,7 +815,6 @@ int main( int argc, char *argv[] )
     statistics_params->coh_input[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], dfreq, setup.ephemerides, sft_noise_sqrtSX, Fstat_assume_sqrtSX, &Fstat_opt_args, statistics_params, 0 );
     XLAL_CHECK_MAIN( statistics_params->coh_input[i] != NULL, XLAL_EFUNC );
   }
-  statistics_params->ref_time = setup.ref_time;
 
   LogPrintf( LOG_NORMAL, "Finished loading input data for coherent results\n" );
 
