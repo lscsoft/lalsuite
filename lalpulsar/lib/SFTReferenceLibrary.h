@@ -73,6 +73,8 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
 			      struct headertag2 *headertwo  /* pointer to later header */
 			      );
 
+int ValidateSFTFile ( const char *fname );
+
 /* various possible error codes.  See SFTErrorMessage() for decodings */
 #define SFTNOERROR              0  /* MUST BE ZERO, MEANS NO ERROR */
 #define SFTENULLFP              1
