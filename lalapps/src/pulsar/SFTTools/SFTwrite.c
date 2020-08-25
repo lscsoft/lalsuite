@@ -36,7 +36,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-#include "SFTReferenceLibrary.h"
+#include <lal/SFTReferenceLibrary.h>
 
 /* some local prototypes */
 FILE *openfile(const char* name);

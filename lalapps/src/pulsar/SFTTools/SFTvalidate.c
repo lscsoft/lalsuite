@@ -34,8 +34,8 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <lal/SFTReferenceLibrary.h>
 #include <LALAppsVCSInfo.h>
-#include "SFTReferenceLibrary.h"
 
 int main(int argc, char** argv) {
   int i;
