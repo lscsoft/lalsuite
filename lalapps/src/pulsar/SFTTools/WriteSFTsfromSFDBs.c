@@ -1,5 +1,5 @@
  /*
- * Copyright (C) 2020 Pep Covas, David Keitel
+ * Copyright (C) 2020 Pep Covas, David Keitel, Rodrigo Tenorio
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -137,8 +137,8 @@ int initUserVars ( UserInput_t *uvar ) {
    XLALRegisterUvarMember( timeStampsFinishing,     STRING, 'f', OPTIONAL, "File(s) containing the starting timestamps of science segments (possibly from more than one detector, separated by a ;)");
    XLALRegisterUvarMember(   fmin,               REAL8, 0, REQUIRED, "Lowest frequency to extract from SFTs");
    XLALRegisterUvarMember(   fmax,               REAL8, 0, REQUIRED, "Highest frequency to extract from SFTs");
-   XLALRegisterUvarMember( outSFTnames,         STRING, 'd', OPTIONAL, "Output custom file(s) (possibly from more than one detector, separated by a ;). Only use either outSFTnames or outSFTdir");
-   XLALRegisterUvarMember( outSFTdir,          STRING, 'n', OPTIONAL,  "Directory for output SFTs. Only use either outSFTnames or outSFTdir");
+   XLALRegisterUvarMember( outSFTnames,         STRING, 'd', OPTIONAL, "Single SFT output custom path(s) (possibly from more than one detector, separated by a ;). Ignored if outSingleSFT is FALSE. Only use either outSFTnames or outSFTdir");
+   XLALRegisterUvarMember( outSFTdir,          STRING, 'n', OPTIONAL,  "Directory for officially-named output SFTs. Only use either outSFTnames or outSFTdir.");
    XLALRegisterUvarMember(   outSingleSFT,       BOOLEAN, 0, OPTIONAL, "Write a single concatenated SFT file instead of individual files (default: TRUE)" );
 
 
