@@ -2260,7 +2260,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
 
       // Maximum possible value of 'B' within the region bound by 'A_bound'
       // - For a single patch in 'A', 'B' must span the entire unit disk
-      const double B_max = ( A_count == 1 ) ? 1 : RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
+      double B_max = ( A_count == 1 ) ? 1 : RE_SQRT( 1 - GSL_MIN( SQR( A_bound[0] ), SQR( A_bound[1] ) ) );
 
       // Handle boundaries as special cases
       if ( B_index_i == 0 ) {
@@ -2277,6 +2277,10 @@ int XLALSetSuperskyEqualAreaSkyBounds(
         // Set up GSL root solver
         double params[] = { target_area, A0, A1 };
         gsl_function F = { .function = EqualAreaSkyBoundSolverB, .params = params };
+        if ( EqualAreaSkyBoundSolverB(-B_max, params) * EqualAreaSkyBoundSolverB(B_max, params) > 0 ) {
+          // [-B_max, B_max] does not bracket root, so use B_max = 1
+          B_max = 1;
+        }
         double B_lower = -B_max, B_upper = B_max;
         XLAL_CHECK( gsl_root_fsolver_set( fs, &F, B_lower, B_upper ) == 0, XLAL_EFAILED );
 
