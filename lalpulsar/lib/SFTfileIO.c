@@ -2116,7 +2116,7 @@ XLALReadSFDB(
               for (UINT4 xx=0; xx<ts1->length; xx++) {
                 starting = ts1->data[ind_Det]->data[xx].gpsSeconds;
                 finishing = ts2->data[ind_Det]->data[xx].gpsSeconds;
-                if ( header.gps_sec>starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
+                if ( header.gps_sec>=starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
                     numSFTsY[header.det] += 1;
                     break;
                 }
@@ -2232,7 +2232,7 @@ XLALReadSFDB(
               for (UINT4 xx=0; xx<ts1->length; xx++) {
                 starting = ts1->data[ind_Det]->data[xx].gpsSeconds;
                 finishing = ts2->data[ind_Det]->data[xx].gpsSeconds;
-                if ( header.gps_sec>starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
+                if ( header.gps_sec>=starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
                     flag=0;
                     break;
                 }
