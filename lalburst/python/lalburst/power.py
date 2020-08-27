@@ -44,7 +44,7 @@ import lal
 from lal import iterutils
 from lal.utils import CacheEntry
 import lalburst
-from lalburst import cafe
+from . import cafe
 
 
 __author__ = "Duncan Brown <duncan@gravity.phys.uwm.edu>, Kipp Cannon <kipp@gravity.phys.uwm.edu>"

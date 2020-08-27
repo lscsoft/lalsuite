@@ -53,7 +53,7 @@ from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import cafe
 from lalburst import timeslides
-from lalapps import power
+from lalburst import power
 
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"
