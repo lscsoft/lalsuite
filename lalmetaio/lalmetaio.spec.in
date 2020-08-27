@@ -26,8 +26,8 @@ Prefix: %{_prefix}
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: pkgconfig >= 0.18.0
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
 BuildRequires: libmetaio-devel
+BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: make
 
 # swig
@@ -57,23 +57,37 @@ BuildRequires: octave-devel
 
 # -- packages ---------------
 
-# lalmetaio
-Requires: libmetaio
-Requires: lal >= @MIN_LAL_VERSION@
+#%%package -n lalmetaio
+Summary: LSC Algorithm MetaIO Library - runtime tools
+Group: LAL
+Requires: lib%{name} = %{version}-%{release}
+Requires: python2-%{name} = %{version}-%{release}
 
 %description
-The LSC Algorithm MetaIO Library for gravitational wave data analysis. This
-package contains the shared-object libraries needed to run applications
+The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+This package provides the runtime tools.
+
+# liblalmetaio
+%package -n lib%{name}
+Summary: LSC Algorithm MetaIO Library - library package
+Requires: libmetaio >= @MIN_METAIO_VERSION@
+Requires: liblal >= @MIN_LAL_VERSION@
+Conflicts: lalmetaio <= 2.0.0-1
+%description -n lib%{name}
+The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+This package contains the shared-object libraries needed to run applications
 that use the LAL MetaIO library.
 
-# lalmetaio-devel
-%package devel
+# liblalmetaio-devel
+%package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL MetaIO
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}
 Requires: libmetaio-devel >= @MIN_METAIO_VERSION@
-Requires: lal-devel >= @MIN_LAL_VERSION@
-%description devel
+Requires: liblal-devel >= @MIN_LAL_VERSION@
+Provides: %{name}-devel = %{version}-%{release}
+Obsoletes: %{name}-devel < %{version}-%{release}
+%description -n lib%{name}-devel
 The LSC Algorithm MetaIO Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL MetaIO
 library.
@@ -82,7 +96,7 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALMetaIO
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-numpy >= @MIN_NUMPY_VERSION@
@@ -97,7 +111,7 @@ This package provides the Python %{python2_version} bindings for LALMetaIO.
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} Bindings for LALMetaIO
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
@@ -110,7 +124,7 @@ This package provides the Python %{python2_version} bindings for LALMetaIO.
 %package octave
 Summary: Octave Bindings for LALMetaIO
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
 %description octave
@@ -164,14 +178,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
-%files
+%files -n lib%{name}
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/lalmetaio_version
 %{_libdir}/*.so.*
-%{_sysconfdir}/*
 
-%files devel
+%files -n lib%{name}-devel
 %defattr(-,root,root)
 %license COPYING
 %{_includedir}/lal
@@ -193,6 +205,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %defattr(-,root,root)
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalmetaio.oct*
+
+%files
+%defattr(-,root,root)
+%license COPYING
+%{_bindir}/lalmetaio_version
+%{_sysconfdir}/*
 
 # -- changelog --------------
 

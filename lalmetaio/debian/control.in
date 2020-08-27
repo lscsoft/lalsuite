@@ -3,54 +3,57 @@ Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
-Build-Depends: debhelper (>= 9),
-  dh-python,
-  gcc,
-  g++,
-  make,
-  pkg-config (>= 0.18.0),
-  lal-dev (>= @MIN_LAL_VERSION@~),
-  libmetaio-dev (>= @MIN_METAIO_VERSION@),
-  liboctave-dev,
-  zlib1g-dev,
-  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-  python-all-dev,
-  python-lal (>= @MIN_LAL_VERSION@~),
-  python-mock,
-  python-pathlib,
-  python-pytest,
-  python3-all-dev,
-  python3-lal (>= @MIN_LAL_VERSION@~),
-  python3-pytest,
-  lal-octave (>= @MIN_LAL_VERSION@~),
+Build-Depends:
+ debhelper (>= 9),
+ dh-python,
+ lal-octave (>= @MIN_LAL_VERSION@~),
+ liblal-dev (>= @MIN_LAL_VERSION@~),
+ libmetaio-dev (>= @MIN_METAIO_VERSION@),
+ liboctave-dev,
+ pkg-config (>= 0.18.0),
+ python-all-dev,
+ python-lal (>= @MIN_LAL_VERSION@~),
+ python-mock,
+ python-pathlib,
+ python-pytest,
+ python3-all-dev,
+ python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-pytest,
+ swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
+ zlib1g-dev,
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
-Package: lalmetaio
+Package: liblalmetaio@LIBMAJOR@
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  libmetaio1 (>= @MIN_METAIO_VERSION@),
-  lal (>= @MIN_LAL_VERSION@~)
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: LSC Algorithm Library MetaIO
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL MetaIO library.
+Replaces: lalmetaio (<< 2.0.0-2~)
+Breaks: lalmetaio (<< 2.0.0-2~)
 
-Package: lalmetaio-dev
+Package: liblalmetaio-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  libmetaio-dev (>= @MIN_METAIO_VERSION@),
-  zlib1g-dev,
-  lal-dev (>= @MIN_LAL_VERSION@~),
-  lalmetaio (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ liblal-dev (>= @MIN_LAL_VERSION@~),
+ liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
+ libmetaio-dev (>= @MIN_METAIO_VERSION@),
+ zlib1g-dev,
 Description: LSC Algorithm Library MetaIO Developers
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  MetaIO library.
+Provides: lalmetaio-dev (= ${binary:Version})
+Replaces: lalmetaio-dev (<< 2.0.0-2~)
+Breaks: lalmetaio-dev (<< 2.0.0-2~)
 
 Package: lalmetaio-python
 Depends: python-lalmetaio, ${misc:Depends}
@@ -66,11 +69,12 @@ Section: python
 Replaces: lalmetaio-python (<< 1.3.1.1-1~)
 Breaks: lalmetaio-python (<< 1.3.1.1-1~)
 Architecture: any
-Depends: ${misc:Depends},
-  ${python:Depends},
-  ${shlibs:Depends},
-  python-lal (>= @MIN_LAL_VERSION@~),
-  lalmetaio (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ ${shlibs:Depends},
+ liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
+ python-lal (>= @MIN_LAL_VERSION@~),
 Description: Python bindings for LALMetaIO
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL MetaIO library.
@@ -89,22 +93,35 @@ Section: python
 Replaces: lalmetaio-python3 (<< 1.3.1.1-1~)
 Breaks: lalmetaio-python3 (<< 1.3.1.1-1~)
 Architecture: any
-Depends: ${misc:Depends},
-  ${python3:Depends},
-  ${shlibs:Depends},
-  python3-lal (>= @MIN_LAL_VERSION@~),
-  lalmetaio (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ ${shlibs:Depends},
+ liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
+ python3-lal (>= @MIN_LAL_VERSION@~),
 Description: Python 3 bindings for LALMetaIO
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL MetaIO library.
 
 Package: lalmetaio-octave
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  octave,
-  lal-octave (>= @MIN_LAL_VERSION@~),
-  lalmetaio (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ lal-octave (>= @MIN_LAL_VERSION@~),
+ liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
+ octave,
 Description: Octave bindings for LALMetaIO
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains Octave bindings for the LAL MetaIO library.
+
+Package: lalmetaio
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
+ python-lalmetaio (= ${binary:Version}),
+Description: LSC Algorithm Library MetaIO
+ The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+ This package provides the runtime tools.
