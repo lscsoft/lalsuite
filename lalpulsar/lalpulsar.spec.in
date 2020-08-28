@@ -28,7 +28,7 @@ BuildRequires: fftw-devel
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
@@ -63,27 +63,42 @@ BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 # -- packages ---------------
 
 # lalpulsar
-Requires: cfitsio
-Requires: fftw
-Requires: gsl
-Requires: lal >= @MIN_LAL_VERSION@
-
+Summary: LSC Algorithm Pulsar Library - runtime tools
+Group: LAL
+Requires: lib%{name} = %{version}-%{release}
+Requires: python2-%{name} = %{version}-%{release}
 %description
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL Pulsar library.
 
-# lalpulsar-devel
-%package devel
+# liblalpulsar
+%package -n lib%{name}
+Summary: LSC Algorithm Simulation Library - library package
+Group: LAL
+Requires: cfitsio
+Requires: fftw
+Requires: gsl
+Requires: liblal >= @MIN_LAL_VERSION@
+Conflicts: %{name} <= 2.1.0-1
+%description -n lib%{name}
+The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+This package contains the shared-object libraries needed to run applications
+that use the LAL Pulsar library.
+
+# liblalpulsar-devel
+%package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Pulsar
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: cfitsio-devel
 Requires: fftw-devel
 Requires: fftw-static
 Requires: gsl-devel
-Requires: lal-devel >= @MIN_LAL_VERSION@
-%description devel
+Requires: liblal-devel >= @MIN_LAL_VERSION@
+Provides: %{name}-devel = %{version}-%{release}
+Obsoletes: %{name}-devel < %{version}-%{release}
+%description -n lib%{name}-devel
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
 Pulsar library.
@@ -92,7 +107,7 @@ Pulsar library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} bindings for LALPulsar
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python
 Requires: python2-astropy
 Requires: python2-lal >= @MIN_LAL_VERSION@
@@ -107,7 +122,7 @@ This package provides the Python %{python2_version} bindings for LALPulsar.
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} bindings for LALPulsar
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-astropy
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
@@ -120,7 +135,7 @@ This package provides the Python %{python3_version} bindings for LALPulsar.
 %package octave
 Summary: Octave bindings for LALPulsar
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
 %description octave
@@ -173,15 +188,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
-%files
+%files -n lib%{name}
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/lalpulsar_version
 %{_datarootdir}/lalpulsar/*
 %{_libdir}/*.so.*
-%{_sysconfdir}/*
 
-%files devel
+%files -n lib%{name}-devel
 %defattr(-,root,root)
 %license COPYING
 %{_includedir}/lal
@@ -203,6 +216,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %defattr(-,root,root)
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalpulsar.oct*
+
+%files
+%defattr(-,root,root)
+%license COPYING
+%{_bindir}/lalpulsar_version
+%{_sysconfdir}/*
 
 # -- changelog --------------
 
