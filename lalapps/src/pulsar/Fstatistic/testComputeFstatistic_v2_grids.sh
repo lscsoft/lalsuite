@@ -120,7 +120,7 @@ sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
 cfs_CL="--DataFiles='${SFTdir_40h}/*.sft' --TwoFthreshold=0 --Dterms=16 --FstatMethod=DemodOptC --RngMedWindow=$RngMedWindow $extra_args"
 if [ "$haveNoise" = false ]; then
-    cfs_CL="$cfs_CL --SignalOnly"
+    cfs_CL="$cfs_CL --assumeSqrtSX=1"
 fi
 
 ## ----- grid=0 : flat grid
@@ -197,11 +197,27 @@ echo " STEP 3: Compare to reference results: "
 echo "----------------------------------------------------------------------"
 echo
 
+# Some of the reference files in fe3d08fc7c81d72e9be2c4251f16346f886db3f7
+# were generated with old --SignalOnly flag which added +4 assuming no-noise SFTs.
+# This behaviour is no longer reproduced by the newer --assumeSqrtSX option,
+# but to make sure this is the only (and understood) difference from the old
+# reference results, we manually subtract that extra term here.
+awk_subtract4='{print $1 " " $2 " " $3 " " $4 " " $5 " " $6 " " ($7-4)}'
+
 for n in 0 1 2 3 6 8 9; do
 
     ## compare results
     echo "Comparing gridType=${n}:"
-    cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ./testCFSv2_grid${n}.dat.ref";
+    ref="./testCFSv2_grid${n}.dat.ref"
+    if grep -q 'SignalOnly=TRUE' $ref; then
+        cmdline="awk '/^[^%]/ $awk_subtract4' $ref > ${ref}minus4.dat"
+        if ! eval $cmdline; then
+            echo "OUCH... using awk to subtract 4 from reference results failed."
+        fi
+        cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 ${ref}minus4.dat";
+    else
+        cmdline="$cmp_code -1 ./testCFSv2_grid${n}.dat -2 $ref";
+    fi
     echo $cmdline
     if ! eval $cmdline; then
         echo "OUCH... files differ. Something might be wrong..."
