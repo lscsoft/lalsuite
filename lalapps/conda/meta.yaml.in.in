@@ -6,8 +6,6 @@
 
 {% set name = "lalapps" %}
 {% set version = "@VERSION@".replace('-', '.') %}
-{% set url = "file://@TARBALL@" %}
-{% set sha256 = "@SHA256@" %}
 
 {% set framel_version = "@MIN_FRAMEL_VERSION@" %}
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
@@ -24,8 +22,8 @@ package:
   version: {{ version }}
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: file://@TARBALL@
+  sha256: @SHA256@
 
 build:
   error_overdepending: true
@@ -50,15 +48,15 @@ requirements:
     - cfitsio
     - fftw * nompi*
     - gsl
-    - lal >={{ lal_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalinference >={{ lalinference_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalpulsar >={{ lalpulsar_version }}
-    - lalsimulation >={{ lalsimulation_version }}
     - libframel >={{ framel_version }}
+    - liblal >={{ lal_version }}
+    - liblalburst >={{ lalburst_version }}
+    - liblalframe >={{ lalframe_version }}
+    - liblalinference >={{ lalinference_version }}
+    - liblalinspiral >={{ lalinspiral_version }}
+    - liblalmetaio >={{ lalmetaio_version }}
+    - liblalpulsar >={{ lalpulsar_version }}
+    - liblalsimulation >={{ lalsimulation_version }}
     - llvm-openmp  # [osx]
     - openmp  # [linux]
     - python
@@ -171,13 +169,13 @@ test:
     - lalapps_tmpltbank --help
 
 about:
-  home: "https://wiki.ligo.org/Computing/LALSuite"
-  doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalapps/"
-  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-  license: "GPL-2.0-or-later"
-  license_family: "GPL"
-  license_file: "COPYING"
-  summary: "LSC Algorithm Library Applications"
+  home: https://wiki.ligo.org/Computing/LALSuite
+  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalapps/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPL-2.0-or-later
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Library Applications
   description: |
     The LSC Algorithm Library Applications for gravitational wave data
     analysis.  This package contains applications that are built on tools
