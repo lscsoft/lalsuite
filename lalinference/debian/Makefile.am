@@ -3,10 +3,13 @@ EXTRA_DIST = \
 	compat \
 	control \
 	copyright \
-	lalinference-dev.install \
-	lalinference-octave.install \
-	python-lalinference.install \
 	lalinference.install \
+	lalinference-octave.install \
+	liblalinference@LIBMAJOR@.install \
+	liblalinference-dev.install \
+	python-lalinference.install \
+	python3-lalinference.install \
 	rules \
 	lalsuite.mk \
-	source/format
+	source/format \
+	$(END_OF_LIST)

@@ -1,7 +1,7 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
-%define configure_opts --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc
+%define configure_opts --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc GSL_LIBS="-lgsl"
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
@@ -27,13 +27,13 @@ BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: help2man
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
+BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
+BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
+BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: liblalburst-devel >= @MIN_LALBURST_VERSION@
+BuildRequires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: liblalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: make
 BuildRequires: openmpi-devel
 BuildRequires: pkgconfig >= 0.18.0
@@ -100,36 +100,46 @@ BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 # -- packages ---------------
 
 # lalinference
+Requires: lib%{name} = %{version}-%{release}
+Requires: python2-%{name} = %{version}-%{release}
+%description
+The LSC Algorithm Inference Library for gravitational wave data analysis.
+
+# liblalinference
+%package -n lib%{name}
+Summary: LSC Algorithm Inference Library - library package
 Requires: gsl >= 1.15
 Requires: openmpi
 Requires: openssh-clients
-Requires: lal >= @MIN_LAL_VERSION@
-Requires: lalframe >= @MIN_LALFRAME_VERSION@
-Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst >= @MIN_LALBURST_VERSION@
-Requires: lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
-
-%description
-The LSC Algorithm Inference Library for gravitational wave data analysis. This
-package contains the shared-object libraries needed to run applications
+Requires: liblal >= @MIN_LAL_VERSION@
+Requires: liblalframe >= @MIN_LALFRAME_VERSION@
+Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: liblalburst >= @MIN_LALBURST_VERSION@
+Requires: liblalinspiral >= @MIN_LALINSPIRAL_VERSION@
+Requires: liblalpulsar >= @MIN_LALPULSAR_VERSION@
+Conflicts: %{name} <= 2.0.5-1
+%description -n lib%{name}
+The LSC Algorithm Inference Library for gravitational wave data analysis.
+This package contains the shared-object libraries needed to run applications
 that use the LAL Inference library.
 
-# lalinference-devel
-%package devel
+# liblalinference-devel
+%package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Inference
 Group: LAL
-Requires: %{name} = %{version}
 Requires: gsl-devel >= 1.15
-Requires: lal-devel >= @MIN_LAL_VERSION@
-Requires: lalframe-devel >= @MIN_LALFRAME_VERSION@
-Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-Requires: lalburst-devel >= @MIN_LALBURST_VERSION@
-Requires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-%description devel
+Requires: lib%{name} = %{version}-%{release}
+Requires: liblal-devel >= @MIN_LAL_VERSION@
+Requires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
+Requires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+Requires: liblalburst-devel >= @MIN_LALBURST_VERSION@
+Requires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
+Requires: liblalpulsar-devel >= @MIN_LALPULSAR_VERSION@
+Provides: %{name}-devel = %{version}-%{release}
+Obsoletes: %{name}-devel < %{version}-%{release}
+%description -n lib%{name}-devel
 The LSC Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference
 library.
@@ -138,7 +148,7 @@ library.
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALInference
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: healpy >= 1.9.1
 Requires: python
 Requires: python2-astropy >= 1.1.1
@@ -170,7 +180,7 @@ This package provides the Python %{python2_version} bindings for LALInference.
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version_version} Bindings for LALInference
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-astropy >= 1.1.1
 Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
@@ -200,7 +210,7 @@ This package provides the Python %{python3_version} bindings for LALInference.
 %package octave
 Summary: Octave Bindings for LALInference
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
 Requires: lalframe-octave >= @MIN_LALFRAME_VERSION@
@@ -260,31 +270,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
-%files
+%files -n lib%{name}
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/lalinference_bench
-%{_bindir}/lalinference_burst
-%{_bindir}/lalinference_datadump
-%{_bindir}/lalinference_injectedlike
-%{_bindir}/lalinference_kombine
-%{_bindir}/lalinference_mcmc
-%{_bindir}/lalinference_nest
-%{_bindir}/lalinference_version
-%{_bindir}/lalinference_mpi_wrapper
-%{_datarootdir}/lalinference/*
 %{_libdir}/*.so.*
-%{_mandir}/man1/lalinference_bench.1*
-%{_mandir}/man1/lalinference_burst.1*
-%{_mandir}/man1/lalinference_datadump.1*
-%{_mandir}/man1/lalinference_injectedlike.1*
-%{_mandir}/man1/lalinference_kombine.1*
-%{_mandir}/man1/lalinference_mcmc.1*
-%{_mandir}/man1/lalinference_nest.1*
-%{_mandir}/man1/lalinference_version.1*
-%{_sysconfdir}/*
 
-%files devel
+%files -n lib%{name}-devel
 %defattr(-,root,root)
 %license COPYING
 %{_includedir}/lal
@@ -295,32 +286,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %files -n python2-%{name}
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/cbcBayes*
-%{_bindir}/imrtgr_*
-%{_bindir}/lalinference_burst_pp_pipe
-%{_bindir}/lalinference_coherence_test
-%{_bindir}/lalinference_compute_roq_weights
-%{_bindir}/lalinference_cpnest
-%{_bindir}/lalinference_evolve_spins_and_append_samples
-%{_bindir}/lalinference_merge_posteriors
-%{_bindir}/lalinference_multi_pipe
-%{_bindir}/lalinference_nest2pos
-%{_bindir}/lalinference_pipe
-%{_bindir}/lalinference_pp_pipe
-%{_bindir}/lalinference_review_test
-%{_mandir}/man1/cbcBayes*.1*
-%{_mandir}/man1/imrtgr_*.1*
-%{_mandir}/man1/lalinference_burst_pp_pipe.1*
-%{_mandir}/man1/lalinference_coherence_test.1*
-%{_mandir}/man1/lalinference_compute_roq_weights.1*
-%{_mandir}/man1/lalinference_cpnest.1*
-%{_mandir}/man1/lalinference_evolve_spins_and_append_samples.1*
-%{_mandir}/man1/lalinference_merge_posteriors.1*
-%{_mandir}/man1/lalinference_multi_pipe.1*
-%{_mandir}/man1/lalinference_nest2pos.1*
-%{_mandir}/man1/lalinference_pipe.1*
-%{_mandir}/man1/lalinference_pp_pipe.1*
-%{_mandir}/man1/lalinference_review_test.1*
 %{python2_sitearch}/*
 
 %files -n python%{python3_pkgversion}-%{name}
@@ -332,6 +297,14 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %defattr(-,root,root)
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalinference.oct*
+
+%files
+%defattr(-,root,root)
+%license COPYING
+%{_bindir}/*
+%{_datarootdir}/%{name}/*
+%{_mandir}/man1/*
+%{_sysconfdir}/*
 
 # -- changelog --------------
 
