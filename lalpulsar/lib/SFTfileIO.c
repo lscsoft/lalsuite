@@ -57,7 +57,6 @@
 #include <lal/Sequence.h>
 #include <lal/ConfigFile.h>
 #include <lal/UserInputParse.h>
-#include <lal/LogPrintf.h>
 #include <lal/SFTutils.h>
 
 /*---------- DEFINES ----------*/
@@ -199,6 +198,7 @@ static BOOLEAN has_valid_v2_crc64 (FILE *fp );
 static int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 REAL8 TSFTfromDFreq ( REAL8 dFreq );
 
+BOOLEAN CheckIfSFDBInScienceMode(SFDBHeader *SFDBHeader, LALStringVector *detectors, MultiLIGOTimeGPSVector *startingTS, MultiLIGOTimeGPSVector *endingTS);
 /*==================== FUNCTION DEFINITIONS ====================*/
 
 /**
@@ -2011,38 +2011,41 @@ XLALReadSFDB(
   )
 {
 
-    LALStringVector *fnames;
-    XLAL_CHECK_NULL ( (fnames = XLALFindFiles (file_pattern)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", file_pattern );
-    UINT4 numFiles = fnames->length;
+    /* ------ Basic Setup ------ */
+    LALStringVector *fnamesSFDB;
+    XLAL_CHECK_NULL ( (fnamesSFDB = XLALFindFiles (file_pattern)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", file_pattern );
+    UINT4 numSFDBFiles = fnamesSFDB->length;
 
-    LALStringVector *fnames_timestampsSt = NULL;
-    LALStringVector *fnames_timestampsFi = NULL;
+    BOOLEAN flag_timestamps; /* This flag is FALSE if no timestamps are used, and TRUE if timestamps to only load SFDBs within science segments are used */
+    LALStringVector *fnamesStartTS = NULL; /* There is one pair (startTS, endTS) for each IFO: #IFOs == startingTS->length == endingTS->length */
+    LALStringVector *fnamesEndTS = NULL;
+    MultiLIGOTimeGPSVector *startingTS = NULL;
+    MultiLIGOTimeGPSVector *endingTS = NULL;
+    
+    LALStringVector *detectors = NULL; /* Only used if flag_timestamps == True */
+    
+    INT4 Tsft = 0;
 
-    REAL8 Tcoh = 0;
-    MultiLIGOTimeGPSVector *ts1 = NULL, *ts2 = NULL;
-
-    BOOLEAN flag_timestamps;  // This flag is FALSE if no timestamps are used, and TRUE if timestamps to only load SFDBs within science segments are used
     if ( timeStampsStarting && timeStampsFinishing ) flag_timestamps = TRUE;
     else if ( timeStampsStarting && timeStampsFinishing == NULL ) XLAL_ERROR_NULL (XLAL_EFUNC, "Must give two files with initial and finishing timestamps, missing finishing timestamps\n");
     else if ( timeStampsStarting == NULL && timeStampsFinishing ) XLAL_ERROR_NULL (XLAL_EFUNC, "Must give two files with initial and finishing timestamps, missing starting timestamps\n");
     else flag_timestamps = FALSE;
 
-    LALStringVector *detectors = NULL;
-    if ( flag_timestamps ) {  // Only read the timestamps files if the input files are not null
-
-      XLAL_CHECK_NULL ( (fnames_timestampsSt = XLALFindFiles (timeStampsStarting)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", timeStampsStarting );
-      XLAL_CHECK_NULL ( (fnames_timestampsFi = XLALFindFiles (timeStampsFinishing)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", timeStampsFinishing );
-      UINT4 numFiles_timestampsSt = fnames_timestampsSt->length;
-      XLAL_CHECK_NULL ( numFiles_timestampsSt == fnames_timestampsFi->length, XLAL_EINVAL );
-      XLAL_CHECK_NULL ( numFiles_timestampsSt > 0, XLAL_EINVAL );
+    if ( flag_timestamps ) {
+      XLAL_CHECK_NULL ( (fnamesStartTS = XLALFindFiles (timeStampsStarting)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", timeStampsStarting );
+      XLAL_CHECK_NULL ( (fnamesEndTS = XLALFindFiles (timeStampsFinishing)) != NULL, XLAL_EFUNC, "Failed to find filelist matching pattern '%s'.\n\n", timeStampsFinishing );
+      UINT4 numTSFiles = fnamesStartTS->length;
+      XLAL_CHECK_NULL ( numTSFiles == fnamesEndTS->length, XLAL_EINVAL );
+      XLAL_CHECK_NULL ( numTSFiles > 0, XLAL_EINVAL );
   
-      ts1 = XLALReadMultiTimestampsFiles(fnames_timestampsSt);
-      ts2 = XLALReadMultiTimestampsFiles(fnames_timestampsFi);
+      startingTS = XLALReadMultiTimestampsFiles(fnamesStartTS);
+      endingTS = XLALReadMultiTimestampsFiles(fnamesEndTS);
 
-      for (UINT4 X = 0; X < numFiles_timestampsSt; ++X){
+      for (UINT4 X = 0; X < numTSFiles; ++X){
 
-          /* Retrieve IFO names in alphabetical order, as prescribed by LAL */
-          CHAR *filenameSt = fnames_timestampsSt->data[X];
+          /* Retrieve IFO names following the SFDB convention */
+          CHAR *filenameSt = fnamesStartTS->data[X];
+          BOOLEAN detectorWasFound = 0;
           for (UINT4 Y = SFDB_DET_FIRST; Y < SFDB_DET_LAST; Y++){
               if ( strstr(filenameSt, SFDB_detector_names[Y]) ){
                     XLAL_CHECK_NULL (
@@ -2051,12 +2054,19 @@ XLALReadSFDB(
                              ) != NULL,
                             XLAL_EFUNC 
                     );
+                    detectorWasFound = 1;
               }
           }
+          XLAL_CHECK_NULL (
+                  detectorWasFound,
+                  XLAL_EINVAL,
+                  "No matching IFO name was found for time stamp file %s",
+                  filenameSt
+                  );
 
           /* Time stamp stanity check */
-          UINT4 numStartStamps = ts1->data[X]->length;
-          UINT4 numEndStamps = ts2->data[X]->length;
+          UINT4 numStartStamps = startingTS->data[X]->length;
+          UINT4 numEndStamps = endingTS->data[X]->length;
           XLAL_CHECK_NULL (
                   numStartStamps == numEndStamps,
                   XLAL_EINVAL,
@@ -2066,232 +2076,237 @@ XLALReadSFDB(
                   filenameSt
                   );
 
-      }/* -- IFO < numFiles_timestampsST -- */
+      }/* -- IFO < numTSfiles -- */
 
-    }
+    }/* -- if flag_timestamps -- */
 
-    // from here on, Y indices loop over the SFDB detector ordering convention
-    // regardless whether data is actually present for each detector
+    /* ------ First Step: Count SFDB files (and IFOs if required by time stamps) to allocate enough memory ------ */
+
+    /* Y indices loop over the SFDB detector ordering convention (regardless of whether data is actually present or not) */
     UINT4 numSFTsY[SFDB_DET_LAST];
-    XLAL_INIT_MEM ( numSFTsY);
-
-    // First pass: this is to know how many of the SFDBs are in science segments
-    for ( UINT4 i = 0; i < numFiles; i++ )
+    XLAL_INIT_MEM(numSFTsY); 
+    for ( UINT4 i = 0; i < numSFDBFiles; i++ )
     {
-        const CHAR *filename = fnames->data[i];
+        const CHAR *filename = fnamesSFDB->data[i];
         FILE  *fpPar = NULL;
         XLAL_CHECK_NULL((fpPar = fopen(filename, "r"))!=NULL,XLAL_EIO,"Failed to open SFDB file '%s' for reading.", filename );
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
 
-        REAL8 count;
-        while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {    // Index of this SFDBs in the file (a SFDB file can have more than one SFDB)
+        REAL8 count; /* Index of an SFDBs in the file (a SFDB file can have more than one SFDB) */
+        while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {
+        
             SFDBHeader header;
             XLAL_CHECK_NULL(read_SFDB_header_from_fp(fpPar, &header)==0,XLAL_EIO,"Failed to parse SFDB header.");
-            Tcoh = header.tbase;
-            // skip number of bytes corresponding to the actual data content
+
+            /* If time stamps are given, only count science mode SFDBs */
+            numSFTsY[header.det] += (flag_timestamps) ? 
+                CheckIfSFDBInScienceMode(&header, detectors, startingTS, endingTS) :
+                1;
+            
+            Tsft = header.tbase;
+            
+            /* Skip number of bytes corresponding to the actual data content */
+            INT4 lavespOrRed = 0;
             UINT4 lsps = 0;
             if (header.lavesp > 0)
             {
-                XLAL_CHECK_NULL(fseek(fpPar,header.lavesp*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
-                lsps=header.lavesp;
+               lavespOrRed= header.lavesp;
+               lsps = header.lavesp;
             }
             else
             {
-                XLAL_CHECK_NULL(fseek(fpPar,header.red*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
-                lsps=header.nsamples/header.red;
+                lavespOrRed = header.red;
+                lsps = header.nsamples / header.red;
             }
-            XLAL_CHECK_NULL(fseek(fpPar,(lsps+2*header.nsamples)*sizeof(REAL4),SEEK_CUR)==0, XLAL_EIO);
+            XLAL_CHECK_NULL(fseek(fpPar, lavespOrRed * sizeof(REAL4), SEEK_CUR) == 0, XLAL_EIO);
+            XLAL_CHECK_NULL(fseek(fpPar, (lsps + 2 * header.nsamples) * sizeof(REAL4), SEEK_CUR) == 0, XLAL_EIO);
+            
+        }/* -- while fread(...) == 1 -- */
 
-            if (flag_timestamps) {
-              INT4 starting=0, finishing=0;
-              // Find detector index 
-              UINT4 ind_Det = 0;
-              for ( UINT4 Y = 0; Y < ts1->length; Y++ ) {
-                if ( !strcmp(SFDB_detector_names[header.det], detectors->data[Y] ) ) {
-                  ind_Det = Y;
-                }
-              }
-             
-              // If the GPS time of this SFDB is within a science segment, count it
-              for (UINT4 xx=0; xx<ts1->length; xx++) {
-                starting = ts1->data[ind_Det]->data[xx].gpsSeconds;
-                finishing = ts2->data[ind_Det]->data[xx].gpsSeconds;
-                if ( header.gps_sec>=starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
-                    numSFTsY[header.det] += 1;
-                    break;
-                }
-              }
-            }
-            else {
-              numSFTsY[header.det] += 1;
-            }
-        }
         fclose(fpPar);
 
-    }
+    }/* -- while i < numSFDBFiles -- */
 
+    /* ------ Second Step: Reformat retrieved information  ------ */
+    
     UINT4 numSFTsTotal = 0;
     for (UINT4 Y = SFDB_DET_FIRST; Y < SFDB_DET_LAST; Y++) {
         numSFTsTotal += numSFTsY[Y];
     }
     XLAL_CHECK_NULL(numSFTsTotal>0, XLAL_EINVAL, "No SFTs found for any detector.");
 
-    // identify for which detectors there is data in the SFDBs
-    // and prepare a name lookup table
+    /* Prepare a lookup table containing detectors present in the SFDBs */
     INT4 detectorLookupYtoX[SFDB_DET_LAST];
     CHAR detectorNames[SFDB_DET_LAST][3];
-    XLAL_INIT_MEM ( detectorNames);
+    XLAL_INIT_MEM(detectorNames);
     for (UINT4 Y = 0; Y < SFDB_DET_LAST; Y++) {
         detectorLookupYtoX[Y] = -1;
         strncpy ( detectorNames[Y], "XX", 3 );
     }
 
+    /* Count IFOs and SFTs per IFO */
+    /* To do so, loop over everything, retrieve present */
+    /* information and re-format it into an array. */
     UINT4 numIFOs = 0;
-    UINT4 numSFTsX[SFDB_DET_LAST];
-    XLAL_INIT_MEM ( numSFTsX);
+    UINT4Vector *auxNumSFTsX = NULL;
+    auxNumSFTsX = XLALCreateUINT4Vector(SFDB_DET_LAST);
     for (UINT4 Y = SFDB_DET_FIRST; Y < SFDB_DET_LAST; Y++) {
         if (numSFTsY[Y]>0) {
-            // numIFOs is used here as an internal loop variable
-            // of actually present detectors (equivalent to X later)
-            // and will be equal to the total number at the end of the loop
+            /* numIFOs is used here as an internal loop variable */
+            /* of actually present detectors (equivalent to X later) */
+            /* and will be equal to the total number at the end of the loop */
             strncpy ( detectorNames[numIFOs], SFDB_detector_names[Y], 3);
-            numSFTsX[numIFOs] = numSFTsY[Y];
+            auxNumSFTsX->data[numIFOs] = numSFTsY[Y];
             detectorLookupYtoX[Y] = numIFOs;
             numIFOs += 1;
         }
     }
-
-    // from here on, X indices loop over the detectors which are actually present
+   
+    /* X indices loop over the actually present detectors */
+    UINT4Vector *numSFTsX = NULL;
+    numSFTsX =  XLALCreateUINT4Vector(numIFOs);
     XLALPrintInfo("Number of SFTs we'll load from the SFDBs:\n");
     for ( UINT4 X = 0; X < numIFOs; X++) {
-        XLALPrintInfo("%s: %d\n", detectorNames[X], numSFTsX[X]);
+        numSFTsX->data[X] = auxNumSFTsX->data[X];
+        XLALPrintInfo("%s: %d\n", detectorNames[X], numSFTsX->data[X]);
     }
 
-    // Allocate memory for the SFT structure
-    MultiSFTVector *inputSFTs = NULL;
-    inputSFTs = XLALCalloc(1, sizeof(*inputSFTs));
-    inputSFTs->data = XLALCalloc ( numIFOs, sizeof(*inputSFTs->data));
-    inputSFTs->length = numIFOs;
-    // Calling XLALFindCoveringSFTBins() guarantees we use the same bandwidth
-    // conventions as e.g. XLALCWMakeFakeMultiData().
+    /* Allocate memory for the SFT structure */
+    /* Calling XLALFindCoveringSFTBins() guarantees we use the same bandwidth */
+    /* conventions as e.g. XLALCWMakeFakeMultiData() */
     UINT4 firstBinExt, numBinsExt;
-    XLAL_CHECK_NULL ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, f_min, f_max-f_min, Tcoh ) == XLAL_SUCCESS, XLAL_EFUNC );
-    for ( UINT4 X = 0; X < numIFOs; X++) {
-        inputSFTs->data[X] = XLALCreateSFTVector( numSFTsX[X], numBinsExt );
-    }
+    XLAL_CHECK_NULL ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, f_min, f_max-f_min, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC ); 
+    MultiSFTVector *outputSFTs = NULL;
+    outputSFTs = XLALCreateMultiSFTVector(numBinsExt, numSFTsX);
 
-    // the actual number loaded, i.e. found in science segments
-    UINT4 numSFTsX_loaded[numIFOs];
-    XLAL_INIT_MEM ( numSFTsX_loaded);
+    /* Clean up auxiliar variables */
+    XLALDestroyUINT4Vector(numSFTsX);    
+    XLALDestroyUINT4Vector(auxNumSFTsX);
 
-    for ( UINT4 i = 0; i < numFiles; i++ )
+    /* ------ Third Step: Fill up SFTs using SFDB data ------ */
+    
+    UINT4 numSFTsLoadedInX[numIFOs];
+    XLAL_INIT_MEM (numSFTsLoadedInX);
+    for ( UINT4 i = 0; i < numSFDBFiles; i++ )
     {
-        const CHAR *filename = fnames->data[i];
+        const CHAR *filename = fnamesSFDB->data[i];
         FILE  *fpPar = NULL;
-        XLAL_CHECK_NULL((fpPar = fopen(filename, "r"))!=NULL,XLAL_EIO,"Failed to open SFDB file '%s' for reading.", filename );
+        XLAL_CHECK_NULL((fpPar = fopen(filename, "r"))!=NULL, XLAL_EIO,"Failed to open SFDB file '%s' for reading.", filename );
         setvbuf(fpPar, (CHAR *)NULL, _IOLBF, 0);
 
         REAL8 count;
-        while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {
-            SFDBHeader header;
-            XLAL_CHECK_NULL(read_SFDB_header_from_fp(fpPar, &header)==0,XLAL_EIO,"Failed to parse SFDB header.");
+        while( fread(&count, sizeof(REAL8), 1, fpPar)==1 ) {/* Read SFDBs one by one */
 
-            // read the actual binary data
+            SFDBHeader header;
+            XLAL_CHECK_NULL(read_SFDB_header_from_fp(fpPar, &header)==0, XLAL_EIO, "Failed to parse SFDB header.");
+
+            
+            /* Read the actual binary data */
+            /* This is needed regardless of this data falling inside science mode */
+            /* since fread is what moves the pointer forwards! */
+            INT4 lavespOrRed = 0;
             UINT4 lsps = 0;
-            REAL4 *buffer1,*buffer2,*buffer3;
+            REAL4 *buffer1 = NULL,  *buffer2 = NULL, *buffer3 = NULL;
             if (header.lavesp > 0)
             {
-                XLAL_CHECK_NULL( (buffer1 = XLALCalloc(header.lavesp*sizeof(REAL4),sizeof(REAL4))) != NULL, XLAL_ENOMEM);
-                XLAL_CHECK_NULL(fread(buffer1,header.lavesp*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
-
-                lsps=header.lavesp;
+                lavespOrRed = header.lavesp;
+                lsps = header.lavesp;
             }
             else
             {
-                XLAL_CHECK_NULL( (buffer1 = XLALCalloc(header.red*sizeof(REAL4),sizeof(REAL4))) != NULL, XLAL_ENOMEM);
-                XLAL_CHECK_NULL(fread(buffer1,header.red*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
-                lsps=header.nsamples/header.red;
+                lavespOrRed = header.red;
+                lsps = header.nsamples/header.red;
             }
+            
+            XLAL_CHECK_NULL( (buffer1 = XLALCalloc(lavespOrRed * sizeof(REAL4), sizeof(REAL4))) != NULL, XLAL_ENOMEM);
+            XLAL_CHECK_NULL(fread(buffer1, lavespOrRed * sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
 
-            XLAL_CHECK_NULL( (buffer2 = XLALCalloc(lsps*sizeof(REAL4),sizeof(REAL4))) != NULL, XLAL_ENOMEM);
-            XLAL_CHECK_NULL(fread(buffer2,lsps*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL( (buffer2 = XLALCalloc(lsps * sizeof(REAL4), sizeof(REAL4))) != NULL, XLAL_ENOMEM);
+            XLAL_CHECK_NULL(fread(buffer2, lsps * sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
 
-            XLAL_CHECK_NULL( (buffer3 = XLALCalloc(2*header.nsamples*sizeof(REAL4),sizeof(REAL4))) != NULL, XLAL_ENOMEM);
-            XLAL_CHECK_NULL(fread(buffer3,2*header.nsamples*sizeof(REAL4),1,fpPar)==1, XLAL_EIO);
+            XLAL_CHECK_NULL( (buffer3 = XLALCalloc(2 * header.nsamples * sizeof(REAL4), sizeof(REAL4))) != NULL, XLAL_ENOMEM);
+            XLAL_CHECK_NULL(fread(buffer3, 2 * header.nsamples * sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
 
-            UINT4 flag=1;
-
-            if (flag_timestamps) {
-              INT4 starting=0, finishing=0;
-              UINT4 ind_Det = 0;
-              for ( UINT4 Y = 0; Y < ts1->length; Y++ ) {
-                if ( !strcmp(SFDB_detector_names[header.det], detectors->data[Y] ) ) {
-                  ind_Det = Y;
-                }
-              }
-              for (UINT4 xx=0; xx<ts1->length; xx++) {
-                starting = ts1->data[ind_Det]->data[xx].gpsSeconds;
-                finishing = ts2->data[ind_Det]->data[xx].gpsSeconds;
-                if ( header.gps_sec>=starting && header.gps_sec+Tcoh<(REAL8)finishing ) {
-                    flag=0;
-                    break;
-                }
-              }
-            }
-            else {
-                flag=0;
-            }
-
-            if (flag==0) {
-                XLAL_CHECK_NULL(detectorLookupYtoX[header.det]>=0,XLAL_EDOM,"Cannot match detector %d, as read from file, with first run.", header.det);
+            if ( flag_timestamps ? CheckIfSFDBInScienceMode(&header, detectors, startingTS, endingTS) : 1){
+                XLAL_CHECK_NULL(detectorLookupYtoX[header.det]>=0, XLAL_EDOM, "Cannot match detector %d, as read from file, with first run.", header.det);
                 UINT4 X = detectorLookupYtoX[header.det];
-                numSFTsX_loaded[X] += 1;
+                numSFTsLoadedInX[X] += 1;
 
+                /* Fill up this SFT */
                 SFTtype *thisSFT = NULL;
-                thisSFT = inputSFTs->data[X]->data + numSFTsX_loaded[X]-1;
-
-                COMPLEX8 *in;
-                UINT4 length = inputSFTs->data[0]->data->data->length;
-                LIGOTimeGPS gpps;
-                XLALGPSSetREAL8( &gpps, header.gps_sec);
-                thisSFT->epoch = gpps;
-
+                thisSFT = outputSFTs->data[X]->data + numSFTsLoadedInX[X] - 1;
+                
+                XLALGPSSetREAL8( &(thisSFT->epoch), header.gps_sec);
                 strncpy( thisSFT->name, detectorNames[X], 3);
-
                 thisSFT->f0 = f_min;
                 thisSFT->deltaF = header.deltanu;
-                UINT4 jjj;
 
-                // Copy to the SFT structure the complex values in the frequency bins (multiplied by some normalization factors in order to agree with the SFT specification)
-                in = thisSFT->data->data;
-                for (jjj=firstBinExt; jjj<(length+firstBinExt); jjj++) {
-                    *in = crectf(buffer3[2*jjj],buffer3[2*jjj+1])*header.einstein*header.tsamplu*header.normw;
-                    ++in;
+                /* Copy to the SFT structure the complex values in the frequency bins (multiplied by some normalization factors in order to agree with the SFT specification) */
+                UINT4 thisSFTLength = thisSFT->data->length;
+                COMPLEX8 *thisSFTData;
+                thisSFTData = thisSFT->data->data;
+                for (UINT4 thisBin = firstBinExt; thisBin < (thisSFTLength + firstBinExt); thisBin++) {
+                    *thisSFTData = crectf(buffer3[2 * thisBin], buffer3[2 * thisBin + 1]) * header.einstein * header.tsamplu * header.normw;
+                    ++thisSFTData;
                 }
             }
 
             XLALFree(buffer1);
             XLALFree(buffer2);
             XLALFree(buffer3);
-        }
+
+        }/* while fread(...) == 1 */
+        
         fclose(fpPar);
-    }
+    }/* -- i < numSFDBFiles -- */
 
-    XLALDestroyStringVector(fnames);
-    XLALDestroyStringVector(fnames_timestampsSt);
-    XLALDestroyStringVector(fnames_timestampsFi);
+    XLALDestroyStringVector(fnamesSFDB);
+    XLALDestroyStringVector(fnamesStartTS);
+    XLALDestroyStringVector(fnamesEndTS);
     XLALDestroyStringVector(detectors);
-    XLALDestroyMultiTimestamps(ts1);
-    XLALDestroyMultiTimestamps(ts2);
+    XLALDestroyMultiTimestamps(startingTS);
+    XLALDestroyMultiTimestamps(endingTS);
 
-    // Sort the SFDBs from lower GPS timestamp to higher GPS timestamp
+    /* Sort the SFDBs from lower GPS timestamp to higher GPS timestamp */
     for ( UINT4 X = 0; X < numIFOs; X++) {
-        qsort( (void*)inputSFTs->data[X]->data, inputSFTs->data[X]->length, sizeof( inputSFTs->data[X]->data[0] ), compareSFTepoch );
+        qsort( (void*)outputSFTs->data[X]->data, outputSFTs->data[X]->length, sizeof( outputSFTs->data[X]->data[0] ), compareSFTepoch );
     }
 
-    return inputSFTs;
+    return outputSFTs;
 } /* XLALReadSFDB() */
 
+BOOLEAN
+CheckIfSFDBInScienceMode(
+       SFDBHeader *header,
+       LALStringVector *detectors,
+       MultiLIGOTimeGPSVector *startingTS,
+       MultiLIGOTimeGPSVector *endingTS
+        )
+{
+   
+    /* Get detector index */
+    UINT4 detectorIndex = 0;
+    while ( strcmp(SFDB_detector_names[header->det],
+                detectors->data[detectorIndex]) != 0
+          ){
+        ++detectorIndex;
+    }
+
+    /* Check if SFDB's epoch falls within time stamps */
+    /* FIXME: Maybe a binary search is faster? */
+    BOOLEAN SFDBWithinScienceMode = 0;
+    UINT4 tsIndex = 0;
+    REAL8 SFDBEndTime = header->gps_sec + header->tbase; 
+    while (header->gps_sec >= startingTS->data[detectorIndex]->data[tsIndex].gpsSeconds){
+        if (SFDBEndTime < endingTS->data[detectorIndex]->data[tsIndex].gpsSeconds){
+            SFDBWithinScienceMode = 1;
+            break;
+        }
+        ++tsIndex;
+    }
+
+    return SFDBWithinScienceMode;
+}
 
 /*================================================================================
  * LOW-level internal SFT-handling functions, should *NOT* be used outside this file!

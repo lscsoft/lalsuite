@@ -1,4 +1,5 @@
 /*
+ * Copyright (C) 2020 Rodrigo Tenorio
  * Copyright (C) 2019 Pep Covas
  * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
