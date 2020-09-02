@@ -473,6 +473,11 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     {
       MultiNoiseFloor XLAL_INIT_DECL(assumeSqrtSX);
       XLAL_CHECK ( XLALParseMultiNoiseFloor ( &assumeSqrtSX, uvar->assumeSqrtSX, numDetectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+      // no need to check assumeSqrtSX.length - XLALParseMultiNoiseFloor() does it internally
+      for ( UINT4 X = 0; X < numDetectors; X ++ )
+        {
+            XLAL_CHECK(assumeSqrtSX.sqrtSn[X] > 0, XLAL_EDOM, "all entries of assumeSqrtSX must be >0");
+        }
 
       XLAL_CHECK ( (multiNoiseWeights = XLALCalloc(1,sizeof(*multiNoiseWeights))) != NULL, XLAL_ENOMEM );
       XLAL_CHECK ( (multiNoiseWeights->data = XLALCalloc ( numDetectors, sizeof(*multiNoiseWeights->data) )) != NULL, XLAL_ENOMEM );
