@@ -15,6 +15,7 @@ test_scripts += \
 	test_SEOBNRv4HM_ROM.py \
 	test_enum_compatibility.py \
 	test_liv.py \
+	test_wf_property_lists.py \
 	$(END_OF_LIST)
 
 
