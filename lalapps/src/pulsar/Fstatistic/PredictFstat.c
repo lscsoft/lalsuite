@@ -401,6 +401,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       numDetectors = multiCatalogView->length;
       // ----- get the (multi-IFO) 'detector-state series' for given catalog
       XLAL_CHECK ( (mTS = XLALTimestampsFromMultiSFTCatalogView ( multiCatalogView )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( mTS->length == numDetectors, XLAL_EINVAL, "Got %d detectors but %d sets of timestamps.", numDetectors, mTS->length );
       XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // ----- estimate noise-floor from SFTs if --assumeSqrtSX was not given:
@@ -441,6 +442,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
           }
           XLAL_CHECK ( (mTS = XLALReadMultiTimestampsFilesConstrained ( uvar->timestampsFiles, &(uvar->minStartTime), endTimeGPS )) != NULL, XLAL_EFUNC );
           XLAL_CHECK ( (mTS->length > 0) && (mTS->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
+          XLAL_CHECK( mTS->length == numDetectors, XLAL_EINVAL, "Got %d detectors but %d sets of timestamps.", numDetectors, mTS->length );
           for ( UINT4 X=0; X < mTS->length; X ++ ) {
             mTS->data[X]->deltaT = Tsft;	// Tsft information not given by timestamps-file
           }
@@ -457,7 +459,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
   // ---------- determine start-time and total amount of data
   LIGOTimeGPS startTime = {LAL_INT4_MAX,0};
   cfg->numSFTs = 0;
-  for ( UINT4 X = 0; X < mTS->length; X ++ )
+  for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
       if ( XLALGPSCmp ( &(mTS->data[X]->data[0]), &startTime ) < 0 ) {
         startTime = mTS->data[X]->data[0];
