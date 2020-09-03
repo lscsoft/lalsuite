@@ -50,6 +50,26 @@ lalapps_fits_overview WeaveOutC.fits
 set +x
 echo
 
+echo "=== Check for consistent accumulated fields ==="
+set -x
+for field in NCOHRES NCOHTPL NSEMITPL; do
+    val1=`lalapps_fits_header_getval "WeaveOut1.fits" "${field}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    val2=`lalapps_fits_header_getval "WeaveOut2.fits" "${field}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    val3=`lalapps_fits_header_getval "WeaveOut3.fits" "${field}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    valC=`lalapps_fits_header_getval "WeaveOutC.fits" "${field}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    echo "${val1} ${val2} ${val3} ${valC}" | awk '{ print err = $1 + $2 + $3 - $4; exit ( err == 0 ? 0 : 1 ) }'
+done
+for field in 'WALL TOTAL' 'CPU TOTAL'; do
+    val1=`lalapps_fits_header_getval "WeaveOut1.fits" "${field}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%0.8f", $1}'`
+    val2=`lalapps_fits_header_getval "WeaveOut2.fits" "${field}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%0.8f", $1}'`
+    val3=`lalapps_fits_header_getval "WeaveOut3.fits" "${field}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%0.8f", $1}'`
+    valC=`lalapps_fits_header_getval "WeaveOutC.fits" "${field}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%0.8f", $1}'`
+    echo "${val1} ${val2} ${val3} ${valC}" | awk '{ print err = sqrt( ( $1 + $2 + $3 - $4 )^2 ); exit ( err < 1e-5 ? 0 : 1 ) }'
+done
+set +x
+echo
+
+
 echo "=== Check for consistent concatenated toplists ==="
 set -x
 lalapps_fits_table_list 'WeaveOut1.fits[mean2F_toplist]' | grep -v '^#' > mean2F_toplist_1.txt
