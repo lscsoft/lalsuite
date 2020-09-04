@@ -192,6 +192,8 @@ int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVecto
 SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
 MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
 
+int XLALValidateSFTFile ( const char *fname );
+
 // compute and work with PSDs
 int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD,
                                     MultiPSDVector **multiPSDVector,

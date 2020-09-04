@@ -34,90 +34,24 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <lal/LALStdlib.h>
+#include <lal/SFTReferenceLibrary.h>
 #include <LALAppsVCSInfo.h>
-#include "SFTReferenceLibrary.h"
 
 int main(int argc, char** argv) {
-  int i;
-  float *data=NULL;
   
   fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsStatus);
 
   /* loop over all file names on command line */
-  for (i=1; i<argc; i++) {
-    FILE *fp;
-    int count;
-
-    /* open the file */
-    if (!(fp=fopen(argv[i], "r"))) {
-      fprintf(stderr,"Unable to open %s", argv[i]);
-      if (errno)
-	perror(" ");
-      return SFTENULLFP;
+  for (int i=1; i<argc; i++) {
+    /* we on purpose do not call the XLAL version here,
+     * so as to have the same stdout printing
+     * and return code handling as older versions of this executable.
+     */
+    int errcode = ValidateSFTFile(argv[i]);
+    if (errcode != 0) {
+        return errcode;
     }
-
-    /* and read successive SFTs blocks from the file and validate CRC
-       checksums */
-    for (count=0; 1; count++) {
-      struct headertag2 info,lastinfo;
-      int err=0, swapendian, move, j;
-      
-      err=ReadSFTHeader(fp, &info, NULL, &swapendian, 1);
-
-      /* at end of SFT file or merged SFT file blocks */
-      if (err==SFTENONE && count)
-	break;
-      
-      /* SFT was invalid: say why */
-      if (err) {
-	fprintf(stderr, "%s is not a valid SFT. %s\n", argv[i], SFTErrorMessage(err));
-	if (errno)
-	  perror(NULL);
-	return err;
-      }
-
-      /* check that various bits of header information are consistent */
-      if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info)))
-	{
-	  fprintf(stderr, "%s is not a valid SFT. %s\n", argv[i], SFTErrorMessage(err));
-	  if (errno)
-	    perror(NULL);
-	  return err;
-	}
-      
-      /* check that data appears valid */
-      data=(float *)realloc((void *)data, info.nsamples*4*2);
-      if (!data) {
-	errno=SFTENULLPOINTER;
-	fprintf(stderr, "ran out of memory at %s. %s\n", argv[i], SFTErrorMessage(err));
-	if (errno)
-	  perror(NULL);
-	return err;
-      }
-
-      err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
-      if (err) {
-	fprintf(stderr, "%s is not a valid SFT. %s\n", argv[i], SFTErrorMessage(err));
-	if (errno)
-	  perror(NULL);
-	return err;
-      }
-
-      for (j=0; j<info.nsamples; j++) {
-	if (!isfinite(data[2*j]) || !isfinite(data[2*j+1])) {
-	  fprintf(stderr, "%s is not a valid SFT (data infinite at freq bin %d)\n", argv[i], j+info.firstfreqindex);
-	  return SFTNOTFINITE;
-	}
-      }
-
-      /* keep copy of header for comparison the next time */
-      lastinfo=info;
-      
-      /* Move forward to next SFT in merged file */
-      move=sizeof(struct headertag2)+info.nsamples*2*sizeof(float)+info.comment_length;
-      fseek(fp, move, SEEK_CUR);
-    }
-    fclose(fp);
   }
   return 0;
 }

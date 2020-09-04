@@ -36,6 +36,7 @@
 #include <lal/ConfigFile.h>
 
 #include <lal/SFTutils.h>
+#include <lal/SFTReferenceLibrary.h>
 
 #if defined(__GNUC__)
 #define UNUSED __attribute__ ((unused))
@@ -2191,6 +2192,22 @@ TSFTfromDFreq ( REAL8 dFreq )
   return Tsft;
 
 } // TSFTfromDFreq()
+
+
+/**
+ * Verify that the contents of a SFT file are valid.
+ *
+ * This is just an XLAL wrapper to the SFTReferenceLibrary function ValidateSFTFile().
+ *
+ * \return: XLAL_SUCCESS if no validation errors encountered.
+ */
+int
+XLALValidateSFTFile ( const char *fname )
+{
+    int errcode = ValidateSFTFile(fname);
+    XLAL_CHECK ( errcode==0, XLAL_EFUNC, "SFT validation error code %d on file %s.", errcode, fname );
+    return XLAL_SUCCESS;
+} /* XLALValidateSFTFile */
 
 
 /**

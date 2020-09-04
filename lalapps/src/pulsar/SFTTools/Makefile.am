@@ -14,17 +14,12 @@ bin_PROGRAMS = \
 	lalapps_splitSFTs \
 	$(END_OF_LIST)
 
-SFTReferenceLibrary = \
-	SFTReferenceLibrary.c \
-	SFTReferenceLibrary.h \
-	$(END_OF_LIST)
-
 lalapps_ComputePSD_SOURCES = ComputePSD.c
 lalapps_SFTclean_SOURCES = SFTclean.c
-lalapps_SFTvalidate_SOURCES = SFTvalidate.c $(SFTReferenceLibrary)
+lalapps_SFTvalidate_SOURCES = SFTvalidate.c
 lalapps_compareSFTs_SOURCES = compareSFTs.c
 lalapps_dumpSFT_SOURCES = dumpSFT.c
-lalapps_splitSFTs_SOURCES = splitSFTs.c $(SFTReferenceLibrary)
+lalapps_splitSFTs_SOURCES = splitSFTs.c
 
 EXTRA_DIST += \
 	SFTSpecification.dox \
@@ -40,4 +35,4 @@ test_scripts += testsplitSFTs.sh
 # Add any helper programs required by tests to this variable
 test_helpers += SFTwrite
 
-SFTwrite_SOURCES = SFTwrite.c $(SFTReferenceLibrary)
+SFTwrite_SOURCES = SFTwrite.c
