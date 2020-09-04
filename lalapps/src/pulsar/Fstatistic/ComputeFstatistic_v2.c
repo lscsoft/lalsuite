@@ -1025,23 +1025,23 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( 	df2dot, 	 REAL8, 0 , OPTIONAL, "Stepsize for f2dot in Hz/s^2");
   XLALRegisterUvarMember( 	df3dot, 	 REAL8, 0 , OPTIONAL, "Stepsize for f3dot in Hz/s^3");
 
-  XLALRegisterUvarMember( 	orbitasini, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
-  XLALRegisterUvarMember( 	orbitPeriod, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Period in seconds");
-  XLALRegisterUvarMember(	orbitTp, 	 EPOCH, 0,  DEVELOPER, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
-  XLALRegisterUvarMember( 	orbitArgp, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Orbital argument of periapse in radians");
-  XLALRegisterUvarMember( 	orbitEcc, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Orbital eccentricity");
+  XLALRegisterUvarMember( 	orbitasini, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Projected semi-major axis in light-seconds [Default: 0.0]");
+  XLALRegisterUvarMember( 	orbitPeriod, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Period in seconds");
+  XLALRegisterUvarMember(	orbitTp, 	 EPOCH, 0,  OPTIONAL, "Binary Orbit: (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
+  XLALRegisterUvarMember( 	orbitArgp, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Orbital argument of periapse in radians");
+  XLALRegisterUvarMember( 	orbitEcc, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Orbital eccentricity");
 
-  XLALRegisterUvarMember( 	orbitasiniBand,	 REAL8, 0,  DEVELOPER, "Binary Orbit: Band in Projected semi-major axis in light-seconds [Default: 0.0]");
-  XLALRegisterUvarMember( 	orbitPeriodBand, REAL8, 0,  DEVELOPER, "Binary Orbit: Band in Period in seconds");
-  XLALRegisterUvarMember(	orbitTpBand, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Band in (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
-  XLALRegisterUvarMember( 	orbitArgpBand, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Band in Orbital argument of periapse in radians");
-  XLALRegisterUvarMember( 	orbitEccBand, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Band in Orbital eccentricity");
+  XLALRegisterUvarMember( 	orbitasiniBand,	 REAL8, 0,  OPTIONAL, "Binary Orbit: Band in Projected semi-major axis in light-seconds [Default: 0.0]");
+  XLALRegisterUvarMember( 	orbitPeriodBand, REAL8, 0,  OPTIONAL, "Binary Orbit: Band in Period in seconds");
+  XLALRegisterUvarMember(	orbitTpBand, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Band in (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
+  XLALRegisterUvarMember( 	orbitArgpBand, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Band in Orbital argument of periapse in radians");
+  XLALRegisterUvarMember( 	orbitEccBand, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Band in Orbital eccentricity");
 
-  XLALRegisterUvarMember( 	dorbitasini, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Projected semi-major axis in light-seconds [Default: 0.0]");
-  XLALRegisterUvarMember( 	dorbitPeriod, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Period in seconds");
-  XLALRegisterUvarMember(	dorbitTp, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
-  XLALRegisterUvarMember( 	dorbitArgp, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Orbital argument of periapse in radians");
-  XLALRegisterUvarMember( 	dorbitEcc, 	 REAL8, 0,  DEVELOPER, "Binary Orbit: Spacing in Orbital eccentricity");
+  XLALRegisterUvarMember( 	dorbitasini, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Spacing in Projected semi-major axis in light-seconds [Default: 0.0]");
+  XLALRegisterUvarMember( 	dorbitPeriod, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Spacing in Period in seconds");
+  XLALRegisterUvarMember(	dorbitTp, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Spacing in (true) epoch of periapsis: use 'xx.yy[GPS|MJD]' format.");
+  XLALRegisterUvarMember( 	dorbitArgp, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Spacing in Orbital argument of periapse in radians");
+  XLALRegisterUvarMember( 	dorbitEcc, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Spacing in Orbital eccentricity");
 
   XLALRegisterUvarMember(DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (also multi-IFO) input SFT-files");
 
