@@ -261,11 +261,15 @@ XLALDestroyPSDVector ( PSDVector *vect )	/**< the PSD-vector to free */
 
 
 /**
- * Create an empty multi-IFO SFT vector for given number of IFOs and number of SFTs per IFO
+ * Create an empty multi-IFO SFT vector with a given number of bins per SFT and number of SFTs per IFO.
+ *
+ * Note that the input argument "length" refers to the number of frequency bins in each SFT.
+ * The length of the returned MultiSFTVector (i.e. the number of IFOs)
+ * is set from the length of the input numsft vector instead.
  */
 MultiSFTVector *XLALCreateMultiSFTVector (
-  UINT4 length,          /**< number of sft data points */
-  UINT4Vector *numsft    /**< number of sfts in each sftvect */
+  UINT4 length,          /**< number of SFT data points (frequency bins) */
+  UINT4Vector *numsft    /**< number of SFTs in each per-detector SFTVector */
   )
 {
 
