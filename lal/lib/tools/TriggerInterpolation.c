@@ -587,7 +587,7 @@ void XLALDestroyNearestNeighborTriggerInterpolant(NearestNeighborTriggerInterpol
 
 
 int XLALCOMPLEX16ApplyNearestNeighborTriggerInterpolant(
-    __attribute__((unused)) NearestNeighborTriggerInterpolant *interp,
+    __attribute__ ((unused)) NearestNeighborTriggerInterpolant *interp,
     double *t,
     COMPLEX16 *y,
     const COMPLEX16 *data)

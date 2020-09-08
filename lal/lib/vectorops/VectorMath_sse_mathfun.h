@@ -38,7 +38,7 @@
 # define ALIGN16_END
 #else /* gcc or icc */
 # define ALIGN16_BEG
-# define ALIGN16_END __attribute__((aligned(16)))
+# define ALIGN16_END __attribute__ ((aligned(16)))
 #endif
 
 /* __m128 is ugly to write */
