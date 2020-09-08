@@ -2217,7 +2217,9 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
             self.add_condor_cmd('accounting_group_user',cp.get('condor','accounting_group_user'))
         if cp.has_option('condor','queue'):
             self.add_condor_cmd('+'+cp.get('condor','queue'),'True')
-            self.add_requirement('(TARGET.'+cp.get('condor','queue')+' =?= True)')
+            # The following line means the jobs will run ONLY on the specified queue
+            # Disabled to allow priority_pe jobs to also run on general resources
+            # self.add_requirement('(TARGET.'+cp.get('condor','queue')+' =?= True)')
         if self.transfer_files:
             self.add_condor_cmd('transfer_executable','False')
             self.add_condor_cmd('transfer_input_files','$(macroinput)')
