@@ -79,7 +79,7 @@
 
 #ifdef __GNUC__
 #ifndef UNUSED
-#define UNUSED __attribute__((unused))
+#define UNUSED __attribute__ ((unused))
 #endif
 #else
 #define UNUSED

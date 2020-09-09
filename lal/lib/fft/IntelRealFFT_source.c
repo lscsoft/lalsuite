@@ -36,7 +36,7 @@
 #define FFTWX_DESTROY_PLAN		CONCAT2(FFTWX,_destroy_plan)
 #define FFTWX_EXECUTE_R2R		CONCAT2(FFTWX,_execute_r2r)
 
-PLAN_TYPE *CREATE_PLAN_FUNCTION(UINT4 size, int fwdflg, __attribute__((unused)) int measurelvl)
+PLAN_TYPE *CREATE_PLAN_FUNCTION(UINT4 size, int fwdflg, __attribute__ ((unused)) int measurelvl)
 {
     PLAN_TYPE *plan;
     INT8  fftStat;

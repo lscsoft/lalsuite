@@ -28,7 +28,7 @@ pthread_mutex_t lalGSLPthreadMutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
 #if __GNUC__
-#define UNUSED __attribute__((unused))
+#define UNUSED __attribute__ ((unused))
 #else
 #define UNUSED
 #endif
