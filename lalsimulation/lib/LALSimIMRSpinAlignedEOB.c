@@ -1442,8 +1442,6 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   eobParams.NyquistStop = 0;
 
   //fprintf( stderr, "Spherical initial conditions: %e %e %e %e\n", values->data[0], values->data[1], values->data[2], values->data[3] );
-  
-
 
   REAL8Array *dynamicsPA = NULL;
 
@@ -1578,6 +1576,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     phiVecInterp = XLALCreateREAL8Vector(PALen);
     prVecInterp = XLALCreateREAL8Vector(PALen);
     pphiVecInterp = XLALCreateREAL8Vector(PALen);
+
     for (i = 0; i < PALen; i++)
     {
       tVecInterp->data[i] = dynamicsPA->data[i];
@@ -1667,8 +1666,9 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     eobParams.rad = values->data[0];
 
     XLALDestroyREAL8Array(interpDynamicsPA);
-
   }
+
+  XLALDestroyREAL8Array(dynamicsPA);
 
   /* Set up pointers to the dynamics */
   // REAL8Vector tVec;
