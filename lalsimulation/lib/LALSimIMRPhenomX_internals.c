@@ -2409,3 +2409,48 @@ double IMRPhenomX_Amplitude_22(double ff, IMRPhenomX_UsefulPowers *powers_of_f, 
   double AmpInt = AmpPreFac * IMRPhenomX_Intermediate_Amp_22_Ansatz(ff, powers_of_f, pWF, pAmp);
   return AmpInt;
 }
+
+
+/* Function to check if the input mode array contains unsupported modes */
+INT4 check_input_mode_array(LALDict *lalParams)
+{
+	UINT4 flagTrue = 0;
+	
+  if(lalParams == NULL) return XLAL_SUCCESS;
+  
+  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
+  
+  if(ModeArray!=NULL)
+  {
+    INT4 larray[5] = {2, 2, 3, 3, 4};
+    INT4 marray[5] = {2, 1, 3, 2, 4};
+    
+    for(INT4 ell=2; ell<=LAL_SIM_L_MAX_MODE_ARRAY; ell++)
+		{
+			for(INT4 emm=0; emm<=ell; emm++)
+			{
+				if(XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, emm)==1 || XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, -1*emm)==1)
+				{
+					for(UINT4 idx=0; idx<5; idx++)
+					{
+			      if(ell==larray[idx] && abs(emm)==marray[idx])
+						{
+							flagTrue = 1;
+						}
+					}
+					// If flagTrue !=1 means that the input mode array has a mode that is not supported by the model.
+					if(flagTrue!=1){
+						XLALPrintError ("Mode (%d,%d) is not available by the model.\n", ell, emm);
+						XLALDestroyValue(ModeArray);
+						return XLAL_FAILURE;
+					}
+					flagTrue = 0;					
+				}				
+			}//End loop over emm
+		}//End loop over ell
+  }//End of if block
+	
+  XLALDestroyValue(ModeArray);
+	
+  return XLAL_SUCCESS;
+}

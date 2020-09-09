@@ -371,6 +371,8 @@ double IMRPhenomX_TimeShift_22(IMRPhenomXPhaseCoefficients *pPhase, IMRPhenomXWa
     
 void IMRPhenomX_Phase_22_ConnectionCoefficients(IMRPhenomXWaveformStruct *pWF, IMRPhenomXPhaseCoefficients *pPhase);
 
+/* Function to check if the input mode array contains supported modes */
+INT4 check_input_mode_array(LALDict *lalParams);
 
 #ifdef __cplusplus
 }

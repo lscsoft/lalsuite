@@ -115,6 +115,9 @@ static int IMRPhenomXHM_MultiMode2(
 );
 
 
+/* Definitions of functions */
+
+
 /* Wrapper function for adding higher modes to the ModeArray */
 static LALDict *IMRPhenomXHM_setup_mode_array(LALDict *lalParams)
 {
@@ -874,7 +877,11 @@ int XLALSimIMRPhenomXHM(
   if(mass_ratio > 20.0  ) { XLAL_PRINT_INFO("Warning: Extrapolating outside of Numerical Relativity calibration domain."); }
   if(mass_ratio > 1000. && fabs(mass_ratio - 1000) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 1000."); } // The 1e-12 is to avoid rounding errors
   if(fabs(chi1L) > 0.99 || fabs(chi2L) > 0.99) { XLAL_PRINT_INFO("Warning: Extrapolating to extremal spins, model is not trusted."); }
-
+ 
+  /* Check that the modes chosen are available for the model */
+  XLAL_CHECK(check_input_mode_array(lalParams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
+  
+  
   /* Evaluate the model */
   retcode = IMRPhenomXHM_MultiMode(
     hptilde,
@@ -898,7 +905,7 @@ int XLALSimIMRPhenomXHM(
   printf("\n******Leaving XLALSimIMRPhenomXHM*****\n");
   #endif
 
-  return XLAL_SUCCESS;
+  return retcode;
 }
 
 /** Returns the hptilde and hctilde of the multimode waveform for positive frequencies.
@@ -972,7 +979,10 @@ int XLALSimIMRPhenomXHM2(
   if(mass_ratio > 20.0  ) { XLAL_PRINT_INFO("Warning: Extrapolating outside of Numerical Relativity calibration domain."); }
   if(mass_ratio > 1000. && fabs(mass_ratio - 1000) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 1000."); } // The 1e-12 is to avoid rounding errors
   if(fabs(chi1L) > 0.99 || fabs(chi2L) > 0.99) { XLAL_PRINT_INFO("Warning: Extrapolating to extremal spins, model is not trusted."); }
-
+  
+  /* Check that the modes chosen are available for the model */
+  XLAL_CHECK(check_input_mode_array(lalParams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
+  
   /* If no reference frequency is given, set it to the starting gravitational wave frequency */
   REAL8 fRef = (fRef_In == 0.0) ? f_min : fRef_In;
 
@@ -1134,7 +1144,7 @@ int XLALSimIMRPhenomXHM2(
    /* Free memory */
    LALFree(pWF);
 
-   return XLAL_SUCCESS;
+   return status;
  }
 
 /** @}
@@ -1228,7 +1238,7 @@ static int IMRPhenomXHM_MultiMode(
           XLALSimIMRPhenomXHMMultiBandOneMode(&htildelm, m1_SI, m2_SI, chi1z, chi2z, ell, -emm, distance, f_min, f_max, deltaF, phiRef, fRef_In, lalParams);
         }
         // If the 22 mode is active we will recycle for the mixing of the 32, we save it in another variable: htilde22.
-        if(ell==2 && emm==2){
+        if(ell==2 && emm==2 && htildelm){
           htilde22 = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &(ligotimegps_zero), 0.0, deltaF, &lalStrainUnit, htildelm->data->length);
           for(UINT4 idx = 0; idx < htildelm->data->length; idx++){
             htilde22->data->data[idx] = htildelm->data->data[idx];
@@ -1270,7 +1280,7 @@ static int IMRPhenomXHM_MultiMode(
       /**** End debugging ****/
 
 
-      if (!(htildelm)){ XLAL_ERROR(XLAL_EFUNC);}
+      if (!(htildelm)){ XLAL_ERROR(XLAL_EFUNC); return XLAL_FAILURE;}
 
       /* We test for hypothetical m=0 modes */
       if (emm == 0)
