@@ -1653,8 +1653,9 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       combinedDynamics->data[4*combinedLen + nInterp + i - 1] = dynamics->data[4*retLen + i];
     }
 
-    dynamics->dimLength->data[1] = combinedLen;
-    *dynamics = *combinedDynamics;
+    XLALDestroyREAL8Array(dynamics);
+
+    dynamics = combinedDynamics;
 
     retLen = combinedLen;
 
