@@ -1067,7 +1067,9 @@ int XLALSimInspiralChooseTDWaveform(
 				
 		    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
 					longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
-
+					
+				if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+				
 				// The Fourier domain model is built such that the TD transformation peakds approximately at zero.
 				// Here we force an exact alignment at zero by computing the maximum of hp^2 + hc^2.
 			 	maxamp = 0;
@@ -1099,6 +1101,8 @@ int XLALSimInspiralChooseTDWaveform(
 			ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
 				longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
 
+			if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+			
 			// The Fourier domain model is built such that the TD transformation peakds approximately at zero.
 			// Here we force an exact alignment at zero by computing the maximum of hp^2 + hc^2.
 			maxamp = 0;

@@ -231,6 +231,9 @@ int XLALSimIMRPhenomXPHM(
   if(mass_ratio > 1000. && fabs(mass_ratio - 1000) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 1000.\n"); } // The 1e-12 is to avoid rounding errors
   if(fabs(chi1z) > 0.99 || fabs(chi2z) > 0.99) { XLAL_PRINT_WARNING("Warning: Extrapolating to extremal spins, model is not trusted.\n"); }
 
+  /* Check that the modes chosen are available for the model */
+  XLAL_CHECK(check_input_mode_array(lalParams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
+  
   /* If no reference frequency is given, set it to the starting gravitational wave frequency. */
   REAL8 fRef = (fRef_In == 0.0) ? f_min : fRef_In;
 
@@ -409,6 +412,9 @@ int XLALSimIMRPhenomXPHMFromModes(
   if(mass_ratio > 1000. && fabs(mass_ratio - 1000) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 1000."); } // The 1e-12 is to avoid rounding errors
   if(fabs(chi1z) > 0.99 || fabs(chi2z) > 0.99) { XLAL_PRINT_WARNING("Warning: Extrapolating to extremal spins, model is not trusted."); }
 
+  /* Check that the modes chosen are available for the model */
+  XLAL_CHECK(check_input_mode_array(lalParams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
+  
   /* If no reference frequency is given, set it to the starting gravitational wave frequency */
   REAL8 fRef = (fRef_In == 0.0) ? f_min : fRef_In;
 
@@ -569,6 +575,9 @@ int XLALSimIMRPhenomXPHMFromModes(
   if(mass_ratio > 1000. && fabs(mass_ratio - 1000) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 1000."); } // The 1e-12 is to avoid rounding errors
   if(fabs(chi1z) > 0.99 || fabs(chi2z) > 0.99) { XLAL_PRINT_INFO("Warning: Extrapolating to extremal spins, model is not trusted."); }
 
+  /* Check that the modes chosen are available for the model */
+  XLAL_CHECK(check_input_mode_array(lalParams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
+  
   /* If no reference frequency is given, set it to the starting gravitational wave frequency */
   REAL8 fRef = (fRef_In == 0.0) ? freqs->data[0] : fRef_In; //It is giving valgrind error, but it is not needed. f_ref = f_min in WaveformCache.c and SimInspiral.c.
 
