@@ -9,8 +9,7 @@
 
 int
 XLALSimInspiralEOBPostAdiabatic(
-    REAL8Array ** dynamics,
-    // REAL8 deltaT,
+    REAL8Array **dynamics,
     const REAL8 m1,
     const REAL8 m2,
     const REAL8 spin1z,
@@ -224,8 +223,8 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 
 int
 XLALReverseREAL8Vector(
-		       REAL8Vector *Vec,
-		       REAL8Vector *reverseVec
+    REAL8Vector *Vec,
+    REAL8Vector *reverseVec
 );
 
 int
@@ -321,9 +320,10 @@ XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstarBetter(
     LALDict *LALParams
 );
 
-REAL8Vector
+int
 XLALSimInspiralEOBPAMeanValueOrder8(
-    REAL8Vector *inputVec
+    REAL8Vector *inputVec,
+    REAL8Vector *meanVec
 );
 
 REAL8

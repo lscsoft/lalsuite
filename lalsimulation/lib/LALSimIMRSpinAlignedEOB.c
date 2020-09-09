@@ -786,13 +786,12 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     UINT4 nModes = 1;
     UINT4 postAdiabaticFlag = 0;
     if (SpinAlignedEOBversion == 4111)
-      {
+    {
+        postAdiabaticFlag = 1;
+        XLALDictInsertUINT4Value(PAParams, "PAFlag", postAdiabaticFlag);
+        // XLALDictInsertUINT4Value(PAParams, "PAOrder",6);
+    }
 
-	postAdiabaticFlag = 1;
-	XLALDictInsertUINT4Value(PAParams, "PAFlag", postAdiabaticFlag);
-	// XLALDictInsertUINT4Value(PAParams, "PAOrder",6);
-	
-      }
     /* If we want SEOBNRv4HM, then reset SpinAlignedEOBversion=4 and set use_hm=1 */
     if (SpinAlignedEOBversion == 41 || SpinAlignedEOBversion == 4111)
     {
@@ -1450,6 +1449,10 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   if (postAdiabaticFlag)
   {
+    XLALDictInsertUINT4Value(PAParams, "PAOrder", 6);
+    XLALDictInsertREAL8Value(PAParams, "rFinal", 1.6);
+    XLALDictInsertREAL8Value(PAParams, "rSwitch", 0.9);
+    XLALDictInsertUINT4Value(PAParams, "rSize", 100);
 
     XLALSimInspiralEOBPostAdiabatic(
       &dynamicsPA,
@@ -1662,6 +1665,9 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     values->data[3] = dynamics->data[4*retLen];
 
     eobParams.rad = values->data[0];
+
+    XLALDestroyREAL8Array(interpDynamicsPA);
+
   }
 
   /* Set up pointers to the dynamics */
@@ -3279,6 +3285,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
         XLALDestroyREAL8Vector(prVecInterp);
       if (pphiVecInterp)
         XLALDestroyREAL8Vector(pphiVecInterp);
+
       //SM
       // Copy dynamics to output in the form of a REAL8Vector (required for SWIG wrapping, REAL8Array does not work)
       *dynamics_out = XLALCreateREAL8Vector(5 * retLen_out);
@@ -3426,6 +3433,8 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
 
     if(hlms)
       XLALDestroySphHarmTimeSeries(hlms);
+
+    XLALDestroyDict(PAParams);
 
     //SM
     if(dynamics) XLALDestroyREAL8Vector(dynamics);

@@ -209,8 +209,8 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 	F.params = params;
 
     const gsl_root_fsolver_type *solver_type;
-    // solver_type = gsl_root_fsolver_falsepos;
-    solver_type = gsl_root_fsolver_brent;
+    solver_type = gsl_root_fsolver_falsepos;
+    // solver_type = gsl_root_fsolver_brent;
 
 	gsl_root_fsolver *solver;
 	solver = gsl_root_fsolver_alloc(solver_type);
@@ -472,6 +472,7 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	XLALReverseREAL8Vector(pphiVec,pphiReverseVec);
 	XLALFDDerivative1Order8(rReverseVec, pphiReverseVec, dpphiBydrReverseVec);
 	XLALReverseREAL8Vector(dpphiBydrReverseVec, dpphiBydrVec);
+
     XLALDestroyREAL8Vector(rReverseVec);
     XLALDestroyREAL8Vector(pphiReverseVec);
     XLALDestroyREAL8Vector(dpphiBydrReverseVec);
@@ -526,6 +527,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 	// Test
 	REAL8Vector *dprstarVec = XLALCreateREAL8Vector(rSize);
 	memset(dprstarVec->data, 0, dprstarVec->length * sizeof(REAL8));
+
 	for (i = 0; i < rSize; i++)
 	{
 		dprstarVec->data[i] = 1.e-4;
@@ -542,7 +544,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
 		if (n > 1)
 		{
-			*dprstarVec = XLALSimInspiralEOBPAMeanValueOrder8(prstarVec);
+			XLALSimInspiralEOBPAMeanValueOrder8(prstarVec, dprstarVec);
 
 			// for (i = 0; i < rSize; i++)
 	  //   	{
@@ -681,6 +683,7 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
     XLALDestroyREAL8Vector(dpphiBydrReverseVec);
     XLALDestroyREAL8Vector(prstarReverseVec);
     XLALDestroyREAL8Vector(dprstarBydrReverseVec);
+    XLALDestroyREAL8Vector(dprstarVec);
 
 	return XLAL_SUCCESS;
 }
@@ -742,20 +745,16 @@ XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
 
 	Hderivative /= h;
 
-	// printf("%.18e\n", Hderivative);
-
 	return Hderivative;
 }
 
-REAL8Vector
+int
 XLALSimInspiralEOBPAMeanValueOrder8(
-	REAL8Vector *inputVec
+	REAL8Vector *inputVec,
+	REAL8Vector *meanVec
 )
 {
 	UINT4 vecLength = inputVec->length;
-
-	REAL8Vector *meanVec = XLALCreateREAL8Vector(vecLength);
-	memset(meanVec->data, 0, meanVec->length * sizeof(REAL8));
 
 	UINT4 i;
 	UINT4 j;
@@ -829,7 +828,7 @@ XLALSimInspiralEOBPAMeanValueOrder8(
 		meanVec->data[i] /= 8;
 	}
 
-	return *meanVec;
+	return XLAL_SUCCESS;
 }
 
 REAL8Vector
@@ -857,7 +856,7 @@ XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstarBetter(
 
 	REAL8Vector *meanprstarVec = XLALCreateREAL8Vector(rSize);
 	memset(meanprstarVec->data, 0, meanprstarVec->length * sizeof(REAL8));
-	*meanprstarVec = XLALSimInspiralEOBPAMeanValueOrder8(prstarVec);
+	XLALSimInspiralEOBPAMeanValueOrder8(prstarVec, meanprstarVec);
 
 	REAL8Vector *partialHByPartialprstarVec = XLALCreateREAL8Vector(rSize);
 	memset(partialHByPartialprstarVec->data, 0, partialHByPartialprstarVec->length * sizeof(REAL8));
@@ -1317,6 +1316,7 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	REAL8Vector *domegadrVec = XLALCreateREAL8Vector(rSize);
 	memset(domegadrVec->data, 0, domegadrVec->length * sizeof(REAL8));
+
 	REAL8Vector *domegadrReverseVec = XLALCreateREAL8Vector(rSize);
 	memset(domegadrReverseVec->data, 0, domegadrReverseVec->length * sizeof(REAL8));
 
@@ -1369,9 +1369,9 @@ XLALSimInspiralEOBPostAdiabatic(
 	XLALCumulativeIntegral3(rVec, dphiBydrVec, phiVec);
 
     UINT4 i,j;
-	XLALReverseREAL8Vector(omegaVec,omegaReverseVec);
+	XLALReverseREAL8Vector(omegaVec, omegaReverseVec);
 	XLALFDDerivative1Order8(rReverseVec, omegaReverseVec,domegadrReverseVec);
-	XLALReverseREAL8Vector(domegadrReverseVec,domegadrVec);
+	XLALReverseREAL8Vector(domegadrReverseVec, domegadrVec);
     FILE *out = fopen ("pa_dyn.dat", "w");
 	// Figure out where we are going to stop
 	UNUSED REAL8 adiabatic_param = 0.0;
@@ -1433,22 +1433,19 @@ XLALSimInspiralEOBPostAdiabatic(
     }
 
     fclose (out);
+
   	UINT4 outSize = idx_stop;
-	REAL8Array *outputDynamics = NULL;
-	outputDynamics = XLALCreateREAL8ArrayL(2, 5, outSize);
+
+	*dynamics = XLALCreateREAL8ArrayL(2, 5, outSize);
 
 	for (i = 0; i < outSize; i++)
     {
-    	outputDynamics->data[i] = tVec->data[i];
-    	outputDynamics->data[outSize + i] = rVec->data[i];
-    	outputDynamics->data[2*outSize + i] = phiVec->data[i];
-    	outputDynamics->data[3*outSize + i] = prstarVec->data[i];
-    	outputDynamics->data[4*outSize + i] = pphiVec->data[i];
+    	(*dynamics)->data[i] = tVec->data[i];
+    	(*dynamics)->data[outSize + i] = rVec->data[i];
+    	(*dynamics)->data[2*outSize + i] = phiVec->data[i];
+    	(*dynamics)->data[3*outSize + i] = prstarVec->data[i];
+    	(*dynamics)->data[4*outSize + i] = pphiVec->data[i];
     } 
-
-    printf("t_f = %.18e\n", tVec->data[rSize-1]*50.0*LAL_MTSUN_SI);
-
-	*dynamics = outputDynamics;
 
 	XLALDestroyREAL8Vector(tVec);
 	XLALDestroyREAL8Vector(tReverseVec);
@@ -1473,8 +1470,14 @@ XLALSimInspiralEOBPostAdiabatic(
 	XLALDestroyREAL8Vector(dphiBydrReverseVec);
 	XLALDestroyREAL8Vector(dtBydrVec);
 	XLALDestroyREAL8Vector(dtBydrReverseVec);
+	XLALDestroyREAL8Vector(omegaReverseVec);
+	XLALDestroyREAL8Vector(domegadrVec);
+	XLALDestroyREAL8Vector(domegadrReverseVec);
+	XLALDestroyREAL8Vector(adiabatic_param_Vec);
 
 	XLALDestroyDict(LALparams);
+
+	// XLALDestroyREAL8Array(outputDynamics);
 	
     return XLAL_SUCCESS;
 }
