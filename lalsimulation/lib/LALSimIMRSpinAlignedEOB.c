@@ -1447,10 +1447,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   if (postAdiabaticFlag)
   {
-    XLALDictInsertUINT4Value(PAParams, "PAOrder", 6);
-    XLALDictInsertREAL8Value(PAParams, "rFinal", 1.6);
-    XLALDictInsertREAL8Value(PAParams, "rSwitch", 0.9);
-    XLALDictInsertUINT4Value(PAParams, "rSize", 100);
+    
 
     XLALSimInspiralEOBPostAdiabatic(
       &dynamicsPA,
@@ -1667,9 +1664,9 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     eobParams.rad = values->data[0];
 
     XLALDestroyREAL8Array(interpDynamicsPA);
-  }
 
-  XLALDestroyREAL8Array(dynamicsPA);
+    XLALDestroyREAL8Array(dynamicsPA);
+  }
 
   /* Set up pointers to the dynamics */
   // REAL8Vector tVec;

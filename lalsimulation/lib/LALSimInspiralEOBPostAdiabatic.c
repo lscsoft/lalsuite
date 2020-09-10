@@ -1147,7 +1147,7 @@ XLALSimInspiralEOBPostAdiabatic(
 	/**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
 	SpinEOBParams *seobParams,
 	EOBNonQCCoeffs *nqcCoeffs,
-	LALDict *PAParams
+	UNUSED LALDict *PAParams
 )
 {
 	if (SpinAlignedEOBversion != 4)
@@ -1209,7 +1209,6 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	UINT4 rSize;
 	rSize = XLALDictLookupUINT4Value(PAParams, "rSize");
-	//rSize = ceil((rInitial-rFinal)/0.05)+1;
 	
 	REAL8 dr;
 	dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
