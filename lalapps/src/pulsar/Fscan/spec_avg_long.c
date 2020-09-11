@@ -88,7 +88,7 @@ int main(int argc, char **argv)
 
     printf("Starting spec_avg_long...\n");
 
-    XLAL_CHECK_MAIN( blocksRngMean % 2 == 1, XLAL_EINVAL, "Need to provide an odd value for blocksRngMean"); 
+    XLAL_CHECK_MAIN( blocksRngMean % 2 == 1, XLAL_EINVAL, "Need to provide an odd value for blocksRngMean");
     INT4 nside = (blocksRngMean - 1) / 2;
 
     //Provide the constraints to the catalog
@@ -227,5 +227,3 @@ int main(int argc, char **argv)
 
 }
 /* END main */
-
-
