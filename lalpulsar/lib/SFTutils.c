@@ -1942,7 +1942,7 @@ int XLALSFTCatalogTimeslice(
   XLAL_INIT_MEM(*slice);
 
   // If not empty: set timeslice of SFT catalog
-  if ( iStart < iEnd )
+  if ( iStart <= iEnd )
     {
       slice->length = iEnd - iStart + 1;
       slice->data = &catalog->data[iStart];
