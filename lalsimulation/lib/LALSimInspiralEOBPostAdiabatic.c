@@ -237,8 +237,6 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 			{
 				printf("%.18e %.18e\n", y, Func(y, params));
 			}
-
-			exit(0);
 		}
 	}
 	else
@@ -284,7 +282,7 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
     if (status != GSL_SUCCESS)
     {
 		printf("Root finding status: %d\n", status);
-		exit(0);
+		XLAL_ERROR(XLAL_EFUNC);
 	}
 
 	gsl_root_fsolver_free (solver);

@@ -1447,20 +1447,41 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   if (postAdiabaticFlag)
   {
+    INT4 errcode;
+
+    XLAL_TRY(XLALSimInspiralEOBPostAdiabatic(
+        &dynamicsPA,
+        m1,
+        m2,
+        spin1z,
+        spin2z,
+        *values,
+        SpinAlignedEOBversion,
+        &seobParams,
+        &nqcCoeffs,
+        PAParams
+      ),
+      errcode);
+
+    if (errcode != XLAL_SUCCESS)
+    {
+      XLALPrintError("Post adiabatic dynamics failed!");
+      XLAL_ERROR(XLAL_EFUNC);
+    }
     
 
-    XLALSimInspiralEOBPostAdiabatic(
-      &dynamicsPA,
-      m1,
-      m2,
-      spin1z,
-      spin2z,
-      *values,
-      SpinAlignedEOBversion,
-      &seobParams,
-      &nqcCoeffs,
-      PAParams
-    );
+    // XLALSimInspiralEOBPostAdiabatic(
+    //   &dynamicsPA,
+    //   m1,
+    //   m2,
+    //   spin1z,
+    //   spin2z,
+    //   *values,
+    //   SpinAlignedEOBversion,
+    //   &seobParams,
+    //   &nqcCoeffs,
+    //   PAParams
+    // );
 
     UINT4 rSize;
     rSize = dynamicsPA->dimLength->data[1];
