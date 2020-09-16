@@ -91,7 +91,7 @@ __date__ = git_version.date
 class CWSimulator(object):
 
     def __init__(self, tref, tstart, Tdata, waveform, dt_wf, phi0, psi, alpha, delta, det_name,
-                 earth_ephem_file="earth00-19-DE405.dat.gz", sun_ephem_file="sun00-19-DE405.dat.gz", tref_at_det=False, extra_comment=None):
+                 earth_ephem_file="earth00-40-DE405.dat.gz", sun_ephem_file="sun00-40-DE405.dat.gz", tref_at_det=False, extra_comment=None):
         """
         Initialise a continuous-wave signal simulator.
 
