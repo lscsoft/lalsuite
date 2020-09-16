@@ -158,7 +158,7 @@ int main(int argc, char **argv)
 	    for (INT4 ii = -nside; ii <= nside; ii++)
 	    {
 	        //Only add to the cumulative average power if the variables are in range
-	        if (i + ii >= 0 && i + ii<sft_vect->data->data->length)
+	       if ((INT4)i + ii >= 0 && (INT4)i + ii<(INT4)sft_vect->data->data->length)
 		{
 		    thisavepower += ((REAL8)crealf(sft_vect->data[0].data->data[i + ii]) *
 				     (REAL8)crealf(sft_vect->data[0].data->data[i + ii])) +
