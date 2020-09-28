@@ -177,10 +177,10 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
     REAL8 partialHBypartialr;
     partialHBypartialr = XLALSimInspiralEOBPAHamiltonianDerivative(dr, r, prstar, j0_sol, seobCoeffs, LALParams);
 
-    REAL8 result;
-    result = partialHBypartialr;
+    // REAL8 result;
+    // result = partialHBypartialr;
 
-	return result;
+	return partialHBypartialr;
 }
 
 int
@@ -237,6 +237,10 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 			{
 				printf("%.18e %.18e\n", y, Func(y, params));
 			}
+
+			printf("Derivatives have the wrong sign.\n");
+
+			XLAL_ERROR(XLAL_EFUNC);
 		}
 	}
 	else
