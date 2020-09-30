@@ -1415,9 +1415,9 @@ XLALSimInspiralEOBPostAdiabatic(
 	{
 		r = rVec->data[j];
 
-		if (idx_stop == 0 && rSwitch > r)
+		if (idx_stop == 0 && rSwitch >= r)
 		{
-			idx_stop = j-1;
+			idx_stop = j;
 			break;
 		}
 	}
