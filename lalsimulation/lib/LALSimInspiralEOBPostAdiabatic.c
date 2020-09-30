@@ -1209,6 +1209,11 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8 rFinalPrefactor = XLALDictLookupREAL8Value(PAParams, "rFinal");
 	rFinal = rFinalPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
+	if (rInitial <= rFinal)
+	{
+		XLAL_ERROR(XLAL_EFUNC);
+	}
+
 	UINT4 rSize;
 	rSize = XLALDictLookupUINT4Value(PAParams, "rSize");
 	
@@ -1400,6 +1405,11 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8 rSwitch;
 	REAL8 rSwitchPrefactor = XLALDictLookupREAL8Value(PAParams, "rSwitch");
 	rSwitch = rSwitchPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
+
+	if (rInitial <= rSwitch)
+	{
+		XLAL_ERROR(XLAL_EFUNC);
+	}
 
 	for (j=0; j<rSize; j++)
 	{
