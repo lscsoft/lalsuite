@@ -14,9 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-# define required parameters for time domain and frequency domain
-# as well as their default values
-
 """Simple test to see if the LIV parameters can be read and inserted correctly
 """
 
@@ -107,5 +104,5 @@ def test_liv_flag_disabled_by_default():
 # -- run the tests ------------------------------
 
 if __name__ == '__main__':
-    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-nrfits.xml"]
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-liv.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
