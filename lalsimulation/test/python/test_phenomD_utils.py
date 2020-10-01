@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-# define required parameters for time domain and frequency domain
-# as well as their default values
-
 """Test PhenomD utility functions
 """
 

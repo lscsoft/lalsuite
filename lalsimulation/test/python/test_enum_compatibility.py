@@ -43,5 +43,5 @@ def regenerate_known_approximants():
     return appx
 
 if __name__ == '__main__':
-    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-approx-enum.xml"]
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-enum_compatibility.xml"]
     sys.exit(pytest.main(args=[__file__] + args))

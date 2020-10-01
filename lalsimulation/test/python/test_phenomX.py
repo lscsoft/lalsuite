@@ -16,9 +16,6 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-# define required parameters for time domain and frequency domain
-# as well as their default values
-
 """Simple test to see if the PhenomX family models have changed: IMRPhenomXAS, IMRPhenomXHM, IMRPhenomXP and IMRPhenomXPHM.
 """
 
@@ -198,4 +195,5 @@ def test_IMRPhenomXPHM():
 # -- run the tests ------------------------------
 
 if __name__ == '__main__':
-    sys.exit(pytest.main(args=[__file__] + sys.argv[1:] + ['-v']))
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-phenomX.xml"]
+    sys.exit(pytest.main(args=[__file__] + args))
