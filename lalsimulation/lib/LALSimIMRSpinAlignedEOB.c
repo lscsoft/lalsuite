@@ -1447,28 +1447,22 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   if (postAdiabaticFlag)
   {
-    INT4 errcode;
-
-    XLAL_TRY(XLALSimInspiralEOBPostAdiabatic(
-        &dynamicsPA,
-        m1,
-        m2,
-        spin1z,
-        spin2z,
-        *values,
-        SpinAlignedEOBversion,
-        &seobParams,
-        &nqcCoeffs,
-        PAParams
-      ),
-      errcode);
-
-    if (errcode != XLAL_SUCCESS)
+    if (XLALSimInspiralEOBPostAdiabatic(
+          &dynamicsPA,
+          m1,
+          m2,
+          spin1z,
+          spin2z,
+          *values,
+          SpinAlignedEOBversion,
+          &seobParams,
+          &nqcCoeffs,
+          PAParams
+        ) != XLAL_SUCCESS)
     {
-      XLALPrintError("Post adiabatic dynamics failed!");
+      XLALPrintError("Post adiabatic dynamics failed!\n");
       XLAL_ERROR(XLAL_EFUNC);
     }
-    
 
     // XLALSimInspiralEOBPostAdiabatic(
     //   &dynamicsPA,

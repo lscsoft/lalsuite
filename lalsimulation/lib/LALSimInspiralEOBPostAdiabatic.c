@@ -29,6 +29,9 @@
 
 #define PA_AD_THRS 8.0e-3
 
+#define ROOT_SOLVER_ABS_TOL 1.0e-10
+#define ROOT_SOLVER_REL_TOL 1.0e-8
+
 int
 XLALSimInspiralEOBPACalculateRadialGrid(
 	REAL8Vector *rVec,
@@ -240,7 +243,8 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 
 			printf("Derivatives have the wrong sign.\n");
 
-			XLAL_ERROR(XLAL_EFUNC);
+			// XLAL_ERROR(XLAL_EFUNC);
+			return XLAL_FAILURE;
 		}
 	}
 	else
@@ -286,7 +290,8 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
     if (status != GSL_SUCCESS)
     {
 		printf("Root finding status: %d\n", status);
-		XLAL_ERROR(XLAL_EFUNC);
+		// XLAL_ERROR(XLAL_EFUNC);
+		return XLAL_FAILURE;
 	}
 
 	gsl_root_fsolver_free (solver);
@@ -408,12 +413,11 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	REAL8 DeltaT;
 	REAL8 DeltaR;
 	struct PostAdiabaticRootSolveParams pphiParams;
+
 	for (i = 0; i < rSize; i++)
 	{
 		REAL8 Newtonianj0;
 		Newtonianj0 = XLALSimInspiralEOBPACalculateNewtonianj0(rVec->data[i]);
-
-		
 
         pphiParams.r = rVec->data[i];
         pphiParams.prstar = prstarVec->data[i];
@@ -428,16 +432,20 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 
 		struct PostAdiabaticRoot pphiRoot;
 
-	    XLALSimInspiralEOBPostAdiabaticRootFinder(
-	    	&pphiRoot,
-			XLALSimInspiralEOBPostAdiabaticj0Func,
-			&pphiParams,
-			pphi0_lower,
-			pphi0_upper,
-			1.e-14,
-			1.e-16,
-			0
-		);
+	    if (XLALSimInspiralEOBPostAdiabaticRootFinder(
+		    	&pphiRoot,
+				XLALSimInspiralEOBPostAdiabaticj0Func,
+				&pphiParams,
+				pphi0_lower,
+				pphi0_upper,
+				ROOT_SOLVER_ABS_TOL,
+				ROOT_SOLVER_REL_TOL,
+				0
+			) != XLAL_SUCCESS)
+	    {
+	    	XLALPrintError("Root solver failed!\n");
+	      	return XLAL_FAILURE;
+	    }
 
 		pphiVec->data[i] = pphiRoot.root;
         pphi0Vec->data[i] = pphiRoot.root;
@@ -470,8 +478,8 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	REAL8Vector *dpphiBydrReverseVec = XLALCreateREAL8Vector(rSize);
 	memset(dpphiBydrReverseVec->data, 0, dpphiBydrReverseVec->length * sizeof(REAL8));
 
-	XLALReverseREAL8Vector(rVec,rReverseVec);
-	XLALReverseREAL8Vector(pphiVec,pphiReverseVec);
+	XLALReverseREAL8Vector(rVec, rReverseVec);
+	XLALReverseREAL8Vector(pphiVec, pphiReverseVec);
 	XLALFDDerivative1Order8(rReverseVec, pphiReverseVec, dpphiBydrReverseVec);
 	XLALReverseREAL8Vector(dpphiBydrReverseVec, dpphiBydrVec);
 
@@ -540,26 +548,21 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
 	for (n = 1; n <= PAOrder; n++)
 	{
-		// printf("Calculating %d PA order\n", n);
+		printf("Calculating %d PA order\n", n);
 
 		parity = n%2;
 
 		if (n > 1)
 		{
 			XLALSimInspiralEOBPAMeanValueOrder8(prstarVec, dprstarVec);
-
-			// for (i = 0; i < rSize; i++)
-	  //   	{
-	  //   		printf("dprstar = %.18e\n", dprstarVec->data[i]);
-	  //   	}
-
-	  //   	exit(0);
 		}
 
 		if (parity)
 		{
 			for (i = 0; i < rSize; i++)
 	    	{
+	    		printf("Calculating iteration %d\n", i);
+
                 struct PostAdiabaticRootSolveParams prstarParams;
                 prstarParams.r = rVec->data[i];
                 prstarParams.dprstar = dprstarVec->data[i];
@@ -579,20 +582,22 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 
 				struct PostAdiabaticRoot prstarRoot;
 
-			    XLALSimInspiralEOBPostAdiabaticRootFinder(
-			    	&prstarRoot,
-					XLALSimInspiralEOBPostAdiabaticdprstarFunc,
-					&prstarParams,
-					x_lower,
-					x_upper,
-					1.e-14,
-					1.e-16,
-					parity
-				);
+				if (XLALSimInspiralEOBPostAdiabaticRootFinder(
+				    	&prstarRoot,
+						XLALSimInspiralEOBPostAdiabaticdprstarFunc,
+						&prstarParams,
+						x_lower,
+						x_upper,
+						ROOT_SOLVER_ABS_TOL,
+						ROOT_SOLVER_REL_TOL,
+						parity
+					) != XLAL_SUCCESS)
+				{
+					XLALPrintError("Root finder failed!\n");
+					return XLAL_FAILURE;
+				}
 
     			prstarVec->data[i] = prstarRoot.root;
-
-    			// printf("%d %.18e %.18e\n", i, prstarVec->data[i], dpphiBydrVec->data[i]);
 
 				polarDynamics[0] = rVec->data[i];
 				polarDynamics[1] = phiVec->data[i];
@@ -607,10 +612,10 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 				
 	    	}
 
-			XLALReverseREAL8Vector(prstarVec,prstarReverseVec);
-			memset(dprstarBydrReverseVec->data, 0, dprstarBydrReverseVec->length * sizeof(REAL8)); // Otherwise we are in trouble
-			XLALFDDerivative1Order8(rReverseVec, prstarReverseVec,dprstarBydrReverseVec);
-			XLALReverseREAL8Vector(dprstarBydrReverseVec,dprstarBydrVec);
+			XLALReverseREAL8Vector(prstarVec, prstarReverseVec);
+			memset(dprstarBydrReverseVec->data, 0, dprstarBydrReverseVec->length * sizeof(REAL8));
+			XLALFDDerivative1Order8(rReverseVec, prstarReverseVec, dprstarBydrReverseVec);
+			XLALReverseREAL8Vector(dprstarBydrReverseVec, dprstarBydrVec);
 		}
 		else
 		{
@@ -629,16 +634,20 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 			    REAL8 x_lower = 0.9 * pphiVec->data[i];
 				REAL8 x_upper = 1.1 * pphiVec->data[i];
 
-			    XLALSimInspiralEOBPostAdiabaticRootFinder(
-			    	&pphiRoot,
-					XLALSimInspiralEOBPostAdiabaticdpphiFunc,
-					&pphiParams,
-					x_lower,
-					x_upper,
-					1.e-14,
-					1.e-16,
-					parity
-				);
+				if (XLALSimInspiralEOBPostAdiabaticRootFinder(
+				    	&pphiRoot,
+						XLALSimInspiralEOBPostAdiabaticdpphiFunc,
+						&pphiParams,
+						x_lower,
+						x_upper,
+						ROOT_SOLVER_ABS_TOL,
+						ROOT_SOLVER_REL_TOL,
+						parity
+					) != XLAL_SUCCESS)
+				{
+					XLALPrintError("Root finder failed!\n");
+					return XLAL_FAILURE;
+				}
 
 				pphiVec->data[i] = pphiRoot.root;
 		
@@ -1334,40 +1343,46 @@ XLALSimInspiralEOBPostAdiabatic(
  		LALparams
  	);
 
- 	XLALSimInspiralEOBPACalculateAdiabaticDynamics(
-		rVec,
-		phiVec,
-		prstarVec,
-		pphiVec,
-		pphi0Vec,
-		dpphiBydrVec,
-		dpphiBydr0Vec,
-		csiVec,
-		omegaVec,
-		seobParams,
-		nqcCoeffs,
-		LALparams
-	);
-
- 	XLALReverseREAL8Vector(rVec,rReverseVec);
-
-	if (PAOrder > 0)
-	{
-		XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
+ 	if (XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 			rVec,
 			phiVec,
-			dphiBydrVec,
 			prstarVec,
-			dprstarBydrVec,
 			pphiVec,
+			pphi0Vec,
 			dpphiBydrVec,
-			dtBydrVec,
+			dpphiBydr0Vec,
 			csiVec,
 			omegaVec,
 			seobParams,
 			nqcCoeffs,
 			LALparams
-		);
+		) != XLAL_SUCCESS)
+	{
+		return XLAL_FAILURE;
+	}
+
+ 	XLALReverseREAL8Vector(rVec, rReverseVec);
+
+	if (PAOrder > 0)
+	{
+		if (XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
+				rVec,
+				phiVec,
+				dphiBydrVec,
+				prstarVec,
+				dprstarBydrVec,
+				pphiVec,
+				dpphiBydrVec,
+				dtBydrVec,
+				csiVec,
+				omegaVec,
+				seobParams,
+				nqcCoeffs,
+				LALparams
+			) != XLAL_SUCCESS)
+		{
+			return XLAL_FAILURE;
+		}
 	}
 
 	XLALCumulativeIntegral3(rVec, dtBydrVec, tVec);
