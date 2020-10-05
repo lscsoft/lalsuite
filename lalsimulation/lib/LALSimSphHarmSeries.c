@@ -212,7 +212,7 @@ SphHarmTimeSeries *XLALResizeSphHarmTimeSeries(
 }
 
 SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
-                                                                             SphHarmFrequencySeries *hlms, 
+                                                                             SphHarmFrequencySeries *hlms,
                                                                              COMPLEX16FrequencySeries* data,
                                                                              COMPLEX16FrequencySeries* psd
         )
@@ -259,7 +259,271 @@ SphHarmTimeSeries *XLALSphHarmTimeSeriesFromSphHarmFrequencySeriesDataAndPSD(
     return rhoTlm;
 }
 
+
 /** @} */
+
+/**
+ * @name SphHarmPolarTimeSeries Routines
+ * @{
+ */
+
+ /**
+  * Prepend a node to a linked list of SphHarmPolarTimeSeries, or create a new head
+ */
+SphHarmPolarTimeSeries* XLALSphHarmPolarTimeSeriesAddMode(
+                                                SphHarmPolarTimeSeries *appended, /**< Linked list to be prepended */
+                                                const REAL8TimeSeries* inAmpl, /**< Time series of |h_lm| mode amplitude being prepended */
+                                                const REAL8TimeSeries* inphase, /**< Time series of phi_lm mode phase being prepended */
+                                                UINT4 l, /**< l index of h_lm mode being prepended */
+                                                INT4 m /**< m index of h_lm mode being prepended */
+)
+{
+    SphHarmPolarTimeSeries* ts;
+
+    // Check if the node with this l, m already exists
+    ts = appended;
+    while( ts ){
+        if( l == ts->l && m == ts->m ){
+            break;
+        }
+        ts = ts->next;
+    }
+
+    if( ts ){
+        XLALDestroyREAL8TimeSeries( ts->ampl );
+        XLALDestroyREAL8TimeSeries( ts->phase );
+        ts->ampl = XLALCutREAL8TimeSeries( inAmpl, 0, inAmpl->data->length);
+        ts->phase = XLALCutREAL8TimeSeries( inphase, 0, inphase->data->length);
+        return appended;
+    } else {
+        ts = XLALMalloc( sizeof(SphHarmPolarTimeSeries) );
+    }
+
+    ts->l = l;
+    ts->m = m;
+    // Cut returns a new series using a slice of the original. I ask it to
+    // return a new one for the full data length --- essentially a duplication
+    if( inAmpl ){
+        ts->ampl = XLALCutREAL8TimeSeries( inAmpl, 0, inAmpl->data->length);
+    } else {
+        ts->ampl = NULL;
+    }
+
+    if( inphase ){
+        ts->phase = XLALCutREAL8TimeSeries( inphase, 0, inphase->data->length);
+        XLAL_CHECK_NULL( (inAmpl) && (inphase->data->length == inAmpl->data->length), XLAL_EBADLEN, "Both mode amplitude and phase need to be defined with the same length or NULL.\n");
+    } else {
+        ts->phase = NULL;
+        XLAL_CHECK_NULL(!inAmpl, XLAL_EFUNC, "Both mode amplitude and phase need to be defined with the same length or NULL.\n");
+    }
+
+
+    if( appended ){
+        ts->next = appended;
+        ts->tdata = appended->tdata;
+    } else {
+        ts->next = NULL;
+        ts->tdata = NULL;
+    }
+
+    return ts;
+}
+
+/**
+ * Set the tdata member for *all* nodes in the list.
+ */
+void XLALSphHarmPolarTimeSeriesSetTData(
+                                   SphHarmPolarTimeSeries *ts, /**< Linked list to be prepended */
+                                   REAL8Sequence* tdata /**< series of time data*/
+)
+{
+    while( ts ){
+        ts->tdata = tdata;
+        ts = ts->next;
+    }
+}
+
+
+/**
+ * Get the tdata member for nodes in the list.
+ */
+REAL8Sequence* XLALSphHarmPolarTimeSeriesGetTData(
+                                             SphHarmPolarTimeSeries *ts /**< Get tdata from this list */
+)
+{
+    if( ts ){
+        return ts->tdata;
+    }
+    return NULL;
+}
+
+/** Delete list from current pointer to the end of the list */
+void XLALDestroySphHarmPolarTimeSeries(
+                                  SphHarmPolarTimeSeries* ts /**< Head of linked list to destroy */
+)
+{
+    SphHarmPolarTimeSeries* pop;
+    while( (pop = ts) ){
+        if( pop->ampl ){
+            XLALDestroyREAL8TimeSeries( pop->ampl );
+        }
+        if( pop->phase ){
+            XLALDestroyREAL8TimeSeries( pop->phase );
+        }
+        // The tdata pointer is shared so we delete on the last node
+        if( pop->next == NULL && pop->tdata ){
+            XLALDestroyREAL8Sequence( pop->tdata );
+        }
+        ts = pop->next;
+        XLALFree( pop );
+    }
+}
+
+/**
+ * Get the time series of a waveform's (l,m) spherical harmonic mode amplitude from a
+ * SphHarmPolarTimeSeries linked list. Returns a pointer to its REAL8TimeSeries
+ */
+REAL8TimeSeries* XLALSphHarmPolarTimeSeriesGetModeAmplitude(
+                                                  SphHarmPolarTimeSeries *ts, /**< linked list to extract mode from */
+                                                  UINT4 l, /**< l index of h_lm mode to get */
+                                                  INT4 m /**< m index of h_lm mode to get */
+)
+{
+    if( !ts ) return NULL;
+
+    SphHarmPolarTimeSeries *itr = ts;
+    while( itr->l != l || itr->m != m ){
+        itr = itr->next;
+        if( !itr ) return NULL;
+    }
+    return itr->ampl;
+}
+
+/**
+ * Get the time series of a waveform's (l,m) spherical harmonic mode phase from a
+ * SphHarmPolarTimeSeries linked list. Returns a pointer to its REAL8TimeSeries
+ */
+REAL8TimeSeries* XLALSphHarmPolarTimeSeriesGetModePhase(
+                                                            SphHarmPolarTimeSeries *ts, /**< linked list to extract mode from */
+                                                            UINT4 l, /**< l index of h_lm mode to get */
+                                                            INT4 m /**< m index of h_lm mode to get */
+)
+{
+    if( !ts ) return NULL;
+
+    SphHarmPolarTimeSeries *itr = ts;
+    while( itr->l != l || itr->m != m ){
+        itr = itr->next;
+        if( !itr ) return NULL;
+    }
+    return itr->phase;
+}
+
+
+/**
+ * Get the largest l index of any mode in the SphHarmTimeSeries linked list
+ */
+UINT4 XLALSphHarmPolarTimeSeriesGetMaxL( SphHarmPolarTimeSeries* ts ){
+    SphHarmPolarTimeSeries *itr = ts;
+    UINT4 maxl=0;
+
+    while( itr ){
+        maxl = itr->l > maxl ? itr->l : maxl;
+        itr = itr ->next;
+    }
+    return maxl;
+}
+
+/**
+ * For every (l,m) node in the SphHarmPolarTimeSeries linked list,
+ * call XLALResizeREAL8TimeSeries(ts->ampl, first, length)
+ * and XLALResizeREAL8TimeSeries(ts->phase, first, length)
+ *
+ * The TimeSeries of each (l,m) mode will have the given length,
+ * and its contents will consist of that part of the original time series
+ * that started at sample first. If first is negative, then the new time
+ * series is padded at the start by that many samples. The time series' epoch
+ * is adjusted appropriately.
+ */
+SphHarmPolarTimeSeries *XLALResizeSphHarmPolarTimeSeries(
+                                               SphHarmPolarTimeSeries *ts, /**< SphHarmTimeSeries to be resized */
+                                               int first, /**< index of first time sample to be copied over */
+                                               size_t length /**< length to resize all COMPLEX16TimeSeries to */
+)
+{
+    SphHarmPolarTimeSeries *this = ts;
+    while( this ) {
+        this->ampl = XLALResizeREAL8TimeSeries(this->ampl, first, length);
+        this->phase = XLALResizeREAL8TimeSeries(this->phase, first, length);
+        this = this->next;
+    }
+
+    return ts;
+}
+
+
+/**
+ * Create a new SphHarmPolarTimeSeries linked listby extracting a
+ * section of an existing SphHarmPolarTimeSeries linked list.
+ * For every (l,m) node in the SphHarmPolarTimeSeries linked list,
+ * call XLALCutREAL8TimeSeries(ts->ampl, first, length)
+ * and XLALCutREAL8TimeSeries(ts->phase, first, length)
+ *
+ * The TimeSeries of each (l,m) mode will have the given length,
+ * and its contents will consist of that part of the original time series
+ * that started at sample first. If first is negative, then the new time
+ * series is padded at the start by that many samples. The time series' epoch
+ * is adjusted appropriately.
+ */
+SphHarmPolarTimeSeries *XLALCutSphHarmPolarTimeSeries(
+                                                         SphHarmPolarTimeSeries *ts, /**< new SphHarmTimeSeries to be filled in */
+                                                         int first, /**< index of first time sample to be copied over */
+                                                         size_t length /**< length to cut all COMPLEX16TimeSeries to */
+)
+{
+  SphHarmPolarTimeSeries *this = ts;
+  SphHarmPolarTimeSeries *head=NULL, *tail=NULL, *new=NULL;
+
+  REAL8Sequence *tcut;
+
+  while( this ) {
+      new = XLALSphHarmPolarTimeSeriesAddMode(NULL, NULL, NULL, this->l, this->m);
+      if (head) {
+          head->next = new;
+      } else {
+          tail = new;
+      }
+      head = new;
+      head->ampl = XLALCutREAL8TimeSeries(this->ampl, first, length);
+      head->phase = XLALCutREAL8TimeSeries(this->phase, first, length);
+      this = this->next;
+  }
+
+  if (ts->tdata) {
+      tcut = XLALCutREAL8Sequence(ts->tdata, first, length);
+      XLALSphHarmPolarTimeSeriesSetTData(tail, tcut);
+  }
+  else {
+    tail->tdata=NULL;
+  }
+
+  head = NULL;
+  new = NULL;
+  tcut = NULL;
+  LALFree(head);
+  LALFree(new);
+  LALFree(tcut);
+  LALFree(this);
+
+  return tail;
+
+}
+
+
+/** @} */
+
+
+
 
 /**
  * @name SphHarmFrequencySeries Routines
