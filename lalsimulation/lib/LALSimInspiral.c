@@ -184,6 +184,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomXHM),
 	INITIALIZE_NAME(IMRPhenomXP),
     INITIALIZE_NAME(IMRPhenomXPHM),
+		INITIALIZE_NAME(TEOBResumS),
 };
 #undef INITIALIZE_NAME
 
@@ -301,6 +302,7 @@ static double fixReferenceFrequency(const double f_ref, const double f_min, cons
 		case IMRPhenomXP:
 		case IMRPhenomXPHM:
         case NRSur4d2s:
+	case TEOBResumS:
             return f_min;
         default:
             break;
@@ -382,8 +384,8 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 lambda3B_UR = 0.;
     REAL8 omega2TidalB_UR = 0.;
     REAL8 omega3TidalB_UR = 0.;
-		REAL8 quadparam1_UR = 0.;
-		REAL8 quadparam2_UR = 0.;
+    REAL8 quadparam1_UR = 0.;
+    REAL8 quadparam2_UR = 0.;
 
     /* General sanity checks that will abort
      *
@@ -534,6 +536,29 @@ int XLALSimInspiralChooseTDWaveform(
           /* Call the waveform driver routine */
           ret = XLALSimInspiralTEOBResumROM(hplus,hcross,phiRef,deltaT,f_min,f_ref,distance,inclination,m1,m2,lambda1,lambda2);
           break;
+
+        case TEOBResumS:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALparams) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");
+            if( !XLALSimInspiralWaveformParamsPNSpinOrderIsDefault(LALparams) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralSpinOrder provided, but this approximant does not use that flag.");
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+            if( f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+            /* Comply with master convention on orientation angles */
+            polariz += LAL_PI_2;
+            /* Call the waveform driver routine */
+            //  MA: TODO if( something about modes choice )
+
+            /* Make sure LALparams exists (otherwise segfault) */
+            if (!LALparams) LALparams = XLALCreateDict();
+            ret = XLALSimIMRTEOBResumS(hplus, hcross, phiRef, deltaT, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z,
+                                       lambda1, lambda2, distance, inclination, longAscNodes, LALparams,
+                                       eccentricity, meanPerAno, f_min, f_ref);
+            break;
+
 
 	case EccentricTD:
 	    /* Waveform-specific sanity checks */
@@ -956,39 +981,39 @@ int XLALSimInspiralChooseTDWaveform(
                 XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
             if( f_ref != 0.)
                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
-						/* If tides-related parameter was not input by the user, use universal relations to compute it from quadrupolar lambda (or from octupolar lambda, itself either input or computed, for omega03) - else use the input value given by the user */
-						if(!XLALDictContains(LALparams, "TidalOctupolarLambda1")) {
-							lambda3A_UR = XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(lambda1);
-							XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(LALparams, lambda3A_UR);
-						}
-						if(!XLALDictContains(LALparams, "TidalOctupolarLambda2")) {
-							lambda3B_UR = XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(lambda2);
-							XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda2(LALparams, lambda3B_UR);
-						}
-						if(!XLALDictContains(LALparams, "TidalQuadrupolarFMode1")) {
-							omega2TidalA_UR = XLALSimUniversalRelationomega02TidalVSlambda2Tidal(lambda1);
-							XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(LALparams, omega2TidalA_UR);
-						}
-						if(!XLALDictContains(LALparams, "TidalQuadrupolarFMode2")) {
-							omega2TidalB_UR = XLALSimUniversalRelationomega02TidalVSlambda2Tidal(lambda2);
-							XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(LALparams, omega2TidalB_UR);
-						}
-						if(!XLALDictContains(LALparams, "TidalOctupolarFMode1")) {
-							omega3TidalA_UR = XLALSimUniversalRelationomega03TidalVSlambda3Tidal(lambda3A_UR);
-							XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(LALparams, omega3TidalA_UR);
-						}
-						if(!XLALDictContains(LALparams, "TidalOctupolarFMode2")) {
-							omega3TidalB_UR = XLALSimUniversalRelationomega03TidalVSlambda3Tidal(lambda3B_UR);
-							XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(LALparams, omega3TidalB_UR);
-						}
-						if(!XLALDictContains(LALparams, "dQuadMon1")) {
-							  quadparam1_UR = XLALSimUniversalRelationQuadMonVSlambda2Tidal(lambda1);
-								XLALSimInspiralWaveformParamsInsertdQuadMon1(LALparams, quadparam1_UR - 1.);
-						}
-						if(!XLALDictContains(LALparams, "dQuadMon2")) {
-							  quadparam2_UR = XLALSimUniversalRelationQuadMonVSlambda2Tidal(lambda2);
-								XLALSimInspiralWaveformParamsInsertdQuadMon2(LALparams, quadparam2_UR - 1.);
-						}
+            /* If tides-related parameter was not input by the user, use universal relations to compute it from quadrupolar lambda (or from octupolar lambda, itself either input or computed, for omega03) - else use the input value given by the user */
+            if(!XLALDictContains(LALparams, "TidalOctupolarLambda1")) {
+                lambda3A_UR = XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(lambda1);
+                XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda1(LALparams, lambda3A_UR);
+            }
+            if(!XLALDictContains(LALparams, "TidalOctupolarLambda2")) {
+                lambda3B_UR = XLALSimUniversalRelationlambda3TidalVSlambda2Tidal(lambda2);
+                XLALSimInspiralWaveformParamsInsertTidalOctupolarLambda2(LALparams, lambda3B_UR);
+            }
+            if(!XLALDictContains(LALparams, "TidalQuadrupolarFMode1")) {
+                omega2TidalA_UR = XLALSimUniversalRelationomega02TidalVSlambda2Tidal(lambda1);
+                XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode1(LALparams, omega2TidalA_UR);
+            }
+            if(!XLALDictContains(LALparams, "TidalQuadrupolarFMode2")) {
+                omega2TidalB_UR = XLALSimUniversalRelationomega02TidalVSlambda2Tidal(lambda2);
+                XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(LALparams, omega2TidalB_UR);
+            }
+            if(!XLALDictContains(LALparams, "TidalOctupolarFMode1")) {
+                omega3TidalA_UR = XLALSimUniversalRelationomega03TidalVSlambda3Tidal(lambda3A_UR);
+                XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(LALparams, omega3TidalA_UR);
+            }
+            if(!XLALDictContains(LALparams, "TidalOctupolarFMode2")) {
+                omega3TidalB_UR = XLALSimUniversalRelationomega03TidalVSlambda3Tidal(lambda3B_UR);
+                XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(LALparams, omega3TidalB_UR);
+            }
+            if(!XLALDictContains(LALparams, "dQuadMon1")) {
+                quadparam1_UR = XLALSimUniversalRelationQuadMonVSlambda2Tidal(lambda1);
+                XLALSimInspiralWaveformParamsInsertdQuadMon1(LALparams, quadparam1_UR - 1.);
+            }
+            if(!XLALDictContains(LALparams, "dQuadMon2")) {
+                quadparam2_UR = XLALSimUniversalRelationQuadMonVSlambda2Tidal(lambda2);
+                XLALSimInspiralWaveformParamsInsertdQuadMon2(LALparams, quadparam2_UR - 1.);
+            }
             /* Call the waveform driver routine */
             if (approximant==SEOBNRv2T) SpinAlignedEOBversion = 201;
             if (approximant==SEOBNRv4T) SpinAlignedEOBversion = 401;
@@ -1064,12 +1089,12 @@ int XLALSimInspiralChooseTDWaveform(
 		    // calculated from hplus and hcross, apply inclination-dependent factors
 		    // in loop below
 				polariz = 0;
-				
+
 		    ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
 					longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
-					
+
 				if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-				
+
 				// The Fourier domain model is built such that the TD transformation peakds approximately at zero.
 				// Here we force an exact alignment at zero by computing the maximum of hp^2 + hc^2.
 			 	maxamp = 0;
@@ -1097,12 +1122,12 @@ int XLALSimInspiralChooseTDWaveform(
 			if( !checkTidesZero(lambda1, lambda2) )
 				XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 			polariz = 0;
-			
+
 			ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef,
 				longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
 
 			if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-			
+
 			// The Fourier domain model is built such that the TD transformation peakds approximately at zero.
 			// Here we force an exact alignment at zero by computing the maximum of hp^2 + hc^2.
 			maxamp = 0;
@@ -1748,7 +1773,7 @@ int XLALSimInspiralChooseFDWaveform(
 
             ret = XLALSimIMRSEOBNRv4HMROM(hptilde, hctilde,
                     phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, -1,5,LALparams);
-            break;   
+            break;
 
 	case SEOBNRv4_ROM_NRTidal:
 
@@ -2158,7 +2183,7 @@ int XLALSimInspiralChooseFDWaveform(
 		    #if DEBUG == 1
 			printf("\n\n**********Leaving ChooseFDWaveform *********************\n\n");
 		    #endif
-		    
+
 			break;
 
 		case IMRPhenomXP:
@@ -3022,7 +3047,7 @@ int XLALSimInspiralChooseWaveform(
  * (h+ + I hx) = Sum_{l,m} Y_lm(0,0) h'_lm,
  */
 SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
-    UNUSED REAL8 phiRef,                        /**< reference orbital phase (rad). This variable is not used and only kept here for backwards compatibility */		
+    UNUSED REAL8 phiRef,                        /**< reference orbital phase (rad). This variable is not used and only kept here for backwards compatibility */
     REAL8 deltaT,                               /**< sampling interval (s) */
     REAL8 m1,                                   /**< mass of companion 1 (kg) */
     REAL8 m2,                                   /**< mass of companion 2 (kg) */
@@ -5470,6 +5495,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case NRSur7dq2:
         case NRSur7dq4:
         case TEOBResum_ROM:
+        case TEOBResumS:
         case SEOBNRv4HM:
         case NRHybSur3dq8:
             return 1;
@@ -5975,11 +6001,12 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv2_ROM_DoubleSpin_HI:
     case Lackey_Tidal_2013_SEOBNRv2_ROM:
     case SEOBNRv4_ROM:
-    case SEOBNRv4HM_ROM:  
+    case SEOBNRv4HM_ROM:
     case SEOBNRv4_ROM_NRTidal:
     case SEOBNRv4_ROM_NRTidalv2:
     case SEOBNRv4_ROM_NRTidalv2_NSBH:
     case SEOBNRv4T_surrogate:
+    case TEOBResumS:
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:
@@ -6109,6 +6136,7 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case IMRPhenomFA:
     case GeneratePPN:
     case TEOBResum_ROM:
+		case TEOBResumS:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_NONPRECESSING;
       break;
     case NR_hdf5:
@@ -6182,11 +6210,12 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv2_ROM_DoubleSpin:
     case SEOBNRv2_ROM_DoubleSpin_HI:
     case Lackey_Tidal_2013_SEOBNRv2_ROM:
-    case SEOBNRv4HM_ROM:  
+    case SEOBNRv4HM_ROM:
     case SEOBNRv4_ROM_NRTidal:
     case SEOBNRv4_ROM_NRTidalv2:
     case SEOBNRv4_ROM_NRTidalv2_NSBH:
     case SEOBNRv4T_surrogate:
+    case TEOBResumS:
     case IMRPhenomA:
     case IMRPhenomB:
     case IMRPhenomFA:
@@ -6594,6 +6623,11 @@ double XLALSimInspiralGetFrequency(
             freq = XLALSimIMRSpinAlignedEOBPeakFrequency(m1, m2, S1z, S2z,
                     SpinAlignedEOBVersion);
             break;
+        case fTEOBResumSFinal: // MA: Replace with TEOB-related RD frequency!
+                               // CAUTION: different function for BNS/NSBH/BBH cases?
+            fprintf(stdout, "Final frequency for TEOBResumS not implemented yet.\n");
+            freq = XLALSimIMRSpinAlignedEOBPeakFrequency(m1, m2, S1z, S2z, 2);
+            break;
         default:
             XLALPrintError("Unsupported approximant\n");
             XLAL_ERROR(XLAL_EINVAL);
@@ -6645,6 +6679,7 @@ double XLALSimInspiralGetFinalFreq(
         case SEOBNRv4_opt:
         case IMRPhenomB:
         case IMRPhenomC:
+        case TEOBResumS:
             /* Check that the transverse spins are zero */
             if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
             {
@@ -6712,6 +6747,10 @@ double XLALSimInspiralGetFinalFreq(
         case IMRPhenomC:
             freqFunc = fIMRPhenomCFinal;
             break;
+
+        case TEOBResumS:
+           freqFunc = fTEOBResumSFinal;
+	   break;
 
         // FIXME: Following I don't know how to calculate */
         /* Spinning inspiral-only time domain */

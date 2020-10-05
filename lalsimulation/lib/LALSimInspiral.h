@@ -361,7 +361,7 @@ typedef enum tagApproximant {
                                 * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4
                                 * @remarks Implemented in lalsimulation (frequency domain). */
-   SEOBNRv4HM_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4hm                                                     
+   SEOBNRv4HM_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4hm
 		    * @remarks Implemented in lalsimulation (frequency domain). */
    SEOBNRv4_ROM_NRTidal, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4 [Bohe et al, arXiv:1611.03703] with tidal phase corrections [Dietrich et al, arXiv:1706.02969
                                 * @remarks Implemented in lalsimulation (frequency domain). */
@@ -431,6 +431,8 @@ typedef enum tagApproximant {
                        * @remarks Implemented in lalsimulation (frequency domain).  */
    IMRPhenomXP, 		/**< Frequency domain, precessing phenomenological IMR waveform model. */
    IMRPhenomXPHM, 	/**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model. */
+   TEOBResumS,          /**< Resummed Spin-aligned Tidal EOB
+                         * @remarks Implemented in lalsimulation (time domain). */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -449,6 +451,7 @@ typedef enum tagFrequencyFunction {
     fSEOBNRv2RD, /**< Dominant ringdown frequency in SEOBNRv2 */
     fSEOBNRv4Peak, /**< Frequency of the peak amplitude in SEOBNRv4 */
     fSEOBNRv4RD, /**< Dominant ringdown frequency in SEOBNRv4 */
+    fTEOBResumSFinal, /**< Dominant ringdown frequency in TEOBResumS */
     NumFreqFunctions /**< Number of elements in the enum */
  } FrequencyFunction;
 

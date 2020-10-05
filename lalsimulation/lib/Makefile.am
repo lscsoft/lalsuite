@@ -237,6 +237,7 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBHcapNumericalDerivativePrec.c \
 	LALSimIMRSpinEOBInitialConditions.c \
 	LALSimIMRSpinEOBInitialConditionsPrec.c \
+	LALSimTEOBResumS.h \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiralTaylorF2Ecc.c \
 	LALSimInspiraldEnergyFlux.c \
@@ -298,6 +299,9 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenomXUtilities.c \
 	LALSimIMRPhenomXHM.c \
 	LALSimIMRPSpinInspiralRD.c \
+	LALSimIMRTEOBResumSUtils.c \
+	LALSimIMRTEOBResumS_Internals.c \
+	LALSimIMRTEOBResumS.c \
 	LALSimPhenSpinRingDown.c \
 	LALSimInspiralWaveformFlags.c \
 	LALSimInspiralTestGRParams.c \

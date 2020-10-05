@@ -322,11 +322,12 @@ int XLALSimInspiralChooseTDWaveformFromCache(
         return XLAL_SUCCESS;
     }
     // case 3: Non-precessing, ampO > 0
-    // FIXME: EOBNRv2HM actually ignores ampO. If it's given with ampO==0,
+    // FIXME: EOBNRv2HM and TEOBResumS actually ignores ampO. If it's given with ampO==0,
     // it will fall to the catch-all and not be cached.
     else if( (ampO==-1 || ampO>0) && (approximant==TaylorT1
                 || approximant==TaylorT2 || approximant==TaylorT3
-                || approximant==TaylorT4 || approximant==EOBNRv2HM) ) {
+                || approximant==TaylorT4 || approximant==EOBNRv2HM
+                || approximant==TEOBResumS) ) {
         // If polarizations are not cached we must generate a fresh waveform
         // FIXME: Add in check that hlms non-NULL
         if( cache->hplus == NULL || cache->hcross == NULL) {
@@ -681,6 +682,13 @@ static CacheVariableDiffersBitmask CacheArgsDifferenceBitmask(
     if ( f_max != cache->f_max) return INTRINSIC;
     if ( XLALSimInspiralWaveformParamsLookupTidalLambda1(LALpars) != XLALSimInspiralWaveformParamsLookupTidalLambda1(cache->LALpars)) return INTRINSIC;
     if ( XLALSimInspiralWaveformParamsLookupTidalLambda2(LALpars) != XLALSimInspiralWaveformParamsLookupTidalLambda2(cache->LALpars)) return INTRINSIC;
+    if ( XLALSimInspiralWaveformParamsLookupTidalOctupolarLambda1(LALpars) != XLALSimInspiralWaveformParamsLookupTidalOctupolarLambda1(cache->LALpars)) return INTRINSIC;
+    if ( XLALSimInspiralWaveformParamsLookupTidalOctupolarLambda2(LALpars) != XLALSimInspiralWaveformParamsLookupTidalOctupolarLambda2(cache->LALpars)) return INTRINSIC;
+    if ( XLALSimInspiralWaveformParamsLookupTidalHexadecapolarLambda1(LALpars) != XLALSimInspiralWaveformParamsLookupTidalHexadecapolarLambda1(cache->LALpars)) return INTRINSIC;
+    if ( XLALSimInspiralWaveformParamsLookupTidalHexadecapolarLambda2(LALpars) != XLALSimInspiralWaveformParamsLookupTidalHexadecapolarLambda1(cache->LALpars)) return INTRINSIC;
+    if ( XLALSimInspiralWaveformParamsLookupdQuadMon1(LALpars) != XLALSimInspiralWaveformParamsLookupdQuadMon1(cache->LALpars)) return INTRINSIC;
+    if ( XLALSimInspiralWaveformParamsLookupdQuadMon2(LALpars) != XLALSimInspiralWaveformParamsLookupdQuadMon2(cache->LALpars)) return INTRINSIC;
+    
     if ( XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALpars) != XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(cache->LALpars)) return INTRINSIC;
     if ( XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALpars) != XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(cache->LALpars)) return INTRINSIC;
 
