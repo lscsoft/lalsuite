@@ -111,7 +111,7 @@ XLALInspiralSpinFactorizedFlux_PA (REAL8Vector * values,	/**< dynamical variable
   omegaSq = omega * omega;
 
   v = cbrt (omega);
-  REAL8 vPhi = XLALSimIMRSpinAlignedEOBNonKeplerCoeff (values->data, ak);
+  REAL8 vPhi = XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, ak);
     COMPLEX16 hT= 0.;
 //  printf( "v = %.16e\n", v );
   for (l = 2; l <= (INT4) lMax; l++)

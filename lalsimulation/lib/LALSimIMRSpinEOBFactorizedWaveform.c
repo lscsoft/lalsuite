@@ -720,7 +720,7 @@ static int XLALSimIMREOBCalcCalibCoefficientHigherModes (FacWaveformCoeffs *
                      v = cbrt (orbOmegaVec->data[i]);
                      if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform
                          (&(hLMVec->data[i]), values, v, HamVec->data[i], modeL, modeM, params,
-                         0) == XLAL_FAILURE)
+                         1) == XLAL_FAILURE)
                      {
                        if(hLMVec) XLALDestroyCOMPLEX16Vector(hLMVec);
                        if(rholmpwrlVec) XLALDestroyCOMPLEX16Vector(rholmpwrlVec);
