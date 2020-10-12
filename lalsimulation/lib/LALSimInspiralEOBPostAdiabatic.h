@@ -26,7 +26,7 @@ XLALSimInspiralEOBPACalculateAdibaticParameter(
     REAL8 r,
     REAL8 prstar,
     REAL8 pphi,
-    SpinEOBHCoeffs * seobCoeffs,
+    SpinEOBParams *seobParams,
     REAL8 csi,
     LALDict *LALParams,
     REAL8 omega,
@@ -156,6 +156,14 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
     LALDict *LALParams
 );
 
+REAL8
+XLALSimIMRSpinAlignedEOBPACalculateOmega(
+    REAL8 polarDynamics[],
+    REAL8 dr,
+    SpinEOBParams *seobParams,
+    LALDict *LALParams
+);
+
 double
 XLALSimInspiralEOBPostAdiabaticdprstarFunc(
     REAL8 prstar_sol,
@@ -178,23 +186,12 @@ struct PostAdiabaticRootSolveParams
 {
     REAL8 r;
     REAL8 dr;
-    // REAL8 rc;
-    // REAL8 drcBydr;
-    // REAL8 uc2;
-    // REAL8 ducBydr;
     REAL8 prstar;
     REAL8 dprstar;
     REAL8 dprstarBydr;
     REAL8 phi;
     REAL8 pphi;
     REAL8 dpphiBydr;
-    // REAL8 A;
-    // REAL8 dA;
-    // REAL8 B;
-    // REAL8 dAuc2Bydr;
-    // REAL8 HeffOrb;
-    // REAL8 dGBydr;
-    // REAL8 dGBydprstar;
     REAL8 omega;
     REAL8 csi;
     SpinEOBParams *seobParams;
@@ -292,22 +289,24 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
 );
 
 REAL8
-XLALSimInspiralEOBPAHamiltonianDerivative(
+XLALSimInspiralEOBPAPartialHByPartialr(
     REAL8 h,
     REAL8 r,
     REAL8 prstar,
     REAL8 pphi,
-    SpinEOBHCoeffs *seobCoeffs,
+    REAL8 csi,
+    SpinEOBParams *seobParams,
     LALDict *LALParams
 );
 
 REAL8
-XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstar(
+XLALSimInspiralEOBPAPartialHByPartialprstar(
     REAL8 h,
     REAL8 r,
     REAL8 prstar,
     REAL8 pphi,
-    SpinEOBHCoeffs *seobCoeffs,
+    REAL8 dprstarBydpr,
+    SpinEOBParams *seobParams,
     LALDict *LALParams
 );
 

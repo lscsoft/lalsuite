@@ -18,6 +18,9 @@
 
 #include "LALSimInspiralEOBPostAdiabatic.h"
 
+#include "LALSimIMRSpinEOBHamiltonian.c"
+#include "LALSimIMRSpinEOBHamiltonianOptimized.c"
+
 #include "LALSimBlackHoleRingdown.h"
 
 REAL8
@@ -119,6 +122,37 @@ XLALSimInspiralEOBPACalculateSstar(
 	Sstar = X1 * X2 * (chi1+chi2);
 
 	return Sstar;
+}
+
+REAL8
+XLALSimIMRSpinAlignedEOBPACalculateOmega(
+    REAL8 polarDynamics[],
+    REAL8 dr,
+    SpinEOBParams *seobParams,
+    LALDict *LALParams
+)
+{
+	const UINT2 analyticFlag = XLALDictLookupUINT2Value(LALParams, "analyticFlag");
+
+	REAL8 omega;
+
+	if (analyticFlag == 0)
+	{
+		omega = XLALSimIMRSpinAlignedEOBCalcOmega(
+			polarDynamics,
+			seobParams,
+			dr
+		);
+	}
+	else
+	{
+		omega = XLALSimIMRSpinAlignedEOBCalcOmegaOptimized(
+			polarDynamics,
+			seobParams
+		);
+	}
+
+	return omega;
 }
 
 double

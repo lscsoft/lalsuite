@@ -717,11 +717,11 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
                      /**<< parameter kappa_1 of the spin-induced quadrupole for body 1, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
 				     const REAL8 quadparam2,
                      /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
-                     REAL8Vector *nqcCoeffsInput,
-                     /**<< Input NQC coeffs */
-                     const INT4 nqcFlag,
-                     /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
-                     LALDict *PAParams
+             REAL8Vector *nqcCoeffsInput,
+             /**<< Input NQC coeffs */
+             const INT4 nqcFlag,
+             /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
+             LALDict *PAParams
   )
 {
   REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
@@ -1447,43 +1447,21 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   if (postAdiabaticFlag)
   {
-    INT4 errcode;
-
-    XLAL_TRY(
-      XLALSimInspiralEOBPostAdiabatic(
-        &dynamicsPA,
-        m1,
-        m2,
-        spin1z,
-        spin2z,
-        *values,
-        SpinAlignedEOBversion,
-        &seobParams,
-        &nqcCoeffs,
-        PAParams
-      ),
-      errcode
-    );
-
-    if (errcode != XLAL_SUCCESS)
+    if (XLALSimInspiralEOBPostAdiabatic(
+          &dynamicsPA,
+          m1,
+          m2,
+          spin1z,
+          spin2z,
+          *values,
+          SpinAlignedEOBversion,
+          &seobParams,
+          &nqcCoeffs,
+          PAParams
+        ) != XLAL_SUCCESS)
     {
-      XLALPrintError("Post adiabatic dynamics failed!");
-      XLAL_ERROR(XLAL_EFUNC);
+      XLAL_ERROR(XLAL_EFUNC, "XLALSimInspiralEOBPostAdiabatic failed!");
     }
-    
-
-    // XLALSimInspiralEOBPostAdiabatic(
-    //   &dynamicsPA,
-    //   m1,
-    //   m2,
-    //   spin1z,
-    //   spin2z,
-    //   *values,
-    //   SpinAlignedEOBversion,
-    //   &seobParams,
-    //   &nqcCoeffs,
-    //   PAParams
-    // );
 
     UINT4 rSize;
     rSize = dynamicsPA->dimLength->data[1];

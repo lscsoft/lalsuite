@@ -1481,7 +1481,7 @@ XLALSimIMRSpinEOBHamiltonianDeltaT (SpinEOBHCoeffs * coeffs,
  * This function calculates the function \f$\Delta_r(r)\f$ which appears in the spinning EOB
  * potential function. Eqs. 10a and 10b
  */
-static REAL8
+UNUSED static REAL8
 XLALSimIMRSpinEOBHamiltonianDeltaR (SpinEOBHCoeffs * coeffs,
 				/**<< Pre-computed coefficients which appear in the function */
 				    const REAL8 r,
