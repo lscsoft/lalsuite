@@ -79,7 +79,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
 	column_pos.ifo = XLALLIGOLwFindColumn(&env, "ifo", METAIO_TYPE_LSTRING, 1);
 	column_pos.search = XLALLIGOLwFindColumn(&env, "search", METAIO_TYPE_LSTRING, 1);
 	column_pos.channel = XLALLIGOLwFindColumn(&env, "channel", METAIO_TYPE_LSTRING, 1);
@@ -95,7 +95,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 	column_pos.confidence = XLALLIGOLwFindColumn(&env, "confidence", METAIO_TYPE_REAL_4, 1);
 	column_pos.chisq = XLALLIGOLwFindColumn(&env, "chisq", METAIO_TYPE_REAL_8, 1);
 	column_pos.chisq_dof = XLALLIGOLwFindColumn(&env, "chisq_dof", METAIO_TYPE_REAL_8, 1);
-	column_pos.event_id = XLALLIGOLwFindColumn(&env, "event_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.event_id = XLALLIGOLwFindColumn(&env, "event_id", METAIO_TYPE_INT_8S, 1);
 
 	/* check for failure (== a required column is missing) */
 
@@ -125,11 +125,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 
 		/* populate the columns */
 
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroySnglBurstTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
 		if(strlen(env.ligo_lw.table.elt[column_pos.ifo].data.lstring.data) >= sizeof(row->ifo) ||
 		strlen(env.ligo_lw.table.elt[column_pos.search].data.lstring.data) >= sizeof(row->search) ||
 		strlen(env.ligo_lw.table.elt[column_pos.channel].data.lstring.data) >= sizeof(row->channel)) {
@@ -151,11 +147,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 		row->confidence = env.ligo_lw.table.elt[column_pos.confidence].data.real_4;
 		row->chisq = env.ligo_lw.table.elt[column_pos.chisq].data.real_8;
 		row->chisq_dof = env.ligo_lw.table.elt[column_pos.chisq_dof].data.real_8;
-		if((row->event_id = XLALLIGOLwParseIlwdChar(&env, column_pos.event_id, "sngl_burst", "event_id")) < 0) {
-			XLALDestroySnglBurstTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->event_id = env.ligo_lw.table.elt[column_pos.event_id].data.int_8s;
 	}
 	if(miostatus < 0) {
 		XLALDestroySnglBurstTable(head);
@@ -233,7 +225,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
 	column_pos.waveform = XLALLIGOLwFindColumn(&env, "waveform", METAIO_TYPE_LSTRING, 1);
 	column_pos.ra = XLALLIGOLwFindColumn(&env, "ra", METAIO_TYPE_REAL_8, 0);
 	column_pos.dec = XLALLIGOLwFindColumn(&env, "dec", METAIO_TYPE_REAL_8, 0);
@@ -251,8 +243,8 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	column_pos.hrss = XLALLIGOLwFindColumn(&env, "hrss", METAIO_TYPE_REAL_8, 0);
 	column_pos.egw_over_rsquared = XLALLIGOLwFindColumn(&env, "egw_over_rsquared", METAIO_TYPE_REAL_8, 0);
 	column_pos.waveform_number = XLALLIGOLwFindColumn(&env, "waveform_number", METAIO_TYPE_INT_8U, 0);
-	column_pos.time_slide_id = XLALLIGOLwFindColumn(&env, "time_slide_id", METAIO_TYPE_ILWD_CHAR, 1);
-	column_pos.simulation_id = XLALLIGOLwFindColumn(&env, "simulation_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.time_slide_id = XLALLIGOLwFindColumn(&env, "time_slide_id", METAIO_TYPE_INT_8S, 1);
+	column_pos.simulation_id = XLALLIGOLwFindColumn(&env, "simulation_id", METAIO_TYPE_INT_8S, 1);
 
 	/* check for failure (== a required column is missing) */
 
@@ -277,12 +269,7 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 
 		/* populate the columns */
 
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroySimBurst(row);
-			XLALDestroySimBurstTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
 		if(strlen(env.ligo_lw.table.elt[column_pos.waveform].data.lstring.data) >= sizeof(row->waveform)) {
 			XLALDestroySimBurst(row);
 			XLALDestroySimBurstTable(head);
@@ -300,18 +287,8 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 		XLALGPSSet(&row->time_geocent_gps, env.ligo_lw.table.elt[column_pos.time_geocent_gps].data.int_4s, env.ligo_lw.table.elt[column_pos.time_geocent_gps_ns].data.int_4s);
 		if(column_pos.time_geocent_gmst >= 0)
 			row->time_geocent_gmst = env.ligo_lw.table.elt[column_pos.time_geocent_gmst].data.real_8;
-		if((row->time_slide_id = XLALLIGOLwParseIlwdChar(&env, column_pos.time_slide_id, "time_slide", "time_slide_id")) < 0) {
-			XLALDestroySimBurst(row);
-			XLALDestroySimBurstTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
-		if((row->simulation_id = XLALLIGOLwParseIlwdChar(&env, column_pos.simulation_id, "sim_burst", "simulation_id")) < 0) {
-			XLALDestroySimBurst(row);
-			XLALDestroySimBurstTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->time_slide_id = env.ligo_lw.table.elt[column_pos.time_slide_id].data.int_8s;
+		row->simulation_id = env.ligo_lw.table.elt[column_pos.simulation_id].data.int_8s;
 
 		if(!strcmp(row->waveform, "StringCusp")) {
 			if(column_pos.duration < 0 || column_pos.frequency < 0 || column_pos.amplitude < 0) {

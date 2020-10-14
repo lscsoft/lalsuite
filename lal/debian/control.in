@@ -19,6 +19,7 @@ Build-Depends: bc,
   python-dateutil,
   python-freezegun,
   python-glue (>= @MIN_GLUE_VERSION@),
+  python-ligo-lw,
   python-ligo-segments,
   python-mock,
   python-numpy (>= @MIN_NUMPY_VERSION@),
@@ -30,6 +31,7 @@ Build-Depends: bc,
   python3-dateutil,
   python3-freezegun,
   python3-glue (>= @MIN_GLUE_VERSION@),
+  python3-ligo-lw,
   python3-ligo-segments,
   python3-numpy (>= @MIN_NUMPY_VERSION@),
   python3-pytest,
@@ -83,12 +85,14 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python:Depends},
   ${shlibs:Depends},
+  python-ligo-lw,
   python-ligo-segments,
   python-glue (>= @MIN_GLUE_VERSION@),
   python-scipy,
   python-six,
   python-dateutil,
   lal (= ${binary:Version})
+Recommends: python-ligo-lw
 Description: Python bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python bindings for the LAL library.
@@ -110,12 +114,14 @@ Architecture: any
 Depends: ${misc:Depends},
   ${python3:Depends},
   ${shlibs:Depends},
+  python3-ligo-lw,
   python3-ligo-segments,
   python3-glue (>= @MIN_GLUE_VERSION@),
   python3-scipy,
   python3-six,
   python3-dateutil,
   lal (= ${binary:Version})
+Recommends: python3-ligo-lw
 Description: Python 3 bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python 3 bindings for the LAL library.

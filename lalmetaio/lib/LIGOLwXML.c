@@ -170,7 +170,7 @@ int XLALWriteLIGOLwXMLProcessTable(
 	XLALFilePuts("\t\t<Column Name=\"process:jobid\" Type=\"int_4s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"process:domain\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"process:ifos\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"process:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(XLAL_EFUNC);
@@ -178,7 +178,7 @@ int XLALWriteLIGOLwXMLProcessTable(
 	/* rows */
 
 	for(; process; process = process->next) {
-		if(XLALFilePrintf(xml->fp, "%s\"%s\",\"%s\",\"%s\",%d,\"%s\",%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",\"process:process_id:%ld\"",
+		if(XLALFilePrintf(xml->fp, "%s\"%s\",\"%s\",\"%s\",%d,\"%s\",%d,\"%s\",\"%s\",%d,%d,%d,%d,\"%s\",\"%s\",%ld",
 			row_head,
 			process->program,
 			process->version,
@@ -233,7 +233,7 @@ int XLALWriteLIGOLwXMLProcessParamsTable(
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"process_params:table\">\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"process_params:program\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"process_params:param\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"process_params:type\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"process_params:value\" Type=\"lstring\"/>\n", xml->fp);
@@ -244,7 +244,7 @@ int XLALWriteLIGOLwXMLProcessParamsTable(
 	/* rows */
 
 	for(; process_params; process_params = process_params->next) {
-		if(XLALFilePrintf(xml->fp, "%s\"%s\",\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\"",
+		if(XLALFilePrintf(xml->fp, "%s\"%s\",%ld,\"%s\",\"%s\",\"%s\"",
 			row_head,
 			process_params->program,
 			process_params->process_id,
@@ -288,7 +288,7 @@ int XLALWriteLIGOLwXMLSearchSummaryTable(
 
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"search_summary:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"search_summary:shared_object\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"search_summary:lalwrapper_cvs_tag\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"search_summary:lal_cvs_tag\" Type=\"lstring\"/>\n", xml->fp);
@@ -311,7 +311,7 @@ int XLALWriteLIGOLwXMLSearchSummaryTable(
 	/* rows */
 
 	for(; search_summary; search_summary = search_summary->next) {
-		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"standalone\",\"\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
+		if(XLALFilePrintf(xml->fp, "%s%ld,\"standalone\",\"\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d",
 			row_head,
 			search_summary->process_id,
 			lalVCSInfo.vcsTag,
@@ -364,7 +364,7 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"sngl_burst:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_burst:ifo\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_burst:search\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_burst:channel\" Type=\"lstring\"/>\n", xml->fp);
@@ -380,7 +380,7 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 	XLALFilePuts("\t\t<Column Name=\"sngl_burst:confidence\" Type=\"real_4\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_burst:chisq\" Type=\"real_8\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_burst:chisq_dof\" Type=\"real_8\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_burst:event_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_burst:event_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"sngl_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(XLAL_EFUNC);
@@ -388,7 +388,7 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 	/* rows */
 
 	for(; sngl_burst; sngl_burst = sngl_burst->next) {
-		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.16g,%.16g,\"sngl_burst:event_id:%ld\"",
+		if(XLALFilePrintf(xml->fp, "%s%ld,\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.16g,%.16g,%ld",
 			row_head,
 			sngl_burst->process_id,
 			sngl_burst->ifo,
@@ -438,7 +438,7 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"sngl_inspiral:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_inspiral:ifo\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_inspiral:search\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_inspiral:channel\" Type=\"lstring\"/>\n", xml->fp);
@@ -501,7 +501,7 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 	XLALFilePuts("\t\t<Column Name=\"sngl_inspiral:spin2x\" Type=\"real_4\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_inspiral:spin2y\" Type=\"real_4\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sngl_inspiral:spin2z\" Type=\"real_4\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sngl_inspiral:event_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sngl_inspiral:event_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"sngl_inspiral:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(XLAL_EFUNC);
@@ -509,7 +509,7 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 	/* rows */
 
 	for(; sngl_inspiral; sngl_inspiral = sngl_inspiral->next) {
-		if(XLALFilePrintf(xml->fp,"%s\"process:process_id:%ld\",\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,\"sngl_inspiral:event_id:%ld\"",
+		if( XLALFilePrintf(xml->fp,"%s%ld,\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%ld",
 			   row_head,
 			   sngl_inspiral->process_id,
 			   sngl_inspiral->ifo,
@@ -611,7 +611,7 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"sim_burst:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:ra\" Type=\"real_8\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:dec\" Type=\"real_8\"/>\n", xml->fp);
@@ -629,8 +629,8 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:hrss\" Type=\"real_8\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:egw_over_rsquared\" Type=\"real_8\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform_number\" Type=\"int_8u\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"time_slide:time_slide_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"sim_burst:simulation_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"time_slide:time_slide_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:simulation_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"sim_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(XLAL_EFUNC);
@@ -638,7 +638,7 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	/* rows */
 
 	for(; sim_burst; sim_burst = sim_burst->next) {
-		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%lu,\"time_slide:time_slide_id:%ld\",\"sim_burst:simulation_id:%ld\"",
+		if(XLALFilePrintf(xml->fp, "%s%ld,\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%lu,%ld,%ld",
 			row_head,
 			sim_burst->process_id,
 			sim_burst->waveform,
@@ -697,8 +697,8 @@ int XLALWriteLIGOLwXMLTimeSlideTable(
 
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"time_slide:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"time_slide:time_slide_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"time_slide:time_slide_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"time_slide:instrument\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"time_slide:offset\" Type=\"real_8\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"time_slide:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
@@ -708,7 +708,7 @@ int XLALWriteLIGOLwXMLTimeSlideTable(
 	/* rows */
 
 	for(; time_slide; time_slide = time_slide->next) {
-		if(XLALFilePrintf(xml->fp, "%s\"process:process_id:%ld\",\"time_slide:time_slide_id:%ld\",\"%s\",%.16g",
+		if(XLALFilePrintf(xml->fp, "%s%ld,%ld,\"%s\",%.16g",
 			row_head,
 			time_slide->process_id,
 			time_slide->time_slide_id,
@@ -751,13 +751,13 @@ int XLALWriteLIGOLwXMLSegmentTable(
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"segment:table\">\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"segment:creator_db\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"segment:segment_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"segment:segment_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"segment:start_time\" Type=\"int_4s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"segment:start_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"segment:end_time\" Type=\"int_4s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"segment:end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"segment_definer:segment_def_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"segment_definer:segment_def_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"segment:segment_def_cdb\" Type=\"int_4s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"segment:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
@@ -766,7 +766,7 @@ int XLALWriteLIGOLwXMLSegmentTable(
 	/* rows */
 
 	for(; segment_table; segment_table = segment_table->next) {
-		if(XLALFilePrintf(xml->fp, "%s%d,\"process:process_id:%ld\",\"segment:segment_id:%ld\",%d,%d,%d,%d,\"segment_def:segment_def_id:%ld\",%d",
+		if(XLALFilePrintf(xml->fp, "%s%d,%ld,%ld,%d,%d,%d,%d,%ld,%d",
 			row_head,
 			segment_table->creator_db,
 			segment_table->process_id,
@@ -791,7 +791,6 @@ int XLALWriteLIGOLwXMLSegmentTable(
 
 	return 0;
 }
-
 
 /**
  * Creates a XML filename accordingly to document T050017

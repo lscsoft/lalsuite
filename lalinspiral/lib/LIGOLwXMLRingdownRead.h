@@ -30,10 +30,6 @@ extern "C" {
  * function prototypes
  */
 
-SnglRingdownTable* XLALSnglRingdownTableFromLIGOLw (
-    CHAR               *fileName
-    );
-
 SimRingdownTable* XLALSimRingdownTableFromLIGOLw (
     CHAR               *fileName,
     INT4                startTime,

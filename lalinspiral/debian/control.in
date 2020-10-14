@@ -101,6 +101,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends},
   python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
   python-lalburst (>= @MIN_LALBURST_VERSION@~),
+  python-ligo-lw,
   python-ligo-segments,
   python-glue
 Description: Python bindings for LALInspiral
@@ -129,6 +130,7 @@ Depends: ${misc:Depends},
   python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
   python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
   python3-lalburst (>= @MIN_LALBURST_VERSION@~),
+  python3-ligo-lw,
   python3-ligo-segments,
   lalinspiral (= ${binary:Version}),
   python3-glue

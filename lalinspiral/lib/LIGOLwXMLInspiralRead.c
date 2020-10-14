@@ -175,12 +175,7 @@ LALSnglInspiralTableFromLIGOLw (
     {
       fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
 
-      if ( ! strcmp(tableDir[i].name, "event_id") )
-      {
-        fprintf( stderr,
-            "The event_id column is not populated, continuing anyway\n");
-      }
-      else if ( strstr(tableDir[i].name, "Gamma") )
+      if ( strstr(tableDir[i].name, "Gamma") )
       {
         fprintf( stderr,
             "The %s column is not populated, continuing anyway\n", tableDir[i].name);
@@ -234,6 +229,7 @@ LALSnglInspiralTableFromLIGOLw (
         REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
         REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+        INT8  i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
 
         if ( tableDir[j].pos < 0 ) continue;
 
@@ -418,12 +414,7 @@ LALSnglInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 44 )
         {
-          if ( tableDir[j].pos > 0 )
-          {
-            thisEvent->event_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sngl_inspiral", "event_id");
-            if ( thisEvent->event_id < 0 )
-              return -1;
-          }
+          thisEvent->event_id = i8colData;
         }
         else if ( tableDir[j].idx == 45 )
         {
@@ -499,12 +490,7 @@ LALSnglInspiralTableFromLIGOLw (
         }
         else if ( tableDir[j].idx == 63 )
         {
-          if ( tableDir[j].pos > 0 )
-          {
-            thisEvent->process_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "process", "process_id");
-            if ( thisEvent->process_id < 0 )
-              return -1;
-          }
+          thisEvent->process_id = i8colData;
         }
         else
         {
@@ -666,12 +652,7 @@ InspiralTmpltBankFromLIGOLw (
     {
       fprintf( stderr, "unable to find column %s\n", tableDir[i].name );
 
-      if ( ! strcmp(tableDir[i].name, "event_id") )
-      {
-        fprintf( stderr,
-            "The event_id column is not populated, continuing anyway\n");
-      }
-      else if ( strstr(tableDir[i].name, "Gamma") )
+      if ( strstr(tableDir[i].name, "Gamma") )
       {
         fprintf( stderr,
             "The %s column is not populated, continuing anyway\n", tableDir[i].name);
@@ -793,19 +774,16 @@ InspiralTmpltBankFromLIGOLw (
         }
         else if ( tableDir[j].idx == 16 )
         {
-          if ( tableDir[j].pos > 0 )
+          INT8 i8colData;
+          if ( column_type == METAIO_TYPE_INT_8S )
+            i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
+          else
           {
-            INT8 i8colData;
-            if ( column_type == METAIO_TYPE_INT_8S )
-              i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
-            else
-            {
-              i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sngl_inspiral", "event_id");
-              if ( i8colData < 0 )
-                return -1;
-            }
-            thisTmplt->event_id = i8colData;
+            i8colData = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sngl_inspiral", "event_id");
+            if ( i8colData < 0 )
+              return -1;
           }
+          thisTmplt->event_id = i8colData;
         }
         else if ( tableDir[j].idx == 17 )
         {
@@ -1075,6 +1053,7 @@ SimInspiralTableFromLIGOLw (
         REAL4 r4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_4;
         REAL8 r8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.real_8;
         INT4  i4colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_4s;
+        INT8  i8colData = env->ligo_lw.table.elt[tableDir[j].pos].data.int_8s;
         if ( tableDir[j].idx == 0 )
         {
           snprintf(thisSim->waveform, LIGOMETA_WAVEFORM_MAX * sizeof(CHAR),
@@ -1303,21 +1282,13 @@ SimInspiralTableFromLIGOLw (
         {
           thisSim->bandpass = i4colData;
         }
-        else if ( tableDir[j].idx == 56 ) {
-          if ( tableDir[j].pos > 0 )
-          {
-            thisSim->process_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "process", "process_id");
-            if ( thisSim->process_id < 0 )
-              return -1;
-          }
+        else if ( tableDir[j].idx == 56 )
+        {
+          thisSim->process_id = i8colData;
         }
-        else if ( tableDir[j].idx == 57 ) {
-          if ( tableDir[j].pos > 0 )
-          {
-            thisSim->simulation_id = XLALLIGOLwParseIlwdChar(env, tableDir[j].pos, "sim_inspiral", "simulation_id");
-            if ( thisSim->simulation_id < 0 )
-              return -1;
-          }
+        else if ( tableDir[j].idx == 57 )
+        {
+          thisSim->simulation_id = i8colData;
         }
         else
         {

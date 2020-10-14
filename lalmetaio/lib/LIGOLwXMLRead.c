@@ -24,19 +24,60 @@
  *
  * File Name: LIGOLwXMLRead.c
  *
- * Author: Cannon, Kipp
+ * Author: Brown, D. A.
  *
  *-----------------------------------------------------------------------
  */
 
 /**
- * \author Cannon, Kipp
+ * \author Brown, D. A. and Fairhurst, S.
  * \file
  * \ingroup lalmetaio_general
  *
- * \brief Routines to read LIGO Light-Weight XML tables into linked lists of C row structures.
+ * \brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
  *
  * ### Description ###
+ *
+ * The routine \c LALSnglInspiralTableFromLIGOLw reads in a
+ * \c sngl_inspiral table from the LIGOLwXML file specified in \c fileName.
+ * It returns the number of triggers read in and \c eventHead provides a
+ * pointer to the head of a linked list of \c SnglInspiralTables containing the
+ * events.  It will return all events between the \c startEvent and
+ * \c stopEvent; if these are set to 0 and -1 respectively, all events are
+ * returned.
+ *
+ * The routine \c InspiralTmpltBankFromLIGOLw reads in a \c sngl_inspiral
+ * table from the LIGOLwXML file specified in \c fileName. It returns the
+ * number of templates read in and \c bankHead provides a pointer to the head
+ * of a linked list of \c InspiralTemplates containing the templates read in.
+ * It will return all events between the \c startTmplt and \c stopTmplt; if
+ * these are set to 0 and -1 respectively, all events are returned.  Although a
+ * \c sngl_inspiral table is read in, only those entries relevant for an
+ * InspiralTemplate are read in and stored.
+ *
+ * The routine \c XLALSearchSummaryTableFromLIGOLw reads in a
+ * \c search_summary table from the LIGOLwXML file specified in
+ * \c fileName.  It returns a pointer to the head of a linked list of
+ * \c SearchSummaryTables.
+ *
+ * The routine \c SummValueTableFromLIGOLw reads in a \c summ_value
+ * table from the LIGOLwXML file specified in \c fileName.  It returns the
+ * number of rows read in and \c sumHead provides a pointer to the head of a
+ * linked list of \c SummValueTables.
+ *
+ * ### Algorithm ###
+ *
+ * None.
+ *
+ * ### Uses ###
+ *
+ * Functions in the Metaio library:
+ * <ul>
+ * <li> \c MetaioFindColumn
+ * </li><li> \c MetaioGetRow
+ * </li><li> \c MetaioOpenTable
+ * </li><li> \c MetaioClose
+ * </li></ul>
  *
  * ### Notes ###
  *
@@ -70,7 +111,11 @@
  * - This function parses the entire file to determine if the table is
  * present, which is slow.
  *
- * - This entire approach to XML I/O is a mistake.
+ * - This entire approach to XML I/O is the wrong way to go.  What's needed
+ * is a "load document" function, and a "save document" function.  DO NOT
+ * attempt to write such functions by using this function to test for
+ * every possible table one-by-one and loading the ones that are found.
+ * Put the time into writing a proper XML I/O layer!!
  */
 int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 {
@@ -113,14 +158,15 @@ int XLALLIGOLwHasTable(const char *filename, const char *table_name)
 
 
 /**
- * Wrapper for MetaioFindColumn(), translating to XLAL-style error
- * reporting and printing error messages on failure.  Returns the integer
- * index of the column, or a negative integer if the column is not found or
- * has the wrong type.  If required is non-zero, then an XLAL error is
- * reported if the column is missing, but if required is zero then no error
- * is generated for missing columns.  When a column is found, it's type is
- * checked and an XLAL error is reported if it does not match the requested
- * type.  Passing METAIO_TYPE_UNKNOWN disables the column type test.
+ * Convenience wrapper for MetaioFindColumn(), translating to XLAL-style
+ * error reporting and printing useful error messages on failure.  Returns
+ * the integer index of the column, or a negative integer if the column is
+ * not found or has the wrong type.  If required is non-zero, then an XLAL
+ * error is reported if the column is missing, but if required is zero then
+ * no error is generated for missing columns.  When a column is found, it's
+ * type is checked and an XLAL error is reported if it does not match the
+ * requested type.  Passing METAIO_TYPE_UNKNOWN disables the column type
+ * test.
  */
 int XLALLIGOLwFindColumn(
 	struct MetaioParseEnvironment *env,
@@ -146,12 +192,14 @@ int XLALLIGOLwFindColumn(
 
 
 /**
- * Extract the integer part of an ilwd:char ID string with some error
- * checking.  If either of ilwd_char_table_name or ilwd_char_column_name is
- * not NULL, then the corresponding portion of the ilwd:char string must
- * match it exactly.  The return value is the recovered integer suffix or <
- * 0 on failure.
+ * Convenience function to extract the integer part of an ilwd:char ID
+ * string with some error checking.  If either of ilwd_char_table_name or
+ * ilwd_char_column_name is not NULL, then the corresponding portion of the
+ * ilwd:char string must match it exactly.  The return value is the
+ * recovered integer suffix or < 0 on failure.
  */
+
+
 long long XLALLIGOLwParseIlwdChar(
 	const struct MetaioParseEnvironment *env,
 	int column_number,
@@ -187,7 +235,7 @@ long long XLALLIGOLwParseIlwdChar(
 
 
 /**
- * Read the process table from a LIGO Light-Weight XML file into a linked
+ * Read the process table from a LIGO Light Weight XML file into a linked
  * list of ProcessTable structures.
  */
 ProcessTable *XLALProcessTableFromLIGOLw(
@@ -246,7 +294,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 	column_pos.jobid = XLALLIGOLwFindColumn(&env, "jobid", METAIO_TYPE_INT_4S, 1);
 	column_pos.domain = XLALLIGOLwFindColumn(&env, "domain", METAIO_TYPE_LSTRING, 1);
 	column_pos.ifos = XLALLIGOLwFindColumn(&env, "ifos", METAIO_TYPE_LSTRING, 1);
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
 
 	/* check for failure (== a required column is missing) */
 
@@ -290,11 +338,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 		row->jobid = env.ligo_lw.table.elt[column_pos.jobid].data.int_4s;
 		strncpy(row->domain, env.ligo_lw.table.elt[column_pos.domain].data.lstring.data, sizeof(row->domain) - 1);
 		strncpy(row->ifos, env.ligo_lw.table.elt[column_pos.ifos].data.lstring.data, sizeof(row->ifos) - 1);
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroyProcessTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
 	}
 	if(miostatus < 0) {
 		XLALDestroyProcessTable(head);
@@ -318,7 +362,7 @@ ProcessTable *XLALProcessTableFromLIGOLw(
 
 
 /**
- * Read the process_params table from a LIGO Light-Weight XML file into a
+ * Read the process_params table from a LIGO Light Weight XML file into a
  * linked list of ProcessParamsTable structures.
  */
 ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
@@ -354,7 +398,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 
 	XLALClearErrno();
 	column_pos.program = XLALLIGOLwFindColumn(&env, "program", METAIO_TYPE_LSTRING, 1);
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
 	column_pos.param = XLALLIGOLwFindColumn(&env, "param", METAIO_TYPE_LSTRING, 1);
 	column_pos.type = XLALLIGOLwFindColumn(&env, "type", METAIO_TYPE_LSTRING, 1);
 	column_pos.value = XLALLIGOLwFindColumn(&env, "value", METAIO_TYPE_LSTRING, 1);
@@ -388,11 +432,7 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 		/* populate the columns */
 
 		strncpy(row->program, env.ligo_lw.table.elt[column_pos.program].data.lstring.data, sizeof(row->program) - 1);
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroyProcessParamsTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
 		strncpy(row->param, env.ligo_lw.table.elt[column_pos.param].data.lstring.data, sizeof(row->param) - 1);
 		strncpy(row->type, env.ligo_lw.table.elt[column_pos.type].data.lstring.data, sizeof(row->type) - 1);
 		strncpy(row->value, env.ligo_lw.table.elt[column_pos.value].data.lstring.data, sizeof(row->value) - 1);
@@ -419,9 +459,10 @@ ProcessParamsTable *XLALProcessParamsTableFromLIGOLw(
 
 
 /**
- * Read the time_slide table from a LIGO Light-Weight XML file into a
+ * Read the time_slide table from a LIGO Light Weight XML file into a
  * linked list of TimeSlide structures.
  */
+
 TimeSlide *
 XLALTimeSlideTableFromLIGOLw (
     const char *filename
@@ -454,8 +495,8 @@ XLALTimeSlideTableFromLIGOLw (
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
-	column_pos.time_slide_id = XLALLIGOLwFindColumn(&env, "time_slide_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
+	column_pos.time_slide_id = XLALLIGOLwFindColumn(&env, "time_slide_id", METAIO_TYPE_INT_8S, 1);
 	column_pos.instrument = XLALLIGOLwFindColumn(&env, "instrument", METAIO_TYPE_LSTRING, 1);
 	column_pos.offset = XLALLIGOLwFindColumn(&env, "offset", METAIO_TYPE_REAL_8, 1);
 
@@ -487,16 +528,8 @@ XLALTimeSlideTableFromLIGOLw (
 
 		/* populate the columns */
 
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroyTimeSlideTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
-		if((row->time_slide_id = XLALLIGOLwParseIlwdChar(&env, column_pos.time_slide_id, "time_slide", "time_slide_id")) < 0) {
-			XLALDestroyTimeSlideTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
+		row->time_slide_id = env.ligo_lw.table.elt[column_pos.time_slide_id].data.int_8s;
 		strncpy(row->instrument, env.ligo_lw.table.elt[column_pos.instrument].data.lstring.data, sizeof(row->instrument) - 1);
 		row->offset = env.ligo_lw.table.elt[column_pos.offset].data.real_8;
 	}
@@ -522,7 +555,7 @@ XLALTimeSlideTableFromLIGOLw (
 
 
 /**
- * Read the search_summary table from a LIGO Light-Weight XML file into a
+ * Read the search_summary table from a LIGO Light Weight XML file into a
  * linked list of SearchSummaryTable structures.
  */
 SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
@@ -568,7 +601,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 	/* find columns */
 
 	XLALClearErrno();
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_ILWD_CHAR, 1);
+	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
 	column_pos.shared_object = XLALLIGOLwFindColumn(&env, "shared_object", METAIO_TYPE_LSTRING, 1);
 	column_pos.lalwrapper_cvs_tag = XLALLIGOLwFindColumn(&env, "lalwrapper_cvs_tag", METAIO_TYPE_LSTRING, 1);
 	column_pos.lal_cvs_tag = XLALLIGOLwFindColumn(&env, "lal_cvs_tag", METAIO_TYPE_LSTRING, 1);
@@ -613,11 +646,7 @@ SearchSummaryTable *XLALSearchSummaryTableFromLIGOLw(
 
 		/* populate the columns */
 
-		if((row->process_id = XLALLIGOLwParseIlwdChar(&env, column_pos.process_id, "process", "process_id")) < 0) {
-			XLALDestroySearchSummaryTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
+		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
 		/* FIXME:  structure definition does not include elements
 		 * for these columns */
 		/*strncpy(row->shared_object, env.ligo_lw.table.elt[column_pos.shared_object].data.lstring.data, sizeof(row->shared_object) - 1);*/
