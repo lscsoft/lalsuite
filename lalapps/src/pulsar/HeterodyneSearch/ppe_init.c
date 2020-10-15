@@ -519,7 +519,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
       if ( PulsarCheckParam( pars, glitchpars[i] ) ){
         const REAL8Vector *glv = PulsarGetREAL8VectorParam( pars, glitchpars[i] );
         for ( j = 0; j < glv->length; j++ ){
-          CHAR varname[256];
+          CHAR varname[300];
           snprintf(varname, sizeof(varname), "%s_%u", glitchpars[i], j+1);
           REAL8 glval = PulsarGetREAL8VectorParamIndividual( pars, varname );
           LALInferenceAddVariable( ini, varname, &glval, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
