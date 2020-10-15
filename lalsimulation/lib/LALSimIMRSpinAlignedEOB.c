@@ -58,6 +58,7 @@
 #include "LALSimIMRSpinEOBComputeAmpPhasefromEOMSoln.c"
 #include "LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c"
 #include "LALSimIMRSpinAlignedEOBHcapDerivativeOptimized.c"
+#include "LALSimIMRSpinAlignedEOBOptimizedInterpolatorGeneral.c"
 /* END OPTIMIZED */
 
 
@@ -792,10 +793,11 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
         postAdiabaticFlag = 1;
         XLALDictInsertUINT4Value(PAParams, "PAFlag", postAdiabaticFlag);
 	XLALDictInsertUINT4Value(PAParams, "PAOrder", 8);
-	XLALDictInsertUINT4Value(PAParams, "rSize", 100);
+
+	
 	XLALDictInsertREAL8Value(PAParams, "rFinal", 1.8);
 	XLALDictInsertREAL8Value(PAParams, "rSwitch", 1.8);
-	
+	XLALDictInsertUINT2Value(PAParams, "analyticFlag",1);
 	
 	//if(XLALDictContains(LALParams,)
         // XLALDictInsertUINT4Value(PAParams, "PAOrder",6);
@@ -1047,8 +1049,16 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     {
       tStepBack = 150. * mTScaled;
     }
-  nStepBack = ceil (tStepBack / deltaT);
-
+  //nStepBack = ceil (tStepBack / deltaT);
+  REAL8 odeStep = 1.0;
+  if(postAdiabaticFlag){
+    odeStep = fmax(5*deltaT/mTScaled,1);
+  }
+  else{
+    odeStep = deltaT/mTScaled;
+  }
+  nStepBack = ceil (tStepBack / odeStep/ mTScaled);
+  printf("odeStep = %e, 5*deltaT/mTscaled=%e, nStepBack = %d\n",odeStep,5*deltaT/mTScaled,nStepBack);
 
   /* Calculate the resample factor for attaching the ringdown */
   /* We want it to be a power of 2 */
@@ -1456,6 +1466,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   if (postAdiabaticFlag)
   {
+      XLALDictInsertUINT4Value(PAParams, "rSize", ceil(values->data[0]/0.3));
     if (XLALSimInspiralEOBPostAdiabatic(
           &dynamicsPA,
           m1,
@@ -1532,7 +1543,8 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   integrator->stopontestonly = 1;
   integrator->retries = 1;
-
+  
+ 
   if (use_optimized_v2_or_v4)
     {
       /* BEGIN OPTIMIZED */
@@ -1555,11 +1567,16 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     }
   else
     {
-      retLen =
+      //retLen =
+	//XLALAdaptiveRungeKutta4NoInterpolate (integrator, &seobParams, values->data, 0.,
+				 //20. / mTScaled, deltaT / mTScaled,0,
+				 //&dynamics,2);
+       retLen =
 	XLALAdaptiveRungeKutta4 (integrator, &seobParams, values->data, 0.,
-				 20. / mTScaled, deltaT / mTScaled,
+				 20. / mTScaled, odeStep,
 				 &dynamics);
     }
+
   if (retLen == XLAL_FAILURE || dynamics == NULL)
     {
       XLAL_ERROR (XLAL_EFUNC);
@@ -1575,8 +1592,8 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   {
     const INT4 PALen = dynamicsPA->dimLength->data[1];
 
-    REAL8 tStepInterp = deltaT / mTScaled;
-    const INT4 nInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp);
+    REAL8 tStepInterp = deltaT/mTScaled;
+    //const INT4 nInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp);
 
     tVecInterp = XLALCreateREAL8Vector(PALen);
     rVecInterp = XLALCreateREAL8Vector(PALen);
@@ -1593,24 +1610,10 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 	pphiVecInterp->data[i] = dynamicsPA->data[4*PALen + i];
       }
 
-    UNUSED gsl_interp_accel *acc1 = gsl_interp_accel_alloc();
-    gsl_spline *spline1 = gsl_spline_alloc(gsl_interp_cspline, tVecInterp->length);
-    gsl_spline_init(spline1, tVecInterp->data, rVecInterp->data, tVecInterp->length);
-
-    UNUSED gsl_interp_accel *acc2 = gsl_interp_accel_alloc();
-    gsl_spline *spline2 = gsl_spline_alloc(gsl_interp_cspline, tVecInterp->length);
-    gsl_spline_init(spline2, tVecInterp->data, phiVecInterp->data, tVecInterp->length);
-
-    UNUSED gsl_interp_accel *acc3 = gsl_interp_accel_alloc();
-    gsl_spline *spline3 = gsl_spline_alloc(gsl_interp_cspline, tVecInterp->length);
-    gsl_spline_init(spline3, tVecInterp->data, prVecInterp->data, tVecInterp->length);
-
-    UNUSED gsl_interp_accel *acc4 = gsl_interp_accel_alloc();
-    gsl_spline *spline4 = gsl_spline_alloc(gsl_interp_cspline, tVecInterp->length);
-    gsl_spline_init(spline4, tVecInterp->data, pphiVecInterp->data, tVecInterp->length);
+    
 
     REAL8Array *interpDynamicsPA = NULL;
-    interpDynamicsPA = XLALCreateREAL8ArrayL(2, 5, nInterp);
+    interpDynamicsPA = XLALCreateREAL8ArrayL(2, 5, PALen);
 
     for (i = 0; i < PALen; i++)
       {
@@ -1621,25 +1624,20 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 	interpDynamicsPA->data[4*PALen + i] = pphiVecInterp->data[i] = dynamicsPA->data[4*PALen + i];
       }
 
-    gsl_spline_free (spline1);
-    gsl_interp_accel_free (acc1);
-
-    gsl_spline_free (spline2);
-    gsl_interp_accel_free (acc2);
-
-    gsl_spline_free (spline3);
-    gsl_interp_accel_free (acc3);
-
-    gsl_spline_free (spline4);
-    gsl_interp_accel_free (acc4);
-
+   
     REAL8 tOffset = interpDynamicsPA->data[PALen - 1];
     printf("Initializing PA dynamics from t=%.17f\n",tOffset);
     REAL8 phiOffset = interpDynamicsPA->data[3*PALen - 1];
 
     const INT4 combinedLen = PALen + retLen - 1;
-    combinedLenForInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp) + retLen - 1; 
-    
+    //combinedLenForInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp) + retLen - 1; 
+    combinedLenForInterp = ceil((dynamics->data[retLen-1]+tOffset-dynamicsPA->data[0]) / tStepInterp) - 1; 
+    printf("Last point of integration: %e\n",dynamics->data[retLen-1]+tOffset);
+    printf("First point of PA is %e\n",dynamicsPA->data[0]);
+    printf("The spacing to interpolate to is %e\n",tStepInterp);
+    printf("The length of the array is %d\n",combinedLenForInterp);
+    //REAL8 nODE = ceil((dynamics->data[retLen-1]-dynamics->data[0])/tStepInterp);
+    //combinedLenForInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp) + nODE - 1; 
     REAL8Array *combinedDynamics = NULL;
     combinedDynamics = XLALCreateREAL8ArrayL(2, 5, combinedLen);
 
@@ -1715,10 +1713,10 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   /* TODO : Insert high sampling rate / ringdown here */
 
-  if (tStepBack > retLen * deltaT)
+  if (tStepBack > retLen * odeStep*mTScaled)
     {
-      tStepBack = 0.5 * retLen * deltaT;	//YPnote: if 100M of step back > actual time of evolution, step back 50% of the later
-      nStepBack = ceil (tStepBack / deltaT);
+      tStepBack = 0.5 * retLen * odeStep*mTScaled;	//YPnote: if 100M of step back > actual time of evolution, step back 50% of the later
+      nStepBack = ceil (tStepBack / odeStep/mTScaled);
     }
 
   //SM
@@ -1819,7 +1817,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   }
   else
   {
-    tstartHi = hiSRndx * deltaT / mTScaled;
+    tstartHi = hiSRndx * odeStep;
   }
   printf("tstartHi = %e\n",tstartHi);
   //SM
@@ -3224,31 +3222,49 @@ for ( UINT4 k = 0; k<nModes; k++) {
 	  REAL8 phase_temp = 0.0;
     REAL8 re_In = 0.0;
     REAL8 im_In = 0.0;
+    REAL8 cm = 0.0;
+    REAL8 sm = 0.0;
+    double x_lo_old = 0, y_lo_old = 0, b_i_old = 0, c_i_old = 0, d_i_old = 0;
+    double x_lo_old2 = 0, y_lo_old2 = 0, b_i_old2 = 0, c_i_old2 = 0, d_i_old2 = 0;
+    double x_lo_old3 = 0, y_lo_old3 = 0, b_i_old3 = 0, c_i_old3 = 0, d_i_old3 = 0;
+    unsigned int index_old = 0, index_old2 = 0, index_old3 = 0;
 	  // printf("Length of rVec is %d\n",rVec.length);
 	  //printf("combinedLenForInterp : %d\n",combinedLenForInterp);
-	  for (i = 0; i < combinedLenForInterp; i++)
-	    {
-	      
-	      t_i = i*deltaT / mTScaled;
-	      
-	      re_temp = gsl_spline_eval(spline_re,t_i,acc_re);
-        im_temp = gsl_spline_eval(spline_im,t_i,acc_im);
-	      phase_temp = gsl_spline_eval(spline_orbphase,t_i,acc_orbphase);
+    for (i = 0; i < combinedLenForInterp; i++)
+    {
 
-        // Reconstruct the intertial frame mode
-        re_In = re_temp*cos(modeM*phase_temp)+im_temp*sin(modeM*phase_temp);
-        im_In = -re_temp*sin(modeM*phase_temp)+im_temp*cos(modeM*phase_temp);
-	      //printf("i: %d  t_i: %e amp = %e phase = %e\n",i,t_i,amp_temp,phase_temp);
-	      hLMAll->data[2*k*sigReVec->length+i] = re_In;
-	      hLMAll->data[(1+2*k)*sigReVec->length+i] = im_In;
-      if(t_i>tstartHi && idx == 0){
-          idx = i;
-        }
-	    }
-      hiSRndx = idx ; 
-     
+      t_i = i * deltaT / mTScaled;
+      //printf("%e,%e\n",t_i,tstartHi);
+      //re_temp = gsl_spline_eval(spline_re, t_i, acc_re);
+      //im_temp = gsl_spline_eval(spline_im, t_i, acc_im);
+      //phase_temp = gsl_spline_eval(spline_orbphase, t_i, acc_orbphase);
+
+      optimized_gsl_spline_eval_e (spline_re, t_i, acc_re, &re_temp,
+                                       &index_old, &x_lo_old, &y_lo_old,
+                                       &b_i_old, &c_i_old, &d_i_old);
+      optimized_gsl_spline_eval_e (spline_im, t_i, acc_im, &im_temp,
+                                       &index_old2, &x_lo_old2, &y_lo_old2,
+                                       &b_i_old2, &c_i_old2, &d_i_old2);
+
+      optimized_gsl_spline_eval_e (spline_orbphase, t_i, acc_orbphase, &phase_temp,
+                                       &index_old3, &x_lo_old3, &y_lo_old3,
+                                       &b_i_old3, &c_i_old3, &d_i_old3);
+      cm = cos(modeM * phase_temp);
+      sm = sin(modeM * phase_temp);
+      
+      // Reconstruct the intertial frame mode
+      re_In = re_temp * cm + im_temp * sm;
+      im_In = -re_temp * sm + im_temp * cm;
+      hLMAll->data[2 * k * sigReVec->length + i] = re_In;
+      hLMAll->data[(1 + 2 * k) * sigReVec->length + i] = im_In;
+      if (t_i > tstartHi && idx == 0)
+      {
+        idx = i;
+      }
+    }
+    hiSRndx = idx;
   }
-  
+
 #if outputDebug
          fclose (out);
         fclose(out2);
@@ -3267,22 +3283,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
     if ( omegaVec )
          XLALDestroyREAL8Vector(omegaVec);
 
-    // Interpolate waveform modes to the correct spacing
-    // Figure out the right length
     
-    // Loop over each waveform mode
-   
-    // Compute the amplitude and phase
-
-    // Create interpolants
-    
-    // Loop over every time point in the new time array
-
-    // Evaluate the interpolant for amplitude
-
-    // Evaluate the interpolant for phase
-    
-    // Reconstruct real and imaginary parts
     
     
 
