@@ -208,7 +208,7 @@ int main(int argc, char **argv)
 	/*------------------------------------------------------------------------------------------------------------------------*/
 
     fprintf(stderr,"Destroying Variables\n");
-    XLALDestroySFTCatalog(catalog);/*cg; desctroys the SFT catalogue*/
+    XLALDestroySFTCatalog(catalog);
 
     XLALDestroyUserVars();
     fprintf(stderr,"Done Destroying Variables\n");
