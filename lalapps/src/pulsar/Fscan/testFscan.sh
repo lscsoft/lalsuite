@@ -20,7 +20,8 @@ for file in $MFDv5sft; do
 done
 
 ## run spec_avg_long to create an average ASD
-cmdline="lalapps_spec_avg_long -p ${MFDv5sft} -I H1 -s 0 -e 2000000000 -f 10 -F 20 -t ${Tsft}"
+fmax=`echo ${fmin} + ${Band} | bc`
+cmdline="lalapps_spec_avg_long -p ${MFDv5sft} -I H1 -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft}"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
