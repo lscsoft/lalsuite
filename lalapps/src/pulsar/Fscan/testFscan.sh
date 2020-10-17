@@ -35,9 +35,9 @@ for file in $MSFTsft; do
 done
 
 ## do a simple test
-cmdline="head -n 1 spec_10.00_20.00_H1_0_2000000000.txt | awk '{if ($0==\"     10.00000000 2.1753e-45 4.66401e-23 1.84129e-45 4.29102e-23\") {print 1} else {print 0}}'"
+cmdline="head -n 1 spec_10.00_20.00_H1_0_2000000000.txt | awk '{if ($0=="     10.00000000 2.1753e-45 4.66401e-23 1.84129e-45 4.29102e-23") {print 1} else {print 0}}'"
 echo "Comparing average spectra:"
-if ! eval "$cmdline"; then
+if eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
