@@ -68,7 +68,6 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
 
 	REAL8 r = j0Params->r;
    	REAL8 prstar = j0Params->prstar;
-   	REAL8 csi = j0Params->csi;
     LALDict *LALParams = j0Params->LALParams;
 
     // RHS of eq. (2) of the document
@@ -77,7 +76,6 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
 		r,
 		prstar,
 		j0_sol,
-		csi,
 		j0Params->seobParams,
 		LALParams
 	);
@@ -120,7 +118,6 @@ XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 			r,
 			prstar,
 			pphi,
-			dprstarBydpr,
 			seobParams,
 			LALParams
 		);
@@ -210,7 +207,6 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 			r,
 			prstar,
 			pphi,
-			dprstarBydpr,
 			pphiParams->seobParams,
 			LALParams
 		);
@@ -220,7 +216,6 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 			r,
 			prstar,
 			pphi,
-			dprstarBydpr,
 			pphiParams->seobParams,
 			LALParams
 		);
@@ -410,14 +405,14 @@ UNUSED REAL8 XLALSimInspiralEOBPACalculateAdibaticParameter(
 	//dr/dt = dHdpr
 	REAL8 partialHBypartialprstar;
 	partialHBypartialprstar = XLALSimInspiralEOBPAPartialHByPartialprstar(
-													1e-4,
-													r,
-													prstar,
-													pphi,
-													csi,
-													seobParams,
-													LALParams
-												);
+		1e-4,
+		r,
+		prstar,
+		pphi,
+		seobParams,
+		LALParams
+	);
+
 	REAL8 drdt = partialHBypartialprstar*csi;
 	return drdt*domegadr/(2*omega*omega);
 }
@@ -489,11 +484,9 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	REAL8Vector *pphiVec,
 	REAL8Vector *pphi0Vec,
 	REAL8Vector *dpphiBydrVec,
-	UNUSED REAL8Vector *dpphiBydr0Vec,
 	REAL8Vector *csiVec,
 	REAL8Vector *omegaVec,
 	SpinEOBParams *seobParams,
-	UNUSED EOBNonQCCoeffs *nqcCoeffs,
 	LALDict *LALParams
 )
 {
@@ -506,7 +499,7 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 
 	REAL8 DeltaT;
 	REAL8 DeltaR;
-	struct PostAdiabaticRootSolveParams pphiParams;
+	struct PostAdiabaticRootSolveParams j0Params;
 
 	for (i = 0; i < rSize; i++)
 	{
@@ -518,11 +511,10 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 		REAL8 Newtonianj0;
 		Newtonianj0 = XLALSimInspiralEOBPACalculateNewtonianj0(rVec->data[i]);
 
-        pphiParams.r = rVec->data[i];
-        pphiParams.prstar = prstarVec->data[i];
-        pphiParams.csi = csiVec->data[i];
-        pphiParams.seobParams = seobParams;
-	    pphiParams.LALParams = LALParams;
+        j0Params.r = rVec->data[i];
+        j0Params.prstar = prstarVec->data[i];
+        j0Params.seobParams = seobParams;
+	    j0Params.LALParams = LALParams;
 
 	    REAL8 pphi0_lower;
 	    REAL8 pphi0_upper;
@@ -535,7 +527,7 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	    if (XLALSimInspiralEOBPostAdiabaticRootFinder(
 		    	&pphiRoot,
 				XLALSimInspiralEOBPostAdiabaticj0Func,
-				&pphiParams,
+				&j0Params,
 				pphi0_lower,
 				pphi0_upper,
 				ROOT_SOLVER_ABS_TOL,
@@ -775,14 +767,13 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 	for(i = 0; i < rSize; i++)
 	{
 		partialHBypartialprstar = XLALSimInspiralEOBPAPartialHByPartialprstar(
-													dprstarVec->data[i],
-													rVec->data[i],
-													prstarVec->data[i],
-													pphiVec->data[i],
-													csiVec->data[i],
-													seobParams,
-													LALParams
-												);
+			dprstarVec->data[i],
+			rVec->data[i],
+			prstarVec->data[i],
+			pphiVec->data[i],
+			seobParams,
+			LALParams
+		);
 		dtBydrVec->data[i] = 1. / (partialHBypartialprstar*csiVec->data[i]);
 	    dphiBydrVec->data[i] = omegaVec->data[i] * dtBydrVec->data[i];
 	}
@@ -804,8 +795,6 @@ XLALSimInspiralEOBPAPartialHByPartialr(
 	REAL8 r,
 	REAL8 prstar,
 	REAL8 pphi,
-	UNUSED REAL8 csi,
-	// SpinEOBHCoeffs *seobCoeffs,
 	SpinEOBParams *seobParams,
 	LALDict *LALParams
 )
@@ -864,7 +853,6 @@ XLALSimInspiralEOBPAPartialHByPartialprstar(
 	REAL8 r,
 	REAL8 prstar,
 	REAL8 pphi,
-	UNUSED REAL8 dprstarBydpr,
 	SpinEOBParams *seobParams,
 	LALDict *LALParams
 )
@@ -1178,6 +1166,7 @@ XLALSimInspiralEOBPostAdiabatic(
 	chi2 = spin2z;
 
 	const UINT4 PAOrder = XLALDictLookupUINT4Value(PAParams, "PAOrder");
+	// const UINT4 PAOrder = 8;
 
 	const UINT2 analyticFlag = XLALDictLookupUINT2Value(PAParams, "analyticFlag");
 
@@ -1317,9 +1306,6 @@ XLALSimInspiralEOBPostAdiabatic(
     REAL8Vector *dpphiBydrVec = XLALCreateREAL8Vector(rSize);
     memset(dpphiBydrVec->data, 0, dpphiBydrVec->length * sizeof(REAL8));
 
-    REAL8Vector *dpphiBydr0Vec = XLALCreateREAL8Vector(rSize);
-    memset(dpphiBydr0Vec->data, 0, dpphiBydr0Vec->length * sizeof(REAL8));
-
     REAL8Vector *dpphiBydrReverseVec = XLALCreateREAL8Vector(rSize);
 	memset(dpphiBydrReverseVec->data, 0, dpphiBydrReverseVec->length * sizeof(REAL8));
 
@@ -1350,11 +1336,9 @@ XLALSimInspiralEOBPostAdiabatic(
 			pphiVec,
 			pphi0Vec,
 			dpphiBydrVec,
-			dpphiBydr0Vec,
 			csiVec,
 			omegaVec,
 			seobParams,
-			nqcCoeffs,
 			LALparams
 		) != XLAL_SUCCESS)
 	{
@@ -1490,7 +1474,6 @@ XLALSimInspiralEOBPostAdiabatic(
 	XLALDestroyREAL8Vector(prstarReverseVec);
 	XLALDestroyREAL8Vector(dprstarBydrVec );
 	XLALDestroyREAL8Vector(dpphiBydrVec);
-	XLALDestroyREAL8Vector(dpphiBydr0Vec);
 	XLALDestroyREAL8Vector(dpphiBydrReverseVec);
 	XLALDestroyREAL8Vector(dprstarBydrReverseVec);
 	XLALDestroyREAL8Vector(dphiBydrVec);

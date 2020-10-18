@@ -131,11 +131,9 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
     REAL8Vector *pphiVec,
     REAL8Vector *pphi0Vec,
     REAL8Vector *dpphiBydrVec,
-    REAL8Vector *dpphiBydr0Vec,
     REAL8Vector *csiVec,
     REAL8Vector *omegaVec,
     SpinEOBParams *seobParams,
-    EOBNonQCCoeffs *nqcCoeffs,
     LALDict *LALParams
 );
 
@@ -294,7 +292,6 @@ XLALSimInspiralEOBPAPartialHByPartialr(
     REAL8 r,
     REAL8 prstar,
     REAL8 pphi,
-    REAL8 csi,
     SpinEOBParams *seobParams,
     LALDict *LALParams
 );
@@ -305,7 +302,6 @@ XLALSimInspiralEOBPAPartialHByPartialprstar(
     REAL8 r,
     REAL8 prstar,
     REAL8 pphi,
-    REAL8 dprstarBydpr,
     SpinEOBParams *seobParams,
     LALDict *LALParams
 );
