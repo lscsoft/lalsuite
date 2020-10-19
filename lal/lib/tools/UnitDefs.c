@@ -275,61 +275,49 @@ static int readString( char temp[UNITDEFSC_TEMPSIZE], const char **charPtrPtr )
  */
 char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
 {
-  UINT2        i;
-  CHAR         temp[UNITDEFSC_TEMPSIZE];
-  INT2         numer;
-  CHAR         *charPtr, *charStopPtr;
+  int    n;
+  int    i;
+  char   *s = string;
 
   if ( ! string || ! input )
     XLAL_ERROR_NULL( XLAL_EFAULT );
   if ( ! length )
     XLAL_ERROR_NULL( XLAL_EBADLEN );
 
-  charPtr = string;
-  charStopPtr = string + length;
-  /* Points one past the end of the array! */
-
-  *charPtr = '\0';
+  *s = '\0';
 
   if (input->powerOfTen != 0)
   {
-    sprintf(temp, "10^%d", input->powerOfTen);
-    if ( charPtr + strlen(temp) >= charStopPtr)
+    n = snprintf(s, length, "10^%d", input->powerOfTen);
+    s += n;
+    length -= n;
+    if ( length <= 0 )
       XLAL_ERROR_NULL( XLAL_EBADLEN );
-    strncpy(charPtr, temp, charStopPtr - charPtr);
-    charPtr += strlen(temp);
   } /* if (input->powerOfTen != 0) */
 
   for (i=0; i<LALNumUnits; ++i)
   {
-    numer = input->unitNumerator[i];
-    if (numer != 0)
+    const char *delim = (s != string) ? " " : "";
+    int numer = input->unitNumerator[i];
+    if (numer == 0)
+      continue;
+    if (input->unitDenominatorMinusOne[i] != 0)
     {
-      if (charPtr != string)
-      {
-	*charPtr = ' ';
-	++charPtr;
-      } /* if (charPtr != output->data) */
-      if (input->unitDenominatorMinusOne[i] == 0)
-      {
-	if (numer == 1)
-	{
-	  sprintf(temp, "%s", lalUnitName[i]);
-	} /* if (numer == 1) */
-	else
-	{
-	  sprintf(temp, "%s^%d", lalUnitName[i], numer);
-	}
-      } /* if (input->unitDenominatorMinusOne[i] == 0) */
-      else {
-	sprintf(temp, "%s^%d/%d", lalUnitName[i], numer,
+      n = snprintf(s, length, "%s%s^%d/%d", delim, lalUnitName[i], numer,
 		 input->unitDenominatorMinusOne[i] + 1);
-      }
-      if ( charPtr + strlen(temp) >= charStopPtr)
-        XLAL_ERROR_NULL( XLAL_EBADLEN );
-      strncpy(charPtr, temp, charStopPtr - charPtr);
-      charPtr += strlen(temp);
-    } /* if (numer != 0) */
+    }
+    else if (numer == 1) /* denom == 0 */
+    {
+      n = snprintf(s, length, "%s%s", delim, lalUnitName[i]);
+    }
+    else /* numer != 1, denom == 0 */
+    {
+      n = snprintf(s, length, "%s%s^%d", delim, lalUnitName[i], numer);
+    }
+    s += n;
+    length -= n;
+    if ( length <= 0 )
+      XLAL_ERROR_NULL( XLAL_EBADLEN );
   }  /* for (i=0; i<LALNumUnits; ++i) */
 
   return string;
