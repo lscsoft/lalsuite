@@ -32,6 +32,7 @@
 #include <gsl/gsl_randist.h>
 #include <lal/LALConstants.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALError.h>
 #include <lal/LALSimBurst.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
@@ -1273,30 +1274,33 @@ int XLALSimBurstGaussian(
 	return 0;
 }
 
+
 /*
  * ============================================================================
  *
- *                                String Cusp
+ *                                  Strings
  *
  * ============================================================================
  */
 
 
 /**
- * @brief Generates cosmic string cusp waveforms.
+ * @brief Function for generating cosmic string waveforms.
  *
  * @details
  * Generates the \f$h_{+}\f$ and \f$h_{\times}\f$ components of a cosmic
- * string cusp waveform.  These waveforms are linearly polarized and placed
- * in the \f$h_{+}\f$ compnent.  The \f$h_{\times}\f$ component is set to
- * 0.  The waveform peaks at t = 0 (as defined by the epoch and deltaT).
+ * string cusp, kink, and kink-kink waveform.  These waveforms are linearly
+ * polarized and placed in the \f$h_{+}\f$ compnent.  The \f$h_{\times}\f$
+ * component is set to 0.  The waveform peaks at t = 0 (as defined by the
+ * epoch and deltaT)
  *
- * In the frequency domain, the waveform is \f$A f^{-\frac{4}{3}}\f$ with a
+ * In the frequency domain, the waveform is \f$A f^{-q}\f$ with a
  * (non-physical) low-frequency cut-off and a (physical) high-frequency
- * cut-off.
+ * cut-off. For kink-kinks the high-frequency cutoff doesn't exist, and
+ * the argument given is ignored.
  * \f{equation}{
  * \tilde{h}_{+}(f)
- *    = A f^{-\frac{4}{3}} \left(1 +
+ *    = A f^{-q} \left(1 +
  *    \frac{f_{\mathrm{low}}^{2}}{f^{2}}\right)^{-4} \begin{cases} \exp(1 -
  *    f/f_{\mathrm{high}}) & f > f_{\mathrm{high}} \\ 1 & f \leq
  *    f_{\mathrm{high}} \end{cases}
@@ -1318,6 +1322,8 @@ int XLALSimBurstGaussian(
  * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
  * on failure.
  *
+ * @param[in] waveform Name of waveform. Should be cusp, kink, or kinkkink.
+ *
  * @param[in] amplitude Waveform's amplitude parameter, \f$A\f$, in units
  * of \f$\mathrm{strain}\,\mathrm{s}^{-\frac{1}{3}}\f$.
  *
@@ -1331,9 +1337,10 @@ int XLALSimBurstGaussian(
  */
 
 
-int XLALGenerateStringCusp(
+static int XLALGenerateString(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
+	const char *waveform,
 	REAL8 amplitude,
 	REAL8 f_high,
 	REAL8 delta_t
@@ -1391,16 +1398,46 @@ int XLALGenerateStringCusp(
 
 	/* construct the waveform in the frequency domain */
 
-	for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
-		double f = tilde_h->f0 + i * tilde_h->deltaF;
+	if(strcmp( waveform, "cusp" ) == 0) {
+		for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
+			double f = tilde_h->f0 + i * tilde_h->deltaF;
 
-		/* frequency-domain wave form.  includes taper factor above
-		 * h_high, and phase shift to put waveform's peak on the
-		 * middle sample of the time series */
+			/* frequency-domain wave form.  includes taper factor above
+			 * h_high, and phase shift to put waveform's peak on the
+			 * middle sample of the time series */
 
-		double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -4. / 3.) * (f > f_high ? exp(1. - f / f_high) : 1.);
+			double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -4. / 3.) * (f > f_high ? exp(1. - f / f_high) : 1.);
 
-		tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
+			tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
+		}
+	} else if(strcmp( waveform, "kink" ) == 0) {
+		for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
+			double f = tilde_h->f0 + i * tilde_h->deltaF;
+
+			/* frequency-domain wave form.  includes taper factor above
+			 * h_high, and phase shift to put waveform's peak on the
+			 * middle sample of the time series */
+
+			double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -5. / 3.) * (f > f_high ? exp(1. - f / f_high) : 1.);
+
+			tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
+		}
+	} else if(strcmp( waveform, "kinkkink" ) == 0) {
+		for(i = 0; (unsigned) i < tilde_h->data->length; i++) {
+			double f = tilde_h->f0 + i * tilde_h->deltaF;
+
+			/* frequency-domain wave form.  includes taper factor above
+			 * h_high, and phase shift to put waveform's peak on the
+			 * middle sample of the time series */
+
+			double amp = amplitude * pow(1. + f_low * f_low / (f * f), -4.) * pow(f, -2.0);
+
+			tilde_h->data->data[i] = amp * cexp(-I * LAL_PI * i * (length - 1) / length);
+		}
+	} else {
+		XLALPrintError("%s(): invalid waveform. must be cusp, kink, or kinkkink\n", __func__);
+		*hplus = *hcross = NULL;
+		XLAL_ERROR(XLAL_EINVAL);
 	}
 
 	/* set DC and Nyquist to zero */
@@ -1440,5 +1477,155 @@ int XLALGenerateStringCusp(
 
 	/* done */
 
-	return 0;
+	return XLAL_SUCCESS;
+}
+
+/*
+ * ============================================================================
+ *
+ *                                String Cusp
+ *
+ * ============================================================================
+ */
+
+
+/**
+ * @brief Generates cosmic string cusp waveforms.
+ *
+ * @details
+ * Generates the \f$h_{+}\f$ and \f$h_{\times}\f$ components of a cosmic
+ * string cusp waveform.
+ *
+ * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
+ * failure.
+ *
+ * @param[out] hcross Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
+ * on failure.
+ *
+ * @param[in] amplitude Waveform's amplitude parameter, \f$A\f$, in units
+ * of \f$\mathrm{strain}\,\mathrm{s}^{-\frac{1}{3}}\f$.
+ *
+ * @param[in] f_high High frequency cut-off, \f$f_{\mathrm{high}}\f$, in
+ * Hertz.
+ *
+ * @param[in] delta_t Sample period of output time series in seconds.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ */
+
+
+int XLALGenerateStringCusp(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 amplitude,
+	REAL8 f_high,
+	REAL8 delta_t
+)
+{
+	/* call waveform generator function */
+	XLAL_CHECK(XLALGenerateString(hplus, hcross, "cusp", amplitude, f_high, delta_t) == XLAL_SUCCESS, XLAL_EFUNC);
+
+	return XLAL_SUCCESS;
+}
+
+/*
+ * ============================================================================
+ *
+ *                                String Kink
+ *
+ * ============================================================================
+ */
+
+
+/**
+ * @brief Generates cosmic string kink waveforms.
+ *
+ * @details
+ * Generates the \f$h_{+}\f$ and \f$h_{\times}\f$ components of a cosmic
+ * string kink waveform.
+ *
+ * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
+ * failure.
+ *
+ * @param[out] hcross Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
+ * on failure.
+ *
+ * @param[in] amplitude Waveform's amplitude parameter, \f$A\f$, in units
+ * of \f$\mathrm{strain}\,\mathrm{s}^{-\frac{1}{3}}\f$.
+ *
+ * @param[in] f_high High frequency cut-off, \f$f_{\mathrm{high}}\f$, in
+ * Hertz.
+ *
+ * @param[in] delta_t Sample period of output time series in seconds.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ */
+
+
+int XLALGenerateStringKink(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 amplitude,
+	REAL8 f_high,
+	REAL8 delta_t
+)
+{
+	/* call waveform generator function */
+	XLAL_CHECK(XLALGenerateString(hplus, hcross, "kink", amplitude, f_high, delta_t) == XLAL_SUCCESS, XLAL_EFUNC);
+
+	return XLAL_SUCCESS;
+}
+
+/*
+ * ============================================================================
+ *
+ *                                String KinkKink
+ *
+ * ============================================================================
+ */
+
+
+/**
+ * @brief Generates cosmic string kink waveforms.
+ *
+ * @details
+ * Generates the \f$h_{+}\f$ and \f$h_{\times}\f$ components of a cosmic
+ * string kink waveform.
+ *
+ * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{+}\f$ time series.  Set to NULL on
+ * failure.
+ *
+ * @param[out] hcross Address of a REAL8TimeSeries pointer to be set to the
+ * address of the newly allocated \f$h_{\times}\f$ time series.  Set to NULL
+ * on failure.
+ *
+ * @param[in] amplitude Waveform's amplitude parameter, \f$A\f$, in units
+ * of \f$\mathrm{strain}\,\mathrm{s}^{-\frac{1}{3}}\f$.
+ *
+ * @param[in] delta_t Sample period of output time series in seconds.
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ */
+
+
+int XLALGenerateStringKinkKink(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	REAL8 amplitude,
+	REAL8 delta_t
+)
+{
+	/* call waveform generator function. the f_high parameter is set as
+	 * NaN, which will be ignored when calculating the spectrum */
+	XLAL_CHECK(XLALGenerateString(hplus, hcross, "kinkkink", amplitude, XLAL_REAL8_FAIL_NAN, delta_t) == XLAL_SUCCESS, XLAL_EFUNC);
+
+	return XLAL_SUCCESS;
 }
