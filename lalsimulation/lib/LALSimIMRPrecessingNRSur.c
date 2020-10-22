@@ -2287,6 +2287,11 @@ int XLALSimInspiralPrecessingNRSurPolarizations(
         t0 = PrecessingNRSur_get_t_ref(omegaMin_dimless, q, chiA0, chiB0,
             init_quat, init_orbphase, __sur_data);
     } else if (fMin > 0) {
+        // Cleanup and exit
+        if(ModeArray) XLALDestroyValue(ModeArray);
+        gsl_vector_free(hplus_model_times);
+        gsl_vector_free(hcross_model_times);
+        MultiModalWaveform_Destroy(h_inertial_modes);
         XLAL_ERROR_REAL8(XLAL_EDOM, "fMin should be 0 or >= %0.8f for this configuration, got %0.8f", start_freq, fMin);
     }
     REAL8 tf = gsl_vector_get(model_times, length-1);
@@ -2480,6 +2485,9 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
         t0 = PrecessingNRSur_get_t_ref(omegaMin_dimless, q, chiA0, chiB0,
             init_quat, init_orbphase, __sur_data);
     } else if (fMin > 0) {
+        // Cleanup and exit
+        if(ModeArray) XLALDestroyValue(ModeArray);
+        MultiModalWaveform_Destroy(h_inertial);
         XLAL_ERROR_NULL(XLAL_EDOM, "fMin should be 0 or >= %0.8f for this configuration, got %0.8f", start_freq, fMin);
     }
     size_t length = model_times->size;
