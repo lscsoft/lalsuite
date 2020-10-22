@@ -962,6 +962,7 @@ gcc:9:
 gcc:10:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:10
+  allow_failure: true
 
 cuda:
   image: igwn/lalsuite-dev-cuda:el7
