@@ -297,7 +297,7 @@ char * XLALUnitAsString( char *string, UINT4 length, const LALUnit *input )
 
   for (i=0; i<LALNumUnits; ++i)
   {
-    const char *delim = (s != string) ? " " : "";
+    const char *delim = (s != string) ? (const char*)" " : (const char*)"";
     int numer = input->unitNumerator[i];
     if (numer == 0)
       continue;
