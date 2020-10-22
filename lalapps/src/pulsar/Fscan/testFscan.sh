@@ -19,15 +19,34 @@ for file in $MFDv5sft; do
     fi
 done
 
-## run spec_avg_long to create an average ASD
+## run spec_avg
+outdir=spec_avg
+mkdir -p ${outdir}
 fmax=`echo ${fmin} + ${Band} | bc`
-cmdline="lalapps_spec_avg_long -p ${MFDv5sft} -I H1 -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft}"
+cmdline="( cd ${outdir} && ../lalapps_spec_avg -p ../${MFDv5sft} -I H1 -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} -r 0.1 )"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
-MSFTsft="./spec_10.00_20.00_H1_0_2000000000.txt"
-for file in $MSFTsft; do
+outfilebase="${outdir}/spec_10.00_20.00_H1_0_2000000000"
+for file in ${outfilebase} ${outfilebase}_date ${outfilebase}_timeaverage ${outfilebase}_timestamps; do
+    if ! test -f $file; then
+        echo "ERROR: could not find file '$file'"
+        exit 1
+    fi
+done
+
+## run spec_avg_long to create an average ASD
+outdir=spec_avg_long
+mkdir -p ${outdir}
+fmax=`echo ${fmin} + ${Band} | bc`
+cmdline="( cd ${outdir} && ../lalapps_spec_avg_long -p ../${MFDv5sft} -I H1 -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} )"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+outfilebase="${outdir}/spec_10.00_20.00_H1_0_2000000000"
+for file in ${outfilebase}.txt; do
     if ! test -f $file; then
         echo "ERROR: could not find file '$file'"
         exit 1
@@ -35,8 +54,8 @@ for file in $MSFTsft; do
 done
 
 ## do a simple test
-echo -n "Comparing first line of spec_10.00_20.00_H1_0_2000000000.txt to reference ... "
-firstline=`awk 'NR == 1 { print }' spec_10.00_20.00_H1_0_2000000000.txt`
+echo -n "Comparing first line of spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt to reference ... "
+firstline=`awk 'NR == 1 { print }' spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt`
 firstline_ref='10.00000000 2.1753e-45 4.66401e-23 1.84129e-45 4.29102e-23'
 for f in 1 2 3 4 5; do
     field=`echo "$firstline" | awk '{ print $'"$f"' }'`
@@ -48,8 +67,8 @@ for f in 1 2 3 4 5; do
     fi
 done
 echo "OK"
-echo -n "Comparing last line of spec_10.00_20.00_H1_0_2000000000.txt to reference ... "
-lastline=`awk 'NR == 18001 { print }' spec_10.00_20.00_H1_0_2000000000.txt`
+echo -n "Comparing last line of spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt to reference ... "
+lastline=`awk 'NR == 18001 { print }' spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt`
 lastline_ref='20.00000000 6.68982e-45 8.17913e-23 6.43827e-45 8.02388e-23'
 for f in 1 2 3 4 5; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
