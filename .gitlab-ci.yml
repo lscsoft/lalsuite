@@ -951,10 +951,6 @@ clang:dev:
     reports:
       junit: "*/test/python/junit*.xml"
 
-gcc:7:
-  <<: *gcc-build
-  image: igwn/lalsuite-dev-gcc:7
-
 gcc:8:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:8
@@ -962,6 +958,11 @@ gcc:8:
 gcc:9:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:9
+
+gcc:10:
+  <<: *gcc-build
+  image: igwn/lalsuite-dev-gcc:10
+  allow_failure: true
 
 cuda:
   image: igwn/lalsuite-dev-cuda:el7
