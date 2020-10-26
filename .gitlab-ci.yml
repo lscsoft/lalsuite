@@ -951,6 +951,10 @@ clang:dev:
     reports:
       junit: "*/test/python/junit*.xml"
 
+gcc:7:
+  <<: *gcc-build
+  image: igwn/lalsuite-dev-gcc:7
+
 gcc:8:
   <<: *gcc-build
   image: igwn/lalsuite-dev-gcc:8
