@@ -303,7 +303,7 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   version_devel=`echo "$VERSION" | cut -d. -f4-`
   test -z "$version_micro" && version_micro=0
   test -z "$version_devel" && version_devel=0
-  configure_date=`date +"%Y-%m-%dT%H:%M:%S%z"`
+  configure_date=`$(top_srcdir)/gnuscripts/reproducible-date +"%Y-%m-%dT%H:%M:%S%z"`
   AC_DEFINE_UNQUOTED(uppercase[_VERSION],["$VERSION"],AC_PACKAGE_NAME[ Version])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_MAJOR],[$version_major],AC_PACKAGE_NAME[ Version Major Number])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_MINOR],[$version_minor],AC_PACKAGE_NAME[ Version Minor Number])
