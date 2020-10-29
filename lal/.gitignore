@@ -89,6 +89,7 @@ test/fft/TimeFreqFFTTest
 test/inject/GeocentricGeodeticTest
 test/inject/SkyCoordinatesTest
 test/noisemodels/NoisePSDTest
+test/python/iterutils_randindex_histogram.png
 test/stats/LALCorrelationTest
 test/stats/LALMomentTest
 test/stats/XLALChisqTest
