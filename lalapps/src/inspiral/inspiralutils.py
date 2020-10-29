@@ -359,7 +359,7 @@ def veto_segments(ifo, config, categories, generateVetoes):
                 xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.ProcessParamsTable))
 
                 # add process table
-                process = ligolw_process.append_process(xmldoc, program=__name__, version=__version__)
+                process = ligolw_process.register_to_xmldoc(xmldoc, __name__, {}, version=__version__)
 
                 gpssegs = segments.segmentlist()
                 for seg in vetoSegs:
@@ -566,7 +566,7 @@ def findSegmentsToAnalyze(config, ifo, veto_categories, generate_segments=True,\
         xmldoc.childNodes[-1].appendChild(lsctables.New(lsctables.ProcessParamsTable))
 
         # add process table
-        process = ligolw_process.append_process(xmldoc, program=__name__, version=__version__)
+        process = ligolw_process.register_to_xmldoc(xmldoc, __name__, {}, version=__version__)
 
         gpssegs = segments.segmentlist()
         for seg in analyzedSegs:
