@@ -1150,76 +1150,45 @@ XLALSimInspiralEOBPostAdiabatic(
 		XLAL_ERROR(XLAL_EFUNC, "XLALSimInspiralEOBPostAdiabatic can only be used with SpinAlignedEOBversion = 4.\n");
 	}
 
-	REAL8 M;
-	M = m1 + m2;
+	REAL8 q = XLALSimInspiralEOBPACalculateMassRatio(m1, m2);
+	REAL8 nu = XLALSimInspiralEOBPACalculateSymmetricMassRatio(q);
 
-	REAL8 q;
-	q = XLALSimInspiralEOBPACalculateMassRatio(m1, m2);
-
-	REAL8 nu;
-	nu = XLALSimInspiralEOBPACalculateSymmetricMassRatio(q);
-
-	REAL8 chi1;
-	chi1 = spin1z;
-
-	REAL8 chi2;
-	chi2 = spin2z;
+	REAL8 chi1 = spin1z;
+	REAL8 chi2 = spin2z;
 
 	const UINT4 PAOrder = XLALDictLookupUINT4Value(PAParams, "PAOrder");
 	// const UINT4 PAOrder = 8;
 
 	const UINT2 analyticFlag = XLALDictLookupUINT2Value(PAParams, "analyticFlag");
 
-	REAL8 X1;
-	X1 = XLALSimInspiralEOBPACalculateX1(nu);
+	REAL8 X1 = XLALSimInspiralEOBPACalculateX1(nu);
+	REAL8 X2 = XLALSimInspiralEOBPACalculateX2(nu);
 
-	REAL8 X2;
-	X2 = XLALSimInspiralEOBPACalculateX2(nu);
+	REAL8 a1 = XLALSimInspiralEOBPACalculatea(X1, chi1);
+	REAL8 a2 = XLALSimInspiralEOBPACalculatea(X2, chi2);
 
-	REAL8 a1;
-	a1 = XLALSimInspiralEOBPACalculatea(X1, chi1);
+	REAL8 aK = a1 + a2;
 
-	REAL8 a2;
-	a2 = XLALSimInspiralEOBPACalculatea(X2, chi2);
+	REAL8 Sstar = XLALSimInspiralEOBPACalculateSstar(X1, X2, chi1, chi2);
 
-	REAL8 aK;
-	aK = a1 + a2;
+	REAL8 rInitial = initVals.data[0];
 
-	REAL8 S1;
-	S1 = XLALSimInspiralEOBPACalculateS(X1, chi1);
-
-	REAL8 S2;
-	S2 = XLALSimInspiralEOBPACalculateS(X2, chi2);
-
-	REAL8 S;
-	S = S1 + S2;
-
-	REAL8 Sstar;
-	Sstar = XLALSimInspiralEOBPACalculateSstar(X1, X2, chi1, chi2);
-
-	REAL8 rInitial;
-	rInitial = initVals.data[0];
-
-	REAL8 rFinal;
 	// REAL8 rFinalPrefactor = XLALDictLookupREAL8Value(PAParams, "rFinal");
 	REAL8 rFinalPrefactor = 1.4;
-	rFinal = rFinalPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
+	REAL8 rFinal = rFinalPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	if (rInitial <= rFinal)
 	{
 		XLAL_ERROR(XLAL_EFUNC);
 	}
 
-	UINT4 rSize;
+	UINT4 rSize = 100;
 	// rSize = XLALDictLookupUINT4Value(PAParams, "rSize");
-	rSize = 50;
 	
-	REAL8 dr;
-	dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
+	REAL8 dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
 
 	LALDict *LALparams = XLALCreateDict();
 
-	XLALDictInsertREAL8Value(LALparams, "M", M);
 	XLALDictInsertREAL8Value(LALparams, "q", q);
 	XLALDictInsertREAL8Value(LALparams, "nu", nu);
 
@@ -1236,9 +1205,6 @@ XLALSimInspiralEOBPostAdiabatic(
 	XLALDictInsertREAL8Value(LALparams, "a2", a2);
 	XLALDictInsertREAL8Value(LALparams, "aK", aK);
 
-	XLALDictInsertREAL8Value(LALparams, "S1", S1);
-	XLALDictInsertREAL8Value(LALparams, "S2", S2);
-	XLALDictInsertREAL8Value(LALparams, "S", S);
 	XLALDictInsertREAL8Value(LALparams, "Sstar", Sstar);
 
 	XLALDictInsertREAL8Value(LALparams, "rInitial", rInitial);
