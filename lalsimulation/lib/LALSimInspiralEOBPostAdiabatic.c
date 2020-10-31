@@ -1182,8 +1182,8 @@ XLALSimInspiralEOBPostAdiabatic(
 		XLAL_ERROR(XLAL_EFUNC);
 	}
 
-	UINT4 rSize = 100;
-	// rSize = XLALDictLookupUINT4Value(PAParams, "rSize");
+	// UINT4 rSize = 100;
+	UINT4 rSize = XLALDictLookupUINT4Value(PAParams, "rSize");
 	
 	REAL8 dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
 
