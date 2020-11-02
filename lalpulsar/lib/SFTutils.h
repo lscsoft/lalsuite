@@ -210,6 +210,15 @@ int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD,
                                     const REAL8 FreqMin,
                                     const REAL8 FreqBand
                               );
+int XLALComputePSDfromSFTs ( REAL8Vector **finalPSD,
+                             MultiSFTVector *inputSFTs,
+                             const UINT4 blocksRngMed,
+                             const MathOpType PSDmthopSFTs,
+                             const MathOpType PSDmthopIFOs,
+                             const BOOLEAN normalizeByTotalNumSFTs,
+                             const REAL8 FreqMin,
+                             const REAL8 FreqBand
+                           );
 int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
 int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
 REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );

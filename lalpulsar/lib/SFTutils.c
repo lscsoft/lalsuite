@@ -2398,6 +2398,47 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
 
 } /* XLALComputePSDandNormSFTPower() */
 
+/**
+ * Compute the PSD (power spectral density) over a MultiSFTVector.
+ * This is just a convenience wrapper around XLALComputePSDandNormSFTPower()
+ * without the extra options for normSFTpower computation.
+ *
+ * \return a REAL8Vector of the final normalized and averaged/summed PSD.
+ */
+int
+XLALComputePSDfromSFTs ( REAL8Vector **finalPSD, /* [out] final PSD averaged over all IFOs and timestamps */
+                         MultiSFTVector *inputSFTs, /* [in] the multi-IFO SFT data */
+                         const UINT4 blocksRngMed, /* [in] running Median window size */
+                         const MathOpType PSDmthopSFTs, /* [in] math operation over SFTs for each IFO (PSD) */
+                         const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
+                         const BOOLEAN normalizeByTotalNumSFTs, /* [in] whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
+                         const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
+                         const REAL8 FreqBand /* [in] frequency band to cover with output bins (must be >=0) */
+                       )
+{
+
+  MultiPSDVector *multiPSDVector = NULL;
+  REAL8Vector *normSFT = NULL;
+  XLAL_CHECK ( XLALComputePSDandNormSFTPower ( finalPSD,
+                      &multiPSDVector,
+                      &normSFT,
+                      inputSFTs,
+                      0,
+                      0,
+                      blocksRngMed,
+                      PSDmthopSFTs,
+                      PSDmthopIFOs,
+                      0,
+                      0,
+                      normalizeByTotalNumSFTs,
+                      FreqMin,
+                      FreqBand
+  ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+} /* XLALComputePSDfromSFTs() */
+
 
 /**
  * Dump complete multi-PSDVector over IFOs, timestamps and frequency-bins into
