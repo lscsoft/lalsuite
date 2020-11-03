@@ -120,6 +120,8 @@ outputs:
         - python-lalinspiral >={{ lalinspiral_version }}
         - python-lalpulsar >={{ lalpulsar_version }}
         - scipy >=0.9.0
+        - python-ligo-lw
+        - ligo-segments
       run:
         - astropy >=1.1.1
         - gsl
@@ -145,6 +147,8 @@ outputs:
         - python-lalinspiral >={{ lalinspiral_version }}
         - python-lalpulsar >={{ lalpulsar_version }}
         - scipy >=0.9.0
+        - python-ligo-lw
+        - ligo-segments
     test:
       requires:
         - cpnest
