@@ -142,6 +142,7 @@ int XLALSimInspiralWaveformParamsInsertNLTidesF2(LALDict *params, REAL8 value);
 
 /* SEOBNRv4P */
 INT4 XLALSimInspiralWaveformParamsInsertEOBChooseNumOrAnalHamDer(LALDict *params, INT4 value);
+INT4 XLALSimInspiralWaveformParamsInsertEOBEllMaxForNyquistCheck(LALDict *params, INT4 value);
 
 INT4 XLALSimInspiralWaveformParamsLookupModesChoice(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupFrameAxis(LALDict *params);
@@ -274,6 +275,7 @@ REAL8 XLALSimInspiralWaveformParamsLookupNLTidesF2(LALDict *params);
 
 /* SEOBNRv4P */
 INT4 XLALSimInspiralWaveformParamsLookupEOBChooseNumOrAnalHamDer(LALDict *params);
+INT4 XLALSimInspiralWaveformParamsLookupEOBEllMaxForNyquistCheck(LALDict *params);
 
 int XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALDict *params);
@@ -395,7 +397,7 @@ int XLALSimInspiralWaveformParamsNonGRLIVASignIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRLIVAlphaIsDefault(LALDict *params);
 /* SEOBNRv4P */
 INT4 XLALSimInspiralWaveformParamsEOBChooseNumOrAnalHamDerIsDefault(LALDict *params);
-
+INT4 XLALSimInspiralWaveformParamsEOBEllMaxForNyquistCheckIsDefault(LALDict *params);
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)

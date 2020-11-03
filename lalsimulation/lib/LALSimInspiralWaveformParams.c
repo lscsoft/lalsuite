@@ -154,6 +154,8 @@ DEFINE_INSERT_FUNC(NLTidesF2, REAL8, "nlTidesF2", 0)
 
 /* SEOBNRv4P */
 DEFINE_INSERT_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
+DEFINE_INSERT_FUNC(EOBEllMaxForNyquistCheck, INT4, "EOBEllMaxForNyquistCheck", 5)
+
 
 /* IMRPhenomX Parameters */
 DEFINE_INSERT_FUNC(PhenomXInspiralPhaseVersion, INT4, "InsPhaseVersion", 104)
@@ -299,6 +301,7 @@ DEFINE_LOOKUP_FUNC(NLTidesN2, REAL8, "nlTidesN2", 0)
 DEFINE_LOOKUP_FUNC(NLTidesF2, REAL8, "nlTidesF2", 0)
 /* SEOBNRv4P */
 DEFINE_LOOKUP_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
+DEFINE_LOOKUP_FUNC(EOBEllMaxForNyquistCheck, INT4, "EOBEllMaxForNyquistCheck", 5)
 
 /* IMRPhenomX Parameters */
 DEFINE_LOOKUP_FUNC(PhenomXInspiralPhaseVersion, INT4, "InsPhaseVersion", 104)
@@ -427,6 +430,7 @@ DEFINE_ISDEFAULT_FUNC(NonGRLIVASign, REAL8, "LIV_A_sign", 1)
 DEFINE_ISDEFAULT_FUNC(NonGRLIVAlpha, REAL8, "nonGR_alpha", 0)
 /* SEOBNRv4P */
 DEFINE_ISDEFAULT_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
+DEFINE_ISDEFAULT_FUNC(EOBEllMaxForNyquistCheck, INT4, "EOBEllMaxForNyquistCheck", 5)
 
 /* IMRPhenomX Parameters */
 DEFINE_ISDEFAULT_FUNC(PhenomXInspiralPhaseVersion, INT4, "InsPhaseVersion", 104)
