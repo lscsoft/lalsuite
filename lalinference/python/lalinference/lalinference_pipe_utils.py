@@ -167,16 +167,17 @@ class Event():
         else:
             self.event_id=next(Event.new_id)
         if self.injection is not None:
-            self.trig_time=self.injection.get_end()
-            if event_id is None: self.event_id=int(str(self.injection.simulation_id).split(':')[2])
+            self.trig_time=self.injection.geocent_end_time + 1.0e-9*self.injection.geocent_end_time_ns
+            if event_id is None: self.event_id=self.injection.simulation_id
         if self.burstinjection is not None:
-            self.trig_time=self.burstinjection.get_end()
-            if event_id is None: self.event_id=int(str(self.burstinjection.simulation_id).split(':')[2])
+            self.trig_time=self.burstinjection.time_geocent + 1.0e-9*self.burstinjection.time_geocent_ns
+            if event_id is None: self.event_id=self.burstinjection.simulation_id
         if self.sngltrigger is not None:
-            self.trig_time=self.sngltrigger.get_end()
-            self.event_id=int(str(self.sngltrigger.event_id).split(':')[2])
+            self.trig_time=self.sngltrigger.end_time + 1.0e-9 * self.sngltrigger.end_time_ns
+            self.event_id=self.sngltrigger.event_id
         if self.coinctrigger is not None:
             self.trig_time=self.coinctrigger.end_time + 1.0e-9 * self.coinctrigger.end_time_ns
+            self.event_id=self.coinctrigger.event_id
         if self.GID is not None:
             self.event_id=int(''.join(i for i in self.GID if i.isdigit()))
         self.engine_opts={}
