@@ -43,7 +43,7 @@ int main( int argc, char *argv[] )
     LALStringVector *input_result_files;
     UINT4 toplist_limit;
   } uvar_struct = {
-    .output_result_file = NULL,
+    .toplist_limit = 0,
   };
   struct uvar_type *const uvar = &uvar_struct;
 
