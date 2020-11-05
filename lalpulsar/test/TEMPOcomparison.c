@@ -230,7 +230,7 @@ main(int argc, char *argv[])
   MJDTime *TOA = NULL;
   CHAR tempstr[1024];
   CHAR *tempstr2;
-  CHAR TstartMJDstr[20],TfinishMJDstr[20],TOAstr[22];
+  CHAR TstartMJDstr[2048],TfinishMJDstr[2048],TOAstr[2048];
   PulsarSignalParams pulsarparams;
   CHAR parfile[256];
   CHAR timfile[256];
@@ -587,12 +587,12 @@ main(int argc, char *argv[])
 
   snprintf(tempstr,sizeof(tempstr),"%1.13f",TOA[0].fracdays);
   tempstr2 = tempstr+2;
-  snprintf(TstartMJDstr,19,"%d.%s",TOA[0].days,tempstr2);
+  snprintf(TstartMJDstr,sizeof(TstartMJDstr),"%d.%s",TOA[0].days,tempstr2);
   XLALPrintInfo ( "Converted initial TOA MJD %d %6.12f to the string %s\n",TOA[0].days,TOA[0].fracdays,TstartMJDstr);
 
   snprintf(tempstr,sizeof(tempstr),"%1.13f",TOA[n-1].fracdays);
   tempstr2 = tempstr+2;
-  snprintf(TfinishMJDstr,19,"%d.%s",TOA[n-1].days,tempstr2);
+  snprintf(TfinishMJDstr,sizeof(TfinishMJDstr),"%d.%s",TOA[n-1].days,tempstr2);
   XLALPrintInfo ( "*** Converted MJD to a string %s\n",TfinishMJDstr);
   XLALPrintInfo ( "Converted final TOA MJD %d %6.12f to the string %s\n",TOA[n-1].days,TOA[n-1].fracdays,TfinishMJDstr);
 
@@ -637,7 +637,7 @@ main(int argc, char *argv[])
       /* convert each TOA to a string for output */
       snprintf(tempstr,sizeof(tempstr),"%1.16f",TOA[i].fracdays);
       tempstr2 = tempstr+2;
-      snprintf(TOAstr,22,"%d.%s",TOA[i].days,tempstr2);
+      snprintf(TOAstr,sizeof(TOAstr),"%d.%s",TOA[i].days,tempstr2);
       fprintf(fp,"blank.dat\t1000.0\t%s\t1.0\t%s\n",TOAstr,detcode);
       XLALPrintInfo ( "Converting MJD time %d %6.16f to string %s\n",TOA[i].days,TOA[i].fracdays,TOAstr);
     } // for i < n
