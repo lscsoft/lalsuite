@@ -966,7 +966,6 @@ gcc:9:
 gcc:10:
   <<: *gcc-build
   image: containers.ligo.org/docker/lalsuite-dev-gcc:10
-  allow_failure: true
 
 cuda:
   image: containers.ligo.org/docker/lalsuite-dev-cuda:el7
