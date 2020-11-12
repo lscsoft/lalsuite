@@ -317,12 +317,7 @@ class CacheEntry(object):
         """
         # the import has to be done here to break the cyclic
         # dependancy
-        try:
-            from ligo.lw.lsctables import instrumentsproperty
-        except ImportError:
-            # FIXME:  remove when we can rely on ligo.lw being installed
-            # (why isn't it!?)
-            from glue.ligolw.lsctables import instrumentsproperty
+        from ligo.lw.lsctables import instrumentsproperty
         instruments = instrumentsproperty.get(self.observatory) or (None,)
         return segments.segmentlistdict((instrument, segments.segmentlist(self.segment is not None and [self.segment] or [])) for instrument in instruments)
 

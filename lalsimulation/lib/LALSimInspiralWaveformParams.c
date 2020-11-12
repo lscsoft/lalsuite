@@ -67,12 +67,15 @@ DEFINE_INSERT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_INSERT_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
 DEFINE_INSERT_FUNC(PNSpinOrder, INT4, "spinO", -1)
 DEFINE_INSERT_FUNC(PNTidalOrder, INT4, "tideO", -1)
-
+DEFINE_INSERT_FUNC(GETides, INT4, "GEtideO", 0)
+DEFINE_INSERT_FUNC(GMTides, INT4, "GMtideO", 0)
 
 DEFINE_INSERT_FUNC(TidalLambda1, REAL8, "lambda1", 0)
 DEFINE_INSERT_FUNC(TidalLambda2, REAL8, "lambda2", 0)
 DEFINE_INSERT_FUNC(TidalOctupolarLambda1, REAL8, "TidalOctupolarLambda1", 0)
 DEFINE_INSERT_FUNC(TidalOctupolarLambda2, REAL8, "TidalOctupolarLambda2", 0)
+DEFINE_INSERT_FUNC(TidalHexadecapolarLambda1, REAL8, "TidalHexadecapolarLambda1", 0)
+DEFINE_INSERT_FUNC(TidalHexadecapolarLambda2, REAL8, "TidalHexadecapolarLambda2", 0)
 DEFINE_INSERT_FUNC(TidalQuadrupolarFMode1, REAL8, "TidalQuadrupolarFMode1", 0)
 DEFINE_INSERT_FUNC(TidalQuadrupolarFMode2, REAL8, "TidalQuadrupolarFMode2", 0)
 DEFINE_INSERT_FUNC(TidalOctupolarFMode1, REAL8, "TidalOctupolarFMode1", 0)
@@ -151,6 +154,8 @@ DEFINE_INSERT_FUNC(NLTidesF2, REAL8, "nlTidesF2", 0)
 
 /* SEOBNRv4P */
 DEFINE_INSERT_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
+DEFINE_INSERT_FUNC(EOBEllMaxForNyquistCheck, INT4, "EOBEllMaxForNyquistCheck", 5)
+
 
 /* IMRPhenomX Parameters */
 DEFINE_INSERT_FUNC(PhenomXInspiralPhaseVersion, INT4, "InsPhaseVersion", 104)
@@ -210,11 +215,15 @@ DEFINE_LOOKUP_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_LOOKUP_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
 DEFINE_LOOKUP_FUNC(PNSpinOrder, INT4, "spinO", -1)
 DEFINE_LOOKUP_FUNC(PNTidalOrder, INT4, "tideO", -1)
+DEFINE_LOOKUP_FUNC(GETides, INT4, "GEtideO", 0)
+DEFINE_LOOKUP_FUNC(GMTides, INT4, "GMtideO", 0)
 
 DEFINE_LOOKUP_FUNC(TidalLambda1, REAL8, "lambda1", 0)
 DEFINE_LOOKUP_FUNC(TidalLambda2, REAL8, "lambda2", 0)
 DEFINE_LOOKUP_FUNC(TidalOctupolarLambda1, REAL8, "TidalOctupolarLambda1", 0)
 DEFINE_LOOKUP_FUNC(TidalOctupolarLambda2, REAL8, "TidalOctupolarLambda2", 0)
+DEFINE_LOOKUP_FUNC(TidalHexadecapolarLambda1, REAL8, "TidalHexadecapolarLambda1", 0)
+DEFINE_LOOKUP_FUNC(TidalHexadecapolarLambda2, REAL8, "TidalHexadecapolarLambda2", 0)
 DEFINE_LOOKUP_FUNC(TidalQuadrupolarFMode1, REAL8, "TidalQuadrupolarFMode1", 0)
 DEFINE_LOOKUP_FUNC(TidalQuadrupolarFMode2, REAL8, "TidalQuadrupolarFMode2", 0)
 DEFINE_LOOKUP_FUNC(TidalOctupolarFMode1, REAL8, "TidalOctupolarFMode1", 0)
@@ -292,6 +301,7 @@ DEFINE_LOOKUP_FUNC(NLTidesN2, REAL8, "nlTidesN2", 0)
 DEFINE_LOOKUP_FUNC(NLTidesF2, REAL8, "nlTidesF2", 0)
 /* SEOBNRv4P */
 DEFINE_LOOKUP_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
+DEFINE_LOOKUP_FUNC(EOBEllMaxForNyquistCheck, INT4, "EOBEllMaxForNyquistCheck", 5)
 
 /* IMRPhenomX Parameters */
 DEFINE_LOOKUP_FUNC(PhenomXInspiralPhaseVersion, INT4, "InsPhaseVersion", 104)
@@ -344,11 +354,15 @@ DEFINE_ISDEFAULT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_ISDEFAULT_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
 DEFINE_ISDEFAULT_FUNC(PNSpinOrder, INT4, "spinO", -1)
 DEFINE_ISDEFAULT_FUNC(PNTidalOrder, INT4, "tideO", -1)
+DEFINE_ISDEFAULT_FUNC(GETides, INT4, "GEtideO", LAL_SIM_INSPIRAL_GETIDES_GSF23)
+DEFINE_ISDEFAULT_FUNC(GMTides, INT4, "GMtideO", LAL_SIM_INSPIRAL_GMTIDES_PN)
 
 DEFINE_ISDEFAULT_FUNC(TidalLambda1, REAL8, "lambda1", 0)
 DEFINE_ISDEFAULT_FUNC(TidalLambda2, REAL8, "lambda2", 0)
 DEFINE_ISDEFAULT_FUNC(TidalOctupolarLambda1, REAL8, "TidalOctupolarLambda1", 0)
 DEFINE_ISDEFAULT_FUNC(TidalOctupolarLambda2, REAL8, "TidalOctupolarLambda2", 0)
+DEFINE_ISDEFAULT_FUNC(TidalHexadecapolarLambda1, REAL8, "TidalHexadecapolarLambda1", 0)
+DEFINE_ISDEFAULT_FUNC(TidalHexadecapolarLambda2, REAL8, "TidalHexadecapolarLambda2", 0)
 DEFINE_ISDEFAULT_FUNC(TidalQuadrupolarFMode1, REAL8, "TidalQuadrupolarFMode1", 0)
 DEFINE_ISDEFAULT_FUNC(TidalQuadrupolarFMode2, REAL8, "TidalQuadrupolarFMode2", 0)
 DEFINE_ISDEFAULT_FUNC(TidalOctupolarFMode1, REAL8, "TidalOctupolarFMode1", 0)
@@ -416,6 +430,7 @@ DEFINE_ISDEFAULT_FUNC(NonGRLIVASign, REAL8, "LIV_A_sign", 1)
 DEFINE_ISDEFAULT_FUNC(NonGRLIVAlpha, REAL8, "nonGR_alpha", 0)
 /* SEOBNRv4P */
 DEFINE_ISDEFAULT_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
+DEFINE_ISDEFAULT_FUNC(EOBEllMaxForNyquistCheck, INT4, "EOBEllMaxForNyquistCheck", 5)
 
 /* IMRPhenomX Parameters */
 DEFINE_ISDEFAULT_FUNC(PhenomXInspiralPhaseVersion, INT4, "InsPhaseVersion", 104)

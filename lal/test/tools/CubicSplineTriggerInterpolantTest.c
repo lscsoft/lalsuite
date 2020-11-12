@@ -24,7 +24,7 @@
 
 #include <lal/TriggerInterpolation.h>
 
-int main(__attribute__((unused)) int argc, __attribute__((unused)) char **argv)
+int main(__attribute__ ((unused)) int argc, __attribute__ ((unused)) char **argv)
 {
     int result;
     double tmax;

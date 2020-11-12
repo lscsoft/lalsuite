@@ -244,16 +244,16 @@ static int PrecessingNRSur_Init(
     for (i=0; i < (t_ds->size); i++) ds_node_data[i] = NULL;
     for (i=0; i < 3; i++) ds_half_node_data[i] = NULL;
     LALH5File *sub;
-    char *sub_name = XLALMalloc(15); // Should be enough for j < 1000000
+    char *sub_name = XLALMalloc(20);
     int j;
     for (i=0; i < (t_ds->size); i++) {
         if (i < 3) {j = 2*i;} else {j = i+3;}
-        snprintf(sub_name, 15, "ds_node_%d", j);
+        snprintf(sub_name, 20, "ds_node_%d", j);
         sub = XLALH5GroupOpen(file, sub_name);
         PrecessingNRSur_LoadDynamicsNode(ds_node_data, sub, i, PrecessingNRSurVersion);
 
         if (i < 3) {
-            snprintf(sub_name, 15, "ds_node_%d", j+1);
+            snprintf(sub_name, 20, "ds_node_%d", j+1);
             sub = XLALH5GroupOpen(file, sub_name);
             PrecessingNRSur_LoadDynamicsNode(ds_half_node_data, sub, i, PrecessingNRSurVersion);
         }
@@ -2287,6 +2287,11 @@ int XLALSimInspiralPrecessingNRSurPolarizations(
         t0 = PrecessingNRSur_get_t_ref(omegaMin_dimless, q, chiA0, chiB0,
             init_quat, init_orbphase, __sur_data);
     } else if (fMin > 0) {
+        // Cleanup and exit
+        if(ModeArray) XLALDestroyValue(ModeArray);
+        gsl_vector_free(hplus_model_times);
+        gsl_vector_free(hcross_model_times);
+        MultiModalWaveform_Destroy(h_inertial_modes);
         XLAL_ERROR_REAL8(XLAL_EDOM, "fMin should be 0 or >= %0.8f for this configuration, got %0.8f", start_freq, fMin);
     }
     REAL8 tf = gsl_vector_get(model_times, length-1);
@@ -2480,6 +2485,9 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
         t0 = PrecessingNRSur_get_t_ref(omegaMin_dimless, q, chiA0, chiB0,
             init_quat, init_orbphase, __sur_data);
     } else if (fMin > 0) {
+        // Cleanup and exit
+        if(ModeArray) XLALDestroyValue(ModeArray);
+        MultiModalWaveform_Destroy(h_inertial);
         XLAL_ERROR_NULL(XLAL_EDOM, "fMin should be 0 or >= %0.8f for this configuration, got %0.8f", start_freq, fMin);
     }
     size_t length = model_times->size;

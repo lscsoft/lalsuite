@@ -57,8 +57,8 @@
 #include <lal/LALHashTbl.h>
 #include <lal/Date.h>
 #include <lal/SFTfileIO.h>
+#include <lal/SFTReferenceLibrary.h>
 #include <LALAppsVCSInfo.h>
-#include "SFTReferenceLibrary.h"
 
 /**
  * rounding (for positive numbers!)

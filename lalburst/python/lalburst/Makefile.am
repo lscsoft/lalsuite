@@ -22,6 +22,7 @@ pymodule_PYTHON = \
 	git_version.py \
 	offsetvector.py \
 	packing.py \
+	power.py \
 	SimBurstUtils.py \
 	SnglBurstUtils.py \
 	snglcluster.py \

@@ -47,7 +47,7 @@ from ligo.segments import utils as segmentsUtils
 from glue import pipeline
 import lal
 from lal.utils import CacheEntry
-from lalapps import power
+from lalburst import power
 
 
 __author__ = "Kipp Cannon <kipp@gravity.phys.uwm.edu>"

@@ -1874,7 +1874,7 @@ else
 /* When -fvisibility=hidden is used, assume the code has been annotated
    correspondingly for the symbols needed.  */
 #if defined __GNUC__ && (((__GNUC__ == 3) && (__GNUC_MINOR__ >= 3)) || (__GNUC__ > 3))
-int fnord () __attribute__((visibility("default")));
+int fnord () __attribute__ ((visibility("default")));
 #endif
 
 int fnord () { return 42; }

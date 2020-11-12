@@ -698,7 +698,7 @@ void XLALError(const char *func,
  * <li> \b ...     (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_ERROR(...) _XLAL_ERROR_IMPL_(return XLAL_FAILURE, __VA_ARGS__)
+#define XLAL_ERROR(...) _XLAL_ERROR_IMPL_(return (int)XLAL_FAILURE, __VA_ARGS__)
 
 /**
  * Macro to invoke a failure from a XLAL routine returning a pointer.
@@ -808,7 +808,7 @@ void XLALError(const char *func,
  * <li> \b ... (Optional) Additional arguments for printf-like format.
  * </ul>
  */
-#define XLAL_CHECK(assertion, ...) _XLAL_CHECK_IMPL_(return XLAL_FAILURE, assertion, __VA_ARGS__)
+#define XLAL_CHECK(assertion, ...) _XLAL_CHECK_IMPL_(return (int)XLAL_FAILURE, assertion, __VA_ARGS__)
 
 /**
  * \brief Macro to test an assertion and invoke a failure if it is not true

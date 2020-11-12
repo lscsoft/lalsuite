@@ -1,0 +1,3 @@
+#!/bin/sh
+SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-$(date +%s)}"
+date -u -d "@$SOURCE_DATE_EPOCH" "$@" 2>/dev/null || date -u -r "$SOURCE_DATE_EPOCH" "$@" 2>/dev/null || date -u "$@"

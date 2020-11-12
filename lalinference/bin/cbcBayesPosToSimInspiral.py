@@ -28,9 +28,9 @@ Populate a sim_inspiral table with random draws from an ASCII table.
 from optparse import Option, OptionParser
 from six.moves import range
 import numpy as np
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import ilwd
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+import ligo.lw.utils.process
 import matplotlib
 matplotlib.use("Agg") # Needed to run on the CIT cluster
 from lalinference import bayespputils as bppu
@@ -281,6 +281,7 @@ if __name__ == "__main__":
     # Create a new XML document
     xmldoc = ligolw.Document()
     xmldoc.appendChild(ligolw.LIGO_LW())
+    proc = ligo.lw.utils.process.register_to_xmldoc(doc, sys.argv[0], {})
     sim_table = lsctables.New(lsctables.SimInspiralTable)
     xmldoc.childNodes[0].appendChild(sim_table)
 
@@ -292,8 +293,8 @@ if __name__ == "__main__":
 
     # Fill in IDs
     for i,row in enumerate(sim_table):
-        row.process_id = ilwd.ilwdchar("process:process_id:{0:d}".format(i))
-        row.simulation_id = ilwd.ilwdchar("sim_inspiral:simulation_id:{0:d}".format(ids[i]))
+        row.process_id = proc.process_id
+        row.simulation_id = sim_table.get_next_id()
 
     # Fill rows
     for field in injections.dtype.names:

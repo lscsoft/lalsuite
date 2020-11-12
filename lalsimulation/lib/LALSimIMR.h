@@ -52,6 +52,7 @@ extern "C" {
  * @defgroup LALSimIMRTidal_c                    LALSimIMRLackeyTidal2013.c
  * @defgroup LALSimPrecessingNRSur_c             LALSimIMRPrecessingNRSur.c
  * @defgroup LALSimIMRNRWaveforms_c              LALSimIMRNRWaveforms.c
+ * @defgroup LALSimIMRTEOBResumS_c               LALSimIMRTEOBResumS.c
  * @}
  *
  * @addtogroup LALSimIMR_h
@@ -638,7 +639,7 @@ int XLALSimIMRPhenomXHMPhase(
     LALDict *lalParams                   /**< Extra params */
   );
 
-  int XLALSimIMRPhenomXPHM(
+int XLALSimIMRPhenomXPHM(
   COMPLEX16FrequencySeries **hptilde,         /**< [out] Frequency-domain waveform h+ */
   COMPLEX16FrequencySeries **hctilde,         /**< [out] Frequency-domain waveform hx */
   REAL8 m1_SI,                                /**< mass of companion 1 (kg) */
@@ -764,6 +765,32 @@ int XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame(
     LALDict *lalParams                /**< LAL Dictionary */
 );
 
+/* in module LALSimIMRTEOBResumS.c */
+
+int XLALSimIMRTEOBResumS(
+                         REAL8TimeSeries **hplus,
+                         REAL8TimeSeries **hcross,
+                         const REAL8 phiRef,
+                         const REAL8 deltaT,
+                         const REAL8 m1,
+                         const REAL8 m2,
+                         const REAL8 S1x,
+                         const REAL8 S1y,
+                         const REAL8 S1z,
+                         const REAL8 S2x,
+                         const REAL8 S2y,
+                         const REAL8 S2z,
+                         const REAL8 lambda1,
+                         const REAL8 lambda2,
+                         const REAL8 distance,
+                         const REAL8 inclination,
+                         const REAL8 longAscNodes,
+                         LALDict *LALparams,
+                         const REAL8 eccentricity,
+                         const REAL8 meanPerAno,
+                         const REAL8 f_min,
+                         const REAL8 f_ref
+                         );
 
 /* in module LALSimInspiralNRWaveforms.c */
 

@@ -92,11 +92,15 @@ from xml.etree.cElementTree import Element, SubElement, tostring, XMLParser
 
 #local application/library specific imports
 import lal
+from lal import LIGOTimeGPS, TimeDelayFromEarthCenter
 from . import git_version
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Ben Farr <bfarr@u.northwestern.edu>, Will M. Farr <will.farr@ligo.org>, John Veitch <john.veitch@ligo.org>, Vivien Raymond <vivien.raymond@ligo.org>"
 __version__= "git id %s"%git_version.id
 __date__= git_version.date
+
+def get_end(siminspiral):
+    return siminspiral.geocent_end_time + 1e-9*siminspiral.geocent_end_time_ns
 
 def replace_column(table, old, new):
     """Workaround for missing astropy.table.Table.replace_column method,
@@ -183,6 +187,14 @@ for param in spectralParams:
     #Confidence levels
 for loglname in statsParams:
     greedyBinSizes[loglname]=0.1
+
+def det_end_time(ifo_prefix, inj):
+    location = lal.cached_detector_by_prefix[ifo_prefix].location
+    ra = inj.longitude
+    dec = inj.latitude
+    t_gps = LIGOTimeGPS(inj.geocent_end_time, inj.geocent_end_time_ns)
+    t0 = inj.geocent_end_time + 1e-9*inj.geocent_end_time_ns
+    return t0 + TimeDelayFromEarthCenter(location,ra,dec,t_gps)
 
 #Pre-defined ordered list of line styles for use in matplotlib contour plots.
 __default_line_styles=['solid', 'dashed', 'dashdot', 'dotted']
@@ -878,9 +890,9 @@ class Posterior(object):
                             'asym_massratio':self._inj_q,
                             'massratio':lambda inj:inj.eta,
                             'sym_massratio':lambda inj:inj.eta,
-                            'time': lambda inj:float(inj.get_end()),
-                            'time_mean': lambda inj:float(inj.get_end()),
-                            'end_time': lambda inj:float(inj.get_end()),
+                            'time': lambda inj:float(get_end(inj)),
+                            'time_mean': lambda inj:float(get_end(inj)),
+                            'end_time': lambda inj:float(get_end(inj)),
                             'phi0':lambda inj:inj.phi0,
                             'phi_orb': lambda inj: inj.coa_phase,
                             'phase': lambda inj: inj.coa_phase,
@@ -898,9 +910,9 @@ class Posterior(object):
                             'f_ref': lambda inj: self._injFref,
                             'polarisation':lambda inj:inj.polarization,
                             'polarization':lambda inj:inj.polarization,
-                            'h1_end_time':lambda inj:float(inj.get_end('H')),
-                            'l1_end_time':lambda inj:float(inj.get_end('L')),
-                            'v1_end_time':lambda inj:float(inj.get_end('V')),
+                            'h1_end_time':lambda inj:det_end(time('H', inj)),
+                            'l1_end_time':lambda inj:det_end(time('L', inj)),
+                            'v1_end_time':lambda inj:det_end(time('V', inj)),
                             'lal_amporder':lambda inj:inj.amp_order}
 
         # Add on all spin parameterizations
@@ -1044,7 +1056,7 @@ class Posterior(object):
                 for ifo in my_ifos:
                     inj_time=None
                     if injection:
-                        inj_time=float(injection.get_end(ifo[0]))
+                        inj_time = det_end_time(ifo, injection)
                     location = lal.cached_detector_by_prefix[ifo].location
                     ifo_times[ifo]=array(list(map(lambda ra,dec,time: array([time[0]+TimeDelayFromEarthCenter(location,ra[0],dec[0],LIGOTimeGPS(float(time[0])))]), pos[ra_name].samples,pos[dec_name].samples,pos['time'].samples)))
                     loc_end_time=PosteriorOneDPDF(ifo.lower()+'_end_time',ifo_times[ifo],injected_value=inj_time)
@@ -1054,7 +1066,7 @@ class Posterior(object):
                         if ifo1==ifo2: continue
                         delay_time=ifo_times[ifo2]-ifo_times[ifo1]
                         if injection:
-                            inj_delay=float(injection.get_end(ifo2[0])-injection.get_end(ifo1[0]))
+                            inj_delay=float(det_end_time(ifo2, injection)-det_end_time(ifo1, injection))
                         else:
                             inj_delay=None
                         time_delay=PosteriorOneDPDF(ifo1.lower()+ifo2.lower()+'_delay',delay_time,inj_delay)
@@ -2207,8 +2219,8 @@ class BurstPosterior(Posterior):
                             'alpha':lambda inj:inj.pol_ellipse_angle,
                             'polar_eccentricity':lambda inj:inj.pol_ellipse_e,
                             'eccentricity':lambda inj:inj.pol_ellipse_e,
-                            'time': lambda inj:float(inj.get_end()),
-                            'end_time': lambda inj:float(inj.get_end()),
+                            'time': lambda inj:float(get_end(inj)),
+                            'end_time': lambda inj:float(get_end(inj)),
                             'ra':self._inj_longitude,
                             'rightascension':self._inj_longitude,
                             'long':self._inj_longitude,
@@ -2222,9 +2234,9 @@ class BurstPosterior(Posterior):
                             'polarisation':lambda inj:inj.psi,
                             'polarization':lambda inj:inj.psi,
                             'duration':lambda inj:inj.duration,
-                            'h1_end_time':lambda inj:float(inj.get_end('H')),
-                            'l1_end_time':lambda inj:float(inj.get_end('L')),
-                            'v1_end_time':lambda inj:float(inj.get_end('V')),
+                            'h1_end_time':lambda inj:get_end_time('H', inj),
+                            'l1_end_time':lambda inj:get_end_time('L', inj),
+                            'v1_end_time':lambda inj:get_end_time('V', inj),
                            }
 
         for one_d_posterior_samples,param_name in zip(np.hsplit(common_output_table_raw,common_output_table_raw.shape[1]),common_output_table_header):
@@ -4774,7 +4786,7 @@ def get_inj_by_time(injections,time):
     Filter injections to find the injection with end time given by time +/- 0.1s
     """
     import itertools
-    injection = itertools.ifilter(lambda a: abs(float(a.get_end()) - time) < 0.1, injections).next()
+    injection = itertools.ifilter(lambda a: abs(float(get_end(a)) - time) < 0.1, injections).next()
     return injection
 
 def histogram2D(posterior,greedy2Params,confidence_levels):
@@ -5589,9 +5601,9 @@ def effectiveSampleSize(samples, Nskip=1):
 def readCoincXML(xml_file, trignum):
     triggers=None
 
-    from glue.ligolw import ligolw
-    from glue.ligolw import lsctables
-    from glue.ligolw import utils
+    from ligo.lw import ligolw
+    from ligo.lw import lsctables
+    from ligo.lw import utils
     coincXML = utils.load_filename(xml_file, contenthandler = lsctables.use_in(ligolw.LIGOLWContentHandler))
     coinc = lsctables.CoincTable.get_table(coincXML)
     coincMap = lsctables.CoincMapTable.get_table(coincXML)
@@ -6592,7 +6604,7 @@ def confidence_interval_uncertainty(cl, cl_bounds, posteriors):
 
 def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V1']):
     #import sim inspiral table content handler
-    from glue.ligolw import lsctables,ligolw
+    from ligo.lw import lsctables,ligolw
     from lalsimulation.lalsimulation import SimInspiralChooseTDWaveform,SimInspiralChooseFDWaveform
     from lalsimulation.lalsimulation import SimInspiralImplementedTDApproximants,SimInspiralImplementedFDApproximants
     from lal.lal import CreateREAL8TimeSeries,CreateForwardREAL8FFTPlan,CreateTukeyREAL8Window,CreateCOMPLEX16FrequencySeries,DimensionlessUnit,REAL8TimeFreqFFT
@@ -6602,7 +6614,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
     from lal.lal import PC_SI as LAL_PC_SI
     import lalsimulation as lalsim
     from math import cos,sin,sqrt
-    from glue.ligolw import utils
+    from ligo.lw import utils
     import os
     import numpy as np
     from numpy import arange
@@ -7191,8 +7203,8 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
     from lal import ComputeDetAMResponse, GreenwichMeanSiderealTime, LIGOTimeGPS
 
     from math import cos,sin,sqrt
-    from glue.ligolw import lsctables
-    from glue.ligolw import utils
+    from ligo.lw import lsctables
+    from ligo.lw import utils
     import os
     import numpy as np
     from numpy import arange,real,absolute,fabs,pi
@@ -7204,8 +7216,8 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
     colors_inj={'H1':'r','L1':'g','V1':'m','I1':'b','J1':'y'}
     colors_rec={'H1':'k','L1':'k','V1':'k','I1':'k','J1':'k'}
     #import sim inspiral table content handler
-    from glue.ligolw import ligolw
-    from glue.ligolw import table
+    from ligo.lw import ligolw
+    from ligo.lw import table
     class LIGOLWContentHandlerExtractSimBurstTable(ligolw.LIGOLWContentHandler):
         def __init__(self,document):
             ligolw.LIGOLWContentHandler.__init__(self,document)

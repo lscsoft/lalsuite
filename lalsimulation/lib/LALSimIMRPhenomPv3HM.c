@@ -301,18 +301,21 @@ int XLALSimIMRPhenomPv3HMGetHplusHcross(
 )
 {
 
-    // Make a pointer to LALDict to circumvent a memory leak
-    // At the end we will check if we created a LALDict in extraParams
-    // and destroy it if we did.
-    LALDict *extraParams_in = extraParams;
-
     XLAL_CHECK(f_ref > 0, XLAL_EDOM, "f_ref must be greater than zero.\n");
 
-    /* setup ModeArray */
+    /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *extraParams_aux;
+
+    /* setup mode array */
     if (extraParams == NULL)
-        extraParams = XLALCreateDict();
-    extraParams = IMRPhenomPv3HM_setup_mode_array(extraParams);
-    LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams);
+    {
+        extraParams_aux = XLALCreateDict();
+    }
+    else{
+        extraParams_aux = XLALDictDuplicate(extraParams);
+    }
+    extraParams_aux = IMRPhenomPv3HM_setup_mode_array(extraParams_aux);
+    LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams_aux);
     int rcode = IMRPhenomPv3HM_check_mode_array(ModeArray);
     XLAL_CHECK(XLAL_SUCCESS == rcode, rcode, "IMRPhenomPv3HM_check_mode_array failed");
 
@@ -405,7 +408,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
         pv3HM->phiRef,
         deltaF,
         f_ref,
-        extraParams);
+        extraParams_aux);
     XLAL_CHECK(XLAL_SUCCESS == retcode,
                XLAL_EFUNC, "XLALSimIMRPhenomHMGethlmModes failed");
 
@@ -524,13 +527,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     /* free pointers */
     LALFree(pv3HM);
     LALFree(pAngles);
-
-    /* If extraParams was allocated in this function and not passed in
-    * we need to free it to prevent a leak */
-    if (extraParams && !extraParams_in)
-    {
-        XLALDestroyDict(extraParams);
-    }
+    XLALDestroyDict(extraParams_aux);
 
     return XLAL_SUCCESS;
 }
@@ -571,17 +568,20 @@ int XLALSimIMRPhenomPv3(
     LALDict *extraParams)               /**<linked list containing the extra testing GR parameters */
 {
 
-    // Make a pointer to LALDict to circumvent a memory leak
-    // At the end we will check if we created a LALDict in extraParams
-    // and destroy it if we did.
-    LALDict *extraParams_in = extraParams;
+    /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *extraParams_aux;
 
-    /* setup ModeArray */
+    /* setup mode array */
     if (extraParams == NULL)
-        extraParams = XLALCreateDict();
+    {
+        extraParams_aux = XLALCreateDict();
+    }
+    else{
+        extraParams_aux = XLALDictDuplicate(extraParams);
+    }
     LALValue *ModeArray = XLALSimInspiralCreateModeArray();
     XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
-    XLALSimInspiralWaveformParamsInsertModeArray(extraParams, ModeArray);
+    XLALSimInspiralWaveformParamsInsertModeArray(extraParams_aux, ModeArray);
     XLALDestroyValue(ModeArray);
 
     int ret = XLALSimIMRPhenomPv3HMGetHplusHcross(
@@ -601,18 +601,13 @@ int XLALSimIMRPhenomPv3(
         phiRef,
         deltaF,
         f_ref,
-        extraParams);
+        extraParams_aux);
     XLAL_CHECK(
         XLAL_SUCCESS == ret,
         XLAL_EFUNC,
         "XLALSimIMRPhenomPv3HMGetHplusHcross failed in IMRPhenomPv3");
 
-    /* If extraParams was allocated in this function and not passed in
-    * we need to free it to prevent a leak */
-    if (extraParams && !extraParams_in)
-    {
-        XLALDestroyDict(extraParams);
-    }
+    XLALDestroyDict(extraParams_aux);
 
     return XLAL_SUCCESS;
 }
@@ -871,18 +866,21 @@ int XLALSimIMRPhenomPv3HMModes(
 
     XLAL_ERROR(XLAL_EFUNC, "Function (XLALSimIMRPhenomPv3HMModes) not implemented!\n");
 
-    // Make a pointer to LALDict to circumvent a memory leak
-    // At the end we will check if we created a LALDict in extraParams
-    // and destroy it if we did.
-    LALDict *extraParams_in = extraParams;
-
     XLAL_CHECK(f_ref > 0, XLAL_EDOM, "f_ref must be greater than zero.\n");
 
-    /* setup ModeArray */
+    /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *extraParams_aux;
+
+    /* setup mode array */
     if (extraParams == NULL)
-        extraParams = XLALCreateDict();
-    extraParams = IMRPhenomPv3HM_setup_mode_array(extraParams);
-    LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams);
+    {
+        extraParams_aux = XLALCreateDict();
+    }
+    else{
+        extraParams_aux = XLALDictDuplicate(extraParams);
+    }
+    extraParams_aux = IMRPhenomPv3HM_setup_mode_array(extraParams_aux);
+    LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams_aux);
     int rcode = IMRPhenomPv3HM_check_mode_array(ModeArray);
     XLAL_CHECK(XLAL_SUCCESS == rcode, rcode, "IMRPhenomPv3HM_check_mode_array failed");
 
@@ -977,7 +975,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
         pv3HM->phiRef,
         deltaF,
         f_ref,
-        extraParams);
+        extraParams_aux);
     XLAL_CHECK(XLAL_SUCCESS == retcode,
                XLAL_EFUNC, "XLALSimIMRPhenomHMGethlmModes failed");
 
@@ -1064,13 +1062,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     /* free pointers */
     LALFree(pv3HM);
     LALFree(pAngles);
-
-    /* If extraParams was allocated in this function and not passed in
-    * we need to free it to prevent a leak */
-    if (extraParams && !extraParams_in)
-    {
-        XLALDestroyDict(extraParams);
-    }
+    XLALDestroyDict(extraParams_aux);
 
     return XLAL_SUCCESS;
 }

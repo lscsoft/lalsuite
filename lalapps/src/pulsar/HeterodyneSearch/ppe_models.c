@@ -213,7 +213,7 @@ void get_pulsar_model( LALInferenceModel *model ){
         REAL8Vector *gl = NULL;
         gl = XLALCreateREAL8Vector( glnum );
         for ( UINT4 j=0; j < glnum; j++ ){
-          CHAR varname[256];
+          CHAR varname[300];
           snprintf(varname, sizeof(varname), "%s_%u", glitchpars[i], j+1);
           if ( LALInferenceCheckVariable( model->params, varname ) ){
             gl->data[j] = LALInferenceGetREAL8Variable( model->params, varname );

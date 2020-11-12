@@ -254,16 +254,16 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( PureSignal,    BOOLEAN,    'P', OPTIONAL, "If true return 2F=SNR^2 ('pure signal without noise'). Otherwise return E[2F] = 4 + SNR^2.");
 
   lalUserVarHelpOptionSubsection = "Signal parameters";
-  XLALRegisterUvarMember( h0,            REAL8,      's', NODEFAULT,"Overall GW amplitude h0 (alternatively use " UVAR_STR2AND(aPlus, aCross) ")." );
-  XLALRegisterUvarMember( cosi,          REAL8,      'i', NODEFAULT,"Inclination angle of rotation axis cos(iota) (alternatively use " UVAR_STR2AND(aPlus, aCross) ").");
-  XLALRegisterUvarMember( aPlus,         REAL8,       0,  NODEFAULT,"'Plus' polarization amplitude A_+ (alternative to " UVAR_STR2AND(h0, cosi) ").");
-  XLALRegisterUvarMember( aCross,        REAL8,       0,  NODEFAULT,"'Cross' polarization amplitude: A_x (alternative to " UVAR_STR2AND(h0, cosi) ").");
+  XLALRegisterUvarMember( h0,            REAL8,      's', NODEFAULT, "Overall GW amplitude h0 (required if " UVAR_STR(cosi) " used, alternatively use " UVAR_STR2AND(aPlus, aCross) ")." );
+  XLALRegisterUvarMember( cosi,          REAL8,      'i', NODEFAULT, "Inclination angle of rotation axis cos(iota) (required if " UVAR_STR(h0) " used, alternatively use " UVAR_STR2AND(aPlus, aCross) ").");
+  XLALRegisterUvarMember( aPlus,         REAL8,       0,  NODEFAULT, "'Plus' polarization amplitude A_+  (required if " UVAR_STR(aCross) " used, alternative to " UVAR_STR2AND(h0, cosi) ").");
+  XLALRegisterUvarMember( aCross,        REAL8,       0,  NODEFAULT, "'Cross' polarization amplitude: A_x  (required if " UVAR_STR(aPlus) " used, alternative to " UVAR_STR2AND(h0, cosi) ").");
 
-  XLALRegisterUvarMember( psi,           REAL8,       0,  REQUIRED, "Polarisation angle in radians");
+  XLALRegisterUvarMember( psi,           REAL8,       0,  OPTIONAL, "Polarisation angle in radians (required if " UVAR_STR4OR(h0, cosi, aPlus, aCross) " used)");
   XLALRegisterUvarMember( phi0,          REAL8,       0,  OPTIONAL, "Initial GW phase phi0 in radians");
 
-  XLALRegisterUvarMember( Alpha,         RAJ,        'a', REQUIRED, "Sky position: equatorial J2000 right ascension");
-  XLALRegisterUvarMember( Delta,         DECJ,       'd', REQUIRED, "Sky position: equatorial J2000 right declination");
+  XLALRegisterUvarMember( Alpha,         RAJ,        'a', OPTIONAL, "Sky position: equatorial J2000 right ascension (required if " UVAR_STR4OR(h0, cosi, aPlus, aCross) " used)");
+  XLALRegisterUvarMember( Delta,         DECJ,       'd', OPTIONAL, "Sky position: equatorial J2000 right declination (required if " UVAR_STR4OR(h0, cosi, aPlus, aCross) " used)");
 
   lalUserVarHelpOptionSubsection = "Data and noise properties";
   XLALRegisterUvarMember( DataFiles,     STRING,     'D', NODEFAULT,"Per-detector SFTs (for detectors, timestamps and noise-estimate)\n"
@@ -320,11 +320,15 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     BOOLEAN have_cosi = XLALUserVarWasSet ( &uvar->cosi );
     BOOLEAN have_Ap   = XLALUserVarWasSet ( &uvar->aPlus );
     BOOLEAN have_Ac   = XLALUserVarWasSet ( &uvar->aCross );
+    BOOLEAN have_psi   = XLALUserVarWasSet ( &uvar->psi );
+    BOOLEAN have_Alpha = XLALUserVarWasSet ( &uvar->Alpha );
+    BOOLEAN have_Delta = XLALUserVarWasSet ( &uvar->Delta );
 
     /* ----- handle {h0,cosi} || {aPlus,aCross} freedom ----- */
     XLAL_CHECK( (( have_h0 && !have_cosi ) || ( !have_h0 && have_cosi )) == 0, XLAL_EINVAL, "Need both (h0, cosi) to specify signal!\n");
     XLAL_CHECK(( ( have_Ap && !have_Ac) || ( !have_Ap && have_Ac ) ) == 0, XLAL_EINVAL, "Need both (aPlus, aCross) to specify signal!\n");
     XLAL_CHECK(( have_h0 && have_Ap ) == 0, XLAL_EINVAL, "Overdetermined: specify EITHER (h0,cosi) OR (aPlus,aCross)!\n");
+    XLAL_CHECK(( ( have_h0 || have_Ap ) && !( have_psi && have_Alpha && have_Delta ) ) == 0, XLAL_EINVAL, "If " UVAR_STR4OR(h0, cosi, aPlus, aCross) ", also need a full set of " UVAR_STR3AND(psi, Alpha, Delta) ".");
     /* ----- internally we always use h0, cosi */
     if ( have_h0 )
       {
@@ -401,6 +405,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
       numDetectors = multiCatalogView->length;
       // ----- get the (multi-IFO) 'detector-state series' for given catalog
       XLAL_CHECK ( (mTS = XLALTimestampsFromMultiSFTCatalogView ( multiCatalogView )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( mTS->length == numDetectors, XLAL_EINVAL, "Got %d detectors but %d sets of timestamps.", numDetectors, mTS->length );
       XLAL_CHECK ( XLALMultiLALDetectorFromMultiSFTCatalogView ( &multiIFO, multiCatalogView ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       // ----- estimate noise-floor from SFTs if --assumeSqrtSX was not given:
@@ -441,6 +446,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
           }
           XLAL_CHECK ( (mTS = XLALReadMultiTimestampsFilesConstrained ( uvar->timestampsFiles, &(uvar->minStartTime), endTimeGPS )) != NULL, XLAL_EFUNC );
           XLAL_CHECK ( (mTS->length > 0) && (mTS->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
+          XLAL_CHECK( mTS->length == numDetectors, XLAL_EINVAL, "Got %d detectors but %d sets of timestamps.", numDetectors, mTS->length );
           for ( UINT4 X=0; X < mTS->length; X ++ ) {
             mTS->data[X]->deltaT = Tsft;	// Tsft information not given by timestamps-file
           }
@@ -457,7 +463,7 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
   // ---------- determine start-time and total amount of data
   LIGOTimeGPS startTime = {LAL_INT4_MAX,0};
   cfg->numSFTs = 0;
-  for ( UINT4 X = 0; X < mTS->length; X ++ )
+  for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
       if ( XLALGPSCmp ( &(mTS->data[X]->data[0]), &startTime ) < 0 ) {
         startTime = mTS->data[X]->data[0];
@@ -471,6 +477,11 @@ InitPFS ( ConfigVariables *cfg, UserInput_t *uvar )
     {
       MultiNoiseFloor XLAL_INIT_DECL(assumeSqrtSX);
       XLAL_CHECK ( XLALParseMultiNoiseFloor ( &assumeSqrtSX, uvar->assumeSqrtSX, numDetectors ) == XLAL_SUCCESS, XLAL_EFUNC );
+      // no need to check assumeSqrtSX.length - XLALParseMultiNoiseFloor() does it internally
+      for ( UINT4 X = 0; X < numDetectors; X ++ )
+        {
+            XLAL_CHECK(assumeSqrtSX.sqrtSn[X] > 0, XLAL_EDOM, "all entries of assumeSqrtSX must be >0");
+        }
 
       XLAL_CHECK ( (multiNoiseWeights = XLALCalloc(1,sizeof(*multiNoiseWeights))) != NULL, XLAL_ENOMEM );
       XLAL_CHECK ( (multiNoiseWeights->data = XLALCalloc ( numDetectors, sizeof(*multiNoiseWeights->data) )) != NULL, XLAL_ENOMEM );

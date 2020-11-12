@@ -153,6 +153,8 @@ Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python2-ligo-gracedb
+Requires: python2-ligo-lw
+Requires: python2-ligo-segments
 Requires: python2-matplotlib >= 1.2.0
 Requires: python2-numpy >= @MIN_NUMPY_VERSION@
 Requires: python2-scipy >= 0.8
@@ -183,6 +185,8 @@ Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python%{python3_pkgversion}-ligo-gracedb
+Requires: python%{python3_pkgversion}-ligo-lw
+Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-scipy >= 0.8
@@ -333,6 +337,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Oct 01 2020 Adam Mercer <adam.mercer@ligo.org> 2.0.4-1
+- Update to 2.0.4
+
 * Wed Aug 05 2020 Adam Mercer <adam.mercer@ligo.org> 2.0.3-1
 - Update for 2.0.3
 

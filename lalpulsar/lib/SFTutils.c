@@ -36,6 +36,7 @@
 #include <lal/ConfigFile.h>
 
 #include <lal/SFTutils.h>
+#include <lal/SFTReferenceLibrary.h>
 
 #if defined(__GNUC__)
 #define UNUSED __attribute__ ((unused))
@@ -261,11 +262,15 @@ XLALDestroyPSDVector ( PSDVector *vect )	/**< the PSD-vector to free */
 
 
 /**
- * Create an empty multi-IFO SFT vector for given number of IFOs and number of SFTs per IFO
+ * Create an empty multi-IFO SFT vector with a given number of bins per SFT and number of SFTs per IFO.
+ *
+ * Note that the input argument "length" refers to the number of frequency bins in each SFT.
+ * The length of the returned MultiSFTVector (i.e. the number of IFOs)
+ * is set from the length of the input numsft vector instead.
  */
 MultiSFTVector *XLALCreateMultiSFTVector (
-  UINT4 length,          /**< number of sft data points */
-  UINT4Vector *numsft    /**< number of sfts in each sftvect */
+  UINT4 length,          /**< number of SFT data points (frequency bins) */
+  UINT4Vector *numsft    /**< number of SFTs in each per-detector SFTVector */
   )
 {
 
@@ -1937,7 +1942,7 @@ int XLALSFTCatalogTimeslice(
   XLAL_INIT_MEM(*slice);
 
   // If not empty: set timeslice of SFT catalog
-  if ( iStart < iEnd )
+  if ( iStart <= iEnd )
     {
       slice->length = iEnd - iStart + 1;
       slice->data = &catalog->data[iStart];
@@ -2187,6 +2192,22 @@ TSFTfromDFreq ( REAL8 dFreq )
   return Tsft;
 
 } // TSFTfromDFreq()
+
+
+/**
+ * Verify that the contents of a SFT file are valid.
+ *
+ * This is just an XLAL wrapper to the SFTReferenceLibrary function ValidateSFTFile().
+ *
+ * \return: XLAL_SUCCESS if no validation errors encountered.
+ */
+int
+XLALValidateSFTFile ( const char *fname )
+{
+    int errcode = ValidateSFTFile(fname);
+    XLAL_CHECK ( errcode==0, XLAL_EFUNC, "SFT validation error code %d on file %s.", errcode, fname );
+    return XLAL_SUCCESS;
+} /* XLALValidateSFTFile */
 
 
 /**

@@ -73,9 +73,9 @@ import lalinference.plot
 from lalinference import bayespputils as bppu
 from lalinference import git_version
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils
 
 __author__="Ben Aylott <benjamin.aylott@ligo.org>, Ben Farr <bfarr@u.northwestern.edu>, Will M. Farr <will.farr@ligo.org>, John Veitch <john.veitch@ligo.org>"
 __version__= "git id %s"%git_version.id

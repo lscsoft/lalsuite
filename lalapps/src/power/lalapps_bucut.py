@@ -47,6 +47,9 @@ __version__ = "git id %s" % git_version.id
 __date__ = git_version.date
 
 
+process_program_name = "lalapps_bucut"
+
+
 #
 # =============================================================================
 #
@@ -95,6 +98,8 @@ def parse_command_line():
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
 
+	paramdict = options.__dict__.copy()
+
 	if options.inj_made_only and not options.program:
 		raise ValueError("must set --program when --inj-made-only is set")
 	options.cut_instrument = set(options.cut_instrument)
@@ -112,7 +117,7 @@ def parse_command_line():
 	if options.max_stop_time is not None:
 		options.max_stop_time = lsctables.LIGOTimeGPS(options.max_stop_time)
 
-	return options, (filenames or [None])
+	return options, paramdict, (filenames or [None])
 
 
 #
@@ -195,85 +200,6 @@ class DocContents(object):
 #
 # =============================================================================
 #
-#                           Add Process Information
-#
-# =============================================================================
-#
-
-
-process_program_name = "lalapps_bucut"
-
-
-def append_process(doc, options):
-	process = ligolw_process.append_process(doc, program = process_program_name, version = __version__, cvs_repository = u"lscsoft", cvs_entry_time = __date__, comment = options.comment)
-
-	params = []
-	if options.coinc_only:
-		params += [(u"--coinc-only", None, None)]
-	if options.inj_made_only:
-		params += [(u"--inj-made-only", None, None)]
-	if options.min_amplitude is not None:
-		params += [(u"--min-amplitude", u"real_4", options.min_amplitude)]
-	if options.max_amplitude is not None:
-		params += [(u"--max-amplitude", u"real_4", options.max_amplitude)]
-	if options.min_bandwidth is not None:
-		params += [(u"--min-bandwidth", u"real_4", options.min_bandwidth)]
-	if options.max_bandwidth is not None:
-		params += [(u"--max-bandwidth", u"real_4", options.max_bandwidth)]
-	if options.min_central_freq is not None:
-		params += [(u"--min-central-freq", u"real_4", options.min_central_freq)]
-	if options.max_central_freq is not None:
-		params += [(u"--max-central-freq", u"real_4", options.max_central_freq)]
-	if options.min_confidence is not None:
-		params += [(u"--min-confidence", u"real_4", options.min_confidence)]
-	if options.max_confidence is not None:
-		params += [(u"--max-confidence", u"real_4", options.max_confidence)]
-	if options.min_duration is not None:
-		params += [(u"--min-duration", u"real_4", options.min_duration)]
-	if options.max_duration is not None:
-		params += [(u"--max-duration", u"real_4", options.max_duration)]
-	if options.min_fhigh is not None:
-		params += [(u"--min-fhigh", u"real_4", options.min_fhigh)]
-	if options.max_fhigh is not None:
-		params += [(u"--max-fhigh", u"real_4", options.max_fhigh)]
-	if options.min_flow is not None:
-		params += [(u"--min-flow", u"real_4", options.min_flow)]
-	if options.max_flow is not None:
-		params += [(u"--max-flow", u"real_4", options.max_flow)]
-	if options.min_hrss is not None:
-		params += [(u"--min-hrss", u"real_4", options.min_hrss)]
-	if options.max_hrss is not None:
-		params += [(u"--max-hrss", u"real_4", options.max_hrss)]
-	for instrument in options.cut_instrument:
-		params += [(u"--cut-instrument", u"lstring", instrument)]
-	if options.min_peak_time is not None:
-		params += [(u"--min-peak-time", u"lstring", options.min_peak_time)]
-	if options.max_peak_time is not None:
-		params += [(u"--max-peak-time", u"lstring", options.max_peak_time)]
-	if options.min_snr is not None:
-		params += [(u"--min-snr", u"real_4", options.min_snr)]
-	if options.max_snr is not None:
-		params += [(u"--max-snr", u"real_4", options.max_snr)]
-	if options.min_start_time is not None:
-		params += [(u"--min-start-time", u"lstring", options.min_start_time)]
-	if options.max_start_time is not None:
-		params += [(u"--max-start-time", u"lstring", options.max_start_time)]
-	if options.min_stop_time is not None:
-		params += [(u"--min-stop-time", u"lstring", options.min_stop_time)]
-	if options.max_stop_time is not None:
-		params += [(u"--max-stop-time", u"lstring", options.max_stop_time)]
-	if options.program:
-		params += [(u"--program", u"lstring", options.program)]
-	if options.veto_file:
-		params += [(u"--veto-file", u"lstring", options.veto_file)]
-	ligolw_process.append_process_params(doc, process, params)
-
-	return process
-
-
-#
-# =============================================================================
-#
 #                                     Cuts
 #
 # =============================================================================
@@ -319,6 +245,10 @@ def remove_skipped_injections(contents):
 
 
 def clean_coinc_tables(contents, removed_ids):
+	# FIXME FIXME FIXME:  this is broken since the conversion to
+	# integer IDs.  need to include table name constraints in these
+	# tests.
+
 	# remove dangling coinc_event_map rows
 	removed_coinc_ids = set()
 	for i in xrange(len(contents.coincmaptable) - 1, -1, -1):
@@ -378,17 +308,17 @@ def apply_filters(contents, burst_test_func, veto_segments, del_non_coincs = Fal
 		remove_non_coincidences(contents)
 
 
-def ligolw_bucut(xmldoc, options, burst_test_func, veto_segments = segments.segmentlistdict(), del_non_coincs = False, del_skipped_injections = False, program = None, verbose = False):
-	contents = DocContents(xmldoc, program)
+def ligolw_bucut(xmldoc, burst_test_func, veto_segments = segments.segmentlistdict(), del_non_coincs = False, del_skipped_injections = False, program = None, comment = None, verbose = False):
+	process = ligolw_process.register_to_xmldoc(xmldoc, process_program_name, paramdict, version = __version__, cvs_repository = u"lscsoft", cvs_entry_time = __date__, comment = comment)
 
-	process = append_process(xmldoc, options)
+	contents = DocContents(xmldoc, program)
 
 	apply_filters(contents, burst_test_func, veto_segments, del_non_coincs = del_non_coincs, del_skipped_injections = del_skipped_injections, verbose = verbose)
 
-	ligolw_process.set_process_end_time(process)
-
 	seg = contents.outsegs.extent_all()
 	ligolw_search_summary.append_search_summary(xmldoc, process, inseg = seg, outseg = seg, nevents = len(contents.snglbursttable))
+
+	ligolw_process.set_process_end_time(process)
 
 	return xmldoc
 
@@ -407,7 +337,7 @@ def ligolw_bucut(xmldoc, options, burst_test_func, veto_segments = segments.segm
 #
 
 
-options, filenames = parse_command_line()
+options, paramdict, filenames = parse_command_line()
 
 
 #
@@ -497,6 +427,6 @@ else:
 
 for filename in filenames:
 	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
-	xmldoc = ligolw_bucut(xmldoc, options, keep_this_sngl_burst, veto_segments = veto_segments, del_non_coincs = options.coinc_only, del_skipped_injections = options.inj_made_only, program = options.program, verbose = options.verbose)
+	xmldoc = ligolw_bucut(xmldoc, keep_this_sngl_burst, veto_segments = veto_segments, del_non_coincs = options.coinc_only, del_skipped_injections = options.inj_made_only, program = options.program, comment = options.comment, verbose = options.verbose)
 	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
 	xmldoc.unlink()

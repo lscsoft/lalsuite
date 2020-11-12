@@ -13,8 +13,10 @@ test_scripts += \
 	test_phenomPv3HM.py \
 	test_phenomX.py \
 	test_SEOBNRv4HM_ROM.py \
+	test_TEOBResumS.py \
 	test_enum_compatibility.py \
 	test_liv.py \
+	test_wf_property_lists.py \
 	$(END_OF_LIST)
 
 

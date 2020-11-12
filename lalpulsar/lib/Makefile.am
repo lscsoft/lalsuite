@@ -47,6 +47,7 @@ pkginclude_HEADERS = \
 	ReadPulsarParFile.h \
 	SFTClean.h \
 	SFTfileIO.h \
+	SFTReferenceLibrary.h \
 	SFTutils.h \
 	SSBtimes.h \
 	SimulatePulsarSignal.h \
@@ -110,6 +111,7 @@ liblalpulsar_la_SOURCES = \
 	ReadPulsarParFile.c \
 	SFTClean.c \
 	SFTfileIO.c \
+	SFTReferenceLibrary.c \
 	SFTutils.c \
 	SSBtimes.c \
 	SimulatePulsarSignal.c \

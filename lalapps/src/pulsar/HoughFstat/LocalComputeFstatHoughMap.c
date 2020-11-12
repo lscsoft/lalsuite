@@ -74,7 +74,7 @@ static int smallerHough(const void *a,const void *b) {
 #endif
 
 #ifdef __GNUC__
-#define ALWAYS_INLINE __attribute__((always_inline))
+#define ALWAYS_INLINE __attribute__ ((always_inline))
 #else
 #define ALWAYS_INLINE
 #endif

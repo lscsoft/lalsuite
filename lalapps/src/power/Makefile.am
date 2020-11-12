@@ -31,7 +31,6 @@ pybin_scripts = \
 	lalapps_power_pipe \
 	lalapps_power_plot_binjtf \
 	lalapps_power_plot_binj
-pkgpython_PYTHON = power.py
 endif
 
 pkgdata_DATA = power_pipe.ini

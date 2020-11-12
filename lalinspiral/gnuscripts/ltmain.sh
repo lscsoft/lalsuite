@@ -5676,7 +5676,7 @@ EOF
 #if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 5)
 # define externally_visible volatile
 #else
-# define externally_visible __attribute__((externally_visible)) volatile
+# define externally_visible __attribute__ ((externally_visible)) volatile
 #endif
 externally_visible const char * MAGIC_EXE = "$magic_exe";
 const char * LIB_PATH_VARNAME = "$shlibpath_var";

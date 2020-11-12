@@ -22,10 +22,10 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import table
-from glue.ligolw import utils
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import table
+from ligo.lw import utils
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as pp

@@ -91,6 +91,7 @@ outputs:
         - gsl
         - hdf5  # [linux]
         - {{ pin_subpackage('lal', exact=True) }}
+        - python-ligo-lw
         - ligo-segments
         - lscsoft-glue >=@MIN_GLUE_VERSION@
         - mkl  # [fft_impl == "mkl"]
