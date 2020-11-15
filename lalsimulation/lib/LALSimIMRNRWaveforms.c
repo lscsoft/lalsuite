@@ -115,9 +115,13 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformGetRefTimeFromRefFreq(
   XLALH5FileClose(curr_group);
   acc = gsl_interp_accel_alloc();
   spline = gsl_spline_alloc(gsl_interp_cspline, omega_w_vec->size);
-  gsl_spline_init(spline, omega_w_vec->data, omega_t_vec->data,
+  INT4 status = gsl_spline_init(spline, omega_w_vec->data, omega_t_vec->data,
                   omega_t_vec->size);
+  XLAL_CHECK(status == GSL_SUCCESS, XLAL_FAILURE, "Failed gsl_spline_init evaluation. Probably omega_w is not monotonically increasing.\n");
   ref_time = gsl_spline_eval(spline, fRef * (LAL_MTSUN_SI * LAL_PI), acc);
+  if ( isnan(ref_time) ){
+    XLAL_ERROR(XLAL_FAILURE, "Interpolation error: gsl_spline_eval returning nan\n");
+  }
   gsl_vector_free(omega_t_vec);
   gsl_vector_free(omega_w_vec);
   gsl_spline_free(spline);
@@ -147,9 +151,13 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint(
   XLALH5FileClose(curr_group);
   acc = gsl_interp_accel_alloc();
   spline = gsl_spline_alloc(gsl_interp_cspline, curr_t_vec->size);
-  gsl_spline_init(spline, curr_t_vec->data, curr_y_vec->data,
+  INT4 status = gsl_spline_init(spline, curr_t_vec->data, curr_y_vec->data,
                   curr_t_vec->size);
+  XLAL_CHECK(status == GSL_SUCCESS, XLAL_FAILURE, "Failed gsl_spline_init evaluation. Probably omega_w is not monotonically increasing.\n");
   ret_val = gsl_spline_eval(spline, ref_point, acc);
+  if ( isnan(ret_val) ){
+    XLAL_ERROR(XLAL_FAILURE, "Interpolation error: gsl_spline_eval returning nan. Group name %s\n", groupName);
+  }
   gsl_vector_free(curr_t_vec);
   gsl_vector_free(curr_y_vec);
   gsl_spline_free (spline);
@@ -219,6 +227,9 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(
 
     /* First interpolate between time and freq to get a reference time */
     ref_time = XLALSimInspiralNRWaveformGetRefTimeFromRefFreq(file, fRef);
+    REAL8 fminNR;
+    XLALH5FileQueryScalarAttributeValue(&fminNR, file, "f_lower_at_1MSUN");
+    XLAL_CHECK( ref_time!=XLAL_FAILURE, XLAL_FAILURE, "Error computing reference time. Try setting fRef equal to the f_low given by the NR simulation (%.16f Hz) or to a value <=0 to deactivate fRef for a non-precessing simulation.\n", fminNR/mTot);
 
     /* Now use ref_time to get spins, LN and nhat */
     nrSpin1x = XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint
@@ -309,8 +320,9 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
   /* SPLINE STUFF */
   acc = gsl_interp_accel_alloc();
   spline = gsl_spline_alloc(gsl_interp_cspline, comp_data_length);
-  gsl_spline_init(spline, knotsVector->data, dataVector->data,
+  INT4 status = gsl_spline_init(spline, knotsVector->data, dataVector->data,
                   comp_data_length);
+  XLAL_CHECK(status == GSL_SUCCESS, XLAL_FAILURE, "Failed gsl_spline_init evaluation. Probably omega_w is not monotonically increasing.\n");
 
   for (idx = 0; idx < length; idx++)
   {
@@ -387,6 +399,7 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   {
     ref_time = XLALSimInspiralNRWaveformGetRefTimeFromRefFreq(filepointer,
                                                               fRef);
+    XLAL_CHECK( ref_time!=XLAL_FAILURE, XLAL_FAILURE, "Error computing reference time. Try setting fRef equal to the f_low given by the NR simulation or to a value <=0 to deactivate fRef for a non-precessing simulation.\n");
     ln_hat_x = XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint
         (filepointer, "LNhatx-vs-time", ref_time);
     ln_hat_y = XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint
@@ -756,7 +769,11 @@ UNUSED static INT4 XLALSimIMRNRWaveformGetModes(
     if (XLALSimInspiralNRWaveformCheckFRef(file, fStart * (m1+m2)) > 0)
     {
       /* Can use Omega array to get start time */
-      est_start_time = XLALSimInspiralNRWaveformGetRefTimeFromRefFreq(file, fStart * (m1+m2)) * (m1 + m2) * LAL_MTSUN_SI;
+      est_start_time = XLALSimInspiralNRWaveformGetRefTimeFromRefFreq(file, fStart * (m1+m2));
+      REAL8 fminNR;
+      XLALH5FileQueryScalarAttributeValue(&fminNR, file, "f_lower_at_1MSUN");
+      XLAL_CHECK( est_start_time!=XLAL_FAILURE, XLAL_FAILURE, "Error computing starting time. Try setting f_low equal to the f_low given by the NR simulation (%.16f Hz)\n",fminNR/(m1+m2));
+      est_start_time = est_start_time * (m1 + m2) * LAL_MTSUN_SI;
     }
     else
     {
