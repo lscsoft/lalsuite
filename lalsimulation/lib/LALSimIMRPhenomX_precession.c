@@ -2579,6 +2579,14 @@ vector IMRPhenomX_Return_Roots_MSA(double LNorm, double JNorm, const IMRPhenomXP
       tmp6 = tmp2;
     }
 
+    /*
+        When Spl2 ~ 0 to numerical roundoff then Smi2 can sometimes be ~ negative causing NaN's.
+        This occurs in a very limited portion of the parameter space where spins are ~ 0 to numerical roundoff.
+        We can circumvent by enforcing +ve definite behaviour when tmp4 ~ 0. Note that S32 can often be negative, this is fine.
+    */
+    tmp4 = fabs(tmp4);
+    tmp6 = fabs(tmp6);
+
     // Return the roots
     Spl2 = tmp4;
     S32  = tmp5;
