@@ -1578,13 +1578,13 @@ int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(
 /** @} */
 
 /**
- * @name Noise PSDs from LIGO-P1800545
+ * @name Noise PSDs from LIGO-T1800545
  * @{
  */
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to aLIGO O3 low 120 Mpc range in LIGO-P1800545.
+ * to aLIGO O3 low 120 Mpc range in LIGO-T1800545.
  */
 
 int XLALSimNoisePSDaLIGOaLIGOO3LowT1800545(
@@ -1598,7 +1598,7 @@ int XLALSimNoisePSDaLIGOaLIGOO3LowT1800545(
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to aLIGO 140 Mpc range in LIGO-P1800545.
+ * to aLIGO 140 Mpc range in LIGO-T1800545.
  */
 
 int XLALSimNoisePSDaLIGOaLIGO140MpcT1800545(
@@ -1612,7 +1612,7 @@ int XLALSimNoisePSDaLIGOaLIGO140MpcT1800545(
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to aLIGO 175 Mpc range (design) in LIGO-P1800545.
+ * to aLIGO 175 Mpc range (design) in LIGO-T1800545.
  */
 
 int XLALSimNoisePSDaLIGOaLIGO175MpcT1800545(
@@ -1626,7 +1626,7 @@ int XLALSimNoisePSDaLIGOaLIGO175MpcT1800545(
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to advanced Virgo 100 Mpc range (O4 intermediate) in LIGO-P1800545.
+ * to advanced Virgo 100 Mpc range (O4 intermediate) in LIGO-T1800545.
  */
 
 int XLALSimNoisePSDaLIGOAdVO4IntermediateT1800545(
@@ -1640,7 +1640,7 @@ int XLALSimNoisePSDaLIGOAdVO4IntermediateT1800545(
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to advanced Virgo 120 Mpc range (O4 design) in LIGO-P1800545.
+ * to advanced Virgo 120 Mpc range (O4 design) in LIGO-T1800545.
  */
 
 int XLALSimNoisePSDaLIGOAdVO4T1800545(
@@ -1654,7 +1654,7 @@ int XLALSimNoisePSDaLIGOAdVO4T1800545(
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to advanced Virgo 65 Mpc range (O3 low) in LIGO-P1800545.
+ * to advanced Virgo 65 Mpc range (O3 low) in LIGO-T1800545.
  */
 
 int XLALSimNoisePSDaLIGOAdVO3LowT1800545(
@@ -1668,7 +1668,7 @@ int XLALSimNoisePSDaLIGOAdVO3LowT1800545(
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to advanced KAGRA 128 Mpc range in LIGO-P1800545.
+ * to advanced KAGRA 128 Mpc range in LIGO-T1800545.
  */
 
 int XLALSimNoisePSDaLIGOKAGRA128MpcT1800545(
@@ -1682,7 +1682,7 @@ int XLALSimNoisePSDaLIGOKAGRA128MpcT1800545(
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to advanced KAGRA 25 Mpc range in LIGO-P1800545.
+ * to advanced KAGRA 25 Mpc range in LIGO-T1800545.
  */
 
 int XLALSimNoisePSDaLIGOKAGRA25MpcT1800545(
@@ -1696,7 +1696,7 @@ int XLALSimNoisePSDaLIGOKAGRA25MpcT1800545(
 
 /**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
- * to advanced KAGRA 80 Mpc range in LIGO-P1800545.
+ * to advanced KAGRA 80 Mpc range in LIGO-T1800545.
  */
 
 int XLALSimNoisePSDaLIGOKAGRA80MpcT1800545(
