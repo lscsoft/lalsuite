@@ -117,7 +117,7 @@ for setup in short mid long; do
     set -x
     peak_mem_no_sim=`lalapps_fits_header_getval "WeaveOutNoSim.fits[0]" 'PEAKMEM' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%.16g", $1}'`
     peak_mem_sim_full=`lalapps_fits_header_getval "WeaveOutSimFull.fits[0]" 'PEAKMEM' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%.16g", $1}'`
-    awk "BEGIN { if ( ${peak_mem_sim_full} > 0 && ${peak_mem_no_sim} > 0 ) { print x = ${peak_mem_sim_full} / ${peak_mem_no_sim}; exit ( ( 0.9 < x && x < 1.0 ) ? 0 : 1 ) }; exit 0 }"
+    awk "BEGIN { x = ${peak_mem_sim_full}; y = ${peak_mem_no_sim}; if ( x > 0 && y > 0 ) { print r = x / y; exit ( ( 0.9 < r && r < 1.0 ) ? 0 : 1 ) }; exit 0 }"
     set +x
     echo
 
