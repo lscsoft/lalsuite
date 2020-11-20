@@ -2793,6 +2793,8 @@ int XLALSimInspiralFD(
     Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
     )
 {
+	  XLAL_CHECK(f_max > 0, XLAL_EDOM, "Maximum frequency must be > 0\n");
+
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
     double chirplen, deltaT;
