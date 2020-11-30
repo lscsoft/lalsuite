@@ -32,7 +32,8 @@ check-AUTHORS: AUTHORS
 		exit 1; \
 	fi; \
 	notniceregex='/[\x80-\xff]/d;/^[A-Z][a-z][-A-Za-z]* /d;/^[A-Z][.] /d'; \
-	if test x`$(SED) "$${notniceregex}" "$${authorsfile}"` = x; then \
+	sedresult=`$(SED) "$${notniceregex}" "$${authorsfile}"`; \
+	if test "x$${sedresult}" = x; then \
 		exit 0; \
 	fi; \
 	echo "" >&2; \
