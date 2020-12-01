@@ -237,6 +237,17 @@ int XLALSimIMRPhenomXPHM(
   /* If no reference frequency is given, set it to the starting gravitational wave frequency. */
   REAL8 fRef = (fRef_In == 0.0) ? f_min : fRef_In;
 
+  /* Use an auxiliar laldict to not overwrite the input argument */
+  LALDict *lalParams_aux;
+  /* setup mode array */
+  if (lalParams == NULL)
+  {
+      lalParams_aux = XLALCreateDict();
+  }
+  else{
+      lalParams_aux = XLALDictDuplicate(lalParams);
+  }
+  
   #if DEBUG == 1
   printf("\n\n **** Initializing waveform struct... **** \n\n");
   #endif
@@ -248,7 +259,7 @@ int XLALSimIMRPhenomXPHM(
   /* Initialize IMRPhenomX Waveform struct and check that it initialized correctly */
   IMRPhenomXWaveformStruct *pWF;
   pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams, PHENOMXDEBUG);
+  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, PHENOMXDEBUG);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
   /*
@@ -278,7 +289,7 @@ int XLALSimIMRPhenomXPHM(
              chi2x,
              chi2y,
              chi2z,
-             lalParams,
+             lalParams_aux,
              PHENOMXDEBUG
            );
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
@@ -289,7 +300,7 @@ int XLALSimIMRPhenomXPHM(
   #endif
 
   /* We now call the core IMRPhenomXPHM waveform generator */
-  status = IMRPhenomXPHM_hplushcross(hptilde, hctilde, freqs, pWF, pPrec, lalParams);
+  status = IMRPhenomXPHM_hplushcross(hptilde, hctilde, freqs, pWF, pPrec, lalParams_aux);
   XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXPHM_hplushcross failed to generate IMRPhenomXHM waveform.\n");
 
   #if DEBUG == 1
@@ -325,7 +336,8 @@ int XLALSimIMRPhenomXPHM(
   LALFree(pWF);
   LALFree(pPrec);
   XLALDestroyREAL8Sequence(freqs);
-
+  XLALDestroyDict(lalParams_aux);
+  
   return XLAL_SUCCESS;
 }
 
@@ -417,7 +429,18 @@ int XLALSimIMRPhenomXPHMFromModes(
 
   /* If no reference frequency is given, set it to the starting gravitational wave frequency */
   REAL8 fRef = (fRef_In == 0.0) ? f_min : fRef_In;
-
+  
+  /* Use an auxiliar laldict to not overwrite the input argument */
+  LALDict *lalParams_aux;
+  /* setup mode array */
+  if (lalParams == NULL)
+  {
+      lalParams_aux = XLALCreateDict();
+  }
+  else{
+      lalParams_aux = XLALDictDuplicate(lalParams);
+  }
+  
   #if DEBUG == 1
   printf("\n\n **** Initializing waveform struct... **** \n\n");
   #endif
@@ -429,7 +452,7 @@ int XLALSimIMRPhenomXPHMFromModes(
   /* Initialize IMR PhenomX Waveform struct and check that it initialized correctly */
   IMRPhenomXWaveformStruct *pWF;
   pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams, PHENOMXDEBUG);
+  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, PHENOMXDEBUG);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
   /*
@@ -459,7 +482,7 @@ int XLALSimIMRPhenomXPHMFromModes(
              chi2x,
              chi2y,
              chi2z,
-             lalParams,
+             lalParams_aux,
              PHENOMXDEBUG
            );
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
@@ -470,7 +493,7 @@ int XLALSimIMRPhenomXPHMFromModes(
   #endif
 
   /* We now call the core IMRPhenomXPHMFromModes waveform generator */
-  status = IMRPhenomXPHM_hplushcross_from_modes(hptilde, hctilde, freqs, pWF, pPrec, lalParams);
+  status = IMRPhenomXPHM_hplushcross_from_modes(hptilde, hctilde, freqs, pWF, pPrec, lalParams_aux);
   XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXPHM_hplushcross_from_modes failed to generate IMRPhenomXPHM waveform.");
 
   #if DEBUG == 1
@@ -505,6 +528,7 @@ int XLALSimIMRPhenomXPHMFromModes(
   LALFree(pWF);
   LALFree(pPrec);
   XLALDestroyREAL8Sequence(freqs);
+  XLALDestroyDict(lalParams_aux);
 
   return XLAL_SUCCESS;
 }
@@ -681,18 +705,8 @@ int XLALSimIMRPhenomXPHMFromModes(
 
    REAL8 deltaF = pWF->deltaF;
 
-   /* Use an auxiliar laldict to not overwrite the input argument */
-   LALDict *lalParams_aux;
-   /* setup mode array */
-   if (lalParams == NULL)
-   {
-       lalParams_aux = XLALCreateDict();
-   }
-   else{
-       lalParams_aux = XLALDictDuplicate(lalParams);
-   }
-   lalParams_aux = IMRPhenomXPHM_setup_mode_array(lalParams_aux);
-   LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams_aux);
+   lalParams = IMRPhenomXPHM_setup_mode_array(lalParams);
+   LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
 
    /* At this point ModeArray should contain the list of modes
    and therefore if NULL then something is wrong and abort. */
@@ -722,7 +736,7 @@ int XLALSimIMRPhenomXPHMFromModes(
       If = 0 then do not use Multibanding. Default value defined in XLALSimInspiralWaveformParams.c.
       If the input freqs_In is non-uniform the Multibanding has been already switche off.
    */
-   REAL8 thresholdMB  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(lalParams_aux);
+   REAL8 thresholdMB  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(lalParams);
 
    /* Initialize the power of pi for the HM internal functions. */
    status = IMRPhenomX_Initialize_Powers(&powers_of_lalpiHM, LAL_PI);
@@ -731,7 +745,7 @@ int XLALSimIMRPhenomXPHMFromModes(
 
    SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
    *hlms = NULL;
-   if (XLALSimInspiralWaveformParamsLookupPhenomXPHMTwistPhenomHM(lalParams_aux)==1)
+   if (XLALSimInspiralWaveformParamsLookupPhenomXPHMTwistPhenomHM(lalParams)==1)
    {
      /* evaluate all hlm modes */
       status = XLALSimIMRPhenomHMGethlmModes(
@@ -749,7 +763,7 @@ int XLALSimIMRPhenomXPHMFromModes(
          //pWF->deltaF,
          0,
          pWF->fRef,
-         lalParams_aux);
+         lalParams);
      XLAL_CHECK(XLAL_SUCCESS == status,
                 XLAL_EFUNC, "XLALSimIMRPhenomHMGethlmModes failed");
    }
@@ -799,7 +813,7 @@ int XLALSimIMRPhenomXPHMFromModes(
        /* Variable to store the strain of only one (negative) mode: h_l-mprime */
        COMPLEX16FrequencySeries *htildelm = NULL;
 
-       if (XLALSimInspiralWaveformParamsLookupPhenomXPHMTwistPhenomHM(lalParams_aux)==1)
+       if (XLALSimInspiralWaveformParamsLookupPhenomXPHMTwistPhenomHM(lalParams)==1)
        {
           INT4 minus1l = 1;
           if(ell % 2 !=0) minus1l = -1;
@@ -824,22 +838,22 @@ int XLALSimIMRPhenomXPHMFromModes(
          if (thresholdMB == 0){  // No multibanding
            if(ell == 2 && emmprime == 2)
            {
-              status = IMRPhenomXASGenerateFD(&htildelm, freqs, pWF, lalParams_aux);
+              status = IMRPhenomXASGenerateFD(&htildelm, freqs, pWF, lalParams);
               XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXASGenerateFD failed to generate IMRPhenomXHM waveform.");
            }
            else
            {
-             status = IMRPhenomXHMGenerateFDOneMode(&htildelm, freqs, pWF, ell, emmprime, lalParams_aux);
+             status = IMRPhenomXHMGenerateFDOneMode(&htildelm, freqs, pWF, ell, emmprime, lalParams);
              XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMGenerateFDOneMode failed to generate IMRPhenomXHM waveform.");
            }
          }
          else{               // With multibanding
            if(ell==3 && emmprime==2){  // mode with mode-mixing
-              status = IMRPhenomXHMMultiBandOneModeMixing(&htildelm, htilde22, pWF, ell, emmprime, lalParams_aux);
+              status = IMRPhenomXHMMultiBandOneModeMixing(&htildelm, htilde22, pWF, ell, emmprime, lalParams);
               XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneModeMixing failed to generate IMRPhenomXHM waveform.");
            }
            else{                  // modes without mode-mixing including 22 mode
-              status = IMRPhenomXHMMultiBandOneMode(&htildelm, pWF, ell, emmprime, lalParams_aux);
+              status = IMRPhenomXHMMultiBandOneMode(&htildelm, pWF, ell, emmprime, lalParams);
               XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneMode failed to generate IMRPhenomXHM waveform.");
            }
 
@@ -940,7 +954,7 @@ int XLALSimIMRPhenomXPHMFromModes(
 
          /* Compute non-uniform coarse frequency grid as 1D array */
          REAL8Sequence *coarseFreqs;
-         XLALSimIMRPhenomXPHMMultibandingGrid(&coarseFreqs, ell, emmprime, pWF, lalParams_aux);
+         XLALSimIMRPhenomXPHMMultibandingGrid(&coarseFreqs, ell, emmprime, pWF, lalParams);
 
          UINT4 lenCoarseArray = coarseFreqs->length;
 
@@ -1160,7 +1174,6 @@ int XLALSimIMRPhenomXPHMFromModes(
   XLALDestroyCOMPLEX16FrequencySeries(htilde22);
   XLALDestroyValue(ModeArray);
   XLALDestroyREAL8Sequence(freqs);
-  XLALDestroyDict(lalParams_aux);
 
   #if DEBUG == 1
   printf("\n******Leaving IMRPhenomXPHM_hplushcross*****\n");
@@ -1192,18 +1205,8 @@ static int IMRPhenomXPHM_hplushcross_from_modes(
   /* Set LIGOTimeGPS */
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
 
-  /* Use an auxiliar laldict to not overwrite the input argument */
-  LALDict *lalParams_aux;
-  /* setup mode array */
-  if (lalParams == NULL)
-  {
-      lalParams_aux = XLALCreateDict();
-  }
-  else{
-      lalParams_aux = XLALDictDuplicate(lalParams);
-  }
-  lalParams_aux = IMRPhenomXPHM_setup_mode_array(lalParams_aux);
-  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams_aux);
+  lalParams = IMRPhenomXPHM_setup_mode_array(lalParams);
+  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
 
   /* At this point ModeArray should contain the list of modes
   and therefore if NULL then something is wrong and abort. */
@@ -1245,7 +1248,7 @@ static int IMRPhenomXPHM_hplushcross_from_modes(
       #endif
 
       /* We now call one single precessing mode.  */
-      status = IMRPhenomXPHM_OneMode(&hlmpos, &hlmneg, freqs, pWF, pPrec, ell, emm, lalParams_aux);
+      status = IMRPhenomXPHM_OneMode(&hlmpos, &hlmneg, freqs, pWF, pPrec, ell, emm, lalParams);
       XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXPHM_OneMode failed to generate IMRPhenomXHM waveform.");
 
       if (!(hlmpos)){ XLAL_ERROR(XLAL_EFUNC);}
@@ -1303,7 +1306,6 @@ static int IMRPhenomXPHM_hplushcross_from_modes(
   /* Free memory */
   XLALDestroyValue(ModeArray);
   XLALDestroyREAL8Sequence(freqs);
-  XLALDestroyDict(lalParams_aux);
 
   #if DEBUG == 1
   printf("\n******Leaving IMRPhenomXPHM_hplushcross_from_modes*****\n");
@@ -1792,6 +1794,19 @@ int XLALSimIMRPhenomXPHMOneMode(
   /* If no reference frequency is given, set it to the starting gravitational wave frequency. */
   REAL8 fRef = (fRef_In == 0.0) ? f_min : fRef_In;
 
+  /* Use an auxiliar laldict to not overwrite the input argument */
+  LALDict *lalParams_aux;
+  /* setup mode array */
+  if (lalParams == NULL)
+  {
+      lalParams_aux = XLALCreateDict();
+  }
+  else{
+      lalParams_aux = XLALDictDuplicate(lalParams);
+  }
+  /* Check that the modes chosen are available for the model */
+  XLAL_CHECK(check_input_mode_array(lalParams_aux) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
+
   #if DEBUG == 1
   printf("\n\n **** Initializing waveform struct... **** \n\n");
   #endif
@@ -1804,7 +1819,7 @@ int XLALSimIMRPhenomXPHMOneMode(
   /* We pass inclination 0 since for the individual modes is not relevant. */
   IMRPhenomXWaveformStruct *pWF;
   pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, 0.0, lalParams, PHENOMXDEBUG);
+  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, 0.0, lalParams_aux, PHENOMXDEBUG);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
   /*
@@ -1835,16 +1850,16 @@ int XLALSimIMRPhenomXPHMOneMode(
              chi2x,
              chi2y,
              chi2z,
-             lalParams,
+             lalParams_aux,
              PHENOMXDEBUG
            );
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
 
   /* Ensure recovering AS limit when modes are in the L0 frame. */
-  if(XLALSimInspiralWaveformParamsLookupPhenomXPHMModesL0Frame(lalParams)==1)
+  if(XLALSimInspiralWaveformParamsLookupPhenomXPHMModesL0Frame(lalParams_aux)==1)
   {
     XLAL_PRINT_WARNING("The L0Frame option only works near the AS limit, it should not be used otherwise.");
-    switch(XLALSimInspiralWaveformParamsLookupPhenomXPConvention(lalParams))
+    switch(XLALSimInspiralWaveformParamsLookupPhenomXPConvention(lalParams_aux))
     {
       case 0:
       case 5:
@@ -1867,13 +1882,13 @@ int XLALSimIMRPhenomXPHMOneMode(
   #endif
 
   /* We now call the core IMRPhenomXPHM_OneMode waveform generator */
-  status = IMRPhenomXPHM_OneMode(hlmpos, hlmneg, freqs, pWF, pPrec, l, m, lalParams);
+  status = IMRPhenomXPHM_OneMode(hlmpos, hlmneg, freqs, pWF, pPrec, l, m, lalParams_aux);
   XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXPHM_OneMode failed to generate IMRPhenomXHM waveform.");
 
   /* Tranform modes to L0-frame if requested. It only works for (near) AS cases. */
-  if(XLALSimInspiralWaveformParamsLookupPhenomXPHMModesL0Frame(lalParams)==1)
+  if(XLALSimInspiralWaveformParamsLookupPhenomXPHMModesL0Frame(lalParams_aux)==1)
   {
-    switch(XLALSimInspiralWaveformParamsLookupPhenomXPConvention(lalParams))
+    switch(XLALSimInspiralWaveformParamsLookupPhenomXPConvention(lalParams_aux))
     {
       case 0:
       case 5:
@@ -1928,6 +1943,7 @@ int XLALSimIMRPhenomXPHMOneMode(
   LALFree(pWF);
   LALFree(pPrec);
   XLALDestroyREAL8Sequence(freqs);
+  XLALDestroyDict(lalParams_aux);
 
   return XLAL_SUCCESS;
 }
@@ -1957,18 +1973,8 @@ static int IMRPhenomXPHM_OneMode(
 
   REAL8 deltaF = pWF->deltaF;
 
-  /* Use an auxiliar laldict to not overwrite the input argument */
-  LALDict *lalParams_aux;
-  /* setup mode array */
-  if (lalParams == NULL)
-  {
-      lalParams_aux = XLALCreateDict();
-  }
-  else{
-      lalParams_aux = XLALDictDuplicate(lalParams);
-  }
-  lalParams_aux = IMRPhenomXPHM_setup_mode_array(lalParams_aux);
-  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams_aux);
+  lalParams = IMRPhenomXPHM_setup_mode_array(lalParams);
+  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
 
   /* At this point ModeArray should contain the list of modes
   and therefore if NULL then something is wrong and abort. */
@@ -1998,7 +2004,7 @@ static int IMRPhenomXPHM_OneMode(
      If = 0 then do not use Multibanding. Default value defined in XLALSimInspiralWaveformParams.c.
      If the input freqs_In is non-uniform the Multibanding has been already switched off.
   */
-  REAL8 thresholdMB  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(lalParams_aux);
+  REAL8 thresholdMB  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(lalParams);
 
   /* Initialize the power of pi for the HM internal functions. */
   status = IMRPhenomX_Initialize_Powers(&powers_of_lalpiHM, LAL_PI);
@@ -2035,22 +2041,22 @@ static int IMRPhenomXPHM_OneMode(
     if (thresholdMB == 0){  // No multibanding
       if(ell == 2 && emmprime == 2)
       {
-         status = IMRPhenomXASGenerateFD(&htildelm, freqs_In, pWF, lalParams_aux);
+         status = IMRPhenomXASGenerateFD(&htildelm, freqs_In, pWF, lalParams);
          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXASGenerateFD failed to generate IMRPhenomXHM waveform.");
       }
       else
       {
-        status = IMRPhenomXHMGenerateFDOneMode(&htildelm, freqs_In, pWF, ell, emmprime, lalParams_aux);
+        status = IMRPhenomXHMGenerateFDOneMode(&htildelm, freqs_In, pWF, ell, emmprime, lalParams);
         XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMGenerateFDOneMode failed to generate IMRPhenomXHM waveform.");
       }
     }
     else{               // With multibanding
       if(ell==3 && emmprime==2){  // mode with mode-mixing
-         status = IMRPhenomXHMMultiBandOneModeMixing(&htildelm, htilde22, pWF, ell, emmprime, lalParams_aux);
+         status = IMRPhenomXHMMultiBandOneModeMixing(&htildelm, htilde22, pWF, ell, emmprime, lalParams);
          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneModeMixing failed to generate IMRPhenomXHM waveform.");
       }
       else{                  // modes without mode-mixing including 22 mode
-         status = IMRPhenomXHMMultiBandOneMode(&htildelm, pWF, ell, emmprime, lalParams_aux);
+         status = IMRPhenomXHMMultiBandOneMode(&htildelm, pWF, ell, emmprime, lalParams);
          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneMode failed to generate IMRPhenomXHM waveform.");
       }
 
@@ -2093,7 +2099,7 @@ static int IMRPhenomXPHM_OneMode(
      /* Variable to store the non-precessing waveform in one frequency point. */
      COMPLEX16 hlmcoprec;
 
-     if(XLALSimInspiralWaveformParamsLookupPhenomXPHMPrecModes(lalParams_aux) == 1)
+     if(XLALSimInspiralWaveformParamsLookupPhenomXPHMPrecModes(lalParams) == 1)
      {
        for (UINT4 idx = 0; idx < freqs->length; idx++)
        {
@@ -2127,7 +2133,6 @@ static int IMRPhenomXPHM_OneMode(
 /* Free memory */
 XLALDestroyCOMPLEX16FrequencySeries(htilde22);
 XLALDestroyValue(ModeArray);
-XLALDestroyDict(lalParams_aux);
 
 
 #if DEBUG == 1
