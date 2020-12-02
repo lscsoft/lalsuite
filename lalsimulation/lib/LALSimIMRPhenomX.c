@@ -1807,7 +1807,7 @@ int XLALSimIMRPhenomXPGenerateFD(
      s        = pPrec->Sperp / (L + pPrec->SL);
      s2       = s*s;
 
-     (*cosbeta_of_f).data[i]    = 1.0 / sqrt(1.0 + s2);
+     (*cosbeta_of_f).data[i]    = copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2);
    }
 
    LALFree(pPrec);
@@ -1951,20 +1951,6 @@ int IMRPhenomXPGenerateFD(
     printf("\n\n **** Initializing amplitude struct... **** \n\n");
   #endif
 
-  /*
-      Check whether maximum opening angle becomes larger than \pi/2 or \pi/4.
-
-      If (L + S_L) < 0, then Wigner-d Coefficients will not track the angle between J and L, meaning
-      that the model may become pathological as one moves away from the aligned-spin limit.
-
-      If this does not happen, then max_beta will be the actual maximum opening angle.
-
-      This function uses a 2PN non-spinning approximation to the orbital angular momentum L, as
-      the roots can be analytically derived.
-
-	  Returns XLAL_PRINT_WARNING if model is in a pathological regime.
-  */
-  IMRPhenomXPCheckMaxOpeningAngle(pWF,pPrec);
 
   /* Allocate and initialize the PhenomX 22 amplitude coefficients struct */
   IMRPhenomXAmpCoefficients *pAmp22;

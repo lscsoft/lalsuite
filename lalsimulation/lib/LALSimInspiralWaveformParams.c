@@ -168,6 +168,7 @@ DEFINE_INSERT_FUNC(PhenomXPrecVersion, INT4, "PrecVersion", 223)
 DEFINE_INSERT_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
 DEFINE_INSERT_FUNC(PhenomXPConvention, INT4, "Convention", 1)
 DEFINE_INSERT_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 3)
+DEFINE_INSERT_FUNC(PhenomXPTransPrecessionMethod, INT4, "TransPrecessionMethod", 1)
 
 /* IMRPhenomXHM Parameters */
 DEFINE_INSERT_FUNC(PhenomXHMInspiralPhaseVersion, INT4, "InsPhaseHMVersion", 122019)
@@ -314,6 +315,7 @@ DEFINE_LOOKUP_FUNC(PhenomXPrecVersion, INT4, "PrecVersion", 223)
 DEFINE_LOOKUP_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
 DEFINE_LOOKUP_FUNC(PhenomXPConvention, INT4, "Convention", 1)
 DEFINE_LOOKUP_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 3)
+DEFINE_LOOKUP_FUNC(PhenomXPTransPrecessionMethod, INT4, "TransPrecessionMethod", 1)
 
 /* IMRPhenomXHM Parameters */
 DEFINE_LOOKUP_FUNC(PhenomXHMInspiralPhaseVersion, INT4, "InsPhaseHMVersion", 122019)
@@ -443,6 +445,7 @@ DEFINE_ISDEFAULT_FUNC(PhenomXPrecVersion, INT4, "PrecVersion", 223)
 DEFINE_ISDEFAULT_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
 DEFINE_ISDEFAULT_FUNC(PhenomXPConvention, INT4, "Convention", 1)
 DEFINE_ISDEFAULT_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 3)
+DEFINE_ISDEFAULT_FUNC(PhenomXPTransPrecessionMethod, INT4, "TransPrecessionMethod", 1)
 
 /* IMRPhenomXHM Parameters */
 DEFINE_ISDEFAULT_FUNC(PhenomXHMInspiralPhaseVersion, INT4, "InsPhaseHMVersion", 122019)
