@@ -306,7 +306,8 @@ int IMRPhenomXGetAndSetPrecessionVariables(
         REAL8 Sperp   = chip * q_factor * q_factor;
         REAL8 af      = copysign(1.0, af_parallel) * sqrt(Sperp*Sperp + af_parallel*af_parallel);
   */
-  double Lfinal = M*M*XLALSimIMRPhenomXFinalSpin2017(eta,pPrec->chi1z,pPrec->chi2z) - m1_2*pPrec->chi1z - m2_2*pPrec->chi2z;
+  REAL8 af_parallel = XLALSimIMRPhenomXFinalSpin2017(eta,pPrec->chi1z,pPrec->chi2z);
+  double Lfinal = M*M*af_parallel - m1_2*pPrec->chi1z - m2_2*pPrec->chi2z;
 
   switch(XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod(lalParams))
   {
@@ -329,7 +330,11 @@ int IMRPhenomXGetAndSetPrecessionVariables(
         }
         else
         {
-          pWF->afinal    = sqrt( pPrec->SAv2 + Lfinal*Lfinal + 2.0*Lfinal*(pPrec->S1L_pav + pPrec->S2L_pav) ) / (M*M);
+          INT2 sign = 1;
+          if (XLALSimInspiralWaveformParamsLookupPhenomXPTransPrecessionMethod(lalParams) == 1 ){
+            sign = copysign(1, af_parallel);
+          }
+          pWF->afinal    = sign * sqrt( pPrec->SAv2 + Lfinal*Lfinal + 2.0*Lfinal*(pPrec->S1L_pav + pPrec->S2L_pav) ) / (M*M);
         }
       }
       else
@@ -996,6 +1001,21 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   pPrec->Y42          = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 4,  2);
   pPrec->Y43          = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 4,  3);
   pPrec->Y44          = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 4,  4);
+  
+  /*
+      Check whether maximum opening angle becomes larger than \pi/2 or \pi/4.
+
+      If (L + S_L) < 0, then Wigner-d Coefficients will not track the angle between J and L, meaning
+      that the model may become pathological as one moves away from the aligned-spin limit.
+
+      If this does not happen, then max_beta will be the actual maximum opening angle.
+
+      This function uses a 2PN non-spinning approximation to the orbital angular momentum L, as
+      the roots can be analytically derived.
+
+	  Returns XLAL_PRINT_WARNING if model is in a pathological regime.
+  */
+  IMRPhenomXPCheckMaxOpeningAngle(pWF,pPrec);
 
   return XLAL_SUCCESS;
 }
@@ -1411,7 +1431,7 @@ int IMRPhenomXPTwistUp22(
      */
      s        = pPrec->Sperp / (L + pPrec->SL);
      s2       = s*s;
-     cos_beta = 1.0 / sqrt(1.0 + s2);
+     cos_beta = copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2);
 
      break;
     }
@@ -1541,7 +1561,7 @@ int IMRPhenomXWignerdCoefficients(
   */
   const REAL8 s        = pPrec->Sperp / (L + pPrec->SL);
   const REAL8 s2       = s*s;
-  const REAL8 cos_beta = 1.0 / sqrt(1.0 + s2);
+  const REAL8 cos_beta = copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2);
 
   *cos_beta_half = + sqrt( (1.0 + cos_beta) / 2.0 );  /* cos(beta/2) */
   *sin_beta_half = + sqrt( (1.0 - cos_beta) / 2.0 );  /* sin(beta/2) */
