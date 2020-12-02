@@ -1580,7 +1580,7 @@ int IMRPhenomXPCheckMaxOpeningAngle(
     const REAL8 eta           = pWF->eta;
 
     /* For now, use the 2PN non-spinning maximum opening angle */
-    const REAL8 v_at_max_beta = sqrt(2.0 / 3.0) * sqrt( (9.0 + eta + sqrt(1539.0 - 1008.0*eta + 19.0*eta*eta)) / (81 - 57*eta + eta*eta) );
+    const REAL8 v_at_max_beta = sqrt(2.0 / 3.0) * sqrt( (-9.0 - eta + sqrt(1539.0 - 1008.0*eta + 19.0*eta*eta)) / (81 - 57*eta + eta*eta) );
 
     REAL8 cBetah = 0.0;
     REAL8 sBetah = 0.0;
