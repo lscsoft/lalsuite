@@ -915,11 +915,11 @@ int XLALSimInspiralChooseTDWaveform(
             break;
     case SEOBNRv4HM_PA:
       if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
-	ABORT_NONDEFAULT_LALDICT_FLAGS(LALparams);
+	XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
       if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-	ABORT_NONZERO_TRANSVERSE_SPINS(LALparams);
+	XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
       if( !checkTidesZero(lambda1, lambda2) )
-	ABORT_NONZERO_TIDES(LALparams);
+	XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
       if( f_ref != 0.)
 	XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
       /* Call the waveform driver routine */
