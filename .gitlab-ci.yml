@@ -96,7 +96,7 @@ cache:
 
 .rpmbuild: &rpmbuild
   <<: *yum-cache
-  image: containers.ligo.org/docker/base:el7-testing
+  image: igwn/base:el7-testing
   variables:
     GIT_STRATEGY: none
     RPM_BUILD_CPUS: 4
@@ -155,7 +155,7 @@ cache:
 
 .debuild: &debbuild
   <<: *apt-cache
-  image: containers.ligo.org/docker/base:stretch-proposed
+  image: igwn/base:stretch-proposed
   variables:
     GIT_STRATEGY: none
   script:
@@ -222,7 +222,7 @@ cache:
   conda info --all
 
 .conda-build: &conda-build
-  image: containers.ligo.org/docker/base:conda
+  image: igwn/base:conda
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_64_"
@@ -344,7 +344,7 @@ lint:coala:
 # -- documentation ------------------------------
 
 documentation:
-  image: containers.ligo.org/docker/lalsuite-dev:stretch-proposed
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: documentation
   needs: []
   script:
@@ -364,7 +364,7 @@ documentation:
     - web
 
 pages:
-  image: containers.ligo.org/docker/lalsuite-dev:stretch-proposed
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: deploy
   script:
     - ./00boot
@@ -396,7 +396,7 @@ pages:
 # in `dependencies:`
 
 make-dist:
-  image: containers.ligo.org/docker/lalsuite-dev:el7
+  image: igwn/lalsuite-dev:el7
   stage: .pre
   script:
     - ./00boot
@@ -695,7 +695,7 @@ lalapps:conda:
 lalinference_testjob:
   <<: *yum-cache
   stage: integration tests
-  image: containers.ligo.org/docker/base:el7-testing
+  image: igwn/base:el7-testing
   before_script:
     - *yum-update
     - ${YUM} install
@@ -725,7 +725,7 @@ lalinference_testjob:
 
 top-level:
   stage: integration tests
-  image: containers.ligo.org/docker/lalsuite-dev:el7-testing
+  image: igwn/lalsuite-dev:el7-testing
   needs: []
   <<: *top-level-build
   only:
@@ -736,7 +736,7 @@ top-level:
 # Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap.
 coverage:
   stage: integration tests
-  image: containers.ligo.org/docker/lalsuite-dev-gcc:8
+  image: igwn/lalsuite-dev-gcc:8
   needs: []
   script:
     - apt-get -y install --no-install-recommends python3-pip
@@ -929,21 +929,21 @@ docker:tags:stretch:
 
 clang:10:
   <<: *clang-build
-  image: containers.ligo.org/docker/lalsuite-dev-clang:10
+  image: igwn/lalsuite-dev-clang:10
   variables:
     CLANG: clang-10
     CLANGXX: clang++-10
 
 clang:11:
   <<: *clang-build
-  image: containers.ligo.org/docker/lalsuite-dev-clang:11
+  image: igwn/lalsuite-dev-clang:11
   variables:
     CLANG: clang-11
     CLANGXX: clang++-11
 
 clang:dev:
   <<: *clang-build
-  image: containers.ligo.org/docker/lalsuite-dev-clang:dev
+  image: igwn/lalsuite-dev-clang:dev
   variables:
     CLANG: clang
     CLANGXX: clang++
@@ -964,22 +964,23 @@ clang:dev:
 
 gcc:7:
   <<: *gcc-build
-  image: containers.ligo.org/docker/lalsuite-dev-gcc:7
+  image: igwn/lalsuite-dev-gcc:7
 
 gcc:8:
   <<: *gcc-build
-  image: containers.ligo.org/docker/lalsuite-dev-gcc:8
+  image: igwn/lalsuite-dev-gcc:8
 
 gcc:9:
   <<: *gcc-build
-  image: containers.ligo.org/docker/lalsuite-dev-gcc:9
+  image: igwn/lalsuite-dev-gcc:9
 
 gcc:10:
   <<: *gcc-build
-  image: containers.ligo.org/docker/lalsuite-dev-gcc:10
+  image: igwn/lalsuite-dev-gcc:10
+  allow_failure: true
 
 cuda:
-  image: containers.ligo.org/docker/lalsuite-dev-cuda:el7
+  image: igwn/lalsuite-dev-cuda:el7
   stage: compiler tests
   needs: []
   script:
@@ -1026,7 +1027,7 @@ upgrade:rpm:el7:
 # -- debian
 
 platform:debian:buster:
-  image: containers.ligo.org/docker/lalsuite-dev:buster
+  image: igwn/lalsuite-dev:buster
   stage: platform tests
   needs: []
   <<: *top-level-build
@@ -1103,7 +1104,7 @@ platform:macos:sierra:
 # -- conda
 
 platform:conda:linux:
-  image: containers.ligo.org/docker/base:conda
+  image: igwn/base:conda
   stage: platform tests
   before_script:
     - source /opt/conda/etc/profile.d/conda.sh
