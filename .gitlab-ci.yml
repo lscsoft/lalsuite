@@ -1024,7 +1024,7 @@ platform:debian:buster:
     - schedules
     - web
 
-upgrade:debian:buster:
+upgrade:debian:stretch:
   <<: *debbuild
   stage: upgrade tests
   needs:
