@@ -18,6 +18,7 @@ stages:
   - integration tests
   - compiler tests
   - platform tests
+  - upgrade tests
   - docker
   - wheels
   - deploy
@@ -990,6 +991,28 @@ cuda:
     reports:
       junit: "*/test/python/junit*.xml"
 
+# -- rpm
+
+upgrade:rpm:el7:
+  <<: *rpmbuild
+  stage: upgrade tests
+  needs:
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalpulsar:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+    - lalapps:rpm
+  script:
+    - *yum-update
+    # install latest release
+    - ${YUM} install lalapps
+    # install new packages
+    - ${YUM} install rpmbuild/RPMS/x86_64/*.rpm
+
 # -- debian
 
 platform:debian:buster:
@@ -1000,6 +1023,26 @@ platform:debian:buster:
   only:
     - schedules
     - web
+
+upgrade:debian:buster:
+  <<: *debbuild
+  stage: upgrade tests
+  needs:
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalpulsar:deb
+    - lalinspiral:deb
+    - lalinference:deb
+    - lalapps:deb
+  script:
+    - *apt-update
+    # install latest release
+    - ${APT_GET} install lalapps
+    # install new packages
+    - "ls *.deb &>/dev/null && { dpkg -i *.deb || { ${APT_GET} -f install; dpkg -i *.deb; } }"
 
 # -- macOS
 
@@ -1069,6 +1112,34 @@ platform:conda:linux:
     reports:
       junit: "*/test/python/junit*.xml"
   allow_failure: true
+
+upgrade:conda:linux:
+  <<: *conda-build
+  stage: upgrade tests
+  needs:
+    - lal:conda:fftw
+    - lalframe:conda
+    - lalmetaio:conda
+    - lalsimulation:conda
+    - lalburst:conda
+    - lalpulsar:conda
+    - lalinspiral:conda
+    - lalinference:conda
+    - lalapps:conda
+  script:
+    # install latest release
+    - conda create -n upgrade-test lalapps
+    # install new packages
+    - conda update -n upgrade-test --use-local
+          lal
+          lalframe
+          lalmetaio
+          lalsimulation
+          lalburst
+          lalinspiral
+          lalpulsar
+          lalinference
+          lalapps
 
 # -- wheels -------------------------------------
 
