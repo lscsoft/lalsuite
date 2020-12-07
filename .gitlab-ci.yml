@@ -1039,10 +1039,16 @@ upgrade:debian:stretch:
     - lalapps:deb
   script:
     - *apt-update
-    # install latest release
-    - ${APT_GET} install lalapps
+    # install latest lalsuite release
+    - ${APT_GET} install lscsoft-lalsuite
+    # setup local apt repository
+    - ${APT_GET} install local-apt-repository
+    - mkdir /srv/local-apt-repository
+    - cp *.deb /srv/local-apt-repository
+    - /usr/lib/local-apt-repository/rebuild
     # install new packages
-    - "ls *.deb &>/dev/null && { dpkg -i *.deb || { ${APT_GET} -f install; dpkg -i *.deb; } }"
+    - ${APT_GET} update
+    - ${APT_GET} dist-upgrade
 
 # -- macOS
 
