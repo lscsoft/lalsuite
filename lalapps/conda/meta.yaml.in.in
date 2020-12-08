@@ -35,6 +35,8 @@ build:
     # ignore run_exports from python's recipe
     - python
   number: 9999
+  script_env:
+    - CI_PIPELINE_SOURCE
   skip: true  # [win]
 
 requirements:
