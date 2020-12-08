@@ -993,9 +993,13 @@ cuda:
 
 # -- rpm
 
+.upgrade-test: &upgrade-test
+  stage: upgrade tests
+  artifacts: {}
+
 upgrade:rpm:el7:
   <<: *rpmbuild
-  stage: upgrade tests
+  <<: *upgrade-test
   needs:
     - lal:rpm
     - lalframe:rpm
@@ -1026,7 +1030,7 @@ platform:debian:buster:
 
 upgrade:debian:stretch:
   <<: *debbuild
-  stage: upgrade tests
+  <<: *upgrade-test
   needs:
     - lal:deb
     - lalframe:deb
@@ -1121,7 +1125,7 @@ platform:conda:linux:
 
 upgrade:conda:linux:
   <<: *conda-build
-  stage: upgrade tests
+  <<: *upgrade-test
   needs:
     - lal:conda:fftw
     - lalframe:conda
