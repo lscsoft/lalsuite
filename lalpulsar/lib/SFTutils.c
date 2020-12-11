@@ -138,7 +138,7 @@ XLALDestroySFT ( SFTtype *sft )
 
 
 /**
- * XLAL function to create an SFTVector of \c numSFT SFTs with \c SFTlen frequency-bins
+ * XLAL function to create an SFTVector of \c numSFT SFTs with \c SFTlen frequency-bins (which will be allocated too).
  */
 SFTVector *
 XLALCreateSFTVector ( UINT4 numSFTs, 	/**< number of SFTs */
@@ -183,6 +183,30 @@ XLALCreateSFTVector ( UINT4 numSFTs, 	/**< number of SFTs */
   return vect;
 
 } /* XLALCreateSFTVector() */
+
+
+/**
+ * XLAL function to create an SFTVector of \c numSFT SFTs (which are not allocated).
+ */
+SFTVector *
+XLALCreateEmptySFTVector ( UINT4 numSFTs 	/**< number of SFTs */
+                      )
+{
+  SFTVector *vect;
+
+  if ( (vect = XLALCalloc ( 1, sizeof(*vect) )) == NULL ) {
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+
+  vect->length = numSFTs;
+  if ( (vect->data = XLALCalloc (1, numSFTs * sizeof ( *vect->data ) )) == NULL ) {
+    XLALFree (vect);
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+
+  return vect;
+
+} /* XLALCreateEmptySFTVector() */
 
 
 /** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
@@ -262,7 +286,7 @@ XLALDestroyPSDVector ( PSDVector *vect )	/**< the PSD-vector to free */
 
 
 /**
- * Create an empty multi-IFO SFT vector with a given number of bins per SFT and number of SFTs per IFO.
+ * Create a multi-IFO SFT vector with a given number of bins per SFT and number of SFTs per IFO (which will be allocated too).
  *
  * Note that the input argument "length" refers to the number of frequency bins in each SFT.
  * The length of the returned MultiSFTVector (i.e. the number of IFOs)
@@ -295,6 +319,35 @@ MultiSFTVector *XLALCreateMultiSFTVector (
   return multSFTVec;
 
 } /* XLALCreateMultiSFTVector() */
+
+
+/**
+ * Create an empty multi-IFO SFT vector with a given number of SFTs per IFO (which are not allocated).
+ */
+MultiSFTVector *XLALCreateEmptyMultiSFTVector (
+  UINT4Vector *numsft    /**< number of SFTs in each per-detector SFTVector */
+  )
+{
+  XLAL_CHECK_NULL( numsft != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( numsft->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( numsft->data != NULL, XLAL_EFAULT );
+
+  MultiSFTVector *multSFTVec = NULL;
+
+  XLAL_CHECK_NULL( ( multSFTVec = XLALCalloc( 1, sizeof(*multSFTVec) ) ) != NULL, XLAL_ENOMEM );
+
+  const UINT4 numifo = numsft->length;
+  multSFTVec->length = numifo;
+
+  XLAL_CHECK_NULL( ( multSFTVec->data = XLALCalloc( numifo, sizeof(*multSFTVec->data) ) ) != NULL, XLAL_ENOMEM );
+
+  for ( UINT4 k = 0; k < numifo; k++) {
+    XLAL_CHECK_NULL( ( multSFTVec->data[k] = XLALCreateEmptySFTVector( numsft->data[k] ) ) != NULL, XLAL_ENOMEM );
+  } /* loop over ifos */
+
+  return multSFTVec;
+
+} /* XLALCreateEmptyMultiSFTVector() */
 
 
 /**

@@ -119,7 +119,9 @@ extern const UserChoices MathOpTypeChoices;
  *----------------------------------------------------------------------*/
 SFTtype* XLALCreateSFT ( UINT4 numBins );
 SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
+SFTVector* XLALCreateEmptySFTVector (UINT4 numSFTs );
 MultiSFTVector *XLALCreateMultiSFTVector ( UINT4 length, UINT4Vector *numsft );
+MultiSFTVector *XLALCreateEmptyMultiSFTVector ( UINT4Vector *numsft );
 
 int XLALAppendSFT2Vector (SFTVector *vect, const SFTtype *sft );
 
