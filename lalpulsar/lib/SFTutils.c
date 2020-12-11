@@ -2217,6 +2217,8 @@ XLALValidateSFTFile ( const char *fname )
  * plus the full multiPSDVector array,
  * and optionally a REAL8Vector of normalized SFT power (only if not passed as NULL)
  *
+ * WARNING: the inputSFTs will also be normalized by this call!
+ *
  */
 int
 XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD averaged over all IFOs and timestamps */
@@ -2404,6 +2406,8 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
  * without the extra options for normSFTpower computation.
  *
  * \return a REAL8Vector of the final normalized and averaged/summed PSD.
+ *
+ * WARNING: the inputSFTs will also be normalized by this call!
  */
 int
 XLALComputePSDfromSFTs ( REAL8Vector **finalPSD, /* [out] final PSD averaged over all IFOs and timestamps */
