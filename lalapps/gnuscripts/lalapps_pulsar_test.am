@@ -19,23 +19,33 @@ PY_LOG_COMPILER = /bin/bash $(test_script_compiler) py "$(skip_tests)"
 clean-local: clean-local-test-dirs
 clean-local-test-dirs:
 	@for file in $(test_scripts); do \
+		scriptname=; \
 		case $${file} in \
-			*.sh|*.py) \
+			*.sh) \
 				scriptname=`expr "X$${file}" : "X\([^/]*\)\.sh$$"`; \
-				echo " rm -rf $${scriptname}.testdir/"; \
-				rm -rf $${scriptname}.testdir/ || exit 1; \
+				;; \
+			*.py) \
+				scriptname=`expr "X$${file}" : "X\([^/]*\)\.py$$"`; \
 				;; \
 		esac; \
+		if test "X$${scriptname}" != X; then \
+			echo " rm -rf $${scriptname}.testdir/"; \
+			rm -rf $${scriptname}.testdir/ || exit 1; \
+		fi; \
 	done
 
 dist-hook: test-ref-tarball-dist-hook
 	@for file in $(test_scripts); do \
+		scriptname=; \
 		case $${file} in \
-			*.sh|*.py) \
+			*.sh) \
 				scriptname=`expr "X$${file}" : "X\([^/]*\)\.sh$$"`; \
-				if test -r "$(srcdir)/$${scriptname}.tar.gz"; then \
-					cp "$(srcdir)/$${scriptname}.tar.gz" "$(distdir)/$${scriptname}.tar.gz"; \
-				fi; \
+				;; \
+			*.py) \
+				scriptname=`expr "X$${file}" : "X\([^/]*\)\.py$$"`; \
 				;; \
 		esac; \
+		if test "X$${scriptname}" != X && test -r "$(srcdir)/$${scriptname}.tar.gz"; then \
+			cp "$(srcdir)/$${scriptname}.tar.gz" "$(distdir)/$${scriptname}.tar.gz"; \
+		fi; \
 	done
