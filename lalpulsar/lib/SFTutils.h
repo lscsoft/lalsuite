@@ -119,7 +119,9 @@ extern const UserChoices MathOpTypeChoices;
  *----------------------------------------------------------------------*/
 SFTtype* XLALCreateSFT ( UINT4 numBins );
 SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
+SFTVector* XLALCreateEmptySFTVector (UINT4 numSFTs );
 MultiSFTVector *XLALCreateMultiSFTVector ( UINT4 length, UINT4Vector *numsft );
+MultiSFTVector *XLALCreateEmptyMultiSFTVector ( UINT4Vector *numsft );
 
 int XLALAppendSFT2Vector (SFTVector *vect, const SFTtype *sft );
 
@@ -210,6 +212,15 @@ int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD,
                                     const REAL8 FreqMin,
                                     const REAL8 FreqBand
                               );
+int XLALComputePSDfromSFTs ( REAL8Vector **finalPSD,
+                             MultiSFTVector *inputSFTs,
+                             const UINT4 blocksRngMed,
+                             const MathOpType PSDmthopSFTs,
+                             const MathOpType PSDmthopIFOs,
+                             const BOOLEAN normalizeByTotalNumSFTs,
+                             const REAL8 FreqMin,
+                             const REAL8 FreqBand
+                           );
 int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
 int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
 REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
