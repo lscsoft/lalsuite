@@ -6,8 +6,6 @@
 
 {% set name = "lalinspiral" %}
 {% set version = "@VERSION@".replace('-', '.') %}
-{% set url = "file://@TARBALL@" %}
-{% set sha256 = "@SHA256@" %}
 
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set lalframe_version = "@MIN_LALFRAME_VERSION@a0" %}
@@ -18,15 +16,19 @@
 {% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
-  name: {{ name }}
+  name: {{ name }}-split
   version: {{ version }}
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: file://@TARBALL@
+  sha256: @SHA256@
 
 build:
+  error_overdepending: true
+  error_overlinking: true
   number: 9999
+  script_env:
+    - CI_PIPELINE_SOURCE
   skip: true  # [win]
 
 requirements:
@@ -37,29 +39,56 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - libblas=*=*netlib
+    - liblal >={{ lal_version }}
+    - liblalframe >={{ lalframe_version }}
+    - liblalmetaio >={{ lalmetaio_version }}
+    - liblalsimulation >={{ lalsimulation_version }}
     - metaio
-  run:
-    - gsl
-    - lal >={{ lal_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - metaio
-
-test:
-  commands:
-    - lalinspiral_version --verbose
 
 outputs:
-  - name: lalinspiral
+  - name: liblalinspiral
+    script: install-lib.sh
     build:
+      error_overdepending: true
+      error_overlinking: true
       run_exports:
-        - {{ pin_subpackage("lalinspiral", max_pin="x.x") }}
+        - {{ pin_subpackage("liblalinspiral", max_pin="x") }}
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make
+        - swig >={{ swig_version }}
+      host:
+        - gsl
+        - liblal >={{ lal_version }}
+        - liblalframe >={{ lalframe_version }}
+        - liblalmetaio >={{ lalmetaio_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
+        - metaio
+      run:
+        - gsl
+        - liblal >={{ lal_version }}
+        - liblalframe >={{ lalframe_version }}
+        - liblalmetaio >={{ lalmetaio_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
+        - metaio
+    test:
+      requires:
+        - pkg-config
+      commands:
+        - test $(pkg-config --modversion --print-errors lalinspiral) == "@VERSION@"
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Inspiral Library
+      description: |
+        The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+        This package contains the shared object libraries needed to run
+        applications that use the LAL Inspiral library.
 
   - name: python-lalinspiral
     script: install-python.sh
@@ -67,7 +96,6 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        # ignore run_exports from python's recipe
         - python
     requirements:
       build:
@@ -76,18 +104,17 @@ outputs:
         - pkg-config
         - swig >={{ swig_version }}
       host:
-        - {{ pin_subpackage('lalinspiral', exact=True) }}
+        - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - numpy
         - python
-        - libblas=*=*netlib
-        - lalburst >={{ lalburst_version }}
+        - liblalburst >={{ lalburst_version }}
       run:
         - gsl
-        - lal >={{ lal_version }}
-        - lalframe >={{ lalframe_version }}
-        - lalmetaio >={{ lalmetaio_version }}
-        - lalsimulation >={{ lalsimulation_version }}
-        - {{ pin_subpackage('lalinspiral', exact=True) }}
+        - liblal >={{ lal_version }}
+        - liblalframe >={{ lalframe_version }}
+        - {{ pin_subpackage('liblalinspiral', exact=True) }}
+        - liblalmetaio >={{ lalmetaio_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
         - lscsoft-glue
         - metaio
         - {{ pin_compatible('numpy') }}
@@ -100,11 +127,8 @@ outputs:
         - python-ligo-lw
     test:
       requires:
-        - mock  # [py<33]
-        - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
-        - python/Makefile
         - test/python
       commands:
         - python -m pytest -rs -v --junit-xml=junit.xml test/python
@@ -114,33 +138,68 @@ outputs:
         - lalinspiral.sbank
         - lalinspiral.thinca
     about:
-      home: "https://wiki.ligo.org/Computing/LALSuite"
-      doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/"
-      dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-      license: "GPL-2.0-or-later"
-      license_family: "GPL"
-      license_file: "COPYING"
-      summary: "LSC Algorithm Inspiral Library"
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Inspiral Library
       description: |
         The LSC Algorithm Inspiral Library for gravitational wave data analysis.
         This package contains the python bindings.
 
+  - name: lalinspiral
+    script: install-bin.sh
+    build:
+      error_overdepending: true
+      error_overlinking: true
+      ignore_run_exports:
+        - liblalburst
+        - python
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make
+      host:
+        - liblal >={{ lal_version }}
+        - liblalburst >={{ lalburst_version }}
+        - {{ pin_subpackage('liblalinspiral', exact=True) }}
+        - python
+      run:
+        - liblal >={{ lal_version }}
+        - {{ pin_subpackage('liblalinspiral', exact=True) }}
+        - python
+        - {{ pin_subpackage('python-lalinspiral', exact=True) }}
+    test:
+      commands:
+        - lalinspiral_version --verbose
+      imports:
+        - lalinspiral
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Inspiral Library
+      description: |
+        The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+
 about:
-  home: "https://wiki.ligo.org/Computing/LALSuite"
-  doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/"
-  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-  license: "GPL-2.0-or-later"
-  license_family: "GPL"
-  license_file: "COPYING"
-  summary: "LSC Algorithm Inspiral Library"
+  home: https://wiki.ligo.org/Computing/LALSuite
+  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPL-2.0-or-later
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Inspiral Library
   description: |
     The LSC Algorithm Inspiral Library for gravitational wave data analysis.
-    This package contains the shared-object libraries needed to run
-    applications that use the LAL Inspiral library.  If you want to install
-    the Python bindings, please install the associated python-lalinspiral
-    package.
 
 extra:
+  feedstock-name: lalinspiral
   recipe-maintainers:
     - duncanmmacleod
     - skymoo
