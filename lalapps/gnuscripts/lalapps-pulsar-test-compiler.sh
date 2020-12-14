@@ -10,6 +10,9 @@ shift
 skip_tests="$1"
 echo "skip_tests=${skip_tests}"
 shift
+test_script_runner="$1"
+echo "test_script_runner=${test_script_runner}"
+shift
 flags=""
 while [ "X$2" != X ]; do
     flags="${flags} '$1'"
@@ -30,6 +33,15 @@ if [ "X${LAL_TEST_BUILDDIR}" = X ]; then
   exit 1
 fi
 
+# Fix path to test script runner
+case "${test_script_runner}" in
+    /*)
+        ;;
+    *)
+        test_script_runner="../${test_script_runner}"
+        ;;
+esac
+
 # Test script name, location, and extension
 script_name=$(expr "X${test}" : "X.*/\(test[^/]*\)\.${script_extn}$")
 if [ "X${script_name}" = X ]; then
@@ -47,10 +59,10 @@ if [ -x "${script}" ]; then
 fi
 case "${script_extn}" in
     sh)
-        cmdline="time bash ${flags} -c 'set -e; source ${script}'"
+        cmdline="time ${test_script_runner} bash ${flags} -c 'set -e; source ${script}'"
         ;;
     py)
-        cmdline="time ${PYTHON} ${flags} '${script}'"
+        cmdline="time ${test_script_runner} ${PYTHON} ${flags} '${script}'"
         ;;
     *)
         echo "Test script '${script}' does not have a recognised extension"
