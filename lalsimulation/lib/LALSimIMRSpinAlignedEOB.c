@@ -821,8 +821,28 @@ XLALSimIMRSpinAlignedEOBModes (
   /**<< Input NQC coeffs */
   const INT4 nqcFlag,
   /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
-  LALDict *PAParams
+  LALDict *PAParams,
   /**<< dictionary containing parameters for the post-adiabatic routine */
+  const REAL8 domega220,     
+  /**<<Fractional deviation in the frequency of the  220 mode; */
+  const REAL8 dtau220,       
+  /**<<Fractional deviation in the damping time of the  220 mode; */
+  const REAL8 domega210,     
+  /**<<Fractional deviation in the frequency of the  210 mode; */
+  const REAL8 dtau210,       
+  /**<<Fractional deviation in the damping time of the  210 mode; */
+  const REAL8 domega330,     
+  /**<<Fractional deviation in the frequency of the  330 mode; */
+  const REAL8 dtau330,       
+  /**<<Fractional deviation in the damping time of the  330 mode; */
+  const REAL8 domega440,     
+  /**<<Fractional deviation in the frequency of the  440 mode; */
+  const REAL8 dtau440,       
+  /**<<Fractional deviation in the damping time of the  440 mode; */
+  const REAL8 domega550,     
+  /**<<Fractional deviation in the frequency of the  550 mode; */
+  const REAL8 dtau550       
+  /**<<Fractional deviation in the damping time of the  550 mode; */
 )
 {
   UNUSED REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
@@ -1193,7 +1213,7 @@ XLALSimIMRSpinAlignedEOBModes (
   UINT4 mode_highest_freqL = 2;
   UINT4 mode_highest_freqM = 2;
 
-  if (use_hm) {
+  if (use_hm && 0) {
     //RC: if we are using SEOBNRv4HM, the check for the Nyquist frequency
     //should be done for the 55 mode, the frequency of the RD scales with l
     mode_highest_freqL = 5;
