@@ -385,6 +385,17 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 quadparam2 = 1.+XLALSimInspiralWaveformParamsLookupdQuadMon2(LALparams);
     REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALparams);
     REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
+    UNUSED REAL8 domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(LALparams);
+    UNUSED REAL8 dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(LALparams);
+    UNUSED REAL8 domega210 = XLALSimInspiralWaveformParamsLookupDOmega210(LALparams);
+    UNUSED REAL8 dtau210 = XLALSimInspiralWaveformParamsLookupDTau210(LALparams);
+    UNUSED REAL8 domega330 = XLALSimInspiralWaveformParamsLookupDOmega330(LALparams);
+    UNUSED REAL8 dtau330 = XLALSimInspiralWaveformParamsLookupDTau330(LALparams);
+    UNUSED REAL8 domega440 = XLALSimInspiralWaveformParamsLookupDOmega440(LALparams);
+    UNUSED REAL8 dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALparams);
+    UNUSED REAL8 domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALparams);
+    UNUSED REAL8 dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALparams);
+
     int amplitudeO = XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALparams);
     int phaseO =XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
         /* Tidal parameters to be computed, if required, by universal relations */

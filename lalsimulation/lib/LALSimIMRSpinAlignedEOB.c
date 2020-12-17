@@ -606,6 +606,28 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   REAL8 omega03Tidal2 = 0;
   REAL8 quadparam1 = 0;
   REAL8 quadparam2 = 0;
+  REAL8 domega220 = 0;
+  REAL8 dtau220 = 0;
+  REAL8 domega210 = 0;
+  REAL8 dtau210 = 0;
+  REAL8 domega330 = 0;
+  REAL8 dtau330 = 0;
+  REAL8 domega440 = 0;
+  REAL8 dtau440 = 0;
+  REAL8 domega550 = 0;
+  REAL8 dtau550 = 0;
+
+  domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(LALParams);
+  dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(LALParams);
+  domega210 = XLALSimInspiralWaveformParamsLookupDOmega210(LALParams);
+  dtau210 = XLALSimInspiralWaveformParamsLookupDTau210(LALParams);
+  domega330 = XLALSimInspiralWaveformParamsLookupDOmega330(LALParams);
+  dtau330 = XLALSimInspiralWaveformParamsLookupDTau330(LALParams);
+  domega440 = XLALSimInspiralWaveformParamsLookupDOmega440(LALParams);
+  dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALParams);
+  domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALParams);
+  dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALParams);
+
 
   lambda2Tidal1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
   lambda2Tidal2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
@@ -669,7 +691,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
       printf("First run SEOBNRv4 to compute NQCs\n");
 #endif
       ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, phiC, 1./32768, m1BH, m2BH, 2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI), r, inc, spin1z, spin2z, 400,
-					 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, nqcCoeffsInput, nqcFlag, ModeArray);
+                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550, nqcCoeffsInput, nqcFlag, ModeArray);
       if (ret == XLAL_FAILURE){
         if ( nqcCoeffsInput ) XLALDestroyREAL8Vector( nqcCoeffsInput );
         if(ModeArray) XLALDestroyValue(ModeArray);
@@ -689,7 +711,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
                                                  omega02Tidal1, omega02Tidal2,
                                                  lambda3Tidal1, lambda3Tidal2,
                                                  omega03Tidal1, omega03Tidal2,
-                                                 quadparam1, quadparam2,
+                                                 quadparam1, quadparam2, domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550,
                                                  nqcCoeffsInput, nqcFlag, ModeArray);
      if (ret == XLAL_FAILURE){
        if ( nqcCoeffsInput ) XLALDestroyREAL8Vector( nqcCoeffsInput );
@@ -779,8 +801,28 @@ XLALSimIMRSpinAlignedEOBModes (
   /**<< Input NQC coeffs */
   const INT4 nqcFlag,
   /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
-  LALDict *PAParams
+  LALDict *PAParams,
   /**<< dictionary containing parameters for the post-adiabatic routine */
+  const REAL8 domega220,     
+  /**<<Fractional deviation in the frequency of the  220 mode; */
+  const REAL8 dtau220,       
+  /**<<Fractional deviation in the damping time of the  220 mode; */
+  const REAL8 domega210,     
+  /**<<Fractional deviation in the frequency of the  210 mode; */
+  const REAL8 dtau210,       
+  /**<<Fractional deviation in the damping time of the  210 mode; */
+  const REAL8 domega330,     
+  /**<<Fractional deviation in the frequency of the  330 mode; */
+  const REAL8 dtau330,       
+  /**<<Fractional deviation in the damping time of the  330 mode; */
+  const REAL8 domega440,     
+  /**<<Fractional deviation in the frequency of the  440 mode; */
+  const REAL8 dtau440,       
+  /**<<Fractional deviation in the damping time of the  440 mode; */
+  const REAL8 domega550,     
+  /**<<Fractional deviation in the frequency of the  550 mode; */
+  const REAL8 dtau550       
+  /**<<Fractional deviation in the damping time of the  550 mode; */
 )
 {
   UNUSED REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
@@ -1151,7 +1193,7 @@ XLALSimIMRSpinAlignedEOBModes (
   UINT4 mode_highest_freqL = 2;
   UINT4 mode_highest_freqM = 2;
 
-  if (use_hm) {
+  if (use_hm && 0) {
     //RC: if we are using SEOBNRv4HM, the check for the Nyquist frequency
     //should be done for the 55 mode, the frequency of the RD scales with l
     mode_highest_freqL = 5;
@@ -1935,25 +1977,47 @@ XLALSimIMRSpinAlignedEOBModes (
   prHi.data = dynamicsHi->data + 3 * retLen;
   pPhiHi.data = dynamicsHi->data + 4 * retLen;
 
-
+  /* Allocate the high sample rate vectors */
+  if(dtau220 > 0)
+    {
+      /*If dtau220>0 we need a larger array than in GR case to accomodate the whole ringdown*/
+      sigReHi =
+		XLALCreateREAL8Vector (retLen +
+			   	   (UINT4) ceil (20 * (1. + dtau220) /
+					 	 (cimag (modeFreq) * deltaTHigh)));
+      sigImHi =
+		XLALCreateREAL8Vector (retLen +
+			   	   (UINT4) ceil (20 * (1. + dtau220) /
+					 	 (cimag (modeFreq) * deltaTHigh)));
+      omegaHi =
+		XLALCreateREAL8Vector (retLen +
+			   	   (UINT4) ceil (20 * (1. + dtau220) /
+					 	 (cimag (modeFreq) * deltaTHigh)));
+      vPhiVecHi =
+		XLALCreateREAL8Vector (retLen +
+				   (UINT4) ceil (20 * (1. + dtau220) /
+						 (cimag (modeFreq) * deltaTHigh)));
+    }
+  else { 
     /* Allocate the high sample rate vectors */
-  sigReHi =
-    XLALCreateREAL8Vector (retLen +
-			   (UINT4) ceil (20 /
-					 (cimag (modeFreq) * deltaTHigh)));
-  sigImHi =
-    XLALCreateREAL8Vector (retLen +
-			   (UINT4) ceil (20 /
-					 (cimag (modeFreq) * deltaTHigh)));
-  omegaHi =
-    XLALCreateREAL8Vector (retLen +
-			   (UINT4) ceil (20 /
-					 (cimag (modeFreq) * deltaTHigh)));
+      sigReHi =
+        XLALCreateREAL8Vector (retLen +
+			       (UINT4) ceil (20 /
+					     (cimag (modeFreq) * deltaTHigh)));
+      sigImHi =
+        XLALCreateREAL8Vector (retLen +
+			       (UINT4) ceil (20 /
+					     (cimag (modeFreq) * deltaTHigh)));
+      omegaHi =
+        XLALCreateREAL8Vector (retLen +
+			       (UINT4) ceil (20 /
+					     (cimag (modeFreq) * deltaTHigh)));
+      vPhiVecHi =
+    	XLALCreateREAL8Vector (retLen +
+                               (UINT4) ceil (20 /
+                                       	     (cimag (modeFreq) * deltaTHigh)));
 
-  vPhiVecHi =
-    XLALCreateREAL8Vector (retLen +
-			 (UINT4) ceil (20 /
-				       (cimag (modeFreq) * deltaTHigh)));
+  }
 
   ampNQC = XLALCreateREAL8Vector (retLen);
   phaseNQC = XLALCreateREAL8Vector (retLen);
@@ -2928,7 +2992,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
             if (XLALSimIMREOBAttachFitRingdown (sigReHi, sigImHi, modeL, modeM,
 					  deltaTHigh, m1, m2, spin1[0],
 					  spin1[1], spin1[2], spin2[0],
-					  spin2[1], spin2[2], &timeHi,
+                                          spin2[1], spin2[2], domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550,&timeHi,
 					  rdMatchPoint,
 					  SpinAlignedEOBapproximant, &indAmpMax) ==
                 XLAL_FAILURE)
@@ -3715,6 +3779,16 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                      /**<< parameter kappa_1 of the spin-induced quadrupole for body 1, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
 				     const REAL8 quadparam2,
                      /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
+                                     const REAL8 domega220,	/**<<Fractional deviation in the frequency of the  220 mode; */
+                                     const REAL8 dtau220,	/**<<Fractional deviation in the damping time of the  220 mode; */
+                                     const REAL8 domega210,	/**<<Fractional deviation in the frequency of the  210 mode; */
+                                     const REAL8 dtau210,	/**<<Fractional deviation in the damping time of the  210 mode; */
+                                     const REAL8 domega330,	/**<<Fractional deviation in the frequency of the  330 mode; */
+                                     const REAL8 dtau330,	/**<<Fractional deviation in the damping time of the  330 mode; */
+                                     const REAL8 domega440,	/**<<Fractional deviation in the frequency of the  440 mode; */
+                                     const REAL8 dtau440,	/**<<Fractional deviation in the damping time of the  440 mode; */
+                                     const REAL8 domega550,	/**<<Fractional deviation in the frequency of the  550 mode; */
+                                     const REAL8 dtau550,	/**<<Fractional deviation in the damping time of the  550 mode; */
                      REAL8Vector *nqcCoeffsInput,
                      /**<< Input NQC coeffs */
                      const INT4 nqcFlag,
@@ -3745,7 +3819,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
                                                omega02Tidal1, omega02Tidal2,
                                                lambda3Tidal1, lambda3Tidal2,
                                                omega03Tidal1, omega03Tidal2,
-                                               quadparam1, quadparam2,
+                                               quadparam1, quadparam2, domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550,
                                                nqcCoeffsInput, nqcFlag, PAParams) == XLAL_FAILURE){
                                                  if(dynamics) XLALDestroyREAL8Vector(dynamics);
                                                  if(dynamicsHi) XLALDestroyREAL8Vector(dynamicsHi);

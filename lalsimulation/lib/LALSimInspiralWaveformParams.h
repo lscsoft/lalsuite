@@ -168,6 +168,17 @@ int XLALSimInspiralWaveformParamsInsertNLTidesF2(LALDict *params, REAL8 value);
 INT4 XLALSimInspiralWaveformParamsInsertEOBChooseNumOrAnalHamDer(LALDict *params, INT4 value);
 INT4 XLALSimInspiralWaveformParamsInsertEOBEllMaxForNyquistCheck(LALDict *params, INT4 value);
 
+int XLALSimInspiralWaveformParamsInsertDOmega220(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDTau220(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDOmega210(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDTau210(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDOmega330(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDTau330(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDOmega440(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDTau440(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDOmega550(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDTau550(LALDict *params, REAL8 value);
+
 INT4 XLALSimInspiralWaveformParamsLookupModesChoice(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupFrameAxis(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupSideband(LALDict *params);
@@ -325,6 +336,17 @@ REAL8 XLALSimInspiralWaveformParamsLookupNLTidesF2(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupEOBChooseNumOrAnalHamDer(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupEOBEllMaxForNyquistCheck(LALDict *params);
 
+REAL8 XLALSimInspiralWaveformParamsLookupDOmega220(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDTau220(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDOmega210(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDTau210(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDOmega330(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDTau330(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDOmega440(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDTau440(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDOmega550(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDTau550(LALDict *params);
+
 int XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsSidebandIsDefault(LALDict *params);
@@ -468,6 +490,18 @@ int XLALSimInspiralWaveformParamsNonGRDChikappaAIsDefault(LALDict *params);
 /* SEOBNRv4P */
 INT4 XLALSimInspiralWaveformParamsEOBChooseNumOrAnalHamDerIsDefault(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsEOBEllMaxForNyquistCheckIsDefault(LALDict *params);
+
+int XLALSimInspiralWaveformParamsDOmega220IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsDTau220IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsDOmega210IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsDTau210IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsDOmega330IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsDTau330IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsDOmega440IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsDTau440IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsDOmega550IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsDTau550IsDefault(LALDict *params);
+
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
