@@ -2218,13 +2218,13 @@ XLALReadSFDB(
                 lsps = header.nsamples/header.red;
             }
             
-            XLAL_CHECK_NULL( (buffer1 = XLALCalloc(lavespOrRed * sizeof(REAL4), sizeof(REAL4))) != NULL, XLAL_ENOMEM);
+            XLAL_CHECK_NULL( (buffer1 = XLALCalloc(lavespOrRed, sizeof(REAL4))) != NULL, XLAL_ENOMEM);
             XLAL_CHECK_NULL(fread(buffer1, lavespOrRed * sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
 
-            XLAL_CHECK_NULL( (buffer2 = XLALCalloc(lsps * sizeof(REAL4), sizeof(REAL4))) != NULL, XLAL_ENOMEM);
+            XLAL_CHECK_NULL( (buffer2 = XLALCalloc(lsps, sizeof(REAL4))) != NULL, XLAL_ENOMEM);
             XLAL_CHECK_NULL(fread(buffer2, lsps * sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
 
-            XLAL_CHECK_NULL( (buffer3 = XLALCalloc(2 * header.nsamples * sizeof(REAL4), sizeof(REAL4))) != NULL, XLAL_ENOMEM);
+            XLAL_CHECK_NULL( (buffer3 = XLALCalloc(2 * header.nsamples, sizeof(REAL4))) != NULL, XLAL_ENOMEM);
             XLAL_CHECK_NULL(fread(buffer3, 2 * header.nsamples * sizeof(REAL4), 1, fpPar)==1, XLAL_EIO);
 
             if ( flag_timestamps ? CheckIfSFDBInScienceMode(&header, detectors, startingTS, endingTS) : 1){
