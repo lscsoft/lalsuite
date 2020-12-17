@@ -1143,6 +1143,8 @@ upgrade:conda:linux:
     - lalinference:conda
     - lalapps:conda
   script:
+    # properly index the newly built packages
+    - conda index ${CONDA_BLD_PATH}
     # install latest release
     - conda create -n upgrade-test lalapps
     # install new packages
