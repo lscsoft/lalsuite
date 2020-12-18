@@ -1680,5 +1680,5 @@ int XLALSimIMRSEOBNRv4HMROM_Modes(
 
   XLALDestroyREAL8Sequence(freqs);
 
-  return(XLAL_SUCCESS);
+  return(retcode);
 }

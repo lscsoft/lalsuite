@@ -854,6 +854,17 @@ int XLALSimIMRPhenomXPGenerateFD(
 
   /* If no reference frequency is given, set it to the starting gravitational wave frequency */
   const REAL8 fRef = (fRef_In == 0.0) ? f_min : fRef_In;
+  
+  /* Use an auxiliar laldict to not overwrite the input argument */
+  LALDict *lalParams_aux;
+  /* setup mode array */
+  if (lalParams == NULL)
+  {
+      lalParams_aux = XLALCreateDict();
+  }
+  else{
+      lalParams_aux = XLALDictDuplicate(lalParams);
+  }
 
   /* Spins aligned with the orbital angular momenta */
   const REAL8 chi1L = chi1z;
@@ -870,7 +881,7 @@ int XLALSimIMRPhenomXPGenerateFD(
   /* Initialize IMR PhenomX Waveform struct and check that it initialized correctly */
   IMRPhenomXWaveformStruct *pWF;
   pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams, debug);
+  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, debug);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
 
@@ -903,7 +914,7 @@ int XLALSimIMRPhenomXPGenerateFD(
            chi2x,
            chi2y,
            chi2z,
-           lalParams,
+           lalParams_aux,
            PHENOMXPDEBUG
          );
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
@@ -913,7 +924,7 @@ int XLALSimIMRPhenomXPGenerateFD(
   #endif
 
   /* We now call the core IMRPhenomXP waveform generator */
-  status = IMRPhenomXPGenerateFD(hptilde, hctilde, freqs, pWF, pPrec, lalParams);
+  status = IMRPhenomXPGenerateFD(hptilde, hctilde, freqs, pWF, pPrec, lalParams_aux);
   XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXPGenerateFD failed to generate IMRPhenomX waveform.\n");
 
   #if PHENOMXPDEBUG == 1
@@ -951,6 +962,7 @@ int XLALSimIMRPhenomXPGenerateFD(
   LALFree(pWF);
   LALFree(pPrec);
   XLALDestroyREAL8Sequence(freqs);
+  XLALDestroyDict(lalParams_aux);
 
   return XLAL_SUCCESS;
 }
@@ -1032,6 +1044,17 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    const REAL8 f_min_In  = freqs->data[0];
    const REAL8 f_max_In  = freqs->data[freqs->length - 1];
+   
+   /* Use an auxiliar laldict to not overwrite the input argument */
+   LALDict *lalParams_aux;
+   /* setup mode array */
+   if (lalParams == NULL)
+   {
+       lalParams_aux = XLALCreateDict();
+   }
+   else{
+       lalParams_aux = XLALDictDuplicate(lalParams);
+   }
 
    /*
       Passing deltaF = 0 implies that freqs is a frequency grid with non-uniform spacing.
@@ -1043,7 +1066,7 @@ int XLALSimIMRPhenomXPGenerateFD(
    /* Initialize IMRPhenomX waveform struct and perform sanity check. */
    IMRPhenomXWaveformStruct *pWF;
    pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, phiRef, f_min_In, f_max_In, distance, inclination, lalParams, 0);
+   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, phiRef, f_min_In, f_max_In, distance, inclination, lalParams_aux, 0);
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
    /* Initialize IMR PhenomX Precession struct and check that it generated successfully */
@@ -1061,17 +1084,18 @@ int XLALSimIMRPhenomXPGenerateFD(
               chi2x,
               chi2y,
               chi2z,
-              lalParams,
+              lalParams_aux,
               PHENOMXDEBUG
             );
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetAndSetPrecessionVariables failed.\n");
 
    /* Now call the core IMRPhenomXP waveform generator */
-   status = IMRPhenomXPGenerateFD(hptilde, hctilde, freqs, pWF, pPrec, lalParams);
+   status = IMRPhenomXPGenerateFD(hptilde, hctilde, freqs, pWF, pPrec, lalParams_aux);
    XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXASFDCore failed to generate IMRPhenomX waveform.\n");
 
    LALFree(pPrec);
    LALFree(pWF);
+   XLALDestroyDict(lalParams);
 
    return XLAL_SUCCESS;
  }
@@ -1584,11 +1608,22 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    const REAL8 f_min_In  = freqs->data[0];
    const REAL8 f_max_In  = freqs->data[freqs->length - 1];
+   
+   /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *lalParams_aux;
+    /* setup mode array */
+    if (lalParams == NULL)
+    {
+        lalParams_aux = XLALCreateDict();
+    }
+    else{
+        lalParams_aux = XLALDictDuplicate(lalParams);
+    }
 
    /* Initialize IMRPhenomX waveform struct and perform sanity check. */
    IMRPhenomXWaveformStruct *pWF;
    pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, 0.0, f_min_In, f_max_In, 1.0, 0.0, lalParams, 0);
+   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, 0.0, f_min_In, f_max_In, 1.0, 0.0, lalParams_aux, 0);
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
 
@@ -1596,7 +1631,7 @@ int XLALSimIMRPhenomXPGenerateFD(
    IMRPhenomXPrecessionStruct *pPrec;
    pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
 
-   const int pflag     = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams);
+   const int pflag     = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
 
    if(pflag != 220 && pflag != 221 && pflag != 222 && pflag != 223 && pflag != 224)
    {
@@ -1614,7 +1649,7 @@ int XLALSimIMRPhenomXPGenerateFD(
               chi2x,
               chi2y,
               chi2z,
-              lalParams,
+              lalParams_aux,
               PHENOMXDEBUG
             );
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetAndSetPrecessionVariables failed.\n");
@@ -1638,6 +1673,7 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    LALFree(pPrec);
    LALFree(pWF);
+   XLALDestroyDict(lalParams);
 
    return XLAL_SUCCESS;
  }
@@ -1703,11 +1739,22 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    const REAL8 f_min_In  = freqs->data[0];
    const REAL8 f_max_In  = freqs->data[freqs->length - 1];
+   
+    /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *lalParams_aux;
+    /* setup mode array */
+    if (lalParams == NULL)
+    {
+        lalParams_aux = XLALCreateDict();
+    }
+    else{
+        lalParams_aux = XLALDictDuplicate(lalParams);
+    }
 
    /* Initialize IMRPhenomX waveform struct and perform sanity check. */
    IMRPhenomXWaveformStruct *pWF;
    pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, 0.0, f_min_In, f_max_In, 1.0, 0.0, lalParams, 0);
+   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, 0.0, f_min_In, f_max_In, 1.0, 0.0, lalParams_aux, 0);
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
    /* Initialize IMR PhenomX Precession struct and check that it generated successfully */
@@ -1725,7 +1772,7 @@ int XLALSimIMRPhenomXPGenerateFD(
               chi2x,
               chi2y,
               chi2z,
-              lalParams,
+              lalParams_aux,
               PHENOMXDEBUG
             );
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetAndSetPrecessionVariables failed.\n");
@@ -1760,11 +1807,12 @@ int XLALSimIMRPhenomXPGenerateFD(
      s        = pPrec->Sperp / (L + pPrec->SL);
      s2       = s*s;
 
-     (*cosbeta_of_f).data[i]    = 1.0 / sqrt(1.0 + s2);
+     (*cosbeta_of_f).data[i]    = copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2);
    }
 
    LALFree(pPrec);
    LALFree(pWF);
+   XLALDestroyDict(lalParams_aux);
 
    return XLAL_SUCCESS;
  }
@@ -1903,20 +1951,6 @@ int IMRPhenomXPGenerateFD(
     printf("\n\n **** Initializing amplitude struct... **** \n\n");
   #endif
 
-  /*
-      Check whether maximum opening angle becomes larger than \pi/2 or \pi/4.
-
-      If (L + S_L) < 0, then Wigner-d Coefficients will not track the angle between J and L, meaning
-      that the model may become pathological as one moves away from the aligned-spin limit.
-
-      If this does not happen, then max_beta will be the actual maximum opening angle.
-
-      This function uses a 2PN non-spinning approximation to the orbital angular momentum L, as
-      the roots can be analytically derived.
-
-	  Returns XLAL_PRINT_WARNING if model is in a pathological regime.
-  */
-  IMRPhenomXPCheckMaxOpeningAngle(pWF,pPrec);
 
   /* Allocate and initialize the PhenomX 22 amplitude coefficients struct */
   IMRPhenomXAmpCoefficients *pAmp22;
