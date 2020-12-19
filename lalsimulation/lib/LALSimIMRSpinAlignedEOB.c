@@ -1213,7 +1213,7 @@ XLALSimIMRSpinAlignedEOBModes (
   UINT4 mode_highest_freqL = 2;
   UINT4 mode_highest_freqM = 2;
 
-  if (use_hm && 0) {
+  if (use_hm) {
     //RC: if we are using SEOBNRv4HM, the check for the Nyquist frequency
     //should be done for the 55 mode, the frequency of the RD scales with l
     mode_highest_freqL = 5;
