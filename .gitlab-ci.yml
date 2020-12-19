@@ -18,6 +18,7 @@ stages:
   - integration tests
   - compiler tests
   - platform tests
+  - upgrade tests
   - docker
   - wheels
   - deploy
@@ -127,6 +128,7 @@ cache:
       - "rpmbuild/BUILD/*/test/test-suite.log"
       - "rpmbuild/BUILD/*/test/python/test-suite.log"
       - "rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm"
+      - "rpmbuild/RPMS/x86_64/lib${CI_JOB_NAME%%:*}-*.rpm"
       - "rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm"
     reports:
       junit: "rpmbuild/BUILD/*/test/python/junit*.xml"
@@ -193,6 +195,7 @@ cache:
       - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/test-suite.log
       - ${CI_JOB_NAME%%:*}*.changes
       - ${CI_JOB_NAME%%:*}*.deb
+      - lib${CI_JOB_NAME%%:*}*.deb
       - python*-${CI_JOB_NAME%%:*}*.deb
       - ${CI_JOB_NAME%%:*}*.dsc
       - ${CI_JOB_NAME%%:*}*.orig.*
@@ -260,17 +263,25 @@ cache:
     paths:
       - "conda/bld/linux-64/${CI_JOB_NAME%%:*}-*.conda"
       - "conda/bld/linux-64/${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda/bld/linux-64/lib${CI_JOB_NAME%%:*}-*.conda"
+      - "conda/bld/linux-64/lib${CI_JOB_NAME%%:*}-*.tar.bz2"
       - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.conda"
       - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/config.log"
-      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/test-suite.log"
-      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/test-suite.log"
-      - "conda/bld/${CI_JOB_NAME%%:*}_*/work/*/*/*/test-suite.log"
+      - "conda/bld/broken/${CI_JOB_NAME%%:*}-*.conda"
+      - "conda/bld/broken/${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda/bld/broken/lib${CI_JOB_NAME%%:*}-*.conda"
+      - "conda/bld/broken/lib${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda/bld/broken/python-${CI_JOB_NAME%%:*}-*.conda"
+      - "conda/bld/broken/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/config.log"
+      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/test/test-suite.log"
+      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/test/python/test-suite.log"
+      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/*/*/*/*/test-suite.log"
       - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
     reports:
       junit:
-        - "conda/bld/${CI_JOB_NAME%%:*}_*/work/test/python/junit*.xml"
-        - "conda/bld/${CI_JOB_NAME%%:*}_*/test_tmp/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}[-_]*/work/_build*/test/python/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}[-_]*/test_tmp/junit*.xml"
     when: always
   only:
     - pushes
@@ -986,6 +997,32 @@ cuda:
     reports:
       junit: "*/test/python/junit*.xml"
 
+# -- rpm
+
+.upgrade-test: &upgrade-test
+  stage: upgrade tests
+  artifacts: {}
+
+upgrade:rpm:el7:
+  <<: *rpmbuild
+  <<: *upgrade-test
+  needs:
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalpulsar:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+    - lalapps:rpm
+  script:
+    - *yum-update
+    # install latest release
+    - ${YUM} install lalapps
+    # install new packages
+    - ${YUM} install rpmbuild/RPMS/x86_64/*.rpm
+
 # -- debian
 
 platform:debian:buster:
@@ -996,6 +1033,32 @@ platform:debian:buster:
   only:
     - schedules
     - web
+
+upgrade:debian:stretch:
+  <<: *debbuild
+  <<: *upgrade-test
+  needs:
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalpulsar:deb
+    - lalinspiral:deb
+    - lalinference:deb
+    - lalapps:deb
+  script:
+    - *apt-update
+    # install latest lalsuite release
+    - ${APT_GET} install lscsoft-lalsuite
+    # setup local apt repository
+    - ${APT_GET} install local-apt-repository
+    - mkdir /srv/local-apt-repository
+    - cp *.deb /srv/local-apt-repository
+    - /usr/lib/local-apt-repository/rebuild
+    # install new packages
+    - ${APT_GET} update
+    - ${APT_GET} dist-upgrade
 
 # -- macOS
 
@@ -1065,6 +1128,36 @@ platform:conda:linux:
     reports:
       junit: "*/test/python/junit*.xml"
   allow_failure: true
+
+upgrade:conda:linux:
+  <<: *conda-build
+  <<: *upgrade-test
+  needs:
+    - lal:conda:fftw
+    - lalframe:conda
+    - lalmetaio:conda
+    - lalsimulation:conda
+    - lalburst:conda
+    - lalpulsar:conda
+    - lalinspiral:conda
+    - lalinference:conda
+    - lalapps:conda
+  script:
+    # properly index the newly built packages
+    - conda index ${CONDA_BLD_PATH}
+    # install latest release
+    - conda create -n upgrade-test lalapps
+    # install new packages
+    - conda update -n upgrade-test --use-local
+          lal
+          lalframe
+          lalmetaio
+          lalsimulation
+          lalburst
+          lalinspiral
+          lalpulsar
+          lalinference
+          lalapps
 
 # -- wheels -------------------------------------
 

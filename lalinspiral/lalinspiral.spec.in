@@ -26,11 +26,11 @@ Prefix: %{_prefix}
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
+BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
+BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
+BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: liblalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: libmetaio-devel
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
@@ -81,39 +81,51 @@ BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
 # -- packages ---------------
 
 # lalinspiral
+Summary: LSC Algorithm Inspiral Library
+Requires: lib%{name} = %{version}-%{release}
+Requires: python2-%{name} = %{version}-%{release}
+%description
+The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+This package provides the runtime tools.
+
+# liblalinspiral
+%package -n lib%{name}
+Summary: LSC Algorithm Inspiral Library - library package
 Requires: gsl
 Requires: libmetaio
-Requires: lal >= @MIN_LAL_VERSION@
-Requires: lalframe >= @MIN_LALFRAME_VERSION@
-Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
-
-%description
-The LSC Algorithm Inspiral Library for gravitational wave data analysis. This
-package contains the shared-object libraries needed to run applications
+Requires: liblal >= @MIN_LAL_VERSION@
+Requires: liblalframe >= @MIN_LALFRAME_VERSION@
+Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
+Conflicts: %{name} <= 2.0.0-1
+%description -n lib%{name}
+The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+This package contains the shared-object libraries needed to run applications
 that use the LAL Inspiral library.
 
-# lalinspiral-devel
-%package devel
+# liblalinspiral-devel
+%package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Inspiral
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: gsl-devel
+Requires: liblal-devel >= @MIN_LAL_VERSION@
+Requires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
+Requires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 Requires: libmetaio-devel
-Requires: lal-devel >= @MIN_LAL_VERSION@
-Requires: lalframe-devel >= @MIN_LALFRAME_VERSION@
-Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-%description devel
-The LSC Algorithm Inspiral Library for gravitational wave data analysis. This
-package contains files needed build applications that use the LAL Inspiral
+Provides: %{name}-devel = %{version}-%{release}
+Obsoletes: %{name}-devel < %{version}-%{release}
+%description -n lib%{name}-devel
+The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+This package contains files needed build applications that use the LAL Inspiral
 library.
 
 # python2-lalinspiral
 %package -n python2-%{name}
 Summary: Python %{python2_version} bindings for LALInspiral
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python
 Requires: python2-glue
 Requires: python2-lal >= @MIN_LAL_VERSION@
@@ -134,7 +146,7 @@ This package provides the Python %{python2_version} bindings for LALInspiral.
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} bindings for LALInspiral
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-glue
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
@@ -153,7 +165,7 @@ This package provides the Python bindings for LALInspiral.
 %package octave
 Summary: Octave bindings for LALInspiral
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
 Requires: lalframe-octave >= @MIN_LALFRAME_VERSION@
@@ -209,14 +221,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
-%files
+%files -n lib%{name}
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/lalinspiral_version
 %{_libdir}/*.so.*
-%{_sysconfdir}/*
 
-%files devel
+%files -n lib%{name}-devel
 %defattr(-,root,root)
 %license COPYING
 %{_includedir}/lal
@@ -238,6 +248,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %defattr(-,root,root)
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalinspiral.oct*
+
+%files
+%defattr(-,root,root)
+%license COPYING
+%{_bindir}/lalinspiral_version
+%{_sysconfdir}/*
 
 # -- changelog --------------
 

@@ -6,19 +6,17 @@
 
 {% set name = "lal" %}
 {% set version = "@VERSION@".replace('-', '.') %}
-{% set url = "file://@TARBALL@" %}
-{% set sha256 = "@SHA256@" %}
 
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 {% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
-  name: {{ name }}
+  name: {{ name }}-split
   version: {{ version }}
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: file://@TARBALL@
+  sha256: @SHA256@
 
 build:
   error_overdepending: true
@@ -29,8 +27,9 @@ build:
     # manually, for now
     - fftw
   number: 9999
+  script_env:
+    - CI_PIPELINE_SOURCE
   skip: true  # [win]
-  string: "{{ fft_impl }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
 
 requirements:
   build:
@@ -45,22 +44,48 @@ requirements:
     - hdf5
     - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
     - zlib
-  run:
-    - fftw  # [fft_impl == "fftw"]
-    - gsl
-    - hdf5
-    - zlib
-
-test:
-  commands:
-    - lal_version --verbose
-    - lal_simd_detect
 
 outputs:
-  - name: lal
+  - name: liblal
+    script: install-lib.sh
     build:
       run_exports:
-        - {{ pin_subpackage("lal", max_pin="x.x") }}
+        - {{ pin_subpackage("liblal", max_pin="x") }}
+      string: {{ fft_impl }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make  # [not win]
+        - swig >=3.0.9
+      host:
+        - fftw * nompi*  # [fft_impl == "fftw"]
+        - gsl
+        - hdf5
+        - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
+        - zlib
+      run:
+        - fftw  # [fft_impl == "fftw"]
+        - gsl
+        - hdf5
+        - zlib
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Library shared object libraries
+      description: |
+        The LSC Algorithm Library for gravitational wave data analysis.
+        This package contains the shared object libraries need to build
+        applications that use LAL.
+    test:
+      requires:
+        - pkg-config
+      commands:
+        - test $(pkg-config --modversion --print-errors lal) == "@VERSION@"
+        - test $(pkg-config --modversion --print-errors lalsupport) == "@VERSION@"
 
   - name: python-lal
     script: install-python.sh
@@ -70,7 +95,7 @@ outputs:
       ignore_run_exports:
         # ignore run_exports from python's recipe
         - python
-      string: "{{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
+      string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
       build:
         - {{ compiler('c') }}
@@ -79,7 +104,7 @@ outputs:
         - swig >={{ swig_version }}
       host:
         - gsl
-        - {{ pin_subpackage('lal', exact=True) }}
+        - {{ pin_subpackage('liblal', exact=True) }}
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
         - numpy
         - python
@@ -90,7 +115,7 @@ outputs:
         - fftw  # [linux and fft_impl == "fftw"]
         - gsl
         - hdf5  # [linux]
-        - {{ pin_subpackage('lal', exact=True) }}
+        - {{ pin_subpackage('liblal', exact=True) }}
         - python-ligo-lw
         - ligo-segments
         - lscsoft-glue >=@MIN_GLUE_VERSION@
@@ -108,7 +133,6 @@ outputs:
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
-        - python/Makefile
         - test/python
       commands:
         - python -m pytest -rs -v --junit-xml=junit.xml test/python
@@ -120,25 +144,64 @@ outputs:
         - lal.series
         - lal.utils
     about:
-      home: "https://wiki.ligo.org/Computing/LALSuite"
-      doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lal/"
-      dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-      license: "GPL-2.0-or-later"
-      license_family: "GPL"
-      license_file: "COPYING"
-      summary: "LSC Algorithm Library"
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Library Python bindings
       description: |
         The LSC Algorithm Library for gravitational wave data analysis.
         This package contains the Python bindings.
 
+  - name: lal
+    script: install-bin.sh
+    build:
+      error_overdepending: true
+      error_overlinking: true
+      ignore_run_exports:
+        - python
+      string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make
+      host:
+        - {{ pin_subpackage('liblal', exact=True) }}
+        # this is here in case the solver gets confused during conda-build
+        - mkl {{ mkl }}  # [fft_impl == "mkl"]
+        - python
+      run:
+        - {{ pin_subpackage('liblal', exact=True) }}
+        - python
+        - {{ pin_subpackage('python-lal', exact=True) }}
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Library runtime tools
+      description: |
+        The LSC Algorithm Library for gravitational wave data analysis.
+        This package contains the runtime tools.
+    test:
+      commands:
+        - lal_version --verbose
+        - lal_simd_detect
+      imports:
+        - lal
+
 about:
-  home: "https://wiki.ligo.org/Computing/LALSuite"
-  doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lal/"
-  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-  license: "GPL-2.0-or-later"
-  license_family: "GPL"
-  license_file: "COPYING"
-  summary: "LSC Algorithm Library"
+  home: https://wiki.ligo.org/Computing/LALSuite
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPL-2.0-or-later
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Library
   description: |
     The LSC Algorithm Library for gravitational wave data analysis.
     This package contains the shared-object libraries needed to run
@@ -147,6 +210,7 @@ about:
     package.
 
 extra:
+  feedstock-name: lal
   recipe-maintainers:
     - duncanmmacleod
     - skymoo

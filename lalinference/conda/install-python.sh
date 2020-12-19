@@ -6,12 +6,20 @@
 
 set -e
 
+# build python in a sub-directory using a copy of the C build
+_builddir="_build${PY_VER}"
+cp -r _build ${_builddir}
+cd ${_builddir}
+
 # when running on gitlab-ci, we are not using a production
 # build, so we don't want to use NDEBUG
 export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 
+# only link libraries we actually use
+export GSL_LIBS="-L${PREFIX}/lib -lgsl"
+
 # configure only python bindings and pure-python extras
-./configure \
+${SRC_DIR}/configure \
 	--disable-doxygen \
 	--disable-swig-iface \
 	--enable-help2man \
@@ -21,14 +29,10 @@ export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 	--prefix=$PREFIX \
 ;
 
-# swig bindings
+# make
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C swig
-make -j ${CPU_COUNT} V=1 VERBOSE=1 -C swig install-exec-am
-
-# python modules
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C python
-make -j ${CPU_COUNT} V=1 VERBOSE=1 -C python install
 
-# python scripts
-make -j ${CPU_COUNT} V=1 VERBOSE=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
-make -j ${CPU_COUNT} V=1 VERBOSE=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS="" install
+# install
+make -j ${CPU_COUNT} V=1 VERBOSE=1 -C swig install-exec  # swig bindings
+make -j ${CPU_COUNT} V=1 VERBOSE=1 -C python install  # pure-python extras

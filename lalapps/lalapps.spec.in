@@ -23,14 +23,14 @@ BuildRequires: gcc
 BuildRequires: gsl-devel
 BuildRequires: help2man
 BuildRequires: less
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalinference-devel >= @MIN_LALINFERENCE_VERSION@
-BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
+BuildRequires: liblalburst-devel >= @MIN_LALBURST_VERSION@
+BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
+BuildRequires: liblalinference-devel >= @MIN_LALINFERENCE_VERSION@
+BuildRequires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: liblalpulsar-devel >= @MIN_LALPULSAR_VERSION@
+BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@

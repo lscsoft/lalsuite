@@ -27,7 +27,7 @@ BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: help2man
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
@@ -59,31 +59,44 @@ BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 # -- packages ---------------
 
 # lalsimulation
-Requires: gsl
-Requires: lal >= @MIN_LAL_VERSION@
-
+Summary: LSC Algorithm Simulation Library - runtime tools
+Group: LAL
+Requires: lib%{name} = %{version}-%{release}
+Requires: python2-%{name} = %{version}-%{release}
 %description
-The LSC Algorithm Simulation Library for gravitational wave data analysis. This
-package contains the shared-object libraries needed to run applications
+The LSC Algorithm Simulation Library for gravitational wave data analysis.
+This package provides the runtime tools.
+
+# liblalsimulation
+%package -n lib%{name}
+Summary: LSC Algorithm Simulation Library - library package
+Requires: gsl
+Requires: liblal >= @MIN_LAL_VERSION@
+Conflicts: %{name} <= 2.3.0-1
+%description -n lib%{name}
+The LSC Algorithm Simulation Library for gravitational wave data analysis.
+This package contains the shared-object libraries needed to run applications
 that use the LAL Simulation library.
 
-# lalsimulation-devel
-%package devel
+# liblalsimulation-devel
+%package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Simulation
 Group: LAL
-Requires: %{name} = %{version}
 Requires: gsl-devel
-Requires: lal-devel >= @MIN_LAL_VERSION@
-%description devel
-The LSC Algorithm Simulation Library for gravitational wave data analysis. This
-package contains files needed build applications that use the LAL Simulation
-library.
+Requires: liblal-devel >= @MIN_LAL_VERSION@
+Requires: lib%{name} = %{version}-%{release}
+Provides: %{name}-devel = %{version}-%{release}
+Obsoletes: %{name}-devel < %{version}-%{release}
+%description -n lib%{name}-devel
+The LSC Algorithm Simulation Library for gravitational wave data analysis.
+This package contains files needed build applications that use the LAL
+Simulation library.
 
 # python2-lalsimulation
 %package -n python2-%{name}
 Summary: Python %{python2_version} bindings for LALSimulation
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-numpy >= @MIN_NUMPY_VERSION@
@@ -97,7 +110,7 @@ This package provides the Python %{python2_version} Bindings for LALSimulation.
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} bindings for LALSimulation
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
@@ -133,7 +146,7 @@ rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
 %configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
 %{__make} V=1 -C swig
 %{__make} V=1 -C python/%{name}
-%{__make} V=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
+#%%{__make} V=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
 popd
 
 %check
@@ -162,24 +175,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
-%files
+%files -n lib%{name}
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/lalsim-*
-%{_bindir}/lalsimulation_version
-%{_datarootdir}/lalsimulation/LALSimNeutronStarEOS_*
-%{_datarootdir}/lalsimulation/LIGO-P1200087*
-%{_datarootdir}/lalsimulation/LIGO-P1600143*
-%{_datarootdir}/lalsimulation/LIGO-T0900288*
-%{_datarootdir}/lalsimulation/LIGO-T1600593*
-%{_datarootdir}/lalsimulation/LIGO-T1800042*
-%{_datarootdir}/lalsimulation/LIGO-T1800044*
-%{_datarootdir}/lalsimulation/LIGO-T1800545*
+%{_datarootdir}/%{name}/*
 %{_libdir}/*.so.*
-%{_mandir}/man1/*
-%{_sysconfdir}/*
 
-%files devel
+%files -n lib%{name}-devel
 %defattr(-,root,root)
 %license COPYING
 %{_includedir}/lal
@@ -201,6 +203,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %defattr(-,root,root)
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalsimulation.oct*
+
+%files
+%defattr(-,root,root)
+%license COPYING
+%{_bindir}/*
+%{_mandir}/man1/*
+%{_sysconfdir}/*
 
 # -- changelog --------------
 

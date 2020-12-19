@@ -1,5 +1,10 @@
 #!/bin/bash
 
+# enable nightly mode for CI
+if [ "${CI_PIPELINE_SOURCE}" = "schedule" ] || [ "${CI_PIPELINE_SOURCE}" = "web" ]; then
+	EXTRA_CONFIG_FLAGS="--enable-nightly"
+fi
+
 # when running on gitlab-ci, we are not using a production
 # build, so we don't want to use NDEBUG
 export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
@@ -15,6 +20,7 @@ export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 	--enable-help2man \
 	--enable-openmp \
 	--prefix=${PREFIX} \
+	${EXTRA_CONFIG_FLAGS} \
 ;
 
 # build

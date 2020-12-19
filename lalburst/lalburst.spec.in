@@ -26,9 +26,9 @@ Prefix: %{_prefix}
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
+BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: libmetaio-devel
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
@@ -75,37 +75,48 @@ BuildRequires: octave-devel
 # -- packages ---------------
 
 # lalburst
-Requires: gsl
-Requires: libmetaio
-Requires: lal >= @MIN_LAL_VERSION@
-Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
-
+Summary: LSC Algorithm Burst Libary - runtime tools
+Requires: lib%{name} = %{version}-%{release}
+Requires: python2-%{name} = %{version}-%{release}
 %description
-The LSC Algorithm Burst Library for gravitational wave data analysis. This
-package contains the shared-object libraries needed to run applications
+The LSC Algorithm Burst Library for gravitational wave data analysis.
+This package provides the runtime tools.
+
+%package -n lib%{name}
+Summary: LSC Algorithm Burst Library - library package
+Requires: gsl
+Requires: liblal >= @MIN_LAL_VERSION@
+Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: libmetaio
+Conflicts: %{name} <= 1.5.6-1
+%description -n lib%{name}
+The LSC Algorithm Burst Library for gravitational wave data analysis.
+This package contains the shared-object libraries needed to run applications
 that use the LAL Burst library.
 
-# lalburst-devel
-%package devel
+# liblalburst-devel
+%package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Burst
 Group: LAL
-Requires: %{name} = %{version}
 Requires: gsl-devel
+Requires: lib%{name} = %{version}-%{release}
+Requires: liblal-devel >= @MIN_LAL_VERSION@
+Requires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 Requires: libmetaio-devel
-Requires: lal-devel >= @MIN_LAL_VERSION@
-Requires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-Requires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-%description devel
-The LSC Algorithm Burst Library for gravitational wave data analysis. This
-package contains files needed build applications that use the LAL Burst
+Provides: %{name}-devel = %{version}-%{release}
+Obsoletes: %{name}-devel < %{version}-%{release}
+%description -n lib%{name}-devel
+The LSC Algorithm Burst Library for gravitational wave data analysis.
+This package contains files needed build applications that use the LAL Burst
 library.
 
 # python2-lalburst
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALBurst
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: gsl
 Requires: python
 Requires: python2-glue
@@ -127,7 +138,7 @@ This package provides the Python %{python2_version} bindings for LALBurst.
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python2_version} Bindings for LALBurst
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: gsl
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-glue
@@ -147,7 +158,7 @@ This package provides the Python %{python3_version} bindings for LALBurst.
 %package octave
 Summary: Octave Bindings for LALBurst
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
 Requires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
@@ -203,14 +214,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
-%files
+%files -n lib%{name}
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/lalburst_version
 %{_libdir}/*.so.*
-%{_sysconfdir}/*
 
-%files devel
+%files -n lib%{name}-devel
 %defattr(-,root,root)
 %license COPYING
 %{_includedir}/lal
@@ -232,6 +241,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %defattr(-,root,root)
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalburst.oct*
+
+%files
+%defattr(-,root,root)
+%license COPYING
+%{_bindir}/lalburst_version
+%{_sysconfdir}/*
 
 # -- changelog --------------
 

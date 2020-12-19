@@ -1,5 +1,3 @@
+etc/lal-user-env.*
 usr/bin/lal_version
 usr/bin/lal_simd_detect
-etc/lal-user-env.*
-usr/lib/*/*.so.*
-#usr/share/lal
