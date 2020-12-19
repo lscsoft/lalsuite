@@ -1393,7 +1393,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   }
 
     /* If requested by the user populate the testing GR or PPE model parameters */
-  if (LALInferenceGetProcParamVal(commandLine,"--grtest-parameters") || LALInferenceGetProcParamVal(commandLine,"--ppe-parameters") || LALInferenceGetProcParamVal(commandLine,"--generic-fd-correction"))
+  if (LALInferenceGetProcParamVal(commandLine,"--grtest-parameters") || LALInferenceGetProcParamVal(commandLine,"--ppe-parameters") || LALInferenceGetProcParamVal(commandLine,"--generic-fd-correction") || LALInferenceGetProcParamVal(commandLine,"--qnmtest-parameters"))
   {
     LALInferenceInitNonGRParams(state, model);
   }
@@ -2344,9 +2344,9 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
     REAL8 correction_ncycles_taper = 1.0;
 
     /* check that the user does not request both a TaylorF2Test and a PPE waveform model */
-    if (LALInferenceGetProcParamVal(commandLine,"--grtest-parameters") && LALInferenceGetProcParamVal(commandLine,"--ppe-parameters"))
+    if (LALInferenceGetProcParamVal(commandLine,"--grtest-parameters") && LALInferenceGetProcParamVal(commandLine,"--ppe-parameters") && LALInferenceGetProcParamVal(commandLine,"--qnmtest-parameters"))
     {
-        fprintf(stderr,"--grtest-parameters and --ppe-parameters are not simultaneously supported. Please choose one. Aborting\n");
+        fprintf(stderr,"--grtest-parameters and --ppe-parameters and --qnmtest-parameters are not simultaneously supported. Please choose one. Aborting\n");
         exit(-1);
     }
 
@@ -2510,6 +2510,26 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
 
         } while((checkParamInList(ppt->value,aPPEparam))||(checkParamInList(ppt->value,alphaPPEparam))||(checkParamInList(ppt->value,bPPEparam))||(checkParamInList(ppt->value,betaPPEparam)));
         if ((counters[0]!=counters[1])||(counters[2]!=counters[3])) {fprintf(stderr,"Unequal number of PPE parameters detected! Check your command line!\n"); exit(-1);}
+    }
+    ppt=LALInferenceGetProcParamVal(commandLine,"--qnmtest-parameters");
+    if (ppt)
+    {
+        REAL8 domega_max=1.;
+        REAL8 domega_min=-1.;
+        REAL8 dtau_max=1.;
+        REAL8 dtau_min=-1.;
+	REAL8 tmpVal=0.0;
+        /* Relative shifts for ringdown frequencies and inverse damping times (SEOBNRv4HM) */
+        if (checkParamInList(ppt->value,"domega220")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "domega220", tmpVal, domega_min, domega_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dtau220")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dtau220", tmpVal, dtau_min, dtau_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"domega210")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "domega210", tmpVal, domega_min, domega_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dtau210")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dtau210", tmpVal, dtau_min, dtau_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"domega330")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "domega330", tmpVal, domega_min, domega_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dtau330")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dtau330", tmpVal, dtau_min, dtau_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"domega440")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "domega440", tmpVal, domega_min, domega_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dtau440")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dtau440", tmpVal, dtau_min, dtau_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"domega550")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "domega550", tmpVal, domega_min, domega_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dtau550")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dtau550", tmpVal, dtau_min, dtau_max, LALINFERENCE_PARAM_LINEAR);
     }
 
 }

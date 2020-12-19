@@ -47,7 +47,7 @@ __version__= "git id %s"%git_version.id
 __date__= git_version.date
 
 #List of parameters to plot/bin . Need to match (converted) column names.
-oneDMenu=['mtotal','m1','m2','mchirp','mc','chirpmass','distance','distMPC','dist','iota','psi','eta','q','asym_massratio','spin1','spin2','a1','a2','phi1','theta1','phi2','theta2','costilt1','costilt2','costhetas','cosbeta','phi_orb', 'lambdat', 'dlambdat', 'lambda1', 'lambda2', 'lam_tilde', 'dlam_tilde','theta_jn','a1z','a2z'] + bppu.spininducedquadParams + bppu.snrParams + bppu.spinParams + bppu.cosmoParam + bppu.calParams + bppu.tigerParams + bppu.lorentzInvarianceViolationParams
+oneDMenu=['mtotal','m1','m2','mchirp','mc','chirpmass','distance','distMPC','dist','iota','psi','eta','q','asym_massratio','spin1','spin2','a1','a2','phi1','theta1','phi2','theta2','costilt1','costilt2','costhetas','cosbeta','phi_orb', 'lambdat', 'dlambdat', 'lambda1', 'lambda2', 'lam_tilde', 'dlam_tilde','theta_jn','a1z','a2z'] + bppu.spininducedquadParams + bppu.snrParams + bppu.spinParams + bppu.cosmoParam + bppu.calParams + bppu.tigerParams + bppu.lorentzInvarianceViolationParams + bppu.qnmtestParams
 #List of parameter pairs to bin . Need to match (converted) column names.
 twoDGreedyMenu=[['mc','eta'],['mchirp','eta'],['chirpmass','eta'],['mc','q'],['mchirp','q'],['chirpmass','q'],['mc','asym_massratio'],['mchirp','asym_massratio'],['chirpmass','asym_massratio'],['m1','m2'],['mtotal','eta'],['distance','iota'],['dist','iota'],['dist','m1'],['ra','dec'],['dist','cos(iota)'],['phi_orb','iota'],['theta_jn','dist'],['spin1','spin2'],['spin1','mchirp'],['spin1','m1'],['a1','a2'],['a1','mchirp'],['a1','m1'],['tilt1','tilt2'],['tilt1','mchirp'],['tilt1','m1'],['a1z','a2z']]
 #Bin size/resolution for binning. Need to match (converted) column names.
@@ -62,10 +62,16 @@ paramNameLatexMap = {'m1': 'm_1', 'm2' : 'm_2', 'mtotal' : r'M_{\rm tot}', 'mchi
                      'cos(iota)': r'\cos \iota', 'tilt1': r't_1', 'tilt2': r't_2', 'ra': r'\alpha', 'dec': r'\delta',
                      'lambdat' : r'\tilde{\Lambda}', 'dlambdat': r'\delta \tilde{\Lambda}',
                      'lambda1' : r'\lambda_1', 'lambda2': r'\lambda_2',
-                     'lam_tilde' : r'\tilde{\Lambda}', 'dlam_tilde': r'\delta \tilde{\Lambda}','dchiMinus2':r'$d\chi_{-2}$','dchiMinus1':r'$d\chi_{-1}$','dchi0':r'\delta\chi_0','dchi1':r'\delta\chi_1','dchi2':r'\delta\chi_2','dchi3':r'\delta\chi_3','dchi3S':r'\delta\chi_{3S}','dchi3NS':r'\delta\chi_{3NS}','dchi4':r'\delta\chi_4','dchi4S':r'\delta\chi_{4S}','dchi4NS':r'\delta\chi_{4NS}','dchi5':r'\delta\chi_5','dchi5S':r'\delta\chi_{5S}','dchi5NS':r'\delta\chi_{5NS}','dchi5l':r'\delta\chi_{5l}','dchi5lS':r'\delta\chi_{5lS}','dchi5lNS':r'\delta\chi_{5lNS}','dchi6':r'\delta\chi_6','dchi6S':r'\delta\chi_{6S}','dchi6NS':r'\delta\chi_{6NS}','dchi6l':r'\delta\chi_{6l}','dchi7':r'\delta\chi_7','dchi7S':r'\delta\chi_{7S}','dchi7NS':r'\delta\chi_{7NS}','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3','dsigma2':r'\delta\sigma_2','dsigma3':r'\delta\sigma_3','dsigma4':r'\delta\sigma_4','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3' ,'log10lambda_a':r'$\log\lambda_{\mathbb{A}}$','log10lambda_eff':r'$\log\lambda_{eff}$','log10livamp':r'$\log \mathbb{A}$','lambda_a':r'$\lambda_{\mathbb{A}}$','lambda_eff':r'$\lambda_{eff}$','liv_amp':r'$\mathbb{A}$','dquadmons':r'\delta\kappa_s','dchikappaS':r'\delta\chi_{kappa_{S}}','dchikappaA':r'\delta\chi_{\kappa_{A}}'}
+                     'lam_tilde' : r'\tilde{\Lambda}', 'dlam_tilde': r'\delta \tilde{\Lambda}','dchiMinus2':r'$d\chi_{-2}$','dchiMinus1':r'$d\chi_{-1}$','dchi0':r'\delta\chi_0','dchi1':r'\delta\chi_1','dchi2':r'\delta\chi_2','dchi3':r'\delta\chi_3','dchi3S':r'\delta\chi_{3S}','dchi3NS':r'\delta\chi_{3NS}','dchi4':r'\delta\chi_4','dchi4S':r'\delta\chi_{4S}','dchi4NS':r'\delta\chi_{4NS}','dchi5':r'\delta\chi_5','dchi5S':r'\delta\chi_{5S}','dchi5NS':r'\delta\chi_{5NS}','dchi5l':r'\delta\chi_{5l}','dchi5lS':r'\delta\chi_{5lS}','dchi5lNS':r'\delta\chi_{5lNS}','dchi6':r'\delta\chi_6','dchi6S':r'\delta\chi_{6S}','dchi6NS':r'\delta\chi_{6NS}','dchi6l':r'\delta\chi_{6l}','dchi7':r'\delta\chi_7','dchi7S':r'\delta\chi_{7S}','dchi7NS':r'\delta\chi_{7NS}','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3','dsigma2':r'\delta\sigma_2','dsigma3':r'\delta\sigma_3','dsigma4':r'\delta\sigma_4','dbeta2':r'\delta\beta_2','dbeta3':r'\delta\beta_3' ,'log10lambda_a':r'$\log\lambda_{\mathbb{A}}$','log10lambda_eff':r'$\log\lambda_{eff}$','log10livamp':r'$\log \mathbb{A}$','lambda_a':r'$\lambda_{\mathbb{A}}$','lambda_eff':r'$\lambda_{eff}$','liv_amp':r'$\mathbb{A}$','dquadmons':r'\delta\kappa_s','dchikappaS':r'\delta\chi_{kappa_{S}}','dchikappaA':r'\delta\chi_{\kappa_{A}}',
+'domega220': r'$d\omega_{220}$', 'dtau220': r'$d\tau_{220}$',
+                     'domega210': r'$d\omega_{210}$', 'dtau210': r'$d\tau_{210}$',
+                     'domega330': r'$d\omega_{330}$','dtau330': r'$d\tau_{330}$',
+                     'domega440': r'$d\omega_{440}$', 'dtau440': r'$d\tau_{440}$',
+                     'domega550': r'$d\omega_{550}$', 'dtau550': r'$d\tau_{550}$'
+}
 
 # Only these parameters, in this order appear in confidence level table.
-clTableParams = ['mchirp', 'mc', 'chirpmass', 'eta', 'q', 'm1', 'm2', 'distance', 'distMPC', 'dist', 'cos(iota)', 'iota', 'theta_jn', 'psi', 'ra', 'dec', 'time', 'phase', 'a1', 'a2', 'costilt1', 'costilt2','dchiMinus2','dchiMinus1','dchi0','dchi1','dchi2','dchi3','dchi3S','dchi3NS','dchi4','dchi4S','dchi4NS','dchi5','dchi5S','dchi5NS','dchi5l','dchi5lS','dchi5lNS','dchi6','dchi6S','dchi6NS','dchi6l','dchi7','dchi7S','dchi7NS','dbeta2','dbeta3','dsigma2','dsigma3','dsigma4','dbeta2','dbeta3', 'log10lambda_eff','log10lambda_a','log10livamp','lambda_eff','lambda_a','liv_amp','dquadmons','dchikappaS','dchikappaA']
+clTableParams = ['mchirp', 'mc', 'chirpmass', 'eta', 'q', 'm1', 'm2', 'distance', 'distMPC', 'dist', 'cos(iota)', 'iota', 'theta_jn', 'psi', 'ra', 'dec', 'time', 'phase', 'a1', 'a2', 'costilt1', 'costilt2','dchiMinus2','dchiMinus1','dchi0','dchi1','dchi2','dchi3','dchi3S','dchi3NS','dchi4','dchi4S','dchi4NS','dchi5','dchi5S','dchi5NS','dchi5l','dchi5lS','dchi5lNS','dchi6','dchi6S','dchi6NS','dchi6l','dchi7','dchi7S','dchi7NS','dbeta2','dbeta3','dsigma2','dsigma3','dsigma4','dbeta2','dbeta3', 'log10lambda_eff','log10lambda_a','log10livamp','lambda_eff','lambda_a','liv_amp','dquadmons','dchikappaS','dchikappaA','domega220', 'dtau220', 'domega210', 'dtau210', 'domega330', 'dtau330', 'domega440', 'dtau440', 'domega550', 'dtau550']
 
 
 
@@ -74,7 +80,7 @@ for s in bppu.snrParams:
         greedyBinSizes[s]=0.02
 for s in bppu.calParams:
         greedyBinSizes[s]=0.02
-for s in bppu.tigerParams + bppu.lorentzInvarianceViolationParams:
+for s in bppu.tigerParams + bppu.lorentzInvarianceViolationParams + bppu.qnmtestParams:
   greedyBinSizes[s]=0.01
 for s in bppu.spinParams:
         greedyBinSizes[s]=0.02

@@ -144,6 +144,7 @@ cosmoParam=['m1_source','m2_source','mtotal_source','mc_source','redshift','mf_s
 #Strong Field
 ppEParams=['ppEalpha','ppElowera','ppEupperA','ppEbeta','ppElowerb','ppEupperB','alphaPPE','aPPE','betaPPE','bPPE']
 tigerParams=['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)] + ['dipolecoeff']+['dchiminus%i'%(i) for i in [1,2]]
+qnmtestParams=['domega220','dtau220','domega210','dtau210','domega330','dtau330','domega440','dtau440','domega550','dtau550']
 bransDickeParams=['omegaBD','ScalarCharge1','ScalarCharge2']
 massiveGravitonParams=['lambdaG']
 lorentzInvarianceViolationParams=['log10lambda_a','lambda_a','log10lambda_eff','lambda_eff','log10livamp','liv_amp']
@@ -151,8 +152,12 @@ tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat','
 fourPiecePolyParams=['logp1','gamma1','gamma2','gamma3']
 spectralParams=['sdgamma0','sdgamma1','sdgamma2','sdgamma3']
 energyParams=['e_rad', 'e_rad_evol', 'e_rad_nonevol', 'l_peak', 'l_peak_evol', 'l_peak_nonevol', 'e_rad_maxldist', 'e_rad_maxldist_evol', 'e_rad_maxldist_nonevol']
-spininducedquadParams = ['dquadmon1','dquadmon2','dquadmona', 'dquadmona']
-strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams+lorentzInvarianceViolationParams+spininducedquadParams
+spininducedquadParams = ['dquadmon1', 'dquadmon2', 'dquadmona', 'dquadmona']
+strongFieldParams = (
+    ppEParams + tigerParams + bransDickeParams + massiveGravitonParams
+    + tidalParams + fourPiecePolyParams + spectralParams + energyParams
+    + lorentzInvarianceViolationParams + spininducedquadParams + qnmtestParams
+)
 
 #Extrinsic
 distParams=['distance','distMPC','dist','distance_maxl']
@@ -177,7 +182,7 @@ for derived_time in ['h1_end_time','l1_end_time','v1_end_time','h1l1_delay','l1v
     greedyBinSizes[derived_time]=greedyBinSizes['time']
 for derived_phase in relativePhaseParams:
     greedyBinSizes[derived_phase]=0.05
-for param in tigerParams + bransDickeParams + massiveGravitonParams + lorentzInvarianceViolationParams:
+for param in tigerParams + bransDickeParams + massiveGravitonParams + lorentzInvarianceViolationParams + qnmtestParams:
     greedyBinSizes[param]=0.01
 for param in tidalParams:
     greedyBinSizes[param]=2.5
@@ -584,6 +589,16 @@ def plot_label(param):
         'dquadmon2':r'$\delta\kappa_2$',
         'dquadmons':r'$\delta\kappa_s$',
         'dquadmona':r'$\delta\kappa_a$',
+        'domega220':r'$d\omega_{220}$',
+        'dtau220':r'$d\tau_{220}$',
+        'domega210':r'$d\omega_{210}$',
+        'dtau210':r'$d\tau_{210}$',
+        'domega330':r'$d\omega_{330}$',
+        'dtau330':r'$d\tau_{330}$',
+        'domega440':r'$d\omega_{440}$',
+        'dtau440':r'$d\tau_{440}$',
+        'domega550':r'$d\omega_{550}$',
+        'dtau550':r'$d\tau_{550}$',
         'optimal_snr':r'$\rho^{opt}$',
         'h1_optimal_snr':r'$\rho^{opt}_{H1}$',
         'l1_optimal_snr':r'$\rho^{opt}_{L1}$',
