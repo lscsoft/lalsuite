@@ -190,7 +190,9 @@ main(int argc, char *argv[])
       fclose(fpRand);
     } /* end cleaning */
 
-  /* call the main loop function; output vectors will be allocated inside */
+  /* call the main loop function; output vectors will be allocated inside
+   * NOTE: inputSFTs will be normalized in place for efficiency reasons
+   */
   REAL8Vector *finalPSD = NULL;
   MultiPSDVector *multiPSDVector = NULL;
   REAL8Vector *normSFT = NULL;
@@ -208,7 +210,8 @@ main(int argc, char *argv[])
                       uvar.nSFTmthopIFOs,
                       uvar.normalizeByTotalNumSFTs,
                       cfg.FreqMin,
-                      cfg.FreqBand
+                      cfg.FreqBand,
+                      TRUE // normalizeSFTsInPlace
                   ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* output spectrograms */

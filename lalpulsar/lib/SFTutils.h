@@ -210,7 +210,8 @@ int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD,
                                     const MathOpType nSFTmthopIFOs,
                                     const BOOLEAN normalizeByTotalNumSFTs,
                                     const REAL8 FreqMin,
-                                    const REAL8 FreqBand
+                                    const REAL8 FreqBand,
+                                    const BOOLEAN normalizeSFTsInPlace
                               );
 int XLALComputePSDfromSFTs ( REAL8Vector **finalPSD,
                              MultiSFTVector *inputSFTs,
