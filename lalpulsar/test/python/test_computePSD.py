@@ -32,7 +32,7 @@ sun_ephem_file = os.path.join(
 ephemerides = lalpulsar.InitBarycenter(earth_ephem_file, sun_ephem_file)
 
 # parameters to make fake data
-IFOs = ["H1"]
+IFOs = ["H1","L1"]
 numDet = len(IFOs)
 sqrtSX = ["1e-23"]
 f_min = 20
@@ -104,6 +104,7 @@ def test_ComputePSDandNormSFTPower():
     print("normSFT:", normSFT.data)
     assert normSFT.length == numBins
     assert multiPSDVector.length == numDet
+    summed_average_IFO_PSD_vector = np.zeros_like(psd.data)
     for X in range(numDet):
         assert multiPSDVector.data[X].length == numSFTs.data[X]
         assert multiPSDVector.data[X].data[0].data.length == psd.length
@@ -118,12 +119,14 @@ def test_ComputePSDandNormSFTPower():
             ]
         )
         print("multiPSDVector[{:d}] averaged: {}".format(X, average_IFO_PSD_vector))
-        assert_allclose(
-            average_IFO_PSD_vector,
-            psd.data,
-            rtol=rtol,
-        )
-        print("X={:d}: Relative agreement to within {:e}.".format(X, rtol))
+        summed_average_IFO_PSD_vector += average_IFO_PSD_vector
+    print("sum of per-IFO averaged multiPSDVector entries:", summed_average_IFO_PSD_vector)
+    assert_allclose(
+        summed_average_IFO_PSD_vector,
+        psd.data,
+        rtol=rtol,
+    )
+    print("Relative agreement to within {:e}.".format(rtol))
 
     print("Calling ComputePSDandNormSFTPower() again, with normalizeSFTsInPlace=True...")
     psd2, multiPSDVector, normSFT2 = lalpulsar.ComputePSDandNormSFTPower(
