@@ -788,19 +788,16 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     REAL8Vector *hLMAll = NULL;
     UINT4 nModes = 1;
     UINT4 postAdiabaticFlag = 0;
+
     if (SpinAlignedEOBversion == 4111)
     {
         postAdiabaticFlag = 1;
         XLALDictInsertUINT4Value(PAParams, "PAFlag", postAdiabaticFlag);
-	XLALDictInsertUINT4Value(PAParams, "PAOrder", 8);
+        XLALDictInsertUINT4Value(PAParams, "PAOrder", 8);
 
-	
-	XLALDictInsertREAL8Value(PAParams, "rFinal", 1.8);
-	XLALDictInsertREAL8Value(PAParams, "rSwitch", 1.8);
-	XLALDictInsertUINT2Value(PAParams, "analyticFlag",1);
-	
-	//if(XLALDictContains(LALParams,)
-        // XLALDictInsertUINT4Value(PAParams, "PAOrder",6);
+      	XLALDictInsertREAL8Value(PAParams, "rFinal", 1.8);
+      	XLALDictInsertREAL8Value(PAParams, "rSwitch", 1.8);
+      	XLALDictInsertUINT2Value(PAParams, "analyticFlag",1);
     }
 
     /* If we want SEOBNRv4HM, then reset SpinAlignedEOBversion=4 and set use_hm=1 */
@@ -1464,34 +1461,45 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   REAL8Array *dynamicsPA = NULL;
 
+  INT4 PostAdiabaticOutcome = XLAL_SUCCESS;
+
   if (postAdiabaticFlag)
   {
-      XLALDictInsertUINT4Value(PAParams, "rSize", ceil(values->data[0]/0.3));
-    if (XLALSimInspiralEOBPostAdiabatic(
-          &dynamicsPA,
-          m1,
-          m2,
-          spin1z,
-          spin2z,
-          *values,
-          SpinAlignedEOBversion,
-          &seobParams,
-          &nqcCoeffs,
-          PAParams
-        ) != XLAL_SUCCESS)
+    // XLALDictInsertUINT4Value(PAParams, "rSize", ceil(values->data[0]/0.3));
+
+    XLAL_TRY(XLALSimInspiralEOBPostAdiabatic(
+      &dynamicsPA,
+      m1,
+      m2,
+      spin1z,
+      spin2z,
+      *values,
+      SpinAlignedEOBversion,
+      &seobParams,
+      &nqcCoeffs,
+      PAParams
+    ), PostAdiabaticOutcome);
+
+    if (PostAdiabaticOutcome == XLAL_ERANGE)
+    {
+      ;
+    }
+    else if (PostAdiabaticOutcome != XLAL_SUCCESS)
     {
       XLAL_ERROR(XLAL_EFUNC, "XLALSimInspiralEOBPostAdiabatic failed!");
     }
+    else
+    {
+      UINT4 rSize;
+      rSize = dynamicsPA->dimLength->data[1];
+      
+      values->data[0] = dynamicsPA->data[2*rSize-1];
+      values->data[1] = 0.;
+      values->data[2] = dynamicsPA->data[4*rSize-1];
+      values->data[3] = dynamicsPA->data[5*rSize-1];
 
-    UINT4 rSize;
-    rSize = dynamicsPA->dimLength->data[1];
-    
-    values->data[0] = dynamicsPA->data[2*rSize-1];
-    values->data[1] = 0.;
-    values->data[2] = dynamicsPA->data[4*rSize-1];
-    values->data[3] = dynamicsPA->data[5*rSize-1];
-
-    eobParams.rad = values->data[0];
+      eobParams.rad = values->data[0];
+    }
   }
 
   /*
@@ -1588,7 +1596,8 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   REAL8Vector *prVecInterp = NULL;
   REAL8Vector *pphiVecInterp = NULL;
   INT4 combinedLenForInterp = 0;
-  if (postAdiabaticFlag)
+
+  if (postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS)
   {
     const INT4 PALen = dynamicsPA->dimLength->data[1];
 
@@ -1812,7 +1821,9 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   // We also keep track of the starting time of the high-sampling dynamics
   INT4 retLenHi_out = retLen;
   REAL8 tstartHi = 0.0;
-  if(postAdiabaticFlag){
+
+  if(postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS)
+  {
     tstartHi = (dynamics->data)[hiSRndx];
   }
   else
@@ -2900,7 +2911,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
 
 
   /* Now create vectors at the correct sample rate, and compile the complete waveform */
-  if(postAdiabaticFlag){
+  if(postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS){
     sigReVec =
       XLALCreateREAL8Vector (combinedLenForInterp + ceil (sigReHi->length / resampFac));
     sigImVec = XLALCreateREAL8Vector (sigReVec->length);
@@ -3187,7 +3198,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
             else {
                 sigReVec->data[i] = amp0 * creal (hLM);
                 sigImVec->data[i] = amp0 * cimag (hLM);
-                if(postAdiabaticFlag){
+                if(postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS){
                   // We need to prepare for interpolation
                   // We cannot interpolate amplitude and phase directly, because:
                   // 1. The grid is too sparse and we don't have the unwrapped GW phase
@@ -3205,7 +3216,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
 	      hLMAll->data[(1+2*k)*sigReVec->length + i] = sigImVec->data[i];
 	    }
         }
-	if(postAdiabaticFlag){
+	if(postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS){
 	  
     
 	  gsl_spline_init(spline_re, tVec.data, sigReCoorbVec->data, rVec.length);

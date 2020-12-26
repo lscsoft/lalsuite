@@ -1179,7 +1179,7 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	if (rInitial <= rFinal)
 	{
-		XLAL_ERROR(XLAL_EFUNC);
+		XLAL_ERROR(XLAL_ERANGE);
 	}
 
 	// UINT4 rSize = 100;
@@ -1384,7 +1384,7 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	if (rInitial <= rSwitch)
 	{
-		XLAL_ERROR(XLAL_EFUNC);
+		XLAL_ERROR(XLAL_ERANGE);
 	}
 
 	for (j=0; j<rSize; j++)
