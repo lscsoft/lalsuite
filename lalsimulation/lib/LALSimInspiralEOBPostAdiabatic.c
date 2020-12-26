@@ -1190,7 +1190,11 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8 dr = 0.3;
 	
 	UINT4 rSize = (int) ceil((rInitial-rFinal)/dr);
-	if (rSize < 10)
+	if (rSize <= 1)
+	{
+		XLAL_ERROR(XLAL_ERANGE);
+	}
+	else if (rSize < 10)
 	{
 		rSize = 10;
 	}
