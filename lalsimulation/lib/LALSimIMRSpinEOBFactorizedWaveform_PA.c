@@ -49,17 +49,18 @@
 
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
+#include <lal/XLALGSL.h>
 
 #include "LALSimIMREOBNRv2.h"
 #include "LALSimIMRSpinEOB.h"
 
 #include "LALSimIMREOBNewtonianMultipole.c"
 #include "LALSimIMRSpinEOBAuxFuncs.c"
-#include "LALSimIMREOBNQCCorrection.c"
-#include "LALSimIMRSpinEOBHamiltonian.c"
+// #include "LALSimIMREOBNQCCorrection.c"
+// #include "LALSimIMRSpinEOBHamiltonian.c"
 
 /* OPTIMIZED */
-#include "LALSimIMRSpinEOBHamiltonianOptimized.c"
+// #include "LALSimIMRSpinEOBHamiltonianOptimized.c"
 /* END OPTIMIZED */
 
 /*------------------------------------------------------------------------------------------
