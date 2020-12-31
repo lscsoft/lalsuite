@@ -1157,7 +1157,6 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8 chi2 = spin2z;
 
 	const UINT4 PAOrder = XLALDictLookupUINT4Value(PAParams, "PAOrder");
-	// const UINT4 PAOrder = 8;
 
 	const UINT2 analyticFlag = XLALDictLookupUINT2Value(PAParams, "analyticFlag");
 
@@ -1182,6 +1181,15 @@ XLALSimInspiralEOBPostAdiabatic(
 		XLAL_ERROR(XLAL_ERANGE);
 	}
 
+	// REAL8 rSwitchPrefactor = XLALDictLookupREAL8Value(PAParams, "rSwitch");
+	REAL8 rSwitchPrefactor = 1.8;
+	REAL8 rSwitch = rSwitchPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
+
+	if (rInitial <= rSwitch)
+	{
+		XLAL_ERROR(XLAL_ERANGE);
+	}
+
 	// UINT4 rSize = 100;
 	// UINT4 rSize = XLALDictLookupUINT4Value(PAParams, "rSize");
 	
@@ -1190,7 +1198,8 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8 dr = 0.3;
 	
 	UINT4 rSize = (int) ceil((rInitial-rFinal)/dr);
-	if (rSize <= 1)
+	
+	if (rSize <= 4)
 	{
 		XLAL_ERROR(XLAL_ERANGE);
 	}
@@ -1381,16 +1390,6 @@ XLALSimInspiralEOBPostAdiabatic(
 	// 	}
 	// }
 
-	REAL8 rSwitch;
-	// REAL8 rSwitchPrefactor = XLALDictLookupREAL8Value(PAParams, "rSwitch");
-	REAL8 rSwitchPrefactor = 1.8;
-	rSwitch = rSwitchPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
-
-	if (rInitial <= rSwitch)
-	{
-		XLAL_ERROR(XLAL_ERANGE);
-	}
-
 	for (j=0; j<rSize; j++)
 	{
 		r = rVec->data[j];
@@ -1436,7 +1435,7 @@ XLALSimInspiralEOBPostAdiabatic(
     	(*dynamics)->data[2*outSize + i] = phiVec->data[i];
     	(*dynamics)->data[3*outSize + i] = prstarVec->data[i];
     	(*dynamics)->data[4*outSize + i] = pphiVec->data[i];
-    } 
+    }
 
 	XLALDestroyREAL8Vector(tVec);
 	XLALDestroyREAL8Vector(tReverseVec);

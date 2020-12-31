@@ -1048,12 +1048,16 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     }
   //nStepBack = ceil (tStepBack / deltaT);
   REAL8 odeStep = 1.0;
-  if(postAdiabaticFlag){
+
+  if(postAdiabaticFlag)
+  {
     odeStep = fmax(5*deltaT/mTScaled,1);
   }
-  else{
+  else
+  {
     odeStep = deltaT/mTScaled;
   }
+
   nStepBack = ceil (tStepBack / odeStep/ mTScaled);
   printf("odeStep = %e, 5*deltaT/mTscaled=%e, nStepBack = %d\n",odeStep,5*deltaT/mTScaled,nStepBack);
 
@@ -1461,12 +1465,10 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
 
   REAL8Array *dynamicsPA = NULL;
 
-  INT4 PostAdiabaticOutcome = XLAL_SUCCESS;
+  INT4 postAdiabaticOutcome = 0;
 
   if (postAdiabaticFlag)
   {
-    // XLALDictInsertUINT4Value(PAParams, "rSize", ceil(values->data[0]/0.3));
-
     XLAL_TRY(XLALSimInspiralEOBPostAdiabatic(
       &dynamicsPA,
       m1,
@@ -1478,13 +1480,13 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
       &seobParams,
       &nqcCoeffs,
       PAParams
-    ), PostAdiabaticOutcome);
+    ), postAdiabaticOutcome);
 
-    if (PostAdiabaticOutcome == XLAL_ERANGE)
+    if (postAdiabaticOutcome == XLAL_ERANGE)
     {
       ;
     }
-    else if (PostAdiabaticOutcome != XLAL_SUCCESS)
+    else if (postAdiabaticOutcome != XLAL_SUCCESS)
     {
       XLAL_ERROR(XLAL_EFUNC, "XLALSimInspiralEOBPostAdiabatic failed!");
     }
@@ -1597,7 +1599,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   REAL8Vector *pphiVecInterp = NULL;
   INT4 combinedLenForInterp = 0;
 
-  if (postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS)
+  if (postAdiabaticFlag && postAdiabaticOutcome == XLAL_SUCCESS)
   {
     const INT4 PALen = dynamicsPA->dimLength->data[1];
 
@@ -1611,29 +1613,26 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
     pphiVecInterp = XLALCreateREAL8Vector(PALen);
 
     for (i = 0; i < PALen; i++)
-      {
-	tVecInterp->data[i] = dynamicsPA->data[i];
-	rVecInterp->data[i] = dynamicsPA->data[PALen + i];
-	phiVecInterp->data[i] = dynamicsPA->data[2*PALen + i];
-	prVecInterp->data[i] = dynamicsPA->data[3*PALen + i];
-	pphiVecInterp->data[i] = dynamicsPA->data[4*PALen + i];
-      }
-
-    
+    {
+    	tVecInterp->data[i] = dynamicsPA->data[i];
+    	rVecInterp->data[i] = dynamicsPA->data[PALen + i];
+    	phiVecInterp->data[i] = dynamicsPA->data[2*PALen + i];
+    	prVecInterp->data[i] = dynamicsPA->data[3*PALen + i];
+    	pphiVecInterp->data[i] = dynamicsPA->data[4*PALen + i];
+    }
 
     REAL8Array *interpDynamicsPA = NULL;
     interpDynamicsPA = XLALCreateREAL8ArrayL(2, 5, PALen);
 
     for (i = 0; i < PALen; i++)
-      {
-	interpDynamicsPA->data[i] = tVecInterp->data[i];
-	interpDynamicsPA->data[PALen + i] = rVecInterp->data[i];
-	interpDynamicsPA->data[2*PALen + i] = 	phiVecInterp->data[i];
-	interpDynamicsPA->data[3*PALen + i] = prVecInterp->data[i];
-	interpDynamicsPA->data[4*PALen + i] = pphiVecInterp->data[i] = dynamicsPA->data[4*PALen + i];
-      }
+    {
+    	interpDynamicsPA->data[i] = tVecInterp->data[i];
+    	interpDynamicsPA->data[PALen + i] = rVecInterp->data[i];
+    	interpDynamicsPA->data[2*PALen + i] = 	phiVecInterp->data[i];
+    	interpDynamicsPA->data[3*PALen + i] = prVecInterp->data[i];
+    	interpDynamicsPA->data[4*PALen + i] = pphiVecInterp->data[i] = dynamicsPA->data[4*PALen + i];
+    }
 
-   
     REAL8 tOffset = interpDynamicsPA->data[PALen - 1];
     printf("Initializing PA dynamics from t=%.17f\n",tOffset);
     REAL8 phiOffset = interpDynamicsPA->data[3*PALen - 1];
@@ -1822,7 +1821,7 @@ XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
   INT4 retLenHi_out = retLen;
   REAL8 tstartHi = 0.0;
 
-  if(postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS)
+  if(postAdiabaticFlag && postAdiabaticOutcome == XLAL_SUCCESS)
   {
     tstartHi = (dynamics->data)[hiSRndx];
   }
@@ -2098,6 +2097,9 @@ gsl_interp_accel_free( acc );
              if(omegaHi){
                XLALDestroyREAL8Vector(omegaHi);
              }
+             if(vPhiVecHi){
+               XLALDestroyREAL8Vector(vPhiVecHi);
+             }
              if(ampNQC){
                XLALDestroyREAL8Vector(ampNQC);
              }
@@ -2149,6 +2151,9 @@ gsl_interp_accel_free( acc );
         if(omegaHi){
           XLALDestroyREAL8Vector(omegaHi);
         }
+        if(vPhiVecHi){
+               XLALDestroyREAL8Vector(vPhiVecHi);
+             }
         if(ampNQC){
           XLALDestroyREAL8Vector(ampNQC);
         }
@@ -2223,6 +2228,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
             if(omegaHi){
               XLALDestroyREAL8Vector(omegaHi);
             }
+            if(vPhiVecHi){
+               XLALDestroyREAL8Vector(vPhiVecHi);
+             }
             if(ampNQC){
               XLALDestroyREAL8Vector(ampNQC);
             }
@@ -2314,6 +2322,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
               if(omegaHi){
                 XLALDestroyREAL8Vector(omegaHi);
               }
+              if(vPhiVecHi){
+               XLALDestroyREAL8Vector(vPhiVecHi);
+             }
               if(ampNQC){
                 XLALDestroyREAL8Vector(ampNQC);
               }
@@ -2439,6 +2450,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
     }
     if(omegaHi){
       XLALDestroyREAL8Vector(omegaHi);
+    }
+    if(vPhiVecHi){
+      XLALDestroyREAL8Vector(vPhiVecHi);
     }
     if(ampNQC){
       XLALDestroyREAL8Vector(ampNQC);
@@ -2583,6 +2597,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
       }
       if(omegaHi){
         XLALDestroyREAL8Vector(omegaHi);
+      }
+      if(vPhiVecHi){
+        XLALDestroyREAL8Vector(vPhiVecHi);
       }
       if(ampNQC){
         XLALDestroyREAL8Vector(ampNQC);
@@ -2831,6 +2848,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
               if(omegaHi){
                 XLALDestroyREAL8Vector(omegaHi);
               }
+              if(vPhiVecHi){
+                XLALDestroyREAL8Vector(vPhiVecHi);
+              }
               if(ampNQC){
                 XLALDestroyREAL8Vector(ampNQC);
               }
@@ -2911,7 +2931,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
 
 
   /* Now create vectors at the correct sample rate, and compile the complete waveform */
-  if(postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS){
+  if(postAdiabaticFlag && postAdiabaticOutcome == XLAL_SUCCESS){
     sigReVec =
       XLALCreateREAL8Vector (combinedLenForInterp + ceil (sigReHi->length / resampFac));
     sigImVec = XLALCreateREAL8Vector (sigReVec->length);
@@ -2958,11 +2978,12 @@ for ( UINT4 k = 0; k<nModes; k++) {
 #endif
         hamV = XLALCreateREAL8Vector(rVec.length);
         memset(hamV->data, 0., hamV->length*sizeof(REAL8));
+
         omegaVec = XLALCreateREAL8Vector(rVec.length);
         memset(omegaVec->data, 0., omegaVec->length*sizeof(REAL8));
-	vPhiVec = XLALCreateREAL8Vector(rVec.length);
- 
-  memset(vPhiVec->data, 0., vPhiVec->length*sizeof(REAL8));
+
+	      vPhiVec = XLALCreateREAL8Vector(rVec.length);
+        memset(vPhiVec->data, 0., vPhiVec->length*sizeof(REAL8));
 
         if (!omegaVec|| !hamV)
         {
@@ -2987,6 +3008,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
           if(omegaHi){
             XLALDestroyREAL8Vector(omegaHi);
           }
+          if(vPhiVecHi){
+            XLALDestroyREAL8Vector(vPhiVecHi);
+          }
           if(ampNQC){
             XLALDestroyREAL8Vector(ampNQC);
           }
@@ -3008,6 +3032,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
           if(hLMAll){
             XLALDestroyREAL8Vector(hLMAll);
           }
+          if(vPhiVec)
+            XLALDestroyREAL8Vector(vPhiVec);
+          
           XLAL_ERROR (XLAL_ENOMEM);
         }
       for (i = 0; i < (INT4) rVec.length; i++)
@@ -3078,8 +3105,16 @@ for ( UINT4 k = 0; k<nModes; k++) {
             values->data[3] = pPhiVec.data[i];
             //if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform
             //(&hLM, values,  cbrt (omegaVec->data[i]), hamV->data[i], modeL, modeM, &seobParams, 0 /*use_optimized_v2_or_v4 */ ) == XLAL_FAILURE)
-	     if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform_PA
-		  (&hLM, values,  cbrt (omegaVec->data[i]), hamV->data[i], modeL, modeM, &seobParams, vPhiVec->data[i] ) == XLAL_FAILURE)
+	      if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform_PA(
+            &hLM, 
+            values,
+            cbrt (omegaVec->data[i]),
+            hamV->data[i],
+            modeL,
+            modeM,
+            &seobParams,
+            vPhiVec->data[i]
+          ) == XLAL_FAILURE)
             {
               if(tmpValues){
                 XLALDestroyREAL8Vector (tmpValues);
@@ -3102,6 +3137,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
               if(omegaHi){
                 XLALDestroyREAL8Vector(omegaHi);
               }
+              if(vPhiVecHi){
+                XLALDestroyREAL8Vector(vPhiVecHi);
+              }
               if(ampNQC){
                 XLALDestroyREAL8Vector(ampNQC);
               }
@@ -3123,6 +3161,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
               if(hLMAll){
                 XLALDestroyREAL8Vector(hLMAll);
               }
+              if(vPhiVec)
+                XLALDestroyREAL8Vector(vPhiVec);
+              
               XLAL_ERROR (XLAL_EFUNC);
             }
             hT = 0.;
@@ -3158,6 +3199,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
               }
               if(omegaHi){
                 XLALDestroyREAL8Vector(omegaHi);
+              }
+              if(vPhiVecHi){
+                XLALDestroyREAL8Vector(vPhiVecHi);
               }
               if(ampNQC){
                 XLALDestroyREAL8Vector(ampNQC);
@@ -3198,7 +3242,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
             else {
                 sigReVec->data[i] = amp0 * creal (hLM);
                 sigImVec->data[i] = amp0 * cimag (hLM);
-                if(postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS){
+                if(postAdiabaticFlag && postAdiabaticOutcome == XLAL_SUCCESS){
                   // We need to prepare for interpolation
                   // We cannot interpolate amplitude and phase directly, because:
                   // 1. The grid is too sparse and we don't have the unwrapped GW phase
@@ -3216,7 +3260,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
 	      hLMAll->data[(1+2*k)*sigReVec->length + i] = sigImVec->data[i];
 	    }
         }
-	if(postAdiabaticFlag && PostAdiabaticOutcome == XLAL_SUCCESS){
+	if(postAdiabaticFlag && postAdiabaticOutcome == XLAL_SUCCESS){
 	  
     
 	  gsl_spline_init(spline_re, tVec.data, sigReCoorbVec->data, rVec.length);
@@ -3459,14 +3503,24 @@ for ( UINT4 k = 0; k<nModes; k++) {
       if ( hamVHi )
           XLALDestroyREAL8Vector (hamVHi);
 
+      if (vPhiVec)
+        XLALDestroyREAL8Vector (vPhiVec);
+
+      if (vPhiVecHi)
+        XLALDestroyREAL8Vector (vPhiVecHi);
+
       if (tVecInterp)
         XLALDestroyREAL8Vector(tVecInterp);
+
       if (phiVecInterp)
         XLALDestroyREAL8Vector(phiVecInterp);
+
       if (rVecInterp)
         XLALDestroyREAL8Vector(rVecInterp);
+
       if (prVecInterp)
         XLALDestroyREAL8Vector(prVecInterp);
+
       if (pphiVecInterp)
         XLALDestroyREAL8Vector(pphiVecInterp);
 
