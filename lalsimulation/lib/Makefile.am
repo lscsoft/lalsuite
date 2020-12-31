@@ -269,6 +269,7 @@ noinst_HEADERS = \
 	LALSimInspiralEOBPANumericalFuncs.c \
 	LALSimInspiralEOBPAAuxiliaryFuncs.c \
 	LALSimIMRSpinEOBFactorizedFlux_PA.c \
+	LALSimIMRSpinEOBFactorizedWaveform_PA.c \
 	LALSimInspiralEOBPostAdiabatic.h
         $(END_OF_LIST)
 
@@ -383,7 +384,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimNRSur3dq8Remnant.c \
 	LALSimInspiralEOBPostAdiabatic.c \
 	LALSimInspiralEOBPANumericalFuncs.c \
-	LALSimInspiralEOBPAAuxiliaryFuncs.c
+	LALSimInspiralEOBPAAuxiliaryFuncs.c \
+	LALSimIMRSpinEOBFactorizedWaveform_PA.c
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
