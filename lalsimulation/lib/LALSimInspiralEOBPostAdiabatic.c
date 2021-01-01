@@ -1138,11 +1138,15 @@ XLALSimInspiralEOBPostAdiabatic(
 	const REAL8 spin2z,
 	/**<< z-component of spin-2, dimensionless */
 	const REAL8Vector initVals,
+	/**<< initial values (r, phi, pr, pphi) for the post-adiabatic routine */
 	UINT4 SpinAlignedEOBversion,
 	/**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
 	SpinEOBParams *seobParams,
+	/**<< SEOB parameters */
 	EOBNonQCCoeffs *nqcCoeffs,
+	/**<< NQC coefficients */
 	LALDict *PAParams
+	/**<< pointer to a dictionary containing parameters for the post-adiabatic routine */
 )
 {
 	if (SpinAlignedEOBversion != 4)

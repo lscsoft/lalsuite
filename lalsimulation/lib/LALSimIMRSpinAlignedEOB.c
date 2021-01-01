@@ -678,54 +678,56 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
  * with a failure rate of ~0.3% at fmin=10Hz for M=3Msol.
  */
 int
-XLALSimIMRSpinAlignedEOBModes (SphHarmTimeSeries ** hlmmode,
-				     /**<< OUTPUT, mode hlm */
-             //SM
-             REAL8Vector ** dynamics_out, /**<< OUTPUT, low-sampling dynamics */
-             REAL8Vector ** dynamicsHi_out, /**<< OUTPUT, high-sampling dynamics */
-             //SM
-				     REAL8 deltaT,
-				     /**<< sampling time step */
-				     const REAL8 m1SI,
-				     /**<< mass-1 in SI unit */
-				     const REAL8 m2SI,
-				     /**<< mass-2 in SI unit */
-				     const REAL8 fMin,
-				     /**<< starting frequency of the 22 mode (Hz) */
-				     const REAL8 r,
-				     /**<< distance in SI unit */
-				     const REAL8 spin1z,
-				     /**<< z-component of spin-1, dimensionless */
-				     const REAL8 spin2z,
-				      /**<< z-component of spin-2, dimensionless */
-             UINT4 SpinAlignedEOBversion,
-             /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
-				     const REAL8 lambda2Tidal1,
-                     /**<< dimensionless adiabatic quadrupole tidal deformability for body 1 (2/3 k2/C^5) */
-				     const REAL8 lambda2Tidal2,
-                     /**<< dimensionless adiabatic quadrupole tidal deformability for body 2 (2/3 k2/C^5) */
-				     const REAL8 omega02Tidal1,
-                     /**<< quadrupole f-mode angular freq for body 1 m_1*omega_{02,1}*/
-				     const REAL8 omega02Tidal2,
-                      /**<< quadrupole f-mode angular freq for body 2 m_2*omega_{02,2}*/
-				     const REAL8 lambda3Tidal1,
-                     /**<< dimensionless adiabatic octupole tidal deformability for body 1 (2/15 k3/C^7) */
-				     const REAL8 lambda3Tidal2,
-                     /**<< dimensionless adiabatic octupole tidal deformability for body 2 (2/15 k3/C^7) */
-				     const REAL8 omega03Tidal1,
-                     /**<< octupole f-mode angular freq for body 1 m_1*omega_{03,1}*/
-				     const REAL8 omega03Tidal2,
-                     /**<< octupole f-mode angular freq for body 2 m_2*omega_{03,2}*/
-             const REAL8 quadparam1,
-                     /**<< parameter kappa_1 of the spin-induced quadrupole for body 1, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
-				     const REAL8 quadparam2,
-                     /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
-             REAL8Vector *nqcCoeffsInput,
-             /**<< Input NQC coeffs */
-             const INT4 nqcFlag,
-             /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
-             LALDict *PAParams
-  )
+XLALSimIMRSpinAlignedEOBModes (
+  SphHarmTimeSeries ** hlmmode,
+  /**<< OUTPUT, mode hlm */
+  //SM
+  REAL8Vector ** dynamics_out, /**<< OUTPUT, low-sampling dynamics */
+  REAL8Vector ** dynamicsHi_out, /**<< OUTPUT, high-sampling dynamics */
+  //SM
+  REAL8 deltaT,
+  /**<< sampling time step */
+  const REAL8 m1SI,
+  /**<< mass-1 in SI unit */
+  const REAL8 m2SI,
+  /**<< mass-2 in SI unit */
+  const REAL8 fMin,
+  /**<< starting frequency of the 22 mode (Hz) */
+  const REAL8 r,
+  /**<< distance in SI unit */
+  const REAL8 spin1z,
+  /**<< z-component of spin-1, dimensionless */
+  const REAL8 spin2z,
+  /**<< z-component of spin-2, dimensionless */
+  UINT4 SpinAlignedEOBversion,
+  /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
+  const REAL8 lambda2Tidal1,
+  /**<< dimensionless adiabatic quadrupole tidal deformability for body 1 (2/3 k2/C^5) */
+  const REAL8 lambda2Tidal2,
+  /**<< dimensionless adiabatic quadrupole tidal deformability for body 2 (2/3 k2/C^5) */
+  const REAL8 omega02Tidal1,
+  /**<< quadrupole f-mode angular freq for body 1 m_1*omega_{02,1}*/
+  const REAL8 omega02Tidal2,
+  /**<< quadrupole f-mode angular freq for body 2 m_2*omega_{02,2}*/
+  const REAL8 lambda3Tidal1,
+  /**<< dimensionless adiabatic octupole tidal deformability for body 1 (2/15 k3/C^7) */
+  const REAL8 lambda3Tidal2,
+  /**<< dimensionless adiabatic octupole tidal deformability for body 2 (2/15 k3/C^7) */
+  const REAL8 omega03Tidal1,
+  /**<< octupole f-mode angular freq for body 1 m_1*omega_{03,1}*/
+  const REAL8 omega03Tidal2,
+  /**<< octupole f-mode angular freq for body 2 m_2*omega_{03,2}*/
+  const REAL8 quadparam1,
+  /**<< parameter kappa_1 of the spin-induced quadrupole for body 1, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
+  const REAL8 quadparam2,
+  /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
+  REAL8Vector *nqcCoeffsInput,
+  /**<< Input NQC coeffs */
+  const INT4 nqcFlag,
+  /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
+  LALDict *PAParams
+  /**<< dictionary containing parameters for the post-adiabatic routine */
+)
 {
   UNUSED REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
   INT4 use_tidal = 0;
