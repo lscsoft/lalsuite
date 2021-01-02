@@ -145,7 +145,7 @@ pkginclude_HEADERS = \
 	LALSimulationVCSInfo.h \
 	LALSimulationVCSInfoHeader.h \
 	LALSimUniversalRelations.h \
-    LALSimInspiralEOS.h \
+	LALSimInspiralEOS.h \
 	LALSimInspiralFDPrecAngles.h
 
 noinst_HEADERS = \
@@ -271,7 +271,7 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBFactorizedFlux_PA.c \
 	LALSimIMRSpinEOBFactorizedWaveform_PA.c \
 	LALSimInspiralEOBPostAdiabatic.h
-        $(END_OF_LIST)
+		$(END_OF_LIST)
 
 lib_LTLIBRARIES = liblalsimulation.la
 
