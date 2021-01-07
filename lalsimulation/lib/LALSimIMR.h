@@ -42,6 +42,7 @@ extern "C" {
  * @{
  * @defgroup LALSimIMRPhenom_c                   LALSimIMRPhenom.c
  * @defgroup LALSimIMRPhenomX_c                  LALSimIMRPhenomX.c
+ * @defgroup LALSimIMRPhenomTHM_c                LALSimIMRPhenomTHM.c
  * @defgroup LALSimIMREOBNRv2_c                  LALSimIMREOBNRv2.c
  * @defgroup LALSimIMRSpinAlignedEOB_c           LALSimIMRSpinAlignedEOB.c
  * @defgroup LALSimIMRSpinPrecEOB_c              LALSimIMRSpinPrecEOB.c
@@ -765,6 +766,54 @@ int XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame(
     LALDict *lalParams                /**< LAL Dictionary */
 );
 
+/* IMRPhenomT/HM Routines */
+/* in module LALSimIMRPhenomTHM.c */
+
+SphHarmTimeSeries *XLALSimIMRPhenomTHM_Modes(
+  REAL8 m1_SI,        /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,        /**< Mass of companion 2 (kg) */
+  REAL8 chi1L,        /**< Dimensionless aligned spin of companion 1 */
+  REAL8 chi2L,        /**< Dimensionless aligned spin of companion 2 */
+  REAL8 distance,     /**< Luminosity distance (m) */
+  REAL8 deltaT,       /**< inclination of source (rad) */
+  REAL8 fmin,         /**< sampling interval (s) */
+  REAL8 fRef,         /**< reference GW frequency (Hz) */
+  REAL8 phiRef,       /**< reference orbital phase (rad) */
+  LALDict *lalParams /**< LAL dictionary containing accessory parameters */
+  );
+
+int XLALSimIMRPhenomTHM(
+  REAL8TimeSeries **hp, /**< [out] TD waveform for plus polarisation */
+  REAL8TimeSeries **hc, /**< [out] TD waveform for cross polarisation */
+  REAL8 m1_SI,          /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,          /**< Mass of companion 2 (kg) */
+  REAL8 chi1L,          /**< Dimensionless aligned spin of companion 1 */
+  REAL8 chi2L,          /**< Dimensionless aligned spin of companion 2 */
+  REAL8 distance,       /**< Luminosity distance (m) */
+  REAL8 inclination,    /**< inclination of source (rad) */
+  REAL8 deltaT,         /**< sampling interval (s) */
+  REAL8 fmin,           /**< starting GW frequency (Hz) */
+  REAL8 fRef,           /**< reference GW frequency (Hz) */
+  REAL8 phiRef,         /**< reference orbital phase (rad) */
+  LALDict *lalparams  /**< LAL dictionary containing accessory parameters */
+  );
+
+int XLALSimIMRPhenomT(
+  REAL8TimeSeries **hp, /**< [out] TD waveform for plus polarisation */
+  REAL8TimeSeries **hc, /**< [out] TD waveform for cross polarisation */
+  REAL8 m1_SI,      /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,      /**< Mass of companion 2 (kg) */
+  REAL8 chi1L,      /**< Dimensionless aligned spin of companion 1 */
+  REAL8 chi2L,      /**< Dimensionless aligned spin of companion 2 */
+  REAL8 distance,   /**< Luminosity distance (m) */
+  REAL8 inclination,  /**< inclination of source (rad) */
+  REAL8 deltaT,     /**< sampling interval (s) */
+  REAL8 fmin,     /**< starting GW frequency (Hz) */
+  REAL8 fRef,     /**< reference GW frequency (Hz) */
+  REAL8 phiRef,     /**< reference orbital phase (rad) */
+  LALDict *lalParams  /**< LAL dictionary containing accessory parameters */
+  );
+
 /* in module LALSimIMRTEOBResumS.c */
 
 int XLALSimIMRTEOBResumS(
@@ -791,6 +840,7 @@ int XLALSimIMRTEOBResumS(
                          const REAL8 f_min,
                          const REAL8 f_ref
                          );
+
 
 /* in module LALSimInspiralNRWaveforms.c */
 
