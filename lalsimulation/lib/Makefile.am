@@ -176,6 +176,12 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD_internals.h \
+	LALSimIMRPhenomTHM_internals.c \
+	LALSimIMRPhenomTHM_internals.h \
+	LALSimIMRPhenomTHM_fits.c \
+	LALSimIMRPhenomTHM_fits.h \
+	LALSimIMRPhenomTHM.c \
+	LALSimIMRPhenomTHM.h \
 	LALSimIMRPhenomX.h \
 	LALSimIMRPhenomX_internals.c \
 	LALSimIMRPhenomX_internals.h \
@@ -295,6 +301,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenomPv3HM.c \
 	LALSimIMRPhenomInternalUtils.c \
 	LALSimIMRPhenomUtils.c \
+	LALSimIMRPhenomTHM.c \
 	LALSimIMRPhenomX.c \
 	LALSimIMRPhenomXUtilities.c \
 	LALSimIMRPhenomXHM.c \
