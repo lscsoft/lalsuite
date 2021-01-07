@@ -1340,7 +1340,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
 
             COMPLEX16FrequencySeries *hlm = XLALCreateCOMPLEX16FrequencySeries("hlm: FD waveform", &tC, 0.0, pHM->deltaF, &lalStrainUnit, pHM->npts);
             memset(hlm->data->data, 0, pHM->npts * sizeof(COMPLEX16));
-            // XLALUnitMultiply(&((*hlm)->sampleUnits), &((*hlm)->sampleUnits), &lalSecondUnit);
+            XLALUnitMultiply(&(hlm->sampleUnits), &(hlm->sampleUnits), &lalSecondUnit);
             retcode = 0;
             retcode = IMRPhenomHMEvaluateOnehlmMode(&hlm,
                                                     amps, phases,

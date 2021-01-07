@@ -17,6 +17,7 @@ int XLALSimInspiralWaveformParamsInsertSideband(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertNumRelData(LALDict *params, const char * value);
 
 int XLALSimInspiralWaveformParamsInsertModeArray(LALDict *params,  LALValue *value);
+int XLALSimInspiralWaveformParamsInsertModeArrayJframe(LALDict *params,  LALValue *value);
 
 int XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALDict *params, INT4 value);
@@ -154,6 +155,7 @@ INT4 XLALSimInspiralWaveformParamsLookupSideband(LALDict *params);
 const char * XLALSimInspiralWaveformParamsLookupNumRelData(LALDict *params);
 
 LALValue* XLALSimInspiralWaveformParamsLookupModeArray(LALDict *params);
+LALValue* XLALSimInspiralWaveformParamsLookupModeArrayJframe(LALDict *params);
 
 INT4 XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALDict *params);
@@ -291,6 +293,7 @@ int XLALSimInspiralWaveformParamsSidebandIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNumRelDataIsDefault(LALDict *params);
 
 int XLALSimInspiralWaveformParamsModeArrayIsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsModeArrayJframeIsDefault(LALDict *params);
 
 int XLALSimInspiralWaveformParamsPNPhaseOrderIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPNAmplitudeOrderIsDefault(LALDict *params);

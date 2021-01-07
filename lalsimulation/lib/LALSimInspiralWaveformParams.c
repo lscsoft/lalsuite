@@ -62,6 +62,11 @@ int XLALSimInspiralWaveformParamsInsertModeArray(LALDict *params, LALValue *valu
 	return XLALDictInsertValue(params, "ModeArray", value);
 }
 
+int XLALSimInspiralWaveformParamsInsertModeArrayJframe(LALDict *params, LALValue *value)
+{
+	return XLALDictInsertValue(params, "ModeArrayJframe", value);
+}
+
 DEFINE_INSERT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_INSERT_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_INSERT_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -214,6 +219,18 @@ LALValue* XLALSimInspiralWaveformParamsLookupModeArray(LALDict *params)
 	return value;
 }
 
+LALValue* XLALSimInspiralWaveformParamsLookupModeArrayJframe(LALDict *params)
+{
+	/* Initialise and set Default to NULL */
+	LALValue * value = NULL;
+	if (params && XLALDictContains(params, "ModeArrayJframe"))
+	{
+		LALDictEntry * entry = XLALDictLookup(params, "ModeArrayJframe");
+		value = XLALValueDuplicate(XLALDictEntryGetValue(entry));
+	}
+	return value;
+}
+
 DEFINE_LOOKUP_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
 DEFINE_LOOKUP_FUNC(PNAmplitudeOrder, INT4, "ampO", -1)
 DEFINE_LOOKUP_FUNC(PNEccentricityOrder, INT4, "eccO", -1)
@@ -355,6 +372,11 @@ DEFINE_ISDEFAULT_FUNC(NumRelData, String, "numreldata", NULL)
 int XLALSimInspiralWaveformParamsModeArrayIsDefault(LALDict *params)
 {
 	return XLALSimInspiralWaveformParamsLookupModeArray(params) == NULL;
+}
+
+int XLALSimInspiralWaveformParamsModeArrayJframeIsDefault(LALDict *params)
+{
+	return XLALSimInspiralWaveformParamsLookupModeArrayJframe(params) == NULL;
 }
 
 DEFINE_ISDEFAULT_FUNC(PNPhaseOrder, INT4, "phaseO", -1)
