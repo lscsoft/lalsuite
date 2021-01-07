@@ -23,6 +23,7 @@
 #include <lal/LALMalloc.h>
 #include <lal/LALError.h>
 #include <lal/LALDict.h>
+#include <lal/Sequence.h>
 
 #if defined(__cplusplus)
 extern "C" {
@@ -183,6 +184,7 @@ int XLALSimInspiralModeArrayIsModeActive(LALValue *modes, unsigned l, int m);
 LALValue * XLALSimInspiralModeArrayActivateAllModesAtL(LALValue *modes, unsigned l);
 LALValue * XLALSimInspiralModeArrayDeactivateAllModesAtL(LALValue *modes, unsigned l);
 int XLALSimInspiralModeArrayPrintModes(LALValue *modes);
+INT2Sequence *XLALSimInspiralModeArrayReadModes(LALValue *modes);
 
 #if 0
 { /* so that editors will match succeeding brace */

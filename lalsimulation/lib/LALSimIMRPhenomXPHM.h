@@ -44,7 +44,7 @@ extern "C" {
 
 /* Multibanding grid for precessing angles */
 INT4 XLALSimIMRPhenomXPHMMultibandingGrid(REAL8Sequence **coarseFreqs, UINT4 ell, UINT4 emmprime, IMRPhenomXWaveformStruct *pWF, LALDict *lalParams);
-
+INT4 check_input_mode_array_Jframe(LALValue *ModeArrayJframe);
 #ifdef __cplusplus
 }
 #endif

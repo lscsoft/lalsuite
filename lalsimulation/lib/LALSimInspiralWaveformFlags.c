@@ -507,4 +507,21 @@ int XLALSimInspiralModeArrayPrintModes(LALValue *modes)
 	return 0;
 }
 
+INT2Sequence *XLALSimInspiralModeArrayReadModes(LALValue *modes)
+{
+	INT2Sequence *seqmodes = XLALCreateINT2Sequence(4*LAL_SIM_L_MAX_MODE_ARRAY+2);
+	int nmodes = 0;
+	for (int l = 0; l <= LAL_SIM_L_MAX_MODE_ARRAY; l++) {
+		for (int m = -l; m <= l; m++)
+			 if(XLALSimInspiralModeArrayIsModeActive(modes, l, m)==1)
+			 {
+				 seqmodes->data[2*nmodes] = l;
+				 seqmodes->data[2*nmodes+1] = m;
+				 nmodes++;
+			 }
+	}
+	seqmodes = XLALShrinkINT2Sequence(seqmodes, 0, 2*nmodes);
+	return seqmodes;
+}
+
 /** @} */
