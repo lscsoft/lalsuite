@@ -433,6 +433,8 @@ typedef enum tagApproximant {
    IMRPhenomXPHM, 	/**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model. */
    TEOBResumS,          /**< Resummed Spin-aligned Tidal EOB
                          * @remarks Implemented in lalsimulation (time domain). */
+   IMRPhenomT,      /** Time domain, non-precessing phenomenological IMR waveform model for the dominant (2,2) and (2,-2) modes ([arXiv: 20XY.ZZZZZ]). */
+   IMRPhenomTHM,      /** Time domain, non-precessing phenomenological IMR waveform model with subdominant modes ([arXiv: 20XY.ZZZZZ]). */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
