@@ -85,6 +85,7 @@ typedef struct {
   /* value fields */
   long int nSFT;       /**< number of SFTs */
   long startTime;      /**< GPS start time */
+  long int span;       /**< timespan */
   char *filename;      /**< SFT filename */
 } SFT_RECORD;
 
@@ -477,17 +478,17 @@ int main( int argc, char **argv )
 
       /* parse SFT filename */
       char obs = 0;
-      long int firstbinfreq = 0, firstbinrem = 0, binwidthfreq = 0, binwidthrem = 0, span = 0;
+      long int firstbinfreq = 0, firstbinrem = 0, binwidthfreq = 0, binwidthrem = 0;
       int sscanf_matched = sscanf( filename, "%c-%ld_%c%c_%ldSFT_NB_F%ldHz%ld_W%ldHz%ld-%ld-%ld.sft",
                                    &obs, &rec->nSFT, &rec->det[0], &rec->det[1], &rec->timebase, &firstbinfreq,
-                                   &firstbinrem, &binwidthfreq, &binwidthrem, &rec->startTime, &span );
+                                   &firstbinrem, &binwidthfreq, &binwidthrem, &rec->startTime, &rec->span );
       XLAL_CHECK_MAIN( sscanf_matched == 11, XLAL_ESYS,
                        "sscanf() matched only %i fields in SFT filename '%s'; partial match = '%c-%ld_%c%c_%ldSFT_NB_F%ldHz%ld_W%ldHz%ld-%ld-%ld.sft'",
                        sscanf_matched, filename,
                        obs, rec->nSFT, rec->det[0], rec->det[1], rec->timebase, firstbinfreq,
-                       firstbinrem, binwidthfreq, binwidthrem, rec->startTime, span );
+                       firstbinrem, binwidthfreq, binwidthrem, rec->startTime, rec->span );
       XLAL_CHECK_MAIN( obs == rec->det[0], XLAL_EINVAL, "inconsistent observatory (%c) vs detector (%c%c) in SFT filename '%s'", obs, rec->det[0], rec->det[1], filename );
-      XLAL_CHECK_MAIN( span > 0, XLAL_EINVAL, "nonpositive timespan (%ld) in SFT filename '%s'", span, filename );
+      XLAL_CHECK_MAIN( rec->span > 0, XLAL_EINVAL, "nonpositive timespan (%ld) in SFT filename '%s'", rec->span, filename );
 
       /* complete SFT record */
       rec->firstbin = firstbinfreq * rec->timebase + firstbinrem;
@@ -665,6 +666,11 @@ int main( int argc, char **argv )
           rec->nSFT = 0;
           rec->startTime = hd.gps_sec;
 
+        } else {
+          /* check if added record would break increasing timestamps */
+          XLAL_CHECK_MAIN( hd.gps_sec >= rec->startTime+rec->span,
+                           XLAL_EDOM,
+                           "New SFT timestamp %d is before startTime+span=%ld+%ld=%ld from existing file %s. Appending would yield an invalid merged SFT file.", hd.gps_sec, rec->startTime, rec->span, rec->startTime+rec->span, rec->filename );
         }
 
         /* update number of SFTs */
