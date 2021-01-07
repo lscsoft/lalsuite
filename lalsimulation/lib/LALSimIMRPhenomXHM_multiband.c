@@ -527,6 +527,7 @@ int XLALSimIMRPhenomXHMMultiBandOneMode(
   { /* The user has requested a higher f_max than Mf = fCut.
     Resize the frequency series to fill with zeros beyond the cutoff frequency. */
     lastfreq = pWF->fMax;
+    XLAL_PRINT_WARNING("The input f_max = %.2f Hz is larger than the internal cutoff of Mf=0.3 (%.2f Hz). Array will be filled with zeroes between these two frequencies.\n", pWF->fMax, pWF->f_max_prime);
   }
   else{  // We have to look for a power of 2 anyway. Without MBAND this step is already satisfied
     lastfreq = pWF->f_max_prime;
@@ -539,10 +540,10 @@ int XLALSimIMRPhenomXHMMultiBandOneMode(
   *htildelm = XLALResizeCOMPLEX16FrequencySeries(*htildelm, 0, n_full);
   XLAL_CHECK (*htildelm, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, pWF->fCut, n_full, pWF->fMax );
   XLALUnitMultiply(&((*htildelm)->sampleUnits), &((*htildelm)->sampleUnits), &lalSecondUnit);
-  
+
   LALFree(pWF);
 
-  return offset;
+  return status;
 
 }
 /** @}
@@ -1189,6 +1190,10 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
   }
   #endif
 
+  if(htilde22 == NULL){
+    XLALPrintWarning("The input 22 waveform is NULL and will be computed internally. This produces a very small difference in the ringdown part respect to when the multibanded 22 waveform is passed in as an argument.\n ");
+  }
+
 
   int debug = DEBUG;
 
@@ -1231,6 +1236,7 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
   { /* The user has requested a higher f_max than Mf = fCut.
     Resize the frequency series to fill with zeros beyond the cutoff frequency. */
     lastfreq = pWF->fMax;
+    XLAL_PRINT_WARNING("The input f_max = %.2f Hz is larger than the internal cutoff of Mf=0.3 (%.2f Hz). Array will be filled with zeroes between these two frequencies.\n", pWF->fMax, pWF->f_max_prime);
   }
   else{  // We have to look for a power of 2 anyway. Without MBAND this step is already satisfied
     lastfreq = pWF->f_max_prime;
@@ -1243,10 +1249,10 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
   *htildelm = XLALResizeCOMPLEX16FrequencySeries(*htildelm, 0, n_full);
   XLAL_CHECK (*htildelm, XLAL_ENOMEM, "Failed to resize waveform COMPLEX16FrequencySeries of length %zu (for internal fCut=%f) to new length %zu (for user-requested f_max=%f).", n, pWF->fCut, n_full, pWF->fMax );
   XLALUnitMultiply(&((*htildelm)->sampleUnits), &((*htildelm)->sampleUnits), &lalSecondUnit);
-  
+
   LALFree(pWF);
 
-  return offset;
+  return status;
 
 }
 
@@ -1911,7 +1917,7 @@ int IMRPhenomXHMMultiBandOneModeMixing(
     for(UINT4 idx = RDcutMin; idx < count; idx++){
       freqs->data[idx-RDcutMin] = finefreqs[idx]/pWF->M_sec;
     }
-    XLALSimIMRPhenomXASFrequencySequence(&htilde22tmp, freqs, pWF->m1_SI, pWF->m2_SI, pWF->chi1L, pWF->chi2L, pWF->distance, pWF->phiRef_In, pWF->fRef, lalParams);
+    XLALSimIMRPhenomXASFrequencySequence(&htilde22tmp, freqs, pWF->m1_SI, pWF->m2_SI, pWF->chi1L, pWF->chi2L, pWF->distance, pWF->phi0, pWF->fRef, lalParams);
     XLALDestroyREAL8Sequence(freqs);
   }
   else{
