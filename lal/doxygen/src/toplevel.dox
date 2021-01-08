@@ -99,6 +99,7 @@
 @{
    \brief This package provides Octave and Python wrappings of LAL
    functions and data structures generated using SWIG.
+   The implementation is described in \cite Wette2020_SWIGLAL .
 @}
 
 \defgroup lal_python			Python Packages
