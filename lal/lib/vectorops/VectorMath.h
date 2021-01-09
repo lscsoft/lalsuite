@@ -50,84 +50,84 @@ extern "C" {
 /** \name Failsafe Aligned Memory Handling */
 /** @{ */
 
-/** A special #UINT4Vector with n-byte aligned memory \c data array */
+/** A special \c UINT4Vector with n-byte aligned memory \c data array */
 typedef struct tagUINT4VectorAligned {
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
   UINT4 *data;		/**< start of aligned memory block */
   UINT4 *data0;		/**< actual physical start of memory block, possibly not aligned */
 } UINT4VectorAligned;
 
-/** Create a new #UINT4VectorAligned struct with length \c length and alignment \c align */
+/** Create a new \c UINT4VectorAligned struct with length \c length and alignment \c align */
 UINT4VectorAligned *XLALCreateUINT4VectorAligned ( const UINT4 length, const UINT4 align );
 
-/** Resize an existing #UINT4VectorAligned struct to length \c length and alignment \c align */
+/** Resize an existing \c UINT4VectorAligned struct to length \c length and alignment \c align */
 UINT4VectorAligned *XLALResizeUINT4VectorAligned ( UINT4VectorAligned *in, const UINT4 length, const UINT4 align );
 
-/** Free a #UINT4VectorAligned struct */
+/** Free a \c UINT4VectorAligned struct */
 void XLALDestroyUINT4VectorAligned ( UINT4VectorAligned *in );
 
-/** A special #REAL4Vector with n-byte aligned memory \c data array */
+/** A special \c REAL4Vector with n-byte aligned memory \c data array */
 typedef struct tagREAL4VectorAligned {
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
   REAL4 *data;		/**< start of aligned memory block */
   REAL4 *data0;		/**< actual physical start of memory block, possibly not aligned */
 } REAL4VectorAligned;
 
-/** Create a new #REAL4VectorAligned struct with length \c length and alignment \c align */
+/** Create a new \c REAL4VectorAligned struct with length \c length and alignment \c align */
 REAL4VectorAligned *XLALCreateREAL4VectorAligned ( const UINT4 length, const UINT4 align );
 
-/** Resize an existing #REAL4VectorAligned struct to length \c length and alignment \c align */
+/** Resize an existing \c REAL4VectorAligned struct to length \c length and alignment \c align */
 REAL4VectorAligned *XLALResizeREAL4VectorAligned ( REAL4VectorAligned *in, const UINT4 length, const UINT4 align );
 
-/** Free a #REAL4VectorAligned struct */
+/** Free a \c REAL4VectorAligned struct */
 void XLALDestroyREAL4VectorAligned ( REAL4VectorAligned *in );
 
-/** A special #REAL8Vector with n-byte aligned memory \c data array */
+/** A special \c REAL8Vector with n-byte aligned memory \c data array */
 typedef struct tagREAL8VectorAligned {
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
   REAL8 *data;		/**< start of aligned memory block */
   REAL8 *data0;		/**< actual physical start of memory block, possibly not aligned */
 } REAL8VectorAligned;
 
-/** Create a new #REAL8VectorAligned struct with length \c length and alignment \c align */
+/** Create a new \c REAL8VectorAligned struct with length \c length and alignment \c align */
 REAL8VectorAligned *XLALCreateREAL8VectorAligned ( const UINT4 length, const UINT4 align );
 
-/** Resize an existing #REAL8VectorAligned struct to length \c length and alignment \c align */
+/** Resize an existing \c REAL8VectorAligned struct to length \c length and alignment \c align */
 REAL8VectorAligned *XLALResizeREAL8VectorAligned ( REAL8VectorAligned *in, const UINT4 length, const UINT4 align );
 
-/** Free a #REAL8VectorAligned struct */
+/** Free a \c REAL8VectorAligned struct */
 void XLALDestroyREAL8VectorAligned ( REAL8VectorAligned *in );
 
-/** A special #COMPLEX8Vector with n-byte aligned memory \c data array */
+/** A special \c COMPLEX8Vector with n-byte aligned memory \c data array */
 typedef struct tagCOMPLEX8VectorAligned {
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
   COMPLEX8 *data;	/**< start of aligned memory block */
   COMPLEX8 *data0;	/**< actual physical start of memory block, possibly not aligned */
 } COMPLEX8VectorAligned;
 
-/** Create a new #COMPLEX8VectorAligned struct with length \c length and alignment \c align */
+/** Create a new \c COMPLEX8VectorAligned struct with length \c length and alignment \c align */
 COMPLEX8VectorAligned *XLALCreateCOMPLEX8VectorAligned ( const UINT4 length, const UINT4 align );
 
-/** Resize an existing #COMPLEX8VectorAligned struct to length \c length and alignment \c align */
+/** Resize an existing \c COMPLEX8VectorAligned struct to length \c length and alignment \c align */
 COMPLEX8VectorAligned *XLALResizeCOMPLEX8VectorAligned ( COMPLEX8VectorAligned *in, const UINT4 length, const UINT4 align );
 
-/** Free a #COMPLEX8VectorAligned struct */
+/** Free a \c COMPLEX8VectorAligned struct */
 void XLALDestroyCOMPLEX8VectorAligned ( COMPLEX8VectorAligned *in );
 
-/** A special #COMPLEX16Vector with n-byte aligned memory \c data array */
+/** A special \c COMPLEX16Vector with n-byte aligned memory \c data array */
 typedef struct tagCOMPLEX16VectorAligned {
   UINT4 length;		/**< number of 'usable' array entries (fully aligned) */
   COMPLEX16 *data;	/**< start of aligned memory block */
   COMPLEX16 *data0;	/**< actual physical start of memory block, possibly not aligned */
 } COMPLEX16VectorAligned;
 
-/** Create a new #COMPLEX16VectorAligned struct with length \c length and alignment \c align */
+/** Create a new \c COMPLEX16VectorAligned struct with length \c length and alignment \c align */
 COMPLEX16VectorAligned *XLALCreateCOMPLEX16VectorAligned ( const UINT4 length, const UINT4 align );
 
-/** Resize an existing #COMPLEX16VectorAligned struct to length \c length and alignment \c align */
+/** Resize an existing \c COMPLEX16VectorAligned struct to length \c length and alignment \c align */
 COMPLEX16VectorAligned *XLALResizeCOMPLEX16VectorAligned ( COMPLEX16VectorAligned *in, const UINT4 length, const UINT4 align );
 
-/** Free a #COMPLEX16VectorAligned struct */
+/** Free a \c COMPLEX16VectorAligned struct */
 void XLALDestroyCOMPLEX16VectorAligned ( COMPLEX16VectorAligned *in );
 
 /** @} */

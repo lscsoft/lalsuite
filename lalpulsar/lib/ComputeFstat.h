@@ -134,7 +134,7 @@ typedef enum tagFstatMethodType {
 typedef struct tagFstatOptionalArgs {
   UINT4 randSeed;			///< Random-number seed value used in case of fake Gaussian noise generation (\c injectSqrtSX)
   SSBprecision SSBprec;			///< Barycentric transformation precision.
-  UINT4 Dterms;                  	///< Number of Dirichlet kernel terms, used by some \a Demod methods; see #FstatMethodType.
+  UINT4 Dterms;                  	///< Number of Dirichlet kernel terms, used by some \a Demod methods; see \c FstatMethodType.
   UINT4 runningMedianWindow;	  	///< If SFT noise weights are calculated from the SFTs, the running median window length to use.
   FstatMethodType FstatMethod;	  	///< Method to use for computing the \f$\mathcal{F}\f$-statistic.
   PulsarParamsVector *injectSources;	///< Vector of parameters of CW signals to simulate and inject.
@@ -142,12 +142,12 @@ typedef struct tagFstatOptionalArgs {
   MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
   FstatInput *prevInput;		///< An \c FstatInput structure from a previous call to XLALCreateFstatInput(); may contain common workspace data than can be re-used to save memory.
   BOOLEAN collectTiming;		///< a flag to turn on/off the collection of F-stat-method-specific timing-data
-  BOOLEAN resampFFTPowerOf2;		///< \a Resamp: round up FFT lengths to next power of 2; see #FstatMethodType.
+  BOOLEAN resampFFTPowerOf2;		///< \a Resamp: round up FFT lengths to next power of 2; see \c FstatMethodType.
   REAL8 allowedMismatchFromSFTLength;      ///<  Optional override for XLALFstatCheckSFTLengthMismatch().
 } FstatOptionalArgs;
 
 ///
-/// Global initializer for setting #FstatOptionalArgs to default values
+/// Global initializer for setting \c FstatOptionalArgs to default values
 ///
 extern const FstatOptionalArgs FstatOptionalArgsDefaults;
 
@@ -173,19 +173,19 @@ typedef struct tagFstatAtomVector {
   SWIGLAL(ARRAY_1D(FstatAtomVector, FstatAtom, data, UINT4, length));
 #endif // SWIG
   UINT4 length;                         ///< Number of per-SFT 'atoms'.
-  FstatAtom *data;                      ///< Array of #FstatAtom pointers of given length.
+  FstatAtom *data;                      ///< Array of \c FstatAtom pointers of given length.
   UINT4 TAtom;                          ///< Time-baseline of 'atoms', typically \f$T_{\mathrm{sft}}\f$.
 } FstatAtomVector;
 
 ///
-/// A multi-detector vector of #FstatAtomVector.
+/// A multi-detector vector of \c FstatAtomVector.
 ///
 typedef struct tagMultiFstatAtomVector {
 #ifdef SWIG // SWIG interface directives
   SWIGLAL(ARRAY_1D(MultiFstatAtomVector, FstatAtomVector*, data, UINT4, length));
 #endif // SWIG
   UINT4 length;                         ///< Number of detectors.
-  FstatAtomVector **data;               ///< Array of #FstatAtomVector pointers, one for each detector X.
+  FstatAtomVector **data;               ///< Array of \c FstatAtomVector pointers, one for each detector X.
 } MultiFstatAtomVector;
 
 ///

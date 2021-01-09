@@ -43,10 +43,10 @@
  * \c LALDetector to standard output in the same format that would
  * be used for a C initialization.  This function is not currently
  * called.  It also contains a static function <tt>CheckDetector()</tt>
- * which extracts the \c ::LALFrDetector and type from a
- * \c ::LALDetector, changes the name of the \c ::LALFrDetector
+ * which extracts the \c LALFrDetector and type from a
+ * \c LALDetector, changes the name of the \c LALFrDetector
  * (in case it's one of the predefined constant detectors), constructs a
- * new \c ::LALDetector and compares the values of the fields of the
+ * new \c LALDetector and compares the values of the fields of the
  * old and new structures.  The program currently performs this check
  * for the two LIGO sites.
  *

@@ -75,15 +75,15 @@
 ///
 
 ///
-/// The macro \b %swiglal_define2 defines a SWIG preprocessor symbol \c NAME1_NAME2.
+/// The macro \b %swiglal_define2 defines a SWIG preprocessor symbol <tt>NAME1_NAME2</tt>.
 ///
 %define %swiglal_define2(NAME1, NAME2)
 %define NAME1##_##NAME2 %enddef
 %enddef
 
 ///
-/// The macro \b %swiglal_map() maps a one-argument \c MACRO(X) onto a list of arguments (which may
-/// be empty). Based on SWIG's \c %formacro().
+/// The macro \b %swiglal_map() maps a one-argument <tt>MACRO(X)</tt> onto a list of arguments (which may
+/// be empty). Based on SWIG's <tt>%formacro()</tt>.
 ///
 %define %_swiglal_map(MACRO, X, ...)
 #if #X != ""
@@ -96,8 +96,8 @@ MACRO(X);
 %enddef
 
 ///
-/// The macro \b %swiglal_map_a() maps a two-argument \c MACRO(A,X) onto a list of arguments (which
-/// may be empty), with a common first argument \c A.
+/// The macro \b %swiglal_map_a() maps a two-argument <tt>MACRO(A,X)</tt> onto a list of arguments (which
+/// may be empty), with a common first argument <tt>A</tt>.
 ///
 %define %_swiglal_map_a(MACRO, A, X, ...)
 #if #X != ""
@@ -110,8 +110,8 @@ MACRO(A, X);
 %enddef
 
 ///
-/// The macro \b %swiglal_map_ab() maps a three-argument \c MACRO(A,B,X) onto a list of arguments
-/// (which may be empty), with common first arguments \c A and \c B.
+/// The macro \b %swiglal_map_ab() maps a three-argument <tt>MACRO(A,B,X)</tt> onto a list of arguments
+/// (which may be empty), with common first arguments <tt>A</tt> and <tt>B</tt>.
 ///
 %define %_swiglal_map_ab(MACRO, A, B, X, ...)
 #if #X != ""
@@ -124,8 +124,8 @@ MACRO(A, B, X);
 %enddef
 
 ///
-/// The macro \b %swiglal_map_abc() maps a four-argument \c MACRO(A,B,C,X) onto a list of arguments
-/// (which may be empty), with common first arguments \c A, \c B, and \c C.
+/// The macro \b %swiglal_map_abc() maps a four-argument <tt>MACRO(A,B,C,X)</tt> onto a list of arguments
+/// (which may be empty), with common first arguments <tt>A,</tt> <tt>B,</tt> and <tt>C</tt>.
 ///
 %define %_swiglal_map_abc(MACRO, A, B, C, X, ...)
 #if #X != ""
@@ -210,7 +210,7 @@ MACRO(A, B, C, X);
 %}
 
 ///
-/// Include SWIG configuration header generated from \c config.h, but don't generate wrappers for
+/// Include SWIG configuration header generated from <tt>config.h</tt>, but don't generate wrappers for
 /// any of its symbols
 ///
 %rename("$ignore", regexmatch$name="^SWIGLAL_") "";
@@ -247,7 +247,7 @@ SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
 #endif
 
 ///
-/// Include LAL standard definitions header \c LALStddef.h: this contains macro definitions which
+/// Include LAL standard definitions header <tt>LALStddef.h</tt>: this contains macro definitions which
 /// are required for parsing LAL headers.
 ///
 %include <lal/LALStddef.h>
@@ -277,7 +277,7 @@ SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
 ///    <dt>LAL</dt><dd>For any function which has a LALStatus* argument, create a blank LALStatus
 ///    struct and pass its pointer to the LAL function.  After the function is called, check the
 ///    LALStatus statusCode; if it is non-zero, raise a generic XLAL error (to set the XLAL error
-///    number), then a native scripting-language exception. The \c swiglal_check_LALStatus (C)
+///    number), then a native scripting-language exception. The <tt>swiglal_check_LALStatus</tt> (C)
 ///    preprocessor symbol determines if the LAL error handling code is invoked; by default this
 ///    symbol should be undefined, i.e. functions are XLAL functions by default.</dd>
 /// </dl>
@@ -355,8 +355,8 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 %nodefaultdtor;
 
 ///
-/// Call the destructor \c DTORFUNC, but first call \b swiglal_release_parent() to check whether
-/// \c PTR own its own memory (and release any parents).
+/// Call the destructor <tt>DTORFUNC</tt>, but first call \b swiglal_release_parent() to check whether
+/// <tt>PTR</tt> own its own memory (and release any parents).
 ///
 %define %swiglal_struct_call_dtor(DTORFUNC, PTR)
 if (swiglal_release_parent(PTR)) {
@@ -391,8 +391,8 @@ struct TAGNAME {
 
 /// </li><li>
 
-/// Create destructor, using either the destructor function \c DTORFUNC, or else XLALFree() if
-/// \c DTORFUNC is undefined, to destroy memory.
+/// Create destructor, using either the destructor function <tt>DTORFUNC</tt>, or else XLALFree() if
+/// <tt>DTORFUNC</tt> is undefined, to destroy memory.
 #if #DTORFUNC == ""
 %extend TAGNAME {
   ~TAGNAME() {
@@ -421,7 +421,7 @@ struct TAGNAME {
 
 ///
 /// Map fixed-array types to special variables of their elements, e.g.
-/// <tt>$typemap(swiglal_fixarr_ltype, const int[][])</tt> returns \c int.
+/// <tt>$typemap(swiglal_fixarr_ltype, const int[][])</tt> returns <tt>int</tt>.
 ///
 %typemap(swiglal_fixarr_ltype) SWIGTYPE "$ltype";
 %typemap(swiglal_fixarr_ltype) SWIGTYPE[ANY] "$typemap(swiglal_fixarr_ltype, $*type)";
@@ -466,10 +466,10 @@ struct TAGNAME {
 ///
 /// Return values are:
 /// <ul>
-///    <li>\b %swiglal_array_copyin...(): SWIG error code as an \c int.</li>
-///    <li>\b %swiglal_array_copyout...(): output scripting-language array as a \c SWIG_Object.</li>
-///    <li>\b %swiglal_array_viewin...(): SWIG error code as an \c int.</li>
-///    <li>\b %swiglal_array_viewout...(): output scripting-language array view as a \c SWIG_Object.</li>
+///    <li>\b %swiglal_array_copyin...(): SWIG error code as an <tt>int</tt>.</li>
+///    <li>\b %swiglal_array_copyout...(): output scripting-language array as a <tt>SWIG_Object</tt>.</li>
+///    <li>\b %swiglal_array_viewin...(): SWIG error code as an <tt>int</tt>.</li>
+///    <li>\b %swiglal_array_viewout...(): output scripting-language array view as a <tt>SWIG_Object</tt>.</li>
 /// </ul>
 ///
 /// In addition, \b %swiglal_array_viewin...() should initialise <tt>dims</tt> regardless of whether
@@ -480,7 +480,7 @@ struct TAGNAME {
 ///
 
 ///
-/// Names of array conversion functions for array type \c ACFTYPE.
+/// Names of array conversion functions for array type <tt>ACFTYPE</tt>.
 ///
 #define %swiglal_array_copyin_func(ACFTYPE) swiglal_array_copyin_##ACFTYPE
 #define %swiglal_array_copyout_func(ACFTYPE) swiglal_array_copyout_##ACFTYPE
@@ -488,7 +488,7 @@ struct TAGNAME {
 #define %swiglal_array_viewout_func(ACFTYPE) swiglal_array_viewout_##ACFTYPE
 
 ///
-/// Names of fragments containing the conversion functions for \c ACFTYPE.
+/// Names of fragments containing the conversion functions for <tt>ACFTYPE</tt>.
 ///
 #define %swiglal_array_copyin_frag(ACFTYPE) "swiglal_array_copyin_" %str(ACFTYPE)
 #define %swiglal_array_copyout_frag(ACFTYPE) "swiglal_array_copyout_" %str(ACFTYPE)
@@ -528,7 +528,7 @@ struct TAGNAME {
 }
 
 ///
-/// The \b %swiglal_array_type() macro maps <tt>TYPE</tt>s of C arrays to an \c ACFTYPE of the
+/// The \b %swiglal_array_type() macro maps <tt>TYPE</tt>s of C arrays to an <tt>ACFTYPE</tt> of the
 /// appropriate array conversion functions, using a special typemap. The typemap also ensures that
 /// fragments containing the required conversion functions are included.
 ///
@@ -571,7 +571,7 @@ struct TAGNAME {
 %swiglal_array_type(COMPLEX16, COMPLEX16);
 
 ///
-/// On modern systems, \c long could be either 32- or 64-bit...
+/// On modern systems, <tt>long</tt> could be either 32- or 64-bit...
 ///
 %swiglal_array_type(int32or64_t, long);
 %swiglal_array_type(uint32or64_t, unsigned long);
@@ -594,7 +594,7 @@ struct TAGNAME {
 %swiglal_array_int32or64_frags(%swiglal_array_viewout_frag, %swiglal_array_viewout_func, uint);
 
 ///
-/// Call the appropriate conversion function for C \c TYPE arrays.
+/// Call the appropriate conversion function for C <tt>TYPE</tt> arrays.
 ///
 #define %swiglal_array_copyin(TYPE) %swiglal_array_copyin_func($typemap(swiglal_array_typeid, TYPE))
 #define %swiglal_array_copyout(TYPE) %swiglal_array_copyout_func($typemap(swiglal_array_typeid, TYPE))
@@ -838,8 +838,8 @@ struct TAGNAME {
 %typemap(swiglal_dynarr_isptr) SWIGTYPE* "true";
 
 ///
-/// Create immutable members for accessing the array's dimensions.  \c NI is the name of the
-/// dimension member, and \c SIZET is its type.
+/// Create immutable members for accessing the array's dimensions.  <tt>NI</tt> is the name of the
+/// dimension member, and <tt>SIZET</tt> is its type.
 ///
 %define %swiglal_array_dynamic_size(SIZET, NI)
 %feature("action") NI {
@@ -862,10 +862,10 @@ if (strides[I-1] == 0) {
 
 ///
 /// The \b %swiglal_array_dynamic_<i>n</i>D() macros create typemaps which convert <i>n</i>D
-/// dynamically-allocated arrays in structs \c NAME. The macros must be added inside the definition
-/// of the struct, before the struct members comprising the array are defined. The \c DATA and \c
-/// N{I,J} members give the array data and dimensions, \c TYPE and \c SIZET give their respective
-/// types. The \c S{I,J} give the strides of the array, in number of elements.  If the sizes or
+/// dynamically-allocated arrays in structs <tt>NAME</tt>. The macros must be added inside the definition
+/// of the struct, before the struct members comprising the array are defined. The <tt>DATA</tt> and \c
+/// N{I,J} members give the array data and dimensions, <tt>TYPE</tt> and <tt>SIZET</tt> give their respective
+/// types. The <tt>S{I,J}</tt> give the strides of the array, in number of elements.  If the sizes or
 /// strides are members of the struct, <tt>arg1-\></tt> should be used to access the struct itself.
 ///
 /// <ul><li>
@@ -934,12 +934,12 @@ if (strides[I-1] == 0) {
 %enddef
 
 /// </li><li>
-/// a 1-D array of pointers to 1-D arrays; \c NI refer to the array of pointers, \c NJ/SJ refer to
+/// a 1-D array of pointers to 1-D arrays; <tt>NI</tt> refer to the array of pointers, <tt>NJ/SJ</tt> refer to
 /// the arrays pointed to:
 %define %swiglal_array_dynamic_1d_ptr_1d(NAME, TYPE, SIZET, DATA, NI, NJ, SJ)
 /// <ul><li>
 
-/// Typemaps which convert from the dynamically-allocated array, indexed by \c arg2
+/// Typemaps which convert from the dynamically-allocated array, indexed by <tt>arg2</tt>
 %typemap(out, noblock=1) TYPE* DATA {
   if (arg1) {
     const size_t dims[1] = {%static_cast(NJ, size_t)};
@@ -1065,8 +1065,8 @@ if (strides[I-1] == 0) {
 /// assume the called C code will not try to re-allocate or free constant memory. When it is known
 /// that the called C function will not try to re-allocate or free a particular argument, the
 /// <b>SWIGLAL(VIEWIN_ARRAYS(NAME, ...))</b> macro can be used to apply the typemap to pointers to
-/// (non-<tt>const</tt>) \c NAME*. Alternatively, the <b>SWIGLAL(COPYINOUT_ARRAYS(NAME, ...))</b>
-/// macro treats \c NAME* as an input-output argument, and makes an internal copy of it if necessary.
+/// (non-<tt>const</tt>) <tt>NAME*</tt>. Alternatively, the <b>SWIGLAL(COPYINOUT_ARRAYS(NAME, ...))</b>
+/// macro treats <tt>NAME*</tt> as an input-output argument, and makes an internal copy of it if necessary.
 ///
 /// <ul><li>
 /// 1-D arrays:
@@ -1117,7 +1117,7 @@ if (strides[I-1] == 0) {
 
 /// </li><li>
 
-/// Typemap which attempts to view pointers to non-<tt>const</tt> \c NAME*.
+/// Typemap which attempts to view pointers to non-<tt>const</tt> <tt>NAME*</tt>.
 %typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_ARRAY (void *argp = 0, int res = 0, NAME temp_struct) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -1145,9 +1145,9 @@ if (strides[I-1] == 0) {
 
 /// </li><li>
 
-/// Typemap which treats pointers to non-<tt>const</tt> \c NAME* as input-output arguments.
+/// Typemap which treats pointers to non-<tt>const</tt> <tt>NAME*</tt> as input-output arguments.
 /// The type of the output argument should always match that of the input argument, so:
-/// - If the input argument is a SWIG-wrapped \c NAME*, just unwrap it and return a reference.
+/// - If the input argument is a SWIG-wrapped <tt>NAME*</tt>, just unwrap it and return a reference.
 /// - If the input argument is a native scripting-language array, make an internal copy of it,
 ///   use the copy, and return a native scripting-language array copy of the internal copy.
 %typemap(in, noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, NAME temp_struct, SWIG_Object input_ref, void *temp_data = 0, size_t dims[1] = {0}, int elemalloc = 0) %{
@@ -1258,7 +1258,7 @@ if (strides[I-1] == 0) {
 
 /// </li><li>
 
-/// Typemap which attempts to view pointers to non-<tt>const</tt> \c NAME*.
+/// Typemap which attempts to view pointers to non-<tt>const</tt> <tt>NAME*</tt>.
 %typemap(in, noblock=1) NAME* SWIGLAL_VIEWIN_ARRAY (void *argp = 0, int res = 0, NAME temp_struct) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -1287,9 +1287,9 @@ if (strides[I-1] == 0) {
 
 /// </li><li>
 
-/// Typemap which treats pointers to non-<tt>const</tt> \c NAME* as input-output arguments.
+/// Typemap which treats pointers to non-<tt>const</tt> <tt>NAME*</tt> as input-output arguments.
 /// The type of the output argument should always match that of the input argument, so:
-/// - If the input argument is a SWIG-wrapped \c NAME*, just unwrap it and return a reference.
+/// - If the input argument is a SWIG-wrapped <tt>NAME*</tt>, just unwrap it and return a reference.
 /// - If the input argument is a native scripting-language array, make an internal copy of it,
 ///   use the copy, and return a native scripting-language array copy of the internal copy.
 %typemap(in, noblock=1) NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, NAME temp_struct, SWIG_Object input_ref, void *temp_data = 0, size_t dims[2] = {0, 0}, int elemalloc = 0) %{
@@ -1355,7 +1355,7 @@ if (strides[I-1] == 0) {
 
 ///
 /// The <b>SWIGLAL(VIEWIN_ARRAYS(NAME, ...))</b> macro can be used to apply the above input view
-/// typemaps to pointers to (non-<tt>const</tt>) \c NAME*.
+/// typemaps to pointers to (non-<tt>const</tt>) <tt>NAME*</tt>.
 ///
 %define %swiglal_public_VIEWIN_ARRAYS(NAME, ...)
 %swiglal_map_ab(%swiglal_apply, NAME* SWIGLAL_VIEWIN_ARRAY, NAME*, __VA_ARGS__);
@@ -1365,9 +1365,9 @@ if (strides[I-1] == 0) {
 %enddef
 
 ///
-/// The <b>SWIGLAL(COPYINOUT_ARRAYS(NAME, ...))</b> treats \c NAME* as an input-output argument.
+/// The <b>SWIGLAL(COPYINOUT_ARRAYS(NAME, ...))</b> treats <tt>NAME*</tt> as an input-output argument.
 /// The type of the output argument should always match that of the input argument, i.e. either
-/// a SWIG-wrapped \c NAME* struct, or a native scripting language array.
+/// a SWIG-wrapped <tt>NAME*</tt> struct, or a native scripting language array.
 ///
 %define %swiglal_public_COPYINOUT_ARRAYS(NAME, ...)
 %swiglal_map_ab(%swiglal_apply, NAME* SWIGLAL_COPYINOUT_ARRAY, NAME*, __VA_ARGS__);
@@ -1462,21 +1462,21 @@ if (strides[I-1] == 0) {
 ///
 
 ///
-/// Typemap for functions which return \c int. If these functions also return other output arguments
-/// (via \c argout typemaps), the \c int return value is ignored. This is because \c int is very
+/// Typemap for functions which return <tt>int</tt>. If these functions also return other output arguments
+/// (via <tt>argout</tt> typemaps), the <tt>int</tt> return value is ignored. This is because <tt>int</tt> is very
 /// commonly used to return an XLAL error code, which will be converted into a native
 /// scripting-language exception, and so the error code itself is not needed directly. To avoid
 /// having to unpack the error code when collecting the other output arguments, therefore, it is
-/// ignored in the wrappings. Functions which fit this criteria but do return a useful \c int can
+/// ignored in the wrappings. Functions which fit this criteria but do return a useful <tt>int</tt> can
 /// use <b>SWIGLAL(RETURN_VALUE(int, ...))</b> to disable this behaviour.
 ///
-/// For functions, since \c %feature("new") is set, the \c out typemap will have <tt>$owner=1</tt>,
-/// and the \c newfree typemap is also applied. The \c out typemap ignores the \c int return value
-/// by setting the output argument list to \c VOID_Object; the wrapping function them proceeds to
-/// add other output arguments to the list, if any. After this, the \c newfree typemap is triggered,
-/// which appends the \c int return if the output argument list is empty, using the
+/// For functions, since <tt>%feature("new")</tt> is set, the <tt>out</tt> typemap will have <tt>$owner=1</tt>,
+/// and the <tt>newfree</tt> typemap is also applied. The <tt>out</tt> typemap ignores the <tt>int</tt> return value
+/// by setting the output argument list to <tt>VOID_Object</tt>; the wrapping function them proceeds to
+/// add other output arguments to the list, if any. After this, the <tt>newfree</tt> typemap is triggered,
+/// which appends the <tt>int</tt> return if the output argument list is empty, using the
 /// scripting-language-specific macro \b swiglal_append_output_if_empty(). For structs,
-/// <tt>$owner=0</tt>, so the int return is set straight away, and the \c newfree typemap is never
+/// <tt>$owner=0</tt>, so the int return is set straight away, and the <tt>newfree</tt> typemap is never
 /// applied.
 ///
 %typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int SWIGLAL_MAYBE_RETURN_INT {
@@ -1496,7 +1496,7 @@ if (strides[I-1] == 0) {
 /// <b>SWIGLAL(EMPTY_ARGUMENT(TYPE, ...))</b> macro applies the typemap which supplies a static
 /// struct, while the <b>SWIGLAL(NEW_EMPTY_ARGUMENT(TYPE, ...))</b> macro applies the typemap which
 /// supplies a dynamically-allocated struct. These typemaps may cause there to be no SWIG-wrapped
-/// object for the first argument; if so, \c swiglal_no_1starg is defined for the duration of the
+/// object for the first argument; if so, <tt>swiglal_no_1starg</tt> is defined for the duration of the
 /// wrapping function.
 ///
 %define %swiglal_public_EMPTY_ARGUMENT(TYPE, ...)
@@ -1552,7 +1552,7 @@ if (strides[I-1] == 0) {
 ///
 /// Fragments and typemaps for the LAL ::BOOLEAN type. The fragments re-use existing
 /// scriping-language conversion functions for the C/C++ boolean type.  Appropriate
-/// typemaps are then generated by \c %typemaps_asvalfromn().
+/// typemaps are then generated by <tt>%typemaps_asvalfromn()</tt>.
 ///
 %fragment(SWIG_From_frag(BOOLEAN), "header", fragment=SWIG_From_frag(bool)) {
   SWIGINTERNINLINE SWIG_Object SWIG_From_dec(BOOLEAN)(BOOLEAN value) {
@@ -1577,7 +1577,7 @@ if (strides[I-1] == 0) {
 ///
 /// Fragments and typemaps for LAL strings, which should be (de)allocated using XLALMalloc() and
 /// XLALFree(). The fragments re-use existing scriping-language conversion functions for ordinary
-/// \c char* strings. Appropriate typemaps are then generated by \c %typemaps_string_alloc(), with
+/// <tt>char*</tt> strings. Appropriate typemaps are then generated by <tt>%typemaps_string_alloc()</tt>, with
 /// custom memory allocators.
 ///
 %fragment("SWIG_FromLALcharPtrAndSize", "header", fragment="SWIG_FromCharPtrAndSize") {
@@ -1642,10 +1642,10 @@ if (strides[I-1] == 0) {
 #endif
 
 ///
-/// Typemaps for string pointers.  By default, treat arguments of type \c char** as output-only
+/// Typemaps for string pointers.  By default, treat arguments of type <tt>char**</tt> as output-only
 /// arguments, which do not require a scripting-language input argument, and return their results in
-/// the output argument list. Also supply an \c INOUT typemap for input-output arguments, which
-/// allows a scripting-language input string to be supplied. The \c INOUT typemaps can be applied as
+/// the output argument list. Also supply an <tt>INOUT</tt> typemap for input-output arguments, which
+/// allows a scripting-language input string to be supplied. The <tt>INOUT</tt> typemaps can be applied as
 /// needed using the <b>SWIGLAL(INOUT_STRINGS(...))</b> macro.
 ///
 %typemap(in, noblock=1, numinputs=0) char ** (char *str = NULL, int alloc = 0) {
@@ -1681,7 +1681,7 @@ if (strides[I-1] == 0) {
 
 ///
 /// Input typemap for pointer-to-<tt>const</tt> <tt>SWIGTYPE</tt>s. This typemap is identical to the
-/// standard \c SWIGTYPE pointer typemap, except <tt>$disown</tt> is commented out. This prevents
+/// standard <tt>SWIGTYPE</tt> pointer typemap, except <tt>$disown</tt> is commented out. This prevents
 /// SWIG transferring ownership of SWIG-wrapped objects when assigning to pointer-to-<tt>const</tt>
 /// members of structs. In this case, it is assumed that the struct does not want to take ownership
 /// of the pointer, since it cannot free it (since it is a pointer-to-<tt>const</tt>).
@@ -1697,7 +1697,7 @@ if (strides[I-1] == 0) {
 
 ///
 /// Struct member assignment typemap for pointer-to-<tt>const</tt> <tt>SWIGTYPE</tt>s. This typemap
-/// overrides the standard SWIG-generated assigment code which casts away \c const on the left-hand,
+/// overrides the standard SWIG-generated assigment code which casts away <tt>const</tt> on the left-hand,
 /// thereby generating compiler errors.
 ///
 %typemap(memberin, noblock=1) const SWIGTYPE * {
@@ -1706,13 +1706,13 @@ if (strides[I-1] == 0) {
 
 ///
 /// Typemaps for output <tt>SWIGTYPE</tt>s. This typemaps will match either the SWIG-wrapped return
-/// argument from functions (which will have the \c SWIG_POINTER_OWN bit set in <tt>$owner</tt>) or
-/// return a member of a struct through a \c get functions (in which case \c SWIG_POINTER_OWN will
+/// argument from functions (which will have the <tt>SWIG_POINTER_OWN</tt> bit set in <tt>$owner</tt>) or
+/// return a member of a struct through a <tt>get</tt> functions (in which case <tt>SWIG_POINTER_OWN</tt> will
 /// not be set). They require the following macros:
 ///
 /// The macro \b %swiglal_store_parent() is called to store a reference to the struct containing the
 /// member being accessed, in order to prevent it from being destroyed as long as the SWIG-wrapped
-/// member object is in scope. The return object is then always created with \c SWIG_POINTER_OWN, so
+/// member object is in scope. The return object is then always created with <tt>SWIG_POINTER_OWN</tt>, so
 /// that its destructor will always be called.
 ///
 %define %swiglal_store_parent(PTR, OWNER, SELF)
@@ -1725,10 +1725,10 @@ if (strides[I-1] == 0) {
 ///
 /// The macro \b %swiglal_set_output() sets the output of the wrapping function. If the (pointer)
 /// return type of the function is the same as its first argument, then
-/// <tt>swiglal_return_1starg_\#\#<i>NAME</i></tt> is defined. Unless \c swiglal_no_1starg is
-/// defined (in which case the first argument is being handled by e.g. the \c EMPTY_ARGUMENT
-/// typemap), the macro compares the pointer of the return value (\c result) to that of the first
-/// argument (\c arg1). If they're equal, the SWIG-wrapped function will return a \e reference to
+/// <tt>swiglal_return_1starg_\#\#<i>NAME</i></tt> is defined. Unless <tt>swiglal_no_1starg</tt> is
+/// defined (in which case the first argument is being handled by e.g. the <tt>EMPTY_ARGUMENT</tt>
+/// typemap), the macro compares the pointer of the return value (<tt>result</tt>) to that of the first
+/// argument (<tt>arg1</tt>). If they're equal, the SWIG-wrapped function will return a \e reference to
 /// the SWIG object wrapping the first argument, i.e. the same object with its reference count
 /// incremented. That way, if the return value is assigned to a different scripting-language
 /// variable than the first argument, the underlying C struct will not be destroyed until both
@@ -1777,7 +1777,7 @@ if (strides[I-1] == 0) {
 
 ///
 /// Typemaps for pointers to primitive scalars. These are treated as output-only arguments by
-/// default, by globally applying the SWIG \c OUTPUT typemaps.
+/// default, by globally applying the SWIG <tt>OUTPUT</tt> typemaps.
 ///
 %apply int* OUTPUT { enum SWIGTYPE* };
 %apply short* OUTPUT { short* };
@@ -1826,19 +1826,19 @@ if (strides[I-1] == 0) {
 %enddef
 
 ///
-/// Typemaps for double pointers. By default, treat arguments of type \c TYPE** as output-only
+/// Typemaps for double pointers. By default, treat arguments of type <tt>TYPE**</tt> as output-only
 /// arguments, which do not require a scripting-language input argument, and return their results in
-/// the output argument list. Also supply an \c INOUT typemap for input-output arguments, which
+/// the output argument list. Also supply an <tt>INOUT</tt> typemap for input-output arguments, which
 /// allows a scripting-language input argument to be supplied. The INOUT typemaps can be applied as
 /// needed using the <b>SWIGLAL(INOUT_STRUCTS(TYPE, ...))</b> macro.
 ///
-/// The typemaps apply the following convention for \c NULL pointers. For an argument \c arg of type
-/// \c TYPE**, where <b>SWIGLAL(INOUT_STRUCTS(TYPE, arg))</b> has been applied:
+/// The typemaps apply the following convention for <tt>NULL</tt> pointers. For an argument <tt>arg</tt> of type
+/// <tt>TYPE**</tt>, where <b>SWIGLAL(INOUT_STRUCTS(TYPE, arg))</b> has been applied:
 /// <ul>
-///    <li>if \c arg is passed a scripting language \c empty value (e.g. <tt>[]</tt> in Octave, or
-///    <tt>None</tt> in Python), this is interpreted as a \c NULL pointer of type \c TYPE**, e.g.
+///    <li>if <tt>arg</tt> is passed a scripting language <tt>empty</tt> value (e.g. <tt>[]</tt> in Octave, or
+///    <tt>None</tt> in Python), this is interpreted as a <tt>NULL</tt> pointer of type <tt>TYPE**</tt>, e.g.
 ///    <tt>TYPE** arg = NULL;</tt>.</li>
-///    <li>if \c arg is passed the integer value \c 0, this is interpreted as a valid pointer of
+///    <li>if <tt>arg</tt> is passed the integer value <tt>0</tt>, this is interpreted as a valid pointer of
 ///    type TYPE** to a NULL pointer of type TYPE*, e.g.  <tt>TYPE* ptr = NULL; TYPE** arg =
 ///    \&ptr;</tt>.</li>
 /// </ul>
@@ -1883,7 +1883,7 @@ if (strides[I-1] == 0) {
 ///
 /// Make the wrapping of <tt>printf()</tt>-style LAL functions a little safer, as suggested in the
 /// SWIG 2.0 documentation (section 13.5). These functions should now be safely able to print any
-/// string, so long as the format string is named \c format or \c fmt.
+/// string, so long as the format string is named <tt>format</tt> or <tt>fmt</tt>.
 ///
 %typemap(in, fragment="SWIG_AsLALcharPtrAndSize") (const char *SWIGLAL_PRINTF_FORMAT, ...)
 (char fmt[] = "%s", char *str = 0, int alloc = 0)
@@ -1906,10 +1906,10 @@ if (strides[I-1] == 0) {
 
 ///
 /// Specialised input typemap for C file pointers. Generally it is not possible to convert
-/// scripting-language file objects into \c FILE*, since the scripting language may not provide
-/// access to the \c FILE*, or even be using \c FILE* internally for I/O.  The \c FILE* will
+/// scripting-language file objects into <tt>FILE*</tt>, since the scripting language may not provide
+/// access to the <tt>FILE*</tt>, or even be using <tt>FILE*</tt> internally for I/O.  The <tt>FILE*</tt> will
 /// therefore have to be supplied from another SWIG-wrapped C function.  For convenience, however,
-/// we allow the user to pass integers 0, 1, or 2 in place of a \c FILE*, as an instruction to use
+/// we allow the user to pass integers 0, 1, or 2 in place of a <tt>FILE*</tt>, as an instruction to use
 /// standard input, output, or error respectively.
 ///
 %typemap(in, noblock=1, fragment=SWIG_AsVal_frag(int)) FILE* (void *argp = 0, int res = 0) {
@@ -1942,13 +1942,13 @@ if (strides[I-1] == 0) {
 
 ///
 /// Specialised input typemaps for a given <tt>struct TAGNAME</tt>. If conversion from a
-/// SWIG-wrapped scripting language object \c INPUT fails, call the function defined in \c FRAGMENT,
-/// <b>swiglal_specialised_<i>TAGNAME</i>(INPUT, OUTPUT)</b>, to try to convert \c INPUT from some
+/// SWIG-wrapped scripting language object <tt>INPUT</tt> fails, call the function defined in <tt>FRAGMENT</tt>,
+/// <b>swiglal_specialised_<i>TAGNAME</i>(INPUT, OUTPUT)</b>, to try to convert <tt>INPUT</tt> from some
 /// other value, and if successful store it in <tt>struct TAGNAME OUTPUT</tt>.  Otherwise, raise a
 /// SWIG error. Separate typemaps are needed for <tt>struct TAGNAME</tt> and pointers to <tt>struct
 /// TAGNAME</tt>. Typecheck typemaps are used by overloaded functions, e.g. constructors.
-/// The \c %swiglal_specialised_typemaps() macro handles flat structs, while the
-/// \c %swiglal_specialised_ptr_typemaps() macro handles structs allocated with dynamic memory.
+/// The <tt>%swiglal_specialised_typemaps()</tt> macro handles flat structs, while the
+/// <tt>%swiglal_specialised_ptr_typemaps()</tt> macro handles structs allocated with dynamic memory.
 ///
 %define %swiglal_specialised_typemaps(TAGNAME, FRAGMENT)
 %typemap(in, noblock=1, fragment=FRAGMENT)
@@ -2095,11 +2095,11 @@ if (strides[I-1] == 0) {
 
 ///
 /// The <b>SWIGLAL(VARIABLE_ARGUMENT_LIST(...))</b> macro supports functions which require a
-/// variable-length list of arguments of type \c TYPE, i.e. a list of strings. It generates SWIG
+/// variable-length list of arguments of type <tt>TYPE</tt>, i.e. a list of strings. It generates SWIG
 /// \e compact default arguments, i.e. only one wrapping function where all missing arguments are
 /// assigned \e ENDVALUE, generates 11 additional optional arguments of type \e TYPE, and creates a
-/// contract ensuring that the last argument is always \c ENDVALUE, so that the argument list is
-/// terminated by \c ENDVALUE.
+/// contract ensuring that the last argument is always <tt>ENDVALUE</tt>, so that the argument list is
+/// terminated by <tt>ENDVALUE</tt>.
 ///
 %define %swiglal_public_VARIABLE_ARGUMENT_LIST(FUNCTION, TYPE, ENDVALUE)
 %feature("kwargs", 0) FUNCTION;
@@ -2116,8 +2116,8 @@ require:
 /// The <b>SWIGLAL(RETURN_OWNED_BY_1ST_ARG(...))</b> macro is used when a function returns an object
 /// whose memory is owned by the object supplied as the first argument to the function.  Typically
 /// this occurs when the function is returning some property of its first argument. The macro
-/// applies a typemap which calles \c swiglal_store_parent() to store a reference to the first
-/// argument as the \c parent of the return argument, so that the parent will not be destroyed as
+/// applies a typemap which calles <tt>swiglal_store_parent()</tt> to store a reference to the first
+/// argument as the <tt>parent</tt> of the return argument, so that the parent will not be destroyed as
 /// long as the return value is in scope.
 ///
 %define %swiglal_public_RETURN_OWNED_BY_1ST_ARG(TYPE, ...)
@@ -2137,8 +2137,8 @@ require:
 /// The <b>SWIGLAL(OUTPUT_OWNED_BY_1ST_ARG(...))</b> macro is used when an output-only argument of a
 /// function is an object whose memory is owned by the object supplied as the first argument to the
 /// function.  Typically this occurs when the function is returning some property of its first
-/// argument. The macro applies a typemap which calles \c swiglal_store_parent() to store a
-/// reference to the first argument as the \c parent of the output-only argument, so that the parent
+/// argument. The macro applies a typemap which calles <tt>swiglal_store_parent()</tt> to store a
+/// reference to the first argument as the <tt>parent</tt> of the output-only argument, so that the parent
 /// will not be destroyed as long as the output value is in scope.
 ///
 %define %swiglal_public_OUTPUT_OWNED_BY_1ST_ARG(TYPE, ...)

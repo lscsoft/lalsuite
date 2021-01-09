@@ -1660,7 +1660,8 @@ static int IMRPhenomXPHMTwistUp(
   return XLAL_SUCCESS;
 }
 
-
+/* @} */
+/* @} */
 
 /** @addtogroup LALSimIMRPhenomX_c
 * @{
@@ -1705,8 +1706,7 @@ static int IMRPhenomXPHMTwistUp(
 *   MBandPrecVersion: Determines the algorithm to build the non-uniform frequency grid for the Euler angles.
 *        - 0: (DEFAULT) Not use multibanding.  Activated to 1 when PrecThresholdMband is non-zero.
 *        - 1: Use the same grid that for the non-precessing modes. Activated when PrecThresholdMband is non-zero.
-*
-* @{ **/
+**/
 
 
 
@@ -2808,3 +2808,6 @@ INT4 XLALSimIMRPhenomXPHMMultibandingGrid(
  LALFree(allGrids);
  return actualnumberofGrids;
 }
+
+/* @} */
+/* @} */

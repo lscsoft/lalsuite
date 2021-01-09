@@ -2822,7 +2822,7 @@ double IMRPhenomX_Return_Psi_MSA(double v, double v2, const IMRPhenomXPrecession
 }
 
 /*
-    Get \dot{\psi} using Eq. 24 of Chatziioannou et al, PRD 95, 104004, (2017), arXiv:1703.03967:
+    Get \f$\dot{\psi}\f$ using Eq. 24 of Chatziioannou et al, PRD 95, 104004, (2017), arXiv:1703.03967:
 */
 double IMRPhenomX_Return_Psi_dot_MSA(const double v, const IMRPhenomXPrecessionStruct *pPrec)
 {

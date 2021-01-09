@@ -2,7 +2,7 @@
 \addtogroup lalinspiral_inspiral
 
 The type of waveform generated
-is determined by specifying the value of the \c enums \ref Approximant and <tt>Order</tt>
+is determined by specifying the value of the enums \c Approximant and \c LALPNOrder
 All \c Approximants generate the restricted post-Newtonian (PN) waveform given by (we
 use units in which \f$c=G=1\f$):
 \f{equation}{
@@ -15,9 +15,9 @@ defined phasing formula which is either an explicit or an implicit
 function of time.  In what follows we summarize the basic formulas used
 in generating the waveforms. As we shall see there are are a number of
 ways in which these waveforms can be generated.  In the \c inspiral package
-these are controlled by two \c enums: The first <tt>enum</tt> called <tt>Order</tt>
+these are controlled by two \c enums: The first <tt>enum</tt> called \c LALPNOrder
 controls the PN order to which the various quantities are defined and
-the second <tt>enum</tt> called \ref Approximant controls the approximant used
+the second <tt>enum</tt> called \c Approximant controls the approximant used
 in generating the waveforms.
 
 \section TaylorPade Taylor and Pade approximants

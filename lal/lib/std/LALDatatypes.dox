@@ -138,15 +138,15 @@ The following constants specify the size, in bytes, of the atomic datatype.
 
 <table>
 <tr><th>Name</th><th>Octal Value</th><th>Description</th></tr>
-<tr><td>#LAL_1_BYTE_TYPE_SIZE</td><td>000</td><td>1 byte type</td></tr>
-<tr><td>#LAL_2_BYTE_TYPE_SIZE</td><td>001</td><td>2 byte type</td></tr>
-<tr><td>#LAL_4_BYTE_TYPE_SIZE</td><td>002</td><td>4 byte type</td></tr>
-<tr><td>#LAL_8_BYTE_TYPE_SIZE</td><td>003</td><td>8 byte type</td></tr>
-<tr><td>#LAL_16_BYTE_TYPE_SIZE</td><td>004</td><td>16 byte type</td></tr>
-<tr><td>#LAL_TYPE_SIZE_MASK</td><td>007</td><td>Mask for byte type size fields</td></tr>
+<tr><td>::LAL_1_BYTE_TYPE_SIZE</td><td>000</td><td>1 byte type</td></tr>
+<tr><td>::LAL_2_BYTE_TYPE_SIZE</td><td>001</td><td>2 byte type</td></tr>
+<tr><td>::LAL_4_BYTE_TYPE_SIZE</td><td>002</td><td>4 byte type</td></tr>
+<tr><td>::LAL_8_BYTE_TYPE_SIZE</td><td>003</td><td>8 byte type</td></tr>
+<tr><td>::LAL_16_BYTE_TYPE_SIZE</td><td>004</td><td>16 byte type</td></tr>
+<tr><td>::LAL_TYPE_SIZE_MASK</td><td>007</td><td>Mask for byte type size fields</td></tr>
 </table>
 
-The constant #LAL_TYPE_SIZE_MASK is useful in extracting the size
+The constant ::LAL_TYPE_SIZE_MASK is useful in extracting the size
 information from other type attributes.  For example, the size, in bytes,
 of an atomic datatype can be found using something like the following:
 \code
@@ -160,18 +160,18 @@ and, if integer, is either signed or unsigned.
 
 <table>
 <tr><th>Name</th><th>Octal Value</th><th>Description</th></tr>
-<tr><td>#LAL_FLTPT_TYPE_FLAG</td><td>010</td><td>Floating-point (not integer) type</td></tr>
-<tr><td>#LAL_CMPLX_TYPE_FLAG</td><td>020</td><td>Complex (not purely real) type</td></tr>
-<tr><td>#LAL_UNSGN_TYPE_FLAG</td><td>040</td><td>Unsigned (no sign info) type</td></tr>
+<tr><td>::LAL_FLTPT_TYPE_FLAG</td><td>010</td><td>Floating-point (not integer) type</td></tr>
+<tr><td>::LAL_CMPLX_TYPE_FLAG</td><td>020</td><td>Complex (not purely real) type</td></tr>
+<tr><td>::LAL_UNSGN_TYPE_FLAG</td><td>040</td><td>Unsigned (no sign info) type</td></tr>
 </table>
 
 To get the actual type, these flags are combined together and with the
 type size constants using the bitwise-or operator (<tt>|</tt>).  For example,
 an eight-byte floating point number would be
-<tt>(#LAL_8_BYTE_TYPE_SIZE | #LAL_8_BYTE_TYPE_SIZE | #LAL_FLTPT_TYPE_FLAG)</tt>.
+<tt>(::LAL_8_BYTE_TYPE_SIZE | ::LAL_8_BYTE_TYPE_SIZE | ::LAL_FLTPT_TYPE_FLAG)</tt>.
 Conceivably you could have a complex type made from a pair of unsigned
 one-byte integers that would be specified as
-<tt>(#LAL_1_BYTE_TYPE_SIZE | #LAL_CMPLX_TYPE_FLAG | #LAL_UNSGN_TYPE_FLAG)</tt>.
+<tt>(::LAL_1_BYTE_TYPE_SIZE | ::LAL_CMPLX_TYPE_FLAG | ::LAL_UNSGN_TYPE_FLAG)</tt>.
 Fortunately, there are none of these in LAL.  Attribues of a particular
 type can be extracted using the bitwise-and operator.  For example:
 \code
@@ -181,22 +181,22 @@ UINT4 iscmplx = ( code & LAL_CMPLX_TYPE_FLAG );
 \endcode
 
 The following constants correspond to the types that actually exist in LAL.
-Their enumeration is the type ::LALTYPECODE.
+Their enumeration is the type \c LALTYPECODE.
 
 <table>
 <tr><th>Name</th><th>Octal Value</th><th>Corresponding Type</th></tr>
-<tr><td>#LAL_CHAR_TYPE_CODE</td><td>000</td><td>#CHAR</td></tr>
-<tr><td>#LAL_I2_TYPE_CODE</td><td>001</td><td>#INT2</td></tr>
-<tr><td>#LAL_I4_TYPE_CODE</td><td>002</td><td>#INT4</td></tr>
-<tr><td>#LAL_I8_TYPE_CODE</td><td>003</td><td>#INT8</td></tr>
-<tr><td>#LAL_UCHAR_TYPE_CODE</td><td>040</td><td>#UCHAR</td></tr>
-<tr><td>#LAL_U2_TYPE_CODE</td><td>041</td><td>#UINT2</td></tr>
-<tr><td>#LAL_U4_TYPE_CODE</td><td>042</td><td>#UINT4</td></tr>
-<tr><td>#LAL_U8_TYPE_CODE</td><td>043</td><td>#UINT8</td></tr>
-<tr><td>#LAL_S_TYPE_CODE</td><td>012</td><td>#REAL4</td></tr>
-<tr><td>#LAL_D_TYPE_CODE</td><td>013</td><td>#REAL8</td></tr>
-<tr><td>#LAL_C_TYPE_CODE</td><td>033</td><td>#COMPLEX8</td></tr>
-<tr><td>#LAL_Z_TYPE_CODE</td><td>034</td><td>#COMPLEX16</td></tr>
+<tr><td>::LAL_CHAR_TYPE_CODE</td><td>000</td><td>::CHAR</td></tr>
+<tr><td>::LAL_I2_TYPE_CODE</td><td>001</td><td>::INT2</td></tr>
+<tr><td>::LAL_I4_TYPE_CODE</td><td>002</td><td>::INT4</td></tr>
+<tr><td>::LAL_I8_TYPE_CODE</td><td>003</td><td>::INT8</td></tr>
+<tr><td>::LAL_UCHAR_TYPE_CODE</td><td>040</td><td>::UCHAR</td></tr>
+<tr><td>::LAL_U2_TYPE_CODE</td><td>041</td><td>::UINT2</td></tr>
+<tr><td>::LAL_U4_TYPE_CODE</td><td>042</td><td>::UINT4</td></tr>
+<tr><td>::LAL_U8_TYPE_CODE</td><td>043</td><td>::UINT8</td></tr>
+<tr><td>::LAL_S_TYPE_CODE</td><td>012</td><td>::REAL4</td></tr>
+<tr><td>::LAL_D_TYPE_CODE</td><td>013</td><td>::REAL8</td></tr>
+<tr><td>::LAL_C_TYPE_CODE</td><td>033</td><td>::COMPLEX8</td></tr>
+<tr><td>::LAL_Z_TYPE_CODE</td><td>034</td><td>::COMPLEX16</td></tr>
 </table>
 
 \section ss_aggregate_datatypes Aggregate datatypes
@@ -220,9 +220,9 @@ The fields are:
 are stored sequentially as \f$\mathtt{data}[0,\ldots,n-1]\f$.</li>
 </ul>
 
-The concrete types are ::CHARVector, ::LALStringVector, ::INT2Vector, ::UINT2Vector,
-::INT4Vector, ::UINT4Vector, ::INT8Vector, ::UINT8Vector, ::REAL4Vector,
-::REAL8Vector, ::COMPLEX8Vector, ::COMPLEX16Vector.
+The concrete types are \c CHARVector, \c LALStringVector, \c INT2Vector, \c UINT2Vector,
+\c INT4Vector, \c UINT4Vector, \c INT8Vector, \c UINT8Vector, \c REAL4Vector,
+\c REAL8Vector, \c COMPLEX8Vector, \c COMPLEX16Vector.
 
 \subsection ss_Array DATATYPE-Array types
 
@@ -244,8 +244,8 @@ that is, the index of <tt>data[]</tt> runs over the entire range of an index
 \f$i_{k+1}\f$ before incrementing \f$i_k\f$.</li>
 </ul>
 
-The concrete types are ::INT2Array, ::UINT2Array, ::INT4Array, ::UINT4Array,
-::INT8Array, ::UINT8Array, ::REAL4Array, ::REAL8Array, ::COMPLEX8Array, ::COMPLEX16Array.
+The concrete types are \c INT2Array, \c UINT2Array, \c INT4Array, \c UINT4Array,
+\c INT8Array, \c UINT8Array, \c REAL4Array, \c REAL8Array, \c COMPLEX8Array, \c COMPLEX16Array.
 
 \subsection ss_Sequence DATATYPE-Sequence types
 
@@ -260,9 +260,9 @@ of an \f$l\f$-dimensional vector.  The fields are:
 are stored sequentially as \f$\mathtt{data}[0, \ldots, l-1]\f$.</li>
 </ul>
 
-The concrete types are ::CHARSequence, ::INT2Sequence, ::UINT2Sequence,
-::INT4Sequence, ::UINT4Sequence, ::INT8Sequence, ::UINT8Sequence, ::REAL4Sequence,
-::REAL8Sequence, ::COMPLEX8Sequence, ::COMPLEX16Sequence.
+The concrete types are \c CHARVector, \c INT2Vector, \c UINT2Vector,
+\c INT4Vector, \c UINT4Vector, \c INT8Vector, \c UINT8Vector, \c REAL4Vector,
+\c REAL8Vector, \c COMPLEX8Vector, \c COMPLEX16Vector.
 
 \subsection ss_VectorSequence DATATYPE-VectorSequence types
 
@@ -282,9 +282,9 @@ that is, the index of <tt>data[]</tt> runs over the internal index of
 each vector element before incrementing to the next vector element.</li>
 </ul>
 
-The concrete types are ::CHARVectorSequence, ::INT2VectorSequence, ::UINT2VectorSequence,
-::INT4VectorSequence, ::UINT4VectorSequence, ::INT8VectorSequence, ::UINT8VectorSequence,
-::REAL4VectorSequence, ::REAL8VectorSequence, ::COMPLEX8VectorSequence, ::COMPLEX16VectorSequence.
+The concrete types are \c CHARVectorSequence, \c INT2VectorSequence, \c UINT2VectorSequence,
+\c INT4VectorSequence, \c UINT4VectorSequence, \c INT8VectorSequence, \c UINT8VectorSequence,
+\c REAL4VectorSequence, \c REAL8VectorSequence, \c COMPLEX8VectorSequence, \c COMPLEX16VectorSequence.
 
 \subsection ss_ArraySequence DATATYPE-ArraySequence types
 
@@ -313,9 +313,9 @@ that is, the index of <tt>data[]</tt> runs over the internal indecies of each
 array element before incrementing to the next array element.</li>
 </ul>
 
-The concrete types are ::INT2ArraySequence, ::UINT2ArraySequence,
-::INT4ArraySequence, ::UINT4ArraySequence, ::INT8ArraySequence, ::UINT8ArraySequence,
-::REAL4ArraySequence, ::REAL8ArraySequence, ::COMPLEX8ArraySequence, ::COMPLEX16ArraySequence
+The concrete types are \c INT2ArraySequence, \c UINT2ArraySequence,
+\c INT4ArraySequence, \c UINT4ArraySequence, \c INT8ArraySequence, \c UINT8ArraySequence,
+\c REAL4ArraySequence, \c REAL8ArraySequence, \c COMPLEX8ArraySequence, \c COMPLEX16ArraySequence
 
 \section ss_structured_datatypes Structured datatypes
 
@@ -328,10 +328,10 @@ response function of a filter.
 
 \subsection ss_LIGOTimeGPS LIGOTimeGPS type
 
-The ::LIGOTimeGPS structure stores the time, to nanosecond precision, synchronized
+The \c LIGOTimeGPS structure stores the time, to nanosecond precision, synchronized
 to the Global Positioning System time reference.  The zero time for
 the GPS standard is the moment of midnight beginning January 6, 1980,
-UTC.  The ::LIGOTimeGPS structure can represent times up to
+UTC.  The \c LIGOTimeGPS structure can represent times up to
 68 years on either side of this epoch.  (Note that this is better than
 an equivalently-sized ::REAL8 representation of time, which can
 maintain nanosecond precision only for times within 104 days of its
@@ -339,8 +339,8 @@ reference point.  However, the ::REAL8 representation does allow
 one to cover arbitrarily long timescales at correspondingly lower
 precision.)
 
-The macro #LIGOTIMEGPSZERO can be used to statically initialize a
-::LIGOTimeGPS object, for example:
+The macro ::LIGOTIMEGPSZERO can be used to statically initialize a
+\c LIGOTimeGPS object, for example:
 \code
 LIGOTimeGPS epoch = LIGOTIMEGPSZERO;
 \endcode
@@ -358,16 +358,16 @@ order to extract the behaviour in a small bandwidth about \f$f_0\f$.  The
 fields are:
 <ul>
 <li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
-<li><tt>::LIGOTimeGPS epoch</tt>: The start time \f$t_0\f$ of the data series.</li>
+<li><tt>\c LIGOTimeGPS epoch</tt>: The start time \f$t_0\f$ of the data series.</li>
 <li><tt>::REAL8 deltaT</tt>: The sampling interval \f$\Delta t\f$, in seconds.</li>
 <li><tt>::REAL8 f0</tt>: The heterodyning frequency \f$f_0\f$, in Hertz.</li>
-<li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
+<li><tt>\c LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
 <li><tt>\<datatype\>Sequence *data</tt>: The sequence of sampled data.</li>
 </ul>
 
-The concrete types are ::INT2TimeSeries, ::UINT2TimeSeries,
-::INT4TimeSeries, ::UINT4TimeSeries, ::INT8TimeSeries, ::UINT8TimeSeries,
-::REAL4TimeSeries, ::REAL8TimeSeries, ::COMPLEX8TimeSeries, ::COMPLEX16TimeSeries.
+The concrete types are \c INT2TimeSeries, \c UINT2TimeSeries,
+\c INT4TimeSeries, \c UINT4TimeSeries, \c INT8TimeSeries, \c UINT8TimeSeries,
+\c REAL4TimeSeries, \c REAL8TimeSeries, \c COMPLEX8TimeSeries, \c COMPLEX16TimeSeries.
 
 \subsection ss_TimeVectorSeries DATATYPE-TimeVectorSeries
 
@@ -376,16 +376,16 @@ are of type <tt>\<datatype\>Vector</tt> (where <tt>\<datatype\></tt> can
 be any primitive datatype).  The fields are:
 <ul>
 <li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
-<li><tt>::LIGOTimeGPS epoch</tt>: The start time of the data series.</li>
+<li><tt>\c LIGOTimeGPS epoch</tt>: The start time of the data series.</li>
 <li><tt>::REAL8 deltaT</tt>: The sampling interval, in seconds.</li>
 <li><tt>::REAL8 f0</tt>: The heterodyning frequency, in Hertz.</li>
-<li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
+<li><tt>\c LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
 <li><tt>\<datatype\>VectorSequence *data</tt>: The sequence of sampled data.</li>
 </ul>
 
-The concrete types are ::INT2TimeVectorSeries, ::UINT2TimeVectorSeries,
-::INT4TimeVectorSeries, ::UINT4TimeVectorSeries, ::INT8TimeVectorSeries, ::UINT8TimeVectorSeries,
-::REAL4TimeVectorSeries, ::REAL8TimeVectorSeries, ::COMPLEX8TimeVectorSeries, ::COMPLEX16TimeVectorSeries.
+The concrete types are \c INT2TimeVectorSeries, \c UINT2TimeVectorSeries,
+\c INT4TimeVectorSeries, \c UINT4TimeVectorSeries, \c INT8TimeVectorSeries, \c UINT8TimeVectorSeries,
+\c REAL4TimeVectorSeries, \c REAL8TimeVectorSeries, \c COMPLEX8TimeVectorSeries, \c COMPLEX16TimeVectorSeries.
 
 \subsection ss_TimeArraySeries DATATYPE-TimeArraySeries types
 
@@ -394,16 +394,16 @@ are of type <tt>\<datatype\>Array</tt> (where <tt>\<datatype\></tt> can
 be any primitive datatype).  The fields are:
 <ul>
 <li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
-<li><tt>::LIGOTimeGPS epoch</tt>: The start time of the data series.</li>
+<li><tt>\c LIGOTimeGPS epoch</tt>: The start time of the data series.</li>
 <li><tt>::REAL8 deltaT</tt>: The sampling interval, in seconds.</li>
 <li><tt>::REAL8 f0</tt>: The heterodyning frequency, in Hertz.</li>
-<li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
+<li><tt>\c LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
 <li><tt>\<datatype\>ArraySequence *data</tt>: The sequence of sampled data.</li>
 </ul>
 
-The concrete types are ::INT2TimeArraySeries, ::UINT2TimeArraySeries,
-::INT4TimeArraySeries, ::UINT4TimeArraySeries, ::INT8TimeArraySeries, ::UINT8TimeArraySeries,
-::REAL4TimeArraySeries, ::REAL8TimeArraySeries, ::COMPLEX8TimeArraySeries, ::COMPLEX16TimeArraySeries.
+The concrete types are \c INT2TimeArraySeries, \c UINT2TimeArraySeries,
+\c INT4TimeArraySeries, \c UINT4TimeArraySeries, \c INT8TimeArraySeries, \c UINT8TimeArraySeries,
+\c REAL4TimeArraySeries, \c REAL8TimeArraySeries, \c COMPLEX8TimeArraySeries, \c COMPLEX16TimeArraySeries.
 
 \subsection ss_FrequencySeries DATATYPE-FrequencySeries types
 
@@ -416,16 +416,16 @@ frequencies, the timestamp of the spectrum, and the type of data being
 sampled.  The fields are:
 <ul>
 <li><tt>::CHAR name[LALNameLength]</tt>: The name of the data series (i.e. the type of data being sampled).</li>
-<li><tt>::LIGOTimeGPS epoch</tt>: The start time of the time series from which the spectrum was calculated.</li>
+<li><tt>\c LIGOTimeGPS epoch</tt>: The start time of the time series from which the spectrum was calculated.</li>
 <li><tt>::REAL8 f0</tt>: The lowest frequency \f$f_0\f$ being sampled, in Hertz.</li>
 <li><tt>::REAL8 deltaF</tt>: The frequency sampling interval \f$\Delta f\f$, in Hertz.</li>
-<li><tt>::LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
+<li><tt>\c LALUnit sampleUnits</tt>: The physical units of the quantity being sampled.</li>
 <li><tt>\<datatype\>Sequence *data</tt>: The sequence of sampled data.</li>
 </ul>
 
-The concrete types are ::INT2FrequencySeries, ::UINT2FrequencySeries,
-::INT4FrequencySeries, ::UINT4FrequencySeries, ::INT8FrequencySeries, ::UINT8FrequencySeries,
-::REAL4FrequencySeries, ::REAL8FrequencySeries, ::COMPLEX8FrequencySeries, ::COMPLEX16FrequencySeries.
+The concrete types are \c INT2FrequencySeries, \c UINT2FrequencySeries,
+\c INT4FrequencySeries, \c UINT4FrequencySeries, \c INT8FrequencySeries, \c UINT8FrequencySeries,
+\c REAL4FrequencySeries, \c REAL8FrequencySeries, \c COMPLEX8FrequencySeries, \c COMPLEX16FrequencySeries.
 
 \subsection ss_ZPGFilter DATATYPE-ZPGFilter types
 
@@ -459,6 +459,6 @@ being equal to the sampling interval of the data being filtered.</li>
 <li><tt>\<datatype\> gain</tt>: The gain \f$g\f$ of the filter.</li>
 </ul>
 
-The concrete types are ::COMPLEX8ZPGFilter and ::COMPLEX16ZPGFilter.
+The concrete types are \c COMPLEX8ZPGFilter and \c COMPLEX16ZPGFilter.
 
 */

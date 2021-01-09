@@ -59,7 +59,7 @@ extern "C" {
  *
  * ### XLAL interface to Units.h functions ###
  *
- * XLALUnitAsString() converts a ::LALUnit structure into a character
+ * XLALUnitAsString() converts a \c LALUnit structure into a character
  * string of maximum length \c length (including NUL termination)
  * representation of the units.  The inverse function, XLALParseUnitString()
  * parses a character string to produce a \c LALUnit structure; if
@@ -67,54 +67,54 @@ extern "C" {
  * \c string is \c NULL or is empty then the output units are
  * dimensionless: lalDimensionlessUnit.
  *
- * XLALUnitNormalize() puts a ::LALUnit structure into normal form
+ * XLALUnitNormalize() puts a \c LALUnit structure into normal form
  * by simplifying all unit exponent fractions to their simplest form.
  *
- * XLALUnitCompare() compares two ::LALUnit structures: they are the
+ * XLALUnitCompare() compares two \c LALUnit structures: they are the
  * same if their normal forms are identical.
  *
- * XLALUnitMultiply() multiplies two ::LALUnit structures.  The result
+ * XLALUnitMultiply() multiplies two \c LALUnit structures.  The result
  * is put into normal form.
  *
- * XLALUnitRaiseRAT4() raises a ::LALUnit structure to a rational
- * power given by the ::RAT4 structure \c power.
- * XLALUnitRaiseINT2() raises a ::LALUnit structure to an integer
+ * XLALUnitRaiseRAT4() raises a \c LALUnit structure to a rational
+ * power given by the \c RAT4 structure \c power.
+ * XLALUnitRaiseINT2() raises a \c LALUnit structure to an integer
  * power \c power.
- * XLALUnitSquare() produces the square of a ::LALUnit structure.
- * XLALUnitSqrt() produces the square-root of a ::LALUnit structure.
+ * XLALUnitSquare() produces the square of a \c LALUnit structure.
+ * XLALUnitSqrt() produces the square-root of a \c LALUnit structure.
  *
  * ### Return Values ###
  *
  * XLALUnitAsString() returns the pointer to the input \c string, which
  * is populated with the unit string if successful.  If there is a failure,
- * XLALUnitAsString() returns a \c NULL pointer and \c ::xlalErrno
- * is set to one of the following values:  \c #XLAL_EFAULT if one of the
- * input pointers is \c NULL or \c #XLAL_EBADLEN if the length of the
+ * XLALUnitAsString() returns a \c NULL pointer and ::xlalErrno
+ * is set to one of the following values:  #XLAL_EFAULT if one of the
+ * input pointers is \c NULL or #XLAL_EBADLEN if the length of the
  * string is insufficent for the unit string.
  *
  * XLALParseUnitString() returns the pointer \c output upon return
  * or a pointer to newly allocated memory if \c output was \c NULL;
  * on failure, \c XLALParseUnitString returns \c NULL and sets
- * \c ::xlalErrno to one of the following values:  \c #XLAL_ENOMEM
+ * ::xlalErrno to one of the following values:  #XLAL_ENOMEM
  * if the routine was unable to allocate memory for the output or
- * \c #XLAL_EFAILED if the routine was unable to parse the unit string.
+ * #XLAL_EFAILED if the routine was unable to parse the unit string.
  *
- * XLALUnitNormalize() returns 0 upon success or \c #XLAL_FAILURE
+ * XLALUnitNormalize() returns 0 upon success or #XLAL_FAILURE
  * if the input pointer is \c NULL, in which case \c xlalErrno
- * is set to \c #XLAL_EFAULT
+ * is set to #XLAL_EFAULT
  *
  * XLALUnitCompare() returns 0 if the the normal form of the two unit
  * structures are the same or \> 0 if they are different.  It returns
- * \c #XLAL_FAILURE and \c ::xlalErrno is set to \c #XLAL_EFAULT if
+ * #XLAL_FAILURE and ::xlalErrno is set to #XLAL_EFAULT if
  * one of the input pointers is \c NULL.
  *
  * XLALUnitMultiply(), XLALUnitRaiseRAT4(), XLALUnitRaiseINT2(), XLALUnitSquare() and
  * XLALUnitSqrt() all return a pointer to the output unit structure
  * \c output upon success or \c NULL upon failure.  If there is
- * a failure, \c ::xlalErrno is set to one of the following values:
- * \c #XLAL_EFAULT if one of the input pointers is \c NULL,
- * \c #XLAL_ERANGE if one of the unit powers exceeds the allowed range,
- * or \c #XLAL_EINVAL (for the raise functions only) if the unit power
+ * a failure, ::xlalErrno is set to one of the following values:
+ * #XLAL_EFAULT if one of the input pointers is \c NULL,
+ * #XLAL_ERANGE if one of the unit powers exceeds the allowed range,
+ * or #XLAL_EINVAL (for the raise functions only) if the unit power
  * would not be an integer.
  *
  * @{

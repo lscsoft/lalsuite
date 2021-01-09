@@ -65,9 +65,9 @@ gcd(INT2 numer, UINT2 denom)
 }
 
 /**
- * Returns 0 upon success or \c #XLAL_FAILURE
- * if the input pointer is \c NULL, in which case \c ::xlalErrno
- * is set to \c #XLAL_EFAULT.
+ * Returns 0 upon success or #XLAL_FAILURE
+ * if the input pointer is \c NULL, in which case ::xlalErrno
+ * is set to #XLAL_EFAULT.
  */
 int XLALUnitNormalize( LALUnit *unit )
 {

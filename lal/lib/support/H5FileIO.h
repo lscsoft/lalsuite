@@ -74,7 +74,7 @@ struct tagLALH5Object;
 /**
  * @brief Incomplete type for a generic HDF5 object.
  * @details
- * The #LALH5Generic is a structure that contains the identifier
+ * The \c LALH5Generic is a structure that contains the identifier
  * of a generic HDF5 file, group, or dataset.
  */
 typedef struct tagLALH5Object LALH5Object;
@@ -83,12 +83,12 @@ struct tagLALH5File;
 /**
  * @brief Incomplete type for a HDF5 file.
  * @details
- * The #LALH5File is a structure that is associated with a HDF5 file or group.
+ * The ::LALH5File is a structure that is associated with a HDF5 file or group.
  *
- * Allocate #LALH5File structures using XLALH5FileOpen() or
+ * Allocate ::LALH5File structures using XLALH5FileOpen() or
  * XLALH5FileGroupOpen().
  *
- * Deallocate #LALH5File structures using XLALH5FileClose().
+ * Deallocate ::LALH5File structures using XLALH5FileClose().
  */
 typedef struct tagLALH5File LALH5File;
 
@@ -96,21 +96,21 @@ struct tagLALH5Dataset;
 /** 
  * @brief Incomplete type for a HDF5 dataset.
  * @details
- * The #LALH5Dataset is a structure that is associated with a HDF5 dataset.
- * Deallocate #LALH5Dataset structures using XLALH5DatasetFree().
+ * The ::LALH5Dataset is a structure that is associated with a HDF5 dataset.
+ * Deallocate ::LALH5Dataset structures using XLALH5DatasetFree().
  */
 typedef struct tagLALH5Dataset LALH5Dataset;
 
 /** 
  * @brief Incomplete type for a pointer to an HDF5 file or group or dataset.
  * @details
- * The #LALH5Generic is a union that is associated with a HDF5 file or
+ * The \c LALH5Generic is a union that is associated with a HDF5 file or
  * group or dataset.
  */
 typedef union tagLALH5Generic {
 	LALH5Object  *generic; /**< Pointer to generic HDF5 object */
-	LALH5File    *file;    /**< Pointer to a #LALH5File file */
-	LALH5Dataset *dset;    /**< Pointer to a #LALH5Dataset dataset */
+	LALH5File    *file;    /**< Pointer to a ::LALH5File file */
+	LALH5Dataset *dset;    /**< Pointer to a ::LALH5Dataset dataset */
 } LALH5Generic;
 
 void XLALH5FileClose(LALH5File *file);

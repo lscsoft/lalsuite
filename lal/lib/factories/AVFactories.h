@@ -156,17 +156,17 @@ extern "C" {
  * data that was passed to the function.  The resize functions will return
  * a \c NULL pointer if the size of the new object was zero.  Upon failure
  * these routines will return \c NULL and will set \c xlalErrno to
- * one of these values: \c #XLAL_ENOMEM if a memory allocation failed,
- * \c #XLAL_EBADLEN if an invalid length was provided (for example, a
+ * one of these values: #XLAL_ENOMEM if a memory allocation failed,
+ * #XLAL_EBADLEN if an invalid length was provided (for example, a
  * zero-size allocation with a create function), \c XLAL_EINVAL if an
  * invalid argument is provided (for example, if the pointer to an
  * array of dimensions is \c NULL).
  *
  * The destroy function does not return any value.  If the function is passed a
- * \c NULL pointer, it will set \c xlalErrno to \c #XLAL_EFAULT.
+ * \c NULL pointer, it will set \c xlalErrno to #XLAL_EFAULT.
  * If the function is passed an object that appears corrupted (e.g., a
  * vector with zero length or will a \c NULL data pointer) it will set
- * \c xlalErrno to \c #XLAL_EINVAL.
+ * \c xlalErrno to #XLAL_EINVAL.
  *
  */
 /** @{ */

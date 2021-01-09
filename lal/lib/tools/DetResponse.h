@@ -126,8 +126,8 @@ SWIGLAL(IMMUTABLE_MEMBERS(tagLALDetAndSource, pDetector));
 typedef struct
 tagLALDetAndSource
 {
-  const LALDetector  *pDetector;/**< Pointer to ::LALDetector object containing information about the detector */
-  LALSource    *pSource;	/**< Pointer to ::LALSource object containing information about the source */
+  const LALDetector  *pDetector;/**< Pointer to \c LALDetector object containing information about the detector */
+  LALSource    *pSource;	/**< Pointer to \c LALSource object containing information about the source */
 }
 LALDetAndSource;
 
@@ -145,7 +145,7 @@ tagLALDetAMResponse
 LALDetAMResponse;
 
 /**
- * This structure aggregates together three ::REAL4TimeSeries objects containing
+ * This structure aggregates together three \c REAL4TimeSeries objects containing
  * time series of detector AM response.
  */
 typedef struct
@@ -160,7 +160,7 @@ LALDetAMResponseSeries;
 
 /**
  * This structure encapsulates time and sampling information for computing a
- * ::LALDetAMResponseSeries. Its fields correspond to some fields of the
+ * \c LALDetAMResponseSeries. Its fields correspond to some fields of the
  * TimeSeries structures for easy conversion.
  */
 typedef struct

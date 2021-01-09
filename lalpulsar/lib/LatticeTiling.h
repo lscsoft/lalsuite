@@ -78,7 +78,7 @@ typedef enum tagLatticeTilingPaddingFlags {
 } LatticeTilingPaddingFlags;
 
 ///
-/// Static array of all #TilingLattice choices, for use by the UserInput module parsing routines
+/// Static array of all :tagTilingLattice choices, for use by the UserInput module parsing routines
 ///
 extern const UserChoices TilingLatticeChoices;
 

@@ -60,15 +60,15 @@ extern "C" {
  *
  * The create functions return a pointer to the created vector sequence if
  * successful; upon failure they will return \c NULL and set \c xlalErrno
- * to one of the following values: \c #XLAL_ENOMEM if memory allocation
- * failed, or \c #XLAL_EBADLEN if the requested \c length or \c veclen
+ * to one of the following values: #XLAL_ENOMEM if memory allocation
+ * failed, or #XLAL_EBADLEN if the requested \c length or \c veclen
  * is zero.
  *
  * The destroy functions do not have a return value.  They can fail if they are
  * passed a \c NULL pointer, in which case \c xlalErrno is set to
- * \c #XLAL_EFAULT, or if the vector sequency passed to the destroy routine
+ * #XLAL_EFAULT, or if the vector sequency passed to the destroy routine
  * has zero length, vector length, or \c NULL data pointer then
- * \c xlalErrno is set to \c #XLAL_EINVAL.
+ * \c xlalErrno is set to #XLAL_EINVAL.
  *
  */
 /** @{ */
