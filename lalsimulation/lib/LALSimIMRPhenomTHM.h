@@ -34,13 +34,14 @@ extern "C" {
 
 /* Function for generating a specific lm mode */
 int LALSimIMRPhenomTHM_OneMode(
-	COMPLEX16TimeSeries **hlm,
-	IMRPhenomTWaveformStruct *pWF,
-	IMRPhenomTPhase22Struct *pPhase,
-  REAL8Sequence *phase22,       /**< Values of the 22 phase for the waveform time array */
-	REAL8Sequence *xorb,
-	UINT4 ell,
-	UINT4 emm);
+	COMPLEX16TimeSeries **hlm,         /**< UNDOCUMENTED */
+	IMRPhenomTWaveformStruct *pWF,     /**< UNDOCUMENTED */
+	IMRPhenomTPhase22Struct *pPhase,   /**< UNDOCUMENTED */
+        REAL8Sequence *phase22,            /**< Values of the 22 phase for the waveform time array */
+	REAL8Sequence *xorb,               /**< UNDOCUMENTED */
+	UINT4 ell,                         /**< UNDOCUMENTED */
+	UINT4 emm                          /**< UNDOCUMENTED */
+        );
 
 /* Function for generating all modes in a requested modelist */
 int LALSimIMRPhenomTHM_Modes(
@@ -55,7 +56,7 @@ int LALSimIMRPhenomTHM_Modes(
   REAL8 fRef,               /**< reference GW frequency (Hz) */
   REAL8 phiRef,               /**< reference orbital phase (rad) */
   LALDict *lalParams,            /**< LAL dictionary containing accessory parameters */
-  UINT4 only22              /* Internal flag for mode array check */
+  UINT4 only22              /**< Internal flag for mode array check */
   );
 
 /* Function to adapt user requested mode list to modes included in the model */

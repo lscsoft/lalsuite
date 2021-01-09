@@ -119,12 +119,12 @@ extern "C" {
  * on failure.
  *
  * The LAL specification requires that XLAL functions that return a
- * floating-point type (either <tt>::REAL4</tt> or <tt>::REAL8</tt>) should return
+ * floating-point type (either ::REAL4 or ::REAL8) should return
  * a particular value to indicate an error.  These values are given by the
  * macros <tt>#XLAL_REAL4_FAIL_NAN</tt> and <tt>#XLAL_REAL8_FAIL_NAN</tt> (they
  * are Not a Number or NaN values).  To implement these we choose hexadecimal
  * representations and then provide static functions that return the equivalent
- * <tt>::REAL4</tt> or <tt>::REAL8</tt> values.  The macros then invoke these
+ * ::REAL4 or ::REAL8 values.  The macros then invoke these
  * functions.  This is done so that the compiler can easily inline the
  * functions (or eliminate them if they are not used).  Conversion from the
  * hexadecimal representation to the floating-point representation is done
@@ -141,7 +141,7 @@ extern "C" {
  *
  * The LAL specification requires particular return code and error values.
  * These are implemented here as enumeration constants in the
- * <tt>::XLALErrorValue</tt> enumeration.
+ * ::XLALErrorValue enumeration.
  */
 /** @{ */
 

@@ -90,8 +90,8 @@ extern "C"
 #define XLAL_JD_TO_MJD(jd) ((jd) - XLAL_MJD_REF) /**< Modified Julian Day for specified civil time structure. */
 
 /**
- * This structure stores pointers to a ::LALDetector and a
- * ::LIGOTimeGPS. Its sole purpose is to aggregate these
+ * This structure stores pointers to a \c LALDetector and a
+ * \c LIGOTimeGPS. Its sole purpose is to aggregate these
  * structures for passing to functions.
  */
 #ifdef SWIG /* SWIG interface directives */

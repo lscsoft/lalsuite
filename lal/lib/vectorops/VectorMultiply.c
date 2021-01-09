@@ -29,8 +29,8 @@
  * \brief Multiply two vectors.
  *
  * Let \c u, \c v, and \c w be objects of type
- * ::COMPLEX8Vector, and let \c a, \c b, and \c c be
- * objects of type ::REAL4Vector.
+ * \c COMPLEX8Vector, and let \c a, \c b, and \c c be
+ * objects of type \c REAL4Vector.
  *
  * The \ref LALCCVectorMultiply "LALCCVectorMultiply( &status, &w, &u, &v )" function computes:<br>
  * <tt>w.data[i]= u.data[i] x v.data[i]</tt>

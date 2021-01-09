@@ -22,12 +22,12 @@
 
 /**
  * \ingroup LALInspiralBank_h
- * \brief A routine that fills an \c ::InspiralTemplate structure based on the values in the \c ::InspiralCoarseBankIn structure.
+ * \brief A routine that fills an \c InspiralTemplate structure based on the values in the \c InspiralCoarseBankIn structure.
  * \author Churches, D. K and Sathyaprakash, B.S.
  *
  * This function takes as an input a structure of type
- * \c ::InspiralCoarseBankIn and it fills up the
- * elements of a structure of type \c ::InspiralTemplate.
+ * \c InspiralCoarseBankIn and it fills up the
+ * elements of a structure of type \c InspiralTemplate.
  * The function sets the fields
  * \c massChoice, \c ieta, \c signalAmplitude,
  * \c tSampling, \c fLower, \c fCutoff,

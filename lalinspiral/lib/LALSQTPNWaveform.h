@@ -127,7 +127,7 @@ typedef struct tagLALSQTPNWaveformParams{
 } LALSQTPNWaveformParams;
 
 /**
- * The function fills the #LALSQTPNCoefficients structure with the needed
+ * The function fills the \c LALSQTPNCoefficients structure with the needed
  * coefficients for calculating the derived dynamic variables with the XLALSQTPNDerivator() function.
  *
  * The orders above 2PN are incomplete, so use them if you want to try their

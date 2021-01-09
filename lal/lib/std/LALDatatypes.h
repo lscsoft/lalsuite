@@ -465,7 +465,7 @@ typedef struct tagLIGOTimeGPS {
 
 /**
  * Indices of arrays corresponding to particular units.
- * The ::LALUnit structure has arrays giving the numerators
+ * The \c LALUnit structure has arrays giving the numerators
  * and denominators-minus-one of the powers of various units.
  * These are the indices for the particular units.
  */

@@ -698,7 +698,7 @@ int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
   REAL8 distance,                      /**< Luminosity distance (m) */
   REAL8 phiRef,                        /**< Orbital phase at fRef (rad) */
   REAL8 fRef_In,                       /**< Reference frequency (Hz) */
-  LALDict *lalParams
+  LALDict *lalParams                   /**< UNDOCUMENTED */
 )
 {
 

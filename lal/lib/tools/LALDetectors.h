@@ -58,7 +58,7 @@ extern "C" {
  * \ .
  * \f}
  *
- * This header defines a \c ::LALFrDetector structure which contains
+ * This header defines a \c LALFrDetector structure which contains
  * essentially the same information as the \c FrDetector structure,
  * as well as a \c LALDetector structure which contains the
  * Cartesian coördinates of the detector along with the components of

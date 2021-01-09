@@ -139,7 +139,7 @@ typedef struct tagPulsarCandidate {
  * \note this type is obsolete and should no longer be used,
  * however, it's too entrenched in LALGeneratePulsarSignal() et al, and codes using it,
  * so we can't easily get rid of it and keep it for now....
- * \deprecated Use #PulsarParams instead.
+ * \deprecated Use \c PulsarParams instead.
  */
 typedef struct tagPulsarSourceParams {
    LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */

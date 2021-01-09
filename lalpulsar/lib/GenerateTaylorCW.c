@@ -37,7 +37,7 @@
  * <tt>*params</tt>, storing the result in <tt>*output</tt>.
  *
  * In the <tt>*params</tt> structure, the routine uses all the "input"
- * fields specified in ::TaylorCWParamStruc, and sets all of the
+ * fields specified in \c TaylorCWParamStruc, and sets all of the
  * "output" fields.  If <tt>params->f=NULL</tt>, a precisely periodic
  * (monochromatic) waveform is generated.
  *

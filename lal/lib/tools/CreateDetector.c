@@ -198,10 +198,10 @@
  * <li> The conventions in the \c LALFrDetector structure are based
  * on version 6 of the frame specification \cite LIGOVIRGO_2000 .</li>
  * <li> If the location and response tensor information for a
- * \c ::LALDetector are filled in by hand (e.g., for testing
+ * \c LALDetector are filled in by hand (e.g., for testing
  * purposes), the \c type field should be set to
- * \c #LALDETECTORTYPE_ABSENT.</li>
- * <li> The range of \c ::LALDetectorType could be expanded to
+ * #LALDETECTORTYPE_ABSENT.</li>
+ * <li> The range of \c LALDetectorType could be expanded to
  * include the  monopole and five quadrupole modes for a spherical
  * resonant detector
  * \cite Maggiore2000b , \cite Zhou_1995 , \cite Bianchi_1998 , \cite Maggiore2000a .</li>

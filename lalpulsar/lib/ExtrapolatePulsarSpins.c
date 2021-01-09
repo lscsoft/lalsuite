@@ -63,7 +63,7 @@
 /*---------- main functions ---------- */
 
 /**
- * Initialise a #PulsarSpinRange struct from two #PulsarSpins structs
+ * Initialise a \c PulsarSpinRange struct from two ::PulsarSpins structs
  */
 int XLALInitPulsarSpinRangeFromSpins ( PulsarSpinRange *range,		/**< [out] output spin range */
                                        const LIGOTimeGPS *refTime,	/**< [in] reference time */

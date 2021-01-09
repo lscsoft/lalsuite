@@ -18,10 +18,10 @@
 */
 /**
  * @addtogroup LALFrStreamRead_c
- * @brief Provides routines for reading data from a #LALFrStream.
+ * @brief Provides routines for reading data from a \c LALFrStream.
  * @details
  * The routines described below perform either random-access or sequential
- * reading of time-series or frequency-series data from #LALFrStream streams.
+ * reading of time-series or frequency-series data from \c LALFrStream streams.
  * @{
  */
 
@@ -39,7 +39,7 @@
  * @brief Returns the number of data points in channel @p chname in the
  * current frame in frame stream @p stream.
  * @param chname String containing the name of the channel.
- * @param stream Pointer to a #LALFrStream structure.
+ * @param stream Pointer to a \c LALFrStream structure.
  * @returns The length of the data vector of the channel in the current frame.
  * @retval -1 Failure.
  */
@@ -52,8 +52,8 @@ int XLALFrStreamGetVectorLength(const char *chname, LALFrStream * stream)
  * @brief Returns the type code for the data type of channel @p chname in the
  * current frame in frame stream @p stream.
  * @param chname String containing the name of the channel.
- * @param stream Pointer to a #LALFrStream structure.
- * @returns The #LALTYPECODE value of the data type of the channel.
+ * @param stream Pointer to a \c LALFrStream structure.
+ * @returns The \c LALTYPECODE value of the data type of the channel.
  * @retval LAL_CHAR_TYPE_CODE Channel is an array of type char.
  * @retval LAL_I2_TYPE_CODE Channel is an array of type int16_t.
  * @retval LAL_I4_TYPE_CODE Channel is an array of type int32_t.
@@ -207,14 +207,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn INT2TimeSeries *XLALFrStreamReadINT2TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -225,14 +225,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn INT4TimeSeries *XLALFrStreamReadINT4TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -243,14 +243,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn INT8TimeSeries *XLALFrStreamReadINT8TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -261,14 +261,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn REAL8TimeSeries *XLALFrStreamReadREAL8TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -279,14 +279,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn UINT2TimeSeries *XLALFrStreamReadUINT2TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -297,14 +297,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn UINT4TimeSeries *XLALFrStreamReadUINT4TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -315,14 +315,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn UINT8TimeSeries *XLALFrStreamReadUINT8TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -333,14 +333,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn REAL4TimeSeries *XLALFrStreamReadREAL4TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -351,14 +351,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn REAL8TimeSeries *XLALFrStreamReadREAL8TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -369,14 +369,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn COMPLEX8TimeSeries *XLALFrStreamReadCOMPLEX8TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -387,14 +387,14 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
 
 /**
  * @fn COMPLEX16TimeSeries *XLALFrStreamReadCOMPLEX16TimeSeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * start, double duration, size_t lengthlimit)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -404,15 +404,15 @@ LALTYPECODE XLALFrStreamGetTimeSeriesType(const char *chname, LALFrStream * stre
  */
 
 /**
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration, and performs any needed type conversion.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.  If the channel being read is not
  * REAL8, the data is converted to type REAL8.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -480,15 +480,15 @@ REAL8TimeSeries *XLALFrStreamInputREAL8TimeSeries(LALFrStream * stream,
 }
 
 /**
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified start time and duration, and performs any needed type conversion.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * beginning at a specified point in time and lasting a specified duration.
  * If there is a gap in the data, this routine skips to the next contiguous
  * set of data of the required duration.  If the channel being read is not
  * COMPLEX16, the data is converted to type COMPLEX16.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param start Pointer to a LIGOTimeGPS structure specifying the start time.
  * @param duration The duration of the data to read, in seconds.
@@ -591,12 +591,12 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
 
 /**
  * @fn REAL4FrequencySeries *XLALFrStreamReadREAL4FrequencySeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * epoch)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * contained in a frame spanning the specified epoch.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param epoch Pointer to a LIGOTimeGPS structure specifying epoch.
  * @returns Pointer to a new REAL4FrequencySeries containing the specified
@@ -606,12 +606,12 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
 
 /**
  * @fn REAL8FrequencySeries *XLALFrStreamReadREAL8FrequencySeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * epoch)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * contained in a frame spanning the specified epoch.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param epoch Pointer to a LIGOTimeGPS structure specifying epoch.
  * @returns Pointer to a new REAL8FrequencySeries containing the specified
@@ -621,12 +621,12 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
 
 /**
  * @fn COMPLEX8FrequencySeries *XLALFrStreamReadCOMPLEX8FrequencySeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * epoch)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * contained in a frame spanning the specified epoch.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param epoch Pointer to a LIGOTimeGPS structure specifying epoch.
  * @returns Pointer to a new COMPLEX8FrequencySeries containing the specified
@@ -636,12 +636,12 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
 
 /**
  * @fn COMPLEX16FrequencySeries *XLALFrStreamReadCOMPLEX16FrequencySeries(LALFrStream * stream, const char *chname, const LIGOTimeGPS * epoch)
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * contained in a frame spanning the specified epoch.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param epoch Pointer to a LIGOTimeGPS structure specifying epoch.
  * @returns Pointer to a new COMPLEX16FrequencySeries containing the specified
@@ -650,13 +650,13 @@ COMPLEX16TimeSeries *XLALFrStreamInputCOMPLEX16TimeSeries(LALFrStream *
  */
 
 /**
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch, and performs any needed type conversion.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * contained in a frame spanning the specified epoch.  If the channel being
  * read is not REAL8, the data is converted to type REAL8.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param epoch Pointer to a LIGOTimeGPS structure specifying epoch.
  * @returns Pointer to a new REAL8FrequencySeries containing the specified
@@ -695,13 +695,13 @@ REAL8FrequencySeries *XLALFrStreamInputREAL8FrequencySeries(LALFrStream *
 }
 
 /**
- * @brief Reads a time series channel from a #LALFrStream stream with a
+ * @brief Reads a time series channel from a \c LALFrStream stream with a
  * specified epoch, and performs any needed type conversion.
  * @details
- * This routine reads data from a specified channel from a #LALFrStream 
+ * This routine reads data from a specified channel from a \c LALFrStream 
  * contained in a frame spanning the specified epoch.  If the channel being
  * read is not COMPLEX16, the data is converted to type COMPLEX16.
- * @param stream Pointer to the #LALFrStream stream.
+ * @param stream Pointer to the \c LALFrStream stream.
  * @param chname String with the channel name to read.
  * @param epoch Pointer to a LIGOTimeGPS structure specifying epoch.
  * @returns Pointer to a new COMPLEX16FrequencySeries containing the specified
@@ -747,7 +747,7 @@ COMPLEX16FrequencySeries
  * @name Sequential Time Series Reading Routines
  *
  * These routines are useful for reading sequential blocks of data from
- * a #LALFrStream stream.  The following is an example of how to read
+ * a \c LALFrStream stream.  The following is an example of how to read
  * REAL8 data from channel `STRAIN` in 1 second blocks starting at the
  * beginning of a stream from frame files in the current directory.
  *
@@ -787,7 +787,7 @@ COMPLEX16FrequencySeries
 
 /**
  * @fn int XLALFrStreamGetINT2TimeSeries(INT2TimeSeries * series, LALFrStream * stream)
- * @brief Reads time series data from the current position in a #LALFrStream stream.
+ * @brief Reads time series data from the current position in a \c LALFrStream stream.
  * @details
  * This routine is provided a time series @p series that will be populated with
  * data read from @p stream.  The channel name of the data to be read is given
@@ -799,9 +799,9 @@ COMPLEX16FrequencySeries
  * channel data.  The data begins at the current position of the stream,
  * but if a gap is encountered, the stream skips forward until a gap-less
  * stretch of data that is long enough is found.  If this happens, the
- * #LAL_FR_STREAM_GAP flag is set on the LALFrStreamState state of the stream.
+ * ::LAL_FR_STREAM_GAP flag is set on the LALFrStreamState state of the stream.
  * @param[in, out] series Pointer to the time series containing the name of the channel to be read and an allocated sequence of the length of data to be read.
- * @param stream Pointer to a #LALFrStream stream.
+ * @param stream Pointer to a \c LALFrStream stream.
  * @retval 0 Success.
  * @retval <0 Read error or end of stream encountered.
  */
@@ -853,7 +853,7 @@ COMPLEX16FrequencySeries
 
 /**
  * @fn int XLALFrStreamGetINT2TimeSeriesMetadata(INT2TimeSeries * series, LALFrStream * stream)
- * @brief Reads time series metadata from the current position in a #LALFrStream stream.
+ * @brief Reads time series metadata from the current position in a \c LALFrStream stream.
  * @details
  * This routine is provided a time series @p series that will be populated with
  * metadata read from @p stream.  The metadata is associated with the channel
@@ -861,7 +861,7 @@ COMPLEX16FrequencySeries
  * quantities in @p stream are populated: `stream->epoch`, `stream->deltaT`,
  * `stream->sampleUnits`.  No data is actually read by this routine.
  * @param[in, out] series Pointer to the time series containing the name of the channel to be read and an allocated sequence of the length of data to be read.
- * @param stream Pointer to a #LALFrStream stream.
+ * @param stream Pointer to a \c LALFrStream stream.
  * @retval 0 Success.
  * @retval <0 Failure.
  */
@@ -917,7 +917,7 @@ COMPLEX16FrequencySeries
  * @name Sequential Frequency Series Reading Routines
  *
  * These routines are useful for reading sequential blocks of data from
- * a #LALFrStream stream.  The following is an example of how to read
+ * a \c LALFrStream stream.  The following is an example of how to read
  * REAL8 data from channel `STRAIN_PSD` in from each frame starting at the
  * beginning of a stream from frame files in the current directory.
  *
@@ -950,7 +950,7 @@ COMPLEX16FrequencySeries
 
 /**
  * @fn int XLALFrStreamGetREAL4FrequencySeries(REAL4FrequencySeries * series, LALFrStream * stream);
- * @brief Reads frequency series data from the current frame in a #LALFrStream
+ * @brief Reads frequency series data from the current frame in a \c LALFrStream
  * stream.
  * @details
  * This routine is provided a frequency series @p series that will be populated 
@@ -966,7 +966,7 @@ COMPLEX16FrequencySeries
  *
  * @param[in,out] series Pointer to the frequency series containing the name
  * of the channel to be read.
- * @param stream Pointer to a #LALFrStream stream.
+ * @param stream Pointer to a \c LALFrStream stream.
  *
  * @retval 0 Success.
  * @retval <0 Failure.

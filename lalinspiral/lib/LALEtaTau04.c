@@ -49,7 +49,7 @@
  * ### Notes ###
  *
  * The <tt>void pointer</tt> <tt>*p</tt> should point to a \c struct
- * of type ::EtaTau04In
+ * of type \c EtaTau04In
  * \code
  * {
  * void *p;
