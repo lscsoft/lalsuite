@@ -1,0 +1,836 @@
+# Copyright (C) 2019--2023 Benjamin Grace
+#
+# This program is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License as published by the
+# Free Software Foundation; either version 2 of the License, or (at your
+# option) any later version.
+#
+# This program is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General
+# Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+from . import MOLSforGTE as mols
+from . import BasisFunctions as bf
+from . import SemicoherentMetricMethods as scmm
+from . import GTEandOtherMethods as gom
+from . import MyErrors
+
+import numpy as np
+import ast
+import copy
+import os.path
+import logging
+
+knotarchivefile = None
+def setknotarchivepath(path):
+    global knotarchivefile
+    knotarchivefile = os.path.join(path, "KnotArchive")
+
+# In this notebook we aim to construct a list of knots which gives the maximum allowed spacing between them while
+# maintining the desired accuracy. In this notebook, we use the function, max(|f_GTE(t) - F_PP(t)|) - Delta f_i0,
+# to choose the spacing of our knots. The Delta f_i0 is the spacing between the frequency parameter given by the
+# metric, it is equal to sqrt(mu/g_ii). Ideally, we wish for the maximum difference between our piecewise model and
+# the GTE to be minimised and smaller than the spacing of our frequency parameters. When finding the maximum
+# difference between the GTE and our model, max(|f_GTE(t) - F_PP(t)|), we maximise over the value t which falls into
+# some interval [p_i, p_i+1]. If we make interval sizes small the difference will go to zero, however this would
+# dramatically increase the number of intervals we need, and hence most likely increase the template bank size.
+# However, if we make them too large the error becomes greater than our parameter spacing. As such, we wish to
+# find the values [p_i, p_i+1] such that the given function above is zero. This is the longest we can make a segment
+# before the error becomes greater than our parameter spacing. We start by assuming p_0 = 0 and then inductively
+# calculate all of the following knots.
+
+# Working in this notebook it is important that the knots function, p(i, ints, dur) in the BasisFunctions file is
+# written correctly. See that file for how it should be defined when using this file. As well as this, this notebook
+# requires methods written in the MOLSforGTE, BasisFunctions and SemicoherentMetricMethods files, all of which rely
+# on the p(i, ints, dur) method. This can be a problem, as for the methods in this notebook to work, p(i, ints,
+# dur) should simply extract an element from a 'knots list' that we build inductively in this notebook. Hence,
+# using the knots generated in this notebook can at times be tricky. The recommendation for using knots built by this
+# file is to either run this file for given model parameter and then use the output as the knots by copying and
+# pasting the output into the BasisFunctions file to be used as all knots, or in the notebook you wish to run, run
+# the GlobalVariableDeclarations notebook which initialises our knot list (by importing this notebook and using the
+# methods below) and then import the GlobalVariableDeclarations notebook into the notebook you wish to run. As an
+# example, if you want to run notebook A which requires knots, import the GlobalVariableDeclarations notebook into A,
+# making sure that in the GlobalVariableDecalartions notebook the knots list is initialised with one of the methods
+# here.
+#
+# Knots generated in this notebook are saved to the KnotArchive text file.
+
+# Another word of caution, some methods in this notebook are outdated, being replaced by more efficient methods later
+# in the notebook. These methods typically run much slower than those which they are replaced by. Further more, many of
+# these methods do not make use of the KnotArchive file which stores all generated values of knots. I have tried to
+# note these outdated methods were appropriate and add an explanation to why they have been rewritten further in the
+# notebook. They are kept in this notebook however for completeness and a reference in case they are needed in the
+# future
+
+# When using this notebook be sure to check that the method p and the knotslist parameter in the BasisFunctions notebook
+# are defined correctly or are being properly updated.
+
+# List that we append the maximum parameter spacing for each segment we build knots for in this notebook. Kept only for
+# inspection, not used in any methods except for printing.
+parameterspacings = []
+
+# Returns the parameter spacing associated with the zeroth derivative at the lth knot. Note, if the knotslist variable
+# in the BasisFunctions is never updated, then this method will only work for l = 0
+def metricelementspacingonl(l, coeffs, mu):
+
+    metvalue = scmm.metricelementonl(l, l, l, 1, 1, 0, 0, coeffs)
+
+    stepsize = np.sqrt(mu / metvalue)
+
+    return stepsize
+
+# Returns the values of the function, max(|f_GTE(t) - F_PP(t)| - Delta f_i0, for different possible interval lengths.
+# the output is in the form [Value list, associated values of functions], can be used for plotting and having an
+# intuitive idea of where the root of the function may be located. Value list gives the values of that function for
+# times between durmin and durmax. This method will only work for values of l which correspond to knot values that are
+# present in the knotslist variable in the BasisFunctions notebook.
+#
+# Note, this method is not used for generating knots, it is primarily used for plotting.
+def differencebetweenerrorandmetric(l, s, durmin, durmax, steps, f0, ngte, kgte, mu):
+    errorlists = []
+    paramspacinglist = []
+
+    segmentend = copy.copy(bf.knotslist[l + 1])
+
+    durlist = np.linspace(durmin, durmax, steps)
+
+    for dur in durlist:
+
+        bf.knotslist[l + 1] = dur
+        basiscoeffs = bf.allcoeffs(s)
+
+        modelparams = mols.solsbyint(mols.solsbetweenknots(l, l + 1, basiscoeffs, 60, s, f0, ngte, kgte, conditioning=True), s)
+
+        paramspacinglist.append(metricelementspacingonl(l, basiscoeffs, mu))
+
+        suberrorlist = []
+
+        for t in np.linspace(durmin, dur, steps):
+
+            suberrorlist.append(mols.errorvalueatpoint(t, basiscoeffs, modelparams, f0, ngte, kgte))
+
+        errorlists.append(suberrorlist)
+
+    allvals = []
+
+    for i, dur in enumerate(durlist):
+        allvals.append(np.max(errorlists[i]) - paramspacinglist[i])
+
+    bf.knotslist[l + 1] = segmentend
+
+    return [durlist, allvals]
+
+# Testing of the above methods
+"""
+durmax = 150
+f0 = 2000
+ngte = 7
+kgte = gom.kforGWsource()
+mu = 0.2
+s = 3
+
+bf.knotslist = [0, 3600]    #For the below method to work, the knotslist just needs to be long enough to avoid an index out of range error. So it needs to have more knots than the 'l' parameter, values can be arbitrary
+points = differencebetweenerrorandmetric(0, s, 0, durmax, 40, f0, ngte, kgte, mu)
+logging.debug(points)
+plt.plot(points[0], points[1], label="diff")
+plt.plot([0, durmax], [0, 0])
+plt.legend()
+plt.xlabel("p1")
+plt.show()
+"""
+
+# This method is an outdated method, replaced later in this notebook. Chronologiclly this was replaced first by the
+# knotatleff method and then finally by the knotatleffusinggivenknotlist method. No other methods in this notebook use
+# this method.
+#
+# Calcualtes the time (and hence knot) at which the function, max(|f_GTE(t) - F_PP(t)| - Delta f_i0 is zero. This is
+# achieved by sampling all times t between durmin and durmax and seeing if the appropriate value of that function is
+# within a given tolerance of zero. If not, we reuse this method with an extended duration of durmax to 2 * durmax. This
+# has the obvious flaw that if the correct knot value is below durmin, then this method will not be able to find it.
+# Because this method does not make use of faster algorithms, such as the bisection method which we use later on, it
+# runs very slowly.
+def knotatl(l, s, durmin, durmax, steps, f0, ngte, kgte, mu):
+    errorlists = []
+    paramspacinglist = []
+
+    durlist = np.linspace(durmin, durmax, steps)
+
+    for dur in durlist:
+        basiscoeffs = bf.allcoeffs(s)
+        modelparams = mols.solsbyint(mols.sols(basiscoeffs, 20, s, f0, ngte, kgte), s)
+        paramspacinglist.append(metricelementspacingonl(l, basiscoeffs, mu))
+
+        suberrorlist = []
+
+        for t in np.linspace(durmin, dur, steps):
+            suberrorlist.append(mols.errorvalueatpoint(t, basiscoeffs, modelparams, f0, ngte, kgte))
+        errorlists.append(suberrorlist)
+
+    for i, dur in enumerate(durlist):
+
+        if np.max(errorlists[i]) - paramspacinglist[i] > 0:
+            return dur
+
+    logging.debug("No root found for specified duration, increasing duration span")
+    return knotatl(l, s, durmax, 2 * durmax, steps, f0, ngte, kgte)
+
+# Adds a knot to the archive if knotnum is the correct value for the list of knots already in the KnotArchive. Although
+# this method functions correctly, it is not used by any other methods in this notebook. It is kept none the less.
+def addknottoarchive(f0, nmax, kmax, knotnum, s, knotval, mu):
+    spindownspecifications = [f0, nmax, kmax, s, mu]
+
+    knotarchive = open(knotarchivefile, "r")
+    alllines = knotarchive.readlines()
+    knotarchive.close()
+
+    for i, line in enumerate(alllines):
+        thisline = ast.literal_eval(line)
+
+        if thisline[0] == spindownspecifications:
+            logging.debug("Length and knotnum")
+            logging.debug(len(thisline[1]))
+            logging.debug(knotnum)
+            if len(thisline[1]) == knotnum:
+                thisline[1].append(knotval)
+
+                updatedline = str(thisline) + "\n"
+                alllines[i] = updatedline
+
+                knotarchive = open(knotarchivefile, "w")
+                knotarchive.write(str(alllines))
+                knotarchive.close()
+
+                break
+            else:
+                logging.debug("Knotnum given is not the correct value for the next knot.")
+                return None
+
+    if knotnum != 0:
+        logging.debug("No knots calculated for this spin down scenario but given knotnum is not zero.")
+        return None
+
+    newline = [spindownspecifications, [0, knotval]]
+
+    knotarchive = open(knotarchivefile, "a")
+
+    knotarchive.write(str(newline) + "\n")
+    knotarchive.close()
+
+    return None
+
+# This method is not used in our finalised knot generating method. It is however used in the buildcompleteknotlist
+# method. It was kept because the buildcompelteknotlist method (and this method) do not read or write to any files.
+# As such, if we want to do some experimentation with how we build our knots but not interfere and risk altering our
+# library of knots we can use these methods instead.
+#
+#
+# The same as the knotatl method but now done more efficiently by using a bisection method. Instead of sampling all
+# possible times/knots, we instead sample two possible durations, negdur and posdur. These knots should be chosen
+# such that negdur results in the function, max(|f_GTE(t) - F_PP(t)| - Delta f_i0, being negative and posdur such
+# that it is positive. We then select a time inbetween these two possible choices and calculated that function value.
+# If the value is within a given tolerance of zero we return that time as the new knot value. If not, we recursively use
+# this method by replacing negdur or posdur with this 'inbetween time' in accordance with the bisection method until we
+# find a time that is close enough to zero for us to be confident we can use that as the new knot value. This method
+# has a maximum recursion depth of 10.
+#
+# This method is somewhat sensitive to the initial choices of negdur and posdur. The checkfirst parameter is used
+# such that negdur and posdur have appropriate values. We must check that negdur and posdur result in negative and
+# positive values of the diff function respectively. In certain cases the ill-conditionedness of the basis functions
+# we calculate also influences our results. We check for this too in certain cases.
+#
+# The checkfirst value should always be used when knotatleff is first called and set to True. Once this check has
+# initially been cleared we do not need to check the negdur and posdur values again.
+#
+# In this method we refer to a boolean value fullMOLS, it is defined below.
+def knotatleff(l, s, negdur, posdur, steps, f0, ngte, kgte, mu, checkfirst=False, recursiondepth=0, ps=None, negcounter=0):
+    # logging.debug("Current recursion depth: " + str(counter))
+
+    knotnuma = len(bf.knotslist) - 1
+    knotnumb = knotnuma + 1
+
+    # As negdur is a candidate knot, it should be greater than the last knot we currently have in bf.knotslist.
+    if bf.knotslist[l] >= negdur:
+        logging.debug("negdur parameter not within appropriate range, adjusting with larger value")
+        logging.debug("negdur = " + str(negdur) + ", previous knot = " + str(bf.knotslist[l]))
+        return knotatleff(l, s, bf.knotslist[l] + 1, posdur, steps, f0, ngte, kgte, mu, True, ps=ps)
+
+    if checkfirst:
+        bf.knotslist.append(negdur)
+        basiscoeffsneg = bf.allcoeffs(s)
+
+        # Can't remember why but this sometimes throws a TypeError. I suspect it probably happens when negdur is too
+        # large and the sample points in the SamplingMethods notebook are chosen poorly. Corrected for by using a
+        # smaller negdur value. Don't ever remember seeing this error for the posdur parameter though
+        try:
+            #logging.debug("Prev knot: " + str(ps))
+            if fullMOLS:
+                modelparamsneg = mols.solsbyint(mols.sols(basiscoeffsneg, 20, s, f0, ngte, kgte), s)
+            else:
+                modelparamsneg = mols.solsbyint(mols.solsbetweenknots(knotnuma, knotnumb, basiscoeffsneg, 20, s, f0, ngte, kgte), s)
+        except TypeError as error:
+            logging.debug(error)
+            logging.debug("Reducing negdur duration")
+            diff = negdur - ps
+            bf.knotslist.pop()
+            return knotatleff(l, s, ps + diff / 10, posdur, steps, f0, ngte, kgte, mu, True, 0, ps=ps)
+
+        # Calculating the diff function value for negdur and posdur
+        paramspacingneg = metricelementspacingonl(l, basiscoeffsneg, mu)
+
+        errorlistneg = []
+
+        for t in np.linspace(bf.knotslist[-1], negdur, steps):
+            errorlistneg.append(mols.errorvalueatpoint(t, basiscoeffsneg, modelparamsneg, f0, ngte, kgte))
+
+        bf.knotslist.pop()
+
+        bf.knotslist.append(posdur)
+        basiscoeffspos = bf.allcoeffs(s)
+        if fullMOLS:
+            modelparamspos = mols.solsbyint(mols.sols(basiscoeffspos, 20, s, f0, ngte, kgte), s)
+        else:
+            modelparamspos = mols.solsbyint(mols.solsbetweenknots(knotnuma, knotnumb, basiscoeffspos, 20, s, f0, ngte, kgte), s)
+
+        paramspacingpos = metricelementspacingonl(l, basiscoeffspos, mu)
+
+        errorlistpos = []
+
+        for t in np.linspace(bf.knotslist[-1], posdur, steps):
+            errorlistpos.append(mols.errorvalueatpoint(t, basiscoeffspos, modelparamspos, f0, ngte, kgte))
+
+        bf.knotslist.pop()
+
+        maxerrorneg = np.max(errorlistneg)
+        maxerrorpos = np.max(errorlistpos)
+        """
+        logging.debug("Neg and pos durs: " + str([negdur, posdur]))
+        logging.debug("Max errors: " + str([maxerrorneg, maxerrorpos]))
+        logging.debug("Metric values: " + str([paramspacingneg, paramspacingpos]))
+        logging.debug()
+        """
+        diffvalneg = maxerrorneg - paramspacingneg
+        diffvalpos = maxerrorpos - paramspacingpos
+
+        # Checking if posdur and negdur have the appropriate signs for the bisection method and readjusting if not
+        if not (diffvalneg < 0 and diffvalpos > 0):
+            #logging.debug("Diff vals are: " + str([diffvalneg, diffvalpos]))
+            if diffvalpos < 0:
+                #logging.debug("Negative pos val")
+                diff = posdur - ps
+                return knotatleff(l, s, negdur, ps + 2 * diff, steps, f0, ngte, kgte, mu, True, ps=ps)
+            if diffvalneg > 0:
+                #logging.debug("Positive neg val")
+                diff = negdur - ps
+
+                return knotatleff(l, s, ps + diff / 10, posdur, steps, f0, ngte, kgte, mu, True, ps=ps,
+                                  negcounter=negcounter + 1)
+
+    # Calculating the diff function value for the time between negdur and posdur
+    halfdur = (posdur + negdur) / 2
+    bf.knotslist.append(halfdur)
+    basiscoeffs = bf.allcoeffs(s)
+    if fullMOLS:
+        modelparams= mols.solsbyint(mols.sols(basiscoeffs, 20, s, f0, ngte, kgte), s)
+    else:
+        modelparams = mols.solsbyint(mols.solsbetweenknots(knotnuma, knotnumb, basiscoeffs, 20, s, f0, ngte, kgte), s)
+    paramspacing = metricelementspacingonl(l, basiscoeffs, mu)
+
+    errorlist = []
+
+    for t in np.linspace(bf.knotslist[-1], halfdur, steps):
+        errorlist.append(mols.errorvalueatpoint(t, basiscoeffs, modelparams, f0, ngte, kgte))
+
+    bf.knotslist.pop()
+
+    maxerror = np.max(errorlist)
+
+    diffval = maxerror - paramspacing
+
+    # Either return halfdur as our new knot value or recursing
+    if -2 ** -10 < diffval <= 0:
+        parameterspacings.append(paramspacing)
+        return halfdur
+    elif recursiondepth > 10:
+        logging.debug("Recursion depth of 10 reached, terminating and returning current knot value")
+        logging.debug("Function value for this knot is " + str(diffval))
+        parameterspacings.append(paramspacing)
+        return halfdur
+    else:
+        if diffval < 0:
+            return knotatleff(l, s, halfdur, posdur, steps, f0, ngte, kgte, mu, False, recursiondepth + 1)
+        elif diffval > 0:
+            return knotatleff(l, s, negdur, halfdur, steps, f0, ngte, kgte, mu, False, recursiondepth + 1)
+
+# This method is not our finalised knot generating method. It is however useful because it does not read or write to
+# any files. As such, if we want to do some experimentation with how we build our knots but not interfere and risk
+# altering our library of knots we can use this methods instead. The finalised knot generating method which does
+# read and write to files as well as uses the most efficient methods is the allidealisedknots method.
+#
+#
+# Builds the knots by the specifications we have described in this file.  The steps parameter specifies how finely we
+# take values of the difference |f_GTE(t) - f_PP(t)| so we can find its maximum. Good results are typically achieved
+# when steps >~20, however coming at the cost of extra computational expense. Note, this method calls the knotatleff
+# method which is very sensitive to its initial input values! The initial values used below for that particular
+# method's initial input have been chosen to try and reduce the risk of any unwanted behaviour (typically infinite
+# recursion if something is chosen poorly or ill-conditionedness in our basis functions), while still trying to
+# remain computationally efficient. Exceptions are used to try to catch these cases
+def buildcompleteknotlist(s, dur, steps, f0, ngte, kgte, mu):
+    bf.knotslist = [0.]
+    newknots = [0.]
+
+    i = 0
+    while newknots[-1] < dur:
+
+        ps = newknots[i]
+
+        # For plotting the diff function as we go. Good for doing a sanity check of the calculating knot values
+        """
+        logging.debug(newknots)
+        points = differencebetweenerrorandmetric(i, kgte, i + 1, ps + 0.1,  ps + 30, 50)
+        plt.plot(points[0], points[1], label="diff")
+        plt.plot([ps, ps + 30], [0, 0])
+        plt.legend()
+        plt.xlabel("p" + str(i))
+        plt.show()
+        """
+        # The variable negdurincrement is added to help reduce computational cost of finding new knots. As each
+        # consecutive segment is longer than the last, it makes sense that we should update the initial negdur and
+        # posdur values to get further and further out. Thus, every time a new knot is generated we increase their
+        # relative values to help speed up the method.
+        if ps == 0:
+            negdurincrement = 1
+            while True:
+                try:
+                    newknot = knotatleff(i, s, negdurincrement, 10 * negdurincrement, steps, f0, ngte, kgte, mu, True, ps=ps)
+                    break
+                except MyErrors.TooManyNegdurReductions:
+                    print("An exception yo")
+                    negdurincrement *= 10
+        else:
+            negdurincrement = 0
+            while True:
+                ordmag = np.floor(np.log10(ps)) + negdurincrement
+                try:
+                    newknot = knotatleff(i, s, ps + 10 ** ordmag, ps + 10 ** (ordmag + 0.5), steps, f0, ngte, kgte, mu, True,
+                                         ps=ps)
+                    break
+                except MyErrors.TooManyNegdurReductions:
+                    print("Another exception bro")
+                    negdurincrement += 0.5
+
+        logging.debug("Knotnum " + str(i) + ": " + str(newknot))
+
+        newknots.append(newknot)
+        bf.knotslist = newknots
+        i += 1
+
+    #logging.debug("Maximum difference between model and GTE for each segment is")
+    #logging.debug(parameterspacings)
+    return newknots
+
+# Same as the knotatleff method but instead of refering to the bf.knotslist parameter we instead include this list of
+# previous knots as the parameter knotslist. The motivation behind this is that previous methods used to generate
+# knots had to start from an initial knot p_0 = 0. This was inconvenient if we instead wanted to calculate p_100 and
+# had already calculated p_99. Instead we carry all generated knots as a parameter in this function. We of course do
+# not need to carry the entire knot list for the model specifications, only the last knot in that list,
+# but we do this anyway.
+#
+# The logic in this method is identical to that of the knotatleff method with only the addition of the knotslist
+# parameter. Read that method's description for more details about the process of this method. This method has
+# a maximum recursion depth of 10.
+#
+# The fullMOLS parameter allows us to decide when considering the worse case scenario whether we want to consider the
+# accuracy of the entire MOLS solution or just the MOLS solution which belongs to the segment we are currently trying
+# to determine the knot for. Typically, if we consider the MOLS solution for the full signal, the knots are spread
+# further apart.
+fullMOLS = True
+def knotatleffusinggivenknotlist(l, s, negdur, posdur, steps, f0, ngte, kgte, knotslist, mu, checkfirst=False, counter=0,
+                                 ps=None, negcounter=0, prevdiffvalneg=np.inf):
+    # logging.debug("Current recursion depth: " + str(counter))
+
+    knotnuma = len(knotslist) - 1
+    knotnumb = knotnuma + 1
+
+    # As negdur is a candidate knot, it should be greater than the last knot we currently have in bf.knotslist.
+    bf.knotslist = knotslist
+    if knotslist[l] >= negdur:
+        logging.debug("negdur parameter not within appropriate range, adjusting with larger value")
+        logging.debug("negdur = " + str(negdur) + ", previous knot = " + str(knotslist[l]))
+        return knotatleffusinggivenknotlist(l, s, knotslist[l] + 1, posdur, steps, f0, ngte, kgte, knotslist, mu, True, ps=ps)
+
+    if checkfirst:
+        bf.knotslist.append(negdur)
+        basiscoeffsneg = bf.allcoeffs(s)
+
+        # Can't remember why but this sometimes throws a TypeError. I suspect it probably happens when negdur is too
+        # large and the sample points in the SamplingMethods notebook are chosen poorly. Corrected for by using a
+        # smaller negdur value. Don't ever remember seeing this error for the posdur parameter though
+        try:
+            if fullMOLS:
+                modelparamsneg = mols.solsbyint(mols.sols(basiscoeffsneg, 20, s, f0, ngte, kgte), s)
+            else:
+                modelparamsneg = mols.solsbyint(mols.solsbetweenknots(knotnuma, knotnumb, basiscoeffsneg, 20, s, f0, ngte, kgte), s)
+        except TypeError as error:
+            logging.debug(error)
+            logging.debug("Reducing negdur duration")
+            bf.knotslist.pop()
+            diff = negdur - ps
+            return knotatleffusinggivenknotlist(l, s, ps + diff / 10, posdur, steps, f0, ngte, kgte, knotslist, mu, True, 0, ps=ps)
+
+        # Calculating the diff function value for negdur and posdur
+        paramspacingneg = metricelementspacingonl(l, basiscoeffsneg, mu)
+
+        errorlistneg = []
+
+        for t in np.linspace(knotslist[-1], negdur, steps):
+            errorlistneg.append(mols.errorvalueatpoint(t, basiscoeffsneg, modelparamsneg, f0, ngte, kgte))
+
+        bf.knotslist.pop()
+
+        bf.knotslist.append(posdur)
+        basiscoeffspos = bf.allcoeffs(s)
+
+        if fullMOLS:
+            modelparamspos = mols.solsbyint(mols.sols(basiscoeffspos, 20, s, f0, ngte, kgte), s)
+        else:
+            modelparamspos = mols.solsbyint(mols.solsbetweenknots(knotnuma, knotnumb, basiscoeffspos, 20, s, f0, ngte, kgte), s)
+
+        paramspacingpos = metricelementspacingonl(l, basiscoeffspos, mu)
+
+        errorlistpos = []
+
+        for t in np.linspace(knotslist[-1], posdur, steps):
+            errorlistpos.append(mols.errorvalueatpoint(t, basiscoeffspos, modelparamspos, f0, ngte, kgte))
+
+        bf.knotslist.pop()
+
+        maxerrorneg = np.max(errorlistneg)
+        maxerrorpos = np.max(errorlistpos)
+
+        diffvalneg = maxerrorneg - paramspacingneg
+        diffvalpos = maxerrorpos - paramspacingpos
+
+        # Checking if posdur and negdur have the appropriate signs for the bisection method and readjusting if not
+        if not (diffvalneg < 0 and diffvalpos > 0):
+            if diffvalpos < 0:
+                diff = posdur - ps
+                return knotatleffusinggivenknotlist(l, s, negdur, ps + 2 * diff, steps, f0, ngte, kgte, knotslist, mu, True,
+                                                    ps=ps, prevdiffvalneg=diffvalneg)
+            if diffvalneg > 0:
+                diff = negdur - ps
+
+                if diffvalneg > prevdiffvalneg:
+                    return knotatleffusinggivenknotlist(l, s, ps + 2 * diff, posdur, steps, f0, ngte, kgte, knotslist, mu,
+                                                        True, ps=ps, negcounter=negcounter + 1, prevdiffvalneg=diffvalneg)
+
+                # if negcounter > 5 or (diff/10) < 1:
+                #    logging.debug("Too many negdur reductions")
+                #    logging.debug()
+                #    raise MyErrors.TooManyNegdurReductions
+
+                return knotatleffusinggivenknotlist(l, s, ps + diff / 10, posdur, steps, f0, ngte, kgte, knotslist, mu, True,
+                                                    ps=ps, negcounter=negcounter + 1, prevdiffvalneg=diffvalneg)
+
+    # Calculating the diff function value for the time between negdur and posdur
+    halfdur = (posdur + negdur) / 2
+    bf.knotslist.append(halfdur)
+    basiscoeffs = bf.allcoeffs(s)
+
+    if fullMOLS:
+        modelparams = mols.solsbyint(mols.sols(basiscoeffs, 20, s, f0, ngte, kgte), s)
+    else:
+        modelparams = mols.solsbyint(mols.solsbetweenknots(knotnuma, knotnumb, basiscoeffs, 20, s, f0, ngte, kgte), s)
+
+    paramspacing = metricelementspacingonl(l, basiscoeffs, mu)
+
+    errorlist = []
+
+    for t in np.linspace(knotslist[-1], halfdur, steps):
+        errorlist.append(mols.errorvalueatpoint(t, basiscoeffs, modelparams, f0, ngte, kgte))
+    bf.knotslist.pop()
+    maxerror = np.max(errorlist)
+
+    diffval = maxerror - paramspacing
+
+    # Either return halfdur as our new knot value or recurse
+    if -2 ** -10 < diffval <= 0:
+        parameterspacings.append(paramspacing)
+        return halfdur
+    elif counter > 10:
+        logging.debug("Recursion depth of 10 reached, terminating and returning current knot value")
+        logging.debug("Function value for this knot is " + str(diffval))
+        parameterspacings.append(paramspacing)
+        return halfdur
+    else:
+        if diffval < 0:
+            return knotatleffusinggivenknotlist(l, s, halfdur, posdur, steps, f0, ngte, kgte, knotslist, mu, counter=counter + 1)
+        elif diffval > 0:
+            return knotatleffusinggivenknotlist(l, s, negdur, halfdur, steps, f0, ngte, kgte, knotslist, mu, counter=counter + 1)
+
+# knotlist = [0, 2.107421875, 4.18438720703125]
+# ints = len(knotlist)
+# logging.debug(knotatleffusinggivenknotlist(ints - 1, 1, ints, 1, 10, 30, knotlist, checkfirst=True, ps=knotlist[-1]))
+
+# Calculates and adds the next knot to the KnotArchive file with the appropriate specifications by using the
+# knotatleffusinggivenknotlist method
+def addnextknottofile(f0, nmax, kgte, s, mu, steps=30):
+    spindownspecification = [f0, nmax, kgte, s, mu, fullMOLS]
+
+    knotarchive = open(knotarchivefile, "r")
+    alllines = knotarchive.readlines()
+    knotarchive.close()
+
+    foundspecifications = False
+    newknot = 0
+
+    for i, line in enumerate(alllines):
+        thisline = ast.literal_eval(line)
+
+        if thisline[0] == spindownspecification:
+            foundspecifications = True
+
+            knotslist = thisline[1]
+            ps = thisline[1][-1]
+            ints = len(knotslist)
+
+            if ps == 0:
+                negdurincrement = 1.1
+                while True:
+                    try:
+                        newknot = knotatleffusinggivenknotlist(ints - 1, s, negdurincrement, 10 * negdurincrement,
+                                                               steps, f0, nmax, kgte, knotslist, mu, True, ps=ps)
+
+                        break
+                    except MyErrors.TooManyNegdurReductions:
+                        negdurincrement *= 10
+            else:
+                negdurincrement = 0
+                while True:
+                    ordmag = np.floor(np.log10(ps)) + negdurincrement
+                    try:
+                        newknot = knotatleffusinggivenknotlist(ints - 1, s, ps + 10 ** ordmag,
+                                                               ps + 10 ** (ordmag + 0.5), steps, f0, nmax, kgte,
+                                                               knotslist, mu, True, ps=ps)
+                        break
+                    except MyErrors.TooManyNegdurReductions:
+                        negdurincrement += 0.5
+            thisline[1].append(newknot)
+            updatedline = str(thisline) + "\n"
+            alllines[i] = updatedline
+            logging.info("Knotnum and knot val: " + str(ints) + ", " + str(newknot))
+            break
+
+    if foundspecifications:
+        knotarchive = open(knotarchivefile, "w")
+        knotarchive.writelines(alllines)
+        knotarchive.close()
+    else:
+        newline = [spindownspecification, [0]]
+
+        knotarchive = open(knotarchivefile, "a")
+        knotarchive.write(str(newline) + "\n")
+        knotarchive.close()
+
+        addnextknottofile(f0, nmax, kgte, s, mu, steps=steps)
+
+    return newknot
+
+# Calculates and writes all knots up the knotnum th knot to the KnotArchive file. E.g. If we want to know the first 10
+# knots for certain model specifications, if we run this method with knotnum = 10, if the KnotArchive file does not
+# already have those 10 knot values, this method will calculate and add those knot values to that file until all knots
+# up to the 10th knot are present
+def addknottoknotnum(s, knotnum, f0, nmax, kgte, mu, steps=30):
+    spindownspecifications = [f0, nmax, kgte, s, mu, fullMOLS]
+
+    knotarchive = open(knotarchivefile, "r")
+    alllines = knotarchive.readlines()
+    knotarchive.close()
+
+    currentknotnum = 0
+
+    for i, line in enumerate(alllines):
+        thisline = ast.literal_eval(line)
+
+        if thisline[0] == spindownspecifications:
+            currentknotnum = len(thisline[1]) - 1
+            break
+    
+    while currentknotnum <= knotnum:
+        addnextknottofile(f0, nmax, kgte, s, mu, steps=steps)
+        currentknotnum += 1
+
+# Ad the above method but now instead of calculating up to a given knotnumber instead calculates all knots up to a given
+# signal duration.
+def addknottodur(s, dur, f0, nmax, kgte, mu, steps=30):
+    spindownspecifications = [f0, nmax, kgte, s, mu, fullMOLS]
+
+    knotarchive = open(knotarchivefile, "r")
+    alllines = knotarchive.readlines()
+    knotarchive.close()
+
+    currentdur = 0
+
+    for i, line in enumerate(alllines):
+        thisline = ast.literal_eval(line)
+
+        if thisline[0] == spindownspecifications:
+            currentdur = thisline[1][-1]
+            break
+
+    while currentdur < dur:
+        currentdur = addnextknottofile(f0, nmax, kgte, s, mu, steps=steps)
+
+# Calculates and returns all knots either up to the time dur or given knot number from the KnotArchive file. By using
+# this method we no longer need to always recalculate our knots, hopefully speeding up some of our other notebooks.
+def allidealisedknots(s, dur, steps, f0, nmax, kgte, mu, knotnum=0):
+    spindownspecifications = [f0, nmax, kgte, s, mu, fullMOLS]
+
+    if os.path.exists(knotarchivefile):
+        pass
+    else:
+        with open(knotarchivefile, "w") as knot_archive:
+            pass
+
+    if knotnum != 0:
+        addknottoknotnum(s, knotnum, f0, nmax, kgte, mu, steps=steps)
+    else:
+        addknottodur(s, dur, f0, nmax, kgte, mu, steps=steps)
+
+    knotarchive = open(knotarchivefile, "r")
+    alllines = knotarchive.readlines()
+    knotarchive.close()
+
+    for i, line in enumerate(alllines):
+        thisline = ast.literal_eval(line)
+
+        if thisline[0] == spindownspecifications:
+            bf.knotslist = thisline[1]
+
+            knotsbelowdur = []
+            
+            if knotnum != 0:
+                knotsbelowdur = thisline[1][0: knotnum + 1]
+            else:
+                # In case the knots stored in KnotArchive go well past the specified duration, we make sure we only set the knots to go to the duration we require
+                for i, knot in enumerate(bf.knotslist):
+                    if knot < dur:
+                        knotsbelowdur.append(knot)
+                    else:
+                        knotsbelowdur.append(dur)
+                        break
+
+            bf.knotslist = knotsbelowdur
+
+            return bf.knotslist
+
+# Returns the number of the first knot which exceeds the time 'dur.'
+def getknotnum(s, dur, f0, nmax, kgte, mu):
+    spindownspecifications = [f0, nmax, kgte, s, mu, fullMOLS]
+
+    knotarchive = open(knotarchivefile, "r")
+    alllines = knotarchive.readlines()
+    knotarchive.close()
+
+    foundspecifications = False
+    knotslist = []
+
+    for i, line in enumerate(alllines):
+        thisline = ast.literal_eval(line)
+
+        if thisline[0] == spindownspecifications:
+            knotslist = thisline[1]
+            foundspecifications = True
+            break
+
+    if not foundspecifications:
+        logging.debug("Knots not calculated for given specifications")
+        logging.debug(spindownspecifications)
+        return None
+
+    for i, knot in enumerate(knotslist):
+        if knot >= dur:
+            return i
+
+    logging.debug("A knot greater than the duration given has not been calculated")
+    return None
+
+# Plots the diff function
+"""
+dur = 6 * 3600
+steps = 60
+f0 = 2000
+ngte = 5
+kgte = gom.kforGWsource()
+mu = 0.2
+s = 3
+logging.debug(kgte)
+allidealisedknots(s, dur, 40, f0, ngte, kgte, mu)
+logging.debug(bf.knotslist)
+
+p0 = 0
+durmax = bf.knotslist[p0] + 2 * (bf.knotslist[p0 + 1] - bf.knotslist[p0])
+
+#bf.knotslist = [0, 3600, 7200]
+points = differencebetweenerrorandmetric(p0, s, bf.knotslist[p0], durmax, steps, f0, ngte, kgte, mu)
+logging.debug(points)
+
+plt.plot(points[0], points[1], label=r'$diff(p_1)$')
+plt.plot([bf.knotslist[p0], durmax], [0, 0], label="0")
+plt.legend()
+plt.xlabel(r'$Knot: p_1$')
+plt.show()
+"""
+
+# Plots Knots
+"""
+s = 3
+dur = 6 * 3600
+steps = 30
+f0 = 1000
+nmax = 5
+mu = 0.2
+kgte = gom.kforGWsource()
+
+bf.knotslist = [0]
+
+allidealisedknots(s, dur, steps, f0, 5, kgte, mu)
+logging.debug(bf.knotslist)
+
+mols.sm.normalpoints = True
+mols.sm.freqpoints = False
+mols.sm.randomknots = False
+
+knots1 = buildcompleteknotlist(s, dur, steps, f0, nmax, kgte, mu)
+
+mols.sm.normalpoints = False
+mols.sm.freqpoints = True
+mols.sm.randomknots = False
+
+knots2 = buildcompleteknotlist(s, dur, steps, f0, nmax, kgte, mu)
+
+mols.sm.normalpoints = False
+mols.sm.freqpoints = False
+mols.sm.randomknots = True
+
+knots3 = buildcompleteknotlist(s, dur, steps, f0, nmax, kgte, mu)
+
+ints = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
+maxknots = np.max([len(knots1), len(knots2), len(knots3)]) - 1
+
+fig, ax = plt.subplots()
+
+ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+ax.scatter(ints[:len(knots1)], knots1, label=r'Evenly spaced')
+ax.scatter(ints[:len(knots2)], knots2, label=r'Even in frequency')
+ax.scatter(ints[:len(knots3)], knots3, label=r'Random')
+ax.plot([0, maxknots], [dur, dur], label="Signal Duration")
+ax.legend()
+plt.xlabel("Knot number")
+plt.ylabel("Knot Value (s)")
+plt.show()
+"""
