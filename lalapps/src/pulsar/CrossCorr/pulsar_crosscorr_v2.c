@@ -872,17 +872,16 @@ int main(int argc, char *argv[]){
 
   XLALfprintfGSLvector(fp, "%g", eps_i);
   XLALfprintfGSLmatrix(fp, "%g", g_ij);*/
-
-  REAL8 diagff = gsl_matrix_get(g_ij, 0, 0);
-  REAL8 diagaa = gsl_matrix_get(g_ij, 1, 1);
-  REAL8 diagTT = gsl_matrix_get(g_ij, 2, 2);
-  REAL8 diagpp = gsl_matrix_get(g_ij, 3, 3);
+  REAL8 diagff = gsl_matrix_get(g_ij, 3, 3);
+  REAL8 diagaa = gsl_matrix_get(g_ij, 2, 2);
+  REAL8 diagTT = gsl_matrix_get(g_ij, 0, 0);
+  REAL8 diagpp = gsl_matrix_get(g_ij, 1, 1);
 
   dimName = XLALCreateCHARVector(coordSys.dim);
-  dimName->data[0] = 'f';
-  dimName->data[1] = 'a';
-  dimName->data[2] = 'T';
-  dimName->data[3] = 'p';
+  dimName->data[0] = 'T';
+  dimName->data[1] = 'p';
+  dimName->data[2] = 'a';
+  dimName->data[3] = 'f';
 
   /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
   if (XLALUserVarWasSet(&uvar.spacingF)) /* If spacing was given by CMD line, use it, else calculate spacing by mismatch*/
@@ -1578,6 +1577,14 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
   } /*Need to apply additional doppler shifting before the loop, or the first point in parameter space will be lost and return a wrong SNR when fBand!=0*/
 
   //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false");
+
+
+  /*Lattice Dimmensions*/
+  int ndim = 4;
+  int dimT = 0;
+  int dimP = 1;
+  int dima = 2;
+  int dimf = 3;
 
   while ( GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0)
     {
