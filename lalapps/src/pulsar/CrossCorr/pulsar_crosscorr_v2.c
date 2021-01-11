@@ -100,6 +100,8 @@ typedef struct tagUserInput_t {
   BOOLEAN inclSameDetector;      /**< include cross-correlations of detector with itself */
   BOOLEAN treatWarningsAsErrors; /**< treat any warnings as errors and abort */
   LALStringVector *injectionSources; /**< CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}' */
+
+  BOOLEAN lattice;                /**< use lattice */
 } UserInput_t;
 
 /* struct to store useful variables */
@@ -1183,6 +1185,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( inclSameDetector, BOOLEAN, 0, OPTIONAL, "Cross-correlate a detector with itself at a different time (if inclAutoCorr, then also same time)");
   XLALRegisterUvarMember( treatWarningsAsErrors, BOOLEAN, 0, OPTIONAL, "Abort program if any warnings arise (for e.g., zero-maxLag radiometer mode)");
   XLALRegisterUvarMember( injectionSources, STRINGVector, 0 , OPTIONAL, "CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}'");
+  XLALRegisterUvarMember( lattice,    BOOLEAN, 0,  OPTIONAL, "Use lattice");
+
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
