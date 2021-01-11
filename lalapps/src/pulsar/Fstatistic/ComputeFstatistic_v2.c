@@ -1843,12 +1843,6 @@ checkUserInputConsistency ( const UserInput_t *uvar )
     /* Specific checks for --gridType=GRID_SPINDOWN_{SQUARE,AGEBRK} parameter spaces */
     if (uvar->gridType == GRID_SPINDOWN_SQUARE || uvar->gridType == GRID_SPINDOWN_AGEBRK) {
 
-      /* Check that no third spindown range were given */
-      if (uvar->f3dot != 0.0 || uvar->f3dotBand != 0.0) {
-        XLALPrintError ("\nERROR: f3dot and f3dotBand cannot be used with gridType={8,9}\n\n");
-        XLAL_ERROR ( XLAL_EINVAL );
-      }
-
       /* Check that no grid spacings were given */
       if (uvar->df1dot != 0.0 || uvar->df2dot != 0.0 || uvar->df3dot != 0.0) {
         XLALPrintError ("\nERROR: df{1,2,3}dot cannot be used with gridType={8,9}\n\n");
@@ -1859,6 +1853,12 @@ checkUserInputConsistency ( const UserInput_t *uvar )
 
     /* Specific checks for --gridType=GRID_SPINDOWN_AGEBRK parameter space */
     if (uvar->gridType == GRID_SPINDOWN_AGEBRK) {
+
+      /* Check that no third spindown range were given */
+      if (uvar->f3dot != 0.0 || uvar->f3dotBand != 0.0) {
+        XLALPrintError ("\nERROR: f3dot and f3dotBand cannot be used with gridType=9\n\n");
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
 
       /* Check age and braking indices */
       if (uvar->spindownAge <= 0.0) {
