@@ -25,7 +25,7 @@
 ///
 
 ///
-/// # Specialised wrapping of ::SnglInspiralTable
+/// # Specialised wrapping of <tt>SnglInspiralTable</tt>
 ///
 
 %{
@@ -44,7 +44,7 @@ void tagSnglInspiralTable_end_time_ns_set(SnglInspiralTable *self, int val) {
 %}
 
 ///
-/// Extend the ::SnglInspiralTable class.
+/// Extend the <tt>SnglInspiralTable</tt> class.
 %extend tagSnglInspiralTable {
   /// <ul><li>
 

@@ -50,7 +50,7 @@ typedef enum tagSSBprecision {
   SSBPREC_LAST			/**< end marker */
 } SSBprecision;
 
-/** Static array of all #SSBprecision choices, for use by the UserInput module parsing routines */
+/** Static array of all \c SSBprecision choices, for use by the UserInput module parsing routines */
 extern const UserChoices SSBprecisionChoices;
 
 /** Simple container for two REAL8-vectors, namely the SSB-timings DeltaT_alpha  and Tdot_alpha,

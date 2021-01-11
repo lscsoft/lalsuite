@@ -51,7 +51,7 @@
 /** @{ */
 
 /**
- * Raises a ::LALUnit structure to a rational power given by the ::RAT4 structure \c power.
+ * Raises a \c LALUnit structure to a rational power given by the \c RAT4 structure \c power.
  */
 LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
     const RAT4 *power )
@@ -101,7 +101,7 @@ LALUnit * XLALUnitRaiseRAT4( LALUnit *output, const LALUnit *input,
 }
 
 /**
- * Raises a ::LALUnit structure to an integer power \c power.
+ * Raises a \c LALUnit structure to an integer power \c power.
  */
 LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
     INT2 power )
@@ -115,7 +115,7 @@ LALUnit * XLALUnitRaiseINT2( LALUnit *output, const LALUnit *input,
 }
 
 /**
- * Produces the square of a ::LALUnit structure.
+ * Produces the square of a \c LALUnit structure.
  */
 LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input )
 {
@@ -128,7 +128,7 @@ LALUnit * XLALUnitSquare( LALUnit *output, const LALUnit *input )
 }
 
 /**
- * Produces the square-root of a ::LALUnit structure.
+ * Produces the square-root of a \c LALUnit structure.
  */
 LALUnit * XLALUnitSqrt( LALUnit *output, const LALUnit *input )
 {

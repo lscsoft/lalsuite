@@ -37,7 +37,7 @@
  *
  * ### Description ###
  *
- * The phase of the inspiral wave corresponding to the ::Approximant #TaylorT2
+ * The phase of the inspiral wave corresponding to the \c Approximant #TaylorT2
  * as in \eqref{eq_InspiralWavePhase2} (<tt>correct equation?</tt>)
  *
  * ### Algorithm ###

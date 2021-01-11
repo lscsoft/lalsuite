@@ -23,7 +23,7 @@
  * \ingroup LALInspiral_h
  *
  * \brief The code \c LALInspiralWave1() generates an time-domain inspiral waveform corresponding to the
- * ::Approximant #TaylorT1 and #PadeT1 as outlined in the documentation for the function \c LALInspiralWave().
+ * \c Approximant #TaylorT1 and #PadeT1 as outlined in the documentation for the function \c LALInspiralWave().
  *
  * ### Prototypes ###
  *
@@ -43,7 +43,7 @@
  * ### Description ###
  *
  * LALInspiralWave1() is called if the user has specified the
- * \c enum ::Approximant to be
+ * enum \c Approximant to be
  * either #TaylorT1 or #PadeT1.
  * XLALInspiralWave1Templates() is exactly the same as LALInspiralWave1(), except that
  * it generates two templates one for which the starting phase is

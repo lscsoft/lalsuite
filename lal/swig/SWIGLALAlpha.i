@@ -30,7 +30,7 @@
 
 ///
 /// Custom LAL/GSL error handlers which raise XLAL errors, so that they will be caught by the SWIG
-/// \c %exception handler (instead of aborting, which will crash the user's scripting language
+/// <tt>%exception</tt> handler (instead of aborting, which will crash the user's scripting language
 /// session).
 %header %{
 /// <ul><li>
@@ -97,7 +97,7 @@ void swig_set_nice_error_handlers(void) {
 %}
 
 ///
-/// Set nasty custom error handlers: use \c abort() error handlers in XLAL/LAL/GSL, which can be
+/// Set nasty custom error handlers: use <tt>abort()</tt> error handlers in XLAL/LAL/GSL, which can be
 /// useful when running scripting language interpreter under a debugger.
 ///
 %inline %{
@@ -121,7 +121,7 @@ void swig_set_nasty_error_handlers(void) {
 %define %swig_lal_gsl_vector_matrix(BASETYPE, TYPE, NAME)
 /// <ul><li>
 
-/// GSL vector of type \c NAME.
+/// GSL vector of type <tt>NAME</tt>.
 typedef struct {
   %extend {
     gsl_vector##NAME(const size_t n) {
@@ -142,7 +142,7 @@ typedef struct {
 
 /// </li><li>
 
-/// Typemap which attempts to view pointers to \c const GSL vector.
+/// Typemap which attempts to view pointers to <tt>const</tt> GSL vector.
 %typemap(in, noblock=1) const gsl_vector##NAME* (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp, void *temp_data = 0, size_t dims[1] = {0}, int elemalloc = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -184,7 +184,7 @@ typedef struct {
 
 /// </li><li>
 
-/// Typemap which attempts to view pointers to non-\c const GSL vector.
+/// Typemap which attempts to view pointers to non-<tt>const</tt> GSL vector.
 %typemap(in, noblock=1) gsl_vector##NAME* SWIGLAL_VIEWIN_ARRAY (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -211,9 +211,9 @@ typedef struct {
 
 /// </li><li>
 
-/// Typemap which treats pointers to non-\c const GSL vector as input-output arguments.
+/// Typemap which treats pointers to non-<tt>const</tt> GSL vector as input-output arguments.
 /// The type of the output argument should always match that of the input argument, so:
-/// - If the input argument is a SWIG-wrapped \c NAME*, just unwrap it and return a reference.
+/// - If the input argument is a SWIG-wrapped <tt>NAME*</tt>, just unwrap it and return a reference.
 /// - If the input argument is a native scripting-language array, make an internal copy of it,
 ///   use the copy, and return a native scripting-language array copy of the internal copy.
 %typemap(in, noblock=1) gsl_vector##NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, gsl_vector##NAME##_view temp, SWIG_Object input_ref, void *temp_data = 0, size_t dims[1] = {0}, int elemalloc = 0) %{
@@ -268,7 +268,7 @@ typedef struct {
 
 /// </li><li>
 
-/// GSL matrix of type \c NAME.
+/// GSL matrix of type <tt>NAME</tt>.
 typedef struct {
   %extend {
     gsl_matrix##NAME(const size_t n1, const size_t n2) {
@@ -290,7 +290,7 @@ typedef struct {
 
 /// </li><li>
 
-/// Typemap which attempts to view pointers to \c const GSL matrix.
+/// Typemap which attempts to view pointers to <tt>const</tt> GSL matrix.
 %typemap(in, noblock=1) const gsl_matrix##NAME* (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp, void *temp_data = 0, size_t dims[2] = {0, 0}, int elemalloc = 0) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -332,7 +332,7 @@ typedef struct {
 
 /// </li><li>
 
-/// Typemap which attempts to view pointers to non-\c const GSL matrix.
+/// Typemap which attempts to view pointers to non-<tt>const</tt> GSL matrix.
 %typemap(in, noblock=1) gsl_matrix##NAME* SWIGLAL_VIEWIN_ARRAY (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp) %{
   res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
   if (!SWIG_IsOK(res)) {
@@ -359,9 +359,9 @@ typedef struct {
 
 /// </li><li>
 
-/// Typemap which treats pointers to non-\c const GSL matrix as input-output arguments.
+/// Typemap which treats pointers to non-<tt>const</tt> GSL matrix as input-output arguments.
 /// The type of the output argument should always match that of the input argument, so:
-/// - If the input argument is a SWIG-wrapped \c NAME*, just unwrap it and return a reference.
+/// - If the input argument is a SWIG-wrapped <tt>NAME*</tt>, just unwrap it and return a reference.
 /// - If the input argument is a native scripting-language array, make an internal copy of it,
 ///   use the copy, and return a native scripting-language array copy of the internal copy.
 %typemap(in, noblock=1) gsl_matrix##NAME* SWIGLAL_COPYINOUT_ARRAY (void *argp = 0, int res = 0, gsl_matrix##NAME##_view temp, SWIG_Object input_ref, void *temp_data = 0, size_t dims[2] = {0, 0}, int elemalloc = 0) %{
@@ -437,11 +437,11 @@ typedef struct {
 %swig_lal_gsl_vector_matrix(double, gsl_complex, _complex);
 
 ///
-/// # Specialised typemaps for ::LIGOTimeGPS
+/// # Specialised typemaps for <tt>LIGOTimeGPS</tt>
 ///
 
 ///
-/// Specialised input typemaps for ::LIGOTimeGPS structs.  Accepts a SWIG-wrapped ::LIGOTimeGPS or a
+/// Specialised input typemaps for <tt>LIGOTimeGPS</tt> structs.  Accepts a SWIG-wrapped <tt>LIGOTimeGPS</tt> or a
 /// double as input; in Python, also accepts any object with .gpsSeconds and .gpsNanoSeconds attributes.
 ///
 %fragment("swiglal_specialised_tagLIGOTimeGPS", "header", fragment=SWIG_AsVal_frag(double), fragment=SWIG_AsVal_frag(int32_t)) {
@@ -473,11 +473,11 @@ typedef struct {
 %swiglal_specialised_typemaps(tagLIGOTimeGPS, "swiglal_specialised_tagLIGOTimeGPS");
 
 ///
-/// # Specialised typemaps for ::LALUnit
+/// # Specialised typemaps for <tt>LALUnit</tt>
 ///
 
 ///
-/// Specialised input typemaps for ::LALUnit structs.  Accepts a SWIG-wrapped ::LALUnit,
+/// Specialised input typemaps for <tt>LALUnit</tt> structs.  Accepts a SWIG-wrapped <tt>LALUnit</tt>,
 /// a unit string, or a dimensionless power-of-10 double as input.
 ///
 %fragment("swiglal_specialised_tagLALUnit", "header",

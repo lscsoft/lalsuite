@@ -106,27 +106,27 @@ extern "C" {
  * Type of integral.
  * The types of integration are the following:
  *
- * I. \c #ClosedInterval
+ * I. #ClosedInterval
  * indicates that the integral should be computed on equal-spaced domain
  * intervals including the boundary.
  *
- * II. \c #OpenInterval indicates that
+ * II. #OpenInterval indicates that
  * the integral should be computed on intervals of the domain not including the
  * boundary.
  *
- * III. \c #SingularLowerLimit indicates that the integral
+ * III. #SingularLowerLimit indicates that the integral
  * should be evaluated on an open interval with a transformation so that a
  * inverse-square-root singularity at the lower limit can be integrated.
  *
- * IV. \c #SingularUpperLimit is the same as above but for a singularity at the
+ * IV. #SingularUpperLimit is the same as above but for a singularity at the
  * upper limit.
  *
- * V. \c #InfiniteDomainPow indicates that the integral
+ * V. #InfiniteDomainPow indicates that the integral
  * should be evaluated over an semi-infinite domain---appropriate when both
  * limits have the same sign (though one is very large) and when the integrand
  * vanishes faster than \f$x^{-1}\f$ at infinity.
  *
- * VI. \c #InfiniteDomainExp
+ * VI. #InfiniteDomainExp
  * indicates that the integral should be evaluated over an infinite domain
  * starting at \c xmin and going to infinity (\c xmax is ignored)---the
  * integrand should vanish exponentially for large \f$x\f$.

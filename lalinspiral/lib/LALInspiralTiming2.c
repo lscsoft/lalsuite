@@ -23,7 +23,7 @@
  * \ingroup LALInspiral_h
  *
  * \brief Module used in solving the timing and phasing functions in quadrature for the
- * ::Approximant #TaylorT2.
+ * \c Approximant #TaylorT2.
  *
  * ### Prototypes ###
  *

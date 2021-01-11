@@ -67,7 +67,7 @@ extern "C" {
  *
  * There are three  parsed arguments
  * <ul>
- * <li> a ::CoherentGW  structure which stores amplitude,
+ * <li> a \c CoherentGW  structure which stores amplitude,
  * frequency and phase of the  waveform (output)</li>
  * <li> a \c thisEvent  structure which provides some
  * waveform parameters (input)</li>

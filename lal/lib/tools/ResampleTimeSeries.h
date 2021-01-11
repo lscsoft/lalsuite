@@ -36,7 +36,7 @@ extern "C" {
  *
  * \brief Provides routines to resample a time series.
  *
- * At present only integer downsampling of ::REAL4TimeSeries by a power of two is supported.
+ * At present only integer downsampling of \c REAL4TimeSeries by a power of two is supported.
  *
  * ### Synopsis ###
  *

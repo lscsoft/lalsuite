@@ -2854,7 +2854,7 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
 /**
  * Compute various types of "math operations" over the entries of an array.
  *
- * The supported optypes (e.g. sums and averages) are defined in #MathOpType.
+ * The supported optypes (e.g. sums and averages) are defined in \c MathOpType.
  *
  * This can be used e.g. for the different established conventions of combining
  * SFTs for a PSD estimate.

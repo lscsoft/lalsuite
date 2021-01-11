@@ -29,8 +29,8 @@
  *
  * \brief Convert complex vector components from rectangular coordinates to polar coordinates.
  *
- * Let \c u be an object of type ::COMPLEX8Vector, and let
- * \c a and \c b be objects of type ::REAL4Vector.
+ * Let \c u be an object of type \c COMPLEX8Vector, and let
+ * \c a and \c b be objects of type \c REAL4Vector.
  *
  * The \ref LALCVectorAbs "LALCVectorAbs( &status, &a, &u )" function computes
  * the magnitude of a complex vector \c u:<br>

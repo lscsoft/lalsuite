@@ -370,13 +370,13 @@ static hid_t XLALGetObjectIdentifier(const void *ptr)
  */
 
 /**
- * @brief Closes a #LALH5File
+ * @brief Closes a ::LALH5File
  * @details
- * This routine closes a #LALH5File and deallocates resources
+ * This routine closes a ::LALH5File and deallocates resources
  * associated with it.  If the file was opened for writing, this
  * routine also renames the temporary file as the actual file.
  *
- * @param file A pointer to a #LALH5File structure to close.
+ * @param file A pointer to a ::LALH5File structure to close.
  */
 void XLALH5FileClose(LALH5File UNUSED *file)
 {
@@ -413,9 +413,9 @@ void XLALH5FileClose(LALH5File UNUSED *file)
 }
 
 /**
- * @brief Opens a #LALH5File
+ * @brief Opens a ::LALH5File
  * @details
- * Opens a HDF5 file with pathname @p path and creates a #LALH5File structure
+ * Opens a HDF5 file with pathname @p path and creates a ::LALH5File structure
  * associated with it.
  *
  * The @p mode parameter points to a string that determines whether the
@@ -427,12 +427,12 @@ void XLALH5FileClose(LALH5File UNUSED *file)
  * </dl>
  *
  * If a file is opened for writing then data is initially written to a
- * temporary file, and this file is renamed once the #LALH5File structure
+ * temporary file, and this file is renamed once the ::LALH5File structure
  * is closed with XLALH5FileClose().
  *
  * @param path Pointer to a string containing the path of the file to open.
  * @param mode Mode to open the file, either "r" or "w".
- * @returns A pointer to a #LALH5File structure associated with the
+ * @returns A pointer to a ::LALH5File structure associated with the
  * specified HDF5 file.
  * @retval NULL An error occurred opening the file.
  */
@@ -452,17 +452,17 @@ LALH5File * XLALH5FileOpen(const char UNUSED *path, const char UNUSED *mode)
 }
 
 /**
- * @brief Opens a group in a #LALH5File
+ * @brief Opens a group in a ::LALH5File
  * @details
  * Opens a HDF5 group with name @p name contained in the HDF5 file
- * associated with the #LALH5File @p file.  If the HDF5 file is
+ * associated with the ::LALH5File @p file.  If the HDF5 file is
  * being read, the specified group must exist in that file.  If
  * the HDF5 file is being written, the specified group is created
  * within the file.
  *
- * @param file Pointer to a #LALH5File structure in which to open the group.
+ * @param file Pointer to a ::LALH5File structure in which to open the group.
  * @param name Pointer to a string with the name of the group to open.
- * @returns A pointer to a #LALH5File structure associated with the
+ * @returns A pointer to a ::LALH5File structure associated with the
  * specified group within a HDF5 file.
  * @retval NULL An error occurred opening the group.
  */
@@ -503,15 +503,15 @@ LALH5File * XLALH5GroupOpen(LALH5File UNUSED *file, const char UNUSED *name)
 }
 
 /**
- * @brief Checks for existence of a group in a #LALH5File
+ * @brief Checks for existence of a group in a ::LALH5File
  * @details
  * Checks if group with name @p name exists in the HDF5 file associated with the
- * #LALH5File file @p file. If the group exists the return code is 1.
+ * ::LALH5File file @p file. If the group exists the return code is 1.
  * If the group does not exist a return code value of 0 is used.
  *
  * @attention Read failure results in a returned value of 0.
  *
- * @param file Pointer to a #LALH5File structure to check for group.
+ * @param file Pointer to a ::LALH5File structure to check for group.
  * @param name Pointer to a string with the name of the group to check.
  * @retval 0 Group does not exist or failure.
  * @retval 1 Group exists.
@@ -531,15 +531,15 @@ int XLALH5FileCheckGroupExists(const LALH5File UNUSED *file, const char UNUSED *
 }
 
 /**
- * @brief Checks for existence of a dataset in a #LALH5File
+ * @brief Checks for existence of a dataset in a ::LALH5File
  * @details
  * Checks if dataset with name @p name exists in the HDF5 file associated with the
- * #LALH5File file @p file. If the dataset exists the return code is 1.
+ * ::LALH5File file @p file. If the dataset exists the return code is 1.
  * If the dataset does not exist a return code value of 0 is used.
  *
  * @attention Read failure results in a returned value of 0.
  *
- * @param file Pointer to a #LALH5File structure to check for dataset.
+ * @param file Pointer to a ::LALH5File structure to check for dataset.
  * @param name Pointer to a string with the name of the dataset to check.
  * @retval 0 Dataset does not exist or failure.
  * @retval 1 Dataset exists.
@@ -596,16 +596,16 @@ int XLALH5FileCheckDatasetExists(const LALH5File UNUSED *file, const char UNUSED
 }
 
 /**
- * @brief DEPRECATED: Checks for existence of a Group in a LALH5File object #LALH5File
+ * @brief DEPRECATED: Checks for existence of a Group in a LALH5File object ::LALH5File
  * @details
  * Checks if group with name @p exists in the HDF5 files associated with the
- * #LALH5File file. If the group exists the return code is 1
+ * ::LALH5File file. If the group exists the return code is 1
  * if the group does not exist a return code value of 0 is used.
  *
  * @deprecated
  * Use XLALH5FileCheckGroupExists instead.
  *
- * @param file Pointer to a #LALH5File structure to check for group in
+ * @param file Pointer to a ::LALH5File structure to check for group in
  * @param name Pointer to a string with the name of the group to check.
  * @returns int, 1 if group exists. 0 if not.
  */
@@ -627,14 +627,14 @@ int XLALH5CheckGroupExists(LALH5File UNUSED *file, const char UNUSED *name)
 }
 
 /**
- * @brief Gets the number of groups contained in a #LALH5File
+ * @brief Gets the number of groups contained in a ::LALH5File
  * @details
  * This routines returns the number of groups contained in a
- * an #LALH5File @p file which can be either a file or a group.
+ * an ::LALH5File @p file which can be either a file or a group.
  * This routine does not recursively count subgroups of the
  * groups found.
  *
- * @param file Pointer to a #LALH5File file or group to be queried.
+ * @param file Pointer to a ::LALH5File file or group to be queried.
  * @returns The number of groups contained in the file or group.
  * @retval -1 Failure.
  */
@@ -666,9 +666,9 @@ size_t XLALH5FileQueryNGroups(const LALH5File UNUSED *file)
 }
 
 /**
- * @brief Gets the name of a group contained in a #LALH5File
+ * @brief Gets the name of a group contained in a ::LALH5File
  * @details
- * This routines gets the name of a group contained in a #LALH5File
+ * This routines gets the name of a group contained in a ::LALH5File
  * @p file which can be either a file or a group.
  * The index @p pos identifies which group's name is returned.
  * The result is written into the buffer pointed to by @p name, the size
@@ -685,7 +685,7 @@ size_t XLALH5FileQueryNGroups(const LALH5File UNUSED *file)
  * @param name Pointer to a buffer into which the string will be written.
  * @param size Size in bytes of the buffer into which the string will be
  * written.
- * @param file Pointer to a #LALH5File file or group to be queried.
+ * @param file Pointer to a ::LALH5File file or group to be queried.
  * @param pos The index identifying which group contained in the file.
  * @retval  0 Success.
  * @retval -1 Failure.
@@ -732,12 +732,12 @@ int XLALH5FileQueryGroupName(char UNUSED *name, size_t UNUSED size, const LALH5F
 }
 
 /**
- * @brief Gets the number of datasets contained in a #LALH5File
+ * @brief Gets the number of datasets contained in a ::LALH5File
  * @details
  * This routines returns the number of datasets contained in a
- * an #LALH5File @p file which can be either a file or a group.
+ * an ::LALH5File @p file which can be either a file or a group.
  *
- * @param file Pointer to a #LALH5File file or group to be queried.
+ * @param file Pointer to a ::LALH5File file or group to be queried.
  * @returns The number of datasets contained in the file or group.
  * @retval -1 Failure.
  */
@@ -769,9 +769,9 @@ size_t XLALH5FileQueryNDatasets(const LALH5File UNUSED *file)
 }
 
 /**
- * @brief Gets the name of a dataset contained in a #LALH5File
+ * @brief Gets the name of a dataset contained in a ::LALH5File
  * @details
- * This routines gets the name of a dataset contained in a #LALH5File
+ * This routines gets the name of a dataset contained in a ::LALH5File
  * @p file which can be either a file or a group.
  * The index @p pos identifies which dataset's name is returned.
  * The result is written into the buffer pointed to by @p name, the size
@@ -788,7 +788,7 @@ size_t XLALH5FileQueryNDatasets(const LALH5File UNUSED *file)
  * @param name Pointer to a buffer into which the string will be written.
  * @param size Size in bytes of the buffer into which the string will be
  * written.
- * @param file Pointer to a #LALH5File file or group to be queried.
+ * @param file Pointer to a ::LALH5File file or group to be queried.
  * @param pos The index identifying which dataset contained in the file.
  * @retval  0 Success.
  * @retval -1 Failure.
@@ -835,9 +835,9 @@ int XLALH5FileQueryDatasetName(char UNUSED *name, size_t UNUSED size, const LALH
 }
 
 /**
- * @brief DEPRECATED: Gets dataset names from a #LALH5File
+ * @brief DEPRECATED: Gets dataset names from a ::LALH5File
  * @details
- * This routine returns the names of all datasets in a #LALH5File.
+ * This routine returns the names of all datasets in a ::LALH5File.
  *
  * @deprecated
  * Use XLALH5AttributeQueryN() and XLALH5AttributeQueryName() instead.
@@ -845,7 +845,7 @@ int XLALH5FileQueryDatasetName(char UNUSED *name, size_t UNUSED size, const LALH
  * @param names Pointer a list of strings to be returned to the user. Memory
  * should be freed by the caller.
  * @param N Pointer to a UINT4 where the number of datasets will be recorded
- * @param file #LALH5File from which to read datasets
+ * @param file ::LALH5File from which to read datasets
  * @retval 0 Success.
  * @retval -1 Failure.
  */
@@ -904,11 +904,11 @@ int XLALH5FileGetDatasetNames(LALH5File UNUSED *file, char UNUSED *** names, UIN
  */
 
 /**
- * @brief Frees a #LALH5Dataset
+ * @brief Frees a ::LALH5Dataset
  * @details
- * Closes a HDF5 dataset associated with the #LALH5Dataset @p dset
- * and deallocates memory of the #LALH5Dataset structure.
- * @param dset Pointer to a #LALH5Dataset structure to close.
+ * Closes a HDF5 dataset associated with the ::LALH5Dataset @p dset
+ * and deallocates memory of the ::LALH5Dataset structure.
+ * @param dset Pointer to a ::LALH5Dataset structure to close.
  */
 void XLALH5DatasetFree(LALH5Dataset UNUSED *dset)
 {
@@ -926,24 +926,24 @@ void XLALH5DatasetFree(LALH5Dataset UNUSED *dset)
 }
 
 /**
- * @brief Allocates a multi-dimensional #LALH5Dataset
+ * @brief Allocates a multi-dimensional ::LALH5Dataset
  * @details
  * Creates a new HDF5 dataset with name @p name within a HDF5 file
- * associated with the #LALH5File @p file structure and allocates a
- * #LALH5Dataset structure associated with the dataset.  The type
- * of data to be stored in the dataset is given by the #LALTYPECODE
+ * associated with the ::LALH5File @p file structure and allocates a
+ * ::LALH5Dataset structure associated with the dataset.  The type
+ * of data to be stored in the dataset is given by the \c LALTYPECODE
  * @p dtype and the rank array dimensions of the dataset is given by
  * the UINT4Vector @p dimLength.
  *
- * The #LALH5File @p file passed to this routine must be a file
+ * The ::LALH5File @p file passed to this routine must be a file
  * opened for writing.
  *
- * @param file Pointer to a #LALH5File structure in which to create the dataset.
+ * @param file Pointer to a ::LALH5File structure in which to create the dataset.
  * @param name Pointer to a string with the name of the dataset to create.
- * @param dtype #LALTYPECODE value specifying the data type.
+ * @param dtype \c LALTYPECODE value specifying the data type.
  * @param dimLength Pointer to a UINT4Vector specifying the dataspace
  * dimensions.
- * @returns A pointer to a #LALH5Dataset structure associated with the
+ * @returns A pointer to a ::LALH5Dataset structure associated with the
  * specified dataset within a HDF5 file.
  * @retval NULL An error occurred creating the dataset.
  */
@@ -1011,23 +1011,23 @@ LALH5Dataset * XLALH5DatasetAlloc(LALH5File UNUSED *file, const char UNUSED *nam
 }
 
 /**
- * @brief Allocates a 1-dimensional #LALH5Dataset
+ * @brief Allocates a 1-dimensional ::LALH5Dataset
  * @details
  * Creates a new HDF5 dataset with name @p name within a HDF5 file
- * associated with the #LALH5File @p file structure and allocates a
- * #LALH5Dataset structure associated with the dataset.  The type
- * of data to be stored in the dataset is given by the #LALTYPECODE
+ * associated with the ::LALH5File @p file structure and allocates a
+ * ::LALH5Dataset structure associated with the dataset.  The type
+ * of data to be stored in the dataset is given by the \c LALTYPECODE
  * @p dtype and the number of points in the dataset is given by
  * the @p length parameter.
  *
- * The #LALH5File @p file passed to this routine must be a file
+ * The ::LALH5File @p file passed to this routine must be a file
  * opened for writing.
  *
- * @param file Pointer to a #LALH5File structure in which to create the dataset.
+ * @param file Pointer to a ::LALH5File structure in which to create the dataset.
  * @param name Pointer to a string with the name of the dataset to create.
- * @param dtype #LALTYPECODE value specifying the data type.
+ * @param dtype \c LALTYPECODE value specifying the data type.
  * @param length The number of points of data in the dataset.
- * @returns A pointer to a #LALH5Dataset structure associated with the
+ * @returns A pointer to a ::LALH5Dataset structure associated with the
  * specified dataset within a HDF5 file.
  * @retval NULL An error occurred creating the dataset.
  */
@@ -1083,11 +1083,11 @@ LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File UNUSED *file, const char UNUSED *n
 }
 
 /**
- * @brief Writes data to a #LALH5Dataset
+ * @brief Writes data to a ::LALH5Dataset
  * @details
  * Writes the data contained in @p data to a HDF5 dataset associated
- * with the #LALH5Dataset @p dset structure.
- * @param dset Pointer to a #LALH5Dataset structure to which to write the data.
+ * with the ::LALH5Dataset @p dset structure.
+ * @param dset Pointer to a ::LALH5Dataset structure to which to write the data.
  * @param data Pointer to the data buffer to be written.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1106,19 +1106,19 @@ int XLALH5DatasetWrite(LALH5Dataset UNUSED *dset, void UNUSED *data)
 }
 
 /**
- * @brief Reads a #LALH5Dataset
+ * @brief Reads a ::LALH5Dataset
  * @details
  * Opens an existing HDF5 dataset with name @p name within a HDF5 file
- * associated with the #LALH5File @p file structure and allocates a
- * #LALH5Dataset structure associated with the dataset.
+ * associated with the ::LALH5File @p file structure and allocates a
+ * ::LALH5Dataset structure associated with the dataset.
  *
- * The #LALH5File @p file passed to this routine must be a file
+ * The ::LALH5File @p file passed to this routine must be a file
  * opened for reading.
  *
- * @param file Pointer to a #LALH5File structure containing the dataset
+ * @param file Pointer to a ::LALH5File structure containing the dataset
  * to be opened.
  * @param name Pointer to a string with the name of the dataset to open.
- * @returns A pointer to a #LALH5Dataset structure associated with the
+ * @returns A pointer to a ::LALH5Dataset structure associated with the
  * specified dataset within a HDF5 file.
  * @retval NULL An error occurred creating the dataset.
  */
@@ -1176,10 +1176,10 @@ LALH5Dataset * XLALH5DatasetRead(LALH5File UNUSED *file, const char UNUSED *name
 }
 
 /**
- * @brief Gets the number of points in a #LALH5Dataset
- * @param dset Pointer to a #LALH5Dataset to be queried.
+ * @brief Gets the number of points in a ::LALH5Dataset
+ * @param dset Pointer to a ::LALH5Dataset to be queried.
  * @returns The number of points in the HDF5 dataset associated
- * with the specified #LALH5Dataset.
+ * with the specified ::LALH5Dataset.
  * @retval (size_t)(-1) Failure.
  */
 size_t XLALH5DatasetQueryNPoints(LALH5Dataset UNUSED *dset)
@@ -1198,10 +1198,10 @@ size_t XLALH5DatasetQueryNPoints(LALH5Dataset UNUSED *dset)
 }
 
 /**
- * @brief Gets the number of bytes in a #LALH5Dataset
- * @param dset Pointer to a #LALH5Dataset to be queried.
+ * @brief Gets the number of bytes in a ::LALH5Dataset
+ * @param dset Pointer to a ::LALH5Dataset to be queried.
  * @returns The number of bytes in the HDF5 dataset associated
- * with the specified #LALH5Dataset.  This is the number of
+ * with the specified ::LALH5Dataset.  This is the number of
  * bytes required to hold the data in that dataset.
  * @retval (size_t)(-1) Failure.
  */
@@ -1225,10 +1225,10 @@ size_t XLALH5DatasetQueryNBytes(LALH5Dataset UNUSED *dset)
 }
 
 /**
- * @brief Gets the type of data in a #LALH5Dataset
- * @param dset Pointer to a #LALH5Dataset to be queried.
- * @returns The #LALTYPECODE of the datatype in the
- * HDF5 dataset associated with the specified #LALH5Dataset.
+ * @brief Gets the type of data in a ::LALH5Dataset
+ * @param dset Pointer to a ::LALH5Dataset to be queried.
+ * @returns The \c LALTYPECODE of the datatype in the
+ * HDF5 dataset associated with the specified ::LALH5Dataset.
  * @retval -1 Failure.
  */
 LALTYPECODE XLALH5DatasetQueryType(LALH5Dataset UNUSED *dset)
@@ -1247,10 +1247,10 @@ LALTYPECODE XLALH5DatasetQueryType(LALH5Dataset UNUSED *dset)
 }
 
 /**
- * @brief Gets the number of dimensions of the dataspace in a #LALH5Dataset
- * @param dset Pointer to a #LALH5Dataset to be queried.
+ * @brief Gets the number of dimensions of the dataspace in a ::LALH5Dataset
+ * @param dset Pointer to a ::LALH5Dataset to be queried.
  * @returns The number of dimensions in the dataspace in the
- * HDF5 dataset associated with the specified #LALH5Dataset.
+ * HDF5 dataset associated with the specified ::LALH5Dataset.
  * @retval -1 Failure.
  */
 int XLALH5DatasetQueryNDim(LALH5Dataset UNUSED *dset)
@@ -1269,11 +1269,11 @@ int XLALH5DatasetQueryNDim(LALH5Dataset UNUSED *dset)
 }
 
 /**
- * @brief Gets the dimensions of the dataspace in a #LALH5Dataset
- * @param dset Pointer to a #LALH5Dataset to be queried.
+ * @brief Gets the dimensions of the dataspace in a ::LALH5Dataset
+ * @param dset Pointer to a ::LALH5Dataset to be queried.
  * @returns A pointer to a newly-allocated UINT4Vector containing
  * the dimensions of the dataspace in the HDF5 dataset associated
- * with the * specified #LALH5Dataset.
+ * with the * specified ::LALH5Dataset.
  * @retval NULL Failure.
  */
 UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset UNUSED *dset)
@@ -1314,15 +1314,15 @@ UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset UNUSED *dset)
 }
 
 /**
- * @brief Gets the data contained in a #LALH5Dataset
+ * @brief Gets the data contained in a ::LALH5Dataset
  * @details
  * This routine reads data from a HDF5 dataset associated with
- * the #LALH5Dataset @p dset and stores the data in the buffer
+ * the ::LALH5Dataset @p dset and stores the data in the buffer
  * @p data.  This buffer should be sufficiently large to hold
  * the entire contents of the dataset; this size can be determined
  * with the routine XLALH5DatasetQueryNBytes().
  * @param data Pointer to a memory in which to store the data.
- * @param dset Pointer to a #LALH5Dataset from which to extract the data.
+ * @param dset Pointer to a ::LALH5Dataset from which to extract the data.
  * @retval 0 Success.
  * @retval -1 Failure.
  */
@@ -1347,9 +1347,9 @@ int XLALH5DatasetQueryData(void UNUSED *data, LALH5Dataset UNUSED *dset)
  * @name Attribute Routines
  * @anchor attribute_routines
  * @details
- * These routines allow for reading or writing attributes to #LALH5File
- * or #LALH5Dataset objects.  To use these, the pointer to the object
- * should be cast to a #LALH5Generic type as in the following example.
+ * These routines allow for reading or writing attributes to ::LALH5File
+ * or ::LALH5Dataset objects.  To use these, the pointer to the object
+ * should be cast to a \c LALH5Generic type as in the following example.
  * @code
  * LALH5File *file = XLALH5FileOpen("example.h5", "r");
  * LALH5Dataset *dset = XLALH5DatasetRead(file, "example_dataset");
@@ -1363,18 +1363,18 @@ int XLALH5DatasetQueryData(void UNUSED *data, LALH5Dataset UNUSED *dset)
 
 
 /**
- * @brief Checks for existence of an attribute associated with a #LALH5File
- * or #LALH5Dataset
+ * @brief Checks for existence of an attribute associated with a ::LALH5File
+ * or ::LALH5Dataset
  * @details
  * Checks if there is an attribute with name @p name associated with
- * an HDF5 object @p object that is either a #LALH5File or
- * #LALH5Dataset.
+ * an HDF5 object @p object that is either a ::LALH5File or
+ * ::LALH5Dataset.
  * If the attribute exists the return code is 1;
  * if the dataset does not exist a return code value of 0 is used.
  *
  * @attention Read failure results in a returned value of 0.
  *
- * @param object Pointer to a #LALH5File or #LALH5Dataset to check for
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to check for
  * attribute.
  * @param name Pointer to a string with the name of the attribute to check.
  * @retval 0 Attribute does not exist or failure.
@@ -1424,14 +1424,14 @@ size_t XLALH5AttributeCheckExists(const LALH5Generic UNUSED object, const char U
 }
 
 /**
- * @brief Gets the number of attributes associated with a #LALH5File
- * or #LALH5Dataset
+ * @brief Gets the number of attributes associated with a ::LALH5File
+ * or ::LALH5Dataset
  * @details
  * This routines returns the number of attributes associated with
- * an HDF5 object @p object that is either a #LALH5File or
- * #LALH5Dataset.
+ * an HDF5 object @p object that is either a ::LALH5File or
+ * ::LALH5Dataset.
  *
- * @param object Pointer to a #LALH5File or #LALH5Dataset that will be
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset that will be
  * queried.
  * @returns The number of attributes associated with the object.
  * @retval -1 Failure.
@@ -1456,12 +1456,12 @@ size_t XLALH5AttributeQueryN(const LALH5Generic UNUSED object)
 }
 
 /**
- * @brief Gets the name of an attribute associated with a #LALH5File
- * or #LALH5Dataset
+ * @brief Gets the name of an attribute associated with a ::LALH5File
+ * or ::LALH5Dataset
  * @details
  * This routines gets the name of an attributes associated with
- * an HDF5 object @p object that is either a #LALH5File or
- * #LALH5Dataset.
+ * an HDF5 object @p object that is either a ::LALH5File or
+ * ::LALH5Dataset.
  * The index @p pos identifies which attribute's name is returned.
  * The result is written into the buffer pointed to by @p name, the size
  * of which is @p size bytes.  If @p name is NULL, no data is copied but
@@ -1477,7 +1477,7 @@ size_t XLALH5AttributeQueryN(const LALH5Generic UNUSED object)
  * @param name Pointer to a buffer into which the string will be written.
  * @param size Size in bytes of the buffer into which the string will be
  * written.
- * @param object Pointer to a #LALH5File or #LALH5Dataset that will be
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset that will be
  * queried.
  * @param pos The index identifying which attribute associated with the object.
  * @retval  0 Success.
@@ -1517,19 +1517,19 @@ int XLALH5AttributeQueryName(char UNUSED *name, size_t UNUSED size, const LALH5G
 }
 
 /**
- * @brief Adds a scalar attribute to a #LALH5File or #LALH5Dataset
+ * @brief Adds a scalar attribute to a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine adds a scalar-valued attribute with name @p key
  * and value given by the memory addressed by @p value to a
- * HDF5 object associated with the #LALH5File or #LALH5Dataset
+ * HDF5 object associated with the ::LALH5File or ::LALH5Dataset
  * @p object.
- * The data type of the scalar value is given by the #LALTYPECODE
+ * The data type of the scalar value is given by the \c LALTYPECODE
  * @p dtype.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to which the attribute
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to which the attribute
  * will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to the value of the scalar attribute to be added.
- * @param dtype #LALTYPECODE value specifying the data type of the attribute.
+ * @param dtype \c LALTYPECODE value specifying the data type of the attribute.
  * @retval 0 Success.
  * @retval -1 Failure.
  */
@@ -1577,12 +1577,12 @@ int XLALH5AttributeAddScalar(LALH5Generic UNUSED object, const char UNUSED *key,
 }
 
 /**
- * @brief Adds a string attribute to a #LALH5File or #LALH5Dataset
+ * @brief Adds a string attribute to a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine adds a NUL-terminated variable-length string @p value
  * attribute with name @p key to a HDF5 object associated with the
- * #LALH5File or #LALH5Dataset @p object.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to which the
+ * ::LALH5File or ::LALH5Dataset @p object.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to which the
  * attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to a string with the value of the new attribute.
@@ -1638,11 +1638,11 @@ int XLALH5AttributeAddString(LALH5Generic UNUSED object, const char UNUSED *key,
 }
 
 /**
- * @brief Adds a LIGOTimeGPS attribute to a #LALH5File or #LALH5Dataset
+ * @brief Adds a LIGOTimeGPS attribute to a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine adds a LIGOTimeGPS @p value attribute with name @p key to a
- * HDF5 object associated with the #LALH5File or #LALH5Dataset @p object.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to which the
+ * HDF5 object associated with the ::LALH5File or ::LALH5Dataset @p object.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to which the
  * attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to a LIGOTimeGPS structure with the value of the new
@@ -1694,15 +1694,15 @@ int XLALH5AttributeAddLIGOTimeGPS(LALH5Generic UNUSED object, const char UNUSED 
 }
 
 /**
- * @brief Adds a 1d enum array attribute to a #LALH5File or #LALH5Dataset
+ * @brief Adds a 1d enum array attribute to a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine adds the 1d enum array @p value of length @p length attribute
- * with name @p key to a HDF5 object associated with the #LALH5File or
- * #LALH5Dataset @p object.
+ * with name @p key to a HDF5 object associated with the ::LALH5File or
+ * ::LALH5Dataset @p object.
  * The names and values of the @p nenum enumeration constants are provided
  * in the arrays @p enumnames and @p enumvals respectively.
  *
- * @param object Pointer to a #LALH5File or #LALH5Dataset to which the
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to which the
  * attribute will be added.
  * @param enumnames Pointer to an array of names of the enum constants.
  * @param enumvals Pointer to an array of values of the enum constants.
@@ -1764,14 +1764,14 @@ int XLALH5AttributeAddEnumArray1D(LALH5Generic UNUSED object, const char UNUSED 
 }
 
 /**
- * @brief Gets the datatype of an attribute in a #LALH5File or #LALH5Dataset
+ * @brief Gets the datatype of an attribute in a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine queries the datatype of a scalar attribute with
- * name @p key in a HDF5 object associated with the #LALH5File or #LALH5Dataset
+ * name @p key in a HDF5 object associated with the ::LALH5File or ::LALH5Dataset
  * @p object.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
- * @returns #LALTYPECODE value of the datatype of the scalar attribute.
+ * @returns \c LALTYPECODE value of the datatype of the scalar attribute.
  * @retval -1 Failure.
  */
 LALTYPECODE XLALH5AttributeQueryScalarType(const LALH5Generic UNUSED object, const char UNUSED *key)
@@ -1826,10 +1826,10 @@ LALTYPECODE XLALH5AttributeQueryScalarType(const LALH5Generic UNUSED object, con
 }
 
 /**
- * @brief Gets the value of a scalar attribute in a #LALH5File or #LALH5Dataset
+ * @brief Gets the value of a scalar attribute in a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine queries the value of a scalar attribute with
- * name @p key in a HDF5 object associated with the #LALH5File or #LALH5Dataset
+ * name @p key in a HDF5 object associated with the ::LALH5File or ::LALH5Dataset
  * @p object.
  * The value is stored in memory pointed to by the pointer @p value.
  *
@@ -1839,7 +1839,7 @@ LALTYPECODE XLALH5AttributeQueryScalarType(const LALH5Generic UNUSED object, con
  * is sufficient to hold the value in the attribute.
  *
  * @param value Pointer to memory in which the value will be stored.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1902,10 +1902,10 @@ int XLALH5AttributeQueryScalarValue(void UNUSED *value, const LALH5Generic UNUSE
 }
 
 /**
- * @brief Gets the value of a string attribute in a #LALH5File or #LALH5Dataset
+ * @brief Gets the value of a string attribute in a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine queries the value of a string attribute with
- * name @p key in a HDF5 object associated with the #LALH5File or #LALH5Dataset
+ * name @p key in a HDF5 object associated with the ::LALH5File or ::LALH5Dataset
  * @p object.
  * The result is written into the buffer pointed to by @p value, the size
  * of which is @p size bytes.  If @p value is NULL, no data is copied but
@@ -1921,7 +1921,7 @@ int XLALH5AttributeQueryScalarValue(void UNUSED *value, const LALH5Generic UNUSE
  * @param value Pointer to a buffer into which the string will be written.
  * @param size Size in bytes of the buffer into which the string will be
  * written.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @returns The number of bytes that would be written to @p value had @p size
  * been sufficiently large excluding the terminating NUL byte.
@@ -1994,15 +1994,15 @@ int XLALH5AttributeQueryStringValue(char UNUSED *value, size_t UNUSED size, cons
 }
 
 /**
- * @brief Gets the value of a LIGOTimeGPS attribute in a #LALH5File or #LALH5Dataset
+ * @brief Gets the value of a LIGOTimeGPS attribute in a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine queries the value of a LIGOTimeGPS attribute with
- * name @p key in a HDF5 object associated with the #LALH5File or #LALH5Dataset
+ * name @p key in a HDF5 object associated with the ::LALH5File or ::LALH5Dataset
  * @p object.
  * The value is stored in memory pointed to by the pointer @p value.
  * @param value Pointer to a LIGOTimeGPS structure in which the attribute
  * value will be stored.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @returns Pointer to the LIGOTimeGPS structure passed to this routine.
  * @retval NULL Failure.
@@ -2117,12 +2117,12 @@ LIGOTimeGPS * XLALH5AttributeQueryLIGOTimeGPSValue(LIGOTimeGPS UNUSED *value, co
 }
 
 /**
- * @brief Gets the length of a 1D enum array attribute in a #LALH5File or
- * #LALH5Dataset
+ * @brief Gets the length of a 1D enum array attribute in a ::LALH5File or
+ * ::LALH5Dataset
  * @details
  * This routine queries the length of a 1D enum array with name @p key in a
- * HDF5 object associated with the #LALH5File or #LALH5Dataset @p object.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
+ * HDF5 object associated with the ::LALH5File or ::LALH5Dataset @p object.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @returns Length of the 1D enum array.
  * @retval -1 Failure.
@@ -2178,11 +2178,11 @@ size_t XLALH5AttributeQueryEnumArray1DLength(const LALH5Generic UNUSED object, c
 }
 
 /**
- * @brief Gets the values in a 1D enum array attribute in a #LALH5File or
- * #LALH5Dataset
+ * @brief Gets the values in a 1D enum array attribute in a ::LALH5File or
+ * ::LALH5Dataset
  * @details
  * This routine reads the values of a 1D enum array with name @p key in a
- * HDF5 object associated with the #LALH5File or #LALH5Dataset @p object
+ * HDF5 object associated with the ::LALH5File or ::LALH5Dataset @p object
  * into the array @p value.
  *
  * @attention
@@ -2193,7 +2193,7 @@ size_t XLALH5AttributeQueryEnumArray1DLength(const LALH5Generic UNUSED object, c
  * length that this array must have.
  *
  * @param value Pointer to an array where then enum values will be stored.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -2249,12 +2249,12 @@ int XLALH5AttributeQueryEnumArray1DValue(int UNUSED value[], const LALH5Generic 
 
 /**
  * @brief Gets the number of constants in an enum type associated with an
- * attribute in a #LALH5File or #LALH5Dataset
+ * attribute in a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine queries the number constants in an enum type associated
  * with the attribute with name @p key in a
- * HDF5 object associated with the #LALH5File or #LALH5Dataset @p object.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
+ * HDF5 object associated with the ::LALH5File or ::LALH5Dataset @p object.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @returns Number of constants in enum type.
  * @retval -1 Failure.
@@ -2319,11 +2319,11 @@ size_t XLALH5AttributeQueryNEnum(const LALH5Generic UNUSED object, const char UN
 
 /**
  * @brief Gets the name of a constants in an enum type associated with an
- * attribute in a #LALH5File or #LALH5Dataset
+ * attribute in a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine queries the name of a constant in an enum type associated
  * with the attribute with name @p key in a
- * HDF5 object associated with the #LALH5File or #LALH5Dataset @p object.
+ * HDF5 object associated with the ::LALH5File or ::LALH5Dataset @p object.
  * The index @p pos identifies which constant's name is returned.
  * The result is written into the buffer pointed to by @p name, the size
  * of which is @p size bytes.  If @p name is NULL, no data is copied but
@@ -2339,7 +2339,7 @@ size_t XLALH5AttributeQueryNEnum(const LALH5Generic UNUSED object, const char UN
  * @param name Pointer to a buffer into which the string will be written.
  * @param size Size in bytes of the buffer into which the string will be
  * written.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @param pos The index identifying which enum constant.
  * @returns The number of bytes that would be written to @p name had @p size
@@ -2423,13 +2423,13 @@ int XLALH5AttributeQueryEnumName(char UNUSED *name, size_t UNUSED size, const LA
 
 /**
  * @brief Gets the value of a constants in an enum type associated with an
- * attribute in a #LALH5File or #LALH5Dataset
+ * attribute in a ::LALH5File or ::LALH5Dataset
  * @details
  * This routine queries the value of a constant in an enum type associated
  * with the attribute with name @p key in a
- * HDF5 object associated with the #LALH5File or #LALH5Dataset @p object.
+ * HDF5 object associated with the ::LALH5File or ::LALH5Dataset @p object.
  * The index @p pos identifies which constant's name is returned.
- * @param object Pointer to a #LALH5File or #LALH5Dataset to be queried.
+ * @param object Pointer to a ::LALH5File or ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @param pos The index identifying which enum constant.
  * @returns The value of the enum constant.
@@ -2519,21 +2519,21 @@ int XLALH5AttributeQueryEnumValue(const LALH5Generic UNUSED object, const char U
  */
 
 /**
- * @brief DEPRECATED: Adds a scalar attribute to a #LALH5File
+ * @brief DEPRECATED: Adds a scalar attribute to a ::LALH5File
  * @details
  * This routine adds a scalar-valued attribute with name @p key
  * and value given by the memory addressed by @p value to a
- * HDF5 file associated with the #LALH5File @p file.
- * The data type of the scalar value is given by the #LALTYPECODE
+ * HDF5 file associated with the ::LALH5File @p file.
+ * The data type of the scalar value is given by the \c LALTYPECODE
  * @p dtype.
  *
  * @deprecated
  * Use XLALH5AttributeAddScalar() instead.
  *
- * @param file Pointer to a #LALH5File to which the attribute will be added.
+ * @param file Pointer to a ::LALH5File to which the attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to the value of the scalar attribute to be added.
- * @param dtype #LALTYPECODE value specifying the data type of the attribute.
+ * @param dtype \c LALTYPECODE value specifying the data type of the attribute.
  * @retval 0 Success.
  * @retval -1 Failure.
  */
@@ -2550,7 +2550,7 @@ int XLALH5FileAddScalarAttribute(LALH5File UNUSED *file, const char UNUSED *key,
 }
 
 /**
- * @brief DEPRECATED: Gets attribute names from a #LALH5File
+ * @brief DEPRECATED: Gets attribute names from a ::LALH5File
  * @details
  * This routine returns the names of all attributes from a HDF5 Dataset
  *
@@ -2559,7 +2559,7 @@ int XLALH5FileAddScalarAttribute(LALH5File UNUSED *file, const char UNUSED *key,
  *
  * @param names Pointer a list of strings to be returned to the user. Memory
  * should be freed by the caller.
- * @param file Pointer to a #LALH5File from which the attributes will be added.
+ * @param file Pointer to a ::LALH5File from which the attributes will be added.
  * @param N Pointer to a UINT4 where the number of datasets will be recorded
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -2599,16 +2599,16 @@ int XLALH5FileGetAttributeNames(LALH5File UNUSED *file, char UNUSED *** names, U
 
 
 /**
- * @brief DEPRECATED: Adds a string attribute to a #LALH5File
+ * @brief DEPRECATED: Adds a string attribute to a ::LALH5File
  * @details
  * This routine adds a NUL-terminated variable-length string @p value
  * attribute with name @p key to a HDF5 file associated with the
- * #LALH5File @p file.
+ * ::LALH5File @p file.
  *
  * @deprecated
  * Use XLALH5AttributeAddString() instead.
  *
- * @param file Pointer to a #LALH5File to which the attribute will be added.
+ * @param file Pointer to a ::LALH5File to which the attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to a string with the value of the new attribute.
  * @retval 0 Success.
@@ -2627,15 +2627,15 @@ int XLALH5FileAddStringAttribute(LALH5File UNUSED *file, const char UNUSED *key,
 }
 
 /**
- * @brief DEPRECATED: Adds a LIGOTimeGPS attribute to a #LALH5File
+ * @brief DEPRECATED: Adds a LIGOTimeGPS attribute to a ::LALH5File
  * @details
  * This routine adds a LIGOTimeGPS @p value attribute with name @p key to a
- * HDF5 file associated with the #LALH5File @p file.
+ * HDF5 file associated with the ::LALH5File @p file.
  *
  * @deprecated
  * Use XLALH5AttributeAddLIGOTimeGPS() instead.
  *
- * @param file Pointer to a #LALH5File to which the attribute will be added.
+ * @param file Pointer to a ::LALH5File to which the attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to a LIGOTimeGPS structure with the value of the new
  * attribute.
@@ -2655,17 +2655,17 @@ int XLALH5FileAddLIGOTimeGPSAttribute(LALH5File UNUSED *file, const char UNUSED 
 }
 
 /**
- * @brief DEPRECATED: Gets the datatype of an attribute in a #LALH5File
+ * @brief DEPRECATED: Gets the datatype of an attribute in a ::LALH5File
  * @details
  * This routine queries the datatype of a scalar attribute with
- * name @p key in a HDF5 file associated with the #LALH5File @p file.
+ * name @p key in a HDF5 file associated with the ::LALH5File @p file.
  *
  * @deprecated
  * Use XLALH5AttributeQueryScalarType() instead.
  *
- * @param file Pointer to a #LALH5File to be queried.
+ * @param file Pointer to a ::LALH5File to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
- * @returns #LALTYPECODE value of the datatype of the scalar attribute.
+ * @returns \c LALTYPECODE value of the datatype of the scalar attribute.
  * @retval -1 Failure.
  */
 LALTYPECODE XLALH5FileQueryScalarAttributeType(LALH5File UNUSED *file, const char UNUSED *key)
@@ -2685,10 +2685,10 @@ LALTYPECODE XLALH5FileQueryScalarAttributeType(LALH5File UNUSED *file, const cha
 }
 
 /**
- * @brief DEPRECATED: Gets the value of a scalar attribute in a #LALH5File
+ * @brief DEPRECATED: Gets the value of a scalar attribute in a ::LALH5File
  * @details
  * This routine queries the value of a scalar attribute with
- * name @p key in a HDF5 file associated with the #LALH5File @p file.
+ * name @p key in a HDF5 file associated with the ::LALH5File @p file.
  * The value is stored in memory pointed to by the pointer @p value.
  *
  * @attention
@@ -2700,7 +2700,7 @@ LALTYPECODE XLALH5FileQueryScalarAttributeType(LALH5File UNUSED *file, const cha
  * Use XLALH5AttributeQueryScalarValue() instead.
  *
  * @param value Pointer to memory in which the value will be stored.
- * @param file Pointer to a #LALH5File to be queried.
+ * @param file Pointer to a ::LALH5File to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -2718,10 +2718,10 @@ int XLALH5FileQueryScalarAttributeValue(void UNUSED *value, LALH5File UNUSED *fi
 }
 
 /**
- * @brief DEPRECATED: Gets the value of a string attribute in a #LALH5File
+ * @brief DEPRECATED: Gets the value of a string attribute in a ::LALH5File
  * @details
  * This routine queries the value of a string attribute with
- * name @p key in a HDF5 file associated with the #LALH5File @p file.
+ * name @p key in a HDF5 file associated with the ::LALH5File @p file.
  * The result is written into the buffer pointed to by @p value, the size
  * of which is @p size bytes.  If @p value is NULL, no data is copied but
  * the routine returns the length of the string.  Therefore, this routine
@@ -2740,7 +2740,7 @@ int XLALH5FileQueryScalarAttributeValue(void UNUSED *value, LALH5File UNUSED *fi
  * @param value Pointer to a buffer into which the string will be written.
  * @param size Size in bytes of the buffer into which the string will be
  * written.
- * @param file Pointer to a #LALH5File to be queried.
+ * @param file Pointer to a ::LALH5File to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @returns The number of bytes that would be written to @p value had @p size
  * been sufficiently large excluding the terminating NUL byte.
@@ -2763,10 +2763,10 @@ int XLALH5FileQueryStringAttributeValue(char UNUSED *value, size_t UNUSED size, 
 }
 
 /**
- * @brief DEPRECATED: Gets the value of a LIGOTimeGPS attribute in a #LALH5File
+ * @brief DEPRECATED: Gets the value of a LIGOTimeGPS attribute in a ::LALH5File
  * @details
  * This routine queries the value of a LIGOTimeGPS attribute with
- * name @p key in a HDF5 file associated with the #LALH5File @p file.
+ * name @p key in a HDF5 file associated with the ::LALH5File @p file.
  * The value is stored in memory pointed to by the pointer @p value.
  *
  * @deprecated
@@ -2774,7 +2774,7 @@ int XLALH5FileQueryStringAttributeValue(char UNUSED *value, size_t UNUSED size, 
  *
  * @param value Pointer to a LIGOTimeGPS structure in which the attribute
  * value will be stored.
- * @param file Pointer to a #LALH5File to be queried.
+ * @param file Pointer to a ::LALH5File to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @returns Pointer to the LIGOTimeGPS structure passed to this routine.
  * @retval NULL Failure.
@@ -2804,21 +2804,21 @@ LIGOTimeGPS * XLALH5FileQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS UNUSED *value
  */
 
 /**
- * @brief DEPRECATED: Adds a scalar attribute to a #LALH5Dataset
+ * @brief DEPRECATED: Adds a scalar attribute to a ::LALH5Dataset
  * @details
  * This routine adds a scalar-valued attribute with name @p key
  * and value given by the memory addressed by @p value to a
- * HDF5 dataset associated with the #LALH5Dataset @p dset.
- * The data type of the scalar value is given by the #LALTYPECODE
+ * HDF5 dataset associated with the ::LALH5Dataset @p dset.
+ * The data type of the scalar value is given by the \c LALTYPECODE
  * @p dtype.
  *
  * @deprecated
  * Use XLALH5AttributeAddScalar() instead.
  *
- * @param dset Pointer to a #LALH5Dataset to which the attribute will be added.
+ * @param dset Pointer to a ::LALH5Dataset to which the attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to the value of the scalar attribute to be added.
- * @param dtype #LALTYPECODE value specifying the data type of the attribute.
+ * @param dtype \c LALTYPECODE value specifying the data type of the attribute.
  * @retval 0 Success.
  * @retval -1 Failure.
  */
@@ -2835,16 +2835,16 @@ int XLALH5DatasetAddScalarAttribute(LALH5Dataset UNUSED *dset, const char UNUSED
 }
 
 /**
- * @brief DEPRECATED: Adds a string attribute to a #LALH5Dataset
+ * @brief DEPRECATED: Adds a string attribute to a ::LALH5Dataset
  * @details
  * This routine adds a NUL-terminated variable-length string @p value
  * attribute with name @p key to a HDF5 dataset associated with the
- * #LALH5Dataset @p dset.
+ * ::LALH5Dataset @p dset.
  *
  * @deprecated
  * Use XLALH5AttributeAddString() instead.
  *
- * @param dset Pointer to a #LALH5Dataset to which the attribute will be added.
+ * @param dset Pointer to a ::LALH5Dataset to which the attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to a string with the value of the new attribute.
  * @retval 0 Success.
@@ -2863,15 +2863,15 @@ int XLALH5DatasetAddStringAttribute(LALH5Dataset UNUSED *dset, const char UNUSED
 }
 
 /**
- * @brief DEPRECATED: Adds a LIGOTimeGPS attribute to a #LALH5Dataset
+ * @brief DEPRECATED: Adds a LIGOTimeGPS attribute to a ::LALH5Dataset
  * @details
  * This routine adds a LIGOTimeGPS @p value attribute with name @p key to a
- * HDF5 dataset associated with the #LALH5Dataset @p dset.
+ * HDF5 dataset associated with the ::LALH5Dataset @p dset.
  *
  * @deprecated
  * Use XLALH5AttributeAddLIGOTimeGPS() instead.
  *
- * @param dset Pointer to a #LALH5Dataset to which the attribute will be added.
+ * @param dset Pointer to a ::LALH5Dataset to which the attribute will be added.
  * @param key Pointer to a string with the name of the new attribute.
  * @param value Pointer to a LIGOTimeGPS structure with the value of the new
  * attribute.
@@ -2891,17 +2891,17 @@ int XLALH5DatasetAddLIGOTimeGPSAttribute(LALH5Dataset UNUSED *dset, const char U
 }
 
 /**
- * @brief DEPRECATED: Gets the datatype of an attribute in a #LALH5Dataset
+ * @brief DEPRECATED: Gets the datatype of an attribute in a ::LALH5Dataset
  * @details
  * This routine queries the datatype of a scalar attribute with
- * name @p key in a HDF5 dataset associated with the #LALH5Dataset @p dset.
+ * name @p key in a HDF5 dataset associated with the ::LALH5Dataset @p dset.
  *
  * @deprecated
  * Use XLALH5AttributeQueryScalarType() instead.
  *
- * @param dset Pointer to a #LALH5Dataset to be queried.
+ * @param dset Pointer to a ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
- * @returns #LALTYPECODE value of the datatype of the scalar attribute.
+ * @returns \c LALTYPECODE value of the datatype of the scalar attribute.
  * @retval -1 Failure.
  */
 LALTYPECODE XLALH5DatasetQueryScalarAttributeType(LALH5Dataset UNUSED *dset, const char UNUSED *key)
@@ -2921,10 +2921,10 @@ LALTYPECODE XLALH5DatasetQueryScalarAttributeType(LALH5Dataset UNUSED *dset, con
 }
 
 /**
- * @brief DEPRECATED: Gets the value of a scalar attribute in a #LALH5Dataset
+ * @brief DEPRECATED: Gets the value of a scalar attribute in a ::LALH5Dataset
  * @details
  * This routine queries the value of a scalar attribute with
- * name @p key in a HDF5 dataset associated with the #LALH5Dataset @p dset.
+ * name @p key in a HDF5 dataset associated with the ::LALH5Dataset @p dset.
  * The value is stored in memory pointed to by the pointer @p value.
  *
  * @attention
@@ -2936,7 +2936,7 @@ LALTYPECODE XLALH5DatasetQueryScalarAttributeType(LALH5Dataset UNUSED *dset, con
  * Use XLALH5AttributeQueryScalarValue() instead.
  *
  * @param value Pointer to memory in which the value will be stored.
- * @param dset Pointer to a #LALH5Dataset to be queried.
+ * @param dset Pointer to a ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -2954,10 +2954,10 @@ int XLALH5DatasetQueryScalarAttributeValue(void UNUSED *value, LALH5Dataset UNUS
 }
 
 /**
- * @brief DEPRECATED: Gets the value of a string attribute in a #LALH5Dataset
+ * @brief DEPRECATED: Gets the value of a string attribute in a ::LALH5Dataset
  * @details
  * This routine queries the value of a string attribute with
- * name @p key in a HDF5 dataset associated with the #LALH5Dataset @p dset.
+ * name @p key in a HDF5 dataset associated with the ::LALH5Dataset @p dset.
  * The result is written into the buffer pointed to by @p value, the size
  * of which is @p size bytes.  If @p value is NULL, no data is copied but
  * the routine returns the length of the string.  Therefore, this routine
@@ -2976,7 +2976,7 @@ int XLALH5DatasetQueryScalarAttributeValue(void UNUSED *value, LALH5Dataset UNUS
  * @param value Pointer to a buffer into which the string will be written.
  * @param size Size in bytes of the buffer into which the string will be
  * written.
- * @param dset Pointer to a #LALH5Dataset to be queried.
+ * @param dset Pointer to a ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @returns The number of bytes that would be written to @p value had @p size
  * been sufficiently large excluding the terminating NUL byte.
@@ -2999,10 +2999,10 @@ int XLALH5DatasetQueryStringAttributeValue(char UNUSED *value, size_t UNUSED siz
 }
 
 /**
- * @brief DEPRECATED: Gets the value of a LIGOTimeGPS attribute in a #LALH5Dataset
+ * @brief DEPRECATED: Gets the value of a LIGOTimeGPS attribute in a ::LALH5Dataset
  * @details
  * This routine queries the value of a LIGOTimeGPS attribute with
- * name @p key in a HDF5 dataset associated with the #LALH5Dataset @p dset.
+ * name @p key in a HDF5 dataset associated with the ::LALH5Dataset @p dset.
  * The value is stored in memory pointed to by the pointer @p value.
  *
  * @deprecated
@@ -3010,7 +3010,7 @@ int XLALH5DatasetQueryStringAttributeValue(char UNUSED *value, size_t UNUSED siz
  *
  * @param value Pointer to a LIGOTimeGPS structure in which the attribute
  * value will be stored.
- * @param dset Pointer to a #LALH5Dataset to be queried.
+ * @param dset Pointer to a ::LALH5Dataset to be queried.
  * @param key Pointer to a string with the name of the attribute to query.
  * @returns Pointer to the LIGOTimeGPS structure passed to this routine.
  * @retval NULL Failure.
@@ -3041,16 +3041,16 @@ LIGOTimeGPS * XLALH5DatasetQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS UNUSED *va
  */
 
 /**
- * @brief Allocates a #LALH5Dataset dataset to hold a table.
+ * @brief Allocates a ::LALH5Dataset dataset to hold a table.
  * @details
  * This routine creates a dataset with name @p name within an HDF5
- * file associated with the #LALH5File @p file structure and allocates
- * a #LALH5Dataset structure associated with the dataset.  The type
+ * file associated with the ::LALH5File @p file structure and allocates
+ * a ::LALH5Dataset structure associated with the dataset.  The type
  * of data to be stored are table data comprised of rows of size
  * @p rowsz; each row having @p ncols columns with names @p cols, types @p
  * types, and offsets @p offsets.
 
- * with the #LALH5Dataset @p dset and stores the data in the buffer @p data.
+ * with the ::LALH5Dataset @p dset and stores the data in the buffer @p data.
  * This buffer should be sufficiently large to hold the requested rows
  * of the dataset, which is comprised of a number of rows each of size
  * @p rowsz.  Each row is comprised of a number of columns
@@ -3074,16 +3074,16 @@ LIGOTimeGPS * XLALH5DatasetQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS UNUSED *va
  * LALH5Dataset *dset = XLALH5TableAlloc(file, "particles", ncols, cols, types, offsets, rowsz);
  * @endcode
  *
- * @param file Pointer to a #LALH5File in which to create the dataset.
+ * @param file Pointer to a ::LALH5File in which to create the dataset.
  * @param name Pointer to a string with the name of the dataset to create (also
  * the table name).
  * @param ncols Number of columns in each row.
  * @param cols Pointer to an array of strings giving the column names.
- * @param types Pointer to an array of #LALTYPECODE values specifying the data
+ * @param types Pointer to an array of \c LALTYPECODE values specifying the data
  * type of each column.
  * @param offsets Pointer to an array of offsets for each column.
  * @param rowsz Size of each row of data.
- * @returns A pointer to a #LALH5Dataset structure associated with the specified
+ * @returns A pointer to a ::LALH5Dataset structure associated with the specified
  * dataset within a HDF5 file.
  * @retval NULL An error occurred creating the dataset.
  */
@@ -3165,10 +3165,10 @@ LALH5Dataset * XLALH5TableAlloc(LALH5File UNUSED *file, const char UNUSED *name,
 }
 
 /**
- * @brief Appends rows of data to a #LALH5Dataset dataset holding a table.
+ * @brief Appends rows of data to a ::LALH5Dataset dataset holding a table.
  * @details
  * This routine appends @p nrows rows of data each having size @p rowsz
- * to a HDF5 table dataset associated with the #LALH5Dataset structure
+ * to a HDF5 table dataset associated with the ::LALH5Dataset structure
  * @p dset.  The data is contained in @p data and the offsets and sizes
  * of each column are given by the arrays @p offsets and @p colsz.
  *
@@ -3202,7 +3202,7 @@ LALH5Dataset * XLALH5TableAlloc(LALH5File UNUSED *file, const char UNUSED *name,
  * XLALH5TableAppend(dset, offsets, colsz, nrows, rowsz, data);
  * @endcode
  *
- * @param dset Pointer to a #LALH5Dataset containing the table into which the
+ * @param dset Pointer to a ::LALH5Dataset containing the table into which the
  * rows will be appended.
  * @param offsets Pointer to an array of offsets for each column.
  * @param colsz Pointer to an array of sizes of each column.
@@ -3228,10 +3228,10 @@ int XLALH5TableAppend(LALH5Dataset UNUSED *dset, const size_t UNUSED *offsets, c
 }
 
 /**
- * @brief Reads table data from a #LALH5Dataset
+ * @brief Reads table data from a ::LALH5Dataset
  * @details
  * This routine reads the table data from a HDF5 dataset associated with the
- * #LALH5Dataset @p dset and stores the data in the buffer @p data.
+ * ::LALH5Dataset @p dset and stores the data in the buffer @p data.
  * This buffer should be sufficiently large to hold the entire contents
  * of the dataset, which is comprised of a number of rows each of size
  * @p rowsz.  The number of rows can be determined with the routine
@@ -3259,7 +3259,7 @@ int XLALH5TableAppend(LALH5Dataset UNUSED *dset, const size_t UNUSED *offsets, c
  * @endcode
  *
  * @param data Pointer to a memory in which to store the data.
- * @param dset Pointer to a #LALH5Dataset from which to extract the data.
+ * @param dset Pointer to a ::LALH5Dataset from which to extract the data.
  * @param offsets Pointer to an array of offsets for each column.
  * @param colsz Pointer to an array of sizes of each column.
  * @param rowsz Size of each row of data.
@@ -3282,10 +3282,10 @@ int XLALH5TableRead(void UNUSED *data, const LALH5Dataset UNUSED *dset, const si
 }
 
 /**
- * @brief Reads certain rows of table data from a #LALH5Dataset
+ * @brief Reads certain rows of table data from a ::LALH5Dataset
  * @details
  * This routine reads certain rows of table data from a HDF5 dataset associated
- * with the #LALH5Dataset @p dset and stores the data in the buffer @p data.
+ * with the ::LALH5Dataset @p dset and stores the data in the buffer @p data.
  * This buffer should be sufficiently large to hold the requested @p nrows rows
  * of the dataset, starting with row @p row0 (the first row is row 0), which is
  * comprised of a number of rows each of size @p rowsz.  Each row is comprised
@@ -3314,7 +3314,7 @@ int XLALH5TableRead(void UNUSED *data, const LALH5Dataset UNUSED *dset, const si
  * @endcode
  *
  * @param data Pointer to a memory in which to store the data.
- * @param dset Pointer to a #LALH5Dataset from which to extract the data.
+ * @param dset Pointer to a ::LALH5Dataset from which to extract the data.
  * @param offsets Pointer to an array of offsets for each column.
  * @param colsz Pointer to an array of sizes of each column.
  * @param row0 The first row to read.
@@ -3339,10 +3339,10 @@ int XLALH5TableReadRows(void UNUSED *data, const LALH5Dataset UNUSED *dset, cons
 }
 
 /**
- * @brief Reads certain columns of table data from a #LALH5Dataset
+ * @brief Reads certain columns of table data from a ::LALH5Dataset
  * @details
  * This routine reads certain columns of table data from a HDF5 dataset associated
- * with the #LALH5Dataset @p dset and stores the data in the buffer @p data.
+ * with the ::LALH5Dataset @p dset and stores the data in the buffer @p data.
  * This buffer should be sufficiently large to hold the requested rows
  * of the dataset, which is comprised of a number of rows each of size
  * @p rowsz.  Each row is comprised of a number of columns
@@ -3371,7 +3371,7 @@ int XLALH5TableReadRows(void UNUSED *data, const LALH5Dataset UNUSED *dset, cons
  * @endcode
  *
  * @param data Pointer to a memory in which to store the data.
- * @param dset Pointer to a #LALH5Dataset from which to extract the data.
+ * @param dset Pointer to a ::LALH5Dataset from which to extract the data.
  * @param cols Pointer to an string listing the column names separated by commas.
  * @param offsets Pointer to an array of offsets for each column.
  * @param colsz Pointer to an array of sizes of each column.
@@ -3397,10 +3397,10 @@ int XLALH5TableReadColumns(void UNUSED *data, const LALH5Dataset UNUSED *dset, c
 }
 
 /**
- * @brief Gets the number of rows in a #LALH5Dataset containing table data.
- * @param dset Pointer to a #LALH5Dataset containing table data to be queried.
+ * @brief Gets the number of rows in a ::LALH5Dataset containing table data.
+ * @param dset Pointer to a ::LALH5Dataset containing table data to be queried.
  * @returns The number of rows of table data in the HDF5 dataset associated
- * with the specified #LALH5Dataset.
+ * with the specified ::LALH5Dataset.
  * @retval (size_t)(-1) Failure.
  */
 size_t XLALH5TableQueryNRows(const LALH5Dataset UNUSED *dset)
@@ -3421,10 +3421,10 @@ size_t XLALH5TableQueryNRows(const LALH5Dataset UNUSED *dset)
 }
 
 /**
- * @brief Gets the number of columns in a #LALH5Dataset containing table data.
- * @param dset Pointer to a #LALH5Dataset containing table data to be queried.
+ * @brief Gets the number of columns in a ::LALH5Dataset containing table data.
+ * @param dset Pointer to a ::LALH5Dataset containing table data to be queried.
  * @returns The number of columns of table data in the HDF5 dataset associated
- * with the specified #LALH5Dataset.
+ * with the specified ::LALH5Dataset.
  * @retval (size_t)(-1) Failure.
  */
 size_t XLALH5TableQueryNColumns(const LALH5Dataset UNUSED *dset)
@@ -3445,11 +3445,11 @@ size_t XLALH5TableQueryNColumns(const LALH5Dataset UNUSED *dset)
 }
 
 /**
- * @brief Gets the number of bytes in a row in a #LALH5Dataset containing table
+ * @brief Gets the number of bytes in a row in a ::LALH5Dataset containing table
  * data.
- * @param dset Pointer to a #LALH5Dataset containing table data to be queried.
+ * @param dset Pointer to a ::LALH5Dataset containing table data to be queried.
  * @returns The number of bytes of a row of data in the HDF5 dataset associated
- * with the specified #LALH5Dataset.
+ * with the specified ::LALH5Dataset.
  * @retval (size_t)(-1) Failure.
  */
 size_t XLALH5TableQueryRowSize(const LALH5Dataset UNUSED *dset)
@@ -3470,10 +3470,10 @@ size_t XLALH5TableQueryRowSize(const LALH5Dataset UNUSED *dset)
 }
 
 /**
- * @brief Gets the name of a column in a #LALH5Dataset containing table
+ * @brief Gets the name of a column in a ::LALH5Dataset containing table
  * data.
  * @details
- * This routines gets the name of a column of data in a #LALH5Dataset
+ * This routines gets the name of a column of data in a ::LALH5Dataset
  * @p dset that contains table data.
  * The index @p pos identifies which column's name is returned.
  * The result is written into the buffer pointed to by @p name, the size
@@ -3490,7 +3490,7 @@ size_t XLALH5TableQueryRowSize(const LALH5Dataset UNUSED *dset)
  * @param name Pointer to a buffer into which the string will be written.
  * @param size Size in bytes of the buffer into which the string will be
  * written.
- * @param dset Pointer to a #LALH5Dataset containing table data to be
+ * @param dset Pointer to a ::LALH5Dataset containing table data to be
  * queried.
  * @param pos The index identifying which column of the table.
  * @retval  0 Success.
@@ -3526,13 +3526,13 @@ int XLALH5TableQueryColumnName(char UNUSED *name, size_t UNUSED size, const LALH
 }
 
 /**
- * @brief Gets the size in bytes of a column in a #LALH5Dataset containing table
+ * @brief Gets the size in bytes of a column in a ::LALH5Dataset containing table
  * data.
- * @param dset Pointer to a #LALH5Dataset containing table data to be
+ * @param dset Pointer to a ::LALH5Dataset containing table data to be
  * queried.
  * @param pos The index identifying which column of the table.
  * @returns The size in bytes of the specified column entry in the HDF5 dataset
- * associated with the specified #LALH5Dataset.
+ * associated with the specified ::LALH5Dataset.
  * @retval -1 Failure.
  */
 size_t XLALH5TableQueryColumnSize(const LALH5Dataset UNUSED *dset, int UNUSED pos)
@@ -3580,13 +3580,13 @@ size_t XLALH5TableQueryColumnSize(const LALH5Dataset UNUSED *dset, int UNUSED po
 }
 
 /**
- * @brief Gets the type of data stored in a column in a #LALH5Dataset
+ * @brief Gets the type of data stored in a column in a ::LALH5Dataset
  * containing table data.
- * @param dset Pointer to a #LALH5Dataset containing table data to be
+ * @param dset Pointer to a ::LALH5Dataset containing table data to be
  * queried.
  * @param pos The index identifying which column of the table.
- * @returns The #LALTYPECODE of the datatype of the specified column entry in
- * the HDF5 dataset associated with the specified #LALH5Dataset.
+ * @returns The \c LALTYPECODE of the datatype of the specified column entry in
+ * the HDF5 dataset associated with the specified ::LALH5Dataset.
  * @retval -1 Failure.
  */
 LALTYPECODE XLALH5TableQueryColumnType(const LALH5Dataset UNUSED *dset, int UNUSED pos)
@@ -3622,13 +3622,13 @@ LALTYPECODE XLALH5TableQueryColumnType(const LALH5Dataset UNUSED *dset, int UNUS
 }
 
 /**
- * @brief Gets the offset of the data in a column in a #LALH5Dataset
+ * @brief Gets the offset of the data in a column in a ::LALH5Dataset
  * containing table data.
- * @param dset Pointer to a #LALH5Dataset containing table data to be
+ * @param dset Pointer to a ::LALH5Dataset containing table data to be
  * queried.
  * @param pos The index identifying which column of the table.
  * @returns The offset of the specified column data in a row of data
- * in the HDF5 dataset associated with the specified #LALH5Dataset.
+ * in the HDF5 dataset associated with the specified ::LALH5Dataset.
  * @retval (size_t)(-1) Failure.
  */
 size_t XLALH5TableQueryColumnOffset(const LALH5Dataset UNUSED *dset, int UNUSED pos)
