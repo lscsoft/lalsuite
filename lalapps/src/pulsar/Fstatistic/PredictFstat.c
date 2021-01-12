@@ -68,7 +68,7 @@ typedef struct {
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+extern int vrbflg;		/**< defined in lal/lib/std/LALError.c */
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 

@@ -270,7 +270,7 @@ typedef struct {
 
 /***********************************************************************************************/
 /* global variables */
-extern int vrbflg;	 	/**< defined in lalapps.c */
+extern int vrbflg;	 	/**< defined in lal/lib/std/LALError.c */
 
 /* keywords in FITS file header */
 char string_OBJECT[] = "OBJECT";

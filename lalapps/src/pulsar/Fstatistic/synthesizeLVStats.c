@@ -173,7 +173,7 @@ MultiNoiseWeights * XLALComputeConstantMultiNoiseWeightsFromNoiseFloor (const Mu
 /* exportable API */
 
 /*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+extern int vrbflg;		/**< defined in lal/lib/std/LALError.c */
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
