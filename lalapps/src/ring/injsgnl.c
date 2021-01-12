@@ -54,7 +54,7 @@ int ring_inject_signal(
 {
   /* note: duration is only used for response, and can be relatively coarse */
   const      REAL8 duration = 16; /* determines deltaF=1/dataDuration Hz*/
-  LALStatus                status     = blank_status;
+  LALStatus                XLAL_INIT_DECL(status);
   COMPLEX8FrequencySeries *response   = NULL;
   SimInspiralTable        *injectList = NULL;
   SimInspiralTable        *thisInject;

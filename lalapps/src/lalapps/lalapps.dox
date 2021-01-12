@@ -17,68 +17,6 @@ look-and-feel.
 To use these utilities, include the header \ref lalapps.h and make sure the
 program links to the object <tt>lalapps.o</tt>.
 
-### Function <tt>clear_status</tt>
-
-<dl>
-
-<dt>Name</dt><dd>
-\c clear_status --- clears the LAL status structure after a failed LAL
-function call</dd>
-
-<dt>Synopsis</dt><dd>
-\code
-#include <lalapps.h>
-extern const LALStatus blank_status;
-int clear_status( LALStatus *status );
-\endcode</dd>
-
-<dt>Description</dt><dd>
-Clears the LAL status structure and iteratively frees attatched (sic) any
-linked status structures.  This is to be used after a failed LAL function
-call to restore the status structure to a useable form.  The structure
-\c blank_status contains a blank status structure that can be used to
-initialize a status structure in the program.</dd>
-
-<dt>Example</dt><dd>
-
-The following program calls a routine \c LALFailUnlessNegative twice,
-once with a positive argument (which causes the routine to fail) and once
-with a negative argument (which causes the routine to pass).  The function
-\c clear_status is used to clean up the status structure after the
-failure and the constant structure \c blank_status is used to initialize
-the status structure.
-
-\code
-#include <lalapps.h>
-#include <lal/LALStdlib.h>
-
-extern const LALStatus blank_status;
-
-void LALFailUnlessNegative( LALStatus *status, INT4 n )
-{
-  INITSTATUS( status, "LALFail", "$Id$" );
-  ATTATCHSTATUSPTR( status );
-  ASSERT( n, status, 1, "Non-negative n" );
-  if ( n > 0 )
-  {
-    TRY( LALFailUnlessNegative( status->statusPtr, n - 1 ), status );
-  }
-  DETATCHSTATUSPTR( status );
-  RETURN( status );
-}
-
-int main( void )
-{
-  LALStatus status = blank_status;
-  LALFailUnlessNegative( &status, 5 );
-  clear_status( &status );
-  LALFailUnlessNegative( &status, -2 );
-  return status.statusCode;
-}
-\endcode
-</dd>
-</dl>
-
 ### Macro <tt>PRINT_VERSION</tt>
 
 <dl>
@@ -168,7 +106,6 @@ pointer error is not caught and the default error handler aborts the program.
 RCSID( "$Id$" );
 
 extern int vrblvl;
-extern const LALStatus blank_status;
 
 void LALInvert( LALStatus *status, REAL4 *y, REAL4 x )
 {
@@ -184,7 +121,7 @@ void LALInvert( LALStatus *status, REAL4 *y, REAL4 x )
 
 int main( void )
 {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
   REAL4 x;
   int code;
 
@@ -195,7 +132,6 @@ int main( void )
   if ( code == 2 )
   {
     puts( "division by zero" );
-    clear_status( &status );
   }
   else if ( code )
   {

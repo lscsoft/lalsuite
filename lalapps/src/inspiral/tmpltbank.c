@@ -481,7 +481,7 @@ CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 int main ( int argc, char *argv[] )
 {
   /* lal function variables */
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
 
   /* frame input data */
   LALCache     *frInCache = NULL;

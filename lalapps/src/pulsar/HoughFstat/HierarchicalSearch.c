@@ -277,7 +277,7 @@ UINT4 nSkyRefine;
 
 int MAIN( int argc, char *argv[]) {
 
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
 
   /* temp loop variables: generally k loops over stacks */
   UINT4 k;

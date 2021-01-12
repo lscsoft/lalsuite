@@ -419,7 +419,7 @@ static REAL4TimeSeries *injectWaveform(
 
 int main( int argc, char *argv[] )
 {
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
   LIGOTimeGPS           gpsStartTime = {0, 0};
   LIGOTimeGPS           earliestEndTime = {0, 0};
   ResponseFunction      injectionResponse = noResponse;

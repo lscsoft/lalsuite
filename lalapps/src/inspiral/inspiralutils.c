@@ -129,7 +129,7 @@ REAL4 XLALCandleDistanceTD(
     UINT4 cut)
 {
 
-  LALStatus      status   = blank_status;
+  LALStatus      XLAL_INIT_DECL(status);
 
   InspiralTemplate  tmplt;
   REAL4Vector    *waveform = NULL;

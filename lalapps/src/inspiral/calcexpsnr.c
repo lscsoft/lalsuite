@@ -156,7 +156,7 @@ int coireflg;                /* is input file coire (1) or inj (null) */
 
 int main( int argc, char *argv[] )
 {
-  LALStatus                     status = blank_status;
+  LALStatus                     XLAL_INIT_DECL(status);
 
   UINT4                         k;
   UINT4                         kLow;
