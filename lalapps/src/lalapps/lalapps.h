@@ -31,42 +31,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-typedef int ( *lal_errhandler_t )(
-    LALStatus  *,
-    const char *func,
-    const char *file,
-    const int   line,
-    volatile const char *id
-    );
-
-#define LAL_ERR_DFLT LAL_ERR_ABRT
-extern lal_errhandler_t lal_errhandler;
-
-extern int LAL_ERR_EXIT(
-    LALStatus  *,
-    const char *func,
-    const char *file,
-    const int   line,
-    volatile const char *id
-    );
-extern int LAL_ERR_ABRT(
-    LALStatus  *,
-    const char *func,
-    const char *file,
-    const int   line,
-    volatile const char *id
-    );
-extern int LAL_ERR_RTRN(
-    LALStatus  *,
-    const char *func,
-    const char *file,
-    const int   line,
-    volatile const char *id
-    );
-
-#define LAL_CALL( function, statusptr ) \
-  ((function),lal_errhandler(statusptr,#function,__FILE__,__LINE__,"$Id$"))
-
 #if 0
 { /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
