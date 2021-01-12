@@ -1579,13 +1579,6 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
   //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false");
 
 
-  /*Lattice Dimmensions*/
-  int ndim = 4;
-  int dimT = 0;
-  int dimP = 1;
-  int dima = 2;
-  int dimf = 3;
-
   while ( GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0)
     {
       /* do useful stuff here*/
