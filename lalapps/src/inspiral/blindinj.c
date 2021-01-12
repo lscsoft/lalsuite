@@ -604,7 +604,7 @@ int main( int argc, char *argv[] )
         /* print version information and exit */
         fprintf( stdout, "blind hardware injection generation routine\n" 
             "Stephen Fairhurst\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

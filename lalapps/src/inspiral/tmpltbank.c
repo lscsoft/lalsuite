@@ -2634,7 +2634,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC Standalone Inspiral Template Bank Code\n"
             "Duncan Brown <duncan@gravity.phys.uwm.edu>\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

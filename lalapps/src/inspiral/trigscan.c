@@ -280,7 +280,7 @@ int main( int argc, char *argv[] )
         fprintf( stdout, "TrigScan Cluster \n" 
             "Larne Pekowsky\n"
             "Based on trigbank and inspiral by Patrick Brady, Duncan Brown and Steve Fairhurst\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

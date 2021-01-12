@@ -835,7 +835,7 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
         break;
 
       case 'V': /* version */
-        PRINT_VERSION( "tconvert" );
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

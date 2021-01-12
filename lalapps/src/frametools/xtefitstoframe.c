@@ -3120,7 +3120,7 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
 	{
 	  CHAR *versionstring = NULL;              /* pointer to a string containing the git version information */
 
-	  versionstring = XLALGetVersionString(1);
+	  versionstring = XLALVCSInfoString(lalAppsVCSInfoList, 1, "%% ");
 	  XLALFrameAddFrHistory(outFrame,"headerdump",ts->headerdump);
 	  XLALFrameAddFrHistory(outFrame,"comment",ts->comment);
 	  XLALFrameAddFrHistory(outFrame,"versionstring",versionstring);

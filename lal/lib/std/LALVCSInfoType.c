@@ -83,3 +83,22 @@ char *XLALVCSInfoString(const LALVCSInfoList vcs_list, const int verbose, const 
   return str;
 
 }
+
+int XLALOutputVCSInfo(FILE *fp, const LALVCSInfoList vcs_list, const int verbose, const char *prefix)
+{
+
+  /* check input */
+  XLAL_CHECK( fp != NULL, XLAL_EFAULT );
+
+  /* generate VCS and build information string */
+  char *str = XLALVCSInfoString( vcs_list, verbose, prefix );
+  XLAL_CHECK( str != NULL, XLAL_EFUNC );
+
+  /* output string */
+  XLAL_CHECK( fprintf( fp, "%s", str ) >= 0, XLAL_ESYS );
+
+  XLALFree( str );
+
+  return XLAL_SUCCESS;
+
+}

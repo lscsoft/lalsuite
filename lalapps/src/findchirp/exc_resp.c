@@ -83,7 +83,7 @@ int main ( int argc, char *argv[] )
         usage( program );
         return 0;
       case 'V':
-        PRINT_VERSION( "hello" );
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         return 0;
       case 'v':
         vrbflg = 1;
