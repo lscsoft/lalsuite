@@ -17,31 +17,6 @@ look-and-feel.
 To use these utilities, include the header \ref lalapps.h and make sure the
 program links to the object <tt>lalapps.o</tt>.
 
-### Macro <tt>PRINT_VERSION</tt>
-
-<dl>
-
-<dt>Name</dt><dd>
-\c PRINT_VERSION --- prints the LALApps version of the program</dd>
-
-<dt>Synopsis</dt><dd>
-\code
-#include <lalapps.h>
-static volatile const char *rcsid="$Id$";
-#ifndef PRINT_VERSION
-#define PRINT_VERSION( program ) \
-  fprintf( stderr, PACKAGE "
-#endif
-\endcode</dd>
-
-<dt>Description</dt><dd>
-\c PRINT_VERSION prints the version information for \c program in a
-standard format, along with the RCS Id information. Note that
-\c PRINT_VERSION requires the string variable \c rcsid to be
-set.</dd>
-
-</dl>
-
 ### Macro <tt>LAL_CALL</tt>
 
 Error Handler

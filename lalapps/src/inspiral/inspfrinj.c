@@ -1520,7 +1520,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC Inspiral Injection Program\n" 
             "Steve Fairhurst <sfairhur@gravity.phys.uwm.edu>\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

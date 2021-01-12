@@ -64,16 +64,8 @@ extern int LAL_ERR_RTRN(
     volatile const char *id
     );
 
-extern char *XLALGetVersionString( int level );
-extern int XLALOutputVersionString ( FILE *fp, int level );
-
 #define LAL_CALL( function, statusptr ) \
   ((function),lal_errhandler(statusptr,#function,__FILE__,__LINE__,"$Id$"))
-
-/** \deprecated FIXME: the following code uses obsolete CVS ID tags.
- *  It should be modified to use git version information. */
-#define PRINT_VERSION( program ) \
-  fprintf(stderr,PACKAGE " %s version " VERSION "\n%s\n",program,"$Id$")
 
 #if 0
 { /* so that editors will match succeeding brace */

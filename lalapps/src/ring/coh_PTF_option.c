@@ -391,7 +391,7 @@ int coh_PTF_parse_options(struct coh_PTF_params *params,int argc,char **argv )
         localparams.shortSlideOffset = atoi( LALoptarg );
         break;
       case 'V': /* version */
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
      case '#': /* sky grid file */
         localparams.skyPositionsFile = LALoptarg;

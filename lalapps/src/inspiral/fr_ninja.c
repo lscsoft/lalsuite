@@ -211,7 +211,7 @@ INT4 main(INT4 argc, CHAR **argv)
       case 'V':
         /* print version information and exit */
         fprintf(stdout, "Numerical Relativity Frame Generation\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit(0);
         break;
 
