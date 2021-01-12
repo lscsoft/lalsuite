@@ -111,8 +111,9 @@ outputs:
         - pytest >=4.0.0a0
       source_files:
         - test/python
+        - lib/*.dat.gz
       commands:
-        - LAL_TEST_PKGDATADIR="${LALPULSAR_DATADIR}" python -m pytest -rs -v --junit-xml=junit.xml test/python
+        - LAL_TEST_PKGDATADIR="./lib" python -m pytest -rs -v --junit-xml=junit.xml test/python
       imports:
         - lalpulsar
         - lalpulsar.NstarTools
