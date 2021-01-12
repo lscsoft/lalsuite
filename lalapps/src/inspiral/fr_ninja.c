@@ -62,7 +62,7 @@ extern int vrbflg;
 INT4 main(INT4 argc, CHAR **argv)
 {
   /* status */
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
 
   /* counters */
   int c;

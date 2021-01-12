@@ -31,8 +31,6 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-extern const LALStatus blank_status;
-
 typedef int ( *lal_errhandler_t )(
     LALStatus  *,
     const char *func,
@@ -65,7 +63,6 @@ extern int LAL_ERR_RTRN(
     const int   line,
     volatile const char *id
     );
-extern int clear_status( LALStatus * );
 
 extern char *XLALGetVersionString( int level );
 extern int XLALOutputVersionString ( FILE *fp, int level );

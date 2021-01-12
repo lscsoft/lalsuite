@@ -120,7 +120,7 @@ static int parse_group_list ( NrParRange *range, CHAR *list);
 /* main program entry */
 int main(INT4 argc, CHAR *argv[])
 {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
 
   /* frame file stuff */
   LALCache *frGlobCache = NULL;

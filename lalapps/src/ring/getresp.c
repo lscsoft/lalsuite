@@ -112,7 +112,7 @@ COMPLEX8FrequencySeries * get_frame_response(
     const char  *channel_name
     )
 {
-  LALStatus                status   = blank_status;
+  LALStatus                XLAL_INIT_DECL(status);
   LALCache                *cache    = NULL;
   COMPLEX8FrequencySeries *response;
   COMPLEX8FrequencySeries *refResponse;

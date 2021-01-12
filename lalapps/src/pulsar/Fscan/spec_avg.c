@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     FILE *fp2 = NULL;
     FILE *fp3 = NULL;
     FILE *fp4 = NULL;
-    LALStatus status = blank_status;
+    LALStatus XLAL_INIT_DECL(status);
     
     SFTCatalog *catalog = NULL;
     SFTVector *sft_vect = NULL;

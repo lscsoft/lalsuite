@@ -1922,7 +1922,7 @@ int main( int argc, char *argv[] )
   CHAR *virgoFakePsd=NULL;
   REAL8FrequencySeries *ligoPsd  = NULL;
   REAL8FrequencySeries *virgoPsd = NULL;
-  status=blank_status;
+  XLAL_INIT_MEM(status);
 
   /* LALgetopt arguments */
   struct LALoption long_options[] =

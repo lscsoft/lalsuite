@@ -128,7 +128,7 @@ static void LALComputeAM (LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsP
 /*---------- function definitions ---------- */
 int main(int argc,char *argv[]) 
 {
-  LALStatus status = blank_status;	/* initialize status */
+  LALStatus XLAL_INIT_DECL(status);	/* initialize status */
 
   vrbflg = 1;		/* verbose error-messages */
 

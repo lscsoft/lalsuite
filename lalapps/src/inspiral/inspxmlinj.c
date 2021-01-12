@@ -99,7 +99,7 @@ int main ( int argc, char *argv[] )
   /* xml output data */
   CHAR                  fname[256];
   CHAR                 *userTag = NULL;
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         injections;

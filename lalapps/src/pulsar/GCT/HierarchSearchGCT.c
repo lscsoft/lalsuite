@@ -238,7 +238,7 @@ extern int XLALReadSegmentsFromFile_support_4column_format;
 /* ###################################  MAIN  ################################### */
 
 int main( int argc, char *argv[]) {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
 
   /* temp loop variables: generally k loops over segments and j over SFTs in a stack */
   UINT4 k;

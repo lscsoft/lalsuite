@@ -175,7 +175,7 @@ extern int vrbflg;                      /* verbocity of lal function    */
 int main ( int argc, char *argv[] )
 {
   /* lal function variables */
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
 
   /* template bank generation parameters */
   CHAR   *bankFileName = NULL;

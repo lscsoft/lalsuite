@@ -44,7 +44,6 @@
     }                                                                          \
   } while( 0 )
 
-const LALStatus blank_status;
 int vrbflg = 0;
 
 lal_errhandler_t lal_errhandler = LAL_ERR_DFLT;
@@ -94,20 +93,6 @@ int LAL_ERR_RTRN(
     FAILMSG( stat, func, file, line, id );
   }
   return stat->statusCode;
-}
-
-int clear_status( LALStatus *stat )
-{
-  if ( ! stat )
-    return 1;
-  while ( stat->statusPtr )
-  {
-    LALStatus *next = stat->statusPtr->statusPtr;
-    LALFree( stat->statusPtr );
-    stat->statusPtr = next;
-  }
-  memset( stat, 0, sizeof( *stat ) );
-  return 0;
 }
 
 
