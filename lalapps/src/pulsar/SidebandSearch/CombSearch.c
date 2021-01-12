@@ -64,7 +64,7 @@
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 
 /***********************************************************************************************/

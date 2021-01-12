@@ -28,6 +28,8 @@
  */
 
 
+#include "config.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,7 +44,6 @@
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LALTrigScanCluster.h>
-#include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
 #define CVS_ID_STRING "$Id$"

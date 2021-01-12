@@ -64,7 +64,7 @@
 
 #include <lal/SynthesizeCWDraws.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /*---------- DEFINES ----------*/
 #define SQ(x) ((x)*(x))

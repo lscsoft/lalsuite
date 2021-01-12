@@ -24,6 +24,8 @@
 #ifndef _HIERARCHSEARCHGCTH  /* Double-include protection. */
 #define _HIERARCHSEARCHGCTH
 
+#include "config.h"
+
 /* standard includes */
 #include <sys/types.h>
 #include <fcntl.h>
@@ -57,7 +59,7 @@
 #include <lal/UniversalDopplerMetric.h>
 
 /* lalapps includes */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* more efficient toplist using heaps */
 #include "GCTtoplist.h"

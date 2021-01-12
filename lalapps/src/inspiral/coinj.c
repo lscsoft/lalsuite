@@ -23,7 +23,7 @@
 #include <math.h>
 #include <string.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>

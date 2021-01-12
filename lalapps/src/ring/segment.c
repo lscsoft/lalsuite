@@ -17,6 +17,8 @@
 *  MA  02111-1307  USA
 */
 
+#include "config.h"
+
 #include <math.h>
 #include <string.h>
 
@@ -27,7 +29,7 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/Units.h>
 
-#include "lalapps.h"
+#include <LALAppsVCSInfo.h>
 #include "segment.h"
 #include "errutil.h"
 #include "gpstime.h"

@@ -27,7 +27,9 @@
  */
 
 /* ---------- includes ---------- */
-#include <lalapps.h>
+#include "config.h"
+
+#include <LALAppsVCSInfo.h>
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>

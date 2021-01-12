@@ -74,7 +74,7 @@
 #include <lal/TransientCW_utils.h>
 #include <lal/LineRobustStats.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* local includes */
 #include "HeapToplist.h"

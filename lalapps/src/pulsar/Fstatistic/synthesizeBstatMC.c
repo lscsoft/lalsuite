@@ -63,7 +63,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/FstatisticTools.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 #define SQ(x) ((x)*(x))
 

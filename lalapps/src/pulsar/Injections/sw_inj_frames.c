@@ -35,6 +35,8 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 /* 30/1/12 v.12: Set signal generation barycenter delay lookup table step size */
 /* 27/06/13 v.13: Allow 2nd and 3rd frequency derivatives and make compatible with new frame functions */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -50,7 +52,7 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 #include <sys/stat.h>
 
 /*LAL Functions */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/Units.h>
 #include <lal/LALFrStream.h>
 #include <lal/LALFrameIO.h>

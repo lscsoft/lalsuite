@@ -135,8 +135,6 @@
 #include <regex.h>
 #include <time.h>
 
-#include <lalapps.h>
-
 #include <lal/LALConfig.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>

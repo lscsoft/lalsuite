@@ -30,8 +30,10 @@
  */
 
 
+#include "config.h"
+
 /* lalapps includes */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <pulsar_crosscorr.h>
 #include <lal/PulsarCrossCorr.h>
 #include <lal/DopplerScan.h>

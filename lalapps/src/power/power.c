@@ -29,7 +29,8 @@
  */
 
 
-#include <lalapps.h>
+#include "config.h"
+
 #include <math.h>
 #include <stdarg.h>
 #include <stdio.h>

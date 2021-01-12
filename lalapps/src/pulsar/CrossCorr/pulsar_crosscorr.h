@@ -39,6 +39,8 @@
 #ifndef _PULSAR_CROSSCORR_H
 #define _PULSAR_CROSSCORR_H
 
+#include "config.h"
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -65,7 +67,7 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/SFTClean.h>
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <gsl/gsl_cdf.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>

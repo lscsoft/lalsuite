@@ -27,6 +27,8 @@
  *-----------------------------------------------------------------------
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -49,7 +51,7 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 #define CVS_ID_STRING "$Id$"
 #define CVS_NAME_STRING "$Name$"

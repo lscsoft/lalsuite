@@ -38,7 +38,7 @@
 #include <time.h>
 #include <math.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <series.h>
 #include <lalappsfrutils.h>
 

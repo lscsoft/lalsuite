@@ -38,7 +38,7 @@
 
 #include <gsl/gsl_math.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 #include "SFTfunctions.h"
 #include "IHS.h"

@@ -72,7 +72,7 @@
 #endif
 
 #include <lal/XLALError.h>
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 
 #define MAXPULSARS 64

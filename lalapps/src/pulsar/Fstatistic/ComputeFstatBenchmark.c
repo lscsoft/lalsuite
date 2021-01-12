@@ -18,7 +18,9 @@
 *  MA  02111-1307  USA
 */
 
-#include <lalapps.h>
+#include "config.h"
+
+#include <LALAppsVCSInfo.h>
 #include <lal/XLALError.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
