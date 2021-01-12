@@ -22,9 +22,11 @@
  */
 
 /* ---------- includes ---------- */
+#include "config.h"
+
 #include <math.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 #include <lal/UserInput.h>
 #include <lal/LALConstants.h>

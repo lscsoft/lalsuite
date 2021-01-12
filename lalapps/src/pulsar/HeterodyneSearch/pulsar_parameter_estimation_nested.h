@@ -28,6 +28,8 @@
 #ifndef _PULSAR_PARAMETER_ESTIMATION_NESTED_H
 #define _PULSAR_PARAMETER_ESTIMATION_NESTED_H
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -63,7 +65,7 @@
 #include <lal/XLALGSL.h>
 #include <lal/FileIO.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 #include <lal/LALInference.h>
 #include <lal/LALInferenceNestedSampler.h>

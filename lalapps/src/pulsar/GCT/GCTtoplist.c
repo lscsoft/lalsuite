@@ -30,7 +30,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LogPrintf.h>
 
 /* Windows specifics */

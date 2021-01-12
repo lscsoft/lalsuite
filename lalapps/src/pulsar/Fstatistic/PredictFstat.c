@@ -49,7 +49,7 @@
 #include <lal/FstatisticTools.h>
 #include <lal/TransientCW_utils.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* local includes */
 

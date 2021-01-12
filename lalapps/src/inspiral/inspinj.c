@@ -366,8 +366,9 @@
  * </dl>
  */
 
+#include "config.h"
+
 #include <ctype.h>
-#include <lalapps.h>
 #include <lal/Date.h>
 #include <lal/LALgetopt.h>
 #include <lal/LIGOMetadataTables.h>

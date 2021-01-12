@@ -44,6 +44,8 @@
 /*                             UWM - February 2003                               */
 /*********************************************************************************/
 
+#include "config.h"
+
 #include <errno.h>
 
 #include <lal/LALString.h>
@@ -57,7 +59,7 @@
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /*---------- error-codes ---------- */
 #define SEMIANALYTIC_ENORM 		0

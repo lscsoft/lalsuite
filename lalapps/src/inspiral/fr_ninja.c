@@ -19,6 +19,8 @@
  * MA  02111-1307  USA
  */
 
+#include "config.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +38,6 @@
 #include <lal/Units.h>
 #include <lal/LALFrameL.h>
 
-#include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
 /* program info */

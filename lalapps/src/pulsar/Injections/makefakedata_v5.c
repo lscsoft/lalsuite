@@ -40,9 +40,10 @@
  */
 
 /* ---------- includes ---------- */
+#include "config.h"
+
 #include <sys/stat.h>
 
-#include <lalapps.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/FrequencySeries.h>
@@ -68,7 +69,7 @@
 #include <lal/LALFrStream.h>
 #endif
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /***************************************************/
 

@@ -34,7 +34,7 @@
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include "getdate.h"
-#include "lalapps.h"
+#include <LALAppsVCSInfo.h>
 
 #include "config.h"
 

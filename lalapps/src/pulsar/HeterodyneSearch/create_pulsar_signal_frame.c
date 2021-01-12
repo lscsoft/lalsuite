@@ -19,6 +19,8 @@
  *  MA  02111-1307  USA
  */
 
+#include "config.h"
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE   /* for alphasort() and scandir() */
 #endif
@@ -38,7 +40,7 @@
 #include <sys/stat.h>
 
 /*LAL Functions */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/Units.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALFrStream.h>

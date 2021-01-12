@@ -17,6 +17,8 @@
 *  MA  02111-1307  USA
 */
 
+#include "config.h"
+
 #include <string.h>
 
 #include <lal/LALStdlib.h>
@@ -34,7 +36,7 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALInspiral.h>
 
-#include "lalapps.h"
+#include <LALAppsVCSInfo.h>
 #include "injsgnl.h"
 #include "getresp.h"
 #include "errutil.h"

@@ -25,6 +25,8 @@
  * \brief Compute power spectral densities
  */
 
+#include "config.h"
+
 #include <glob.h>
 #include <stdlib.h>
 #include <math.h>
@@ -51,7 +53,7 @@
 
 #include <lal/LogPrintf.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* ---------- Error codes and messages ---------- */
 #define COMPUTEPSDC_ENORM 0

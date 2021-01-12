@@ -23,6 +23,8 @@
  */
 
 
+#include "config.h"
+
 /*temporary rubbish bin for headers*/
 /*These are included in HeterodyneCrabPulsar files
 #include <lal/LALStdlib.h>
@@ -32,7 +34,7 @@
 /*end of temporary rubbish bin*/
 
 /*LAL header files*/
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>

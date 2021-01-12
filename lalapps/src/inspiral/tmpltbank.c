@@ -312,7 +312,6 @@
 #include <regex.h>
 #include <time.h>
 
-#include <lalapps.h>
 #include <series.h>
 #include <lalappsfrutils.h>
 

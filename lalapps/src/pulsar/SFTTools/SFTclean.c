@@ -23,10 +23,12 @@
  * \author Badri Krishnan
  */
 
+#include "config.h"
+
 #include <lal/SFTClean.h>
 #include <lal/SFTutils.h>
 #include <glob.h> 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* Error codes and messages */
 

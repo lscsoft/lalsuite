@@ -84,12 +84,14 @@
  * the list of events, and the Hough maps
  */
 
+#include "config.h"
+
 /* lalapps/hough includes */
 #include "./DriveHoughColor.h"
 #include "./MCInjectHoughMulti.h"
 
 /* lalapps includes */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include "FstatToplist.h"
 
 /* lal includes */

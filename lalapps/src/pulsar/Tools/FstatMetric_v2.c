@@ -57,7 +57,7 @@
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* ---------- Error codes and messages ---------- */
 #define FSTATMETRIC_EMEM 	1

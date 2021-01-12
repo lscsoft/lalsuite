@@ -38,7 +38,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <lalapps.h>
 #include <series.h>
 
 #include <lal/LALConfig.h>

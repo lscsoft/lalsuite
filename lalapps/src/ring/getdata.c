@@ -17,7 +17,9 @@
 *  MA  02111-1307  USA
 */
 
-#include "lalapps.h"
+#include "config.h"
+
+#include <LALAppsVCSInfo.h>
 #include <math.h>
 #include <string.h>
 

@@ -20,7 +20,9 @@
 #ifndef _LALAPPS_INSPIRAL_H
 #define _LALAPPS_INSPIRAL_H
 
-#include <lalapps.h>
+#include "config.h"
+
+#include <LALAppsVCSInfo.h>
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>

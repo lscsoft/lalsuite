@@ -75,7 +75,6 @@
 #include <lal/TimeSeries.h>
 #include <lal/GenerateBurst.h>
 
-#include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
 #define TESTSTATUS( pstat ) \

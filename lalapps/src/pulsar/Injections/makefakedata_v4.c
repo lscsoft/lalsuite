@@ -38,9 +38,10 @@
  */
 
 /* ---------- includes ---------- */
+#include "config.h"
+
 #include <sys/stat.h>
 
-#include <lalapps.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/FrequencySeries.h>
@@ -64,7 +65,7 @@
 
 #include <lal/TransientCW_utils.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /***************************************************/
 #define SQ(x) ( (x) * (x) )

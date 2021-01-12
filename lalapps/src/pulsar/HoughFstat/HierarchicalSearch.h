@@ -32,6 +32,8 @@
 #ifndef _DRIVEHOUGHCOLOR_H
 #define _DRIVEHOUGHCOLOR_H
 
+#include "config.h"
+
 /* standard includes */
 #include <sys/types.h>
 #include <fcntl.h>
@@ -64,7 +66,7 @@
 #include <lal/DopplerScan.h>
 
 /* lalapps includes */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* more efficient toplist using heaps */
 #include "HoughFstatToplist.h"

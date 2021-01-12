@@ -19,8 +19,10 @@
  *  MA  02111-1307  USA
  */
 
+#include "config.h"
+
 /*lalapps includes */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
