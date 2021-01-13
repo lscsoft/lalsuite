@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2021 Karl Wette
  *  Copyright (C) 2004, 2005 Bruce Allen
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -41,17 +42,44 @@
 int main(int argc, char** argv) {
   
   fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsStatus);
+  fflush(stdout);
 
-  /* loop over all file names on command line */
-  for (int i=1; i<argc; i++) {
-    /* we on purpose do not call the XLAL version here,
-     * so as to have the same stdout printing
-     * and return code handling as older versions of this executable.
-     */
-    int errcode = ValidateSFTFile(argv[i]);
-    if (errcode != 0) {
-        return errcode;
+  int errcode = EXIT_SUCCESS;
+
+  if (argc > 1) {
+
+    /* loop over all file names on command line */
+    for (int i = 1; i < argc; ++i) {
+      /* we on purpose do not call the XLAL version here,
+       * so as to have the same stdout printing
+       * and return code handling as older versions of this executable.
+       */
+      if (ValidateSFTFile(argv[i]) != 0) {
+        errcode = EXIT_FAILURE;
+      }
     }
+
+  } else {
+
+    char line[2048];
+
+    /* loop over all file names from standard input */
+    while (fgets(line, sizeof(line) - 1, stdin) != NULL) {
+      size_t len = strlen(line);
+      if (len > 1) {
+        line[len - 1] = '\0';
+        /* we on purpose do not call the XLAL version here,
+         * so as to have the same stdout printing
+         * and return code handling as older versions of this executable.
+         */
+        if (ValidateSFTFile(line) != 0) {
+          errcode = EXIT_FAILURE;
+        }
+      }
+    }
+
   }
-  return 0;
+
+  return errcode;
+
 }
