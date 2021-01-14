@@ -37,7 +37,6 @@
 #include <regex.h>
 #include <time.h>
 
-#include <lalapps.h>
 #include <series.h>
 
 #include <lal/LALConfig.h>
@@ -93,7 +92,7 @@ INT4                 outCompress = 0;
 int main ( int argc, char *argv[] )
 {
   /* lal function variables */
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
 
   /* templates */
   RandomParams         *randParams = NULL;

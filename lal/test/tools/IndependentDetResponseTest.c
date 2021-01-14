@@ -66,7 +66,6 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-/* #include <lalapps.h> */ /* 05/20/03 gam */
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>

@@ -38,7 +38,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <lalapps.h>
 #include <series.h>
 
 #include <lal/LALConfig.h>
@@ -228,7 +227,7 @@ REAL4FrequencySeries *readPSD(const char *fname, REAL4 fNyq, REAL4 df, UINT4 N, 
 int main ( int argc, char *argv[] )
 {
   /* lal function variables */
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
 
   /* templates */
   RandomParams         *randParams = NULL;

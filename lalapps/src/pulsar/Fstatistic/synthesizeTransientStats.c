@@ -64,7 +64,7 @@
 
 #include <lal/SynthesizeCWDraws.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /*---------- DEFINES ----------*/
 #define SQ(x) ((x)*(x))
@@ -160,7 +160,7 @@ int XLALInitAmplitudePrior ( AmplitudePrior_t *AmpPrior, const UserInput_t *uvar
 /* exportable API */
 
 /*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+extern int vrbflg;		/**< defined in lal/lib/std/LALError.c */
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */

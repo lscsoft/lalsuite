@@ -17,7 +17,8 @@
 *  MA  02111-1307  USA
 */
 
-#include "lalapps.h"
+#include "config.h"
+#include <LALAppsVCSInfo.h>
 
 #include <math.h>
 
@@ -49,7 +50,7 @@ REAL4FrequencySeries *compute_average_spectrum(
     int                      whiteSpectrum
     )
 {
-  /*LALStatus status = blank_status;*/
+  /*LALStatus XLAL_INIT_DECL(status);*/
   REAL4Window  *window  = NULL;
   REAL4FrequencySeries *spectrum;
   UINT4 segmentLength;

@@ -29,7 +29,7 @@ void coh_PTF_template (
     )
 {
   UINT4 i;
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
   switch ( params->approximant )
   {
     /* Speacial case #1 */

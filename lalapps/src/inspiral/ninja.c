@@ -27,12 +27,12 @@
  */
 
 
+#include "config.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <lalapps.h>
 
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
@@ -120,7 +120,7 @@ static int parse_group_list ( NrParRange *range, CHAR *list);
 /* main program entry */
 int main(INT4 argc, CHAR *argv[])
 {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
 
   /* frame file stuff */
   LALCache *frGlobCache = NULL;

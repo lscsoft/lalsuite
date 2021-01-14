@@ -69,7 +69,7 @@
 
 #include <lal/StringVector.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /*---------- DEFINES ----------*/
 #define SQ(x) ((x)*(x))
@@ -173,7 +173,7 @@ MultiNoiseWeights * XLALComputeConstantMultiNoiseWeightsFromNoiseFloor (const Mu
 /* exportable API */
 
 /*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+extern int vrbflg;		/**< defined in lal/lib/std/LALError.c */
 
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */

@@ -38,7 +38,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <lalapps.h>
 #include <series.h>
 #include <lalappsfrutils.h>
 
@@ -156,7 +155,7 @@ int coireflg;                /* is input file coire (1) or inj (null) */
 
 int main( int argc, char *argv[] )
 {
-  LALStatus                     status = blank_status;
+  LALStatus                     XLAL_INIT_DECL(status);
 
   UINT4                         k;
   UINT4                         kLow;
@@ -382,7 +381,7 @@ int main( int argc, char *argv[] )
         /* print version information and exit */
         fprintf( stdout, "calculation of expected SNR of injections\n"
             "Gareth Jones\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

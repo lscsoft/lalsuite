@@ -358,7 +358,7 @@ data!\n");
   CHAR *headerinfo = XLALStringDuplicate("%% File created on ");
   headerinfo = XLALStringAppend(headerinfo, LogTimeToString( XLALGetTimeOfDay() ));
   headerinfo = XLALStringAppend(headerinfo, "\n");
-  headerinfo = XLALStringAppend(headerinfo, XLALGetVersionString( 0 ) );
+  headerinfo = XLALStringAppend(headerinfo, XLALVCSInfoString( lalAppsVCSInfoList, 0, "%% " ) );
   headerinfo = XLALStringAppend(headerinfo, "%% ");
   for ( INT4 j=0; j<argc; j++ ) {
     headerinfo = XLALStringAppend(headerinfo, argv[j]);

@@ -17,13 +17,15 @@
 *  MA  02111-1307  USA
 */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 
 #include <lal/LALStdlib.h>
 
-#include "lalapps.h"
+#include <LALAppsVCSInfo.h>
 #include "errutil.h"
 
 /* global flag to abort on error (rather than just exit) */

@@ -135,7 +135,7 @@ int coh_PTF_output_events_xml(
     struct coh_PTF_params *params
     )
 {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
   MetadataTable   siminspiral;
   MetadataTable   ringEvents;
   MetadataTable snglEventTab;
@@ -213,7 +213,7 @@ int coh_PTF_output_tmpltbank(
     struct coh_PTF_params *params
     )
 {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
   MetadataTable   process;
   MetadataTable   processParams;
   MetadataTable   searchSummary;

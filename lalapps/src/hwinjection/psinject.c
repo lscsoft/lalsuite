@@ -72,7 +72,7 @@
 #endif
 
 #include <lal/XLALError.h>
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 
 #define MAXPULSARS 64
@@ -260,8 +260,8 @@ int parseinput(int argc, char **argv){
     double tempamp;
     switch (c) {
     case 'v':
-      if ( XLALOutputVersionString(stdout,0) != XLAL_SUCCESS ) {
-        XLALPrintError("XLALOutputVersionString() failed!\n");
+      if ( XLALOutputVCSInfo(stdout, lalAppsVCSInfoList, 0, "%% ") != XLAL_SUCCESS ) {
+        XLALPrintError("XLALOutputVCSInfo() failed!\n");
         exit(1);
       }
       exit(0);

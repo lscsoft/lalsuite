@@ -17,9 +17,11 @@
 *  MA  02111-1307  USA
 */
 
+#include "config.h"
+
 #include <math.h>
 #include <lal/LALStdlib.h>
-#include "lalapps.h"
+#include <LALAppsVCSInfo.h>
 #include "gpstime.h"
 
 /* one second in nano seconds as an INT8 */

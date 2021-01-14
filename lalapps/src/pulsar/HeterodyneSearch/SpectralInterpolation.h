@@ -3,6 +3,8 @@
 
 #define _GNU_SOURCE   /* for alphasort() and scandir() */
 
+#include "config.h"
+
 #include <sys/time.h>
 
 #include <complex.h>
@@ -42,7 +44,7 @@
 #include <lal/SFTfileIO.h>
 #include <lal/LALCache.h>
 /* lalapps header */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* Usage format string. */
 #define USAGE \

@@ -64,7 +64,7 @@
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 
 /***********************************************************************************************/
@@ -127,7 +127,7 @@ typedef struct {
 
 /***********************************************************************************************/
 /* Global variables */
-extern int vrbflg;				/* defined in lalapps.c */
+extern int vrbflg;				/* defined in lal/lib/std/LALError.c */
 
 const char *va(const char *format, ...);	/* little var-arg string helper function */
 

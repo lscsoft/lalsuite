@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
@@ -83,7 +83,7 @@ int main ( int argc, char *argv[] )
         usage( program );
         return 0;
       case 'V':
-        PRINT_VERSION( "hello" );
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         return 0;
       case 'v':
         vrbflg = 1;

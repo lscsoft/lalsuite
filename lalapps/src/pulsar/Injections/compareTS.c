@@ -30,6 +30,8 @@
  */
 
 /* ---------- includes ---------- */
+#include "config.h"
+
 #include <stdio.h>
 
 #include <lal/LALDatatypes.h>
@@ -38,7 +40,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/SFTutils.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* User variables */
 typedef struct {

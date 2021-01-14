@@ -49,7 +49,7 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/ConfigFile.h>
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 BOOLEAN calc_AM_coeffs(gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDetectorStateSeries*, MultiNoiseWeights*, REAL8*, REAL8*, REAL8*);
 REAL8 pdf_ncx2_4(REAL8, REAL8);

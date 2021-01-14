@@ -28,6 +28,8 @@
  */
 
 
+#include "config.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -42,7 +44,6 @@
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LALTrigScanCluster.h>
-#include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
 #define CVS_ID_STRING "$Id$"
@@ -280,7 +281,7 @@ int main( int argc, char *argv[] )
         fprintf( stdout, "TrigScan Cluster \n" 
             "Larne Pekowsky\n"
             "Based on trigbank and inspiral by Patrick Brady, Duncan Brown and Steve Fairhurst\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

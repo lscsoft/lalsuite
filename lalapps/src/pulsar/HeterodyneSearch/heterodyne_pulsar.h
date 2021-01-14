@@ -28,6 +28,8 @@
 #ifndef _HETERODYNE_PULSAR_H
 #define _HETERODYNE_PULSAR_H
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -69,7 +71,7 @@
 #include <lal/XLALError.h>
 
 /* lalapps header */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* frame headers */
 #include <FrIO.h>

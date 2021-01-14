@@ -366,8 +366,9 @@
  * </dl>
  */
 
+#include "config.h"
+
 #include <ctype.h>
-#include <lalapps.h>
 #include <lal/Date.h>
 #include <lal/LALgetopt.h>
 #include <lal/LIGOMetadataTables.h>
@@ -1922,7 +1923,7 @@ int main( int argc, char *argv[] )
   CHAR *virgoFakePsd=NULL;
   REAL8FrequencySeries *ligoPsd  = NULL;
   REAL8FrequencySeries *virgoPsd = NULL;
-  status=blank_status;
+  XLAL_INIT_MEM(status);
 
   /* LALgetopt arguments */
   struct LALoption long_options[] =
@@ -3066,7 +3067,7 @@ int main( int argc, char *argv[] )
       case 'V':
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC inspiral injection engine\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

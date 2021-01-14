@@ -23,6 +23,8 @@
  */
 
 
+#include "config.h"
+
 /*temporary rubbish bin for headers*/
 /*These are included in HeterodyneCrabPulsar files
 #include <lal/LALStdlib.h>
@@ -32,7 +34,7 @@
 /*end of temporary rubbish bin*/
 
 /*LAL header files*/
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
@@ -58,7 +60,7 @@ int main(int argc, char **argv)
     FILE *fp2 = NULL;
     FILE *fp3 = NULL;
     FILE *fp4 = NULL;
-    LALStatus status = blank_status;
+    LALStatus XLAL_INIT_DECL(status);
     
     SFTCatalog *catalog = NULL;
     SFTVector *sft_vect = NULL;

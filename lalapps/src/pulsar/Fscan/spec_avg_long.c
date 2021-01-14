@@ -23,8 +23,10 @@
 * \ingroup lalapps_pulsar_fscan
 */
 
+#include "config.h"
+
 /*LAL header files*/
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/SFTutils.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>

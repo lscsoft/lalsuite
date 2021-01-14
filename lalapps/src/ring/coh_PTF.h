@@ -17,6 +17,8 @@
 *  MA  02111-1307  USA
 */
 
+#include "config.h"
+
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -54,11 +56,10 @@
 #include <lal/PrintFTSeries.h>
 #include <lal/FindChirpPTF.h>
 #include <lal/RingUtils.h>
-#include <LALAppsVCSInfo.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/XLALError.h>
 
-#include "lalapps.h"
+#include <LALAppsVCSInfo.h>
 #include "getdata.h"
 #include "injsgnl.h"
 #include "getresp.h"

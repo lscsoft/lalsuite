@@ -49,7 +49,7 @@
 #include <lal/FstatisticTools.h>
 #include <lal/TransientCW_utils.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* local includes */
 
@@ -68,7 +68,7 @@ typedef struct {
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+extern int vrbflg;		/**< defined in lal/lib/std/LALError.c */
 
 ConfigVariables GV;		/**< global container for various derived configuration settings */
 

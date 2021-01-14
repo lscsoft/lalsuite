@@ -36,7 +36,6 @@
 #include <assert.h>
 #include <string.h>
 #include <time.h>
-#include <lalapps.h>
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
@@ -419,7 +418,7 @@ static REAL4TimeSeries *injectWaveform(
 
 int main( int argc, char *argv[] )
 {
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
   LIGOTimeGPS           gpsStartTime = {0, 0};
   LIGOTimeGPS           earliestEndTime = {0, 0};
   ResponseFunction      injectionResponse = noResponse;
@@ -604,7 +603,7 @@ int main( int argc, char *argv[] )
         /* print version information and exit */
         fprintf( stdout, "blind hardware injection generation routine\n" 
             "Stephen Fairhurst\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

@@ -4198,7 +4198,7 @@ CohPTFSkyPositions *coh_PTF_two_det_sky_grid(
   //verbose("\n");
 
   /* convert from earth-fixed to sky-fixed */
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
   skyPoints = LALCalloc(1, sizeof(*skyPoints));
   skyPoints->numPoints = geoSkyPoints->numPoints;
   skyPoints->data      = LALCalloc(1, skyPoints->numPoints*sizeof(SkyPosition));

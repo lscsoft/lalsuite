@@ -17,6 +17,8 @@
 *  MA  02111-1307  USA
 */
 
+#include "config.h"
+
 #include <string.h>
 
 #include <lal/LALStdlib.h>
@@ -34,7 +36,7 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALInspiral.h>
 
-#include "lalapps.h"
+#include <LALAppsVCSInfo.h>
 #include "injsgnl.h"
 #include "getresp.h"
 #include "errutil.h"
@@ -54,7 +56,7 @@ int ring_inject_signal(
 {
   /* note: duration is only used for response, and can be relatively coarse */
   const      REAL8 duration = 16; /* determines deltaF=1/dataDuration Hz*/
-  LALStatus                status     = blank_status;
+  LALStatus                XLAL_INIT_DECL(status);
   COMPLEX8FrequencySeries *response   = NULL;
   SimInspiralTable        *injectList = NULL;
   SimInspiralTable        *thisInject;

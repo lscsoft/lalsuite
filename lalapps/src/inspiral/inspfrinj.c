@@ -266,7 +266,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <lalapps.h>
 #include <series.h>
 #include <lalappsfrutils.h>
 
@@ -378,7 +377,7 @@ CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 int main( int argc, char *argv[] )
 {
   /* lal function variables */
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
 
   /* frame input data */
   LALCache     *frInCache = NULL;
@@ -1520,7 +1519,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC Inspiral Injection Program\n" 
             "Steve Fairhurst <sfairhur@gravity.phys.uwm.edu>\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

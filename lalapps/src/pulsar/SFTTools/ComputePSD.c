@@ -25,6 +25,8 @@
  * \brief Compute power spectral densities
  */
 
+#include "config.h"
+
 #include <glob.h>
 #include <stdlib.h>
 #include <math.h>
@@ -51,7 +53,7 @@
 
 #include <lal/LogPrintf.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* ---------- Error codes and messages ---------- */
 #define COMPUTEPSDC_ENORM 0
@@ -274,7 +276,7 @@ main(int argc, char *argv[])
     LogPrintf(LOG_DEBUG, "Printing PSD to file ...\n");
     FILE *fpOut = NULL;
     XLAL_CHECK_MAIN ( (fpOut = fopen(uvar.outputPSD, "wb")) != NULL, XLAL_EIO, "Unable to open output file %s for writing", uvar.outputPSD );
-    XLAL_CHECK_MAIN ( XLALOutputVersionString ( fpOut, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN ( XLALOutputVCSInfo(fpOut, lalAppsVCSInfoList, 0, "%% ") == XLAL_SUCCESS, XLAL_EFUNC );
     for (int a = 0; a < argc; a++) { /* write the command-line */
       fprintf(fpOut,"%%%% argv[%d]: '%s'\n", a, argv[a]);
     }
@@ -708,7 +710,7 @@ XLALWriteREAL8FrequencySeries_to_file ( const REAL8FrequencySeries *series,	/**<
   }
 
   /* write header info in comments */
-  if ( XLAL_SUCCESS != XLALOutputVersionString ( fp, 0 ) )
+  if ( XLAL_SUCCESS != XLALOutputVCSInfo(fp, lalAppsVCSInfoList, 0, "%% ") )
     XLAL_ERROR ( XLAL_EFUNC );
 
   fprintf ( fp, "%%%% name = '%s'\n", series->name );

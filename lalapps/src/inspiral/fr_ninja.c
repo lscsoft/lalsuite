@@ -19,6 +19,8 @@
  * MA  02111-1307  USA
  */
 
+#include "config.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -36,7 +38,6 @@
 #include <lal/Units.h>
 #include <lal/LALFrameL.h>
 
-#include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
 /* program info */
@@ -62,7 +63,7 @@ extern int vrbflg;
 INT4 main(INT4 argc, CHAR **argv)
 {
   /* status */
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
 
   /* counters */
   int c;
@@ -211,7 +212,7 @@ INT4 main(INT4 argc, CHAR **argv)
       case 'V':
         /* print version information and exit */
         fprintf(stdout, "Numerical Relativity Frame Generation\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit(0);
         break;
 

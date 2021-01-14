@@ -28,6 +28,8 @@
  */
 
 /* ---------- includes ---------- */
+#include "config.h"
+
 #include <math.h>
 #include <errno.h>
 #include <string.h>
@@ -37,7 +39,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/LALString.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* ----- compile switches ----- */
 

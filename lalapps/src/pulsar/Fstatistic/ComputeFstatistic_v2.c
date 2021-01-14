@@ -74,7 +74,7 @@
 #include <lal/TransientCW_utils.h>
 #include <lal/LineRobustStats.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* local includes */
 #include "HeapToplist.h"
@@ -318,7 +318,7 @@ typedef struct {
 } UserInput_t;
 
 /*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+extern int vrbflg;		/**< defined in lal/lib/std/LALError.c */
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);

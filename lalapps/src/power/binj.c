@@ -28,6 +28,8 @@
  */
 
 
+#include "config.h"
+
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -55,8 +57,6 @@
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
-
-#include <lalapps.h>
 
 #include <LALAppsVCSInfo.h>
 

@@ -23,7 +23,7 @@
 #include <math.h>
 #include <string.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
@@ -106,7 +106,7 @@ double chirpDist(SimInspiralTable *inj, char ifo){
 
 int main(int argc, char *argv[])
 {
-  LALStatus        status=blank_status;
+  LALStatus        XLAL_INIT_DECL(status);
   CHAR                inputfile[FILENAME_MAX];
   CHAR                outputpath[1000];
   CHAR                injtype[30];
