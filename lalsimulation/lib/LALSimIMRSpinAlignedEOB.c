@@ -64,6 +64,7 @@
 
 #define debugOutput 0
 #define SEOBNRv4HM 41
+#define SEOBNRv4HM_PA 4111
 
 
 //static int debugPK = 0;
@@ -96,6 +97,16 @@ static INT4 XLALSetup_EOB__std_mode_array_structure(
         XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 4);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 5, 5);
       }
+      else if (SpinAlignedEOBversion == SEOBNRv4HM_PA) {
+        /* Adding all the modes of SEOBNRv4HM_PA
+        * i.e. [(2,2),(2,1),(3,3),(4,4),(5,5)]
+        the relative -m modes are added automatically*/
+        XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
+        XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 1);
+        XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 3);
+        XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 4);
+        XLALSimInspiralModeArrayActivateMode(ModeArray, 5, 5);
+      }
       else{
         /*All the other spin aligned model so far only have the 22 mode
         */
@@ -119,8 +130,14 @@ static INT4 XLALCheck_EOB_mode_array_structure(
   UINT4 modeM;
   UINT4 nModes;
   const UINT4 lmModes[5][2] = {{2, 2}, {3, 3}, {2, 1}, {4, 4}, {5, 5}};
+
   if (SpinAlignedEOBversion == SEOBNRv4HM) {
     /*If one select SEOBNRv4HM all the modes above are selected to check
+    */
+    nModes = 5;
+  }
+  else if (SpinAlignedEOBversion == SEOBNRv4HM_PA) {
+    /*If one select SEOBNRv4HM_PA all the modes above are selected to check
     */
     nModes = 5;
   }
@@ -536,7 +553,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
 				  const REAL8 inc,		     /**<< inclination angle */
 				  const REAL8 spin1z,		     /**<< z-component of spin-1, dimensionless */
 				  const REAL8 spin2z,		      /**<< z-component of spin-2, dimensionless */
-				  UINT4 SpinAlignedEOBversion,		      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
+				  UINT4 SpinAlignedEOBversion,		      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM, 4111 for SEOBNRv4HM_PA */
                   LALDict *LALParams /**<< Dictionary of additional wf parameters, including tidal and nonGR */
   )
 {
@@ -700,7 +717,7 @@ XLALSimIMRSpinAlignedEOBModes (
   const REAL8 spin2z,
   /**<< z-component of spin-2, dimensionless */
   UINT4 SpinAlignedEOBversion,
-  /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
+  /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM, 4111 for SEOBNRv4HM_PA */
   const REAL8 lambda2Tidal1,
   /**<< dimensionless adiabatic quadrupole tidal deformability for body 1 (2/3 k2/C^5) */
   const REAL8 lambda2Tidal2,
@@ -1061,7 +1078,7 @@ XLALSimIMRSpinAlignedEOBModes (
   }
 
   nStepBack = ceil (tStepBack / odeStep/ mTScaled);
-  printf("odeStep = %e, 5*deltaT/mTscaled=%e, nStepBack = %d\n",odeStep,5*deltaT/mTScaled,nStepBack);
+  // printf("odeStep = %e, 5*deltaT/mTscaled=%e, nStepBack = %d\n",odeStep,5*deltaT/mTScaled,nStepBack);
 
   /* Calculate the resample factor for attaching the ringdown */
   /* We want it to be a power of 2 */
@@ -1636,16 +1653,15 @@ XLALSimIMRSpinAlignedEOBModes (
     }
 
     REAL8 tOffset = interpDynamicsPA->data[PALen - 1];
-    printf("Initializing PA dynamics from t=%.17f\n",tOffset);
     REAL8 phiOffset = interpDynamicsPA->data[3*PALen - 1];
 
     const INT4 combinedLen = PALen + retLen - 1;
-    //combinedLenForInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp) + retLen - 1; 
+
     combinedLenForInterp = ceil((dynamics->data[retLen-1]+tOffset-dynamicsPA->data[0]) / tStepInterp) - 1; 
-    printf("Last point of integration: %e\n",dynamics->data[retLen-1]+tOffset);
-    printf("First point of PA is %e\n",dynamicsPA->data[0]);
-    printf("The spacing to interpolate to is %e\n",tStepInterp);
-    printf("The length of the array is %d\n",combinedLenForInterp);
+    // printf("Last point of integration: %e\n",dynamics->data[retLen-1]+tOffset);
+    // printf("First point of PA is %e\n",dynamicsPA->data[0]);
+    // printf("The spacing to interpolate to is %e\n",tStepInterp);
+    // printf("The length of the array is %d\n",combinedLenForInterp);
     //REAL8 nODE = ceil((dynamics->data[retLen-1]-dynamics->data[0])/tStepInterp);
     //combinedLenForInterp = ceil((dynamicsPA->data[PALen-1]-dynamicsPA->data[0]) / tStepInterp) + nODE - 1; 
     REAL8Array *combinedDynamics = NULL;
@@ -1743,15 +1759,15 @@ XLALSimIMRSpinAlignedEOBModes (
   hiSRndx = retLen - nStepBack;
   deltaTHigh = deltaT / (REAL8) resampFac;
 
-#if 1
-  printf (
-	   "Stepping back %d points - we expect %d points at high SR\n",
-	   nStepBack, nStepBack * resampFac);
-  printf (
-	   "Commencing high SR integration... from %.16e %.16e %.16e %.16e %.16e\n",
-	   (dynamics->data)[hiSRndx], rVec.data[hiSRndx],
-	   phiVec.data[hiSRndx], prVec.data[hiSRndx], pPhiVec.data[hiSRndx]);
-#endif
+// #if 1
+  // printf (
+	 //   "Stepping back %d points - we expect %d points at high SR\n",
+	 //   nStepBack, nStepBack * resampFac);
+  // printf (
+	 //   "Commencing high SR integration... from %.16e %.16e %.16e %.16e %.16e\n",
+	 //   (dynamics->data)[hiSRndx], rVec.data[hiSRndx],
+	 //   phiVec.data[hiSRndx], prVec.data[hiSRndx], pPhiVec.data[hiSRndx]);
+// #endif
 
   values->data[0] = rVec.data[hiSRndx];
   values->data[1] = phiVec.data[hiSRndx];
@@ -1831,7 +1847,7 @@ XLALSimIMRSpinAlignedEOBModes (
   {
     tstartHi = hiSRndx * odeStep;
   }
-  printf("tstartHi = %e\n",tstartHi);
+  // printf("tstartHi = %e\n",tstartHi);
   //SM
 
 //  fprintf( stderr, "We got %d points at high SR\n", retLen );
@@ -3357,10 +3373,10 @@ for ( UINT4 k = 0; k<nModes; k++) {
       hLMAll->data[(2*k+1)*sigReVec->length + i + hiSRndx] = hLMAllHi->data[(2*k+1)*sigReHi->length + i*resampFac];
     }
 }
-  printf("The legnth of sigReVec is %d\n",sigReVec->length);
-  printf("The hiSRndx is %d\n",hiSRndx);
-  printf("The legnth of sigReHi is %d\n",sigReHi->length);
-  printf("The length of hLMAll is %d\n",hLMAll->length);
+  // printf("The legnth of sigReVec is %d\n",sigReVec->length);
+  // printf("The hiSRndx is %d\n",hiSRndx);
+  // printf("The legnth of sigReHi is %d\n",sigReHi->length);
+  // printf("The length of hLMAll is %d\n",hLMAll->length);
 
 
     /* Cut wf if fMin requested by user was high */

@@ -1370,7 +1370,7 @@ XLALSimInspiralEOBPostAdiabatic(
 	XLALReverseREAL8Vector(omegaVec, omegaReverseVec);
 	XLALFDDerivative1Order8(rReverseVec, omegaReverseVec, domegadrReverseVec);
 	XLALReverseREAL8Vector(domegadrReverseVec, domegadrVec);
-    FILE *out = fopen ("pa_dyn.dat", "w");
+    
 	// Figure out where we are going to stop
 	UNUSED REAL8 adiabatic_param = 0.0;
 	UNUSED REAL8 r,prstar,pphi,csi,omega,domegadr;
@@ -1410,23 +1410,25 @@ XLALSimInspiralEOBPostAdiabatic(
 		idx_stop = rSize - 1;
 	}
 
-	for (i = 0; i < rSize; i++)
-    {
-        fprintf(
-        	out,
-        	"%.18e %.18e %.18e %.18e %.18e %.18e %.18e %.18e\n",
-        	tVec->data[i],
-        	rVec->data[i],
-            phiVec->data[i],
-            prstarVec->data[i],
-            pphiVec->data[i],
-            dtBydrVec->data[i],
-            domegadrVec->data[i],
-            adiabatic_param_Vec->data[i]
-        );
-    }
+	// FILE *out = fopen ("pa_dyn.dat", "w");
+	
+	// for (i = 0; i < rSize; i++)
+ //    {
+ //        fprintf(
+ //        	out,
+ //        	"%.18e %.18e %.18e %.18e %.18e %.18e %.18e %.18e\n",
+ //        	tVec->data[i],
+ //        	rVec->data[i],
+ //            phiVec->data[i],
+ //            prstarVec->data[i],
+ //            pphiVec->data[i],
+ //            dtBydrVec->data[i],
+ //            domegadrVec->data[i],
+ //            adiabatic_param_Vec->data[i]
+ //        );
+ //    }
 
-    fclose (out);
+ //    fclose (out);
 
   	UINT4 outSize = idx_stop;
 

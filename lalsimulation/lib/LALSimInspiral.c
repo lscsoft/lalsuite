@@ -925,7 +925,7 @@ int XLALSimInspiralChooseTDWaveform(
       /* Call the waveform driver routine */
       polariz+=-LAL_PI/2.;
       //R.C. this rotation of -pi/2 is needed to go from the EOB wave frame to the LAL wave frame, see slide 9 of https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/blob/master/tests/conventions/con \ventions.pdf                                                                                                                                                                                                
-      SpinAlignedEOBversion = 4111;
+      if(approximant==SEOBNRv4HM_PA) SpinAlignedEOBversion = 4111;
 
       ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
 					 deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
@@ -6421,7 +6421,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case TaylorT2:
         case TaylorT3:
         case TaylorT4:
-    case EccentricTD:
+	    case EccentricTD:
         case EOBNRv2:
         case HGimri:
         case IMRPhenomA:
@@ -6468,7 +6468,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case TEOBResum_ROM:
         case TEOBResumS:
         case SEOBNRv4HM:
-    case SEOBNRv4HM_PA:
+        case SEOBNRv4HM_PA:
         case NRHybSur3dq8:
         case IMRPhenomT:
         case IMRPhenomTHM:
@@ -6973,7 +6973,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv2T:
     case SEOBNRv4T:
     case SEOBNRv4HM:
-  case SEOBNRv4HM_PA:
+    case SEOBNRv4HM_PA:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -7088,7 +7088,7 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case SEOBNRv2T:
     case SEOBNRv4T:
     case SEOBNRv4HM:
-  case SEOBNRv4HM_PA:
+    case SEOBNRv4HM_PA:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
