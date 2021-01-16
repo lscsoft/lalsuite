@@ -56,6 +56,9 @@ int main(int argc, char** argv) {
        */
       if (ValidateSFTFile(argv[i]) != 0) {
         errcode = EXIT_FAILURE;
+      } else {
+        fprintf(stdout, "%s\n", argv[i]);
+        fflush(stdout);
       }
     }
 
@@ -74,6 +77,9 @@ int main(int argc, char** argv) {
          */
         if (ValidateSFTFile(line) != 0) {
           errcode = EXIT_FAILURE;
+        } else {
+          fprintf(stdout, "%s\n", line);
+          fflush(stdout);
         }
       }
     }
