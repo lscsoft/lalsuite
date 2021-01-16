@@ -16,8 +16,8 @@ if ! lalapps_SFTvalidate SFT-good SFT-test*; then
     exit 1
 fi
 echo
-echo "printf '%s\n' SFT-good '' SFT-test* | lalapps_SFTvalidate"
-if ! printf '%s\n' SFT-good '' SFT-test* | lalapps_SFTvalidate; then
+echo "printf '%s\n' SFT-good '' SFT-test* | lalapps_SFTvalidate >valid-sfts.txt"
+if ! printf '%s\n' SFT-good '' SFT-test* | lalapps_SFTvalidate >valid-sfts.txt; then
     echo "lalapps_SFTvalidate failed SFTs SFT-good SFT-test*; should have passed"
     exit 1
 fi
@@ -41,6 +41,18 @@ echo
 echo "printf '%s\n' SFT-bad* | lalapps_SFTvalidate"
 if printf '%s\n' SFT-bad* | lalapps_SFTvalidate; then
     echo "lalapps_SFTvalidate passed SFTs SFT-bad*; should have failed"
+    exit 1
+fi
+echo
+echo "printf '%s\n' SFT-good SFT-bad* SFT-test* | lalapps_SFTvalidate >valid-sfts-2.txt"
+if printf '%s\n' SFT-good SFT-bad* SFT-test* | lalapps_SFTvalidate >valid-sfts-2.txt; then
+    echo "lalapps_SFTvalidate passed SFT-good SFT-bad* SFT-test*; should have failed"
+    exit 1
+fi
+echo
+echo "diff valid-sfts.txt valid-sfts-2.txt"
+if ! diff valid-sfts.txt valid-sfts-2.txt; then
+    echo "valid-sfts.txt and valid-sfts-2.txt should compare equal"
     exit 1
 fi
 echo
