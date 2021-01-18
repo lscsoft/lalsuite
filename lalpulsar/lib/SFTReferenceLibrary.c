@@ -554,8 +554,8 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     /* check that checksum is consistent */
     if (crc != crc64save) {
 #ifdef SFTDEVEL
-      printf("CRC64 computes as %llu\n", crc);
-      printf("CRC64 in SFT is   %llu\n", crc64save);
+      fprintf(stderr, "%s: CRC64 computes as %llu\n", __func__, crc);
+      fprintf(stderr, "%s: CRC64 in SFT is   %llu\n", __func__, crc64save);
 #endif
       retval=SFTEBADCRC64;
       goto error;
@@ -835,11 +835,14 @@ ValidateSFTFile ( const char *fname )
   FILE *fp;
   int count;
 
+  /* clear error status */
+  errno = 0;
+
   /* open the file */
   if (!(fp=fopen(fname, "r"))) {
-    fprintf(stderr,"Unable to open %s", fname);
+    fprintf(stderr, "%s: Unable to open %s", __func__, fname);
     if (errno)
-      perror(" ");
+      perror(__func__);
     return SFTENULLFP;
   }
 
@@ -857,17 +860,17 @@ ValidateSFTFile ( const char *fname )
 
     /* SFT was invalid: say why */
     if (err) {
-      fprintf(stderr, "%s is not a valid SFT. %s\n", fname, SFTErrorMessage(err));
+      fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(NULL);
+        perror(__func__);
       return err;
     }
 
     /* check that various bits of header information are consistent */
     if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info))) {
-      fprintf(stderr, "%s is not a valid SFT. %s\n", fname, SFTErrorMessage(err));
+      fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(NULL);
+        perror(__func__);
       return err;
     }
 
@@ -876,23 +879,23 @@ ValidateSFTFile ( const char *fname )
     data = (float *)realloc((void *)data, info.nsamples*4*2);
     if (!data) {
       errno=SFTENULLPOINTER;
-      fprintf(stderr, "ran out of memory at %s. %s\n", fname, SFTErrorMessage(err));
+      fprintf(stderr, "%s: ran out of memory at %s (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(NULL);
+        perror(__func__);
       return err;
     }
 
     err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
     if (err) {
-      fprintf(stderr, "%s is not a valid SFT. %s\n", fname, SFTErrorMessage(err));
+      fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(NULL);
+        perror(__func__);
       return err;
     }
 
     for (j=0; j<info.nsamples; j++) {
       if (!isfinite(data[2*j]) || !isfinite(data[2*j+1])) {
-        fprintf(stderr, "%s is not a valid SFT (data infinite at freq bin %d)\n", fname, j+info.firstfreqindex);
+        fprintf(stderr, "%s: %s is not a valid SFT (data infinite at freq bin %d)\n", __func__, fname, j+info.firstfreqindex);
         return SFTNOTFINITE;
       }
     }
