@@ -103,9 +103,9 @@ int main(int argc, char *argv[]){
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outDir,    "outDir",    STRING,       'o',OPTIONAL,  "Output SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMin,      "fMin",      REAL8,        0,   OPTIONAL, "start Frequency") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMax,      "fMax",      REAL8,        0,   OPTIONAL, "Max Frequency Band") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_window,    "window",    INT4,         'w',OPTIONAL,  "Window size") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_window,    "window",    INT4,         'w',OPTIONAL,  "Window size for noise floor estimation in vicinity of a line") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBins,   "maxBins",   INT4,         'm',OPTIONAL,  "Max. bins to clean") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles, "linefiles", STRINGVector, 0,   OPTIONAL, "List of linefiles (filenames must contain IFO name)") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles, "linefiles", STRINGVector, 0,   OPTIONAL, "List of per-detector files with list of lines (each full path must start with a canonical IFO name)") == XLAL_SUCCESS, XLAL_EFUNC);
 
 
 
@@ -124,8 +124,7 @@ int main(int argc, char *argv[]){
     fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
     exit(1);
   }
-  thisCatalog.length = 1;
-  fprintf(stdout, "%d\n",catalog->length);
+  fprintf(stdout, "Created catalog with %d SFTs.\n", catalog->length);
 
   /* get a new seed value, and use it to create a new random parameter structure */
   fp=fopen("/dev/urandom", "r");
@@ -144,6 +143,7 @@ int main(int argc, char *argv[]){
   LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
   
   /* loop over sfts and clean them -- load one sft at a time */
+  thisCatalog.length = 1;
   for (j=0; j<catalog->length; j++) {
 
     thisCatalog.data = catalog->data + j;
