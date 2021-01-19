@@ -833,7 +833,8 @@ ValidateSFTFile ( const char *fname )
 {
 
   FILE *fp;
-  int count;
+  int err = 0;
+  float *data = NULL;
 
   /* clear error status */
   errno = 0;
@@ -848,22 +849,24 @@ ValidateSFTFile ( const char *fname )
 
   /* and read successive SFTs blocks from the file and validate CRC
      checksums */
-  for (count=0; 1; count++) {
+  for (int count=0; 1; count++) {
     struct headertag2 info,lastinfo;
-    int err=0, swapendian, move, j;
+    int swapendian, move, j;
 
     err=ReadSFTHeader(fp, &info, NULL, &swapendian, 1);
 
     /* at end of SFT file or merged SFT file blocks */
-    if (err==SFTENONE && count)
+    if (err==SFTENONE && count) {
+      err=0;
       break;
+    }
 
     /* SFT was invalid: say why */
     if (err) {
       fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
         perror(__func__);
-      return err;
+      break;
     }
 
     /* check that various bits of header information are consistent */
@@ -871,18 +874,17 @@ ValidateSFTFile ( const char *fname )
       fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
         perror(__func__);
-      return err;
+      break;
     }
 
     /* check that data appears valid */
-    float *data=NULL;
     data = (float *)realloc((void *)data, info.nsamples*4*2);
     if (!data) {
       errno=SFTENULLPOINTER;
       fprintf(stderr, "%s: ran out of memory at %s (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
         perror(__func__);
-      return err;
+      break;
     }
 
     err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
@@ -890,13 +892,14 @@ ValidateSFTFile ( const char *fname )
       fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
         perror(__func__);
-      return err;
+      break;
     }
 
     for (j=0; j<info.nsamples; j++) {
       if (!isfinite(data[2*j]) || !isfinite(data[2*j+1])) {
         fprintf(stderr, "%s: %s is not a valid SFT (data infinite at freq bin %d)\n", __func__, fname, j+info.firstfreqindex);
-        return SFTNOTFINITE;
+        err=SFTNOTFINITE;
+        break;
       }
     }
 
@@ -908,7 +911,10 @@ ValidateSFTFile ( const char *fname )
     fseek(fp, move, SEEK_CUR);
   }
 
+  /* cleanup */
   fclose(fp);
-  return ( 0 );
+  free(data);
+
+  return err;
 
 } /* ValidateSFTFile */
