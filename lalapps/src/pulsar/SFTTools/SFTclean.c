@@ -125,7 +125,7 @@ int main(int argc, char *argv[]){
     exit(1);
   }
   thisCatalog.length = 1;
-  fprintf(stdout, "%d\n",catalog->length);
+  fprintf(stdout, "Loaded %d SFTs into catalog.\n", catalog->length);
 
   /* get a new seed value, and use it to create a new random parameter structure */
   fp=fopen("/dev/urandom", "r");
