@@ -797,32 +797,32 @@ XLALSimIMRSpinAlignedEOBModes (
   /**<< parameter kappa_1 of the spin-induced quadrupole for body 1, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
   const REAL8 quadparam2,
   /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
+  const REAL8 domega220,
+  /**<<Fractional deviation in the frequency of the  220 mode; */
+  const REAL8 dtau220,
+  /**<<Fractional deviation in the damping time of the  220 mode; */
+  const REAL8 domega210,
+  /**<<Fractional deviation in the frequency of the  210 mode; */
+  const REAL8 dtau210,
+  /**<<Fractional deviation in the damping time of the  210 mode; */
+  const REAL8 domega330,
+  /**<<Fractional deviation in the frequency of the  330 mode; */
+  const REAL8 dtau330,
+  /**<<Fractional deviation in the damping time of the  330 mode; */
+  const REAL8 domega440,
+  /**<<Fractional deviation in the frequency of the  440 mode; */
+  const REAL8 dtau440,
+  /**<<Fractional deviation in the damping time of the  440 mode; */
+  const REAL8 domega550,
+  /**<<Fractional deviation in the frequency of the  550 mode; */
+  const REAL8 dtau550,
+  /**<<Fractional deviation in the damping time of the  550 mode; */
   REAL8Vector *nqcCoeffsInput,
   /**<< Input NQC coeffs */
   const INT4 nqcFlag,
   /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
-  LALDict *PAParams,
+  LALDict *PAParams
   /**<< dictionary containing parameters for the post-adiabatic routine */
-  const REAL8 domega220,     
-  /**<<Fractional deviation in the frequency of the  220 mode; */
-  const REAL8 dtau220,       
-  /**<<Fractional deviation in the damping time of the  220 mode; */
-  const REAL8 domega210,     
-  /**<<Fractional deviation in the frequency of the  210 mode; */
-  const REAL8 dtau210,       
-  /**<<Fractional deviation in the damping time of the  210 mode; */
-  const REAL8 domega330,     
-  /**<<Fractional deviation in the frequency of the  330 mode; */
-  const REAL8 dtau330,       
-  /**<<Fractional deviation in the damping time of the  330 mode; */
-  const REAL8 domega440,     
-  /**<<Fractional deviation in the frequency of the  440 mode; */
-  const REAL8 dtau440,       
-  /**<<Fractional deviation in the damping time of the  440 mode; */
-  const REAL8 domega550,     
-  /**<<Fractional deviation in the frequency of the  550 mode; */
-  const REAL8 dtau550       
-  /**<<Fractional deviation in the damping time of the  550 mode; */
 )
 {
   UNUSED REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
