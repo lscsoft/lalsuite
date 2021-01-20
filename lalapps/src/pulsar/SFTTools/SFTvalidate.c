@@ -41,8 +41,18 @@
 
 int main(int argc, char** argv) {
   
-  fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsStatus);
-  fflush(stdout);
+  if (argc == 2 && (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0)) {
+    fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsStatus);
+    return EXIT_SUCCESS;
+  }
+
+  if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+    fprintf(stdout, "usage:\n");
+    fprintf(stdout, "   %s *.sft\n", argv[0]);
+    fprintf(stdout, "   ls *.sft | %s\n", argv[0]);
+    fprintf(stdout, "   find -name '*.sft' | %s >valid-sfts.txt 2>errors.log\n", argv[0]);
+    return EXIT_SUCCESS;
+  }
 
   int errcode = EXIT_SUCCESS;
 
@@ -56,6 +66,9 @@ int main(int argc, char** argv) {
        */
       if (ValidateSFTFile(argv[i]) != 0) {
         errcode = EXIT_FAILURE;
+      } else {
+        fprintf(stdout, "%s\n", argv[i]);
+        fflush(stdout);
       }
     }
 
@@ -74,6 +87,9 @@ int main(int argc, char** argv) {
          */
         if (ValidateSFTFile(line) != 0) {
           errcode = EXIT_FAILURE;
+        } else {
+          fprintf(stdout, "%s\n", line);
+          fflush(stdout);
         }
       }
     }
