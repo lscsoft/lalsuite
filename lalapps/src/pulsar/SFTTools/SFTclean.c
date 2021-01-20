@@ -46,19 +46,8 @@
 #define SFTCLEANC_MSGEFILE "Could not create output file"
 /** @} */
 
-
-/* Default parameters. */
-
-
+/*---------- local defines ---------- */
 #define MAXFILENAMELENGTH 256
-/* defaults chosen for L1 */
-#define INPUTSFTDIR "./S3H1data/"
-#define OUTPUTSFTDIR "./test/"
-#define STARTFREQ 950.0
-#define ENDFREQ 970.0
-#define WINDOWSIZE 100
-#define MAXBINS 20
-
 #define TRUE (1==1)
 #define FALSE (1==0)
 
@@ -86,23 +75,18 @@ int main(int argc, char *argv[]){
   INT4  uvar_window, uvar_maxBins;
 
   /* set defaults */
-
-  uvar_sftDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(uvar_sftDir, INPUTSFTDIR);
-
-  uvar_outDir = (CHAR *)LALMalloc(256 * sizeof(CHAR));
-  strcpy(uvar_outDir, OUTPUTSFTDIR);
-
-  uvar_fMin = STARTFREQ;
-  uvar_fMax = ENDFREQ;  
-  uvar_window = WINDOWSIZE;
-  uvar_maxBins = MAXBINS;
+  uvar_sftDir = NULL;
+  uvar_outDir = NULL;
+  uvar_fMin = -1;
+  uvar_fMax = -1;
+  uvar_window = 100;
+  uvar_maxBins = 20;
 
   /* register user input variables */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,    "sftDir",    STRING,       'i',OPTIONAL,  "Input SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outDir,    "outDir",    STRING,       'o',OPTIONAL,  "Output SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMin,      "fMin",      REAL8,        0,   OPTIONAL, "start Frequency") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMax,      "fMax",      REAL8,        0,   OPTIONAL, "Max Frequency Band") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,    "sftDir",    STRING,       'i', REQUIRED,  "Input SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outDir,    "outDir",    STRING,       'o', REQUIRED,  "Output SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMin,      "fMin",      REAL8,        0,   OPTIONAL, "start Frequency (default: full input SFTs width)") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMax,      "fMax",      REAL8,        0,   OPTIONAL, "Max Frequency  (default: full input SFTs width)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_window,    "window",    INT4,         'w',OPTIONAL,  "Window size for noise floor estimation in vicinity of a line") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBins,   "maxBins",   INT4,         'm',OPTIONAL,  "Max. bins to clean") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles, "linefiles", STRINGVector, 0,   OPTIONAL, "List of per-detector files with list of lines (each full path must start with a canonical IFO name)") == XLAL_SUCCESS, XLAL_EFUNC);
