@@ -957,6 +957,8 @@ int main(int argc, char *argv[]){
         XLAL_ERROR( XLAL_EFUNC );
       }
       demodLoopCrossCorr(multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist, ndim, dimf, dima, dimT, dimP, g_ij );
+
+
       XLALDestroyMultiSFTVector ( inputSFTs );
       XLALDestroyCOMPLEX8Vector ( expSignalPhases );
   } 
@@ -1617,6 +1619,8 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
         LIGOTimeGPS currpointGPS;
         XLALGPSSetREAL8(&currpointGPS, curr_point->data[DEMODdimT]);
         dopplerpos.tp =  currpointGPS;
+
+
       }
       /* do useful stuff here*/
 
@@ -1656,6 +1660,10 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
       //fprintf(stdout,"Inner loop: freq %f , tp %f , asini %f \n", thisCandidate.freq, thisCandidate.tp, thisCandidate.asini);
 
     } /* end while loop over templates */
+  gsl_vector_free ( curr_point );
+  XLALDestroyLatticeTilingIterator(iterator);
+  XLALDestroyLatticeTiling(tiling);
+
     return 0;
 } /* end demodLoopCrossCorr */
 
