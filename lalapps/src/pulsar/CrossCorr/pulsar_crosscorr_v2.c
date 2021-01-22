@@ -107,6 +107,13 @@ typedef struct tagUserInput_t {
   BOOLEAN lattice;                /**< use lattice */
   REAL8   mismatchMax;          /**< total mismatch */
 
+  /*elliptical boundary */
+  REAL8   orbitPSecCenter;          /**< Center of prior ellipse for binary orbital period (seconds) */
+  REAL8   orbitPSecSigma;          /**< Center of prior ellipse for binary orbital period (seconds) */
+  REAL8   orbitTimeAscCenter;          /**< Center of prior ellipse for binary orbital period (seconds) */
+  REAL8   orbitTimeAscSigma;          /**< Center of prior ellipse for binary orbital period (seconds) */
+
+
 } UserInput_t;
 
 /* struct to store useful variables */
@@ -1199,6 +1206,11 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( injectionSources, STRINGVector, 0 , OPTIONAL, "CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}'");
   XLALRegisterUvarMember( lattice,    BOOLEAN, 0,  OPTIONAL, "Use lattice");
   XLALRegisterUvarMember( mismatchMax,    REAL8, 0,  OPTIONAL, "maximum mismatch to use for the lattice ");
+  XLALRegisterUvarMember( orbitPSecCenter,    REAL8, 0,  OPTIONAL, " Center of prior ellipse for binary orbital period (seconds) ");
+  XLALRegisterUvarMember( orbitPSecSigma,    REAL8, 0,  OPTIONAL, "One-sigma semiaxis for binary orbital period (seconds) ");
+  XLALRegisterUvarMember( orbitTimeAscCenter,    REAL8, 0,  OPTIONAL, "Center of prior ellipse for orbital time-of-ascension in GPS seconds");
+  XLALRegisterUvarMember( orbitTimeAscSigma,    REAL8, 0,  OPTIONAL, "One-sigma semiaxis for orbital time of ascension (seconds)");
+
 
 
   if ( xlalErrno ) {
@@ -1596,7 +1608,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
   LatticeTiling *tiling = XLALCreateLatticeTiling(DEMODndim);
   XLALSetLatticeTilingConstantBound(tiling, DEMODdimT, uvar.orbitTimeAsc, uvar.orbitTimeAsc + uvar.orbitTimeAscBand);
   
-  XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSec, uvar.orbitPSecBand, uvar.orbitTimeAsc, uvar.orbitTimeAscBand, uvar.refTime, 3.3);
+  XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, uvar.refTime, 3.3);
   
   XLALSetLatticeTilingConstantBound(tiling, DEMODdima, uvar.orbitAsiniSec, uvar.orbitAsiniSec + uvar.orbitAsiniSecBand);
   
