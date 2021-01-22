@@ -187,7 +187,9 @@ cache:
           --install
           --remove
     # build packages
-    - debuild -us -uc -r
+    - debuild
+         -us -uc -r
+         --lintian-opts --color=always
   artifacts:
     expire_in: 18h
     paths:
