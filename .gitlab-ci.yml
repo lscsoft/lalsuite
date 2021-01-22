@@ -29,7 +29,6 @@ variables:
   COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-  DEB_BUILD_OPTIONS: "parallel=4"
   DOCKER_DRIVER: overlay
   GIT_DEPTH: 1
   LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
@@ -158,6 +157,7 @@ cache:
   <<: *apt-cache
   image: igwn/base:stretch-proposed
   variables:
+    DEB_BUILD_OPTIONS: "parallel=4"
     GIT_STRATEGY: none
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
