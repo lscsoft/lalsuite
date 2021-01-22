@@ -105,6 +105,8 @@ typedef struct tagUserInput_t {
   LALStringVector *injectionSources; /**< CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}' */
 
   BOOLEAN lattice;                /**< use lattice */
+  REAL8   mismatchMax;          /**< total mismatch */
+
 } UserInput_t;
 
 /* struct to store useful variables */
@@ -1196,6 +1198,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( treatWarningsAsErrors, BOOLEAN, 0, OPTIONAL, "Abort program if any warnings arise (for e.g., zero-maxLag radiometer mode)");
   XLALRegisterUvarMember( injectionSources, STRINGVector, 0 , OPTIONAL, "CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}'");
   XLALRegisterUvarMember( lattice,    BOOLEAN, 0,  OPTIONAL, "Use lattice");
+  XLALRegisterUvarMember( mismatchMax,    REAL8, 0,  OPTIONAL, "maximum mismatch to use for the lattice ");
+
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
@@ -1598,8 +1602,8 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
   
   XLALSetLatticeTilingConstantBound(tiling, DEMODdimf, uvar.fStart, uvar.fStart + uvar.fBand);
   int lattice = TILING_LATTICE_ANSTAR;
-  REAL8 mismatchTOTAL = (0.25*DEMODndim)/4;
-  XLALSetTilingLatticeAndMetric(tiling, lattice, metric_ij, mismatchTOTAL);
+
+  XLALSetTilingLatticeAndMetric(tiling, lattice, metric_ij, uvar.mismatchMax);
   LatticeTilingIterator *iterator = XLALCreateLatticeTilingIterator(tiling, DEMODndim);
 
   gsl_vector *curr_point  = gsl_vector_alloc (DEMODndim);
