@@ -29,6 +29,7 @@ BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
+BuildRequires: help2man >= 1.37
 BuildRequires: less
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
@@ -248,9 +249,11 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_prefix}/lib*/octave/*/site/oct/*/lal.oct*
 
 %files
-%{_bindir}/lal_simd_detect
-%{_bindir}/lal_version
-%{_sysconfdir}/lal-user-env.*
+%defattr(-,root,root)
+%license COPYING
+%{_bindir}/*
+%{_mandir}/man1/*
+%{_sysconfdir}/*
 
 # -- changelog --------------
 

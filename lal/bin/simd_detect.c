@@ -24,9 +24,24 @@
 #include <stdio.h>
 #include <config.h>
 
+#include <lal/LALStdlib.h>
 #include <lal/LALSIMD.h>
 
-int main(void) {
+int main(int argc, char **argv) {
+
+  /* Parse command line */
+  if ( argc > 1 ) {
+    fprintf(stderr,
+            "Usage: %s [-h|--help]\n"
+            "  --help       display this messgage and exit\n",
+            argv[0]
+      );
+    if ( strcmp( argv[1], "-h" ) == 0 || strcmp( argv[1], "-help" ) == 0 || strcmp( argv[1], "--help" ) == 0 ) {
+      return EXIT_SUCCESS;
+    } else {
+      return EXIT_FAILURE;
+    }
+  }
 
   printf("%s was compiled with support for the following instruction sets:\n   %s %s\n",
          PACKAGE_STRING, XLALSIMDInstructionSetName(0), HAVE_SIMD_COMPILER);
