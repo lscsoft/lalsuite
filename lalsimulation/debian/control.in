@@ -61,7 +61,7 @@ Breaks: lalsimulation-dev (<< 2.4.0-2~)
 Package: lalsimulation-python
 Depends: python-lalsimulation, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalsimulation-python was renamed python-lalsimulation,
@@ -85,7 +85,7 @@ Description: Python bindings for LALSimulation
 Package: lalsimulation-python3
 Depends: python3-lalsimulation, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalsimulation-python3 was renamed python3-lalsimulation,
