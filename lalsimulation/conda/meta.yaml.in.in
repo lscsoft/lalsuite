@@ -31,7 +31,7 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man
+    - help2man >=1.37
     - llvm-openmp  # [osx]
     - make
     - pkg-config >=0.18.0
