@@ -28,6 +28,7 @@ BuildRequires: fftw-devel
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
+BuildRequires: help2man >= 1.37
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
@@ -220,7 +221,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %files
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/lalpulsar_version
+%{_bindir}/*
+%{_mandir}/man1/*
 %{_sysconfdir}/*
 
 # -- changelog --------------

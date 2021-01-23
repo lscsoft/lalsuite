@@ -30,6 +30,7 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - help2man >=1.37
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
     - make
