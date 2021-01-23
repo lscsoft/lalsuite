@@ -1,4 +1,1 @@
-usr/bin/lalfr-*
-usr/bin/lalframe_version
-etc/*
-usr/share/man/man1/*
+../../gnuscripts/debian/pkg.install
