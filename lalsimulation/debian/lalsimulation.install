@@ -1,4 +1,1 @@
-usr/bin/lalsim-*
-usr/bin/lalsimulation_version
-etc/*
-usr/share/man/*
+../../gnuscripts/debian/pkg.install
