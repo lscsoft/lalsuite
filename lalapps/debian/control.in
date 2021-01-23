@@ -7,7 +7,7 @@ Build-Depends:
  bc,
  debhelper (>= 9),
  dh-python,
- help2man,
+ help2man (>= 1.37),
  less,
  libcfitsio3-dev | libcfitsio-dev,
  libfftw3-dev,
