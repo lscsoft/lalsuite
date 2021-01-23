@@ -1,2 +1,1 @@
-usr/bin/lalburst_version
-etc/*
+../../gnuscripts/debian/pkg.install
