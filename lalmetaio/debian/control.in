@@ -58,7 +58,7 @@ Breaks: lalmetaio-dev (<< 2.0.0-2~)
 Package: lalmetaio-python
 Depends: python-lalmetaio, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalmetaio-python was renamed python-lalmetaio,
@@ -82,7 +82,7 @@ Description: Python bindings for LALMetaIO
 Package: lalmetaio-python3
 Depends: python3-lalmetaio, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalmetaio-python3 was renamed python3-lalmetaio,
