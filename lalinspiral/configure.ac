@@ -101,6 +101,9 @@ LALSUITE_ENABLE_LALBURST
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
 
+# enable help2man documentation
+LALSUITE_ENABLE_HELP2MAN
+
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
 
