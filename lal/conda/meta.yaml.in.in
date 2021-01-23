@@ -36,6 +36,7 @@ requirements:
     - {{ compiler('c') }}
     - pkg-config >=0.18.0
     - make
+    - help2man >=1.37
     - bc
     - swig >={{ swig_version }}
   host:

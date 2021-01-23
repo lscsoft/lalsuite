@@ -1,3 +1,1 @@
-etc/lal-user-env.*
-usr/bin/lal_version
-usr/bin/lal_simd_detect
+../../gnuscripts/debian/pkg.install
