@@ -189,7 +189,7 @@ cache:
     # build packages
     - debuild
          -us -uc -r
-         --lintian-opts --color=always
+         --lintian-opts --color=always --allow-root
   artifacts:
     expire_in: 18h
     paths:
