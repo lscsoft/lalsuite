@@ -25,6 +25,7 @@ Prefix: %{_prefix}
 # C
 BuildRequires: gcc
 BuildRequires: gcc-c++
+BuildRequires: help2man >= 1.37
 BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: libmetaio-devel
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
@@ -209,7 +210,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %files
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/lalmetaio_version
+%{_bindir}/*
+%{_mandir}/man1/*
 %{_sysconfdir}/*
 
 # -- changelog --------------
