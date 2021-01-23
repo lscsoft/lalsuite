@@ -6,6 +6,7 @@ Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends:
  debhelper (>= 9),
  dh-python,
+ help2man (>= 1.37),
  lal-octave (>= @MIN_LAL_VERSION@~),
  lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
  lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
