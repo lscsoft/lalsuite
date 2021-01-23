@@ -32,8 +32,10 @@ int main(int argc, char **argv) {
   /* Parse command line */
   if ( argc > 1 ) {
     fprintf(stderr,
-            "Usage: %s [-h|--help]\n"
-            "  --help       display this messgage and exit\n",
+            "Usage: %s [-h|--help]\n\n"
+            "Print compiled and detected SIMD extensions\n\n"
+            "Options:\n"
+            "  --help       display this message and exit\n",
             argv[0]
       );
     if ( strcmp( argv[1], "-h" ) == 0 || strcmp( argv[1], "-help" ) == 0 || strcmp( argv[1], "--help" ) == 0 ) {
