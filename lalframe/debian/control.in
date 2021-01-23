@@ -6,7 +6,7 @@ Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
 Build-Depends:
  debhelper (>= 9),
  dh-python,
- help2man,
+ help2man (>= 1.37),
  lal-octave (>= @MIN_LAL_VERSION@~),
  ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
  libframel-dev (>= @MIN_FRAMEL_VERSION@),
