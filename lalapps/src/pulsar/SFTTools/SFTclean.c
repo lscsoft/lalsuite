@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2021 David Keitel
 *  Copyright (C) 2007 Badri Krishnan, Alicia Sintes Olives
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -19,8 +20,8 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Hough
- * \author Badri Krishnan
+ * \ingroup lalapps_pulsar_SFTTools
+ * \author Badri Krishnan, Alicia Sintes Olives, David Keitel
  */
 
 #include "config.h"
