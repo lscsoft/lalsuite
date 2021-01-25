@@ -1636,6 +1636,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
         XLALGPSSetREAL8(&currpointGPS, curr_point->data[DEMODdimT]);
         dopplerpos.tp =  currpointGPS;
 
+	fprintf(stdout, "t=%f, p=%f, a=%f, f=%f \n", dopplerpos.fkdot[0], dopplerpos.asini, dopplerpos.period, curr_point->data[DEMODdimT]);
 
       }
       /* do useful stuff here*/
