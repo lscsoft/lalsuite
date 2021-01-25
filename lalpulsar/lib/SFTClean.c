@@ -945,7 +945,7 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< 
 					  MultiSFTVector   *MultiSFTVect,  /**< SFTVector to be cleaned */
 					  INT4             width,          /**< maximum width to be cleaned */
 					  INT4             window,         /**< window size for noise floor estimation in vicinity of a line */
-					  LALStringVector *linefiles,      /**< list of per-detector files with list of lines (each full path must start with a canonical IFO name) */
+					  LALStringVector *linefiles,      /**< list of per-detector files with list of lines (the basename of each file must start with a canonical IFO name) */
 					  RandomParams     *randPar)       /**< for creating random numbers */
 {
 
