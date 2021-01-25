@@ -64,7 +64,7 @@ Replaces: lalpulsar-dev (<< 2.1.0-2~)
 Package: lalpulsar-python
 Depends: python-lalpulsar, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalpulsar-python was renamed python-lalpulsar,
@@ -89,7 +89,7 @@ Description: Python bindings for LALPulsar.
 Package: lalpulsar-python3
 Depends: python3-lalpulsar, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalpulsar-python3 was renamed python3-lalpulsar,

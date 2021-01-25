@@ -109,7 +109,7 @@ Replaces: lalinference-dev (<< 2.0.5-2~)
 Package: lalinference-python
 Depends: python-lalinference, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalinference-python was renamed python-lalinference,
@@ -207,6 +207,7 @@ Depends:
  liblalinference@LIBMAJOR@ (= ${binary:Version}),
  openmpi-bin,
  openssh-client,
+ python:any,
  python-lalinference (= ${binary:Version}),
 Description: LSC Algorithm Library Inference
  The LSC Algorithm Inference Library for gravitational wave data analysis.

@@ -80,7 +80,7 @@ Breaks: lalburst-dev (<< 1.5.6-2~)
 Package: lalburst-python
 Depends: python-lalburst, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalburst-python was renamed python-lalburst,
@@ -111,7 +111,7 @@ Description: Python bindings for LALBurst
 Package: lalburst-python3
 Depends: python3-lalburst, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalburst-python3 was renamed python3-lalburst,
