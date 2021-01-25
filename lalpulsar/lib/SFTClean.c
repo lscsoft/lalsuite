@@ -17,6 +17,7 @@
  *  MA  02111-1307  USA
  */
 
+#include <libgen.h>
 #include <lal/SFTClean.h>
 #include <lal/SFTutils.h>
 
@@ -973,7 +974,7 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< 
     {
       ifo = NULL;
       /* try to get the ifo name from the linefile name */
-      if ( (ifo = XLALGetChannelPrefix ( linefiles->data[k])) == NULL) {
+      if ( (ifo = XLALGetChannelPrefix ( basename(linefiles->data[k]))) == NULL) {
         ABORT ( status, SFTCLEANH_ELINENAME, SFTCLEANH_MSGELINENAME);
       }
 
