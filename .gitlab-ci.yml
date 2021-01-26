@@ -297,6 +297,7 @@ cache:
           --error-overdepending
           --keep-old-work
           --no-anaconda-upload
+          --use-channeldata
           --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
           ${CONDA_BUILD_ARGS}"
