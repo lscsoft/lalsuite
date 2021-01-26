@@ -80,7 +80,7 @@ BuildRequires: octave-devel
 
 # -- packages ---------------
 
-#%%package -n %{name}
+# lal
 Summary: LSC Algorithm Library - runtime tools
 Group: LAL
 Requires: lib%{name} = %{version}-%{release}
