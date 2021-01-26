@@ -55,8 +55,13 @@ lalfr_MANS = \
 
 man1_MANS = \
 	$(lalfr_MANS) \
+	$(END_OF_LIST)
+
+if HELP2MAN
+man1_MANS += \
 	lalframe_version.man \
 	$(END_OF_LIST)
+endif
 
 EXTRA_DIST += \
 	$(lalfr_MANS) \
