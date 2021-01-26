@@ -29,6 +29,7 @@ variables:
   COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+  CPU_COUNT: 4
   DOCKER_DRIVER: overlay
   GIT_DEPTH: 1
   LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
@@ -75,7 +76,7 @@ cache:
   script:
     - ./00boot
     - ./configure --enable-doxygen --enable-swig
-    - make -j4 VERBOSE=1 distcheck
+    - make -j${CPU_COUNT} VERBOSE=1 distcheck
   artifacts:
     reports:
       junit:
@@ -99,7 +100,7 @@ cache:
   image: igwn/base:el7-testing
   variables:
     GIT_STRATEGY: none
-    RPM_BUILD_CPUS: 4
+    RPM_BUILD_NCPUS: ${CPU_COUNT}
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install srpm dependencies
@@ -157,7 +158,7 @@ cache:
   <<: *apt-cache
   image: igwn/base:stretch-proposed
   variables:
-    DEB_BUILD_OPTIONS: "parallel=4"
+    DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
     GIT_STRATEGY: none
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
@@ -353,7 +354,7 @@ documentation:
   script:
     - ./00boot
     - ./configure --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 install-html
+    - make -j${CPU_COUNT} install-html
     - pushd ${LAL_DIR}/share/doc
     - cp lalsuite/index.html index.html
     - sed -i 's/..\/lal/lal/g' index.html
@@ -372,7 +373,7 @@ pages:
   script:
     - ./00boot
     - ./configure --enable-doxygen --prefix=${LAL_DIR}
-    - make -j4 install-html
+    - make -j${CPU_COUNT} install-html
     - cp -r ${LAL_DIR}/share/doc public/
     - pushd public
     - cp lalsuite/index.html index.html
@@ -758,9 +759,9 @@ coverage:
     # Configure for C code coverage measurement with gcc
     - ./configure --enable-swig-python CFLAGS="--coverage -fprofile-abs-path" PYTHON=python3
     # Run unit tests with Python scripts instrumented by coverage.py
-    - make -j4 check COVERAGE_FILE="$(pwd)/.coverage" PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+    - make -j${CPU_COUNT} check COVERAGE_FILE="$(pwd)/.coverage" PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
     # Output C coverage data in Cobertura format
-    - gcovr -j4 --exclude-directories test --xml c-coverage.xml
+    - gcovr -j${CPU_COUNT} --exclude-directories test --xml c-coverage.xml
     # Combine and output Python coverage data in Cobertura format
     - coverage combine
     - coverage xml -o py-coverage.xml
@@ -932,7 +933,7 @@ docker:tags:stretch:
   script:
     - ./00boot
     - CC=${CLANG} CXX=${CLANGXX} ./configure --enable-swig --enable-doxygen
-    - make -j4 VERBOSE=1 distcheck
+    - make -j${CPU_COUNT} VERBOSE=1 distcheck
   only:
     - schedules
     - web
@@ -967,7 +968,7 @@ clang:dev:
   script:
     - ./00boot
     - ./configure --enable-doxygen
-    - make -j4 VERBOSE=1 distcheck
+    - make -j${CPU_COUNT} VERBOSE=1 distcheck
   only:
     - schedules
     - web
@@ -999,11 +1000,11 @@ cuda:
   script:
     - ./00boot
     - ./configure --with-cuda=/usr/local/cuda
-    - make -j4 dist
-    - make -j4
+    - make -j${CPU_COUNT} dist
+    - make -j${CPU_COUNT}
     # just compile test suite; some tests require a CUDA device to run
-    - make -j4 VERBOSE=1 check TESTS=
-    - make -j4 install
+    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
+    - make -j${CPU_COUNT} install
   only:
     - schedules
     - web
@@ -1085,8 +1086,8 @@ platform:macos:highsierra:
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
     # is available
     - PYTHON=/opt/local/bin/python2.7 ./configure
-    - make -j4
-    - make -j4 VERBOSE=1 check
+    - make -j${CPU_COUNT}
+    - make -j${CPU_COUNT} VERBOSE=1 check
   needs: []
   only:
     - schedules
@@ -1104,8 +1105,8 @@ platform:macos:sierra:
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
     # is available
     - PYTHON=/opt/local/bin/python2.7 ./configure
-    - make -j4
-    - make -j4 VERBOSE=1 check
+    - make -j${CPU_COUNT}
+    - make -j${CPU_COUNT} VERBOSE=1 check
   needs: []
   only:
     - schedules
@@ -1132,8 +1133,8 @@ platform:conda:linux:
     - ./00boot
     - ./configure
           --disable-swig-octave
-    - make -j4
-    - make -j4 VERBOSE=1 check
+    - make -j${CPU_COUNT}
+    - make -j${CPU_COUNT} VERBOSE=1 check
   needs: []
   only:
     - schedules
@@ -1186,7 +1187,7 @@ upgrade:conda:linux:
     # Build wheel
     - ./00boot
     - ./configure PYTHON=${PYPREFIX}/bin/python --enable-mpi ${EXTRA_CONFIG_FLAGS}
-    - make -j4 wheel
+    - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
     # Test: do some simple sanity checks in a virtualenv
@@ -1220,7 +1221,7 @@ upgrade:conda:linux:
     # Build wheel
     - ./00boot
     - ./configure PYTHON=$(which python${PYVERS}) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
-    - make -j4 wheel
+    - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
     # Test: do some simple sanity checks in a virtualenv
