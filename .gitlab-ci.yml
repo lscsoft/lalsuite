@@ -113,8 +113,6 @@ cache:
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
     - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${TARBALL}
     - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${PACKAGE}-*.src.rpm
-    # lint src.rpm
-    - rpmlint ${SRCRPM}
     # install build dependencies
     - yum-builddep ${YUM_OPTS} ${SRCRPM}
     # build binary rpms and print details of what we got
@@ -131,6 +129,11 @@ cache:
           echo "Requires:" &&
           rpm -qp --requires "${rpmf}";
       done
+    # lint RPMs
+    #    '-o "NetworkEnabled False"' disables checking Source0
+    - rpmlint
+          -o "NetworkEnabled False"
+          ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
   artifacts:
     expire_in: 18h
     paths:
