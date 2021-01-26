@@ -308,6 +308,10 @@ cache:
       fi
     # run the build
     - eval $cmd
+  after_script:
+    # clean cache of old files
+    - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
+    - find ${CONDA_PKGS_DIRS%:*} -type d -empty -delete
   artifacts:
     expire_in: 18h
     paths:
