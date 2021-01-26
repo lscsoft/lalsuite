@@ -100,7 +100,7 @@ cache:
   image: igwn/base:el7-testing
   variables:
     GIT_STRATEGY: none
-    RPM_BUILD_CPUS: ${CPU_COUNT}
+    RPM_BUILD_NCPUS: ${CPU_COUNT}
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     # install srpm dependencies
