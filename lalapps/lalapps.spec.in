@@ -21,7 +21,7 @@ BuildRequires: fftw-devel
 BuildRequires: libframel-devel >= @MIN_FRAMEL_VERSION@
 BuildRequires: gcc
 BuildRequires: gsl-devel
-BuildRequires: help2man
+BuildRequires: help2man >= 1.37
 BuildRequires: less
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: liblalburst-devel >= @MIN_LALBURST_VERSION@

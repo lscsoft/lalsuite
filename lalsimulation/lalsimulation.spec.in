@@ -26,7 +26,7 @@ Prefix: %{_prefix}
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
-BuildRequires: help2man
+BuildRequires: help2man >= 1.37
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0

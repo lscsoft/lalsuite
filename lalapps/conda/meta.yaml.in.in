@@ -42,7 +42,7 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man
+    - help2man >=1.37
     - make
     - pkg-config
   host:

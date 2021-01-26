@@ -26,6 +26,7 @@ Prefix: %{_prefix}
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
+BuildRequires: help2man >= 1.37
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
@@ -245,7 +246,8 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %files
 %defattr(-,root,root)
 %license COPYING
-%{_bindir}/lalburst_version
+%{_bindir}/*
+%{_mandir}/man1/*
 %{_sysconfdir}/*
 
 # -- changelog --------------

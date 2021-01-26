@@ -1,2 +1,1 @@
-usr/bin/lalinspiral_version
-etc/*
+../../gnuscripts/debian/pkg.install
