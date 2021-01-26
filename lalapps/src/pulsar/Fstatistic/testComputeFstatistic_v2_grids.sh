@@ -115,6 +115,8 @@ echo " STEP 2: run CFS_v2 for various grid-types"
 echo "----------------------------------------------------------------------"
 echo
 
+basecmds=("" "" "" "" "" "" "" "" "" "") # length 10 to cover grid types 0-9
+
 ## common arguments for grid types 0,1,2,3,6
 sky_CL="--Alpha=$Alpha --AlphaBand=$AlphaBand --dAlpha=$dAlpha --Delta=$Delta --DeltaBand=$DeltaBand --dDelta=$dDelta"
 spin_CL="--Freq=$Freq --FreqBand=$FreqBand --dFreq=$dFreq --f1dot=$f1dot --f1dotBand=$f1dotBand --df1dot=$df1dot"
@@ -125,7 +127,8 @@ fi
 
 ## ----- grid=0 : flat grid
 echo "CFSv2 using gridType=0:"
-cmdline="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=0 --outputFstat=./testCFSv2_grid0.dat";
+basecmds[0]="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=0"
+cmdline="${basecmds[0]} --outputFstat=./testCFSv2_grid0.dat";
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cmdline' ..."
@@ -134,7 +137,8 @@ fi
 
 ## ----- grid=1 : isotropic
 echo "CFSv2 using gridType=1:"
-cmdline="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=1 --outputFstat=./testCFSv2_grid1.dat";
+basecmds[1]="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=1"
+cmdline="${basecmds[1]} --outputFstat=./testCFSv2_grid1.dat";
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cmdline' ..."
@@ -143,7 +147,8 @@ fi
 
 ## ----- grid=2 : metric grid
 echo "CFSv2 using gridType=2:"
-cmdline="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=2 --metricType=1 --metricMismatch=0.1 --outputFstat=./testCFSv2_grid2.dat";
+basecmds[2]="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=2 --metricType=1 --metricMismatch=0.1"
+cmdline="${basecmds[2]} --outputFstat=./testCFSv2_grid2.dat";
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cmdline' ..."
@@ -152,7 +157,8 @@ fi
 
 ## ----- grid=3 : same metric grid, specified as 'grid-file' passed on the commandline
 echo "CFSv2 using gridType=3:"
-cmdline="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=3 --outputFstat=./testCFSv2_grid3.dat --gridFile='{2.000000953674316 -0.4704365134239197; 2.068386077880859 -0.4704365134239197; 2.099475860595703 -0.492608368396759; 2.000000953674316 -0.4204375147819519; 2.082211971282959 -0.4204375147819519}'";
+basecmds[3]="$cfsv2_code $sky_CL $spin_CL $cfs_CL --gridType=3 --gridFile='{2.000000953674316 -0.4704365134239197; 2.068386077880859 -0.4704365134239197; 2.099475860595703 -0.492608368396759; 2.000000953674316 -0.4204375147819519; 2.082211971282959 -0.4204375147819519}'"
+cmdline="${basecmds[3]} --outputFstat=./testCFSv2_grid3.dat";
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cmdline' ..."
@@ -165,8 +171,8 @@ echo "recompute gridType=2 with CFSv2 using gridType=6:"
 gridFile="testCFSv2_grid2_grid.dat";
 awk_extract6='{printf "%s %s %s %s %s %s\n", $1, $2, $3, $4, $5, $6 }'
 sed '/^%.*/d' ./testCFSv2_grid2.dat | awk "$awk_extract6" >${gridFile}
-
-cmdline="$cfsv2_code $cfs_CL --gridType=6 --gridFile=./${gridFile} --outputFstat=./testCFSv2_grid6.dat";
+basecmds[6]="$cfsv2_code $cfs_CL --gridType=6 --gridFile=./${gridFile}"
+cmdline="${basecmds[6]} --outputFstat=./testCFSv2_grid6.dat";
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cmdline' ..."
@@ -175,7 +181,8 @@ fi
 
 ## --- grid=8 : lattice tiling grid, square parameter space
 echo "CFSv2 using gridType=8:"
-cmdline="$cfsv2_code --Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=5e-4 --f1dot=-1e-10 --f1dotBand=1e-10 --DataFiles='${SFTdir_5d}/*.sft' --TwoFthreshold=0 --gridType=8 --metricMismatch=0.5 --outputFstat=./testCFSv2_grid8.dat --RngMedWindow=$RngMedWindow"
+basecmds[8]="$cfsv2_code --Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=5e-4 --f1dot=-1e-10 --f1dotBand=1e-10 --DataFiles='${SFTdir_5d}/*.sft' --TwoFthreshold=0 --gridType=8 --metricMismatch=0.5 --RngMedWindow=$RngMedWindow"
+cmdline="${basecmds[8]} --outputFstat=./testCFSv2_grid8.dat"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cmdline' ..."
@@ -184,7 +191,8 @@ fi
 
 ## --- grid=9 : lattice tiling grid, age-spindown-index parameter space
 echo "CFSv2 using gridType=9:"
-cmdline="$cfsv2_code --Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=8e-5 --spindownAge=1e11 --minBraking=2 --maxBraking=5 --DataFiles='${SFTdir_5d}/*.sft' --TwoFthreshold=0 --gridType=9 --metricMismatch=0.5 --outputFstat=./testCFSv2_grid9.dat --RngMedWindow=$RngMedWindow"
+basecmds[9]="$cfsv2_code --Alpha=6.1 --Delta=1.2 --Freq=100.4 --FreqBand=8e-5 --spindownAge=1e11 --minBraking=2 --maxBraking=5 --DataFiles='${SFTdir_5d}/*.sft' --TwoFthreshold=0 --gridType=9 --metricMismatch=0.5 --RngMedWindow=$RngMedWindow"
+cmdline="${basecmds[9]} --outputFstat=./testCFSv2_grid9.dat"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$cmdline' ..."
@@ -269,6 +277,50 @@ if [ "X$ntemplates" != "X$ntemplates_ref" ]; then
 else
     echo "OK."
 fi
+
+echo
+echo "----------------------------------------------------------------------"
+echo " STEP 5: Check --outputGrid option:"
+echo "----------------------------------------------------------------------"
+echo
+
+for n in 0 1 2 3 6 8 9; do
+
+    # run with pure grid output (no search)
+    echo "CFSv2 using gridType=$n:"
+    cmdline="${basecmds[$n]} --outputGrid=./testCFSv2_grid${n}_nosearch.dat"
+    echo $cmdline
+    if ! eval $cmdline; then
+        echo "Error.. something failed when running '$cmdline' ..."
+        exit 1
+    fi
+
+    ## compare results
+    echo "Comparing --outputFstat vs --outputGrid for gridType=${n}:"
+    grid="./testCFSv2_grid${n}_nosearch.dat"
+    gridcut="./testCFSv2_grid${n}_nosearch_cut.dat"
+    sed_cmd="sed '/%/d' ${grid} > ${gridcut}"
+    if ! eval $sed_cmd; then
+        echo "Error.. something failed when running '$sed_cmd' ..."
+        exit 1
+    fi
+    res="./testCFSv2_grid${n}.dat"
+    rescut="./testCFSv2_grid${n}_cut.dat"
+    sed_cmd="sed '/%/d' ${res} | cut -d ' ' -f 1-6 > ${rescut}"
+    if ! eval $sed_cmd; then
+        echo "Error.. something failed when running '$sed_cmd' ..."
+        exit 1
+    fi
+    diff_cmd="diff -s ${gridcut} ${rescut}"
+    echo $diff_cmd
+    if ! eval $diff_cmd; then
+        echo "error: columns 1-6 of $grid and $res should be equal."
+        exit 1
+    else
+        echo "OK, columns 1-6 match."
+    fi
+
+done
 
 ## ------------------------------------------------------------
 
