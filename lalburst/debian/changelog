@@ -1,3 +1,9 @@
+lalburst (1.5.7-1) unstable; urgency=low
+
+  * Update for 1.5.7
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 11 Jan 2021 15:05:44 -0700
+
 lalburst (1.5.6-1) unstable; urgency=low
 
   * Update for 1.5.6
