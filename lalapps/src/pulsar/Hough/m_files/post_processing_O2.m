@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA2
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA2
  %}
 
 function post_processing_O2_ecl(X_input,Y_input,grup,grup_Band,BandNo,BandNf,Ntop,PixelFactor,p,sig_veto,rp_sig,r_W,r_W_cl,CHI_V,chisquare_STD_veto,population_cluster_veto,significance_veto_cluster,Extract_S,min_band,Clean_lines_I,Clean_lines_II,load_data,file1,file2,file3)
