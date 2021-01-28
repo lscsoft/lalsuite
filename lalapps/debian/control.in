@@ -32,7 +32,6 @@ Build-Depends:
  python-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
  python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python-six,
- zlib1g-dev,
 X-Python-Version: >= 2.7
 X-Python3-Version: <= 3.0
 Standards-Version: 3.9.8
@@ -65,7 +64,6 @@ Depends:
  python-ligo-segments,
  python-ligo-lw,
  python-six,
- zlib1g,
 Breaks: lalinference-python (<< 1.9.4.1-1~)
 Provides: python-bayestar-localization, python-bayestar
 Conflicts: python-bayestar-localization, python-bayestar, python-pylal
