@@ -131,7 +131,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
- python-lalpulsar (= ${binary:Version}),
+ python3-lalpulsar (= ${binary:Version}),
 Description: LSC Algorithm Library Pulsar
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package provides the runtime tools.
