@@ -22,25 +22,24 @@ Build-Depends:
  liblalpulsar-dev (>= @MIN_LALPULSAR_VERSION@~),
  liblalinference-dev (>= @MIN_LALINFERENCE_VERSION@~),
  pkg-config (>= 0.18.0),
- python-all-dev,
- python-lal (>= @MIN_LAL_VERSION@~),
- python-lalburst (>= @MIN_LALBURST_VERSION@~),
- python-lalframe (>= @MIN_LALFRAME_VERSION@~),
- python-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
- python-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
- python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
- python-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
- python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
- python-six,
-X-Python-Version: >= 2.7
-X-Python3-Version: <= 3.0
+ python3-all-dev,
+ python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-lalburst (>= @MIN_LALBURST_VERSION@~),
+ python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
+ python3-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
+ python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
+ python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+ python3-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
+ python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+ python3-six,
+X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
 Package: lalapps
 Architecture: any
 Depends:
  ${misc:Depends},
- ${python:Depends},
+ ${python3:Depends},
  ${shlibs:Depends},
  less,
  lal (>= @MIN_LAL_VERSION@~),
@@ -52,22 +51,19 @@ Depends:
  lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
  lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  libframel8 (>= 8.0),
- python-h5py,
- python-lal (>= @MIN_LAL_VERSION@~),
- python-lalframe (>= @MIN_LALFRAME_VERSION@~),
- python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
- python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
- python-lalburst (>= @MIN_LALBURST_VERSION@~),
- python-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
- python-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
- python-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
- python-ligo-segments,
- python-ligo-lw,
- python-six,
+ python3-h5py,
+ python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
+ python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
+ python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
+ python3-lalburst (>= @MIN_LALBURST_VERSION@~),
+ python3-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
+ python3-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
+ python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
+ python3-ligo-segments,
+ python3-ligo-lw,
+ python3-six,
 Breaks: lalinference-python (<< 1.9.4.1-1~)
-Provides: python-bayestar-localization, python-bayestar
-Conflicts: python-bayestar-localization, python-bayestar, python-pylal
-Replaces: python-bayestar-localization, python-bayestar, python-pylal
 Description: LSC Algorithm Library Applications
  The LSC Algorithm Library Applications for gravitational wave data analysis.
  This package contains applications that are built on tools in the
