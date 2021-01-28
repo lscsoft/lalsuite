@@ -159,7 +159,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  liblalburst@LIBMAJOR@ (= ${binary:Version}),
- python-lalburst (= ${binary:Version}),
+ python3-lalburst (= ${binary:Version}),
 Description: LSC Algorithm Library Burst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package provides the runtime tools.
