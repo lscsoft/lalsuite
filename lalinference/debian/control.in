@@ -206,8 +206,8 @@ Depends:
  liblalinference@LIBMAJOR@ (= ${binary:Version}),
  openmpi-bin,
  openssh-client,
- python:any,
- python-lalinference (= ${binary:Version}),
+ python3:any,
+ python3-lalinference (= ${binary:Version}),
 Description: LSC Algorithm Library Inference
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package provides the runtime tools.
