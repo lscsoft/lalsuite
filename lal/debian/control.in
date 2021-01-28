@@ -36,6 +36,7 @@ Build-Depends:
  python3-pytest,
  python3-scipy,
  python3-six,
+ rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
  zlib1g-dev,
 X-Python-Version: >= 2.7
