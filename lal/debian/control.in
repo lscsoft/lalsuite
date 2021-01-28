@@ -170,7 +170,7 @@ Depends:
  ${shlibs:Depends},
  liblal@LIBMAJOR@ (= ${binary:Version}),
  liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
- python-lal (= ${binary:Version}),
+ python3-lal (= ${binary:Version}),
 Description: LSC Algorithm Library - runtime tools
  The LSC Algorithm Library for gravitational wave analysis.
  This package provides the runtime tools.
