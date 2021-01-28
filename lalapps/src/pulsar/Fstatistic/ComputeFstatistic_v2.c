@@ -1161,6 +1161,11 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   /* ----- set computational parameters for F-statistic from User-input ----- */
   cfg->useResamp = ( uvar->FstatMethod >= FMETHOD_RESAMP_GENERIC ); // use resampling;
 
+  /* check that resampling is compatible with gridType */
+  if ( cfg->useResamp && uvar->gridType > GRID_SKY_LAST /* end-marker for factored grid types */ ) {
+    XLAL_ERROR ( XLAL_EINVAL, "\nUse of resampling FstatMethod is incompatible with non-factored gridType=%i\n\n", uvar->gridType );
+  }
+
   /* if IFO string vector was passed by user, parse it for later use */
   if ( uvar->IFOs != NULL ) {
     XLAL_CHECK ( XLALParseMultiLALDetector ( &(cfg->multiIFO), uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
