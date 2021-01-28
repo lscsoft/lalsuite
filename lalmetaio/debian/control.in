@@ -121,7 +121,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
- python-lalmetaio (= ${binary:Version}),
+ python3-lalmetaio (= ${binary:Version}),
 Description: LSC Algorithm Library MetaIO
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.
  This package provides the runtime tools.
