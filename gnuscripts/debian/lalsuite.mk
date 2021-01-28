@@ -39,6 +39,8 @@ override_dh_auto_build:
 ifneq ($(strip $(PYTHON_OTHER)),)
 	# -- configure and build 'other' python library
 	# copy over current build into new directory
+	# NOTE: when this is removed, please remove
+	#       'rsync' from Build-Depends
 	$(RM) -r $(PYTHON_OTHER_BUILD_DIR)
 	rsync -ra . $(PYTHON_OTHER_BUILD_DIR)
 	# remove old makefiles

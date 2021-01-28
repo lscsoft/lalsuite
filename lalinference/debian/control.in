@@ -63,6 +63,7 @@ Build-Depends:
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-pytest,
  python3-scipy (>= 0.9.0),
+ rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
  zlib1g-dev,
 X-Python-Version: >= 2.7
