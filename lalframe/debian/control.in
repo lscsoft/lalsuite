@@ -129,7 +129,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  liblalframe@LIBMAJOR@ (= ${binary:Version}),
- python-lalframe (= ${binary:Version}),
+ python3-lalframe (= ${binary:Version}),
 Description: LSC Algorithm Library Frame
  The LSC Algorithm Frame Library for gravitational wave data analysis.
  This package provides the runtime tools.
