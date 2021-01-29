@@ -270,6 +270,7 @@ cache:
   before_script:
     - *define-retry
     - *conda-init
+    - conda config --set channel_priority strict
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
@@ -287,8 +288,9 @@ cache:
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
     # build packages (preferring local packages over everything)
-    - conda config --set channel_priority strict
-    - conda build
+    # note: we use a variable and `eval` to get around the
+    #       _pyversion string having spaces in it
+    - cmd="conda build
           recipe/
           --dirty
           --error-overlinking
@@ -296,7 +298,14 @@ cache:
           --no-anaconda-upload
           --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
-          ${CONDA_BUILD_ARGS}
+          ${CONDA_BUILD_ARGS}"
+    # if not a nightly or web-triggered pipeline, just build one python version
+    - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
+         _pyversion=$(python -c "import yaml; conf = yaml.load(open('.ci_support/${CONDA_CONFIG}.yaml'), Loader=yaml.SafeLoader); print(conf['python'][-1])");
+         cmd="${cmd} --python \"${_pyversion}\"";
+      fi
+    # run the build
+    - eval $cmd
   artifacts:
     expire_in: 18h
     paths:
