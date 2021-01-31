@@ -3357,7 +3357,7 @@ class knopeDAG(pipeline.CondorDAG):
               segextypes = [sts.strip() for sts in excludetype.split(',')]  # split and strip whitespace
 
               for j in range(len(segextypes)):
-                exquery = DataQualityFlag.query_dqsegdb(segextypes[i], st, et, url=server)
+                exquery = DataQualityFlag.query_dqsegdb(segextypes[j], st, et, url=server)
 
                 # exclude segments
                 query = query & ~exquery.active
