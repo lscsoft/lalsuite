@@ -3329,6 +3329,7 @@ class knopeDAG(pipeline.CondorDAG):
       for i in range(len(segtypes)):
         # create query
         query = DataQualityFlag.query_dqsegdb(segtypes[i], st, et, url=server)
+        query = query.active  # use "active" segment list
 
         if excludesegs is not None:
           # check whether there are different exclusion types for the different times
@@ -3359,7 +3360,7 @@ class knopeDAG(pipeline.CondorDAG):
                 exquery = DataQualityFlag.query_dqsegdb(segextypes[i], st, et, url=server)
 
                 # exclude segments
-                query = query & ~exquery
+                query = query & ~exquery.active
 
         if segquery is None:
           segquery = query.copy()
@@ -3368,7 +3369,7 @@ class knopeDAG(pipeline.CondorDAG):
           segquery = segquery & query
 
       # write out segment list
-      for thisseg in segquery.active:
+      for thisseg in segquery:
         print(int(thisseg[0]), int(thisseg[1]), file=segfp)
 
       sidx += 1
