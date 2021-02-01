@@ -1200,6 +1200,7 @@ upgrade:conda:linux:
   only:
     - /^lalsuite-v.*$/
     - schedules
+    - web
   artifacts:
     expire_in: 18h
     paths:
