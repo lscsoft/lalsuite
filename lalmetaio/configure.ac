@@ -117,14 +117,6 @@ LALSUITE_USE_LIBTOOL
 # check for header files
 AC_HEADER_STDC
 
-# check for zlib libraries and headers
-PKG_CHECK_MODULES([ZLIB],[zlib],[true],[false])
-LALSUITE_PUSH_UVARS
-LALSUITE_ADD_FLAGS([C],[${ZLIB_CFLAGS}],[${ZLIB_LIBS}])
-AC_SEARCH_LIBS([compress],[],[:],[AC_MSG_ERROR([could not find the zlib library])])
-AC_CHECK_HEADER([zlib.h],[:],[AC_MSG_ERROR([could not find the zlib.h header])])
-LALSUITE_POP_UVARS
-
 # math library
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
