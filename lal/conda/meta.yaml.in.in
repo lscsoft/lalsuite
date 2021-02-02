@@ -122,7 +122,6 @@ outputs:
         - lscsoft-glue >=@MIN_GLUE_VERSION@
         - mkl  # [fft_impl == "mkl"]
         - {{ pin_compatible('numpy') }}
-        - numpy <1.20.0a0
         - python
         - python-dateutil
         - scipy
