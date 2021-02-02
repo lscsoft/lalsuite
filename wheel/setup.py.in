@@ -69,8 +69,8 @@ try:
 except ImportError:
     # FIXME: remove after dropping support for Python < 3.7
     import importlib_resources as resources
-with resources.path('lalapps', '') as new_path:
-    new_path = str(new_path / 'data')
+with resources.path('lalapps', '__init__.py') as new_path:
+    new_path = str(new_path.parent / 'data')
 path = os.environ.get('LAL_DATA_PATH')
 path = path.split(':') if path else []
 if new_path not in path:
@@ -104,8 +104,8 @@ try:
 except ImportError:
     # FIXME: remove after dropping support for Python < 3.7
     import importlib_resources as resources
-with resources.path('lalapps', 'bin') as new_path:
-    new_path = str(new_path / '{}')
+with resources.path('lalapps', '__init__.py') as new_path:
+    new_path = str(new_path.parent / 'bin' / '{}')
 os.execv(new_path, sys.argv)
 '''
 
@@ -162,6 +162,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Scientific/Engineering :: Physics'],
     cmdclass={'build_ext': build_ext,

@@ -1269,16 +1269,16 @@ wheel:cp37-cp37m-manylinux2014:
   <<: *wheel-manylinux2014
 wheel:cp38-cp38-manylinux2014:
   <<: *wheel-manylinux2014
-#wheel:cp39-cp39-manylinux2014:
-#  <<: *wheel-manylinux2014
+wheel:cp39-cp39-manylinux2014:
+ <<: *wheel-manylinux2014
 wheel:cp36-cp36m-macosx:
   <<: *wheel-macos
 wheel:cp37-cp37m-macosx:
   <<: *wheel-macos
 wheel:cp38-cp38-macosx:
   <<: *wheel-macos
-#wheel:cp39-cp39-macosx:
-#  <<: *wheel-macos
+wheel:cp39-cp39-macosx:
+ <<: *wheel-macos
 
 deploy:wheel:
   stage: deploy
@@ -1295,11 +1295,11 @@ deploy:wheel:
     - wheel:cp36-cp36m-manylinux2014
     - wheel:cp37-cp37m-manylinux2014
     - wheel:cp38-cp38-manylinux2014
-#    - wheel:cp39-cp39-manylinux2014
+    - wheel:cp39-cp39-manylinux2014
     - wheel:cp36-cp36m-macosx
     - wheel:cp37-cp37m-macosx
     - wheel:cp38-cp38-macosx
-#    - wheel:cp39-cp39-macosx
+    - wheel:cp39-cp39-macosx
   only:
     - /^lalsuite-v.*$/
     - schedules
