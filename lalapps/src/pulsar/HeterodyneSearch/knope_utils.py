@@ -372,7 +372,7 @@ class knopeDAG(pipeline.CondorDAG):
 
         # check that .par file contains ephemeris information and units (if not present defaults will be used - see get_ephemeris)
         if psr['EPHEM'] != None:
-          if psr['EPHEM'] not in ['DE200', 'DE405', 'DE414', 'DE421', 'DE430', 'DE436']:
+          if psr['EPHEM'] not in ['DE200', 'DE405', 'DE414', 'DE421', 'DE430', 'DE435', 'DE436']:
             print("Unregconised ephemeris '%s' in '%s'. Skipping this source" % (psr['EPHEM'], par))
             self.skipped_pulsars[par] = "Unregconised ephemeris '%s'" % psr['EPHEM']
             continue
@@ -3329,6 +3329,7 @@ class knopeDAG(pipeline.CondorDAG):
       for i in range(len(segtypes)):
         # create query
         query = DataQualityFlag.query_dqsegdb(segtypes[i], st, et, url=server)
+        query = query.active  # use "active" segment list
 
         if excludesegs is not None:
           # check whether there are different exclusion types for the different times
@@ -3356,10 +3357,10 @@ class knopeDAG(pipeline.CondorDAG):
               segextypes = [sts.strip() for sts in excludetype.split(',')]  # split and strip whitespace
 
               for j in range(len(segextypes)):
-                exquery = DataQualityFlag.query_dqsegdb(segextypes[i], st, et, url=server)
+                exquery = DataQualityFlag.query_dqsegdb(segextypes[j], st, et, url=server)
 
                 # exclude segments
-                query = query & ~exquery
+                query = query & ~exquery.active
 
         if segquery is None:
           segquery = query.copy()
@@ -3368,7 +3369,7 @@ class knopeDAG(pipeline.CondorDAG):
           segquery = segquery & query
 
       # write out segment list
-      for thisseg in segquery.active:
+      for thisseg in segquery:
         print(int(thisseg[0]), int(thisseg[1]), file=segfp)
 
       sidx += 1
