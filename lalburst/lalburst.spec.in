@@ -7,6 +7,9 @@
 %undefine nightly
 %endif
 
+# borrowed from python3-rpm-macros
+%define pyYdir %{_builddir}/pythonY-%{name}-%{version}-%{release}
+
 # -- metadata ---------------
 
 Name: @PACKAGE@
@@ -37,6 +40,7 @@ BuildRequires: pkgconfig >= 0.18.0
 # swig
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
 # python2
 BuildRequires: pytest
 BuildRequires: python-devel
@@ -51,6 +55,8 @@ BuildRequires: python2-mock
 BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python2-rpm-macros
 BuildRequires: python2-scipy
+BuildRequires: rsync
+%endif
 
 # python3x
 BuildRequires: epel-rpm-macros
@@ -78,7 +84,7 @@ BuildRequires: octave-devel
 # lalburst
 Summary: LSC Algorithm Burst Libary - runtime tools
 Requires: lib%{name} = %{version}-%{release}
-Requires: python2-%{name} = %{version}-%{release}
+Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 %description
 The LSC Algorithm Burst Library for gravitational wave data analysis.
 This package provides the runtime tools.
@@ -113,6 +119,7 @@ The LSC Algorithm Burst Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL Burst
 library.
 
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
 # python2-lalburst
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALBurst
@@ -129,15 +136,17 @@ Requires: python2-ligo-segments
 Requires: python2-numpy >= @MIN_NUMPY_VERSION@
 Requires: python2-scipy
 Provides: %{name}-python = %{version}-%{release}
+Provides: deprecated()
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALBurst.
+%endif
 
 # python3x-lalburst
 %package -n python%{python3_pkgversion}-%{name}
-Summary: Python %{python2_version} Bindings for LALBurst
+Summary: Python %{python3_version} Bindings for LALBurst
 Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: gsl
@@ -174,33 +183,42 @@ This package provides the Octave bindings for LALBurst.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-# build C library with python2
-%configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python2}
+# build C library with python3
+%configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
-# build python3 library (copy things so we don't have to rebuild them)
-rm -rf %py3dir
-cp -r . %py3dir
-pushd %py3dir
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
+# build python2 library (copy things so we don't have to rebuild them)
+rm -rf %{pyYdir}
+rsync -ra . %{pyYdir}
+pushd %{pyYdir}
 rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
-%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
+%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python2}
 %{__make} V=1 -C swig
 %{__make} V=1 -C python/%{name}
 %{__make} V=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
 popd
+%endif
 
 %check
-# C + python2 + octave
+# C + python3 + octave
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
-# python3
-[ -d %py3dir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
+
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
+# python2
+[ -d %pyYdir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %pyYdir -C test/python check
+%endif
 
 %install
-# C + python2 + octave
+# C + python3 + octave
 %make_install
-# python3
-%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
-%{__make} -C %py3dir -C python/%{name} install DESTDIR=%{?buildroot}
+
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
+# python2
+%{__make} -C %pyYdir -C swig install-exec-am DESTDIR=%{?buildroot}
+%{__make} -C %pyYdir -C python/%{name} install DESTDIR=%{?buildroot}
+%endif
+
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post
@@ -228,10 +246,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
 %files -n python2-%{name}
 %defattr(-,root,root)
 %license COPYING
 %{python2_sitearch}/*
+%endif
 
 %files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)

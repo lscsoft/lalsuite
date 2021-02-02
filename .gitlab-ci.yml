@@ -119,8 +119,18 @@ cache:
     - yum-builddep ${YUM_OPTS} ${SRCRPM}
     # build binary rpms and print details of what we got
     - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
-    - rpm -qilp ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
-    - rpm -qp --provides ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
+    # print package info
+    - set +x
+    - for rpmf in ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm; do
+          echo "===== ${rpmf}" &&
+          rpm -qlp "${rpmf}" &&
+          echo "Files:" &&
+          rpm -qip "${rpmf}" &&
+          echo "Provides:" &&
+          rpm -qp --provides "${rpmf}" &&
+          echo "Requires:" &&
+          rpm -qp --requires "${rpmf}";
+      done
   artifacts:
     expire_in: 18h
     paths:
@@ -191,6 +201,14 @@ cache:
     - debuild
          -us -uc -r
          --lintian-opts --color=always --allow-root
+    # print package info
+    - set +x
+    - cd ${CI_PROJECT_DIR}
+    - for debf in *.deb; do
+          echo "===== ${debf}";
+          dpkg --info "${debf}";
+          dpkg --contents "${debf}";
+      done
   artifacts:
     expire_in: 18h
     paths:

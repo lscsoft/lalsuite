@@ -123,7 +123,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
- python-lalsimulation (= ${binary:Version}),
+ python3-lalsimulation (= ${binary:Version}),
 Description: LSC Algorithm Library Simulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package provides the runtime tools.

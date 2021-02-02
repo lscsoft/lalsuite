@@ -3,16 +3,18 @@ DPKG_EXPORT_BUILDFLAGS = 1
 include /usr/share/dpkg/buildflags.mk
 include /usr/share/dpkg/pkg-info.mk
 
-HAVE_PYTHON2 := $(if $(shell pyversions -r),yes)
-HAVE_PYTHON3 := $(if $(shell py3versions -r),yes)
-HAVE_OCTAVE := $(if $(shell grep $(DEB_SOURCE)-octave debian/control),yes)
+DH_PACKAGES := $(shell dh_listpackages)
+WITH_PYTHON2 := $(if $(filter python-$(DEB_SOURCE),$(DH_PACKAGES)),yes)
+WITH_OCTAVE := $(if $(filter $(DEB_SOURCE)-octave,$(DH_PACKAGES)),yes)
 
 # define 'main' python, and other python
 # NOTE: to disable the 'other' python build set 'PYTHON_OTHER = '
 #       (i.e. to the empty string) _before_ the 'include debian/lalsuite.mk'
 #       line in debian/rules file
-PYTHON := /usr/bin/python2
-PYTHON_OTHER ?= /usr/bin/python3
+PYTHON := /usr/bin/python3
+ifneq (,$(WITH_PYTHON2))
+	PYTHON_OTHER ?= /usr/bin/python2
+endif
 PYTHON_OTHER_BUILD_DIR ?= _buildpyother
 
 # handle parallelism
@@ -23,8 +25,9 @@ endif
 %:
 	dh $@ \
 		--buildsystem=autoconf \
-		$(if $(HAVE_PYTHON2),--with=python2) \
-		$(if $(HAVE_PYTHON3),--with=python3)
+		--with=python3 \
+		$(if $(WITH_PYTHON2),--with=python2) \
+	;
 
 override_dh_auto_configure:
 	# configure the build for the 'main' python version
@@ -80,14 +83,15 @@ ifneq ($(strip $(PYTHON_OTHER)),)
 endif
 
 override_dh_fixperms:
-	dh_fixperms $(if $(HAVE_OCTAVE),&& find debian -name '*.oct' | xargs chmod -x)
+	dh_fixperms $(if $(WITH_OCTAVE),&& find debian -name '*.oct' | xargs chmod -x)
 
 override_dh_strip:
-	dh_strip $(if $(HAVE_OCTAVE),&& find debian -name '*.oct' | xargs strip --strip-unneeded)
+	dh_strip $(if $(WITH_OCTAVE),&& find debian -name '*.oct' | xargs strip --strip-unneeded)
 
 override_dh_shlibdeps:
 	dh_shlibdeps \
 	&& find debian -name '*.la' -delete \
-	$(if $(HAVE_OCTAVE),&& dpkg-shlibdeps -Odebian/$(DEB_SOURCE)-octave.substvars $$(find debian -name '*.oct')) \
-	$(if $(HAVE_PYTHON2),&& dh_numpy) \
-	$(if $(HAVE_PYTHON3),&& dh_numpy3)
+	&& dh_numpy3 \
+	$(if $(WITH_OCTAVE),&& dpkg-shlibdeps -Odebian/$(DEB_SOURCE)-octave.substvars $$(find debian -name '*.oct')) \
+	$(if $(WITH_PYTHON2),&& dh_numpy) \
+	;
