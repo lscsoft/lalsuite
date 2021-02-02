@@ -295,6 +295,7 @@ cache:
           --dirty
           --error-overlinking
           --error-overdepending
+          --keep-old-work
           --no-anaconda-upload
           --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
