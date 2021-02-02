@@ -28,7 +28,7 @@ DEACTIVATE_SH="${PREFIX}/etc/conda/deactivate.d/deactivate_${PKG_NAME}.sh"
 mkdir -p $(dirname ${DEACTIVATE_SH})
 cat > ${DEACTIVATE_SH} << EOF
 #!/bin/bash
-if [ "\${CONDA_BACKUP_${PKG_NAME_UPPER}_DATADIR}" == "empty" ]; then
+if [ "\${CONDA_BACKUP_${PKG_NAME_UPPER}_DATADIR}" = "empty" ]; then
 	unset ${PKG_NAME_UPPER}_DATADIR
 else
 	export ${PKG_NAME_UPPER}_DATADIR="\${CONDA_BACKUP_${PKG_NAME_UPPER}_DATADIR}"
