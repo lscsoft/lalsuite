@@ -424,11 +424,11 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   // frequency-band either taken here from user-input, or later from noiseSFTs (no defaults)
   UINT4 nSetfminBand = UVAR_SET2(fmin,Band);
-  XLAL_CHECK ( (nSetfminBand==2) || ( (nSetfminBand==0) && have_noiseSFTs ), XLAL_EINVAL, "Need either 'noiseSFTs' or BOTH of 'fMin' and 'Band'!\n");
+  XLAL_CHECK ( (nSetfminBand==2) || ( (nSetfminBand==0) && have_noiseSFTs ), XLAL_EINVAL, "Need either 'noiseSFTs' or BOTH of 'fmin' and 'Band'!\n");
   if ( nSetfminBand==2 )
     {
-      /* check for negative fMin and Band, which would break the fMin_eff, fBand_eff calculation below */
-      XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fMin=%f!\n\n", uvar->fmin );
+      /* check for negative fmin and Band, which would break the fMin_eff, fBand_eff calculation below */
+      XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fmin=%f!\n\n", uvar->fmin );
       XLAL_CHECK ( uvar->Band > 0, XLAL_EDOM, "Invalid non-positive frequency band Band=%f!\n\n", uvar->Band );
       cfg->fminOut = uvar->fmin;
       cfg->BandOut = uvar->Band;
