@@ -159,7 +159,7 @@ test_ParseStringValue ( void )
   // ---------- XLALParseStringValueAsREAL4() ----------
   REAL4 valREAL4, valREAL4Ref;
   valString = "2147483647";
-  valREAL4Ref = 2147483647;
+  valREAL4Ref = 2147483647.0;
   XLAL_CHECK ( XLALParseStringValueAsREAL4 ( &valREAL4, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( valREAL4 == valREAL4Ref, XLAL_ETOL, "XLALParseStringValueAsREAL4(%s) failed, return = %.16g\n", valString, valREAL4 );
 
