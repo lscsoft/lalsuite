@@ -69,6 +69,11 @@ outputs:
         - gsl
         - hdf5
         - zlib
+      run_constrained:
+        # make sure downstream packages are updated beyond the first
+        # appearance of liblal
+        - lal >=7.1.1
+        - python-lal >=7.1.1
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
