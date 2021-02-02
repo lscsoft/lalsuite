@@ -2810,17 +2810,18 @@ endian_swap(CHAR * pdata, size_t dsize, size_t nelements)
 
 } /* endian swap */
 
-
-/*----------------------------------------------------------------------
- * glob() has been reported to fail under condor, so we use our own
- * function to get a filelist from a directory, using a glob-like pattern.
- * also can read a list of file names from a "list file".
+/**
+ * Returns a list of filenames matching the input argument, which may be one of
+ * the following:
+ *   - <tt>\<file\>[;\<file\>;...]</tt>: a list of filenames.
+ *   - <tt>\<glob\>[;\<glob\>;...]</tt>: a list of glob-like pattern(s) such
+ *     as <tt>*.sft</tt>, <tt>./dir/\htmlonly\endhtmlonly*.sft</tt>, etc.
+ *   - <tt>list:\<filelist\></tt>: a file containing a list of filenames.
+ *     Prefixes of the form <tt>file:\htmlonly\endhtmlonly//localhost/</tt>
+ *     or <tt>file:\htmlonly\endhtmlonly///</tt> are removed.
  *
- * looks pretty ugly with all the #ifdefs for the Microsoft C compiler
- *
- * NOTE: the list of filenames is returned SORTED ALPHABETICALLY !
- *
- *----------------------------------------------------------------------*/
+ * Note: the list of filenames is returned sorted alphabetically.
+ */
 LALStringVector *
 XLALFindFiles (const CHAR *globstring)
 {
