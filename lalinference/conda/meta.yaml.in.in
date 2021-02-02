@@ -37,8 +37,6 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man >=1.37
-    - llvm-openmp  # [osx]
     - make
     - pkg-config
     - swig >={{ swig_version }}
@@ -51,9 +49,6 @@ requirements:
     - lalburst >={{ lalburst_version }}
     - lalinspiral >={{ lalinspiral_version }}
     - lalpulsar >={{ lalpulsar_version }}
-    - libgomp  # [linux]
-    - llvm-openmp  # [osx]
-    - openmpi
 
 outputs:
   - name: liblalinference
@@ -97,7 +92,6 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        - openmpi
         # ignore run_exports from python's recipe
         - python
     requirements:
@@ -109,24 +103,8 @@ outputs:
       host:
         - gsl
         - {{ pin_subpackage('liblalinference', exact=True) }}
-        - openmpi
         - python
         - numpy
-        # run requirements needed for help2man
-        - astropy >=1.1.1
-        - healpy >=1.9.1
-        - h5py
-        - ligo-segments
-        - lscsoft-glue >=1.54.1
-        - matplotlib-base >=1.2.0
-        - python-lal >={{ lal_version }}
-        - python-lalmetaio >={{ lalmetaio_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
-        - python-lalburst >={{ lalburst_version }}
-        - python-lalinspiral >={{ lalinspiral_version }}
-        - python-lalpulsar >={{ lalpulsar_version }}
-        - python-ligo-lw
-        - scipy >=0.9.0
       run:
         - astropy >=1.1.1
         - gsl
@@ -192,29 +170,56 @@ outputs:
     build:
       ignore_run_exports:
         - python
+      # Prioritise nompi via build number
+      number: {{ (build + 100) if (mpi or "nompi") == "nompi" else build }}
+      string: {{ "nompi" if (mpi or "nompi") == "nompi" else ("mpi_" + mpi) }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man
-        - llvm-openmp  # [osx]
+        - help2man >=1.37
+        - llvm-openmp  # [osx and mpi != 'nompi']
         - make
+        - pkg-config >=0.18.0
       host:
-        - gsl
-        - {{ pin_subpackage('liblalinference', exact=True) }}
-        - libgomp  # [linux]
-        - llvm-openmp  # [osx]
-        - openmpi
-        - python
-        - {{ pin_subpackage('python-lalinference', exact=True) }}
-      run:
-        - gsl
+        - gsl  # [mpi != 'nompi']
+        - libgomp  # [linux and mpi != 'nompi']
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalinference', exact=True) }}
-        - liblalinspiral >={{ lalinspiral_version }}
-        - llvm-openmp  # [osx]
-        - openmpi
+        - liblalinspiral >={{ lalinspiral_version }}  # [mpi != 'nompi']
+        - llvm-openmp  # [osx and mpi != 'nompi']
+        - {{ mpi }}  # [mpi != 'nompi']
         - python
         - {{ pin_subpackage('python-lalinference', exact=True) }}
+        # run requirements needed for help2man
+        - astropy >=1.1.1
+        - h5py
+        - ligo-gracedb
+        - lscsoft-glue >=1.54.1
+        - matplotlib-base >=1.2.0
+        - python-lal >={{ lal_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
+        - python-ligo-lw
+        - scipy >=0.9.0
+        - six
+      run:
+        - astropy >=1.1.1
+        - gsl  # [mpi != 'nompi']
+        - h5py
+        - liblal >={{ lal_version }}
+        - {{ pin_subpackage('liblalinference', exact=True) }}
+        - liblalinspiral >={{ lalinspiral_version }}  # [mpi != 'nompi']
+        - ligo-gracedb
+        - llvm-openmp  # [osx and mpi != 'nompi']
+        - lscsoft-glue >=1.54.1
+        - matplotlib-base >=1.2.0
+        - {{ mpi }}  # [mpi != 'nompi']
+        - python
+        - python-lal >={{ lal_version }}
+        - {{ pin_subpackage('python-lalinference', exact=True) }}
+        - python-lalsimulation >={{ lalsimulation_version }}
+        - python-ligo-lw
+        - scipy >=0.9.0
+        - six
     test:
       requires:
         - cpnest
