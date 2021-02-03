@@ -26,6 +26,7 @@ ${SRC_DIR}/configure \
 	--disable-swig-octave \
 	--disable-swig-python \
 	--enable-cfitsio \
+	--enable-help2man \
 	--enable-openmp \
 	--enable-swig-iface \
 	--prefix="${PREFIX}" \
