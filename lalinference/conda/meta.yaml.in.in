@@ -5,6 +5,7 @@
 # production-ready at any time.
 
 {% set name = "lalinference" %}
+{% set build = 9999 %}
 
 # set version based on nightly
 # (we rebuild the nightly version ourselves because the tarball might have
@@ -39,7 +40,7 @@ source:
 build:
   error_overdepending: true
   error_overlinking: true
-  number: 9999
+  number: {{ build }}
   script_env:
     - CI_PIPELINE_SOURCE
   skip: true  # [win]
