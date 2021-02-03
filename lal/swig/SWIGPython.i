@@ -665,25 +665,29 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     // Create NumPy array descriptor if none yet exists.
     if (*pdescr == NULL) {
-      *pdescr = PyArray_DescrNewFromType(NPY_OBJECT);
+      *pdescr = PyArray_DescrNewFromType(NPY_VOID);
       if (*pdescr == NULL) {
         return NULL;
       }
       (*pdescr)->typeobj = SwigPyObject_type();
+      (*pdescr)->byteorder = '=';
+      (*pdescr)->flags = NPY_LIST_PICKLE | NPY_NEEDS_INIT | NPY_NEEDS_PYAPI | NPY_USE_GETITEM | NPY_USE_SETITEM;
+      (*pdescr)->type_num = 0;
       (*pdescr)->elsize = esize;
       (*pdescr)->alignment = 1;
+      (*pdescr)->subarray = NULL;
+      (*pdescr)->names = NULL;
+      (*pdescr)->fields = NULL;
       (*pdescr)->f = &swiglal_py_array_objview_##ACFTYPE##_arrfuncs;
-
-      // Numpy workaround for registering user-defined object types. See
-      // https://github.com/numpy/numpy/pull/18303,
-      // https://github.com/numpy/numpy/pull/17320
-      (*pdescr)->names = Py_BuildValue("(s)", "swigobj");
-      (*pdescr)->fields = Py_BuildValue("{s:(s,i)}", "swigobj", "O", 0);
 
       if (PyArray_RegisterDataType(*pdescr) < 0) {
         return NULL;
       }
     }
+
+    // PyArray_NewFromDescr appears to steal a reference to the descriptor passed to it, so a
+    // reference count increment is needed here.
+    Py_INCREF(*pdescr);
 
     return *pdescr;
 
