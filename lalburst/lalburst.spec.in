@@ -113,7 +113,7 @@ Requires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 Requires: libmetaio-devel
 Provides: %{name}-devel = %{version}-%{release}
-Obsoletes: %{name}-devel < %{version}-%{release}
+Obsoletes: %{name}-devel < 1.5.7-1
 %description -n lib%{name}-devel
 The LSC Algorithm Burst Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL Burst
