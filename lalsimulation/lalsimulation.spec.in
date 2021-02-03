@@ -92,7 +92,7 @@ Requires: gsl-devel
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Requires: lib%{name} = %{version}-%{release}
 Provides: %{name}-devel = %{version}-%{release}
-Obsoletes: %{name}-devel < %{version}-%{release}
+Obsoletes: %{name}-devel < 2.5.0-1
 %description -n lib%{name}-devel
 The LSC Algorithm Simulation Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
