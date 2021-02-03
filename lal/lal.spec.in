@@ -113,7 +113,7 @@ Requires: fftw-devel
 Requires: gsl-devel
 Requires: hdf5-devel
 Provides: %{name}-devel = %{version}-%{release}
-Obsoletes: %{name}-devel < %{version}-%{release}
+Obsoletes: %{name}-devel < 7.1.1-1
 %description -n lib%{name}-devel
 The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
