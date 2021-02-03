@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Running the omega pipeline with condor for an arbitrary amount of sources
 """
