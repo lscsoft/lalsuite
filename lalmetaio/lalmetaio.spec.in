@@ -93,7 +93,7 @@ Requires: lib%{name} = %{version}
 Requires: libmetaio-devel >= @MIN_METAIO_VERSION@
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
-Obsoletes: %{name}-devel < %{version}-%{release}
+Obsoletes: %{name}-devel < 2.0.1-1
 %description -n lib%{name}-devel
 The LSC Algorithm MetaIO Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL MetaIO
