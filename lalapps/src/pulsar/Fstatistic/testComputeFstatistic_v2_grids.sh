@@ -321,14 +321,3 @@ for n in 0 1 2 3 6 8 9; do
     fi
 
 done
-
-## ------------------------------------------------------------
-
-## clean up files
-if [ -z "$NOCLEANUP" ]; then
-    rm -rf $SFTdir_40h $SFTdir_5d
-    rm -f $gridFile Fstats Fstats.log
-    for n in 0 1 2 3 6 8 9; do
-        rm -f testCFSv2_grid${n}.dat
-    done
-fi
