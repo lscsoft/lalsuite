@@ -104,7 +104,7 @@ Requires: fftw-static
 Requires: gsl-devel
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
-Obsoletes: %{name}-devel < %{version}-%{release}
+Obsoletes: %{name}-devel < 3.0.0-1
 %description -n lib%{name}-devel
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
