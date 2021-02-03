@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright (C) 2012  Nickolas Fotopoulos
 # Copyright (C) 2014-2017  Stephen Privitera
 #
