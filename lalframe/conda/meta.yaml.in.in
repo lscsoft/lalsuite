@@ -73,6 +73,9 @@ outputs:
         - ldas-tools-framecpp >={{ framecpp_version }}
         - libframel >={{ framel_version }}
         - liblal >={{ lal_version }}
+      run_constrained:
+        - lalframe >=1.5.3
+        - python-lalframe >=1.5.3
     test:
       requires:
         - pkg-config
