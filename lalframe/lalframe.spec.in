@@ -186,11 +186,9 @@ popd
 
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
-%post
-ldconfig
+%post -n lib%{name} -p /sbin/ldconfig
 
-%postun
-ldconfig
+%postun -n lib%{name} -p /sbin/ldconfig
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
