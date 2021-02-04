@@ -29,6 +29,7 @@ variables:
   COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+  CONDA_PYTHON_VERSION: "3.8"
   CPU_COUNT: 4
   DOCKER_DRIVER: overlay
   GIT_DEPTH: 1
@@ -266,6 +267,7 @@ cache:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_64_"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+    CONDA_PYTHON_VERSION: "3.8"
     GIT_STRATEGY: none
   before_script:
     - *define-retry
@@ -303,8 +305,7 @@ cache:
           ${CONDA_BUILD_ARGS}"
     # if not a nightly or web-triggered pipeline, just build one python version
     - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
-         _pyversion=$(python -c "import yaml; conf = yaml.load(open('.ci_support/${CONDA_CONFIG}.yaml'), Loader=yaml.SafeLoader); print(conf['python'][-1])");
-         cmd="${cmd} --python \"${_pyversion}\"";
+         cmd="${cmd} --python \"${CONDA_PYTHON_VERSION}.* *_cpython\"";
       fi
     # run the build
     - echo $cmd && eval $cmd
@@ -764,7 +765,7 @@ lalapps:conda:
     - lalinference:conda
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
-    CONDA_CONFIG: "linux_64_python3.7.____cpython"
+    CONDA_CONFIG: "linux_64_python${CONDA_PYTHON_VERSION}.____cpython"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 # -- integration tests --------------------------
