@@ -848,10 +848,10 @@ int main(int argc, char *argv[]){
 
   const DopplerCoordinateSystem coordSys = {
     .dim = 4,
-    .coordIDs = { DOPPLERCOORD_FREQ,
+    .coordIDs = { DOPPLERCOORD_TASC,
+		  DOPPLERCOORD_PORB,
 		  DOPPLERCOORD_ASINI,
-		  DOPPLERCOORD_TASC,
-		  DOPPLERCOORD_PORB, },
+		  DOPPLERCOORD_FREQ, },
   };
 
   REAL8VectorSequence *phaseDerivs = NULL;
@@ -895,11 +895,14 @@ int main(int argc, char *argv[]){
   REAL8 diagTT = gsl_matrix_get(g_ij, dimT, dimT);
   REAL8 diagpp = gsl_matrix_get(g_ij, dimP, dimP);
 
+  fprintf(stdout, "OLDdiagff: %f, OLDdiagaa: %f, OLDdiagTT: %f, OLDdiagpp: %f\n", old_diagff, old_diagaa, old_diagTT, old_diagpp);
+  fprintf(stdout, "diagff: %f, diagaa: %f, diagTT: %f, diagpp: %f\n", diagff, diagaa, diagTT, diagpp);
+
   dimName = XLALCreateCHARVector(coordSys.dim);
-  dimName->data[0] = 'T';
-  dimName->data[1] = 'p';
-  dimName->data[2] = 'a';
-  dimName->data[3] = 'f';
+  dimName->data[dimT] = 'T';
+  dimName->data[dimP] = 'p';
+  dimName->data[dima] = 'a';
+  dimName->data[dimf] = 'f';
 
   /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
   if (XLALUserVarWasSet(&uvar.spacingF)) /* If spacing was given by CMD line, use it, else calculate spacing by mismatch*/
@@ -1606,25 +1609,38 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
   //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false");
 
   LatticeTiling *tiling = XLALCreateLatticeTiling(DEMODndim);
+  fprintf(stdout, "SetLatticeTilingConstantBound (dimT: %X, uvar.orbitTimeAsc: %f, uvar.orbitTimeAsc: %f + uvar.orbitTimeAscBand: %f ) \n", DEMODdimT, uvar.orbitTimeAsc, uvar.orbitTimeAsc, uvar.orbitTimeAscBand);
   XLALSetLatticeTilingConstantBound(tiling, DEMODdimT, uvar.orbitTimeAsc, uvar.orbitTimeAsc + uvar.orbitTimeAscBand);
-  
+
+  fprintf(stdout, "SetLatticeTilingPorbEllipticalBound (dimT: %X, dimP: %X, uvar.orbitPSecCenter: %f, uvar.orbitPSecSigma: %f, uvar.orbitTimeAscCenter: %f, uvar.orbitTimeAscSigma: %f, uvar.refTime: %f, 3.3) \n", DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, uvar.refTime);
   XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, uvar.refTime, 3.3);
-  
+
+  fprintf(stdout, "SetLatticeTilingConstantBound (dima: %X, uvar.orbitAsiniSec: %f, uvar.orbitAsiniSec: %f + uvar.orbitAsiniSecBand: %f ) \n", DEMODdima, uvar.orbitAsiniSec, uvar.orbitAsiniSec, uvar.orbitAsiniSecBand);
   XLALSetLatticeTilingConstantBound(tiling, DEMODdima, uvar.orbitAsiniSec, uvar.orbitAsiniSec + uvar.orbitAsiniSecBand);
   
+  fprintf(stdout, "SetLatticeTilingConstantBound (dimf: %X, uvar.fStart: %f, uvar.fStart: %f, uvar.fBand: %f ) \n", DEMODdimf, uvar.fStart, uvar.fStart, uvar.fBand);
   XLALSetLatticeTilingConstantBound(tiling, DEMODdimf, uvar.fStart, uvar.fStart + uvar.fBand);
-  int lattice = TILING_LATTICE_ANSTAR;
+
+  int lattice = TILING_LATTICE_CUBIC;
 
   XLALSetTilingLatticeAndMetric(tiling, lattice, metric_ij, uvar.mismatchMax);
   LatticeTilingIterator *iterator = XLALCreateLatticeTilingIterator(tiling, DEMODndim);
 
   gsl_vector *curr_point  = gsl_vector_alloc (DEMODndim);
-  curr_point->data[DEMODdimP] = uvar.orbitPSec;
-  curr_point->data[DEMODdimT] = uvar.orbitTimeAsc + (uvar.orbitTimeAscBand/2.0);
+  curr_point->data[DEMODdimP] = uvar.orbitPSecCenter;
+  curr_point->data[DEMODdimT] = uvar.refTime;
   curr_point->data[DEMODdima] = uvar.orbitAsiniSec + (uvar.orbitAsiniSecBand/2.0);
   curr_point->data[DEMODdimf]  = uvar.fStart + (uvar.fBand/2.0);
+  /*
+  curr_point->data[DEMODdimP] = uvar.orbitPSec + (uvar.orbitPSecBand/2.0);
+  curr_point->data[DEMODdimT] = uvar.orbitTimeAsc + (uvar.orbitTimeAscBand/2.0);
+  curr_point->data[DEMODdima] = uvar.orbitAsiniSec + (uvar.orbitAsiniSecBand/2.0);
+  curr_point->data[DEMODdimf]  = uvar.fStart + (uvar.fBand/2.0);*/
 
+  fprintf(stdout, "gff: %f, gaa: %f, gTT: %f, gPP: %f, gTP: %f\n", gsl_matrix_get(metric_ij, DEMODdimf, DEMODdimf), gsl_matrix_get(metric_ij, DEMODdima, DEMODdima), gsl_matrix_get(metric_ij, DEMODdimT, DEMODdimT),gsl_matrix_get(metric_ij, DEMODdimP, DEMODdimP), gsl_matrix_get(metric_ij, DEMODdimP, DEMODdimT));
 
+  fprintf(stdout, "TASC\tPORB\tASINI\tFREQ\n");
+  fprintf(stdout, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]);
 
   while ( ( uvar.lattice == FALSE && GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0) || ( uvar.lattice == TRUE && XLALNextLatticeTilingPoint(iterator, curr_point) > 0) )
     {
@@ -1635,9 +1651,9 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
         LIGOTimeGPS currpointGPS;
         XLALGPSSetREAL8(&currpointGPS, curr_point->data[DEMODdimT]);
         dopplerpos.tp =  currpointGPS;
-
-	fprintf(stdout, "TASC\tPORB\tASINI\tFREQ\n");
+	
 	fprintf(stdout, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]);
+	
 
       }
       /* do useful stuff here*/
