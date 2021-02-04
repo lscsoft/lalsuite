@@ -22,6 +22,10 @@
  * \file
  * \ingroup lalapps_pulsar_SFTTools
  * \author Badri Krishnan, Alicia Sintes Olives, David Keitel
+ *
+ * NOTE: The modern Advanced LIGO linefiles format is not supported.
+ * To run this code, any linefiles should first be converted into the legacy
+ * format as described in the lalpulsar SFTClean module.
  */
 
 #include "config.h"
@@ -97,7 +101,7 @@ int main(int argc, char *argv[]){
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMax,      "fMax",      REAL8,        0,   OPTIONAL, "Max Frequency  (default: full input SFTs width)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_window,    "window",    INT4,         'w',OPTIONAL,  "Window size for noise floor estimation in vicinity of a line") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBins,   "maxBins",   INT4,         'm',OPTIONAL,  "Max. bins to clean") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles, "linefiles", STRINGVector, 0,   OPTIONAL, "List of per-detector files with list of lines (each full path must start with a canonical IFO name)") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles, "linefiles", STRINGVector, 0,   OPTIONAL, "List of per-detector files with list of lines (each full path must start with a canonical IFO name). NOTE: The modern Advanced LIGO linefiles format is not supported. Files should first be converted into the legacy format as described in the lalpulsar SFTClean module.") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_addComment, "addComment", INT4,       'c', OPTIONAL, "How to deal with comments - 0 means no comment is written at all, 1 means that the comment is taken unmodified from the input SFTs, 2 (default) means that the program appends its RCS id and command-line to the comment.") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_outSingleSFT, "outSingleSFT", BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT file per IFO, instead of individual files") == XLAL_SUCCESS, XLAL_EFUNC );
 

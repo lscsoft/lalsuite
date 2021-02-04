@@ -31,8 +31,12 @@
  * This module contains routines for dealing with lists of known spectral disturbances
  * in the frequency domain, and using them to clean SFTs.
  *
- * The basic input is a text file containing a list of known spectral lines.  An example
- * is the following
+ * The basic input is a text file containing a list of known spectral lines.
+ * NOTE: the legacy format used here is not identical with that of
+ * modern Advanced LIGO linefiles.
+ * To run this code with newer linefiles, they should first be converted into
+ * the legacy format.
+ * An example of the supported format is the following:
  *
  * \verbatim
  * 0.0      0.25     4000     0.0        0.0   0.25Hzlines
