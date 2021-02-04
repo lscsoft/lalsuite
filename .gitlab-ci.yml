@@ -131,7 +131,9 @@ cache:
       done
     # lint RPMs
     #    '-o "NetworkEnabled False"' disables checking Source0
+    - echo "addFilter('binary-or-shlib-defines-rpath')" > rpmlintrc
     - rpmlint
+          -f rpmlintrc
           -o "NetworkEnabled False"
           ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
   artifacts:
