@@ -307,7 +307,7 @@ cache:
          cmd="${cmd} --python \"${_pyversion}\"";
       fi
     # run the build
-    - eval $cmd
+    - echo $cmd && eval $cmd
   after_script:
     # clean cache of old files
     - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
