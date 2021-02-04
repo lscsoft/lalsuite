@@ -117,9 +117,7 @@ Algorithm Library.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-# force linking agsinst system libmpi
-export OMPI_LIBS="-lmpi -Wl,--disable-new-dtags"
-%configure --disable-gcc-flags --enable-cfitsio --enable-openmp PYTHON=%{__python3}
+%configure --disable-gcc-flags --enable-cfitsio PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
 %check

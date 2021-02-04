@@ -59,8 +59,6 @@ requirements:
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalpulsar >={{ lalpulsar_version }}
     - liblalsimulation >={{ lalsimulation_version }}
-    - llvm-openmp  # [osx]
-    - openmp  # [linux]
     - python
     - python-lal >={{ lal_version }}
     - python-lalburst >={{ lalburst_version }}
@@ -85,8 +83,6 @@ requirements:
     - lalinference >={{ lalinference_version }}
     - libframel >={{ framel_version }}
     - ligo-segments
-    - llvm-openmp  # [osx]
-    - openmp  # [linux]
     - numpy
     - pillow
     - python

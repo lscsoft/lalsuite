@@ -18,7 +18,6 @@ export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 	--disable-doxygen \
 	--enable-cfitsio \
 	--enable-help2man \
-	--enable-openmp \
 	--prefix=${PREFIX} \
 	${EXTRA_CONFIG_FLAGS} \
 ;
