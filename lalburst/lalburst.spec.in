@@ -91,11 +91,9 @@ This package provides the runtime tools.
 
 %package -n lib%{name}
 Summary: LSC Algorithm Burst Library - library package
-Requires: gsl
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: libmetaio
 Conflicts: %{name} <= 1.5.6-1
 %description -n lib%{name}
 The LSC Algorithm Burst Library for gravitational wave data analysis.
@@ -125,7 +123,6 @@ library.
 Summary: Python %{python2_version} Bindings for LALBurst
 Group: LAL
 Requires: lib%{name} = %{version}-%{release}
-Requires: gsl
 Requires: python
 Requires: python2-glue
 Requires: python2-lal >= @MIN_LAL_VERSION@
@@ -149,7 +146,6 @@ This package provides the Python %{python2_version} bindings for LALBurst.
 Summary: Python %{python3_version} Bindings for LALBurst
 Group: LAL
 Requires: lib%{name} = %{version}-%{release}
-Requires: gsl
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-glue
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
