@@ -8,14 +8,14 @@ lalmetaio/          @adam-mercer @jolien-creighton
 lalsimulation/      @riccardo-sturani @frank-ohme @sebastian-khan @harald.pfeiffer @maria.haney
 lalburst/           @kipp.cannon @duncanmmacleod @gabriele-vedovato @marco-drago @adam-mercer @duncanmmacleod
 lalpulsar/          @karl-wette @david-keitel
-lalinspiral/        @jolien-creighton @adam-mercer
+lalinspiral/        @jolien-creighton @adam-mercer @ian-harry
 lalinference/       @bfarr @cjhaster @john-veitch @vivien @salvatore-vitale @aaron.zimmerman @patricia-schmidt @gregory.ashton
 
 # lalapps
 lalapps/src/findchirp/           @jolien-creighton @adam-mercer
 lalapps/src/frametools/          @adam-mercer @jolien-creighton
 lalapps/src/hwinjection/         @karl-wette @david-keitel
-lalapps/src/inspiral/            @jolien-creighton @adam-mercer
+lalapps/src/inspiral/            @jolien-creighton @adam-mercer @ian-harry
 lalapps/src/lalapps/             @adam-mercer @jolien-creighton
 lalapps/src/power/               @kipp.cannon @xavier.siemens
 lalapps/src/pulsar/              @karl-wette @david-keitel
