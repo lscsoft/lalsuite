@@ -92,10 +92,6 @@ This package provides the runtime tools.
 # liblal
 %package -n lib%{name}
 Summary: LSC Algorithm Library -- library package
-Requires: fftw
-Requires: fftw
-Requires: gsl
-Requires: hdf5
 Requires: less
 Conflicts: lal <= 7.1.0-1
 Obsoletes: python-pylal < 0.13.2-1
