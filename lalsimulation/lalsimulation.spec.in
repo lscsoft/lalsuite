@@ -76,7 +76,6 @@ This package provides the runtime tools.
 # liblalsimulation
 %package -n lib%{name}
 Summary: LSC Algorithm Simulation Library - library package
-Requires: gsl
 Requires: liblal >= @MIN_LAL_VERSION@
 Conflicts: %{name} <= 2.3.0-1
 %description -n lib%{name}
