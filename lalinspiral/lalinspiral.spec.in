@@ -98,8 +98,6 @@ This package provides the runtime tools.
 # liblalinspiral
 %package -n lib%{name}
 Summary: LSC Algorithm Inspiral Library - library package
-Requires: gsl
-Requires: libmetaio
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalframe >= @MIN_LALFRAME_VERSION@
 Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
