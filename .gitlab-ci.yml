@@ -130,11 +130,18 @@ cache:
           rpm -qp --requires "${rpmf}";
       done
     # lint RPMs
-    #    '-o "NetworkEnabled False"' disables checking Source0
-    - echo "addFilter('binary-or-shlib-defines-rpath')" > rpmlintrc
+    - |
+      cat << EOF > rpmlintrc
+      # don't validate Source0
+      setOption("NetworkEnabled", False)
+      # don't know how to fix this
+      addFilter('binary-or-shlib-defines-rpath')
+      # the regex rpmlint uses to identify 'lib' libraries is crap
+      addFilter('explicit-lib-dependency (.*)?matplotlib')
+      addFilter('explicit-lib-dependency (.*)?ciecplib')
+      EOF
     - rpmlint
           -f rpmlintrc
-          -o "NetworkEnabled False"
           ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
   artifacts:
     expire_in: 18h
