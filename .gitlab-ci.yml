@@ -166,7 +166,7 @@ cache:
 
 .debuild: &debbuild
   <<: *apt-cache
-  image: igwn/base:stretch-proposed
+  image: igwn/base:buster
   variables:
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
     GIT_STRATEGY: none
@@ -366,7 +366,7 @@ lint:coala:
 # -- documentation ------------------------------
 
 documentation:
-  image: igwn/lalsuite-dev:stretch-proposed
+  image: igwn/lalsuite-dev:buster
   stage: documentation
   needs: []
   script:
@@ -386,7 +386,7 @@ documentation:
     - web
 
 pages:
-  image: igwn/lalsuite-dev:stretch-proposed
+  image: igwn/lalsuite-dev:buster
   stage: deploy
   script:
     - ./00boot
@@ -890,7 +890,7 @@ docker:tags:el7:
     - /^lalsuite-v.*$/
 
 # build a nightly container from the debian packages
-docker:nightly:stretch:
+docker:nightly:buster:
   stage: docker
   before_script: []
   script:
@@ -900,8 +900,8 @@ docker:nightly:stretch:
     - rm *.changes *.dsc *.orig.*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:stretch --file .gitlab-ci-stretch.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/nightly:stretch
+    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:buster --file .gitlab-ci-buster.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/nightly:buster
   needs:
     - lal:deb
     - lalframe:deb
@@ -916,7 +916,7 @@ docker:nightly:stretch:
     - schedules
 
 # build a tagged container from the debian packages
-docker:tags:stretch:
+docker:tags:buster:
   stage: docker
   before_script: []
   script:
@@ -926,8 +926,8 @@ docker:tags:stretch:
     - rm *.changes *.dsc *.orig.*
     # build container and push to registry
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch --file .gitlab-ci-stretch.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:stretch
+    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:buster --file .gitlab-ci-buster.Dockerfile .
+    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:buster
   needs:
     - lal:deb
     - lalframe:deb
@@ -1058,8 +1058,8 @@ upgrade:rpm:el7:
 
 # -- debian
 
-platform:debian:buster:
-  image: igwn/lalsuite-dev:buster
+platform:debian:stretch:
+  image: igwn/lalsuite-dev:stretch-proposed
   stage: platform tests
   needs: []
   <<: *top-level-build
@@ -1067,7 +1067,7 @@ platform:debian:buster:
     - schedules
     - web
 
-upgrade:debian:stretch:
+upgrade:debian:buster:
   <<: *debbuild
   <<: *upgrade-test
   needs:
