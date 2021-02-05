@@ -33,7 +33,6 @@ BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: hdf5-devel
 BuildRequires: help2man >= 1.37
-BuildRequires: less
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
@@ -96,7 +95,6 @@ Requires: fftw
 Requires: fftw
 Requires: gsl
 Requires: hdf5
-Requires: less
 Conflicts: lal <= 7.1.0-1
 Obsoletes: python-pylal < 0.13.2-1
 %description -n lib%{name}
