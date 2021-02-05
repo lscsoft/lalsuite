@@ -144,7 +144,7 @@ Requires: liblalburst-devel >= @MIN_LALBURST_VERSION@
 Requires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 Requires: liblalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
-Obsoletes: %{name}-devel < %{version}-%{release}
+Obsoletes: %{name}-devel < 2.0.6-1
 %description -n lib%{name}-devel
 The LSC Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference

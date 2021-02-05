@@ -94,7 +94,7 @@ Requires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 Requires: libframel-devel >= @MIN_FRAMEL_VERSION@
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
-Obsoletes: %{name}-devel < %{version}-%{release}
+Obsoletes: %{name}-devel < 1.5.3-1
 %description -n lib%{name}-devel
 The LSC Algorithm Frame Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Frame
