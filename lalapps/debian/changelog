@@ -1,3 +1,9 @@
+lalapps (7.2.0-1) unstable; urgency=low
+
+  * Update for 7.2.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 05 Feb 2021 15:26:59 -0700
+
 lalapps (7.1.0-1) unstable; urgency=low
 
   * Update for 7.1.0
