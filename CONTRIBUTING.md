@@ -135,6 +135,25 @@ git branch -d my-new-feature
 
 A feature branch should *not* be repurposed for further development as this can result in problems merging upstream changes. 
 
+### Speeding up the continuous integration pipeline
+
+The Gitlab-CI (continuous integration) pipeline runs for all changes to ensure that the software still builds and passes all of the tests.
+The full pipeline (and even more so the nightly pipeline) takes a long time to carefully go through all of the package builds, but for minor changes to documentation or infrastructure this can be a waste of time and resources.
+
+Sections of the CI pipeline can be skipped by adding special key text to your commit messages as follows:
+
+| Commit message text  | Action                                        |
+| -------------------- | --------------------------------------------- |
+| `[skip conda]`       | Skip Conda build jobs (and their dependents)  |
+| `[skip debian]`      | Skip Debian build jobs (and their dependents) |
+| `[skip docs]`        | Skip documentation jobs                       |
+| `[skip integration]` | Skip integration test jobs                    |
+| `[skip lint]`        | Skip lint jobs                                |
+| `[skip rhel]`        | Skip RHEL build jobs (and their dependents)   |
+| `[skip wheels]`      | Skip Python wheel build jobs test jobs        |
+
+**It is important that this feature is not abused, please do not skip any jobs when making library changes.**
+
 ### Special case: CW codes in LALPulsar and LALApps
 
 For the continuous-wave (CW) related codes in the `lalpulsar/` and `lalapps/src/pulsar` directories,
