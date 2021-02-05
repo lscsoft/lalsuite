@@ -147,7 +147,7 @@ def parse_command_line():
     #
     # waveform options
     #
-    parser.add_option("--approximant", choices=waveforms.keys(), metavar='|'.join(waveforms.keys()), default=None, help="Required. Specify the approximant to use for waveform generation.")
+    parser.add_option("--approximant", choices=list(waveforms.keys()), metavar='|'.join(waveforms.keys()), default=None, help="Required. Specify the approximant to use for waveform generation.")
     parser.add_option("--use-metric", action="store_true", default=False, help="Use analytic approximation to the numerical match calculation (if available).")
     parser.add_option("--duration-min", type=float, help="Set minimum allowed duration of the template waveform in seconds.")
     parser.add_option("--duration-max", type=float, help="Set maximum allowed duration of the template waveform in seconds.")
@@ -188,7 +188,7 @@ def parse_command_line():
     #
     # noise model options
     #
-    parser.add_option("--noise-model", choices=noise_models.keys(), metavar='|'.join(noise_models.keys()), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model.")
+    parser.add_option("--noise-model", choices=list(noise_models.keys()), metavar='|'.join(noise_models.keys()), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model.")
     parser.add_option("--reference-psd", help="Read PSD from an xml file instead of using analytical noise model. The PSD is assumed to be infinite beyond the maximum frequency contained in the file. This effectively sets the upper frequency cutoff to that frequency, unless a smaller frequency is given via --fhigh-max.", metavar="FILE")
     parser.add_option("--instrument", metavar="IFO", help="Specify the instrument from input PSD file for which to generate a template bank.")
 
