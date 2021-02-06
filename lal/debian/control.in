@@ -8,6 +8,7 @@ Build-Depends:
  debhelper (>= 9),
  dh-python,
  help2man (>= 1.37),
+ less,
  libfftw3-dev,
  libgsl0-dev (>= 1.9) | libgsl-dev,
  libhdf5-dev,
@@ -47,6 +48,7 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
+ less,
 Description: LSC Algorithm Library
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains the liblal.so shared-object library needed
@@ -59,6 +61,7 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
+ less,
 Description: LSC Algorithm Library
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains the liblalsupport.so shared-object library needed
