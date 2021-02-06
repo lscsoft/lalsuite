@@ -22,6 +22,7 @@ BuildRequires: libframel-devel >= @MIN_FRAMEL_VERSION@
 BuildRequires: gcc
 BuildRequires: gsl-devel
 BuildRequires: help2man >= 1.37
+BuildRequires: less
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: liblalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
@@ -52,6 +53,7 @@ Requires: lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: less
 Requires: libframel >= @MIN_FRAMEL_VERSION@
 Requires: python
 Requires: python%{python3_pkgversion}-h5py
