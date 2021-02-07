@@ -103,8 +103,7 @@ def new_doc(comment = None, **kwargs):
 		cvs_entry_time = __date__,
 		comment = comment
 	)
-	timeslidetable = lsctables.New(lsctables.TimeSlideTable)
-	doc.childNodes[0].appendChild(timeslidetable)
+	doc.childNodes[0].appendChild(lsctables.New(lsctables.TimeSlideTable))
 
 	return doc, process
 
@@ -202,7 +201,7 @@ if options.remove_zero_lag:
 #
 
 
-time_slides = time_slides.values()
+time_slides = list(time_slides.values())
 
 
 #
