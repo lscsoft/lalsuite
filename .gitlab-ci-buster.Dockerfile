@@ -12,5 +12,5 @@ RUN apt-get update && \
       apt-get -y install local-apt-repository && \
       /usr/lib/local-apt-repository/rebuild && \
       apt-get update && \
-      apt-get install lscsoft-lalsuite && \
+      apt-get -y install lscsoft-lalsuite && \
       rm -rf /var/lib/apts/lists/*
