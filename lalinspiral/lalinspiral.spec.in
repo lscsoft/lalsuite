@@ -257,6 +257,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %doc README.md
 %license COPYING
 %{python2_sitearch}/*
+%exclude %{python2_sitearch}/%{name}/*.a
 %endif
 
 %files -n python%{python3_pkgversion}-%{name}
@@ -264,6 +265,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %doc README.md
 %license COPYING
 %{python3_sitearch}/*
+%exclude %{python3_sitearch}/%{name}/*.a
 
 %files octave
 %defattr(-,root,root)
