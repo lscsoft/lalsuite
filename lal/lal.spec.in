@@ -80,7 +80,7 @@ BuildRequires: octave-devel
 
 # -- packages ---------------
 
-#%%package -n %{name}
+# lal
 Summary: LSC Algorithm Library - runtime tools
 Group: LAL
 Requires: lib%{name} = %{version}-%{release}
@@ -92,10 +92,6 @@ This package provides the runtime tools.
 # liblal
 %package -n lib%{name}
 Summary: LSC Algorithm Library -- library package
-Requires: fftw
-Requires: fftw
-Requires: gsl
-Requires: hdf5
 Requires: less
 Conflicts: lal <= 7.1.0-1
 Obsoletes: python-pylal < 0.13.2-1
@@ -238,11 +234,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files -n lib%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_libdir}/*.so.*
 
 %files -n lib%{name}-devel
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
@@ -252,22 +250,26 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %if 0%{?rhel} != 0 && 0%{?rhel} < 8
 %files -n python2-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python2_sitearch}/*
 %endif
 
 %files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python3_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lal.oct*
 
 %files
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_bindir}/*
 %{_mandir}/man1/*

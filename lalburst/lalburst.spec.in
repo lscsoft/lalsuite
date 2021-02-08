@@ -91,11 +91,9 @@ This package provides the runtime tools.
 
 %package -n lib%{name}
 Summary: LSC Algorithm Burst Library - library package
-Requires: gsl
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: libmetaio
 Conflicts: %{name} <= 1.5.6-1
 %description -n lib%{name}
 The LSC Algorithm Burst Library for gravitational wave data analysis.
@@ -125,7 +123,6 @@ library.
 Summary: Python %{python2_version} Bindings for LALBurst
 Group: LAL
 Requires: lib%{name} = %{version}-%{release}
-Requires: gsl
 Requires: python
 Requires: python2-glue
 Requires: python2-lal >= @MIN_LAL_VERSION@
@@ -149,7 +146,6 @@ This package provides the Python %{python2_version} bindings for LALBurst.
 Summary: Python %{python3_version} Bindings for LALBurst
 Group: LAL
 Requires: lib%{name} = %{version}-%{release}
-Requires: gsl
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-glue
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
@@ -233,11 +229,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files -n lib%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_libdir}/*.so.*
 
 %files -n lib%{name}-devel
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
@@ -247,22 +245,28 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %if 0%{?rhel} != 0 && 0%{?rhel} < 8
 %files -n python2-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python2_sitearch}/*
+%exclude %{python2_sitearch}/%{name}/*.a
 %endif
 
 %files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python3_sitearch}/*
+%exclude %{python3_sitearch}/%{name}/*.a
 
 %files octave
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalburst.oct*
 
 %files
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_bindir}/*
 %{_mandir}/man1/*

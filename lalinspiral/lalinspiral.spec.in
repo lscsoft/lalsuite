@@ -98,8 +98,6 @@ This package provides the runtime tools.
 # liblalinspiral
 %package -n lib%{name}
 Summary: LSC Algorithm Inspiral Library - library package
-Requires: gsl
-Requires: libmetaio
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalframe >= @MIN_LALFRAME_VERSION@
 Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
@@ -240,11 +238,13 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files -n lib%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_libdir}/*.so.*
 
 %files -n lib%{name}-devel
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
@@ -254,22 +254,28 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %if 0%{?rhel} != 0 && 0%{?rhel} < 8
 %files -n python2-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python2_sitearch}/*
+%exclude %{python2_sitearch}/%{name}/*.a
 %endif
 
 %files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python3_sitearch}/*
+%exclude %{python3_sitearch}/%{name}/*.a
 
 %files octave
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalinspiral.oct*
 
 %files
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_bindir}/*
 %{_mandir}/man1/*

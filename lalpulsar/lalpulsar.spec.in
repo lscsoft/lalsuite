@@ -83,9 +83,6 @@ that use the LAL Pulsar library.
 %package -n lib%{name}
 Summary: LSC Algorithm Simulation Library - library package
 Group: LAL
-Requires: cfitsio
-Requires: fftw
-Requires: gsl
 Requires: liblal >= @MIN_LAL_VERSION@
 Conflicts: %{name} <= 2.1.0-1
 %description -n lib%{name}
@@ -207,12 +204,14 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files -n lib%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_datarootdir}/lalpulsar/*
 %{_libdir}/*.so.*
 
 %files -n lib%{name}-devel
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
@@ -222,22 +221,26 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %if 0%{?rhel} != 0 && 0%{?rhel} < 8
 %files -n python2-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python2_sitearch}/*
 %endif
 
 %files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python3_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalpulsar.oct*
 
 %files
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_bindir}/*
 %{_mandir}/man1/*
