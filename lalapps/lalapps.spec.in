@@ -138,6 +138,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_bindir}/*
 %{_datadir}/lalapps/*
