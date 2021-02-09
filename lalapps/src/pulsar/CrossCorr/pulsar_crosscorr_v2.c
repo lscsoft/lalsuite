@@ -2,6 +2,7 @@
  *  Copyright (C) 2013 Badri Krishnan, Shane Larson, John Whelan
  *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *  Copyright (C) 2016, 2017 Grant David Meadors
+ *  Copyright (C) 2020, 2021 Jared Wofford, John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -38,8 +39,8 @@
 
 
 /**
- * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang, G.D. Meadors
- * \date 2013, 2014, 2015, 2016, 2017
+ * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang, G.D.Meadors, J.K.Wofford
+ * \date 2013, 2014, 2015, 2016, 2017, 2020, 2021
  * \file
  * \ingroup lalapps_pulsar_CrossCorr
  * \brief Perform CW cross-correlation search - version 2
