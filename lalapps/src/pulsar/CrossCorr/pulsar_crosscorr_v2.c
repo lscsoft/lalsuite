@@ -1223,7 +1223,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( orbitTimeAscCenter,    REAL8, 0,  OPTIONAL, "Center of prior ellipse for orbital time-of-ascension in GPS seconds");
   XLALRegisterUvarMember( orbitTimeAscSigma,    REAL8, 0,  OPTIONAL, "One-sigma semiaxis for orbital time of ascension (seconds)");
 
-  XLALRegisterUvarMember( LatticeOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT pairs");
+  XLALRegisterUvarMember( LatticeOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write lattice");
 
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
