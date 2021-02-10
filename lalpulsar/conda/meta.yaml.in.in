@@ -116,10 +116,8 @@ outputs:
         - python
       run:
         - astropy
-        - cfitsio
-        - fftw
-        - gsl
-        - liblal >={{ lal_version }}
+        - gsl  # [linux]
+        - liblal # [linux]
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
