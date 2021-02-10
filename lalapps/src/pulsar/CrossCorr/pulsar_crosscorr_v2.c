@@ -114,6 +114,7 @@ typedef struct tagUserInput_t {
   REAL8   orbitPSecSigma;          /**< Center of prior ellipse for binary orbital period (seconds) */
   REAL8   orbitTimeAscCenter;          /**< Center of prior ellipse for binary orbital period (seconds) */
   REAL8   orbitTimeAscSigma;          /**< Center of prior ellipse for binary orbital period (seconds) */
+  REAL8   orbitTPEllipseRadius;          /**< Radius of search ellipse (sigma) */
 
   CHAR    *LatticeOutputFilename; /**< output filename to write list of sft index pairs */
 
@@ -269,6 +270,46 @@ int main(int argc, char *argv[]){
     LogPrintf (LOG_CRITICAL, "spacingT and mismatchT are both set, use spacingT %.9g by default\n\n", uvar.spacingT);
   if (XLALUserVarWasSet(&uvar.spacingP) && XLALUserVarWasSet(&uvar.mismatchP))
     LogPrintf (LOG_CRITICAL, "spacingP and mismatchP are both set, use spacingP %.9g by default\n\n", uvar.spacingP);
+
+  if (XLALUserVarWasSet(&uvar.orbitPSecCenter) || XLALUserVarWasSet(&uvar.orbitPSecSigma) || XLALUserVarWasSet(&uvar.orbitTimeAscCenter) || XLALUserVarWasSet(&uvar.orbitTimeAscSigma)) {
+    if ( !(XLALUserVarWasSet(&uvar.orbitPSecCenter)) || !(XLALUserVarWasSet(&uvar.orbitPSecSigma)) || !(XLALUserVarWasSet(&uvar.orbitTimeAscCenter)) || !(XLALUserVarWasSet(&uvar.orbitTimeAscSigma))) {
+      printf("Error!  Need to set all or none of --orbitPSecCenter --orbitPSecSigma --orbitTimeAscCenter --orbitTimeAscSigma\n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    if ( (uvar.orbitPSec != 0.0) ) {
+      printf("Warning!  --orbitPSec not expected with elliptical boundaries\n");
+      if ( uvar.treatWarningsAsErrors ) {
+        printf("Error! (--treatWarningsAsErrors flag is true).\n");
+        XLAL_ERROR( XLAL_EFUNC );
+      }
+    } else {
+      /* Minumum value of Porb ellipse */
+      uvar.orbitPSec = uvar.orbitPSecCenter - uvar.orbitTPEllipseRadius * uvar.orbitPSecSigma;
+    }
+    if ( (uvar.orbitPSec != 0.0) || (uvar.orbitPSecBand != 0.0) ) {
+      printf("Warning!  --orbitPSecBand not expected with elliptical boundaries\n");
+      if ( uvar.treatWarningsAsErrors ) {
+        printf("Error! (--treatWarningsAsErrors flag is true).\n");
+        XLAL_ERROR( XLAL_EFUNC );
+      }
+    } else {
+      /* Full width of Porb ellipse */
+      uvar.orbitPSecBand = 2 * uvar.orbitTPEllipseRadius * uvar.orbitPSecSigma;
+    }
+    if ( uvar.useLattice == FALSE ) {
+      printf("Error!  Elliptical boundary only works with LatticeTiling\n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    if ( uvar.resamp == TRUE ) {
+      printf("Error!  Elliptical boundary not yet implemented with resampling\n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+
+  if ( uvar.resamp == TRUE && uvar.useLattice == TRUE ) {
+      printf("Error!  LatticeTiling placement not yet implemented with resampling\n");
+      XLAL_ERROR( XLAL_EFUNC );
+  }
 
   /* create the toplist */
   create_crossCorrBinary_toplist( &ccToplist, uvar.numCand);
@@ -1129,6 +1170,9 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->orbitTimeAsc = 0;
   uvar->orbitTimeAscBand = 0;
 
+  /* Default radius for elliptical boundary in Tasc-Porb */
+  uvar->orbitTPEllipseRadius = 3.3;
+
   /*default mismatch values */
   /* set to 0.1 by default -- for no real reason */
   /* make 0.1 a macro? */
@@ -1228,6 +1272,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( orbitPSecSigma,    REAL8, 0,  OPTIONAL, "One-sigma semiaxis for binary orbital period (seconds) ");
   XLALRegisterUvarMember( orbitTimeAscCenter,    REAL8, 0,  OPTIONAL, "Center of prior ellipse for orbital time-of-ascension in GPS seconds");
   XLALRegisterUvarMember( orbitTimeAscSigma,    REAL8, 0,  OPTIONAL, "One-sigma semiaxis for orbital time of ascension (seconds)");
+  XLALRegisterUvarMember( orbitTPEllipseRadius,    REAL8, 0,  OPTIONAL, "Radius in sigma for Tasc-Porb search ellipse");
 
   XLALRegisterUvarMember( LatticeOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write lattice");
 
@@ -1626,9 +1671,13 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
   if (uvar.useLattice == TRUE){
     LatticeTiling *tiling = XLALCreateLatticeTiling(DEMODndim);
     XLALSetLatticeTilingConstantBound(tiling, DEMODdimT, uvar.orbitTimeAsc, uvar.orbitTimeAsc + uvar.orbitTimeAscBand);
-  
-    XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, uvar.refTime, 3.3);
-    
+
+    if ( XLALUserVarWasSet(&uvar.orbitPSecCenter) ) {
+      XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, uvar.refTime, uvar.orbitTPEllipseRadius);
+    } else {
+      XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand);
+    }
+
     XLALSetLatticeTilingConstantBound(tiling, DEMODdima, uvar.orbitAsiniSec, uvar.orbitAsiniSec + uvar.orbitAsiniSecBand);
   
     XLALSetLatticeTilingConstantBound(tiling, DEMODdimf, uvar.fStart, uvar.fStart + uvar.fBand);
