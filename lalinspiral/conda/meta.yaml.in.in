@@ -111,6 +111,8 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        # liblalburst is required because python-lalburst is used
+        - liblalburst
         - python
     requirements:
       build:
@@ -120,19 +122,14 @@ outputs:
         - pkg-config
         - swig >={{ swig_version }}
       host:
+        - liblalburst >={{ lalburst_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - numpy
         - python
-        - liblalburst >={{ lalburst_version }}
       run:
-        - gsl
-        - liblal >={{ lal_version }}
-        - liblalframe >={{ lalframe_version }}
+        - liblal  # [linux]
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
-        - liblalmetaio >={{ lalmetaio_version }}
-        - liblalsimulation >={{ lalsimulation_version }}
         - lscsoft-glue
-        - metaio
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
