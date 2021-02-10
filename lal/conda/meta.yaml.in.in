@@ -110,6 +110,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - mkl
         # ignore run_exports from python's recipe
         - python
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
@@ -127,23 +128,15 @@ outputs:
         - numpy
         - python
       run:
-        # NOTE: on linux, python-lal links the LAL dependencies
-        #       as well so we have to list them here. why this
-        #       doesn't happen on osx, I'm not sure.
-        - fftw  # [linux and fft_impl == "fftw"]
-        - gsl
-        - hdf5  # [linux]
         - {{ pin_subpackage('liblal', exact=True) }}
         - python-ligo-lw
         - ligo-segments
         - lscsoft-glue >=@MIN_GLUE_VERSION@
-        - mkl  # [fft_impl == "mkl"]
         - {{ pin_compatible('numpy') }}
         - python
         - python-dateutil
         - scipy
         - six
-        - zlib  # [linux]
     test:
       requires:
         - freezegun
