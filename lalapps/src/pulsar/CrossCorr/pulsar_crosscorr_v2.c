@@ -105,7 +105,8 @@ typedef struct tagUserInput_t {
   BOOLEAN treatWarningsAsErrors; /**< treat any warnings as errors and abort */
   LALStringVector *injectionSources; /**< CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}' */
 
-  BOOLEAN lattice;                /**< use lattice */
+  BOOLEAN useLattice;           /**< use latticeTiling for template placement */
+  INT4    latticeType;          /**< lattice to use */
   REAL8   mismatchMax;          /**< total mismatch */
 
   /*elliptical boundary */
@@ -1167,6 +1168,10 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->testShortFunctions = FALSE;
   uvar->testResampNoTShort = FALSE;
 
+  /* lattice choices */
+  uvar->useLattice = FALSE;
+  uvar->latticeType = TILING_LATTICE_ANSTAR;
+
   /* register  user-variables */
   XLALRegisterUvarMember( startTime,       INT4, 0,  REQUIRED, "Desired start time of analysis in GPS seconds (SFT timestamps must be >= this)");
   XLALRegisterUvarMember( endTime,         INT4, 0,  REQUIRED, "Desired end time of analysis in GPS seconds (SFT timestamps must be < this)");
@@ -1216,7 +1221,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( inclSameDetector, BOOLEAN, 0, OPTIONAL, "Cross-correlate a detector with itself at a different time (if inclAutoCorr, then also same time)");
   XLALRegisterUvarMember( treatWarningsAsErrors, BOOLEAN, 0, OPTIONAL, "Abort program if any warnings arise (for e.g., zero-maxLag radiometer mode)");
   XLALRegisterUvarMember( injectionSources, STRINGVector, 0 , OPTIONAL, "CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}'");
-  XLALRegisterUvarMember( lattice,    BOOLEAN, 0,  OPTIONAL, "Use lattice");
+  XLALRegisterUvarMember( useLattice,    BOOLEAN, 0,  OPTIONAL, "Use latticeTiling for template placement");
+  XLALRegisterUvarAuxDataMember( latticeType, UserEnum, &TilingLatticeChoices, 0, OPTIONAL, "Type of lattice used for template placement");
   XLALRegisterUvarMember( mismatchMax,    REAL8, 0,  OPTIONAL, "maximum mismatch to use for the lattice ");
   XLALRegisterUvarMember( orbitPSecCenter,    REAL8, 0,  OPTIONAL, " Center of prior ellipse for binary orbital period (seconds) ");
   XLALRegisterUvarMember( orbitPSecSigma,    REAL8, 0,  OPTIONAL, "One-sigma semiaxis for binary orbital period (seconds) ");
@@ -1617,7 +1623,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 
   //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false");
 
-  if (uvar.lattice == TRUE){
+  if (uvar.useLattice == TRUE){
     LatticeTiling *tiling = XLALCreateLatticeTiling(DEMODndim);
     XLALSetLatticeTilingConstantBound(tiling, DEMODdimT, uvar.orbitTimeAsc, uvar.orbitTimeAsc + uvar.orbitTimeAscBand);
   
@@ -1626,7 +1632,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
     XLALSetLatticeTilingConstantBound(tiling, DEMODdima, uvar.orbitAsiniSec, uvar.orbitAsiniSec + uvar.orbitAsiniSecBand);
   
     XLALSetLatticeTilingConstantBound(tiling, DEMODdimf, uvar.fStart, uvar.fStart + uvar.fBand);
-    int lattice = TILING_LATTICE_CUBIC;
+    int lattice = uvar.latticeType;
 
     XLALSetTilingLatticeAndMetric(tiling, lattice, metric_ij, uvar.mismatchMax);
     LatticeTilingIterator *iterator = XLALCreateLatticeTilingIterator(tiling, DEMODndim);
