@@ -18,6 +18,7 @@ from __future__ import print_function
 
 ##############################################################################
 # import standard modules and append the lalapps prefix to the python path
+import getpass
 import os
 import socket
 import subprocess
@@ -42,7 +43,7 @@ def which(prog):
 
 def log_path():
     host = socket.getfqdn()
-    username = os.environ['USER']
+    username = getpass.getuser()
     #FIXME add more hosts as you need them
     if 'caltech.edu' in host: return '/usr1/' + username
     if 'phys.uwm.edu' in host: return '/localscratch/' + username
