@@ -2,13 +2,13 @@
 * @adam-mercer @duncanmmacleod @karl-wette
 
 # package-level owners
-lal/                @adam-mercer @jolien-creighton
+lal/                @adam-mercer @jolien-creighton @kipp.cannon
 lalframe/           @adam-mercer @jolien-creighton @ed-maros
-lalmetaio/          @adam-mercer @jolien-creighton
-lalsimulation/      @riccardo-sturani @frank-ohme @sebastian-khan @harald.pfeiffer @maria.haney
+lalmetaio/          @adam-mercer @jolien-creighton @kipp.cannon
+lalsimulation/      @riccardo-sturani @frank-ohme @sebastian-khan @harald.pfeiffer @maria.haney @kipp.cannon
 lalburst/           @kipp.cannon @duncanmmacleod @gabriele-vedovato @marco-drago @adam-mercer @duncanmmacleod
 lalpulsar/          @karl-wette @david-keitel
-lalinspiral/        @jolien-creighton @adam-mercer @ian-harry
+lalinspiral/        @jolien-creighton @adam-mercer @ian-harry @kipp.cannon
 lalinference/       @bfarr @cjhaster @john-veitch @vivien @salvatore-vitale @aaron.zimmerman @patricia-schmidt @gregory.ashton
 
 # lalapps
