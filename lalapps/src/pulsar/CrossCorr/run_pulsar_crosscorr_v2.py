@@ -21,7 +21,7 @@
 from __future__ import division
 from argparse import ArgumentParser
 from subprocess import check_call
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from time import sleep
 
 ap = ArgumentParser()
@@ -50,6 +50,7 @@ toplistName = toplistPattern % (args.jobNum,args.numJobs)
 logfilePattern = cp.get('filename-patterns','logfile_name')
 logfileName = logfilePattern % (args.jobNum,args.numJobs)
 
+
 # Pass along the arguments from the ini file
 program_args = ['--%s=%s' % a for a in cp.items('raw-program-arguments')]
 
@@ -58,6 +59,13 @@ program_args += ['--fStart=%.11f' % fStart]
 program_args += ['--fBand=%.11f' % fBand]
 program_args += ['--toplistFilename=%s' % toplistName]
 program_args += ['--logFilename=%s' % logfileName]
+
+#check if latticeFilename is in the ini file
+if cp.has_section('program') and cp.has_option('filename-patterns','latticeOutput_name'):
+    latticeOuputPattern = cp.get('filename-patterns','latticeOutput_name')
+    latticeOutputName = latticeOutputPattern % (args.jobNum, args.numJobs)
+    program_args += ['--latticeOutputFilename=%s' % latticeOutputName]
+
 
 # Variable delay to stagger start times of lalapps code
 if cp.has_section('program') and cp.has_option('program','delay_secs'):
