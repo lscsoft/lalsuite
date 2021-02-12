@@ -5,8 +5,19 @@
 # production-ready at any time.
 
 {% set name = "lal" %}
-{% set version = "@VERSION@".replace('-', '.') %}
 
+# set version based on nightly
+# (we rebuild the nightly version ourselves because the tarball might have
+#  been generate on a different day)
+{% set base_version = "@BASE_VERSION@" %}
+{% set nightly_version = "@NIGHTLY_VERSION@" %}
+{% if nightly_version %}
+{% set version = base_version + ".dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% else %}
+{% set version = base_version %}
+{% endif %}
+
+# dependencies
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 {% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
@@ -69,6 +80,17 @@ outputs:
         - gsl
         - hdf5
         - zlib
+      run_constrained:
+        # make sure downstream packages are updated beyond the first
+        # appearance of liblal
+        - lal >=7.1.1
+        - python-lal >=7.1.1
+    test:
+      requires:
+        - pkg-config
+      commands:
+        - test $(pkg-config --modversion --print-errors lal) == "${PKG_VERSION}"
+        - test $(pkg-config --modversion --print-errors lalsupport) == "${PKG_VERSION}"
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
@@ -81,12 +103,6 @@ outputs:
         The LSC Algorithm Library for gravitational wave data analysis.
         This package contains the shared object libraries need to build
         applications that use LAL.
-    test:
-      requires:
-        - pkg-config
-      commands:
-        - test $(pkg-config --modversion --print-errors lal) == "@VERSION@"
-        - test $(pkg-config --modversion --print-errors lalsupport) == "@VERSION@"
 
   - name: python-lal
     script: install-python.sh
@@ -100,6 +116,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - help2man >=1.37
         - make
         - pkg-config >=0.18.0
         - swig >={{ swig_version }}
@@ -167,6 +184,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - help2man >=1.37
         - make
       host:
         - {{ pin_subpackage('liblal', exact=True) }}

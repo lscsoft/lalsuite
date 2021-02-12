@@ -5,8 +5,19 @@
 # production-ready at any time.
 
 {% set name = "lalpulsar" %}
-{% set version = "@VERSION@".replace('-', '.') %}
 
+# set version based on nightly
+# (we rebuild the nightly version ourselves because the tarball might have
+#  been generate on a different day)
+{% set base_version = "@BASE_VERSION@" %}
+{% set nightly_version = "@NIGHTLY_VERSION@" %}
+{% if nightly_version %}
+{% set version = base_version + ".dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% else %}
+{% set version = base_version %}
+{% endif %}
+
+# dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 {% set numpy_version = "@MIN_NUMPY_VERSION@" %}
@@ -75,6 +86,14 @@ outputs:
         - fftw
         - gsl
         - liblal >={{ lal_version }}
+      run_constrained:
+        - lalpulsar >=3.0.0
+        - python-lalpulsar >=3.0.0
+    test:
+      requires:
+        - pkg-config
+      commands:
+        - test $(pkg-config --modversion --print-errors lalpulsar) == "${PKG_VERSION}"
 
   - name: python-lalpulsar
     script: install-python.sh
@@ -87,6 +106,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - help2man >=1.37
         - make
         - pkg-config
         - swig >={{ swig_version }}
@@ -140,6 +160,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - help2man >=1.37
         - make
       host:
         - liblal >={{ lal_version }}

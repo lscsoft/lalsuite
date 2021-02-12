@@ -29,6 +29,7 @@ variables:
   COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+  CONDA_PYTHON_VERSION: "3.8"
   CPU_COUNT: 4
   DOCKER_DRIVER: overlay
   GIT_DEPTH: 1
@@ -266,10 +267,12 @@ cache:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_64_"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+    CONDA_PYTHON_VERSION: "3.8"
     GIT_STRATEGY: none
   before_script:
     - *define-retry
     - *conda-init
+    - conda config --set channel_priority strict
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
@@ -287,16 +290,29 @@ cache:
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
     # build packages (preferring local packages over everything)
-    - conda config --set channel_priority strict
-    - conda build
+    # note: we use a variable and `eval` to get around the
+    #       _pyversion string having spaces in it
+    - cmd="conda build
           recipe/
           --dirty
           --error-overlinking
           --error-overdepending
+          --keep-old-work
           --no-anaconda-upload
+          --use-channeldata
           --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
-          ${CONDA_BUILD_ARGS}
+          ${CONDA_BUILD_ARGS}"
+    # if not a nightly or web-triggered pipeline, just build one python version
+    - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
+         cmd="${cmd} --python \"${CONDA_PYTHON_VERSION}.* *_cpython\"";
+      fi
+    # run the build
+    - echo $cmd && eval $cmd
+  after_script:
+    # clean cache of old files
+    - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
+    - find ${CONDA_PKGS_DIRS%:*} -type d -empty -delete
   artifacts:
     expire_in: 18h
     paths:
@@ -319,8 +335,8 @@ cache:
       - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
     reports:
       junit:
-        - "conda/bld/${CI_JOB_NAME%%:*}[-_]*/work/_build*/test/python/junit*.xml"
-        - "conda/bld/${CI_JOB_NAME%%:*}[-_]*/test_tmp/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/test/python/junit*.xml"
+        - "conda/bld/${CI_JOB_NAME%%:*}-*/test_tmp/junit*.xml"
     when: always
   cache:
     key: $CI_JOB_NAME
@@ -749,7 +765,7 @@ lalapps:conda:
     - lalinference:conda
   variables:
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
-    CONDA_CONFIG: "linux_64_python3.7.____cpython"
+    CONDA_CONFIG: "linux_64_python${CONDA_PYTHON_VERSION}.____cpython"
     CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 # -- integration tests --------------------------

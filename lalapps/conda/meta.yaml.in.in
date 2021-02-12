@@ -5,8 +5,19 @@
 # production-ready at any time.
 
 {% set name = "lalapps" %}
-{% set version = "@VERSION@".replace('-', '.') %}
 
+# set version based on nightly
+# (we rebuild the nightly version ourselves because the tarball might have
+#  been generate on a different day)
+{% set base_version = "@BASE_VERSION@" %}
+{% set nightly_version = "@NIGHTLY_VERSION@" %}
+{% if nightly_version %}
+{% set version = base_version + ".dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% else %}
+{% set version = base_version %}
+{% endif %}
+
+# dependencies
 {% set framel_version = "@MIN_FRAMEL_VERSION@" %}
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set lalburst_version = "@MIN_LALBURST_VERSION@a0" %}
@@ -73,22 +84,21 @@ requirements:
     - fftw
     - gsl
     - h5py
-    - lal >={{ lal_version }}
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalpulsar >={{ lalpulsar_version }}
     - lalinference >={{ lalinference_version }}
     - libframel >={{ framel_version }}
+    - liblal >={{ lal_version }}
+    - liblalframe >={{ lalframe_version }}
+    - liblalmetaio >={{ lalmetaio_version }}
+    - liblalsimulation >={{ lalsimulation_version }}
+    - liblalburst >={{ lalburst_version }}
+    - liblalinspiral >={{ lalinspiral_version }}
+    - liblalpulsar >={{ lalpulsar_version }}
     - ligo-segments
     - numpy
     - pillow
     - python
     - python-lal >={{ lal_version }}
     - python-lalburst >={{ lalburst_version }}
-    - python-lalframe >={{ lalframe_version }}
     - python-lalinference >={{ lalinference_version }}
     - python-lalinspiral >={{ lalinspiral_version }}
     - python-lalmetaio >={{ lalmetaio_version }}
@@ -99,46 +109,72 @@ requirements:
 test:
   imports:
     - lalapps
-    - lalapps.git_version
+    - lalapps.cosmicstring
+    - lalapps.inspiral
+    - lalapps.inspiralutils
+    - lalapps.knope_utils
+    - lalapps.pulsarhtmlutils
+    - lalapps.pulsarpputils
+  requires:
+    - ldas-tools-framecpp
   commands:
-    - lalapps_version --help
+    # set up test data (creates Z-ilwd_test_frame-600000000-1.gwf)
+    - framecpp_sample
+    # run --help
     - lalapps_binj --help
-    - lalapps_binjfind --help
     - lalapps_binj_pic --help
+    - lalapps_binjfind --help
     - lalapps_blindinj --help
     - lalapps_bucluster --help
     - lalapps_bucut --help
     - lalapps_burca --help
     - lalapps_burca_tailor --help
+    - lalapps_cache Z-ilwd_test_frame-600000000-1.gwf
     - lalapps_cafe --help
     - lalapps_calcexpsnr --help
+    - lalapps_cbc_sbank --help
+    - lalapps_cbc_sbank_choose_mchirp_boundaries --help
+    - lalapps_cbc_sbank_hdf5_bankcombiner --help
+    - lalapps_cbc_sbank_hdf5_choose_mchirp_boundaries --help
+    - TMPDIR="." lalapps_cbc_sbank_pipe --help
+    - lalapps_cbc_sbank_sim --help
+    - TMPDIR="." lalapps_cbc_sbank_sim_pipe --help
+    - lalapps_cbc_stochasticbank --help
+    - lalapps_chirplen --m1 1.4 --m2 1.4 --flow 30
     - lalapps_coh_PTF_inspiral --help
+    - lalapps_coh_PTF_spin_checker --help
     - lalapps_coinj --help
     - lalapps_cosmicstring_pipe --help
     - lalapps_create_pulsar_signal_frame --help
     - lalapps_create_solar_system_ephemeris --help
     - lalapps_create_solar_system_ephemeris_python --help
+    - TEMPO2="" lalapps_create_time_correction_ephemeris --help
     - lalapps_effdist --help
-    - lalapps_fftwf_wisdom --help
+    - lalapps_exc_resp -h
     - lalapps_fftw_wisdom --help
+    - lalapps_fftwf_wisdom --help
     - lalapps_fits_header_getval --help
     - lalapps_fits_header_list --help
     - lalapps_fits_overview --help
     - lalapps_fits_table_list --help
-    - lalapps_frjoin --help
     - lalapps_fr_ninja --help
+    - lalapps_frextr test.gwf Z-ilwd_test_frame-600000000-1.gwf Z0:RAMPED_INT_2U_1
+    - lalapps_frinfo Z-ilwd_test_frame-600000000-1.gwf
+    - lalapps_frjoin --verbose --output test.gwf Z-ilwd_test_frame-600000000-1.gwf
+    - lalapps_frread Z-ilwd_test_frame-600000000-1.gwf Z0:RAMPED_INT_2U_1
     - lalapps_frview --help
     - lalapps_gen_timeslides --help
     - lalapps_gwf2xml --help
     - lalapps_heterodyne_pulsar --help
     - lalapps_inspfrinj --help
-    - lalapps_inspinj --help
+    - lalapps_inspinj --f-lower 30 --waveform IMRPhenomD --gps-start-time 1000000000 --gps-end-time 1000000010 --d-distr volume --l-distr random --m-distr log --i-distr gaussian --incl-std 2 --min-distance 100000 --max-distance 120000 --min-mass1 10 --max-mass1 20 --min-mass2 10 --max-mass2 20 --disable-spin --time-step
+      2
     - lalapps_inspinjfind --help
-    - lalapps_makeblindinj --help
-    - lalapps_makeblindinj_himass --help
+    - lalapps_knope --help
+    - lalapps_knope_collate_results --help
+    #- lalapps_knope_result_page --help  <- needs scotchcorner
     - lalapps_make_nr_hdf_catalog --help
-    - lalapps_MakeSFTs --help
-    - lalapps_path2cache --help
+    - lalapps_path2cache <<< Z-ilwd_test_frame-600000000-1.gwf
     - lalapps_plot_tisi --help
     - lalapps_power --help
     - lalapps_power_calc_likelihood --help
@@ -147,24 +183,31 @@ test:
     - lalapps_power_pipe --help
     - lalapps_power_plot_binj --help
     - lalapps_power_plot_binjtf --help
+    - lalapps_psinject -h
     - lalapps_pulsar_frequency_evolution --help
     - lalapps_pulsar_parameter_estimation_nested --help
-    - lalapps_randombank --help
+    - lalapps_random_bank 10 20 10
+    - lalapps_randombank --minimum-mass 10 --maximum-mass 20 --number-of-templates 10
     - lalapps_run_sqlite --help
     - lalapps_searchsum2cache --help
     - lalapps_splitSFTs --help
-    - lalapps_ssbtodetector --help
+    - lalapps_splitbank --verbose --bank-file P1-TMPLTBANK-0-0.xml --number-of-banks 2 --minimal-match 0.9
+    - test "$(lalapps_ssbtodetector --gps 1000000000 --ra 0 --dec 0 --telescope JBO)" == "999999506.306100250"
     - lalapps_string_apply_vetoes --help
     - lalapps_string_calc_likelihood --help
     - lalapps_string_contour_plotter --help
+    - lalapps_string_contour_plotter_largeloops --help
     - lalapps_string_cs_gamma --help
+    - lalapps_string_cs_gamma_largeloops --help
+    - lalapps_string_final --help
     - lalapps_string_meas_likelihood --help
     - lalapps_string_plot_binj --help
     - lalapps_string_plot_likelihood --help
-    - lalapps_StringSearch --help
-    - lalapps_tconvert --help
+    - test "$(lalapps_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"
+    - test "$(lalapps_tconvert Fri, 13 May 2005 06:13:07 +0000)" -eq 800000000
     - lalapps_thinca --help
     - lalapps_tmpltbank --help
+    - lalapps_version
 
 about:
   home: https://wiki.ligo.org/Computing/LALSuite

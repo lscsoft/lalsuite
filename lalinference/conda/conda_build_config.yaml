@@ -1,0 +1,11 @@
+mpi:
+  # in CI we only want to test vanilla openmpi
+  #- nompi
+  #- mpich  # [unix]
+  - openmpi  # [unix]
+
+pin_run_as_build:
+  mpich:
+    max_pin: x.x
+  openmpi:
+    max_pin: x.x

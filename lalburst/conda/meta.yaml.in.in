@@ -5,9 +5,17 @@
 # production-ready at any time.
 
 {% set name = "lalburst" %}
-{% set version = "@VERSION@".replace('-', '.') %}
-{% set url = "file://@TARBALL@" %}
-{% set sha256 = "@SHA256@" %}
+
+# set version based on nightly
+# (we rebuild the nightly version ourselves because the tarball might have
+#  been generate on a different day)
+{% set base_version = "@BASE_VERSION@" %}
+{% set nightly_version = "@NIGHTLY_VERSION@" %}
+{% if nightly_version %}
+{% set version = base_version + ".dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% else %}
+{% set version = base_version %}
+{% endif %}
 
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
@@ -69,11 +77,14 @@ outputs:
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
         - metaio
+      run_constrained:
+        - lalburst >=1.5.7
+        - python-lalburst >=1.5.7
     test:
       requires:
         - pkg-config
       commands:
-        - test $(pkg-config --modversion --print-errors lalburst) == "@VERSION@"
+        - test $(pkg-config --modversion --print-errors lalburst) == "${PKG_VERSION}"
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
@@ -98,6 +109,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - help2man >=1.37
         - make
         - pkg-config >=0.18.0
         - swig >={{ swig_version }}
@@ -172,6 +184,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
+        - help2man >=1.37
         - make
       host:
         - liblal >={{ lal_version }}
