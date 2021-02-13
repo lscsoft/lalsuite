@@ -20,7 +20,6 @@
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
-{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
   name: {{ name }}-split
