@@ -27,7 +27,6 @@
 {% set lalpulsar_version = "@MIN_LALPULSAR_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
-{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
   name: {{ name }}-split
