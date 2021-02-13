@@ -770,7 +770,8 @@ lalapps:conda:
   - source test/bin/activate
   - python -m pip install --upgrade pip
   - python -m pip install wheelhouse/*
-  - python3 - <<EOF
+  - |
+    python3 - <<EOF
     import lal
     import lalframe
     import lalmetaio
