@@ -1307,22 +1307,47 @@ lint:coala:
   extends:
     - .lint
   image: coala/base
-  before_script:
-    - pip install coala-json
   script:
-    # run once to show output to console
-    - coala --ci || true
-    # run again to prepare JSON report for upload
-    - coala --ci --json -o output.json
+    # run first for codeclimate (using --json)
+    - coala --ci --json -o coala.json || true
+    # run again to get plaintxt output for the user
+    - coala --ci
   after_script:
-    - coala-json --junit -f output.json -o junit.xml
+    - |
+      python3 - <<EOF
+      import json
+      import sys
+      SEVERITY = ['info', 'minor', 'major', 'critical', 'blocker']
+      with open('coala.json', 'r') as file:
+          indata = json.load(file)
+      outdata = []
+      for key in indata['results']:
+          for e in indata['results'][key]:
+              start = e['affected_code'][0]['start']
+              end = e['affected_code'][0]['end']
+              outdata.append({
+                  'type': 'issue',
+                  'check_name': e['origin'],
+                  'content': e['additional_info'] or None,
+                  'description': e['message'],
+                  'fingerprint': e['id'],
+                  'severity': SEVERITY[e['severity']],
+                  'location': {
+                      'path': start['file'],
+                      'begin': start['line'],
+                      'end': end['line'],
+                  },
+              })
+      with open('codequality.json', 'w') as file:
+          json.dump(outdata, file, separators=(',', ':'))
+      EOF
   artifacts:
-    expire_in: 1month
     paths:
       - output.json
-      - junit.xml
+      - codequality.json
     reports:
-      junit: junit.xml
+      codequality: codequality.json
+    expire_in: 1month
     when: always
 
 # -- documentation ------------------------------
