@@ -120,6 +120,10 @@ variables:
       junit:
         - "**/*junit*.xml"
 
+.macos:
+  tags:
+    - macos
+
 # -- build templates ----------------------------
 
 .build-from-tarball:
@@ -1167,33 +1171,9 @@ platform:debian:stretch:
     - .platform-test
   image: igwn/lalsuite-dev:stretch-proposed
 
-.platform-test:macos:
+.platform-test:conda:
   extends:
     - .platform-test
-  tags:
-    - macos
-  variables:
-    PYTHON: "/opt/local/bin/python3.8"
-    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0 is available
-    CONFIGURE_FLAGS: "--disable-swig-octave --enable-python --enable-swig-python"
-
-platform:macos:highsierra:
-  extends:
-    - .platform-test:macos
-  tags:
-    - macos_highsierra
-
-platform:macos:sierra:
-  extends:
-    - .platform-test:macos
-  tags:
-    - macos_sierra
-
-platform:conda:linux:
-  extends:
-    - .top-level-build
-  image: igwn/base:conda
-  stage: platform tests
   variables:
     CONFIGURE_FLAGS: "--disable-swig-octave --enable-python --enable-swig-python"
   before_script:
@@ -1205,11 +1185,17 @@ platform:conda:linux:
     - conda info --all
     - conda list --name lalsuite-platform-tests
     - conda activate lalsuite-platform-tests
-  only:
-    refs:
-      - schedules
-      - web
   allow_failure: true
+
+platform:conda:linux:
+  image: igwn/base:conda
+  extends:
+    - .platform-test:conda
+
+platform:conda:macos:
+  extends:
+    - .platform-test:conda
+    - .macos
 
 # -- docker -------------------------------------
 

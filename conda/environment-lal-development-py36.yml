@@ -3,13 +3,13 @@ channels:
   - conda-forge
 dependencies:
   - autoconf
-  - automake = 1.15
+  - automake
   - bc
   - cfitsio
   - doxygen
   - fftw
   - freezegun
-  - gcc_linux-64
+  - c-compiler
   - gsl
   - h5py
   - hdf5
@@ -23,9 +23,9 @@ dependencies:
   - numpy
   - pkg-config
   - pytest
-  - python = 3.6
+  - python 3.6
   - scipy
   - six
-  - swig >= 3.0.10
+  - swig >=3.0.10
   - texlive-core
   - zlib
