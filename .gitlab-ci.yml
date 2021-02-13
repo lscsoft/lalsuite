@@ -1007,8 +1007,11 @@ coverage:
   variables:
     MAKE_TARGET: "distcheck"
   only:
-    - schedules
-    - web
+    refs:
+      - schedules
+      - web
+    variables:
+      - $CI_COMMIT_MESSAGE !~ /\[skip compiler\]/
 
 clang:10:
   extends:
@@ -1167,8 +1170,11 @@ upgrade:conda:linux:
   extends:
     - .top-level-build
   only:
-    - schedules
-    - web
+    refs:
+      - schedules
+      - web
+    variables:
+      - $CI_COMMIT_MESSAGE !~ /\[skip platform\]/
 
 platform:debian:stretch:
   extends:
