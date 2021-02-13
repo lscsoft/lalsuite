@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -ex
 
 # use out-of-tree build
 mkdir -pv _build
