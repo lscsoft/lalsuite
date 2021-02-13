@@ -51,13 +51,12 @@ variables:
   # don't need git history
   GIT_DEPTH: 1
   # global build helpers
-  LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
   VERBOSE: "true"
   # where to store files
   XDG_CONFIG_HOME: "${CI_PROJECT_DIR}/.config"
   XDG_CACHE_HOME: "${CI_PROJECT_DIR}/.cache"
-  CCACHE_DIR: "${XDG_CACHE_HOME}/ccache"
-  PIP_CACHE_DIR: "${XDG_CACHE_HOME}/pip"
+  CCACHE_DIR: "${CI_PROJECT_DIR}/.cache/ccache"
+  PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pipe"
 
 # -- templates --------------
 
@@ -66,9 +65,6 @@ variables:
 
 .configure-coredump: &configure-coredump
   ulimit -S -c 0
-
-.configure-pkgconfig: &configure-pkgconfig
-  export PKG_CONFIG_PATH=${LAL_DIR}/lib/pkgconfig
 
 .configure-nightly: &configure-nightly-build
   if [ ${CI_PIPELINE_SOURCE} = "schedule" ] || [ ${CI_PIPELINE_SOURCE} = "web" ]; then
