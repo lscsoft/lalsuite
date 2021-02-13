@@ -12,7 +12,7 @@
 {% set base_version = "@BASE_VERSION@" %}
 {% set nightly_version = "@NIGHTLY_VERSION@" %}
 {% if nightly_version %}
-{% set version = base_version + ".dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% set version = base_version + "-dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
 {% else %}
 {% set version = base_version %}
 {% endif %}
@@ -24,7 +24,7 @@
 
 package:
   name: {{ name }}-split
-  version: {{ version }}
+  version: {{ version|replace('-', '.') }}
 
 source:
   url: file://@TARBALL@
@@ -93,7 +93,20 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - test $(pkg-config --modversion --print-errors lalpulsar) == "${PKG_VERSION}"
+        - pkg-config --print-errors --exact-version "{{ version }}" lalpulsar
+        - test -f ${PREFIX}/lib/liblalpulsar${SHLIB_EXT}  # [not win]
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Pulsar Library shared object libraries
+      description: |
+        The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+        This package contains the shared-object libraries needed to run
+        applications that use the LAL MetaIO library.
 
   - name: python-lalpulsar
     script: install-python.sh
