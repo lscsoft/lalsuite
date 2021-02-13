@@ -1185,7 +1185,7 @@ platform:debian:stretch:
   variables:
     CONFIGURE_FLAGS: "--disable-swig-octave --enable-python --enable-swig-python"
   before_script:
-    - source ${CONDA_ROOT:-}/etc/profile.d/conda.sh
+    - source ${CONDA_ROOT:-/opt/conda}/etc/profile.d/conda.sh
     - conda env create
           --file conda/environment-lal-development-py37.yml
           --name lalsuite-platform-tests
