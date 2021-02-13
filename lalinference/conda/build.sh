@@ -4,7 +4,7 @@
 # the SWIG interface files, but without any actual language bindings
 #
 
-set -e
+set -ex
 
 # use out-of-tree build
 mkdir -pv _build
