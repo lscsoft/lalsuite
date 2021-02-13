@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -ex
+
 # enable nightly mode for CI
 if [ "${CI_PIPELINE_SOURCE}" = "schedule" ] || [ "${CI_PIPELINE_SOURCE}" = "web" ]; then
 	EXTRA_CONFIG_FLAGS="--enable-nightly"
