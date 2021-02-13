@@ -1077,6 +1077,7 @@ cuda:
     # just compile test suite; some tests require a CUDA device to run
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     - make -j${CPU_COUNT} install
+  allow_failure: true
 
 # -- upgrade tests ----------
 
