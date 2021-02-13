@@ -291,7 +291,7 @@ variables:
 .conda-init: &conda-init
   - *define-retry
   # init conda
-  - mkdir -p $(dirname ${CONDA_PKGS_DIRS:=${CI_PROJECT_DIR/.cache/conda/pkgs}})
+  - mkdir -p $(dirname ${CONDA_PKGS_DIRS:=${CI_PROJECT_DIR}/.cache/conda/pkgs})
   - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
   # configure conda options
   - conda config --set always_yes yes
