@@ -1038,7 +1038,7 @@ clang:dev:
     CC: clang
     CXX: clang++
 
-.compiler-test:gcc
+.compiler-test:gcc:
   extends:
     - .compiler-test
   variables:
