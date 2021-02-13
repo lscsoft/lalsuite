@@ -107,11 +107,13 @@ variables:
   extends:
     - .build-job
   variables:
-    DISTCHECK_CONFIGURE_FLAGS: "${ENABLE_NIGHTLY} --enable-swig --enable-doxygen ${EXTRA_CONFIG_FLAGS}"
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python"
+    DISTCHECK_CONFIGURE_FLAGS: "${ENABLE_NIGHTLY} ${CONFIGURE_FLAGS}"
+    PYTHON: "python3"
   needs: []
   script:
     - ./00boot
-    - ./configure --enable-doxygen --enable-swig ${ENABLE_NIGHTLY} ${EXTRA_CONFIG_FLAGS}
+    - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
     - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
   artifacts:
     reports:
@@ -393,7 +395,7 @@ variables:
   script:
     - pushd ${CI_JOB_NAME##*:}
     - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} ${EXTRA_CONFIG_FLAGS} --enable-swig
+    - ./configure ${ENABLE_NIGHTLY} --enable-swig
     - make dist
   artifacts:
     expire_in: 18h
@@ -405,7 +407,7 @@ make-dist:
     - .make-dist
   script:
     - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
+    - ./configure ${ENABLE_NIGHTLY} --enable-swig
     - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalpulsar lalinference lalapps; do
         pushd ${subdir};
         make dist;
@@ -782,7 +784,14 @@ lalapps:conda:
     - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
     # Build wheel
     - ./00boot
-    - ./configure PYTHON=${PYTHON} --enable-mpi ${EXTRA_CONFIG_FLAGS}
+    - ./configure
+          ${ENABLE_NIGHTLY}
+          --disable-doxygen
+          --disable-swig-octave
+          --enable-mpi
+          --enable-python
+          --enable-swig-python
+          PYTHON=${PYTHON}
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
     - auditwheel repair wheel/*.whl
@@ -805,7 +814,15 @@ lalapps:conda:
           oldest-supported-numpy
     # Build wheel
     - ./00boot
-    - ./configure PYTHON=$(which python) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
+    - ./configure
+          ${ENABLE_NIGHTLY}
+          --disable-doxygen
+          --disable-swig-octave
+          --enable-mpi
+          --enable-python
+          --enable-swig-python
+          PYTHON=$(which python)
+          LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
     - delocate-wheel -v -w wheelhouse wheel/*.whl
@@ -913,7 +930,11 @@ coverage:
   script:
     - ./00boot
     # Configure for C code coverage measurement with gcc
-    - ./configure --enable-swig-python ${EXTRA_CONFIG_FLAGS} CFLAGS="--coverage -fprofile-abs-path" PYTHON=python3
+    - ./configure
+          ${ENABLE_NIGHTLY}
+          --enable-swig-python
+          CFLAGS="--coverage -fprofile-abs-path"
+          PYTHON=python3
     # Run unit tests with Python scripts instrumented by coverage.py
     - make -j${CPU_COUNT} check COVERAGE_FILE="$(pwd)/.coverage" PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
   after_script:
@@ -1154,7 +1175,7 @@ platform:debian:stretch:
   variables:
     PYTHON: "/opt/local/bin/python3.8"
     # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0 is available
-    EXTRA_CONFIG_FLAGS: "--disable-swig-octave"
+    CONFIGURE_FLAGS: "--disable-swig-octave --enable-python --enable-swig-python"
 
 platform:macos:highsierra:
   extends:
@@ -1174,7 +1195,7 @@ platform:conda:linux:
   image: igwn/base:conda
   stage: platform tests
   variables:
-    EXTRA_CONFIG_FLAGS: "--disable-swig-octave"
+    CONFIGURE_FLAGS: "--disable-swig-octave --enable-python --enable-swig-python"
   before_script:
     - source ${CONDA_ROOT:-}/etc/profile.d/conda.sh
     - conda env create
