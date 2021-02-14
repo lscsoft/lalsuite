@@ -390,10 +390,13 @@ variables:
     - cd ${PACKAGE}-feedstock
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
+    # if not a nightly or web-triggered pipeline, just build one python version
+    - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
+         CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
+      fi
     # build packages (preferring local packages over everything)
-    # note: we use a variable and `eval` to get around the
-    #       _pyversion string having spaces in it
-    - cmd="conda build
+    # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
+    - xargs conda build
           recipe/
           --dirty
           --error-overlinking
@@ -403,13 +406,7 @@ variables:
           --use-channeldata
           --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
-          ${CONDA_BUILD_ARGS}"
-    # if not a nightly or web-triggered pipeline, just build one python version
-    - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
-         cmd="${cmd} --python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
-      fi
-    # run the build
-    - echo $cmd && eval $cmd
+          <<< ${CONDA_BUILD_ARGS}
   after_script:
     # clean cache of old files
     - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
