@@ -1197,6 +1197,14 @@ platform:debian:stretch:
     - conda info --all
     - conda list --name lalsuite-platform-tests
     - conda activate lalsuite-platform-tests
+    # manually install packages that have circular dependencies upon lal
+    # then forcibly remove lalsuite
+    - conda install --yes --quiet --name lalsuite-platform-tests
+          python-ligo-lw
+    - conda uninstall --yes --quiet --name lalsuite-platform-tests --force-remove
+          "liblal*"
+          "lal*"
+          "python-lal*"
   allow_failure: true
 
 platform:conda:linux:
