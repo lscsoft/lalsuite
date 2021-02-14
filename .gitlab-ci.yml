@@ -199,7 +199,7 @@ variables:
     # install build dependencies
     - yum-builddep -y -q ${SRPM}
     # build binary rpms and print details of what we got
-    - rpmbuild --rebuild --define "_topdir ${RPM_BUILD_TOPDIR}" ${SRPM}
+    - rpmbuild --rebuild --noclean --define "_topdir ${RPM_BUILD_TOPDIR}" ${SRPM}
     # print package info
     - set +x
     - for rpmf in ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm; do
