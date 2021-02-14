@@ -127,7 +127,7 @@ variables:
 
 # a top-level build runs the standard boot/configure/make
 # cycle with some sensible defaults
-.top-level-build:
+.make-distcheck:
   extends:
     - .build-job
   variables:
@@ -1022,7 +1022,7 @@ top-level:
   image: igwn/lalsuite-dev:el7-testing
   needs: []
   extends:
-    - .top-level-build
+    - .make-distcheck
     - .integration-tests
   only:
     refs:
@@ -1040,7 +1040,7 @@ top-level:
   stage: compiler tests
   needs: []
   extends:
-    - .top-level-build
+    - .make-distcheck
   only:
     refs:
       - schedules
@@ -1215,7 +1215,7 @@ upgrade:conda:linux:
 .platform-test:
   stage: platform tests
   extends:
-    - .top-level-build
+    - .make-distcheck
   only:
     refs:
       - schedules
