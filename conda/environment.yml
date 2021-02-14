@@ -1,4 +1,4 @@
-name: lal-development-py36
+name: lalsuite-dev
 channels:
   - conda-forge
 dependencies:
@@ -23,7 +23,7 @@ dependencies:
   - numpy
   - pkg-config
   - pytest
-  - python 3.6
+  - python
   - scipy
   - six
   - swig >=3.0.10
