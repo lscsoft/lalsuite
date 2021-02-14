@@ -427,7 +427,9 @@ variables:
       # the feedstock
       - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
     reports:
-      junit: "conda-bld/${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
+      # conda-build deletes the _test_tmp directory for each
+      # package, so we write them into the project directory
+      junit: "*junit*.xml"
     when: always
   only:
     refs:
