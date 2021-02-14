@@ -22,6 +22,7 @@ stages:
   # build containers
   - docker
   # quality checks
+  - coverage
   - lint
   # documentation
   - documentation
@@ -918,85 +919,6 @@ top-level:
       - schedules
       - web
 
-# Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap
-coverage:
-  extends:
-    - .integration-tests
-  image: igwn/lalsuite-dev-gcc:8
-  needs: []
-  before_script:
-    - *init-build-job
-    - apt-get -y install --no-install-recommends python3-pip
-    - python3 -m pip install coverage gcovr pycobertura
-  script:
-    - ./00boot
-    # Configure for C code coverage measurement with gcc
-    - ./configure
-          ${ENABLE_NIGHTLY}
-          --enable-swig-python
-          CFLAGS="--coverage -fprofile-abs-path"
-          PYTHON=python3
-    # Run unit tests with Python scripts instrumented by coverage.py
-    - make -j${CPU_COUNT} check COVERAGE_FILE="$(pwd)/.coverage" PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
-  after_script:
-    # Output C coverage data in Cobertura format
-    - gcovr -j${CPU_COUNT} --exclude-directories test --xml c-coverage.xml
-    # Combine and output Python coverage data in Cobertura format
-    - python3 -m coverage combine
-    - python3 -m coverage xml -o py-coverage.xml
-    # Merge coverage reports. They're just XML, after all.
-    - |
-      python3 - <<EOF
-      import lxml.etree
-      import copy
-
-      doc1 = lxml.etree.parse('py-coverage.xml')
-      doc2 = lxml.etree.parse('c-coverage.xml')
-      root1 = doc1.getroot()
-      root2 = doc2.getroot()
-      root1.attrib['lines-covered'] = str(
-          int(root1.attrib['lines-covered']) +
-          int(root2.attrib['lines-covered']))
-      root1.attrib['lines-valid'] = str(
-          int(root1.attrib['lines-valid']) +
-          int(root2.attrib['lines-valid']))
-      try:
-          root1.attrib['line-rate'] = str(
-              int(root1.attrib['lines-covered']) /
-              int(root1.attrib['lines-valid']))
-      except ZeroDivisionError:
-          root1.attrib['line-rate'] = '0'
-      root1.attrib['branches-covered'] = str(
-          int(root1.attrib['branches-covered']) +
-          int(root2.attrib['branches-covered']))
-      root1.attrib['branches-valid'] = str(
-          int(root1.attrib['branches-valid']) +
-          int(root2.attrib['branches-valid']))
-      try:
-          root1.attrib['branch-rate'] = str(
-              int(root1.attrib['branches-covered']) /
-              int(root1.attrib['branches-valid']))
-      except ZeroDivisionError:
-          root1.attrib['branch-rate'] = '0'
-      packages = root1.find('./packages')
-      packages.extend(root2.iterfind('./packages/package'))
-      doc1.write('coverage.xml')
-      EOF
-    # Write HTML coverage report and show coverage summary.
-    - pycobertura show coverage.xml -f html -o coverage.html
-    - pycobertura show coverage.xml | tail -n 1
-  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
-  artifacts:
-    paths:
-      - coverage.html
-    reports:
-      cobertura: coverage.xml
-  only:
-    refs:
-      - pushes
-      - schedules
-      - web
-
 # -- compiler tests -----------------------------
 
 .compiler-test:
@@ -1314,6 +1236,95 @@ docker:tags:buster:
   extends:
     - .docker:debian
     - .docker:tags
+
+# -- coverage ---------------------------------
+#
+# Measure test coverage
+#
+
+# Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap
+coverage:
+  stage: coverage
+  image: igwn/lalsuite-dev-gcc:8
+  needs: []
+  before_script:
+    - *init-build-job
+    - apt-get -y install --no-install-recommends python3-pip
+    - python3 -m pip install coverage gcovr pycobertura
+  script:
+    - ./00boot
+    # Configure for C code coverage measurement with gcc
+    - ./configure
+          ${ENABLE_NIGHTLY}
+          --enable-swig-python
+          CFLAGS="--coverage -fprofile-abs-path"
+          PYTHON=python3
+    # Run unit tests with Python scripts instrumented by coverage.py
+    - make -j${CPU_COUNT} check
+          COVERAGE_FILE="$(pwd)/.coverage"
+          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+  after_script:
+    # Output C coverage data in Cobertura format
+    - gcovr -j${CPU_COUNT} --exclude-directories test --xml c-coverage.xml
+    # Combine and output Python coverage data in Cobertura format
+    - python3 -m coverage combine
+    - python3 -m coverage xml -o py-coverage.xml
+    # Merge coverage reports. They're just XML, after all.
+    - |
+      python3 - <<EOF
+      import lxml.etree
+      import copy
+
+      doc1 = lxml.etree.parse('py-coverage.xml')
+      doc2 = lxml.etree.parse('c-coverage.xml')
+      root1 = doc1.getroot()
+      root2 = doc2.getroot()
+      root1.attrib['lines-covered'] = str(
+          int(root1.attrib['lines-covered']) +
+          int(root2.attrib['lines-covered']))
+      root1.attrib['lines-valid'] = str(
+          int(root1.attrib['lines-valid']) +
+          int(root2.attrib['lines-valid']))
+      try:
+          root1.attrib['line-rate'] = str(
+              int(root1.attrib['lines-covered']) /
+              int(root1.attrib['lines-valid']))
+      except ZeroDivisionError:
+          root1.attrib['line-rate'] = '0'
+      root1.attrib['branches-covered'] = str(
+          int(root1.attrib['branches-covered']) +
+          int(root2.attrib['branches-covered']))
+      root1.attrib['branches-valid'] = str(
+          int(root1.attrib['branches-valid']) +
+          int(root2.attrib['branches-valid']))
+      try:
+          root1.attrib['branch-rate'] = str(
+              int(root1.attrib['branches-covered']) /
+              int(root1.attrib['branches-valid']))
+      except ZeroDivisionError:
+          root1.attrib['branch-rate'] = '0'
+      packages = root1.find('./packages')
+      packages.extend(root2.iterfind('./packages/package'))
+      doc1.write('coverage.xml')
+      EOF
+    # Write HTML coverage report and show coverage summary.
+    - pycobertura show coverage.xml -f html -o coverage.html
+    - pycobertura show coverage.xml | tail -n 1
+  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
+  artifacts:
+    paths:
+      - coverage.html
+    reports:
+      cobertura: coverage.xml
+  only:
+    refs:
+      - pushes
+      - schedules
+      - web
+    variables:
+      # allow these jobs to be skipped by including
+      # `[skip coverage]` in the commit message
+      - $CI_COMMIT_MESSAGE !~ /\[skip coverage\]/
 
 # -- linting ------------------------------------
 

@@ -146,6 +146,7 @@ Sections of the CI pipeline can be skipped by adding special key text to your co
 | -------------------- | --------------------------------------------- |
 | `[skip compiler]`    | Skip compiler test jobs                       |
 | `[skip conda]`       | Skip Conda build jobs (and their dependents)  |
+| `[skip coverage]`    | Skip coverage jobs                            |
 | `[skip debian]`      | Skip Debian build jobs (and their dependents) |
 | `[skip docs]`        | Skip documentation jobs                       |
 | `[skip integration]` | Skip integration test jobs                    |
