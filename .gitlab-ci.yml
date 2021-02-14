@@ -1114,7 +1114,10 @@ cuda:
     # just compile test suite; some tests require a CUDA device to run
     - make -j${CPU_COUNT} V=1 VERBOSE=1 check TESTS=
     - make -j${CPU_COUNT} install
-  allow_failure: true
+  artifacts:
+    # we don't run the test suite, so there are no reports
+    reports:
+      junit: []
 
 # -- upgrade tests ------------------------------
 #
