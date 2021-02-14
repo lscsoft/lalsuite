@@ -1528,7 +1528,7 @@ lint:coala:
       EOF
   artifacts:
     paths:
-      - output.json
+      - coala.json
       - codequality.json
     reports:
       codequality: codequality.json
