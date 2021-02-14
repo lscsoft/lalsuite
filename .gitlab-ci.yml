@@ -146,9 +146,6 @@ variables:
     - ./00boot
     - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
     - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
-  artifacts:
-    reports:
-      junit: "**/*junit*.xml"
 
 # helper template for jobs running on macOS
 # (the 'macos' tag means that jobs only run on macOS runners)
@@ -1040,8 +1037,6 @@ top-level:
   needs: []
   extends:
     - .top-level-build
-  variables:
-    MAKE_TARGET: "distcheck"
   only:
     refs:
       - schedules
