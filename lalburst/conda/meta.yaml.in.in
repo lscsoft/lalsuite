@@ -143,7 +143,7 @@ outputs:
       source_files:
         - test/python
       commands:
-        - python -m pytest -rs -v --junit-xml=junit.xml test/python
+        - python -m pytest -ra -v --junit-xml=junit-python${PY_VER}.xml test/python
       imports:
         - lalburst
         - lalburst.SimBurstUtils
