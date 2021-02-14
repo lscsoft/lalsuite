@@ -1237,7 +1237,16 @@ upgrade:conda:linux:
     # properly index the newly built packages
     - conda index ${CONDA_BLD_PATH}
     # install latest release
-    - conda create -n upgrade-test --only-deps lalsuite
+    - conda create -n upgrade-test
+          lal
+          lalframe
+          lalmetaio
+          lalsimulation
+          lalburst
+          lalinspiral
+          lalpulsar
+          lalinference
+          lalapps
     # install new packages
     - conda update -n upgrade-test --use-local
           lal
