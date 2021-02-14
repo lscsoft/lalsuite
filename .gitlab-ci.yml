@@ -133,8 +133,6 @@ variables:
   variables:
     # default configure flags (can be overridden from dependents)
     CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python"
-    # flags to actually pass to configure
-    DISTCHECK_CONFIGURE_FLAGS: "${ENABLE_NIGHTLY} ${CONFIGURE_FLAGS}"
     # target to actually run (distcheck is the most thorough)
     MAKE_TARGET: "distcheck"
     # set default python as python3
@@ -144,8 +142,15 @@ variables:
   needs: []
   script:
     - ./00boot
-    - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
+    - ./configure ${ENABLE_NIGHTLY} ${CONFIGURE_FLAGS}
+    - grep "DISTCHECK_CONFIGURE_FLAGS =" Makefile
     - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
+  artifacts:
+    # upload some files to debug failures
+    paths:
+      - config.log
+      - Makefile
+    when: on_failure
 
 # helper template for jobs running on macOS
 # (the 'macos' tag means that jobs only run on macOS runners)
@@ -1244,7 +1249,6 @@ platform:debian:stretch:
     - conda activate lalsuite-platform-tests
     # don't use NDEBUG
     - export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
-    - export DISTCHECK_CONFIGURE_FLAGS="${DISTCHECK_CONFIGURE_FLAGS} CPPFLAGS=\"${CPPFLAGS}\""
     # manually install packages that have circular dependencies upon lal
     # then forcibly remove lalsuite
     - conda install --yes --quiet --name lalsuite-platform-tests
