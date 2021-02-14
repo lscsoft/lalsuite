@@ -7,7 +7,6 @@ EXTRA_DIST = \
 	lalburst-octave.install \
 	liblalburst@LIBMAJOR@.install \
 	liblalburst-dev.install \
-	python-lalburst.install \
 	python3-lalburst.install \
 	rules \
 	lalsuite.mk \
