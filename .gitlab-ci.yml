@@ -142,8 +142,9 @@ variables:
   needs: []
   script:
     - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} ${CONFIGURE_FLAGS}
-    - grep "DISTCHECK_CONFIGURE_FLAGS =" Makefile
+    # we use xargs here in case CONFIGURE_FLAGS contains
+    # variables with spaces, etc etc
+    - xargs ./configure ${ENABLE_NIGHTLY} <<< ${CONFIGURE_FLAGS}
     - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
   artifacts:
     # upload some files to debug failures
@@ -1249,6 +1250,7 @@ platform:debian:stretch:
     - conda activate lalsuite-platform-tests
     # don't use NDEBUG
     - export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
+    - export CONFIGURE_FLAGS="${CONFIGURE_FLAGS} CPPFLAGS='${CPPFLAGS}'"
     # manually install packages that have circular dependencies upon lal
     # then forcibly remove lalsuite
     - conda install --yes --quiet --name lalsuite-platform-tests
