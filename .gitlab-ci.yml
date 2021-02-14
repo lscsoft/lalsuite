@@ -1454,6 +1454,7 @@ coverage:
   artifacts:
     paths:
       - coverage.html
+      - "*.xml"
     reports:
       cobertura: coverage.xml
   only:
