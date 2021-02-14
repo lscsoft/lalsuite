@@ -145,7 +145,7 @@ variables:
   script:
     - ./00boot
     - ./configure ${DISTCHECK_CONFIGURE_FLAGS}
-    - make -j${CPU_COUNT} V=1 VERBOSE=1 ${MAKE_TARGET:-distcheck}
+    - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
   artifacts:
     reports:
       junit: "**/*junit*.xml"
@@ -1112,7 +1112,7 @@ cuda:
     - make -j${CPU_COUNT} dist
     - make -j${CPU_COUNT}
     # just compile test suite; some tests require a CUDA device to run
-    - make -j${CPU_COUNT} V=1 VERBOSE=1 check TESTS=
+    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     - make -j${CPU_COUNT} install
   artifacts:
     # we don't run the test suite, so there are no reports
