@@ -1,9 +1,17 @@
+#
+# Gitlab-CI configuration for LALSuite
+#
+# This file is complicated, but hopefully robust,
+# if you have any questions please email lal-discuss@ligo.org
+# or open a question ticket at
+# https://git.ligo.org/lscsoft/lalsuite/-/issues/
+#
 
-# -- setup ------------------
+# -- setup --------------------------------------
 
 stages:
   - tarballs
-  # build packages
+  # build packages for each subpackage
   - LAL
   - LALFrame
   - LALMetaIO
@@ -29,37 +37,44 @@ stages:
   # deploy packages
   - deploy
 
+# include job templates from the gitlab-ci-templates repo
+# see https://computing.docs.ligo.org/gitlab-ci-templates/
 include:
   - project: computing/gitlab-ci-templates
     file:
+      # helpers for debian builds
       - /packaging/debian.yml
+      # helpers for RHEL builds
       - /packaging/rhel.yml
+      # a flake8 job template
       - /python/lint.yml
 
-# -- global settings --------
+# -- global settings ----------------------------
 
-image: docker:latest
-
-# by default cache everything under the XDG_CACHE_HOME
+# by default cache everything in the .cache directory
 cache:
   key: "${CI_JOB_NAME}"
   paths:
     - .cache
 
 variables:
+  # version of python to use for builds
+  LALSUITE_PYTHON_VERSION: "3.8"
   # gitlab runners have 4 cores per job
   CPU_COUNT: 4
   # don't need git history
   GIT_DEPTH: 1
   # global build helpers
   VERBOSE: "true"
-  # where to store files
+  # where to store files, ideally everything that is 'cache'
+  # should go under ${CI_PROJECT_DIR}/.cache to match the
+  # cache key setting above
   XDG_CONFIG_HOME: "${CI_PROJECT_DIR}/.config"
   XDG_CACHE_HOME: "${CI_PROJECT_DIR}/.cache"
   CCACHE_DIR: "${CI_PROJECT_DIR}/.cache/ccache"
   PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pipe"
 
-# -- templates --------------
+# -- templates ----------------------------------
 
 .configure-ccache: &configure-ccache
   export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
@@ -67,16 +82,24 @@ variables:
 .configure-coredump: &configure-coredump
   ulimit -S -c 0
 
+# manually triggered and scheduled pipelines should use the
+# `--enable-nightly` configure flag
 .configure-nightly: &configure-nightly-build
   if [ ${CI_PIPELINE_SOURCE} = "schedule" ] || [ ${CI_PIPELINE_SOURCE} = "web" ]; then
       export ENABLE_NIGHTLY="--enable-nightly";
   fi
 
+# basic steps for a job that compiles stuff
+# can be included in the before_script/script sections
+# via `*init-build-job`
 .build-init: &init-build-job
   - *configure-ccache
   - *configure-coredump
   - *configure-nightly-build
 
+# simple bash command to retry a stage up to 3 times
+# with a 15-second delay (mainly to survive transient
+# network issues)
 .retry: &define-retry |
   retry() {
     local n=1
@@ -96,16 +119,26 @@ variables:
     done
   }
 
+# basic before_script template for a compiling job
 .build-job:
   before_script:
     - *init-build-job
 
+# a top-level build runs the standard boot/configure/make
+# cycle with some sensible defaults
 .top-level-build:
   extends:
     - .build-job
   variables:
+    # default configure flags (can be overridden from dependents)
     CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python"
+    # flags to actually pass to configure
     DISTCHECK_CONFIGURE_FLAGS: "${ENABLE_NIGHTLY} ${CONFIGURE_FLAGS}"
+    # target to actually run (distcheck is the most thorough)
+    MAKE_TARGET: "distcheck"
+    # set default python as python3
+    # TODO: this can be removed when all packages require python>=3
+    #       on their own
     PYTHON: "python3"
   needs: []
   script:
@@ -117,28 +150,37 @@ variables:
       junit:
         - "**/*junit*.xml"
 
+# helper template for jobs running on macOS
+# (the 'macos' tag means that jobs only run on macOS runners)
 .macos:
   tags:
     - macos
 
 # -- build templates ----------------------------
 
+# jobs that build from the tarballs should not need
+# the git repository (this speeds things up and prevents
+# other issues)
 .build-from-tarball:
   variables:
     GIT_STRATEGY: none
 
 # -- rpm
 
+# disable the condor repo, we don't need it (most of the time)
 .yum-disable-htcondor-repo: &yum-disable-htcondor-repo
-  yum-config-manager --disable htcondor
+  - yum-config-manager --disable htcondor
 
+# template for RPM packaging jobs
 .rpmbuild:
   extends:
     - .rhel:base
     - .build-from-tarball
   image: igwn/base:el7-testing
   variables:
+    # parallelise the build (rpmbuild uses this variable by default)
     RPM_BUILD_NCPUS: ${CPU_COUNT}
+    # where to build things (not a standard variable name)
     RPM_BUILD_TOPDIR: "${CI_PROJECT_DIR}/rpmbuild"
   # before_script comes from .rhel:base
   script:
@@ -204,16 +246,20 @@ variables:
       - tags
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip rhel]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip rhel\]/
 
 # -- debian
 
+# template for debian packaging jobs
 .debuild:
   extends:
     - .debian:base
     - .build-from-tarball
   image: igwn/base:buster
   variables:
+    # tell debhelper to parallelise the build
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
   # before_script: comes from .debian:base
   script:
@@ -281,10 +327,13 @@ variables:
       - tags
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip debian]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip debian\]/
 
 # -- conda
 
+# initialise conda for 'conda build jobs'
 .conda-init: &conda-init
   - *define-retry
   # init conda
@@ -302,23 +351,28 @@ variables:
   - conda activate base
   - conda info --all
 
+# template for jobs that use conda (in any context)
 .conda-job:
   image: igwn/base:conda
   variables:
+    # where to write conda packages
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda-bld"
+    # where to cache conda packages
     CONDA_PKGS_DIRS: "${XDG_CACHE_HOME}/conda/pkgs"
+    # dont clone the git repo
     GIT_STRATEGY: none
   before_script:
     - *init-build-job
     - *define-retry
     - *conda-init
 
+# template for `conda build` jobs
 .conda-build:
   extends:
     - .conda-job
   variables:
+    # stub of feedstock configuration file
     CONDA_CONFIG: "linux_64_"
-    CONDA_PYTHON_VERSION: "3.8"
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
@@ -351,7 +405,7 @@ variables:
           ${CONDA_BUILD_ARGS}"
     # if not a nightly or web-triggered pipeline, just build one python version
     - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
-         cmd="${cmd} --python \"${CONDA_PYTHON_VERSION}.* *_cpython\"";
+         cmd="${cmd} --python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
       fi
     # run the build
     - echo $cmd && eval $cmd
@@ -384,10 +438,19 @@ variables:
       - tags
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip conda]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip conda\]/
 
 # -- tarballs -----------------------------------
+#
+# make tarballs for each subpackage
+#
 
+# job template for a subpackage tarball build,
+# to build a tarball for a subpackage just define
+# a job called `make-dist:<subpackage>` that
+# `extends` this one (see `make-dist:lal` below)
 .make-dist:
   image: igwn/lalsuite-dev:el7
   stage: tarballs
@@ -400,9 +463,13 @@ variables:
     - make dist
   artifacts:
     expire_in: 18h
+    # store the tarballs
     paths:
       - "*/*.tar.*"
+    # there are no reports for tarball jobs
+    reports: {}
 
+# make tarballs for _all_ packages
 make-dist:
   extends:
     - .make-dist
@@ -415,12 +482,18 @@ make-dist:
         popd;
       done
 
-# just make the lal tarball to release other jobs
+# make the tarball for LAL only
+# (this job will run much faster than the `make-dist` job
+#  so we use it to release the 'LAL' stage jobs as
+#  early as possible)
 make-dist:lal:
   extends:
     - .make-dist
 
 # -- lal ----------------------------------------
+#
+# build packages for LAL
+#
 
 .lal:
   stage: LAL
@@ -437,6 +510,7 @@ lal:deb:
     - .debuild
     - .lal
 
+# build with conda using FFTW
 lal:conda:fftw:
   extends:
     - .conda-build
@@ -444,6 +518,7 @@ lal:conda:fftw:
   variables:
     CONDA_CONFIG: "linux_64_fft_implfftw"
 
+# build with conda using Intel FFT (MKL)
 lal:conda:mkl:
   extends:
     - .conda-build
@@ -452,6 +527,9 @@ lal:conda:mkl:
     CONDA_CONFIG: "linux_64_fft_implmkl"
 
 # -- lalframe------------------------------------
+#
+# build packages for LALFrame
+#
 
 .lalframe:
   stage: LALFrame
@@ -481,6 +559,9 @@ lalframe:conda:
     - lal:conda:fftw
 
 # -- lalmetaio ----------------------------------
+#
+# build packages for LALMetaIO
+#
 
 .lalmetaio:
   stage: LALMetaIO
@@ -510,6 +591,9 @@ lalmetaio:conda:
     - lal:conda:fftw
 
 # -- lalsimulation ------------------------------
+#
+# build packages for LALSimulation
+#
 
 .lalsimulation:
   stage: LALSimulation
@@ -539,6 +623,9 @@ lalsimulation:conda:
     - lal:conda:fftw
 
 # -- lalburst -----------------------------------
+#
+# build packages for LALBurst
+#
 
 .lalburst:
   stage: LALBurst
@@ -574,6 +661,9 @@ lalburst:conda:
     - lalsimulation:conda
 
 # -- lalinspiral --------------------------------
+#
+# build packages for LALInspiral
+#
 
 .lalinspiral:
   stage: LALInspiral
@@ -615,6 +705,9 @@ lalinspiral:conda:
     - lalburst:conda
 
 # -- lalpulsar ----------------------------------
+#
+# build packages for LALPulsar
+#
 
 .lalpulsar:
   stage: LALPulsar
@@ -644,6 +737,9 @@ lalpulsar:conda:
     - lal:conda:fftw
 
 # -- lalinference -------------------------------
+#
+# build packages for LALInference
+#
 
 .lalinference:
   stage: LALInference
@@ -691,6 +787,9 @@ lalinference:conda:
     - lalinspiral:conda
 
 # -- lalapps ------------------------------------
+#
+# build packages for LALApps
+#
 
 .lalapps:
   stage: LALApps
@@ -740,10 +839,14 @@ lalapps:conda:
     - lalinspiral:conda
     - lalinference:conda
   variables:
-    CONDA_CONFIG: "linux_64_python${CONDA_PYTHON_VERSION}.____cpython"
+    CONDA_CONFIG: "linux_64_python${LALSUITE_PYTHON_VERSION}.____cpython"
 
 # -- wheels -------------------------------------
+#
+# build python wheels
+#
 
+# job template for wheel builds
 .wheel:
   stage: wheels
   needs: []
@@ -755,14 +858,16 @@ lalapps:conda:
       - schedules
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip wheels]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip wheels\]/
   artifacts:
     expire_in: 18h
     paths:
       - wheelhouse
 
+# do some simple sanity checks in a virtualenv
 .wheel-test: &wheel-test
-  # do some simple sanity checks in a virtualenv
   - ${PYTHON} -m venv test
   - source test/bin/activate
   - python -m pip install --upgrade pip
@@ -836,6 +941,7 @@ lalapps:conda:
       - /^lalsuite-v.*$/
       - schedules
 
+# wheel build using the manylinux2014 container
 .wheel:manylinux2014:
   extends:
     - .wheel:manylinux
@@ -868,11 +974,16 @@ wheel:cp39-cp39-macosx:
     - .wheel:macos
 
 # -- integration tests --------------------------
+#
+# End-to-end integration tests
+#
 
 .integration-tests:
   stage: integration tests
   only:
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip integration]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip integration\]/
 
 lalinference_testjob:
@@ -920,6 +1031,10 @@ top-level:
       - web
 
 # -- compiler tests -----------------------------
+#
+# Top-level build tests for various non-default
+# compilers
+#
 
 .compiler-test:
   stage: compiler tests
@@ -933,6 +1048,8 @@ top-level:
       - schedules
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip compiler]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip compiler\]/
 
 clang:10:
@@ -1000,7 +1117,11 @@ cuda:
     - make -j${CPU_COUNT} install
   allow_failure: true
 
-# -- upgrade tests ----------
+# -- upgrade tests ------------------------------
+#
+# Check that users can cleanly update/upgrade
+# to the latest packages on their platform
+#
 
 .upgrade-test:
   stage: upgrade tests
@@ -1085,7 +1206,10 @@ upgrade:conda:linux:
           lalinference
           lalapps
 
-# -- platform tests ---------
+# -- platform tests -----------------------------
+#
+# Top-level build tests for non-standard platforms
+#
 
 .platform-test:
   stage: platform tests
@@ -1096,6 +1220,8 @@ upgrade:conda:linux:
       - schedules
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip platform]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip platform\]/
 
 platform:debian:stretch:
@@ -1111,7 +1237,7 @@ platform:debian:stretch:
     ENVIRONMENT_FILE: "conda/environment.yml"
   before_script:
     - source ${CONDA_ROOT:-/opt/conda}/etc/profile.d/conda.sh
-    - sed -i.tmp "s/- python$/- python ${CONDA_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
+    - sed -i.tmp "s/- python$/- python ${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
     - conda env create
           --file ${ENVIRONMENT_FILE}
           --name lalsuite-platform-tests
@@ -1140,13 +1266,20 @@ platform:conda:macos:
     - .macos
 
 # -- docker -------------------------------------
+#
+# Build docker images that include the
+# latest build outputs
+#
 
+# job template for docker builds
 .docker:
   variables:
     DOCKER_DRIVER: overlay
   stage: docker
   only:
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip docker]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip docker\]/
   script:
     # build container and push to registry
@@ -1161,6 +1294,7 @@ platform:conda:macos:
   variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/nightly"
   only:
+    # only run nightly docker builds nightly...
     refs:
       - schedules
 
@@ -1170,9 +1304,11 @@ platform:conda:macos:
   variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_TAG"
   only:
+    # only run tagged docker builds for git tags
     refs:
       - /^lalsuite-v.*$/
 
+# template for RHEL docker builds
 .docker:el:
   extends:
     - .docker
@@ -1194,6 +1330,7 @@ platform:conda:macos:
     - lalinference:rpm
     - lalapps:rpm
 
+# template for Debian docker builds
 .docker:debian:
   extends:
     - .docker
@@ -1227,11 +1364,13 @@ docker:tags:el7:
     - .docker:el
     - .docker:tags
 
+# build a nightly container for Debian buster
 docker:nightly:buster:
   extends:
     - .docker:debian
     - .docker:nightly
 
+# build a tagged container for Debian buster
 docker:tags:buster:
   extends:
     - .docker:debian
@@ -1327,12 +1466,18 @@ coverage:
       - $CI_COMMIT_MESSAGE !~ /\[skip coverage\]/
 
 # -- linting ------------------------------------
+#
+# Run some quality checks on the source code
+#
 
+# job template for lint jobs
 .lint:
   stage: lint
   needs: []
   only:
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip lint]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip lint\]/
 
 lint:python:
@@ -1349,6 +1494,7 @@ lint:coala:
     # run first for codeclimate (using --json)
     - coala --ci --json -o coala.json || true
     # run again to get plaintxt output for the user
+    # (and the exit code)
     - coala --ci
   after_script:
     - |
@@ -1385,10 +1531,12 @@ lint:coala:
       - codequality.json
     reports:
       codequality: codequality.json
-    expire_in: 1month
     when: always
 
 # -- documentation ------------------------------
+#
+# Generate the documentation
+#
 
 documentation:
   image: igwn/lalsuite-dev:buster
@@ -1411,14 +1559,25 @@ documentation:
       - pushes
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip docs]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip docs\]/
 
-# -- deploy -----------------
+# -- deploy -------------------------------------
+#
+# Deploy outputs to various locations
+#
+
+.deploy:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
 
 # deploy documentation to gitlab pages
 pages:
+  extends:
+    - .deploy
   image: igwn/lalsuite-dev:buster
-  stage: deploy
   needs:
     - documentation
     - coverage
@@ -1440,10 +1599,9 @@ pages:
 
 # deploy wheels
 deploy:wheel:
-  stage: deploy
+  extends:
+    - .deploy
   image: python
-  variables:
-    GIT_STRATEGY: none
   script:
     # exit if we're not running in the main namespace
     - if [[ ${CI_PROJECT_PATH} != "lscsoft/lalsuite" ]]; then echo "Not deploying."; exit 0; fi
