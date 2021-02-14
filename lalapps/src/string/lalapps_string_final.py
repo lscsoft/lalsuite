@@ -34,12 +34,8 @@ from __future__ import print_function
 
 
 import bisect
-try:
-    import copyreg
-    import pickle
-except ImportError:  # python < 3
-    import copy_reg as copyreg
-    import cPickle as pickle
+import copyreg
+import pickle
 import heapq
 import itertools
 from optparse import OptionParser

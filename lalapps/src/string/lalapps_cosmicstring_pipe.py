@@ -25,10 +25,7 @@ from optparse import OptionParser
 import os
 import sys
 import tempfile
-try:
-	from configparser import ConfigParser
-except ImportError:  # python < 3
-	from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 
 from glue import pipeline
