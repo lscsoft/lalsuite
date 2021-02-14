@@ -467,7 +467,8 @@ variables:
     paths:
       - "*/*.tar.*"
     # there are no reports for tarball jobs
-    reports: {}
+    reports:
+      junit: []
 
 # make tarballs for _all_ packages
 make-dist:
