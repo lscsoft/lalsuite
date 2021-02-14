@@ -61,11 +61,15 @@ program_args += ['--toplistFilename=%s' % toplistName]
 program_args += ['--logFilename=%s' % logfileName]
 
 #check if latticeFilename is in the ini file
-if cp.has_section('program') and cp.has_option('filename-patterns','latticeOutput_name'):
-    latticeOuputPattern = cp.get('filename-patterns','latticeOutput_name')
-    latticeOutputName = latticeOutputPattern % (args.jobNum, args.numJobs)
-    program_args += ['--latticeOutputFilename=%s' % latticeOutputName]
+if cp.has_section('program') and cp.has_option('filename-patterns','latticefile_name'):
+    print("has latticefile")
+    latticefilePattern = cp.get('filename-patterns','latticefile_name')
+    latticefileName = latticefilePattern % (args.jobNum, args.numJobs)
+    program_args += ['--LatticeOutputFilename=%s' % latticefileName]
 
+if cp.has_section('raw-program-arguments') and cp.has_option('raw-program-arguments','latticeType'):
+    print("has lattice--uselattice")
+    program_args += ['--useLattice']
 
 # Variable delay to stagger start times of lalapps code
 if cp.has_section('program') and cp.has_option('program','delay_secs'):
@@ -77,5 +81,6 @@ if cp.has_section('program') and cp.has_option('program','executable'):
 else:
     program = 'lalapps_pulsar_crosscorr_v2'
 
+print(program, program_args)
 check_call(([program]+program_args))
 
