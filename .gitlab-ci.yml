@@ -445,10 +445,10 @@ variables:
 # make tarballs for each subpackage
 #
 
-# job template for a subpackage tarball build,
+# job template for a subpackage tarball build;
 # to build a tarball for a subpackage just define
-# a job called `make-dist:<subpackage>` that
-# `extends` this one (see `make-dist:lal` below)
+# a job called `tarball:<subpackage>` that
+# `extends` this one (see `tarball:lal` below)
 .make-dist:
   image: igwn/lalsuite-dev:el7
   stage: tarballs
@@ -469,7 +469,7 @@ variables:
       junit: []
 
 # make tarballs for _all_ packages
-make-dist:
+tarballs:
   extends:
     - .make-dist
   script:
@@ -482,10 +482,10 @@ make-dist:
       done
 
 # make the tarball for LAL only
-# (this job will run much faster than the `make-dist` job
+# (this job will run much faster than the `tarballs` job
 #  so we use it to release the 'LAL' stage jobs as
 #  early as possible)
-make-dist:lal:
+tarball:lal:
   extends:
     - .make-dist
 
@@ -497,7 +497,7 @@ make-dist:lal:
 .lal:
   stage: LAL
   needs:
-    - make-dist:lal
+    - tarball:lal
 
 lal:rpm:
   extends:
@@ -538,7 +538,7 @@ lalframe:rpm:
     - .rpmbuild
     - .lalframe
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
 
 lalframe:deb:
@@ -546,7 +546,7 @@ lalframe:deb:
     - .debuild
     - .lalframe
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
 
 lalframe:conda:
@@ -554,7 +554,7 @@ lalframe:conda:
     - .conda-build
     - .lalframe
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
 
 # -- lalmetaio ----------------------------------
@@ -570,7 +570,7 @@ lalmetaio:rpm:
     - .rpmbuild
     - .lalmetaio
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
 
 lalmetaio:deb:
@@ -578,7 +578,7 @@ lalmetaio:deb:
     - .debuild
     - .lalmetaio
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
 
 lalmetaio:conda:
@@ -586,7 +586,7 @@ lalmetaio:conda:
     - .conda-build
     - .lalmetaio
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
 
 # -- lalsimulation ------------------------------
@@ -602,7 +602,7 @@ lalsimulation:rpm:
     - .rpmbuild
     - .lalsimulation
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
 
 lalsimulation:deb:
@@ -610,7 +610,7 @@ lalsimulation:deb:
     - .debuild
     - .lalsimulation
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
 
 lalsimulation:conda:
@@ -618,7 +618,7 @@ lalsimulation:conda:
     - .conda-build
     - .lalsimulation
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
 
 # -- lalburst -----------------------------------
@@ -634,7 +634,7 @@ lalburst:rpm:
     - .rpmbuild
     - .lalburst
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
     - lalmetaio:rpm
     - lalsimulation:rpm
@@ -644,7 +644,7 @@ lalburst:deb:
     - .debuild
     - .lalburst
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
     - lalmetaio:deb
     - lalsimulation:deb
@@ -654,7 +654,7 @@ lalburst:conda:
     - .conda-build
     - .lalburst
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
     - lalmetaio:conda
     - lalsimulation:conda
@@ -672,7 +672,7 @@ lalinspiral:rpm:
     - .rpmbuild
     - .lalinspiral
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
     - lalframe:rpm
     - lalmetaio:rpm
@@ -684,7 +684,7 @@ lalinspiral:deb:
     - .debuild
     - .lalinspiral
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
     - lalframe:deb
     - lalmetaio:deb
@@ -696,7 +696,7 @@ lalinspiral:conda:
     - .conda-build
     - .lalinspiral
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
@@ -716,7 +716,7 @@ lalpulsar:rpm:
     - .rpmbuild
     - .lalpulsar
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
 
 lalpulsar:deb:
@@ -724,7 +724,7 @@ lalpulsar:deb:
     - .debuild
     - .lalpulsar
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
 
 lalpulsar:conda:
@@ -732,7 +732,7 @@ lalpulsar:conda:
     - .conda-build
     - .lalpulsar
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
 
 # -- lalinference -------------------------------
@@ -748,7 +748,7 @@ lalinference:rpm:
     - .rpmbuild
     - .lalinference
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
     - lalframe:rpm
     - lalmetaio:rpm
@@ -762,7 +762,7 @@ lalinference:deb:
     - .debuild
     - .lalinference
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
     - lalframe:deb
     - lalmetaio:deb
@@ -776,7 +776,7 @@ lalinference:conda:
     - .conda-build
     - .lalinference
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
@@ -798,7 +798,7 @@ lalapps:rpm:
     - .rpmbuild
     - .lalapps
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
     - lalframe:rpm
     - lalmetaio:rpm
@@ -813,7 +813,7 @@ lalapps:deb:
     - .debuild
     - .lalapps
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
     - lalframe:deb
     - lalmetaio:deb
@@ -828,7 +828,7 @@ lalapps:conda:
     - .conda-build
     - .lalapps
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
