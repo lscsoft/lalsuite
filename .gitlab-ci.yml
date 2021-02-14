@@ -72,6 +72,7 @@ variables:
   XDG_CONFIG_HOME: "${CI_PROJECT_DIR}/.config"
   XDG_CACHE_HOME: "${CI_PROJECT_DIR}/.cache"
   CCACHE_DIR: "${CI_PROJECT_DIR}/.cache/ccache"
+  CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
   PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pipe"
 
 # -- templates ----------------------------------
@@ -147,8 +148,7 @@ variables:
     - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
   artifacts:
     reports:
-      junit:
-        - "**/*junit*.xml"
+      junit: "**/*junit*.xml"
 
 # helper template for jobs running on macOS
 # (the 'macos' tag means that jobs only run on macOS runners)
@@ -234,7 +234,7 @@ variables:
       - "rpmbuild/RPMS/x86_64/lib${CI_JOB_NAME%%:*}-*.rpm"
       - "rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm"
       # log files
-      - "rpmbuild/BUILD/*/config.log"
+      - "rpmbuild/BUILD/**/config.log"
       - "rpmbuild/BUILD/**/test-suite.log"
     reports:
       junit: "rpmbuild/BUILD/**/*junit*.xml"
@@ -318,7 +318,7 @@ variables:
       # the orig tarball
       - "${CI_JOB_NAME%%:*}*.orig.*"
     reports:
-      junit: "${CI_JOB_NAME%%:*}*/.pybuild/python*/build/**/*junit*.xml"
+      junit: "${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
     when: always
   only:
     refs:
@@ -337,7 +337,7 @@ variables:
 .conda-init: &conda-init
   - *define-retry
   # init conda
-  - mkdir -p $(dirname ${CONDA_PKGS_DIRS:=${CI_PROJECT_DIR}/.cache/conda/pkgs})
+  - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
   - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
   # configure conda options
   - conda config --set always_yes yes
@@ -357,8 +357,6 @@ variables:
   variables:
     # where to write conda packages
     CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda-bld"
-    # where to cache conda packages
-    CONDA_PKGS_DIRS: "${XDG_CACHE_HOME}/conda/pkgs"
     # dont clone the git repo
     GIT_STRATEGY: none
   before_script:
@@ -424,7 +422,7 @@ variables:
       - "conda-bld/**/python-${CI_JOB_NAME%%:*}-*.conda"
       - "conda-bld/**/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
       # log files
-      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/_build*/config.log"
+      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/config.log"
       - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/test-suite.log"
       # the feedstock
       - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
