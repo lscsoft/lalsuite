@@ -452,8 +452,9 @@ variables:
 .make-dist:
   image: igwn/lalsuite-dev:el7
   stage: tarballs
+  needs: []
   extends:
-    - .top-level-build
+    - .build-job
   script:
     - pushd ${CI_JOB_NAME##*:}
     - ./00boot
