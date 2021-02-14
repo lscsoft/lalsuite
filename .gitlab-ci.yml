@@ -1245,6 +1245,8 @@ platform:debian:stretch:
     - conda info --all
     - conda list --name lalsuite-platform-tests
     - conda activate lalsuite-platform-tests
+    # don't use NDEBUG
+    - export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
     # manually install packages that have circular dependencies upon lal
     # then forcibly remove lalsuite
     - conda install --yes --quiet --name lalsuite-platform-tests
