@@ -1347,7 +1347,9 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
     config->orbitPSecMin = uvar->orbitPSecCenter - uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
     config->orbitPSecMax = uvar->orbitPSecCenter + uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
     /* Compute number of orbits to shift prior ellipse */
-    config->norb = (int) round ( ( uvar->refTime - uvar->orbitTimeAscCenter )
+    config->norb = (int) round ( ( uvar->orbitTimeAsc
+				   + 0.5 * uvar->orbitTimeAscBand
+				   - uvar->orbitTimeAscCenter )
 				 / uvar->orbitPSecCenter );
   } else {
     config->useTPEllipse = FALSE;
