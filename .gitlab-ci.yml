@@ -1435,7 +1435,7 @@ coverage:
     - gcovr
          -j ${CPU_COUNT}
          --exclude '(.+/)?swiglal_[a-z]+\.c$'
-         --exclude-directories test
+         --exclude-directories 'lal([a-z]+/)?test'
          --xml c-coverage.xml
     # Combine and output Python coverage data in Cobertura format
     - python3 -m coverage combine
