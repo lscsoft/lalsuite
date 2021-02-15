@@ -1443,39 +1443,30 @@ coverage:
     # Merge coverage reports. They're just XML, after all.
     - |
       python3 - <<EOF
+      # read inputs
       import lxml.etree
-      import copy
-
       doc1 = lxml.etree.parse('py-coverage.xml')
       doc2 = lxml.etree.parse('c-coverage.xml')
       root1 = doc1.getroot()
       root2 = doc2.getroot()
-      root1.attrib['lines-covered'] = str(
-          int(root1.attrib['lines-covered']) +
-          int(root2.attrib['lines-covered']))
-      root1.attrib['lines-valid'] = str(
-          int(root1.attrib['lines-valid']) +
-          int(root2.attrib['lines-valid']))
-      try:
-          root1.attrib['line-rate'] = str(
-              int(root1.attrib['lines-covered']) /
-              int(root1.attrib['lines-valid']))
-      except ZeroDivisionError:
-          root1.attrib['line-rate'] = '0'
-      root1.attrib['branches-covered'] = str(
-          int(root1.attrib['branches-covered']) +
-          int(root2.attrib['branches-covered']))
-      root1.attrib['branches-valid'] = str(
-          int(root1.attrib['branches-valid']) +
-          int(root2.attrib['branches-valid']))
-      try:
-          root1.attrib['branch-rate'] = str(
-              int(root1.attrib['branches-covered']) /
-              int(root1.attrib['branches-valid']))
-      except ZeroDivisionError:
-          root1.attrib['branch-rate'] = '0'
+      attrib1 = root1.attrib
+      attrib2 = root1.attrib
+      # combine counts
+      for key in ('lines-covered', 'lines-valid', 'branches-covered', 'branches-valid'):
+          attrib1[key] = str(int(attrib1[key]) + int(attrib2[key]))
+      # recalculate rates
+      for key, covered, valid in (
+              ('line-rate', 'lines-covered', 'lines-valid'),
+              ('branch-rate', 'branches-covered', 'branches-valid'),
+      ):
+          try:
+              attrib1[key] = str(int(attrib1[covered]) / int(attrib1[valid]))
+          except ZeroDivisionError:
+              attrib1[key] = '0'
+      # combine file coverage reports
       packages = root1.find('./packages')
       packages.extend(root2.iterfind('./packages/package'))
+      # write new file
       doc1.write('coverage.xml')
       EOF
     # Write HTML coverage report and show coverage summary.
