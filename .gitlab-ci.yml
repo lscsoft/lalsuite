@@ -1432,7 +1432,11 @@ coverage:
           PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
   after_script:
     # Output C coverage data in Cobertura format
-    - gcovr -j${CPU_COUNT} --exclude-directories test --xml c-coverage.xml
+    - gcovr
+         -j ${CPU_COUNT}
+         --exclude '(.+/)?swiglal_[a-z]+\.c$'
+         --exclude-directories test
+         --xml c-coverage.xml
     # Combine and output Python coverage data in Cobertura format
     - python3 -m coverage combine
     - python3 -m coverage xml -o py-coverage.xml
