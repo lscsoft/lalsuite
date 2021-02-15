@@ -114,9 +114,7 @@ outputs:
         - numpy
         - python
       run:
-        - ldas-tools-framecpp >={{ framecpp_version }}
-        - libframel >={{ framel_version }}
-        - liblal >={{ lal_version }}
+        - liblal  # [linux]
         - {{ pin_subpackage('liblalframe', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python

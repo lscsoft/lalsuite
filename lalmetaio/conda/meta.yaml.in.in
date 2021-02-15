@@ -110,9 +110,8 @@ outputs:
         - numpy
         - python
       run:
-        - liblal >={{ lal_version }}
+        - liblal  # [linux]
         - {{ pin_subpackage('liblalmetaio', exact=True) }}
-        - metaio >={{ metaio_version }}
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}

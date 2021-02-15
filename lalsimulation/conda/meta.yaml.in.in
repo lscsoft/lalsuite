@@ -117,8 +117,7 @@ outputs:
         - numpy
         - python
       run:
-        - gsl
-        - liblal >={{ lal_version }}
+        - liblal  # [linux]
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python

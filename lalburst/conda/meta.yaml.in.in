@@ -114,6 +114,7 @@ outputs:
         - pkg-config >=0.18.0
         - swig >={{ swig_version }}
       host:
+        - gsl
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - lscsoft-glue
         - numpy
@@ -124,14 +125,11 @@ outputs:
         - scipy
       run:
         - gsl
-        - liblal >={{ lal_version }}
+        - liblal  # [linux]
         - {{ pin_subpackage('liblalburst', exact=True) }}
-        - liblalmetaio
-        - liblalsimulation
         - ligo-segments
         - lscsoft-glue
         - matplotlib
-        - metaio
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}

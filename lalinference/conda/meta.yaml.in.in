@@ -120,23 +120,15 @@ outputs:
         - pkg-config
         - swig >={{ swig_version }}
       host:
-        - gsl
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - python
         - numpy
       run:
         - astropy >=1.1.1
-        - gsl
         - healpy >=1.9.1
         - h5py
         - liblal >={{ lal_version }}
-        - liblalburst >={{ lalburst_version }}  # [linux]
-        - liblalframe >={{ lalframe_version }}  # [linux]
         - {{ pin_subpackage('liblalinference', exact=True) }}
-        - liblalinspiral >={{ lalinspiral_version }}  # [linux]
-        - liblalmetaio >={{ lalmetaio_version }}  # [linux]
-        - liblalpulsar >={{ lalpulsar_version }}  # [linux]
-        - liblalsimulation >={{ lalsimulation_version }}  # [linux]
         - ligo-segments
         - lscsoft-glue >=1.54.1
         - matplotlib-base >=1.2.0
