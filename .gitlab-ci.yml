@@ -74,6 +74,8 @@ variables:
   CCACHE_DIR: "${CI_PROJECT_DIR}/.cache/ccache"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
   PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pipe"
+  # where to build conda environments (i.e. not in ~/.conda)
+  CONDA_ENVS_PATH: "${CI_PROJECT_DIR}/envs"
 
 # -- templates ----------------------------------
 
