@@ -44,7 +44,7 @@ int XLALSetLatticeTilingPorbEllipticalBound(
   const double sigP,            ///< [in] One-sigma uncertainty on orbital period
   const double T0,              ///< [in] Most likely time of ascension (uncorrelated with orbital period
   const double sigT,            ///< [in] One-sigma uncertainty on time of ascension
-  const double Tref,            ///< [in] Time of GW observation for Tasc search parameter
+  const int norb,            ///< [in] Number of orbits between time of ascention estimate and search region
   const double nsigma           ///< [in] Radius in sigma of circular search region in parameter space scaled by uncertainties
   );
 

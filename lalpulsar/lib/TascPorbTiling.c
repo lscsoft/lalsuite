@@ -120,7 +120,7 @@ int XLALSetLatticeTilingPorbEllipticalBound(
   const double sigP,
   const double T0,
   const double sigT,
-  const double Tref,
+  const int norb,
   const double nsigma
   )
 {
@@ -137,7 +137,6 @@ int XLALSetLatticeTilingPorbEllipticalBound(
   PorbEllipticalBoundInfo XLAL_INIT_DECL( info_lower );
   PorbEllipticalBoundInfo XLAL_INIT_DECL( info_upper );
   info_lower.tasc_dim = info_upper.tasc_dim = tasc_dimension;
-  int norb = (int) round( ( Tref - T0 ) / P0 );
   info_lower.norb = info_upper.norb = norb;
   info_lower.T0p = info_upper.T0p = T0 + norb * P0;
   info_lower.P0 = info_upper.P0 = P0;
