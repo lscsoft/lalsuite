@@ -12,7 +12,7 @@
 {% set base_version = "@BASE_VERSION@" %}
 {% set nightly_version = "@NIGHTLY_VERSION@" %}
 {% if nightly_version %}
-{% set version = base_version + ".dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% set version = base_version + "-dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
 {% else %}
 {% set version = base_version %}
 {% endif %}
@@ -22,11 +22,10 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
-{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
   name: {{ name }}-split
-  version: {{ version }}
+  version: {{ version|replace('-', '.') }}
 
 source:
   url: file://@TARBALL@
@@ -84,7 +83,8 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - test $(pkg-config --modversion --print-errors lalburst) == "${PKG_VERSION}"
+        - pkg-config --print-errors --exact-version "{{ version }}" lalburst
+        - test -f ${PREFIX}/lib/liblalburst${SHLIB_EXT}  # [not win]
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/

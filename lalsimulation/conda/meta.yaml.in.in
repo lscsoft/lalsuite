@@ -12,19 +12,18 @@
 {% set base_version = "@BASE_VERSION@" %}
 {% set nightly_version = "@NIGHTLY_VERSION@" %}
 {% if nightly_version %}
-{% set version = base_version + ".dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% set version = base_version + "-dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
 {% else %}
 {% set version = base_version %}
 {% endif %}
 
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
-{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
   name: {{ name }}-split
-  version: {{ version }}
+  version: {{ version|replace('-', '.') }}
 
 source:
   url: file://@TARBALL@
@@ -82,7 +81,8 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - test $(pkg-config --modversion --print-errors lalsimulation) == "${PKG_VERSION}"
+        - pkg-config --print-errors --exact-version "{{ version }}" lalsimulation
+        - test -f ${PREFIX}/lib/liblalsimulation${SHLIB_EXT}  # [not win]
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/

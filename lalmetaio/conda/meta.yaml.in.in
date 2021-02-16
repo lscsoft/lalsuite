@@ -12,7 +12,7 @@
 {% set base_version = "@BASE_VERSION@" %}
 {% set nightly_version = "@NIGHTLY_VERSION@" %}
 {% if nightly_version %}
-{% set version = base_version + ".dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% set version = base_version + "-dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
 {% else %}
 {% set version = base_version %}
 {% endif %}
@@ -21,11 +21,10 @@
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set metaio_version = "@MIN_METAIO_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
-{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
   name: {{ name }}-split
-  version: {{ version }}
+  version: {{ version|replace('-', '.') }}
 
 source:
   url: file://@TARBALL@
@@ -76,7 +75,8 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - test $(pkg-config --modversion --print-errors lalmetaio) == "${PKG_VERSION}"
+        - pkg-config --print-errors --exact-version "{{ version }}" lalmetaio
+        - test -f ${PREFIX}/lib/liblalmetaio${SHLIB_EXT}  # [not win]
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalmetaio/

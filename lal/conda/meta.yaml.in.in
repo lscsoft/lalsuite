@@ -8,22 +8,21 @@
 
 # set version based on nightly
 # (we rebuild the nightly version ourselves because the tarball might have
-#  been generate on a different day)
+#  been generated on a different day)
 {% set base_version = "@BASE_VERSION@" %}
 {% set nightly_version = "@NIGHTLY_VERSION@" %}
 {% if nightly_version %}
-{% set version = base_version + ".dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% set version = base_version + "-dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
 {% else %}
 {% set version = base_version %}
 {% endif %}
 
 # dependencies
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
-{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
   name: {{ name }}-split
-  version: {{ version }}
+  version: {{ version|replace('-', '.') }}
 
 source:
   url: file://@TARBALL@
@@ -89,8 +88,10 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - test $(pkg-config --modversion --print-errors lal) == "${PKG_VERSION}"
-        - test $(pkg-config --modversion --print-errors lalsupport) == "${PKG_VERSION}"
+        - pkg-config --print-errors --exact-version "{{ version }}" lal
+        - pkg-config --print-errors --exact-version "{{ version }}" lalsupport
+        - test -f ${PREFIX}/lib/liblal${SHLIB_EXT}  # [not win]
+        - test -f ${PREFIX}/lib/liblalsupport${SHLIB_EXT}  # [not win]
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
