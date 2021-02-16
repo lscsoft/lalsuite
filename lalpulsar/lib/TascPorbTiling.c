@@ -70,6 +70,7 @@ typedef struct {
   double pmsigT;
   double sigP;
   double ksq;
+  BOOLEAN sheared;
 } PorbEllipticalBoundInfo;
 
 static double PorbEllipticalBound(
@@ -87,10 +88,10 @@ static double PorbEllipticalBound(
   const double Tasc = gsl_vector_get(point, info->tasc_dim);
 
   double Tscaled = ( Tasc - info->T0p ) / info->sigTp;
-  double Pscaled = (
-		    info->norb * info->sigP * Tscaled
-		    + info->pmsigT * RE_SQRT( info->ksq - SQR(Tscaled) )
-		    ) / info->sigTp;
+  double Pscaled = info->pmsigT * RE_SQRT( info->ksq - SQR(Tscaled) ) / info->sigTp;
+  if (!(info->sheared)) {
+    Pscaled += info->norb * info->sigP * Tscaled / info->sigTp;
+  }
   // fprintf(stdout,"n=%d\n",info->norb);
   // fprintf(stdout,"sigP=%g\n",info->sigP);
   // fprintf(stdout,"sigTp=%g\n",info->sigTp);
@@ -121,7 +122,8 @@ int XLALSetLatticeTilingPorbEllipticalBound(
   const double T0,
   const double sigT,
   const int norb,
-  const double nsigma
+  const double nsigma,
+  const BOOLEAN useShearedPeriod
   )
 {
   // Check input
@@ -145,6 +147,7 @@ int XLALSetLatticeTilingPorbEllipticalBound(
   info_upper.pmsigT = sigT;
   info_lower.sigP = info_upper.sigP = sigP;
   info_lower.ksq = info_upper.ksq = SQR(nsigma);
+  info_lower.sheared = info_upper.sheared = useShearedPeriod;
 
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, porb_dimension, PorbEllipticalBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
 
