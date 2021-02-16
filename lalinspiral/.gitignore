@@ -4,6 +4,7 @@ __pycache__
 *.la
 *.lo
 *.log
+*.man
 *.o
 *.pc
 *.pyc
