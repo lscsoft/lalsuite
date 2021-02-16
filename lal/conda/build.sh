@@ -24,6 +24,7 @@ fi
 
 # only link libraries we actually use
 export GSL_LIBS="-L${PREFIX}/lib -lgsl"
+export HDF5_LIBS="-L${PREFIX}/lib -lhdf5 -lhdf5_hl"
 
 # configure
 ${SRC_DIR}/configure \
@@ -39,7 +40,7 @@ ${SRC_DIR}/configure \
 ;
 
 # build
-make -j ${CPU_COUNT} V=1 VERBOSE=1
+make -j ${CPU_COUNT} V=1 VERBOSE=1 HDF5_LIBS="${HDF5_LIBS}"
 
 # test
 make -j ${CPU_COUNT} V=1 VERBOSE=1 check
