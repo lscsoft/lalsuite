@@ -1047,7 +1047,7 @@ int main(int argc, char *argv[]){
     fprintf(fp, "[CalculatedValues]\n\n");
     if (config.norb != 0) {
       fprintf(fp, "norb = %d\n", config.norb);
-      fprintf(fp, "orbitTimeAscCenterShifted = %.9"LAL_REAL8_FORMAT"\n", config.orbitTimeAscCenterShifted);
+      fprintf(fp, "orbitTimeAscCenterShifted = %.9f\n", config.orbitTimeAscCenterShifted);
     }
     REAL8 g_lm, eps_n;
     for (UINT4 l = 0; l < coordSys.dim; l++){
