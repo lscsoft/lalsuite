@@ -1757,7 +1757,8 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	    ( curr_point->data[DEMODdimT] - orbitTimeAscCenterShifted)
 	    * dPorbdTascShear;
 	}
-	
+
+	fprintf(LatticeReadFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]); 
 	/* if counter is on first point, the orbital points haven't changed so make the dopplerShiftFlag = FALSE*/
 	if (numpoints == 1)
 	  {
@@ -1779,7 +1780,6 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	prev_point->data[DEMODdimP] = curr_point->data[DEMODdimP];
 	prev_point->data[DEMODdimT] = curr_point->data[DEMODdimT];
 
-	fprintf(LatticeReadFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]); 
 	
       /* Apply additional Doppler shifting using current binary orbital parameters */
       /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
