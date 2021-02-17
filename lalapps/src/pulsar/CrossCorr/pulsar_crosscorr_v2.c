@@ -1735,13 +1735,14 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
     LatticeTilingIterator *iterator = XLALCreateLatticeTilingIterator(tiling, DEMODndim);
 
     gsl_vector *curr_point  = gsl_vector_alloc (DEMODndim);
+    gsl_vector *prev_point  = gsl_vector_alloc (DEMODndim);
     curr_point->data[DEMODdimP] = uvar.orbitPSecCenter;
     curr_point->data[DEMODdimT] = uvar.orbitTimeAsc + (uvar.orbitTimeAscBand/2.0);
     curr_point->data[DEMODdima] = uvar.orbitAsiniSec + (uvar.orbitAsiniSecBand/2.0);
     curr_point->data[DEMODdimf]  = uvar.fStart + (uvar.fBand/2.0);
     fprintf(LatticeReadFile, "TASC\tPORB\tASINI\tFREQ\n");
     fprintf(LatticeReadFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]);
-  
+    int numpoints = 0;
     while ( XLALNextLatticeTilingPoint(iterator, curr_point) > 0 )
       {
 	dopplerpos.fkdot[0] = curr_point->data[DEMODdimf];
@@ -1750,16 +1751,35 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	LIGOTimeGPS currpointGPS;
 	XLALGPSSetREAL8(&currpointGPS, curr_point->data[DEMODdimT]);
 	dopplerpos.tp =  currpointGPS;
-
+	numpoints += 1;
 	if ( uvar.useShearedPeriod ) {
 	  dopplerpos.period +=
 	    ( curr_point->data[DEMODdimT] - orbitTimeAscCenterShifted)
 	    * dPorbdTascShear;
 	}
+	
+	/* if counter is on first point, the orbital points haven't changed so make the dopplerShiftFlag = FALSE*/
+	if (numpoints == 1)
+	  {
+	    dopplerShiftFlag = FALSE;
+	  }
+	/* if not on the first point, check that the previous orbital points are the same as the current points. If it is the same, the dopplerShiftFlag is false and we don't need additional doppler shifting */
+	else if (prev_point->data[DEMODdima] == curr_point->data[DEMODdima] && prev_point->data[DEMODdimP] == curr_point->data[DEMODdimP] && prev_point->data[DEMODdimT] == curr_point->data[DEMODdimT])
+	  {
+	    dopplerShiftFlag = FALSE;
+	  }
+	/* if not on the first point, check that the previous orbital points are different current point. If it is the differennt, the dopplerShiftFlag is true and we need additional doppler shifting */
+	else if (prev_point->data[DEMODdima] != curr_point->data[DEMODdima] || prev_point->data[DEMODdimP] != curr_point->data[DEMODdimP] || prev_point->data[DEMODdimT] != curr_point->data[DEMODdimT])
+	  {
+	    dopplerShiftFlag = TRUE;
+	  }
+	/* save the current point into the previous point*/
+	prev_point->data[DEMODdimf] = curr_point->data[DEMODdimf];
+	prev_point->data[DEMODdima] = curr_point->data[DEMODdima];
+	prev_point->data[DEMODdimP] = curr_point->data[DEMODdimP];
+	prev_point->data[DEMODdimT] = curr_point->data[DEMODdimT];
 
-	fprintf(LatticeReadFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]);
-        
-      /* do useful stuff here*/
+	fprintf(LatticeReadFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]); 
 	
       /* Apply additional Doppler shifting using current binary orbital parameters */
       /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
@@ -1804,7 +1824,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
     fclose(LatticeReadFile);
   }
 
-  else{
+    else{
     while (GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0)
       {
       /* do useful stuff here*/
