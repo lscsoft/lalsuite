@@ -70,6 +70,13 @@ if cp.has_section('program') and cp.has_option('filename-patterns','latticefile_
 if cp.has_section('raw-program-arguments') and cp.has_option('raw-program-arguments','latticeType'):
     print("has lattice--uselattice")
     program_args += ['--useLattice']
+    latticeType = cp.get('raw-program-arguments','latticeType')
+    program_args += ['--latticeType=%s' % latticeType]
+
+
+if cp.has_section('raw-program-arguments') and cp.has_option('raw-program-arguments','useShearedPeriod'):
+    print("has --useShearedPeriod")
+    program_args += ['--useShearedPeriod']
 
 # Variable delay to stagger start times of lalapps code
 if cp.has_section('program') and cp.has_option('program','delay_secs'):
