@@ -107,6 +107,7 @@ typedef struct tagUserInput_t {
 
   BOOLEAN useLattice;           /**< use latticeTiling for template placement */
   BOOLEAN useShearedPeriod;   /**< use sheared orbital period */
+  BOOLEAN unresolvedPeriod;   /**< use only one point in period direction */
   INT4    latticeType;          /**< lattice to use */
   REAL8   mismatchMax;          /**< total mismatch */
 
@@ -1208,6 +1209,7 @@ int XLALInitUserVars (UserInput_t *uvar)
 
   /* sheared period coordinate */
   uvar->useShearedPeriod = FALSE;
+  uvar->unresolvedPeriod = FALSE;
 
   /* register  user-variables */
   XLALRegisterUvarMember( startTime,       INT4, 0,  REQUIRED, "Desired start time of analysis in GPS seconds (SFT timestamps must be >= this)");
@@ -1260,6 +1262,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( injectionSources, STRINGVector, 0 , OPTIONAL, "CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}'");
   XLALRegisterUvarMember( useLattice,    BOOLEAN, 0,  OPTIONAL, "Use latticeTiling for template placement");
   XLALRegisterUvarMember( useShearedPeriod, BOOLEAN, 0,  OPTIONAL, "Use sheared period coordinate for template placement");
+  XLALRegisterUvarMember( unresolvedPeriod, BOOLEAN, 0,  OPTIONAL, "Use only one point in period direction and compensate in overall mismatch");
   XLALRegisterUvarAuxDataMember( latticeType, UserEnum, &TilingLatticeChoices, 0, OPTIONAL, "Type of lattice used for template placement");
   XLALRegisterUvarMember( mismatchMax,    REAL8, 0,  OPTIONAL, "maximum mismatch to use for the lattice ");
   XLALRegisterUvarMember( orbitPSecCenter,    REAL8, 0,  OPTIONAL, " Center of prior ellipse for binary orbital period (seconds) ");
@@ -1720,18 +1723,45 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
     LatticeTiling *tiling = XLALCreateLatticeTiling(DEMODndim);
     XLALSetLatticeTilingConstantBound(tiling, DEMODdimT, uvar.orbitTimeAsc, uvar.orbitTimeAsc + uvar.orbitTimeAscBand);
 
-    if ( useTPEllipse == TRUE ) {
+    REAL8 mismatchMax = uvar.mismatchMax;
+    if (uvar.unresolvedPeriod==TRUE) {
+      gsl_matrix *LU_ij = gsl_matrix_alloc(DEMODndim,DEMODndim);
+      gsl_matrix *ginv_ij = gsl_matrix_alloc(DEMODndim,DEMODndim);
+      gsl_permutation *P_ij = gsl_permutation_alloc(DEMODndim);
+      int signum = 0;
+
+      XLAL_CHECK( gsl_linalg_LU_decomp( LU_ij, P_ij, &signum ) == 0, XLAL_EFAILED );
+      XLAL_CHECK( gsl_linalg_LU_invert( LU_ij, P_ij, ginv_ij ) == 0, XLAL_EFAILED );
+      REAL8 deltaP;
+      if ( useTPEllipse == TRUE ) {
+	deltaP = uvar.orbitTPEllipseRadius * uvar.orbitPSecSigma;
+	XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecCenter);
+      } else {
+	deltaP = 0.5 * uvar.orbitPSecBand;
+	XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec + deltaP, uvar.orbitPSec + deltaP);
+      }
+      /* Adjust maximum mismatch in constant-P surface to account for finite width in P coordinate (Porb or sheared Ptilde) */
+
+      mismatchMax -= SQR(deltaP) / gsl_matrix_get(ginv_ij, DEMODdimP, DEMODdimP);
+      if (mismatchMax < 0) {
+	printf("Error! Remaining mismatch after setting period is negative: %g\n", mismatchMax);
+        XLAL_ERROR( XLAL_EFUNC );
+      }
+
+      gsl_permutation_free(P_ij);
+      gsl_matrix_free(ginv_ij);
+    } else if ( useTPEllipse == TRUE ) {
       XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, norb, uvar.orbitTPEllipseRadius, uvar.useShearedPeriod);
     } else {
       XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand);
     }
 
     XLALSetLatticeTilingConstantBound(tiling, DEMODdima, uvar.orbitAsiniSec, uvar.orbitAsiniSec + uvar.orbitAsiniSecBand);
-  
+
     XLALSetLatticeTilingConstantBound(tiling, DEMODdimf, uvar.fStart, uvar.fStart + uvar.fBand);
     int lattice = uvar.latticeType;
 
-    XLALSetTilingLatticeAndMetric(tiling, lattice, metric_ij, uvar.mismatchMax);
+    XLALSetTilingLatticeAndMetric(tiling, lattice, metric_ij, mismatchMax);
     LatticeTilingIterator *iterator = XLALCreateLatticeTilingIterator(tiling, DEMODndim);
 
     gsl_vector *curr_point  = gsl_vector_alloc (DEMODndim);
