@@ -1,3 +1,9 @@
+lalmetaio (2.0.2-1) unstable; urgency=low
+
+  * Update for 2.0.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 05 Feb 2021 13:39:16 -0700
+
 lalmetaio (2.0.1-1) unstable; urgency=low
 
   * Update for 2.0.1
