@@ -1,9 +1,17 @@
+#
+# Gitlab-CI configuration for LALSuite
+#
+# This file is complicated, but hopefully robust,
+# if you have any questions please email lal-discuss@ligo.org
+# or open a question ticket at
+# https://git.ligo.org/lscsoft/lalsuite/-/issues/
+#
 
 # -- setup --------------------------------------
 
-image: docker:latest
-
 stages:
+  - tarballs
+  # build packages for each subpackage
   - LAL
   - LALFrame
   - LALMetaIO
@@ -13,47 +21,90 @@ stages:
   - LALPulsar
   - LALInference
   - LALApps
-  - lint
-  - documentation
+  - wheels
+  # end-to-end tests
   - integration tests
   - compiler tests
   - platform tests
   - upgrade tests
+  # build containers
   - docker
-  - wheels
+  # quality checks
+  - coverage
+  - lint
+  # documentation
+  - documentation
+  # deploy packages
   - deploy
 
-variables:
-  APT_GET: "apt-get -y -q -q -o dir::cache::archives=${CI_PROJECT_DIR}/.cache/apt"
-  BRANCH: $CI_REGISTRY_IMAGE:$CI_COMMIT_REF_NAME
-  COMMIT: $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
-  CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
-  CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-  CONDA_PYTHON_VERSION: "3.8"
-  CPU_COUNT: 4
-  DOCKER_DRIVER: overlay
-  GIT_DEPTH: 1
-  LAL_DIR: $CI_PROJECT_DIR/opt/lalsuite
-  NIGHTLY: $CI_REGISTRY_IMAGE:nightly
-  TAG: $CI_REGISTRY_IMAGE:$CI_COMMIT_TAG
-  YUM: "yum -y -q --setopt=cachedir=${CI_PROJECT_DIR}/.cache/yum --setopt=keepcache=1"
-  YUM_OPTS: "-y -q --setopt=cachedir=${CI_PROJECT_DIR}/.cache/yum --setopt=keepcache=1"
+# include job templates from the gitlab-ci-templates repo
+# see https://computing.docs.ligo.org/gitlab-ci-templates/
+include:
+  - project: computing/gitlab-ci-templates
+    file:
+      # helpers for debian builds
+      - /packaging/debian.yml
+      # helpers for RHEL builds
+      - /packaging/rhel.yml
+      # a flake8 job template
+      - /python/lint.yml
 
-before_script:
-  - set -x  # print commands as they are run (helps debugging)
-  - ulimit -S -c 0
-  - export VERBOSE="true"
-  - export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
-  - export CCACHE_DIR=${PWD}/ccache
-  - export PKG_CONFIG_PATH=${LAL_DIR}/lib/pkgconfig
-  - mkdir -p opt/lalsuite
-  - if [ ${CI_PIPELINE_SOURCE} = "schedule" ] || [ ${CI_PIPELINE_SOURCE} = "web" ]; then EXTRA_CONFIG_FLAGS="--enable-nightly"; fi
+# -- global settings ----------------------------
 
+# by default cache everything in the .cache directory
 cache:
-  key: $CI_JOB_NAME
+  key: "${CI_JOB_NAME}"
   paths:
-    - ccache
+    - .cache
 
+variables:
+  # version of python to use for builds
+  LALSUITE_PYTHON_VERSION: "3.8"
+  # gitlab runners have 4 cores per job
+  CPU_COUNT: 4
+  # don't need git history
+  GIT_DEPTH: 1
+  # global build helpers
+  VERBOSE: "true"
+  # where to store files, ideally everything that is 'cache'
+  # should go under ${CI_PROJECT_DIR}/.cache to match the
+  # cache key setting above
+  XDG_CONFIG_HOME: "${CI_PROJECT_DIR}/.config"
+  XDG_CACHE_HOME: "${CI_PROJECT_DIR}/.cache"
+  CCACHE_DIR: "${CI_PROJECT_DIR}/.cache/ccache"
+  CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
+  PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pipe"
+  # where to build conda environments (i.e. not in ~/.conda)
+  CONDA_ENVS_PATH: "${CI_PROJECT_DIR}/envs"
+  # what file to use for conda configuration
+  CONDARC: "${CI_PROJECT_DIR}/.condarc"
+
+# -- templates ----------------------------------
+
+.configure-ccache: &configure-ccache
+  export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
+
+.configure-coredump: &configure-coredump
+  ulimit -S -c 0
+
+# manually triggered and scheduled pipelines should use the
+# `--enable-nightly` configure flag
+.configure-nightly: &configure-nightly-build
+  if [ ${CI_PIPELINE_SOURCE} = "schedule" ] || [ ${CI_PIPELINE_SOURCE} = "web" ]; then
+      export ENABLE_NIGHTLY="--enable-nightly";
+  fi
+
+# basic steps for a job that compiles stuff
+# can be included in the before_script/script sections
+# via `*init-build-job`
+.build-init: &init-build-job
+  - *configure-ccache
+  - *configure-coredump
+  - *configure-nightly-build
+
+# simple bash command to retry a stage up to 3 times
+# with a 15-second delay (mainly to survive transient
+# network issues)
 .retry: &define-retry |
   retry() {
     local n=1
@@ -69,55 +120,93 @@ cache:
           echo "The command has failed after $n attempts." 1>&2
           exit 1
         fi
-      }
+    }
     done
   }
 
-.top-level-build: &top-level-build
+# basic before_script template for a compiling job
+.build-job:
+  before_script:
+    - *init-build-job
+
+# a top-level build runs the standard boot/configure/make
+# cycle with some sensible defaults
+.make-distcheck:
+  extends:
+    - .build-job
+  variables:
+    # default configure flags (can be overridden from dependents)
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python"
+    # target to actually run (distcheck is the most thorough)
+    MAKE_TARGET: "distcheck"
+    # set default python as python3
+    # TODO: this can be removed when all packages require python>=3
+    #       on their own
+    PYTHON: "python3"
+  needs: []
   script:
     - ./00boot
-    - ./configure --enable-doxygen --enable-swig
-    - make -j${CPU_COUNT} VERBOSE=1 distcheck
+    # we use xargs here in case CONFIGURE_FLAGS contains
+    # variables with spaces, etc etc
+    - xargs ./configure ${ENABLE_NIGHTLY} <<< ${CONFIGURE_FLAGS}
+    - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
   artifacts:
-    reports:
-      junit:
-        - "*/_build/*/test/python/junit*.xml"
+    # upload some files to debug failures
+    paths:
+      - config.log
+      - Makefile
+    when: on_failure
+
+# helper template for jobs running on macOS
+# (the 'macos' tag means that jobs only run on macOS runners)
+.macos:
+  tags:
+    - macos
 
 # -- build templates ----------------------------
 
-# -- rpm
-
-.yum-cache: &yum-cache
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .cache/yum
-
-.yum-update: &yum-update
-  yum-config-manager --disable htcondor 1>/dev/null && ${YUM} update
-
-.rpmbuild: &rpmbuild
-  <<: *yum-cache
-  image: igwn/base:el7-testing
+# jobs that build from the tarballs should not need
+# the git repository (this speeds things up and prevents
+# other issues)
+.build-from-tarball:
   variables:
     GIT_STRATEGY: none
+
+# -- rpm
+
+# disable the condor repo, we don't need it (most of the time)
+.yum-disable-htcondor-repo: &yum-disable-htcondor-repo
+  - yum-config-manager --disable htcondor
+
+# template for RPM packaging jobs
+.rpmbuild:
+  extends:
+    - .rhel:base
+    - .build-from-tarball
+  image: igwn/base:el7-testing
+  variables:
+    # parallelise the build (rpmbuild uses this variable by default)
     RPM_BUILD_NCPUS: ${CPU_COUNT}
+    # where to build things (not a standard variable name)
+    RPM_BUILD_TOPDIR: "${CI_PROJECT_DIR}/rpmbuild"
+  # before_script comes from .rhel:base
   script:
-    - PACKAGE=${CI_JOB_NAME%%:*}
+    - *init-build-job
+    - *yum-disable-htcondor-repo
     # install srpm dependencies
-    - *yum-update
-    - ${YUM} install lscsoft-packaging-tools
+    - yum install -y -q lscsoft-packaging-tools
     # install upstream packages
-    - if [ -d rpmbuild ]; then ${YUM} install rpmbuild/RPMS/x86_64/*.rpm; fi
+    - if [ -d rpmbuild ]; then yum install -y -q rpmbuild/RPMS/x86_64/*.rpm; fi
     # build src.rpm
+    - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
-    - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${TARBALL}
-    - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${PACKAGE}-*.src.rpm
+    - rpmbuild -ts --define "_topdir ${RPM_BUILD_TOPDIR}" ${TARBALL}
+    - SRPM=${RPM_BUILD_TOPDIR}/SRPMS/${PACKAGE}-*.src.rpm
     # install build dependencies
-    - yum-builddep ${YUM_OPTS} ${SRCRPM}
+    - yum-builddep -y -q ${SRPM}
     # build binary rpms and print details of what we got
-    - rpmbuild --rebuild --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${SRCRPM}
+    - rpmbuild --rebuild --noclean --define "_topdir ${RPM_BUILD_TOPDIR}" ${SRPM}
     # print package info
     - set +x
     - for rpmf in ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm; do
@@ -147,15 +236,15 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
-      - "rpmbuild/BUILD/*/config.log"
-      - "rpmbuild/BUILD/*/test-suite.log"
-      - "rpmbuild/BUILD/*/test/test-suite.log"
-      - "rpmbuild/BUILD/*/test/python/test-suite.log"
+      # build packages
       - "rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm"
       - "rpmbuild/RPMS/x86_64/lib${CI_JOB_NAME%%:*}-*.rpm"
       - "rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm"
+      # log files
+      - "rpmbuild/BUILD/**/config.log"
+      - "rpmbuild/BUILD/**/test-suite.log"
     reports:
-      junit: "rpmbuild/BUILD/*/test/python/junit*.xml"
+      junit: "rpmbuild/BUILD/**/*junit*.xml"
     when: always
   only:
     refs:
@@ -164,36 +253,32 @@ cache:
       - tags
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip rhel]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip rhel\]/
 
 # -- debian
 
-.apt-cache: &apt-cache
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .cache/apt
-
-.apt-update: &apt-update
-  mkdir -p "${CI_PROJECT_DIR}/.cache/apt/partial" &&
-  ${APT_GET} autoclean &&
-  ${APT_GET} update
-
-.debuild: &debbuild
-  <<: *apt-cache
+# template for debian packaging jobs
+.debuild:
+  extends:
+    - .debian:base
+    - .build-from-tarball
   image: igwn/base:buster
   variables:
+    # tell debhelper to parallelise the build
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
-    GIT_STRATEGY: none
+  # before_script: comes from .debian:base
   script:
+    - *init-build-job
     - PACKAGE=${CI_JOB_NAME%%:*}
-    # install debs from artifacts
-    - *apt-update
-    - ${APT_GET} install
+    # install build requirements
+    - apt-get install -y -q -q
           devscripts
           dpkg-dev
           lintian
-    - "ls *.deb &>/dev/null && { dpkg -i *.deb || { ${APT_GET} -f install; dpkg -i *.deb; } }"
+    # install upstream packages
+    - "ls *.deb &>/dev/null && { dpkg -i *.deb || { apt-get -y -f install; dpkg -i *.deb; } }"
     # create orig tarball
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -201,15 +286,16 @@ cache:
     - VERSION=$(basename $TARBALL | sed 's/[^-]*-\(.*\)\.tar\..*/\1/' | tr '-' '~')
     - cd ${CI_PROJECT_DIR}/
     - cp ${TARBALL} ${PACKAGE}_${VERSION}.orig.${SUFFIX}
-    # update changelog
+    # unpack tarball
     - export DEBFULLNAME="GitLab"
     - export DEBEMAIL="gitlab@git.ligo.org"
     - tar -xf ${TARBALL}
     - cd ${PACKAGE}-*/
+    # update changelog
     - dch -v ${VERSION}-1 -b 'Rebuilt automatically on git.ligo.org CI'
     # install build dependencies
     - mk-build-deps
-          --tool "${APT_GET} -o Debug::pkgProblemResolver=yes --no-install-recommends"
+          --tool "apt-get -y -q -o Debug::pkgProblemResolver=yes --no-install-recommends"
           --install
           --remove
     # build packages
@@ -227,17 +313,19 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
-      - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/config.log
-      - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/test-suite.log
-      - ${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/test-suite.log
-      - ${CI_JOB_NAME%%:*}*.changes
-      - ${CI_JOB_NAME%%:*}*.deb
-      - lib${CI_JOB_NAME%%:*}*.deb
-      - python*-${CI_JOB_NAME%%:*}*.deb
-      - ${CI_JOB_NAME%%:*}*.dsc
-      - ${CI_JOB_NAME%%:*}*.orig.*
+      # build packages
+      - "${CI_JOB_NAME%%:*}*.changes"
+      - "${CI_JOB_NAME%%:*}*.deb"
+      - "lib${CI_JOB_NAME%%:*}*.deb"
+      - "python*-${CI_JOB_NAME%%:*}*.deb"
+      - "${CI_JOB_NAME%%:*}*.dsc"
+      # log files
+      - "${CI_JOB_NAME%%:*}*/**/config.log"
+      - "${CI_JOB_NAME%%:*}*/**/test-suite.log"
+      # the orig tarball
+      - "${CI_JOB_NAME%%:*}*.orig.*"
     reports:
-      junit: "${CI_JOB_NAME%%:*}*/.pybuild/python*/build/test/python/junit*.xml"
+      junit: "${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
     when: always
   only:
     refs:
@@ -246,37 +334,59 @@ cache:
       - tags
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip debian]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip debian\]/
 
 # -- conda
 
-.conda-init: &conda-init |
-  # configure conda
-  mkdir -p $(dirname ${CONDA_PKGS_DIRS})
-  source /opt/conda/etc/profile.d/conda.sh
-  conda config --set always_yes yes
-  conda config --add channels conda-forge
-  retry conda update -n base conda setuptools
-  conda activate base
-  retry conda install -n base "conda-build!=3.18.10" conda-forge-pinning "conda-smithy>=3.7.5" conda-verify
-  conda info --all
+# initialise conda for 'conda build jobs'
+# note: this assumes that the base environment is writable,
+#       which is not the case by default for the shared
+#       macos runners at CIT, if you need a writable base env
+#       on those machines, install miniconda/miniforge yourself
+.conda-init: &conda-init
+  - *define-retry
+  # init conda
+  - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
+  - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
+  # configure conda options
+  - conda config --file ${CONDARC} --set always_yes yes
+  - conda config --file ${CONDARC} --add channels conda-forge
+  - conda config --file ${CONDARC} --set channel_priority strict
+  # update conda itself
+  - retry conda update -n base conda setuptools
+  # install build helpers
+  - retry conda install -n base "conda-build!=3.18.10" conda-forge-pinning "conda-smithy>=3.7.5" conda-verify
+  # print info
+  - conda activate base
+  - conda info --all
+  - conda config --show-sources
 
-.conda-build: &conda-build
+# template for jobs that use conda (in any context)
+.conda-job:
   image: igwn/base:conda
   variables:
-    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
-    CONDA_CONFIG: "linux_64_"
-    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
-    CONDA_PYTHON_VERSION: "3.8"
+    # where to write conda packages
+    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda-bld"
+    # dont clone the git repo
     GIT_STRATEGY: none
   before_script:
+    - *init-build-job
     - *define-retry
     - *conda-init
-    - conda config --set channel_priority strict
+
+# template for `conda build` jobs
+.conda-build:
+  extends:
+    - .conda-job
+  variables:
+    # stub of feedstock configuration file
+    CONDA_CONFIG: "linux_64_"
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
-    # render clobber YAML file to use our tarball
+    # render YAML file to use our tarball
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
     - SHA256=$(openssl dgst -r -sha256 $TARBALL | cut -d\  -f1)
     - tar -xf ${TARBALL} --wildcards ${PACKAGE}-*/conda/ --strip-components=1
@@ -289,10 +399,13 @@ cache:
     - cd ${PACKAGE}-feedstock
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
+    # if not a nightly or web-triggered pipeline, just build one python version
+    - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
+         CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
+      fi
     # build packages (preferring local packages over everything)
-    # note: we use a variable and `eval` to get around the
-    #       _pyversion string having spaces in it
-    - cmd="conda build
+    # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
+    - xargs conda build
           recipe/
           --dirty
           --error-overlinking
@@ -302,13 +415,7 @@ cache:
           --use-channeldata
           --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
-          ${CONDA_BUILD_ARGS}"
-    # if not a nightly or web-triggered pipeline, just build one python version
-    - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
-         cmd="${cmd} --python \"${CONDA_PYTHON_VERSION}.* *_cpython\"";
-      fi
-    # run the build
-    - echo $cmd && eval $cmd
+          <<< ${CONDA_BUILD_ARGS}
   after_script:
     # clean cache of old files
     - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
@@ -316,32 +423,23 @@ cache:
   artifacts:
     expire_in: 18h
     paths:
-      - "conda/bld/linux-64/${CI_JOB_NAME%%:*}-*.conda"
-      - "conda/bld/linux-64/${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda/bld/linux-64/lib${CI_JOB_NAME%%:*}-*.conda"
-      - "conda/bld/linux-64/lib${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.conda"
-      - "conda/bld/linux-64/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda/bld/broken/${CI_JOB_NAME%%:*}-*.conda"
-      - "conda/bld/broken/${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda/bld/broken/lib${CI_JOB_NAME%%:*}-*.conda"
-      - "conda/bld/broken/lib${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda/bld/broken/python-${CI_JOB_NAME%%:*}-*.conda"
-      - "conda/bld/broken/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/config.log"
-      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/test/test-suite.log"
-      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/test/python/test-suite.log"
-      - "conda/bld/${CI_JOB_NAME%%:*}-*/work/*/*/*/*/test-suite.log"
+      # built packages (matching this package only)
+      - "conda-bld/**/${CI_JOB_NAME%%:*}-*.conda"
+      - "conda-bld/**/${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda-bld/**/lib${CI_JOB_NAME%%:*}-*.conda"
+      - "conda-bld/**/lib${CI_JOB_NAME%%:*}-*.tar.bz2"
+      - "conda-bld/**/python-${CI_JOB_NAME%%:*}-*.conda"
+      - "conda-bld/**/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
+      # log files
+      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/config.log"
+      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/test-suite.log"
+      # the feedstock
       - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
     reports:
-      junit:
-        - "conda/bld/${CI_JOB_NAME%%:*}-*/work/_build*/test/python/junit*.xml"
-        - "conda/bld/${CI_JOB_NAME%%:*}-*/test_tmp/junit*.xml"
+      # conda-build deletes the _test_tmp directory for each
+      # package, so we write them into the project directory
+      junit: "*junit*.xml"
     when: always
-  cache:
-    key: $CI_JOB_NAME
-    paths:
-      - conda/pkgs
   only:
     refs:
       - pushes
@@ -349,285 +447,244 @@ cache:
       - tags
       - web
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip conda]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip conda\]/
 
-# -- linting ------------------------------------
+# -- tarballs -----------------------------------
+#
+# make tarballs for each subpackage
+#
 
-.lint:
-  stage: lint
+# job template for a subpackage tarball build;
+# to build a tarball for a subpackage just define
+# a job called `tarball:<subpackage>` that
+# `extends` this one (see `tarball:lal` below)
+.make-dist:
+  image: igwn/lalsuite-dev:el7
+  stage: tarballs
   needs: []
-  only:
-    variables:
-      - $CI_COMMIT_MESSAGE !~ /\[skip lint\]/
-
-lint:python:
   extends:
-    - .lint
-  image: python
-  before_script:
-    - python -m pip install
-          "flake8>=3.7.0"
-          "flake8-junit-report"
+    - .build-job
   script:
-    - python -m flake8 --output-file flake8.out
-  after_script:
-    - cat flake8.out
-    - python -m junit_conversor flake8.out junit.xml
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .cache/pip
-  artifacts:
-    expire_in: 1month
-    reports:
-      junit: junit.xml
-    when: always
-
-lint:coala:
-  extends:
-    - .lint
-  image: coala/base
-  before_script:
-    - pip install coala-json
-  script:
-    # run once to show output to console
-    - coala --ci || true
-    # run again to prepare JSON report for upload
-    - coala --ci --json -o output.json
-  after_script:
-    - coala-json --junit -f output.json -o junit.xml
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .cache/pip
-  artifacts:
-    expire_in: 1month
-    reports:
-      junit: junit.xml
-    when: always
-
-# -- documentation ------------------------------
-
-documentation:
-  image: igwn/lalsuite-dev:buster
-  stage: documentation
-  needs: []
-  script:
+    - pushd ${CI_JOB_NAME##*:}
     - ./00boot
-    - ./configure --enable-doxygen --prefix=${LAL_DIR}
-    - make -j${CPU_COUNT} install-html
-    - pushd ${LAL_DIR}/share/doc
-    - cp lalsuite/index.html index.html
-    - sed -i 's/..\/lal/lal/g' index.html
-    - popd
+    - ./configure ${ENABLE_NIGHTLY} --enable-swig
+    - make dist
   artifacts:
     expire_in: 18h
+    # store the tarballs
     paths:
-      - ${LAL_DIR}/share/doc
-  only:
-    refs:
-      - pushes
-      - web
-    variables:
-      - $CI_COMMIT_MESSAGE !~ /\[skip docs\]/
+      - "*/*.tar.*"
+    # there are no reports for tarball jobs
+    reports:
+      junit: []
 
-pages:
-  image: igwn/lalsuite-dev:buster
-  stage: deploy
+# make tarballs for _all_ packages
+tarballs:
+  extends:
+    - .make-dist
   script:
     - ./00boot
-    - ./configure --enable-doxygen --prefix=${LAL_DIR}
-    - make -j${CPU_COUNT} install-html
-    - cp -r ${LAL_DIR}/share/doc public/
-    - pushd public
-    - cp lalsuite/index.html index.html
-    - sed -i 's/..\/lal/lal/g' index.html
-    - popd
-    - cp coverage.html public/
-  needs:
-    - coverage
-  artifacts:
-    paths:
-      - public
-  only:
-    - master@lscsoft/lalsuite
-  except:
-    - pushes
-    - web
-
-# -- tarballs -----------------------------------
-
-# this job makes all of the source tarballs up-front using a top-level
-# make dist call
-#
-# to use one (any) of the tarballs in another job, just add "make-dist"
-# in `dependencies:`
-
-make-dist:
-  image: igwn/lalsuite-dev:el7
-  stage: .pre
-  script:
-    - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
+    - ./configure ${ENABLE_NIGHTLY} --enable-swig
     - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalpulsar lalinference lalapps; do
         pushd ${subdir};
         make dist;
         popd;
       done
-  artifacts:
-    expire_in: 18h
-    paths:
-      - "*/*.tar.*"
 
-# just make the lal tarball to release other jobs
-make-dist:lal:
+# make the tarball for LAL only
+# (this job will run much faster than the `tarballs` job
+#  so we use it to release the 'LAL' stage jobs as
+#  early as possible)
+tarball:lal:
   extends:
-    - make-dist
-  script:
-    - pushd lal
-    - ./00boot
-    - ./configure --enable-swig ${EXTRA_CONFIG_FLAGS}
-    - make dist
+    - .make-dist
 
 # -- lal ----------------------------------------
+#
+# build packages for LAL
+#
+
+.lal:
+  stage: LAL
+  needs:
+    - tarball:lal
 
 lal:rpm:
-  <<: *rpmbuild
-  stage: LAL
-  needs:
-    - make-dist:lal
+  extends:
+     - .rpmbuild
+     - .lal
 
 lal:deb:
-  <<: *debbuild
-  stage: LAL
-  needs:
-    - make-dist:lal
+  extends:
+    - .debuild
+    - .lal
 
+# build with conda using FFTW
 lal:conda:fftw:
-  <<: *conda-build
-  stage: LAL
-  needs:
-    - make-dist:lal
+  extends:
+    - .conda-build
+    - .lal
   variables:
-    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_64_fft_implfftw"
-    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
+# build with conda using Intel FFT (MKL)
 lal:conda:mkl:
-  <<: *conda-build
-  stage: LAL
-  needs:
-    - make-dist:lal
+  extends:
+    - .conda-build
+    - .lal
   variables:
-    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
     CONDA_CONFIG: "linux_64_fft_implmkl"
-    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
 
 # -- lalframe------------------------------------
+#
+# build packages for LALFrame
+#
+
+.lalframe:
+  stage: LALFrame
 
 lalframe:rpm:
-  <<: *rpmbuild
-  stage: LALFrame
+  extends:
+    - .rpmbuild
+    - .lalframe
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
 
 lalframe:deb:
-  <<: *debbuild
-  stage: LALFrame
+  extends:
+    - .debuild
+    - .lalframe
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
 
 lalframe:conda:
-  <<: *conda-build
-  stage: LALFrame
+  extends:
+    - .conda-build
+    - .lalframe
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
 
 # -- lalmetaio ----------------------------------
+#
+# build packages for LALMetaIO
+#
+
+.lalmetaio:
+  stage: LALMetaIO
 
 lalmetaio:rpm:
-  <<: *rpmbuild
-  stage: LALMetaIO
+  extends:
+    - .rpmbuild
+    - .lalmetaio
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
 
 lalmetaio:deb:
-  <<: *debbuild
-  stage: LALMetaIO
+  extends:
+    - .debuild
+    - .lalmetaio
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
 
 lalmetaio:conda:
-  <<: *conda-build
-  stage: LALMetaIO
+  extends:
+    - .conda-build
+    - .lalmetaio
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
 
 # -- lalsimulation ------------------------------
+#
+# build packages for LALSimulation
+#
+
+.lalsimulation:
+  stage: LALSimulation
 
 lalsimulation:rpm:
-  <<: *rpmbuild
-  stage: LALSimulation
+  extends:
+    - .rpmbuild
+    - .lalsimulation
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
 
 lalsimulation:deb:
-  <<: *debbuild
-  stage: LALSimulation
+  extends:
+    - .debuild
+    - .lalsimulation
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
 
 lalsimulation:conda:
-  <<: *conda-build
-  stage: LALSimulation
+  extends:
+    - .conda-build
+    - .lalsimulation
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
 
 # -- lalburst -----------------------------------
+#
+# build packages for LALBurst
+#
+
+.lalburst:
+  stage: LALBurst
 
 lalburst:rpm:
-  <<: *rpmbuild
-  stage: LALBurst
+  extends:
+    - .rpmbuild
+    - .lalburst
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
     - lalmetaio:rpm
     - lalsimulation:rpm
 
 lalburst:deb:
-  <<: *debbuild
-  stage: LALBurst
+  extends:
+    - .debuild
+    - .lalburst
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
     - lalmetaio:deb
     - lalsimulation:deb
 
 lalburst:conda:
-  <<: *conda-build
-  stage: LALBurst
+  extends:
+    - .conda-build
+    - .lalburst
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
     - lalmetaio:conda
     - lalsimulation:conda
 
 # -- lalinspiral --------------------------------
+#
+# build packages for LALInspiral
+#
+
+.lalinspiral:
+  stage: LALInspiral
 
 lalinspiral:rpm:
-  <<: *rpmbuild
-  stage: LALInspiral
+  extends:
+    - .rpmbuild
+    - .lalinspiral
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
     - lalframe:rpm
     - lalmetaio:rpm
@@ -635,10 +692,11 @@ lalinspiral:rpm:
     - lalburst:rpm
 
 lalinspiral:deb:
-  <<: *debbuild
-  stage: LALInspiral
+  extends:
+    - .debuild
+    - .lalinspiral
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
     - lalframe:deb
     - lalmetaio:deb
@@ -646,10 +704,11 @@ lalinspiral:deb:
     - lalburst:deb
 
 lalinspiral:conda:
-  <<: *conda-build
-  stage: LALInspiral
+  extends:
+    - .conda-build
+    - .lalinspiral
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
@@ -657,35 +716,51 @@ lalinspiral:conda:
     - lalburst:conda
 
 # -- lalpulsar ----------------------------------
+#
+# build packages for LALPulsar
+#
+
+.lalpulsar:
+  stage: LALPulsar
 
 lalpulsar:rpm:
-  <<: *rpmbuild
-  stage: LALPulsar
+  extends:
+    - .rpmbuild
+    - .lalpulsar
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
 
 lalpulsar:deb:
-  <<: *debbuild
-  stage: LALPulsar
+  extends:
+    - .debuild
+    - .lalpulsar
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
 
 lalpulsar:conda:
-  <<: *conda-build
-  stage: LALPulsar
+  extends:
+    - .conda-build
+    - .lalpulsar
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
 
 # -- lalinference -------------------------------
+#
+# build packages for LALInference
+#
+
+.lalinference:
+  stage: LALInference
 
 lalinference:rpm:
-  <<: *rpmbuild
-  stage: LALInference
+  extends:
+    - .rpmbuild
+    - .lalinference
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
     - lalframe:rpm
     - lalmetaio:rpm
@@ -695,10 +770,11 @@ lalinference:rpm:
     - lalinspiral:rpm
 
 lalinference:deb:
-  <<: *debbuild
-  stage: LALInference
+  extends:
+    - .debuild
+    - .lalinference
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
     - lalframe:deb
     - lalmetaio:deb
@@ -708,10 +784,11 @@ lalinference:deb:
     - lalinspiral:deb
 
 lalinference:conda:
-  <<: *conda-build
-  stage: LALInference
+  extends:
+    - .conda-build
+    - .lalinference
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
@@ -721,12 +798,19 @@ lalinference:conda:
     - lalinspiral:conda
 
 # -- lalapps ------------------------------------
+#
+# build packages for LALApps
+#
+
+.lalapps:
+  stage: LALApps
 
 lalapps:rpm:
-  <<: *rpmbuild
-  stage: LALApps
+  extends:
+    - .rpmbuild
+    - .lalapps
   needs:
-    - make-dist
+    - tarballs
     - lal:rpm
     - lalframe:rpm
     - lalmetaio:rpm
@@ -737,10 +821,11 @@ lalapps:rpm:
     - lalinference:rpm
 
 lalapps:deb:
-  <<: *debbuild
-  stage: LALApps
+  extends:
+    - .debuild
+    - .lalapps
   needs:
-    - make-dist
+    - tarballs
     - lal:deb
     - lalframe:deb
     - lalmetaio:deb
@@ -751,10 +836,11 @@ lalapps:deb:
     - lalinference:deb
 
 lalapps:conda:
-  <<: *conda-build
-  stage: LALApps
+  extends:
+    - .conda-build
+    - .lalapps
   needs:
-    - make-dist
+    - tarballs
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
@@ -764,29 +850,163 @@ lalapps:conda:
     - lalinspiral:conda
     - lalinference:conda
   variables:
-    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda/bld"
-    CONDA_CONFIG: "linux_64_python${CONDA_PYTHON_VERSION}.____cpython"
-    CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/conda/pkgs"
+    CONDA_CONFIG: "linux_64_python${LALSUITE_PYTHON_VERSION}.____cpython"
+
+# -- wheels -------------------------------------
+#
+# build python wheels
+#
+
+# job template for wheel builds
+.wheel:
+  stage: wheels
+  needs: []
+  extends:
+    - .build-job
+  only:
+    refs:
+      - /^lalsuite-v.*$/
+      - schedules
+      - web
+    variables:
+      # allow these jobs to be skipped by including
+      # `[skip wheels]` in the commit message
+      - $CI_COMMIT_MESSAGE !~ /\[skip wheels\]/
+  artifacts:
+    expire_in: 18h
+    paths:
+      - wheelhouse
+
+# do some simple sanity checks in a virtualenv
+.wheel-test: &wheel-test
+  - ${PYTHON} -m venv test
+  - source test/bin/activate
+  - python -m pip install --upgrade pip
+  - python -m pip install wheelhouse/*
+  - |
+    python3 - <<EOF
+    import lal
+    import lalframe
+    import lalmetaio
+    import lalsimulation
+    series = lal.CreateREAL8FrequencySeries('psd', 0, 0, 1, None, 4096)
+    lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)
+    EOF
+  - lalapps_version
+
+# Build receipe for standalone wheels on Linux
+.wheel:manylinux:
+  extends:
+    - .wheel
+  script:
+    - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
+    # Build wheel
+    - ./00boot
+    - ./configure
+          ${ENABLE_NIGHTLY}
+          --disable-doxygen
+          --disable-swig-octave
+          --enable-mpi
+          --enable-python
+          --enable-swig-python
+          PYTHON=${PYTHON}
+    - make -j${CPU_COUNT} wheel
+    # Bundle and fix up dependent shared libraries
+    - auditwheel repair wheel/*.whl
+    # Test: do some simple sanity checks in a virtualenv
+    - *wheel-test
+
+# Build receipe for standalone wheels on macOS
+.wheel:macos:
+  extends:
+    - .wheel
+  tags:
+    - macos_sierra
+  script:
+    - PYTHON=$(which python$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/'))
+    # Enter virtualenv so that we have a controlled version of Numpy
+    - ${PYTHON} -m venv env
+    - source env/bin/activate
+    - python -m pip install
+          git+https://github.com/lpsinger/delocate@fix-duplicate-libs
+          oldest-supported-numpy
+    # Build wheel
+    - ./00boot
+    - ./configure
+          ${ENABLE_NIGHTLY}
+          --disable-doxygen
+          --disable-swig-octave
+          --enable-mpi
+          --enable-python
+          --enable-swig-python
+          PYTHON=$(which python)
+          LDFLAGS=-Wl,-headerpad_max_install_names
+    - make -j${CPU_COUNT} wheel
+    # Bundle and fix up dependent shared libraries
+    - delocate-wheel -v -w wheelhouse wheel/*.whl
+    # Test: do some simple sanity checks in a virtualenv
+    - *wheel-test
+  only:
+    # don't run macos wheel jobs from manually-triggered pipelines
+    refs:
+      - /^lalsuite-v.*$/
+      - schedules
+
+# wheel build using the manylinux2014 container
+.wheel:manylinux2014:
+  extends:
+    - .wheel:manylinux
+  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2014_x86_64
+
+# Build wheels for all supported platforms
+wheel:cp36-cp36m-manylinux2014:
+  extends:
+    - .wheel:manylinux2014
+wheel:cp37-cp37m-manylinux2014:
+  extends:
+    - .wheel:manylinux2014
+wheel:cp38-cp38-manylinux2014:
+  extends:
+    - .wheel:manylinux2014
+wheel:cp39-cp39-manylinux2014:
+ extends:
+    - .wheel:manylinux2014
+wheel:cp36-cp36m-macosx:
+  extends:
+    - .wheel:macos
+wheel:cp37-cp37m-macosx:
+  extends:
+    - .wheel:macos
+wheel:cp38-cp38-macosx:
+  extends:
+    - .wheel:macos
+wheel:cp39-cp39-macosx:
+ extends:
+    - .wheel:macos
 
 # -- integration tests --------------------------
+#
+# End-to-end integration tests
+#
 
-.integration-tests: &integration-tests
+.integration-tests:
   stage: integration tests
   only:
     variables:
+      # allow these jobs to be skipped by including
+      # `[skip integration]` in the commit message
       - $CI_COMMIT_MESSAGE !~ /\[skip integration\]/
 
 lalinference_testjob:
-  <<: *yum-cache
   extends:
     - .integration-tests
   image: igwn/base:el7-testing
   before_script:
-    - *yum-update
-    - ${YUM} install
+    - *yum-disable-htcondor-repo
+    - yum -y -q install
           git
           git-lfs
-    - ${YUM} install rpmbuild/RPMS/x86_64/*.rpm
+    - yum -y -q install rpmbuild/RPMS/x86_64/*.rpm
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
@@ -812,8 +1032,8 @@ lalinference_testjob:
 top-level:
   image: igwn/lalsuite-dev:el7-testing
   needs: []
-  <<: *top-level-build
   extends:
+    - .make-distcheck
     - .integration-tests
   only:
     refs:
@@ -821,25 +1041,401 @@ top-level:
       - schedules
       - web
 
-# Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap.
-coverage:
+# -- compiler tests -----------------------------
+#
+# Top-level build tests for various non-default
+# compilers
+#
+
+.compiler-test:
+  stage: compiler tests
+  needs: []
   extends:
-    - .integration-tests
+    - .make-distcheck
+  only:
+    refs:
+      - schedules
+      - web
+    variables:
+      # allow these jobs to be skipped by including
+      # `[skip compiler]` in the commit message
+      - $CI_COMMIT_MESSAGE !~ /\[skip compiler\]/
+
+clang:10:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-clang:10
+  variables:
+    CC: clang-10
+    CXX: clang++-10
+
+clang:11:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-clang:11
+  variables:
+    CC: clang-11
+    CXX: clang++-11
+
+clang:dev:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-clang:dev
+  variables:
+    CC: clang
+    CXX: clang++
+
+.compiler-test:gcc:
+  extends:
+    - .compiler-test
+  variables:
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave"
+
+gcc:7:
+  extends:
+    - .compiler-test:gcc
+  image: igwn/lalsuite-dev-gcc:7
+
+gcc:8:
+  extends:
+    - .compiler-test:gcc
+  image: igwn/lalsuite-dev-gcc:8
+
+gcc:9:
+  extends:
+    - .compiler-test:gcc
+  image: igwn/lalsuite-dev-gcc:9
+
+gcc:10:
+  extends:
+    - .compiler-test:gcc
+  image: igwn/lalsuite-dev-gcc:10
+  allow_failure: true
+
+cuda:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-cuda:el7
+  script:
+    - ./00boot
+    - ./configure --with-cuda=/usr/local/cuda
+    - make -j${CPU_COUNT} dist
+    - make -j${CPU_COUNT}
+    # just compile test suite; some tests require a CUDA device to run
+    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
+    - make -j${CPU_COUNT} install
+  artifacts:
+    # we don't run the test suite, so there are no reports
+    reports:
+      junit: []
+
+# -- upgrade tests ------------------------------
+#
+# Check that users can cleanly update/upgrade
+# to the latest packages on their platform
+#
+
+.upgrade-test:
+  stage: upgrade tests
+  artifacts: {}
+
+upgrade:rpm:el7:
+  extends:
+    - .rpmbuild
+    - .upgrade-test
+  needs:
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalpulsar:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+    - lalapps:rpm
+  script:
+    - *yum-disable-htcondor-repo
+    # install latest release
+    - yum -y -q install lalapps
+    # install new packages
+    - yum -y -q install rpmbuild/RPMS/x86_64/*.rpm
+
+upgrade:debian:buster:
+  extends:
+    - .debuild
+    - .upgrade-test
+  needs:
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalpulsar:deb
+    - lalinspiral:deb
+    - lalinference:deb
+    - lalapps:deb
+  script:
+    - apt-get -y -q -q update
+    # install latest lalsuite release
+    - apt-get -y -q install lscsoft-lalsuite
+    # setup local apt repository
+    - apt-get -y -q install local-apt-repository
+    - mkdir /srv/local-apt-repository
+    - cp *.deb /srv/local-apt-repository
+    - /usr/lib/local-apt-repository/rebuild
+    # install new packages
+    - apt-get -y -q update
+    - apt-get -y -q dist-upgrade
+
+upgrade:conda:linux:
+  extends:
+    - .conda-build
+    - .upgrade-test
+  needs:
+    - lal:conda:fftw
+    - lalframe:conda
+    - lalmetaio:conda
+    - lalsimulation:conda
+    - lalburst:conda
+    - lalpulsar:conda
+    - lalinspiral:conda
+    - lalinference:conda
+    - lalapps:conda
+  script:
+    # properly index the newly built packages
+    - conda index ${CONDA_BLD_PATH}
+    # install latest release
+    - conda create -n upgrade-test
+          lal
+          lalframe
+          lalmetaio
+          lalsimulation
+          lalburst
+          lalinspiral
+          lalpulsar
+          lalinference
+          lalapps
+    # install new packages
+    - conda update -n upgrade-test --use-local
+          lal
+          lalframe
+          lalmetaio
+          lalsimulation
+          lalburst
+          lalinspiral
+          lalpulsar
+          lalinference
+          lalapps
+
+# -- platform tests -----------------------------
+#
+# Top-level build tests for non-standard platforms
+#
+
+.platform-test:
+  stage: platform tests
+  extends:
+    - .make-distcheck
+  only:
+    refs:
+      - schedules
+      - web
+    variables:
+      # allow these jobs to be skipped by including
+      # `[skip platform]` in the commit message
+      - $CI_COMMIT_MESSAGE !~ /\[skip platform\]/
+
+platform:debian:stretch:
+  extends:
+    - .platform-test
+  image: igwn/lalsuite-dev:stretch-proposed
+
+.platform-test:conda:
+  extends:
+    - .platform-test
+  variables:
+    CONFIGURE_FLAGS: "--disable-swig-octave --enable-python --enable-swig-python"
+    ENVIRONMENT_FILE: "conda/environment.yml"
+  before_script:
+    # configure conda
+    - source ${CONDA_ROOT:-/opt/conda}/etc/profile.d/conda.sh
+    - conda config --file ${CONDARC} --set always_yes yes
+    - conda config --file ${CONDARC} --add channels conda-forge
+    - conda info --all
+    - conda config --show-sources
+    # install the dev environment for the default python version
+    - sed -i.tmp "s/- python$/- python ${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
+    - conda env create
+          --file ${ENVIRONMENT_FILE}
+          --name lalsuite-platform-tests
+          --quiet
+    - conda list --name lalsuite-platform-tests
+    - conda activate lalsuite-platform-tests
+    # don't use NDEBUG
+    - export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
+    - export CONFIGURE_FLAGS="${CONFIGURE_FLAGS} CPPFLAGS='${CPPFLAGS}'"
+    # manually install packages that have circular dependencies upon lal
+    # then forcibly remove lalsuite
+    - conda install --yes --quiet --name lalsuite-platform-tests
+          python-ligo-lw
+    - conda uninstall --yes --quiet --name lalsuite-platform-tests --force-remove
+          "liblal*"
+          "lal*"
+          "python-lal*"
+
+platform:conda:linux:
+  image: igwn/base:conda
+  extends:
+    - .platform-test:conda
+
+platform:conda:macos:
+  extends:
+    - .platform-test:conda
+    - .macos
+
+# -- docker -------------------------------------
+#
+# Build docker images that include the
+# latest build outputs
+#
+
+# job template for docker builds
+.docker:
+  variables:
+    DOCKER_DRIVER: overlay
+  stage: docker
+  only:
+    variables:
+      # allow these jobs to be skipped by including
+      # `[skip docker]` in the commit message
+      - $CI_COMMIT_MESSAGE !~ /\[skip docker\]/
+  script:
+    # build container and push to registry
+    - IMAGE_TAG=${CI_JOB_NAME##*:}
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker build --pull -t ${IMAGE_NAME}:${IMAGE_TAG} --file ${DOCKER_FILE} .
+    - docker push ${IMAGE_NAME}
+
+.docker:nightly:
+  extends:
+    - .docker
+  variables:
+    IMAGE_NAME: "$CI_REGISTRY_IMAGE/nightly"
+  only:
+    # only run nightly docker builds nightly...
+    refs:
+      - schedules
+
+.docker:tags:
+  extends:
+    - .docker
+  variables:
+    IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_TAG"
+  only:
+    # only run tagged docker builds for git tags
+    refs:
+      - /^lalsuite-v.*$/
+
+# template for RHEL docker builds
+.docker:el:
+  extends:
+    - .docker
+  variables:
+    DOCKER_FILE: ".gitlab-ci-el7.Dockerfile"
+  before_script:
+    - set -x
+    # add RPMs to directory to pass to docker
+    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
+    - rm -rf rpmbuild*
+  needs:
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalpulsar:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+    - lalapps:rpm
+
+# template for Debian docker builds
+.docker:debian:
+  extends:
+    - .docker
+  variables:
+    DOCKER_FILE: ".gitlab-ci-buster.Dockerfile"
+  before_script:
+    - set -x
+    # add deb packages to directory to pass to docker
+    - mkdir debs && mv *.deb debs
+    - rm *.changes *.dsc *.orig.*
+  needs:
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalpulsar:deb
+    - lalinspiral:deb
+    - lalinference:deb
+    - lalapps:deb
+
+# build a nightly container from the RPMs
+docker:nightly:el7:
+  extends:
+    - .docker:el
+    - .docker:nightly
+
+# build a tagged container from the rpms
+docker:tags:el7:
+  extends:
+    - .docker:el
+    - .docker:tags
+
+# build a nightly container for Debian buster
+docker:nightly:buster:
+  extends:
+    - .docker:debian
+    - .docker:nightly
+
+# build a tagged container for Debian buster
+docker:tags:buster:
+  extends:
+    - .docker:debian
+    - .docker:tags
+
+# -- coverage ---------------------------------
+#
+# Measure test coverage
+#
+
+# Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap
+coverage:
+  stage: coverage
   image: igwn/lalsuite-dev-gcc:8
   needs: []
-  script:
+  before_script:
+    - *init-build-job
     - apt-get -y install --no-install-recommends python3-pip
     - python3 -m pip install coverage gcovr pycobertura
+  script:
     - ./00boot
     # Configure for C code coverage measurement with gcc
-    - ./configure --enable-swig-python CFLAGS="--coverage -fprofile-abs-path" PYTHON=python3
+    - ./configure
+          ${ENABLE_NIGHTLY}
+          --enable-swig-python
+          CFLAGS="--coverage -fprofile-abs-path"
+          PYTHON=python3
     # Run unit tests with Python scripts instrumented by coverage.py
-    - make -j${CPU_COUNT} check COVERAGE_FILE="$(pwd)/.coverage" PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+    - make -j${CPU_COUNT} check
+          COVERAGE_FILE="$(pwd)/.coverage"
+          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+  after_script:
     # Output C coverage data in Cobertura format
     - gcovr -j${CPU_COUNT} --exclude-directories test --xml c-coverage.xml
     # Combine and output Python coverage data in Cobertura format
-    - coverage combine
-    - coverage xml -o py-coverage.xml
+    - python3 -m coverage combine
+    - python3 -m coverage xml -o py-coverage.xml
     # Merge coverage reports. They're just XML, after all.
     - |
       python3 - <<EOF
@@ -885,6 +1481,7 @@ coverage:
   artifacts:
     paths:
       - coverage.html
+      - "*.xml"
     reports:
       cobertura: coverage.xml
   only:
@@ -892,472 +1489,148 @@ coverage:
       - pushes
       - schedules
       - web
+    variables:
+      # allow these jobs to be skipped by including
+      # `[skip coverage]` in the commit message
+      - $CI_COMMIT_MESSAGE !~ /\[skip coverage\]/
 
-# -- docker -------------------------------------
+# -- linting ------------------------------------
+#
+# Run some quality checks on the source code
+#
 
-# build a nightly container from the RPMs
-docker:nightly:el7:
-  stage: docker
-  before_script: []
-  script:
-    - set -x  # print commands as they are run (helps debugging)
-    # add RPMs to directory to pass to docker
-    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
-    - rm -rf rpmbuild*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:el7 --file .gitlab-ci-el7.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/nightly:el7
-  needs:
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalpulsar:rpm
-    - lalinspiral:rpm
-    - lalinference:rpm
-    - lalapps:rpm
-  only:
-    - schedules
-
-# build a tagged container from the rpms
-docker:tags:el7:
-  stage: docker
-  before_script: []
-  script:
-    - set -x  # print commands as they are run (helps debugging)
-    # add RPMs to directory to pass to docker
-    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
-    - rm -rf rpmbuild*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7 --file .gitlab-ci-el7.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:el7
-  needs:
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalpulsar:rpm
-    - lalinspiral:rpm
-    - lalinference:rpm
-    - lalapps:rpm
-  only:
-    - /^lalsuite-v.*$/
-
-# build a nightly container from the debian packages
-docker:nightly:buster:
-  stage: docker
-  before_script: []
-  script:
-    - set -x  # print commands as they are run (helps debugging)
-    # add deb packages to directory to pass to docker
-    - mkdir debs && mv *.deb debs
-    - rm *.changes *.dsc *.orig.*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/nightly:buster --file .gitlab-ci-buster.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/nightly:buster
-  needs:
-    - lal:deb
-    - lalframe:deb
-    - lalmetaio:deb
-    - lalsimulation:deb
-    - lalburst:deb
-    - lalpulsar:deb
-    - lalinspiral:deb
-    - lalinference:deb
-    - lalapps:deb
-  only:
-    - schedules
-
-# build a tagged container from the debian packages
-docker:tags:buster:
-  stage: docker
-  before_script: []
-  script:
-    - set -x  # print commands as they are run (helps debugging)
-    # add deb packages to directory to pass to docker
-    - mkdir debs && mv *.deb debs
-    - rm *.changes *.dsc *.orig.*
-    # build container and push to registry
-    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker build --pull -t $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:buster --file .gitlab-ci-buster.Dockerfile .
-    - docker push $CI_REGISTRY_IMAGE/$CI_COMMIT_TAG:buster
-  needs:
-    - lal:deb
-    - lalframe:deb
-    - lalmetaio:deb
-    - lalsimulation:deb
-    - lalburst:deb
-    - lalpulsar:deb
-    - lalinspiral:deb
-    - lalinference:deb
-    - lalapps:deb
-  only:
-    - /^lalsuite-v.*$/
-
-# -- nightly ------------------------------------
-
-# -- compilers
-
-.clang-build: &clang-build
-  stage: compiler tests
+# job template for lint jobs
+.lint:
+  stage: lint
   needs: []
-  script:
-    - ./00boot
-    - CC=${CLANG} CXX=${CLANGXX} ./configure --enable-swig --enable-doxygen
-    - make -j${CPU_COUNT} VERBOSE=1 distcheck
   only:
-    - schedules
-    - web
+    variables:
+      # allow these jobs to be skipped by including
+      # `[skip lint]` in the commit message
+      - $CI_COMMIT_MESSAGE !~ /\[skip lint\]/
+
+lint:python:
+  extends:
+    - .python:flake8
+    - .lint
+  # use everything we get from .python:flake8
+
+lint:coala:
+  extends:
+    - .lint
+  image: coala/base
+  script:
+    # run first for codeclimate (using --json)
+    - coala --ci --json -o coala.json || true
+    # run again to get plaintxt output for the user
+    # (and the exit code)
+    - coala --ci
+  after_script:
+    - |
+      python3 - <<EOF
+      import json
+      import sys
+      SEVERITY = ['info', 'minor', 'major', 'critical', 'blocker']
+      with open('coala.json', 'r') as file:
+          indata = json.load(file)
+      outdata = []
+      for key in indata['results']:
+          for e in indata['results'][key]:
+              start = e['affected_code'][0]['start']
+              end = e['affected_code'][0]['end']
+              outdata.append({
+                  'type': 'issue',
+                  'check_name': e['origin'],
+                  'content': e['additional_info'] or None,
+                  'description': e['message'],
+                  'fingerprint': e['id'],
+                  'severity': SEVERITY[e['severity']],
+                  'location': {
+                      'path': start['file'],
+                      'begin': start['line'],
+                      'end': end['line'],
+                  },
+              })
+      with open('codequality.json', 'w') as file:
+          json.dump(outdata, file, separators=(',', ':'))
+      EOF
   artifacts:
+    paths:
+      - coala.json
+      - codequality.json
     reports:
-      junit: "*/test/python/junit*.xml"
+      codequality: codequality.json
+    when: always
 
-clang:10:
-  <<: *clang-build
-  image: igwn/lalsuite-dev-clang:10
-  variables:
-    CLANG: clang-10
-    CLANGXX: clang++-10
+# -- documentation ------------------------------
+#
+# Generate the documentation
+#
 
-clang:11:
-  <<: *clang-build
-  image: igwn/lalsuite-dev-clang:11
-  variables:
-    CLANG: clang-11
-    CLANGXX: clang++-11
-
-clang:dev:
-  <<: *clang-build
-  image: igwn/lalsuite-dev-clang:dev
-  variables:
-    CLANG: clang
-    CLANGXX: clang++
-
-.gcc-build: &gcc-build
-  stage: compiler tests
+documentation:
+  image: igwn/lalsuite-dev:buster
+  stage: documentation
   needs: []
   script:
     - ./00boot
-    - ./configure --enable-doxygen
-    - make -j${CPU_COUNT} VERBOSE=1 distcheck
-  only:
-    - schedules
-    - web
+    - ./configure --enable-doxygen --prefix=$(pwd)/_inst
+    - make -j${CPU_COUNT} install-html
+    - mv _inst/share/doc html
+    - cd html
+    - cp lalsuite/index.html index.html
+    - sed -i 's/..\/lal/lal/g' index.html
   artifacts:
-    reports:
-      junit: "*/test/python/junit*.xml"
-
-gcc:7:
-  <<: *gcc-build
-  image: igwn/lalsuite-dev-gcc:7
-
-gcc:8:
-  <<: *gcc-build
-  image: igwn/lalsuite-dev-gcc:8
-
-gcc:9:
-  <<: *gcc-build
-  image: igwn/lalsuite-dev-gcc:9
-
-gcc:10:
-  <<: *gcc-build
-  image: igwn/lalsuite-dev-gcc:10
-  allow_failure: true
-
-cuda:
-  image: igwn/lalsuite-dev-cuda:el7
-  stage: compiler tests
-  needs: []
-  script:
-    - ./00boot
-    - ./configure --with-cuda=/usr/local/cuda
-    - make -j${CPU_COUNT} dist
-    - make -j${CPU_COUNT}
-    # just compile test suite; some tests require a CUDA device to run
-    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
-    - make -j${CPU_COUNT} install
-  only:
-    - schedules
-    - web
-  artifacts:
-    reports:
-      junit: "*/test/python/junit*.xml"
-
-# -- rpm
-
-.upgrade-test: &upgrade-test
-  stage: upgrade tests
-  artifacts: {}
-
-upgrade:rpm:el7:
-  <<: *rpmbuild
-  <<: *upgrade-test
-  needs:
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalpulsar:rpm
-    - lalinspiral:rpm
-    - lalinference:rpm
-    - lalapps:rpm
-  script:
-    - *yum-update
-    # install latest release
-    - ${YUM} install lalapps
-    # install new packages
-    - ${YUM} install rpmbuild/RPMS/x86_64/*.rpm
-
-# -- debian
-
-platform:debian:stretch:
-  image: igwn/lalsuite-dev:stretch-proposed
-  stage: platform tests
-  needs: []
-  <<: *top-level-build
-  only:
-    - schedules
-    - web
-
-upgrade:debian:buster:
-  <<: *debbuild
-  <<: *upgrade-test
-  needs:
-    - lal:deb
-    - lalframe:deb
-    - lalmetaio:deb
-    - lalsimulation:deb
-    - lalburst:deb
-    - lalpulsar:deb
-    - lalinspiral:deb
-    - lalinference:deb
-    - lalapps:deb
-  script:
-    - *apt-update
-    # install latest lalsuite release
-    - ${APT_GET} install lscsoft-lalsuite
-    # setup local apt repository
-    - ${APT_GET} install local-apt-repository
-    - mkdir /srv/local-apt-repository
-    - cp *.deb /srv/local-apt-repository
-    - /usr/lib/local-apt-repository/rebuild
-    # install new packages
-    - ${APT_GET} update
-    - ${APT_GET} dist-upgrade
-
-# -- macOS
-
-platform:macos:highsierra:
-  tags:
-    - macos_highsierra
-  stage: platform tests
-  script:
-    - ./00boot
-    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
-    # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure
-    - make -j${CPU_COUNT}
-    - make -j${CPU_COUNT} VERBOSE=1 check
-  needs: []
-  only:
-    - schedules
-    - web
-  artifacts:
-    reports:
-      junit: "*/test/python/junit*.xml"
-
-platform:macos:sierra:
-  tags:
-    - macos_sierra
-  stage: platform tests
-  script:
-    - ./00boot
-    # FIXME: disable building of Octave SWIG bindings until SWIG-4.0.0
-    # is available
-    - PYTHON=/opt/local/bin/python2.7 ./configure
-    - make -j${CPU_COUNT}
-    - make -j${CPU_COUNT} VERBOSE=1 check
-  needs: []
-  only:
-    - schedules
-    - web
-  artifacts:
-    reports:
-      junit: "*/test/python/junit*.xml"
-
-# -- conda
-
-platform:conda:linux:
-  image: igwn/base:conda
-  stage: platform tests
-  before_script:
-    - source /opt/conda/etc/profile.d/conda.sh
-    - conda env create
-          --file conda/environment-lal-development-py37.yml
-          --name lalsuite-platform-tests
-          --quiet
-    - conda info --all
-    - conda list --name lalsuite-platform-tests
-  script:
-    - conda activate lalsuite-platform-tests
-    - ./00boot
-    - ./configure
-          --disable-swig-octave
-    - make -j${CPU_COUNT}
-    - make -j${CPU_COUNT} VERBOSE=1 check
-  needs: []
-  only:
-    - schedules
-    - web
-  artifacts:
-    reports:
-      junit: "*/test/python/junit*.xml"
-  allow_failure: true
-
-upgrade:conda:linux:
-  <<: *conda-build
-  <<: *upgrade-test
-  needs:
-    - lal:conda:fftw
-    - lalframe:conda
-    - lalmetaio:conda
-    - lalsimulation:conda
-    - lalburst:conda
-    - lalpulsar:conda
-    - lalinspiral:conda
-    - lalinference:conda
-    - lalapps:conda
-  script:
-    # properly index the newly built packages
-    - conda index ${CONDA_BLD_PATH}
-    # install latest release
-    - conda create -n upgrade-test
-          lal
-          lalframe
-          lalmetaio
-          lalsimulation
-          lalburst
-          lalinspiral
-          lalpulsar
-          lalinference
-          lalapps
-    # install new packages
-    - conda update -n upgrade-test --use-local
-          lal
-          lalframe
-          lalmetaio
-          lalsimulation
-          lalburst
-          lalinspiral
-          lalpulsar
-          lalinference
-          lalapps
-
-# -- wheels -------------------------------------
-
-# Build receipe for standalone wheels on Linux
-.wheel:manylinux: &wheel-manylinux
-  # This container is derived from the official manylinux image provided by
-  # python.org (see PEP 513 and PEP 571), and includes all of the LALSuite
-  # build-dependencies.
-  stage: wheels
-  script:
-    - PYPREFIX=/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')
-    # Build wheel
-    - ./00boot
-    - ./configure PYTHON=${PYPREFIX}/bin/python --enable-mpi ${EXTRA_CONFIG_FLAGS}
-    - make -j${CPU_COUNT} wheel
-    # Bundle and fix up dependent shared libraries
-    - auditwheel repair wheel/*.whl
-    # Test: do some simple sanity checks in a virtualenv
-    - ${PYPREFIX}/bin/python -m venv test
-    - source test/bin/activate
-    - pip install --upgrade pip
-    - pip install wheelhouse/*
-    - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
-  needs: []
+    expire_in: 18h
+    paths:
+      - html
   only:
     refs:
-      - /^lalsuite-v.*$/
-      - schedules
+      - pushes
       - web
     variables:
-      - $CI_COMMIT_MESSAGE !~ /\[skip wheels\]/
-  artifacts:
-    expire_in: 18h
-    paths:
-      - wheelhouse
+      # allow these jobs to be skipped by including
+      # `[skip docs]` in the commit message
+      - $CI_COMMIT_MESSAGE !~ /\[skip docs\]/
 
-# Build receipe for standalone wheels on macOS
-.wheel:macos: &wheel-macos
-  tags:
-    - macos_sierra
-  stage: wheels
-  script:
-    - PYVERS=$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/')
-    # Enter virtualenv so that we have a controlled version of Numpy
-    - python${PYVERS} -m venv env
-    - source env/bin/activate
-    - python -m pip install
-          git+https://github.com/lpsinger/delocate@fix-duplicate-libs
-          oldest-supported-numpy
-    # Build wheel
-    - ./00boot
-    - ./configure PYTHON=$(which python${PYVERS}) --enable-mpi --enable-swig-python ${EXTRA_CONFIG_FLAGS} LDFLAGS=-Wl,-headerpad_max_install_names
-    - make -j${CPU_COUNT} wheel
-    # Bundle and fix up dependent shared libraries
-    - delocate-wheel -v -w wheelhouse wheel/*.whl
-    # Test: do some simple sanity checks in a virtualenv
-    - python${PYVERS} -m venv test
-    - source test/bin/activate
-    - python -m pip install wheelhouse/*
-    - python -c 'import lal, lalframe, lalmetaio, lalsimulation; series = lal.CreateREAL8FrequencySeries("psd", 0, 0, 1, None, 4096); lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)'
-    - lalapps_version
-  needs: []
-  only:
-    refs:
-      - /^lalsuite-v.*$/
-      - schedules
-    variables:
-      - $CI_COMMIT_MESSAGE !~ /\[skip wheels\]/
-  artifacts:
-    expire_in: 18h
-    paths:
-      - wheelhouse
+# -- deploy -------------------------------------
+#
+# Deploy outputs to various locations
+#
 
-.wheel:manylinux2014: &wheel-manylinux2014
-  <<: *wheel-manylinux
-  image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2014_x86_64
-
-# Build wheels for all supported platforms
-wheel:cp36-cp36m-manylinux2014:
-  <<: *wheel-manylinux2014
-wheel:cp37-cp37m-manylinux2014:
-  <<: *wheel-manylinux2014
-wheel:cp38-cp38-manylinux2014:
-  <<: *wheel-manylinux2014
-wheel:cp39-cp39-manylinux2014:
- <<: *wheel-manylinux2014
-wheel:cp36-cp36m-macosx:
-  <<: *wheel-macos
-wheel:cp37-cp37m-macosx:
-  <<: *wheel-macos
-wheel:cp38-cp38-macosx:
-  <<: *wheel-macos
-wheel:cp39-cp39-macosx:
- <<: *wheel-macos
-
-deploy:wheel:
+.deploy:
   stage: deploy
-  image: python
   variables:
     GIT_STRATEGY: none
+
+# deploy documentation to gitlab pages
+pages:
+  extends:
+    - .deploy
+  image: igwn/lalsuite-dev:buster
+  needs:
+    - documentation
+    - coverage
+  script:
+    - mv html public
+    - cp coverage.html public/
+  artifacts:
+    paths:
+      - public
+  only:
+    refs:
+      - master@lscsoft/lalsuite
+    variables:
+      - $CI_COMMIT_MESSAGE !~ /\[skip docs\]/
+  except:
+    refs:
+      - pushes
+      - web
+
+# deploy wheels
+deploy:wheel:
+  extends:
+    - .deploy
+  image: python
   script:
     # exit if we're not running in the main namespace
     - if [[ ${CI_PROJECT_PATH} != "lscsoft/lalsuite" ]]; then echo "Not deploying."; exit 0; fi
@@ -1374,5 +1647,6 @@ deploy:wheel:
     - wheel:cp38-cp38-macosx
     - wheel:cp39-cp39-macosx
   only:
-    - /^lalsuite-v.*$/
-    - schedules
+    refs:
+      - /^lalsuite-v.*$/
+      - schedules
