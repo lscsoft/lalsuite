@@ -355,6 +355,7 @@ variables:
   # print info
   - conda activate base
   - conda info --all
+  - conda config --show-sources
 
 # template for jobs that use conda (in any context)
 .conda-job:
@@ -1242,12 +1243,13 @@ platform:debian:stretch:
     ENVIRONMENT_FILE: "conda/environment.yml"
   before_script:
     - source ${CONDA_ROOT:-/opt/conda}/etc/profile.d/conda.sh
+    - conda info --all
+    - conda config --show-sources
     - sed -i.tmp "s/- python$/- python ${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
     - conda env create
           --file ${ENVIRONMENT_FILE}
           --name lalsuite-platform-tests
           --quiet
-    - conda info --all
     - conda list --name lalsuite-platform-tests
     - conda activate lalsuite-platform-tests
     # don't use NDEBUG
@@ -1261,7 +1263,6 @@ platform:debian:stretch:
           "liblal*"
           "lal*"
           "python-lal*"
-  allow_failure: true
 
 platform:conda:linux:
   image: igwn/base:conda
