@@ -76,6 +76,8 @@ variables:
   PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pipe"
   # where to build conda environments (i.e. not in ~/.conda)
   CONDA_ENVS_PATH: "${CI_PROJECT_DIR}/envs"
+  # what file to use for conda configuration
+  CONDARC: "${CI_PROJECT_DIR}/.condarc"
 
 # -- templates ----------------------------------
 
@@ -339,15 +341,19 @@ variables:
 # -- conda
 
 # initialise conda for 'conda build jobs'
+# note: this assumes that the base environment is writable,
+#       which is not the case by default for the shared
+#       macos runners at CIT, if you need a writable base env
+#       on those machines, install miniconda/miniforge yourself
 .conda-init: &conda-init
   - *define-retry
   # init conda
   - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
   - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
   # configure conda options
-  - conda config --set always_yes yes
-  - conda config --add channels conda-forge
-  - conda config --set channel_priority strict
+  - conda config --file ${CONDARC} --set always_yes yes
+  - conda config --file ${CONDARC} --add channels conda-forge
+  - conda config --file ${CONDARC} --set channel_priority strict
   # update conda itself
   - retry conda update -n base conda setuptools
   # install build helpers
@@ -1242,9 +1248,13 @@ platform:debian:stretch:
     CONFIGURE_FLAGS: "--disable-swig-octave --enable-python --enable-swig-python"
     ENVIRONMENT_FILE: "conda/environment.yml"
   before_script:
+    # configure conda
     - source ${CONDA_ROOT:-/opt/conda}/etc/profile.d/conda.sh
+    - conda config --file ${CONDARC} --set always_yes yes
+    - conda config --file ${CONDARC} --add channels conda-forge
     - conda info --all
     - conda config --show-sources
+    # install the dev environment for the default python version
     - sed -i.tmp "s/- python$/- python ${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
     - conda env create
           --file ${ENVIRONMENT_FILE}
