@@ -90,13 +90,9 @@ test_scripts += test_heterodyne_pulsar.sh
 test_helpers +=
 
 # Add any extra files required by tests (e.g. helper scripts) to this variable
-test_extra_files +=
+test_extra_files += make_frame_cache.py
 
 # These tests require FRAME
 if !FRAMEL
 skip_tests += test_heterodyne_pulsar.sh
 endif
-
-EXTRA_DIST += \
-	make_frame_cache \
-	$(END_OF_LIST)

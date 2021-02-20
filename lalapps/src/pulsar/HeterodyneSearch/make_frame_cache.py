@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Matt Pitkin - 13/11/06
 code to take scan a directory of frame files and output it as a frame cache file between given
