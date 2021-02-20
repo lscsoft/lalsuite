@@ -4,6 +4,7 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic
 
@@ -23,6 +24,13 @@ lalapps_pulsar_crosscorr_v2_SOURCES = \
 	CrossCorrToplist.h \
 	HeapToplist.c \
 	$(END_OF_LINE)
+
+if HAVE_PYTHON
+pybin_scripts = \
+	lalapps_combine_crosscorr_toplists \
+	lalapps_run_pulsar_crosscorr_v2 \
+	$(END_OF_LINE)
+endif
 
 # Add shell test scripts to this variable
 test_scripts += test_pulsar_crosscorr_v2.sh

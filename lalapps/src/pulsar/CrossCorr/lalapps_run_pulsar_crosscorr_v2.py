@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # script to call lalapps_pulsar_crosscorr_v2 (for use with e.g. condor)
 
 # Copyright (C) 2014 John Whelan

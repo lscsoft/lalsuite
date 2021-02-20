@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # script to combine toplists from lalapps_pulsar_crosscorr_v2
 
 # Copyright (C) 2014 John Whelan
