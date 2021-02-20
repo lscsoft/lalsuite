@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 This script checks that the list of approximants
 has not been changed in a backward-incompatible way
