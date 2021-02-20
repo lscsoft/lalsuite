@@ -89,6 +89,9 @@ test_scripts += test_heterodyne_pulsar.sh
 # Add any helper programs required by tests to this variable
 test_helpers +=
 
+# Add any extra files required by tests (e.g. helper scripts) to this variable
+test_extra_files +=
+
 # These tests require FRAME
 if !FRAMEL
 skip_tests += test_heterodyne_pulsar.sh

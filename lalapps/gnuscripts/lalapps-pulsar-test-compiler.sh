@@ -10,6 +10,9 @@ shift
 skip_tests="$1"
 echo "skip_tests=${skip_tests}"
 shift
+test_extra_files="$1"
+echo "test_extra_files=${test_extra_files}"
+shift
 test_script_runner="$1"
 echo "test_script_runner=${test_script_runner}"
 shift
@@ -128,6 +131,12 @@ done
 export PATH="${testdir}:${PATH}"
 echo "PATH=${PATH}"
 echo
+
+# Create links to any extra files
+for extrafile in ${test_extra_files}; do
+    linkfile="${testdir}/${extrafile}"
+    [ -h "${linkfile}" ] || ln -s "${LAL_TEST_SRCDIR}/${extrafile}" "${linkfile}"
+done
 
 # List contents of test directory
 echo "--- Running test in directory ${testdir} ---"

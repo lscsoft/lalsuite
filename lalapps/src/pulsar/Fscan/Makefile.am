@@ -14,3 +14,9 @@ lalapps_spec_avg_long_SOURCES = spec_avg_long.c
 
 # Add shell test scripts to this variable
 test_scripts += testFscan.sh
+
+# Add any helper programs required by tests to this variable
+test_helpers +=
+
+# Add any extra files required by tests (e.g. helper scripts) to this variable
+test_extra_files +=

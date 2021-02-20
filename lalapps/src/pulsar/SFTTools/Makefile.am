@@ -39,4 +39,7 @@ test_scripts += testWriteSFTsfromSFDBs.py
 # Add any helper programs required by tests to this variable
 test_helpers += SFTwrite
 
+# Add any extra files required by tests (e.g. helper scripts) to this variable
+test_extra_files +=
+
 SFTwrite_SOURCES = SFTwrite.c

@@ -29,6 +29,9 @@ test_scripts += testfits.sh
 # Add any helper programs required by tests to this variable
 test_helpers +=
 
+# Add any extra files required by tests (e.g. helper scripts) to this variable
+test_extra_files +=
+
 # All tests require CFITSIO
 if !CFITSIO
 skip_tests += $(test_scripts)

@@ -29,3 +29,6 @@ test_scripts += test_pulsar_crosscorr_v2.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
+
+# Add any extra files required by tests (e.g. helper scripts) to this variable
+test_extra_files +=
