@@ -75,6 +75,7 @@ pybin_scripts = \
 	lalapps_knope \
 	lalapps_knope_result_page \
 	lalapps_knope_collate_results \
+	lalapps_knope_automation_script \
 	$(END_OF_LINE)
 pkgpython_PYTHON = \
 	pulsarhtmlutils.py \

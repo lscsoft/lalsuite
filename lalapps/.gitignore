@@ -212,6 +212,7 @@ src/pulsar/HeterodyneSearch/lalapps_knope
 src/pulsar/HeterodyneSearch/lalapps_knope_collate_results
 src/pulsar/HeterodyneSearch/lalapps_knope_create_prior
 src/pulsar/HeterodyneSearch/lalapps_knope_result_page
+src/pulsar/HeterodyneSearch/lalapps_knope_automation_script
 src/pulsar/HeterodyneSearch/lalapps_pulsar_frequency_evolution
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation_nested

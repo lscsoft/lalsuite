@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Script to be setup and launch a cron job for the automated running of the known pulsar analysis.
 
