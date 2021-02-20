@@ -1521,7 +1521,8 @@ lint:python:
   extends:
     - .python:flake8
     - .lint
-  # use everything we get from .python:flake8
+  variables:
+    FLAKE8_PLUGINS: "flake8-executable"
 
 lint:coala:
   extends:
