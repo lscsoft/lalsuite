@@ -9,8 +9,6 @@ from __future__ import print_function
 # import modules
 import sys
 import os
-import string
-import re
 import getopt
 
 # program usage
