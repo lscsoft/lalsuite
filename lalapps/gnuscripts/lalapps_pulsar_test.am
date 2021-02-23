@@ -13,13 +13,13 @@ test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
 test_script_runner_args = --verbose '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
 EXTRA_DIST += $(test_script_runner)
 
-test_script_compiler = $(top_srcdir)/gnuscripts/lalapps-pulsar-test-compiler.sh
+test_script_compiler = $(top_srcdir)/gnuscripts/lalapps_pulsar_test_compiler
 EXTRA_DIST += $(test_script_compiler)
 
 skip_tests =
 TEST_EXTENSIONS = .sh .py
-SH_LOG_COMPILER = /bin/bash $(test_script_compiler) sh "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
-PY_LOG_COMPILER = /bin/bash $(test_script_compiler) py "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
+SH_LOG_COMPILER = $(test_script_compiler) sh "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
+PY_LOG_COMPILER = $(test_script_compiler) py "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
 
 clean-local: clean-local-test-dirs
 clean-local-test-dirs:
