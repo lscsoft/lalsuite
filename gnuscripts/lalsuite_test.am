@@ -40,6 +40,6 @@ EXTRA_DIST += $(test_script_runner)
 
 test_script_compiler = $(test_script_runner) $(test_script_runner_args)
 
-SH_LOG_COMPILER = $(SHELL)
+SH_LOG_COMPILER = $(test_script_compiler) $(SHELL)
 M_LOG_COMPILER = $(test_script_compiler) "$(OCTAVE)" -fH
 PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u
