@@ -76,64 +76,19 @@ int XLALSetLatticeTilingCircleBound(
 
 
 typedef struct tagFirstKnotBoundInfo{
-  double n;  /// A braking index (should be of an optimised value)
-  double k;  /// A k value (should be of an optimised value)
+  double fmin;  /// Global minimum starting frequency
+  double fmax;  /// Global maximum starting frequency
+  double n;     /// A braking index (should be of an optimised value)
+  double k;     /// A k value (should be of an optimised value)
 } FirstKnotBoundInfo;
-
-
-
-///
-/// Defines the bounds for the first and second derivative frequency parameters on the first knot (t = 0)
-///
-static double FirstKnotDerivBound(
-  const void *data,
-  const size_t dim,
-  const gsl_matrix *cache UNUSED,
-  const gsl_vector* point
-  )
-{
-  const FirstKnotBoundInfo* info = (const FirstKnotBoundInfo*)data;
-  
-  const double f0 = gsl_vector_get(point, 0);
-  
-  double n = info->n;
-  double k = info->k;
-  
-  if(f0 <= 0){
-    return 0.;
-  }
-  
-  if (dim == 1){
-    double f1 = -k * pow(f0, n);
-    
-    return f1;
-  }
-  else if (dim == 2){
-    const double f1 = gsl_vector_get(point, 1);
-    
-    if(f1 >= 0){
-      return 0.;
-    }
-    
-    double f2 = n * pow(f1, 2) / f0;
-    
-    double thisn = f2 * f0 / pow(f1, 2);
-    printf("%f \n", thisn);
-    
-    return f2;
-  }
-
-  return NAN;
-}
-
-
-
 
 
 ///
 /// A struct containing the relevant information for calculating upper and lower bounds on a specific piecewise segment
 ///
 typedef struct tagPiecewiseBoundInfo{
+  double fmin;  /// Minimum frequency at t = 0
+  double fmax;  /// Maximum frequency at t = 0
   double nmin;  /// Global minimum braking index
   double nmax;  /// Global maximum braking index
   double ntol;  /// Braking index tolerance (percentage) between adjacent knots
@@ -254,8 +209,6 @@ static double F0BoundMinMax(
   /// These combinations of gted and gtedd give one of the optimised values of f0 (either minimum or maximum) such that the braking index at the next knot still
   /// falls within an acceptable range. This acceptable range is between [na, nb] or [nb, na], depending upon the value of minmax. Do a double check of this maths
   
-  printf("%f, %f, %f, %f, %f \n", f0, na, nb, ka, kb);
-  
   double gted = GTEAndDerivs(f0, na, ka, seglength, 1);
   double gtedd = GTEAndDerivs(f0, nb, kb, seglength, 2);
   double brakingindex = na * pow(gted, 2) / gtedd;
@@ -263,92 +216,29 @@ static double F0BoundMinMax(
   /// Parameter range optimisation for frequency parameter
   double paramrange = GTEAndDerivs(f0, nb, kb, seglength, 0);
   
-  // Selecting the appropriate bound as the optimised value
-  if (brakingindex < paramrange){
-    if (minmax == 1){
+  printf("These are the f0 options %E, %E \n", brakingindex, paramrange);
+  printf("Min max is %d \n", minmax);
+  
+  if (minmax == 1) {
+    if (brakingindex <= paramrange){
       return brakingindex;
     }
-    else if (minmax == -1){
+    else if (brakingindex > paramrange){
       return paramrange;
     }
   }
-  else if (brakingindex >= paramrange){
-    if (minmax == 1){
+  else if (minmax == -1){
+    if (brakingindex <= paramrange){
       return paramrange;
     }
-    else if (minmax == -1){
+    else if (paramrange < brakingindex){
       return brakingindex;
     }
   }
   
-  return 0.0;
+  return NAN;
 }
 
-
-///
-/// Sets the bound on the frequency parameter
-///
-static double F0Bound(
-  const void *data,
-  const size_t dim,
-  const gsl_matrix *cache UNUSED,
-  const gsl_vector* point
-  )
-{
-  
-  double f0n1 = gsl_vector_get(point, dim - 3);
-  double f1n1 = gsl_vector_get(point, dim - 2);
-  double f2n1 = gsl_vector_get(point, dim - 1);
-  
-  if(f0n1 <= 0 || f1n1 >= 0 || f2n1 <= 0){
-    return 0.;
-  }
-  
-  const PiecewiseBoundInfo* info = (const PiecewiseBoundInfo*)data;
-  
-  double nmin = info->nmin;
-  double nmax = info->nmax;
-  double ntol = info->ntol;
-  double kmin = info->kmin;
-  double kmax = info->kmax;
-  double ktol = info->ktol;
-  double segmentlength = info->segmentlength;
-  int upperlower = info->upperlower;
-  
-  double nprev = f2n1 * f0n1 / pow(f1n1, 2);
-  
-  if (nprev > nmax){
-    nprev = nmax;
-  }
-  else if (nprev < nmin){
-    nprev = nmin;
-  }
-  
-  double kprev = - f1n1 / pow(f0n1, nprev);
-  
-  if (kprev > kmax){
-    kprev = kmax;
-  }
-  else if (kprev < kmin){
-    kprev = kmin;
-  }
-  
-  double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
-  double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
-  
-  ///printf("%f \n", kprev);
-  
-  if (upperlower == 1){
-    double upperbound = F0BoundMinMax(f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, 1);
-    return upperbound;
-  }
-  else if (upperlower == -1){
-    double lowerbound = F0BoundMinMax(f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, -1);
-    return lowerbound;
-  }
-  
-  return 0.0;
-}
 
 ///
 /// Function which determines the minimum/maximum value of the first derivative parameters
@@ -367,8 +257,10 @@ static double F1BoundMinMax(
   double prangecondition1 = -ka * pow(f0, na);
   double prangecondition2 = GTEAndDerivs(fprev, na, ka, seglength, 1);
   
-  double brakingindexcriteria = sqrt(GTEAndDerivs(fprev, nb, kb, seglength, 2) * f0 / nb);
-  double bound = 0;
+  double brakingindexcriteria = -sqrt(GTEAndDerivs(fprev, na, kb, seglength, 2) * f0 / nb);
+  double bound;
+  
+  ///printf("These are the f1 options %E, %E, %E \n", prangecondition1, prangecondition2, brakingindexcriteria);
   
   
   if (minmax == 1){
@@ -385,6 +277,7 @@ static double F1BoundMinMax(
       return bound;
     }
   }
+  
   else if (minmax == -1){
     if (prangecondition1 < prangecondition2){
       bound = prangecondition2;
@@ -403,79 +296,6 @@ static double F1BoundMinMax(
   return 0.0;
 }
 
-///
-/// Sets the bound on the first derivative frequency parameter 
-///
-static double F1Bound(
-  const void *data,
-  const size_t dim,
-  const gsl_matrix *cache UNUSED,
-  const gsl_vector* point
-  )
-{
-  double f0n1 = gsl_vector_get(point, dim - 4);
-  double f1n1 = gsl_vector_get(point, dim - 3);
-  double f2n1 = gsl_vector_get(point, dim - 2);
-  
-  if(f0n1 <= 0 || f1n1 >= 0 || f2n1 <= 0){
-    return 0.;
-  }
-  
-  double f0 = gsl_vector_get(point, dim - 1);
-  
-  if(f0 <= 0){
-    return 0.;
-  }
-  
-  ///printf("%f, %f, %f, %f \n", f0n1, f1n1, f2n1, f0);
-  
-  const PiecewiseBoundInfo* info = (const PiecewiseBoundInfo*)data;
-  
-  double nmin = info->nmin;
-  double nmax = info->nmax;
-  double ntol = info->ntol;
-  double kmin = info->kmin;
-  double kmax = info->kmax;
-  double ktol = info->ktol;
-  double segmentlength = info->segmentlength;
-  int upperlower = info->upperlower;
-  
-  
-  double nprev = f2n1 * f0n1 / pow(f1n1, 2);
-  
-  if (nprev > nmax){
-    nprev = nmax;
-  }
-  else if (nprev < nmin){
-    nprev = nmin;
-  }
-  
-  double kprev = - f1n1 / pow(f0n1, nprev);
-  
-  if (kprev > kmax){
-    kprev = kmax;
-  }
-  else if (kprev < kmin){
-    kprev = kmin;
-  }
-  
-  
-  double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
-  double *kminmax = NMinMax(kprev, ktol, kmin, kmax, segmentlength);
-  
-  if (upperlower == 1){
-    double upperbound = F1BoundMinMax(f0, f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, 1);
-    
-    return upperbound;
-  }
-  else if (upperlower == -1){
-    double lowerbound = F1BoundMinMax(f0, f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, -1);
-    
-    return lowerbound;
-  }
-  
-  return 0.0;
-}
 
 ///
 /// Calculates the bound for the second derivative frequency parameter 
@@ -492,6 +312,8 @@ static double F2BoundMinMax(
 {
   double brakingindexcriteria = n * pow(f1, 2) / f0;
   double prangecriteria = GTEAndDerivs(fprev, n, k, seglength, 2);
+  
+  ///printf("For f2, these are the two criteria %E, %E \n", brakingindexcriteria, prangecriteria);
   
   if (minmax == 1){
     if (brakingindexcriteria > prangecriteria) {
@@ -513,33 +335,243 @@ static double F2BoundMinMax(
   return 0.0;
 }
 
+
+/// Takes an input val, and returns val to its closest value within the range [valmin, valmax].
+static double resetinsidebounds(
+  double val,     /// Value
+  double valmin,  /// Lower bound of range
+  double valmax   /// Upper bound of range
+  )
+{
+  if (valmin <= val && val <= valmax){
+    return val;
+  }
+  else if (val < valmin){
+    printf("I am activated! Too small %E, %E, %E \n", val, valmin, valmax);
+    return valmin;
+  }
+  else if (val > valmax){
+    printf("I am activated! Too big %E, %E, %E \n", val, valmin, valmax);
+    return valmax;
+  }
+  
+  return NAN;
+}
+
+
+static void resetdimonpoint(
+  gsl_vector* point,
+  int dim,
+  double fmin,
+  double fmax,
+  double nmin,
+  double nmax,
+  double ntol,
+  double kmin,
+  double kmax,
+  double ktol,
+  double segmentlength
+  )
+{
+  if (dim == 0){
+    double f0 = gsl_vector_get(point, dim);
+    double val = resetinsidebounds(f0, fmin, fmax);
+    gsl_vector_set(point, dim, val);
+    return;
+  }
+  
+  else if (dim == 1){
+    double f0 = gsl_vector_get(point, dim - 1);
+    double f1 = gsl_vector_get(point, dim);
+    double lower = -kmax * pow(f0, nmax);
+    double upper = -kmin * pow(f0, nmin);
+    
+    double val = resetinsidebounds(f1, lower, upper);
+    gsl_vector_set(point, dim, val);
+    return;
+  }
+  else if (dim == 2){
+    double f0 = gsl_vector_get(point, dim - 2);
+    double f1 = gsl_vector_get(point, dim - 1);
+    double f2 = gsl_vector_get(point, dim);
+    
+    double lower = nmin * pow(f1, 2) / f0;
+    double upper = nmax * pow(f1, 2) / f0;
+    
+    double val = resetinsidebounds(f2, lower, upper);
+    gsl_vector_set(point, dim, val);
+    return;
+  }
+  else if (dim % 3 == 0){
+    printf("Second knot f0 \n");
+    double f0n1 = gsl_vector_get(point, dim - 3);
+    double f1n1 = gsl_vector_get(point, dim - 2);
+    double f2n1 = gsl_vector_get(point, dim - 1);
+    double f0 =   gsl_vector_get(point, dim);
+    
+    double nprev = f2n1 * f0n1 / pow(f1n1, 2);
+    double kprev = - f1n1 / pow(f0n1, nprev);
+    
+    double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
+    double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+    
+    ///printf("%f, %f, %f \n", nprev, nminmax[0], nminmax[1]);
+    
+    double lower = F0BoundMinMax(f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, -1);
+    double upper = F0BoundMinMax(f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength,  1);
+    
+    double val = resetinsidebounds(f0, lower, upper);
+    gsl_vector_set(point, dim, val);
+    
+  }
+  else if (dim % 3 == 1){
+    printf("Second knot f1 \n");
+    double f0n1 = gsl_vector_get(point, dim - 4);
+    double f1n1 = gsl_vector_get(point, dim - 3);
+    double f2n1 = gsl_vector_get(point, dim - 2);
+    double f0 =   gsl_vector_get(point, dim - 1);
+    double f1 =   gsl_vector_get(point, dim);
+    
+    double nprev = f2n1 * f0n1 / pow(f1n1, 2);
+    double kprev = - f1n1 / pow(f0n1, nprev);
+    
+    double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
+    double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+    
+    double lower = F1BoundMinMax(f0, f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, -1);
+    double upper = F1BoundMinMax(f0, f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength,  1);
+    printf("Lower upper %E, %E \n", lower, upper);
+    double val = resetinsidebounds(f1, lower, upper);
+    gsl_vector_set(point, dim, val);
+  }
+  else if (dim % 3 == 2){
+    printf("Second knot f2 \n");
+    double f0n1 = gsl_vector_get(point, dim - 5);
+    double f1n1 = gsl_vector_get(point, dim - 4);
+    double f2n1 = gsl_vector_get(point, dim - 3);
+    double f0 =   gsl_vector_get(point, dim - 2);
+    double f1 =   gsl_vector_get(point, dim - 1);
+    double f2 =   gsl_vector_get(point, dim);
+    
+    double nprev = f2n1 * f0n1 / pow(f1n1, 2);
+    double kprev = - f1n1 / pow(f0n1, nprev);
+    
+    double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
+    double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+    
+    double lower = F2BoundMinMax(f0, f0n1, f1, nminmax[0], kminmax[0], segmentlength, -1);
+    double upper = F2BoundMinMax(f0, f0n1, f1, nminmax[1], kminmax[1], segmentlength,  1);
+    
+    double val = resetinsidebounds(f2, lower, upper);
+    gsl_vector_set(point, dim, val);
+  }
+}
+
+
+static void resetoutofboundspoint(
+  gsl_vector* point,
+  double fmin,
+  double fmax,
+  double nmin,
+  double nmax,
+  double ntol,
+  double kmin,
+  double kmax,
+  double ktol,
+  double segmentlength
+  )
+{
+  int dim = point->size;
+  /*
+  printf("Before \n");
+  for (int i = 0; i < dim; ++i){
+    printf("%E, ", gsl_vector_get(point, i));
+  }
+  printf("\n");
+  */
+  for (int i = 0; i < dim; ++i){
+    
+    if (dim % 3 == 0){
+      printf("Dim being reset is f0 \n");
+    }
+    else if (dim % 3 == 1){
+      printf("Dim being reset is f1 \n");
+    }
+    else if (dim % 3 == 2){
+      printf("Dim being reset is f2 \n");
+    }
+    
+    resetdimonpoint(point, i, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  }
+  /*
+  printf("After \n");
+  for (int i = 0; i < dim; ++i){
+    printf("%E, ", gsl_vector_get(point, i));
+  }
+  printf("\n");
+  */
+}
+
+
 ///
-/// Sets the bounds on the second derivative frequency parameter 
+/// Defines the bounds for the first and second derivative frequency parameters on the first knot (t = 0).
 ///
-static double F2Bound(
+static double FirstKnotDerivBound(
   const void *data,
   const size_t dim,
   const gsl_matrix *cache UNUSED,
   const gsl_vector* point
   )
 {
-  double f0n1 = gsl_vector_get(point, dim - 5);
-  double f1n1 = gsl_vector_get(point, dim - 4);
-  double f2n1 = gsl_vector_get(point, dim - 3);
+  const FirstKnotBoundInfo* info = (const FirstKnotBoundInfo*)data;
   
-  if(f0n1 <= 0 || f1n1 >= 0 || f2n1 <= 0){
-    return 0.;
+  double fmin = info->fmin;
+  double fmax = info->fmax;
+  double n = info->n;
+  double k = info->k;
+  
+  double f0 = resetinsidebounds(gsl_vector_get(point, 0), fmin, fmax);
+  
+  if (dim == 1){
+    double f1 = -k * pow(f0, n);
+    
+    return f1;
   }
-  
-  double f0 = gsl_vector_get(point, dim - 2);
-  double f1 = gsl_vector_get(point, dim - 1);
-  
-  if(f0 <= 0 || f1 >= 0){
-    return 0.;
+  else if (dim == 2){
+    
+    double lower = -k * pow(fmax, n);
+    double upper = -k * pow(fmin, n);
+    
+    double f1 = resetinsidebounds(gsl_vector_get(point, 1), lower, upper);
+ 
+    double f2 = n * pow(f1, 2) / f0;
+    
+    
+    return f2;
   }
+
+  return NAN;
+}
+
+
+///
+/// Sets the bound on the frequency parameter
+///
+static double F0Bound(
+  const void *data,
+  const size_t dim,
+  const gsl_matrix *cache UNUSED,
+  const gsl_vector* pointorig
+  )
+{
+  size_t vectorlength = pointorig->size;
+  gsl_vector* point = gsl_vector_alloc(vectorlength);
+  memcpy(point, pointorig, sizeof(gsl_vector));
   
   const PiecewiseBoundInfo* info = (const PiecewiseBoundInfo*)data;
   
+  double fmin = info->fmin;
+  double fmax = info->fmax;
   double nmin = info->nmin;
   double nmax = info->nmax;
   double ntol = info->ntol;
@@ -549,23 +581,125 @@ static double F2Bound(
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
   
+  resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  
+  double f0n1 = gsl_vector_get(point, dim - 3);
+  double f1n1 = gsl_vector_get(point, dim - 2);
+  double f2n1 = gsl_vector_get(point, dim - 1);
+  
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
-  
-  if (nprev > nmax){
-    nprev = nmax;
-  }
-  else if (nprev < nmin){
-    nprev = nmin;
-  }
-  
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  if (kprev > kmax){
-    kprev = kmax;
+  double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
+  double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+  
+  if (upperlower == 1){
+    double upperbound = F0BoundMinMax(f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, 1);
+    return upperbound;
   }
-  else if (kprev < kmin){
-    kprev = kmin;
+  else if (upperlower == -1){
+    double lowerbound = F0BoundMinMax(f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, -1);
+    return lowerbound;
   }
+  
+  return 0.0;
+}
+
+///
+/// Sets the bound on the first derivative frequency parameter 
+///
+static double F1Bound(
+  const void *data,
+  const size_t dim,
+  const gsl_matrix *cache UNUSED,
+  const gsl_vector* pointorig
+  )
+{
+  size_t vectorlength = pointorig->size;
+  gsl_vector* point = gsl_vector_alloc(vectorlength);
+  memcpy(point, pointorig, sizeof(gsl_vector));
+  
+  const PiecewiseBoundInfo* info = (const PiecewiseBoundInfo*)data;
+  
+  double fmin = info->fmin;
+  double fmax = info->fmax;
+  double nmin = info->nmin;
+  double nmax = info->nmax;
+  double ntol = info->ntol;
+  double kmin = info->kmin;
+  double kmax = info->kmax;
+  double ktol = info->ktol;
+  double segmentlength = info->segmentlength;
+  int upperlower = info->upperlower;
+  
+  resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  
+  double f0n1 = gsl_vector_get(point, dim - 4);
+  double f1n1 = gsl_vector_get(point, dim - 3);
+  double f2n1 = gsl_vector_get(point, dim - 2);
+  
+  double f0 = gsl_vector_get(point, dim - 1);
+  
+  ///printf("%f, %f, %f, %f \n", f0n1, f1n1, f2n1, f0);
+  
+  double nprev = f2n1 * f0n1 / pow(f1n1, 2);
+  double kprev = - f1n1 / pow(f0n1, nprev);
+  
+  double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
+  double *kminmax = NMinMax(kprev, ktol, kmin, kmax, segmentlength);
+  
+  if (upperlower == 1){
+    double upperbound = F1BoundMinMax(f0, f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, 1);
+    
+    return upperbound;
+  }
+  else if (upperlower == -1){
+    double lowerbound = F1BoundMinMax(f0, f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, -1);
+    
+    return lowerbound;
+  }
+  
+  return 0.0;
+}
+
+///
+/// Sets the bounds on the second derivative frequency parameter 
+///
+static double F2Bound(
+  const void *data,
+  const size_t dim,
+  const gsl_matrix *cache UNUSED,
+  const gsl_vector* pointorig
+  )
+{
+  size_t vectorlength = pointorig->size;
+  gsl_vector* point = gsl_vector_alloc(vectorlength);
+  memcpy(point, pointorig, sizeof(gsl_vector));
+  
+  const PiecewiseBoundInfo* info = (const PiecewiseBoundInfo*)data;
+  
+  double fmin = info->fmin;
+  double fmax = info->fmax;
+  double nmin = info->nmin;
+  double nmax = info->nmax;
+  double ntol = info->ntol;
+  double kmin = info->kmin;
+  double kmax = info->kmax;
+  double ktol = info->ktol;
+  double segmentlength = info->segmentlength;
+  int upperlower = info->upperlower;
+  
+  resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  
+  double f0n1 = gsl_vector_get(point, dim - 5);
+  double f1n1 = gsl_vector_get(point, dim - 4);
+  double f2n1 = gsl_vector_get(point, dim - 3);
+  
+  double f0 = gsl_vector_get(point, dim - 2);
+  double f1 = gsl_vector_get(point, dim - 1);
+  
+  double nprev = f2n1 * f0n1 / pow(f1n1, 2);
+  double kprev = - f1n1 / pow(f0n1, nprev);
   
   double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
   double *kminmax = NMinMax(kprev, ktol, kmin, kmax, segmentlength);
@@ -586,8 +720,8 @@ static double F2Bound(
 /// Converts a given tau value to a k value (or a given k value to a tau value)
 ///
 static double ktauconversion(
-  double f0,  /// Frequency at time t = 0. For calculating kmax/kmin from initial tau values, f0 should be maximised. Likewise for calculating taumin/taumax from k values 
-  double n,   /// A braking index. For calculating kmax/kmin from initial tau values, n should be maximised. Likewise for calculating taumin/taumax from k values 
+  double f0,     /// Frequency at time t = 0. For calculating kmax/kmin from initial tau values, f0 should be maximised. Likewise for calculating taumin/taumax from k values 
+  double n,      /// A braking index. For calculating kmax/kmin from initial tau values, n should be maximised. Likewise for calculating taumin/taumax from k values 
   double kortau  /// The k or tau values we wish to convert. For calculating kmax, taumin should be used. For calculating kmin, taumax should be used.
   )
 {
@@ -605,16 +739,16 @@ static double ktauconversion(
 ///
 int XLALSetLatticeTilingPiecewiseBounds(
   LatticeTiling* tiling,
-  const double fmin, /// Minimum spin frequency
-  const double fmax, /// Maximum spin frequency
-  const double nmin, /// Minimum braking index
-  const double nmax, /// Maximum braking index
-  const double ntol, /// Tolerance (percentage) between braking indices on adjacent knots
+  const double fmin,   /// Minimum spin frequency
+  const double fmax,   /// Maximum spin frequency
+  const double nmin,   /// Minimum braking index
+  const double nmax,   /// Maximum braking index
+  const double ntol,   /// Tolerance (percentage) between braking indices on adjacent knots
   const double taumin, /// Minimum tau value
   const double taumax, /// Maximum tau value
-  const double ktol, /// Tolerance (percentage) between k values on adjacent knots
+  const double ktol,   /// Tolerance (percentage) between k values on adjacent knots
   const gsl_vector* knots, /// List of knots
-  const int finalknot /// The number of the final knot
+  const int finalknot  /// The number of the final knot
   )
 {
   /* Simple checks. Not sure what I assume the types of errors are, something to ask about later */
@@ -626,10 +760,12 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   
   /// Setting the first knot bounds
-  printf("Setting bounds on knot 0 \n");
   XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_lower );
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_upper );
+  
+  info_first_knot_lower.fmin = info_first_knot_upper.fmin = fmin;
+  info_first_knot_lower.fmax = info_first_knot_upper.fmax = fmax;
   
   info_first_knot_lower.n = nmax;
   info_first_knot_lower.k = kmax;
@@ -643,12 +779,13 @@ int XLALSetLatticeTilingPiecewiseBounds(
   /// Setting the bounds for all following knots
   
   for (int knot = 1; knot < finalknot; ++knot){
-    printf("Setting bounds on knot %i \n", knot);
     double segmentlength = gsl_vector_get(knots, knot) - gsl_vector_get(knots, knot - 1);
     
     PiecewiseBoundInfo XLAL_INIT_DECL( info_knot_lower );
     PiecewiseBoundInfo XLAL_INIT_DECL( info_knot_upper );
     
+    info_knot_lower.fmin = info_knot_upper.fmin = fmin;
+    info_knot_lower.fmax = info_knot_upper.fmax = fmax;
     info_knot_lower.nmin = info_knot_upper.nmin = nmin;
     info_knot_lower.nmax = info_knot_upper.nmax = nmax;
     info_knot_lower.ntol = info_knot_upper.ntol = ntol;
@@ -666,19 +803,16 @@ int XLALSetLatticeTilingPiecewiseBounds(
     XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 1, F1Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 2, F2Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     
-    printf("Finished that knot \n");
-    printf("\n");
-    
   }
+  
+  printf("Bounds set \n");
+  printf("\n");
   return XLAL_SUCCESS;
 }
 
 
 
-
-
-
-
+/// resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
 
 
 
