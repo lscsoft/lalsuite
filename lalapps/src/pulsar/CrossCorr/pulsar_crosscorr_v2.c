@@ -1735,6 +1735,11 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
       REAL8 deltaP;
       if ( useTPEllipse == TRUE ) {
 	deltaP = uvar.orbitTPEllipseRadius * uvar.orbitPSecSigma;
+	/* printf('DeltaP = %g',deltaP) */
+	if ( uvar.useShearedPeriod ) {
+	  deltaP *= 1. / sqrt ( 1. + SQR(norb*uvar.orbitPSecSigma/uvar.orbitTimeAscSigma) );
+	/* printf('DeltaPtilde = %g',deltaP) */
+	}
 	XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecCenter);
       } else {
 	deltaP = 0.5 * uvar.orbitPSecBand;
