@@ -33,6 +33,7 @@ override_dh_auto_configure:
 	# configure the build for the 'main' python version
 	dh_auto_configure -- \
 		--disable-gcc-flags \
+		$(if $(WITH_OCTAVE),,--disable-swig-octave) \
 		$(CONFIGUREARGS) \
 		PYTHON=$(PYTHON)
 
