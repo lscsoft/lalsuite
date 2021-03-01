@@ -1,0 +1,31 @@
+name: lal-development-py36
+channels:
+  - conda-forge
+dependencies:
+  - autoconf
+  - automake = 1.15
+  - bc
+  - cfitsio
+  - clang_osx-64
+  - doxygen
+  - fftw
+  - freezegun
+  - gsl
+  - h5py
+  - hdf5
+  - healpy
+  - ldas-tools-framecpp
+  - libframe
+  - ligo-segments
+  - lscsoft-glue
+  - make
+  - metaio
+  - numpy
+  - pkg-config
+  - pytest
+  - python = 3.6
+  - scipy
+  - six
+  - swig >= 3.0.10
+  - texlive-core
+  - zlib

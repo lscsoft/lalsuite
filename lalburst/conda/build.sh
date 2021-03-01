@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -ex
+set -e
 
 # use out-of-tree build
 mkdir -pv _build
@@ -8,7 +8,7 @@ cd _build
 
 # enable nightly mode for CI
 if [ "${CI_PIPELINE_SOURCE}" = "schedule" ] || [ "${CI_PIPELINE_SOURCE}" = "web" ]; then
-	ENABLE_NIGHTLY="--enable-nightly"
+	EXTRA_CONFIG_FLAGS="--enable-nightly"
 fi
 
 # when running on gitlab-ci, we are not using a production
@@ -27,7 +27,7 @@ ${SRC_DIR}/configure \
 	--enable-help2man \
 	--enable-swig-iface \
 	--prefix="${PREFIX}" \
-	${ENABLE_NIGHTLY} \
+	${EXTRA_CONFIG_FLAGS} \
 ;
 
 # build

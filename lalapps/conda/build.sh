@@ -1,10 +1,8 @@
 #!/bin/bash
 
-set -ex
-
 # enable nightly mode for CI
 if [ "${CI_PIPELINE_SOURCE}" = "schedule" ] || [ "${CI_PIPELINE_SOURCE}" = "web" ]; then
-	ENABLE_NIGHTLY="--enable-nightly"
+	EXTRA_CONFIG_FLAGS="--enable-nightly"
 fi
 
 # when running on gitlab-ci, we are not using a production
@@ -21,7 +19,7 @@ export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 	--enable-cfitsio \
 	--enable-help2man \
 	--prefix=${PREFIX} \
-	${ENABLE_NIGHTLY} \
+	${EXTRA_CONFIG_FLAGS} \
 ;
 
 # build

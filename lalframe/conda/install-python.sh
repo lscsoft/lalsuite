@@ -4,7 +4,7 @@
 # for a LALSuite subpackage.
 #
 
-set -ex
+set -e
 
 # build python in a sub-directory using a copy of the C build
 _builddir="_build${PY_VER}"

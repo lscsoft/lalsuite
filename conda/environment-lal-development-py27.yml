@@ -1,0 +1,32 @@
+name: lal-development-py27
+channels:
+  - conda-forge
+dependencies:
+  - autoconf
+  - automake = 1.15
+  - bc
+  - cfitsio
+  - doxygen
+  - fftw
+  - freezegun
+  - gcc_linux-64
+  - gsl
+  - h5py
+  - hdf5
+  - healpy
+  - ldas-tools-framecpp
+  - libframe
+  - ligo-segments
+  - lscsoft-glue
+  - make
+  - metaio
+  - mock
+  - numpy
+  - pkg-config
+  - pytest
+  - python = 2.7
+  - scipy
+  - six
+  - swig >= 3.0.10
+  - texlive-core
+  - zlib
