@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /* ---------- SEE LALError.dox for doxygen documentation ---------- */
@@ -134,6 +134,46 @@ void REPORTSTATUS(LALStatus * status);
 #endif /* NOLALMACROS */
 
 #endif /* NDEBUG */
+
+/*
+ * Error handlers for LALApps applications
+ */
+
+typedef int ( *lal_errhandler_t )(
+    LALStatus  *,
+    const char *func,
+    const char *file,
+    const int   line,
+    volatile const char *id
+    );
+
+#define LAL_ERR_DFLT LAL_ERR_ABRT
+extern lal_errhandler_t lal_errhandler;
+
+extern int LAL_ERR_EXIT(
+    LALStatus  *,
+    const char *func,
+    const char *file,
+    const int   line,
+    volatile const char *id
+    );
+extern int LAL_ERR_ABRT(
+    LALStatus  *,
+    const char *func,
+    const char *file,
+    const int   line,
+    volatile const char *id
+    );
+extern int LAL_ERR_RTRN(
+    LALStatus  *,
+    const char *func,
+    const char *file,
+    const int   line,
+    volatile const char *id
+    );
+
+#define LAL_CALL( function, statusptr ) \
+  ((function),lal_errhandler(statusptr,#function,__FILE__,__LINE__,"$Id$"))
 
 #endif /* SWIG */
 

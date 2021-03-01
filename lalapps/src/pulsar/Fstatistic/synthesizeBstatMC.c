@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 /*********************************************************************************/
@@ -63,7 +63,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/FstatisticTools.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 #define SQ(x) ((x)*(x))
 
@@ -94,7 +94,7 @@ typedef struct {
 } ConfigVariables;
 
 /*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+extern int vrbflg;		/**< defined in lal/lib/std/LALError.c */
 
 /* ----- User-variables: can be set from config-file or command-line */
 typedef struct {

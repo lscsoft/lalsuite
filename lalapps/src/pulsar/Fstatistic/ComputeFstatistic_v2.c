@@ -18,8 +18,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 /*********************************************************************************/
@@ -74,7 +74,7 @@
 #include <lal/TransientCW_utils.h>
 #include <lal/LineRobustStats.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* local includes */
 #include "HeapToplist.h"
@@ -184,6 +184,7 @@ typedef struct {
   PulsarParamsVector *injectionSources;    /**< Source parameters to inject: comma-separated list of file-patterns and/or direct config-strings ('{...}') */
   MultiLIGOTimeGPSVector *multiTimestamps; /**< a vector of timestamps (only set if provided from dedicated time stamp files) */
   MultiLALDetector multiIFO;		   /**< detectors to generate data for (if provided by user and not via noise files) */
+  BOOLEAN runSearch;		   /**< whether to actually perform the search, or just generate a grid and/or count templates */
 } ConfigVariables;
 
 
@@ -260,6 +261,7 @@ typedef struct {
   REAL8 FstatHistBin;           /**< width of an Fstatistic histogram bin */
 
   BOOLEAN countTemplates;       /**< just count templates (if supported) instead of search */
+  CHAR *outputGrid;		/**< filename to output grid points in */
 
   INT4 NumCandidatesToKeep;	/**< maximal number of toplist candidates to output */
   REAL8 FracCandidatesToKeep;	/**< fractional number of candidates to output in toplist */
@@ -318,7 +320,7 @@ typedef struct {
 } UserInput_t;
 
 /*---------- Global variables ----------*/
-extern int vrbflg;		/**< defined in lalapps.c */
+extern int vrbflg;		/**< defined in lal/lib/std/LALError.c */
 
 /* ---------- local prototypes ---------- */
 int main(int argc,char *argv[]);
@@ -330,7 +332,7 @@ int checkUserInputConsistency (const UserInput_t *uvar);
 int outputBeamTS( const CHAR *fname, const AMCoeffs *amcoe, const DetectorStateSeries *detStates );
 MultiNoiseWeights *getUnitWeights ( const MultiSFTVector *multiSFTs );
 
-int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand, const BOOLEAN output_orbit );
+int write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand, const BOOLEAN output_stats, const BOOLEAN output_orbit );
 int write_PulsarCandidate_to_fp ( FILE *fp,  const PulsarCandidate *pulsarParams, const FstatCandidate *Fcand );
 
 int compareFstatCandidates ( const void *candA, const void *candB );
@@ -409,56 +411,7 @@ int main(int argc,char *argv[])
     XLAL_CHECK_MAIN ( WriteFstatLog ( uvar.outputLogfile, GV.logstring ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
-  /* if a complete output of the F-statistic file was requested,
-   * we open and prepare the output-file here */
-  if (uvar.outputFstat)
-    {
-      XLAL_CHECK_MAIN ( (fpFstat = fopen (uvar.outputFstat, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputFstat );
-      fprintf (fpFstat, "%s", GV.logstring );
-
-      /* assemble column headings string */
-      char column_headings_string[1024];
-      XLAL_INIT_MEM( column_headings_string );
-      strcat ( column_headings_string, "freq alpha delta f1dot f2dot f3dot 2F" );
-      if ( uvar.computeBSGL )
-        {
-          strcat ( column_headings_string, " log10BSGL" );
-        }
-      if ( uvar.outputSingleFstats || uvar.computeBSGL )
-        {
-          const UINT4 numDetectors = GV.detectorIDs->length;
-          for ( UINT4 X = 0; X < numDetectors ; X ++ )
-            {
-              char headingX[7];
-              snprintf ( headingX, sizeof(headingX), " 2F_%s", GV.detectorIDs->data[X] );
-              strcat ( column_headings_string, headingX );
-            } /* for X < numDet */
-        }
-      fprintf (fpFstat, "%%%% columns:\n%%%% %s\n", column_headings_string );
-
-    } /* if outputFstat */
-
-  if ( uvar.outputTransientStats )
-    {
-      XLAL_CHECK_MAIN ( (fpTransientStats = XLALFileOpen (uvar.outputTransientStats, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStats );
-      XLALFilePrintf (fpTransientStats, "%s", GV.logstring );			/* write search log comment */
-      XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, NULL, 's' ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
-    }
-
-  if ( uvar.outputTransientStatsAll )
-    {
-      XLAL_CHECK_MAIN ( (fpTransientStatsAll = XLALFileOpen (uvar.outputTransientStatsAll, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStatsAll );
-      XLALFilePrintf (fpTransientStatsAll, "%s", GV.logstring );			/* write search log comment */
-      XLAL_CHECK_MAIN ( write_transientCandidateAll_to_fp ( fpTransientStatsAll, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
-    }
-
-  /* start Fstatistic histogram with a single empty bin */
-  if (uvar.outputFstatHist) {
-    XLAL_CHECK_MAIN ((Fstat_histogram = gsl_vector_int_alloc(1)) != NULL, XLAL_ENOMEM );
-    gsl_vector_int_set_zero(Fstat_histogram);
-  }
-
-  // count number of binary orbit parameters
+  /* count number of binary orbit parameters (done early to be able to prepare output file headers) */
   const UINT4 n_orbitasini = 1 + ( XLALUserVarWasSet(&uvar.dorbitasini) ? (UINT4) floor ( uvar.orbitasiniBand / uvar.dorbitasini ) : 0 );
   const UINT4 n_orbitPeriod = 1 + ( XLALUserVarWasSet(&uvar.dorbitPeriod) ? (UINT4) floor ( uvar.orbitPeriodBand / uvar.dorbitPeriod ) : 0 );
   const UINT4 n_orbitTp = 1 + ( XLALUserVarWasSet(&uvar.dorbitTp) ? (UINT4) floor ( uvar.orbitTpBand / uvar.dorbitTp ) : 0 );
@@ -466,11 +419,105 @@ int main(int argc,char *argv[])
   const UINT4 n_orbitEcc = 1 + ( XLALUserVarWasSet(&uvar.dorbitEcc) ? (UINT4) floor ( uvar.orbitEccBand / uvar.dorbitEcc ) : 0 );
   const UINT4 n_orbit = n_orbitasini * n_orbitPeriod * n_orbitTp * n_orbitArgp * n_orbitEcc;
 
+  /* if a complete output of the F-statistic results, or a grid output file, was requested,
+   * we open and prepare the output-file here */
+  if ( ( uvar.outputFstat && GV.runSearch ) || uvar.outputGrid )
+    {
+      if ( uvar.outputGrid )
+        {
+          XLAL_CHECK_MAIN ( (fpFstat = fopen (uvar.outputGrid, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputGrid );
+        } else {
+          XLAL_CHECK_MAIN ( (fpFstat = fopen (uvar.outputFstat, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputFstat );
+        }
+      fprintf (fpFstat, "%s", GV.logstring );
+
+      /* assemble column headings string */
+      char column_headings_string[1024];
+      XLAL_INIT_MEM( column_headings_string );
+      strcat ( column_headings_string, "freq alpha delta f1dot f2dot f3dot" );
+      if ( !uvar.outputGrid )
+        {
+          strcat ( column_headings_string, " 2F");
+          if ( uvar.computeBSGL )
+            {
+              strcat ( column_headings_string, " log10BSGL" );
+            }
+          if ( uvar.outputSingleFstats || uvar.computeBSGL )
+            {
+              const UINT4 numDetectors = GV.detectorIDs->length;
+              for ( UINT4 X = 0; X < numDetectors ; X ++ )
+                {
+                  char headingX[7];
+                  snprintf ( headingX, sizeof(headingX), " 2F_%s", GV.detectorIDs->data[X] );
+                  strcat ( column_headings_string, headingX );
+                } /* for X < numDet */
+            }
+        }
+      if ( n_orbit > 1 )
+        {
+          strcat ( column_headings_string, " asini period tp argp ecc" );
+      }
+      fprintf (fpFstat, "%%%% columns:\n%%%% %s\n", column_headings_string );
+
+    } /* if ( ( uvar.outputFstat && GV.runSearch ) || uvar.outputGrid ) */
+
   /* count number of templates */
   numTemplates = XLALNumDopplerTemplates ( GV.scanState );
   numTemplates *= n_orbit;
   if (uvar.countTemplates) {
     printf("%%%% Number of templates: %0.0f\n", numTemplates);
+  }
+
+  if ( uvar.outputGrid ) { /* alternative to main search loop: loop through the same grid but only write out the parameters, no F-stats */
+    while ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 ) {
+    for (UINT4 i_orbitasini = 0; i_orbitasini < n_orbitasini; ++i_orbitasini) {
+    for (UINT4 i_orbitPeriod = 0; i_orbitPeriod < n_orbitPeriod; ++i_orbitPeriod) {
+    for (UINT4 i_orbitTp = 0; i_orbitTp < n_orbitTp; ++i_orbitTp) {
+    for (UINT4 i_orbitArgp = 0; i_orbitArgp < n_orbitArgp; ++i_orbitArgp) {
+    for (UINT4 i_orbitEcc = 0; i_orbitEcc < n_orbitEcc; ++i_orbitEcc) {
+      dopplerpos.asini = uvar.orbitasini + i_orbitasini * uvar.dorbitasini;
+      dopplerpos.period = uvar.orbitPeriod + i_orbitPeriod * uvar.dorbitPeriod;
+      dopplerpos.tp = uvar.orbitTp; XLALGPSAdd( &dopplerpos.tp, i_orbitTp * uvar.dorbitTp );
+      dopplerpos.argp = uvar.orbitArgp + i_orbitArgp * uvar.dorbitArgp;
+      dopplerpos.ecc = uvar.orbitEcc + i_orbitEcc * uvar.dorbitEcc;
+      for ( UINT4 iFreq = 0; iFreq < GV.numFreqBins_FBand; iFreq ++ )
+      {
+        /* collect data on current 'Fstat-candidate' */
+        thisFCand.doppler = dopplerpos;	// use 'original' dopplerpos @ refTime !
+        thisFCand.doppler.fkdot[0] += iFreq * GV.dFreq; // this only does something for the resampling post-loop over frequency-bins, 0 otherwise ...
+        if ( fpFstat ) { /* no search, no toplist: write out grid point immediately */
+          if ( write_FstatCandidate_to_fp ( fpFstat, &thisFCand, 0, n_orbit > 1 ) != 0 ) {
+            LogPrintf (LOG_CRITICAL, "Failed to write candidate to file.\n");
+            return -1;
+          }
+        }
+      }
+    }
+    }
+    }
+    }
+    }
+    } /* while more Doppler positions to scan */
+  } /* if ( uvar.outputGrid ) */
+
+  if ( uvar.outputTransientStats && GV.runSearch )
+    {
+      XLAL_CHECK_MAIN ( (fpTransientStats = XLALFileOpen (uvar.outputTransientStats, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStats );
+      XLALFilePrintf (fpTransientStats, "%s", GV.logstring );			/* write search log comment */
+      XLAL_CHECK_MAIN ( write_transientCandidate_to_fp ( fpTransientStats, NULL, 's' ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
+    }
+
+  if ( uvar.outputTransientStatsAll && GV.runSearch )
+    {
+      XLAL_CHECK_MAIN ( (fpTransientStatsAll = XLALFileOpen (uvar.outputTransientStatsAll, "wb")) != NULL, XLAL_ESYS, "\nError opening file '%s' for writing..\n\n", uvar.outputTransientStatsAll );
+      XLALFilePrintf (fpTransientStatsAll, "%s", GV.logstring );			/* write search log comment */
+      XLAL_CHECK_MAIN ( write_transientCandidateAll_to_fp ( fpTransientStatsAll, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );	/* write header-line comment */
+    }
+
+  /* start Fstatistic histogram with a single empty bin */
+  if ( uvar.outputFstatHist && GV.runSearch ) {
+    XLAL_CHECK_MAIN ((Fstat_histogram = gsl_vector_int_alloc(1)) != NULL, XLAL_ENOMEM );
+    gsl_vector_int_set_zero(Fstat_histogram);
   }
 
   /*----------------------------------------------------------------------
@@ -487,8 +534,7 @@ int main(int argc,char *argv[])
   // pointer to Fstat results structure, will be allocated by XLALComputeFstat()
   FstatResults* Fstat_res = NULL;
 
-  /* skip search if user supplied --countTemplates */
-  while ( !uvar.countTemplates && (XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0) ) {
+  while ( GV.runSearch && ( XLALNextDopplerPos( &dopplerpos, GV.scanState ) == 0 ) ) {
 
     for (UINT4 i_orbitasini = 0; i_orbitasini < n_orbitasini; ++i_orbitasini) {
     for (UINT4 i_orbitPeriod = 0; i_orbitPeriod < n_orbitPeriod; ++i_orbitPeriod) {
@@ -618,7 +664,7 @@ int main(int argc,char *argv[])
 	    }
 	  else if ( fpFstat ) 				/* no toplist :write out immediately */
 	    {
-	      if ( write_FstatCandidate_to_fp ( fpFstat, writeCand, n_orbit > 1 ) != 0 )
+	      if ( write_FstatCandidate_to_fp ( fpFstat, writeCand, 1, n_orbit > 1 ) != 0 )
 		{
 		  LogPrintf (LOG_CRITICAL, "Failed to write candidate to file.\n");
 		  return -1;
@@ -767,7 +813,7 @@ int main(int argc,char *argv[])
 
 
   /* if requested: output timings into timing-file */
-  if ( uvar.outputTiming )
+  if ( uvar.outputTiming && GV.runSearch )
     {
       REAL8 num_templates = numTemplates * GV.numFreqBins_FBand;	// 'templates' now refers to number of 'frequency-bands' in resampling case
 
@@ -786,7 +832,7 @@ int main(int argc,char *argv[])
     } /* if timing output requested */
 
   /* if requested: output F-statistic timings into F-statistic-timing-file */
-  if ( uvar.outputFstatTiming )
+  if ( uvar.outputFstatTiming && GV.runSearch )
     {
 
       FILE *fp;
@@ -806,7 +852,7 @@ int main(int argc,char *argv[])
     } /* if timing output requested */
 
   /* ----- if using toplist: sort and write it out to file now ----- */
-  if ( fpFstat && GV.FstatToplist )
+  if ( fpFstat && GV.FstatToplist && GV.runSearch )
     {
       UINT4 el;
 
@@ -827,7 +873,7 @@ int main(int argc,char *argv[])
 	    LogPrintf ( LOG_CRITICAL, "Internal consistency problems with toplist: contains fewer elements than expected!\n");
 	    return -1;
 	  }
-	  if ( write_FstatCandidate_to_fp ( fpFstat, candi, n_orbit > 1 ) != 0 )
+	  if ( write_FstatCandidate_to_fp ( fpFstat, candi, 1, n_orbit > 1 ) != 0 )
 	    {
 	      LogPrintf (LOG_CRITICAL, "Failed to write candidate to file.\n");
 	      return -1;
@@ -846,7 +892,7 @@ int main(int argc,char *argv[])
   XLALFileClose (fpTransientStatsAll);
 
   /* ----- estimate amplitude-parameters for the loudest canidate and output into separate file ----- */
-  if ( uvar.outputLoudest )
+  if ( uvar.outputLoudest && GV.runSearch )
     {
       FILE *fpLoudest;
       PulsarCandidate XLAL_INIT_DECL(pulsarParams);
@@ -870,7 +916,7 @@ int main(int argc,char *argv[])
   LogPrintf (LOG_NORMAL, "Search finished.\n");
 
   /* write out the Fstatistic histogram */
-  if (uvar.outputFstatHist) {
+  if  (uvar.outputFstatHist && GV.runSearch ) {
 
     size_t i = 0;
     FILE *fpFstatHist = fopen(uvar.outputFstatHist, "wb");
@@ -1093,6 +1139,9 @@ initUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarAuxDataMember( FstatMethod, UserEnum, XLALFstatMethodChoices(), 0, OPTIONAL,  "F-statistic method to use" );
 
+  XLALRegisterUvarMember( 	countTemplates,  BOOLEAN, 0,  OPTIONAL, "Count number of templates (if supported) instead of search");
+  XLALRegisterUvarMember( 	outputGrid,	 STRING, 0,  OPTIONAL, "Output-file for parameter-space grid (without running a search!)");
+
   /* ----- more experimental/expert options ----- */
   XLALRegisterUvarMember( 	UseNoiseWeights,BOOLEAN, 'W', DEVELOPER, "Use per-SFT noise weights");
   XLALRegisterUvarMember(ephemEarth, 	 STRING, 0,  DEVELOPER, "Earth ephemeris file to use");
@@ -1107,8 +1156,6 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( 	timerCount, 	 REAL8, 0,  DEVELOPER, "N: Output progress/timer info every N seconds");
 
   XLALRegisterUvarMember( 	projectMetric, 	 BOOLEAN, 0,  DEVELOPER, "Use projected metric on Freq=const subspact");
-
-  XLALRegisterUvarMember( 	countTemplates,  BOOLEAN, 0,  DEVELOPER, "Count number of templates (if supported) instead of search");
 
   XLALRegisterUvarMember(  spindownAge,     REAL8, 0,  DEVELOPER, "Spindown age for --gridType=9");
   XLALRegisterUvarMember(  minBraking,      REAL8, 0,  DEVELOPER, "Minimum braking index for --gridType=9");
@@ -1155,11 +1202,20 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
   LIGOTimeGPS endTime;
   size_t toplist_length = uvar->NumCandidatesToKeep;
 
+  /* check compatibility of some output options */
+  cfg->runSearch = !( uvar->countTemplates || uvar->outputGrid );
+  XLAL_CHECK ( cfg->runSearch || !( uvar->outputFstat || uvar->outputFstatAtoms || uvar->outputFstatHist || uvar->outputFstatTiming || uvar->outputLoudest || uvar->outputTransientStats || uvar->outputTransientStatsAll ), XLAL_EINVAL, "Invalid input: --countTemplates or --outputGrid means that no search is actually run, so we can't do any of --outputFstat --outputFstatAtoms --outputFstatHist --outputFstatTiming --outputLoudest --outputTransientStats --outputTransientStatsAll" );
+
   /* set the current working directory */
   XLAL_CHECK ( chdir ( uvar->workingDir ) == 0, XLAL_EINVAL, "Unable to change directory to workinDir '%s'\n", uvar->workingDir );
 
   /* ----- set computational parameters for F-statistic from User-input ----- */
   cfg->useResamp = ( uvar->FstatMethod >= FMETHOD_RESAMP_GENERIC ); // use resampling;
+
+  /* check that resampling is compatible with gridType */
+  if ( cfg->useResamp && uvar->gridType > GRID_SKY_LAST /* end-marker for factored grid types */ ) {
+    XLAL_ERROR ( XLAL_EINVAL, "\nUse of resampling FstatMethod is incompatible with non-factored gridType=%i\n\n", uvar->gridType );
+  }
 
   /* if IFO string vector was passed by user, parse it for later use */
   if ( uvar->IFOs != NULL ) {
@@ -1843,12 +1899,6 @@ checkUserInputConsistency ( const UserInput_t *uvar )
     /* Specific checks for --gridType=GRID_SPINDOWN_{SQUARE,AGEBRK} parameter spaces */
     if (uvar->gridType == GRID_SPINDOWN_SQUARE || uvar->gridType == GRID_SPINDOWN_AGEBRK) {
 
-      /* Check that no third spindown range were given */
-      if (uvar->f3dot != 0.0 || uvar->f3dotBand != 0.0) {
-        XLALPrintError ("\nERROR: f3dot and f3dotBand cannot be used with gridType={8,9}\n\n");
-        XLAL_ERROR ( XLAL_EINVAL );
-      }
-
       /* Check that no grid spacings were given */
       if (uvar->df1dot != 0.0 || uvar->df2dot != 0.0 || uvar->df3dot != 0.0) {
         XLALPrintError ("\nERROR: df{1,2,3}dot cannot be used with gridType={8,9}\n\n");
@@ -1859,6 +1909,12 @@ checkUserInputConsistency ( const UserInput_t *uvar )
 
     /* Specific checks for --gridType=GRID_SPINDOWN_AGEBRK parameter space */
     if (uvar->gridType == GRID_SPINDOWN_AGEBRK) {
+
+      /* Check that no third spindown range were given */
+      if (uvar->f3dot != 0.0 || uvar->f3dotBand != 0.0) {
+        XLALPrintError ("\nERROR: f3dot and f3dotBand cannot be used with gridType=9\n\n");
+        XLAL_ERROR ( XLAL_EINVAL );
+      }
 
       /* Check age and braking indices */
       if (uvar->spindownAge <= 0.0) {
@@ -2087,37 +2143,38 @@ compareFstatCandidates_BSGL ( const void *candA, const void *candB )
  * Return: 0 = OK, -1 = ERROR
  */
 int
-write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand, const BOOLEAN output_orbit )
+write_FstatCandidate_to_fp ( FILE *fp, const FstatCandidate *thisFCand, const BOOLEAN output_stats, const BOOLEAN output_orbit )
 {
 
   if ( !fp || !thisFCand )
     return -1;
 
-  /* add extra output-field containing per-detector FX if non-NULL */
-  char extraStatsStr[256] = "";     /* defaults to empty */
-  char buf0[256];
-  /* BSGL */
-  if ( !XLALIsREAL4FailNaN(thisFCand->log10BSGL) ) { /* if --computeBSGL=FALSE, the log10BSGL field was initialised to NAN - do not output it */
-      snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->log10BSGL );
-  }
-  if ( thisFCand->numDetectors > 0 )
-    {
-      for ( UINT4 X = 0; X < thisFCand->numDetectors; X ++ )
-        {
-          snprintf ( buf0, sizeof(buf0), " %.9g", thisFCand->twoFX[X] );
-          UINT4 len1 = strlen ( extraStatsStr ) + strlen ( buf0 ) + 1;
-          if ( len1 > sizeof ( extraStatsStr ) ) {
-            XLAL_ERROR ( XLAL_EINVAL, "assembled output string too long! (%d > %zu)\n", len1, sizeof(extraStatsStr ));
-            break;      /* we can't really terminate with error in this function, but at least we avoid crashing */
-          }
-          strcat ( extraStatsStr, buf0 );
-        } /* for X < numDet */
-    } /* if FX */
-
-  fprintf (fp, "%.16g %.16g %.16g %.16g %.16g %.16g %.9g%s",
+  /* write main Doppler parameters */
+  fprintf (fp, "%.16g %.16g %.16g %.16g %.16g %.16g",
 	   thisFCand->doppler.fkdot[0], thisFCand->doppler.Alpha, thisFCand->doppler.Delta,
-	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3],
-	   thisFCand->twoF, extraStatsStr );
+	   thisFCand->doppler.fkdot[1], thisFCand->doppler.fkdot[2], thisFCand->doppler.fkdot[3] );
+
+  if (output_stats) {
+    /* add extra output-field containing per-detector FX if non-NULL */
+    char extraStatsStr[256] = "";     /* defaults to empty */
+    char buf0[256];
+    /* BSGL */
+    if ( !XLALIsREAL4FailNaN(thisFCand->log10BSGL) ) { /* if --computeBSGL=FALSE, the log10BSGL field was initialised to NAN - do not output it */
+      snprintf ( extraStatsStr, sizeof(extraStatsStr), " %.9g", thisFCand->log10BSGL );
+    }
+    if ( thisFCand->numDetectors > 0 ) {
+      for ( UINT4 X = 0; X < thisFCand->numDetectors; X ++ ) {
+        snprintf ( buf0, sizeof(buf0), " %.9g", thisFCand->twoFX[X] );
+        UINT4 len1 = strlen ( extraStatsStr ) + strlen ( buf0 ) + 1;
+        if ( len1 > sizeof ( extraStatsStr ) ) {
+          XLAL_ERROR ( XLAL_EINVAL, "assembled output string too long! (%d > %zu)\n", len1, sizeof(extraStatsStr ));
+          break;      /* we can't really terminate with error in this function, but at least we avoid crashing */
+        }
+        strcat ( extraStatsStr, buf0 );
+      } /* for X < numDet */
+    } /* if FX */
+    fprintf (fp, " %.9g%s", thisFCand->twoF, extraStatsStr );
+  }
 
   if (output_orbit) {
     fprintf( fp, " %.16g %.16g %.16g %.16g %.16g",

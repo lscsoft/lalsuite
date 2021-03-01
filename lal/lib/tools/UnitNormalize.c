@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #define TRUE 1
@@ -65,9 +65,9 @@ gcd(INT2 numer, UINT2 denom)
 }
 
 /**
- * Returns 0 upon success or \c #XLAL_FAILURE
- * if the input pointer is \c NULL, in which case \c ::xlalErrno
- * is set to \c #XLAL_EFAULT.
+ * Returns 0 upon success or #XLAL_FAILURE
+ * if the input pointer is \c NULL, in which case ::xlalErrno
+ * is set to #XLAL_EFAULT.
  */
 int XLALUnitNormalize( LALUnit *unit )
 {

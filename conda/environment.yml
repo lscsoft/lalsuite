@@ -1,0 +1,38 @@
+name: lalsuite-dev
+channels:
+  - conda-forge
+dependencies:
+  - astropy >=1.1.1
+  - autoconf
+  - automake
+  - bc
+  - cfitsio
+  - doxygen
+  - fftw
+  - freezegun
+  - c-compiler
+  - gsl
+  - h5py
+  - hdf5
+  - healpy
+  - help2man >=1.37
+  - ldas-tools-framecpp
+  - libframel
+  - ligo-gracedb
+  - ligo-segments
+  - lscsoft-glue >=2.0.0
+  - make
+  - matplotlib-base
+  - metaio
+  - numpy
+  - openmpi
+  - pillow
+  - pkg-config >=0.18.0
+  - pytest
+  - python
+  #- python-ligo-lw  <-- depends upon python-lal
+  - scipy >=0.9.0
+  - six
+  - swig >=3.0.10
+  - texlive-core
+  - zlib

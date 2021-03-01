@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #include <math.h>
@@ -383,15 +383,14 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
         } else if (strcmp(argv[i], "--nr-file") == 0) {
 	  XLALSimInspiralWaveformParamsInsertNumRelData(params->params, argv[++i]);
         } else if (strcmp(argv[i], "--modesList") == 0) {
-            char numbers_str[50], *currnum;
-            strncpy(numbers_str, argv[++i], strlen(numbers_str)-1);
-            int numbers[25], iii = 0;
-            while ((currnum = strtok(iii ? NULL : numbers_str, ",")) != NULL){
-              numbers[iii++] = atoi(currnum);
+            char *current_mode;
+            int modes[50], iii = 0;
+            while ((current_mode = strtok(iii ? NULL : argv[++i], ",")) != NULL){
+              modes[iii++] = atoi(current_mode);
             }
             LALValue *ModeArray = XLALSimInspiralCreateModeArray();
             for (int ii=0; ii<iii; ii+=2){
-               XLALSimInspiralModeArrayActivateMode(ModeArray, numbers[ii], numbers[ii+1]);
+               XLALSimInspiralModeArrayActivateMode(ModeArray, modes[ii], modes[ii+1]);
                XLALSimInspiralWaveformParamsInsertModeArray(params->params, ModeArray);
              }
              XLALDestroyValue(ModeArray);

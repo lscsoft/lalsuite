@@ -12,7 +12,7 @@ Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 Summary: LSC Algorithm Library Applications
 License: GPLv2+
 Group: LAL
-Source: %{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
+Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 BuildRequires: bc
@@ -21,30 +21,27 @@ BuildRequires: fftw-devel
 BuildRequires: libframel-devel >= @MIN_FRAMEL_VERSION@
 BuildRequires: gcc
 BuildRequires: gsl-devel
-BuildRequires: help2man
+BuildRequires: help2man >= 1.37
 BuildRequires: less
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
-BuildRequires: lalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: lalframe-devel >= @MIN_LALFRAME_VERSION@
-BuildRequires: lalinference-devel >= @MIN_LALINFERENCE_VERSION@
-BuildRequires: lalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalmetaio-devel >= @MIN_LALMETAIO_VERSION@
-BuildRequires: lalpulsar-devel >= @MIN_LALPULSAR_VERSION@
-BuildRequires: lalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
+BuildRequires: liblalburst-devel >= @MIN_LALBURST_VERSION@
+BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
+BuildRequires: liblalinference-devel >= @MIN_LALINFERENCE_VERSION@
+BuildRequires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: liblalpulsar-devel >= @MIN_LALPULSAR_VERSION@
+BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
-BuildRequires: python2-lal >= @MIN_LAL_VERSION@
-BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
-BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
-BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python2-lalburst >= @MIN_LALBURST_VERSION@
-BuildRequires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
-BuildRequires: python2-lalinference >= @MIN_LALINFERENCE_VERSION@
-BuildRequires: python2-rpm-macros
-Requires: cfitsio
-Requires: fftw
-Requires: gsl
+BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
+BuildRequires: python3-rpm-macros
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalburst >= @MIN_LALBURST_VERSION@
 Requires: lalframe >= @MIN_LALFRAME_VERSION@
@@ -56,21 +53,21 @@ Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
 Requires: libframel >= @MIN_FRAMEL_VERSION@
 Requires: python
-Requires: python2-h5py
-Requires: python2-lal >= @MIN_LAL_VERSION@
-Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
-Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
-Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
-Requires: python2-lalinference >= @MIN_LALINFERENCE_VERSION@
-Requires: python2-ligo-lw
-Requires: python2-ligo-segments
-Requires: python2-matplotlib
-Requires: python2-numpy
-Requires: python2-scipy
-Requires: python2-six
+Requires: python%{python3_pkgversion}-h5py
+Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
+Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
+Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
+Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
+Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
+Requires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
+Requires: python%{python3_pkgversion}-ligo-lw
+Requires: python%{python3_pkgversion}-ligo-segments
+Requires: python%{python3_pkgversion}-matplotlib
+Requires: python%{python3_pkgversion}-numpy
+Requires: python%{python3_pkgversion}-scipy
+Requires: python%{python3_pkgversion}-six
 Obsoletes: lalxml < 1.2.5-1
 Obsoletes: lalxml-debuginfo < 1.2.5-1
 Obsoletes: lalxml-devel < 1.2.5-1
@@ -117,16 +114,14 @@ Algorithm Library.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-# force linking agsinst system libmpi
-export OMPI_LIBS="-lmpi -Wl,--disable-new-dtags"
-%configure --disable-gcc-flags --enable-cfitsio --enable-openmp
+%configure --disable-gcc-flags --enable-cfitsio PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
 %check
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 # check python import
-env PYTHONPATH="%{buildroot}%{python2_sitearch}" \
-%{__python2} -c "import %{name}"
+env PYTHONPATH="%{buildroot}%{python3_sitearch}" \
+%{__python3} -c "import %{name}"
 
 %install
 %make_install
@@ -143,15 +138,25 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 %files
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_bindir}/*
 %{_datadir}/lalapps/*
 %{_mandir}/man1/*
 %{_sysconfdir}/lalapps-user-env.*
-%{python2_sitearch}
+%{python3_sitearch}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Fri Feb 05 2021 Adam Mercer <adam.mercer@ligo.org> 7.2.0-1
+- Update for 7.2.0
+
+* Mon Jan 11 2021 Adam Mercer <adam.mercer@ligo.org> 7.1.0-1
+- Update for 7.1.0
+
+* Wed Oct 28 2020 Adam Mercer <adam.mercer@ligo.org> 7.0.0-1
+- Update for 7.0.0
+
 * Wed Aug 19 2020 Adam Mercer <adam.mercer@ligo.org> 6.26.1-1
 - Update for 6.26.1
 

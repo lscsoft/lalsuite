@@ -1,15 +1,40 @@
 AC_PREREQ([2.63])
-AC_INIT([LALMetaIO],[1.6.1.1],[lal-discuss@ligo.org])
+AC_INIT([LALMetaIO],[2.0.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([lib/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
+
+# set library api info
+# 1. start with version information of "0:0:0" for each libtool library
+# 2. update the version information only immediately before a public
+#    release of your software. More frequent updates are unnecessary,
+#    and only guarantee that the current interface number gets larger
+#    faster.
+# 3. if the library source code has changed at all since the last
+#    update, then increment revision ("c:r:a" becomes "c:r+1:a").
+# 4. if any interfaces have been added, removed, or changed since the
+#    last update, increment current, and set revision to 0.
+# 5. if any interfaces have been added since the last public release,
+#    then increment age.
+# 6. if any interfaces have been removed since the last public release,
+#    then set age to 0.
+AC_SUBST([LIBCURRENT],[8])
+AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
+AS_CASE([${host_os}],
+  [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
+  [AC_SUBST([LIBMAJOR],[$((LIBCURRENT-LIBAGE))])]
+)
+
 AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
   debian/Makefile \
   debian/control \
+  debian/liblalmetaio${LIBMAJOR}.install:debian/liblalmetaio.install.in \
   doxygen/Makefile \
   doxygen/doxygen.cfg \
   include/Makefile \
@@ -42,7 +67,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.0.0"
+MIN_LAL_VERSION="7.1.0"
 AC_SUBST([MIN_LAL_VERSION])
 
 AC_CANONICAL_HOST
@@ -51,25 +76,6 @@ LALSUITE_ARG_VAR
 
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-
-# set library api info
-# 1. start with version information of "0:0:0" for each libtool library
-# 2. update the version information only immediately before a public
-#    release of your software. More frequent updates are unnecessary,
-#    and only guarantee that the current interface number gets larger
-#    faster.
-# 3. if the library source code has changed at all since the last
-#    update, then increment revision ("c:r:a" becomes "c:r+1:a").
-# 4. if any interfaces have been added, removed, or changed since the
-#    last update, increment current, and set revision to 0.
-# 5. if any interfaces have been added since the last public release,
-#    then increment age.
-# 6. if any interfaces have been removed since the last public release,
-#    then set age to 0.
-AC_SUBST([LIBCURRENT],[8])
-AC_SUBST([LIBREVISION],[0])
-AC_SUBST([LIBAGE],[0])
-AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
@@ -82,6 +88,9 @@ LALSUITE_ENABLE_SWIG
 
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
+
+# enable help2man documentation
+LALSUITE_ENABLE_HELP2MAN
 
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO
@@ -107,14 +116,6 @@ LALSUITE_USE_LIBTOOL
 
 # check for header files
 AC_HEADER_STDC
-
-# check for zlib libraries and headers
-PKG_CHECK_MODULES([ZLIB],[zlib],[true],[false])
-LALSUITE_PUSH_UVARS
-LALSUITE_ADD_FLAGS([C],[${ZLIB_CFLAGS}],[${ZLIB_LIBS}])
-AC_SEARCH_LIBS([compress],[],[:],[AC_MSG_ERROR([could not find the zlib library])])
-AC_CHECK_HEADER([zlib.h],[:],[AC_MSG_ERROR([could not find the zlib.h header])])
-LALSUITE_POP_UVARS
 
 # math library
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])

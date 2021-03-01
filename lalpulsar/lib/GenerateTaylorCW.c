@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #include <lal/LALStdio.h>
@@ -37,7 +37,7 @@
  * <tt>*params</tt>, storing the result in <tt>*output</tt>.
  *
  * In the <tt>*params</tt> structure, the routine uses all the "input"
- * fields specified in ::TaylorCWParamStruc, and sets all of the
+ * fields specified in \c TaylorCWParamStruc, and sets all of the
  * "output" fields.  If <tt>params->f=NULL</tt>, a precisely periodic
  * (monochromatic) waveform is generated.
  *

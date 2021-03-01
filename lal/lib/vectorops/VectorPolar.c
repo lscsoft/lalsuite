@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #include <complex.h>
@@ -29,8 +29,8 @@
  *
  * \brief Convert complex vector components from rectangular coordinates to polar coordinates.
  *
- * Let \c u be an object of type ::COMPLEX8Vector, and let
- * \c a and \c b be objects of type ::REAL4Vector.
+ * Let \c u be an object of type \c COMPLEX8Vector, and let
+ * \c a and \c b be objects of type \c REAL4Vector.
  *
  * The \ref LALCVectorAbs "LALCVectorAbs( &status, &a, &u )" function computes
  * the magnitude of a complex vector \c u:<br>

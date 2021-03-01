@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #define _GNU_SOURCE   /* for mkstemp() and strdup() */
@@ -896,20 +896,27 @@ static FrAdcData *XLALFrameUFrAdcDataNew(const char *name, int type)
         XLAL_ERROR_NULL(XLAL_ENOMEM);
     }
     switch (type) {
-    case FR_VECT_4S:
-        adcData->nBits = 32;
-        break;
-    case FR_VECT_2S:
-        adcData->nBits = 16;
-        break;
     case FR_VECT_C:
+    case FR_VECT_1U:
         adcData->nBits = 8;
         break;
+    case FR_VECT_2S:
+    case FR_VECT_2U:
+        adcData->nBits = 16;
+        break;
     case FR_VECT_4R:
+    case FR_VECT_4S:
+    case FR_VECT_4U:
         adcData->nBits = 32;
         break;
+    case FR_VECT_8C:
     case FR_VECT_8R:
+    case FR_VECT_8S:
+    case FR_VECT_8U:
         adcData->nBits = 64;
+        break;
+    case FR_VECT_16C:
+        adcData->nBits = 128;
         break;
     default:   /* invalid type */
         FrAdcDataFree(adcData);
@@ -1125,20 +1132,27 @@ int XLALFrameUFrChanVectorAlloc_FrameL_(LALFrameUFrChan * channel, int dtype, si
     case XLAL_FRAMEU_FR_CHAN_TYPE_ADC:
         /* determine bits */
         switch (dtype) {
-        case FR_VECT_4S:
-            channel->handle.adc->nBits = 32;
-            break;
-        case FR_VECT_2S:
-            channel->handle.adc->nBits = 16;
-            break;
         case FR_VECT_C:
+        case FR_VECT_1U:
             channel->handle.adc->nBits = 8;
             break;
+        case FR_VECT_2S:
+        case FR_VECT_2U:
+            channel->handle.adc->nBits = 16;
+            break;
         case FR_VECT_4R:
+        case FR_VECT_4S:
+        case FR_VECT_4U:
             channel->handle.adc->nBits = 32;
             break;
+        case FR_VECT_8C:
         case FR_VECT_8R:
+        case FR_VECT_8S:
+        case FR_VECT_8U:
             channel->handle.adc->nBits = 64;
+            break;
+        case FR_VECT_16C:
+            channel->handle.adc->nBits = 128;
             break;
         default:       /* invalid vector type for adc data */
             XLAL_ERROR(XLAL_ETYPE);

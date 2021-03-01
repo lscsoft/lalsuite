@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, 
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ *  MA  02110-1301  USA
  */
 
 /**
@@ -38,6 +38,8 @@
 
 #ifndef _PULSAR_CROSSCORR_H
 #define _PULSAR_CROSSCORR_H
+
+#include "config.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -65,7 +67,7 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/SFTClean.h>
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <gsl/gsl_cdf.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>

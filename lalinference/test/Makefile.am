@@ -11,6 +11,7 @@ test_programs += LALInferenceGenerateROQTest
 #test_programs += LALInferenceLikelihoodTest
 #test_programs += LALInferenceProposalTest
 test_programs += LALInferenceHDF5Test
+test_programs += test_cubic_interp
 
 # Add shell, Python, etc. test scripts to this variable
 # Disable test_multiband.sh for now

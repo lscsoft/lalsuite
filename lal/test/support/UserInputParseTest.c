@@ -14,8 +14,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with with program; see the file COPYING. If not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-// MA 02111-1307 USA
+// Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301 USA
 //
 
 // Tests of the unit conversion functions in the UserInputParser.[ch] module
@@ -159,7 +159,7 @@ test_ParseStringValue ( void )
   // ---------- XLALParseStringValueAsREAL4() ----------
   REAL4 valREAL4, valREAL4Ref;
   valString = "2147483647";
-  valREAL4Ref = 2147483647;
+  valREAL4Ref = 2147483647.0;
   XLAL_CHECK ( XLALParseStringValueAsREAL4 ( &valREAL4, valString ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( valREAL4 == valREAL4Ref, XLAL_ETOL, "XLALParseStringValueAsREAL4(%s) failed, return = %.16g\n", valString, valREAL4 );
 

@@ -98,14 +98,9 @@ e.g. H1")
     det = opts.det
 
   # get the path for the ephemeris files
-  try:
-    ephpath = os.environ['LALPULSAR_PREFIX']
-  except:
-    print("Need environment variables 'LALPULSAR_PREFIX' to be set", file=sys.stderr)
-    sys.exit(1)
-
-  earth = ephpath + '/share/lalpulsar/earth00-19-DE405.dat.gz'
-  sun = ephpath + '/share/lalpulsar/sun00-19-DE405.dat.gz'
+  ephpath = os.environ['LALPULSAR_DATADIR']
+  earth = os.path.join(ephpath, 'earth00-19-DE405.dat.gz')
+  sun = os.path.join(ephpath, 'sun00-19-DE405.dat.gz')
 
   # check files exist
   if not os.path.isfile(earth) or not os.path.isfile(sun):

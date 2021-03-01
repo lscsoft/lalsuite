@@ -3,65 +3,68 @@ Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
-Build-Depends: debhelper (>= 9),
-  dh-python,
-  gcc,
-  g++,
-  help2man,
-  make,
-  pkg-config (>= 0.18.0),
-  lal-dev (>= @MIN_LAL_VERSION@~),
-  ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
-  libframel-dev (>= @MIN_FRAMEL_VERSION@),
-  liboctave-dev,
-  zlib1g-dev,
-  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-  python-all-dev,
-  python-lal (>= @MIN_LAL_VERSION@~),
-  python-mock,
-  python-numpy (>= @MIN_NUMPY_VERSION@),
-  python-pathlib,
-  python-pytest,
-  python3-all-dev,
-  python3-lal (>= @MIN_LAL_VERSION@~),
-  python3-numpy (>= @MIN_NUMPY_VERSION@),
-  python3-pytest,
-  lal-octave (>= @MIN_LAL_VERSION@~),
+Build-Depends:
+ debhelper (>= 9),
+ dh-python,
+ help2man (>= 1.37),
+ lal-octave (>= @MIN_LAL_VERSION@~),
+ ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
+ libframel-dev (>= @MIN_FRAMEL_VERSION@),
+ liblal-dev (>= @MIN_LAL_VERSION@~),
+ liboctave-dev,
+ pkg-config (>= 0.18.0),
+ python-all-dev,
+ python-lal (>= @MIN_LAL_VERSION@~),
+ python-mock,
+ python-numpy (>= @MIN_NUMPY_VERSION@),
+ python-pathlib,
+ python-pytest,
+ python3-all-dev,
+ python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-numpy (>= @MIN_NUMPY_VERSION@),
+ python3-pytest,
+ rsync,
+ swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
-Package: lalframe
+Package: liblalframe@LIBMAJOR@
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  ldas-tools-framecpp-c (>= @MIN_FRAMECPPC_VERSION@),
-  libframel8 (>= @MIN_FRAMEL_VERSION@),
-  lal (>= @MIN_LAL_VERSION@~)
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: LSC Algorithm Library Frame
  The LSC Algorithm Frame Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL Frame library.
+Replaces: lalframe (<< 1.5.2-2~)
+Breaks: lalframe (<< 1.5.2-2~)
 
-Package: lalframe-dev
+Package: liblalframe-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
-  libframel-dev (>= @MIN_FRAMEL_VERSION@),
-  zlib1g-dev,
-  lal-dev (>= @MIN_LAL_VERSION@~),
-  lalframe (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
+ libframel-dev (>= @MIN_FRAMEL_VERSION@),
+ liblal-dev (>= @MIN_LAL_VERSION@~),
+ liblalframe@LIBMAJOR@ (= ${binary:Version}),
 Description: LSC Algorithm Library Frame Developers
  The LSC Algorithm Frame Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  Frame library.
+Provides: lalframe-dev (= ${binary:Version})
+Replaces: lalframe-dev (<< 1.5.2-2~)
+Breaks: lalframe-dev (<< 1.5.2-2~)
 
 Package: lalframe-python
-Depends: python-lalframe, ${misc:Depends}
+Depends:
+ ${misc:Depends},
+ python-lalframe,
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalframe-python was renamed python-lalframe,
@@ -72,19 +75,22 @@ Section: python
 Replaces: lalframe-python (<< 1.4.3.1-1~)
 Breaks: lalframe-python (<< 1.4.3.1-1~)
 Architecture: any
-Depends: ${misc:Depends},
-  ${python:Depends},
-  ${shlibs:Depends},
-  python-lal (>= @MIN_LAL_VERSION@~),
-  lalframe (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ ${shlibs:Depends},
+ liblalframe@LIBMAJOR@ (= ${binary:Version}),
+ python-lal (>= @MIN_LAL_VERSION@~),
 Description: Python bindings for LALFrame
  The LSC Algorithm Frame Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Frame library.
 
 Package: lalframe-python3
-Depends: python3-lalframe, ${misc:Depends}
+Depends:
+ ${misc:Depends},
+ python3-lalframe,
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalframe-python3 was renamed python3-lalframe,
@@ -95,22 +101,35 @@ Section: python
 Replaces: lalframe-python3 (<< 1.4.3.1-1~)
 Breaks: lalframe-python3 (<< 1.4.3.1-1~)
 Architecture: any
-Depends: ${misc:Depends},
-  ${python3:Depends},
-  ${shlibs:Depends},
-  python3-lal (>= @MIN_LAL_VERSION@~),
-  lalframe (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ ${shlibs:Depends},
+ lalframe (= ${binary:Version}),
+ python3-lal (>= @MIN_LAL_VERSION@~),
 Description: Python 3 bindings for LALFrame
  The LSC Algorithm Frame Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Frame library.
 
 Package: lalframe-octave
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  octave,
-  lal-octave (>= @MIN_LAL_VERSION@~),
-  lalframe (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ lal-octave (>= @MIN_LAL_VERSION@~),
+ lalframe (= ${binary:Version}),
+ octave,
 Description: Octave bindings for LALFrame
  The LSC Algorithm Frame Library for gravitational wave data analysis.
  This package contains Octave bindings for the LAL Frame library.
+
+Package: lalframe
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ liblalframe@LIBMAJOR@ (= ${binary:Version}),
+ python3-lalframe (= ${binary:Version}),
+Description: LSC Algorithm Library Frame
+ The LSC Algorithm Frame Library for gravitational wave data analysis.
+ This package provides the runtime tools.

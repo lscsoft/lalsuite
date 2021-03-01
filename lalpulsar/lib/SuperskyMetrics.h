@@ -13,8 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with with program; see the file COPYING. If not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-// MA 02111-1307 USA
+// Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301 USA
 //
 
 #ifndef _SUPERSKYMETRICS_H
@@ -76,7 +76,7 @@ typedef struct tagSuperskyMetrics {
 } SuperskyMetrics;
 
 ///
-/// Compute the supersky metrics, which are returned in a #SuperskyMetrics struct.
+/// Compute the supersky metrics, which are returned in a \c SuperskyMetrics struct.
 ///
 SuperskyMetrics *XLALComputeSuperskyMetrics(
   const SuperskyMetricType type,                ///< [in] Type of supersky metric to compute
@@ -91,21 +91,21 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   );
 
 ///
-/// Copy a #SuperskyMetrics struct.
+/// Copy a \c SuperskyMetrics struct.
 ///
 SuperskyMetrics *XLALCopySuperskyMetrics(
   const SuperskyMetrics *metrics                ///< [in] Supersky metrics struct
   );
 
 ///
-/// Destroy a #SuperskyMetrics struct.
+/// Destroy a \c SuperskyMetrics struct.
 ///
 void XLALDestroySuperskyMetrics(
   SuperskyMetrics *metrics                      ///< [in] Supersky metrics struct
   );
 
 ///
-/// Write a #SuperskyMetrics struct to a FITS file.
+/// Write a \c SuperskyMetrics struct to a FITS file.
 ///
 int XLALFITSWriteSuperskyMetrics(
   FITSFile *file,                               ///< [in] FITS file pointer
@@ -113,7 +113,7 @@ int XLALFITSWriteSuperskyMetrics(
   );
 
 ///
-/// Read a #SuperskyMetrics struct from a FITS file.
+/// Read a \c SuperskyMetrics struct from a FITS file.
 ///
 int XLALFITSReadSuperskyMetrics(
   FITSFile *file,                               ///< [in] FITS file pointer

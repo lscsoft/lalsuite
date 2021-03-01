@@ -13,8 +13,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with with program; see the file COPYING. If not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA  02111-1307  USA
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA  02110-1301  USA
  */
 
 
@@ -27,12 +27,12 @@
  */
 
 
+#include "config.h"
+
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#include <lalapps.h>
 
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
@@ -120,7 +120,7 @@ static int parse_group_list ( NrParRange *range, CHAR *list);
 /* main program entry */
 int main(INT4 argc, CHAR *argv[])
 {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
 
   /* frame file stuff */
   LALCache *frGlobCache = NULL;

@@ -13,11 +13,13 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
-#include "lalapps.h"
+#include "config.h"
+
+#include <LALAppsVCSInfo.h>
 #include <math.h>
 #include <string.h>
 
@@ -354,7 +356,7 @@ REAL8TimeSeries * fr_get_REAL8TimeSeries( const char *channelName,
 /* resample time series */
 int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate )
 {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
   char name[LALNameLength];
   if ( sampleRate > 0.0 && sampleRate * series->deltaT < 1.0 )
   {
@@ -377,7 +379,7 @@ int resample_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 sampleRate )
 /* highpass filter time series */
 int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
 {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
   char name[LALNameLength];
   PassBandParamStruc highpasspar;
 
@@ -403,7 +405,7 @@ int highpass_REAL4TimeSeries( REAL4TimeSeries *series, REAL8 frequency )
 /* highpass filter double-precision time series */
 int highpass_REAL8TimeSeries( REAL8TimeSeries *series, REAL8 frequency )
 {
-  LALStatus status = blank_status;
+  LALStatus XLAL_INIT_DECL(status);
   char name[LALNameLength];
   PassBandParamStruc highpasspar;
   if ( frequency > 0.0 )

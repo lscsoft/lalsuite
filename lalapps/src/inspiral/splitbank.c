@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /*----------------------------------------------------------------------- 
@@ -135,8 +135,6 @@
 #include <regex.h>
 #include <time.h>
 
-#include <lalapps.h>
-
 #include <lal/LALConfig.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdio.h>
@@ -175,7 +173,7 @@ extern int vrbflg;                      /* verbocity of lal function    */
 int main ( int argc, char *argv[] )
 {
   /* lal function variables */
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
 
   /* template bank generation parameters */
   CHAR   *bankFileName = NULL;
@@ -375,7 +373,7 @@ int main ( int argc, char *argv[] )
         /* print version information and exit */
         fprintf( stdout, "Inspiral Template Bank Splitter\n" 
             "Duncan Brown <duncan@gravity.phys.uwm.edu>\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #ifndef _LALFRAMEIO_H
@@ -71,7 +71,7 @@ typedef struct tagLALFrFile LALFrFile;
 /**
  * @brief Close a frame file described by a LALFrFile structure.
  * @note This routine is a no-op if passed a NULL pointer.
- * @param frfile Pointer to the #LALFrFile structure
+ * @param frfile Pointer to the ::LALFrFile structure
  * @retval 0 Successfully closed the file and freed memory.
  */
 int XLALFrFileClose(LALFrFile * frfile);
@@ -87,7 +87,7 @@ LALFrFile *XLALFrFileOpenURL(const char *url);
 
 /**
  * @brief Use checksum to determine if a frame file is valid.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @return Logical value indicating if the frame file checksum is correct.
  * @retval 1 The frame file is valid.
  * @retval 0 The frame file has an incorrect checksum or an error occurred.
@@ -103,7 +103,7 @@ int XLALFrFileCksumValid(LALFrFile * frfile);
 
 /**
  * @brief Query a frame file for the number of frames contained in the file.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @return Then number of frame structures contained.
  * @retval (size_t)(-1) Failure.
  */
@@ -111,17 +111,17 @@ size_t XLALFrFileQueryNFrame(const LALFrFile * frfile);
 
 /** 
  * @brief Query a frame file for the start time of a particular frame.
- * @param[out] start Pointer to a #LIGOTimeGPS structure containing the start time.
- * @param[in] frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param[out] start Pointer to a \c LIGOTimeGPS structure containing the start time.
+ * @param[in] frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param[in] pos The index of the frame in the frame file.
- * @returns The pointer to the #LIGOTimeGPS parameter start, with its values
+ * @returns The pointer to the \c LIGOTimeGPS parameter start, with its values
  * set to the start GPS time of the specified frame.
  */
 LIGOTimeGPS *XLALFrFileQueryGTime(LIGOTimeGPS * start, const LALFrFile * frfile, size_t pos);
 
 /** 
  * @brief Query a frame file for the duration of a particular frame.
- * @param[in] frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param[in] frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param[in] pos The index of the frame in the frame file.
  * @returns The duration of the frame file in seconds.
  * @retval LAL_REAL8_FAIL_NAN Failure.
@@ -130,10 +130,10 @@ double XLALFrFileQueryDt(const LALFrFile * frfile, size_t pos);
 
 /** 
  * @brief Query a frame file for the data type of a channel in a frame.
- * @param[in] frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param[in] frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param[in] chname String containing the name of the channel.
  * @param[in] pos The index of the frame in the frame file.
- * @returns The #LALTYPECODE value of the data type of the channel.
+ * @returns The \c LALTYPECODE value of the data type of the channel.
  * @retval LAL_CHAR_TYPE_CODE Channel is an array of type char.
  * @retval LAL_I2_TYPE_CODE Channel is an array of type int16_t.
  * @retval LAL_I4_TYPE_CODE Channel is an array of type int32_t.
@@ -152,7 +152,7 @@ LALTYPECODE XLALFrFileQueryChanType(const LALFrFile * frfile, const char *chname
 
 /** 
  * @brief Query a frame file for the number of data points in a channel in a frame.
- * @param[in] frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param[in] frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param[in] chname String containing the name of the channel.
  * @param[in] pos The index of the frame in the frame file.
  * @returns The length of the data vector of the channel in the specified frame.
@@ -169,10 +169,10 @@ size_t XLALFrFileQueryChanVectorLength(const LALFrFile * frfile, const char *chn
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #INT2TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c INT2TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -181,10 +181,10 @@ INT2TimeSeries *XLALFrFileReadINT2TimeSeriesMetadata(LALFrFile * frfile, const c
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #INT4TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c INT4TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -193,10 +193,10 @@ INT4TimeSeries *XLALFrFileReadINT4TimeSeriesMetadata(LALFrFile * frfile, const c
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #INT8TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c INT8TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -205,10 +205,10 @@ INT8TimeSeries *XLALFrFileReadINT8TimeSeriesMetadata(LALFrFile * frfile, const c
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #UINT2TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c UINT2TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -217,10 +217,10 @@ UINT2TimeSeries *XLALFrFileReadUINT2TimeSeriesMetadata(LALFrFile * frfile, const
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #UINT4TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c UINT4TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -229,10 +229,10 @@ UINT4TimeSeries *XLALFrFileReadUINT4TimeSeriesMetadata(LALFrFile * frfile, const
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #UINT8TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c UINT8TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -241,10 +241,10 @@ UINT8TimeSeries *XLALFrFileReadUINT8TimeSeriesMetadata(LALFrFile * frfile, const
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #REAL4TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c REAL4TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -253,10 +253,10 @@ REAL4TimeSeries *XLALFrFileReadREAL4TimeSeriesMetadata(LALFrFile * frfile, const
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #REAL8TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c REAL8TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -265,10 +265,10 @@ REAL8TimeSeries *XLALFrFileReadREAL8TimeSeriesMetadata(LALFrFile * frfile, const
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #COMPLEX8TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c COMPLEX8TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -277,10 +277,10 @@ COMPLEX8TimeSeries *XLALFrFileReadCOMPLEX8TimeSeriesMetadata(LALFrFile * frfile,
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #COMPLEX16TimeSeries containing the correct
+ * @returns A pointer to a newly allocated \c COMPLEX16TimeSeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -289,10 +289,10 @@ COMPLEX16TimeSeries *XLALFrFileReadCOMPLEX16TimeSeriesMetadata(LALFrFile * frfil
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #REAL4FrequencySeries containing the correct
+ * @returns A pointer to a newly allocated \c REAL4FrequencySeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -301,10 +301,10 @@ REAL4FrequencySeries *XLALFrFileReadREAL4FrequencySeriesMetadata(LALFrFile * frf
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #REAL8FrequencySeries containing the correct
+ * @returns A pointer to a newly allocated \c REAL8FrequencySeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -313,10 +313,10 @@ REAL8FrequencySeries *XLALFrFileReadREAL8FrequencySeriesMetadata(LALFrFile * frf
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #COMPLEX8FrequencySeries containing the correct
+ * @returns A pointer to a newly allocated \c COMPLEX8FrequencySeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -325,10 +325,10 @@ COMPLEX8FrequencySeries *XLALFrFileReadCOMPLEX8FrequencySeriesMetadata(LALFrFile
 
 /**
  * @brief Acquires metadata about a specified channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #COMPLEX16FrequencySeries containing the correct
+ * @returns A pointer to a newly allocated \c COMPLEX16FrequencySeries containing the correct
  * channel name, sample units, epoch, and sampling interval.  No data is actually
  * read by this routine, and the length of the data vector is set to 0.
  * @retval NULL Failure.
@@ -344,10 +344,10 @@ COMPLEX16FrequencySeries *XLALFrFileReadCOMPLEX16FrequencySeriesMetadata(LALFrFi
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #INT2TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c INT2TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -355,10 +355,10 @@ INT2TimeSeries *XLALFrFileReadINT2TimeSeries(LALFrFile * frfile, const char *chn
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #INT4TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c INT4TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -366,10 +366,10 @@ INT4TimeSeries *XLALFrFileReadINT4TimeSeries(LALFrFile * frfile, const char *chn
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #INT8TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c INT8TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -377,10 +377,10 @@ INT8TimeSeries *XLALFrFileReadINT8TimeSeries(LALFrFile * frfile, const char *chn
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #UINT2TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c UINT2TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -388,10 +388,10 @@ UINT2TimeSeries *XLALFrFileReadUINT2TimeSeries(LALFrFile * frfile, const char *c
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #UINT4TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c UINT4TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -399,10 +399,10 @@ UINT4TimeSeries *XLALFrFileReadUINT4TimeSeries(LALFrFile * frfile, const char *c
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #UINT8TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c UINT8TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -410,10 +410,10 @@ UINT8TimeSeries *XLALFrFileReadUINT8TimeSeries(LALFrFile * frfile, const char *c
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #REAL4TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c REAL4TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -421,10 +421,10 @@ REAL4TimeSeries *XLALFrFileReadREAL4TimeSeries(LALFrFile * frfile, const char *c
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #REAL8TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c REAL8TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -432,10 +432,10 @@ REAL8TimeSeries *XLALFrFileReadREAL8TimeSeries(LALFrFile * frfile, const char *c
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #COMPLEX8TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c COMPLEX8TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -443,10 +443,10 @@ COMPLEX8TimeSeries *XLALFrFileReadCOMPLEX8TimeSeries(LALFrFile * frfile, const c
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #COMPLEX16TimeSeries containing the data
+ * @returns A pointer to a newly allocated \c COMPLEX16TimeSeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -454,10 +454,10 @@ COMPLEX16TimeSeries *XLALFrFileReadCOMPLEX16TimeSeries(LALFrFile * frfile, const
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #REAL4FrequencySeries containing the data
+ * @returns A pointer to a newly allocated \c REAL4FrequencySeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -465,10 +465,10 @@ REAL4FrequencySeries *XLALFrFileReadREAL4FrequencySeries(LALFrFile * frfile, con
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #REAL8FrequencySeries containing the data
+ * @returns A pointer to a newly allocated \c REAL8FrequencySeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -476,10 +476,10 @@ REAL8FrequencySeries *XLALFrFileReadREAL8FrequencySeries(LALFrFile * frfile, con
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #COMPLEX8FrequencySeries containing the data
+ * @returns A pointer to a newly allocated \c COMPLEX8FrequencySeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -487,10 +487,10 @@ COMPLEX8FrequencySeries *XLALFrFileReadCOMPLEX8FrequencySeries(LALFrFile * frfil
 
 /**
  * @brief Reads data from a channel in a frame.
- * @param frfile Pointer to a #LALFrFile structure associated with a frame file.
+ * @param frfile Pointer to a ::LALFrFile structure associated with a frame file.
  * @param chname String containing the name of the channel.
  * @param pos The index of the frame in the frame file.
- * @returns A pointer to a newly allocated #COMPLEX8FrequencySeries containing the data
+ * @returns A pointer to a newly allocated \c COMPLEX8FrequencySeries containing the data
  * from the specified channel in the specified frame.
  * @retval NULL Failure.
  */
@@ -528,9 +528,9 @@ typedef LALFrameUFrameH LALFrameH;
  */
 
 /**
- * @brief Creates a frame file holding the data in a #INT2TimeSeries.
+ * @brief Creates a frame file holding the data in a \c INT2TimeSeries.
  * @details
- * Outputs the data contained in a #INT2TimeSeries to a frame file
+ * Outputs the data contained in a \c INT2TimeSeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:channel_name then this routine adds the appropriate detector
@@ -550,9 +550,9 @@ typedef LALFrameUFrameH LALFrameH;
 int XLALFrWriteINT2TimeSeries(const INT2TimeSeries * series, int fnum);
 
 /**
- * @brief Creates a frame file holding the data in a #INT4TimeSeries.
+ * @brief Creates a frame file holding the data in a \c INT4TimeSeries.
  * @details
- * Outputs the data contained in a #INT4TimeSeries to a frame file
+ * Outputs the data contained in a \c INT4TimeSeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -572,9 +572,9 @@ int XLALFrWriteINT2TimeSeries(const INT2TimeSeries * series, int fnum);
 int XLALFrWriteINT4TimeSeries(const INT4TimeSeries * series, int fnum);
 
 /**
- * @brief Creates a frame file holding the data in a #INT8TimeSeries.
+ * @brief Creates a frame file holding the data in a \c INT8TimeSeries.
  * @details
- * Outputs the data contained in a #INT8TimeSeries to a frame file
+ * Outputs the data contained in a \c INT8TimeSeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -594,9 +594,9 @@ int XLALFrWriteINT4TimeSeries(const INT4TimeSeries * series, int fnum);
 int XLALFrWriteINT8TimeSeries(const INT8TimeSeries * series, int fnum);
 
 /**
- * @brief Creates a frame file holding the data in a #REAL4TimeSeries.
+ * @brief Creates a frame file holding the data in a \c REAL4TimeSeries.
  * @details
- * Outputs the data contained in a #REAL4TimeSeries to a frame file
+ * Outputs the data contained in a \c REAL4TimeSeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -616,9 +616,9 @@ int XLALFrWriteINT8TimeSeries(const INT8TimeSeries * series, int fnum);
 int XLALFrWriteREAL4TimeSeries(const REAL4TimeSeries * series, int fnum);
 
 /**
- * @brief Creates a frame file holding the data in a #REAL8TimeSeries.
+ * @brief Creates a frame file holding the data in a \c REAL8TimeSeries.
  * @details
- * Outputs the data contained in a #REAL8TimeSeries to a frame file
+ * Outputs the data contained in a \c REAL8TimeSeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -638,9 +638,9 @@ int XLALFrWriteREAL4TimeSeries(const REAL4TimeSeries * series, int fnum);
 int XLALFrWriteREAL8TimeSeries(const REAL8TimeSeries * series, int fnum);
 
 /**
- * @brief Creates a frame file holding the data in a #COMPLEX8TimeSeries.
+ * @brief Creates a frame file holding the data in a \c COMPLEX8TimeSeries.
  * @details
- * Outputs the data contained in a #COMPLEX8TimeSeries to a frame file
+ * Outputs the data contained in a \c COMPLEX8TimeSeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -660,9 +660,9 @@ int XLALFrWriteREAL8TimeSeries(const REAL8TimeSeries * series, int fnum);
 int XLALFrWriteCOMPLEX8TimeSeries(const COMPLEX8TimeSeries * series, int fnum);
 
 /**
- * @brief Creates a frame file holding the data in a #COMPLEX16TimeSeries.
+ * @brief Creates a frame file holding the data in a \c COMPLEX16TimeSeries.
  * @details
- * Outputs the data contained in a #COMPLEX16TimeSeries to a frame file
+ * Outputs the data contained in a \c COMPLEX16TimeSeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -682,9 +682,9 @@ int XLALFrWriteCOMPLEX8TimeSeries(const COMPLEX8TimeSeries * series, int fnum);
 int XLALFrWriteCOMPLEX16TimeSeries(const COMPLEX16TimeSeries * series, int fnum);
 
 /**
- * @brief Creates a frame file holding the data in a #REAL4FrequencySeries.
+ * @brief Creates a frame file holding the data in a \c REAL4FrequencySeries.
  * @details
- * Outputs the data contained in a #REAL4FrequencySeries to a frame file
+ * Outputs the data contained in a \c REAL4FrequencySeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -718,9 +718,9 @@ int XLALFrWriteCOMPLEX16TimeSeries(const COMPLEX16TimeSeries * series, int fnum)
 int XLALFrWriteREAL4FrequencySeries(const REAL4FrequencySeries * series, int fnum, int subtype);
 
 /**
- * @brief Creates a frame file holding the data in a #REAL8FrequencySeries.
+ * @brief Creates a frame file holding the data in a \c REAL8FrequencySeries.
  * @details
- * Outputs the data contained in a #REAL8FrequencySeries to a frame file
+ * Outputs the data contained in a \c REAL8FrequencySeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -754,9 +754,9 @@ int XLALFrWriteREAL4FrequencySeries(const REAL4FrequencySeries * series, int fnu
 int XLALFrWriteREAL8FrequencySeries(const REAL8FrequencySeries * series, int fnum, int subtype);
 
 /**
- * @brief Creates a frame file holding the data in a #COMPLEX8FrequencySeries.
+ * @brief Creates a frame file holding the data in a \c COMPLEX8FrequencySeries.
  * @details
- * Outputs the data contained in a #COMPLEX8FrequencySeries to a frame file
+ * Outputs the data contained in a \c COMPLEX8FrequencySeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -790,9 +790,9 @@ int XLALFrWriteREAL8FrequencySeries(const REAL8FrequencySeries * series, int fnu
 int XLALFrWriteCOMPLEX8FrequencySeries(const COMPLEX8FrequencySeries * series, int fnum, int subtype);
 
 /**
- * @brief Creates a frame file holding the data in a #COMPLEX16FrequencySeries.
+ * @brief Creates a frame file holding the data in a \c COMPLEX16FrequencySeries.
  * @details
- * Outputs the data contained in a #COMPLEX16FrequencySeries to a frame file
+ * Outputs the data contained in a \c COMPLEX16FrequencySeries to a frame file
  * whose name is derived from the series name.  The name of the file
  * conforms to the convention LIGO-T010150.  If the name begins with
  * @c XmYn:description then this routine adds the appropriate detector
@@ -831,16 +831,16 @@ int XLALFrWriteCOMPLEX16FrequencySeries(const COMPLEX16FrequencySeries * series,
  * @name Advanced Frame Writing Routines
  * @brief Routines allowing for more control of the data written to a frame file.
  * @details
- * These routines allow the user to add specific components to a #LALFrameH structure,
+ * These routines allow the user to add specific components to a ::LALFrameH structure,
  * which represents a single frame.  Various channels of and other data types can be
- * added to the #LALFrameH structure, and then the frame can be written to a frame file.
+ * added to the ::LALFrameH structure, and then the frame can be written to a frame file.
  * @{
  */
 
 /**
  * @brief Frees a frame structure.
  * @note This routine is a no-op if passed a NULL pointer.
- * @param frame Pointer to a #LALFrameH structure.
+ * @param frame Pointer to a ::LALFrameH structure.
  */
 void XLALFrameFree(LALFrameH * frame);
 
@@ -854,7 +854,7 @@ void XLALFrameFree(LALFrameH * frame);
  * e.g., <tt>( LAL_LHO_4K_DETECTOR_BIT | LAL_LLO_4K_DETECTOR_BIT )</tt> would
  * attach detector structures to the frame for the LIGO Hanford and Livingston
  * observatories.  See @ref LALDetectors_h.
- * @param[in] epoch Pointer to a #LIGOTimeGPS structure containing the start time of this frame.
+ * @param[in] epoch Pointer to a \c LIGOTimeGPS structure containing the start time of this frame.
  * @param[in] duration Duration of this frame in seconds.
  * @param[in] project String describing the project associated with this frame.
  * @param[in] run Run number associated with this frame.
@@ -875,7 +875,7 @@ LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration, const char *
  * generated.  For example, the program name, version information, etc., can
  * be added to a frame.  The name of the history record should match the name
  * of the FrProcData channel that it is associated with.
- * @param frame Pointer to a #LALFrameH frame structure to which the history will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the history will be added.
  * @param name String containing the name of the history record that will be added.
  * @param comment The history comment that will be added.
  * @retval 0 Success.
@@ -889,8 +889,8 @@ int XLALFrameAddFrHistory(LALFrameH * frame, const char *name, const char *comme
 
 /**
  * @brief Adds a detector structure to a frame.
- * @param frame Pointer to a #LALFrameH frame structure to which the detector will be added.
- * @param detector Pointer to a #LALFrDetector structure to add to the frame.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the detector will be added.
+ * @param detector Pointer to a \c LALFrDetector structure to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
  * @sa Section 4.3.2.5 of
@@ -901,9 +901,9 @@ int XLALFrameAddFrHistory(LALFrameH * frame, const char *name, const char *comme
 int XLALFrameAddFrDetector(LALFrameH * frame, const LALFrDetector * detector);
 
 /**
- * @brief Adds an #INT2TimeSeries to a frame as a FrAdcData channel.
+ * @brief Adds an \c INT2TimeSeries to a frame as a FrAdcData channel.
  * @remark FrAdcData channels contains "raw" interferometer data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -915,9 +915,9 @@ int XLALFrameAddFrDetector(LALFrameH * frame, const LALFrDetector * detector);
 int XLALFrameAddINT2TimeSeriesAdcData(LALFrameH * frame, const INT2TimeSeries * series);
 
 /**
- * @brief Adds an #INT4TimeSeries to a frame as a FrAdcData channel.
+ * @brief Adds an \c INT4TimeSeries to a frame as a FrAdcData channel.
  * @remark FrAdcData channels contains "raw" interferometer data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -929,9 +929,9 @@ int XLALFrameAddINT2TimeSeriesAdcData(LALFrameH * frame, const INT2TimeSeries * 
 int XLALFrameAddINT4TimeSeriesAdcData(LALFrameH * frame, const INT4TimeSeries * series);
 
 /**
- * @brief Adds an #REAL4TimeSeries to a frame as a FrAdcData channel.
+ * @brief Adds an \c REAL4TimeSeries to a frame as a FrAdcData channel.
  * @remark FrAdcData channels contains "raw" interferometer data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -943,9 +943,9 @@ int XLALFrameAddINT4TimeSeriesAdcData(LALFrameH * frame, const INT4TimeSeries * 
 int XLALFrameAddREAL4TimeSeriesAdcData(LALFrameH * frame, const REAL4TimeSeries * series);
 
 /**
- * @brief Adds an #REAL8TimeSeries to a frame as a FrAdcData channel.
+ * @brief Adds an \c REAL8TimeSeries to a frame as a FrAdcData channel.
  * @remark FrAdcData channels contains "raw" interferometer data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -957,9 +957,9 @@ int XLALFrameAddREAL4TimeSeriesAdcData(LALFrameH * frame, const REAL4TimeSeries 
 int XLALFrameAddREAL8TimeSeriesAdcData(LALFrameH * frame, const REAL8TimeSeries * series);
 
 /**
- * @brief Adds an #INT2TimeSeries to a frame as a FrSimData channel.
+ * @brief Adds an \c INT2TimeSeries to a frame as a FrSimData channel.
  * @remark FrSimData channels contains simulated interferometer data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -971,9 +971,9 @@ int XLALFrameAddREAL8TimeSeriesAdcData(LALFrameH * frame, const REAL8TimeSeries 
 int XLALFrameAddINT2TimeSeriesSimData(LALFrameH * frame, const INT2TimeSeries * series);
 
 /**
- * @brief Adds an #INT4TimeSeries to a frame as a FrSimData channel.
+ * @brief Adds an \c INT4TimeSeries to a frame as a FrSimData channel.
  * @remark FrSimData channels contains simulated interferometer data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -985,9 +985,9 @@ int XLALFrameAddINT2TimeSeriesSimData(LALFrameH * frame, const INT2TimeSeries * 
 int XLALFrameAddINT4TimeSeriesSimData(LALFrameH * frame, const INT4TimeSeries * series);
 
 /**
- * @brief Adds an #REAL4TimeSeries to a frame as a FrSimData channel.
+ * @brief Adds an \c REAL4TimeSeries to a frame as a FrSimData channel.
  * @remark FrSimData channels contains simulated interferometer data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -999,9 +999,9 @@ int XLALFrameAddINT4TimeSeriesSimData(LALFrameH * frame, const INT4TimeSeries * 
 int XLALFrameAddREAL4TimeSeriesSimData(LALFrameH * frame, const REAL4TimeSeries * series);
 
 /**
- * @brief Adds an #REAL8TimeSeries to a frame as a FrSimData channel.
+ * @brief Adds an \c REAL8TimeSeries to a frame as a FrSimData channel.
  * @remark FrSimData channels contains simulated interferometer data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1013,9 +1013,9 @@ int XLALFrameAddREAL4TimeSeriesSimData(LALFrameH * frame, const REAL4TimeSeries 
 int XLALFrameAddREAL8TimeSeriesSimData(LALFrameH * frame, const REAL8TimeSeries * series);
 
 /**
- * @brief Adds an #INT2TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c INT2TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1027,9 +1027,9 @@ int XLALFrameAddREAL8TimeSeriesSimData(LALFrameH * frame, const REAL8TimeSeries 
 int XLALFrameAddINT2TimeSeriesProcData(LALFrameH * frame, const INT2TimeSeries * series);
 
 /**
- * @brief Adds an #INT4TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c INT4TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1041,9 +1041,9 @@ int XLALFrameAddINT2TimeSeriesProcData(LALFrameH * frame, const INT2TimeSeries *
 int XLALFrameAddINT4TimeSeriesProcData(LALFrameH * frame, const INT4TimeSeries * series);
 
 /**
- * @brief Adds an #INT8TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c INT8TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1055,9 +1055,9 @@ int XLALFrameAddINT4TimeSeriesProcData(LALFrameH * frame, const INT4TimeSeries *
 int XLALFrameAddINT8TimeSeriesProcData(LALFrameH * frame, const INT8TimeSeries * series);
 
 /**
- * @brief Adds an #UINT2TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c UINT2TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1069,9 +1069,9 @@ int XLALFrameAddINT8TimeSeriesProcData(LALFrameH * frame, const INT8TimeSeries *
 int XLALFrameAddUINT2TimeSeriesProcData(LALFrameH * frame, const UINT2TimeSeries * series);
 
 /**
- * @brief Adds an #UINT4TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c UINT4TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1083,9 +1083,9 @@ int XLALFrameAddUINT2TimeSeriesProcData(LALFrameH * frame, const UINT2TimeSeries
 int XLALFrameAddUINT4TimeSeriesProcData(LALFrameH * frame, const UINT4TimeSeries * series);
 
 /**
- * @brief Adds an #UINT8TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c UINT8TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1097,9 +1097,9 @@ int XLALFrameAddUINT4TimeSeriesProcData(LALFrameH * frame, const UINT4TimeSeries
 int XLALFrameAddUINT8TimeSeriesProcData(LALFrameH * frame, const UINT8TimeSeries * series);
 
 /**
- * @brief Adds an #REAL4TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c REAL4TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1111,9 +1111,9 @@ int XLALFrameAddUINT8TimeSeriesProcData(LALFrameH * frame, const UINT8TimeSeries
 int XLALFrameAddREAL4TimeSeriesProcData(LALFrameH * frame, const REAL4TimeSeries * series);
 
 /**
- * @brief Adds an #REAL8TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c REAL8TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1125,9 +1125,9 @@ int XLALFrameAddREAL4TimeSeriesProcData(LALFrameH * frame, const REAL4TimeSeries
 int XLALFrameAddREAL8TimeSeriesProcData(LALFrameH * frame, const REAL8TimeSeries * series);
 
 /**
- * @brief Adds an #COMPLEX8TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c COMPLEX8TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1139,9 +1139,9 @@ int XLALFrameAddREAL8TimeSeriesProcData(LALFrameH * frame, const REAL8TimeSeries
 int XLALFrameAddCOMPLEX8TimeSeriesProcData(LALFrameH * frame, const COMPLEX8TimeSeries * series);
 
 /**
- * @brief Adds an #COMPLEX16TimeSeries to a frame as a FrProcData channel.
+ * @brief Adds an \c COMPLEX16TimeSeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @retval 0 Success.
  * @retval -1 Failure.
@@ -1153,7 +1153,7 @@ int XLALFrameAddCOMPLEX8TimeSeriesProcData(LALFrameH * frame, const COMPLEX8Time
 int XLALFrameAddCOMPLEX16TimeSeriesProcData(LALFrameH * frame, const COMPLEX16TimeSeries * series);
 
 /**
- * @brief Adds an #REAL4FrequencySeries to a frame as a FrProcData channel.
+ * @brief Adds an \c REAL4FrequencySeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
  *
  * The subtypes are as follows:
@@ -1168,7 +1168,7 @@ int XLALFrameAddCOMPLEX16TimeSeriesProcData(LALFrameH * frame, const COMPLEX16Ti
  *   5    | Coherence
  *   6    | Transfer Function
  *
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @param subtype The FrProcData subtype of this frequency series.
  * @retval 0 Success.
@@ -1181,7 +1181,7 @@ int XLALFrameAddCOMPLEX16TimeSeriesProcData(LALFrameH * frame, const COMPLEX16Ti
 int XLALFrameAddREAL4FrequencySeriesProcData(LALFrameH * frame, const REAL4FrequencySeries * series, int subtype);
 
 /**
- * @brief Adds an #REAL8FrequencySeries to a frame as a FrProcData channel.
+ * @brief Adds an \c REAL8FrequencySeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
  *
  * The subtypes are as follows:
@@ -1196,7 +1196,7 @@ int XLALFrameAddREAL4FrequencySeriesProcData(LALFrameH * frame, const REAL4Frequ
  *   5    | Coherence
  *   6    | Transfer Function
  *
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @param subtype The FrProcData subtype of this frequency series.
  * @retval 0 Success.
@@ -1209,7 +1209,7 @@ int XLALFrameAddREAL4FrequencySeriesProcData(LALFrameH * frame, const REAL4Frequ
 int XLALFrameAddREAL8FrequencySeriesProcData(LALFrameH * frame, const REAL8FrequencySeries * series, int subtype);
 
 /**
- * @brief Adds an #COMPLEX8FrequencySeries to a frame as a FrProcData channel.
+ * @brief Adds an \c COMPLEX8FrequencySeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
  *
  * The subtypes are as follows:
@@ -1224,7 +1224,7 @@ int XLALFrameAddREAL8FrequencySeriesProcData(LALFrameH * frame, const REAL8Frequ
  *   5    | Coherence
  *   6    | Transfer Function
  *
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @param subtype The FrProcData subtype of this frequency series.
  * @retval 0 Success.
@@ -1237,7 +1237,7 @@ int XLALFrameAddREAL8FrequencySeriesProcData(LALFrameH * frame, const REAL8Frequ
 int XLALFrameAddCOMPLEX8FrequencySeriesProcData(LALFrameH * frame, const COMPLEX8FrequencySeries * series, int subtype);
 
 /**
- * @brief Adds an #COMPLEX16FrequencySeries to a frame as a FrProcData channel.
+ * @brief Adds an \c COMPLEX16FrequencySeries to a frame as a FrProcData channel.
  * @remark FrProcData channels contains post-processed data.
  *
  * The subtypes are as follows:
@@ -1252,7 +1252,7 @@ int XLALFrameAddCOMPLEX8FrequencySeriesProcData(LALFrameH * frame, const COMPLEX
  *   5    | Coherence
  *   6    | Transfer Function
  *
- * @param frame Pointer to a #LALFrameH frame structure to which the series will be added.
+ * @param frame Pointer to a ::LALFrameH frame structure to which the series will be added.
  * @param series Pointer to the series to add to the frame.
  * @param subtype The FrProcData subtype of this frequency series.
  * @retval 0 Success.
@@ -1266,8 +1266,8 @@ int XLALFrameAddCOMPLEX16FrequencySeriesProcData(LALFrameH * frame, const COMPLE
 
 
 /**
- * @brief Write a #LALFrameH frame structure to a frame file.
- * @param frame Pointer to the #LALFrameH frame structure to be written.
+ * @brief Write a ::LALFrameH frame structure to a frame file.
+ * @param frame Pointer to the ::LALFrameH frame structure to be written.
  * @param fname String with the path name of the frame file to create.
  * @retval 0 Success.
  * @retval -1 Failure.

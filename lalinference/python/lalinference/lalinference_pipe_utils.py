@@ -5,8 +5,8 @@
 import itertools
 from glue import pipeline
 from ligo import segments
-from glue.ligolw import ligolw, lsctables
-from glue.ligolw import utils as ligolw_utils
+from ligo.lw import ligolw, lsctables
+from ligo.lw import utils as ligolw_utils
 import os
 import socket
 import uuid
@@ -167,16 +167,17 @@ class Event():
         else:
             self.event_id=next(Event.new_id)
         if self.injection is not None:
-            self.trig_time=self.injection.get_end()
-            if event_id is None: self.event_id=int(str(self.injection.simulation_id).split(':')[2])
+            self.trig_time=self.injection.geocent_end_time + 1.0e-9*self.injection.geocent_end_time_ns
+            if event_id is None: self.event_id=self.injection.simulation_id
         if self.burstinjection is not None:
-            self.trig_time=self.burstinjection.get_end()
-            if event_id is None: self.event_id=int(str(self.burstinjection.simulation_id).split(':')[2])
+            self.trig_time=self.burstinjection.time_geocent + 1.0e-9*self.burstinjection.time_geocent_ns
+            if event_id is None: self.event_id=self.burstinjection.simulation_id
         if self.sngltrigger is not None:
-            self.trig_time=self.sngltrigger.get_end()
-            self.event_id=int(str(self.sngltrigger.event_id).split(':')[2])
+            self.trig_time=self.sngltrigger.end_time + 1.0e-9 * self.sngltrigger.end_time_ns
+            self.event_id=self.sngltrigger.event_id
         if self.coinctrigger is not None:
             self.trig_time=self.coinctrigger.end_time + 1.0e-9 * self.coinctrigger.end_time_ns
+            self.event_id=self.coinctrigger.event_id
         if self.GID is not None:
             self.event_id=int(''.join(i for i in self.GID if i.isdigit()))
         self.engine_opts={}
@@ -317,7 +318,7 @@ def open_pipedown_database(database_filename,tmp_space):
     """
     if not os.access(database_filename,os.R_OK):
         raise Exception('Unable to open input file: %s'%(database_filename))
-    from glue.ligolw import dbtables
+    from ligo.lw import dbtables
     import sqlite3
     working_filename=dbtables.get_connection_filename(database_filename,tmp_path=tmp_space)
     connection = sqlite3.connect(working_filename)

@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 /**
@@ -33,11 +33,15 @@
 
 /***********************************************************************************************/
 /* includes */
+
+#include "config.h"
+
 /* disable -Wstrict-prototypes flag for this header file as this */
 /* a build failure for cfitsio-3.440+ */
 #pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #include <fitsio.h>
 #pragma GCC diagnostic pop
+
 #include <math.h>
 #include <gsl/gsl_interp.h>        /* needed for the gsl interpolation */
 #include <gsl/gsl_spline.h>        /* needed for the gsl interpolation */
@@ -51,7 +55,6 @@
 #include <lal/LALFrameIO.h>
 #include <lal/LALFrStream.h>
 #include <lalappsfrutils.h>
-#include <lalapps.h>
 #include <LALAppsVCSInfo.h>
 
 /***********************************************************************************************/
@@ -270,7 +273,7 @@ typedef struct {
 
 /***********************************************************************************************/
 /* global variables */
-extern int vrbflg;	 	/**< defined in lalapps.c */
+extern int vrbflg;	 	/**< defined in lal/lib/std/LALError.c */
 
 /* keywords in FITS file header */
 char string_OBJECT[] = "OBJECT";
@@ -3120,7 +3123,7 @@ int XLALXTEUINT4TimeSeriesArrayToFrames(XTEUINT4TimeSeriesArray *ts,      /**< [
 	{
 	  CHAR *versionstring = NULL;              /* pointer to a string containing the git version information */
 
-	  versionstring = XLALGetVersionString(1);
+	  versionstring = XLALVCSInfoString(lalAppsVCSInfoList, 1, "%% ");
 	  XLALFrameAddFrHistory(outFrame,"headerdump",ts->headerdump);
 	  XLALFrameAddFrHistory(outFrame,"comment",ts->comment);
 	  XLALFrameAddFrHistory(outFrame,"versionstring",versionstring);

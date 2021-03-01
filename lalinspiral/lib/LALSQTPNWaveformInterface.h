@@ -85,7 +85,7 @@ void XLALSQTPNDestroyCoherentGW(CoherentGW *wave);
  * <li>the initial frequency \f$f_L\f$ in \f$Hz\f$</li>
  * <li>the distance \f$d\f$ in \f$Mpc\f$</li>
  * <li>the sampling time \f$t_s\f$ in \f$s\f$</li>
- * <li>the PN order, see #LALPNOrder</li>
+ * <li>the PN order, see \c LALPNOrder</li>
  * <li>level of accuracy in including spin and quadrupole contributions, see LALSQTPNSpinInteraction </li>
  * </ul><br />
  * <em>The calculated parameters:</em>

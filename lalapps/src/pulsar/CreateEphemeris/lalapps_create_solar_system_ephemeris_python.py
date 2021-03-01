@@ -14,8 +14,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with with program; see the file COPYING. If not, write to the
-# Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-# MA  02111-1307  USA
+# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA  02110-1301  USA
 
 from __future__ import print_function, division
 
@@ -67,6 +67,7 @@ HEADER = """\
 
 # set locations of JPL ephemeris files for downloading
 EPH_URLS = {'DE436': 'ftp://ssd.jpl.nasa.gov/pub/eph/planets/bsp/de436.bsp',
+            'DE435': 'ftp://ssd.jpl.nasa.gov/pub/eph/planets/bsp/de435.bsp',
             'DE432S': 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de432s.bsp',
             'DE430': 'http://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de430.bsp',
             'DE421': 'https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de421.bsp',

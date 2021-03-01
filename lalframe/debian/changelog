@@ -1,3 +1,21 @@
+lalframe (1.5.4-1) unstable; urgency=low
+
+  * Update for 1.5.4
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 05 Feb 2021 13:31:44 -0700
+
+lalframe (1.5.3-1) unstable; urgency=low
+
+  * Update for 1.5.3
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 11 Jan 2021 14:33:14 -0700
+
+lalframe (1.5.2-1) unstable; urgency=low
+
+  * Update for 1.5.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 27 Oct 2020 13:34:22 -0700
+
 lalframe (1.5.1-1) unstable; urgency=low
 
   * Update for 1.5.1

@@ -102,6 +102,7 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 InspiralSICoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 1, description = u"sim_inspiral<-->sngl_inspiral coincidences")
 InspiralSCNearCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 2, description = u"sim_inspiral<-->coinc_event coincidences (nearby)")
 InspiralSCExactCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 3, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
+InspiralSTCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 4, description = u"sim_inspiral<-->sngl_inspiral template coincidences")
 
 
 class DocContents(object):

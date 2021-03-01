@@ -13,10 +13,11 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
+#include <libgen.h>
 #include <lal/SFTClean.h>
 #include <lal/SFTutils.h>
 
@@ -30,8 +31,12 @@
  * This module contains routines for dealing with lists of known spectral disturbances
  * in the frequency domain, and using them to clean SFTs.
  *
- * The basic input is a text file containing a list of known spectral lines.  An example
- * is the following
+ * The basic input is a text file containing a list of known spectral lines.
+ * NOTE: the legacy format used here is not identical with that of
+ * modern Advanced LIGO linefiles.
+ * To run this code with newer linefiles, they should first be converted into
+ * the legacy format.
+ * An example of the supported format is the following:
  *
  * \verbatim
  * 0.0      0.25     4000     0.0        0.0   0.25Hzlines
@@ -944,7 +949,7 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< 
 					  MultiSFTVector   *MultiSFTVect,  /**< SFTVector to be cleaned */
 					  INT4             width,          /**< maximum width to be cleaned */
 					  INT4             window,         /**< window size for noise floor estimation in vicinity of a line */
-					  LALStringVector *linefiles,      /**< file with list of lines */
+					  LALStringVector *linefiles,      /**< list of per-detector files with list of lines (the basename of each file must start with a canonical IFO name) */
 					  RandomParams     *randPar)       /**< for creating random numbers */
 {
 
@@ -973,7 +978,7 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< 
     {
       ifo = NULL;
       /* try to get the ifo name from the linefile name */
-      if ( (ifo = XLALGetChannelPrefix ( linefiles->data[k])) == NULL) {
+      if ( (ifo = XLALGetChannelPrefix ( basename(linefiles->data[k]))) == NULL) {
         ABORT ( status, SFTCLEANH_ELINENAME, SFTCLEANH_MSGELINENAME);
       }
 

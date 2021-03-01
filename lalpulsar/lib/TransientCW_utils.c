@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2010 Reinhard Prix, Stefanos Giampanis
  * Copyright (C) 2009 Reinhard Prix
+ * Copyright (C) 2017-2020 David Keitel
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,8 +15,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 /*********************************************************************************/
@@ -658,7 +659,7 @@ XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms, 	/**
   UINT4 TAtomHalf = TAtom/2;	/* integer division */
 
   if ( (atoms = XLALmergeMultiFstatAtomsBinned ( multiFstatAtoms, TAtom )) == NULL ) {
-    XLALPrintError ("%s: XLALmergeMultiFstatAtomsSorted() failed with code %d\n", __func__, xlalErrno );
+    XLALPrintError ("%s: XLALmergeMultiFstatAtomsBinned() failed with code %d\n", __func__, xlalErrno );
     XLAL_ERROR_NULL ( XLAL_EFUNC );
   }
   UINT4 numAtoms = atoms->length;
@@ -924,12 +925,12 @@ XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 d
           FstatAtom *atom_X_i = &multiAtoms->data[X]->data[i];
           UINT4 t_X_i = atom_X_i -> timestamp;
 
-          /* determine target bin-index j such that t_i in [ t_j, t_{j+1} )  */
+          /* determine target bin-index j such that t_X_i in [ t_j, t_{j+1} )  */
           UINT4 j = (UINT4) floor ( 1.0 * ( t_X_i - tMin ) / deltaT );
 
           /* add atoms i to target atoms j */
           FstatAtom *destAtom = &atomsOut->data[j];
-          destAtom->timestamp = tMin + i * deltaT;	/* set binned output atoms timestamp */
+          destAtom->timestamp = tMin + j * deltaT;	/* set binned output atoms timestamp */
 
           destAtom->a2_alpha += atom_X_i->a2_alpha;
           destAtom->b2_alpha += atom_X_i->b2_alpha;

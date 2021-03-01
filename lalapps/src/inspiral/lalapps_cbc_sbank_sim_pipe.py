@@ -22,6 +22,7 @@
 ###############################################################################
 
 import os
+import getpass
 import socket, tempfile
 from optparse import OptionParser
 from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
@@ -36,7 +37,7 @@ from lalapps import inspiral
 
 def log_path():
     host = socket.getfqdn()
-    username = os.environ['USER']
+    username = getpass.getuser()
     #FIXME add more hosts as you need them
     if 'caltech.edu' in host: return '/usr1/' + username
     if 'phys.uwm.edu' in host: return '/localscratch/' + username

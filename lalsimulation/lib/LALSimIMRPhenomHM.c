@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 #include <lal/LALSimIMR.h>
@@ -1012,10 +1012,18 @@ int IMRPhenomHMCore(
 {
     int retcode;
 
-    // Make a pointer to LALDict to circumvent a memory leak
-    // At the end we will check if we created a LALDict in extraParams
-    // and destroy it if we did.
-    LALDict *extraParams_in = extraParams;
+    /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *extraParams_aux;
+
+    /* setup mode array */
+    if (extraParams == NULL)
+    {
+        extraParams_aux = XLALCreateDict();
+    }
+    else{
+        extraParams_aux = XLALDictDuplicate(extraParams);
+    }
+    extraParams_aux = IMRPhenomHM_setup_mode_array(extraParams_aux);
 
     /* evaluate all hlm modes */
     SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
@@ -1035,7 +1043,7 @@ int IMRPhenomHMCore(
         phiRef,
         deltaF,
         f_ref,
-        extraParams);
+        extraParams_aux);
     XLAL_CHECK(XLAL_SUCCESS == retcode,
                XLAL_EFUNC, "XLALSimIMRPhenomHMGethlmModes failed");
 
@@ -1089,12 +1097,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     INT4 sym; /* sym will decide whether to add the -m mode (when equatorial symmetry is present) */
 
     /* setup ModeArray */
-    if (extraParams == NULL)
-    {
-        extraParams = XLALCreateDict();
-    }
-    extraParams = IMRPhenomHM_setup_mode_array(extraParams);
-    LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams);
+    LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams_aux);
 
     /* loop over modes */
     /* at this point ModeArray should contain the list of modes
@@ -1148,11 +1151,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
     XLALDestroyValue(ModeArray);
     LALFree(pHMFS);
 
-  /* If extraParams was allocated in this function and not passed in
-   * we need to free it to prevent a leak */
-  if (extraParams && !extraParams_in) {
-    XLALDestroyDict(extraParams);
-  }
+    XLALDestroyDict(extraParams_aux);
 
     return XLAL_SUCCESS;
 }
@@ -1185,10 +1184,8 @@ int XLALSimIMRPhenomHMGethlmModes(
 {
     UNUSED int retcode;
 
-    // Make a pointer to LALDict to circumvent a memory leak
-    // At the end we will check if we created a LALDict in extraParams
-    // and destroy it if we did.
-    LALDict *extraParams_in = extraParams;
+    /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *extraParams_aux;
 
     /* sanity checks on input parameters: check pointers, etc. */
 
@@ -1203,10 +1200,14 @@ must be <= 1 in magnitude!\n", chi2z);
 positive.\n");
 
     /* setup ModeArray */
-    if (extraParams == NULL)
-        extraParams = XLALCreateDict();
-    extraParams = IMRPhenomHM_setup_mode_array(extraParams);
-    LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams);
+    if (extraParams == NULL){
+      extraParams_aux = XLALCreateDict();
+    }
+    else{
+      extraParams_aux = XLALDictDuplicate(extraParams);
+    }
+    extraParams_aux = IMRPhenomHM_setup_mode_array(extraParams_aux);
+    LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(extraParams_aux);
     int rcode = IMRPhenomHM_check_mode_array(ModeArray);
     XLAL_CHECK(XLAL_SUCCESS == rcode, rcode, "IMRPhenomHM_check_mode_array failed");
 
@@ -1300,7 +1301,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
         pHM->chi2z,
         pHM->Rholm[2][2],
         pHM->Taulm[2][2],
-        extraParams);
+        extraParams_aux);
     if (retcode != XLAL_SUCCESS)
     {
         XLALPrintError("XLAL Error - IMRPhenomDSetupAmpAndPhaseCoefficients failed\n");
@@ -1339,7 +1340,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
 
             COMPLEX16FrequencySeries *hlm = XLALCreateCOMPLEX16FrequencySeries("hlm: FD waveform", &tC, 0.0, pHM->deltaF, &lalStrainUnit, pHM->npts);
             memset(hlm->data->data, 0, pHM->npts * sizeof(COMPLEX16));
-            // XLALUnitMultiply(&((*hlm)->sampleUnits), &((*hlm)->sampleUnits), &lalSecondUnit);
+            XLALUnitMultiply(&(hlm->sampleUnits), &(hlm->sampleUnits), &lalSecondUnit);
             retcode = 0;
             retcode = IMRPhenomHMEvaluateOnehlmMode(&hlm,
                                                     amps, phases,
@@ -1347,7 +1348,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
                                                     pHM,
                                                     ell, mm,
                                                     phi0,
-                                                    extraParams);
+                                                    extraParams_aux);
             XLAL_CHECK(XLAL_SUCCESS == retcode,
                        XLAL_EFUNC, "IMRPhenomHMEvaluateOnehlmMode failed");
 
@@ -1379,11 +1380,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
 
     LALFree(pHM);
 
-  /* If extraParams was allocated in this function and not passed in
-   * we need to free it to prevent a leak */
-  if (extraParams && !extraParams_in) {
-    XLALDestroyDict(extraParams);
-  }
+    XLALDestroyDict(extraParams_aux);
 
     return XLAL_SUCCESS;
 }

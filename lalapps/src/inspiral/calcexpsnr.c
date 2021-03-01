@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /*-----------------------------------------------------------------------
@@ -38,7 +38,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <lalapps.h>
 #include <series.h>
 #include <lalappsfrutils.h>
 
@@ -156,7 +155,7 @@ int coireflg;                /* is input file coire (1) or inj (null) */
 
 int main( int argc, char *argv[] )
 {
-  LALStatus                     status = blank_status;
+  LALStatus                     XLAL_INIT_DECL(status);
 
   UINT4                         k;
   UINT4                         kLow;
@@ -382,7 +381,7 @@ int main( int argc, char *argv[] )
         /* print version information and exit */
         fprintf( stdout, "calculation of expected SNR of injections\n"
             "Gareth Jones\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

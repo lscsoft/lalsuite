@@ -16,8 +16,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -40,9 +40,10 @@
  */
 
 /* ---------- includes ---------- */
+#include "config.h"
+
 #include <sys/stat.h>
 
-#include <lalapps.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/FrequencySeries.h>
@@ -68,7 +69,7 @@
 #include <lal/LALFrStream.h>
 #endif
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /***************************************************/
 
@@ -423,11 +424,11 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
 
   // frequency-band either taken here from user-input, or later from noiseSFTs (no defaults)
   UINT4 nSetfminBand = UVAR_SET2(fmin,Band);
-  XLAL_CHECK ( (nSetfminBand==2) || ( (nSetfminBand==0) && have_noiseSFTs ), XLAL_EINVAL, "Need either 'noiseSFTs' or BOTH of 'fMin' and 'Band'!\n");
+  XLAL_CHECK ( (nSetfminBand==2) || ( (nSetfminBand==0) && have_noiseSFTs ), XLAL_EINVAL, "Need either 'noiseSFTs' or BOTH of 'fmin' and 'Band'!\n");
   if ( nSetfminBand==2 )
     {
-      /* check for negative fMin and Band, which would break the fMin_eff, fBand_eff calculation below */
-      XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fMin=%f!\n\n", uvar->fmin );
+      /* check for negative fmin and Band, which would break the fMin_eff, fBand_eff calculation below */
+      XLAL_CHECK ( uvar->fmin >= 0, XLAL_EDOM, "Invalid negative frequency fmin=%f!\n\n", uvar->fmin );
       XLAL_CHECK ( uvar->Band > 0, XLAL_EDOM, "Invalid non-positive frequency band Band=%f!\n\n", uvar->Band );
       cfg->fminOut = uvar->fmin;
       cfg->BandOut = uvar->Band;

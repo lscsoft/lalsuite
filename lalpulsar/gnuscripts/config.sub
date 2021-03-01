@@ -1263,6 +1263,9 @@ case $basic_machine in
 		basic_machine=none-none
 		os=-none
 		;;
+	arm64-*)
+		cpu=aarch64
+		;;
 
 # Here we handle the default manufacturer of certain CPU types.  It is in
 # some cases the only manufacturer, in others, it is the most popular.

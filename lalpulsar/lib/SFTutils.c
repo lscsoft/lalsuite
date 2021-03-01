@@ -15,8 +15,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 /*---------- INCLUDES ----------*/
@@ -47,6 +47,9 @@
 /*---------- DEFINES ----------*/
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
 #define MAX(x,y) ((x) > (y) ? (x) : (y))
+
+#define TRUE    1
+#define FALSE   0
 
 /*----- SWITCHES -----*/
 
@@ -138,7 +141,7 @@ XLALDestroySFT ( SFTtype *sft )
 
 
 /**
- * XLAL function to create an SFTVector of \c numSFT SFTs with \c SFTlen frequency-bins
+ * XLAL function to create an SFTVector of \c numSFT SFTs with \c SFTlen frequency-bins (which will be allocated too).
  */
 SFTVector *
 XLALCreateSFTVector ( UINT4 numSFTs, 	/**< number of SFTs */
@@ -183,6 +186,30 @@ XLALCreateSFTVector ( UINT4 numSFTs, 	/**< number of SFTs */
   return vect;
 
 } /* XLALCreateSFTVector() */
+
+
+/**
+ * XLAL function to create an SFTVector of \c numSFT SFTs (which are not allocated).
+ */
+SFTVector *
+XLALCreateEmptySFTVector ( UINT4 numSFTs 	/**< number of SFTs */
+                      )
+{
+  SFTVector *vect;
+
+  if ( (vect = XLALCalloc ( 1, sizeof(*vect) )) == NULL ) {
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+
+  vect->length = numSFTs;
+  if ( (vect->data = XLALCalloc (1, numSFTs * sizeof ( *vect->data ) )) == NULL ) {
+    XLALFree (vect);
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+
+  return vect;
+
+} /* XLALCreateEmptySFTVector() */
 
 
 /** Append the given SFTtype to the SFT-vector (no SFT-specific checks are done!) */
@@ -262,7 +289,7 @@ XLALDestroyPSDVector ( PSDVector *vect )	/**< the PSD-vector to free */
 
 
 /**
- * Create an empty multi-IFO SFT vector with a given number of bins per SFT and number of SFTs per IFO.
+ * Create a multi-IFO SFT vector with a given number of bins per SFT and number of SFTs per IFO (which will be allocated too).
  *
  * Note that the input argument "length" refers to the number of frequency bins in each SFT.
  * The length of the returned MultiSFTVector (i.e. the number of IFOs)
@@ -295,6 +322,35 @@ MultiSFTVector *XLALCreateMultiSFTVector (
   return multSFTVec;
 
 } /* XLALCreateMultiSFTVector() */
+
+
+/**
+ * Create an empty multi-IFO SFT vector with a given number of SFTs per IFO (which are not allocated).
+ */
+MultiSFTVector *XLALCreateEmptyMultiSFTVector (
+  UINT4Vector *numsft    /**< number of SFTs in each per-detector SFTVector */
+  )
+{
+  XLAL_CHECK_NULL( numsft != NULL, XLAL_EFAULT );
+  XLAL_CHECK_NULL( numsft->length > 0, XLAL_EINVAL );
+  XLAL_CHECK_NULL( numsft->data != NULL, XLAL_EFAULT );
+
+  MultiSFTVector *multSFTVec = NULL;
+
+  XLAL_CHECK_NULL( ( multSFTVec = XLALCalloc( 1, sizeof(*multSFTVec) ) ) != NULL, XLAL_ENOMEM );
+
+  const UINT4 numifo = numsft->length;
+  multSFTVec->length = numifo;
+
+  XLAL_CHECK_NULL( ( multSFTVec->data = XLALCalloc( numifo, sizeof(*multSFTVec->data) ) ) != NULL, XLAL_ENOMEM );
+
+  for ( UINT4 k = 0; k < numifo; k++) {
+    XLAL_CHECK_NULL( ( multSFTVec->data[k] = XLALCreateEmptySFTVector( numsft->data[k] ) ) != NULL, XLAL_ENOMEM );
+  } /* loop over ifos */
+
+  return multSFTVec;
+
+} /* XLALCreateEmptyMultiSFTVector() */
 
 
 /**
@@ -2217,6 +2273,8 @@ XLALValidateSFTFile ( const char *fname )
  * plus the full multiPSDVector array,
  * and optionally a REAL8Vector of normalized SFT power (only if not passed as NULL)
  *
+ * If normalizeSFTsInPlace is TRUE, then the inputSFTs will be modified by XLALNormalizeMultiSFTVect().
+ * If it is FALSE, an internal copy will be used and the inputSFTs will be returned unmodified.
  */
 int
 XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD averaged over all IFOs and timestamps */
@@ -2232,7 +2290,8 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
                                 const MathOpType nSFTmthopIFOs, /* [in] math operation over IFOs (normSFT) */
                                 const BOOLEAN normalizeByTotalNumSFTs, /* [in] whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
                                 const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
-                                const REAL8 FreqBand /* [in] frequency band to cover with output bins (must be >=0) */
+                                const REAL8 FreqBand, /* [in] frequency band to cover with output bins (must be >=0) */
+                                const BOOLEAN normalizeSFTsInPlace /* [in] if FALSE, a copy of inputSFTs will be used internally and the original will not be modified */
                               )
 {
 
@@ -2243,20 +2302,39 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
   XLAL_CHECK ( inputSFTs && inputSFTs->data && inputSFTs->length>0, XLAL_EINVAL, "inputSFTs must be pre-allocated." );
   XLAL_CHECK ( ( FreqMin>=0 && FreqBand>=0 ) || ( FreqMin==-1 && FreqBand==0 ), XLAL_EINVAL, "Need either both Freqmin>=0 && FreqBand>=0 (truncate PSD band to this range) or FreqMin=-1 && FreqBand=0 (use full band as loaded from SFTs, including rngmed-sidebands.");
 
-  /* get power running-median rngmed[ |data|^2 ] from SFTs */
-  /* as the output of XLALNormalizeMultiSFTVect(),
+  /* get power running-median rngmed[ |data|^2 ] from SFTs *
+   * as the output of XLALNormalizeMultiSFTVect(),
    * multiPSD will be a rng-median smoothed periodogram over the normalized SFTs.
-   * The inputSFTs themselves will also be normalized in this call.
+   * The inputSFTs themselves will also be normalized in this call
+   * unless overruled by normalizeSFTsInPlace option.
   */
-  XLAL_CHECK ( (*multiPSDVector = XLALNormalizeMultiSFTVect ( inputSFTs, blocksRngMed, NULL )) != NULL, XLAL_EFUNC);
-  UINT4 numBinsSFTs = inputSFTs->data[0]->data[0].data->length;
+  UINT4Vector *numSFTsVec = NULL;
+  MultiSFTVector *SFTs = NULL;
+  UINT4 numIFOs = inputSFTs->length;
+  if ( normalizeSFTsInPlace ) {
+      SFTs = inputSFTs;
+  }
+  else {
+      numSFTsVec = XLALCreateUINT4Vector ( numIFOs );
+      for (UINT4 X = 0; X < numIFOs; ++X) {
+        numSFTsVec->data[X] = inputSFTs->data[X]->length;
+      }
+      SFTs = XLALCreateEmptyMultiSFTVector ( numSFTsVec );
+      for (UINT4 X = 0; X < numIFOs; ++X) {
+        for (UINT4 k = 0; k < numSFTsVec->data[X]; ++k) {
+          XLAL_CHECK ( XLALCopySFT(&(SFTs->data[X]->data[k]), &(inputSFTs->data[X]->data[k])) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+      }
+  }
+  XLAL_CHECK ( (*multiPSDVector = XLALNormalizeMultiSFTVect ( SFTs, blocksRngMed, NULL )) != NULL, XLAL_EFUNC);
+  UINT4 numBinsSFTs = SFTs->data[0]->data[0].data->length;
   REAL8 dFreq = (*multiPSDVector)->data[0]->data[0].deltaF;
 
   /* restrict to just the "physical" band if requested */
   /* first, figure out the effective PSD bin-boundaries for user */
   UINT4 firstBin, lastBin;
   if ( FreqMin>0 ) { /* user requested a constrained band */
-    REAL8 fminSFTs = inputSFTs->data[0]->data[0].f0;
+    REAL8 fminSFTs = SFTs->data[0]->data[0].f0;
     REAL8 fmaxSFTs = fminSFTs + numBinsSFTs*dFreq;
     XLAL_CHECK ( ( FreqMin >= fminSFTs ) && ( FreqMin+FreqBand <= fmaxSFTs ), XLAL_EDOM, "Requested frequency range [%f,%f]Hz not covered by available SFT band [%f,%f]Hz", FreqMin, FreqMin+FreqBand, fminSFTs, fmaxSFTs );
     /* check band wide enough for wings */
@@ -2279,7 +2357,7 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
   }
   XLAL_PRINT_INFO("loaded SFTs have %d bins, effective PSD output band is [%d, %d]", numBinsSFTs, firstBin, lastBin);
   /* now truncate */
-  XLAL_CHECK ( XLALCropMultiPSDandSFTVectors ( *multiPSDVector, inputSFTs, firstBin, lastBin ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALCropMultiPSDandSFTVectors (multiPSDVector, inputSFTs, firstBin=%d, lastBin=%d)", firstBin, lastBin );
+  XLAL_CHECK ( XLALCropMultiPSDandSFTVectors ( *multiPSDVector, SFTs, firstBin, lastBin ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed call to XLALCropMultiPSDandSFTVectors (multiPSDVector, SFTs, firstBin=%d, lastBin=%d)", firstBin, lastBin );
 
   /* number of raw bins in final PSD */
   UINT4 numBins = (*multiPSDVector)->data[0]->data[0].data->length;
@@ -2288,7 +2366,6 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
   XLAL_CHECK ( (*finalPSD = XLALCreateREAL8Vector ( numBins )) != NULL, XLAL_ENOMEM, "Failed to create REAL8Vector for finalPSD.");
 
   /* number of IFOs */
-  UINT4 numIFOs = (*multiPSDVector)->length;
   REAL8Vector *overIFOs = NULL; /* one frequency bin over IFOs */
   XLAL_CHECK ( (overIFOs = XLALCreateREAL8Vector ( numIFOs )) != NULL, XLAL_ENOMEM, "Failed to create REAL8Vector for overIFOs array.");
 
@@ -2310,7 +2387,7 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
    * which gives equivalent results to if we had rewritten the loop order
    * to allow for calling MATH_OP_[HARMONIC/POWERMINUS2]_MEAN over the combined array.
    */
-  REAL8 totalNumSFTsNormalizingFactor;
+  REAL8 totalNumSFTsNormalizingFactor = 1.;
   if ( normalizeByTotalNumSFTs ) {
     UINT4 totalNumSFTs = 0;
     for (UINT4 X = 0; X < numIFOs; ++X) {
@@ -2364,11 +2441,11 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
       for (UINT4 X = 0; X < numIFOs; ++X) {
 
         /* number of SFTs for this IFO */
-        UINT4 numSFTs = inputSFTs->data[X]->length;
+        UINT4 numSFTs = SFTs->data[X]->length;
 
         /* compute SFT power */
         for (UINT4 alpha = 0; alpha < numSFTs; ++alpha) {
-          COMPLEX8 bin = inputSFTs->data[X]->data[alpha].data->data[k];
+          COMPLEX8 bin = SFTs->data[X]->data[alpha].data->data[k];
           overSFTs->data[alpha] = crealf(bin)*crealf(bin) + cimagf(bin)*cimagf(bin);
         }
 
@@ -2394,9 +2471,60 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
     *multiPSDVector = NULL;
   }
 
+  if ( !normalizeSFTsInPlace ) {
+    XLALDestroyUINT4Vector ( numSFTsVec );
+    XLALDestroyMultiSFTVector ( SFTs );
+  }
+
   return XLAL_SUCCESS;
 
 } /* XLALComputePSDandNormSFTPower() */
+
+/**
+ * Compute the PSD (power spectral density) over a MultiSFTVector.
+ * This is just a convenience wrapper around XLALComputePSDandNormSFTPower()
+ * without the extra options for normSFTpower computation.
+ *
+ * \return a REAL8Vector of the final normalized and averaged/summed PSD.
+ *
+ * NOTE: contrary to earlier versions of this function, it no longer modifies
+ * the inputSFTs in-place, so now it can safely be called multiple times.
+ *
+ */
+int
+XLALComputePSDfromSFTs ( REAL8Vector **finalPSD, /* [out] final PSD averaged over all IFOs and timestamps */
+                         MultiSFTVector *inputSFTs, /* [in] the multi-IFO SFT data */
+                         const UINT4 blocksRngMed, /* [in] running Median window size */
+                         const MathOpType PSDmthopSFTs, /* [in] math operation over SFTs for each IFO (PSD) */
+                         const MathOpType PSDmthopIFOs, /* [in] math operation over IFOs (PSD) */
+                         const BOOLEAN normalizeByTotalNumSFTs, /* [in] whether to include a final normalization factor derived from the total number of SFTs (over all IFOs); only useful for some mthops */
+                         const REAL8 FreqMin, /* [in] starting frequency -> first output bin (if -1: use full SFT data including rngmed bins, else must be >=0) */
+                         const REAL8 FreqBand /* [in] frequency band to cover with output bins (must be >=0) */
+                       )
+{
+
+  MultiPSDVector *multiPSDVector = NULL;
+  REAL8Vector *normSFT = NULL;
+  XLAL_CHECK ( XLALComputePSDandNormSFTPower ( finalPSD,
+                      &multiPSDVector,
+                      &normSFT,
+                      inputSFTs,
+                      0, // returnMultiPSDVector
+                      0, // returnNormSFT
+                      blocksRngMed,
+                      PSDmthopSFTs,
+                      PSDmthopIFOs,
+                      0, // nSFTmthopSFTs
+                      0, // nSFTmthopIFOs
+                      normalizeByTotalNumSFTs,
+                      FreqMin,
+                      FreqBand,
+                      FALSE // normalizeSFTsInPlace
+  ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+} /* XLALComputePSDfromSFTs() */
 
 
 /**
@@ -2726,7 +2854,7 @@ XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, 	/**< input PSD ma
 /**
  * Compute various types of "math operations" over the entries of an array.
  *
- * The supported optypes (e.g. sums and averages) are defined in #MathOpType.
+ * The supported optypes (e.g. sums and averages) are defined in \c MathOpType.
  *
  * This can be used e.g. for the different established conventions of combining
  * SFTs for a PSD estimate.

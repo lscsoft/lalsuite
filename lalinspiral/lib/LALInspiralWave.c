@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -58,11 +58,11 @@
  * #EOB at orders 2 and higher. #SpinTaylorT3 is implemented only at 2PN order
  * by solving the evolution equations for the spin and orbital angular momenta and a
  * time-domain phasing formula. Finally, PN order is undefined for #BCV.
- * The approximant and the order are set up by the enums ::Approximant and ::LALPNOrder,
+ * The approximant and the order are set up by the enums \c Approximant and \c LALPNOrder,
  * respectively.
  *
  * The waveforms are all terminated one bin before the last stable orbit is reached.
- * The last stable orbit corresponding to a given ::Approximant and ::LALPNOrder is
+ * The last stable orbit corresponding to a given \c Approximant and \c LALPNOrder is
  * defined as follows: For all \c Taylor approximants at orders 0PN, 1PN and 1.5PN
  * \f$v_\textrm{lso}^2=1/6,\f$ and at 2PN, 2.5PN, 3PN and 3.5PN
  * \f$v_\textrm{lso}^2 = x^\textrm{lso}_{T_4},\f$ where \f$x^\textrm{lso}_{T_4}\f$ is
@@ -102,9 +102,9 @@
  * ### Notes ###
  *
  * <ul>
- * <li> A time-domain waveform is returned when the ::Approximant is one of
+ * <li> A time-domain waveform is returned when the \c Approximant is one of
  * #TaylorT1, #TaylorT2, #TaylorT3, #PadeT1, #EOB, #SpinTaylorT3, #PhenSpinTaylorRD, #SpinQuadTaylor
- * </li><li> A frequency-domain waveform is returned when the ::Approximant is one of
+ * </li><li> A frequency-domain waveform is returned when the \c Approximant is one of
  * #TaylorF1, #TaylorF2, #TaylorF2RedSpin, #BCV.
  * In these cases the code returns the real and imagninary parts of the
  * Fourier domain signal in the convention of fftw. For a signal vector

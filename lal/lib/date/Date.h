@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #ifndef _DATE_H
@@ -90,8 +90,8 @@ extern "C"
 #define XLAL_JD_TO_MJD(jd) ((jd) - XLAL_MJD_REF) /**< Modified Julian Day for specified civil time structure. */
 
 /**
- * This structure stores pointers to a ::LALDetector and a
- * ::LIGOTimeGPS. Its sole purpose is to aggregate these
+ * This structure stores pointers to a \c LALDetector and a
+ * \c LIGOTimeGPS. Its sole purpose is to aggregate these
  * structures for passing to functions.
  */
 #ifdef SWIG /* SWIG interface directives */

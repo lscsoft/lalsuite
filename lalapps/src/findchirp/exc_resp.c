@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #include <config.h>
@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
@@ -83,7 +83,7 @@ int main ( int argc, char *argv[] )
         usage( program );
         return 0;
       case 'V':
-        PRINT_VERSION( "hello" );
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         return 0;
       case 'v':
         vrbflg = 1;

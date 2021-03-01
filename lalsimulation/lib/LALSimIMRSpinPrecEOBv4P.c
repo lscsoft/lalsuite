@@ -14,8 +14,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 #ifndef _LALSIMIMRSPINPRECEOBv4P_C
 #define _LALSIMIMRSPINPRECEOBv4P_C
@@ -855,6 +855,15 @@ int XLALSimIMRSpinPrecEOBWaveform(
                           FLAG_SEOBNRv4P_ZFRAME_L);
   /* No debug output */
   XLALDictInsertINT4Value(seobflags, "SEOBNRv4P_debug", 0);
+  // What max ell to use for the Nyquist check.
+  // Note that this has no effect at which waveform modes are actually being generated.
+  // For SEOBNRv4P we do not give the user a choice, the max ell is *always* 2
+  INT4 ellMaxForNyquistCheck = 2;
+  if (PrecEOBversion == v4PHM.number){
+    ellMaxForNyquistCheck =
+        XLALSimInspiralWaveformParamsLookupEOBEllMaxForNyquistCheck(LALParams);
+  }
+  XLALDictInsertINT4Value(seobflags,"ellMaxForNyquistCheck",ellMaxForNyquistCheck);
   int ret = XLAL_SUCCESS;
   XLAL_TRY(XLALSimIMRSpinPrecEOBWaveformAll(
                hplus, hcross, &hIlm, &hJlm, &dyn_Low, &dyn_Hi, &dyn_all,
@@ -1069,6 +1078,13 @@ SphHarmTimeSeries *XLALSimIMRSpinPrecEOBModes(
                           FLAG_SEOBNRv4P_ZFRAME_L);
   /* No debug output */
   XLALDictInsertINT4Value(seobflags, "SEOBNRv4P_debug", 0);
+
+  INT4 ellMaxForNyquistCheck = 2;
+  if (PrecEOBversion == v4PHM.number){
+    ellMaxForNyquistCheck =
+        XLALSimInspiralWaveformParamsLookupEOBEllMaxForNyquistCheck(LALParams);
+  }
+  XLALDictInsertINT4Value(seobflags,"ellMaxForNyquistCheck",ellMaxForNyquistCheck);
   int ret = XLAL_SUCCESS;
   XLAL_TRY(XLALSimIMRSpinPrecEOBWaveformAll(
                &hplus, &hcross, &hIlm, &hJlm, &dyn_Low, &dyn_Hi, &dyn_all,
@@ -1079,7 +1095,56 @@ SphHarmTimeSeries *XLALSimIMRSpinPrecEOBModes(
                INspin1[2], INspin2[0], INspin2[1], INspin2[2], modearray,
                seobflags),
            ret);
+  if (ret != XLAL_SUCCESS)
+  {
+    // We have to clean up right here
+    if (modearray)
+      XLALDestroyValue(modearray);
+    if (seobflags)
+      XLALDestroyDict(seobflags);
+    if (dyn_Low)
+      XLALDestroyREAL8Vector(dyn_Low);
+    if (dyn_Hi)
+      XLALDestroyREAL8Vector(dyn_Hi);
+    if (dyn_all)
+      XLALDestroyREAL8Vector(dyn_all);
 
+    if (t_vec_modes)
+      XLALDestroyREAL8Vector(t_vec_modes);
+    if (hP22_amp)
+      XLALDestroyREAL8Vector(hP22_amp);
+    if (hP22_phase)
+      XLALDestroyREAL8Vector(hP22_phase);
+    if (hP21_amp)
+      XLALDestroyREAL8Vector(hP21_amp);
+    if (hP21_phase)
+      XLALDestroyREAL8Vector(hP21_phase);
+    if (hP33_amp)
+      XLALDestroyREAL8Vector(hP33_amp);
+    if (hP33_phase)
+      XLALDestroyREAL8Vector(hP33_phase);
+    if (hP44_amp)
+      XLALDestroyREAL8Vector(hP44_amp);
+    if (hP44_phase)
+      XLALDestroyREAL8Vector(hP44_phase);
+    if (hP55_amp)
+      XLALDestroyREAL8Vector(hP55_amp);
+    if (hP55_phase)
+      XLALDestroyREAL8Vector(hP55_phase);
+
+    if (alphaJ2P)
+      XLALDestroyREAL8Vector(alphaJ2P);
+    if (betaJ2P)
+      XLALDestroyREAL8Vector(betaJ2P);
+    if (gammaJ2P)
+      XLALDestroyREAL8Vector(gammaJ2P);
+    if (AttachPars)
+      XLALDestroyREAL8Vector(AttachPars);
+    if (hJlm)
+      XLALDestroySphHarmTimeSeries(hJlm);
+    // Fail correctly
+    XLAL_ERROR_NULL(ret);
+  }
   /* Here we multiply the appropriate factor to the modes to convert them in
    * dimensional units */
   REAL8 m1 = m1SI / LAL_MSUN_SI;
@@ -1192,9 +1257,7 @@ SphHarmTimeSeries *XLALSimIMRSpinPrecEOBModes(
     XLALDestroyREAL8Vector(AttachPars);
   if (hJlm)
     XLALDestroySphHarmTimeSeries(hJlm);
-  if (ret != XLAL_SUCCESS) {
-    XLAL_ERROR_NULL(XLAL_EFUNC);
-  }
+
   return hIlm_dimfull;
 }
 
@@ -4616,6 +4679,7 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
     debug = 0;
   else
     debug = XLALDictLookupINT4Value(seobflags, "SEOBNRv4P_debug");
+
   if (debug) {
     printf("************************************\n");
     printf("XLALSimIMRSpinPrecEOBWaveformAll\n");
@@ -4680,9 +4744,27 @@ int XLALSimIMRSpinPrecEOBWaveformAll(
   INT4 ret = 0;
 
   // Check Nyquist frequency
+  UINT4 ellMaxForNyquistCheck = 2;
   UINT4 ell_max = SEOBGetLMaxInModeArray(modearray, _SEOB_MODES_LMAX);
+  
+  // Set the max ell to use for Nyquist check
+  // If the value is not set, simply use the largest L in the mode array
+  // which will give 2 for SEOBNRv4P and 5 for SEOBNRv4PHM
+  if(!XLALDictContains(seobflags,"ellMaxForNyquistCheck")){
+    ellMaxForNyquistCheck = ell_max;
+  }
+  else{
+     ellMaxForNyquistCheck = XLALDictLookupINT4Value(seobflags, "ellMaxForNyquistCheck");
+  }
+  if (ellMaxForNyquistCheck<2){
+    XLALPrintError("Custom value of ell < 2 was passed to Nyquist check. This is not supported!");
+    XLAL_ERROR(XLAL_EFUNC);
+  }
+  if(ellMaxForNyquistCheck < ell_max){
+    XLALPrintError("WARNING: Using ell=%d for Nyqusit check of srate, even though max ell of waveforms produced is %d\n",ellMaxForNyquistCheck,ell_max);
+  }
   XLAL_TRY(XLALEOBCheckNyquistFrequency(m1, m2, INchi1.data, INchi2.data,
-                                        ell_max, SEOBNRv4P, INdeltaT),
+                                       ellMaxForNyquistCheck, SEOBNRv4P, INdeltaT),
            ret);
   if (ret != XLAL_SUCCESS) {
     XLAL_ERROR(XLAL_EDOM);

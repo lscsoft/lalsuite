@@ -2,6 +2,7 @@ BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
 TESTS =
+include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 # -- C programs -------------
@@ -38,7 +39,7 @@ TESTS += \
 	lalframe_version \
 	$(END_OF_LIST)
 
-man_MANS = \
+lalfr_MANS = \
 	lalfr-cksum.1 \
 	lalfr-stat.1 \
 	lalfr-dump.1 \
@@ -52,8 +53,18 @@ man_MANS = \
 	lalfr-vis.1 \
 	$(END_OF_LIST)
 
+man1_MANS = \
+	$(lalfr_MANS) \
+	$(END_OF_LIST)
+
+if HELP2MAN
+man1_MANS += \
+	lalframe_version.man \
+	$(END_OF_LIST)
+endif
+
 EXTRA_DIST += \
-	$(MANS) \
+	$(lalfr_MANS) \
 	$(END_OF_LIST)
 
 # -- Python programs --------

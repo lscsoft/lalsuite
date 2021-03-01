@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /*-----------------------------------------------------------------------
@@ -41,12 +41,12 @@
  * The function <tt>XLALCreateTriggerErrorList()</tt> creates a linked list of
  * structures pointing to the trigger and their associated position vector and
  * shape matrix. If required, the maximum difference in tC associated with the
- * triggers in the list of \c ::SnglInspiralTable's will be passed back in
+ * triggers in the list of \c SnglInspiralTable's will be passed back in
  * \c tcMax.
  *
  * The function <tt>XLALDestroyTriggerErrorList()</tt> frees all memory associated
- * with the \c ::TriggerErrorList, with the exception of the wrapped
- * ::SnglInspiralTable's, which will normally still be required after
+ * with the \c TriggerErrorList, with the exception of the wrapped
+ * \c SnglInspiralTable's, which will normally still be required after
  * TrigScan and E-thinca have completed.
  *
  */

@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -22,6 +22,8 @@
  * \ingroup lalapps_pulsar_SFTTools
  */
 
+
+#include "config.h"
 
 /*temporary rubbish bin for headers*/
 /*These are included in HeterodyneCrabPulsar files
@@ -32,7 +34,7 @@
 /*end of temporary rubbish bin*/
 
 /*LAL header files*/
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
@@ -58,7 +60,7 @@ int main(int argc, char **argv)
     FILE *fp2 = NULL;
     FILE *fp3 = NULL;
     FILE *fp4 = NULL;
-    LALStatus status = blank_status;
+    LALStatus XLAL_INIT_DECL(status);
     
     SFTCatalog *catalog = NULL;
     SFTVector *sft_vect = NULL;

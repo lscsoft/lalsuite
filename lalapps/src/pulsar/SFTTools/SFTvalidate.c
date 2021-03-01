@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2021 Karl Wette
  *  Copyright (C) 2004, 2005 Bruce Allen
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -13,8 +14,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 /**
@@ -40,18 +41,61 @@
 
 int main(int argc, char** argv) {
   
-  fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsStatus);
-
-  /* loop over all file names on command line */
-  for (int i=1; i<argc; i++) {
-    /* we on purpose do not call the XLAL version here,
-     * so as to have the same stdout printing
-     * and return code handling as older versions of this executable.
-     */
-    int errcode = ValidateSFTFile(argv[i]);
-    if (errcode != 0) {
-        return errcode;
-    }
+  if (argc == 2 && (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0)) {
+    fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsStatus);
+    return EXIT_SUCCESS;
   }
-  return 0;
+
+  if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+    fprintf(stdout, "usage:\n");
+    fprintf(stdout, "   %s *.sft\n", argv[0]);
+    fprintf(stdout, "   ls *.sft | %s\n", argv[0]);
+    fprintf(stdout, "   find -name '*.sft' | %s >valid-sfts.txt 2>errors.log\n", argv[0]);
+    return EXIT_SUCCESS;
+  }
+
+  int errcode = EXIT_SUCCESS;
+
+  if (argc > 1) {
+
+    /* loop over all file names on command line */
+    for (int i = 1; i < argc; ++i) {
+      /* we on purpose do not call the XLAL version here,
+       * so as to have the same stdout printing
+       * and return code handling as older versions of this executable.
+       */
+      if (ValidateSFTFile(argv[i]) != 0) {
+        errcode = EXIT_FAILURE;
+      } else {
+        fprintf(stdout, "%s\n", argv[i]);
+        fflush(stdout);
+      }
+    }
+
+  } else {
+
+    char line[2048];
+
+    /* loop over all file names from standard input */
+    while (fgets(line, sizeof(line) - 1, stdin) != NULL) {
+      size_t len = strlen(line);
+      if (len > 1) {
+        line[len - 1] = '\0';
+        /* we on purpose do not call the XLAL version here,
+         * so as to have the same stdout printing
+         * and return code handling as older versions of this executable.
+         */
+        if (ValidateSFTFile(line) != 0) {
+          errcode = EXIT_FAILURE;
+        } else {
+          fprintf(stdout, "%s\n", line);
+          fflush(stdout);
+        }
+      }
+    }
+
+  }
+
+  return errcode;
+
 }

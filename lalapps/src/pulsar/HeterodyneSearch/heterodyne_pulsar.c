@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -358,7 +358,7 @@ data!\n");
   CHAR *headerinfo = XLALStringDuplicate("%% File created on ");
   headerinfo = XLALStringAppend(headerinfo, LogTimeToString( XLALGetTimeOfDay() ));
   headerinfo = XLALStringAppend(headerinfo, "\n");
-  headerinfo = XLALStringAppend(headerinfo, XLALGetVersionString( 0 ) );
+  headerinfo = XLALStringAppend(headerinfo, XLALVCSInfoString( lalAppsVCSInfoList, 0, "%% " ) );
   headerinfo = XLALStringAppend(headerinfo, "%% ");
   for ( INT4 j=0; j<argc; j++ ) {
     headerinfo = XLALStringAppend(headerinfo, argv[j]);

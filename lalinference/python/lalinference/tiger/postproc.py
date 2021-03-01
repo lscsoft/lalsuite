@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 Postprocessing for the tiger pipeline
 """

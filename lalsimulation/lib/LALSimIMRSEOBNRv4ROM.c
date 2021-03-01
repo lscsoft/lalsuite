@@ -14,8 +14,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 #ifdef __GNUC__
@@ -506,13 +506,13 @@ int SEOBNRROMdataDS_Init(
   XLALH5FileClose(file);
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->sub1, dir, "sub1");
-  if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel 1 loaded sucessfully.\n", __func__);
+  if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel 1 loaded successfully.\n", __func__);
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->sub2, dir, "sub2");
-  if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel 2 loaded sucessfully.\n", __func__);
+  if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel 2 loaded successfully.\n", __func__);
 
   ret |= SEOBNRROMdataDS_Init_submodel(&(romdata)->sub3, dir, "sub3");
-  if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel 3 loaded sucessfully.\n", __func__);
+  if (ret==XLAL_SUCCESS) XLALPrintInfo("%s : submodel 3 loaded successfully.\n", __func__);
 
   if(XLAL_SUCCESS==ret)
     romdata->setup=1;
@@ -1488,7 +1488,8 @@ int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(
   if (Mf < Mf_ROM_min || Mf > Mf_ROM_max || Mf > Mf_final) {
     gsl_spline_free(spline_phi);
     gsl_interp_accel_free(acc_phi);
-    XLAL_ERROR(XLAL_EDOM, "Frequency %g is outside allowed frequency range.\n", frequency);
+    XLAL_ERROR(XLAL_EDOM, "Frequency %g Hz (Mf=%g) is outside allowed range.\n"
+               "Min / max / final Mf values are %g, %g, %g\n", frequency, Mf, Mf_ROM_min, Mf_ROM_max, Mf_final);
    }
 
   // Compute time relative to origin at merger
