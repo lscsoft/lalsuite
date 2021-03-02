@@ -1628,12 +1628,11 @@ pages:
     refs:
       - debug-ci@lscsoft/lalsuite
   except:
-    variables:
-      - $CI_COMMIT_MESSAGE =~ /\[skip docs\]/ || $CI_COMMIT_MESSAGE =~ /\[skip coverage\]/
-  except:
     refs:
       - pushes
       - web
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /\[skip docs\]/ || $CI_COMMIT_MESSAGE =~ /\[skip coverage\]/
 
 # deploy wheels
 deploy:wheel:
