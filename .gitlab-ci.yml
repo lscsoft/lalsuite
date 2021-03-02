@@ -1593,6 +1593,7 @@ documentation:
   only:
     refs:
       - pushes
+      - schedules
       - web
   except:
     variables:
