@@ -1618,7 +1618,7 @@ pages:
       - public
   only:
     refs:
-      - master@lscsoft/lalsuite
+      - debug-ci@lscsoft/lalsuite
     variables:
       - $CI_COMMIT_MESSAGE !~ /\[skip docs\]/
   except:
