@@ -252,10 +252,11 @@ variables:
       - schedules
       - tags
       - web
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip rhel]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip rhel\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip rhel\]/
 
 # -- debian
 
@@ -333,10 +334,11 @@ variables:
       - schedules
       - tags
       - web
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip debian]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip debian\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip debian\]/
 
 # -- conda
 
@@ -446,10 +448,11 @@ variables:
       - schedules
       - tags
       - web
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip conda]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip conda\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip conda\]/
 
 # -- tarballs -----------------------------------
 #
@@ -868,10 +871,11 @@ lalapps:conda:
       - /^lalsuite-v.*$/
       - schedules
       - web
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip wheels]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip wheels\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip wheels\]/
   artifacts:
     expire_in: 18h
     paths:
@@ -991,11 +995,11 @@ wheel:cp39-cp39-macosx:
 
 .integration-tests:
   stage: integration tests
-  only:
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip integration]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip integration\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip integration\]/
 
 lalinference_testjob:
   extends:
@@ -1056,10 +1060,11 @@ top-level:
     refs:
       - schedules
       - web
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip compiler]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip compiler\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip compiler\]/
 
 clang:10:
   extends:
@@ -1240,10 +1245,11 @@ upgrade:conda:linux:
     refs:
       - schedules
       - web
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip platform]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip platform\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip platform\]/
 
 platform:debian:stretch:
   extends:
@@ -1304,11 +1310,11 @@ platform:conda:macos:
   variables:
     DOCKER_DRIVER: overlay
   stage: docker
-  only:
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip docker]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip docker\]/
+      - $CI_COMMIT_MESSAGE != /\[skip docker\]/
   script:
     # build container and push to registry
     - IMAGE_TAG=${CI_JOB_NAME##*:}
@@ -1489,10 +1495,11 @@ coverage:
       - pushes
       - schedules
       - web
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip coverage]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip coverage\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip coverage\]/
 
 # -- linting ------------------------------------
 #
@@ -1503,11 +1510,11 @@ coverage:
 .lint:
   stage: lint
   needs: []
-  only:
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip lint]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip lint\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip lint\]/
 
 lint:python:
   extends:
@@ -1587,10 +1594,11 @@ documentation:
     refs:
       - pushes
       - web
+  except:
     variables:
       # allow these jobs to be skipped by including
       # `[skip docs]` in the commit message
-      - $CI_COMMIT_MESSAGE !~ /\[skip docs\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip docs\]/
 
 # -- deploy -------------------------------------
 #
@@ -1619,12 +1627,12 @@ pages:
   only:
     refs:
       - master@lscsoft/lalsuite
-    variables:
-      - $CI_COMMIT_MESSAGE !~ /\[skip docs\]/
   except:
     refs:
       - pushes
       - web
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /\[skip docs\]/ || $CI_COMMIT_MESSAGE =~ /\[skip coverage\]/
 
 # deploy wheels
 deploy:wheel:
