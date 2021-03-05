@@ -24,10 +24,18 @@
 import os
 import getpass
 import socket, tempfile
+import warnings
 from optparse import OptionParser
 from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 from glue import pipeline
 from lalapps import inspiral
+
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
 
 ###############################################################################
 #

@@ -18,6 +18,7 @@ from __future__ import (division, print_function)
 
 from operator import attrgetter
 from optparse import OptionParser
+import warnings
 
 from time import strftime
 import numpy as np
@@ -33,6 +34,14 @@ from lalinspiral.sbank.bank import Bank
 #from sbank import git_version FIXME
 from lalinspiral.sbank.waveforms import waveforms
 from lalinspiral.sbank.psds import noise_models, read_psd
+
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
+
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
