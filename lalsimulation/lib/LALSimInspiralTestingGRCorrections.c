@@ -101,9 +101,10 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
   INT4 n = (INT4) htilde->data->length;
   
   /* Indices of f0, f_low, frequency at which non-GR modifications end, and fPeak */
-  INT4 iStart, iRef,  iPeak;
-  iStart = (UINT4) ceil((f_low-f0) / deltaF);
-  iRef   = (UINT4) ceil((f_ref*m-f0) / deltaF);
+  INT4 iStart, iStartFinal, iRef,  iPeak;
+  iStart = (UINT4) ceil((f_low/2.-f0) / deltaF);
+  iStartFinal = (UINT4) ceil((f_low-f0) / deltaF);
+  iRef   = (UINT4) ceil((f_ref*m/2.-f0) / deltaF);
   iPeak  = (UINT4) fmin(ceil((f22Peak - f0) / deltaF),n-1);
   
   /* Sequence of frequencies where corrections to the model need to be evaluated
@@ -122,7 +123,7 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
   const REAL8 qm_def2 = 1.;
   
   XLALSimInspiralPNCorrections(&pfa, m1, m2, chi1z, chi2z, chi1z*chi1z, chi2z*chi2z, chi1z*chi2z, qm_def1, qm_def2, LALpars);
-  XLALSimInspiralPhaseCorrectionsPhasing(htilde,freqs,m,iStart,iRef,iPeak,pfa,m_sec,eta,f_window_div_f_Peak,f22Peak,NCyclesStep);
+  XLALSimInspiralPhaseCorrectionsPhasing(htilde,freqs,m,iStart,iRef,iPeak,pfa,m_sec,eta,f_window_div_f_Peak,iStartFinal,NCyclesStep);
   XLALDestroyREAL8Sequence(freqs);
   return 0;
 }
@@ -258,7 +259,7 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
                                            const REAL8 mtot,
                                            const REAL8 eta,
                                            const REAL8 f_window_div_f_Peak,
-                                           const REAL8 f22Peak,
+                                           const REAL8 iStartFinal,
                                            const REAL8 NCyclesStep)  /** Choose number of GW cycles over which to taper the non-GR phase correction */
 {
     
@@ -266,7 +267,7 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
   const REAL8 pfaN0 = 3.L/(128.L * eta);
   const REAL8 piM = LAL_PI * mtot;
   /*const REAL8 vWindow = cbrt(2*piM * freqs->data[iEnd]/m); //Center of the tapering function in v-space*/
-  const REAL8 vWindow = cbrt(2*piM * f_window_div_f_Peak * f22Peak/2); //Center of the tapering function in v-space
+  const REAL8 vWindow = cbrt(2*piM * f_window_div_f_Peak * freqs->data[iPeak]/2); //Center of the tapering function in v-space
   const REAL8 width = (NCyclesStep * LAL_PI * vWindow * vWindow * vWindow * vWindow * vWindow * vWindow)/(50. * pfaN0); //Width of tapering step function
 
   
@@ -317,7 +318,7 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
   REAL8 PNPhaseRefDerivative = dphasenonGRdfTapered->data[iPeak];
   /*printf("phase at fref=%f\n", phasenonGRTapered->data[iRef]);*/
   
-  for ( i = iStart; i < freqs->length; i++ ) {
+  for ( i = iStartFinal; i < freqs->length; i++ ) {
     REAL8 phasing = phasenonGRTapered->data[i] - PNPhaseRefDerivative * (freqs->data[i]-freqs->data[iRef]) ;
     htilde->data->data[i] *= cexp(phasing * 1.j);
   }

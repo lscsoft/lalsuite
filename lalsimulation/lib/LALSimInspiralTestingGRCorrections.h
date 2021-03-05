@@ -70,7 +70,7 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
                                            const REAL8 mtot,
                                            const REAL8 eta,
                                            const REAL8 f_window_div_f_Peak,
-                                           const REAL8 f22Peak,
+                                           const REAL8 iStartFinal,
 					   const REAL8 NCyclesStep);  /** Choose number of GW cycles over which to taper the non-GR phase correction */
 
 /* Main function for waveform generation for signals with dynamical scalarization. Accepts a GR waveform htilde, binary parameters,
