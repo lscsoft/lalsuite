@@ -157,5 +157,5 @@ for filename in filenames:
 	#
 
 	if changed:
-		ligolw_utils.write_filename(xmldoc, filename, gz = (filename or "stdout").endswith(".gz"), verbose = options.verbose)
+		ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
 	xmldoc.unlink()

@@ -121,5 +121,4 @@ for count, inj in enumerate(inj_list):
     sim_table.append(curr_sim)
 
 xmldoc.childNodes[-1].appendChild(sim_table)
-utils.write_filename(xmldoc, args.output_file,
-                     gz=args.output_file.endswith('gz'))
+utils.write_filename(xmldoc, args.output_file)

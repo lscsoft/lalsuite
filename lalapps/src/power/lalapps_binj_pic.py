@@ -259,4 +259,4 @@ for n, filename in enumerate(filenames, 1):
 #
 
 
-ligolw_utils.write_filename(xmldoc, options.output, gz = (options.output or "stdout").endswith(".gz"), verbose = options.verbose)
+ligolw_utils.write_filename(xmldoc, options.output, verbose = options.verbose)

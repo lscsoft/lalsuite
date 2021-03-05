@@ -137,7 +137,7 @@ def checkpoint_save(xmldoc, fout, process):
 
     # write out the document
     ligolw_process.set_process_end_time(process)
-    utils.write_filename(xmldoc, fout + "_checkpoint.gz",  gz=True)
+    utils.write_filename(xmldoc, fout + "_checkpoint.gz")
 
 
 def parse_command_line():
@@ -466,7 +466,7 @@ if opts.output_filename.endswith(('.xml', '.xml.gz')):
 
 if opts.trial_waveforms:
     if opts.trial_waveforms.endswith(('.xml', '.xml.gz')):
-        trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
+        trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler)
         trial_sngls = lsctables.SnglInspiralTable.get_table(trialdoc)
         proposal = (tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls)
     elif opts.trial_waveforms.endswith(('.hdf', '.h5', '.hdf5')):
@@ -590,8 +590,7 @@ bank.clear()  # clear caches
 # write out the document
 if opts.output_filename.endswith(('.xml', '.xml.gz')):
     ligolw_process.set_process_end_time(process)
-    utils.write_filename(xmldoc, opts.output_filename,
-                         gz=opts.output_filename.endswith("gz"))
+    utils.write_filename(xmldoc, opts.output_filename)
 elif opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
     hdf_fp = h5py.File(opts.output_filename, 'w')
     if len(tbl) == 0:

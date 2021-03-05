@@ -171,6 +171,6 @@ for n, filename in enumerate(filenames):
 	# done
 	#
 
-	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
 	xmldoc.unlink()
 	lsctables.reset_next_ids(lsctables.TableByName.values())
