@@ -1566,7 +1566,7 @@ int XLALSimNoisePSDaLIGOAPlusDesignSensitivityT1800042(
  * to an updated aLIGO configuration design sensitivity scenario in 
  * LIGO-T1800044.
  */
-int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(
+int XLALSimNoisePSDaLIGODesignSensitivityT1800044(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1587,7 +1587,7 @@ int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(
  * to aLIGO O3 low 120 Mpc range in LIGO-P1800545.
  */
 
-int XLALSimNoisePSDaLIGOaLIGOO3LowT1800545(
+int XLALSimNoisePSDaLIGOO3LowT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1601,7 +1601,7 @@ int XLALSimNoisePSDaLIGOaLIGOO3LowT1800545(
  * to aLIGO 140 Mpc range in LIGO-P1800545.
  */
 
-int XLALSimNoisePSDaLIGOaLIGO140MpcT1800545(
+int XLALSimNoisePSDaLIGO140MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1615,7 +1615,7 @@ int XLALSimNoisePSDaLIGOaLIGO140MpcT1800545(
  * to aLIGO 175 Mpc range (design) in LIGO-P1800545.
  */
 
-int XLALSimNoisePSDaLIGOaLIGO175MpcT1800545(
+int XLALSimNoisePSDaLIGO175MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1629,7 +1629,7 @@ int XLALSimNoisePSDaLIGOaLIGO175MpcT1800545(
  * to advanced Virgo 100 Mpc range (O4 intermediate) in LIGO-P1800545.
  */
 
-int XLALSimNoisePSDaLIGOAdVO4IntermediateT1800545(
+int XLALSimNoisePSDAdVO4IntermediateT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1643,7 +1643,7 @@ int XLALSimNoisePSDaLIGOAdVO4IntermediateT1800545(
  * to advanced Virgo 120 Mpc range (O4 design) in LIGO-P1800545.
  */
 
-int XLALSimNoisePSDaLIGOAdVO4T1800545(
+int XLALSimNoisePSDAdVO4T1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1657,7 +1657,7 @@ int XLALSimNoisePSDaLIGOAdVO4T1800545(
  * to advanced Virgo 65 Mpc range (O3 low) in LIGO-P1800545.
  */
 
-int XLALSimNoisePSDaLIGOAdVO3LowT1800545(
+int XLALSimNoisePSDAdVO3LowT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1671,7 +1671,7 @@ int XLALSimNoisePSDaLIGOAdVO3LowT1800545(
  * to advanced KAGRA 128 Mpc range in LIGO-P1800545.
  */
 
-int XLALSimNoisePSDaLIGOKAGRA128MpcT1800545(
+int XLALSimNoisePSDKAGRA128MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1685,7 +1685,7 @@ int XLALSimNoisePSDaLIGOKAGRA128MpcT1800545(
  * to advanced KAGRA 25 Mpc range in LIGO-P1800545.
  */
 
-int XLALSimNoisePSDaLIGOKAGRA25MpcT1800545(
+int XLALSimNoisePSDKAGRA25MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1699,7 +1699,7 @@ int XLALSimNoisePSDaLIGOKAGRA25MpcT1800545(
  * to advanced KAGRA 80 Mpc range in LIGO-P1800545.
  */
 
-int XLALSimNoisePSDaLIGOKAGRA80MpcT1800545(
+int XLALSimNoisePSDKAGRA80MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
