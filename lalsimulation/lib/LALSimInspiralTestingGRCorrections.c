@@ -71,6 +71,12 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
   const REAL8 mt = m1 + m2;
   const REAL8 m_sec = mt * LAL_MTSUN_SI;  /* total mass in seconds */
   const REAL8 eta = m1 * m2 / (mt * mt);
+/* Check that fRef is sane */
+  if( f_ref < f_low )
+  {
+        XLALPrintError("XLAL Error - %s: fRef is smaller than the starting frequency of the waveform, f_low. Please pass in the starting GW frequency instead.\n", __func__);
+        XLAL_ERROR(XLAL_EINVAL);
+  }
   
   REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALpars);
   REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALpars);
