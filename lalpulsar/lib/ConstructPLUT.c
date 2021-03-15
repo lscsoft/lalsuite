@@ -3148,12 +3148,12 @@ static void FillCaseA3(INT4 lb1, INT4 rb1, INT4 currentBin,
   if( (lb1UpY == patch->ySide-1) && (lb1LoY == 0)) return;
 
   /* provisional settings */
-  if( lb1UpY > yCl1 ){
+  if( lb1UpY >= yCl1 ){
     lut->bin[currentBin].piece1max = patch->ySide-1;
     lut->bin[currentBin].piece1min = lb1UpY+1;
   }
 
-  if( lb1LoY < yCl1 ){
+  if( lb1LoY <= yCl1 ){
     lut->bin[currentBin].piece2max = lb1LoY-1;
     /* lut->bin[currentBin].piece2min = 0; */
   }
