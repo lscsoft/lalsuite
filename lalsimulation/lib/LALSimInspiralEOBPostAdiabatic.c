@@ -1177,8 +1177,10 @@ XLALSimInspiralEOBPostAdiabatic(
 	REAL8 rInitial = initVals.data[0];
 
 	// REAL8 rFinalPrefactor = XLALDictLookupREAL8Value(PAParams, "rFinal");
-	REAL8 rFinalPrefactor = 1.8;
-	REAL8 rFinal = rFinalPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
+	REAL8 rFinalPrefactor = 1.6;
+	REAL8 rf =  XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(seobParams->a);
+	REAL8 rFinal = rFinalPrefactor * rf;
+	//XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	if (rInitial <= rFinal)
 	{
@@ -1186,8 +1188,9 @@ XLALSimInspiralEOBPostAdiabatic(
 	}
 
 	// REAL8 rSwitchPrefactor = XLALDictLookupREAL8Value(PAParams, "rSwitch");
-	REAL8 rSwitchPrefactor = 1.8;
-	REAL8 rSwitch = rSwitchPrefactor * XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
+	REAL8 rSwitchPrefactor = 1.6;
+	REAL8 rSwitch = rSwitchPrefactor * rf;
+	//XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	if (rInitial <= rSwitch)
 	{

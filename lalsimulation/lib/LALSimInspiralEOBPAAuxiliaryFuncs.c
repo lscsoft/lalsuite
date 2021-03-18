@@ -208,13 +208,29 @@ XLALSimInspiralEOBPostAdiabaticFinalRadius(
 	REAL8 rFinal;
 
 	aTotal = XLALSimInspiralEOBPostAdiabaticTotalSpin(q, a1, a2);
-
+	
 	rISCO = XLALSimRadiusKerrISCO(aTotal);
 	finalRadiusPrefactor = 1.0;
 
 	rFinal = finalRadiusPrefactor * rISCO;
 
 	return rFinal;
+}
+
+REAL8 XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(REAL8 a)
+{
+
+  REAL8 rISCO;
+  REAL8 finalRadiusPrefactor;
+  REAL8 rFinal;
+
+
+  rISCO = XLALSimRadiusKerrISCO(a);
+  finalRadiusPrefactor = 1.0;
+
+  rFinal = finalRadiusPrefactor * rISCO;
+
+  return rFinal;
 }
 
 REAL8

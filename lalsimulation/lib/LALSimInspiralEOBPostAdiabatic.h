@@ -99,6 +99,10 @@ XLALSimInspiralEOBPostAdiabaticFinalRadius(
 );
 
 REAL8
+XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(
+					   REAL8 a);
+
+REAL8
 XLALSimInspiralEOBPACalculatedr(
     REAL8 rStart,
     REAL8 rFinal,
