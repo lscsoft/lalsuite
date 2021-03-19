@@ -108,8 +108,9 @@ typedef struct tagUserInput_t {
   LALStringVector *injectionSources; /**< CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}' */
 
   BOOLEAN useLattice;           /**< use latticeTiling for template placement */
-  BOOLEAN useShearedPeriod;   /**< use sheared orbital period */
-  BOOLEAN unresolvedPeriod;   /**< use only one point in period direction */
+  BOOLEAN useShearedPorb;   /**< use sheared orbital period */
+  REAL8 unresolvedPorbMismatch; /**< use only one point in period direction if maximum mismatch in that direction is below this */
+  BOOLEAN reallocatePorbMismatch; /**< subtract actual period mismatch from other directions rather than maximum */
   INT4    latticeType;          /**< lattice to use */
   REAL8   mismatchMax;          /**< total mismatch */
 
@@ -285,6 +286,12 @@ int main(int argc, char *argv[]){
 
   if ( uvar.resamp == TRUE && uvar.useLattice == TRUE ) {
       printf("Error!  LatticeTiling placement not yet implemented with resampling\n");
+      XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  if ( uvar.useLattice == TRUE
+       && uvar.mismatchMax <= uvar.unresolvedPorbMismatch ) {
+    printf("Error!  Unresolved P threshold (%g) must be less than max mismatch (%g)",uvar.unresolvedPorbMismatch,uvar.mismatchMax);
       XLAL_ERROR( XLAL_EFUNC );
   }
 
@@ -914,7 +921,7 @@ int main(int argc, char *argv[]){
   int dimf = 3;
 
   /* Modify metric if using sheared coordinates */
-  if ( uvar.useShearedPeriod == TRUE ) {
+  if ( uvar.useShearedPorb == TRUE ) {
     REAL8 gTT = gsl_matrix_get(g_ij, dimT, dimT);
     REAL8 gTP = gsl_matrix_get(g_ij, dimT, dimP);
     REAL8 gPP = gsl_matrix_get(g_ij, dimP, dimP);
@@ -1224,8 +1231,9 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->latticeType = TILING_LATTICE_ANSTAR;
 
   /* sheared period coordinate */
-  uvar->useShearedPeriod = FALSE;
-  uvar->unresolvedPeriod = FALSE;
+  uvar->useShearedPorb = FALSE;
+  uvar->unresolvedPorbMismatch = 0.0;
+  uvar->reallocatePorbMismatch = FALSE;
 
   /* register  user-variables */
   XLALRegisterUvarMember( startTime,       INT4, 0,  REQUIRED, "Desired start time of analysis in GPS seconds (SFT timestamps must be >= this)");
@@ -1277,8 +1285,9 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( treatWarningsAsErrors, BOOLEAN, 0, OPTIONAL, "Abort program if any warnings arise (for e.g., zero-maxLag radiometer mode)");
   XLALRegisterUvarMember( injectionSources, STRINGVector, 0 , OPTIONAL, "CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}'");
   XLALRegisterUvarMember( useLattice,    BOOLEAN, 0,  OPTIONAL, "Use latticeTiling for template placement");
-  XLALRegisterUvarMember( useShearedPeriod, BOOLEAN, 0,  OPTIONAL, "Use sheared period coordinate for template placement");
-  XLALRegisterUvarMember( unresolvedPeriod, BOOLEAN, 0,  OPTIONAL, "Use only one point in period direction and compensate in overall mismatch");
+  XLALRegisterUvarMember( useShearedPorb, BOOLEAN, 0,  OPTIONAL, "Use sheared period coordinate for template placement");
+  XLALRegisterUvarMember( unresolvedPorbMismatch, REAL8, 0,  OPTIONAL, "If maximum mismatch in period direction is less than this, only one point compensate in overall mismatch");
+  XLALRegisterUvarMember( reallocatePorbMismatch, BOOLEAN, 0,  OPTIONAL, "Compensate for unresolved period with actual mismatch in that direction.  (Otherwise use mismatch threshold, which is more conservative.)");
   XLALRegisterUvarAuxDataMember( latticeType, UserEnum, &TilingLatticeChoices, 0, OPTIONAL, "Type of lattice used for template placement");
   XLALRegisterUvarMember( mismatchMax,    REAL8, 0,  OPTIONAL, "maximum mismatch to use for the lattice ");
   XLALRegisterUvarMember( orbitPSecCenter,    REAL8, 0,  OPTIONAL, " Center of prior ellipse for binary orbital period (seconds) ");
@@ -1399,7 +1408,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
 	/ ( SQR(config->norb)
 	    + SQR((uvar->orbitPSecSigma/uvar->orbitTimeAscSigma)) ) );
   } else {
-    if ( uvar->useShearedPeriod == TRUE ) {
+    if ( uvar->useShearedPorb == TRUE ) {
       printf("Error!  Sheared period requires values for --orbitPSecCenter --orbitPSecSigma --orbitTimeAscCenter --orbitTimeAscSigma\n");
       XLAL_ERROR( XLAL_EFUNC );
     }
@@ -1740,7 +1749,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
     XLALSetLatticeTilingConstantBound(tiling, DEMODdimT, uvar.orbitTimeAsc, uvar.orbitTimeAsc + uvar.orbitTimeAscBand);
 
     REAL8 mismatchMax = uvar.mismatchMax;
-    if (uvar.unresolvedPeriod==TRUE) {
+    if (uvar.unresolvedPorbMismatch > 0.0) {
       gsl_matrix *LU_ij = gsl_matrix_alloc(DEMODndim,DEMODndim);
       gsl_matrix *ginv_ij = gsl_matrix_alloc(DEMODndim,DEMODndim);
       gsl_permutation *P_ij = gsl_permutation_alloc(DEMODndim);
@@ -1752,7 +1761,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
       if ( useTPEllipse == TRUE ) {
 	deltaP = uvar.orbitTPEllipseRadius * uvar.orbitPSecSigma;
 	/* printf('DeltaP = %g',deltaP) */
-	if ( uvar.useShearedPeriod ) {
+	if ( uvar.useShearedPorb ) {
 	  deltaP *= 1. / sqrt ( 1. + SQR(norb*uvar.orbitPSecSigma/uvar.orbitTimeAscSigma) );
 	/* printf('DeltaPtilde = %g',deltaP) */
 	}
@@ -1762,17 +1771,25 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec + deltaP, uvar.orbitPSec + deltaP);
       }
       /* Adjust maximum mismatch in constant-P surface to account for finite width in P coordinate (Porb or sheared Ptilde) */
+      REAL8 mismatchMaxP = SQR(deltaP) / gsl_matrix_get(ginv_ij, DEMODdimP, DEMODdimP);
+      if (mismatchMaxP < uvar.unresolvedPorbMismatch) {
+	if (uvar.reallocatePorbMismatch) {
+	  mismatchMax -= mismatchMaxP;
+	} else {
+	  mismatchMax = uvar.unresolvedPorbMismatch;
+	}
+      }
 
-      mismatchMax -= SQR(deltaP) / gsl_matrix_get(ginv_ij, DEMODdimP, DEMODdimP);
-      if (mismatchMax < 0) {
+      /* The following check should be unneccesary since we check that uvar.unresolvedPorbMismatch <= uvar.mismatchMax */
+      /* if (mismatchMax < 0) {
 	printf("Error! Remaining mismatch after setting period is negative: %g\n", mismatchMax);
         XLAL_ERROR( XLAL_EFUNC );
-      }
+	} */
 
       gsl_permutation_free(P_ij);
       gsl_matrix_free(ginv_ij);
     } else if ( useTPEllipse == TRUE ) {
-      XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, norb, uvar.orbitTPEllipseRadius, uvar.useShearedPeriod);
+      XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, norb, uvar.orbitTPEllipseRadius, uvar.useShearedPorb);
     } else {
       XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand);
     }
@@ -1803,7 +1820,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	XLALGPSSetREAL8(&currpointGPS, curr_point->data[DEMODdimT]);
 	dopplerpos.tp =  currpointGPS;
 	*DEMODnumpoints += 1;
-	if ( uvar.useShearedPeriod ) {
+	if ( uvar.useShearedPorb ) {
 	  dopplerpos.period +=
 	    ( curr_point->data[DEMODdimT] - orbitTimeAscCenterShifted)
 	    * dPorbdTascShear;
@@ -2051,19 +2068,19 @@ int resampForLoopCrossCorr(PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftF
   REAL8 dFreq = 1.0/Tobs; /* Reinhard's trick for resamp function*/
   REAL8 fCoverMin, fCoverMax;
   const REAL8 binaryMaxAsini = MYMAX( uvar.orbitAsiniSec, uvar.orbitAsiniSec + uvar.orbitAsiniSecBand );
-  const REAL8 binaryMinPeriod = MYMIN( uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand );
+  const REAL8 binaryMinPorb = MYMIN( uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand );
   /* for now, a zero-eccentricity search with no spindown */
   const REAL8 binaryMaxEcc = 0.0;
   //PulsarSpinRange spinRangeRef;
   REAL8 extraPerFreq = 1.05 * LAL_TWOPI / LAL_C_SI * ( (LAL_AU_SI/LAL_YRSID_SI) + (LAL_REARTH_SI/LAL_DAYSID_SI) );
-  REAL8 maxOmega = LAL_TWOPI / binaryMinPeriod;
+  REAL8 maxOmega = LAL_TWOPI / binaryMinPorb;
   extraPerFreq += maxOmega * binaryMaxAsini / ( 1.0 - binaryMaxEcc );
   fCoverMin = (uvar.fStart) * (1.0 - extraPerFreq);
   fCoverMax = (uvar.fStart + uvar.fBand) * (1.0 + extraPerFreq);
-  //printf("%f %f\n", (2 * LAL_PI * binaryMaxAsini)/binaryMinPeriod, extraPerFreq);
-  //fCoverMin = uvar.fStart * (1.0 - (2 * LAL_PI * binaryMaxAsini)/binaryMinPeriod);
-  //fCoverMax = (uvar.fStart + uvar.fBand) * (1 + (2 * LAL_PI * binaryMaxAsini)/binaryMinPeriod);
-  //XLALCWSignalCoveringBand( &fCoverMin, &fCoverMax, &startTimeGPS, &endTimeGPS, &spinRangeRef, binaryMaxAsini, binaryMinPeriod, binaryMaxEcc);
+  //printf("%f %f\n", (2 * LAL_PI * binaryMaxAsini)/binaryMinPorb, extraPerFreq);
+  //fCoverMin = uvar.fStart * (1.0 - (2 * LAL_PI * binaryMaxAsini)/binaryMinPorb);
+  //fCoverMax = (uvar.fStart + uvar.fBand) * (1 + (2 * LAL_PI * binaryMaxAsini)/binaryMinPorb);
+  //XLALCWSignalCoveringBand( &fCoverMin, &fCoverMax, &startTimeGPS, &endTimeGPS, &spinRangeRef, binaryMaxAsini, binaryMinPorb, binaryMaxEcc);
   //printf("min, max %f, %f\n", fCoverMin, fCoverMax);
   /* Important: resampling uses 8 bins on either side, 16 total, to buffer
    * the SFTs read in from the catalog by create f-stat input.
