@@ -290,9 +290,10 @@ int main(int argc, char *argv[]){
   }
 
   if ( uvar.useLattice == TRUE
-       && uvar.mismatchMax <= uvar.unresolvedPorbMismatch ) {
-    printf("Error!  Unresolved P threshold (%g) must be less than max mismatch (%g)",uvar.unresolvedPorbMismatch,uvar.mismatchMax);
-      XLAL_ERROR( XLAL_EFUNC );
+       && uvar.mismatchMax < uvar.unresolvedPorbMismatch ) {
+    printf("Error!  Unresolved P threshold (%g) exceeds max mismatch (%g)",
+	   uvar.unresolvedPorbMismatch,uvar.mismatchMax);
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /* create the toplist */
@@ -1744,7 +1745,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 
   //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false");
 
-  if (uvar.useLattice == TRUE){
+  if (uvar.useLattice == TRUE) {
     LatticeTiling *tiling = XLALCreateLatticeTiling(DEMODndim);
     XLALSetLatticeTilingConstantBound(tiling, DEMODdimT, uvar.orbitTimeAsc, uvar.orbitTimeAsc + uvar.orbitTimeAscBand);
 
@@ -1763,12 +1764,10 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	/* printf('DeltaP = %g',deltaP) */
 	if ( uvar.useShearedPorb ) {
 	  deltaP *= 1. / sqrt ( 1. + SQR(norb*uvar.orbitPSecSigma/uvar.orbitTimeAscSigma) );
-	/* printf('DeltaPtilde = %g',deltaP) */
+	  /* printf('DeltaPtilde = %g',deltaP) */
 	}
-	XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecCenter);
       } else {
 	deltaP = 0.5 * uvar.orbitPSecBand;
-	XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec + deltaP, uvar.orbitPSec + deltaP);
       }
       /* Adjust maximum mismatch in constant-P surface to account for finite width in P coordinate (Porb or sheared Ptilde) */
       REAL8 mismatchMaxP = SQR(deltaP) / gsl_matrix_get(ginv_ij, DEMODdimP, DEMODdimP);
@@ -1776,24 +1775,32 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	if (uvar.reallocatePorbMismatch) {
 	  mismatchMax -= mismatchMaxP;
 	} else {
-	  mismatchMax = uvar.unresolvedPorbMismatch;
+	  mismatchMax -= uvar.unresolvedPorbMismatch;
 	}
-      }
+	if ( uvar.useShearedPorb ) {
+	  XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecCenter);
+	} else {
+	  XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec + deltaP, uvar.orbitPSec + deltaP);
+	}
 
       /* The following check should be unneccesary since we check that uvar.unresolvedPorbMismatch <= uvar.mismatchMax */
       /* if (mismatchMax < 0) {
 	printf("Error! Remaining mismatch after setting period is negative: %g\n", mismatchMax);
         XLAL_ERROR( XLAL_EFUNC );
 	} */
-
+      }
       gsl_permutation_free(P_ij);
       gsl_matrix_free(ginv_ij);
-    } else if ( useTPEllipse == TRUE ) {
-      XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, norb, uvar.orbitTPEllipseRadius, uvar.useShearedPorb);
-    } else {
-      XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand);
     }
 
+      /* If we haven't adjusted the mismatch for an unresolved period, we need to set the usual boundaties for the period */
+    if (mismatchMax == uvar.mismatchMax) {
+      if ( useTPEllipse == TRUE ) {
+	XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, norb, uvar.orbitTPEllipseRadius, uvar.useShearedPorb);
+      } else {
+	XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand);
+      }
+    }
     XLALSetLatticeTilingConstantBound(tiling, DEMODdima, uvar.orbitAsiniSec, uvar.orbitAsiniSec + uvar.orbitAsiniSecBand);
 
     XLALSetLatticeTilingConstantBound(tiling, DEMODdimf, uvar.fStart, uvar.fStart + uvar.fBand);
