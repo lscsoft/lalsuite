@@ -189,6 +189,9 @@ static double * NMinMax(
   
   if (nextnmin > nextnmax){
     printf("Ranges from NMinMax are incorrect %E, %E \n", nextnmin, nextnmax);
+    nminmax[0] = NAN;
+    nminmax[1] = NAN;
+    return nminmax;
   }
   
   return nminmax;
@@ -210,7 +213,7 @@ static double * KMinMax(
   double nextkmin = k * (1 - ktol);
   double nextkmax = k * (1 + ktol);
   
-  printf("Using KMinMax %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax);
+  //printf("Using KMinMax %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax);
   
   if (nextkmax < kmin || nextkmin > kmax){
     printf("Calculated ranges outside of global range \n");
@@ -236,6 +239,9 @@ static double * KMinMax(
   
   if (nextkmin > nextkmax){
     printf("Ranges from KMinMax are incorrect %E, %E \n", nextkmin, nextkmax);
+    kminmax[0] = NAN;
+    kminmax[1] = NAN;
+    return kminmax;
   }
   
   return kminmax;
@@ -260,9 +266,11 @@ static double F0BoundMinMax(
   /// falls within an acceptable range. This acceptable range is between [na, nb] or [nb, na], depending upon the value of minmax. Do a double check of this maths
   if (na > nb && minmax == -1){
     printf("F0BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
+    return NAN;
   }
   else if (na < nb && minmax == 1){
     printf("F0BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
+    return NAN;
   }
   
   /*
@@ -318,9 +326,11 @@ static double F1BoundMinMax(
 {
   if (na < nb && minmax == -1){
     printf("F1BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
+    return NAN;
   }
   if (na > nb && minmax == 1){
     printf("F1BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
+    return NAN;
   }
   
   
@@ -424,11 +434,9 @@ static double resetinsidebounds(
     return val;
   }
   else if (val < valmin){
-    ///printf("I am activated! Too small %E, %E, %E \n", val, valmin, valmax);
     return valmin;
   }
   else if (val > valmax){
-    ///printf("I am activated! Too big %E, %E, %E \n", val, valmin, valmax);
     return valmax;
   }
   
@@ -459,15 +467,14 @@ static double LambertW(
   } else {
     iterations = (int) ceil(log10(x) / 3);
   }
-  printf("Iterations %d \n", iterations);
   // initial guess is based on 0 < ln(a) < 3
   double w = 3 * log(x + 1) / 4;
 
-  // Halley's method via eqn (5.9) in Corless et al (1996)
+  // Halley's method via eqn (5.9) in Corless et al (1996). (Obviously there are other methods besides Halley's method, this however seems the simplest to implement for my purposes).
   for (int i = 0; i < iterations; i++)
     w = w - (w * exp(w) - x) / (exp(w) * (w + 1) - (w + 2) * (w * exp(w) - x) / (2 * w + 2));
     
-  printf("Lambert W function results are for x = %f are %f \n", x, w);
+  //printf("Lambert W function results are for x = %f are %f \n", x, w);
 
   return w;
 }
@@ -485,28 +492,29 @@ static void resetfirstdim(
   
   double n = f2 * f0 / pow(f1, 2);
   double thisk = - f1 / pow(f0, n);
-  printf("Resetting first dim. %f, %f, %f \n", f0, f1, f2);
-  if (kmin * (1 - tol) <= thisk && thisk <= kmax * (1 + tol)){
-    printf("It's all good brother \n");
+  
+  //printf("Resetting first dim. %f, %f, %f \n", f0, f1, f2);
+  if (kmin <= thisk && thisk <= kmax){
+    //printf("It's all good brother \n");
     return;
   }
   /// Solutions for the appropriate bounds on f1 were calculated using mathematica and the inequality that kmin < - f1 / f0^n < kmax, where the value of n used is calculated using the values
   /// on that specific knot.
   else if (thisk < kmin){
-    printf("Not all good, thisk < kmin, using LambertW function\n");
+    //printf("Not all good, thisk < kmin, using LambertW function\n");
     double numerator = 2 * f0 * f2 * log(f0);
-    printf("Lamb W elems %f, %f, %E \n", f0, f2, kmin);
-    double denominator = LambertW(numerator / pow(kmin, 2));
+    //printf("Lamb W elems %f, %f, %E \n", f0, f2, kmin);
+    double denominator = LambertW(numerator / pow(kmin * (1 + tol), 2));
     
     double newf1 = - sqrt(numerator / denominator);
     gsl_vector_set(point, 1, newf1);
     return;
   }
   else if (kmax < thisk){
-    printf("Not all good, kmax < thisk using LambertW function \n");
+    //printf("Not all good, kmax < thisk using LambertW function \n");
     double numerator = 2 * f0 * f2 * log(f0);
-    printf("Lamb W elems %f, %f, %E \n", f0, f2, kmin);
-    double denominator = LambertW(numerator / pow(kmax, 2));
+    //printf("Lamb W elems %f, %f, %E \n", f0, f2, kmin);
+    double denominator = LambertW(numerator / pow(kmax * (1 - tol), 2));
     
     double newf1 = - sqrt(numerator / denominator);
     gsl_vector_set(point, 1, newf1);
@@ -514,7 +522,15 @@ static void resetfirstdim(
   }
   
   printf("Something strange happened, no cases caught, not using LambertW function \n");
-  printf("K values here are %E, %E, %E \n", thisk, kmin, kmax);
+  //printf("K values here are %E, %E, %E \n", thisk, kmin, kmax);
+  printvector(point);
+  if (!(f2 > 0)){
+    printf("f2 has a weird value, %E \n", f2);
+  }
+  if (f2 == 0.){
+    printf("f2 is 0! \n");
+  }
+  
   return; 
 }
 
@@ -532,31 +548,44 @@ static void resetseconddim(
   double f2 = gsl_vector_get(point, 2);
   
   if (f2 < 0){
-    printf("f2 below 0, resetting using GTE \n");
+    //printf("f2 below 0, resetting using GTE. Second dim only method. \n");
     f2 = GTEAndDerivs(f0, nmin, kmin, 0, 2);
     gsl_vector_set(point, 2, f2);
   }
-  if (f1 > 1){
-    printf("f2 above 1, resetting using GTE \n");
+  if (f2 > 1){
+    //printf("f2 above 1, resetting using GTE. Second dim only method. \n");
     f2 = GTEAndDerivs(f0, nmax, kmax, 0, 2);
     gsl_vector_set(point, 2, f2);
   }
   
-  printf("Resetting second dim \n");
+  if (!(f2 > 0)){
+    printf("First check, f2 !> 0. %E \n", f2);
+  }
   
-  if ((1 - tol) * nmin * pow(f1, 2) / f0 <= f2 && f2 <= (1 + tol) * nmax * pow(f1, 2) / f0){
-    printf(" We G fam for f2 \n");
+  //printf("Resetting second dim \n");
+  
+  if (nmin * pow(f1, 2) / f0 <= f2 && f2 <= nmax * pow(f1, 2) / f0){
+    //printf(" We G fam for f2 \n");
+    if (!(f2 > 0)){
+    printf("f2 appropriate, but somehow, f2 !> 0. %E \n", f2);
+  }
     return;
   }
   else if (f2 < nmin * pow(f1, 2) / f0){
-    printf("f2 too small, resetting. %f \n", f2);
-    double newf2 = nmin * pow(f1, 2) / f0;
+    //printf("f2 too small, resetting. %f \n", f2);
+    double newf2 = (1 + tol) * nmin * pow(f1, 2) / f0;
+    if (!(f2 > 0)){
+      printf("f2 was too small, but f2 !> 0. %E \n", f2);
+    }
     gsl_vector_set(point, 2, newf2);
     return;
   }
   else if (f2 > nmax * pow(f1, 2) / f0){
-    printf("f2 too large, resetting. %f \n", f2);
-    double newf2 = nmax * pow(f1, 2) / f0;
+    //printf("f2 too large, resetting. %f \n", f2);
+    double newf2 = (1 - tol) * nmax * pow(f1, 2) / f0;
+    if (!(f2 > 0)){
+      printf("f2 was too big, but f2 !> 0. %E \n", f2);
+    }
     gsl_vector_set(point, 2, newf2);
     return;
   }
@@ -575,8 +604,9 @@ static void resetfirstandseconddim(
   int itr
   )
 {
-  if (itr >= 20){
-    printf("Number of iterations exceeds 100, returning current \n");
+  int maxitr = 100;
+  if (itr >= maxitr){
+    printf("Number of iterations exceeds %d, returning current values of point. (Perhaps I should throw an error here instead?)\n", maxitr);
     return;
   }
   
@@ -584,18 +614,35 @@ static void resetfirstandseconddim(
   double f1 = gsl_vector_get(point, 1);
   double f2 = gsl_vector_get(point, 2);
   
-  if (f2 < 0){
+  
+  if (f2 <= 0){
     // We use nmin/kmin because if f2 is negative, it should be closest to its minimum values. Hence we use the extrema which result in the minimum values for f2.
+    //printf("f2 below 0, resetting using GTE. Global only method. \n");
     f2 = GTEAndDerivs(f0, nmin, kmin, 0, 2);
+    if (!(f2 > 0)){
+      printf("lol, f2 reset is too small. nmin and kmin, f2 !> 0. %E \n", f2);
+    }
     gsl_vector_set(point, 2, f2);
+  }
+  if (f2 > 1){
+    //printf("f2 above 1, resetting using GTE. Global only method. \n");
+    f2 = GTEAndDerivs(f0, nmax, kmax, 0, 2);
+    if (!(f2 > 0)){
+      printf("lol, f2 reset is too small. nmax and kmax, f2 !> 0. %E \n", f2);
+    }
+    gsl_vector_set(point, 2, f2);
+  }
+  
+  if (!(f2 > 0)){
+    printf("Global reset after initial checks, f2 !> 0. %E \n", f2);
   }
   
   
   double n = f2 * f0 / pow(f1, 2);
   double thisk = - f1 / pow(f0, n);
   
-  if (kmin * (1 - tol) <= thisk && thisk <= kmax * (1 + tol)){
-    if ((1 - tol) * nmin * pow(f1, 2) / f0 <= f2 && f2 <= (1 + tol) * nmax * pow(f1, 2) / f0){
+  if (kmin <= thisk && thisk <= kmax){
+    if (nmin * pow(f1, 2) / f0 <= f2 && f2 <= nmax * pow(f1, 2) / f0){
       return;
     }
     resetseconddim(point, nmin, nmax, kmin, kmax, tol);
@@ -629,8 +676,8 @@ static void resetdimonpoint(
   double segmentlength
   )
 {
-  printf("Variables for the resetting method \n");
-  printf("%f, %f, %f, %f, %f, %E, %E, %f, %f \n", fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  //printf("Variables for the resetting method \n");
+  //printf("%f, %f, %f, %f, %f, %E, %E, %f, %f \n", fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
   if (dim == 0){
     double f0 = gsl_vector_get(point, dim);
     double val = resetinsidebounds(f0, fmin, fmax);
@@ -681,7 +728,7 @@ static void resetdimonpoint(
   }
   else if (dim % 3 == 0){
   
-    printf("Second knot f0 \n");
+    //printf("Second knot f0 \n");
     
     double f0n1 = gsl_vector_get(point, dim - 3);
     double f1n1 = gsl_vector_get(point, dim - 2);
@@ -692,11 +739,11 @@ static void resetdimonpoint(
     double kprev = - f1n1 / pow(f0n1, nprev);
     
     if (kprev > kmax || kprev < kmin){
-      printf("kprev outside global ranges, %E, %E, %E \n", kprev, kmin, kmax);
+      printf("Second knot f0. kprev outside global ranges, %E, %E, %E \n", kprev, kmin, kmax);
     }
-    if (kprev < kmax && kprev > kmin){
-      printf("It made it inside!!! \n");
-      printf("\n");
+    if (kprev <= kmax && kprev >= kmin){
+      //printf("It made it inside!!! \n");
+      //printf("\n");
     }
     
     double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
@@ -712,7 +759,7 @@ static void resetdimonpoint(
     
   }
   else if (dim % 3 == 1){
-    printf("Second knot f1 \n");
+    //printf("Second knot f1 \n");
     double f0n1 = gsl_vector_get(point, dim - 4);
     double f1n1 = gsl_vector_get(point, dim - 3);
     double f2n1 = gsl_vector_get(point, dim - 2);
@@ -723,11 +770,11 @@ static void resetdimonpoint(
     double kprev = - f1n1 / pow(f0n1, nprev);
     
     if (kprev > kmax || kprev < kmin){
-      printf("kprev outside global ranges, %E, %E, %E \n", kprev, kmin, kmax);
+      printf("Second knot f1. kprev outside global ranges, %E, %E, %E \n", kprev, kmin, kmax);
     }
-    if (kprev < kmax && kprev > kmin){
-      printf("It made it inside!!! \n");
-      printf("\n");
+    if (kprev <= kmax && kprev >= kmin){
+      //printf("It made it inside!!! \n");
+      //printf("\n");
     }
     
     double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
@@ -745,7 +792,7 @@ static void resetdimonpoint(
   }
   else if (dim % 3 == 2){
   
-    printf("Second knot f2 \n");
+    //printf("Second knot f2 \n");
     
     double f0n1 = gsl_vector_get(point, dim - 5);
     double f1n1 = gsl_vector_get(point, dim - 4);
@@ -760,9 +807,9 @@ static void resetdimonpoint(
     if (kprev > kmax || kprev < kmin){
       printf("kprev outside global ranges, %E, %E, %E \n", kprev, kmin, kmax);
     }
-    if (kprev < kmax && kprev > kmin){
-      printf("It made it inside!!! \n");
-      printf("\n");
+    if (kprev <= kmax && kprev >= kmin){
+      //printf("It made it inside!!! \n");
+      //printf("\n");
     }
     
     double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
@@ -791,34 +838,10 @@ static void resetoutofboundspoint(
   )
 {
   int dim = point->size;
-  /*
-  printf("Before \n");
+  
   for (int i = 0; i < dim; ++i){
-    printf("%E, ", gsl_vector_get(point, i));
-  }
-  printf("\n");
-  */
-  for (int i = 0; i < dim; ++i){
-    /*
-    if (dim % 3 == 0){
-      printf("Dim being reset is f0 \n");
-    }
-    else if (dim % 3 == 1){
-      printf("Dim being reset is f1 \n");
-    }
-    else if (dim % 3 == 2){
-      printf("Dim being reset is f2 \n");
-    }
-    */
     resetdimonpoint(point, i, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
   }
-  /*
-  printf("After \n");
-  for (int i = 0; i < dim; ++i){
-    printf("%E, ", gsl_vector_get(point, i));
-  }
-  printf("\n");
-  */
 }
 
 
@@ -889,11 +912,11 @@ static double F0Bound(
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
   
-  printf("Before F0 reset \n");
-  printvector(point);
+  //printf("Before F0 reset \n");
+  //printvector(point);
   resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
-  printf("After F0 reset \n");
-  printvector(point);
+  //printf("After F0 reset \n");
+  //printvector(point);
   
   double f0n1 = gsl_vector_get(point, dim - 3);
   double f1n1 = gsl_vector_get(point, dim - 2);
@@ -901,7 +924,7 @@ static double F0Bound(
   
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
-  printf("Setting F0 Bound \n");
+  
   double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
   double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
   
@@ -944,11 +967,11 @@ static double F1Bound(
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
   
-  printf("Before F1 reset \n");
-  printvector(point);
+  //printf("Before F1 reset \n");
+  //printvector(point);
   resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
-  printf("After F1 reset \n");
-  printvector(point);
+  //printf("After F1 reset \n");
+  //printvector(point);
   
   double f0n1 = gsl_vector_get(point, dim - 4);
   double f1n1 = gsl_vector_get(point, dim - 3);
@@ -964,8 +987,8 @@ static double F1Bound(
   double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
   double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
   
-  printf("nminmax %f, %f \n", nminmax[0], nminmax[1]);
-  printf("kminmax %f, %f \n", kminmax[0], kminmax[1]);
+  //printf("nminmax %f, %f \n", nminmax[0], nminmax[1]);
+  //printf("kminmax %f, %f \n", kminmax[0], kminmax[1]);
   
   if (upperlower == 1){
     double upperbound = F1BoundMinMax(f0, f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, 1);
@@ -1008,11 +1031,11 @@ static double F2Bound(
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
   
-  printf("Before F2 reset \n");
-  printvector(point);
+  //printf("Before F2 reset \n");
+  //printvector(point);
   resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
-  printf("After F2 reset \n");
-  printvector(point);
+  //printf("After F2 reset \n");
+  //printvector(point);
   
   double f0n1 = gsl_vector_get(point, dim - 5);
   double f1n1 = gsl_vector_get(point, dim - 4);
