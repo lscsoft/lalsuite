@@ -76,6 +76,43 @@
 #endif
 
 
+static INT4 IntrpolateDynamics(REAL8Vector* tVec,REAL8Vector* rVec,REAL8Vector* phiVec,REAL8Vector* prVec,REAL8Vector* pphiVec,REAL8Vector* values,REAL8 closestTime){
+  UNUSED gsl_interp_accel *acc1 = gsl_interp_accel_alloc();
+  gsl_spline *spline1 = gsl_spline_alloc(gsl_interp_cspline, tVec->length);
+  gsl_spline_init(spline1, tVec->data, rVec->data, tVec->length);
+
+  UNUSED gsl_interp_accel *acc2 = gsl_interp_accel_alloc();
+  gsl_spline *spline2 = gsl_spline_alloc(gsl_interp_cspline, tVec->length);
+  gsl_spline_init(spline2, tVec->data, phiVec->data, tVec->length);
+
+  UNUSED gsl_interp_accel *acc3 = gsl_interp_accel_alloc();
+  gsl_spline *spline3 = gsl_spline_alloc(gsl_interp_cspline, tVec->length);
+  gsl_spline_init(spline3, tVec->data, prVec->data, tVec->length);
+
+  UNUSED gsl_interp_accel *acc4 = gsl_interp_accel_alloc();
+  gsl_spline *spline4 = gsl_spline_alloc(gsl_interp_cspline, tVec->length);
+  gsl_spline_init(spline4, tVec->data, pphiVec->data, tVec->length);
+  values->data[0] = gsl_spline_eval(spline1, closestTime, acc1);
+  values->data[1] = gsl_spline_eval(spline2, closestTime, acc2);
+  values->data[2] = gsl_spline_eval(spline3, closestTime, acc3);
+  values->data[3] = gsl_spline_eval(spline4, closestTime, acc4);
+  //printf("Interpolated values: r=%.17f, phi = %.17f, pr=%.17f, pphi = %.17f\n",values->data[0],values->data[1],values->data[2],values->data[3]);
+  gsl_spline_free (spline1);
+  gsl_interp_accel_free (acc1);
+
+  gsl_spline_free (spline2);
+  gsl_interp_accel_free (acc2);
+
+  gsl_spline_free (spline3);
+  gsl_interp_accel_free (acc3);
+
+  gsl_spline_free (spline4);
+  gsl_interp_accel_free (acc4);
+
+  return XLAL_SUCCESS;
+
+}
+
 /**
  * ModeArray is a structure which allows to select the modes to include
  * in the waveform.
@@ -1066,18 +1103,7 @@ XLALSimIMRSpinAlignedEOBModes (
       tStepBack = 150. * mTScaled;
     }
   //nStepBack = ceil (tStepBack / deltaT);
-  REAL8 odeStep = 1.0;
 
-  if(postAdiabaticFlag)
-  {
-    odeStep = fmax(5*deltaT/mTScaled,1);
-  }
-  else
-  {
-    odeStep = deltaT/mTScaled;
-  }
-
-  nStepBack = ceil (tStepBack / odeStep/ mTScaled);
   // printf("odeStep = %e, 5*deltaT/mTscaled=%e, nStepBack = %d\n",odeStep,5*deltaT/mTScaled,nStepBack);
 
   /* Calculate the resample factor for attaching the ringdown */
@@ -1503,7 +1529,7 @@ XLALSimIMRSpinAlignedEOBModes (
 
     if (postAdiabaticOutcome == XLAL_ERANGE)
     {
-      ;
+      postAdiabaticFlag=0;
     }
     else if (postAdiabaticOutcome != XLAL_SUCCESS)
     {
@@ -1526,7 +1552,19 @@ XLALSimIMRSpinAlignedEOBModes (
   /*
    * STEP 2) Evolve EOB trajectory until reaching the peak of orbital frequency
    */
+  REAL8 odeStep = 1.0;
 
+  if(postAdiabaticFlag)
+    {
+      //odeStep = deltaT/mTScaled;
+      odeStep = fmax(5*deltaT/mTScaled,1);
+    }
+  else
+    {
+      odeStep = deltaT/mTScaled;
+    }
+
+  nStepBack = ceil (tStepBack / odeStep/ mTScaled);
   /* Now we have the initial conditions, we can initialize the adaptive integrator */
 #if debugOutput
     printf("Begin integration\n");
@@ -1686,7 +1724,6 @@ XLALSimIMRSpinAlignedEOBModes (
       }
 
     XLALDestroyREAL8Array(dynamics);
-
     dynamics = combinedDynamics;
 
     retLen = combinedLen;
@@ -1758,7 +1795,7 @@ XLALSimIMRSpinAlignedEOBModes (
   /* Set up the high sample rate integration */
   hiSRndx = retLen - nStepBack;
   deltaTHigh = deltaT / (REAL8) resampFac;
-
+  //printf("deltaT = %.17f, deltaTHigh = %.17f\n",deltaT,deltaTHigh);
 // #if 1
   // printf (
 	 //   "Stepping back %d points - we expect %d points at high SR\n",
@@ -1773,10 +1810,37 @@ XLALSimIMRSpinAlignedEOBModes (
   values->data[1] = phiVec.data[hiSRndx];
   values->data[2] = prVec.data[hiSRndx];
   values->data[3] = pPhiVec.data[hiSRndx];
+  //printf("Before it begins\n");
+  //printf("t=%.17f values: r=%.17f, phi = %.17f, pr=%.17f, pphi = %.17f\n",tVec.data[hiSRndx],values->data[0],values->data[1],values->data[2],values->data[3]);
+
   eobParams.rad = values->data[0];
   eobParams.omegaPeaked = 0;
   eobParams.NyquistStop = 0;
 
+  /* If we are doing a post-adibatic run, we need to be more careful.
+     In particular because the grid is *not* uniform and has a different
+     step than what we want the final waveform on, we need to actually step
+     back into a point that *will* be on the final grid. This is needed to
+     ensure that when we insert the high-SR waveform after the low-SR, the times
+     are consistent.
+     To do this, we proceed as follows: determine the point on the final grid that
+     is closest to the desired tStepBack. Then interpolate the dynamics to this point
+     and begin the high-SR evolution from there. We can also set the highSRndx correctly
+     here
+  */
+  REAL8 tstartHi = 0.0;
+  if (postAdiabaticFlag && postAdiabaticOutcome == XLAL_SUCCESS)
+    {
+      /* The time to which want to step back to */
+      
+      REAL8 tTarget =  tVec.data[retLen-1]-tStepBack/mTScaled;
+      UINT4 ndx = floor(tTarget*mTScaled/deltaT);
+      REAL8 closestTime = ndx*deltaT/mTScaled;
+      tstartHi = closestTime;
+      //printf("tStepBack = %.17f, tend=%.17f, tTarget=%.17f,ndx=%d,closestTime=%.17f\n",tStepBack,tVec.data[retLen-1],tTarget,ndx,closestTime);
+      IntrpolateDynamics(&tVec,&rVec,&phiVec,&prVec,&pPhiVec,values,closestTime);
+      eobParams.rad = values->data[0];
+    }
   /* For HiSR evolution, we stop at a radius 0.3M from the deformed Kerr singularity,
    * or when any derivative of Hamiltonian becomes nan */
   integrator->stop = XLALSpinAlignedHiSRStopCondition;
@@ -1837,13 +1901,10 @@ XLALSimIMRSpinAlignedEOBModes (
   // retLen now means the length of the high-sampling dynamics
   // We also keep track of the starting time of the high-sampling dynamics
   INT4 retLenHi_out = retLen;
-  REAL8 tstartHi = 0.0;
+  
 
-  if(postAdiabaticFlag && postAdiabaticOutcome == XLAL_SUCCESS)
-  {
-    tstartHi = (dynamics->data)[hiSRndx];
-  }
-  else
+
+  if(!postAdiabaticFlag)
   {
     tstartHi = hiSRndx * odeStep;
   }
@@ -3332,7 +3393,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
       hLMAll->data[(1 + 2 * k) * sigReVec->length + i] = im_In;
       if (t_i > tstartHi && idx == 0)
       {
-        idx = i;
+        idx = i-1;
       }
     }
     hiSRndx = idx;
