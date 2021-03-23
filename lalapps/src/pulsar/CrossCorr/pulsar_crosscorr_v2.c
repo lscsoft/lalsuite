@@ -590,7 +590,7 @@ int main(int argc, char *argv[]){
 
   MultiUINT4Vector *badBins = NULL;
 
-#define PCC_LINEFILE_HEADER "%% %2s lines cleaning file for O1\n"\
+#define PCC_LINEFILE_HEADER "%% %2s lines cleaning file for %s\n"\
 "%%\n"\
 "%% File contains %d (non-comment) lines\n"\
 "%%\n"\
@@ -627,7 +627,8 @@ int main(int argc, char *argv[]){
       }
       CHAR ifo[3];
       UINT4 numLines;
-      if(fscanf(fp,PCC_LINEFILE_HEADER,&ifo[0],&numLines)==EOF){
+      CHAR linesLabel;
+      if(fscanf(fp,PCC_LINEFILE_HEADER,&ifo[0],&linesLabel, &numLines)==EOF){
 	LogPrintf ( LOG_CRITICAL, "can't parse header of line file %s\n",config.lineFiles->data[i_f]);
 	XLAL_ERROR( XLAL_EINVAL );
       }
