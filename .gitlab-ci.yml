@@ -1211,6 +1211,7 @@ upgrade:conda:linux:
     - conda index ${CONDA_BLD_PATH}
     # install latest release
     - conda create -n upgrade-test
+          python=${LALSUITE_PYTHON_VERSION}
           lal
           lalframe
           lalmetaio
