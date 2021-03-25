@@ -12,7 +12,7 @@ lalinspiral/                    @adam-mercer @ian-harry @jolien-creighton @kipp.
 lalinference/                   @aaron.zimmerman @bfarr @cjhaster @gregory.ashton @john-veitch @patricia-schmidt @salvatore-vitale @vivien
 
 # lalapps
-lalapps/src/findchirp/          @adam-mercer @jolien-creighton
+lalapps/src/findchirp/          @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/frametools/         @adam-mercer @jolien-creighton
 lalapps/src/hwinjection/        @david-keitel @karl-wette @matthew-pitkin
 lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
