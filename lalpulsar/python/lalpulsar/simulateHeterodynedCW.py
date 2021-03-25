@@ -223,10 +223,10 @@ class HeterodynedCWSimulator(object):
 
         # set the "heterodyne" FITWAVES phase
         if self.times is not None and self.hetpar["WAVESIN"] is not None and self.hetpar["WAVECOS"] is not None:
-            self.__hetfitwavesphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(self.hetpar.PulsarParameters(),
-                                                                                self.gpstimes,
-                                                                                self.__hetSSBdelay,
-                                                                                self.hetpar["F0"])
+            self.__hetfitwavesphase = lalpulsar.HeterodynedPulsarGetFITWAVESPhase(self.hetpar.PulsarParameters(),
+                                                                                  self.gpstimes,
+                                                                                  self.__hetSSBdelay,
+                                                                                  self.hetpar["F0"])
         else:
             self.__hetfitwavesphase = None
 
