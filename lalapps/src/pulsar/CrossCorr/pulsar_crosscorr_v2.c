@@ -1744,13 +1744,13 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 
     REAL8 mismatchMax = uvar.mismatchMax;
     if (uvar.unresolvedPorbMismatch > 0.0) {
-      gsl_matrix *LU_ij = gsl_matrix_alloc(DEMODndim,DEMODndim);
+      gsl_matrix *A_ij = gsl_matrix_alloc(DEMODndim,DEMODndim);
       gsl_matrix *ginv_ij = gsl_matrix_alloc(DEMODndim,DEMODndim);
       gsl_permutation *P_ij = gsl_permutation_alloc(DEMODndim);
-      int signum = 0;
 
-      XLAL_CHECK( gsl_linalg_LU_decomp( LU_ij, P_ij, &signum ) == 0, XLAL_EFAILED );
-      XLAL_CHECK( gsl_linalg_LU_invert( LU_ij, P_ij, ginv_ij ) == 0, XLAL_EFAILED );
+      XLAL_CHECK( gsl_matrix_memcpy( A_ij, metric_ij )  == 0, XLAL_EFAILED );
+      XLAL_CHECK( gsl_linalg_pcholesky_decomp( A_ij, P_ij ) == 0, XLAL_EFAILED );
+      XLAL_CHECK( gsl_linalg_pcholesky_invert( A_ij, P_ij, ginv_ij ) == 0, XLAL_EFAILED );
       REAL8 deltaP;
       if ( useTPEllipse == TRUE ) {
 	deltaP = uvar.orbitTPEllipseRadius * uvar.orbitPSecSigma;
@@ -1783,6 +1783,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	} */
       }
       gsl_permutation_free(P_ij);
+      gsl_matrix_free(A_ij);
       gsl_matrix_free(ginv_ij);
     }
 
