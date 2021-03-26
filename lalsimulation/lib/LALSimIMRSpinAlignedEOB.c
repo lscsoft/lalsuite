@@ -1596,15 +1596,29 @@ XLALSimIMRSpinAlignedEOBModes (
         }
         else
         {
+          
+          if(postAdiabaticFlag){
+              if (!
+                  (integrator =
+                  XLALAdaptiveRungeKutta4Init (4, XLALSpinAlignedHcapDerivativeOptimized,
+            XLALEOBSpinAlignedStopCondition,
+            EPS_ABS, EPS_REL)))
+              {
+                  XLALDestroyREAL8Vector (values);
+                  XLAL_ERROR (XLAL_EFUNC);
+              }
+          }
+          else{
             if (!
-                (integrator =
-                 XLALAdaptiveRungeKutta4Init (4, XLALSpinAlignedHcapDerivativeOptimized,
-					XLALEOBSpinAlignedStopCondition,
-					EPS_ABS, EPS_REL)))
-            {
-                XLALDestroyREAL8Vector (values);
-                XLAL_ERROR (XLAL_EFUNC);
-            }
+                  (integrator =
+                  XLALAdaptiveRungeKutta4Init (4, XLALSpinAlignedHcapDerivative,
+            XLALEOBSpinAlignedStopCondition,
+            EPS_ABS, EPS_REL)))
+              {
+                  XLALDestroyREAL8Vector (values);
+                  XLAL_ERROR (XLAL_EFUNC);
+              }
+          }
         }
     }
 
@@ -1988,18 +2002,25 @@ XLALSimIMRSpinAlignedEOBModes (
 	}
       else
 	{
+   
+    if(postAdiabaticFlag){
+      omega =
+              XLALSimIMRSpinAlignedEOBCalcOmegaOptimized (values->data, &seobParams);
+    }
+    else{
 	  omega =
-            XLALSimIMRSpinAlignedEOBCalcOmegaOptimized (values->data,
-                                                        &seobParams);
-	  //omega =
-	  //   XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams, STEP_SIZE);
+	    XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams, STEP_SIZE);
+    }
 	}
 
       if (omega < 1.0e-15)
 	omega = 1.0e-9;		//YPnote: make sure omega>0 during very-late evolution when numerical errors are huge.
       omegaHi->data[i] = omega;	//YPnote: omega<0 is extremely rare and had only happenned after relevant time interval.
       v = cbrt (omega);
-      vPhiVecHi->data[i] =  XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, &seobParams);
+      
+      if (postAdiabaticFlag){
+        vPhiVecHi->data[i] =  XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, &seobParams);
+      }
       /* Calculate the value of the Hamiltonian */
       cartPosVec.data[0] = values->data[0];
       cartMomVec.data[0] = values->data[2];
@@ -2263,6 +2284,7 @@ gsl_interp_accel_free( acc );
 
 
     hLMAllHi = XLALCreateREAL8Vector((UINT4)2*sigReHi->length*nModes);
+    INT4 status = XLAL_SUCCESS;
     memset(hLMAllHi->data, 0, hLMAllHi->length*sizeof (REAL8));
 for ( UINT4 k = 0; k<nModes; k++) {
     modeL  = lmModes[k][0];
@@ -2278,13 +2300,18 @@ for ( UINT4 k = 0; k<nModes; k++) {
         values->data[2] = prHi.data[i];
         values->data[3] = pPhiHi.data[i];
         v = cbrt (omegaHi->data[i]);
-        //if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform
-        //    (&hLM, values, v, hamVHi->data[i], modeL, modeM, &seobParams,
-        //     use_optimized_v2_or_v4) == XLAL_FAILURE)
-
-	  if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform_PA
-	      (&hLM, values, v, hamVHi->data[i], modeL, modeM, &seobParams,
-	       vPhiVecHi->data[i]) == XLAL_FAILURE)
+        if (postAdiabaticFlag)
+        {
+          status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform_PA(&hLM, values, v, hamVHi->data[i], modeL, modeM, &seobParams,
+                                                                 vPhiVecHi->data[i]);
+        }
+        else
+        {
+          status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform(&hLM, values, v, hamVHi->data[i], modeL, modeM, &seobParams,
+                                                              use_optimized_v2_or_v4);
+        }
+        
+	  if (status == XLAL_FAILURE)
         {
             if(tmpValues){
               XLALDestroyREAL8Vector (tmpValues);
@@ -3122,11 +3149,17 @@ for ( UINT4 k = 0; k<nModes; k++) {
 	  values->data[1] = phiVec.data[i];
 	  values->data[2] = prVec.data[i];
 	  values->data[3] = pPhiVec.data[i];
-
 	  /* Do not need to add an if(use_optimized_v2_or_v4), since this is strictly unoptimized code (see if(use_optimized_v2_or_v4) above) */
-	  omegaVec->data[i] = XLALSimIMRSpinAlignedEOBCalcOmegaOptimized (values->data, &seobParams);
-	  vPhiVec->data[i] =  XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, &seobParams);
-	    //XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams, STEP_SIZE);
+	  if (postAdiabaticFlag){
+      omegaVec->data[i] = XLALSimIMRSpinAlignedEOBCalcOmegaOptimized (values->data, &seobParams);
+      vPhiVec->data[i] =  XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, &seobParams);
+      
+    }
+    else{
+      omegaVec->data[i] = XLALSimIMRSpinAlignedEOBCalcOmega (values->data, &seobParams, STEP_SIZE);
+    }
+    
+	    //
 	  
 #if debugOutput
         fprintf (out, "%.16e %.16e %.16e %.16e %.16e %.16e\n", dynamics->data[i],
@@ -3136,12 +3169,21 @@ for ( UINT4 k = 0; k<nModes; k++) {
 	  cartPosVec.data[0] = values->data[0];
 	  cartMomVec.data[0] = values->data[2];
 	  cartMomVec.data[1] = values->data[3] / values->data[0];
-
+    
+    if(postAdiabaticFlag){
 	  hamV->data[i] =
 	    XLALSimIMRSpinEOBHamiltonianOptimized (eta, &cartPosVec, &cartMomVec,
 					  &s1VecOverMtMt, &s2VecOverMtMt,
 					  sigmaKerr, sigmaStar,
 					  seobParams.tortoise, &seobCoeffs);
+    }
+    else{
+      hamV->data[i] =
+	    XLALSimIMRSpinEOBHamiltonian (eta, &cartPosVec, &cartMomVec,
+					  &s1VecOverMtMt, &s2VecOverMtMt,
+					  sigmaKerr, sigmaStar,
+					  seobParams.tortoise, &seobCoeffs);
+    }
   }
 
     
@@ -3182,18 +3224,23 @@ for ( UINT4 k = 0; k<nModes; k++) {
             values->data[1] = phiVec.data[i];
             values->data[2] = prVec.data[i];
             values->data[3] = pPhiVec.data[i];
-            //if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform
-            //(&hLM, values,  cbrt (omegaVec->data[i]), hamV->data[i], modeL, modeM, &seobParams, 0 /*use_optimized_v2_or_v4 */ ) == XLAL_FAILURE)
-	      if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform_PA(
-            &hLM, 
-            values,
-            cbrt (omegaVec->data[i]),
-            hamV->data[i],
-            modeL,
-            modeM,
-            &seobParams,
-            vPhiVec->data[i]
-          ) == XLAL_FAILURE)
+            if(postAdiabaticFlag){
+              status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform_PA(
+                &hLM, 
+                values,
+                cbrt (omegaVec->data[i]),
+                hamV->data[i],
+                modeL,
+                modeM,
+                &seobParams,
+                vPhiVec->data[i]
+              );
+            }
+            else{
+              status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform(&hLM, values,  cbrt (omegaVec->data[i]), hamV->data[i], modeL, modeM, &seobParams, 0 /*use_optimized_v2_or_v4 */ );
+            }
+          
+        if ( status == XLAL_FAILURE)
             {
               if(tmpValues){
                 XLALDestroyREAL8Vector (tmpValues);
