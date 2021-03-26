@@ -13,7 +13,7 @@ lalinference/                   @aaron.zimmerman @bfarr @cjhaster @gregory.ashto
 
 # lalapps
 lalapps/src/findchirp/          @adam-mercer @ian-harry @jolien-creighton
-lalapps/src/frametools/         @adam-mercer @jolien-creighton
+lalapps/src/frametools/         @adam-mercer @ed-maros @jolien-creighton
 lalapps/src/hwinjection/        @david-keitel @karl-wette @matthew-pitkin
 lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
