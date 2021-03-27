@@ -1,3 +1,7 @@
+# NOTE: when adding any new names here, the corresponding users must also be
+# added as members of https://git.ligo.org/lscsoft/lalsuite (with at least
+# Developer level permissions) in order to be able to approve merge requests
+
 # overall
 *                               @adam-mercer @duncanmmacleod @karl-wette
 
