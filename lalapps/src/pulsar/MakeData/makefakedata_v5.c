@@ -196,18 +196,9 @@ main(int argc, char *argv[])
   DataParams.SFTWindowType      = uvar.SFTWindowType;
   DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
   DataParams.sourceDeltaT       = uvar.sourceDeltaT;
-  if ( GV.inputMultiTS == NULL )
-    {
-      DataParams.fMin               = GV.fminOut;
-      DataParams.Band               = GV.BandOut;
-      DataParams.inputMultiTS       = NULL;
-    }
-  else // current limitation: FIXME
-    {
-      DataParams.fMin               = 0;
-      DataParams.Band               = 0;
-      DataParams.inputMultiTS       = GV.inputMultiTS;
-    }
+  DataParams.inputMultiTS       = GV.inputMultiTS;
+  DataParams.fMin               = GV.fminOut;
+  DataParams.Band               = GV.BandOut;
 
   XLAL_CHECK ( XLALCWMakeFakeMultiData ( &mSFTs, &mTseries, injectionSources, &DataParams, GV.edat ) == XLAL_SUCCESS, XLAL_EFUNC );
 
