@@ -11,6 +11,8 @@
 #endif
 
 
+///
+/// A method for printing the contents of a gsl vector
 static void printvector(
   gsl_vector* vec
   )
@@ -96,7 +98,9 @@ int XLALSetLatticeTilingCircleBound(
   return XLAL_SUCCESS;
 }
 
-
+///
+/// Information required to determine the bounds on for the parameters on the first knot
+///
 typedef struct tagFirstKnotBoundInfo{
   double fmin;  /// Global minimum starting frequency
   double fmax;  /// Global maximum starting frequency
@@ -133,7 +137,7 @@ static double GTEAndDerivs(
   int d      /// Derivative order (d <= 2)
   )
 {
-  double base = 1 + (n + 1) * k * pow(f0, n - 1) * t;
+  double base = 1 + (n - 1) * k * pow(f0, n - 1) * t;
   double power = 1 / (1 - n);
   
   if (d == 0){
@@ -155,13 +159,13 @@ static double GTEAndDerivs(
 }
 
 ///
-/// Calculates the valid braking index for the next knot based upon the previous braking index. Arbitrary definition
+/// Calculates the valid braking index for the next knot based upon the previous braking index. Can be defined in any manner. 
 ///
 static double * NMinMax(
-  double n,     /// Previous braking index
-  double ntol,  /// Braking index tolerance (percentage)
-  double nmin,  /// Minimum acceptable braking index
-  double nmax,  /// Maximum acceptable braking index
+  double n,                   /// Previous braking index
+  double ntol,                /// Braking index tolerance (percentage)
+  double nmin,                /// Minimum acceptable braking index
+  double nmax,                /// Maximum acceptable braking index
   double segmentlength UNUSED /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
   )
 {
@@ -199,13 +203,13 @@ static double * NMinMax(
 
 
 ///
-/// Calculates the valid k value for the next knot based upon the previous value. Arbitrary definition
+/// Calculates the valid k value for the next knot based upon the previous value. Can be defined in any manner. 
 ///
 static double * KMinMax(
-  double k,     /// Previous braking index
-  double ktol,  /// Braking index tolerance (percentage)
-  double kmin,  /// Minimum acceptable braking index
-  double kmax,  /// Maximum acceptable braking index
+  double k,                   /// Previous braking index
+  double ktol,                /// Braking index tolerance (percentage)
+  double kmin,                /// Minimum acceptable braking index
+  double kmax,                /// Maximum acceptable braking index
   double segmentlength UNUSED /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
   )
 {
@@ -273,42 +277,37 @@ static double F0BoundMinMax(
     return NAN;
   }
   
-  /*
+  /// These variables are used to calculate the f0 value using braking index criteria
   double gted = GTEAndDerivs(f0, na, ka, seglength, 1);
   double gtedd = GTEAndDerivs(f0, nb, kb, seglength, 2);
-  double brakingindex = na * pow(gted, 2) / gtedd;
-  */
+  double bindexcriteria = na * pow(gted, 2) / gtedd;
+  
   /// Parameter range optimisation for frequency parameter
   double paramrange = GTEAndDerivs(f0, nb, kb, seglength, 0);
   
-  return paramrange;
-  
-  
   ///printf("These are the f0 options %E, %E \n", brakingindex, paramrange);
   ///printf("Min max is %d \n", minmax);
-  /*
+  
   if (minmax == 1) {
-    if (brakingindex <= paramrange){
-      return brakingindex;
+    if (bindexcriteria <= paramrange){
+    
+      return bindexcriteria;
     }
-    else if (brakingindex > paramrange){
+    else if (bindexcriteria > paramrange){
       return paramrange;
     }
   }
   else if (minmax == -1){
-    if (brakingindex <= paramrange){
+    if (bindexcriteria <= paramrange){
       return paramrange;
     }
-    else if (paramrange < brakingindex){
-      return brakingindex;
+    else if (paramrange < bindexcriteria){
+      return bindexcriteria;
     }
   }
   
-  
   return NAN;
-  */
 }
-
 
 ///
 /// Function which determines the minimum/maximum value of the first derivative parameters
@@ -324,6 +323,7 @@ static double F1BoundMinMax(
   int minmax        /// +1 for maximum bound, -1 for minimum bound
 )
 {
+  /// Checking that the method is being called with the appropriate values
   if (na < nb && minmax == -1){
     printf("F1BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
     return NAN;
@@ -333,15 +333,13 @@ static double F1BoundMinMax(
     return NAN;
   }
   
-  
+  /// The two parameter range conditions
   double prangecondition1 = -ka * pow(f0, na);
   double prangecondition2 = GTEAndDerivs(fprev, na, ka, seglength, 1);
   
-  double brakingindexcriteria = -sqrt(GTEAndDerivs(fprev, na, ka, seglength, 2) * f0 / nb);
+  /// The braking index criteria
+  double bindexcriteria = -sqrt(GTEAndDerivs(fprev, na, ka, seglength, 2) * f0 / nb);
   double bound;
-  
-  ///printf("These are the f1 options %d, %E, %E, %E \n", minmax, prangecondition1, prangecondition2, brakingindexcriteria);
-  
   
   if (minmax == 1){
     if (prangecondition1 > prangecondition2){
@@ -350,8 +348,8 @@ static double F1BoundMinMax(
     else {
       bound = prangecondition1;
     }
-    if (bound > brakingindexcriteria){
-      return brakingindexcriteria;
+    if (bound > bindexcriteria){
+      return bindexcriteria;
     }
     else {
       return bound;
@@ -365,8 +363,8 @@ static double F1BoundMinMax(
     else {
       bound = prangecondition1;
     }
-    if (bound < brakingindexcriteria){
-      return brakingindexcriteria;
+    if (bound < bindexcriteria){
+      return bindexcriteria;
     }
     else {
       return bound;
@@ -390,33 +388,33 @@ static double F2BoundMinMax(
   int minmax        /// +1 for maximum value, -1 for minimum value
 )
 {
-  double brakingindexcriteria = n * pow(f1, 2) / f0;
+  /// Braking index and parameter range conditions.
+  double bindexcriteria = n * pow(f1, 2) / f0;
   double prangecriteria = GTEAndDerivs(fprev, n, k, seglength, 2);
   
-  ///printf("For f2, these are the two criteria %E, %E \n", brakingindexcriteria, prangecriteria);
-  
   if (minmax == 1){
-    if (brakingindexcriteria > prangecriteria) {
+    if (bindexcriteria > prangecriteria) {
       return prangecriteria;
     }
     else {
-      return brakingindexcriteria;
+      return bindexcriteria;
     }
   }
   else if (minmax == -1) {
-    if (brakingindexcriteria < prangecriteria) {
+    if (bindexcriteria < prangecriteria) {
       return prangecriteria;
     }
     else {
-      return brakingindexcriteria;
+      return bindexcriteria;
     }
   }
   
   return NAN;
 }
 
-
+///
 /// Takes an input val, and returns val to its closest value within the range [valmin, valmax].
+///
 static double resetinsidebounds(
   double val,     /// Value
   double valmin,  /// Lower bound of range
@@ -443,16 +441,15 @@ static double resetinsidebounds(
   return NAN;
 }
 
-
-
-
-/// The Lambert W function. Taken from https://stackoverflow.com/questions/60211021/lambert-w-function-in-c-sharp. It may be that other better numerical estimates for the Lambert W function
-/// exist. For now will work with this approximation.
+///
+/// The Lambert W function (the same as the ProductLog function in Mathematica). Taken from https://stackoverflow.com/questions/60211021/lambert-w-function-in-c-sharp.
+/// It may be that other better numerical estimates for the Lambert W function exist. For now will work with this approximation.
+///
 static double LambertW(
   double x
   )
 {
-  // LambertW is not defined in this section
+  // LambertW is not defined in this case
   if (x < -exp(-1)){
     printf("Lambert W function not defined for x = %f \n", x);
     return NAN;
@@ -479,11 +476,16 @@ static double LambertW(
   return w;
 }
 
+///
+/// Due to some interdependence on the conditions between the f1 and f2 parameters on the first knot, we need to define a special method for how these parameters can be 'reset' if 
+/// a point is selected outside the parameter space. This method calculates the optimised value of f1 allowed given the calculate k values on that knot. If they are unacceptable, the f1
+/// value is reset appropriately using the solution to f1 = - thisk f0 ^ thisn, where thisk = - f1/f0^thisn and thisn = f2 * f0 / f1^2.
+///
 static void resetfirstdim(
-  gsl_vector* point,
-  double kmin,
-  double kmax,
-  double tol
+  gsl_vector* point,    /// The vector of which we are resetting the variables f1 and f2 on
+  double kmin,          /// The minimum allowed value of k for the first knot
+  double kmax,          /// The maximum allowed value of k for the first knot
+  double tol            /// How close we desire the current value of k for this knot to be within the range [kmin, kmax]. Defined as a percentage, e.g. if tol = 0.1, we expect k for this knot to be no more than 10% lower or greater than kmin or kmax respectively.
   )
 {
   double f0 = gsl_vector_get(point, 0);
@@ -534,13 +536,16 @@ static void resetfirstdim(
   return; 
 }
 
+///
+/// As the above method but now for the parameter f2 on the first knot. This value is instead reset however using the expression we have for the braking index, i.e. f2 = n f2^2 / f0
+///
 static void resetseconddim(
-  gsl_vector* point,
-  double nmin,
-  double nmax,
-  double kmin,
-  double kmax,
-  double tol
+  gsl_vector* point, /// The vector of which we are resetting the variables f1 and f2 on
+  double nmin,       /// The minimum allowed value of n for the first knot
+  double nmax,       /// The maximum allowed value of n for the first knot
+  double kmin,       /// The minimum allowed value of k for the first knot
+  double kmax,       /// The maximum allowed value of k for the first knot
+  double tol         /// The same tol as in the above method, however now for both n and k criteria
   )
 {
   double f0 = gsl_vector_get(point, 0);
@@ -558,14 +563,8 @@ static void resetseconddim(
     gsl_vector_set(point, 2, f2);
   }
   
-  if (!(f2 > 0)){
-    printf("First check, f2 !> 0. %E \n", f2);
-  }
-  
-  //printf("Resetting second dim \n");
   
   if (nmin * pow(f1, 2) / f0 <= f2 && f2 <= nmax * pow(f1, 2) / f0){
-    //printf(" We G fam for f2 \n");
     if (!(f2 > 0)){
     printf("f2 appropriate, but somehow, f2 !> 0. %E \n", f2);
   }
@@ -593,14 +592,19 @@ static void resetseconddim(
   return; 
 }
 
-
+///
+/// Due to the interdependence of the conditions on f1 and f2 on the first knot, if there values are chosen outside of the parameter space, resetting them can be challenging. Here I have written
+/// a recursive numerical method which gives a way to reset such a parameter. First, if we find f1 to be in need of resetting, we use the resetfirstdim method defined above. Then, if the f2
+/// parameter also needs resetting then we use the resetseconddim method above. If with both of these resets we find that the first knot is within the appropriate bounds, we terminate. Otherwise
+/// we repeat this process for a maximum of 100 iterations. This method has so far worked successfully.
+///
 static void resetfirstandseconddim(
-  gsl_vector* point,
-  double nmin,
-  double nmax,
-  double kmin,
-  double kmax,
-  double tol,
+  gsl_vector* point, /// The vector of which we are resetting the variables f1 and f2 on
+  double nmin,       /// The minimum allowed value of n for the first knot
+  double nmax,       /// The maximum allowed value of n for the first knot
+  double kmin,       /// The minimum allowed value of k for the first knot
+  double kmax,       /// The maximum allowed value of k for the first knot
+  double tol,        /// The same tol as in the above method, however now for both n and k criteria
   int itr
   )
 {
@@ -660,20 +664,21 @@ static void resetfirstandseconddim(
   
 }
 
-
-
+///
+/// A method which will reset a given point to be within our parameter sapce
+///
 static void resetdimonpoint(
-  gsl_vector* point,
-  int dim,
-  double fmin,
-  double fmax,
-  double nmin,
-  double nmax,
-  double ntol,
-  double kmin,
-  double kmax,
-  double ktol,
-  double segmentlength
+  gsl_vector* point,   /// The point which we are resetting to be within the parameter space
+  int dim,             /// The dimension which we are resetting
+  double fmin,         /// The global minimum frequency
+  double fmax,         /// The global maximum frequency
+  double nmin,         /// The minimum braking index allowed for the knot belonging to dim
+  double nmax,         /// The maximum braking index allowed for the knot belonging to dim
+  double ntol,         /// The percentage tolerance we allow for the braking index on adjacent knots
+  double kmin,         /// The minimum k value allowed for the knot belonging to dim
+  double kmax,         /// The maximum k value allowed for the knot belonging to dim
+  double ktol,         /// The percentage tolerance we allow for the k value on adjacent knots
+  double segmentlength /// The length of the segment we are working on
   )
 {
   //printf("Variables for the resetting method \n");
@@ -772,10 +777,6 @@ static void resetdimonpoint(
     if (kprev > kmax || kprev < kmin){
       printf("Second knot f1. kprev outside global ranges, %E, %E, %E \n", kprev, kmin, kmax);
     }
-    if (kprev <= kmax && kprev >= kmin){
-      //printf("It made it inside!!! \n");
-      //printf("\n");
-    }
     
     double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
     double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
@@ -807,10 +808,6 @@ static void resetdimonpoint(
     if (kprev > kmax || kprev < kmin){
       printf("kprev outside global ranges, %E, %E, %E \n", kprev, kmin, kmax);
     }
-    if (kprev <= kmax && kprev >= kmin){
-      //printf("It made it inside!!! \n");
-      //printf("\n");
-    }
     
     double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
     double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
@@ -823,18 +820,20 @@ static void resetdimonpoint(
   }
 }
 
-
+///
+/// Resets a point such that it is within the bounds of our parameter space
+///
 static void resetoutofboundspoint(
-  gsl_vector* point,
-  double fmin,
-  double fmax,
-  double nmin,
-  double nmax,
-  double ntol,
-  double kmin,
-  double kmax,
-  double ktol,
-  double segmentlength
+  gsl_vector* point,   /// The point which we are resetting to be within the parameter space
+  double fmin,         /// The global minimum frequency
+  double fmax,         /// The global maximum frequency
+  double nmin,         /// The minimum braking index allowed for the knot belonging to dim
+  double nmax,         /// The maximum braking index allowed for the knot belonging to dim
+  double ntol,         /// The percentage tolerance we allow for the braking index on adjacent knots
+  double kmin,         /// The minimum k value allowed for the knot belonging to dim
+  double kmax,         /// The maximum k value allowed for the knot belonging to dim
+  double ktol,         /// The percentage tolerance we allow for the k value on adjacent knots
+  double segmentlength /// The length of the segment we are working on
   )
 {
   int dim = point->size;
@@ -852,9 +851,13 @@ static double FirstKnotDerivBound(
   const void *data,
   const size_t dim,
   const gsl_matrix *cache UNUSED,
-  const gsl_vector* point
+  const gsl_vector* pointorig
   )
 {
+  size_t vectorlength = pointorig->size;
+  gsl_vector* point = gsl_vector_alloc(vectorlength);
+  memcpy(point, pointorig, sizeof(gsl_vector));
+  
   const FirstKnotBoundInfo* info = (const FirstKnotBoundInfo*)data;
   
   double fmin = info->fmin;
@@ -875,7 +878,7 @@ static double FirstKnotDerivBound(
     double upper = -k * pow(fmin, n);
     
     double f1 = resetinsidebounds(gsl_vector_get(point, 1), lower, upper);
- 
+    
     double f2 = n * pow(f1, 2) / f0;
     
     
@@ -912,10 +915,9 @@ static double F0Bound(
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
   
-  //printf("Before F0 reset \n");
+  //printf("Before and after F0 reset \n");
   //printvector(point);
   resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
-  //printf("After F0 reset \n");
   //printvector(point);
   
   double f0n1 = gsl_vector_get(point, dim - 3);
@@ -930,14 +932,16 @@ static double F0Bound(
   
   if (upperlower == 1){
     double upperbound = F0BoundMinMax(f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, 1);
+    //printf("F0 upper bound %f, %f \n", f0n1, upperbound);
     return upperbound;
   }
   else if (upperlower == -1){
     double lowerbound = F0BoundMinMax(f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, -1);
+    //printf("F0 lower bound %f, %f \n", f0n1, lowerbound);
     return lowerbound;
   }
   
-  return 0.0;
+  return NAN;
 }
 
 ///
@@ -967,10 +971,9 @@ static double F1Bound(
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
   
-  //printf("Before F1 reset \n");
+  //printf("Before and after F1 reset \n");
   //printvector(point);
   resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
-  //printf("After F1 reset \n");
   //printvector(point);
   
   double f0n1 = gsl_vector_get(point, dim - 4);
@@ -992,16 +995,16 @@ static double F1Bound(
   
   if (upperlower == 1){
     double upperbound = F1BoundMinMax(f0, f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, 1);
-    
+    //printf("F1 upper bound %f, %f \n", f1n1, upperbound);
     return upperbound;
   }
   else if (upperlower == -1){
     double lowerbound = F1BoundMinMax(f0, f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, -1);
-    
+    //printf("F1 lower bound %f, %f \n", f1n1, lowerbound);
     return lowerbound;
   }
   
-  return 0.0;
+  return NAN;
 }
 
 ///
@@ -1031,10 +1034,9 @@ static double F2Bound(
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
   
-  //printf("Before F2 reset \n");
+  //printf("Before and after F2 reset \n");
   //printvector(point);
   resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
-  //printf("After F2 reset \n");
   //printvector(point);
   
   double f0n1 = gsl_vector_get(point, dim - 5);
@@ -1052,10 +1054,12 @@ static double F2Bound(
   
   if (upperlower == 1){
     double upperbound = F2BoundMinMax(f0, f0n1, f1, nminmax[1], kminmax[1], segmentlength, 1);
+    printf("F2 upper bound %E, %E \n", f2n1, upperbound);
     return upperbound;
   }
   else if (upperlower == -1){
     double lowerbound = F2BoundMinMax(f0, f0n1, f1, nminmax[0], kminmax[0], segmentlength, -1);
+    printf("F2 lower bound %E, %E \n", f2n1, lowerbound);
     return lowerbound;
   }
   
@@ -1114,6 +1118,8 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   /// Setting the first knot bounds
   XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
+  XLALSetLatticeTilingPaddingFlags(tiling, 0, 0);
+  
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_lower );
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_upper );
   
@@ -1128,6 +1134,9 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_lower, &info_first_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 2, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_upper, &info_first_knot_lower) == XLAL_SUCCESS, XLAL_EFAILED);
+  
+  XLALSetLatticeTilingPaddingFlags(tiling, 1, 0);
+  XLALSetLatticeTilingPaddingFlags(tiling, 2, 0);
   
   /// Setting the bounds for all following knots
   
@@ -1156,20 +1165,15 @@ int XLALSetLatticeTilingPiecewiseBounds(
     XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 1, F1Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 2, F2Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     
+    XLALSetLatticeTilingPaddingFlags(tiling, dimindex,     0);
+    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 1, 0);
+    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 2, 0);
+    
   }
   
   printf("Bounds set \n");
   printf("\n");
   return XLAL_SUCCESS;
 }
-
-
-
-/// resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
-
-
-
-
-
 
 
