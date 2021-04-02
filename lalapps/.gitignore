@@ -183,12 +183,19 @@ src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalapps_create_solar_system_ephemeris_python
 src/pulsar/CreateEphemeris/lalapps_create_time_correction_ephemeris
 src/pulsar/CrossCorr/*.testdir
+src/pulsar/CrossCorr/lalapps_combine_crosscorr_toplists
 src/pulsar/CrossCorr/lalapps_pulsar_crosscorr
 src/pulsar/CrossCorr/lalapps_pulsar_crosscorr_v2
+src/pulsar/CrossCorr/lalapps_run_pulsar_crosscorr_v2
 src/pulsar/FITSTools/lalapps_fits_header_getval
 src/pulsar/FITSTools/lalapps_fits_header_list
 src/pulsar/FITSTools/lalapps_fits_overview
 src/pulsar/FITSTools/lalapps_fits_table_list
+src/pulsar/Fscan/lalapps_Fscan_checkCoherencePath
+src/pulsar/Fscan/lalapps_Fscan_coherenceFromSFTs
+src/pulsar/Fscan/lalapps_Fscan_findCombs
+src/pulsar/Fscan/lalapps_Fscan_fscanDriver
+src/pulsar/Fscan/lalapps_Fscan_plotSpecAvgOutput
 src/pulsar/Fscan/lalapps_spec_avg
 src/pulsar/Fscan/lalapps_spec_avg_long
 src/pulsar/Fstatistic/*.testdir
@@ -212,6 +219,7 @@ src/pulsar/HeterodyneSearch/lalapps_knope
 src/pulsar/HeterodyneSearch/lalapps_knope_collate_results
 src/pulsar/HeterodyneSearch/lalapps_knope_create_prior
 src/pulsar/HeterodyneSearch/lalapps_knope_result_page
+src/pulsar/HeterodyneSearch/lalapps_knope_automation_script
 src/pulsar/HeterodyneSearch/lalapps_pulsar_frequency_evolution
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation
 src/pulsar/HeterodyneSearch/lalapps_pulsar_parameter_estimation_nested

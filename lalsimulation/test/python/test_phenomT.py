@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 # Copyright (C) 2020 Hector Estelles (adapted from test_phenomX.py of Cecilio García Quiros)

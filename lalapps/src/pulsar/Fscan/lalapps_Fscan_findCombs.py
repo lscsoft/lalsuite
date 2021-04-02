@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 # import timeit
 # import pandas as pd
 from numpy import *

@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #from pywcsgrid2.allsky_axes import make_allsky_axes_from_header, allsky_header
 #import pywcsgrid2.healpix_helper as healpix_helper
 #from mpl_toolkits.basemap import Basemap

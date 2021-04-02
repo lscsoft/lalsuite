@@ -102,7 +102,7 @@ fi
 FILELIST=$FRAMEFILE
 cp $FILELIST ${LOCATION}/framedir
 
-make_frame_cache --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
+${PYTHON} ./make_frame_cache.py --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
 if [ $? != "0" ]; then
   echo Could not create the cache file!
   exit 2
