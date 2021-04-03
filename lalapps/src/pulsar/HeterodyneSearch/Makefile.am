@@ -93,7 +93,7 @@ test_helpers +=
 # Add any extra files required by tests (e.g. helper scripts) to this variable
 test_extra_files += make_frame_cache.py
 
-# These tests require FRAME
-if !FRAMEL
+# These tests require LALFrame
+if !LALFRAME
 skip_tests += test_heterodyne_pulsar.sh
 endif
