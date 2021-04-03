@@ -10,14 +10,14 @@ dist_bin_SCRIPTS = lalapps_CopySFTs
 
 bin_PROGRAMS =
 
-if FRAMEL
+if LALFRAME
 bin_PROGRAMS += lalapps_MakeSFTs
 endif
 
 lalapps_MakeSFTs_SOURCES = MakeSFTs.c
 lalapps_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
 
-if FRAMEL
+if LALFRAME
 if PSS
 lalapps_MakeSFTs_SOURCES += XLALPSSInterface.c
 lalapps_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
@@ -38,7 +38,7 @@ test_helpers +=
 # Add any extra files required by tests (e.g. helper scripts) to this variable
 test_extra_files +=
 
-# These tests require FRAME
-if !FRAMEL
+# These tests require LALFrame
+if !LALFRAME
 skip_tests += testMakeSFTs.sh
 endif
