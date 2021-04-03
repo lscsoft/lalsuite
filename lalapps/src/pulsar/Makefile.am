@@ -5,6 +5,7 @@ SUBDIRS = \
 	MakeData \
 	Fscan \
 	CreateEphemeris \
+	HWInjection \
 	Fstatistic \
 	HeterodyneSearch \
 	Hough \

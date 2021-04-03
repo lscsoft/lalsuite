@@ -17,7 +17,6 @@ AC_CONFIG_FILES([\
   src/Makefile \
   src/findchirp/Makefile \
   src/frametools/Makefile \
-  src/hwinjection/Makefile \
   src/inspiral/Makefile \
   src/lalapps/LALAppsVCSInfo.c \
   src/lalapps/LALAppsVCSInfo.h \
@@ -31,6 +30,7 @@ AC_CONFIG_FILES([\
   src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/HeterodyneSearch/Makefile \
+  src/pulsar/HWInjection/Makefile \
   src/pulsar/Hough/Makefile \
   src/pulsar/HoughFstat/Makefile \
   src/pulsar/MakeData/Makefile \
