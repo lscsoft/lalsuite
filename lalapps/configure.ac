@@ -34,7 +34,6 @@ AC_CONFIG_FILES([\
   src/pulsar/Hough/Makefile \
   src/pulsar/HoughFstat/Makefile \
   src/pulsar/MakeData/Makefile \
-  src/pulsar/MakeSFTs/Makefile \
   src/pulsar/Makefile \
   src/pulsar/SFTTools/Makefile \
   src/pulsar/SidebandSearch/Makefile \

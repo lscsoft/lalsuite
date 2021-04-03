@@ -3,7 +3,6 @@ SUBDIRS = \
 	SFTTools \
 	FITSTools \
 	MakeData \
-	MakeSFTs \
 	Fscan \
 	CreateEphemeris \
 	Fstatistic \

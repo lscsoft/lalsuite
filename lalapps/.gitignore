@@ -237,12 +237,10 @@ src/pulsar/Hough/lalapps_ValidateHoughMulti
 src/pulsar/HoughFstat/lalapps_HierarchicalSearch
 src/pulsar/MakeData/*.testdir
 src/pulsar/MakeData/compareTS
+src/pulsar/MakeData/lalapps_MakeSFTDAG
+src/pulsar/MakeData/lalapps_MakeSFTs
 src/pulsar/MakeData/lalapps_Makefakedata_v4
 src/pulsar/MakeData/lalapps_Makefakedata_v5
-src/pulsar/MakeSFTs/*.testdir
-src/pulsar/MakeSFTs/lalapps_LISAmakeSFTs
-src/pulsar/MakeSFTs/lalapps_MakeSFTDAG
-src/pulsar/MakeSFTs/lalapps_MakeSFTs
 src/pulsar/SFTTools/*.testdir
 src/pulsar/SFTTools/lalapps_compareSFTs
 src/pulsar/SFTTools/lalapps_ComputePSD
