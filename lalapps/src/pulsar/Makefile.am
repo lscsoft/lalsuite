@@ -2,7 +2,7 @@ SUBDIRS = \
 	Tools \
 	SFTTools \
 	FITSTools \
-	Injections \
+	MakeData \
 	MakeSFTs \
 	Fscan \
 	CreateEphemeris \

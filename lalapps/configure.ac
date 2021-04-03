@@ -33,7 +33,7 @@ AC_CONFIG_FILES([\
   src/pulsar/HeterodyneSearch/Makefile \
   src/pulsar/Hough/Makefile \
   src/pulsar/HoughFstat/Makefile \
-  src/pulsar/Injections/Makefile \
+  src/pulsar/MakeData/Makefile \
   src/pulsar/MakeSFTs/Makefile \
   src/pulsar/Makefile \
   src/pulsar/SFTTools/Makefile \
