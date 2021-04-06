@@ -59,10 +59,6 @@
 /* 24/07/14 eag; Change default SFT output to version 2 per RedMine LALSuite CW patch #1518 */
 
 #include <config.h>
-#if !defined HAVE_LIBGSL || !defined HAVE_LIBLALFRAME
-#include <stdio.h>
-int main(void) {fputs("disabled, no gsl or no lal frame library support.\n", stderr);return 1;}
-#else
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -2184,5 +2180,3 @@ int FreeMem(struct CommandLineArgsTag CLA)
   return 0;
 }
 /*******************************************************************************/
-
-#endif

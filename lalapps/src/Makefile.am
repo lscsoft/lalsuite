@@ -43,5 +43,3 @@ if LALINSPIRAL
 SUBDIRS += inspiral
 endif
 endif
-
-SUBDIRS += hwinjection
