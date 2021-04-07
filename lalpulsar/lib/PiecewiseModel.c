@@ -1118,7 +1118,7 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   /// Setting the first knot bounds
   XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
-  XLALSetLatticeTilingPaddingFlags(tiling, 0, 0);
+  XLALSetLatticeTilingPaddingFlags(tiling, 0, LATTICE_TILING_PAD_NONE);
   
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_lower );
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_upper );
@@ -1135,8 +1135,8 @@ int XLALSetLatticeTilingPiecewiseBounds(
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_lower, &info_first_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 2, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_upper, &info_first_knot_lower) == XLAL_SUCCESS, XLAL_EFAILED);
   
-  XLALSetLatticeTilingPaddingFlags(tiling, 1, 0);
-  XLALSetLatticeTilingPaddingFlags(tiling, 2, 0);
+  XLALSetLatticeTilingPaddingFlags(tiling, 1, LATTICE_TILING_PAD_NONE);
+  XLALSetLatticeTilingPaddingFlags(tiling, 2, LATTICE_TILING_PAD_NONE);
   
   /// Setting the bounds for all following knots
   
@@ -1165,9 +1165,9 @@ int XLALSetLatticeTilingPiecewiseBounds(
     XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 1, F1Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 2, F2Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     
-    XLALSetLatticeTilingPaddingFlags(tiling, dimindex,     0);
-    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 1, 0);
-    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 2, 0);
+    XLALSetLatticeTilingPaddingFlags(tiling, dimindex,     LATTICE_TILING_PAD_NONE);
+    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 1, LATTICE_TILING_PAD_NONE);
+    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 2, LATTICE_TILING_PAD_NONE);
     
   }
   
