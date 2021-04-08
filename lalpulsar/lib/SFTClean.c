@@ -20,6 +20,7 @@
 #include <libgen.h>
 #include <lal/SFTClean.h>
 #include <lal/SFTutils.h>
+#include <lal/LogPrintf.h>
 
 /**
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
@@ -680,10 +681,19 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
     if ((lineBin >= minBin) && (lineBin <= maxBin)) {
 
       /* cut wings if wider than width parameter */
+      if ( ( leftWingBins > width ) || ( rightWingBins > width) ) {
+        LogPrintf ( LOG_NORMAL, "%s: Cutting wings of line %d/%d from [-%d,+%d] to width=%d.\n", __func__, count, nLines, leftWingBins, rightWingBins, width );
+      }
       leftWingBins = leftWingBins < width ? leftWingBins : width;
       rightWingBins = rightWingBins < width ? rightWingBins : width;
 
       /* estimate the sft power in "window" # of bins each side */
+      if ( 2*window > (maxBin - minBin) ) {
+        LogPrintf ( LOG_NORMAL, "%s: Window of +-%d bins around lineBin=%d does not fit within SFT range [%d,%d], noise floor estimation will be compromised.\n", __func__, window, lineBin, minBin, maxBin );
+      }
+      if ( ( window < leftWingBins) || ( window <= rightWingBins) ) {
+        LogPrintf ( LOG_NORMAL, "%s: Window of +-%d bins around lineBin=%d does not extend further than line wings [-%d,+%d], noise floor estimation will be compromised by the very same line that is supposed to be cleaned.\n", __func__, window, lineBin, leftWingBins, rightWingBins );
+      }
       for (k = 0; k < window ; k++){
 	if (maxBin - lineBin - rightWingBins - k > 0)
 	  inData = sft->data->data + lineBin - minBin + rightWingBins + k + 1;
