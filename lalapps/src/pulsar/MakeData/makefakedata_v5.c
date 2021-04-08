@@ -278,6 +278,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_LIBLALFRAME
   if ( GV.outFrameDir != NULL )
     {
+      XLAL_CHECK ( is_directory ( uvar.outFrameDir ), XLAL_EINVAL );
       XLAL_CHECK ( XLALCheckValidDescriptionField ( uvar.outLabel ) == XLAL_SUCCESS, XLAL_EFUNC );
       len = strlen(GV.outFrameDir) + strlen(uvar.outLabel) + 100;
       char *fname;
