@@ -676,8 +676,12 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
     leftWingBins = floor(tBase * leftWing[count]);
     rightWingBins = floor(tBase * rightWing[count]);
 
-    /* check that frequency is within band of sft and line is not too wide*/
-    if ((lineBin >= minBin) && (lineBin <= maxBin) && (leftWingBins <= width) && (rightWingBins <= width)){
+    /* check that central frequency of the line is within band of sft */
+    if ((lineBin >= minBin) && (lineBin <= maxBin)) {
+
+      /* cut wings if wider than width parameter */
+      leftWingBins = leftWingBins < width ? leftWingBins : width;
+      rightWingBins = rightWingBins < width ? rightWingBins : width;
 
       /* estimate the sft power in "window" # of bins each side */
       for (k = 0; k < window ; k++){
@@ -714,7 +718,6 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
       /* now go left and set the left wing to noise */
       /* make sure that we are always within the sft band */
       /* and set bins to zero only if Wing width is smaller than "width" */
-      if ((leftWingBins <= width)){
 	for (leftCount = 0; leftCount < leftWingBins; leftCount++){
 	  if ( (lineBin - minBin - leftCount > 0)){
 	    inData = sft->data->data + lineBin - minBin - leftCount - 1;
@@ -728,10 +731,8 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	    tempk++;
 	  }
 	}
-      }
 
       /* now go right making sure again to stay within the sft band */
-      if ((rightWingBins <= width )){
 	for (rightCount = 0; rightCount < rightWingBins; rightCount++){
 	  if ( (maxBin - lineBin - rightCount > 0)){
 	    inData = sft->data->data + lineBin - minBin + rightCount + 1;
@@ -745,7 +746,7 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	    tempk++;
 	  }
 	}
-      }
+
     }
   } /* end loop over lines */
 
