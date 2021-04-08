@@ -967,7 +967,6 @@ XLALSimIMRSpinAlignedEOBModes (
   REAL8 m1, m2, mTotal, eta, mTScaled;
   REAL8 amp0;
   LIGOTimeGPS tc = LIGOTIMEGPSZERO;
-
   /* Dynamics of the system */
   REAL8Vector rVec, phiVec, prVec, pPhiVec,tVec;
   /* OPTIMIZED */
@@ -2810,8 +2809,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
     }
 
     /* Having located the peak of orbital frequency, we set time and phase of coalescence */
-    XLALGPSAdd (&tc, -mTScaled * (dynamics->data[hiSRndx] + timePeak));
-
+    if(!postAdiabaticFlag){
+      XLALGPSAdd (&tc, -mTScaled * (dynamics->data[hiSRndx] + timePeak));
+    }
 
 
   rdMatchPoint->data[0] =
@@ -3444,8 +3444,9 @@ for ( UINT4 k = 0; k<nModes; k++) {
       }
     }
     hiSRndx = idx;
+   
   }
-
+  
 #if outputDebug
          fclose (out);
         fclose(out2);
@@ -3471,9 +3472,11 @@ for ( UINT4 k = 0; k<nModes; k++) {
   /*
    * STEP 8) Generate full IMR modes -- attaching ringdown to inspiral
    */
-
+ 
   /* Attach the ringdown part to the inspiral */
-  
+if(postAdiabaticFlag){
+    XLALGPSAdd (&tc, -(deltaT*hiSRndx + timePeak*mTScaled));
+  }
 for ( UINT4 k = 0; k<nModes; k++) {
   for (i = 0; i < (INT4) (sigReHi->length / resampFac); i++)
     {
@@ -3558,9 +3561,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
         fclose(out);
     }
 #endif
-
 XLALGPSAdd (&tc, deltaT * (REAL8) kMin);
-
 /*
  * STEP 9) Generate full IMR hp and hx waveforms
  */
