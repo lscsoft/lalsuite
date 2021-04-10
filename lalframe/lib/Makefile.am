@@ -21,7 +21,6 @@ pkginclude_HEADERS = \
 	LALFrStream.h \
 	LALFrameConfig.h \
 	LALFrameIO.h \
-	LALFrameL.h \
 	LALFrameU.h \
 	LALFrameVCSInfo.h \
 	LALFrameVCSInfoHeader.h
