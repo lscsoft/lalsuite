@@ -75,7 +75,7 @@
 
 /* frame headers */
 #include <FrIO.h>
-#include <lal/LALFrameL.h>
+#include <FrameL.h>
 
 #ifdef __cplusplus
 extern "C" {

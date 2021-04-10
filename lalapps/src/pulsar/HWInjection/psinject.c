@@ -67,8 +67,8 @@
 #include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
 
-#ifdef HAVE_LIBLALFRAME
-#include <lal/LALFrameL.h>
+#ifdef HAVE_FRAMEL_H
+#include <FrameL.h>
 #endif
 
 #include <lal/XLALError.h>
@@ -228,7 +228,7 @@ void usage(FILE *filep){
 	  "-p            Print the calibration line frequencies in Hz then exit(0)\n"
 	  "-I STRING     Detector: LHO, LLO, GEO, VIRGO, TAMA, CIT, ROME [REQUIRED]\n"
 	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
-#ifdef HAVE_LIBLALFRAME
+#ifdef HAVE_FRAMEL_H
           "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
 	  "-S INT        Number of 1-second frames per frame file (default 60).\n"
 #endif
@@ -359,7 +359,7 @@ int parseinput(int argc, char **argv){
       actuation = LALoptarg;
       break;
     case 'F':
-#ifdef HAVE_LIBLALFRAME
+#ifdef HAVE_FRAMEL_H
 	{
 	    int how_many = atoi(LALoptarg);
 	    if (how_many < 0) {
@@ -374,7 +374,7 @@ int parseinput(int argc, char **argv){
 #endif
           break;
     case 'S':
-#ifdef HAVE_LIBLALFRAME
+#ifdef HAVE_FRAMEL_H
 	secs_per_framefile = atoi(LALoptarg);
         if (secs_per_framefile < 1) {
 	    syserror(0,"%s: fatal error, argument -S %d must be at least 1 second.\n", argv[0], secs_per_framefile);
@@ -741,7 +741,7 @@ int main(int argc, char *argv[]){
     /* now output the total signal to frames */
 
     if (write_frames) {
-#ifdef HAVE_LIBLALFRAME
+#ifdef HAVE_FRAMEL_H
 	static int counter = 0;
 	static FrFile *oFile;
 

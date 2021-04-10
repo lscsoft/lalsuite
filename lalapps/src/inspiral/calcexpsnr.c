@@ -71,7 +71,6 @@
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeSeries.h>
 #include <lal/VectorOps.h>
-#include <lal/LALFrameL.h>
 #include <lal/SeqFactories.h>
 
 #include <LALAppsVCSInfo.h>

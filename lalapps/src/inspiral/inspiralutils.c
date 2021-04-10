@@ -65,7 +65,6 @@
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
-#include <lal/LALFrameL.h>
 #include <lal/LALDict.h>
 #include <lal/LALNoiseModels.h>
 
