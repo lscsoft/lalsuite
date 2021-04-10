@@ -19,6 +19,7 @@
 
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
+{% set lalframe_version = "@MIN_LALFRAME_VERSION@a0" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
@@ -51,6 +52,7 @@ requirements:
     - fftw * nompi*
     - gsl
     - lal >={{ lal_version }} fftw*
+    - lalframe >={{ lalframe_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
 
@@ -78,6 +80,7 @@ outputs:
         - fftw * nompi*
         - gsl
         - liblal >={{ lal_version }} fftw*
+        - liblalframe >={{ lalframe_version }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
       run:
@@ -85,6 +88,7 @@ outputs:
         - fftw
         - gsl
         - liblal >={{ lal_version }}
+        - liblalframe >={{ lalframe_version }}
       run_constrained:
         - lalpulsar >=3.0.0
         - python-lalpulsar >=3.0.0
@@ -134,6 +138,7 @@ outputs:
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
+        - python-lalframe >={{ lalframe_version }}
         - six
     test:
       requires:

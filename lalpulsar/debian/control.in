@@ -8,15 +8,18 @@ Build-Depends:
  dh-python,
  help2man (>= 1.37),
  lal-octave (>= @MIN_LAL_VERSION@~),
+ lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
  libcfitsio3-dev | libcfitsio-dev,
  libfftw3-dev,
  libgsl-dev | libgsl0-dev (>= 1.9),
  liblal-dev (>= @MIN_LAL_VERSION@~),
+ liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
  liboctave-dev,
  pkg-config (>= 0.18.0),
  python-all-dev,
  python-astropy,
  python-lal (>= @MIN_LAL_VERSION@~),
+ python-lalframe (>= @MIN_LALFRAME_VERSION@~),
  python-mock,
  python-numpy (>= @MIN_NUMPY_VERSION@),
  python-pathlib,
@@ -24,6 +27,7 @@ Build-Depends:
  python3-all-dev,
  python3-astropy,
  python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-pytest,
  rsync,
@@ -54,6 +58,7 @@ Depends:
  libfftw3-dev,
  libgsl-dev | libgsl0-dev (>= 1.9),
  liblal-dev (>= @MIN_LAL_VERSION@~),
+ liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
 Description: LSC Algorithm Library Pulsar Developers
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
@@ -84,6 +89,7 @@ Depends:
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
  python-astropy,
  python-lal (>= @MIN_LAL_VERSION@~),
+ python-lalframe (>= @MIN_LALFRAME_VERSION@~),
 Description: Python bindings for LALPulsar.
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Pulsar library.
@@ -109,6 +115,7 @@ Depends:
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
  python3-astropy,
  python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
 Description: Python 3 bindings for LALPulsar.
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Pulsar library.
@@ -119,6 +126,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  lal-octave (>= @MIN_LAL_VERSION@~),
+ lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
  octave,
 Description: Octave bindings for LALPulsar.

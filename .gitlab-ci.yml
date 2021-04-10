@@ -733,6 +733,7 @@ lalpulsar:rpm:
   needs:
     - tarballs
     - lal:rpm
+    - lalframe:rpm
 
 lalpulsar:deb:
   extends:
@@ -741,6 +742,7 @@ lalpulsar:deb:
   needs:
     - tarballs
     - lal:deb
+    - lalframe:deb
 
 lalpulsar:conda:
   extends:
@@ -749,6 +751,7 @@ lalpulsar:conda:
   needs:
     - tarballs
     - lal:conda:fftw
+    - lalframe:conda
 
 # -- lalinference -------------------------------
 #
