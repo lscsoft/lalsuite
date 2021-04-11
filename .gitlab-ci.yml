@@ -1315,7 +1315,7 @@ platform:conda:macos:
     variables:
       # allow these jobs to be skipped by including
       # `[skip docker]` in the commit message
-      - $CI_COMMIT_MESSAGE != /\[skip docker\]/
+      - $CI_COMMIT_MESSAGE =~ /\[skip docker\]/
   script:
     # build container and push to registry
     - IMAGE_TAG=${CI_JOB_NAME##*:}
