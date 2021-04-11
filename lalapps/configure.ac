@@ -204,7 +204,7 @@ if test "${gds}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([GDS])
 
-# check for libFrame
+# check for FrameL
 if test "${framel}" = "true"; then
   PKG_CHECK_MODULES([FRAMEL],[framel],[true],[false])
   lal_pre_framel_LIBS="$LIBS"
@@ -212,7 +212,6 @@ if test "${framel}" = "true"; then
   AC_SEARCH_LIBS([FrLibIni],[framel],,
                  [AC_MSG_WARN([could not find the FrameL library])]
                  [framel="false"]
-                 [lalframe="false"]
                  [LIBS="$lal_pre_framel_LIBS"])
 fi
 
@@ -223,7 +222,6 @@ if test "${framel}" = "true"; then
   AC_CHECK_HEADERS([FrameL.h],,
                    [AC_MSG_WARN([could not find the FrameL.h header])]
                    [framel="false"]
-                   [lalframe="false"]
                    [CPPFLAGS="$lal_pre_framel_CPPFLAGS"])
 fi
 LALSUITE_ENABLE_MODULE([FRAMEL])
