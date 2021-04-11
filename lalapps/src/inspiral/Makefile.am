@@ -36,21 +36,26 @@ lalapps_coinj_SOURCES = $(COINJSRC)
 lalapps_cbc_stochasticbank_SOURCES = $(STOCHBANKSRC)
 
 bin_PROGRAMS = \
-	lalapps_tmpltbank \
-	lalapps_inspinj \
 	lalapps_splitbank \
 	lalapps_blindinj \
-	lalapps_inspfrinj \
-	lalapps_gwf2xml \
 	lalapps_trigscan \
 	lalapps_spininj \
 	lalapps_randombank \
-	lalapps_ninja \
 	lalapps_fr_ninja \
-	lalapps_calcexpsnr \
 	lalapps_coinj \
 	lalapps_cbc_stochasticbank \
 	$(END_OF_LIST)
+
+if FRAMEL
+bin_PROGRAMS += \
+	lalapps_tmpltbank \
+	lalapps_inspinj \
+	lalapps_inspfrinj \
+	lalapps_gwf2xml \
+	lalapps_ninja \
+	lalapps_calcexpsnr \
+	$(END_OF_LIST)
+endif
 
 if HAVE_PYTHON
 pybin_scripts = \
