@@ -39,7 +39,9 @@ SUBDIRS += pulsar
 endif
 
 if LALFRAME
+if LALMETAIO
 if LALINSPIRAL
 SUBDIRS += inspiral
+endif
 endif
 endif

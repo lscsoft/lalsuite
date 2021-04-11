@@ -20,23 +20,6 @@ CALCEXPSNRSRC = calcexpsnr.c
 COINJSRC = coinj.c
 STOCHBANKSRC = stochasticbank.c
 
-if LALMETAIO
-LALMETAIO_PROGS = \
-	lalapps_tmpltbank \
-	lalapps_inspinj \
-	lalapps_splitbank \
-	lalapps_blindinj \
-	lalapps_inspfrinj \
-	lalapps_gwf2xml \
-	lalapps_trigscan \
-	lalapps_spininj \
-	lalapps_randombank \
-	lalapps_ninja \
-	lalapps_fr_ninja \
-	lalapps_calcexpsnr \
-	lalapps_coinj \
-	lalapps_cbc_stochasticbank \
-	$(END_OF_LIST)
 lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
 lalapps_blindinj_SOURCES = $(BLINDINJSRC)
@@ -51,10 +34,22 @@ lalapps_fr_ninja_SOURCES = $(FRNINJASRC)
 lalapps_calcexpsnr_SOURCES = $(CALCEXPSNRSRC)
 lalapps_coinj_SOURCES = $(COINJSRC)
 lalapps_cbc_stochasticbank_SOURCES = $(STOCHBANKSRC)
-endif
 
 bin_PROGRAMS = \
-	$(LALMETAIO_PROGS) \
+	lalapps_tmpltbank \
+	lalapps_inspinj \
+	lalapps_splitbank \
+	lalapps_blindinj \
+	lalapps_inspfrinj \
+	lalapps_gwf2xml \
+	lalapps_trigscan \
+	lalapps_spininj \
+	lalapps_randombank \
+	lalapps_ninja \
+	lalapps_fr_ninja \
+	lalapps_calcexpsnr \
+	lalapps_coinj \
+	lalapps_cbc_stochasticbank \
 	$(END_OF_LIST)
 
 if HAVE_PYTHON
