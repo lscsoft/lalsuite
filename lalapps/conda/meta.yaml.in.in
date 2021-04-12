@@ -27,6 +27,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalpulsar_version = "@MIN_LALPULSAR_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
+{% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 
 package:
   name: {{ name }}
@@ -104,7 +105,7 @@ requirements:
     - python-lalmetaio >={{ lalmetaio_version }}
     - python-lalpulsar >={{ lalpulsar_version }}
     - python-lalsimulation >={{ lalsimulation_version }}
-    - python-ligo-lw
+    - python-ligo-lw >={{ python_ligo_lw_version }}
 
 test:
   imports:

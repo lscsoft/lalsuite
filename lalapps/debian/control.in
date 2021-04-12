@@ -61,7 +61,7 @@ Depends:
  python3-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
  python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
  python3-ligo-segments,
- python3-ligo-lw,
+ python3-ligo-lw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
  python3-six,
 Breaks: lalinference-python (<< 1.9.4.1-1~)
 Description: LSC Algorithm Library Applications
