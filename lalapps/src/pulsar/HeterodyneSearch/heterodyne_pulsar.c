@@ -1605,9 +1605,9 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
   /* fill in vector - checking for frame data type */
   INT4 frtype = XLALFrStreamGetTimeSeriesType(channel, frfile);
   if( frtype == LAL_S_TYPE_CODE ){ /* data is float */
-    REAL4TimeSeries *tseries = NULL
+    REAL4TimeSeries *tseries = NULL;
 
-    if ((tseries = XLALFrStreamReadREAL4TimeSeries(frfile, channel, epoch, duration, 0)) == NULL){
+    if ((tseries = XLALFrStreamReadREAL4TimeSeries(frfile, channel, &epoch, duration, 0)) == NULL){
       XLALDestroyREAL4TimeSeries(tseries);
       XLALFrStreamClose(frfile);
       XLALDestroyCache(frcache);
@@ -1635,7 +1635,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
     XLALDestroyREAL4TimeSeries(tseries);
   }
   else if( frtype == LAL_D_TYPE_CODE ){ /* data is double */
-    if ((dblseries = XLALFrStreamReadREAL8TimeSeries(frfile, channel, epoch, duration, 0)) == NULL){
+    if ((dblseries = XLALFrStreamReadREAL8TimeSeries(frfile, channel, &epoch, duration, 0)) == NULL){
       XLALFrStreamClose(frfile);
       XLALDestroyCache(frcache);
       return NULL; /* couldn't read frame data */
