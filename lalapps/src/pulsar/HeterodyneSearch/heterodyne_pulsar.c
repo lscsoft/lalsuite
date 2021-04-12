@@ -1585,66 +1585,74 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
   REAL8 highpass){
   REAL8TimeSeries *dblseries=NULL;
 
-  FrFile *frfile=NULL;
-  FrVect *frvect=NULL;
+  LALFrStream *frfile=NULL;
+  LALCache *frcache=NULL;
 
   LIGOTimeGPS epoch;
   INT4 i;
 
-  /* open frame file for reading */
-  if((frfile = FrFileINew(framefile)) == NULL)
-    return NULL; /* couldn't open frame file */
-
+  /* set the data epoch */
   XLALGPSSetREAL8(&epoch, ttime);
 
-  /* create data memory */
-  if( (dblseries = XLALCreateREAL8TimeSeries( channel, &epoch, 0.,
-       1./samplerate, &lalSecondUnit, (INT4)length )) == NULL )
-    {  XLALPrintError("Error allocating data times series.\n");  }
+  /* create frame cache */
+  if((frcache = XLALCacheImport(framefile)) == NULL )
+    return NULL; /* couldn't create frame cache file */
 
-  /* read in frame data */
-  if((frvect = FrFileIGetV(frfile, channel, ttime, (REAL8)duration))==NULL){
-    FrFileIEnd(frfile);
-    XLALDestroyREAL8Vector(dblseries->data);
-    XLALFree(dblseries);
-    return NULL; /* couldn't read frame data */
-  }
-
-  /* check if there was missing data within the frame(s) */
-  if(frvect->next){
-    FrFileIEnd(frfile);
-    XLALDestroyREAL8Vector(dblseries->data);
-    XLALFree(dblseries);
-    FrVectFree(frvect);
-    return NULL; /* couldn't read frame data */
-  }
-
-  FrFileIEnd(frfile);
+  /* open frame file for reading */
+  if((frfile = XLALFrStreamCacheOpen(frcache)) == NULL)
+    return NULL; /* couldn't open frame file */
 
   /* fill in vector - checking for frame data type */
-  if( frvect->type == FR_VECT_4R ){ /* data is float */
-    /* check that data doesn't contain NaNs */
-    if(isnan(frvect->dataF[0]) != 0){
-      XLALDestroyREAL8Vector(dblseries->data);
-      XLALFree(dblseries);
-      FrVectFree(frvect);
+  INT4 frtype = XLALFrStreamGetTimeSeriesType(channel, frfile);
+  if( frtype == LAL_S_TYPE_CODE ){ /* data is float */
+    REAL4TimeSeries *tseries = NULL
+
+    if ((tseries = XLALFrStreamReadREAL4TimeSeries(frfile, channel, epoch, duration, 0)) == NULL){
+      XLALDestroyREAL4TimeSeries(tseries);
+      XLALFrStreamClose(frfile);
+      XLALDestroyCache(frcache);
       return NULL; /* couldn't read frame data */
     }
 
-    for(i=0;i<(INT4)length;i++)
-      dblseries->data->data[i] = scalefac*(REAL8)frvect->dataF[i];
+    /* create REAL8 time series */
+    if( (dblseries = XLALCreateREAL8TimeSeries( channel, &epoch, 0.,
+       1./samplerate, &lalSecondUnit, (INT4)length )) == NULL )
+    {  XLALPrintError("Error allocating data times series.\n"); }
+
+    for(i=0;i<(INT4)length;i++){
+      /* check for NaNs and scale data */
+      if ( isnan(tseries->data->data[i]) != 0 ){
+        XLALDestroyREAL8TimeSeries(dblseries);
+        XLALDestroyREAL4TimeSeries(tseries);
+        XLALFrStreamClose(frfile);
+        XLALDestroyCache(frcache);
+        return NULL; /* couldn't read frame data */
+      }
+
+      dblseries->data->data[i] = scalefac * (REAL8)tseries->data->data[i];
+    }
+
+    XLALDestroyREAL4TimeSeries(tseries);
   }
-  else if( frvect->type == FR_VECT_8R ){ /* data is double */
-    /* check that data doesn't contain NaNs */
-    if(isnan(frvect->dataD[0]) != 0){
-      XLALDestroyREAL8Vector(dblseries->data);
-      XLALFree(dblseries);
-      FrVectFree(frvect);
+  else if( frtype == LAL_D_TYPE_CODE ){ /* data is double */
+    if ((dblseries = XLALFrStreamReadREAL8TimeSeries(frfile, channel, epoch, duration, 0)) == NULL){
+      XLALFrStreamClose(frfile);
+      XLALDestroyCache(frcache);
       return NULL; /* couldn't read frame data */
     }
+    
+    /* check that data doesn't contain NaNs */
+    for(i=0;i<(INT4)length;i++){
+      /* check for NaNs and scale data */
+      if ( isnan(dblseries->data->data[i]) != 0 ){
+        XLALDestroyREAL8TimeSeries(dblseries);
+        XLALFrStreamClose(frfile);
+        XLALDestroyCache(frcache);
+        return NULL; /* couldn't read frame data */
+      }
 
-    for(i=0;i<(INT4)length;i++)
-      dblseries->data->data[i] = scalefac*(REAL8)frvect->dataD[i];
+      dblseries->data->data[i] = scalefac * dblseries->data->data[i];
+    }
   }
   else{ /* channel name is not recognised */
     fprintf(stderr, "Error... Channel name %s is not recognised as a proper channel.\n", channel);
@@ -1652,7 +1660,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
   }
 
   /* if a high-pass filter is specified (>0) then filter data */
-  if(highpass > 0.){
+  if( highpass > 0. ){
     PassBandParamStruc highpasspar;
 
     /* uses 8th order Butterworth, with 10% attenuation */
@@ -1665,7 +1673,8 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
     XLALButterworthREAL8TimeSeries( dblseries, &highpasspar );
   }
 
-  FrVectFree(frvect);
+  XLALFrStreamClose(frfile);
+  XLALDestroyCache(frcache);
 
   return dblseries;
 }

@@ -73,9 +73,6 @@
 /* lalapps header */
 #include <LALAppsVCSInfo.h>
 
-/* frame headers */
-#include <FrIO.h>
-#include <lal/LALFrameL.h>
 
 #ifdef __cplusplus
 extern "C" {
