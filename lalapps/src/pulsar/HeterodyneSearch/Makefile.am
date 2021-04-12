@@ -8,21 +8,17 @@ include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = lalapps_ssbtodetector
 
-if LALFRAME
 bin_PROGRAMS += \
 	lalapps_heterodyne_pulsar \
 	lalapps_create_pulsar_signal_frame \
 	lalapps_SplInter \
 	$(END_OF_LINE)
-endif
 
-if LALFRAME
 if LALINFERENCE
 bin_PROGRAMS += \
 	lalapps_pulsar_parameter_estimation_nested \
 	lalapps_pulsar_frequency_evolution \
 	$(END_OF_LINE)
-endif
 endif
 
 lalapps_ssbtodetector_SOURCES = ssbtodetector.c
