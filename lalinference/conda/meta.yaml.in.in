@@ -26,6 +26,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalpulsar_version = "@MIN_LALPULSAR_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
+{% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
@@ -152,7 +153,7 @@ outputs:
         - python-lalburst >={{ lalburst_version }}
         - python-lalinspiral >={{ lalinspiral_version }}
         - python-lalpulsar >={{ lalpulsar_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
     test:
       requires:
@@ -221,7 +222,7 @@ outputs:
         - matplotlib-base >=1.2.0
         - python-lal >={{ lal_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
         - six
       run:
@@ -240,7 +241,7 @@ outputs:
         - python-lal >={{ lal_version }}
         - {{ pin_subpackage('python-lalinference', exact=True) }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
         - six
     test:

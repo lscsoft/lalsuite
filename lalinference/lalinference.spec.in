@@ -169,7 +169,7 @@ Requires: python2-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python2-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python2-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python2-ligo-gracedb
-Requires: python2-ligo-lw
+Requires: python2-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
 Requires: python2-ligo-segments
 Requires: python2-matplotlib >= 1.2.0
 Requires: python2-numpy >= @MIN_NUMPY_VERSION@
@@ -203,7 +203,7 @@ Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python%{python3_pkgversion}-ligo-gracedb
-Requires: python%{python3_pkgversion}-ligo-lw
+Requires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
 Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
