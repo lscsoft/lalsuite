@@ -27,17 +27,18 @@
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
 #include <lal/LALStdlib.h>
 #include <lal/LALString.h>
 #include <lal/Date.h>
 #include <lal/XLALError.h>
-#include <lal/LALFrameL.h>
 
 #ifndef P_tmpdir
 #define P_tmpdir "/tmp"
 #endif
 
 #include <FrIO.h>
+#include <FrameL.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

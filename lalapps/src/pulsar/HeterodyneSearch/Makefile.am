@@ -6,13 +6,22 @@ include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
-bin_PROGRAMS = lalapps_ssbtodetector
+bin_PROGRAMS = \
+	lalapps_ssbtodetector \
+	lalapps_SplInter \
+	$(END_OF_LINE)
 
+if FRAMEL
 if LALFRAME
 bin_PROGRAMS += \
 	lalapps_heterodyne_pulsar \
+	$(END_OF_LINE)
+endif
+endif
+
+if LALFRAME
+bin_PROGRAMS += \
 	lalapps_create_pulsar_signal_frame \
-	lalapps_SplInter \
 	$(END_OF_LINE)
 endif
 
@@ -92,6 +101,11 @@ test_helpers +=
 
 # Add any extra files required by tests (e.g. helper scripts) to this variable
 test_extra_files += make_frame_cache.py
+
+# These tests require FrameL
+if !FRAMEL
+skip_tests += test_heterodyne_pulsar.sh
+endif
 
 # These tests require LALFrame
 if !LALFRAME

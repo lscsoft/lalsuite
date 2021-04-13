@@ -289,7 +289,6 @@
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
-#include <lal/LALFrameL.h>
 #include <lal/TimeSeries.h>
 
 #include <LALAppsVCSInfo.h>
