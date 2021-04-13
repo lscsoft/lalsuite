@@ -261,7 +261,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times
 void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration);
 
 /* reads in a time series from frames */
-REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 gpstime,
+REAL8TimeSeries *get_frame_data(LALCache *framecache, CHAR *channel, REAL8 gpstime,
   REAL8 length, INT4 duration, REAL8 samplerate, REAL8 scalefac,
   REAL8 highpass);
 
@@ -269,7 +269,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 gpstime,
 INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile, INT4 heterodyneflag);
 
 /* get frame data for partcular science segment */
-CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrames, INT4 *position, INT4 maxchunklength);
+LALCache *set_frame_files(INT4 *starts, INT4 *stops, LALCache *cache, INT4 *position, INT4 maxchunklength);
 
 /* calibrate data */
 void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes, CalibrationFiles calfiles,
