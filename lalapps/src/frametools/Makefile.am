@@ -3,48 +3,46 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-LALFRAMEPROGRAMS = \
+bin_PROGRAMS = \
 	lalapps_animate \
 	lalapps_calfacs \
+	$(END_OF_LIST)
+
+lalapps_animate_SOURCES = animate.c
+lalapps_calfacs_SOURCES = calfacs.c
+
+if FRAMEL
+
+bin_PROGRAMS += \
 	lalapps_frinfo \
 	lalapps_frread \
 	lalapps_frextr \
 	lalapps_frjoin \
 	$(END_OF_LIST)
 
-lalapps_animate_SOURCES = animate.c
-lalapps_calfacs_SOURCES = calfacs.c
 lalapps_frinfo_SOURCES = info.c
 lalapps_frread_SOURCES = read.c
 lalapps_frextr_SOURCES = extr.c
 lalapps_frjoin_SOURCES = join.c
 
+endif
+
 if LALMETAIO
 if LALBURST
 if LALINSPIRAL
-LALFRAMEMETAIOBURSTPROGRAMS = lalapps_frview
+bin_PROGRAMS += lalapps_frview
 lalapps_frview_SOURCES = view.c
 endif
 endif
 endif
 
+if FRAMEL
 if CFITSIO
-LALFRAMECFITSIOPROGRAMS = lalapps_xtefitstoframe
+bin_PROGRAMS += lalapps_xtefitstoframe
 lalapps_xtefitstoframe_SOURCES = xtefitstoframe.c
 endif
-
-bin_PROGRAMS = \
-	$(LALFRAMEPROGRAMS) \
-	$(LALFRAMEMETAIOBURSTPROGRAMS) \
-	$(LALFRAMECFITSIOPROGRAMS) \
-	$(END_OF_LIST)
+endif
 
 EXTRA_DIST = \
-	animate.c \
 	animate.png \
-	calfacs.c \
-	extr.c \
-	info.c \
-	join.c \
-	read.c \
 	$(END_OF_LIST)

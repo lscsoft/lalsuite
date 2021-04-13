@@ -59,7 +59,6 @@
 #include <lalappsfrutils.h>
 #include <lal/LALFrStream.h>
 #include <lal/LogPrintf.h>
-#include <lal/LALFrameL.h>
 
 #include <LALAppsVCSInfo.h>
 

@@ -30,7 +30,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <lal/LALFrameL.h>
+
+#include <FrameL.h>
+
 #include <lal/LALgetopt.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXMLlegacy.h>

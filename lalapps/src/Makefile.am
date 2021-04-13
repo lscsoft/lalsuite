@@ -8,12 +8,10 @@ if LALINSPIRAL
 SUBDIRS += findchirp
 endif
 
-if FRAMEL
 if LALFRAME
 if LALMETAIO
 if LALINSPIRAL
 SUBDIRS += ring
-endif
 endif
 endif
 endif
@@ -39,7 +37,9 @@ SUBDIRS += pulsar
 endif
 
 if LALFRAME
+if LALMETAIO
 if LALINSPIRAL
 SUBDIRS += inspiral
+endif
 endif
 endif

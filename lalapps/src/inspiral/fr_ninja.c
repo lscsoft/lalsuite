@@ -36,7 +36,6 @@
 #include <lal/NRWaveInject.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
-#include <lal/LALFrameL.h>
 
 #include <LALAppsVCSInfo.h>
 

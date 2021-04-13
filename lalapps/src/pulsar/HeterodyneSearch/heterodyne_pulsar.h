@@ -73,7 +73,6 @@
 /* lalapps header */
 #include <LALAppsVCSInfo.h>
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif

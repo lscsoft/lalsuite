@@ -21,7 +21,9 @@
 #include <config.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <lal/LALFrameL.h>
+
+#include <FrameL.h>
+
 #include <lal/LALgetopt.h>
 
 

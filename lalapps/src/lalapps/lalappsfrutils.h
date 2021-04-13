@@ -36,6 +36,8 @@
 #include <regex.h>
 #include <time.h>
 
+#include <FrameL.h>
+
 #include <lal/LALConfig.h>
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
@@ -43,7 +45,6 @@
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
-#include <lal/LALFrameL.h>
 
 #include "series.h"
 
