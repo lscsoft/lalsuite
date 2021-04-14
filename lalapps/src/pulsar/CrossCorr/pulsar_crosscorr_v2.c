@@ -1012,14 +1012,12 @@ int main(int argc, char *argv[]){
         LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
         XLAL_ERROR( XLAL_EFUNC );
       }
-
       if (XLALUserVarWasSet(&uvar.LatticeOutputFilename)) { /* Write the list of pairs to a file, if a name was provided */
 	if((fp = fopen(uvar.LatticeOutputFilename, "w")) == NULL){
 	  LogPrintf ( LOG_CRITICAL, "Can't write in Lattice file \n");
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
       }
-
       demodLoopCrossCorr(multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist, ndim, dimf, dima, dimT, dimP, g_ij, fp, &numpoints, &config);
 
       XLALDestroyMultiSFTVector ( inputSFTs );
@@ -1808,9 +1806,10 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
     curr_point->data[DEMODdimT] = uvar.orbitTimeAsc + (uvar.orbitTimeAscBand/2.0);
     curr_point->data[DEMODdima] = uvar.orbitAsiniSec + (uvar.orbitAsiniSecBand/2.0);
     curr_point->data[DEMODdimf]  = uvar.fStart + (uvar.fBand/2.0);
+    if (LatticeReadFile != NULL){
     fprintf(LatticeReadFile, "TASC\tPORB\tASINI\tFREQ\n");
     fprintf(LatticeReadFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]);
-
+      }
     while ( XLALNextLatticeTilingPoint(iterator, curr_point) > 0 )
       {
 	dopplerpos.fkdot[0] = curr_point->data[DEMODdimf];
@@ -1826,7 +1825,9 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	    * config->dPorbdTascShear;
 	}
 
-	fprintf(LatticeReadFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]); 
+	if (LatticeReadFile != NULL){
+	  fprintf(LatticeReadFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]); 
+	}
 	/* if counter is on first point, the orbital points haven't changed so make the dopplerShiftFlag = FALSE*/
 	if (*DEMODnumpoints == 1)
 	  {
