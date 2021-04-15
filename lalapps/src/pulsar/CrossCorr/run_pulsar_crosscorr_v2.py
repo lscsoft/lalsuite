@@ -62,16 +62,19 @@ program_args += ['--logFilename=%s' % logfileName]
 
 #check if latticeFilename is in the ini file
 if cp.has_section('program') and cp.has_option('filename-patterns','latticefile_name'):
-    print("has latticefile")
+#    print("has latticefile")
     latticefilePattern = cp.get('filename-patterns','latticefile_name')
     latticefileName = latticefilePattern % (args.jobNum, args.numJobs)
     program_args += ['--LatticeOutputFilename=%s' % latticefileName]
 
 if cp.has_section('raw-program-arguments') and cp.has_option('raw-program-arguments','latticeType'):
-    print("has lattice--uselattice")
-    program_args += ['--useLattice']
-    latticeType = cp.get('raw-program-arguments','latticeType')
-    program_args += ['--latticeType=%s' % latticeType]
+    if cp.get('raw-program-arguments','latticeType') == 'byHand' or cp.get('raw-program-arguments','latticeType') =='byhand' or cp.get('raw-program-arguments','latticeType') =='byhand':
+        print ("no lattice")
+    else:
+        print("has lattice--uselattice")
+        program_args += ['--useLattice']
+        #    latticeType = cp.get('raw-program-arguments','latticeType')
+        #    program_args += ['--latticeType=%s' % latticeType]
 
 
 if cp.has_section('raw-program-arguments') and cp.has_option('raw-program-arguments','useShearedPeriod'):
