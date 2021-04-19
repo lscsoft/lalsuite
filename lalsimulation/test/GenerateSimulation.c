@@ -210,6 +210,8 @@ const char * usage =
 "                           Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html.\n"
 "--phenomXPrecVersion int   Choose precessing version for the Euler angles.\n"
 "                           Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html.\n"
+"--phenomXPFinalSpinMod int Choose final spin prescription.\n"
+"                           Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html.\n"
 ;
 
 /* Parse command line, sanity check arguments, and return a newly
@@ -403,6 +405,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             XLALSimInspiralWaveformParamsInsertPhenomXPHMThresholdMband(params->params, atoi(argv[++i]));
         }else if(strcmp(argv[i], "--phenomXPrecVersion") == 0){
             XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(params->params, atoi(argv[++i]));
+        }else if(strcmp(argv[i], "--phenomXPFinalSpinMod") == 0){
+            XLALSimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(params->params, atoi(argv[++i]));
         }else {
             XLALPrintError("Error: invalid option: %s\n", argv[i]);
             goto fail;

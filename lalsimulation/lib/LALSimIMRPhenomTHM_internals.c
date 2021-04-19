@@ -121,6 +121,8 @@ int IMRPhenomTSetWaveformVariables(
 	wf->Mfinal    = XLALSimIMRPhenomXFinalMass2017(wf->eta,wf->chi1L,wf->chi2L);
 	wf->afinal    = XLALSimIMRPhenomXFinalSpin2017(wf->eta,wf->chi1L,wf->chi2L);
 
+	wf->afinal_prec = XLALSimIMRPhenomXFinalSpin2017(wf->eta,wf->chi1L,wf->chi2L);
+
 	/* Distance*/
 	wf->distance    = distance;
 
@@ -178,6 +180,15 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
 	pPhase->omegaRING = omegaRING;
 	pPhase->alpha1RD  = alpha1RD;
 
+	pPhase->omegaRING_prec = 2*LAL_PI*evaluate_QNMfit_fring22(wf->afinal_prec) / (wf->Mfinal);
+	pPhase->alpha1RD_prec  = 2*LAL_PI*evaluate_QNMfit_fdamp22(wf->afinal_prec) / (wf->Mfinal);
+
+	pPhase->EulerRDslope = 2*LAL_PI*(evaluate_QNMfit_fring22(wf->afinal_prec) / (wf->Mfinal) - evaluate_QNMfit_fring21(wf->afinal_prec) / (wf->Mfinal)); // FIXME: 
+	if(wf->afinal<0)
+	{
+		pPhase->EulerRDslope = -pPhase->EulerRDslope;
+	}
+
 	/* Dimensionless minimum and reference frequencies */
 	pPhase->MfRef = wf->MfRef;
 	pPhase->Mfmin = wf->Mfmin;
@@ -204,7 +215,8 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
 	pPhase->c3 = IMRPhenomT_RD_Freq_D3_22(eta, S, dchi, delta);
 	pPhase->c2 = IMRPhenomT_RD_Freq_D2_22(eta, S, dchi, delta);
 	pPhase->c4 = 0.0;
-	pPhase->c1 = (1 + pPhase->c3 + pPhase->c4)*(omegaRING - pPhase->omegaPeak)/pPhase->c2/(pPhase->c3 + 2*pPhase->c4);
+	pPhase->c1 = (1 + pPhase->c3 + pPhase->c4)*(pPhase->omegaRING - pPhase->omegaPeak)/pPhase->c2/(pPhase->c3 + 2*pPhase->c4);
+	pPhase->c1_prec = (1 + pPhase->c3 + pPhase->c4)*(pPhase->omegaRING_prec - pPhase->omegaPeak)/pPhase->c2/(pPhase->c3 + 2*pPhase->c4);
 
 	/* ********************************** */
 	/* *** INSPIRAL COEFFICIENTS ******** */
@@ -502,16 +514,18 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
     /* Allocate a brent solver and set it to use F */
     /* Left boundary of the solver is set at a sufficient early time such that above one solar mass, it exists a solution. */
     solver_type = gsl_root_fsolver_brent;
-    solver = gsl_root_fsolver_alloc(solver_type);
-    gsl_root_fsolver_set(solver, &F, -1000000000.0,tEnd);
+    gsl_set_error_handler_off();
 
     int status;
+    int status_solver = GSL_CONTINUE;
+    solver = gsl_root_fsolver_alloc(solver_type);
+    status = gsl_root_fsolver_set(solver, &F, -1000000000.0,tEnd);
+
     double r = 0.0;
-    status = GSL_CONTINUE;
-    for (UINT4 i = 1; i <= 1000 && status == GSL_CONTINUE; ++i) {
+    for (UINT4 i = 1; i <= 1000 && status_solver == GSL_CONTINUE; ++i) {
         /* iterate one step of the solver */
-        status = gsl_root_fsolver_iterate(solver);
-        if (status != GSL_SUCCESS)
+        status_solver = gsl_root_fsolver_iterate(solver);
+        if (status_solver != GSL_SUCCESS)
             break;
 
         /* get the solver's current best solution and bounds */
@@ -520,9 +534,9 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
         double x_hi = gsl_root_fsolver_x_upper(solver);
 
         /* Check to see if the solution is within 0.0001 */
-        status = gsl_root_test_interval(x_lo, x_hi, 0, 0.0001);
+        status_solver = gsl_root_test_interval(x_lo, x_hi, 0, 0.0001);
         }
-    XLAL_CHECK(GSL_SUCCESS == status, XLAL_EFUNC, "Error: Root finder unable to solve minimum time.");
+    XLAL_CHECK(GSL_SUCCESS == status, XLAL_EFUNC, "Error: Root finder unable to solve minimum time. Minimum frequency may be too high for these parameters. Try reducing fmin below the peak frequency: %.8f Hz. \n", pPhase->omegaPeak/(LAL_TWOPI*wf->M_sec));
 
     pPhase->tmin = r; // Minimum time is selected as the solution of the above root finding operation
     gsl_root_fsolver_free(solver); // Free the gsl solver
@@ -547,13 +561,13 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
     	/* Allocate a brent solver and set it to use F */
     	solver_type = gsl_root_fsolver_brent;
     	solver = gsl_root_fsolver_alloc(solver_type);
-    	gsl_root_fsolver_set(solver, &F, -1000000000.0,tEnd);
+    	status = gsl_root_fsolver_set(solver, &F, -1000000000.0,tEnd);
+    	status_solver = GSL_CONTINUE;
 
-    	status = GSL_CONTINUE;
-    	for (UINT4 i = 1; i <= 1000 && status == GSL_CONTINUE; ++i) {
+    	for (UINT4 i = 1; i <= 1000 && status_solver == GSL_CONTINUE; ++i) {
         	/* iterate one step of the solver */
-        	status = gsl_root_fsolver_iterate(solver);
-        	if (status != GSL_SUCCESS)
+        	status_solver = gsl_root_fsolver_iterate(solver);
+        	if (status_solver != GSL_SUCCESS)
             	break;
 
         	/* get the solver's current best solution and bounds */
@@ -562,9 +576,9 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
         	double x_hi = gsl_root_fsolver_x_upper(solver);
 
         	/* Check to see if the solution is within 0.001 */
-        	status = gsl_root_test_interval(x_lo, x_hi, 0, 0.0001);
+        	status_solver = gsl_root_test_interval(x_lo, x_hi, 0, 0.0001);
         	}
-        	XLAL_CHECK(GSL_SUCCESS == status, XLAL_EFUNC, "Error: Root finder unable to solve reference time.");
+        	XLAL_CHECK(GSL_SUCCESS == status, XLAL_EFUNC, "Error: Root finder unable to solve reference time. Reference frequency may be too high for these parameters. Try reducing fRef below the peak frequency: %.8f Hz. \n", pPhase->omegaPeak/(LAL_TWOPI*wf->M_sec));
 
     	pPhase->tRef = r;
     	gsl_root_fsolver_free(solver);
@@ -631,7 +645,7 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 
 	REAL8 ampInspCP[3]; // Inspiral collocation point values.
 	REAL8 ampMergerCP1, ampPeak;    // Merger collocation point value and peak amplitude
-	REAL8 ampRDC3, fDAMP, fDAMPn2, coshc3, tanhc3; // Ringdown ansatz c3 free coefficient, damping frequencies and needed quantities to compute ringdown ansatz coefficients.
+	REAL8 ampRDC3, fDAMP, fDAMPn2, fDAMP_prec, fDAMPn2_prec, coshc3, tanhc3; // Ringdown ansatz c3 free coefficient, damping frequencies and needed quantities to compute ringdown ansatz coefficients.
 	/* Ringdown ansatz coefficients c_{1,2,3,4} as defined in eq. [6-8] of Damour&Nagar 2014 (https://arxiv.org/pdf/1406.0401.pdf), also explained in eq.26 of THM paper (https://dcc.ligo.org/DocDB/0172/P2000524/001/PhenomTHM_SH-3.pdf)
 	 and alpha_1, alpha_2, alpha_21 as defined in Sec IV of the same reference are stored in the amplitude struct since they are directly passed to the ringdown ansatz.
 	 tshift, also passed to the amplitude struct, corresponds to the peak amplitude time of the (l,m) mode (0 for the 22 by construction). */
@@ -656,9 +670,8 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 		fDAMP     = evaluate_QNMfit_fdamp22(wf->afinal) / (wf->Mfinal); //damping frequency of 122 QNM
 		fDAMPn2   = evaluate_QNMfit_fdamp22n2(wf->afinal) / (wf->Mfinal); //damping frequency of 222 QNM
 
-		pAmp->alpha1RD = 2*LAL_PI*fDAMP;
-		pAmp->alpha2RD = 2*LAL_PI*fDAMPn2;
-		pAmp->alpha21RD = 0.5*(pAmp->alpha2RD - pAmp->alpha1RD); //Coefficient c_2 of ringdown amplitude ansatz as defined in equation 7 of Damour&Nagar 2014 (https://arxiv.org/pdf/1406.0401.pdf) and eq.26d of https://dcc.ligo.org/DocDB/0172/P2000524/001/PhenomTHM_SH-3.pdf
+		fDAMP_prec = evaluate_QNMfit_fdamp22(wf->afinal_prec) / (wf->Mfinal);
+		fDAMPn2_prec   = evaluate_QNMfit_fdamp22n2(wf->afinal_prec) / (wf->Mfinal);
 
 		pAmp->tshift = 0.0; //Peak time, by construction 0 for l=2, m=2
 
@@ -702,9 +715,8 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 		fDAMP     = evaluate_QNMfit_fdamp21(wf->afinal) / (wf->Mfinal); //damping frequency of 121 QNM
 		fDAMPn2   = evaluate_QNMfit_fdamp21n2(wf->afinal) / (wf->Mfinal); //damping frequency of 221 QNM
 
-		pAmp->alpha1RD = 2*LAL_PI*fDAMP;
-		pAmp->alpha2RD = 2*LAL_PI*fDAMPn2;
-		pAmp->alpha21RD = 0.5*(pAmp->alpha2RD - pAmp->alpha1RD);
+		fDAMP_prec = evaluate_QNMfit_fdamp21(wf->afinal_prec) / (wf->Mfinal);
+		fDAMPn2_prec   = evaluate_QNMfit_fdamp21n2(wf->afinal_prec) / (wf->Mfinal);
 
 		pAmp->tshift = IMRPhenomT_tshift_21(eta, S, dchi); //Peak time of l=2, m=1 mode
 
@@ -748,9 +760,8 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 		fDAMP     = evaluate_QNMfit_fdamp33(wf->afinal) / (wf->Mfinal); //damping frequency of 133 QNM
 		fDAMPn2   = evaluate_QNMfit_fdamp33n2(wf->afinal) / (wf->Mfinal); //damping frequency of 233 QNM
 
-		pAmp->alpha1RD = 2*LAL_PI*fDAMP;
-		pAmp->alpha2RD = 2*LAL_PI*fDAMPn2;
-		pAmp->alpha21RD = 0.5*(pAmp->alpha2RD - pAmp->alpha1RD); //Peak time of l=3, m=3 mode
+		fDAMP_prec = evaluate_QNMfit_fdamp33(wf->afinal_prec) / (wf->Mfinal);
+		fDAMPn2_prec   = evaluate_QNMfit_fdamp33n2(wf->afinal_prec) / (wf->Mfinal);
 
 		pAmp->tshift = IMRPhenomT_tshift_33(eta, S);
 
@@ -794,9 +805,8 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 		fDAMP     = evaluate_QNMfit_fdamp44(wf->afinal) / (wf->Mfinal); //damping frequency of 144 QNM
 		fDAMPn2   = evaluate_QNMfit_fdamp44n2(wf->afinal) / (wf->Mfinal); //damping frequency of 244 QNM
 
-		pAmp->alpha1RD = 2*LAL_PI*fDAMP;
-		pAmp->alpha2RD = 2*LAL_PI*fDAMPn2;
-		pAmp->alpha21RD = 0.5*(pAmp->alpha2RD - pAmp->alpha1RD);
+		fDAMP_prec = evaluate_QNMfit_fdamp44(wf->afinal_prec) / (wf->Mfinal);
+		fDAMPn2_prec   = evaluate_QNMfit_fdamp44n2(wf->afinal_prec) / (wf->Mfinal);
 
 		pAmp->tshift = IMRPhenomT_tshift_44(eta, S); //Peak time of l=4, m=4 mode
 
@@ -840,9 +850,8 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 		fDAMP     = evaluate_QNMfit_fdamp55(wf->afinal) / (wf->Mfinal); //damping frequency of 155 QNM
 		fDAMPn2   = evaluate_QNMfit_fdamp55n2(wf->afinal) / (wf->Mfinal); //damping frequency of 255 QNM
 
-		pAmp->alpha1RD = 2*LAL_PI*fDAMP;
-		pAmp->alpha2RD = 2*LAL_PI*fDAMPn2;
-		pAmp->alpha21RD = 0.5*(pAmp->alpha2RD - pAmp->alpha1RD);
+		fDAMP_prec = evaluate_QNMfit_fdamp55(wf->afinal_prec) / (wf->Mfinal);
+		fDAMPn2_prec   = evaluate_QNMfit_fdamp55n2(wf->afinal_prec) / (wf->Mfinal);
 
 		pAmp->tshift = IMRPhenomT_tshift_55(eta, S); //Peak time of l=5, m=5 mode
 
@@ -885,8 +894,18 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 	/* Ringdown ansatz coefficients as defined in in eq. [6-8] of Damour&Nagar 2014 (https://arxiv.org/pdf/1406.0401.pdf).
 	See also eq.26c-e of THM paper: https://dcc.ligo.org/DocDB/0172/P2000524/001/PhenomTHM_SH-3.pdf
 	Essentially, c3 is the only calibrated coefficient. c2 accounts for the effect of the first overtone in the early ringdown, and c1 and c4 fix the peak amplitude and null derivative at peak */
+	
+	pAmp->alpha1RD = 2*LAL_PI*fDAMP;
+	pAmp->alpha2RD = 2*LAL_PI*fDAMPn2;
+	pAmp->alpha21RD = 0.5*(pAmp->alpha2RD - pAmp->alpha1RD); //Coefficient c_2 of ringdown amplitude ansatz as defined in equation 7 of Damour&Nagar 2014 (https://arxiv.org/pdf/1406.0401.pdf) and eq.26d of https://dcc.ligo.org/DocDB/0172/P2000524/001/PhenomTHM_SH-3.pdf
+
+	pAmp->alpha1RD_prec = 2*LAL_PI*fDAMP_prec;
+	pAmp->alpha2RD_prec = 2*LAL_PI*fDAMPn2_prec;
+	pAmp->alpha21RD_prec = 0.5*(pAmp->alpha2RD_prec - pAmp->alpha1RD_prec);
+
 	pAmp->c3 = ampRDC3;
 	pAmp->c2 = 0.5*(pAmp->alpha2RD - pAmp->alpha1RD);
+	pAmp->c2_prec = 0.5*(pAmp->alpha2RD_prec - pAmp->alpha1RD_prec);
 
 	phi = gsl_complex_rect(pAmp->c3,0); // Needed complex parameter for gsl hyperbolic functions
 	coshc3 =  GSL_REAL(gsl_complex_cosh(phi));
@@ -897,9 +916,16 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 	{
 		pAmp->c2 = -0.5*pAmp->alpha1RD/tanhc3;
 	}
+	if(fabs(pAmp->c2_prec) > fabs(0.5*pAmp->alpha1RD_prec/tanhc3))
+	{
+		pAmp->c2_prec = -0.5*pAmp->alpha1RD_prec/tanhc3;
+	}
+	
 
 	pAmp->c1 = ampPeak*pAmp->alpha1RD*coshc3*coshc3/pAmp->c2;
+	pAmp->c1_prec = ampPeak*pAmp->alpha1RD_prec*coshc3*coshc3/pAmp->c2_prec;
 	pAmp->c4 = ampPeak - pAmp->c1*tanhc3;
+	pAmp->c4_prec = ampPeak - pAmp->c1_prec*tanhc3;
 
 	/***********************************************************/
 	/************** INSPIRAL COEFFICIENTS SOLUTION *************/
@@ -1164,6 +1190,9 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->alpha2RD = 2*LAL_PI*fDAMPn2;
 		pPhaseHM->alpha21RD = 0.5*(pPhaseHM->alpha2RD - pPhaseHM->alpha1RD);
 
+		pPhaseHM->omegaRING_prec = 2*LAL_PI*evaluate_QNMfit_fring22(wf->afinal_prec) / (wf->Mfinal);
+		pPhaseHM->alpha1RD_prec  = 2*LAL_PI*evaluate_QNMfit_fdamp22(wf->afinal_prec) / (wf->Mfinal);
+
 
 		omegaCutBar = 1. - (omegaCut + omegaCutPNAMP)/pPhaseHM->omegaRING; // Value of the rescaled inspiral frequency at the boundary time. Notice that it includes the contribution from the complex amplitude.
 		omegaMergerCP = 1. - IMRPhenomT_Merger_Freq_CP1_22(eta, S, dchi, delta)/pPhaseHM->omegaRING; // Value of the rescaled collocation point.
@@ -1178,6 +1207,7 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->c2 = IMRPhenomT_RD_Freq_D2_22(eta, S, dchi, delta);
 		pPhaseHM->c4 = 0.0;
 		pPhaseHM->c1 = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
+		pPhaseHM->c1_prec = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING_prec - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
 
 	}
 
@@ -1193,6 +1223,9 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->alpha2RD = 2*LAL_PI*fDAMPn2;
 		pPhaseHM->alpha21RD = 0.5*(pPhaseHM->alpha2RD - pPhaseHM->alpha1RD);
 
+		pPhaseHM->omegaRING_prec = 2*LAL_PI*evaluate_QNMfit_fring21(wf->afinal_prec) / (wf->Mfinal);
+		pPhaseHM->alpha1RD_prec  = 2*LAL_PI*evaluate_QNMfit_fdamp21(wf->afinal_prec) / (wf->Mfinal);
+
 		omegaCut = 0.5*omegaCut; // Frequency at the inspiral boundary coming from the 2,2 rescaling
 		omegaCutBar = 1. - (omegaCut + omegaCutPNAMP)/pPhaseHM->omegaRING; // Value of the rescaled inspiral frequency at the boundary time. Notice that it includes the contribution from the complex amplitude.
 		omegaMergerCP = 1. - IMRPhenomT_Merger_Freq_CP1_21(eta, S, dchi, delta)/pPhaseHM->omegaRING; // Value of the rescaled collocation point.
@@ -1203,6 +1236,7 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->c2 = IMRPhenomT_RD_Freq_D2_21(eta, S, dchi, delta);
 		pPhaseHM->c4 = 0.0;
 		pPhaseHM->c1 = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
+		pPhaseHM->c1_prec = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING_prec - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
 
 		domegaCut = -0.5*domegaCut/pPhaseHM->omegaRING; //Rescaled frequency derivative at the inspiral boundary
 		domegaPeak = -(IMRPhenomTRDOmegaAnsatzHM(0.00001, pPhaseHM) - IMRPhenomTRDOmegaAnsatzHM(0., pPhaseHM))/(0.00001)/pPhaseHM->omegaRING; //Rescaled numerical frequency derivative at the ringdown boundary
@@ -1222,6 +1256,9 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->alpha2RD = 2*LAL_PI*fDAMPn2;
 		pPhaseHM->alpha21RD = 0.5*(pPhaseHM->alpha2RD - pPhaseHM->alpha1RD);
 
+		pPhaseHM->omegaRING_prec = 2*LAL_PI*evaluate_QNMfit_fring33(wf->afinal_prec) / (wf->Mfinal);
+		pPhaseHM->alpha1RD_prec  = 2*LAL_PI*evaluate_QNMfit_fdamp33(wf->afinal_prec) / (wf->Mfinal);
+
 		omegaCut = 1.5*omegaCut; // Frequency at the inspiral boundary coming from the 2,2 rescaling
 		omegaCutBar = 1. - (omegaCut + omegaCutPNAMP)/pPhaseHM->omegaRING; // Value of the rescaled inspiral frequency at the boundary time. Notice that it includes the contribution from the complex amplitude.
 		omegaMergerCP = 1. - IMRPhenomT_Merger_Freq_CP1_33(eta, S, dchi, delta)/pPhaseHM->omegaRING; // Value of the rescaled collocation point.
@@ -1232,6 +1269,7 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->c2 = IMRPhenomT_RD_Freq_D2_33(eta, S, dchi, delta);
 		pPhaseHM->c4 = 0.0;
 		pPhaseHM->c1 = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
+		pPhaseHM->c1_prec = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING_prec - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
 
 		domegaCut = -1.5*domegaCut/pPhaseHM->omegaRING; //Rescaled frequency derivative at the inspiral boundary
 		domegaPeak = -(IMRPhenomTRDOmegaAnsatzHM(0.00001, pPhaseHM) - IMRPhenomTRDOmegaAnsatzHM(0., pPhaseHM))/(0.00001)/pPhaseHM->omegaRING; //Rescaled numerical frequency derivative at the ringdown boundary
@@ -1251,6 +1289,9 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->alpha2RD = 2*LAL_PI*fDAMPn2;
 		pPhaseHM->alpha21RD = 0.5*(pPhaseHM->alpha2RD - pPhaseHM->alpha1RD);
 
+		pPhaseHM->omegaRING_prec = 2*LAL_PI*evaluate_QNMfit_fring44(wf->afinal_prec) / (wf->Mfinal);
+		pPhaseHM->alpha1RD_prec  = 2*LAL_PI*evaluate_QNMfit_fdamp44(wf->afinal_prec) / (wf->Mfinal);
+
 		omegaCut = 2*omegaCut; // Frequency at the inspiral boundary coming from the 2,2 rescaling
 		omegaCutBar = 1. - (omegaCut + omegaCutPNAMP)/pPhaseHM->omegaRING; // Value of the rescaled inspiral frequency at the boundary time. Notice that it includes the contribution from the complex amplitude.
 		omegaMergerCP = 1. - IMRPhenomT_Merger_Freq_CP1_44(eta, S, dchi, delta)/pPhaseHM->omegaRING; // Value of the rescaled collocation point.
@@ -1261,6 +1302,7 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->c2 = IMRPhenomT_RD_Freq_D2_44(eta, S, dchi, delta);
 		pPhaseHM->c4 = 0.0;
 		pPhaseHM->c1 = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
+		pPhaseHM->c1_prec = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING_prec - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
 
 		domegaCut = -2.0*domegaCut/pPhaseHM->omegaRING; //Rescaled frequency derivative at the inspiral boundary
 		domegaPeak = -(IMRPhenomTRDOmegaAnsatzHM(0.0000001, pPhaseHM) - IMRPhenomTRDOmegaAnsatzHM(0., pPhaseHM))/(0.0000001)/pPhaseHM->omegaRING; //Rescaled numerical frequency derivative at the ringdown boundary
@@ -1280,6 +1322,9 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->alpha2RD = 2*LAL_PI*fDAMPn2;
 		pPhaseHM->alpha21RD = 0.5*(pPhaseHM->alpha2RD - pPhaseHM->alpha1RD);
 
+		pPhaseHM->omegaRING_prec = 2*LAL_PI*evaluate_QNMfit_fring55(wf->afinal_prec) / (wf->Mfinal);
+		pPhaseHM->alpha1RD_prec  = 2*LAL_PI*evaluate_QNMfit_fdamp55(wf->afinal_prec) / (wf->Mfinal);
+
 		omegaCut = 2.5*omegaCut; // Frequency at the inspiral boundary coming from the 2,2 rescaling
 		omegaCutBar = 1. - (omegaCut + omegaCutPNAMP)/pPhaseHM->omegaRING; // Value of the rescaled inspiral frequency at the boundary time. Notice that it includes the contribution from the complex amplitude.
 		omegaMergerCP = 1. - IMRPhenomT_Merger_Freq_CP1_55(eta, S, dchi, delta)/pPhaseHM->omegaRING; // Value of the rescaled collocation point.
@@ -1290,6 +1335,7 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 		pPhaseHM->c2 = IMRPhenomT_RD_Freq_D2_55(eta, S, dchi, delta);
 		pPhaseHM->c4 = 0.0;
 		pPhaseHM->c1 = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
+		pPhaseHM->c1_prec = (1 + pPhaseHM->c3 + pPhaseHM->c4)*(pPhaseHM->omegaRING_prec - pPhaseHM->omegaPeak)/pPhaseHM->c2/(pPhaseHM->c3 + 2*pPhaseHM->c4);
 
 		domegaCut = -2.5*domegaCut/pPhaseHM->omegaRING; //Rescaled frequency derivative at the inspiral boundary
 		domegaPeak = -(IMRPhenomTRDOmegaAnsatzHM(0.0000001, pPhaseHM) - IMRPhenomTRDOmegaAnsatzHM(0., pPhaseHM))/(0.0000001)/pPhaseHM->omegaRING; //Rescaled numerical frequency derivative at the ringdown boundary
@@ -1529,7 +1575,7 @@ double IMRPhenomTRDPhaseAnsatz22(REAL8 t, IMRPhenomTPhase22Struct *pPhase){
    REAL8 c3 = pPhase->c3;
    REAL8 c4 = pPhase->c4;
    REAL8 c2 = pPhase->c2;
-   REAL8 c1 = pPhase->c1;
+   REAL8 c1 = pPhase->c1_prec;
 
 
    REAL8 expC = exp(-c2*t);
@@ -1539,7 +1585,7 @@ double IMRPhenomTRDPhaseAnsatz22(REAL8 t, IMRPhenomTPhase22Struct *pPhase){
    REAL8 den = 1 + c3 + c4;
    REAL8 aux = log(num/den);
 
-   return (c1*aux + pPhase->omegaRING*t + pPhase->phOffRD);
+   return (c1*aux + pPhase->omegaRING_prec*t + pPhase->phOffRD);
 }
 
 /* ---------------------------------------------------------------------------------------------------- */
@@ -1620,7 +1666,7 @@ double IMRPhenomTRDPhaseAnsatzHM(REAL8 t, IMRPhenomTHMPhaseStruct *pPhase){
    REAL8 c3 = pPhase->c3;
    REAL8 c4 = pPhase->c4;
    REAL8 c2 = pPhase->c2;
-   REAL8 c1 = pPhase->c1;
+   REAL8 c1 = pPhase->c1_prec;
 
 
    REAL8 expC = exp(-1*c2*t);
@@ -1630,7 +1676,7 @@ double IMRPhenomTRDPhaseAnsatzHM(REAL8 t, IMRPhenomTHMPhaseStruct *pPhase){
    REAL8 den = 1 + c3 + c4;
    REAL8 aux = log(num/den);
 
-   return (c1*aux + pPhase->omegaRING*t + pPhase->phOffRD);
+   return (c1*aux + pPhase->omegaRING_prec*t + pPhase->phOffRD);
 }
 
 /* *********** AMPLITUDE ANSATZ ************** */
@@ -1702,14 +1748,14 @@ double IMRPhenomTRDAmpAnsatzHM(REAL8 t, IMRPhenomTHMAmpStruct *pAmp)
 {
 	double tpeak = pAmp->tshift;
 	REAL8 c3 = pAmp->c3;
-  REAL8 c4 = pAmp->c4;
-  REAL8 c2 = pAmp->c2;
-  REAL8 c1 = pAmp->c1;
+  REAL8 c4 = pAmp->c4_prec;
+  REAL8 c2 = pAmp->c2_prec;
+  REAL8 c1 = pAmp->c1_prec;
 
   gsl_complex phi = gsl_complex_rect(c2*(t-tpeak) + c3,0);
   REAL8 tanh = GSL_REAL(gsl_complex_tanh(phi));
 
-  REAL8 expAlpha = exp(-pAmp->alpha1RD*(t-tpeak));
+  REAL8 expAlpha = exp(-pAmp->alpha1RD_prec*(t-tpeak));
 
   return expAlpha*(c1*tanh + c4);
 }
@@ -1857,4 +1903,15 @@ double GetTimeOfFreq(double t, void *params)
 	}
 
 	return(LAL_TWOPI*p->f0 - IMRPhenomTomega22(t, theta, p->wf, p->pPhase));
+}
+
+REAL8 GetEulerSlope(REAL8 af, REAL8 mf)
+{
+	REAL8 EulerRDslope = 2*LAL_PI*(evaluate_QNMfit_fring22(af) / (mf) - evaluate_QNMfit_fring21(af) / (mf)); // FIXME: 
+	if(af<0)
+	{
+		EulerRDslope = -EulerRDslope;
+	}
+
+	return EulerRDslope;
 }

@@ -54,43 +54,25 @@
 /* EXTERNAL ROUTINES */
 
 /**
- * @addtogroup LALSimIMRPhenomTHM_c
- * @brief Routines to produce IMRPhenomTHM phenomenological inspiral-merger-ringdown waveform modes and the corresponding polarisations in the time domain.
+ * @addtogroup LALSimIMRPhenomT_c
+ * @brief Routines to produce IMRPhenomT-family of phenomenological inspiral-merger-ringdown waveforms.
+ * These are time-domain models for compact binaries at comparable and extreme mass ratios, tuned to numerical-relativity simulations.
  *
- * @author Héctor Estellés
+ * - IMRPhenomT: model for the 22 mode of non-precessing binaries. Model concept together with precession was published in https://arxiv.org/abs/2004.08302. 
+ * Although an updated version together with the higher mode extension is under the DCC: https://dcc.ligo.org/LIGO-P2000524.  
+ * - IMRPhenomTHM: model with subdominant harmonics for non-precessing binaries. DCC link: https://dcc.ligo.org/LIGO-P2000524.
+ * - IMRPhenomTP: model for precessing binaries. Twisted-up version of IMRPhenomT. Original concept: https://arxiv.org/abs/2004.08302.
+ * - IMRPhenomTPHM: model for precessing binaries including higher harmonics. Twisted-up version of IMRPhenomTHM.
  *
- * IMRPhenomTHM is a phenomenological model in the time domain for aligned-spin binary black hole coalescences, calibrated with Numerical Relativity simulations for
- * comparable mass ratio and to Teukolsky waveforms at extreme mass ratio. The model produces IMR waveforms for the Spin-Weighted Spherical Harmonic modes (l,m)=(2,2), (2,1), (3,3), (4,4) and (5,5),
- * obtaining the corresponding negative m modes by symmetry.
-
- * For selecting a particular list of modes to be returned or to be employed in the polarisations construction, the user can follow the usual procedure:
- * -Create a mode array object with lalsimulation.SimInspiralCreateModeArray
- * -Activate the desired modes with lalsim.SimInspiralModeArrayActivateMode
- * -Insert the mode array into a LAL dictionary with lalsim.SimInspiralWaveformParamsInsertModeArray
- * -Pass the LAL ditionary to ChooseTDWaveform or ChooseTDModes.
- * For a user specified mode array, only the implemented modes in the model will be computed.
-
- * User option for selecting (2,2) phase and frequency reconstruction through LAL parameter PhenomTHMInspiralVersion. Default (0) will reconstruct with
- * only 1 inspiral region modelled by TaylorT3 with the merger time parameter tt0 set to 0 and additional higher order terms.
- * Non-default will provide an early inspiral region for imensionless PN time parameter theta<0.33, constructed with pure TaylorT3 (without higher orders) with tt0 calibrated
- * across parameter space. Both options maintained for code historical reasons, but not clear benefit from non-default option was found.
-
- * Model has been calibrated with 531 BBH non-precessing NR simulations from the
- * last release of the SXS Catalog, additional BAM NR simulations at q=4, q=8 and q=18, and numerical Teukolsky waveforms placed at q=200 and q=1000. Calibration procedure has followed the 
- * hierarchical data-driven fitting approach (Xisco Jimenez-Forteza et al https://arxiv.org/abs/1611.00332) using the symmetric mass ratio eta, dimensionless effective spin Shat=(m1^2*chi1+m2^2*chi2)/(m1^2+m2^2)
- * and spin difference dchi=chi1-chi2. Supplementary material for the fits of the various collocation points
- * and phenomenological coefficients is available at https://git.ligo.org/waveforms/reviews/phenomt/-/tree/master/SupplementaryMaterial/Fits3DPhenomTHM.
-
- * For reference, the publication presenting the model concept (originally only for the dominant mode and incorporating precession) is https://arxiv.org/abs/2004.08302 ,
- * the publication describing the multimode extension is on DCC under https://dcc.ligo.org/DocDB/0172/P2000524/001/PhenomTHM_SH-3.pdf .
  *
- * @review IMRPhenomTHM under review by Maria Haney, Jacob Lange, Jonathan Thompson and Eleanor Hamilton. Review wiki: https://git.ligo.org/waveforms/reviews/phenomt/-/wikis/home
+ * @review IMRPhenomT(HM) has been review by Maria Haney, Jacob Lange, Jonathan Thompson and Eleanor Hamilton. Review wiki: https://git.ligo.org/waveforms/reviews/phenomt/-/wikis/home.
+ * IMRPhenomTP(HM) are being reviewed by the same team under the same wiki page.
  *
  *
  */
 
  /**
-  * @addtogroup LALSimIMRPhenomTHM_c
+  * @addtogroup LALSimIMRPhenomT_c
   * @{
   *
   * @name Routines for IMRPhenomT
@@ -98,7 +80,10 @@
   *
   * @author Héctor Estellés
   *
-  * @brief C
+  * @brief C code for the IMRPhenomT phenomenological waveform model
+  *
+  *
+  *
   */
   
 /**
@@ -125,14 +110,17 @@ int XLALSimIMRPhenomT(
 
   INT4 status;
 
-  /* Check if lalParams is NULL and create one then. */
-  INT4 lalParams_In = 0;
-  if (lalParams == NULL)
-  {
-    lalParams_In = 1;
-    lalParams = XLALCreateDict();
-  }
-  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
+  /* Use an auxiliar laldict to not overwrite the input argument */
+   LALDict *lalParams_aux;
+   /* setup mode array */
+   if (lalParams == NULL)
+   {
+       lalParams_aux = XLALCreateDict();
+   }
+   else{
+       lalParams_aux = XLALDictDuplicate(lalParams);
+   }
+  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams_aux);
   
   /* Check if an mode array is NULL and then populate it with the (2,2) and (2,-2) modes. */
   if(ModeArray==NULL)
@@ -142,7 +130,7 @@ int XLALSimIMRPhenomT(
     XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
     XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
     /* Insert ModeArray into lalParams */
-    XLALSimInspiralWaveformParamsInsertModeArray(lalParams, ModeArray);
+    XLALSimInspiralWaveformParamsInsertModeArray(lalParams_aux, ModeArray);
     XLALDestroyValue(ModeArray);
   }
 
@@ -150,7 +138,7 @@ int XLALSimIMRPhenomT(
 
   /* Compute modes dominant modes */
   SphHarmTimeSeries *hlms = NULL;
-  status = LALSimIMRPhenomTHM_Modes(&hlms, m1_SI, m2_SI, chi1L, chi2L, distance, deltaT, fmin, fRef, phiRef, lalParams, only22);
+  status = LALSimIMRPhenomTHM_Modes(&hlms, m1_SI, m2_SI, chi1L, chi2L, distance, deltaT, fmin, fRef, phiRef, lalParams_aux, only22);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: Internal function LALSimIMRPhenomTHM_Modes has failed producing the modes.");
 
   /* Obtain length and epoch from modes (they are the same for all the modes) */
@@ -181,14 +169,45 @@ int XLALSimIMRPhenomT(
   XLALDestroySphHarmTimeSeries(hlms);
   XLALDestroySphHarmTimeSeries(hlms_temp);
 
-  /* Destroy lalParams if needed. */
-  if(lalParams_In == 1)
-  {
-    XLALDestroyDict(lalParams);
-  }
+  /* Destroy lalParams_aux. */
+  XLALDestroyDict(lalParams_aux);
+  
 
   return status;
 }
+
+/** @} */
+/**
+* @name Routines for IMRPhenomTHM
+* @{
+*
+* @author Héctor Estellés
+*
+* @brief C code for the IMRPhenomTHM phenomenological waveform model
+*
+* IMRPhenomTHM is a phenomenological model in the time domain for aligned-spin binary black hole coalescences, calibrated to Numerical Relativity simulations for
+* comparable mass ratio and Teukolsky waveforms for extreme mass ratio. The model produces IMR waveforms for the Spin-Weighted Spherical Harmonic modes (l,m)=(2,2), (2,1), (3,3), (4,4) and (5,5),
+* obtaining the corresponding negative m modes by symmetry.
+*
+* For selecting a particular list of modes to be returned or to be employed in the polarisations construction, the user can follow the usual procedure:
+* - Create a mode array object with lalsimulation.SimInspiralCreateModeArray
+* - Activate the desired modes with lalsim.SimInspiralModeArrayActivateMode
+* - Insert the mode array into a LAL dictionary with lalsim.SimInspiralWaveformParamsInsertModeArray
+* - Pass the LAL ditionary to ChooseTDWaveform or ChooseTDModes.
+* For a user specified mode array, only the implemented modes in the model will be computed.
+*
+* User option for selecting (2,2) phase and frequency reconstruction through LAL parameter PhenomTHMInspiralVersion. Default (0) will reconstruct with
+* only 1 inspiral region modelled by TaylorT3 with the merger time parameter tt0 set to 0 and additional higher order terms.
+* Non-default will provide an early inspiral region for imensionless PN time parameter theta<0.33, constructed with pure TaylorT3 (without higher orders) with tt0 calibrated
+* across parameter space. Both options maintained for code historical reasons, but not clear benefit from non-default option was found.
+*
+* Model has been calibrated to 531 BBH non-precessing NR simulations from the
+* last release of the SXS Catalog (https://iopscience.iop.org/article/10.1088/1361-6382/ab34e2), additional BAM NR simulations at q=4, q=8 and q=18, and numerical Teukolsky waveforms placed at q=200 and q=1000. Calibration procedure has followed the 
+* hierarchical data-driven fitting approach (Xisco Jimenez-Forteza et al https://arxiv.org/abs/1611.00332) using the symmetric mass ratio eta, dimensionless effective spin Shat=(m1^2*chi1+m2^2*chi2)/(m1^2+m2^2)
+* and spin difference dchi=chi1-chi2. Supplementary material for the fits of the various collocation points
+* and phenomenological coefficients is available at https://git.ligo.org/waveforms/reviews/phenomt/-/tree/master/SupplementaryMaterial/Fits3DPhenomTHM.
+*
+*/
 
 /**
  * Routine to compute time domain polarisations for IMRPhenomTHM model. It returns two real time series for the plus and the cross polarisations,
@@ -329,11 +348,11 @@ int LALSimIMRPhenomTHM_Modes(
 
   if(only22==0)
   {
-    XLAL_CHECK(check_input_mode_array(lalParams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
+    XLAL_CHECK(check_input_mode_array_THM(lalParams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
   }
   else if(only22==1)
   {
-    XLAL_CHECK(check_input_mode_array_22(lalParams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
+    XLAL_CHECK(check_input_mode_array_22_THM(lalParams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
   }
 
   /*
@@ -354,28 +373,30 @@ int LALSimIMRPhenomTHM_Modes(
    mass_ratio = m2_SI / m1_SI;
   }
   if(mass_ratio > 20.0 && chi1L < 0.9 && m2_SI/LAL_MSUN_SI >= 0.5  ) { XLAL_PRINT_INFO("Warning: Extrapolating outside of Numerical Relativity calibration domain."); }
-  if(mass_ratio > 20.0 && (chi1L >= 0.9 || m2_SI/LAL_MSUN_SI < 0.5) ) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model can be pathological at these parameters."); }
+  if(mass_ratio > 20.0 && (chi1L >= 0.9 || m2_SI/LAL_MSUN_SI < 0.5) ) { XLAL_PRINT_INFO("Warning: Model can be pathological at these parameters."); }
   if(mass_ratio > 200. && fabs(mass_ratio - 200) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 200."); } // The 1e-12 is to avoid rounding errors
   if(fabs(chi1L) > 0.99 || fabs(chi2L) > 0.99) { XLAL_PRINT_INFO("Warning: Extrapolating to extremal spins, model is not trusted."); }
 
   INT4 status;
 
-  /* Setup ModeArray reading from lalParams. */
-
-  INT4 lalParams_In = 0;
+  /* Use an auxiliar laldict to not overwrite the input argument */
+  LALDict *lalParams_aux;
+  /* setup mode array */
   if (lalParams == NULL)
   {
-    lalParams_In = 1;
-    lalParams = XLALCreateDict();
+      lalParams_aux = XLALCreateDict();
   }
-  lalParams = IMRPhenomTHM_setup_mode_array(lalParams);
-  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
+  else{
+      lalParams_aux = XLALDictDuplicate(lalParams);
+  }
+  lalParams_aux = IMRPhenomTHM_setup_mode_array(lalParams_aux);
+  LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams_aux);
 
   /* Initialise waveform struct and phase/frequency struct for the 22, needed for any mode */
 
   IMRPhenomTWaveformStruct *pWF;
   pWF    = XLALMalloc(sizeof(IMRPhenomTWaveformStruct));
-  status = IMRPhenomTSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, distance, deltaT, fmin, fRef, phiRef, lalParams);
+  status = IMRPhenomTSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, distance, deltaT, fmin, fRef, phiRef, lalParams_aux);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: Internal function IMRPhenomTSetWaveformVariables has failed.");
 
 
@@ -521,10 +542,7 @@ int LALSimIMRPhenomTHM_Modes(
 
   XLALDestroyREAL8Sequence(xorb);
 
-  if(lalParams_In == 1)
-  {
-    XLALDestroyDict(lalParams);
-  }
+  XLALDestroyDict(lalParams_aux);
 
   return status;
 }
@@ -690,7 +708,7 @@ LALDict *IMRPhenomTHM_setup_mode_array(LALDict *lalParams)
 }
 
 /* Function for checking if input mode array has supported modes by the model. Ported from IMRPhenomXHM, with modifications in the supported modes. */
-INT4 check_input_mode_array(LALDict *lalParams)
+INT4 check_input_mode_array_THM(LALDict *lalParams)
 {
 	UINT4 flagTrue = 0;
 	
@@ -734,7 +752,7 @@ INT4 check_input_mode_array(LALDict *lalParams)
 }
 
 /* Function for checking if input mode array has supported modes by the model. Ported from IMRPhenomXHM, with modifications in the supported modes. In this cases, for IMRPhenomT, only 22 and 2-2 modes are supported. */
-INT4 check_input_mode_array_22(LALDict *lalParams)
+INT4 check_input_mode_array_22_THM(LALDict *lalParams)
 {
   UINT4 flagTrue = 0;
   
