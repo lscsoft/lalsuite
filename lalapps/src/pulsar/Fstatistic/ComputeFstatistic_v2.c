@@ -236,6 +236,9 @@ typedef struct {
   REAL8 dorbitEcc;
   REAL8 orbitEccBand;
 
+  /* extra parameters for --gridType==GRID_SPINDOWN_SQUARE */
+  BOOLEAN strictSpindownBounds; /**< suppress spindown grid points outside the [fkdot,fkdotBand] ranges? */
+
   /* extra parameters for --gridType=GRID_SPINDOWN_AGEBRK parameter space */
   REAL8 spindownAge;            /**< spindown age of the object */
   REAL8 minBraking;             /**< minimum braking index */
@@ -1021,6 +1024,8 @@ initUserVars ( UserInput_t *uvar )
 
   uvar->timerCount = 10;	/* output a timer/progress count every N seconds */
 
+  uvar->strictSpindownBounds = FALSE;
+
   uvar->spindownAge = 0.0;
   uvar->minBraking = 0.0;
   uvar->maxBraking = 0.0;
@@ -1156,6 +1161,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( 	timerCount, 	 REAL8, 0,  DEVELOPER, "N: Output progress/timer info every N seconds");
 
   XLALRegisterUvarMember( 	projectMetric, 	 BOOLEAN, 0,  DEVELOPER, "Use projected metric on Freq=const subspact");
+
+  XLALRegisterUvarMember( strictSpindownBounds, BOOLEAN, 0, DEVELOPER, "suppress spindown grid points outside the [fkdot,fkdotBand] ranges? (only supported for --gridType=8)");
 
   XLALRegisterUvarMember(  spindownAge,     REAL8, 0,  DEVELOPER, "Spindown age for --gridType=9");
   XLALRegisterUvarMember(  minBraking,      REAL8, 0,  DEVELOPER, "Minimum braking index for --gridType=9");
@@ -1400,8 +1407,11 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLAL_CHECK ( (detector = XLALGetSiteInfo ( catalog->data[0].header.name ) ) != NULL, XLAL_EFUNC );
     scanInit.Detector  = detector;
 
-    /* Specific to --gridType=GRID_SPINDOWN_AGEBRK parameter space */
-    if (uvar->gridType == GRID_SPINDOWN_AGEBRK) {
+    /* Specific options for some gridTypes */
+    if (uvar->gridType == GRID_SPINDOWN_SQUARE) {
+      scanInit.extraArgs[0] = !uvar->strictSpindownBounds;
+    }
+    else if (uvar->gridType == GRID_SPINDOWN_AGEBRK) {
       scanInit.extraArgs[0] = uvar->spindownAge;
       scanInit.extraArgs[1] = uvar->minBraking;
       scanInit.extraArgs[2] = uvar->maxBraking;
@@ -1905,6 +1915,11 @@ checkUserInputConsistency ( const UserInput_t *uvar )
         XLAL_ERROR ( XLAL_EINVAL );
       }
 
+    }
+
+    if (uvar->strictSpindownBounds && ! (uvar->gridType == GRID_SPINDOWN_SQUARE) ) {
+      XLALPrintError("\nERROR: strictSpindownBounds can only be used with gridType=8\n\n");
+      XLAL_ERROR ( XLAL_EINVAL );
     }
 
     /* Specific checks for --gridType=GRID_SPINDOWN_AGEBRK parameter space */
