@@ -182,6 +182,9 @@ noinst_HEADERS = \
 	LALSimIMRPhenomTHM_fits.h \
 	LALSimIMRPhenomTHM.c \
 	LALSimIMRPhenomTHM.h \
+	LALSimIMRPhenomTPHM.c \
+	LALSimIMRPhenomTPHM_FrameRotations.c \
+	LALSimIMRPhenomTPHM_EulerAngles.c \
 	LALSimIMRPhenomX.h \
 	LALSimIMRPhenomX_internals.c \
 	LALSimIMRPhenomX_internals.h \
@@ -264,7 +267,6 @@ noinst_HEADERS = \
 	LALSimNRSur3dq8Remnant.h
 	$(END_OF_LIST)
 
-
 lib_LTLIBRARIES = liblalsimulation.la
 
 liblalsimulation_la_SOURCES = \
@@ -302,6 +304,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenomInternalUtils.c \
 	LALSimIMRPhenomUtils.c \
 	LALSimIMRPhenomTHM.c \
+	LALSimIMRPhenomTPHM.c \
 	LALSimIMRPhenomX.c \
 	LALSimIMRPhenomXUtilities.c \
 	LALSimIMRPhenomXHM.c \

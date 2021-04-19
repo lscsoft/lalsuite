@@ -42,7 +42,7 @@ extern "C" {
  * @{
  * @defgroup LALSimIMRPhenom_c                   LALSimIMRPhenom.c
  * @defgroup LALSimIMRPhenomX_c                  LALSimIMRPhenomX.c
- * @defgroup LALSimIMRPhenomTHM_c                LALSimIMRPhenomTHM.c
+ * @defgroup LALSimIMRPhenomT_c                  LALSimIMRPhenomTHM.c
  * @defgroup LALSimIMREOBNRv2_c                  LALSimIMREOBNRv2.c
  * @defgroup LALSimIMRSpinAlignedEOB_c           LALSimIMRSpinAlignedEOB.c
  * @defgroup LALSimIMRSpinPrecEOB_c              LALSimIMRSpinPrecEOB.c
@@ -848,6 +848,162 @@ int XLALSimIMRPhenomT(
   REAL8 fRef,     /**< reference GW frequency (Hz) */
   REAL8 phiRef,     /**< reference orbital phase (rad) */
   LALDict *lalParams  /**< LAL dictionary containing accessory parameters */
+  );
+
+/* IMRPhenomTPHM Routines */
+/* in module LALSimIMRPhenomTPHM.c */
+
+int XLALSimIMRPhenomTP(
+  REAL8TimeSeries **hp,       /**< [out] TD waveform for plus polarisation */
+  REAL8TimeSeries **hc,       /**< [out] TD waveform for cross polarisation */
+  REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
+  REAL8 chi1x,                /**< x component of primary spin*/
+  REAL8 chi1y,                /**< y component of primary spin*/
+  REAL8 chi1z,                /**< z component of primary spin */
+  REAL8 chi2x,                /**< x component of secondary spin*/
+  REAL8 chi2y,                /**< y component of secondary spin*/
+  REAL8 chi2z,                /**< z component of secondary spin */
+  REAL8 distance,             /**< Luminosity distance (m) */
+  REAL8 inclination,          /**< inclination (in rad) */
+  REAL8 deltaT,               /**< sampling interval (s) */
+  REAL8 fmin,               /**< starting GW frequency (Hz) */
+  REAL8 fRef,               /**< reference GW frequency (Hz) */
+  REAL8 phiRef,               /**< reference orbital phase (rad) */
+  LALDict *lalParams            /**< LAL dictionary containing accessory parameters */
+  );
+
+int XLALSimIMRPhenomTPHM(
+  REAL8TimeSeries **hp,       /**< [out] TD waveform for plus polarisation */
+  REAL8TimeSeries **hc,       /**< [out] TD waveform for cross polarisation */
+  REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
+  REAL8 chi1x,                /**< x component of primary spin*/
+  REAL8 chi1y,                /**< y component of primary spin*/
+  REAL8 chi1z,                /**< z component of primary spin */
+  REAL8 chi2x,                /**< x component of secondary spin*/
+  REAL8 chi2y,                /**< y component of secondary spin*/
+  REAL8 chi2z,                /**< z component of secondary spin */
+  REAL8 distance,             /**< Luminosity distance (m) */
+  REAL8 inclination,          /**< inclination (in rad) */
+  REAL8 deltaT,               /**< sampling interval (s) */
+  REAL8 fmin,               /**< starting GW frequency (Hz) */
+  REAL8 fRef,               /**< reference GW frequency (Hz) */
+  REAL8 phiRef,               /**< reference orbital phase (rad) */
+  LALDict *lalParams            /**< LAL dictionary containing accessory parameters */
+  );
+
+SphHarmTimeSeries* XLALSimIMRPhenomTPHM_ChooseTDModes(
+  REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
+  REAL8 chi1x,                /**< x component of primary spin*/
+  REAL8 chi1y,                /**< y component of primary spin*/
+  REAL8 chi1z,                /**< z component of primary spin */
+  REAL8 chi2x,                /**< x component of secondary spin*/
+  REAL8 chi2y,                /**< y component of secondary spin*/
+  REAL8 chi2z,                /**< z component of secondary spin */
+  REAL8 distance,             /**< Luminosity distance (m) */
+  REAL8 deltaT,               /**< sampling interval (s) */
+  REAL8 fmin,               /**< starting GW frequency (Hz) */
+  REAL8 fRef,               /**< reference GW frequency (Hz) */
+  LALDict *lalParams            /**< LAL dictionary containing accessory parameters */
+  );
+
+int XLALSimIMRPhenomTPHM_L0Modes(
+  SphHarmTimeSeries **hlmI,   /**< [out] Modes in the intertial L0=z frame*/
+  REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
+  REAL8 chi1x,                /**< x component of primary spin*/
+  REAL8 chi1y,                /**< y component of primary spin*/
+  REAL8 chi1z,                /**< z component of primary spin */
+  REAL8 chi2x,                /**< x component of secondary spin*/
+  REAL8 chi2y,                /**< y component of secondary spin*/
+  REAL8 chi2z,                /**< z component of secondary spin */
+  REAL8 distance,             /**< Luminosity distance (m) */
+  REAL8 inclination,          /**< inclination (in rad) */
+  REAL8 deltaT,               /**< sampling interval (s) */
+  REAL8 fmin,               /**< starting GW frequency (Hz) */
+  REAL8 fRef,               /**< reference GW frequency (Hz) */
+  REAL8 phiRef,               /**< reference orbital phase (rad) */
+  LALDict *lalParams,            /**< LAL dictionary containing accessory parameters */
+  UINT4 only22              /**< Flag for calling only IMRPhenomTP (dominant 22 coprec mode only) */
+  );
+
+int XLALSimIMRPhenomTPHM_JModes(
+  SphHarmTimeSeries **hlmJ,   /**< [out] Modes in the intertial J0=z frame*/
+  REAL8TimeSeries **alphaTS,  /**< [out] Precessing Euler angle alpha */
+  REAL8TimeSeries **cosbetaTS,   /**< [out] cosinus of Precessing Euler angle beta */
+  REAL8TimeSeries **gammaTS,  /**< [out] Precessing Euler angle gamma */
+  REAL8 *af,                  /**< [out] Final spin */
+  REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
+  REAL8 chi1x,                /**< x component of primary spin*/
+  REAL8 chi1y,                /**< y component of primary spin*/
+  REAL8 chi1z,                /**< z component of primary spin */
+  REAL8 chi2x,                /**< x component of secondary spin*/
+  REAL8 chi2y,                /**< y component of secondary spin*/
+  REAL8 chi2z,                /**< z component of secondary spin */
+  REAL8 distance,             /**< Luminosity distance (m) */
+  REAL8 inclination,          /**< inclination (in rad) */
+  REAL8 deltaT,               /**< sampling interval (s) */
+  REAL8 fmin,               /**< starting GW frequency (Hz) */
+  REAL8 fRef,               /**< reference GW frequency (Hz) */
+  REAL8 phiRef,               /**< reference orbital phase (rad) */
+  LALDict *lalParams,       /**< LAL dictionary containing accessory parameters */
+  UINT4 only22              /**< Flag for calling only IMRPhenomTP (dominant 22 coprec mode only) */
+  );
+
+int XLALSimIMRPhenomTPHM_EvolveOrbit(
+  REAL8TimeSeries **V,            /**< post-Newtonian parameter [returned]*/
+  REAL8TimeSeries **S1x,          /**< Spin1 vector x component [returned]*/
+  REAL8TimeSeries **S1y,          /**< "    "    "  y component [returned]*/
+  REAL8TimeSeries **S1z,          /**< "    "    "  z component [returned]*/
+  REAL8TimeSeries **S2x,          /**< Spin2 vector x component [returned]*/
+  REAL8TimeSeries **S2y,          /**< "    "    "  y component [returned]*/
+  REAL8TimeSeries **S2z,          /**< "    "    "  z component [returned]*/
+  REAL8TimeSeries **LNhatx,       /**< unit orbital ang. mom. x [returned]*/
+  REAL8TimeSeries **LNhaty,       /**< "    "    "  y component [returned]*/
+  REAL8TimeSeries **LNhatz,       /**< "    "    "  z component [returned]*/
+  REAL8TimeSeries **E1x,          /**< orb. plane basis vector x[returned]*/
+  REAL8TimeSeries **E1y,          /**< "    "    "  y component [returned]*/
+  REAL8TimeSeries **E1z,          /**< "    "    "  z component [returned]*/
+  REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
+  REAL8 chi1x,                /**< x component of primary spin*/
+  REAL8 chi1y,                /**< y component of primary spin*/
+  REAL8 chi1z,                /**< z component of primary spin */
+  REAL8 chi2x,                /**< x component of secondary spin*/
+  REAL8 chi2y,                /**< y component of secondary spin*/
+  REAL8 chi2z,                /**< z component of secondary spin */
+  REAL8 deltaT,               /**< sampling interval (s) */
+  REAL8 fmin,               /**< starting GW frequency (Hz) */
+  REAL8 fRef,               /**< reference GW frequency (Hz) */
+  REAL8 phiRef,               /**< reference orbital phase (rad) */
+  LALDict *lalParams       /**< LAL dictionary containing accessory parameters */
+  );
+
+int XLALSimIMRPhenomTPHM_CoprecModes(
+  SphHarmTimeSeries **hlmJ,   /**< [out] Modes in the intertial J0=z frame*/
+  REAL8TimeSeries **alphaTS,  /**< [out] Precessing Euler angle alpha */
+  REAL8TimeSeries **cosbetaTS,   /**< [out] Precessing Euler angle beta */
+  REAL8TimeSeries **gammaTS,  /**< [out] Precessing Euler angle gamma */
+  REAL8 *af,                  /**< [out] Final spin */
+  REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
+  REAL8 chi1x,                /**< x component of primary spin*/
+  REAL8 chi1y,                /**< y component of primary spin*/
+  REAL8 chi1z,                /**< z component of primary spin */
+  REAL8 chi2x,                /**< x component of secondary spin*/
+  REAL8 chi2y,                /**< y component of secondary spin*/
+  REAL8 chi2z,                /**< z component of secondary spin */
+  REAL8 distance,             /**< Luminosity distance (m) */
+  REAL8 inclination,          /**< inclination (in rad) */
+  REAL8 deltaT,               /**< sampling interval (s) */
+  REAL8 fmin,               /**< starting GW frequency (Hz) */
+  REAL8 fRef,               /**< reference GW frequency (Hz) */
+  REAL8 phiRef,               /**< reference orbital phase (rad) */
+  LALDict *lalParams,       /**< LAL dictionary containing accessory parameters */
+  UINT4 only22              /**< Flag for calling only IMRPhenomTP (dominant 22 coprec mode only) */
   );
 
 /* in module LALSimIMRTEOBResumS.c */

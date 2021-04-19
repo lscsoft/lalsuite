@@ -1748,7 +1748,7 @@ int IMRPhenomXHMMultiBandOneModeMixing(
 
         phi0 = ILphaselmSS[jdx];
 
-        if(j + pointsPrecessedSoFar < lenCoarseArray){
+        if(jdx < (int)lencoarseSS-1){
           Omega = (ILphaselmSS[ jdx + 1] - ILphaselmSS[jdx])/(IntLawpoints[pointsPrecessedSoFar + j + 1] - IntLawpoints[pointsPrecessedSoFar + j]);
         }
         else{
@@ -1762,7 +1762,7 @@ int IMRPhenomXHMMultiBandOneModeMixing(
       /****  Spherical part ****/
       else{
         UINT4 jjdx = j + pointsPrecessedSoFar;
-        if(jjdx < lenCoarseArray){
+        if(jjdx < lencoarseS-1){
           Omega = (ILphaselm[jjdx+ 1] - ILphaselm[jjdx])/(IntLawpoints[jjdx + 1] - IntLawpoints[jjdx]);
         }
         else{

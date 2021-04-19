@@ -1293,7 +1293,8 @@ int XLALSimIMRPhenomXPGenerateFD(
    IMRPhenomXPrecessionStruct *pPrec;
    pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
 
-   const int pflag     = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
+   int pflag     = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
+   if (pflag == 300) pflag = 223;
 
    if(pflag != 220 && pflag != 221 && pflag != 222 && pflag != 223 && pflag != 224)
    {
