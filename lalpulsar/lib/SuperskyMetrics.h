@@ -20,6 +20,7 @@
 #ifndef _SUPERSKYMETRICS_H
 #define _SUPERSKYMETRICS_H
 
+#include <stdbool.h>
 #include <gsl/gsl_matrix.h>
 #include <lal/LALStdlib.h>
 #include <lal/UniversalDopplerMetric.h>
@@ -255,6 +256,17 @@ int XLALSetSuperskyPhysicalSpinBound(
   const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,                          ///< [in] First bound on frequency/spindown
   const double bound2                           ///< [in] Second bound on frequency/spindown
+  );
+
+///
+/// Set parameter-space bound padding on the physical frequency/spindowns \f$f^{(s)}\f$ for a lattice
+/// tiling using the reduced supersky metric.
+///
+int XLALSetSuperskyPhysicalSpinBoundPadding(
+  LatticeTiling *tiling,                        ///< [in] Lattice tiling
+  const SuperskyTransformData *rssky_transf,    ///< [in] Reduced supersky coordinate transform data
+  const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
+  const bool padding                            ///< [in] Whether bounds are padded
   );
 
 ///
