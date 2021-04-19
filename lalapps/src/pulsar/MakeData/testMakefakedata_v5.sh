@@ -1,6 +1,8 @@
 mfdv4_CODE="lalapps_Makefakedata_v4"
 mfdv5_CODE="lalapps_Makefakedata_v5"
 cmp_CODE="lalapps_compareSFTs"
+dump_code="lalapps_dumpSFT"
+split_code="lalapps_splitSFTs"
 
 testDIR="./mfdv5_TEST"
 
@@ -15,7 +17,7 @@ nTsft=20
 timestamps=./testT8_1800.txt
 
 ## excercise non-integer cycle gaps in heterodyned timeseries
-fmin=299.0
+fmin=299
 Band=10
 fmax=$(echo $fmin $Band | LC_ALL=C awk '{printf "%.7g", $1 + $2}');
 
@@ -279,4 +281,75 @@ if ! eval $cmdline; then
     exit 2
 else
     echo "OK."
+fi
+
+echo
+echo "--------------------------------------------------"
+echo "Test frame in/output and sub-band selection"
+echo "--------------------------------------------------"
+
+startTime=1238112018
+
+mfdv5_cmd_Base="$mfdv5_CODE --outSFTdir=$testDIR --outSingleSFT=False --SFTWindowType=tukey --SFTWindowBeta=0.001"
+
+cmdline="$mfdv5_cmd_Base --IFOs=H1 --fmin=0.0 --Band=512.0 --sqrtSX=$sqrtSn1 --startTime=$startTime --duration=$Tsft --outFrameDir=$testDIR"
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfdv5_CODE' ..."
+    exit 1
+fi
+
+cache="${testDIR}/H1_frame_cache.lcf"
+pwd=$("pwd")
+echo "H H1_mfdv5 $startTime $Tsft file://localhost/${pwd}/${testDIR}/H-H1_mfdv5-${startTime}-${Tsft}.gwf" > $cache
+
+cmdline="$mfdv5_cmd_Base --inFrames=$cache --inFrChannels=H1:mfdv5 --fmin=$fmin --Band=$Band --outLabel=mfdv5fromframes"
+echo $cmdline;
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$mfdv5_CODE' ..."
+    exit 1
+fi
+
+SFTs_orig="H-1_H1_${Tsft}SFT_mfdv5-${startTime}-${Tsft}.sft"
+# FIXME: currently need to add "Hz1" to the width part of the SFTs_split filename
+# due to the nudging required below
+SFTs_split="H-1_H1_${Tsft}SFT_NB_F0${fmin}Hz0_W00${Band}Hz1-${startTime}-${Tsft}.sft"
+SFTs_fromframes="H-1_H1_${Tsft}SFT_mfdv5fromframes-${startTime}-${Tsft}.sft"
+dumps_split="${testDIR}/dump_${SFTs_split}.txt"
+dumps_fromframes="${testDIR}/dump_${SFTs_fromframes}.txt"
+SFTs_orig="${testDIR}/${SFTs_orig}"
+SFTs_split="${testDIR}/${SFTs_split}"
+SFTs_fromframes="${testDIR}/${SFTs_fromframes}"
+
+# FIXME: currently need to nudge the end frequency a bit higher for splitSFTs
+# because by default, unlike MFDv5, it wouldn't include the last bin
+fbin=$(echo "1 / $Tsft" | bc -l)
+fmax=$(echo "$fmin + $Band + $fbin" | bc)
+splitband=$(echo "$Band + $fbin" | bc)
+cmdline="$split_code -fs $fmin -fb $splitband -fe $fmax -n $testDIR -- $SFTs_orig"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$split_code' ..."
+    exit 1
+fi
+
+cmdline="$dump_code --dataOnly --SFTfiles=$SFTs_split > $dumps_split"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$dump_code' ..."
+    exit 1
+fi
+
+cmdline="$dump_code --dataOnly --SFTfiles=$SFTs_fromframes > $dumps_fromframes"
+echo $cmdline
+if ! eval $cmdline; then
+    echo "Error.. something failed when running '$dump_code' ..."
+    exit 1
+fi
+
+diff_cmd="diff -s $dumps_split $dumps_fromframes"
+echo $diff_cmd
+if ! eval $diff_cmd; then
+    echo "error: $dumps_split and $dumps_fromframes should be equal."
+    exit 1
 fi
