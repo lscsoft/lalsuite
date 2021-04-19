@@ -70,6 +70,7 @@ typedef enum tagTilingLattice {
 /// Lattice tiling parameter-space bound padding control flags.
 ///
 typedef enum tagLatticeTilingPaddingFlags {
+  LATTICE_TILING_PAD_NONE  = 0x00,      ///< Do not add padding, and generate points strictly within parameter space
   LATTICE_TILING_PAD_LHBBX = 0x01,      ///< Add half-bounding-box padding to lower physical parameter-space bounds
   LATTICE_TILING_PAD_UHBBX = 0x02,      ///< Add half-bounding-box padding to upper physical parameter-space bounds
   LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
