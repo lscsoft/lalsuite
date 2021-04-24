@@ -5,31 +5,42 @@
 # production-ready at any time.
 
 {% set name = "lalsimulation" %}
-{% set version = "@VERSION@".replace('-', '.') %}
-{% set url = "file://@TARBALL@" %}
-{% set sha256 = "@SHA256@" %}
+
+# set version based on nightly
+# (we rebuild the nightly version ourselves because the tarball might have
+#  been generate on a different day)
+{% set base_version = "@BASE_VERSION@" %}
+{% set nightly_version = "@NIGHTLY_VERSION@" %}
+{% if nightly_version %}
+{% set version = base_version + "-dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% else %}
+{% set version = base_version %}
+{% endif %}
 
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
-{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
-  name: "{{ name }}"
-  version: "{{ version }}"
+  name: {{ name }}-split
+  version: {{ version|replace('-', '.') }}
 
 source:
-  url: "{{ url }}"
-  sha256: "{{ sha256 }}"
+  url: file://@TARBALL@
+  sha256: @SHA256@
 
 build:
+  error_overdepening: true
+  error_overlinking: true
   number: 9999
+  script_env:
+    - CI_PIPELINE_SOURCE
   skip: true  # [win]
 
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man
+    - help2man >=1.37
     - llvm-openmp  # [osx]
     - make
     - pkg-config >=0.18.0
@@ -39,33 +50,52 @@ requirements:
     - lal >={{ lal_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
-  run:
-    - gsl
-    - lal >={{ lal_version }}
-    - llvm-openmp  # [osx]
-
-test:
-  commands:
-    - lalsimulation_version --verbose
-    - lalsim-bh-qnmode -l 0 -m 0 -s 0
-    - lalsim-bh-ringdown -M 10 -a 0 -r 100 -e 0.001 -i 0 -l 2 -m 2
-    - lalsim-bh-sphwf -a 0 -l 2 -m 2 -s 0
-    - lalsim-burst -w SineGaussian -q 10 -f 100 -H 1e-21 1> /dev/null
-    - lalsim-detector-noise -C -t 1 -r 10
-    - lalsim-detector-strain --help
-    - lalsim-inject --help
-    - lalsim-inspiral > /dev/null
-    - lalsim-ns-eos-table -n ALF1 1> /dev/null
-    - lalsim-ns-mass-radius -n ALF1 1> /dev/null
-    - lalsim-ns-params -n ALF1
-    - lalsim-sgwb --geo -t 1 -r 100 -W 1 1> /dev/null
-    - lalsim-unicorn --help
 
 outputs:
-  - name: lalsimulation
+  - name: liblalsimulation
+    script: install-lib.sh
     build:
+      error_overdepending: true
+      error_overlinking: true
       run_exports:
-        - {{ pin_subpackage("lalsimulation", max_pin="x.x") }}
+        - {{ pin_subpackage("liblalsimulation", max_pin="x") }}
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - llvm-openmp  # [osx]
+        - make
+        - swig >={{ swig_version }}
+      host:
+        - gsl
+        - liblal >={{ lal_version }}
+        - libgomp  # [linux]
+        - llvm-openmp  # [osx]
+      run:
+        - gsl
+        - liblal >={{ lal_version }}
+        - llvm-openmp  # [osx]
+      run_constrained:
+        - lalsimulation >=2.5.0
+        - python-lalsimulation >=2.5.0
+    test:
+      requires:
+        - pkg-config
+      commands:
+        - pkg-config --print-errors --exact-version "{{ version }}" lalsimulation
+        - test -f ${PREFIX}/lib/liblalsimulation${SHLIB_EXT}  # [not win]
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Simulation Library
+      description: |
+        The LSC Algorithm Simulation Library for gravitational wave data
+        analysis.
+        This package contains the shared-object libraries needed to run
+        applications that use the LAL Simulation library.
 
   - name: python-lalsimulation
     script: install-python.sh
@@ -78,64 +108,97 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man
+        - help2man >=1.37
         - make
         - pkg-config >=0.18.0
         - swig >={{ swig_version }}
       host:
-        - {{ pin_subpackage('lalsimulation', exact=True) }}
+        - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - numpy
         - python
       run:
-        - gsl
-        - lal >={{ lal_version }}
-        - {{ pin_subpackage('lalsimulation', exact=True) }}
+        - liblal  # [linux]
+        - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
     test:
       requires:
-        - mock  # [py<33]
-        - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
-        - python/Makefile
         - test/python
       commands:
-        - python -m pytest -rs -v --junit-xml=junit.xml test/python
+        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python
       imports:
         - lalsimulation
         - lalsimulation.nrfits
     about:
-      home: "https://wiki.ligo.org/Computing/LALSuite"
-      doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/"
-      dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-      license: "GPL-2.0-or-later"
-      license_family: "GPL"
-      license_file: "COPYING"
-      summary: "LSC Algorithm Simulation Library"
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Simulation Library
       description: |
         The LSC Algorithm Simulation Library for gravitational wave data
         analysis.
         This package contains the python bindings.
 
+  - name: lalsimulation
+    script: install-bin.sh
+    build:
+      error_overdepending: true
+      error_overlinking: true
+      ignore_run_exports:
+        - python
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - help2man >=1.37
+        - make
+      host:
+        - gsl
+        - liblal >={{ lal_version }}
+        - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - python
+      run:
+        - gsl
+        - liblal >={{ lal_version }}
+        - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - python
+        - {{ pin_subpackage('python-lalsimulation', exact=True) }}
+    test:
+      commands:
+        - lalsimulation_version --verbose
+        - lalsim-bh-qnmode -l 0 -m 0 -s 0
+        - lalsim-bh-ringdown -M 10 -a 0 -r 100 -e 0.001 -i 0 -l 2 -m 2
+        - lalsim-bh-sphwf -a 0 -l 2 -m 2 -s 0
+        - lalsim-burst -w SineGaussian -q 10 -f 100 -H 1e-21 1> /dev/null
+        - lalsim-detector-noise -C -t 1 -r 10
+        - lalsim-detector-strain --help
+        - lalsim-inject --help
+        - lalsim-inspiral > /dev/null
+        - lalsim-ns-eos-table -n ALF1 1> /dev/null
+        - lalsim-ns-mass-radius -n ALF1 1> /dev/null
+        - lalsim-ns-params -n ALF1
+        - lalsim-sgwb --geo -t 1 -r 100 -W 1 1> /dev/null
+        - lalsim-unicorn --help
+
 about:
-  home: "https://wiki.ligo.org/Computing/LALSuite"
-  doc_url: "https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/"
-  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-  license: "GPL-2.0-or-later"
-  license_family: "GPL"
-  license_file: "COPYING"
-  summary: "LSC Algorithm Simulation Library"
+  home: https://wiki.ligo.org/Computing/LALSuite
+  doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalsimulation/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPL-2.0-or-later
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Simulation Library
   description: |
     The LSC Algorithm Simulation Library for gravitational wave data
     analysis.
-    This package contains the shared-object libraries needed to run
-    applications that use the LAL Simulation library. If you want to
-    install the Python bindings, please install the associated
-    python-lalsimulation package.
 
 extra:
+  feedstock-name: lalsimulation
   recipe-maintainers:
     - duncanmmacleod
     - skymoo

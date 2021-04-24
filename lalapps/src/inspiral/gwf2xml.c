@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /*----------------------------------------------------------------------- 
@@ -30,7 +30,9 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <lal/LALFrameL.h>
+
+#include <FrameL.h>
+
 #include <lal/LALgetopt.h>
 #include <lal/Date.h>
 #include <lal/LIGOLwXMLlegacy.h>

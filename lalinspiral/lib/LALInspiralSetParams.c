@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #include <stdio.h>
@@ -22,12 +22,12 @@
 
 /**
  * \ingroup LALInspiralBank_h
- * \brief A routine that fills an \c ::InspiralTemplate structure based on the values in the \c ::InspiralCoarseBankIn structure.
+ * \brief A routine that fills an \c InspiralTemplate structure based on the values in the \c InspiralCoarseBankIn structure.
  * \author Churches, D. K and Sathyaprakash, B.S.
  *
  * This function takes as an input a structure of type
- * \c ::InspiralCoarseBankIn and it fills up the
- * elements of a structure of type \c ::InspiralTemplate.
+ * \c InspiralCoarseBankIn and it fills up the
+ * elements of a structure of type \c InspiralTemplate.
  * The function sets the fields
  * \c massChoice, \c ieta, \c signalAmplitude,
  * \c tSampling, \c fLower, \c fCutoff,

@@ -35,9 +35,11 @@ TESTS = $(test_programs) $(test_scripts)
 EXTRA_DIST += $(test_scripts)
 
 test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
-test_script_compiler = $(test_script_runner) --verbose '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
+test_script_runner_args = --verbose '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
 EXTRA_DIST += $(test_script_runner)
 
-SH_LOG_COMPILER = $(SHELL)
+test_script_compiler = $(test_script_runner) $(test_script_runner_args)
+
+SH_LOG_COMPILER = $(test_script_compiler) $(SHELL)
 M_LOG_COMPILER = $(test_script_compiler) "$(OCTAVE)" -fH
 PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u

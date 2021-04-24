@@ -14,8 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with with program; see the file COPYING. If not, write to the
- * Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- * MA 02111-1307 USA
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA 02110-1301 USA
  */
 
 #include <string.h>
@@ -81,5 +81,24 @@ char *XLALVCSInfoString(const LALVCSInfoList vcs_list, const int verbose, const 
   }
 
   return str;
+
+}
+
+int XLALOutputVCSInfo(FILE *fp, const LALVCSInfoList vcs_list, const int verbose, const char *prefix)
+{
+
+  /* check input */
+  XLAL_CHECK( fp != NULL, XLAL_EFAULT );
+
+  /* generate VCS and build information string */
+  char *str = XLALVCSInfoString( vcs_list, verbose, prefix );
+  XLAL_CHECK( str != NULL, XLAL_EFUNC );
+
+  /* output string */
+  XLAL_CHECK( fprintf( fp, "%s", str ) >= 0, XLAL_ESYS );
+
+  XLALFree( str );
+
+  return XLAL_SUCCESS;
 
 }

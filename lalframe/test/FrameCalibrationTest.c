@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -90,13 +90,15 @@
 
 #include <stdio.h>
 #include <math.h>
+
+#include <FrameL.h>
+
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/LALFrStream.h>
 #include <lal/FrameCalibration.h>
-#include <lal/LALFrameL.h>
 #include <lal/Calibration.h>
 #include <lal/PrintFTSeries.h>
 

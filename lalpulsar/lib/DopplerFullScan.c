@@ -14,8 +14,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 /**
@@ -189,6 +189,12 @@ XLALInitDopplerFullScan ( const DopplerFullScanInit *init       /**< [in] initia
           /* Set square bounds on the frequency and spindowns */
           for (size_t i = 0; i < PULSAR_MAX_SPINS; ++i) {
             XLAL_CHECK_NULL ( XLALSetLatticeTilingConstantBound(thisScan->spindownTiling, 2 + i, init->searchRegion.fkdot[i], init->searchRegion.fkdot[i] + init->searchRegion.fkdotBand[i]) == XLAL_SUCCESS, XLAL_EFUNC );
+          }
+          /* if requested by user, suppress padding in the fkdot (k>0) dimensions;
+           * if not, default padding is kept the same as in XLALCreateLatticeTiling()
+           */
+          for (size_t i = 1; i < PULSAR_MAX_SPINS; ++i) {
+            XLAL_CHECK_NULL( XLALSetLatticeTilingPaddingFlags( thisScan->spindownTiling, 2 + i, init->extraArgs[0] ? ( LATTICE_TILING_PAD_LHBBX | LATTICE_TILING_PAD_UHBBX ) : LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
 
         } else if (thisScan->gridType == GRID_SPINDOWN_AGEBRK) { /* age-braking index parameter space */

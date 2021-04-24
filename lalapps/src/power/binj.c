@@ -14,8 +14,8 @@
  *
  * You should have received a copy of the GNU General Public License along
  * with with program; see the file COPYING. If not, write to the Free
- * Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA
- * 02111-1307  USA
+ * Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
+ * 02110-1301  USA
  */
 
 
@@ -27,6 +27,8 @@
  * ============================================================================
  */
 
+
+#include "config.h"
 
 #include <ctype.h>
 #include <stdio.h>
@@ -55,8 +57,6 @@
 #include <lal/TimeDelay.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
-
-#include <lalapps.h>
 
 #include <LALAppsVCSInfo.h>
 
@@ -895,9 +895,12 @@ static SimBurst *random_directed_btlwnb(double ra, double dec, double psi, doubl
 	sim_burst->dec = dec;
 	sim_burst->psi = psi;
 
-	/* pick a waveform */
+	/* pick a waveform.  assumes a random number generator spanning the
+	 * full integer range is in use.  at the time of writing, the
+	 * MT19937 generator is being used, which yields integers spanning
+	 * the full unsigned long int range. */
 
-	sim_burst->waveform_number = floor(gsl_ran_flat(rng, 0, ULONG_MAX));
+	sim_burst->waveform_number = gsl_rng_get(rng);
 
 	/* centre frequency.  three steps between minf and maxf */
 

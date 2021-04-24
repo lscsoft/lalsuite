@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 158
+# serial 159
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -303,7 +303,9 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   version_devel=`echo "$VERSION" | cut -d. -f4-`
   test -z "$version_micro" && version_micro=0
   test -z "$version_devel" && version_devel=0
-  configure_date=`$(top_srcdir)/gnuscripts/reproducible-date +"%Y-%m-%dT%H:%M:%S%z"`
+  reproducible_date="${srcdir}/gnuscripts/reproducible-date"
+  configure_date=`${reproducible_date} +"%Y-%m-%dT%H:%M:%S%z"` >&AS_MESSAGE_LOG_FD 2>&AS_MESSAGE_LOG_FD
+  AS_IF([test "x${configure_date}" = x],[AC_MSG_ERROR([failed to run ${reproducible_date}])])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION],["$VERSION"],AC_PACKAGE_NAME[ Version])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_MAJOR],[$version_major],AC_PACKAGE_NAME[ Version Major Number])
   AC_DEFINE_UNQUOTED(uppercase[_VERSION_MINOR],[$version_minor],AC_PACKAGE_NAME[ Version Minor Number])

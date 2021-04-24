@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 // ---------- SEE LALError.dox for doxygen documentation ----------
@@ -344,4 +344,77 @@ void REPORTSTATUS(LALStatus * status)
                       ptr->function, ptr->file, ptr->line);
     }
     return;
+}
+
+
+
+
+/*
+ * Error handlers for LALApps applications
+ */
+
+#define FAILMSG( stat, func, file, line, id )                                  \
+  do {                                                                         \
+    if ( lalDebugLevel & LALERROR )                                            \
+    {                                                                          \
+      LALPrintError( "Error[0]: file %s, line %d, %s\n"                        \
+          "\tLAL_CALL: Function call `%s' failed.\n", file, line, id, func );  \
+    }                                                                          \
+    if ( vrbflg )                                                              \
+    {                                                                          \
+      fprintf(stderr,"Level 0: %s\n\tFunction call `%s' failed.\n"             \
+          "\tfile %s, line %d\n", id, func, file, line );                      \
+      REPORTSTATUS( stat );                                                    \
+    }                                                                          \
+  } while( 0 )
+
+int vrbflg = 0;
+
+lal_errhandler_t lal_errhandler = LAL_ERR_DFLT;
+
+int LAL_ERR_EXIT(
+    LALStatus  *stat,
+    const char *func,
+    const char *file,
+    const int   line,
+    volatile const char *id
+    )
+{
+  if ( stat->statusCode )
+  {
+    FAILMSG( stat, func, file, line, id );
+    exit( 1 );
+  }
+  return stat->statusCode;
+}
+
+int LAL_ERR_ABRT(
+    LALStatus  *stat,
+    const char *func,
+    const char *file,
+    const int   line,
+    volatile const char *id
+    )
+{
+  if ( stat->statusCode )
+  {
+    FAILMSG( stat, func, file, line, id );
+    abort();
+  }
+  return 0;
+}
+
+int LAL_ERR_RTRN(
+    LALStatus  *stat,
+    const char *func,
+    const char *file,
+    const int   line,
+    volatile const char *id
+    )
+{
+  if ( stat->statusCode )
+  {
+    FAILMSG( stat, func, file, line, id );
+  }
+  return stat->statusCode;
 }

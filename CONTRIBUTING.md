@@ -18,7 +18,7 @@ but only a small number of people with reporter, developer or maintainer status.
 
 ## Contributing code
 
-All contributions to LALSuite code must be made using the fork and [merge request](https://git.ligo.org/help/user/project/merge_requests/index.md) [workflow](https://git.ligo.org/help/workflow/forking_workflow.md), which must then be reviewed by one of the project maintainers.
+All contributions to LALSuite code must be made using the fork and [merge request](https://git.ligo.org/help/user/project/merge_requests/index.md) [workflow](https://git.ligo.org/help/user/project/repository/forking_workflow.md), which must then be reviewed by one of the project maintainers.
 
 If you wish to contribute new code, or changes to existing code, please follow this development workflow:
 
@@ -27,14 +27,20 @@ If you wish to contribute new code, or changes to existing code, please follow t
 **You only need to do this once**
 
 1. Go to the [LALSuite repository home page](https://git.ligo.org/lscsoft/lalsuite)
-2. Click on the *Fork* button, that should lead you [here](https://git.ligo.org/lscsoft/lalsuite/forks/new)
+2. Click on the *Fork* button, that should lead you [here](https://git.ligo.org/lscsoft/lalsuite/-/forks/new)
 3. Select the namespace that you want to create the fork in, this will usually be your personal namespace
 
 If you can't see the *Fork* button, make sure that you are logged in by checking for your account profile photo in the top right-hand corner of the screen.
 
 ### Clone your fork
 
-Make sure that you have installed and configured [git-lfs](https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client) for the management of large files. This is required to successfully build and install your development fork. 
+Make sure that you have installed and configured [git-lfs](https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client):
+
+ ```bash
+ git lfs install
+ ```
+
+for the management of large files. This is required to successfully build and install your development fork. 
 
 Then, clone your fork with 
 
@@ -44,7 +50,7 @@ git clone git@git.ligo.org:<namespace>/lalsuite.git
 
 ### Keeping your fork up to date
 
-Link your clone to the main (`upstream`) repository so that you can `fetch` changes, `merge` them with your clone, and `push` them to your fork. Do *not* make changes on your master branch. 
+Link your clone to the main (`upstream`) repository so that you can `fetch` and `pull` changes, `merge` them with your clone, and `push` them to your fork. Do *not* make changes on your master branch. 
 
 1. Link your fork to the main repository:
 
@@ -55,16 +61,26 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` chan
 
    You need only do this step once. 
 
-2. Fetch new changes from the `upstream` repository, merge them with your master branch, and push them to your fork on git.ligo.org:
+2. Update your `master` branch to track changes from upstream:
 
     ```bash
     git checkout master
     git fetch upstream
-    git merge upstream/master
-    git push
+    git branch --set-upstream-to upstream/master
+    git pull
     ```
 
-3. You can see which remotes are configured using
+   You only need to do this step once. 
+
+3. Fetch new changes from the `upstream` repository, merge them with your master branch, and push them to your fork on git.ligo.org:
+
+    ```bash
+    git checkout master
+    git pull
+    git push origin master
+    ```
+
+4. You can see which remotes are configured using
 
    ```bash
    git remote -v
@@ -76,9 +92,11 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` chan
 
 All changes should be developed on a feature branch in order to keep them separate from other work, thus simplifying the review and merge once the work is complete. The workflow is:
 
-1. Create a new feature branch configured to track the `master` branch of the `upstream` repository:
+1. Create a new feature branch configured to track the `master` branch:
 
    ```bash
+   git checkout master
+   git pull
    git checkout -b my-new-feature upstream/master
    ```
 
@@ -97,17 +115,18 @@ All changes should be developed on a feature branch in order to keep them separa
     git push --set-upstream origin my-new-feature
     ```
 
-    Subsequenct pushes can be made with 
+    Subsequenct pushes can be made with just:
 
     ```bash
-    git push origin my-new-feature
+    git push
     ```
    
-3. Keep your feature branch up to date with the `upstream` repository by doing 
+3. Keep your feature branch up to date with the `upstream` repository by doing:
 
    ```bash
+   git checkout master
+   git pull
    git checkout my-new-feature
-   git fetch upstream
    git rebase upstream/master
    git push -f origin my-new-feature
    ```
@@ -129,17 +148,33 @@ Once the request has been opened, one of the maintainers will assign someone to 
 
 Once the changes are merged into the upstream repository, you should remove the development branch from your clone using 
 
-```
+```bash
 git branch -d my-new-feature
 ```
 
 A feature branch should *not* be repurposed for further development as this can result in problems merging upstream changes. 
 
-### Special case: CW codes in LALPulsar and LALApps
+### Speeding up the continuous integration pipeline
 
-For the continuous-wave (CW) related codes in the `lalpulsar/` and `lalapps/src/pulsar` directories,
-issues should preferentially be reported [in the CW fork tracker](https://git.ligo.org/CW/software/lalsuite/issues).
-Branches in that fork can also be used for short-term development, please also see the special contributing guide [here](https://git.ligo.org/CW/software/lalsuite/wikis/contributing).
+The Gitlab-CI (continuous integration) pipeline runs for all changes to ensure that the software still builds and passes all of the tests.
+The full pipeline (and even more so the nightly pipeline) takes a long time to carefully go through all of the package builds, but for minor changes to documentation or infrastructure this can be a waste of time and resources.
+
+Sections of the CI pipeline can be skipped by adding special key text to your commit messages as follows:
+
+| Commit message text  | Action                                        |
+| -------------------- | --------------------------------------------- |
+| `[skip compiler]`    | Skip compiler test jobs                       |
+| `[skip conda]`       | Skip Conda build jobs (and their dependents)  |
+| `[skip coverage]`    | Skip coverage jobs                            |
+| `[skip debian]`      | Skip Debian build jobs (and their dependents) |
+| `[skip docs]`        | Skip documentation jobs                       |
+| `[skip integration]` | Skip integration test jobs                    |
+| `[skip lint]`        | Skip lint jobs                                |
+| `[skip platform]`    | Skip platform test jobs                       |
+| `[skip rhel]`        | Skip RHEL build jobs (and their dependents)   |
+| `[skip wheels]`      | Skip Python wheel build jobs test jobs        |
+
+**It is important that this feature is not abused, please do not skip any jobs when making library changes.**
 
 ## More Information
 

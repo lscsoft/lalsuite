@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -47,7 +47,7 @@
  * ### Notes ###
  *
  * The void pointer} <tt>*p</tt> should point to a struct
- * of type ::EtaTau02In :
+ * of type \c EtaTau02In :
  * \code
  * {
  * void *p;

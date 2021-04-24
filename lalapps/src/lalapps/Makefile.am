@@ -30,8 +30,6 @@ noinst_LTLIBRARIES = liblalapps.la
 liblalapps_la_SOURCES = \
 	LALAppsVCSInfo.h \
 	LALAppsVCSInfoHeader.h \
-	lalapps.c \
-	lalapps.h \
 	$(FRAMESRCS)
 
 nodist_liblalapps_la_SOURCES = \
@@ -81,7 +79,6 @@ EXTRA_DIST += \
 	fftwf_wisdom.c \
 	getdate.y \
 	git_version.py \
-	lalapps.dox \
 	lalappsfrutils.c \
 	lalappsfrutils.h \
 	series.c \

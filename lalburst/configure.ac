@@ -1,15 +1,40 @@
 AC_PREREQ([2.63])
-AC_INIT([LALBurst],[1.5.5.1],[lal-discuss@ligo.org])
+AC_INIT([LALBurst],[1.5.8.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([lib/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
+
+# set library api info
+# 1. start with version information of "0:0:0" for each libtool library
+# 2. update the version information only immediately before a public
+#    release of your software. More frequent updates are unnecessary,
+#    and only guarantee that the current interface number gets larger
+#    faster.
+# 3. if the library source code has changed at all since the last
+#    update, then increment revision ("c:r:a" becomes "c:r+1:a").
+# 4. if any interfaces have been added, removed, or changed since the
+#    last update, increment current, and set revision to 0.
+# 5. if any interfaces have been added since the last public release,
+#    then increment age.
+# 6. if any interfaces have been removed since the last public release,
+#    then set age to 0.
+AC_SUBST([LIBCURRENT],[6])
+AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
+AS_CASE([${host_os}],
+  [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
+  [AC_SUBST([LIBMAJOR],[$((LIBCURRENT-LIBAGE))])]
+)
+
 AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
   debian/Makefile \
   debian/control \
+  debian/liblalburst${LIBMAJOR}.install:debian/liblalburst.install.in \
   doxygen/Makefile \
   doxygen/doxygen.cfg \
   include/Makefile \
@@ -42,9 +67,9 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.0.0"
-MIN_LALMETAIO_VERSION="1.6.0"
-MIN_LALSIMULATION_VERSION="2.1.0"
+MIN_LAL_VERSION="7.1.0"
+MIN_LALMETAIO_VERSION="2.0.0"
+MIN_LALSIMULATION_VERSION="2.5.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
@@ -55,25 +80,6 @@ LALSUITE_ARG_VAR
 
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-
-# set library api info
-# 1. start with version information of "0:0:0" for each libtool library
-# 2. update the version information only immediately before a public
-#    release of your software. More frequent updates are unnecessary,
-#    and only guarantee that the current interface number gets larger
-#    faster.
-# 3. if the library source code has changed at all since the last
-#    update, then increment revision ("c:r:a" becomes "c:r+1:a").
-# 4. if any interfaces have been added, removed, or changed since the
-#    last update, increment current, and set revision to 0.
-# 5. if any interfaces have been added since the last public release,
-#    then increment age.
-# 6. if any interfaces have been removed since the last public release,
-#    then set age to 0.
-AC_SUBST([LIBCURRENT],[6])
-AC_SUBST([LIBREVISION],[1])
-AC_SUBST([LIBAGE],[0])
-AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
@@ -86,6 +92,9 @@ LALSUITE_ENABLE_SWIG
 
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
+
+# enable help2man documentation
+LALSUITE_ENABLE_HELP2MAN
 
 # define version/configure info
 LALSUITE_VERSION_CONFIGURE_INFO

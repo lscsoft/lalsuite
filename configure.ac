@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[6.78.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[6.82.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -71,6 +71,10 @@ AC_DEFUN([lalsuite_config_subdir],[
   # if $1 is enabled
   AS_IF([test "x${lowercase}" = xtrue],[
 
+    # re-run top-level ./00boot if any package-level ./configure.ac have changed
+    # - this is needed to pick up e.g. any new inter-package dependencies
+    lalsuite_package_configure_deps="${lalsuite_package_configure_deps} "'$(top_srcdir)/lowercase/configure.ac'
+
     # export precious environment variables
     uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/lib/lib[]lowercase.la"
     uppercase[]_CFLAGS="-I${lalsuite_abs_top_builddir}/lowercase/include"
@@ -101,6 +105,7 @@ AC_DEFUN([lalsuite_config_subdir],[
 # lal and lalsupport are always configured
 lalsuite_config_doxygen([LAL])
 AC_CONFIG_SUBDIRS(lal)
+lalsuite_package_configure_deps='$(top_srcdir)/lal/configure.ac'
 LAL_LIBS="${lalsuite_abs_top_builddir}/lal/lib/liblal.la"
 LAL_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
 LAL_DATA_PATH="${lalsuite_abs_top_srcdir}/lal/test"
@@ -129,6 +134,7 @@ lalsuite_config_subdir([LALInference])
 
 # optionally configure lalapps
 AS_IF([test "x$lalapps" = xtrue],[
+  lalsuite_package_configure_deps="${lalsuite_package_configure_deps} "'$(top_srcdir)/lalapps/configure.ac'
   lalsuite_config_doxygen([LALApps])
   AC_CONFIG_SUBDIRS(lalapps)
   LALAPPS_ENABLE_VAL=ENABLED
@@ -137,6 +143,7 @@ AS_IF([test "x$lalapps" = xtrue],[
 ])
 
 AC_SUBST([ac_configure_args])
+AC_SUBST([lalsuite_package_configure_deps])
 AC_OUTPUT
 AC_MSG_NOTICE([
 ==================================================

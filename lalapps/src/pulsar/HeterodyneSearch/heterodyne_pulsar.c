@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -78,8 +78,8 @@ int main(int argc, char *argv[]){
 
   LALFILE *fpin=NULL;
   FILE *fpout=NULL;
-  static FrameCache cache;
-  INT4 count=0, frcount=0;
+  LALCache *cache=NULL;
+  INT4 count=0;
 
   CHAR outputfile[256]="";
   CHAR channel[128]="";
@@ -235,70 +235,13 @@ int main(int argc, char *argv[]){
 
   if(verbose){ fprintf(stderr, "I've read in the segment list.\n"); }
 
-  /* open input file */
-  if((fpin = XLALFileOpen(inputParams.datafile, "r")) == NULL){
-    fprintf(stderr, "Error... Can't open input data file!\n");
-    return 1;
-  }
-
-  cache.starttime = NULL;
-  cache.duration = NULL;
-  cache.framelist = NULL;
-
   if(inputParams.heterodyneflag == 0 || inputParams.heterodyneflag == 3){
     /* input comes from frame files so read in frame filenames */
-    CHAR det[10]; /* detector from cache file */
-    CHAR type[256]; /* frame type e.g. RDS_R_L3 - from cache file */
-    INT4 cachecount=0, ch=0;
-
-    /* count the number of frame files in the cache file */
-    while( (ch = XLALFileGetc(fpin) ) != EOF ){
-      if( ch == '\n' ) cachecount++;
-    }
-
-    /* rewind file pointer */
-    XLALFileRewind(fpin);
-
-    /* allocate memory for frame cache information */
-    {
-      INT4 ii=0;
-
-      if( (cache.starttime = XLALCalloc(cachecount, sizeof(INT4))) == NULL ||
-          (cache.duration = XLALCalloc(cachecount, sizeof(INT4))) == NULL ||
-          (cache.framelist = XLALCalloc(cachecount, sizeof(CHAR *))) == NULL )
-        {  XLALPrintError("Error allocating frame cache memory.\n");  }
-
-      for( ii=0; ii<cachecount; ii++ ){
-        if( (cache.framelist[ii] = XLALCalloc(MAXSTRLENGTH, sizeof(CHAR))) == NULL )
-          {  XLALPrintError("Error allocating frame list memory.\n");  }
-      }
-    }
-
-    frcount=0;
-    do{
-      CHAR linebuf[1024]; // buffer for each line
-      if ( XLALFileGets(&linebuf[0], 1024, fpin) == NULL ){
-        // skip this line
-        continue;
-      }
-
-      if ( sscanf(linebuf, "%s%s%d%d file://localhost%s", det, type, &cache.starttime[frcount], &cache.duration[frcount],
-             cache.framelist[frcount]) != 5 ){
-        // skip this line
-        continue;
-      }
-
-      frcount++;
-    }while( !XLALFileEOF(fpin) );
-    XLALFileClose(fpin);
-
-    if( frcount != cachecount ){
+    if( (cache = XLALCacheImport(inputParams.datafile)) == NULL ){
       fprintf(stderr, "Error... There's been a problem reading in the frame \
 data!\n");
       return 1;
     }
-
-    cache.length = cachecount;
 
     if(verbose){  fprintf(stderr, "I've read in the frame list.\n");  }
   }
@@ -358,7 +301,7 @@ data!\n");
   CHAR *headerinfo = XLALStringDuplicate("%% File created on ");
   headerinfo = XLALStringAppend(headerinfo, LogTimeToString( XLALGetTimeOfDay() ));
   headerinfo = XLALStringAppend(headerinfo, "\n");
-  headerinfo = XLALStringAppend(headerinfo, XLALGetVersionString( 0 ) );
+  headerinfo = XLALStringAppend(headerinfo, XLALVCSInfoString( lalAppsVCSInfoList, 0, "%% " ) );
   headerinfo = XLALStringAppend(headerinfo, "%% ");
   for ( INT4 j=0; j<argc; j++ ) {
     headerinfo = XLALStringAppend(headerinfo, argv[j]);
@@ -408,7 +351,7 @@ data!\n");
       REAL8 gpstime;
       INT4 duration;
       REAL8TimeSeries *datareal=NULL;
-      CHAR *smalllist=NULL; /* list of frame files for a science segment */
+      LALCache *smalllist=NULL; /* list of frame files for a science segment */
       LIGOTimeGPS epochdummy;
 
       epochdummy.gpsSeconds = 0;
@@ -416,12 +359,12 @@ data!\n");
 
       /* if the seg list has segment before the start time of the available
          data frame then increment the segment and continue */
-      if( stops->data[count] <= cache.starttime[0] ){
+      if( stops->data[count] <= cache->list[0].t0 ){
         count++;
         continue;
       }
       /* if there are segments after the last available data from then break */
-      if( cache.starttime[frcount-1] + cache.duration[frcount-1] <=
+      if( cache->list[cache->length-1].t0 + cache->list[cache->length-1].dt <=
           starts->data[count] )
         break;
 
@@ -438,7 +381,7 @@ data!\n");
 
       /* if there was no frame file for that segment move on */
       if((smalllist = set_frame_files(&starts->data[count], &stops->data[count],
-        cache, frcount, &count, inputParams.datachunklength))==NULL){
+        cache, &count, inputParams.datachunklength))==NULL){
         /* if there was no frame file for that segment move on */
         fprintf(stderr, "Error... no frame files listed between %d and %d.\n",
           (INT4)gpstime, (INT4)gpstime + duration);
@@ -470,7 +413,7 @@ data!\n");
 
           XLALDestroyCOMPLEX16TimeSeries( data );
 
-          XLALFree( smalllist );
+          XLALDestroyCache( smalllist );
 
           continue;
         }
@@ -487,7 +430,7 @@ data!\n");
 
       XLALDestroyREAL8TimeSeries( datareal );
 
-      XLALFree( smalllist );
+      XLALDestroyCache( smalllist );
 
       count++;
     }
@@ -507,6 +450,12 @@ data!\n");
       i=0;
 
       fprintf(stderr, "Reading heterodyned data from %s.\n", inputParams.datafile);
+
+      /* open input file */
+      if((fpin = XLALFileOpen(inputParams.datafile, "r")) == NULL){
+        fprintf(stderr, "Error... Can't open input data file!\n");
+        return 1;
+      }
 
       /* read in header info (if not working on legacy files without the header) */
       CHAR headerdata[HEADERSIZE];
@@ -758,14 +707,7 @@ data!\n");
   XLALDestroyINT4Vector( starts );
 
   if( inputParams.heterodyneflag == 0 || inputParams.heterodyneflag == 3){
-    UINT4 ii=0, cachecount=cache.length;
-
-    XLALFree( cache.starttime );
-    XLALFree( cache.duration );
-
-    for( ii=0; ii<cachecount; ii++ ) XLALFree(cache.framelist[ii]);
-
-    XLALFree( cache.framelist );
+    XLALDestroyCache(cache);
   }
 
   if( inputParams.filterknee > 0. ){
@@ -1580,71 +1522,70 @@ void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration){
 }
 
 /* function to read in frame data given a framefile and data channel */
-REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
+REAL8TimeSeries *get_frame_data(LALCache *framecache, CHAR *channel, REAL8 ttime,
   REAL8 length, INT4 duration, REAL8 samplerate, REAL8 scalefac,
   REAL8 highpass){
   REAL8TimeSeries *dblseries=NULL;
 
-  FrFile *frfile=NULL;
-  FrVect *frvect=NULL;
+  LALFrStream *frfile=NULL;
 
   LIGOTimeGPS epoch;
   INT4 i;
 
-  /* open frame file for reading */
-  if((frfile = FrFileINew(framefile)) == NULL)
-    return NULL; /* couldn't open frame file */
-
+  /* set the data epoch */
   XLALGPSSetREAL8(&epoch, ttime);
 
-  /* create data memory */
-  if( (dblseries = XLALCreateREAL8TimeSeries( channel, &epoch, 0.,
-       1./samplerate, &lalSecondUnit, (INT4)length )) == NULL )
-    {  XLALPrintError("Error allocating data times series.\n");  }
-
-  /* read in frame data */
-  if((frvect = FrFileIGetV(frfile, channel, ttime, (REAL8)duration))==NULL){
-    FrFileIEnd(frfile);
-    XLALDestroyREAL8Vector(dblseries->data);
-    XLALFree(dblseries);
-    return NULL; /* couldn't read frame data */
-  }
-
-  /* check if there was missing data within the frame(s) */
-  if(frvect->next){
-    FrFileIEnd(frfile);
-    XLALDestroyREAL8Vector(dblseries->data);
-    XLALFree(dblseries);
-    FrVectFree(frvect);
-    return NULL; /* couldn't read frame data */
-  }
-
-  FrFileIEnd(frfile);
+  /* open frame file for reading */
+  if((frfile = XLALFrStreamCacheOpen(framecache)) == NULL)
+    return NULL; /* couldn't open frame file */
 
   /* fill in vector - checking for frame data type */
-  if( frvect->type == FR_VECT_4R ){ /* data is float */
-    /* check that data doesn't contain NaNs */
-    if(isnan(frvect->dataF[0]) != 0){
-      XLALDestroyREAL8Vector(dblseries->data);
-      XLALFree(dblseries);
-      FrVectFree(frvect);
+  INT4 frtype = XLALFrStreamGetTimeSeriesType(channel, frfile);
+  if( frtype == LAL_S_TYPE_CODE ){ /* data is float */
+    REAL4TimeSeries *tseries = NULL;
+
+    if ((tseries = XLALFrStreamReadREAL4TimeSeries(frfile, channel, &epoch, duration, 0)) == NULL){
+      XLALDestroyREAL4TimeSeries(tseries);
+      XLALFrStreamClose(frfile);
       return NULL; /* couldn't read frame data */
     }
 
-    for(i=0;i<(INT4)length;i++)
-      dblseries->data->data[i] = scalefac*(REAL8)frvect->dataF[i];
+    /* create REAL8 time series */
+    if( (dblseries = XLALCreateREAL8TimeSeries( channel, &epoch, 0.,
+       1./samplerate, &lalSecondUnit, (INT4)length )) == NULL )
+    {  XLALPrintError("Error allocating data times series.\n"); }
+
+    for(i=0;i<(INT4)length;i++){
+      /* check for NaNs and scale data */
+      if ( isnan(tseries->data->data[i]) != 0 ){
+        XLALDestroyREAL8TimeSeries(dblseries);
+        XLALDestroyREAL4TimeSeries(tseries);
+        XLALFrStreamClose(frfile);
+        return NULL; /* couldn't read frame data */
+      }
+
+      dblseries->data->data[i] = scalefac * (REAL8)tseries->data->data[i];
+    }
+
+    XLALDestroyREAL4TimeSeries(tseries);
   }
-  else if( frvect->type == FR_VECT_8R ){ /* data is double */
-    /* check that data doesn't contain NaNs */
-    if(isnan(frvect->dataD[0]) != 0){
-      XLALDestroyREAL8Vector(dblseries->data);
-      XLALFree(dblseries);
-      FrVectFree(frvect);
+  else if( frtype == LAL_D_TYPE_CODE ){ /* data is double */
+    if ((dblseries = XLALFrStreamReadREAL8TimeSeries(frfile, channel, &epoch, duration, 0)) == NULL){
+      XLALFrStreamClose(frfile);
       return NULL; /* couldn't read frame data */
     }
+    
+    /* check that data doesn't contain NaNs */
+    for(i=0;i<(INT4)length;i++){
+      /* check for NaNs and scale data */
+      if ( isnan(dblseries->data->data[i]) != 0 ){
+        XLALDestroyREAL8TimeSeries(dblseries);
+        XLALFrStreamClose(frfile);
+        return NULL; /* couldn't read frame data */
+      }
 
-    for(i=0;i<(INT4)length;i++)
-      dblseries->data->data[i] = scalefac*(REAL8)frvect->dataD[i];
+      dblseries->data->data[i] = scalefac * dblseries->data->data[i];
+    }
   }
   else{ /* channel name is not recognised */
     fprintf(stderr, "Error... Channel name %s is not recognised as a proper channel.\n", channel);
@@ -1652,7 +1593,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
   }
 
   /* if a high-pass filter is specified (>0) then filter data */
-  if(highpass > 0.){
+  if( highpass > 0. ){
     PassBandParamStruc highpasspar;
 
     /* uses 8th order Butterworth, with 10% attenuation */
@@ -1665,7 +1606,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 ttime,
     XLALButterworthREAL8TimeSeries( dblseries, &highpasspar );
   }
 
-  FrVectFree(frvect);
+  XLALFrStreamClose(frfile);
 
   return dblseries;
 }
@@ -1970,45 +1911,29 @@ INT4 heterodyneflag){
 }
 
 /* get frame data for partcular science segment */
-CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache,
-  INT4 numFrames, INT4 *position, INT4 maxchunklength){
-  INT4 i=0;
+LALCache *set_frame_files(INT4 *starts, INT4 *stops, LALCache *cache,
+  INT4 *position, INT4 maxchunklength){
   INT4 durlock; /* duration of locked segment */
   INT4 tempstart, tempstop;
-  INT4 check=0;
-  CHAR *smalllist=NULL;
-
-  if( (smalllist = XLALCalloc(MAXLISTLENGTH, sizeof(CHAR))) == NULL )
-    {  XLALPrintError("Error allocating memory for small frame list.\n");  }
+  LALCache *smalllist=NULL;
 
   durlock = *stops - *starts;
   tempstart = *starts;
   tempstop = *stops;
 
+  /* duplicate frame cache */
+  if((smalllist = XLALCacheDuplicate(cache)) == NULL ){
+    fprintf(stderr, "Error... could not duplicate frame cache file\n");
+    exit(1);
+  }
+
   /*if lock stretch is long can't read whole thing in at once so only do a bit*/
   if( durlock > maxchunklength )
     tempstop = tempstart + maxchunklength;
 
-  for( i=0;i<numFrames;i++ ){
-    if(tempstart >= cache.starttime[i]
-        && tempstart < cache.starttime[i]+cache.duration[i]
-        && cache.starttime[i] < tempstop){
-      if ( (smalllist = XLALStringAppend(smalllist, cache.framelist[i]))
-        == NULL ){
-        fprintf(stderr, "Error... something wrong creating frame list with \
-XLALStringAppend!\n");
-        exit(1);
-      }
-
-      /* add a space between frame filenames */
-      smalllist = XLALStringAppend(smalllist, " ");
-
-      tempstart += cache.duration[i];
-      check++;
-    }
-    /* break out the loop when we have all the files for the segment */
-    else if( cache.starttime[i] > tempstop )
-      break;
+  if ( XLALCacheSieve(smalllist, tempstart, tempstop, NULL, NULL, NULL) != 0 ){
+    fprintf(stderr, "Error... could not import frame cache file\n");
+    exit(1);
   }
 
   if( durlock > maxchunklength ){ /* set starts to its value plus maxchunklength */
@@ -2017,14 +1942,9 @@ XLALStringAppend!\n");
   }
 
   /* if no data was found at all set small list to NULL */
-  if( check == 0 ){
-    XLALFree(smalllist);
+  if( smalllist->length == 0 ){
+    XLALDestroyCache(smalllist);
     return NULL;
-  }
-
-  if( strlen(smalllist) > MAXLISTLENGTH ){
-    fprintf(stderr, "Error... small list of frames files is too long.\n");
-    exit(1);
   }
 
   return smalllist;

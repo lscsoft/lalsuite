@@ -234,7 +234,6 @@ class PulsarParametersPy(object):
             >>> pppy = PulsarParametersPy()
             >>> pppy.read('apulsar.par')
 
-         parameter can be set in the class using, e.g.
     """
 
     keynames = []   # parameter names in PulsarParameters structure

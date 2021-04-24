@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /*****************************************************************
@@ -66,7 +66,6 @@ the model given in Jaranowski, Krolak, and Schutz gr-qc/9804014.
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
-/* #include <lalapps.h> */ /* 05/20/03 gam */
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALConstants.h>

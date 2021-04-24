@@ -12,7 +12,9 @@ LAL_PYTHON_PATH=@pyexecdir@
 Name: LAL
 Description: LSC Algorithm Library
 Version: @VERSION@
-Requires.private: gsl, fftw3, fftw3f
-Libs.private: -L${libdir} -llal @CUDA_LIBS@ @PTHREAD_LIBS@
+@INTELFFT_FALSE@Requires.private: gsl, fftw3, fftw3f
+@INTELFFT_FALSE@Libs.private: -L${libdir} -llal @CUDA_LIBS@ @PTHREAD_LIBS@
+@INTELFFT_TRUE@Requires.private: gsl
+@INTELFFT_TRUE@Libs.private: -L${libdir} -llal mkl_rt @CUDA_LIBS@ @PTHREAD_LIBS@
 Libs: -L${libdir} -llal
 Cflags: -I${includedir} @CUDA_CFLAGS@ @PTHREAD_CFLAGS@

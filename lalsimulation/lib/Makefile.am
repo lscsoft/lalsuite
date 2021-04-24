@@ -176,6 +176,15 @@ noinst_HEADERS = \
 	LALSimIMRPhenomD.h \
 	LALSimIMRPhenomD_internals.c \
 	LALSimIMRPhenomD_internals.h \
+	LALSimIMRPhenomTHM_internals.c \
+	LALSimIMRPhenomTHM_internals.h \
+	LALSimIMRPhenomTHM_fits.c \
+	LALSimIMRPhenomTHM_fits.h \
+	LALSimIMRPhenomTHM.c \
+	LALSimIMRPhenomTHM.h \
+	LALSimIMRPhenomTPHM.c \
+	LALSimIMRPhenomTPHM_FrameRotations.c \
+	LALSimIMRPhenomTPHM_EulerAngles.c \
 	LALSimIMRPhenomX.h \
 	LALSimIMRPhenomX_internals.c \
 	LALSimIMRPhenomX_internals.h \
@@ -258,7 +267,6 @@ noinst_HEADERS = \
 	LALSimNRSur3dq8Remnant.h
 	$(END_OF_LIST)
 
-
 lib_LTLIBRARIES = liblalsimulation.la
 
 liblalsimulation_la_SOURCES = \
@@ -295,6 +303,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRPhenomPv3HM.c \
 	LALSimIMRPhenomInternalUtils.c \
 	LALSimIMRPhenomUtils.c \
+	LALSimIMRPhenomTHM.c \
+	LALSimIMRPhenomTPHM.c \
 	LALSimIMRPhenomX.c \
 	LALSimIMRPhenomXUtilities.c \
 	LALSimIMRPhenomXHM.c \

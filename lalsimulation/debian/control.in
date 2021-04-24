@@ -3,61 +3,64 @@ Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
-Build-Depends: debhelper (>= 9),
-  dh-python,
-  gcc,
-  g++,
-  help2man,
-  make,
-  pkg-config (>= 0.18.0),
-  lal-dev (>= @MIN_LAL_VERSION@~),
-  libgsl-dev | libgsl0-dev (>= 1.9),
-  liboctave-dev,
-  zlib1g-dev,
-  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-  python-all-dev,
-  python-lal (>= @MIN_LAL_VERSION@~),
-  python-mock,
-  python-numpy (>= @MIN_NUMPY_VERSION@),
-  python-pathlib,
-  python-pytest,
-  python3-all-dev,
-  python3-numpy (>= @MIN_NUMPY_VERSION@),
-  python3-lal (>= @MIN_LAL_VERSION@~),
-  python3-pytest,
-  lal-octave (>= @MIN_LAL_VERSION@~),
+Build-Depends:
+ debhelper (>= 9),
+ dh-python,
+ help2man (>= 1.37),
+ lal-octave (>= @MIN_LAL_VERSION@~),
+ libgsl-dev | libgsl0-dev (>= 1.9),
+ liblal-dev (>= @MIN_LAL_VERSION@~),
+ liboctave-dev,
+ pkg-config (>= 0.18.0),
+ python-all-dev,
+ python-lal (>= @MIN_LAL_VERSION@~),
+ python-mock,
+ python-numpy (>= @MIN_NUMPY_VERSION@),
+ python-pathlib,
+ python-pytest,
+ python3-all-dev,
+ python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-numpy (>= @MIN_NUMPY_VERSION@),
+ python3-pytest,
+ rsync,
+ swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
-Package: lalsimulation
+Package: liblalsimulation@LIBMAJOR@
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  lal (>= @MIN_LAL_VERSION@~)
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: LSC Algorithm Library Simulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL Simulation library.
+Replaces: lalsimulation (<< 2.4.0-2~)
+Breaks: lalsimulation (<< 2.4.0-2~)
 
-Package: lalsimulation-dev
+Package: liblalsimulation-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  libgsl-dev | libgsl0-dev (>= 1.9),
-  zlib1g-dev,
-  lal-dev (>= @MIN_LAL_VERSION@~),
-  lalsimulation (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ liblal-dev (>= @MIN_LAL_VERSION@~),
+ libgsl-dev | libgsl0-dev (>= 1.9),
+ liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
 Description: LSC Algorithm Library Simulation Developers
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  Simulation library.
+Provides: lalsimulation-dev (= ${binary:Version})
+Replaces: lalsimulation-dev (<< 2.4.0-2~)
+Breaks: lalsimulation-dev (<< 2.4.0-2~)
 
 Package: lalsimulation-python
 Depends: python-lalsimulation, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalsimulation-python was renamed python-lalsimulation,
@@ -68,11 +71,12 @@ Section: python
 Replaces: lalsimulation-python (<< 1.7.3.1-1~)
 Breaks: lalsimulation-python (<< 1.7.3.1-1~)
 Architecture: any
-Depends: ${misc:Depends},
-  ${python:Depends},
-  ${shlibs:Depends},
-  python-lal (>= @MIN_LAL_VERSION@~),
-  lalsimulation (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ ${shlibs:Depends},
+ liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
+ python-lal (>= @MIN_LAL_VERSION@~),
 Description: Python bindings for LALSimulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Simulation library.
@@ -80,7 +84,7 @@ Description: Python bindings for LALSimulation
 Package: lalsimulation-python3
 Depends: python3-lalsimulation, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalsimulation-python3 was renamed python3-lalsimulation,
@@ -92,22 +96,34 @@ Breaks: lalsimulation-python3 (<< 1.7.3.1-1~)
 Section: python
 Architecture: any
 Depends:
-  ${misc:Depends},
-  ${python3:Depends},
-  ${shlibs:Depends},
-  python3-lal (>= @MIN_LAL_VERSION@~),
-  lalsimulation (= ${binary:Version})
+ ${misc:Depends},
+ ${python3:Depends},
+ ${shlibs:Depends},
+ liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
+ python3-lal (>= @MIN_LAL_VERSION@~),
 Description: Python 3 bindings for LALSimulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Simulation library.
 
 Package: lalsimulation-octave
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  octave,
-  lal-octave (>= @MIN_LAL_VERSION@~),
-  lalsimulation (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ lal-octave (>= @MIN_LAL_VERSION@~),
+ liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
+ octave,
 Description: Octave bindings for LALSimulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package contains Octave bindings for the LAL Simulation library.
+
+Package: lalsimulation
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
+ python3-lalsimulation (= ${binary:Version}),
+Description: LSC Algorithm Library Simulation
+ The LSC Algorithm Simulation Library for gravitational wave data analysis.
+ This package provides the runtime tools.

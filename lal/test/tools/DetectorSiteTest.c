@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -43,10 +43,10 @@
  * \c LALDetector to standard output in the same format that would
  * be used for a C initialization.  This function is not currently
  * called.  It also contains a static function <tt>CheckDetector()</tt>
- * which extracts the \c ::LALFrDetector and type from a
- * \c ::LALDetector, changes the name of the \c ::LALFrDetector
+ * which extracts the \c LALFrDetector and type from a
+ * \c LALDetector, changes the name of the \c LALFrDetector
  * (in case it's one of the predefined constant detectors), constructs a
- * new \c ::LALDetector and compares the values of the fields of the
+ * new \c LALDetector and compares the values of the fields of the
  * old and new structures.  The program currently performs this check
  * for the two LIGO sites.
  *

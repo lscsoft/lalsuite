@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 
@@ -181,7 +181,6 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   XLAL_CHECK ( detectorIndex < dataParams->multiNoiseFloor.length, XLAL_EINVAL );
   XLAL_CHECK ( detectorIndex < dataParams->multiTimestamps.length, XLAL_EINVAL );
   XLAL_CHECK ( (dataParams->inputMultiTS == NULL) || (detectorIndex < dataParams->inputMultiTS->length), XLAL_EINVAL );
-  XLAL_CHECK ( (dataParams->inputMultiTS == NULL) || (dataParams->fMin == 0 && dataParams->Band == 0), XLAL_EINVAL, "If given time-series, must have fMin=Band=0\n");
 
   // initial default values fMin, sampling rate from caller input or timeseries
   REAL8 fMin  = dataParams->fMin;
@@ -189,13 +188,13 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   REAL8 fSamp = 2.0 * fBand;
   if ( dataParams->inputMultiTS != NULL )
     {
-      XLAL_CHECK ( (fMin == 0) && (fBand == 0), XLAL_EINVAL, "fMin and fBand must be 0 if input timeseries is given\n");
       const REAL8TimeSeries *ts = dataParams->inputMultiTS->data[detectorIndex];
       XLAL_CHECK ( ts != NULL, XLAL_EINVAL );
       REAL8 dt = ts->deltaT;
       fMin = ts->f0;
       fSamp = 1.0 / dt;
       fBand = 0.5 * fSamp;
+      XLAL_CHECK ( ( dataParams->fMin >= fMin ) && ( dataParams->Band <= fBand ), XLAL_EINVAL, "Requested fMin=%f and fBand=%f are not covered by what the input timeseries can provide (fMin=%f, fBand=%f).", dataParams->fMin, dataParams->Band, fMin, fBand );
     }
 
   const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[detectorIndex];
@@ -376,12 +375,19 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       SFTVector *sftVect;
       XLAL_CHECK ( (sftVect = XLALMakeSFTsFromREAL8TimeSeries ( outTS, timestamps, dataParams->SFTWindowType, dataParams->SFTWindowBeta)) != NULL, XLAL_EFUNC );
 
-      // extract effective band from this, if neccessary (ie if faster-sampled output SFTs)
-      if ( n1_fSamp != n0_fSamp )
+      // extract effective band from this, if user requested a smaller band
+      if ( ( dataParams->fMin > fMin ) || ( dataParams->Band < fBand ) )
+        {
+          XLAL_CHECK ( ((*SFTvect) = XLALExtractBandFromSFTVector ( sftVect, dataParams->fMin, dataParams->Band )) != NULL, XLAL_EFUNC );
+          XLALDestroySFTVector ( sftVect );
+        }
+      // or for faster-sampled output SFTs
+      else if ( n1_fSamp != n0_fSamp )
         {
           XLAL_CHECK ( ((*SFTvect) = XLALExtractBandFromSFTVector ( sftVect, fMin, fBand )) != NULL, XLAL_EFUNC );
           XLALDestroySFTVector ( sftVect );
         }
+      // or return the full vector
       else
         {
           (*SFTvect) = sftVect;

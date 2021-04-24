@@ -3,75 +3,96 @@ Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
-Build-Depends: bc,
-  debhelper (>= 9),
-  dh-python,
-  gcc,
-  g++,
-  less,
-  libfftw3-dev,
-  libgsl0-dev (>= 1.9) | libgsl-dev,
-  libhdf5-dev,
-  liboctave-dev,
-  make,
-  pkg-config (>= 0.18.0),
-  python-all-dev,
-  python-dateutil,
-  python-freezegun,
-  python-glue (>= @MIN_GLUE_VERSION@),
-  python-ligo-lw,
-  python-ligo-segments,
-  python-mock,
-  python-numpy (>= @MIN_NUMPY_VERSION@),
-  python-pathlib,
-  python-pytest,
-  python-scipy,
-  python-six,
-  python3-all-dev,
-  python3-dateutil,
-  python3-freezegun,
-  python3-glue (>= @MIN_GLUE_VERSION@),
-  python3-ligo-lw,
-  python3-ligo-segments,
-  python3-numpy (>= @MIN_NUMPY_VERSION@),
-  python3-pytest,
-  python3-scipy,
-  python3-six,
-  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-  zlib1g-dev
+Build-Depends:
+ bc,
+ debhelper (>= 9),
+ dh-python,
+ help2man (>= 1.37),
+ less,
+ libfftw3-dev,
+ libgsl0-dev (>= 1.9) | libgsl-dev,
+ libhdf5-dev,
+ liboctave-dev,
+ pkg-config (>= 0.18.0),
+ python-all-dev,
+ python-dateutil,
+ python-freezegun,
+ python-glue (>= @MIN_GLUE_VERSION@),
+ python-ligo-lw,
+ python-ligo-segments,
+ python-mock,
+ python-numpy (>= @MIN_NUMPY_VERSION@),
+ python-pathlib,
+ python-pytest,
+ python-scipy,
+ python-six,
+ python3-all-dev,
+ python3-dateutil,
+ python3-freezegun,
+ python3-glue (>= @MIN_GLUE_VERSION@),
+ python3-ligo-lw,
+ python3-ligo-segments,
+ python3-numpy (>= @MIN_NUMPY_VERSION@),
+ python3-pytest,
+ python3-scipy,
+ python3-six,
+ rsync,
+ swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
+ zlib1g-dev,
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
-Package: lal
+Package: liblal@LIBMAJOR@
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  less
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ less,
 Description: LSC Algorithm Library
  The LSC Algorithm Library for gravitational wave analysis.
- This package contains the shared-object libraries needed to run applications
- that use the LAL library.
+ This package contains the liblal.so shared-object library needed
+ to run applications that use the LAL library.
+Replaces: lal (<< 7.1.0-2~)
+Breaks: lal (<< 7.1.0-2~)
 
-Package: lal-dev
+Package: liblalsupport@LIBMAJOR_SUPPORT@
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ less,
+Description: LSC Algorithm Library
+ The LSC Algorithm Library for gravitational wave analysis.
+ This package contains the liblalsupport.so shared-object library needed
+ to run applications that use the LAL library.
+Replaces: lal (<< 7.1.0-2~)
+Breaks: lal (<< 7.1.0-2~)
+
+Package: liblal-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  libfftw3-dev,
-  libgsl0-dev (>= 1.9) | libgsl-dev,
-  libhdf5-dev,
-  zlib1g-dev,
-  lal (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ libfftw3-dev,
+ libgsl0-dev (>= 1.9) | libgsl-dev,
+ libhdf5-dev,
+ zlib1g-dev,
 Description: Files and documentation needed for compiling programs that use LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains files needed to build applications that use the LAL
  library as well as the documentation for the library.
+Provides: lal-dev (= ${binary:Version})
+Replaces: lal-dev (<< 7.1.0-2~)
+Breaks: lal-dev (<< 7.1.0-2~)
 
 Package: lal-python
-Depends: python-lal, ${misc:Depends}
+Depends:
+ ${misc:Depends},
+ python-lal,
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lal-python was renamed python-lal,
@@ -82,25 +103,28 @@ Replaces: lal-python (<< 6.18.0.1-1~)
 Breaks: lal-python (<< 6.18.0.1-1~)
 Section: python
 Architecture: any
-Depends: ${misc:Depends},
-  ${python:Depends},
-  ${shlibs:Depends},
-  python-ligo-lw,
-  python-ligo-segments,
-  python-glue (>= @MIN_GLUE_VERSION@),
-  python-scipy,
-  python-six,
-  python-dateutil,
-  lal (= ${binary:Version})
-Recommends: python-ligo-lw
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ ${shlibs:Depends},
+ liblal@LIBMAJOR@ (= ${binary:Version}),
+ liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
+ python-dateutil,
+ python-glue (>= @MIN_GLUE_VERSION@),
+ python-ligo-lw,
+ python-ligo-segments,
+ python-scipy,
+ python-six,
 Description: Python bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python bindings for the LAL library.
 
 Package: lal-python3
-Depends: python3-lal, ${misc:Depends}
+Depends:
+ ${misc:Depends},
+ python3-lal,
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lal-python3 was renamed python3-lal,
@@ -111,27 +135,42 @@ Section: python
 Replaces: lal-python3 (<< 6.18.0.1-1~)
 Breaks: lal-python3 (<< 6.18.0.1-1~)
 Architecture: any
-Depends: ${misc:Depends},
-  ${python3:Depends},
-  ${shlibs:Depends},
-  python3-ligo-lw,
-  python3-ligo-segments,
-  python3-glue (>= @MIN_GLUE_VERSION@),
-  python3-scipy,
-  python3-six,
-  python3-dateutil,
-  lal (= ${binary:Version})
-Recommends: python3-ligo-lw
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ ${shlibs:Depends},
+ liblal@LIBMAJOR@ (= ${binary:Version}),
+ liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
+ python3-dateutil,
+ python3-glue (>= @MIN_GLUE_VERSION@),
+ python3-ligo-lw,
+ python3-ligo-segments,
+ python3-scipy,
+ python3-six,
 Description: Python 3 bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python 3 bindings for the LAL library.
 
 Package: lal-octave
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  octave,
-  lal (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ liblal@LIBMAJOR@ (= ${binary:Version}),
+ liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
+ octave,
 Description: Octave bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Octave bindings for the LAL library.
+
+Package: lal
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ liblal@LIBMAJOR@ (= ${binary:Version}),
+ liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
+ python3-lal (= ${binary:Version}),
+Description: LSC Algorithm Library - runtime tools
+ The LSC Algorithm Library for gravitational wave analysis.
+ This package provides the runtime tools.

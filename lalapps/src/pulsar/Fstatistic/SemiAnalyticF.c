@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -44,6 +44,8 @@
 /*                             UWM - February 2003                               */
 /*********************************************************************************/
 
+#include "config.h"
+
 #include <errno.h>
 
 #include <lal/LALString.h>
@@ -57,7 +59,7 @@
 #include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /*---------- error-codes ---------- */
 #define SEMIANALYTIC_ENORM 		0
@@ -128,7 +130,7 @@ static void LALComputeAM (LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsP
 /*---------- function definitions ---------- */
 int main(int argc,char *argv[]) 
 {
-  LALStatus status = blank_status;	/* initialize status */
+  LALStatus XLAL_INIT_DECL(status);	/* initialize status */
 
   vrbflg = 1;		/* verbose error-messages */
 

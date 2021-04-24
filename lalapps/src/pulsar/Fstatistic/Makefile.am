@@ -51,3 +51,6 @@ test_scripts += test_synthesizeLVStats.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers += SemiAnalyticF
+
+# Add any extra files required by tests (e.g. helper scripts) to this variable
+test_extra_files +=

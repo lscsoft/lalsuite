@@ -2,10 +2,10 @@ SUBDIRS = \
 	Tools \
 	SFTTools \
 	FITSTools \
-	Injections \
-	MakeSFTs \
+	MakeData \
 	Fscan \
 	CreateEphemeris \
+	HWInjection \
 	Fstatistic \
 	HeterodyneSearch \
 	Hough \

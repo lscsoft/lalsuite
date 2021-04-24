@@ -16,8 +16,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with with program; see the file COPYING. If not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-// MA  02111-1307  USA
+// Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA  02110-1301  USA
 //
 
 #include <stdlib.h>
@@ -221,11 +221,11 @@ int XLALFstatCheckSFTLengthMismatch ( const REAL8 Tsft,             /**< [in] ac
 } // XLALFstatCheckSFTLengthMismatch()
 
 ///
-/// Create a #FstatInputVector of the given length, for example for setting up
+/// Create a \c FstatInputVector of the given length, for example for setting up
 /// F-stat searches over several segments.
 ///
 FstatInputVector*
-XLALCreateFstatInputVector ( const UINT4 length            ///< [in] Length of the #FstatInputVector.
+XLALCreateFstatInputVector ( const UINT4 length            ///< [in] Length of the \c FstatInputVector.
                              )
 {
   // Allocate and initialise vector container
@@ -243,10 +243,10 @@ XLALCreateFstatInputVector ( const UINT4 length            ///< [in] Length of t
 } // XLALCreateFstatInputVector()
 
 ///
-/// Free all memory associated with a #FstatInputVector structure.
+/// Free all memory associated with a \c FstatInputVector structure.
 ///
 void
-XLALDestroyFstatInputVector ( FstatInputVector* inputs        ///< [in] #FstatInputVector structure to be freed.
+XLALDestroyFstatInputVector ( FstatInputVector* inputs        ///< [in] \c FstatInputVector structure to be freed.
                               )
 {
   if ( inputs == NULL ) {
@@ -268,10 +268,10 @@ XLALDestroyFstatInputVector ( FstatInputVector* inputs        ///< [in] #FstatIn
 } // XLALDestroyFstatInputVector()
 
 ///
-/// Create a #FstatAtomVector of the given length.
+/// Create a \c FstatAtomVector of the given length.
 ///
 FstatAtomVector*
-XLALCreateFstatAtomVector ( const UINT4 length ///< [in] Length of the #FstatAtomVector.
+XLALCreateFstatAtomVector ( const UINT4 length ///< [in] Length of the \c FstatAtomVector.
                             )
 {
   // Allocate and initialise vector container
@@ -289,10 +289,10 @@ XLALCreateFstatAtomVector ( const UINT4 length ///< [in] Length of the #FstatAto
 } // XLALCreateFstatAtomVector()
 
 ///
-/// Free all memory associated with a #FstatAtomVector structure.
+/// Free all memory associated with a \c FstatAtomVector structure.
 ///
 void
-XLALDestroyFstatAtomVector ( FstatAtomVector *atoms      ///< [in] #FstatAtomVector structure to be freed.
+XLALDestroyFstatAtomVector ( FstatAtomVector *atoms      ///< [in] \c FstatAtomVector structure to be freed.
                              )
 {
   if ( atoms == NULL ) {
@@ -309,10 +309,10 @@ XLALDestroyFstatAtomVector ( FstatAtomVector *atoms      ///< [in] #FstatAtomVec
 } // XLALDestroyFstatAtomVector()
 
 ///
-/// Create a #MultiFstatAtomVector of the given length.
+/// Create a \c MultiFstatAtomVector of the given length.
 ///
 MultiFstatAtomVector*
-XLALCreateMultiFstatAtomVector ( const UINT4 length   ///< [in] Length of the #MultiFstatAtomVector.
+XLALCreateMultiFstatAtomVector ( const UINT4 length   ///< [in] Length of the \c MultiFstatAtomVector.
                                  )
 {
   // Allocate and initialise vector container
@@ -330,10 +330,10 @@ XLALCreateMultiFstatAtomVector ( const UINT4 length   ///< [in] Length of the #M
 } // XLALCreateMultiFstatAtomVector()
 
 ///
-/// Free all memory associated with a #MultiFstatAtomVector structure.
+/// Free all memory associated with a \c MultiFstatAtomVector structure.
 ///
 void
-XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms  ///< [in] #MultiFstatAtomVector structure to be freed.
+XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms  ///< [in] \c MultiFstatAtomVector structure to be freed.
                                   )
 {
   if ( multiAtoms == NULL ) {
@@ -355,7 +355,7 @@ XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms  ///< [in] #M
 ///
 FstatInput *
 XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Catalog of SFTs to either load from files, or generate in memory.
-                                                                  ///< The \c locator field of each ::SFTDescriptor must be \c !=NULL for SFT loading, and \c ==NULL for SFT generation.
+                                                                  ///< The \c locator field of each \c SFTDescriptor must be \c !=NULL for SFT loading, and \c ==NULL for SFT generation.
                        const REAL8 minCoverFreq,                  ///< [in] Minimum instantaneous frequency which will be covered over the SFT time span.
                        const REAL8 maxCoverFreq,                  ///< [in] Maximum instantaneous frequency which will be covered over the SFT time span.
                        const REAL8 dFreq,                         ///< [in] Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins. May be zero \e only for single-frequency searches.
@@ -754,7 +754,7 @@ XLALGetFstatInputDetectorStates ( const FstatInput* input       ///< [in] \c Fst
 /// Compute the \f$\mathcal{F}\f$-statistic over a band of frequencies.
 ///
 int
-XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of a pointer to a #FstatResults results structure; if \c NULL, allocate here.
+XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of a pointer to a \c FstatResults results structure; if \c NULL, allocate here.
                    FstatInput *input,                   ///< [in] Input data structure created by one of the setup functions.
                    const PulsarDopplerParams *doppler,  ///< [in] Doppler parameters, including starting frequency, at which to compute \f$2\mathcal{F}\f$
                    const UINT4 numFreqBins,             ///< [in] Number of frequencies at which the \f$2\mathcal{F}\f$ are to be computed. Must be 1 if XLALCreateFstatInput() was passed zero \c dFreq.
@@ -934,10 +934,10 @@ XLALDestroyFstatInput ( FstatInput* input       ///< [in] \c FstatInput structur
 } // XLALDestroyFstatInput()
 
 ///
-/// Free all memory associated with a #FstatResults structure.
+/// Free all memory associated with a \c FstatResults structure.
 ///
 void
-XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] #FstatResults structure to be freed.
+XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] \c FstatResults structure to be freed.
                           )
 {
   if ( Fstats == NULL ) {
@@ -980,7 +980,7 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] #FstatResults structur
 /// with the (now removed) \c --SignalOnly option.
 ///
 int
-XLALAdd4ToFstatResults ( FstatResults* Fstats    ///< [in/out] #FstatResults structure.
+XLALAdd4ToFstatResults ( FstatResults* Fstats    ///< [in/out] \c FstatResults structure.
                          )
 {
   // Check input
@@ -1098,7 +1098,7 @@ XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms,   ///< 
 } // XLALComputeFstatFromAtoms()
 
 ///
-/// If user asks for a 'best' #FstatMethodType, find and select it
+/// If user asks for a 'best' \c FstatMethodType, find and select it
 ///
 static int
 XLALSelectBestFstatMethod ( FstatMethodType *method )
@@ -1131,7 +1131,7 @@ XLALSelectBestFstatMethod ( FstatMethodType *method )
 }
 
 ///
-/// Return true if given #FstatMethodType corresponds to a valid and *available* Fstat method, false otherwise
+/// Return true if given \c FstatMethodType corresponds to a valid and *available* Fstat method, false otherwise
 ///
 int
 XLALFstatMethodIsAvailable ( FstatMethodType method )
@@ -1181,7 +1181,7 @@ XLALFstatMethodIsAvailable ( FstatMethodType method )
 } // XLALFstatMethodIsAvailable()
 
 ///
-/// Return pointer to a static string giving the name of the #FstatMethodType \p method
+/// Return pointer to a static string giving the name of the \c FstatMethodType \p method
 ///
 const CHAR *
 XLALFstatMethodName ( FstatMethodType method )
@@ -1192,7 +1192,7 @@ XLALFstatMethodName ( FstatMethodType method )
 }
 
 ///
-/// Return pointer to a static array of all (available) #FstatMethodType choices.
+/// Return pointer to a static array of all (available) \c FstatMethodType choices.
 /// This data is used by the UserInput module to parse a user enumeration.
 ///
 const UserChoices *

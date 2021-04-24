@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #include <math.h>
@@ -77,7 +77,7 @@ REAL8 XLALUnitRatio(const LALUnit *unit1, const LALUnit *unit2)
 /**
  * Returns 0 if the the normal form of the two unit
  * structures are the same or > 0 if they are different.  It returns
- * \c #XLAL_FAILURE and \c ::xlalErrno is set to \c #XLAL_EFAULT if
+ * #XLAL_FAILURE and ::xlalErrno is set to #XLAL_EFAULT if
  * one of the input pointers is \c NULL.
  *
  * Example:

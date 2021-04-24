@@ -12,8 +12,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 #include <stdio.h>
@@ -505,6 +505,23 @@ int XLALSimInspiralModeArrayPrintModes(LALValue *modes)
 		printf("\n");
 	}
 	return 0;
+}
+
+INT2Sequence *XLALSimInspiralModeArrayReadModes(LALValue *modes)
+{
+	INT2Sequence *seqmodes = XLALCreateINT2Sequence(4*LAL_SIM_L_MAX_MODE_ARRAY+2);
+	int nmodes = 0;
+	for (int l = 0; l <= LAL_SIM_L_MAX_MODE_ARRAY; l++) {
+		for (int m = -l; m <= l; m++)
+			 if(XLALSimInspiralModeArrayIsModeActive(modes, l, m)==1)
+			 {
+				 seqmodes->data[2*nmodes] = l;
+				 seqmodes->data[2*nmodes+1] = m;
+				 nmodes++;
+			 }
+	}
+	seqmodes = XLALShrinkINT2Sequence(seqmodes, 0, 2*nmodes);
+	return seqmodes;
 }
 
 /** @} */

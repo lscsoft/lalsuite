@@ -16,8 +16,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 #ifdef __GNUC__
@@ -1282,6 +1282,7 @@ UNUSED static int SEOBNRv4HMROMCoreModes(
     }
 
     memset(hlmtilde->data->data, 0, npts * sizeof(COMPLEX16));
+    XLALUnitMultiply(&(hlmtilde->sampleUnits), &(hlmtilde->sampleUnits), &lalSecondUnit);
     COMPLEX16 *hlmdata=hlmtilde->data->data;
 
     REAL8 Mtot = Mtot_sec / LAL_MTSUN_SI;
@@ -1573,8 +1574,8 @@ int XLALSimIMRSEOBNRv4HMROM(
   UNUSED COMPLEX16FrequencySeries *hCrosstilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &tGPS, 0.0, deltaF,&lalStrainUnit, npts);
   memset(hPlustilde->data->data, 0, npts * sizeof(COMPLEX16));
   memset(hCrosstilde->data->data, 0, npts * sizeof(COMPLEX16));
-  XLALUnitDivide(&hPlustilde->sampleUnits, &hPlustilde->sampleUnits, &lalSecondUnit);
-  XLALUnitDivide(&hCrosstilde->sampleUnits, &hCrosstilde->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&hPlustilde->sampleUnits, &hPlustilde->sampleUnits, &lalSecondUnit);
+  XLALUnitMultiply(&hCrosstilde->sampleUnits, &hCrosstilde->sampleUnits, &lalSecondUnit);
   retcode = SEOBROMComputehplushcrossFromhlm(hPlustilde,hCrosstilde,ModeArray,hlm,inclination,phiRef);
   if(retcode != XLAL_SUCCESS) XLAL_ERROR(retcode);
 
@@ -1680,5 +1681,5 @@ int XLALSimIMRSEOBNRv4HMROM_Modes(
 
   XLALDestroyREAL8Sequence(freqs);
 
-  return(XLAL_SUCCESS);
+  return(retcode);
 }

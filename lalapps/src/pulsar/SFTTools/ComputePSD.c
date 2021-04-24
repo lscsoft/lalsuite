@@ -14,8 +14,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /**
@@ -24,6 +24,8 @@
  * \author Badri Krishnan, Iraj Gholami, Reinhard Prix, Alicia Sintes, Karl Wette
  * \brief Compute power spectral densities
  */
+
+#include "config.h"
 
 #include <glob.h>
 #include <stdlib.h>
@@ -51,7 +53,7 @@
 
 #include <lal/LogPrintf.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* ---------- Error codes and messages ---------- */
 #define COMPUTEPSDC_ENORM 0
@@ -190,7 +192,9 @@ main(int argc, char *argv[])
       fclose(fpRand);
     } /* end cleaning */
 
-  /* call the main loop function; output vectors will be allocated inside */
+  /* call the main loop function; output vectors will be allocated inside
+   * NOTE: inputSFTs will be normalized in place for efficiency reasons
+   */
   REAL8Vector *finalPSD = NULL;
   MultiPSDVector *multiPSDVector = NULL;
   REAL8Vector *normSFT = NULL;
@@ -208,7 +212,8 @@ main(int argc, char *argv[])
                       uvar.nSFTmthopIFOs,
                       uvar.normalizeByTotalNumSFTs,
                       cfg.FreqMin,
-                      cfg.FreqBand
+                      cfg.FreqBand,
+                      TRUE // normalizeSFTsInPlace
                   ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* output spectrograms */
@@ -271,7 +276,7 @@ main(int argc, char *argv[])
     LogPrintf(LOG_DEBUG, "Printing PSD to file ...\n");
     FILE *fpOut = NULL;
     XLAL_CHECK_MAIN ( (fpOut = fopen(uvar.outputPSD, "wb")) != NULL, XLAL_EIO, "Unable to open output file %s for writing", uvar.outputPSD );
-    XLAL_CHECK_MAIN ( XLALOutputVersionString ( fpOut, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN ( XLALOutputVCSInfo(fpOut, lalAppsVCSInfoList, 0, "%% ") == XLAL_SUCCESS, XLAL_EFUNC );
     for (int a = 0; a < argc; a++) { /* write the command-line */
       fprintf(fpOut,"%%%% argv[%d]: '%s'\n", a, argv[a]);
     }
@@ -705,7 +710,7 @@ XLALWriteREAL8FrequencySeries_to_file ( const REAL8FrequencySeries *series,	/**<
   }
 
   /* write header info in comments */
-  if ( XLAL_SUCCESS != XLALOutputVersionString ( fp, 0 ) )
+  if ( XLAL_SUCCESS != XLALOutputVCSInfo(fp, lalAppsVCSInfoList, 0, "%% ") )
     XLAL_ERROR ( XLAL_EFUNC );
 
   fprintf ( fp, "%%%% name = '%s'\n", series->name );

@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #include <complex.h>
@@ -29,8 +29,8 @@
  * \brief Multiply two vectors.
  *
  * Let \c u, \c v, and \c w be objects of type
- * ::COMPLEX8Vector, and let \c a, \c b, and \c c be
- * objects of type ::REAL4Vector.
+ * \c COMPLEX8Vector, and let \c a, \c b, and \c c be
+ * objects of type \c REAL4Vector.
  *
  * The \ref LALCCVectorMultiply "LALCCVectorMultiply( &status, &w, &u, &v )" function computes:<br>
  * <tt>w.data[i]= u.data[i] x v.data[i]</tt>

@@ -13,12 +13,14 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
+#include <libgen.h>
 #include <lal/SFTClean.h>
 #include <lal/SFTutils.h>
+#include <lal/LogPrintf.h>
 
 /**
  * \author Badri Krishnan, Alicia Sintes, Greg Mendell
@@ -30,8 +32,12 @@
  * This module contains routines for dealing with lists of known spectral disturbances
  * in the frequency domain, and using them to clean SFTs.
  *
- * The basic input is a text file containing a list of known spectral lines.  An example
- * is the following
+ * The basic input is a text file containing a list of known spectral lines.
+ * NOTE: the legacy format used here is not identical with that of
+ * modern Advanced LIGO linefiles.
+ * To run this code with newer linefiles, they should first be converted into
+ * the legacy format.
+ * An example of the supported format is the following:
  *
  * \verbatim
  * 0.0      0.25     4000     0.0        0.0   0.25Hzlines
@@ -671,10 +677,23 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
     leftWingBins = floor(tBase * leftWing[count]);
     rightWingBins = floor(tBase * rightWing[count]);
 
-    /* check that frequency is within band of sft and line is not too wide*/
-    if ((lineBin >= minBin) && (lineBin <= maxBin) && (leftWingBins <= width) && (rightWingBins <= width)){
+    /* check that central frequency of the line is within band of sft */
+    if ((lineBin >= minBin) && (lineBin <= maxBin)) {
+
+      /* cut wings if wider than width parameter */
+      if ( ( leftWingBins > width ) || ( rightWingBins > width) ) {
+        LogPrintf ( LOG_NORMAL, "%s: Cutting wings of line %d/%d from [-%d,+%d] to width=%d.\n", __func__, count, nLines, leftWingBins, rightWingBins, width );
+      }
+      leftWingBins = leftWingBins < width ? leftWingBins : width;
+      rightWingBins = rightWingBins < width ? rightWingBins : width;
 
       /* estimate the sft power in "window" # of bins each side */
+      if ( 2*window > (maxBin - minBin) ) {
+        LogPrintf ( LOG_NORMAL, "%s: Window of +-%d bins around lineBin=%d does not fit within SFT range [%d,%d], noise floor estimation will be compromised.\n", __func__, window, lineBin, minBin, maxBin );
+      }
+      if ( ( window < leftWingBins) || ( window <= rightWingBins) ) {
+        LogPrintf ( LOG_NORMAL, "%s: Window of +-%d bins around lineBin=%d does not extend further than line wings [-%d,+%d], noise floor estimation will be compromised by the very same line that is supposed to be cleaned.\n", __func__, window, lineBin, leftWingBins, rightWingBins );
+      }
       for (k = 0; k < window ; k++){
 	if (maxBin - lineBin - rightWingBins - k > 0)
 	  inData = sft->data->data + lineBin - minBin + rightWingBins + k + 1;
@@ -709,7 +728,6 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
       /* now go left and set the left wing to noise */
       /* make sure that we are always within the sft band */
       /* and set bins to zero only if Wing width is smaller than "width" */
-      if ((leftWingBins <= width)){
 	for (leftCount = 0; leftCount < leftWingBins; leftCount++){
 	  if ( (lineBin - minBin - leftCount > 0)){
 	    inData = sft->data->data + lineBin - minBin - leftCount - 1;
@@ -723,10 +741,8 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	    tempk++;
 	  }
 	}
-      }
 
       /* now go right making sure again to stay within the sft band */
-      if ((rightWingBins <= width )){
 	for (rightCount = 0; rightCount < rightWingBins; rightCount++){
 	  if ( (maxBin - lineBin - rightCount > 0)){
 	    inData = sft->data->data + lineBin - minBin + rightCount + 1;
@@ -740,7 +756,7 @@ void LALCleanCOMPLEX8SFT (LALStatus          *status,/**< pointer to LALStatus s
 	    tempk++;
 	  }
 	}
-      }
+
     }
   } /* end loop over lines */
 
@@ -944,7 +960,7 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< 
 					  MultiSFTVector   *MultiSFTVect,  /**< SFTVector to be cleaned */
 					  INT4             width,          /**< maximum width to be cleaned */
 					  INT4             window,         /**< window size for noise floor estimation in vicinity of a line */
-					  LALStringVector *linefiles,      /**< file with list of lines */
+					  LALStringVector *linefiles,      /**< list of per-detector files with list of lines (the basename of each file must start with a canonical IFO name) */
 					  RandomParams     *randPar)       /**< for creating random numbers */
 {
 
@@ -973,7 +989,7 @@ void LALRemoveKnownLinesInMultiSFTVector (LALStatus        *status,        /**< 
     {
       ifo = NULL;
       /* try to get the ifo name from the linefile name */
-      if ( (ifo = XLALGetChannelPrefix ( linefiles->data[k])) == NULL) {
+      if ( (ifo = XLALGetChannelPrefix ( basename(linefiles->data[k]))) == NULL) {
         ABORT ( status, SFTCLEANH_ELINENAME, SFTCLEANH_MSGELINENAME);
       }
 

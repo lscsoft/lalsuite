@@ -13,8 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with with program; see the file COPYING. If not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-// MA 02111-1307 USA
+// Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301 USA
 //
 
 #include <config.h>
@@ -2408,6 +2408,26 @@ int XLALSetSuperskyPhysicalSpinBound(
   const int tiled_fkdot = XLALIsTiledLatticeTilingDimension( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ) );
   XLAL_CHECK( tiled_fkdot != XLAL_FAILURE, XLAL_EFUNC );
   XLAL_CHECK( !( tiled_sskyA || tiled_sskyB ) || tiled_fkdot, XLAL_EINVAL, "Must search over %zu-order spindown if also searching over sky", s );
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALSetSuperskyPhysicalSpinBoundPadding(
+  LatticeTiling *tiling,
+  const SuperskyTransformData *rssky_transf,
+  const size_t s,
+  const bool padding
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky_transf ), XLAL_EINVAL );
+  XLAL_CHECK( s <= rssky_transf->SMAX, XLAL_ESIZE );
+
+  // Set padding
+  XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ), padding ? ( LATTICE_TILING_PAD_LHBBX | LATTICE_TILING_PAD_UHBBX ) : LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

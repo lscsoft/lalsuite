@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /*
@@ -27,6 +27,8 @@
 
 #ifndef _HETERODYNE_PULSAR_H
 #define _HETERODYNE_PULSAR_H
+
+#include "config.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -69,11 +71,7 @@
 #include <lal/XLALError.h>
 
 /* lalapps header */
-#include <lalapps.h>
-
-/* frame headers */
-#include <FrIO.h>
-#include <lal/LALFrameL.h>
+#include <LALAppsVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -262,7 +260,7 @@ COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times
 void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration);
 
 /* reads in a time series from frames */
-REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 gpstime,
+REAL8TimeSeries *get_frame_data(LALCache *framecache, CHAR *channel, REAL8 gpstime,
   REAL8 length, INT4 duration, REAL8 samplerate, REAL8 scalefac,
   REAL8 highpass);
 
@@ -270,7 +268,7 @@ REAL8TimeSeries *get_frame_data(CHAR *framefile, CHAR *channel, REAL8 gpstime,
 INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile, INT4 heterodyneflag);
 
 /* get frame data for partcular science segment */
-CHAR *set_frame_files(INT4 *starts, INT4 *stops, FrameCache cache, INT4 numFrames, INT4 *position, INT4 maxchunklength);
+LALCache *set_frame_files(INT4 *starts, INT4 *stops, LALCache *cache, INT4 *position, INT4 maxchunklength);
 
 /* calibrate data */
 void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes, CalibrationFiles calfiles,

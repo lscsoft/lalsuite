@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import doctest
 from lal import rate
 

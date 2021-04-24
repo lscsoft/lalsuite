@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 **********************************************************************/
 
 #include <stdio.h>
@@ -23,7 +23,7 @@
 #include <math.h>
 #include <string.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
@@ -106,7 +106,7 @@ double chirpDist(SimInspiralTable *inj, char ifo){
 
 int main(int argc, char *argv[])
 {
-  LALStatus        status=blank_status;
+  LALStatus        XLAL_INIT_DECL(status);
   CHAR                inputfile[FILENAME_MAX];
   CHAR                outputpath[1000];
   CHAR                injtype[30];

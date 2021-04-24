@@ -13,8 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with with program; see the file COPYING. If not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-// MA 02111-1307 USA
+// Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301 USA
 //
 
 #ifndef _FITSFILEIO_H
@@ -88,8 +88,8 @@ int XLALFITSHeaderQueryKeyExists( FITSFile *file, const CHAR *key, BOOLEAN *exis
 /// \name Write/Read Key-Value Pairs to/from FITS Header-Data Unit
 ///
 /// These functions write/read key-value pairs (\p key, \p value) to/from a FITS header-data unit (HDU).
-/// Scalar #BOOLEAN, #UINT2, #UINT4, #UINT8, #INT2, #INT4, #INT8, #REAL4, #REAL8, #COMPLEX8, and #COMPLEX16 values,
-/// strings, string vectors (#LALStringVector) and GPS times (#LIGOTimeGPS) can be written and read.
+/// Scalar ::BOOLEAN, ::UINT2, ::UINT4, ::UINT8, ::INT2, ::INT4, ::INT8, ::REAL4, ::REAL8, ::COMPLEX8, and ::COMPLEX16 values,
+/// strings, string vectors (\c LALStringVector) and GPS times (\c LIGOTimeGPS) can be written and read.
 /// A \p comment string describing the value is required when writing to an HDU, and an arbitrary
 /// formatted comment string can also be written. Units for numeric header values may be specified
 /// in square brackets after the header key, e.g. "freq [Hz]".
@@ -146,7 +146,7 @@ int XLALFITSHeaderReadGPSTime( FITSFile *file, const CHAR *key, LIGOTimeGPS *val
 /// <tt>XLALFITSArrayOpenWrite<i>N</i>()</tt> and <tt>XLALFITSArrayOpenRead<i>N</i>()</tt> are
 /// convenience functions for 1- and 2-dimensional arrays. The functions
 /// <tt>XLALFITSArrayWrite<i>TYPE</i>()</tt> and <tt>XLALFITSArrayRead<i>TYPE</i>()</tt> are then
-/// used to write scalar #UINT2, #UINT4, #UINT8, #INT2, #INT4, #INT8, #REAL4, and #REAL8 values to the array
+/// used to write scalar ::UINT2, ::UINT4, ::UINT8, ::INT2, ::INT4, ::INT8, ::REAL4, and ::REAL8 values to the array
 /// element indexed by \p idx. For the convenience the functions XLALFITSArrayWriteGSLMatrix() and
 /// XLALFITSArrayReadGSLMatrix() exist for writing/reading elements to/from a <tt>gsl_matrix</tt>.
 ///

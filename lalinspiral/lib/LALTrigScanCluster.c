@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /*----------------------------------------------------------------------------
@@ -39,20 +39,20 @@
  * ### Description ###
  *
  * <tt>XLALTrigScanClusterTriggers()</tt> is the main function for invoking
- * trigScan clustering. It takes in the ::SnglInspiralTable to be clustered,
+ * trigScan clustering. It takes in the \c SnglInspiralTable to be clustered,
  * the method to be applied, the metric scaling factor, and a flag to say whether
  * to append stragglers (i.e. clusters of only 1 trigger). Upon success, the
- * return value will be #XLAL_SUCCESS, with the ::SnglInspiralTable having
+ * return value will be #XLAL_SUCCESS, with the \c SnglInspiralTable having
  * been clustered. At present, the only clustering method implemented is #T0T3Tc.
  *
- * <tt>XLALTrigScanCreateCluster()</tt> takes in a ::TriggerErrorList
+ * <tt>XLALTrigScanCreateCluster()</tt> takes in a \c TriggerErrorList
  * containing the triggers, their position vectors and ellipsoid matrices. It
  * creates the cluster by agglomerating triggers by checking for overlap of
  * ellipsoids. Upon ellipsoid overlap, the trigger is added to the cluster, and
  * removed from the unclustered list.
  *
  * <tt>XLALTrigScanRemoveStragglers()</tt> takes in a linked list of
- * ::TrigScanCluster's. It removes all clusters of 1 element from the list.
+ * \c TrigScanCluster's. It removes all clusters of 1 element from the list.
  *
  * <tt>XLALTrigScanKeepLoudestTrigger()</tt> performs the actual clustering,
  * freeing all triggers in the cluster except the loudest. Currently, loudest
@@ -61,12 +61,12 @@
  *
  * <tt>XLALTrigScanReLinkLists()</tt> re-links all the inter-cluster lists after
  * the clustering has been performed, in preparation for returning the clustered
- * ::SnglInspiralTable to the program.
+ * \c SnglInspiralTable to the program.
  *
  * <tt>XLALTrigScanDestroyCluster()</tt> frees memory associated with a cluster.
- * It has two modes of operation, specified by the ::TrigScanStatus. If this
- * is #TRIGSCAN_ERROR, the ::SnglInspiralTable will also be freed. If it is
- * #TRIGSCAN_SUCCESS, the ::SnglInspiralTable will be kept for returning to the
+ * It has two modes of operation, specified by the \c TrigScanStatus. If this
+ * is #TRIGSCAN_ERROR, the \c SnglInspiralTable will also be freed. If it is
+ * #TRIGSCAN_SUCCESS, the \c SnglInspiralTable will be kept for returning to the
  * calling program.
  *
  */

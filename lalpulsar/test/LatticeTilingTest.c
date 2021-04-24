@@ -13,8 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with with program; see the file COPYING. If not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-// MA 02111-1307 USA
+// Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301 USA
 //
 
 // Tests of the lattice-based template generation code in LatticeTiling.[ch].
@@ -761,7 +761,83 @@ static int SuperskyTests(
   XLALDestroyEphemerisData( edat );
   LALCheckMemoryLeaks();
 
-  printf( "Finished super-sky metric tests\n" );
+  printf( "Finished super-sky metric tests\n\n" );
+
+  return XLAL_SUCCESS;
+
+}
+
+static double LinearBound(
+  const void *data,
+  const size_t dim,
+  const gsl_matrix *cache UNUSED,
+  const gsl_vector *point
+  )
+{
+
+  // Get bounds data
+  const double *c_m = ( const double * ) data;
+  const double c = c_m[0];
+  const double m = c_m[1];
+  
+  // Return bound
+  const double x = gsl_vector_get( point, dim - 1);
+  return m * x + c;
+
+}
+
+static int StrictBoundaryTest(
+  const double y_range
+  ) {
+
+  // Create lattice tiling
+  LatticeTiling *tiling = XLALCreateLatticeTiling( 2 );
+  XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
+
+  // Add bounds
+  XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, -1.0, 1.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 0, LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  {
+    const double c_m_lower[] = { -y_range, 5.0 };
+    const double c_m_upper[] = { +y_range, 5.0 };
+    XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, LinearBound, sizeof(c_m_lower), c_m_lower, c_m_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 1, LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Set metric to the Lehmer matrix
+  const double max_mismatch = 0.3;
+  {
+    gsl_matrix *GAMAT( metric, 2, 2 );
+    for ( size_t i = 0; i < 2; ++i ) {
+      for ( size_t j = 0; j < 2; ++j ) {
+        const double ii = i+1, jj = j+1;
+        gsl_matrix_set( metric, i, j, jj >= ii ? ii/jj : jj/ii );
+      }
+    }
+    XLAL_CHECK( XLALSetTilingLatticeAndMetric( tiling, TILING_LATTICE_ANSTAR, metric, max_mismatch ) == XLAL_SUCCESS, XLAL_EFUNC );
+    GFMAT( metric );
+  }
+
+  // Create lattice tiling iterator
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, 2 );
+
+  // Check that all points are strictly within boundaries
+  {
+    gsl_vector *GAVEC( point, 2 );
+    while ( XLALNextLatticeTilingPoint( itr, point ) > 0 ) {
+      const double x = gsl_vector_get( point, 0 );
+      const double y = gsl_vector_get( point, 1 );
+      XLAL_CHECK( -1.0 <= x && x <= 1.0, XLAL_EFAILED, "x=%0.5g is not in strict boundaries [-1, 1]", x );
+      const double y_min = 5.0 * x - y_range;
+      const double y_max = 5.0 * x + y_range;
+      XLAL_CHECK( y_min <= y && y <= y_max, XLAL_EFAILED, "y=%0.5g is not within strict boundaries [%0.5g, %0.5g]", y, y_min, y_max );
+    }
+    GFVEC( point );
+  }
+  
+  // Cleanup
+  XLALDestroyLatticeTilingIterator( itr );
+  XLALDestroyLatticeTiling( tiling );
 
   return XLAL_SUCCESS;
 
@@ -817,6 +893,13 @@ int main( void )
 
   // Perform a variety of tests with the reduced supersky parameter space and metric
   XLAL_CHECK_MAIN( SuperskyTests( 6886488, 1050134, 932765, 26063227993 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  // Perform test to check latting tiling with strict boundary flags
+  for ( double y_range = 0.5; y_range < 2.005; y_range += 0.1 ) {
+    printf("Strict boundary tests, y_range=%g\n", y_range);
+    XLAL_CHECK_MAIN( StrictBoundaryTest( y_range ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+  printf("\n");
 
   return EXIT_SUCCESS;
 

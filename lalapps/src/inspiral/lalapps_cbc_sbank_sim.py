@@ -87,7 +87,7 @@ def parse_command_line():
     parser.add_option("--duration-min",default = 0, type="float", help="Cull injections based on duration")
     parser.add_option("--template-bank",default = [], action="append", metavar="FILE[:APPROX]")
     parser.add_option("--template-approx",default = None, help="Approximant to be used for templates when not specified with file.")
-    parser.add_option("--noise-model", choices=noise_models.keys(), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model")
+    parser.add_option("--noise-model", choices=list(noise_models.keys()), default="aLIGOZeroDetHighPower", help="Choose a noise model for the PSD from a set of available analytical model")
     parser.add_option("--reference-psd", help="Read PSD from xml instead of using analytical noise model.")
     parser.add_option("--instrument", metavar="IFO", help="Specify the instrument for which to generate a template bank.")
     parser.add_option("--flow",default = 40.0, type="float")

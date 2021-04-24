@@ -7,6 +7,9 @@
 %undefine nightly
 %endif
 
+# borrowed from python3-rpm-macros
+%define pyYdir %{_builddir}/pythonY-%{name}-%{version}-%{release}
+
 # -- metadata ---------------
 
 Name: @PACKAGE@
@@ -15,7 +18,7 @@ Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 Summary: LSC Algorithm Frame Library
 License: GPLv2+
 Group: LAL
-Source0: http://software.ligo.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
+Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
 Prefix: %{_prefix}
@@ -26,8 +29,8 @@ Prefix: %{_prefix}
 BuildRequires: libframel-devel >= @MIN_FRAMEL_VERSION@
 BuildRequires: gcc
 BuildRequires: gcc-c++
-BuildRequires: help2man
-BuildRequires: lal-devel >= @MIN_LAL_VERSION@
+BuildRequires: help2man >= 1.37
+BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
@@ -35,6 +38,7 @@ BuildRequires: pkgconfig >= 0.18.0
 # swig
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
 # python2
 BuildRequires: python2-rpm-macros
 BuildRequires: python-devel
@@ -43,11 +47,12 @@ BuildRequires: python2-mock
 BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python-pathlib
 BuildRequires: pytest
+BuildRequires: rsync
+%endif
 
 # python3x
 BuildRequires: python-srpm-macros
 BuildRequires: python3-rpm-macros
-BuildRequires: epel-rpm-macros
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
@@ -59,49 +64,65 @@ BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 
 # -- packages ---------------
 
-# lalframe
-Requires: lal >= @MIN_LAL_VERSION@
+#%%package -n lalframe
+Summary: LSC Algorithm Frame Library - runtime tools
+Group: LAL
+Requires: lib%{name} = %{version}-%{release}
+Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+%description
+The LSC Algorithm Frame Library for gravitational wave data analysis.
+This package provides the runtime tools.
+
+# liblalframe
+%package -n lib%{name}
+Summary: LSC Algorithm Frame Library - library package
 Requires: ldas-tools-framecpp-c >= @MIN_FRAMECPPC_VERSION@
 Requires: libframel >= @MIN_FRAMEL_VERSION@
-
-%description
-The LSC Algorithm Frame Library for gravitational wave data analysis. This
-package contains the shared-object libraries needed to run applications
+Requires: liblal >= @MIN_LAL_VERSION@
+Conflicts: lalframe <= 1.5.2-1
+%description -n lib%{name}
+The LSC Algorithm Frame Library for gravitational wave data analysis.
+This package contains the shared-object libraries needed to run applications
 that use the LAL Frame library.
 
-# lalframe-devel
-%package devel
+# liblalframe-devel
+%package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Frame
 Group: LAL
-Requires: %{name} = %{version}
-Requires: libframel-devel >= @MIN_FRAMEL_VERSION@
-Requires: lal-devel >= @MIN_LAL_VERSION@
+Requires: lib%{name} = %{version}-%{release}
 Requires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
-%description devel
+Requires: libframel-devel >= @MIN_FRAMEL_VERSION@
+Requires: liblal-devel >= @MIN_LAL_VERSION@
+Provides: %{name}-devel = %{version}-%{release}
+Obsoletes: %{name}-devel < 1.5.3-1
+%description -n lib%{name}-devel
 The LSC Algorithm Frame Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Frame
 library.
 
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
 # python2-lalframe
 %package -n python2-%{name}
 Summary: Python %{python2_version} Bindings for LALFrame
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python
 Requires: python2-lal >= @MIN_LAL_VERSION@
 Requires: python2-numpy >= @MIN_NUMPY_VERSION@
 Provides: %{name}-python = %{version}-%{release}
+Provides: deprecated()
 Obsoletes: %{name}-python < %{version}-%{release}
 %{?python_provide:%python_provide python2-%{name}}
 %description -n python2-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python2_version} bindings for LALFrame.
+%endif
 
 # python3x-lalframe
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} Bindings for LALFrame
 Group: LAL
-Requires: %{name} = %{version}
+Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
@@ -127,40 +148,47 @@ This package provides the Octave bindings for LALFrame.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-# build C library with python2
-%configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python2}
+# build C library with python3
+%configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
-# build python3 library (copy things so we don't have to rebuild them)
-rm -rf %py3dir
-cp -r . %py3dir
-pushd %py3dir
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
+# build python2 library (copy things so we don't have to rebuild them)
+rm -rf %pyYdir
+rsync -ra . %pyYdir
+pushd %pyYdir
 rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
-%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python3}
+%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python2}
 %{__make} V=1 -C swig
 %{__make} V=1 -C python/%{name}
-%{__make} V=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
+#%%{__make} V=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
 popd
+%endif
 
 %check
-# C + python2 + octave
+# C + python3 + octave
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
-# python3
-%{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %py3dir -C test/python check
+
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
+# python2
+%{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %pyYdir -C test/python check
+%endif
 
 %install
-# C + python2 + octave
+# C + python3 + octave
 %make_install
-# python3
-%{__make} -C %py3dir -C swig install-exec-am DESTDIR=%{?buildroot}
-%{__make} -C %py3dir -C python/%{name} install DESTDIR=%{?buildroot}
+
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
+# python2
+%{__make} -C %pyYdir -C swig install-exec-am DESTDIR=%{?buildroot}
+%{__make} -C %pyYdir -C python/%{name} install DESTDIR=%{?buildroot}
+%endif
+
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
-%post
-ldconfig
+%post -n lib%{name} -p /sbin/ldconfig
 
-%postun
-ldconfig
+%postun -n lib%{name} -p /sbin/ldconfig
 
 %clean
 [ ${RPM_BUILD_ROOT} != "/" ] && rm -Rf ${RPM_BUILD_ROOT}
@@ -168,42 +196,62 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
-%files
+%files -n lib%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
-%{_bindir}/lalfr-*
-%{_bindir}/lalframe_version
-%{_mandir}/man1/*
 %{_libdir}/*.so.*
-%{_sysconfdir}/*
 
-%files devel
+%files -n lib%{name}-devel
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_includedir}/lal
 %{_libdir}/*.a
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
+%if 0%{?rhel} != 0 && 0%{?rhel} < 8
 %files -n python2-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python2_sitearch}/*
+%endif
 
 %files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{python3_sitearch}/*
 
 %files octave
 %defattr(-,root,root)
+%doc README.md
 %license COPYING
 %{_prefix}/lib*/octave/*/site/oct/*/lalframe.oct*
+
+%files
+%defattr(-,root,root)
+%doc README.md
+%license COPYING
+%{_bindir}/*
+%{_mandir}/man1/*
+%{_sysconfdir}/*
 
 # -- changelog --------------
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Fri Feb 05 2021 Adam Mercer <adam.mercer@ligo.org> 1.5.4-1
+- Update for 1.5.4
+
+* Mon Jan 11 2021 Adam Mercer <adam.mercer@ligo.org> 1.5.3-1
+- Update for 1.5.3
+
+* Tue Oct 27 2020 Adam Mercer <adam.mercer@ligo.org> 1.5.2-1
+- Update for 1.5.2
+
 * Mon Jun 08 2020 Adam Mercer <adam.mercer@ligo.org> 1.5.1-1
 - Update for 1.5.1
 

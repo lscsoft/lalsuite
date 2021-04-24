@@ -13,9 +13,11 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
+
+#include "config.h"
 
 #include <string.h>
 
@@ -34,7 +36,7 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALInspiral.h>
 
-#include "lalapps.h"
+#include <LALAppsVCSInfo.h>
 #include "injsgnl.h"
 #include "getresp.h"
 #include "errutil.h"
@@ -54,7 +56,7 @@ int ring_inject_signal(
 {
   /* note: duration is only used for response, and can be relatively coarse */
   const      REAL8 duration = 16; /* determines deltaF=1/dataDuration Hz*/
-  LALStatus                status     = blank_status;
+  LALStatus                XLAL_INIT_DECL(status);
   COMPLEX8FrequencySeries *response   = NULL;
   SimInspiralTable        *injectList = NULL;
   SimInspiralTable        *thisInject;

@@ -75,3 +75,7 @@ TESTS += \
 	$(END_OF_LIST)
 
 endif
+
+# -- Manuals ----------------
+
+man1_MANS = $(help2man_MANS)

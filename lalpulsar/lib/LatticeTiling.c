@@ -13,8 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with with program; see the file COPYING. If not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-// MA 02111-1307 USA
+// Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301 USA
 //
 
 #include <config.h>
@@ -1962,6 +1962,35 @@ int XLALNextLatticeTilingPoint(
         phys_point_i += phys_from_int_i_j * int_point_tj;
       }
       LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, phys_point_i );
+    }
+
+    // Handle strict parameter space boundaries
+    if ( bound->padf == LATTICE_TILING_PAD_NONE && ti >= changed_ti ) {
+
+      // Get current physical point and bounds
+      double phys_point_i = gsl_vector_get( itr->phys_point, i );
+      double phys_lower = 0, phys_upper = 0;
+      LT_CallBoundFunc( itr->tiling, i, itr->phys_point_cache, itr->phys_point, &phys_lower, &phys_upper );
+
+      // If physical point outside lower bound, try to move just inside
+      if ( phys_point_i < phys_lower ) {
+        const double phys_from_int_i_i = gsl_matrix_get( itr->tiling->phys_from_int, i, i );
+        const INT4 di = lround( ceil ( ( phys_lower - phys_point_i ) / phys_from_int_i_i ) );
+        itr->int_point[ti] += di;
+        phys_point_i += phys_from_int_i_i * di;
+      }
+
+      // If physical point now outside upper bound, parameter space is narrower than step size:
+      // - Set physical point to mid-point of parameter space bounds
+      // - Set integer point to upper bound, so that next iteration will reset
+      if ( phys_point_i > phys_upper ) {
+        phys_point_i = 0.5 * ( phys_lower + phys_upper );
+        itr->int_point[ti] = itr->int_upper[ti];
+      }
+
+      // Set physical point
+      LT_SetPhysPoint( itr->tiling, itr->phys_point_cache, itr->phys_point, i, phys_point_i );
+
     }
 
     // Increment tiled dimension index

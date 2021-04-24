@@ -13,8 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with with program; see the file COPYING. If not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-// MA 02111-1307 USA
+// Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301 USA
 //
 
 #ifndef _LATTICETILING_H
@@ -70,6 +70,7 @@ typedef enum tagTilingLattice {
 /// Lattice tiling parameter-space bound padding control flags.
 ///
 typedef enum tagLatticeTilingPaddingFlags {
+  LATTICE_TILING_PAD_NONE  = 0x00,      ///< Do not add padding, and generate points strictly within parameter space
   LATTICE_TILING_PAD_LHBBX = 0x01,      ///< Add half-bounding-box padding to lower physical parameter-space bounds
   LATTICE_TILING_PAD_UHBBX = 0x02,      ///< Add half-bounding-box padding to upper physical parameter-space bounds
   LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
@@ -78,7 +79,7 @@ typedef enum tagLatticeTilingPaddingFlags {
 } LatticeTilingPaddingFlags;
 
 ///
-/// Static array of all #TilingLattice choices, for use by the UserInput module parsing routines
+/// Static array of all :tagTilingLattice choices, for use by the UserInput module parsing routines
 ///
 extern const UserChoices TilingLatticeChoices;
 

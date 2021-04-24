@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 #include <lal/LALSimIMR.h>
@@ -1340,7 +1340,7 @@ tried to apply shift of -1.0/deltaF with deltaF=%g.",
 
             COMPLEX16FrequencySeries *hlm = XLALCreateCOMPLEX16FrequencySeries("hlm: FD waveform", &tC, 0.0, pHM->deltaF, &lalStrainUnit, pHM->npts);
             memset(hlm->data->data, 0, pHM->npts * sizeof(COMPLEX16));
-            // XLALUnitMultiply(&((*hlm)->sampleUnits), &((*hlm)->sampleUnits), &lalSecondUnit);
+            XLALUnitMultiply(&(hlm->sampleUnits), &(hlm->sampleUnits), &lalSecondUnit);
             retcode = 0;
             retcode = IMRPhenomHMEvaluateOnehlmMode(&hlm,
                                                     amps, phases,

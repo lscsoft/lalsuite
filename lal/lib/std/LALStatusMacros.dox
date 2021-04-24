@@ -20,13 +20,13 @@ routines.
 \section ss_status_reporting_objects Status-reporting objects
 
 LAL routines make use of two objects in reporting their current
-status: the status structure ::LALStatus, and the global integer
+status: the status structure \c LALStatus, and the global integer
 lalDebugLevel.  These two objects are described in the following
 sections.
 
 \subsection ss_LALStatus The LALStatus structure
 
-The ::LALStatus structure is the means by which LAL functions report their
+The \c LALStatus structure is the means by which LAL functions report their
 success or failure; it provides a useful mechanism for tracking
 progress and errors through nested function calls.  The error
 reporting structure is a linked list of LALStatus structures, with
@@ -137,9 +137,9 @@ of debugging or error-tracking code - such as the memory leak
 detection code in \ref LALMalloc.c - do not write status messages
 and are not associated with a \c lalDebugLevel bit; instead, these
 pieces of code are turned on for \e any nonzero value of
-\c lalDebugLevel, unless the #LALMEMDBG bit is set.
+\c lalDebugLevel, unless the ::LALMEMDBG bit is set.
 Switching on only the most significant bit with
-#LALMEMDBG activates this code without turning on any other
+::LALMEMDBG activates this code without turning on any other
 error reporting.
 
 To turn debugging code on or off at compile time (rather than

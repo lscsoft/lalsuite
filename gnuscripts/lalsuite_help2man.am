@@ -1,11 +1,12 @@
 if HELP2MAN
 
-man1_MANS = $(bin_PROGRAMS:=.man)
+help2man_MANS = $(bin_PROGRAMS:=.man)
+
 if HAVE_PYTHON
-man1_MANS += $(pybin_scripts:=.pyman)
+help2man_MANS += $(pybin_scripts:=.pyman)
 endif
 
-MOSTLYCLEANFILES += $(man1_MANS) $(man1_MANS:.man=.man.tmp)
+MOSTLYCLEANFILES += $(help2man_MANS) $(help2man_MANS:.man=.man.tmp)
 
 endif
 

@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2008  Kipp Cannon
 #               2015  Leo Singer
 #

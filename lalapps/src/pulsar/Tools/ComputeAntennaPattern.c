@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 /**
@@ -29,6 +29,8 @@
  */
 
 /* ---------- includes ---------- */
+#include "config.h"
+
 #include <math.h>
 #include <errno.h>
 #include <string.h>
@@ -39,7 +41,7 @@
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
 
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 
 /* ----- compile switches ----- */
 
@@ -128,7 +130,7 @@ main(int argc, char *argv[])
       XLAL_CHECK ( (fpOutab = fopen (uvar.outab, "wb")) != NULL, XLAL_EIO, "Error opening file '%s' for writing...", uvar.outab );
 
       /* write header info in comments */
-      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVersionString ( fpOutab, 0 ), XLAL_EFUNC );
+      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVCSInfo(fpOutab, lalAppsVCSInfoList, 0, "%% "), XLAL_EFUNC );
 
       /* write the command-line */
       for (int a = 0; a < argc; a++)
@@ -158,7 +160,7 @@ main(int argc, char *argv[])
       XLAL_CHECK ( (fpOutABCD = fopen (uvar.outABCD, "wb")) != NULL, XLAL_EIO, "Error opening file '%s' for writing...", uvar.outABCD );
 
       /* write header info in comments */
-      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVersionString ( fpOutABCD, 0 ), XLAL_EFUNC );
+      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVCSInfo(fpOutABCD, lalAppsVCSInfoList, 0, "%% "), XLAL_EFUNC );
 
       /* write the command-line */
       for (int a = 0; a < argc; a++)

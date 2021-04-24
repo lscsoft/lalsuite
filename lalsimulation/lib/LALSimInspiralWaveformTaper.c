@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 
@@ -37,7 +37,7 @@ const UINT4 LALSIMULATION_RINGING_EXTENT = 19;
  * \c XLALInspiralREAL8WaveTaper() impose a smooth time tapering at the
  * beginning and/or the end of REAL4 or REAL8 waveforms in the time domain.
  *
- * They take either a ::REAL4Vector or a ::REAL8Vector and search for the
+ * They take either a \c REAL4Vector or a \c REAL8Vector and search for the
  * beginning and end points of the signal, in case there are null data points
  * at either end. They then taper the waveform from the ends to the second
  * maxima from each end in the waveform, according to formula 3.35 of
@@ -47,7 +47,7 @@ const UINT4 LALSIMULATION_RINGING_EXTENT = 19;
  * from the each end to the second peak then the waveform is tapered from the
  * ends to the centre of the instead.
  *
- * The bookends option is an ::LALSimInspiralApplyTaper enumerator and allows the
+ * The bookends option is an \c LALSimInspiralApplyTaper enumerator and allows the
  * user to specify whether just the start, just the end or both the start and
  * end of the signal are tapered. These options are #LAL_SIM_INSPIRAL_TAPER_START,
  * #LAL_SIM_INSPIRAL_TAPER_END and #LAL_SIM_INSPIRAL_TAPER_STARTEND.

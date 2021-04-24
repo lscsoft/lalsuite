@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #include <lal/LALStdlib.h>
@@ -198,10 +198,10 @@
  * <li> The conventions in the \c LALFrDetector structure are based
  * on version 6 of the frame specification \cite LIGOVIRGO_2000 .</li>
  * <li> If the location and response tensor information for a
- * \c ::LALDetector are filled in by hand (e.g., for testing
+ * \c LALDetector are filled in by hand (e.g., for testing
  * purposes), the \c type field should be set to
- * \c #LALDETECTORTYPE_ABSENT.</li>
- * <li> The range of \c ::LALDetectorType could be expanded to
+ * #LALDETECTORTYPE_ABSENT.</li>
+ * <li> The range of \c LALDetectorType could be expanded to
  * include the  monopole and five quadrupole modes for a spherical
  * resonant detector
  * \cite Maggiore2000b , \cite Zhou_1995 , \cite Bianchi_1998 , \cite Maggiore2000a .</li>

@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 #include <complex.h>
@@ -185,6 +185,10 @@ static const char *lalSimulationApproximantNames[] = {
 	INITIALIZE_NAME(IMRPhenomXP),
     INITIALIZE_NAME(IMRPhenomXPHM),
 		INITIALIZE_NAME(TEOBResumS),
+    INITIALIZE_NAME(IMRPhenomT),
+    INITIALIZE_NAME(IMRPhenomTHM),
+    INITIALIZE_NAME(IMRPhenomTP),
+    INITIALIZE_NAME(IMRPhenomTPHM)
 };
 #undef INITIALIZE_NAME
 
@@ -302,6 +306,10 @@ static double fixReferenceFrequency(const double f_ref, const double f_min, cons
 		case IMRPhenomXP:
 		case IMRPhenomXPHM:
         case NRSur4d2s:
+        case IMRPhenomT:
+        case IMRPhenomTHM:
+        case IMRPhenomTP:
+        case IMRPhenomTPHM:
 	case TEOBResumS:
             return f_min;
         default:
@@ -1156,6 +1164,53 @@ int XLALSimInspiralChooseTDWaveform(
 			polariz = 0;
 			ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
 			break;
+
+        case IMRPhenomT:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+            ret = XLALSimIMRPhenomT(hplus, hcross, m1, m2, S1z, S2z, distance, inclination, deltaT, f_min, f_ref, phiRef, LALparams);
+            break;
+
+
+        case IMRPhenomTHM:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+            ret = XLALSimIMRPhenomTHM(hplus, hcross, m1, m2, S1z, S2z, distance, inclination, deltaT, f_min, f_ref, phiRef, LALparams);
+            break;
+
+        case IMRPhenomTP:
+            /* Waveform-specific sanity checks */
+        /* FIXME: CHECK ADDITIONAL CHECKS OF XP */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+            ret = XLALSimIMRPhenomTP(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, deltaT, f_min, f_ref, phiRef, LALparams);
+            break;
+
+        case IMRPhenomTPHM:
+            /* Waveform-specific sanity checks */
+            /* FIXME: CHECK ADDITIONAL CHECKS OF XPHM */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+            ret = XLALSimIMRPhenomTPHM(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, deltaT, f_min, f_ref, phiRef, LALparams);
+            break;
 
         default:
             XLALPrintError("TD version of approximant not implemented in lalsimulation\n");
@@ -2793,6 +2848,8 @@ int XLALSimInspiralFD(
     Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
     )
 {
+	  XLAL_CHECK(f_max > 0, XLAL_EDOM, "Maximum frequency must be > 0\n");
+
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
     double chirplen, deltaT;
@@ -3237,6 +3294,31 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
                 S2z, f_min, f_ref, r, LALpars);
             break;
 
+        case IMRPhenomTHM:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+            /* Call the waveform driver routine */
+            hlm = XLALSimIMRPhenomTHM_Modes(m1, m2, S1z, S2z, r, deltaT, f_min, f_ref, phiRef, LALpars);
+
+            break;
+
+        case IMRPhenomTPHM:
+            /* Waveform-specific sanity checks */
+            /* FIXME: CHECK XPHM CHECKS */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+            /* Call the waveform driver routine. */
+            hlm = XLALSimIMRPhenomTPHM_ChooseTDModes(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, r, deltaT, f_min, f_ref, LALpars);
+            break;
+
         case SEOBNRv4P:
             /* Waveform-specific sanity checks */
             if (!XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars))
@@ -3338,6 +3420,494 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
         XLAL_ERROR_NULL(XLAL_EFUNC);
 
     return hlm;
+}
+
+/**
+ * @brief Interface to compute a set of -2 spin-weighted spherical harmonic modes
+ * for a binary merger for a given waveform approximant in the Fourier domain.
+ * Non-precessing models IMRPhenomXHM, SEOBNRv4HM_ROM and IMRPhenomHM and the
+ * precessing IMRPhenomXPHM are implemented.
+ * By default, all the modes available in the model are returned, although the list
+ * can be specified through the ModeArray option in the LAL dictionary.
+ * @details
+ * In the Fourier domain the modes span over the whole frequency regime (positive and negative frequencies).
+ * However, in the aligned spin case, the modes have support only in one half of the frequency regime.
+ * The LAL conventions establish that the negative modes (m<0) have support for positive frequencies while
+ * the positive modes (m>0) have support for negative frequencies (this is based in the right hand rule and 
+ * Fourier transform definition in LAL).
+ * Due to the equatorial symmetry of non-precessng systems, there exist a relation between them: h_{lm}(f) = (-1)^l h*_{l-m}(-f).
+ * In the precessing case this symmetry is broken and all the modes have support for both positive and negative frequencies.
+ *
+ * For this reason, the ouput SphHarmFrequencySeries object will return the modes in the whole frequency range.
+ * The frequencies of this object will be sorted as: -f_max,...,-f_min,...0,...,f_min,...,f_max.
+ * The values of the waveform will be sorted correspondingly. Consequently, in the aligned spin case, half of the frequency spectrum consists of zeros.
+ *
+ * It is relevant to mention why the arguments inclination and phiRef are needed for computing the h_lm.
+ * For AS models the argument inclination is irrelevant and will not be use since it only enters in the Ylm. However, for the precessing model,
+ * since the modes are returned in the J-frame, we need the inclination argument to carry out the Euler transformation from the co-precessing L-frame
+ * to the inertial J-frame. Regarding the argument phiRef, this affects the output of the precessing model due to the same reason as before, while for the AS models 
+ * it would not affect the output of SEOBNRv4HM_ROM but will change the output of IMRPhenomHM and IMRPhenomXHM (this is due to the internals workings of the models).
+ * If one wants to built the polarizations from the individual modes of ChooseFDModes must be aware of this behaviour. 
+ * Ideally, one would call ChooseFDModes with phiRef=0 to obtain the h_lms, then build the Fourier domain polarizations as
+ *
+ * h_+ (f) = 1/2 sum_{l=2} sum_{m=-l}^{m=l}  (  h_lm(f) * Y_lm(theta, vphi)  +  h*_lm(-f) * Y*_lm(theta, vphi)  )  
+ * h_x (f) = i/2 sum_{l=2} sum_{m=-l}^{m=l}  (  h_lm(f) * Y_lm(theta, vphi)  -  h*_lm(-f) * Y*_lm(theta, vphi)  )  
+ *
+ * where theta is the inclination and vphi is pi/2 - phiRef. 
+ *
+ * If one does this, one will find generally a very close result to ChooseFDWaveform with very small mismatches (~10^-9 for IMRPhenomXHM),
+ * and this is what is found if one uses the XLALSimInspiralPolarizationsFromSphHarmFrequencySeries function, however this is not close to machine precision.
+ * The reason is that IMRPhenomHM and IMRPhenomXHM use internally the phiRef argument to compute the h_lms because at that time phiRef was considered to be also a reference 
+ * phase for the h_lms and not just the argument for the azimuthal angle in the Y_lms. 
+ * To take this into account we provide also the function XLALSimInspiralPolarizationsFromChooseFDModes which build the polarizations in the proper way for each
+ * model returning a result close to machine precision with ChooseFDWaveform.
+ *
+ * For the precessing model IMRPhenomXPHM, since the h_lms are returned in the J-frame one must build the polarizations using theta = theta_JN and vphi = 0. 
+ * The parameter theta_JN is computed internally when using XLALSimInspiralPolarizationsFromChooseFDModes and again here the result is close to machine precision to ChooseFDWaveform. 
+ * However, one would have to compute theta_JN personally when using XLALSimInspiralPolarizationsFromSphHarmFrequencySeries. 
+ * For IMRPhenomXPHM this parameter can be computed using XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame. Eventhough one would still have to correct with the polarization angle.
+ *
+ * By default all the modes available in the model will be returned, both positive and negative modes.
+ * The mode content of AS models can be adjusted through the ModeArray option in the LAL dictionary argument, and it accepts any set of modes e.g. (2,2),(2,-1),(3,3),...
+ * For IMRPhenomXPHM, we can specify both the modes in the co-precessing L-frame, which are used to do the twisting-up, and
+ * the ouput modes in the inertial J-frame. The set of modes in the L-frame are specified with the standard ModeArray option
+ * while the set of modes in the J-frame are specified in a new option called ModeArrayJframe. Notice that in IMRPhenomXPHM, ModeArray does not distinguish
+ * between positive or negative modes and it always twists-up both positive and negative modes, i.e. the sets {(2,2)}, {(2,-2)} or {(2,2),(2,-2)} would return the same result.
+ * For the modes in ModeArrayJframe, we can specify both positive or negative modes for example {(2,2),(2,-2),(2,-1),(3,3),...}.
+ */
+SphHarmFrequencySeries *XLALSimInspiralChooseFDModes(
+	REAL8 m1,                                   /**< mass of companion 1 (kg) */
+    REAL8 m2,                                   /**< mass of companion 2 (kg) */
+    REAL8 S1x,                                  /**< x-component of the dimensionless spin of object 1 */
+    REAL8 S1y,                                  /**< y-component of the dimensionless spin of object 1 */
+    REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+    REAL8 S2x,                                  /**< x-component of the dimensionless spin of object 2 */
+    REAL8 S2y,                                  /**< y-component of the dimensionless spin of object 2 */
+    REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+    REAL8 deltaF,                               /**< sampling interval (s) */
+	REAL8 f_min,                                /**< starting GW frequency (Hz) */
+	REAL8 f_max,                                /**< ending GW frequency (Hz) */
+    REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+	REAL8 phiRef,								/**< reference phase (rad) */
+    REAL8 distance,                             /**< distance of source (m) */
+    REAL8 inclination,                          /**< inclination of source (rad) */
+	LALDict *LALparams,                         /**< LAL dictionary containing accessory parameters (optional mode array) */
+    Approximant approximant                     /**< approximant to use for waveform production */
+    )
+{
+
+	REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALparams);
+	REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
+
+	/* General sanity checks that will abort
+	 *
+	 * If non-GR approximants are added, include them in
+	 * XLALSimInspiralApproximantAcceptTestGRParams()
+	 */
+	if( !XLALSimInspiralWaveformParamsNonGRAreDefault(LALparams) && XLALSimInspiralApproximantAcceptTestGRParams(approximant) != LAL_SIM_INSPIRAL_TESTGR_PARAMS ) {
+			XLALPrintError("XLAL Error - %s: Passed in non-NULL pointer to LALSimInspiralTestGRParam for an approximant that does not use LALSimInspiralTestGRParam\n", __func__);
+			XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+
+	/* General sanity check the input parameters - only give warnings! */
+	if( deltaF > 1. )
+			XLALPrintWarning("XLAL Warning - %s: Large value of deltaF = %e requested...This corresponds to a very short TD signal (with padding). Consider a smaller value.\n", __func__, deltaF);
+	if( deltaF < 1./4096. )
+			XLALPrintWarning("XLAL Warning - %s: Small value of deltaF = %e requested...This corresponds to a very long TD signal. Consider a larger value.\n", __func__, deltaF);
+	if( m1 < 0.09 * LAL_MSUN_SI )
+			XLALPrintWarning("XLAL Warning - %s: Small value of m1 = %e (kg) = %e (Msun) requested...Perhaps you have a unit conversion error?\n", __func__, m1, m1/LAL_MSUN_SI);
+	if( m2 < 0.09 * LAL_MSUN_SI )
+			XLALPrintWarning("XLAL Warning - %s: Small value of m2 = %e (kg) = %e (Msun) requested...Perhaps you have a unit conversion error?\n", __func__, m2, m2/LAL_MSUN_SI);
+	if( m1 + m2 > 1000. * LAL_MSUN_SI )
+			XLALPrintWarning("XLAL Warning - %s: Large value of total mass m1+m2 = %e (kg) = %e (Msun) requested...Signal not likely to be in band of ground-based detectors.\n", __func__, m1+m2, (m1+m2)/LAL_MSUN_SI);
+	if( S1x*S1x + S1y*S1y + S1z*S1z > 1.000001 )
+			XLALPrintWarning("XLAL Warning - %s: S1 = (%e,%e,%e) with norm > 1 requested...Are you sure you want to violate the Kerr bound?\n", __func__, S1x, S1y, S1z);
+	if( S2x*S2x + S2y*S2y + S2z*S2z > 1.000001 )
+			XLALPrintWarning("XLAL Warning - %s: S2 = (%e,%e,%e) with norm > 1 requested...Are you sure you want to violate the Kerr bound?\n", __func__, S2x, S2y, S2z);
+	if( f_min < 1. )
+			XLALPrintWarning("XLAL Warning - %s: Small value of fmin = %e requested...Check for errors, this could create a very long waveform.\n", __func__, f_min);
+	if( f_min > 40.000001 )
+			XLALPrintWarning("XLAL Warning - %s: Large value of fmin = %e requested...Check for errors, the signal will start in band.\n", __func__, f_min);
+
+	/* Adjust the reference frequency for certain precessing approximants:
+	 * if that approximate interprets f_ref==0 to be f_min, set f_ref=f_min;
+	 * otherwise do nothing */
+	f_ref = fixReferenceFrequency(f_ref, f_min, approximant);
+
+	/* Output object, structure with the individual modes required.
+	   The values of each mode are returned both for positive and negative frequencies to be consistent with the precessing models. */
+	SphHarmFrequencySeries *hlms = NULL;
+
+	/* Frequency array of each mode. It will have both positive and negative values. */
+	REAL8Sequence *freqsSphH = NULL;
+
+
+	/* The following variables are only used for PhenomHM and SEOBNRv4HM_ROM since some extra operations are needed for them. */
+
+	/* Input ModeArray. If not specified in the LAL dictionary, it will return all the available modes in the model. */
+	LALValue *ModeArray = NULL;
+	LALDict *LALparams_aux;
+	/* This is an auxiliar, easy to read list with the modes in the ModeArray option.
+	   E.g. if (2,-2), (3,-3) are activated, the it would be (2, -2, 3, -3). */
+	INT2Sequence *modeseq;
+	/* Variable for the number of modes in the ModeArray */
+	UINT4 nmodes;
+	/* Variable for the length of individual modes in half the frequency spectrum. */
+	INT4 length;
+	/* Auxiliar variable to store the individual modes computed from the internal functions of each model which later we will
+	   apply some operations to be consistent with LAL conventions. */
+	SphHarmFrequencySeries** hlms_tmp = XLALMalloc(sizeof(SphHarmFrequencySeries));
+	*hlms_tmp = NULL;
+
+	INT4 retcode;
+
+	switch(approximant)
+	{
+		case IMRPhenomXHM:
+			/* Waveform-specific sanity checks */
+			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+			if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+			if( !checkTidesZero(lambda1, lambda2) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+			/* Compute individual modes from IMRPhenomXHM */
+			XLALSimIMRPhenomXHMModes(&hlms, m1, m2, S1z, S2z, deltaF, f_min, f_max, f_ref, phiRef, distance, LALparams);
+			break;
+
+		case IMRPhenomXPHM:
+			/* Waveform-specific sanity checks */
+			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+			if( !checkTidesZero(lambda1, lambda2) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+			/* Compute individual modes in the J-frame from IMRPhenomXPHM */
+		  XLALSimIMRPhenomXPHMModes(&hlms, m1, m2, S1x, S1y, S1z,	S2x, S2y, S2z, deltaF, f_min, f_max, f_ref, phiRef, distance, inclination, LALparams);
+			break;
+
+		case SEOBNRv4HM_ROM:
+			/* Waveform-specific sanity checks */
+			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+			if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+			if( !checkTidesZero(lambda1, lambda2) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+			/* First we define the mode array of the output SphHarmFrequencySeries.
+			   Although the user can choose this array, the model computes internally all the modes
+			   and then we just pick those specified by the user.
+			   The only exception is when only the 2,-2 mode is required, in such case SEOBNRv4_ROM is called.
+            */
+            if(LALparams == NULL){
+                LALparams_aux = XLALCreateDict();
+            }
+            else{
+                LALparams_aux = XLALDictDuplicate(LALparams);
+            }
+            ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(LALparams_aux);
+            if(ModeArray == NULL)
+            {
+                /* If not specified, fill array with default modes of IMRPhenomHM */
+                ModeArray = XLALSimInspiralCreateModeArray();
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -1);
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 3, -3);
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 4, -4);
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 5, -5);
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 1);
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 3);
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 4);
+                XLALSimInspiralModeArrayActivateMode(ModeArray, 5, 5);
+
+                modeseq = XLALSimInspiralModeArrayReadModes(ModeArray);
+
+                XLALDestroyValue(ModeArray);
+                nmodes = modeseq->length/2;
+            }
+            else // This is just to avoid killing the kernel when you ask for a mode that is not available.
+            {
+                modeseq = XLALSimInspiralModeArrayReadModes(ModeArray);
+                XLALDestroyValue(ModeArray);
+                nmodes = modeseq->length/2;
+
+                /* Check that there are not unavailable modes. */
+                LALValue *DefaultModeArray = XLALSimInspiralCreateModeArray();
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, -2);
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, -1);
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, -3);
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, -4);
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 5, -5);
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, 2);
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, 1);
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, 3);
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, 4);
+                XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 5, 5);
+
+                for(UINT4 i=0; i<nmodes; i++)
+                {
+                    INT2 l, m;
+                    l = modeseq->data[2*i];
+                    m = modeseq->data[2*i+1];
+                    if(XLALSimInspiralModeArrayIsModeActive(DefaultModeArray, l, m) == 0){
+                        XLALDestroyValue(DefaultModeArray);
+                        XLALDestroyINT2Sequence(modeseq);
+                        XLALFree(hlms_tmp);
+                        XLAL_ERROR_NULL(XLAL_EINVAL, "Mode (%i,%i) is not available in SEOBNRv4HM_ROM.\n", l, m);
+                    }
+                }
+                XLALDestroyValue(DefaultModeArray);
+            }
+            XLALDestroyDict(LALparams_aux);
+
+			UINT2 eobmodes = 5;
+			if(nmodes == 1 && modeseq->data[0]==2 && abs(modeseq->data[0])==2)
+			{
+				eobmodes = 1; // This will  internally call SEOBNRv4_ROM instead of all the modes, therefore saving time.
+			}
+
+			/* Compute individual modes of SEOBNRv4HM_ROM */
+			retcode = XLALSimIMRSEOBNRv4HMROM_Modes(hlms_tmp, phiRef, deltaF, f_min, f_max, f_ref, distance, m1, m2, S1z, S2z, -1, eobmodes);
+			if( retcode != XLAL_SUCCESS){
+				XLALFree(hlms_tmp);
+				XLAL_ERROR_NULL(XLAL_EFUNC);
+			}
+
+
+			/* This is the length of half of the frequency spectrum.
+			   Later we will resize series to add the negative frequency regime. */
+			length = (*hlms_tmp)->mode->data->length -1;
+
+
+			/* Loop over modes in the SphHarmFrequencySeries. Resize each mode. */
+			for(UINT4 i=0; i<nmodes; i++)
+			{
+				INT2 l, m;
+				l = modeseq->data[2*i];
+				m = modeseq->data[2*i+1];
+
+				COMPLEX16FrequencySeries *hlm = XLALSphHarmFrequencySeriesGetMode(*hlms_tmp, l, -abs(m));
+
+
+				if(m<0){
+					/* Resize series to add the negative frequency regime */
+					hlm = XLALResizeCOMPLEX16FrequencySeries(hlm, -length, 2*length+1);
+				}
+				else{
+					/* Use equatorial symmetry to transform negative to positive mode. */
+					INT4 minus1l = -1;
+					if (l%2 == 0){
+						minus1l = 1;
+					}
+					hlm = XLALResizeCOMPLEX16FrequencySeries(hlm, 0, 2*length+1);
+					for(INT4 j=0; j<length; j++)
+					{
+						hlm->data->data[j] = minus1l * conj(hlm->data->data[hlm->data->length -1 - j]);
+						hlm->data->data[hlm->data->length -1 - j] = 0.;
+					}
+				}
+
+				hlms = XLALSphHarmFrequencySeriesAddMode(hlms, hlm, l, m);
+			}
+			XLALDestroyINT2Sequence(modeseq);
+			XLALDestroySphHarmFrequencySeries(*hlms_tmp);
+
+			/* Add frequency array to SphHarmFrequencySeries */
+ 			freqsSphH = XLALCreateREAL8Sequence(2*length+1);
+			for (INT4 i = -length; i<=length; i++)
+ 			{
+ 				freqsSphH->data[i+length] = i*deltaF;
+ 			}
+ 			XLALSphHarmFrequencySeriesSetFData(hlms, freqsSphH);
+			break;
+
+		case IMRPhenomHM:
+			/* Waveform-specific sanity checks */
+			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+			if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+			if( !checkTidesZero(lambda1, lambda2) )
+			 		XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+
+			/* First we define the mode array of the output SphHarmFrequencySeries.
+			   PhenomHM only computes those modes specified in this array.
+				 We use an auxiliary LALDictionary LALparams_I*/
+			if(LALparams == NULL){
+				LALparams_aux = XLALCreateDict();
+			}
+			else{
+				LALparams_aux = XLALDictDuplicate(LALparams);
+			}
+			ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(LALparams_aux);
+			if( ModeArray == NULL)
+			{
+				/* If not specified, fill array with default modes of IMRPhenomHM */
+				ModeArray = XLALSimInspiralCreateModeArray();
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 1);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 3);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 2);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 4);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 3);
+
+				XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
+
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -1);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 3, -3);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 3, -2);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 4, -4);
+				XLALSimInspiralModeArrayActivateMode(ModeArray, 4, -3);
+
+				modeseq = XLALSimInspiralModeArrayReadModes(ModeArray);
+				nmodes = modeseq->length/2;
+			}
+			else // This is to avoid killing the kernel when you ask for a mode that is not available.
+			{
+				modeseq = XLALSimInspiralModeArrayReadModes(ModeArray);
+				nmodes = modeseq->length/2;
+
+				/* Modes supported by IMRPhenomHM */
+				LALValue *DefaultModeArray = XLALSimInspiralCreateModeArray();
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, 2);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, 1);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, 3);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, 2);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, 4);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, 3);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, -2);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, -1);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, -3);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, -2);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, -4);
+				XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, -3);
+
+				/* Check if there is any mode not supported */
+				for(UINT4 i=0; i<nmodes; i++)
+				{
+					INT2 l, m;
+					l = modeseq->data[2*i];
+					m = modeseq->data[2*i+1];
+
+					if(XLALSimInspiralModeArrayIsModeActive(DefaultModeArray, l, m) == 0){
+						XLALDestroyValue(ModeArray);
+						XLALDestroyValue(DefaultModeArray);
+						XLALDestroyINT2Sequence(modeseq);
+						XLALFree(hlms_tmp);
+						XLAL_ERROR_NULL(XLAL_EINVAL, "Mode (%i,%i) is not available in IMRPhenomHM.\n", l, m);
+					}
+					/* For the internal function of IMRPhenomHM we must pass an array only with positive modes */
+					if (m<0){
+						XLALSimInspiralModeArrayDeactivateMode(ModeArray, l, m);
+						XLALSimInspiralModeArrayActivateMode(ModeArray, l, abs(m));
+					}
+				}
+				XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
+				XLALDestroyValue(DefaultModeArray);
+			}
+
+			/* Build structure for minimum and maximum frequencies */
+			REAL8Sequence *freqs = XLALCreateREAL8Sequence(2);
+			freqs->data[0] = f_min;
+			freqs->data[1] = f_max;
+
+
+			/* Call individual modes of PhenomHM */
+			retcode = XLALSimIMRPhenomHMGethlmModes(hlms_tmp, freqs, m1, m2, 0., 0., S1z, 0., 0., S2z, phiRef, deltaF, f_ref, LALparams_aux);
+			XLALDestroyREAL8Sequence(freqs);
+			if( retcode != XLAL_SUCCESS){
+				XLALFree(hlms_tmp);
+				XLAL_ERROR_NULL(XLAL_EFUNC);
+			}
+
+
+			/* This is the length of half of the frequency spectrum.
+			   Later we will resize series to add the negative frequency regime. */
+			length = (*hlms_tmp)->mode->data->length -1;
+
+
+			/* PhenomHM returns the modes in geometrical units, we need to multiply them by amp0 to obtain physical units. */
+			const REAL8 Mtot_Msun = (m1 + m2) / LAL_MSUN_SI;
+			const REAL8 amp0 = Mtot_Msun * LAL_MRSUN_SI * Mtot_Msun * LAL_MTSUN_SI / distance;
+
+			/* PhenomHM neglects the LAL convention that the azimuthal angle of the spherical harmonics Ylm is PI/2 - phiRef.
+			   Here we compesate by this factor so it is consistent with the polarizations construction. */
+			COMPLEX16 extra_phase = cexp(-I * (LAL_PI_2 - phiRef));
+
+			/* Loop over modes in the SphHarmFrequencySeries.
+			   We add the previous factors and resize the series. */
+			for(UINT4 i=0; i<nmodes; i++)
+			{
+				INT2 l, m; // Indexes of mode
+				l = modeseq->data[2*i];
+				m = modeseq->data[2*i+1];
+
+				/* Get one individual mode.
+				 	 Either if m is positive or negative we read the same mode and transform accordingly later. */
+				COMPLEX16FrequencySeries *hlm = XLALSphHarmFrequencySeriesGetMode(*hlms_tmp, l, abs(m));
+
+				INT4 minus1l = -1;
+				if(l%2==0) minus1l = 1;
+
+				/* Incorporate correct units and */
+				COMPLEX16 extra_factor_lm = minus1l * amp0 * cpow(extra_phase, m);
+
+				if(m<0){
+					for(UINT4 j=0; j<hlm->data->length; j++)
+					{
+						hlm->data->data[j] = hlm->data->data[j] * extra_factor_lm;
+					}
+					hlm = XLALResizeCOMPLEX16FrequencySeries(hlm, -length, 2*length+1);
+				}
+				else{
+					if(XLALSimInspiralModeArrayIsModeActive(ModeArray, l, -m) == 1){
+						extra_factor_lm = minus1l;
+					}
+					else{
+							extra_factor_lm = minus1l * extra_factor_lm;
+					}
+					hlm = XLALResizeCOMPLEX16FrequencySeries(hlm, 0, 2*length+1);
+					for(INT4 j=0; j<length; j++)
+					{
+						hlm->data->data[j] = conj(hlm->data->data[hlm->data->length -1 - j]) * extra_factor_lm;
+						hlm->data->data[hlm->data->length -1 - j] = 0.;
+					}
+				}
+
+				/* Add the mode to the SphHarmFrequencySeries */
+				hlms = XLALSphHarmFrequencySeriesAddMode(hlms, hlm, l, m);
+
+		 	}
+			XLALDestroyINT2Sequence(modeseq);
+			XLALDestroySphHarmFrequencySeries(*hlms_tmp);
+			XLALDestroyValue(ModeArray);
+			XLALDestroyDict(LALparams_aux);
+
+			/* Add frequency array to SphHarmFrequencySeries */
+			/* Here we build the whole frequency regime (negative and positive). */
+			freqsSphH = XLALCreateREAL8Sequence(hlms->mode->data->length);
+			for (INT4 i = -length; i<=length; i++)
+			{
+				freqsSphH->data[i+length] = i*deltaF;
+			}
+			XLALSphHarmFrequencySeriesSetFData(hlms, freqsSphH);
+
+			break;
+		default:
+			 XLALPrintError("XLAL ERROR - %s approximant not supported  by ChooseFDModes.\n", XLALSimInspiralGetStringFromApproximant(approximant));
+			 XLAL_ERROR_NULL(XLAL_EINVAL);
+	}
+	XLALFree(hlms_tmp);
+
+	if (!(hlms))
+			XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	return hlms;
 }
 
 /**
@@ -4031,6 +4601,221 @@ int XLALSimInspiralPolarizationsFromSphHarmTimeSeries(
         if( ret != XLAL_SUCCESS ) XLAL_ERROR(XLAL_EFUNC);
         ts = ts->next;
     }
+
+    return XLAL_SUCCESS;
+}
+
+
+/**
+  Function returning the Fourier domain polarizations for positive frequencies built from the individual modes computed with ChooseFDModes.
+	The output should be equivalent to that from ChooseFDWaveform, close to machine precision.
+	Some of the AS models use the argument phiRef internally to build the hlms and build the polarizations with an azimuthal angle different from Pi/2 - phiRef.
+	In this function we take into account those differences among models. 
+	For the precessing model IMRPhenomXPHM, since the modes are returned in the J-frame, the polarizations are built using theta_JN instead of the inclination and azimuthal angle = 0.
+*/
+int XLALSimInspiralPolarizationsFromChooseFDModes(
+    COMPLEX16FrequencySeries **hptilde,     /**< FD plus polarization */
+    COMPLEX16FrequencySeries **hctilde,     /**< FD cross polarization */
+    const REAL8 m1,                         /**< mass of companion 1 (kg) */
+    const REAL8 m2,                         /**< mass of companion 2 (kg) */
+    const REAL8 S1x,                        /**< x-component of the dimensionless spin of object 1 */
+    const REAL8 S1y,                        /**< y-component of the dimensionless spin of object 1 */
+    const REAL8 S1z,                        /**< z-component of the dimensionless spin of object 1 */
+    const REAL8 S2x,                        /**< x-component of the dimensionless spin of object 2 */
+    const REAL8 S2y,                        /**< y-component of the dimensionless spin of object 2 */
+    const REAL8 S2z,                        /**< z-component of the dimensionless spin of object 2 */
+    const REAL8 distance,                   /**< distance of source (m) */
+    const REAL8 inclination,                /**< inclination of source (rad) */
+    const REAL8 phiRef,                     /**< reference orbital phase (rad) */
+    const REAL8 UNUSED longAscNodes,        /**< longitude of ascending nodes, degenerate with the polarization angle, Omega in documentation */
+    const REAL8 UNUSED eccentricity,        /**< eccentricity at reference epoch */
+    const REAL8 UNUSED meanPerAno,          /**< mean anomaly of periastron */
+    // frequency sampling parameters, no default value
+    const REAL8 deltaF,                     /**< sampling interval (Hz) */
+    const REAL8 f_min,                      /**< starting GW frequency (Hz) */
+    const REAL8 f_max,                      /**< ending GW frequency (Hz) */
+    REAL8 f_ref,                            /**< Reference frequency (Hz) */
+    LALDict *LALparams,                     /**< LAL dictionary containing accessory parameters */
+    const Approximant approximant           /**< post-Newtonian approximant to use for waveform production */
+    )
+{
+
+	/* Adjust the reference frequency for certain precessing approximants:
+	 * if that approximate interprets f_ref==0 to be f_min, set f_ref=f_min;
+	 * otherwise do nothing */
+	f_ref = fixReferenceFrequency(f_ref, f_min, approximant);
+
+    int ret = XLAL_SUCCESS;
+    REAL8 phiRef_modes = 0;
+	REAL8 theta = inclination;
+	REAL8 azimuthal = LAL_PI_2 - phiRef;
+	REAL8 zeta_polarization = 0;
+
+    switch (approximant)
+    {
+        case IMRPhenomXHM:
+        phiRef_modes = phiRef;
+        azimuthal = LAL_PI_2;
+        break;
+        
+        case IMRPhenomXPHM:
+        phiRef_modes = phiRef;
+        REAL8 d1=0, d2=0, d3=0, d4=0, d5=0;
+        ret = XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame(&d1, &d2, &d3, &theta, &d4, &d5, &zeta_polarization, m1, m2, f_ref, phiRef, inclination, S1x,S1y,S1z, S2x,S2y,S2z, LALparams);
+        XLAL_CHECK(XLAL_SUCCESS == ret, XLAL_EFUNC, "Error: XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame failed.\n");
+        azimuthal = 0.;
+
+        break;
+        case SEOBNRv4HM_ROM:
+
+        break;
+        case IMRPhenomHM:
+        phiRef_modes = phiRef;
+        break;
+        default:
+                XLALPrintError("Approximant not implemented\n");
+                XLAL_ERROR(XLAL_EINVAL);
+    }
+
+
+	SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
+	*hlms = XLALSimInspiralChooseFDModes(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, deltaF, f_min, f_max, f_ref, phiRef_modes, distance, inclination, LALparams, approximant);
+    if(!(*hlms)){
+        XLAL_ERROR(XLAL_EFUNC, "Error: XLALSimInspiralChooseFDModes failed\n");
+    }
+
+	UINT4 len = (*hlms)->mode->data->length;
+	UINT4 offset = 0;
+
+	/* This is to account that ChooseFDModes return the modes for both negative and positve frequencies,
+	   but here we return the polarizations just for positive frequencies. */
+	len = (UINT4) ceil(len/2.);
+	offset = len-1;
+
+	/* Create polarizations objects */
+	*hptilde = XLALCreateCOMPLEX16FrequencySeries("FD hplus",
+					&((*hlms)->mode->epoch), (*hlms)->mode->f0, (*hlms)->mode->deltaF,
+					&((*hlms)->mode->sampleUnits), len);
+	*hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+					&((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
+					&((*hptilde)->sampleUnits), (*hptilde)->data->length);
+	memset((*hptilde)->data->data, 0, (len) * sizeof(COMPLEX16));
+	memset((*hctilde)->data->data, 0, (len) * sizeof(COMPLEX16));
+
+
+	SphHarmFrequencySeries *hlms_tmp = *hlms;
+
+	/* Build the polarizations by summing the modes*/
+	while ( hlms_tmp ){
+		COMPLEX16 Ylm = XLALSpinWeightedSphericalHarmonic(theta, azimuthal, -2, hlms_tmp->l, hlms_tmp->m);
+		COMPLEX16 Ylmstar = conj(Ylm);
+
+		for(UINT4 idx = 0; idx<len; idx++){
+			COMPLEX16 hlm = hlms_tmp->mode->data->data[idx + offset];
+			COMPLEX16 hlm2 = conj(hlms_tmp->mode->data->data[len - 1 - idx]);
+			(*hptilde)->data->data[idx] += 0.5 * (hlm * Ylm + hlm2 * Ylmstar);
+			(*hctilde)->data->data[idx] += 0.5 * I * (hlm * Ylm - hlm2 * Ylmstar);
+		}
+		hlms_tmp = hlms_tmp->next;
+	}
+
+	/* Free memory */
+	XLALDestroySphHarmFrequencySeries(*hlms);
+	XLALFree(hlms);
+	XLALDestroySphHarmFrequencySeries(hlms_tmp);
+
+
+	/* Add the correct polarization angle for IMRPhenomXPHM */
+	if(fabs(zeta_polarization) > 0)
+	{
+		COMPLEX16 PhPpolp, PhPpolc;
+		REAL8 cosPolFac, sinPolFac;
+
+		cosPolFac = cos(2.0 * zeta_polarization);
+		sinPolFac = sin(2.0 * zeta_polarization);
+
+		for (UINT4 i = 0; i < (*hptilde)->data->length; i++)
+		{
+            PhPpolp = (*hptilde)->data->data[i];
+            PhPpolc = (*hctilde)->data->data[i];
+
+            (*hptilde)->data->data[i] = cosPolFac * PhPpolp + sinPolFac * PhPpolc;
+            (*hctilde)->data->data[i] = cosPolFac * PhPpolc - sinPolFac * PhPpolp;
+		}
+	}
+
+
+  /* This final rotation is taken from ChooseFDWaveform */
+	REAL8 polariz=longAscNodes;
+	if (polariz) {
+		COMPLEX16 tmpP,tmpC;
+		for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++) {
+tmpP=(*hptilde)->data->data[idx];
+tmpC=(*hctilde)->data->data[idx];
+(*hptilde)->data->data[idx] =cos(2.*polariz)*tmpP+sin(2.*polariz)*tmpC;
+(*hctilde)->data->data[idx]=cos(2.*polariz)*tmpC-sin(2.*polariz)*tmpP;
+		}
+	}
+
+	if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+	if (XLALSimInspiralWaveformParamsLookupEnableLIV(LALparams))
+		ret = XLALSimLorentzInvarianceViolationTerm(hptilde, hctilde, m1/LAL_MSUN_SI, m2/LAL_MSUN_SI, distance, LALparams);
+	if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
+
+	return ret;
+}
+
+
+
+/**
+	Return polarizations for positive frequencies built by summing the individual modes present
+	in the input array SphHarmFrequencySeries *hlms	computed with ChooseFDModes.
+	Notice that in general the output may not be close to machine precision with ChooseFDWaveform due to differences in
+	computing the h_lms and in the use of the azimuthal angle. 
+	For IMRPhenomXPHM, the argument theta should not be the inclination but theta_JN and phiRef should be 0.
+*/
+int XLALSimInspiralPolarizationsFromSphHarmFrequencySeries(
+    COMPLEX16FrequencySeries **hp, /**< Plus polarization frequency series [returned] */
+    COMPLEX16FrequencySeries **hc, /**< Cross polarization frequency series [returned] */
+    SphHarmFrequencySeries *hlms,  /**< Head of linked list of waveform modes */
+    REAL8 theta, 									 /**< Polar angle for the Ylms (rad): Inclination for h_lms in L0-frame and theta_JN for J-frame. */
+    REAL8 phi 										 /**< Azimuthal angle for the Ylms (rad): pi/2 - phiRef for AS models and 0 for precessing. */
+    )
+{
+	if (!(hlms)){ XLAL_ERROR(XLAL_EFUNC, "SphHarmFrequencySeires object empty.\n");}
+
+    SphHarmFrequencySeries *fs = hlms;
+    UINT4 len = fs->mode->data->length;
+    INT4 offset = 0;
+    /* This is to account that ChooseFDModes return the modes for both negative and positve frequencies,
+        but here we return the polarizations just for positive frequencies. */
+    len = (UINT4) ceil(len/2.);
+    offset = len-1;
+    // Destroy hp, hc FrequencySeries if they already exist
+    if( (*hp) ) XLALDestroyCOMPLEX16FrequencySeries( *hp );
+    if( (*hc) ) XLALDestroyCOMPLEX16FrequencySeries( *hc );
+    *hp = XLALCreateCOMPLEX16FrequencySeries("hplus", &(fs->mode->epoch), fs->mode->f0,
+                fs->mode->deltaF, &(fs->mode->sampleUnits), len);
+    *hc = XLALCreateCOMPLEX16FrequencySeries("hcross", &(fs->mode->epoch), fs->mode->f0,
+                fs->mode->deltaF, &(fs->mode->sampleUnits), len);
+    memset( (*hp)->data->data, 0, (*hp)->data->length*sizeof(COMPLEX16) );
+    memset( (*hc)->data->data, 0, (*hc)->data->length*sizeof(COMPLEX16) );
+
+
+    /* Build the polarizations by summing the modes */
+    while ( fs ){
+        COMPLEX16 Ylm = XLALSpinWeightedSphericalHarmonic(theta, phi, -2, fs->l, fs->m);
+        COMPLEX16 Ylmstar = conj(Ylm);
+
+        for(UINT4 idx = 0; idx<len; idx++){
+            COMPLEX16 hlm = fs->mode->data->data[idx + offset];
+            COMPLEX16 hlm2 = conj(fs->mode->data->data[len - 1 - idx]);
+            (*hp)->data->data[idx] += 0.5 * (hlm * Ylm + hlm2 * Ylmstar);
+            (*hc)->data->data[idx] += 0.5 * I * (hlm * Ylm - hlm2 * Ylmstar);
+        }
+        fs = fs->next;
+    }
+    XLALDestroySphHarmFrequencySeries(fs);
 
     return XLAL_SUCCESS;
 }
@@ -5498,6 +6283,10 @@ int XLALSimInspiralImplementedTDApproximants(
         case TEOBResumS:
         case SEOBNRv4HM:
         case NRHybSur3dq8:
+        case IMRPhenomT:
+        case IMRPhenomTHM:
+        case IMRPhenomTP:
+        case IMRPhenomTPHM:
             return 1;
 
         default:
@@ -5965,6 +6754,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case NRSur4d2s:
     case NRSur7dq2:
     case NRSur7dq4:
+    case IMRPhenomTP:
+    case IMRPhenomTPHM:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
@@ -6011,6 +6802,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomFB:
     case FindChirpSP:
     case NRHybSur3dq8:
+    case IMRPhenomT:
+    case IMRPhenomTHM:
       spin_support=LAL_SIM_INSPIRAL_ALIGNEDSPIN;
       break;
     case TaylorEt:
@@ -6077,6 +6870,8 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case NRSur7dq2:
     case NRSur7dq4:
     case SpinTaylorF2:
+    case IMRPhenomTP:
+    case IMRPhenomTPHM:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_F_REF;
       break;
     case FindChirpPTF:
@@ -6136,6 +6931,8 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case IMRPhenomFA:
     case GeneratePPN:
     case TEOBResum_ROM:
+    case IMRPhenomT:
+    case IMRPhenomTHM:
 		case TEOBResumS:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_NONPRECESSING;
       break;
@@ -6237,6 +7034,10 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomXHM:
 	case IMRPhenomXP:
 	case IMRPhenomXPHM:
+    case IMRPhenomT:
+    case IMRPhenomTHM:
+    case IMRPhenomTP:
+    case IMRPhenomTPHM:
     case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;

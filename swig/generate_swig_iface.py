@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-#
 # Copyright (C) 2011--2014 Karl Wette
 #
 # This program is free software; you can redistribute it and/or modify
@@ -14,8 +12,8 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with with program; see the file COPYING. If not, write to the
-# Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-# MA  02111-1307  USA
+# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA  02110-1301  USA
 
 """Generate the swig<package>.i interface file for a given LAL subpackage
 

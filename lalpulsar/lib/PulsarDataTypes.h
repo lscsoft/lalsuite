@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 #ifndef _PULSARDATATYPES_H  /* Double-include protection. */
@@ -139,7 +139,7 @@ typedef struct tagPulsarCandidate {
  * \note this type is obsolete and should no longer be used,
  * however, it's too entrenched in LALGeneratePulsarSignal() et al, and codes using it,
  * so we can't easily get rid of it and keep it for now....
- * \deprecated Use #PulsarParams instead.
+ * \deprecated Use \c PulsarParams instead.
  */
 typedef struct tagPulsarSourceParams {
    LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */

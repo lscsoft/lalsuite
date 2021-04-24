@@ -15,8 +15,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 #ifndef _SFTUTILS_H  /* Double-include protection. */
 #define _SFTUTILS_H
@@ -119,7 +119,9 @@ extern const UserChoices MathOpTypeChoices;
  *----------------------------------------------------------------------*/
 SFTtype* XLALCreateSFT ( UINT4 numBins );
 SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
+SFTVector* XLALCreateEmptySFTVector (UINT4 numSFTs );
 MultiSFTVector *XLALCreateMultiSFTVector ( UINT4 length, UINT4Vector *numsft );
+MultiSFTVector *XLALCreateEmptyMultiSFTVector ( UINT4Vector *numsft );
 
 int XLALAppendSFT2Vector (SFTVector *vect, const SFTtype *sft );
 
@@ -208,8 +210,18 @@ int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD,
                                     const MathOpType nSFTmthopIFOs,
                                     const BOOLEAN normalizeByTotalNumSFTs,
                                     const REAL8 FreqMin,
-                                    const REAL8 FreqBand
+                                    const REAL8 FreqBand,
+                                    const BOOLEAN normalizeSFTsInPlace
                               );
+int XLALComputePSDfromSFTs ( REAL8Vector **finalPSD,
+                             MultiSFTVector *inputSFTs,
+                             const UINT4 blocksRngMed,
+                             const MathOpType PSDmthopSFTs,
+                             const MathOpType PSDmthopIFOs,
+                             const BOOLEAN normalizeByTotalNumSFTs,
+                             const REAL8 FreqMin,
+                             const REAL8 FreqBand
+                           );
 int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
 int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
 REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );

@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 //
 //  Created by Marta on 13/02/2019.
@@ -476,6 +476,7 @@ This is a wrapper function that uses XLALSimIMRPhenomXASGenerateFD for the 22 mo
        /* The user has requested a higher f_max than Mf = fCut.
        Resize the frequency series to fill with zeros beyond the cutoff frequency. */
        lastfreq = pWF->fMax;
+       XLAL_PRINT_WARNING("The input f_max = %.2f Hz is larger than the internal cutoff of Mf=0.3 (%.2f Hz). Array will be filled with zeroes between these two frequencies.\n", pWF->fMax, pWF->f_max_prime);
      }
      else
      {
@@ -697,7 +698,7 @@ int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
   REAL8 distance,                      /**< Luminosity distance (m) */
   REAL8 phiRef,                        /**< Orbital phase at fRef (rad) */
   REAL8 fRef_In,                       /**< Reference frequency (Hz) */
-  LALDict *lalParams
+  LALDict *lalParams                   /**< UNDOCUMENTED */
 )
 {
 
@@ -834,6 +835,170 @@ int XLALSimIMRPhenomXHMFrequencySequenceOneMode(
 
   }//Higher modes
 }
+
+
+/** Function to obtain a SphHarmFrequencySeries with the individual modes h_lm.
+    By default it returns all the modes available in the model, both positive and negatives.
+    With the mode array option in the LAL dictionary, the user can specify a custom mode array.
+    This function is to be used by ChooseFDModes.
+*/
+int XLALSimIMRPhenomXHMModes(
+      SphHarmFrequencySeries **hlms,              /**< [out] list with single modes h_lm */
+  	  REAL8 m1_SI,                                /**< mass of companion 1 (kg) */
+      REAL8 m2_SI,                                /**< mass of companion 2 (kg) */
+      REAL8 S1z,                                  /**< z-component of the dimensionless spin of object 1 */
+      REAL8 S2z,                                  /**< z-component of the dimensionless spin of object 2 */
+      REAL8 deltaF,                               /**< frequency spacing (Hz) */
+  		REAL8 f_min,                                /**< starting GW frequency (Hz) */
+  		REAL8 f_max,                                /**< ending GW frequency (Hz) */
+      REAL8 f_ref,                                /**< reference GW frequency (Hz) */
+      REAL8 phiRef,                               /**< phase shift at reference frequency */
+      REAL8 distance,                             /**< distance of source (m) */
+  		LALDict *LALparams                          /**< LAL dictionary with extra options */
+)
+{
+    LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO;
+    LALDict *XHMparams;
+    INT4 LALparams_In = 0;
+    LALValue *InputModeArray = NULL;
+
+    /* Read mode array from LAL dictionary */
+    if(LALparams != NULL)
+    {
+      LALparams_In = 1;
+      /* Check that the modes chosen are available for the model */
+      XLAL_CHECK(check_input_mode_array(LALparams) == XLAL_SUCCESS, XLAL_EFAULT, "Not available mode chosen.\n");
+
+      InputModeArray = XLALSimInspiralWaveformParamsLookupModeArray(LALparams);
+    }
+    else
+    {
+      LALparams = XLALCreateDict();
+    }
+
+
+    /* Create new LAL dictionary with the default mode-array of PhenomXHM.
+       Can not pass LALparams to this function because the mode array must be null,
+       and LALparams can have non-null mode array.
+    */
+    XHMparams = XLALCreateDict();
+    XHMparams = IMRPhenomXHM_setup_mode_array(XHMparams);
+    /* Read mode array from previous LAL dictionary */
+    LALValue *XHMModeArray = XLALSimInspiralWaveformParamsLookupModeArray(XHMparams);
+
+    /* If input LAL dictionary does not have mode array, setup to default XHM array */
+    if(InputModeArray == NULL)
+    {
+      InputModeArray = XLALSimInspiralWaveformParamsLookupModeArray(XHMparams);
+    }
+
+    INT4 length = 0;
+    COMPLEX16FrequencySeries *htilde22 = NULL;
+
+    /***** Loop over modes ******/
+    for (UINT4 ell = 2; ell <= L_MAX; ell++)
+    {
+      for (INT4 emm = -(INT4)ell; emm <= (INT4)ell; emm++)
+      {
+        /* Here I use two mode_arrays to check if the user asked for a mode that is not available in XHM and print an error message in such a case. */
+        if(XLALSimInspiralModeArrayIsModeActive(InputModeArray, ell, emm) !=1)
+        {
+          /* Skip mode if user did not specified it. */
+          continue;
+        }
+        if(XLALSimInspiralModeArrayIsModeActive(XHMModeArray, ell, emm) !=1)
+        {
+          /* Skip mode. This is a requested mode by the user that the model does not support and warning. */
+          XLAL_PRINT_ERROR("Mode (%i,%i) not available in IMRPhenomXHM", ell, emm);
+          continue;
+        }
+        //Variable to store the strain of only one (positive/negative) mode: h_lm
+        COMPLEX16FrequencySeries *htildelm = NULL;
+
+        // Read Multibanding threshold
+        REAL8 thresholdMB  = XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(LALparams);
+
+        /* Compute one mode */
+        if (thresholdMB == 0){  // No multibanding
+          XLALSimIMRPhenomXHMGenerateFDOneMode(&htildelm, m1_SI, m2_SI, S1z, S2z, ell, emm, distance, f_min, f_max, deltaF, phiRef, f_ref, LALparams);
+        }
+        else{               // With multibanding
+          if(ell==3 && abs(emm)==2){  // mode with mixing. htilde22 is not recycled here for flexibility, so instead we pass NULL.
+            XLALSimIMRPhenomXHMMultiBandOneModeMixing(&htildelm, htilde22, m1_SI, m2_SI, S1z, S2z, ell, emm, distance, f_min, f_max, deltaF, phiRef, f_ref, LALparams);
+          }
+          else{                  // modes without mixing
+            XLALSimIMRPhenomXHMMultiBandOneMode(&htildelm, m1_SI, m2_SI, S1z, S2z, ell, emm, distance, f_min, f_max, deltaF, phiRef, f_ref, LALparams);
+          }
+          // If the 22 mode is active we will recycle for the mixing of the 32, we save it in another variable: htilde22.
+          if(ell==2 && emm==-2 && htildelm){
+            htilde22 = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &(ligotimegps_zero), 0.0, deltaF, &lalStrainUnit, htildelm->data->length);
+            for(UINT4 idx = 0; idx < htildelm->data->length; idx++){
+              htilde22->data->data[idx] = htildelm->data->data[idx];
+            }
+          }
+        }
+
+        if (!(htildelm)){ XLAL_ERROR(XLAL_EFUNC); }
+
+        length = htildelm->data->length-1;
+
+
+        XLALGPSAdd(&ligotimegps_zero, -1. / deltaF); /* coalesce at t=0 */
+        COMPLEX16FrequencySeries *hlmall = NULL;
+        hlmall = XLALCreateCOMPLEX16FrequencySeries("hlmall: mode with positive and negative freqs", &(htildelm->epoch), htildelm->f0, htildelm->deltaF, &(htildelm->sampleUnits), 2*length+1);
+
+        if(emm < 0){
+          for(INT4 i=0; i<=length; i++)
+          {
+            hlmall->data->data[i+length] = htildelm->data->data[i];
+            hlmall->data->data[i] = 0;
+          }
+        }
+        else{
+          for(INT4 i=0; i<=length; i++)
+          {
+            hlmall->data->data[i] = htildelm->data->data[length-i];
+            hlmall->data->data[i+length] = 0;
+          }
+        }
+
+        // Add single mode to list
+        *hlms = XLALSphHarmFrequencySeriesAddMode(*hlms, hlmall, ell, emm);
+
+
+        // Free memory
+        XLALDestroyCOMPLEX16FrequencySeries(htildelm);
+        XLALDestroyCOMPLEX16FrequencySeries(hlmall);
+      }
+    } /* End loop over modes */
+    XLALDestroyCOMPLEX16FrequencySeries(htilde22);
+
+    /* Add frequency array to SphHarmFrequencySeries */
+    REAL8Sequence *freqs = XLALCreateREAL8Sequence(2*length+1);
+    for (INT4 i = -length; i<=length; i++)
+    {
+      freqs->data[i+length] = i*deltaF;
+    }
+    XLALSphHarmFrequencySeriesSetFData(*hlms, freqs);
+
+
+    /* Free memory */
+    XLALDestroyValue(XHMModeArray);
+    XLALDestroyDict(XHMparams);
+
+    if (LALparams_In == 0)
+    {
+      XLALDestroyDict(LALparams);
+    }
+    else
+    {
+      XLALDestroyValue(InputModeArray);
+    }
+
+    return XLAL_SUCCESS;
+
+}
+
 
 /*********************************************/
 /*                                           */
@@ -1057,6 +1222,7 @@ int XLALSimIMRPhenomXHM2(
     /* The user has requested a higher f_max than Mf = fCut.
     Resize the frequency series to fill with zeros beyond the cutoff frequency. */
     lastfreq = pWF->fMax;
+    XLAL_PRINT_WARNING("The input f_max = %.2f Hz is larger than the internal cutoff of Mf=0.3 (%.2f Hz). Array will be filled with zeroes between these two frequencies.\n", pWF->fMax, pWF->f_max_prime);
   }
   else{  // We have to look for a power of 2 anyway.
     lastfreq = pWF->f_max_prime;
@@ -1317,7 +1483,7 @@ static int IMRPhenomXHM_MultiMode(
       /**** End debugging ****/
 
 
-      if (!(htildelm)){ XLAL_ERROR(XLAL_EFUNC); return XLAL_FAILURE;}
+      if (!(htildelm)){ XLAL_ERROR(XLAL_EFUNC); }
 
       /* We test for hypothetical m=0 modes */
       if (emm == 0)
@@ -2031,7 +2197,8 @@ int XLALSimIMRPhenomXHMAmplitude(
         Resize the frequency series to fill with zeros beyond the cutoff frequency.
         */
         size_t n = (*amplitude)->data->length;
-
+        XLAL_PRINT_WARNING("The input f_max = %.2f Hz is larger than the internal cutoff of Mf=0.3 (%.2f Hz). Array will be filled with zeroes between these two frequencies.\n", pWF->fMax, pWF->f_max_prime);
+        
         // We want to have the length be a power of 2 + 1
         size_t n_full = NextPow2(pWF->fMax / pWF->deltaF) + 1;
 
@@ -2266,7 +2433,8 @@ int XLALSimIMRPhenomXHMAmplitude(
           Resize the frequency series to fill with zeros beyond the cutoff frequency.
           */
           size_t n = (*phase)->data->length;
-
+          XLAL_PRINT_WARNING("The input f_max = %.2f Hz is larger than the internal cutoff of Mf=0.3 (%.2f Hz). Array will be filled with zeroes between these two frequencies.\n", pWF->fMax, pWF->f_max_prime);
+          
           // We want to have the length be a power of 2 + 1
           size_t n_full = NextPow2(pWF->fMax / pWF->deltaF) + 1;
 

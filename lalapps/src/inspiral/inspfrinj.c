@@ -13,8 +13,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 /*----------------------------------------------------------------------- 
@@ -266,7 +266,6 @@
 #include <time.h>
 #include <math.h>
 
-#include <lalapps.h>
 #include <series.h>
 #include <lalappsfrutils.h>
 
@@ -290,7 +289,6 @@
 #include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
-#include <lal/LALFrameL.h>
 #include <lal/TimeSeries.h>
 
 #include <LALAppsVCSInfo.h>
@@ -378,7 +376,7 @@ CHAR comment[LIGOMETA_COMMENT_MAX];     /* process param comment        */
 int main( int argc, char *argv[] )
 {
   /* lal function variables */
-  LALStatus             status = blank_status;
+  LALStatus             XLAL_INIT_DECL(status);
 
   /* frame input data */
   LALCache     *frInCache = NULL;
@@ -1520,7 +1518,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
         /* print version information and exit */
         fprintf( stdout, "LIGO/LSC Inspiral Injection Program\n" 
             "Steve Fairhurst <sfairhur@gravity.phys.uwm.edu>\n");
-        XLALOutputVersionString(stderr, 0);
+        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 

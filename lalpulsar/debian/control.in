@@ -3,64 +3,75 @@ Section: science
 Priority: optional
 Maintainer: Steffen Grunewald <steffen.grunewald@aei.mpg.de>
 Uploaders: Adam Mercer <adam.mercer@ligo.org>, GitLab <gitlab@git.ligo.org>
-Build-Depends: debhelper (>= 9),
-  dh-python,
-  gcc,
-  g++,
-  make,
-  pkg-config (>= 0.18.0),
-  lal-dev (>= @MIN_LAL_VERSION@~),
-  libcfitsio3-dev | libcfitsio-dev,
-  libfftw3-dev,
-  libgsl-dev | libgsl0-dev (>= 1.9),
-  liboctave-dev,
-  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-  python-all-dev,
-  python-astropy,
-  python-lal (>= @MIN_LAL_VERSION@~),
-  python-mock,
-  python-numpy (>= @MIN_NUMPY_VERSION@),
-  python-pathlib,
-  python-pytest,
-  python3-all-dev,
-  python3-astropy,
-  python3-lal (>= @MIN_LAL_VERSION@~),
-  python3-numpy (>= @MIN_NUMPY_VERSION@),
-  python3-pytest,
-  lal-octave (>= @MIN_LAL_VERSION@~),
+Build-Depends:
+ debhelper (>= 9),
+ dh-python,
+ help2man (>= 1.37),
+ lal-octave (>= @MIN_LAL_VERSION@~),
+ lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
+ libcfitsio3-dev | libcfitsio-dev,
+ libfftw3-dev,
+ libgsl-dev | libgsl0-dev (>= 1.9),
+ liblal-dev (>= @MIN_LAL_VERSION@~),
+ liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
+ liboctave-dev,
+ pkg-config (>= 0.18.0),
+ python-all-dev,
+ python-astropy,
+ python-lal (>= @MIN_LAL_VERSION@~),
+ python-lalframe (>= @MIN_LALFRAME_VERSION@~),
+ python-mock,
+ python-numpy (>= @MIN_NUMPY_VERSION@),
+ python-pathlib,
+ python-pytest,
+ python3-all-dev,
+ python3-astropy,
+ python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
+ python3-numpy (>= @MIN_NUMPY_VERSION@),
+ python3-pytest,
+ rsync,
+ swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
 X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
-Package: lalpulsar
+Package: liblalpulsar@LIBMAJOR@
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  lal (>= @MIN_LAL_VERSION@~),
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
 Description: LSC Algorithm Library Pulsar
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL Pulsar library.
+Breaks: lalpulsar (<< 2.1.0-2~)
+Replaces: lalpulsar (<< 2.1.0-2~)
 
-Package: lalpulsar-dev
+Package: liblalpulsar-dev
 Section: libdevel
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  libcfitsio3-dev | libcfitsio-dev,
-  libfftw3-dev,
-  libgsl-dev | libgsl0-dev (>= 1.9),
-  lal-dev (>= @MIN_LAL_VERSION@~),
-  lalpulsar (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ libcfitsio3-dev | libcfitsio-dev,
+ libfftw3-dev,
+ libgsl-dev | libgsl0-dev (>= 1.9),
+ liblal-dev (>= @MIN_LAL_VERSION@~),
+ liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
+ liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
 Description: LSC Algorithm Library Pulsar Developers
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  Pulsar library.
+Provides: lalpulsar-dev (= ${binary:Version})
+Breaks: lalpulsar-dev (<< 2.1.0-2~)
+Replaces: lalpulsar-dev (<< 2.1.0-2~)
 
 Package: lalpulsar-python
 Depends: python-lalpulsar, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalpulsar-python was renamed python-lalpulsar,
@@ -71,12 +82,14 @@ Section: python
 Replaces: lalpulsar-python (<< 1.16.0.1-1~)
 Breaks: lalpulsar-python (<< 1.16.0.1-1~)
 Architecture: any
-Depends: ${misc:Depends},
-  ${python:Depends},
-  ${shlibs:Depends},
-  python-astropy,
-  python-lal (>= @MIN_LAL_VERSION@~),
-  lalpulsar (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${python:Depends},
+ ${shlibs:Depends},
+ liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
+ python-astropy,
+ python-lal (>= @MIN_LAL_VERSION@~),
+ python-lalframe (>= @MIN_LALFRAME_VERSION@~),
 Description: Python bindings for LALPulsar.
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Pulsar library.
@@ -84,7 +97,7 @@ Description: Python bindings for LALPulsar.
 Package: lalpulsar-python3
 Depends: python3-lalpulsar, ${misc:Depends}
 Architecture: all
-Priority: optional
+Priority: extra
 Section: oldlibs
 Description: transitional package
  lalpulsar-python3 was renamed python3-lalpulsar,
@@ -95,23 +108,38 @@ Section: python
 Replaces: lalpulsar-python3 (<< 1.16.0.1-1~)
 Breaks: lalpulsar-python3 (<< 1.16.0.1-1~)
 Architecture: any
-Depends: ${misc:Depends},
-  ${python3:Depends},
-  ${shlibs:Depends},
-  python3-astropy,
-  python3-lal (>= @MIN_LAL_VERSION@~),
-  lalpulsar (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${python3:Depends},
+ ${shlibs:Depends},
+ liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
+ python3-astropy,
+ python3-lal (>= @MIN_LAL_VERSION@~),
+ python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
 Description: Python 3 bindings for LALPulsar.
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Pulsar library.
 
 Package: lalpulsar-octave
 Architecture: any
-Depends: ${misc:Depends},
-  ${shlibs:Depends},
-  octave,
-  lal-octave (>= @MIN_LAL_VERSION@~),
-  lalpulsar (= ${binary:Version})
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ lal-octave (>= @MIN_LAL_VERSION@~),
+ lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
+ liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
+ octave,
 Description: Octave bindings for LALPulsar.
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains Octave bindings for the LAL Pulsar library.
+
+Package: lalpulsar
+Architecture: any
+Depends:
+ ${misc:Depends},
+ ${shlibs:Depends},
+ liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
+ python3-lalpulsar (= ${binary:Version}),
+Description: LSC Algorithm Library Pulsar
+ The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+ This package provides the runtime tools.

@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA2
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA2
  */
 
 /**
@@ -84,12 +84,14 @@
  * the list of events, and the Hough maps
  */
 
+#include "config.h"
+
 /* lalapps/hough includes */
 #include "./DriveHoughColor.h"
 #include "./MCInjectHoughMulti.h"
 
 /* lalapps includes */
-#include <lalapps.h>
+#include <LALAppsVCSInfo.h>
 #include "FstatToplist.h"
 
 /* lal includes */

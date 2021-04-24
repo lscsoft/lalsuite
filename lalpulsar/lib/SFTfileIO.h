@@ -1,4 +1,6 @@
 /*
+ * Copyright (C) 2020 Rodrigo Tenorio
+ * Copyright (C) 2019 Pep Covas
  * Copyright (C) 2010 Karl Wette
  * Copyright (C) 2004, 2005 R. Prix, B. Machenschalk, A.M. Sintes
  *
@@ -14,8 +16,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 #ifndef _SFTFILEIO_H  	/* Double-include protection. */
 #define _SFTFILEIO_H
@@ -61,7 +63,7 @@ extern "C" {
  *
  * The basic operation of <b>reading SFTs</b> from files proceeds in two simple steps:
  *
- * -# XLALSFTdataFind(): get an '::SFTCatalog' of SFTs matching certain requirements (free with XLALDestroySFTCatalog())
+ * -# XLALSFTdataFind(): get an '\c SFTCatalog' of SFTs matching certain requirements (free with XLALDestroySFTCatalog())
  * -# XLALLoadSFTs(): load a frequency-band into a single-IFO SFTVector defined by the catalogue, OR <br>
  * XLALLoadMultiSFTs(): load a frequency-band into a multi-IFO vector of SFTVectors defined by the catalogue
  *
@@ -107,8 +109,8 @@ extern "C" {
  *
  * One can use the following catalog-handling API functions:
  * - XLALDestroySFTCatalog(): free up a complete SFT-catalog
- * - XLALSFTtimestampsFromCatalog(): extract the list of SFT timestamps found in the ::SFTCatalog
- * - XLALDestroyTimestampVector(): free up a timestamps-vector (::LIGOTimeGPSVector)
+ * - XLALSFTtimestampsFromCatalog(): extract the list of SFT timestamps found in the \c SFTCatalog
+ * - XLALDestroyTimestampVector(): free up a timestamps-vector (\c LIGOTimeGPSVector)
  * - XLALshowSFTLocator(): [*debugging only*] show a static string describing the 'locator'
  *
  * <b>NOTE:</b> The SFTs in the returned catalogue are \em guaranteed to
@@ -117,7 +119,7 @@ extern "C" {
  *
  * <h4>Details to 2: load frequency-band from SFTs described in an SFTCatalog</h4>
  *
- * The function XLALLoadSFTs() takes an ::SFTCatalog and reads the smallest frequency-band containing <tt>[fMin, fMax]</tt>
+ * The function XLALLoadSFTs() takes an \c SFTCatalog and reads the smallest frequency-band containing <tt>[fMin, fMax]</tt>
  * from the SFTs, returning the resulting ::SFTVector. Note that this function will return an error if the
  * SFTCatalog contains SFTs from different detectors, for which XLALLoadMultiSFTs() must be used.
  *
@@ -126,7 +128,7 @@ extern "C" {
  * <tt>[fMin, -1]</tt>: read from \c fMin up to last frequency-bin in the SFTS<br>
  * <tt>[-1, -1]</tt>: read ALL frequency-bins from SFT.
  *
- * The function XLALLoadMultiSFTs() is similar to the above, except that it accepts an ::SFTCatalog with different detectors,
+ * The function XLALLoadMultiSFTs() is similar to the above, except that it accepts an \c SFTCatalog with different detectors,
  * and returns corresponding multi-IFO vector of SFTVectors.
  *
  * <p><h2>Usage: Writing of SFT-files</h2>
@@ -320,6 +322,8 @@ char *XLALGetOfficialName4SFT ( const SFTtype *sft, const char *Misc );
 char *XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts, const char *Misc );
 char *XLALOfficialSFTFilename ( char site, char channel, UINT4 numSFTs, UINT4 Tsft, UINT4 GPS_start, UINT4 Tspan, const char *Misc );
 int XLALCheckValidDescriptionField ( const char *desc );
+
+MultiSFTVector* XLALReadSFDB(REAL8 f_min, REAL8 f_max, const CHAR *file_pattern, const CHAR *timeStampsStarting, const CHAR *timeStampsFinishing);
 
 /** @} */
 

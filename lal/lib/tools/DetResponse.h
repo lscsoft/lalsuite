@@ -14,8 +14,8 @@
 *
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-*  MA  02111-1307  USA
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
 */
 
 #ifndef _DETRESPONSE_H
@@ -126,8 +126,8 @@ SWIGLAL(IMMUTABLE_MEMBERS(tagLALDetAndSource, pDetector));
 typedef struct
 tagLALDetAndSource
 {
-  const LALDetector  *pDetector;/**< Pointer to ::LALDetector object containing information about the detector */
-  LALSource    *pSource;	/**< Pointer to ::LALSource object containing information about the source */
+  const LALDetector  *pDetector;/**< Pointer to \c LALDetector object containing information about the detector */
+  LALSource    *pSource;	/**< Pointer to \c LALSource object containing information about the source */
 }
 LALDetAndSource;
 
@@ -145,7 +145,7 @@ tagLALDetAMResponse
 LALDetAMResponse;
 
 /**
- * This structure aggregates together three ::REAL4TimeSeries objects containing
+ * This structure aggregates together three \c REAL4TimeSeries objects containing
  * time series of detector AM response.
  */
 typedef struct
@@ -160,7 +160,7 @@ LALDetAMResponseSeries;
 
 /**
  * This structure encapsulates time and sampling information for computing a
- * ::LALDetAMResponseSeries. Its fields correspond to some fields of the
+ * \c LALDetAMResponseSeries. Its fields correspond to some fields of the
  * TimeSeries structures for easy conversion.
  */
 typedef struct

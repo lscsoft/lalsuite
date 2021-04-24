@@ -5,20 +5,28 @@
 # production-ready at any time.
 
 {% set name = "lal" %}
-{% set version = "@VERSION@".replace('-', '.') %}
-{% set url = "file://@TARBALL@" %}
-{% set sha256 = "@SHA256@" %}
 
+# set version based on nightly
+# (we rebuild the nightly version ourselves because the tarball might have
+#  been generated on a different day)
+{% set base_version = "@BASE_VERSION@" %}
+{% set nightly_version = "@NIGHTLY_VERSION@" %}
+{% if nightly_version %}
+{% set version = base_version + "-dev" + datetime.datetime.utcnow().strftime("%Y%m%d") %}
+{% else %}
+{% set version = base_version %}
+{% endif %}
+
+# dependencies
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
-{% set numpy_version = "@MIN_NUMPY_VERSION@" %}
 
 package:
-  name: {{ name }}
-  version: {{ version }}
+  name: {{ name }}-split
+  version: {{ version|replace('-', '.') }}
 
 source:
-  url: {{ url }}
-  sha256: {{ sha256 }}
+  url: file://@TARBALL@
+  sha256: @SHA256@
 
 build:
   error_overdepending: true
@@ -29,14 +37,16 @@ build:
     # manually, for now
     - fftw
   number: 9999
+  script_env:
+    - CI_PIPELINE_SOURCE
   skip: true  # [win]
-  string: "{{ fft_impl }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
 
 requirements:
   build:
     - {{ compiler('c') }}
     - pkg-config >=0.18.0
     - make
+    - help2man >=1.37
     - bc
     - swig >={{ swig_version }}
   host:
@@ -45,22 +55,55 @@ requirements:
     - hdf5
     - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
     - zlib
-  run:
-    - fftw  # [fft_impl == "fftw"]
-    - gsl
-    - hdf5
-    - zlib
-
-test:
-  commands:
-    - lal_version --verbose
-    - lal_simd_detect
 
 outputs:
-  - name: lal
+  - name: liblal
+    script: install-lib.sh
     build:
       run_exports:
-        - {{ pin_subpackage("lal", max_pin="x.x") }}
+        - {{ pin_subpackage("liblal", max_pin="x") }}
+      string: {{ fft_impl }}_h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - make  # [not win]
+        - swig >=3.0.9
+      host:
+        - fftw * nompi*  # [fft_impl == "fftw"]
+        - gsl
+        - hdf5
+        - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
+        - zlib
+      run:
+        - fftw  # [fft_impl == "fftw"]
+        - gsl
+        - hdf5
+        - zlib
+      run_constrained:
+        # make sure downstream packages are updated beyond the first
+        # appearance of liblal
+        - lal >=7.1.1
+        - python-lal >=7.1.1
+    test:
+      requires:
+        - pkg-config
+      commands:
+        - pkg-config --print-errors --exact-version "{{ version }}" lal
+        - pkg-config --print-errors --exact-version "{{ version }}" lalsupport
+        - test -f ${PREFIX}/lib/liblal${SHLIB_EXT}  # [not win]
+        - test -f ${PREFIX}/lib/liblalsupport${SHLIB_EXT}  # [not win]
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Library shared object libraries
+      description: |
+        The LSC Algorithm Library for gravitational wave data analysis.
+        This package contains the shared object libraries need to build
+        applications that use LAL.
 
   - name: python-lal
     script: install-python.sh
@@ -68,39 +111,33 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - mkl
         # ignore run_exports from python's recipe
         - python
-      string: "{{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}"
+      string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
       build:
         - {{ compiler('c') }}
+        - help2man >=1.37
         - make
         - pkg-config >=0.18.0
         - swig >={{ swig_version }}
       host:
         - gsl
-        - {{ pin_subpackage('lal', exact=True) }}
+        - {{ pin_subpackage('liblal', exact=True) }}
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
         - numpy
         - python
       run:
-        # NOTE: on linux, python-lal links the LAL dependencies
-        #       as well so we have to list them here. why this
-        #       doesn't happen on osx, I'm not sure.
-        - fftw  # [linux and fft_impl == "fftw"]
-        - gsl
-        - hdf5  # [linux]
-        - {{ pin_subpackage('lal', exact=True) }}
+        - {{ pin_subpackage('liblal', exact=True) }}
         - python-ligo-lw
         - ligo-segments
         - lscsoft-glue >=@MIN_GLUE_VERSION@
-        - mkl  # [fft_impl == "mkl"]
         - {{ pin_compatible('numpy') }}
         - python
         - python-dateutil
         - scipy
         - six
-        - zlib  # [linux]
     test:
       requires:
         - freezegun
@@ -108,10 +145,9 @@ outputs:
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
       source_files:
-        - python/Makefile
         - test/python
       commands:
-        - python -m pytest -rs -v --junit-xml=junit.xml test/python
+        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python
       imports:
         - lal
         - lal.antenna
@@ -120,25 +156,65 @@ outputs:
         - lal.series
         - lal.utils
     about:
-      home: "https://wiki.ligo.org/Computing/LALSuite"
-      doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lal/"
-      dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-      license: "GPL-2.0-or-later"
-      license_family: "GPL"
-      license_file: "COPYING"
-      summary: "LSC Algorithm Library"
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Library Python bindings
       description: |
         The LSC Algorithm Library for gravitational wave data analysis.
         This package contains the Python bindings.
 
+  - name: lal
+    script: install-bin.sh
+    build:
+      error_overdepending: true
+      error_overlinking: true
+      ignore_run_exports:
+        - python
+      string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
+    requirements:
+      build:
+        - {{ compiler('c') }}
+        - help2man >=1.37
+        - make
+      host:
+        - {{ pin_subpackage('liblal', exact=True) }}
+        # this is here in case the solver gets confused during conda-build
+        - mkl {{ mkl }}  # [fft_impl == "mkl"]
+        - python
+      run:
+        - {{ pin_subpackage('liblal', exact=True) }}
+        - python
+        - {{ pin_subpackage('python-lal', exact=True) }}
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite/
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Library runtime tools
+      description: |
+        The LSC Algorithm Library for gravitational wave data analysis.
+        This package contains the runtime tools.
+    test:
+      commands:
+        - lal_version --verbose
+        - lal_simd_detect
+      imports:
+        - lal
+
 about:
-  home: "https://wiki.ligo.org/Computing/LALSuite"
-  doc_url: "https://lscsoft.docs.ligo.org/lalsuite/lal/"
-  dev_url: "https://git.ligo.org/lscsoft/lalsuite/"
-  license: "GPL-2.0-or-later"
-  license_family: "GPL"
-  license_file: "COPYING"
-  summary: "LSC Algorithm Library"
+  home: https://wiki.ligo.org/Computing/LALSuite
+  doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
+  dev_url: https://git.ligo.org/lscsoft/lalsuite/
+  license: GPL-2.0-or-later
+  license_family: GPL
+  license_file: COPYING
+  summary: LSC Algorithm Library
   description: |
     The LSC Algorithm Library for gravitational wave data analysis.
     This package contains the shared-object libraries needed to run
@@ -147,6 +223,7 @@ about:
     package.
 
 extra:
+  feedstock-name: lal
   recipe-maintainers:
     - duncanmmacleod
     - skymoo

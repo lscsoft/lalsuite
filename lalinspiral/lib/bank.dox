@@ -74,8 +74,8 @@ frequency cutoff</em> of the detector sensitivity.
 This algorithm allows one to choose
 a coarse grid of templates either in the \f$\tau_0-\tau_2\f$
 or \f$\tau_0-\tau_3\f$ space depending on the value of the
-\c enum ::CoordinateSpace, which can take one of two values:
-#Tau0Tau2 or #Tau0Tau3. The shape of the coordinate
+enum \c CoordinateSpace, which can take one of two values:
+::Tau0Tau2 or ::Tau0Tau3. The shape of the coordinate
 spaces for some interesting range of masses is shown
 in \ref LALInspiralBankH4Figures "this figure". The important point to note in these
 figures is that the \f$\eta=1/4\f$ curve spans from the \e minimum to the
@@ -137,16 +137,16 @@ of templates in the rectangular region defined by
 \subsubsection sec_ParamsCG Parameters specifying a coarse grid
 
 The algorithm takes as input the structure
-::InspiralCoarseBankIn and returns a pointer to an array of
-type ::InspiralTemplateList and the number of elements in the
-array.  ::InspiralCoarseBankIn is designed to provide the coarse
+\c InspiralCoarseBankIn and returns a pointer to an array of
+type \c InspiralTemplateList and the number of elements in the
+array.  \c InspiralCoarseBankIn is designed to provide the coarse
 bank algorithm with information about the search space such as the
 minimum mass of component stars, maximum total mass, etc., as well as
 other parameters not directly used by the coarse grid algorithm but
 are needed by inspiral wave generation algorithms. This is so that
 the coarse grid algorithm can correctly set the members of the
-::InspiralTemplateList structure. In particular, the members
-of the ::InspiralCoarseBankIn structure used by the coarse grid
+\c InspiralTemplateList structure. In particular, the members
+of the \c InspiralCoarseBankIn structure used by the coarse grid
 algorithm are:
 <ul>
 <li> <tt>REAL8 mMin,</tt> minimum mass of the component stars</li>
@@ -164,9 +164,9 @@ LALGEOPsd(), LALLIGOIPsd(), LALTAMAPsd() and \c LALVIRGOPsd().</li>
 for wave generation the choices being
 <tt>newtonian, onePN, onePointFivePN, twoPN, twoPointFivePN,
 threePN, threePointFivePN</tt>.</li>
-<li> ::CoordinateSpace space, the coordinate space in which templates
-are laid (the choices being #Tau0Tau2, #Tau0Tau3; at \c onePN
-order the only choice is #Tau0Tau2).</li>
+<li> \c CoordinateSpace space, the coordinate space in which templates
+are laid (the choices being ::Tau0Tau2, ::Tau0Tau3; at \c onePN
+order the only choice is ::Tau0Tau2).</li>
 <li> <tt>etamin,</tt> minimum value of eta; must be pre-computed using the
 formula <tt>etamin = mMin * (MMax - mMin) / pow(MMax,2)</tt>
 before calling the LALInspiralCreateCoarseBank().</li>
@@ -176,21 +176,21 @@ Additionally, the user may specify the fine bank minimal match
 A fine bank can be created only around grid points where the
 metric is known.
 
-Other members of the ::InspiralCoarseBankIn structure that
+Other members of the \c InspiralCoarseBankIn structure that
 are not directly used by the coarse grid algorithm but are needed to
-correctly set all the members of the ::InspiralTemplate are:
+correctly set all the members of the \c InspiralTemplate are:
 <ul>
 <li> <tt>REAL8 tSampling,</tt> time-domain sampling rate in Hz.</li>
 <li> <tt>REAL8 approximant,</tt> the approximation method to be used
-for wave generation which can be anyone of #TaylorT1, #TaylorT2,
-#TaylorT3, #TaylorF1, #TaylorF2, or #PadeT1, #PadeF1, #EOB. Note that
-the placement algorithm is guaranteed to work with only #TaylorF2
+for wave generation which can be anyone of ::TaylorT1, ::TaylorT2,
+::TaylorT3, ::TaylorF1, ::TaylorF2, or ::PadeT1, ::PadeF1, ::EOB. Note that
+the placement algorithm is guaranteed to work with only ::TaylorF2
 approximants. A detailed study of approximants that are well captured by
 this template placement algorithm is described elsewhere \cite dis2001 .</li>
-<li> ::GridSpacing, specify the type of placement to be used. For the
-physical template families placement, it must be #SquareNotOriented,
-#Hexagonal, #HybridHexagonal. For the non-BCV case, it could be #Square,
-#SquareNotOriented, #Hexagonal, #HexagonalNotOriented. Concerning
+<li> \c GridSpacing, specify the type of placement to be used. For the
+physical template families placement, it must be ::SquareNotOriented,
+::Hexagonal, ::HybridHexagonal. For the non-BCV case, it could be ::Square,
+::SquareNotOriented, ::Hexagonal, ::HexagonalNotOriented. Concerning
 the physical case, the non oriented square placement, as described in this
 section, places the template on a square lattice but does not take into
 account the orientation of the ellipse, which might cause problem in some
@@ -210,8 +210,8 @@ This placement reduces by 30\% (as expected) the number of templates used by
 the square lattice. Although the algorithm is different (and described in this
 documentation), it is based on the same structure and uses the same function
 to be called, namely LALInspiralCreateCoarseBank(). The lattice is
-specified by the variable \c gridSpacing from the structure ::InspiralCoarseBankIn, where
-the user must set gridSpacing to #Hexagonal.
+specified by the variable \c gridSpacing from the structure \c InspiralCoarseBankIn, where
+the user must set gridSpacing to ::Hexagonal.
 
 \subsection sec_CGAlgHybrid Coarse Grid Algorithm : the hybrid hexagonal placement
 
@@ -220,7 +220,7 @@ to the previous hexagonal placement bu has a slightly different placement when
 upper an lower boundaries of the parameter space are coverred by a single
 template. In such a case, the hexagonal placement is replace by a placement
 along the bissectrice of the upper and lower boundaries. See the documentation
-for more details. This algorithm is called by setting gridSpacing to  #HybridHexagonal.
+for more details. This algorithm is called by setting gridSpacing to  ::HybridHexagonal.
 
 \subsection sec_CGAlgBCV Coarse Grid algorithm: non physical placement (BCV)
 

@@ -17,6 +17,7 @@ int XLALSimInspiralWaveformParamsInsertSideband(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertNumRelData(LALDict *params, const char * value);
 
 int XLALSimInspiralWaveformParamsInsertModeArray(LALDict *params,  LALValue *value);
+int XLALSimInspiralWaveformParamsInsertModeArrayJframe(LALDict *params,  LALValue *value);
 
 int XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALDict *params, INT4 value);
@@ -53,6 +54,7 @@ int XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(LALDict *params, INT4 
 int XLALSimInspiralWaveformParamsInsertPhenomXPExpansionOrder(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertPhenomXPConvention(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(LALDict *params, INT4 value);
+int XLALSimInspiralWaveformParamsInsertPhenomXPTransPrecessionMethod(LALDict *params, INT4 value);
 
 /* IMRPhenomXHM Parameters */
 int XLALSimInspiralWaveformParamsInsertPhenomXHMInspiralPhaseVersion(LALDict *params, INT4 value);
@@ -67,6 +69,10 @@ int XLALSimInspiralWaveformParamsInsertPhenomXHMRingdownAmpFitsVersion(LALDict *
 int XLALSimInspiralWaveformParamsInsertPhenomXHMPhaseRef21(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertPhenomXHMThresholdMband(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertPhenomXHMAmpInterpolMB(LALDict *params, INT4 value);
+
+/* IMRPhenomTHM Parameters */
+int XLALSimInspiralWaveformParamsInsertPhenomTHMInspiralVersion(LALDict *params, INT4 value);
+int XLALSimInspiralWaveformParamsInsertPhenomTPHMMergerVersion(LALDict *params, INT4 value);
 
 /* IMRPhenomXPHM Parameters */
 int XLALSimInspiralWaveformParamsInsertPhenomXPHMMBandVersion(LALDict *params, INT4 value);
@@ -150,6 +156,7 @@ INT4 XLALSimInspiralWaveformParamsLookupSideband(LALDict *params);
 const char * XLALSimInspiralWaveformParamsLookupNumRelData(LALDict *params);
 
 LALValue* XLALSimInspiralWaveformParamsLookupModeArray(LALDict *params);
+LALValue* XLALSimInspiralWaveformParamsLookupModeArrayJframe(LALDict *params);
 
 INT4 XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALDict *params);
@@ -201,6 +208,10 @@ REAL8 XLALSimInspiralWaveformParamsLookupPhenomXHMPhaseRef21(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupPhenomXHMAmpInterpolMB(LALDict *params);
 
+/* IMRPhenomTHM Parameters */
+INT4 XLALSimInspiralWaveformParamsLookupPhenomTHMInspiralVersion(LALDict *params);
+INT4 XLALSimInspiralWaveformParamsLookupPhenomTPHMMergerVersion(LALDict *params);
+
 /* IMRPhenomXPHM Parameters */
 INT4 XLALSimInspiralWaveformParamsLookupPhenomXPHMMBandVersion(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupPhenomXPHMThresholdMband(LALDict *params);
@@ -208,6 +219,7 @@ INT4 XLALSimInspiralWaveformParamsLookupPhenomXPHMUseModes(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupPhenomXPHMModesL0Frame(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupPhenomXPHMPrecModes(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupPhenomXPHMTwistPhenomHM(LALDict *params);
+INT4 XLALSimInspiralWaveformParamsLookupPhenomXPTransPrecessionMethod(LALDict *params);
 
 REAL8 XLALSimInspiralWaveformParamsLookupNonGRPhi1(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupNonGRPhi2(LALDict *params);
@@ -283,6 +295,7 @@ int XLALSimInspiralWaveformParamsSidebandIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNumRelDataIsDefault(LALDict *params);
 
 int XLALSimInspiralWaveformParamsModeArrayIsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsModeArrayJframeIsDefault(LALDict *params);
 
 int XLALSimInspiralWaveformParamsPNPhaseOrderIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPNAmplitudeOrderIsDefault(LALDict *params);
@@ -318,6 +331,7 @@ int XLALSimInspiralWaveformParamsPhenomXPrecVersionIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPhenomXPExpansionOrderIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPhenomXPConventionIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPhenomXPFinalSpinModIsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsPhenomXPTransPrecessionMethodIsDefault(LALDict *params);
 
 /* IMRPhenomXHM Parameters */
 int XLALSimInspiralWaveformParamsPhenomXHMInspiralPhaseVersionIsDefault(LALDict *params);
@@ -340,6 +354,10 @@ int XLALSimInspiralWaveformParamsPhenomXPHMUseModesIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPhenomXPHMModesL0FrameIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPhenomXPHMPrecModesIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsPhenomXPHMTwistPhenomHMIsDefault(LALDict *params);
+
+/* IMRPhenomTHM Parameters */
+int XLALSimInspiralWaveformParamsPhenomTHMInspiralVersionIsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsPhenomTPHMMergerVersionIsDefault(LALDict *params);
 
 int XLALSimInspiralWaveformParamsNonGRPhi1IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRPhi2IsDefault(LALDict *params);

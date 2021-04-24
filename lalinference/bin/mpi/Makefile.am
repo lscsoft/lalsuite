@@ -29,4 +29,6 @@ noinst_HEADERS = \
 	LALInferenceMCMCSampler.h \
 	$(END_OF_LIST)
 
+man1_MANS = $(help2man_MANS)
+
 endif

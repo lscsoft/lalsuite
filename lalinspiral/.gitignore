@@ -4,6 +4,7 @@ __pycache__
 *.la
 *.lo
 *.log
+*.man
 *.o
 *.pc
 *.pyc
@@ -14,6 +15,7 @@ __pycache__
 AUTHORS
 config.lt
 debian/control
+debian/liblal*.install
 doxygen/autogen.dox
 doxygen/doxygen_objdb_*.tmp
 doxygen/doxygen_sqlite3.db

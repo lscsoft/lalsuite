@@ -13,8 +13,8 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with with program; see the file COPYING. If not, write to the
-// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
-// MA 02111-1307 USA
+// Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+// MA 02110-1301 USA
 //
 
 ///
@@ -54,7 +54,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, mean2F_hgrm, segment_info, simulate_search, time_search, cache_all_gc;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, mean2F_hgrm, segment_info, simulate_search, time_search, cache_all_gc, strict_spindown_bounds;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_sqrtSX, *injections, *Fstat_assume_sqrtSX, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
@@ -191,6 +191,10 @@ int main( int argc, char *argv[] )
     f4dot, REAL8Range, '4', DEVELOPER,
     "Search parameter space in fourth spindown, in Hertz/second^4. "
     "(Just in case a nearby supernova goes off!) "
+    );
+  XLALRegisterUvarMember(
+    strict_spindown_bounds, BOOLEAN, '0', DEVELOPER,
+    "Do not add padding to spindown parameter space bounds."
     );
   //
   // - Lattice tiling setup
@@ -658,7 +662,8 @@ int main( int argc, char *argv[] )
   LogPrintf( LOG_NORMAL, "Search frequency parameter space = [%.15g, %.15g] Hz\n", uvar->freq[0], uvar->freq[1] );
   for ( size_t s = 1; s <= nmetricspins; ++s ) {
     XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBound( tiling[isemi], rssky_transf[isemi], s, uvarspins[s-1][0], uvarspins[s-1][1] ) == XLAL_SUCCESS, XLAL_EFUNC );
-    LogPrintf( LOG_NORMAL, "Search %zu-order spindown parameter space = [%.15g, %.15g] Hz/s^%zu\n", s, uvarspins[s-1][0], uvarspins[s-1][1], s );
+    XLAL_CHECK_MAIN( XLALSetSuperskyPhysicalSpinBoundPadding( tiling[isemi], rssky_transf[isemi], s, !uvar->strict_spindown_bounds ) == XLAL_SUCCESS, XLAL_EFUNC );
+    LogPrintf( LOG_NORMAL, "Search %zu-order spindown parameter space = [%.15g, %.15g] Hz/s^%zu %s padding\n", s, uvarspins[s-1][0], uvarspins[s-1][1], s, uvar->strict_spindown_bounds ? "without" : "with" );
   }
 
   // Add random offsets to physical origin of semicoherent lattice tiling, if requested

@@ -13,8 +13,8 @@
  *
  *  You should have received a copy of the GNU General Public License
  *  along with with program; see the file COPYING. If not, write to the
- *  Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
- *  MA  02111-1307  USA
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ *  MA  02110-1301  USA
  */
 
 /* Standard LAL */
@@ -854,6 +854,17 @@ int XLALSimIMRPhenomXPGenerateFD(
 
   /* If no reference frequency is given, set it to the starting gravitational wave frequency */
   const REAL8 fRef = (fRef_In == 0.0) ? f_min : fRef_In;
+  
+  /* Use an auxiliar laldict to not overwrite the input argument */
+  LALDict *lalParams_aux;
+  /* setup mode array */
+  if (lalParams == NULL)
+  {
+      lalParams_aux = XLALCreateDict();
+  }
+  else{
+      lalParams_aux = XLALDictDuplicate(lalParams);
+  }
 
   /* Spins aligned with the orbital angular momenta */
   const REAL8 chi1L = chi1z;
@@ -870,7 +881,7 @@ int XLALSimIMRPhenomXPGenerateFD(
   /* Initialize IMR PhenomX Waveform struct and check that it initialized correctly */
   IMRPhenomXWaveformStruct *pWF;
   pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams, debug);
+  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, debug);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
 
@@ -903,7 +914,7 @@ int XLALSimIMRPhenomXPGenerateFD(
            chi2x,
            chi2y,
            chi2z,
-           lalParams,
+           lalParams_aux,
            PHENOMXPDEBUG
          );
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
@@ -913,7 +924,7 @@ int XLALSimIMRPhenomXPGenerateFD(
   #endif
 
   /* We now call the core IMRPhenomXP waveform generator */
-  status = IMRPhenomXPGenerateFD(hptilde, hctilde, freqs, pWF, pPrec, lalParams);
+  status = IMRPhenomXPGenerateFD(hptilde, hctilde, freqs, pWF, pPrec, lalParams_aux);
   XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXPGenerateFD failed to generate IMRPhenomX waveform.\n");
 
   #if PHENOMXPDEBUG == 1
@@ -951,6 +962,7 @@ int XLALSimIMRPhenomXPGenerateFD(
   LALFree(pWF);
   LALFree(pPrec);
   XLALDestroyREAL8Sequence(freqs);
+  XLALDestroyDict(lalParams_aux);
 
   return XLAL_SUCCESS;
 }
@@ -1032,6 +1044,17 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    const REAL8 f_min_In  = freqs->data[0];
    const REAL8 f_max_In  = freqs->data[freqs->length - 1];
+   
+   /* Use an auxiliar laldict to not overwrite the input argument */
+   LALDict *lalParams_aux;
+   /* setup mode array */
+   if (lalParams == NULL)
+   {
+       lalParams_aux = XLALCreateDict();
+   }
+   else{
+       lalParams_aux = XLALDictDuplicate(lalParams);
+   }
 
    /*
       Passing deltaF = 0 implies that freqs is a frequency grid with non-uniform spacing.
@@ -1043,7 +1066,7 @@ int XLALSimIMRPhenomXPGenerateFD(
    /* Initialize IMRPhenomX waveform struct and perform sanity check. */
    IMRPhenomXWaveformStruct *pWF;
    pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, phiRef, f_min_In, f_max_In, distance, inclination, lalParams, 0);
+   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, phiRef, f_min_In, f_max_In, distance, inclination, lalParams_aux, 0);
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
    /* Initialize IMR PhenomX Precession struct and check that it generated successfully */
@@ -1061,17 +1084,18 @@ int XLALSimIMRPhenomXPGenerateFD(
               chi2x,
               chi2y,
               chi2z,
-              lalParams,
+              lalParams_aux,
               PHENOMXDEBUG
             );
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetAndSetPrecessionVariables failed.\n");
 
    /* Now call the core IMRPhenomXP waveform generator */
-   status = IMRPhenomXPGenerateFD(hptilde, hctilde, freqs, pWF, pPrec, lalParams);
+   status = IMRPhenomXPGenerateFD(hptilde, hctilde, freqs, pWF, pPrec, lalParams_aux);
    XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXASFDCore failed to generate IMRPhenomX waveform.\n");
 
    LALFree(pPrec);
    LALFree(pWF);
+   XLALDestroyDict(lalParams);
 
    return XLAL_SUCCESS;
  }
@@ -1104,17 +1128,17 @@ int XLALSimIMRPhenomXPGenerateFD(
        REAL8 *alpha0,                    /**< [out] Initial value of alpha angle (azimuthal precession angle)   */
        REAL8 *phi_aligned,               /**< [out] Initial phase to feed the underlying aligned-spin model     */
        REAL8 *zeta_polarization,         /**< [out] Angle to rotate the polarizations                           */
-       const REAL8 m1_SI,                /**< Mass of companion 1 (kg)    */
-       const REAL8 m2_SI,                /**< Mass of companion 2 (kg)    */
-       const REAL8 f_ref,                /**< Reference GW frequency (Hz) */
-       const REAL8 phiRef,               /**< Reference phase (Hz)        */
-       const REAL8 incl,                 /**< Inclination : angle between LN and the line of sight */
-       const REAL8 chi1x,                /**< Initial value of chi1x: dimensionless spin of BH 1 in L frame    */
-       const REAL8 chi1y,                /**< Initial value of chi1y: dimensionless spin of BH 1 in L frame    */
-       const REAL8 chi1z,                /**< Initial value of chi1z: dimensionless spin of BH 1 in L frame    */
-       const REAL8 chi2x,                /**< Initial value of chi2x: dimensionless spin of BH 2 in L frame    */
-       const REAL8 chi2y,                /**< Initial value of chi2y: dimensionless spin of BH 2 in L frame    */
-       const REAL8 chi2z,                /**< Initial value of chi2z: dimensionless spin of BH 2 in L frame    */
+       REAL8 m1_SI,                /**< Mass of companion 1 (kg)    */
+       REAL8 m2_SI,                /**< Mass of companion 2 (kg)    */
+       REAL8 f_ref,                /**< Reference GW frequency (Hz) */
+       REAL8 phiRef,               /**< Reference phase (Hz)        */
+       REAL8 incl,                 /**< Inclination : angle between LN and the line of sight */
+       REAL8 chi1x,                /**< Initial value of chi1x: dimensionless spin of BH 1 in L frame    */
+       REAL8 chi1y,                /**< Initial value of chi1y: dimensionless spin of BH 1 in L frame    */
+       REAL8 chi1z,                /**< Initial value of chi1z: dimensionless spin of BH 1 in L frame    */
+       REAL8 chi2x,                /**< Initial value of chi2x: dimensionless spin of BH 2 in L frame    */
+       REAL8 chi2y,                /**< Initial value of chi2y: dimensionless spin of BH 2 in L frame    */
+       REAL8 chi2z,                /**< Initial value of chi2z: dimensionless spin of BH 2 in L frame    */
        LALDict *lalParams                /**< LAL Dictionary */
    )
    {
@@ -1132,405 +1156,67 @@ int XLALSimIMRPhenomXPGenerateFD(
      XLAL_CHECK(fabs(chi1x*chi1x + chi1y*chi1y + chi1z*chi1z) <= 1.0, XLAL_EDOM, "Error in XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame: |S1/m1^2| must be <= 1.\n");
      XLAL_CHECK(fabs(chi2x*chi2x + chi2y*chi2y + chi2z*chi2z) <= 1.0, XLAL_EDOM, "Error in XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame: |S2/m2^2| must be <= 1.\n");
 
-     /* Get Precession version */
-     const int IMRPhenomXPrecVersion     = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams);
+     /* Use an auxiliar laldict to not overwrite the input argument */
+     LALDict *lalParams_aux;
+     /* setup mode array */
+     if (lalParams == NULL)
+     {
+         lalParams_aux = XLALCreateDict();
+     }
+     else{
+         lalParams_aux = XLALDictDuplicate(lalParams);
+     }
+     
+     /* Check if m1 > m2, swap the bodies otherwise. */
+     INT4 status = XLALIMRPhenomXPCheckMassesAndSpins(&m1_SI,&m2_SI,&chi1x,&chi1y,&chi1z,&chi2x,&chi2y,&chi2z);
+     XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: XLALIMRPhenomXPCheckMassesAndSpins failed.\n");
 
-     const REAL8 m1    = m1_SI / LAL_MSUN_SI;    /* Component mass 1 in solar masses */
-     const REAL8 m2    = m2_SI / LAL_MSUN_SI;    /* Component mass 2 in solar masses */
-     const REAL8 M     = m1+m2;                  /* Total mass in solar masses */
-     const REAL8 m1_2  = m1*m1;
-     const REAL8 m2_2  = m2*m2;
-     const REAL8 eta   = m1 * m2 / (M*M);        /* Symmetric mass-ratio  */
-     const REAL8 delta = sqrt(1.0 - 4.0*eta);    /* PN symmetry parameter */
 
-     /*
-         From the components in the source frame, we can determine the IMRPhenomXP intrinsic parameters:
-         chi1L, chi2L, chi_p and phi_aligned.
+     /* Initialize the useful powers of LAL_PI */
+     status = IMRPhenomX_Initialize_Powers(&powers_of_lalpi, LAL_PI);
+     XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.\n");
 
-         We also compute the spherical angles of J, which are used to transform to the J frame.
-     */
+     /* Initialize IMRPhenomX Waveform struct and check that it initialized correctly */
+     IMRPhenomXWaveformStruct *pWF;
+     pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
+     status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, 0.125, f_ref, phiRef, 30., 1024., 1e6*LAL_PC_SI, incl, lalParams_aux, PHENOMXDEBUG);
+     XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
+
+     /* Initialize IMRPhenomX Precession struct and check that it generated successfully */
+     IMRPhenomXPrecessionStruct *pPrec;
+     pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
+
+     status = IMRPhenomXGetAndSetPrecessionVariables(
+                pWF,
+                pPrec,
+                m1_SI,
+                m2_SI,
+                chi1x,
+                chi1y,
+                chi1z,
+                chi2x,
+                chi2y,
+                chi2z,
+                lalParams_aux,
+                PHENOMXDEBUG
+              );
+     XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetPrecessionVariables failed.\n");
 
      /* Aligned spins */
      *chi1L = chi1z; /* Dimensionless aligned spin on BH 1 */
      *chi2L = chi2z; /* Dimensionless aligned spin on BH 2 */
 
-     /* Magnitude of the spin projections in the orbital plane */
-     const REAL8 S1_perp = m1_2*sqrt(chi1x*chi1x + chi1y*chi1y);
-     const REAL8 S2_perp = m2_2*sqrt(chi2x*chi2x + chi2y*chi2y);
+     *chi_p = pPrec->chi_p;
+     *thetaJN = pPrec->thetaJN;
+     *alpha0 = pPrec->alpha0;
+     *phi_aligned = pPrec->phi0_aligned;
+     *zeta_polarization = pPrec->zeta_polarization;
 
-     /*
-         Calculate the single effective precession parameter:
-           - Schmidt, Ohme, Hannam, PRD, 91,024043 (2015), arXiv:1408.1810
-     */
-     const REAL8 A1    = 2 + (3*m2) / (2*m1);
-     const REAL8 A2    = 2 + (3*m1) / (2*m2);
-     const REAL8 ASp1  = A1*S1_perp;
-     const REAL8 ASp2  = A2*S2_perp;
-     const REAL8 num   = (ASp2 > ASp1) ? ASp2 : ASp1;
-     const REAL8 den   = (m2 > m1) ? A2*m2_2 : A1*m1_2;
+     LALFree(pWF);
+     LALFree(pPrec);
+     XLALDestroyDict(lalParams_aux);
 
-     /*  chi_p = max(A1 Sp1, A2 Sp2) / (A_i m_i^2) for i index of larger BH. See Eq. 3.3 and 3.4 of arXiv:1408.1810 */
-     *chi_p             = num / den;
-
-     #if DEBUG == 1
-     printf("\nCalling: XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame..\n");
-     printf("m1    : %e\n",m1);
-     printf("m2    : %e\n",m2);
-     printf("eta   : %e\n",eta);
-     printf("chi_p : %e\n",num/den);
-     #endif
-
-     /* Define phase, velocity, etc at reference frequency */
-     const REAL8 m_sec = M * LAL_MTSUN_SI;   /* Total mass in seconds */
-     const REAL8 piM   = LAL_PI * m_sec;
-     const REAL8 v_ref = cbrt(piM * f_ref);
-
-     /* Compute L - we implement different alternative approximations */
-     REAL8 L0 = 0.0;
-
-     switch(IMRPhenomXPrecVersion)
-     {
-       case 101:
-       {
-         /* Orbital angular momentum L to 2PN, non-spinning. This is as implemented in IMRPhenomPv2 */
-         L0 = M*M * XLALSimIMRPhenomXL2PNNS(v_ref, eta);
-         break;
-       }
-       case 102:
-       {
-         /* Orbital angular momentum L to 3PN with spinning terms. */
-         L0 = M*M * XLALSimIMRPhenomXL3PNAS(v_ref, eta, *chi1L, *chi2L, delta);
-         break;
-       }
-       case 103:
-       {
-         /* 4PN orbital angular momentum with spin terms */
-         L0 = M*M * XLALSimIMRPhenomXL4PNAS(v_ref, eta, *chi1L, *chi2L, delta);
-         break;
-       }
-       case 104:
-       {
-         /* 4PN+ orbital angular momentum */
-         L0 = M*M * XLALSimIMRPhenomXL4PNLOSIAS(v_ref, eta, *chi1L, *chi2L, delta);
-         break;
-       }
-       case 220:
-       case 221:
-       case 222:
-       case 223:
-       case 224:
-       {
-         /* 3PN orbital angular momentum  */
-         L0 = M*M * XLALSimIMRPhenomXL3PNAS(v_ref, eta, *chi1L, *chi2L, delta);
-         break;
-       }
-       default:
-       {
-         XLAL_ERROR( XLAL_EINVAL, "Error in XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame: IMRPhenomXPrecVersion not valid.\n" );
-         break;
-       }
-     }
-
-     /*
-       In the following code block we construct the convetions that relate the source frame and the LAL frame.
-
-       A detailed discussion of the conventions can be found in Appendix C and D of arXiv:XXXX.YYYY and https://dcc.ligo.org/LIGO-T1500602
-     */
-     INT4 convention     = XLALSimInspiralWaveformParamsLookupPhenomXPConvention(lalParams);
-     if ( !(convention == 0 || convention == 1 || convention == 5 || convention == 6 || convention == 7) )
-     {
-       XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPConvention not recognized.\n");
-     }
-
-     /* Below, _Sf indicates source frame (L frame) components. Elsewhere we also use _Jf for J frame components */
-     const REAL8 J0x_Sf = m1_2*chi1x + m2_2*chi2x;
-     const REAL8 J0y_Sf = m1_2*chi1y + m2_2*chi2y;
-     const REAL8 J0z_Sf = L0 + (m1_2*chi1z) + (m2_2*chi2z);
-     const REAL8 J0     = sqrt(J0x_Sf*J0x_Sf + J0y_Sf*J0y_Sf + J0z_Sf*J0z_Sf);
-
-     /* Compute thetaJ_Sf, the angle between J0 and LN (z-direction) */
-     REAL8 thetaJ_Sf;
-     if (J0 < 1e-10)
-     {
-       XLAL_PRINT_WARNING("Warning: |J0| < 1e-10. Setting thetaJ_Sf = 0.\n");
-       thetaJ_Sf = 0;
-     }
-     else
-     {
-       thetaJ_Sf = acos(J0z_Sf / J0);
-     }
-
-     double phiRefIn = phiRef;
-
-     /* The azimuthal angle of J0 in the source frame */
-     REAL8 phiJ_Sf;
-     if (fabs(J0x_Sf) < MAX_TOL_ATAN && fabs(J0y_Sf) < MAX_TOL_ATAN)
-     {
-       // Then we are ~ aligned spin
-       switch(convention)
-       {
-         case 0:
-         case 5:
-         {
-           phiJ_Sf = LAL_PI/2. - phiRefIn;
-           break;
-         }
-         case 1:
-         case 6:
-         case 7:
-         {
-           phiJ_Sf = 0;
-           break;
-         }
-         default:
-         {
-           XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPConvention not recognized.\n");
-           break;
-         }
-       }
-     }
-     else
-     {
-       phiJ_Sf = atan2(J0y_Sf, J0x_Sf);
-     }
-
-     switch(convention)
-     {
-       case 0:
-       {
-         *phi_aligned = - phiJ_Sf;
-         break;
-       }
-       case 1:
-       {
-         *phi_aligned = 0.0;
-         break;
-       }
-       case 5:
-       case 6:
-       case 7:
-       {
-         *phi_aligned = phiRef;
-         break;
-       }
-       default:
-       {
-         XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPConvention not recognized.\n");
-         break;
-       }
-     }
-
-     /*
-         Here we follow the same prescription as in IMRPhenomPv2:
-
-         Now rotate from SF to J frame to compute alpha0, the azimuthal angle of LN, as well as
-         thetaJ, the angle between J and N.
-
-         The J frame is defined by imposing that J points in the z-direction and the line of sight N is in the xz-plane
-         (with positive projection along x).
-
-         The components of any vector in the (new) J-frame can be obtained by rotation from the (old) source frame (SF).
-         This is done by multiplying by: RZ[kappa].RY[-thetaJ].RZ[-phiJ]
-
-         Note that kappa is determined by rotating N with RY[-thetaJ].RZ[-phiJ], which brings J to the z-axis, and
-         taking the opposite of the azimuthal angle of the rotated N.
-     */
-
-     /*
-         First determine kappa in the source frame.
-
-         The components of N are given in Eq (35c) of T1500606-v6:
-     */
-     REAL8 Nx_Sf = sin(incl)*cos(LAL_PI/2. - phiRef);
-     REAL8 Ny_Sf = sin(incl)*sin(LAL_PI/2. - phiRef);
-     REAL8 Nz_Sf = cos(incl);
-
-     REAL8 tmp_x = Nx_Sf;
-     REAL8 tmp_y = Ny_Sf;
-     REAL8 tmp_z = Nz_Sf;
-
-     IMRPhenomX_rotate_z(-phiJ_Sf,   &tmp_x, &tmp_y, &tmp_z);
-     IMRPhenomX_rotate_y(-thetaJ_Sf, &tmp_x, &tmp_y, &tmp_z);
-
-     REAL8 kappa;
-     kappa = XLALSimIMRPhenomXatan2tol(tmp_y, tmp_x, MAX_TOL_ATAN);
-
-     /* Now determine alpha0 by rotating LN. In the source frame, LN = {0,0,1} */
-     tmp_x = 0.0;
-     tmp_y = 0.0;
-     tmp_z = 1.0;
-
-     IMRPhenomX_rotate_z(-phiJ_Sf,   &tmp_x, &tmp_y, &tmp_z);
-     IMRPhenomX_rotate_y(-thetaJ_Sf, &tmp_x, &tmp_y, &tmp_z);
-     IMRPhenomX_rotate_z(-kappa,     &tmp_x, &tmp_y, &tmp_z);
-
-     if (fabs(tmp_x) < MAX_TOL_ATAN && fabs(tmp_y) < MAX_TOL_ATAN)
-     {
-       // This is the aligned spin case
-       switch(convention)
-       {
-         case 0:
-         case 5:
-         {
-           *alpha0 = LAL_PI;
-           break;
-         }
-         case 1:
-         case 6:
-         case 7:
-         {
-           *alpha0 = LAL_PI - kappa;
-           break;
-         }
-         default:
-         {
-           XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPConvention not recognized.\n");
-           break;
-         }
-       }
-     }
-     else
-     {
-       switch(convention)
-       {
-         case 0:
-         case 5:
-         {
-           *alpha0 = atan2(tmp_y,tmp_x);
-           break;
-         }
-         case 1:
-         case 6:
-         case 7:
-         {
-           *alpha0 = LAL_PI - kappa;
-           break;
-         }
-         default:
-         {
-           XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPConvention not recognized.\n");
-           break;
-         }
-       }
-     }
-
-     REAL8 Nx_Jf = 0.0;
-     REAL8 Nz_Jf = 0.0;
-     switch(convention)
-     {
-       case 0:
-       case 5:
-       {
-         // Finally we determine thetaJ, by rotating N
-         tmp_x = Nx_Sf;
-         tmp_y = Ny_Sf;
-         tmp_z = Nz_Sf;
-         IMRPhenomX_rotate_z(-phiJ_Sf,     &tmp_x, &tmp_y, &tmp_z);
-         IMRPhenomX_rotate_y(-thetaJ_Sf,   &tmp_x, &tmp_y, &tmp_z);
-         IMRPhenomX_rotate_z(kappa,        &tmp_x, &tmp_y, &tmp_z);
-
-         // Do not need the y-component
-         Nx_Jf = tmp_x;
-         Nz_Jf = tmp_z;
-         *thetaJN    = acos(Nz_Jf);
-         break;
-       }
-       case 1:
-       case 6:
-       case 7:
-       {
-          REAL8 J0dotN = (J0x_Sf * Nx_Sf) + (J0y_Sf * Ny_Sf) + (J0z_Sf * Nz_Sf);
-          *thetaJN     = acos( J0dotN / J0 );
-          Nz_Jf        = cos(*thetaJN);
-          Nx_Jf        = sin(*thetaJN);
-          break;
-       }
-       default:
-       {
-         XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPConvention not recognized.\n");
-         break;
-       }
-     }
-
-     /*
-         Define the polarizations used. This follows the conventions adopted for IMRPhenomPv2.
-
-         The IMRPhenomP polarizations are defined following the conventions in Arun et al (arXiv:0810.5336),
-         i.e. projecting the metric onto the P, Q, N triad defining where: P = (N x J) / |N x J|.
-
-         However, the triad X,Y,N used in LAL (the "waveframe") follows the definition in the
-         NR Injection Infrastructure (Schmidt et al, arXiv:1703.01076).
-
-         The triads differ from each other by a rotation around N by an angle \zeta. We therefore need to rotate
-         the polarizations by an angle 2 \zeta.
-     */
-     REAL8 Xx_Sf = -cos(incl)*sin(phiRef);
-     REAL8 Xy_Sf = -cos(incl)*cos(phiRef);
-     REAL8 Xz_Sf = sin(incl);
-
-     tmp_x = Xx_Sf;
-     tmp_y = Xy_Sf;
-     tmp_z = Xz_Sf;
-     IMRPhenomX_rotate_z(-phiJ_Sf,   &tmp_x, &tmp_y, &tmp_z);
-     IMRPhenomX_rotate_y(-thetaJ_Sf, &tmp_x, &tmp_y, &tmp_z);
-     IMRPhenomX_rotate_z(kappa,      &tmp_x, &tmp_y, &tmp_z);
-
-     REAL8 PArunx_Jf, PAruny_Jf, PArunz_Jf;
-     REAL8 QArunx_Jf, QAruny_Jf, QArunz_Jf;
-
-     switch(convention)
-     {
-       case 0:
-       case 5:
-       {
-         /*
-             The components tmp_i are now the components of X in the J frame.
-
-             We now need the polar angle of this vector in the P, Q basis of Arun et al:
-
-                 P = (N x J) / |NxJ|
-
-             Note, that we put N in the (pos x)z half plane of the J frame
-         */
-
-         /* Get the polar angle of X vector in the J frame using the P, Q basis of Arun et al */
-         PArunx_Jf = 0.0;
-         PAruny_Jf = -1.0;
-         PArunz_Jf = 0.0;
-
-         // Q = N x P
-         QArunx_Jf = Nz_Jf;
-         QAruny_Jf = 0.0;
-         QArunz_Jf = -Nx_Jf;
-         break;
-       }
-       case 1:
-       case 6:
-       case 7:
-       {
-         PArunx_Jf = +Nz_Jf;
-         PAruny_Jf = 0.0;
-         PArunz_Jf = -Nx_Jf;
-
-         QArunx_Jf = 0.0;
-         QAruny_Jf = 1.0;
-         QArunz_Jf = 0.0;
-         break;
-       }
-       default:
-       {
-         XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPConvention not recognized.\n");
-         break;
-       }
-     }
-
-     REAL8 XdotPArun     = tmp_x*PArunx_Jf + tmp_y*PAruny_Jf + tmp_z*PArunz_Jf;
-     REAL8 XdotQArun     = tmp_x*QArunx_Jf + tmp_y*QAruny_Jf + tmp_z*QArunz_Jf;
-
-     /* Return polarization angle */
-     *zeta_polarization  = atan2(XdotQArun , XdotPArun);
-
-     return XLAL_SUCCESS;
+     return status;
  }
 
 
@@ -1584,11 +1270,22 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    const REAL8 f_min_In  = freqs->data[0];
    const REAL8 f_max_In  = freqs->data[freqs->length - 1];
+   
+   /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *lalParams_aux;
+    /* setup mode array */
+    if (lalParams == NULL)
+    {
+        lalParams_aux = XLALCreateDict();
+    }
+    else{
+        lalParams_aux = XLALDictDuplicate(lalParams);
+    }
 
    /* Initialize IMRPhenomX waveform struct and perform sanity check. */
    IMRPhenomXWaveformStruct *pWF;
    pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, 0.0, f_min_In, f_max_In, 1.0, 0.0, lalParams, 0);
+   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, 0.0, f_min_In, f_max_In, 1.0, 0.0, lalParams_aux, 0);
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
 
@@ -1596,7 +1293,8 @@ int XLALSimIMRPhenomXPGenerateFD(
    IMRPhenomXPrecessionStruct *pPrec;
    pPrec  = XLALMalloc(sizeof(IMRPhenomXPrecessionStruct));
 
-   const int pflag     = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams);
+   int pflag     = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams_aux);
+   if (pflag == 300) pflag = 223;
 
    if(pflag != 220 && pflag != 221 && pflag != 222 && pflag != 223 && pflag != 224)
    {
@@ -1614,7 +1312,7 @@ int XLALSimIMRPhenomXPGenerateFD(
               chi2x,
               chi2y,
               chi2z,
-              lalParams,
+              lalParams_aux,
               PHENOMXDEBUG
             );
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetAndSetPrecessionVariables failed.\n");
@@ -1638,6 +1336,7 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    LALFree(pPrec);
    LALFree(pWF);
+   XLALDestroyDict(lalParams);
 
    return XLAL_SUCCESS;
  }
@@ -1703,11 +1402,22 @@ int XLALSimIMRPhenomXPGenerateFD(
 
    const REAL8 f_min_In  = freqs->data[0];
    const REAL8 f_max_In  = freqs->data[freqs->length - 1];
+   
+    /* Use an auxiliar laldict to not overwrite the input argument */
+    LALDict *lalParams_aux;
+    /* setup mode array */
+    if (lalParams == NULL)
+    {
+        lalParams_aux = XLALCreateDict();
+    }
+    else{
+        lalParams_aux = XLALDictDuplicate(lalParams);
+    }
 
    /* Initialize IMRPhenomX waveform struct and perform sanity check. */
    IMRPhenomXWaveformStruct *pWF;
    pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, 0.0, f_min_In, f_max_In, 1.0, 0.0, lalParams, 0);
+   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, 0.0, f_min_In, f_max_In, 1.0, 0.0, lalParams_aux, 0);
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
    /* Initialize IMR PhenomX Precession struct and check that it generated successfully */
@@ -1725,7 +1435,7 @@ int XLALSimIMRPhenomXPGenerateFD(
               chi2x,
               chi2y,
               chi2z,
-              lalParams,
+              lalParams_aux,
               PHENOMXDEBUG
             );
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetAndSetPrecessionVariables failed.\n");
@@ -1760,11 +1470,12 @@ int XLALSimIMRPhenomXPGenerateFD(
      s        = pPrec->Sperp / (L + pPrec->SL);
      s2       = s*s;
 
-     (*cosbeta_of_f).data[i]    = 1.0 / sqrt(1.0 + s2);
+     (*cosbeta_of_f).data[i]    = copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2);
    }
 
    LALFree(pPrec);
    LALFree(pWF);
+   XLALDestroyDict(lalParams_aux);
 
    return XLAL_SUCCESS;
  }
@@ -1903,20 +1614,6 @@ int IMRPhenomXPGenerateFD(
     printf("\n\n **** Initializing amplitude struct... **** \n\n");
   #endif
 
-  /*
-      Check whether maximum opening angle becomes larger than \pi/2 or \pi/4.
-
-      If (L + S_L) < 0, then Wigner-d Coefficients will not track the angle between J and L, meaning
-      that the model may become pathological as one moves away from the aligned-spin limit.
-
-      If this does not happen, then max_beta will be the actual maximum opening angle.
-
-      This function uses a 2PN non-spinning approximation to the orbital angular momentum L, as
-      the roots can be analytically derived.
-
-	  Returns XLAL_PRINT_WARNING if model is in a pathological regime.
-  */
-  IMRPhenomXPCheckMaxOpeningAngle(pWF,pPrec);
 
   /* Allocate and initialize the PhenomX 22 amplitude coefficients struct */
   IMRPhenomXAmpCoefficients *pAmp22;
