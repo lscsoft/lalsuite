@@ -157,7 +157,6 @@ static double GTEAndDerivs(
     double secondderiv = factor * pow(base, power - 2);
     
     return secondderiv;
-    
   }
   
   return NAN;
@@ -272,13 +271,15 @@ static double F0BoundMinMax(
   }
   
   /// These variables are used to calculate the f0 value using braking index criteria
-  double gted = GTEAndDerivs(f0, na, ka, seglength, 1);
-  double gtedd = GTEAndDerivs(f0, nb, kb, seglength, 2);
-  double bindexcriteria = na * pow(gted, 2) / gtedd;
+  //double gted = GTEAndDerivs(f0, na, ka, seglength, 1);
+  //double gtedd = GTEAndDerivs(f0, nb, kb, seglength, 2);
+  //double bindexcriteria = na * pow(gted, 2) / gtedd;
   
   /// Parameter range optimisation for frequency parameter
   double paramrange = GTEAndDerivs(f0, nb, kb, seglength, 0);
+  return paramrange;
   
+  /*
   gsl_vector* vals = gsl_vector_alloc(2);
   gsl_vector_set(vals, 0, bindexcriteria);
   gsl_vector_set(vals, 1, paramrange);
@@ -291,6 +292,7 @@ static double F0BoundMinMax(
     double min = gsl_vector_max(vals);
     return min;
   }
+  */
   
   return NAN;
 }
@@ -328,16 +330,19 @@ static double F1BoundMinMax(
   gsl_vector_set(vals, 0, prangecondition1);
   gsl_vector_set(vals, 1, prangecondition2);
   
+  double rtn = NAN;
+  
   if(minmax == 1){
     double max = gsl_vector_min(vals);
-    return max;
+    rtn = max;
   }
   else if(minmax == -1){
     double min = gsl_vector_max(vals);
-    return min;
+    rtn = min;
   }
   
-  return NAN; 
+  gsl_vector_free(vals);
+  return rtn; 
 }
 
 ///
@@ -374,16 +379,19 @@ static double F2BoundMinMax(
   gsl_vector_set(vals, 1, prangecriteria);
   gsl_vector_set(vals, 2, kcriteria);
   
+  double rtn = NAN;
+  
   if(minmax == 1){
     double max = gsl_vector_min(vals);
-    return max;
+    rtn =  max;
   }
   else if(minmax == -1){
     double min = gsl_vector_max(vals);
-    return min;
+    rtn = min;
   }
   
-  return NAN;
+  gsl_vector_free(vals);
+  return rtn;
 }
 
 ///
@@ -454,9 +462,8 @@ static void resetdimonpoint(
     double val = resetinsidebounds(f1, lower, upper);
     gsl_vector_set(point, dim, val);
     return;
-    
-    
   }
+  
   else if (dim == 2){
     
     double f0 = gsl_vector_get(point, dim - 2);
@@ -649,7 +656,7 @@ static double FirstKnotDerivBound(
 {
   size_t vectorlength = pointorig->size;
   gsl_vector* point = gsl_vector_alloc(vectorlength);
-  memcpy(point, pointorig, sizeof(gsl_vector));
+  gsl_vector_memcpy(point, pointorig);
   
   const FirstKnotBoundInfo* info = (const FirstKnotBoundInfo*)data;
   
@@ -664,15 +671,17 @@ static double FirstKnotDerivBound(
   double f0 = resetinsidebounds(gsl_vector_get(point, 0), fmin, fmax);
   gsl_vector_set(point, 0, f0);
   
+  double rtn = NAN;
+  
   if (dim == 1){
     
     if (minmax == 1){
       double f1 = -kmin * pow(f0, nmin);
-      return f1;
+      rtn = f1;
     }
     else if (minmax == -1){
       double f1 = -kmax * pow(f0, nmax);
-      return f1;
+      rtn = f1;
     }
   }
   else if (dim == 2){
@@ -685,15 +694,16 @@ static double FirstKnotDerivBound(
     
     if (minmax == 1){
       double f2 = F2BoundMinMax(f0, 100000000000, f1, nmax, kmax, kmin, 0, 1);
-      return f2;
+      rtn = f2;
     }
     else if (minmax == -1){
       double f2 = F2BoundMinMax(f0, 0.0000000001, f1, nmin, kmin, kmax, 0, -1);
-      return f2;
+      rtn = f2;
     }
   }
-
-  return NAN;
+  
+  gsl_vector_free(point);
+  return rtn;
 }
 
 ///
@@ -708,7 +718,7 @@ static double F0Bound(
 {
   size_t vectorlength = pointorig->size;
   gsl_vector* point = gsl_vector_alloc(vectorlength);
-  memcpy(point, pointorig, sizeof(gsl_vector));
+  gsl_vector_memcpy(point, pointorig);
   
   const PiecewiseBoundInfo* info = (const PiecewiseBoundInfo*)data;
   
@@ -752,16 +762,19 @@ static double F0Bound(
   NMinMax(nminmax, nprev, ntol, nmin, nmax, segmentlength);
   KMinMax(kminmax, kprev, ktol, kmin, kmax, segmentlength);
   
+  double rtn = NAN;
+  
   if (upperlower == 1){
     double upperbound = F0BoundMinMax(f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, 1);
-    return upperbound;
+    rtn = upperbound;
   }
   else if (upperlower == -1){
     double lowerbound = F0BoundMinMax(f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, -1);
-    return lowerbound;
+    rtn = lowerbound;
   }
   
-  return NAN;
+  gsl_vector_free(point);
+  return rtn;
 }
 
 ///
@@ -776,7 +789,7 @@ static double F1Bound(
 {
   size_t vectorlength = pointorig->size;
   gsl_vector* point = gsl_vector_alloc(vectorlength);
-  memcpy(point, pointorig, sizeof(gsl_vector));
+  gsl_vector_memcpy(point, pointorig);
   
   const PiecewiseBoundInfo* info = (const PiecewiseBoundInfo*)data;
   
@@ -822,16 +835,19 @@ static double F1Bound(
   NMinMax(nminmax, nprev, ntol, nmin, nmax, segmentlength);
   KMinMax(kminmax, kprev, ktol, kmin, kmax, segmentlength);
   
+  double rtn = NAN;
+  
   if (upperlower == 1){
     double upperbound = F1BoundMinMax(f0, f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, 1);
-    return upperbound;
+    rtn = upperbound;
   }
   else if (upperlower == -1){
     double lowerbound = F1BoundMinMax(f0, f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, -1);
-    return lowerbound;
+    rtn = lowerbound;
   }
   
-  return NAN;
+  gsl_vector_free(point);
+  return rtn;
 }
 
 ///
@@ -846,7 +862,7 @@ static double F2Bound(
 {
   size_t vectorlength = pointorig->size;
   gsl_vector* point = gsl_vector_alloc(vectorlength);
-  memcpy(point, pointorig, sizeof(gsl_vector));
+  gsl_vector_memcpy(point, pointorig);
   
   const PiecewiseBoundInfo* info = (const PiecewiseBoundInfo*)data;
   
@@ -893,16 +909,19 @@ static double F2Bound(
   NMinMax(nminmax, nprev, ntol, nmin, nmax, segmentlength);
   KMinMax(kminmax, kprev, ktol, kmin, kmax, segmentlength);
   
+  double rtn = NAN;
+  
   if (upperlower == 1){
     double upperbound = F2BoundMinMax(f0, f0n1, f1, nminmax[1], kminmax[1], kminmax[0], segmentlength, 1);
-    return upperbound;
+    rtn = upperbound;
   }
   else if (upperlower == -1){
     double lowerbound = F2BoundMinMax(f0, f0n1, f1, nminmax[0], kminmax[0], kminmax[1], segmentlength, -1);
-    return lowerbound;
+    rtn = lowerbound;
   }
   
-  return NAN;
+  gsl_vector_free(point);
+  return rtn;
 }
 
 ///
@@ -947,7 +966,7 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   /// Simple checks. Not sure what the types of errors are, something to ask about later
   XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(fmin < fmax, XLAL_EFAULT);
+  XLAL_CHECK(fmin < fmax, XLAL_EFAULT, "This is bad %f", fmin); //EINVAL
   XLAL_CHECK(nmin < nmax, XLAL_EFAULT);
   XLAL_CHECK(taumin < taumax, XLAL_EFAULT);
   XLAL_CHECK(kmin < kmax, XLAL_EFAULT);
