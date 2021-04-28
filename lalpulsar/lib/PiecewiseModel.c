@@ -64,7 +64,7 @@ static double CircleBound(
   double radius = info->radius;
   int pm = info->pm;
   
-  if (x > 1 || x < 1){
+  if (x > radius || x < - radius){
     return 0.;
   }
   
@@ -95,12 +95,13 @@ int XLALSetLatticeTilingCircleBound(
   
   /* Set bounds and check for success? */
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, CircleBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+  //XLALSetLatticeTilingPaddingFlags(tiling, 1, LATTICE_TILING_PAD_NONE);
   
   return XLAL_SUCCESS;
 }
 
 ///
-/// Information required to determine the bounds on for the parameters on the first knot
+/// Information required to determine the bounds on the parameters on the first knot
 ///
 typedef struct tagFirstKnotBoundInfo{
   double fmin;  /// Global minimum starting frequency
@@ -137,7 +138,7 @@ static double GTEAndDerivs(
   double f0, /// Initial frequency
   double n,  /// Braking index
   double k,  /// k value
-  double t,  /// Time at which to calculat evalue
+  double t,  /// Time at which to evaluate the GTE
   int d      /// Derivative order (d <= 2)
   )
 {
@@ -165,7 +166,8 @@ static double GTEAndDerivs(
 ///
 /// Calculates the valid braking index for the next knot based upon the previous braking index. Can be defined in any manner. 
 ///
-static double * NMinMax(
+static void NMinMax(
+  double * nminmax,           /// Nminmax array
   double n,                   /// Previous braking index
   double ntol,                /// Braking index tolerance (percentage)
   double nmin,                /// Minimum acceptable braking index
@@ -173,8 +175,6 @@ static double * NMinMax(
   double segmentlength UNUSED /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
   )
 {
-  static double nminmax[2];
-  
   double nextnmin = n * (1 - ntol);
   double nextnmax = n; //* (1 + ntol);
   
@@ -182,7 +182,6 @@ static double * NMinMax(
     printf("nmin greater than nmax, %E, %E \n", nmin, nmax);
     nminmax[0] = NAN;
     nminmax[1] = NAN;
-    return nminmax;
   }
   
   if (nextnmin < nmin){
@@ -200,17 +199,15 @@ static double * NMinMax(
     
     nminmax[0] = NAN;
     nminmax[1] = NAN;
-    return nminmax;
   }
-  
-  return nminmax;
 }
 
 
 ///
 /// Calculates the valid k value for the next knot based upon the previous value. Can be defined in any manner. 
 ///
-static double * KMinMax(
+static void KMinMax(
+  double * kminmax,           /// kminmax array
   double k,                   /// Previous braking index
   double ktol,                /// Braking index tolerance (percentage)
   double kmin,                /// Minimum acceptable braking index
@@ -218,12 +215,8 @@ static double * KMinMax(
   double segmentlength UNUSED /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
   )
 {
-  
-  static double kminmax[2];
   double nextkmin = k * (1 - ktol);
   double nextkmax = k; //* (1 + ktol);
-  
-  //printf("Using KMinMax %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax);
   
   if (nextkmax < kmin || nextkmin > kmax){
     printf("Calculated ranges outside of global range, %E, %E, %E, %E, %E \n", k, kmin, kmax, k - kmin, k - kmax);
@@ -233,7 +226,6 @@ static double * KMinMax(
     printf("kmin greater than kmax, %E, %E \n", kmin, kmax);
     kminmax[0] = NAN;
     kminmax[1] = NAN;
-    return kminmax;
   }
   
   
@@ -251,15 +243,12 @@ static double * KMinMax(
     printf("Ranges from KMinMax are incorrect %E, %E \n", nextkmin, nextkmax);
     kminmax[0] = NAN;
     kminmax[1] = NAN;
-    return kminmax;
   }
-  
-  return kminmax;
 }
 
 
 ///
-/// Calculates the minimum and maximum bounds for a frequency frequency parameter
+/// Calculates the minimum and maximum bounds for a frequency parameter
 ///
 static double F0BoundMinMax(
   double f0,        /// Frequency value of the previous knot
@@ -299,12 +288,11 @@ static double F0BoundMinMax(
     return max;
   }
   else if (minmax == -1){
-    return gsl_vector_max(vals);
+    double min = gsl_vector_max(vals);
+    return min;
   }
   
-  
   return NAN;
-  
 }
 
 
@@ -333,17 +321,8 @@ static double F1BoundMinMax(
   }
   
   /// The two parameter range conditions
-  double prangecondition1 = -ka * pow(f0, na); // * (1 - minmax * 0.01);
+  double prangecondition1 = -ka * pow(f0, na);
   double prangecondition2 = GTEAndDerivs(fprev, na, ka, seglength, 1);
-  
-  //return prangecondition;
-  
-  
-  /// The braking index criteria
-  //double bindexcriteria = -sqrt(GTEAndDerivs(fprev, na, ka, seglength, 2) * f0 / nb);
-  
-  //printf("%f, %f, %f, %f, %E \n", f0, fprev, na, nb, ka);
-  //printf("Bounds are: %E, %E, %E \n", prangecondition1, prangecondition2, bindexcriteria);
   
   gsl_vector* vals = gsl_vector_alloc(2);
   gsl_vector_set(vals, 0, prangecondition1);
@@ -358,11 +337,8 @@ static double F1BoundMinMax(
     return min;
   }
   
-  return NAN;
-  
+  return NAN; 
 }
-
-/// Optimal k value. For upper bound k should be maximised, for lower bound k should be minimised
 
 ///
 /// Calculates the bound for the second derivative frequency parameter 
@@ -398,7 +374,6 @@ static double F2BoundMinMax(
   gsl_vector_set(vals, 1, prangecriteria);
   gsl_vector_set(vals, 2, kcriteria);
   
-  //printf("F2BoundMinMax parameters: %f, %f, %E, %f, %E, %E, %f, %d \n", f0, fprev, f1, n, ka, kb, seglength, minmax);
   if(minmax == 1){
     double max = gsl_vector_min(vals);
     return max;
@@ -470,17 +445,11 @@ static void resetdimonpoint(
   
   else if (dim == 1){
     
-    //resetf1f2(point, nmin, nmax, kmin, kmax, 0.1, 0);
-    //return;
-    
     double f0 = gsl_vector_get(point, dim - 1);
     double f1 = gsl_vector_get(point, dim);
     
     double lower = -kmax * pow(f0, nmax);
     double upper = -kmin * pow(f0, nmin);
-    
-    //double lower = F1BoundMinMax(f0, f0, nmax, nmin, kmax, kmin, 0, -1);
-    //double upper = F1BoundMinMax(f0, f0, nmin, nmax, kmin, kmax, 0, 1);
     
     double val = resetinsidebounds(f1, lower, upper);
     gsl_vector_set(point, dim, val);
@@ -495,7 +464,7 @@ static void resetdimonpoint(
     double f2 = gsl_vector_get(point, dim);
     
     /// We need a special case when f1 is equal to one of its bounds. The reason being a floating point error arises which results in calculated k values being
-    /// off by only small percentage. This is explained in further comments below.
+    /// off by only a small percentage. This is explained in further comments below.
     if (f1 == -kmax * pow(f0, nmax)){
       double val = nmax * pow(f1, 2) / f0;
       gsl_vector_set(point, dim, val);
@@ -530,22 +499,25 @@ static void resetdimonpoint(
     /// two end results. For this reason, we must choose one equation to use to calculate f2 (in this case we have chosen the braking index equation) and then manually
     /// edit the value of k and n we decide to use for our checks on subsequent knots from that point. This is the reason for the below conditions. The typically error
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
-    if (kprev > kmax && kprev * 0.9999 <= kmax){
+    if (kprev > kmax && kprev * 0.99999 <= kmax){
       kprev = kmax;
     }
-    if (kprev < kmin && kprev * 1.0001 >= kmin){
+    if (kprev < kmin && kprev * 1.00001 >= kmin){
       kprev = kmin;
     }
     
-    if (nprev > nmax && nprev * 0.9999 <= nmax){
+    if (nprev > nmax && nprev * 0.99999 <= nmax){
       nprev = nmax;
     }
-    if (nprev < nmin && nprev * 1.0001 >= nmin){
+    if (nprev < nmin && nprev * 1.00001 >= nmin){
       nprev = nmin;
     }
     
-    double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
-    double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+    double nminmax[2];
+    double kminmax[2];
+    
+    NMinMax(nminmax, nprev, ntol, nmin, nmax, segmentlength);
+    KMinMax(kminmax, kprev, ktol, kmin, kmax, segmentlength);
     
     double lower = F0BoundMinMax(f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, -1);
     double upper = F0BoundMinMax(f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength,  1);
@@ -570,22 +542,25 @@ static void resetdimonpoint(
     /// two end results. For this reason, we must choose one equation to use to calculate f2 (in this case we have chosen the braking index equation) and then manually
     /// edit the value of k and n we decide to use for our checks on subsequent knots from that point. This is the reason for the below conditions. The typically error
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
-    if (kprev > kmax && kprev * 0.9999 <= kmax){
+    if (kprev > kmax && kprev * 0.99999 <= kmax){
       kprev = kmax;
     }
-    if (kprev < kmin && kprev * 1.0001 >= kmin){
+    if (kprev < kmin && kprev * 1.00001 >= kmin){
       kprev = kmin;
     }
     
-    if (nprev > nmax && nprev * 0.9999 <= nmax){
+    if (nprev > nmax && nprev * 0.99909 <= nmax){
       nprev = nmax;
     }
-    if (nprev < nmin && nprev * 1.0001 >= nmin){
+    if (nprev < nmin && nprev * 1.00001 >= nmin){
       nprev = nmin;
     }
     
-    double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
-    double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+    double nminmax[2];
+    double kminmax[2];
+    
+    NMinMax(nminmax, nprev, ntol, nmin, nmax, segmentlength);
+    KMinMax(kminmax, kprev, ktol, kmin, kmax, segmentlength);
     
     double lower = F1BoundMinMax(f0, f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, -1);
     double upper = F1BoundMinMax(f0, f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength,  1);
@@ -610,22 +585,25 @@ static void resetdimonpoint(
     /// two end results. For this reason, we must choose one equation to use to calculate f2 (in this case we have chosen the braking index equation) and then manually
     /// edit the value of k and n we decide to use for our checks on subsequent knots from that point. This is the reason for the below conditions. The typically error
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
-    if (kprev > kmax && kprev * 0.9999 <= kmax){
+    if (kprev > kmax && kprev * 0.99999 <= kmax){
       kprev = kmax;
     }
-    if (kprev < kmin && kprev * 1.0001 >= kmin){
+    if (kprev < kmin && kprev * 1.00001 >= kmin){
       kprev = kmin;
     }
     
-    if (nprev > nmax && nprev * 0.9999 <= nmax){
+    if (nprev > nmax && nprev * 0.99999 <= nmax){
       nprev = nmax;
     }
-    if (nprev < nmin && nprev * 1.0001 >= nmin){
+    if (nprev < nmin && nprev * 1.00001 >= nmin){
       nprev = nmin;
     }
     
-    double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
-    double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+    double nminmax[2];
+    double kminmax[2];
+    
+    NMinMax(nminmax, nprev, ntol, nmin, nmax, segmentlength);
+    KMinMax(kminmax, kprev, ktol, kmin, kmax, segmentlength);
     
     double lower = F2BoundMinMax(f0, f0n1, f1, nminmax[0], kminmax[0], kminmax[1], segmentlength, -1);
     double upper = F2BoundMinMax(f0, f0n1, f1, nminmax[1], kminmax[1], kminmax[0], segmentlength,  1);
@@ -682,7 +660,6 @@ static double FirstKnotDerivBound(
   double kmin = info->kmin;
   double kmax = info->kmax;
   int minmax = info->minmax;
-  
   
   double f0 = resetinsidebounds(gsl_vector_get(point, 0), fmin, fmax);
   gsl_vector_set(point, 0, f0);
@@ -755,22 +732,25 @@ static double F0Bound(
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  if (kprev > kmax && kprev * 0.9999 <= kmax){
+  if (kprev > kmax && kprev * 0.99999 <= kmax){
       kprev = kmax;
     }
-  if (kprev < kmin && kprev * 1.0001 >= kmin){
+  if (kprev < kmin && kprev * 1.00001 >= kmin){
     kprev = kmin;
   }
     
-  if (nprev > nmax && nprev * 0.9999 <= nmax){
+  if (nprev > nmax && nprev * 0.99999 <= nmax){
     nprev = nmax;
   }
-  if (nprev < nmin && nprev * 1.0001 >= nmin){
+  if (nprev < nmin && nprev * 1.00001 >= nmin){
     nprev = nmin;
   }
   
-  double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
-  double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+  double nminmax[2];
+  double kminmax[2];
+  
+  NMinMax(nminmax, nprev, ntol, nmin, nmax, segmentlength);
+  KMinMax(kminmax, kprev, ktol, kmin, kmax, segmentlength);
   
   if (upperlower == 1){
     double upperbound = F0BoundMinMax(f0n1, nminmax[1], nminmax[0], kminmax[1], kminmax[0], segmentlength, 1);
@@ -822,22 +802,25 @@ static double F1Bound(
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  if (kprev > kmax && kprev * 0.9999 <= kmax){
+  if (kprev > kmax && kprev * 0.99999 <= kmax){
       kprev = kmax;
     }
-  if (kprev < kmin && kprev * 1.0001 >= kmin){
+  if (kprev < kmin && kprev * 1.00001 >= kmin){
     kprev = kmin;
   }
     
-  if (nprev > nmax && nprev * 0.9999 <= nmax){
+  if (nprev > nmax && nprev * 0.99999 <= nmax){
     nprev = nmax;
   }
-  if (nprev < nmin && nprev * 1.0001 >= nmin){
+  if (nprev < nmin && nprev * 1.00001 >= nmin){
     nprev = nmin;
   }
   
-  double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
-  double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+  double nminmax[2];
+  double kminmax[2];
+  
+  NMinMax(nminmax, nprev, ntol, nmin, nmax, segmentlength);
+  KMinMax(kminmax, kprev, ktol, kmin, kmax, segmentlength);
   
   if (upperlower == 1){
     double upperbound = F1BoundMinMax(f0, f0n1, nminmax[0], nminmax[1], kminmax[0], kminmax[1], segmentlength, 1);
@@ -890,22 +873,25 @@ static double F2Bound(
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  if (kprev > kmax && kprev * 0.9999 <= kmax){
+  if (kprev > kmax && kprev * 0.99999 <= kmax){
       kprev = kmax;
     }
-  if (kprev < kmin && kprev * 1.0001 >= kmin){
+  if (kprev < kmin && kprev * 1.00001 >= kmin){
     kprev = kmin;
   }
     
-  if (nprev > nmax && nprev * 0.9999 <= nmax){
+  if (nprev > nmax && nprev * 0.99999 <= nmax){
     nprev = nmax;
   }
-  if (nprev < nmin && nprev * 1.0001 >= nmin){
+  if (nprev < nmin && nprev * 1.00001 >= nmin){
     nprev = nmin;
   }
   
-  double *nminmax = NMinMax(nprev, ntol, nmin, nmax, segmentlength);
-  double *kminmax = KMinMax(kprev, ktol, kmin, kmax, segmentlength);
+  double nminmax[2];
+  double kminmax[2];
+  
+  NMinMax(nminmax, nprev, ntol, nmin, nmax, segmentlength);
+  KMinMax(kminmax, kprev, ktol, kmin, kmax, segmentlength);
   
   if (upperlower == 1){
     double upperbound = F2BoundMinMax(f0, f0n1, f1, nminmax[1], kminmax[1], kminmax[0], segmentlength, 1);
@@ -936,7 +922,6 @@ static double ktauconversion(
   return ktau;
 }
 
-
 ///
 /// Sets the bounds for the piecewise model
 ///
@@ -954,7 +939,6 @@ int XLALSetLatticeTilingPiecewiseBounds(
   const int finalknot  /// The number of the final knot
   )
 {
-  
   /// Converting tau values to k values
   double kmin = ktauconversion(fmax, nmax, taumax);
   double kmax = ktauconversion(fmax, nmax, taumin);
@@ -970,7 +954,6 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   /// Setting the first knot bounds
   XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
-  XLALSetLatticeTilingPaddingFlags(tiling, 0, LATTICE_TILING_PAD_NONE);
   
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_lower );
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_upper );
@@ -985,12 +968,23 @@ int XLALSetLatticeTilingPiecewiseBounds(
   info_first_knot_lower.minmax = -1;
   info_first_knot_upper.minmax = 1;
   
-  
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_lower, &info_first_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 2, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_upper, &info_first_knot_lower) == XLAL_SUCCESS, XLAL_EFAILED);
   
-  XLALSetLatticeTilingPaddingFlags(tiling, 1, LATTICE_TILING_PAD_NONE);
-  XLALSetLatticeTilingPaddingFlags(tiling, 2, LATTICE_TILING_PAD_NONE);
+  /// Padding flags options. For reference.
+  
+  //LATTICE_TILING_PAD_NONE  = 0x00,      ///< Do not add padding, and generate points strictly within parameter space
+  //LATTICE_TILING_PAD_LHBBX = 0x01,      ///< Add half-bounding-box padding to lower physical parameter-space bounds
+  //LATTICE_TILING_PAD_UHBBX = 0x02,      ///< Add half-bounding-box padding to upper physical parameter-space bounds
+  //LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
+  //LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
+  //LATTICE_TILING_PAD_MAX   = 0x20,
+  
+  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
+  
+  XLALSetLatticeTilingPaddingFlags(tiling, 0, flags);
+  XLALSetLatticeTilingPaddingFlags(tiling, 1, flags);
+  XLALSetLatticeTilingPaddingFlags(tiling, 2, flags);
   
   /// Setting the bounds for all following knots
   
@@ -1019,10 +1013,9 @@ int XLALSetLatticeTilingPiecewiseBounds(
     XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 1, F1Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 2, F2Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     
-    XLALSetLatticeTilingPaddingFlags(tiling, dimindex,     LATTICE_TILING_PAD_NONE);
-    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 1, LATTICE_TILING_PAD_NONE);
-    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 2, LATTICE_TILING_PAD_NONE);
-    
+    XLALSetLatticeTilingPaddingFlags(tiling, dimindex,     flags);
+    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 1, flags);
+    XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 2, flags);
   }
   
   return XLAL_SUCCESS;
