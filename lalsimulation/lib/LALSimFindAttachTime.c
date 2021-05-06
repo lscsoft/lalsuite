@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdlib.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_deriv.h>
@@ -40,6 +41,9 @@ double  XLALSimLocateOmegaTime(
     INT4 use_optimized
     )
 {
+    /* check that retLenHi is at least 2 */
+    assert( retLenHi > 2 && "retLenHi must be greater than 2" );
+
     *tMaxOmega = 0; //Zach E: Fixes Heisenbug with ICC 16 and 17 compilers (5181); removing this line will result in segfaults with both compilers.
     /*
     * Locate merger point (max omega),
@@ -439,6 +443,10 @@ double XLALSimLocateAmplTime(
     double dt = timeHi->data[1] - timeHi->data[0];
     double ddradiusVec[timeHi->length - 1];
     unsigned int k;
+
+    /* check that timeHi->length is at least 2 */
+    assert( timeHi->length > 2 && "timeHi->length must be greater than 2" );
+
     for (k = 1; k < timeHi->length-1; k++) {
         ddradiusVec[k] = (radiusVec->data[k+1] - 2.*radiusVec->data[k] + radiusVec->data[k-1])/dt/dt;
 //        XLAL_PRINT_INFO("%3.10f %3.10f\n", timeHi->data[k], ddradiusVec[k]);
