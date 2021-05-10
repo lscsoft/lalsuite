@@ -1891,8 +1891,12 @@ int XLALNextLatticeTilingPoint(
       // Find the extrema of the parameter-space bounds on the current dimension
       gsl_vector_memcpy( itr->phys_sampl, itr->phys_point );
       double phys_lower = GSL_POSINF, phys_upper = GSL_NEGINF;
-      LT_FindBoundExtrema( itr->tiling, 0, i, itr->phys_sampl_cache, itr->phys_sampl, &phys_lower, &phys_upper );
-
+      
+      if ( bound->padf == LATTICE_TILING_PAD_NONE ) {
+        LT_CallBoundFunc( itr->tiling, i, itr->phys_point_cache, itr->phys_sampl, &phys_lower, &phys_upper );
+      } else {
+        LT_FindBoundExtrema( itr->tiling, 0, i, itr->phys_sampl_cache, itr->phys_sampl, &phys_lower, &phys_upper );
+      }
       // Add padding of half the extext of the metric ellipse bounding box, if requested
       {
         const double phys_hbbox_i = 0.5 * gsl_vector_get( itr->tiling->phys_bbox, i );
