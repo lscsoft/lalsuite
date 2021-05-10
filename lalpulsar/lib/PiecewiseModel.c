@@ -227,7 +227,6 @@ static void KMinMax(
     kminmax[1] = NAN;
   }
   
-  
   if (nextkmin < kmin){
     nextkmin = kmin;
   }
@@ -292,7 +291,7 @@ static double F0BoundMinMax(
     double min = gsl_vector_max(vals);
     return min;
   }
-  */
+  */  
   
   return NAN;
 }
@@ -428,6 +427,26 @@ static double resetinsidebounds(
 
 
 ///
+/// Sets a value val to one of its extreme values if it lies just outside its acceptable range. 'Just outside' defined by valtol
+///
+static double resetvalwithintol(
+  double val,
+  double valmin,
+  double valmax,
+  double valtol
+  )
+{
+  if (val > valmax && val * (1 - valtol) <= valmax){
+    val = valmax;
+  }
+  else if (val < valmin && val * (1 + valtol) >= valmin){
+    val = valmin;
+  }
+  return val;
+}
+
+
+///
 /// A method which will reset a given point to be within our parameter sapce
 ///
 static void resetdimonpoint(
@@ -506,19 +525,9 @@ static void resetdimonpoint(
     /// two end results. For this reason, we must choose one equation to use to calculate f2 (in this case we have chosen the braking index equation) and then manually
     /// edit the value of k and n we decide to use for our checks on subsequent knots from that point. This is the reason for the below conditions. The typically error
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
-    if (kprev > kmax && kprev * 0.99999 <= kmax){
-      kprev = kmax;
-    }
-    if (kprev < kmin && kprev * 1.00001 >= kmin){
-      kprev = kmin;
-    }
     
-    if (nprev > nmax && nprev * 0.99999 <= nmax){
-      nprev = nmax;
-    }
-    if (nprev < nmin && nprev * 1.00001 >= nmin){
-      nprev = nmin;
-    }
+    kprev = resetvalwithintol(kprev, kmin, kmax, 0.00001);
+    nprev = resetvalwithintol(nprev, nmin, nmax, 0.00001);
     
     double nminmax[2];
     double kminmax[2];
@@ -549,19 +558,9 @@ static void resetdimonpoint(
     /// two end results. For this reason, we must choose one equation to use to calculate f2 (in this case we have chosen the braking index equation) and then manually
     /// edit the value of k and n we decide to use for our checks on subsequent knots from that point. This is the reason for the below conditions. The typically error
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
-    if (kprev > kmax && kprev * 0.99999 <= kmax){
-      kprev = kmax;
-    }
-    if (kprev < kmin && kprev * 1.00001 >= kmin){
-      kprev = kmin;
-    }
     
-    if (nprev > nmax && nprev * 0.99909 <= nmax){
-      nprev = nmax;
-    }
-    if (nprev < nmin && nprev * 1.00001 >= nmin){
-      nprev = nmin;
-    }
+    kprev = resetvalwithintol(kprev, kmin, kmax, 0.00001);
+    nprev = resetvalwithintol(nprev, nmin, nmax, 0.00001);
     
     double nminmax[2];
     double kminmax[2];
@@ -592,19 +591,9 @@ static void resetdimonpoint(
     /// two end results. For this reason, we must choose one equation to use to calculate f2 (in this case we have chosen the braking index equation) and then manually
     /// edit the value of k and n we decide to use for our checks on subsequent knots from that point. This is the reason for the below conditions. The typically error
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
-    if (kprev > kmax && kprev * 0.99999 <= kmax){
-      kprev = kmax;
-    }
-    if (kprev < kmin && kprev * 1.00001 >= kmin){
-      kprev = kmin;
-    }
     
-    if (nprev > nmax && nprev * 0.99999 <= nmax){
-      nprev = nmax;
-    }
-    if (nprev < nmin && nprev * 1.00001 >= nmin){
-      nprev = nmin;
-    }
+    kprev = resetvalwithintol(kprev, kmin, kmax, 0.00001);
+    nprev = resetvalwithintol(nprev, nmin, nmax, 0.00001);
     
     double nminmax[2];
     double kminmax[2];
@@ -637,10 +626,12 @@ static void resetoutofboundspoint(
   )
 {
   int dim = point->size;
-  
+  //printvector(point);
   for (int i = 0; i < dim; ++i){
     resetdimonpoint(point, i, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
   }
+  //printvector(point);
+  //printf("\n");
 }
 
 
@@ -742,19 +733,8 @@ static double F0Bound(
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  if (kprev > kmax && kprev * 0.99999 <= kmax){
-      kprev = kmax;
-    }
-  if (kprev < kmin && kprev * 1.00001 >= kmin){
-    kprev = kmin;
-  }
-    
-  if (nprev > nmax && nprev * 0.99999 <= nmax){
-    nprev = nmax;
-  }
-  if (nprev < nmin && nprev * 1.00001 >= nmin){
-    nprev = nmin;
-  }
+  kprev = resetvalwithintol(kprev, kmin, kmax, 0.00001);
+  nprev = resetvalwithintol(nprev, nmin, nmax, 0.00001);
   
   double nminmax[2];
   double kminmax[2];
@@ -815,19 +795,8 @@ static double F1Bound(
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  if (kprev > kmax && kprev * 0.99999 <= kmax){
-      kprev = kmax;
-    }
-  if (kprev < kmin && kprev * 1.00001 >= kmin){
-    kprev = kmin;
-  }
-    
-  if (nprev > nmax && nprev * 0.99999 <= nmax){
-    nprev = nmax;
-  }
-  if (nprev < nmin && nprev * 1.00001 >= nmin){
-    nprev = nmin;
-  }
+  kprev = resetvalwithintol(kprev, kmin, kmax, 0.00001);
+  nprev = resetvalwithintol(nprev, nmin, nmax, 0.00001);
   
   double nminmax[2];
   double kminmax[2];
@@ -889,19 +858,8 @@ static double F2Bound(
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  if (kprev > kmax && kprev * 0.99999 <= kmax){
-      kprev = kmax;
-    }
-  if (kprev < kmin && kprev * 1.00001 >= kmin){
-    kprev = kmin;
-  }
-    
-  if (nprev > nmax && nprev * 0.99999 <= nmax){
-    nprev = nmax;
-  }
-  if (nprev < nmin && nprev * 1.00001 >= nmin){
-    nprev = nmin;
-  }
+  kprev = resetvalwithintol(kprev, kmin, kmax, 0.00001);
+  nprev = resetvalwithintol(nprev, nmin, nmax, 0.00001);
   
   double nminmax[2];
   double kminmax[2];
@@ -965,11 +923,11 @@ int XLALSetLatticeTilingPiecewiseBounds(
   printf("kmin and kmax %E, %E \n", kmin, kmax);
   
   /// Simple checks. Not sure what the types of errors are, something to ask about later
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(fmin < fmax, XLAL_EFAULT, "This is bad %f", fmin); //EINVAL
-  XLAL_CHECK(nmin < nmax, XLAL_EFAULT);
-  XLAL_CHECK(taumin < taumax, XLAL_EFAULT);
-  XLAL_CHECK(kmin < kmax, XLAL_EFAULT);
+  XLAL_CHECK(tiling != NULL, XLAL_EINVAL);
+  XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax); //EINVAL
+  XLAL_CHECK(nmin < nmax, XLAL_EINVAL, "Bad braking index range: [%f, %f]", nmin, nmax);
+  XLAL_CHECK(taumin < taumax, XLAL_EINVAL, "Bad tau range: [%f, %f]", taumin, taumax);
+  XLAL_CHECK(kmin < kmax, XLAL_EINVAL, "Bad k range: [%f, %f]", kmin, kmax);
   
   /// Setting the first knot bounds
   XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
@@ -1039,5 +997,8 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   return XLAL_SUCCESS;
 }
+
+
+
 
 
