@@ -19,6 +19,8 @@
 #define SAMPLEFREQ 300 /* Hz */
 #define SAMPLEVELOCITY 1.0
 
+
+/* In some error, the hplus wave only takes 0, and this is the test to check hplus surely has some value.  */
 static int check_nonzero(REAL8TimeSeries **target){
 	unsigned i;
 
@@ -30,6 +32,7 @@ static int check_nonzero(REAL8TimeSeries **target){
 	return 0;
 }
 
+/* hcross must only get the value of 0, and this test return 0 if hcross has nonzero value. */
 static int check_zero(REAL8TimeSeries **target){
 	unsigned i;
 
@@ -41,6 +44,10 @@ static int check_zero(REAL8TimeSeries **target){
 	return 1;
 }
 
+
+/* If the spectrum of low freauency is too influential to the waveform, the waveform becomes only taking
+ * positve value although it unlikes the wave form of Cherenkov Burst. This test return 0 if the wave 
+ * only gets positive value. */
 static int check_positive(REAL8TimeSeries **target){
 	unsigned i;
 
@@ -52,6 +59,7 @@ static int check_positive(REAL8TimeSeries **target){
 	return 0;
 }
 
+/* Perforiming the tests above for the frequency and velocity rate in some range. */
 static int TestFrequencyAndVelocity(void)
 {
 	double f;
@@ -80,6 +88,8 @@ static int TestFrequencyAndVelocity(void)
 
 }
 
+/* Checking if the calculation of amplitude which is defined by energy over r squared works successfully.
+ * The input of frequency and velocity rate is arbitrary choosen. */
 static int TestEoverRsquared(void)
 {
 
