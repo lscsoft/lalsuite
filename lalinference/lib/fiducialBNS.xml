@@ -17,7 +17,7 @@
 		<Column Type="real_4" Name="sim_inspiral:spin2x"/>
 		<Column Type="real_4" Name="sim_inspiral:spin2y"/>
 		<Column Type="real_4" Name="sim_inspiral:spin2z"/>
-		<Column Type="int_8s" Name="sim_inspiral:process_id"/>
+		<Column Type="int_8s" Name="process:process_id"/>
 		<Column Type="int_4s" Name="sim_inspiral:h_end_time"/>
 		<Column Type="real_4" Name="sim_inspiral:distance"/>
 		<Column Type="int_4s" Name="sim_inspiral:t_end_time"/>
