@@ -56,8 +56,8 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline,
     startTimeDatafind = startTimeThisNode - extraDatafindTime
     endTimeDatafind = endTimeThisNode + extraDatafindTime
     tagStringOut = '{}_{}'.format(tagString, nodeCount)
-    cacheFile = '{}/{}-{}-{}.cache'.format(cachePath, site, startTimeDataFind,
-                                           endTimeDataFind)
+    cacheFile = '{}/{}-{}-{}.cache'.format(cachePath, site, startTimeDatafind,
+                                           endTimeDatafind)
     argList = '-f {} -t {} -p {} -C {} -s {} -e {} -N {} -v {}'.format(
         filterKneeFreq, timeBaseline, outputSFTPath, cacheFile,
         startTimeThisNode, endTimeThisNode, channelName, sftVersion)
@@ -86,7 +86,7 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline,
                                                      startTimeDatafind))
     dagFID.write('gpsendtime="{}" observatory="{}" '.format(endTimeDatafind,
                                                             site))
-    dagFID.write('inputdatatype="{}" '.format(inputDataTime))
+    dagFID.write('inputdatatype="{}" '.format(inputDataType))
     dagFID.write('tagstring="{}"\n'.format(tagStringOut))
     dagFID.write('JOB {} MakeSFTs.sub\n'.format(MakeSFTs))
     dagFID.write('RETRY {} 5\n'.format(MakeSFTs))
