@@ -171,10 +171,10 @@ static void NMinMax(
   double ntol,                /// Braking index tolerance (percentage)
   double nmin,                /// Minimum acceptable braking index
   double nmax,                /// Maximum acceptable braking index
-  double segmentlength UNUSED /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
+  double segmentlength        /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
   )
 {
-  double nextnmin = n * (1 - ntol);
+  double nextnmin = n * (1 - ntol * segmentlength);
   double nextnmax = n; //* (1 + ntol);
   
   if (nmin > nmax){
@@ -211,10 +211,10 @@ static void KMinMax(
   double ktol,                /// Braking index tolerance (percentage)
   double kmin,                /// Minimum acceptable braking index
   double kmax,                /// Maximum acceptable braking index
-  double segmentlength UNUSED /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
+  double segmentlength        /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
   )
 {
-  double nextkmin = k * (1 - ktol);
+  double nextkmin = k * (1 - ktol * segmentlength);
   double nextkmax = k; //* (1 + ktol);
   
   if (nextkmax < kmin || nextkmin > kmax){
@@ -408,7 +408,7 @@ static double resetinsidebounds(
   }
   else if (valmin > valmax){
   
-    if ((valmin - valmax) / valmax < pow(10, -10)){
+    if ((valmin - valmax) / valmax < pow(10, -6)){
       return valmax;
     }
     printf("Oh no, valmin is bigger than valmax! \n");
@@ -527,8 +527,8 @@ static void resetdimonpoint(
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
     
     
-    nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-    kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+    nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+    kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
     
     double nminmax[2];
     double kminmax[2];
@@ -561,8 +561,8 @@ static void resetdimonpoint(
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
     
     
-    nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-    kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+    nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+    kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
     
     double nminmax[2];
     double kminmax[2];
@@ -595,8 +595,8 @@ static void resetdimonpoint(
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
     
     
-    nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-    kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+    nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+    kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
     
     double nminmax[2];
     double kminmax[2];
@@ -737,8 +737,8 @@ static double F0Bound(
   double kprev = - f1n1 / pow(f0n1, nprev);
   
   
-  nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-  kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+  nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+  kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
   
   double nminmax[2];
   double kminmax[2];
@@ -800,8 +800,8 @@ static double F1Bound(
   double kprev = - f1n1 / pow(f0n1, nprev);
   
   
-  nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-  kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+  nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+  kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
   
   double nminmax[2];
   double kminmax[2];
@@ -864,8 +864,8 @@ static double F2Bound(
   double kprev = - f1n1 / pow(f0n1, nprev);
   
   
-  nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-  kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+  nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+  kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
   
   double nminmax[2];
   double kminmax[2];
@@ -1206,8 +1206,8 @@ static void resetdimonpointS2(
     double nprev = 1 + (f0nn1 * f1n1 - f0n1 * f1nn1) / (f1nn1 * f1n1 * segmentlength);
     double kprev = - f1n1 / pow(f0n1, nprev);
   
-    nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-    kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+    nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+    kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
   
     double nminmax[2];
     double kminmax[2];
@@ -1236,8 +1236,8 @@ static void resetdimonpointS2(
     double nprev = 1 + (f0nn1 * f1n1 - f0n1 * f1nn1) / (f1nn1 * f1n1 * segmentlength);
     double kprev = - f1n1 / pow(f0n1, nprev);
     
-    nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-    kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+    nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+    kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
     
     double nminmax[2];
     double kminmax[2];
@@ -1323,8 +1323,8 @@ static double F0BoundS2(
   double nprev = 1 + (f0nn1 * f1n1 - f0n1 * f1nn1) / (f1nn1 * f1n1 * segmentlength);
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-  kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+  nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+  kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
   
   double nminmax[2];
   double kminmax[2];
@@ -1390,8 +1390,8 @@ static double F1BoundS2(
   double nprev = 1 + (f0nn1 * f1n1 - f0n1 * f1nn1) / (f1nn1 * f1n1 * segmentlength);
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  nprev = resetvalwithintol(nprev, nmin, nmax, pow(ntol, 2));
-  kprev = resetvalwithintol(kprev, kmin, kmax, pow(ktol, 2));
+  nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
+  kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
   
   double nminmax[2];
   double kminmax[2];
@@ -1471,7 +1471,7 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   //LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
   //LATTICE_TILING_PAD_MAX   = 0x20,
   
-  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
+  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_LHBBX;
   
   XLALSetLatticeTilingPaddingFlags(tiling, 0, flags);
   XLALSetLatticeTilingPaddingFlags(tiling, 1, flags);
@@ -1479,7 +1479,7 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   /// Setting the bounds for all following knots
   
   for (int knot = 1; knot < finalknot; ++knot){
-    printf("Inside the first for loop \n");
+  
     double segmentlength = gsl_vector_get(knots, knot) - gsl_vector_get(knots, knot - 1);
     
     PiecewiseBoundInfo XLAL_INIT_DECL( info_knot_lower );
@@ -1512,7 +1512,7 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
     XLALSetLatticeTilingPaddingFlags(tiling, dimindex,     flags);
     XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 1, flags);
   }
-  printf("Bounds set! \n");
+  
   return XLAL_SUCCESS;
 }
 
