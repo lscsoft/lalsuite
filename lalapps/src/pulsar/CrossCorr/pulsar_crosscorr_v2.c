@@ -137,6 +137,8 @@ typedef struct tagConfigVariables{
   int    norb;          /**< number of orbits to shift prior elliptical boundary for Tasc-Porb search space */
   REAL8  orbitTimeAscCenterShifted; /**< shifted center of prior ellipse for binary time of ascension (GPS seconds) */
   REAL8  dPorbdTascShear; /**< slope of centerline of prior ellipse */
+  REAL8  unshearedgTT; /**< metric element gTT in unsheared coordinates */
+  REAL8  unshearedgTP; /**< metric element gTP in unsheared coordinates */
   REAL8 mismatchMaxP; /**<mismatch in porb */
 } ConfigVariables;
 
@@ -928,6 +930,8 @@ int main(int argc, char *argv[]){
     REAL8 gTT = gsl_matrix_get(g_ij, dimT, dimT);
     REAL8 gTP = gsl_matrix_get(g_ij, dimT, dimP);
     REAL8 gPP = gsl_matrix_get(g_ij, dimP, dimP);
+    config.unshearedgTT = gTT;
+    config.unshearedgTP = gTP;
     REAL8 gtildeTT = gTT + 2. * config.dPorbdTascShear * gTP
       + SQR(config.dPorbdTascShear) * gPP;
     REAL8 gtildeTP = gTP + config.dPorbdTascShear * gPP;
@@ -1087,6 +1091,12 @@ int main(int argc, char *argv[]){
     fprintf(fp, "old_diagaa = %.9g\n", old_diagaa);
     fprintf(fp, "old_diagTT = %.9g\n", old_diagTT);
     fprintf(fp, "old_diagpp = %.9g\n", old_diagpp);
+    if (uvar.useShearedPorb == TRUE) {
+      fprintf(fp, "unsheared_gTT = %.9"LAL_REAL8_FORMAT"\n", config.unshearedgTT);
+      fprintf(fp, "unsheared_gTP = %.9"LAL_REAL8_FORMAT"\n", config.unshearedgTP);
+      fprintf(fp, "dPorbdTascShear = %.9"LAL_REAL8_FORMAT"\n", config.dPorbdTascShear);
+    }
+
     if (uvar.useLattice == TRUE){
       fprintf(fp, "TemplatenumTotal = %d\n", numpoints);
     }
