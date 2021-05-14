@@ -23,6 +23,7 @@ int XLALSetLatticeTilingPiecewiseBounds(
   LatticeTiling* tiling,
   const double fmin,       /// Minimum spin frequency
   const double fmax,       /// Maximum spin frequency
+  const double fmaxtrue,
   const double nmin,       /// Minimum braking index
   const double nmax,       /// Maximum braking index
   const double ntol,       /// Tolerance (percentage) between braking indices on adjacent knots

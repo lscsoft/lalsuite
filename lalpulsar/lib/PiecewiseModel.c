@@ -111,6 +111,7 @@ typedef struct tagFirstKnotBoundInfo{
   double kmin;  /// Initial minimum k value
   double kmax;  /// Initial maximum k value
   int minmax;   /// +1 for upper bound, -1 for lower bound
+  int reset;    /// +1 for resetting point selected to within bounds, -1 for not
 } FirstKnotBoundInfo;
 
 
@@ -118,16 +119,17 @@ typedef struct tagFirstKnotBoundInfo{
 /// A struct containing the relevant information for calculating upper and lower bounds on a specific piecewise segment
 ///
 typedef struct tagPiecewiseBoundInfo{
-  double fmin;  /// Minimum frequency at t = 0
-  double fmax;  /// Maximum frequency at t = 0
-  double nmin;  /// Global minimum braking index
-  double nmax;  /// Global maximum braking index
-  double ntol;  /// Braking index tolerance (percentage) between adjacent knots
-  double kmin;  /// Global minimum k value
-  double kmax;  /// Global maximum k value
-  double ktol;  /// k value tolerance (percentage) between adjacent knots
+  double fmin;           /// Minimum frequency at t = 0
+  double fmax;           /// Maximum frequency at t = 0
+  double nmin;           /// Global minimum braking index
+  double nmax;           /// Global maximum braking index
+  double ntol;           /// Braking index tolerance (percentage) between adjacent knots
+  double kmin;           /// Global minimum k value
+  double kmax;           /// Global maximum k value
+  double ktol;           /// k value tolerance (percentage) between adjacent knots
   double segmentlength;  /// The time difference between the two knots relevant to this piecewise segment
-  int upperlower;  /// +1 for calculating upper bound, -1 for calculating lower bound
+  int upperlower;        /// +1 for calculating upper bound, -1 for calculating lower bound
+  int reset;             /// +1 for resetting point selected to within bounds, -1 for not
 } PiecewiseBoundInfo;
 
 
@@ -177,6 +179,11 @@ static void NMinMax(
   double nextnmin = n * (1 - ntol * segmentlength);
   double nextnmax = n; //* (1 + ntol);
   
+  if (nextnmax < nmin || nextnmin > nmax){
+    printf("Calculated n ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", n, nmin, nmax, nextnmin, nextnmax, n - nmin, n - nmax);
+  }
+  
+  
   if (nmin > nmax){
     printf("nmin greater than nmax, %E, %E \n", nmin, nmax);
     nminmax[0] = NAN;
@@ -218,7 +225,7 @@ static void KMinMax(
   double nextkmax = k; //* (1 + ktol);
   
   if (nextkmax < kmin || nextkmin > kmax){
-    printf("Calculated ranges outside of global range, %E, %E, %E, %E, %E \n", k, kmin, kmax, k - kmin, k - kmax);
+    printf("Calculated ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax, k - kmin, k - kmax);
   }
   
   if (kmin > kmax){
@@ -408,7 +415,7 @@ static double resetinsidebounds(
   }
   else if (valmin > valmax){
   
-    if ((valmin - valmax) / valmax < pow(10, -6)){
+    if ((valmin - valmax) / valmax < pow(10, -4)){
       return valmax;
     }
     printf("Oh no, valmin is bigger than valmax! \n");
@@ -504,7 +511,7 @@ static void resetdimonpoint(
     
     double lower = F2BoundMinMax(f0, 0.0000000001, f1, nmin, kmin, kmax, 0, -1);
     double upper = F2BoundMinMax(f0, 100000000000, f1, nmax, kmax, kmin, 0, 1);
-    
+    printf("Shouldn't be here \n");
     double val = resetinsidebounds(f2, lower, upper);
     gsl_vector_set(point, dim, val);
     return;
@@ -606,7 +613,7 @@ static void resetdimonpoint(
     
     double lower = F2BoundMinMax(f0, f0n1, f1, nminmax[0], kminmax[0], kminmax[1], segmentlength, -1);
     double upper = F2BoundMinMax(f0, f0n1, f1, nminmax[1], kminmax[1], kminmax[0], segmentlength,  1);
-    
+    printf("Shouldn't be here number 2 \n");
     double val = resetinsidebounds(f2, lower, upper);
     gsl_vector_set(point, dim, val);
   }
@@ -661,9 +668,14 @@ static double FirstKnotDerivBound(
   double kmin = info->kmin;
   double kmax = info->kmax;
   int minmax = info->minmax;
+  int reset = info->reset;
   
-  double f0 = resetinsidebounds(gsl_vector_get(point, 0), fmin, fmax);
-  gsl_vector_set(point, 0, f0);
+  double f0 = gsl_vector_get(point, 0);
+  
+  if (reset == 1){
+    f0 = resetinsidebounds(gsl_vector_get(point, 0), fmin, fmax);
+    gsl_vector_set(point, 0, f0);
+  }
   
   double rtn = NAN;
   
@@ -680,11 +692,16 @@ static double FirstKnotDerivBound(
   }
   else if (dim == 2){
     
-    double lower = -kmax * pow(f0, nmax);
-    double upper = -kmin * pow(f0, nmin);
+    double f1 = gsl_vector_get(point, 1);
     
-    double f1 = resetinsidebounds(gsl_vector_get(point, 1), lower, upper);
-    gsl_vector_set(point, 1, f1);
+    if (reset == 1){
+    
+      double lower = -kmax * pow(f0, nmax);
+      double upper = -kmin * pow(f0, nmin);
+      
+      f1 = resetinsidebounds(gsl_vector_get(point, 1), lower, upper);
+      gsl_vector_set(point, 1, f1);
+    }
     
     if (minmax == 1){
       double f2 = F2BoundMinMax(f0, 100000000000, f1, nmax, kmax, kmin, 0, 1);
@@ -726,8 +743,12 @@ static double F0Bound(
   double ktol = info->ktol;
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
+  int reset = info->reset;
   
-  resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  if (reset == 1){
+    resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  }
+  
   
   double f0n1 = gsl_vector_get(point, dim - 3);
   double f1n1 = gsl_vector_get(point, dim - 2);
@@ -735,7 +756,6 @@ static double F0Bound(
   
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
-  
   
   nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
   kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
@@ -787,8 +807,12 @@ static double F1Bound(
   double ktol = info->ktol;
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
+  int reset = info->reset;
   
-  resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  if (reset == 1){
+    resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  }
+  
   
   double f0n1 = gsl_vector_get(point, dim - 4);
   double f1n1 = gsl_vector_get(point, dim - 3);
@@ -850,8 +874,11 @@ static double F2Bound(
   double ktol = info->ktol;
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
+  int reset = info->reset;
   
-  resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  if (reset == 1){
+    resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  }
   
   double f0n1 = gsl_vector_get(point, dim - 5);
   double f1n1 = gsl_vector_get(point, dim - 4);
@@ -910,21 +937,22 @@ static double ktauconversion(
 ///
 int XLALSetLatticeTilingPiecewiseBounds(
   LatticeTiling* tiling,
-  const double fmin,   /// Minimum spin frequency
-  const double fmax,   /// Maximum spin frequency
-  const double nmin,   /// Minimum braking index
-  const double nmax,   /// Maximum braking index
-  const double ntol,   /// Tolerance (percentage) between braking indices on adjacent knots
-  const double taumin, /// Minimum tau value
-  const double taumax, /// Maximum tau value
-  const double ktol,   /// Tolerance (percentage) between k values on adjacent knots
+  const double fmin,       /// Minimum spin frequency to search over
+  const double fmax,       /// Maximum spin frequency to search over
+  const double fmaxtrue,   /// Maximum spin frequency with which to calculate that k value ranges with (useful for when we computing tiles in parrallel and fmax != fmaxtrue)
+  const double nmin,       /// Minimum braking index
+  const double nmax,       /// Maximum braking index
+  const double ntol,       /// Tolerance (percentage) between braking indices on adjacent knots
+  const double taumin,     /// Minimum tau value
+  const double taumax,     /// Maximum tau value
+  const double ktol,       /// Tolerance (percentage) between k values on adjacent knots
   const gsl_vector* knots, /// List of knots
-  const int finalknot  /// The number of the final knot
+  const int finalknot      /// The number of the final knot
   )
 {
   /// Converting tau values to k values
-  double kmin = ktauconversion(fmax, nmax, taumax);
-  double kmax = ktauconversion(fmax, nmax, taumin);
+  double kmin = ktauconversion(fmaxtrue, nmax, taumax);
+  double kmax = ktauconversion(fmaxtrue, nmax, taumin);
   
   printf("kmin and kmax %E, %E \n", kmin, kmax);
   
@@ -951,6 +979,15 @@ int XLALSetLatticeTilingPiecewiseBounds(
   info_first_knot_lower.minmax = -1;
   info_first_knot_upper.minmax = 1;
   
+  info_first_knot_lower.reset = info_first_knot_upper.reset = 1;
+  
+  
+  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
+  
+  if (flags == LATTICE_TILING_PAD_NONE){
+    info_first_knot_lower.reset = info_first_knot_upper.reset = -1;
+  }
+  
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_lower, &info_first_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 2, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_upper, &info_first_knot_lower) == XLAL_SUCCESS, XLAL_EFAILED);
   
@@ -962,8 +999,6 @@ int XLALSetLatticeTilingPiecewiseBounds(
   //LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
   //LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
   //LATTICE_TILING_PAD_MAX   = 0x20,
-  
-  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
   
   XLALSetLatticeTilingPaddingFlags(tiling, 0, flags);
   XLALSetLatticeTilingPaddingFlags(tiling, 1, flags);
@@ -989,6 +1024,12 @@ int XLALSetLatticeTilingPiecewiseBounds(
     
     info_knot_lower.upperlower = -1;
     info_knot_upper.upperlower = 1;
+    
+    info_knot_lower.reset = info_knot_upper.reset = 1;
+    
+    if (flags == LATTICE_TILING_PAD_NONE){
+      info_knot_lower.reset = info_knot_upper.reset = -1;
+    }
     
     int dimindex = 3 * knot;
     
@@ -1084,12 +1125,18 @@ static double SecondKnotBoundS2(
   double kmax = info->kmax;
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
+  int reset = info->reset;
   
-  double f0prev = resetinsidebounds(gsl_vector_get(point, 0), fmin, fmax);
-  double f1prev = resetinsidebounds(gsl_vector_get(point, 1), -kmax * pow(fmax, nmax), -kmin * pow(fmin, nmin));
+  double f0prev = gsl_vector_get(point, 0);
+  double f1prev = gsl_vector_get(point, 1);
   
-  gsl_vector_set(point, 0, f0prev);
-  gsl_vector_set(point, 1, f1prev);
+  if (reset == 1){
+    f0prev = resetinsidebounds(gsl_vector_get(point, 0), fmin, fmax);
+    f1prev = resetinsidebounds(gsl_vector_get(point, 1), -kmax * pow(fmax, nmax), -kmin * pow(fmin, nmin));
+    
+    gsl_vector_set(point, 0, f0prev);
+    gsl_vector_set(point, 1, f1prev); 
+  }
   
   double rtn = NAN;
   
@@ -1109,8 +1156,12 @@ static double SecondKnotBoundS2(
     double lower = F0BoundMinMax(f0prev, nmin, nmax, kmin, kmax, segmentlength, -1);
     double upper = F0BoundMinMax(f0prev, nmax, nmin, kmax, kmin, segmentlength, 1);
     
-    double f0 = resetinsidebounds(gsl_vector_get(point, 2), lower, upper);
-    gsl_vector_set(point, 2, f0);
+    double f0 = gsl_vector_get(point, 2);
+    
+    if (reset == 1){
+      f0 = resetinsidebounds(gsl_vector_get(point, 2), lower, upper);
+      gsl_vector_set(point, 2, f0);
+    }
     
     if (upperlower == 1){
       double f1 = F1BoundMinMaxS2(f0, f0prev, f1prev, nmin, nmax, kmin, kmax, segmentlength, upperlower);
@@ -1311,8 +1362,11 @@ static double F0BoundS2(
   double ktol = info->ktol;
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
+  int reset = info->reset;
   
-  resetoutofboundspointS2(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  if (reset == 1){
+    resetoutofboundspointS2(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  }
   
   double f0nn1 = gsl_vector_get(point, dim - 4);
   double f1nn1 = gsl_vector_get(point, dim - 3);
@@ -1376,8 +1430,11 @@ static double F1BoundS2(
   double ktol = info->ktol;
   double segmentlength = info->segmentlength;
   int upperlower = info->upperlower;
+  int reset = info->reset;
   
-  resetoutofboundspointS2(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  if (reset == 1){
+    resetoutofboundspointS2(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
+  }
   
   double f0nn1 = gsl_vector_get(point, dim - 5);
   double f1nn1 = gsl_vector_get(point, dim - 4);
@@ -1457,6 +1514,7 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   info_first_knot_lower.minmax = -1;
   info_first_knot_upper.minmax = 1;
   
+  
   /// Setting the bounds on the first knot
   XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
   
@@ -1471,7 +1529,7 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   //LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
   //LATTICE_TILING_PAD_MAX   = 0x20,
   
-  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_LHBBX;
+  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
   
   XLALSetLatticeTilingPaddingFlags(tiling, 0, flags);
   XLALSetLatticeTilingPaddingFlags(tiling, 1, flags);
@@ -1497,6 +1555,12 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
     
     info_knot_lower.upperlower = -1;
     info_knot_upper.upperlower = 1;
+    
+    info_knot_lower.reset = info_knot_upper.reset = 1;
+    
+    if (flags == LATTICE_TILING_PAD_NONE){
+      info_knot_lower.reset = info_knot_upper.reset = -1;
+    }
     
     int dimindex = 2 * knot;
     

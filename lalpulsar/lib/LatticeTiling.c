@@ -38,7 +38,7 @@
 #endif
 
 // Maximum length of arbitrary data
-#define LT_DATA_MAX_SIZE 1024
+#define LT_DATA_MAX_SIZE 65536
 
 // Number of cached values which can be stored per dimension
 #define LT_CACHE_MAX_SIZE 6
