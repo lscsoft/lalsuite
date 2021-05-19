@@ -1841,11 +1841,12 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	/* if counter is on first point, the orbital points haven't changed so make the dopplerShiftFlag = FALSE*/
 	if (*DEMODnumpoints == 1)
 	  {
-	    dopplerShiftFlag = FALSE;
-	    prev_point->data[DEMODdimf] = curr_point->data[DEMODdimf];
-	    prev_point->data[DEMODdima] = curr_point->data[DEMODdima];
-	    prev_point->data[DEMODdimP] = curr_point->data[DEMODdimP];
-	    prev_point->data[DEMODdimT] = curr_point->data[DEMODdimT];
+	    dopplerShiftFlag = TRUE;
+	    /* dopplerShiftFlag = FALSE; */
+	    /* prev_point->data[DEMODdimf] = curr_point->data[DEMODdimf]; */
+	    /* prev_point->data[DEMODdima] = curr_point->data[DEMODdima]; */
+	    /* prev_point->data[DEMODdimP] = curr_point->data[DEMODdimP]; */
+	    /* prev_point->data[DEMODdimT] = curr_point->data[DEMODdimT]; */
 	  }
 
 	else if(prev_point->data[DEMODdima] == curr_point->data[DEMODdima]){
