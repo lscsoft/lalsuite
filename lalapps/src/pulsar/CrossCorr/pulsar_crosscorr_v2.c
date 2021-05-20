@@ -161,7 +161,7 @@ int XLALDestroyConfigVars (ConfigVariables *config);
 int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
 int GetNextCrossCorrTemplateResamp(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
 int GetNextCrossCorrTemplateForResamp(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount);
-int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, int DEMODndim, int DEMODdimf, int DEMODdima, int DEMODdimT, int DEMODdimP, gsl_matrix *metric_ij, FILE* LatticeReadFile, int* DEMODnumpoints,ConfigVariables *config);
+int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, int DEMODndim, int DEMODdimf, int DEMODdima, int DEMODdimT, int DEMODdimP, gsl_matrix *metric_ij, FILE* LatticeReadFile, int* DEMODnumpoints, int* DEMODnumorb, ConfigVariables *config);
 int resampLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist );
 int resampForLoopCrossCorr(PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftGlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, UserInput_t uvar, MultiNoiseWeights *multiWeights, REAL8Vector *ccStatVector, REAL8Vector *evSquaredVector, REAL8Vector *numeEquivAve, REAL8Vector *numeEquivCirc, REAL8 estSens, REAL8Vector *resampGammaAve, MultiResampSFTPairMultiIndexList *resampMultiPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, REAL8 tShort, ConfigVariables *config);
 int testShortFunctionsBlock ( UserInput_t uvar, MultiSFTVector *inputSFTs, REAL8 Tsft, REAL8 resampTshort, SFTIndexList **sftIndices, SFTPairIndexList **sftPairs, REAL8Vector** GammaAve, REAL8Vector** GammaCirc, MultiResampSFTPairMultiIndexList **resampMultiPairs, MultiLALDetector* multiDetectors, MultiDetectorStateSeries **multiStates, MultiDetectorStateSeries **resampMultiStates, MultiNoiseWeights **multiWeights,  MultiLIGOTimeGPSVector **multiTimes, MultiLIGOTimeGPSVector **resampMultiTimes, MultiSSBtimes **multiSSBTimes, REAL8VectorSequence **phaseDerivs, gsl_matrix **g_ij, gsl_vector **eps_i, REAL8 estSens, SkyPosition *skypos, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *thisBinaryTemplate, ConfigVariables config, const DopplerCoordinateSystem coordSys );
@@ -1004,6 +1004,7 @@ int main(int argc, char *argv[]){
   /* BEGIN section resampled */
 
   int numpoints = 0;
+  int numorb = 0;
   if (uvar.resamp == TRUE){
       // Resampled loop 
       XLALDestroyMultiSFTVector ( inputSFTs );
@@ -1023,7 +1024,7 @@ int main(int argc, char *argv[]){
 	  XLAL_ERROR( XLAL_EFUNC );
 	}
       }
-      demodLoopCrossCorr(multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist, ndim, dimf, dima, dimT, dimP, g_ij, fp, &numpoints, &config);
+      demodLoopCrossCorr(multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist, ndim, dimf, dima, dimT, dimP, g_ij, fp, &numpoints, &numorb, &config);
 
       XLALDestroyMultiSFTVector ( inputSFTs );
       XLALDestroyCOMPLEX8Vector ( expSignalPhases );
@@ -1100,6 +1101,7 @@ int main(int argc, char *argv[]){
 
     if (uvar.useLattice == TRUE){
       fprintf(fp, "TemplatenumTotal = %d\n", numpoints);
+      fprintf(fp, "TemplatenumOrb = %d\n", numorb);
     }
     else{
       fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
@@ -1745,7 +1747,7 @@ INT4 XLALFindBadBins
 }
 
 /** Function to isolate the loop for demod */
-int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, int DEMODndim, int DEMODdimf, int DEMODdima, int DEMODdimT, int DEMODdimP, gsl_matrix *metric_ij, FILE* LatticeReadFile, int* DEMODnumpoints, ConfigVariables *config){
+int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, int DEMODndim, int DEMODdimf, int DEMODdima, int DEMODdimT, int DEMODdimP, gsl_matrix *metric_ij, FILE* LatticeReadFile, int* DEMODnumpoints, int* DEMODnumorb, ConfigVariables *config){
 
   if (uvar.useLattice == TRUE) {
     LatticeTiling *tiling = XLALCreateLatticeTiling(DEMODndim);
@@ -1894,6 +1896,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	      LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
 	      XLAL_ERROR( XLAL_EFUNC );
 	    }
+	    DEMODnumorb += 1;
 	  }
 
 	if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, badBins, Tsft )  != XLAL_SUCCESS ) ) {
