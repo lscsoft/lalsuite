@@ -1018,7 +1018,7 @@ int main(int argc, char *argv[]){
         LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
         XLAL_ERROR( XLAL_EFUNC );
       }
-      demodLoopCrossCorr(multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist, ndim, dimf, dima, dimT, dimP, g_ij, fp, &numpoints, &numorb, &config);
+      demodLoopCrossCorr(multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist, ndim, dimf, dima, dimT, dimP, g_ij, &numpoints, &numorb, &config);
 
       XLALDestroyMultiSFTVector ( inputSFTs );
       XLALDestroyCOMPLEX8Vector ( expSignalPhases );
@@ -1745,7 +1745,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 
   if (uvar.useLattice == TRUE) {
     FILE *LatticeFile = NULL;
-    if (XLALUserVarWasSet(&uvar.LatticeOutputFilename)) { /* Write the list of pairs to a file, if a name was provided */
+    if (uvar.LatticeOutputFilename != NULL) { /* Write the list of pairs to a file, if a name was provided */
       if((LatticeFile = fopen(uvar.LatticeOutputFilename, "w")) == NULL) {
 	LogPrintf ( LOG_CRITICAL, "Can't write in Lattice file \n");
 	XLAL_ERROR( XLAL_EFUNC );
@@ -1845,7 +1845,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	    * config->dPorbdTascShear;
 	}
 
-	if (LatticeFile != 1){
+	if (LatticeFile != NULL){
 	  fprintf(LatticeFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]);
 	}
 	/* if counter is on first point, the orbital points haven't changed so make the dopplerShiftFlag = FALSE*/
@@ -1857,21 +1857,15 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	    /* prev_point->data[DEMODdima] = curr_point->data[DEMODdima]; */
 	    /* prev_point->data[DEMODdimP] = curr_point->data[DEMODdimP]; */
 	    /* prev_point->data[DEMODdimT] = curr_point->data[DEMODdimT]; */
-	  }
-
-	else if(prev_point->data[DEMODdima] == curr_point->data[DEMODdima]){
-	  dopplerShiftFlag = FALSE;
-	}
-	else if(prev_point->data[DEMODdimP] == curr_point->data[DEMODdimP]){
-	  dopplerShiftFlag = FALSE;
-	}
-	else if(prev_point->data[DEMODdimT] == curr_point->data[DEMODdimT]){
+	  } else if ((prev_point->data[DEMODdima] == curr_point->data[DEMODdima])
+		 && (prev_point->data[DEMODdimP] == curr_point->data[DEMODdimP])
+		 && (prev_point->data[DEMODdimT] == curr_point->data[DEMODdimT])) {
 	  dopplerShiftFlag = FALSE;
 	}
 	else{
 	  dopplerShiftFlag = TRUE;
 	}
-       
+
 	/* if not on the first point, check that the previous orbital points are the same as the current points. If it is the same, the dopplerShiftFlag is false and we don't need additional doppler shifting */
 	/**	else if (prev_point->data[DEMODdima] == curr_point->data[DEMODdima] && prev_point->data[DEMODdimP] == curr_point->data[DEMODdimP] && prev_point->data[DEMODdimT] == curr_point->data[DEMODdimT]) **/
 	/**{
