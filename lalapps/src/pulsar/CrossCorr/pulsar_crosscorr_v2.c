@@ -139,7 +139,8 @@ typedef struct tagConfigVariables{
   REAL8  dPorbdTascShear; /**< slope of centerline of prior ellipse */
   REAL8  unshearedgTT; /**< metric element gTT in unsheared coordinates */
   REAL8  unshearedgTP; /**< metric element gTP in unsheared coordinates */
-  REAL8 mismatchMaxP; /**<mismatch in porb */
+  REAL8 mismatchMaxP; /**< maximum mismatch in porb */
+  REAL8 mismatchMaxThreeD; /**< mismatch used for 3d lattice */
 } ConfigVariables;
 
 #define TRUE (1==1)
@@ -1121,7 +1122,12 @@ int main(int argc, char *argv[]){
     fprintf(fp, "pairnum = %" LAL_UINT4_FORMAT "\n", sftPairs->length); /*total number of pair of SFT*/
     fprintf(fp, "Tsft = %.6g\n", Tsft); /*SFT duration*/
     fprintf(fp, "Tshort = %.6g\n", resampTshort); /* resampling tShort duration */
-    fprintf(fp, "mismatchMaxP = %.9f\n", config.mismatchMaxP);
+    if (config.mismatchMaxP != 0.0) {
+      fprintf(fp, "mismatchMaxP = %.9f\n", config.mismatchMaxP);
+    }
+    if (config.mismatchMaxThreeD != 0.0) {
+      fprintf(fp, "mismatchMax3D = %.9f\n", config.mismatchMaxThreeD);
+    }
     fprintf(fp, "mismatchMax = %"LAL_REAL8_FORMAT"\n", uvar.mismatchMax);
     fprintf(fp, "\n[Version]\n\n");
     fprintf(fp, "%s",  VCSInfoString);
@@ -1779,6 +1785,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	} else {
 	  mismatchMax -= uvar.unresolvedPorbMismatch;
 	}
+	config->mismatchMaxThreeD = mismatchMax;
 	if ( uvar.useShearedPorb ) {
 	  XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecCenter);
 	} else {
@@ -1930,9 +1937,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
     XLALDestroyLatticeTilingIterator(iterator);
     XLALDestroyLatticeTiling(tiling);
     fclose(LatticeReadFile);
-  }
-
-    else{
+  } else {
     while (GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0)
       {
       /* do useful stuff here*/
