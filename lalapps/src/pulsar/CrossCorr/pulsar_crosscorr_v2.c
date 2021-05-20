@@ -1801,7 +1801,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
       gsl_matrix_free(ginv_ij);
     }
 
-      /* If we haven't adjusted the mismatch for an unresolved period, we need to set the usual boundaties for the period */
+      /* If we haven't adjusted the mismatch for an unresolved period, we need to set the usual boundaries for the period */
     if (mismatchMax == uvar.mismatchMax) {
       if ( config->useTPEllipse == TRUE ) {
 	XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, config->norb, uvar.orbitTPEllipseRadius, uvar.useShearedPorb);
@@ -1843,7 +1843,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	dopplerpos.period = curr_point->data[DEMODdimP];
 	LIGOTimeGPS currpointGPS;
 	XLALGPSSetREAL8(&currpointGPS, curr_point->data[DEMODdimT]);
-	dopplerpos.tp =  currpointGPS;
+	dopplerpos.tp = currpointGPS;
 	*DEMODnumpoints += 1;
 	if ( uvar.useShearedPorb ) {
 	  dopplerpos.period +=
