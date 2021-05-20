@@ -1934,9 +1934,12 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
       } /* end while loop over templates */
   
     gsl_vector_free ( curr_point );
+    gsl_vector_free ( prev_point );
     XLALDestroyLatticeTilingIterator(iterator);
     XLALDestroyLatticeTiling(tiling);
-    fclose(LatticeReadFile);
+    if (LatticeReadFile != NULL){
+      fclose(LatticeReadFile);
+    }
   } else {
     while (GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0)
       {
