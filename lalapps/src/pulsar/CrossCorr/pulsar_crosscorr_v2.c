@@ -1887,11 +1887,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	    }**/
 	
 	/* save the current point into the previous point*/
-	prev_point->data[DEMODdimf] = curr_point->data[DEMODdimf];
-	prev_point->data[DEMODdima] = curr_point->data[DEMODdima];
-	prev_point->data[DEMODdimP] = curr_point->data[DEMODdimP];
-	prev_point->data[DEMODdimT] = curr_point->data[DEMODdimT];
-
+	XLAL_CHECK( gsl_vector_memcpy( prev_point, curr_point ) == 0, XLAL_EFAILED );
 	
       /* Apply additional Doppler shifting using current binary orbital parameters */
       /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
