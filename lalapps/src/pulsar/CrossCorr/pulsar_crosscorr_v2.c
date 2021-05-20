@@ -1812,7 +1812,12 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 
     gsl_vector *curr_point  = gsl_vector_alloc (DEMODndim);
     gsl_vector *prev_point  = gsl_vector_alloc (DEMODndim);
-    curr_point->data[DEMODdimP] = uvar.orbitPSecCenter;
+    curr_point->data[DEMODdimP] = 0.5*(config->orbitPSecMin+config->orbitPSecMax);
+    if (uvar.useShearedPorb) {
+      curr_point->data[DEMODdimP] -=
+	( curr_point->data[DEMODdimT] - config->orbitTimeAscCenterShifted )
+	* config->dPorbdTascShear;
+    }
     curr_point->data[DEMODdimT] = uvar.orbitTimeAsc + (uvar.orbitTimeAscBand/2.0);
     curr_point->data[DEMODdima] = uvar.orbitAsiniSec + (uvar.orbitAsiniSecBand/2.0);
     curr_point->data[DEMODdimf]  = uvar.fStart + (uvar.fBand/2.0);
