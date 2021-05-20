@@ -1833,9 +1833,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	dopplerpos.fkdot[0] = curr_point->data[DEMODdimf];
 	dopplerpos.asini = curr_point->data[DEMODdima];
 	dopplerpos.period = curr_point->data[DEMODdimP];
-	LIGOTimeGPS currpointGPS;
-	XLALGPSSetREAL8(&currpointGPS, curr_point->data[DEMODdimT]);
-	dopplerpos.tp = currpointGPS;
+	XLALGPSSetREAL8(&(dopplerpos.tp), curr_point->data[DEMODdimT]);
 	*DEMODnumpoints += 1;
 	if ( uvar.useShearedPorb ) {
 	  dopplerpos.period +=
@@ -1924,7 +1922,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 	//fprintf(stdout,"Inner loop: freq %f , tp %f , asini %f \n", thisCandidate.freq, thisCandidate.tp, thisCandidate.asini);
 
       } /* end while loop over templates */
-  
+
     gsl_vector_free ( curr_point );
     gsl_vector_free ( prev_point );
     XLALDestroyLatticeTilingIterator(iterator);
