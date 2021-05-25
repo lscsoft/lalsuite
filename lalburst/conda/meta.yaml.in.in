@@ -129,7 +129,7 @@ outputs:
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - ligo-segments
         - lscsoft-glue
-        - matplotlib
+        - matplotlib-base
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
