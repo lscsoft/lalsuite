@@ -52,13 +52,13 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }} fftw*
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalpulsar >={{ lalpulsar_version }}
+    - liblal >={{ lal_version }} fftw*
+    - liblalframe >={{ lalframe_version }}
+    - liblalmetaio >={{ lalmetaio_version }}
+    - liblalsimulation >={{ lalsimulation_version }}
+    - liblalburst >={{ lalburst_version }}
+    - liblalinspiral >={{ lalinspiral_version }}
+    - liblalpulsar >={{ lalpulsar_version }}
 
 outputs:
   - name: liblalinference
