@@ -65,14 +65,17 @@ def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline,
         argList = '{} -i {}'.format(argList, IFO)
     if commentField is not None:
         argList = '{} -c {}'.format(argList, commentField)
-    if miscDesc is not None:
-        argList = '{} -X {}'.format(argList, miscDesc)
-    if frameStructType is not None:
+    if frameStructType is not None and not useHoT:
         argList = '{} -u {}'.format(argList, frameStructType)
+    argList = '{} -F {} -B {}'.format(argList, startFreq, freqBand)
     if makeGPSDirs != 0:
         argList = '{} -D {}'.format(argList, makeGPSDirs)
-    argList = '{} -F {} -B {} -w {} -P {}'.format(
-        argList, startFreq, freqBand, windowType, overlapFraction)
+    if miscDesc is not None:
+        argList = '{} -X {}'.format(argList, miscDesc)
+    if windowType != 1:
+        argList = '{} -w {}'.format(argList, windowType)
+    if overlapFraction != 0.0:
+        argList = '{} -P {}'.format(argList, overlapFraction)
     if useSingle:
         argList = '{} -S'.format(argList)
     if useHoT:
@@ -124,7 +127,7 @@ parser.add_argument('-y', '--synchronize-start', action='store_true',
                     help='synchronize the start times of the SFTs so that the \
                     start times are synchronized when there are gaps in the \
                     data')
-parser.add_argument('-k', '--filter-knee-freq', required=True, type=float,
+parser.add_argument('-k', '--filter-knee-freq', required=True, type=int,
                     help='high pass filter knee frequency used on time domain \
                     data before generating SFTs')
 parser.add_argument('-T', '--time-baseline', required=True, type=int,
@@ -390,8 +393,8 @@ with open('datafind.sub','w') as datafindFID:
     datafindFID.write('log = {}\n'.format(datafindLogFile))
     datafindFID.write('error = {}/datafind_$(tagstring).err\n'.format(
         args.log_path))
-    datafindFID.write('output = {}/$(observatory)-$(gpsstarttime)-\
-        $(gpsendtime).cache\n'.format(args.cache_path))
+    datafindFID.write('output = {}/'.format(args.cache_path))
+    datafindFID.write('$(observatory)-$(gpsstarttime)-$(gpsendtime).cache\n')
     datafindFID.write('notification = never\n')
     datafindFID.write('queue 1\n')
 

@@ -1,16 +1,16 @@
 ## common variables
-tstart=1257741529
-tend=1257745130
+seg1_tstart=1257741529
+seg1_tend=1257743329
+seg2_tstart=1257743330
+seg2_tend=1257745130
 Tsft=1800
 fmin=10
 Band=1990
 
 ## a segment file
 segs="./segs"
-seg1=`echo "${tstart} + ${Tsft}" | bc`
-seg2=`echo "${tstart} + ${Tsft} + 1" | bc`
-echo "${tstart} ${seg1}" > $segs
-echo "${seg2} ${tend}" >> $segs
+echo "${seg1_tstart} ${seg1_tend}" > $segs
+echo "${seg2_tstart} ${seg2_tend}" >> $segs
 
 ## run lalapps_MakeSFTDAG to create a fake output
 cmdline="lalapps_MakeSFTDAG -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . -N H1:GDS-CALIB_STRAIN_CLEAN -F ${fmin} -B ${Band} -D 3 -X TEST -w 3 -P 0.5 -m 1 -A ligo.sim.o4.cw.explore.test -U albert.einstein -H -g segs"
@@ -45,6 +45,10 @@ VARS MakeSFTs_2 argList=\"-f 7 -t 1800 -p . -C cache/H-1257743330-1257745130.cac
 PARENT LSCdataFind_2 CHILD MakeSFTs_2"
 if ! [[ $testdagcontent == $dagfilecontent ]]; then
    echo "ERROR: dagfile content did not match expected content"
+   echo "test content:"
+   echo $testdagcontent
+   echo "Expected content:"
+   echo $dagfilecontent
    exit 1
 fi
 
@@ -62,6 +66,10 @@ notification = never
 queue 1"
 if ! [[ $testdatafindcontent == $datafindfilecontent ]]; then
    echo "ERROR: datafind.sub content did not match expected content"
+   echo "test content:"
+   echo $testdatafindcontent
+   echo "Expected content:"
+   echo $datafindfilecontent
    exit 1
 fi
 
@@ -76,11 +84,17 @@ log = logs/MakeSFTs_test.dag.log
 error = logs/MakeSFTs_\$(tagstring).err
 output = logs/MakeSFTs_\$(tagstring).out
 notification = never
+RequestMemory = 2048
 RequestCpus = 1
 queue 1"
 if ! [[ $testsftsubcontent == $sftsubfilecontent ]]; then
    echo "ERROR: MakeSFT.sub content did not match expected content"
+   echo "test content:"
+   echo $testsftsubcontent
+   echo "Expected content:"
+   echo $sftsubfilecontent
    exit 1
 fi
 
 rm MakeSFTs.sub datafind.sub segs test.dag
+rmdir cache logs
