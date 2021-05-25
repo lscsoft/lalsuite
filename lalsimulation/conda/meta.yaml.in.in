@@ -47,7 +47,7 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }}
+    - liblal >={{ lal_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
 
