@@ -46,7 +46,7 @@ requirements:
     - pkg-config >=0.18.0
     - swig >={{ swig_version }}
   host:
-    - lal >={{ lal_version }}
+    - liblal >={{ lal_version }}
     - metaio >={{ metaio_version }}
 
 outputs:

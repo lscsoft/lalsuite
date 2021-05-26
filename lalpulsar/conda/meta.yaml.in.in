@@ -51,8 +51,8 @@ requirements:
     - cfitsio
     - fftw * nompi*
     - gsl
-    - lal >={{ lal_version }} fftw*
-    - lalframe >={{ lalframe_version }}
+    - liblal >={{ lal_version }} fftw*
+    - liblalframe >={{ lalframe_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
 
