@@ -33,6 +33,7 @@ BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: help2man >= 1.37
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
+BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
@@ -45,6 +46,7 @@ BuildRequires: python2-rpm-macros
 BuildRequires: python-devel
 BuildRequires: python2-astropy
 BuildRequires: python2-lal >= @MIN_LAL_VERSION@
+BuildRequires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python2-mock
 BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python-pathlib
@@ -60,12 +62,14 @@ BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-astropy
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
 
 # octave
 BuildRequires: octave-devel
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
+BuildRequires: lalframe-octave >= @MIN_LALFRAME_VERSION@
 
 # -- packages ---------------
 
@@ -84,6 +88,7 @@ that use the LAL Pulsar library.
 Summary: LSC Algorithm Simulation Library - library package
 Group: LAL
 Requires: liblal >= @MIN_LAL_VERSION@
+Requires: liblalframe >= @MIN_LALFRAME_VERSION@
 Conflicts: %{name} <= 2.1.0-1
 %description -n lib%{name}
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
@@ -100,6 +105,7 @@ Requires: fftw-devel
 Requires: fftw-static
 Requires: gsl-devel
 Requires: liblal-devel >= @MIN_LAL_VERSION@
+Requires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 3.0.0-1
 %description -n lib%{name}-devel
@@ -116,6 +122,7 @@ Requires: lib%{name} = %{version}-%{release}
 Requires: python
 Requires: python2-astropy
 Requires: python2-lal >= @MIN_LAL_VERSION@
+Requires: python2-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python2-numpy >= @MIN_NUMPY_VERSION@
 Provides: %{name}-python = %{version}-%{release}
 Provides: deprecated()
@@ -133,6 +140,7 @@ Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-astropy
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
@@ -145,6 +153,7 @@ Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
+Requires: lalframe-octave >= @MIN_LALFRAME_VERSION@
 %description octave
 This package provides the Octave bindings for LALPulsar.
 

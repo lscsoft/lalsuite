@@ -2,6 +2,7 @@
 
 [flake8]
 select =
+	EXE,
 	E9,
 	F401,
 	W2,

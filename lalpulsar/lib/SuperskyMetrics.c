@@ -2409,6 +2409,26 @@ int XLALSetSuperskyPhysicalSpinBound(
 
 }
 
+int XLALSetSuperskyPhysicalSpinBoundPadding(
+  LatticeTiling *tiling,
+  const SuperskyTransformData *rssky_transf,
+  const size_t s,
+  const bool padding
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( CHECK_RSSKY_TRANSF( rssky_transf ), XLAL_EINVAL );
+  XLAL_CHECK( s <= rssky_transf->SMAX, XLAL_ESIZE );
+
+  // Set padding
+  XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ), padding ? ( LATTICE_TILING_PAD_LHBBX | LATTICE_TILING_PAD_UHBBX ) : LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return XLAL_SUCCESS;
+
+}
+
 static int SM_LatticePhysicalRangeCallback(
   const bool first_call,
   const LatticeTiling *tiling,

@@ -1,48 +1,49 @@
+# NOTE: when adding any new names here, the corresponding users must also be
+# added as members of https://git.ligo.org/lscsoft/lalsuite (with at least
+# Developer level permissions) in order to be able to approve merge requests
+
 # overall
-* @adam-mercer @duncanmmacleod @karl-wette
+*                               @adam-mercer @duncanmmacleod @karl-wette
 
 # package-level owners
-lal/                @adam-mercer @jolien-creighton @kipp.cannon
-lalframe/           @adam-mercer @jolien-creighton @ed-maros
-lalmetaio/          @adam-mercer @jolien-creighton @kipp.cannon
-lalsimulation/      @riccardo-sturani @frank-ohme @sebastian-khan @harald.pfeiffer @maria.haney @kipp.cannon
-lalburst/           @kipp.cannon @duncanmmacleod @gabriele-vedovato @marco-drago @adam-mercer @duncanmmacleod
-lalpulsar/          @karl-wette @david-keitel
-lalinspiral/        @jolien-creighton @adam-mercer @ian-harry @kipp.cannon
-lalinference/       @bfarr @cjhaster @john-veitch @vivien @salvatore-vitale @aaron.zimmerman @patricia-schmidt @gregory.ashton
+lal/                            @adam-mercer @jolien-creighton @kipp.cannon
+lalframe/                       @adam-mercer @ed-maros @jolien-creighton
+lalmetaio/                      @adam-mercer @jolien-creighton @kipp.cannon
+lalsimulation/                  @kipp.cannon @maria.haney @geraint.pratten @sebastian-khan
+lalburst/                       @adam-mercer @duncanmmacleod @gabriele-vedovato @kipp.cannon @marco-drago
+lalpulsar/                      @david-keitel @karl-wette @matthew-pitkin
+lalinspiral/                    @adam-mercer @ian-harry @jolien-creighton @kipp.cannon
+lalinference/                   @aaron.zimmerman @bfarr @cjhaster @gregory.ashton @john-veitch @patricia-schmidt @salvatore-vitale @vivien
 
 # lalapps
-lalapps/src/findchirp/           @jolien-creighton @adam-mercer
-lalapps/src/frametools/          @adam-mercer @jolien-creighton
-lalapps/src/hwinjection/         @karl-wette @david-keitel
-lalapps/src/inspiral/            @jolien-creighton @adam-mercer @ian-harry
-lalapps/src/lalapps/             @adam-mercer @jolien-creighton
-lalapps/src/power/               @kipp.cannon @xavier.siemens
-lalapps/src/pulsar/              @karl-wette @david-keitel
-lalapps/src/ring/                @ian-harry @andrew-williamson
-lalapps/src/string/              @kipp.cannon @florent-robinet @imene.belahcene @daichi.tsuna
+lalapps/src/findchirp/          @adam-mercer @ian-harry @jolien-creighton
+lalapps/src/frametools/         @adam-mercer @ed-maros @jolien-creighton
+lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
+lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
+lalapps/src/power/              @kipp.cannon @soichiro.kuwahara @xavier.siemens
+lalapps/src/pulsar/             @david-keitel @karl-wette @matthew-pitkin
+lalapps/src/ring/               @andrew-williamson @francesco-pannarale @ian-harry
+lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 
-# build / packaging  / support files
-.coafile             @adam-mercer @duncanmmacleod
-.gitlab/             @adam-mercer @duncanmmacleod
-conda/               @adam-mercer @duncanmmacleod
-debian/              @adam-mercer @duncanmmacleod
-docker/              @adam-mercer @duncanmmacleod
-doxygen/             @adam-mercer @karl-wette @duncanmmacleod
-gnuscripts/          @adam-mercer @karl-wette @duncanmmacleod
-include/             @adam-mercer @karl-wette @duncanmmacleod
-*.spec.in            @adam-mercer @duncanmmacleod
-*.pc.in              @adam-mercer @duncanmmacleod
-.gitlab-ci.yml       @adam-mercer @duncanmmacleod
-.gitlab-*.Dockerfile @adam-mercer @duncanmmacleod
-.gitignore           @adam-mercer @karl-wette @duncanmmacleod
-.mailmap             @adam-mercer @karl-wette
-.AUTHORS             @adam-mercer @karl-wette
-00boot               @adam-mercer @karl-wette @duncanmmacleod
-CONTRIBUTING.md      @adam-mercer @duncanmmacleod
-COPYING              @adam-mercer @duncanmmacleod
-Makefile.am          @adam-mercer @karl-wette @duncanmmacleod
-configure.ac         @adam-mercer @karl-wette @duncanmmacleod
-
-# SWIG bindings
-swig/               @karl-wette @adam-mercer @duncanmmacleod
+# build / packaging / support files
+*.pc.in                         @adam-mercer @duncanmmacleod @karl-wette
+*.spec.in                       @adam-mercer @duncanmmacleod @karl-wette
+.AUTHORS                        @adam-mercer @duncanmmacleod @karl-wette
+.coafile                        @adam-mercer @duncanmmacleod @karl-wette
+.gitignore                      @adam-mercer @duncanmmacleod @karl-wette
+.gitlab-*.Dockerfile            @adam-mercer @duncanmmacleod @karl-wette
+.gitlab-ci.yml                  @adam-mercer @duncanmmacleod @karl-wette
+.gitlab/                        @adam-mercer @duncanmmacleod @karl-wette
+.mailmap                        @adam-mercer @duncanmmacleod @karl-wette
+00boot                          @adam-mercer @duncanmmacleod @karl-wette
+CONTRIBUTING.md                 @adam-mercer @duncanmmacleod @karl-wette
+COPYING                         @adam-mercer @duncanmmacleod @karl-wette
+Makefile.am                     @adam-mercer @duncanmmacleod @karl-wette
+conda/                          @adam-mercer @duncanmmacleod @karl-wette
+configure.ac                    @adam-mercer @duncanmmacleod @karl-wette
+debian/                         @adam-mercer @duncanmmacleod @karl-wette
+docker/                         @adam-mercer @duncanmmacleod @karl-wette
+doxygen/                        @adam-mercer @duncanmmacleod @karl-wette
+gnuscripts/                     @adam-mercer @duncanmmacleod @karl-wette
+include/                        @adam-mercer @duncanmmacleod @karl-wette
+swig/                           @adam-mercer @duncanmmacleod @karl-wette

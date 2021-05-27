@@ -72,6 +72,7 @@ int XLALSimInspiralWaveformParamsInsertPhenomXHMAmpInterpolMB(LALDict *params, I
 
 /* IMRPhenomTHM Parameters */
 int XLALSimInspiralWaveformParamsInsertPhenomTHMInspiralVersion(LALDict *params, INT4 value);
+int XLALSimInspiralWaveformParamsInsertPhenomTPHMMergerVersion(LALDict *params, INT4 value);
 
 /* IMRPhenomXPHM Parameters */
 int XLALSimInspiralWaveformParamsInsertPhenomXPHMMBandVersion(LALDict *params, INT4 value);
@@ -209,6 +210,7 @@ INT4 XLALSimInspiralWaveformParamsLookupPhenomXHMAmpInterpolMB(LALDict *params);
 
 /* IMRPhenomTHM Parameters */
 INT4 XLALSimInspiralWaveformParamsLookupPhenomTHMInspiralVersion(LALDict *params);
+INT4 XLALSimInspiralWaveformParamsLookupPhenomTPHMMergerVersion(LALDict *params);
 
 /* IMRPhenomXPHM Parameters */
 INT4 XLALSimInspiralWaveformParamsLookupPhenomXPHMMBandVersion(LALDict *params);
@@ -355,6 +357,7 @@ int XLALSimInspiralWaveformParamsPhenomXPHMTwistPhenomHMIsDefault(LALDict *param
 
 /* IMRPhenomTHM Parameters */
 int XLALSimInspiralWaveformParamsPhenomTHMInspiralVersionIsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsPhenomTPHMMergerVersionIsDefault(LALDict *params);
 
 int XLALSimInspiralWaveformParamsNonGRPhi1IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRPhi2IsDefault(LALDict *params);

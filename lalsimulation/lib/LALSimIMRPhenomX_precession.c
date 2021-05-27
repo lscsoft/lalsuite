@@ -91,6 +91,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 
   // Get IMRPhenomX precession version from LAL dictionary
   pPrec->IMRPhenomXPrecVersion = XLALSimInspiralWaveformParamsLookupPhenomXPrecVersion(lalParams);
+  if (pPrec->IMRPhenomXPrecVersion == 300) pPrec->IMRPhenomXPrecVersion = 223;
 
   // Get expansion order for MSA system of equations. Default is taken to be 5.
   pPrec->ExpansionOrder        = XLALSimInspiralWaveformParamsLookupPhenomXPExpansionOrder(lalParams);
@@ -308,8 +309,11 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   */
   REAL8 af_parallel = XLALSimIMRPhenomXFinalSpin2017(eta,pPrec->chi1z,pPrec->chi2z);
   double Lfinal = M*M*af_parallel - m1_2*pPrec->chi1z - m2_2*pPrec->chi2z;
+  
+  int fsflag = XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod(lalParams);
+  if (fsflag == 4) fsflag = 3;
 
-  switch(XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod(lalParams))
+  switch(fsflag)
   {
     case 0:
       pWF->afinal    = XLALSimIMRPhenomXPrecessingFinalSpin2017(eta,chi1L,chi2L,chip);
@@ -1538,8 +1542,8 @@ int IMRPhenomXWignerdCoefficients_cosbeta(
 )
 {
   /* Note that the results here are indeed always non-negative */
-  *cos_beta_half = + sqrt( (1.0 + cos_beta) / 2.0 );  /* cos(beta/2) */
-  *sin_beta_half = + sqrt( (1.0 - cos_beta) / 2.0 );  /* sin(beta/2) */
+  *cos_beta_half = + sqrt( fabs(1.0 + cos_beta) / 2.0 );  /* cos(beta/2) */
+  *sin_beta_half = + sqrt( fabs(1.0 - cos_beta) / 2.0 );  /* sin(beta/2) */
 
   return XLAL_SUCCESS;
 }
@@ -1563,8 +1567,8 @@ int IMRPhenomXWignerdCoefficients(
   const REAL8 s2       = s*s;
   const REAL8 cos_beta = copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2);
 
-  *cos_beta_half = + sqrt( (1.0 + cos_beta) / 2.0 );  /* cos(beta/2) */
-  *sin_beta_half = + sqrt( (1.0 - cos_beta) / 2.0 );  /* sin(beta/2) */
+  *cos_beta_half = + sqrt( fabs(1.0 + cos_beta) / 2.0 );  /* cos(beta/2) */
+  *sin_beta_half = + sqrt( fabs(1.0 - cos_beta) / 2.0 );  /* sin(beta/2) */
 
   return XLAL_SUCCESS;
 }
@@ -2107,7 +2111,7 @@ int IMRPhenomX_Initialize_MSA_System(IMRPhenomXWaveformStruct *pWF, IMRPhenomXPr
       const double Del4 = 4. * c_1_over_nu_2 * q_2 * one_p_q_sq;
       const double Del5 = 8. * c_1_over_nu * q_2 * (1. + q) * Seff;
       const double Del6 = 4. * (one_m_q2_2 * pPrec->S2_norm_2 - q_2 * Seff_2);
-      pPrec->Delta      = sqrt((Del1 - Del2 - Del3) * (Del4 - Del5 - Del6));
+      pPrec->Delta      = sqrt( fabs( (Del1 - Del2 - Del3) * (Del4 - Del5 - Del6) ));
     }
     else
     {
@@ -2127,7 +2131,7 @@ int IMRPhenomX_Initialize_MSA_System(IMRPhenomXWaveformStruct *pWF, IMRPhenomXPr
       term6  = -eta2 * (delta2*pPrec->S2_norm_2 - eta2*Seff2) / delta4;
 
       /* \Delta as in Eq. C3 of Appendix C in PRD, 95, 104004, (2017) */
-      pPrec->Delta  = sqrt( (term1 + term2 + term3) * (term4 + term5 + term6) );
+      pPrec->Delta  = sqrt( fabs( (term1 + term2 + term3) * (term4 + term5 + term6) ) );
     }
 
     /*  This implements the Delta term as in LALSimInspiralFDPrecAngles.c
@@ -2889,7 +2893,7 @@ double IMRPhenomX_Return_phiz_MSA(const double v, const double JNorm, const IMRP
 
       Note that the <\Omega_z>^(n) are given by pPrec->Omegazn_coeff's as in Eqs. D15-D20
   */
-  const double phiz_out   = (   phiz_0_coeff*pPrec->Omegaz0_coeff
+  double phiz_out   = (   phiz_0_coeff*pPrec->Omegaz0_coeff
                               + phiz_1_coeff*pPrec->Omegaz1_coeff
                               + phiz_2_coeff*pPrec->Omegaz2_coeff
                               + phiz_3_coeff*pPrec->Omegaz3_coeff
@@ -2897,6 +2901,8 @@ double IMRPhenomX_Return_phiz_MSA(const double v, const double JNorm, const IMRP
                               + phiz_5_coeff*pPrec->Omegaz5_coeff
                               + pPrec->phiz_0
                             );
+
+  if (phiz_out != phiz_out) phiz_out = 0;
 
   return (phiz_out);
 }
@@ -3075,6 +3081,10 @@ vector IMRPhenomX_Return_MSA_Corrections_MSA(double v, double LNorm, double JNor
     /* Eq. F19 as in arXiv:1703.03967 */
     vMSA.y = ( ( A_theta_L * (Cphi + Dphi) ) + (2.0 * d0 * B_theta_L) * ( ( Cphi / (sd - d2) ) - ( Dphi / (sd + d2) ) ) ) / psi_dot;
   }
+
+  // Return 0 if the angles are NAN
+  if (vMSA.x != vMSA.x) vMSA.x = 0;
+  if (vMSA.y != vMSA.y) vMSA.y = 0;
 
   // Obsolete component that we initialize to zero just in case
   vMSA.z = 0.0;

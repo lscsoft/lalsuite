@@ -225,7 +225,7 @@ void coh_PTF_setup_null_stream(
 /* Be aware this is separate from the null SNR! */
 int coh_PTF_get_null_stream(
     struct coh_PTF_params *params,
-    REAL4TimeSeries **channel,
+    REAL4TimeSeries *channel[LAL_NUM_IFO+1],
     REAL4 *Fplus,
     REAL4 *Fcross,
     REAL4 *timeOffsets )

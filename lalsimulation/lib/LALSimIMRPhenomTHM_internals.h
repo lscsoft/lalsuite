@@ -77,6 +77,7 @@ typedef struct tagIMRPhenomTWaveformStruct
 
 	REAL8 Mfinal;		/* Final mass of the remnant black hole */
 	REAL8 afinal;		/* Final spin of the remnant black hole */
+	REAL8 afinal_prec;
 
 	REAL8 distance;		/* Luminosity distance (m) */
 
@@ -97,6 +98,7 @@ typedef struct tagIMRPhenomTPhase22Struct
 
 	/* Ringdown ansatz phenomenological coefficients */
 	REAL8 c1;
+	REAL8 c1_prec;
 	REAL8 c2;
 	REAL8 c3;
 	REAL8 c4;
@@ -123,8 +125,10 @@ typedef struct tagIMRPhenomTPhase22Struct
 	REAL8 omegaMergerC3;
 
 	REAL8 alpha1RD; // Angular damping frequency of the nlm = 122 QNM
+	REAL8 alpha1RD_prec;
 	REAL8 domegaPeak;	// Frequency derivative at the peak amplitude time
 	REAL8 omegaRING;	// Angular ringdown frequency
+	REAL8 omegaRING_prec;
 
 	REAL8 MfRef;  // Dimensionless reference frequency
 	REAL8 Mfmin;  // Dimensionless minimum frequency	
@@ -145,6 +149,7 @@ typedef struct tagIMRPhenomTPhase22Struct
 	REAL8 tt0;     // Calibrated t0 parameter of TaylorT3, needed for theta=0.33 collocation point and for early inspiral region if requested.
 
 	REAL8 dtM;     // Dimensionless time step
+	REAL8 EulerRDslope; // Slope of the analytical ringdown approximation for the precessing alpha angle. FIXME: check if its needed.
 
 } IMRPhenomTPhase22Struct;
 
@@ -156,6 +161,7 @@ typedef struct tagIMRPhenomTHMPhaseStruct
 
 	/* Ringdown ansatz phenomenological coefficients */
 	REAL8 c1;
+	REAL8 c1_prec;
 	REAL8 c2;
 	REAL8 c3;
 	REAL8 c4;
@@ -166,11 +172,13 @@ typedef struct tagIMRPhenomTHMPhaseStruct
 	REAL8 omegaMergerC3;
 
 	REAL8 alpha1RD;	// Angular damping frequency of the nlm = 1lm QNM
+	REAL8 alpha1RD_prec;
 	REAL8 alpha2RD; // Angular damping frequency of the nlm = 2lm QNM
 	REAL8 alpha21RD; // Damping frequency difference between n=2 and n=1 QNM
 	
 	REAL8 domegaPeak;	// Frequency derivative at the peak amplitude time
 	REAL8 omegaRING;	// Angular ringdown frequency
+	REAL8 omegaRING_prec;
 
 	REAL8 phOffMerger;	// phase offset of merger phase
 	REAL8 phOffRD;		// phase offset of ringdown phase
@@ -217,11 +225,19 @@ typedef struct tahIMRPhenomTHMAmpStruct
 	REAL8 alpha2RD;
 	REAL8 alpha21RD;
 
+	REAL8 alpha1RD_prec;
+	REAL8 alpha2RD_prec;
+	REAL8 alpha21RD_prec;
+
 	/* Phenomenological coefficients of ringdown ansatz */
 	REAL8 c1;
 	REAL8 c2;
 	REAL8 c3;
 	REAL8 c4;
+
+	REAL8 c1_prec;
+	REAL8 c2_prec;
+	REAL8 c4_prec;
 
 	/* Complex inspiral amplitude phase/frequenct contribution at the inspiral-merger boundary */
 	REAL8 omegaCutPNAMP;
@@ -306,6 +322,8 @@ double IMRPhenomTHMPhase(
 );
 
 COMPLEX16 IMRPhenomTHMAmp(REAL8 t, REAL8 w, IMRPhenomTHMAmpStruct *pAmpHM);
+
+REAL8 GetEulerSlope(REAL8 af, REAL8 mf);
 
 #ifdef __cplusplus
 }

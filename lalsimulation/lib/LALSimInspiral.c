@@ -186,7 +186,9 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomXPHM),
 		INITIALIZE_NAME(TEOBResumS),
     INITIALIZE_NAME(IMRPhenomT),
-    INITIALIZE_NAME(IMRPhenomTHM)
+    INITIALIZE_NAME(IMRPhenomTHM),
+    INITIALIZE_NAME(IMRPhenomTP),
+    INITIALIZE_NAME(IMRPhenomTPHM)
 };
 #undef INITIALIZE_NAME
 
@@ -306,6 +308,8 @@ static double fixReferenceFrequency(const double f_ref, const double f_min, cons
         case NRSur4d2s:
         case IMRPhenomT:
         case IMRPhenomTHM:
+        case IMRPhenomTP:
+        case IMRPhenomTPHM:
 	case TEOBResumS:
             return f_min;
         default:
@@ -1184,6 +1188,28 @@ int XLALSimInspiralChooseTDWaveform(
                 XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             ret = XLALSimIMRPhenomTHM(hplus, hcross, m1, m2, S1z, S2z, distance, inclination, deltaT, f_min, f_ref, phiRef, LALparams);
+            break;
+
+        case IMRPhenomTP:
+            /* Waveform-specific sanity checks */
+        /* FIXME: CHECK ADDITIONAL CHECKS OF XP */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+            ret = XLALSimIMRPhenomTP(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, deltaT, f_min, f_ref, phiRef, LALparams);
+            break;
+
+        case IMRPhenomTPHM:
+            /* Waveform-specific sanity checks */
+            /* FIXME: CHECK ADDITIONAL CHECKS OF XPHM */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+            ret = XLALSimIMRPhenomTPHM(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, deltaT, f_min, f_ref, phiRef, LALparams);
             break;
 
         default:
@@ -3280,6 +3306,17 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             /* Call the waveform driver routine */
             hlm = XLALSimIMRPhenomTHM_Modes(m1, m2, S1z, S2z, r, deltaT, f_min, f_ref, phiRef, LALpars);
 
+            break;
+
+        case IMRPhenomTPHM:
+            /* Waveform-specific sanity checks */
+            /* FIXME: CHECK XPHM CHECKS */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+            /* Call the waveform driver routine. */
+            hlm = XLALSimIMRPhenomTPHM_ChooseTDModes(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, r, deltaT, f_min, f_ref, LALpars);
             break;
 
         case SEOBNRv4P:
@@ -6248,6 +6285,8 @@ int XLALSimInspiralImplementedTDApproximants(
         case NRHybSur3dq8:
         case IMRPhenomT:
         case IMRPhenomTHM:
+        case IMRPhenomTP:
+        case IMRPhenomTPHM:
             return 1;
 
         default:
@@ -6715,6 +6754,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case NRSur4d2s:
     case NRSur7dq2:
     case NRSur7dq4:
+    case IMRPhenomTP:
+    case IMRPhenomTPHM:
       spin_support=LAL_SIM_INSPIRAL_PRECESSINGSPIN;
       break;
     case SpinTaylorF2:
@@ -6829,6 +6870,8 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case NRSur7dq2:
     case NRSur7dq4:
     case SpinTaylorF2:
+    case IMRPhenomTP:
+    case IMRPhenomTPHM:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_F_REF;
       break;
     case FindChirpPTF:
@@ -6993,6 +7036,8 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
 	case IMRPhenomXPHM:
     case IMRPhenomT:
     case IMRPhenomTHM:
+    case IMRPhenomTP:
+    case IMRPhenomTPHM:
     case NumApproximants:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;

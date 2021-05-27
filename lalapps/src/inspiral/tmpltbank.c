@@ -344,7 +344,6 @@
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALInspiralBank.h>
-#include <lal/LALFrameL.h>
 #include <lal/LALSimNoise.h>
 
 #include <LALAppsVCSInfo.h>

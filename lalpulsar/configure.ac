@@ -69,7 +69,9 @@ AM_INIT_AUTOMAKE([ \
 
 # version requirements
 MIN_LAL_VERSION="7.1.0"
+MIN_LALFRAME_VERSION="1.5.0"
 AC_SUBST([MIN_LAL_VERSION])
+AC_SUBST([MIN_LALFRAME_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -86,6 +88,9 @@ LALSUITE_ENABLE_CFITSIO
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
+
+# optional lal libraries
+LALSUITE_ENABLE_LALFRAME
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
@@ -159,9 +164,8 @@ LALSUITE_USE_CFITSIO
 
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
-
-# check for lalsupport, needed for test suite
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
+LALSUITE_CHECK_OPT_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[XLALFrStreamOpen],[lal/LALFrStream.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG

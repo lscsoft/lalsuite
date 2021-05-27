@@ -37,7 +37,7 @@ int LALSimIMRPhenomTHM_OneMode(
 	COMPLEX16TimeSeries **hlm,         /**< UNDOCUMENTED */
 	IMRPhenomTWaveformStruct *pWF,     /**< UNDOCUMENTED */
 	IMRPhenomTPhase22Struct *pPhase,   /**< UNDOCUMENTED */
-        REAL8Sequence *phase22,            /**< Values of the 22 phase for the waveform time array */
+	REAL8Sequence *phase22,            /**< Values of the 22 phase for the waveform time array */
 	REAL8Sequence *xorb,               /**< UNDOCUMENTED */
 	UINT4 ell,                         /**< UNDOCUMENTED */
 	UINT4 emm                          /**< UNDOCUMENTED */
@@ -56,13 +56,13 @@ int LALSimIMRPhenomTHM_Modes(
   REAL8 fRef,               /**< reference GW frequency (Hz) */
   REAL8 phiRef,               /**< reference orbital phase (rad) */
   LALDict *lalParams,            /**< LAL dictionary containing accessory parameters */
-  UINT4 only22              /**< Internal flag for mode array check */
+  UINT4 only22              /* Internal flag for mode array check */
   );
 
 /* Function to adapt user requested mode list to modes included in the model */
-static LALDict *IMRPhenomTHM_setup_mode_array(LALDict *lalParams);
-static int check_input_mode_array(LALDict *lalParams);
-static int check_input_mode_array_22(LALDict *lalParams);
+LALDict *IMRPhenomTHM_setup_mode_array(LALDict *lalParams);
+int check_input_mode_array_THM(LALDict *lalParams);
+int check_input_mode_array_22_THM(LALDict *lalParams);
 
 
 #ifdef __cplusplus

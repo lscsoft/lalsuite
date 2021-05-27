@@ -20,3 +20,6 @@ test_scripts += testComputeAntennaPattern.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
+
+# Add any extra files required by tests (e.g. helper scripts) to this variable
+test_extra_files +=

@@ -22,7 +22,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <lal/LALFrameL.h>
+#include <FrameL.h>
 
 #include "series.h"
 
