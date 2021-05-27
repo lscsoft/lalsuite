@@ -103,6 +103,7 @@ typedef struct tagUserInput_t {
   BOOLEAN testShortFunctions;    /**< alternative pathway with tShort using resampMultiPairs and new functions */
   BOOLEAN testResampNoTShort;    /**< use resampling without tShort (for e.g., comparison in gapless Gaussian data) */
   INT4    Dterms;                /**< number of Dirichlet terms to use for resampling sinc interpolation */
+  REAL8   allowedMismatchFromSFTLength;  /**< mismatch to tolerate in XLALFstatCheckSFTLengthMismatch() */
   BOOLEAN inclSameDetector;      /**< include cross-correlations of detector with itself */
   BOOLEAN treatWarningsAsErrors; /**< treat any warnings as errors and abort */
   LALStringVector *injectionSources; /**< CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}' */
@@ -1226,6 +1227,9 @@ int XLALInitUserVars (UserInput_t *uvar)
    * the optimization is very shallow: 32 is also fine.
    */
   uvar->Dterms = 8;
+  /* override default value in XLALFstatCheckSFTLengthMismatch(), which is 0.05 */
+  /* Note that per Whelan et al PRD _91_, 102005 (2015) the starting point for CrossCorr searches is 1/17 ~= 0.059 */
+  uvar->allowedMismatchFromSFTLength = 0.10;
 
   /* initialize overall principles */
   uvar->inclSameDetector = TRUE;
@@ -1288,6 +1292,7 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( testShortFunctions, BOOLEAN, 0,  OPTIONAL, "Use alternative functions for resampMultiPairs with tShort");
   XLALRegisterUvarMember( testResampNoTShort, BOOLEAN, 0, OPTIONAL, "Use resampling without tShort (for e.g., comparison in gapless Gaussian data)");
   XLALRegisterUvarMember( Dterms, INT4, 0, OPTIONAL, "Number of Dirichlet terms for resampling sinc interpolation");
+  XLALRegisterUvarMember( allowedMismatchFromSFTLength, REAL8, 0, OPTIONAL, "override default value in XLALFstatCheckSFTLengthMismatch() (only relevant for resamp)");
   XLALRegisterUvarMember( inclSameDetector, BOOLEAN, 0, OPTIONAL, "Cross-correlate a detector with itself at a different time (if inclAutoCorr, then also same time)");
   XLALRegisterUvarMember( treatWarningsAsErrors, BOOLEAN, 0, OPTIONAL, "Abort program if any warnings arise (for e.g., zero-maxLag radiometer mode)");
   XLALRegisterUvarMember( injectionSources, STRINGVector, 0 , OPTIONAL, "CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}'");
@@ -2060,6 +2065,7 @@ int resampForLoopCrossCorr(PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftF
   }
   optionalArgs.injectSources = injectSources;
   optionalArgs.injectSqrtSX = injectSqrtSX;
+  optionalArgs.allowedMismatchFromSFTLength = uvar.allowedMismatchFromSFTLength;
 
   /* Set environmental variable for Fstat FFT planning: creating F stat input
    * automatically invokes the FFT planner, but we never use it, so want to
