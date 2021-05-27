@@ -87,6 +87,7 @@ int main(int argc, char *argv[]){
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
+  INT4 nodata=1;
 
   FilterResponse *filtresp=NULL; /* variable for the filter response function */
 
@@ -391,8 +392,9 @@ data!\n");
 
           continue;
         }
-        else
+        else{
           break;
+        }
       }
 
       /* make vector (make sure imaginary parts are set to zero) */
@@ -418,10 +420,13 @@ data!\n");
           continue;
         }
         else{
-          break; /* if at the end of data anyway then break */
           XLALDestroyCOMPLEX16TimeSeries( data );
+          break; /* if at the end of data anyway then break */
         }
       }
+
+      /* if any data has successfully been read-in set flag to 0 */
+      nodata = 0;
 
       /* put data into COMPLEX16 vector and set imaginary parts to zero */
       for( i=0;i<inputParams.samplerate * duration;i++ ){
@@ -688,6 +693,12 @@ data!\n");
 
     XLALDestroyREAL8Vector( times );
   }while( count < numSegs && (inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3) );
+
+  /* check if any data has been read - if not exit with an error */
+  if ( nodata && (inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3) ){
+    fprintf(stderr, "Error... no data was read in.\n");
+    exit(1);
+  }
 
   /* check whether to gzip the output */
   if ( !inputParams.binaryoutput && inputParams.gzipoutput ){
