@@ -1186,7 +1186,7 @@ upgrade:rpm:el7:
     # install latest release
     - yum -y -q install lalapps
     # install new packages
-    - yum -y -q install rpmbuild/RPMS/x86_64/*.rpm
+    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
 
 upgrade:debian:buster:
   extends:
@@ -1213,7 +1213,7 @@ upgrade:debian:buster:
     - /usr/lib/local-apt-repository/rebuild
     # install new packages
     - apt-get -y -q update
-    - apt-get -y -q dist-upgrade
+    - apt-get -y dist-upgrade
 
 upgrade:conda:linux:
   extends:
