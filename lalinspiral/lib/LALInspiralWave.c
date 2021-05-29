@@ -271,7 +271,7 @@ int XLALInspiralTDWaveformFromSimInspiral(
 
    /* get extra parameters from numrel_data column */
    /* format is: "param1=3.14,param2:INT4=7,param3:string=hello" */
-   if (*thisRow->numrel_data) {
+   if (*thisRow->numrel_data && approximant != NR_hdf5) {
       char *str = XLALStringDuplicate(thisRow->numrel_data);
       char *head = str;
       char *tok;
@@ -286,6 +286,7 @@ int XLALInspiralTDWaveformFromSimInspiral(
          char *val = strchr(tok, '=');
          char *type;
          if (val == NULL) {
+            XLALDestroyDict(params);
             XLALFree(head);
             XLAL_ERROR(XLAL_ENAME, "could not parse extra params from numrel_data column `%s'", thisRow->numrel_data);
          }
@@ -300,11 +301,12 @@ int XLALInspiralTDWaveformFromSimInspiral(
          else if (XLALStringCaseCompare(type, "STRING") == 0)
             XLALDictInsertStringValue(params, key, val);
          else {
+            XLALDestroyDict(params);
             XLALFree(head);
             XLAL_ERROR(XLAL_ENAME, "could not parse extra params from numrel_data column `%s'", thisRow->numrel_data);
          }
       }
-      XLALFree(str);
+      XLALFree(head);
    }
 
    /* generate +,x waveforms */
