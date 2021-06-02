@@ -26,6 +26,7 @@
 
 #include <lal/LatticeTiling.h>
 #include <lal/LALStdio.h>
+#include <lal/LogPrintf.h>
 #include <lal/LALHashFunc.h>
 #include <lal/MetricUtils.h>
 #include <lal/GSLHelpers.h>
@@ -1557,6 +1558,7 @@ int XLALPerformLatticeTilingCallbacks(
   XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
   // Iterate over all points
+  double old_progress = -1.0;
   bool first_call = true;
   int changed_ti_p1;
   double point_array[n];
@@ -1570,6 +1572,16 @@ int XLALPerformLatticeTilingCallbacks(
       XLAL_CHECK( (cb->func)( first_call, tiling, itr, &point_view.vector, changed_i, cb->param, cb->out ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     first_call = false;
+
+    // Log progress
+    if ( tiling->tiled_ndim > 0 && changed_ti_p1 == 1 ) {
+      double progress = 0.1 * round( 1000.0 * ( (double) ( itr->int_point[0] - itr->int_lower[0] ) ) / ( (double) ( itr->int_upper[0] - itr->int_lower[0] ) ) );
+      if ( progress > old_progress ) {
+        old_progress = progress;
+        UINT8 total_points = 1 + itr->index;
+        LogPrintf( LOG_DEBUG, "%s() progress %0.1f%%, total points %" LAL_UINT8_FORMAT "\n", __func__, progress, total_points );
+      }
+    }
 
   }
   XLAL_CHECK( xlalErrno == 0, XLAL_EFAILED );
