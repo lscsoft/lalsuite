@@ -1575,6 +1575,17 @@ int XLALSimNoisePSDaLIGODesignSensitivityT1800044(
 		T1800044 "aLIGO_DESIGN.txt");
 }
 
+/**
+ * \deprecated Use XLALSimNoisePSDaLIGODesignSensitivityT1800044.
+ */
+int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(
+    REAL8FrequencySeries *psd,  /**< frequency series to be computed */
+    double flow             /**< low frequency cutoff (Hz) */
+)
+{
+    return XLALSimNoisePSDaLIGODesignSensitivityT1800044(psd, flow);
+}
+
 /** @} */
 
 /**
