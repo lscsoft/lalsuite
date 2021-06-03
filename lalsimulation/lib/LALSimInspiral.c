@@ -1827,8 +1827,8 @@ int XLALSimInspiralChooseFDWaveform(
                 XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             ret = XLALSimIMRSEOBNRv4HMROM(hptilde, hctilde,
-                    phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, -1,5,LALparams);
-            break;
+                    phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, 5, true, LALparams);
+            break;   
 
 	case SEOBNRv4_ROM_NRTidal:
 
@@ -3670,7 +3670,7 @@ SphHarmFrequencySeries *XLALSimInspiralChooseFDModes(
 			}
 
 			/* Compute individual modes of SEOBNRv4HM_ROM */
-			retcode = XLALSimIMRSEOBNRv4HMROM_Modes(hlms_tmp, phiRef, deltaF, f_min, f_max, f_ref, distance, m1, m2, S1z, S2z, -1, eobmodes);
+			retcode = XLALSimIMRSEOBNRv4HMROM_Modes(hlms_tmp, phiRef, deltaF, f_min, f_max, f_ref, distance, m1, m2, S1z, S2z, -1, eobmodes, true);
 			if( retcode != XLAL_SUCCESS){
 				XLALFree(hlms_tmp);
 				XLAL_ERROR_NULL(XLAL_EFUNC);
