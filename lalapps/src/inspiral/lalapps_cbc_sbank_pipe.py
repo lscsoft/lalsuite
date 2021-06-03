@@ -24,6 +24,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+import warnings
 
 ##############################################################################
 # import the modules we need to build the pipeline
@@ -32,6 +33,14 @@ from glue.pipeline import DeepCopyableConfigParser as dcConfigParser
 
 from glue import pipeline
 from lalapps import inspiral
+
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
+
 
 def which(prog):
     which = subprocess.Popen(['/usr/bin/which', prog], stdout=subprocess.PIPE)

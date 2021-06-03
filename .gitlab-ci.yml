@@ -1452,7 +1452,7 @@ coverage:
     # Run unit tests with Python scripts instrumented by coverage.py
     - make -j${CPU_COUNT} check
           COVERAGE_FILE="$(pwd)/.coverage"
-          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\*,\*sbank\* -p"
   after_script:
     # Output C coverage data in Cobertura format
     - gcovr

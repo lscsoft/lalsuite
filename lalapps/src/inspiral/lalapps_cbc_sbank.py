@@ -19,6 +19,7 @@ from __future__ import (division, print_function)
 
 import os
 import sys
+import warnings
 from collections import deque
 from optparse import OptionParser
 from time import strftime
@@ -40,6 +41,13 @@ from lalinspiral.sbank.bank import Bank
 from lalinspiral.sbank.tau0tau3 import proposals
 from lalinspiral.sbank.psds import (noise_models, read_psd)
 from lalinspiral.sbank.waveforms import waveforms, SnglInspiralTable
+
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
 
 
 class ContentHandler(ligolw.LIGOLWContentHandler):

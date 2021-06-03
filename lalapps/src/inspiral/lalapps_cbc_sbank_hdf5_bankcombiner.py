@@ -23,9 +23,17 @@ single template bank.
 import argparse
 import numpy
 import h5py
+import warnings
 
 __author__  = "Ian Harry <ian.harry@ligo.org>"
 __program__ = "lalapps_cbc_sbank_hdf5_bankcombiner"
+
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
 
 parser = argparse.ArgumentParser(description=__doc__[1:])
 parser.add_argument("--output-file", type=str,

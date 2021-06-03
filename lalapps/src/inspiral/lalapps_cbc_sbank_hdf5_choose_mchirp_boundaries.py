@@ -25,10 +25,18 @@ of the ligolw_cbc_sbank job that produced them unless overridden.
 from __future__ import print_function
 
 import sys
+import warnings
 from bisect import (bisect_left, bisect_right)
 from optparse import OptionParser
 import numpy
 import h5py
+
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
 
 
 def parse_command_line():
