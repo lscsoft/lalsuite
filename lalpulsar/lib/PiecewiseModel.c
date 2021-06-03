@@ -104,32 +104,31 @@ int XLALSetLatticeTilingCircleBound(
 /// Information required to determine the bounds on the parameters on the first knot
 ///
 typedef struct tagFirstKnotBoundInfo{
-  double fmin;  /// Global minimum starting frequency
-  double fmax;  /// Global maximum starting frequency
-  double nmin;  /// Initial minimum allowed braking
-  double nmax;  /// Initial maximum allowed braking index
-  double kmin;  /// Initial minimum k value
-  double kmax;  /// Initial maximum k value
-  int minmax;   /// +1 for upper bound, -1 for lower bound
-  int reset;    /// +1 for resetting point selected to within bounds, -1 for not
+  double fmin;             /// Minimum starting frequency
+  double fmax;             /// Maximum starting frequency
+  double nmin;             /// Minimum braking index
+  double nmax;             /// Maximum braking index
+  double kmin;             /// Minimum k value
+  double kmax;             /// Maximum k value
+  int minmax;              /// +1 for upper bound, -1 for lower bound
+  int reset;               /// +1 for resetting point methods to be used, -1 for not
 } FirstKnotBoundInfo;
-
 
 ///
 /// A struct containing the relevant information for calculating upper and lower bounds on a specific piecewise segment
 ///
 typedef struct tagPiecewiseBoundInfo{
-  double fmin;           /// Minimum frequency at t = 0
-  double fmax;           /// Maximum frequency at t = 0
-  double nmin;           /// Global minimum braking index
-  double nmax;           /// Global maximum braking index
-  double ntol;           /// Braking index tolerance (percentage) between adjacent knots
-  double kmin;           /// Global minimum k value
-  double kmax;           /// Global maximum k value
-  double ktol;           /// k value tolerance (percentage) between adjacent knots
-  double segmentlength;  /// The time difference between the two knots relevant to this piecewise segment
-  int upperlower;        /// +1 for calculating upper bound, -1 for calculating lower bound
-  int reset;             /// +1 for resetting point selected to within bounds, -1 for not
+  double fmin;             /// Minimum starting frequency
+  double fmax;             /// Maximum starting frequency
+  double nmin;             /// Minimum braking index
+  double nmax;             /// Maximum braking index
+  double ntol;             /// Braking index tolerance (percentage per second) between adjacent knots
+  double kmin;             /// Minimum k value
+  double kmax;             /// Maximum k value
+  double ktol;             /// k value tolerance (percentage per second) between adjacent knots
+  double segmentlength;    /// The duration of the current piecewise segment
+  int upperlower;          /// +1 for calculating upper bound, -1 for calculating lower bound
+  int reset;               /// +1 for resetting point methods to be used, -1 for not
 } PiecewiseBoundInfo;
 
 
@@ -137,11 +136,11 @@ typedef struct tagPiecewiseBoundInfo{
 /// The general torque equation and its first two derivatives 
 ///
 static double GTEAndDerivs(
-  double f0, /// Initial frequency
-  double n,  /// Braking index
-  double k,  /// k value
-  double t,  /// Time at which to evaluate the GTE
-  int d      /// Derivative order (d <= 2)
+  double f0,               /// Initial frequency
+  double n,                /// Braking index
+  double k,                /// k value
+  double t,                /// Time at which to evaluate the GTE
+  int d                    /// Derivative order (d <= 2)
   )
 {
   double base = 1 + (n - 1) * k * pow(f0, n - 1) * t;
@@ -165,29 +164,28 @@ static double GTEAndDerivs(
 }
 
 ///
-/// Calculates the valid braking index for the next knot based upon the previous braking index. Can be defined in any manner. 
+/// Alters the nminmax array to give the allowed range of the braking index for a knot given the braking index value on the previous knot
 ///
-static void NMinMax(
-  double * nminmax,           /// Nminmax array
-  double n,                   /// Previous braking index
-  double ntol,                /// Braking index tolerance (percentage)
-  double nmin,                /// Minimum acceptable braking index
-  double nmax,                /// Maximum acceptable braking index
-  double segmentlength        /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
+static int NMinMax(
+  double * nminmax,        /// Nminmax array
+  double n,                /// Previous braking index
+  double ntol,             /// Braking index tolerance (percentage per second)
+  double nmin,             /// Minimum allowed braking index
+  double nmax,             /// Maximum allowed braking index
+  double segmentlength     /// Time difference between current knot and previous knot
   )
 {
+
+  XLAL_CHECK(nmin <= nmax, XLAL_EINVAL, "nmin greater than nmax, [nmin, nmax] = [%f. %f]", nmin, nmax);
+  
   double nextnmin = n * (1 - ntol * segmentlength);
   double nextnmax = n; //* (1 + ntol);
   
+  /// This should just be a warning, but I'm not 100% sure on how to do that in lalsuite. Either way, if the code is running properly (at least with padding flags turned off) this
+  /// shouldn't ever really come up, but if it does, it doesn't necessarily mean things will go wrong. It usually just means that nextnmax/nextnmin are very close to the either nmin
+  /// or nmax
   if (nextnmax < nmin || nextnmin > nmax){
     printf("Calculated n ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", n, nmin, nmax, nextnmin, nextnmax, n - nmin, n - nmax);
-  }
-  
-  
-  if (nmin > nmax){
-    printf("nmin greater than nmax, %E, %E \n", nmin, nmax);
-    nminmax[0] = NAN;
-    nminmax[1] = NAN;
   }
   
   if (nextnmin < nmin){
@@ -200,38 +198,34 @@ static void NMinMax(
   nminmax[0] = nextnmin;
   nminmax[1] = nextnmax;
   
-  if (nextnmin > nextnmax){
-    printf("Ranges from NMinMax are incorrect %E, %E \n", nextnmin, nextnmax);
-    
-    nminmax[0] = NAN;
-    nminmax[1] = NAN;
-  }
+  XLAL_CHECK(nextnmin <= nextnmax, XLAL_EINVAL, "Calculated braking index ranges incorrect, [nextnmin, nextnmax] = [%f, %f]", nextnmin, nextnmax);
+  
+  return 1;
 }
 
-
 ///
-/// Calculates the valid k value for the next knot based upon the previous value. Can be defined in any manner. 
+/// Alters the kminmax array to give the allowed range of the k value for a knot given the k value on the previous knot
 ///
-static void KMinMax(
-  double * kminmax,           /// kminmax array
-  double k,                   /// Previous braking index
-  double ktol,                /// Braking index tolerance (percentage)
-  double kmin,                /// Minimum acceptable braking index
-  double kmax,                /// Maximum acceptable braking index
-  double segmentlength        /// Time difference between current knot and previous knot. Kept in case function definition changes at a later date
+static int KMinMax(
+  double * kminmax,        /// kminmax array
+  double k,                /// Previous k value index
+  double ktol,             /// k value tolerance (percentage per second)
+  double kmin,             /// Minimum allowed k value
+  double kmax,             /// Maximum allowed k value
+  double segmentlength     /// Time difference between current knot and previous knot
   )
 {
+  
+  XLAL_CHECK(kmin <= kmax, XLAL_EINVAL, "kmin greater than kmax, [kmin, kmax] = [%E. %E]", kmin, kmax);
+  
   double nextkmin = k * (1 - ktol * segmentlength);
   double nextkmax = k; //* (1 + ktol);
   
+  /// This should just be a warning, but I'm not 100% sure on how to do that in lalsuite. Either way, if the code is running properly (at least with padding flags turned off) this
+  /// shouldn't ever really come up, but if it does, it doesn't necessarily mean things will go wrong. It usually just means that nextkmax/nextkmin are very close to the either kmin
+  /// or kmax
   if (nextkmax < kmin || nextkmin > kmax){
     printf("Calculated ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax, k - kmin, k - kmax);
-  }
-  
-  if (kmin > kmax){
-    printf("kmin greater than kmax, %E, %E \n", kmin, kmax);
-    kminmax[0] = NAN;
-    kminmax[1] = NAN;
   }
   
   if (nextkmin < kmin){
@@ -244,89 +238,50 @@ static void KMinMax(
   kminmax[0] = nextkmin;
   kminmax[1] = nextkmax;
   
-  if (nextkmin > nextkmax){
-    printf("Ranges from KMinMax are incorrect %E, %E \n", nextkmin, nextkmax);
-    kminmax[0] = NAN;
-    kminmax[1] = NAN;
-  }
-}
+  XLAL_CHECK(nextkmin <= nextkmax, XLAL_EINVAL, "Calculated k value ranges incorrect, [nextkmin, nextkmax] = [%E, %E]", nextkmin, nextkmax);
 
+  return 1;
+}
 
 ///
 /// Calculates the minimum and maximum bounds for a frequency parameter
 ///
 static double F0BoundMinMax(
-  double f0,        /// Frequency value of the previous knot
-  double na,        /// A braking index value. For calculating upper bound, na > nb. For calculating lower bound na < nb
-  double nb,        /// A braking index value. For calculating upper bound, na > nb. For calculating lower bound na < nb
-  double ka UNUSED, /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb
-  double kb,        /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb
-  double seglength, /// Time difference between this knot and the previous knot
-  int minmax        /// +1 for calculating upper bound, -1 for calculating lower bound
+  double f0,               /// Frequency value of the previous knot
+  double na,               /// A braking index value. For calculating upper bound, na > nb. For calculating lower bound na < nb
+  double nb,               /// A braking index value. For calculating upper bound, na > nb. For calculating lower bound na < nb
+  double ka UNUSED,        /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb
+  double kb,               /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb
+  double seglength,        /// Time difference between this knot and the previous knot
+  int minmax               /// +1 for calculating upper bound, -1 for calculating lower bound
 )
 {
-  /// These combinations of gted and gtedd give one of the optimised values of f0 (either minimum or maximum) such that the braking index at the next knot still
-  /// falls within an acceptable range. This acceptable range is between [na, nb] or [nb, na], depending upon the value of minmax. Do a double check of this maths
-  if (na > nb && minmax == -1){
-    printf("F0BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
-    return NAN;
-  }
-  else if (na < nb && minmax == 1){
-    printf("F0BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
-    return NAN;
-  }
-  
-  /// These variables are used to calculate the f0 value using braking index criteria
-  //double gted = GTEAndDerivs(f0, na, ka, seglength, 1);
-  //double gtedd = GTEAndDerivs(f0, nb, kb, seglength, 2);
-  //double bindexcriteria = na * pow(gted, 2) / gtedd;
+
+  XLAL_CHECK((na <= nb && minmax == -1) || (na >= nb && minmax == 1), XLAL_EINVAL, "F0BoundMinMax being called incorrectly, with [na, nb, minmax] = [%f, %f, %d]", na, nb, minmax);
   
   /// Parameter range optimisation for frequency parameter
   double paramrange = GTEAndDerivs(f0, nb, kb, seglength, 0);
   return paramrange;
   
-  /*
-  gsl_vector* vals = gsl_vector_alloc(2);
-  gsl_vector_set(vals, 0, bindexcriteria);
-  gsl_vector_set(vals, 1, paramrange);
-  
-  if(minmax == 1){
-    double max = gsl_vector_min(vals);
-    return max;
-  }
-  else if (minmax == -1){
-    double min = gsl_vector_max(vals);
-    return min;
-  }
-  */  
-  
   return NAN;
 }
-
 
 ///
 /// Function which determines the minimum/maximum value of the first derivative parameters
 ///
 static double F1BoundMinMax(
   double f0 UNUSED,        /// Frequency parameter at the corresponding knot
-  double fprev,     /// Frequency parameter at the previous knot
-  double na,        /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
-  double nb,        /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
-  double ka,        /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
-  double kb UNUSED, /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
-  double seglength, /// Time difference between this knot and the previous
-  int minmax        /// +1 for upper bound, -1 for lower bound
+  double fprev,            /// Frequency parameter at the previous knot
+  double na,               /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
+  double nb,               /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
+  double ka,               /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
+  double kb UNUSED,        /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
+  double seglength,        /// Time difference between this knot and the previous
+  int minmax               /// +1 for upper bound, -1 for lower bound
   )
 {
-  /// Checking that the method is being called with the appropriate values
-  if (na < nb && minmax == -1){
-    printf("F1BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
-    return NAN;
-  }
-  if (na > nb && minmax == 1){
-    printf("F1BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
-    return NAN;
-  }
+
+  XLAL_CHECK((na >= nb && minmax == -1) || (na <= nb && minmax == 1), XLAL_EINVAL, "F1BoundMinMax being called incorrectly, with [na, nb, minmax] = [%f, %f, %d]", na, nb, minmax);
   
   /// The two parameter range conditions
   double prangecondition1 = -ka * pow(f0, na);
@@ -355,25 +310,18 @@ static double F1BoundMinMax(
 /// Calculates the bound for the second derivative frequency parameter 
 ///
 static double F2BoundMinMax(
-  double f0,        /// Frequency parameter on this knot
-  double fprev,     /// Frequency parameter on the previous knot
-  double f1,        /// First derivative frequency parameter on this knot
-  double n,         /// Optimal braking index value. For upper bound n should be maximised, for lower bound n should be minimised
-  double ka,        /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb
-  double kb,        /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb 
-  double seglength, /// Time difference between this knot and the previous
-  int minmax        /// +1 for upper bound, -1 for lower bound
+  double f0,               /// Frequency parameter on this knot
+  double fprev,            /// Frequency parameter on the previous knot
+  double f1,               /// First derivative frequency parameter on this knot
+  double n,                /// Optimal braking index value. For upper bound n should be maximised, for lower bound n should be minimised
+  double ka,               /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb
+  double kb,               /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb 
+  double seglength,        /// Time difference between this knot and the previous
+  int minmax               /// +1 for upper bound, -1 for lower bound
 )
 {
-  /// Checking that the method is being called with the appropriate values
-  if (ka > kb && minmax == -1){
-    printf("F2BoundMinMax being called incorrectly, with %f, %f, %d \n", ka, kb, minmax);
-    return NAN;
-  }
-  if (ka < kb && minmax == 1){
-    printf("F2BoundMinMax being called incorrectly, with %f, %f, %d \n", ka, kb, minmax);
-    return NAN;
-  }
+
+  XLAL_CHECK((ka <= kb && minmax == -1) || (ka >= kb && minmax == 1), XLAL_EINVAL, "F2BoundMinMax being called incorrectly, with [ka, kb, minmax] = [%E, %E, %d]", ka, kb, minmax);
   
   /// Braking index and parameter range conditions.
   double bindexcriteria = n * pow(f1, 2) / f0;
@@ -404,9 +352,9 @@ static double F2BoundMinMax(
 /// Takes an input val, and returns val to its closest value within the range [valmin, valmax].
 ///
 static double resetinsidebounds(
-  double val,     /// Value
-  double valmin,  /// Lower bound of range
-  double valmax   /// Upper bound of range
+  double val,              /// Value
+  double valmin,           /// Lower bound of range
+  double valmax            /// Upper bound of range
   )
 {
   
@@ -414,13 +362,10 @@ static double resetinsidebounds(
     return val;
   }
   else if (valmin > valmax){
-  
-    if ((valmin - valmax) / valmax < pow(10, -4)){
-      return valmax;
-    }
-    printf("Oh no, valmin is bigger than valmax! \n");
-    printf("val, valmin and valmax: %E, %E, %E, %E \n", val, valmin, valmax, valmax - valmin);
-    return NAN;
+    
+    XLAL_CHECK(((valmin - valmax) / valmax < pow(10, -4)), XLAL_EINVAL, "Valmin bigger than valmax by more than accepted tolerance: [val, valmin, valmax] = [%E, %E, %E]", val, valmin, valmax);
+    return valmax;
+    
   }
   else if (val < valmin){
     return valmin;
@@ -432,15 +377,14 @@ static double resetinsidebounds(
   return NAN;
 }
 
-
 ///
 /// Sets a value val to one of its extreme values if it lies just outside its acceptable range. 'Just outside' defined by valtol
 ///
 static double resetvalwithintol(
-  double val,
-  double valmin,
-  double valmax,
-  double valtol
+  double val,              /// Value
+  double valmin,           /// Lower bound of range
+  double valmax,           /// Upper bound of range
+  double valtol            /// Percentage tolerance val may lie outside of range
   )
 {
   if (val > valmax && val * (1 - valtol) <= valmax){
@@ -452,22 +396,21 @@ static double resetvalwithintol(
   return val;
 }
 
-
 ///
-/// A method which will reset a given point to be within our parameter sapce
+/// A method which will reset a given point to be within our parameter space. Method not used when LatticeTilingPaddingFlags = LATTICE_TILING_PADDING_FLAGS_NONE
 ///
 static void resetdimonpoint(
-  gsl_vector* point,   /// The point which we are resetting to be within the parameter space
-  int dim,             /// The dimension which we are resetting
-  double fmin,         /// The global minimum frequency
-  double fmax,         /// The global maximum frequency
-  double nmin,         /// The minimum braking index allowed for the knot belonging to dim
-  double nmax,         /// The maximum braking index allowed for the knot belonging to dim
-  double ntol,         /// The percentage tolerance we allow for the braking index on adjacent knots
-  double kmin,         /// The minimum k value allowed for the knot belonging to dim
-  double kmax,         /// The maximum k value allowed for the knot belonging to dim
-  double ktol,         /// The percentage tolerance we allow for the k value on adjacent knots
-  double segmentlength /// The length of the segment we are working on
+  gsl_vector* point,       /// The point which we are resetting to be within the parameter space
+  int dim,                 /// The dimension which we are resetting
+  double fmin,             /// Minimum starting frequency
+  double fmax,             /// Maximum starting frequency
+  double nmin,             /// Minimum allowed braking index at current knot
+  double nmax,             /// Maximum allowed braking index at current knot
+  double ntol,             /// Braking index tolerance (percentage per second)
+  double kmin,             /// Minimum allowed k value at current knot
+  double kmax,             /// Maximum allowed k value at current knot
+  double ktol,             /// k value tolerance (percentage per second)
+  double segmentlength     /// The length of the segment we are working on
   )
 {
   if (dim == 0){
@@ -509,9 +452,11 @@ static void resetdimonpoint(
       return;
     }
     
+    /// The parameter range criteria involving fprev is not valid for at the first knot (as there are no preceding knots). To then discount this criteria in the 
+    /// F2BoundMinMax function, we set fprev to extreme values to ensure this criteria is never selected without having to write a new method
     double lower = F2BoundMinMax(f0, 0.0000000001, f1, nmin, kmin, kmax, 0, -1);
     double upper = F2BoundMinMax(f0, 100000000000, f1, nmax, kmax, kmin, 0, 1);
-    printf("Shouldn't be here \n");
+
     double val = resetinsidebounds(f2, lower, upper);
     gsl_vector_set(point, dim, val);
     return;
@@ -532,7 +477,6 @@ static void resetdimonpoint(
     /// two end results. For this reason, we must choose one equation to use to calculate f2 (in this case we have chosen the braking index equation) and then manually
     /// edit the value of k and n we decide to use for our checks on subsequent knots from that point. This is the reason for the below conditions. The typically error
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
-    
     
     nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
     kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
@@ -567,7 +511,6 @@ static void resetdimonpoint(
     /// edit the value of k and n we decide to use for our checks on subsequent knots from that point. This is the reason for the below conditions. The typically error
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
     
-    
     nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
     kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
     
@@ -601,7 +544,6 @@ static void resetdimonpoint(
     /// edit the value of k and n we decide to use for our checks on subsequent knots from that point. This is the reason for the below conditions. The typically error
     /// between kprev and either kmax and kmin is on the order of ~10^-23, likewise for nprev and nmin/nmax the error is of the order ~10^-16.
     
-    
     nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
     kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
     
@@ -613,26 +555,26 @@ static void resetdimonpoint(
     
     double lower = F2BoundMinMax(f0, f0n1, f1, nminmax[0], kminmax[0], kminmax[1], segmentlength, -1);
     double upper = F2BoundMinMax(f0, f0n1, f1, nminmax[1], kminmax[1], kminmax[0], segmentlength,  1);
-    printf("Shouldn't be here number 2 \n");
+
     double val = resetinsidebounds(f2, lower, upper);
     gsl_vector_set(point, dim, val);
   }
 }
 
 ///
-/// Resets a point such that it is within the bounds of our parameter space
+/// Resets a point such that it is within the bounds of our parameter space. Method not used when LatticeTilingPaddingFlags = LATTICE_TILING_PADDING_FLAGS_NONE
 ///
 static void resetoutofboundspoint(
-  gsl_vector* point,   /// The point which we are resetting to be within the parameter space
-  double fmin,         /// The global minimum frequency
-  double fmax,         /// The global maximum frequency
-  double nmin,         /// The minimum braking index allowed for the knot belonging to dim
-  double nmax,         /// The maximum braking index allowed for the knot belonging to dim
-  double ntol,         /// The percentage tolerance we allow for the braking index on adjacent knots
-  double kmin,         /// The minimum k value allowed for the knot belonging to dim
-  double kmax,         /// The maximum k value allowed for the knot belonging to dim
-  double ktol,         /// The percentage tolerance we allow for the k value on adjacent knots
-  double segmentlength /// The length of the segment we are working on
+  gsl_vector* point,       /// The point which we are resetting to be within the parameter space
+  double fmin,             /// Minimum starting frequency
+  double fmax,             /// Maximum starting frequency
+  double nmin,             /// Minimum allowed braking index at current knot
+  double nmax,             /// Maximum allowed braking index at current knot
+  double ntol,             /// Braking index tolerance (percentage per second)
+  double kmin,             /// Minimum allowed k value at current knot
+  double kmax,             /// Maximum allowed k value at current knot
+  double ktol,             /// k value tolerance (percentage per second)
+  double segmentlength     /// The length of the segment we are working on
   )
 {
   int dim = point->size;
@@ -643,7 +585,6 @@ static void resetoutofboundspoint(
   //printvector(point);
   //printf("\n");
 }
-
 
 ///
 /// Defines the bounds for the first and second derivative frequency parameters on the first knot (t = 0).
@@ -749,7 +690,6 @@ static double F0Bound(
     resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
   }
   
-  
   double f0n1 = gsl_vector_get(point, dim - 3);
   double f1n1 = gsl_vector_get(point, dim - 2);
   double f2n1 = gsl_vector_get(point, dim - 1);
@@ -813,7 +753,6 @@ static double F1Bound(
     resetoutofboundspoint(point, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
   }
   
-  
   double f0n1 = gsl_vector_get(point, dim - 4);
   double f1n1 = gsl_vector_get(point, dim - 3);
   double f2n1 = gsl_vector_get(point, dim - 2);
@@ -822,7 +761,6 @@ static double F1Bound(
   
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
-  
   
   nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
   kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
@@ -890,7 +828,6 @@ static double F2Bound(
   double nprev = f2n1 * f0n1 / pow(f1n1, 2);
   double kprev = - f1n1 / pow(f0n1, nprev);
   
-  
   nprev = resetvalwithintol(nprev, nmin, nmax, ntol);
   kprev = resetvalwithintol(kprev, kmin, kmax, ktol);
   
@@ -919,9 +856,9 @@ static double F2Bound(
 /// Converts a given tau value to a k value (or a given k value to a tau value)
 ///
 static double ktauconversion(
-  double f0,     /// Frequency at time t = 0. For calculating kmax/kmin from initial tau values, f0 should be maximised. Likewise for calculating taumin/taumax from k values 
-  double n,      /// A braking index. For calculating kmax/kmin from initial tau values, n should be maximised. Likewise for calculating taumin/taumax from k values 
-  double kortau  /// The k or tau values we wish to convert. For calculating kmax, taumin should be used. For calculating kmin, taumax should be used.
+  double f0,               /// Frequency at time t = 0. For calculating kmax/kmin from tau values, f0 should be maximised. Likewise for calculating taumin/taumax from k values 
+  double n,                /// A braking index. For calculating kmax/kmin from tau values, n should be maximised. Likewise for calculating taumin/taumax from k values 
+  double kortau            /// The k or tau values we wish to convert. For calculating kmax, taumin should be used. For calculating kmin, taumax should be used.
   )
 {
   double numerator = pow(2, n - 1) - 1;
@@ -937,15 +874,15 @@ static double ktauconversion(
 ///
 int XLALSetLatticeTilingPiecewiseBounds(
   LatticeTiling* tiling,
-  const double fmin,       /// Minimum spin frequency to search over
-  const double fmax,       /// Maximum spin frequency to search over
-  const double fmaxtrue,   /// Maximum spin frequency with which to calculate that k value ranges with (useful for when we computing tiles in parrallel and fmax != fmaxtrue)
+  const double fmin,       /// Minimum initial frequency
+  const double fmax,       /// Maximum initial frequency
+  const double fmaxtrue,   /// Maximum spin frequency with which to calculate k value ranges with (useful when computing tiles in parrallel and fmax != fmaxtrue)
   const double nmin,       /// Minimum braking index
   const double nmax,       /// Maximum braking index
-  const double ntol,       /// Tolerance (percentage) between braking indices on adjacent knots
+  const double ntol,       /// Tolerance (percentage per second) between braking indices on adjacent knots
   const double taumin,     /// Minimum tau value
   const double taumax,     /// Maximum tau value
-  const double ktol,       /// Tolerance (percentage) between k values on adjacent knots
+  const double ktol,       /// Tolerance (percentage per second) between k values on adjacent knots
   const gsl_vector* knots, /// List of knots
   const int finalknot      /// The number of the final knot
   )
@@ -956,7 +893,6 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   printf("kmin and kmax %E, %E \n", kmin, kmax);
   
-  /// Simple checks. Not sure what the types of errors are, something to ask about later
   XLAL_CHECK(tiling != NULL, XLAL_EINVAL);
   XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax); //EINVAL
   XLAL_CHECK(nmin < nmax, XLAL_EINVAL, "Bad braking index range: [%f, %f]", nmin, nmax);
@@ -984,6 +920,7 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
   
+  /// We only need to use the resetting methods if flags != LATTICE_TILING_PAD_NONE
   if (flags == LATTICE_TILING_PAD_NONE){
     info_first_knot_lower.reset = info_first_knot_upper.reset = -1;
   }
@@ -1027,6 +964,7 @@ int XLALSetLatticeTilingPiecewiseBounds(
     
     info_knot_lower.reset = info_knot_upper.reset = 1;
     
+    /// We only need to use the resetting methods if flags != LATTICE_TILING_PAD_NONE
     if (flags == LATTICE_TILING_PAD_NONE){
       info_knot_lower.reset = info_knot_upper.reset = -1;
     }
@@ -1046,33 +984,26 @@ int XLALSetLatticeTilingPiecewiseBounds(
 }
 
 
-
+/// Methods below are for when S = 2
 
 
 ///
 /// Function which determines the minimum/maximum value of the first derivative parameters
 ///
 static double F1BoundMinMaxS2(
-  double f0,        /// Frequency parameter at the corresponding knot
-  double fprev,     /// Frequency parameter at the previous knot
-  double f1prev,    /// Frequency derivative parameter at previous knot
-  double na,        /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
-  double nb,        /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
-  double ka,        /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
-  double kb UNUSED, /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
-  double seglength, /// Time difference between this knot and the previous
-  int minmax        /// +1 for upper bound, -1 for lower bound
+  double f0,               /// Frequency parameter at current knot
+  double fprev,            /// Frequency parameter on the previous knot
+  double f1prev,           /// Frequency derivative parameter at previous knot
+  double na,               /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
+  double nb,               /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
+  double ka,               /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
+  double kb UNUSED,        /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
+  double seglength,        /// Time difference between this knot and the previous
+  int minmax               /// +1 for upper bound, -1 for lower bound
   )
 {
-  /// Checking that the method is being called with the appropriate values
-  if (na < nb && minmax == -1){
-    printf("F1BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
-    return NAN;
-  }
-  if (na > nb && minmax == 1){
-    printf("F1BoundMinMax being called incorrectly, with %f, %f, %d \n", na, nb, minmax);
-    return NAN;
-  }
+
+  XLAL_CHECK((na >= nb && minmax == -1) || (na <= nb && minmax == 1), XLAL_EINVAL, "F1BoundMinMaxS2 being called incorrectly, with [na, nb, minmax] = [%f, %f, %d]", na, nb, minmax);
   
   /// The two parameter range conditions
   double prangecondition1 = -ka * pow(f0, na);
@@ -1099,7 +1030,6 @@ static double F1BoundMinMaxS2(
   gsl_vector_free(vals);
   return rtn; 
 }
-
 
 ///
 /// Defines the bounds for the first and second derivative frequency parameters on the first knot (t = 0).
@@ -1153,12 +1083,13 @@ static double SecondKnotBoundS2(
   }
   else if (dim == 3){
     
-    double lower = F0BoundMinMax(f0prev, nmin, nmax, kmin, kmax, segmentlength, -1);
-    double upper = F0BoundMinMax(f0prev, nmax, nmin, kmax, kmin, segmentlength, 1);
-    
     double f0 = gsl_vector_get(point, 2);
     
     if (reset == 1){
+      
+      double lower = F0BoundMinMax(f0prev, nmin, nmax, kmin, kmax, segmentlength, -1);
+      double upper = F0BoundMinMax(f0prev, nmax, nmin, kmax, kmin, segmentlength, 1); 
+      
       f0 = resetinsidebounds(gsl_vector_get(point, 2), lower, upper);
       gsl_vector_set(point, 2, f0);
     }
@@ -1177,24 +1108,21 @@ static double SecondKnotBoundS2(
   return rtn;
 }
 
-
-
-
 ///
-/// A method which will reset a given point to be within our parameter sapce
+/// A method which will reset a given point to be within our parameter space. Method not used if LatticeTilingPaddingFlags = LATTICE_TILING_PADDING_FLAGS_NONE
 ///
 static void resetdimonpointS2(
-  gsl_vector* point,   /// The point which we are resetting to be within the parameter space
-  int dim,             /// The dimension which we are resetting
-  double fmin,         /// The global minimum frequency
-  double fmax,         /// The global maximum frequency
-  double nmin,         /// The minimum braking index allowed for the knot belonging to dim
-  double nmax,         /// The maximum braking index allowed for the knot belonging to dim
-  double ntol,         /// The percentage tolerance we allow for the braking index on adjacent knots
-  double kmin,         /// The minimum k value allowed for the knot belonging to dim
-  double kmax,         /// The maximum k value allowed for the knot belonging to dim
-  double ktol,         /// The percentage tolerance we allow for the k value on adjacent knots
-  double segmentlength /// The length of the segment we are working on
+  gsl_vector* point,       /// The point which we are resetting to be within the parameter space
+  int dim,                 /// The dimension which we are resetting
+  double fmin,             /// Minimum initial frequency
+  double fmax,             /// Maximum initial frequency
+  double nmin,             /// Minimum allowed braking index
+  double nmax,             /// Maximum allowed braking index
+  double ntol,             /// Braking index tolerance (percentage per second)
+  double kmin,             /// Minimum allowed k value
+  double kmax,             /// Maximum allowed k value
+  double ktol,             /// k value tolerance (percentage per second)
+  double segmentlength     /// The length of the segment we are working on
   )
 {
   if (dim == 0){
@@ -1305,23 +1233,20 @@ static void resetdimonpointS2(
   }
 }
 
-
-
-
 ///
-/// Resets a point such that it is within the bounds of our parameter space
+/// Resets a point such that it is within the bounds of our parameter space. Method not used if LatticeTilingPaddingFlags = LATTICE_TILING_PADDING_FLAGS_NONE
 ///
 static void resetoutofboundspointS2(
-  gsl_vector* point,   /// The point which we are resetting to be within the parameter space
-  double fmin,         /// The global minimum frequency
-  double fmax,         /// The global maximum frequency
-  double nmin,         /// The minimum braking index allowed for the knot belonging to dim
-  double nmax,         /// The maximum braking index allowed for the knot belonging to dim
-  double ntol,         /// The percentage tolerance we allow for the braking index on adjacent knots
-  double kmin,         /// The minimum k value allowed for the knot belonging to dim
-  double kmax,         /// The maximum k value allowed for the knot belonging to dim
-  double ktol,         /// The percentage tolerance we allow for the k value on adjacent knots
-  double segmentlength /// The length of the segment we are working on
+  gsl_vector* point,       /// The point which we are resetting to be within the parameter space
+  double fmin,             /// Minimum initial frequency
+  double fmax,             /// Maximum initial frequency
+  double nmin,             /// Minimum allowed braking index
+  double nmax,             /// Maximum allowed braking index
+  double ntol,             /// Braking index tolerance (percentage per second)
+  double kmin,             /// Minimum allowed k value
+  double kmax,             /// Maximum allowed k value
+  double ktol,             /// k value tolerance (percentage per second)
+  double segmentlength     /// The length of the segment we are working on
   )
 {
   int dim = point->size;
@@ -1332,7 +1257,6 @@ static void resetoutofboundspointS2(
   //printvector(point);
   //printf("\n");
 }
-
 
 ///
 /// Sets the bound on the frequency parameter
@@ -1411,7 +1335,6 @@ static double F1BoundS2(
   const gsl_vector* pointorig
   )
 {
-  printf("Using F1BoundsS2 \n");
   XLAL_CHECK(dim < 4, XLAL_EINVAL, "F1BoundS2 being called before there is an appropriate number of knots. Minimum dimension required: 4. Current dimension: %zu", dim);
   
   size_t vectorlength = pointorig->size;
@@ -1476,25 +1399,25 @@ static double F1BoundS2(
 ///
 int XLALSetLatticeTilingPiecewiseBoundsS2(
   LatticeTiling* tiling,
-  const double fmin,   /// Minimum spin frequency
-  const double fmax,   /// Maximum spin frequency
-  const double nmin,   /// Minimum braking index
-  const double nmax,   /// Maximum braking index
-  const double ntol,   /// Tolerance (percentage) between braking indices on adjacent knots
-  const double taumin, /// Minimum tau value
-  const double taumax, /// Maximum tau value
-  const double ktol,   /// Tolerance (percentage) between k values on adjacent knots
+  const double fmin,       /// Minimum spin frequency to search over
+  const double fmax,       /// Maximum spin frequency to search over
+  const double fmaxtrue,   /// Maximum spin frequency with which to calculate that k value ranges with (useful for when we computing tiles in parrallel and fmax != fmaxtrue)
+  const double nmin,       /// Minimum braking index
+  const double nmax,       /// Maximum braking index
+  const double ntol,       /// Tolerance (percentage) between braking indices on adjacent knots
+  const double taumin,     /// Minimum tau value
+  const double taumax,     /// Maximum tau value
+  const double ktol,       /// Tolerance (percentage) between k values on adjacent knots
   const gsl_vector* knots, /// List of knots
-  const int finalknot  /// The number of the final knot
+  const int finalknot      /// The number of the final knot
   )
 {
   /// Converting tau values to k values
-  double kmin = ktauconversion(fmax, nmax, taumax);
-  double kmax = ktauconversion(fmax, nmax, taumin);
+  double kmin = ktauconversion(fmaxtrue, nmax, taumax);
+  double kmax = ktauconversion(fmaxtrue, nmax, taumin);
   
   printf("kmin and kmax %E, %E \n", kmin, kmax);
   
-  /// Simple checks. Not sure what the types of errors are, something to ask about later
   XLAL_CHECK(tiling != NULL, XLAL_EINVAL);
   XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax); //EINVAL
   XLAL_CHECK(nmin < nmax, XLAL_EINVAL, "Bad braking index range: [%f, %f]", nmin, nmax);
@@ -1514,6 +1437,14 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   info_first_knot_lower.minmax = -1;
   info_first_knot_upper.minmax = 1;
   
+  info_first_knot_lower.reset = info_first_knot_upper.reset = 1;
+  
+  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
+  
+  /// We only need to use the resetting methods if flags != LATTICE_TILING_PAD_NONE
+  if (flags == LATTICE_TILING_PAD_NONE){
+    info_first_knot_lower.reset = info_first_knot_upper.reset = -1;
+  }
   
   /// Setting the bounds on the first knot
   XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
@@ -1528,8 +1459,6 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   //LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
   //LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
   //LATTICE_TILING_PAD_MAX   = 0x20,
-  
-  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
   
   XLALSetLatticeTilingPaddingFlags(tiling, 0, flags);
   XLALSetLatticeTilingPaddingFlags(tiling, 1, flags);
@@ -1558,6 +1487,7 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
     
     info_knot_lower.reset = info_knot_upper.reset = 1;
     
+    /// We only need to use the resetting methods if flags != LATTICE_TILING_PAD_NONE
     if (flags == LATTICE_TILING_PAD_NONE){
       info_knot_lower.reset = info_knot_upper.reset = -1;
     }

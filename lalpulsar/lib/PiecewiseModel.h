@@ -21,32 +21,33 @@ int XLALSetLatticeTilingCircleBound(
 ///
 int XLALSetLatticeTilingPiecewiseBounds(
   LatticeTiling* tiling,
-  const double fmin,       /// Minimum spin frequency
-  const double fmax,       /// Maximum spin frequency
-  const double fmaxtrue,
+  const double fmin,       /// Minimum spin frequency to search over
+  const double fmax,       /// Maximum spin frequency to search over
+  const double fmaxtrue,   /// Maximum spin frequency used to calculate k and knots (useful for computing tiles in parrallel and fmax != fmaxtrue)
   const double nmin,       /// Minimum braking index
   const double nmax,       /// Maximum braking index
-  const double ntol,       /// Tolerance (percentage) between braking indices on adjacent knots
-  const double taumin,     /// Minimum tau value
-  const double taumax,     /// Maximum tau value
-  const double ktol,       /// Tolerance (percentage) between k values on adjacent knots
+  const double ntol,       /// Tolerance (percentage per second) between braking indices on adjacent knots
+  const double taumin,     /// Minimum spin half life when n = nmax, f0 = fmaxtrue
+  const double taumax,     /// Maximum spin half life when n = nmax, f0 = fmaxtrue
+  const double ktol,       /// Tolerance (percentage per second) between k values on adjacent knots
   const gsl_vector* knots, /// List of knots
   const int finalknot      /// The number of the final knot
   );
-
+  
 ///
 /// Sets the bounds for the piecewise model when we are using 2 spin down parameters for each knot
 ///
 int XLALSetLatticeTilingPiecewiseBoundsS2(
   LatticeTiling* tiling,
-  const double fmin,       /// Minimum spin frequency
-  const double fmax,       /// Maximum spin frequency
+  const double fmin,       /// Minimum spin frequency to search over
+  const double fmax,       /// Maximum spin frequency to search over
+  const double fmaxtrue,   /// Maximum spin frequency used to calculate k and knots (useful for computing tiles in parrallel and fmax != fmaxtrue)
   const double nmin,       /// Minimum braking index
   const double nmax,       /// Maximum braking index
-  const double ntol,       /// Tolerance (percentage) between braking indices on adjacent knots
-  const double taumin,     /// Minimum tau value
-  const double taumax,     /// Maximum tau value
-  const double ktol,       /// Tolerance (percentage) between k values on adjacent knots
+  const double ntol,       /// Tolerance (percentage per second) between braking indices on adjacent knots
+  const double taumin,     /// Minimum spin half life when n = nmax, f0 = fmaxtrue
+  const double taumax,     /// Maximum spin half life when n = nmax, f0 = fmaxtrue
+  const double ktol,       /// Tolerance (percentage per second) between k values on adjacent knots
   const gsl_vector* knots, /// List of knots
   const int finalknot      /// The number of the final knot
   );
