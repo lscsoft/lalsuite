@@ -356,7 +356,7 @@ echo " STEP 4: Rerunning with full (t0,tau) search grid at a single freq: "
 echo "----------------------------------------------------------------------"
 echo
 
-cfs_CL_run3="${cfs_CL_base} --Freq=$Freq --FreqBand=0 --dFreq=0 --f1dot=$f1dot --f1dotBand=0 --df1dot=0 --outputTransientStatsAll=${outfile_transientMap3} --transient-WindowType=rect --transient-t0Epoch=$t0min --transient-t0Band=$t0Band --transient-dt0=$Tsft --transient-tau=$taumin --transient-tauBand=$tauBand --transient-dtau=$Tsft"
+cfs_CL_run3="${cfs_CL_base} --Freq=$tCWout_top2F_freq --FreqBand=0 --dFreq=0 --f1dot=$f1dot --f1dotBand=0 --df1dot=0 --outputTransientStatsAll=${outfile_transientMap3} --transient-WindowType=rect --transient-t0Epoch=$t0min --transient-t0Band=$t0Band --transient-dt0=$Tsft --transient-tau=$taumin --transient-tauBand=$tauBand --transient-dtau=$Tsft"
 cmdline="$cfsv2_code $cfs_CL_run3"
 echo $cmdline;
 if ! eval "$cmdline"; then
