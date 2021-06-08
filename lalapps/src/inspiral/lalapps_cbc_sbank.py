@@ -30,11 +30,11 @@ import h5py
 
 from scipy.interpolate import UnivariateSpline
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw import ilwd
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils
+from ligo.lw import ilwd
+from ligo.lw.utils import process as ligolw_process
 
 #from sbank import git_version FIXME
 from lalinspiral.sbank.bank import Bank
@@ -49,10 +49,9 @@ warnings.warn(
     DeprecationWarning,
 )
 
-
+@lsctables.use_in
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
-lsctables.use_in(ContentHandler)
 
 usage = """
 
@@ -461,11 +460,11 @@ else:
 #
 # prepare process table with information about the current program
 #
-opts_dict = dict((k, v) for k, v in opts.__dict__.iteritems() if v is not False and v is not None)
+opts_dict = dict((k, v) for k, v in opts.__dict__.items() if v is not False and v is not None)
 if opts.output_filename.endswith(('.xml', '.xml.gz')):
     process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
         opts_dict, version="no version",
-        cvs_repository="sbank", cvs_entry_time=strftime('%Y/%m/%d %H:%M:%S'))
+        cvs_repository="sbank", cvs_entry_time=strftime('%Y-%m-%d %H:%M:%S +0000'))
 
 
 #
