@@ -183,6 +183,7 @@ setup(
                            .replace('.so', '')
                            .replace('/', '.'), [])
                  for filename in glob(PYTHONDIR + '/**/*.so', recursive=True)],
+    python_requires='>=3.5',
     extras_require={
         'lalinference': ['gwpy', 'gwdatafind']
     },
