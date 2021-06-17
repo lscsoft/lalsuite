@@ -1584,43 +1584,6 @@ class BinnedArray(object):
 		array = self.at_centres()
 		return tuple(centres[index] for centres, index in zip(self.centres(), numpy.unravel_index(array.argmax(), array.shape)))
 
-	def to_pdf(self):
-		"""
-		Normalize the internal array's contents so that when
-		multiplied by the corresponding bin volumes the result sums
-		to 1 (neglecting bins with infinite volume).
-
-		NOTE:
-
-		- This is a legacy method that has been superceded by the
-		  BinnedDensity and BinnedLnPDF classes.  You almost
-		  certainly want to be using those instead of whatever
-		  you're doing that needs this method.
-		"""
-		# zero bins whose volumes are infinite so the rest will
-		# appear to be normalized
-		self.array[numpy.isinf(self.bins.volumes())] = 0.
-		# make sum = 1
-		self.array /= self.array.sum()
-		# make integral = 1
-		self.array /= self.bins.volumes()
-
-	def logregularize(self, epsilon = 2**-1074):
-		"""
-		Find bins <= 0, and set them to epsilon, This has the
-		effect of allowing the logarithm of the array to be
-		evaluated without error.
-
-		NOTE:
-
-		- This is a legacy method that has been superceded by the
-		  BinnedDensity and BinnedLnPDF classes.  You almost
-		  certainly want to be using those instead of whatever
-		  you're doing that needs this method.
-		"""
-		self.array[self.array <= 0] = epsilon
-		return self
-
 	def to_xml(self, name):
 		"""
 		Retrun an XML document tree describing a rate.BinnedArray
