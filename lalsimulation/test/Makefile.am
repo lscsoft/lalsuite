@@ -25,6 +25,7 @@ test_programs += InitialSpinRotationTest
 test_programs += PrecessingHlmsTest
 test_programs += SpinTaylorHlmsTest
 test_programs += SEOBNRv4_ROM_NRTidalv2_NSBH_Test
+test_programs += XLALSimBurstCherenkovRadiationTest
 #test_programs += TEOBResumROMTest
 #test_programs += TestTaylorTFourier
 #test_programs += SpinTaylorT4DynamicsTest
