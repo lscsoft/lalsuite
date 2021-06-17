@@ -260,4 +260,4 @@ if options.T010150:
 	filename = "%s.xml.gz" % T010150_basename(segs.keys(), options.T010150, segs.extent_all())
 else:
 	filename = options.output
-ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)

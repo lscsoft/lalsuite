@@ -203,4 +203,4 @@ else:
 
 
 xmldoc = burca_tailor.gen_likelihood_control(distributions, segs)
-ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)

@@ -1119,7 +1119,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     contenthandler = lalseries.PSDContentHandler
                 )[0]
                 psd_dict = lalseries.read_psd_xmldoc(psd_xml_obj)
-                ligolw_utils.write_filename(psd_xml_obj, path_to_psd, gz = True)
+                ligolw_utils.write_filename(psd_xml_obj, path_to_psd)
                 ifos = sorted(
                     lsctables.CoincInspiralTable.get_table(
                         coinc_xml_obj
