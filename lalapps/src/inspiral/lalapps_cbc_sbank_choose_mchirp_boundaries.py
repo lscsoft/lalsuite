@@ -32,7 +32,9 @@ from optparse import OptionParser
 
 import numpy
 
-from glue.ligolw import (ligolw, lsctables, utils)
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils
 
 warnings.warn(
     "this script has been moved into the independent `sbank` project, "
@@ -41,10 +43,9 @@ warnings.warn(
     DeprecationWarning,
 )
 
-
+@lsctables.use_in
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
-lsctables.use_in(ContentHandler)
 
 def parse_command_line():
     parser = OptionParser(usage=__doc__)
