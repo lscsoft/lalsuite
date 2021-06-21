@@ -33,7 +33,6 @@ Generic time interval coincidence engine.
 
 
 from bisect import bisect_left
-import collections
 try:
 	from fpconst import NegInf
 except ImportError:
@@ -61,7 +60,6 @@ import warnings
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw.utils import coincs as ligolw_coincs
-from glue.text_progress_bar import ProgressBar
 import lal
 from ligo.segments import NegInfinity
 from . import offsetvector
