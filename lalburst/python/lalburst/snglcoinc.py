@@ -1,4 +1,4 @@
-# Copyright (C) 2006--2018  Kipp Cannon, Drew G. Keppel, Jolien Creighton
+# Copyright (C) 2006--2021  Kipp Cannon, Drew G. Keppel, Jolien Creighton
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -24,6 +24,7 @@
 #
 
 
+# python 2
 from __future__ import print_function
 
 
@@ -92,58 +93,101 @@ def light_travel_time(instrument1, instrument2):
 	return math.sqrt((dx * dx).sum()) / lal.C_SI
 
 
+#
+# Some comments about this code.
+#
+# The snglesqueue, coincgen_doubles, and the TimeSlideGraphNode object
+# export APIs that are partially compatible with each other.  This is done
+# so that they can be used interchangably within the time slide graph to
+# implement coincidence generators of different orders without the need to
+# wrap them in conditionals to select the correct code path.  This is why,
+# for example, the concept of the coincidence window and the distinction
+# between t_complete and t_coinc_complete have been pushed down into the
+# snglesqueue object even though they seem to be nonsensical there.
+#
+
+
 class singlesqueue(object):
 	"""
-	Buffer a partially time-ordered stream of events, sort them into
-	time order, maintain a record of the time up-to which the list of
-	events is complete, and provide events in time order to coincidence
-	tests.
+	Queue a stream of partially time ordered events:  as new events are
+	added, sort them into the queue in time order;  maintain a record
+	of the time up-to which the list of events is complete;  and
+	provide events sorted in time order to coincidence tests.
 
 	Searches must define a class subclassed from this that defines an
 	override of the .event_time() method.  See coincgen_doubles for
 	information on what to do with the subclass.
+
+	Implementation notes:
+
+	What is actually inserted into the queue is the time of the event
+	as defined by the .event_time() method provided by the subclass.
+	This allows sorts and bisection searches to be performed quickly,
+	without the need for much additional code.  When we need to
+	retrieve an event, we need some way of turning the time of
+	the event (i.e., the thing that is actually in the queue) back into
+	that event, and this is done by adding an attribute to the time
+	object that points back to the original event.  This means that
+	builtin Python numeric types cannot be used for the times of the
+	events because new attributes cannot be attached to them.
+	Subclasses of the builtin numeric types can be used as time
+	objects, as can be LAL's LIGOTimeGPS.
 	"""
 	@staticmethod
 	def event_time(event):
 		"""
-		Override with a method to extract the "time" of the given
-		event.  The "time" object that is returned should be a
-		lal.LIGOTimeGPS object.  The object must support arithmetic
-		and comparison with python float objects and
-		lal.LIGOTimeGPS objects, and support comparison with
-		ligo.segments.PosInfinity and ligo.segments.NegInfinity,
-		and it must have a .__dict__ or other mechanism allowing a
-		an additional attribute named .event to be set on the
-		object.  float is not suitable.
+		Override with a method to return the "time" of the given
+		event.  The "time" object that is returned is typically a
+		lal.LIGOTimeGPS object.  If some other type is used, it
+		must support arithmetic and comparison with python float
+		objects and lal.LIGOTimeGPS objects, and support comparison
+		with ligo.segments.PosInfinity and
+		ligo.segments.NegInfinity, and it must have a .__dict__ or
+		other mechanism allowing an additional attribute named
+		.event to be set on the object.  The builtin float type is
+		not suitable, but a subclass of float would be.
 		"""
 		raise NotImplementedError
 
-
 	def queueentry_from_event(self, event):
 		"""
-		For internal use.
+		For internal use.  Construct the object that is to be
+		inserted into the queue from an event.
 		"""
+		# retrieve the time and attach a reference back to the
+		# original event object
 		entry = self.event_time(event)
 		entry.event = event
 		return entry
 
 	def __init__(self, coinc_window):
-		# using .event_time() to define the times of events, this
-		# is the minimum time that must separate events in this
-		# queue from other queues for them to be certain to fail
-		# coincidence.  it is not necessary for this to be exactly
-		# the coincidence window, it is sufficient to bound it from
-		# above, but performance is improved by making this close
-		# to, or ideally exactly, the coincidence window.  NOTE:
-		# this must include light travel time, and any additional
-		# window required to allow for time shift offsets.
+		"""
+		Initialize a new, empty, singles queue.  coinc_window is a
+		lower bound on the time that must separate two events as
+		defined by .event_time() for it to be impossible for them
+		to participate in a coincidence.
+
+		NOTE:  this is NOT the coincidence test, that is defined
+		elsewhere (see the .get_coincs class defined within the
+		coincgen_doubles class).  This parameter is used in the
+		stream processing logic to determine how much of the queued
+		events can be processed.  It is only necessary that this
+		parameter be at least as large as the true coincidence
+		window, but both performance and latency are improved by
+		setting this parameter to as small a value as possible.
+
+		NOTE:  the value must include light travel time and any
+		additional window required to accomodate time shift
+		offsets.
+		"""
 		self.coinc_window = coinc_window
 		# using .event_time() to define the times of events, the
 		# list of events is complete upto but not including
-		# .t_valid.  we can't use fpconst.NegInf because
+		# .t_complete.  we can't use fpconst.NegInf because
 		# LIGOTimeGPS objects refuse to be compared to it.  the
 		# NegInfinity object from the segments library, however, is
-		# compatible with LIGOTimeGPS.
+		# compatible with both LIGOTimeGPS and with native Python
+		# numeric types.
 		self.t_complete = NegInfinity
 		# queues of events.  the queues' contents are time-ordered,
 		# they contain the events upto .t_complete and from
@@ -164,7 +208,17 @@ class singlesqueue(object):
 		"""
 		Using .event_time() to define the times of events, the time
 		of the oldest event in the queue or self.t_complete if the
-		queue is empty.
+		queue is empty.  The time scale for .age is that of the
+		events themselves, not their shifted times (the offset
+		parameter is not applied).
+
+		This is not used by the coincidence engine.  This
+		information is provided as a convenience for calling code.
+		For example, some performance improvements might be
+		realized if segment lists or other information are clipped
+		to the range of times spanned by the contents of the
+		coincidence engine queues, and this allows calling codes to
+		see what interval that is.
 		"""
 		return self.complete[0] if self.complete else self.t_complete
 
@@ -187,12 +241,12 @@ class singlesqueue(object):
 
 	def push(self, events, t_complete):
 		"""
-		Add events to the queue.  Mark the queue complete up to
+		Add new events to the queue.  Mark the queue complete up to
 		t_complete, meaning you promise no further events will be
 		added to the queue earlier than t_complete.
 
-		NOTE:  events will be iterated over multiple times.  It may
-		not be a generator.
+		NOTE:  the events sequence will be iterated over multiple
+		times.  It may not be a generator.
 		"""
 		if t_complete < self.t_complete:
 			raise ValueError("t_complete has gone backwards:  last was %s, new is %s" % (self.t_complete, t_complete))
@@ -226,16 +280,21 @@ class singlesqueue(object):
 		upto t, i.e., the events from the queue at or following t
 		up to (not including) t + coinc_window.  The events
 		returned in the first of the two tuples are removed from
-		the queue.  The times of events are defined by
-		.event_time(), and both tuples are time-ordered.
+		the queue and will not be reported again.  The events
+		returned in the second of the two tuples are retained, and
+		will be reported again in the future.  In all cases, the
+		times of events are defined by .event_time(), and both
+		tuples are time-ordered.
 
 		If t is None, then the queue is flushed.  All remaining
-		events are pulled from the queue, .t_complete is reset to
-		-inf and all other internal state is reset.  After calling
-		.pull() with t = None, the object's state is equivalent to
-		its initial state and it is ready to process a new stream
-		of events.
+		events are pulled from the queue and reported in the first
+		tuple, .t_complete is reset to -inf and all other internal
+		state is reset.  After calling .pull() with t = None, the
+		object's state is equivalent to its initial state and it is
+		ready to process a new stream of events.
 		"""
+		# are we being flushed?  if so, return everything we've got
+		# and reset out state to .__init__() equivalent
 		if t is None:
 			events = tuple(entry.event for entry in self.complete) + tuple(entry.event for entry in self.incomplete)
 			del self.complete[:]
@@ -327,9 +386,10 @@ class coincgen_doubles(object):
 
 	Searches must subclass this.  The .singlesqueue class attribute
 	must be set to the search-specific singlesqueue implementation to
-	be used.  The internally-defined .get_coincs class must be
-	overridden with an implementation that provides the required
-	.__init__() and .__call__() methods.
+	be used, i.e., a subclass of singlesqueue with an appropriate
+	.event_time() override.  The internally-defined .get_coincs class
+	must be overridden with an implementation that provides the
+	required .__init__() and .__call__() methods.
 	"""
 	# subclass must override this attribute with a reference to an
 	# implementation of singlesqueue that implements the .event_time()
@@ -338,14 +398,37 @@ class coincgen_doubles(object):
 
 	class get_coincs(object):
 		"""
-		Override with a class whose .__init__() accepts a tuple of
-		events, and whose .__call__ behaves as described below.
-		The events will be provided to .__init__() in time order.
+		This class defines the coincidence test.  An instance is
+		initialized with a sequence of events, and is a callable
+		object.  When the instance is called with a single event
+		from some other instrument, a time offset to apply to that
+		event (relative to the events in this list) and a time
+		coincidence window, the return value must be a (possibly
+		empty) sequence of the initial events that are coincident
+		with that given event.
+
+		The sequence of events with which the instance is
+		initialized is passed in time order.
 
 		It is not required that the implementation be subclassed
 		from this.  This placeholder implementation is merely
 		provided to document the required interface.
+
+		A minimal example:
+
+		class get_coincs(object):
+			def __init__(self, events):
+				self.events = events
+			def __call__(self, event_a, offset_a, coinc_window):
+				return [event_b for event_b in self.events if abs(event_a.time + offset_a - event_b.time) < coinc_window]
+
+		This is performance-critical code and a naive
+		implementation such as the one above will likely be found
+		to be inadequate.  Expect to implement this code in C for
+		best results.
 		"""
+		# FIXME:  move offset_a and coinc_window parameters to
+		# __init__() method
 		def __init__(self, events):
 			"""
 			Prepare to search a collection of events for
@@ -372,11 +455,12 @@ class coincgen_doubles(object):
 			coincidences.
 
 			coinc_window is the maximum time, in seconds,
-			separating events from the shifted time of event_a.
-			This is the value passed to coincgen_doubles()'s
-			.__init__() method with the light travel time
-			between this event list's detector and the detector
-			of event_a added.
+			separating coincident events from the shifted time of
+			event_a.  Here, this is the interval that defines
+			the coincidence test between the two detectors, not
+			the bound on all such intervals used by the
+			singlesqueue object to determine the interval for
+			which n-tuple candidates can be constructed.
 			"""
 			raise NotImplementedError
 
@@ -463,8 +547,8 @@ class coincgen_doubles(object):
 
 		# for each event in list A, iterate over events from the
 		# other list that are coincident with the event, and return
-		# the pairs.  while doing this, collect the events that are
-		# used in coincidences in a set for later logic.
+		# the pairs.  while doing this, collect the IDs of events
+		# that are used in coincidences in a set for later logic.
 		coinc_window = self.coinc_window
 		used = set()
 		used_add = used.add
@@ -493,15 +577,11 @@ class coincgen_doubles(object):
 		instrument.
 
 		The Python IDs of all events flushed from the queues are
-		placed in the flushed set.  The IDs of the flushed events
-		that were never reported in a coincident pair, either now
-		or in a previous call to .pull(), are also placed in the
+		placed in the flushed set (events that, assuming t only
+		ever is moved to later times, will not be needed from now
+		on).  Of those, the IDs of the flushed events that were
+		never reported in a coincident pair are placed in the
 		flushed_unused set.
-
-		If t is None, then all events are flushed from the queues,
-		and all remaining coincidences are constructed.  The object
-		is reset to its initial state and can be re-used for a new
-		event stream.
 
 		NOTE:  the flushed and flushed_unused parameters passed to
 		this function must be sets or set-like objects.  They must
@@ -576,6 +656,7 @@ class TimeSlideGraphNode(object):
 		# keep_partial is part of the logic that ensures we only
 		# return coincs that meet the min_instruments criterion
 		self.keep_partial = len(offset_vector) > min_instruments
+		# construct this node's children
 		if len(offset_vector) > 2:
 			self.components = tuple(TimeSlideGraphNode(coincgen_doubles_type, offset_vector, coinc_window, min_instruments) for offset_vector in offsetvector.component_offsetvectors([offset_vector], len(offset_vector) - 1))
 			# view into the id() --> event indexes of the
@@ -585,7 +666,15 @@ class TimeSlideGraphNode(object):
 			self.components = (coincgen_doubles_type(offset_vector, coinc_window),)
 			self.index = self.components[0].index
 		elif len(offset_vector) == 1:
-			# use a singles queue directly, no coincidence
+			# use a singles queue directly, no coincidence.
+			# note that this configuration is not how singles
+			# are generated in a normal analysis.  this is a
+			# special case to support analyses processing only
+			# a single detector (possibly being run for
+			# diagnostic or performance testing purposes).
+			# normal multi-detector analyses get singles from
+			# the unused events returned by the doubles
+			# generator in the len==2 code path.
 			self.components = (coincgen_doubles_type.singlesqueue(coinc_window),)
 			self.index = self.components[0].index
 		else:
@@ -673,9 +762,17 @@ class TimeSlideGraphNode(object):
 		# null set of "partial coincs".  NOTE:  the "no-op" node
 		# concept exists to enable single-detector searches, i.e.,
 		# searches where there is not, in fact, any coincidence
-		# analysis to perform.  it's here so that calling codes
-		# don't need to implement special cases themselves to
-		# handle this.
+		# analysis to perform.  it is not here to enable
+		# single-detector candidate reporting in multi-detector
+		# searches.  typically this streaming coincidence engine is
+		# wrapped in additional code that updates the contents of
+		# an output document based on the results, so by adding
+		# this feature to the "coincidence engine", calling codes
+		# don't need to support special configurations for
+		# one-detector anlyses, they can set up their normal event
+		# handling code with a one-detector offset vector, push
+		# events in and collect candidates out as if nothing was
+		# unusual.
 		#
 
 		if len(self.offset_vector) == 1:
@@ -735,20 +832,30 @@ class TimeSlideGraphNode(object):
 			partial_coincs = set(itertools.chain(*component_coincs))
 
 			# the (< n-1)-instrument partial coincs are more
-			# complicated.  for example, H+L doubles are sought
-			# out when forming H+L+V triples and also when
-			# forming H+K+L triples, and if we are now trying
-			# to form H+K+L+V quadruples we will have been
-			# given two sets of "unused" H+L doubles, and there
-			# is no reason for them to agree.  it can be shown
-			# that if a (< n-1)-instrument coinc went unused in
-			# forming any two of our (n-1)-instrument
-			# components, then it cannot have been used to form
-			# any of our (n-1)-instrument components.  we find
-			# the unused (< n-1)-instrument partial coincs from
-			# the union of all pair-wise intersections of the
-			# (< n-1)-instrument partial coincs from our
-			# components.
+			# complicated.  for example, H+L doubles are
+			# constructed as an intermediate step when forming
+			# H+L+V triples and also when forming H+K+L
+			# triples.  The H+L doubles that failed to form a
+			# coincidence with V are reported as unused in the
+			# former case, while the H+L doubles that failed to
+			# form a coincidence with K are reported as unused
+			# in the latter case, and there is no reason why
+			# these two sets should be the same:  some H+L
+			# doubles that were not used in forming H+L+V
+			# triples might have been used to form H+L+K
+			# triples.  if we are now using those two sets of
+			# triples (among others) to form H+K+L+V
+			# quadruples, we need to figure out which unused
+			# H+L doubles have, in fact, really not been used
+			# at this stage.  it can be shown that a (<
+			# n-1)-instrument coinc will go unused in forming
+			# any two of our (n-1)-instrument components if and
+			# only if it is is not used to form any of our
+			# (n-1)-instrument components.  therefore, we
+			# obtain the unused (< n-1)-instrument partial
+			# coincs from the union of all pair-wise
+			# intersections of the (< n-1)-instrument partial
+			# coincs from our components.
 			for partial_coincsa, partial_coincsb in itertools.combinations((elem[1] for elem in component_coincs_and_partial_coincs_and_flushed), 2):
 				partial_coincs |= partial_coincsa & partial_coincsb
 		else:
@@ -831,8 +938,7 @@ class TimeSlideGraphNode(object):
 class TimeSlideGraph(object):
 	def __init__(self, coincgen_doubles_type, offset_vector_dict, coinc_window, min_instruments = 2, verbose = False):
 		#
-		# populate the graph head nodes.  these represent the
-		# target offset vectors requested by the calling code.
+		# some initial input safety checks
 		#
 
 		if min_instruments < 1:
@@ -840,8 +946,17 @@ class TimeSlideGraph(object):
 		if min(len(offset_vector) for offset_vector in offset_vector_dict.values()) < min_instruments:
 			# this test is part of the logic that ensures we
 			# will only extract coincs that meet the
-			# min_instruments criterion
+			# min_instruments criterion, i.e., the condition
+			# being checked here must be true or we will get
+			# incorrect results but this is the only place it
+			# is checked so be careful.  don't delete this
+			# check.
 			raise ValueError("encountered offset vector (%s) smaller than min_instruments (%d)", (str(min(offset_vector_dict.values(), key = lambda offset_vector: len(offset_vector))), min_instruments))
+
+		#
+		# populate the graph head nodes.  these represent the
+		# target offset vectors requested by the calling code.
+		#
 
 		if verbose:
 			print("constructing coincidence assembly graph for %d offset vectors ..." % len(offset_vector_dict), file=sys.stderr)
@@ -850,7 +965,10 @@ class TimeSlideGraph(object):
 				coincgen_doubles_type, offset_vector, coinc_window, min_instruments, time_slide_id = time_slide_id
 			) for time_slide_id, offset_vector in sorted(offset_vector_dict.items())
 		)
+
+		# view into the id() --> event indexes of the graph nodes
 		self.index = multidict(*(node.index for node in self.head))
+
 		# the set of the Python id()'s of the events contained in
 		# the internal queues that have formed coincident
 		# candidates (including single-detector coincidences if
@@ -904,14 +1022,20 @@ class TimeSlideGraph(object):
 		Push new events from some instrument into the internal
 		queues.  The iterable of events need not be time-ordered.
 		With self.singlesqueue.event_time() defining the time of
-		events, t_complete sets the time up-to which the collection
-		of events is known to be complete.  That is, in the future
-		no new events will be pushed whose times are earlier than
-		t_complete.
+		events, t_complete sets the time up-to which the event
+		stream from this instrument is known to be complete.  That
+		is, in the future no new events will be pushed from this
+		instrument whose times are earlier than t_complete.
+		t_complete is measured with respect to the unshifted times
+		of the events.
 
-		Returns True if the graph state has changed in a way that
-		might allow new candidates to be constructed, False if it
-		is not possible for new candidates to be constructed.
+		Returns True if the graph's .t_coinc_complete has changed,
+		indicating that it might be possible to form new
+		candidates;  False if the addition of these events does not
+		yet allow new candidates to be formed.  If the return value
+		is False, .pull() is guaranteed to return an empty
+		candidate list unless the graph is flushed of all
+		candidates.
 		"""
 		t_before = self.t_coinc_complete
 		for node in self.head:
@@ -993,8 +1117,8 @@ class TimeSlideGraph(object):
 			flushed_unused_ids = set()
 
 		# if we've been flushed then there can't be any events left
-		# in the queues (the or in parentheses is a boolean
-		# operation, not a set operation)
+		# in the queues (note that the "or" in parentheses is a
+		# boolean operation, not a set operation)
 		assert not flush or not (self.used_ids or self.reported_ids)
 
 		# use the index to populate newly_used, flushed, and
@@ -1106,7 +1230,7 @@ class CoincTables(object):
 #
 # =============================================================================
 #
-#                       Time-slideless Coinc Synthesizer
+#                        Poisson Model for Coincidences
 #
 # =============================================================================
 #
@@ -1863,7 +1987,7 @@ class TOATriangulator(object):
 #
 # =============================================================================
 #
-#                     Coincidence Parameter Distributions
+#                         Ranking Statistic Components
 #
 # =============================================================================
 #
@@ -1991,78 +2115,112 @@ class LnLRDensity(object):
 #
 
 
-# starting from Bayes' theorem:
-#
-# P(coinc is a g.w. | its parameters)
-#     P(those parameters | coinc is g.w.) * P(coinc is g.w.)
-#   = ------------------------------------------------------
-#                         P(parameters)
-#
-#               P(those parameters | coinc is g.w.) * P(coinc is g.w.)
-#   = -------------------------------------------------------------------------
-#     P(noise params) * P(coinc is not g.w.) + P(inj params) * P(coinc is g.w.)
-#
-#                        P(inj params) * P(coinc is g.w.)
-#   = ---------------------------------------------------------------------------
-#     P(noise params) * [1 - P(coinc is g.w.)] + P(inj params) * P(coinc is g.w.)
-#
-#                        P(inj params) * P(coinc is g.w.)
-#   = ----------------------------------------------------------------------
-#     P(noise params) + [P(inj params) - P(noise params)] * P(coinc is g.w.)
-#
-# this last form above is used below to compute the LHS
-#
-#          [P(inj params) / P(noise params)] * P(coinc is g.w.)
-#   = --------------------------------------------------------------
-#     1 + [[P(inj params) / P(noise params)] - 1] * P(coinc is g.w.)
-#
-#          Lambda * P(coinc is g.w.)                       P(inj params)
-#   = -----------------------------------  where Lambda = ---------------
-#     1 + (Lambda - 1) * P(coinc is g.w.)                 P(noise params)
-#
-# Differentiating w.r.t. Lambda shows the derivative is always positive, so
-# thresholding on Lambda is equivalent to thresholding on P(coinc is a g.w.
-# | its parameters).  The limits:  Lambda=0 --> P(coinc is a g.w. | its
-# parameters)=0, Lambda=+inf --> P(coinc is a g.w. | its parameters)=1.  We
-# interpret Lambda=0/0 to mean P(coinc is a g.w. | its parameters)=0 since
-# although it can't be noise it's definitely not a g.w..  We do not protect
-# against NaNs in the Lambda = +inf/+inf case.
-
-
 class LnLikelihoodRatioMixin(object):
 	"""
-	Mixin class to provide the standard log likelihood ratio methods.
-	Intended to be added to the parent classes of a ranking statistic
-	class defining .numerator and .denominator attributes that are both
-	instances of (subclasses of) the LnLRDensity class.  The ranking
-	statistic class will then acquire a .__call__() method allowing it
-	to be used as a log likelihood ratio function, and also a
-	.ln_lr_samples() method providing importance-weighted sampling of
-	the log likelihood ratio distribution in the signal and noise
-	(numerator and denominator) populations.
+	Mixin to assist in implementing a log likelihood ratio ranking
+	statistic class.  The ranking statistic class that inherits from
+	this must:  (i) define a callable .numerator attribute that returns
+	ln P(*args, **kwargs | signal);  (ii) define a callable
+	.denominator attribute that returns ln P(*args, **kwargs | noise).
+
+	Inheriting from this will:
+
+	1.  Add a .__call__() method that returns the natural logarithm of
+	the likelihood ratio
+
+	ln P(*args, **kwargs | signal) - ln P(*args, **kwargs | noise)
+
+	The implementation handles various special cases sensibly, such as
+	when either or both of the logarithms of the numerator and
+	denominator diverge.
+
+	2.  Add a .ln_lr_samples() method that makes use of the .numerator
+	and .denominator attributes, together with the .__call__() method
+	to transform a sequence of (*args, **kwargs) into a sequence of log
+	likelihood ratios and their respective relative frequencies.  This
+	can be used to construct histograms of P(ln L | signal) and P(ln L
+	| noise).  These distributions are required for, for example,
+	signal rate estimation and false-alarm probability estimation.
+
+	Why is the likelihood ratio useful?  Starting from Bayes' theorem,
+	and using the fact that "signal" and "noise" are the only two
+	choices:
+
+	                   P(data | signal) * P(signal)
+	P(signal | data) = ----------------------------
+	                              P(data)
+
+	                  P(data | signal) * P(signal)
+	  = ---------------------------------------------------------
+	    P(data | noise) * P(noise) + P(data | signal) * P(signal)
+
+	            [P(data | signal) / P(data | noise)] * P(signal)
+	  = ----------------------------------------------------------------
+	    1 - P(signal) + [P(data | signal) / P(data | noise)] * P(signal)
+
+	                        Lambda * P(signal)
+	P(signal | data) = ----------------------------
+	                   1 + (Lambda - 1) * P(signal)
+
+	               P(data | signal)
+	where Lambda = ----------------
+	               P(data | noise)
+
+	Differentiating P(signal | data) w.r.t. Lambda shows the derivative
+	is always positive, so the probability that a candidate is the
+	result of a gravitiational wave is a monotonically increasing
+	function of the likelihood ratio.  Ranking events from "most likely
+	to be a genuine signal" to "least likely to be a genuine signal"
+	can be performed by sorting candidates by likelihood ratio.  Or, if
+	one wanted to set a threshold on P(signal | data) to select a
+	subset of candidates such that the candidates selected have a given
+	purity (the fraction of them that are real is fixed), that is
+	equivalent to selecting candidates using a likelihood ratio
+	threshold.
+
+	These are expressions of the Neyman-Pearson lemma which tells us
+	that thresholding on Lambda creates a detector that extremizes the
+	detection efficiency at fixed false-alarm rate.
 	"""
 	def __call__(self, *args, **kwargs):
 		"""
 		Return the natural logarithm of the likelihood ratio for
-		the given parameters.  The likelihood ratio is P(params |
-		signal) / P(params | noise).  The probability that the
-		events are the result of a gravitiational wave is a
-		monotonically increasing function of the likelihood ratio,
-		so ranking events from "most like a gravitational wave" to
-		"least like a gravitational wave" can be performed by
-		calculating the (logarithm of the) likelihood ratios.
+		the given parameters,
+
+		ln P(*args, **kwargs | signal) - ln P(*args, **kwargs | noise)
 
 		The arguments are passed verbatim to the .__call__()
 		methods of the .numerator and .denominator attributes of
-		self.
+		self and the return value is computed from the results.
 
-		NOTE:  it is possible for sub-classes to override this
-		method, and chain to it if they wish.  There is no
-		requirement that this method evaluate the ratio .numerator
-		/ .denominator, for example it would not invalidate the
-		output of .ln_lr_samples() if the computation of the return
-		value includes some kind of cuts, or other non-trivial
-		logic.
+		NOTE:  sub-classes may override this method, possibly
+		chaining to it if they wish.  The .ln_lr_samples()
+		mechanism does not require this method to return exactly
+		the natural logarithm of the .numerator/.denominator ratio.
+		The .ln_lr_samples() mechanism does not assume the
+		numerator, denominator and ranking statistic are related to
+		each other as the latter being the ratio of the former two,
+		it evaluates all three separately.  For this reason, the
+		.__call__() method that implements the ranking statistic is
+		free to include other logic, such as hierarchical cuts or
+		bail-outs that are not stricly equivalent to the ratio of
+		the numerator and denominator.
+
+		Special cases:
+
+		.numerator/.denominator=0/0 is mapped to ln Lambda = -inf,
+		meaning P(signal | data) = 0.  Although this condition is
+		nonsensical because the data is claimed to be inconsistent
+		with both noise and signal --- the only two things it can
+		be --- our task here is to compute something that is
+		monotonic in the probability the data is the result of a
+		signal, and since this data cannot be from a signal the
+		correct answer is -inf.
+
+		.numerator/.denominator = +inf/+inf is mapped to ln Lambda
+		= NaN.  This is sufficiently nonsensical that there is no
+		correct interpretation.  A warning will be displayed when
+		this is encountered.
 		"""
 		lnP_signal = self.numerator(*args, **kwargs)
 		lnP_noise = self.denominator(*args, **kwargs)
@@ -2095,45 +2253,76 @@ class LnLikelihoodRatioMixin(object):
 
 	def ln_lr_samples(self, random_params_seq, signal_noise_pdfs = None):
 		"""
-		Generator that yields an unending sequence of 3-element
-		tuples.  Each tuple's elements are a value of the natural
-		logarithm of the likelihood rato, the natural logarithm of
-		the relative frequency of occurance of that likelihood
-		ratio in the signal population corrected for the relative
-		frequency at which the sampler is yielding that value, and
-		the natural logarithm of the relative frequency of
-		occurance of that likelihood ratio in the noise population
-		similarly corrected for the relative frequency at which the
-		sampler is yielding that value.  The intention is for the
-		first element of each tuple to be added to histograms using
-		the two relative frequencies as weights, i.e., the two
-		relative frequencies give the number of times one should
-		consider this one draw of log likelihood ratio to have
-		occured in the two populations.
+		Generator that transforms a sequence of candidate parameter
+		samples into a sequence of log likelihood ratio samples.
 
 		random_params_seq is a sequence (generator is OK) yielding
 		3-element tuples whose first two elements provide the *args
-		and **kwargs values passed to the numerator and denominator
-		density functions, and whose thrid element is the natural
-		logarithm of the probability density from which the
-		parameters have been drawn evaluated at the parameters.
+		and **kwargs values to be passed to the .numerator and
+		.denominator functions, and whose third element is the
+		natural logarithm of the probability density from which the
+		(*args, **kwargs) parameters have been drawn evaluated at
+		those parameters.
+
+		The output of this generator is a sequence of 3-element
+		tuples, each of whose elements are:
+
+		1.  a value of the natural logarithm of the likelihood
+		ratio,
+
+		2.  the natural logarithm of the relative frequency of
+		occurance of that likelihood ratio in the signal population
+		corrected for the relative frequency at which the
+		random_params_seq sampler is causing that value to be
+		returned, and
+
+		3.  the natural logarithm of the relative frequency of
+		occurance of that likelihood ratio in the noise population
+		similarly corrected for the relative frequency at which the
+		random_params_seq sampler is causing that value to be
+		returned.
+
+		The intention is for the first element of each tuple to be
+		added to histograms using the two relative frequencies as
+		weights, i.e., the two relative frequencies give the number
+		of times one should consider this one draw of log
+		likelihood ratio to have occured in the two populations.
 
 		On each iteration, the *args and **kwargs values yielded by
 		random_params_seq are passed to our own .__call__() method
 		to evalute the log likelihood ratio at that choice of
-		parameter values.  If signal_noise_pdfs is None the
-		parameters are also passed to the .__call__() mehods of our
-		own .numerator and .denominator attributes to obtain the
-		signal and noise population densities at those parameters.
-		If signal_noise_pdfs is not None then, instead, the
-		parameters are passed to the .__call__() methods of its
-		.numerator and .denominator attributes to obtain those
-		densities.
+		parameter values.  The parameters are also passed to the
+		.__call__() mehods of our own .numerator and .denominator
+		attributes to obtain the signal and noise population
+		densities at those parameters.
 
-		If histograming the results as described above, the effect
-		is to draw paramter values from the signal and noise
-		populations defined by signal_noise_pdfs' PDFs but with log
-		likelihood ratios evaluated using our own PDFs.
+		If signal_noise_pdfs is not None then, instead of using our
+		own .numerator and .denominator attributes, the parameters
+		are passed to the .__call__() methods of its .numerator and
+		.denominator attributes to obtain those densities.  This
+		allows the distribution of ranking statistic values
+		obtained from alternative signal and noise populations to
+		be modelled.  This is sometimes useful for diagnostic
+		purposes.
+
+		Normalizations:
+
+		Within the context of the intended application, it is
+		sufficient for all of the probabilities involved (the
+		.numerator and .denominator probability densities, and the
+		probability density supplied by the random_params_seq
+		geneator) to be correct up to unknown normalization
+		constants, i.e., the natural logarithms of the probabilties
+		to be correct up to unknown additive constants.  That is
+		why the two probability densities yielded by each iteration
+		of this generator are described as relative frequencies:
+		the ratios among their values are meaningful, but not their
+		absolute values.
+
+		If all of the supplied probabilities are, in fact, properly
+		normalized, then the relative frequencies returned by this
+		generator are, also, correctly normalized probability
+		densities.
 		"""
 		if signal_noise_pdfs is None:
 			lnP_signal_func = self.numerator
