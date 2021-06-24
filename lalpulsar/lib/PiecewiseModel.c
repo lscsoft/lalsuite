@@ -1,7 +1,26 @@
+//
+// Copyright (C) 2021, Ben Grace
+//
+// This program is free software; you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation; either version 2 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with with program; see the file COPYING. If not, write to the
+// Free Software Foundation, Inc., 59 Temple Place, Suite 330, Boston,
+// MA 02111-1307 USA
+//
 
 #include <stdio.h>
 #include <math.h>
 #include <lal/LatticeTiling.h>
+#include <lal/LogPrintf.h>
 #include <lal/PiecewiseModel.h>
 
 #ifdef __GNUC__
@@ -34,72 +53,6 @@ static void printvector(
 }
 */
 
-
-///
-/// Information required for creating circular bounds
-///
-typedef struct{
-  double radius; /// Radius of circle
-  int pm;        /// +1 for upper bound, -1 for lower bound
-} CircleBoundInfo;
-
-///
-/// Function which describes the circular bound
-///
-static double CircleBound(
-  const void *data,
-  const size_t dim UNUSED,
-  const gsl_matrix *cache UNUSED,
-  const gsl_vector* point
-  )
-{
-  /* I think this defines a YBoundInfo struct with the values in data */
-  const CircleBoundInfo* info = (const CircleBoundInfo*)data;
-  
-  /* This extracts the value located at the 0th position in the gsl_vector point */
-  const double x = gsl_vector_get(point, 0);
-  
-  /* Define important variables to determine the bounds */
-  
-  double radius = info->radius;
-  int pm = info->pm;
-  
-  if (x > radius || x < - radius){
-    return 0.;
-  }
-  
-  double y = pm * sqrt(radius * radius - x * x);
-  
-  return y;
-}
-
-///
-/// Sets the bound for a circular parameter space
-///
-int XLALSetLatticeTilingCircleBound(
-  LatticeTiling* tiling,
-  const double radius
-  )
-{
-  /* Simple checks. Not sure what I assume the types of errors are, something to ask about later */
-  XLAL_CHECK(tiling != NULL, XLAL_EFAULT);
-  XLAL_CHECK(radius > 0.0, XLAL_EINVAL);
-  
-  /* Build parameter space bounds */
-  CircleBoundInfo XLAL_INIT_DECL( info_lower );
-  CircleBoundInfo XLAL_INIT_DECL( info_upper );
-  info_lower.radius = info_upper.radius = radius;
-  info_lower.pm = -1;
-  info_upper.pm = 1;
-  
-  
-  /* Set bounds and check for success? */
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, CircleBound, sizeof( info_lower ), &info_lower, &info_upper) == XLAL_SUCCESS, XLAL_EFAILED);
-  //XLALSetLatticeTilingPaddingFlags(tiling, 1, LATTICE_TILING_PAD_NONE);
-  
-  return XLAL_SUCCESS;
-}
-
 ///
 /// Information required to determine the bounds on the parameters on the first knot
 ///
@@ -130,7 +83,6 @@ typedef struct tagPiecewiseBoundInfo{
   int upperlower;          /// +1 for calculating upper bound, -1 for calculating lower bound
   int reset;               /// +1 for resetting point methods to be used, -1 for not
 } PiecewiseBoundInfo;
-
 
 ///
 /// The general torque equation and its first two derivatives 
@@ -176,16 +128,15 @@ static int NMinMax(
   )
 {
 
-  XLAL_CHECK(nmin <= nmax, XLAL_EINVAL, "nmin greater than nmax, [nmin, nmax] = [%f. %f]", nmin, nmax);
+  XLAL_CHECK(nmin <= nmax, XLAL_EINVAL, "nmin greater than nmax, [nmin, nmax] = [%f, %f]", nmin, nmax);
   
   double nextnmin = n * (1 - ntol * segmentlength);
-  double nextnmax = n; //* (1 + ntol);
+  double nextnmax = n;
   
-  /// This should just be a warning, but I'm not 100% sure on how to do that in lalsuite. Either way, if the code is running properly (at least with padding flags turned off) this
-  /// shouldn't ever really come up, but if it does, it doesn't necessarily mean things will go wrong. It usually just means that nextnmax/nextnmin are very close to the either nmin
-  /// or nmax
+  /// If the code is running properly (at least with padding flags turned off) this shouldn't ever really come up, but if it does, it doesn't necessarily 
+  /// mean things will go wrong. It usually just means that nextnmax/nextnmin are very close to the either nmin or nmax
   if (nextnmax < nmin || nextnmin > nmax){
-    printf("Calculated n ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", n, nmin, nmax, nextnmin, nextnmax, n - nmin, n - nmax);
+    XLAL_PRINT_WARNING("Calculated n ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", n, nmin, nmax, nextnmin, nextnmax, n - nmin, n - nmax);
   }
   
   if (nextnmin < nmin){
@@ -216,16 +167,15 @@ static int KMinMax(
   )
 {
   
-  XLAL_CHECK(kmin <= kmax, XLAL_EINVAL, "kmin greater than kmax, [kmin, kmax] = [%E. %E]", kmin, kmax);
+  XLAL_CHECK(kmin <= kmax, XLAL_EINVAL, "kmin greater than kmax, [kmin, kmax] = [%E, %E]", kmin, kmax);
   
   double nextkmin = k * (1 - ktol * segmentlength);
-  double nextkmax = k; //* (1 + ktol);
+  double nextkmax = k;
   
-  /// This should just be a warning, but I'm not 100% sure on how to do that in lalsuite. Either way, if the code is running properly (at least with padding flags turned off) this
-  /// shouldn't ever really come up, but if it does, it doesn't necessarily mean things will go wrong. It usually just means that nextkmax/nextkmin are very close to the either kmin
-  /// or kmax
+  /// If the code is running properly (at least with padding flags turned off) this shouldn't ever really come up, but if it does, it doesn't necessarily 
+  /// mean things will go wrong. It usually just means that nextkmax/nextkmin are very close to the either kmin or kmax
   if (nextkmax < kmin || nextkmin > kmax){
-    printf("Calculated ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax, k - kmin, k - kmax);
+    XLAL_PRINT_WARNING("Calculated ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax, k - kmin, k - kmax);
   }
   
   if (nextkmin < kmin){
@@ -248,22 +198,18 @@ static int KMinMax(
 ///
 static double F0BoundMinMax(
   double f0,               /// Frequency value of the previous knot
-  double na,               /// A braking index value. For calculating upper bound, na > nb. For calculating lower bound na < nb
-  double nb,               /// A braking index value. For calculating upper bound, na > nb. For calculating lower bound na < nb
+  double na UNUSED,        /// A braking index value. For calculating upper bound, na > nb. For calculating lower bound na < nb.
+  double nb,               /// A braking index value. For calculating upper bound, na > nb. For calculating lower bound na < nb. Revision: For upper bound, nb should be minimised
   double ka UNUSED,        /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb
-  double kb,               /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb
+  double kb,               /// A k value. For calculating upper bound, ka > kb. For calculating lower bound ka < kb. Revision: For upper bound, kb should be minimised
   double seglength,        /// Time difference between this knot and the previous knot
-  int minmax               /// +1 for calculating upper bound, -1 for calculating lower bound
+  int minmax UNUSED        /// +1 for calculating upper bound, -1 for calculating lower bound
 )
 {
 
-  XLAL_CHECK((na <= nb && minmax == -1) || (na >= nb && minmax == 1), XLAL_EINVAL, "F0BoundMinMax being called incorrectly, with [na, nb, minmax] = [%f, %f, %d]", na, nb, minmax);
-  
   /// Parameter range optimisation for frequency parameter
   double paramrange = GTEAndDerivs(f0, nb, kb, seglength, 0);
   return paramrange;
-  
-  return NAN;
 }
 
 ///
@@ -272,18 +218,14 @@ static double F0BoundMinMax(
 static double F1BoundMinMax(
   double f0 UNUSED,        /// Frequency parameter at the corresponding knot
   double fprev,            /// Frequency parameter at the previous knot
-  double na,               /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
-  double nb,               /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
-  double ka,               /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
+  double na,               /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb. Revision: For upper bound, na should be minimised
+  double nb UNUSED,        /// A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
+  double ka,               /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb. Revision: For upper bound, ka should be minimised
   double kb UNUSED,        /// A k value. For calculating upper bound, ka < kb. For calculating lower bound ka > kb
   double seglength,        /// Time difference between this knot and the previous
   int minmax               /// +1 for upper bound, -1 for lower bound
   )
 {
-
-  XLAL_CHECK((na >= nb && minmax == -1) || (na <= nb && minmax == 1), XLAL_EINVAL, "F1BoundMinMax being called incorrectly, with [na, nb, minmax] = [%f, %f, %d]", na, nb, minmax);
-  
-  /// The two parameter range conditions
   double prangecondition1 = -ka * pow(f0, na);
   double prangecondition2 = GTEAndDerivs(fprev, na, ka, seglength, 1);
   
@@ -578,12 +520,10 @@ static void resetoutofboundspoint(
   )
 {
   int dim = point->size;
-  //printvector(point);
+  
   for (int i = 0; i < dim; ++i){
     resetdimonpoint(point, i, fmin, fmax, nmin, nmax, ntol, kmin, kmax, ktol, segmentlength);
   }
-  //printvector(point);
-  //printf("\n");
 }
 
 ///
@@ -645,11 +585,11 @@ static double FirstKnotDerivBound(
     }
     
     if (minmax == 1){
-      double f2 = F2BoundMinMax(f0, 100000000000, f1, nmax, kmax, kmin, 0, 1);
+      double f2 = F2BoundMinMax(f0,  1E10, f1, nmax, kmax, kmin, 0, 1);
       rtn = f2;
     }
     else if (minmax == -1){
-      double f2 = F2BoundMinMax(f0, 0.0000000001, f1, nmin, kmin, kmax, 0, -1);
+      double f2 = F2BoundMinMax(f0, 1E-10, f1, nmin, kmin, kmax, 0, -1);
       rtn = f2;
     }
   }
@@ -891,10 +831,10 @@ int XLALSetLatticeTilingPiecewiseBounds(
   double kmin = ktauconversion(fmaxtrue, nmax, taumax);
   double kmax = ktauconversion(fmaxtrue, nmax, taumin);
   
-  printf("kmin and kmax %E, %E \n", kmin, kmax);
+  LogPrintf(LOG_DEBUG, "kmin and kmax %E, %E \n", kmin, kmax);
   
   XLAL_CHECK(tiling != NULL, XLAL_EINVAL);
-  XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax); //EINVAL
+  XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax);
   XLAL_CHECK(nmin < nmax, XLAL_EINVAL, "Bad braking index range: [%f, %f]", nmin, nmax);
   XLAL_CHECK(taumin < taumax, XLAL_EINVAL, "Bad tau range: [%f, %f]", taumin, taumax);
   XLAL_CHECK(kmin < kmax, XLAL_EINVAL, "Bad k range: [%f, %f]", kmin, kmax);
@@ -917,7 +857,6 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   info_first_knot_lower.reset = info_first_knot_upper.reset = 1;
   
-  
   LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
   
   /// We only need to use the resetting methods if flags != LATTICE_TILING_PAD_NONE
@@ -927,15 +866,6 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_lower, &info_first_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 2, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_upper, &info_first_knot_lower) == XLAL_SUCCESS, XLAL_EFAILED);
-  
-  /// Padding flags options. For reference.
-  
-  //LATTICE_TILING_PAD_NONE  = 0x00,      ///< Do not add padding, and generate points strictly within parameter space
-  //LATTICE_TILING_PAD_LHBBX = 0x01,      ///< Add half-bounding-box padding to lower physical parameter-space bounds
-  //LATTICE_TILING_PAD_UHBBX = 0x02,      ///< Add half-bounding-box padding to upper physical parameter-space bounds
-  //LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
-  //LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
-  //LATTICE_TILING_PAD_MAX   = 0x20,
   
   XLALSetLatticeTilingPaddingFlags(tiling, 0, flags);
   XLALSetLatticeTilingPaddingFlags(tiling, 1, flags);
@@ -1416,10 +1346,10 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   double kmin = ktauconversion(fmaxtrue, nmax, taumax);
   double kmax = ktauconversion(fmaxtrue, nmax, taumin);
   
-  printf("kmin and kmax %E, %E \n", kmin, kmax);
+  LogPrintf(LOG_DEBUG, "kmin and kmax %E, %E \n", kmin, kmax);
   
   XLAL_CHECK(tiling != NULL, XLAL_EINVAL);
-  XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax); //EINVAL
+  XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax);
   XLAL_CHECK(nmin < nmax, XLAL_EINVAL, "Bad braking index range: [%f, %f]", nmin, nmax);
   XLAL_CHECK(taumin < taumax, XLAL_EINVAL, "Bad tau range: [%f, %f]", taumin, taumax);
   XLAL_CHECK(kmin < kmax, XLAL_EINVAL, "Bad k range: [%f, %f]", kmin, kmax);
@@ -1450,15 +1380,6 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
   
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_lower, &info_first_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
-  
-  /// Padding flags options. For reference.
-  
-  //LATTICE_TILING_PAD_NONE  = 0x00,      ///< Do not add padding, and generate points strictly within parameter space
-  //LATTICE_TILING_PAD_LHBBX = 0x01,      ///< Add half-bounding-box padding to lower physical parameter-space bounds
-  //LATTICE_TILING_PAD_UHBBX = 0x02,      ///< Add half-bounding-box padding to upper physical parameter-space bounds
-  //LATTICE_TILING_PAD_LINTP = 0x04,      ///< Add integer point padding to lower integer parameter-space bounds
-  //LATTICE_TILING_PAD_UINTP = 0x08,      ///< Add integer point padding to upper integer parameter-space bounds
-  //LATTICE_TILING_PAD_MAX   = 0x20,
   
   XLALSetLatticeTilingPaddingFlags(tiling, 0, flags);
   XLALSetLatticeTilingPaddingFlags(tiling, 1, flags);
@@ -1509,9 +1430,4 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   
   return XLAL_SUCCESS;
 }
-
-
-
-
-
 
