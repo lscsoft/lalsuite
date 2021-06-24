@@ -47,7 +47,6 @@ BuildRequires: python
 BuildRequires: python-devel
 BuildRequires: python2-dateutil
 BuildRequires: python2-freezegun
-BuildRequires: python2-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python2-ligo-lw
 BuildRequires: python2-ligo-segments
 BuildRequires: python2-mock
@@ -67,7 +66,6 @@ BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-dateutil
 BuildRequires: python%{python3_pkgversion}-freezegun
-BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python%{python3_pkgversion}-ligo-lw
 BuildRequires: python%{python3_pkgversion}-ligo-segments
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
@@ -123,7 +121,6 @@ Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python
 Requires: python2-dateutil
-Requires: python2-glue >= @MIN_GLUE_VERSION@
 Requires: python2-ligo-lw
 Requires: python2-ligo-segments
 Requires: python2-numpy >= @MIN_NUMPY_VERSION@
@@ -151,7 +148,6 @@ Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-dateutil
-Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
 Requires: python%{python3_pkgversion}-ligo-lw
 Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@

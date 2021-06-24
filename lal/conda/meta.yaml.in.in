@@ -132,7 +132,6 @@ outputs:
         - {{ pin_subpackage('liblal', exact=True) }}
         - python-ligo-lw
         - ligo-segments
-        - lscsoft-glue >=@MIN_GLUE_VERSION@
         - {{ pin_compatible('numpy') }}
         - python
         - python-dateutil
@@ -141,6 +140,7 @@ outputs:
     test:
       requires:
         - freezegun
+        - lscsoft-glue
         - mock  # [py<33]
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
