@@ -74,10 +74,66 @@ from .git_version import version as __version__
 #
 # =============================================================================
 #
-#                    Streaming Double Coincidence Generator
+#                                  Utilities
 #
 # =============================================================================
 #
+
+
+class multidict(UserDict):
+	"""
+	Read-only dictionary view into a collection of dictionaries.
+
+	Example:
+
+	>>> x = {"a": 10., "b": 100.}
+	>>> y = {"c": 1000., "d": 10000.}
+	>>> z = multidict(x, y)
+	>>> z["a"]
+	10.0
+	>>> z["c"]
+	1000.0
+	>>> "d" in z
+	True
+	>>> "e" in z
+	False
+	"""
+	def __init__(self, *dicts):
+		self.dicts = dicts
+		if not self.dicts:
+			raise ValueError("len(dicts) must be > 0")
+
+	def __getitem__(self, x):
+		for d in self.dicts:
+			if x in d:
+				return d[x]
+		raise KeyError(x)
+
+	def __nonzero__(self):
+		return any(self.dicts)
+
+	def __contains__(self, x):
+		return any(x in d for d in self.dicts)
+
+	def __len__(self):
+		return sum(len(d) for d in self.dicts)
+
+	def __iter__(self):
+		return itertools.chain(*(iter(d) for d in self.dicts))
+
+	def iteritems(self):
+		warnings.warn(
+			"this method is deprecated, and will be removed in a "
+			"future release. please use .items() instead.",
+			DeprecationWarning,
+		)
+		return self.items()
+
+	def items(self):
+		return itertools.chain(*(d.items() for d in self.dicts))
+
+	def keys(self):
+		return list(self)
 
 
 def light_travel_time(instrument1, instrument2):
@@ -91,6 +147,15 @@ def light_travel_time(instrument1, instrument2):
 	"""
 	dx = lal.cached_detector_by_prefix[instrument1].location - lal.cached_detector_by_prefix[instrument2].location
 	return math.sqrt((dx * dx).sum()) / lal.C_SI
+
+
+#
+# =============================================================================
+#
+#                    Streaming Double Coincidence Generator
+#
+# =============================================================================
+#
 
 
 #
@@ -321,62 +386,6 @@ class singlesqueue(object):
 		else:
 			other_events = tuple(entry.event for entry in self.complete) + tuple(entry.event for entry in self.incomplete[:bisect_left(self.incomplete, t)])
 		return events, other_events
-
-
-class multidict(UserDict):
-	"""
-	Read-only dictionary view into a collection of dictionaries.
-
-	Example:
-
-	>>> x = {"a": 10., "b": 100.}
-	>>> y = {"c": 1000., "d": 10000.}
-	>>> z = multidict(x, y)
-	>>> z["a"]
-	10.0
-	>>> z["c"]
-	1000.0
-	>>> "d" in z
-	True
-	>>> "e" in z
-	False
-	"""
-	def __init__(self, *dicts):
-		self.dicts = dicts
-		if not self.dicts:
-			raise ValueError("len(dicts) must be > 0")
-
-	def __getitem__(self, x):
-		for d in self.dicts:
-			if x in d:
-				return d[x]
-		raise KeyError(x)
-
-	def __nonzero__(self):
-		return any(self.dicts)
-
-	def __contains__(self, x):
-		return any(x in d for d in self.dicts)
-
-	def __len__(self):
-		return sum(len(d) for d in self.dicts)
-
-	def __iter__(self):
-		return itertools.chain(*(iter(d) for d in self.dicts))
-
-	def iteritems(self):
-		warnings.warn(
-			"this method is deprecated, and will be removed in a "
-			"future release. please use .items() instead.",
-			DeprecationWarning,
-		)
-		return self.items()
-
-	def items(self):
-		return itertools.chain(*(d.items() for d in self.dicts))
-
-	def keys(self):
-		return list(self)
 
 
 class coincgen_doubles(object):
