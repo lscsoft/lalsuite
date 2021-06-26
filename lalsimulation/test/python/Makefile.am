@@ -1,3 +1,4 @@
+EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_test_python.am
 
 # Add compiled test programs to this variable
@@ -18,8 +19,12 @@ test_scripts += \
 	test_enum_compatibility.py \
 	test_liv.py \
 	test_wf_property_lists.py \
+	test_spintaylor_evolveorbit.py \
 	$(END_OF_LIST)
 
+EXTRA_DIST += \
+	reviewed_evolveorbit.asc \
+	$(END_OF_LIST)
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
