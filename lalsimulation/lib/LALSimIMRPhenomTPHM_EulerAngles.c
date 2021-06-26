@@ -505,7 +505,7 @@ int PNAnalyticalInspiralEulerAngles(
 /*************** NUMERICAL EULER ANGLES ****************/
 /*******************************************************/
 
-/* This section provides the needed functions to perform the evolution of the spin precessing equations, that are specified in XLALSimInspiralSpinDerivatives and 
+/* This section provides the needed functions to perform the evolution of the spin precessing equations, that are specified in XLALSimInspiralSpinDerivativesAvg and
 related SimInspiral code employing the PN expansion parameter v(t) computed from the orbital frequency predicted by IMRPhenomT, instead of evolving v from 
 a TaylorT* approximant. */ 
 
@@ -564,7 +564,7 @@ INT4 XLALSimIMRPhenomTPHMSpinDerivatives(
     LNhdotS1 = (LNhx*S1x + LNhy*S1y + LNhz*S1z);
     LNhdotS2 = (LNhx*S2x + LNhy*S2y + LNhz*S2z);
 
-    status = XLALSimInspiralSpinDerivatives(&dLNhx,&dLNhy,&dLNhz,&dE1x,&dE1y,&dE1z,&dS1x,&dS1y,&dS1z,&dS2x,&dS2y,&dS2z,v,LNhx,LNhy,LNhz,E1x,E1y,E1z,S1x,S1y,S1z,S2x,S2y,S2z,LNhdotS1,LNhdotS2,Tparams);
+    status = XLALSimInspiralSpinDerivativesAvg(&dLNhx,&dLNhy,&dLNhz,&dE1x,&dE1y,&dE1z,&dS1x,&dS1y,&dS1z,&dS2x,&dS2y,&dS2z,v,LNhx,LNhy,LNhz,E1x,E1y,E1z,S1x,S1y,S1z,S2x,S2y,S2z,LNhdotS1,LNhdotS2,Tparams);
     XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: function XLALSimInspiralSpinDerivatives has failed.");
 
     dvalues[0]    = sign*dLNhx; dvalues[1]     = sign*dLNhy ; dvalues[2]    = sign*dLNhz;
@@ -888,7 +888,7 @@ int IMRPhenomTPHM_EvolveOrbit(
     INT4 phaseO = -1;
     INT4 lscorr = 0;
 
-    XLALSimInspiralSpinTaylorT4Setup(&Tparams, m1_SI, m2_SI, pWF->fRef, 0.0, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, lscorr);
+    XLALSimInspiralSpinTaylorT4Setup(&Tparams, m1_SI, m2_SI, pWF->fRef, 0.0, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, lscorr, 1);
 
     params.v_spline = spline_v;
     params.v_acc = accel_v;
@@ -1072,7 +1072,7 @@ int IMRPhenomTPHM_EvolveOrbit(
 
 
       /* Set up PN coefficients struct */
-      XLALSimInspiralSpinTaylorT4Setup(&Tparams, m1_SI, m2_SI, pWF->fmin, 0.0, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, lscorr);
+      XLALSimInspiralSpinTaylorT4Setup(&Tparams, m1_SI, m2_SI, pWF->fmin, 0.0, lambda1, lambda2, quadparam1, quadparam2, spinO, tideO, phaseO, lscorr, 1);
       params.Tparams = Tparams;
       // Passed to actually performed backward integration. For t' in the integration, v(t) will be evaluated at t = tint1 - t'
       params.ToffSign = -tint1; 

@@ -3358,7 +3358,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             break;
 
         case SpinTaylorT1:
-        case SpinTaylorT2:
+        case SpinTaylorT5:
         case SpinTaylorT4:
             if( lmax > 4 )
 	      XLALPrintError("XLAL ERROR - %s: maximum l implemented for SpinTaylors is 4, = %d requested.\n", __func__, lmax);
@@ -3389,11 +3389,14 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
 	    REAL8 e1z=0.;
 	    //phi_ref is added later
 	    errCode+=XLALSimInspiralSpinTaylorDriver(NULL,NULL,&V,&Phi,&Spin1x,&Spin1y,&Spin1z,&Spin2x,&Spin2y,&Spin2z,&LNhx,&LNhy,&LNhz,&E1x,&E1y,&E1z, 0., deltaT, m1, m2, f_min, f_ref, r, S1x, S1y, S1z, S2x, S2y, S2z, lnhx, lnhy, lnhz, e1x, e1y, e1z, LALpars, approximant);
-
-	    LALValue *modearray=XLALSimInspiralCreateModeArray();
-	    for (l=2; l<=(UINT4)lmax ; l++)
-	      XLALSimInspiralModeArrayActivateAllModesAtL(modearray, l);
-
+	    INT4 ma_needs_destroy=0;
+	    LALValue *modearray=XLALSimInspiralWaveformParamsLookupModeArray(LALpars);
+	    if (modearray==NULL) {
+	      modearray=XLALSimInspiralCreateModeArray();
+	      ma_needs_destroy=1;
+	      for (l=2; l<=(UINT4)lmax ; l++)
+		XLALSimInspiralModeArrayActivateAllModesAtL(modearray, l);
+	    }
 	    errCode+=XLALSimInspiralSpinTaylorHlmModesFromOrbit(&hlm,V,Phi,LNhx,LNhy,LNhz,E1x,E1y,E1z,Spin1x,Spin1y,Spin1z,Spin2x,Spin2y,Spin2z,m1,m2,r, XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALpars),modearray);
 
 	    XLALDestroyREAL8TimeSeries(V);
@@ -3410,6 +3413,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
 	    XLALDestroyREAL8TimeSeries(E1x);
 	    XLALDestroyREAL8TimeSeries(E1y);
 	    XLALDestroyREAL8TimeSeries(E1z);
+	    if (ma_needs_destroy)
+	      XLALDestroyValue(modearray);
 	    break;
 
         default:
@@ -8018,7 +8023,7 @@ int XLALSimInspiralChooseTDWaveformOLD(
             /* Call the waveform driver routine */
             ret = XLALSimInspiralSpinTaylorT5(hplus, hcross, phiRef, deltaT,
 					      m1, m2, f_min, f_ref, distance, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z,
-					      LNhatx, LNhaty, LNhatz, E1x, E1y, E1z,					      NULL);
+					      LNhatx, LNhaty, LNhatz, E1x, E1y, E1z, NULL);
             break;
 
         // need to make a consistent choice for SpinTaylorT4 and PSpinInspiralRD waveform inputs
