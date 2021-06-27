@@ -143,7 +143,7 @@ def checkpoint_save(xmldoc, fout, process):
              state4=np.array(rng_state[4]))
 
     # write out the document
-    ligolw_process.set_process_end_time(process)
+    process.set_end_time_now()
     utils.write_filename(xmldoc, fout + "_checkpoint.gz")
 
 
@@ -596,7 +596,7 @@ bank.clear()  # clear caches
 
 # write out the document
 if opts.output_filename.endswith(('.xml', '.xml.gz')):
-    ligolw_process.set_process_end_time(process)
+    process.set_end_time_now()
     utils.write_filename(xmldoc, opts.output_filename)
 elif opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
     hdf_fp = h5py.File(opts.output_filename, 'w')

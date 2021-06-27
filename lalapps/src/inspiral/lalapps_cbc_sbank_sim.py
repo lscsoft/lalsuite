@@ -253,7 +253,7 @@ lsctables.reset_next_ids((lsctables.ProcessTable, lsctables.ProcessParamsTable))
 ligolw_add.reassign_ids(fake_xmldoc)
 ligolw_add.merge_ligolws(fake_xmldoc)
 ligolw_add.merge_compatible_tables(fake_xmldoc)
-ligolw_process.set_process_end_time(process)
+process.set_end_time_now()
 
 # output process
 proc = lsctables.ProcessTable.get_table(fake_xmldoc)

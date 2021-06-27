@@ -355,6 +355,6 @@ def gen_likelihood_control(coinc_params_distributions, seglists, name = u"lalapp
 
 	node.appendChild(coinc_params_distributions.to_xml(name))
 
-	ligolw_process.set_process_end_time(process)
+	process.set_end_time_now()
 
 	return xmldoc

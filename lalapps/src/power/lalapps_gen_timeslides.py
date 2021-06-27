@@ -248,7 +248,7 @@ while filenames:
 	# Finish off the document.
 	#
 
-	ligolw_process.set_process_end_time(process)
+	process.set_end_time_now()
 
 	#
 	# Write.

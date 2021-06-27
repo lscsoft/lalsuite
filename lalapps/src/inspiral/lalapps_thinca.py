@@ -245,7 +245,7 @@ for n, filename in enumerate(filenames, start = 1):
 	# Close out the process table.
 	#
 
-	ligolw_process.set_process_end_time(process)
+	process.set_end_time_now()
 
 	#
 	# Write back to disk, and clean up.

@@ -249,7 +249,7 @@ for n, filename in enumerate(filenames):
 
 ligolw_search_summary.append_search_summary(xmldoc, process, ifos = segs.keys(), inseg = segs.extent_all(), outseg = segs.extent_all())
 xmldoc.childNodes[-1].appendChild(distributions.to_xml(u"string_cusp_likelihood"))
-ligolw_process.set_process_end_time(process)
+process.set_end_time_now()
 
 
 def T010150_basename(instruments, description, seg):
