@@ -1,6 +1,6 @@
 BUILT_SOURCES =
-MOSTLYCLEANFILES =
 EXTRA_DIST =
+MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
@@ -30,7 +30,8 @@ pybin_scripts = \
 	lalapps_power_likelihood_pipe \
 	lalapps_power_pipe \
 	lalapps_power_plot_binjtf \
-	lalapps_power_plot_binj
+	lalapps_power_plot_binj \
+	$(END_OF_LIST)
 endif
 
 pkgdata_DATA = power_pipe.ini
