@@ -153,6 +153,7 @@ src/lalapps/LALAppsVCSInfo.h
 src/lalapps/LALAppsVCSInfoHeader.h
 src/lalapps/version2.c
 src/online/lalapps_online_datafind
+src/power/bucluster_test.xml.gz
 src/power/lalapps_binj
 src/power/lalapps_binj_pic
 src/power/lalapps_binjfind

@@ -3,6 +3,7 @@ EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 BURSTPROGS = lalapps_binj
@@ -32,12 +33,20 @@ pybin_scripts = \
 	lalapps_power_plot_binjtf \
 	lalapps_power_plot_binj \
 	$(END_OF_LIST)
+
+test_scripts += \
+	test_bucluster.sh \
+	$(END_OF_LIST)
+test_extra_files += \
+	H1-POWER_S5-830046410-50274.xml.gz \
+	$(END_OF_LIST)
 endif
 
 pkgdata_DATA = power_pipe.ini
 
 EXTRA_DIST += \
 	H1_L1_dt125_df128.png \
+	H1-POWER_S5-830046410-50274.xml.gz \
 	Z_histogram.png \
 	clustering_example.png \
 	conditioning.png \
@@ -52,9 +61,14 @@ EXTRA_DIST += \
 	psds.png \
 	sk_histogram.png \
 	sksk.png \
+	test_bucluster.sh \
 	tiles_histogram.png \
 	tiles_histogram_adjusted.png \
 	timedomainfilter_04hz.png \
 	timedomainfilter_16hz.png \
 	windows.png \
+	$(END_OF_LIST)
+
+MOSTLYCLEANFILES += \
+	bucluster_test.xml.gz \
 	$(END_OF_LIST)
