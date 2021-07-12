@@ -122,10 +122,6 @@ AM_INIT_AUTOMAKE([ \
   no-dist-gzip \
 ])
 
-# version requirements
-MIN_GLUE_VERSION="1.54.1"
-AC_SUBST([MIN_GLUE_VERSION])
-
 AC_CANONICAL_HOST
 
 LALSUITE_CHECK_GIT_REPO
