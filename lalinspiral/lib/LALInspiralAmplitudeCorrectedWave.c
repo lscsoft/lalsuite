@@ -359,7 +359,7 @@ LALInspiralAmplitudeCorrectedWaveEngine(
    REAL8 etab = 0;
    REAL8 fFac = 0; /* SI normalization for f and t */
    REAL8 UNUSED f2aFac = 0;/* factor multiplying f in amplitude function */
-   REAL8 apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
+   REAL8 UNUSED apFac = 0, acFac = 0;/* extra factor in plus and cross amplitudes */
 
    REAL4 hPlus, hCross;
    double fPlus, fCross;
