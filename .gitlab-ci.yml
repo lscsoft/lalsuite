@@ -407,14 +407,13 @@ variables:
       fi
     # build packages (preferring local packages over everything)
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
-    - xargs conda build
+    - xargs -t conda build
           recipe/
           --dirty
           --error-overlinking
           --error-overdepending
           --keep-old-work
           --no-anaconda-upload
-          --use-channeldata
           --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
           <<< ${CONDA_BUILD_ARGS}
