@@ -58,6 +58,8 @@ cache:
     - .cache
 
 variables:
+  # run autoreconf in pedantic and loud mode
+  AUTORECONF: "autoreconf --verbose --warnings=error"
   # version of python to use for builds
   LALSUITE_PYTHON_VERSION: "3.8"
   # gitlab runners have 4 cores per job
