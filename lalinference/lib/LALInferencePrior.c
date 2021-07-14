@@ -1412,7 +1412,7 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
 
     char **info = (char **)context;
     char *timeID = &info[2][0];
-    REAL8 min=-INFINITY, max=INFINITY, logPrior=0.;
+    REAL8 min=-INFINITY, max=INFINITY;
     int i = 0;
 
     INT4 SKY_FRAME=0;
@@ -1458,7 +1458,6 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
         {
             lat = asin(2.0 * Cube[i] - 1.0);
             LALInferenceSetVariable(params, "declination", &lat);
-            logPrior += log(fabs(cos(lat)));
             i++;
         }
       }
@@ -1636,7 +1635,6 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             dist = LALInferenceCubeToLogFlatPrior(Cube[i], min, max);
             double logdist = log(dist);
             LALInferenceSetVariable(params, "logdistance", &logdist);
-            logPrior -= logdist;
             i++;
         }
     }
@@ -1648,7 +1646,6 @@ UINT4 LALInferenceInspiralSkyLocCubeToPrior(LALInferenceRunState *runState, LALI
             LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", (void *)&min, (void *)&max);
             dist = LALInferenceCubeToLogFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "distance", &dist);
-            logPrior -= log(dist);
             i++;
         }
     }
