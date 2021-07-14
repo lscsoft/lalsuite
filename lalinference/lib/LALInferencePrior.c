@@ -3019,7 +3019,7 @@ REAL8 LALInferenceAnalyticNullPrior(LALInferenceRunState UNUSED *runState, LALIn
 
 UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, UNUSED LALInferenceModel *model, double *Cube, void *context) {
     int i = 0;
-    REAL8 logPrior=0.,min=-INFINITY,max=INFINITY;
+    REAL8 min=-INFINITY,max=INFINITY;
     REAL8 m1=1.,m2=1.;
     LALInferenceVariableItem *item;
 
@@ -3037,7 +3037,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceGetMinMaxPrior(runState->priorArgs, "mass1", (void *)&min, (void *)&max);
             m1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "mass1", &m1);
-            logPrior -= log(max-min);
         }
         else
         {
@@ -3051,7 +3050,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceGetMinMaxPrior(runState->priorArgs, "mass2", (void *)&min, (void *)&max);
             m2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "mass2", &m2);
-            logPrior -= log(max-min);
         }
         else
         {
@@ -3068,7 +3066,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double phase = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "phase", &phase);
             i++;
-            logPrior -= log(max-min);
         }
     }
 
@@ -3081,7 +3078,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double polarisation = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "polarisation", &polarisation);
             i++;
-            logPrior -= log(max-min);
         }
     }
 
@@ -3096,7 +3092,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double azimuth = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "azimuth", &azimuth);
             i++;
-            logPrior -= log(max-min);
         }
       }
     }
@@ -3111,7 +3106,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double rightascension = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "rightascension", &rightascension);
             i++;
-            logPrior -= log(max-min);
         }
       }
     }
@@ -3127,7 +3121,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double cosalpha = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "cosalpha", &cosalpha);
             i++;
-            logPrior -= log(max-min);
         }
       }
     }
@@ -3142,7 +3135,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double declination = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "declination", &declination);
             i++;
-            logPrior -= log(max-min);
         }
       }
     }
@@ -3156,7 +3148,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double distance = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "distance", &distance);
             i++;
-            logPrior -= log(max-min);
         }
     }
 
@@ -3172,7 +3163,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "t0", &t0);
             sprintf(timeID,"%d",i);
             i++;
-            logPrior -= log(max-min);
         }
       }
     }
@@ -3188,7 +3178,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceSetVariable(params, "time", &tc);
             sprintf(timeID,"%d",i);
             i++;
-            logPrior -= log(max-min);
         }
       }
     }
@@ -3202,7 +3191,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double a_spin1 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "a_spin1", &a_spin1);
             i++;
-            logPrior -= log(max-min);
         }
     }
 
@@ -3215,7 +3203,6 @@ UINT4 LALInferenceAnalyticCubeToPrior(LALInferenceRunState *runState, LALInferen
             double a_spin2 = LALInferenceCubeToFlatPrior(Cube[i], min, max);
             LALInferenceSetVariable(params, "a_spin2", &a_spin2);
             i++;
-            logPrior -= log(max-min);
         }
     }
 
