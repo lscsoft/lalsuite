@@ -706,7 +706,7 @@ REAL8 LALInferenceInspiralPrior(LALInferenceRunState *runState, LALInferenceVari
 /* Convert the hypercube parameter to physical parameters, for the non-spinning inspiral signal case */
 UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferenceVariables *params, LALInferenceModel *model, double *Cube, void *context)
 {
-    REAL8 min=-INFINITY, max=INFINITY, logPrior=0.;
+    REAL8 min=-INFINITY, max=INFINITY;
     LALInferenceVariableItem *item;
     LALInferenceVariables *priorParams=runState->priorArgs;
 
@@ -757,7 +757,6 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
         {
             lat = asin(2.0 * Cube[i] - 1.0);
             LALInferenceSetVariable(params, "declination", &lat);
-            logPrior += log(fabs(cos(lat)));
             i++;
         }
       }
@@ -939,8 +938,6 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
             double logdist = log(dist);
             LALInferenceSetVariable(params, "logdistance", &logdist);
-            if (!(LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
-              logPrior += 2.0*logdist;
             i++;
         }
     }
@@ -952,8 +949,6 @@ UINT4 LALInferenceInspiralCubeToPrior(LALInferenceRunState *runState, LALInferen
             LALInferenceGetMinMaxPrior(runState->priorArgs, "distance", (void *)&min, (void *)&max);
             dist = LALInferenceCubeToPowerPrior(2.0, Cube[i], min, max);
             LALInferenceSetVariable(params, "distance", &dist);
-            if (!(LALInferenceCheckVariable(priorParams,"uniform_distance") && LALInferenceGetINT4Variable(priorParams,"uniform_distance")))
-              logPrior += 2.0*log(dist);
             i++;
         }
     }
