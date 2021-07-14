@@ -1674,7 +1674,6 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
   double ra=0.0, dec=0.0, psi=0.0, gmst=0.0;
   double GPSdouble=0.0;
   LIGOTimeGPS GPSlal;
-  double chisquared;
   double timedelay;  /* time delay b/w iterferometer & geocenter w.r.t. sky location */
   double timeshift=0;  /* time shift (not necessarily same as above)                   */
   double deltaT, TwoDeltaToverN, deltaF, twopit=0.0, re, im, dre, dim, newRe, newIm;
@@ -1733,7 +1732,6 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
   XLALGPSSetREAL8(&GPSlal, GPSdouble);
   gmst=XLALGreenwichMeanSiderealTime(&GPSlal);
 
-  chisquared = 0.0;
   REAL8 loglikelihood = 0.0;
 
   /* Reset SNR */
@@ -1855,7 +1853,6 @@ REAL8 LALInferenceFastSineGaussianLogLikelihood(LALInferenceVariables *currentPa
 
       REAL8 diffsq = creal(diff)*creal(diff)+cimag(diff)*cimag(diff);
       chisq = TwoDeltaToverN*diffsq/sigmasq;
-      chisquared  += chisq;
       model->ifo_loglikelihoods[ifo] -= chisq;
     } /* End loop over freq bins */
 
