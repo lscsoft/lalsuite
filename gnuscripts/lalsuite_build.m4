@@ -347,11 +347,14 @@ m4_foreach([lang],[[C++],[Fortran 77],[Fortran]],[
 
 AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # $0: check for C/C++/Fortran compilers
+  AC_REQUIRE([AC_PROG_CC])
+  AC_REQUIRE([AC_PROG_CPP])
 
   # check for C99 compiler
-  AC_REQUIRE([AC_PROG_CC])
-  AC_REQUIRE([AC_PROG_CC_C99])
-  AC_REQUIRE([AC_PROG_CPP])
+  # NOTE: AC_PROG_CC_C99 is deprecated in autoconf-2.70, so avoid calling it;
+  #       on systems that have 2.70 c99 or greater will be the compiler
+  #       default anyway, so we don't _need_ to use AC_PROG_CC_C99
+  m4_version_prereq([2.70], [], [AC_REQUIRE([AC_PROG_CC_C99])])
 
   # set default CFLAGS
   CFLAGS=
