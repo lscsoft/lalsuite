@@ -19,6 +19,8 @@ test_scripts += \
 	test_liv.py \
 	test_wf_property_lists.py \
 	test_spintaylor_evolveorbit.py \
+	test_prec_avg_evol.py \
+	test_hybrid_evol.py \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \

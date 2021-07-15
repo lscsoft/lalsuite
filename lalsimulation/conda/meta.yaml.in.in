@@ -119,6 +119,7 @@ outputs:
       run:
         - liblal  # [linux]
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - mpmath >=1.0.0
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
@@ -132,6 +133,7 @@ outputs:
       imports:
         - lalsimulation
         - lalsimulation.nrfits
+        - lalsimulation.tilts_at_infinity
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
@@ -166,6 +168,7 @@ outputs:
         - gsl
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - mpmath >=1.0.0
         - python
         - {{ pin_subpackage('python-lalsimulation', exact=True) }}
     test:
