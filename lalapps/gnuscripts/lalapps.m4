@@ -99,14 +99,14 @@ AC_DEFUN([LALAPPS_ENABLE_GDS],
 
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],
 [AC_MSG_CHECKING([whether LAL has been compiled with Intel MKL and qthread])
-AC_TRY_RUN([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <lal/LALConfig.h>
 #ifdef LAL_QTHREAD
 int main( void ) { return 0; }
 #else
 int main( void ) { return 1; }
 #endif
-],
+]])],
 AC_MSG_RESULT([yes])
 [
 if test x$condor != xtrue ; then
