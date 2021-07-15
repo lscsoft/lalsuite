@@ -114,9 +114,6 @@ LALSUITE_OSX_VERSION_CHECK
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
 
-# check for header files
-AC_HEADER_STDC
-
 # math library
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
