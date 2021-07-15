@@ -431,7 +431,7 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   # $0: check for Python
   AC_ARG_ENABLE(
     [python],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-python],
       [build Python programs and modules]
     ),[
@@ -734,7 +734,7 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
   BASE_VERSION="${VERSION}"
   AC_ARG_ENABLE(
     [nightly],
-    AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
+    AS_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
     [ case "${enableval}" in
         yes) NIGHTLY_VERSION=dev`date -u +"%Y%m%d"`
              VERSION="${BASE_VERSION}-${NIGHTLY_VERSION}" ;;
@@ -751,7 +751,7 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
 AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],
 [AC_ARG_ENABLE(
   [all_lal],
-  AC_HELP_STRING([--enable-all-lal],[enable/disable compilation of all LAL libraries]),
+  AS_HELP_STRING([--enable-all-lal],[enable/disable compilation of all LAL libraries]),
   [ case "${enableval}" in
       yes) all_lal=true;;
       no) all_lal=false;;
@@ -764,7 +764,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALFRAME],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalframe],
-  AC_HELP_STRING([--enable-lalframe],[compile code that requires lalframe library [default=yes]]),
+  AS_HELP_STRING([--enable-lalframe],[compile code that requires lalframe library [default=yes]]),
   [ case "${enableval}" in
       yes) lalframe=true;;
       no) lalframe=false;;
@@ -777,7 +777,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALMETAIO],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalmetaio],
-  AC_HELP_STRING([--enable-lalmetaio],[compile code that requires lalmetaio library [default=yes]]),
+  AS_HELP_STRING([--enable-lalmetaio],[compile code that requires lalmetaio library [default=yes]]),
   [ case "${enableval}" in
       yes) lalmetaio=true;;
       no) lalmetaio=false;;
@@ -790,7 +790,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALSIMULATION],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalsimulation],
-  AC_HELP_STRING([--enable-lalsimulation],[compile code that requires lalsimulation library [default=yes]]),
+  AS_HELP_STRING([--enable-lalsimulation],[compile code that requires lalsimulation library [default=yes]]),
   [ case "${enableval}" in
       yes) lalsimulation=true;;
       no) lalsimulation=false;;
@@ -803,7 +803,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALBURST],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalburst],
-  AC_HELP_STRING([--enable-lalburst],[compile code that requires lalburst library [default=yes]]),
+  AS_HELP_STRING([--enable-lalburst],[compile code that requires lalburst library [default=yes]]),
   [ case "${enableval}" in
       yes) lalburst=true;;
       no) lalburst=false;;
@@ -816,7 +816,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALINSPIRAL],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalinspiral],
-  AC_HELP_STRING([--enable-lalinspiral],[compile code that requires lalinspiral library [default=yes]]),
+  AS_HELP_STRING([--enable-lalinspiral],[compile code that requires lalinspiral library [default=yes]]),
   [ case "${enableval}" in
       yes) lalinspiral=true;;
       no) lalinspiral=false;;
@@ -829,7 +829,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalpulsar],
-  AC_HELP_STRING([--enable-lalpulsar],[compile code that requires lalpulsar library [default=yes]]),
+  AS_HELP_STRING([--enable-lalpulsar],[compile code that requires lalpulsar library [default=yes]]),
   [ case "${enableval}" in
       yes) lalpulsar=true;;
       no) lalpulsar=false;;
@@ -842,7 +842,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALINFERENCE],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalinference],
-  AC_HELP_STRING([--enable-lalinference],[compile code that requires lalinference library [default=yes]]),
+  AS_HELP_STRING([--enable-lalinference],[compile code that requires lalinference library [default=yes]]),
   [ case "${enableval}" in
       yes) lalinference=true;;
       no) lalinference=false;;
@@ -855,7 +855,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
   AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
   AC_ARG_ENABLE(
     [lalapps],
-    AC_HELP_STRING([--enable-lalapps],[compile lalapps [default=yes]]),
+    AS_HELP_STRING([--enable-lalapps],[compile lalapps [default=yes]]),
     [
       case "${enableval}" in
         yes) lalapps=true ;;
@@ -871,7 +871,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
 AC_DEFUN([LALSUITE_WITH_CUDA],[
 AC_ARG_WITH(
   [cuda],
-  AC_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),[
+  AS_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),[
     AS_CASE([${with_cuda}],
       [no],[cuda=false],
       [yes],[cuda=true; cuda_path=/opt/cuda],
@@ -907,7 +907,7 @@ AC_ARG_WITH(
   LALSUITE_ENABLE_MODULE([CUDA])
   AC_ARG_WITH(
     [nvcc_cflags],
-    AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
+    AS_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
     [
       NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"
     ]
@@ -958,7 +958,7 @@ AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],[
   # $0: enable/disable fast/inline GSL code
   AC_ARG_ENABLE(
     [fast_gsl],
-    AC_HELP_STRING([--enable-fast-gsl],[enable fast/inline GSL code [default=no]]),
+    AS_HELP_STRING([--enable-fast-gsl],[enable fast/inline GSL code [default=no]]),
     AS_CASE(["${enableval}"],
       [yes],[
         AC_DEFINE([HAVE_INLINE],[1],[Define to 1 to use inline code])
@@ -975,7 +975,7 @@ AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],[
 AC_DEFUN([LALSUITE_ENABLE_OSX_VERSION_CHECK],
 [AC_ARG_ENABLE(
   [osx_version_check],
-  AC_HELP_STRING([--enable-osx-version-check],[disable OS X version check [default=yes]]),
+  AS_HELP_STRING([--enable-osx-version-check],[disable OS X version check [default=yes]]),
   AS_CASE(["${enableval}"],
     [yes],[osx_version_check=true],
     [no],[osx_version_check=false],
@@ -1020,7 +1020,7 @@ AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[
   # $0: enable Doxygen documentation
   AC_ARG_ENABLE(
     [doxygen],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-doxygen],
       [generate Doxygen documentation]
     ),[
@@ -1043,7 +1043,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
   # add configuration option for MathJax installation
   AC_ARG_WITH(
     [mathjax],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--with-mathjax=PATH],
       [use MathJax installation at PATH [default: use CDN]]
     ),[
@@ -1265,7 +1265,7 @@ AC_DEFUN([LALSUITE_ENABLE_CFITSIO],[
   # $0: enable/disable cfitsio library
   AC_ARG_ENABLE(
     [cfitsio],
-    AC_HELP_STRING([--enable-cfitsio],[compile code that requires cfitsio library [default=yes]]),
+    AS_HELP_STRING([--enable-cfitsio],[compile code that requires cfitsio library [default=yes]]),
     AS_CASE(["${enableval}"],
       [yes],[cfitsio=true],
       [no],[cfitsio=false],
@@ -1301,7 +1301,7 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
   # $0: check for pager programs and required functions
   AC_ARG_WITH(
     [pager],
-    AC_HELP_STRING([--with-pager=PAGER],[specify pager program [default: less/more]]),
+    AS_HELP_STRING([--with-pager=PAGER],[specify pager program [default: less/more]]),
     [
       AS_CASE([${with_pager}],
         [no],[pager="false"],
@@ -1367,7 +1367,7 @@ AC_DEFUN([LALSUITE_ENABLE_HELP2MAN],[
   )
   AC_ARG_ENABLE(
     [help2man],
-    AC_HELP_STRING([--enable-help2man],[automatically generate man pages with help2man @<:@default=yes@:>@]),
+    AS_HELP_STRING([--enable-help2man],[automatically generate man pages with help2man @<:@default=yes@:>@]),
     AS_CASE([${enableval}],
       [yes], [],
       [no], [HELP2MAN=],
@@ -1436,7 +1436,7 @@ AC_DEFUN([LALSUITE_ENABLE_OPENMP],[
 AC_DEFUN([LALSUITE_ENABLE_MPI],
 [AC_ARG_ENABLE(
   [mpi],
-  AC_HELP_STRING([--enable-mpi],[compile using MPI for supported codes [default=no]]),
+  AS_HELP_STRING([--enable-mpi],[compile using MPI for supported codes [default=no]]),
   [ case "${enableval}" in
       yes) mpi=true;;
       no)  mpi=false;;

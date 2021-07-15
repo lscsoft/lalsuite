@@ -39,7 +39,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   # $0: enable SWIG bindings
   AC_ARG_ENABLE(
     [swig],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-swig],
       [generate SWIG bindings for all languages]
     ),[
@@ -54,7 +54,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   )
   AC_ARG_ENABLE(
     [swig_iface],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-swig-iface],
       [generate SWIG interface only]
     ),[
@@ -114,7 +114,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
   m4_pushdef([lowercase],m4_translit([$1],[A-Z],[a-z]))
   AC_ARG_ENABLE(
     [swig-]lowercase,
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-swig-]lowercase,
       [generate SWIG bindings for $1]
     ),[
