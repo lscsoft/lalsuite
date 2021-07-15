@@ -6,6 +6,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 SUBDIRS = \
 	nrfits \
+	tilts_at_infinity \
 	$(END_OF_LIST)
 
 vcs_info_sources = git_version.py

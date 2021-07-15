@@ -45,6 +45,7 @@ AC_CONFIG_FILES([ \
   python/lalsimulation/Makefile \
   python/lalsimulation/__init__.py \
   python/lalsimulation/nrfits/Makefile \
+  python/lalsimulation/tilts_at_infinity/Makefile \
   lib/LALSimulationVCSInfo.c \
   lib/LALSimulationVCSInfo.h \
   lib/Makefile \
