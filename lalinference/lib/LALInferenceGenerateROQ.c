@@ -1048,7 +1048,7 @@ REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RBin,
     for(size_t i = 0; i < rows; i++){
       gsl_matrix_complex_get_row(ts_el, &TSview.matrix, i);
       projection_coeff = complex_weighted_dot_product(&deltaview.vector, last_rb, ts_el);
-      projection_norms2[i] += (projection_coeff.dat[0]*projection_coeff.dat[0] + projection_coeff.dat[1]*projection_coeff.dat[1]);
+      projection_norms2[i] += (GSL_REAL(projection_coeff)*GSL_REAL(projection_coeff) + GSL_IMAG(projection_coeff)*GSL_IMAG(projection_coeff));
       errors[i] = A_row_norms2[i] - projection_norms2[i];
     }
 
