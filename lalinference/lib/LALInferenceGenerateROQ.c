@@ -1102,7 +1102,8 @@ REAL8 LALInferenceGenerateCOMPLEX16OrthonormalBasis(COMPLEX16Array **RBin,
 
     /* check normalisation of generated orthogonal basis is not NaN (cause by a new orthogonal basis
       having zero residual with the current basis) - if this is the case do not add the new basis. */
-    if ( gsl_isnan(GSL_REAL(gsl_vector_complex_get(ru, dim_RB))) ){ break; }
+    gsl_complex norm = gsl_vector_complex_get(ru, dim_RB);
+    if ( gsl_isnan(GSL_REAL(norm)) ){ break; }
 
     /* add to reduced basis */
     dims->data[0] = dim_RB+1; /* add row */
