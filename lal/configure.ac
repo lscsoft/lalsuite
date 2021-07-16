@@ -192,7 +192,6 @@ case "${host_os}" in
 esac
 
 # check for system headers files
-AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/time.h sys/resource.h unistd.h malloc.h regex.h glob.h execinfo.h])
 AC_CHECK_HEADERS([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
 AC_CHECK_HEADERS([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
@@ -295,7 +294,6 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
-AC_HEADER_TIME
 
 # checks for library functions
 AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_gettime])

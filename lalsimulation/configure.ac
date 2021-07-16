@@ -119,7 +119,6 @@ LALSUITE_OSX_VERSION_CHECK
 LALSUITE_USE_LIBTOOL
 
 # check for header files
-AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h])
 
 # check for gethostname in unistd.h
