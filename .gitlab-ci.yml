@@ -176,10 +176,6 @@ variables:
 
 # -- rpm
 
-# disable the condor repo, we don't need it (most of the time)
-.yum-disable-htcondor-repo: &yum-disable-htcondor-repo
-  - yum-config-manager --disable htcondor
-
 # template for RPM packaging jobs
 .rpmbuild:
   extends:
@@ -187,6 +183,8 @@ variables:
     - .build-from-tarball
   image: igwn/base:el7-testing
   variables:
+    # disable repos we don't use
+    DISABLE_REPOS: "htcondor osg"
     # parallelise the build (rpmbuild uses this variable by default)
     RPM_BUILD_NCPUS: ${CPU_COUNT}
     # where to build things (not a standard variable name)
@@ -194,7 +192,6 @@ variables:
   # before_script comes from .rhel:rpm
   script:
     - *init-build-job
-    - *yum-disable-htcondor-repo
     # install srpm dependencies
     - yum install -y -q lscsoft-packaging-tools
     # install upstream packages
@@ -1005,10 +1002,12 @@ wheel:cp39-cp39-macosx:
 
 lalinference_testjob:
   extends:
+    - .rpmbuild
     - .integration-tests
-  image: igwn/base:el7-testing
   before_script:
-    - *yum-disable-htcondor-repo
+    # init yum stuff from the template
+    - !reference [".rhel:base", before_script]
+    # install our packages
     - yum -y -q install
           git
           git-lfs
@@ -1174,7 +1173,6 @@ upgrade:rpm:el7:
     - lalinference:rpm
     - lalapps:rpm
   script:
-    - *yum-disable-htcondor-repo
     # install latest release
     - yum -y -q install lalapps
     # install new packages
