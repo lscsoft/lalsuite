@@ -43,11 +43,11 @@ include:
   - project: computing/gitlab-ci-templates
     file:
       # helpers for debian builds
-      - /packaging/debian.yml
+      - debian.yml
       # helpers for RHEL builds
-      - /packaging/rhel.yml
+      - rhel.yml
       # a flake8 job template
-      - /python/lint.yml
+      - python.yml
 
 # -- global settings ----------------------------
 
@@ -176,25 +176,22 @@ variables:
 
 # -- rpm
 
-# disable the condor repo, we don't need it (most of the time)
-.yum-disable-htcondor-repo: &yum-disable-htcondor-repo
-  - yum-config-manager --disable htcondor
-
 # template for RPM packaging jobs
 .rpmbuild:
   extends:
-    - .rhel:base
+    - .rhel:rpm
     - .build-from-tarball
   image: igwn/base:el7-testing
   variables:
+    # disable repos we don't use
+    DISABLE_REPOS: "htcondor osg"
     # parallelise the build (rpmbuild uses this variable by default)
     RPM_BUILD_NCPUS: ${CPU_COUNT}
     # where to build things (not a standard variable name)
     RPM_BUILD_TOPDIR: "${CI_PROJECT_DIR}/rpmbuild"
-  # before_script comes from .rhel:base
+  # before_script comes from .rhel:rpm
   script:
     - *init-build-job
-    - *yum-disable-htcondor-repo
     # install srpm dependencies
     - yum install -y -q lscsoft-packaging-tools
     # install upstream packages
@@ -265,20 +262,18 @@ variables:
 # template for debian packaging jobs
 .debuild:
   extends:
-    - .debian:base
+    - .debian:deb
     - .build-from-tarball
   image: igwn/base:buster
   variables:
     # tell debhelper to parallelise the build
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
-  # before_script: comes from .debian:base
+  # before_script: comes from .debian:deb
   script:
     - *init-build-job
     - PACKAGE=${CI_JOB_NAME%%:*}
-    # install build requirements
+    # install extra build requirements
     - apt-get install -y -q -q
-          devscripts
-          dpkg-dev
           lintian
     # install upstream packages
     - "ls *.deb &>/dev/null && { dpkg -i *.deb || { apt-get -y -f install; dpkg -i *.deb; } }"
@@ -1007,10 +1002,12 @@ wheel:cp39-cp39-macosx:
 
 lalinference_testjob:
   extends:
+    - .rpmbuild
     - .integration-tests
-  image: igwn/base:el7-testing
   before_script:
-    - *yum-disable-htcondor-repo
+    # init yum stuff from the template
+    - !reference [".rhel:base", before_script]
+    # install our packages
     - yum -y -q install
           git
           git-lfs
@@ -1176,7 +1173,6 @@ upgrade:rpm:el7:
     - lalinference:rpm
     - lalapps:rpm
   script:
-    - *yum-disable-htcondor-repo
     # install latest release
     - yum -y -q install lalapps
     # install new packages
