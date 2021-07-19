@@ -1769,11 +1769,9 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	{
 	  REAL8 a_a_i_j, b_b_i_j, a_b_i_j;
 	  REAL8 a_a_i, b_b_i, a_b_i;
-	  REAL8 a_a_j, b_b_j, a_b_j;
 
 	  a_a_i_j = b_b_i_j = a_b_i_j = 0;
 	  a_a_i = b_b_i = a_b_i = 0;
-	  a_a_j = b_b_j = a_b_j = 0;
 
 	  for ( X = 0; X < numDet; X ++ )
 	    {
@@ -1847,7 +1845,6 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
               max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
-	      a_a_j += weight * av;
 
 	      /* <b^2 Phi_j> */
 	      intparams.amcomp1 = AMCOMP_B;
@@ -1855,7 +1852,6 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
               max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
-	      b_b_j += weight * av;
 
 	      /* <a b Phi_j> */
 	      intparams.amcomp1 = AMCOMP_A;
@@ -1863,7 +1859,6 @@ XLALComputeAtomsForFmetric ( const DopplerMetricParams *metricParams,  	/**< inp
 	      av = XLALAverage_am1_am2_Phi_i_Phi_j ( &intparams, &relerr );
               max_relerr = MYMAX ( max_relerr, relerr );
 	      if ( xlalErrno ) goto failed;
-	      a_b_j += weight * av;
 
 	    } /* for X < numDetectors */
 

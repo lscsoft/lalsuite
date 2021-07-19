@@ -168,7 +168,7 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
   REAL8 e, e2, e0;     /* E variable, E^2, and constant piece of E */
   REAL8 de;            /* coefficient of sinh() piece of E */
   REAL8 tpOff;         /* orbit epoch - time series epoch (s) */
-  REAL8 spinOff;       /* spin epoch - orbit epoch (s) */
+  //REAL8 spinOff;       /* spin epoch - orbit epoch (s) */
   REAL8 *fSpin = NULL; /* pointer to Taylor coefficients */
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
@@ -234,10 +234,10 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
 		   params->epoch.gpsSeconds );
   tpOff += 1.0e-9 * (REAL8)( params->orbitEpoch.gpsNanoSeconds -
 			     params->epoch.gpsNanoSeconds );
-  spinOff = (REAL8)( params->orbitEpoch.gpsSeconds -
-		     params->spinEpoch.gpsSeconds );
-  spinOff += 1.0e-9 * (REAL8)( params->orbitEpoch.gpsNanoSeconds -
-			       params->spinEpoch.gpsNanoSeconds );
+  //spinOff = (REAL8)( params->orbitEpoch.gpsSeconds -
+  //                   params->spinEpoch.gpsSeconds );
+  //spinOff += 1.0e-9 * (REAL8)( params->orbitEpoch.gpsNanoSeconds -
+  //                             params->spinEpoch.gpsNanoSeconds );
 
   /* Set up some other constants. */
   twopif0 = f0*LAL_TWOPI;

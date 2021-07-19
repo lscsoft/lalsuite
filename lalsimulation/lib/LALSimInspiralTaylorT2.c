@@ -758,8 +758,6 @@ int XLALSimInspiralTaylorT2PNEvolveOrbit(
 		)
 {
 	const UINT4 blocklen = 1024;
-	REAL8 m = m1 + m2;
-	m *= LAL_G_SI / pow(LAL_C_SI, 3.0);/* convert m from kilograms to seconds */
 	REAL8 tC, xmin, xmax, xacc, v, phase;
 	REAL8 (*timing2)(REAL8, void *);
 	UINT4 j, len, idxRef = 0;
