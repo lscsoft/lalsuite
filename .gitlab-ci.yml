@@ -43,11 +43,11 @@ include:
   - project: computing/gitlab-ci-templates
     file:
       # helpers for debian builds
-      - /packaging/debian.yml
+      - debian.yml
       # helpers for RHEL builds
-      - /packaging/rhel.yml
+      - rhel.yml
       # a flake8 job template
-      - /python/lint.yml
+      - python.yml
 
 # -- global settings ----------------------------
 
@@ -183,7 +183,7 @@ variables:
 # template for RPM packaging jobs
 .rpmbuild:
   extends:
-    - .rhel:base
+    - .rhel:rpm
     - .build-from-tarball
   image: igwn/base:el7-testing
   variables:
@@ -191,7 +191,7 @@ variables:
     RPM_BUILD_NCPUS: ${CPU_COUNT}
     # where to build things (not a standard variable name)
     RPM_BUILD_TOPDIR: "${CI_PROJECT_DIR}/rpmbuild"
-  # before_script comes from .rhel:base
+  # before_script comes from .rhel:rpm
   script:
     - *init-build-job
     - *yum-disable-htcondor-repo
@@ -265,20 +265,18 @@ variables:
 # template for debian packaging jobs
 .debuild:
   extends:
-    - .debian:base
+    - .debian:deb
     - .build-from-tarball
   image: igwn/base:buster
   variables:
     # tell debhelper to parallelise the build
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
-  # before_script: comes from .debian:base
+  # before_script: comes from .debian:deb
   script:
     - *init-build-job
     - PACKAGE=${CI_JOB_NAME%%:*}
-    # install build requirements
+    # install extra build requirements
     - apt-get install -y -q -q
-          devscripts
-          dpkg-dev
           lintian
     # install upstream packages
     - "ls *.deb &>/dev/null && { dpkg -i *.deb || { apt-get -y -f install; dpkg -i *.deb; } }"
