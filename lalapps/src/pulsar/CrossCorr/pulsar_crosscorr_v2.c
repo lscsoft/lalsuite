@@ -159,7 +159,7 @@ typedef struct tagConfigVariables{
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, ConfigVariables *config);
 int GetNextCrossCorrTemplateResamp(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
 int GetNextCrossCorrTemplateForResamp(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount);
 int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, int DEMODndim, int DEMODdimf, int DEMODdima, int DEMODdimT, int DEMODdimP, gsl_matrix *metric_ij, int* DEMODnumpoints, int* DEMODnumorb, ConfigVariables *config);
@@ -1450,7 +1450,7 @@ int XLALDestroyConfigVars (ConfigVariables *config)
 /* getting the next template */
 /** FIXME: spacings and min, max values of binary parameters are not used yet */
 
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum)
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, ConfigVariables *config)
 {
 
   /* basic sanity checks */
@@ -1488,6 +1488,12 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 	  if ( *pCount < pSpacingNum )  /*after looping the plane of f and a_p, initialize f, a_p and loop over P*/
 	    {
 	      dopplerpos->period = minBinaryTemplate->period + (*pCount + 1) * binaryTemplateSpacings->period;
+	      if (config->dPorbdTascShear != 0) {
+		dopplerpos->period -=
+		  ( XLALGPSGetREAL8(&dopplerpos->tp)
+		    - config->orbitTimeAscCenterShifted )
+		  * config->dPorbdTascShear;
+	      }
 	      dopplerpos->fkdot[0] =  minBinaryTemplate->fkdot[0];
 	      *fCount = 0;
 	      dopplerpos->asini = minBinaryTemplate->asini;
@@ -1508,6 +1514,11 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 		  dopplerpos->asini = minBinaryTemplate->asini;
 		  *aCount = 0;
 		  dopplerpos->period = minBinaryTemplate->period;
+		  if (config->dPorbdTascShear != 0) {
+		    dopplerpos->period -=
+		      ( nextGPSTime - config->orbitTimeAscCenterShifted )
+		      * config->dPorbdTascShear;
+		  }
 		  *pCount = 0;
 		  *binaryParamsFlag = TRUE;
 		  *tCount += 1;
@@ -1522,6 +1533,12 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 		      dopplerpos->asini = minBinaryTemplate->asini;
 		      dopplerpos->period = minBinaryTemplate->period;
 		      dopplerpos->tp = minBinaryTemplate->tp;
+		      if (config->dPorbdTascShear != 0) {
+			dopplerpos->period -=
+			  ( XLALGPSGetREAL8(&dopplerpos->tp)
+			    - config->orbitTimeAscCenterShifted )
+			  * config->dPorbdTascShear;
+		      }
 		      *firstPoint = FALSE;
 		      *binaryParamsFlag = TRUE;
 		      return 0;
@@ -1940,7 +1957,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 
     //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false");
 
-    while (GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0)
+    while (GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, config) == 0)
       {
       /* do useful stuff here*/
 	
