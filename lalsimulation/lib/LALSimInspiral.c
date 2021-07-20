@@ -5324,7 +5324,7 @@ int XLALSimInspiralPrecessingPolarizationWaveforms(
                 /* 1.5PN tail amp. corrections */
                 hplusTail15 = 2*((lx2 - ly2 - nx2 + ny2)*LAL_PI);
                 hcrossTail15 = 4*((lx*ly - nx*ny)*LAL_PI);
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
                 __attribute__ ((fallthrough));
 #endif
 
