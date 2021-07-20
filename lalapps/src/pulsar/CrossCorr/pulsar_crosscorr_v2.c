@@ -1384,30 +1384,56 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
       printf("Error!  Need to set all or none of --orbitPSecCenter --orbitPSecSigma --orbitTimeAscCenter --orbitTimeAscSigma\n");
       XLAL_ERROR( XLAL_EFUNC );
     }
-    if ( (uvar->orbitPSec != 0.0) ) {
-      printf("Warning!  --orbitPSec not expected with elliptical boundaries; ignored\n");
-      if ( uvar->treatWarningsAsErrors ) {
-        printf("Error! (--treatWarningsAsErrors flag is true).\n");
-        XLAL_ERROR( XLAL_EFUNC );
+    /* If these parameters have been set, it's because we're using the sheared perior coordinate, or the elliptical boundaries, or both */
+    if ( uvar->useShearedPorb ) {
+      if ( (uvar->orbitPSec != 0.0) ) {
+	if ( XLALUserVarWasSet(&uvar->orbitTPEllipseRadius) ) {
+	  /* If we get here, both --orbitTPEllipseRadius and --orbitPSec were set, which was probably a mistake, but we ignore --orbitPsec */
+	  config->useTPEllipse = TRUE;
+	  printf("Warning!  --orbitPSec not expected with elliptical boundaries; ignored\n");
+	  if ( uvar->treatWarningsAsErrors ) {
+	    printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	    XLAL_ERROR( XLAL_EFUNC );
+	  }
+	}
+	/* If we get here, --useShearedPorb and --orbitPSec were set, so we're doing a search with constant boundaries in the sheared period coordinate and config->useTPEllipse remains false */
+      } else {
+	config->useTPEllipse = TRUE;
+	if ( (uvar->orbitPSecBand != 0.0) ) {
+	  printf("Warning!  --orbitPSecBand not expected with elliptical boundaries\n; ignored\n");
+	  if ( uvar->treatWarningsAsErrors ) {
+	    printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	    XLAL_ERROR( XLAL_EFUNC );
+	  }
+	}
       }
-    }
-    if ( (uvar->orbitPSecBand != 0.0) ) {
-      printf("Warning!  --orbitPSecBand not expected with elliptical boundaries\n; ignored\n");
-      if ( uvar->treatWarningsAsErrors ) {
-        printf("Error! (--treatWarningsAsErrors flag is true).\n");
-        XLAL_ERROR( XLAL_EFUNC );
+    } else {
+      /* If we get here, we specified the parameters of the elliptical boundary but are not using the sheared period coordinate, so we go with the default value for --orbitTPEllipseRadius if it wasn't set on the command line */
+      if ( (uvar->orbitPSec != 0.0) ) {
+	printf("Warning!  --orbitPSec not expected with elliptical boundaries; ignored\n");
+	if ( uvar->treatWarningsAsErrors ) {
+	  printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
       }
-    }
-    if ( uvar->useLattice == FALSE ) {
-      printf("Error!  Elliptical boundary only works with LatticeTiling\n");
-      XLAL_ERROR( XLAL_EFUNC );
+      if ( (uvar->orbitPSecBand != 0.0) ) {
+	printf("Warning!  --orbitPSecBand not expected with elliptical boundaries\n; ignored\n");
+	if ( uvar->treatWarningsAsErrors ) {
+	  printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
+      }
+      if ( uvar->useLattice == FALSE ) {
+	printf("Error!  Elliptical boundary only works with LatticeTiling\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+      config->useTPEllipse = TRUE;
     }
     if ( uvar->resamp == TRUE ) {
-      printf("Error!  Elliptical boundary not yet implemented with resampling\n");
+      printf("Error!  Elliptical boundary and sheared coordinates not yet implemented with resampling\n");
       XLAL_ERROR( XLAL_EFUNC );
     }
     /* End consistency checks */
-    config->useTPEllipse = TRUE;
     config->orbitPSecMin = uvar->orbitPSecCenter - uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
     config->orbitPSecMax = uvar->orbitPSecCenter + uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
     /* Compute number of orbits to shift prior ellipse */
