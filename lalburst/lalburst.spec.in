@@ -66,7 +66,7 @@ BuildRequires: python%{python3_pkgversion}-glue
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python%{python3_pkgversion}-ligo-lw
+BuildRequires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
 BuildRequires: python%{python3_pkgversion}-matplotlib
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
