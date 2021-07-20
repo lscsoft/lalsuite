@@ -196,7 +196,7 @@ for n, filename in enumerate(filenames, start = 1):
 		# close out the process metadata
 		#
 
-		ligolw_process.set_process_end_time(process)
+		process.set_end_time_now()
 
 	#
 	# done

@@ -318,7 +318,7 @@ def ligolw_bucut(xmldoc, burst_test_func, veto_segments = segments.segmentlistdi
 	seg = contents.outsegs.extent_all()
 	ligolw_search_summary.append_search_summary(xmldoc, process, inseg = seg, outseg = seg, nevents = len(contents.snglbursttable))
 
-	ligolw_process.set_process_end_time(process)
+	process.set_end_time_now()
 
 	return xmldoc
 

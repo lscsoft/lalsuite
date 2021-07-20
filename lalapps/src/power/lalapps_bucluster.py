@@ -34,7 +34,6 @@ from lal.utils import CacheEntry
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-from ligo.lw.utils import process as ligolw_process
 from lalburst import git_version
 from lalburst import bucluster
 
@@ -150,7 +149,7 @@ for filename in filenames:
 	# Finish process information
 	#
 
-	ligolw_process.set_process_end_time(process)
+	process.set_end_time_now()
 
 	#
 	# Write document
