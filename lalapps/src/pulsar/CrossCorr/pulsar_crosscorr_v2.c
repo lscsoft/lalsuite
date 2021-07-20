@@ -1001,6 +1001,12 @@ int main(int argc, char *argv[]){
   dopplerpos.asini = minBinaryTemplate.asini;
   dopplerpos.tp = minBinaryTemplate.tp;
   dopplerpos.period = minBinaryTemplate.period;
+  if (config.dPorbdTascShear != 0) {
+    dopplerpos.period +=
+      ( XLALGPSGetREAL8(&dopplerpos.tp)
+	- config.orbitTimeAscCenterShifted )
+      * config.dPorbdTascShear;
+  }
 
   /* BEGIN section resampled */
 
@@ -2020,7 +2026,7 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
 
 	insert_into_crossCorrBinary_toplist(ccToplist, thisCandidate);
 
-	//fprintf(stdout,"Inner loop: freq %f , tp %f , asini %f \n", thisCandidate.freq, thisCandidate.tp, thisCandidate.asini);
+	// fprintf(stdout,"Inner loop: freq %f , asini %f , tasc %f , porb %f \n", thisCandidate.freq, thisCandidate.asini, thisCandidate.tp, thisCandidate.period);
 
       } /* end while loop over templates */
 
