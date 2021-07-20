@@ -982,8 +982,8 @@ class posteriors:
 
   def plot_prior(self, ax, param, prior, orientation='horizontal', truth=0., npoints=100):
     # plot the prior distribution (with truth subtracted if non-zero)
-    priortype = prior[param].keys()[0]
-    priorrange = prior[param].values()[0]
+    priortype = list(prior[param].keys())[0]
+    priorrange = list(prior[param].values())[0]
 
     if truth is None:
       truth = 0.
