@@ -1515,7 +1515,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 	    {
 	      dopplerpos->period = minBinaryTemplate->period + (*pCount + 1) * binaryTemplateSpacings->period;
 	      if (config->dPorbdTascShear != 0) {
-		dopplerpos->period -=
+		dopplerpos->period +=
 		  ( XLALGPSGetREAL8(&dopplerpos->tp)
 		    - config->orbitTimeAscCenterShifted )
 		  * config->dPorbdTascShear;
@@ -1541,7 +1541,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 		  *aCount = 0;
 		  dopplerpos->period = minBinaryTemplate->period;
 		  if (config->dPorbdTascShear != 0) {
-		    dopplerpos->period -=
+		    dopplerpos->period +=
 		      ( nextGPSTime - config->orbitTimeAscCenterShifted )
 		      * config->dPorbdTascShear;
 		  }
@@ -1560,7 +1560,7 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 		      dopplerpos->period = minBinaryTemplate->period;
 		      dopplerpos->tp = minBinaryTemplate->tp;
 		      if (config->dPorbdTascShear != 0) {
-			dopplerpos->period -=
+			dopplerpos->period +=
 			  ( XLALGPSGetREAL8(&dopplerpos->tp)
 			    - config->orbitTimeAscCenterShifted )
 			  * config->dPorbdTascShear;
