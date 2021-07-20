@@ -1148,6 +1148,13 @@ cuda:
     reports:
       junit: []
 
+icc:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-icc:el7
+  variables:
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave --disable-static --enable-intelfft"
+
 # -- upgrade tests ------------------------------
 #
 # Check that users can cleanly update/upgrade
