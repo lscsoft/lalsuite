@@ -75,7 +75,6 @@ pybin_scripts = \
 
 pkgpython_PYTHON = \
 	inspiral.py \
-	inspiralutils.py \
 	$(END_OF_LIST)
 endif
 
