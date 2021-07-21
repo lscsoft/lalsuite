@@ -335,21 +335,6 @@ class PTFInspiralJob(InspiralAnalysisJob):
     self.add_condor_cmd('request_memory', '%d' %(ramValue))
 
 
-class PTFSpinCheckerJob(InspiralAnalysisJob):
-  """
-  A coh_PTF spin checker job
-  """
-  def __init__(self,cp,dax=False):
-    """
-    cp = ConfigParser object from which options are read.
-    """
-    exec_name = 'coh_PTF_spin_checker'
-    sections = ['coh_PTF_spin_checker']
-    extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
-    self.add_condor_cmd('request_memory', '1400')
-
-
 class TrigbankJob(InspiralAnalysisJob):
   """
   A lalapps_trigbank job used by the inspiral pipeline. The static
