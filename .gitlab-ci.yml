@@ -1004,6 +1004,9 @@ lalinference_testjob:
   extends:
     - .rpmbuild
     - .integration-tests
+  variables:
+    # we need the git repo to run the test script
+    GIT_STRATEGY: fetch
   before_script:
     # init yum stuff from the template
     - !reference [".rhel:base", before_script]
