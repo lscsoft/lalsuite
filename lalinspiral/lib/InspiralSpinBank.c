@@ -297,7 +297,7 @@ LALInspiralSpinBank(
   REAL4 f0 = -1;  			/* frequency of minimum of noise curve */
   INT2 bccFlag = 0;      		/* determines offset for bcc tiling */
   INT4 cnt = 0;				/* loop counter set to value of ntiles */
-  REAL4 shf0 = 1;			/* used to find minimum of shf */
+  REAL8 shf0 = 1;			/* used to find minimum of shf */
   BOOLEAN havePsi;			/* are we using phenom parameters?  */
 
   /* Set up status pointer. */
