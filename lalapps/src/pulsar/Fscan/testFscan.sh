@@ -36,6 +36,112 @@ for file in ${outfilebase} ${outfilebase}_date ${outfilebase}_timeaverage ${outf
     fi
 done
 
+## do a simple test
+echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_date to reference ... "
+firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_date`
+firstline_ref='0	 2011	 9	 14	 1	 46	 25'
+for f in 1 2 3 4 5 6 7; do
+    field=`echo "$firstline" | awk '{ print $'"$f"' }'`
+    field_ref=`echo "$firstline_ref" | awk '{ print $'"$f"' }'`
+    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
+    if ! eval "$cmdline"; then
+        echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        exit 1
+    fi
+done
+echo "OK"
+echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_date to reference ... "
+lastline=`awk 'NR == 2 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_date`
+lastline_ref='1	 2011	 9	 14	 2	 16	 25'
+for f in 1 2 3 4 5 6 7; do
+    field=`echo "$lastline" | awk '{ print $'"$f"' }'`
+    field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
+    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
+    if ! eval "$cmdline"; then
+        echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        exit 1
+    fi
+done
+echo "OK"
+echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps to reference ... "
+firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps`
+firstline_ref='0.	1000000000'
+for f in 1 2; do
+    field=`echo "$firstline" | awk '{ print $'"$f"' }'`
+    field_ref=`echo "$firstline_ref" | awk '{ print $'"$f"' }'`
+    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
+    if ! eval "$cmdline"; then
+        echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        exit 1
+    fi
+done
+echo "OK"
+echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps to reference ... "
+lastline=`awk 'NR == 2 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps`
+lastline_ref='1.	1000001800'
+for f in 1 2; do
+    field=`echo "$lastline" | awk '{ print $'"$f"' }'`
+    field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
+    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
+    if ! eval "$cmdline"; then
+        echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        exit 1
+    fi
+done
+echo "OK"
+echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage to reference ... "
+firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage`
+firstline_ref='       10.000000            0.239'
+for f in 1 2; do
+    field=`echo "$firstline" | awk '{ print $'"$f"' }'`
+    field_ref=`echo "$firstline_ref" | awk '{ print $'"$f"' }'`
+    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    if ! eval "$cmdline"; then
+        echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        exit 1
+    fi
+done
+echo "OK"
+echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage to reference ... "
+lastline=`awk 'NR == 18001 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage`
+lastline_ref='       20.000000            0.652'
+for f in 1 2; do
+    field=`echo "$lastline" | awk '{ print $'"$f"' }'`
+    field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
+    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    if ! eval "$cmdline"; then
+        echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        exit 1
+    fi
+done
+echo "OK"
+echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000 to reference ... "
+firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000`
+firstline_ref='1.015133e-22    1.035036e-22    9.887402e-23    1.008830e-22'
+for f in 1 2 3 4; do
+    field=`echo "$firstline" | awk '{ print $'"$f"' }'`
+    field_ref=`echo "$firstline_ref" | awk '{ print $'"$f"' }'`
+    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    if ! eval "$cmdline"; then
+        echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        exit 1
+    fi
+done
+echo "OK"
+echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000 to reference ... "
+lastline=`awk 'NR == 2 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000`
+lastline_ref='9.351592e-23    9.947149e-23    9.312546e-23    9.680045e-23'
+for f in 1 2 3 4; do
+    field=`echo "$lastline" | awk '{ print $'"$f"' }'`
+    field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
+    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    if ! eval "$cmdline"; then
+        echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        exit 1
+    fi
+done
+echo "OK"
+
 ## run spec_avg_long to create an average ASD
 outdir=spec_avg_long
 mkdir -p ${outdir}
