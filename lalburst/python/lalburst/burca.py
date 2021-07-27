@@ -34,6 +34,7 @@ import sys
 
 
 from ligo.lw import lsctables
+from ligo.segments import PosInfinity
 from . import snglcoinc
 
 
@@ -327,17 +328,14 @@ def burca(
 
 	sngl_burst_table = lsctables.SnglBurstTable.get_table(xmldoc)
 	for instrument, events in itertools.groupby(sorted(sngl_burst_table, key = lambda row: row.ifo), lambda event: event.ifo):
-		events = tuple(events)
-		time_slide_graph.push(instrument, events, max(event.peak for event in events))
+		time_slide_graph.push(instrument, tuple(events), PosInfinity)
 
 	#
-	# retrieve all coincidences, apply the final n-tuple compare func
-	# and record the survivors
+	# retrieve all coincidences.
 	#
 
-	for node, events in time_slide_graph.pull(flush = True, verbose = verbose):
-		if not ntuple_comparefunc(events, node.offset_vector):
-			coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events, u"sngl_burst"))
+	for node, events in time_slide_graph.pull(coinc_sieve = ntuple_comparefunc, flush = True):
+		coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events, u"sngl_burst"))
 
 	#
 	# done
