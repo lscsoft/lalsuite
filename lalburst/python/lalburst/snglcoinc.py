@@ -121,14 +121,6 @@ class multidict(UserDict):
 	def __iter__(self):
 		return itertools.chain(*(iter(d) for d in self.dicts))
 
-	def iteritems(self):
-		warnings.warn(
-			"this method is deprecated, and will be removed in a "
-			"future release. please use .items() instead.",
-			DeprecationWarning,
-		)
-		return self.items()
-
 	def items(self):
 		return itertools.chain(*(d.items() for d in self.dicts))
 
