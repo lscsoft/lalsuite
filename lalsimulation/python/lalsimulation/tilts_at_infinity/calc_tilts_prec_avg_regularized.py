@@ -1,7 +1,7 @@
 """
 Implement the computation of the tilt angles at infinity or bounds and average values of tilts at a finite separation
 from tilt angles at some frequency, taken to be sufficiently small so that precession-averaged evolution is accurate.
-This implementation is described in the paper, <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx.
+This implementation is described in the paper, <https://dcc.ligo.org/P2100029>, arXiv:2107.11902.
 
 N. K. Johnson-McDaniel, 2021
 """
@@ -210,7 +210,7 @@ def L_from_masses_a_and_ecc(m1, m2, a, e):
 
 def E_ratio_term(m):
     """
-    Compute m*E_ratio(m) [cf. Eq. (B13) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx, which gives m^2*E_ratio(m)]
+    Compute m*E_ratio(m) [cf. Eq. (B13) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902, which gives m^2*E_ratio(m)]
     """
 
     omm = 1. - m
@@ -221,7 +221,7 @@ def E_ratio_term(m):
 
 def eq_coeffs(u, kappaxiq, q, S1, S2, xi, S0sq):
     """
-    Compute coefficients for the cubic equation in bar{S}^2 to be solved [Eq. (20) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx]
+    Compute coefficients for the cubic equation in bar{S}^2 to be solved [Eq. (20) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902]
 
     Inputs:
     u: 1/(2L), where L is the orbital angular momentum (i.e., the integration variable)
@@ -250,10 +250,10 @@ def eq_coeffs(u, kappaxiq, q, S1, S2, xi, S0sq):
     kappaxiq2 = kappaxiq*kappaxiq
 
     # Compute the coefficients of the transformed equation q (1 - q^2) u^2 bar{S}^6 + bar{B} bar{S}^4 +
-    # bar{C} bar{S}^2 + bar{D} = 0 [Eqs. (20-22) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx].
+    # bar{C} bar{S}^2 + bar{D} = 0 [Eqs. (20-22) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902].
 
     # Here we refer to the barred coefficients with the suffix "transf" and the coefficient of bar{S}^6 as
-    # vareps, as in Appendix C of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx
+    # vareps, as in Appendix C of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902
 
     Sigma = 0.5*(S0sq - S1sq - S2sq)
     Upsilon = opq*(2.*q*Sigma + q2*S1sq + S2sq)
@@ -285,7 +285,7 @@ def solve_cubic(coeffs, u, kappaxiq, q, S1, S2, imag_tol, use_mpmath=False, root
 
     coeffs: Array of coefficients of cubic [vareps, Btransf, Ctransf, Dtransf]
     u: 1/(2L), where L is the orbital angular momentum (i.e., the integration variable)
-    kappaxiq: The rescaled variable defined in Eq. (14) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx
+    kappaxiq: The rescaled variable defined in Eq. (14) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902
     q: Mass ratio of the binary, with the < 1 convention
     S1, S2: Magnitudes of the dimensionful spins of the binary (with total mass = 1)
     imag_tol: Tolerance for the imaginary part of roots of the cubic
@@ -343,14 +343,14 @@ def solve_cubic(coeffs, u, kappaxiq, q, S1, S2, imag_tol, use_mpmath=False, root
             warn(
                 r"\bar{S}_3^2 and \bar{S}_-^2 have the same real parts, with values of: %e, %e"%(Ssq3, Ssqm), RuntimeWarning)
         elif Ssq3 == 0. and Ssqm == 0.:
-            raise NonprecessingError() # This system is nonprecessing to numerical accuracy
+            raise NonprecessingError(r"The system is nonprecessing: \bar{S}^2_3 = \bar(S}^2_- = 0") # This system is nonprecessing to numerical accuracy
 
     if Ssqm.real == Ssqp.real:
         if Ssqm.imag != 0. or Ssqp.imag != 0.:
             warn(
                 r"\bar{S}_-^2 and \bar{S}_+^2 have the same real parts, with values of: %e, %e"%(Ssqm, Ssqp), RuntimeWarning)
         elif Ssqm == 0. and Ssqp == 0.:
-            raise NonprecessingError() # This system is nonprecessing to numerical accuracy
+            raise NonprecessingError(r"The system is nonprecessing: \bar{S}^2_- = \bar(S}^2_+ = 0") # This system is nonprecessing to numerical accuracy
 
     return Ssq3, Ssqm, Ssqp
 
@@ -368,10 +368,10 @@ def dkappaxiq_du(u, kappaxiq, q, S1, S2, xi, S0sq, imag_tol, root_tol, lin_tol, 
     - Required:
 
     u: 1/(2L), where L is the orbital angular momentum (i.e., the integration variable)
-    kappaxiq: The rescaled variable defined above and in Eq. (14) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx
+    kappaxiq: The rescaled variable defined above and in Eq. (14) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902
     q: Mass ratio of the binary, with the < 1 convention
     S1, S2: Magnitudes of the dimensionful spins of the binary (with total mass = 1)
-    xi: Conserved effective spin, defined in Eq. (2) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx
+    xi: Conserved effective spin, defined in Eq. (2) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902
     S0sq: Square of magnitude of the initial total spin (at u = u0, and with total mass = 1)
     imag_tol: Tolerance for the imaginary part of roots of the cubic
     root_tol: Tolerance for the error in the roots of the cubic (is an absolute tolerance for small values of the roots, as
@@ -420,7 +420,7 @@ def dkappaxiq_du(u, kappaxiq, q, S1, S2, xi, S0sq, imag_tol, root_tol, lin_tol, 
             z_eps_abs = abs(
                 (-Btransf + (Btransf*Btransf - 4.*Ctransf*vareps)**0.5)/(2.*Ctransf))
 
-            # Error on -Ctransf/Btransf expression for S_+^2 + S_-^2, E_\varepsilon^\text{sum} [Eq. (C5) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx]
+            # Error on -Ctransf/Btransf expression for S_+^2 + S_-^2, E_\varepsilon^\text{sum} [Eq. (C5) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902]
             sum_err_bound = z_eps_abs * \
                 (abs(Ctransf*Ctransf - Btransf*Dtransf) + Ctransf*Dtransf*z_eps_abs) / \
                 (Btransf*(Btransf - Ctransf*z_eps_abs))
@@ -649,7 +649,7 @@ def dkappaxiq_du(u, kappaxiq, q, S1, S2, xi, S0sq, imag_tol, root_tol, lin_tol, 
                 else:
                     ellip_ratio = ellipe(mm)/ellipk(mm)
 
-                # Eq. (17) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx
+                # Eq. (17) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902
                 Ssq_pr = Ssqp + (ellip_ratio - 1.)*(Ssqp - Ssq3)
     else:
         Ssq_pr = 0.
@@ -670,7 +670,7 @@ def kappaxiq_evol(q, S1, S2, S1L, xi, S0sq, u0, uf, du, method, imag_tol, root_t
     q: Mass ratio of the binary, with the < 1 convention
     S1, S2: Magnitudes of the dimensionful spins of the binary (with total mass = 1)
     S1L: Component of the dimensionful spin of hole 1 along the orbital angular momentum (with total mass = 1)
-    xi: Conserved effective spin, defined in Eq. (2) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx
+    xi: Conserved effective spin, defined in Eq. (2) of the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902
     S0sq: Square of initial dimensionful total spin (in total mass = 1 units)
     u0: Initial value of u
     uf: Final value of u
@@ -786,7 +786,7 @@ def prec_avg_tilt_comp_vec_inputs(m1, m2, chi1_vec, chi2_vec, fref, L0_vec=None,
     from masses, spins, tilt angles, and in-plane spin angle at some frequency, taken to be small enough that
     the precession averaged spin evolution from Gerosa et al. PRD 92, 064016 (2015) [implemented following
     Chatziioannou, Klein, Yunes, and Cornish PRD 95, 104004 (2017)] is accurate, using the regularized expressions
-    from <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx. This version takes vectors of spins as input (as opposed
+    from <https://dcc.ligo.org/P2100029>, arXiv:2107.11902. This version takes vectors of spins as input (as opposed
     to spin angles) and allows one optionally to specify the initial orbital angular momentum instead of computing it
     from fref (and the binary's parameters).
 
@@ -1228,7 +1228,7 @@ def prec_avg_tilt_comp_vec_inputs(m1, m2, chi1_vec, chi2_vec, fref, L0_vec=None,
     # so there are no concerns about division by zero here.
 
     if Lf is None:
-        # Compute cosines of tilt angles at infinity [Eqs. (15) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx]
+        # Compute cosines of tilt angles at infinity [Eqs. (15) in the paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902]
 
         cos_tilt1inf = k_evol/S1
         cos_tilt2inf = q*(xi/(1. + q) - k_evol)/S2
@@ -1265,7 +1265,7 @@ def prec_avg_tilt_comp_vec_inputs(m1, m2, chi1_vec, chi2_vec, fref, L0_vec=None,
                               use_mpmath=mpmath_tilts, polyroots_maxsteps=polyroots_maxsteps,
                               polyroots_extraprec=polyroots_extraprec)
 
-        # Compute cosines of tilt angles at separation [Eqs. (23) in paper <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx]
+        # Compute cosines of tilt angles at separation [Eqs. (23) in paper <https://dcc.ligo.org/P2100029>, arXiv:2107.11902]
 
         cos_tilt1sep_Sm = (k_evol - uf*Ssqm)/S1
         cos_tilt2sep_Sm = q*(xi/(1. + q) - S1*cos_tilt1sep_Sm)/S2

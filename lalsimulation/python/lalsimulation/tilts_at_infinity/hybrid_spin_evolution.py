@@ -2,7 +2,7 @@
 This script computes the tilt angles at infinity from a given reference frequency, by combining orbit-averaged evolution at higher frequencies
 until a transition frequency, with precession-averaged evolution until infinite separation.
 There is also an option to compute the bounds on the tilts and an average value at a finite separation, though this has not been tested extensively.
-This implementation is described in the paper, <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx
+This implementation is described in the paper, <https://dcc.ligo.org/P2100029>, arXiv:2107.11902
 
 Sumeet Kulkarni, 2021
 """
@@ -66,7 +66,7 @@ def calc_v_trans(q):
     """
     Calculates the transition orbital speed (v_trans) to shift from orbit-averaged to precession-averaged evolution in this
     hybrid spin evolution code. v_trans depends on the mass ratio, (q), and is determined using the fitting curve from the
-    paper [Eq. (30) in the paper, <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx]
+    paper [Eq. (31) in the paper, <https://dcc.ligo.org/P2100029>, arXiv:2107.11902]
 
     Input:
 
@@ -91,8 +91,8 @@ def get_nsteps(v_trans):
 
     Input:
     v_trans (float): the transition orbital speed determined by the fit in calc_v_trans()
-    The value for v_trans must be >= 0.01, which is the least transition orbital speed given in our fit in the paper [Eq. (30) in
-    <https://dcc.ligo.org/P2100029>, arXiv:2107.xxxxx]
+    The value for v_trans must be >= 0.01, which is the least transition orbital speed given in our fit in the paper [Eq. (31) in
+    <https://dcc.ligo.org/P2100029>, arXiv:2107.11902]
 
     Output:
     n_steps: (int), the number of steps for evolution to be used in calc_tilts_at_infty_hybrid_evolve()
