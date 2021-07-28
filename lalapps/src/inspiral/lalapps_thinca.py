@@ -77,8 +77,11 @@ def parse_command_line():
 	parser.add_option("-f", "--force", action = "store_true", help = "Process document even if it has already been processed.")
 	parser.add_option("-t", "--threshold", metavar = "float", type = "float", help = "Set the coincidence window in seconds, not including light travel time (required).  The value entered here will be dilated by the light travel time between detectors to define the coincidence window for each detector pair.")
 	parser.add_option("--min-instruments", metavar = "number", default = "2", type = "int", help = "Set the minimum number of instruments that must participate in a coincidence (default = 2).  The value must be greater than 0.")
-	parser.add_option("--vetoes-name", metavar = "string", default = "vetoes", help = "From the input document, exatract the segment list having this name to use as the veto segments (default = \"vetoes\").  Warning:  if no segments by this name are found in the document then vetoes will not be applied, this is not an error condition.")
-	parser.add_option("--coinc-end-time-segment", metavar = "seg", help = "The segment of time to retain coincident triggers from. Uses segmentUtils.from_range_strings() format \"START:END\" for an interval of the form [START,END), \"START:\" for an interval of the form [START,INF), and \":END\" for an interval of the form (-INF,END).")
+	# FIXME:  the test documents I have don't have SNR segments in
+	# them, but really that's what this should be using
+	parser.add_option("--snr-segments-name", metavar = "string", default = "whitehtsegments", help = "From the input document, use the segment list with this name to define when each detector was operating (default = \"whitehtsegments\").")
+	parser.add_option("--vetoes-segments-name", metavar = "string", help = "From the input document, use the segment list with this name to veto single-detector triggers before considering them for coincidence (default = do not apply vetoes.")
+	parser.add_option("--coinc-end-time-segment", metavar = "seg", help = "The segment of time to retain coincident triggers from.  Uses segmentUtils.from_range_strings() format \"START:END\" for an interval of the form [START,END), \"START:\" for an interval of the form [START,INF), and \":END\" for an interval of the form (-INF,END) (default = retain all coincidences)")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
 
@@ -215,16 +218,11 @@ for n, filename in enumerate(filenames, start = 1):
 	# with ligolw_add, the veto lists will not get duplicated.
 	#
 
-	if not ligolw_segments.has_segment_tables(xmldoc):
-		if options.verbose:
-			print("warning: no segment definitions found, vetoes will not be applied", file=sys.stderr)
-		vetoes = None
-	elif not ligolw_segments.has_segment_tables(xmldoc, name = options.vetoes_name):
-		if options.verbose:
-			print("warning: document contains segment definitions but none named \"%s\", vetoes will not be applied" % options.vetoes_name, file=sys.stderr)
-		vetoes = None
+	seglists = ligolw_segments.segmenttable_get_by_name(xmldoc, options.snr_segments_name).coalesce()
+	if options.vetoes_segments_name is not None:
+		vetoes = ligolw_segments.segmenttable_get_by_name(xmldoc, options.vetoes_segments_name).coalesce()
 	else:
-		vetoes = ligolw_segments.segmenttable_get_by_name(xmldoc, options.vetoes_name).coalesce()
+		vetoes = None
 
 	#
 	# Run coincidence algorithm.
@@ -235,7 +233,7 @@ for n, filename in enumerate(filenames, start = 1):
 		process_id = process.process_id,
 		delta_t = options.threshold,
 		ntuple_comparefunc = ntuple_comparefunc,
-		seglists = None,	# FIXME
+		seglists = seglists,
 		veto_segments = vetoes,
 		min_instruments = options.min_instruments,
 		verbose = options.verbose

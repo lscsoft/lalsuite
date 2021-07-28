@@ -214,6 +214,7 @@ for n, filename in enumerate(filenames):
 		coinc_definer_row = CoincDef,
 		delta_t = delta_t,
 		ntuple_comparefunc = ntuple_comparefunc,
+		min_instruments = options.min_instruments,
 		verbose = options.verbose
 	)
 
