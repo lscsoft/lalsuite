@@ -104,6 +104,7 @@ Depends:
  python-ligo-segments,
  python-matplotlib,
  python-scipy,
+ python-tqdm,
 Description: Python bindings for LALBurst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains Python bindings for the LAL Burst library.
@@ -135,6 +136,7 @@ Depends:
  python3-ligo-segments,
  python3-matplotlib,
  python3-scipy,
+ python3-tqdm,
 Description: Python 3 bindings foar LALBurst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Burst library.

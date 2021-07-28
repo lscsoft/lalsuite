@@ -63,6 +63,7 @@ Depends:
  python3-ligo-segments,
  python3-ligo-lw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
  python3-six,
+ python3-tqdm,
 Breaks: lalinference-python (<< 1.9.4.1-1~)
 Description: LSC Algorithm Library Applications
  The LSC Algorithm Library Applications for gravitational wave data analysis.

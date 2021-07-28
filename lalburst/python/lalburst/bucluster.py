@@ -146,7 +146,7 @@ def ExcessPowerPostFunc(sngl_burst_table, offset):
 		row.peak = offset + row.peak_time
 
 
-def ExcessPowerSortKeyFunc(a, b):
+def ExcessPowerSortKeyFunc(a):
 	"""
 	Sort key to grouping excess power triggers near triggers with which
 	they might cluster.
@@ -373,7 +373,7 @@ def bucluster(
 		if verbose:
 			print("document does not contain a sngl_burst table, skipping ...", file=sys.stderr)
 		return xmldoc, False
-	seglists = ligolw_search_summary.segmentlistdict_fromsearchsummary(xmldoc, program = program).coalesce()
+	seglists = ligolw_search_summary.segmentlistdict_fromsearchsummary_out(xmldoc, program = program).coalesce()
 
 	#
 	# Preprocess candidates

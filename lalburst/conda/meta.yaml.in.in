@@ -124,6 +124,7 @@ outputs:
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy
+        - tqdm
       run:
         - gsl
         - liblal  # [linux]
@@ -138,6 +139,7 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy
+        - tqdm
     test:
       requires:
         - pytest >=4.0.0a0

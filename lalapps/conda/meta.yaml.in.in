@@ -80,6 +80,7 @@ requirements:
     - python-lalmetaio >={{ lalmetaio_version }}
     - python-lalpulsar >={{ lalpulsar_version }}
     - python-lalsimulation >={{ lalsimulation_version }}
+    - tqdm
   run:
     - cfitsio
     - fftw
@@ -106,6 +107,7 @@ requirements:
     - python-lalpulsar >={{ lalpulsar_version }}
     - python-lalsimulation >={{ lalsimulation_version }}
     - python-ligo-lw >={{ python_ligo_lw_version }}
+    - tqdm
 
 test:
   imports:

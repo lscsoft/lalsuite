@@ -68,6 +68,7 @@ Requires: python%{python3_pkgversion}-matplotlib
 Requires: python%{python3_pkgversion}-numpy
 Requires: python%{python3_pkgversion}-scipy
 Requires: python%{python3_pkgversion}-six
+Requires: python%{python3_pkgversion}-tqdm
 Obsoletes: lalxml < 1.2.5-1
 Obsoletes: lalxml-debuginfo < 1.2.5-1
 Obsoletes: lalxml-devel < 1.2.5-1
