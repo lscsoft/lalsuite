@@ -112,7 +112,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -124,7 +124,7 @@ LALSUITE_USE_LIBTOOL
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for Python
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])

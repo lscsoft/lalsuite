@@ -40,10 +40,7 @@ from optparse import OptionParser
 import os
 import sys
 import tempfile
-try:
-    from configparser import (ConfigParser, NoOptionError)
-except ImportError:  # python < 3
-    from ConfigParser import (SafeConfigParser as ConfigParser, NoOptionError)
+from configparser import (ConfigParser, NoOptionError)
 
 
 from ligo import segments

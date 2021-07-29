@@ -7,7 +7,6 @@ EXTRA_DIST = \
 	lalinference-octave.install \
 	liblalinference@LIBMAJOR@.install \
 	liblalinference-dev.install \
-	python-lalinference.install \
 	python3-lalinference.install \
 	rules \
 	lalsuite.mk \

@@ -7,7 +7,6 @@ EXTRA_DIST = \
 	lalinspiral-octave.install \
 	liblalinspiral@LIBMAJOR@.install \
 	liblalinspiral-dev.install \
-	python-lalinspiral.install \
 	python3-lalinspiral.install \
 	rules \
 	lalsuite.mk \

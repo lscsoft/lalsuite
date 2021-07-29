@@ -7,7 +7,6 @@ EXTRA_DIST = \
 	lalpulsar-octave.install \
 	liblalpulsar-dev.install \
 	liblalpulsar@LIBMAJOR@.install \
-	python-lalpulsar.install \
 	python3-lalpulsar.install \
 	rules \
 	lalsuite.mk \
