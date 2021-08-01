@@ -190,5 +190,4 @@ setup(
     install_requires=['lscsoft-glue', 'ligo-segments', 'matplotlib',
                       'numpy>=1.7', 'python-dateutil', 'scipy',
                      'importlib_resources;python_version<"3.7"'],
-    python_requires=">=3.5",
 )
