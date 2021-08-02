@@ -129,7 +129,7 @@ def test_IMRPhenomXHM():
 
     """
 
-    expected_result = np.array([1005.1602387413318, 170.00035596090245, 768.1841403827161, 169.12938008572488])
+    expected_result = np.array([1005.16009183, 169.88197475, 768.18401876, 169.12711241])
 
     new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXHM, [[2,2],[2,-2],[2,1],[2,-1],[3,3],[3,-3],[4,4],[4,-4]]))
 
@@ -176,7 +176,7 @@ def test_IMRPhenomXPHM():
 
     """
 
-    expected_result = np.array([1166.0110734324703, 334.37564200163365, 767.8213461946891, 326.0800374360311])
+    expected_result = np.array([1166.01091848, 334.5693217,  767.82099062, 326.09652364])
 
     new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[2,2],[2,1],[3,3],[4,4]]))
 

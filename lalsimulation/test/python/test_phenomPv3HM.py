@@ -103,7 +103,7 @@ def test_IMRPhenomPv3HM():
 
     """
 
-    expected_result = np.array([1533.6929276824517, 324.65007907740073, 1541.092503933986, 323.69337324077907])
+    expected_result = np.array([1533.69290062, 324.65008927, 1541.09248084, 323.69338373])
 
     new_result  =  np.array(gen_test_data())
 
