@@ -140,7 +140,7 @@ def test_IMRPhenomXHM():
     new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXHM, [[3,2],[3,-2]]))
 
     # rtol with 32 mode needs to b more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=3e-4, err_msg="IMRPhenomXHM 32 mode test failed")
+    np.testing.assert_allclose(new_result, expected_result, rtol=3.1e-4, err_msg="IMRPhenomXHM 32 mode test failed")
 
 
 def test_IMRPhenomXP():
