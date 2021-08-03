@@ -1,4 +1,4 @@
-# Copyright (C) 2007-2014  Kipp Cannon
+# Copyright (C) 2007--2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,9 +22,6 @@
 #
 # =============================================================================
 #
-
-
-from __future__ import print_function
 
 
 import copy
@@ -129,7 +126,7 @@ class LnLRDensity(snglcoinc.LnLRDensity):
 
 
 class BurcaCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
-	ligo_lw_name_suffix = u"excesspower_coincparamsdistributions"
+	ligo_lw_name_suffix = "excesspower_coincparamsdistributions"
 
 	@ligolw_array.use_in
 	@ligolw_param.use_in
@@ -164,8 +161,8 @@ class BurcaCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 
 	@classmethod
 	def get_xml_root(cls, xml, name):
-		name = u"%s:%s" % (name, cls.ligo_lw_name_suffix)
-		xml = [elem for elem in xml.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == name]
+		name = "%s:%s" % (name, cls.ligo_lw_name_suffix)
+		xml = [elem for elem in xml.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute("Name") and elem.Name == name]
 		if len(xml) != 1:
 			raise ValueError("XML tree must contain exactly one %s element named %s" % (ligolw.LIGO_LW.tagName, name))
 		return xml[0]
@@ -179,7 +176,7 @@ class BurcaCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		self.candidates = LnLRDensity.from_xml(xml, "candidates")
 
 	def to_xml(self, name):
-		xml = ligolw.LIGO_LW({u"Name": u"%s:%s" % (name, self.ligo_lw_name_suffix)})
+		xml = ligolw.LIGO_LW({"Name": "%s:%s" % (name, self.ligo_lw_name_suffix)})
 		xml.appendChild(self.numerator.to_xml("numerator"))
 		xml.appendChild(self.denominator.to_xml("denominator"))
 		xml.appendChild(self.candidates.to_xml("candidates"))
@@ -345,7 +342,7 @@ class EPGalacticCoreCoincParamsDistributions(BurcaCoincParamsDistributions):
 process_program_name = "lalapps_burca_tailor"
 
 
-def gen_likelihood_control(coinc_params_distributions, seglists, name = u"lalapps_burca_tailor", comment = u""):
+def gen_likelihood_control(coinc_params_distributions, seglists, name = "lalapps_burca_tailor", comment = ""):
 	xmldoc = ligolw.Document()
 	node = xmldoc.appendChild(ligolw.LIGO_LW())
 

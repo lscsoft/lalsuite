@@ -1,4 +1,4 @@
-# Copyright (C) 2006  Kipp Cannon
+# Copyright (C) 2006--2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,9 +22,6 @@
 #
 # =============================================================================
 #
-
-
-from __future__ import print_function
 
 
 import math
@@ -63,7 +60,7 @@ def append_process(xmldoc, cluster_algorithm, comment):
 			"cluster_algorithm": cluster_algorithm
 		},
 		version = __version__,
-		cvs_repository = u"lscsoft",
+		cvs_repository = "lscsoft",
 		cvs_entry_time = __date__,
 		comment = comment
 	)
@@ -148,8 +145,8 @@ def ExcessPowerPostFunc(sngl_burst_table, offset):
 
 def ExcessPowerSortKeyFunc(a):
 	"""
-	Sort key to grouping excess power triggers near triggers with which
-	they might cluster.
+	Sort key for grouping excess power triggers near triggers with
+	which they might cluster.
 	"""
 	return (a.ifo, a.channel, a.search, a.start)
 

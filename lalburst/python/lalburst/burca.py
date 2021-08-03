@@ -1,4 +1,4 @@
-# Copyright (C) 2006--2011,2013,2015--2017  Kipp Cannon
+# Copyright (C) 2006--2011,2013,2015--2019,2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,9 +22,6 @@
 #
 # =============================================================================
 #
-
-
-from __future__ import print_function
 
 
 from bisect import bisect_left, bisect_right
@@ -94,7 +91,7 @@ class SnglBurst(lsctables.SnglBurst):
 #
 
 
-ExcessPowerBBCoincDef = lsctables.CoincDef(search = u"excesspower", search_coinc_type = 0, description = u"sngl_burst<-->sngl_burst coincidences")
+ExcessPowerBBCoincDef = lsctables.CoincDef(search = "excesspower", search_coinc_type = 0, description = "sngl_burst<-->sngl_burst coincidences")
 
 
 class ExcessPowerCoincTables(snglcoinc.CoincTables):
@@ -171,7 +168,7 @@ class ExcessPowerCoincTables(snglcoinc.CoincTables):
 #
 
 
-StringCuspBBCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_type = 0, description = u"sngl_burst<-->sngl_burst coincidences")
+StringCuspBBCoincDef = lsctables.CoincDef(search = "StringCusp", search_coinc_type = 0, description = "sngl_burst<-->sngl_burst coincidences")
 
 
 class StringCuspCoincTables(snglcoinc.CoincTables):
@@ -335,7 +332,7 @@ def burca(
 	#
 
 	for node, events in time_slide_graph.pull(coinc_sieve = ntuple_comparefunc, flush = True):
-		coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events, u"sngl_burst"))
+		coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events, "sngl_burst"))
 
 	#
 	# done

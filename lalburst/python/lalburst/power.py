@@ -28,9 +28,6 @@ Excess power pipeline construction tools.
 """
 
 
-from __future__ import print_function
-
-
 import errno
 import os
 import sys
@@ -342,7 +339,7 @@ class BurstInjNode(pipeline.CondorDAGNode,pipeline.AnalysisNode):
 		"""
 		if not self.output_cache:
 			# FIXME:  instruments hardcoded to "everything"
-			self.output_cache = [CacheEntry(u"G1+H1+H2+L1+T1+V1", self.__usertag, segments.segment(lal.LIGOTimeGPS(self.get_start()), lal.LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
+			self.output_cache = [CacheEntry("G1+H1+H2+L1+T1+V1", self.__usertag, segments.segment(lal.LIGOTimeGPS(self.get_start()), lal.LIGOTimeGPS(self.get_end())), "file://localhost" + os.path.abspath(self.get_output()))]
 		return self.output_cache
 
 	def get_output_files(self):

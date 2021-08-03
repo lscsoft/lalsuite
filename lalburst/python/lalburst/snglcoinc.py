@@ -24,10 +24,6 @@
 #
 
 
-# python 2
-from __future__ import print_function
-
-
 """
 Generic time interval coincidence engine.
 """
@@ -47,14 +43,7 @@ import random
 import scipy.optimize
 from scipy import spatial
 import sys
-try:
-	# python 2
-	from UserDict import DictMixin
-	class UserDict(object, DictMixin):
-		pass
-except ImportError:
-	# python 3
-	from collections import UserDict
+from collections import UserDict
 import warnings
 
 
@@ -906,10 +895,7 @@ class coincgen_doubles(object):
 		# construct coincident pairs.  the pairs are the python IDs
 		# of the coincident events, not the events themselves.
 
-		# FIXME:  when switching to Python 3 use
-		#yield from self.doublesgen(flusheda + fornexttimea, offset_a, flushedb + fornexttimeb)
-		for pair in self.doublesgen(flusheda + fornexttimea, offset_a, flushedb + fornexttimeb):
-			yield pair
+		yield from self.doublesgen(flusheda + fornexttimea, offset_a, flushedb + fornexttimeb)
 
 		# populate the flushed and flushed_unused sets
 
@@ -2452,7 +2438,7 @@ class LnLRDensity(object):
 		Subclasses must chain to this method, then customize the
 		return value as needed.
 		"""
-		return ligolw.LIGO_LW({u"Name": u"%s:lnlrdensity" % name})
+		return ligolw.LIGO_LW({"Name": "%s:lnlrdensity" % name})
 
 	@classmethod
 	def get_xml_root(cls, xml, name):
@@ -2461,8 +2447,8 @@ class LnLRDensity(object):
 		.from_xml() method to find the root element of the XML
 		serialization.
 		"""
-		name = u"%s:lnlrdensity" % name
-		xml = [elem for elem in xml.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == name]
+		name = "%s:lnlrdensity" % name
+		xml = [elem for elem in xml.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute("Name") and elem.Name == name]
 		if len(xml) != 1:
 			raise ValueError("XML tree must contain exactly one %s element named %s" % (ligolw.LIGO_LW.tagName, name))
 		return xml[0]
