@@ -2201,12 +2201,19 @@ class BinnedLnPDF(BinnedDensity):
 		array([       -inf, -1.38629436, -1.38629436,        -inf,        -inf])
 		"""
 		super(BinnedLnPDF, self).__iadd__(other)
-		# c = a + b
+		# how to add two numbers when all you know are their
+		# logarithms:
+		#
+		#	c = a + b
+		#
 		# if b is smaller than a:
-		# c = a (1 + b/a)
-		# log c = log a + log1p(b / a)
-		# log c = log a + log1p(exp(log b - log a))
-		# otherwise, swap a and b.
+		#
+		#	c = a (1 + b/a)
+		#	log c = log a + log1p(b / a)
+		#	log c = log a + log1p(exp(log b - log a))
+		#
+		# otherwise, if a is smaller than b, do the same but swap a
+		# and b.
 		if self.norm >= other.norm:
 			self.norm += math.log1p(math.exp(other.norm - self.norm))
 		else:
