@@ -1,4 +1,4 @@
-# Copyright (C) 2009--2018  Kipp Cannon
+# Copyright (C) 2009--2019,2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,9 +22,6 @@
 #
 # =============================================================================
 #
-
-
-from __future__ import print_function
 
 
 try:
