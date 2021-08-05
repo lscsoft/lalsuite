@@ -33,7 +33,8 @@ from distutils.command.build_scripts import build_scripts as _build_scripts
 from distutils import log
 
 # These variables come from automake.
-subst = dict(prefix=os.path.abspath('build/inst'))
+subst = {}
+subst['prefix'] = subst['PYTHON_PREFIX'] = subst['PYTHON_EXEC_PREFIX'] = os.path.abspath('build/inst')
 subst['exec_prefix'] = Template('@exec_prefix@').substitute(**subst)
 BINDIR = Template('@bindir@').substitute(**subst)
 DATADIR = Template('$prefix/share').substitute(**subst)
