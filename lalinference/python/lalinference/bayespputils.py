@@ -151,8 +151,8 @@ tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat','
 fourPiecePolyParams=['logp1','gamma1','gamma2','gamma3']
 spectralParams=['sdgamma0','sdgamma1','sdgamma2','sdgamma3']
 energyParams=['e_rad', 'e_rad_evol', 'e_rad_nonevol', 'l_peak', 'l_peak_evol', 'l_peak_nonevol', 'e_rad_maxldist', 'e_rad_maxldist_evol', 'e_rad_maxldist_nonevol']
-spin_induced_quad_terms = ['dquadmon1','dquadmon2','dquadmona', 'dquadmona']
-strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams+lorentzInvarianceViolationParams+spin_induced_quad_terms
+spininducedquadParams = ['dquadmon1','dquadmon2','dquadmona', 'dquadmona']
+strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams+lorentzInvarianceViolationParams+spininducedquadParams
 
 #Extrinsic
 distParams=['distance','distMPC','dist','distance_maxl']
