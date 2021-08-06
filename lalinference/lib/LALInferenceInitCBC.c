@@ -2318,6 +2318,14 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         REAL8 dbeta_min=-1.;
         REAL8 dsigma_max=1.;
         REAL8 dsigma_min=-1.;
+        REAL8 dQuadMon1_min=0.0;
+        REAL8 dQuadMon1_max=20.0;
+        REAL8 dQuadMon2_min=0.0;
+        REAL8 dQuadMon2_max=20.0;
+        REAL8 dQuadMonS_min=0.0;
+        REAL8 dQuadMonS_max=20.0;
+        REAL8 dQuadMonA_min=0.0;
+        REAL8 dQuadMonA_max=20.0;
         REAL8 tmpVal=0.0;
         if ((pptb=LALInferenceGetProcParamVal(commandLine,"--LIV_A_sign"))) {
           REAL8 LIV_A_sign;
@@ -2400,7 +2408,13 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
             LALInferenceRegisterUniformVariableREAL8(state, model->params, "log10lambda_eff", 3.0, log10lambda_eff_min, log10lambda_eff_max, LALINFERENCE_PARAM_LINEAR);
           }
       }
-    }
+        /* Adding terms for spin-induced quadrupole moments  */
+        if (checkParamInList(ppt->value,"dQuadMon1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", tmpVal, dQuadMon1_min, dQuadMon1_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dQuadMon2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon2", tmpVal, dQuadMon2_min, dQuadMon2_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dQuadMonS")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonS", tmpVal, dQuadMonS_min, dQuadMonS_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dQuadMonA")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonA", tmpVal, dQuadMonA_min, dQuadMonA_max, LALINFERENCE_PARAM_LINEAR);
+
+    
     ppt=LALInferenceGetProcParamVal(commandLine,"--ppe-parameters");
     if (ppt)
     {
