@@ -358,25 +358,57 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
   }
 
 
-/* ==== Spin-induced quadrupole moment parameters ==== */
-  if(LALInferenceCheckVariable(model->params, "dQuadMon1"))
-    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1"));
-  if(LALInferenceCheckVariable(model->params, "dQuadMon2"))
-    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2"));
-  REAL8 dQuadMonS = 0.;
-  REAL8 dQuadMonA = 0.;
+/* ==== Spin induced quadrupole moment PARAMETERS ==== */
+ 
+ if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
+    REAL8 dQuadMon1=0.;
+    REAL8 dQuadMon2=0.;
+    REAL8 dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
+    REAL8 dQuadMonA = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonA");
+    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
+  }
+ else {
+  
+  if(LALInferenceCheckVariable(model->params, "dQuadMon1")){
+    REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
+   fprintf(stdout,"dQuadMon1: %e \n",dQuadMon1);
+      }
+  if(LALInferenceCheckVariable(model->params, "dQuadMon2")){
+    REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+   fprintf(stdout,"dQuadMon2: %e \n",dQuadMon2);
+      }
 
   if(LALInferenceCheckVariable(model->params, "dQuadMonS")){
     REAL8 dQuadMon1=0.;
     REAL8 dQuadMon2=0.;
-    dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
+    REAL8 dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
+    REAL8 dQuadMonA = 0.;
     LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+	fprintf(stdout,"Only dQaudMonS is sampled");
+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
   }
 
+  if(LALInferenceCheckVariable(model->params, "dQuadMonA")){
+    REAL8 dQuadMon1=0.;
+    REAL8 dQuadMon2=0.;
+    REAL8 dQuadMonA = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonA");
+    REAL8 dQuadMonS = 0.;
+    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+	fprintf(stdout,"Only dQaudMonA is sampled");
+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
+  }
 
-
+  }
   /* ==== TIDAL PARAMETERS ==== */
   if(LALInferenceCheckVariable(model->params, "lambda1"))
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
@@ -859,25 +891,57 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
   }
 
 
-/* ==== Spin-induced quadrupole moment parameters ==== */
-  if(LALInferenceCheckVariable(model->params, "dQuadMon1"))
-    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1"));
-  if(LALInferenceCheckVariable(model->params, "dQuadMon2"))
-    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2"));
-  REAL8 dQuadMonS = 0.;
-  REAL8 dQuadMonA = 0.;
+/* ==== Spin induced quadrupole moment PARAMETERS ==== */
+
+ if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
+    REAL8 dQuadMon1=0.;
+    REAL8 dQuadMon2=0.;
+    REAL8 dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
+    REAL8 dQuadMonA = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonA");
+    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
+  }
+ else {
+  
+  if(LALInferenceCheckVariable(model->params, "dQuadMon1")){
+    REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
+   fprintf(stdout,"dQuadMon1: %e \n",dQuadMon1);
+      }
+  if(LALInferenceCheckVariable(model->params, "dQuadMon2")){
+    REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+   fprintf(stdout,"dQuadMon2: %e \n",dQuadMon2);
+      }
 
   if(LALInferenceCheckVariable(model->params, "dQuadMonS")){
     REAL8 dQuadMon1=0.;
     REAL8 dQuadMon2=0.;
-    dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
+    REAL8 dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
+    REAL8 dQuadMonA = 0.;
     LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+	fprintf(stdout,"Only dQaudMonS is sampled");
+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
   }
 
+  if(LALInferenceCheckVariable(model->params, "dQuadMonA")){
+    REAL8 dQuadMon1=0.;
+    REAL8 dQuadMon2=0.;
+    REAL8 dQuadMonA = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonA");
+    REAL8 dQuadMonS = 0.;
+    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+	fprintf(stdout,"Only dQaudMonA is sampled");
+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
+  }
 
-
+  }
   /* ==== TIDAL PARAMETERS ==== */
   if(LALInferenceCheckVariable(model->params, "lambda1"))
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
@@ -1464,23 +1528,58 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
         }
     }
 
-/* ==== Spin-induced quadrupole moment parameters ==== */
-  if(LALInferenceCheckVariable(model->params, "dQuadMon1"))
-    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1"));
-  if(LALInferenceCheckVariable(model->params, "dQuadMon2"))
-    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2"));
-  REAL8 dQuadMonS = 0.;
-  REAL8 dQuadMonA = 0.;
+/* ==== Spin induced quadrupole moment PARAMETERS ==== */
+
+
+ if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
+    REAL8 dQuadMon1=0.;
+    REAL8 dQuadMon2=0.;
+    REAL8 dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
+    REAL8 dQuadMonA = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonA");
+    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+        fprintf(stdout,"Both dQuadMonS and dQaudMonA are  sampled");
+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
+  }
+ else {
+  
+  if(LALInferenceCheckVariable(model->params, "dQuadMon1")){
+    REAL8 dQuadMon1 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon1");
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
+   fprintf(stdout,"dQuadMon1: %e \n",dQuadMon1);
+      }
+  if(LALInferenceCheckVariable(model->params, "dQuadMon2")){
+    REAL8 dQuadMon2 = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMon2");
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+   fprintf(stdout,"dQuadMon2: %e \n",dQuadMon2);
+      }
 
   if(LALInferenceCheckVariable(model->params, "dQuadMonS")){
     REAL8 dQuadMon1=0.;
     REAL8 dQuadMon2=0.;
-    dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
+    REAL8 dQuadMonS = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonS");
+    REAL8 dQuadMonA = 0.;
     LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+	fprintf(stdout,"Only dQaudMonS is sampled");
+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
   }
 
+  if(LALInferenceCheckVariable(model->params, "dQuadMonA")){
+    REAL8 dQuadMon1=0.;
+    REAL8 dQuadMon2=0.;
+    REAL8 dQuadMonA = *(REAL8*) LALInferenceGetVariable(model->params, "dQuadMonA");
+    REAL8 dQuadMonS = 0.;
+    LALInferencedQuadMonSdQuadMonA(dQuadMonS,dQuadMonA,&dQuadMon1,&dQuadMon2);
+    XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
+    XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
+	fprintf(stdout,"Only dQaudMonA is sampled");
+    fprintf(stdout,"dQM1: %e, dQM2: %e, dQMS: %e, dQMA: %e \n",dQuadMon1,dQuadMon2,dQuadMonS,dQuadMonA);
+  }
+
+  }
 
 
     /* ==== TIDAL PARAMETERS ==== */

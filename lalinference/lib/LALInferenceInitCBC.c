@@ -2318,14 +2318,8 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         REAL8 dbeta_min=-1.;
         REAL8 dsigma_max=1.;
         REAL8 dsigma_min=-1.;
-        REAL8 dQuadMon1_min=-200.0;
-        REAL8 dQuadMon1_max=200.0;
-        REAL8 dQuadMon2_min=-200.0;
-        REAL8 dQuadMon2_max=200.0;
-        REAL8 dQuadMonS_min=-200.0;
-        REAL8 dQuadMonS_max=200.0;
-        REAL8 dQuadMonA_min=-200.0;
-        REAL8 dQuadMonA_max=200.0;
+        REAL8 dQuadMon_min=-200.0;
+        REAL8 dQuadMon_max=200.0;
         REAL8 tmpVal=0.0;
         if ((pptb=LALInferenceGetProcParamVal(commandLine,"--LIV_A_sign"))) {
           REAL8 LIV_A_sign;
@@ -2345,6 +2339,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
           }
           else LALInferenceAddVariable(model->params,"nonGR_alpha", &nonGR_alpha, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
         }
+        UINT4 nParams_dQuadMon= 0;
 	/* Relative shifts for inspiral phase PN coefficients (absolute value for dchi1) */
         if (checkParamInList(ppt->value,"dchi0")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi0", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dchi1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi1", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
@@ -2378,6 +2373,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         if (checkParamInList(ppt->value,"dbeta1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta1", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dbeta2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta2", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dbeta3")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dbeta3", tmpVal, dbeta_min, dbeta_max, LALINFERENCE_PARAM_LINEAR);
+<<<<<<< HEAD
         if (checkParamInList(ppt->value,"lambda_eff")) {
           if (ppta==NULL) {
             XLALPrintError("A value for nonGR_alpha has to be passed with lambda_eff.\n");
@@ -2408,13 +2404,49 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
             LALInferenceRegisterUniformVariableREAL8(state, model->params, "log10lambda_eff", 3.0, log10lambda_eff_min, log10lambda_eff_max, LALINFERENCE_PARAM_LINEAR);
           }
       }
-        /* Adding terms for spin-induced quadrupole moments  */
-        if (checkParamInList(ppt->value,"dQuadMon1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", tmpVal, dQuadMon1_min, dQuadMon1_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dQuadMon2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon2", tmpVal, dQuadMon2_min, dQuadMon2_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dQuadMonS")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonS", tmpVal, dQuadMonS_min, dQuadMonS_max, LALINFERENCE_PARAM_LINEAR);
-        if (checkParamInList(ppt->value,"dQuadMonA")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonA", tmpVal, dQuadMonA_min, dQuadMonA_max, LALINFERENCE_PARAM_LINEAR);
 
-    
+  /* Adding terms for spin-induced quadrupole moments  */
+        if (checkParamInList(ppt->value,"dQuadMon1")) 
+             nParams_dQuadMon++ ;
+        if (checkParamInList(ppt->value,"dQuadMon2")) 
+             nParams_dQuadMon++ ;
+        if (checkParamInList(ppt->value,"dQuadMonS")) 
+             nParams_dQuadMon++ ;
+        if (checkParamInList(ppt->value,"dQuadMonA")) 
+             nParams_dQuadMon++ ;
+
+      if (nParams_dQuadMon == 1 )
+      { 	
+        if (checkParamInList(ppt->value,"dQuadMon1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dQuadMon2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon2", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dQuadMonS")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonS", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dQuadMonA")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonA", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+      }
+	
+	  if (nParams_dQuadMon == 2 )
+      {
+          if (checkParamInList(ppt->value,"dQuadMonS") && checkParamInList(ppt->value,"dQuadMonA"))
+          {
+            LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonS", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+            LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonA", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+		  }
+          else  
+		  { 
+			if (!checkParamInList(ppt->value,"dQuadMon1") && !checkParamInList(ppt->value,"dQuadMon2"))
+			 fprintf(stderr, "\n For dQuadMon parameters, allowed two-parameter sampling options are either {dQuadMon1,dQuadMon2} or {dQuadMonS,dQuadMonA}. . \n Switching to default sampling option {dQuadMon1,dQuadMon2} . .\n");	
+            LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+            LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon2", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+		  }
+     }
+
+      if (nParams_dQuadMon > 2) 
+      {
+        fprintf(stderr, "\n For more than two dQuadMon parameters have been specified. Only two of them are independent.  \n Switching to default sampling option {dQuadMon1,dQuadMon2} . .\n");
+        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+		LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon2", tmpVal, dQuadMon_min, dQuadMon_max, LALINFERENCE_PARAM_LINEAR);
+	  }
+  }
+
     ppt=LALInferenceGetProcParamVal(commandLine,"--ppe-parameters");
     if (ppt)
     {
