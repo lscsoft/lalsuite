@@ -85,7 +85,8 @@ posterior_name_to_latex_name = {
     'dbeta3':r'$d\beta_3$',
     'dbeta4':r'$d\beta_4$',
     'dquadmons':r'$\delta\kappa_s$',
-    'dquadmon2':r'$\delta\kappa_1$',
+    'dquadmona':r'$\delta\kappa_a$',
+    'dquadmon1':r'$\delta\kappa_1$',
     'dquadmon2':r'$\delta\kappa_2$'
 }
 
