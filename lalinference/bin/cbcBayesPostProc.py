@@ -1161,7 +1161,7 @@ if __name__=='__main__':
         fixedBurnins = None
 
 
-    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,fourPiecePolyParams,spectralParams,spininducedquadParams
+    from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,fourPiecePolyParams,spectralParams
 
 
     oneDMenus={'Masses':None,'SourceFrame':None,'Timing':None,'Extrinsic':None,'Spins':None,'StrongField':None,'Others':None}
