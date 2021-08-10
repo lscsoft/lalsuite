@@ -31,8 +31,8 @@ Description: LSC Algorithm Library Simulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL Simulation library.
-Replaces: lalsimulation (<< 2.4.0-2~)
-Breaks: lalsimulation (<< 2.4.0-2~)
+Replaces: lalsimulation (<< 2.4.0-2~), liblalsimulation23 (<< 2.5.1-2~)
+Breaks: lalsimulation (<< 2.4.0-2~), liblalsimulation23 (<< 2.5.1-2~)
 
 Package: liblalsimulation-dev
 Section: libdevel

@@ -146,6 +146,7 @@ Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-scipy >= 0.8
 Requires: python%{python3_pkgversion}-six
+Obsoletes: python2-%{name} < 3.1.0-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
@@ -234,6 +235,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon May 17 2021 Adam Mercer <adam.mercer@ligo.org> 3.0.0-1
+- Update for 3.0.0
+
 * Fri Feb 05 2021 Adam Mercer <adam.mercer@ligo.org> 2.0.7-1
 - Update for 2.0.7
 
