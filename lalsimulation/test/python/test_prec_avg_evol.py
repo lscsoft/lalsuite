@@ -103,7 +103,7 @@ def test_inf(m1, m2, chi1, chi2, tilt1, tilt2, phi12, f0, tilt1_inf, tilt2_inf, 
 
     res = prec_avg_tilt_comp(m1, m2, chi1, chi2, tilt1, tilt2, phi12, f0, version=version)
 
-    rtol = 1.e-7
+    rtol = 1.e-6
     np.testing.assert_allclose([res['tilt1_inf'], res['tilt2_inf']], [tilt1_inf, tilt2_inf], \
         err_msg="Check of tilts at infinity failed.", rtol=rtol)
 
