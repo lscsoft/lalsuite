@@ -44,6 +44,14 @@
  */
 
 
+/* retrieve the template ID.  in modern versions of the pipeline any
+ * integer may be used as a template ID, including negative values, so
+ * error conditions must be checked for in the calling code using
+ * PyErr_Occurred().  mirroring the behaviour of PyLong_AsLong(), we return
+ * -1 on error so that calling codes can test for that value before calling
+ * PyErr_Occurred() to avoid the function call */
+
+
 static long get_template_id(PyObject *event)
 {
 	PyObject *template_id = PyObject_GetAttrString(event, "template_id");
@@ -58,8 +66,8 @@ static long get_template_id(PyObject *event)
 	val = PyLong_AsLong(template_id);
 #endif
 	Py_DECREF(template_id);
-	if(val < 0 && PyErr_Occurred())
-		return -1;
+	/* PyLong_AsLong()'s error code is the same as ours, so we don't do
+	 * error checking here.  the calling code is responsible */
 
 	return val;
 }
@@ -152,16 +160,13 @@ static int event_sequence_insert(struct event_sequence **event_sequences, int *n
 	PyObject **new_events;
 	int need_sort = 0;
 
-	if(template_id < 0) {
-		Py_DECREF(event);
+	if(template_id == -1 && PyErr_Occurred())
 		return -1;
-	}
 
 	event_sequence = event_sequence_get(*event_sequences, *n, template_id);
 	if(!event_sequence) {
 		struct event_sequence *new = realloc(*event_sequences, (*n + 1) * sizeof(**event_sequences));
 		if(!new) {
-			Py_DECREF(event);
 			PyErr_SetString(PyExc_MemoryError, "realloc() failed");
 			return -1;
 		}
@@ -176,11 +181,11 @@ static int event_sequence_insert(struct event_sequence **event_sequences, int *n
 
 	new_events = realloc(event_sequence->events, (event_sequence->length + 1) * sizeof(*event_sequence->events));
 	if(!new_events) {
-		Py_DECREF(event);
 		PyErr_SetString(PyExc_MemoryError, "realloc() failed");
 		return -1;
 	}
 	event_sequence->events = new_events;
+	Py_INCREF(event);
 	event_sequence->events[event_sequence->length] = event;
 	event_sequence->length++;
 
@@ -312,22 +317,13 @@ static int get_coincs__init__(PyObject *self, PyObject *args, PyObject *kwds)
 	if(!item)
 		return -1;
 	last = item + PySequence_Length(events);
-	for(; item < last; item++) {
-		long template_id = get_template_id(*item);
-		if(template_id < 0) {
-			event_sequence_free(get_coincs->event_sequences, get_coincs->n_sequences);
-			get_coincs->event_sequences = NULL;
-			get_coincs->n_sequences = 0;
-			return -1;
-		}
-		Py_INCREF(*item);
+	for(; item < last; item++)
 		if(event_sequence_insert(&get_coincs->event_sequences, &get_coincs->n_sequences, *item) < 0) {
 			event_sequence_free(get_coincs->event_sequences, get_coincs->n_sequences);
 			get_coincs->event_sequences = NULL;
 			get_coincs->n_sequences = 0;
 			return -1;
 		}
-	}
 
 	return 0;
 }
@@ -356,7 +352,7 @@ static PyObject *get_coincs__call__(PyObject *self, PyObject *args, PyObject *kw
 		return NULL;
 
 	template_id = get_template_id(event_a);
-	if(template_id < 0)
+	if(template_id == -1 && PyErr_Occurred())
 		return NULL;
 	event_sequence = event_sequence_get(get_coincs->event_sequences, get_coincs->n_sequences, template_id);
 	if(!(event_sequence && event_sequence->length)) {
