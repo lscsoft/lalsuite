@@ -1450,12 +1450,12 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     if(!model->eos_fam) XLAL_ERROR_NULL(XLAL_EINVAL, "Unable to initialise EOS family");
 
   // Pull in symmetric tidal deformability (lambdaS) and the uniform variable used to marginlise over the BinaryLove fit uncertainty
-    else if((ppt=LALInferenceGetProcParamVal(commandLine,"--BinaryLove"))){
+  } else if((ppt=LALInferenceGetProcParamVal(commandLine,"--BinaryLove"))){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaS", zero, lambdaSMin, lambdaSMax, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "BLuni", 0.5, 0.0, 1.0, LALINFERENCE_PARAM_LINEAR);
   }    
   
-  }
+  
 
     if(LALInferenceGetProcParamVal(commandLine,"--dQuadMon12")){
         LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
