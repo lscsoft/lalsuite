@@ -803,12 +803,12 @@ class coincgen_doubles(object):
 		for eventa in eventsa:
 			matches = queueb_get_coincs(eventa, offset_a, coinc_window)
 			if matches:
-				eventa_id = id(eventa)
-				used_add(eventa_id)
+				eventa = id(eventa)
+				used_add(eventa)
 				for eventb in matches:
-					eventb_id = id(eventb)
-					used_add(eventb_id)
-					yield unswap(eventa_id, eventb_id)
+					eventb = id(eventb)
+					used_add(eventb)
+					yield unswap(eventa, eventb)
 		self.used |= used
 
 	def pull(self, t, singles_ids):
