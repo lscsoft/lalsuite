@@ -471,22 +471,8 @@ class singlesqueue(object):
 		# compatible with both LIGOTimeGPS and with native Python
 		# numeric types.
 		self.t_complete = segments.NegInfinity
-		# queues of events.  the queues' contents are time-ordered,
-		# they contain the events upto .t_complete and from
-		# .t_complete on, respectively.
-		# FIXME:  I don't think we need complete and incomplete
-		# lists separately.  the motivation for keeping them
-		# separate is to minimize the number of entries that need
-		# to be sorted during the push operation (the events in the
-		# complete list are known to be sorted) in the belief that
-		# the extra cost of sorting all the events together in one
-		# list (not just the new events) excedes the cost of moving
-		# events from one list to the other.  I think the lists are
-		# usually short enough that the cost of in-sorting all
-		# events together is actually small enough that it isn't
-		# more than the move operation, but I don't know.
-		self.complete = []
-		self.incomplete = []
+		# queue of events.  the queue's contents are time-ordered.
+		self.queue = []
 		# id() --> event mapping for the contents of queue.  sets
 		# will be used to track the status of events, e.g. which
 		# have and haven't been used to form candidates.  we don't
@@ -514,7 +500,7 @@ class singlesqueue(object):
 		see what interval that is, in physical event times not
 		time-shifted event times.
 		"""
-		return self.complete[0] if self.complete else self.t_complete
+		return self.queue[0] if self.queue else self.t_complete
 
 	@property
 	def t_coinc_complete(self):
@@ -556,16 +542,8 @@ class singlesqueue(object):
 
 			# construct queue entries from the new events and
 			# insort with current "incomplete" queue
-			self.incomplete.extend(map(self.queueentry_from_event, events))
-			self.incomplete.sort()
-			if self.incomplete[0] < self.t_complete:
-				raise ValueError("t_complete violation: earliest event is %s, previous t_complete was %s" % (self.incomplete[0], self.t_complete))
-
-		# move events preceding the new t_complete from the
-		# incomplete to the complete queue.
-		i = bisect_left(self.incomplete, t_complete)
-		self.complete += self.incomplete[:i]
-		del self.incomplete[:i]
+			self.queue.extend(map(self.queueentry_from_event, events))
+			self.queue.sort()
 
 		# update the marker labelling time up to which the event
 		# list is complete
@@ -612,9 +590,8 @@ class singlesqueue(object):
 		# are we being flushed?  if so, return everything we've got
 		# and reset out state to .__init__() equivalent
 		if t is None:
-			events = tuple(entry.event for entry in self.complete) + tuple(entry.event for entry in self.incomplete)
-			del self.complete[:]
-			del self.incomplete[:]
+			events = tuple(entry.event for entry in self.queue)
+			del self.queue[:]
 			self.index.clear()
 			self.t_complete = segments.NegInfinity
 			return events, ()
@@ -630,16 +607,16 @@ class singlesqueue(object):
 		# the queue, and remove their IDs from the index.  this is
 		# calculating time C for this event list in the description
 		# above.
-		i = bisect_left(self.complete, t - self.max_coinc_window)
-		flushed_events = tuple(entry.event for entry in self.complete[:i])
-		del self.complete[:i]
+		i = bisect_left(self.queue, t - self.max_coinc_window)
+		flushed_events = tuple(entry.event for entry in self.queue[:i])
+		del self.queue[:i]
 		for event in flushed_events:
 			self.index.pop(id(event))
 		# collect other events that might be used again but that
 		# can form coincidences with things in other detectors up
 		# to t.  this is computing time F for this event list in
 		# the description above.
-		fornexttime_events = tuple(entry.event for entry in self.complete[:bisect_left(self.complete, t + self.max_coinc_window)])
+		fornexttime_events = tuple(entry.event for entry in self.queue[:bisect_left(self.queue, t + self.max_coinc_window)])
 		return flushed_events, fornexttime_events
 
 
