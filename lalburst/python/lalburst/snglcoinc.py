@@ -318,11 +318,6 @@ def light_travel_time(instrument1, instrument2):
 # and performance problems, events are removed from the set when they are
 # removed from the last queue that contains them.
 #
-# FIXME:  explain how that's done.  collections.Counter?  compute another
-# boundary, before A, which is the time before which no event in any
-# instrument in any time slide is required any longer and only flush events
-# prior to that?
-#
 # How to compute the times.  For each time slide,
 #
 # - D is the minimum across all instruments of
@@ -839,7 +834,7 @@ class coincgen_doubles(object):
 					yield unswap(eventa_id, eventb_id)
 		self.used |= used
 
-	def pull(self, t, flushed, flushed_unused):
+	def pull(self, t, singles_ids):
 		"""
 		Generate a sequence of 2-element tuples of Python IDs of
 		coincident event pairs.  Calling code is assumed to be in
@@ -860,15 +855,13 @@ class coincgen_doubles(object):
 		The order of the IDs in each tuple is alphabetical by
 		instrument.
 
-		The Python IDs of all events flushed from the queues are
-		placed in the flushed set.  Of those, the IDs of the
-		flushed events that were never reported in a coincident
-		pair are placed in the flushed_unused set.
+		The Python IDs of events flushed from the queues that have
+		not been reported in a coincident pair are placed in the
+		singles_ids set.
 
-		NOTE:  the flushed and flushed_unused parameters passed to
-		this function must be sets or set-like objects.  They must
-		support Python set manipulation methods, like .clear(),
-		.update(), and so on.
+		NOTE:  the singles_ids parameter passed to this function
+		must a set or set-like object.  It must support Python set
+		manipulation methods, like .clear(), .update(), and so on.
 		"""
 		# get the instrument names in alphabetical order, and
 		# compute the time offset of the one wrt the other.
@@ -893,17 +886,15 @@ class coincgen_doubles(object):
 
 		yield from self.doublesgen(flusheda + fornexttimea, offset_a, flushedb + fornexttimeb)
 
-		# populate the flushed and flushed_unused sets
+		# populate the singles_ids set and remove the events being
+		# flushed from the used set.  if we've been flushed, there
+		# better not be anything left
 
-		flushed.clear()
-		flushed.update(id(event) for event in flusheda)
-		flushed.update(id(event) for event in flushedb)
-		flushed_unused.clear()
-		flushed_unused |= flushed - self.used
-
-		# remove the events being flushed from the used set.  if
-		# we've been flushed, there better not be anything left
-
+		singles_ids.clear()
+		singles_ids.update(id(event) for event in flusheda)
+		singles_ids.update(id(event) for event in flushedb)
+		flushed = singles_ids.copy()
+		singles_ids -= self.used
 		self.used -= flushed
 		assert t is not None or not self.used
 
@@ -958,6 +949,8 @@ class TimeSlideGraphNode(object):
 			raise ValueError("offset_vector cannot be empty")
 		# the time up to which we have been pulled already
 		self.previous_t = segments.NegInfinity
+		# local reference to event_time() function.  required for
+		# cutting candidate sets to time boundaries.
 		self.event_time = coincgen_doubles_type.singlesqueue.event_time
 
 	@staticmethod
@@ -1024,13 +1017,11 @@ class TimeSlideGraphNode(object):
 		all candidates required to decide that set, which might
 		include candidates all of whose events come after t.
 
-		Three objects are returned:  a tuple of the (n=N)-way
+		Two objects are returned:  a tuple of the (n=N)-way
 		coincidences, where N is the number of instruments in this
-		node's offset vector, a set of the
+		node's offset vector, and a set of the
 		(min_instruments<=n<N)-way coincidences, which will be
-		empty if N < min_instruments, and a set of the Python IDs
-		of events that have been flushed from all internal queues
-		by this operation.
+		empty if N < min_instruments.
 
 		Since the (min_instruments<=n<N)-tuple coincidences cannot
 		go on to form (n>N)-tuple coincidences, any that fail to
@@ -1043,14 +1034,14 @@ class TimeSlideGraphNode(object):
 		candidates in the stream at this stage and cull them in a
 		single pass at the end.
 
-		For sequences of coincs, the coincidences are reported as
-		tuples of the Python id()'s of the events that form
-		coincidences.  The .index look-up table can be used to map
-		these id()'s back to the original events.  To do that,
-		however, a copy of the contents of the .index mapping must
-		be made before calling this method because this method will
-		result in some of the events in question being removed from
-		the queues, and thus also from the .index mapping.
+		The coincidences are reported as tuples of the Python IDs
+		of the events that form coincidences.  The .index look-up
+		table can be used to map these IDs back to the original
+		events.  To do that, however, a copy of the contents of the
+		.index mapping must be made before calling this method
+		because this method will result in some of the events in
+		question being removed from the queues, and thus also from
+		the .index mapping.
 		"""
 		#
 		# no-op unless time has advanced.  .previous_t is never
@@ -1058,7 +1049,7 @@ class TimeSlideGraphNode(object):
 		#
 
 		if t == self.previous_t:
-			return tuple(), set(), set()
+			return tuple(), set()
 
 		#
 		# record the t to which we are being pulled for use in
@@ -1087,13 +1078,7 @@ class TimeSlideGraphNode(object):
 		#
 
 		if len(self.offset_vector) == 1:
-			# NOTE:  because in a single-detector analysis
-			# there are no coincidence windows, the
-			# max_coinc_window parameter was set to 0 when
-			# initializing this queue, so the flushed list
-			# contains exactly everything upto t.
-			flushed_ids = set(id(event) for event in self.components[0].pull(t)[0])
-			return tuple((eventid,) for eventid in flushed_ids), set(), flushed_ids
+			return tuple((id(event),) for event in self.components[0].pull(t)[0]), set()
 
 		#
 		# is this a leaf node?  construct the coincs explicitly
@@ -1116,10 +1101,9 @@ class TimeSlideGraphNode(object):
 			# take the form of 1-detector coincs
 			#
 
-			flushed_ids = set()
-			partial_coincs = set()
-			coincs = tuple(sorted(self.components[0].pull(t, flushed_ids, partial_coincs)))
-			return coincs, (set((eventid,) for eventid in partial_coincs) if self.keep_partial else set()), flushed_ids
+			singles_ids = set()
+			coincs = tuple(sorted(self.components[0].pull(t, singles_ids)))
+			return coincs, (set((eventid,) for eventid in singles_ids) if self.keep_partial else set())
 
 		#
 		# this is a regular node in the graph.  use coincidence
@@ -1134,9 +1118,8 @@ class TimeSlideGraphNode(object):
 
 		# first collect all coincs and partial coincs from the
 		# component nodes in the graph
-		component_coincs_and_partial_coincs_and_flushed_ids = tuple(component.pull(t, verbose = verbose) for component in self.components)
-		component_coincs = tuple(elem[0] for elem in component_coincs_and_partial_coincs_and_flushed_ids)
-		flushed_ids = set.union(*(elem[2] for elem in component_coincs_and_partial_coincs_and_flushed_ids))
+		component_coincs_and_partial_coincs = tuple(component.pull(t, verbose = verbose) for component in self.components)
+		component_coincs = tuple(elem[0] for elem in component_coincs_and_partial_coincs)
 
 		if self.keep_partial:
 			# any coinc with n-1 instruments from the component
@@ -1172,11 +1155,11 @@ class TimeSlideGraphNode(object):
 			# coincs from the union of all pair-wise
 			# intersections of the (< n-1)-instrument partial
 			# coincs from our components.
-			for partial_coincsa, partial_coincsb in itertools.combinations((elem[1] for elem in component_coincs_and_partial_coincs_and_flushed_ids), 2):
+			for partial_coincsa, partial_coincsb in itertools.combinations((elem[1] for elem in component_coincs_and_partial_coincs), 2):
 				partial_coincs |= partial_coincsa & partial_coincsb
 		else:
 			partial_coincs = set()
-		del component_coincs_and_partial_coincs_and_flushed_ids
+		del component_coincs_and_partial_coincs
 
 		if verbose:
 			print("\tassembling %s ..." % str(self.offset_vector), file=sys.stderr)
@@ -1249,7 +1232,7 @@ class TimeSlideGraphNode(object):
 		# done.
 		#
 
-		return coincs, partial_coincs, flushed_ids
+		return coincs, partial_coincs
 
 
 class TimeSlideGraph(object):
@@ -1388,10 +1371,16 @@ class TimeSlideGraph(object):
 		else:
 			event_collector_push = event_collector.push
 
-		used_ids = set()
 		newly_reported_ids = set()
 		flushed_ids = set(index)
+		# avoid attribute look-ups in the loop
+		newly_reported_update = newly_reported_ids.update
+		used_update = self.used_ids.update
 		for n, node in enumerate(self.head, start = 1):
+			# avoid attribute look-ups in the loop
+			event_time = node.event_time
+			offset_vector = node.offset_vector
+
 			if verbose:
 				print("%d/%d: %s" % (n, len(self.head), str(node.offset_vector)), file=sys.stderr)
 
@@ -1406,40 +1395,19 @@ class TimeSlideGraph(object):
 			# coincs contain at least min_instruments events
 			# because those that don't meet the criteria are
 			# excluded during coinc construction.
-			# FIXME:  because we can't guarantee that an event
-			# will be flushed simultaneously from all queues in
-			# which it is stored, some of the flushed IDs
-			# reported by this .pull() operation might still be
-			# in other queues and we can't say for certain yet
-			# whether they will or will not be used to form a
-			# candidate (in some other offset vector, if not
-			# this one).  therefore, this _flushed_ids return
-			# value is not used for anything, and instead we
-			# use the .index view to determine the change in
-			# the contents of the queues.  I have not removed
-			# the mechanisms used to construct this
-			# _flushed_ids return value because I'm concerned
-			# the .index trick might not scale well for all
-			# pipelines, however if the .index trick works well
-			# then the _flushed_ids gathering code should be
-			# removed to eliminate its overhead.  an
-			# alternative might make use of collections.Counter
-			# to track the number of times each event is
-			# enqueued and then flushed, stack-style
-			coincs, partial_coincs, _flushed_ids = node.pull(t, verbose)
-			for event_ids in itertools.chain(coincs, partial_coincs):
+			for event_ids in itertools.chain(*node.pull(t, verbose)):
 				# use the index to convert Python IDs back
 				# to event objects
 				events = tuple(index[event_id] for event_id in event_ids)
 				# check the candidate's time, and skip
 				# those that don't meet the
 				# t_coinc_complete constraint
-				if min(node.event_time(event) + node.offset_vector[event.ifo] for event in events) not in candidate_seg:
+				if min(event_time(event) + offset_vector[event.ifo] for event in events) not in candidate_seg:
 					continue
 				# update the used IDs state and inform the
 				# event collector of a candidate
-				used_ids.update(event_ids)
-				event_collector_push(event_ids, node.offset_vector)
+				used_update(event_ids)
+				event_collector_push(event_ids, offset_vector)
 				# apply the coinc sieve test.  if the
 				# calling code has some mechanism to decide
 				# which n-tuples are worth saving for later
@@ -1449,10 +1417,9 @@ class TimeSlideGraph(object):
 				# events need to be recorded in the output
 				# document can see that some will not be
 				# needed.
-				if not coinc_sieve(events, node.offset_vector):
-					newly_reported_ids.update(event_ids)
+				if not coinc_sieve(events, offset_vector):
+					newly_reported_update(event_ids)
 					yield node, events
-		self.used_ids |= used_ids
 		if newly_reported_ids:
 			newly_reported_ids -= self.reported_ids
 			self.reported_ids |= newly_reported_ids
