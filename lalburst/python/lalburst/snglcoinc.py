@@ -43,7 +43,7 @@ import random
 import scipy.optimize
 from scipy import spatial
 import sys
-from collections import UserDict
+from collections import Counter, UserDict
 import warnings
 
 
@@ -1131,9 +1131,14 @@ class TimeSlideGraphNode(object):
 			# obtain the unused (< n-1)-instrument partial
 			# coincs from the union of all pair-wise
 			# intersections of the (< n-1)-instrument partial
-			# coincs from our components.
-			for partial_coincsa, partial_coincsb in itertools.combinations((elem[1] for elem in component_coincs_and_partial_coincs), 2):
-				partial_coincs |= partial_coincsa & partial_coincsb
+			# coincs from our components.  since each partial
+			# coinc can only be listed at most once in the
+			# result from each component, and because we must
+			# compute all possible pair-wise intersections of
+			# the sets, this is equivalent to finding the
+			# partial coincs that appear two or more times in
+			# the concatenated sequence.
+			partial_coincs.update(coinc for coinc, count in Counter(itertools.chain(*(elem[1] for elem in component_coincs_and_partial_coincs))).items() if count >= 2)
 		else:
 			partial_coincs = set()
 		del component_coincs_and_partial_coincs
