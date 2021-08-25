@@ -43,15 +43,15 @@ import random
 import scipy.optimize
 from scipy import spatial
 import sys
-from collections import UserDict
+from collections import Counter, UserDict
 import warnings
 
 
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw.utils import coincs as ligolw_coincs
+from ligo import segments
 import lal
-from ligo.segments import NegInfinity
 from . import offsetvector
 
 
@@ -144,28 +144,29 @@ def light_travel_time(instrument1, instrument2):
 #
 # The ingredients are shown in the diagram below:
 #
-#      #1 -----X----------X--X------------------X---X------]----->
+#      #1 -----X----------X--X------------------X---X------)----->
 #
-#           #2 ------X--------------X------X-X------------X]---X-X---->
+#           #2 ------X--------------X------X-X------------X)---X-X---->
 #
-# #3 ----X------X---------x--------------x]----------------->
+# #3 ----X------X---------x--------------x)----------------->
 # ----------------------------------------------------------------------> t
 #
 #
 # "X" = an event.  Each event has a unique discrete time associated with
 # it.  Physically the event might represent a signal lasting many tens
-# of minutes, but we require a "time" to be assigned to that signal somehow
-# and that will form the basis of the coincidence test.
+# of minutes, but regardless of that we require a "time" to be assigned to
+# that signal, and that time will form the basis of the coincidence test.
 #
 # "#1", etc. = a detector that provides a sequence of events.  Each
 # detector has a time offset applied to its events
 #
-# "]" = t_complete for that detector.  Calling code guarantees that the
-# event sequence for that detector is complete up to this time.  Events
-# might already have been collected at or following this time, but no
-# further events will be collected preceding that time.  In the diagram
-# above the event lists are shown displaced according to their respective
-# offsets, and the t_completes shifted accordingly.
+# ")" = t_complete for that detector.  Calling code guarantees that the
+# event sequence for that detector is complete up to (not necessarily
+# including) this time.  Events might already have been collected at or
+# following this time, but no further events will be collected preceding
+# that time.  In the diagram above the event lists are shown displaced
+# according to their respective offsets, and the t_completes shifted
+# accordingly.
 #
 # For each pair of detectors there is a coincidence window which is assumed
 # to equal some fixed time interval common to all detector pairs + the
@@ -176,11 +177,11 @@ def light_travel_time(instrument1, instrument2):
 #
 # Looking at the events again:
 #
-#      #1 -----X----------X--X------------------X---X------]----->
+#      #1 -----X----------X--X------------------X---X------)----->
 #
-#           #2 ------X--------------X------X-X------------X]---X-X---->
+#           #2 ------X--------------X------X-X------------X)---X-X---->
 #
-# #3 ----X------X---------x--------------x]----------------->
+# #3 ----X------X---------x--------------x)----------------->
 # ----------------------------------------------------------------------> t
 #                                         ^                ^
 #                                         B                A
@@ -214,53 +215,14 @@ def light_travel_time(instrument1, instrument2):
 # is reported more than once and no candidate that can be constructed from
 # the (complete) event sequences is missed.
 #
-# Looking at the events again:
-#
-#      #1 -----X----------X--X------------------X---X------]----->
-#                                          .
-#           #2 ------X--------------X------X-X------------X]---X-X---->
-#                                        .
-# #3 ----X------X---------x--------------x]----------------->
-# ----------------------------------------------------------------------> t
-#
-# Considering the two events marked with a ".", and imagining that they are
-# within their respective coincidence window, as described above we have
-# enough information to decide that that pair forms a #2+#3 double (and not
-# a triple with #1) because the event list for #3 is complete up to that
-# point, and the event list for #1 and #2 are both complete well beyond
-# that point.  After, we can dispose of all of the events from #3 up to its
-# t_complete because we have found all the candidates they can participate
-# in and so we need not consider them again, however we need to retain the
-# "." event from #2 because it might still participate in a second
-# coincidence with a later event from #3 that we haven't collected yet (not
-# all pipelines will permit this, for example if there is rate-limiting
-# logic that prevents two events from occuring in sufficiently rapid
-# succession for both to form coincidences with a shared event in another
-# detector, but in general it is possible).  However, if after the event
-# list for #3 is advanced we find there are no further coincidences that
-# the "." event in #2 particpates in, we must, at that time, remember that
-# we have already reported it in a double-coincidence with an event in #3
-# (which we have now disposed of) and not mistake it for a single-detector
-# candidate and accidentally report it as such.
-#
-# If, considering those same two events, we imagine they do not form a
-# coincidence, then the #3 "." event can be reported as a single-detector
-# candidate and, again, we can dispose of all the events from that
-# detector.  However, the #2 "." event cannot be reported as a single yet
-# because just as before it might still form a double with an event to be
-# collected from #3 later.  In this case, when the event list for #3 is
-# advanced if we fail to find a coincident event we *do* need to report the
-# #2 "." event as a single-detector candidate at that time, by remembering
-# that we haven't reported it at all yet.
-#
 # The algorithm we use for achieving this is the following.  We need the
 # following ingredients:
 #
 # - an exactly reproducible method by which to assign a "time" to an
 # n-tuple candidate so that two different codes (possibly using different
-# arithmetic optimiziations, or even the same code doing the calculation a
+# arithmetic optimiziations, or the same code doing the calculation a
 # second time) will agree whether a given candidate is before or after (or
-# at) some given time;
+# at) some given time boundary;
 #
 # - given that definition, a method by which to determine the latest such
 # time up to which all possible candidates can be constructed;
@@ -272,9 +234,10 @@ def light_travel_time(instrument1, instrument2):
 # whether or not a candidate is before or after the time bound we choose is
 # stable against the addition of new events to the queues (the bound must
 # precede the times up to which event lists are complete by a sufficent
-# margin), and the decision as to whether or not a candidate has previously
-# been reported is stable against the removal of used-up events from the
-# queues.  It is desirable for the algorithm to achieve the lowest possible
+# margin), and we will need to retain events long enough to make this
+# definition stable against removal of events from the queues at least
+# until the risk of mistaking subsets of the n-tuple as new candidates has
+# passed.  It is desirable for the algorithm to achieve the lowest possible
 # latency, meaning always reporting as many candidates as can be decided
 # given the information available, but performance is the primary
 # consideration so we also require an algorithm that can make decisions
@@ -288,92 +251,113 @@ def light_travel_time(instrument1, instrument2):
 # detectors' event lists are complete this is stable against addition of
 # new events to the detector queues, even for those candidates that are
 # modified by the addition of extra coincident events as the event
-# sequences are advanced.  For the #2+#3 double coincidence example above,
-# the time of the candidate is the time-shifted time of the event in the #3
-# detector.
+# sequences are advanced.
 #
-# If, for each detector, we compute its time-shifted t_complete and
-# subtract from that the maximum time that can separate a time-shifted
-# event in that detector from a time-shifted event in any other detector
-# and they still be considered coincident, then a reasonable choice of
-# boundary time is the earliest of all such times.  This is not, in fact
-# the latest boundary time that can be chosen in general, but it is one
-# that can be computed by each event queue locally, without knowledge of
-# the state ofther queues, so it is a simple efficient choice and in the
-# worst case scenario precedes the actual latest allowed boundary by only
-# the coincidence window.  Since coincidence windows are typically only 10s
-# of milliseconds, a more sophisticated algorithm can only improve upon the
-# latency of this choice by several milliseconds on average.
+# Looking at our event sequences from above again, we now identify 6 times
+# of interest:
 #
-# To understand the choice of margin, consider our events again, but for
-# simplicity imagine we have only detectors #1 and #2 and consider the
-# event indicated with a "." below:
+#      #1 -----O---|----|-X--X--|----|----|-|---X---X------)----->
+#                  |    |       |    |    | |
+#           #2 ----|-X--|-------|---X|----|X|X------------X)---X-X---->
+#                  |    |       |    |    | |
+# #3 ----O------O--|----|-x-----|----|---x)-|--------------->
+# -----------------|----[=======|====)----|-|---------------------------> t
+#                  A    B       C    D    E F
 #
-#      #1 -----X----------X--X------------------X---X------]-----> t
-#                                                         .
-#           #2 ------X--------------X------X-X------------X]---X-X----> t
+# E is the earliest of the time-shifted t_compeletes, in this case it
+# corresponds to #3's time-shifted t_complete.  D is the closest
+# time-shifted time an event in another detector can have to E before we
+# cannot say if it forms a coincidence with events in #3 that we have not
+# yet collected.  Since the #3's event list is complete upto but not
+# including E, we can collect all n-tuples whose time (time of earliest
+# candidate) is upto but not including D.  B was the boundary upto
+# which we collected candidates in the previous iteration.  Since at that
+# time we did not allow candidates whose time was exactly B to be
+# collected, we now include them.  Therefore the range of candidate times
+# to be collected is [B, D) (closed from below, open from above).  In order
+# to know that an n-tuple's earliest coincident member is not prior to B
+# (and therefore it would have already been reported as part of a larger
+# coincidence involving that event) we must retain and include for
+# consideration events as early as A.  A precedes B by the largest
+# coincidence window between any pair of detectors.  In this iteration, any
+# events that had preceded A have been disposed of (and are indicated now
+# as an "O").  After this iteration is complete, we will have reported
+# exactly all candidates who canonical times fall in [B, D) and they will
+# not be reported again, but for the same reason we retained events between
+# A and B we must not discard all of them yet.  We must retain all the
+# events whose time-shifted times are C or later where C precedes D by the
+# largest coincidence window between any pair of detectors.  Since we are
+# only forming coincidences involving at least one event preceding D, we do
+# not need to include in the coincidence analysis at this iteration any of
+# the events whose time-sifted times are F or later, where F antecedes
+# D by the largest coincidence window between any pair of detectors.
 #
-# We can't yet decide if the "." event participates in a coincidence
-# because we haven't necessarily seen all the events from #1 that could
-# fall within the coincidence window.  I.e., the concern is not that we
-# can't know that "." forms a single, it's that we cannot yet know that it
-# does *not* form a double, so we can't know what candidates it will
-# participate in until more data becomes available.
+# The procedure is to (i) compute these boundary times, (ii) collect all
+# the events from all detectors upto but not including F, (iii) perform a
+# full coincidence analysis, (iv) report as newly-identified any candidates
+# whose canonical times fall in the interval [B, D), ignoring the rest, (v)
+# then discard all events up to C, (vi) record D to be used as B next time,
+# (vii) and return.
 #
-# Because we require full n-way coincidence, the n-tuple candidates that
-# contain at least one event preceding t_coinc_complete given by the
-# earliest of the detectors'
+# There is an additional complication.  One of the problems we need to
+# solve is to provide the set of single-detector events that participate in
+# the n-tuple candidates, across all time-shift offset vectors.  For
+# example, we need a list of the detector #1 events that participate in any
+# n-tuple candidate, but we need each one to be listed only once,
+# regardless of how many different offset vectors were found to result in
+# it participating in an n-tuple candidate.
 #
-# t_complete + offset - max(coincidence window with other detectors)
+# We solve this problem the following way.  We maintain a set of the events
+# that have participated in n-tuple coincidences.  The first time an event
+# is found to participate in an n-tuple candidate it is added to the set
+# and reported as a newly used single-detector event to be inserted into
+# the calling code's output document.  Events that participate in n-tuple
+# coincidences but are found to already be in that set are not reported to
+# the calling code (the n-tuple coincidence is, but not the single-detector
+# event).  To prevent the set from growing without bound, causing both memory
+# and performance problems, events are removed from the set when they are
+# removed from the last queue that contains them.
 #
-# are guaranteed to be complete because the not-yet-collected events from
-# whichever detector doesn't yet have them will be too far removed from the
-# earliest event in the n-tuple to form a coincidence.  This set is not
-# exhaustive:  depending on which events are involved and where the
-# respective detectors' (t_copmlete + offset) fall it might be possible to
-# know that other n-tuple candidates are also complete, but the algorithm
-# for deciding that gets complicated and costly to implement.
+# How to compute the times.  For each time slide,
 #
-# After constructing those n-tuple candidates, for each instrument all
-# events whose times are less than t_coinc_complete can be discarded
-# because we have chosen t_coinc_complete to ensure that all candidates
-# with at least one event preceding that time are complete, meaning we have
-# now constructed the complete set and therefore no longer require any of
-# those events for future candidate construction.
+# - D is the minimum across all instruments of
 #
-# Note that although we will only report n-tuple candidates in which at
-# least one event precedes t_coinc_complete, constructing that set
-# generally requires the intermediate stages of the process to construct
-# and report all available candidates without applying that constraint
-# because not until the final full n-way coincidence has been tested can we
-# say for certain if one or more events in the n-tuple precedes
-# t_coinc_complete.  For example, a 3-way coincidence in which only one of
-# the 3 events precedes t_coinc_complete contains within it a two-detector
-# pair in which neither event precedes the boundary.  Consdering that
-# two-detector pair alone it would not be a valid candidate at this
-# iteration because it doesn't meet the criterion of having at least one
-# event precede t_coinc_complete, but both events are coincident with a
-# third event that does precede t_coinc_complete, and so is part of a valid
-# n-tuple candidate.  The code responsible for constructing that pair can't
-# know if it will or will not form part of a valid n-tuple candidate, and
-# so it must report it to the rest of the algorithm.  In the event that
-# that pair does not produce a triple meeting the t_coinc_complete
-# criterion then, when that is decided, it must be discarded.  Therefore
-# the algorithm is, in general, going to construct and report a number of
-# candidates which, at the end, will need to be ignored.  A mechanism is
-# required for detecting them.
+# D = min(t_complete + offset - max(coincidence window with other detectors))
 #
-# We don't need to construct at report *all* possible intermediate
-# candidates.  Because the candidates to be reported must contain at least
-# one event that precedes t_coinc_complete, all events in a given candidate
-# must precede the earliest of the detectors'
+# Note that this is slightly different than the algorithm described above,
+# where we explained that D was computed relative to E, the minimum of the
+# time-shifted completes.  In fact we compute the boundary uniquely for
+# each detector and take the minimum of those.  This is simpler, but also
+# is necessary in the event that two detectors' t_completes are very close
+# and the later one has a larger maximum coincidence window than the
+# earlier one, larger by an amount greater than the difference between the
+# t_completes.
 #
-# t_complete + offset
+# - B is this value computed in the previous iteration.
 #
-# Therefore, on each iteration we retrieve all the events up to the
-# earliest of the time-shifted t_completes, perform a complete coincidence
-# anlaysis, but then discard any n-tuple candidates whose "time" is after
-# the t_coinc_complete.
+# - F is computed as a unique value for each detector as
+#
+# F = D + max(coincidence window with other detectors)
+#
+# For simplicity, the description above implied F was common to all
+# detectors, but we can reduce the computational cost by trimming it
+# as tightly as we can for each detector.
+#
+# - likewise, A is computed as a unique value for each detector as
+#
+# A = B - max(coincidence window with other detectors)
+#
+# - and C, also, is computed as a unique value for each detector as
+#
+# C = D - max(coincidence window with other detectors)
+#
+# For each detector, all events in the interval [A, F) for that detector
+# are collected and fed into the coincidence constructor.  When finished,
+# all events upto but not including C are discarded and reported to the
+# top-level of the coincidence engine as being no-longer in storage, which
+# is information it uses to manage the set of events that have participated
+# in n-tuple coincidences.
+#
 #
 # Some pipelines require a list of the events known to not form
 # coincidences.  This information might be used, for example, to assist in
@@ -453,30 +437,32 @@ class singlesqueue(object):
 		entry.event = event
 		return entry
 
-	def __init__(self, offset, coinc_window):
+	def __init__(self, offset, max_coinc_window):
 		"""
 		Initialize a new, empty, singles queue.  offset is the time
 		that will be added to events in this queue when forming
 		coincidences with events from other queues, and
-		coinc_window is the lower bound on the maximum time that
+		max_coinc_window is an upper bound on the maximum time that
 		can separate events in this queue from events in other
-		queues and they still be able to form coincidences.
+		queues and they still be able to form coincidences --- it
+		is not that maximum time, necessarily, but the true maximum
+		time cannot be larger than max_coinc_window.
 
-		Note that coinc_window is not defining the coincidence
+		Note that max_coinc_window is not defining the coincidence
 		test, that is defined by the get_coincs machinery within
-		the coincgen_doubles class.  coinc_window is used by the
-		streaming logic to determine where in the event sequences
-		complete n-tuple candidates can be constructed.  Although
-		coinc_window need only bound the time interval described
-		above, the latency of the coincidence engine is reduced and
-		the number of events stored in the queue (and the
-		computational overhead they cause) is reduced if the number
-		is as small as possible.
+		the coincgen_doubles class.  max_coinc_window is used by
+		the streaming logic to determine where in the event
+		sequences complete n-tuple candidates can be constructed.
+		Although max_coinc_window need only bound the time interval
+		described above, the latency of the coincidence engine is
+		reduced and the number of events stored in the queue (and
+		the computational overhead they cause) is reduced if the
+		number is as small as possible.
 		"""
 		self.offset = offset
-		if coinc_window < 0.:
-			raise ValueError("coinc_window < 0 (%g)" % coinc_window)
-		self.coinc_window = coinc_window
+		if max_coinc_window < 0.:
+			raise ValueError("max_coinc_window < 0 (%g)" % max_coinc_window)
+		self.max_coinc_window = max_coinc_window
 		# using .event_time() to define the times of events, the
 		# list of events is complete upto but not including
 		# .t_complete.  we can't use fpconst.NegInf because
@@ -484,24 +470,9 @@ class singlesqueue(object):
 		# NegInfinity object from the segments library, however, is
 		# compatible with both LIGOTimeGPS and with native Python
 		# numeric types.
-		self.t_complete = NegInfinity
-		# queues of events.  the queues' contents are time-ordered,
-		# they contain the events upto .t_complete and from
-		# .t_complete on, respectively.
-		# FIXME:  I don't think we need complete and incomplete
-		# lists separately.  the motivation for keeping them
-		# separate is to minimize the number of entries that need
-		# to be sorted during the push operation (the complete
-		# portion of the list is known to be sorted) in the belief
-		# that the extra cost of sorting all the events together in
-		# one list (not just the new events) excedes the cost of
-		# moving events from one list to the other.  I think the
-		# lists are usually short enough that the cost of
-		# in-sorting all events together is actually small enough
-		# that it isn't more than the move operation, but I don't
-		# know.
-		self.complete = []
-		self.incomplete = []
+		self.t_complete = segments.NegInfinity
+		# queue of events.  the queue's contents are time-ordered.
+		self.queue = []
 		# id() --> event mapping for the contents of queue.  sets
 		# will be used to track the status of events, e.g. which
 		# have and haven't been used to form candidates.  we don't
@@ -526,9 +497,10 @@ class singlesqueue(object):
 		realized if segment lists or other information are clipped
 		to the range of times spanned by the contents of the
 		coincidence engine queues, and this allows calling codes to
-		see what interval that is.
+		see what interval that is, in physical event times not
+		time-shifted event times.
 		"""
-		return self.complete[0] if self.complete else self.t_complete
+		return self.queue[0] if self.queue else self.t_complete
 
 	@property
 	def t_coinc_complete(self):
@@ -542,13 +514,13 @@ class singlesqueue(object):
 		event in this queue from events in others and they still be
 		considered coincident in time.
 
-		The minimum such time across all detectors is the time up
+		The earliest such time across all detectors is the time up
 		to which the n-tuple candidate list can be completely
 		constructed, assuming the "time" of an n-tuple candidate is
-		defined to be the latest time-shifted time of the events in
-		the n-tuple.
+		defined to be the earliest time-shifted time of the events
+		in the n-tuple.
 		"""
-		return self.t_complete + self.offset - self.coinc_window
+		return self.t_complete + self.offset - self.max_coinc_window
 
 	def push(self, events, t_complete):
 		"""
@@ -570,16 +542,8 @@ class singlesqueue(object):
 
 			# construct queue entries from the new events and
 			# insort with current "incomplete" queue
-			self.incomplete.extend(map(self.queueentry_from_event, events))
-			self.incomplete.sort()
-			if self.incomplete[0] < self.t_complete:
-				raise ValueError("t_complete violation: earliest event is %s, previous t_complete was %s" % (self.incomplete[0], self.t_complete))
-
-		# move events preceding the new t_complete from the
-		# incomplete to the complete queue.
-		i = bisect_left(self.incomplete, t_complete)
-		self.complete += self.incomplete[:i]
-		del self.incomplete[:i]
+			self.queue.extend(map(self.queueentry_from_event, events))
+			self.queue.sort()
 
 		# update the marker labelling time up to which the event
 		# list is complete
@@ -592,8 +556,8 @@ class singlesqueue(object):
 		candidates.  The return value is a pair of tuples which,
 		together, contain all events from the queue whose
 		time-shifted end times are up to (not including) t +
-		coinc_window, which are all the events from this queue that
-		could form a coincidence with an event up to (not
+		max_coinc_window, which are all the events from this queue
+		that could form a coincidence with an event up to (not
 		including) t.
 
 		The first of the two tuples contains the events from the
@@ -620,37 +584,39 @@ class singlesqueue(object):
 		None, the object's state is equivalent to its initial state
 		and it is ready to process a new stream of events.
 		"""
-		# the input parameter t is t_coinc_complete in the
-		# algorithm description above
+		# the input parameter t is the time D in the algorithm
+		# description above
 
 		# are we being flushed?  if so, return everything we've got
 		# and reset out state to .__init__() equivalent
 		if t is None:
-			events = tuple(entry.event for entry in self.complete) + tuple(entry.event for entry in self.incomplete)
-			del self.complete[:]
-			del self.incomplete[:]
+			events = tuple(entry.event for entry in self.queue)
+			del self.queue[:]
 			self.index.clear()
-			self.t_complete = NegInfinity
+			self.t_complete = segments.NegInfinity
 			return events, ()
 
 		# unshift back to our events' time scale
 		t -= self.offset
 
 		# safety check
-		if t + self.coinc_window > self.t_complete:
-			raise ValueError("pull to %g fails to precede time to which queue is complete, (%g + %g), by the required margin of %g s" % (t + self.offset, self.t_complete, self.offset, self.coinc_window))
+		if t + self.max_coinc_window > self.t_complete:
+			raise ValueError("pull to %g fails to precede time to which queue is complete, (%g + %g), by the required margin of %g s" % (t + self.offset, self.t_complete, self.offset, self.max_coinc_window))
 
 		# these events will never be used again.  remove them from
-		# the queue, and remove their IDs from the index
-		i = bisect_left(self.complete, t)
-		flushed_events = tuple(entry.event for entry in self.complete[:i])
-		del self.complete[:i]
+		# the queue, and remove their IDs from the index.  this is
+		# calculating time C for this event list in the description
+		# above.
+		i = bisect_left(self.queue, t - self.max_coinc_window)
+		flushed_events = tuple(entry.event for entry in self.queue[:i])
+		del self.queue[:i]
 		for event in flushed_events:
 			self.index.pop(id(event))
 		# collect other events that might be used again but that
 		# can form coincidences with things in other detectors up
-		# to t
-		fornexttime_events = tuple(entry.event for entry in self.complete[:bisect_left(self.complete, t + self.coinc_window)])
+		# to t.  this is computing time F for this event list in
+		# the description above.
+		fornexttime_events = tuple(entry.event for entry in self.queue[:bisect_left(self.queue, t + self.max_coinc_window)])
 		return flushed_events, fornexttime_events
 
 
@@ -759,11 +725,12 @@ class coincgen_doubles(object):
 		if max_coinc_window < 0.:
 			raise ValueError("max(coinc_window) < 0 (%g)" % max_coinc_window)
 		# FIXME: the max_coinc_window is the largest of all
-		# coincidence windows, but we only need it to be the
-		# largest of the windows that include the specific
-		# instrument.  fixing this will reduce latency slightly
-		# (tens of milliseconds) and keep the in-ram event lists
-		# smaller and reduce coincidence overhead
+		# coincidence windows, but as described above in the notes
+		# about this algorithm we only need it to be the largest of
+		# the windows that include the specific instrument.  fixing
+		# this will reduce latency slightly (tens of milliseconds)
+		# and keep the in-ram event lists smaller and reduce
+		# coincidence overhead
 		self.queues = dict((instrument, self.singlesqueue(offset, max_coinc_window)) for instrument, offset in offset_vector.items())
 		# view into the id() --> event indexes of the queues
 		self.index = multidict(*(queue.index for queue in self.queues.values()))
@@ -836,15 +803,15 @@ class coincgen_doubles(object):
 		for eventa in eventsa:
 			matches = queueb_get_coincs(eventa, offset_a, coinc_window)
 			if matches:
-				eventa_id = id(eventa)
-				used_add(eventa_id)
+				eventa = id(eventa)
+				used_add(eventa)
 				for eventb in matches:
-					eventb_id = id(eventb)
-					used_add(eventb_id)
-					yield unswap(eventa_id, eventb_id)
+					eventb = id(eventb)
+					used_add(eventb)
+					yield unswap(eventa, eventb)
 		self.used |= used
 
-	def pull(self, t, flushed, flushed_unused):
+	def pull(self, t, singles_ids):
 		"""
 		Generate a sequence of 2-element tuples of Python IDs of
 		coincident event pairs.  Calling code is assumed to be in
@@ -855,29 +822,28 @@ class coincgen_doubles(object):
 		construct and return pairs that might contain only events
 		after t so that the calling code can test them for
 		coincidence with events from other instruments that precede
-		t.  The internal queues are flushed to t.  If t is the
-		special value None then all coincident pairs that can be
-		constructed from the internal queues are constructed and
-		returned, the queues are emptied and returned to their
+		t.  The internal queues are flushed of events that cannot
+		be used again assuming that t never goes backwards.  If t
+		is the special value None then all coincident pairs that
+		can be constructed from the internal queues are constructed
+		and returned, the queues are emptied and returned to their
 		initial state.
 
 		The order of the IDs in each tuple is alphabetical by
 		instrument.
 
-		The Python IDs of all events flushed from the queues are
-		placed in the flushed set (events that, assuming t only
-		ever is moved to later times, will not be needed from now
-		on).  Of those, the IDs of the flushed events that were
-		never reported in a coincident pair are placed in the
-		flushed_unused set.
+		The Python IDs of events flushed from the queues that have
+		not been reported in a coincident pair are placed in the
+		singles_ids set.
 
-		NOTE:  the flushed and flushed_unused parameters passed to
-		this function must be sets or set-like objects.  They must
-		support Python set manipulation methods, like .clear(),
-		.update(), and so on.
+		NOTE:  the singles_ids parameter passed to this function
+		must a set or set-like object.  It must support Python set
+		manipulation methods, like .clear(), .update(), and so on.
 		"""
 		# get the instrument names in alphabetical order, and
 		# compute the time offset of the one wrt the other.
+		# FIXME:  there's no reason to recompute these things every
+		# time, they are fixed values.
 
 		instrumenta, instrumentb = sorted(self.queues)
 		offset_a = self.queues[instrumenta].offset - self.queues[instrumentb].offset
@@ -897,17 +863,15 @@ class coincgen_doubles(object):
 
 		yield from self.doublesgen(flusheda + fornexttimea, offset_a, flushedb + fornexttimeb)
 
-		# populate the flushed and flushed_unused sets
+		# populate the singles_ids set and remove the events being
+		# flushed from the used set.  if we've been flushed, there
+		# better not be anything left
 
-		flushed.clear()
-		flushed.update(id(event) for event in flusheda)
-		flushed.update(id(event) for event in flushedb)
-		flushed_unused.clear()
-		flushed_unused |= flushed - self.used
-
-		# remove the events being flushed from the used set.  if
-		# we've been flushed, there better not be anything left
-
+		singles_ids.clear()
+		singles_ids.update(id(event) for event in flusheda)
+		singles_ids.update(id(event) for event in flushedb)
+		flushed = singles_ids.copy()
+		singles_ids -= self.used
 		self.used -= flushed
 		assert t is not None or not self.used
 
@@ -955,10 +919,15 @@ class TimeSlideGraphNode(object):
 			# normal multi-detector analyses get singles from
 			# the unused events returned by the doubles
 			# generator in the len==2 code path.
-			self.components = (coincgen_doubles_type.singlesqueue(max(coinc_windows.values())),)
+			assert not coinc_windows
+			self.components = (coincgen_doubles_type.singlesqueue(0.),)
 			self.index = self.components[0].index
 		else:
 			raise ValueError("offset_vector cannot be empty")
+		# the time up to which we have been pulled already
+		self.previous_t = segments.NegInfinity
+		# local reference to event_time() function.  required for
+		# cutting candidate sets to time boundaries.
 		self.event_time = coincgen_doubles_type.singlesqueue.event_time
 
 	@staticmethod
@@ -967,7 +936,7 @@ class TimeSlideGraphNode(object):
 		Equivalent to offsetvector.component_offsetvectors() except
 		only one input offsetvector is considered, not a sequence
 		of them, and the output offsetvector objects preserve the
-		absolute offsets of each instrument not only the relative
+		absolute offsets of each instrument, not only the relative
 		offsets between instruments.
 		"""
 		assert 1 <= n <= len(offset_vector)
@@ -997,7 +966,14 @@ class TimeSlideGraphNode(object):
 		of events is known to be complete.  That is, in the future
 		no new events will be pushed whose times are earlier than
 		t_complete.
+
+		Returns True if this node's .t_coinc_complete property has
+		been changed by this operation, False otherwise.  If
+		.t_coinc_complete does not change, then no new candidates
+		can yet be formed and it is not necessary to perform a
+		coincidence analysis at this time.
 		"""
+		t_before = self.t_coinc_complete
 		if len(self.offset_vector) == 1:
 			# push directly into the singles queue
 			assert (instrument,) == self.offset_vector.keys()
@@ -1006,6 +982,7 @@ class TimeSlideGraphNode(object):
 			for node in self.components:
 				if instrument in node.offset_vector:
 					node.push(instrument, events, t_complete)
+		return self.t_coinc_complete != t_before
 
 	def pull(self, t, verbose = False):
 		"""
@@ -1017,13 +994,11 @@ class TimeSlideGraphNode(object):
 		all candidates required to decide that set, which might
 		include candidates all of whose events come after t.
 
-		Three objects are returned:  a tuple of the (n=N)-way
+		Two objects are returned:  a tuple of the (n=N)-way
 		coincidences, where N is the number of instruments in this
-		node's offset vector, a tuple of the
+		node's offset vector, and a set of the
 		(min_instruments<=n<N)-way coincidences, which will be
-		empty if N < min_instruments, and a set of the Python IDs
-		of events that have been flushed from all internal queues
-		by this operation.
+		empty if N < min_instruments.
 
 		Since the (min_instruments<=n<N)-tuple coincidences cannot
 		go on to form (n>N)-tuple coincidences, any that fail to
@@ -1036,30 +1011,31 @@ class TimeSlideGraphNode(object):
 		candidates in the stream at this stage and cull them in a
 		single pass at the end.
 
-		For the two tuples, the coincidences are reported as tuples
-		of the Python id()'s of the events that form coincidences.
-		The .index look-up table can be used to map these id()'s
-		back to the original events.  To do that, however, a copy
-		of the contents of the .index mapping must be made before
-		calling this method because this method will result in some
-		of the events in question being removed from the queues,
-		and thus also from the .index mapping.
+		The coincidences are reported as tuples of the Python IDs
+		of the events that form coincidences.  The .index look-up
+		table can be used to map these IDs back to the original
+		events.  To do that, however, a copy of the contents of the
+		.index mapping must be made before calling this method
+		because this method will result in some of the events in
+		question being removed from the queues, and thus also from
+		the .index mapping.
 		"""
 		#
-		# NOTE:  it is essential that the same t be used for all
-		# nodes when walking the graph.  the code assumes this to
-		# be true to determine which events have been and have not
-		# been used to construct coincidences:  we assume that
-		# events that are being flushed from one instrument's queue
-		# in one part of the graph must also be getting flushed
-		# from all other queues for that same instrument elsewhere
-		# in the graph, and so if they have not been used to form a
-		# coincidence by now then they won't ever be.
+		# no-op unless time has advanced.  .previous_t is never
+		# None, so flushing cannot be mistaken for a no-op
 		#
-		# It is not possible to encode a safety check to ensure
-		# this invariant, it is left to developers not to screw
-		# with the graph traversal in that way.
+
+		if t == self.previous_t:
+			return tuple(), set()
+
 		#
+		# record the t to which we are being pulled for use in
+		# defining the candidate interval in the next interation.
+		# if we are being flushed, then reset to -inf.  this is
+		# time B in the algorithm description above
+		#
+
+		self.previous_t = t if t is not None else segments.NegInfinity
 
 		#
 		# is this a "no-op" node?  return 1-detector "coincs" and a
@@ -1075,13 +1051,11 @@ class TimeSlideGraphNode(object):
 		# don't need to support special configurations for
 		# one-detector anlyses, they can set up their normal event
 		# handling code with a one-detector offset vector, push
-		# events in and collect candidates out as if nothing was
-		# unusual.
+		# events in and collect candidates out.
 		#
 
 		if len(self.offset_vector) == 1:
-			flushed_ids = set(id(event) for event in self.components[0].pull(t)[0])
-			return tuple((eventid,) for eventid in flushed_ids), set(), flushed_ids
+			return tuple((id(event),) for event in self.components[0].pull(t)[0]), set()
 
 		#
 		# is this a leaf node?  construct the coincs explicitly
@@ -1104,10 +1078,9 @@ class TimeSlideGraphNode(object):
 			# take the form of 1-detector coincs
 			#
 
-			flushed_ids = set()
-			partial_coincs = set()
-			coincs = tuple(sorted(self.components[0].pull(t, flushed_ids, partial_coincs)))
-			return coincs, (set((eventid,) for eventid in partial_coincs) if self.keep_partial else set()), flushed_ids
+			singles_ids = set()
+			coincs = tuple(sorted(self.components[0].pull(t, singles_ids)))
+			return coincs, (set((eventid,) for eventid in singles_ids) if self.keep_partial else set())
 
 		#
 		# this is a regular node in the graph.  use coincidence
@@ -1122,9 +1095,8 @@ class TimeSlideGraphNode(object):
 
 		# first collect all coincs and partial coincs from the
 		# component nodes in the graph
-		component_coincs_and_partial_coincs_and_flushed_ids = tuple(component.pull(t, verbose = verbose) for component in self.components)
-		component_coincs = tuple(elem[0] for elem in component_coincs_and_partial_coincs_and_flushed_ids)
-		flushed_ids = set.union(*(elem[2] for elem in component_coincs_and_partial_coincs_and_flushed_ids))
+		component_coincs_and_partial_coincs = tuple(component.pull(t, verbose = verbose) for component in self.components)
+		component_coincs = tuple(elem[0] for elem in component_coincs_and_partial_coincs)
 
 		if self.keep_partial:
 			# any coinc with n-1 instruments from the component
@@ -1159,12 +1131,17 @@ class TimeSlideGraphNode(object):
 			# obtain the unused (< n-1)-instrument partial
 			# coincs from the union of all pair-wise
 			# intersections of the (< n-1)-instrument partial
-			# coincs from our components.
-			for partial_coincsa, partial_coincsb in itertools.combinations((elem[1] for elem in component_coincs_and_partial_coincs_and_flushed_ids), 2):
-				partial_coincs |= partial_coincsa & partial_coincsb
+			# coincs from our components.  since each partial
+			# coinc can only be listed at most once in the
+			# result from each component, and because we must
+			# compute all possible pair-wise intersections of
+			# the sets, this is equivalent to finding the
+			# partial coincs that appear two or more times in
+			# the concatenated sequence.
+			partial_coincs.update(coinc for coinc, count in Counter(itertools.chain(*(elem[1] for elem in component_coincs_and_partial_coincs))).items() if count >= 2)
 		else:
 			partial_coincs = set()
-		del component_coincs_and_partial_coincs_and_flushed_ids
+		del component_coincs_and_partial_coincs
 
 		if verbose:
 			print("\tassembling %s ..." % str(self.offset_vector), file=sys.stderr)
@@ -1237,7 +1214,7 @@ class TimeSlideGraphNode(object):
 		# done.
 		#
 
-		return coincs, partial_coincs, flushed_ids
+		return coincs, partial_coincs
 
 
 class TimeSlideGraph(object):
@@ -1272,26 +1249,13 @@ class TimeSlideGraph(object):
 		# populate the graph head nodes.  these represent the
 		# target offset vectors requested by the calling code.
 		#
-		# NOTE:  internally the offset vectors are normalized to
-		# remove any net offset by shifting all instruments so that
-		# the instrument shifted farthest into the future has an
-		# offset of 0.  this is done to keep the latency (and with
-		# that ram use and book keeping overhead) to a minimum when
-		# multiple offset vectors are being processed.  be aware
-		# that if you query the offset vectors, or for example when
-		# the event collector is told the offset vector at which an
-		# n-tuple candidate has been found, these will not
-		# numerically equal the offset vectors used to initialize
-		# the object (although the time differences between
-		# instruments will match).
-		#
 
 		if verbose:
 			print("constructing coincidence assembly graph for %d offset vectors ..." % len(offset_vector_dict), file=sys.stderr)
 		self.head = tuple(
 			TimeSlideGraphNode(
 				coincgen_doubles_type,
-				self.normalize_offsetvector(offset_vector),
+				offset_vector,
 				coinc_windows,
 				min_instruments,
 				time_slide_id = time_slide_id
@@ -1333,34 +1297,12 @@ class TimeSlideGraph(object):
 			print("graph contains %d fundamental nodes, %d higher-order nodes" % tuple(sum(walk(node) for node in self.head)), file=sys.stderr)
 
 
-	@staticmethod
-	def normalize_offsetvector(offset_vector):
-		"""
-		Compute and return the offset vector equivalent to
-		offset_vector (relative offsets are equal) such that the
-		instrument shifted farthest into the future has an offset
-		of 0.
-		"""
-		norm = max(offset_vector.values())
-		offset_vector = offsetvector.offsetvector((instrument, offset - norm) for instrument, offset in offset_vector.items())
-		assert max(offset_vector.values()) == 0, "offset vector normalization failed"
-		return offset_vector
-
-
 	@property
 	def age(self):
 		"""
 		The earliest of the graph's head nodes' .age.
 		"""
 		return min(node.age for node in self.head)
-
-
-	@property
-	def t_coinc_complete(self):
-		"""
-		The earliest of the graph's head nodes' .t_coinc_complete.
-		"""
-		return min(node.t_coinc_complete for node in self.head)
 
 
 	def push(self, instrument, events, t_complete):
@@ -1383,31 +1325,15 @@ class TimeSlideGraph(object):
 		candidate list unless the graph is flushed of all
 		candidates.
 		"""
-		t_before = self.t_coinc_complete
-		for node in self.head:
-			if instrument in node.offset_vector:
-				node.push(instrument, events, t_complete)
-		return self.t_coinc_complete != t_before
+		# NOTE:  it is necessary to explicitly create a list to
+		# prevent any() from bailing out before all nodes have had
+		# the events pushed into them.
+		return any([node.push(instrument, events, t_complete) for node in self.head if instrument in node.offset_vector])
 
 
 	def pull(self, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None, verbose = False):
 		if verbose:
 			print("constructing coincs for target offset vectors ...", file=sys.stderr)
-
-		# NOTE:  we can only rely on the "flushed" and so on event
-		# sets from the graph head nodes to be compatible with each
-		# other if all nodes are .pull()ed to the same t.
-		# otherwise what has been flushed from one node in the
-		# graph might not yet be flushed from another.  we do use a
-		# single time, but that means the latency is always the
-		# worst-case scenario:  whichever graph node requires
-		# triggers to be held the longest for the coincidence test
-		# determines the latency of all graph nodes.  online we
-		# only do a zero-lag analysis, and offline we don't care
-		# about latency, so for now this is OK, but be aware of
-		# this limitation if you are tempted to mess about with
-		# this code's logic.
-		t = None if flush else self.t_coinc_complete
 
 		# flatten ID index for faster performance in loop.  NOTE:
 		# this must be done before calling .pull() on the graph
@@ -1427,47 +1353,59 @@ class TimeSlideGraph(object):
 		else:
 			event_collector_push = event_collector.push
 
-		used_ids = set()
 		newly_reported_ids = set()
-		flushed_ids = set()
+		flushed_ids = set(index)
+		# avoid attribute look-ups in the loop
+		newly_reported_update = newly_reported_ids.update
+		used_update = self.used_ids.update
 		for n, node in enumerate(self.head, start = 1):
+			# avoid attribute look-ups in the loop
+			event_time = node.event_time
+			offset_vector = node.offset_vector
+
 			if verbose:
 				print("%d/%d: %s" % (n, len(self.head), str(node.offset_vector)), file=sys.stderr)
+
+			if flush:
+				t = None
+				candidate_seg = segments.segment(node.previous_t, segments.PosInfinity)
+			else:
+				t = node.t_coinc_complete
+				candidate_seg = segments.segment(node.previous_t, t)
+
 			# we don't need to check that the coincs or partial
 			# coincs contain at least min_instruments events
 			# because those that don't meet the criteria are
 			# excluded during coinc construction.
-			coincs, partial_coincs, _flushed_ids = node.pull(t, verbose)
-			flushed_ids |= _flushed_ids
-			for event_ids in itertools.chain(coincs, partial_coincs):
+			for event_ids in itertools.chain(*node.pull(t, verbose)):
 				# use the index to convert Python IDs back
 				# to event objects
 				events = tuple(index[event_id] for event_id in event_ids)
 				# check the candidate's time, and skip
 				# those that don't meet the
 				# t_coinc_complete constraint
-				if t is not None and min(node.event_time(event) + node.offset_vector[event.ifo] for event in events) >= t:
+				if min(event_time(event) + offset_vector[event.ifo] for event in events) not in candidate_seg:
 					continue
 				# update the used IDs state and inform the
 				# event collector of a candidate
-				used_ids.update(event_ids)
-				event_collector_push(event_ids, node.offset_vector)
+				used_update(event_ids)
+				event_collector_push(event_ids, offset_vector)
 				# apply the coinc sieve test.  if the
 				# calling code has some mechanism to decide
-				# which n-tuples are worth
-				# saving for later analysis, it can be
-				# applied here (instead of by the calling
-				# code itself) so that the machinery here
-				# taht is tracking which events need to be
-				# recorded in the output document can see
-				# that some will not be needed.
-				if not coinc_sieve(events, node.offset_vector):
-					newly_reported_ids.update(event_ids)
+				# which n-tuples are worth saving for later
+				# analysis, it can be applied here (instead
+				# of by the calling code itself) so that
+				# the machinery that is tracking which
+				# events need to be recorded in the output
+				# document can see that some will not be
+				# needed.
+				if not coinc_sieve(events, offset_vector):
+					newly_reported_update(event_ids)
 					yield node, events
-		self.used_ids |= used_ids
 		if newly_reported_ids:
 			newly_reported_ids -= self.reported_ids
 			self.reported_ids |= newly_reported_ids
+		flushed_ids -= set(self.index)
 		if flushed_ids:
 			flushed_unused_ids = flushed_ids - self.used_ids
 			self.used_ids -= flushed_ids
