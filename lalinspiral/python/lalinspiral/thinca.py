@@ -267,8 +267,6 @@ def ligolw_thinca(
 	seglists,
 	ntuple_comparefunc = None,
 	veto_segments = None,
-	likelihood_func = None,
-	fapfar = None,
 	min_instruments = 2,
 	coinc_definer_row = InspiralCoincDef,
 	verbose = False
@@ -302,21 +300,11 @@ def ligolw_thinca(
 		time_slide_graph.push(instrument, events, max(event.end for event in events))
 
 	#
-	# retrieve all coincidences, apply the final n-tuple compare func
-	# and record the survivors
+	# retrieve all coincidences,
 	#
 
 	for node, events in time_slide_graph.pull(coinc_sieve = ntuple_comparefunc, flush = True, verbose = verbose):
-		coinc, coincmaps, coinc_inspiral = coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists)
-		if likelihood_func is not None:
-			coinc.likelihood = likelihood_func(events, node.offset_vector)
-			if fapfar is not None:
-				# FIXME:  add proper columns to
-				# store these values in
-				coinc_inspiral.combined_far = fapfar.far_from_rank(coinc.likelihood)
-				coinc_inspiral.false_alarm_rate = fapfar.fap_from_rank(coinc.likelihood)
-		# finally, append coinc to tables
-		coinc_tables.append_coinc(coinc, coincmaps, coinc_inspiral)
+		coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events, seglists = seglists))
 
 	#
 	# done
