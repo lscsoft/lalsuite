@@ -43,7 +43,7 @@ import random
 import scipy.optimize
 from scipy import spatial
 import sys
-from collections import Counter, UserDict
+from collections import ChainMap, Counter
 import warnings
 
 
@@ -67,54 +67,6 @@ from .git_version import version as __version__
 #
 # =============================================================================
 #
-
-
-class multidict(UserDict):
-	"""
-	Read-only dictionary view into a collection of dictionaries.
-
-	Example:
-
-	>>> x = {"a": 10., "b": 100.}
-	>>> y = {"c": 1000., "d": 10000.}
-	>>> z = multidict(x, y)
-	>>> z["a"]
-	10.0
-	>>> z["c"]
-	1000.0
-	>>> "d" in z
-	True
-	>>> "e" in z
-	False
-	"""
-	def __init__(self, *dicts):
-		self.dicts = dicts
-		if not self.dicts:
-			raise ValueError("len(dicts) must be > 0")
-
-	def __getitem__(self, x):
-		for d in self.dicts:
-			if x in d:
-				return d[x]
-		raise KeyError(x)
-
-	def __nonzero__(self):
-		return any(self.dicts)
-
-	def __contains__(self, x):
-		return any(x in d for d in self.dicts)
-
-	def __len__(self):
-		return sum(len(d) for d in self.dicts)
-
-	def __iter__(self):
-		return itertools.chain(*(iter(d) for d in self.dicts))
-
-	def items(self):
-		return itertools.chain(*(d.items() for d in self.dicts))
-
-	def keys(self):
-		return list(self)
 
 
 def light_travel_time(instrument1, instrument2):
@@ -733,7 +685,7 @@ class coincgen_doubles(object):
 		# coincidence overhead
 		self.queues = dict((instrument, self.singlesqueue(offset, max_coinc_window)) for instrument, offset in offset_vector.items())
 		# view into the id() --> event indexes of the queues
-		self.index = multidict(*(queue.index for queue in self.queues.values()))
+		self.index = ChainMap(*(queue.index for queue in self.queues.values()))
 		# Python id()s of events currently in the queues that have
 		# been reported in coincidences
 		self.used = set()
@@ -904,8 +856,14 @@ class TimeSlideGraphNode(object):
 		if len(offset_vector) > 2:
 			self.components = tuple(TimeSlideGraphNode(coincgen_doubles_type, component_offset_vector, coinc_windows, min_instruments) for component_offset_vector in self.component_offsetvectors(offset_vector, len(offset_vector) - 1))
 			# view into the id() --> event indexes of the
-			# nodes
-			self.index = multidict(*(node.index for node in self.components))
+			# nodes.  we assume they are all ChainMap
+			# instances, and, for performance reasons, flatten
+			# the hierarchy one level.  if that was also done
+			# at the lower levels, ensures that, globally, the
+			# ChainMap hierarchy doesn't grow in depth as the
+			# graph is constructed.  it's only ever a ChainMap
+			# of dicts, not a ChainMap of ChainMaps of ...
+			self.index = ChainMap(*(index for node in self.components for index in node.index.maps))
 		elif len(offset_vector) == 2:
 			self.components = (coincgen_doubles_type(offset_vector, coinc_windows),)
 			self.index = self.components[0].index
@@ -1263,7 +1221,7 @@ class TimeSlideGraph(object):
 		)
 
 		# view into the id() --> event indexes of the graph nodes
-		self.index = multidict(*(node.index for node in self.head))
+		self.index = ChainMap(*(node.index for node in self.head))
 
 		# the set of the Python id()'s of the events contained in
 		# the internal queues that have formed coincident
