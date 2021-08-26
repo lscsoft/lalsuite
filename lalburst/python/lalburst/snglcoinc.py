@@ -813,7 +813,7 @@ class coincgen_doubles(object):
 		# construct coincident pairs.  the pairs are the python IDs
 		# of the coincident events, not the events themselves.
 
-		yield from self.doublesgen(flusheda + fornexttimea, offset_a, flushedb + fornexttimeb)
+		yield from sorted(self.doublesgen(flusheda + fornexttimea, offset_a, flushedb + fornexttimeb))
 
 		# populate the singles_ids set and remove the events being
 		# flushed from the used set.  if we've been flushed, there
@@ -1029,15 +1029,13 @@ class TimeSlideGraphNode(object):
 			# of IDs is, itself, ordered alphabetically by
 			# instrument name.  here, for the two-instrument
 			# case, the "partial coincs" are any singles that
-			# failed to form coincidences, which corresponds to
-			# the "flushed_unused" parameter of the
-			# coincgen_doubles' .pull() method, but we convert
-			# the set into a set of 1-element tuples so they
-			# take the form of 1-detector coincs
+			# failed to form coincidences, but we convert the
+			# set into a set of 1-element tuples so they take
+			# the form of 1-detector coincs
 			#
 
 			singles_ids = set()
-			coincs = tuple(sorted(self.components[0].pull(t, singles_ids)))
+			coincs = tuple(self.components[0].pull(t, singles_ids))
 			return coincs, (set((eventid,) for eventid in singles_ids) if self.keep_partial else set())
 
 		#
