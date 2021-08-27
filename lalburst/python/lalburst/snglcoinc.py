@@ -942,7 +942,7 @@ class TimeSlideGraphNode(object):
 					node.push(instrument, events, t_complete)
 		return self.t_coinc_complete != t_before
 
-	def pull(self, t, verbose = False):
+	def pull(self, t):
 		"""
 		Using the events contained in the internal queues construct
 		and return all coincidences they participate in.  It is
@@ -1020,9 +1020,6 @@ class TimeSlideGraphNode(object):
 		#
 
 		if len(self.offset_vector) == 2:
-			if verbose:
-				print("\tconstructing %s ..." % str(self.offset_vector), file=sys.stderr)
-
 			#
 			# search for and record coincidences.  coincs is a
 			# sorted tuple of event ID pairs, where each pair
@@ -1051,7 +1048,7 @@ class TimeSlideGraphNode(object):
 
 		# first collect all coincs and partial coincs from the
 		# component nodes in the graph
-		component_coincs_and_partial_coincs = tuple(component.pull(t, verbose = verbose) for component in self.components)
+		component_coincs_and_partial_coincs = tuple(component.pull(t) for component in self.components)
 		component_coincs = tuple(elem[0] for elem in component_coincs_and_partial_coincs)
 
 		if self.keep_partial:
@@ -1099,8 +1096,6 @@ class TimeSlideGraphNode(object):
 			partial_coincs = set()
 		del component_coincs_and_partial_coincs
 
-		if verbose:
-			print("\tassembling %s ..." % str(self.offset_vector), file=sys.stderr)
 		# magic:  we can form all n-instrument coincs by knowing
 		# just three sets of the (n-1)-instrument coincs no matter
 		# what n is (n > 2).
@@ -1287,16 +1282,12 @@ class TimeSlideGraph(object):
 		return any([node.push(instrument, events, t_complete) for node in self.head if instrument in node.offset_vector])
 
 
-	def pull(self, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None, verbose = False):
-		if verbose:
-			print("constructing coincs for target offset vectors ...", file=sys.stderr)
-
+	def pull(self, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None):
 		# flatten ID index for faster performance in loop.  NOTE:
-		# this must be done before calling .pull() on the graph
-		# because that operation will flush events from the
-		# internal index, leaving it incomplete for our needs.  we
-		# do it outside the loop over nodes because we'll need it
-		# when the loop terminates
+		# this is also done to freeze the contents of the index.
+		# calling .pull() on the graph nodes flushes events from
+		# the internal queues which removes them from the index,
+		# but we need the index to turn IDs back into events.
 		index = dict(self.index.items())
 
 		# default coinc sieve
@@ -1319,9 +1310,6 @@ class TimeSlideGraph(object):
 			event_time = node.event_time
 			offset_vector = node.offset_vector
 
-			if verbose:
-				print("%d/%d: %s" % (n, len(self.head), str(node.offset_vector)), file=sys.stderr)
-
 			if flush:
 				t = None
 				candidate_seg = segments.segment(node.previous_t, segments.PosInfinity)
@@ -1333,7 +1321,7 @@ class TimeSlideGraph(object):
 			# coincs contain at least min_instruments events
 			# because those that don't meet the criteria are
 			# excluded during coinc construction.
-			for event_ids in itertools.chain(*node.pull(t, verbose)):
+			for event_ids in itertools.chain(*node.pull(t)):
 				# use the index to convert Python IDs back
 				# to event objects
 				events = tuple(index[event_id] for event_id in event_ids)
