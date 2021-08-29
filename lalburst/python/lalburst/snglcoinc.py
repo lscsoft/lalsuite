@@ -505,33 +505,23 @@ class singlesqueue(object):
 		"""
 		t is the time up to which the calling code is in the
 		process of constructing all available n-tuple coincident
-		candidates.  The return value is a pair of tuples which,
-		together, contain all events from the queue whose
-		time-shifted end times are up to (not including) t +
-		max_coinc_window, which are all the events from this queue
-		that could form a coincidence with an event up to (not
-		including) t.
-
-		The first of the two tuples contains the events from the
-		queue that will be flushed and not reported again.  These
-		are the events from this queue that themselves precede t.
-		The second contains the additional events in the queue that
-		will be retained and reported again in future .pull()
-		requests.  They are reported separately so that the calling
-		code can use the distinction to track which events have
-		been used to form candidates and which have not been (doing
-		so requires us to tell it which events we are now finished
-		with, so it can decide their fate).
+		candidates.  The return value is a tuple of all events from
+		the queue whose time-shifted end times are up to (not
+		including) t + max_coinc_window, which are all the events
+		from this queue that could form a coincidence with an event
+		up to (not including) t.
 
 		t is defined with respect to the time-shifted event times.
-		The contents of both tuples are time-ordered as defined by
-		.event_time(), and all events in the first tuple precede
-		all events in the second tuple, i.e., concatenating the
-		tuples is also a time-ordered sequence.
+		The contents of the returned tuple is time-ordered as
+		defined by .event_time().
+
+		Assuming that t cannot go backwards, any of the reported
+		events that cannot be used again are removed from the
+		internal queue.
 
 		If t is None, then the queue is completely flushed.  All
 		remaining events are pulled from the queue and reported in
-		the first tuple, .t_complete is reset to -inf and all other
+		the tuple, .t_complete is reset to -inf and all other
 		internal state is reset.  After calling .pull() with t =
 		None, the object's state is equivalent to its initial state
 		and it is ready to process a new stream of events.
@@ -546,7 +536,7 @@ class singlesqueue(object):
 			del self.queue[:]
 			self.index.clear()
 			self.t_complete = segments.NegInfinity
-			return events, ()
+			return events
 
 		# unshift back to our events' time scale
 		t -= self.offset
@@ -568,8 +558,7 @@ class singlesqueue(object):
 		# can form coincidences with things in other detectors up
 		# to t.  this is computing time F for this event list in
 		# the description above.
-		fornexttime_events = tuple(entry.event for entry in self.queue[:bisect_left(self.queue, t + self.max_coinc_window)])
-		return flushed_events, fornexttime_events
+		return flushed_events + tuple(entry.event for entry in self.queue[:bisect_left(self.queue, t + self.max_coinc_window)])
 
 
 class coincgen_doubles(object):
@@ -670,12 +659,17 @@ class coincgen_doubles(object):
 		"""
 		if len(offset_vector) != 2:
 			raise ValueError("offset_vector must name exactly 2 instruments (got %d)" % len(offset_vector))
+		# the coincidence window for our pair of detectors
 		self.coinc_window = coinc_windows[frozenset(offset_vector)]
-		max_coinc_window = max(coinc_windows.values())
 		if self.coinc_window < 0.:
 			raise ValueError("coinc_window < 0 (%g)" % coinc_window)
+		# the largest coincidence window between any pair of
+		# detectors in the network
+		max_coinc_window = max(coinc_windows.values())
 		if max_coinc_window < 0.:
 			raise ValueError("max(coinc_window) < 0 (%g)" % max_coinc_window)
+		# initialize the singlesqueue objects, one for each of our
+		# detectors
 		# FIXME: the max_coinc_window is the largest of all
 		# coincidence windows, but as described above in the notes
 		# about this algorithm we only need it to be the largest of
@@ -686,9 +680,6 @@ class coincgen_doubles(object):
 		self.queues = dict((instrument, self.singlesqueue(offset, max_coinc_window)) for instrument, offset in offset_vector.items())
 		# view into the id() --> event indexes of the queues
 		self.index = ChainMap(*(queue.index for queue in self.queues.values()))
-		# Python id()s of events currently in the queues that have
-		# been reported in coincidences
-		self.used = set()
 
 	@property
 	def offset_vector(self):
@@ -723,7 +714,7 @@ class coincgen_doubles(object):
 		"""
 		self.queues[instrument].push(events, t_complete)
 
-	def doublesgen(self, eventsa, offset_a, eventsb):
+	def doublesgen(self, eventsa, offset_a, eventsb, singles_ids):
 		"""
 		For internal use only.
 		"""
@@ -744,24 +735,29 @@ class coincgen_doubles(object):
 		else:
 			unswap = lambda a, b: (a, b)
 
+		# initialize the singles_ids set
+
+		singles_ids.clear()
+		singles_ids.update(id(event) for event in eventsb)
+		singles_ids_add = singles_ids.add
+		singles_ids_discard = singles_ids.discard
+
 		# for each event in list A, iterate over events from the
 		# other list that are coincident with the event, and return
 		# the pairs.  while doing this, collect the IDs of events
 		# that are used in coincidences in a set for later logic.
 		coinc_window = self.coinc_window
-		used = set()
-		used_add = used.add
 		queueb_get_coincs = self.get_coincs(eventsb)
 		for eventa in eventsa:
 			matches = queueb_get_coincs(eventa, offset_a, coinc_window)
+			eventa = id(eventa)
 			if matches:
-				eventa = id(eventa)
-				used_add(eventa)
 				for eventb in matches:
 					eventb = id(eventb)
-					used_add(eventb)
+					singles_ids_discard(eventb)
 					yield unswap(eventa, eventb)
-		self.used |= used
+			else:
+				singles_ids_add(eventa)
 
 	def pull(self, t, singles_ids):
 		"""
@@ -784,9 +780,8 @@ class coincgen_doubles(object):
 		The order of the IDs in each tuple is alphabetical by
 		instrument.
 
-		The Python IDs of events flushed from the queues that have
-		not been reported in a coincident pair are placed in the
-		singles_ids set.
+		The Python IDs of events that are not reported in a
+		coincident pair are placed in the singles_ids set.
 
 		NOTE:  the singles_ids parameter passed to this function
 		must a set or set-like object.  It must support Python set
@@ -800,32 +795,18 @@ class coincgen_doubles(object):
 		instrumenta, instrumentb = sorted(self.queues)
 		offset_a = self.queues[instrumenta].offset - self.queues[instrumentb].offset
 
-		# retrieve the event lists.  these are event objects, not
-		# their python IDs.  the .pull() methods will safety check
-		# t, we don't have to do it here.  t is the
-		# t_coinc_complete parameter in the algorithm description
-		# above, but the singlesqueues take care of the timing
-		# logic for us we just pass the t along to them.
+		# retrieve the event lists to be considered for coincidence
+		# using .pull() on the singlesqueues.  these return
+		# sequences of event objects, not their python IDs.  the
+		# .pull() methods will safety check t against their
+		# time-shifted t_completes, we don't have to do it here.
+		# from the event sequences, we construct coincident pairs.
+		# the pairs are the python IDs of the coincident events,
+		# not the events themselves.  while doing this, the
+		# singles_ids set is populated with python IDs of events
+		# that do not form pairs.
 
-		flusheda, fornexttimea = self.queues[instrumenta].pull(t)
-		flushedb, fornexttimeb = self.queues[instrumentb].pull(t)
-
-		# construct coincident pairs.  the pairs are the python IDs
-		# of the coincident events, not the events themselves.
-
-		yield from sorted(self.doublesgen(flusheda + fornexttimea, offset_a, flushedb + fornexttimeb))
-
-		# populate the singles_ids set and remove the events being
-		# flushed from the used set.  if we've been flushed, there
-		# better not be anything left
-
-		singles_ids.clear()
-		singles_ids.update(id(event) for event in flusheda)
-		singles_ids.update(id(event) for event in flushedb)
-		flushed = singles_ids.copy()
-		singles_ids -= self.used
-		self.used -= flushed
-		assert t is not None or not self.used
+		return sorted(self.doublesgen(self.queues[instrumenta].pull(t), offset_a, self.queues[instrumentb].pull(t), singles_ids))
 
 
 #
