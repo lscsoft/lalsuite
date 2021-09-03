@@ -303,6 +303,7 @@ def burca(
 	delta_t,
 	ntuple_comparefunc = lambda events, offset_vector: False,
 	min_instruments = 2,
+	incremental = True,
 	verbose = False
 ):
 	#
@@ -324,11 +325,25 @@ def burca(
 	#
 
 	sngl_burst_table = lsctables.SnglBurstTable.get_table(xmldoc)
-	for instrument, events in itertools.groupby(sorted(sngl_burst_table, key = lambda row: row.ifo), lambda event: event.ifo):
-		time_slide_graph.push(instrument, tuple(events), PosInfinity)
+	if not incremental:
+		# normal version:  push everything into the graph, then
+		# pull out all coincs in one operation below using the
+		# final flush
+		for instrument, events in itertools.groupby(sorted(sngl_burst_table, key = lambda row: row.ifo), lambda event: event.ifo):
+			time_slide_graph.push(instrument, tuple(events), PosInfinity)
+	else:
+		# slower diagnostic version.  simulate an online
+		# incremental analysis by pushing events into the graph in
+		# time order and collecting candidates as we go.  we still
+		# do the final flush operation below.
+		for instrument, events in itertools.groupby(sorted(sngl_burst_table, key = lambda row: (row.peak, row.ifo)), lambda event: event.ifo):
+			events = tuple(events)
+			if time_slide_graph.push(instrument, events, max(event.peak for event in events)):
+				for node, events in time_slide_graph.pull(coinc_sieve = ntuple_comparefunc):
+					coinc_tables.append_coinc(*coinc_tables.coinc_rows(process_id, node.time_slide_id, events, "sngl_burst"))
 
 	#
-	# retrieve all coincidences.
+	# retrieve all remaining coincidences.
 	#
 
 	for node, events in time_slide_graph.pull(coinc_sieve = ntuple_comparefunc, flush = True):
