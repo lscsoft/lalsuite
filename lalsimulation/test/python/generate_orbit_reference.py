@@ -23,7 +23,7 @@
 import lal
 import lalsimulation as lalsim
 
-DEFAULT_FILE = 'reviewed_evolveorbit.asc'
+DEFAULT_FILE = 'reviewed_evolveorbit.ini'
 NEW_DATA_STR = '######### NEW DATASET #############\n'
 
 lal_pars=lal.CreateDict()
