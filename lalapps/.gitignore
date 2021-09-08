@@ -262,7 +262,6 @@ src/pulsar/Weave/lalapps_Weave
 src/pulsar/Weave/lalapps_WeaveCompare
 src/pulsar/Weave/lalapps_WeaveSetup
 src/ring/lalapps_coh_PTF_inspiral
-src/ring/lalapps_coh_PTF_spin_checker
 src/ring/lalapps_coh_PTF_testing
 src/ring/lalapps_coincringread
 src/ring/lalapps_collatesim
