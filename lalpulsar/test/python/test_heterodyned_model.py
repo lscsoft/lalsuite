@@ -677,9 +677,8 @@ def test_three(harmonic):
     freqfactor = float(harmonic)  # set frequency factor
 
     # convert into GPS times
-    gpstimes = lalpulsar.CreateTimestampVector(len(t3output[harmonic]))
-    for i, time in enumerate(t3output[harmonic][:,0]):
-        gpstimes.data[i] = lal.LIGOTimeGPS(time)
+    gpstimes = lal.CreateREAL8Vector(len(t3output[harmonic]))
+    gpstimes.data = t3output[harmonic][:,0]
 
     # set the response function look-up table
     dt = t3output[harmonic][1,0] - t3output[harmonic][0,0]  # time step
@@ -764,9 +763,8 @@ def test_four():
     det = 'H1'  # the detector
 
     # convert into GPS times
-    gpstimes = lalpulsar.CreateTimestampVector(len(t4output))
-    for i, time in enumerate(t4output[:,0]):
-        gpstimes.data[i] = lal.LIGOTimeGPS(time)
+    gpstimes = lal.CreateREAL8Vector(len(t4output))
+    gpstimes.data = t4output[:,0]
 
     detector = lalpulsar.GetSiteInfo(det)
 
@@ -845,10 +843,8 @@ def test_five():
     det = 'H1'  # detector
     detector = lalpulsar.GetSiteInfo(det)
 
-    gpstimes = lalpulsar.CreateTimestampVector(len(t5output))
-    for i, time in enumerate(t5output[:,0]):
-        gpstimes.data[i] = lal.LIGOTimeGPS(time)
-
+    gpstimes = lal.CreateREAL8Vector(len(t5output))
+    gpstimes.data = t5output[:,0]
 
     # set the response function look-up table
     dt = t5output[1,0] - t5output[0,0]  # time step
@@ -928,9 +924,8 @@ def test_six():
     det = 'H1'  # the detector
 
     # convert into GPS times
-    gpstimes = lalpulsar.CreateTimestampVector(len(t6output))
-    for i, time in enumerate(np.linspace(1000000000.0, 1000000540.0, 10)):
-        gpstimes.data[i] = lal.LIGOTimeGPS(time)
+    gpstimes = lal.CreateREAL8Vector(len(t6output))
+    gpstimes.data = np.linspace(1000000000.0, 1000000540.0, 10)
 
     detector = lalpulsar.GetSiteInfo(det)
 
@@ -1008,9 +1003,8 @@ def test_seven():
     det = 'H1'  # the detector
 
     # convert into GPS times
-    gpstimes = lalpulsar.CreateTimestampVector(len(t7output))
-    for i, time in enumerate(np.linspace(1000000000.0, 1000000540.0, 10)):
-        gpstimes.data[i] = lal.LIGOTimeGPS(time)
+    gpstimes = lal.CreateREAL8Vector(len(t7output))
+    gpstimes.data = np.linspace(1000000000.0, 1000000540.0, 10)
 
     detector = lalpulsar.GetSiteInfo(det)
 
