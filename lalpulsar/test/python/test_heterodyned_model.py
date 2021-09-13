@@ -520,9 +520,8 @@ def test_one(det):
     freqfactor = 2.  # set frequency factor
 
     # convert into GPS times
-    gpstimes = lalpulsar.CreateTimestampVector(len(t1output[det]))
-    for i, time in enumerate(t1output[det][:,0]):
-        gpstimes.data[i] = lal.LIGOTimeGPS(time)
+    gpstimes = lal.CreateREAL8Vector(len(t1output[det]))
+    gpstimes.data = t1output[det][:,0]
 
     detector = lalpulsar.GetSiteInfo(det)
 
@@ -595,9 +594,8 @@ def test_two():
     det = 'H1'  # the detector
 
     # convert into GPS times
-    gpstimes = lalpulsar.CreateTimestampVector(len(t2output))
-    for i, time in enumerate(t2output[:,0]):
-        gpstimes.data[i] = lal.LIGOTimeGPS(time)
+    gpstimes = lal.CreateREAL8Vector(len(t2output))
+    gpstimes.data = t2output[:,0]
 
     detector = lalpulsar.GetSiteInfo(det)
 
