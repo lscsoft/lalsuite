@@ -102,7 +102,7 @@ REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
 
 void XLALGetEarthPosVel( EarthState *earth,
                          const EphemerisData *edat,
-                         const REAL8 *tGPS );
+                         REAL8 tGPS );
 
 REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
                                                   const REAL8Vector *datatimes,

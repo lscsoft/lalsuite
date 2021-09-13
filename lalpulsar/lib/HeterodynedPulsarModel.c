@@ -476,7 +476,7 @@ REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
     for ( i = 0; i < length; i++ ){
       binput.tb = datatimes->data[i] + dts->data[i];
 
-      XLALGetEarthPosVel( &earth, edat, &datatimes->data[i] );
+      XLALGetEarthPosVel( &earth, edat, datatimes->data[i] );
 
       binput.earth = earth; /* current Earth state */
       XLALBinaryPulsarDeltaTNew( &boutput, &binput, pars );
@@ -512,7 +512,7 @@ REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
  */
 void XLALGetEarthPosVel( EarthState *earth,
                          const EphemerisData *edat,
-                         const REAL8 *tGPS ){
+                         REAL8 tGPS ){
   REAL8 tgpsSecond;
   REAL8 tgpsFractionSecond;
 
@@ -531,7 +531,7 @@ void XLALGetEarthPosVel( EarthState *earth,
   }
 
   tgpsSecond = (REAL8)floor(tGPS);
-  tgpsFractionSection = tGPS - tgpsSecond;
+  tgpsFractionSecond = tGPS - tgpsSecond;
 
   tinitE = edat->ephemE[0].gps;
 
@@ -539,12 +539,12 @@ void XLALGetEarthPosVel( EarthState *earth,
   ientryE = ROUND(t0e/edat->dtEtable);  /* finding Earth table entry */
 
   if ( ( ientryE < 0 ) || ( ientryE >=  edat->nentriesE )) {
-    XLAL_ERROR_VOID( XLAL_EDOM, "Input GPS time %f outside of Earth ephem range [%f, %f]\n", tgps[0], tinitE, tinitE +
+    XLAL_ERROR_VOID( XLAL_EDOM, "Input GPS time %f outside of Earth ephem range [%f, %f]\n", tgpsSecond, tinitE, tinitE +
 edat->nentriesE * edat->dtEtable );
   }
 
   /* tdiff is arrival time minus closest Earth table entry; tdiff can be pos. or neg. */
-  tdiffE = t0e -edat->dtEtable*ientryE + tgpsFractionSection;
+  tdiffE = t0e -edat->dtEtable*ientryE + tgpsFractionSecond;
   tdiff2E = tdiffE*tdiffE;
 
   REAL8* pos = edat->ephemE[ientryE].pos;
