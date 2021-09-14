@@ -73,7 +73,7 @@ typedef struct tagDetResponseTimeLookupTable{
 
 REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
                                                    PulsarParameters *origparams,
-                                                   const LIGOTimeGPSVector *datatimes,
+                                                   const REAL8Vector *datatimes,
                                                    REAL8 freqfactor,
                                                    REAL8Vector *ssbdts,
                                                    UINT4 calcSSBDelay,
@@ -89,28 +89,28 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
                                                    TimeCorrectionType ttype );
 
 REAL8Vector *XLALHeterodynedPulsarGetSSBDelay( PulsarParameters *pars,
-                                               const LIGOTimeGPSVector *datatimes,
+                                               const REAL8Vector *datatimes,
                                                const LALDetector *detector,
                                                const EphemerisData *ephem,
                                                const TimeCorrectionData *tdat,
                                                TimeCorrectionType ttype );
 
 REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
-                                               const LIGOTimeGPSVector *datatimes,
+                                               const REAL8Vector *datatimes,
                                                const REAL8Vector *dts,
                                                const EphemerisData *edat );
 
 void XLALGetEarthPosVel( EarthState *earth,
                          const EphemerisData *edat,
-                         const LIGOTimeGPS *tGPS );
+                         REAL8 tGPS );
 
 REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
-                                                  const LIGOTimeGPSVector *datatimes,
+                                                  const REAL8Vector *datatimes,
                                                   const REAL8Vector *ssbdts,
                                                   const REAL8Vector *bsbdts );
 
 REAL8Vector *XLALHeterodynedPulsarGetFITWAVESPhase( PulsarParameters *params,
-                                                    const LIGOTimeGPSVector *datatimes,
+                                                    const REAL8Vector *datatimes,
                                                     const REAL8Vector *ssbdts,
                                                     REAL8 freq );
 
@@ -119,7 +119,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
                                                              UINT4 varyphase,
                                                              UINT4 useroq,
                                                              UINT4 nonGR,
-                                                             const LIGOTimeGPSVector *timestamps,
+                                                             const REAL8Vector *timestamps,
                                                              const DetResponseTimeLookupTable *resp );
 
 COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
@@ -128,7 +128,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
                                                     UINT4 varyphase,
                                                     UINT4 useroq,
                                                     UINT4 nonGR,
-                                                    const LIGOTimeGPSVector *timestamps,
+                                                    const REAL8Vector *timestamps,
                                                     REAL8Vector *hetssbdelays,
                                                     UINT4 calcSSBDelay,
                                                     REAL8Vector *hetbsbdelays,
