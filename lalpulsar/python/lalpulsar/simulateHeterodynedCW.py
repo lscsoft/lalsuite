@@ -195,7 +195,7 @@ class HeterodynedCWSimulator(object):
         # set the "heterodyne" SSB time delay
         if self.times is not None:
             self.__hetSSBdelay = lalpulsar.HeterodynedPulsarGetSSBDelay(self.hetpar.PulsarParameters(),
-                                                                        self.times,
+                                                                        self.gpstimes,
                                                                         self.detector,
                                                                         self.__edat,
                                                                         self.__tdat,
@@ -206,7 +206,7 @@ class HeterodynedCWSimulator(object):
         # set the "heterodyne" BSB time delay
         if self.times is not None and self.hetpar["BINARY"] is not None:
             self.__hetBSBdelay = lalpulsar.HeterodynedPulsarGetBSBDelay(self.hetpar.PulsarParameters(),
-                                                                        self.times,
+                                                                        self.gpstimes,
                                                                         self.__hetSSBdelay,
                                                                         self.__edat)
         else:
@@ -215,7 +215,7 @@ class HeterodynedCWSimulator(object):
         # set the "heterodyne" glitch phase
         if self.times is not None and self.hetpar["GLEP"] is not None:
             self.__hetglitchphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(self.hetpar.PulsarParameters(),
-                                                                              self.times,
+                                                                              self.gpstimes,
                                                                               self.__hetSSBdelay,
                                                                               self.__hetBSBdelay)
         else:
@@ -224,7 +224,7 @@ class HeterodynedCWSimulator(object):
         # set the "heterodyne" FITWAVES phase
         if self.times is not None and self.hetpar["WAVESIN"] is not None and self.hetpar["WAVECOS"] is not None:
             self.__hetfitwavesphase = lalpulsar.HeterodynedPulsarGetFITWAVESPhase(self.hetpar.PulsarParameters(),
-                                                                                  self.times,
+                                                                                  self.gpstimes,
                                                                                   self.__hetSSBdelay,
                                                                                   self.hetpar["F0"])
         else:
@@ -235,17 +235,17 @@ class HeterodynedCWSimulator(object):
             raise ValueError("Must supply either 'times' or 't0' to calculate "
                              "the response function")
         else:
-            self.__t0 = t0 if t0 is not None else self.times.data[0]
+            self.__t0 = t0 if t0 is not None else self.times[0]
 
         if dt is None and self.times is None:
             raise ValueError("Must supply either 'times' or 'dt' to calculate "
                              "the response function")
         else:
             if self.times is not None and dt is None:
-                if self.times.length == 1:
+                if len(self.times) == 1:
                     raise ValueError("Must supply a 'dt' value")
                 else:
-                    self.__dt = self.times.data[1] - self.times.data[0]
+                    self.__dt = self.times[1] - self.times[0]
             else:
                 self.__dt = dt
 
@@ -299,24 +299,42 @@ class HeterodynedCWSimulator(object):
     def times(self):
         return self.__times
 
+    @property
+    def gpstimes(self):
+        return self.__gpstimes
+
     @times.setter
     def times(self, times):
         """
-        Set an array of times as a \c REAL8Vector.
+        Set an array of times, and also a @b LIGOTimeGPSVector() containing the
+        times.
         """
 
         if times is None:
             self.__times = None
+            self.__gpstimes = None
+            return
+        elif isinstance(times, lal.LIGOTimeGPS):
+            self.__times = np.array([times.gpsSeconds + 1e-9*times.gpsNanoSeconds], dtype='float64')
+            self.__gpstimes = lalpulsar.CreateTimestampVector(1)
+            self.__gpstimes.data[0] = times
+            return
+        elif isinstance(times, lalpulsar.LIGOTimeGPSVector):
+            self.__gpstimes = times
+            self.__times = np.zeros(len(times.data), dtype='float64')
+            for i, gpstime in enumerate(times.data):
+                self.__times[i] = times.data[i].gpsSeconds + 1e-9*times.data[i].gpsNanoSeconds
             return
         elif isinstance(times, (int, float)):
-            times = np.array([times], dtype='float64')
+            self.__times = np.array([times], dtype='float64')
         elif isinstance(times, (list, np.ndarray)):
-            times = np.array(times, dtype='float64')
+            self.__times = np.array(times, dtype='float64')
         else:
             raise TypeError("Unknown data type for times")
 
-        self.__times = lal.CreateREAL8Vector(len(times))
-        self.__times.data = times
+        self.__gpstimes = lalpulsar.CreateTimestampVector(len(self.__times))
+        for i, time in enumerate(self.__times):
+            self.__gpstimes.data[i] = lal.LIGOTimeGPS(time)
 
     @property
     def ephem(self):
@@ -410,7 +428,7 @@ class HeterodynedCWSimulator(object):
                                                          int(usephase),  # phase is varying between par files
                                                          int(roq),       # using ROQ?
                                                          self.__nonGR,   # using non-tensorial modes?
-                                                         self.times,
+                                                         self.gpstimes,
                                                          self.ssbdelay,
                                                          int(updateSSB),  # the SSB delay should be updated compared to hetSSBdelay
                                                          self.bsbdelay,

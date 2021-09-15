@@ -106,7 +106,7 @@
  */
 REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
                                                    PulsarParameters *origparams,
-                                                   const REAL8Vector *datatimes,
+                                                   const LIGOTimeGPSVector *datatimes,
                                                    REAL8 freqfactor,
                                                    REAL8Vector *ssbdts,
                                                    UINT4 calcSSBDelay,
@@ -252,7 +252,8 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
     REAL8 deltaphi = 0., innerphi = 0.; /* change in phase */
     Ddelay = 0.;                        /* change in SSB/BSB delay */
 
-    DT = datatimes->data[i] - T0; /* time diff between data and start of data */
+    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] ); /* time of data */
+    DT = realT - T0; /* time diff between data and start of data */
 
     /* get difference in solar system barycentring time delays */
     deltat = DT;
@@ -334,7 +335,7 @@ REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
  * \sa XLALBarycenterEarthNew
  */
 REAL8Vector *XLALHeterodynedPulsarGetSSBDelay( PulsarParameters *pars,
-                                               const REAL8Vector *datatimes,
+                                               const LIGOTimeGPSVector *datatimes,
                                                const LALDetector *detector,
                                                const EphemerisData *ephem,
                                                const TimeCorrectionData *tdat,
@@ -409,9 +410,11 @@ REAL8Vector *XLALHeterodynedPulsarGetSSBDelay( PulsarParameters *pars,
   EarthState earth;
   EmissionTime emit;
   for( i=0; i<length; i++){
-    XLALGPSSetREAL8(&bary.tgps, datatimes->data[i]);
-    bary.delta = dec + ( datatimes->data[i] - posepoch ) * pmdec;
-    bary.alpha = ra + ( datatimes->data[i] - posepoch ) * pmra / cos( bary.delta );
+    REAL8 realT = XLALGPSGetREAL8( &datatimes->data[i] );
+
+    bary.tgps = datatimes->data[i];
+    bary.delta = dec + ( realT - posepoch ) * pmdec;
+    bary.alpha = ra + ( realT - posepoch ) * pmra / cos( bary.delta );
 
     /* call barycentring routines */
     XLAL_CHECK_NULL( XLALBarycenterEarthNew( &earth, &bary.tgps, ephem, tdat, ttype ) == XLAL_SUCCESS, XLAL_EFUNC, "Barycentring routine failed" );
@@ -450,7 +453,7 @@ REAL8Vector *XLALHeterodynedPulsarGetSSBDelay( PulsarParameters *pars,
  * \sa XLALBinaryPulsarDeltaTNew
  */
 REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
-                                               const REAL8Vector *datatimes,
+                                               const LIGOTimeGPSVector *datatimes,
                                                const REAL8Vector *dts,
                                                const EphemerisData *edat ){
   /* check inputs */
@@ -474,9 +477,9 @@ REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
   /* check whether there's a binary model */
   if ( PulsarCheckParam( pars, "BINARY" ) ){
     for ( i = 0; i < length; i++ ){
-      binput.tb = datatimes->data[i] + dts->data[i];
+      binput.tb = XLALGPSGetREAL8( &datatimes->data[i] ) + dts->data[i];
 
-      XLALGetEarthPosVel( &earth, edat, datatimes->data[i] );
+      XLALGetEarthPosVel( &earth, edat, &datatimes->data[i] );
 
       binput.earth = earth; /* current Earth state */
       XLALBinaryPulsarDeltaTNew( &boutput, &binput, pars );
@@ -506,15 +509,14 @@ REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
  *
  * \param earth [out] The returned \c EarthState structure containing the Earth's position and velocity
  * \param edat [in] The solar system ephemeris data
- * \param tGPS [in] The GPS time
+ * \param tGPS [in] A \c LIGOTimeGPS structure containing a GPS time
  *
  * \sa XLALBarycenterEarth
  */
 void XLALGetEarthPosVel( EarthState *earth,
                          const EphemerisData *edat,
-                         REAL8 tGPS ){
-  REAL8 tgpsSecond;
-  REAL8 tgpsFractionSecond;
+                         const LIGOTimeGPS *tGPS ){
+  REAL8 tgps[2];
 
   REAL8 t0e;        /* time since first entry in Earth ephem. table */
   INT4 ientryE;     /* entry in look-up table closest to current time, tGPS */
@@ -530,21 +532,21 @@ void XLALGetEarthPosVel( EarthState *earth,
     XLAL_ERROR_VOID( XLAL_EINVAL, "Invalid NULL input 'earth', 'tGPS', 'edat','edat->ephemE' or 'edat->ephemS'" );
   }
 
-  tgpsSecond = (REAL8)floor(tGPS);
-  tgpsFractionSecond = tGPS - tgpsSecond;
+  tgps[0] = (REAL8)tGPS->gpsSeconds; /* convert from INT4 to REAL8 */
+  tgps[1] = (REAL8)tGPS->gpsNanoSeconds;
 
   tinitE = edat->ephemE[0].gps;
 
-  t0e = tgpsSecond - tinitE;
+  t0e = tgps[0] - tinitE;
   ientryE = ROUND(t0e/edat->dtEtable);  /* finding Earth table entry */
 
   if ( ( ientryE < 0 ) || ( ientryE >=  edat->nentriesE )) {
-    XLAL_ERROR_VOID( XLAL_EDOM, "Input GPS time %f outside of Earth ephem range [%f, %f]\n", tgpsSecond, tinitE, tinitE +
+    XLAL_ERROR_VOID( XLAL_EDOM, "Input GPS time %f outside of Earth ephem range [%f, %f]\n", tgps[0], tinitE, tinitE +
 edat->nentriesE * edat->dtEtable );
   }
 
   /* tdiff is arrival time minus closest Earth table entry; tdiff can be pos. or neg. */
-  tdiffE = t0e -edat->dtEtable*ientryE + tgpsFractionSecond;
+  tdiffE = t0e -edat->dtEtable*ientryE + tgps[1]*1.e-9;
   tdiff2E = tdiffE*tdiffE;
 
   REAL8* pos = edat->ephemE[ientryE].pos;
@@ -573,7 +575,7 @@ edat->nentriesE * edat->dtEtable );
  * \return A vector of (EM) phases in cycles
  */
 REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
-                                                  const REAL8Vector *datatimes,
+                                                  const LIGOTimeGPSVector *datatimes,
                                                   const REAL8Vector *ssbdts,
                                                   const REAL8Vector *bsbdts ){
   /* check inputs */
@@ -646,7 +648,7 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
 
     for( i=0; i<length; i++){
       glphase->data[i] = 0.;
-      tdt = datatimes->data[i] + ssbdts->data[i];
+      tdt = XLALGPSGetREAL8( &datatimes->data[i] ) + ssbdts->data[i];
       if ( bsbdts != NULL ){ tdt += bsbdts->data[i]; }
       for ( UINT4 k = 0; k < glnum; k++ ){
         if ( tdt >= glep->data[k] ){
@@ -685,7 +687,7 @@ REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
  * \return A vector of (EM) phases in cycles
  */
 REAL8Vector *XLALHeterodynedPulsarGetFITWAVESPhase( PulsarParameters *params,
-                                                    const REAL8Vector *datatimes,
+                                                    const LIGOTimeGPSVector *datatimes,
                                                     const REAL8Vector *ssbdts,
                                                     REAL8 freq ){
   /* check inputs */
@@ -719,7 +721,7 @@ REAL8Vector *XLALHeterodynedPulsarGetFITWAVESPhase( PulsarParameters *params,
     for ( i=0; i < length; i++ ){
       twave = 0.0;
       /* note: this does not include the binary times delays */
-      dtwave = (datatimes->data[i] + ssbdts->data[i] - waveepoch) / 86400.;  /* in days */
+      dtwave = (XLALGPSGetREAL8( &datatimes->data[i] ) + ssbdts->data[i] - waveepoch) / 86400.;  /* in days */
       
       for ( j=0; j < nwaves; j++ ){
         twave += wsin->data[j] * sin(waveom * (REAL8)(j + 1.) * dtwave);
@@ -770,7 +772,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
                                                              UINT4 varyphase,
                                                              UINT4 useroq,
                                                              UINT4 nonGR,
-                                                             const REAL8Vector *timestamps,
+                                                             const LIGOTimeGPSVector *timestamps,
                                                              const DetResponseTimeLookupTable *resp ){
   COMPLEX16TimeSeries *csignal = NULL;
 
@@ -903,7 +905,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
 
       /* set the time bin for the lookup table */
       /* sidereal day in secs*/
-      T = fmod( timestamps->data[i] - t0, LAL_DAYSID_SI );  /* convert GPS time to sidereal day */
+      T = fmod( XLALGPSGetREAL8( &timestamps->data[i] ) - t0, LAL_DAYSID_SI );  /* convert GPS time to sidereal day */
       timebinMin = (INT4)fmod( floor(T / tsv), resp->ntimebins );
       timeMin = timebinMin*tsv;
       timebinMax = (INT4)fmod( timebinMin + 1, resp->ntimebins );
@@ -1039,7 +1041,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
                                                     UINT4 usephase,
                                                     UINT4 useroq,
                                                     UINT4 nonGR,
-                                                    const REAL8Vector *timestamps,
+                                                    const LIGOTimeGPSVector *timestamps,
                                                     REAL8Vector *hetssbdelays,
                                                     UINT4 calcSSBDelay,
                                                     REAL8Vector *hetbsbdelays,
