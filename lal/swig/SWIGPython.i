@@ -584,10 +584,15 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     swiglal_py_array_tinfo_from_descr(&isptr, &tinfo, PyArray_DESCR(nparr));
     assert(tinfo != NULL);
 
-    // When assigning Python objects to a C array, assume the struct who owns the C array takes
-    // ownership of the memory of the C array element. The Python object wrapping the C array
-    // element should therefore disown the underlying memory.
-    const int tflags = SWIG_POINTER_DISOWN;
+    // When assigning Python objects to a C array of pointers, assume the struct
+    // who owns the C array takes ownership of the memory of the C array element.
+    // The Python object wrapping the C array element should therefore disown the
+    // underlying memory.
+    // When assigning Python objects to a C array of data blocks, however, the C
+    // array just struct-copies the object rather than taking ownership of its
+    // pointer, and so the Python object should not be disowned so that it can
+    // be garbage-collected later.
+    const int tflags = isptr ? SWIG_POINTER_DISOWN : 0;
 
     // Set the C array element to the supplied Python object.
     const size_t esize = PyArray_DESCR(nparr)->elsize;
