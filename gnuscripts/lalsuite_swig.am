@@ -160,11 +160,14 @@ endif
 
 $(nodist_swiglal_octave_la_SOURCES): $(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_octave/ && \
-	if $(SWIG) $(swig_octave_flags) -o $@ $<; then \
+	if $(SWIG) $(swig_octave_flags) -o $@.tmp $<; then \
 		$(swig_deps_if)mv -f $(SWIG_DEPDIR)/swiglal_octave.deps.tmp $(SWIG_DEPDIR)/swiglal_octave.deps; \
+		echo '#line 1 "$@<$(PACKAGE)>"' > $@; \
+		cat $@.tmp >> $@; \
+		rm -f $@.tmp; \
 	else \
 		$(swig_deps_if)rm -f $(SWIG_DEPDIR)/swiglal_octave.deps.tmp; \
-		rm -f $@; \
+		rm -f $@.tmp; \
 		exit 1; \
 	fi
 
@@ -219,11 +222,14 @@ endif
 
 $(nodist_swiglal_python_la_SOURCES): $(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_python/ && \
-	if $(SWIG) $(swig_python_flags) -o $@ $<; then \
+	if $(SWIG) $(swig_python_flags) -o $@.tmp $<; then \
 		$(swig_deps_if)mv -f $(SWIG_DEPDIR)/swiglal_python.deps.tmp $(SWIG_DEPDIR)/swiglal_python.deps; \
+		echo '#line 1 "$@<$(PACKAGE)>"' > $@; \
+		cat $@.tmp >> $@; \
+		rm -f $@.tmp; \
 	else \
 		$(swig_deps_if)rm -f $(SWIG_DEPDIR)/swiglal_python.deps.tmp; \
-		rm -f $@; \
+		rm -f $@.tmp; \
 		exit 1; \
 	fi
 

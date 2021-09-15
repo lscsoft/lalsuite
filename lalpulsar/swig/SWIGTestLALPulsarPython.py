@@ -22,16 +22,19 @@ del a
 lal.CheckMemoryLeaks()
 print("PASSED object parent tracking")
 
-# check multi-vector element assignment
-print("checking multi-vector element assignment ...")
+# check array element assignment
+print("checking array element assignment ...")
 mts = lalpulsar.CreateMultiLIGOTimeGPSVector(2)
 ts0 = lalpulsar.CreateTimestampVector(3)
+for i in range(ts0.length):
+    ts0.data[i] = lal.LIGOTimeGPS(900000000 + i)
 mts.data[0] = ts0
 lal.swig_set_nasty_error_handlers()
 del mts
 del ts0
 lal.swig_set_nice_error_handlers()
-print("PASSED multi-vector element assignment")
+lal.CheckMemoryLeaks()
+print("PASSED array element assignment")
 
 # passed all tests!
 print("PASSED all tests")
