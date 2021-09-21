@@ -1,6 +1,8 @@
 #include <config.h>
 
 #ifdef HAVE_HDF5
+/* FIXME: should really update interface */
+#define H5_USE_110_API
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #endif
