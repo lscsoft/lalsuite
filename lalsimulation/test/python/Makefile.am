@@ -24,7 +24,7 @@ test_scripts += \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
-	reviewed_evolveorbit.asc \
+	reviewed_evolveorbit.ini \
 	$(END_OF_LIST)
 
 # Add any helper programs required by tests to this variable

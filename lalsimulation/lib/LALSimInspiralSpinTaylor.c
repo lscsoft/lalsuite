@@ -1326,6 +1326,8 @@ int XLALSimInspiralSpinTaylorT5Setup(
 	   * impact 3.5PN terms, hence the latter should only be used in the
 	   * spin-aligned case only when orbit average is taken.
 	   */
+	    (*params)->wdot6S1O       = XLALSimInspiralTaylorT2dtdv_6PNSOCoeff(m1M);
+	    (*params)->wdot6S2O       = XLALSimInspiralTaylorT2dtdv_6PNSOCoeff(m2M);
             (*params)->wdot6S1S2Avg   = XLALSimInspiralTaylorT2dtdv_6PNS1S2CoeffAvg(eta);
             (*params)->wdot6S1OS2OAvg = XLALSimInspiralTaylorT2dtdv_6PNS1OS2OCoeffAvg(eta);
             (*params)->wdot6S1S1Avg   = XLALSimInspiralTaylorT2dtdv_6PNS1S1CoeffAvg(m1M);
@@ -2896,7 +2898,8 @@ static int XLALSimInspiralSpinTaylorT5DerivativesAvg(
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_SPIN_ORDER_3PN:
-	    wspin6Avg = params->wdot6S1S2Avg*S1dotS2 + params->wdot6S1OS2OAvg*LNhdotS1*LNhdotS2
+	    wspin6Avg = params->wdot6S1O*LNhdotS1 + params->wdot6S2O*LNhdotS2
+	  + params->wdot6S1S2Avg*S1dotS2 + params->wdot6S1OS2OAvg*LNhdotS1*LNhdotS2
 	  + (params->wdot6S1S1Avg + params->wdot6QMS1S1Avg)*S1sq
 	  + (params->wdot6S2S2Avg + params->wdot6QMS2S2Avg)*S2sq
 	  + (params->wdot6S1OS1OAvg + params->wdot6QMS1OS1OAvg)*LNhdotS1*LNhdotS1 +
