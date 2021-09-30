@@ -114,7 +114,7 @@ typedef struct
   /* time-series sampling + heterodyning frequencies */
   REAL8 fmin;		/**< Lowest frequency in output SFT (= heterodyning frequency) */
   REAL8 Band;		/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
-  REAL8 sourceDeltaT;   /**< source-frame sampling period. '0' implies previous internal defaults */
+  REAL8 sourceDeltaT;   /**< source-frame sampling period. '0' implies defaults set in XLALGeneratePulsarSignal() */
 
   /* SFT params */
   REAL8 Tsft;		        /**< SFT time baseline Tsft */
@@ -643,9 +643,11 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* pulsar params */
   XLALRegisterUvarMember( injectionSources,     STRINGVector, 0, OPTIONAL, "%s", InjectionSourcesHelpString );
+  XLALRegisterUvarMember( sourceDeltaT,         REAL8,  0, OPTIONAL, "Source-frame sampling period. '0' implies implies defaults set in XLALGeneratePulsarSignal()." );
 
   /* noise */
   XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps, and frequency range unless separately specified.)");
+  XLALRegisterUvarMember( randSeed,           INT4, 0, OPTIONAL, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
 
   /* frame input/output options */
 #ifdef HAVE_LIBLALFRAME
@@ -661,8 +663,6 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 #endif
 
   // ----- 'expert-user/developer' options ----- (only shown in help at lalDebugLevel >= warning)
-  XLALRegisterUvarMember(   randSeed,             INT4, 0, DEVELOPER, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
-  XLALRegisterUvarMember(  sourceDeltaT,        REAL8,  0, DEVELOPER, "Source-frame sampling period. '0' implies previous internal defaults" );
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
