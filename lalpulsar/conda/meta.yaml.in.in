@@ -117,6 +117,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         # ignore run_exports from python's recipe
         - python
     requirements:
@@ -130,6 +131,8 @@ outputs:
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - numpy
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - astropy
         - gsl  # [linux]
@@ -171,6 +174,7 @@ outputs:
     script: install-bin.sh
     build:
       ignore_run_exports:
+        - openssl
         - python
     requirements:
       build:
@@ -181,6 +185,8 @@ outputs:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
