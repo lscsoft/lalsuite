@@ -80,6 +80,8 @@ variables:
   CONDA_ENVS_PATH: "${CI_PROJECT_DIR}/envs"
   # what file to use for conda configuration
   CONDARC: "${CI_PROJECT_DIR}/.condarc"
+  # tell mamba to not display the huge ascii-art banner
+  MAMBA_NO_BANNER: 1
 
 # default parameters for jobs
 default:
@@ -368,14 +370,20 @@ default:
   - conda config --file ${CONDARC} --set always_yes yes
   - conda config --file ${CONDARC} --add channels conda-forge
   - conda config --file ${CONDARC} --set channel_priority strict
-  # update conda itself
-  - retry conda update -n base conda setuptools
+  # update conda and mamba
+  - retry mamba update -n base conda "mamba<0.18.0"
   # install build helpers
-  - retry conda install -n base "conda-build!=3.18.10" conda-forge-pinning "conda-smithy>=3.7.5" conda-verify
+  - retry mamba install -n base
+        "conda-build!=3.18.10"
+        conda-forge-pinning
+        "conda-smithy>=3.7.5"
+        conda-verify
+        boa
   # print info
   - conda activate base
   - conda info --all
   - conda config --show-sources
+  - conda list --name base
 
 # template for jobs that use conda (in any context)
 .conda-job:
@@ -420,14 +428,14 @@ default:
       fi
     # build packages (preferring local packages over everything)
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
-    - xargs -t conda build
+    - xargs -t conda mambabuild
           recipe/
+          --channel local
           --dirty
           --error-overlinking
           --error-overdepending
           --keep-old-work
           --no-anaconda-upload
-          --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
           <<< ${CONDA_BUILD_ARGS}
   after_script:
@@ -1247,7 +1255,7 @@ upgrade:conda:linux:
     # properly index the newly built packages
     - conda index ${CONDA_BLD_PATH}
     # install latest release
-    - conda create -n upgrade-test
+    - mamba create -n upgrade-test
           python=${LALSUITE_PYTHON_VERSION}
           lal
           lalframe
@@ -1259,7 +1267,7 @@ upgrade:conda:linux:
           lalinference
           lalapps
     # install new packages
-    - conda update -n upgrade-test --use-local
+    - mamba update -n upgrade-test --use-local
           lal
           lalframe
           lalmetaio
@@ -1309,7 +1317,7 @@ platform:debian:stretch:
     - conda config --show-sources
     # install the dev environment for the default python version
     - sed -i.tmp "s/- python$/- python ${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
-    - conda env create
+    - mamba env create
           --file ${ENVIRONMENT_FILE}
           --name lalsuite-platform-tests
           --quiet
@@ -1320,8 +1328,9 @@ platform:debian:stretch:
     - export CONFIGURE_FLAGS="${CONFIGURE_FLAGS} CPPFLAGS='${CPPFLAGS}'"
     # manually install packages that have circular dependencies upon lal
     # then forcibly remove lalsuite
-    - conda install --yes --quiet --name lalsuite-platform-tests
+    - mamba install --yes --quiet --name lalsuite-platform-tests
           python-ligo-lw
+    # need to use `conda` here, see https://github.com/mamba-org/mamba/issues/1239
     - conda uninstall --yes --quiet --name lalsuite-platform-tests --force-remove
           "liblal*"
           "lal*"
