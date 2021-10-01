@@ -65,5 +65,3 @@ vcs_build_info_source = LALVCSInfo.c
 vcs_info_sources = LALVCSInfoHeader.h
 build_info_source = LALBuildInfoHeader.h
 build_info_dependencies = $(EXTRA_liblal_la_DEPENDENCIES)
-
-LDADD = liblal.la
