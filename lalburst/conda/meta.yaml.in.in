@@ -105,6 +105,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         # ignore run_exports from python's recipe
         - python
     requirements:
@@ -125,6 +126,8 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy
         - tqdm
+        # provided to assist the solver, but not actually used
+        - openssl
       run:
         - gsl
         - liblal  # [linux]
@@ -181,6 +184,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         - python
     requirements:
       build:
@@ -191,6 +195,8 @@ outputs:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - python
+        # provided to assist the solver, but not actually used
+        - openssl
       run:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalburst', exact=True) }}
