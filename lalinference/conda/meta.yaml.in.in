@@ -124,6 +124,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         # ignore run_exports from python's recipe
         - python
     requirements:
@@ -136,6 +137,8 @@ outputs:
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - python
         - numpy
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - astropy >=1.1.1
         - healpy >=1.9.1
@@ -193,6 +196,7 @@ outputs:
     script: install-bin.sh
     build:
       ignore_run_exports:
+        - openssl
         - python
       # Prioritise nompi via build number
       number: {{ (build + 100) if (mpi or "nompi") == "nompi" else build }}
@@ -225,6 +229,8 @@ outputs:
         - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
         - six
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - astropy >=1.1.1
         - gsl  # [mpi != 'nompi']
