@@ -119,8 +119,6 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_SLY9.dat \
 	LALSimNeutronStarEOS_HQC18.dat
 
-LDADD = liblalsimulation.la
-
 pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \
 	LALSimBlackHoleRingdownPrec.h \
