@@ -54,7 +54,7 @@ requirements:
     - gsl
     - hdf5
     - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
-    - zlib
+    - libzlib
 
 outputs:
   - name: liblal
@@ -73,12 +73,12 @@ outputs:
         - gsl
         - hdf5
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
-        - zlib
+        - libzlib
       run:
         - fftw  # [fft_impl == "fftw"]
         - gsl
         - hdf5
-        - zlib
+        - libzlib
       run_constrained:
         # make sure downstream packages are updated beyond the first
         # appearance of liblal
