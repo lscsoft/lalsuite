@@ -931,7 +931,7 @@ lalapps:conda:
     - ${PYTHON} -m venv env
     - source env/bin/activate
     - python -m pip install
-          git+https://github.com/lpsinger/delocate@fix-duplicate-libs
+          delocate
           oldest-supported-numpy
     # Build wheel
     - ./00boot
