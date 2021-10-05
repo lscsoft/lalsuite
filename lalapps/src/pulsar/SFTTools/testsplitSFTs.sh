@@ -41,7 +41,7 @@ for i in 1 2; do
         else
             binwidth="0008Hz0"
         fi
-        sft="narrowband${i}/H-5_H1_${Tsft}SFT_NB_F00${freq}Hz0_W${binwidth}-${start}-${span}.sft"
+        sft="narrowband${i}/H-5_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_mfdv5-${start}-${span}.sft"
         if ! test -f $sft; then
             echo "ERROR: could not find file '$sft'"
             exit 1
@@ -92,7 +92,7 @@ for freq in 10 18 26 34 42 50 58 66 74 82 90; do
     else
         binwidth="0008Hz0"
     fi
-    sft="narrowband3/H-5_H1_${Tsft}SFT_NB_F00${freq}Hz0_W${binwidth}-${start}-${span}.sft"
+    sft="narrowband3/H-5_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_mfdv5-${start}-${span}.sft"
     if ! test -f $sft; then
         echo "ERROR: could not find file '$sft'"
         exit 1
@@ -118,7 +118,7 @@ for freq in 10 18 26 34 42 50 58 66 74 82 90; do
     else
         binwidth="0008Hz0"
     fi
-    sft="narrowband4/H-3_H1_${Tsft}SFT_NB_F00${freq}Hz0_W${binwidth}-${startTime2}-${span2}.sft"
+    sft="narrowband4/H-3_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_mfdv5-${startTime2}-${span2}.sft"
     if ! test -f $sft; then
         echo "ERROR: could not find file '$sft'"
         exit 1
