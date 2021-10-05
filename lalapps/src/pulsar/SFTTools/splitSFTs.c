@@ -60,6 +60,12 @@
 #include <lal/SFTReferenceLibrary.h>
 #include <LALAppsVCSInfo.h>
 
+#ifndef _WIN32
+#define DIR_SEPARATOR '/'
+#else
+#define DIR_SEPARATOR '\\'
+#endif
+
 /**
  * rounding (for positive numbers!)
  * taken from SFTfileIO in LALSupport, should be consistent with that
@@ -470,7 +476,7 @@ int main( int argc, char **argv )
     for ( size_t i = 0; i < globbuf.gl_pathc; ++i ) {
 
       /* find the filename component */
-      char *filename = strrchr( globbuf.gl_pathv[i], '/' );
+      char *filename = strrchr( globbuf.gl_pathv[i], DIR_SEPARATOR );
       XLAL_CHECK_MAIN( filename != NULL, XLAL_ESYS, "could not extract filename from '%s'", globbuf.gl_pathv[i] );
       ++filename;
       XLAL_CHECK_MAIN( *filename != '\0', XLAL_ESYS, "'%s' is a directory", globbuf.gl_pathv[i] );
@@ -514,7 +520,7 @@ int main( int argc, char **argv )
   for ( ; (arg < argc) && !stopInputCauseSorted; arg++ ) {
 
     /* find the filename component */
-    char *filename = strrchr( argv[arg], '/' );
+    char *filename = strrchr( argv[arg], DIR_SEPARATOR );
     XLAL_CHECK_MAIN( filename != NULL, XLAL_ESYS, "could not extract filename from '%s'", argv[arg] );
     ++filename;
     XLAL_CHECK_MAIN( *filename != '\0', XLAL_ESYS, "'%s' is a directory", argv[arg] );
