@@ -1070,14 +1070,6 @@ top-level:
       # `[skip compiler]` in the commit message
       - $CI_COMMIT_MESSAGE =~ /\[skip compiler\]/
 
-clang:10:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-clang:10
-  variables:
-    CC: clang-10
-    CXX: clang++-10
-
 clang:11:
   extends:
     - .compiler-test
