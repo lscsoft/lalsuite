@@ -1094,6 +1094,14 @@ clang:12:
     CC: clang-12
     CXX: clang++-12
 
+clang:13:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-clang:13
+  variables:
+    CC: clang-13
+    CXX: clang++-13
+
 clang:dev:
   extends:
     - .compiler-test
