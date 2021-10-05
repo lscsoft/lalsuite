@@ -2504,12 +2504,14 @@ static int XLALSimInspiralSpinTaylorStoppingTest(double UNUSED t,
 } // End of XLALSimInspiralSpinTaylorStoppingTest()
 
 /*
- * Utility function to compute the 3PN contribution to \omega of circular orbit
+ * Utility function to compute the 3PN contribution to \f$\omega\f$ of circular orbit
  * coming from precession.
- * There is due to the mismatch at 3PN between \dot\phi and \omega, as explained in arXiv:1507.00406, leading to
- * \dot\phi=omega-(\Omega\cdot\lambda)^2/(2\dot\phi), where \Omega is the precession vector of \hat L_N:
- * \Omega= \hat L_N\times \dot\hat L_N, which after orbit average gives
- * \dot\phi=\omega-\Omega^2/(4\dot\phi)\simeq \omega-\Omega^2/(4\omega)
+ * There is due to the mismatch at 3PN between \f$\dot{\phi}\f$ and \f$\omega\f$,
+ * as explained in arXiv:1507.00406, leading to
+ * \f$\dot{\phi} = \omega-(\Omega\cdot\lambda)^2/(2\dot{\phi})\f$,
+ * where \f$\Omega\f$ is the precession vector of \f$\hat{L_N}\f$:
+ * \f$\Omega= \hat{L_N}\times \dot{\hat{L_N}}\f$, which after orbit average gives
+ * \f$\dot{\phi}=\omega-\Omega^2/(4\dot{\phi})\simeq \omega-\Omega^2/(4\omega)\f$
  */
 static REAL8 omegashift(REAL8 S1sq,    // Modulo square of S1
 			REAL8 S2sq,    // Modulo square of S2
