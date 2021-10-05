@@ -23,10 +23,6 @@ lalapps_dumpSFT_SOURCES = dumpSFT.c
 lalapps_splitSFTs_SOURCES = splitSFTs.c
 lalapps_WriteSFTsfromSFDBs_SOURCES = WriteSFTsfromSFDBs.c
 
-EXTRA_DIST += \
-	SFTSpecification.dox \
-	$(END_OF_LIST)
-
 # Add shell test scripts to this variable
 test_scripts += testComputePSD.sh
 test_scripts += testSFTvalidate.sh
