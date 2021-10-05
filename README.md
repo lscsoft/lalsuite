@@ -60,7 +60,7 @@ After the environment setup succeeded, you can activate it with:
 
 You can then build the suite by executing, in order:
 1. `./00boot` (once at first time)
-2. `./configure` with appropriate options (see `,/configure --help`)
+2. `./configure` with appropriate options (see `./configure --help`)
 3. `make`
 
 After pulling updates or making your own changes,
