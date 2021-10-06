@@ -313,7 +313,7 @@ fi
 SFTs_orig="H-1_H1_${Tsft}SFT_mfdv5-${startTime}-${Tsft}.sft"
 # FIXME: currently need to add "Hz1" to the width part of the SFTs_split filename
 # due to the nudging required below
-SFTs_split="H-1_H1_${Tsft}SFT_NB_F0${fmin}Hz0_W00${Band}Hz1-${startTime}-${Tsft}.sft"
+SFTs_split="H-1_H1_${Tsft}SFT_NBF0${fmin}Hz0W00${Band}Hz1_mfdv5-${startTime}-${Tsft}.sft"
 SFTs_fromframes="H-1_H1_${Tsft}SFT_mfdv5fromframes-${startTime}-${Tsft}.sft"
 dumps_split="${testDIR}/dump_${SFTs_split}.txt"
 dumps_fromframes="${testDIR}/dump_${SFTs_fromframes}.txt"
