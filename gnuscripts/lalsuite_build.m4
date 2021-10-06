@@ -1001,7 +1001,7 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
 
 AC_DEFUN([LALSUITE_CHECK_CUDA],
 [AC_MSG_CHECKING([whether LAL has been compiled with CUDA support])
-AC_RUN_IFELSE([AC_LANG_SOURCE[([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <lal/LALConfig.h>
 #ifdef LAL_CUDA_ENABLED
 int main( void ) { return 0; }
