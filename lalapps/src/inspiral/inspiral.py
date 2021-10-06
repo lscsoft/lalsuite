@@ -32,7 +32,7 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
   are set, the stdout and stderr from the job are directed to the logs
   directory. The path to the executable is determined from the ini file.
   """
-  def __init__(self,cp,sections,exec_name,extension='xml',dax=False):
+  def __init__(self,cp,sections,exec_name,extension='xml'):
     """
     cp = ConfigParser object from which options are read.
     sections = sections of the ConfigParser that get added to the opts
@@ -43,7 +43,7 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     universe = cp.get('condor','universe')
     executable = cp.get('condor',exec_name)
     pipeline.CondorDAGJob.__init__(self,universe,executable)
-    pipeline.AnalysisJob.__init__(self,cp,dax)
+    pipeline.AnalysisJob.__init__(self,cp)
     self.add_condor_cmd('copy_to_spool','False')
     self.set_grid_site('local')
     self.__use_gpus = cp.has_option('condor', 'use-gpus')
@@ -107,13 +107,13 @@ class InspiralPlottingJob(InspiralAnalysisJob):
   The InspiralPlottingJob class will assign options common to all plotting
   jobs. Currently this is only MPLCONFIGDIR.
   """
-  def __init__(self,cp,sections,exec_name,extension='xml',dax=False):
+  def __init__(self,cp,sections,exec_name,extension='xml'):
     """
     cp = ConfigParser object from which options are read.
     sections = sections of the ConfigParser that get added to the opts
     exec_name = exec_name name in ConfigParser
     """
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
     self.add_condor_cmd('getenv','True')
     if cp.has_option('pipeline','matplotlibdir'):
       MPLConfigPath = cp.get('pipeline','matplotlibdir')
@@ -129,7 +129,7 @@ class TmpltBankJob(InspiralAnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -142,7 +142,7 @@ class TmpltBankJob(InspiralAnalysisJob):
          have_pycbc=True
          cp.set('condor', 'universe', 'vanilla')
 
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
     if have_pycbc:
         self.add_condor_cmd('getenv', 'True')
@@ -157,14 +157,14 @@ class InspInjJob(InspiralAnalysisJob):
   job runs in the universe specified in the ini file. The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'inspinj'
     sections = ['inspinj']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
     self.set_universe('vanilla')
 
     self.__listDone=[]
@@ -189,14 +189,14 @@ class BbhInjJob(InspiralAnalysisJob):
   job runs in the universe specified in the ini file. The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'bbhinj'
     sections = ['bbhinj']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
 
 class RandomBankJob(InspiralAnalysisJob):
@@ -207,14 +207,14 @@ class RandomBankJob(InspiralAnalysisJob):
   universe specfied in the ini file. The path to the executable is determined
   from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'randombank'
     sections = ['randombank']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
 
 class SplitBankJob(InspiralAnalysisJob):
@@ -225,14 +225,14 @@ class SplitBankJob(InspiralAnalysisJob):
   universe specfied in the ini file. The path to the executable is determined
   from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'splitbank'
     sections = ['splitbank']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
 
 class InspiralJob(InspiralAnalysisJob):
@@ -245,7 +245,7 @@ class InspiralJob(InspiralAnalysisJob):
   checks are done to ensure a successful run and the necessary Condor
   commands are added.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -259,7 +259,7 @@ class InspiralJob(InspiralAnalysisJob):
          cp.set('condor', 'universe', 'vanilla')
          cp.remove_option('inspiral', 'pycbc')
 
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
     self.add_condor_cmd('request_memory', '1000')
 
@@ -301,14 +301,14 @@ class InspiralCkptJob(InspiralAnalysisJob):
   is determined from the ini file.
   This one checkpoints.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'inspiral'
     sections = []
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
     self.add_short_opt('_condor_relocatable', '')
 
 
@@ -320,14 +320,14 @@ class PTFInspiralJob(InspiralAnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'coh_PTF_inspiral'
     sections = ['coh_PTF_inspiral']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
     ramValue = 1390
     if cp.has_section('coh_PTF_inspiral-meta'):
       if cp.has_option('coh_PTF_inspiral-meta','minimum-ram'):
@@ -343,14 +343,14 @@ class TrigbankJob(InspiralAnalysisJob):
   always runs in the scheduler universe. The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'trigbank'
     sections = ['trigbank']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
 
 class IncaJob(InspiralAnalysisJob):
@@ -360,14 +360,14 @@ class IncaJob(InspiralAnalysisJob):
   the job are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
     exec_name = 'inca'
     sections = ['inca']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
 
 class ThincaJob(InspiralAnalysisJob):
@@ -377,7 +377,7 @@ class ThincaJob(InspiralAnalysisJob):
   the job are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     cp = ConfigParser object from which options are read.
     """
@@ -385,7 +385,7 @@ class ThincaJob(InspiralAnalysisJob):
     #sections = ['thinca']
     sections = []
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
     if cp.has_section('thinca'):
       self.add_ini_opts(cp,'thinca')
 
@@ -420,15 +420,14 @@ class ThincaToCoincJob(InspiralAnalysisJob):
   A ThincaToCoinc job. The static options are read from the
   section [thinca_to_coinc] in the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'thinca_to_coinc'
     sections = ['thinca_to_coinc']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax)
+    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension)
     self.add_condor_cmd('getenv', 'True')
     self.__experiment_start_time = None
     self.__experiment_end_time = None
@@ -477,10 +476,9 @@ class HWinjPageJob(InspiralAnalysisJob):
   A HWinjPageJob, runs the hardware injection page script on the
   output of the pipeline
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = "hardware_inj_page"
     universe = "vanilla"
@@ -488,7 +486,7 @@ class HWinjPageJob(InspiralAnalysisJob):
     extension = 'html'
     executable = cp.get('condor',exec_name)
     pipeline.CondorDAGJob.__init__(self, universe, executable)
-    pipeline.AnalysisJob.__init__(self, cp, dax)
+    pipeline.AnalysisJob.__init__(self, cp)
     self.add_condor_cmd('getenv','True')
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
     self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
@@ -500,15 +498,14 @@ class SireJob(InspiralAnalysisJob):
   the job are directed to the logs directory. The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'sire'
     sections = ['sire']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
     # sire currently doesn't take GPS start/end times
     self.set_stdout_file('logs/sire-$(macroifo)-$(cluster)-$(process).out')
@@ -521,15 +518,14 @@ class CoireJob(InspiralAnalysisJob):
   the job are directed to the logs directory. The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'coire'
     sections = ['coire']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
     # coire currently doesn't take GPS start/end times
     self.set_stdout_file('logs/coire-$(macroifo)-$(cluster)-$(process).out')
@@ -541,15 +537,14 @@ class FrJoinJob(InspiralAnalysisJob):
   A lalapps_frjoin job used by the inspiral pipeline. The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'frjoin'
     sections = []
     extension = 'gwf'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
     # frjoin currently doesn't take GPS start/end times
     self.set_stdout_file('logs/frjoin-$(cluster)-$(process).out')
@@ -563,15 +558,14 @@ class CohBankJob(InspiralAnalysisJob):
   stderr from the job are directed to the logs directory.  The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'cohbank'
     sections = ['cohbank']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
 
 class InspiralCoherentJob(InspiralAnalysisJob):
@@ -582,15 +576,14 @@ class InspiralCoherentJob(InspiralAnalysisJob):
   runs in the universe specfied in the ini file. The path to the executable
   is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'inspiral'
     sections = ['data']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
 
@@ -601,15 +594,14 @@ class CohInspBankJob(InspiralAnalysisJob):
   stderr from the job are directed to the logs directory.  The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'cohinspbank'
     sections = ['cohinspbank']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
 
 class ChiaJob(InspiralAnalysisJob):
@@ -619,15 +611,14 @@ class ChiaJob(InspiralAnalysisJob):
   stderr from the job are directed to the logs directory.  The path to the
   executable is determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'chia'
     sections = ['chia']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
 
 class CohireJob(InspiralAnalysisJob):
@@ -636,15 +627,14 @@ class CohireJob(InspiralAnalysisJob):
   the job are directed to the logs directory. The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'cohire'
     sections = ['cohire']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
 
     # cohire currently doesn't take GPS start/end times
     self.set_stdout_file('logs/cohire-$(macroifo)-$(cluster)-$(process).out')
@@ -656,15 +646,14 @@ class InjFindJob(InspiralAnalysisJob):
   An injfind job. The static options are read from the [injfind]
   section in the cp file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: a ConfigParser object from which the options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'injfind'
     sections = ['injfind']
     extension = 'xml'
-    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax)
+    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension)
     self.add_condor_cmd('getenv', 'True')
     # overwrite standard log file names
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
@@ -2245,15 +2234,14 @@ class PlotInspiralrangeJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotinspiralrange'
     sections = ['plotinspiralrange']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
 
 class PlotInspiralrangeNode(InspiralPlottingNode):
   """
@@ -2275,15 +2263,14 @@ class PlotInspiralJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotinspiral'
     sections = ['plotinspiral']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
 
 class PlotInspiralNode(InspiralPlottingNode):
   """
@@ -2304,15 +2291,14 @@ class PlotThincaJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotthinca'
     sections = ['plotthinca']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
     self.add_condor_cmd('request_memory', '2500')
 
 class PlotThincaNode(InspiralPlottingNode):
@@ -2335,15 +2321,14 @@ class PlotCohsnrJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotcohsnr'
     sections = ['plotcohsnr']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
 
 class PlotCohsnrNode(InspiralPlottingNode):
   """
@@ -2365,15 +2350,14 @@ class PlotNumtemplatesJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotnumtemplates'
     sections = ['plotnumtemplates']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
 
 class PlotNumtemplatesNode(InspiralPlottingNode):
   """
@@ -2394,15 +2378,14 @@ class PlotEthincaJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotethinca'
     sections = ['plotethinca']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
     self.add_condor_cmd('request_memory', '2500')
 
 class PlotEthincaNode(InspiralPlottingNode):
@@ -2424,15 +2407,14 @@ class PlotInspmissedJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotinspmissed'
     sections = ['plotinspmissed']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
 
 class PlotInspmissedNode(InspiralPlottingNode):
   """
@@ -2453,15 +2435,14 @@ class PlotEffdistcutJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'ploteffdistcut'
     sections = ['ploteffdistcut']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
 
 class PlotEffdistcutNode(InspiralPlottingNode):
   """
@@ -2483,15 +2464,14 @@ class PlotInspinjJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotinspinj'
     sections = ['plotinspinj']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
     self.add_condor_cmd('request_memory', '2500')
 
 class PlotInspinjNode(InspiralPlottingNode):
@@ -2513,15 +2493,14 @@ class PlotSnrchiJob(InspiralPlottingJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotsnrchi'
     sections = ['plotsnrchi']
     extension = 'html'
-    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralPlottingJob.__init__(self,cp,sections,exec_name,extension)
     self.add_condor_cmd('request_memory', '2500')
 
 class PlotSnrchiNode(InspiralPlottingNode):
@@ -2543,15 +2522,14 @@ class PlotGRBtimeslideStatsJob(InspiralAnalysisJob):
   are directed to the logs directory.  The path to the executable is
   determined from the ini file.
   """
-  def __init__(self,cp,dax=False):
+  def __init__(self,cp):
     """
     @param cp = ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'pylal_grbtimeslide_stats'
     sections = ['grbtimeslidestats']
     extension = 'html'
-    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+    InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
     self.add_condor_cmd('getenv', 'True')
 
 class PlotGRBtimeslideStatsNode(InspiralAnalysisNode):
@@ -2571,15 +2549,14 @@ class MiniFollowupsJob(InspiralPlottingJob):
   A minifollowups job. Static options are read from the
   [minifollowups] section in the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'minifollowups'
     sections = ['minifollowups','omega-scans']
     extension = None
-    InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension, dax)
+    InspiralPlottingJob.__init__(self, cp, sections, exec_name, extension)
     self.add_condor_cmd('request_memory', '2500')
 
   def set_time_slides(self):
@@ -2720,14 +2697,13 @@ class DBSimplifyJob(pipeline.SqliteJob):
   A DBSimplify job. The static options are read from the section
   [dbsimplify] in the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'dbsimplify'
     sections = ['dbsimplify']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 
 class DBSimplifyNode(pipeline.SqliteNode):
@@ -2746,14 +2722,13 @@ class ComputeDurationsJob(pipeline.SqliteJob):
   A ComputeDurations job. The static options are read from the section
   [compute_durations] in the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'compute_durations'
     sections = ['compute_durations']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 
 class ComputeDurationsNode(pipeline.SqliteNode):
@@ -2772,14 +2747,13 @@ class DBAddInjJob(pipeline.SqliteJob):
   A DBAddInj job. The static options are read from the section
   [dbaddinj] in the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'dbaddinj'
     sections = ['dbaddinj']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 
 class DBAddInjNode(pipeline.SqliteNode):
@@ -2826,14 +2800,13 @@ class RepopCoincJob(pipeline.SqliteJob):
   A repop_coinc job. The static options are read from the section
   [repop_coinc] in the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'repop_coinc'
     sections = ['repop_coinc']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 
 class RepopCoincNode(pipeline.SqliteNode):
@@ -2852,14 +2825,13 @@ class DBInjFindJob(pipeline.SqliteJob):
   A dbinjfind job. The static options are read from the section
   [dbinjfind] in the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'dbinjfind'
     sections = ['dbinjfind']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 
 class DBInjFindNode(pipeline.SqliteNode):
@@ -2878,14 +2850,13 @@ class ClusterCoincsJob(pipeline.SqliteJob):
   A cluster coincs job. The static options are read from the section
   [cluster_coincs] in the ini file.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'cluster_coincs'
     sections = ['cluster_coincs']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 
 class ClusterCoincsNode(pipeline.SqliteNode):
@@ -2904,14 +2875,13 @@ class CFarJob(pipeline.SqliteJob):
   A cfar job. The static options are read from the section [cfar] in
   the ini file.
   """
-  def __init__(self, cp, sections, dax = False):
+  def __init__(self, cp, sections):
     """
     @param cp: ConfigParser object from which options are read.
     @param sections: list of sections for cp to read from
-    @param dax UNDOCUMENTED
     """
     exec_name = 'cfar'
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 
 class CFarNode(pipeline.SqliteNode):
@@ -2929,14 +2899,13 @@ class LigolwCBCPrintJob(pipeline.SqliteJob):
   """
   A LigolwCBCPrintJob is a generic job class for ligolw_cbc_print* programs, e.g., ligolw_cbc_printlc.
   """
-  def __init__(self, cp, exec_name, sections, dax = False):
+  def __init__(self, cp, exec_name, sections):
     """
     @param cp: ConfigParser object from which options are read.
     @param exec_name UNDOCUMENTED
     @param sections: list of sections for cp to read from
-    @param dax UNDOCUMENTED
     """
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 
 class LigolwCBCPrintNode(pipeline.SqliteNode):
@@ -3117,14 +3086,13 @@ class PlotSlidesJob(pipeline.SqliteJob):
   A plotslides job. The static options are read from the sections [plot_input]
   and [plotslides].
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotslides'
     sections = ['plot_input', 'plotslides']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
   def set_plot_playground_only(self):
     """
@@ -3149,14 +3117,13 @@ class PlotCumhistJob(pipeline.SqliteJob):
   A plotcumhist job. The static options are read from the sections [plot_input] and
   [plotcumhist].
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotcumhist'
     sections = ['plot_input', 'plotcumhist']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
   def set_plot_playground_only(self):
     """
@@ -3180,14 +3147,13 @@ class PlotIfarJob(pipeline.SqliteJob):
   """
   A plotifar job. The static options are read from the [plotifar] section.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotifar'
     sections = ['plot_input','plotifar']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 
 class PlotIfarNode(pipeline.SqliteNode):
@@ -3218,14 +3184,13 @@ class PlotFMJob(pipeline.SqliteJob):
   """
   A plotfm job. The static options are read from the [plotfm] seciont.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which objects are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'plotfm'
     sections = ['plot_input', 'plotfm']
-    pipeline.SqliteJob.__init__(self, cp, sections, exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, sections, exec_name)
 
 class PlotFMNode(pipeline.SqliteNode):
   """
@@ -3284,13 +3249,12 @@ class SearchVolumeJob(pipeline.SqliteJob):
   volume above the loudest event (open box) or FAR=1/livetime
   (closed box).
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = 'search_volume'
-    pipeline.SqliteJob.__init__(self, cp, ['search-volume'], exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, ['search-volume'], exec_name)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
 class SearchVolumeNode(pipeline.SqliteNode):
@@ -3323,14 +3287,13 @@ class SearchUpperLimitJob(pipeline.SqliteJob):
   A search upper limit job. Compute the search upper limit from the search
   volume output. Generates upper limit plots.
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
     sections: list of sections for cp to read from
-    @param dax UNDOCUMENTED
     """
     exec_name = 'search_upper_limit'
-    pipeline.SqliteJob.__init__(self, cp, ['upper-limit'], exec_name, dax)
+    pipeline.SqliteJob.__init__(self, cp, ['upper-limit'], exec_name)
     self.add_condor_cmd('environment',"KMP_LIBRARY=serial;MKL_SERIAL=yes")
 
 class SearchUpperLimitNode(pipeline.SqliteNode):
@@ -3362,17 +3325,16 @@ class MVSCDagGenerationJob(InspiralAnalysisJob):
   """
   a job that generates the mvsc_dag, which will be run as an external subdag
   """
-  def __init__(self, cp, dax = False):
+  def __init__(self, cp):
     """
     @param cp: ConfigParser object from which options are read.
-    @param dax UNDOCUMENTED
     """
     exec_name = "mvsc_dag"
     universe = "vanilla"
     sections = "[mvsc_dag]"
     executable = cp.get('condor',exec_name)
     pipeline.CondorDAGJob.__init__(self, universe, executable)
-    pipeline.AnalysisJob.__init__(self, cp, dax)
+    pipeline.AnalysisJob.__init__(self, cp)
     self.add_condor_cmd('getenv','True')
     self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
     self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
@@ -3403,7 +3365,7 @@ class ExtendedCoincJob(InspiralAnalysisJob):
     exec_name = 'extended_background'
     sections = []
     extension = 'html'
-    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension, dax=False)
+    InspiralAnalysisJob.__init__(self, cp, sections, exec_name, extension)
     self.add_condor_cmd('getenv','True')
 
 
