@@ -922,7 +922,8 @@ AC_DEFUN([LALSUITE_CHECK_GSL_VERSION],[
   # $0: check for GSL version
   lal_min_gsl_version=m4_normalize([$1])
   AC_MSG_CHECKING(for GSL version >= $lal_min_gsl_version)
-  AC_RUN_IFELSE([AC_LANG_SOURCE([
+  AC_RUN_IFELSE(
+    [AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -947,15 +948,12 @@ int main(void)
   }
   return 0;
 }
-  ],[
-    AC_MSG_RESULT([yes])
-  ],[
-    AC_MSG_ERROR([could not find required version of GSL])
-  ],[
-    AC_MSG_WARN([cross compiling; assumed OK...])
-  ])
+]])],
+    [AC_MSG_RESULT([yes])],
+    [AC_MSG_ERROR([could not find required version of GSL])],
+    [AC_MSG_WARN([cross compiling; assumed OK...])])
   # end $0
-])])
+])
 
 AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],[
   # $0: enable/disable fast/inline GSL code
@@ -1003,7 +1001,7 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
 
 AC_DEFUN([LALSUITE_CHECK_CUDA],
 [AC_MSG_CHECKING([whether LAL has been compiled with CUDA support])
-AC_RUN_IFELSE([AC_LANG_SOURCE[([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <lal/LALConfig.h>
 #ifdef LAL_CUDA_ENABLED
 int main( void ) { return 0; }
