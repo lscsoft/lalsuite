@@ -802,7 +802,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath)
             self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath)
         if self.config.has_section('spin_evol'):
-            self.evolve_spins_job=EvolveSamplesJob(self.config, os.path.join(self.basepath,'evolve_spins.sub'),self.logpath,dax=self.is_dax())
+            self.evolve_spins_job=EvolveSamplesJob(self.config, os.path.join(self.basepath,'evolve_spins.sub'),self.logpath)
         if self.engine=='lalinferencemcmc':
             self.combine_job = CombineMCMCJob(self.config,os.path.join(self.basepath,'combine_files.sub'),self.logpath)
             self.merge_job = MergeJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath,engine='mcmc')
@@ -3585,10 +3585,10 @@ class EvolveSamplesJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
   """
   Class for evolving the spins of posterior samples
   """
-  def __init__(self,cp,submitFile,logdir,dax=False):
+  def __init__(self,cp,submitFile,logdir):
       exe=cp.get('condor','evolve_spins')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-      pipeline.AnalysisJob.__init__(self,cp,dax=dax)
+      pipeline.AnalysisJob.__init__(self,cp)
       if cp.has_option('condor','accounting_group'):
         self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
       if cp.has_option('condor','accounting_group_user'):
