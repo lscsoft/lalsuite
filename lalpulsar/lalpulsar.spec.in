@@ -86,7 +86,6 @@ Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: cfitsio-devel
 Requires: fftw-devel
-Requires: fftw-static
 Requires: gsl-devel
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Requires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
