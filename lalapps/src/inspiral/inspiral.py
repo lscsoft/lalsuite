@@ -1006,13 +1006,6 @@ class InspiralNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
-    self.add_pegasus_profile('condor', 'request_memory', '1000')
-
-    if job.get_use_gpus():
-      # assume all the checks have been already
-      # done by the InspiralJob instance
-      self.add_pegasus_profile('condor', '+WantGPU', 'true')
-      self.add_pegasus_profile('condor', 'Requirements', '( GPU_PRESENT =?= true)')
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
@@ -1095,7 +1088,6 @@ class PTFInspiralNode(InspiralAnalysisNode):
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
     self.set_zip_output(True)
-    self.add_pegasus_profile('condor', 'request_memory', '1400')
 
   def set_spin_bank(self,bank):
     self.add_var_opt('spin-bank', bank)
@@ -1136,7 +1128,6 @@ class PTFSpinCheckerNode(InspiralAnalysisNode):
     """
     InspiralAnalysisNode.__init__(self,job)
     self.__injections = None
-    self.add_pegasus_profile('condor', 'request_memory', '1400')
 
   def set_bank(self,bank):
     self.add_var_opt('bank-file', bank)
