@@ -66,12 +66,6 @@
 #define DIR_SEPARATOR '\\'
 #endif
 
-/**
- * rounding (for positive numbers!)
- * taken from SFTfileIO in LALSupport, should be consistent with that
- */
-#define MYROUND(x) ( floor( (x) + 0.5 ) )
-
 #define FALSE 0
 #define TRUE (!FALSE)
 
@@ -600,17 +594,20 @@ int main( int argc, char **argv )
 
       /* calculate bins from frequency parameters if they were given */
       /* deltaF = 1.0 / tbase; bins = freq / deltaF => bins = freq * tbase */
-      if ( fMin >= 0.0 ) {
-        startBin = MYROUND( fMin * hd.tbase );
-      }
-      if ( fMax >= 0.0 ) {
-        endBin   = MYROUND( fMax * hd.tbase );
-      }
-      if ( fWidth >= 0.0 ) {
-        width = MYROUND( fWidth * hd.tbase );
-      }
-      if ( fOverlap >= 0.0 ) {
-        overlap = MYROUND( fOverlap * hd.tbase );
+      {
+        const double deltaF = 1.0 / hd.tbase;
+        if ( fMin >= 0.0 ) {
+          startBin = XLALRoundFrequencyDownToSFTBin( fMin, deltaF );
+        }
+        if ( fMax >= 0.0 ) {
+          endBin   = XLALRoundFrequencyUpToSFTBin( fMax, deltaF ) - 1;
+        }
+        if ( fWidth >= 0.0 ) {
+          width = XLALRoundFrequencyUpToSFTBin( fWidth, deltaF );
+        }
+        if ( fOverlap >= 0.0 ) {
+          overlap = XLALRoundFrequencyUpToSFTBin( fOverlap, deltaF );
+        }
       }
 
       /* allocate space for SFT data */
@@ -699,7 +696,7 @@ int main( int argc, char **argv )
         /* check if this narrow-band SFT exists */
         SFT_RECORD key = {
           .det = { detector[0], detector[1] },
-          .timebase = ( int )MYROUND( hd.tbase ),
+          .timebase = ( int ) round( hd.tbase ),
           .firstbin = bin,
           .binwidth = this_width
         };
