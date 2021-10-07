@@ -60,13 +60,13 @@ tagexpnCoeffsTaylorT4 {
 }expnCoeffsTaylorT4;
 
 typedef REAL8 (SimInspiralEnergy4)(
-   REAL8 v, /**< post-Newtonian parameter */
-   expnCoeffsdEnergyFlux *ak
+   REAL8 v,                   /**< post-Newtonian parameter */
+   expnCoeffsdEnergyFlux *ak  /**< Taylor expansion coefficients */
 );
 
 typedef REAL8 (SimInspiralAngularAcceleration4)(
-   REAL8 v, /**< post-Newtonian parameter */
-   expnCoeffsTaylorT4 *ak
+   REAL8 v,                /**< post-Newtonian parameter */
+   expnCoeffsTaylorT4 *ak  /**< Taylor expansion coefficients */
 );
 
 /*
