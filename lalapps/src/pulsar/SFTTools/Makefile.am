@@ -30,7 +30,9 @@ test_scripts += testdumpSFT.sh
 test_scripts += testcompareSFTs.sh
 test_scripts += testsplitSFTs.sh
 test_scripts += testSFTclean.sh
+if HAVE_PYTHON
 test_scripts += testWriteSFTsfromSFDBs.py
+endif
 
 # Add any helper programs required by tests to this variable
 test_helpers += SFTwrite
