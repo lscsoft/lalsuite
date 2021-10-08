@@ -1147,7 +1147,6 @@ gcc:11:
   extends:
     - .compiler-test:gcc
   image: igwn/lalsuite-dev-gcc:11
-  allow_failure: true
 
 cuda:
   extends:
