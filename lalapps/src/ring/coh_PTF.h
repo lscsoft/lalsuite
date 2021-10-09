@@ -424,18 +424,6 @@ void coh_PTF_cluster_sngl_triggers(
 );
 
 
-/* Function declarations for coh_PTF_spin_checker */
-
-int coh_PTF_spin_checker(
-    REAL8Array              *PTFM[LAL_NUM_IFO+1],
-    REAL8Array              *PTFN[LAL_NUM_IFO+1],
-    struct coh_PTF_params   *params,
-    UINT4                   singleDetector,
-    REAL4                   *Fplus,
-    REAL4                   *Fcross,
-    INT4                    segmentNumber
-);
-
 /* Function declarations for coh_PTF_utils */
 
 INT4 coh_PTF_data_condition(
@@ -1129,8 +1117,6 @@ int coh_PTF_default_params( struct coh_PTF_params *params );
 int coh_PTF_params_sanity_check( struct coh_PTF_params *params );
 
 int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params );
-
-int coh_PTF_params_spin_checker_sanity_check( struct coh_PTF_params *params );
 
 int coh_PTF_usage( const char *program );
 

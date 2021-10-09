@@ -20,9 +20,9 @@ if HAVE_PYTHON
 BUILT_SOURCES += $(pybin_scripts)
 MOSTLYCLEANFILES += $(pybin_scripts)
 
-uninstalled_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
-uninstalled_compiler = $(uninstalled_runner) '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
-EXTRA_DIST += $(uninstalled_runner)
+uninstalled_runner = gnuscripts/lalsuite_run_uninstalled
+uninstalled_compiler = $(abs_top_srcdir)/$(uninstalled_runner) '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
+EXTRA_DIST += $(top_srcdir)/$(uninstalled_runner)
 
 pymodule-all-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \

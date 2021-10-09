@@ -31,10 +31,10 @@ from __future__ import print_function
 import math
 from optparse import OptionParser
 import sys
+from tqdm import tqdm
 from PIL import Image
 
 
-from glue.text_progress_bar import ProgressBar
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
@@ -192,11 +192,10 @@ for n, filename in enumerate(filenames, 1):
 		print("converting to %dx%d grayscale ... " % (width, height), file = sys.stderr)
 	img = img.resize((width, height)).convert("L")
 
-	progress = ProgressBar("computing pixels", max = width * height) if options.verbose else None
+	progress = tqdm(desc = "computing pixels", total = width * height, disable = not options.verbose)
 	for i in range(width):
 		for j in range(height):
-			if progress is not None:
-				progress.increment()
+			progress.update()
 			# amplitude.  hrss column is ignored by waveform
 			# generation code.  it is included for convenience,
 			# to record the desired pixel brightness.  because
@@ -251,7 +250,7 @@ for n, filename in enumerate(filenames, 1):
 
 			# put row into table
 			sim_burst_tbl.append(row)
-	del progress
+	progress.close()
 
 
 #
@@ -259,4 +258,4 @@ for n, filename in enumerate(filenames, 1):
 #
 
 
-ligolw_utils.write_filename(xmldoc, options.output, gz = (options.output or "stdout").endswith(".gz"), verbose = options.verbose)
+ligolw_utils.write_filename(xmldoc, options.output, verbose = options.verbose)

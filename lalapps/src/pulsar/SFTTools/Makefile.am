@@ -23,10 +23,6 @@ lalapps_dumpSFT_SOURCES = dumpSFT.c
 lalapps_splitSFTs_SOURCES = splitSFTs.c
 lalapps_WriteSFTsfromSFDBs_SOURCES = WriteSFTsfromSFDBs.c
 
-EXTRA_DIST += \
-	SFTSpecification.dox \
-	$(END_OF_LIST)
-
 # Add shell test scripts to this variable
 test_scripts += testComputePSD.sh
 test_scripts += testSFTvalidate.sh
@@ -34,7 +30,9 @@ test_scripts += testdumpSFT.sh
 test_scripts += testcompareSFTs.sh
 test_scripts += testsplitSFTs.sh
 test_scripts += testSFTclean.sh
+if HAVE_PYTHON
 test_scripts += testWriteSFTsfromSFDBs.py
+endif
 
 # Add any helper programs required by tests to this variable
 test_helpers += SFTwrite

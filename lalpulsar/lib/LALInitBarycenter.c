@@ -151,6 +151,9 @@ XLALInitTimeCorrections ( const CHAR *timeCorrectionFile /**< File containing Ea
   /* set output time delay vector */
   tdat->timeCorrs = tvec;
 
+  /* store *copy* of ephemeris-file name in output structure */
+  tdat->timeEphemeris = XLALStringDuplicate( timeCorrectionFile );
+
   return tdat;
 
 } /* XLALInitTimeCorrections() */
@@ -167,6 +170,9 @@ XLALDestroyTimeCorrectionData ( TimeCorrectionData *tcd )
 
   if ( tcd->timeCorrs )
     XLALFree ( tcd->timeCorrs );
+
+  if ( tcd->timeEphemeris )
+    XLALFree ( tcd->timeEphemeris );
 
   XLALFree ( tcd );
 

@@ -87,6 +87,7 @@ int main(int argc, char *argv[]){
 
   INT4Vector *starts=NULL, *stops=NULL; /* science segment start and stop times */
   INT4 numSegs=0;
+  INT4 nodata=1;
 
   FilterResponse *filtresp=NULL; /* variable for the filter response function */
 
@@ -391,8 +392,9 @@ data!\n");
 
           continue;
         }
-        else
+        else{
           break;
+        }
       }
 
       /* make vector (make sure imaginary parts are set to zero) */
@@ -418,10 +420,13 @@ data!\n");
           continue;
         }
         else{
-          break; /* if at the end of data anyway then break */
           XLALDestroyCOMPLEX16TimeSeries( data );
+          break; /* if at the end of data anyway then break */
         }
       }
+
+      /* if any data has successfully been read-in set flag to 0 */
+      nodata = 0;
 
       /* put data into COMPLEX16 vector and set imaginary parts to zero */
       for( i=0;i<inputParams.samplerate * duration;i++ ){
@@ -688,6 +693,12 @@ data!\n");
 
     XLALDestroyREAL8Vector( times );
   }while( count < numSegs && (inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3) );
+
+  /* check if any data has been read - if not exit with an error */
+  if ( nodata && (inputParams.heterodyneflag==0 || inputParams.heterodyneflag==3) ){
+    fprintf(stderr, "Error... no data was read in.\n");
+    exit(1);
+  }
 
   /* check whether to gzip the output */
   if ( !inputParams.binaryoutput && inputParams.gzipoutput ){
@@ -1052,7 +1063,7 @@ heterodyne!\n");
 void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
   HeterodyneParams hetParams, REAL8 freqfactor, FilterResponse *filtresp){
   REAL8 phaseCoarse=0., phaseUpdate=0., deltaphase=0.;
-  REAL8 t=0., t2=0., tdt=0., T0=0., T0Update=0., tdt_2=0.;
+  REAL8 t=0., t2=0., tdt=0., T0=0., T0Update=0.;
   REAL8 dtpos=0.; /* time between position epoch and data timestamp */
   INT4 i=0;
 
@@ -1223,7 +1234,6 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
       tdt = hetParams.timestamp + (REAL8)i/hetParams.samplerate - T0;
     else if( hetParams.heterodyneflag == 1 || hetParams.heterodyneflag == 2){
       tdt = times->data[i] - T0;
-      tdt_2 = times->data[i] - T0Update;
     }
     /* if doing one single heterodyne i.e. het flag = 3 then just calc phaseCoarse at all times */
     else if(hetParams.heterodyneflag == 3 || hetParams.heterodyneflag == 4 ){
@@ -1255,17 +1265,14 @@ void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times,
 
         /* add binary time delay */
         tdt = (t - T0) + emit.deltaT +  binOutput.deltaT;
-        tdt_2 = (t - T0Update) + emit.deltaT +  binOutput.deltaT;
       }
       else{
         tdt = t - T0 + emit.deltaT;
-        tdt_2 = t - T0Update + emit.deltaT;
       }
 
       /* add the effect of a variable gravitational wave speed */
       if ( cgw > 0. && cgw < 1. ){
         tdt /= cgw;
-        tdt_2 /= cgw;
       }
 
       /* check if any timing noise whitening is used */

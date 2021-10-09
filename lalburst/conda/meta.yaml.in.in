@@ -21,6 +21,7 @@
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
+{% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
@@ -104,6 +105,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         # ignore run_exports from python's recipe
         - python
     requirements:
@@ -123,20 +125,24 @@ outputs:
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy
+        - tqdm
+        # provided to assist the solver, but not actually used
+        - openssl
       run:
         - gsl
         - liblal  # [linux]
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - ligo-segments
         - lscsoft-glue
-        - matplotlib
+        - matplotlib-base
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy
+        - tqdm
     test:
       requires:
         - pytest >=4.0.0a0
@@ -178,6 +184,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         - python
     requirements:
       build:
@@ -188,6 +195,8 @@ outputs:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - python
+        # provided to assist the solver, but not actually used
+        - openssl
       run:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalburst', exact=True) }}

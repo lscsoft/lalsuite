@@ -47,6 +47,9 @@ test_scripts += testMakeSFTs.sh
 test_scripts += testMakefakedata_v4.sh
 test_scripts += testMakefakedata_v4_hwinjection.sh
 test_scripts += testMakefakedata_v5.sh
+if HAVE_PYTHON
+test_scripts += testMakeSFTDAG.sh
+endif
 
 # Add any helper programs required by tests to this variable
 test_helpers += compareTS

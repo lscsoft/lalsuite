@@ -1318,7 +1318,7 @@ void coh_PTF_cluster_triggers(
 )
 {
   UINT4 slideNum, currTimeDiff, currStorageID;
-  UINT4 triggerNum, lenTriggers, numRemovedTriggers;
+  UINT4 triggerNum, lenTriggers;
   UINT4 **rejectTriggers;
   rejectTriggers = LALCalloc(1, numSlides*timeDiff*sizeof(UINT4*));
 
@@ -1336,7 +1336,6 @@ void coh_PTF_cluster_triggers(
       currEvent2 = NULL;
       triggerNum = 0;
       lenTriggers = 0;
-      numRemovedTriggers = 0;
 
       /* find number of triggers */
       while (currEvent)
@@ -1363,7 +1362,6 @@ void coh_PTF_cluster_triggers(
         {
           rejectTriggers[currStorageID][triggerNum] = 1;
           triggerNum += 1;
-          numRemovedTriggers += 1;
         }
         currEvent = currEvent->next;
       }

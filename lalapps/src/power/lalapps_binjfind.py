@@ -165,12 +165,12 @@ for n, filename in enumerate(filenames):
 	# close out the process metadata
 	#
 
-	ligolw_process.set_process_end_time(process)
+	process.set_end_time_now()
 
 	#
 	# done
 	#
 
-	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
 	xmldoc.unlink()
 	lsctables.reset_next_ids(lsctables.TableByName.values())

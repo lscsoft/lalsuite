@@ -106,5 +106,6 @@ test/ST4-dynamics.dat
 test/WaveformFlagsTest
 test/WaveformFromCacheTest
 test/XLALSimAddInjectionTest
+test/XLALSimBurstCherenkovRadiationTest
 test/XLALSimIMRPhenomC.dat
 test/XLALSimIMRPhenomP.dat

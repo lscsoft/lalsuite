@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALBurst],[1.5.8.1],[lal-discuss@ligo.org])
+AC_INIT([LALBurst],[1.5.9.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([lib/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -69,10 +69,12 @@ AM_INIT_AUTOMAKE([ \
 # version requirements
 MIN_LAL_VERSION="7.1.0"
 MIN_LALMETAIO_VERSION="2.0.0"
-MIN_LALSIMULATION_VERSION="2.5.0"
+MIN_LALSIMULATION_VERSION="3.0.0"
+MIN_PYTHON_LIGO_LW_VERSION="1.7.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
+AC_SUBST([MIN_PYTHON_LIGO_LW_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -110,7 +112,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -118,14 +120,11 @@ LALSUITE_OSX_VERSION_CHECK
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
 
-# check for header files
-AC_HEADER_STDC
-
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for Python
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])

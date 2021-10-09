@@ -1,4 +1,4 @@
-# Copyright (C) 2006--2017  Kipp Cannon
+# Copyright (C) 2006--2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -114,12 +114,6 @@ class Bins(object):
 		override this method but need not.
 		"""
 		raise NotImplementedError
-
-	def __ne__(self, other):
-		# this can be removed when we require Python 3, since in
-		# Python 3 this relationship between the operators is the
-		# default.
-		return not self.__eq__(other)
 
 	def __getitem__(self, x):
 		"""
@@ -275,20 +269,20 @@ class Bins(object):
 	#
 
 	@staticmethod
-	def xml_bins_name_enc(name, suffix = u"pylal_rate_bins"):
+	def xml_bins_name_enc(name, suffix = "pylal_rate_bins"):
 		"""
 		For internal use by XML I/O code.  Subclasses should not
 		override this method.
 		"""
-		return u"%s:%s" % (name, suffix)
+		return "%s:%s" % (name, suffix)
 
 	@staticmethod
-	def xml_bins_name_dec(name, suffix = u"pylal_rate_bins"):
+	def xml_bins_name_dec(name, suffix = "pylal_rate_bins"):
 		"""
 		For internal use by XML I/O code.  Subclasses should not
 		override this method.
 		"""
-		name = name.rsplit(u":", 1)
+		name = name.rsplit(":", 1)
 		if name[-1] != suffix:
 			raise ValueError(name)
 		return name[0]
@@ -299,7 +293,7 @@ class Bins(object):
 		For internal use by XML I/O code.  Subclasses should not
 		override this method.
 		"""
-		return elem.tagName == ligolw.Param.tagName and elem.hasAttribute(u"Name") and name == cls.xml_bins_name_dec(elem.Name)
+		return elem.tagName == ligolw.Param.tagName and elem.hasAttribute("Name") and name == cls.xml_bins_name_dec(elem.Name)
 
 	def to_xml(self):
 		"""
@@ -364,7 +358,7 @@ class LoHiCountBins(Bins):
 		Bins instance.  Subclasses must define the .xml_bins_name
 		class attribute.
 		"""
-		return ligolw_param.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), u"%s,%s,%s" % (ligolw_types.FormatFunc[u"real_8"](self.min), ligolw_types.FormatFunc[u"real_8"](self.max), ligolw_types.FormatFunc[u"int_8s"](self.n)))
+		return ligolw_param.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), "%s,%s,%s" % (ligolw_types.FormatFunc["real_8"](self.min), ligolw_types.FormatFunc["real_8"](self.max), ligolw_types.FormatFunc["int_8s"](self.n)))
 
 	@classmethod
 	def from_xml(cls, xml):
@@ -375,10 +369,10 @@ class LoHiCountBins(Bins):
 		"""
 		if not cls.xml_bins_check(xml, cls.xml_bins_name):
 			raise ValueError("not a %s" % repr(cls))
-		lo, hi, n = xml.pcdata.split(u",")
-		lo = ligolw_types.ToPyType[u"real_8"](lo)
-		hi = ligolw_types.ToPyType[u"real_8"](hi)
-		n = ligolw_types.ToPyType[u"int_8s"](n)
+		lo, hi, n = xml.pcdata.split(",")
+		lo = ligolw_types.ToPyType["real_8"](lo)
+		hi = ligolw_types.ToPyType["real_8"](hi)
+		n = ligolw_types.ToPyType["int_8s"](n)
 		return cls(lo, hi, n)
 
 
@@ -465,14 +459,14 @@ class IrregularBins(Bins):
 	# XML I/O related methods and data
 	#
 
-	xml_bins_name = u"irregularbins"
+	xml_bins_name = "irregularbins"
 
 	def to_xml(self):
 		"""
 		Construct a LIGO Light Weight XML representation of the
 		Bins instance.
 		"""
-		return ligolw_param.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), u",".join(map(ligolw_types.FormatFunc[u"real_8"], self.boundaries)))
+		return ligolw_param.Param.from_pyvalue(self.xml_bins_name_enc(self.xml_bins_name), ",".join(map(ligolw_types.FormatFunc["real_8"], self.boundaries)))
 
 	@classmethod
 	def from_xml(cls, xml):
@@ -482,7 +476,7 @@ class IrregularBins(Bins):
 		"""
 		if not cls.xml_bins_check(xml, cls.xml_bins_name):
 			raise ValueError("not a %s" % repr(cls))
-		return cls(map(ligolw_types.ToPyType[u"real_8"], xml.pcdata.split(u",")))
+		return cls(map(ligolw_types.ToPyType["real_8"], xml.pcdata.split(",")))
 
 
 class LinearBins(LoHiCountBins):
@@ -557,7 +551,7 @@ class LinearBins(LoHiCountBins):
 	# XML I/O related methods and data
 	#
 
-	xml_bins_name = u"linbins"
+	xml_bins_name = "linbins"
 
 
 class LinearPlusOverflowBins(LoHiCountBins):
@@ -637,7 +631,7 @@ class LinearPlusOverflowBins(LoHiCountBins):
 	# XML I/O related methods and data
 	#
 
-	xml_bins_name = u"linplusoverflowbins"
+	xml_bins_name = "linplusoverflowbins"
 
 
 class LogarithmicBins(LoHiCountBins):
@@ -693,7 +687,7 @@ class LogarithmicBins(LoHiCountBins):
 	# XML I/O related methods and data
 	#
 
-	xml_bins_name = u"logbins"
+	xml_bins_name = "logbins"
 
 
 class LogarithmicPlusOverflowBins(LoHiCountBins):
@@ -769,7 +763,7 @@ class LogarithmicPlusOverflowBins(LoHiCountBins):
 	# XML I/O related methods and data
 	#
 
-	xml_bins_name = u"logplusoverflowbins"
+	xml_bins_name = "logplusoverflowbins"
 
 
 class ATanBins(LoHiCountBins):
@@ -838,7 +832,7 @@ class ATanBins(LoHiCountBins):
 	# XML I/O related methods and data
 	#
 
-	xml_bins_name = u"atanbins"
+	xml_bins_name = "atanbins"
 
 
 class ATanLogarithmicBins(LoHiCountBins, IrregularBins):
@@ -912,7 +906,7 @@ class ATanLogarithmicBins(LoHiCountBins, IrregularBins):
 	# XML I/O related methods and data
 	#
 
-	xml_bins_name = u"atanlogbins"
+	xml_bins_name = "atanlogbins"
 
 
 class Categories(Bins):
@@ -990,14 +984,14 @@ class Categories(Bins):
 	# XML I/O related methods and data
 	#
 
-	xml_bins_name = u"categorybins"
+	xml_bins_name = "categorybins"
 
 	def to_xml(self):
 		"""
 		Construct a LIGO Light Weight XML representation of the
 		Bins instance.
 		"""
-		return ligolw_param.Param.build(self.xml_bins_name_enc(self.xml_bins_name), u"yaml", self.containers)
+		return ligolw_param.Param.build(self.xml_bins_name_enc(self.xml_bins_name), "yaml", self.containers)
 
 	@classmethod
 	def from_xml(cls, xml):
@@ -1041,7 +1035,7 @@ class HashableBins(Categories):
 		except (KeyError, TypeError):
 			raise IndexError(value)
 
-	xml_bins_name = u"hashablebins"
+	xml_bins_name = "hashablebins"
 
 
 class NDBins(tuple):
@@ -1445,7 +1439,7 @@ class BinnedArray(object):
 
 	>>> import sys
 	>>> x = BinnedArray(NDBins((LinearBins(-0.5, 1.5, 2), LinearBins(-0.5, 1.5, 2))))
-	>>> elem = x.to_xml(u"test")
+	>>> elem = x.to_xml("test")
 	>>> elem.write(sys.stdout)	# doctest: +NORMALIZE_WHITESPACE
 	<LIGO_LW Name="test:pylal_rate_binnedarray">
 		<Param Type="lstring" Name="linbins:pylal_rate_bins:param">-0.5,1.5,2</Param>
@@ -1459,7 +1453,7 @@ class BinnedArray(object):
 			</Stream>
 		</Array>
 	</LIGO_LW>
-	>>> y = BinnedArray.from_xml(elem, u"test")
+	>>> y = BinnedArray.from_xml(elem, "test")
 	>>> y.bins == x.bins
 	True
 	>>> (y.array == x.array).all()
@@ -1584,58 +1578,21 @@ class BinnedArray(object):
 		array = self.at_centres()
 		return tuple(centres[index] for centres, index in zip(self.centres(), numpy.unravel_index(array.argmax(), array.shape)))
 
-	def to_pdf(self):
-		"""
-		Normalize the internal array's contents so that when
-		multiplied by the corresponding bin volumes the result sums
-		to 1 (neglecting bins with infinite volume).
-
-		NOTE:
-
-		- This is a legacy method that has been superceded by the
-		  BinnedDensity and BinnedLnPDF classes.  You almost
-		  certainly want to be using those instead of whatever
-		  you're doing that needs this method.
-		"""
-		# zero bins whose volumes are infinite so the rest will
-		# appear to be normalized
-		self.array[numpy.isinf(self.bins.volumes())] = 0.
-		# make sum = 1
-		self.array /= self.array.sum()
-		# make integral = 1
-		self.array /= self.bins.volumes()
-
-	def logregularize(self, epsilon = 2**-1074):
-		"""
-		Find bins <= 0, and set them to epsilon, This has the
-		effect of allowing the logarithm of the array to be
-		evaluated without error.
-
-		NOTE:
-
-		- This is a legacy method that has been superceded by the
-		  BinnedDensity and BinnedLnPDF classes.  You almost
-		  certainly want to be using those instead of whatever
-		  you're doing that needs this method.
-		"""
-		self.array[self.array <= 0] = epsilon
-		return self
-
 	def to_xml(self, name):
 		"""
 		Retrun an XML document tree describing a rate.BinnedArray
 		object.
 		"""
 		elem = ligolw.LIGO_LW()
-		elem.Name = u"%s:pylal_rate_binnedarray" % name
+		elem.Name = "%s:pylal_rate_binnedarray" % name
 		self.bins.to_xml(elem)
-		elem.appendChild(ligolw_array.Array.build(u"array", self.array))
+		elem.appendChild(ligolw_array.Array.build("array", self.array))
 		return elem
 
 	@classmethod
 	def get_xml_root(cls, xml, name):
-		name = u"%s:pylal_rate_binnedarray" % name
-		elem = [elem for elem in xml.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute(u"Name") and elem.Name == name]
+		name = "%s:pylal_rate_binnedarray" % name
+		elem = [elem for elem in xml.getElementsByTagName(ligolw.LIGO_LW.tagName) if elem.hasAttribute("Name") and elem.Name == name]
 		try:
 			elem, = elem
 		except ValueError:
@@ -1655,7 +1612,7 @@ class BinnedArray(object):
 		the BinnedArray object affect the XML document tree.
 		"""
 		elem = cls.get_xml_root(xml, name)
-		self = cls(NDBins.from_xml(elem), array = ligolw_array.get_array(elem, u"array").array)
+		self = cls(NDBins.from_xml(elem), array = ligolw_array.get_array(elem, "array").array)
 		# sanity check
 		if self.bins.shape != self.array.shape:
 			raise ValueError("'%s' binning shape does not match array shape:  %s != %s" % (name, self.bins.shape, self.array.shape))
@@ -2238,12 +2195,19 @@ class BinnedLnPDF(BinnedDensity):
 		array([       -inf, -1.38629436, -1.38629436,        -inf,        -inf])
 		"""
 		super(BinnedLnPDF, self).__iadd__(other)
-		# c = a + b
+		# how to add two numbers when all you know are their
+		# logarithms:
+		#
+		#	c = a + b
+		#
 		# if b is smaller than a:
-		# c = a (1 + b/a)
-		# log c = log a + log1p(b / a)
-		# log c = log a + log1p(exp(log b - log a))
-		# otherwise, swap a and b.
+		#
+		#	c = a (1 + b/a)
+		#	log c = log a + log1p(b / a)
+		#	log c = log a + log1p(exp(log b - log a))
+		#
+		# otherwise, if a is smaller than b, do the same but swap a
+		# and b.
 		if self.norm >= other.norm:
 			self.norm += math.log1p(math.exp(other.norm - self.norm))
 		else:

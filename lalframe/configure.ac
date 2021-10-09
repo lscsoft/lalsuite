@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALFrame],[1.5.4.1],[lal-discuss@ligo.org])
+AC_INIT([LALFrame],[1.5.5.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([lib/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[11])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBREVISION],[4])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -121,7 +121,7 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -130,7 +130,6 @@ LALSUITE_OSX_VERSION_CHECK
 LALSUITE_USE_LIBTOOL
 
 # check for header files
-AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h])
 
 # check for gethostname in unistd.h

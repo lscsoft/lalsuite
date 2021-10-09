@@ -113,6 +113,7 @@ outputs:
       ignore_run_exports:
         # liblalburst is required because python-lalburst is used
         - liblalburst
+        - openssl
         - python
     requirements:
       build:
@@ -126,6 +127,8 @@ outputs:
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - numpy
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - liblal  # [linux]
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
@@ -169,6 +172,7 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - liblalburst
+        - openssl
         - python
     requirements:
       build:
@@ -180,6 +184,8 @@ outputs:
         - liblalburst >={{ lalburst_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}

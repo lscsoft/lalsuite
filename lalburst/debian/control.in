@@ -17,31 +17,18 @@ Build-Depends:
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
  libmetaio-dev (>= 8.2),
  liboctave-dev,
- python-all-dev,
- python-glue,
- python-lal (>= @MIN_LAL_VERSION@~),
- python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
- python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
- python-ligo-lw,
- python-matplotlib,
- python-mock,
- python-numpy (>= @MIN_NUMPY_VERSION@),
- python-pathlib,
- python-pytest,
- python-scipy,
  python3-all-dev,
  python3-glue,
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
- python3-ligo-lw,
+ python3-ligo-lw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
  python3-matplotlib,
  python3-pytest,
  python3-scipy,
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
@@ -77,37 +64,6 @@ Provides: lalburst-dev (= ${binary:Version})
 Replaces: lalburst-dev (<< 1.5.6-2~)
 Breaks: lalburst-dev (<< 1.5.6-2~)
 
-Package: lalburst-python
-Depends: python-lalburst, ${misc:Depends}
-Architecture: all
-Priority: extra
-Section: oldlibs
-Description: transitional package
- lalburst-python was renamed python-lalburst,
- this is a transitional package, it can safely be removed.
-
-Package: python-lalburst
-Section: python
-Replaces: lalburst-python (<< 1.4.4.1-1~)
-Breaks: lalburst-python (<< 1.4.4.1-1)
-Architecture: any
-Depends:
- ${misc:Depends},
- ${python:Depends},
- ${shlibs:Depends},
- liblalburst@LIBMAJOR@ (= ${binary:Version}),
- python-glue,
- python-lal (>= @MIN_LAL_VERSION@~),
- python-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
- python-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
- python-ligo-lw,
- python-ligo-segments,
- python-matplotlib,
- python-scipy,
-Description: Python bindings for LALBurst
- The LSC Algorithm Burst Library for gravitational wave data analysis.
- This package contains Python bindings for the LAL Burst library.
-
 Package: lalburst-python3
 Depends: python3-lalburst, ${misc:Depends}
 Architecture: all
@@ -135,6 +91,7 @@ Depends:
  python3-ligo-segments,
  python3-matplotlib,
  python3-scipy,
+ python3-tqdm,
 Description: Python 3 bindings foar LALBurst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Burst library.

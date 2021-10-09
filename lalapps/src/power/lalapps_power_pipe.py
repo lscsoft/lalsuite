@@ -40,10 +40,7 @@ from optparse import OptionParser
 import os
 import sys
 import tempfile
-try:
-    from configparser import (ConfigParser, NoOptionError)
-except ImportError:  # python < 3
-    from ConfigParser import (SafeConfigParser as ConfigParser, NoOptionError)
+from configparser import (ConfigParser, NoOptionError)
 
 
 from ligo import segments
@@ -268,7 +265,7 @@ background_seglistdict = segments.segmentlistdict()
 if options.do_noninjections:
 	for filename in options.background_time_slides:
 		cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-		background_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+		background_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose).values()
 		background_seglistdict |= compute_segment_lists(seglistdict, background_time_slides[cache_entry], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 
 
@@ -277,7 +274,7 @@ injection_seglistdict = segments.segmentlistdict()
 if options.do_injections:
 	for filename in options.injection_time_slides:
 		cache_entry = CacheEntry(None, None, None, "file://localhost" + os.path.abspath(filename))
-		injection_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose, gz = filename.endswith(".gz")).values()
+		injection_time_slides[cache_entry] = timeslides.load_time_slides(filename, verbose = options.verbose).values()
 		injection_seglistdict |= compute_segment_lists(seglistdict, injection_time_slides[cache_entry], options.minimum_gap, options.timing_params, full_segments = options.full_segments, verbose = options.verbose)
 
 

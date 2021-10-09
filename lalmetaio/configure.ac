@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALMetaIO],[2.0.2.1],[lal-discuss@ligo.org])
+AC_INIT([LALMetaIO],[2.0.3.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([lib/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -106,16 +106,13 @@ AC_PROG_INSTALL
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
 
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
-
-# check for header files
-AC_HEADER_STDC
 
 # math library
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])

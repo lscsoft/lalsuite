@@ -47,7 +47,7 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }}
+    - liblal >={{ lal_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
 
@@ -103,6 +103,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         # ignore run_exports from python's recipe
         - python
     requirements:
@@ -116,9 +117,12 @@ outputs:
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - numpy
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - liblal  # [linux]
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - mpmath >=1.0.0
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
@@ -132,6 +136,7 @@ outputs:
       imports:
         - lalsimulation
         - lalsimulation.nrfits
+        - lalsimulation.tilts_at_infinity
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
@@ -151,6 +156,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         - python
     requirements:
       build:
@@ -162,10 +168,13 @@ outputs:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - gsl
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - mpmath >=1.0.0
         - python
         - {{ pin_subpackage('python-lalsimulation', exact=True) }}
     test:

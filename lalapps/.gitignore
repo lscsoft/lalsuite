@@ -103,7 +103,6 @@ src/inspiral/lalapps_inspinjfind
 src/inspiral/lalapps_inspiral_hipe
 src/inspiral/lalapps_inspiral_online_pipe
 src/inspiral/lalapps_inspiral_online_pipe_inject
-src/inspiral/lalapps_inspiral_pipe
 src/inspiral/lalapps_inspiral_ssipe
 src/inspiral/lalapps_link_old_ihope
 src/inspiral/lalapps_make_nr_hdf_catalog
@@ -154,6 +153,7 @@ src/lalapps/LALAppsVCSInfo.h
 src/lalapps/LALAppsVCSInfoHeader.h
 src/lalapps/version2.c
 src/online/lalapps_online_datafind
+src/power/bucluster_test.xml.gz
 src/power/lalapps_binj
 src/power/lalapps_binj_pic
 src/power/lalapps_binjfind
@@ -263,7 +263,6 @@ src/pulsar/Weave/lalapps_WeaveCompare
 src/pulsar/Weave/lalapps_WeaveConcat
 src/pulsar/Weave/lalapps_WeaveSetup
 src/ring/lalapps_coh_PTF_inspiral
-src/ring/lalapps_coh_PTF_spin_checker
 src/ring/lalapps_coh_PTF_testing
 src/ring/lalapps_coincringread
 src/ring/lalapps_collatesim

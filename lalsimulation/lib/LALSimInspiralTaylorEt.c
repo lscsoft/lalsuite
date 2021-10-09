@@ -60,18 +60,18 @@ typedef struct
 } expnCoeffsTaylorEt;
 
 typedef REAL8 (SimInspiralTaylorEtdPhase)(
-	REAL8 zeta, /**< post-Newtonian parameter */
-	expnCoeffsTaylorEt *ak
+	REAL8 zeta,             /**< post-Newtonian parameter */
+	expnCoeffsTaylorEt *ak  /**< coefficients for TaylorEt evolution */
 );
 
 typedef REAL8 (SimInspiralTaylorEtdZeta)(
-	REAL8 zeta, /**< post-Newtonian parameter */
-	expnCoeffsTaylorEt *ak
+	REAL8 zeta,             /**< post-Newtonian parameter */
+	expnCoeffsTaylorEt *ak  /**< coefficients for TaylorEt evolution */
 );
 
 typedef REAL8 (SimInspiralTaylorEtVOfZeta)(
-	REAL8 zeta, /**< post-Newtonian parameter */
-	expnCoeffsTaylorEt *ak
+	REAL8 zeta,             /**< post-Newtonian parameter */
+	expnCoeffsTaylorEt *ak  /**< coefficients for TaylorEt evolution */
 );
 
 /*

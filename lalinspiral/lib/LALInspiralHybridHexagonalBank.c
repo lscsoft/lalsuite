@@ -356,7 +356,7 @@ LALInspiralCreatePNCoarseBankHybridHexa(
       /* if non physical parameter i.e below eta=0.25*/
       if(cells[k].RectPosition[0] == Below )
       {
-        INT4 above=0, below=0, in=0, out=0;
+        INT4 above=0;
 
 		/*first, we define the line which is along the long semi-axis of the
 		 * ambiguity function, defined by the angle theta and the position of
@@ -402,31 +402,31 @@ LALInspiralCreatePNCoarseBankHybridHexa(
 		{
 
 	  		switch (cells[k].RectPosition[1]){
-			  case In:    in    +=1; break;
-			  case Below: below +=1; break;
 			  case Above: above +=1; break;
-			  case Out:   out   +=1; break;
+			  case In:
+			  case Below:
+			  case Out:
 			  case Edge:             break;
 			  }
 			  switch (cells[k].RectPosition[2]){
-			  case In:    in    +=1; break;
-			  case Below: below +=1; break;
 			  case Above: above +=1; break;
-			  case Out:   out   +=1; break;
+			  case In:
+			  case Below:
+			  case Out:
 			  case Edge:             break;
 			  }
 			  switch (cells[k].RectPosition[3]){
-			  case In:    in    +=1; break;
-			  case Below: below +=1; break;
 			  case Above: above +=1; break;
-			  case Out:   out   +=1; break;
+			  case In:
+			  case Below:
+			  case Out:
 			  case Edge:             break;
 			  }
 			  switch (cells[k].RectPosition[4]){
-			  case In:    in    +=1; break;
-			  case Below: below +=1; break;
 			  case Above: above +=1; break;
-			  case Out:   out   +=1; break;
+			  case In:
+			  case Below:
+			  case Out:
 			  case Edge:             break;
 			  }
 			}

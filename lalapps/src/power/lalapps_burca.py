@@ -214,6 +214,7 @@ for n, filename in enumerate(filenames):
 		coinc_definer_row = CoincDef,
 		delta_t = delta_t,
 		ntuple_comparefunc = ntuple_comparefunc,
+		min_instruments = options.min_instruments,
 		verbose = options.verbose
 	)
 
@@ -221,12 +222,12 @@ for n, filename in enumerate(filenames):
 	# Close out the process table.
 	#
 
-	ligolw_process.set_process_end_time(process)
+	process.set_end_time_now()
 
 	#
 	# Write back to disk, and clean up.
 	#
 
-	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
 	xmldoc.unlink()
 	lsctables.reset_next_ids(lsctables.TableByName.values())

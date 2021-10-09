@@ -19,6 +19,7 @@ from __future__ import (division, print_function)
 
 import os
 import sys
+import warnings
 from collections import deque
 from optparse import OptionParser
 from time import strftime
@@ -29,11 +30,11 @@ import h5py
 
 from scipy.interpolate import UnivariateSpline
 
-from glue.ligolw import ligolw
-from glue.ligolw import lsctables
-from glue.ligolw import utils
-from glue.ligolw import ilwd
-from glue.ligolw.utils import process as ligolw_process
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils
+from ligo.lw import ilwd
+from ligo.lw.utils import process as ligolw_process
 
 #from sbank import git_version FIXME
 from lalinspiral.sbank.bank import Bank
@@ -41,10 +42,16 @@ from lalinspiral.sbank.tau0tau3 import proposals
 from lalinspiral.sbank.psds import (noise_models, read_psd)
 from lalinspiral.sbank.waveforms import waveforms, SnglInspiralTable
 
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
 
+@lsctables.use_in
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
-lsctables.use_in(ContentHandler)
 
 usage = """
 
@@ -136,8 +143,8 @@ def checkpoint_save(xmldoc, fout, process):
              state4=np.array(rng_state[4]))
 
     # write out the document
-    ligolw_process.set_process_end_time(process)
-    utils.write_filename(xmldoc, fout + "_checkpoint.gz",  gz=True)
+    process.set_end_time_now()
+    utils.write_filename(xmldoc, fout + "_checkpoint.gz")
 
 
 def parse_command_line():
@@ -453,11 +460,11 @@ else:
 #
 # prepare process table with information about the current program
 #
-opts_dict = dict((k, v) for k, v in opts.__dict__.iteritems() if v is not False and v is not None)
+opts_dict = dict((k, v) for k, v in opts.__dict__.items() if v is not False and v is not None)
 if opts.output_filename.endswith(('.xml', '.xml.gz')):
     process = ligolw_process.register_to_xmldoc(xmldoc, "lalapps_cbc_sbank",
         opts_dict, version="no version",
-        cvs_repository="sbank", cvs_entry_time=strftime('%Y/%m/%d %H:%M:%S'))
+        cvs_repository="sbank", cvs_entry_time=strftime('%Y-%m-%d %H:%M:%S +0000'))
 
 
 #
@@ -466,7 +473,7 @@ if opts.output_filename.endswith(('.xml', '.xml.gz')):
 
 if opts.trial_waveforms:
     if opts.trial_waveforms.endswith(('.xml', '.xml.gz')):
-        trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler, gz=opts.trial_waveforms.endswith('.gz'))
+        trialdoc = utils.load_filename(opts.trial_waveforms, contenthandler=ContentHandler)
         trial_sngls = lsctables.SnglInspiralTable.get_table(trialdoc)
         proposal = (tmplt_class.from_sngl(t, bank=bank) for t in trial_sngls)
     elif opts.trial_waveforms.endswith(('.hdf', '.h5', '.hdf5')):
@@ -589,9 +596,8 @@ bank.clear()  # clear caches
 
 # write out the document
 if opts.output_filename.endswith(('.xml', '.xml.gz')):
-    ligolw_process.set_process_end_time(process)
-    utils.write_filename(xmldoc, opts.output_filename,
-                         gz=opts.output_filename.endswith("gz"))
+    process.set_end_time_now()
+    utils.write_filename(xmldoc, opts.output_filename)
 elif opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
     hdf_fp = h5py.File(opts.output_filename, 'w')
     if len(tbl) == 0:

@@ -37,7 +37,7 @@ int LALSimIMRPhenomTHM_OneMode(
 	COMPLEX16TimeSeries **hlm,         /**< UNDOCUMENTED */
 	IMRPhenomTWaveformStruct *pWF,     /**< UNDOCUMENTED */
 	IMRPhenomTPhase22Struct *pPhase,   /**< UNDOCUMENTED */
-  REAL8Sequence *phase22,            /**< Values of the 22 phase for the waveform time array */
+	REAL8Sequence *phase22,            /**< Values of the 22 phase for the waveform time array */
 	REAL8Sequence *xorb,               /**< UNDOCUMENTED */
 	UINT4 ell,                         /**< UNDOCUMENTED */
 	UINT4 emm                          /**< UNDOCUMENTED */

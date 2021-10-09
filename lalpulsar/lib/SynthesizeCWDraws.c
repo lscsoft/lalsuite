@@ -359,7 +359,6 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
   REAL8 TAtom = atoms->TAtom;
   UINT4 numAtoms = atoms->length;
   UINT4 alpha;
-  REAL8 Ad = 0, Bd = 0, Cd = 0;		// usual non-transient antenna-pattern functions
   REAL8 Ap = 0, Bp = 0, Cp = 0;		// "effective" transient-CW antenna-pattern matrix M'_mu_nu
 
   for ( alpha=0; alpha < numAtoms; alpha ++ )
@@ -378,10 +377,6 @@ XLALAddSignalToFstatAtomVector ( FstatAtomVector* atoms,	 /**< [in/out] atoms ve
       REAL8 a2 = win * atoms->data[alpha].a2_alpha;
       REAL8 b2 = win * atoms->data[alpha].b2_alpha;
       REAL8 ab = win * atoms->data[alpha].ab_alpha;
-
-      Ad += a2;
-      Bd += b2;
-      Cd += ab;
 
       // we also compute M'_mu_nu, which will be used to estimate optimal SNR
       // NOTE: M'_mu_nu is QUADRATIC in window-function!, so we multiply by win again

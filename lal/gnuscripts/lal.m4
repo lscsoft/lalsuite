@@ -5,7 +5,7 @@
 AC_DEFUN([LAL_WITH_DEFAULT_DEBUG_LEVEL],[
   AC_ARG_WITH(
     [default_debug_level],
-    AC_HELP_STRING([--with-default-debug-level],[set default value of lalDebugLevel [default=1, i.e. print error messages]]),
+    AS_HELP_STRING([--with-default-debug-level],[set default value of lalDebugLevel [default=1, i.e. print error messages]]),
     [AS_IF([test "x`expr "X${withval}" : ["^\(X[0-9][0-9]*$\)"]`" != "xX${withval}"],[
       AC_MSG_ERROR([bad integer value '${withval}' for --with-default-debug-level])
     ])],
@@ -17,7 +17,7 @@ AC_DEFUN([LAL_WITH_DEFAULT_DEBUG_LEVEL],[
 AC_DEFUN([LAL_ENABLE_FFTW3_MEMALIGN],
 [AC_ARG_ENABLE(
   [fftw3_memalign],
-  AC_HELP_STRING([--enable-fftw3-memalign],[use aligned memory optimizations with fftw3 [default=no]]),
+  AS_HELP_STRING([--enable-fftw3-memalign],[use aligned memory optimizations with fftw3 [default=no]]),
   AS_CASE(["${enableval}"],
     [yes],[fftw3_memalign=true],
     [no],[fftw3_memalign=false],
@@ -28,7 +28,7 @@ AC_DEFUN([LAL_ENABLE_FFTW3_MEMALIGN],
 AC_DEFUN([LAL_ENABLE_INTELFFT],
 [AC_ARG_ENABLE(
   [intelfft],
-  AC_HELP_STRING([--enable-intelfft],[use Intel FFT libraries insted of FFTW [default=no]]),
+  AS_HELP_STRING([--enable-intelfft],[use Intel FFT libraries insted of FFTW [default=no]]),
   AS_CASE(["${enableval}"],
     [yes],[intelfft=true],
     [no],[intelfft=false],
@@ -40,7 +40,7 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
 AC_DEFUN([LAL_ENABLE_MACROS],
 [AC_ARG_ENABLE(
   [macros],
-  AC_HELP_STRING([--enable-macros],[use LAL macros [default=yes]]),
+  AS_HELP_STRING([--enable-macros],[use LAL macros [default=yes]]),
   AS_CASE(["${enableval}"],
     [yes],,
     [no],AC_DEFINE([NOLALMACROS],[1],[Use functions rather than macros]),
@@ -50,7 +50,7 @@ AC_DEFUN([LAL_ENABLE_MACROS],
 
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK], [
   AC_ARG_ENABLE([pthread_lock],
-    AC_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety @<:@default=yes@:>@]),
+    AS_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety @<:@default=yes@:>@]),
     AS_CASE(["${enableval}"],
       [yes],[lal_pthread_lock=true],
       [no],[lal_pthread_lock=false],
@@ -113,7 +113,7 @@ AC_MSG_ERROR([Intel FFT must use either static or shared libraries])
 AC_DEFUN([LAL_ENABLE_DEBUG],[
   AC_ARG_ENABLE(
     [debug],
-    AC_HELP_STRING([--enable-debug],[THIS OPTION IS NO LONGER SUPPORTED]),
+    AS_HELP_STRING([--enable-debug],[THIS OPTION IS NO LONGER SUPPORTED]),
     AC_MSG_ERROR([[
 **************************************************************************
 * The options --enable-debug/--disable-debug are no longer supported.    *

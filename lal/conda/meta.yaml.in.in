@@ -54,7 +54,7 @@ requirements:
     - gsl
     - hdf5
     - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
-    - zlib
+    - libzlib
 
 outputs:
   - name: liblal
@@ -73,12 +73,12 @@ outputs:
         - gsl
         - hdf5
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
-        - zlib
+        - libzlib
       run:
         - fftw  # [fft_impl == "fftw"]
         - gsl
         - hdf5
-        - zlib
+        - libzlib
       run_constrained:
         # make sure downstream packages are updated beyond the first
         # appearance of liblal
@@ -112,6 +112,7 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - mkl
+        - openssl
         # ignore run_exports from python's recipe
         - python
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
@@ -125,14 +126,15 @@ outputs:
       host:
         - gsl
         - {{ pin_subpackage('liblal', exact=True) }}
-        - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
         - numpy
         - python
+        # provided to assist the solver, but not actually used
+        - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
+        - openssl
       run:
         - {{ pin_subpackage('liblal', exact=True) }}
         - python-ligo-lw
         - ligo-segments
-        - lscsoft-glue >=@MIN_GLUE_VERSION@
         - {{ pin_compatible('numpy') }}
         - python
         - python-dateutil
@@ -141,6 +143,7 @@ outputs:
     test:
       requires:
         - freezegun
+        - lscsoft-glue
         - mock  # [py<33]
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
@@ -173,6 +176,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         - python
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
@@ -182,9 +186,10 @@ outputs:
         - make
       host:
         - {{ pin_subpackage('liblal', exact=True) }}
-        # this is here in case the solver gets confused during conda-build
-        - mkl {{ mkl }}  # [fft_impl == "mkl"]
         - python
+        # extras to help the solver
+        - mkl {{ mkl }}  # [fft_impl == "mkl"]
+        - openssl
       run:
         - {{ pin_subpackage('liblal', exact=True) }}
         - python

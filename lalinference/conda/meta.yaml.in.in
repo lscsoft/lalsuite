@@ -26,6 +26,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalpulsar_version = "@MIN_LALPULSAR_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
+{% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
@@ -52,13 +53,13 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - gsl
-    - lal >={{ lal_version }} fftw*
-    - lalframe >={{ lalframe_version }}
-    - lalmetaio >={{ lalmetaio_version }}
-    - lalsimulation >={{ lalsimulation_version }}
-    - lalburst >={{ lalburst_version }}
-    - lalinspiral >={{ lalinspiral_version }}
-    - lalpulsar >={{ lalpulsar_version }}
+    - liblal >={{ lal_version }} fftw*
+    - liblalframe >={{ lalframe_version }}
+    - liblalmetaio >={{ lalmetaio_version }}
+    - liblalsimulation >={{ lalsimulation_version }}
+    - liblalburst >={{ lalburst_version }}
+    - liblalinspiral >={{ lalinspiral_version }}
+    - liblalpulsar >={{ lalpulsar_version }}
 
 outputs:
   - name: liblalinference
@@ -123,6 +124,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         # ignore run_exports from python's recipe
         - python
     requirements:
@@ -135,6 +137,8 @@ outputs:
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - python
         - numpy
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - astropy >=1.1.1
         - healpy >=1.9.1
@@ -152,7 +156,7 @@ outputs:
         - python-lalburst >={{ lalburst_version }}
         - python-lalinspiral >={{ lalinspiral_version }}
         - python-lalpulsar >={{ lalpulsar_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
     test:
       requires:
@@ -192,6 +196,7 @@ outputs:
     script: install-bin.sh
     build:
       ignore_run_exports:
+        - openssl
         - python
       # Prioritise nompi via build number
       number: {{ (build + 100) if (mpi or "nompi") == "nompi" else build }}
@@ -221,9 +226,11 @@ outputs:
         - matplotlib-base >=1.2.0
         - python-lal >={{ lal_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
         - six
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - astropy >=1.1.1
         - gsl  # [mpi != 'nompi']
@@ -240,7 +247,7 @@ outputs:
         - python-lal >={{ lal_version }}
         - {{ pin_subpackage('python-lalinference', exact=True) }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
         - six
     test:

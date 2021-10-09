@@ -225,7 +225,7 @@ void coh_PTF_setup_null_stream(
 /* Be aware this is separate from the null SNR! */
 int coh_PTF_get_null_stream(
     struct coh_PTF_params *params,
-    REAL4TimeSeries **channel,
+    REAL4TimeSeries *channel[LAL_NUM_IFO+1],
     REAL4 *Fplus,
     REAL4 *Fcross,
     REAL4 *timeOffsets )
@@ -3163,7 +3163,6 @@ void coh_PTF_cluster_sngl_triggers(
   SnglInspiralTable *newEventHead = NULL;
   UINT4 triggerNum = 0;
   UINT4 lenTriggers = 0;
-  UINT4 numRemovedTriggers = 0;
 
   /* find number of triggers */
   while (currEvent)
@@ -3188,7 +3187,6 @@ void coh_PTF_cluster_sngl_triggers(
     {
       rejectTriggers[triggerNum] = 1;
       triggerNum += 1;
-      numRemovedTriggers += 1;
     }
     currEvent = currEvent->next;
   }

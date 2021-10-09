@@ -27,16 +27,20 @@ clear ans;
 LALCheckMemoryLeaks();
 disp("PASSED object parent tracking");
 
-# check multi-vector element assignment
-disp("checking multi-vector element assignment ...");
+# check array element assignment
+disp("checking array element assignment ...");
 mts = XLALCreateMultiLIGOTimeGPSVector(2);
 ts0 = XLALCreateTimestampVector(3);
+for i = 1:ts0.length
+  ts0.data(i) = LIGOTimeGPS(900000000 + i - 1);
+endfor
 mts.data(1) = ts0;
 lal.swig_set_nasty_error_handlers();
 clear mts;
 clear ts0;
 lal.swig_set_nice_error_handlers();
-disp("PASSED multi-vector element assignment");
+LALCheckMemoryLeaks();
+disp("PASSED array element assignment");
 
 ## passed all tests!
 disp("PASSED all tests");

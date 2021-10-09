@@ -24,6 +24,7 @@ of the ligolw_cbc_sbank job that produced them unless overridden.
 
 from __future__ import print_function
 
+import warnings
 import sys
 from bisect import (bisect_left, bisect_right)
 from operator import attrgetter
@@ -31,12 +32,20 @@ from optparse import OptionParser
 
 import numpy
 
-from glue.ligolw import (ligolw, lsctables, utils)
+from ligo.lw import ligolw
+from ligo.lw import lsctables
+from ligo.lw import utils
 
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
 
+@lsctables.use_in
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
-lsctables.use_in(ContentHandler)
 
 def parse_command_line():
     parser = OptionParser(usage=__doc__)

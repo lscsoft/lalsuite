@@ -62,12 +62,13 @@ Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
-Requires: python%{python3_pkgversion}-ligo-lw
+Requires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
 Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-matplotlib
 Requires: python%{python3_pkgversion}-numpy
 Requires: python%{python3_pkgversion}-scipy
 Requires: python%{python3_pkgversion}-six
+Requires: python%{python3_pkgversion}-tqdm
 Obsoletes: lalxml < 1.2.5-1
 Obsoletes: lalxml-debuginfo < 1.2.5-1
 Obsoletes: lalxml-devel < 1.2.5-1
@@ -148,6 +149,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Tue May 25 2021 Adam Mercer <adam.mercer@ligo.org> 7.3.0-1
+- Update for 7.3.0
+
 * Fri Feb 05 2021 Adam Mercer <adam.mercer@ligo.org> 7.2.0-1
 - Update for 7.2.0
 

@@ -70,18 +70,18 @@ typedef struct
 } expnCoeffsTaylorT1;
 
 typedef REAL8 (SimInspiralTaylorT1Energy)(
-	REAL8 v, /**< post-Newtonian parameter */
-	expnCoeffsdEnergyFlux *ak
+	REAL8 v,                   /**< post-Newtonian parameter */
+	expnCoeffsdEnergyFlux *ak  /**< Taylor expansion coefficents */
 );
 
 typedef REAL8 (SimInspiralTaylorT1dEnergy)(
-	REAL8 v, /**< post-Newtonian parameter */
-	expnCoeffsdEnergyFlux *ak
+	REAL8 v,                   /**< post-Newtonian parameter */
+	expnCoeffsdEnergyFlux *ak  /**< Taylor expansion coefficents */
 );
 
 typedef REAL8 (SimInspiralTaylorT1Flux)(
-	REAL8 v, /**< post-Newtonian parameter */
-	expnCoeffsdEnergyFlux *ak
+	REAL8 v,                   /**< post-Newtonian parameter */
+	expnCoeffsdEnergyFlux *ak  /**< Taylor expansion coefficents */
 );
 
 /*

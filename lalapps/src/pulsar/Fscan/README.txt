@@ -1,171 +1,261 @@
-December 19, 2017: Add updated code for using Python for plotting and comb finding.
+1. Fscan Information:
 
-Before running, set this location to get working Python and Matplotlib:
+i. The code is in lalapps here:
 
-. /home/detchar/opt/gwpysoft-2.7/bin/activate
+https://git.ligo.org/lscsoft/lalsuite/tree/master/lalapps/src/pulsar/Fscan
 
-Here are some notes on the Fscans.
+The latest production code is at LHO under,
 
-1. The main documentation for Fscans is on this page:
+/home/pulsar/public_html/fscan/H1/scripts/
 
-https://wiki.ligo.org/viewauth/CW/FscanNotesAndInvestigations
+The production code runs via cron jobs on ldas-grid as user pulsar from,
 
-This is from S6 but gives an overview and how the daily Fscans were run
-then.
+/home/pulsar/public_html/fscan/H1/daily/H1Fscan_coherence
+/home/pulsar/public_html/fscan/H1/monthly/H1Fscan_coherence
+/home/pulsar/public_html/fscan/H1/weekly/H1Fscan_coherence
 
-2. More links to Fscan pages are here,
+at LHO, and from,
+
+/home/pulsar/public_html/fscan/L1/daily/L1Fscan_coherence
+/home/pulsar/public_html/fscan/L1/monthly/L1Fscan_coherence
+/home/pulsar/public_html/fscan/L1/weekly/L1Fscan_coherence
+
+at LLO.
+
+A copy of the code is kept at Caltech under,
+
+/home/gregory.mendell/scripts/fscan/newFscanCode2017/
+
+ii. This Fscan README file is in git here:
+
+https://git.ligo.org/lscsoft/lalsuite/-/blob/master/lalapps/src/pulsar/Fscan/README.txt
+
+iii. See these talks,
+
+https://dcc.ligo.org/LIGO-G1400026
+
+https://dcc.ligo.org/LIGO-G2000677
+
+to get an overview of what the Fscans do.
+
+iv. Links to Fscan information is here:
+
+https://wiki.ligo.org/DetChar/O3LinesCombsInvestigations
+
+v. Links to older Fscan investigations are also here,
 
 https://wiki.ligo.org/CW/InvestigationsOverview
 
-under "Detector characterisation".
+vi. Older documentation for Fscans is on this page:
 
-3. These talks give information about the Fscans:
+https://wiki.ligo.org/viewauth/CW/FscanNotesAndInvestigations
 
-Fscan Update January 2014: https://dcc.ligo.org/LIGO-G1400026
+2. Example Fscans:
 
-Fscan Update March 2012: https://dcc.ligo.org/LIGO-G1200176
+The Fscans appear on the daily summary pages, e.g., here:
 
-Fscan Update March 2010: https://dcc.ligo.org/LIGO-G1000242
+https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/20200212/detchar/fscan/
 
-Fscan Update December 2009: https://dcc.ligo.org/LIGO-G0901064
+https://ldas-jobs.ligo-la.caltech.edu/~detchar/summary/day/20200212/detchar/fscan/
 
-Fscan Discussion: https://dcc.ligo.org/LIGO-G0900102
+Click on green button, e.g., Coherence Daily, to get to the Fscan calendars.
 
-4. The code is in lalapps here:
+Click on a date then a channel and then on: Fscan Plots or Fscans Plots
+(Reverse Order) or Coherence Plots.
 
-https://ligo-vcs.phys.uwm.edu/cgit/lalsuite/tree/lalapps/src/pulsar/fscan
+Note that there links to the data in the plots and additional
+information below or to the side of each plot.
 
-5. Example Fscans can be found here:
+3. Steps for running the Fscan code:
 
-i. Daily Fscans of the primary channels:
+Note that the examples below are for running at LHO from
 
-https://ldas-jobs.ligo-wa.caltech.edu/~pulsar/fscan/H1_DUAL_ARM/H1_DUAL_ARM_HANN/fscanNavigation.html
+$HOME/public_html/fscan/test
 
-https://ldas-jobs.ligo-la.caltech.edu/~pulsar/fscan/L1_DUAL_ARM/L1_DUAL_ARM_DCREADOUT_HANN/fscanNavigation.html
-
-Scroll to the bottom of the calendar to get to ER8/O1 times. Click on a
-date then a channel, then on "old or new" to get the plots.
-
-(Old for the old arrangement from low frequency to high frequency, new
-for the new arrangement from high frequency to low. Probably need to
-rename the buttons. Both arrangements are useful.)
-
-The Fscans also appear on the daily summary pages, e.g., here:
-
-https://ldas-jobs.ligo-wa.caltech.edu/~detchar/summary/day/20151012/detchar/fscan/
-
-https://ldas-jobs.ligo-la.caltech.edu/~detchar/summary/day/20151012/detchar/fscan/
-
-6. Steps for running the Fscan code:
+If running at another site or a different directory, you will need to
+change URLs and paths accordingly.
 
 i. Login ldas-grid at LHO:
 
-$ gsissh ldas-grid.ligo-wa.caltech.edu
+$ ssh <albert.einstein@>ldas-grid.ligo-wa.caltech.edu
 
-ii. Change to the fscan working directory:
+or
 
-For example:
+$ ssh <albert.einstein@>ssh.ligo.org
 
-$ cd /home/[YOUR USER NAME]/public_html/test
+and follow the menu to ldas-grid at LHO.
 
-iii. Make a directory under the test directory, which will be the top
+ii. Make an fscan working directory:
+
+Make sure you're in your home directory, e.g.,
+
+$ cd /home/albert.einstein
+
+and run,
+
+$ mkdir -p public_html/fscan/test
+
+iii. Make a directories under the test directory, which will be the top
 level directory for the output:
 
-$ mkdir myOutput
+$ cd $HOME/public_html/fscan/test
 
-iii. If you want to run on "locked" times, you need to query the segment
+$ mkdir output
+
+$ mkdir output/comparisonFscans
+
+iv. For now, don't worry about locked times.
+
+But, if you want to run on "locked" times, you need to query the segment
 database to find the times.
 
-For example, to find the times for the past 24 hrs up to 6 am PDT today,
-you would need to run while logged into the cluster:
+For example, while logged into the cluster, run:
+
+$ ligo-proxy-init albert.einstein
+
+You will be prompted for your ligo.org password. For example:
+
+$ ligo-proxy-init gregory.mendell
+Your identity: gregory.mendell@LIGO.ORG
+Enter pass phrase for this identity:
+Creating proxy .................................... Done
+Your proxy is valid until: Jan 27 09:19:48 2021 GMT
+
+Then, to get the analysis ready times, e.g., run:
 
 $ ligolw_segment_query_dqsegdb --segment-url=https://segments.ligo.org
 --query-segments --include-segments H1:DMT-ANALYSIS_READY:1
---gps-start-time 1128776417 --gps-end-time 1128862817 | ligolw_print -t
+--gps-start-time 1265500818 --gps-end-time 1265587218 | ligolw_print -t
 segment:table -c start_time -c end_time -d " "
 
-This will return a list like this:
+This should output this list:
 
-1128776417 1128782611
-1128811907 1128837796
-1128858099 1128862817
+1265500818 1265520839
+1265521077 1265522807
+1265527149 1265572718
+1265575316 1265583488
 
-You can put these segments into a segment file, e.g.,
+You can put the list of segments into a segment file, e.g.,
 
-$HOME/public_html/test/mysegs.txt
+$HOME/public_html/fscan/test/mysegs.txt
 
-iv. Edit the .rsc (resource) file as needed:
+However, the Fscan code can also get these segments for you, as you will
+see below.
 
-An example .rsc files is here:
+v. Get the Fscan code:
 
-https://ldas-jobs.ligo-wa.caltech.edu/~pulsar/fscan/H1_DUAL_ARM/H1_DUAL_ARM_HANN/autoFscanGeneratorHann_H1_DUAL_ARM_HANN.rsc
+$ cd $HOME/public_html/fscan/test
 
-If you make a file,
+$ cp /home/pulsar/public_html/fscan/H1/scripts/*.tcl .
 
-myFscans.rsc
+$ cp /home/pulsar/public_html/fscan/H1/scripts/*.py .
 
-which is a copy of the above file then
+or see item 1 above for the location of the code.
 
-$ vi myFscans.rsc
+vi. Make a resource file called myFscans.rsc, like the following,
 
-The edit the channel list at the top of the .rsc file.
+https://ldas-jobs.ligo-wa.caltech.edu/~gmendell/fscan/test/myFscans.rsc
 
-Edit the start and end times, e.g., to be this:
+For comparision, see also this production .rsc file:
 
-set startTime 1128776417
-set endTime 1128862817
+https://ldas-jobs.ligo-wa.caltech.edu/~pulsar/fscan/H1/daily/H1Fscan_coherence/autoFscanGeneratorHann_H1FscanCoherence.rsc.sav22April2021
 
-You will also need this line:
+You can edit the start and end times, e.g., change the lines like these,
 
-set parentOutputDirectory "myOutput";
+set startTime 1265500818
+
+set endTime 1265587218
+
+to the start/end times you want.
+
+You can use tconvert to get times.
+
+For example, to get the above times I ran:
+
+$ tconvert Feb 11 2020 16:00:00 PST
+1265500818
+
+$ tconvert Feb 12 2020 16:00:00 PST
+1265587218
+
+*** WARNING!!! ***
+
+In the .rsc file, this setting,
+
+set startTimeFile "lastTimeUsedByH1FscanCoherenceGeneratorAuto.txt";
+
+gives a file with the last time the Fscan ran. If this file exists, the
+time in this file, INSTEAD of the startTime will be used. Thus, if you
+start the Fscans, jobs will be launched all the way back to the last
+time the Fscan ran! If the Fscans have not run for a while, you will
+want to update this file to the time from which you actually want to start.
+
+Also note this line:
+
+set parentOutputDirectory "output";
 
 The Fscans will put directories based on date and channel name and the
 fscans under this directory.
 
-For example, the daily Fscans I pointed to above, for H1, that ran
-today, ran from:
+vii. You need to set env variables. Make env.txt with
 
-/home/pulsar/public_html/fscan/H1_DUAL_ARM/H1_DUAL_ARM_HANN
+export S6_SEGMENT_SERVER=https://segments.ligo.org
+export LSC_DATAFIND_PATH=/usr/bin
+export MAKESFTS_PATH=/usr/bin
+export SPECAVG_PATH=/home/pulsar/searchcode/bin
+export PLOTSPECAVGOUTPUT_PATH=/home/[YOUR USER NAME] /public_html/fscan/test
+export CHECK_COHERENCE_PATH=/home/[YOUR USER NAME] /public_html/fscan/test
+export COHERENCE_FROM_SFTS_PATH=/home/[YOUR USER
+NAME]/public_html/fscan/test
+export PATH=$PATH:/home/pulsar/searchcode/bin
 
-And from that location the Fscan output for today's STRAIN data will go
-under:
+but with [YOUR USER NAME] replaced with your albert.einstein user name.
 
-H1_DUAL_ARM_HANN/fscans_2015_10_14_06_00_02_PDT_Wed/H1_GDS-CALIB_STRAIN/
+*** ToDo: Check whether the Fscans work with lalapps_spec_avg and
+MakeSFTDAG under /usr/bin rather than using the older versions under
+/home/pulsar/searchcode/bin ***
 
-v. You will need these env variables set:
+viii. Before running the Fscans, run
 
-$ export LSC_DATAFIND_PATH=/usr/bin
-$ export MAKESFTS_PATH=/archive/home/pulsar/searchcode/bin
-$ export SPECAVG_PATH=/archive/home/pulsar/searchcode/bin
-$ export
-PLOTSPECAVGOUTPUT_PATH=/archive/home/pulsar/searchcode/src/lalsuite/lalapps/src/pulsar/fscan
+$ source env.txt
 
-Also update your PATH:
+and to get the correct version of Python, run,
 
-$ export PATH=$PATH:/home/pulsar/searchcode/bin
+$ . /home/detchar/opt/gwpysoft-2.7/bin/activate
 
-This is no longer needed: add the location of ligotools to your env:
+*** ToDo: Update the Fscans to use a newer version of Python ***
 
-$ eval `/ligotools/bin/use_ligotools`
+(Note that the "." is the same as "source" in the syntax above. Either
+should work, but "." has been used when activating gwpysoft-2.7.)
 
-However, once you have ligotools in your env, you can run things like FrChannels,
-FrDump, and also tconvert to convert between GPS and standard time.
+ix. Update the accountingGroupUser:
 
-For example:
+In
 
-$ tconvert Oct 13 2015 06:00:00 PDT
-1128776417
+fscanDriver.py
 
-$ tconvert Oct 14 2015 06:00:00 PDT
-1128862817
+you must change,
 
-vi. Start the Fscans:
+accountingGroupUser = "gregory.mendell"
 
-$ cd $HOME/public_html/test
+to
 
-$ mkdir myOutput
+accountingGroupUser = "[YOUR USER NAME]"
 
-$ ./multiFscanGenerator.tcl myFscans.rsc $HOME/public_html/test/myseg.txt -R
+There is also a command line option for setting this with fscanDriver.py,
+
+-U, --accounting-group-user  (optional) accounting group albert.einstein
+username to be added to the condor submit files.
+
+However, that option is not set by multiFscanGenerator.tcl.
+
+*** ToDo: accountingGroupUser should be added as a configuration option
+for multiFscanGenerator.tcl and then  accountingGroupUser could be set
+in the .rsc file.***
+
+x. Start the Fscans:
+
+$ ./multiFscanGenerator.tcl myFscans.rsc -R
 
 You will see lots of messages scroll by about the script running
 MakeSFTDAG, fscanDriver.py, and condor_submit_dag, and hopefully the
@@ -173,63 +263,125 @@ word "Succeeded" a lot!
 
 The jobs will run under condor.
 
-Once the messages stop scrolling by, run "condor_q pulsar" to monitor
+Once the messages stop scrolling by, run "condor_q -nobatch" to monitor
 progress.
 
-vii. Make the web pages by running,
+xi. Make the web pages by running,
 
-$ ./generateMultiFscanHTML.tcl myOutput.
+$ ./generateMultiFscanHTML.tcl output
 
 Your results will be here:
 
 https://ldas-jobs.ligo-wa.caltech.edu/~[YOUR USER
-NAME]/test/fscanNavigation.html
+NAME]/fscans/test/fscanNavigation.html
 
-There are a lot steps done when the scripts are run that go on under the
-hood. 
+It will take 1-2 hrs for the jobs to run (or longer if the cluster is busy).
 
-See the following older instructions for running the fscanDriver.py script, which gets
-run above by the multiFscanGenerator.tcl script. 
+On the filesystem, there should be a list of channels and
+fscanChannels.html under under, e.g., something like,
 
-Older instructions:
+output/fscans_2020_02_11_16_00_00_PST_Tue/H1_GDS-CALIB_STRAIN
 
-1. Run ./fscanDriver.py -h to get help
+To understand the details of how the jobs are set up, go to the working
+directory, e.g.,
 
-2. Example Trial Run That Generates A Dag To Make H1 DARM_CTRL SFTs in /archive/home/pulsar/fscan/sfts:
+$ cd output/fscans_2020_02_12_16_00_02_PST_Wed/H1_GDS-CALIB_STRAIN/
 
-../fscanDriver.py -s 842705233 -L 36000 -G exampleTest -d RDS_R_L1 -k 40 -T 1800 -p /archive/home/pulsar/searchcode/src/lalapps/src/pulsar/fscan/test/sfts -N H1:LSC-DARM_CTRL -F 100 -B 20 -b 5 -X fscanTest -o /usr1/pulsar -C
+and study the .sub and .dag files.
 
-3. Example That Generates And Runs A Dag To Make H1 DARM_CTRL SFTs in /archive/home/pulsar/fscan/sfts:
+But don't worry if you don't see any output for a while.
 
-../fscanDriver.py -s 842705233 -L 36000 -G exampleTest -d RDS_R_L1 -k 40 -T 1800 -p /archive/home/pulsar/searchcode/src/lalapps/src/pulsar/fscan/test/sfts -N H1:LSC-DARM_CTRL -F 100 -B 20 -b 5 -X fscanTest -o /usr1/pulsar -C --run 
+However, if things fail:
 
-4. Example That Generates And Runs A Dag To Make H1 DARM_CTRL SFTs in /archive/home/pulsar/fscan/sfts and then run matlab driver script to output plots:
+Look in
 
-../fscanDriver.py -s 842705233 -L 36000 -G exampleTest -d RDS_R_L1 -k 40 -T 1800 -p /archive/home/pulsar/searchcode/src/lalapps/src/pulsar/fscan/test/sfts -N H1:LSC-DARM_CTRL -F 100 -B 20 -b 5 -X fscanTest -o /usr1/pulsar -O . -C --run 
+output/fscans_2020_02_11_16_00_00_PST_Tue/H1_GDS-CALIB_STRAIN/sft/tmp
 
-5. Obsolete instructions for using Matlab (replaced by plotSpecAvgOutput.py). 
+for .sft files.
 
-How to compile plotSpecAvgOutput.m, e.g., as user pulsar on ldas-grid:
+Check for errors in files like,
 
-Make sure /archive/home/pulsar/.usematlab_r2008a exists, otherwise touch this file, and logout and login so that "which matlab" returns:
-/ldcg/matlab_r2008a/bin/matlab 
+output/fscans_2020_02_11_16_00_00_PST_Tue/H1_GDS-CALIB_STRAIN/SUPERDAGH1_GDS-CALIB_STRAIN_H1_1265414418_1265500818tmp.dag.dagman.out
 
-Then run these commands:
+and the logs directory, e.g, under,
 
-$ cd /archive/home/pulsar/searchcode/src/lalsuite/lalapps/src/pulsar/fscan
-$ source MatlabSetup_R2008a_glnxa64.sh
-$ matlab -nodisplay -nodesktop -nojvm
->> mbuild -setup
->> mcc -mv plotSpecAvgOutput.m
->> exit
+output/fscans_2020_02_11_16_00_00_PST_Tue/H1_GDS-CALIB_STRAIN/logs
 
-You many need to run the code once by hand before it will work on the cluster (it does not matter if this fails, this just makes Matlab set up the libraries under ~/.mcr_cache_v78): 
+xii. To retry the test, you will need to remove a few things first:
 
-./plotSpecAvgOutput S4/spec_50.00_100.00_H1_793181266_795677345 /archive/home/pulsar/public_html/fscan/test/spec_50.00_100.00_H1_793181266_795677345.pdf H1:hoft 793181266 795677345 50 100 10 5 10
+$ rm lastTimeUsedByH1FscanCoherenceGeneratorAuto.txt
+$ cd output
+$ rm -rf fscans_2020_02_12_16_00_02_PST_Wed
 
-After this, logout, and login to unset the environment set by MatlabSetup_R2008a_glnxa64.sh.
+xiii. If you already have mysegs.txt, you can also run on the segments
+in mysegs.txt by changing in myFscans.rsc, this line from,
 
-You do not want to source MatlabSetup_R2008a_glnxa64.sh when running plotSpecAvgOutput!!!
+set useLSCsegFind 1
 
-Instead, the fscan code runs run_plotSpecAvgOutput.sh /ldcg/matlab_r2008a, which is a wrapper script the matlab mcc commands generated that runs plotSpecAvgOutput, and it will take care of setting up the environment.   
+to
+
+set useLSCsegFind 0
+
+and running,
+
+$ ./multiFscanGenerator.tcl myFscans.rsc mysegs.txt -R
+
+However, in most cases during a run, you'll want to keep these lines in
+in the .rsc file:
+
+set useLSCsegFind 1
+
+set typeLSCsegFind "H1:DMT-ANALYSIS_READY:1",
+
+or to run on locked times instead of analysis read times, set in the
+.rsc file,
+
+set typeLSCsegFind "H1:DMT-DC_READOUT_LOCKED:1"
+
+Also, whenever you generate a new set of Fscans, update the html to the
+results by running:
+
+$ ./generateMultiFscanHTML.tcl output
+
+xiv. To see how to automate fscan running, at LHO see:
+
+/home/pulsar/public_html/fscan/H1/daily/H1Fscan_coherence/runDailyH1FscanCoherence.sh
+
+/home/pulsar/public_html/fscan/H1/daily/H1Fscan_coherence/genDailyH1FscanCoherenceHTML.sh
+
+and
+
+/home/pulsar/.bash_profile
+
+Also, in myFscans.rsc, change,
+
+set startTime "1265414418";
+set endTime "1265500818";
+set timeLag "0";
+#set endTime "now";
+#set timeLag "7800";
+set startTimeFile "lastTimeUsedByH1FscanCoherenceGeneratorAuto.txt";
+
+to,
+
+set startTime "1265414418";
+#set endTime "1265500818";
+#set timeLag "0";
+set endTime "now";
+set timeLag "7800";
+set startTimeFile "lastTimeUsedByH1FscanCoherenceGeneratorAuto.txt";
+
+to automatically pick up the endTime as "now" with a lag of 7800
+seconds. Note that the startTime will always get set by
+lastTimeUsedByH1FscanCoherenceGeneratorAuto.txt, if that file exists.
+This file is updated each time multiFscanGenerator.tcl is run. (See the
+WARNING about updating this file if the Fscans haven't run for awhile
+above.)
+
+Finally, see the cron jobs run by user pulsar,
+
+10 19 * * *
+/home/pulsar/public_html/fscan/H1/daily/H1Fscan_coherence/runDailyH1FscanCoherence.sh
+20 21 * * *
+/home/pulsar/public_html/fscan/H1/daily/H1Fscan_coherence/genDailyH1FscanCoherenceHTML.sh
 

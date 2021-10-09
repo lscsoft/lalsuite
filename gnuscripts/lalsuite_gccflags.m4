@@ -6,7 +6,7 @@
 AC_DEFUN([LALSUITE_ENABLE_GCC_FLAGS],[
   # $0: enable GCC warning flags
   AC_ARG_ENABLE([gcc_flags],
-    AC_HELP_STRING([--enable-gcc-flags],[turn on strict GCC warning flags [default=yes]]),
+    AS_HELP_STRING([--enable-gcc-flags],[turn on strict GCC warning flags [default=yes]]),
     AS_CASE(["${enableval}"],
       [yes|no],[:],
       AC_MSG_ERROR([bad value '${enableval}' for --enable-gcc-flags])

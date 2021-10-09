@@ -19,6 +19,7 @@ from __future__ import division
 from math import ceil, floor, log10
 import sys
 import os
+import warnings
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")
@@ -30,6 +31,14 @@ from lalinspiral.sbank.waveforms import compute_mchirp
 from lalinspiral.sbank.tau0tau3 import m1m2_to_tau0tau3
 
 from h5py import File as H5File
+
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
+
 
 def find_process_id(process_table, prog_name):
     for program, pid in process_table["program", "process_id"]:

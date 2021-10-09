@@ -18,6 +18,7 @@ from __future__ import (division, print_function)
 
 from operator import attrgetter
 from optparse import OptionParser
+import warnings
 
 from time import strftime
 import numpy as np
@@ -33,6 +34,14 @@ from lalinspiral.sbank.bank import Bank
 #from sbank import git_version FIXME
 from lalinspiral.sbank.waveforms import waveforms
 from lalinspiral.sbank.psds import noise_models, read_psd
+
+warnings.warn(
+    "this script has been moved into the independent `sbank` project, "
+    "see https://pypi.org/project/sbank/ for details, and will be "
+    "removed from lalapps in an upcoming release",
+    DeprecationWarning,
+)
+
 
 class ContentHandler(ligolw.LIGOLWContentHandler):
     pass
@@ -244,7 +253,7 @@ lsctables.reset_next_ids((lsctables.ProcessTable, lsctables.ProcessParamsTable))
 ligolw_add.reassign_ids(fake_xmldoc)
 ligolw_add.merge_ligolws(fake_xmldoc)
 ligolw_add.merge_compatible_tables(fake_xmldoc)
-ligolw_process.set_process_end_time(process)
+process.set_end_time_now()
 
 # output process
 proc = lsctables.ProcessTable.get_table(fake_xmldoc)

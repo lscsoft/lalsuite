@@ -35,7 +35,7 @@
  */
 
 #include <stdio.h>
-#include <stdarg.h> 
+#include <stdarg.h>
 #include <lal/XLALError.h>
 #include <stdbool.h>
 #include <gsl/gsl_math.h>
@@ -59,7 +59,8 @@ UNUSED static UINT4 compute_i_max_LF_i_min_HF(INT8 * i_max_LF, INT8 * i_min_LF,g
 UNUSED static REAL8 Get_omegaQNM_SEOBNRv4(REAL8 q, REAL8 chi1z, REAL8 chi2z, UINT4 l, UINT4 m);
 UNUSED static UINT4 unwrap_phase(gsl_vector* phaseout,gsl_vector* phasein);
 UNUSED static UINT8 compute_i_at_f(gsl_vector * freq_array, REAL8 freq);
-UNUSED static UINT4 align_wfs_window(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector* phase_1, gsl_vector* phase_2, REAL8 f_align_start, REAL8 f_align_end);
+UNUSED static UINT4 align_wfs_window(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector* phase_1, gsl_vector* phase_2, REAL8* Deltat, REAL8* Deltaphi, REAL8 f_align_start, REAL8 f_align_end);
+UNUSED static UINT4 align_wfs_window_from_22(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector* phase_1, gsl_vector* phase_2, REAL8 f_align_start, REAL8 f_align_end, REAL8 Deltat22, REAL8 Deltaphi22, INT4 modeM);
 
 #ifdef LAL_HDF5_ENABLED
 UNUSED static int CheckVectorFromHDF5(LALH5File *file, const char name[], const double *v, size_t n);
@@ -716,7 +717,7 @@ UINT4 blend_functions(gsl_vector * freqs_out, gsl_vector * out_fun, gsl_vector *
     out_fun->data[i] = inter_func;
     i--;
   }
-  
+
   /* Build the contribution to out_fun from fun_in_2 in the range [freq_1, freq_2] */
   /* where f_end is the ending frequency of the array freq_in_2 */
   while((freqs_out->data[i]>=freq_1)&&(freqs_out->data[i]<=freq_2)){
@@ -735,33 +736,146 @@ UINT4 blend_functions(gsl_vector * freqs_out, gsl_vector * out_fun, gsl_vector *
 }
 
 // Function to align two phases in a window [f_align_start,f_align_end]
-UINT4 align_wfs_window(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector* phase_1, gsl_vector* phase_2, REAL8 f_align_start, REAL8 f_align_end){
+// Output phase shift, time shift from the linear fit of phi2 - phi1
+// Convention for alignment quantities:
+// phase_2 ~= phase_1 + Deltaphi + 2pi*f*Deltat
+UINT4 align_wfs_window(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector* phase_1, gsl_vector* phase_2, REAL8* Deltat, REAL8* Deltaphi, REAL8 f_align_start, REAL8 f_align_end){
 
-    // Search the indices corresponding to [f_align_start,f_align_end] in f_array_2
-    INT8 i_align_start = compute_i_at_f(f_array_2, f_align_start);
-    INT8 i_align_end = compute_i_at_f(f_array_2, f_align_end);
+    /* Check frequency range */
+    if((f_align_start<f_array_1->data[0]) || (f_align_start<f_array_2->data[0]) || (f_align_end>f_array_1->data[f_array_1->size-1]) || (f_align_end>f_array_2->data[f_array_2->size-1])) {
+      XLAL_ERROR(XLAL_EINVAL, "Incompatible frequency ranges.");
+    }
+    /* Number of points to fit the phase difference */
+    /* arbitrary, suitable for linear fit */
+    UINT8 npt_fit = 10;
     // Interpolate phase_1 phase on phase_2 frequency grid between [f_align_start,f_align_end] and compute phase difference
-    gsl_interp_accel *acc = gsl_interp_accel_alloc ();
-    gsl_spline *spline = gsl_spline_alloc (gsl_interp_cspline, phase_1->size);
-    gsl_spline_init (spline, f_array_1->data, phase_1->data, phase_1->size);
-    gsl_vector* delta_phi = gsl_vector_alloc(i_align_end-i_align_start);
-    gsl_vector* freq_delta_phi = gsl_vector_alloc(i_align_end-i_align_start);
-    for(unsigned int i = 0; i <freq_delta_phi->size; i++){
-      freq_delta_phi->data[i] = f_array_2->data[i+i_align_start];
-      delta_phi->data[i] = gsl_spline_eval(spline, f_array_2->data[i+i_align_start], acc) - phase_2->data[i+i_align_start];
+    gsl_interp_accel *acc_1 = gsl_interp_accel_alloc();
+    gsl_spline *spline_1 = gsl_spline_alloc(gsl_interp_cspline, phase_1->size);
+    gsl_spline_init(spline_1, f_array_1->data, phase_1->data, phase_1->size);
+    gsl_interp_accel *acc_2 = gsl_interp_accel_alloc();
+    gsl_spline *spline_2 = gsl_spline_alloc(gsl_interp_cspline, phase_2->size);
+    gsl_spline_init(spline_2, f_array_2->data, phase_2->data, phase_2->size);
+    gsl_vector* delta_phi = gsl_vector_alloc(npt_fit);
+    gsl_vector* freq_delta_phi = gsl_vector_alloc(npt_fit);
+    // delta_phi is phi2-phi1
+    REAL8 f = 0.;
+    for(unsigned int i=0; i<freq_delta_phi->size; i++){
+      f = f_align_start + ((double) i)/(freq_delta_phi->size - 1) * (f_align_end-f_align_start);
+      freq_delta_phi->data[i]  = f;
+      delta_phi->data[i] = gsl_spline_eval(spline_2, f, acc_2) - gsl_spline_eval(spline_1, f, acc_1);
     }
     REAL8 c0, c1, cov00, cov01, cov11, chisq;
-    gsl_fit_linear (freq_delta_phi->data, 1, delta_phi->data, 1, freq_delta_phi->size, &c0, &c1, &cov00, &cov01, &cov11, &chisq);
-    
+    gsl_fit_linear(freq_delta_phi->data, 1, delta_phi->data, 1, freq_delta_phi->size, &c0, &c1, &cov00, &cov01, &cov11, &chisq);
+    *Deltaphi = c0;
+    *Deltat = c1 / (2*LAL_PI);
+
     // Remove the linear fit from phase_1
     for(unsigned int i = 0; i < f_array_1->size; i++){
-      phase_1->data[i] = phase_1->data[i] - (c1*f_array_1->data[i] + c0);
+      phase_1->data[i] = phase_1->data[i] + (c1*f_array_1->data[i] + c0);
     }
     /* Cleanup */
     gsl_vector_free(delta_phi);
     gsl_vector_free(freq_delta_phi);
-    gsl_spline_free (spline);
-    gsl_interp_accel_free(acc);
+    gsl_spline_free(spline_1);
+    gsl_interp_accel_free(acc_1);
+    gsl_spline_free(spline_2);
+    gsl_interp_accel_free(acc_2);
+
+    return XLAL_SUCCESS;
+
+}
+
+// Useful debugging functions
+UNUSED static void test_save_gsl_vector(const char filename[], gsl_vector *v);
+UNUSED static void test_save_gsl_spline(const char filename[], gsl_spline *s);
+UNUSED static void test_save_cmplx_freq_series(COMPLEX16FrequencySeries *mode, const char filename[], bool save_real_part);
+
+/********************* Definitions begin here ********************/
+
+UNUSED static void test_save_gsl_vector(const char filename[], gsl_vector *v) {
+  FILE *fp = fopen(filename, "w");
+  gsl_vector_fprintf(fp, v, "%g");
+  fclose(fp);
+}
+
+UNUSED static void test_save_gsl_spline(const char filename[], gsl_spline *s) {
+  FILE *fp = fopen(filename, "w");
+  for (size_t i=0; i < s->size; i++) {
+    fprintf(fp, "%g\t%g\n", s->x[i], s->y[i]);
+  }
+  fclose(fp);
+}
+
+UNUSED static void test_save_cmplx_freq_series(
+  COMPLEX16FrequencySeries *mode,
+  const char filename[],
+  bool save_real_part)
+{
+  // Save either the real or imaginary part of a COMPLEX16FrequencySeries to a file.
+  gsl_vector *v = gsl_vector_alloc(mode->data->length);
+  double (*part_fun_ptr)(double complex);
+  if (save_real_part)
+    part_fun_ptr = creal;
+  else
+    part_fun_ptr = cimag;
+  for (unsigned int i=0; i<mode->data->length; i++)
+    gsl_vector_set(v, i, part_fun_ptr(mode->data->data[i]));
+  test_save_gsl_vector(filename, v);
+  gsl_vector_free(v);
+}
+
+// Function to align two phases with a given 22-mode constant and slope
+// using the window [f_align_start,f_align_end] to determine an additional pi
+// (in general there is a pi ambiguity in m/2*Deltaphi_22)
+// Convention for alignment quantities:
+// phase2_22 ~= phase1_22 + Deltaphi22_align + 2pi*f*Deltat22_align
+UINT4 align_wfs_window_from_22(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector* phase_1, gsl_vector* phase_2, REAL8 f_align_start, REAL8 f_align_end, REAL8 Deltat22, REAL8 Deltaphi22, INT4 modeM){
+
+    /* Check frequency range */
+    if((f_align_start<f_array_1->data[0]) || (f_align_start<f_array_2->data[0]) || (f_align_end>f_array_1->data[f_array_1->size-1]) || (f_align_end>f_array_2->data[f_array_2->size-1])) {
+      XLAL_ERROR(XLAL_EINVAL, "Incompatible frequency ranges.");
+    }
+    /* Number of points to fit the phase difference */
+    /* arbitrary, suitable for linear fit */
+    UINT8 npt_fit = 10;
+    // Interpolate phase_1 phase on phase_2 frequency grid between [f_align_start,f_align_end] and compute phase difference
+    gsl_interp_accel *acc_1 = gsl_interp_accel_alloc();
+    gsl_spline *spline_1 = gsl_spline_alloc(gsl_interp_cspline, phase_1->size);
+    gsl_spline_init(spline_1, f_array_1->data, phase_1->data, phase_1->size);
+    gsl_interp_accel *acc_2 = gsl_interp_accel_alloc();
+    gsl_spline *spline_2 = gsl_spline_alloc(gsl_interp_cspline, phase_2->size);
+    gsl_spline_init(spline_2, f_array_2->data, phase_2->data, phase_2->size);
+    gsl_vector* delta_phi = gsl_vector_alloc(npt_fit);
+    gsl_vector* freq_delta_phi = gsl_vector_alloc(npt_fit);
+    // delta_phi is phi2-phi1, taking into account the constant and linear term from alignment to be added
+    REAL8 f = 0.;
+    for(unsigned int i=0; i<freq_delta_phi->size; i++){
+      f = f_align_start + ((double) i)/(freq_delta_phi->size - 1) * (f_align_end-f_align_start);
+      delta_phi->data[i] = gsl_spline_eval(spline_2, f, acc_2) - gsl_spline_eval(spline_1, f, acc_1) -  (2*LAL_PI*Deltat22*f + modeM/2.*Deltaphi22);
+    }
+
+    // Determine a possible additional pi-shift (pi-ambiguity in m/2*Deltaphi22)
+    REAL8 av_phase_diff = 0.;
+    for(unsigned int i = 0; i < freq_delta_phi->size; i++){
+      av_phase_diff += delta_phi->data[i];
+    }
+    av_phase_diff = av_phase_diff / (delta_phi->size);
+
+    // Closest multiple of pi to eliminate the residual phase diff
+    REAL8 pishift = floor((av_phase_diff + LAL_PI/2) / LAL_PI) * LAL_PI;
+
+    // Remove the scaled linear fit and pi shift from phase_1
+    for(unsigned int i = 0; i < f_array_1->size; i++){
+      phase_1->data[i] = phase_1->data[i] + (2*LAL_PI*Deltat22*f_array_1->data[i] + modeM/2.*Deltaphi22 + pishift);
+    }
+
+    /* Cleanup */
+    gsl_vector_free(delta_phi);
+    gsl_vector_free(freq_delta_phi);
+    gsl_spline_free(spline_1);
+    gsl_interp_accel_free(acc_1);
+    gsl_spline_free(spline_2);
+    gsl_interp_accel_free(acc_2);
 
     return XLAL_SUCCESS;
 
@@ -770,7 +884,7 @@ UINT4 align_wfs_window(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector*
 // Function to compute the QNM frequency
 REAL8 Get_omegaQNM_SEOBNRv4(REAL8 q, REAL8 chi1z, REAL8 chi2z, UINT4 l, UINT4 m){
     // Total mass M is not important here, we return the QNM frequencies in geometric units
-    REAL8 M = 100.; 
+    REAL8 M = 100.;
     REAL8 Ms = M * LAL_MTSUN_SI;
     REAL8 m1 = M * q/(1+q);
     REAL8 m2 = M * 1/(1+q);
@@ -780,8 +894,8 @@ REAL8 Get_omegaQNM_SEOBNRv4(REAL8 q, REAL8 chi1z, REAL8 chi2z, UINT4 l, UINT4 m)
     modefreqVec.length = 1;
     modefreqVec.data = &modeFreq;
     REAL8 spin1[3] = {0., 0., chi1z};
-    REAL8 spin2[3] = {0., 0., chi2z}; 
-    // XLALSimIMREOBGenerateQNMFreqV2 is returning QNM frequencies in SI units, we multiply by Ms to convert it in geometric units 
+    REAL8 spin2[3] = {0., 0., chi2z};
+    // XLALSimIMREOBGenerateQNMFreqV2 is returning QNM frequencies in SI units, we multiply by Ms to convert it in geometric units
     UNUSED UINT4 ret = XLALSimIMREOBGenerateQNMFreqV2(&modefreqVec, m1, m2, spin1, spin2, l, m, 1, SpinAlignedEOBapproximant);
     return Ms * creal(modefreqVec.data[0]);
 }

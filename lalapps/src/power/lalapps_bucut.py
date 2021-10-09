@@ -318,7 +318,7 @@ def ligolw_bucut(xmldoc, burst_test_func, veto_segments = segments.segmentlistdi
 	seg = contents.outsegs.extent_all()
 	ligolw_search_summary.append_search_summary(xmldoc, process, inseg = seg, outseg = seg, nevents = len(contents.snglbursttable))
 
-	ligolw_process.set_process_end_time(process)
+	process.set_end_time_now()
 
 	return xmldoc
 
@@ -428,5 +428,5 @@ else:
 for filename in filenames:
 	xmldoc = ligolw_utils.load_filename(filename, verbose = options.verbose, contenthandler = ContentHandler)
 	xmldoc = ligolw_bucut(xmldoc, keep_this_sngl_burst, veto_segments = veto_segments, del_non_coincs = options.coinc_only, del_skipped_injections = options.inj_made_only, program = options.program, comment = options.comment, verbose = options.verbose)
-	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
 	xmldoc.unlink()

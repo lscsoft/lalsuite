@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2010,2012--2013  Kipp Cannon
+# Copyright (C) 2006-2010,2012--2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -27,9 +27,6 @@
 """
 LIGO Light-Weight XML coincidence analysis front end.
 """
-
-
-from __future__ import print_function
 
 
 import math

@@ -43,11 +43,11 @@ include:
   - project: computing/gitlab-ci-templates
     file:
       # helpers for debian builds
-      - /packaging/debian.yml
+      - debian.yml
       # helpers for RHEL builds
-      - /packaging/rhel.yml
+      - rhel.yml
       # a flake8 job template
-      - /python/lint.yml
+      - python.yml
 
 # -- global settings ----------------------------
 
@@ -58,6 +58,8 @@ cache:
     - .cache
 
 variables:
+  # run autoreconf in pedantic and loud mode
+  AUTORECONF: "autoreconf --verbose --warnings=error"
   # version of python to use for builds
   LALSUITE_PYTHON_VERSION: "3.8"
   # gitlab runners have 4 cores per job
@@ -78,6 +80,21 @@ variables:
   CONDA_ENVS_PATH: "${CI_PROJECT_DIR}/envs"
   # what file to use for conda configuration
   CONDARC: "${CI_PROJECT_DIR}/.condarc"
+
+# default parameters for jobs
+default:
+  # retry running jobs on some failure types
+  retry:
+    max: 1
+    when:
+      - api_failure
+      - stuck_or_timeout_failure
+      - runner_system_failure
+      - stale_schedule
+      - job_execution_timeout
+      - archived_failure
+      - scheduler_failure
+      - data_integrity_failure
 
 # -- templates ----------------------------------
 
@@ -174,25 +191,22 @@ variables:
 
 # -- rpm
 
-# disable the condor repo, we don't need it (most of the time)
-.yum-disable-htcondor-repo: &yum-disable-htcondor-repo
-  - yum-config-manager --disable htcondor
-
 # template for RPM packaging jobs
 .rpmbuild:
   extends:
-    - .rhel:base
+    - .rhel:rpm
     - .build-from-tarball
   image: igwn/base:el7-testing
   variables:
+    # disable repos we don't use
+    DISABLE_REPOS: "htcondor osg"
     # parallelise the build (rpmbuild uses this variable by default)
     RPM_BUILD_NCPUS: ${CPU_COUNT}
     # where to build things (not a standard variable name)
     RPM_BUILD_TOPDIR: "${CI_PROJECT_DIR}/rpmbuild"
-  # before_script comes from .rhel:base
+  # before_script comes from .rhel:rpm
   script:
     - *init-build-job
-    - *yum-disable-htcondor-repo
     # install srpm dependencies
     - yum install -y -q lscsoft-packaging-tools
     # install upstream packages
@@ -263,20 +277,18 @@ variables:
 # template for debian packaging jobs
 .debuild:
   extends:
-    - .debian:base
+    - .debian:deb
     - .build-from-tarball
   image: igwn/base:buster
   variables:
     # tell debhelper to parallelise the build
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
-  # before_script: comes from .debian:base
+  # before_script: comes from .debian:deb
   script:
     - *init-build-job
     - PACKAGE=${CI_JOB_NAME%%:*}
-    # install build requirements
+    # install extra build requirements
     - apt-get install -y -q -q
-          devscripts
-          dpkg-dev
           lintian
     # install upstream packages
     - "ls *.deb &>/dev/null && { dpkg -i *.deb || { apt-get -y -f install; dpkg -i *.deb; } }"
@@ -407,14 +419,13 @@ variables:
       fi
     # build packages (preferring local packages over everything)
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
-    - xargs conda build
+    - xargs -t conda build
           recipe/
           --dirty
           --error-overlinking
           --error-overdepending
           --keep-old-work
           --no-anaconda-upload
-          --use-channeldata
           --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
           <<< ${CONDA_BUILD_ARGS}
@@ -935,7 +946,7 @@ lalapps:conda:
     - ${PYTHON} -m venv env
     - source env/bin/activate
     - python -m pip install
-          git+https://github.com/lpsinger/delocate@fix-duplicate-libs
+          delocate
           oldest-supported-numpy
     # Build wheel
     - ./00boot
@@ -958,7 +969,6 @@ lalapps:conda:
     refs:
       - /^lalsuite-v.*$/
       - schedules
-  allow_failure: true
 
 # wheel build using the manylinux2014 container
 .wheel:manylinux2014:
@@ -1007,10 +1017,15 @@ wheel:cp39-cp39-macosx:
 
 lalinference_testjob:
   extends:
+    - .rpmbuild
     - .integration-tests
-  image: igwn/base:el7-testing
+  variables:
+    # we need the git repo to run the test script
+    GIT_STRATEGY: fetch
   before_script:
-    - *yum-disable-htcondor-repo
+    # init yum stuff from the template
+    - !reference [".rhel:base", before_script]
+    # install our packages
     - yum -y -q install
           git
           git-lfs
@@ -1070,14 +1085,6 @@ top-level:
       # `[skip compiler]` in the commit message
       - $CI_COMMIT_MESSAGE =~ /\[skip compiler\]/
 
-clang:10:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-clang:10
-  variables:
-    CC: clang-10
-    CXX: clang++-10
-
 clang:11:
   extends:
     - .compiler-test
@@ -1093,6 +1100,14 @@ clang:12:
   variables:
     CC: clang-12
     CXX: clang++-12
+
+clang:13:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-clang:13
+  variables:
+    CC: clang-13
+    CXX: clang++-13
 
 clang:dev:
   extends:
@@ -1127,7 +1142,11 @@ gcc:10:
   extends:
     - .compiler-test:gcc
   image: igwn/lalsuite-dev-gcc:10
-  allow_failure: true
+
+gcc:11:
+  extends:
+    - .compiler-test:gcc
+  image: igwn/lalsuite-dev-gcc:11
 
 cuda:
   extends:
@@ -1145,6 +1164,14 @@ cuda:
     # we don't run the test suite, so there are no reports
     reports:
       junit: []
+
+icc:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-icc:el7
+  variables:
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave --disable-static --enable-intelfft"
+  allow_failure: true
 
 # -- upgrade tests ------------------------------
 #
@@ -1171,11 +1198,10 @@ upgrade:rpm:el7:
     - lalinference:rpm
     - lalapps:rpm
   script:
-    - *yum-disable-htcondor-repo
     # install latest release
     - yum -y -q install lalapps
     # install new packages
-    - yum -y -q install rpmbuild/RPMS/x86_64/*.rpm
+    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
 
 upgrade:debian:buster:
   extends:
@@ -1202,7 +1228,7 @@ upgrade:debian:buster:
     - /usr/lib/local-apt-repository/rebuild
     # install new packages
     - apt-get -y -q update
-    - apt-get -y -q dist-upgrade
+    - apt-get -y dist-upgrade
 
 upgrade:conda:linux:
   extends:
@@ -1448,7 +1474,7 @@ coverage:
     # Run unit tests with Python scripts instrumented by coverage.py
     - make -j${CPU_COUNT} check
           COVERAGE_FILE="$(pwd)/.coverage"
-          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\*,\*sbank\* -p"
   after_script:
     # Output C coverage data in Cobertura format
     - gcovr
@@ -1660,10 +1686,10 @@ deploy:wheel:
     - wheel:cp37-cp37m-manylinux2014
     - wheel:cp38-cp38-manylinux2014
     - wheel:cp39-cp39-manylinux2014
-#    - wheel:cp36-cp36m-macosx
-#    - wheel:cp37-cp37m-macosx
-#    - wheel:cp38-cp38-macosx
-#    - wheel:cp39-cp39-macosx
+    - wheel:cp36-cp36m-macosx
+    - wheel:cp37-cp37m-macosx
+    - wheel:cp38-cp38-macosx
+    - wheel:cp39-cp39-macosx
   only:
     refs:
       - /^lalsuite-v.*$/
