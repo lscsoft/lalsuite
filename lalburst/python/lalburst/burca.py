@@ -275,7 +275,8 @@ class string_coincgen_doubles(ep_coincgen_doubles):
 
 		def __call__(self, event_a, offset_a, coinc_window):
 			peak = event_a.peak + offset_a
-			return self.events[bisect_left(self.events, peak - coinc_window) : bisect_right(self.events, peak + coinc_window)]
+			template_id = event_a.template_id
+			return [event for event in self.events[bisect_left(self.events, peak - coinc_window) : bisect_right(self.events, peak + coinc_window)] if event.template_id == template_id]
 
 
 #
