@@ -2164,29 +2164,31 @@ require:
 /// ownership of a particular argument, e.g. by storing that argument in some container, and that
 /// therefore the SWIG object wrapping that argument should no longer own its memory.
 ///
+%typemap(swiglal_owns_this_arg_is_char) SWIGTYPE "0";
+%typemap(swiglal_owns_this_arg_is_char) char * "1";
+%typemap(swiglal_owns_this_arg_is_char) const char * "1";
+%typemap(in, noblock=1) SWIGTYPE SWIGLAL_OWNS_THIS_ARG (int res = 0) {
+%#if $typemap(swiglal_owns_this_arg_is_char, $1_type)
+  {
+    char *str = NULL;
+    int alloc = 0;
+    res = SWIG_AsLALcharPtr($input, &str, &alloc);
+    if (!SWIG_IsOK(res)) {
+      %argument_fail(res,"$type",$symname, $argnum);
+    }
+    $1 = %reinterpret_cast(str, $1_ltype);
+  }
+%#else
+  res = SWIG_ConvertPtr($input, %as_voidptrptr(&$1), $descriptor, SWIG_POINTER_DISOWN | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+    %argument_fail(res,"$type", $symname, $argnum);
+  }
+%#endif
+}
 %define %swiglal_public_OWNS_THIS_ARG(TYPE, ...)
-%swiglal_map_ab(%swiglal_apply, SWIGTYPE* DISOWN, TYPE, __VA_ARGS__);
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE SWIGLAL_OWNS_THIS_ARG, TYPE, __VA_ARGS__);
 %enddef
 %define %swiglal_public_clear_OWNS_THIS_ARG(TYPE, ...)
-%swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
-%enddef
-
-///
-/// The <b>SWIGLAL(OWNS_THIS_STRING(...))</b> is a specialisation of the <b>SWIGLAL(OWNS_THIS_ARG(...))</b>
-/// macro for strings, which must be handled differently.
-///
-%typemap(in, noblock=1, fragment="SWIG_AsLALcharPtrAndSize") char * SWIGLAL_OWNS_THIS_STRING (int res, char *str = NULL, int alloc = 0), const char * SWIGLAL_OWNS_THIS_STRING (int res, char *str = NULL, int alloc = 0) {
-  res = SWIG_AsLALcharPtr($input, &str, &alloc);
-  if (!SWIG_IsOK(res)) {
-    %argument_fail(res,"$type",$symname, $argnum);
-  }
-  $1 = %reinterpret_cast(str, $1_ltype);
-}
-%typemap(freearg, noblock=1, match="in") char *SWIGLAL_OWNS_THIS_STRING, const char *SWIGLAL_OWNS_THIS_STRING "";
-%define %swiglal_public_OWNS_THIS_STRING(TYPE, ...)
-%swiglal_map_ab(%swiglal_apply, TYPE SWIGLAL_OWNS_THIS_STRING, TYPE, __VA_ARGS__);
-%enddef
-%define %swiglal_public_clear_OWNS_THIS_STRING(TYPE, ...)
 %swiglal_map_a(%swiglal_clear, TYPE, __VA_ARGS__);
 %enddef
 
