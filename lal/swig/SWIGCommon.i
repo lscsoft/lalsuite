@@ -2191,6 +2191,24 @@ require:
 %enddef
 
 ///
+/// The <b>SWIGLAL(NO_OWN_ON_ASSIGNMENT(...))</b> macro prevents structs for taking ownership of
+/// any values assigned to the listed struct members, which is the (hard-coded) SWIG default.
+///
+%typemap(in, noblock=1) SWIGTYPE * SWIGLAL_NO_OWN_ON_ASSIGNMENT (void *argp = 0, int res = 0) {
+  res = SWIG_ConvertPtr($input, &argp, $descriptor, 0 /*$disown*/ | %convertptr_flags);
+  if (!SWIG_IsOK(res)) {
+    %argument_fail(res, "$type", $symname, $argnum);
+  }
+  $1 = %reinterpret_cast(argp, $ltype);
+}
+%define %swiglal_public_NO_OWN_ON_ASSIGNMENT(...)
+%swiglal_map_ab(%swiglal_apply, SWIGTYPE * SWIGLAL_NO_OWN_ON_ASSIGNMENT, SWIGTYPE *, __VA_ARGS__);
+%enddef
+%define %swiglal_public_clear_NO_OWN_ON_ASSIGNMENT(TYPE, ...)
+%swiglal_map_a(%swiglal_clear, SWIGTYPE *, __VA_ARGS__);
+%enddef
+
+///
 /// The <b>SWIGLAL(EXTERNAL_STRUCT(...))</b> macro can be used to support structs which are not
 /// declared in LALSuite. It treats the struct as opaque, and attaches a destructor function to it.
 ///
