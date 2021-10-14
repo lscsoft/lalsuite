@@ -172,13 +172,6 @@ StringCuspBBCoincDef = lsctables.CoincDef(search = "StringCusp", search_coinc_ty
 
 
 class StringCuspCoincTables(snglcoinc.CoincTables):
-	@staticmethod
-	def ntuple_comparefunc(events, offset_vector, disallowed = frozenset(("H1", "H2"))):
-		# disallow H1,H2 only coincs
-		# FIXME:  implement this in the ranking statistic, not like
-		# this
-		return set(event.ifo for event in events) == disallowed
-
 	def coinc_rows(self, process_id, time_slide_id, events, table_name):
 		coinc, coincmaps = super(StringCuspCoincTables, self).coinc_rows(process_id, time_slide_id, events, table_name)
 		coinc.insts = (event.ifo for event in events)
