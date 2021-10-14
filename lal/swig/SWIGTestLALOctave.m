@@ -1018,6 +1018,26 @@ clear ptr_ptr;
 clear ptr_null_ptr;
 clear null_ptr_ptr;
 LALCheckMemoryLeaks();
+ptr_ptr = 0;
+for i = 1:9
+  ptr_ptr = swig_lal_test_typemaps_ptrptr(ptr_ptr);
+  assert(swig_this(ptr_ptr) != 0);
+  assert(ptr_ptr.n == i);
+endfor
+clear ptr_ptr;
+ptr_ptr_list = {0};
+for i = 1:9
+  ptr_ptr_list{end+1} = swig_lal_test_typemaps_ptrptr(ptr_ptr_list{end});
+  assert(swig_this(ptr_ptr_list{end}) != 0);
+  assert(ptr_ptr_list{end}.n == i);
+endfor
+while length(ptr_ptr_list) > 0
+  assert(swig_this(ptr_ptr_list{end}) != 0);
+  assert(ptr_ptr_list{end}.n == i);
+  ptr_ptr_list = ptr_ptr_list(2:end);
+endwhile
+clear ptr_ptr_list;
+LALCheckMemoryLeaks();
 disp("PASSED typemaps for strings and double pointers");
 
 ## check 'tm' struct conversions

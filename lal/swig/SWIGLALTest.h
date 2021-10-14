@@ -354,6 +354,15 @@ int swig_lal_test_typemaps_string_ptrptr(
 #ifdef SWIG
 SWIGLAL_CLEAR(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
 #endif // SWIG
+#ifdef SWIG
+SWIGLAL(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr));
+#endif // SWIG
+int swig_lal_test_typemaps_ptrptr(
+  swig_lal_test_struct** ptr_ptr
+  );
+#ifdef SWIG
+SWIGLAL_CLEAR(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr));
+#endif // SWIG
 
 // Test LIGOTimeGPS operations.
 typedef struct tagswig_lal_test_gps {

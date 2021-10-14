@@ -1038,6 +1038,24 @@ del ptr_ptr
 del ptr_null_ptr
 del null_ptr_ptr
 lal.CheckMemoryLeaks()
+ptr_ptr = 0
+for i in range(1, 10):
+    ptr_ptr = lal.swig_lal_test_typemaps_ptrptr(ptr_ptr)
+    assert(ptr_ptr is not None)
+    assert(ptr_ptr.n == i)
+del ptr_ptr
+lal.CheckMemoryLeaks()
+ptr_ptr_list = [0]
+for i in range(1, 10):
+    ptr_ptr_list.append(lal.swig_lal_test_typemaps_ptrptr(ptr_ptr_list[-1]))
+    assert(ptr_ptr_list[-1] is not None)
+    assert(ptr_ptr_list[-1].n == i)
+while len(ptr_ptr_list) > 0:
+    assert(ptr_ptr_list[-1] is not None)
+    assert(ptr_ptr_list[-1].n == i)
+    del ptr_ptr_list[0]
+del ptr_ptr_list
+lal.CheckMemoryLeaks()
 print("PASSED typemaps for strings and double pointers")
 
 # check 'tm' struct conversions

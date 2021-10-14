@@ -601,6 +601,18 @@ int swig_lal_test_typemaps_string_ptrptr(
   memcpy( *ptr_null_ptr, *ptr_ptr, sizeof(**ptr_null_ptr) );
   return XLAL_SUCCESS;
 }
+int swig_lal_test_typemaps_ptrptr(
+  swig_lal_test_struct** ptr_ptr
+  )
+{
+  XLAL_CHECK( ptr_ptr != NULL, XLAL_EFAILED );
+  if (*ptr_ptr == NULL) {
+    *ptr_ptr = XLALCalloc( 1, sizeof(**ptr_ptr) );
+    XLAL_CHECK( *ptr_ptr != NULL, XLAL_ENOMEM );
+  }
+  ++( *ptr_ptr )->n;
+  return XLAL_SUCCESS;
+}
 
 // Test LIGOTimeGPS operations.
 REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps) {
