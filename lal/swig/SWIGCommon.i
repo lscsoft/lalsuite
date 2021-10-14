@@ -1843,34 +1843,39 @@ if (strides[I-1] == 0) {
 ///    \&ptr;</tt>.</li>
 /// </ul>
 ///
-%typemap(in, noblock=1, numinputs=0) SWIGTYPE ** (void *argp = NULL, int owner = 0) {
+%typemap(in, noblock=1, numinputs=0) SWIGTYPE ** (void *argp = NULL) {
   $1 = %reinterpret_cast(&argp, $ltype);
-  owner = SWIG_POINTER_OWN;
 }
-%typemap(in, noblock=1, fragment=SWIG_AsVal_frag(int)) SWIGTYPE ** INOUT (void  *argp = NULL, int owner = 0, int res = 0) {
-  res = SWIG_ConvertPtr($input, &argp, $*descriptor, ($disown | %convertptr_flags) | SWIG_POINTER_DISOWN);
+%typemap(in, noblock=1, fragment=SWIG_AsVal_frag(int)) SWIGTYPE ** INOUT (SWIG_Object inobj, void *inarg = NULL, void *inoutarg = NULL, int res = 0) {
+  inobj = $input;
+  res = SWIG_ConvertPtr(inobj, &inarg, $*descriptor, ($disown | %convertptr_flags) & ~SWIG_POINTER_DISOWN);
   if (!SWIG_IsOK(res)) {
     int val = 0;
-    res = SWIG_AsVal(int)($input, &val);
+    res = SWIG_AsVal(int)(inobj, &val);
     if (!SWIG_IsOK(res) || val != 0) {
       %argument_fail(res, "$type", $symname, $argnum);
     } else {
-      argp = NULL;
-      $1 = %reinterpret_cast(&argp, $ltype);
-      owner = SWIG_POINTER_OWN;
+      inoutarg = inarg = NULL;
+      $1 = %reinterpret_cast(&inoutarg, $ltype);
     }
   } else {
-    if (argp == NULL) {
+    inoutarg = inarg;
+    if (inoutarg == NULL) {
       $1 = NULL;
-      owner = 0;
     } else {
-      $1 = %reinterpret_cast(&argp, $ltype);
-      owner = 0;
+      $1 = %reinterpret_cast(&inoutarg, $ltype);
     }
   }
 }
 %typemap(argout, noblock=1) SWIGTYPE ** {
-  %append_output(SWIG_NewPointerObj($1 != NULL ? %as_voidptr(*$1) : NULL, $*descriptor, owner$argnum | %newpointer_flags));
+  %append_output(SWIG_NewPointerObj($1 != NULL ? %as_voidptr(*$1) : NULL, $*descriptor, %newpointer_flags | SWIG_POINTER_OWN));
+}
+%typemap(argout, noblock=1) SWIGTYPE ** INOUT {
+  if ($1 != NULL && *$1 != NULL && *$1 == inarg$argnum) {
+    %append_output(swiglal_get_reference(inobj$argnum));
+  } else {
+    %append_output(SWIG_NewPointerObj($1 != NULL ? %as_voidptr(*$1) : NULL, $*descriptor, %newpointer_flags | SWIG_POINTER_OWN));
+  }
 }
 %typemap(freearg) SWIGTYPE ** "";
 %define %swiglal_public_INOUT_STRUCTS(TYPE, ...)
@@ -2151,7 +2156,7 @@ require:
 %#ifndef swiglal_no_1starg
   %swiglal_store_parent(*$1, 0, swiglal_1starg());
 %#endif
-  %append_output(SWIG_NewPointerObj($1 != NULL ? %as_voidptr(*$1) : NULL, $*descriptor, (owner$argnum | %newpointer_flags) | SWIG_POINTER_OWN));
+  %append_output(SWIG_NewPointerObj($1 != NULL ? %as_voidptr(*$1) : NULL, $*descriptor, %newpointer_flags | SWIG_POINTER_OWN));
 }
 
 ///
