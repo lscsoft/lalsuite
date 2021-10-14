@@ -977,9 +977,6 @@ lalapps:conda:
   image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2014_x86_64
 
 # Build wheels for all supported platforms
-wheel:cp36-cp36m-manylinux2014:
-  extends:
-    - .wheel:manylinux2014
 wheel:cp37-cp37m-manylinux2014:
   extends:
     - .wheel:manylinux2014
@@ -989,9 +986,6 @@ wheel:cp38-cp38-manylinux2014:
 wheel:cp39-cp39-manylinux2014:
  extends:
     - .wheel:manylinux2014
-wheel:cp36-cp36m-macosx:
-  extends:
-    - .wheel:macos
 wheel:cp37-cp37m-macosx:
   extends:
     - .wheel:macos
@@ -1682,11 +1676,9 @@ deploy:wheel:
     - pip install twine
     - twine upload wheelhouse/*
   needs:
-    - wheel:cp36-cp36m-manylinux2014
     - wheel:cp37-cp37m-manylinux2014
     - wheel:cp38-cp38-manylinux2014
     - wheel:cp39-cp39-manylinux2014
-    - wheel:cp36-cp36m-macosx
     - wheel:cp37-cp37m-macosx
     - wheel:cp38-cp38-macosx
     - wheel:cp39-cp39-macosx
