@@ -345,14 +345,14 @@ void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs* ap);
 
 // Test typemaps for strings and double pointers
 #ifdef SWIG
-SWIGLAL(INOUT_STRUCTS(const swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
+SWIGLAL(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
 #endif // SWIG
 int swig_lal_test_typemaps_string_ptrptr(
   const char *str, const char *empty_str, const char *null_str,
-  const swig_lal_test_struct** ptr_ptr, const swig_lal_test_struct** ptr_null_ptr, const swig_lal_test_struct** null_ptr_ptr
+  swig_lal_test_struct** ptr_ptr, swig_lal_test_struct** ptr_null_ptr, swig_lal_test_struct** null_ptr_ptr
   );
 #ifdef SWIG
-SWIGLAL_CLEAR(INOUT_STRUCTS(const swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
+SWIGLAL_CLEAR(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
 #endif // SWIG
 
 // Test LIGOTimeGPS operations.
