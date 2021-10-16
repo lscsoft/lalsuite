@@ -1,6 +1,12 @@
 # LALSuite
 
 This is the main LALSuite development repository.
+If you would like to just use a released version,
+see [here](https://computing.docs.ligo.org/conda/)
+for IGWN conda environments including LALSuite,
+or the project pages
+on [conda-forge](https://anaconda.org/conda-forge/lalsuite)
+and on [PyPI](https://pypi.org/project/lalsuite/).
 
 ## Acknowledgment
 
@@ -37,6 +43,32 @@ This only needs to be done once for each machine you access the
 repository. It can then be cloned using:
 
      $ git clone git@git.ligo.org:lscsoft/lalsuite.git
+
+## Building from Source
+
+The recommended way to build LALSuite from source is in a `conda` environment.
+[A recipe file](conda/environment.yml) is available with all main dependencies.
+This can serve as the base for custom recipes,
+or be used directly via:
+
+     $ conda env create -f conda/environment.yml
+
+Pulling in dependencies may take a while depending on your internet connection.
+After the environment setup succeeded, you can activate it with:
+
+     $ conda activate lalsuite-dev
+
+You can then build the suite by executing, in order:
+1. `./00boot` (once at first time)
+2. `./configure` with appropriate options (see `./configure --help`)
+3. `make`
+
+After pulling updates or making your own changes,
+you will usually only need to call `make` again,
+as reconfiguration and re-running `00boot` should be handled automatically if needed.
+
+If you prefer managing dependencies yourself without conda,
+see [here](https://wiki.ligo.org/Computing/LALSuite#Dependencies).
 
 ## Contributing to LALSuite
 
