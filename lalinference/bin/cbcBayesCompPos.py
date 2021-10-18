@@ -289,9 +289,9 @@ def compare_plots_one_param_line_hist(list_of_pos_by_name,param,cl,color_by_name
             injvals.append(posterior[param].injval)
 
         try:
-            n,bins=np.histogram(posterior[param].samples,bins=posbins,normed=True,new=True)
+            n,bins=np.histogram(posterior[param].samples,bins=posbins,density=True,new=True)
         except:
-            n,bins=np.histogram(posterior[param].samples,bins=posbins,normed=True)
+            n,bins=np.histogram(posterior[param].samples,bins=posbins,density=True)
         if min(bins)==max(bins):
             print('Skipping '+param)
             continue

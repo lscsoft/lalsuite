@@ -1159,8 +1159,6 @@ if __name__=='__main__':
             fixedBurnins = [int(fixedBurnin) for fixedBurnin in opts.fixedBurnin]
     else:
         fixedBurnins = None
-
-
     from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,fourPiecePolyParams,spectralParams
 
 
