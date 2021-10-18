@@ -1145,12 +1145,14 @@ except:
 assert(not expected_exception)
 print("*** above should be error messages from LIGOTimeGPS constructor ***")
 assert(lal.swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.swig_lal_test_noptrgps(1234.5))
+print("*** below should be error messages from LIGOTimeGPS constructor ***")
 try:
     LIGOTimeGPS(None)
     expected_exception = True
 except:
     pass
 assert(not expected_exception)
+print("*** above should be error messages from LIGOTimeGPS constructor ***")
 del t0
 del t1
 del t2
