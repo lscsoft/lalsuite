@@ -357,10 +357,7 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
         return;
       }
   }
-
-
-/* ==== Spin induced quadrupole moment PARAMETERS ==== */
- 
+/* ==== Spin induced quadrupole moment PARAMETERS ==== */ 
  if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
     REAL8 dQuadMon1=0.;
     REAL8 dQuadMon2=0.;
@@ -376,9 +373,6 @@ void LALInferenceROQWrapperForXLALSimInspiralChooseFDWaveformSequence(LALInferen
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
   }
-
-
-
   /* ==== TIDAL PARAMETERS ==== */
   if(LALInferenceCheckVariable(model->params, "lambda1"))
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
@@ -858,12 +852,8 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
         XLALPrintError(" ERROR in XLALSimInspiralTransformPrecessingNewInitialConditions(): error converting angles. errnum=%d: %s\n",errnum, XLALErrorString(errnum) );
         return;
       }
-  }
-
-
-  
+  } 
 /* ==== Spin induced quadrupole moment PARAMETERS ==== */
-
  if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
     REAL8 dQuadMon1=0.;
     REAL8 dQuadMon2=0.;
@@ -879,12 +869,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
   }
-
-
-  
-
-
-
 /* ==== TIDAL PARAMETERS ==== */
   if(LALInferenceCheckVariable(model->params, "lambda1"))
     XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
@@ -1470,13 +1454,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
             return;
         }
     }
-
-  
-
-
-
 /* ==== Spin induced quadrupole moment PARAMETERS ==== */
-
  if(LALInferenceCheckVariable(model->params, "dQuadMonS")&&LALInferenceCheckVariable(model->params, "dQuadMonA")){
     REAL8 dQuadMon1=0.;
     REAL8 dQuadMon2=0.;
@@ -1492,11 +1470,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveformPhaseInterpolated(LALInfer
     XLALSimInspiralWaveformParamsInsertdQuadMon1(model->LALpars,dQuadMon1);
     XLALSimInspiralWaveformParamsInsertdQuadMon2(model->LALpars,dQuadMon2);
   }
-
-
-
-
-
     /* ==== TIDAL PARAMETERS ==== */
     if(LALInferenceCheckVariable(model->params, "lambda1"))
       XLALSimInspiralWaveformParamsInsertTidalLambda1(model->LALpars, *(REAL8*) LALInferenceGetVariable(model->params, "lambda1"));
