@@ -941,6 +941,9 @@ lalapps:conda:
   tags:
     - macos_sierra
   script:
+    # this build uses macports for the libraries and Python
+    - . /opt/local/share/macports/setupenv.bash
+    # find python
     - PYTHON=$(which python$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/'))
     # Enter virtualenv so that we have a controlled version of Numpy
     - ${PYTHON} -m venv env
