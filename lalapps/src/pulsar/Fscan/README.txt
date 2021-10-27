@@ -221,7 +221,7 @@ $ source env.txt
 
 and to get the correct version of Python, run,
 
-$ . /home/detchar/opt/gwpysoft-2.7/bin/activate
+$ conda activate igwn-py37
 
 *** ToDo: Update the Fscans to use a newer version of Python ***
 

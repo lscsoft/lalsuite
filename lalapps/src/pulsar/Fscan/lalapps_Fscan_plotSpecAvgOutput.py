@@ -1,18 +1,15 @@
-import sys
-import os
-import math
-
 from numpy import *
-
-import scipy
-
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 from pylab import *
-
+import sys
+import os
+import math as math
+import numpy as np
 from findCombs import findCombs
+from fscanForestOfLines import fscanForestOfLines
 
 def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,taveFlag,effTBaseFull,thresholdSNR,coinDF, pulsar, referenceFile):
 
@@ -64,7 +61,7 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
     yzeros=list(y.sum(axis=0))
     for i in reversed(range(len(yzeros))):
         if yzeros[i] == 0:
-            y_temp1 = scipy.delete(y_temp1,i,1)
+            y_temp1 = np.delete(y_temp1,i,1)
 
     y_temp2 = []
     xlen2=len(y_temp1[:,0])
@@ -123,8 +120,9 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 #y-axis
     ylabel('Frequency [Hz]',fontsize=10)
     fRange = int(float(fEnd)) - int(float(fStart))
-    VecFLabels = range(int(float(fStart)),int(float(fEnd))+1,deltaFTicks)
-    VecFLabels.reverse()
+    #VecFLabels = range(int(float(fStart)),int(float(fEnd))+1,deltaFTicks)
+    #VecFLabels.reverse()
+    VecFLabels = reversed(range(int(float(fStart)),int(float(fEnd))+1,deltaFTicks))
     yticks(range(0,int((fRange + 1)*effTBase),int(deltaFTicks*effTBase)),VecFLabels,fontsize=9)
 
 #x-axis
@@ -377,6 +375,8 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
         os.rename(currentComparisonFile, comparisonFile) # move new file to comparisonDir
 
     findCombs(5.0,outputFileName,3,data2)
+
+    fscanForestOfLines(filename, 30, 1e-6)
 
     # remove the original _timeaverage file:
     os.remove(timeaverageFileName)
