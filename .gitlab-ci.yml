@@ -178,7 +178,7 @@ default:
 # (the 'macos' tag means that jobs only run on macOS runners)
 .macos:
   tags:
-    - macos
+    - macos_x86_64
 
 # -- build templates ----------------------------
 
