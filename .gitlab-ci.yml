@@ -989,15 +989,15 @@ wheel:cp38-cp38-manylinux2014:
 wheel:cp39-cp39-manylinux2014:
  extends:
     - .wheel:manylinux2014
-# wheel:cp37-cp37m-macosx:
-#   extends:
-#     - .wheel:macos
-# wheel:cp38-cp38-macosx:
-#   extends:
-#     - .wheel:macos
-# wheel:cp39-cp39-macosx:
-#  extends:
-#     - .wheel:macos
+wheel:cp37-cp37m-macosx:
+  extends:
+    - .wheel:macos
+wheel:cp38-cp38-macosx:
+  extends:
+    - .wheel:macos
+wheel:cp39-cp39-macosx:
+ extends:
+    - .wheel:macos
 
 # -- integration tests --------------------------
 #
@@ -1330,10 +1330,10 @@ platform:conda:linux:
   extends:
     - .platform-test:conda
 
-# platform:conda:macos:
-#   extends:
-#     - .platform-test:conda
-#     - .macos
+platform:conda:macos:
+  extends:
+    - .platform-test:conda
+    - .macos
 
 # -- docker -------------------------------------
 #
@@ -1682,9 +1682,9 @@ deploy:wheel:
     - wheel:cp37-cp37m-manylinux2014
     - wheel:cp38-cp38-manylinux2014
     - wheel:cp39-cp39-manylinux2014
-    # - wheel:cp37-cp37m-macosx
-    # - wheel:cp38-cp38-macosx
-    # - wheel:cp39-cp39-macosx
+    - wheel:cp37-cp37m-macosx
+    - wheel:cp38-cp38-macosx
+    - wheel:cp39-cp39-macosx
   only:
     refs:
       - /^lalsuite-v.*$/
