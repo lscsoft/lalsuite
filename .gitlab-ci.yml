@@ -939,7 +939,8 @@ lalapps:conda:
   extends:
     - .wheel
   tags:
-    - macos_sierra
+    # explicitly use the oldest macOS tag we have
+    - macos_catalina_x86_64
   script:
     # this build uses macports for the libraries and Python
     - . /opt/local/share/macports/setupenv.bash
