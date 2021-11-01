@@ -120,8 +120,6 @@ def plotSpecAvgOutput(filename,outputFileName,chanName,effTBase,deltaFTicks,tave
 #y-axis
     ylabel('Frequency [Hz]',fontsize=10)
     fRange = int(float(fEnd)) - int(float(fStart))
-    #VecFLabels = range(int(float(fStart)),int(float(fEnd))+1,deltaFTicks)
-    #VecFLabels.reverse()
     VecFLabels = reversed(range(int(float(fStart)),int(float(fEnd))+1,deltaFTicks))
     yticks(range(0,int((fRange + 1)*effTBase),int(deltaFTicks*effTBase)),VecFLabels,fontsize=9)
 

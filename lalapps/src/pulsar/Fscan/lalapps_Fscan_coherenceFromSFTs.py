@@ -25,7 +25,6 @@ def parseSFT(SFTinput):
     elif type(SFTinput) == file:
         SFTfile = SFTinput
     else:
-        #raise TypeError, 'Argument must be a string (filename) or open file object.'
         raise TypeError('Argument must be a string (filename) or open file object.')
 
     sfts = []
@@ -50,8 +49,6 @@ def parseSFT(SFTinput):
 
         # Check version (and endianness)
         if version != 2.0:
-            #raise ValueError, ('Can only parse SFTs of version 2, not %f'
-            #                   % version)
             raise ValueError('Can only parse SFTs of version 2, not %f' % version)
 
         # TODO: check crc64 checksum
