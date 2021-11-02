@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalpulsar.m4 - LALPulsar specific macros
 #
-# serial 1
+# serial 2
 
 AC_DEFUN([LALPULSAR_CHECK_ALTIVEC],[
   # $0: check for Altivec support for ComputeFstat Demod hotloop
@@ -31,5 +31,20 @@ AC_DEFUN([LALPULSAR_CHECK_ALTIVEC],[
   AM_COND_IF([HAVE_ALTIVEC],[
     AC_DEFINE([HAVE_ALTIVEC],[1],[Define to 1 for Altivec support])
   ])
+  # end $0
+])
+
+AC_DEFUN([LALPULSAR_INSTALL_MINIMAL_EPHEM],[
+  # $0: install only a minimal set of ephemeris files
+  AC_ARG_ENABLE(
+    [minimal_ephem],
+    AS_HELP_STRING(
+      [--enable-minimal-ephem],
+      [install only a minimal set of ephemeris files [default=no; install all ephemeris files]]
+    ),
+    [],
+    [enable_minimal_ephem=no]
+  )
+  AM_CONDITIONAL([INSTALL_MINIMAL_EPHEM],[test x"${enable_minimal_ephem}" = xyes])
   # end $0
 ])
