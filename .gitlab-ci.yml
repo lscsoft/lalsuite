@@ -947,6 +947,7 @@ lalapps:conda:
           --enable-mpi
           --enable-python
           --enable-swig-python
+          --enable-minimal-ephem
           PYTHON=${PYTHON}
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
@@ -981,6 +982,7 @@ lalapps:conda:
           --enable-mpi
           --enable-python
           --enable-swig-python
+          --enable-minimal-ephem
           PYTHON=$(which python)
           LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j${CPU_COUNT} wheel
