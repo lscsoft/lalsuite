@@ -38,13 +38,14 @@ build:
   error_overlinking: true
   number: 9999
   script_env:
+    - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - GITLAB_CI
   skip: true  # [win]
 
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man >=1.37
     - make
     - pkg-config
     - swig >={{ swig_version }}
@@ -90,8 +91,12 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - pkg-config --print-errors --exact-version "{{ version }}" lalinspiral
-        - test -f ${PREFIX}/lib/liblalinspiral${SHLIB_EXT}  # [not win]
+        # check library
+        - test -f ${PREFIX}/lib/liblalinspiral${SHLIB_EXT}  # [unix]
+        # check activate variables
+        - test "${LALINSPIRAL_DATADIR}" = "${PREFIX}/share/lalinspiral"  # [unix]
+        # check pkg-config
+        - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalinspiral
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
@@ -118,10 +123,14 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
         - pkg-config
         - swig >={{ swig_version }}
+        # extras for cross-compilation:
+        - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+        - numpy                               # [build_platform != target_platform]
+        - python                              # [build_platform != target_platform]
       host:
         - liblalburst >={{ lalburst_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
@@ -130,7 +139,6 @@ outputs:
         # extras to assist the solver, but not actually used
         - openssl
       run:
-        - liblal  # [linux]
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - lscsoft-glue
         - {{ pin_compatible('numpy') }}
@@ -177,7 +185,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
       host:
         - liblal >={{ lal_version }}
