@@ -867,7 +867,7 @@ lalapps:conda:
     - lalinspiral:conda
     - lalinference:conda
   variables:
-    CONDA_CONFIG: "linux_64_python${LALSUITE_PYTHON_VERSION}.____cpython"
+    CONDA_CONFIG: "linux_64_numpy1.18python${LALSUITE_PYTHON_VERSION}.____cpython"
 
 # -- wheels -------------------------------------
 #
