@@ -35,13 +35,14 @@ build:
   error_overlinking: true
   number: 9999
   script_env:
+    - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - GITLAB_CI
   skip: true  # [win]
 
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man >=1.37
     - make
     - pkg-config >=0.18.0
     - swig >={{ swig_version }}
@@ -60,7 +61,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - make  # [not win]
+        - make
         - swig >={{ swig_version }}
       host:
         - liblal >={{ lal_version }}
@@ -75,8 +76,12 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - pkg-config --print-errors --exact-version "{{ version }}" lalmetaio
-        - test -f ${PREFIX}/lib/liblalmetaio${SHLIB_EXT}  # [not win]
+        # check library
+        - test -f ${PREFIX}/lib/liblalmetaio${SHLIB_EXT}  # [unix]
+        # check activate variables
+        - test "${LALMETAIO_DATADIR}" = "${PREFIX}/share/lalmetaio"  # [unix]
+        # check pkg-config
+        - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalmetaio
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalmetaio/
@@ -102,10 +107,14 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
         - pkg-config
         - swig >={{ swig_version }}
+        # extras for cross-compilation:
+        - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+        - numpy                               # [build_platform != target_platform]
+        - python                              # [build_platform != target_platform]
       host:
         - {{ pin_subpackage('liblalmetaio', exact=True) }}
         - numpy
@@ -113,7 +122,6 @@ outputs:
         # extras to assist the solver, but not actually used
         - openssl
       run:
-        - liblal  # [linux]
         - {{ pin_subpackage('liblalmetaio', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
@@ -150,7 +158,7 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
       host:
         - liblal >={{ lal_version }}
