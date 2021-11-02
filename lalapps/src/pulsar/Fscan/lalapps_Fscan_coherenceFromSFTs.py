@@ -1,15 +1,10 @@
-import os
-import struct
-import sys
-
+import sys, os
 import numpy as np
+import struct
 import matplotlib
 matplotlib.use('Agg')
-
 from matplotlib.pyplot import *
-
 import matplotlib.pyplot as plt
-
 matplotlib.rcParams['text.usetex']=False
 
 #Written by Kara Merfeld, 2018 (In my defense, I was a little first year grad student when I did this :) )
@@ -54,8 +49,7 @@ def parseSFT(SFTinput):
 
         # Check version (and endianness)
         if version != 2.0:
-            raise ValueError('Can only parse SFTs of version 2, not %f'
-                               % version)
+            raise ValueError('Can only parse SFTs of version 2, not %f' % version)
 
         # TODO: check crc64 checksum
 
@@ -93,7 +87,7 @@ def parseSFT(SFTinput):
         return tuple(sfts)
 
 
-def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The function that generates the coherence
+def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100, timeStamp=None):  #The function that generates the coherence
 
     done = False
     for i in range(11 , len(pathToSFTsChannA)-1):
@@ -231,7 +225,7 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
     B = Fmax-Fmin  #I am not understanding what B is... It is the bandwidth of frequencies -- it is
     N = T * B +1 # Number of frequency bins? I think so, because N=len(coh)
 
-    Freq = np.linspace(Fmin,Fmax, N)
+    Freq = np.linspace(int(Fmin),int(Fmax+1.0),int(N))
 
     #print('lenth of frequency array and coherence array')
     #print(len(Freq))
@@ -268,15 +262,17 @@ def coherenceFromSFTs( pathToSFTsChannA, pathToSFTsChannB, subBand=100):  #The f
     # All frequencies below, minFreq, maxFreq, and subBand, are coverted to integer indices in the Freq array.
     i = int(0)
     subBand = subBand * TbaseA
-    maxPossibleFreq = len(Freq);
+    maxPossibleFreq = len(Freq)
     minFreq = int(i * subBand) #minFreq is integer minimum frequency, this subBand
     maxFreq = int((i + 1) * subBand) # maxFreq is integer maximum frequency, this subBand
     while  maxFreq < maxPossibleFreq:
         plot_num = str(i)
 
         #Now we create the filenames:
-
-        filename = 'spec_%d.00_%d.00_%s_coherence_%s_and_%s' % (Freq[minFreq],Freq[maxFreq],startTime,CA,CB)
+        if (timeStamp == None):
+          filename = 'spec_%d.00_%d.00_%s_coherence_%s_and_%s' % (Freq[minFreq],Freq[maxFreq],startTime,CA,CB)
+        else:
+          filename = 'spec_%d.00_%d.00_%s_coherence_%s_and_%s' % (Freq[minFreq],Freq[maxFreq],timeStamp,CA,CB)
 
         #np.savetxt(path+filename+'.txt', Coh_Output[minFreq:maxFreq])
         np.savetxt(filename+'.txt', Coh_Output[minFreq:maxFreq], fmt=['%.6e','%.4f'])
@@ -309,9 +305,11 @@ if len(sys.argv) < 3:
    print(' ')
    print('Find the coherence between SFTs in two specified directories ')
    print(' ')
-   print('Usage: %s <pathToSFTsChanA> <pathToSFTsChanB> [subBand]' % sys.argv[0])
+   print('Usage: %s <pathToSFTsChanA> <pathToSFTsChanB> [subBand] [timeStamp]' % sys.argv[0])
    print(' ')
    print('The optional subBand is the band in Hz to output in each plot. (Default is 100 Hz)')
+   print(' ')
+   print('The optional timeStamp is used in the name of the output files. (Defaults to start time of the first SFT.)')
    print(' ')
    exit(0)
 
@@ -327,13 +325,17 @@ if pathToSFTsChannA[-1] != '/':
 if pathToSFTsChannB[-1] != '/':
    pathToSFTsChannB = pathToSFTsChannB + '/'
 
-# Default subBand
+# Defaults
 subBand=100
+timeStamp=None
 
 if len(sys.argv) >= 4:
    subBand =  sys.argv[3]
 
+if len(sys.argv) >= 5:
+   timeStamp = sys.argv[4]
+
 #coherenceFromSFTs('/home/kara.merfeld/public_html/fscan/test/output/fscans_2017_08_17_17_00_00_PDT_Thu/H1_GDS-CALIB_STRAIN/sfts/tmp/','/home/kara.merfeld/public_html/fscan/test/output/fscans_2017_08_17_17_00_00_PDT_Thu/H1_PEM-CS_ACC_BSC3_ITMX_X_DQ/sfts/tmp/')
 
-coherenceFromSFTs(pathToSFTsChannA, pathToSFTsChannB, subBand)
+coherenceFromSFTs(pathToSFTsChannA, pathToSFTsChannB, subBand, timeStamp)
 
