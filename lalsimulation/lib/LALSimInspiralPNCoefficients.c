@@ -790,6 +790,11 @@ XLALSimInspiralTaylorF2Phasing_7PNSOCoeff(
  * Compute 2.0PN SS, QM, and self-spin
  * See Eq. (6.24) in arXiv:0810.5336
  * 9b,c,d in arXiv:astro-ph/0504538
+ * Note that these terms are understood to multiply
+ * dimensionless spin magnitudes \chi_i=S_i/m_i^2
+ * differently from the convention adopted for SpinTaylorTX
+ * whose spinning coefficients multiply \chi_LAL=S_i/M^2
+ * where M=m_1+m_2.
  * See also https://dcc.ligo.org/T1800298
  */
 
