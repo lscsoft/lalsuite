@@ -2989,7 +2989,7 @@ static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start,
     XLALDestroyREAL8TimeSeries(end);
 
     return start;        
-}  // End of XLALSimInspiralSpinTaylorT5Derivatives()
+}
 
 /**
  * Driver function to generate any of SpinTaylorT1/T5/T4
@@ -3018,6 +3018,7 @@ static REAL8TimeSeries *appendTSandFree(REAL8TimeSeries *start,
  * * dQuadMon2
  * * TidalLambda1
  * * TidalLambda2
+ * * FinalFreq
  * Next-to-last version REVIEWED completed on git hash 6640e79e60791d5230731acc63351676ce7ce413
  */
 int XLALSimInspiralSpinTaylorDriver(
@@ -3207,7 +3208,7 @@ int XLALSimInspiralSpinTaylorDriver(
     if( fRef < LAL_REAL4_EPS )
     {
         fS = fStart;
-        fE = 0.;
+        fE = XLALSimInspiralWaveformParamsLookupFinalFreq(LALparams);
         /* Evolve the dynamical variables */
         n = XLALSimInspiralSpinTaylorPNEvolveOrbit(&V, &Phi,
                 &S1x, &S1y, &S1z, &S2x, &S2y, &S2z,
@@ -3230,7 +3231,7 @@ int XLALSimInspiralSpinTaylorDriver(
     else if( fabs(fRef - fStart) < LAL_REAL4_EPS )
     {
         fS = fStart;
-        fE = 0.;
+        fE = XLALSimInspiralWaveformParamsLookupFinalFreq(LALparams);
         /* Evolve the dynamical variables */
         n = XLALSimInspiralSpinTaylorPNEvolveOrbit(&V, &Phi,
                 &S1x, &S1y, &S1z, &S2x, &S2y, &S2z,
@@ -3280,7 +3281,7 @@ int XLALSimInspiralSpinTaylorDriver(
 
         /* Integrate forward to end of waveform */
         fS = fRef;
-        fE = 0.;
+        fE = XLALSimInspiralWaveformParamsLookupFinalFreq(LALparams);
         n = XLALSimInspiralSpinTaylorPNEvolveOrbit(&V2, &Phi2,
                 &S1x2, &S1y2, &S1z2, &S2x2, &S2y2, &S2z2,
                 &LNhatx2, &LNhaty2, &LNhatz2, &E1x2, &E1y2, &E1z2,
