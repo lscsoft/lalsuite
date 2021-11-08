@@ -54,7 +54,7 @@ fi
 
 testdatafindcontent=$(<$datafindsub)
 datafindfilecontent="universe = vanilla
-executable = gw_data_find
+executable = /usr/bin/gw_data_find
 arguments = -r \$ENV(LIGO_DATAFIND_SERVER) --observatory \$(observatory) --url-type file --gps-start-time \$(gpsstarttime) --gps-end-time \$(gpsendtime) --lal-cache --type \$(inputdatatype) 
 getenv = True
 accounting_group = ligo.sim.o4.cw.explore.test
@@ -75,7 +75,7 @@ fi
 
 testsftsubcontent=$(<$sftsub)
 sftsubfilecontent="universe = vanilla
-executable = lalapps_MakeSFTs
+executable = /usr/bin/lalapps_MakeSFTs
 arguments = \$(argList)
 getenv = True
 accounting_group = ligo.sim.o4.cw.explore.test

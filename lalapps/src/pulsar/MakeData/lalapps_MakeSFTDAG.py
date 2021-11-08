@@ -272,12 +272,16 @@ if args.datafind_path:
     dataFindExe = os.path.join(args.datafind_path, dataFindExe)
 elif 'LSC_DATAFIND_PATH' in os.environ:
     dataFindExe = os.path.join('$ENV(LSC_DATAFIND_PATH)', dataFindExe)
+else:
+    dataFindExe = os.path.join('/usr/bin', dataFindExe)
 
 makeSFTsExe = 'lalapps_MakeSFTs'
 if args.makesfts_path:
     makeSFTsExe = os.path.join(args.makesfts_path, makeSFTsExe)
 elif 'MAKESFTS_PATH' in os.environ:
     makeSFTsExe = os.path.join('$ENV(MAKESFTS_PATH)', makeSFTsExe)
+else:
+    makeSFTsExe = os.path.join('/usr/bin', makeSFTsExe)
 
 # try and make a directory to store the cache files and job logs
 try: os.mkdir(args.log_path)
