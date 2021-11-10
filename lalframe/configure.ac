@@ -118,6 +118,7 @@ AM_CONDITIONAL([PTHREAD],[test x$lalframe_pthread = xtrue])
 
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
