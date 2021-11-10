@@ -916,11 +916,16 @@ XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
 /* literature: Agathos et al (arxiv 1503.0545) eq (5)
  * caveat: these are incomplete terms
  * conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above
+ * --> completed by the terms given in equation (4) of :
+ * Tatsuya Narikawa, Nami Uchikata, Takahiro Tanaka,
+ * "Gravitational-wave constraints on the GWTC-2 events by measuring
+ * the tidal deformability and the spin-induced quadrupole moment",
+ * Phys. Rev. D 104, 084056 (2021), arXiv:2106.09193
  */
 {
   REAL8 mByM3 = mByM*mByM*mByM;
   REAL8 mByM4 = mByM3 * mByM;
-  return - mByM4 * 24.L*(39927845.L/508032.L - 480043345.L/9144576.L*mByM + 9860575.L/127008.L*mByM*mByM - 421821905.L/2286144.L*mByM3 + 4359700.L/35721.L*mByM4 - 10578445.L/285768.L*mByM4*mByM);
+  return - mByM4 * 5.L*(193986935.L/571536.L - 14415613.L/381024.L*mByM - 57859.L/378.L*mByM*mByM - 209495.L/1512.L*mByM3 + 965.L/54.L*mByM4 - 4.L*mByM4*mByM);
 }
 
 static REAL8 UNUSED
@@ -929,12 +934,17 @@ XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(
     )
 /* literature: Agathos et al (arxiv 1503.0545) eq (5)
  * conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above 
+ * --> corrected by the terms given in equation (4) of :
+ * Tatsuya Narikawa, Nami Uchikata, Takahiro Tanaka,
+ * "Gravitational-wave constraints on the GWTC-2 events by measuring
+ * the tidal deformability and the spin-induced quadrupole moment",
+ * Phys. Rev. D 104, 084056 (2021), arXiv:2106.09193
  */
 {
   REAL8 mByM2 = mByM*mByM;
   REAL8 mByM3 = mByM2*mByM;
   REAL8 mByM4 = mByM3*mByM;
-  return mByM4 * 1.L/28.L*LAL_PI*(27719.L - 22127.L*mByM + 7022.L*mByM2 - 10232.L*mByM3) ;
+  return mByM4 * 1.L/28.L*LAL_PI*(27719.L - 22415.L*mByM + 7598.L*mByM2 - 10520.L*mByM3) ;
 }
 
 /* The phasing function for TaylorF2 frequency-domain waveform.
