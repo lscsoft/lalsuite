@@ -1099,6 +1099,8 @@ int main(int argc, char *argv[]){
       fprintf(fp, "unsheared_gTP = %.9"LAL_REAL8_FORMAT"\n", config.unshearedgTP);
       fprintf(fp, "dPorbdTascShear = %.9"LAL_REAL8_FORMAT"\n", config.dPorbdTascShear);
     }
+    fprintf(fp, "orbitPSecMin = %.9"LAL_REAL8_FORMAT"\n", config.orbitPSecMin);
+    fprintf(fp, "orbitPSecMax = %.9"LAL_REAL8_FORMAT"\n", config.orbitPSecMax);
 
     if (uvar.useLattice == TRUE){
       fprintf(fp, "TemplatenumTotal = %d\n", numpoints);
@@ -1394,7 +1396,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
     if ( uvar->useShearedPorb ) {
       if ( (uvar->orbitPSec != 0.0) ) {
 	if ( XLALUserVarWasSet(&uvar->orbitTPEllipseRadius) ) {
-	  /* If we get here, both --orbitTPEllipseRadius and --orbitPSec were set, which was probably a mistake, but we ignore --orbitPsec */
+	  /* If we get here, both --orbitTPEllipseRadius and --orbitPSec were set, which was probably a mistake, but we ignore --orbitPSec */
 	  config->useTPEllipse = TRUE;
 	  printf("Warning!  --orbitPSec not expected with elliptical boundaries; ignored\n");
 	  if ( uvar->treatWarningsAsErrors ) {
@@ -1440,8 +1442,6 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
       XLAL_ERROR( XLAL_EFUNC );
     }
     /* End consistency checks */
-    config->orbitPSecMin = uvar->orbitPSecCenter - uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
-    config->orbitPSecMax = uvar->orbitPSecCenter + uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
     /* Compute number of orbits to shift prior ellipse */
     config->norb = (int) round ( ( uvar->orbitTimeAsc
 				   + 0.5 * uvar->orbitTimeAscBand
@@ -1457,10 +1457,15 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
       XLAL_ERROR( XLAL_EFUNC );
     }
     config->useTPEllipse = FALSE;
-    config->orbitPSecMin = uvar->orbitPSec;
-    config->orbitPSecMax = uvar->orbitPSec + uvar->orbitPSecBand;
     config->norb = 0; /* undefined since we don't know the epoch of the uncorrelated Tasc and Porb estimates */
     config->dPorbdTascShear = 0;
+  }
+  if ( config->useTPEllipse == TRUE ) {
+    config->orbitPSecMin = uvar->orbitPSecCenter - uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
+    config->orbitPSecMax = uvar->orbitPSecCenter + uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
+  } else {
+    config->orbitPSecMin = uvar->orbitPSec;
+    config->orbitPSecMax = uvar->orbitPSec + uvar->orbitPSecBand;
   }
   config->orbitTimeAscCenterShifted = uvar->orbitTimeAscCenter + config->norb * uvar->orbitPSecCenter;
 
