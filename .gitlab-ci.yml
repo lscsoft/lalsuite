@@ -1548,6 +1548,35 @@ coverage:
       # `[skip lint]` in the commit message
       - $CI_COMMIT_MESSAGE =~ /\[skip lint\]/
 
+lint:gitignore:
+  extends:
+    - .build-job
+    - .lint
+  image: igwn/lalsuite-dev:el7
+  variables:
+    # TODO: this can be removed when all packages require python>=3
+    #       on their own
+    PYTHON: "python3"
+  needs: []
+  script:
+    - ./00boot
+    - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-swig --enable-python
+    # build in source directory
+    - make -j${CPU_COUNT} VERBOSE=1 all
+    # check for build files not in .gitignore
+    - |
+      if git status --short | grep '^?? ' >/dev/null 2>&1; then
+        echo 'ERROR: the following files need to be added to .gitignore:'
+        git status --short
+        exit 1
+      fi
+  artifacts:
+    # upload some files to debug failures
+    paths:
+      - config.log
+      - Makefile
+    when: on_failure
+
 lint:python:
   extends:
     - .python:flake8
