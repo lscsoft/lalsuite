@@ -2265,6 +2265,11 @@ UNUSED static int SEOBNRv4HMROMCoreModesHybridized(
   REAL8 fHigh_geom = fHigh * Mtot_sec;
   REAL8 deltaF_geom = deltaF * Mtot_sec;
 
+    // The maximum available frequency is the one associated with the 55 mode
+  REAL8 Mf_ROM_max = const_fmax_lm[4] * Get_omegaQNM_SEOBNRv4(q, chi1, chi2, 5, 5) / (2.*LAL_PI);
+
+  if (fHigh_geom == 0)
+    fHigh_geom = Mf_ROM_max;
   // Enforce allowed geometric frequency range
   // ROM starting frequency
   // Note: Mf_low_55 is 5/2 times Mf_low_22 and about 1e-3; this is the shortest mode
