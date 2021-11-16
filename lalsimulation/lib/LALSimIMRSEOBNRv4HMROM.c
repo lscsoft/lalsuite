@@ -680,13 +680,14 @@ int SEOBNRROMdataDS_Init(
   }
    else
      SEOBNRROMdataDS_Cleanup(romdata);
-#else
-  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
-#endif
 
   XLALFree(path);
   XLALH5FileClose(file);
   ret = XLAL_SUCCESS;
+
+#else
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+#endif
 
   return (ret);
 }
