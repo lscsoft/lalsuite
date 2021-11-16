@@ -1083,7 +1083,20 @@ int XLALFrameUFrChanSetTimeOffset_FrameL_(LALFrameUFrChan * channel, double time
         channel->handle.sim->timeOffset = timeOffset;
         return 0;
     case XLAL_FRAMEU_FR_CHAN_TYPE_PROC:
-        channel->handle.sim->timeOffset = timeOffset;
+        channel->handle.proc->timeOffset = timeOffset;
+        return 0;
+    default:   /* unrecognized channel type */
+        XLAL_ERROR(XLAL_ETYPE);
+    }
+}
+
+int XLALFrameUFrChanSetTRange_FrameL_(LALFrameUFrChan * channel, double tRange)
+{
+    if (tRange < 0) /* timeOffset must be non-negative */
+        XLAL_ERROR(XLAL_EINVAL, "Time range must be non-negative");
+    switch (channel->type) {
+    case XLAL_FRAMEU_FR_CHAN_TYPE_PROC:
+        channel->handle.proc->tRange = tRange;
         return 0;
     default:   /* unrecognized channel type */
         XLAL_ERROR(XLAL_ETYPE);

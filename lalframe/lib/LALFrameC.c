@@ -646,6 +646,12 @@ int XLALFrameUFrChanSetTimeOffset_FrameC_(LALFrameUFrChan * channel, double time
     TRY_FRAMEC_FUNCTION(FrameCFrChanSet, channel, FR_CHAN_FIELD_TIME_OFFSET, offset, FR_CHAN_FIELD_LAST);
 }
 
+int XLALFrameUFrChanSetTRange_FrameC_(LALFrameUFrChan * channel, double tRange)
+{
+    fr_chan_t_range_t dt = tRange;
+    TRY_FRAMEC_FUNCTION(FrameCFrChanSet, channel, FR_CHAN_FIELD_T_RANGE, dt, FR_CHAN_FIELD_LAST);
+}
+
 /*
  * FrVect functions
  */

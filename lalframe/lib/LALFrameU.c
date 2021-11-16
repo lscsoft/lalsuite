@@ -322,6 +322,11 @@ int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel, double timeOffset)
     FRAME_LIBRARY_SELECT(XLALFrameUFrChanSetTimeOffset, channel, timeOffset);
 }
 
+int XLALFrameUFrChanSetTRange(LALFrameUFrChan * channel, double tRange)
+{
+    FRAME_LIBRARY_SELECT(XLALFrameUFrChanSetTRange, channel, tRange);
+}
+
 int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype, size_t ndata)
 {
     FRAME_LIBRARY_SELECT(XLALFrameUFrChanVectorAlloc, channel, dtype, ndata);
