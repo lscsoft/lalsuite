@@ -192,6 +192,7 @@ src/pulsar/FITSTools/lalapps_fits_table_list
 src/pulsar/Fscan/lalapps_Fscan_checkCoherencePath
 src/pulsar/Fscan/lalapps_Fscan_coherenceFromSFTs
 src/pulsar/Fscan/lalapps_Fscan_findCombs
+src/pulsar/Fscan/lalapps_Fscan_forestOfLines
 src/pulsar/Fscan/lalapps_Fscan_fscanDriver
 src/pulsar/Fscan/lalapps_Fscan_plotSpecAvgOutput
 src/pulsar/Fscan/lalapps_spec_avg

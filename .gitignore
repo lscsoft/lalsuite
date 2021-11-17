@@ -8,6 +8,8 @@
 *.trs
 *~
 __pycache__/
+/.cache/
+/.config/
 /_build/
 /_inst/
 /index.html
