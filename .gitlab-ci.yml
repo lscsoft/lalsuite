@@ -413,8 +413,9 @@ default:
     - cd ${PACKAGE}-feedstock
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
-    # if not a nightly or web-triggered pipeline, just build one python version
-    - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
+    # if not a single-python-per-build recipe and not a nightly
+    # or web-triggered pipeline, just build one python version
+    - if [[ "${CONDA_CONFIG}" != *"python"* ]] && [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
          CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
       fi
     # build packages (preferring local packages over everything)
