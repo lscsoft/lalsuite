@@ -41,24 +41,26 @@ build:
   error_overdepending: true
   error_overlinking: true
   ignore_run_exports:
-    # run_exports parsing for fftw is broken, so we ignore it
-    # manually, for now
-    - fftw
     # ignore run_exports from python's recipe
     - python
   number: 9999
   script_env:
+    - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - GITLAB_CI
   skip: true  # [win]
 
 requirements:
   build:
+    - bc  # [build_platform == target_platform]
     - {{ compiler('c') }}
-    - help2man >=1.37
+    - help2man >=1.37  # [build_platform == target_platform]
     - make
     - pkg-config
+    # extras for cross-compiling
+    - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+    - python                              # [build_platform != target_platform]
   host:
-    - bc
     - cfitsio
     - fftw * nompi*
     - gsl
@@ -72,14 +74,20 @@ requirements:
     - liblalpulsar >={{ lalpulsar_version }}
     - liblalsimulation >={{ lalsimulation_version }}
     - python
-    - python-lal >={{ lal_version }}
-    - python-lalburst >={{ lalburst_version }}
-    - python-lalinference >={{ lalinference_version }}
-    - python-lalinspiral >={{ lalinspiral_version }}
-    - python-lalframe >={{ lalframe_version }}
-    - python-lalmetaio >={{ lalmetaio_version }}
-    - python-lalpulsar >={{ lalpulsar_version }}
-    - python-lalsimulation >={{ lalsimulation_version }}
+    # extras needed for help2man (not when cross compiling)
+    - h5py  # [build_platform == target_platform]
+    - ligo-segments  # [build_platform == target_platform]
+    - numpy  # [build_platform == target_platform]
+    - pillow  # [build_platform == target_platform]
+    - python-lal >={{ lal_version }}  # [build_platform == target_platform]
+    - python-lalburst >={{ lalburst_version }}  # [build_platform == target_platform]
+    - python-lalinference >={{ lalinference_version }}  # [build_platform == target_platform]
+    - python-lalinspiral >={{ lalinspiral_version }}  # [build_platform == target_platform]
+    - python-lalframe >={{ lalframe_version }}  # [build_platform == target_platform]
+    - python-lalmetaio >={{ lalmetaio_version }}  # [build_platform == target_platform]
+    - python-lalpulsar >={{ lalpulsar_version }}  # [build_platform == target_platform]
+    - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
+    - python-ligo-lw  # [build_platform == target_platform]
     - tqdm
   run:
     - cfitsio
