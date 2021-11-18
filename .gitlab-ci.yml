@@ -408,6 +408,11 @@ default:
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
+    # update index of local packages:
+    - if [ "${PACKAGE}" != "lal" ]; then
+          conda index ${CONDA_BLD_PATH} --no-progress;
+          conda search "*lal*" --channel local --override-channels;
+      fi
     # render YAML file to use our tarball
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
     - SHA256=$(openssl dgst -r -sha256 $TARBALL | cut -d\  -f1)
