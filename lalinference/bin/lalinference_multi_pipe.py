@@ -52,9 +52,6 @@ parser.add_option("-I","--injections",action="store",type="string",default=None,
 parser.add_option("-P","--pipedown-db",action="store",type="string",default=None,help="Pipedown database to read and analyse",metavar="pipedown.sqlite")
 parser.add_option("-F","--folder-names",dest="fnames",action="callback", callback=vararg_callback,help="Space separated list of folders that will be created, corresponding to the TIGER parameters that are being tested or GR. The order has to be the same used with the ini files!",default=None,metavar="GR phi1")
 parser.add_option("--condor-submit",action="store_true",default=False,help="Automatically submit the condor dag")
-parser.add_option("-x", "--dax",action="store_true",default=False, help="Delete the ligo_data_find jobs and populate frame LFNs in the DAX -- WARNING: not tested in multi_pipe! Don't assume it will work.")
-parser.add_option("-G", "--grid-site",action="store",type="string",metavar="SITE", help="Specify remote site in conjunction with --dax option. e.g. --grid-site=creamce for Bologna cluster.\
-Supported options are: creamce and local",default=None)
 
 (opts,args)=parser.parse_args()
 
@@ -115,12 +112,12 @@ for inifile in inits:
     cp.set('paths','basedir',os.path.join(str(common_path),str(fnames_dic[inits.index(inifile)])))
     # Create the DAG from the configparser object
   if first_dag:
-    dag=pipe_utils.LALInferencePipelineDAG(cp,site=opts.grid_site)
+    dag=pipe_utils.LALInferencePipelineDAG(cp)
     first_dag=False
     dag.write_sub_files()
     dag2=dag
   else:
-    dag2=pipe_utils.LALInferencePipelineDAG(cp,first_dag=False,previous_dag=dag,site=opts.grid_site)
+    dag2=pipe_utils.LALInferencePipelineDAG(cp,first_dag=False,previous_dag=dag)
     dag2.write_sub_files()
     dag=dag2
 
