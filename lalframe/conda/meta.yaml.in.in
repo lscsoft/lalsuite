@@ -58,6 +58,8 @@ outputs:
     build:
       error_overdepending: true
       error_overlinking: true
+      ignore_run_exports:
+        - openssl
       run_exports:
         - {{ pin_subpackage("liblalframe", max_pin="x") }}
     requirements:
@@ -69,6 +71,7 @@ outputs:
         - ldas-tools-framecpp >={{ framecpp_version }}
         - libframel >={{ framel_version }}
         - liblal >={{ lal_version }}
+        - openssl
       run:
         - ldas-tools-framecpp >={{ framecpp_version }}
         - libframel >={{ framel_version }}
