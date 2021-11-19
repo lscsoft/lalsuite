@@ -281,7 +281,7 @@ if args.makesfts_path:
 elif 'MAKESFTS_PATH' in os.environ:
     makeSFTsExe = os.path.join('$ENV(MAKESFTS_PATH)', makeSFTsExe)
 else:
-    makeSFTsExe = os.path.join('/usr/bin', makeSFTsExe)
+    makeSFTsExe = os.path.join('@LALSUITE_BINDIR@', makeSFTsExe)
 
 # try and make a directory to store the cache files and job logs
 try: os.mkdir(args.log_path)
