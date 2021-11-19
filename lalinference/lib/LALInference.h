@@ -1176,7 +1176,7 @@ LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVa
 void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const char* name,LALInferenceMCMCRunPhase* value);
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
+SWIGLAL(OWNS_THIS_ARG(const CHAR*, value));
 #endif
 
 void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, const CHAR* value, LALInferenceParamVaryType vary);
@@ -1186,7 +1186,7 @@ const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const ch
 void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name, const CHAR* value);
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
+SWIGLAL_CLEAR(OWNS_THIS_ARG(const CHAR*, value));
 #endif
 
 /**

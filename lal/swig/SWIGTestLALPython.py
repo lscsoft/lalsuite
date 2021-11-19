@@ -1031,12 +1031,30 @@ print("checking typemaps for strings and double pointers ...")
 sts = lal.swig_lal_test_struct()
 ptr_ptr, ptr_null_ptr, null_ptr_ptr = lal.swig_lal_test_typemaps_string_ptrptr("abcde", "", None, sts, 0, None)
 assert(ptr_ptr == sts)
-assert(ptr_null_ptr == sts)
-assert(null_ptr_ptr == None)
+assert(ptr_null_ptr is not None)
+assert(null_ptr_ptr is None)
 del sts
 del ptr_ptr
 del ptr_null_ptr
 del null_ptr_ptr
+lal.CheckMemoryLeaks()
+ptr_ptr = 0
+for i in range(1, 10):
+    ptr_ptr = lal.swig_lal_test_typemaps_ptrptr(ptr_ptr)
+    assert(ptr_ptr is not None)
+    assert(ptr_ptr.n == i)
+del ptr_ptr
+lal.CheckMemoryLeaks()
+ptr_ptr_list = [0]
+for i in range(1, 10):
+    ptr_ptr_list.append(lal.swig_lal_test_typemaps_ptrptr(ptr_ptr_list[-1]))
+    assert(ptr_ptr_list[-1] is not None)
+    assert(ptr_ptr_list[-1].n == i)
+while len(ptr_ptr_list) > 0:
+    assert(ptr_ptr_list[-1] is not None)
+    assert(ptr_ptr_list[-1].n == i)
+    del ptr_ptr_list[0]
+del ptr_ptr_list
 lal.CheckMemoryLeaks()
 print("PASSED typemaps for strings and double pointers")
 
@@ -1127,12 +1145,14 @@ except:
 assert(not expected_exception)
 print("*** above should be error messages from LIGOTimeGPS constructor ***")
 assert(lal.swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.swig_lal_test_noptrgps(1234.5))
+print("*** below should be error messages from LIGOTimeGPS constructor ***")
 try:
     LIGOTimeGPS(None)
     expected_exception = True
 except:
     pass
 assert(not expected_exception)
+print("*** above should be error messages from LIGOTimeGPS constructor ***")
 del t0
 del t1
 del t2
