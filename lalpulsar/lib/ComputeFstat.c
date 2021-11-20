@@ -535,8 +535,14 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     {
       // Initialise parameters struct for XLALCWMakeFakeMultiData()
       CWMFDataParams XLAL_INIT_DECL(MFDparams);
-      MFDparams.fMin = input->minFreqFull;
-      MFDparams.Band = input->maxFreqFull - input->minFreqFull;
+      if (multiSFTs != NULL) {
+        const SFTtype *sft = &multiSFTs->data[0]->data[0];
+        MFDparams.fMin = sft->f0;
+        MFDparams.Band = sft->data->length * sft->deltaF;
+      } else {
+        MFDparams.fMin = input->minFreqFull;
+        MFDparams.Band = input->maxFreqFull - input->minFreqFull;
+      }
       MFDparams.multiIFO = common->detectors;
       MFDparams.multiTimestamps = *(common->multiTimestamps);
       MFDparams.randSeed = optArgs.randSeed;
