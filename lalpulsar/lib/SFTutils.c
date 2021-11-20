@@ -2457,14 +2457,16 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
     /* check band wide enough for wings */
     UINT4 rngmedSideBandBins = blocksRngMed / 2 + 1; /* truncates down plus add one bin extra safety! */
     REAL8 rngmedSideBand = rngmedSideBandBins * dFreq;
-    if ( ( FreqMin-rngmedSideBand < fminSFTs ) || ( FreqMin+FreqBand+rngmedSideBand > fmaxSFTs ) ) {
-        /* FIXME: should this be an error instead? */
-        XLAL_PRINT_WARNING ( "Requested frequency range [%f,%f]Hz means rngmedSideBand=%fHz (%d bins) would spill over available SFT band [%f,%f]Hz", FreqMin, FreqMin+FreqBand, rngmedSideBand, rngmedSideBandBins, fminSFTs, fmaxSFTs );
-    }
     /* set the actual output range in bins */
     UINT4 minBinPSD = XLALRoundFrequencyDownToSFTBin(FreqMin, dFreq);
+    UINT4 maxBinPSD = XLALRoundFrequencyUpToSFTBin(FreqMin + FreqBand, dFreq) - 1;
     UINT4 minBinSFTs = XLALRoundFrequencyDownToSFTBin(fminSFTs, dFreq);
-    UINT4 binsBand = XLALRoundFrequencyUpToSFTBin(FreqBand, dFreq) + 1; /* +1 inherited from old local rounding convention: ceil ( (FreqBand - 1e-9) / dFreq ) + 1 */
+    UINT4 maxBinSFTs = XLALRoundFrequencyUpToSFTBin(fmaxSFTs, dFreq) - 1;
+    if ( ( minBinPSD < minBinSFTs ) || ( maxBinPSD > maxBinSFTs ) ) {
+      XLAL_ERROR( XLAL_ERANGE, "Requested frequency range [%f,%f)Hz means rngmedSideBand=%fHz (%d bins) would spill over available SFT band [%f,%f)Hz",
+                  FreqMin, FreqMin+FreqBand, rngmedSideBand, rngmedSideBandBins, fminSFTs, fmaxSFTs );
+    }
+    UINT4 binsBand = maxBinPSD - minBinPSD + 1;
     firstBin = minBinPSD - minBinSFTs;
     lastBin = firstBin + binsBand - 1;
   }
