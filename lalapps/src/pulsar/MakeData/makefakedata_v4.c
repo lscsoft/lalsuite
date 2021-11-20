@@ -464,14 +464,13 @@ main(int argc, char *argv[])
 	  /* get SFTs from timeseries */
           XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
 
-	  /* extract requested band if necessary (eg in the exact-signal case) */
-	  if ( uvar.exactSignal )
-	    {
-	      SFTVector *outSFTs;
-              XLAL_CHECK ( (outSFTs = XLALExtractBandFromSFTVector ( SFTs, GV.fmin_eff, GV.fBand_eff )) != NULL, XLAL_EFUNC );
-	      XLALDestroySFTVector ( SFTs );
-	      SFTs = outSFTs;
-	    }
+          /* extract requested band */
+          {
+            SFTVector *outSFTs;
+            XLAL_CHECK ( (outSFTs = XLALExtractStrictBandFromSFTVector ( SFTs, uvar.fmin, uvar.Band )) != NULL, XLAL_EFUNC );
+            XLALDestroySFTVector ( SFTs );
+            SFTs = outSFTs;
+          }
 
           /* generate comment string */
           CHAR *logstr;
