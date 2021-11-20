@@ -108,8 +108,8 @@ for f in 1 2; do
 done
 echo "OK"
 echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage to reference ... "
-lastline=`awk 'NR == 18001 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage`
-lastline_ref='       20.000000            0.652'
+lastline=`awk 'NR == 18000 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage`
+lastline_ref='       19.999444            1.224'
 for f in 1 2; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
@@ -186,8 +186,8 @@ for f in 1 2 3 4 5 6; do
 done
 echo "OK"
 echo -n "Comparing last line of spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt to reference ... "
-lastline=`awk 'NR == 18001 { print }' spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt`
-lastline_ref='20.00000000 6.68982e-45 8.17913e-23 6.43827e-45 8.02388e-23 0'
+lastline=`awk 'NR == 18000 { print }' spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt`
+lastline_ref='19.99944444 1.26395e-44 1.12425e-22 1.29723e-44 1.13896e-22 0'
 for f in 1 2 3 4 5 6; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
@@ -236,8 +236,8 @@ for f in 1 2; do
 done
 echo "OK"
 echo -n "Comparing last line of spec_coherence/spec_10.00_20.00_0_2000000000_coh.txt to reference ... "
-lastline=`awk 'NR == 18001 { print }' spec_coherence/spec_10.00_20.00_0_2000000000_coh.txt`
-lastline_ref='20.00000000 1'
+lastline=`awk 'NR == 18000 { print }' spec_coherence/spec_10.00_20.00_0_2000000000_coh.txt`
+lastline_ref='19.99944444 1'
 for f in 1 2; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
@@ -296,8 +296,8 @@ for f in 1 2; do
 done
 echo "OK"
 echo -n "Comparing last line of spec_coherence/spec_10.00_20.00_0_2000000000_coh.txt to reference ... "
-lastline=`awk 'NR == 18001 { print }' spec_coherence/spec_10.00_20.00_0_2000000000_coh.txt`
-lastline_ref='20.00000000 0.456569'
+lastline=`awk 'NR == 18000 { print }' spec_coherence/spec_10.00_20.00_0_2000000000_coh.txt`
+lastline_ref='19.99944444 0.0888071'
 for f in 1 2; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
