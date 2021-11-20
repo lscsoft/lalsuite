@@ -213,7 +213,7 @@ main(int argc, char *argv[])
       UINT4 numBins = sft0->data->length;
       REAL8 dFreq   = sft0->deltaF;
       REAL8 fMin    = sft0->f0;
-      REAL8 fMax    = fMin + ( numBins - 1 ) * dFreq;
+      REAL8 fMax    = fMin + numBins * dFreq;
       MultiSFTVector *mNoiseSFTs;
       XLAL_CHECK ( (mNoiseSFTs = XLALLoadMultiSFTsFromView ( GV.multiNoiseCatalogView, fMin, fMax )) != NULL, XLAL_EFUNC );
       XLAL_CHECK ( XLALMultiSFTVectorAdd ( mSFTs, mNoiseSFTs ) == XLAL_SUCCESS, XLAL_EFUNC );
