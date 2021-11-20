@@ -375,23 +375,9 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       SFTVector *sftVect;
       XLAL_CHECK ( (sftVect = XLALMakeSFTsFromREAL8TimeSeries ( outTS, timestamps, dataParams->SFTWindowType, dataParams->SFTWindowBeta)) != NULL, XLAL_EFUNC );
 
-      // extract effective band from this, if user requested a smaller band
-      if ( ( dataParams->fMin > fMin ) || ( dataParams->Band < fBand ) )
-        {
-          XLAL_CHECK ( ((*SFTvect) = XLALExtractBandFromSFTVector ( sftVect, dataParams->fMin, dataParams->Band )) != NULL, XLAL_EFUNC );
-          XLALDestroySFTVector ( sftVect );
-        }
-      // or for faster-sampled output SFTs
-      else if ( n1_fSamp != n0_fSamp )
-        {
-          XLAL_CHECK ( ((*SFTvect) = XLALExtractBandFromSFTVector ( sftVect, fMin, fBand )) != NULL, XLAL_EFUNC );
-          XLALDestroySFTVector ( sftVect );
-        }
-      // or return the full vector
-      else
-        {
-          (*SFTvect) = sftVect;
-        }
+      // extract requested band
+      XLAL_CHECK ( ((*SFTvect) = XLALExtractStrictBandFromSFTVector ( sftVect, dataParams->fMin, dataParams->Band )) != NULL, XLAL_EFUNC );
+      XLALDestroySFTVector ( sftVect );
     } // if SFTvect
 
   // return timeseries if requested
