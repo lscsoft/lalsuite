@@ -38,7 +38,7 @@ for i in 1a 1b; do
     ## check narrowband SFT names
     for freq in 10 18 26 34 42 50 58 66 74 82 90; do
         if [ $freq = 90 ]; then
-            binwidth="0005Hz1"
+            binwidth="0005Hz0"
         else
             binwidth="0008Hz0"
         fi
@@ -91,7 +91,7 @@ fi
 ## check narrowband1c/ SFT names (full range)
 for freq in 10 18 26 34 42 50 58 66 74 82 90; do
     if [ $freq = 90 ]; then
-        binwidth="0005Hz1"
+        binwidth="0005Hz0"
     else
         binwidth="0008Hz0"
     fi
@@ -117,7 +117,7 @@ fi
 ## check narrowband1d/ SFT names (reduced range)
 for freq in 10 18 26 34 42 50 58 66 74 82 90; do
     if [ $freq = 90 ]; then
-        binwidth="0005Hz1"
+        binwidth="0005Hz0"
     else
         binwidth="0008Hz0"
     fi
@@ -127,3 +127,44 @@ for freq in 10 18 26 34 42 50 58 66 74 82 90; do
         exit 1
     fi
 done
+
+## check rounding of bins
+mkdir -p broadband3/
+cmdline="lalapps_Makefakedata_v5 --IFOs H1 --sqrtSX 1e-24 --startTime ${start} --duration ${Tsft} --Tsft ${Tsft} --fmin 50 --Band 10 --outSingleSFT=no --outSFTdir broadband3/"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+mkdir -p narrowband3a/
+cmdline="lalapps_splitSFTs --output-directory narrowband3a/ --start-frequency 51 --frequency-bandwidth 1 --end-frequency 52 -- broadband3/H-1_H1_1800SFT_mfdv5-1257800000-1800.sft"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+files=`echo narrowband3a/*.sft`
+if [ "X$files" != "Xnarrowband3a/H-1_H1_1800SFT_NBF0051Hz0W0001Hz0_mfdv5-1257800000-1800.sft" ]; then
+    echo "ERROR: extra SFTs generated in narrowband3a/: ${files}"
+    exit 1
+fi
+mkdir -p narrowband3b/
+cmdline="lalapps_splitSFTs --output-directory narrowband3b/ --start-frequency 51 --frequency-bandwidth 1.2212 --end-frequency 52.2212 -- broadband3/H-1_H1_1800SFT_mfdv5-1257800000-1800.sft"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+files=`echo narrowband3b/*.sft`
+if [ "X$files" != "Xnarrowband3b/H-1_H1_1800SFT_NBF0051Hz0W0001Hz399_mfdv5-1257800000-1800.sft" ]; then
+    echo "ERROR: extra SFTs generated in narrowband3b/: ${files}"
+    exit 1
+fi
+mkdir -p narrowband3c/
+cmdline="lalapps_splitSFTs --output-directory narrowband3c/ --start-frequency 50.9508 --frequency-bandwidth 1.2212 --end-frequency 52.172 -- broadband3/H-1_H1_1800SFT_mfdv5-1257800000-1800.sft"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+files=`echo narrowband3c/*.sft`
+if [ "X$files" != "Xnarrowband3c/H-1_H1_1800SFT_NBF0050Hz1711W0001Hz399_mfdv5-1257800000-1800.sft" ]; then
+    echo "ERROR: extra SFTs generated in narrowband3c/: ${files}"
+    exit 1
+fi
