@@ -51,6 +51,7 @@ requirements:
     - ldas-tools-framecpp >={{ framecpp_version }}
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
+    - openssl
 
 outputs:
   - name: liblalframe
