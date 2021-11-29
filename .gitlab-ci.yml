@@ -177,10 +177,13 @@ default:
     when: on_failure
 
 # helper template for jobs running on macOS
-# (the 'macos' tag means that jobs only run on macOS runners)
 .macos:
   tags:
     - macos_x86_64
+
+.macos-arm64:
+  tags:
+    - macos_arm64
 
 # -- build templates ----------------------------
 
@@ -1330,7 +1333,11 @@ platform:debian:stretch:
     - conda info --all
     - conda config --show-sources
     # install the dev environment for the default python version
-    - sed -i.tmp "s/- python$/- python ${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
+    - sed -i.tmp "s/- python$/- python=${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
+    # https://github.com/conda-forge/texlive-core-feedstock/issues/59
+    - if [[ "${CI_JOB_NAME}" == *"arm64"* ]]; then
+          sed -i.tmp "/texlive-core/d" ${ENVIRONMENT_FILE};
+      fi
     - mamba env create
           --file ${ENVIRONMENT_FILE}
           --name lalsuite-platform-tests
@@ -1355,10 +1362,15 @@ platform:conda:linux:
   extends:
     - .platform-test:conda
 
-platform:conda:macos:
+platform:conda:macos-x86_64:
   extends:
     - .platform-test:conda
     - .macos
+
+platform:conda:macos-arm64:
+  extends:
+    - .platform-test:conda
+    - .macos-arm64
 
 # -- docker -------------------------------------
 #
