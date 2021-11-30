@@ -1,4 +1,6 @@
 .PHONY: clean-local-test-dirs
+.PHONY: clean-tested-logs
+.PHONY: gen-tested-programs-log
 .PHONY: test-ref-tarball-dist-hook
 
 ## so that additional flags can be easily appended with
@@ -55,7 +57,20 @@ TEST_EXTENSIONS = .sh .py
 SH_LOG_COMPILER = $(test_script_compiler) sh "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
 PY_LOG_COMPILER = $(test_script_compiler) py "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
 
-clean-local: clean-local-test-dirs
+check-local: gen-tested-programs-log
+
+clean-local: clean-local-test-dirs clean-tested-logs
+
+gen-tested-programs-log:
+	@if test "X$(TEST)" = X; then \
+		echo > .tested_programs.log; \
+	else \
+		echo 'programs $(subdir) $(bin_PROGRAMS) $(pybin_scripts)' > .tested_programs.log; \
+	fi
+
+clean-tested-logs:
+	-rm -f .tested_*.log
+
 clean-local-test-dirs:
 	@for file in $(test_scripts); do \
 		scriptname=; \
