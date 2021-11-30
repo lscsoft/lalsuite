@@ -1008,10 +1008,10 @@ wheel:cp38-cp38-manylinux2014:
   extends:
     - .wheel:manylinux2014
 wheel:cp39-cp39-manylinux2014:
- extends:
+  extends:
     - .wheel:manylinux2014
 wheel:cp310-cp310-manylinux2014:
- extends:
+  extends:
     - .wheel:manylinux2014
 wheel:cp37-cp37m-macosx:
   extends:
@@ -1020,7 +1020,7 @@ wheel:cp38-cp38-macosx:
   extends:
     - .wheel:macos
 wheel:cp39-cp39-macosx:  # macOS wheel reference build
- extends:
+  extends:
     - .wheel:macos
   only:
     refs:
