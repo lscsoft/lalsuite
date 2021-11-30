@@ -17,6 +17,7 @@ lalapps_PrintDetectorState_SOURCES = PrintDetectorState.c
 
 # Add shell test scripts to this variable
 test_scripts += testComputeAntennaPattern.sh
+test_scripts += testFstatMetric_v2.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
