@@ -1122,6 +1122,11 @@ t1 += 812345667.75
 assert(str(t1) == "812345678.25")
 assert(type(eval(repr(t1))) is type(t1))
 assert(eval(repr(t1)) == t1)
+assert(LIGOTimeGPS(1100000000).asutcstr() == "Fri, 14 Nov 2014 11:33:04 +0000")   # lalapps_tconvert -u -R
+assert(LIGOTimeGPS(1100000000, 100).asutcstr() == "Fri, 14 Nov 2014 11:33:04.0000001 +0000")
+assert(LIGOTimeGPS(0, 0).asutcstr() == "Sun, 06 Jan 1980 00:00:00 +0000")
+assert(LIGOTimeGPS(-1, 0).asutcstr() == "Sat, 05 Jan 1980 23:59:59 +0000")
+assert(LIGOTimeGPS(0, -1).asutcstr() == "Sat, 05 Jan 1980 23:59:59.999999999 +0000")
 assert(int(t1) == 812345678)
 assert(t1.ns() == 812345678250000000)
 assert(hash(t1) == 1049484238)

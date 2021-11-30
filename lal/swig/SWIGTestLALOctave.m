@@ -1092,6 +1092,11 @@ assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.
 t1 += 812345667.75;
 assert(strcmp(t1.__str__(), "812345678.25"));
 assert(new_LIGOTimeGPS(t1.__str__()) == t1);
+assert(strcmp(LIGOTimeGPS(1100000000).asutcstr(), "Fri, 14 Nov 2014 11:33:04 +0000"));   # lalapps_tconvert -u -R
+assert(strcmp(LIGOTimeGPS(1100000000, 100).asutcstr(), "Fri, 14 Nov 2014 11:33:04.0000001 +0000"));
+assert(strcmp(LIGOTimeGPS(0, 0).asutcstr(), "Sun, 06 Jan 1980 00:00:00 +0000"));
+assert(strcmp(LIGOTimeGPS(-1, 0).asutcstr(), "Sat, 05 Jan 1980 23:59:59 +0000"));
+assert(strcmp(LIGOTimeGPS(0, -1).asutcstr(), "Sat, 05 Jan 1980 23:59:59.999999999 +0000"));
 assert(t1.ns() == 812345678250000000);
 t4struct = new_swig_lal_test_gps;
 t4struct.t = 1234.5;
