@@ -47,6 +47,7 @@ test_scripts += testComputeFstatistic_v2_binary.sh
 test_scripts += testComputeFstatistic_v2_grids.sh
 test_scripts += testComputeFstatistic_v2_resamp.sh
 test_scripts += testComputeFstatistic_v2_transient.sh
+test_scripts += testComputeFstatBenchmark.sh
 test_scripts += testComputeFstatMCUpperLimit.sh
 test_scripts += test_synthesizeBstatMC.sh
 test_scripts += test_synthesizeLVStats.sh
