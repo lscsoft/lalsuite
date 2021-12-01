@@ -1,7 +1,6 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
