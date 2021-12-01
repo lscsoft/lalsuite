@@ -17,8 +17,8 @@ dist-hook: pybin-dist-hook
 
 if HAVE_PYTHON
 
-BUILT_SOURCES += $(pybin_scripts)
-MOSTLYCLEANFILES += $(pybin_scripts)
+BUILT_SOURCES += $(pybin_scripts) $(noinst_pybin_scripts)
+MOSTLYCLEANFILES += $(pybin_scripts) $(noinst_pybin_scripts)
 
 uninstalled_runner = gnuscripts/lalsuite_run_uninstalled
 uninstalled_compiler = $(abs_top_srcdir)/$(uninstalled_runner) '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
@@ -35,7 +35,7 @@ pymodule-all-local:
 	fi
 pyscripts-all-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
-		for file in $(pybin_scripts); do \
+		for file in $(pybin_scripts) $(noinst_pybin_scripts); do \
 			if test -r "$(srcdir)/$${file}.py"; then \
 				rm -f "$(builddir)/$${file}.py" || exit 1; \
 				cp -p "$(srcdir)/$${file}.py" "$(builddir)/$${file}.py" || exit 1; \
@@ -58,7 +58,7 @@ pymodule-mostlyclean-local:
 	done
 pyscripts-mostlyclean-local:
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
-		for file in $(pybin_scripts); do \
+		for file in $(pybin_scripts) $(noinst_pybin_scripts); do \
 			if test -r "$(srcdir)/$${file}.py"; then \
 				echo " rm -f $(builddir)/$${file}.py"; \
 				rm -f "$(builddir)/$${file}.py" || exit 1; \
@@ -67,9 +67,9 @@ pyscripts-mostlyclean-local:
 	fi
 py-mostlyclean-local:
 	-rm -rf __pycache__
-	-for file in $(pybin_scripts); do rm -f .libs/$${file}.bin .libs/$${file}.py; done
+	-for file in $(pybin_scripts) $(noinst_pybin_scripts); do rm -f .libs/$${file}.bin .libs/$${file}.py; done
 
-$(pybin_scripts): Makefile pyscripts-all-local
+$(pybin_scripts) $(noinst_pybin_scripts): Makefile pyscripts-all-local
 .py:
 	$(AM_V_GEN)shebang='#!'; dummy_shebang='##(in place of shebang, for consistent line numbers)'; \
 	$(MKDIR_P) .libs || exit 1; \
@@ -137,7 +137,7 @@ pybin-uninstall-local:
 	done
 
 pybin-dist-hook:
-	for file in $(pybin_scripts); do \
+	for file in $(pybin_scripts) $(noinst_pybin_scripts); do \
 		cp "$(srcdir)/$${file}.py" "$(distdir)/$${file}.py"; \
 	done
 
@@ -146,6 +146,7 @@ else # !HAVE_PYTHON
 pymoduledir =
 pymodule_PYTHON =
 pybin_scripts =
+noinst_pybin_scripts =
 pkgpython_PYTHON =
 
 endif # HAVE_PYTHON
