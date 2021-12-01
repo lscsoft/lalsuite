@@ -11,6 +11,8 @@ BUILT_SOURCES += $(top_builddir)/src/lalapps/liblalapps.la
 $(top_builddir)/src/lalapps/liblalapps.la:
 	@test "X$(distdir)" != X || ( cd $(top_builddir)/src/lalapps && $(MAKE) liblalapps.la )
 
+TEST_EXTENSIONS = .sh .py
+
 ## here we should be using OMP_THREAD_LIMIT, instead of OMP_NUM_THREADS,
 ## to limit the number of threads used by OpenMP but this is a OpenMP
 ## 4.5 feature and not currently supported by the compilers we are
@@ -30,4 +32,23 @@ TESTS_ENVIRONMENT = \
 	test "x$(LAL_PYTHON_PATH)" = x || lalsuite_path="$${lalsuite_path}:$(LAL_PYTHON_PATH)"; \
 	test "x$${PYTHONPATH}" = x || lalsuite_path="$${lalsuite_path}:$${PYTHONPATH}"; \
 	export PYTHONPATH; PYTHONPATH="$${lalsuite_path}"; \
+	lalsuite_path="$(abs_builddir)"; \
+	test "x$(builddir)" = "x$(srcdir)" || lalsuite_path="$${lalsuite_path}:$(abs_srcdir)"; \
+	export PATH; PATH="$${lalsuite_path}:$${PATH}"; \
 	$(END_OF_LIST)
+
+test_programs =
+test_scripts =
+test_helpers =
+check_PROGRAMS = $(test_programs) $(test_helpers)
+TESTS = $(test_programs) $(test_scripts)
+EXTRA_DIST += $(test_scripts)
+
+test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
+test_script_runner_args = --verbose '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
+EXTRA_DIST += $(test_script_runner)
+
+test_script_compiler = $(test_script_runner) $(test_script_runner_args)
+
+SH_LOG_COMPILER = $(test_script_compiler) $(SHELL)
+PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u
