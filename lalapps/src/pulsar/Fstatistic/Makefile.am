@@ -50,6 +50,7 @@ test_scripts += testComputeFstatistic_v2_transient.sh
 test_scripts += testComputeFstatMCUpperLimit.sh
 test_scripts += test_synthesizeBstatMC.sh
 test_scripts += test_synthesizeLVStats.sh
+test_scripts += test_synthesizeTransientStats.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers += SemiAnalyticF
