@@ -43,3 +43,5 @@ SUBDIRS += inspiral
 endif
 endif
 endif
+
+SUBDIRS += hwinjection
