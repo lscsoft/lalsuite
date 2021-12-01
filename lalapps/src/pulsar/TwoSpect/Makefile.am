@@ -1,7 +1,7 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
+include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 bin_PROGRAMS = lalapps_TwoSpect \
@@ -65,10 +65,10 @@ computeSignalDetector_SOURCES = helperprograms/computeSignalDetector.c \
 	TwoSpectSpecFunc.h
 
 # Add shell test scripts to this variable
-test_scripts += testTwoSpect.py
+#test_scripts += testTwoSpect.py
 
 # Add any helper programs required by tests to this variable
-test_helpers +=
+#test_helpers +=
 
 # Add any extra files required by tests (e.g. helper scripts) to this variable
-test_extra_files +=
+#test_extra_files +=
