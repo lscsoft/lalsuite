@@ -1013,6 +1013,8 @@ wheel:cp39-cp39-manylinux2014:
 wheel:cp310-cp310-manylinux2014:
   extends:
     - .wheel:manylinux2014
+  # see https://git.ligo.org/lscsoft/glue/-/merge_requests/83
+  allow_failure: true
 wheel:cp37-cp37m-macosx:
   extends:
     - .wheel:macos
@@ -1030,6 +1032,8 @@ wheel:cp39-cp39-macosx:  # macOS wheel reference build
 wheel:cp310-cp310-macosx:
   extends:
      - .wheel:macos
+  # see https://git.ligo.org/lscsoft/glue/-/merge_requests/83
+  allow_failure: true
 
 # -- integration tests --------------------------
 #
@@ -1757,7 +1761,7 @@ deploy:wheel:
     - wheel:cp37-cp37m-macosx
     - wheel:cp38-cp38-macosx
     - wheel:cp39-cp39-macosx
-    - wheel:cp310-cp310-macosx
+    #- wheel:cp310-cp310-macosx
   only:
     refs:
       - /^lalsuite-v.*$/
