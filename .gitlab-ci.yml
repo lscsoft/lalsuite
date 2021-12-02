@@ -1314,10 +1314,13 @@ upgrade:conda:linux:
       # `[skip platform]` in the commit message
       - $CI_COMMIT_MESSAGE =~ /\[skip platform\]/
 
-platform:debian:stretch:
+platform:debian:bullseye:
   extends:
     - .platform-test
-  image: igwn/lalsuite-dev:stretch-proposed
+  variables:
+    # disable the octave bindings as the version of SWIG on bullseye doesn't support the version of Octave
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig-python --enable-python"
+  image: igwn/lalsuite-dev:bullseye
 
 .platform-test:conda:
   extends:
