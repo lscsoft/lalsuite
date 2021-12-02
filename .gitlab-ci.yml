@@ -965,7 +965,7 @@ lalapps:conda:
     # this build uses macports for the libraries and Python
     - . /opt/local/share/macports/setupenv.bash
     # find python
-    - PYTHON=$(which python$(echo ${CI_JOB_NAME} | sed 's/.*:cp\([0-9]\)\([0-9]\+\).*/\1.\2/')
+    - PYTHON=$(which python$(echo ${CI_JOB_NAME} | sed 's/.*:cp\([0-9]\)\([0-9]\{1,\}\).*/\1.\2/'))
     # Enter virtualenv so that we have a controlled version of Numpy
     - ${PYTHON} -m venv env
     - source env/bin/activate
@@ -1008,23 +1008,32 @@ wheel:cp38-cp38-manylinux2014:
   extends:
     - .wheel:manylinux2014
 wheel:cp39-cp39-manylinux2014:
- extends:
+  extends:
     - .wheel:manylinux2014
 wheel:cp310-cp310-manylinux2014:
- extends:
+  extends:
     - .wheel:manylinux2014
+  # see https://git.ligo.org/lscsoft/glue/-/merge_requests/83
+  allow_failure: true
 wheel:cp37-cp37m-macosx:
   extends:
     - .wheel:macos
 wheel:cp38-cp38-macosx:
   extends:
     - .wheel:macos
-wheel:cp39-cp39-macosx:
- extends:
+wheel:cp39-cp39-macosx:  # macOS wheel reference build
+  extends:
     - .wheel:macos
+  only:
+    refs:
+      - /^lalsuite-v.*$/
+      - web
+      - schedules
 wheel:cp310-cp310-macosx:
- extends:
-    - .wheel:macos
+  extends:
+     - .wheel:macos
+  # see https://git.ligo.org/lscsoft/glue/-/merge_requests/83
+  allow_failure: true
 
 # -- integration tests --------------------------
 #
@@ -1755,7 +1764,7 @@ deploy:wheel:
     - wheel:cp37-cp37m-macosx
     - wheel:cp38-cp38-macosx
     - wheel:cp39-cp39-macosx
-    - wheel:cp310-cp310-macosx
+    #- wheel:cp310-cp310-macosx
   only:
     refs:
       - /^lalsuite-v.*$/
