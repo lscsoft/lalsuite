@@ -131,9 +131,6 @@ typedef enum tagFstatMethodType {
 /// Struct of optional 'advanced level' and (potentially method-specific) arguments to be passed to the
 /// \f$\mathcal{F}\f$-statistic setup function XLALCreateFstatInput().
 ///
-#ifdef SWIG // SWIG interface directives
-SWIGLAL(NO_OWN_ON_ASSIGNMENT(injectSources, injectSqrtSX, assumeSqrtSX, prevInput));
-#endif // SWIG
 typedef struct tagFstatOptionalArgs {
   UINT4 randSeed;			///< Random-number seed value used in case of fake Gaussian noise generation (\c injectSqrtSX)
   SSBprecision SSBprec;			///< Barycentric transformation precision.
@@ -148,9 +145,6 @@ typedef struct tagFstatOptionalArgs {
   BOOLEAN resampFFTPowerOf2;		///< \a Resamp: round up FFT lengths to next power of 2; see \c FstatMethodType.
   REAL8 allowedMismatchFromSFTLength;      ///<  Optional override for XLALFstatCheckSFTLengthMismatch().
 } FstatOptionalArgs;
-#ifdef SWIG // SWIG interface directives
-SWIGLAL_CLEAR(NO_OWN_ON_ASSIGNMENT(injectSources, injectSqrtSX, assumeSqrtSX, prevInput));
-#endif // SWIG
 
 ///
 /// Global initializer for setting \c FstatOptionalArgs to default values
