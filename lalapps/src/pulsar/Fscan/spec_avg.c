@@ -145,7 +145,9 @@ int main(int argc, char **argv)
         {
             REAL8 avg = 0.0;
 	    for (UINT4 k=0; k<NumBinsAvg; k++) {
-	       avg += 2.0*(crealf(sft_vect->data[j].data->data[i-k])*crealf(sft_vect->data[j].data->data[i-k]) + cimagf(sft_vect->data[j].data->data[i-k])*cimagf(sft_vect->data[j].data->data[i-k]))/(REAL8)timebaseline;
+              const REAL8 re = (REAL8)crealf(sft_vect->data[j].data->data[i-k]);
+              const REAL8 im = (REAL8)cimagf(sft_vect->data[j].data->data[i-k]);
+              avg += 2.0*(re*re + im*im)/(REAL8)timebaseline;
 	    }
             fprintf(fp, "%e\t", sqrt(avg / (REAL8)NumBinsAvg)); /* 06/15/2017 gam; then take sqrt here. */
         }
@@ -189,15 +191,15 @@ int main(int argc, char **argv)
         // Loop over the frequency bins in the SFT
         for (UINT4 i=0; i<sft_vect->data[j].data->length; i++)
         {
+            const REAL8 re = (REAL8)crealf(sft_vect->data[j].data->data[i]);
+            const REAL8 im = (REAL8)cimagf(sft_vect->data[j].data->data[i]);
             if (j == 0) 
             {
-                timeavg->data[i] = crealf(sft_vect->data[j].data->data[i])*crealf(sft_vect->data[j].data->data[i]) +
-                                   cimagf(sft_vect->data[j].data->data[i])*cimagf(sft_vect->data[j].data->data[i]);
+                timeavg->data[i] = re*re + im*im;
             } 
             else 
             {
-                timeavg->data[i] += crealf(sft_vect->data[j].data->data[i])*crealf(sft_vect->data[j].data->data[i]) +
-                                    cimagf(sft_vect->data[j].data->data[i])*cimagf(sft_vect->data[j].data->data[i]);
+                timeavg->data[i] += re*re + im*im;
             }
         }
     }
