@@ -377,14 +377,14 @@ default:
   - conda config --show aggressive_update_packages >> ${CONDARC}
   - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
   # update conda and mamba
-  - retry mamba update -n base conda "mamba<0.18.0"
+  - retry mamba update -n base conda mamba
   # install build helpers
   - retry mamba install -n base
         "conda-build!=3.18.10"
         conda-forge-pinning
         "conda-smithy>=3.7.5"
         conda-verify
-        boa
+        "boa>=0.8.0"
   # print info
   - conda activate base
   - conda info --all
