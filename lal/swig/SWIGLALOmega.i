@@ -205,6 +205,34 @@ typedef struct {
   char* __repr__() {
     return XLALStringAppendFmt(NULL, "LIGOTimeGPS(%d, %d)", $self->gpsSeconds, $self->gpsNanoSeconds);
   }
+  %newobject asutcstr;
+  %typemap(newfree) char* asutcstr "XLALFree($1);";
+  char* asutcstr() {
+    LIGOTimeGPS gps;
+    /* use XLALGPSSet() to normalize the nanoseconds */
+    XLALGPSSet(&gps, $self->gpsSeconds, $self->gpsNanoSeconds);
+    if (gps.gpsNanoSeconds < 0) {
+      gps.gpsSeconds -= 1;
+      gps.gpsNanoSeconds += XLAL_BILLION_INT4;
+    }
+    struct tm utc;
+    XLAL_CHECK_NULL(XLALGPSToUTC(&utc, gps.gpsSeconds) != NULL, XLAL_EFUNC);
+    char datebuf[256] = {0};
+    const size_t datelen = strftime(datebuf, sizeof(datebuf), "%a, %d %b %Y %H:%M:%S", &utc);
+    XLAL_CHECK_NULL(datelen > 0, XLAL_ESYS);
+    XLAL_CHECK_NULL(datelen < sizeof(datebuf), XLAL_ESYS);
+    char nsbuf[256] = {0};
+    if (gps.gpsNanoSeconds != 0) {
+      const int nslen = snprintf(nsbuf, sizeof(nsbuf), ".%09ld", (long) gps.gpsNanoSeconds);
+      XLAL_CHECK_NULL(nslen > 0, XLAL_ESYS);
+      XLAL_CHECK_NULL(nslen < (int)sizeof(nsbuf), XLAL_ESYS);
+      char *end = nsbuf + nslen;
+      while (*(--end) == '0') {
+        *end = 0;
+      }
+    }
+    return XLALStringAppendFmt(NULL, "%s%s +0000", datebuf, nsbuf);
+  }
 
   /// </li><li>
 
