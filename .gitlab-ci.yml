@@ -1377,11 +1377,19 @@ platform:conda:macos-x86_64:
   extends:
     - .platform-test:conda
     - .macos
+  # if the build fails during the distcheck phase then subsequent builds will
+  # fail with permissions errors, reset the permissions
+  after_script:
+    - chmod -R +w $CI_PROJECT_DIR
 
 platform:conda:macos-arm64:
   extends:
     - .platform-test:conda
     - .macos-arm64
+  # if the build fails during the distcheck phase then subsequent builds will
+  # fail with permissions errors, reset the permissions
+  after_script:
+    - chmod -R +w $CI_PROJECT_DIR
 
 # -- docker -------------------------------------
 #
