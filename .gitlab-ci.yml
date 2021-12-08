@@ -917,20 +917,30 @@ lalapps:conda:
 
 # do some simple sanity checks in a virtualenv
 .wheel-test: &wheel-test
+  # remove build tree first to make sure wheel does not
+  # access it, e.g. try to find LAL data files there
+  - rm -rf wheel/build/
+  # install wheel
   - ${PYTHON} -m venv test
   - source test/bin/activate
   - python -m pip install --upgrade pip
   - python -m pip install wheelhouse/*
+  # test loading Python modules and finding data files
   - |
-    python3 - <<EOF
+    env LAL_DEBUG_LEVEL=info python3 - <<EOF
     import lal
     import lalframe
     import lalmetaio
     import lalsimulation
+    import lalpulsar
     series = lal.CreateREAL8FrequencySeries('psd', 0, 0, 1, None, 4096)
     lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)
+    lalpulsar.InitBarycenter("earth00-40-DE405.dat.gz", "sun00-40-DE405.dat.gz")
     EOF
+  # test running C executables and finding data files
   - lalapps_version
+  - env LAL_DEBUG_LEVEL=info lalsim-detector-noise --official --aligo-nsnsopt --duration 1 >/dev/null
+  - env LAL_DEBUG_LEVEL=info lalapps_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
 
 # Build receipe for standalone wheels on Linux
 .wheel:manylinux:
@@ -942,6 +952,8 @@ lalapps:conda:
     - ./00boot
     - ./configure
           ${ENABLE_NIGHTLY}
+          --with-relative-data-path="../lalapps/data"
+          --without-fallback-data-path
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
@@ -977,6 +989,8 @@ lalapps:conda:
     - ./00boot
     - ./configure
           ${ENABLE_NIGHTLY}
+          --with-relative-data-path="../../lalapps/data"
+          --without-fallback-data-path
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
