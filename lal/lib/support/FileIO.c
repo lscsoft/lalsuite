@@ -91,14 +91,20 @@ XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path t
 
   UINT4 fname_len = strlen ( fname );
 
+  XLALPrintInfo ( "%s(): trying to resolve fname='%s' ...\n", __func__, fname );
+
   if ( strchr ( fname, '/' ) != NULL )	// any kind of (absolute or relative) path is given -> use only that
     {
       FILE *tmp;
+      XLALPrintInfo ( "%s(): strategy: absolute/relative path\n", __func__ );
+      XLALPrintInfo ( "%s(): trying '%s' -> '%s' ...\n", __func__, fname, fname );
       if ( (tmp = LALFopen ( fname, "rb" )) != NULL ) {
         LALFclose ( tmp );
+        XLALPrintInfo ( "%s(): success '%s' -> '%s'\n", __func__, fname, fname );
         return XLALStringDuplicate ( fname );
       } // if found
       else {
+        XLALPrintInfo ( "%s(): failed '%s'\n", __func__, fname );
         return NULL;
       } // if not found
 
@@ -109,17 +115,25 @@ XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path t
       char *resolveFname = NULL;
 
       // ----- Strategy 1: try local directory explicitly
+      XLALPrintInfo ( "%s(): strategy: local directory\n", __func__ );
       XLAL_CHECK_NULL ( (resolveFname = XLALMalloc ( fname_len + 2 + 1 )) != NULL, XLAL_ENOMEM );
       sprintf ( resolveFname, "./%s", fname );
+      XLALPrintInfo ( "%s(): trying '%s' -> '%s' ...\n", __func__, fname, resolveFname );
       if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
         LALFclose ( tmp );
+        XLALPrintInfo ( "%s(): success '%s' -> '%s'\n", __func__, fname, resolveFname );
         return resolveFname;
       } // if found
 
       // ----- Strategy 2: scan LAL_DATA_PATH
       const char *lal_data_path = getenv( "LAL_DATA_PATH" );
-      if ( lal_data_path && (strlen (lal_data_path ) > 0) )
+      if ( ! ( lal_data_path && (strlen (lal_data_path ) > 0 ) ) )
         {
+          XLALPrintInfo ( "%s(): skip strategy LAL_DATA_PATH: environment variable not set\n", __func__ );
+        }
+      else
+        {
+          XLALPrintInfo ( "%s(): strategy: LAL_DATA_PATH='%s'\n", __func__, lal_data_path );
           TokenList *subPaths = NULL;
           XLAL_CHECK_NULL ( XLALCreateTokenList ( &subPaths, lal_data_path, ":" ) == XLAL_SUCCESS, XLAL_EFUNC );
           for ( UINT4 i = 0; i < subPaths->nTokens; i ++ )
@@ -127,9 +141,11 @@ XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path t
               const char *subPath_i = subPaths->tokens[i];
               XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, strlen(subPath_i) + 1 + fname_len + 1 )) != NULL, XLAL_ENOMEM );
               sprintf ( resolveFname, "%s/%s", subPath_i, fname );
+              XLALPrintInfo ( "%s(): trying '%s' -> '%s' ...\n", __func__, fname, resolveFname );
               if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
                 LALFclose ( tmp );
                 XLALDestroyTokenList ( subPaths );
+                XLALPrintInfo ( "%s(): success '%s' -> '%s'\n", __func__, fname, resolveFname );
                 return resolveFname;
               } // if found
 
@@ -141,11 +157,19 @@ XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path t
 
       // ----- Strategy 3: try 'fallbackdir' if given
       if ( fallbackdir != NULL )
+      if ( fallbackdir == NULL )
         {
+          XLALPrintInfo ( "%s(): skip strategy fallbackdir: argument not given\n", __func__ );
+        }
+      else
+        {
+          XLALPrintInfo ( "%s(): strategy: fallbackdir='%s'\n", __func__, fallbackdir );
           XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, strlen(fallbackdir) + 1 + strlen(fname) + 1 )) != NULL, XLAL_ENOMEM );
           sprintf ( resolveFname, "%s/%s", fallbackdir, fname );
+          XLALPrintInfo ( "%s(): trying '%s' -> '%s' ...\n", __func__, fname, resolveFname );
           if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
             LALFclose ( tmp );
+            XLALPrintInfo ( "%s(): success '%s' -> '%s'\n", __func__, fname, resolveFname );
             return resolveFname;
           } // if found
         } // if fallbackdir
@@ -155,6 +179,7 @@ XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path t
     } // end: if pure filename given
 
   // nothing worked? that's ok: return NULL without failure!
+  XLALPrintInfo ( "%s(): failed '%s'\n", __func__, fname);
   return NULL;
 
 } // XLALFileResolvePathLong()
