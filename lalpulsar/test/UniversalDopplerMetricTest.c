@@ -136,8 +136,8 @@ test_XLALComputeDopplerMetrics ( void )
   const REAL8 tolPh = 0.01;	// 1% tolerance on phase metrics [taken from testMetricCodes.py]
 
   // ----- load ephemeris
-  const char earthEphem[] = TEST_PKG_DATA_DIR "earth00-19-DE200.dat.gz";
-  const char sunEphem[]   = TEST_PKG_DATA_DIR "sun00-19-DE200.dat.gz";
+  const char earthEphem[] = TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz";
+  const char sunEphem[]   = TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz";
   EphemerisData *edat = XLALInitBarycenter ( earthEphem, sunEphem );
   XLAL_CHECK ( edat != NULL, XLAL_EFUNC, "XLALInitBarycenter('%s','%s') failed with xlalErrno = %d\n", earthEphem, sunEphem, xlalErrno );
 
