@@ -1,5 +1,6 @@
 /*
  *  Copyright (C) 2007 Bernd Machenschalk, Jolien Creighton, Reinhard Prix
+ *  Copyright (C) 2012--2015, 2021 Karl Wette
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -40,6 +41,14 @@
 #include <lal/StringInput.h>
 #include <lal/FileIO.h>
 
+#include "whereami.h"
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 struct tagLALFILE {
   int compression;
   void *fp;
@@ -71,8 +80,12 @@ LALFILE *lalstderr( void )
  *
  * Resolving uses the following algorithm: if 'fname' contains a
  * i) (relative or absolute) path: only tries to open that path directly
- * ii) pure filename: try 1) local dir, then 2) search LAL_DATA_PATH, then 3) try fallbackdir
- *                    return first successful hit
+ * ii) pure filename: try
+ *     1) local dir, then
+ *     2) search LAL_DATA_PATH, then
+ *     3) try LAL_RELATIVE_DATA_PATH relative to location of to liblalsupport.so (if enabled), then
+ *     4) try fallbackdir (if enabled/given)
+ *     return first successful hit
  *
  * Note: it is not an error if the given 'fname' cannot be resolved,
  * this will simply return NULL but xlalErrno will not be set in that case.
@@ -83,8 +96,8 @@ LALFILE *lalstderr( void )
  * Note3: the returned string is allocated here and must be XLALFree'ed by the caller.
  */
 char *
-XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path to resolve
-                          const char *fallbackdir //!< [in] directory to try as a last resort (usually PKG_DATA_DIR) [can be NULL]
+XLALFileResolvePathLong ( const char *fname,                //!< [in] filename or file-path to resolve
+                          const char UNUSED *fallbackdir    //!< [in] directory to try as a last resort (usually PKG_DATA_DIR) [can be NULL]
                           )
 {
   XLAL_CHECK_NULL ( fname != NULL, XLAL_EINVAL );
@@ -109,7 +122,7 @@ XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path t
       } // if not found
 
     } // end: if path given
-  else	// if pure filename given: try 1) local directory, then 2) scan LAL_DATA_PATH, then 3) try fallbackdir (if given)
+  else	// if pure filename given: try 1) local directory, then 2) scan LAL_DATA_PATH, then 3) LAL_RELATIVE_DATA_PATH (if enabled), then 4) try fallbackdir (if enabled/given)
     {
       FILE *tmp;
       char *resolveFname = NULL;
@@ -155,8 +168,48 @@ XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path t
 
         } // if LAL_DATA_PATH given
 
-      // ----- Strategy 3: try 'fallbackdir' if given
-      if ( fallbackdir != NULL )
+      // ----- Strategy 3: try LAL_RELATIVE_DATA_PATH relative to location of to liblalsupport.so, if enabled
+#ifndef LAL_RELATIVE_DATA_PATH
+      XLALPrintInfo ( "%s(): skip strategy LAL_RELATIVE_DATA_PATH: disabled\n", __func__ );
+#else
+      XLALPrintInfo ( "%s(): strategy: LAL_RELATIVE_DATA_PATH='%s'\n", __func__, LAL_RELATIVE_DATA_PATH );
+      {
+
+        // get location of liblalsupport.so
+        int module_path_length = wai_getModulePath ( NULL, 0, NULL );
+        if ( module_path_length <= 0 ) {
+          XLALPrintInfo ( "%s(): skip strategy LAL_RELATIVE_DATA_PATH: wai_getModulePath() failed\n", __func__ );
+        } else {
+          char *module_path = XLALMalloc ( module_path_length + 1 );
+          XLAL_CHECK_NULL ( module_path != NULL, XLAL_ENOMEM );
+          int module_dirname_length = 0;
+          XLAL_CHECK_NULL ( wai_getModulePath ( module_path, module_path_length, &module_dirname_length ) > 0, XLAL_EERR );
+          module_path[module_path_length] = '\0';
+          XLAL_CHECK_NULL ( module_dirname_length >= 0, XLAL_EERR );
+          XLAL_CHECK_NULL ( module_dirname_length < module_path_length, XLAL_EERR );
+
+          // try path starting in directory containing liblalsupport.so, plus LAL_RELATIVE_DATA_PATH
+          XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, module_dirname_length + 1 + strlen(LAL_RELATIVE_DATA_PATH) + 1 + fname_len + 1 )) != NULL, XLAL_ENOMEM );
+          module_path[module_dirname_length] = '\0';
+          sprintf ( resolveFname, "%s/%s/%s", module_path, LAL_RELATIVE_DATA_PATH, fname );
+          XLALPrintInfo ( "%s(): trying '%s' -> '%s' ...\n", __func__, fname, resolveFname );
+          if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
+            LALFclose ( tmp );
+            XLALFree ( module_path );
+            XLALPrintInfo ( "%s(): success '%s' -> '%s'\n", __func__, fname, resolveFname );
+            return resolveFname;
+          } // if found
+
+          XLALFree ( module_path );
+
+        }
+      }
+#endif // if LAL_RELATIVE_DATA_PATH
+
+      // ----- Strategy 4: try 'fallbackdir' if given
+#ifndef LAL_FALLBACK_DATA_PATH
+      XLALPrintInfo ( "%s(): skip strategy fallbackdir: disabled\n", __func__ );
+#else
       if ( fallbackdir == NULL )
         {
           XLALPrintInfo ( "%s(): skip strategy fallbackdir: argument not given\n", __func__ );
@@ -173,6 +226,7 @@ XLALFileResolvePathLong ( const char *fname,	  //!< [in] filename or file-path t
             return resolveFname;
           } // if found
         } // if fallbackdir
+#endif // if LAL_FALLBACK_DATA_PATH
 
       XLALFree ( resolveFname );
 
