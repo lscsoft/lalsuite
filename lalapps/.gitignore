@@ -199,6 +199,7 @@ src/pulsar/Fscan/lalapps_Fscan_fscanDriver
 src/pulsar/Fscan/lalapps_Fscan_plotSpecAvgOutput
 src/pulsar/Fscan/lalapps_spec_avg
 src/pulsar/Fscan/lalapps_spec_avg_long
+src/pulsar/Fscan/lalapps_spec_coherence
 src/pulsar/Fstatistic/*.testdir
 src/pulsar/Fstatistic/lalapps_compareFstats
 src/pulsar/Fstatistic/lalapps_ComputeFstatBenchmark
