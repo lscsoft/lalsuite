@@ -1,7 +1,11 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
+%if 0%{?rhel} >= 8
+%define configure_opts GSL_LIBS="-lgsl -lopenblas"
+%else
 %define configure_opts GSL_LIBS="-lgsl"
+%endif
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
@@ -32,6 +36,9 @@ BuildRequires: hdf5-devel
 BuildRequires: help2man >= 1.37
 BuildRequires: less
 BuildRequires: make
+%if 0%{?rhel} >= 8
+BuildRequires: openblas-devel
+%endif
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
