@@ -66,7 +66,6 @@ liblalsupport_la_LIBADD = \
 	libtypeU8.la \
 	libtypeCHAR.la \
 	libtype.la \
-	libwhereami.la \
 	$(END_OF_LIST)
 
 noinst_LTLIBRARIES = $(liblalsupport_la_LIBADD)
@@ -145,10 +144,6 @@ libtype_la_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DTYPE='REAL4' \
 	-DFMT='"%i %f\n"' -DARG='vector->data[i]'
 
-libwhereami_la_SOURCES = whereami.h whereami.c
-# -D_GNU_SOURCE required for realpath() on Linux
-libwhereami_la_CPPFLAGS = $(AM_CPPFLAGS) -D_GNU_SOURCE
-
 liblalsupport_la_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(HDF5_CFLAGS)
 liblalsupport_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS) $(PAGER_CPPFLAGS)
 liblalsupport_la_LDFLAGS = ../liblal.la $(AM_LDFLAGS) $(HDF5_LDFLAGS) $(ZLIB_LIBS) $(HDF5_LIBS) -version-info $(LIBVERSION_SUPPORT)
@@ -172,6 +167,8 @@ noinst_HEADERS = \
 	StreamSeriesOutput_source.c \
 	StreamVectorInput_source.c \
 	StreamVectorSequenceInput_source.c \
+	whereami.h \
+	whereami.c \
 	$(END_OF_LIST)
 
 EXTRA_DIST = \
