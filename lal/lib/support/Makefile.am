@@ -65,7 +65,9 @@ liblalsupport_la_LIBADD = \
 	libtypeU4.la \
 	libtypeU8.la \
 	libtypeCHAR.la \
-	libtype.la
+	libtype.la \
+	libwhereami.la \
+	$(END_OF_LIST)
 
 noinst_LTLIBRARIES = $(liblalsupport_la_LIBADD)
 
@@ -142,6 +144,10 @@ libtype_la_CPPFLAGS = $(AM_CPPFLAGS) \
 	-DTYPECODE='' \
 	-DTYPE='REAL4' \
 	-DFMT='"%i %f\n"' -DARG='vector->data[i]'
+
+libwhereami_la_SOURCES = whereami.h whereami.c
+# -D_GNU_SOURCE required for realpath() on Linux
+libwhereami_la_CPPFLAGS = $(AM_CPPFLAGS) -D_GNU_SOURCE
 
 liblalsupport_la_CFLAGS = $(AM_CFLAGS) $(ZLIB_CFLAGS) $(HDF5_CFLAGS)
 liblalsupport_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS) $(PAGER_CPPFLAGS)
