@@ -18,6 +18,9 @@
  *  MA  02110-1301  USA
  */
 
+/* for realpath() for whereami.c on Linux */
+#define _GNU_SOURCE
+
 #include <config.h>
 
 #include <stdarg.h>
@@ -41,13 +44,16 @@
 #include <lal/StringInput.h>
 #include <lal/FileIO.h>
 
-#include "whereami.h"
-
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
 #else
 #define UNUSED
 #endif
+
+/* do not export functions from whereami.c */
+#define WAI_FUNCSPEC static UNUSED
+
+#include "whereami.c"
 
 struct tagLALFILE {
   int compression;
