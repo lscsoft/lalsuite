@@ -425,6 +425,8 @@ default:
   extends:
     - .conda-job
   variables:
+    # default to mambabuild from boa
+    CONDA_BUILD_CMD: "mambabuild"
     # stub of feedstock configuration file
     CONDA_CONFIG: "linux_64_"
   script:
@@ -459,7 +461,7 @@ default:
       fi
     # build packages (preferring local packages over everything)
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
-    - xargs -t conda mambabuild
+    - xargs -t conda ${CONDA_BUILD_CMD:-build}
           recipe/
           --channel local
           --dirty
