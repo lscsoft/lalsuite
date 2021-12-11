@@ -1,7 +1,11 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
+%if 0%{?rhel} >= 8
+%define configure_opts GSL_LIBS="-lgsl -lopenblas"
+%else
 %define configure_opts GSL_LIBS="-lgsl"
+%endif
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
@@ -32,6 +36,9 @@ BuildRequires: hdf5-devel
 BuildRequires: help2man >= 1.37
 BuildRequires: less
 BuildRequires: make
+%if 0%{?rhel} >= 8
+BuildRequires: openblas-devel
+%endif
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
@@ -193,6 +200,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Fri Dec 03 2021 Adam Mercer <adam.mercer@ligo.org> 7.1.5-1
+- Update for 7.1.5
+
 * Wed Nov 17 2021 Adam Mercer <adam.mercer@ligo.org> 7.1.4-1
 - Update for 7.1.4
 

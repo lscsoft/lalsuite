@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALBurst],[1.5.9.1],[lal-discuss@ligo.org])
+AC_INIT([LALBurst],[1.5.10.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([lib/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[6])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBREVISION],[4])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -68,8 +68,8 @@ AM_INIT_AUTOMAKE([ \
 
 # version requirements
 MIN_LAL_VERSION="7.1.0"
-MIN_LALMETAIO_VERSION="2.0.0"
-MIN_LALSIMULATION_VERSION="3.0.0"
+MIN_LALMETAIO_VERSION="2.1.0"
+MIN_LALSIMULATION_VERSION="3.1.0"
 MIN_PYTHON_LIGO_LW_VERSION="1.7.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])

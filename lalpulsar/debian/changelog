@@ -1,3 +1,9 @@
+lalpulsar (3.1.1-1) unstable; urgency=low
+
+  * Update for 3.1.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 03 Dec 2021 12:08:28 -0700
+
 lalpulsar (3.1.0-1) unstable; urgency=low
 
   * Update for 3.1.0
