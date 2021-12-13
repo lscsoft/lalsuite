@@ -444,8 +444,8 @@ avesqrtSh 1.0e-23
 minTemplateLength 1
 maxTemplateLength $tmplLength
 outdirectory $directory/$jobnum
-ephemEarth /home/egoetz/opt/lscsoft-master/share/lalpulsar/earth00-19-DE405.dat.gz
-ephemSun /home/egoetz/opt/lscsoft-master/share/lalpulsar/sun00-19-DE405.dat.gz
+ephemEarth /home/egoetz/opt/lscsoft-master/share/lalpulsar/earth00-40-DE405.dat.gz
+ephemSun /home/egoetz/opt/lscsoft-master/share/lalpulsar/sun00-40-DE405.dat.gz
 FFTplanFlag 1
 fastchisqinv
 useSSE

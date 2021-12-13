@@ -4,7 +4,7 @@ export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
 echo "=== Create search setup with 3 segments spanning ~260 days ==="
 set -x
-lalapps_WeaveSetup --ephem-earth=earth00-19-DE405.dat.gz --ephem-sun=sun00-19-DE405.dat.gz --first-segment=1122332211/90000 --segment-count=3 --segment-gap=11130000 --detectors=H1,L1 --output-file=WeaveSetup.fits
+lalapps_WeaveSetup --ephem-earth=earth00-40-DE405.dat.gz --ephem-sun=sun00-40-DE405.dat.gz --first-segment=1122332211/90000 --segment-count=3 --segment-gap=11130000 --detectors=H1,L1 --output-file=WeaveSetup.fits
 lalapps_fits_overview WeaveSetup.fits
 set +x
 echo
@@ -72,6 +72,7 @@ echo
 ### Make updating reference results a little easier ###
 mkdir newtarball/
 cd newtarball/
+cp ../all-timestamps-1.txt ../all-timestamps-2.txt .
 cp ../RefSeg1Exact.txt ../RefSeg2Exact.txt ../RefSeg3Exact.txt .
 cp ../WeaveOut.fits RefWeaveOut.fits
 tar zcf ../new_testWeave_interpolating.tar.gz *

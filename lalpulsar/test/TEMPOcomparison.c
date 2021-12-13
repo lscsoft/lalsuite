@@ -682,8 +682,8 @@ initUserVars ( int argc, char *argv[], UserVariables_t *uvar )
 
   uvar->randSeed = 1;
 
-  uvar->ephemEarth = XLALStringDuplicate("earth00-19-DE405.dat.gz");
-  uvar->ephemSun = XLALStringDuplicate("sun00-19-DE405.dat.gz");
+  uvar->ephemEarth = XLALStringDuplicate("earth00-40-DE405.dat.gz");
+  uvar->ephemSun = XLALStringDuplicate("sun00-40-DE405.dat.gz");
 
   /* register user input variables */
   XLALRegisterUvarMember( RAJ, 	        STRING, 'r', OPTIONAL, 	"Right ascension hh:mm.ss.ssss [Default=random]");
