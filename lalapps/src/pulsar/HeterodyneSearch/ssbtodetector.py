@@ -99,8 +99,8 @@ e.g. H1")
 
   # get the path for the ephemeris files
   ephpath = os.environ['LALPULSAR_DATADIR']
-  earth = os.path.join(ephpath, 'earth00-19-DE405.dat.gz')
-  sun = os.path.join(ephpath, 'sun00-19-DE405.dat.gz')
+  earth = os.path.join(ephpath, 'earth00-40-DE405.dat.gz')
+  sun = os.path.join(ephpath, 'sun00-40-DE405.dat.gz')
 
   # check files exist
   if not os.path.isfile(earth) or not os.path.isfile(sun):

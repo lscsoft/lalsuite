@@ -4,7 +4,7 @@ export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
 echo "=== Create single-segment search setup ==="
 set -x
-lalapps_WeaveSetup --ephem-earth=earth00-19-DE405.dat.gz --ephem-sun=sun00-19-DE405.dat.gz --first-segment=1122332211/90000 --detectors=H1,L1 --output-file=WeaveSetup.fits
+lalapps_WeaveSetup --ephem-earth=earth00-40-DE405.dat.gz --ephem-sun=sun00-40-DE405.dat.gz --first-segment=1122332211/90000 --detectors=H1,L1 --output-file=WeaveSetup.fits
 lalapps_fits_overview WeaveSetup.fits
 set +x
 echo
