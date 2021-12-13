@@ -13,7 +13,6 @@ Name: @PACKAGE@
 Version: @BASE_VERSION@
 Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 License: GPLv2+
-Group: LAL
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
@@ -57,7 +56,6 @@ BuildRequires: lalframe-octave >= @MIN_LALFRAME_VERSION@
 
 # lalpulsar
 Summary: LSC Algorithm Pulsar Library - runtime tools
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Obsoletes: python2-%{name} <= 3.0.1-1
@@ -69,7 +67,6 @@ that use the LAL Pulsar library.
 # liblalpulsar
 %package -n lib%{name}
 Summary: LSC Algorithm Simulation Library - library package
-Group: LAL
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalframe >= @MIN_LALFRAME_VERSION@
 Conflicts: %{name} <= 2.1.0-1
@@ -81,7 +78,6 @@ that use the LAL Pulsar library.
 # liblalpulsar-devel
 %package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Pulsar
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: cfitsio-devel
 Requires: fftw-devel
@@ -98,7 +94,6 @@ Pulsar library.
 # python3x-lalpulsar
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} bindings for LALPulsar
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-astropy
@@ -113,7 +108,6 @@ This package provides the Python %{python3_version} bindings for LALPulsar.
 # lalpulsar-octave
 %package octave
 Summary: Octave bindings for LALPulsar
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
