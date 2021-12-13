@@ -13,7 +13,6 @@ Name: @PACKAGE@
 Version: @BASE_VERSION@
 Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 License: GPLv2+
-Group: LAL
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
@@ -89,7 +88,6 @@ that use the LAL Inspiral library.
 # liblalinspiral-devel
 %package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Inspiral
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: gsl-devel
 Requires: liblal-devel >= @MIN_LAL_VERSION@
@@ -107,7 +105,6 @@ library.
 # python3x-lalinspiral
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} bindings for LALInspiral
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-glue
@@ -127,7 +124,6 @@ This package provides the Python bindings for LALInspiral.
 # lalinspiral-octave
 %package octave
 Summary: Octave bindings for LALInspiral
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
