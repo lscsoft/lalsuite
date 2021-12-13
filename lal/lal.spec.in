@@ -17,7 +17,6 @@ Name: @PACKAGE@
 Version: @BASE_VERSION@
 Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 License: GPLv2+
-Group: LAL
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
@@ -65,7 +64,6 @@ BuildRequires: octave-devel
 
 # lal
 Summary: LSC Algorithm Library - runtime tools
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Obsoletes: python2-%{name} <= 7.1.2-1
@@ -87,7 +85,6 @@ that use the LAL library.
 # liblal-devel
 %package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: fftw-devel
 Requires: gsl-devel
@@ -102,7 +99,6 @@ as well as the documentation for the library.
 # python3x-lal
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} bindings for LAL
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-dateutil
@@ -126,7 +122,6 @@ This package provides the Python %{python3_version} bindings.
 # lal-octave
 %package octave
 Summary: Octave bindings for LAL
-Group: LAL
 Requires: %{name} = %{version}-%{release}
 Requires: octave
 %description octave
