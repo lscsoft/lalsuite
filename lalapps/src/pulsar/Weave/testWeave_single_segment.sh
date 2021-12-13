@@ -77,6 +77,7 @@ echo
 ### Make updating reference results a little easier ###
 mkdir newtarball/
 cd newtarball/
+cp ../all-timestamps-1.txt ../all-timestamps-2.txt .
 cp ../RefExact.txt .
 cp ../WeaveOut.fits RefWeaveOut.fits
 tar zcf ../new_testWeave_single_segment.tar.gz *

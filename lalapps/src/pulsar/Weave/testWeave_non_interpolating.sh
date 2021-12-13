@@ -98,6 +98,7 @@ echo
 ### Make updating reference results a little easier ###
 mkdir newtarball/
 cd newtarball/
+cp ../all-timestamps-1.txt ../all-timestamps-2.txt .
 cp ../RefSeg1Exact.txt ../RefSeg2Exact.txt ../RefSeg3Exact.txt .
 cp ../WeaveOut.fits RefWeaveOut.fits
 tar zcf ../new_testWeave_non_interpolating.tar.gz *
