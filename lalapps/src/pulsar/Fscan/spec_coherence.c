@@ -184,8 +184,8 @@ int main(int argc, char **argv)
 
     XLALDestroyUserVars();
     fprintf(stderr,"Done Destroying Variables\n");
-    fprintf(stderr, "end of spec_avg\n");
-    fprintf(stderr, "Spec_avg_done!\n");
+    fprintf(stderr, "end of spec_coherence\n");
+    fprintf(stderr, "Spec_coherence_done!\n");
 
     return(0);
 
