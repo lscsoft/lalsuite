@@ -405,6 +405,7 @@ default:
   - conda activate base
   - conda info --all
   - conda config --show-sources
+  - conda config --show
   - conda list --name base
 
 # template for jobs that use conda (in any context)
@@ -1380,7 +1381,10 @@ platform:debian:bullseye:
     - conda config --file ${CONDARC} --set always_yes yes
     - conda config --file ${CONDARC} --add channels conda-forge
     - conda info --all
+    # print the manual overrides in the config
     - conda config --show-sources
+    # then print the whole config
+    - conda config --show
     # install the dev environment for the default python version
     - sed -i.tmp "s/- python$/- python=${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
     # https://github.com/conda-forge/texlive-core-feedstock/issues/59
