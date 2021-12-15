@@ -207,9 +207,9 @@ void XLALFrameUFrameHFree(LALFrameUFrameH * frame)
     FRAME_LIBRARY_SELECT_VOID(XLALFrameUFrameHFree, frame);
 }
 
-LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start, double dt, int frnum)
+LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start1, double start2, double dt, int frnum)
 {
-    FRAME_LIBRARY_SELECT_NULL(XLALFrameUFrameHAlloc, name, start, dt, frnum);
+    FRAME_LIBRARY_SELECT_NULL(XLALFrameUFrameHAlloc, name, start1, start2, dt, frnum);
 }
 
 LALFrameUFrameH *XLALFrameUFrameHRead(LALFrameUFrFile * stream, int pos)

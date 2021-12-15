@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
             t0 = data[0];
         }
 
-        frame = XLALFrameUFrameHAlloc(fname, t0, dt, f);
+        frame = XLALFrameUFrameHAlloc(fname, t0, 0.0, dt, f);
         XLALFrameUFrameHSetRun(frame, 0);
 
         for (dim = (ndim == 1 ? 0 : 1); dim < ndim; ++dim) {
