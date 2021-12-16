@@ -433,10 +433,14 @@ default:
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
-    # update index of local packages:
-    - if [ "${PACKAGE}" != "lal" ]; then
-          conda index ${CONDA_BLD_PATH} --no-progress;
-          conda search "*lal*" --channel local --override-channels;
+    # copy local packages from conda-bld dir to a new channel
+    - if [ -d "${CONDA_BLD_PATH}" ]; then
+          LOCAL_CHANNEL="${CI_PROJECT_DIR}/local-builds";
+          cp -r "${CONDA_BLD_PATH}" "${LOCAL_CHANNEL}";
+          conda index "${LOCAL_CHANNEL}" --no-progress;
+          conda config --file ${CONDARC} --add channels "${LOCAL_CHANNEL}";
+          conda search "*lal*" --channel "${LOCAL_CHANNEL}" --override-channels;
+          rm -rf "${CONDA_BLD_PATH}";
       fi
     # render YAML file to use our tarball
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -460,11 +464,10 @@ default:
     - if [[ "${CONDA_CONFIG}" != *"python"* ]] && [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
          CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
       fi
-    # build packages (preferring local packages over everything)
+    # build packages
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
     - xargs -t conda ${CONDA_BUILD_CMD:-build}
           recipe/
-          --channel local
           --dirty
           --error-overlinking
           --error-overdepending
