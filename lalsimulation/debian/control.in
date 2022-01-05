@@ -54,7 +54,7 @@ Breaks: lalsimulation-dev (<< 2.4.0-2~)
 Package: lalsimulation-python3
 Depends: python3-lalsimulation, ${misc:Depends}
 Architecture: all
-Priority: extra
+Priority: optional
 Section: oldlibs
 Description: transitional package
  lalsimulation-python3 was renamed python3-lalsimulation,
