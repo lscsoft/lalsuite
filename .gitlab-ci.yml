@@ -295,8 +295,14 @@ default:
     # install extra build requirements
     - apt-get install -y -q -q
           lintian
-    # install upstream packages
-    - "ls *.deb &>/dev/null && { dpkg -i *.deb || { apt-get -y -f install; dpkg -i *.deb; } }"
+    # setup local apt repository to house upstream packages
+    - if test -n "$(find . -maxdepth 1 -name '*.deb' -print -quit)"; then
+          apt-get -y -q -q install local-apt-repository;
+          mkdir -pv /srv/local-apt-repository;
+          mv -v *.deb /srv/local-apt-repository;
+          /usr/lib/local-apt-repository/rebuild;
+          apt-get -y -q update;
+      fi
     # create orig tarball
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
