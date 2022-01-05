@@ -39,8 +39,6 @@ vcs_info_sources = LALBurstVCSInfoHeader.h
 build_info_source = LALBurstBuildInfoHeader.h
 build_info_dependencies = $(liblalburst_la_DEPENDENCIES)
 
-LDADD = liblalburst.la
-
 EXTRA_DIST = \
 	LALBurstConfig.h.in \
 	config.h.in \

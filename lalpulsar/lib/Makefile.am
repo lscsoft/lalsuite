@@ -166,8 +166,6 @@ vcs_info_sources = LALPulsarVCSInfoHeader.h
 build_info_source = LALPulsarBuildInfoHeader.h
 build_info_dependencies = $(liblalpulsar_la_DEPENDENCIES)
 
-LDADD = liblalpulsar.la
-
 minimal_ephemerides = \
 	earth00-40-DE405.dat.gz \
 	sun00-40-DE405.dat.gz \
