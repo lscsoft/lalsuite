@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalinference${LIBMAJOR}.install:debian/liblalinference.install.in \

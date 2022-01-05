@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalburst${LIBMAJOR}.install:debian/liblalburst.install.in \
