@@ -70,9 +70,8 @@ class bank_DAG(pipeline.CondorDAG):
         logfile = tempfile.mktemp()
         fh = open( logfile, "w" )
         fh.close()
-        pipeline.CondorDAG.__init__(self,logfile, dax=False)
+        pipeline.CondorDAG.__init__(self,logfile)
         self.set_dag_file(self.basename)
-        self.set_dax_file(self.basename)
         self.jobsDict = {}
         self.node_id = 0
         self.output_cache = []
@@ -92,11 +91,11 @@ class bank_DAG(pipeline.CondorDAG):
 
 
 class SBankJob(inspiral.InspiralAnalysisJob):
-    def __init__(self,cp,dax=False, tag_base="lalapps_cbc_sbank"):
+    def __init__(self,cp, tag_base="lalapps_cbc_sbank"):
         exec_name = 'lalapps_cbc_sbank'
         extension = 'xml'
         sections = ['sbank']
-        inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+        inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
         self.tag_base = tag_base
         self.set_sub_file(tag_base+'.sub')
         self.set_stdout_file('logs/'+tag_base+'-$(macroid)-$(process).out')
@@ -133,11 +132,11 @@ class SBankNode(pipeline.CondorDAGNode):
 
 
 class SBankChooseMchirpBoundariesJob(inspiral.InspiralAnalysisJob):
-    def __init__(self,cp,dax=False, tag_base="lalapps_cbc_sbank_choose_mchirp_boundaries"):
+    def __init__(self,cp, tag_base="lalapps_cbc_sbank_choose_mchirp_boundaries"):
         exec_name = 'lalapps_cbc_sbank_choose_mchirp_boundaries'
         extension = 'txt'
         sections = ['split']
-        inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension,dax)
+        inspiral.InspiralAnalysisJob.__init__(self,cp,sections,exec_name,extension)
         self.set_universe("local")
         self.set_sub_file(tag_base+'.sub')
         self.tag_base = tag_base
