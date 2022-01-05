@@ -67,7 +67,7 @@ Breaks: lalburst-dev (<< 1.5.6-2~)
 Package: lalburst-python3
 Depends: python3-lalburst, ${misc:Depends}
 Architecture: all
-Priority: extra
+Priority: optional
 Section: oldlibs
 Description: transitional package
  lalburst-python3 was renamed python3-lalburst,
