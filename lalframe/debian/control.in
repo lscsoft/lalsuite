@@ -57,7 +57,7 @@ Depends:
  ${misc:Depends},
  python3-lalframe,
 Architecture: all
-Priority: extra
+Priority: optional
 Section: oldlibs
 Description: transitional package
  lalframe-python3 was renamed python3-lalframe,

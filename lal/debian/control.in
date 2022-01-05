@@ -78,7 +78,7 @@ Depends:
  ${misc:Depends},
  python3-lal,
 Architecture: all
-Priority: extra
+Priority: optional
 Section: oldlibs
 Description: transitional package
  lal-python3 was renamed python3-lal,
