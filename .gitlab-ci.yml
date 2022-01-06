@@ -897,7 +897,36 @@ lalapps:conda:
     - lalinspiral:conda
     - lalinference:conda
   variables:
-    CONDA_CONFIG: "linux_64_numpy1.18python${LALSUITE_PYTHON_VERSION}.____cpython"
+    CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.____cpython"
+
+# template to run extra conda lalapps jobs only when the upstream
+# conda jobs will have run over all python versions
+.lalapps:conda:extra:
+  only:
+    refs:
+      - schedules
+      - web
+
+lalapps:conda:py37:
+  extends:
+    - lalapps:conda
+    - .lalapps:conda:extra
+  variables:
+    LALSUITE_PYTHON_VERSION: "3.7"
+
+lalapps:conda:py39:
+  extends:
+    - lalapps:conda
+    - .lalapps:conda:extra
+  variables:
+    LALSUITE_PYTHON_VERSION: "3.9"
+
+lalapps:conda:py310:
+  extends:
+    - lalapps:conda
+    - .lalapps:conda:extra
+  variables:
+    LALSUITE_PYTHON_VERSION: "3.10"
 
 # -- wheels -------------------------------------
 #
