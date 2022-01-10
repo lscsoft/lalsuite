@@ -370,6 +370,7 @@ default:
   - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
   - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
   # configure conda options
+  - rm -fv ${CONDARC}  # start afresh
   - conda config --file ${CONDARC} --set always_yes yes
   - conda config --file ${CONDARC} --add channels conda-forge
   - conda config --file ${CONDARC} --set channel_priority strict
