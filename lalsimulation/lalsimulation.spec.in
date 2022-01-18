@@ -1,7 +1,7 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
-%define configure_opts --enable-openmp GSL_LIBS="-lgsl"
+%define configure_opts --enable-openmp
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
