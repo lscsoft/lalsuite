@@ -47,7 +47,6 @@ BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-astropy >= 1.1.1
 BuildRequires: python%{python3_pkgversion}-gwdatafind
-BuildRequires: python%{python3_pkgversion}-gwpy
 BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python%{python3_pkgversion}-healpy >= 1.9.1
 BuildRequires: python%{python3_pkgversion}-h5py
