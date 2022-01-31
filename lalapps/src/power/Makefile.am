@@ -33,9 +33,9 @@ pybin_scripts = \
 	lalapps_power_plot_binj \
 	$(END_OF_LIST)
 
-test_scripts += \
-	test_bucluster.sh \
-	$(END_OF_LIST)
+#test_scripts += \
+#	test_bucluster.sh \
+#	$(END_OF_LIST)
 test_extra_files += \
 	H1-POWER_S5-830046410-50274.xml.gz \
 	$(END_OF_LIST)
