@@ -45,18 +45,11 @@ class InspiralAnalysisJob(pipeline.AnalysisJob, pipeline.CondorDAGJob):
     pipeline.CondorDAGJob.__init__(self,universe,executable)
     pipeline.AnalysisJob.__init__(self,cp)
     self.add_condor_cmd('copy_to_spool','False')
-    self.set_grid_site('local')
     self.__use_gpus = cp.has_option('condor', 'use-gpus')
 
     mycp = copy.deepcopy(cp)
     for sec in sections:
       if mycp.has_section(sec):
-        # check to see if the job should run on a remote site
-        if mycp.has_option(sec,'remote-sites'):
-          remotesites = mycp.get(sec,'remote-sites')
-          mycp.remove_option(sec,'remote-sites')
-          self.set_grid_site(remotesites)
-
         # add all the other options as arguments to the code
         self.add_ini_opts(mycp, sec)
 
