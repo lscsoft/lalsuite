@@ -173,7 +173,7 @@ static int KMinMax(
   double nextkmax = k;
   
   ///< If the code is running properly (at least with padding flags turned off) this shouldn't ever really come up, but if it does, it doesn't necessarily 
-  ///< mean things will go wrong. It usually just means that nextkmax/nextkmin are very close to the either kmin or kmax
+  ///< mean things will go wrong. It usually just means that nextkmax/nextkmin are very close to either kmin or kmax
   if (nextkmax < kmin || nextkmin > kmax){
     XLAL_PRINT_WARNING("Calculated ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax, k - kmin, k - kmax);
   }
@@ -819,6 +819,8 @@ int XLALSetLatticeTilingPiecewiseBounds(
   const double fmaxtrue,   ///< Maximum spin frequency with which to calculate k value ranges with (useful when computing tiles in parrallel and fmax != fmaxtrue)
   const double nmin,       ///< Minimum braking index
   const double nmax,       ///< Maximum braking index
+  const double nmin0,      ///< Minimum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
+  const double nmax0,      ///< Maximum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
   const double ntol,       ///< Tolerance (percentage per second) between braking indices on adjacent knots
   const double taumin,     ///< Minimum tau value
   const double taumax,     ///< Maximum tau value
@@ -836,6 +838,9 @@ int XLALSetLatticeTilingPiecewiseBounds(
   XLAL_CHECK(tiling != NULL, XLAL_EINVAL);
   XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax);
   XLAL_CHECK(nmin < nmax, XLAL_EINVAL, "Bad braking index range: [%f, %f]", nmin, nmax);
+  XLAL_CHECK(nmin0 < nmax0, XLAL_EINVAL, "Bad braking index knot0 range: [%f, %f]", nmin0, nmax0);
+  XLAL_CHECK(nmin0 >= nmin, XLAL_EINVAL, "nmin0 smaller than nmin: [%f, %f]", nmin0, nmin);
+  XLAL_CHECK(nmax0 <= nmax, XLAL_EINVAL, "nmax0 greater than nmax: [%f, %f]", nmax0, nmax);
   XLAL_CHECK(taumin < taumax, XLAL_EINVAL, "Bad tau range: [%f, %f]", taumin, taumax);
   XLAL_CHECK(kmin < kmax, XLAL_EINVAL, "Bad k range: [%f, %f]", kmin, kmax);
   
@@ -847,8 +852,8 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   info_first_knot_lower.fmin = info_first_knot_upper.fmin = fmin;
   info_first_knot_lower.fmax = info_first_knot_upper.fmax = fmax;
-  info_first_knot_lower.nmin = info_first_knot_upper.nmin = nmin;
-  info_first_knot_lower.nmax = info_first_knot_upper.nmax = nmax;
+  info_first_knot_lower.nmin = info_first_knot_upper.nmin = nmin0;
+  info_first_knot_lower.nmax = info_first_knot_upper.nmax = nmax0;
   info_first_knot_lower.kmin = info_first_knot_upper.kmin = kmin;
   info_first_knot_lower.kmax = info_first_knot_upper.kmax = kmax;
   
