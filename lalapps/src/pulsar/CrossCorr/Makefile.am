@@ -2,7 +2,6 @@ BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
@@ -39,4 +38,4 @@ test_scripts += test_pulsar_crosscorr_v2.sh
 test_helpers +=
 
 # Add any extra files required by tests (e.g. helper scripts) to this variable
-test_extra_files +=
+#test_extra_files +=

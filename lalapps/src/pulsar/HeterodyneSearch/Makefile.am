@@ -2,7 +2,6 @@ BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
@@ -84,18 +83,18 @@ pkgpython_PYTHON = \
 	$(END_OF_LINE)
 endif
 
+EXTRA_DIST += \
+	H-CW_Injection-875206560-120.gwf \
+	H1response.txt \
+	make_frame_cache.py \
+	$(END_OF_LIST)
+
 # Add shell test scripts to this variable
+if LALFRAME
 if HAVE_PYTHON
 test_scripts += test_heterodyne_pulsar.sh
+endif
 endif
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
-
-# Add any extra files required by tests (e.g. helper scripts) to this variable
-test_extra_files += make_frame_cache.py
-
-# These tests require LALFrame
-if !LALFRAME
-skip_tests += test_heterodyne_pulsar.sh
-endif

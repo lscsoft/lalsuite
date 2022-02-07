@@ -2,14 +2,15 @@ BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-bin_PROGRAMS = lalapps_psinject
+progs = lalapps_psinject
 
 if GDS
-bin_PROGRAMS += online_psinject
+progs += online_psinject
 endif
+
+bin_PROGRAMS = $(progs)
 
 lalapps_psinject_SOURCES = psinject.c
 

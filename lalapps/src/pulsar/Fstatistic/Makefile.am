@@ -1,8 +1,7 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 bin_PROGRAMS = \
@@ -47,7 +46,11 @@ test_scripts += testComputeFstatistic_v2_binary.sh
 test_scripts += testComputeFstatistic_v2_grids.sh
 test_scripts += testComputeFstatistic_v2_resamp.sh
 test_scripts += testComputeFstatistic_v2_transient.sh
+test_scripts += testComputeFstatBenchmark.sh
+test_scripts += testComputeFstatMCUpperLimit.sh
+test_scripts += test_synthesizeBstatMC.sh
 test_scripts += test_synthesizeLVStats.sh
+test_scripts += test_synthesizeTransientStats.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers += SemiAnalyticF
