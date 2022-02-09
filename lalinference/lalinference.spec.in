@@ -1,7 +1,7 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
-%define configure_opts --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc GSL_LIBS="-lgsl"
+%define configure_opts --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
@@ -12,9 +12,7 @@
 Name: @PACKAGE@
 Version: @BASE_VERSION@
 Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
-Summary: LSC Algorithm Inference Library
 License: GPLv2+
-Group: LAL
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
@@ -49,7 +47,6 @@ BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-astropy >= 1.1.1
 BuildRequires: python%{python3_pkgversion}-gwdatafind
-BuildRequires: python%{python3_pkgversion}-gwpy
 BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python%{python3_pkgversion}-healpy >= 1.9.1
 BuildRequires: python%{python3_pkgversion}-h5py
@@ -77,6 +74,7 @@ BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 # -- packages ---------------
 
 # lalinference
+Summary: LSC Algorithm Inference Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Obsoletes: python2-%{name} <= 2.0.7-1
@@ -104,7 +102,6 @@ that use the LAL Inference library.
 # liblalinference-devel
 %package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Inference
-Group: LAL
 Requires: gsl-devel >= 1.15
 Requires: lib%{name} = %{version}-%{release}
 Requires: liblal-devel >= @MIN_LAL_VERSION@
@@ -124,7 +121,6 @@ library.
 # python3x-lalinference
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} Bindings for LALInference
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-astropy >= 1.1.1
@@ -155,7 +151,6 @@ This package provides the Python %{python3_version} bindings for LALInference.
 # lalinference-octave
 %package octave
 Summary: Octave Bindings for LALInference
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
@@ -235,6 +230,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Jan 10 2022 Adam Mercer <adam.mercer@ligo.org> 3.0.2-1
+- Update for 3.0.2
+
+* Fri Dec 03 2021 Adam Mercer <adam.mercer@ligo.org> 3.0.1-1
+- Update for 3.0.1
+
 * Mon May 17 2021 Adam Mercer <adam.mercer@ligo.org> 3.0.0-1
 - Update for 3.0.0
 

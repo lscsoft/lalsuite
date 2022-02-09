@@ -33,7 +33,6 @@ from scipy.interpolate import UnivariateSpline
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils
-from ligo.lw import ilwd
 from ligo.lw.utils import process as ligolw_process
 
 #from sbank import git_version FIXME
@@ -559,10 +558,6 @@ for tmplt in proposal:
         if not hasattr(tmplt, 'is_seed_point'):
             if opts.output_filename.endswith(('.xml', '.xml.gz')):
                 row = tmplt.to_sngl()
-                # Event ids must be unique, or the table isn't valid,
-                # SQL needs this
-                row.event_id = ilwd.ilwdchar('sngl_inspiral:event_id:%d' %
-                                             (len(bank), ))
                 # If we figure out how to use metaio's SnglInspiralTable the
                 # following change then defines the event_id
                 #curr_id = EventIDColumn()
@@ -571,6 +566,7 @@ for tmplt in proposal:
                 #row.event_id = curr_id
                 row.ifo = opts.instrument
                 row.process_id = process.process_id
+                row.event_id = tbl.get_next_id()
                 tbl.append(row)
             if opts.output_filename.endswith(('.hdf', '.h5', '.hdf5')):
                 row = tmplt.to_storage_arr()

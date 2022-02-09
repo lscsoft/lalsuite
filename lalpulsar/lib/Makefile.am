@@ -176,15 +176,19 @@ vcs_info_sources = LALPulsarVCSInfoHeader.h
 build_info_source = LALPulsarBuildInfoHeader.h
 build_info_dependencies = $(liblalpulsar_la_DEPENDENCIES)
 
-LDADD = liblalpulsar.la
+minimal_ephemerides = \
+	earth00-40-DE405.dat.gz \
+	sun00-40-DE405.dat.gz \
+	tdb_2000-2040.dat.gz \
+	te405_2000-2040.dat.gz \
+	$(END_OF_LIST)
 
-pkgdata_DATA = \
+all_ephemerides = \
 	earth00-19-DE200.dat.gz \
 	earth00-19-DE405.dat.gz \
 	earth00-19-DE414.dat.gz \
 	earth00-19-DE421.dat.gz \
 	earth00-40-DE200.dat.gz \
-	earth00-40-DE405.dat.gz \
 	earth00-40-DE421.dat.gz \
 	earth00-40-DE430.dat.gz \
 	sun00-19-DE200.dat.gz \
@@ -192,14 +196,19 @@ pkgdata_DATA = \
 	sun00-19-DE414.dat.gz \
 	sun00-19-DE421.dat.gz \
 	sun00-40-DE200.dat.gz \
-	sun00-40-DE405.dat.gz \
 	sun00-40-DE421.dat.gz \
 	sun00-40-DE430.dat.gz \
 	tdb_2000-2019.dat.gz \
 	te405_2000-2019.dat.gz \
-	tdb_2000-2040.dat.gz \
-	te405_2000-2040.dat.gz \
 	$(END_OF_LIST)
+
+pkgdata_DATA = \
+	$(minimal_ephemerides) \
+	$(END_OF_LIST)
+
+if !INSTALL_MINIMAL_EPHEM
+pkgdata_DATA += $(all_ephemerides)
+endif
 
 EXTRA_DIST = \
 	$(pkgdata_DATA) \

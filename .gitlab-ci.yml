@@ -80,6 +80,8 @@ variables:
   CONDA_ENVS_PATH: "${CI_PROJECT_DIR}/envs"
   # what file to use for conda configuration
   CONDARC: "${CI_PROJECT_DIR}/.condarc"
+  # tell mamba to not display the huge ascii-art banner
+  MAMBA_NO_BANNER: 1
 
 # default parameters for jobs
 default:
@@ -175,10 +177,13 @@ default:
     when: on_failure
 
 # helper template for jobs running on macOS
-# (the 'macos' tag means that jobs only run on macOS runners)
 .macos:
   tags:
-    - macos
+    - macos_x86_64
+
+.macos-arm64:
+  tags:
+    - macos_arm64
 
 # -- build templates ----------------------------
 
@@ -207,10 +212,24 @@ default:
   # before_script comes from .rhel:rpm
   script:
     - *init-build-job
+    # build a yum repo from the upstream packages
+    - |
+      if [ -d rpmbuild ]; then
+          yum install -y -q createrepo
+          LOCAL_REPO="${CI_PROJECT_DIR}/local-builds"
+          _ARCH=$(rpm --eval '%{_arch}')
+          cp -r rpmbuild/RPMS/$(rpm --eval '%{_arch}') ${LOCAL_REPO}
+          createrepo --quiet --workers "${CPU_COUNT}" "${LOCAL_REPO}"
+          cat > /etc/yum.repos.d/local-builds.repo <<EOF
+      [local-builds]
+      name=Local builds
+      baseurl=file://${LOCAL_REPO}
+      enabled=1
+      gpgcheck=0
+      EOF
+      fi
     # install srpm dependencies
     - yum install -y -q lscsoft-packaging-tools
-    # install upstream packages
-    - if [ -d rpmbuild ]; then yum install -y -q rpmbuild/RPMS/x86_64/*.rpm; fi
     # build src.rpm
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
@@ -219,6 +238,8 @@ default:
     - SRPM=${RPM_BUILD_TOPDIR}/SRPMS/${PACKAGE}-*.src.rpm
     # install build dependencies
     - yum-builddep -y -q ${SRPM}
+    # print installed packages
+    - yum list installed --quiet
     # build binary rpms and print details of what we got
     - rpmbuild --rebuild --noclean --define "_topdir ${RPM_BUILD_TOPDIR}" ${SRPM}
     # print package info
@@ -290,8 +311,14 @@ default:
     # install extra build requirements
     - apt-get install -y -q -q
           lintian
-    # install upstream packages
-    - "ls *.deb &>/dev/null && { dpkg -i *.deb || { apt-get -y -f install; dpkg -i *.deb; } }"
+    # setup local apt repository to house upstream packages
+    - if test -n "$(find . -maxdepth 1 -name '*.deb' -print -quit)"; then
+          apt-get -y -q -q install local-apt-repository;
+          mkdir -pv /srv/local-apt-repository;
+          mv -v *.deb /srv/local-apt-repository;
+          /usr/lib/local-apt-repository/rebuild;
+          apt-get -y -q update;
+      fi
     # create orig tarball
     - cd ${PACKAGE}/
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
@@ -365,17 +392,28 @@ default:
   - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
   - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
   # configure conda options
+  - rm -fv ${CONDARC}  # start afresh
   - conda config --file ${CONDARC} --set always_yes yes
   - conda config --file ${CONDARC} --add channels conda-forge
   - conda config --file ${CONDARC} --set channel_priority strict
-  # update conda itself
-  - retry conda update -n base conda setuptools
+  # see https://github.com/conda-forge/conda-forge-ci-setup-feedstock/pull/168
+  - conda config --show aggressive_update_packages >> ${CONDARC}
+  - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
+  # update conda and mamba
+  - retry mamba update -n base conda mamba
   # install build helpers
-  - retry conda install -n base "conda-build!=3.18.10" conda-forge-pinning "conda-smithy>=3.7.5" conda-verify
+  - retry mamba install -n base
+        "conda-build!=3.18.10"
+        conda-forge-pinning
+        "conda-smithy>=3.7.5"
+        conda-verify
+        "boa>=0.8.0"
   # print info
   - conda activate base
   - conda info --all
   - conda config --show-sources
+  - conda config --show
+  - conda list --name base
 
 # template for jobs that use conda (in any context)
 .conda-job:
@@ -395,11 +433,22 @@ default:
   extends:
     - .conda-job
   variables:
+    # default to mambabuild from boa
+    CONDA_BUILD_CMD: "mambabuild"
     # stub of feedstock configuration file
     CONDA_CONFIG: "linux_64_"
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/
+    # copy local packages from conda-bld dir to a new channel
+    - if [ -d "${CONDA_BLD_PATH}" ]; then
+          LOCAL_CHANNEL="${CI_PROJECT_DIR}/local-builds";
+          cp -rv "${CONDA_BLD_PATH}" "${LOCAL_CHANNEL}";
+          conda index "${LOCAL_CHANNEL}" --no-progress;
+          conda config --file ${CONDARC} --add channels "${LOCAL_CHANNEL}";
+          conda search "*lal*" --channel "${LOCAL_CHANNEL}" --override-channels;
+          rm -rf "${CONDA_BLD_PATH}";
+      fi
     # render YAML file to use our tarball
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
     - SHA256=$(openssl dgst -r -sha256 $TARBALL | cut -d\  -f1)
@@ -411,22 +460,26 @@ default:
     - git config --global user.email "${GITLAB_USER_EMAIL}"
     - conda smithy init conda/ --feedstock-directory ${PACKAGE}-feedstock
     - cd ${PACKAGE}-feedstock
+    # handle migrations that are bundled with the tarball
+    - mkdir -p .ci_support/migrations
+    - find recipe/migrations -type f -name "*.yaml" -exec cp -n -v {} .ci_support/migrations/ \;
+    # regenerate the feedstock
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
-    # if not a nightly or web-triggered pipeline, just build one python version
-    - if [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
+    # if not a single-python-per-build recipe and not a nightly
+    # or web-triggered pipeline, just build one python version
+    - if [[ "${CONDA_CONFIG}" != *"python"* ]] && [ ${CI_PIPELINE_SOURCE} != "schedule" ] && [ ${CI_PIPELINE_SOURCE} != "web" ]; then
          CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
       fi
-    # build packages (preferring local packages over everything)
+    # build packages
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
-    - xargs -t conda build
+    - xargs -t conda ${CONDA_BUILD_CMD:-build}
           recipe/
           --dirty
           --error-overlinking
           --error-overdepending
           --keep-old-work
           --no-anaconda-upload
-          --use-local
           --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
           <<< ${CONDA_BUILD_ARGS}
   after_script:
@@ -867,7 +920,36 @@ lalapps:conda:
     - lalinspiral:conda
     - lalinference:conda
   variables:
-    CONDA_CONFIG: "linux_64_python${LALSUITE_PYTHON_VERSION}.____cpython"
+    CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.____cpython"
+
+# template to run extra conda lalapps jobs only when the upstream
+# conda jobs will have run over all python versions
+.lalapps:conda:extra:
+  only:
+    refs:
+      - schedules
+      - web
+
+lalapps:conda:py37:
+  extends:
+    - lalapps:conda
+    - .lalapps:conda:extra
+  variables:
+    LALSUITE_PYTHON_VERSION: "3.7"
+
+lalapps:conda:py39:
+  extends:
+    - lalapps:conda
+    - .lalapps:conda:extra
+  variables:
+    LALSUITE_PYTHON_VERSION: "3.9"
+
+lalapps:conda:py310:
+  extends:
+    - lalapps:conda
+    - .lalapps:conda:extra
+  variables:
+    LALSUITE_PYTHON_VERSION: "3.10"
 
 # -- wheels -------------------------------------
 #
@@ -897,20 +979,30 @@ lalapps:conda:
 
 # do some simple sanity checks in a virtualenv
 .wheel-test: &wheel-test
+  # remove build tree first to make sure wheel does not
+  # access it, e.g. try to find LAL data files there
+  - rm -rf wheel/build/
+  # install wheel
   - ${PYTHON} -m venv test
   - source test/bin/activate
   - python -m pip install --upgrade pip
   - python -m pip install wheelhouse/*
+  # test loading Python modules and finding data files
   - |
-    python3 - <<EOF
+    env LAL_DEBUG_LEVEL=info python3 - <<EOF
     import lal
     import lalframe
     import lalmetaio
     import lalsimulation
+    import lalpulsar
     series = lal.CreateREAL8FrequencySeries('psd', 0, 0, 1, None, 4096)
     lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)
+    lalpulsar.InitBarycenter("earth00-40-DE405.dat.gz", "sun00-40-DE405.dat.gz")
     EOF
+  # test running C executables and finding data files
   - lalapps_version
+  - env LAL_DEBUG_LEVEL=info lalsim-detector-noise --official --aligo-nsnsopt --duration 1 >/dev/null
+  - env LAL_DEBUG_LEVEL=info lalapps_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
 
 # Build receipe for standalone wheels on Linux
 .wheel:manylinux:
@@ -922,11 +1014,14 @@ lalapps:conda:
     - ./00boot
     - ./configure
           ${ENABLE_NIGHTLY}
+          --with-relative-data-path="../lalapps/data"
+          --without-fallback-data-path
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
           --enable-python
           --enable-swig-python
+          --enable-minimal-ephem
           PYTHON=${PYTHON}
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
@@ -939,9 +1034,13 @@ lalapps:conda:
   extends:
     - .wheel
   tags:
-    - macos_sierra
+    # explicitly use the oldest macOS tag we have
+    - macos_catalina_x86_64
   script:
-    - PYTHON=$(which python$(echo ${CI_JOB_NAME} | sed 's/.*:cp\(.\)\(.\).*/\1.\2/'))
+    # this build uses macports for the libraries and Python
+    - . /opt/local/share/macports/setupenv.bash
+    # find python
+    - PYTHON=$(which python$(echo ${CI_JOB_NAME} | sed 's/.*:cp\([0-9]\)\([0-9]\{1,\}\).*/\1.\2/'))
     # Enter virtualenv so that we have a controlled version of Numpy
     - ${PYTHON} -m venv env
     - source env/bin/activate
@@ -952,11 +1051,14 @@ lalapps:conda:
     - ./00boot
     - ./configure
           ${ENABLE_NIGHTLY}
+          --with-relative-data-path="../../lalapps/data"
+          --without-fallback-data-path
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
           --enable-python
           --enable-swig-python
+          --enable-minimal-ephem
           PYTHON=$(which python)
           LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j${CPU_COUNT} wheel
@@ -977,9 +1079,6 @@ lalapps:conda:
   image: containers.ligo.org/lscsoft/lalsuite-manylinux/manylinux2014_x86_64
 
 # Build wheels for all supported platforms
-wheel:cp36-cp36m-manylinux2014:
-  extends:
-    - .wheel:manylinux2014
 wheel:cp37-cp37m-manylinux2014:
   extends:
     - .wheel:manylinux2014
@@ -987,20 +1086,32 @@ wheel:cp38-cp38-manylinux2014:
   extends:
     - .wheel:manylinux2014
 wheel:cp39-cp39-manylinux2014:
- extends:
-    - .wheel:manylinux2014
-wheel:cp36-cp36m-macosx:
   extends:
-    - .wheel:macos
+    - .wheel:manylinux2014
+wheel:cp310-cp310-manylinux2014:
+  extends:
+    - .wheel:manylinux2014
+  # see https://git.ligo.org/lscsoft/glue/-/merge_requests/83
+  allow_failure: true
 wheel:cp37-cp37m-macosx:
   extends:
     - .wheel:macos
 wheel:cp38-cp38-macosx:
   extends:
     - .wheel:macos
-wheel:cp39-cp39-macosx:
- extends:
+wheel:cp39-cp39-macosx:  # macOS wheel reference build
+  extends:
     - .wheel:macos
+  only:
+    refs:
+      - /^lalsuite-v.*$/
+      - web
+      - schedules
+wheel:cp310-cp310-macosx:
+  extends:
+     - .wheel:macos
+  # see https://git.ligo.org/lscsoft/glue/-/merge_requests/83
+  allow_failure: true
 
 # -- integration tests --------------------------
 #
@@ -1171,7 +1282,6 @@ icc:
   image: igwn/lalsuite-dev-icc:el7
   variables:
     CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave --disable-static --enable-intelfft"
-  allow_failure: true
 
 # -- upgrade tests ------------------------------
 #
@@ -1248,7 +1358,7 @@ upgrade:conda:linux:
     # properly index the newly built packages
     - conda index ${CONDA_BLD_PATH}
     # install latest release
-    - conda create -n upgrade-test
+    - mamba create -n upgrade-test
           python=${LALSUITE_PYTHON_VERSION}
           lal
           lalframe
@@ -1260,7 +1370,7 @@ upgrade:conda:linux:
           lalinference
           lalapps
     # install new packages
-    - conda update -n upgrade-test --use-local
+    - mamba update -n upgrade-test --use-local
           lal
           lalframe
           lalmetaio
@@ -1290,10 +1400,13 @@ upgrade:conda:linux:
       # `[skip platform]` in the commit message
       - $CI_COMMIT_MESSAGE =~ /\[skip platform\]/
 
-platform:debian:stretch:
+platform:debian:bullseye:
   extends:
     - .platform-test
-  image: igwn/lalsuite-dev:stretch-proposed
+  variables:
+    # disable the octave bindings as the version of SWIG on bullseye doesn't support the version of Octave
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig-python --enable-python"
+  image: igwn/lalsuite-dev:bullseye
 
 .platform-test:conda:
   extends:
@@ -1307,10 +1420,17 @@ platform:debian:stretch:
     - conda config --file ${CONDARC} --set always_yes yes
     - conda config --file ${CONDARC} --add channels conda-forge
     - conda info --all
+    # print the manual overrides in the config
     - conda config --show-sources
+    # then print the whole config
+    - conda config --show
     # install the dev environment for the default python version
-    - sed -i.tmp "s/- python$/- python ${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
-    - conda env create
+    - sed -i.tmp "s/- python$/- python=${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
+    # https://github.com/conda-forge/texlive-core-feedstock/issues/59
+    - if [[ "${CI_JOB_NAME}" == *"arm64"* ]]; then
+          sed -i.tmp "/texlive-core/d" ${ENVIRONMENT_FILE};
+      fi
+    - mamba env create
           --file ${ENVIRONMENT_FILE}
           --name lalsuite-platform-tests
           --quiet
@@ -1321,8 +1441,9 @@ platform:debian:stretch:
     - export CONFIGURE_FLAGS="${CONFIGURE_FLAGS} CPPFLAGS='${CPPFLAGS}'"
     # manually install packages that have circular dependencies upon lal
     # then forcibly remove lalsuite
-    - conda install --yes --quiet --name lalsuite-platform-tests
+    - mamba install --yes --quiet --name lalsuite-platform-tests
           python-ligo-lw
+    # need to use `conda` here, see https://github.com/mamba-org/mamba/issues/1239
     - conda uninstall --yes --quiet --name lalsuite-platform-tests --force-remove
           "liblal*"
           "lal*"
@@ -1333,10 +1454,23 @@ platform:conda:linux:
   extends:
     - .platform-test:conda
 
-platform:conda:macos:
+platform:conda:macos-x86_64:
   extends:
     - .platform-test:conda
     - .macos
+  # if the build fails during the distcheck phase then subsequent builds will
+  # fail with permissions errors, reset the permissions
+  after_script:
+    - chmod -R +w $CI_PROJECT_DIR
+
+platform:conda:macos-arm64:
+  extends:
+    - .platform-test:conda
+    - .macos-arm64
+  # if the build fails during the distcheck phase then subsequent builds will
+  # fail with permissions errors, reset the permissions
+  after_script:
+    - chmod -R +w $CI_PROJECT_DIR
 
 # -- docker -------------------------------------
 #
@@ -1550,6 +1684,35 @@ coverage:
       # `[skip lint]` in the commit message
       - $CI_COMMIT_MESSAGE =~ /\[skip lint\]/
 
+lint:gitignore:
+  extends:
+    - .build-job
+    - .lint
+  image: igwn/lalsuite-dev:el7
+  variables:
+    # TODO: this can be removed when all packages require python>=3
+    #       on their own
+    PYTHON: "python3"
+  needs: []
+  script:
+    - ./00boot
+    - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-swig --enable-python
+    # build in source directory
+    - make -j${CPU_COUNT} VERBOSE=1 all
+    # check for build files not in .gitignore
+    - |
+      if git status --short | grep '^?? ' >/dev/null 2>&1; then
+        echo 'ERROR: the following files need to be added to .gitignore:'
+        git status --short
+        exit 1
+      fi
+  artifacts:
+    # upload some files to debug failures
+    paths:
+      - config.log
+      - Makefile
+    when: on_failure
+
 lint:python:
   extends:
     - .python:flake8
@@ -1682,14 +1845,14 @@ deploy:wheel:
     - pip install twine
     - twine upload wheelhouse/*
   needs:
-    - wheel:cp36-cp36m-manylinux2014
     - wheel:cp37-cp37m-manylinux2014
     - wheel:cp38-cp38-manylinux2014
     - wheel:cp39-cp39-manylinux2014
-    - wheel:cp36-cp36m-macosx
+    - wheel:cp310-cp310-manylinux2014
     - wheel:cp37-cp37m-macosx
     - wheel:cp38-cp38-macosx
     - wheel:cp39-cp39-macosx
+    #- wheel:cp310-cp310-macosx
   only:
     refs:
       - /^lalsuite-v.*$/

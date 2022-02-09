@@ -62,6 +62,8 @@ src/frametools/lalapps_frjoin
 src/frametools/lalapps_frread
 src/frametools/lalapps_frview
 src/frametools/lalapps_xtefitstoframe
+src/hwinjection/lalapps_psinject
+src/hwinjection/online_psinject
 src/inspiral/ihope_ssipe.ini
 src/inspiral/lalapps_blindinj
 src/inspiral/lalapps_calcexpsnr
@@ -192,6 +194,7 @@ src/pulsar/FITSTools/lalapps_fits_table_list
 src/pulsar/Fscan/lalapps_Fscan_checkCoherencePath
 src/pulsar/Fscan/lalapps_Fscan_coherenceFromSFTs
 src/pulsar/Fscan/lalapps_Fscan_findCombs
+src/pulsar/Fscan/lalapps_Fscan_forestOfLines
 src/pulsar/Fscan/lalapps_Fscan_fscanDriver
 src/pulsar/Fscan/lalapps_Fscan_plotSpecAvgOutput
 src/pulsar/Fscan/lalapps_spec_avg
@@ -233,8 +236,6 @@ src/pulsar/Hough/lalapps_MultiWeights
 src/pulsar/Hough/lalapps_ValidateChi2Test
 src/pulsar/Hough/lalapps_ValidateHoughMulti
 src/pulsar/HoughFstat/lalapps_HierarchicalSearch
-src/pulsar/HWInjection/lalapps_psinject
-src/pulsar/HWInjection/online_psinject
 src/pulsar/MakeData/*.testdir
 src/pulsar/MakeData/compareTS
 src/pulsar/MakeData/lalapps_MakeSFTDAG

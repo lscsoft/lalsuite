@@ -71,7 +71,7 @@ Breaks: lalinspiral-dev (<< 2.0.0-2~)
 Package: lalinspiral-python3
 Depends: python3-lalinspiral, ${misc:Depends}
 Architecture: all
-Priority: extra
+Priority: optional
 Section: oldlibs
 Description: transitional package
  lalinspiral-python3 was renamed python3-lalinspiral,

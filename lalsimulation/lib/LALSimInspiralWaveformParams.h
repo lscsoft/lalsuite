@@ -38,6 +38,7 @@ int XLALSimInspiralWaveformParamsInsertTidalQuadrupolarFMode2(LALDict *params, R
 int XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode1(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertTidalOctupolarFMode2(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertLscorr(LALDict *params, INT4 value);
+int XLALSimInspiralWaveformParamsInsertFinalFreq(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertdQuadMon1(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertdQuadMon2(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertRedshift(LALDict *params, REAL8 value);
@@ -181,6 +182,7 @@ REAL8 XLALSimInspiralWaveformParamsLookupdQuadMon2(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupRedshift(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupEccentricityFreq(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupLscorr(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupFinalFreq(LALDict *params);
 
 /* IMRPhenomX Parameters */
 INT4 XLALSimInspiralWaveformParamsLookupPhenomXInspiralPhaseVersion(LALDict *params);

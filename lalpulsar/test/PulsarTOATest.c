@@ -192,20 +192,20 @@ int main(int argc, char *argv[])
   /* initialise the solar system ephemerides */
   const char *earthFile = NULL, *sunFile = NULL;
   if( par.ephem == NULL ){ /* default to DE405 */
-    earthFile = TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz";
-    sunFile   = TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz";
+    earthFile = TEST_PKG_DATA_DIR "earth00-40-DE405.dat.gz";
+    sunFile   = TEST_PKG_DATA_DIR "sun00-40-DE405.dat.gz";
   }
   else if( strcmp(par.ephem, "DE200") == 0 ){
-    earthFile = TEST_PKG_DATA_DIR "earth00-19-DE200.dat.gz";
-    sunFile   = TEST_PKG_DATA_DIR "sun00-19-DE200.dat.gz";
+    earthFile = TEST_PKG_DATA_DIR "earth00-40-DE200.dat.gz";
+    sunFile   = TEST_PKG_DATA_DIR "sun00-40-DE200.dat.gz";
   }
   else if( strcmp(par.ephem, "DE405") == 0 ){
-    earthFile = TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz";
-    sunFile   = TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz";
+    earthFile = TEST_PKG_DATA_DIR "earth00-40-DE405.dat.gz";
+    sunFile   = TEST_PKG_DATA_DIR "sun00-40-DE405.dat.gz";
   }
   else if( strcmp(par.ephem, "DE421") == 0 ){
-    earthFile = TEST_PKG_DATA_DIR "earth00-19-DE421.dat.gz";
-    sunFile   = TEST_PKG_DATA_DIR "sun00-19-DE421.dat.gz";
+    earthFile = TEST_PKG_DATA_DIR "earth00-40-DE421.dat.gz";
+    sunFile   = TEST_PKG_DATA_DIR "sun00-40-DE421.dat.gz";
   }
   else {
     XLAL_ERROR_MAIN ( XLAL_EINVAL, "Invalid ephem='%s', allowed are 'DE200', 'DE405' or 'DE421'\n", par.ephem );

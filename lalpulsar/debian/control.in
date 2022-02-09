@@ -62,7 +62,7 @@ Replaces: lalpulsar-dev (<< 2.1.0-2~)
 Package: lalpulsar-python3
 Depends: python3-lalpulsar, ${misc:Depends}
 Architecture: all
-Priority: extra
+Priority: optional
 Section: oldlibs
 Description: transitional package
  lalpulsar-python3 was renamed python3-lalpulsar,

@@ -6656,7 +6656,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
         skip=0
         try:
             xmldoc = utils.load_filename(siminspiral,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
-            tbl = lsctables.table.get_table(xmldoc, "sim_inspiral")
+            tbl = lsctables.SimInspiralTable.get_table(xmldoc)
             if event>0:
                 tbl=tbl[event]
             else:

@@ -159,8 +159,6 @@ vcs_info_sources = LALInspiralVCSInfoHeader.h
 build_info_source = LALInspiralBuildInfoHeader.h
 build_info_dependencies = $(liblalinspiral_la_DEPENDENCIES)
 
-LDADD = liblalinspiral.la
-
 EXTRA_DIST = \
 	LALInspiralBankH4Figures.png \
 	LALInspiralBankHCoarse2.png \

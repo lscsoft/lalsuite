@@ -113,11 +113,11 @@ def cluster_events(events, testfunc, clusterfunc, sortkeyfunc = None, bailoutfun
 				# inner_did_cluster indicates if events[i] has
 				# changed
 				inner_did_cluster = False
-				for j, event_j in enumerate(events[i + 1:], 1):
+				for j, event_j in enumerate(events[i + 1:], i + 1):
 					if event_j is not None:
 						if not testfunc(events[i], event_j):
 							events[i] = clusterfunc(events[i], event_j)
-							events[i + j] = None
+							events[j] = None
 							inner_did_cluster = True
 						elif (sortkeyfunc is not None) and bailoutfunc(events[i], event_j):
 							break

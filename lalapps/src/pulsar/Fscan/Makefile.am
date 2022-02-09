@@ -1,8 +1,7 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
@@ -16,11 +15,6 @@ lalapps_spec_avg_long_SOURCES = spec_avg_long.c
 
 if HAVE_PYTHON
 pybin_scripts = \
-	lalapps_Fscan_checkCoherencePath \
-	lalapps_Fscan_coherenceFromSFTs \
-	lalapps_Fscan_findCombs \
-	lalapps_Fscan_fscanDriver \
-	lalapps_Fscan_plotSpecAvgOutput \
 	$(END_OF_LIST)
 endif
 

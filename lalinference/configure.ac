@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[3.0.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[3.0.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([lib/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[22])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalinference${LIBMAJOR}.install:debian/liblalinference.install.in \
@@ -76,9 +77,9 @@ AM_INIT_AUTOMAKE([ \
 # version requirements
 MIN_GLUE_VERSION="1.54.1"
 MIN_LAL_VERSION="7.1.0"
-MIN_LALMETAIO_VERSION="2.0.0"
-MIN_LALFRAME_VERSION="1.5.0"
-MIN_LALSIMULATION_VERSION="3.0.0"
+MIN_LALMETAIO_VERSION="2.1.0"
+MIN_LALFRAME_VERSION="1.6.0"
+MIN_LALSIMULATION_VERSION="3.1.0"
 MIN_LALBURST_VERSION="1.5.3"
 MIN_LALINSPIRAL_VERSION="2.0.0"
 MIN_LALPULSAR_VERSION="3.1.0"
@@ -153,6 +154,7 @@ LALSUITE_ENABLE_MODULE([MPI])
 
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED

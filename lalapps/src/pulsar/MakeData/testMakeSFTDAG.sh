@@ -13,7 +13,7 @@ echo "${seg1_tstart} ${seg1_tend}" > $segs
 echo "${seg2_tstart} ${seg2_tend}" >> $segs
 
 ## run lalapps_MakeSFTDAG to create a fake output
-cmdline="lalapps_MakeSFTDAG -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . -N H1:GDS-CALIB_STRAIN_CLEAN -F ${fmin} -B ${Band} -D 3 -X TEST -w 3 -P 0.5 -m 1 -A ligo.sim.o4.cw.explore.test -U albert.einstein -H -g segs"
+cmdline="lalapps_MakeSFTDAG -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . -N H1:GDS-CALIB_STRAIN_CLEAN -F ${fmin} -B ${Band} -D 3 -X TEST -w 3 -P 0.5 -m 1 -A ligo.sim.o4.cw.explore.test -U albert.einstein -H -g segs -J /tmp/path/to"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -54,7 +54,7 @@ fi
 
 testdatafindcontent=$(<$datafindsub)
 datafindfilecontent="universe = vanilla
-executable = gw_data_find
+executable = /usr/bin/gw_data_find
 arguments = -r \$ENV(LIGO_DATAFIND_SERVER) --observatory \$(observatory) --url-type file --gps-start-time \$(gpsstarttime) --gps-end-time \$(gpsendtime) --lal-cache --type \$(inputdatatype) 
 getenv = True
 accounting_group = ligo.sim.o4.cw.explore.test
@@ -75,7 +75,7 @@ fi
 
 testsftsubcontent=$(<$sftsub)
 sftsubfilecontent="universe = vanilla
-executable = lalapps_MakeSFTs
+executable = /tmp/path/to/lalapps_MakeSFTs
 arguments = \$(argList)
 getenv = True
 accounting_group = ligo.sim.o4.cw.explore.test

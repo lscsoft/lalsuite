@@ -66,6 +66,7 @@ const char *XLALFrameUFrChanQueryName_FrameC_(const LALFrameUFrChan * channel);
 double XLALFrameUFrChanQueryTimeOffset_FrameC_(const LALFrameUFrChan * channel);
 int XLALFrameUFrChanSetSampleRate_FrameC_(LALFrameUFrChan * channel, double sampleRate);
 int XLALFrameUFrChanSetTimeOffset_FrameC_(LALFrameUFrChan * channel, double timeOffset);
+int XLALFrameUFrChanSetTRange_FrameC_(LALFrameUFrChan * channel, double tRange);
 int XLALFrameUFrChanVectorAlloc_FrameC_(LALFrameUFrChan * channel, int dtype, size_t ndata);
 int XLALFrameUFrChanVectorCompress_FrameC_(LALFrameUFrChan * channel, int compressLevel);
 int XLALFrameUFrChanVectorExpand_FrameC_(LALFrameUFrChan * channel);

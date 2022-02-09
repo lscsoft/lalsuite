@@ -510,71 +510,71 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 
 	for(; sngl_inspiral; sngl_inspiral = sngl_inspiral->next) {
 		if( XLALFilePrintf(xml->fp,"%s%ld,\"%s\",\"%s\",\"%s\",%d,%d,%.16g,%d,%d,%.16g,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%u,%.8g,%u,%.8g,%u,%.16g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%.8g,%ld",
-			   row_head,
-			   sngl_inspiral->process_id,
-			   sngl_inspiral->ifo,
-			   sngl_inspiral->search,
-			   sngl_inspiral->channel,
-			   sngl_inspiral->end.gpsSeconds,
-			   sngl_inspiral->end.gpsNanoSeconds,
-			   sngl_inspiral->end_time_gmst,
-			   sngl_inspiral->impulse_time.gpsSeconds,
-			   sngl_inspiral->impulse_time.gpsNanoSeconds,
-			   sngl_inspiral->template_duration,
-			   sngl_inspiral->event_duration,
-			   sngl_inspiral->amplitude,
-			   sngl_inspiral->eff_distance,
-			   sngl_inspiral->coa_phase,
-			   sngl_inspiral->mass1,
-			   sngl_inspiral->mass2,
-			   sngl_inspiral->mchirp,
-			   sngl_inspiral->mtotal,
-			   sngl_inspiral->eta,
-			   sngl_inspiral->kappa,
-			   sngl_inspiral->chi,
-			   sngl_inspiral->tau0,
-			   sngl_inspiral->tau2,
-			   sngl_inspiral->tau3,
-			   sngl_inspiral->tau4,
-			   sngl_inspiral->tau5,
-			   sngl_inspiral->ttotal,
-			   sngl_inspiral->psi0,
-			   sngl_inspiral->psi3,
-			   sngl_inspiral->alpha,
-			   sngl_inspiral->alpha1,
-			   sngl_inspiral->alpha2,
-			   sngl_inspiral->alpha3,
-			   sngl_inspiral->alpha4,
-			   sngl_inspiral->alpha5,
-			   sngl_inspiral->alpha6,
-			   sngl_inspiral->beta,
-			   sngl_inspiral->f_final,
-			   sngl_inspiral->snr,
-			   sngl_inspiral->chisq,
-			   sngl_inspiral->chisq_dof,
-			   sngl_inspiral->bank_chisq,
-			   sngl_inspiral->bank_chisq_dof,
-			   sngl_inspiral->cont_chisq,
-			   sngl_inspiral->cont_chisq_dof,
-			   sngl_inspiral->sigmasq,
-			   sngl_inspiral->rsqveto_duration,
-			   sngl_inspiral->Gamma[0],
-			   sngl_inspiral->Gamma[1],
-			   sngl_inspiral->Gamma[2],
-			   sngl_inspiral->Gamma[3],
-			   sngl_inspiral->Gamma[4],
-			   sngl_inspiral->Gamma[5],
-			   sngl_inspiral->Gamma[6],
-			   sngl_inspiral->Gamma[7],
-			   sngl_inspiral->Gamma[8],
-			   sngl_inspiral->Gamma[9],
-			   sngl_inspiral->spin1x,  
-			   sngl_inspiral->spin1y,
-			   sngl_inspiral->spin1z,
-			   sngl_inspiral->spin2x,
-			   sngl_inspiral->spin2y,
-			   sngl_inspiral->spin2z,
-			   sngl_inspiral->event_id ) < 0)
+			row_head,
+			sngl_inspiral->process_id,
+			sngl_inspiral->ifo,
+			sngl_inspiral->search,
+			sngl_inspiral->channel,
+			sngl_inspiral->end.gpsSeconds,
+			sngl_inspiral->end.gpsNanoSeconds,
+			sngl_inspiral->end_time_gmst,
+			sngl_inspiral->impulse_time.gpsSeconds,
+			sngl_inspiral->impulse_time.gpsNanoSeconds,
+			sngl_inspiral->template_duration,
+			sngl_inspiral->event_duration,
+			sngl_inspiral->amplitude,
+			sngl_inspiral->eff_distance,
+			sngl_inspiral->coa_phase,
+			sngl_inspiral->mass1,
+			sngl_inspiral->mass2,
+			sngl_inspiral->mchirp,
+			sngl_inspiral->mtotal,
+			sngl_inspiral->eta,
+			sngl_inspiral->kappa,
+			sngl_inspiral->chi,
+			sngl_inspiral->tau0,
+			sngl_inspiral->tau2,
+			sngl_inspiral->tau3,
+			sngl_inspiral->tau4,
+			sngl_inspiral->tau5,
+			sngl_inspiral->ttotal,
+			sngl_inspiral->psi0,
+			sngl_inspiral->psi3,
+			sngl_inspiral->alpha,
+			sngl_inspiral->alpha1,
+			sngl_inspiral->alpha2,
+			sngl_inspiral->alpha3,
+			sngl_inspiral->alpha4,
+			sngl_inspiral->alpha5,
+			sngl_inspiral->alpha6,
+			sngl_inspiral->beta,
+			sngl_inspiral->f_final,
+			sngl_inspiral->snr,
+			sngl_inspiral->chisq,
+			sngl_inspiral->chisq_dof,
+			sngl_inspiral->bank_chisq,
+			sngl_inspiral->bank_chisq_dof,
+			sngl_inspiral->cont_chisq,
+			sngl_inspiral->cont_chisq_dof,
+			sngl_inspiral->sigmasq,
+			sngl_inspiral->rsqveto_duration,
+			sngl_inspiral->Gamma[0],
+			sngl_inspiral->Gamma[1],
+			sngl_inspiral->Gamma[2],
+			sngl_inspiral->Gamma[3],
+			sngl_inspiral->Gamma[4],
+			sngl_inspiral->Gamma[5],
+			sngl_inspiral->Gamma[6],
+			sngl_inspiral->Gamma[7],
+			sngl_inspiral->Gamma[8],
+			sngl_inspiral->Gamma[9],
+			sngl_inspiral->spin1x,  
+			sngl_inspiral->spin1y,
+			sngl_inspiral->spin1z,
+			sngl_inspiral->spin2x,
+			sngl_inspiral->spin2y,
+			sngl_inspiral->spin2z,
+			sngl_inspiral->event_id ) < 0)
 			XLAL_ERROR(XLAL_EFUNC);
 		row_head = ",\n\t\t\t";
 	}
@@ -675,6 +675,170 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	return 0;
 }
 
+/**
+ * Write a sim_inspiral table to an XML file.
+ */
+
+int XLALWriteLIGOLwXMLSimInspiralTable(
+		LIGOLwXMLStream *xml,
+		const SimInspiralTable *sim_inspiral
+		)
+
+{
+
+	const char *row_head = "\n\t\t\t";
+
+	if(xml->table != no_table) {
+		XLALPrintError("a table is still open");
+		XLAL_ERROR(XLAL_EFAILED);
+	}
+
+	/* table header */
+
+	XLALClearErrno();
+	XLALFilePuts("\t<Table Name=\"sim_inspiral:table\">\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:waveform\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:geocent_end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:geocent_end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:h_end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:h_end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:l_end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:l_end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:g_end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:g_end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:t_end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:t_end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:v_end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:v_end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:end_time_gmst\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:source\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:mass1\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:mass2\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:mchirp\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:eta\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:distance\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:longitude\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:latitude\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:inclination\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:coa_phase\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:polarization\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:psi0\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:psi3\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:alpha\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:alpha1\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:alpha2\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:alpha3\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:alpha4\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:alpha5\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:alpha6\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:beta\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:spin1x\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:spin1y\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:spin1z\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:spin2x\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:spin2y\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:spin2z\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:theta0\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:phi0\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:f_lower\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:f_final\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:eff_dist_h\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:eff_dist_l\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:eff_dist_g\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:eff_dist_t\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:eff_dist_v\" Type=\"real_4\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:numrel_mode_min\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:numrel_mode_max\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:numrel_data\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:amp_order\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:taper\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:bandpass\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_inspiral:simulation_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Stream Name=\"sim_inspiral:table\" Type=\"Local\" Delimiter=\",\">\n", xml->fp);
+
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* rows */
+
+	for(; sim_inspiral; sim_inspiral = sim_inspiral->next) {
+		if(XLALFilePrintf(xml->fp, "%s%ld,\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%.16g,\"%s\",%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%16g,%d,%d,\"%s\",%d,\"%s\",%d,%ld",
+					row_head,
+					sim_inspiral->process_id,
+					sim_inspiral->waveform,
+					sim_inspiral->geocent_end_time.gpsSeconds,
+					sim_inspiral->geocent_end_time.gpsNanoSeconds,
+					sim_inspiral->h_end_time.gpsSeconds,
+					sim_inspiral->h_end_time.gpsNanoSeconds,
+					sim_inspiral->l_end_time.gpsSeconds,
+					sim_inspiral->l_end_time.gpsNanoSeconds,
+					sim_inspiral->g_end_time.gpsSeconds,
+					sim_inspiral->g_end_time.gpsNanoSeconds,
+					sim_inspiral->t_end_time.gpsSeconds,
+					sim_inspiral->t_end_time.gpsNanoSeconds,
+					sim_inspiral->v_end_time.gpsSeconds,
+					sim_inspiral->v_end_time.gpsNanoSeconds,
+					sim_inspiral->end_time_gmst,
+					sim_inspiral->source,
+					sim_inspiral->mass1,
+					sim_inspiral->mass2,
+					sim_inspiral->mchirp,
+					sim_inspiral->eta,
+					sim_inspiral->distance,
+					sim_inspiral->longitude,
+					sim_inspiral->latitude,
+					sim_inspiral->inclination,
+					sim_inspiral->coa_phase,
+					sim_inspiral->polarization,
+					sim_inspiral->psi0,
+					sim_inspiral->psi3,
+					sim_inspiral->alpha,
+					sim_inspiral->alpha1,
+					sim_inspiral->alpha2,
+					sim_inspiral->alpha3,
+					sim_inspiral->alpha4,
+					sim_inspiral->alpha5,
+					sim_inspiral->alpha6,
+					sim_inspiral->beta,
+					sim_inspiral->spin1x,
+					sim_inspiral->spin1y,
+					sim_inspiral->spin1z,
+					sim_inspiral->spin2x,
+					sim_inspiral->spin2y,
+					sim_inspiral->spin2z,
+					sim_inspiral->theta0,
+					sim_inspiral->phi0,
+					sim_inspiral->f_lower,
+					sim_inspiral->f_final,
+					sim_inspiral->eff_dist_h,
+					sim_inspiral->eff_dist_l,
+					sim_inspiral->eff_dist_g,
+					sim_inspiral->eff_dist_t,
+					sim_inspiral->eff_dist_v,
+					sim_inspiral->numrel_mode_min,
+					sim_inspiral->numrel_mode_max,
+					sim_inspiral->numrel_data,
+					sim_inspiral->amp_order,
+					sim_inspiral->taper,
+					sim_inspiral->bandpass,
+					sim_inspiral->simulation_id
+						) < 0)
+						XLAL_ERROR(XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(XLALFilePuts("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
+
 
 /**
  * Write a time_slide table to an XML file.
@@ -682,9 +846,9 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 
 
 int XLALWriteLIGOLwXMLTimeSlideTable(
-	LIGOLwXMLStream *xml,
-	const TimeSlide *time_slide
-)
+		LIGOLwXMLStream *xml,
+		const TimeSlide *time_slide
+		)
 {
 	const char *row_head = "\n\t\t\t";
 

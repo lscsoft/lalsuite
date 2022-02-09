@@ -46,6 +46,7 @@ for f in 1 2 3 4 5 6 7; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== firstline ===\n%s\n=== firstline_ref ===\n%s\n---' "${firstline}" "${firstline_ref}"
         exit 1
     fi
 done
@@ -59,6 +60,7 @@ for f in 1 2 3 4 5 6 7; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== lastline ===\n%s\n=== lastline_ref ===\n%s\n---' "${lastline}" "${lastline_ref}"
         exit 1
     fi
 done
@@ -72,6 +74,7 @@ for f in 1 2; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== firstline ===\n%s\n=== firstline_ref ===\n%s\n---' "${firstline}" "${firstline_ref}"
         exit 1
     fi
 done
@@ -85,6 +88,7 @@ for f in 1 2; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== lastline ===\n%s\n=== lastline_ref ===\n%s\n---' "${lastline}" "${lastline_ref}"
         exit 1
     fi
 done
@@ -98,6 +102,7 @@ for f in 1 2; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== firstline ===\n%s\n=== firstline_ref ===\n%s\n---' "${firstline}" "${firstline_ref}"
         exit 1
     fi
 done
@@ -111,6 +116,7 @@ for f in 1 2; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== lastline ===\n%s\n=== lastline_ref ===\n%s\n---' "${lastline}" "${lastline_ref}"
         exit 1
     fi
 done
@@ -124,6 +130,7 @@ for f in 1 2 3 4; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== firstline ===\n%s\n=== firstline_ref ===\n%s\n---' "${firstline}" "${firstline_ref}"
         exit 1
     fi
 done
@@ -137,6 +144,7 @@ for f in 1 2 3 4; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== lastline ===\n%s\n=== lastline_ref ===\n%s\n---' "${lastline}" "${lastline_ref}"
         exit 1
     fi
 done
@@ -169,6 +177,7 @@ for f in 1 2 3 4 5; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== firstline ===\n%s\n=== firstline_ref ===\n%s\n---' "${firstline}" "${firstline_ref}"
         exit 1
     fi
 done
@@ -182,6 +191,7 @@ for f in 1 2 3 4 5; do
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== lastline ===\n%s\n=== lastline_ref ===\n%s\n---' "${lastline}" "${lastline_ref}"
         exit 1
     fi
 done

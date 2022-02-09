@@ -7,6 +7,7 @@ test_programs +=
 test_scripts += \
 	test_computePSD.py \
 	test_heterodyned_model.py \
+	test_lineFileParser.py \
 	test_ReadSFDB.py \
 	test_simulateCW.py \
 	$(END_OF_LIST)

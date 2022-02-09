@@ -4501,11 +4501,11 @@ int main( int argc, char *argv[] )
   XLALSimInspiralAssignIDs ( injections.simInspiralTable, 0, 0 );
   if ( injections.simInspiralTable )
   {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_inspiral_table ),
-        &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlfp, injections,
-          sim_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
+    int retcode = XLALWriteLIGOLwXMLSimInspiralTable(&xmlfp, injections.simInspiralTable);
+    if ( retcode != XLAL_SUCCESS )
+    {
+        XLAL_ERROR(retcode);
+    }
   }
 
   LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );

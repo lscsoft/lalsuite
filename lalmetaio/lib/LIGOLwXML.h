@@ -117,6 +117,11 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 	const SimBurst *
 );
 
+int XLALWriteLIGOLwXMLSimInspiralTable(
+	LIGOLwXMLStream *,
+	const SimInspiralTable *
+);
+
 int XLALWriteLIGOLwXMLTimeSlideTable(
 	LIGOLwXMLStream *,
 	const TimeSlide *

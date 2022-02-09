@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALPulsar],[3.1.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[3.1.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([lib/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[24])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalpulsar${LIBMAJOR}.install:debian/liblalpulsar.install.in \
@@ -68,8 +69,8 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.1.0"
-MIN_LALFRAME_VERSION="1.5.0"
+MIN_LAL_VERSION="7.1.5"
+MIN_LALFRAME_VERSION="1.6.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
 
@@ -120,8 +121,12 @@ LALSUITE_PROG_COMPILERS
 LALSUITE_CHECK_SIMD
 LALPULSAR_CHECK_ALTIVEC
 
+# install only a minimal set of ephemeris files
+LALPULSAR_INSTALL_MINIMAL_EPHEM
+
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED

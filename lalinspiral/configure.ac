@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInspiral],[2.0.3.1],[lal-discuss@ligo.org])
+AC_INIT([LALInspiral],[2.0.5.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([lib/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalinspiral${LIBMAJOR}.install:debian/liblalinspiral.install.in \
@@ -69,9 +70,9 @@ AM_INIT_AUTOMAKE([ \
 
 # version requirements
 MIN_LAL_VERSION="7.1.0"
-MIN_LALFRAME_VERSION="1.5.0"
-MIN_LALMETAIO_VERSION="2.0.0"
-MIN_LALSIMULATION_VERSION="3.0.0"
+MIN_LALFRAME_VERSION="1.6.0"
+MIN_LALMETAIO_VERSION="2.1.0"
+MIN_LALSIMULATION_VERSION="3.1.0"
 MIN_LALBURST_VERSION="1.5.3"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
@@ -115,6 +116,7 @@ LALSUITE_PROG_COMPILERS
 
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED

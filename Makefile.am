@@ -8,6 +8,7 @@ ACLOCAL_AMFLAGS = -I gnuscripts
 
 SUBDIRS = @subdirs@ wheel
 
+.PHONY: wheel
 wheel:
 	$(MAKE) -C wheel wheel
 
@@ -24,7 +25,7 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps) $(lalsuite_package_configure_deps)
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) $(top_srcdir)/configure $(ac_configure_args)
 
-.PHONY: cscopelist-subdirs wheel
+.PHONY: cscopelist-subdirs
 cscopelist-am: cscopelist-subdirs
 cscopelist-subdirs:
 	for subdir in @subdirs@; do \

@@ -1,6 +1,11 @@
-CODENAME=lalapps_heterodyne_pulsar
+# this script will be used as part of 'make test' to make sure that the
+# lalapps_heterodyne_pulsar code outputs the correct result. It will run
+# the code in all its 4 modes and compare the results to standard
+# archived files
 
-FRAMEFILE=H-CW_Injection-875206560-120.gwf
+CODENAME=${LAL_TEST_BUILDDIR}/lalapps_heterodyne_pulsar
+
+FRAMEFILE=${LAL_TEST_SRCDIR}/H-CW_Injection-875206560-120.gwf
 DATASTART=875206560
 DATAEND=`expr $DATASTART + 120`
 DETECTOR=H1
@@ -102,7 +107,13 @@ fi
 FILELIST=$FRAMEFILE
 cp $FILELIST ${LOCATION}/framedir
 
-${PYTHON} ./make_frame_cache.py --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
+# use make_frame_cache to make a frame cache file
+if [ ! -f ${LAL_TEST_SRCDIR}/make_frame_cache.py ]; then
+  echo Error! ${LAL_TEST_SRCDIR}/make_frame_cache.py does not exist!
+  exit 2
+fi
+
+${PYTHON} ${LAL_TEST_SRCDIR}/make_frame_cache.py --frame-dir ${LOCATION}/framedir --gps-start-time $DATASTART --gps-end-time $DATAEND --output-file cachefile
 if [ $? != "0" ]; then
   echo Could not create the cache file!
   exit 2
@@ -219,7 +230,7 @@ fi
 mv $COARSEFILE $COARSEFILE.off
 
 # set calibration files
-RESPFILE=H1response.txt
+RESPFILE=${LAL_TEST_SRCDIR}/H1response.txt
 
 ################### FINE HETERODYNES #######################
 

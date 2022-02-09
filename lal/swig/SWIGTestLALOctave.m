@@ -1011,12 +1011,32 @@ disp("checking typemaps for strings and double pointers ...");
 sts = new_swig_lal_test_struct();
 [ptr_ptr, ptr_null_ptr, null_ptr_ptr] = swig_lal_test_typemaps_string_ptrptr("abcde", "", [], sts, 0, []);
 assert(swig_this(ptr_ptr) == swig_this(sts));
-assert(swig_this(ptr_null_ptr) == swig_this(sts));
+assert(swig_this(ptr_null_ptr) != 0);
 assert(swig_this(null_ptr_ptr) == 0);
 clear sts;
 clear ptr_ptr;
 clear ptr_null_ptr;
 clear null_ptr_ptr;
+LALCheckMemoryLeaks();
+ptr_ptr = 0;
+for i = 1:9
+  ptr_ptr = swig_lal_test_typemaps_ptrptr(ptr_ptr);
+  assert(swig_this(ptr_ptr) != 0);
+  assert(ptr_ptr.n == i);
+endfor
+clear ptr_ptr;
+ptr_ptr_list = {0};
+for i = 1:9
+  ptr_ptr_list{end+1} = swig_lal_test_typemaps_ptrptr(ptr_ptr_list{end});
+  assert(swig_this(ptr_ptr_list{end}) != 0);
+  assert(ptr_ptr_list{end}.n == i);
+endfor
+while length(ptr_ptr_list) > 0
+  assert(swig_this(ptr_ptr_list{end}) != 0);
+  assert(ptr_ptr_list{end}.n == i);
+  ptr_ptr_list = ptr_ptr_list(2:end);
+endwhile
+clear ptr_ptr_list;
 LALCheckMemoryLeaks();
 disp("PASSED typemaps for strings and double pointers");
 
@@ -1072,6 +1092,11 @@ assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.
 t1 += 812345667.75;
 assert(strcmp(t1.__str__(), "812345678.25"));
 assert(new_LIGOTimeGPS(t1.__str__()) == t1);
+assert(strcmp(LIGOTimeGPS(1100000000).asutcstr(), "Fri, 14 Nov 2014 11:33:04 +0000"));   # lalapps_tconvert -u -R
+assert(strcmp(LIGOTimeGPS(1100000000, 100).asutcstr(), "Fri, 14 Nov 2014 11:33:04.0000001 +0000"));
+assert(strcmp(LIGOTimeGPS(0, 0).asutcstr(), "Sun, 06 Jan 1980 00:00:00 +0000"));
+assert(strcmp(LIGOTimeGPS(-1, 0).asutcstr(), "Sat, 05 Jan 1980 23:59:59 +0000"));
+assert(strcmp(LIGOTimeGPS(0, -1).asutcstr(), "Sat, 05 Jan 1980 23:59:59.999999999 +0000"));
 assert(t1.ns() == 812345678250000000);
 t4struct = new_swig_lal_test_gps;
 t4struct.t = 1234.5;
@@ -1091,11 +1116,13 @@ end_try_catch
 assert(!expected_exception);
 disp("*** above should be error messages from LIGOTimeGPS constructor ***");
 assert(swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == swig_lal_test_noptrgps(1234.5))
+disp("*** below should be error messages from LIGOTimeGPS constructor ***");
 try
   LIGOTimeGPS([]);
   expected_exception = 1;
 end_try_catch
 assert(!expected_exception);
+disp("*** above should be error messages from LIGOTimeGPS constructor ***");
 clear t0;
 clear t1;
 clear t2;
