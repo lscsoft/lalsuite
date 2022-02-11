@@ -443,6 +443,7 @@ default:
     # copy local packages from conda-bld dir to a new channel
     - if [ -d "${CONDA_BLD_PATH}" ]; then
           LOCAL_CHANNEL="${CI_PROJECT_DIR}/local-builds";
+          rm -rf "${LOCAL_CHANNEL}";
           cp -rv "${CONDA_BLD_PATH}" "${LOCAL_CHANNEL}";
           conda index "${LOCAL_CHANNEL}" --no-progress;
           conda config --file ${CONDARC} --add channels "${LOCAL_CHANNEL}";
