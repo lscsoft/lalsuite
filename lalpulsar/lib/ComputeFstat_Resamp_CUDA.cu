@@ -43,7 +43,7 @@
 ///
 /// \defgroup ComputeFstat_Resamp_CUDA_cu Module ComputeFstat_Resamp_CUDA.cu
 /// \ingroup ComputeFstat_h
-/// \brief Implements a CUDA version of the \a Resamp FFT-based resampling algorithm for
+/// \brief Implements a CUDA version \cite DunnEtAl2022 of the \a Resamp FFT-based resampling algorithm for
 /// computing the \f$\mathcal{F}\f$-statistic \cite JKS98 .
 ///
 
