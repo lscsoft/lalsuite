@@ -169,11 +169,15 @@ done
 ## do a simple test
 echo -n "Comparing first line of spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt to reference ... "
 firstline=`awk 'NR == 1 { print }' spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt`
-firstline_ref='10.00000000 2.1753e-45 4.66401e-23 1.84129e-45 4.29102e-23'
-for f in 1 2 3 4 5; do
+firstline_ref='10.00000000 2.1753e-45 4.66401e-23 1.84129e-45 4.29102e-23 0'
+for f in 1 2 3 4 5 6; do
     field=`echo "$firstline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$firstline_ref" | awk '{ print $'"$f"' }'`
-    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    if f < 6; then
+       cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    else
+	cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
+    fi
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
         printf '=== firstline ===\n%s\n=== firstline_ref ===\n%s\n---' "${firstline}" "${firstline_ref}"
@@ -183,11 +187,15 @@ done
 echo "OK"
 echo -n "Comparing last line of spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt to reference ... "
 lastline=`awk 'NR == 18001 { print }' spec_avg_long/spec_10.00_20.00_H1_0_2000000000.txt`
-lastline_ref='20.00000000 6.68982e-45 8.17913e-23 6.43827e-45 8.02388e-23'
-for f in 1 2 3 4 5; do
+lastline_ref='20.00000000 6.68982e-45 8.17913e-23 6.43827e-45 8.02388e-23 0'
+for f in 1 2 3 4 5 6; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
-    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    if f < 6; then
+       cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    else
+	cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
+    fi
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
         printf '=== lastline ===\n%s\n=== lastline_ref ===\n%s\n---' "${lastline}" "${lastline_ref}"
