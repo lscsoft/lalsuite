@@ -77,6 +77,7 @@ int write_SFTdata (const char *fname, const SFTtype *sft);
 int XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2, const VectorComparison *tol );
 static COMPLEX8 testSignal ( REAL8 t, REAL8 sigmaN );
 
+/* These three functions were copied from the SFTutils module after being deprecated, to keep this test going. */
 int extractBandFromSFT ( SFTtype **outSFT, const SFTtype *inSFT, REAL8 fMin, REAL8 Band );
 SFTVector *extractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band );
 REAL8 TSFTfromDFreq ( REAL8 dFreq );
