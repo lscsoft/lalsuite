@@ -17,7 +17,7 @@ linefreq="50.005"
 TSFT=1800
 NSFTs=3
 duration=$(echo "$NSFTs * $TSFT" | bc)
-nBins=$(echo "($fBand * $TSFT)/1 + 1" | bc)
+nBins=$(echo "($fBand * $TSFT)/1" | bc)
 
 # ---------- define comparison functions
 awk_reim_abs='{printf "%.6e", sqrt($1*$1+$2*$2) }'
@@ -190,7 +190,7 @@ echo
 test_cleaning "50.002222222 0.002222222 4 0.0 0.0  /*comb*/" "4"
 
 echo
-test_cleaning "50.005 0.0 1 0.0 0.0 /*line1*/\n50.01 0.0 1 0.0 0.0 /*line2*/" "2"
+test_cleaning "50.005 0.0 1 0.0 0.0 /*line1*/\n50.009 0.0 1 0.0 0.0 /*line2*/" "2"
 
 echo
 test_cleaning "50.005 0.0 1 1.0 1.0 /*very_wide_line*/" $nBins

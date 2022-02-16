@@ -689,13 +689,13 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 
 
 /**
- * Load the given frequency-band <tt>[fMin, fMax]</tt> (inclusively) from the SFT-files listed in the
+ * Load the given frequency-band <tt>[fMin, fMax)</tt> (half-open) from the SFT-files listed in the
  * SFT-'catalogue' ( returned by XLALSFTdataFind() ).
  *
  * Note: \a fMin (or \a fMax) is allowed to be set to \c -1, which means to read in all
  * Frequency-bins from the lowest (or up to the highest) found in all SFT-files of the catalog.
  *
- * Note 2: The returned frequency-interval is guaranteed to contain <tt>[fMin, fMax]</tt>,
+ * Note 2: The returned frequency-interval is guaranteed to contain <tt>[fMin, fMax)</tt>,
  * but is allowed to be larger, as it must be an interval of discrete frequency-bins as found
  * in the SFT-file.
  *
@@ -782,7 +782,7 @@ XLALLoadSFTs (const SFTCatalog *catalog,   /**< The 'catalogue' of SFTs to load 
   if (fMax < 0)
     lastbin = maxbin;
   else {
-    lastbin = XLALRoundFrequencyUpToSFTBin ( fMax, deltaF );
+    lastbin = XLALRoundFrequencyUpToSFTBin ( fMax, deltaF ) - 1;
     if((lastbin == 0) && (fMax != 0)) {
       XLALPrintError("ERROR: last bin to read is 0 (fMax: %f, deltaF: %f)\n", fMax, deltaF);
       XLALLOADSFTSERROR(XLAL_EINVAL);

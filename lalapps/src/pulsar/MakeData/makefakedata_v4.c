@@ -464,14 +464,13 @@ main(int argc, char *argv[])
 	  /* get SFTs from timeseries */
           XLAL_CHECK ( (SFTs = XLALSignalToSFTs (Tseries, &sftParams)) != NULL, XLAL_EFUNC );
 
-	  /* extract requested band if necessary (eg in the exact-signal case) */
-	  if ( uvar.exactSignal )
-	    {
-	      SFTVector *outSFTs;
-              XLAL_CHECK ( (outSFTs = XLALExtractBandFromSFTVector ( SFTs, GV.fmin_eff, GV.fBand_eff )) != NULL, XLAL_EFUNC );
-	      XLALDestroySFTVector ( SFTs );
-	      SFTs = outSFTs;
-	    }
+          /* extract requested band */
+          {
+            SFTVector *outSFTs;
+            XLAL_CHECK ( (outSFTs = XLALExtractStrictBandFromSFTVector ( SFTs, uvar.fmin, uvar.Band )) != NULL, XLAL_EFUNC );
+            XLALDestroySFTVector ( SFTs );
+            SFTs = outSFTs;
+          }
 
           /* generate comment string */
           CHAR *logstr;
@@ -700,6 +699,9 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLAL_CHECK ( uvar->Band >= 0, XLAL_EDOM, "Invalid negative frequency band Band=%f!\n\n", uvar->Band );
 
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
+  // Note: this band is only used for internal data operations; ultimately SFTs covering
+  // the half-open interval uvar->[fmin,fmin+Band) are returned to the user using
+  // XLALExtractStrictBandFromSFTVector()
   if ( XLALUserVarWasSet( &uvar->outSFTbname ) )
     {
       UINT4 firstBin, numBins;
