@@ -194,7 +194,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       fMin = ts->f0;
       fSamp = 1.0 / dt;
       fBand = 0.5 * fSamp;
-      XLAL_CHECK ( ( dataParams->fMin >= fMin ) && ( dataParams->Band <= fBand ), XLAL_EINVAL, "Requested fMin=%f and fBand=%f are not covered by what the input timeseries can provide (fMin=%f, fBand=%f).", dataParams->fMin, dataParams->Band, fMin, fBand );
+      XLAL_CHECK ( ( dataParams->fMin >= fMin ) && ( dataParams->fMin + dataParams->Band <= fMin + fBand ), XLAL_EINVAL, "Requested fMin=%f and fBand=%f are not covered by what the input timeseries can provide (fMin=%f, fBand=%f).", dataParams->fMin, dataParams->Band, fMin, fBand );
     }
 
   const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[detectorIndex];
