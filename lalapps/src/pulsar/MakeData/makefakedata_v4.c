@@ -699,6 +699,9 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLAL_CHECK ( uvar->Band >= 0, XLAL_EDOM, "Invalid negative frequency band Band=%f!\n\n", uvar->Band );
 
   /* ---------- for SFT output: calculate effective fmin and Band ---------- */
+  // Note: this band is only used for internal data operations; ultimately SFTs covering
+  // the half-open interval uvar->[fmin,fmin+Band) are returned to the user using
+  // XLALExtractStrictBandFromSFTVector()
   if ( XLALUserVarWasSet( &uvar->outSFTbname ) )
     {
       UINT4 firstBin, numBins;

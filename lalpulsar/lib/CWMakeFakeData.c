@@ -202,6 +202,9 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   REAL8 Tsft = timestamps->deltaT;
 
   // if SFT output requested: need *effective* fMin and Band consistent with SFT bins
+  // Note: this band is only used for internal data operations; ultimately SFTs covering
+  // the half-open interval dataParams->[fMin,fMin+Band) are returned to the user using
+  // XLALExtractStrictBandFromSFTVector()
   if ( SFTvect != NULL )
     {
       UINT4 firstBinEff, numBinsEff;

@@ -1858,6 +1858,11 @@ XLALSFTAdd ( SFTtype *a,		/**< [in/out] SFT to be added to */
  * The 'fudge region' allowing for numerical noise is eps= 10*LAL_REAL8_EPS ~2e-15
  * relative deviation: ie if the SFT contains a bin at 'fi', then we consider for example
  * "fMin == fi" if  fabs(fi - fMin)/fi < eps.
+ *
+ * Note: this function is most useful for internal operations, e.g. where a generated
+ * time series needs to be over-sampled to cover the SFT frequency band of interest.
+ * Ultimately SFTs covering a half-open interval [fMinIn,BandIn) should be returned to
+ * the user using XLALExtractStrictBandFromSFTVector().
  */
 int
 XLALFindCoveringSFTBins ( UINT4 *firstBin,	///< [out] effective lower frequency-bin fMinEff = firstBin/Tsft
