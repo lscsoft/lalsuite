@@ -77,6 +77,11 @@ int write_SFTdata (const char *fname, const SFTtype *sft);
 int XLALCompareSFTs ( const SFTtype *sft1, const SFTtype *sft2, const VectorComparison *tol );
 static COMPLEX8 testSignal ( REAL8 t, REAL8 sigmaN );
 
+/* These three functions were copied from the SFTutils module after being deprecated, to keep this test going. */
+int extractBandFromSFT ( SFTtype **outSFT, const SFTtype *inSFT, REAL8 fMin, REAL8 Band );
+SFTVector *extractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band );
+REAL8 TSFTfromDFreq ( REAL8 dFreq );
+
 /*----------------------------------------------------------------------*/
 /* Main Function starts here */
 /*----------------------------------------------------------------------*/
@@ -124,7 +129,7 @@ test_XLALSFTVectorToLFT ( void )
   REAL8 out_fMin = 3;
   REAL8 out_Band = 1;
   SFTVector *sftsBand;
-  XLAL_CHECK ( (sftsBand = XLALExtractBandFromSFTVector ( sfts0, out_fMin, out_Band )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (sftsBand = extractBandFromSFTVector ( sfts0, out_fMin, out_Band )) != NULL, XLAL_EFUNC );
   XLALDestroySFTVector ( sfts0 );
 
   // ----- 1) compute FFT on original REAL4 timeseries -----
@@ -143,7 +148,7 @@ test_XLALSFTVectorToLFT ( void )
 
   // ----- extract frequency band of interest
   SFTtype *lftR4 = NULL;
-  XLAL_CHECK ( XLALExtractBandFromSFT ( &lftR4, lft0, out_fMin, out_Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( extractBandFromSFT ( &lftR4, lft0, out_fMin, out_Band ) == XLAL_SUCCESS, XLAL_EFUNC );
   for ( UINT4 k=0; k < lftR4->data->length; k ++ ) {
     lftR4->data->data[k] *= dt_R4;
   }
@@ -155,7 +160,7 @@ test_XLALSFTVectorToLFT ( void )
 
   // ----- re-extract frequency band of interest
   SFTtype *lftSFTs = NULL;
-  XLAL_CHECK ( XLALExtractBandFromSFT ( &lftSFTs, lftSFTs0, out_fMin, out_Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( extractBandFromSFT ( &lftSFTs, lftSFTs0, out_fMin, out_Band ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   if ( lalDebugLevel & LALINFO )
   {   // ----- write debug output
@@ -326,7 +331,7 @@ test_XLALSincInterpolateSFT ( void )
 
   REAL8 Band = 0.5/dt - f0;
   SFTtype *sft = NULL;
-  XLAL_CHECK ( XLALExtractBandFromSFT ( &sft, &tmp, f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( extractBandFromSFT ( &sft, &tmp, f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyCOMPLEX8Vector ( fft );
 
 
@@ -334,7 +339,7 @@ test_XLALSincInterpolateSFT ( void )
   tmp.deltaF = df0padded;
   tmp.data = fft0padded;
   SFTtype *sft0padded = NULL;
-  XLAL_CHECK ( XLALExtractBandFromSFT ( &sft0padded, &tmp, f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( extractBandFromSFT ( &sft0padded, &tmp, f0, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLALDestroyCOMPLEX8Vector ( fft0padded );
 
   // ---------- interpolate input SFT onto frequency bins of padded-ts FFT for comparison
@@ -347,7 +352,7 @@ test_XLALSincInterpolateSFT ( void )
   REAL8 BandOut = (numBinsOut-1) * df0padded;
 
   SFTtype *sftUpsampled = NULL;
-  XLAL_CHECK ( XLALExtractBandFromSFT ( &sftUpsampled, sft0padded, fMin + 0.5*df0padded, BandOut - df0padded ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( extractBandFromSFT ( &sftUpsampled, sft0padded, fMin + 0.5*df0padded, BandOut - df0padded ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   SFTtype *sftInterpolated;
   XLAL_CHECK ( (sftInterpolated = XLALSincInterpolateSFT ( sft, fMin, df0padded, numBinsOut, Dterms )) != NULL, XLAL_EFUNC );
@@ -535,3 +540,88 @@ write_SFTdata (const char *fname, const SFTtype *sft)
   return XLAL_SUCCESS;
 
 } // write_SFTdata()
+
+SFTVector *
+extractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
+                               REAL8 fMin,		///< [in] lower end of frequency interval to return
+                               REAL8 Band		///< [in] band width of frequency interval to return
+                               )
+{
+  XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input SFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input SFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
+  XLAL_CHECK_NULL ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  UINT4 numSFTs = inSFTs->length;
+
+  SFTVector *ret;
+  XLAL_CHECK_NULL ( (ret = XLALCreateSFTVector ( numSFTs, 0 )) != NULL, XLAL_EFUNC );
+
+  for ( UINT4 i = 0; i < numSFTs; i ++ )
+    {
+      SFTtype *dest = &(ret->data[i]);
+      SFTtype *src =  &(inSFTs->data[i]);
+
+      XLAL_CHECK_NULL ( extractBandFromSFT ( &dest, src, fMin, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    } /* for i < numSFTs */
+
+  /* return final SFT-vector */
+  return ret;
+
+} /* extractBandFromSFTVector() */
+
+int
+extractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re-alloced as required)
+                         const SFTtype *inSFT,	///< [in] input SFT
+                         REAL8 fMin,		///< [in] lower end of frequency interval to return
+                         REAL8 Band		///< [in] band width of frequency interval to return
+                         )
+{
+  XLAL_CHECK ( outSFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( inSFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( inSFT->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
+  XLAL_CHECK ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  REAL8 df      = inSFT->deltaF;
+  REAL8 Tsft    = TSFTfromDFreq ( df );
+
+  REAL8 fMinSFT    = inSFT->f0;
+  UINT4 numBinsSFT = inSFT->data->length;
+  UINT4 firstBinSFT= round ( fMinSFT / df );	// round to closest bin
+  UINT4 lastBinSFT = firstBinSFT + ( numBinsSFT - 1 );
+
+  // find 'covering' SFT-band to extract
+  UINT4 firstBinExt, numBinsExt;
+  XLAL_CHECK ( XLALFindCoveringSFTBins ( &firstBinExt, &numBinsExt, fMin, Band, Tsft ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UINT4 lastBinExt = firstBinExt + ( numBinsExt - 1 );
+
+  XLAL_CHECK ( firstBinExt >= firstBinSFT && (lastBinExt <= lastBinSFT), XLAL_EINVAL,
+               "Requested frequency-bins [%f,%f]Hz = [%d, %d] not contained within SFT's [%f, %f]Hz = [%d,%d].\n",
+               fMin, fMin + Band, firstBinExt, lastBinExt, fMinSFT, fMinSFT + (numBinsSFT-1) * df, firstBinSFT, lastBinSFT );
+
+  INT4 firstBinOffset = firstBinExt - firstBinSFT;
+
+  if ( (*outSFT) == NULL ) {
+    XLAL_CHECK ( ((*outSFT) = XLALCalloc(1, sizeof(*(*outSFT)))) != NULL, XLAL_ENOMEM );
+  }
+  if ( (*outSFT)->data == NULL ) {
+    XLAL_CHECK ( ((*outSFT)->data = XLALCreateCOMPLEX8Vector ( numBinsExt )) != NULL, XLAL_EFUNC );
+  }
+  if ( (*outSFT)->data->length != numBinsExt ) {
+    XLAL_CHECK ( ((*outSFT)->data->data = XLALRealloc ( (*outSFT)->data->data, numBinsExt * sizeof((*outSFT)->data->data[0]))) != NULL, XLAL_ENOMEM );
+    (*outSFT)->data->length = numBinsExt;
+  }
+
+  COMPLEX8Vector *ptr = (*outSFT)->data;	// keep copy to data-pointer
+  (*(*outSFT)) = (*inSFT);			// copy complete header
+  (*outSFT)->data = ptr;	  		// restore data-pointer
+  (*outSFT)->f0 = firstBinExt * df ;	  	// set correct new fMin
+
+  /* copy the relevant part of the data */
+  memcpy ( (*outSFT)->data->data, inSFT->data->data + firstBinOffset, numBinsExt * sizeof( (*outSFT)->data->data[0] ) );
+
+  return XLAL_SUCCESS;
+
+} // extractBandFromSFT()

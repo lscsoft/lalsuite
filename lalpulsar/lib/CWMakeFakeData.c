@@ -194,7 +194,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       fMin = ts->f0;
       fSamp = 1.0 / dt;
       fBand = 0.5 * fSamp;
-      XLAL_CHECK ( ( dataParams->fMin >= fMin ) && ( dataParams->Band <= fBand ), XLAL_EINVAL, "Requested fMin=%f and fBand=%f are not covered by what the input timeseries can provide (fMin=%f, fBand=%f).", dataParams->fMin, dataParams->Band, fMin, fBand );
+      XLAL_CHECK ( ( dataParams->fMin >= fMin ) && ( dataParams->fMin + dataParams->Band <= fMin + fBand ), XLAL_EINVAL, "Requested fMin=%f and fBand=%f are not covered by what the input timeseries can provide (fMin=%f, fBand=%f).", dataParams->fMin, dataParams->Band, fMin, fBand );
     }
 
   const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[detectorIndex];
@@ -202,6 +202,9 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   REAL8 Tsft = timestamps->deltaT;
 
   // if SFT output requested: need *effective* fMin and Band consistent with SFT bins
+  // Note: this band is only used for internal data operations; ultimately SFTs covering
+  // the half-open interval dataParams->[fMin,fMin+Band) are returned to the user using
+  // XLALExtractStrictBandFromSFTVector()
   if ( SFTvect != NULL )
     {
       UINT4 firstBinEff, numBinsEff;
@@ -375,23 +378,9 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       SFTVector *sftVect;
       XLAL_CHECK ( (sftVect = XLALMakeSFTsFromREAL8TimeSeries ( outTS, timestamps, dataParams->SFTWindowType, dataParams->SFTWindowBeta)) != NULL, XLAL_EFUNC );
 
-      // extract effective band from this, if user requested a smaller band
-      if ( ( dataParams->fMin > fMin ) || ( dataParams->Band < fBand ) )
-        {
-          XLAL_CHECK ( ((*SFTvect) = XLALExtractBandFromSFTVector ( sftVect, dataParams->fMin, dataParams->Band )) != NULL, XLAL_EFUNC );
-          XLALDestroySFTVector ( sftVect );
-        }
-      // or for faster-sampled output SFTs
-      else if ( n1_fSamp != n0_fSamp )
-        {
-          XLAL_CHECK ( ((*SFTvect) = XLALExtractBandFromSFTVector ( sftVect, fMin, fBand )) != NULL, XLAL_EFUNC );
-          XLALDestroySFTVector ( sftVect );
-        }
-      // or return the full vector
-      else
-        {
-          (*SFTvect) = sftVect;
-        }
+      // extract requested band
+      XLAL_CHECK ( ((*SFTvect) = XLALExtractStrictBandFromSFTVector ( sftVect, dataParams->fMin, dataParams->Band )) != NULL, XLAL_EFUNC );
+      XLALDestroySFTVector ( sftVect );
     } // if SFTvect
 
   // return timeseries if requested
