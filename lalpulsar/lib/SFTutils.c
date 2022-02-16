@@ -1386,6 +1386,9 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
  * This uses the conventions in XLALFindCoveringSFTBins() to determine
  * the 'effective' frequency-band to extract.
  *
+ * \warning This convention is deprecated. Please use either
+ * XLALExtractStrictBandFromSFTVector(), or else XLALSFTVectorResizeBand()
+ * if you really need a covering frequency band.
  */
 SFTVector *
 XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
@@ -1393,6 +1396,8 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
                                REAL8 Band		///< [in] band width of frequency interval to return
                                )
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALExtractStrictBandFromSFTVector");
+
   XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input SFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input SFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
@@ -1427,6 +1432,9 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
  * This uses the conventions in XLALFindCoveringSFTBins() to determine
  * the 'effective' frequency-band to extract.
  *
+ * \warning This convention is deprecated. Please use either
+ * XLALExtractStrictBandFromSFT(), or else XLALSFTResizeBand()
+ * if you really need a covering frequency band.
  */
 int
 XLALExtractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re-alloced as required)
@@ -1435,6 +1443,8 @@ XLALExtractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re
                          REAL8 Band		///< [in] band width of frequency interval to return
                          )
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALExtractStrictBandFromSFT");
+
   XLAL_CHECK ( outSFT != NULL, XLAL_EINVAL );
   XLAL_CHECK ( inSFT != NULL, XLAL_EINVAL );
   XLAL_CHECK ( inSFT->data != NULL, XLAL_EINVAL );
@@ -1492,6 +1502,9 @@ XLALExtractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re
  * This uses the conventions in XLALFindCoveringSFTBins() to determine
  * the 'effective' frequency-band to extract.
  *
+ * \warning This convention is deprecated. Please use either
+ * XLALExtractStrictBandFromMultiSFTVector(), or else XLALMultiSFTVectorResizeBand()
+ * if you really need a covering frequency band.
  */
 MultiSFTVector *
 XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in] input MultiSFTs
@@ -1499,6 +1512,8 @@ XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in]
                                     REAL8 Band                         ///< [in] band width of frequency interval to return
                                     )
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALExtractStrictBandFromMultiSFTVector");
+
   XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input MultiSFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input MultiSFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
