@@ -1518,7 +1518,7 @@ XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in]
 
 
 /**
- * Return a vector of SFTs containing only the bins in [fMin, fMin+Band).
+ * Return a copy of a vector of SFTs containing only the bins in [fMin, fMin+Band).
  */
 SFTVector *
 XLALExtractStrictBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
@@ -1551,7 +1551,7 @@ XLALExtractStrictBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SF
 } /* XLALExtractStrictBandFromSFTVector() */
 
 /**
- * Return an SFTs containing only the bins in [fMin, fMin+Band).
+ * Return a copy of an SFT containing only the bins in [fMin, fMin+Band).
  */
 int
 XLALExtractStrictBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re-alloced as required)
@@ -1607,7 +1607,7 @@ XLALExtractStrictBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed
 } // XLALExtractStrictBandFromSFT()
 
 /**
- * Return a MultiSFT vector containing only the bins in [fMin, fMin+Band).
+ * Return a copy of a MultiSFT vector containing only the bins in [fMin, fMin+Band).
  */
 MultiSFTVector *
 XLALExtractStrictBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in] input MultiSFTs
