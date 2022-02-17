@@ -1,6 +1,6 @@
-FROM igwn/base:buster
+FROM igwn/base:bullseye
 
-LABEL name="LALSuite Nightly - Debian Buster" \
+LABEL name="LALSuite Nightly - Debian Bullseye" \
       maintainer="Adam Mercer <adam.mercer@ligo.org>" \
       support="Not Supported"
 

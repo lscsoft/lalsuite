@@ -7,7 +7,7 @@ include:
   - local: '/.gitlab/ci/rules.yml'
 
 documentation:
-  image: igwn/lalsuite-dev:buster
+  image: igwn/lalsuite-dev:bullseye
   stage: documentation
   needs: []
   script:
@@ -29,7 +29,6 @@ documentation:
 
 pages:
   stage: deploy
-  image: igwn/lalsuite-dev:buster
   needs:
     - documentation
     - coverage

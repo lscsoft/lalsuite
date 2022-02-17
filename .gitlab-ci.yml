@@ -317,7 +317,7 @@ default:
   extends:
     - .debian:deb
     - .build-from-tarball
-  image: igwn/base:buster
+  image: igwn/base:bullseye
   variables:
     # tell debhelper to parallelise the build
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
@@ -1323,7 +1323,7 @@ upgrade:rpm:el7:
     # install new packages
     - yum -y upgrade
 
-upgrade:debian:buster:
+upgrade:debian:bullseye:
   extends:
     - .debuild
     - .upgrade-test
@@ -1541,7 +1541,7 @@ platform:conda:macos-arm64:
   extends:
     - .docker
   variables:
-    DOCKER_FILE: ".gitlab-ci-buster.Dockerfile"
+    DOCKER_FILE: ".gitlab-ci-bullseye.Dockerfile"
   before_script:
     - set -x
     # add deb packages to directory to pass to docker
@@ -1590,14 +1590,14 @@ docker:tags:el7:
     - .docker:el
     - .docker:tags
 
-# build a nightly container for Debian buster
-docker:nightly:buster:
+# build a nightly container for Debian bullseye
+docker:nightly:bullseye:
   extends:
     - .docker:debian
     - .docker:nightly
 
-# build a tagged container for Debian buster
-docker:tags:buster:
+# build a tagged container for Debian bullseye
+docker:tags:bullseye:
   extends:
     - .docker:debian
     - .docker:tags
