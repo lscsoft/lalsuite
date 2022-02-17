@@ -1060,8 +1060,8 @@ __global__ void CUDAApplyHetAMSrc(cuComplex *TStmp1_SRC_data,
   cuComplex signum = {1.0f - 2*(iSRC_al_j % 2), 0}; // alternating sign, avoid branching
   ei2piphase = cuCmulf(ei2piphase, signum);
 
-  TStmp1_SRC_data[iSRC_al_j] = {ei2piphase.x * a_al, ei2piphase.y * a_al};
-  TStmp2_SRC_data[iSRC_al_j] = {ei2piphase.x * b_al, ei2piphase.y * b_al};
+  TStmp1_SRC_data[iSRC_al_j] = make_cuComplex(ei2piphase.x * a_al, ei2piphase.y * a_al);
+  TStmp2_SRC_data[iSRC_al_j] = make_cuComplex(ei2piphase.x * b_al, ei2piphase.y * b_al);
 }
 
 __global__ void CUDASincInterp(cuComplex *out,
@@ -1083,7 +1083,7 @@ __global__ void CUDASincInterp(cuComplex *out,
   // samples outside of input timeseries are returned as 0
   if ( (t < 0) || (t > (numSamplesIn-1)*dt) )	// avoid any extrapolations!
     {
-      out[l] = {0, 0};
+      out[l] = make_cuComplex(0, 0);
       return;
     }
 
