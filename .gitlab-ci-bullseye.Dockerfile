@@ -5,7 +5,7 @@ LABEL name="LALSuite Nightly - Debian Bullseye" \
       support="Not Supported"
 
 # add debian packages to container
-COPY debs /srv/local-apt=repository
+COPY debs /srv/local-apt-repository
 
 # install debs & cleanup
 RUN apt-get update && \
