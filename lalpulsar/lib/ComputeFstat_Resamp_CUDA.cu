@@ -376,7 +376,7 @@ XLALSetupFstatResampCUDA ( void **method_data,
   UINT4 numSamplesFFT0 = (UINT4) ceil ( TspanFFT / dt_DET );      // we use ceil() so that we artificially widen the band rather than reduce it
   UINT4 numSamplesFFT = 0;
   if ( optArgs->resampFFTPowerOf2 ) {
-    numSamplesFFT = (UINT4) pow ( 2, ceil ( log2 ( numSamplesFFT0 ) ) );  // round numSamplesFFT up to next power of 2 for most effiecient FFT
+    numSamplesFFT = (UINT4) pow ( 2, ceil ( log2 ( (double) numSamplesFFT0 ) ) );  // round numSamplesFFT up to next power of 2 for most effiecient FFT
   } else {
     numSamplesFFT = (UINT4) 2 * ceil ( numSamplesFFT0 / 2 );	// always ensure numSamplesFFT is even
   }
@@ -784,7 +784,7 @@ XLALComputeFstatResampCUDA ( FstatResults* Fstats,
       // compute resampling timing model coefficients
       REAL8 tau0_Fbin  = (Tau->Copy + Tau->Norm + Tau->SumFabX + Tau->Fab2F) / NFbin;
       REAL8 tau0_spin  = Tau->Spin / (tiRS->Resolution * tiRS->NsampFFT );
-      REAL8 tau0_FFT   = Tau->FFT / (5.0 * tiRS->NsampFFT * log2(tiRS->NsampFFT));
+      REAL8 tau0_FFT   = Tau->FFT / (5.0 * tiRS->NsampFFT * log2((double) tiRS->NsampFFT));
 
       // update the averaged timing-model quantities
       tiGen->NCalls ++;	// keep track of number of Fstat-calls for timing
