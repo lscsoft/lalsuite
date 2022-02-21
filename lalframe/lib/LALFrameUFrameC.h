@@ -43,7 +43,7 @@ const char *XLALFrameUFrTOCQueryProcName_FrameC_(const LALFrameUFrTOC * toc, siz
 size_t XLALFrameUFrTOCQueryDetectorN_FrameC_(const LALFrameUFrTOC * toc);
 const char *XLALFrameUFrTOCQueryDetectorName_FrameC_(const LALFrameUFrTOC * toc, size_t det);
 void XLALFrameUFrameHFree_FrameC_(LALFrameUFrameH * frame);
-LALFrameUFrameH *XLALFrameUFrameHAlloc_FrameC_(const char *name, double start, double dt, int frnum);
+LALFrameUFrameH *XLALFrameUFrameHAlloc_FrameC_(const char *name, double start1, double start2, double dt, int frnum);
 LALFrameUFrameH *XLALFrameUFrameHRead_FrameC_(LALFrameUFrFile * stream, int pos);
 int XLALFrameUFrameHWrite_FrameC_(LALFrameUFrFile * stream, LALFrameUFrameH * frame);
 int XLALFrameUFrameHFrChanAdd_FrameC_(LALFrameUFrameH * frame, LALFrameUFrChan * channel);

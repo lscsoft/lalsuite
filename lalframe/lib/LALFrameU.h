@@ -482,11 +482,15 @@ void XLALFrameUFrameHFree(LALFrameUFrameH * frame);
 /**
  * @brief Allocate memory for a new frame header FrameH structure.
  * @param name Name for this FrameH structure.
- * @param start GPS start time in seconds for this FrameH structure.
+ * @param start1 First of two double precision floating point numbers specifying the GPS start time in seconds for this FrameH structure (to be added to start2).
+ * @param start2 Second of two double precision floating point numbers GPS start time in seconds for this FrameH structure (to be added to start1).
  * @param dt Duration in seconds for this FrameH structure.
  * @param frnum Number for this FrameH structure.
  * @return Pointer to a new FrameH structure.
  * @retval NULL Failure.
+ * @note To maintain precision, the start time is broken into two double
+ * precision floating point values, start1 and start2, which, when added
+ * together is the GPS start time in seconds.
  * @attention The calling routine is responsible for freeing the returned
  * pointer with XLALFrameUFrameHFree().
  * @sa Section 4.3.2.3 of
@@ -494,7 +498,7 @@ void XLALFrameUFrameHFree(LALFrameUFrameH * frame);
  * Gravitational Wave Detectors (IGWD)</em>
  * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
-LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start, double dt, int frnum);
+LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start1, double start2, double dt, int frnum);
 
 /**
  * @brief Read a frame header FrameH structure from a FrFile stream.
