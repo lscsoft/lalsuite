@@ -27,25 +27,83 @@ function check_average {
 timestamp1=818845553
 duration=86400
 numDraws=1000
-common_args="--IFO=H1 --dataStartGPS=$timestamp1 --dataDuration=$duration --numDraws=$numDraws --randSeed=1"
+common_args="--IFOs=H1 --dataStartGPS=$timestamp1 --dataDuration=$duration --numDraws=$numDraws --randSeed=1"
 
 ## lalapps_synthesizeTransientStats with a single square window should give the same results as lalapps_synthesizeLVStats
 
-synthLV="lalapps_synthesizeLVStats ${common_args} --computeBSGL=false"
-synthTS="lalapps_synthesizeTransientStats ${common_args} --injectWindow-type=rect --injectWindow-tauDays=1 --injectWindow-tauDaysBand=0 --injectWindow-t0Days=0 --injectWindow-t0DaysBand=0 --searchWindow-type=rect --searchWindow-tauDays=1 --searchWindow-tauDaysBand=0 --searchWindow-t0Days=0 --searchWindow-t0DaysBand=0"
+synthLVcode="lalapps_synthesizeLVStats"
+synthTScode="lalapps_synthesizeTransientStats"
+
+transient_args="--injectWindow-type=rect --injectWindow-tauDays=1 --injectWindow-tauDaysBand=0 --injectWindow-t0Days=0 --injectWindow-t0DaysBand=0 --searchWindow-type=rect --searchWindow-tauDays=1 --searchWindow-tauDaysBand=0 --searchWindow-t0Days=0 --searchWindow-t0DaysBand=0"
+
+CLsynthLV="$synthLVcode ${common_args} --computeBSGL=false"
+CLsynthTS="$synthTScode ${common_args} ${transient_args}"
 
 # --- first try with Gaussian noise
 
-${synthLV} --fixedSNR=0 --outputStats="synthLV_stats_g.dat"
-${synthTS} --fixedSNR=0 --outputStats="synthTS_stats_g.dat"
+cmdline="${CLsynthLV} --fixedSNR=0 --outputStats=synthLV_stats_H1_g.dat"
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$synthLVcode' ..."
+    exit 1
+fi
+cmdline="${CLsynthTS} --fixedSNR=0 --outputStats=synthTS_stats_H1_g.dat"
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$synthTScode' ..."
+    exit 1
+fi
 
-check_average "synthLV_stats_g.dat" 5 "2F" 4.0
-check_average "synthTS_stats_g.dat" 9 "2F" 4.0
+check_average "synthLV_stats_H1_g.dat" 5 "2F" 4.0
+check_average "synthTS_stats_H1_g.dat" 9 "2F" 4.0
 
 # --- now try with signals
 
-${synthLV} --fixedSNR=4 --outputStats="synthLV_stats_s.dat"
-${synthTS} --fixedSNR=4 --outputStats="synthTS_stats_s.dat"
+cmdline="${CLsynthLV} --fixedSNR=4 --outputStats=synthLV_stats_H1_s.dat"
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$synthLVcode' ..."
+    exit 1
+fi
+cmdline="${CLsynthTS} --fixedSNR=4 --outputStats=synthTS_stats_H1_s.dat"
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$synthTScode' ..."
+    exit 1
+fi
 
-check_average "synthLV_stats_s.dat" 5 "2F" 20.0
-check_average "synthTS_stats_s.dat" 9 "2F" 20.0
+check_average "synthLV_stats_H1_s.dat" 5 "2F" 20.0
+check_average "synthTS_stats_H1_s.dat" 9 "2F" 20.0
+
+# --- now try multi-IFO mode
+
+common_args="--IFOs=H1,L1 --dataStartGPS=$timestamp1 --dataDuration=$duration --numDraws=$numDraws --randSeed=1"
+cmdline="$synthTScode ${common_args} ${transient_args} --fixedSNR=4 --outputStats=synthTS_stats_H1L1_s.dat"
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$synthTScode' ..."
+    exit 1
+fi
+check_average "synthTS_stats_H1L1_s.dat" 9 "2F" 20.0
+
+# --- multi-IFO and timestampsfiles
+
+tsH1="ts_H1.txt"
+tsL1="ts_L1.txt"
+TSFT=1800
+Tend=$(($timestamp1 + $duration))
+for i in `seq $timestamp1 $TSFT $Tend`; do
+    echo "$i 0" >> ${tsH1}
+done
+for i in `seq $timestamp1 $TSFT $Tend`; do
+    echo "$(($i + 900)) 0" >> ${tsL1}
+done
+
+common_args="--IFOs=H1,L1 --timestampsFiles=$tsH1,$tsL1 --numDraws=$numDraws --randSeed=1"
+cmdline="$synthTScode ${common_args} ${transient_args} --fixedSNR=4 --outputStats=synthTS_stats_H1L1_s_TS.dat"
+echo $cmdline
+if ! eval "$cmdline"; then
+    echo "Error.. something failed when running '$synthTScode' ..."
+    exit 1
+fi
+check_average "synthTS_stats_H1L1_s_TS.dat" 9 "2F" 20.0

@@ -71,6 +71,14 @@
 #define CUBE(x) ((x)*(x)*(x))
 #define QUAD(x) ((x)*(x)*(x)*(x))
 
+/* define min/max macros if not already defined */
+#ifndef min
+#define min(a,b) ((a)<(b)?(a):(b))
+#endif
+#ifndef max
+#define max(a,b) ((a)>(b)?(a):(b))
+#endif
+
 /* ---------- local types ---------- */
 
 /** User-variables: can be set from config-file or command-line */
@@ -106,7 +114,8 @@ typedef struct {
   INT4  searchWindow_dtau;       /**< Step-size for search/marginalization over transient-window timescale, in seconds [Default:Tsft] */
 
   /* other parameters */
-  CHAR *IFO;		/**< IFO name */
+  CHAR *IFO;		/**< IFO name [deprecated] */
+  LALStringVector* IFOs; /**< list of detector-names "H1,H2,L1,.." or single detector*/
   INT4 dataStartGPS;	/**< data start-time in GPS seconds */
   INT4 dataDuration;	/**< data-span to generate */
   LALStringVector *timestampsFiles;	/**< per-detector file(s) with timestamps list */
@@ -508,6 +517,10 @@ XLALInitUserVars ( UserInput_t *uvar )
 #define DEFAULT_IFO "H1"
   uvar->IFO = XLALMalloc ( strlen(DEFAULT_IFO)+1 );
   strcpy ( uvar->IFO, DEFAULT_IFO );
+  if ( (uvar->IFOs = XLALCreateStringVector ( "H1", NULL )) == NULL ) {
+    LogPrintf (LOG_CRITICAL, "Call to XLALCreateStringVector() failed with xlalErrno = %d\n", xlalErrno );
+    XLAL_ERROR ( XLAL_ENOMEM );
+  }
 
   /* ---------- transient window defaults ---------- */
 #define DEFAULT_TRANSIENT "rect"
@@ -550,7 +563,8 @@ XLALInitUserVars ( UserInput_t *uvar )
 
   XLALRegisterUvarMember( AmpPriorType,	 	 INT4, 0,  OPTIONAL, "Enumeration of types of amplitude-priors: 0=physical, 1=canonical");
 
-  XLALRegisterUvarMember( IFO,	        STRING, 'I', OPTIONAL, "Detector: 'G1','L1','H1,'H2', 'V1', ... ");
+  XLALRegisterUvarMember( IFO,	        STRING, 0, DEPRECATED, "Detector: 'G1','L1','H1,'H2', 'V1', ... (use --IFOs instead)");
+  XLALRegisterUvarMember( IFOs,	        STRINGVector, 'I', OPTIONAL, "Comma-separated list of detectors, e.g. \"H1,H2,L1,G1, ...\" ");
   XLALRegisterUvarMember( dataStartGPS,	 	 INT4, 0,  OPTIONAL, "data start-time in GPS seconds");
   XLALRegisterUvarMember( dataDuration,	 	 INT4, 0,  OPTIONAL, "data-span to generate (in seconds)");
   XLALRegisterUvarMember( timestampsFiles,	        STRINGVector, 0,  OPTIONAL, "ALTERNATIVE: file(s) to read timestamps from (file-format: lines with <seconds> [<nanoseconds>]; nanoseconds currently ignored; only 1 detector/file currently supported)");
@@ -664,15 +678,16 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   }
 
   /* init detector info */
-  LALDetector *site;
-  if ( (site = XLALGetSiteInfo ( uvar->IFO )) == NULL ) {
-    XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, uvar->IFO );
-    XLAL_ERROR ( XLAL_EFUNC );
+  if ( XLALUserVarWasSet ( &uvar->IFO ) && XLALUserVarWasSet ( &uvar->IFOs ) ) {
+    XLALPrintError ("%s: Please do not use both the deprecated --IFO and the newer --IFOs option.\n", __func__ );
+    XLAL_ERROR ( XLAL_EINVAL );
   }
+  else if ( XLALUserVarWasSet ( &uvar->IFO ) ) {
+    strcpy(uvar->IFOs->data[0], uvar->IFO);
+  }
+  UINT4 numDetectors = uvar->IFOs->length;
   MultiLALDetector multiDet;
-  multiDet.length = 1;
-  multiDet.sites[0] = (*site); 	/* copy! */
-  XLALFree ( site );
+  XLAL_CHECK ( XLALParseMultiLALDetector ( &multiDet, uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* TIMESTAMPS: either from --startTime+duration OR --timestampsFiles */
   BOOLEAN have_startTime = XLALUserVarWasSet ( &uvar->dataStartGPS );
@@ -685,41 +700,43 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
   XLAL_CHECK ( !have_timestampsFiles || !have_startTime, XLAL_EINVAL, "--timestampsFiles incompatible with --dataStartGPS and --dataDuration}\n");
   MultiLIGOTimeGPSVector * multiTS;
   UINT4 numSteps = 0;
-  INT4 dataStartGPS = 0;
+  INT4 dataStartGPS = LAL_INT4_MAX;
+  INT4 dataEndGPS = 0;
   INT4 dataDuration = 0;
   /* now handle the two mutually-exclusive cases */
   if ( have_timestampsFiles )
     {
       /* NOTE: nanoseconds will be truncated! */
       XLAL_CHECK ( (multiTS = XLALReadMultiTimestampsFiles ( uvar->timestampsFiles )) != NULL, XLAL_EFUNC );
-      XLAL_CHECK ( (multiTS->length > 0) && (multiTS->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
-      XLAL_CHECK ( (multiTS->length == 1) , XLAL_EINVAL, "Can currently deal only with one --timestampsFiles entry for a single detector!\n" );
-      XLAL_CHECK ( (multiTS->data[0]->length > 0) && (multiTS->data[0]->data != NULL), XLAL_EINVAL, "Got empty timestamps-list for detector %s", uvar->IFO );
-      numSteps = multiTS->data[0]->length;
-      multiTS->data[0]->deltaT = uvar->TAtom; // Tsft information not given by timestamps-file
-      dataStartGPS = multiTS->data[0]->data[0].gpsSeconds;
-      dataDuration = uvar->TAtom + multiTS->data[0]->data[numSteps-1].gpsSeconds - dataStartGPS; // difference of last and first timestamp, plus one extra atom length
+      XLAL_CHECK ( (multiTS->length > 0) && (multiTS->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()" );
+      XLAL_CHECK ( (multiTS->length == numDetectors) , XLAL_EINVAL, "Number of timestamps files does not match number of IFOs! (%d!=%d)", multiTS->length, numDetectors );
+      for ( UINT4 X=0; X < numDetectors; X++ ) {
+          XLAL_CHECK ( (multiTS->data[X]->length > 0) && (multiTS->data[X]->data != NULL), XLAL_EINVAL, "Got empty timestamps-list for detector %s", uvar->IFOs->data[X] );
+          numSteps = multiTS->data[X]->length;
+          multiTS->data[X]->deltaT = uvar->TAtom; // Tsft information not given by timestamps-file
+          dataStartGPS = min(dataStartGPS, multiTS->data[X]->data[0].gpsSeconds);
+          dataEndGPS = max(dataEndGPS, multiTS->data[X]->data[numSteps-1].gpsSeconds);
+      }
+      dataDuration = uvar->TAtom + dataEndGPS - dataStartGPS; // difference of last and first timestamp, plus one extra atom length
     } // endif have_timestampsFiles
   else
     {
       /* init timestamps vector covering observation time */
-      XLAL_CHECK ( (multiTS = XLALCalloc ( 1, sizeof(*multiTS))) != NULL, XLAL_ENOMEM );
-      multiTS->length = 1;
-      XLAL_CHECK ( (multiTS->data = XLALCalloc (1, sizeof(*multiTS->data))) != NULL, XLAL_ENOMEM );
+      XLAL_CHECK ( (multiTS = XLALCreateMultiLIGOTimeGPSVector (numDetectors)) != NULL, XLAL_EINVAL, "XLALCreateMultiLIGOTimeGPSVector(%d) failed.", numDetectors );
       dataStartGPS = uvar->dataStartGPS;
       dataDuration = uvar->dataDuration;
       numSteps = (UINT4) ceil ( dataDuration / uvar->TAtom );
-      XLAL_CHECK ( (multiTS->data[0] = XLALCreateTimestampVector (numSteps)) != NULL, XLAL_EFUNC, "XLALCreateTimestampVector(%d) failed.", numSteps );
-      multiTS->data[0]->deltaT = uvar->TAtom;
-      UINT4 i;
-      for ( i=0; i < numSteps; i ++ )
-        {
-          UINT4 ti = dataStartGPS + i * uvar->TAtom;
-          multiTS->data[0]->data[i].gpsSeconds = ti;
-          multiTS->data[0]->data[i].gpsNanoSeconds = 0;
-        }
+      XLAL_CHECK ( numSteps>=2, XLAL_EINVAL, "Need timestamps covering at least 2 atoms!" );
+      for ( UINT4 X=0; X < numDetectors; X++ ) {
+          XLAL_CHECK ( (multiTS->data[X] = XLALCreateTimestampVector (numSteps)) != NULL, XLAL_EFUNC, "XLALCreateTimestampVector(%d) failed.", numSteps );
+          multiTS->data[X]->deltaT = uvar->TAtom;
+          for ( UINT4 i=0; i < numSteps; i ++ ) {
+              UINT4 ti = dataStartGPS + i * uvar->TAtom;
+              multiTS->data[X]->data[i].gpsSeconds = ti;
+              multiTS->data[X]->data[i].gpsNanoSeconds = 0;
+          }
+      }
     } // endif !have_noiseSFTs
-  XLAL_CHECK(numSteps>=2,XLAL_EINVAL,"Need timestamps covering at least 2 atoms!");
 
   /* get detector states */
   if ( (cfg->multiDetStates = XLALGetMultiDetectorStates ( multiTS, &multiDet, edat, 0.5 * uvar->TAtom )) == NULL ) {
