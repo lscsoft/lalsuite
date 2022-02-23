@@ -457,7 +457,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
           REAL8 noise_fmin    = desc->header.f0;
           REAL8 noise_dFreq   = desc->header.deltaF;
           UINT4 noise_numBins = desc->numBins;
-          REAL8 noise_band    = (noise_numBins-1) * noise_dFreq;
+          REAL8 noise_band    = noise_numBins * noise_dFreq;
           cfg->fminOut = noise_fmin;
           cfg->BandOut = noise_band;
         }
