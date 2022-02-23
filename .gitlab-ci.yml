@@ -355,6 +355,7 @@ default:
           --tool "apt-get -y -q -o Debug::pkgProblemResolver=yes --no-install-recommends"
           --install
           --remove
+    - rm -rfv *-build-deps_*
     # build packages
     - debuild
          -us -uc -r
