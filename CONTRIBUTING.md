@@ -168,6 +168,7 @@ Sections of the CI pipeline can be skipped by adding special key text to your co
 | `[skip coverage]`    | Skip coverage jobs                            |
 | `[skip debian]`      | Skip Debian build jobs (and their dependents) |
 | `[skip docs]`        | Skip documentation jobs                       |
+| `[skip docker]`      | Skip Docker build jobs                        |
 | `[skip integration]` | Skip integration test jobs                    |
 | `[skip lint]`        | Skip lint jobs                                |
 | `[skip platform]`    | Skip platform test jobs                       |
