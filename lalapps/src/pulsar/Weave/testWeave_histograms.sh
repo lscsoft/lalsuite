@@ -39,7 +39,7 @@ echo "=== Compare histogram to toplist ==="
 set -x
 lalapps_fits_table_list 'WeaveOut.fits[mean2F_hgrm]' | awk '/^#/ { next } { printf "%8.5f %8.5f %4i\n", $1, $2, $3}' > mean2F_hgrm.txt
 lalapps_fits_table_list 'WeaveOut.fits[mean2F_toplist]' | awk '/^#/ { next } { ++hgrm[int(10 * $5)] } END { for (j in hgrm) { printf "%8.5f %8.5f %4i\n", 0.1 * j, 0.1 * (j + 1), hgrm[j] } }' | sort -n > mean2F_hgrm_from_toplist.txt
-paste mean2F_hgrm.txt mean2F_hgrm_from_toplist.txt | awk '{ if ($1 != $4 || $2 != $5 || $3 - $6 > 2 || $6 - $3 > 2) { exit(1) } }'
+paste mean2F_hgrm.txt mean2F_hgrm_from_toplist.txt | awk '{ if ($1 != $4 || $2 != $5 || $3 - $6 > 3 || $6 - $3 > 3) { exit(1) } }'
 set +x
 echo
 set +e
