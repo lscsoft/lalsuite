@@ -978,46 +978,6 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] \c FstatResults struct
   return;
 } // XLALDestroyFstatResults()
 
-///
-/// Add +4 to any multi-detector or per-detector 2F values computed by XLALComputeFstat().
-///
-/// This is for compatibility with programs which expect this normalisation if SFTs do not
-/// contain noise, e.g. \c lalapps_ComputeFstatistic_v2 historically used to do so
-/// with the (now removed) \c --SignalOnly option.
-///
-int
-XLALAdd4ToFstatResults ( FstatResults* Fstats    ///< [in/out] \c FstatResults structure.
-                         )
-{
-  // Check input
-  XLAL_CHECK( Fstats != NULL, XLAL_EINVAL );
-
-  // Add +4 to multi-detector 2F array
-  if ( Fstats->whatWasComputed & FSTATQ_2F )
-    {
-      for ( UINT4 k = 0; k < Fstats->numFreqBins; ++k ) {
-        Fstats->twoF[k] += 4;
-      }
-    }
-  if ( Fstats->whatWasComputed & FSTATQ_2F_CUDA )
-    {
-      XLAL_ERROR ( XLAL_EINVAL, "Not implemented for FSTATQ_2F_CUDA" );
-    }
-
-  // Add +4 to 2F per detector arrays
-  if ( Fstats->whatWasComputed & FSTATQ_2F_PER_DET )
-    {
-      for ( UINT4 X = 0; X < Fstats->numDetectors; ++X ) {
-        for ( UINT4 k = 0; k < Fstats->numFreqBins; ++k ) {
-          Fstats->twoFPerDet[X][k] += 4;
-        }
-      }
-    }
-
-  return XLAL_SUCCESS;
-
-} // XLALAdd4ToFstatResults()
-
 
 /// Compute the \f$\mathcal{F}\f$-statistic from the complex \f$F_a\f$ and \f$F_b\f$ components
 /// and the antenna pattern matrix.
