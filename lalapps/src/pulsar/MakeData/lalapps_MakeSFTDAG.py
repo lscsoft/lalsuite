@@ -374,10 +374,16 @@ site = args.channel_name[0]
 # initialize count of nodes
 nodeCount = 0
 
+# Create .sub files
+path_to_dag_file = os.path.dirname(args.dag_file)
+dag_filename = os.path.basename(args.dag_file)
+datafind_sub = os.path.join(path_to_dag_file, 'datafind.sub')
+makesfts_sub = os.path.join(path_to_dag_file, 'MakeSFTs.sub')
+
 # create datafind.sub
-with open('datafind.sub','w') as datafindFID:
+with open(datafind_sub, 'w') as datafindFID:
     datafindLogFile = '{}/datafind_{}.log'.format(args.sub_log_path,
-                                                  args.dag_file)
+                                                  dag_filename)
     datafindFID.write('universe = vanilla\n')
     datafindFID.write('executable = {}\n'.format(dataFindExe))
     if not args.datafind_match:
@@ -403,9 +409,9 @@ with open('datafind.sub','w') as datafindFID:
     datafindFID.write('queue 1\n')
 
 # create MakeSFTs.sub
-with open('MakeSFTs.sub','w') as MakeSFTsFID:
+with open(makesfts_sub, 'w') as MakeSFTsFID:
     MakeSFTsLogFile = '{}/MakeSFTs_{}.log'.format(args.sub_log_path,
-                                                  args.dag_file)
+                                                  dag_filename)
     MakeSFTsFID.write('universe = vanilla\n')
     MakeSFTsFID.write('executable = {}\n'.format(makeSFTsExe))
     MakeSFTsFID.write('arguments = $(argList)\n')
@@ -424,7 +430,7 @@ with open('MakeSFTs.sub','w') as MakeSFTsFID:
     MakeSFTsFID.write('queue 1\n')
 
 # create the DAG file with the jobs to run
-with open(args.dag_file,'w') as dagFID:
+with open(args.dag_file, 'w') as dagFID:
     startTimeAllNodes = None
     firstSFTstartTime = 0 # need this for the synchronized start option
     nodeListIndex = 0

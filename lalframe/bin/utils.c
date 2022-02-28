@@ -48,7 +48,7 @@ LALFrameUFrameH *framedup(LALFrameUFrameH * frame)
     frnum = XLALFrameUFrameHQueryFrame(frame);
     run = XLALFrameUFrameHQueryRun(frame);
 
-    output = XLALFrameUFrameHAlloc(name, tip + tfp, dt, frnum);
+    output = XLALFrameUFrameHAlloc(name, tip, tfp, dt, frnum);
     XLALFrameUFrameHSetRun(output, run);
 
     return output;

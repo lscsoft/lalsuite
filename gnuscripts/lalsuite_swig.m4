@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 109
+# serial 110
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -350,11 +350,17 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
         min_swig_version_info="for Octave version ${octave_version}"
       ])
     ])
+    debian_version=[`cat /etc/debian_version 2>/dev/null`]
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.4.0],[
       LALSUITE_VERSION_COMPARE([${MIN_SWIG_VERSION}],[<],[4.0.2],[
-        # TODO: once SWIG 4.0.2 is released and widely available, replace 'min_swig_recommend_version' with 'MIN_SWIG_VERSION'
-        min_swig_recommend_version=4.0.2
-        min_swig_version_info="for Octave version ${octave_version}"
+        # Debian Buster backports 4.0.2 fixes to 3.0.12, so can accept that
+        AX_COMPARE_VERSION([${debian_version}],[eq1],[10],[
+          min_swig_recommend_version=4.0.2
+          min_swig_version_info="for Octave version ${octave_version}"
+        ],[
+          MIN_SWIG_VERSION=4.0.2
+          min_swig_version_info="for Octave version ${octave_version}"
+        ])
       ])
     ])
 

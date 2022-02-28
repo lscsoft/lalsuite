@@ -424,9 +424,7 @@ LALFrameH *XLALFrameNew(const LIGOTimeGPS * epoch, double duration,
     int detind;
 
     /* allocate frame and set run */
-    frame =
-        XLALFrameUFrameHAlloc(project, XLALGPSGetREAL8(epoch), duration,
-        frnum);
+    frame = XLALFrameUFrameHAlloc(project, epoch->gpsSeconds, 1e-9 * epoch->gpsNanoSeconds, duration, frnum);
     if (!frame)
         XLAL_ERROR_NULL(XLAL_EFUNC);
     if (XLALFrameUFrameHSetRun(frame, run) < 0) {
