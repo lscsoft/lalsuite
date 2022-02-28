@@ -108,7 +108,7 @@ for opt in nopart freqpart f1dotpart allpart; do
 
     echo "=== Options '${opt}': Compare F-statistics from lalapps_Weave without/with checkpointing ==="
     set -x
-    env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits
+    lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits
     set +x
     echo
 

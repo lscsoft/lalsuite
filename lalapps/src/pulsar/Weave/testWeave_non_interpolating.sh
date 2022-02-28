@@ -107,11 +107,11 @@ rm -rf newtarball/
 
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to reference results ==="
 set -x
-if env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits; then
+if lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits; then
     exitcode=0
 else
     exitcode=77
-    env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
+    lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
 fi
 set +x
 echo
