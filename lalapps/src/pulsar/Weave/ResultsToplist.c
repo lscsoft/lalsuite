@@ -1057,7 +1057,7 @@ int XLALWeaveResultsToplistCompare(
             }
 
             if ( !equal_semi ) {
-              XLALPrintError( "Negative: failed comparison\n" );
+              XLALPrintInfo( "Negative: failed comparison\n" );
               ( *equal ) = 0;	// Neither candidate close to threshold ==> comparison failed
             }
           } else { // Keep track of all successfully 'matched' templates for further comparisons
