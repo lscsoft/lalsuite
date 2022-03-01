@@ -1071,7 +1071,6 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
         INT4 flag_HM = 1;
         
         if(flag_HM == 0){
-          printf("You should not be here\n");
           /* generate waveform with non-GR parameters set to default (zero) */
           XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
               deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
@@ -1094,13 +1093,14 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           /* generate modes with non-GR parameters set to default (zero)
           at the moment I'm using the custom SEOBNRv4HM_ROM function to get the modes. This will be substituted with ChooseFDModes */
           //allocate hlms
-          // SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
-          // *hlms = NULL;
-          SphHarmFrequencySeries *hlms = NULL;
-          XLAL_TRY(ret=XLALSimIMRSEOBNRv4HMROM_Modes(&hlms, phi0,
+          SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
+          *hlms = NULL;
+          //SphHarmFrequencySeries *hlms = NULL;
+          XLAL_TRY(ret=XLALSimIMRSEOBNRv4HMROM_Modes(hlms, phi0,
               deltaF,f_start,f_max,f_ref,corrected_distance, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1z,
               spin2z,-1,1), errnum);
           //the last 1 means that we are only generating the 22 mode. Remember to modify that later
+
           /* apply FTA corrections */
           REAL8 correction_window = 1.;
           if(LALInferenceCheckVariable(model->params, "correction_window")) correction_window = *(REAL8*) LALInferenceGetVariable(model->params, "correction_window");
@@ -1109,26 +1109,26 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           if(LALInferenceCheckVariable(model->params, "correction_ncycles_taper")) correction_ncycles_taper = *(REAL8*) LALInferenceGetVariable(model->params, "correction_ncycles_taper");    
 
           /* Extract the mode from the SphericalHarmFrequencySeries */
-          COMPLEX16FrequencySeries *hlm_mode = XLALSphHarmFrequencySeriesGetMode(hlms, 2,-2); 
+          COMPLEX16FrequencySeries *hlm_mode = XLALSphHarmFrequencySeriesGetMode(*hlms, 2,-2);
 
           /* Apply FTA correction */
           XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hlm_mode,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
-
-          /* Reconstruct the new hlms with the modified modes */
-          hlms = XLALSphHarmFrequencySeriesAddMode(hlms, hlm_mode, 2, -2);
-
+  
           /* Construct hp and hc from hlms */
           size_t npts_wave = hlm_mode->data->length;
+          
           hptilde = XLALCreateCOMPLEX16FrequencySeries("FD hplus",
-                    &hlm_mode->epoch, hlm_mode->f0, hlm_mode->deltaF,
-                    &hlm_mode->sampleUnits, npts_wave);
+                    &(hlm_mode->epoch), 0.0, deltaF,
+                    &(hlm_mode->sampleUnits), npts_wave);
           hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
-                    &hlm_mode->epoch, hlm_mode->f0, hlm_mode->deltaF,
-                    &hlm_mode->sampleUnits, npts_wave);
+                    &(hlm_mode->epoch), 0.0, deltaF,
+                    &(hlm_mode->sampleUnits), npts_wave);
+          memset(hptilde->data->data, 0, npts_wave * sizeof(COMPLEX16));
+          memset(hctilde->data->data, 0, npts_wave * sizeof(COMPLEX16));  
 
-          XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, hlms->mode, inclination, LAL_PI/2. - phi0, 2, -2, 1), errnum);
-          XLALDestroySphHarmFrequencySeries(hlms);
-          XLALDestroyCOMPLEX16FrequencySeries(hlm_mode);
+          XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, (*hlms)->mode, inclination, LAL_PI/2. - phi0, (*hlms)->l, (*hlms)->m, 1), errnum);
+
+          XLALDestroySphHarmFrequencySeries(*hlms);
         }
         
 

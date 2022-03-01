@@ -39,7 +39,9 @@ extern "C" {
  * that determine how the correction will be tapered. Calls PNCorrections to compute non-GR corrections to phase, then
  * PhaseCorrectionsPhasing to smoothly taper the correction to the baseline GR waveform.
  */
-int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */                                   
+int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
+                                        const UINT4 l,
+                                        const UINT4 m,                                   
                                         const REAL8 m1_SI,
                                         const REAL8 m2_SI,
                                         const REAL8 chi1z,
@@ -60,6 +62,7 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa, const REAL8 m1, const RE
  */
 int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
                                            const REAL8Sequence *freqs,
+                                           const UINT4 m,
                                            const UINT4 iStart,
                                            const UINT4 iRef,
                                            const UINT4 iEnd,
@@ -74,9 +77,9 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
  * non-GR corrections to phase, then PhaseCorrectionsPhasing to smoothly taper the correction to the baseline GR waveform.
  */
 
-REAL8 PNPhase(REAL8 f, PNPhasingSeries pfa, const REAL8 mtot); /* Returns phase computed from PN coefficients pfa at frequency f*/
-REAL8 PNPhaseDerivative(REAL8 f, PNPhasingSeries pfa, const REAL8 mtot); /* Returns derivative of phase w.r.t. frequency computed from PN coefficients pfa at frequency f*/
-REAL8 PNPhaseSecondDerivative(REAL8 f, PNPhasingSeries pfa, const REAL8 mtot); /* Returns second derivative of phase w.r.t. frequency computed from PN coefficients pfa at frequency f*/
+REAL8 PNPhase(REAL8 f, UINT4 m, PNPhasingSeries pfa, const REAL8 mtot); /* Returns phase computed from PN coefficients pfa at frequency f*/
+REAL8 PNPhaseDerivative(REAL8 f, UINT4 m, PNPhasingSeries pfa, const REAL8 mtot); /* Returns derivative of phase w.r.t. frequency computed from PN coefficients pfa at frequency f*/
+REAL8 PNPhaseSecondDerivative(REAL8 f, UINT4 m, PNPhasingSeries pfa, const REAL8 mtot); /* Returns second derivative of phase w.r.t. frequency computed from PN coefficients pfa at frequency f*/
 
 #if 0
 { /* so that editors will match succeeding brace */

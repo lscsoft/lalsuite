@@ -33,21 +33,41 @@
  * Peak (angular) frequency of 2,2 mode of GW predicted by fitting NR results. Taken from
  * Eq. A8 of Bohe et al (2017) (arxiv.org/abs/1611.03703). Used in building SEOBNRv4.
  */
-static inline REAL8 Get22PeakAngFreq(REAL8 UNUSED eta,
+static inline REAL8 GetlmModePeakAngFreq(UINT4 l, UINT4 m, REAL8 UNUSED eta,
                                                  REAL8 a) /** Combined spin chi defined in Eq. (2.8) of Bohe et al. (2017)  */
 {
     REAL8 chi = a;
+    const REAL8 eta2 = eta * eta;
+    const REAL8 eta3 = eta2 * eta;
+    const REAL8 chi2 = chi * chi;
+    const REAL8 chi3 = chi2 * chi;
     REAL8 res;
-    res = 0.5626787200433265 + (-0.08706198756945482 +
-                                0.0017434519312586804 * chi) *
-    log (10.26207326082448 -
-         chi * (7.629921628648589 -
-                72.75949266353584 * (-0.25 + eta)) -
-         62.353217004599784 * (-0.25 + eta));
+    res=0.0;
+
+    if (l==2 && m==2){
+        res = 0.5626787200433265 + (-0.08706198756945482 + 0.0017434519312586804 * chi) * log (10.26207326082448 - chi * (7.629921628648589 - 72.75949266353584 * (-0.25 + eta)) - 62.353217004599784 * (-0.25 + eta)); }
+
+    if (l==2 && m==1){
+        res = 0.174319 + 0.0535087*chi + 0.0302288*chi2 + (0.193894 - 0.184602*chi - 0.112222*chi2)*eta + (0.167006 + 0.218731*chi)*eta2; }
+
+    if (l==3 && m==3){
+        res = 0.397395 + 0.164193*chi +  0.163553*chi2 + 0.0614016*chi3 + (0.699506 - 0.362674*chi - 0.977547*chi2)*eta 
+            + (-0.345533 + 0.319523*chi + 1.93342*chi2)*eta2; }
+
+    if (l==4 && m==4){
+        res = 0.538936 + 0.166352*chi + 0.207539*chi2 + 0.152681*chi3 + (0.76174 + 0.00958786*chi - 1.3023*chi2 - 0.556275*chi3)*eta 
+            + (0.967515 - 0.220593*chi + 2.6781*chi2)*eta2 - 4.89538*eta3; } 
+
+    if (l==5 && m==5){
+        res = 0.643755 + 0.223155*chi + 0.295689*chi2 + 0.173278*chi3 + (-0.470178 - 0.392901*chi - 2.26534*chi2 - 0.5513*chi3)*eta 
+            + (2.31148 + 0.882934*chi + 5.8176*chi*chi)*eta2; }       
+
     return res;
 }
 
 int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
+                                        const UINT4 l,
+                                        const UINT4 m,
                                         const REAL8 m1_SI,
                                         const REAL8 m2_SI,
                                         const REAL8 chi1z,
@@ -66,9 +86,9 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
   const REAL8 deltaF = htilde->deltaF;
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
   const REAL8 m2 = m2_SI / LAL_MSUN_SI;
-  const REAL8 m = m1 + m2;
-  const REAL8 m_sec = m * LAL_MTSUN_SI;  /* total mass in seconds */
-  const REAL8 eta = m1 * m2 / (m * m);
+  const REAL8 mt = m1 + m2;
+  const REAL8 m_sec = mt * LAL_MTSUN_SI;  /* total mass in seconds */
+  const REAL8 eta = m1 * m2 / (mt * mt);
   
   REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALpars);
   REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALpars);
@@ -76,23 +96,23 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
   REAL8 fPeak;
   
   /* Compute the frequency where the amplitude of 2,2 mode peaks differently for BBH, BNS, and NSBH:
-     For BBH, use (unpublished) fit to NR used in construction of SEOBNRv4
-     For BNS, use (unpublished) fit to NR used in construction of NRTidal models (documented in LALSimNRTunedTides.c)
+     For BBH, use fit to NR used in construction of SEOBNRv4 (arxiv:1611.03703)
+     For BNS, use fit to NR used in construction of NRTidal models (documented in LALSimNRTunedTides.c, arXiv:1706.02969)
      For NSBH, use same fit as BBH
   */
   
   if(lambda1 == 0.0 && lambda2 == 0.0){
-    fPeak = Get22PeakAngFreq(eta, 0.5*(chi1z + chi2z) + 0.5*(chi1z - chi2z)*(m1 - m2)/(m1 + m2)/(1. - 2.*eta)) / (2.*LAL_PI * m_sec);
+    fPeak = GetlmModePeakAngFreq(l, m, eta, 0.5*(chi1z + chi2z) + 0.5*(chi1z - chi2z)*(m1 - m2)/(m1 + m2)/(1. - 2.*eta)) / (2.*LAL_PI * m_sec);
     //Spin combination defined in Eq. (2.8) of Bohe et al. (2017) (SEOBNRv4 paper)
   }
   else if(lambda1 != 0.0 && lambda2 != 0.0)
   {
     const REAL8 q = fmax(m1 / m2, m2 / m1);
     const double kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
-    fPeak = XLALSimNRTunedTidesMergerFrequency(m, kappa2T, q);
+    fPeak = XLALSimNRTunedTidesMergerFrequency(mt, kappa2T, q);
   }
   else{
-    fPeak = Get22PeakAngFreq(eta, 0.5*(chi1z + chi2z) + 0.5*(chi1z - chi2z)*(m1 - m2)/(m1 + m2)/(1. - 2.*eta)) / (2.*LAL_PI * m_sec);
+    fPeak = GetlmModePeakAngFreq(l, m, eta, 0.5*(chi1z + chi2z) + 0.5*(chi1z - chi2z)*(m1 - m2)/(m1 + m2)/(1. - 2.*eta)) / (2.*LAL_PI * m_sec);
   }
   
   INT4 i;
@@ -120,7 +140,7 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
   const REAL8 qm_def1 = 1.;
   const REAL8 qm_def2 = 1.;
   XLALSimInspiralPNCorrections(&pfa, m1, m2, chi1z, chi2z, chi1z*chi1z, chi2z*chi2z, chi1z*chi2z, qm_def1, qm_def2, LALpars);
-  XLALSimInspiralPhaseCorrectionsPhasing(htilde,freqs,iStart,iRef,iEnd,iPeak,pfa,m_sec, eta, NCyclesStep);
+  XLALSimInspiralPhaseCorrectionsPhasing(htilde,freqs,m,iStart,iRef,iEnd,iPeak,pfa,m_sec, eta, NCyclesStep);
   XLALDestroyREAL8Sequence(freqs);
   return 0;
 }
@@ -248,6 +268,7 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
 
 int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
                                            const REAL8Sequence *freqs,
+                                           const UINT4 m,
                                            const UINT4 iStart,
                                            const UINT4 iRef,
                                            const UINT4 iEnd,
@@ -261,7 +282,7 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
   UINT4 i;
   const REAL8 pfaN0 = 3.L/(128.L * eta);
   const REAL8 piM = LAL_PI * mtot;
-  const REAL8 vWindow = cbrt(piM * freqs->data[iEnd]); //Center of the tapering step function in v-space
+  const REAL8 vWindow = cbrt(2*piM * freqs->data[iEnd]/m); //Center of the tapering step function in v-space
   const REAL8 width = (NCyclesStep * LAL_PI * vWindow * vWindow * vWindow * vWindow * vWindow * vWindow)/(50. * pfaN0); //Width of tapering step function
 
   
@@ -274,9 +295,10 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
   for ( i = iStart; i < freqs->length; i++)
     {
       f = freqs->data[i];
-      if (f>0) d2phasenonGRdf2Tapered->data[i] = PNPhaseSecondDerivative(f, pfa, mtot)/ (1. + exp( (cbrt(piM * freqs->data[i]) - vWindow) / width ) );
+      if (f>0) d2phasenonGRdf2Tapered->data[i] = PNPhaseSecondDerivative(f, m, pfa, mtot)/ (1. + exp( (cbrt(2*piM * freqs->data[i]/m) - vWindow) / width ) );
     }
-  
+/* I have edited till this point: Ajit */ 
+ 
   /* Interpolate and integrate (twice) the tapered second derivative of the phase correction to compute the phase correction
    * Set the value of the correction and its first derivative to zero at f_ref
    */
@@ -325,6 +347,7 @@ int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,    
 }
 
 REAL8 PNPhase(REAL8 f,    /* frequency in Hz */
+              UINT4 m,
               PNPhasingSeries pfa,
               const REAL8 mtot)   /* total mass in seconds */
 {
@@ -343,7 +366,7 @@ REAL8 PNPhase(REAL8 f,    /* frequency in Hz */
     const REAL8 pfaMinus1 = pfa.vneg[1];
     const REAL8 pfaMinus2 = pfa.vneg[2];
     
-    const REAL8 v = cbrt(piM*f);
+    const REAL8 v = cbrt(2*piM*f/m);
     const REAL8 logv = log(v);
     const REAL8 v2 = v * v;
     const REAL8 v3 = v * v2;
@@ -364,6 +387,7 @@ REAL8 PNPhase(REAL8 f,    /* frequency in Hz */
     phasing += pfaMinus1 / v;
     phasing += pfaMinus2 /v2;
     phasing /= v5;
+    phasing *=m/2.;
 
     return -phasing;
 }
@@ -376,6 +400,7 @@ REAL8 PNPhase(REAL8 f,    /* frequency in Hz */
  */
 
 REAL8 PNPhaseDerivative(REAL8 f,    /* frequency in Hz */
+                        UINT4 m,
                         PNPhasingSeries pfa,
                         const REAL8 mtot)   /* total mass in seconds */
 {
@@ -394,7 +419,7 @@ REAL8 PNPhaseDerivative(REAL8 f,    /* frequency in Hz */
     const REAL8 pfaMinus1 = pfa.vneg[1];
     const REAL8 pfaMinus2 = pfa.vneg[2];
 
-    const REAL8 v = cbrt(piM*f);
+    const REAL8 v = cbrt(2*piM*f/m);
     const REAL8 logv = log(v);
     const REAL8 v2 = v * v;
     const REAL8 v3 = v * v2;
@@ -428,6 +453,7 @@ REAL8 PNPhaseDerivative(REAL8 f,    /* frequency in Hz */
  */
 
 REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
+                              UINT4 m,
                               PNPhasingSeries pfa,
                               const REAL8 mtot)   /* total mass in seconds */
 {
@@ -446,7 +472,7 @@ REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
     const REAL8 pfaMinus1 = pfa.vneg[1];
     const REAL8 pfaMinus2 = pfa.vneg[2];
 
-    const REAL8 v = cbrt(piM*f);
+    const REAL8 v = cbrt(2*piM*f/m);
     const REAL8 logv = log(v);
     const REAL8 v2 = v * v;
     const REAL8 v3 = v * v2;
@@ -469,5 +495,6 @@ REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
     phasing += 70. * pfaMinus2 /v8;
     phasing /= v5;
     phasing *= piM*piM/9.;
+    phasing *=2./m;
     return -phasing;
 }
