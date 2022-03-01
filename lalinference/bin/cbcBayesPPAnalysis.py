@@ -61,6 +61,8 @@ posterior_name_to_latex_name = {
     'theta_jn':r'$\theta_{jn}$',
     'tilt1':r'$\tau_1$',
     'tilt2':r'$\tau_2$',
+    'dchiminus1':r'$d\chi_{-1}$',
+    'dchiminus2':r'$d\chi_{-2}$',
     'dchi0':r'$d\chi_0$',
     'dchi1':r'$d\chi_1$',
     'dchi2':r'$d\chi_2$',
