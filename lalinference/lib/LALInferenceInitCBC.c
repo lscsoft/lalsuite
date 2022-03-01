@@ -2382,6 +2382,8 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
           else LALInferenceAddVariable(model->params,"nonGR_alpha", &nonGR_alpha, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
         }
 	/* Relative shifts for inspiral phase PN coefficients (absolute value for dchi1) */
+        if (checkParamInList(ppt->value,"dchiMinus2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchiMinus2", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchiMinus1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchiMinus1", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dchi0")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi0", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dchi1")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi1", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dchi2")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi2", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
