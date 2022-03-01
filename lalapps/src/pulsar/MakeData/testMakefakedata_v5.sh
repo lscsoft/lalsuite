@@ -209,12 +209,12 @@ fi
 echo
 echo "========== MFDv5 =========="
 echo
-mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --fmin=$fmin --Band=$Band"
+mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR}"
 
 echo "----- Method 1: single multi-IFO, multi-signal call"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig13="--injectionSources='${injFile1},${injFile2}'"
-cmdline="$mfdv5_CL ${outIFOs} ${sig13}"
+cmdline="$mfdv5_CL ${outIFOs} ${sig13} --fmin=$fmin --Band=$Band"
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
@@ -226,7 +226,7 @@ echo "----- Method 2: and again the same, using different input methods"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig1="--injectionSources='${injString}'"
 sig23="--injectionSources='${injFile2}'"
-cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outLabel='mfdv5_meth2'"
+cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outLabel='mfdv5_meth2' --fmin=$fmin --Band=$Band"
 echo $cmdline1;
 if ! eval $cmdline1; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
