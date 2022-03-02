@@ -2805,11 +2805,23 @@ int XLALSimInspiralTD(
  *
  * This routine assumes that f_max is the Nyquist frequency of a corresponding time-domain
  * waveform, so that deltaT = 0.5 / f_max.  If deltaF is set to 0 then this routine computes
- * a deltaF that is small enough to represent the Fourier transform of a time-domain waveform.
+ * a deltaF that is small enough to represent the Fourier transform of a time-domain waveform
+ * while ensuring the length of the time-domain signal if a power of 2.
  * If deltaF is specified but f_max / deltaF is not a power of 2, and the waveform approximant
  * is a time-domain approximant, then f_max is increased so that f_max / deltaF is the next
  * power of 2.  (If the user wishes to discard the extra high frequency content, this must
  * be done separately.)
+ *
+ * The user should take care to ensure that deltaF is sufficiently small to contain the full
+ * signal (time series duration = 1 / deltaF). If the provided deltaF is too large the signal
+ * will be abruptly truncated for time-domain waveform generators. For frequency-domain
+ * generators the signal will be aliased in the frequency domain.
+ *
+ * Similarly, if the provided f_max is less than the ringdown frequency the underlying waveform
+ * generator may raise an error. If not, the frequency domain signal will be aliased in the
+ * frequency domain.
+ *
+ * Some waveform approximants have built in checks for the maximum frequency and signal length
  *
  * This routine used to have one additional parameter relative to XLALSimInspiralChooseTDWaveform:
  * the redshift, z, of the waveform, which is now stuffed into the LALDict.
@@ -2852,9 +2864,10 @@ int XLALSimInspiralFD(
 
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
-    double chirplen, deltaT;
+    double chirplen, deltaT, f_nyquist;
     int chirplen_exp;
     int retval;
+	size_t n;
 
     /* adjust the reference frequency for certain precessing approximants:
      * if that approximate interprets f_ref==0 to be f_min, set f_ref=f_min;
@@ -2873,9 +2886,22 @@ int XLALSimInspiralFD(
     if (LALparams)
       XLALSimInspiralWaveformParamsInsertRedshift(LALparams,z);
 
-    /* FIXME: assume that f_max is the Nyquist frequency, and use it
-     * to compute the requested deltaT */
-    deltaT = 0.5 / f_max;
+	/* Apply condition that f_max rounds to the next power-of-two multiple
+	 * of deltaF.
+	 * Round f_max / deltaF to next power of two.
+	 * Set f_max to the new Nyquist frequency.
+	 * The length of the chirp signal is then 2 * f_nyquist / deltaF.
+	 * The time spacing is 1 / (2 * f_nyquist) */
+    f_nyquist = f_max;
+	if (deltaF != 0) {
+	    n = round(f_max / deltaF);
+	    if ((n & (n - 1))) { /* not a power of 2 */
+			frexp(n, &chirplen_exp);
+			f_nyquist = ldexp(1.0, chirplen_exp) * deltaF;
+	        XLAL_PRINT_WARNING("f_max/deltaF = %g/%g = %g is not a power of two: changing f_max to %g", f_max, deltaF, f_max/deltaF, f_nyquist);
+        }
+	}
+    deltaT = 0.5 / f_nyquist;
 
     if (XLALSimInspiralImplementedFDApproximants(approximant)) {
 
@@ -2994,28 +3020,21 @@ int XLALSimInspiralFD(
         if (retval < 0)
             XLAL_ERROR(XLAL_EFUNC);
 
-        /* determine chirp length and round up to next power of two */
-        chirplen = hplus->data->length;
-        frexp(chirplen, &chirplen_exp);
-        chirplen = ldexp(1.0, chirplen_exp);
         /* frequency resolution */
-        if (deltaF == 0.0)
+        if (deltaF == 0.0) {
+            /* round length of time domain signal to next power of two */
+            chirplen = hplus->data->length;
+            frexp(chirplen, &chirplen_exp);
+            chirplen = ldexp(1.0, chirplen_exp);
             deltaF = 1.0 / (chirplen * hplus->deltaT);
-        else { /* recompute chirplen based on deltaF and f_max */
-            size_t n;
-            if (deltaF > 1.0 / (chirplen * deltaT))
-                XLAL_PRINT_WARNING("Specified frequency interval of %g Hz is too large for a chirp of duration %g s", deltaF, chirplen * deltaT);
-            n = chirplen = round(2.0 * f_max / deltaF);
-            if ((n & (n - 1))) { /* not a power of 2 */
-                /* what do we do here?... we need to change either
-                 * f_max or deltaF so that chirplen is a power of 2
-                 * so that the FFT can be done, so choose to change f_max */
-                /* round chirplen up to next power of 2 */
-                frexp(chirplen, &chirplen_exp);
-                chirplen = ldexp(1.0, chirplen_exp);
-                XLAL_PRINT_WARNING("f_max/deltaF = %g/%g = %g is not a power of two: changing f_max to %g", f_max, deltaF, f_max/deltaF, (chirplen / 2) * deltaF);
-                f_max = (chirplen / 2) * deltaF;
-            }
+        } else {
+            /* set chirp length using precomputed Nyquist */
+	    	chirplen = 2 * f_nyquist / deltaF;
+            if (chirplen < hplus->data->length)
+                XLAL_PRINT_WARNING(
+                    "Specified frequency interval of %g Hz is too large for a chirp of duration %g s with Nyquist frequency %g Hz. The inspiral will be truncated.",
+                    deltaF, hplus->data->length * deltaT, f_nyquist
+                );
         }
 
         /* resize waveforms to the required length */
