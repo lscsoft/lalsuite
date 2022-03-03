@@ -1,3 +1,9 @@
+lalinspiral (2.0.6-1) unstable; urgency=low
+
+  * Update for 2.0.6
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 03 Mar 2022 12:38:03 -0700
+
 lalinspiral (2.0.5-1) unstable; urgency=low
 
   * Update for 2.0.5
