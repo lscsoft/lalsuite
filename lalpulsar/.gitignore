@@ -44,6 +44,7 @@ python/lalpulsar/lalpulsar.py
 lib/config.h
 lib/config.h.in
 lib/git_version
+lib/ComputeFstat_Resamp_CUDA.cpp
 lib/LALPulsarBuildInfoHeader.h
 lib/LALPulsarConfig.h
 lib/LALPulsarVCSInfo.c

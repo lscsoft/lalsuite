@@ -40,7 +40,7 @@ lalapps_Weave --output-file=WeaveOut.fits \
     --toplists=mean2F --toplist-limit=0 --extra-statistics="mean2F_det" \
     --toplist-tmpl-idx --segment-info \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --Fstat-run-med-window=50 \
+    --Fstat-method=ResampGeneric --Fstat-run-med-window=50 \
     --freq=55.5~0.005 --f1dot=-2e-9,0 \
     --semi-max-mismatch=9
 lalapps_fits_overview WeaveOut.fits
@@ -86,11 +86,11 @@ rm -rf newtarball/
 
 echo "=== Compare F-statistics from lalapps_Weave to reference results ==="
 set -x
-if env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits; then
+if lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits; then
     exitcode=0
 else
     exitcode=77
-    env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
+    lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
 fi
 set +x
 echo

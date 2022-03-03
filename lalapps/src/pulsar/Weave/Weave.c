@@ -22,6 +22,8 @@
 /// \ingroup lalapps_pulsar_Weave
 ///
 
+#include "config.h"
+
 #include "Weave.h"
 #include "SetupData.h"
 #include "SearchIteration.h"
@@ -29,6 +31,11 @@
 #include "CacheResults.h"
 #include "OutputResults.h"
 #include "SearchTiming.h"
+
+#ifdef LALAPPS_CUDA_ENABLED
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#endif
 
 #include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
@@ -47,11 +54,12 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, segment_info, simulate_search, time_search, cache_all_gc, strict_spindown_bounds;
+    BOOLEAN validate_sft_files, interpolation, lattice_rand_offset, toplist_tmpl_idx, mean2F_hgrm, segment_info, simulate_search, time_search, cache_all_gc, strict_spindown_bounds;
     CHAR *setup_file, *sft_files, *output_file, *ckpt_output_file;
     LALStringVector *sft_timestamps_files, *sft_noise_sqrtSX, *injections, *Fstat_assume_sqrtSX, *lrs_oLGX;
     REAL8 sft_timebase, semi_max_mismatch, coh_max_mismatch, ckpt_output_period, ckpt_output_exit, lrs_Fstar0sc, nc_2Fth;
     REAL8Range alpha, delta, freq, f1dot, f2dot, f3dot, f4dot;
+    REAL8Vector *random_injection;
     UINT4 sky_patch_count, sky_patch_index, freq_partitions, f1dot_partitions, Fstat_run_med_window, Fstat_Dterms, toplist_limit, rand_seed, cache_max_size;
     int lattice, Fstat_method, Fstat_SSB_precision, toplists, extra_statistics, recalc_statistics;
   } uvar_struct = {
@@ -121,6 +129,15 @@ int main( int argc, char *argv[] )
     injections, STRINGVector, 'J', NODEFAULT,
     "%s", InjectionSourcesHelpString
     );
+  XLALRegisterUvarMember(
+    random_injection, REAL8Vector, 'H', NODEFAULT,
+    "Inject a simulated signal, with phase parameters drawn randomly from the search parameter space, "
+    "and with a randomly-generated polarisation angle (psi) and initial phase (phi0). "
+    "The amplitude of the injection is specified by either 1 or 2 arguments to " UVAR_STR( random_injection ) ":\n"
+    " - h0: generate a random cosine of inclination angle (cosi), then set aPlus=0.5*h0*(1+cosi^2), aCross=h0*cosi;\n"
+    " - aPlus,aCross: use the given plus- and cross-polarisation amplitudes."
+    );
+
   //
   // - Search parameter space
   //
@@ -270,6 +287,10 @@ int main( int argc, char *argv[] )
     toplist_tmpl_idx, BOOLEAN, 0, DEVELOPER,
     "Output for each toplist item a unique (up to frequency) index identifying its semicoherent and coherent templates. "
     );
+  XLALRegisterUvarMember(
+    mean2F_hgrm, BOOLEAN, 0, DEVELOPER,
+    "Output a histogram of all mean multi-Fstatistics computed by the search. "
+    );
   XLALRegisterUvarAuxDataMember(
     extra_statistics, UserFlag, &WeaveStatisticChoices, 'E', OPTIONAL,
     "Sets which ('stage 0') extra statistics to compute and return in the output file given by " UVAR_STR( output_file ) ":\n"
@@ -359,6 +380,12 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     !UVAR_SET( sft_timebase ) || uvar->sft_timebase > 0,
                     UVAR_STR( sft_timebase ) " must be strictly positive" );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_ALLSET2( injections, random_injection ),
+                    UVAR_STR( injections ) " and " UVAR_STR( random_injection ) " are mutually exclusive" );
+  XLALUserVarCheck( &should_exit,
+                    !UVAR_SET( random_injection ) || uvar->random_injection->length <= 2,
+                    UVAR_STR( random_injection ) " must be passed either 1 or 2 arguments" );
   //
   // - Search parameter space
   //
@@ -485,6 +512,7 @@ int main( int argc, char *argv[] )
   statistics_params->detectors = XLALCopyStringVector( setup.detectors );
   XLAL_CHECK_MAIN( statistics_params->detectors != NULL, XLAL_EFUNC );
   statistics_params->nsegments = nsegments;
+  statistics_params->ref_time = setup.ref_time;
 
   //
   // Figure out which statistics need to be computed, and when, in order to
@@ -512,6 +540,11 @@ int main( int argc, char *argv[] )
   }
   // set number-count threshold
   statistics_params->nc_2Fth = uvar->nc_2Fth;
+
+  // If asked to return a histogram of mean multi-Fstatistics, ensure they're computed
+  if ( uvar->mean2F_hgrm ) {
+    statistics_params->mainloop_statistics |= WEAVE_STATISTIC_MEAN2F;
+  }
 
   ////////// Set up lattice tilings //////////
 
@@ -794,11 +827,44 @@ int main( int argc, char *argv[] )
     LogPrintf( LOG_NORMAL, "Simulating search with %s memory usage; no results will be computed\n", simulation_level & WEAVE_SIMULATE_MIN_MEM ? "minimal" : "full" );
   }
 
-  // Parse signal injection string
+  // Set up injections
   PulsarParamsVector *injections = NULL;
   if ( UVAR_SET( injections ) ) {
+
+    // Parse signal injection string
     injections = XLALPulsarParamsFromUserInput( uvar->injections, &setup.ref_time );
     XLAL_CHECK_MAIN( injections != NULL, XLAL_EFUNC );
+
+  } else if ( UVAR_SET( random_injection ) ) {
+
+    // Create injection parameters vector
+    injections = XLALCreatePulsarParamsVector(1);
+    XLAL_CHECK_MAIN( injections != NULL, XLAL_EFUNC );
+    PulsarParams *const inj = &injections->data[0];
+    strcpy( inj->name, "random_injection" );
+
+    // Draw random phase parameters from search parameter space
+    {
+      double XLAL_INIT_DECL( random_point, [ndim] );
+      gsl_matrix_view random_point_matrix = gsl_matrix_view_array( random_point, ndim, 1 );
+      XLAL_CHECK_MAIN( XLALRandomLatticeTilingPoints( tiling[isemi], 0, rand_par, &random_point_matrix.matrix ) == XLAL_SUCCESS, XLAL_EFUNC );
+      gsl_vector_view random_point_vector = gsl_vector_view_array( random_point, ndim );
+      XLAL_CHECK_MAIN( XLALConvertSuperskyToPhysicalPoint( &inj->Doppler, &random_point_vector.vector, NULL, rssky_transf[isemi] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
+    // Randomly generate and set amplitude parameters
+    inj->Amp.psi = LAL_TWOPI * XLALUniformDeviate( rand_par );
+    inj->Amp.phi0 = LAL_TWOPI * XLALUniformDeviate( rand_par );
+    if ( uvar->random_injection->length == 1 ) {
+      const REAL8 h0 = uvar->random_injection->data[0];
+      const REAL8 cosi = -1 + 2 * XLALUniformDeviate( rand_par );
+      inj->Amp.aPlus = 0.5 * h0 * (1.0 + cosi * cosi);
+      inj->Amp.aCross = h0 * cosi;
+    } else {
+      inj->Amp.aPlus = uvar->random_injection->data[0];
+      inj->Amp.aCross = uvar->random_injection->data[1];
+    }
+
   }
 
   // Set F-statistic optional arguments
@@ -815,11 +881,16 @@ int main( int argc, char *argv[] )
   const LALStringVector *sft_noise_sqrtSX = UVAR_SET( sft_noise_sqrtSX ) ? uvar->sft_noise_sqrtSX : NULL;
   const LALStringVector *Fstat_assume_sqrtSX = UVAR_SET( Fstat_assume_sqrtSX ) ? uvar->Fstat_assume_sqrtSX : NULL;
   LogPrintf( LOG_NORMAL, "Loading input data for coherent results ...\n" );
+  XLAL_INIT_MEM( statistics_params->n2F_det );
   for ( size_t i = 0; i < nsegments; ++i ) {
     statistics_params->coh_input[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], dfreq, setup.ephemerides, sft_noise_sqrtSX, Fstat_assume_sqrtSX, &Fstat_opt_args, statistics_params, 0 );
     XLAL_CHECK_MAIN( statistics_params->coh_input[i] != NULL, XLAL_EFUNC );
   }
-  statistics_params->ref_time = setup.ref_time;
+  if ( !( simulation_level & WEAVE_SIMULATE_MIN_MEM ) && ( statistics_params->mainloop_statistics & WEAVE_STATISTIC_COH2F_DET ) ) {
+    for ( size_t i = 0; i < ndetectors; ++i ) {
+      XLAL_CHECK_MAIN( 0 < statistics_params->n2F_det[i] && statistics_params->n2F_det[i] <= nsegments, XLAL_EFAILED, "Invalid number of per-detector F-statistics (%u) for detector '%s'", statistics_params->n2F_det[i], setup.detectors->data[i] );
+    }
+  }
 
   LogPrintf( LOG_NORMAL, "Finished loading input data for coherent results\n" );
 
@@ -847,7 +918,7 @@ int main( int argc, char *argv[] )
   WeaveSemiResults *semi_res = NULL;
 
   // Create output results structure
-  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, statistics_params, uvar->toplist_limit, uvar->toplist_tmpl_idx );
+  WeaveOutputResults *out = XLALWeaveOutputResultsCreate( &setup.ref_time, ninputspins, statistics_params, uvar->toplist_limit, uvar->toplist_tmpl_idx, uvar->mean2F_hgrm );
   XLAL_CHECK_MAIN( out != NULL, XLAL_EFUNC );
 
   // Create search timing structure
@@ -875,8 +946,12 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALFITSHeaderReadUINT4( file, "ckptcnt", &ckpt_output_count ) == XLAL_SUCCESS, XLAL_EFUNC );
       XLAL_CHECK_MAIN( ckpt_output_count > 0, XLAL_EIO, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
+      // Read maximum size of toplists
+      UINT4 toplist_limit = 0;
+      XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+
       // Read output results
-      XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out, 0 ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
+      XLAL_CHECK_MAIN( XLALWeaveOutputResultsReadAppend( file, &out, toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
 
       // Restore state of main loop iterator
       XLAL_CHECK_MAIN( XLALWeaveSearchIteratorRestore( main_loop_itr, file ) == XLAL_SUCCESS, XLAL_EFUNC, "Invalid output checkpoint file '%s'", uvar->ckpt_output_file );
@@ -971,9 +1046,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALWeaveSemiResultsInit( &semi_res, simulation_level, ndetectors, nsegments, semi_index, &semi_phys, dfreq, semi_nfreqs, statistics_params ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Add coherent results to semicoherent results
-    for ( size_t i = 0; i < nsegments; ++i ) {
-      XLAL_CHECK_MAIN( XLALWeaveSemiResultsAdd( semi_res, coh_res[i], coh_index[i], coh_offset[i], tim ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
+    XLAL_CHECK_MAIN( XLALWeaveSemiResultsComputeSegs( semi_res, nsegments, coh_res, coh_index, coh_offset, tim ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Switch timing section
     XLAL_CHECK_MAIN( XLALWeaveSearchTimingSection( tim, WEAVE_SEARCH_TIMING_SEMISEG, WEAVE_SEARCH_TIMING_SEMI ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1021,6 +1094,25 @@ int main( int argc, char *argv[] )
 
       // Print memory usage
       LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB", XLALGetPeakHeapUsageMB() );
+#ifdef LALAPPS_CUDA_ENABLED
+      if ( Fstat_opt_args.FstatMethod == FMETHOD_RESAMP_CUDA ) {
+        size_t CUDA_free_mem_B = 0;
+        size_t CUDA_tot_mem_B = 0;
+        XLAL_CHECK_MAIN( cudaMemGetInfo( &CUDA_free_mem_B, &CUDA_tot_mem_B ) == cudaSuccess, XLAL_EERR );
+        XLAL_CHECK_MAIN( CUDA_free_mem_B <= CUDA_tot_mem_B, XLAL_EERR );
+        const size_t CUDA_used_mem_B = CUDA_tot_mem_B - CUDA_free_mem_B;
+        const REAL4 CUDA_used_mem_MB = CUDA_used_mem_B / (1024.0 * 1024.0);
+        const REAL4 CUDA_tot_mem_MB = CUDA_tot_mem_B / (1024.0 * 1024.0);
+        LogPrintfVerbatim( LOG_NORMAL, ", CUDA memory %.1f/%.1fMB", CUDA_used_mem_MB, CUDA_tot_mem_MB );
+      }
+#endif
+
+      // Print mean maximum size obtained by caches
+      {
+        REAL4 cache_mean_max_size = 0;
+        XLAL_CHECK_MAIN( XLALWeaveGetCacheMeanMaxSize( &cache_mean_max_size, nsegments, coh_cache ) == XLAL_SUCCESS, XLAL_EFUNC );
+        LogPrintfVerbatim( LOG_NORMAL, ", cache max ~%0.1f", cache_mean_max_size );
+      }
 
       // Finish progress printing
       LogPrintfVerbatim( LOG_NORMAL, "\n" );
@@ -1102,9 +1194,15 @@ int main( int argc, char *argv[] )
     FstatOptionalArgs Fstat_opt_args_recalc = Fstat_opt_args;
     Fstat_opt_args_recalc.FstatMethod = FMETHOD_DEMOD_BEST;
     Fstat_opt_args_recalc.prevInput = NULL;
+    XLAL_INIT_MEM( statistics_params->n2F_det );
     for ( size_t i = 0; i < nsegments; ++i ) {
       statistics_params->coh_input_recalc[i] = XLALWeaveCohInputCreate( setup.detectors, simulation_level, sft_catalog, i, &setup.segments->segs[i], min_phys[i], max_phys[i], 0, setup.ephemerides, sft_noise_sqrtSX, Fstat_assume_sqrtSX, &Fstat_opt_args_recalc, statistics_params, 1 );
       XLAL_CHECK_MAIN( statistics_params->coh_input_recalc[i] != NULL, XLAL_EFUNC );
+    }
+    if ( !( simulation_level & WEAVE_SIMULATE_MIN_MEM ) && ( statistics_params->completionloop_statistics[1] & WEAVE_STATISTIC_COH2F_DET ) ) {
+      for ( size_t i = 0; i < ndetectors; ++i ) {
+        XLAL_CHECK_MAIN( 0 < statistics_params->n2F_det[i] && statistics_params->n2F_det[i] <= nsegments, XLAL_EFAILED, "Invalid number of per-detector F-statistics (%u) for detector '%s'", statistics_params->n2F_det[i], setup.detectors->data[i] );
+      }
     }
   }
 
@@ -1195,6 +1293,11 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALWeaveOutputResultsWrite( file, out ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
+    // Write list of injections
+    if ( injections != NULL ) {
+      XLAL_CHECK_MAIN( XLALFITSWritePulsarParamsVector( file, "injections", injections) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
     // Write various segment information from coherent input data
     if ( uvar->segment_info ) {
       XLAL_CHECK_MAIN( XLALWeaveCohInputWriteSegInfo( file, nsegments, statistics_params->coh_input ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1241,9 +1344,11 @@ int main( int argc, char *argv[] )
   // Cleanup random number generator
   XLALDestroyRandomParams( rand_par );
 
+  // Cleanup injection parameters vector
+  XLALDestroyPulsarParamsVector( injections );
+
   // Cleanup memory from user input
   XLALDestroyUserVars();
-  XLALDestroyPulsarParamsVector( injections );
 
   // Check for memory leaks
   LALCheckMemoryLeaks();

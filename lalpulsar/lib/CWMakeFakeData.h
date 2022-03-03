@@ -47,6 +47,7 @@ extern "C" {
 #include <lal/PulsarDataTypes.h>
 #include <lal/ConfigFile.h>
 #include <lal/DetectorStates.h>
+#include <lal/FITSFileIO.h>
 
 // ---------- exported TYPES ----------
 /**
@@ -115,6 +116,7 @@ PulsarParamsVector * XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, co
 
 void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
 
+int XLALFITSWritePulsarParamsVector ( FITSFile *file, const CHAR *tableName, const PulsarParamsVector *list );
 
 /** @} */
 

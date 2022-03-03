@@ -2990,7 +2990,7 @@ XLALCreateCrossCorrWorkspace(
     MultiCOMPLEX8TimeSeries   **        multiTimeSeries_SRC_aOut, /**< [out] resampling A time series */
     MultiCOMPLEX8TimeSeries   **        multiTimeSeries_SRC_bOut, /**< [out] resampling B time series */
     const PulsarDopplerParams           binaryTemplateSpacings,   /**< [in ]binary template spacings */
-    const FstatInput          *restrict resampFstatInput,         /**< [in] resampling f-statistic input */
+    FstatInput                *         resampFstatInput,         /**< [in] resampling f-statistic input */
     const UINT4                         numFreqBins,              /**< [in] number of frequency bins */
     const REAL8                         tCoh,                     /**< [in] Tcoh = 2 * max lag + resampling tShort */
     const BOOLEAN                       treatWarningsAsErrors     /**< [in] abort program if any warnings encountered */

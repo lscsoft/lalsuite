@@ -22,10 +22,22 @@
 /// \ingroup lalapps_pulsar_Weave
 ///
 
+#include "config.h"
+
 #include "ComputeResults.h"
+
+#ifdef LALAPPS_CUDA_ENABLED
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#endif
 
 #include <lal/UserInputPrint.h>
 #include <lal/ExtrapolatePulsarSpins.h>
+
+#define XLAL_CHECK_CUDA_CALL(...) do { \
+  cudaError_t retn; \
+  XLAL_CHECK ( ( retn = (__VA_ARGS__) ) == cudaSuccess, XLAL_EERR, "%s failed with return code %i", #__VA_ARGS__, retn ); \
+  } while(0)
 
 ///
 /// Aligned arrays use maximum required alignment, i.e.\ 32 bytes for AVX
@@ -86,6 +98,8 @@ struct tagWeaveCohResults {
   UINT4 nfreqs;
   /// Multi-detector F-statistics per frequency
   REAL4Vector *coh2F;
+  /// Multi-detector F-statistics per frequency, stored in CUDA device memory
+  REAL4Vector coh2F_CUDA;
   /// Per-detector F-statistics per frequency
   REAL4Vector *coh2F_det[PULSAR_MAX_DETECTORS];
 };
@@ -95,8 +109,10 @@ struct tagWeaveCohResults {
 ///
 /// @{
 
-static int semi_res_sum_2F( UINT4 *nsum, REAL4 *sum2F, const REAL4 *coh2F, const UINT4 nfreqs );
-static int semi_res_max_2F( UINT4 *nmax, REAL4 *max2F, const REAL4 *coh2F, const UINT4 nfreqs );
+#ifdef LALAPPS_CUDA_ENABLED
+int XLALVectorsMaxREAL4CUDA( REAL4 *max, const REAL4 **vec, const size_t nvec, const size_t nbin );
+int XLALVectorsAddREAL4CUDA( REAL4 *sum, const REAL4 **vec, const size_t nvec, const size_t nbin );
+#endif
 
 /// @}
 
@@ -116,7 +132,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   const LALStringVector *sft_noise_sqrtSX,
   const LALStringVector *Fstat_assume_sqrtSX,
   FstatOptionalArgs *Fstat_opt_args,
-  const WeaveStatisticsParams *statistics_params,
+  WeaveStatisticsParams *statistics_params,
   BOOLEAN recalc_stage
   )
 {
@@ -145,15 +161,6 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   // Record information from segment
   coh_input->seg_info.segment_start = segment->start;
   coh_input->seg_info.segment_end = segment->end;
-
-  // Decide what F-statistic quantities to compute
-  WeaveStatisticType requested_stats = ( recalc_stage ) ? statistics_params->completionloop_statistics[1] : statistics_params->mainloop_statistics;
-  if ( requested_stats & WEAVE_STATISTIC_COH2F ) {
-    coh_input->Fstat_what_to_compute |= FSTATQ_2F;
-  }
-  if ( requested_stats & WEAVE_STATISTIC_COH2F_DET ) {
-    coh_input->Fstat_what_to_compute |= FSTATQ_2F_PER_DET;
-  }
 
   // Return now if simulating search with minimal memory allocation
   if ( coh_input->simulation_level & WEAVE_SIMULATE_MIN_MEM ) {
@@ -204,9 +211,29 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   XLAL_CHECK_NULL( coh_input->Fstat_input != NULL, XLAL_EFUNC );
   Fstat_opt_args->prevInput = coh_input->Fstat_input;
 
+  // Decide what F-statistic quantities to compute
+  WeaveStatisticType requested_stats = ( recalc_stage ) ? statistics_params->completionloop_statistics[1] : statistics_params->mainloop_statistics;
+  if ( requested_stats & WEAVE_STATISTIC_COH2F ) {
+#ifdef LALAPPS_CUDA_ENABLED
+    const char *Fstat_method = XLALGetFstatInputMethodName( coh_input->Fstat_input );
+    XLAL_CHECK_NULL( Fstat_method != NULL, XLAL_EFUNC );
+    if ( XLALStringCaseCompare( Fstat_method, "ResampCUDA" ) == 0 ) {
+      coh_input->Fstat_what_to_compute |= FSTATQ_2F_CUDA;
+    } else {
+      coh_input->Fstat_what_to_compute |= FSTATQ_2F;
+    }
+#else
+    coh_input->Fstat_what_to_compute |= FSTATQ_2F;
+#endif
+  }
+  if ( requested_stats & WEAVE_STATISTIC_COH2F_DET ) {
+    coh_input->Fstat_what_to_compute |= FSTATQ_2F_PER_DET;
+  }
+
   // Map detectors in F-statistic data in the given segment to their index in the coherent results
   // - This is important when segments contain data from a subset of detectors
   // - Map entry 'i' in 'Fstat_detector_info' (F-statistic data) to entry 'idx' in 'detectors' (coherent results)
+  // The array 'n2F_det[idx]' counts the total number of F-statistics computed for detector 'idx' across all segments
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
     const MultiLALDetector *Fstat_detector_info = XLALGetFstatInputDetectors( coh_input->Fstat_input );
     coh_input->Fstat_ndetectors = Fstat_detector_info->length;
@@ -216,6 +243,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
       const int idx = XLALFindStringInVector( prefix, statistics_params->detectors );
       XLAL_CHECK_NULL( idx >= 0, XLAL_EFAILED, "Detector '%s' from F-statistic data not found in list of detectors '%s'", prefix, statistics_detectors_string );
       coh_input->Fstat_res_idx[i] = idx;
+      statistics_params->n2F_det[idx] += 1;
     }
     XLALFree( statistics_detectors_string );
   }
@@ -441,9 +469,22 @@ int XLALWeaveCohResultsCompute(
   }
 
   // Reallocate vectors of multi- and per-detector F-statistics per frequency
-  if ( ( *coh_res )->coh2F == NULL || ( *coh_res )->coh2F->length < ( *coh_res )->nfreqs ) {
-    ( *coh_res )->coh2F = XLALResizeREAL4Vector( ( *coh_res )->coh2F, ( *coh_res )->nfreqs );
-    XLAL_CHECK( ( *coh_res )->coh2F != NULL, XLAL_ENOMEM );
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F ) {
+    if ( ( *coh_res )->coh2F == NULL || ( *coh_res )->coh2F->length < ( *coh_res )->nfreqs ) {
+      ( *coh_res )->coh2F = XLALResizeREAL4Vector( ( *coh_res )->coh2F, ( *coh_res )->nfreqs );
+      XLAL_CHECK( ( *coh_res )->coh2F != NULL, XLAL_ENOMEM );
+    }
+  }
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_CUDA ) {
+#ifdef LALAPPS_CUDA_ENABLED
+    if ( ( *coh_res )->coh2F_CUDA.data == NULL || ( *coh_res )->coh2F_CUDA.length < ( *coh_res )->nfreqs ) {
+      cudaFree( ( *coh_res )->coh2F_CUDA.data );
+      XLAL_CHECK( cudaMalloc( (void **)&( *coh_res )->coh2F_CUDA.data, sizeof( ( *coh_res )->coh2F_CUDA.data[0] ) * ( *coh_res )->nfreqs ) == cudaSuccess, XLAL_ENOMEM );
+      ( *coh_res )->coh2F_CUDA.length = ( *coh_res )->nfreqs;
+    }
+#else
+    XLAL_ERROR( XLAL_EFAILED, "CUDA not enabled" );
+#endif
   }
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
     for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
@@ -471,13 +512,20 @@ int XLALWeaveCohResultsCompute(
   FstatResults XLAL_INIT_DECL( Fstat_res_struct );
   FstatResults *Fstat_res = &Fstat_res_struct;
   Fstat_res->internalalloclen = ( *coh_res )->nfreqs;
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F ) {
+    Fstat_res->twoF = ( *coh_res )->coh2F->data;
+  }
+#ifdef LALAPPS_CUDA_ENABLED
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_CUDA ) {
+    Fstat_res->twoF_CUDA = ( *coh_res )->coh2F_CUDA.data;
+  }
+#endif
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
     Fstat_res->numDetectors = coh_input->Fstat_ndetectors;
-  }
-  Fstat_res->twoF = ( *coh_res )->coh2F->data;
-  for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
-    const size_t idx = coh_input->Fstat_res_idx[i];
-    Fstat_res->twoFPerDet[i] = ( *coh_res )->coh2F_det[idx]->data;
+    for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
+      const size_t idx = coh_input->Fstat_res_idx[i];
+      Fstat_res->twoFPerDet[i] = ( *coh_res )->coh2F_det[idx]->data;
+    }
   }
 
   // Compute the F-statistic starting at the point 'coh_phys', with 'nfreqs' frequency bins
@@ -487,10 +535,19 @@ int XLALWeaveCohResultsCompute(
   XLAL_CHECK( Fstat_res->internalalloclen == ( *coh_res )->nfreqs, XLAL_EFAILED );
   XLAL_CHECK( Fstat_res->numFreqBins == ( *coh_res )->nfreqs, XLAL_EFAILED );
   XLAL_CHECK( !( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) || ( Fstat_res->numDetectors == coh_input->Fstat_ndetectors ), XLAL_EFAILED );
-  XLAL_CHECK( Fstat_res->twoF == ( *coh_res )->coh2F->data, XLAL_EFAILED );
-  for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
-    const size_t idx = coh_input->Fstat_res_idx[i];
-    XLAL_CHECK( Fstat_res->twoFPerDet[i] == ( *coh_res )->coh2F_det[idx]->data, XLAL_EFAILED, "%p vs %p", Fstat_res->twoFPerDet[i], ( *coh_res )->coh2F_det[idx]->data );
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F ) {
+    XLAL_CHECK( Fstat_res->twoF == ( *coh_res )->coh2F->data, XLAL_EFAILED );
+  }
+#ifdef LALAPPS_CUDA_ENABLED
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_CUDA ) {
+    XLAL_CHECK( Fstat_res->twoF_CUDA == ( *coh_res )->coh2F_CUDA.data, XLAL_EFAILED );
+  }
+#endif
+  if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_PER_DET ) {
+    for ( size_t i = 0; i < coh_input->Fstat_ndetectors; ++i ) {
+      const size_t idx = coh_input->Fstat_res_idx[i];
+      XLAL_CHECK( Fstat_res->twoFPerDet[i] == ( *coh_res )->coh2F_det[idx]->data, XLAL_EFAILED, "%p vs %p", Fstat_res->twoFPerDet[i], ( *coh_res )->coh2F_det[idx]->data );
+    }
   }
 
   // Stop timing of coherent results
@@ -511,6 +568,11 @@ void XLALWeaveCohResultsDestroy(
 {
   if ( coh_res != NULL ) {
     XLALDestroyREAL4Vector( coh_res->coh2F );
+#ifdef LALAPPS_CUDA_ENABLED
+    if ( coh_res->coh2F_CUDA.data != NULL ) {
+      cudaFree( coh_res->coh2F_CUDA.data );
+    }
+#endif
     for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
       XLALDestroyREAL4Vector( coh_res->coh2F_det[i] );
     }
@@ -580,8 +642,17 @@ int XLALWeaveSemiResultsInit(
 
     // If we need coh2F in "main loop": allocate vector
     if ( mainloop_stats & WEAVE_STATISTIC_COH2F ) {
-      ( *semi_res )->coh2F = XLALCalloc( nsegments, sizeof( *( *semi_res )->coh2F ) );
-      XLAL_CHECK( ( *semi_res )->coh2F != NULL, XLAL_ENOMEM );
+      if ( statistics_params->coh_input[0]->Fstat_what_to_compute & FSTATQ_2F_CUDA ) {
+#ifdef LALAPPS_CUDA_ENABLED
+        XLAL_CHECK( cudaMallocManaged( (void **)&( *semi_res )->coh2F_CUDA, nsegments * sizeof( *( *semi_res )->coh2F_CUDA ), cudaMemAttachGlobal ) == cudaSuccess, XLAL_ENOMEM );
+        memset( ( *semi_res )->coh2F_CUDA, 0, nsegments * sizeof( *( *semi_res )->coh2F_CUDA ) );
+#else
+        XLAL_ERROR( XLAL_EFAILED, "CUDA not enabled" );
+#endif
+      } else {
+        XLAL_CHECK( ( ( *semi_res )->coh2F = XLALMalloc( nsegments * sizeof( *( *semi_res )->coh2F ) ) ) != NULL, XLAL_ENOMEM );
+        memset( ( *semi_res )->coh2F, 0, nsegments * sizeof( *( *semi_res )->coh2F ) );
+      }
     }
 
     // If we need coh2F_det in "main loop": allocate vector
@@ -607,14 +678,22 @@ int XLALWeaveSemiResultsInit(
   // Initialise number of coherent results
   ( *semi_res )->ncoh_res = 0;
 
-  // Initialise number of max-over-segments to multi- and per-detector F-statistics
-  ( *semi_res )->nmax2F = 0;
-  XLAL_INIT_MEM( ( *semi_res )->nmax2F_det );
   // If we need max2F in "main loop": Reallocate vector of max-over-segments of multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
     if ( ( *semi_res )->max2F == NULL || ( *semi_res )->max2F->length < ( *semi_res )->nfreqs ) {
+#ifdef LALAPPS_CUDA_ENABLED
+      if ( ( *semi_res )->max2F == NULL ) {
+        XLAL_CHECK( ( ( *semi_res )->max2F = XLALCalloc( 1, sizeof( *( *semi_res )->max2F ) ) ) != NULL, XLAL_ENOMEM );
+      }
+      if ( ( *semi_res )->max2F->data != NULL ) {
+        cudaFree( ( *semi_res )->max2F->data );
+      }
+      XLAL_CHECK( cudaMallocManaged( (void **)&( *semi_res )->max2F->data, sizeof( ( *semi_res )->max2F->data[0] ) * ( *semi_res )->nfreqs, cudaMemAttachGlobal ) == cudaSuccess, XLAL_ENOMEM );
+      ( *semi_res )->max2F->length = ( *semi_res )->nfreqs;
+#else
       ( *semi_res )->max2F = XLALResizeREAL4VectorAligned( ( *semi_res )->max2F, ( *semi_res )->nfreqs, alignment );
       XLAL_CHECK( ( *semi_res )->max2F != NULL, XLAL_ENOMEM );
+#endif
     }
   }
   // If we need max2F_det in "main loop": Reallocate vector of max-over-segments of per-detector F-statistics per frequency
@@ -627,14 +706,22 @@ int XLALWeaveSemiResultsInit(
     }
   }
 
-  // Initialise number of additions to multi- and per-detector F-statistics
-  ( *semi_res )->nsum2F = 0;
-  XLAL_INIT_MEM( ( *semi_res )->nsum2F_det );
   // If we need sum2F in "main loop": Reallocate vector of sum of multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
     if ( ( *semi_res )->sum2F == NULL || ( *semi_res )->sum2F->length < ( *semi_res )->nfreqs ) {
+#ifdef LALAPPS_CUDA_ENABLED
+      if ( ( *semi_res )->sum2F == NULL ) {
+        XLAL_CHECK( ( ( *semi_res )->sum2F = XLALCalloc( 1, sizeof( *( *semi_res )->sum2F ) ) ) != NULL, XLAL_ENOMEM );
+      }
+      if ( ( *semi_res )->sum2F->data != NULL ) {
+        cudaFree( ( *semi_res )->sum2F->data );
+      }
+      XLAL_CHECK( cudaMallocManaged( (void **)&( *semi_res )->sum2F->data, sizeof( ( *semi_res )->sum2F->data[0] ) * ( *semi_res )->nfreqs, cudaMemAttachGlobal ) == cudaSuccess, XLAL_ENOMEM );
+      ( *semi_res )->sum2F->length = ( *semi_res )->nfreqs;
+#else
       ( *semi_res )->sum2F = XLALResizeREAL4VectorAligned( ( *semi_res )->sum2F, ( *semi_res )->nfreqs, alignment );
       XLAL_CHECK( ( *semi_res )->sum2F != NULL, XLAL_ENOMEM );
+#endif
     }
   }
   // If we need sum2F_det in "main loop": Reallocate vector of sum of per-detector F-statistics per frequency
@@ -684,49 +771,14 @@ int XLALWeaveSemiResultsInit(
 }
 
 ///
-/// Add F-statistic array 'coh2F' to summed array 'sum2F', and keep track of the number of summations 'nsum'
-///
-static int semi_res_sum_2F(
-  UINT4 *nsum,
-  REAL4 *sum2F,
-  const REAL4 *coh2F,
-  const UINT4 nfreqs
-  )
-{
-  if ( ( *nsum )++ == 0 ) {
-    // If this is the first summation, just use memcpy()
-    memcpy( sum2F, coh2F, sizeof( *sum2F ) * nfreqs );
-    return XLAL_SUCCESS;
-  }
-  return XLALVectorAddREAL4( sum2F, sum2F, coh2F, nfreqs );
-}
-
-///
-/// Track maximum between F-statistic array 'coh2F' and 'max2F', and keep track of the number of maximum-comparisons 'nmax'
-///
-static int semi_res_max_2F(
-  UINT4 *nmax,
-  REAL4 *max2F,
-  const REAL4 *coh2F,
-  const UINT4 nfreqs
-  )
-{
-  if ( ( *nmax )++ == 0 ) {
-    // If this is the first max-comparison, just use memcpy()
-    memcpy( max2F, coh2F, sizeof( *max2F ) * nfreqs );
-    return XLAL_SUCCESS;
-  }
-  return XLALVectorMaxREAL4( max2F, max2F, coh2F, nfreqs );
-}
-
-///
 /// Add a new set of coherent results to the semicoherent results
 ///
-int XLALWeaveSemiResultsAdd(
+int XLALWeaveSemiResultsComputeSegs(
   WeaveSemiResults *semi_res,
-  const WeaveCohResults *coh_res,
-  const UINT8 coh_index,
-  const UINT4 coh_offset,
+  const UINT4 nsegments,
+  const WeaveCohResults **coh_res,
+  const UINT8 *coh_index,
+  const UINT4 *coh_offset,
   WeaveSearchTiming *tim
   )
 {
@@ -734,25 +786,34 @@ int XLALWeaveSemiResultsAdd(
   // Check input
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res->ncoh_res < semi_res->nsegments, XLAL_EINVAL );
-  XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res->statistics_params != NULL, XLAL_EFAULT );
+  XLAL_CHECK( nsegments > 0, XLAL_EINVAL );
+  XLAL_CHECK( coh_res != NULL, XLAL_EFAULT );
+  for ( size_t j = 0; j < nsegments; ++j ) {
+    XLAL_CHECK( coh_res[j] != NULL, XLAL_EFAULT );
+  }
+  XLAL_CHECK( coh_index != NULL, XLAL_EFAULT );
+  XLAL_CHECK( coh_offset != NULL, XLAL_EFAULT );
   XLAL_CHECK( tim != NULL, XLAL_EFAULT );
-
-  // Check that offset does not overrun coherent results arrays
-  XLAL_CHECK( coh_offset + semi_res->nfreqs <= coh_res->nfreqs, XLAL_EFAILED, "Coherent offset (%u) + number of semicoherent frequency bins (%u) > number of coherent frequency bins (%u)", coh_offset, semi_res->nfreqs, coh_res->nfreqs );
 
   WeaveStatisticType mainloop_stats = semi_res->statistics_params->mainloop_statistics;
 
-  // Increment number of processed coherent results
-  const size_t j = semi_res->ncoh_res;
-  ++semi_res->ncoh_res;
+  // Set number of processed coherent results
+  semi_res->ncoh_res = nsegments;
 
-  // Store per-segment coherent template index
-  semi_res->coh_index[j] = coh_index;
+  for ( size_t j = 0; j < nsegments; ++j ) {
 
-  // Store per-segment coherent template parameters
-  semi_res->coh_phys[j] = coh_res->coh_phys;
-  semi_res->coh_phys[j].fkdot[0] += semi_res->dfreq * coh_offset;
+    // Check that offset does not overrun coherent results arrays
+    XLAL_CHECK( coh_offset[j] + semi_res->nfreqs <= coh_res[j]->nfreqs, XLAL_EFAILED, "Coherent offset (%u) + number of semicoherent frequency bins (%u) > number of coherent frequency bins (%u)", coh_offset[j], semi_res->nfreqs, coh_res[j]->nfreqs );
+
+    // Store per-segment coherent template index
+    semi_res->coh_index[j] = coh_index[j];
+
+    // Store per-segment coherent template parameters
+    semi_res->coh_phys[j] = coh_res[j]->coh_phys;
+    semi_res->coh_phys[j].fkdot[0] += semi_res->dfreq * coh_offset[j];
+
+  }
 
   // Return now if simulating search
   if ( semi_res->simulation_level & WEAVE_SIMULATE ) {
@@ -761,13 +822,25 @@ int XLALWeaveSemiResultsAdd(
 
   // Store per-segment F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_COH2F ) {
-    semi_res->coh2F[j] = coh_res->coh2F->data + coh_offset;
+    if ( semi_res->coh2F_CUDA != NULL ) {
+      for ( size_t j = 0; j < nsegments; ++j ) {
+        XLAL_CHECK( coh_res[j]->coh2F_CUDA.data != NULL, XLAL_EFAULT );
+        semi_res->coh2F_CUDA[j] = coh_res[j]->coh2F_CUDA.data + coh_offset[j];
+      }
+    } else {
+      for ( size_t j = 0; j < nsegments; ++j ) {
+        XLAL_CHECK( coh_res[j]->coh2F->data != NULL, XLAL_EFAULT );
+        semi_res->coh2F[j] = coh_res[j]->coh2F->data + coh_offset[j];
+      }
+    }
   }
 
   // Store per-segment per-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_COH2F_DET ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      semi_res->coh2F_det[i][j] = ( coh_res->coh2F_det[i] != NULL ) ? coh_res->coh2F_det[i]->data + coh_offset : NULL;
+      for ( size_t j = 0; j < nsegments; ++j ) {
+        semi_res->coh2F_det[i][j] = ( coh_res[j]->coh2F_det[i] != NULL ) ? coh_res[j]->coh2F_det[i]->data + coh_offset[j] : NULL;
+      }
     }
   }
 
@@ -776,7 +849,24 @@ int XLALWeaveSemiResultsAdd(
 
   // Add to max-over-segments multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
-    XLAL_CHECK( semi_res_max_2F( &semi_res->nmax2F, semi_res->max2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( semi_res->coh2F_CUDA != NULL ) {
+#ifdef LALAPPS_CUDA_ENABLED
+
+      // CUDA implementation
+      XLAL_CHECK( XLALVectorsMaxREAL4CUDA( semi_res->max2F->data, semi_res->coh2F_CUDA, nsegments, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+#else
+      XLAL_ERROR( XLAL_EFAILED, "CUDA not enabled" );
+#endif
+    } else {
+
+      // Generic implementation
+      memcpy( semi_res->max2F->data, semi_res->coh2F[0], sizeof( semi_res->max2F->data[0] ) * semi_res->nfreqs );
+      for ( size_t j = 1; j < nsegments; ++j ) {
+        XLAL_CHECK( XLALVectorMaxREAL4( semi_res->max2F->data, semi_res->max2F->data, semi_res->coh2F[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+
+    }
   }
 
   // Switch timed statistic
@@ -785,8 +875,11 @@ int XLALWeaveSemiResultsAdd(
   // Add to max-over-segments per-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F_DET ) {
     for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-      if ( coh_res->coh2F_det[i] != NULL ) {
-        XLAL_CHECK( semi_res_max_2F( &semi_res->nmax2F_det[i], semi_res->max2F_det[i]->data, coh_res->coh2F_det[i]->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      memset( semi_res->max2F_det[i]->data, 0, sizeof( semi_res->max2F_det[i]->data[0] ) * semi_res->nfreqs );
+      for ( size_t j = 0; j < nsegments; ++j ) {
+        if ( coh_res[j]->coh2F_det[i] != NULL ) {
+          XLAL_CHECK( XLALVectorMaxREAL4( semi_res->max2F_det[i]->data, semi_res->max2F_det[i]->data, coh_res[j]->coh2F_det[i]->data + coh_offset[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
       }
     }
   }
@@ -796,9 +889,24 @@ int XLALWeaveSemiResultsAdd(
 
   // Add to summed multi-detector F-statistics per frequency, and increment number of additions thus far
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
-    XLAL_CHECK( semi_res_sum_2F( &semi_res->nsum2F, semi_res->sum2F->data, coh_res->coh2F->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-  } else {
-    semi_res->nsum2F ++;             // Even if not summing here: count number of 2F summands for (potential) completion-loop usage
+    if ( semi_res->coh2F_CUDA != NULL ) {
+#ifdef LALAPPS_CUDA_ENABLED
+
+      // CUDA implementation
+      XLAL_CHECK( XLALVectorsAddREAL4CUDA( semi_res->sum2F->data, semi_res->coh2F_CUDA, nsegments, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+#else
+      XLAL_ERROR( XLAL_EFAILED, "CUDA not enabled" );
+#endif
+    } else {
+
+      // Generic implementation
+      memcpy( semi_res->sum2F->data, semi_res->coh2F[0], sizeof( semi_res->sum2F->data[0] ) * semi_res->nfreqs );
+      for ( size_t j = 1; j < nsegments; ++j ) {
+        XLAL_CHECK( XLALVectorAddREAL4( semi_res->sum2F->data, semi_res->sum2F->data, semi_res->coh2F[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+
+    }
   }
 
   // Switch timed statistic
@@ -806,11 +914,14 @@ int XLALWeaveSemiResultsAdd(
 
   // Add to summed per-detector F-statistics per frequency, and increment number of additions thus far
   for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
-    if ( coh_res->coh2F_det[i] != NULL ) {
-      if ( mainloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
-        XLAL_CHECK( semi_res_sum_2F( &semi_res->nsum2F_det[i], semi_res->sum2F_det[i]->data, coh_res->coh2F_det[i]->data + coh_offset, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
-      } else {
-        semi_res->nsum2F_det[i] ++;  // Even if not summing here: count number of per-detector 2F summands for (potential) completion-loop usage
+    if ( mainloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
+      memset( semi_res->sum2F_det[i]->data, 0, sizeof( semi_res->sum2F_det[i]->data[0] ) * semi_res->nfreqs );
+    }
+    for ( size_t j = 0; j < nsegments; ++j ) {
+      if ( coh_res[j]->coh2F_det[i] != NULL ) {
+        if ( mainloop_stats & WEAVE_STATISTIC_SUM2F_DET ) {
+          XLAL_CHECK( XLALVectorAddREAL4( semi_res->sum2F_det[i]->data, semi_res->sum2F_det[i]->data, coh_res[j]->coh2F_det[i]->data + coh_offset[j], semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
       }
     }
   }
@@ -866,7 +977,7 @@ int XLALWeaveSemiResultsComputeMain(
 
   // Compute mean multi-detector F-statistics per frequency:
   if ( mainloop_stats & WEAVE_STATISTIC_MEAN2F ) {
-    XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F->data, 1.0 / semi_res->nsum2F, sum2F, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALVectorScaleREAL4( semi_res->mean2F->data, 1.0 / semi_res->nsegments, sum2F, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Switch timed statistic
@@ -914,9 +1025,27 @@ void XLALWeaveSemiResultsDestroy(
   XLALFree( semi_res->coh_index );
   XLALFree( semi_res->coh_phys );
   XLALFree( semi_res->coh2F );
+#ifdef LALAPPS_CUDA_ENABLED
+  cudaFree( semi_res->coh2F_CUDA );
+#endif
 
+#ifdef LALAPPS_CUDA_ENABLED
+  if ( semi_res->max2F != NULL ) {
+    if ( semi_res->max2F->data != NULL ) {
+      cudaFree( semi_res->max2F->data );
+    }
+    XLALFree( semi_res->max2F );
+  }
+  if ( semi_res->sum2F != NULL ) {
+    if ( semi_res->sum2F->data != NULL ) {
+      cudaFree( semi_res->sum2F->data );
+    }
+    XLALFree( semi_res->sum2F );
+  }
+#else
   XLALDestroyREAL4VectorAligned( semi_res->max2F );
   XLALDestroyREAL4VectorAligned( semi_res->sum2F );
+#endif
   XLALDestroyREAL4VectorAligned( semi_res->mean2F );
 
   for ( size_t i = 0; i < PULSAR_MAX_DETECTORS; ++i ) {
@@ -948,6 +1077,7 @@ int XLALWeaveCohResultsExtract(
   XLAL_CHECK( coh_res->nfreqs >= 1, XLAL_EINVAL );
   XLAL_CHECK( coh2F != NULL && coh2F_det != NULL, XLAL_EINVAL );
   XLAL_CHECK( have_coh2F_det != NULL, XLAL_EINVAL );
+  XLAL_CHECK( !( coh_input->Fstat_what_to_compute & FSTATQ_2F_CUDA ), XLAL_EINVAL );
 
   ( *coh2F ) = coh_res->coh2F;
   ( *have_coh2F_det ) = 0;
@@ -964,6 +1094,44 @@ int XLALWeaveCohResultsExtract(
   return XLAL_SUCCESS;
 }
 
+/// Extract 2F results from WeaveSemiResults; handles results stores in CUDA device memory
+int XLALWeaveSemiCoh2FExtract(
+  REAL4 *coh2F,
+  const WeaveSemiResults *semi_res,
+  const UINT4 freq_idx
+  )
+{
+
+  // Check input
+  XLAL_CHECK( coh2F != NULL, XLAL_EFAULT );
+  XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
+  XLAL_CHECK( freq_idx < semi_res->nfreqs, XLAL_EINVAL );
+
+  if ( semi_res->coh2F_CUDA != NULL ) {
+#ifdef LALAPPS_CUDA_ENABLED
+    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+      if ( semi_res->coh2F_CUDA[j] != NULL ) {
+        XLAL_CHECK_CUDA_CALL( cudaMemcpy( (void*)&coh2F[j], &semi_res->coh2F_CUDA[j][freq_idx], sizeof(coh2F[j]), cudaMemcpyDeviceToHost ) );
+      } else {
+        coh2F[j] = NAN;
+      }
+    }
+#else
+    XLAL_ERROR( XLAL_EFAILED, "CUDA not enabled" );
+#endif
+  } else {
+    for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
+      if ( semi_res->coh2F[j] != NULL ) {
+        coh2F[j] = semi_res->coh2F[j][freq_idx];
+      } else {
+        coh2F[j] = NAN;
+      }
+    }
+  }
+  
+  return XLAL_SUCCESS;
+
+}
 
 // Local Variables:
 // c-file-style: "linux"

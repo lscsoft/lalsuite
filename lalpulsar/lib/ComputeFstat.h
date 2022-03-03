@@ -98,13 +98,14 @@ typedef enum tagFstatQuantities {
   FSTATQ_2F_PER_DET     = 0x04,         ///< Compute \f$2\mathcal{F}\f$ for each detector.
   FSTATQ_FAFB_PER_DET   = 0x08,         ///< Compute \f$F_a\f$ and \f$F_b\f$ for each detector.
   FSTATQ_ATOMS_PER_DET  = 0x10,         ///< Compute per-SFT \f$\mathcal{F}\f$-statistic atoms for each detector (\a Demod only).
-  FSTATQ_LAST           = 0x20
+  FSTATQ_2F_CUDA        = 0x20,         ///< Compute multi-detector \f$2\mathcal{F}\f$, store results on CUDA GPU (CUDA implementation of \a Resamp only).
+  FSTATQ_LAST           = 0x80
 } FstatQuantities;
 
 ///
 /// Different methods available to compute the \f$\mathcal{F}\f$-statistic, falling into two broad classes:
 /// * \a Demod: Dirichlet kernel-based demodulation \cite Williams1999 .
-/// * \a Resamp: FFT-based resampling \cite JKS98 .
+/// * \a Resamp: FFT-based resampling \cite JKS98 \cite Prix2022 \cite DunnEtAl2022 .
 ///
 typedef enum tagFstatMethodType {
 
@@ -118,7 +119,8 @@ typedef enum tagFstatMethodType {
   FMETHOD_DEMOD_SSE,		///< \a Demod: SSE hotloop with precalc divisors, uses fixed \f$\text{Dterms} = 8\f$
   FMETHOD_DEMOD_BEST,		///< \a Demod: best guess of the fastest available hotloop
 
-  FMETHOD_RESAMP_GENERIC,	///< \a Resamp: generic implementation
+  FMETHOD_RESAMP_GENERIC,	///< \a Resamp: generic implementation \cite Prix2022
+  FMETHOD_RESAMP_CUDA,		///< \a Resamp: CUDA resampling \cite DunnEtAl2022
   FMETHOD_RESAMP_BEST,		///< \a Resamp: best guess of the fastest available implementation
 
   /// \cond DONT_DOXYGEN
@@ -237,6 +239,13 @@ typedef struct tagFstatResults {
 #endif // SWIG
   REAL4 *twoF;
 
+#ifndef SWIG // exclude from SWIG interface
+  /// If #whatWasComputed & FSTATQ_2F_CUDA is true, the multi-detector \f$2\mathcal{F}\f$ values
+  /// as for #twoF, but stored in CUDA device memory.  This array should not be accessed if
+  /// #whatWasComputed & FSTATQ_2F_CUDA is false.
+  REAL4 *twoF_CUDA;
+#endif
+
   /// If #whatWasComputed & FSTATQ_PARTS is true, the multi-detector \f$F_a\f$ and \f$F_b\f$
   /// computed at #numFreqBins frequencies spaced #dFreq apart.  This array should not be accessed
   /// if #whatWasComputed & FSTATQ_PARTS is false.
@@ -348,7 +357,7 @@ const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
 const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
 MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );
 const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
-int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, const FstatInput *input );
+int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, FstatInput *input );
 int XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
 int XLALAppendFstatTiming2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
 int XLALFstatInputTimeslice ( FstatInput** slice, const FstatInput* input, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS);
@@ -361,7 +370,6 @@ int XLALComputeFstat ( FstatResults **Fstats, FstatInput *input, const PulsarDop
 
 void XLALDestroyFstatInput ( FstatInput* input );
 void XLALDestroyFstatResults ( FstatResults* Fstats );
-int XLALAdd4ToFstatResults ( FstatResults* Fstats );
 
 REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv );
 

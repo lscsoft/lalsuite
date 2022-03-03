@@ -102,7 +102,7 @@ for setup in short long; do
         short)
             echo "=== Setup '${setup}': Compare F-statistics from lalapps_Weave without/with a maximum cache size ==="
             set -x
-            env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoMax.fits --result-file-2=WeaveOutMax.fits
+            lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoMax.fits --result-file-2=WeaveOutMax.fits
             set +x
             echo
             ;;
