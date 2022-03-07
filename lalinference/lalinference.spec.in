@@ -77,9 +77,18 @@ BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 Summary: LSC Algorithm Inference Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+Requires: %{name}-data
 Obsoletes: python2-%{name} <= 2.0.7-1
 %description
 The LSC Algorithm Inference Library for gravitational wave data analysis.
+
+# lalinference-data
+%package data
+Summary: Data files for LALInference
+%description data
+The LSC Algorithm Inference Library for gravitational wave data analysis.
+This package contains the data files needed to run various applications
+and rountines that use the LAL Inference library.
 
 # liblalinference
 %package -n lib%{name}
@@ -93,6 +102,7 @@ Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: liblalburst >= @MIN_LALBURST_VERSION@
 Requires: liblalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: liblalpulsar >= @MIN_LALPULSAR_VERSION@
+Requires: %{name}-data
 Conflicts: %{name} <= 2.0.5-1
 %description -n lib%{name}
 The LSC Algorithm Inference Library for gravitational wave data analysis.
@@ -190,6 +200,12 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
+%files data
+%defattr(-,root,root)
+%doc README.md
+%license COPYING
+%{_datarootdir}/%{name}/*
+
 %files -n lib%{name}
 %defattr(-,root,root)
 %doc README.md
@@ -222,7 +238,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %doc README.md
 %license COPYING
 %{_bindir}/*
-%{_datarootdir}/%{name}/*
 %{_mandir}/man1/*
 %{_sysconfdir}/*
 

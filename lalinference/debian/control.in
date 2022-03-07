@@ -52,6 +52,7 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
+ lalinference-data,
 Breaks: lalinference (<< 2.0.5-2~)
 Replaces: lalinference (<< 2.0.5-2~)
 Description: LSC Algorithm Library Inference
@@ -142,8 +143,18 @@ Depends:
  openssh-client,
  python3:any,
  python3-lalinference (= ${binary:Version}),
+ lalinference-data,
 Description: LSC Algorithm Library Inference
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package provides the runtime tools.
 Breaks: lalapps (<< 6.25)
 Replaces: lalapps (<< 6.25)
+
+Package: lalinference-data
+Architecture: all
+Depends: ${misc:Depends}
+Description: LSC Algorithm Library Inference
+ The LSC Algorithm Inference Library for gravitational wave data analysis.
+ This package provides the data files.
+Replaces: liblalinference22 (<< 3.0.2.1-1~)
+Breaks: liblalinference22 (<< 3.0.2.1-1~)
