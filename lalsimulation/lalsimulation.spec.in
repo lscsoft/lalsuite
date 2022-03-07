@@ -50,16 +50,26 @@ BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 # lalsimulation
 Summary: LSC Algorithm Simulation Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
+Requires: %{name}-data
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Obsoletes: python2-%{name} <= 2.5.1-1
 %description
 The LSC Algorithm Simulation Library for gravitational wave data analysis.
 This package provides the runtime tools.
 
+# lalsimulation-data
+%package data
+Summary: Data files for LALSimulation
+%description data
+The LSC Algorithm Simulation Library for gravitational wave data analysis.
+This package contains the data files needed to run various applications and
+rountines that use the LAL Simulation Library.
+
 # liblalsimulation
 %package -n lib%{name}
 Summary: LSC Algorithm Simulation Library - library package
 Requires: liblal >= @MIN_LAL_VERSION@
+Requires: %{name}-data
 Conflicts: %{name} <= 2.3.0-1
 %description -n lib%{name}
 The LSC Algorithm Simulation Library for gravitational wave data analysis.
@@ -126,11 +136,16 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
-%files -n lib%{name}
+%files data
 %defattr(-,root,root)
 %doc README.md
 %license COPYING
 %{_datarootdir}/%{name}/*
+
+%files -n lib%{name}
+%defattr(-,root,root)
+%doc README.md
+%license COPYING
 %{_libdir}/*.so.*
 
 %files -n lib%{name}-devel
