@@ -4,6 +4,7 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	lalsimulation.install \
+	lalsimulation-data.install \
 	lalsimulation-octave.install \
 	liblalsimulation-dev.install \
 	liblalsimulation@LIBMAJOR@.install \

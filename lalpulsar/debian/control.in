@@ -32,6 +32,7 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
+ lalpulsar-data,
 Description: LSC Algorithm Library Pulsar
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -105,6 +106,16 @@ Depends:
  ${shlibs:Depends},
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
  python3-lalpulsar (= ${binary:Version}),
+ lalpulsar-data,
 Description: LSC Algorithm Library Pulsar
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package provides the runtime tools.
+
+Package: lalpulsar-data
+Architecture: all
+Depends: ${misc:Depends}
+Description: LSC Algorithm Library Pulsar
+ The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+ This package provides the data files.
+Replaces: liblalpulsar23 (<< 3.1.2.1-1~)
+Breaks: liblalpulsar23 (<< 3.1.2.1-1~)

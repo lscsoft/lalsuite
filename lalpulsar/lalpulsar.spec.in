@@ -58,17 +58,27 @@ BuildRequires: lalframe-octave >= @MIN_LALFRAME_VERSION@
 Summary: LSC Algorithm Pulsar Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+Requires: %{name}-data
 Obsoletes: python2-%{name} <= 3.0.1-1
 %description
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL Pulsar library.
 
+# lalpulsar-data
+%package data
+Summary: Data files for LALPulsar
+%description data
+The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+This package contains the data files needed to run various applications and
+rountines that use the LAL Pulsar Library.
+
 # liblalpulsar
 %package -n lib%{name}
 Summary: LSC Algorithm Simulation Library - library package
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalframe >= @MIN_LALFRAME_VERSION@
+Requires: %{name}-data
 Conflicts: %{name} <= 2.1.0-1
 %description -n lib%{name}
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
@@ -141,11 +151,16 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
+%files data
+%defattr(-,root,root)
+%doc README.md
+%license COPYING
+%{_datarootdir}/%{name}/*
+
 %files -n lib%{name}
 %defattr(-,root,root)
 %doc README.md
 %license COPYING
-%{_datarootdir}/lalpulsar/*
 %{_libdir}/*.so.*
 
 %files -n lib%{name}-devel

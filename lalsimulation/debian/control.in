@@ -27,6 +27,7 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
+ lalsimulation-data,
 Description: LSC Algorithm Library Simulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -93,7 +94,17 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
+ lalsimulation-data,
  python3-lalsimulation (= ${binary:Version}),
 Description: LSC Algorithm Library Simulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package provides the runtime tools.
+
+Package: lalsimulation-data
+Architecture: all
+Depends: ${misc:Depends}
+Description: LSC Algorithm Library Simulation
+ The LSC Algorithm Simulation Library for gravitational wave data analysis.
+ This package provides the data files.
+Replaces: liblalsimulation29 (<< 3.1.1.1-1~)
+Breaks: liblalsimulation29 (<< 3.1.1.1-1~)
