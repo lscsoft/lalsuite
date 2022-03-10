@@ -9,13 +9,17 @@ other problems.
 
 #### Backwards Compatible Changes
 
-- [ ] This change introduces no API changes
-- [ ] This change adds new API calls
+- [ ] This change does not modify any class/function/struct/type definitions
+      in a public C header file or any Python class/function definitions
+- [ ] This change adds new classes/functions/structs/types
+      to a public C header file or Python module
 
 #### Backwards Incompatible Changes
 
-- [ ] This change modifies an existing API
-- [ ] This change removes an existing API
+- [ ] This change modifies an existing class/function/struct/type definition
+      in a public C header file or Python module
+- [ ] This change removes an existing class/function/struct/type
+      from a public C header file or Python module
 
 If any of the Backwards Incompatible check boxes are ticked please
 provide a justification why this change is necessary and why it needs
