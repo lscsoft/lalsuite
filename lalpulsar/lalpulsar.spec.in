@@ -67,6 +67,7 @@ that use the LAL Pulsar library.
 
 # lalpulsar-data
 %package data
+BuildArch: noarch
 Summary: Data files for LALPulsar
 %description data
 The LSC Algorithm Pulsar Library for gravitational wave data analysis.
