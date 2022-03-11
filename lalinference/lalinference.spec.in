@@ -84,6 +84,7 @@ The LSC Algorithm Inference Library for gravitational wave data analysis.
 
 # lalinference-data
 %package data
+BuildArch: noarch
 Summary: Data files for LALInference
 %description data
 The LSC Algorithm Inference Library for gravitational wave data analysis.
