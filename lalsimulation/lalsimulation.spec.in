@@ -59,6 +59,7 @@ This package provides the runtime tools.
 
 # lalsimulation-data
 %package data
+BuildArch: noarch
 Summary: Data files for LALSimulation
 %description data
 The LSC Algorithm Simulation Library for gravitational wave data analysis.
