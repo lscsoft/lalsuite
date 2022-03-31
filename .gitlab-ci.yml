@@ -217,8 +217,7 @@ default:
       if [ -d rpmbuild ]; then
           yum install -y -q createrepo
           LOCAL_REPO="${CI_PROJECT_DIR}/local-builds"
-          _ARCH=$(rpm --eval '%{_arch}')
-          cp -r rpmbuild/RPMS/$(rpm --eval '%{_arch}') ${LOCAL_REPO}
+          cp -r rpmbuild/RPMS ${LOCAL_REPO}
           createrepo --quiet --workers "${CPU_COUNT}" "${LOCAL_REPO}"
           cat > /etc/yum.repos.d/local-builds.repo <<EOF
       [local-builds]
@@ -272,9 +271,9 @@ default:
     expire_in: 18h
     paths:
       # build packages
-      - "rpmbuild/RPMS/x86_64/${CI_JOB_NAME%%:*}-*.rpm"
-      - "rpmbuild/RPMS/x86_64/lib${CI_JOB_NAME%%:*}-*.rpm"
-      - "rpmbuild/RPMS/x86_64/python*-${CI_JOB_NAME%%:*}-*.rpm"
+      - "rpmbuild/RPMS/*/${CI_JOB_NAME%%:*}-*.rpm"
+      - "rpmbuild/RPMS/*/lib${CI_JOB_NAME%%:*}-*.rpm"
+      - "rpmbuild/RPMS/*/python*-${CI_JOB_NAME%%:*}-*.rpm"
       # log files
       - "rpmbuild/BUILD/**/config.log"
       - "rpmbuild/BUILD/**/test-suite.log"
@@ -1144,7 +1143,7 @@ lalinference_testjob:
     - yum -y -q install
           git
           git-lfs
-    - yum -y -q install rpmbuild/RPMS/x86_64/*.rpm
+    - yum -y -q install rpmbuild/RPMS/*/*.rpm
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
@@ -1315,7 +1314,7 @@ upgrade:rpm:el7:
     # install latest release
     - yum -y -q install lalapps
     # install new packages
-    - yum -y install rpmbuild/RPMS/x86_64/*.rpm
+    - yum -y install rpmbuild/RPMS/*/*.rpm
 
 upgrade:debian:buster:
   extends:
@@ -1530,7 +1529,7 @@ platform:conda:macos-arm64:
   before_script:
     - set -x
     # add RPMs to directory to pass to docker
-    - mkdir rpms && mv rpmbuild/RPMS/x86_64/*.rpm rpms
+    - mkdir rpms && mv rpmbuild/RPMS/*/*.rpm rpms
     - rm -rf rpmbuild*
   needs:
     - lal:rpm
