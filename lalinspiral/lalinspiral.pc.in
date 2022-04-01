@@ -1,13 +1,7 @@
-PACKAGE_TARNAME=@PACKAGE_TARNAME@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 libdir=@libdir@
 includedir=@includedir@
-datarootdir=@datarootdir@
-docdir=@docdir@
-htmldir=@htmldir@
-LALINSPIRAL_OCTAVE_PATH=@octexecdir@
-LALINSPIRAL_PYTHON_PATH=@pyexecdir@
 
 Name: LALInspiral
 Description: LAL Inspiral Library Support
