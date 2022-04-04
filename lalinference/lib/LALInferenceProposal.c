@@ -47,7 +47,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALInferenceClusteredKDE.h>
 #include <lal/LALInferenceNestedSampler.h>
-#include <alloca.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -1071,29 +1070,25 @@ REAL8 LALInferenceDifferentialEvolutionNames(LALInferenceThreadState *thread,
     LALInferenceVariables *ptI, *ptJ;
     REAL8 logPropRatio = 0.0;
     REAL8 scale, x;
-
-
+    N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
+    const char *localnames[N];
+    
     gsl_rng *rng = thread->GSLrandom;
 
     if (names == NULL) {
-        N = LALInferenceGetVariableDimension(currentParams) + 1; /* More names than we need. */
-        names = alloca(N * sizeof(char *)); /* Hope we have alloca---saves
-                                               having to deallocate after
-                                               proposal. */
-
         item = currentParams->head;
         i = 0;
         while (item != NULL) {
             if (LALInferenceCheckVariableNonFixed(currentParams, item->name) && item->type==LALINFERENCE_REAL8_t ) {
-                names[i] = item->name;
+                localnames[i] = item->name;
                 i++;
             }
 
             item = item->next;
         }
-        names[i]=NULL; /* Terminate */
+        localnames[i]=NULL; /* Terminate */
+        names = localnames;
     }
-
 
     Ndim = 0;
     for (Ndim=0, i=0; names[i] != NULL; i++ ) {
