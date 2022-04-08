@@ -60,11 +60,7 @@ static long get_template_id(PyObject *event)
 	if(!template_id)
 		return -1;
 
-#if PY_MAJOR_VERSION < 3
-	val = PyInt_AsLong(template_id);
-#else
 	val = PyLong_AsLong(template_id);
-#endif
 	Py_DECREF(template_id);
 	/* PyLong_AsLong()'s error code is the same as ours, so we don't do
 	 * error checking here.  the calling code is responsible */
@@ -377,21 +373,13 @@ static PyObject *get_coincs__call__(PyObject *self, PyObject *args, PyObject *kw
 
 
 static PyTypeObject get_coincs_Type = {
-#if PY_MAJOR_VERSION < 3
-	PyObject_HEAD_INIT(NULL)
-#else
 	PyVarObject_HEAD_INIT(NULL, 0)
-#endif
 	.tp_name = MODULE_NAME ".get_coincs",
 	.tp_basicsize = sizeof(struct get_coincs),
 	.tp_dealloc = get_coincs__del__,
 	.tp_call = get_coincs__call__,
 	.tp_doc = "",
-#if PY_MAJOR_VERSION < 3
-	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES,
-#else
 	.tp_flags = Py_TPFLAGS_DEFAULT,
-#endif
 	.tp_init = get_coincs__init__,
 	.tp_new = PyType_GenericNew,
 };
@@ -406,17 +394,9 @@ static PyTypeObject get_coincs_Type = {
  */
 
 
-#if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC init_thinca(void);	/* silence warning */
-PyMODINIT_FUNC init_thinca(void)
-#else
 PyMODINIT_FUNC PyInit__thinca(void);	/* silence warning */
 PyMODINIT_FUNC PyInit__thinca(void)
-#endif
 {
-#if PY_MAJOR_VERSION < 3
-	PyObject *module = Py_InitModule3(MODULE_NAME, NULL, "");
-#else
 	static struct PyModuleDef modef = {
 		PyModuleDef_HEAD_INIT,
 		.m_name = MODULE_NAME,
@@ -425,7 +405,6 @@ PyMODINIT_FUNC PyInit__thinca(void)
 		.m_methods = NULL,
 	};
 	PyObject *module = PyModule_Create(&modef);
-#endif
 
 	if(PyType_Ready(&get_coincs_Type) < 0) {
 		Py_DECREF(module);
@@ -440,9 +419,5 @@ PyMODINIT_FUNC PyInit__thinca(void)
 	}
 
 done:
-#if PY_MAJOR_VERSION < 3
-	return;
-#else
 	return module;
-#endif
 }
