@@ -27,7 +27,6 @@
 import itertools
 import math
 import operator
-import sys
 
 
 from ligo.lw import ligolw
@@ -275,8 +274,6 @@ def ligolw_thinca(
 	# prepare the coincidence table interface.
 	#
 
-	if verbose:
-		print("indexing ...", file=sys.stderr)
 	coinc_tables = InspiralCoincTables(xmldoc, coinc_definer_row)
 
 	#
