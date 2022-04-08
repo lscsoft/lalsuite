@@ -41,6 +41,13 @@ from .git_version import date as __date__
 from .git_version import version as __version__
 
 
+def mchirp(m1, m2):
+	# mchirp = mtotal * eta**0.6
+	#        = mtotal * ((m1 * m2) / mtotal**2)**0.6
+	mtotal = m1 + m2
+	return mtotal * ((m1 * m2) / (mtotal * mtotal))**0.6
+
+
 #
 # =============================================================================
 #
@@ -199,7 +206,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 		coinc_inspiral = self.coinc_inspiral_table.RowType(
 			coinc_event_id = coinc.coinc_event_id,	# = None
 			mass = refevent.mass1 + refevent.mass2,
-			mchirp = refevent.mchirp,
+			mchirp = mchirp(refevent.mass1, refevent.mass2),
 			snr = math.sqrt(sum(event.snr**2. for event in events)),
 			false_alarm_rate = None,
 			combined_far = None,
