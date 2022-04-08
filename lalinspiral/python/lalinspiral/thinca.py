@@ -306,7 +306,7 @@ def ligolw_thinca(
 		# pull out all coincs in one operation below using the
 		# final flush
 		for instrument, events in itertools.groupby(sorted(sngl_inspiral_table, key = lambda row: row.ifo), lambda event: event.ifo):
-			time_slide_graph.push(instrument, tuple(events), PosInfinity)
+			time_slide_graph.push(instrument, tuple(events), snglcoinc.segments.PosInfinity)
 	else:
 		# slower diagnostic version.  simulate an online
 		# incremental analysis by pushing events into the graph in
