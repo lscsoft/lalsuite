@@ -51,68 +51,6 @@ def mchirp(m1, m2):
 #
 # =============================================================================
 #
-#                                 Speed Hacks
-#
-# =============================================================================
-#
-
-
-#
-# Construct a subclass of the sngl_inspiral row class with the methods that
-# are needed
-#
-
-
-class SnglInspiral(lsctables.SnglInspiral):
-	__slots__ = ()
-
-	#
-	# compare self's end time to the LIGOTimeGPS instance other.
-	# allows bisection searches by GPS time to find ranges of triggers
-	# quickly
-	#
-
-	def __lt__(self, other):
-		return self.end < other
-
-	def __le__(self, other):
-		return self.end <= other
-
-	def __eq__(self, other):
-		return self.end == other
-
-	def __ne__(self, other):
-		return self.end != other
-
-	def __ge__(self, other):
-		return self.end >= other
-
-	def __gt__(self, other):
-		return self.end > other
-
-	#
-	# simulate mtotal, eta, and mchirp from mass1 and mass2.  this (a)
-	# works around documents that have incorrect values in those three
-	# columns (yes, yes people do that) and (b) allows us to process
-	# documents that don't have the columns at all
-	#
-
-	@property
-	def mtotal(self):
-		return self.mass1 + self.mass2
-
-	@property
-	def eta(self):
-		return self.mass1 * self.mass2 / self.mtotal**2.
-
-	@property
-	def mchirp(self):
-		return self.mtotal * self.eta**0.6
-
-
-#
-# =============================================================================
-#
 #                          CoincTables Customizations
 #
 # =============================================================================
