@@ -1313,8 +1313,21 @@ upgrade:rpm:el7:
   script:
     # install latest release
     - yum -y -q install lal* python*-lal* --exclude lalsuite*
+    # create local repo
+    - yum -y -q install createrepo
+    - LOCAL_REPO="${CI_PROJECT_DIR}/local-builds"
+    - cp -r rpmbuild/RPMS ${LOCAL_REPO}
+    - createrepo --quiet --workers "${CPU_COUNT}" "${LOCAL_REPO}"
+    - |
+      cat > /etc/yum.repos.d/local-builds.repo <<EOF
+      [local-builds]
+      name=Local builds
+      baseurl=file://${LOCAL_REPO}
+      enabled=1
+      gpgcheck=0
+      EOF
     # install new packages
-    - yum -y install rpmbuild/RPMS/*/*.rpm
+    - yum -y upgrade
 
 upgrade:debian:buster:
   extends:
