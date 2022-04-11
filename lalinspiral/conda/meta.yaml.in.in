@@ -118,6 +118,7 @@ outputs:
       ignore_run_exports:
         # liblalburst is required because python-lalburst is used
         - liblalburst
+        - numpy
         - openssl
         - python
     requirements:
