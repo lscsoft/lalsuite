@@ -1332,6 +1332,7 @@ upgrade:debian:buster:
     - lalapps:deb
   script:
     - apt-get -y -q -q update
+    - apt-get -y -q -q upgrade
     # install latest lalsuite release
     - apt-get -y -q install lscsoft-lalsuite
     # setup local apt repository
