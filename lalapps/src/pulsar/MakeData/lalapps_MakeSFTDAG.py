@@ -230,6 +230,9 @@ parser.add_argument('-J', '--makesfts-path', type=str,
 parser.add_argument('-Y', '--request-memory', type=int, default=2048,
                     help='memory allocation in MB to request from condor for \
                     lalapps_MakeSFTs step')
+parser.add_argument('-s', '--request-disk', type=int, default=1024,
+                    help='disk space allocation in MB to request from condor \
+                    for lalapps_MakeSFTs step')
 parser.add_argument('-A', '--accounting-group', required=True, type=str,
                     help='Condor tag for the production of SFTs')
 parser.add_argument('-U', '--accounting-group-user', required=True, type=str,
@@ -397,6 +400,7 @@ with open(datafind_sub, 'w') as datafindFID:
     datafindFID.write('--type $(inputdatatype) {}\n'.format(
         dataFindMatchString))
     datafindFID.write('getenv = True\n')
+    datafindFID.write('request_disk = 5MB\n')
     datafindFID.write('accounting_group = {}\n'.format(args.accounting_group))
     datafindFID.write('accounting_group_user = {}\n'.format(
         args.accounting_group_user))
@@ -425,7 +429,8 @@ with open(makesfts_sub, 'w') as MakeSFTsFID:
     MakeSFTsFID.write('output = {}/MakeSFTs_$(tagstring).out\n'.format(
         args.log_path))
     MakeSFTsFID.write('notification = never\n')
-    MakeSFTsFID.write('RequestMemory = {}\n'.format(args.request_memory))
+    MakeSFTsFID.write(f'request_memory = {args.request_memory}MB\n')
+    MakeSFTsFID.write(f'request_disk = {args.request_disk}MB\n')
     MakeSFTsFID.write('RequestCpus = 1\n')
     MakeSFTsFID.write('queue 1\n')
 

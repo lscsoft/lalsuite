@@ -57,6 +57,7 @@ datafindfilecontent="universe = vanilla
 executable = /usr/bin/gw_data_find
 arguments = -r \$ENV(LIGO_DATAFIND_SERVER) --observatory \$(observatory) --url-type file --gps-start-time \$(gpsstarttime) --gps-end-time \$(gpsendtime) --lal-cache --type \$(inputdatatype) 
 getenv = True
+request_disk = 5MB
 accounting_group = ligo.sim.o4.cw.explore.test
 accounting_group_user = albert.einstein
 log = logs/datafind_test.dag.log
@@ -84,7 +85,8 @@ log = logs/MakeSFTs_test.dag.log
 error = logs/MakeSFTs_\$(tagstring).err
 output = logs/MakeSFTs_\$(tagstring).out
 notification = never
-RequestMemory = 2048
+request_memory = 2048MB
+request_disk = 1024MB
 RequestCpus = 1
 queue 1"
 if ! [[ $testsftsubcontent == $sftsubfilecontent ]]; then
