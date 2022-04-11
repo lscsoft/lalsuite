@@ -112,8 +112,8 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - mkl
+        - numpy
         - openssl
-        # ignore run_exports from python's recipe
         - python
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
