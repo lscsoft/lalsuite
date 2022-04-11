@@ -1312,7 +1312,7 @@ upgrade:rpm:el7:
     - lalapps:rpm
   script:
     # install latest release
-    - yum -y -q install lalapps
+    - yum -y -q install lal* python*-lal* --exclude lalsuite*
     # install new packages
     - yum -y install rpmbuild/RPMS/*/*.rpm
 
@@ -1333,12 +1333,16 @@ upgrade:debian:buster:
   script:
     - apt-get -y -q -q update
     - apt-get -y -q -q upgrade
-    # install latest lalsuite release
-    - apt-get -y -q install lscsoft-lalsuite
     # setup local apt repository
     - apt-get -y -q install local-apt-repository
     - mkdir /srv/local-apt-repository
-    - cp *.deb /srv/local-apt-repository
+    - mv *.deb /srv/local-apt-repository
+    # cleanup
+    - rm *.changes *.dsc *.orig.tar.xz
+    - ls | grep -P "lal.*-\d+(\.\d+)+" | xargs -d"\n" rm -rf
+    # install latest lalsuite release
+    - apt-get -y -q install lal* python*-lal*
+    # generate local apt repository metadata
     - /usr/lib/local-apt-repository/rebuild
     # install new packages
     - apt-get -y -q update
