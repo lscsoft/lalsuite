@@ -111,8 +111,8 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - numpy
         - openssl
-        # ignore run_exports from python's recipe
         - python
     requirements:
       build:
