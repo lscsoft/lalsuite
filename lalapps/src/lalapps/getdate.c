@@ -1347,7 +1347,7 @@ int yychar;
 YYSTYPE yylval;
 
     /* Number of syntax errors so far.  */
-    int yynerrs;
+    /*int yynerrs;*/
 
     int yystate;
     /* Number of tokens to shift before error messages enabled.  */
@@ -1402,7 +1402,7 @@ YYSTYPE yylval;
 
   yystate = 0;
   yyerrstatus = 0;
-  yynerrs = 0;
+  /*yynerrs = 0;*/
   yychar = YYEMPTY; /* Cause a token to be read.  */
 
   /* Initialize stack pointers.
@@ -2113,7 +2113,7 @@ yyerrlab:
   /* If not already recovering from an error, report this error.  */
   if (!yyerrstatus)
     {
-      ++yynerrs;
+      /*++yynerrs;*/
 #if ! YYERROR_VERBOSE
       yyerror (YY_("syntax error"));
 #else
