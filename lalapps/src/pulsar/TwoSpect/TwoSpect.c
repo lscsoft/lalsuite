@@ -538,9 +538,6 @@ int main(int argc, char *argv[])
    REAL8 skypointffnormalization = 1.0;
    XLAL_CHECK( ffPlaneNoise(aveNoise, &uvar, sftexistForihs2h0, aveNoiseInTimeForihs2h0, antweightsforihs2h0, backgroundScalingForihs2h0, secondFFTplan, expRandVals, rng, &(skypointffnormalization)) == XLAL_SUCCESS, XLAL_EFUNC );
 
-   //Set skycounter to -1 at the start
-   INT4 skycounter = -1;
-
    //Print message that we start the analysis
    fprintf(LOG, "Starting TwoSpect analysis...\n");
    fprintf(stderr, "Starting TwoSpect analysis...\n");
@@ -549,7 +546,6 @@ int main(int argc, char *argv[])
    while (scan.state != STATE_FINISHED) {
       fprintf(LOG, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
       fprintf(stderr, "Sky location: RA = %g, DEC = %g\n", dopplerpos.Alpha, dopplerpos.Delta);
-      skycounter++;
 
       SkyPosition skypos = {dopplerpos.Alpha, dopplerpos.Delta, COORDINATESYSTEM_EQUATORIAL};
 
