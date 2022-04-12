@@ -1425,7 +1425,7 @@ read_IPN_grid_from_file( char *fname )
  */
 
   void
-sourceComplete()
+sourceComplete(void)
 {
   /*  Catalog Completion Constants */
   REAL8 Mbstar       = -20.45;
