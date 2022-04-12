@@ -1006,11 +1006,13 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread,
   }
 
 
+  /*
   size_t Ndim = 0;
   for(Ndim=0,i=0; names[i] != NULL; i++ ) {
     if(LALInferenceCheckVariableNonFixed(currentParams,names[i]))
       Ndim++;
   }
+  */
 
   LALInferenceVariables **pointsPool = thread->differentialPoints;
   size_t k=0;
