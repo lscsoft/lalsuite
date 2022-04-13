@@ -85,7 +85,7 @@ LALDict *IMRPhenomXPHM_setup_mode_array(LALDict *lalParams);
 static int IMRPhenomXPHM_hplushcross(
   COMPLEX16FrequencySeries **hptilde,  /**< [out] Frequency domain h+ GW strain */
   COMPLEX16FrequencySeries **hctilde,  /**< [out] Frequency domain hx GW strain */
-  REAL8Sequence *freqs_In,             /**< Frequency array to evaluate the model. (fmin, fmax) for equally spaced grids. */
+  const REAL8Sequence *freqs_In,       /**< Frequency array to evaluate the model. (fmin, fmax) for equally spaced grids. */
   IMRPhenomXWaveformStruct *pWF,       /**< IMRPhenomX Waveform Struct  */
   IMRPhenomXPrecessionStruct *pPrec,   /**< IMRPhenomXP Precession Struct  */
   LALDict *lalParams                   /**< LAL Dictionary Structure    */
@@ -94,7 +94,7 @@ static int IMRPhenomXPHM_hplushcross(
 static int IMRPhenomXPHM_hplushcross_from_modes(
   COMPLEX16FrequencySeries **hptilde,  /**< [out] Frequency domain h+ GW strain */
   COMPLEX16FrequencySeries **hctilde,  /**< [out] Frequency domain hx GW strain */
-  REAL8Sequence *freqs_In,             /**< Frequency array to evaluate the model. (fmin, fmax) for equally spaced grids. */
+  const REAL8Sequence *freqs_In,       /**< Frequency array to evaluate the model. (fmin, fmax) for equally spaced grids. */
   IMRPhenomXWaveformStruct *pWF,       /**< IMRPhenomX Waveform Struct  */
   IMRPhenomXPrecessionStruct *pPrec,   /**< IMRPhenomXP Precession Struct  */
   LALDict *lalParams                   /**< LAL Dictionary Structure    */
@@ -103,7 +103,7 @@ static int IMRPhenomXPHM_hplushcross_from_modes(
 static int IMRPhenomXPHM_OneMode(
   COMPLEX16FrequencySeries **hlmpos,    /**< [out] Frequency domain hlm GW strain inertial frame positive frequencies */
   COMPLEX16FrequencySeries **hlmneg,    /**< [out] Frequency domain hlm GW strain inertial frame negative frequencies */
-  REAL8Sequence *freqs_In,              /**< Input frequency grid        */
+  const REAL8Sequence *freqs_In,        /**< Input frequency grid (Hz) */
   IMRPhenomXWaveformStruct *pWF,        /**< IMRPhenomX Waveform Struct  */
   IMRPhenomXPrecessionStruct *pPrec,    /**< IMRPhenomXP Precession Struct  */
   UINT4 ell,                            /**< l index of the (l,m) precessing mode */
@@ -547,7 +547,7 @@ int XLALSimIMRPhenomXPHMFromModes(
  int XLALSimIMRPhenomXPHMFrequencySequence(
     COMPLEX16FrequencySeries **hptilde, /**< [out] Frequency-domain waveform h+  */
     COMPLEX16FrequencySeries **hctilde, /**< [out] Frequency-domain waveform hx  */
-    REAL8Sequence *freqs,               /**< Input Frequency series [Hz]         */
+    const REAL8Sequence *freqs,         /**< Input Frequency series (Hz)         */
     REAL8 m1_SI,                        /**< mass of companion 1 (kg) */
     REAL8 m2_SI,                        /**< mass of companion 2 (kg) */
     REAL8 chi1x,                        /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
@@ -696,7 +696,7 @@ int XLALSimIMRPhenomXPHMFromModes(
  static int IMRPhenomXPHM_hplushcross(
    COMPLEX16FrequencySeries **hptilde,  /**< [out] Frequency domain h+ GW strain */
    COMPLEX16FrequencySeries **hctilde,  /**< [out] Frequency domain hx GW strain */
-   REAL8Sequence *freqs_In,             /**< Frequency array to evaluate the model. (fmin, fmax) for equally spaced grids. */
+   const REAL8Sequence *freqs_In,       /**< Frequency array to evaluate the model. (fmin, fmax) for equally spaced grids. */
    IMRPhenomXWaveformStruct *pWF,       /**< IMRPhenomX Waveform Struct  */
    IMRPhenomXPrecessionStruct *pPrec,   /**< IMRPhenomXP Precession Struct  */
    LALDict *lalParams                   /**< LAL Dictionary Structure    */
@@ -1197,7 +1197,7 @@ int XLALSimIMRPhenomXPHMFromModes(
 static int IMRPhenomXPHM_hplushcross_from_modes(
   COMPLEX16FrequencySeries **hptilde,  /**< [out] Frequency domain h+ GW strain */
   COMPLEX16FrequencySeries **hctilde,  /**< [out] Frequency domain hx GW strain */
-  REAL8Sequence *freqs_In,             /**< Frequency array to evaluate the model. (fmin, fmax) for equally spaced grids. */
+  const REAL8Sequence *freqs_In,       /**< Frequency array to evaluate the model. (fmin, fmax) for equally spaced grids. */
   IMRPhenomXWaveformStruct *pWF,       /**< IMRPhenomX Waveform Struct  */
   IMRPhenomXPrecessionStruct *pPrec,   /**< IMRPhenomXP Precession Struct  */
   LALDict *lalParams                   /**< LAL Dictionary Structure    */
@@ -1718,8 +1718,10 @@ static int IMRPhenomXPHMTwistUp(
 
 /**
     Function to compute one hlm precessing mode in an uniform frequency grid.
-    By default the mode is given in the inertial J-frame. It can be transform to the L0-frame with the option "L0Frame" which
-    currently only works for cases near AS limit.
+    By default the mode is given in the inertial J-frame. It can be transformed to the L0-frame with the option "PhenomXPHMModesL0Frame" which
+    currently only works for cases near AS limit. 
+    It can return the co-precessing mode with the option "PhenomXPHMPrecModes": this corresponds to the XHM mode with the modified 
+    ringdown/damping frequencies of the precessing final spin. In this case only m<0 are supported, so hlmneg will be filled with zeros.
     Returns two frequency series, one for the positive frequencies and other for the negative frequencies since, as opposite to the
     aligned spin case, in the precessing case all the modes have support in the whole frequency regime.
     This is a wrapper of the internal core function that actually does the calculation IMRPhenomXPHM_OneMode.
@@ -1958,14 +1960,12 @@ int XLALSimIMRPhenomXPHMOneMode(
 
 /**
     Function to compute one hlm precessing mode on a custom frequency grid.
-    Returns two frequency series, one for the positive frequencies and other for the negative frequencies since, as opposite to the
-    aligned spin case, in the precessing case all the modes have support in the whole frequency regime.
-    This is a wrapper of the internal core function that actually does the calculation IMRPhenomXPHM_OneMode.
+    Equivalent options and behaviour to that of XLALSimIMRPhenomXPHMOneMode.
 */
-int XLALSimIMRPhenomXPHMOneModeFrequencySequence(
+int XLALSimIMRPhenomXPHMFrequencySequenceOneMode(
   COMPLEX16FrequencySeries **hlmpos,      /**< [out] Frequency-domain waveform hlm inertial frame positive frequencies */
   COMPLEX16FrequencySeries **hlmneg,      /**< [out] Frequency-domain waveform hlm inertial frame negative frequencies */
-  REAL8Sequence *freqs,                   /**< Input Frequency series [Hz]         */
+  const REAL8Sequence *freqs,             /**< Input Frequency series [Hz]         */
   const UINT4 l,                          /**< First index of the (l,m) precessing mode */
   const INT4  m,                          /**< Second index of the (l,m) precessing mode */
   REAL8 m1_SI,                            /**< mass of companion 1 (kg) */
@@ -1977,6 +1977,7 @@ int XLALSimIMRPhenomXPHMOneModeFrequencySequence(
   REAL8 chi2y,                            /**< y-component of the dimensionless spin of object 2  w.r.t. Lhat = (0,0,1) */
   REAL8 chi2z,                            /**< z-component of the dimensionless spin of object 2  w.r.t. Lhat = (0,0,1) */
   const REAL8 distance,                   /**< distance of source (m) */
+  const REAL8 inclination,                /**< inclination of source (rad) */
   const REAL8 phiRef,                     /**< reference orbital phase (rad) */
   const REAL8 fRef_In,                    /**< Reference frequency */
   LALDict *lalParams                      /**<LAL Dictionary */
@@ -2062,7 +2063,7 @@ int XLALSimIMRPhenomXPHMOneModeFrequencySequence(
   /* We pass inclination 0 since for the individual modes is not relevant. */
   IMRPhenomXWaveformStruct *pWF;
   pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, 0.0, fRef, phiRef, f_min, f_max, distance, 0.0, lalParams_aux, PHENOMXDEBUG);
+  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, 0.0, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, PHENOMXDEBUG);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
 
@@ -2172,7 +2173,7 @@ int XLALSimIMRPhenomXPHMOneModeFrequencySequence(
 static int IMRPhenomXPHM_OneMode(
   COMPLEX16FrequencySeries **hlmpos,    /**< [out] Frequency domain hlm GW strain inertial frame positive frequencies */
   COMPLEX16FrequencySeries **hlmneg,    /**< [out] Frequency domain hlm GW strain inertial frame negative frequencies */
-  REAL8Sequence *freqs_In,              /**< Input frequency grid        */
+  const REAL8Sequence *freqs_In,        /**< Input frequency grid (Hz) */
   IMRPhenomXWaveformStruct *pWF,        /**< IMRPhenomX Waveform Struct  */
   IMRPhenomXPrecessionStruct *pPrec,    /**< IMRPhenomXP Precession Struct  */
   UINT4 ell,                            /**< l index of the (l,m) precessing mode */

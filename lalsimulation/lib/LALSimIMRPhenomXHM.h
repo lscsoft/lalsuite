@@ -47,7 +47,7 @@ extern "C" {
 
 int IMRPhenomXHMGenerateFDOneMode(
    COMPLEX16FrequencySeries **htildelm,  /**< [out] hlm for one mode **/
-   REAL8Sequence *freqs_In,              /**< fmin, fmax [Hz] **/
+   const REAL8Sequence *freqs_In,        /**< fmin, fmax [Hz] **/
    IMRPhenomXWaveformStruct *pWF,        /**< structure of the 22 mode **/
    UINT4 ell,                            /**< first index of the mode **/
    UINT4 emm,                            /**< second index of the mode **/
@@ -58,7 +58,7 @@ int IMRPhenomXHMGenerateFDOneMode(
 int SetupWFArrays(
   REAL8Sequence **freqs,                /**< [out] frequency grid [Hz] */
   COMPLEX16FrequencySeries **htildelm,  /**< [out] Frequency domain hlm GW strain */
-  REAL8Sequence *freqs_In,              /**< fmin, fmax [Hz] */
+  const REAL8Sequence *freqs_In,        /**< fmin, fmax [Hz] */
   IMRPhenomXWaveformStruct *pWF,        /**< Waveform structure with parameters */
   LIGOTimeGPS ligotimegps_zero          /**< = {0,0} */
 );
