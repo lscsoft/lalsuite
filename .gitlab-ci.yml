@@ -1141,9 +1141,23 @@ lalinference_testjob:
     - !reference [".rhel:base", before_script]
     # install our packages
     - yum -y -q install
+          createrepo
           git
           git-lfs
-    - yum -y -q install rpmbuild/RPMS/*/*.rpm
+    # create local repo
+    - LOCAL_REPO="${CI_PROJECT_DIR}/local-builds"
+    - cp -r rpmbuild/RPMS ${LOCAL_REPO}
+    - createrepo --quiet --workers "${CPU_COUNT}" "${LOCAL_REPO}"
+    - |
+      cat > /etc/yum.repos.d/local-builds.repo <<EOF
+      [local-builds]
+      name=Local builds
+      baseurl=file://${LOCAL_REPO}
+      enabled=1
+      gpgcheck=0
+      EOF
+    # install require packages
+    - yum -y -q install lal* python*-lal* --exclude lalsuite*
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
