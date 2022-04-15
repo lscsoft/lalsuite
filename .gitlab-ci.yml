@@ -1369,7 +1369,9 @@ upgrade:debian:buster:
     - rm *.changes *.dsc *.orig.tar.xz
     - ls | grep -P "lal.*-\d+(\.\d+)+" | xargs -d"\n" rm -rf
     # install latest lalsuite release
-    - apt-get -y -q install lal* python*-lal*
+    - apt-get -y -q install lalsuite lalsuite-dev lalsuite-octave
+    # remove lalsuite meta-packages
+    - dpkg -r lalsuite lalsuite-dev lalsuite-octave
     # generate local apt repository metadata
     - /usr/lib/local-apt-repository/rebuild
     # install new packages
