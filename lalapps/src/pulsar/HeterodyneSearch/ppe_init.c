@@ -963,7 +963,6 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
   gsl_matrix *corMatg = NULL;
   UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
   UINT4 corsize = corMat->dimLength->data[0];
-  UINT4 corshrink = corsize;
 
   /* loop through parameters and find ones that have Gaussian priors set - these should match with parameters in the
    * correlation coefficient matrix */
@@ -996,9 +995,6 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
       for ( k = i+1; k < corsize; k++ )
         for ( j = 0; j < corsize; j++ )
           corMat->data[j*corsize + k-1] = corMat->data[j*corsize + k];
-
-      /* resize array */
-      corshrink--;
     }
   }
 

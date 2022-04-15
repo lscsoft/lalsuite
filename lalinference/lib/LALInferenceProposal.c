@@ -1007,11 +1007,13 @@ REAL8 LALInferenceEnsembleWalkNames(LALInferenceThreadState *thread,
   }
 
 
+  /*
   size_t Ndim = 0;
   for(Ndim=0,i=0; names[i] != NULL; i++ ) {
     if(LALInferenceCheckVariableNonFixed(currentParams,names[i]))
       Ndim++;
   }
+  */
 
   LALInferenceVariables **pointsPool = thread->differentialPoints;
   size_t k=0;
@@ -1572,7 +1574,6 @@ static REAL8 glitchAmplitudeDraw(REAL8 Q, REAL8 f, gsl_rng *r) {
     REAL8 PIterm = 0.5*LAL_2_SQRTPI*LAL_SQRT1_2;
     REAL8 SNRPEAK = 5.0;
 
-    INT4 k=0;
     REAL8 den=0.0, alpha=1.0;
     REAL8 max= 1.0/(SNRPEAK*LAL_E);;
 
@@ -1589,8 +1590,6 @@ static REAL8 glitchAmplitudeDraw(REAL8 Q, REAL8 f, gsl_rng *r) {
         den /= max;
 
         alpha = gsl_rng_uniform(r);
-
-        k++;
     } while (alpha > den);
 
     return SNR/sqrt((PIterm*Q/f));

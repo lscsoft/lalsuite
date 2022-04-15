@@ -373,13 +373,11 @@ XLALMassCut(
 
   REAL4 massParam;
   REAL4 mass2Param;
-  INT4 numTriggers;
   INT4 massBOOL;
   REAL4 eps = 1.e-08; /* Safeguard against roundoff error in eta */
 
   /* Remove all the triggers which are not of the desired type */
 
-  numTriggers = 0;
   thisEvent = eventHead;
 
   while ( thisEvent )
@@ -456,7 +454,6 @@ XLALMassCut(
       }
       tmpEvent->next = NULL;
       prevEvent = tmpEvent;
-      ++numTriggers;
     }
     else
     {
