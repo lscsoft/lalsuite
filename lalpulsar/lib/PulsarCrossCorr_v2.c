@@ -622,7 +622,6 @@ int XLALCreateSFTPairIndexListShortResamp
 
   /* do two passes, one to count the number of pairs so the list can be allocated, and one to actually populate the list. */
   /* maximum possible number of pairs */
-  UINT4 numMatchMultiResampLists = 0;
   /* MULTI-RESAMPLING maximum possible number of pairs */
   UINT4 lMinMulti;
   UINT4 lMaxMulti =0;
@@ -651,7 +650,6 @@ int XLALCreateSFTPairIndexListShortResamp
             REAL8 timeDiff = XLALGPSDiff(&gps1, &gps2);
             if (fabs(timeDiff) <= maxLag) {
               ++LmatchingGivenKMulti;
-              ++numMatchMultiResampLists;
             }
           }
           MultiListOfLmatchingGivenMultiK->data[detX].data[k].data[detY].detInd = detY;

@@ -432,7 +432,7 @@ UNUSED static int spline_to_gsl_vectors(gsl_spline *s, gsl_vector **x, gsl_vecto
 
 /** Setup SEOBNRv4HMROM model using data files installed in $LAL_DATA_PATH
  */
-UNUSED static void SEOBNRv4HMROM_Init_LALDATA()
+UNUSED static void SEOBNRv4HMROM_Init_LALDATA(void)
 {
   // Loop over all the available modes and check if they have already been initialized
   for(int i = 0; i < NMODES; i++) {

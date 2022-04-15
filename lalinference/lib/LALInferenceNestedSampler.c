@@ -1509,7 +1509,6 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
     UINT4 subchain_length=(sloppynumber/testnumber) +1;
     REAL8 logLnew=0.0;
     UINT4 sub_iter=0;
-    UINT4 tries=0;
     UINT4 ifo=0;
     REAL8 counter=1.;
     UINT4 BAILOUT=100*testnumber; /* If no acceptance after 100 tries, will exit and the sampler will try a different starting point */
@@ -1533,14 +1532,12 @@ INT4 LALInferenceNestedSamplingSloppySample(LALInferenceRunState *runState)
         }while(counter<1);
         /* Check that there was at least one accepted point */
         if(sub_accepted==0) {
-          tries++;
           sub_iter+=subchain_length;
           mcmc_iter++;
           LALInferenceCopyVariables(&oldParams,threadState->currentParams);
           threadState->currentLikelihood=logLold;
           continue;
         }
-        tries=0;
         mcmc_iter++;
     	sub_iter+=subchain_length;
         if(isfinite(logLmin)) logLnew=runState->likelihood(threadState->currentParams,runState->data,threadState->model);

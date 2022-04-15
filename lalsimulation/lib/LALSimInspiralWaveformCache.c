@@ -617,7 +617,7 @@ int XLALSimInspiralChooseFDWaveformFromCache(
  * avoid re-computation of waveforms that differ only by simple
  * scaling relations in extrinsic parameters.
  */
-LALSimInspiralWaveformCache *XLALCreateSimInspiralWaveformCache()
+LALSimInspiralWaveformCache *XLALCreateSimInspiralWaveformCache(void)
 {
     LALSimInspiralWaveformCache *cache = XLALCalloc(1,
             sizeof(LALSimInspiralWaveformCache));
