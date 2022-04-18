@@ -1,3 +1,9 @@
+lalapps (8.1.1-1) unstable; urgency=low
+
+  * Update for 8.1.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 11 Apr 2022 11:21:35 -0700
+
 lalapps (8.1.0-1) unstable; urgency=low
 
   * Update for 8.1.0
