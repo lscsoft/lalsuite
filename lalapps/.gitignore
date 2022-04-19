@@ -142,6 +142,7 @@ src/inspiral/posterior/lalinference_pipe
 src/inspiral/posterior/lalinference_pipe_roq
 src/inspiral/posterior/lalinference_pp_pipe
 src/inspiral/posterior/lalinference_review_test
+src/lalapps/__init__.py
 src/lalapps/git_version.py
 src/lalapps/lalapps_cache
 src/lalapps/lalapps_fftw*_wisdom

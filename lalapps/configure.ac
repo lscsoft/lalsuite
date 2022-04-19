@@ -20,6 +20,7 @@ AC_CONFIG_FILES([\
   src/frametools/Makefile \
   src/hwinjection/Makefile \
   src/inspiral/Makefile \
+  src/lalapps/__init__.py \
   src/lalapps/LALAppsVCSInfo.c \
   src/lalapps/LALAppsVCSInfo.h \
   src/lalapps/Makefile \
