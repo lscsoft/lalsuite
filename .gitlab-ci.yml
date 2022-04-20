@@ -1519,6 +1519,7 @@ platform:conda:macos-arm64:
 
 # job template for docker builds
 .docker:
+  image: docker:latest
   variables:
     DOCKER_DRIVER: overlay
   stage: docker
