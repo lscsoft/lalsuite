@@ -42,6 +42,8 @@ stages:
 include:
   - project: computing/gitlab-ci-templates
     file:
+      # helpers for codequality jobs
+      - codequality.yml
       # helpers for debian builds
       - debian.yml
       # helpers for RHEL builds
@@ -1762,6 +1764,13 @@ lint:python:
     - .lint
   variables:
     FLAKE8_PLUGINS: "flake8-executable"
+  artifacts:
+    paths:
+      - flake8*.json
+    reports:
+      # don't upload report, see lint:combine-reports
+      codequality: null
+    when: always
 
 lint:coala:
   extends:
@@ -1807,8 +1816,21 @@ lint:coala:
       - coala.json
       - codequality.json
     reports:
-      codequality: codequality.json
+      # don't upload report, see lint:combine-reports
+      codequality: null
     when: always
+
+lint:combine-reports:
+  extends:
+    - .codequality:combine
+    - .lint
+  stage: .post
+  needs:
+    - lint:coala
+    - lint:python
+  before_script:
+    # don't need this file
+    - rm -f coala.json
 
 # -- documentation ------------------------------
 #
