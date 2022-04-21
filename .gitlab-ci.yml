@@ -1698,9 +1698,16 @@ coverage:
     - pycobertura show coverage.xml | tail -n 1
   coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
   artifacts:
+    expose_as: coverage
     paths:
+      # report
       - coverage.html
-      - "*.xml"
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
     reports:
       cobertura: coverage.xml
   only:
@@ -1850,8 +1857,9 @@ documentation:
     - cp lalsuite/index.html index.html
     - sed -i 's/..\/lal/lal/g' index.html
   artifacts:
-    expire_in: 18h
+    expose_as: html
     paths:
+      - html/index.html
       - html
   only:
     refs:
