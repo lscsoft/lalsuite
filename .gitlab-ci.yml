@@ -1636,7 +1636,10 @@ coverage:
   before_script:
     - *init-build-job
     - apt-get -y install --no-install-recommends python3-pip
-    - python3 -m pip install coverage gcovr pycobertura
+    - python3 -m pip install
+          coverage
+          "gcovr!=5.1"
+          pycobertura
   script:
     - ./00boot
     # Configure for C code coverage measurement with gcc
