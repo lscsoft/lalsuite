@@ -1825,8 +1825,9 @@ documentation:
     - cp lalsuite/index.html index.html
     - sed -i 's/..\/lal/lal/g' index.html
   artifacts:
-    expire_in: 18h
+    expose_as: html
     paths:
+      - html/index.html
       - html
   only:
     refs:
