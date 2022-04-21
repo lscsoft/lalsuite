@@ -1693,9 +1693,16 @@ coverage:
     - pycobertura show coverage.xml | tail -n 1
   coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
   artifacts:
+    expose_as: coverage
     paths:
+      # report
       - coverage.html
-      - "*.xml"
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
     reports:
       cobertura: coverage.xml
   only:
