@@ -95,6 +95,10 @@ test/myderivs.dat
 test/NRWaveIOTest
 test/PNTemplates
 test/PNTemplates.out
+test/python/brute_min1.xml.gz
+test/python/brute_min2.xml.gz
+test/python/thinca_min1.xml.gz
+test/python/thinca_min2.xml.gz
 test/RandomInspiralSignalTest
 test/RandomInspiralSignalTest.out
 test/sp_rhosq.out
