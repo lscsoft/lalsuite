@@ -51,6 +51,14 @@ from lalapps.git_version import version as __version__
 
 
 #
+# Must use coincidence code's custom sngl_inspiral table row type.
+#
+
+
+lsctables.SnglInspiralTable.RowType = lsctables.SnglInspiral = thinca.SnglInspiral
+
+
+#
 # =============================================================================
 #
 #                                 Command Line
