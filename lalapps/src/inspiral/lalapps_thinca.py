@@ -25,9 +25,6 @@
 #
 
 
-from __future__ import print_function
-
-
 from optparse import OptionParser
 import sys
 
@@ -113,7 +110,7 @@ def parse_command_line():
 #
 
 
-process_program_name = u"lalapps_thinca"
+process_program_name = "lalapps_thinca"
 
 
 #
@@ -188,7 +185,7 @@ for n, filename in enumerate(filenames, start = 1):
 		process_params,
 		comment = options.comment,
 		version = __version__,
-		cvs_repository = u"lscsoft",
+		cvs_repository = "lscsoft",
 		cvs_entry_time = __date__
 	)
 

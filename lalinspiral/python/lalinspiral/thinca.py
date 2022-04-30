@@ -62,7 +62,7 @@ def mchirp(m1, m2):
 #
 
 
-InspiralCoincDef = lsctables.CoincDef(search = u"inspiral", search_coinc_type = 0, description = u"sngl_inspiral<-->sngl_inspiral coincidences")
+InspiralCoincDef = lsctables.CoincDef(search = "inspiral", search_coinc_type = 0, description = "sngl_inspiral<-->sngl_inspiral coincidences")
 
 
 #
@@ -116,7 +116,7 @@ class InspiralCoincTables(snglcoinc.CoincTables):
 
 
 	def coinc_rows(self, process_id, time_slide_id, events, seglists):
-		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events, u"sngl_inspiral")
+		coinc, coincmaps = super(InspiralCoincTables, self).coinc_rows(process_id, time_slide_id, events, "sngl_inspiral")
 
 		#
 		# populate the coinc_inspiral table.  assume exact-match
