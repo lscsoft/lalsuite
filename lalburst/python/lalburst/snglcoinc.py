@@ -480,7 +480,10 @@ class singlesqueue(object):
 		t_complete, meaning you promise no further events will be
 		added to the queue earlier than t_complete.  The time scale
 		for t_complete is that of the events themselves, not their
-		shifted times (the offset parameter is not applied).
+		shifted times (the offset parameter is not applied).  The
+		value of t_complete is stored for later retrieval.
+
+		NOTE:  t_complete is not permitted to decrease.
 
 		NOTE:  the events sequence will be iterated over multiple
 		times.  It may not be a generator.
@@ -716,7 +719,7 @@ class coincgen_doubles(object):
 		events, t_complete sets the time up-to which the collection
 		of events is known to be complete.  That is, in the future
 		no new events will be pushed whose times are earlier than
-		t_complete.
+		t_complete.  t_complete is not permitted to decrease.
 		"""
 		self.queues[instrument].push(events, t_complete)
 
@@ -903,14 +906,7 @@ class TimeSlideGraphNode(object):
 		of events is known to be complete.  That is, in the future
 		no new events will be pushed whose times are earlier than
 		t_complete.
-
-		Returns True if this node's .t_coinc_complete property has
-		been changed by this operation, False otherwise.  If
-		.t_coinc_complete does not change, then no new candidates
-		can yet be formed and it is not necessary to perform a
-		coincidence analysis at this time.
 		"""
-		t_before = self.t_coinc_complete
 		if len(self.offset_vector) == 1:
 			# push directly into the singles queue
 			assert (instrument,) == self.offset_vector.keys()
@@ -919,7 +915,6 @@ class TimeSlideGraphNode(object):
 			for node in self.components:
 				if instrument in node.offset_vector:
 					node.push(instrument, events, t_complete)
-		return self.t_coinc_complete != t_before
 
 	def pull(self, t):
 		"""
@@ -1255,10 +1250,13 @@ class TimeSlideGraph(object):
 		candidate list unless the graph is flushed of all
 		candidates.
 		"""
-		# NOTE:  it is necessary to explicitly create a list to
-		# prevent any() from bailing out before all nodes have had
-		# the events pushed into them.
-		return any([node.push(instrument, events, t_complete) for node in self.head if instrument in node.offset_vector])
+		t_changed = False
+		for node in self.head:
+			if instrument in node.offset_vector:
+				t_before = node.t_coinc_complete
+				node.push(instrument, events, t_complete)
+				t_changed |= t_before != node.t_coinc_complete
+		return t_changed
 
 
 	def pull(self, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None):
