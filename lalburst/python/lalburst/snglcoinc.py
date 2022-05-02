@@ -681,6 +681,12 @@ class coincgen_doubles(object):
 		# view into the id() --> event indexes of the queues
 		self.index = ChainMap(*(queue.index for queue in self.queues.values()))
 
+		# pre-sort the instruments into alphabetical order
+		self.instrumenta, self.instrumentb = sorted(self.queues)
+		# pre-compute the offset of the 1st wrt to the 2nd
+		self.offset_a = self.queues[self.instrumenta].offset - self.queues[self.instrumentb].offset
+
+
 	@property
 	def offset_vector(self):
 		# emulate a .offset_vector attribute.  not sure if this is a
@@ -787,14 +793,6 @@ class coincgen_doubles(object):
 		must a set or set-like object.  It must support Python set
 		manipulation methods, like .clear(), .update(), and so on.
 		"""
-		# get the instrument names in alphabetical order, and
-		# compute the time offset of the one wrt the other.
-		# FIXME:  there's no reason to recompute these things every
-		# time, they are fixed values.
-
-		instrumenta, instrumentb = sorted(self.queues)
-		offset_a = self.queues[instrumenta].offset - self.queues[instrumentb].offset
-
 		# retrieve the event lists to be considered for coincidence
 		# using .pull() on the singlesqueues.  these return
 		# sequences of event objects, not their python IDs.  the
@@ -806,7 +804,7 @@ class coincgen_doubles(object):
 		# singles_ids set is populated with python IDs of events
 		# that do not form pairs.
 
-		return sorted(self.doublesgen(self.queues[instrumenta].pull(t), offset_a, self.queues[instrumentb].pull(t), singles_ids))
+		return sorted(self.doublesgen(self.queues[self.instrumenta].pull(t), self.offset_a, self.queues[self.instrumentb].pull(t), singles_ids))
 
 
 #
