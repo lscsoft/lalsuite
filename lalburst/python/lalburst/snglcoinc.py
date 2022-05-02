@@ -662,6 +662,7 @@ class coincgen_doubles(object):
 		"""
 		if len(offset_vector) != 2:
 			raise ValueError("offset_vector must name exactly 2 instruments (got %d)" % len(offset_vector))
+		self.offset_vector = offset_vector
 		# the coincidence window for our pair of detectors
 		self.coinc_window = coinc_windows[frozenset(offset_vector)]
 		if self.coinc_window < 0.:
@@ -688,14 +689,6 @@ class coincgen_doubles(object):
 		self.instrumenta, self.instrumentb = sorted(self.queues)
 		# pre-compute the offset of the 1st wrt to the 2nd
 		self.offset_a = self.queues[self.instrumenta].offset - self.queues[self.instrumentb].offset
-
-
-	@property
-	def offset_vector(self):
-		# emulate a .offset_vector attribute.  not sure if this is a
-		# performance issue or not, but I prefer not to have
-		# duplicated data floating around when it can be avoided.
-		return dict((instrument, queue.offset) for instrument, queue in self.queues.items())
 
 	@property
 	def age(self):
