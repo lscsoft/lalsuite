@@ -1253,6 +1253,108 @@ class TimeSlideGraph(object):
 
 
 	def pull(self, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None):
+		"""
+		Extract newly available coincident candidates from the
+		internal queues.  If flush if True, then all remaining
+		candidates are extracted and the internal queues are reset,
+		otherwise only those candidates that can be constructed
+		given the times up to which the individual event queues are
+		known to be complete and given the offset vectors being
+		considered will be reported.
+
+		This method returns a generator whose elements consist of
+		(node, events) pairs, wherein events is a tuple of
+		single-detector event objects comprising a single
+		coincident n-tuple, and node is the TimeSlideGraphNode
+		object from which the coincidence was retrieved.  The node
+		object can be consulted to retrieve the offset vector
+		applied to the event times to form the coincidence, and
+		other information about the state of the analysis.  If the
+		optional coinc_sieve() function is supplied (see below)
+		then only those n-tuples that pass that function's test are
+		included in the sequence.
+
+		Two output streams are available.  One stream is the
+		generator returned to the calling code explained above,
+		which consists only of n-tuples that pass the optional
+		coinc_sieve() test.  The other stream exits this code via
+		calls to event_collector() (see below), and consists of all
+		coincident n-tuples formed by the coincidence engine,
+		regardless of whether they pass the optional coinc_sieve()
+		test or not.  The n-tuples passed to event_collector()
+		contain the Python IDs of the events, not the event objects
+		themselves.  If coinc_sieve() is not supplied, both streams
+		contain the same n-tuples, one of tuples of event objects,
+		the other of tuples of the Python IDs of those events.
+
+		event_collector(), if supplied, must be an object with a
+		.push() method with the signature
+
+			event_collector.push(event_ids, offset_vector)
+
+		The return value is ignored.  It will be called once for
+		every coincident n-tuple that is formed by the coincidence
+		engine, regardless of whether or not that n-tuple is
+		ultimately reported to the calling code.  event_ids will be
+		a tuple of Python IDs of the single-detector events in the
+		coincidence.
+
+		coinc_sieve(), if supplied, must be a callable object with
+		the signature
+
+			coinc_sieve(events, offset_vector)
+
+		If the return value is False the event tuple is reported to
+		the calling code, otherwise it is discarded.  The default
+		is to report all n-tuples.  This feature can be used to
+		remove obviously uninteresting candidates from the reported
+		candidate stream, to reduce the memory requirements of the
+		calling code and the disk requirements of output documents.
+
+		The optional parameters newly_reported, flushed, and
+		flushed_unused may be used to pass lists to this code,
+		which will be populated with additional information to
+		assist the calling code.  If lists are supplied, their
+		contents will be erased and populated with event objects as
+		follows:
+
+		newly_reported:  list of single-detector events that have
+		participated in n-tuple candidates reported to the calling
+		code for the first time this invocation of .pull().  Note
+		that only those events that particate in n-tuples that
+		survive the optional coinc_sieve() test are included.  This
+		is meant to allow the calling code to populate an event
+		table with the list of just the events needed to describe
+		the surviving n-tuple candidates.
+
+		flushed:  list of single-detector events that have been
+		removed from the internal queues because they are now
+		sufficiently old that all n-tuples that they can
+		participate in have been formed and reported.  This can be
+		used to assist the calling code with house keeping tasks,
+		for example emptying its event_collector implementation of
+		unnecessary internal state.
+
+		flushed_unused:  list of the single-detector events in the
+		flushed list that never participated in an n-tuple
+		candidate.  Note that events are considered to have
+		participated in an n-tuple candidate if the coincidence
+		engine reported them in one, regardless of whether or not
+		the optional coinc_sieve() test ultimately rejected the
+		candidate before it was reported to the calling code.
+
+		NOTE:  the intent of the coinc_sieve() feature is not to
+		alter the definition of the coincidence test, but merely
+		reduce the data volume going into the output document.
+		Therefore, the coinc_sieve() feature affects the events
+		appearing in the newly_reported list because that list is
+		expected to be used to construct the output document, but
+		does not affect the events appearing in the flushed_unused
+		list because that list is meant to convey information about
+		which events failed to form coincidenes, for example for
+		the purpose of informing false-alarm probability noise
+		models.
+		"""
 		# flatten ID index for faster performance in loop.  NOTE:
 		# this is also done to freeze the contents of the index.
 		# calling .pull() on the graph nodes flushes events from
