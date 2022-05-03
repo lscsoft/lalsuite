@@ -1272,11 +1272,12 @@ class TimeSlideGraph(object):
 
 		newly_reported_ids = set()
 		flushed_ids = set(index)
-		# avoid attribute look-ups in the loop
+		# avoid attribute look-ups in loops
 		newly_reported_update = newly_reported_ids.update
 		used_update = self.used_ids.update
+		id_to_event = index.__getitem__
 		for n, node in enumerate(self.head, start = 1):
-			# avoid attribute look-ups in the loop
+			# avoid attribute look-ups loops
 			event_time = node.event_time
 			offset_vector = node.offset_vector
 
@@ -1294,7 +1295,7 @@ class TimeSlideGraph(object):
 			for event_ids in itertools.chain(*node.pull(t)):
 				# use the index to convert Python IDs back
 				# to event objects
-				events = tuple(index[event_id] for event_id in event_ids)
+				events = tuple(map(id_to_event, event_ids))
 				# check the candidate's time, and skip
 				# those that don't meet the
 				# t_coinc_complete constraint
@@ -1335,11 +1336,11 @@ class TimeSlideGraph(object):
 		# use the index to populate newly_used, flushed, and
 		# flushed_unused with event objects
 		if newly_reported is not None:
-			newly_reported[:] = (index[event_id] for event_id in newly_reported_ids)
+			newly_reported[:] = map(id_to_event, newly_reported_ids)
 		if flushed is not None:
-			flushed[:] = (index[event_id] for event_id in flushed_ids)
+			flushed[:] = map(id_to_event, flushed_ids)
 		if flushed_unused is not None:
-			flushed_unused[:] = (index[event_id] for event_id in flushed_unused_ids)
+			flushed_unused[:] = map(id_to_event, flushed_unused_ids)
 
 
 #
