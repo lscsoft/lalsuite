@@ -1271,6 +1271,8 @@ class TimeSlideGraph(object):
 			event_collector_push = event_collector.push
 
 		newly_reported_ids = set()
+		# initialize the set of flushed events to the complete
+		# contents of the internal queues
 		flushed_ids = set(index)
 		# avoid attribute look-ups in loops
 		newly_reported_update = newly_reported_ids.update
@@ -1317,10 +1319,16 @@ class TimeSlideGraph(object):
 				if not coinc_sieve(events, offset_vector):
 					newly_reported_update(event_ids)
 					yield node, events
+		# finish computing the set of newly reported event ids
 		if newly_reported_ids:
 			newly_reported_ids -= self.reported_ids
 			self.reported_ids |= newly_reported_ids
+		# finish computing the set of flushed events by removing
+		# any from the set that still remain in the queues
 		flushed_ids -= set(self.index)
+		# compute the set of flushed events that were never used
+		# for a candidate, and use flushed ids to clean up other
+		# sets to avoid them growing without bound
 		if flushed_ids:
 			flushed_unused_ids = flushed_ids - self.used_ids
 			self.used_ids -= flushed_ids
