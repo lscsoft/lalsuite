@@ -1276,7 +1276,7 @@ class TimeSlideGraph(object):
 		newly_reported_update = newly_reported_ids.update
 		used_update = self.used_ids.update
 		id_to_event = index.__getitem__
-		for n, node in enumerate(self.head, start = 1):
+		for node in self.head:
 			# avoid attribute look-ups loops
 			event_time = node.event_time
 			offset_vector = node.offset_vector
