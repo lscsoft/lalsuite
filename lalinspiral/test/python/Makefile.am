@@ -13,7 +13,7 @@ test_programs +=
 
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += \
-	test_thinca.sh \
+	#test_thinca.sh \  <-- see https://git.ligo.org/lscsoft/lalsuite/-/issues/525
 	$(END_OF_LIST)
 
 # Add any helper programs required by tests to this variable
