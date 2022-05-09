@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2011--2014 Karl Wette
+// Copyright (C) 2011--2014, 2022 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -207,6 +207,7 @@ MACRO(A, B, C, X);
 #include <complex.h>
 #include <signal.h>
 #endif
+#include <unistd.h>
 %}
 
 ///
@@ -269,6 +270,162 @@ SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
 %constant int swig_version = SWIG_VERSION;
 
 ///
+/// Standard output/error redirection
+/// - In some environments (e.g. IPython Jupyter notebooks) standard output/error within the scripting
+///   language are redirected in a non-trivial way. These redirections may not capture standard output/error
+///   from external C libraries such as LAL, which can result in e.g. error messages from LAL being printed
+///   to a terminal (if any) instead of the environment in which the scripting language is being used.
+/// - The \b lal.swig_redirect_standard_output_error() function turns on standard output/error redirection
+///   for all LAL libraries. See <tt>SWIGLALAlpha.i</tt> for its definition.
+/// - The \b SWIGLAL_REDIRECT_STDOUTERR and \b SWIGLAL_RESTORE_OUTPUT_STDOUTERR hooks are inserted by an
+///   \b %exception block (see below) and implement standard output/error redirection. These macros refer
+///   to a locally saved value of \c swig_lal_do_redirect_stdouterr in case its value is changed by
+///   \c $action (i.e. by a call to \b lal.swig_redirect_standard_output_error()).
+/// - The common function \b swiglal_redirect_stdouterr() redirects standard output & error to temporary
+///   files \c swiglal_tmp_stdout and \c swiglal_tmp_stderr respectively.
+/// - The common function \b swiglal_restore_stdouterr() restores the system standard output & error.
+/// - The scripting language-specific function \b swiglal_output_stdouterr() outputs the captured
+///   standard output & error through the scripting language API in a way that is robust to any
+///   redirections within the scripting language itself.
+///
+%header %{
+extern int swig_lal_do_redirect_stdouterr;
+
+static int swiglal_save_stdout_fd, swiglal_save_stderr_fd;
+static FILE *swiglal_tmp_stdout, *swiglal_tmp_stderr;
+
+SWIGINTERN int swiglal_redirect_stdouterr(void);
+SWIGINTERN int swiglal_restore_stdouterr(void);
+SWIGINTERN int swiglal_output_stdouterr(void);
+
+#define SWIGLAL_REDIRECT_STDOUTERR \
+  { \
+    const int local_swig_lal_do_redirect_stdouterr = swig_lal_do_redirect_stdouterr; \
+    if (local_swig_lal_do_redirect_stdouterr) { \
+      if (!swiglal_redirect_stdouterr()) { \
+        SWIG_exception(SWIG_RuntimeError, "swiglal_redirect_stdouterr() failed"); \
+      } \
+    }
+#define SWIGLAL_RESTORE_OUTPUT_STDOUTERR \
+    if (local_swig_lal_do_redirect_stdouterr) { \
+      if (!swiglal_restore_stdouterr()) {\
+        SWIG_exception(SWIG_RuntimeError, "swiglal_restore_stdouterr() failed"); \
+      } \
+      if (!swiglal_output_stdouterr()) { \
+        SWIG_exception(SWIG_RuntimeError, "swiglal_output_stdouterr() failed"); \
+      } \
+    } \
+ }
+
+SWIGINTERN int swiglal_redirect_stdouterr(void) {
+
+  // Flush standard output & error
+  fflush(stdout);
+  fflush(stderr);
+
+  // Save the original standard output & error
+  swiglal_save_stdout_fd = dup(STDOUT_FILENO);
+  swiglal_save_stderr_fd = dup(STDERR_FILENO);
+  if (swiglal_save_stdout_fd < 0 || swiglal_save_stderr_fd < 0) {
+    const char msg[] = "redirect_stdouterr(): dup(STD{OUT|ERR}_FILENO) failed\n";
+    write(STDERR_FILENO, msg, sizeof(msg));
+    fsync(STDERR_FILENO);
+    return 0;
+  }
+
+  // Open new temporary files for standard output & error
+  swiglal_tmp_stdout = tmpfile();
+  swiglal_tmp_stderr = tmpfile();
+  if (swiglal_tmp_stdout == NULL || swiglal_tmp_stderr == NULL) {
+    const char msg[] = "redirect_stdouterr(): tmpfile() failed\n";
+    write(STDERR_FILENO, msg, sizeof(msg));
+    fsync(STDERR_FILENO);
+    close(swiglal_save_stdout_fd);
+    close(swiglal_save_stderr_fd);
+    if (swiglal_tmp_stdout != NULL) {
+      fclose(swiglal_tmp_stdout);
+    }
+    if (swiglal_tmp_stderr != NULL) {
+      fclose(swiglal_tmp_stderr);
+    }
+    return 0;
+  }
+
+  // Get file descriptors for temporary files
+  int swiglal_tmp_stdout_fd = fileno(swiglal_tmp_stdout);
+  int swiglal_tmp_stderr_fd = fileno(swiglal_tmp_stderr);
+  if (swiglal_tmp_stdout_fd < 0 || swiglal_tmp_stderr_fd < 0) {
+    const char msg[] = "redirect_stdouterr(): fileno(tmp_std{out|err}) failed\n";
+    write(STDERR_FILENO, msg, sizeof(msg));
+    fsync(STDERR_FILENO);
+    close(swiglal_save_stdout_fd);
+    close(swiglal_save_stderr_fd);
+    fclose(swiglal_tmp_stdout);
+    fclose(swiglal_tmp_stderr);
+    return 0;
+  }
+
+  // Redirect standard output & error to temporary files
+  if (dup2(swiglal_tmp_stdout_fd, STDOUT_FILENO) < 0) {
+    const char msg[] = "redirect_stdouterr(): dup2(swiglal_tmp_stdout_fd, STDOUT_FILENO) failed\n";
+    write(STDERR_FILENO, msg, sizeof(msg));
+    fsync(STDERR_FILENO);
+    close(swiglal_save_stdout_fd);
+    close(swiglal_save_stderr_fd);
+    fclose(swiglal_tmp_stdout);
+    fclose(swiglal_tmp_stderr);
+    return 0;
+  }
+  if (dup2(swiglal_tmp_stderr_fd, STDERR_FILENO) < 0) {
+    const char msg[] = "redirect_stdouterr(): dup2(swiglal_tmp_stderr_fd, STDERR_FILENO) failed\n";
+    write(STDERR_FILENO, msg, sizeof(msg));
+    fsync(STDERR_FILENO);
+    if (dup2(swiglal_save_stdout_fd, STDOUT_FILENO) < 0) {
+      const char msg[] = "redirect_stdouterr(): dup2(swiglal_save_stdout_fd, STDOUT_FILENO) failed\n";
+      write(STDERR_FILENO, msg, sizeof(msg));
+      fsync(STDERR_FILENO);
+    }
+    close(swiglal_save_stdout_fd);
+    close(swiglal_save_stderr_fd);
+    fclose(swiglal_tmp_stdout);
+    fclose(swiglal_tmp_stderr);
+    return 0;
+  }
+
+  return 1;
+
+}
+
+SWIGINTERN int swiglal_restore_stdouterr(void) {
+
+  // Flush standard output & error
+  fflush(stdout);
+  fflush(stderr);
+
+  // Restore the original standard output & error
+  if (dup2(swiglal_save_stdout_fd, STDOUT_FILENO) < 0) {
+    const char msg[] = "redirect_stdouterr(): dup2(swiglal_save_stdout_fd, STDOUT_FILENO) failed\n";
+    write(swiglal_save_stderr_fd, msg, sizeof(msg));
+    fsync(swiglal_save_stderr_fd);
+    return 0;
+  }
+  if (dup2(swiglal_save_stderr_fd, STDERR_FILENO) < 0) {
+    const char msg[] = "redirect_stdouterr(): dup2(swiglal_save_stderr_fd, STDERR_FILENO) failed\n";
+    write(swiglal_save_stderr_fd, msg, sizeof(msg));
+    fsync(swiglal_save_stderr_fd);
+    return 0;
+  }
+
+  // Close the duplicated standard output & error file descriptors
+  close(swiglal_save_stdout_fd);
+  close(swiglal_save_stderr_fd);
+
+  return 1;
+
+}
+%}
+
+///
 /// Convert XLAL/LAL errors into native scripting-language exceptions:
 /// <dl>
 ///    <dt>XLAL</dt><dd>Before performing any action, clear the XLAL error number.  Check it after
@@ -282,6 +439,9 @@ SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
 ///    symbol should be undefined, i.e. functions are XLAL functions by default.</dd>
 /// </dl>
 ///
+/// The \b %exception block also inserts the \b SWIGLAL_REDIRECT_STDOUTERR and
+/// \b SWIGLAL_RESTORE_OUTPUT_STDOUTERR hooks for standard output/error redirection
+///
 %header %{
 static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, NULL, 0};
 #undef swiglal_check_LALStatus
@@ -293,7 +453,9 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
 }
 %exception %{
   XLALClearErrno();
+  SWIGLAL_REDIRECT_STDOUTERR
   $action
+  SWIGLAL_RESTORE_OUTPUT_STDOUTERR
 #ifdef swiglal_check_LALStatus
   if (lalstatus.statusCode) {
     XLALSetErrno(XLAL_EFAILED);

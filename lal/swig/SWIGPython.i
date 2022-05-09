@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2011--2014 Karl Wette
+// Copyright (C) 2011--2014, 2022 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -68,6 +68,41 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 // Evaluates true if a PyObject represents a null pointer, false otherwise.
 %header %{
 #define swiglal_null_ptr(v)  ((v) == Py_None)
+%}
+
+// Python-specific function for standard output/error redirection
+%header %{
+SWIGINTERN int swiglal_output_stdouterr(void) {
+
+  // Flush and rewind temporary files
+  fflush(swiglal_tmp_stdout);
+  rewind(swiglal_tmp_stdout);
+  fflush(swiglal_tmp_stderr);
+  rewind(swiglal_tmp_stderr);
+
+  // Write standard output
+  {
+    char buf[512];
+    while (fgets(buf, sizeof(buf), swiglal_tmp_stdout) != NULL) {
+      PySys_WriteStdout("%s", buf);
+    }
+  }
+
+  // Write standard error
+  {
+    char buf[512];
+    while (fgets(buf, sizeof(buf), swiglal_tmp_stderr) != NULL) {
+      PySys_WriteStderr("%s", buf);
+    }
+  }
+
+  // Close temporary files
+  fclose(swiglal_tmp_stdout);
+  fclose(swiglal_tmp_stderr);
+
+  return 1;
+
+}
 %}
 
 //

@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2011--2017 Karl Wette
+// Copyright (C) 2011--2017, 2022 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -68,6 +68,55 @@ extern "C++" {
 // Evaluates true if an octave_value represents a null pointer, false otherwise.
 %header %{
 #define swiglal_null_ptr(v)  (!(v).is_string() && (v).is_matrix_type() && (v).rows() == 0 && (v).columns() == 0)
+%}
+
+// Python-specific function for standard output/error redirection
+%header %{
+SWIGINTERN int swiglal_output_stdouterr(void) {
+
+  // Flush and rewind temporary files
+  fflush(swiglal_tmp_stdout);
+  rewind(swiglal_tmp_stdout);
+  fflush(swiglal_tmp_stderr);
+  rewind(swiglal_tmp_stderr);
+
+  // Write standard output
+  {
+    octave_value_list args = feval("stdout", octave_value_list(), 1);
+    if (args.length() < 1) {
+      return 0;
+    }
+    args.resize(3);
+    args(1) = octave_value(std::string("%s"));
+    char buf[512];
+    while (fgets(buf, sizeof(buf), swiglal_tmp_stdout) != NULL) {
+      args(2) = octave_value(std::string(buf));
+      feval("fprintf", args, 0);
+    }
+  }
+
+  // Write standard error
+  {
+    octave_value_list args = feval("stderr", octave_value_list(), 1);
+    if (args.length() < 1) {
+      return 0;
+    }
+    args.resize(3);
+    args(1) = octave_value(std::string("%s"));
+    char buf[512];
+    while (fgets(buf, sizeof(buf), swiglal_tmp_stderr) != NULL) {
+      args(2) = octave_value(std::string(buf));
+      feval("fprintf", args, 0);
+    }
+  }
+
+  // Close temporary files
+  fclose(swiglal_tmp_stdout);
+  fclose(swiglal_tmp_stderr);
+
+  return 1;
+
+}
 %}
 
 //
