@@ -9,8 +9,8 @@ if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
-mkdir -p broadband1b/
-cmdline="${cmdlinebase} --outSingleSFT=yes --outSFTdir broadband1b/"
+mkdir -p broadband1c/
+cmdline="${cmdlinebase} --outSingleSFT=yes --outSFTdir broadband1c/"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -26,14 +26,14 @@ if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
-mkdir -p narrowband1b/
-cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1b/ -- broadband1b/H-5_H1_${Tsft}SFT_mfdv5-${start}-${span}.sft"
+mkdir -p narrowband1c/
+cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1c/ -- broadband1c/H-5_H1_${Tsft}SFT_mfdv5-${start}-${span}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 
-for i in 1a 1b; do
+for i in 1a 1c; do
 
     ## check narrowband SFT names
     for freq in 10 18 26 34 42 50 58 66 74 82 90; do
@@ -66,7 +66,7 @@ for i in 1a 1b; do
 
 done
 
-## split broadband1b/ set again, but with timestamps constraints
+## split broadband1c/ set again, but with timestamps constraints
 
 endTime1=$(echo "$start + $span" | bc)
 startTime2=$(echo "$start + $Tsft" | bc)
@@ -74,54 +74,54 @@ endTime2=$(echo "$endTime1 - $Tsft" | bc)
 span2=$(echo "$endTime2 - $startTime2" | bc)
 
 ## first using the constraint user options, but trying to get back the full split set
-mkdir -p narrowband1c/
-cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1c/ -ts ${start} -te ${endTime1} -- broadband1b/H-5_H1_${Tsft}SFT_mfdv5-${start}-${span}.sft"
+mkdir -p narrowband2a/
+cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband2a/ -ts ${start} -te ${endTime1} -- broadband1c/H-5_H1_${Tsft}SFT_mfdv5-${start}-${span}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 ## then actually reduce the range
-mkdir -p narrowband1d/
-cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1d/ -ts ${startTime2} -te ${endTime2} -- broadband1b/H-5_H1_${Tsft}SFT_mfdv5-${start}-${span}.sft"
+mkdir -p narrowband2b/
+cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband2b/ -ts ${startTime2} -te ${endTime2} -- broadband1c/H-5_H1_${Tsft}SFT_mfdv5-${start}-${span}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 
-## check narrowband1c/ SFT names (full range)
+## check narrowband2a/ SFT names (full range)
 for freq in 10 18 26 34 42 50 58 66 74 82 90; do
     if [ $freq = 90 ]; then
         binwidth="0005Hz0"
     else
         binwidth="0008Hz0"
     fi
-    sft="narrowband1c/H-5_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_mfdv5-${start}-${span}.sft"
+    sft="narrowband2a/H-5_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_mfdv5-${start}-${span}.sft"
     if ! test -f $sft; then
         echo "ERROR: could not find file '$sft'"
         exit 1
     fi
 done
 
-## dump narrowband1c/ (full range) SFT bins, sorted by frequency, should match broadband1b/ from before
-cmdline="lalapps_dumpSFT -d -i 'narrowband1c/*' | sed '/^$/d;/^%/d' | sort -n -k1,3 > narrowband1c_bins.txt"
+## dump narrowband2a/ (full range) SFT bins, sorted by frequency, should match broadband1c/ from before
+cmdline="lalapps_dumpSFT -d -i 'narrowband2a/*' | sed '/^$/d;/^%/d' | sort -n -k1,3 > narrowband2a_bins.txt"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 
-if ! diff -s narrowband1b_bins.txt narrowband1c_bins.txt; then
-    echo "ERROR: narrowband1b_bins.txt and narrowband1c_bins.txt should be equal"
+if ! diff -s narrowband1c_bins.txt narrowband2a_bins.txt; then
+    echo "ERROR: narrowband1c_bins.txt and narrowband2a_bins.txt should be equal"
     exit 1
 fi
 
-## check narrowband1d/ SFT names (reduced range)
+## check narrowband2b/ SFT names (reduced range)
 for freq in 10 18 26 34 42 50 58 66 74 82 90; do
     if [ $freq = 90 ]; then
         binwidth="0005Hz0"
     else
         binwidth="0008Hz0"
     fi
-    sft="narrowband1d/H-3_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_mfdv5-${startTime2}-${span2}.sft"
+    sft="narrowband2b/H-3_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_mfdv5-${startTime2}-${span2}.sft"
     if ! test -f $sft; then
         echo "ERROR: could not find file '$sft'"
         exit 1
