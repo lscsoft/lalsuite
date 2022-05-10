@@ -53,6 +53,10 @@ liblalsupport_la_SOURCES = \
 	LALgetopt.c \
 	$(END_OF_LIST)
 
+if SWIG_BUILD
+liblalsupport_la_SOURCES += SWIGSharedVars.c
+endif
+
 liblalsupport_la_LIBADD = \
 	libtypeZ.la \
 	libtypeC.la \
