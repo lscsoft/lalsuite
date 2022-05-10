@@ -483,15 +483,17 @@ int main( int argc, char **argv )
       char obs = 0;
       char misc[1024];
       long int firstbinfreq = 0, firstbinrem = 0, binwidthfreq = 0, binwidthrem = 0;
-      int sscanf_matched = sscanf( filename, "%c-%ld_%c%c_%ldSFT_NBF%ldHz%ldW%ldHz%ld%s-%ld-%ld.sft",
+      int sscanf_matched = sscanf( filename, "%c-%ld_%c%c_%ldSFT_NBF%ldHz%ldW%ldHz%ld%1023[^-]-%ld-%ld.sft",
                                    &obs, &rec->nSFT, &rec->det[0], &rec->det[1], &rec->timebase, &firstbinfreq,
                                    &firstbinrem, &binwidthfreq, &binwidthrem, misc, &rec->startTime, &rec->span );
       XLAL_CHECK_MAIN( sscanf_matched == 12, XLAL_ESYS,
-                       "sscanf() matched only %i fields in SFT filename '%s'; partial match = '%c-%ld_%c%c_%ldSFT_NBF%ldHz%ldW%ldHz%ld%s-%ld-%ld.sft'",
+                       "sscanf() matched only %i fields in narrow-band SFT filename '%s'; partial match = '%c-%ld_%c%c_%ldSFT_NBF%ldHz%ldW%ldHz%ld%s-%ld-%ld.sft'",
                        sscanf_matched, filename,
                        obs, rec->nSFT, rec->det[0], rec->det[1], rec->timebase, firstbinfreq,
                        firstbinrem, binwidthfreq, binwidthrem, misc, rec->startTime, rec->span );
       XLAL_CHECK_MAIN( obs == rec->det[0], XLAL_EINVAL, "inconsistent observatory (%c) vs detector (%c%c) in SFT filename '%s'", obs, rec->det[0], rec->det[1], filename );
+      XLAL_CHECK_MAIN( strlen(misc) < 1023, XLAL_EINVAL, "misc description field (%s) has overflowed internal buffer", misc );
+      XLAL_CHECK_MAIN( misc[0] == '\0' || misc[0] == '_', XLAL_EINVAL, "misc description field (%s) must be separated from narrow-band descriptor by an underscore", misc );
       XLAL_CHECK_MAIN( rec->span > 0, XLAL_EINVAL, "nonpositive timespan (%ld) in SFT filename '%s'", rec->span, filename );
 
       /* complete SFT record */
@@ -522,33 +524,29 @@ int main( int argc, char **argv )
     /* parse SFT filename to get misc field */
     char *misc = NULL;
     {
-      char *fn = NULL;
-      XLAL_CHECK_MAIN( ( fn = XLALStringDuplicate( filename ) ) != NULL, XLAL_ENOMEM, "out of memory allocating filename" );
-      char *tok = NULL;
-      {
-        /* get S token from S-D-G-T.sft SFT filename */
-        XLAL_CHECK_MAIN( ( tok = strtok( fn, "-" ) ) != NULL, XLAL_ESYS, "failed to parse SFT filename '%s'", filename );
-        /* get D token from S-D-G-T.sft SFT filename */
-        XLAL_CHECK_MAIN( ( tok = strtok( NULL, "-" ) ) != NULL, XLAL_ESYS, "failed to parse SFT filename '%s'", filename );
-      }
-      char *tok2 = NULL;
-      {
-        /* get numSFTs token from numSFTs_IFO_SFTtype[_Misc] SFT filename D token */
-        XLAL_CHECK_MAIN( ( tok2 = strtok( tok, "_" ) ) != NULL, XLAL_ESYS, "failed to parse SFT filename '%s'", filename );
-        /* get IFO token from numSFTs_IFO_SFTtype[_Misc] SFT filename D token */
-        XLAL_CHECK_MAIN( ( tok2 = strtok( NULL, "_" ) ) != NULL, XLAL_ESYS, "failed to parse SFT filename '%s'", filename );
-        /* get SFTtype token from numSFTs_IFO_SFTtype[_Misc] SFT filename D token */
-        XLAL_CHECK_MAIN( ( tok2 = strtok( NULL, "_" ) ) != NULL, XLAL_ESYS, "failed to parse SFT filename '%s'", filename );
-        /* get Misc token (if any) from numSFTs_IFO_SFTtype[_Misc] SFT filename D token */
-        XLAL_CHECK_MAIN( ( tok2 = strtok( NULL, "_" ) ) != NULL, XLAL_ESYS, "failed to parse SFT filename '%s'", filename );
-      }
-      if ( tok2 != NULL ) {
-        misc = XLALStringAppendFmt( NULL, "_%s", tok2 );
-      } else {
-        misc = XLALStringDuplicate( "" );
-      }
+      char S[1024], D_numSFTs[1024], D_IFO[1024], D_SFTtype[1024], D_misc[1024], G[1024], T[1024];
+      int sscanf_matched = sscanf( filename, "%1023[^-]-%1023[^_-]_%1023[^_-]_%1023[^_-]%1023[^-]-%1023[^-]-%1023[^.].sft",
+                                   S, D_numSFTs, D_IFO, D_SFTtype, D_misc, G, T );
+      XLAL_CHECK_MAIN( sscanf_matched == 7, XLAL_ESYS,
+                       "sscanf() matched only %i fields in broad-band SFT filename '%s'; partial match = '%s-%s_%s_%s%s-%s-%s.sft'",
+                       sscanf_matched, filename,
+                       S, D_numSFTs, D_IFO, D_SFTtype, D_misc, G, T );
+      XLAL_CHECK_MAIN( strlen(S) > 0, XLAL_EINVAL, "SFT filename 'S' field (%s) is missing", S );
+      XLAL_CHECK_MAIN( strlen(S) < 1023, XLAL_EINVAL, "SFT filename 'S' field (%s) has overflowed internal buffer", S );
+      XLAL_CHECK_MAIN( strlen(D_numSFTs) > 0, XLAL_EINVAL, "SFT filename 'D_numSFTs' field (%s) is missing", D_numSFTs );
+      XLAL_CHECK_MAIN( strlen(D_numSFTs) < 1023, XLAL_EINVAL, "SFT filename 'D_numSFTs' field (%s) has overflowed internal buffer", D_numSFTs );
+      XLAL_CHECK_MAIN( strlen(D_IFO) > 0, XLAL_EINVAL, "SFT filename 'D_IFO' field (%s) is missing", D_IFO );
+      XLAL_CHECK_MAIN( strlen(D_IFO) < 1023, XLAL_EINVAL, "SFT filename 'D_IFO' field (%s) has overflowed internal buffer", D_IFO );
+      XLAL_CHECK_MAIN( strlen(D_SFTtype) > 0, XLAL_EINVAL, "SFT filename 'D_SFTtype' field (%s) is missing", D_SFTtype );
+      XLAL_CHECK_MAIN( strlen(D_SFTtype) < 1023, XLAL_EINVAL, "SFT filename 'D_SFTtype' field (%s) has overflowed internal buffer", D_SFTtype );
+      XLAL_CHECK_MAIN( strlen(D_misc) < 1023, XLAL_EINVAL, "SFT filename 'D_misc' field (%s) has overflowed internal buffer", D_misc );
+      XLAL_CHECK_MAIN( D_misc[0] == '\0' || D_misc[0] == '_', XLAL_EINVAL, "SFT filename 'D_misc' field (%s) must be separated from 'D_SFTtype' field by an underscore", D_misc );
+      XLAL_CHECK_MAIN( strlen(G) > 0, XLAL_EINVAL, "SFT filename 'G' field (%s) is missing", G );
+      XLAL_CHECK_MAIN( strlen(G) < 1023, XLAL_EINVAL, "SFT filename 'G' field (%s) has overflowed internal buffer", G );
+      XLAL_CHECK_MAIN( strlen(T) > 0, XLAL_EINVAL, "SFT filename 'T' field (%s) is missing", T );
+      XLAL_CHECK_MAIN( strlen(T) < 1023, XLAL_EINVAL, "SFT filename 'T' field (%s) has overflowed internal buffer", T );
+      misc = XLALStringDuplicate( D_misc );
       XLAL_CHECK_MAIN( misc != NULL, XLAL_ENOMEM, "out of memory allocation misc" );
-      XLALFree( fn );
     }
 
     /* open input SFT file */
