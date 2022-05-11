@@ -95,6 +95,7 @@ Depends:
  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
  python3-ligo-lw,
  python3-ligo-segments,
+ python3-tqdm,
 Description: Python 3 bindings for LALInspiral
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Inspiral library.

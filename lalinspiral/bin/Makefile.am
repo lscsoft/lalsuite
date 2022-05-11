@@ -22,6 +22,7 @@ TESTS += \
 if HAVE_PYTHON
 
 pybin_scripts = \
+	lalinspiral_injfind \
 	lalinspiral_thinca \
 	$(END_OF_LIST)
 

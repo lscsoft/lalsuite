@@ -29,8 +29,6 @@
 Command-line interface to CBC injection identification code.
 """
 
-from __future__ import print_function
-
 
 from optparse import OptionParser
 import sys
@@ -43,8 +41,8 @@ from lalinspiral import inspinjfind
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from lalapps.git_version import date as __date__
-from lalapps.git_version import version as __version__
+from lalinspiral.git_version import date as __date__
+from lalinspiral.git_version import version as __version__
 
 
 process_program_name = "lalapps_inspinjfind"
