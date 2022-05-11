@@ -121,6 +121,7 @@ Depends:
  ${shlibs:Depends},
  liblalinspiral@LIBMAJOR@ (= ${binary:Version}),
  python3-lalinspiral (= ${binary:Version}),
+ python3-ligo-segments,
 Description: LSC Algorithm Library Inspiral
  The LSC Algorithm Inspiral Library for gravitational wave data analysis.
  This package provides the runtime tools.

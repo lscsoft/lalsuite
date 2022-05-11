@@ -118,7 +118,6 @@ src/inspiral/lalapps_siminspiral_to_frame
 src/inspiral/lalapps_skymap
 src/inspiral/lalapps_spininj
 src/inspiral/lalapps_splitbank
-src/inspiral/lalapps_thinca
 src/inspiral/lalapps_tmpltbank
 src/inspiral/lalapps_trigbank
 src/inspiral/lalapps_trigger_hipe

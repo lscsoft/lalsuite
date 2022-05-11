@@ -202,6 +202,7 @@ outputs:
         - {{ pin_subpackage('python-lalinspiral', exact=True) }}
     test:
       commands:
+        - lalinspiral_thinca --help
         - lalinspiral_version --verbose
       imports:
         - lalinspiral

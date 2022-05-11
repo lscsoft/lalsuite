@@ -214,7 +214,6 @@ test:
     - lalapps_string_plot_likelihood --help
     - test "$(lalapps_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"
     - test "$(lalapps_tconvert Fri, 13 May 2005 06:13:07 +0000)" -eq 800000000
-    - lalapps_thinca --help
     - lalapps_tmpltbank --help
     - lalapps_version
 
