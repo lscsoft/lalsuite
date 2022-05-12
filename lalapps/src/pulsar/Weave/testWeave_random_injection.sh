@@ -35,7 +35,7 @@ echo
 
 echo "=== Perform interpolating search with random injection ==="
 set -x
-lalapps_Weave --output-file=WeaveOutRandInj.fits \
+lalapps_Weave --rand-seed=9876 --output-file=WeaveOutRandInj.fits \
     --random-injection=0.5 \
     --toplists=mean2F --toplist-limit=10 \
     --extra-statistics="coh2F,coh2F_det,mean2F_det" \
