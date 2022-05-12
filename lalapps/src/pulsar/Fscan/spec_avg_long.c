@@ -87,7 +87,7 @@ int main(int argc, char **argv)
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&persistAvgSeconds, "persistAvgSeconds", INT4, 'T', OPTIONAL, "Time baseline in seconds for averaging SFTs to measure the persistency, must be >= timeBaseline (cannot also specify --persistAveOption)") == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&persistAvgOpt,     "persistAvgOption",  INT4, 'E', OPTIONAL, "Choose one of 1 = day, 2 = week, or 3 = month averaging for measuring the persistency (cannot also specify --persistAvgSeconds)") == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&persistSNRthresh,  "persistSNRthresh",  REAL8, 'z', OPTIONAL, "SNR of lines for being present in the data") == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&line_freq,     "lineFreq",      STRINGVector,  0, OPTIONAL, "CSV list of line frequencies (e.g., --lineFreq=21.5,22.0). If set, then an output file with all GPS start times of SFTs with 0s and 1s is given for when line is above threshold (1 indicates above threshold). Be careful that the CSV list of values are interpreted as floating point values") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&line_freq,     "lineFreq",      STRINGVector,  0, OPTIONAL, "CSV list of line frequencies (e.g., --lineFreq=21.5,22.0). If set, then an output file with all GPS start times of SFTs with float values of number of standard deviations above the mean (>0 indicates above mean). Be careful that the CSV list of values are interpreted as floating point values") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&auto_track,    "autoTrack",     REAL8,  'a', OPTIONAL, "If specified, also track any frequency whose persistency is >= this threshold within range [0,1]") == XLAL_SUCCESS, XLAL_EFUNC );
 
     BOOLEAN should_exit = 0;
@@ -304,14 +304,14 @@ int main(int argc, char **argv)
     } // end loop over frequency bins
 
     // allocate arrays for monitoring specific line frequencies
-    UINT4VectorSequence *line_exceeds_thresh_in_sfts = NULL;
+    REAL8VectorSequence *line_excess_in_epochs = NULL;
     if (line_freq != NULL) {
 	INT4Vector *line_freq_bin_in_sft = NULL;
 	REAL8Vector *line_freq_array = NULL;
         XLAL_CHECK_MAIN( (line_freq_array = XLALCreateREAL8Vector(line_freq->length)) != NULL, XLAL_EFUNC );
         XLAL_CHECK_MAIN( (line_freq_bin_in_sft = XLALCreateINT4Vector(line_freq->length)) != NULL, XLAL_EFUNC );
-	XLAL_CHECK_MAIN( (line_exceeds_thresh_in_sfts = XLALCreateUINT4VectorSequence(line_freq->length, epoch_gps_times->length)) != NULL, XLAL_EFUNC );
-        memset(line_exceeds_thresh_in_sfts->data, 0, sizeof(UINT4)*line_exceeds_thresh_in_sfts->length*line_exceeds_thresh_in_sfts->vectorLength);
+	XLAL_CHECK_MAIN( (line_excess_in_epochs = XLALCreateREAL8VectorSequence(line_freq->length, epoch_gps_times->length)) != NULL, XLAL_EFUNC );
+        memset(line_excess_in_epochs->data, 0, sizeof(REAL8)*line_excess_in_epochs->length*line_excess_in_epochs->vectorLength);
 
         // Set line_freq_array as the REAL8 values of the line_freq string vector
         // Set line_freq_bin_in_sft as the nearest INT4 values of the line frequencies to track
@@ -332,9 +332,8 @@ int main(int argc, char **argv)
 		REAL8 mean, std;
 		XLAL_CHECK_MAIN( select_mean_std_from_vect(&mean, &std, means, stds, line_freq_bin_in_sft->data[i], (UINT4)nside) == XLAL_SUCCESS, XLAL_EFUNC );
 
-		if ((epoch_avg->data[j*epoch_avg->vectorLength + line_freq_bin_in_sft->data[i]] - mean)/std > persistSNRthresh) {
-		    line_exceeds_thresh_in_sfts->data[i*line_exceeds_thresh_in_sfts->vectorLength + j] = 1;
-		}
+		// assign the value of the number of standard devaiations above the mean for this chunk
+		line_excess_in_epochs->data[i*line_excess_in_epochs->vectorLength + j] = (epoch_avg->data[j*epoch_avg->vectorLength + line_freq_bin_in_sft->data[i]] - mean)/std;
 	    } // end loop over lines to track
 	} // end loop over chunks of SFT averages
 
@@ -383,12 +382,12 @@ int main(int argc, char **argv)
 	for (UINT4 i = 0; i < epoch_gps_times->length; i++) {
 	    fprintf(LINEOUT, "%d", epoch_gps_times->data[i].gpsSeconds);
 	    for (UINT4 n=0; n<line_freq->length; n++) {
-		fprintf(LINEOUT, ",%u", line_exceeds_thresh_in_sfts->data[n*line_exceeds_thresh_in_sfts->vectorLength + i]);
+		fprintf(LINEOUT, ",%.4f", line_excess_in_epochs->data[n*line_excess_in_epochs->vectorLength + i]);
 	    }
 	    fprintf(LINEOUT, "\n");
 	}
 	fclose(LINEOUT);
-	XLALDestroyUINT4VectorSequence(line_exceeds_thresh_in_sfts);
+	XLALDestroyREAL8VectorSequence(line_excess_in_epochs);
     }
 
 	/*------------------------------------------------------------------------------------------------------------------------*/
