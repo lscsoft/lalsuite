@@ -12,8 +12,8 @@ EXTRA_DIST += \
 	$(END_OF_LIST)
 
 noinst_pybin_scripts = \
-	test_thinca_brute_force_coinc \
-	test_thinca_compare_coinc_lists \
+	thinca_brute_force_coinc \
+	thinca_compare_coinc_lists \
 	$(END_OF_LIST)
 
 # Add compiled test programs to this variable
