@@ -34,11 +34,8 @@ check-execs-are-tested:
 	not_tested=`$(AWK) ' \
 	$$1 == "programs" { for (i = 3; i <= NF; ++i) { prog[$$i] = 1; progpath[$$i] = $$2 "/" $$i } } \
 	$$1 == "tested" { for (i = 2; i <= NF; ++i) { tested[$$i] = 1; } } \
-	END { if (prog) { for (e in prog) { if (!tested[e]) { print progpath[e]; } } } else { print "NONE"; } } \
+	END { for (e in prog) { if (!tested[e]) { print progpath[e]; } } } \
 	' $${tested_logfiles} /dev/null | $(SED) 's|^$(subdir)/||' | sort`; \
-	if test "X$${not_tested}" = XNONE; then \
-		exit 0; \
-	fi; \
 	if test "X$${not_tested}" != X; then \
 		printf "\nERROR: the following executables under lalapps_pulsar.am test harness are not tested:\n" >&2; \
 		printf "   %s\n" $${not_tested} >&2; \
