@@ -702,6 +702,10 @@ int XLALSimIMRPhenomXPHMFromModes(
    LALDict *lalParams                   /**< LAL Dictionary Structure    */
  )
  {
+
+   if (pWF->f_max_prime <= pWF->fMin)
+     XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);     
+     
    /* Set LIGOTimeGPS */
    LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
 
@@ -1203,6 +1207,10 @@ static int IMRPhenomXPHM_hplushcross_from_modes(
   LALDict *lalParams                   /**< LAL Dictionary Structure    */
 )
 {
+    
+  if (pWF->f_max_prime <= pWF->fMin)
+    XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);     
+
   /* Set LIGOTimeGPS */
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
 
@@ -2181,6 +2189,9 @@ static int IMRPhenomXPHM_OneMode(
   LALDict *lalParams                    /**< LAL Dictionary Structure    */
 )
 {
+  if (pWF->f_max_prime <= pWF->fMin)
+    XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);     
+
   /* Set LIGOTimeGPS */
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
 
