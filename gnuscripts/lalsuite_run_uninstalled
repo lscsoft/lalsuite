@@ -154,6 +154,10 @@ if test "x${verbose}" = xyes || test "x${LALSUITE_RUN_UNINSTALLED_VERBOSE}" != x
     eval "${ltcmd} env" 2>/dev/null | sed -n -e '/^LAL/p;/PATH=/p' | sed -e 's/^/environment: /'
     echo "---------- $0 environment ----------"
     echo
+    echo "========== $0 libtool dry run =========="
+    eval "${ltcmd} --dry-run ${cmd}"
+    echo "---------- $0 libtool dry run ----------"
+    echo
     echo "========== $0 command =========="
     echo "${ltcmd} ${cmd}"
     echo "---------- $0 command ----------"
