@@ -422,7 +422,6 @@ typedef enum tagApproximant {
    NRSur7dq4,           /**< q=4 extension of NRSur7dq2, arxiv: 1905.09300 */
    SEOBNRv4HM,	/**< Spin nonprecessing EOBNR model v4 with higher modes, PhysRevD.98.084028 [arXiv:1803.10701]
                      * @remarks Implemented in lalsimulation (time domain). */
-   SEOBNRv4HM_PA, /** < Spin nonprecessing EOBNR model v4 with higher modes post-adiabatic dynamics used, PhysRevD.98.084028 [arXiv:1803.10701]                                                                                             		        * @remarks Implemented in lalsimulation (time domain). */
    NRHybSur3dq8,        /**< Time domain, aligned-spin, higher modes, hybridized. Paper arxiv:1812.07865 */
    IMRPhenomXAS, 		/**< Frequency domain, non-precessing phenomenological IMR waveform model ([arXiv: 20XY.ZZZZZ]). */
    IMRPhenomXHM, 		/**< Frequency domain, non-precessing phenomenological IMR waveform model with subdominant modes ([arXiv:2001.10914 [gr-qc]]) and accelerated evaluation through adapted grids (arXiv:2001.10897 [gr-qc]) */
@@ -440,6 +439,7 @@ typedef enum tagApproximant {
    IMRPhenomTPHM,      /** Time domain, precessing phenomenological IMR waveform model with subdominant modes ([arXiv: 20XY.ZZZZZ]). */
    SEOBNRv5_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5
 		    * @remarks Implemented in lalsimulation (frequency domain). */
+   SEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain), PhysRevD.104.124087 [arXiv:2105.06983] */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 

@@ -138,7 +138,6 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv2T),
     INITIALIZE_NAME(SEOBNRv4T),
     INITIALIZE_NAME(SEOBNRv4HM),
-    INITIALIZE_NAME(SEOBNRv4HM_PA),
     INITIALIZE_NAME(SEOBNRv1_ROM_EffectiveSpin),
     INITIALIZE_NAME(SEOBNRv1_ROM_DoubleSpin),
     INITIALIZE_NAME(SEOBNRv2_ROM_EffectiveSpin),
@@ -186,11 +185,12 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomXHM),
     INITIALIZE_NAME(IMRPhenomXP),
     INITIALIZE_NAME(IMRPhenomXPHM),
-        INITIALIZE_NAME(TEOBResumS),
+	INITIALIZE_NAME(TEOBResumS),
     INITIALIZE_NAME(IMRPhenomT),
     INITIALIZE_NAME(IMRPhenomTHM),
     INITIALIZE_NAME(IMRPhenomTP),
-    INITIALIZE_NAME(IMRPhenomTPHM)
+    INITIALIZE_NAME(IMRPhenomTPHM),
+    INITIALIZE_NAME(SEOBNRv4HM_PA)
 };
 #undef INITIALIZE_NAME
 
@@ -6468,12 +6468,12 @@ int XLALSimInspiralImplementedTDApproximants(
         case TEOBResum_ROM:
         case TEOBResumS:
         case SEOBNRv4HM:
-        case SEOBNRv4HM_PA:
         case NRHybSur3dq8:
         case IMRPhenomT:
         case IMRPhenomTHM:
         case IMRPhenomTP:
         case IMRPhenomTPHM:
+        case SEOBNRv4HM_PA:
             return 1;
 
         default:
@@ -6973,7 +6973,6 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv2T:
     case SEOBNRv4T:
     case SEOBNRv4HM:
-    case SEOBNRv4HM_PA:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -6994,6 +6993,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case NRHybSur3dq8:
     case IMRPhenomT:
     case IMRPhenomTHM:
+    case SEOBNRv4HM_PA:
       spin_support=LAL_SIM_INSPIRAL_ALIGNEDSPIN;
       break;
     case TaylorEt:
@@ -7088,7 +7088,6 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case SEOBNRv2T:
     case SEOBNRv4T:
     case SEOBNRv4HM:
-    case SEOBNRv4HM_PA:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -7125,7 +7124,12 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case TEOBResum_ROM:
     case IMRPhenomT:
     case IMRPhenomTHM:
+<<<<<<< HEAD
         case TEOBResumS:
+=======
+	case TEOBResumS:
+    case SEOBNRv4HM_PA:
+>>>>>>> Finalize changes for SEOBNRv4HM_PA
       spin_freq=LAL_SIM_INSPIRAL_SPINS_NONPRECESSING;
       break;
     case NR_hdf5:
@@ -7217,7 +7221,6 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv2T:
     case SEOBNRv4T:
     case SEOBNRv4HM:
-    case SEOBNRv4HM_PA:
     case SEOBNRv1_ROM_EffectiveSpin:
     case SEOBNRv1_ROM_DoubleSpin:
     case SEOBNRv2_ROM_EffectiveSpin:
@@ -7251,6 +7254,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomTP:
     case IMRPhenomTPHM:
     case NumApproximants:
+    case SEOBNRv4HM_PA:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case TaylorF2:
