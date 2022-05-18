@@ -62,7 +62,11 @@ check-local: gen-tested-programs-log
 clean-local: clean-local-test-dirs clean-tested-logs
 
 gen-tested-programs-log:
-	@echo 'programs $(subdir) $(bin_PROGRAMS) $(pybin_scripts)' > .tested_programs.log
+	@if test "X$(TEST)" = X; then \
+		echo > .tested_programs.log; \
+	else \
+		echo 'programs $(subdir) $(bin_PROGRAMS) $(pybin_scripts)' > .tested_programs.log; \
+	fi
 
 clean-tested-logs:
 	-rm -f .tested_*.log
