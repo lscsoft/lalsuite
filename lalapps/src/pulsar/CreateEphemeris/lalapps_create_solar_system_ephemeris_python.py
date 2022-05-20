@@ -110,12 +110,15 @@ if __name__=='__main__':
 
     args = parser.parse_args()
 
-    # check ephemeris is in our current list
-    if args.ephemeris.upper() not in EPH_URLS.keys():
-        print("Ephemeris '{}' is not allowed, use one of: {}".format(args.ephemeris, EPH_URLS.keys()))
-        sys.exit(1)
+    # check ephemeris is either a filename, or in our current list
+    if args.ephemeris.endswith(".bsp"):
+        ephemfile = args.ephemeris
     else:
-        ephemfile = EPH_URLS[args.ephemeris.upper()]
+        if args.ephemeris.upper() not in EPH_URLS.keys():
+            print("Ephemeris '{}' is not allowed, use one of: {}".format(args.ephemeris, EPH_URLS.keys()))
+            sys.exit(1)
+        else:
+            ephemfile = EPH_URLS[args.ephemeris.upper()]
 
     # check that the body is in our current list
     if args.target.lower() not in BODIES:
