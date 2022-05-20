@@ -26,6 +26,7 @@ endif
 # Add shell test scripts to this variable
 test_scripts += test_create_solar_system_ephemeris.sh
 test_scripts += test_create_solar_system_ephemeris_python.sh
+test_scripts += test_create_time_correction_ephemeris.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
