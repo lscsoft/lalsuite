@@ -57,8 +57,18 @@ def get_SEOBNRv4HM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
         0.0,
         1.0,
         1.0,
+        0.0, # domega22
+        0.0, # dtau22
+        0.0, # domega21
+        0.0, # dtau21
+        0.0, # domega33
+        0.0, # dtau33
+        0.0, # domega44
+        0.0, # dtau44
+        0.0, # domega55
+        0.0, # dtau55
         nqcCoeffsInput,
-        0,
+        0, # nqcFlag
         PAparams,
     )
 
