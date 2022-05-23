@@ -88,8 +88,6 @@ outputs:
       commands:
         # check library
         - test -f ${PREFIX}/lib/liblalburst${SHLIB_EXT}  # [unix]
-        # check activate variables
-        - test "${LALBURST_DATADIR}" = "${PREFIX}/share/lalburst"  # [unix]
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalburst
     about:
