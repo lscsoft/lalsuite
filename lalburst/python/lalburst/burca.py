@@ -43,43 +43,6 @@ from .git_version import version as __version__
 #
 # =============================================================================
 #
-#                                 Speed Hacks
-#
-# =============================================================================
-#
-
-
-class SnglBurst(lsctables.SnglBurst):
-	__slots__ = ()
-
-	#
-	# compare self's peak time to the LIGOTimeGPS instance other.
-	# allows bisection searches by GPS time to find ranges of triggers
-	# quickly
-	#
-
-	def __lt__(self, other):
-		return self.peak < other
-
-	def __le__(self, other):
-		return self.peak <= other
-
-	def __eq__(self, other):
-		return self.peak == other
-
-	def __ne__(self, other):
-		return self.peak != other
-
-	def __ge__(self, other):
-		return self.peak >= other
-
-	def __gt__(self, other):
-		return self.peak > other
-
-
-#
-# =============================================================================
-#
 #                          CoincTables Customizations
 #
 # =============================================================================
@@ -228,6 +191,7 @@ class ep_coincgen_doubles(snglcoinc.coincgen_doubles):
 
 		def __init__(self, events):
 			self.events = events
+			self.times = tuple(map(ep_coincgen_doubles.singlesqueue.event_time, events))
 			# for this instance, replace the method with the
 			# pre-computed value
 			self.max_edge_peak_delta = self.max_edge_peak_delta(events)
@@ -259,7 +223,7 @@ class ep_coincgen_doubles(snglcoinc.coincgen_doubles):
 			# searches for the minimum and maximum allowed peak
 			# times to quickly identify a subset of the full
 			# list)
-			return [event_b for event_b in self.events[bisect_left(self.events, peak - dt) : bisect_right(self.events, peak + dt)] if not self.comparefunc(event_a, offset_a, event_b, coinc_window)]
+			return [event_b for event_b in self.events[bisect_left(self.times, peak - dt) : bisect_right(self.times, peak + dt)] if not self.comparefunc(event_a, offset_a, event_b, coinc_window)]
 
 
 
@@ -272,11 +236,12 @@ class string_coincgen_doubles(ep_coincgen_doubles):
 	class get_coincs(object):
 		def __init__(self, events):
 			self.events = events
+			self.times = tuple(map(string_coincgen_doubles.singlesqueue.event_time, events))
 
 		def __call__(self, event_a, offset_a, coinc_window):
 			peak = event_a.peak + offset_a
 			template_id = event_a.template_id
-			return [event for event in self.events[bisect_left(self.events, peak - coinc_window) : bisect_right(self.events, peak + coinc_window)] if event.template_id == template_id]
+			return [event for event in self.events[bisect_left(self.times, peak - coinc_window) : bisect_right(self.times, peak + coinc_window)] if event.template_id == template_id]
 
 
 #

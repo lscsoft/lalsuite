@@ -27,8 +27,6 @@ from ligo.lw.utils import time_slide as ligolw_time_slide
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 	pass
 
-lsctables.SnglBurstTable.RowType = lsctables.SnglBurst = burca.SnglBurst
-
 
 #
 # construct a synthetic burst trigger document
@@ -155,10 +153,11 @@ class coincgen_doubles(snglcoinc.coincgen_doubles):
 	class get_coincs(object):
 		def __init__(self, events):
 			self.events = events
+			self.times = tuple(map(coincgen_doubles.singlesqueue.event_time, events))
 
 		def __call__(self, event_a, offset_a, coinc_window):
 			peak = event_a.peak + offset_a
-			return self.events[bisect_left(self.events, peak - coinc_window) : bisect_right(self.events, peak + coinc_window)]
+			return self.events[bisect_left(self.times, peak - coinc_window) : bisect_right(self.times, peak + coinc_window)]
 
 
 def do_snglcoinc(xmldoc, delta_t = 0.015, min_instruments = 1):
