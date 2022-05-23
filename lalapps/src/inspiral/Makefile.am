@@ -59,8 +59,6 @@ endif
 
 if HAVE_PYTHON
 pybin_scripts = \
-	lalapps_inspinjfind \
-	lalapps_thinca \
 	lalapps_cbc_sbank \
 	lalapps_cbc_sbank_choose_mchirp_boundaries \
 	lalapps_cbc_sbank_hdf5_choose_mchirp_boundaries \

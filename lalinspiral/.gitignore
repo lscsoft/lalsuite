@@ -8,6 +8,7 @@ __pycache__
 *.o
 *.pc
 *.pyc
+*.pyman
 *.pyo
 /_build/
 /_inst/
@@ -53,6 +54,8 @@ lib/LALInspiralVCSInfo.h
 lib/LALInspiralVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
+bin/lalinspiral_injfind
+bin/lalinspiral_thinca
 bin/lalinspiral_version
 bin/version.c
 swig/.swigdeps

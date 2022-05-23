@@ -12,7 +12,7 @@ for i in 1 2 ; do
 	for f in brute_min${i}.xml.gz ; do echo "reset $f" ; "cp" ${SRCDIR}/test_thinca_input.xml.gz ${f} ; done
 
 	# run thinca and brute force algorithm
-	lalapps_thinca --verbose --threshold 0.005 --min-instruments ${i} thinca_min${i}.xml.gz
+	lalinspiral_thinca --verbose --threshold 0.005 --min-instruments ${i} thinca_min${i}.xml.gz
 	${SRCDIR}/test_thinca_brute_force_coinc --verbose --delta-t 0.005 --min-instruments ${i} brute_min${i}.xml.gz
 
 	# print total event counts

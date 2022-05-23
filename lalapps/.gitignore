@@ -101,7 +101,6 @@ src/inspiral/lalapps_ihope_status
 src/inspiral/lalapps_inca
 src/inspiral/lalapps_inspfrinj
 src/inspiral/lalapps_inspinj
-src/inspiral/lalapps_inspinjfind
 src/inspiral/lalapps_inspiral_hipe
 src/inspiral/lalapps_inspiral_online_pipe
 src/inspiral/lalapps_inspiral_online_pipe_inject
@@ -118,7 +117,6 @@ src/inspiral/lalapps_siminspiral_to_frame
 src/inspiral/lalapps_skymap
 src/inspiral/lalapps_spininj
 src/inspiral/lalapps_splitbank
-src/inspiral/lalapps_thinca
 src/inspiral/lalapps_tmpltbank
 src/inspiral/lalapps_trigbank
 src/inspiral/lalapps_trigger_hipe

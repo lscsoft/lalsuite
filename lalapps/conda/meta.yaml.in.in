@@ -178,7 +178,6 @@ test:
     - lalapps_inspfrinj --help
     - lalapps_inspinj --f-lower 30 --waveform IMRPhenomD --gps-start-time 1000000000 --gps-end-time 1000000010 --d-distr volume --l-distr random --m-distr log --i-distr gaussian --incl-std 2 --min-distance 100000 --max-distance 120000 --min-mass1 10 --max-mass1 20 --min-mass2 10 --max-mass2 20 --disable-spin --time-step
       2
-    - lalapps_inspinjfind --help
     - lalapps_knope --help
     - lalapps_knope_collate_results --help
     #- lalapps_knope_result_page --help  <- needs scotchcorner
@@ -214,7 +213,6 @@ test:
     - lalapps_string_plot_likelihood --help
     - test "$(lalapps_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"
     - test "$(lalapps_tconvert Fri, 13 May 2005 06:13:07 +0000)" -eq 800000000
-    - lalapps_thinca --help
     - lalapps_tmpltbank --help
     - lalapps_version
 

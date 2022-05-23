@@ -24,10 +24,6 @@
 #
 
 
-from __future__ import division
-from __future__ import print_function
-
-
 """
 Inspiral injection identification library.  Contains code providing the
 capacity to search a list of sngl_inspiral candidates for events
@@ -43,6 +39,7 @@ again using the standard coincidence infrastructure.
 import bisect
 import functools
 import sys
+import tqdm
 
 
 from lal import iterutils
@@ -50,7 +47,6 @@ from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw.utils import coincs as ligolw_coincs
 from ligo.lw.utils import time_slide as ligolw_time_slide
-from glue.text_progress_bar import ProgressBar
 from . import thinca
 
 
@@ -410,24 +406,17 @@ def ligolw_inspinjfind(xmldoc, process, search, snglcomparefunc, nearcoinccompar
 	# Find sim_inspiral <--> sngl_inspiral coincidences.
 	#
 
-	progressbar = ProgressBar(max = len(contents.siminspiraltable), textwidth = 35, text = sbdef.description) if verbose else None
-	for sim in contents.siminspiraltable:
-		if progressbar is not None:
-			progressbar.increment()
+	for sim in tqdm.tqdm(contents.siminspiraltable, desc = sbdef.description, disable = not verbose):
 		inspirals = find_sngl_inspiral_matches(contents, sim, snglcomparefunc)
 		if inspirals:
 			add_sim_inspiral_coinc(contents, sim, inspirals)
-	del progressbar
 
 	#
 	# Find sim_inspiral <--> coinc_event coincidences.
 	#
 
 	if contents.scn_coinc_def_id:
-		progressbar = ProgressBar(max = len(contents.siminspiraltable), textwidth = 35, text = scndef.description) if verbose else None
-		for sim in contents.siminspiraltable:
-			if progressbar is not None:
-				progressbar.increment()
+		for sim in tqdm.tqdm(contents.siminspiraltable, desc = scndef.description, disable = not verbose):
 			coincs = contents.coincs_near_endtime(sim.time_geocent)
 			exact_coinc_event_ids = find_exact_coinc_matches(coincs, sim, snglcomparefunc)
 			near_coinc_event_ids = find_near_coinc_matches(coincs, sim, nearcoinccomparefunc)
@@ -436,7 +425,6 @@ def ligolw_inspinjfind(xmldoc, process, search, snglcomparefunc, nearcoinccompar
 				add_sim_coinc_coinc(contents, sim, exact_coinc_event_ids, contents.sce_coinc_def_id)
 			if near_coinc_event_ids:
 				add_sim_coinc_coinc(contents, sim, near_coinc_event_ids, contents.scn_coinc_def_id)
-		del progressbar
 
 	#
 	# Restore the original event order.

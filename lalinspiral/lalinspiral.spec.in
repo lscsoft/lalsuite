@@ -67,6 +67,7 @@ BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
 Summary: LSC Algorithm Inspiral Library
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+Requires: python%{python3_pkgversion}-ligo-segments
 Obsoletes: python2-%{name} <= 2.0.2-1
 %description
 The LSC Algorithm Inspiral Library for gravitational wave data analysis.
@@ -116,6 +117,7 @@ Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSIO
 Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python%{python3_pkgversion}-ligo-lw
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
+Requires: python%{python3_pkgversion}-tqdm
 Obsoletes: python2-%{name} < 2.0.3-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}

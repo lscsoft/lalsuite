@@ -46,8 +46,8 @@ lsctables.use_in(ligolw.LIGOLWContentHandler)
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-from lalapps.git_version import date as __date__
-from lalapps.git_version import version as __version__
+from lalinspiral.git_version import date as __date__
+from lalinspiral.git_version import version as __version__
 
 
 #
