@@ -58,6 +58,31 @@ requirements:
     - llvm-openmp  # [osx]
 
 outputs:
+  - name: lalpulsar-data
+    script: install-data.sh
+    build:
+      script_env: {}
+    requirements:
+      build:
+        - make
+      run_constrained:
+        - liblalpulsar >=4.0.0
+    test:
+      commands:
+        - test -f ${LALPULSAR_DATADIR}/sun00-40-DE405.dat.gz  # [unix]
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite.git
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Pulsar Library data files
+      description: |
+        The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+        This package contains the data files needed to run various applications
+        and routines that use the LAL Pulsar library.
+
   - name: liblalpulsar
     script: install-lib.sh
     build:
@@ -76,6 +101,7 @@ outputs:
         - cfitsio
         - fftw * nompi*
         - gsl
+        - {{ pin_subpackage('lalpulsar-data', exact=True) }}
         - liblal >={{ lal_version }} fftw*
         - liblalframe >={{ lalframe_version }}
         - libgomp  # [linux]
@@ -84,6 +110,7 @@ outputs:
         - cfitsio
         - fftw
         - gsl
+        - {{ pin_subpackage('lalpulsar-data', exact=True) }}
         - liblal >={{ lal_version }}
         - liblalframe >={{ lalframe_version }}
       run_constrained:
@@ -95,8 +122,6 @@ outputs:
       commands:
         # check library
         - test -f ${PREFIX}/lib/liblalpulsar${SHLIB_EXT}  # [unix]
-        # check activate variables
-        - test "${LALPULSAR_DATADIR}" = "${PREFIX}/share/lalpulsar"  # [unix]
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalpulsar
     about:
