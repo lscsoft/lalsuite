@@ -87,8 +87,6 @@ outputs:
         # check library
         - test -f ${PREFIX}/lib/liblal${SHLIB_EXT}  # [not win]
         - test -f ${PREFIX}/lib/liblalsupport${SHLIB_EXT}  # [not win]
-        # check activate variables
-        - test "${LAL_DATADIR}" = "${PREFIX}/share/lal"  # [unix]
         # check pkg-config
         - pkg-config --print-errors --exact-version "{{ version }}" lal
         - pkg-config --print-errors --exact-version "{{ version }}" lalsupport
