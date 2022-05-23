@@ -64,6 +64,31 @@ requirements:
     - liblalpulsar >={{ lalpulsar_version }}
 
 outputs:
+  - name: lalinference-data
+    script: install-data.sh
+    build:
+      script_env: {}
+    requirements:
+      build:
+        - make
+      run_constrained:
+        - liblalinference >=3.0.3
+    test:
+      commands:
+        - test -f ${LALINFERENCE_DATADIR}/fiducialBNS.xml  # [unix]
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalinference/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite.git
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Inference Library data files
+      description: |
+        The LSC Algorithm Inference Library for gravitational wave data analysis.
+        This package contains the data files needed to run various applications
+        and routines that use the LAL Inference library.
+
   - name: liblalinference
     script: install-lib.sh
     build:
@@ -79,6 +104,7 @@ outputs:
         - swig >={{ swig_version }}
       host:
         - gsl
+        - {{ pin_subpackage("lalinference-data", exact=True) }}
         - libgomp  # [linux]
         - liblal >={{ lal_version }} fftw*
         - liblalframe >={{ lalframe_version }}
@@ -90,6 +116,7 @@ outputs:
         - llvm-openmp  # [osx]
       run:
         - gsl
+        - {{ pin_subpackage("lalinference-data", exact=True) }}
         - liblal >={{ lal_version }} fftw*
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
