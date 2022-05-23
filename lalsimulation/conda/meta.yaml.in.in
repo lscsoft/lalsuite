@@ -53,6 +53,31 @@ requirements:
     - llvm-openmp  # [osx]
 
 outputs:
+  - name: lalsimulation-data
+    script: install-data.sh
+    build:
+      script_env: {}
+    requirements:
+      build:
+        - make
+      run_constrained:
+        - liblalsimulation >=3.1.2
+    test:
+      commands:
+        - test -f ${LALSIMULATION_DATADIR}/LIGO-P1200087-v18-AdV_DESIGN.txt  # [unix]
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite.git
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Simulation Library data files
+      description: |
+        The LSC Algorithm Simulation Library for gravitational wave data analysis.
+        This package contains the data files needed to run various applications
+        and routines that use the LAL Simulation library.
+
   - name: liblalsimulation
     script: install-lib.sh
     build:
@@ -68,11 +93,13 @@ outputs:
         - swig >={{ swig_version }}
       host:
         - gsl
+        - {{ pin_subpackage('lalsimulation-data', exact=True) }}
         - liblal >={{ lal_version }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
       run:
         - gsl
+        - {{ pin_subpackage('lalsimulation-data', exact=True) }}
         - liblal >={{ lal_version }}
         - llvm-openmp  # [osx]
       run_constrained:
@@ -84,8 +111,6 @@ outputs:
       commands:
         # check library
         - test -f ${PREFIX}/lib/liblalsimulation${SHLIB_EXT}  # [unix]
-        # check activate variables
-        - test "${LALSIMULATION_DATADIR}" = "${PREFIX}/share/lalsimulation"  # [unix]
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalsimulation
     about:
