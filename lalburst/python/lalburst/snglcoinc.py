@@ -480,7 +480,10 @@ class singlesqueue(object):
 		t_complete, meaning you promise no further events will be
 		added to the queue earlier than t_complete.  The time scale
 		for t_complete is that of the events themselves, not their
-		shifted times (the offset parameter is not applied).
+		shifted times (the offset parameter is not applied).  The
+		value of t_complete is stored for later retrieval.
+
+		NOTE:  t_complete is not permitted to decrease.
 
 		NOTE:  the events sequence will be iterated over multiple
 		times.  It may not be a generator.
@@ -659,6 +662,7 @@ class coincgen_doubles(object):
 		"""
 		if len(offset_vector) != 2:
 			raise ValueError("offset_vector must name exactly 2 instruments (got %d)" % len(offset_vector))
+		self.offset_vector = offset_vector
 		# the coincidence window for our pair of detectors
 		self.coinc_window = coinc_windows[frozenset(offset_vector)]
 		if self.coinc_window < 0.:
@@ -681,12 +685,10 @@ class coincgen_doubles(object):
 		# view into the id() --> event indexes of the queues
 		self.index = ChainMap(*(queue.index for queue in self.queues.values()))
 
-	@property
-	def offset_vector(self):
-		# emulate a .offset_vector attribute.  not sure if this is a
-		# performance issue or not, but I prefer not to have
-		# duplicated data floating around when it can be avoided.
-		return dict((instrument, queue.offset) for instrument, queue in self.queues.items())
+		# pre-sort the instruments into alphabetical order
+		self.instrumenta, self.instrumentb = sorted(self.queues)
+		# pre-compute the offset of the 1st wrt to the 2nd
+		self.offset_a = self.queues[self.instrumenta].offset - self.queues[self.instrumentb].offset
 
 	@property
 	def age(self):
@@ -710,7 +712,7 @@ class coincgen_doubles(object):
 		events, t_complete sets the time up-to which the collection
 		of events is known to be complete.  That is, in the future
 		no new events will be pushed whose times are earlier than
-		t_complete.
+		t_complete.  t_complete is not permitted to decrease.
 		"""
 		self.queues[instrument].push(events, t_complete)
 
@@ -787,14 +789,6 @@ class coincgen_doubles(object):
 		must a set or set-like object.  It must support Python set
 		manipulation methods, like .clear(), .update(), and so on.
 		"""
-		# get the instrument names in alphabetical order, and
-		# compute the time offset of the one wrt the other.
-		# FIXME:  there's no reason to recompute these things every
-		# time, they are fixed values.
-
-		instrumenta, instrumentb = sorted(self.queues)
-		offset_a = self.queues[instrumenta].offset - self.queues[instrumentb].offset
-
 		# retrieve the event lists to be considered for coincidence
 		# using .pull() on the singlesqueues.  these return
 		# sequences of event objects, not their python IDs.  the
@@ -806,7 +800,7 @@ class coincgen_doubles(object):
 		# singles_ids set is populated with python IDs of events
 		# that do not form pairs.
 
-		return sorted(self.doublesgen(self.queues[instrumenta].pull(t), offset_a, self.queues[instrumentb].pull(t), singles_ids))
+		return sorted(self.doublesgen(self.queues[self.instrumenta].pull(t), self.offset_a, self.queues[self.instrumentb].pull(t), singles_ids))
 
 
 #
@@ -905,14 +899,7 @@ class TimeSlideGraphNode(object):
 		of events is known to be complete.  That is, in the future
 		no new events will be pushed whose times are earlier than
 		t_complete.
-
-		Returns True if this node's .t_coinc_complete property has
-		been changed by this operation, False otherwise.  If
-		.t_coinc_complete does not change, then no new candidates
-		can yet be formed and it is not necessary to perform a
-		coincidence analysis at this time.
 		"""
-		t_before = self.t_coinc_complete
 		if len(self.offset_vector) == 1:
 			# push directly into the singles queue
 			assert (instrument,) == self.offset_vector.keys()
@@ -921,7 +908,6 @@ class TimeSlideGraphNode(object):
 			for node in self.components:
 				if instrument in node.offset_vector:
 					node.push(instrument, events, t_complete)
-		return self.t_coinc_complete != t_before
 
 	def pull(self, t):
 		"""
@@ -1257,13 +1243,118 @@ class TimeSlideGraph(object):
 		candidate list unless the graph is flushed of all
 		candidates.
 		"""
-		# NOTE:  it is necessary to explicitly create a list to
-		# prevent any() from bailing out before all nodes have had
-		# the events pushed into them.
-		return any([node.push(instrument, events, t_complete) for node in self.head if instrument in node.offset_vector])
+		t_changed = False
+		for node in self.head:
+			if instrument in node.offset_vector:
+				t_before = node.t_coinc_complete
+				node.push(instrument, events, t_complete)
+				t_changed |= t_before != node.t_coinc_complete
+		return t_changed
 
 
 	def pull(self, newly_reported = None, flushed = None, flushed_unused = None, flush = False, coinc_sieve = None, event_collector = None):
+		"""
+		Extract newly available coincident candidates from the
+		internal queues.  If flush if True, then all remaining
+		candidates are extracted and the internal queues are reset,
+		otherwise only those candidates that can be constructed
+		given the times up to which the individual event queues are
+		known to be complete and given the offset vectors being
+		considered will be reported.
+
+		This method returns a generator whose elements consist of
+		(node, events) pairs, wherein events is a tuple of
+		single-detector event objects comprising a single
+		coincident n-tuple, and node is the TimeSlideGraphNode
+		object from which the coincidence was retrieved.  The node
+		object can be consulted to retrieve the offset vector
+		applied to the event times to form the coincidence, and
+		other information about the state of the analysis.  If the
+		optional coinc_sieve() function is supplied (see below)
+		then only those n-tuples that pass that function's test are
+		included in the sequence.
+
+		Two output streams are available.  One stream is the
+		generator returned to the calling code explained above,
+		which consists only of n-tuples that pass the optional
+		coinc_sieve() test.  The other stream exits this code via
+		calls to event_collector() (see below), and consists of all
+		coincident n-tuples formed by the coincidence engine,
+		regardless of whether they pass the optional coinc_sieve()
+		test or not.  The n-tuples passed to event_collector()
+		contain the Python IDs of the events, not the event objects
+		themselves.  If coinc_sieve() is not supplied, both streams
+		contain the same n-tuples, one of tuples of event objects,
+		the other of tuples of the Python IDs of those events.
+
+		event_collector(), if supplied, must be an object with a
+		.push() method with the signature
+
+			event_collector.push(event_ids, offset_vector)
+
+		The return value is ignored.  It will be called once for
+		every coincident n-tuple that is formed by the coincidence
+		engine, regardless of whether or not that n-tuple is
+		ultimately reported to the calling code.  event_ids will be
+		a tuple of Python IDs of the single-detector events in the
+		coincidence.
+
+		coinc_sieve(), if supplied, must be a callable object with
+		the signature
+
+			coinc_sieve(events, offset_vector)
+
+		If the return value is False the event tuple is reported to
+		the calling code, otherwise it is discarded.  The default
+		is to report all n-tuples.  This feature can be used to
+		remove obviously uninteresting candidates from the reported
+		candidate stream, to reduce the memory requirements of the
+		calling code and the disk requirements of output documents.
+
+		The optional parameters newly_reported, flushed, and
+		flushed_unused may be used to pass lists to this code,
+		which will be populated with additional information to
+		assist the calling code.  If lists are supplied, their
+		contents will be erased and populated with event objects as
+		follows:
+
+		newly_reported:  list of single-detector events that have
+		participated in n-tuple candidates reported to the calling
+		code for the first time this invocation of .pull().  Note
+		that only those events that particate in n-tuples that
+		survive the optional coinc_sieve() test are included.  This
+		is meant to allow the calling code to populate an event
+		table with the list of just the events needed to describe
+		the surviving n-tuple candidates.
+
+		flushed:  list of single-detector events that have been
+		removed from the internal queues because they are now
+		sufficiently old that all n-tuples that they can
+		participate in have been formed and reported.  This can be
+		used to assist the calling code with house keeping tasks,
+		for example emptying its event_collector implementation of
+		unnecessary internal state.
+
+		flushed_unused:  list of the single-detector events in the
+		flushed list that never participated in an n-tuple
+		candidate.  Note that events are considered to have
+		participated in an n-tuple candidate if the coincidence
+		engine reported them in one, regardless of whether or not
+		the optional coinc_sieve() test ultimately rejected the
+		candidate before it was reported to the calling code.
+
+		NOTE:  the intent of the coinc_sieve() feature is not to
+		alter the definition of the coincidence test, but merely
+		reduce the data volume going into the output document.
+		Therefore, the coinc_sieve() feature affects the events
+		appearing in the newly_reported list because that list is
+		expected to be used to construct the output document, but
+		does not affect the events appearing in the flushed_unused
+		list because that list is meant to convey information about
+		which events failed to form coincidenes, for example for
+		the purpose of informing false-alarm probability noise
+		models.
+		"""
 		# flatten ID index for faster performance in loop.  NOTE:
 		# this is also done to freeze the contents of the index.
 		# calling .pull() on the graph nodes flushes events from
@@ -1282,12 +1373,15 @@ class TimeSlideGraph(object):
 			event_collector_push = event_collector.push
 
 		newly_reported_ids = set()
+		# initialize the set of flushed events to the complete
+		# contents of the internal queues
 		flushed_ids = set(index)
-		# avoid attribute look-ups in the loop
+		# avoid attribute look-ups in loops
 		newly_reported_update = newly_reported_ids.update
 		used_update = self.used_ids.update
-		for n, node in enumerate(self.head, start = 1):
-			# avoid attribute look-ups in the loop
+		id_to_event = index.__getitem__
+		for node in self.head:
+			# avoid attribute look-ups loops
 			event_time = node.event_time
 			offset_vector = node.offset_vector
 
@@ -1305,7 +1399,7 @@ class TimeSlideGraph(object):
 			for event_ids in itertools.chain(*node.pull(t)):
 				# use the index to convert Python IDs back
 				# to event objects
-				events = tuple(index[event_id] for event_id in event_ids)
+				events = tuple(map(id_to_event, event_ids))
 				# check the candidate's time, and skip
 				# those that don't meet the
 				# t_coinc_complete constraint
@@ -1327,10 +1421,16 @@ class TimeSlideGraph(object):
 				if not coinc_sieve(events, offset_vector):
 					newly_reported_update(event_ids)
 					yield node, events
+		# finish computing the set of newly reported event ids
 		if newly_reported_ids:
 			newly_reported_ids -= self.reported_ids
 			self.reported_ids |= newly_reported_ids
+		# finish computing the set of flushed events by removing
+		# any from the set that still remain in the queues
 		flushed_ids -= set(self.index)
+		# compute the set of flushed events that were never used
+		# for a candidate, and use flushed ids to clean up other
+		# sets to avoid them growing without bound
 		if flushed_ids:
 			flushed_unused_ids = flushed_ids - self.used_ids
 			self.used_ids -= flushed_ids
@@ -1346,11 +1446,11 @@ class TimeSlideGraph(object):
 		# use the index to populate newly_used, flushed, and
 		# flushed_unused with event objects
 		if newly_reported is not None:
-			newly_reported[:] = (index[event_id] for event_id in newly_reported_ids)
+			newly_reported[:] = map(id_to_event, newly_reported_ids)
 		if flushed is not None:
-			flushed[:] = (index[event_id] for event_id in flushed_ids)
+			flushed[:] = map(id_to_event, flushed_ids)
 		if flushed_unused is not None:
-			flushed_unused[:] = (index[event_id] for event_id in flushed_unused_ids)
+			flushed_unused[:] = map(id_to_event, flushed_unused_ids)
 
 
 #
