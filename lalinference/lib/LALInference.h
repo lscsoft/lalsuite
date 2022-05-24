@@ -423,12 +423,9 @@ tagLALInferenceIFOModel
 {
   LALInferenceVariables       *params; /** Parameters used when filling the buffers - template functions should copy to here */
 
-  LIGOTimeGPSVector           *times; /** Vector of time stamps for time domain data */
-
   LALDetector                 *detector; /** LALDetector structure for where this data came from */
-  EphemerisData               *ephem;  /** Ephemeris data */
-  TimeCorrectionData          *tdat; /** Einstein delay time correction data */
-  TimeCorrectionType           ttype; /** The time correction type e.g. TDB, TCB */
+
+  void                        *extraData; /** Pointer to extra detector-dependent parameters, used by pulsar analyses */
 
   REAL8TimeSeries             *timehPlus, *timehCross; /** Time series model buffers */
   COMPLEX16FrequencySeries    *freqhPlus, *freqhCross; /** Freq series model buffers */

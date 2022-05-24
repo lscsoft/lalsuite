@@ -331,7 +331,7 @@ void inject_signal( LALInferenceRunState *runState ){
   while( data ){
     FILE *fp = NULL, *fpso = NULL;
     ProcessParamsTable *ppt2 = LALInferenceGetProcParamVal( commandLine, "--inject-output" );
-    INT4 i = 0, length = ifo_model->times->length;
+    INT4 i = 0, length = IFO_XTRA_DATA( ifo_model )->times->length;
 
     /* check whether to output the data */
     if ( ppt2 ){
@@ -371,11 +371,11 @@ void inject_signal( LALInferenceRunState *runState ){
       /* write out injection to file */
       if( fp != NULL && fpso != NULL ){
         /* print out data - time stamp, real and imaginary parts of data (injected signal + noise) */
-        fprintf(fp, "%.5lf\t%.12le\t%.12le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
+        fprintf(fp, "%.5lf\t%.12le\t%.12le\n", XLALGPSGetREAL8( &IFO_XTRA_DATA( ifo_model )->times->data[i] ),
                 creal(data->compTimeData->data->data[i]), cimag(data->compTimeData->data->data[i]) );
 
         /* print signal only data - time stamp, real and imaginary parts of signal */
-        fprintf(fpso, "%.5lf\t%.12le\t%.12le\n", XLALGPSGetREAL8( &ifo_model->times->data[i] ),
+        fprintf(fpso, "%.5lf\t%.12le\t%.12le\n", XLALGPSGetREAL8( &IFO_XTRA_DATA( ifo_model )->times->data[i] ),
                 creal(ifo_model->compTimeSignal->data->data[i]), cimag(ifo_model->compTimeSignal->data->data[i]) );
       }
     }
@@ -646,11 +646,11 @@ void get_loudest_snr( LALInferenceRunState *runState ){
       LALInferenceAddVariable( ifo_model->params, "siderealDay", &sidtime, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
 
       LIGOTimeGPSVector *timestamps = *(LIGOTimeGPSVector **)LALInferenceGetVariable( ifo_model->params, "timeStampVectorFull" );
-      XLALDestroyTimestampVector( ifo_model->times );
-      ifo_model->times = timestamps;
-      //fprintf(stderr, "timestamps->length = %d, ifo_model->times->data[0] = %d, ifo_model->times->data[-1] = %d\n", timestamps->length, ifo_model->times->data[0].gpsSeconds, ifo_model->times->data[timestamps->length-1].gpsSeconds);
+      XLALDestroyTimestampVector( IFO_XTRA_DATA( ifo_model )->times );
+      IFO_XTRA_DATA( ifo_model )->times = timestamps;
+      //fprintf(stderr, "timestamps->length = %d, IFO_XTRA_DATA( ifo_model )->times->data[0] = %d, IFO_XTRA_DATA( ifo_model )->times->data[-1] = %d\n", timestamps->length, IFO_XTRA_DATA( ifo_model )->times->data[0].gpsSeconds, IFO_XTRA_DATA( ifo_model )->times->data[timestamps->length-1].gpsSeconds);
 
-      ifo_model->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo_model->compTimeSignal, 0, ifo_model->times->length );
+      ifo_model->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo_model->compTimeSignal, 0, IFO_XTRA_DATA( ifo_model )->times->length );
 
       /* remove the ROQ variable for calculating the likelihood */
       LALInferenceRemoveVariable( ifo_model->params, "roq" );
@@ -748,7 +748,7 @@ void get_loudest_snr( LALInferenceRunState *runState ){
     /* print out maxlikelihood template */
     //for ( UINT4 j=0; j < length; j++ ){
     //  fprintf(fp, "%lf\t%le\t%le\n",
-    //          XLALGPSGetREAL8( &ifo_model->times->data[j] ),
+    //          XLALGPSGetREAL8( &IFO_XTRA_DATA( ifo_model )->times->data[j] ),
     //          creal(ifo_model->compTimeSignal->data->data[j]),
     //          cimag(ifo_model->compTimeSignal->data->data[j]));
     //}

@@ -307,11 +307,11 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
 
     t0 = XLALGPSGetREAL8( &data->compTimeData->epoch );
 
-    sidDayFrac = XLALCreateREAL8Vector( ifo_model->times->length );
+    sidDayFrac = XLALCreateREAL8Vector( IFO_XTRA_DATA( ifo_model )->times->length );
 
     /* set the time in sidereal days since the first data point (mod 1 sidereal day) */
-    for( i = 0; i < ifo_model->times->length; i++ ){
-      sidDayFrac->data[i] = fmod( XLALGPSGetREAL8( &ifo_model->times->data[i] ) - t0, LAL_DAYSID_SI );
+    for( i = 0; i < IFO_XTRA_DATA( ifo_model )->times->length; i++ ){
+      sidDayFrac->data[i] = fmod( XLALGPSGetREAL8( &IFO_XTRA_DATA( ifo_model )->times->data[i] ) - t0, LAL_DAYSID_SI );
     }
 
     LALInferenceAddVariable( ifo_model->params, "siderealDay", &sidDayFrac, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
@@ -1131,7 +1131,7 @@ void sum_data( LALInferenceRunState *runState ){
 
     chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifomodel->params, "chunkLength" );
 
-    length = ifomodel->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
+    length = IFO_XTRA_DATA( ifomodel )->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
 
     sumdat = XLALCreateREAL8Vector( chunkLengths->length );
 
