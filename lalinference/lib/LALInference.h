@@ -60,19 +60,13 @@
 #include <lal/Window.h>
 #include <lal/LALString.h>
 #include <lal/StringInput.h>
+#include <lal/StringVector.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/LALSimNeutronStar.h>
 #include <lal/LALHashTbl.h>
 #include <lal/RealFFT.h>
-
-#include <lal/SFTutils.h>
-#include <lal/SFTfileIO.h>
 #include <lal/LALDetectors.h>
-#include <lal/LALBarycenter.h>
-#include <lal/LALInitBarycenter.h>
-#include <lal/BinaryPulsarTiming.h>
-
 
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_errno.h>
