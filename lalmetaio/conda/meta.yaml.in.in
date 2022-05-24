@@ -78,8 +78,6 @@ outputs:
       commands:
         # check library
         - test -f ${PREFIX}/lib/liblalmetaio${SHLIB_EXT}  # [unix]
-        # check activate variables
-        - test "${LALMETAIO_DATADIR}" = "${PREFIX}/share/lalmetaio"  # [unix]
         # check pkg-config
         - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalmetaio
     about:
