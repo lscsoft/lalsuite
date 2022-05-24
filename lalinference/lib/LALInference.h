@@ -655,7 +655,6 @@ tagLALInferenceIFOData
   REAL8FFTPlan              *margFFTPlan; /** FFT plan needed for time/time-and-phase marginalisation */
   REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */
   LALDetector               *detector;          /** LALDetector structure for where this data came from */
-  BarycenterInput           *bary;              /** Barycenter information */
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */
