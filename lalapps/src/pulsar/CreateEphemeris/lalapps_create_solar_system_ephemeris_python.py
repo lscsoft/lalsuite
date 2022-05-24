@@ -38,9 +38,12 @@ try:
     __id__ = git_version.id          # git tag of build
     __branch__ = git_version.branch  # git branch of build
 except ImportError:
-    __author__ = os.environ['USER']
+    try:
+        __author__ = os.environ['USER']
+    except KeyError:
+        __author__ = 'Unknown'
     import datetime
-    __date__ = datetime.datatime.now()
+    __date__ = datetime.datetime.now()
     __id__ = 'Unknown'
     __branch__ = 'Unknown'
 
