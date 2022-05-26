@@ -16,25 +16,10 @@ bin_PROGRAMS = $(BURSTPROGS) $(INSPPROGS)
 
 if HAVE_PYTHON
 pybin_scripts = \
-	lalapps_binj_pic \
-	lalapps_binjfind \
-	lalapps_bucluster \
-	lalapps_bucut \
-	lalapps_burca \
-	lalapps_burca_tailor \
 	lalapps_cafe \
 	lalapps_gen_timeslides \
-	lalapps_plot_tisi \
-	lalapps_power_calc_likelihood \
-	lalapps_power_final \
 	lalapps_power_likelihood_pipe \
 	lalapps_power_pipe \
-	lalapps_power_plot_binjtf \
-	lalapps_power_plot_binj \
-	$(END_OF_LIST)
-
-test_scripts += \
-	test_bucluster.sh \
 	$(END_OF_LIST)
 endif
 
@@ -42,7 +27,6 @@ pkgdata_DATA = power_pipe.ini
 
 EXTRA_DIST += \
 	H1_L1_dt125_df128.png \
-	H1-POWER_S5-830046410-50274.xml.gz \
 	Z_histogram.png \
 	clustering_example.png \
 	conditioning.png \
@@ -57,7 +41,6 @@ EXTRA_DIST += \
 	psds.png \
 	sk_histogram.png \
 	sksk.png \
-	test_bucluster.sh \
 	tiles_histogram.png \
 	tiles_histogram_adjusted.png \
 	timedomainfilter_04hz.png \
@@ -66,5 +49,4 @@ EXTRA_DIST += \
 	$(END_OF_LIST)
 
 MOSTLYCLEANFILES += \
-	bucluster_test.xml.gz \
 	$(END_OF_LIST)

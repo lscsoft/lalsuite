@@ -25,9 +25,6 @@
 #
 
 
-from __future__ import print_function
-
-
 from optparse import OptionParser
 import sys
 
@@ -47,7 +44,7 @@ __version__ = "git id %s" % git_version.id
 __date__ = git_version.date
 
 
-process_program_name = "lalapps_bucut"
+process_program_name = "lalburst_cut"
 
 
 #
@@ -309,7 +306,7 @@ def apply_filters(contents, burst_test_func, veto_segments, del_non_coincs = Fal
 
 
 def ligolw_bucut(xmldoc, burst_test_func, veto_segments = segments.segmentlistdict(), del_non_coincs = False, del_skipped_injections = False, program = None, comment = None, verbose = False):
-	process = ligolw_process.register_to_xmldoc(xmldoc, process_program_name, paramdict, version = __version__, cvs_repository = u"lscsoft", cvs_entry_time = __date__, comment = comment)
+	process = ligolw_process.register_to_xmldoc(xmldoc, process_program_name, paramdict, version = __version__, cvs_repository = "lscsoft", cvs_entry_time = __date__, comment = comment)
 
 	contents = DocContents(xmldoc, program)
 

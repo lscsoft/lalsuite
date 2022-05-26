@@ -25,9 +25,6 @@
 #
 
 
-from __future__ import print_function
-
-
 from optparse import OptionParser
 import sys
 
@@ -47,7 +44,7 @@ class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 
 lsctables.SnglBurstTable.RowType = burca.SnglBurst
 
-process_program_name = "lalapps_burca"
+process_program_name = "lalburst_coinc"
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -191,7 +188,7 @@ for n, filename in enumerate(filenames):
 	process = ligolw_process.register_to_xmldoc(xmldoc, process_program_name, paramdict,
 		comment = options.comment,
 		version = __version__,
-		cvs_repository = u"lscsoft",
+		cvs_repository = "lscsoft",
 		cvs_entry_time = __date__
 	)
 

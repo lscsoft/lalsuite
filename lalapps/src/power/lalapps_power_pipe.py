@@ -32,9 +32,6 @@ Excess power offline pipeline construction script.
 """
 
 
-from __future__ import print_function
-
-
 import math
 from optparse import OptionParser
 import os
@@ -45,7 +42,15 @@ from configparser import (ConfigParser, NoOptionError)
 
 from ligo import segments
 from ligo.segments import utils as segmentsUtils
-from glue import pipeline
+# pipeline.py is required, but the version available in lalsuite is
+# currently broken and we can't add a dependency on gstlal because it would
+# create a cycle, so we make the import optional.  the program cannot run
+# to completion without it, but it can print a --help message and exit with
+# a success code, which is enough to make lalsuite's build scripts happy.
+try:
+	from gstlal import pipeline
+except ImportError:
+	pass
 from lal import LIGOTimeGPS
 from lal.utils import CacheEntry
 from lalburst import cafe
@@ -77,7 +82,7 @@ def parse_command_line():
 	parser.add_option("--full-segments", action = "store_true", help = "Analyze all data from segment lists, not just coincident times.")
 	parser.add_option("--minimum-gap", metavar = "seconds", type = "float", default = 60.0, help = "Merge jobs analyzing data from the same instrument if the gap between them is less than this many seconds (default = 60).")
 	parser.add_option("--variant", metavar = "[injections|noninjections|both]", default = "both", help = "Select the variant of the pipeline to construct.  \"injections\" produces a simulations-only version of the pipeline, \"noninjections\" produces a version with no simulation jobs, and \"both\" produces a full pipeline with both simulation and non-simulation jobs.")
-	parser.add_option("--background-time-slides", metavar = "filename", default = [], action = "append", help = "Set file from which to obtain the time slide table for use in the background branch of the pipeline (default = \"background_time_slides.xml.gz\").  Provide this argument multiple times to provide multiple time slide files, each will result in a separate set of lalapps_burca jobs.")
+	parser.add_option("--background-time-slides", metavar = "filename", default = [], action = "append", help = "Set file from which to obtain the time slide table for use in the background branch of the pipeline (default = \"background_time_slides.xml.gz\").  Provide this argument multiple times to provide multiple time slide files, each will result in a separate set of lalburst_coinc jobs.")
 	parser.add_option("--injection-time-slides", metavar = "filename", help = "Set file from which to obtain the time slide table for use in the injection branch of the pipeline (default = \"injection_time_slides.xml.gz\").")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()

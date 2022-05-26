@@ -388,7 +388,7 @@ class DocContents(object):
 #
 
 
-process_program_name = "lalapps_binjfind"
+process_program_name = "lalburst_injfind"
 
 
 def append_process(xmldoc, match_algorithm, comment):

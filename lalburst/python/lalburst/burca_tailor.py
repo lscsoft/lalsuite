@@ -339,10 +339,10 @@ class EPGalacticCoreCoincParamsDistributions(BurcaCoincParamsDistributions):
 #
 
 
-process_program_name = "lalapps_burca_tailor"
+process_program_name = "lalburst_power_meas_likelihood"
 
 
-def gen_likelihood_control(coinc_params_distributions, seglists, name = "lalapps_burca_tailor", comment = ""):
+def gen_likelihood_control(coinc_params_distributions, seglists, name = process_program_name, comment = ""):
 	xmldoc = ligolw.Document()
 	node = xmldoc.appendChild(ligolw.LIGO_LW())
 
