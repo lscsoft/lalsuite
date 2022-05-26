@@ -88,15 +88,22 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
   if p < 0.005:
     print("There might be a problem for this prior distribution")
-    import matplotlib.pyplot as pl
+    try:
+      import matplotlib as mpl
+      mpl.use('Agg')
+      import matplotlib.pyplot as pl
+    except:
+      print("matplotlib unavailable; skipping plot")
+      break
     fig, ax = pl.subplots(1, 1)
-    ax.hist(h0samps, bins=20, normed=True, cumulative=True, histtype='stepfilled', alpha=0.2)
+    ax.hist(h0samps, bins=20, density=True, cumulative=True, histtype='stepfilled', alpha=0.2)
     ax.plot([0., h0ul], [0., 1], 'k--')
     ax.set_xlim((0., h0ul))
     ax.set_ylim((0., 1.))
     ax.set_xlabel('h_0')
     ax.set_ylabel('Cumulative probability')
-    pl.show()
+    fig.savefig('h0samps.png')
+    print("Saved plot to 'h0samps.png'")
     break
 
   # clean up per-run temporary files
