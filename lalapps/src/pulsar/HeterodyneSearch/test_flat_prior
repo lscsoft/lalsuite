@@ -14,6 +14,8 @@ import subprocess as sp
 import scipy.stats as ss
 import h5py
 
+exit_code = 0
+
 lalapps_root = os.environ['LALAPPS_PREFIX'] # install location for lalapps
 execu = lalapps_root+'/bin/lalapps_pulsar_parameter_estimation_nested' # executable
 
@@ -94,6 +96,7 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
       import matplotlib.pyplot as pl
     except:
       print("matplotlib unavailable; skipping plot")
+      exit_code = 1
       break
     fig, ax = pl.subplots(1, 1)
     ax.hist(h0samps, bins=20, density=True, cumulative=True, histtype='stepfilled', alpha=0.2)
@@ -104,6 +107,7 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
     ax.set_ylabel('Cumulative probability')
     fig.savefig('h0samps.png')
     print("Saved plot to 'h0samps.png'")
+    exit_code = 1
     break
 
   # clean up per-run temporary files
@@ -114,4 +118,4 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 for fs in (priorf, parf, datafile):
   os.remove(fs)
 
-sys.exit(0)
+sys.exit(exit_code)
