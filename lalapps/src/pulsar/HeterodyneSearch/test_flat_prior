@@ -49,6 +49,8 @@ dets='H1'
 Nlive='10000'
 Nmcmcinitial='0'
 outfile='test.hdf'
+outfile_SNR='test_SNR'
+outfile_Znoise='test_Znoise'
 priorsamples=Nlive
 
 for h0ul in h0uls:
@@ -97,12 +99,12 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
     pl.show()
     break
 
+  # clean up per-run temporary files
+  for fs in (outfile, outfile_SNR, outfile_Znoise):
+    os.remove(fs)
+
 # clean up temporary files
-os.remove(parf)
-os.remove(priorf)
-os.remove(datafile)
-ofs = glob.glob(outfile+'*')
-for fs in ofs:
+for fs in (priorf, parf, datafile):
   os.remove(fs)
 
 sys.exit(0)
