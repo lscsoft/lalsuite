@@ -12,8 +12,16 @@ import glob
 import sys
 import numpy as np
 import subprocess as sp
-import matplotlib.pyplot as pl
 import h5py
+
+try:
+  import matplotlib as mpl
+  mpl.use('Agg')
+  import matplotlib.pyplot as pl
+  doplot = True
+except:
+  print("matplotlib unavailable; skipping plot")
+  doplot = False
 
 lalapps_root = os.environ['LALAPPS_PREFIX'] # install location for lalapps
 execu = lalapps_root+'/bin/lalapps_pulsar_parameter_estimation_nested' # executable
@@ -69,7 +77,8 @@ pcolor = ['b', 'r']
 
 Ntests = 10 # number of times to run nested sampling for each h0 value to get average
 
-fig, ax = pl.subplots(1, 1)
+if doplot:
+  fig, ax = pl.subplots(1, 1)
 
 for i, prop in enumerate(proposals):
   odds_prior = []
@@ -126,12 +135,15 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
     print("This is potentially significantly (%f sigma) different from a flat line" % nsigma)
 
   # plot figure
-  ax.errorbar(-np.array(logpriors), odds_prior, yerr=std_odds_prior, fmt='o', label=labels[i], color=pcolor[i])
-  ax.set_xlabel('log(prior volume)')
-  ax.set_ylabel('log(odds ratio)-log(prior)')
+  if doplot:
+    ax.errorbar(-np.array(logpriors), odds_prior, yerr=std_odds_prior, fmt='o', label=labels[i], color=pcolor[i])
+    ax.set_xlabel('log(prior volume)')
+    ax.set_ylabel('log(odds ratio)-log(prior)')
 
-pl.legend()
-pl.show()
+if doplot:
+  pl.legend()
+  fig.savefig('odds_prior.png')
+  print("Saved plot to 'odds_prior.png'")
 
 # clean up temporary files
 for fs in (priorf, parf, datafile):
