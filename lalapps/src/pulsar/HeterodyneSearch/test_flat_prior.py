@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 A script to run lalapps_pulsar_parameter_estimation_nested with increasing amplitude prior
 ranges. Samples supposedly generated from the prior will be output and checked using a KS test
@@ -15,8 +13,7 @@ import h5py
 
 exit_code = 0
 
-lalapps_root = os.environ['LALAPPS_PREFIX'] # install location for lalapps
-execu = lalapps_root+'/bin/lalapps_pulsar_parameter_estimation_nested' # executable
+execu = './lalapps_pulsar_parameter_estimation_nested' # executable
 
 # create files needed to run the code
 

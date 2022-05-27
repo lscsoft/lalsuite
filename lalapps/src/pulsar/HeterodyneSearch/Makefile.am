@@ -86,6 +86,7 @@ endif
 # Add shell test scripts to this variable
 if HAVE_PYTHON
 test_scripts += test_heterodyne_pulsar.sh
+test_scripts += test_flat_prior.py
 endif
 
 # Add any helper programs required by tests to this variable
@@ -97,4 +98,9 @@ test_extra_files += make_frame_cache.py
 # These tests require LALFrame
 if !LALFRAME
 skip_tests += test_heterodyne_pulsar.sh
+endif
+
+# These tests require LALInference
+if !LALINFERENCE
+skip_tests += test_flat_prior.py
 endif
