@@ -3,10 +3,6 @@ if ${PYTHON} -c "import jplephem"; then
     echo "jplephem is available; running test"
 else
     echo "jplephem is not available; skipping test"
-
-    # call the code so that the lalapps_pulsar.am test harness marks it as having been tested
-    lalapps_create_solar_system_ephemeris_python --help >/dev/null 2>&1
-
     exit 77
 fi
 
