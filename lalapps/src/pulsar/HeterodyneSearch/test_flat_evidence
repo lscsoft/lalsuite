@@ -87,7 +87,7 @@ for i, prop in enumerate(proposals):
   std_odds_prior = []
   logpriors = []
 
-  for h0ul in h0uls:
+  for h, h0ul in enumerate(h0uls):
     # prior file
     priorfile="\
 H0 uniform 0 %e\n\
@@ -106,6 +106,8 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
     hodds = []
     # run Ntests times to get average
     for j in range(Ntests):
+      print("--- proposal=%i/%i h0=%i/%i test=%i/%i ---" % (i+1, len(proposals), h+1, len(h0uls), j+1, Ntests), flush=True)
+
       # run code
       commandline="%s --detectors %s --par-file %s --input-files %s --outfile %s --prior-file %s --Nlive %d --Nmcmcinitial %d %s" \
 % (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, prop)
