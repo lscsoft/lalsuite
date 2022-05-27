@@ -15,6 +15,10 @@ exit_code = 0
 
 execu = './lalapps_pulsar_parameter_estimation_nested' # executable
 
+# lalapps_pulsar_parameter_estimation_nested runs much slower with memory debugging
+os.environ['LAL_DEBUG_LEVEL'] = os.environ['LAL_DEBUG_LEVEL'].replace('memdbg', '')
+print("Modified LAL_DEBUG_LEVEL='%s'" % os.environ['LAL_DEBUG_LEVEL'])
+
 # create files needed to run the code
 
 # par file
@@ -44,7 +48,7 @@ h0uls = [1e-22, 1e-21, 1e-20, 1e-19, 1e-18, 1e-17]
 
 # some default inputs
 dets='H1'
-Nlive='10000'
+Nlive='5000'
 Nmcmcinitial='0'
 outfile='test.hdf'
 outfile_SNR='test_SNR'
