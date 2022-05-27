@@ -20,6 +20,7 @@ pymodule_PYTHON = \
 	git_version.py \
 	gpstime.py \
 	iterutils.py \
+	pipeline.py \
 	rate.py \
 	series.py \
 	$(END_OF_LIST)
