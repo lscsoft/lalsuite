@@ -55,7 +55,9 @@ outfile_SNR='test_SNR'
 outfile_Znoise='test_Znoise'
 priorsamples=Nlive
 
-for h0ul in h0uls:
+for h, h0ul in enumerate(h0uls):
+  print("--- h0=%i/%i ---" % (h+1, len(h0uls)), flush=True)
+
   # prior file
   priorfile="\
 H0 uniform 0 %e\n\
