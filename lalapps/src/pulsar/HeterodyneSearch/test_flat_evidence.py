@@ -24,6 +24,10 @@ exit_code = 0
 
 execu = './lalapps_pulsar_parameter_estimation_nested' # executable
 
+# lalapps_pulsar_parameter_estimation_nested runs much slower with memory debugging
+os.environ['LAL_DEBUG_LEVEL'] = os.environ['LAL_DEBUG_LEVEL'].replace('memdbg', '')
+print("Modified LAL_DEBUG_LEVEL='%s'" % os.environ['LAL_DEBUG_LEVEL'])
+
 # create files needed to run the code
 
 # par file
@@ -42,7 +46,7 @@ f.close()
 # data file
 datafile = 'data.txt.gz'
 dlen = 1440 # number of data points
-dt = 60     # number of seconds between each data point
+dt = 600    # number of seconds between each data point
 startgps = 900000000. # start GPS time
 endgps = startgps + dt*(dlen-1)
 ds = np.zeros((dlen,3))
@@ -61,7 +65,7 @@ h0uls = np.logspace(np.log10(5.*ulest), np.log10(500.*ulest), 4)
 
 # some default inputs
 dets='H1'
-Nlive=1024
+Nlive=16
 Nmcmcinitial=0
 outfile='test.hdf'
 outfile_SNR='test_SNR'
@@ -72,6 +76,7 @@ outfile_Znoise='test_Znoise'
 proposals = ['', '--ensembleWalk 1 --uniformprop 0']
 labels = ['Default', 'Walk']
 pcolor = ['b', 'r']
+max_nsigma = [2., 3.]
 
 for i, proplabel in enumerate(labels):
   if __file__.endswith('_%s.py' % proplabel.lower()):
@@ -79,6 +84,7 @@ for i, proplabel in enumerate(labels):
     proposals = proposals[i:i+1]
     labels = labels[i:i+1]
     pcolor = pcolor[i:i+1]
+    max_nsigma = max_nsigma[i:i+1]
     break
 else:
   print(f"Running {__file__} with full proposal list")
@@ -95,11 +101,7 @@ for i, prop in enumerate(proposals):
 
   for h, h0ul in enumerate(h0uls):
     # prior file
-    priorfile="\
-H0 uniform 0 %e\n\
-PHI0 uniform 0 %f\n\
-COSIOTA uniform -1 1\n\
-PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
+    priorfile="H0 uniform 0 %e\n" % h0ul
 
     priorf = 'test.prior'
     f = open(priorf, 'w')
@@ -141,8 +143,8 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
   print("Reduced chi-squared test for linear relation = %f" % (p))
 
-  if nsigma > 2.:
-    print("This is potentially significantly (%f sigma) different from a flat line" % nsigma)
+  if nsigma > max_nsigma[i]:
+    print("This is potentially significantly (%f sigma > %f max sigma) different from a flat line" % (nsigma, max_nsigma[i]))
     exit_code = 1
 
   # plot figure
