@@ -18,7 +18,7 @@ SUBDIRS = \
 
 # Because many tests in lalapps/src/pulsar/ call executables from other
 # subdirectories in lalapps/src/pulsar/, it is safest to make sure the
-# whole of src/pulsar is built first
+# whole of lalapps/src/pulsar/ is built first
 check-recursive: all-recursive
 
 # All programs under lalapps/src/pulsar/ [1] must be executed by at least one
@@ -46,4 +46,4 @@ check-execs-are-tested:
 		printf "\n" >&2; \
 		exit 1; \
 	fi; \
-	printf "OK: all executables under lalapps_pulsar.am test harness are tested\n"
+	printf "OK: all C executables under lalapps/src/pulsar/ have been tested\n"

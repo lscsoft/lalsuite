@@ -65,7 +65,7 @@ gen-tested-programs-log:
 	@if test "X$(TESTS)" = X; then \
 		echo > .tested_programs.log; \
 	else \
-		echo 'programs $(subdir) $(bin_PROGRAMS) $(pybin_scripts)' > .tested_programs.log; \
+		echo 'programs $(subdir) $(bin_PROGRAMS)' > .tested_programs.log; \
 	fi
 
 clean-tested-logs:
