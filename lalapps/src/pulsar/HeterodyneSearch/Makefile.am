@@ -87,6 +87,8 @@ endif
 if HAVE_PYTHON
 test_scripts += test_heterodyne_pulsar.sh
 test_scripts += test_flat_prior.py
+test_scripts += test_flat_evidence_default.py
+test_scripts += test_flat_evidence_walk.py
 endif
 
 # Add any helper programs required by tests to this variable
@@ -103,4 +105,6 @@ endif
 # These tests require LALInference
 if !LALINFERENCE
 skip_tests += test_flat_prior.py
+skip_tests += test_flat_evidence_default.py
+skip_tests += test_flat_evidence_walk.py
 endif

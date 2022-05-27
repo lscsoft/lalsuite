@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 """
 A script to run lalapps_pulsar_parameter_estimation_nested with increasing amplitude prior
 ranges. For a range of h0 ranges the nested sampling will be run and the odds ratio extracted.
@@ -24,8 +22,7 @@ except:
 
 exit_code = 0
 
-lalapps_root = os.environ['LALAPPS_PREFIX'] # install location for lalapps
-execu = lalapps_root+'/bin/lalapps_pulsar_parameter_estimation_nested' # executable
+execu = './lalapps_pulsar_parameter_estimation_nested' # executable
 
 # create files needed to run the code
 
@@ -75,6 +72,16 @@ outfile_Znoise='test_Znoise'
 proposals = ['', '--ensembleWalk 1 --uniformprop 0']
 labels = ['Default', 'Walk']
 pcolor = ['b', 'r']
+
+for i, proplabel in enumerate(labels):
+  if __file__.endswith('_%s.py' % proplabel.lower()):
+    print(f"Running {__file__} with proposal={proplabel} extracted from filename")
+    proposals = proposals[i:i+1]
+    labels = labels[i:i+1]
+    pcolor = pcolor[i:i+1]
+    break
+else:
+  print(f"Running {__file__} with full proposal list")
 
 Ntests = 10 # number of times to run nested sampling for each h0 value to get average
 
