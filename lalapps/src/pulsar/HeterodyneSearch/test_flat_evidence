@@ -58,6 +58,8 @@ dets='H1'
 Nlive=1024
 Nmcmcinitial=0
 outfile='test.hdf'
+outfile_SNR='test_SNR'
+outfile_Znoise='test_Znoise'
 
 # test two different proposals - the default proposal (which is currently --ensembleWalk 3 --uniformprop 1)
 # against just using the ensemble walk proposal
@@ -105,6 +107,10 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
       hodds.append(a.attrs['log_bayes_factor'])
       f.close()
 
+      # clean up per-run temporary files
+      for fs in (outfile, outfile_SNR, outfile_Znoise):
+        os.remove(fs)
+
     odds_prior.append(np.mean(hodds)-logprior)
     std_odds_prior.append(np.std(hodds))
 
@@ -128,11 +134,7 @@ pl.legend()
 pl.show()
 
 # clean up temporary files
-os.remove(parf)
-os.remove(priorf)
-os.remove(datafile)
-ofs = glob.glob(outfile+'*')
-for fs in ofs:
+for fs in (priorf, parf, datafile):
   os.remove(fs)
 
 sys.exit(0)
