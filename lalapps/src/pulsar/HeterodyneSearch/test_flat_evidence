@@ -23,6 +23,8 @@ except:
   print("matplotlib unavailable; skipping plot")
   doplot = False
 
+exit_code = 0
+
 lalapps_root = os.environ['LALAPPS_PREFIX'] # install location for lalapps
 execu = lalapps_root+'/bin/lalapps_pulsar_parameter_estimation_nested' # executable
 
@@ -133,6 +135,7 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
   if nsigma > 2.:
     print("This is potentially significantly (%f sigma) different from a flat line" % nsigma)
+    exit_code = 1
 
   # plot figure
   if doplot:
@@ -149,4 +152,4 @@ if doplot:
 for fs in (priorf, parf, datafile):
   os.remove(fs)
 
-sys.exit(0)
+sys.exit(exit_code)
