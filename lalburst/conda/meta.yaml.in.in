@@ -128,7 +128,6 @@ outputs:
       host:
         - gsl
         - {{ pin_subpackage('liblalburst', exact=True) }}
-        - lscsoft-glue
         - numpy
         - pytest  # [build_platform == target_platform]
         - python
@@ -142,7 +141,6 @@ outputs:
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - igwn-ligolw >={{ python_ligo_lw_version }}
         - igwn-segments
-        - lscsoft-glue
         - matplotlib-base
         - numpy
         - python
