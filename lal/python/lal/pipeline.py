@@ -25,11 +25,16 @@ __version__ = "git id %s" % git_version.id
 __date__ = git_version.date
 
 from collections import OrderedDict
+import configparser
+import ligo.segments
+import itertools
+import math
 import os
-import re
-import time
 import random
+import re
 import stat
+import sys
+import time
 from hashlib import md5
 import warnings
 
@@ -969,6 +974,7 @@ class CondorDAGNode(object):
   def set_retry(self, retry):
     """
     Set the number of times that this node in the DAG should retry.
+    @param retry: number of times to retry node.
     """
     self.__retry = retry
 
@@ -1396,3 +1402,1225 @@ class CondorDAG(object):
     outfile.close()
 
     os.chmod(outfilename, os.stat(outfilename)[0] | stat.S_IEXEC)
+
+
+class AnalysisJob(object):
+  """
+  Describes a generic analysis job that filters LIGO data as configured by
+  an ini file.
+  """
+  def __init__(self,cp):
+    """
+    @param cp: ConfigParser object that contains the configuration for this job.
+    """
+    self.__cp = cp
+    try:
+      self.__channel = str(self.__cp.get('input','channel')).strip()
+    except:
+      self.__channel = None
+
+  def get_config(self,sec,opt):
+    """
+    Get the configration variable in a particular section of this jobs ini
+    file.
+    @param sec: ini file section.
+    @param opt: option from section sec.
+    """
+    return str(self.__cp.get(sec,opt)).strip()
+
+  def set_channel(self,channel):
+    """
+    Set the name of the channel that this job is filtering.  This will
+    overwrite the value obtained at initialization.
+    """
+    self.__channel = channel
+
+  def channel(self):
+    """
+    Returns the name of the channel that this job is filtering. Note that
+    channel is defined to be IFO independent, so this may be LSC-AS_Q or
+    IOO-MC_F. The IFO is set on a per node basis, not a per job basis.
+    """
+    return self.__channel
+
+
+class AnalysisNode(object):
+  """
+  Contains the methods that allow an object to be built to analyse LIGO
+  data in a Condor DAG.
+  """
+  def __init__(self):
+    self.__start = 0
+    self.__end = 0
+    self.__data_start = 0
+    self.__pad_data = 0
+    self.__data_end = 0
+    self.__trig_start = 0
+    self.__trig_end = 0
+    self.__ifo = None
+    self.__ifo_tag = None
+    self.__input = None
+    self.__output = None
+    self.__calibration = None
+    self.__calibration_cache = None
+    self.__LHO2k = re.compile(r'H2')
+    self.__user_tag = self.job().get_opts().get("user-tag", None)
+
+  def set_start(self,time,pass_to_command_line=True):
+    """
+    Set the GPS start time of the analysis node by setting a --gps-start-time
+    option to the node when it is executed.
+    @param time: GPS start time of job.
+    @param pass_to_command_line: add gps-start-time as variable option.
+    """
+    if pass_to_command_line:
+      self.add_var_opt('gps-start-time',time)
+    self.__start = time
+    self.__data_start = time
+    #if not self.__calibration and self.__ifo and self.__start > 0:
+    #  self.calibration()
+
+  def get_start(self):
+    """
+    Get the GPS start time of the node.
+    """
+    return self.__start
+
+  def set_end(self,time,pass_to_command_line=True):
+    """
+    Set the GPS end time of the analysis node by setting a --gps-end-time
+    option to the node when it is executed.
+    @param time: GPS end time of job.
+    @param pass_to_command_line: add gps-end-time as variable option.
+    """
+    if pass_to_command_line:
+      self.add_var_opt('gps-end-time',time)
+    self.__end = time
+    self.__data_end = time
+
+  def get_end(self):
+    """
+    Get the GPS end time of the node.
+    """
+    return self.__end
+
+  def set_data_start(self,time):
+    """
+    Set the GPS start time of the data needed by this analysis node.
+    @param time: GPS start time of job.
+    """
+    self.__data_start = time
+
+  def get_data_start(self):
+    """
+    Get the GPS start time of the data needed by this node.
+    """
+    return self.__data_start
+
+  def set_pad_data(self,pad):
+    """
+    Set the GPS start time of the data needed by this analysis node.
+    @param pad: pad
+    """
+    self.__pad_data = pad
+
+  def get_pad_data(self):
+    """
+    Get the GPS start time of the data needed by this node.
+    """
+    return self.__pad_data
+
+  def set_data_end(self,time):
+    """
+    Set the GPS end time of the data needed by this analysis node.
+    @param time: GPS end time of job.
+    """
+    self.__data_end = time
+
+  def get_data_end(self):
+    """
+    Get the GPS end time of the data needed by this node.
+    """
+    return self.__data_end
+
+  def set_trig_start(self,time,pass_to_command_line=True):
+    """
+    Set the trig start time of the analysis node by setting a
+    --trig-start-time option to the node when it is executed.
+    @param time: trig start time of job.
+    @param pass_to_command_line: add trig-start-time as a variable option.
+    """
+    if pass_to_command_line:
+      self.add_var_opt('trig-start-time',time)
+    self.__trig_start = time
+
+  def get_trig_start(self):
+    """
+    Get the trig start time of the node.
+    """
+    return self.__trig_start
+
+  def set_trig_end(self,time,pass_to_command_line=True):
+    """
+    Set the trig end time of the analysis node by setting a --trig-end-time
+    option to the node when it is executed.
+    @param time: trig end time of job.
+    @param pass_to_command_line: add trig-end-time as a variable option.
+    """
+    if pass_to_command_line:
+      self.add_var_opt('trig-end-time',time)
+    self.__trig_end = time
+
+  def get_trig_end(self):
+    """
+    Get the trig end time of the node.
+    """
+    return self.__trig_end
+
+  def set_input(self,filename,pass_to_command_line=True):
+    """
+    Add an input to the node by adding a --input option.
+    @param filename: option argument to pass as input.
+    @param pass_to_command_line: add input as a variable option.
+    """
+    self.__input = filename
+    if pass_to_command_line:
+      self.add_var_opt('input', filename)
+    self.add_input_file(filename)
+
+  def get_input(self):
+    """
+    Get the file that will be passed as input.
+    """
+    return self.__input
+
+  def set_output(self,filename,pass_to_command_line=True):
+    """
+    Add an output to the node by adding a --output option.
+    @param filename: option argument to pass as output.
+    @param pass_to_command_line: add output as a variable option.
+    """
+    self.__output = filename
+    if pass_to_command_line:
+      self.add_var_opt('output', filename)
+    self.add_output_file(filename)
+
+  def get_output(self):
+    """
+    Get the file that will be passed as output.
+    """
+    return self.__output
+
+  def set_ifo(self,ifo):
+    """
+    Set the ifo name to analyze. If the channel name for the job is defined,
+    then the name of the ifo is prepended to the channel name obtained
+    from the job configuration file and passed with a --channel-name option.
+    @param ifo: two letter ifo code (e.g. L1, H1 or H2).
+    """
+    self.__ifo = ifo
+    if self.job().channel():
+      self.add_var_opt('channel-name', ifo + ':' + self.job().channel())
+
+  def get_ifo(self):
+    """
+    Returns the two letter IFO code for this node.
+    """
+    return self.__ifo
+
+  def set_ifo_tag(self,ifo_tag,pass_to_command_line=True):
+    """
+    Set the ifo tag that is passed to the analysis code.
+    @param ifo_tag: a string to identify one or more IFOs
+    @param pass_to_command_line: add ifo-tag as a variable option.
+    """
+    self.__ifo_tag = ifo_tag
+    if pass_to_command_line:
+      self.add_var_opt('ifo-tag', ifo_tag)
+
+  def get_ifo_tag(self):
+    """
+    Returns the IFO tag string
+    """
+    return self.__ifo_tag
+
+  def set_user_tag(self,usertag,pass_to_command_line=True):
+    """
+    Set the user tag that is passed to the analysis code.
+    @param usertag: the user tag to identify the job
+    @param pass_to_command_line: add user-tag as a variable option.
+    """
+    self.__user_tag = usertag
+    if pass_to_command_line:
+      self.add_var_opt('user-tag', usertag)
+
+  def get_user_tag(self):
+    """
+    Returns the usertag string
+    """
+    return self.__user_tag
+
+  def set_cache(self,filename):
+    """
+    Set the LAL frame cache to to use. The frame cache is passed to the job
+    with the --frame-cache argument.
+    @param filename: calibration file to use.
+    """
+    if isinstance( filename, str ):
+      # the name of a lal cache file created by a datafind node
+      self.add_var_opt('frame-cache', filename)
+      self.add_input_file(filename)
+    elif isinstance( filename, list ):
+      # we have an LFN list
+      self.add_var_opt('glob-frame-data',' ')
+      # only add the LFNs that actually overlap with this job
+      # XXX FIXME this is a very slow algorithm
+      if len(filename) == 0:
+        raise CondorDAGNodeError(
+          "LDR did not return any LFNs for query: check ifo and frame type")
+      for lfn in filename:
+        a, b, c, d = lfn.split('.')[0].split('-')
+        t_start = int(c)
+        t_end = int(c) + int(d)
+        if (t_start <= (self.get_data_end()+self.get_pad_data()+int(d)+1) \
+          and t_end >= (self.get_data_start()-self.get_pad_data()-int(d)-1)):
+          self.add_input_file(lfn)
+      # set the frame type based on the LFNs returned by datafind
+      self.add_var_opt('frame-type',b)
+    else:
+      raise CondorDAGNodeError("Unknown LFN cache format")
+
+  def calibration_cache_path(self):
+    """
+    Determine the path to the correct calibration cache file to use.
+    """
+    if self.__ifo and self.__start > 0:
+        cal_path = self.job().get_config('calibration','path')
+
+        # check if this is S2: split calibration epochs
+        if ( self.__LHO2k.match(self.__ifo) and
+          (self.__start >= 729273613) and (self.__start <= 734367613) ):
+          if self.__start < int(
+            self.job().get_config('calibration','H2-cal-epoch-boundary')):
+            cal_file = self.job().get_config('calibration','H2-1')
+          else:
+            cal_file = self.job().get_config('calibration','H2-2')
+        else:
+            # if not: just add calibration cache
+            cal_file = self.job().get_config('calibration',self.__ifo)
+
+        cal = os.path.join(cal_path,cal_file)
+        self.__calibration_cache = cal
+    else:
+       msg = "IFO and start-time must be set first"
+       raise CondorDAGNodeError(msg)
+
+  def calibration(self):
+    """
+    Set the path to the calibration cache file for the given IFO.
+    During S2 the Hanford 2km IFO had two calibration epochs, so
+    if the start time is during S2, we use the correct cache file.
+    """
+    # figure out the name of the calibration cache files
+    # as specified in the ini-file
+    self.calibration_cache_path()
+
+    # old .calibration for DAG's
+    self.add_var_opt('calibration-cache', self.__calibration_cache)
+    self.__calibration = self.__calibration_cache
+    self.add_input_file(self.__calibration)
+
+  def get_calibration(self):
+    """
+    Return the calibration cache file to be used by the
+    DAG.
+    """
+    return self.__calibration_cache
+
+
+class ScienceSegment(object):
+  """
+  A ScienceSegment is a period of time where the experimenters determine
+  that the inteferometer is in a state where the data is suitable for
+  scientific analysis. A science segment can have a list of AnalysisChunks
+  asscociated with it that break the segment up into (possibly overlapping)
+  smaller time intervals for analysis.
+  """
+  def __init__(self,segment):
+    """
+    @param segment: a tuple containing the (segment id, gps start time, gps end
+    time, duration) of the segment.
+    """
+    self.__id = segment[0]
+    self.__start = segment[1]
+    self.__end = segment[2]
+    self.__dur = segment[3]
+    self.__chunks = []
+    self.__unused = self.dur()
+    self.__ifo = None
+    self.__df_node = None
+
+  def __getitem__(self,i):
+    """
+    Allows iteration over and direct access to the AnalysisChunks contained
+    in this ScienceSegment.
+    """
+    if i < 0: raise IndexError("list index out of range")
+    return self.__chunks[i]
+
+  def __len__(self):
+    """
+    Returns the number of AnalysisChunks contained in this ScienceSegment.
+    """
+    return len(self.__chunks)
+
+  def __repr__(self):
+    return '<ScienceSegment: id %d, start %d, end %d, dur %d, unused %d>' % (
+    self.id(),self.start(),self.end(),self.dur(),self.__unused)
+
+  def __cmp__(self,other):
+    """
+    ScienceSegments are compared by the GPS start time of the segment.
+    """
+    return cmp(self.start(),other.start())
+
+  def make_chunks(self,length=0,overlap=0,play=0,sl=0,excl_play=0,pad_data=0):
+    """
+    Divides the science segment into chunks of length seconds overlapped by
+    overlap seconds. If the play option is set, only chunks that contain S2
+    playground data are generated. If the user has a more complicated way
+    of generating chunks, this method should be overriden in a sub-class.
+    Any data at the end of the ScienceSegment that is too short to contain a
+    chunk is ignored. The length of this unused data is stored and can be
+    retrieved with the unused() method.
+    @param length: length of chunk in seconds.
+    @param overlap: overlap between chunks in seconds.
+    @param play: 1 : only generate chunks that overlap with S2 playground data.
+                 2 : as play = 1 plus compute trig start and end times to
+                     coincide with the start/end of the playground
+    @param sl: slide by sl seconds before determining playground data.
+    @param excl_play: exclude the first excl_play second from the start and end
+    of the chunk when computing if the chunk overlaps with playground.
+    @param pad_data: exclude the first and last pad_data seconds of the segment
+    when generating chunks
+    """
+    time_left = self.dur() - (2 * pad_data)
+    start = self.start() + pad_data
+    increment = length - overlap
+    while time_left >= length:
+      end = start + length
+      if (not play) or (play and (((end-sl-excl_play-729273613) % 6370) <
+        (600+length-2*excl_play))):
+        if (play == 2):
+        # calculate the start of the playground preceeding the chunk end
+          play_start = 729273613 + 6370 * \
+           math.floor((end-sl-excl_play-729273613) / 6370)
+          play_end = play_start + 600
+          trig_start = 0
+          trig_end = 0
+          if ( (play_end - 6370) > start ):
+            print("Two playground segments in this chunk:", end=' ')
+            print("  Code to handle this case has not been implemented")
+            sys.exit(1)
+          else:
+            if play_start > start:
+              trig_start = int(play_start)
+            if play_end < end:
+              trig_end = int(play_end)
+          self.__chunks.append(AnalysisChunk(start,end,trig_start,trig_end))
+        else:
+          self.__chunks.append(AnalysisChunk(start,end))
+      start += increment
+      time_left -= increment
+    self.__unused = time_left - overlap
+
+  def add_chunk(self,start,end,trig_start=0,trig_end=0):
+    """
+    Add an AnalysisChunk to the list associated with this ScienceSegment.
+    @param start: GPS start time of chunk.
+    @param end: GPS end time of chunk.
+    @param trig_start: GPS start time for triggers from chunk
+    @param trig_end: trig_end
+    """
+    self.__chunks.append(AnalysisChunk(start,end,trig_start,trig_end))
+
+  def unused(self):
+    """
+    Returns the length of data in the science segment not used to make chunks.
+    """
+    return self.__unused
+
+  def set_unused(self,unused):
+    """
+    Set the length of data in the science segment not used to make chunks.
+    """
+    self.__unused = unused
+
+  def id(self):
+    """
+    Returns the ID of this ScienceSegment.
+    """
+    return self.__id
+
+  def start(self):
+    """
+    Returns the GPS start time of this ScienceSegment.
+    """
+    return self.__start
+
+  def end(self):
+    """
+    Returns the GPS end time of this ScienceSegment.
+    """
+    return self.__end
+
+  def set_start(self,t):
+    """
+    Override the GPS start time (and set the duration) of this ScienceSegment.
+    @param t: new GPS start time.
+    """
+    self.__dur += self.__start - t
+    self.__start = t
+
+  def set_end(self,t):
+    """
+    Override the GPS end time (and set the duration) of this ScienceSegment.
+    @param t: new GPS end time.
+    """
+    self.__dur -= self.__end - t
+    self.__end = t
+
+  def dur(self):
+    """
+    Returns the length (duration) in seconds of this ScienceSegment.
+    """
+    return self.__dur
+
+  def set_df_node(self,df_node):
+    """
+    Set the DataFind node associated with this ScienceSegment to df_node.
+    @param df_node: the DataFind node for this ScienceSegment.
+    """
+    self.__df_node = df_node
+
+  def get_df_node(self):
+    """
+    Returns the DataFind node for this ScienceSegment.
+    """
+    return self.__df_node
+
+
+class LsyncCache(object):
+  def __init__(self,path):
+    # location of the cache file
+    self.__path = path
+
+    # dictionary where the keys are data types like 'gwf', 'sft', 'xml'
+    # and the values are dictionaries
+    self.cache = {'gwf': None, 'sft' : None, 'xml' : None}
+
+    # for each type create a dictionary where keys are sites and values
+    # are dictionaries
+    for type in self.cache.keys():
+      self.cache[type] = {}
+
+  def group(self, lst, n):
+    """
+    Group an iterable into an n-tuples iterable. Incomplete
+    tuples are discarded
+    """
+    return itertools.izip(*[itertools.islice(lst, i, None, n) for i in range(n)])
+
+  def parse(self,type_regex=None):
+    """
+    Each line of the frame cache file is like the following:
+
+    /frames/E13/LHO/frames/hoftMon_H1/H-H1_DMT_C00_L2-9246,H,H1_DMT_C00_L2,1,16 1240664820 6231 {924600000 924646720 924646784 924647472 924647712 924700000}
+
+    The description is as follows:
+
+    1.1) Directory path of files
+    1.2) Site
+    1.3) Type
+    1.4) Number of frames in the files (assumed to be 1)
+    1.5) Duration of the frame files.
+
+    2) UNIX timestamp for directory modification time.
+
+    3) Number of files that that match the above pattern in the directory.
+
+    4) List of time range or segments [start, stop)
+
+    We store the cache for each site and frameType combination
+    as a dictionary where the keys are (directory, duration)
+    tuples and the values are segment lists.
+
+    Since the cache file is already coalesced we do not
+    have to call the coalesce method on the segment lists.
+    """
+    path = self.__path
+    cache = self.cache
+    if type_regex:
+      type_filter = re.compile(type_regex)
+    else:
+      type_filter = None
+
+    f = open(path, 'r')
+
+    # holds this iteration of the cache
+    gwfDict = {}
+
+    # parse each line in the cache file
+    for line in f:
+      # ignore lines that don't match the regex
+      if type_filter and type_filter.search(line) is None:
+        continue
+
+      # split on spaces and then comma to get the parts
+      header, modTime, fileCount, times = line.strip().split(' ', 3)
+      dir, site, frameType, frameCount, duration = header.split(',')
+      duration = int(duration)
+
+      # times string has form { t1 t2 t3 t4 t5 t6 ... tN t(N+1) }
+      # where the (ti, t(i+1)) represent segments
+      #
+      # first turn the times string into a list of integers
+      times = [ int(s) for s in times[1:-1].split(' ') ]
+
+      # group the integers by two and turn those tuples into segments
+      segments = [ ligo.segments.segment(a) for a in self.group(times, 2) ]
+
+      # initialize if necessary for this site
+      if site not in gwfDict:
+        gwfDict[site] = {}
+
+      # initialize if necessary for this frame type
+      if frameType not in gwfDict[site]:
+        gwfDict[site][frameType] = {}
+
+      # record segment list as value indexed by the (directory, duration) tuple
+      key = (dir, duration)
+      if key in gwfDict[site][frameType]:
+        msg = "The combination %s is not unique in the frame cache file" \
+          % str(key)
+        raise RuntimeError(msg)
+
+      gwfDict[site][frameType][key] = ligo.segments.segmentlist(segments)
+    f.close()
+
+    cache['gwf'] = gwfDict
+
+  def get_lfns(self, site, frameType, gpsStart, gpsEnd):
+    """
+    """
+    # get the cache from the manager
+    cache = self.cache
+
+    # if the cache does not contain any mappings for this site type return empty list
+    if site not in cache['gwf']:
+      return []
+
+    # if the cache does nto contain any mappings for this frame type return empty list
+    if frameType not in cache['gwf'][site]:
+      return []
+
+    # segment representing the search interval
+    search = ligo.segments.segment(gpsStart, gpsEnd)
+
+    # segment list representing the search interval
+    searchlist = ligo.segments.segmentlist([search])
+
+    # dict of LFNs returned that match the metadata query
+    lfnDict = {}
+
+    for key,seglist in cache['gwf'][site][frameType].items():
+      dir, dur = key
+
+      # see if the seglist overlaps with our search
+      overlap = seglist.intersects(searchlist)
+
+      if not overlap: continue
+
+      # the seglist does overlap with search so build file paths
+      # but reject those outside of the search segment
+
+      for s in seglist:
+        if s.intersects(search):
+          t1, t2 = s
+          times = range(t1, t2, dur)
+
+          # loop through the times and create paths
+          for t in times:
+            if search.intersects(ligo.segments.segment(t, t + dur)):
+              lfn =  "%s-%s-%d-%d.gwf" % (site, frameType, t, dur)
+              lfnDict[lfn] = None
+
+    # sort the LFNs to deliver URLs in GPS order
+    lfns = list(lfnDict.keys())
+    lfns.sort()
+
+    return lfns
+
+
+class LSCDataFindJob(CondorDAGJob, AnalysisJob):
+  """
+  An LSCdataFind job used to locate data. The static options are
+  read from the section [datafind] in the ini file. The stdout from
+  LSCdataFind contains the paths to the frame files and is directed to a file
+  in the cache directory named by site and GPS start and end times. The stderr
+  is directed to the logs directory. The job always runs in the scheduler
+  universe. The path to the executable is determined from the ini file.
+  """
+  def __init__(self,cache_dir,log_dir,config_file,lsync_cache_file=None,lsync_type_regex=None):
+    """
+    @param cache_dir: the directory to write the output lal cache files to.
+    @param log_dir: the directory to write the stderr file to.
+    @param config_file: ConfigParser object containing the path to the LSCdataFind executable in the [condor] section and a [datafind] section from which the LSCdataFind options are read.
+    @param lsync_cache_file: lsync_cache_file
+    @param lsync_type_regex: lsync_type_regex
+    """
+    self.__executable = config_file.get('condor','datafind')
+    self.__universe = 'local'
+    CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    AnalysisJob.__init__(self,config_file)
+    self.__cache_dir = cache_dir
+    self.__config_file = config_file
+    self.__lsync_cache = None
+    if config_file.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',config_file.get('condor','accounting_group'))
+    if lsync_cache_file:
+      self.__lsync_cache = LsyncCache(lsync_cache_file)
+      self.__lsync_cache.parse(lsync_type_regex)
+
+    # we have to do this manually for backwards compatibility with type
+    for o in self.__config_file.options('datafind'):
+      opt = str(o).strip()
+      if opt[:4] != "type":
+        arg = str(self.__config_file.get('datafind',opt)).strip()
+        self.add_opt(opt,arg)
+
+    # we need a lal cache for file PFNs
+    self.add_opt('lal-cache','')
+    self.add_opt('url-type','file')
+
+    self.add_condor_cmd('getenv','True')
+
+    self.set_stderr_file(os.path.join(log_dir, 'datafind-$(macroobservatory)-$(macrotype)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).err'))
+    self.set_stdout_file(os.path.join(log_dir, 'datafind-$(macroobservatory)-$(macrotype)-$(macrogpsstarttime)-$(macrogpsendtime)-$(cluster)-$(process).out'))
+    self.set_sub_file('datafind.sub')
+
+  def get_cache_dir(self):
+    """
+    returns the directroy that the cache files are written to.
+    """
+    return self.__cache_dir
+
+  def get_config_file(self):
+    """
+    return the configuration file object
+    """
+    return self.__config_file
+
+  def lsync_cache(self):
+    return self.__lsync_cache
+
+
+class LSCDataFindNode(CondorDAGNode, AnalysisNode):
+  """
+  A DataFindNode runs an instance of LSCdataFind in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    @param job: A CondorDAGJob that can run an instance of LALdataFind.
+    """
+    CondorDAGNode.__init__(self,job)
+    AnalysisNode.__init__(self)
+    self.__start = 0
+    self.__end = 0
+    self.__observatory = None
+    self.__output = None
+    self.__job = job
+    self.__lfn_list = None
+
+    # try and get a type from the ini file and default to type None
+    try:
+      self.set_type(self.job().get_config_file().get('datafind','type'))
+    except:
+      self.__type = None
+
+  def __set_output(self):
+    """
+    Private method to set the file to write the cache to. Automaticaly set
+    once the ifo, start and end times have been set.
+    """
+    if self.__start and self.__end and self.__observatory and self.__type:
+      self.__output = os.path.join(self.__job.get_cache_dir(), self.__observatory + '-' + self.__type +'_CACHE' + '-' + str(self.__start) + '-' + str(self.__end - self.__start) + '.lcf')
+      self.set_output(self.__output)
+
+  def set_start(self,time,pad = None):
+    """
+    Set the start time of the datafind query.
+    @param time: GPS start time of query.
+    @param pad: pad
+    """
+    if pad:
+      self.add_var_opt('gps-start-time', int(time)-int(pad))
+    else:
+      self.add_var_opt('gps-start-time', int(time))
+    self.__start = time
+    self.__set_output()
+
+  def get_start(self):
+    """
+    Return the start time of the datafind query
+    """
+    return self.__start
+
+  def set_end(self,time):
+    """
+    Set the end time of the datafind query.
+    @param time: GPS end time of query.
+    """
+    self.add_var_opt('gps-end-time', time)
+    self.__end = time
+    self.__set_output()
+
+  def get_end(self):
+    """
+    Return the start time of the datafind query
+    """
+    return self.__end
+
+  def set_observatory(self,obs):
+    """
+    Set the IFO to retrieve data for. Since the data from both Hanford
+    interferometers is stored in the same frame file, this takes the first
+    letter of the IFO (e.g. L or H) and passes it to the --observatory option
+    of LSCdataFind.
+    @param obs: IFO to obtain data for.
+    """
+    self.add_var_opt('observatory',obs)
+    self.__observatory = str(obs)
+    self.__set_output()
+
+  def get_observatory(self):
+    """
+    Return the start time of the datafind query
+    """
+    return self.__observatory
+
+  def set_type(self,type):
+    """
+    sets the frame type that we are querying
+    """
+    self.add_var_opt('type',str(type))
+    self.__type = str(type)
+    self.__set_output()
+
+  def get_type(self):
+    """
+    gets the frame type that we are querying
+    """
+    return self.__type
+
+  def get_output_cache(self):
+    return  self.__output
+
+  def get_output(self):
+    """
+    Return the output file, i.e. the file containing the frame cache data.
+    or the files itself as tuple (for DAX)
+    """
+    return self.__output
+
+
+class LigolwAddJob(CondorDAGJob, AnalysisJob):
+  """
+  A ligolw_add job can be used to concatenate several ligo lw files
+  """
+  def __init__(self,log_dir,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','ligolw_add')
+    self.__universe = 'vanilla'
+    CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    AnalysisJob.__init__(self,cp)
+    self.add_ini_opts(cp, "ligolw_add")
+
+    self.add_condor_cmd('getenv','True')
+    if cp.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+
+    self.set_stdout_file(os.path.join( log_dir, 'ligolw_add-$(cluster)-$(process).out') )
+    self.set_stderr_file(os.path.join( log_dir, 'ligolw_add-$(cluster)-$(process).err') )
+    self.set_sub_file('ligolw_add.sub')
+
+
+class LigolwAddNode(CondorDAGNode, AnalysisNode):
+  """
+  Runs an instance of ligolw_add in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    @param job: A CondorDAGJob that can run an instance of ligolw_add
+    """
+    CondorDAGNode.__init__(self,job)
+    AnalysisNode.__init__(self)
+
+
+class LigolwCutJob(CondorDAGJob, AnalysisJob):
+  """
+  A ligolw_cut job can be used to remove parts of a ligo lw file
+  """
+  def __init__(self,log_dir,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','ligolw_cut')
+    self.__universe = 'vanilla'
+    CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    AnalysisJob.__init__(self,cp)
+
+    self.add_condor_cmd('getenv','True')
+
+    self.set_stdout_file(os.path.join( log_dir, 'ligolw_cut-$(cluster)-$(process).out') )
+    self.set_stderr_file(os.path.join( log_dir, 'ligolw_cut-$(cluster)-$(process).err') )
+    self.set_sub_file('ligolw_cut.sub')
+
+
+class LigolwCutNode(CondorDAGNode, AnalysisNode):
+  """
+  Runs an instance of ligolw_cut in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    @param job: A CondorDAGJob that can run an instance of ligolw_cut
+    """
+    CondorDAGNode.__init__(self,job)
+    AnalysisNode.__init__(self)
+
+
+class LDBDCJob(CondorDAGJob, AnalysisJob):
+  """
+  A ldbdc job can be used to insert data or fetch data from the database.
+  """
+  def __init__(self,log_dir,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = cp.get('condor','ldbdc')
+    self.__universe = 'local'
+    CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    AnalysisJob.__init__(self,cp)
+
+    self.add_condor_cmd('getenv','True')
+
+    self.set_stdout_file(os.path.join( log_dir, 'ldbdc-$(cluster)-$(process).out') )
+    self.set_stderr_file(os.path.join( log_dir, 'ldbdc-$(cluster)-$(process).err') )
+    self.set_sub_file('ldbdc.sub')
+
+
+class LDBDCNode(CondorDAGNode, AnalysisNode):
+  """
+  Runs an instance of ldbdc in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    @param job: A CondorDAGJob that can run an instance of ligolw_add
+    """
+    CondorDAGNode.__init__(self,job)
+    AnalysisNode.__init__(self)
+    self.__server = None
+    self.__identity = None
+    self.__insert = None
+    self.__pfn = None
+    self.__query = None
+
+  def set_server(self, server):
+    """
+    Set the server name.
+    """
+    self.add_var_opt('server',server)
+    self.__server = server
+
+  def get_server(self, server):
+    """
+    Get the server name.
+    """
+    return self.__server
+
+  def set_identity(self, identity):
+    """
+    Set the identity name.
+    """
+    self.add_var_opt('identity',identity)
+    self.__identity = identity
+
+  def get_identity(self, identity):
+    """
+    Get the identity name.
+    """
+    return self.__identity
+
+  def set_insert(self, insert):
+    """
+    Set the insert name.
+    """
+    self.add_var_opt('insert',insert)
+    self.__insert = insert
+
+  def get_insert(self, insert):
+    """
+    Get the insert name.
+    """
+    return self.__insert
+
+  def set_pfn(self, pfn):
+    """
+    Set the pfn name.
+    """
+    self.add_var_opt('pfn',pfn)
+    self.__pfn = pfn
+
+  def get_pfn(self, pfn):
+    """
+    Get the pfn name.
+    """
+    return self.__pfn
+
+  def set_query(self, query):
+    """
+    Set the query name.
+    """
+    self.add_var_opt('query',query)
+    self.__query = query
+
+  def get_query(self, query):
+    """
+    Get the query name.
+    """
+    return self.__query
+
+
+class NoopJob(CondorDAGJob, AnalysisJob):
+  """
+  A Noop Job does nothing.
+  """
+  def __init__(self,log_dir,cp):
+    """
+    cp = ConfigParser object from which options are read.
+    """
+    self.__executable = 'true'
+    self.__universe = 'local'
+    CondorDAGJob.__init__(self,self.__universe,self.__executable)
+    AnalysisJob.__init__(self,cp)
+
+    self.add_condor_cmd('getenv','True')
+    self.add_condor_cmd('noop_job','True')
+    if cp.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+
+    self.set_stdout_file(os.path.join( log_dir, 'noop-$(cluster)-$(process).out') )
+    self.set_stderr_file(os.path.join( log_dir, 'noop-$(cluster)-$(process).err') )
+    self.set_sub_file('noop.sub')
+
+
+class NoopNode(CondorDAGNode, AnalysisNode):
+  """
+  Run an noop job in a Condor DAG.
+  """
+  def __init__(self,job):
+    """
+    @param job: A CondorDAGJob that does nothing.
+    """
+    CondorDAGNode.__init__(self,job)
+    AnalysisNode.__init__(self)
+    self.__server = None
+    self.__identity = None
+    self.__insert = None
+    self.__pfn = None
+    self.__query = None
+
+
+class SqliteJob(CondorDAGJob, AnalysisJob):
+  """
+  A cbc sqlite job adds to CondorDAGJob and AnalysisJob features common to jobs
+  which read or write to a sqlite database. Of note, the universe is always set to
+  local regardless of what's in the cp file, the extension is set
+  to None so that it may be set by individual SqliteNodes, log files do not
+  have macrogpsstarttime and endtime in them, and get_env is set to True.
+  """
+  def __init__(self, cp, sections, exec_name):
+    """
+    @param cp: a ConfigParser object from which options are read
+    @param sections: list of sections in cp to get added options
+    @param exec_name: the name of the sql executable
+    """
+    self.__exec_name = exec_name
+    executable = cp.get('condor', exec_name)
+    universe = 'vanilla'
+    CondorDAGJob.__init__(self, universe, executable)
+    AnalysisJob.__init__(self, cp)
+
+    for sec in sections:
+      if cp.has_section(sec):
+        self.add_ini_opts(cp, sec)
+      else:
+        sys.stderr.write("warning: config file is missing section [" + sec + "]\n")
+
+    self.add_condor_cmd('getenv', 'True')
+    if cp.has_option('condor','accounting_group'):
+        self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
+    self.set_stdout_file('logs/' + exec_name + '-$(cluster)-$(process).out')
+    self.set_stderr_file('logs/' + exec_name + '-$(cluster)-$(process).err')
+
+  def set_exec_name(self, exec_name):
+    """
+    Set the exec_name name
+    """
+    self.__exec_name = exec_name
+
+  def get_exec_name(self):
+    """
+    Get the exec_name name
+    """
+    return self.__exec_name
+
+
+class SqliteNode(CondorDAGNode, AnalysisNode):
+  """
+  A cbc sqlite node adds to the standard AnalysisNode features common to nodes
+  which read or write to a sqlite database. Specifically, it adds the set_tmp_space_path
+  and set_database methods.
+  """
+  def __init__(self, job):
+    """
+    @param job: an Sqlite job
+    """
+    CondorDAGNode.__init__(self, job)
+    AnalysisNode.__init__(self)
+    self.__tmp_space = None
+    self.__database = None
+
+  def set_tmp_space(self, tmp_space):
+    """
+    Sets temp-space path. This should be on a local disk.
+    @param tmp_space: tmp_space
+    """
+    self.add_var_opt('tmp-space', tmp_space)
+    self.__tmp_space = tmp_space
+
+  def get_tmp_space(self):
+    """
+    Gets tmp-space path.
+    """
+    return self.__tmp_space
+
+  def set_database(self, database):
+    """
+    Sets database option.
+    @param database: database
+    """
+    self.add_file_opt('database', database)
+    self.__database = database
+
+  def get_database(self):
+    """
+    Gets database option.
+    """
+    return self.__database
+
+
+class LigolwSqliteJob(SqliteJob):
+  """
+  A LigolwSqlite job. The static options are read from the
+  section [ligolw_sqlite] in the ini file.
+  """
+  def __init__(self, cp):
+    """
+    @param cp: ConfigParser object from which options are read.
+    """
+    exec_name = 'ligolw_sqlite'
+    sections = ['ligolw_sqlite']
+    super(LigolwSqliteJob,self).__init__(cp, sections, exec_name)
+
+  def set_replace(self):
+    """
+    Sets the --replace option. This will cause the job
+    to overwrite existing databases rather than add to them.
+    """
+    self.add_opt('replace','')
+
+
+class LigolwSqliteNode(SqliteNode):
+  """
+  A LigolwSqlite node.
+  """
+  def __init__(self, job):
+    """
+    @param job: a LigolwSqliteJob
+    """
+    super(LigolwSqliteNode,self).__init__(job)
+    self.__input_cache = None
+    self.__xml_output = None
+    self.__xml_input   = None
+
+  def set_input_cache(self, input_cache):
+    """
+    Sets input cache.
+    @param input_cache: input_cache
+    """
+    self.add_file_opt('input-cache', input_cache)
+    self.__input_cache = input_cache
+
+  def get_input_cache(self):
+    """
+    Gets input cache.
+    """
+    return self.__input_cache
+
+  def set_xml_input(self, xml_file):
+    """
+    Sets xml input file instead of cache
+    @param xml_file: xml_file
+    """
+    self.add_var_arg(xml_file)
+
+  def set_xml_output(self, xml_file):
+    """
+    Tell ligolw_sqlite to dump the contents of the database to a file.
+    @param xml_file: xml_file
+    """
+    if self.get_database() is None:
+      raise ValueError("no database specified")
+    self.add_file_opt('extract', xml_file)
+    self.__xml_output = xml_file
+
+  def get_output(self):
+    """
+    Override standard get_output to return xml-file if xml-file is specified.
+    Otherwise, will return database.
+    """
+    if self.__xml_output:
+      return self.__xml_output
+    elif self.get_database():
+      return self.get_database()
+    else:
+      raise ValueError("no output xml file or database specified")
+
+class DeepCopyableConfigParser(configparser.ConfigParser):
+    """
+    The standard SafeConfigParser no longer supports deepcopy() as of python
+    2.7 (see http://bugs.python.org/issue16058). This subclass restores that
+    functionality.
+    """
+    def __deepcopy__(self, memo):
+        # http://stackoverflow.com/questions/23416370
+        # /manually-building-a-deep-copy-of-a-configparser-in-python-2-7
+        config_string = StringIO()
+        self.write(config_string)
+        config_string.seek(0)
+        new_config = self.__class__()
+        new_config.readfp(config_string)
+        return new_config
