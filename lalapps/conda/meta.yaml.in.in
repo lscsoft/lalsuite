@@ -61,9 +61,11 @@ requirements:
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - python                              # [build_platform != target_platform]
   host:
+    - astropy
     - cfitsio
     - fftw * nompi*
     - gsl
+    - jplephem
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
     - liblalburst >={{ lalburst_version }}
@@ -90,10 +92,12 @@ requirements:
     - python-ligo-lw  # [build_platform == target_platform]
     - tqdm
   run:
+    - astropy
     - cfitsio
     - fftw
     - gsl
     - h5py
+    - jplephem
     - lalinference >={{ lalinference_version }}
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
@@ -157,7 +161,7 @@ test:
     - lalapps_create_pulsar_signal_frame --help
     - lalapps_create_solar_system_ephemeris --help
     - lalapps_create_solar_system_ephemeris_python --help
-    - TEMPO2="" lalapps_create_time_correction_ephemeris --help
+    - lalapps_create_time_correction_ephemeris --help
     - lalapps_effdist --help
     - lalapps_exc_resp -h
     - lalapps_fftw_wisdom --help

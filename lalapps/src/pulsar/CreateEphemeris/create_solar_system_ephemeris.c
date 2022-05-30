@@ -232,6 +232,13 @@ int main(int argc, char **argv){
       earthEphem);
       return TESTFAIL;
     }
+
+    /* skip comment lines */
+    int c;
+    while((c = getc(fpe)) == '#') {
+      while((c = getc(fpe)) != '\n');
+    }
+    ungetc(c, fpe);
   }
 
   if(verbose){
