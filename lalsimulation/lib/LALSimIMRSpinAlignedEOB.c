@@ -1279,7 +1279,7 @@ XLALSimIMRSpinAlignedEOBModes (
   seobParams.use_hm = use_hm;
   eobParams.hCoeffs = &hCoeffs;
   eobParams.prefixes = &prefixes;
-
+  seobParams.postAdiabaticFlag = postAdiabaticFlag;
   eobParams.m1 = m1;
   eobParams.m2 = m2;
   eobParams.eta = eta;
@@ -2082,7 +2082,7 @@ XLALSimIMRSpinAlignedEOBModes (
       v = cbrt (omega);
       
       if (postAdiabaticFlag){
-        vPhiVecHi->data[i] =  XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, &seobParams);
+	 vPhiVecHi->data[i] =  XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, &seobParams);
       }
       /* Calculate the value of the Hamiltonian */
       cartPosVec.data[0] = values->data[0];
@@ -2334,11 +2334,11 @@ gsl_interp_accel_free( acc );
       else{
       //RC: in addition to the PN coefficient, here we also need to evaluate a spinning pseudo-PN coefficient for the 21 and the 55 mode. These coefficients do not break
       //the odd mode's symmetry and for this reason they are 0 if chiS == chiA == 0. This of course hold also for non-spinning configurations.
-        XLALSimIMREOBCalcCalibCoefficientHigherModes(&hCoeffs, &seobParams,2,1,&phiHi,&rHi,&prHi,
+	XLALSimIMREOBCalcCalibCoefficientHigherModes(&hCoeffs, &seobParams,2,1,&phiHi,&rHi,&prHi,
               omegaHi,hamVHi,&pPhiHi,timePeak -timewavePeak,m1,m2,chiS,chiA,deltaTHigh / mTScaled);
         XLALSimIMREOBCalcCalibCoefficientHigherModes(&hCoeffs, &seobParams,5,5,&phiHi,&rHi,&prHi,
                     omegaHi,hamVHi,&pPhiHi,timePeak -timewavePeak- 10,m1,m2,chiS,chiA,deltaTHigh / mTScaled);
-        //RC: The - 10 here is because for the 55 mode the attachment is done at timePeak -timewavePeak- 10. timewavePeak is computed here outside
+	//RC: The - 10 here is because for the 55 mode the attachment is done at timePeak -timewavePeak- 10. timewavePeak is computed here outside
         //the for loop for the modes, for this reason I'm putting the -10 by hand, if it was inside the loop I could have used XLALSimIMREOBGetNRSpinPeakDeltaTv4 (5, 5, m1, m2, spin1z, spin2z)
       }
     }
@@ -2370,7 +2370,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
         }
         else
         {
-          status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform(&hLM, values, v, hamVHi->data[i], modeL, modeM, &seobParams,
+	   status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform(&hLM, values, v, hamVHi->data[i], modeL, modeM, &seobParams,
                                                               use_optimized_v2_or_v4);
         }
         
@@ -3301,7 +3301,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
               );
             }
             else{
-              status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform(&hLM, values,  cbrt (omegaVec->data[i]), hamV->data[i], modeL, modeM, &seobParams, 0 /*use_optimized_v2_or_v4 */ );
+	       status = XLALSimIMRSpinEOBGetSpinFactorizedWaveform(&hLM, values,  cbrt (omegaVec->data[i]), hamV->data[i], modeL, modeM, &seobParams, 0 /*use_optimized_v2_or_v4 */ );
             }
           
         if ( status == XLAL_FAILURE)
