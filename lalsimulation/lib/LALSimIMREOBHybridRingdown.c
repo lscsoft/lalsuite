@@ -1257,7 +1257,7 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     /*                                            RD fitting formulas                                           */
     /*********************************************************************************************/
     /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-    UINT4 Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
+    UINT4 Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs22->data[0]) / dt);
     //printf("Stas Nrdwave %d,  dt = %f", Nrdwave, dt);
     REAL8 dtM = dt / (mtot * LAL_MTSUN_SI);     // go to geometric units
     rdtime = XLALCreateREAL8Vector(Nrdwave);
