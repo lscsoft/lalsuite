@@ -460,8 +460,10 @@ workflow:
   # see https://github.com/conda-forge/conda-forge-ci-setup-feedstock/pull/168
   - conda config --show aggressive_update_packages >> ${CONDARC}
   - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
-  # update conda and mamba
-  - retry conda update -n base conda mamba
+  # pin conda and mamba to stable major/minor versions
+  - conda --version | sed -n '/^conda /p' | sed 's|[0-9]*$|*|' >> ${CONDA_ROOT}/conda-meta/pinned
+  - mamba --version | sed -n '/^mamba /p' | sed 's|[0-9]*$|*|' >> ${CONDA_ROOT}/conda-meta/pinned
+  - grep -H . ${CONDA_ROOT}/conda-meta/pinned
   # install build helpers
   - retry mamba install -n base
         "conda-build!=3.18.10"
