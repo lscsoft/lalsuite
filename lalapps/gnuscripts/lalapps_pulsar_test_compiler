@@ -133,7 +133,10 @@ for execfile in $(find "${LAL_TEST_BUILDDIR}/.." "${LAL_TEST_SRCDIR}/.." -maxdep
 
         # Stub script logs that this executable has been called from a test script
         echo "#!/bin/sh" > "${stubfile}"
-        echo "echo 'tested ${execname}' >> '${tested_logfile}'" >> "${stubfile}"
+        echo "case \"\$@\" in" >> "${stubfile}"
+        echo "--help|-h|--version|-v) ;;" >> "${stubfile}"
+        echo "*) echo 'tested ${execname}' >> '${tested_logfile}' ;;" >> "${stubfile}"
+        echo "esac" >> "${stubfile}"
         echo "exec '${execfile}' \"\$@\"" >> "${stubfile}"
         chmod +x "${stubfile}"
 
