@@ -124,7 +124,7 @@ echo
 
 # Create stubs to any executables in lalapps/src/pulsar/ used by test script, and set PATH
 tested_logfile="${LAL_TEST_BUILDDIR}/.tested_log_${script_name}.log"
-echo > "${tested_logfile}"
+echo "# ${tested_logfile}" > "${tested_logfile}"
 for execfile in $(find "${LAL_TEST_BUILDDIR}/.." "${LAL_TEST_SRCDIR}/.." -maxdepth 2 -type f -perm -u+x); do
     execname=$(expr "X${execfile}" : "X.*/\([^/]*\)$")
     stubfile="${testdir}/${execname}"

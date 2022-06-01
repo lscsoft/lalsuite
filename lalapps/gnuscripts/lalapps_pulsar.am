@@ -62,10 +62,9 @@ check-local: gen-tested-programs-log
 clean-local: clean-local-test-dirs clean-tested-logs
 
 gen-tested-programs-log:
-	@if test "X$(TESTS)" = X; then \
-		echo > .tested_programs.log; \
-	else \
-		echo 'programs $(subdir) $(bin_PROGRAMS)' > .tested_programs.log; \
+	@echo "# $(abs_builddir)/.tested_programs.log" > .tested_programs.log; \
+	if test "X$(TESTS)" != X; then \
+		echo 'programs $(subdir) $(bin_PROGRAMS)' >> .tested_programs.log; \
 	fi
 
 clean-tested-logs:
