@@ -27,8 +27,18 @@ check-recursive: all-recursive
 #
 # [1] Certain directories are currently exempt from this requirement; in these
 # directories, Makefile.am includes lalapps.am instead of lalapps_pulsar.am
-.PHONY: check-execs-are-tested
+.PHONY: clean-execs-tested-logs check-execs-are-tested
+
+check-recursive: clean-execs-tested-logs
+
 check-local: check-execs-are-tested
+
+clean-execs-tested-logs:
+	@tested_logfiles=`find $(builddir) -name '.tested_*.log'`; \
+	for file in $${tested_logfiles}; do \
+		echo '# empty' > "$${file}"; \
+	done
+
 check-execs-are-tested:
 	@tested_logfiles=`find $(builddir) -name '.tested_*.log'`; \
 	not_tested=`$(AWK) ' \
