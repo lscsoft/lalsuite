@@ -89,6 +89,7 @@ test_scripts += test_heterodyne_pulsar.sh
 test_scripts += test_flat_prior.py
 test_scripts += test_flat_evidence_default.py
 test_scripts += test_flat_evidence_walk.py
+test_scripts += test_ssbtodetector.py
 endif
 
 # Add any helper programs required by tests to this variable
