@@ -91,6 +91,7 @@ test_scripts += test_flat_evidence_default.py
 test_scripts += test_flat_evidence_walk.py
 test_scripts += test_ssbtodetector.py
 endif
+test_scripts += test_pulsar_frequency_evolution.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
@@ -108,4 +109,5 @@ if !LALINFERENCE
 skip_tests += test_flat_prior.py
 skip_tests += test_flat_evidence_default.py
 skip_tests += test_flat_evidence_walk.py
+skip_tests += test_pulsar_frequency_evolution.sh
 endif
