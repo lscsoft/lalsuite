@@ -16,6 +16,9 @@ noinst_PROGRAMS = \
 if LALFRAME
 bin_PROGRAMS += \
 	lalapps_heterodyne_pulsar \
+	$(END_OF_LINE)
+
+noinst_PROGRAMS += \
 	lalapps_create_pulsar_signal_frame \
 	$(END_OF_LINE)
 endif
