@@ -7,6 +7,9 @@ include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
 	lalapps_ssbtodetector \
+	$(END_OF_LINE)
+
+noinst_PROGRAMS = \
 	lalapps_SplInter \
 	$(END_OF_LINE)
 
