@@ -471,7 +471,7 @@ workflow:
   - conda config --show aggressive_update_packages >> ${CONDARC}
   - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
   # update conda and mamba
-  - retry mamba update -n base conda mamba
+  - retry conda update -n base conda mamba
   # install build helpers
   - retry mamba install -n base
         "conda-build!=3.18.10"
