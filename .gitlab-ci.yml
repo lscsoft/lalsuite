@@ -136,7 +136,7 @@ workflow:
 
 # manually-triggered pipeline
 .manual-rule: &manual
-  - if: '$CI_PIPELINE_SOURCE == "web"'
+  - if: '$CI_PIPELINE_SOURCE == "web" || $CI_COMMIT_MESSAGE =~ /\[nightly ci\]/'
     variables:
       ENABLE_NIGHTLY: "--enable-nightly"
 
