@@ -1552,6 +1552,8 @@ platform:conda:macos-x86_64:
   # fail with permissions errors, reset the permissions
   after_script:
     - chmod -R +w $CI_PROJECT_DIR
+  # https://git.ligo.org/lscsoft/lalsuite/-/issues/514
+  allow_failure: true
 
 platform:conda:macos-arm64:
   extends:
