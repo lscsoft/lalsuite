@@ -112,7 +112,7 @@ workflow:
 
 # default run
 .default-rule: &default
-  - when: always
+  - when: on_success
 
 # tag on the upstream repo
 .tag-rule: &tags
