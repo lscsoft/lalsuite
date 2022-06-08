@@ -1,13 +1,15 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic
 
-bin_PROGRAMS = lalapps_HoughValidate \
-	lalapps_DriveHoughMulti lalapps_MCInjectHoughMulti lalapps_MultiWeights \
+bin_PROGRAMS = lalapps_DriveHoughMulti
+
+noinst_PROGRAMS = \
+	lalapps_HoughValidate lalapps_MCInjectHoughMulti lalapps_MultiWeights \
 	lalapps_ValidateHoughMulti lalapps_ValidateChi2Test lalapps_MCInjectHoughMultiChi2Test \
 	lalapps_HoughValidateAM
 
@@ -23,3 +25,9 @@ lalapps_ValidateChi2Test_SOURCES = ValidateHoughMultiChi2Test.c  DriveHoughColor
 lalapps_MCInjectHoughMultiChi2Test_SOURCES = MCInjectHoughMultiChi2Test.c MCInjectHoughMulti.h DriveHoughColor.h  PeakSelect.c PeakSelect.h
 
 lalapps_HoughValidateAM_SOURCES = HoughValidateAM.c MCInjectHoughS2.h SFTbin.h SFTbin.c DriveHoughColor.h PeakSelect.h PeakSelect.c
+
+
+# Add shell test scripts to this variable
+if HAVE_PYTHON
+test_scripts += testDriveHoughMulti.py
+endif
