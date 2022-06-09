@@ -990,8 +990,7 @@ lalapps:conda:
 # conda jobs will have run over all python versions
 .lalapps:conda:extra:
   rules:
-    - *scheduled
-    - *manual
+    - *nightly
 
 lalapps:conda:py37:
   extends:
