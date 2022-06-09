@@ -45,7 +45,8 @@ int XLALSetLatticeTilingPiecewiseBounds(
   const double taumax,     /// Maximum spin half life when n = nmax, f0 = fmaxtrue
   const double ktol,       /// Tolerance (percentage per second) between k values on adjacent knots
   const gsl_vector* knots, /// List of knots
-  const int finalknot      /// The number of the final knot
+  const int finalknot,      /// The number of the final knot
+  const int flagnum       ///< Use this number to specify the flags we want to use
   );
   
 ///
@@ -58,6 +59,8 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   const double fmaxtrue,   /// Maximum spin frequency used to calculate k and knots (useful for computing tiles in parrallel and fmax != fmaxtrue)
   const double nmin,       /// Minimum braking index
   const double nmax,       /// Maximum braking index
+  const double nmin0,      /// Minimum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
+  const double nmax0,      /// Maximum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
   const double ntol,       /// Tolerance (percentage per second) between braking indices on adjacent knots
   const double taumin,     /// Minimum spin half life when n = nmax, f0 = fmaxtrue
   const double taumax,     /// Maximum spin half life when n = nmax, f0 = fmaxtrue

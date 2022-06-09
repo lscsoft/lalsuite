@@ -168,7 +168,6 @@ static int KMinMax(
 {
   
   XLAL_CHECK(kmin <= kmax, XLAL_EINVAL, "kmin greater than kmax, [kmin, kmax] = [%E, %E]", kmin, kmax);
-  
   double nextkmin = k * (1 - ktol * segmentlength);
   double nextkmax = k;
   
@@ -397,7 +396,7 @@ static void resetdimonpoint(
     ///< The parameter range criteria involving fprev is not valid for at the first knot (as there are no preceding knots). To then discount this criteria in the 
     ///< F2BoundMinMax function, we set fprev to extreme values to ensure this criteria is never selected without having to write a new method
     double lower = F2BoundMinMax(f0, 0.0000000001, f1, nmin, kmin, kmax, 0, -1);
-    double upper = F2BoundMinMax(f0, 100000000000, f1, nmax, kmax, kmin, 0, 1);
+    double upper = F2BoundMinMax(f0, 100000000000, f1, nmax, kmax, kmin, 0,  1);
 
     double val = resetinsidebounds(f2, lower, upper);
     gsl_vector_set(point, dim, val);
@@ -826,7 +825,8 @@ int XLALSetLatticeTilingPiecewiseBounds(
   const double taumax,     ///< Maximum tau value
   const double ktol,       ///< Tolerance (percentage per second) between k values on adjacent knots
   const gsl_vector* knots, ///< List of knots
-  const int finalknot      ///< The number of the final knot
+  const int finalknot,      ///< The number of the final knot
+  const int flagnum       ///< Use this number to specify the flags we want to use
   )
 {
   // Converting tau values to k values
@@ -838,6 +838,7 @@ int XLALSetLatticeTilingPiecewiseBounds(
   XLAL_CHECK(tiling != NULL, XLAL_EINVAL);
   XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax);
   XLAL_CHECK(nmin < nmax, XLAL_EINVAL, "Bad braking index range: [%f, %f]", nmin, nmax);
+  XLAL_CHECK(fmax <= fmaxtrue, XLAL_EINVAL, "fmax larger than fmaxtrue: [%f, %f]", fmax, fmaxtrue);
   XLAL_CHECK(nmin0 < nmax0, XLAL_EINVAL, "Bad braking index knot0 range: [%f, %f]", nmin0, nmax0);
   XLAL_CHECK(nmin0 >= nmin, XLAL_EINVAL, "nmin0 smaller than nmin: [%f, %f]", nmin0, nmin);
   XLAL_CHECK(nmax0 <= nmax, XLAL_EINVAL, "nmax0 greater than nmax: [%f, %f]", nmax0, nmax);
@@ -862,7 +863,13 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   info_first_knot_lower.reset = info_first_knot_upper.reset = 1;
   
-  LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
+  ///< LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_NONE;
+  ///< LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_LHBBX;
+  ///< LatticeTilingPaddingFlags flags = LATTICE_TILING_PAD_MAX;
+  
+  //LatticeTilingPaddingFlags flagoptions[6] = {LATTICE_TILING_PAD_NONE, LATTICE_TILING_PAD_LHBBX, LATTICE_TILING_PAD_UHBBX, LATTICE_TILING_PAD_LINTP, LATTICE_TILING_PAD_UINTP, LATTICE_TILING_PAD_MAX};
+  
+  LatticeTilingPaddingFlags flags = flagnum;
   
   ///< We only need to use the resetting methods if flags != LATTICE_TILING_PAD_NONE
   if (flags == LATTICE_TILING_PAD_NONE){
@@ -914,6 +921,7 @@ int XLALSetLatticeTilingPiecewiseBounds(
     XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 1, flags);
     XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 2, flags);
   }
+  
   
   return XLAL_SUCCESS;
 }
@@ -1203,7 +1211,7 @@ static double F0BoundS2(
   const gsl_vector* pointorig
   )
 {
-  XLAL_CHECK(dim < 4, XLAL_EINVAL, "F0BoundS2 being called before there is an appropriate number of knots. Minimum dimension required: 4. Current dimension: %zu", dim);
+  XLAL_CHECK(dim >= 4, XLAL_EINVAL, "F0BoundS2 being called before there is an appropriate number of knots. Minimum dimension required: 4. Current dimension: %zu", dim);
   
   size_t vectorlength = pointorig->size;
   gsl_vector* point = gsl_vector_alloc(vectorlength);
@@ -1270,7 +1278,7 @@ static double F1BoundS2(
   const gsl_vector* pointorig
   )
 {
-  XLAL_CHECK(dim < 4, XLAL_EINVAL, "F1BoundS2 being called before there is an appropriate number of knots. Minimum dimension required: 4. Current dimension: %zu", dim);
+  XLAL_CHECK(dim >= 4, XLAL_EINVAL, "F1BoundS2 being called before there is an appropriate number of knots. Minimum dimension required: 4. Current dimension: %zu", dim);
   
   size_t vectorlength = pointorig->size;
   gsl_vector* point = gsl_vector_alloc(vectorlength);
@@ -1339,6 +1347,8 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   const double fmaxtrue,   ///< Maximum spin frequency with which to calculate that k value ranges with (useful for when we computing tiles in parrallel and fmax != fmaxtrue)
   const double nmin,       ///< Minimum braking index
   const double nmax,       ///< Maximum braking index
+  const double nmin0,      ///< Minimum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
+  const double nmax0,      ///< Maximum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
   const double ntol,       ///< Tolerance (percentage) between braking indices on adjacent knots
   const double taumin,     ///< Minimum tau value
   const double taumax,     ///< Maximum tau value
@@ -1356,6 +1366,10 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   XLAL_CHECK(tiling != NULL, XLAL_EINVAL);
   XLAL_CHECK(fmin < fmax, XLAL_EINVAL, "Bad frequency range: [%f, %f]", fmin, fmax);
   XLAL_CHECK(nmin < nmax, XLAL_EINVAL, "Bad braking index range: [%f, %f]", nmin, nmax);
+   XLAL_CHECK(fmax <= fmaxtrue, XLAL_EINVAL, "fmax larger than fmaxtrue: [%f, %f]", fmax, fmaxtrue);
+  XLAL_CHECK(nmin0 < nmax0, XLAL_EINVAL, "Bad braking index knot0 range: [%f, %f]", nmin0, nmax0);
+  XLAL_CHECK(nmin0 >= nmin, XLAL_EINVAL, "nmin0 smaller than nmin: [%f, %f]", nmin0, nmin);
+  XLAL_CHECK(nmax0 <= nmax, XLAL_EINVAL, "nmax0 greater than nmax: [%f, %f]", nmax0, nmax);
   XLAL_CHECK(taumin < taumax, XLAL_EINVAL, "Bad tau range: [%f, %f]", taumin, taumax);
   XLAL_CHECK(kmin < kmax, XLAL_EINVAL, "Bad k range: [%f, %f]", kmin, kmax);
   
@@ -1364,8 +1378,8 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   
   info_first_knot_lower.fmin = info_first_knot_upper.fmin = fmin;
   info_first_knot_lower.fmax = info_first_knot_upper.fmax = fmax;
-  info_first_knot_lower.nmin = info_first_knot_upper.nmin = nmin;
-  info_first_knot_lower.nmax = info_first_knot_upper.nmax = nmax;
+  info_first_knot_lower.nmin = info_first_knot_upper.nmin = nmin0;
+  info_first_knot_lower.nmax = info_first_knot_upper.nmax = nmax0;
   info_first_knot_lower.kmin = info_first_knot_upper.kmin = kmin;
   info_first_knot_lower.kmax = info_first_knot_upper.kmax = kmax;
   
@@ -1400,8 +1414,6 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
     
     info_knot_lower.fmin = info_knot_upper.fmin = fmin;
     info_knot_lower.fmax = info_knot_upper.fmax = fmax;
-    info_knot_lower.nmin = info_knot_upper.nmin = nmin;
-    info_knot_lower.nmax = info_knot_upper.nmax = nmax;
     info_knot_lower.ntol = info_knot_upper.ntol = ntol;
     info_knot_lower.kmin = info_knot_upper.kmin = kmin;
     info_knot_lower.kmax = info_knot_upper.kmax = kmax;
@@ -1421,10 +1433,16 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
     int dimindex = 2 * knot;
     
     if (knot == 1){
+      info_knot_lower.nmin = info_knot_upper.nmin = nmin0;
+      info_knot_lower.nmax = info_knot_upper.nmax = nmax0;
+    
       XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex,     SecondKnotBoundS2, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
       XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 1, SecondKnotBoundS2, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     }
-    else {  
+    else {
+      info_knot_lower.nmin = info_knot_upper.nmin = nmin;
+      info_knot_lower.nmax = info_knot_upper.nmax = nmax;
+      
       XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex,     F0BoundS2, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
       XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 1, F1BoundS2, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
     }
