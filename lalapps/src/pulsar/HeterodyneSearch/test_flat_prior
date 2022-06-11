@@ -7,7 +7,6 @@ to see if they match the expected flat prior across the range.
 """
 
 import os
-import glob
 import sys
 import numpy as np
 import subprocess as sp
