@@ -119,6 +119,15 @@ int XLALAdaptiveRungeKutta4Hermite( LALAdaptiveRungeKuttaIntegrator *integrator,
                                     REAL8Array **yout
                                     );
 
+int XLALAdaptiveRungeKutta4HermiteOnlyFinal(LALAdaptiveRungeKuttaIntegrator *integrator,
+				            void *params,
+				            REAL8 *yinit,
+				            REAL8 tinit,
+					    REAL8 tend_in,
+					    REAL8 y1_final,
+					    REAL8 deltat
+					    );
+
 /**
  * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg (RKF45)
  * steps with adaptive step size control.  Intended for use in Fourier domain

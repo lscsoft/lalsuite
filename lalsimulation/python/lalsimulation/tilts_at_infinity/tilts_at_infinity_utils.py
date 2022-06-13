@@ -127,10 +127,11 @@ def package_tilts(tilt1, tilt2, Lf, swap):
         return {'tilt1_sep_min': tilt1, 'tilt1_sep_max': tilt1, 'tilt1_sep_avg': tilt1, 'tilt2_sep_min': tilt2,
                 'tilt2_sep_max': tilt2, 'tilt2_sep_avg': tilt2}
 
-def evolution_error_handling(failure_mode, failure_message, failure_output, failure_output_string, Lf, swap):
+
+def evolution_error_handling(failure_mode, failure_message, failure_output, failure_output_string, Lf, swap, hybrid_evol=False):
     """
     Take care of the error message or warning and returning something for the tilts when the
-    precession-averaged evolution fails
+    precession-averaged evolution fails. Append entries for tilts at transition in the case where hybrid evolution fails.
 
     Inputs:
     failure_mode: The failure mode (either "Error", "NAN", or "None")
@@ -139,11 +140,13 @@ def evolution_error_handling(failure_mode, failure_message, failure_output, fail
     failure_output_string: The string associated with the failure output
     Lf: Final orbital angular momentum (here just acts as a switch depending on whether it is None or not)
     swap: Whether to swap tilt1 and tilt2 before returning (True) or not (False)
+    hybrid_evol: Flag to invoke error handling in the hybrid evolution code. Default: False
 
     Output: dictionary with entries 'tilt1_inf', 'tilt2_inf' for evolution to infinity--Lf is None--and entries
             'tilt1_sep_min', 'tilt1_sep_max', 'tilt1_sep_avg', 'tilt2_sep_min', 'tilt2_sep_max', 'tilt2_sep_avg'
             for evolution to a finite separation (i.e., a finite orbital angular momentum), when Lf is not None.
             The entries of the dictionary are failure_output
+            If hybrid_evol is set to True, entries 'tilt1_transition', 'tilt2_transition', 'phi12_transition', and 'f_transition' set as failure_output are appended to match the output of the hybrid evolution code.
     """
 
     if failure_mode == 'Error':
@@ -152,5 +155,13 @@ def evolution_error_handling(failure_mode, failure_message, failure_output, fail
         failure_message += " Returning %s for the tilts."%failure_output_string
 
         warn(failure_message, RuntimeWarning)
+
+        if hybrid_evol:
+            hybrid_output_tilts = package_tilts(failure_output, failure_output, Lf, swap)
+            hybrid_output_tilts["tilt1_transition"] = failure_output
+            hybrid_output_tilts["tilt2_transition"] = failure_output
+            hybrid_output_tilts["phi12_transition"] = failure_output
+            hybrid_output_tilts["f_transition"] = failure_output
+            return hybrid_output_tilts
 
         return package_tilts(failure_output, failure_output, Lf, swap)

@@ -8,10 +8,11 @@ Sumeet Kulkarni, 2021
 """
 
 import numpy as np
+import lal
 from .calc_tilts_prec_avg_regularized import prec_avg_tilt_comp
 from .tilts_at_infinity_utils import *
 import lalsimulation as lalsim
-
+from warnings import warn
 
 # Define a function to transform spin basis:
 def get_tilts(chi1x, chi1y, chi1z, chi2x, chi2y, chi2z, Lnx, Lny, Lnz):
@@ -134,7 +135,7 @@ def get_dt_constant(v_trans):
     return dt_c
 
 
-def calc_tilts_at_infty_hybrid_evolve(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fref, approx="SpinTaylorT5", spinO=6, lscorr=1, verbose=False, prec_only=False, version='v1', **kwargs):
+def calc_tilts_at_infty_hybrid_evolve(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fref, approx="SpinTaylorT5", spinO=6, lscorr=1, verbose=False, prec_only=False, version='v1', failure_mode='None', **kwargs):
     """
     Calculate tilts at infinity with hybrid orbit-averaged and precession-averaged evolution
     Evolves tilt1 and tilt2 for a given binary from a reference frequency, fref, to infinite separation by first evolving using orbit-averaged evolution
@@ -160,7 +161,8 @@ def calc_tilts_at_infty_hybrid_evolve(m1, m2, chi1, chi2, tilt1, tilt2, phi12, f
     lscorr: activates spin contributions to the orbital angular momentum in the precession equations, default: 1 (active)
     verbose (bool): display details of integration steps and print output of orbit-averaged evolution, default: False
     prec_only: Use only the precession-averaged evolution for a quick but less accurate result, default: False
-    version: Version of the calculation to use--currently only the initial version, v1, is available, default: "v1"
+    version: Version of the calculation to use--currently, two versions are available: v1 divides the orbit-averaged part of the hybrid evolution into a series of multiple integration steps, while in v2 it proceeds in a single step using a modified integrator that only outputs the final spin values, default: "v1", though this will be changed to "v2" in a near future release, since the "v2" evolution is much faster and somewhat more accurate
+    failure_mode:  How the code behaves when the evolution fails. 'Error' means that the code raises a RuntimeError, while 'NAN' and 'None' mean that the code raises a RuntimeWarning and returns np.nan or None for the output, respectively, default: 'None'
 
     **kwargs: dict, optional: precession-averaged evolution settings, passed through **kwargs to prec_avg_tilt_comp()
     Please refer to the prec_avg_tilt_comp() documentation in calc_tilts_prec_avg_regularized.py for the list of settings
@@ -181,10 +183,23 @@ def calc_tilts_at_infty_hybrid_evolve(m1, m2, chi1, chi2, tilt1, tilt2, phi12, f
     """
 
     # Check version
-    if version == 'v1':
+    if version in ['v1','v2']:
         version_prec_avg = 'v1'
+
+        if version == 'v1':
+            warn("v1 of the hybrid tilts at infinity calculation is deprecated, since v2 is much faster and somewhat more accurate. In a near future release, the default version will be changed to v2.", FutureWarning)
     else:
-        raise ValueError("Only version v1 is available at the moment, while version = %s"%version)
+        raise ValueError("Only versions ['v1', 'v2'] are available at the moment, while version = %s"%version)
+
+    # Set the failure output and the string corresponding to it
+    # These default to None, since they are not used if failure_mode == 'Error'
+
+    if failure_mode == 'NAN':
+        failure_output = np.nan
+        failure_output_string = 'np.nan'
+    else:
+        failure_output = None
+        failure_output_string = 'None'
 
     # Check if Lf is defined in kwargs:
     if 'Lf' in kwargs:
@@ -291,17 +306,70 @@ def calc_tilts_at_infty_hybrid_evolve(m1, m2, chi1, chi2, tilt1, tilt2, phi12, f
     E1y_high = 0.0
     E1z_high = 0.0
 
-    dt_constant = get_dt_constant(v_trans)
-    dt = 1./(dt_constant * fref)
+    lalpars=lal.CreateDict()
+    lalsim.SimInspiralWaveformParamsInsertFinalFreq(lalpars, f_trans)
+    lalsim.SimInspiralWaveformParamsInsertPNSpinOrder(lalpars, spinO)
+    lalsim.SimInspiralWaveformParamsInsertPNPhaseOrder(lalpars, phaseO)
+    lalsim.SimInspiralWaveformParamsInsertLscorr(lalpars, lscorr)
 
-    dictparams = {'deltaT': dt, 'm1': m1, 'm2': m2, 'fStart': fref, 'fEnd': f_trans, 's1x': chi1x_high, 's1y': chi1y_high, 's1z': chi1z_high,
-                  's2x': chi2x_high, 's2y': chi2y_high, 's2z': chi2z_high, 'lnhatx': Lnx_high, 'lnhaty': Lny_high, 'lnhatz': Lnz_high,
-                  'e1x': E1x_high, 'e1y': E1y_high, 'e1z': E1z_high, 'lambda1': 0., 'lambda2': 0., 'quadparam1': 1., 'quadparam2': 1.,
-                  'spinO': spinO, 'tideO': tideO, 'phaseO': phaseO, 'lscorr': lscorr, 'approx': approx}
+    if f_trans < fref:
+
+        ###################### v2: single-step evolution ############################################
+
+        if version == "v2":
+
+            # Use a uniform timestep (with dt_constant = 64) for all binary parameters:
+            dt = 1./(64 * fref)
+            # Activate option to save only final values in Spin Taylor evolution:
+            lalsim.SimInspiralWaveformParamsInsertOnlyFinal(lalpars, 1)
+
+            dictparams = {'phiRef':0., 'deltaT': dt, 'm1_SI': m1, 'm2_SI': m2, 'fStart': fref, 'fRef': fref, 's1x': chi1x_high, 's1y': chi1y_high, 's1z': chi1z_high,
+                          's2x': chi2x_high, 's2y': chi2y_high, 's2z': chi2z_high, 'lnhatx': Lnx_high, 'lnhaty': Lny_high, 'lnhatz': Lnz_high,
+                          'e1x': E1x_high, 'e1y': E1y_high, 'e1z': E1z_high, 'LALparams': lalpars, 'approx': approx}
+
+            try:
+                _,_,c1x, c1y, c1z, c2x, c2y, c2z, Lnx, Lny, Lnz, E1x, E1y, E1z = lalsim.SimInspiralSpinTaylorOrbitalDriver(**dictparams)
+            except:
+                failure_message = "The orbit-averaged evolution failed."
+                return evolution_error_handling(failure_mode, failure_message, failure_output, failure_output_string, Lf, swap=False, hybrid_evol=True)
+
+            c1x = c1x.data.data[-1]
+            c2x = c2x.data.data[-1]
+            c1y = c1y.data.data[-1]
+            c2y = c2y.data.data[-1]
+            c2z = c2z.data.data[-1]
+            c1z = c1z.data.data[-1]
+            Lnx = Lnx.data.data[-1]
+            Lny = Lny.data.data[-1]
+            Lnz = Lnz.data.data[-1]
+
+            tilt1_transition, tilt2_transition, phi12_transition = get_tilts(c1x, c1y, c1z, c2x, c2y, c2z, Lnx, Lny, Lnz)
+
+            if verbose:
+                print("The tilts at transition are: tilt1 = {0}, tilt2 = {1}, phi12 = {2}".format(tilt1_transition, tilt2_transition, phi12_transition))
+
+            spin_angles_output = prec_avg_tilt_comp(m1, m2, chi1, chi2, tilt1_transition, tilt2_transition, phi12_transition, f_trans, LPNorder = LPNorder, LPNspins = LPNspins,
+                                                        version=version_prec_avg, **kwargs)
+            spin_angles_output["tilt1_transition"] = tilt1_transition
+            spin_angles_output["tilt2_transition"] = tilt2_transition
+            spin_angles_output["phi12_transition"] = phi12_transition
+            spin_angles_output["f_transition"] = v_trans**3/np.pi/(M*kg_to_s) #return the transition frequency based on the original input masses in kg.
+
+
+    ################### v1: multi-step evolution #############################
+
+        elif version == 'v1':
+
+            # Use a timestep optimized by the get_dt_constant() function:
+            dt_constant = get_dt_constant(v_trans)
+            dt = 1./(dt_constant * fref)
+
+            dictparams = {'phiRef':0., 'deltaT': dt, 'm1_SI': m1, 'm2_SI': m2, 'fStart': fref, 'fRef': fref, 's1x': chi1x_high, 's1y': chi1y_high, 's1z': chi1z_high,
+                          's2x': chi2x_high, 's2y': chi2y_high, 's2z': chi2z_high, 'lnhatx': Lnx_high, 'lnhaty': Lny_high, 'lnhatz': Lnz_high,
+                          'e1x': E1x_high, 'e1y': E1y_high, 'e1z': E1z_high, 'LALparams': lalpars, 'approx': approx}
 
 
     ####################### Step 1: Use LALSIM.SimInspiralSpinTaylorPNEvolveOrbit to get orbit-averaged spins at the transition frequency #########################
-    if f_trans < fref:
 
             n_steps = get_nsteps(v_trans)
 
@@ -318,15 +386,26 @@ def calc_tilts_at_infty_hybrid_evolve(m1, m2, chi1, chi2, tilt1, tilt2, phi12, f
                     v_high = v_arr[i]
                     f_high = v_high**3/np.pi/MT_s
                     dictparams['fStart'] = f_high
+                    dictparams['fRef'] = f_high
 
                     v_low = v_arr[i+1]
                     f_low = v_low**3/np.pi/MT_s
-                    dictparams['fEnd'] = f_low
+                    lalsim.SimInspiralWaveformParamsInsertFinalFreq(lalpars, f_low)
+                    dictparams['LALparams'] = lalpars
                     dictparams['deltaT'] = 1./(dt_constant * f_high)
                     if verbose:
-                        print("Evolving to v_low = {0} corresponding to f_low = {1} with dt = {2}".format(v_low,dictparams['fEnd'],dictparams['deltaT']))
+                        print("Evolving to v_low = {0} corresponding to f_low = {1} with dt = {2}".format(v_low, f_low, dictparams['deltaT']))
 
-                    _,_,chi1x_low, chi1y_low, chi1z_low, chi2x_low, chi2y_low, chi2z_low, Lnx_low, Lny_low, Lnz_low, E1x, E1y, E1z = lalsim.SimInspiralSpinTaylorPNEvolveOrbit(**dictparams)
+                    try:
+                        v_out,_,chi1x_low, chi1y_low, chi1z_low, chi2x_low, chi2y_low, chi2z_low, Lnx_low, Lny_low, Lnz_low, E1x, E1y, E1z = lalsim.SimInspiralSpinTaylorOrbitalDriver(**dictparams)
+                    except:
+                        failure_message = "The orbit-averaged evolution failed."
+                        return evolution_error_handling(failure_mode, failure_message, failure_output, failure_output_string, Lf, swap=False, hybrid_evol=True)
+
+                    if abs(v_out.data.data[0] - v_low) > 1.e-4:
+                        failure_message = f"The orbit-averaged evolution failed to reached the specified final velocity, v={v_low} at step {i+1}. The input binary parameters cannot be evolved from the given frequency {fref*fac} Hz."
+                        return evolution_error_handling(failure_mode, failure_message, failure_output, failure_output_string, Lf, swap=False, hybrid_evol=True)
+
 
                     dictparams['s1x'] = chi1x_low.data.data[0]
                     dictparams['s1y'] = chi1y_low.data.data[0]
