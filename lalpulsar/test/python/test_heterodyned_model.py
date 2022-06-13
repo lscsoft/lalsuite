@@ -35,6 +35,7 @@ import lal
 
 import lalpulsar
 from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
+from lalpulsar.simulateHeterodynedCW import HeterodynedCWSimulator
 
 """
 The first test output is to create a signal model for a source assuming that
@@ -1056,6 +1057,54 @@ def test_seven():
 
     # check output matches that from lalapps_heterodyne_pulsar
     assert_allclose(2.0 * np.pi * np.fmod(fullphase.data, 1.), t7output, rtol=1e-3)
+
+
+@pytest.mark.parametrize('det', ["H1", "L1", "V1"])
+def test_transient(det):
+    """
+    Test the transient signal models with a rectangular and exponential decay.
+    """
+
+    parhet = PulsarParametersPy()
+    parhet["F"] = [153.4567, -2.876e-11]  # set frequency
+    parhet["RAJ"] = lal.TranslateHMStoRAD("04:23:34.6")  # set right ascension
+    parhet["DECJ"] = lal.TranslateDMStoRAD("-05:01:23.5")  # set declination
+    pepoch = lal.TranslateStringMJDTTtoGPS("55810")
+    parhet["PEPOCH"] = pepoch.gpsSeconds + 1e-9 * pepoch.gpsNanoSeconds
+
+    parhet["H0"] = 1e-24
+    parhet["COSIOTA"] = 0.4
+    parhet["PSI"] = 1.3
+    parhet["PHI0"] = 2.9
+
+    times = np.arange(1000000000, 1000000000 + 8 * 86400, 600)
+
+    parhet["TRANSIENTSTARTTIME"] = times[0] + 86400.0
+    parhet["TRANSIENTTAU"] = 86400.0 * 2
+
+    # model with no transient window
+    hetfull = HeterodynedCWSimulator(parhet, det, times=times)
+    fullmodel = hetfull.model(usephase=True)
+
+    # model with rectangular window
+    parhet["TRANSIENTWINDOWTYPE"] = "RECT"
+    hetrect = HeterodynedCWSimulator(parhet, det, times=times)
+    rectmodel = hetrect.model()
+
+    # model with exponential decay window
+    parhet["TRANSIENTWINDOWTYPE"] = "EXP"
+    hetexp = HeterodynedCWSimulator(parhet, det, times=times)
+    expmodel = hetexp.model()
+
+    # check rectangular window
+    wintimes = (times >= parhet["TRANSIENTSTARTTIME"]) & (times <= parhet["TRANSIENTSTARTTIME"] + parhet["TRANSIENTTAU"])
+    assert_equal(fullmodel[wintimes], rectmodel[wintimes])
+    assert_equal(rectmodel[~wintimes], np.zeros_like(rectmodel[~wintimes]))
+
+    # check exponential window
+    for i, time in enumerate(np.arange(parhet["TRANSIENTSTARTTIME"], times[-1], parhet["TRANSIENTTAU"])):
+        idx = int((time - times[0]) / 600)
+        assert_allclose([expmodel[idx]], [fullmodel[idx] / (np.e ** i)], rtol=1e-3)
 
 
 if __name__ == '__main__':

@@ -838,7 +838,7 @@ typedef struct tagParConversion{
 }ParConversion;
 
 
-#define NUM_PARS 121 /* number of allowed parameters */
+#define NUM_PARS 124 /* number of allowed parameters */
 
 /** Initialise conversion structure with most allowed TEMPO2 parameter names and conversion functions
  * (convert all read in parameters to SI units where necessary). See http://arxiv.org/abs/astro-ph/0603381 and
@@ -994,9 +994,13 @@ ParConversion pc[NUM_PARS] = {
   { .name = "HVECTORX_F", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector x-mode amplitude */
   { .name = "HVECTORY_F", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector y-mode amplitude */
   { .name = "PSIVECTOR_F", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector angle polarisation */
-  { .name = "PHI0VECTOR_F", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t } /* GW vector polarisation initial phase */
-};
+  { .name = "PHI0VECTOR_F", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* GW vector polarisation initial phase */
 
+  /* transient signal parameters */
+  { .name = "TRANSIENTWINDOWTYPE", .convfunc = ParConvToString, .converrfunc = NULL, .ptype = PULSARTYPE_string_t }, /* window type, currently "RECT" (rectangular window) or "EXP" (exponentially decaying window) */
+  { .name = "TRANSIENTSTARTTIME", .convfunc = ParConvMJDToGPS, .converrfunc = NULL, .ptype = PULSARTYPE_REAL8_t }, /* transient start time in MJD */
+  { .name = "TRANSIENTTAU", .convfunc = ParConvDaysToSecs, .converrfunc = NULL, .ptype = PULSARTYPE_REAL8_t } /* transient decay time scale (duration for "RECT" and decay constant for "EXP") */
+};
 
 /** \brief Parse a single line from a pulsar parameter file
  *
