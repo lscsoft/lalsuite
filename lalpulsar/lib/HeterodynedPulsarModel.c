@@ -781,7 +781,18 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
   gpstime.gpsSeconds = 0;
   gpstime.gpsNanoSeconds = 0;
 
-  if ( varyphase || useroq ){
+  /* check for transient signal */
+  INT4 rectWindow = 0, expWindow = 0;
+  REAL8 transientStartTime = PulsarGetREAL8ParamOrZero(pars, "TRANSIENTSTARTTIME");
+  REAL8 transientTau = PulsarGetREAL8ParamOrZero(pars, "TRANSIENTTAU");
+
+  if ( PulsarCheckParam(pars, "TRANSIENTWINDOWTYPE") ){
+    const CHAR *transientWindow = PulsarGetStringParam(pars, "TRANSIENTWINDOWTYPE");
+    rectWindow = !strcmp(transientWindow, "RECT");
+    expWindow = !strcmp(transientWindow, "EXP");
+  }
+
+  if ( varyphase || useroq || rectWindow || expWindow ){
     XLAL_CHECK_NULL( timestamps->length > 0, XLAL_EFUNC, "length must be a positive integer" );
 
     /* in these cases use signal length to specify the length of the signal */
@@ -890,7 +901,7 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
     XLAL_ERROR_NULL( XLAL_EINVAL, "Error... currently unknown frequency factor (%.2lf) for models.", freqfactor );
   }
 
-  if ( varyphase || useroq ){ /* have to compute the full time domain signal */
+  if ( varyphase || useroq || rectWindow || expWindow ){ /* have to compute the full time domain signal */
     REAL8 tsv;
 
     /* set lookup table parameters */
@@ -899,13 +910,25 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
     for( i=0; i<csignal->data->length; i++ ){
       REAL8 plus00, plus01, cross00, cross01, plus = 0., cross = 0.;
       REAL8 x00, x01, y00, y01, b00, b01, l00, l01;
-      REAL8 timeScaled, timeMin, timeMax;
+      REAL8 timeGPS, timeScaled, timeMin, timeMax;
       REAL8 plusT = 0., crossT = 0., x = 0., y = 0., xT = 0., yT = 0., b = 0., l = 0.;
       INT4 timebinMin, timebinMax;
 
       /* set the time bin for the lookup table */
       /* sidereal day in secs*/
-      T = fmod( XLALGPSGetREAL8( &timestamps->data[i] ) - t0, LAL_DAYSID_SI );  /* convert GPS time to sidereal day */
+      timeGPS = XLALGPSGetREAL8( &timestamps->data[i] );
+      T = fmod( timeGPS - t0, LAL_DAYSID_SI );  /* convert GPS time to sidereal day */
+      
+      /* set signal to zero for transient signals as required */
+      if ( rectWindow && (timeGPS < transientStartTime || timeGPS > transientStartTime + transientTau) ){
+        csignal->data->data[i] = 0.0 + I * 0.0;
+        continue;
+      }
+      else if ( expWindow && timeGPS < transientStartTime ){
+        csignal->data->data[i] = 0.0 + I * 0.0;
+        continue;
+      }
+
       timebinMin = (INT4)fmod( floor(T / tsv), resp->ntimebins );
       timeMin = timebinMin*tsv;
       timebinMax = (INT4)fmod( timebinMin + 1, resp->ntimebins );
@@ -951,6 +974,11 @@ COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *p
 
       /* add non-GR components if required */
       if ( nonGR ){ csignal->data->data[i] += ( Cx*xT ) + ( Cy*yT ) + Cb*b + Cl*l; }
+
+      /* add exponential window if required */
+      if ( expWindow ){
+        csignal->data->data[i] *= exp(-(timeGPS - transientStartTime) / transientTau);
+      }
     }
   }
   else{ /* just have to calculate the values to multiply the pre-summed data */
