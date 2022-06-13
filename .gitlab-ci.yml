@@ -100,9 +100,9 @@ workflow:
     # run all other pipelines
     - when: always
 
-# always run
-.always-rule: &always
-  - when: always
+# default run
+.default-rule: &default
+  - when: on_success
 
 # tag on the upstream repo
 .tag-rule: &tags
@@ -360,7 +360,7 @@ workflow:
     when: always
   rules:
     - *skip-rhel
-    - *always
+    - *default
 
 # -- debian
 
@@ -438,7 +438,7 @@ workflow:
     when: always
   rules:
     - *skip-debian
-    - *always
+    - *default
 
 # -- conda
 
@@ -570,7 +570,7 @@ workflow:
     when: always
   rules:
     - *skip-conda
-    - *always
+    - *default
 
 # -- tarballs -----------------------------------
 #
@@ -1168,7 +1168,7 @@ wheel:cp310-cp310-macosx:
   stage: integration tests
   rules:
     - *skip-integration
-    - *always
+    - *default
 
 lalinference_testjob:
   extends:
@@ -1745,7 +1745,7 @@ coverage:
       cobertura: coverage.xml
   rules:
     - *skip-coverage
-    - *always
+    - *default
 
 # -- linting ------------------------------------
 #
@@ -1758,7 +1758,7 @@ coverage:
   needs: []
   rules:
     - *skip-lint
-    - *always
+    - *default
 
 lint:gitignore:
   extends:
@@ -1887,7 +1887,7 @@ documentation:
       - html
   rules:
     - *skip-docs
-    - *always
+    - *default
 
 # -- deploy -------------------------------------
 #
