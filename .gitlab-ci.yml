@@ -125,8 +125,8 @@ workflow:
       ENABLE_NIGHTLY: "--enable-nightly"
 
 # manually-triggered pipeline
-.web-rule: &web
-  - if: '$CI_PIPELINE_SOURCE == "web"'
+.manual-rule: &manual
+  - if: '$CI_PIPELINE_SOURCE == "web" || $CI_COMMIT_MESSAGE =~ /\[nightly ci\]/'
     variables:
       ENABLE_NIGHTLY: "--enable-nightly"
 
@@ -529,7 +529,7 @@ workflow:
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
     # if not a single-python-per-build recipe and not a nightly
-    # or web-triggered pipeline, just build one python version
+    # or manual-triggered pipeline, just build one python version
     - if [[ "${CONDA_CONFIG}" != *"python"* ]] && [ -z "${ENABLE_NIGHTLY}" ]; then
          CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
       fi
@@ -980,8 +980,7 @@ lalapps:conda:
 # conda jobs will have run over all python versions
 .lalapps:conda:extra:
   rules:
-    - *scheduled
-    - *web
+    - *nightly
 
 lalapps:conda:py37:
   extends:
@@ -1031,12 +1030,12 @@ lalapps:conda:py310:
       - wheelhouse
 
 # template to run wheels on manually-triggered pipelines as well
-.wheel-web-rule:
+.wheel-manual-rule:
   rules:
     # use the upstream rules
     - !reference [.wheel, rules]
     # also run on manually triggered pipelines
-    - *web
+    - *manual
 
 # do some simple sanity checks in a virtualenv
 .wheel-test: &wheel-test
@@ -1072,7 +1071,7 @@ lalapps:conda:py310:
 .wheel:manylinux:
   extends:
     - .wheel
-    - .wheel-web-rule
+    - .wheel-manual-rule
   script:
     - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
     # Build wheel
@@ -1154,7 +1153,7 @@ wheel:cp38-cp38-macosx:
 wheel:cp39-cp39-macosx:  # macOS wheel reference build
   extends:
     - .wheel:macos
-    - .wheel-web-rule
+    - .wheel-manual-rule
 wheel:cp310-cp310-macosx:
   extends:
      - .wheel:macos
@@ -1214,7 +1213,7 @@ lalinference_testjob:
   rules:
     - *skip-integration
     - *scheduled
-    - *web
+    - *manual
   artifacts:
     expire_in: 18h
     paths:
@@ -1231,7 +1230,7 @@ top-level:
     - *skip-integration
     - *pushes
     - *scheduled
-    - *web
+    - *manual
 
 # -- compiler tests -----------------------------
 #
@@ -1247,7 +1246,7 @@ top-level:
   rules:
     - *skip-compiler
     - *scheduled
-    - *web
+    - *manual
 
 clang:11:
   extends:
@@ -1472,7 +1471,7 @@ upgrade:conda:linux:
   rules:
     - *skip-platform
     - *scheduled
-    - *web
+    - *manual
 
 platform:debian:bullseye:
   extends:
@@ -1536,6 +1535,8 @@ platform:conda:macos-x86_64:
   # fail with permissions errors, reset the permissions
   after_script:
     - chmod -R +w $CI_PROJECT_DIR
+  # https://git.ligo.org/lscsoft/lalsuite/-/issues/514
+  allow_failure: true
 
 platform:conda:macos-arm64:
   extends:
@@ -1564,7 +1565,7 @@ platform:conda:macos-arm64:
     - *skip-docker
     - *pushes
     - *scheduled
-    - *web
+    - *manual
   script:
     # build container and push to registry
     - IMAGE_TAG=${CI_JOB_NAME##*:}

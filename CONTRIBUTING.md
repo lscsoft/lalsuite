@@ -177,6 +177,8 @@ Sections of the CI pipeline can be skipped by adding special key text to your co
 
 **It is important that this feature is not abused, please do not skip any jobs when making library changes.**
 
+On the other hand, if you are adding a feature you know will only be fully tested by the nightly pipeline, you can add the special key text `[nightly ci]` to your commit messages to trigger this pipeline. **The nightly pipeline will take longer to run and consume more resources, so please use only when necessary.**
+
 ## More Information
 
 More information regarding the usage of GitLab can be found in the main GitLab [documentation](https://git.ligo.org/help/).

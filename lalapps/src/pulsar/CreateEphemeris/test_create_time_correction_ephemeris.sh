@@ -13,7 +13,7 @@ for file in tdb_2000-2019.dat te405_2000-2019.dat; do
     echo "Comparing ${file} and ref_${file}"
     cat "${file}" | sed '/^#/d' > new.txt
     cat "ref_${file}" | sed '/^#/d' > ref.txt
-    paste new.txt ref.txt | awk -v "rmsmax=1e-15" '
+    paste new.txt ref.txt | awk -v "rmsmax=1e-12" '
         BEGINFILE { rms = 0 }
         FNR == 1 { if ( $1 != $5 || $2 != $6 || $3 != $7 || $4 != $8 ) { print "Header mismatch:", $0; exit ( 1 ) } }
         FNR > 1 { rms += ($1 - $2)^2 }
