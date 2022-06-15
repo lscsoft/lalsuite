@@ -182,6 +182,11 @@ extern "C" {
 			     HOUGHPeakGramVector *pgV,
 			     SemiCoherentParams *params);
 
+  void LocalComputeFstatHoughMap (LALStatus *status,
+			     SemiCohCandidateList *out,
+			     HOUGHPeakGramVector *pgV,
+			     SemiCoherentParams *params);
+
   void FstatVectToPeakGram (LALStatus *status,
 			    HOUGHPeakGramVector *pgV,
 			    REAL4FrequencySeriesVector *FstatVect,

@@ -23,7 +23,13 @@
    See that file for Copyright details
 */
 
-#include "../HierarchicalSearch.h"
+#include "HierarchicalSearch.h"
+
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
 
 #define HSMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define HSMIN(x,y) ( (x) < (y) ? (x) : (y) )
@@ -296,7 +302,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
   fBinFin -= params->extraBinsFstat;
   /* this is not very clean -- the Fstat calculation has to know how many extra bins are needed */
 
-  LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%d bins)\n", 
+  LogPrintf(LOG_DETAIL, "Freq. range analyzed by Hough = [%fHz - %fHz] (%" LAL_INT8_FORMAT " bins)\n", 
 	    fBinIni*deltaF, fBinFin*deltaF, fBinFin - fBinIni + 1);
   ASSERT ( fBinIni < fBinFin, status, HIERARCHICALSEARCH_EVAL, HIERARCHICALSEARCH_MSGEVAL );
 
@@ -728,15 +734,15 @@ LocalHOUGHAddPHMD2HD_W (LALStatus      *status, /**< the status pointer */
 #if defined(__GNUC__) && ( defined(__i386__) || defined(__x86_64__) )
 
 #if __x86_64__
-#include "hough_x64.ci"
+#include "hough_x64.i"
 #elif __SSE2__
-#include "hough_sse2.ci"
+#include "hough_sse2.i"
 #elif __i386__
-#include "hough_x87.ci"
+#include "hough_x87.i"
 #endif
 
 INLINE void ALWAYS_INLINE
-LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status,
+LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status UNUSED,
 			   HoughDT*      map,
 			   HOUGHBorder** pBorderP,
 			   INT4         length,
