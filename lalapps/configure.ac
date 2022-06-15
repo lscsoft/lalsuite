@@ -124,6 +124,9 @@ AM_SILENT_RULES([yes])
 # check for required compilers
 LALSUITE_PROG_COMPILERS
 
+# check for SIMD extensions
+LALSUITE_CHECK_SIMD
+
 # link tests using libtool
 if test "${static_binaries}" = "true"; then
   lalsuite_libtool_flags="-all-static"
