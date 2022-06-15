@@ -6,10 +6,10 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
 bin_PROGRAMS = \
-	lalapps_WeaveSetup \
 	lalapps_Weave \
 	lalapps_WeaveCompare \
 	lalapps_WeaveConcat \
+	lalapps_WeaveSetup \
 	$(END_OF_LIST)
 
 lalapps_WeaveSetup_SOURCES = \
@@ -79,11 +79,13 @@ lalapps_WeaveConcat_SOURCES = \
 noinst_LTLIBRARIES =
 
 if CUDA
+
 noinst_LTLIBRARIES += libweave_computeresults_cuda.la
 LDADD += libweave_computeresults_cuda.la
 libweave_computeresults_cuda_la_SOURCES = ComputeResults_CUDA.cu
 libweave_computeresults_cuda_la_LDFLAGS = -no-undefined
 MOSTLYCLEANFILES += ComputeResults_CUDA.cpp
+
 endif
 
 # Add shell test scripts to this variable
@@ -107,7 +109,9 @@ test_extra_files +=
 
 # All tests require CFITSIO
 if !CFITSIO
+
 skip_tests += $(test_scripts)
+
 endif
 
 # testWeave_reference_results.sh requires output from tests that compare against reference results
