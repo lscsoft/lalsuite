@@ -11,14 +11,17 @@ bin_PROGRAMS = \
 	lalapps_spec_coherence \
 	$(END_OF_LIST)
 
-lalapps_spec_avg_SOURCES = spec_avg.c
-lalapps_spec_avg_long_SOURCES = spec_avg_long.c
-lalapps_spec_coherence_SOURCES = spec_coherence.c
-
-if HAVE_PYTHON
-pybin_scripts = \
+lalapps_spec_avg_SOURCES = \
+	spec_avg.c \
 	$(END_OF_LIST)
-endif
+
+lalapps_spec_avg_long_SOURCES = \
+	spec_avg_long.c \
+	$(END_OF_LIST)
+
+lalapps_spec_coherence_SOURCES = \
+	spec_coherence.c \
+	$(END_OF_LIST)
 
 # Add shell test scripts to this variable
 test_scripts += testFscan.sh
