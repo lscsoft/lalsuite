@@ -1743,7 +1743,9 @@ coverage:
       # Python coverage
       - py-coverage.xml
     reports:
-      cobertura: coverage.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
   rules:
     - *skip-coverage
     - *default
