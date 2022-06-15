@@ -14,6 +14,7 @@ noinst_PROGRAMS = \
 	$(END_OF_LINE)
 
 if LALFRAME
+
 bin_PROGRAMS += \
 	lalapps_heterodyne_pulsar \
 	$(END_OF_LINE)
@@ -21,23 +22,28 @@ bin_PROGRAMS += \
 noinst_PROGRAMS += \
 	lalapps_create_pulsar_signal_frame \
 	$(END_OF_LINE)
+
 endif
 
 if LALINFERENCE
+
 bin_PROGRAMS += \
-	lalapps_pulsar_parameter_estimation_nested \
 	lalapps_pulsar_frequency_evolution \
+	lalapps_pulsar_parameter_estimation_nested \
 	$(END_OF_LINE)
+
 endif
 
-lalapps_ssbtodetector_SOURCES = ssbtodetector.c
+lalapps_ssbtodetector_SOURCES = \
+	ssbtodetector.c \
+	$(END_OF_LINE)
 
 lalapps_pulsar_frequency_evolution_SOURCES = \
-	pulsar_frequency_evolution.c \
 	ppe_models.c \
 	ppe_models.h \
 	ppe_utils.c \
 	ppe_utils.h \
+	pulsar_frequency_evolution.c \
 	$(END_OF_LINE)
 
 lalapps_heterodyne_pulsar_SOURCES = \
@@ -46,22 +52,22 @@ lalapps_heterodyne_pulsar_SOURCES = \
 	$(END_OF_LINE)
 
 lalapps_pulsar_parameter_estimation_nested_SOURCES = \
-	ppe_models.c \
-	ppe_models.h \
-	ppe_likelihood.c \
-	ppe_likelihood.h \
-	ppe_testing.c \
-	ppe_testing.h \
 	ppe_init.c \
 	ppe_init.h \
-	ppe_utils.c \
-	ppe_utils.h \
-	ppe_readdata.c \
-	ppe_readdata.h \
 	ppe_inject.c \
 	ppe_inject.h \
+	ppe_likelihood.c \
+	ppe_likelihood.h \
+	ppe_models.c \
+	ppe_models.h \
+	ppe_readdata.c \
+	ppe_readdata.h \
 	ppe_roq.c \
 	ppe_roq.h \
+	ppe_testing.c \
+	ppe_testing.h \
+	ppe_utils.c \
+	ppe_utils.h \
 	pulsar_parameter_estimation_nested.c \
 	pulsar_parameter_estimation_nested.h \
 	$(END_OF_LINE)
@@ -76,17 +82,20 @@ lalapps_SplInter_SOURCES = \
 	$(END_OF_LINE)
 
 if HAVE_PYTHON
+
 pybin_scripts = \
 	lalapps_knope \
-	lalapps_knope_result_page \
-	lalapps_knope_collate_results \
 	lalapps_knope_automation_script \
+	lalapps_knope_collate_results \
+	lalapps_knope_result_page \
 	$(END_OF_LINE)
+
 pkgpython_PYTHON = \
+	knope_utils.py \
 	pulsarhtmlutils.py \
 	pulsarpputils.py \
-	knope_utils.py \
 	$(END_OF_LINE)
+
 endif
 
 # Add shell test scripts to this variable
