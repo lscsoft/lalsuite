@@ -1,6 +1,6 @@
 ##---------- names of codes and input/output files
-mfd_code="${LAL_TEST_BUILDDIR}/../MakeData/lalapps_Makefakedata_v4"
-pcc_code="${LAL_TEST_BUILDDIR}/lalapps_pulsar_crosscorr_v2"
+mfd_code="lalapps_Makefakedata_v4"
+pcc_code="lalapps_pulsar_crosscorr_v2"
 
 Ftolerance=0.05
 
