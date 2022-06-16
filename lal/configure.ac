@@ -299,9 +299,16 @@ AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 
 # checks for library functions
-AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_gettime])
+AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace])
 
 # check for CPU timer
+LALSUITE_PUSH_UVARS
+LALSUITE_CLEAR_UVARS
+AC_SEARCH_LIBS([clock_gettime],[rt])
+clock_gettime_LIBS="${LIBS}"
+LALSUITE_POP_UVARS
+LALSUITE_ADD_FLAGS([C],[],[${clock_gettime_LIBS}])
+AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_DECLS([CLOCK_PROCESS_CPUTIME_ID],,,[AC_INCLUDES_DEFAULT
 #include <time.h>
 ])
