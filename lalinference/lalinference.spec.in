@@ -31,7 +31,6 @@ BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: liblalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: liblalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: make
 BuildRequires: openmpi-devel
 BuildRequires: pkgconfig >= 0.18.0
@@ -56,7 +55,6 @@ BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 BuildRequires: python%{python3_pkgversion}-matplotlib >= 1.2.0
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
@@ -70,7 +68,6 @@ BuildRequires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
 BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
 BuildRequires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 
 # -- packages ---------------
 
@@ -103,7 +100,6 @@ Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: liblalburst >= @MIN_LALBURST_VERSION@
 Requires: liblalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: liblalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: %{name}-data
 Conflicts: %{name} <= 2.0.5-1
 %description -n lib%{name}
@@ -122,7 +118,6 @@ Requires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 Requires: liblalburst-devel >= @MIN_LALBURST_VERSION@
 Requires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
-Requires: liblalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 2.0.6-1
 %description -n lib%{name}-devel
@@ -147,7 +142,6 @@ Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python%{python3_pkgversion}-ligo-gracedb
 Requires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
 Requires: python%{python3_pkgversion}-ligo-segments
@@ -172,7 +166,6 @@ Requires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
 Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 Requires: lalburst-octave >= @MIN_LALBURST_VERSION@
 Requires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
-Requires: lalpulsar-octave >= @MIN_LALPULSAR_VERSION@
 %description octave
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALInference.

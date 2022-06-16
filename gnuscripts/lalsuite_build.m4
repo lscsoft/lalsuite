@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 161
+# serial 162
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -831,19 +831,6 @@ AC_ARG_ENABLE(
   ], [ lalinspiral=${all_lal:-true} ] )
 ])
 
-AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
-[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
-AC_ARG_ENABLE(
-  [lalpulsar],
-  AS_HELP_STRING([--enable-lalpulsar],[compile code that requires lalpulsar library [default=yes]]),
-  [ case "${enableval}" in
-      yes) lalpulsar=true;;
-      no) lalpulsar=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalpulsar) ;;
-    esac
-  ], [ lalpulsar=${all_lal:-true} ] )
-])
-
 AC_DEFUN([LALSUITE_ENABLE_LALINFERENCE],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
@@ -855,6 +842,19 @@ AC_ARG_ENABLE(
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalinference) ;;
     esac
   ], [ lalinference=${all_lal:-true} ] )
+])
+
+AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
+  [lalpulsar],
+  AS_HELP_STRING([--enable-lalpulsar],[compile code that requires lalpulsar library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalpulsar=true;;
+      no) lalpulsar=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalpulsar) ;;
+    esac
+  ], [ lalpulsar=${all_lal:-true} ] )
 ])
 
 AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
