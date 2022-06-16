@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 159
+# serial 160
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -382,8 +382,8 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
       CXXFLAGS="${CXXFLAGS} -g"
     ])
 
-    # define C99 constant and limit macros for C++ sources
-    CXXFLAGS="${CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
+    # define C99 constant, limit, and format macros for C++ sources
+    CXXFLAGS="${CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS"
 
   ],[
     CXX=
