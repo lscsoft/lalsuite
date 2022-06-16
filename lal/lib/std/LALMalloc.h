@@ -83,7 +83,7 @@ void XLALFreeAligned(void *ptr);
 #define LALReallocLong( p, n, file, line ) realloc( p, n )
 #define LALFree                            free
 #define LALFreeShort                       free
-#define LALFreeLong( p, n, file, line )    free( p )
+#define LALFreeLong( p, file, line )       free( p )
 #define LALCheckMemoryLeaks()
 #endif /* SWIG */
 
