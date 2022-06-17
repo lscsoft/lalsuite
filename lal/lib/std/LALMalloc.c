@@ -28,6 +28,12 @@
 #include <lal/LALStdio.h>
 #include <lal/LALError.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* global variables */
 size_t lalMallocTotal = 0;	/**< current amount of memory allocated by process */
 size_t lalMallocTotalPeak = 0;	/**< peak amount of memory allocated so far */
@@ -111,7 +117,7 @@ void (XLALFree) (void *p)
     return;
 }
 
-void XLALFreeLong(void *p, const char *file, int line)
+void XLALFreeLong(void *p, const char *file UNUSED, int line UNUSED)
 {
     if (p)
         LALFreeLong(p, file, line);
