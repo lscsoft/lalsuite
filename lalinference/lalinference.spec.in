@@ -51,6 +51,7 @@ BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python%{python3_pkgversion}-healpy >= 1.9.1
 BuildRequires: python%{python3_pkgversion}-h5py
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
@@ -141,6 +142,7 @@ Requires: python%{python3_pkgversion}-gwpy
 Requires: python%{python3_pkgversion}-healpy >= 1.9.1
 Requires: python%{python3_pkgversion}-h5py
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
+Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
