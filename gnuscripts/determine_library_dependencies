@@ -1,0 +1,57 @@
+#!/bin/bash
+# Author: Karl Wette, 2022
+
+set -e
+
+# only run from a clean Git repository
+if ! git diff --quiet; then
+    git status
+    exit 1
+fi
+
+# configure all LALSuite libraries
+./00boot
+./configure --enable-all-lal
+
+# create C header links and preprocess C source files
+make clean
+( make -k CFLAGS="-E" ) || true
+
+# find libraries headers are in from header links
+echo "# library_containing_header header" > ./lib-header-is-in
+find -name '*.h' | sed -n 's|^\./||;s|/include/lal/| |p' | sort -u >> ./lib-header-is-in
+
+# find headers used by libraries from preprocessed code
+echo "# library header_used_by_library" > ./headers-used-by-lib
+find -name '*.o' | xargs grep -H '[^.]/include/lal/' | sed 's|^\./||;s|[0-9/#"]| |g' | awk '{print $1, $NF}' | sort -u >> ./headers-used-by-lib
+
+# find libraries dependencies by header usage
+echo "# library depends_on_library due_to_using_header" > ./lib-depends-header
+grep -v '^#' ./headers-used-by-lib | while read lib hdr; do
+  printf "%s %s %s\n" "${lib}" "${hdr}" "`grep " ${hdr}$" ./lib-header-is-in`"
+done | awk '$2 == $4 && $1 != $3 { print $1, $3, $2 }' | sort -u >> ./lib-depends-header
+
+# collate library dependencies
+echo "# library depends_on_libraries" > ./lib-depends
+grep -v '^#' ./lib-depends-header | awk '
+{
+  depend[$1][$2] = 1
+}
+END {
+  PROCINFO["sorted_in"] = "@ind_str_asc"
+  for (i in depend) {
+    printf "%s", i
+    for (j in depend[i]) {
+      printf " %s", j
+    }
+    printf "\n"
+  }
+}'  >> ./lib-depends
+
+# cleanup
+make distclean
+
+# show files
+echo
+grep '^#' ./lib-header-is-in ./headers-used-by-lib ./lib-depends-header ./lib-depends
+echo
