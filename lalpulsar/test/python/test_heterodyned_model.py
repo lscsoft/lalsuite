@@ -1083,17 +1083,17 @@ def test_transient(det):
     parhet["TRANSIENTTAU"] = 86400.0 * 2
 
     # model with no transient window
-    hetfull = HeterodynedCWSimulator(parhet, det, times=times)
+    hetfull = HeterodynedCWSimulator(parhet, det, times=times, earth_ephem=earthephem, sun_ephem=sunephem, time_corr=timefile)
     fullmodel = hetfull.model(usephase=True)
 
     # model with rectangular window
     parhet["TRANSIENTWINDOWTYPE"] = "RECT"
-    hetrect = HeterodynedCWSimulator(parhet, det, times=times)
+    hetrect = HeterodynedCWSimulator(parhet, det, times=times, earth_ephem=earthephem, sun_ephem=sunephem, time_corr=timefile)
     rectmodel = hetrect.model()
 
     # model with exponential decay window
     parhet["TRANSIENTWINDOWTYPE"] = "EXP"
-    hetexp = HeterodynedCWSimulator(parhet, det, times=times)
+    hetexp = HeterodynedCWSimulator(parhet, det, times=times, earth_ephem=earthephem, sun_ephem=sunephem, time_corr=timefile)
     expmodel = hetexp.model()
 
     # check rectangular window
