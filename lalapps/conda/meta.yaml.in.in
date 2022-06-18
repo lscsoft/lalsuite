@@ -102,6 +102,7 @@ requirements:
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
     - liblalframe >={{ lalframe_version }}
+    - liblalinference >={{ lalinference_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
     - liblalburst >={{ lalburst_version }}
@@ -113,6 +114,7 @@ requirements:
     - python
     - python-lal >={{ lal_version }}
     - python-lalburst >={{ lalburst_version }}
+    - python-lalframe >={{ lalframe_version }}
     - python-lalinference >={{ lalinference_version }}
     - python-lalinspiral >={{ lalinspiral_version }}
     - python-lalmetaio >={{ lalmetaio_version }}

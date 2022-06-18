@@ -53,6 +53,7 @@ requirements:
     - gsl
     - liblal >={{ lal_version }}
     - liblalframe >={{ lalframe_version }}
+    - liblalburst >={{ lalburst_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
     - metaio
@@ -73,6 +74,7 @@ outputs:
       host:
         - gsl
         - liblal >={{ lal_version }}
+        - liblalburst >={{ lalburst_version }}
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
@@ -80,6 +82,7 @@ outputs:
       run:
         - gsl
         - liblal >={{ lal_version }}
+        - liblalburst >={{ lalburst_version }}
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
