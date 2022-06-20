@@ -194,7 +194,6 @@ int main( int argc, char *argv[] )
   SimInspiralTable            *thisInjection  = NULL;
   SnglInspiralTable           *snglHead       = NULL;
   SearchSummaryTable          *searchSummHead = NULL;
-  /*SummValueTable              *summValueHead  = NULL;    */
 
   /* raw input data storage */
   REAL8FrequencySeries          *specH1        = NULL;
