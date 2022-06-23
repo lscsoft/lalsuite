@@ -323,7 +323,7 @@ m4_pushdef([includes],[AC_INCLUDES_DEFAULT
 #include <sys/ioctl.h>
 #endif
 ])
-AC_CHECK_FUNCS([isatty fileno ioctl],,,includes)
+AC_CHECK_FUNCS([isatty dprintf fileno ioctl],,,includes)
 AC_CHECK_DECLS([TIOCGWINSZ],,,includes)
 AC_CHECK_MEMBERS([struct winsize.ws_col],,,includes)
 m4_popdef([includes])

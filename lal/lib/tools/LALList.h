@@ -20,6 +20,7 @@
 #ifndef _LAL_LIST_H
 #define _LAL_LIST_H
 
+#include <stdio.h>
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALValue.h>
@@ -51,6 +52,7 @@ LALListItem *XLALListItemDuplicate(const LALListItem *item);
 const LALValue * XLALListItemGetValue(const LALListItem *item);
 LALTYPECODE XLALListItemGetValueType(const LALListItem *item);
 void * XLALListItemGetValueData(void * data, size_t size, LALTYPECODE type, const LALListItem *item);
+void * XLALListItemGetBLOBValue(const LALListItem *item);
 const char * XLALListItemGetStringValue(const LALListItem *item);
 CHAR XLALListItemGetCHARValue(const LALListItem *item);
 INT2 XLALListItemGetINT2Value(const LALListItem *item);
@@ -92,7 +94,8 @@ LALListItem * XLALListIterNext(LALListIter *iter);
 
 int XLALListAdd(LALList *list, const void *data, size_t size, LALTYPECODE type);
 int XLALListAddValue(LALList *list, const LALValue *value);
-int XLALListAddStringValue(LALList *list, const char *value);
+int XLALListAddBLOBValue(LALList *list, const void *blob, size_t size);
+int XLALListAddStringValue(LALList *list, const char *string);
 int XLALListAddCHARValue(LALList *list, CHAR value);
 int XLALListAddINT2Value(LALList *list, INT2 value);
 int XLALListAddINT4Value(LALList *list, INT4 value);
@@ -106,6 +109,7 @@ int XLALListAddREAL8Value(LALList *list, REAL8 value);
 int XLALListAddCOMPLEX8Value(LALList *list, COMPLEX8 value);
 int XLALListAddCOMPLEX16Value(LALList *list, COMPLEX16 value);
 
+char * XLALListAsStringAppend(char *s, LALList *list);
 void XLALListPrint(LALList *list, int fd);
 
 
