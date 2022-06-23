@@ -170,6 +170,7 @@ Sections of the CI pipeline can be skipped by adding special key text to your co
 | `[skip docs]`        | Skip documentation jobs                       |
 | `[skip docker]`      | Skip Docker build jobs                        |
 | `[skip integration]` | Skip integration test jobs                    |
+| `[skip koji]`        | Skip koji test jobs                           |
 | `[skip lint]`        | Skip lint jobs                                |
 | `[skip platform]`    | Skip platform test jobs                       |
 | `[skip rhel]`        | Skip RHEL build jobs (and their dependents)   |
