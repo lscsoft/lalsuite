@@ -46,6 +46,7 @@ BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_V
 BuildRequires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
 BuildRequires: python%{python3_pkgversion}-matplotlib
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
+BuildRequires: python%{python3_pkgversion}-pillow
 BuildRequires: python%{python3_pkgversion}-pytest
 BuildRequires: python%{python3_pkgversion}-scipy
 BuildRequires: python3-rpm-macros
@@ -61,7 +62,17 @@ BuildRequires: octave-devel
 # lalburst
 Summary: LSC Algorithm Burst Libary - runtime tools
 Requires: lib%{name} = %{version}-%{release}
+Requires: python%{python3_pkgversion}-lal
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+Requires: python%{python3_pkgversion}-lalmetaio
+Requires: python%{python3_pkgversion}-lalsimulation
+Requires: python%{python3_pkgversion}-ligo-lw
+Requires: python%{python3_pkgversion}-ligo-segments
+Requires: python%{python3_pkgversion}-matplotlib
+Requires: python%{python3_pkgversion}-numpy
+Requires: python%{python3_pkgversion}-pillow
+Requires: python%{python3_pkgversion}-scipy
+Requires: python%{python3_pkgversion}-tqdm
 Obsoletes: python2-%{name} <= 1.5.8-1
 %description
 The LSC Algorithm Burst Library for gravitational wave data analysis.

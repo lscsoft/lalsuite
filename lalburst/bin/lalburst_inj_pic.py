@@ -25,9 +25,6 @@
 #
 
 
-from __future__ import print_function
-
-
 import math
 from optparse import OptionParser
 import sys
@@ -143,7 +140,7 @@ xmldoc = ligolw_utils.load_filename(options.time_slide_xml, verbose = options.ve
 #
 
 
-process = ligolw_process.register_to_xmldoc(xmldoc, u"lalapps_binj_pic", options.options_dict, version = git_version.version)
+process = ligolw_process.register_to_xmldoc(xmldoc, "lalburst_inj_pic", options.options_dict, version = git_version.version)
 
 
 #

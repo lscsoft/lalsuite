@@ -208,9 +208,21 @@ outputs:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - python
+        - pillow
         - {{ pin_subpackage('python-lalburst', exact=True) }}
     test:
       commands:
+        - lalburst_cluster --help
+        - lalburst_coinc --help
+        - lalburst_cut --help
+        - lalburst_injfind --help
+        - lalburst_inj_pic --help
+        - lalburst_plot_tisi --help
+        - lalburst_power_calc_likelihood --help
+        - lalburst_power_final --help
+        - lalburst_power_meas_likelihood --help
+        - lalburst_power_plot_binj --help
+        - lalburst_power_plot_binjtf --help
         - lalburst_version --verbose
       imports:
         - lalburst

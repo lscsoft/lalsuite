@@ -25,9 +25,6 @@
 #
 
 
-from __future__ import print_function
-
-
 from optparse import OptionParser
 import sys
 import sqlite3
@@ -63,8 +60,8 @@ def parse_command_line():
 	)
 	parser.add_option("-c", "--comment", metavar = "text", help = "Set comment string in process table (default = None).")
 	parser.add_option("-p", "--program", metavar = "name", help = "Set the name of the program that generated the events as it appears in the process table (required).  The program name is used to extract live time information from the search summary tables in the input files.")
-	parser.add_option("--likelihood-data", metavar = "filename", default = [], action = "append", help = "Read likelihood data from this XML file.  (use lalapps_burca_tailor to generate these files)")
-	parser.add_option("--likelihood-data-cache", metavar = "filename", help = "Read likelihood data from the XML files described by this LAL cache.  For each trigger file, the live time of the trigger file is established and all likelihood data files whose segments intersect the trigger file's live time are loaded and merged into a single distribution data set.  (use lalapps_burca_tailor to generate these files)")
+	parser.add_option("--likelihood-data", metavar = "filename", default = [], action = "append", help = "Read likelihood data from this XML file.  (use lalburst_power_meas_likelihood to generate these files)")
+	parser.add_option("--likelihood-data-cache", metavar = "filename", help = "Read likelihood data from the XML files described by this LAL cache.  For each trigger file, the live time of the trigger file is established and all likelihood data files whose segments intersect the trigger file's live time are loaded and merged into a single distribution data set.  (use lalburst_power_meas_likelihood to generate these files)")
 	parser.add_option("--tmp-space", metavar = "path", help = "Path to a directory suitable for use as a work area while manipulating the database file.  The database file will be worked on in this directory, and then moved to the final location when complete.  This option is intended to improve performance when running in a networked environment, where there might be a local disk with higher bandwidth than is available to the filesystem on which the final output will reside.")
 	parser.add_option("-v", "--verbose", action = "store_true", help = "Be verbose.")
 	options, filenames = parser.parse_args()
@@ -115,7 +112,7 @@ options, filenames = parse_command_line()
 
 
 def load_likelihood_data(filenames, verbose = False):
-	distributions, ignored = burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, u"lalapps_burca_tailor", verbose = verbose)
+	distributions, ignored = burca_tailor.EPGalacticCoreCoincParamsDistributions.from_filenames(filenames, "lalburst_power_meas_likelihood", verbose = verbose)
 	distributions.finish()
 	return distributions
 

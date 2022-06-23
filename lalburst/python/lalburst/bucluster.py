@@ -49,7 +49,7 @@ from .git_version import version as __version__
 #
 
 
-process_program_name = "lalapps_bucluster"
+process_program_name = "lalburst_cluster"
 
 
 def append_process(xmldoc, cluster_algorithm, comment):

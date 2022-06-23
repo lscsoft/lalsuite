@@ -24,7 +24,6 @@
 # =============================================================================
 #
 
-from __future__ import print_function
 
 import math
 from optparse import OptionParser
@@ -65,7 +64,7 @@ def parse_command_line():
 	parser = OptionParser(
 		version = "Name: %%prog\n%s" % git_version.verbose_msg,
 		usage = "%prog [options] [filename ...]",
-		description = "%prog analyzes a collection of SQLite3 database files containing lalapps_burca outputs, and measures probability distributions for a variety of parameters computed from the coincidences therein.  The distributions are written to a likelihood data file in XML format, which can be used by lalapps_burca for the excesspower2 algorithm in which a second pass assigns likelihoods to each coincidence.  The command line arguments are used to provide shell patterns for the files from which to obtain injection and backgroun coincidences.  If file names are given on the command line following the arguments, then likelihood data is loaded from those files and added to the output."
+		description = "%prog analyzes a collection of SQLite3 database files containing lalburst_coinc outputs, and measures probability distributions for a variety of parameters computed from the coincidences therein.  The distributions are written to a likelihood data file in XML format, which can be used by lalburst_coinc for the excesspower2 algorithm in which a second pass assigns likelihoods to each coincidence.  The command line arguments are used to provide shell patterns for the files from which to obtain injection and backgroun coincidences.  If file names are given on the command line following the arguments, then likelihood data is loaded from those files and added to the output."
 	)
 	parser.add_option("--add-from", metavar = "filename", default = [], action = "append", help = "Also add likelihood data from this XML file.")
 	parser.add_option("--add-from-cache", metavar = "filename", help = "Also add likelihood data from all XML files listed in this LAL cache.")
@@ -122,7 +121,7 @@ segs = segments.segmentlistdict()
 
 
 if options.add_from:
-	c, s = distributions.from_filenames(options.add_from, u"lalapps_burca_tailor", verbose = options.verbose)
+	c, s = distributions.from_filenames(options.add_from, "lalburst_power_meas_likelihood", verbose = options.verbose)
 	distributions += c
 	segs |= s
 	del c

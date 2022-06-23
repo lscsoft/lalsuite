@@ -25,9 +25,6 @@
 #
 
 
-from __future__ import print_function
-
-
 import math
 from matplotlib import cm, colors, collections
 import numpy
@@ -75,6 +72,7 @@ options, filenames = parse_command_line()
 #
 # =============================================================================
 #
+
 
 def time_freq_plot(database, instrument, sim):
 	fig = SnglBurstUtils.figure.Figure()

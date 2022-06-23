@@ -136,13 +136,7 @@ test:
     - framecpp_sample
     # run --help
     - lalapps_binj --help
-    - lalapps_binj_pic --help
-    - lalapps_binjfind --help
     - lalapps_blindinj --help
-    - lalapps_bucluster --help
-    - lalapps_bucut --help
-    - lalapps_burca --help
-    - lalapps_burca_tailor --help
     - lalapps_cache Z-ilwd_test_frame-600000000-1.gwf
     - lalapps_cafe --help
     - lalapps_calcexpsnr --help
@@ -187,14 +181,9 @@ test:
     #- lalapps_knope_result_page --help  <- needs scotchcorner
     - lalapps_make_nr_hdf_catalog --help
     - lalapps_path2cache <<< Z-ilwd_test_frame-600000000-1.gwf
-    - lalapps_plot_tisi --help
     - lalapps_power --help
-    - lalapps_power_calc_likelihood --help
-    - lalapps_power_final --help
     - lalapps_power_likelihood_pipe --help
     - lalapps_power_pipe --help
-    - lalapps_power_plot_binj --help
-    - lalapps_power_plot_binjtf --help
     - lalapps_psinject -h
     - lalapps_pulsar_frequency_evolution --help
     - lalapps_pulsar_parameter_estimation_nested --help

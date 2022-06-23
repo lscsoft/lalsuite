@@ -30,9 +30,6 @@ Command-line interface to burst injection identification code.
 """
 
 
-from __future__ import print_function
-
-
 from optparse import OptionParser
 import sys
 

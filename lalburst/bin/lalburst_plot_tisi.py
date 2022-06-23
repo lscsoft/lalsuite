@@ -25,9 +25,6 @@
 #
 
 
-from __future__ import print_function
-
-
 from optparse import OptionParser
 from matplotlib import figure
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas

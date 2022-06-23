@@ -61,9 +61,6 @@
 #
 
 
-from __future__ import print_function
-
-
 import bisect
 try:
 	from fpconst import PosInf, NegInf
@@ -322,15 +319,15 @@ WHERE
 	if verbose:
 		print("writing scatter plot data ...", file=sys.stderr)
 
-	f = file("lalapps_excesspowerfinal_background_scatter.dat", "w")
+	f = file("lalburst_power_final_background_scatter.dat", "w")
 	for a, l, c in background:
 		print("%.16g %.16g" % (l, c), file=f)
 
-	f = file("lalapps_excesspowerfinal_zero_lag_scatter.dat", "w")
+	f = file("lalburst_power_final_zero_lag_scatter.dat", "w")
 	for a, l, c in zero_lag:
 		print("%.16g %.16g" % (l, c), file=f)
 
-	f = file("lalapps_excesspowerfinal_injections_scatter.dat", "w")
+	f = file("lalburst_power_final_injections_scatter.dat", "w")
 	for a, l, c in injections:
 		print("%.16g %.16g" % (l, c), file=f)
 
@@ -377,9 +374,9 @@ def plot_confidence_likelihood_scatter_data(slope, verbose = False):
 			print("plotting ...", file=sys.stderr)
 		return axes.plot(X, Y, colour)
 
-	set1 = read_and_plot("lalapps_excesspowerfinal_injections_scatter.dat", "r+", verbose = verbose)
-	set2 = read_and_plot("lalapps_excesspowerfinal_background_scatter.dat", "k+", verbose = verbose)
-	#set3 = read_and_plot("lalapps_excesspowerfinal_zero_lag_scatter.dat", "b+", verbose = verbose)
+	set1 = read_and_plot("lalburst_power_final_injections_scatter.dat", "r+", verbose = verbose)
+	set2 = read_and_plot("lalburst_power_final_background_scatter.dat", "k+", verbose = verbose)
+	#set3 = read_and_plot("lalburst_power_final_zero_lag_scatter.dat", "b+", verbose = verbose)
 
 	#axes.legend((set1, set2, set3), (r"Injections", r"Background (time slides)", r"Zero lag"), loc = "lower right")
 	axes.legend((set1, set2), (r"Injections", r"Background (time slides)"), loc = "lower right")
@@ -413,8 +410,8 @@ def plot_confidence_likelihood_scatter_data(slope, verbose = False):
 	#
 
 	if verbose:
-		print("writing 'lalapps_excesspowerfinal_scatter.png' ...", file=sys.stderr)
-	fig.savefig("lalapps_excesspowerfinal_scatter.png")
+		print("writing 'lalburst_power_final_scatter.png' ...", file=sys.stderr)
+	fig.savefig("lalburst_power_final_scatter.png")
 
 	#
 	# Done
@@ -728,10 +725,10 @@ def plot_rate_vs_threshold(data):
 
 	# done rate vs. threshold plot
 
-	#print >>sys.stderr, "writing lalapps_excesspowerfinal_rate_vs_threshold.pdf ..."
-	#fig.savefig("lalapps_excesspowerfinal_rate_vs_threshold.pdf")
-	print("writing lalapps_excesspowerfinal_rate_vs_threshold.png ...", file=sys.stderr)
-	fig.savefig("lalapps_excesspowerfinal_rate_vs_threshold.png")
+	#print >>sys.stderr, "writing lalburst_power_final_rate_vs_threshold.pdf ..."
+	#fig.savefig("lalburst_power_final_rate_vs_threshold.pdf")
+	print("writing lalburst_power_final_rate_vs_threshold.png ...", file=sys.stderr)
+	fig.savefig("lalburst_power_final_rate_vs_threshold.png")
 
 	# start rate vs. threshold residual plot
 
@@ -754,10 +751,10 @@ def plot_rate_vs_threshold(data):
 
 	# done rate vs. threshold residual plot
 
-	#print >>sys.stderr, "writing lalapps_excesspowerfinal_rate_vs_threshold_residual.pdf ..."
-	#fig.savefig("lalapps_excesspowerfinal_rate_vs_threshold_residual.pdf")
-	print("writing lalapps_excesspowerfinal_rate_vs_threshold_residual.png ...", file=sys.stderr)
-	fig.savefig("lalapps_excesspowerfinal_rate_vs_threshold_residual.png")
+	#print >>sys.stderr, "writing lalburst_power_final_rate_vs_threshold_residual.pdf ..."
+	#fig.savefig("lalburst_power_final_rate_vs_threshold_residual.pdf")
+	print("writing lalburst_power_final_rate_vs_threshold_residual.png ...", file=sys.stderr)
+	fig.savefig("lalburst_power_final_rate_vs_threshold_residual.png")
 
 	# done
 
@@ -937,9 +934,9 @@ FROM
 				d[x, 0:y] = d[x, y]
 				f[x, 0:y] = f[x, y]
 
-		diagnostic_plot(self.efficiency.numerator.array, self.efficiency.denominator.bins, r"Efficiency Numerator (Before Averaging)", self.amplitude_lbl, "lalapps_excesspowerfinal_efficiency_numerator_before.png")
-		diagnostic_plot(self.efficiency.denominator.array, self.efficiency.denominator.bins, r"Efficiency Denominator (Before Averaging)", self.amplitude_lbl, "lalapps_excesspowerfinal_efficiency_denominator_before.png")
-		diagnostic_plot(self.found_density.array, self.efficiency.denominator.bins, r"Injections Lost / Unit of Threshold (Before Averaging)", self.amplitude_lbl, "lalapps_excesspowerfinal_found_density_before.png")
+		diagnostic_plot(self.efficiency.numerator.array, self.efficiency.denominator.bins, r"Efficiency Numerator (Before Averaging)", self.amplitude_lbl, "lalburst_power_final_efficiency_numerator_before.png")
+		diagnostic_plot(self.efficiency.denominator.array, self.efficiency.denominator.bins, r"Efficiency Denominator (Before Averaging)", self.amplitude_lbl, "lalburst_power_final_efficiency_denominator_before.png")
+		diagnostic_plot(self.found_density.array, self.efficiency.denominator.bins, r"Injections Lost / Unit of Threshold (Before Averaging)", self.amplitude_lbl, "lalburst_power_final_found_density_before.png")
 
 		# smooth the efficiency bins and the found injection
 		# density bins using the same 2D window.
@@ -949,9 +946,9 @@ FROM
 		rate.filter_binned_ratios(self.efficiency, window)
 		rate.filter_array(self.found_density.array, window)
 
-		diagnostic_plot(self.efficiency.numerator.array, self.efficiency.denominator.bins, r"Efficiency Numerator (After Averaging)", self.amplitude_lbl, "lalapps_excesspowerfinal_efficiency_numerator_after.png")
-		diagnostic_plot(self.efficiency.denominator.array, self.efficiency.denominator.bins, r"Efficiency Denominator (After Averaging)", self.amplitude_lbl, "lalapps_excesspowerfinal_efficiency_denominator_after.png")
-		diagnostic_plot(self.found_density.array, self.efficiency.denominator.bins, r"Injections Lost / Unit of Threshold (After Averaging)", self.amplitude_lbl, "lalapps_excesspowerfinal_found_density_after.png")
+		diagnostic_plot(self.efficiency.numerator.array, self.efficiency.denominator.bins, r"Efficiency Numerator (After Averaging)", self.amplitude_lbl, "lalburst_power_final_efficiency_numerator_after.png")
+		diagnostic_plot(self.efficiency.denominator.array, self.efficiency.denominator.bins, r"Efficiency Denominator (After Averaging)", self.amplitude_lbl, "lalburst_power_final_efficiency_denominator_after.png")
+		diagnostic_plot(self.found_density.array, self.efficiency.denominator.bins, r"Injections Lost / Unit of Threshold (After Averaging)", self.amplitude_lbl, "lalburst_power_final_found_density_after.png")
 
 		# compute the uncertainties in the efficiency and its
 		# derivative by assuming these to be the binomial counting
@@ -1039,10 +1036,10 @@ def plot_efficiency_data(efficiency_data):
 
 	# done
 
-	#print >>sys.stderr, "writing lalapps_excesspowerfinal_efficiency.pdf ..."
-	#fig.savefig("lalapps_excesspowerfinal_efficiency.pdf")
-	print("writing lalapps_excesspowerfinal_efficiency.png ...", file=sys.stderr)
-	fig.savefig("lalapps_excesspowerfinal_efficiency.png")
+	#print >>sys.stderr, "writing lalburst_power_final_efficiency.pdf ..."
+	#fig.savefig("lalburst_power_final_efficiency.pdf")
+	print("writing lalburst_power_final_efficiency.png ...", file=sys.stderr)
+	fig.savefig("lalburst_power_final_efficiency.png")
 
 
 #
@@ -1133,13 +1130,13 @@ def rate_upper_limit(efficiency_data, mu_0primed, zero_lag_live_time, p):
 	xi = 1.0 / (1.0 - e_over_eprimed * abs(mu_0primed * zero_lag_live_time))
 	xi = numpy.where(numpy.isnan(e_over_eprimed), 1.0, xi)
 
-	diagnostic_plot(xi, rate_data.rate_array.bins, r"Background Correction Factor $\xi$", rate_data.amplitude_lbl, "lalapps_excesspowerfinal_xi.png")
+	diagnostic_plot(xi, rate_data.rate_array.bins, r"Background Correction Factor $\xi$", rate_data.amplitude_lbl, "lalburst_power_final_xi.png")
 
 	# compute the rate upper limit
 
 	for xy in iterutils.MultiIter(*map(xrange, rate_data.rate_array.array.shape)):
 		rate_data.rate_array.array[xy] = mu_p_epsilon(xi[xy], p)
-	diagnostic_plot(rate_data.rate_array.array, rate_data.rate_array.bins, r"$\mu_{%.2g} \epsilon$" % p, rate_data.amplitude_lbl, "lalapps_excesspowerfinal_mu_p_epsilon.png")
+	diagnostic_plot(rate_data.rate_array.array, rate_data.rate_array.bins, r"$\mu_{%.2g} \epsilon$" % p, rate_data.amplitude_lbl, "lalburst_power_final_mu_p_epsilon.png")
 	rate_data.rate_array.array /= zero_lag_live_time * e
 
 	# done
@@ -1172,10 +1169,10 @@ def plot_rate_upper_limit(rate_data):
 
 	axes.set_title(r"%g\%% Confidence Rate Upper Limit ($\log_{10} R_{%g} / 1\,\mathrm{Hz}$)" % (100 * rate_data.confidence, rate_data.confidence))
 
-	#print >>sys.stderr, "writing lalapps_excesspowerfinal_upper_limit_1.pdf ..."
-	#fig.savefig("lalapps_excesspowerfinal_upper_limit_1.pdf")
-	print("writing lalapps_excesspowerfinal_upper_limit_1.png ...", file=sys.stderr)
-	fig.savefig("lalapps_excesspowerfinal_upper_limit_1.png")
+	#print >>sys.stderr, "writing lalburst_power_final_upper_limit_1.pdf ..."
+	#fig.savefig("lalburst_power_final_upper_limit_1.pdf")
+	print("writing lalburst_power_final_upper_limit_1.png ...", file=sys.stderr)
+	fig.savefig("lalburst_power_final_upper_limit_1.png")
 
 	#
 	# rate vs. energy curve at a sample frequency
@@ -1195,10 +1192,10 @@ def plot_rate_upper_limit(rate_data):
 
 	axes.set_title(r"%g\%% Confidence Rate Upper Limit at $110\,\mathrm{Hz}$" % (100 * rate_data.confidence))
 
-	#print >>sys.stderr, "writing lalapps_excesspowerfinal_upper_limit_2.pdf ..."
-	#fig.savefig("lalapps_excesspowerfinal_upper_limit_2.pdf")
-	print("writing lalapps_excesspowerfinal_upper_limit_2.png ...", file=sys.stderr)
-	fig.savefig("lalapps_excesspowerfinal_upper_limit_2.png")
+	#print >>sys.stderr, "writing lalburst_power_final_upper_limit_2.pdf ..."
+	#fig.savefig("lalburst_power_final_upper_limit_2.pdf")
+	print("writing lalburst_power_final_upper_limit_2.png ...", file=sys.stderr)
+	fig.savefig("lalburst_power_final_upper_limit_2.png")
 
 
 #
