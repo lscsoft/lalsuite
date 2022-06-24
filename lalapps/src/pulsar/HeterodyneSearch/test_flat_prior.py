@@ -96,7 +96,7 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
       import matplotlib as mpl
       mpl.use('Agg')
       import matplotlib.pyplot as pl
-    except:
+    except ModuleNotFoundError:
       print("matplotlib unavailable; skipping plot")
       exit_code = 1
       break

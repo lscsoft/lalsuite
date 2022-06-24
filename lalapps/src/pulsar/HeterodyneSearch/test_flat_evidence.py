@@ -26,7 +26,7 @@ try:
   mpl.use('Agg')
   import matplotlib.pyplot as pl
   doplot = True
-except:
+except ModuleNotFoundError:
   print("matplotlib unavailable; skipping plot")
   doplot = False
 
