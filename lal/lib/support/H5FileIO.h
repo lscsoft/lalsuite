@@ -289,6 +289,7 @@ int XLALH5FileWriteREAL4Vector(LALH5File *file, const char *name, REAL4Vector *v
 int XLALH5FileWriteREAL8Vector(LALH5File *file, const char *name, REAL8Vector *vector);
 int XLALH5FileWriteCOMPLEX8Vector(LALH5File *file, const char *name, COMPLEX8Vector *vector);
 int XLALH5FileWriteCOMPLEX16Vector(LALH5File *file, const char *name, COMPLEX16Vector *vector);
+int XLALH5FileWriteStringVector(LALH5File *file, const char *name, LALStringVector *vector);
 
 int XLALH5FileWriteINT2Array(LALH5File *file, const char *name, INT2Array *array);
 int XLALH5FileWriteINT4Array(LALH5File *file, const char *name, INT4Array *array);
@@ -328,6 +329,7 @@ REAL4Vector *XLALH5FileReadREAL4Vector(LALH5File *file, const char *name);
 REAL8Vector *XLALH5FileReadREAL8Vector(LALH5File *file, const char *name);
 COMPLEX8Vector *XLALH5FileReadCOMPLEX8Vector(LALH5File *file, const char *name);
 COMPLEX16Vector *XLALH5FileReadCOMPLEX16Vector(LALH5File *file, const char *name);
+LALStringVector *XLALH5FileReadStringVector(LALH5File *file, const char *name);
 
 INT2Array *XLALH5FileReadINT2Array(LALH5File *file, const char *name);
 INT4Array *XLALH5FileReadINT4Array(LALH5File *file, const char *name);

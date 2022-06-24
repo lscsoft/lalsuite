@@ -9,6 +9,7 @@ int main(void) { return 77; /* don't do any testing */ }
 #include <string.h>
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/StringVector.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
@@ -44,6 +45,35 @@ static float generate_float_data(void)
 static float complex generate_complex_data(void)
 {
 	return rand() / (RAND_MAX + 1.0) + I * rand() / (RAND_MAX + 1.0);
+}
+
+static char * generate_string_data(void)
+{
+	const char *s;
+	switch (rand() % 18) {
+	case 0: s = "lorem"; break;
+	case 1: s = "ipsum"; break;
+	case 2: s = "dolor"; break;
+	case 3: s = "sit"; break;
+	case 4: s = "amet"; break;
+	case 5: s = "consectetur"; break;
+	case 6: s = "adipiscing"; break;
+	case 7: s = "elit"; break;
+	case 8: s = "sed"; break;
+	case 9: s = "eiusmod"; break;
+	case 10: s = "tempor"; break;
+	case 11: s = "incididunt"; break;
+	case 12: s = "ut"; break;
+	case 13: s = "labore"; break;
+	case 14: s = "et"; break;
+	case 15: s = "dolore"; break;
+	case 16: s = "magna"; break;
+	case 17: s = "aliqua"; break;
+	default:
+		fprintf(stderr, "Cannot get here!");
+		exit(1);
+	}
+	return XLALStringDuplicate(s);
 }
 
 #define DEFINE_WRITE_FUNCTION(type) \
@@ -129,6 +159,26 @@ static float complex generate_complex_data(void)
 			return 1; \
 		return memcmp(v1->data, v2->data, v1->length * sizeof(*v1->data)); \
 	}
+
+static LALStringVector * create_StringVector(void)
+{
+	LALStringVector *v;
+	size_t i;
+	v = XLALCreateEmptyStringVector(NPTS);
+	for (i = 0; i < NPTS; ++i)
+		v->data[i] = generate_string_data();
+	return v;
+}
+
+static int compare_StringVector(LALStringVector *v1, LALStringVector *v2)
+{
+	if (v1->length != v2->length)
+		return 1;
+	for (size_t i = 0; i < v1->length; ++i)
+		if (strcmp(v1->data[i], v2->data[i]) != 0)
+			return 1;
+	return 0;
+}
 
 /* ARRAY ROUTINES */
 
@@ -248,6 +298,11 @@ DEFINE_VECTOR_FUNCTIONS(COMPLEX8Vector)
 DEFINE_VECTOR_FUNCTIONS(COMPLEX16Vector)
 #undef GENERATE_DATA
 
+#define StringVector LALStringVector
+DEFINE_WRITE_FUNCTION(StringVector)
+DEFINE_READ_FUNCTION(StringVector)
+DEFINE_TEST_FUNCTION(StringVector)
+
 #define GENERATE_DATA generate_int_data
 DEFINE_ARRAY_FUNCTIONS(INT2Array)
 DEFINE_ARRAY_FUNCTIONS(INT4Array)
@@ -306,6 +361,7 @@ int main(void)
 	test_REAL8Vector();
 	test_COMPLEX8Vector();
 	test_COMPLEX16Vector();
+	test_StringVector();
 
 	test_INT2Array();
 	test_INT4Array();
