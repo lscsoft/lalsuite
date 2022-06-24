@@ -133,6 +133,7 @@ void XLALH5DatasetFree(LALH5Dataset *dset);
 
 LALH5Dataset * XLALH5DatasetAlloc(LALH5File *file, const char *name, LALTYPECODE dtype, UINT4Vector *dimLength);
 LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File *file, const char *name, LALTYPECODE dtype, size_t length);
+LALH5Dataset * XLALH5DatasetAllocStringData(LALH5File *file, const char *name, size_t length);
 int XLALH5DatasetWrite(LALH5Dataset *dset, void *data);
 
 /* these routines are deprecated */
@@ -149,6 +150,7 @@ int XLALH5FileQueryStringAttributeValue(char *value, size_t size, LALH5File *fil
 LIGOTimeGPS * XLALH5FileQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, LALH5File *file, const char *key);
 
 LALH5Dataset * XLALH5DatasetRead(LALH5File *file, const char *name);
+int XLALH5DatasetCheckStringData(LALH5Dataset *dset);
 size_t XLALH5DatasetQueryNPoints(LALH5Dataset *dset);
 size_t XLALH5DatasetQueryNBytes(LALH5Dataset *dset);
 LALTYPECODE XLALH5DatasetQueryType(LALH5Dataset *dset);
@@ -236,6 +238,7 @@ LALH5Dataset *XLALH5DatasetAllocREAL4Vector(LALH5File *file, const char *name, R
 LALH5Dataset *XLALH5DatasetAllocREAL8Vector(LALH5File *file, const char *name, REAL8Vector *vector);
 LALH5Dataset *XLALH5DatasetAllocCOMPLEX8Vector(LALH5File *file, const char *name, COMPLEX8Vector *vector);
 LALH5Dataset *XLALH5DatasetAllocCOMPLEX16Vector(LALH5File *file, const char *name, COMPLEX16Vector *vector);
+LALH5Dataset *XLALH5DatasetAllocStringVector(LALH5File *file, const char *name, LALStringVector *vector);
 
 LALH5Dataset *XLALH5DatasetAllocINT2Array(LALH5File *file, const char *name, INT2Array *array);
 LALH5Dataset *XLALH5DatasetAllocINT4Array(LALH5File *file, const char *name, INT4Array *array);
@@ -259,6 +262,8 @@ REAL4Vector *XLALH5DatasetReadREAL4Vector(LALH5Dataset *dset);
 REAL8Vector *XLALH5DatasetReadREAL8Vector(LALH5Dataset *dset);
 COMPLEX8Vector *XLALH5DatasetReadCOMPLEX8Vector(LALH5Dataset *dset);
 COMPLEX16Vector *XLALH5DatasetReadCOMPLEX16Vector(LALH5Dataset *dset);
+LALStringVector *XLALH5DatasetReadStringVector(LALH5Dataset *dset);
+
 
 INT2Array *XLALH5DatasetReadINT2Array(LALH5Dataset *dset);
 INT4Array *XLALH5DatasetReadINT4Array(LALH5Dataset *dset);
@@ -284,6 +289,7 @@ int XLALH5FileWriteREAL4Vector(LALH5File *file, const char *name, REAL4Vector *v
 int XLALH5FileWriteREAL8Vector(LALH5File *file, const char *name, REAL8Vector *vector);
 int XLALH5FileWriteCOMPLEX8Vector(LALH5File *file, const char *name, COMPLEX8Vector *vector);
 int XLALH5FileWriteCOMPLEX16Vector(LALH5File *file, const char *name, COMPLEX16Vector *vector);
+int XLALH5FileWriteStringVector(LALH5File *file, const char *name, LALStringVector *vector);
 
 int XLALH5FileWriteINT2Array(LALH5File *file, const char *name, INT2Array *array);
 int XLALH5FileWriteINT4Array(LALH5File *file, const char *name, INT4Array *array);
@@ -323,6 +329,7 @@ REAL4Vector *XLALH5FileReadREAL4Vector(LALH5File *file, const char *name);
 REAL8Vector *XLALH5FileReadREAL8Vector(LALH5File *file, const char *name);
 COMPLEX8Vector *XLALH5FileReadCOMPLEX8Vector(LALH5File *file, const char *name);
 COMPLEX16Vector *XLALH5FileReadCOMPLEX16Vector(LALH5File *file, const char *name);
+LALStringVector *XLALH5FileReadStringVector(LALH5File *file, const char *name);
 
 INT2Array *XLALH5FileReadINT2Array(LALH5File *file, const char *name);
 INT4Array *XLALH5FileReadINT4Array(LALH5File *file, const char *name);

@@ -137,6 +137,7 @@ test/tools/SkymapTest
 test/tools/TimeSeriesInterpTest
 test/tools/TimeSeriesTest
 test/tools/UnitsTest
+test/tools/ValueTest
 test/utilities/CSInterpolateTest
 test/utilities/DetInverseTest
 test/utilities/DirichletTest
