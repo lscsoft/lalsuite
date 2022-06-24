@@ -269,13 +269,25 @@ workflow:
     when: on_failure
 
 # helper template for jobs running on macOS
+.macos-job:
+  # if the build fails during the distcheck phase then subsequent builds will
+  # fail with permissions errors, reset the permissions
+  after_script:
+    - chmod -R +w $CI_PROJECT_DIR
+
 .macos:
+  extends:
+    - .macos-job
   tags:
     - macos_x86_64
 
 .macos-arm64:
+  extends:
+    - .macos-job
   tags:
     - macos_arm64
+
+
 
 # -- build templates ----------------------------
 
@@ -1241,6 +1253,7 @@ lalapps:koji:
 .wheel:macos:
   extends:
     - .wheel
+    - .macos-job
   script:
     # this build uses macports for the libraries and Python
     - . /opt/local/share/macports/setupenv.bash
@@ -1698,10 +1711,6 @@ platform:conda:macos-x86_64:
   extends:
     - .platform-test:conda
     - .macos
-  # if the build fails during the distcheck phase then subsequent builds will
-  # fail with permissions errors, reset the permissions
-  after_script:
-    - chmod -R +w $CI_PROJECT_DIR
   # https://git.ligo.org/lscsoft/lalsuite/-/issues/514
   allow_failure: true
 
@@ -1709,10 +1718,6 @@ platform:conda:macos-arm64:
   extends:
     - .platform-test:conda
     - .macos-arm64
-  # if the build fails during the distcheck phase then subsequent builds will
-  # fail with permissions errors, reset the permissions
-  after_script:
-    - chmod -R +w $CI_PROJECT_DIR
   # https://git.ligo.org/lscsoft/lalsuite/-/issues/514
   allow_failure: true
 
