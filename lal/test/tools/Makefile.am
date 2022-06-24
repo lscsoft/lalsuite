@@ -16,6 +16,7 @@ test_programs += SkymapTest
 test_programs += TimeSeriesInterpTest
 test_programs += TimeSeriesTest
 test_programs += UnitsTest
+test_programs += ValueTest
 #test_programs += CoherentEstimationTest
 
 # Add shell, Python, etc. test scripts to this variable

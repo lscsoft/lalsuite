@@ -41,7 +41,7 @@ LALValue * XLALValueRealloc(LALValue *value, size_t size)
 {
 	if (value == NULL)
 		return XLALValueAlloc(size);
-	value = XLALRealloc(value->data, sizeof(*value) + size);
+	value = XLALRealloc(value, sizeof(*value) + size);
 	if (!value)
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
 	value->size = size;

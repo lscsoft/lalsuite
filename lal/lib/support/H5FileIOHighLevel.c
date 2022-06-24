@@ -443,7 +443,7 @@
 
 /**
  * @fn LALStringVector *XLALH5FileReadStringVector(LALH5File *file, const char *name)
- * @copydoc XLALH5FileReadStringVector()
+ * @copydoc XLALH5FileReadCHARVector()
  */
 
 /** @} */
