@@ -12,7 +12,7 @@ import subprocess as sp
 import h5py
 
 # only run test on GitLab, unless LONGTESTS environment variable is defined
-if ('GITLAB_CI' in os.environ) and ('LONGTESTS' not in os.environ):
+if ('GITLAB_CI' not in os.environ) and ('LONGTESTS' not in os.environ):
   print('''
 Due to the longer runtime of this test, it is only run by default as part of
 the GitLab CI pipeline. You can force this test to run locally by running:
