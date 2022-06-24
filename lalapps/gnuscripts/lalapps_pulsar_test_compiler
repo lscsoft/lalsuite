@@ -188,6 +188,11 @@ case $status in
 esac
 echo
 
+# Move any junit XML files out of test directory
+for junitxml in `find ${testdir} -name 'junit-*.xml'`; do
+    mv -f "${junitxml}" "${LAL_TEST_BUILDDIR}"
+done
+
 # Remove test directory, unless NOCLEANUP is set
 if [ "X${NOCLEANUP}" = X ]; then
     echo "--- Removing directory ${testdir} ---"
