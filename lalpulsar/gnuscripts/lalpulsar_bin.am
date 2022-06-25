@@ -45,7 +45,7 @@ test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
 test_script_runner_args = --verbose '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
 EXTRA_DIST += $(test_script_runner)
 
-test_script_compiler = $(top_srcdir)/gnuscripts/lalapps_pulsar_test_compiler
+test_script_compiler = $(top_srcdir)/gnuscripts/lalpulsar_bin_test_compiler
 EXTRA_DIST += $(test_script_compiler)
 
 skip_tests =
