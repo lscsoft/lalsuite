@@ -1,3 +1,7 @@
+MOSTLYCLEANFILES =
+dist_bin_SCRIPTS =
+include $(top_srcdir)/gnuscripts/lalsuite_old_exec_name_stubs.am
+
 SUBDIRS = \
 	Tools \
 	SFTTools \
@@ -57,3 +61,68 @@ check-execs-are-tested:
 		exit 1; \
 	fi; \
 	printf "OK: all C executables under lalapps/src/pulsar/ have been tested\n"
+
+old_exec_name_stubs = \
+	lalapps_ComputeAntennaPattern \
+	lalapps_ComputeFstatBenchmark \
+	lalapps_ComputeFstatLatticeCount \
+	lalapps_ComputeFstatMCUpperLimit \
+	lalapps_ComputeFstatistic_v2 \
+	lalapps_ComputePSD \
+	lalapps_CopySFTs \
+	lalapps_DriveHoughMulti \
+	lalapps_FstatMetric_v2 \
+	lalapps_HierarchSearchGCT \
+	lalapps_HierarchicalSearch \
+	lalapps_MakeSFTDAG \
+	lalapps_MakeSFTs \
+	lalapps_Makefakedata_v4 \
+	lalapps_Makefakedata_v5 \
+	lalapps_PredictFstat \
+	lalapps_PrintDetectorState \
+	lalapps_SFTclean \
+	lalapps_SFTvalidate \
+	lalapps_Weave \
+	lalapps_WeaveCompare \
+	lalapps_WeaveConcat \
+	lalapps_WeaveSetup \
+	lalapps_WriteSFTsfromSFDBs \
+	lalapps_combine_crosscorr_toplists \
+	lalapps_compareFstats \
+	lalapps_compareSFTs \
+	lalapps_create_solar_system_ephemeris \
+	lalapps_create_solar_system_ephemeris_python \
+	lalapps_create_time_correction_ephemeris \
+	lalapps_dumpSFT \
+	lalapps_fits_header_getval \
+	lalapps_fits_header_list \
+	lalapps_fits_overview \
+	lalapps_fits_table_list \
+	lalapps_heterodyne_pulsar \
+	lalapps_knope \
+	lalapps_knope_automation_script \
+	lalapps_knope_collate_results \
+	lalapps_knope_result_page \
+	lalapps_pulsar_crosscorr_v2 \
+	lalapps_pulsar_frequency_evolution \
+	lalapps_pulsar_parameter_estimation_nested \
+	lalapps_run_pulsar_crosscorr_v2 \
+	lalapps_spec_avg \
+	lalapps_spec_avg_long \
+	lalapps_spec_coherence \
+	lalapps_splitSFTs \
+	lalapps_ssbtodetector \
+	lalapps_synthesizeBstatMC \
+	lalapps_synthesizeLVStats \
+	lalapps_synthesizeTransientStats \
+	$(END_OF_LINE)
+
+new_exec_name_regex = ' \
+	s|^lalapps_pulsar_crosscorr_v2$$|lalpulsar_crosscorr_v2|; \
+	s|^lalapps_pulsar_frequency_evolution$$|lalpulsar_frequency_evolution|; \
+	s|^lalapps_heterodyne_pulsar$$|lalpulsar_heterodyne|; \
+	s|^lalapps_pulsar_parameter_estimation_nested$$|lalpulsar_parameter_estimation_nested|; \
+	s|^lalapps_run_pulsar_crosscorr_v2$$|lalpulsar_run_crosscorr_v2|; \
+	s|^lalapps_|lalpulsar_|'
+
+EXTRA_DIST = old_exec_name_stubs.dox

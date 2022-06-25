@@ -155,6 +155,7 @@ src/power/lalapps_power_plot_burstrate
 src/power/lalapps_power_plot_detresponse
 src/power/lalapps_simburst_to_frame
 src/power/lalapps_xml_plotlalseries
+src/pulsar/lalapps_*
 src/pulsar/CreateEphemeris/*.testdir
 src/pulsar/CreateEphemeris/lalpulsar_create_solar_system_ephemeris
 src/pulsar/CreateEphemeris/lalpulsar_create_solar_system_ephemeris_python

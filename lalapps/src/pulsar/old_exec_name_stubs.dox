@@ -1,0 +1,321 @@
+/**
+ * \defgroup lalapps_pulsar_exec_stubs Pulsar Applications
+ *
+ * All pulsar applications have been moved to the LALPulsar library, and renamed
+ * with a \c lalpulsar_... prefix. For backward compatibility LALApps still
+ * provides executable stubs with the former \c lalapps_... names, which call
+ * the appropriate \c lalpulsar_... applications, as listed below. The old \c
+ * lalapps_... names will eventually be removed in a future release of LALApps.
+ */
+
+/**
+ * \page lalapps_combine_crosscorr_toplists lalapps_combine_crosscorr_toplists
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_combine_crosscorr_toplists has been renamed to \c lalpulsar_combine_crosscorr_toplists
+ */
+
+/**
+ * \page lalapps_compareFstats lalapps_compareFstats
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_compareFstats has been renamed to \c lalpulsar_compareFstats
+ */
+
+/**
+ * \page lalapps_compareSFTs lalapps_compareSFTs
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_compareSFTs has been renamed to \c lalpulsar_compareSFTs
+ */
+
+/**
+ * \page lalapps_ComputeAntennaPattern lalapps_ComputeAntennaPattern
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_ComputeAntennaPattern has been renamed to \c lalpulsar_ComputeAntennaPattern
+ */
+
+/**
+ * \page lalapps_ComputeFstatBenchmark lalapps_ComputeFstatBenchmark
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_ComputeFstatBenchmark has been renamed to \c lalpulsar_ComputeFstatBenchmark
+ */
+
+/**
+ * \page lalapps_ComputeFstatistic_v2 lalapps_ComputeFstatistic_v2
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_ComputeFstatistic_v2 has been renamed to \c lalpulsar_ComputeFstatistic_v2
+ */
+
+/**
+ * \page lalapps_ComputeFstatLatticeCount lalapps_ComputeFstatLatticeCount
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_ComputeFstatLatticeCount has been renamed to \c lalpulsar_ComputeFstatLatticeCount
+ */
+
+/**
+ * \page lalapps_ComputeFstatMCUpperLimit lalapps_ComputeFstatMCUpperLimit
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_ComputeFstatMCUpperLimit has been renamed to \c lalpulsar_ComputeFstatMCUpperLimit
+ */
+
+/**
+ * \page lalapps_ComputePSD lalapps_ComputePSD
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_ComputePSD has been renamed to \c lalpulsar_ComputePSD
+ */
+
+/**
+ * \page lalapps_CopySFTs lalapps_CopySFTs
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_CopySFTs has been renamed to \c lalpulsar_CopySFTs
+ */
+
+/**
+ * \page lalapps_create_solar_system_ephemeris lalapps_create_solar_system_ephemeris
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_create_solar_system_ephemeris has been renamed to \c lalpulsar_create_solar_system_ephemeris
+ */
+
+/**
+ * \page lalapps_create_solar_system_ephemeris_python lalapps_create_solar_system_ephemeris_python
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_create_solar_system_ephemeris_python has been renamed to \c lalpulsar_create_solar_system_ephemeris_python
+ */
+
+/**
+ * \page lalapps_create_time_correction_ephemeris lalapps_create_time_correction_ephemeris
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_create_time_correction_ephemeris has been renamed to \c lalpulsar_create_time_correction_ephemeris
+ */
+
+/**
+ * \page lalapps_pulsar_crosscorr_v2 lalapps_pulsar_crosscorr_v2
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_pulsar_crosscorr_v2 has been renamed to \c lalpulsar_crosscorr_v2
+ */
+
+/**
+ * \page lalapps_DriveHoughMulti lalapps_DriveHoughMulti
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_DriveHoughMulti has been renamed to \c lalpulsar_DriveHoughMulti
+ */
+
+/**
+ * \page lalapps_dumpSFT lalapps_dumpSFT
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_dumpSFT has been renamed to \c lalpulsar_dumpSFT
+ */
+
+/**
+ * \page lalapps_fits_header_getval lalapps_fits_header_getval
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_fits_header_getval has been renamed to \c lalpulsar_fits_header_getval
+ */
+
+/**
+ * \page lalapps_fits_header_list lalapps_fits_header_list
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_fits_header_list has been renamed to \c lalpulsar_fits_header_list
+ */
+
+/**
+ * \page lalapps_fits_overview lalapps_fits_overview
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_fits_overview has been renamed to \c lalpulsar_fits_overview
+ */
+
+/**
+ * \page lalapps_fits_table_list lalapps_fits_table_list
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_fits_table_list has been renamed to \c lalpulsar_fits_table_list
+ */
+
+/**
+ * \page lalapps_pulsar_frequency_evolution lalapps_pulsar_frequency_evolution
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_pulsar_frequency_evolution has been renamed to \c lalpulsar_frequency_evolution
+ */
+
+/**
+ * \page lalapps_FstatMetric_v2 lalapps_FstatMetric_v2
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_FstatMetric_v2 has been renamed to \c lalpulsar_FstatMetric_v2
+ */
+
+/**
+ * \page lalapps_heterodyne_pulsar lalapps_heterodyne_pulsar
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_heterodyne_pulsar has been renamed to \c lalpulsar_heterodyne
+ */
+
+/**
+ * \page lalapps_HierarchicalSearch lalapps_HierarchicalSearch
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_HierarchicalSearch has been renamed to \c lalpulsar_HierarchicalSearch
+ */
+
+/**
+ * \page lalapps_HierarchSearchGCT lalapps_HierarchSearchGCT
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_HierarchSearchGCT has been renamed to \c lalpulsar_HierarchSearchGCT
+ */
+
+/**
+ * \page lalapps_knope lalapps_knope
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_knope has been renamed to \c lalpulsar_knope
+ */
+
+/**
+ * \page lalapps_knope_automation_script lalapps_knope_automation_script
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_knope_automation_script has been renamed to \c lalpulsar_knope_automation_script
+ */
+
+/**
+ * \page lalapps_knope_collate_results lalapps_knope_collate_results
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_knope_collate_results has been renamed to \c lalpulsar_knope_collate_results
+ */
+
+/**
+ * \page lalapps_knope_result_page lalapps_knope_result_page
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_knope_result_page has been renamed to \c lalpulsar_knope_result_page
+ */
+
+/**
+ * \page lalapps_Makefakedata_v4 lalapps_Makefakedata_v4
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_Makefakedata_v4 has been renamed to \c lalpulsar_Makefakedata_v4
+ */
+
+/**
+ * \page lalapps_Makefakedata_v5 lalapps_Makefakedata_v5
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_Makefakedata_v5 has been renamed to \c lalpulsar_Makefakedata_v5
+ */
+
+/**
+ * \page lalapps_MakeSFTDAG lalapps_MakeSFTDAG
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_MakeSFTDAG has been renamed to \c lalpulsar_MakeSFTDAG
+ */
+
+/**
+ * \page lalapps_MakeSFTs lalapps_MakeSFTs
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_MakeSFTs has been renamed to \c lalpulsar_MakeSFTs
+ */
+
+/**
+ * \page lalapps_pulsar_parameter_estimation_nested lalapps_pulsar_parameter_estimation_nested
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_pulsar_parameter_estimation_nested has been renamed to \c lalpulsar_parameter_estimation_nested
+ */
+
+/**
+ * \page lalapps_PredictFstat lalapps_PredictFstat
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_PredictFstat has been renamed to \c lalpulsar_PredictFstat
+ */
+
+/**
+ * \page lalapps_PrintDetectorState lalapps_PrintDetectorState
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_PrintDetectorState has been renamed to \c lalpulsar_PrintDetectorState
+ */
+
+/**
+ * \page lalapps_run_pulsar_crosscorr_v2 lalapps_run_pulsar_crosscorr_v2
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_run_pulsar_crosscorr_v2 has been renamed to \c lalpulsar_run_crosscorr_v2
+ */
+
+/**
+ * \page lalapps_SFTclean lalapps_SFTclean
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_SFTclean has been renamed to \c lalpulsar_SFTclean
+ */
+
+/**
+ * \page lalapps_SFTvalidate lalapps_SFTvalidate
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_SFTvalidate has been renamed to \c lalpulsar_SFTvalidate
+ */
+
+/**
+ * \page lalapps_spec_avg lalapps_spec_avg
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_spec_avg has been renamed to \c lalpulsar_spec_avg
+ */
+
+/**
+ * \page lalapps_spec_avg_long lalapps_spec_avg_long
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_spec_avg_long has been renamed to \c lalpulsar_spec_avg_long
+ */
+
+/**
+ * \page lalapps_spec_coherence lalapps_spec_coherence
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_spec_coherence has been renamed to \c lalpulsar_spec_coherence
+ */
+
+/**
+ * \page lalapps_splitSFTs lalapps_splitSFTs
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_splitSFTs has been renamed to \c lalpulsar_splitSFTs
+ */
+
+/**
+ * \page lalapps_ssbtodetector lalapps_ssbtodetector
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_ssbtodetector has been renamed to \c lalpulsar_ssbtodetector
+ */
+
+/**
+ * \page lalapps_synthesizeBstatMC lalapps_synthesizeBstatMC
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_synthesizeBstatMC has been renamed to \c lalpulsar_synthesizeBstatMC
+ */
+
+/**
+ * \page lalapps_synthesizeLVStats lalapps_synthesizeLVStats
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_synthesizeLVStats has been renamed to \c lalpulsar_synthesizeLVStats
+ */
+
+/**
+ * \page lalapps_synthesizeTransientStats lalapps_synthesizeTransientStats
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_synthesizeTransientStats has been renamed to \c lalpulsar_synthesizeTransientStats
+ */
+
+/**
+ * \page lalapps_Weave lalapps_Weave
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_Weave has been renamed to \c lalpulsar_Weave
+ */
+
+/**
+ * \page lalapps_WeaveCompare lalapps_WeaveCompare
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_WeaveCompare has been renamed to \c lalpulsar_WeaveCompare
+ */
+
+/**
+ * \page lalapps_WeaveConcat lalapps_WeaveConcat
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_WeaveConcat has been renamed to \c lalpulsar_WeaveConcat
+ */
+
+/**
+ * \page lalapps_WeaveSetup lalapps_WeaveSetup
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_WeaveSetup has been renamed to \c lalpulsar_WeaveSetup
+ */
+
+/**
+ * \page lalapps_WriteSFTsfromSFDBs lalapps_WriteSFTsfromSFDBs
+ * \ingroup lalapps_pulsar_exec_stubs
+ * \c lalapps_WriteSFTsfromSFDBs has been renamed to \c lalpulsar_WriteSFTsfromSFDBs
+ */
