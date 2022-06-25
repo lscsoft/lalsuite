@@ -118,9 +118,6 @@ test:
     - lalapps
     - lalapps.cosmicstring
     - lalapps.inspiral
-    - lalapps.knope_utils
-    - lalapps.pulsarhtmlutils
-    - lalapps.pulsarpputils
   requires:
     - ldas-tools-framecpp
   commands:

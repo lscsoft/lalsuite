@@ -196,6 +196,9 @@ outputs:
         - lalpulsar.NstarTools
         - lalpulsar.PulsarParametersWrapper
         - lalpulsar.simulateCW
+        - lalpulsar.knope_utils
+        - lalpulsar.pulsarhtmlutils
+        - lalpulsar.pulsarpputils
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/

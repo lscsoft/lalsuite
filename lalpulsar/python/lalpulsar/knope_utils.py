@@ -29,7 +29,7 @@ import pickle
 from scipy import optimize
 from collections import OrderedDict
 from six import string_types
-from lalapps import pulsarpputils as pppu
+from lalpulsar import pulsarpputils as pppu
 
 # set some specific error codes and messages
 KNOPE_ERROR_GENERAL = -1

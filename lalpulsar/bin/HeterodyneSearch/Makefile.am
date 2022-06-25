@@ -92,12 +92,6 @@ pybin_scripts = \
 	lalpulsar_knope_result_page \
 	$(END_OF_LINE)
 
-pkgpython_PYTHON = \
-	knope_utils.py \
-	pulsarhtmlutils.py \
-	pulsarpputils.py \
-	$(END_OF_LINE)
-
 endif
 
 # Add shell test scripts to this variable

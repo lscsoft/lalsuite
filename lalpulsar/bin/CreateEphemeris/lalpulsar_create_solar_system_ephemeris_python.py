@@ -32,7 +32,7 @@ except ImportError:
     raise Exception("Could not import functions from astropy")
 
 try:
-    from lalapps import git_version
+    from lalpulsar import git_version
     __author__ = git_version.builder # person who built the code and therefore created the ephemeris!
     __date__ = git_version.date
     __id__ = git_version.id          # git tag of build

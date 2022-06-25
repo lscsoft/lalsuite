@@ -620,7 +620,7 @@ def plot_posterior_hist(poslist, param, ifos,
                         parfile=None, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  from lalapps.pulsarhtmlutils import paramlatexdict
+  from lalpulsar.pulsarhtmlutils import paramlatexdict
 
   # create list of figures
   myfigs = []
@@ -781,7 +781,7 @@ def upper_limit_greedy(pos, upperlimit=0.95, nbins=100):
 def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  from lalapps.pulsarhtmlutils import paramlatexdict
+  from lalpulsar.pulsarhtmlutils import paramlatexdict
 
   try:
     from matplotlib import gridspec
@@ -956,7 +956,7 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
                           mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  from lalapps.pulsarhtmlutils import paramlatexdict
+  from lalpulsar.pulsarhtmlutils import paramlatexdict
 
   # read in 2D h0 vs cos(iota) binary prior file
   xbins, ybins, histarr = read_hist_from_file(histfile)
@@ -1092,7 +1092,7 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
                           parfile=None, overplot=False, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  from lalapps.pulsarhtmlutils import paramlatexdict
+  from lalpulsar.pulsarhtmlutils import paramlatexdict
 
   if len(params) != 2:
     print("Require 2 parameters", file=sys.stderr)
@@ -1509,7 +1509,7 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
 def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, mplparams=False):
   import matplotlib
   from matplotlib import pyplot as plt
-  from lalapps.pulsarhtmlutils import paramlatexdict
+  from lalpulsar.pulsarhtmlutils import paramlatexdict
 
   if not mplparams:
     mplparams = { \

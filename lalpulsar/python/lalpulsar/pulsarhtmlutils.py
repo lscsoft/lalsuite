@@ -32,7 +32,7 @@ import numpy as np
 import math
 import six
 
-from lalapps.pulsarpputils import rad_to_dms, rad_to_hms
+from lalpulsar.pulsarpputils import rad_to_dms, rad_to_hms
 
 # some parameter names for special LaTeX treatment in figures
 paramlatexdict = {'H0': '$h_0$',

@@ -23,7 +23,7 @@ import stat
 import argparse
 from six.moves.configparser import RawConfigParser
 
-from lalapps import git_version
+from lalpulsar import git_version
 
 # try importing astropy
 try:

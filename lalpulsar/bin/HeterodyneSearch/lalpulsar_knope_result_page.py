@@ -43,8 +43,8 @@ import itertools
 import matplotlib
 matplotlib.use("Agg")
 
-from lalapps.pulsarpputils import *
-from lalapps.pulsarhtmlutils import *
+from lalpulsar.pulsarpputils import *
+from lalpulsar.pulsarhtmlutils import *
 from lalinference.bayespputils import Posterior, PosteriorOneDPDF
 from lalinference import git_version
 
