@@ -1,4 +1,4 @@
-# script to combine toplists from lalpulsar_pulsar_crosscorr_v2
+# script to combine toplists from lalpulsar_crosscorr_v2
 
 # Copyright (C) 2014 John Whelan
 

@@ -2,7 +2,7 @@
 
 grep . test.par
 
-lalpulsar_pulsar_frequency_evolution --detector L1 --par-file test.par --start 1100000000 --timespan 3600 --deltat 60 --output-dir .
+lalpulsar_frequency_evolution --detector L1 --par-file test.par --start 1100000000 --timespan 3600 --deltat 60 --output-dir .
 
 # compare to reference result
 

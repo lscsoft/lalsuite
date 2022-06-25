@@ -161,7 +161,7 @@ test:
     - lalapps_frview --help
     - lalapps_gen_timeslides --help
     - lalapps_gwf2xml --help
-    - lalpulsar_heterodyne_pulsar --help
+    - lalpulsar_heterodyne --help
     - lalapps_inspfrinj --help
     - lalapps_inspinj --f-lower 30 --waveform IMRPhenomD --gps-start-time 1000000000 --gps-end-time 1000000010 --d-distr volume --l-distr random --m-distr log --i-distr gaussian --incl-std 2 --min-distance 100000 --max-distance 120000 --min-mass1 10 --max-mass1 20 --min-mass2 10 --max-mass2 20 --disable-spin --time-step
       2
@@ -173,8 +173,8 @@ test:
     - lalapps_power_likelihood_pipe --help
     - lalapps_power_pipe --help
     - lalapps_psinject -h
-    - lalpulsar_pulsar_frequency_evolution --help
-    - lalpulsar_pulsar_parameter_estimation_nested --help
+    - lalpulsar_frequency_evolution --help
+    - lalpulsar_parameter_estimation_nested --help
     - lalapps_random_bank 10 20 10
     - lalapps_randombank --minimum-mass 10 --maximum-mass 20 --number-of-templates 10
     - lalapps_run_sqlite --help

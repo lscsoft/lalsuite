@@ -1,5 +1,5 @@
 """
-A script to run lalpulsar_pulsar_parameter_estimation_nested with increasing amplitude prior
+A script to run lalpulsar_parameter_estimation_nested with increasing amplitude prior
 ranges. For a range of h0 ranges the nested sampling will be run and the odds ratio extracted.
 It will calculate the value of the log(odds ratio)-log(prior) and check that it is roughly
 flat as the prior range increases.
@@ -32,9 +32,9 @@ except ModuleNotFoundError:
 
 exit_code = 0
 
-execu = './lalpulsar_pulsar_parameter_estimation_nested' # executable
+execu = './lalpulsar_parameter_estimation_nested' # executable
 
-# lalpulsar_pulsar_parameter_estimation_nested runs much slower with memory debugging
+# lalpulsar_parameter_estimation_nested runs much slower with memory debugging
 os.environ['LAL_DEBUG_LEVEL'] = os.environ['LAL_DEBUG_LEVEL'].replace('memdbg', '')
 print("Modified LAL_DEBUG_LEVEL='%s'" % os.environ['LAL_DEBUG_LEVEL'])
 

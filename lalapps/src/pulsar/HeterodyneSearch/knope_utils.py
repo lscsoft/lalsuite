@@ -928,16 +928,16 @@ class knopeDAG(pipeline.CondorDAG):
     """
 
     # get executable
-    self.pe_exec = self.get_config_option('pe', 'pe_exec', default='lalpulsar_pulsar_parameter_estimation_nested')
+    self.pe_exec = self.get_config_option('pe', 'pe_exec', default='lalpulsar_parameter_estimation_nested')
     if self.error_code != 0: return
 
     # check file exists and is executable
     if not os.path.isfile(self.pe_exec) or not os.access(self.pe_exec, os.X_OK):
       print("Warning... 'pe_exec' in '[pe]' does not exist or is not an executable. Try finding code in path.")
-      peexec = self.find_exec_file('lalpulsar_pulsar_parameter_estimation_nested')
+      peexec = self.find_exec_file('lalpulsar_parameter_estimation_nested')
 
       if peexec == None:
-        print("Error... could not find 'lalpulsar_pulsar_parameter_estimation_nested' in 'PATH'", file=sys.stderr)
+        print("Error... could not find 'lalpulsar_parameter_estimation_nested' in 'PATH'", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
@@ -2134,16 +2134,16 @@ class knopeDAG(pipeline.CondorDAG):
     """
 
     # get executable
-    self.heterodyne_exec = self.get_config_option('heterodyne', 'heterodyne_exec', default='lalpulsar_heterodyne_pulsar')
+    self.heterodyne_exec = self.get_config_option('heterodyne', 'heterodyne_exec', default='lalpulsar_heterodyne')
     if self.error_code != 0: return
 
     # check file exists and is executable
     if not os.path.isfile(self.heterodyne_exec) or not os.access(self.heterodyne_exec, os.X_OK):
       print("Warning... 'heterodyne_exec' in '[heterodyne]' does not exist or is not an executable. Try finding code in path.")
-      hetexec = self.find_exec_file('lalpulsar_heterodyne_pulsar')
+      hetexec = self.find_exec_file('lalpulsar_heterodyne')
 
       if hetexec == None:
-        print("Error... could not find 'lalpulsar_heterodyne_pulsar' in 'PATH'", file=sys.stderr)
+        print("Error... could not find 'lalpulsar_heterodyne' in 'PATH'", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
@@ -3415,7 +3415,7 @@ class knopeDAG(pipeline.CondorDAG):
 
 class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A lalpulsar_heterodyne_pulsar job to heterodyne the data.
+  A lalpulsar_heterodyne job to heterodyne the data.
   """
   def __init__(self, execu, univ='vanilla', accgroup=None, accuser=None, logdir=None, rundir=None, subprefix='', requestmemory=None):
     self.__executable = execu
@@ -3448,11 +3448,11 @@ class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
-  A heterodyneNode runs an instance of lalpulsar_heterodyne_pulsar in a condor DAG.
+  A heterodyneNode runs an instance of lalpulsar_heterodyne in a condor DAG.
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of lalpulsar_heterodyne_pulsar
+    job = A CondorDAGJob that can run an instance of lalpulsar_heterodyne
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)

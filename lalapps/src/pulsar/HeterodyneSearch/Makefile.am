@@ -16,11 +16,11 @@ noinst_PROGRAMS = \
 if LALFRAME
 
 bin_PROGRAMS += \
-	lalpulsar_heterodyne_pulsar \
+	lalpulsar_heterodyne \
 	$(END_OF_LINE)
 
 noinst_PROGRAMS += \
-	lalpulsar_create_pulsar_signal_frame \
+	lalpulsar_create_signal_frame \
 	$(END_OF_LINE)
 
 endif
@@ -28,8 +28,8 @@ endif
 if LALINFERENCE
 
 bin_PROGRAMS += \
-	lalpulsar_pulsar_frequency_evolution \
-	lalpulsar_pulsar_parameter_estimation_nested \
+	lalpulsar_frequency_evolution \
+	lalpulsar_parameter_estimation_nested \
 	$(END_OF_LINE)
 
 endif
@@ -38,7 +38,7 @@ lalpulsar_ssbtodetector_SOURCES = \
 	ssbtodetector.c \
 	$(END_OF_LINE)
 
-lalpulsar_pulsar_frequency_evolution_SOURCES = \
+lalpulsar_frequency_evolution_SOURCES = \
 	ppe_models.c \
 	ppe_models.h \
 	ppe_utils.c \
@@ -46,12 +46,12 @@ lalpulsar_pulsar_frequency_evolution_SOURCES = \
 	pulsar_frequency_evolution.c \
 	$(END_OF_LINE)
 
-lalpulsar_heterodyne_pulsar_SOURCES = \
+lalpulsar_heterodyne_SOURCES = \
 	heterodyne_pulsar.c \
 	heterodyne_pulsar.h \
 	$(END_OF_LINE)
 
-lalpulsar_pulsar_parameter_estimation_nested_SOURCES = \
+lalpulsar_parameter_estimation_nested_SOURCES = \
 	ppe_init.c \
 	ppe_init.h \
 	ppe_inject.c \
@@ -72,7 +72,7 @@ lalpulsar_pulsar_parameter_estimation_nested_SOURCES = \
 	pulsar_parameter_estimation_nested.h \
 	$(END_OF_LINE)
 
-lalpulsar_create_pulsar_signal_frame_SOURCES = \
+lalpulsar_create_signal_frame_SOURCES = \
 	create_pulsar_signal_frame.c \
 	$(END_OF_LINE)
 
@@ -99,9 +99,9 @@ pkgpython_PYTHON = \
 endif
 
 # Add shell test scripts to this variable
-test_scripts += test_pulsar_frequency_evolution.sh
+test_scripts += test_frequency_evolution.sh
 if HAVE_PYTHON
-test_scripts += test_heterodyne_pulsar.sh
+test_scripts += test_heterodyne.sh
 test_scripts += test_ssbtodetector.py
 test_scripts += test_flat_prior.py
 test_scripts += test_flat_evidence_default.py
@@ -116,12 +116,12 @@ test_extra_files += make_frame_cache.py
 
 # These tests require LALFrame
 if !LALFRAME
-skip_tests += test_heterodyne_pulsar.sh
+skip_tests += test_heterodyne.sh
 endif
 
 # These tests require LALInference
 if !LALINFERENCE
-skip_tests += test_pulsar_frequency_evolution.sh
+skip_tests += test_frequency_evolution.sh
 skip_tests += test_flat_prior.py
 skip_tests += test_flat_evidence_default.py
 skip_tests += test_flat_evidence_walk.py

@@ -1,4 +1,4 @@
-CODENAME=lalpulsar_heterodyne_pulsar
+CODENAME=lalpulsar_heterodyne
 
 FRAMEFILE=H-CW_Injection-875206560-120.gwf
 DATASTART=875206560
@@ -150,7 +150,7 @@ $CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PF
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-  echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+  echo lalpulsar_heterodyne exited with error $ret_code!
   exit 2
 fi
 
@@ -170,7 +170,7 @@ $CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PF
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-        echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+        echo lalpulsar_heterodyne exited with error $ret_code!
         exit 2
 fi
 
@@ -189,7 +189,7 @@ $CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PF
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-        echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+        echo lalpulsar_heterodyne exited with error $ret_code!
         exit 2
 fi
 
@@ -206,7 +206,7 @@ $CODENAME --heterodyne-flag 0 --ifo $DETECTOR --pulsar $PSRNAME --param-file $PF
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-        echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+        echo lalpulsar_heterodyne exited with error $ret_code!
         exit 2
 fi
 
@@ -231,7 +231,7 @@ $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file 
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-        echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+        echo lalpulsar_heterodyne exited with error $ret_code!
         exit 2
 fi
 
@@ -251,7 +251,7 @@ $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file 
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-        echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+        echo lalpulsar_heterodyne exited with error $ret_code!
         exit 2
 fi
 
@@ -271,7 +271,7 @@ $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file 
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-        echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+        echo lalpulsar_heterodyne exited with error $ret_code!
         exit 2
 fi
 
@@ -291,7 +291,7 @@ $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file 
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-        echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+        echo lalpulsar_heterodyne exited with error $ret_code!
         exit 2
 fi
 
@@ -311,7 +311,7 @@ $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file 
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-        echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+        echo lalpulsar_heterodyne exited with error $ret_code!
         exit 2
 fi
 
@@ -332,7 +332,7 @@ $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file 
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-  echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+  echo lalpulsar_heterodyne exited with error $ret_code!
   exit 2
 fi
 
@@ -352,7 +352,7 @@ $CODENAME --ephem-earth-file $EEPHEM --ephem-sun-file $SEPHEM --ephem-time-file 
 # check the exit status of the code
 ret_code=$?
 if [ $ret_code != "0" ]; then
-        echo lalpulsar_heterodyne_pulsar exited with error $ret_code!
+        echo lalpulsar_heterodyne exited with error $ret_code!
         exit 2
 fi
 
