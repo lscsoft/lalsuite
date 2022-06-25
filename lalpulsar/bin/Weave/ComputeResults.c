@@ -26,7 +26,7 @@
 
 #include "ComputeResults.h"
 
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #endif
@@ -109,7 +109,7 @@ struct tagWeaveCohResults {
 ///
 /// @{
 
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
 int XLALVectorsMaxREAL4CUDA( REAL4 *max, const REAL4 **vec, const size_t nvec, const size_t nbin );
 int XLALVectorsAddREAL4CUDA( REAL4 *sum, const REAL4 **vec, const size_t nvec, const size_t nbin );
 #endif
@@ -214,7 +214,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   // Decide what F-statistic quantities to compute
   WeaveStatisticType requested_stats = ( recalc_stage ) ? statistics_params->completionloop_statistics[1] : statistics_params->mainloop_statistics;
   if ( requested_stats & WEAVE_STATISTIC_COH2F ) {
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
     const char *Fstat_method = XLALGetFstatInputMethodName( coh_input->Fstat_input );
     XLAL_CHECK_NULL( Fstat_method != NULL, XLAL_EFUNC );
     if ( XLALStringCaseCompare( Fstat_method, "ResampCUDA" ) == 0 ) {
@@ -476,7 +476,7 @@ int XLALWeaveCohResultsCompute(
     }
   }
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_CUDA ) {
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
     if ( ( *coh_res )->coh2F_CUDA.data == NULL || ( *coh_res )->coh2F_CUDA.length < ( *coh_res )->nfreqs ) {
       cudaFree( ( *coh_res )->coh2F_CUDA.data );
       XLAL_CHECK( cudaMalloc( (void **)&( *coh_res )->coh2F_CUDA.data, sizeof( ( *coh_res )->coh2F_CUDA.data[0] ) * ( *coh_res )->nfreqs ) == cudaSuccess, XLAL_ENOMEM );
@@ -515,7 +515,7 @@ int XLALWeaveCohResultsCompute(
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F ) {
     Fstat_res->twoF = ( *coh_res )->coh2F->data;
   }
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_CUDA ) {
     Fstat_res->twoF_CUDA = ( *coh_res )->coh2F_CUDA.data;
   }
@@ -538,7 +538,7 @@ int XLALWeaveCohResultsCompute(
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F ) {
     XLAL_CHECK( Fstat_res->twoF == ( *coh_res )->coh2F->data, XLAL_EFAILED );
   }
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
   if ( coh_input->Fstat_what_to_compute & FSTATQ_2F_CUDA ) {
     XLAL_CHECK( Fstat_res->twoF_CUDA == ( *coh_res )->coh2F_CUDA.data, XLAL_EFAILED );
   }
@@ -568,7 +568,7 @@ void XLALWeaveCohResultsDestroy(
 {
   if ( coh_res != NULL ) {
     XLALDestroyREAL4Vector( coh_res->coh2F );
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
     if ( coh_res->coh2F_CUDA.data != NULL ) {
       cudaFree( coh_res->coh2F_CUDA.data );
     }
@@ -643,7 +643,7 @@ int XLALWeaveSemiResultsInit(
     // If we need coh2F in "main loop": allocate vector
     if ( mainloop_stats & WEAVE_STATISTIC_COH2F ) {
       if ( statistics_params->coh_input[0]->Fstat_what_to_compute & FSTATQ_2F_CUDA ) {
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
         XLAL_CHECK( cudaMallocManaged( (void **)&( *semi_res )->coh2F_CUDA, nsegments * sizeof( *( *semi_res )->coh2F_CUDA ), cudaMemAttachGlobal ) == cudaSuccess, XLAL_ENOMEM );
         memset( ( *semi_res )->coh2F_CUDA, 0, nsegments * sizeof( *( *semi_res )->coh2F_CUDA ) );
 #else
@@ -681,7 +681,7 @@ int XLALWeaveSemiResultsInit(
   // If we need max2F in "main loop": Reallocate vector of max-over-segments of multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
     if ( ( *semi_res )->max2F == NULL || ( *semi_res )->max2F->length < ( *semi_res )->nfreqs ) {
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
       if ( ( *semi_res )->max2F == NULL ) {
         XLAL_CHECK( ( ( *semi_res )->max2F = XLALCalloc( 1, sizeof( *( *semi_res )->max2F ) ) ) != NULL, XLAL_ENOMEM );
       }
@@ -709,7 +709,7 @@ int XLALWeaveSemiResultsInit(
   // If we need sum2F in "main loop": Reallocate vector of sum of multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
     if ( ( *semi_res )->sum2F == NULL || ( *semi_res )->sum2F->length < ( *semi_res )->nfreqs ) {
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
       if ( ( *semi_res )->sum2F == NULL ) {
         XLAL_CHECK( ( ( *semi_res )->sum2F = XLALCalloc( 1, sizeof( *( *semi_res )->sum2F ) ) ) != NULL, XLAL_ENOMEM );
       }
@@ -850,7 +850,7 @@ int XLALWeaveSemiResultsComputeSegs(
   // Add to max-over-segments multi-detector F-statistics per frequency
   if ( mainloop_stats & WEAVE_STATISTIC_MAX2F ) {
     if ( semi_res->coh2F_CUDA != NULL ) {
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
 
       // CUDA implementation
       XLAL_CHECK( XLALVectorsMaxREAL4CUDA( semi_res->max2F->data, semi_res->coh2F_CUDA, nsegments, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -890,7 +890,7 @@ int XLALWeaveSemiResultsComputeSegs(
   // Add to summed multi-detector F-statistics per frequency, and increment number of additions thus far
   if ( mainloop_stats & WEAVE_STATISTIC_SUM2F ) {
     if ( semi_res->coh2F_CUDA != NULL ) {
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
 
       // CUDA implementation
       XLAL_CHECK( XLALVectorsAddREAL4CUDA( semi_res->sum2F->data, semi_res->coh2F_CUDA, nsegments, semi_res->nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1025,11 +1025,11 @@ void XLALWeaveSemiResultsDestroy(
   XLALFree( semi_res->coh_index );
   XLALFree( semi_res->coh_phys );
   XLALFree( semi_res->coh2F );
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
   cudaFree( semi_res->coh2F_CUDA );
 #endif
 
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
   if ( semi_res->max2F != NULL ) {
     if ( semi_res->max2F->data != NULL ) {
       cudaFree( semi_res->max2F->data );
@@ -1108,7 +1108,7 @@ int XLALWeaveSemiCoh2FExtract(
   XLAL_CHECK( freq_idx < semi_res->nfreqs, XLAL_EINVAL );
 
   if ( semi_res->coh2F_CUDA != NULL ) {
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
     for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
       if ( semi_res->coh2F_CUDA[j] != NULL ) {
         XLAL_CHECK_CUDA_CALL( cudaMemcpy( (void*)&coh2F[j], &semi_res->coh2F_CUDA[j][freq_idx], sizeof(coh2F[j]), cudaMemcpyDeviceToHost ) );

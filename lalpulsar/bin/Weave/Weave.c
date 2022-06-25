@@ -32,7 +32,7 @@
 #include "OutputResults.h"
 #include "SearchTiming.h"
 
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
 #include <cuda.h>
 #include <cuda_runtime_api.h>
 #endif
@@ -1094,7 +1094,7 @@ int main( int argc, char *argv[] )
 
       // Print memory usage
       LogPrintfVerbatim( LOG_NORMAL, ", peak memory %.1fMB", XLALGetPeakHeapUsageMB() );
-#ifdef LALAPPS_CUDA_ENABLED
+#ifdef LALPULSAR_CUDA_ENABLED
       if ( Fstat_opt_args.FstatMethod == FMETHOD_RESAMP_CUDA ) {
         size_t CUDA_free_mem_B = 0;
         size_t CUDA_tot_mem_B = 0;
