@@ -18,7 +18,7 @@
 
  * \author G.S. Davies
  * \brief
- * lalapps code to provide B_k given SFT data for given a set of pulsar
+ * code to provide B_k given SFT data for given a set of pulsar
  * parameters. The Spectral Interpolation code is intended as a black box replacement for the existing
  * heterodyne process.
  */

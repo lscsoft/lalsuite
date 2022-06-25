@@ -50,7 +50,7 @@
  *
  * ### Notes ###
  *
- * See the pulsar search code in lalapps for more
+ * See the pulsar search code in lalpulsar/bin for more
  * example uses of the functions tested by this code.
  *
  */

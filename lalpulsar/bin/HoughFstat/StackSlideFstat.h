@@ -114,12 +114,12 @@ void StackSlideVecF_HoughMode(LALStatus *status,
 
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
 /* Returns f(t) in outputPoint.fkdot[0] */
-void LALappsFindFreqFromMasterEquation(LALStatus *status, 
-                                       PulsarDopplerParams *outputPoint,
-                                       PulsarDopplerParams *inputPoint,
-                                       REAL8 *vel,
-                                       REAL8 deltaT,
-                                       UINT2 numSpindown);
+void FindFreqFromMasterEquation(LALStatus *status,
+                                PulsarDopplerParams *outputPoint,
+                                PulsarDopplerParams *inputPoint,
+                                REAL8 *vel,
+                                REAL8 deltaT,
+                                UINT2 numSpindown);
 
 /* Get StackSlide candidates using a fixed threshold */
 void GetStackSlideCandidates_threshold(LALStatus *status, 

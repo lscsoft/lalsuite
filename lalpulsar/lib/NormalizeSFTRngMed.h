@@ -32,7 +32,7 @@ extern "C" {
  * \date
  * \brief Header file for SFT normalization routines
  *
- * History:   Moved from LALAPPS 31/7/05
+ * History:   Moved from Hough code 31/7/05
  *
  */
 /** @{ */

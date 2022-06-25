@@ -26,7 +26,7 @@
  * \brief Normalizes SFTs based on their noise floor calculated using the running median
  *
  * History: Created by B. Krishnan Aug, 2004
- * Taken from SFTbin.c and PeakSelect.c from hough dir in lalapps
+ * Taken from SFTbin.c and PeakSelect.c from Hough code
  *
  * ### Description ###
  *

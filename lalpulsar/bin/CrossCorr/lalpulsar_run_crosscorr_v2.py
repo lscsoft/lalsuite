@@ -80,7 +80,7 @@ if cp.has_section('raw-program-arguments') and cp.has_option('raw-program-argume
     print("has --useShearedPeriod")
     program_args += ['--useShearedPeriod']
 
-# Variable delay to stagger start times of lalapps code
+# Variable delay to stagger start times of lalpulsar_crosscorr_v2 code
 if cp.has_section('program') and cp.has_option('program','delay_secs'):
     sleep(args.jobNum * cp.getfloat('program','delay_secs'))
 

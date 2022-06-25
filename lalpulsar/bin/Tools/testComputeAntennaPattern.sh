@@ -38,7 +38,7 @@ sftfile_L1="${sftfile_base}L1"
 outPFS="pfs_test.dat"
 
 ## if a previous run failed, have to delete some files to avoid appending
-## (the others are forcefully recreated by their respective lalapps)
+## (the others are forcefully recreated by their respective programs)
 if [ -f $outPDS ]; then
     rm $outPDS
 fi

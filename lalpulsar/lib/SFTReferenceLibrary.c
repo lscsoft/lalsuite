@@ -705,7 +705,7 @@ int unknownDetector (const char *detector) {
  * The exit status will be non-zero if any of the validity checks do not pass.
  * Error codes are defined in SFTReferenceLibrary.h .
  *
- * This has been extracted from lalapps_pulsar_SFTTools,
+ * This has been extracted from lalpulsar_SFTvalidate,
  * original author: Bruce Allen
  */
 int

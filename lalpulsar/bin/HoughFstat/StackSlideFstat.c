@@ -253,7 +253,7 @@ void StackSlideVecF(LALStatus *status,			/**< pointer to LALStatus structure */
                   /* COMPUTE f(t) using the master equation and find bin offset for  */
                   /* the frequency in the middle of the band, fmid.                  */
                   /* ASSUMES same offset for entire band, assumed to be very narrow. */
-                  TRY ( LALappsFindFreqFromMasterEquation(status->statusPtr,&outputPoint,&inputPoint,(vel->data + 3*k),timeDiffV->data[k],numSpindown), status);
+                  TRY ( FindFreqFromMasterEquation(status->statusPtr,&outputPoint,&inputPoint,(vel->data + 3*k),timeDiffV->data[k],numSpindown), status);
 
                   offset = floor( (outputPoint.fkdot[0] - fmid)*tEffSTK + 0.5 );
                   
@@ -686,12 +686,12 @@ void StackSlideVecF_HoughMode(LALStatus *status,		/**< pointer to LALStatus stru
 
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
 /* Returns f(t) in outputPoint.fkdot[0] */
-void LALappsFindFreqFromMasterEquation(LALStatus *status, 		  /**< pointer to LALStatus structure */
-                                       PulsarDopplerParams *outputPoint,  /**< outputs f(t) for output sky position and spindown values                       */
-                                       PulsarDopplerParams *inputPoint,   /**< input demodulation f0, sky position, and spindown values                       */
-                                       REAL8 *vel,                        /**< vx = vel[0], vy = vel[1], vz = vel[2] = ave detector velocity                  */
-                                       REAL8 deltaT,                      /**< time since the reference time                                                  */
-                                       UINT2 numSpindown)                 /**< Number of spindown values == high deriv. of include == 1 if just df/dt, etc... */
+void FindFreqFromMasterEquation(LALStatus *status, 		  /**< pointer to LALStatus structure */
+                                PulsarDopplerParams *outputPoint,  /**< outputs f(t) for output sky position and spindown values                       */
+                                PulsarDopplerParams *inputPoint,   /**< input demodulation f0, sky position, and spindown values                       */
+                                REAL8 *vel,                        /**< vx = vel[0], vy = vel[1], vz = vel[2] = ave detector velocity                  */
+                                REAL8 deltaT,                      /**< time since the reference time                                                  */
+                                UINT2 numSpindown)                 /**< Number of spindown values == high deriv. of include == 1 if just df/dt, etc... */
 {
                   UINT2 k;
                   REAL8 f0, F0, F0zeta, alpha, delta, cosAlpha, cosDelta, sinDelta;
@@ -769,7 +769,7 @@ void LALappsFindFreqFromMasterEquation(LALStatus *status, 		  /**< pointer to LA
 
                   DETATCHSTATUSPTR (status);
                   RETURN(status);
-} /* END LALappsFindFreqFromMasterEquation */
+} /* END FindFreqFromMasterEquation */
 
 /* Get StackSlide candidates using a fixed threshold */
 void GetStackSlideCandidates_threshold(LALStatus *status,			/**< pointer to LALStatus structure */

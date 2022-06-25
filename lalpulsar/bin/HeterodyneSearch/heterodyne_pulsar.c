@@ -22,7 +22,7 @@
  * \ingroup lalpulsar_bin_HeterodyneSearch
  * \author M. D. Pitkin
  * \brief
- * lalapps code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of pulsar
+ * code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of pulsar
  * parameters. The heterodyne is a 2 stage process with the code run for a coarse
  * heterodyne (not taking into account the SSB and BSB time delays, but using the other frequency
  * params) and then rerun for the fine heterodyne (taking into account SSB and BSB time delays). The
@@ -33,7 +33,7 @@
 
 /* Matt Pitkin - 07/02/06 ------------- heterodyne_pulsar.c */
 
-/* lalapps code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of pulsar
+/* code to perform a coarse/fine heterodyne on LIGO or GEO data given a set of pulsar
 parameters. The heterodyne is a 2 stage process with the code run for a coarse
 heterodyne (not taking into account the SSB and BSB time delays, but using the other frequency
 params) and then rerun for the fine heterodyne (taking into account SSB and BSB time delays). The

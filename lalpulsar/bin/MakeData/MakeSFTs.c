@@ -53,7 +53,7 @@
 /* 01/09/06 gam; Add make-tmp-file, -Z option; write SFT to .*.tmp file, then move to final file name. */
 /* 01/10/07 gam; Add -u --frame-struct-type option; specified the input data type in the frames (default ADC_REAL4) */
 /* 01/14/07 gam; Add -i --ifo option to specify the ifo independent of the channel name which can begin with H0, L0, or G0. */
-/* 06/26/07 gam; Write all command line arguments to commentField of version 2 SFTs, based on /lalapps/src/calibration/ComputeStrainDriver.c */
+/* 06/26/07 gam; Write all command line arguments to commentField of version 2 SFTs, based on lalapps/src/calibration/ComputeStrainDriver.c */
 /* 06/26/07 gam; Use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values, based on sftlib/SFTvalidate.c */
 /* 10/05/12 gam; Add to version 2 normalization one over the root mean square of the window function (defined here as winFncRMS) as per RedMine LALSuite CW Bug #560*/
 /* 24/07/14 eag; Change default SFT output to version 2 per RedMine LALSuite CW patch #1518 */
@@ -186,7 +186,7 @@ COMPLEX8Vector *fftDataSingle = NULL;
 XLALPSSParamSet XLALPSSParams;
 #endif
 
-CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentField, based on /lalapps/src/calibration/ComputeStrainDriver.c */
+CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentField, based on lalapps/src/calibration/ComputeStrainDriver.c */
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */

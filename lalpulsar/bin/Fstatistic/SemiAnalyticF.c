@@ -427,14 +427,12 @@ CheckUserInput (LALStatus *status,  struct CommandLineArgsTag *CLA )
   if( have_timestamps && (have_gpsStart||have_duration) )
     {
       fprintf(stderr,"\nBoth start time/duration and timestamps file specified - just need one !!\n");
-      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n\n");
       ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
     }   
   
   if( !have_timestamps && !have_gpsStart )
     {
       fprintf(stderr,"\nNeed to specify gpsStart time or a timestamps file !!\n");
-      fprintf(stderr,"Try ./lalapps_SemiAnalyticF -h \n\n");
       ABORT (status, SEMIANALYTIC_EINPUT, SEMIANALYTIC_MSGEINPUT);
     }
   

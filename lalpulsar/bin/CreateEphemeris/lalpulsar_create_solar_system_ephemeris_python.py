@@ -50,9 +50,9 @@ except ImportError:
 HEADER = """\
 # Build information for {exec}
 # Author: {author}
-# LALApps Commit ID: {gitid}
-# LALApps Commit Date: {gitdate}
-# LALApps Commit Branch: {gitbranch}
+# LALPulsar Commit ID: {gitid}
+# LALPulsar Commit Date: {gitdate}
+# LALPulsar Commit Branch: {gitbranch}
 #
 # Ephemeris creation command:-
 #       {command}

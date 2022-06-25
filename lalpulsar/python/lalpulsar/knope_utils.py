@@ -3648,7 +3648,7 @@ class splinterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 class splinterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
-  A splinterNode runs an instance of lalapps_Splinter in a condor DAG.
+  A splinterNode runs an instance of lalpulsar_Splinter in a condor DAG.
   """
   def __init__(self,job):
     """
