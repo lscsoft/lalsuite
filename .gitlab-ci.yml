@@ -1020,7 +1020,6 @@ lalapps:rpm:
     - lalburst:rpm
     - lalinspiral:rpm
     - lalinference:rpm
-    - lalpulsar:rpm
 
 lalapps:deb:
   extends:
@@ -1035,7 +1034,6 @@ lalapps:deb:
     - lalburst:deb
     - lalinspiral:deb
     - lalinference:deb
-    - lalpulsar:deb
 
 lalapps:conda:
   extends:
@@ -1050,7 +1048,6 @@ lalapps:conda:
     - lalburst:conda
     - lalinspiral:conda
     - lalinference:conda
-    - lalpulsar:conda
   variables:
     CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.____cpython"
 
@@ -1092,7 +1089,6 @@ lalapps:koji:
     - lalmetaio:koji
     - lalsimulation:koji
     - lalburst:koji
-    - lalpulsar:koji
     - lalinspiral:koji
     - lalinference:koji
 

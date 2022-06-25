@@ -216,6 +216,7 @@ outputs:
         - make
       host:
         - liblal >={{ lal_version }}
+        - lalinference >={{ lalinference_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - python
         # extras to assist the solver, but not actually used
