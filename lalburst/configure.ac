@@ -176,6 +176,9 @@ AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+# make sure local library module is in python path
+LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
+
 # check whether we have the packages to pass the snglcoinc_verify.py tests
 # see https://git.ligo.org/lscsoft/lalsuite/issues/208
 AM_COND_IF(
