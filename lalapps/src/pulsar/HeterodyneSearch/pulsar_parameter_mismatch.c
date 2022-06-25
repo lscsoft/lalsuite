@@ -1,6 +1,6 @@
 /**
  * \file
- * \ingroup lalapps_pulsar_HeterodyneSearch
+ * \ingroup lalpulsar_bin_HeterodyneSearch
  * \brief calculate the mismatch between two phase models from the standard definition of mismatch
  */
 

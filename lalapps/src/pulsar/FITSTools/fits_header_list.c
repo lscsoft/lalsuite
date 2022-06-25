@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_FITSTools
+ * \ingroup lalpulsar_bin_FITSTools
  */
 
 #include "config.h"

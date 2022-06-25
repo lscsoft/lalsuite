@@ -21,7 +21,7 @@
 /**
  * \author R. Prix
  * \file
- * \ingroup lalapps_pulsar_Fstatistic
+ * \ingroup lalpulsar_bin_Fstatistic
  * \brief
  * Generate N samples of various statistics (F-stat, B-stat,...) drawn from their
  * respective distributions, assuming Gaussian noise, and drawing signal params from

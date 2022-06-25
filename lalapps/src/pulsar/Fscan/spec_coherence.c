@@ -19,7 +19,7 @@
 
 /**
 * \file
-* \ingroup lalapps_pulsar_fscan
+* \ingroup lalpulsar_bin_fscan
 */
 
 #include <lal/SFTutils.h>

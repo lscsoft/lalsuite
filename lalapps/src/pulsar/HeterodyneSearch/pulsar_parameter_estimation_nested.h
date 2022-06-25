@@ -12,13 +12,13 @@
 */
 
 /**
- * \defgroup lalapps_pulsar_HeterodyneSearch Heterodyne Search Applications
- * \ingroup lalapps_pulsar_Apps
+ * \defgroup lalpulsar_bin_HeterodyneSearch Heterodyne Search Applications
+ * \ingroup lalpulsar_bin_Apps
  */
 
 /**
  * \file
- * \ingroup lalapps_pulsar_HeterodyneSearch
+ * \ingroup lalpulsar_bin_HeterodyneSearch
  * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Header file for the parameter estimation code for known pulsar

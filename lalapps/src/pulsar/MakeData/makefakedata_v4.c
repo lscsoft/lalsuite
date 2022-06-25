@@ -21,7 +21,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_Tools
+ * \ingroup lalpulsar_bin_Tools
  * \author R. Prix, M.A. Papa, X. Siemens, B. Allen, C. Messenger
  */
 

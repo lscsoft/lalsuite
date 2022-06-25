@@ -22,7 +22,7 @@
 
 ///
 /// \file
-/// \ingroup lalapps_pulsar_Weave
+/// \ingroup lalpulsar_bin_Weave
 /// \brief Module which handles the output results
 ///
 

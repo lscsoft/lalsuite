@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_HeterodyneSearch
+ * \ingroup lalpulsar_bin_HeterodyneSearch
  * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Pulsar likelihood and prior functions for use in parameter estimation

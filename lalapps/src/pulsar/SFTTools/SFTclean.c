@@ -20,7 +20,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_SFTTools
+ * \ingroup lalpulsar_bin_SFTTools
  * \author Badri Krishnan, Alicia Sintes Olives, David Keitel
  *
  * NOTE: The modern Advanced LIGO linefiles format is not supported.

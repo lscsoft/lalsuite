@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_SFTTools
+ * \ingroup lalpulsar_bin_SFTTools
  * \author R. Prix
  */
 

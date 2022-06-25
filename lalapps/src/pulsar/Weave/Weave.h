@@ -21,14 +21,14 @@
 #define _WEAVE_H
 
 ///
-/// \defgroup lalapps_pulsar_Weave Weave Search Application
-/// \ingroup lalapps_pulsar_Apps
+/// \defgroup lalpulsar_bin_Weave Weave Search Application
+/// \ingroup lalpulsar_bin_Apps
 /// \author Karl Wette
 ///
 
 ///
 /// \file
-/// \ingroup lalapps_pulsar_Weave
+/// \ingroup lalpulsar_bin_Weave
 ///
 
 #include <stdlib.h>

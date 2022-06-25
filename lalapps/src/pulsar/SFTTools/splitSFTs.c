@@ -20,7 +20,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_SFTTools
+ * \ingroup lalpulsar_bin_SFTTools
  * \author Bernd Machenschalk, Bruce Allen
  *
  * \brief This program reads in binary SFTs (v2) and writes out narrow-banded merged SFTs (v2).

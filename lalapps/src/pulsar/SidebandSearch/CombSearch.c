@@ -20,13 +20,13 @@
  */
 
 /**
- * \defgroup lalapps_pulsar_SidebandSearch Sideband Search Application
- * \ingroup lalapps_pulsar_Apps
+ * \defgroup lalpulsar_bin_SidebandSearch Sideband Search Application
+ * \ingroup lalpulsar_bin_Apps
  */
 
-/*
+/**
  * \file
- * \ingroup lalapps_pulsar_SidebandSearch
+ * \ingroup lalpulsar_bin_SidebandSearch
  * \author L.Sammut, C. Messenger
  * \brief
  * Calculates the C-statistic for a given parameter-space of GW signals from binary sources with known sky position.

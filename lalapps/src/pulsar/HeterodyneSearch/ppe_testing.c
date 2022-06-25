@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_HeterodyneSearch
+ * \ingroup lalpulsar_bin_HeterodyneSearch
  * \author Matthew Pitkin
  *
  * \brief Functions for use in testing the parameter estimation codes for

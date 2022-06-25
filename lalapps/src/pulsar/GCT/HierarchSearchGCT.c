@@ -24,14 +24,14 @@
 
 /*********************************************************************************/
 /**
- * \defgroup lalapps_pulsar_GCT GCT Search Application
- * \ingroup lalapps_pulsar_Apps
+ * \defgroup lalpulsar_bin_GCT GCT Search Application
+ * \ingroup lalpulsar_bin_Apps
  */
 
 /**
  * \author Holger Pletsch
  * \file
- * \ingroup lalapps_pulsar_GCT
+ * \ingroup lalpulsar_bin_GCT
  * \brief Hierarchical semicoherent CW search code based on F-Statistic,
  * exploiting global-correlation coordinates (Phys.Rev.Lett. 103, 181102, 2009)
  *

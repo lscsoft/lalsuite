@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_HeterodyneSearch
+ * \ingroup lalpulsar_bin_HeterodyneSearch
  * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Header file for the initialisation functions for the parameter estimation code for known pulsar

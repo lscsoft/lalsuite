@@ -24,14 +24,14 @@
 
 /*********************************************************************************/
 /**
- * \defgroup lalapps_pulsar_Fstatistic Fstatistic Search Applications
- * \ingroup lalapps_pulsar_Apps
+ * \defgroup lalpulsar_bin_Fstatistic Fstatistic Search Applications
+ * \ingroup lalpulsar_bin_Apps
  */
 
 /**
  * \author R. Prix, I. Gholami, Y. Ioth, Papa, X. Siemens, C. Messenger, K. Wette
  * \file
- * \ingroup lalapps_pulsar_Fstatistic
+ * \ingroup lalpulsar_bin_Fstatistic
  * \brief
  * Calculate the F-statistic for a given parameter-space of pulsar GW signals.
  * Implements the so-called "F-statistic" as introduced in \cite JKS98 .

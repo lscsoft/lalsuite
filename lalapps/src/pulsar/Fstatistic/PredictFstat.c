@@ -22,7 +22,7 @@
 /**
  * \author I. Gholami, R. Prix
  * \file
- * \ingroup lalapps_pulsar_Fstatistic
+ * \ingroup lalpulsar_bin_Fstatistic
  * \brief
  * Calculate the *expected* (multi-IFO) F-statistic for pulsar GW signals, without actually
  * performing a search. The "F-statistic" was introduced in \cite JKS98 and Cutler-Schutz 2005.

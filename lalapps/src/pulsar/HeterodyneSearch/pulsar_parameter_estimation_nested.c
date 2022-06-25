@@ -22,7 +22,7 @@ LALInference tools */
 
 /**
  * \file
- * \ingroup lalapps_pulsar_HeterodyneSearch
+ * \ingroup lalpulsar_bin_HeterodyneSearch
  * \author Matthew Pitkin, John Veitch, Max Isi, Colin Gill
  *
  * \brief Parameter estimation code for known pulsar searches using the nested sampling algorithm.

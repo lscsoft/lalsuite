@@ -20,7 +20,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_SFTTools
+ * \ingroup lalpulsar_bin_SFTTools
  * \author Badri Krishnan, Iraj Gholami, Reinhard Prix, Alicia Sintes, Karl Wette
  * \brief Compute power spectral densities
  */

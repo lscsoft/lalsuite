@@ -17,12 +17,10 @@
 *  MA  02110-1301  USA
 */
 
-/**
- * \file
- * \ingroup lalapps_pulsar_Tools
- * \author R. Prix
- * \brief
- * compare two binary strain files, written from hardware-injection
+/*
+ * Author: R. Prix
+ *
+ * Compare two binary strain files, written from hardware-injection
  * streams, return maximal relative error.
  *
  * Note: the strain file need to start with magic REAL4 1234.5,

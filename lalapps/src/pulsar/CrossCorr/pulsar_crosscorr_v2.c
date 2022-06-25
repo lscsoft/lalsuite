@@ -44,7 +44,7 @@
  * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang, G.D.Meadors, J.K.Wofford
  * \date 2013, 2014, 2015, 2016, 2017, 2020, 2021
  * \file
- * \ingroup lalapps_pulsar_CrossCorr
+ * \ingroup lalpulsar_bin_CrossCorr
  * \brief Perform CW cross-correlation search - version 2
  *
  * This carries out the cross-correlation search defined in

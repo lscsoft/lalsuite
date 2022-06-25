@@ -21,7 +21,7 @@
 /**
  * \author Bruce Allen
  * \file
- * \ingroup lalapps_pulsar_SFTTools
+ * \ingroup lalpulsar_bin_SFTTools
  * \brief
  * Verify that a set of SFT files is valid
  *

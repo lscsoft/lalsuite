@@ -19,7 +19,7 @@
 
 ///
 /// \file
-/// \ingroup lalapps_pulsar_Weave
+/// \ingroup lalpulsar_bin_Weave
 ///
 
 #include "CacheResults.h"

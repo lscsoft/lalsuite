@@ -19,7 +19,7 @@
 
 ///
 /// \file
-/// \ingroup lalapps_pulsar_Fstatistic
+/// \ingroup lalpulsar_bin_Fstatistic
 /// \author Karl Wette
 /// \brief Count number of templates in a given lattice tiling
 ///

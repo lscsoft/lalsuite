@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_HeterodyneSearch
+ * \ingroup lalpulsar_bin_HeterodyneSearch
  * \author Matt Pitkin
  *
  * \brief Program to convert an input MJD, or GPS, time at the solar system barycentre to a GPS time at a detector

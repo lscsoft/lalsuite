@@ -13,7 +13,7 @@
 
 /**
  * \file
- * \ingroup lalapps_pulsar_HeterodyneSearch
+ * \ingroup lalpulsar_bin_HeterodyneSearch
  * \author Matthew Pitkin, John Veitch, Colin Gill
  *
  * \brief Header file for the likelihood and prior functions used in parameter

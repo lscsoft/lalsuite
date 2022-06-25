@@ -17,11 +17,9 @@
  *  MA  02110-1301  USA
  */
 
-/**
- * \author Bruce Allen
- * \file
- * \ingroup lalapps_pulsar_SFTTools
- * \brief
+/*
+ * Author: Bruce Allen
+ *
  * Makes a test SFT (called SFT-test)
  *
  * You can do this on little-endian and big-endian machines to generate

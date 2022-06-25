@@ -19,14 +19,14 @@
  */
 
 /**
- * \defgroup lalapps_pulsar_HoughFstat Hough-on-Fstatistic Search Application
- * \ingroup lalapps_pulsar_Apps
+ * \defgroup lalpulsar_bin_HoughFstat Hough-on-Fstatistic Search Application
+ * \ingroup lalpulsar_bin_Apps
  */
 
 /**
  * \author Badri Krishnan, Alicia Sintes, Reinhard Prix, Bernd Machenschalk
  * \file
- * \ingroup lalapps_pulsar_HoughFstat
+ * \ingroup lalpulsar_bin_HoughFstat
  * \brief Program for calculating F-stat values for different time segments
  * and combining them semi-coherently using the Hough transform, and following
  * up candidates using a longer coherent integration.
