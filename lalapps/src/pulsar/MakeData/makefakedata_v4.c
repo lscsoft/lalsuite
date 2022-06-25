@@ -58,14 +58,12 @@
 #include <lal/Window.h>
 #include <lal/TranslateAngles.h>
 #include <lal/TranslateMJD.h>
+#include <lal/TransientCW_utils.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #ifdef HAVE_LIBLALFRAME
 #include <lal/LALFrameIO.h>
 #endif
-
-#include <lal/TransientCW_utils.h>
-
-#include <LALAppsVCSInfo.h>
 
 /***************************************************/
 #define SQ(x) ( (x) * (x) )
@@ -98,7 +96,7 @@ typedef struct
   COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
 
   transientWindow_t transientWindow;	/**< properties of transient-signal window */
-  CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
+  CHAR *VCSInfoString;          /**< Git version string */
 } ConfigVars_t;
 
 typedef enum
@@ -539,7 +537,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLAL_CHECK ( cfg != NULL, XLAL_EINVAL, "Invalid NULL input 'cfg'\n" );
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
 
-  cfg->VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");
+  cfg->VCSInfoString = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ");
   XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALVCSInfoString failed.\n" );
 
   BOOLEAN have_parfile = XLALUserVarWasSet (&uvar->parfile);
@@ -1181,7 +1179,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit )
     exit (1);
 

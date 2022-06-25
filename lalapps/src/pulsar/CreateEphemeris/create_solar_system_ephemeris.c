@@ -46,7 +46,7 @@
 #include <lal/LALConstants.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALVCSInfo.h>
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #define MERCURY 0
 #define VENUS 1
@@ -335,9 +335,9 @@ writing!\n");
 
     /* output header information on lines starting with a # comment */
     fprintf(fpe, "# Build information for %s\n", argv[0]);
-    fprintf(fpe, "# Author: %s\n", lalAppsVCSInfo.vcsAuthor);
-    fprintf(fpe, "# LALApps Commit ID: %s\n", lalAppsVCSInfo.vcsId);
-    fprintf(fpe, "# LALApps Commit Date: %s\n", lalAppsVCSInfo.vcsDate);
+    fprintf(fpe, "# Author: %s\n", lalPulsarVCSInfo.vcsAuthor);
+    fprintf(fpe, "# LALPulsar Commit ID: %s\n", lalPulsarVCSInfo.vcsId);
+    fprintf(fpe, "# LALPulsar Commit Date: %s\n", lalPulsarVCSInfo.vcsDate);
     fprintf(fpe, "#\n# Ephemeris creation command:-\n#\t");
     for( INT4 k=0; k<argc; k++ ) fprintf(fpe, "%s ", argv[k]);
     fprintf(fpe, "\n");

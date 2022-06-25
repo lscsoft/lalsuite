@@ -81,7 +81,7 @@ noinst_LTLIBRARIES =
 if CUDA
 
 noinst_LTLIBRARIES += libweave_computeresults_cuda.la
-LDADD += libweave_computeresults_cuda.la
+LDADD = libweave_computeresults_cuda.la
 libweave_computeresults_cuda_la_SOURCES = ComputeResults_CUDA.cu
 libweave_computeresults_cuda_la_LDFLAGS = -no-undefined
 MOSTLYCLEANFILES += ComputeResults_CUDA.cpp

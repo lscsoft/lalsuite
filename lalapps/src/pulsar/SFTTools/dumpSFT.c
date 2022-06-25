@@ -29,13 +29,12 @@
 /* ---------- includes ---------- */
 #include "config.h"
 
-#include <LALAppsVCSInfo.h>
-
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/LALString.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /*---------- DEFINES ----------*/
 #define MIN(x,y) ((x) < (y) ? (x) : (y))
@@ -198,7 +197,7 @@ XLALprintTimestamps ( const SFTCatalog *catalog, const UINT4 Nmax )
 
   // print fully descriptive commented header-log for reproducibility:
   char *version;
-  XLAL_CHECK_MAIN ( (version = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (version = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
   char *cmdline;
   XLAL_CHECK ( (cmdline = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );
 
@@ -238,7 +237,7 @@ XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }

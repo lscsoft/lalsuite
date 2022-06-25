@@ -51,8 +51,6 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 #include <dirent.h>
 #include <sys/stat.h>
 
-/*LAL Functions */
-#include <LALAppsVCSInfo.h>
 #include <lal/Units.h>
 #include <lal/LALFrStream.h>
 #include <lal/LALFrameIO.h>
@@ -72,6 +70,7 @@ example$ ./lalapps_sw_inj_frames -p /Users/erinmacdonald/lsc/analyses/test_par_f
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALString.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #define STRINGLENGTH 256              /* the length of general string */
 
@@ -699,7 +698,7 @@ InitUserVars ( UserInput_t *uvar,      /**< [out] UserInput structure to be fill
   XLALRegisterUvarMember( logDir, STRING, 'L', OPTIONAL, "Directory to put .log file");
 
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit(1);
   }

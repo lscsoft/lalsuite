@@ -59,6 +59,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
@@ -66,7 +67,8 @@
 #include <lal/LALRunningMedian.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/PHMD.h>
-#include "./SFTbin.h"
+
+#include "SFTbin.h"
 
 /*
  *   Protection against C++ name mangling

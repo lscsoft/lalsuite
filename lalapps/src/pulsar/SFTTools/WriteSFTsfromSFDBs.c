@@ -26,7 +26,7 @@
 
  #include <sys/stat.h>
  #include <sys/types.h>
- #include <LALAppsVCSInfo.h>
+ #include <lal/LALPulsarVCSInfo.h>
  #include <lal/UserInput.h>
  #include <lal/PulsarDataTypes.h>
  #include <lal/SFTfileIO.h>
@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 
     /* read cmdline & cfgfile  */
     BOOLEAN should_exit = 0;
-    XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( should_exit ) {
       exit (1);
     }
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
 
     /* generate comment string */
     size_t len;
-    char *VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");
+    char *VCSInfoString = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ");
     XLAL_CHECK ( VCSInfoString != NULL, XLAL_EFUNC, "XLALVCSInfoString failed.\n" );
     char *logstr;
     XLAL_CHECK ( (logstr = XLALUserVarGetLog ( UVAR_LOGFMT_CMDLINE )) != NULL, XLAL_EFUNC );

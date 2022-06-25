@@ -31,11 +31,8 @@
  */
 #include "config.h"
 
-/* System includes */
 #include <stdio.h>
 
-/* GSL includes */
-#include <lal/LALGSL.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 #include <gsl/gsl_blas.h>
@@ -50,8 +47,7 @@
 #include <gsl/gsl_monte_miser.h>
 #include <gsl/gsl_monte_vegas.h>
 
-
-/* LAL-includes */
+#include <lal/LALGSL.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/UserInput.h>
@@ -62,8 +58,7 @@
 #include <lal/LALHough.h>
 #include <lal/LogPrintf.h>
 #include <lal/FstatisticTools.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #define SQ(x) ((x)*(x))
 
@@ -201,12 +196,12 @@ int main(int argc,char *argv[])
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     return EXIT_FAILURE;
   }
 
-  XLAL_CHECK_MAIN ( (version_string = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (version_string = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
 
   /* ---------- Initialize code-setup ---------- */
   XLAL_CHECK_MAIN ( InitCode ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );

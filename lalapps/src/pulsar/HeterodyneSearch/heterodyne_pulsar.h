@@ -42,7 +42,6 @@
 #define localtime_r(timep, result) memcpy((result), localtime(timep), sizeof(struct tm))
 #endif
 
-/* LAL headers */
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/LALgetopt.h>
 #include <lal/LogPrintf.h>
@@ -69,9 +68,7 @@
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
 #include <lal/XLALError.h>
-
-/* lalapps header */
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #ifdef __cplusplus
 extern "C" {

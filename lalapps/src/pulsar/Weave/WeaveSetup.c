@@ -130,7 +130,7 @@ int main( int argc, char *argv[] )
   // Parse user input
   XLAL_CHECK_MAIN( xlalErrno == 0, XLAL_EFUNC, "A call to XLALRegisterUvarMember() failed" );
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input:
   //
@@ -293,7 +293,7 @@ int main( int argc, char *argv[] )
   LogPrintf( LOG_NORMAL, "Opening output file '%s' for writing ...\n", uvar->output_file );
   FITSFile *file = XLALFITSFileOpenWrite( uvar->output_file );
   XLAL_CHECK_MAIN( file != NULL, XLAL_EFUNC );
-  XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALFITSFileWriteVCSInfo( file, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALFITSFileWriteUVarCmdLine( file ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Write setup data

@@ -30,11 +30,12 @@
 
 #include "config.h"
 
+#include <glob.h>
+
 #include <lal/SFTClean.h>
 #include <lal/SFTutils.h>
 #include <lal/SFTReferenceLibrary.h>
-#include <glob.h> 
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /* Error codes and messages */
 
@@ -107,16 +108,16 @@ int main(int argc, char *argv[]){
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
 
   /* record VCS ID and command-line for the comment */
   char *cmdline = NULL;
   if ( uvar_addComment > CMT_OLD ) {
-    XLAL_CHECK_MAIN( ( cmdline = ( char * )XLALMalloc( strlen( lalAppsVCSIdentInfo.vcsId ) + strlen( lalAppsVCSIdentInfo.vcsStatus ) + 2 ) ) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
-    strcpy( cmdline, lalAppsVCSIdentInfo.vcsId );
-    strcat( cmdline, lalAppsVCSIdentInfo.vcsStatus );
+    XLAL_CHECK_MAIN( ( cmdline = ( char * )XLALMalloc( strlen( lalPulsarVCSIdentInfo.vcsId ) + strlen( lalPulsarVCSIdentInfo.vcsStatus ) + 2 ) ) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
+    strcpy( cmdline, lalPulsarVCSIdentInfo.vcsId );
+    strcat( cmdline, lalPulsarVCSIdentInfo.vcsStatus );
     strcat( cmdline, "\n" );
     for ( int arg = 0; arg < argc; arg++ ) {
         XLAL_CHECK_MAIN( ( cmdline = ( char * )XLALRealloc( ( void * )cmdline, strlen( cmdline ) + strlen( argv[arg] ) + 2 ) ) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );

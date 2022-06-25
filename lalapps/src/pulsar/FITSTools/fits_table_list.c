@@ -22,7 +22,8 @@
  * \ingroup lalapps_pulsar_FITSTools
  */
 
-#include <config.h>
+#include "config.h"
+
 #include <string.h>
 #include <stdio.h>
 #include <math.h>

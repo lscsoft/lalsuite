@@ -43,16 +43,15 @@
  */
 #include "config.h"
 
-/* System includes */
 #include <math.h>
 #include <stdio.h>
 #include <strings.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
 #include <gsl/gsl_math.h>
 
-/* LAL-includes */
 #include <lal/LALString.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
@@ -62,21 +61,16 @@
 #include <lal/SFTfileIO.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/FstatisticTools.h>
-
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LALHough.h>
-
 #include <lal/LogPrintf.h>
 #include <lal/DopplerFullScan.h>
 #include <lal/BinaryPulsarTiming.h>
-
 #include <lal/TransientCW_utils.h>
 #include <lal/LineRobustStats.h>
-
-#include <LALAppsVCSInfo.h>
-
 #include <lal/HeapToplist.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /*---------- DEFINES ----------*/
 
@@ -172,7 +166,7 @@ typedef struct {
   FstatQuantities Fstat_what;		    /**< Fstat quantities to compute */
   toplist_t* FstatToplist;		    /**< sorted 'toplist' of the NumCandidatesToKeep loudest candidates */
   scanlineWindow_t *scanlineWindow;         /**< moving window of candidates on scanline to find local maxima */
-  CHAR *VCSInfoString;                      /**< LAL + LALapps Git version string */
+  CHAR *VCSInfoString;                      /**< Git version string */
   CHAR *logstring;                          /**< log containing max-info on the whole search setup */
   transientWindowRange_t transientWindowRange; /**< search range parameters for transient window */
   BSGLSetup *BSGLsetup;                    /**< pre-computed setup for line-robust statistic */
@@ -387,11 +381,11 @@ int main(int argc,char *argv[])
   /* register all user-variable */
   XLAL_CHECK_MAIN ( initUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK_MAIN ( (GV.VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (GV.VCSInfoString = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }

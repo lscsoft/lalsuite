@@ -40,8 +40,7 @@
 #include <lal/ComputeFstat.h>
 #include <lal/LALString.h>
 #include <lal/StringVector.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /* ----- compile switches ----- */
 
@@ -115,7 +114,7 @@ main(int argc, char *argv[])
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit(1);
   }
@@ -130,7 +129,7 @@ main(int argc, char *argv[])
       XLAL_CHECK ( (fpOutab = fopen (uvar.outab, "wb")) != NULL, XLAL_EIO, "Error opening file '%s' for writing...", uvar.outab );
 
       /* write header info in comments */
-      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVCSInfo(fpOutab, lalAppsVCSInfoList, 0, "%% "), XLAL_EFUNC );
+      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVCSInfo(fpOutab, lalPulsarVCSInfoList, 0, "%% "), XLAL_EFUNC );
 
       /* write the command-line */
       for (int a = 0; a < argc; a++)
@@ -160,7 +159,7 @@ main(int argc, char *argv[])
       XLAL_CHECK ( (fpOutABCD = fopen (uvar.outABCD, "wb")) != NULL, XLAL_EIO, "Error opening file '%s' for writing...", uvar.outABCD );
 
       /* write header info in comments */
-      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVCSInfo(fpOutABCD, lalAppsVCSInfoList, 0, "%% "), XLAL_EFUNC );
+      XLAL_CHECK ( XLAL_SUCCESS == XLALOutputVCSInfo(fpOutABCD, lalPulsarVCSInfoList, 0, "%% "), XLAL_EFUNC );
 
       /* write the command-line */
       for (int a = 0; a < argc; a++)

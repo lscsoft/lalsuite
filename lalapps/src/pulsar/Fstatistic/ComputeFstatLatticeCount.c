@@ -24,9 +24,11 @@
 /// \brief Count number of templates in a given lattice tiling
 ///
 
-#include <config.h>
+#include "config.h"
+
 #include <stdlib.h>
 #include <stdio.h>
+
 #include <gsl/gsl_math.h>
 
 #include <lal/LALStdlib.h>
@@ -37,8 +39,7 @@
 #include <lal/DopplerFullScan.h>
 #include <lal/PtoleMetric.h>
 #include <lal/GSLHelpers.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 typedef struct {
   REAL8 time_span;
@@ -72,7 +73,7 @@ int main(int argc, char *argv[])
 
   // Parse user input
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input
   XLALUserVarCheck( &should_exit, UVAR_SET2(square, age_braking) == 1, "Exactly one of " UVAR_STR2AND(square, age_braking) " must be specified" );

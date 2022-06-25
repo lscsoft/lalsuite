@@ -61,15 +61,14 @@
 #include <lal/LALString.h>
 #include <lal/LALCache.h>
 #include <lal/Units.h>
-
 #include <lal/TransientCW_utils.h>
 #include <lal/CWMakeFakeData.h>
+#include <lal/LALPulsarVCSInfo.h>
+
 #ifdef HAVE_LIBLALFRAME
 #include <lal/LALFrameIO.h>
 #include <lal/LALFrStream.h>
 #endif
-
-#include <LALAppsVCSInfo.h>
 
 /***************************************************/
 
@@ -91,7 +90,7 @@ typedef struct
   REAL8 BandOut;				/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
 
   transientWindow_t transientWindow;	/**< properties of transient-signal window */
-  CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
+  CHAR *VCSInfoString;			/**< Git version string */
   CHAR *outFrameDir;			/**< output frame directory */
 } ConfigVars_t;
 
@@ -357,7 +356,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   XLAL_CHECK ( cfg != NULL, XLAL_EINVAL, "Invalid NULL input 'cfg'\n" );
   XLAL_CHECK ( uvar != NULL, XLAL_EINVAL, "Invalid NULL input 'uvar'\n");
 
-  cfg->VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");
+  cfg->VCSInfoString = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ");
   XLAL_CHECK ( cfg->VCSInfoString != NULL, XLAL_EFUNC, "XLALVCSInfoString failed.\n" );
 
   /* if requested, log all user-input and code-versions */
@@ -666,7 +665,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }

@@ -19,11 +19,11 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+
 #include <gsl/gsl_sort_double.h>
 #include <gsl/gsl_statistics_double.h>
 #include <gsl/gsl_sf_gamma.h>
 
-/* LAL headers */
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdlib.h>
@@ -43,8 +43,7 @@
 #include <lal/XLALError.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LALCache.h>
-/* lalapps header */
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /* Usage format string. */
 #define USAGE \

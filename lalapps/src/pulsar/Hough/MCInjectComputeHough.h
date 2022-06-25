@@ -45,7 +45,8 @@
 #include <lal/GeneratePulsarSignal.h> 
 #include <lal/LALComputeAM.h>
 #include <lal/ComputeSky.h>
-#include "./DriveHoughColor.h" /* proper path*/
+
+#include "DriveHoughColor.h"
 
 #ifdef TIMING
 #include "./timer/cycle_counter/Intel/GCC/cycle_counter.h" /* proper path*/

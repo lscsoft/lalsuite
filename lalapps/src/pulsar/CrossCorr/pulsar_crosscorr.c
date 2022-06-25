@@ -32,14 +32,15 @@
 
 #include "config.h"
 
-/* lalapps includes */
-#include <LALAppsVCSInfo.h>
-#include <pulsar_crosscorr.h>
+#include <gsl/gsl_permutation.h>
+
 #include <lal/PulsarCrossCorr.h>
 #include <lal/DopplerScan.h>
 #include <lal/ExtrapolatePulsarSpins.h>
-#include <gsl/gsl_permutation.h>
 #include <lal/LALString.h>
+#include <lal/LALPulsarVCSInfo.h>
+
+#include "pulsar_crosscorr.h"
 
 /* globals, constants and defaults */
 
@@ -217,7 +218,7 @@ int main(int argc, char *argv[]){
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
 

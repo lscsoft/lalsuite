@@ -29,11 +29,9 @@
  *
  */
 
-#include "./DriveHoughColor.h"
+#include "DriveHoughColor.h"
 
 /* globals, constants and defaults */
-
-
 
 /* boolean global variables for controlling output */
 BOOLEAN uvar_printEvents, uvar_printTemplates, uvar_printMaps, uvar_printStats, uvar_printSigma;
@@ -176,7 +174,7 @@ int main(int argc, char *argv[]){
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
 

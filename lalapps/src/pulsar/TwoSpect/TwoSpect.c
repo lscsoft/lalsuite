@@ -35,10 +35,9 @@
 #include <lal/LALString.h>
 #include <lal/Window.h>
 #include <lal/DopplerScan.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #include <gsl/gsl_math.h>
-
-#include <LALAppsVCSInfo.h>
 
 #include "SFTfunctions.h"
 #include "IHS.h"
@@ -106,7 +105,7 @@ int main(int argc, char *argv[])
 
    //print VCS info
    CHAR *VCSInfoString;
-   XLAL_CHECK( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
+   XLAL_CHECK( (VCSInfoString = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
    fprintf(LOG, "%s\n", VCSInfoString);
    fprintf(stderr, "%s\n", VCSInfoString);
    XLALFree(VCSInfoString);
@@ -1776,7 +1775,7 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    //Read all the input from config file and command line (command line has priority)
    //Also checks required variables unless help is requested
    BOOLEAN should_exit = 0;
-   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
    if ( should_exit ) exit(1);
 
    //Check analysis parameters

@@ -38,7 +38,6 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_matrix.h>
 
-
 #include <lal/UserInput.h>
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
@@ -53,11 +52,9 @@
 #include <lal/ComputeFstat.h>
 #include <lal/LogPrintf.h>
 #include <lal/StringVector.h>
-
 #include <lal/UniversalDopplerMetric.h>
 #include <lal/MetricUtils.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /* ---------- Error codes and messages ---------- */
 #define FSTATMETRIC_EMEM 	1
@@ -112,7 +109,7 @@ typedef struct
 {
   CHAR *app_name;			/**< name (and path) of this application */
   CHAR *cmdline;			/**< commandline used to produce this result */
-  CHAR *VCSInfoString;			/**< lal+lalapps source-version + configure string */
+  CHAR *VCSInfoString;			/**< Git source-version + configure string */
 } ResultHistory_t;
 
 
@@ -211,12 +208,12 @@ main(int argc, char *argv[])
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit )
     return EXIT_FAILURE;
 
   CHAR *VCSInfoString;
-  if ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) == NULL ) {
+  if ( (VCSInfoString = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ")) == NULL ) {
     XLALPrintError("XLALVCSInfoString failed.\n");
     exit(1);
   }

@@ -26,11 +26,12 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+
 #include <lal/Date.h>
 #include <lal/LALString.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALVCSInfo.h>
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /* TEMPO style time delay file */
 #define TT2TDB_FILE "/ephemeris/TDB.1950.2050"

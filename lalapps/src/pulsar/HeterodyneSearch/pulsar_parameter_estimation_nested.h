@@ -38,7 +38,6 @@
 #include <time.h>
 #include <sys/time.h>
 
-/* LAL headers */
 #include <lal/LALStdlib.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALAtomicDatatypes.h>
@@ -64,8 +63,7 @@
 #include <lal/StringVector.h>
 #include <lal/XLALGSL.h>
 #include <lal/FileIO.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #include <lal/LALInference.h>
 #include <lal/LALInferenceNestedSampler.h>

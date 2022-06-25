@@ -58,7 +58,7 @@
  * \endcode
  */
 
-#include "./SFTbin.h"
+#include "SFTbin.h"
 
 /*
  * The functions that make up the guts of this module

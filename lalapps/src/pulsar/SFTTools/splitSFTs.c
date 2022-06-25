@@ -41,7 +41,7 @@
  * obscure a mystery factor in command-line record even if given with long option --factor
  */
 
-#include <config.h>
+#include "config.h"
 
 #include <math.h>
 #include <time.h>
@@ -58,7 +58,7 @@
 #include <lal/Date.h>
 #include <lal/SFTfileIO.h>
 #include <lal/SFTReferenceLibrary.h>
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #ifndef _WIN32
 #define DIR_SEPARATOR '/'
@@ -332,9 +332,9 @@ int main( int argc, char **argv )
   }
 
   /* record VCS ID and command-line for the comment */
-  XLAL_CHECK_MAIN( ( cmdline = ( char * )XLALMalloc( strlen( lalAppsVCSIdentInfo.vcsId ) + strlen( lalAppsVCSIdentInfo.vcsStatus ) + 2 ) ) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
-  strcpy( cmdline, lalAppsVCSIdentInfo.vcsId );
-  strcat( cmdline, lalAppsVCSIdentInfo.vcsStatus );
+  XLAL_CHECK_MAIN( ( cmdline = ( char * )XLALMalloc( strlen( lalPulsarVCSIdentInfo.vcsId ) + strlen( lalPulsarVCSIdentInfo.vcsStatus ) + 2 ) ) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
+  strcpy( cmdline, lalPulsarVCSIdentInfo.vcsId );
+  strcat( cmdline, lalPulsarVCSIdentInfo.vcsStatus );
   strcat( cmdline, "\n" );
   for ( arg = 0; arg < argc; arg++ ) {
     if ( strcmp( argv[arg], "-m" ) == 0 ) {

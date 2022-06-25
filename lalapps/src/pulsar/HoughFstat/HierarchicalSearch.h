@@ -44,7 +44,6 @@
 #include <time.h>
 #include <errno.h> 
 
-/* lal includes */
 #include <lal/UserInput.h>
 #include <lal/LALStdlib.h>
 #include <lal/PulsarDataTypes.h>
@@ -64,9 +63,7 @@
 #include <lal/GeneratePulsarSignal.h> 
 #include <lal/LogPrintf.h>
 #include <lal/DopplerScan.h>
-
-/* lalapps includes */
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /* more efficient toplist using heaps */
 #include "HoughFstatToplist.h"

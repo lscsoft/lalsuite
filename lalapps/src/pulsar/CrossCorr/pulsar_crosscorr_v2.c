@@ -22,8 +22,6 @@
 
 #include "config.h"
 
-/*lalapps includes */
-#include <LALAppsVCSInfo.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
@@ -35,6 +33,8 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALString.h>
 #include <lal/PulsarCrossCorr_v2.h>
+#include <lal/LALPulsarVCSInfo.h>
+
 #include "CrossCorrToplist.h"
 #include <lal/LatticeTiling.h>
 #include <lal/TascPorbTiling.h>
@@ -221,14 +221,14 @@ int main(int argc, char *argv[]){
 
   /* read user input from the command line or config file */
   BOOLEAN should_exit = 0;
-  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv, lalAppsVCSInfoList ) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv, lalPulsarVCSInfoList ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
   if (should_exit)
     return EXIT_FAILURE;
 
-  CHAR *VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ");     /**<LAL + LALapps Vsersion string*/
+  CHAR *VCSInfoString = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ");     /**< Git version string*/
 
   /* configure useful variables based on user input */
   if ( XLALInitializeConfigVars ( &config, &uvar) != XLAL_SUCCESS ) {

@@ -17,21 +17,22 @@
 *  MA  02110-1301  USA
 */
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "GCTtoplist.h"
-#include <lal/HeapToplist.h>
-#include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
+
+#include <lal/StringInput.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
-#include <LALAppsVCSInfo.h>
-#include <lal/LogPrintf.h>
+#include <lal/HeapToplist.h>
+#include <lal/LALPulsarVCSInfo.h>
+
+#include "GCTtoplist.h"
 
 /* Windows specifics */
 #ifdef _WIN32
@@ -525,7 +526,7 @@ static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *file
     CHAR *VCSInfoString;
 
     /* write the version string */
-    if ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) == NULL ) {
+    if ( (VCSInfoString = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ")) == NULL ) {
       LogPrintf (LOG_CRITICAL, "XLALVCSInfoString failed.\n");
       length = -1;
     } else {

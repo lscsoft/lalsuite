@@ -7,15 +7,6 @@
 ##   AM_CPPFLAGS += ...
 AM_CPPFLAGS = @AM_CPPFLAGS@
 
-## link any executables against liblalapps
-LDADD = $(top_builddir)/src/lalapps/liblalapps.la
-
-## ensure liblalapps is (re)built before everything else
-## (but don't try to build when running 'make dist')
-BUILT_SOURCES += $(top_builddir)/src/lalapps/liblalapps.la
-$(top_builddir)/src/lalapps/liblalapps.la:
-	@test "X$(distdir)" != X || ( cd $(top_builddir)/src/lalapps && $(MAKE) liblalapps.la )
-
 ## here we should be using OMP_THREAD_LIMIT, instead of OMP_NUM_THREADS,
 ## to limit the number of threads used by OpenMP but this is a OpenMP
 ## 4.5 feature and not currently supported by the compilers we are

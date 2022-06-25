@@ -23,11 +23,10 @@
  * \ingroup lalapps_pulsar_SFTTools
  */
 
-/*LAL header files*/
-#include <LALAppsVCSInfo.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/NormalizeSFTRngMed.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 
 int main(int argc, char **argv)
@@ -68,7 +67,7 @@ int main(int argc, char **argv)
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&timebaseline, "timeBaseline", INT4,  't', REQUIRED, "The time baseline of sfts in seconds") == XLAL_SUCCESS, XLAL_EFUNC);
     
     BOOLEAN should_exit = 0;
-    XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC );
     if (should_exit) {
        return(1);
     }

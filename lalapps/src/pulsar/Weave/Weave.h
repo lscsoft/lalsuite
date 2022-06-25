@@ -44,8 +44,7 @@
 #include <lal/PulsarDataTypes.h>
 #include <lal/GSLHelpers.h>
 #include <lal/FITSFileIO.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))

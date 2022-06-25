@@ -37,12 +37,12 @@
 #include <errno.h>
 #include <lal/LALStdlib.h>
 #include <lal/SFTReferenceLibrary.h>
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 int main(int argc, char** argv) {
   
   if (argc == 2 && (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0)) {
-    fprintf(stdout, "%s: %s %s\n", argv[0], lalAppsVCSInfo.vcsId, lalAppsVCSInfo.vcsStatus);
+    fprintf(stdout, "%s: %s %s\n", argv[0], lalPulsarVCSInfo.vcsId, lalPulsarVCSInfo.vcsStatus);
     return EXIT_SUCCESS;
   }
 

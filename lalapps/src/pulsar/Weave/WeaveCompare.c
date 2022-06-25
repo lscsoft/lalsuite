@@ -103,7 +103,7 @@ int main( int argc, char *argv[] )
   // Parse user input
   XLAL_CHECK_FAIL( xlalErrno == 0, XLAL_EFUNC, "A call to XLALRegisterUvarMember() failed" );
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_FAIL( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input:
   //

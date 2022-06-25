@@ -52,6 +52,8 @@
 #include <time.h>
 #include <errno.h> 
 
+#include <gsl/gsl_cdf.h>
+
 #include <lal/AVFactories.h>
 #include <lal/Date.h>
 #include <lal/DetectorSite.h>
@@ -67,11 +69,10 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/SFTClean.h>
-#include <LALAppsVCSInfo.h>
-#include <gsl/gsl_cdf.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Sequence.h>
 #include <lal/PulsarCrossCorr.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 
 /******************************************************

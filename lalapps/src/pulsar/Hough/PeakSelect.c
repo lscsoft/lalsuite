@@ -45,7 +45,7 @@
  * \endcode
  */
 
-#include "./PeakSelect.h"
+#include "PeakSelect.h"
 
 /*
  * The functions that make up the guts of this module

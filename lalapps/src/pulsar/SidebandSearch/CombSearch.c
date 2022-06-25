@@ -58,13 +58,10 @@
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
-
 #include <lal/AVFactories.h>
-
 #include <lal/ComplexFFT.h>
 #include <lal/RealFFT.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 
 /***********************************************************************************************/
@@ -269,7 +266,7 @@ int initUserVars(int argc,char *argv[],UserInput_t *uvar)
   
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  if (XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList)) {
+  if (XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList)) {
     LogPrintf(LOG_CRITICAL,"%s : XLALUserVarReadAllInput failed with error = %d\n",fn,xlalErrno);
     return XLAL_EFAULT;
   }

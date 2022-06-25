@@ -31,8 +31,7 @@
 /* THRESHOLDFRACSS is the fraction of power that must be in the local maxima when INCLUDE_EXTRA_STACKSLIDE_THREHOLDCHECK is defined */
 #define THRESHOLDFRACSS 0.667
 
-/* include files: */
-#include "./StackSlideFstat.h"
+#include "StackSlideFstat.h"
 
 #define TRUE (1==1)
 #define FALSE (1==0)

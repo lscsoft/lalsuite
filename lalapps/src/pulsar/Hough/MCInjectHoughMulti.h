@@ -45,7 +45,8 @@
 #include <lal/UserInput.h>
 #include <lal/GeneratePulsarSignal.h> 
 #include <lal/SFTClean.h>
-#include "./DriveHoughColor.h" /* proper path*/
+
+#include "DriveHoughColor.h"
 
 
 /******************************************************

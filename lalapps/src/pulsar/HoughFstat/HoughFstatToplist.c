@@ -17,22 +17,21 @@
 *  MA  02110-1301  USA
 */
 
-#include <config.h>
+#include "config.h"
 
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "HoughFstatToplist.h"
-#include <lal/HeapToplist.h>
-#include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
-#include <lal/AVFactories.h> /* for XLALDestroyREAL4Vector */
 
+#include <lal/StringInput.h>
+#include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
+#include <lal/HeapToplist.h>
 
-#include <lal/LogPrintf.h>
+#include "HoughFstatToplist.h"
 
 /* Windows specifics */
 #ifdef _WIN32

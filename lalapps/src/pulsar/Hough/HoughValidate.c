@@ -56,7 +56,7 @@ Input shoud be from
 
 
 
-#include "./MCInjectComputeHough.h" /* proper path*/
+#include "MCInjectComputeHough.h"
 
 #define VALIDATEOUT "./outHM1/skypatch_1/HM1validate"
 #define VALIDATEIN  "./outHM1/skypatch_1/HM1templates"
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]){
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     exit(1);
  

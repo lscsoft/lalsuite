@@ -20,9 +20,9 @@
 #ifndef GCTFSTATTOPLIST_H
 #define GCTFSTATTOPLIST_H
 
-#include <lal/HeapToplist.h>
 #include <lal/LALDatatypes.h>
 #include <lal/PulsarDataTypes.h>
+#include <lal/HeapToplist.h>
 
 #ifdef __cplusplus
 extern "C" {

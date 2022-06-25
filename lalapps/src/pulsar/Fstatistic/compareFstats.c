@@ -26,12 +26,11 @@
 
 #include <math.h>
 
-#include <LALAppsVCSInfo.h>
-
 #include <lal/UserInput.h>
 #include <lal/LALConstants.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/LFTandTSutils.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 // ----- defines & macros ----------
 #define TRUE (1==1)
@@ -80,7 +79,7 @@ main (int argc, char *argv[] )
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }

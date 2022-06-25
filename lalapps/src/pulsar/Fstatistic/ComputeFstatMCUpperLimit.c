@@ -49,7 +49,7 @@
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/ConfigFile.h>
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 BOOLEAN calc_AM_coeffs(gsl_rng*, REAL8, REAL8, REAL8, REAL8, MultiDetectorStateSeries*, MultiNoiseWeights*, REAL8*, REAL8*, REAL8*);
 REAL8 pdf_ncx2_4(REAL8, REAL8);
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
 
   /* Get command line arguments */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
   if (should_exit)
     return EXIT_FAILURE;
 

@@ -58,7 +58,7 @@
 /* 10/05/12 gam; Add to version 2 normalization one over the root mean square of the window function (defined here as winFncRMS) as per RedMine LALSuite CW Bug #560*/
 /* 24/07/14 eag; Change default SFT output to version 2 per RedMine LALSuite CW patch #1518 */
 
-#include <config.h>
+#include "config.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -96,7 +96,7 @@
 #include <lal/SFTfileIO.h>
 #include <lal/SFTutils.h>
 #include <lal/LALVCSInfo.h>
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #ifdef PSS_ENABLED
 #include <XLALPSSInterface.h>
@@ -640,8 +640,8 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   strcat(allargs, lalVCSIdentInfo.vcsId);
   strcat(allargs, lalVCSIdentInfo.vcsStatus);
   strcat(allargs, "\nMakeSFTs ");
-  strcat(allargs, lalAppsVCSIdentInfo.vcsId);
-  strcat(allargs, lalAppsVCSIdentInfo.vcsStatus);
+  strcat(allargs, lalPulsarVCSIdentInfo.vcsId);
+  strcat(allargs, lalPulsarVCSIdentInfo.vcsStatus);
   strcat(allargs, "\nMakeSFTs command line args: "); /* 06/26/07 gam; copy all command line args into commentField */
   for(i = 0; i < argc; i++)
   {
@@ -830,13 +830,13 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tpss-edge           \tFLOAT\t (optional) Set PSS parameter 'edge' for time-domain cleaning\n");
       fprintf(stdout,"\tpss-ext            \tINT\t (optional) Extend the timeseries at the beginning before calculating the autoregressive mean, defaults to 1, set to 0 for no\n");
 #endif
-      fprintf(stdout,"\tversion (-V)\t\tFLAG\t Print LAL & LALApps version and exit.\n");
+      fprintf(stdout,"\tversion (-V)\t\tFLAG\t Print LAL & LALPulsar version and exit.\n");
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
     case 'V':
       /* print version */
       fprintf(stdout,"MakeSFTs %s %s\n", lalVCSIdentInfo.vcsId, lalVCSIdentInfo.vcsStatus);
-      fprintf(stdout,"MakeSFTs %s %s\n", lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus);
+      fprintf(stdout,"MakeSFTs %s %s\n", lalPulsarVCSIdentInfo.vcsId, lalPulsarVCSIdentInfo.vcsStatus);
       exit(0);
     default:
       /* unrecognized option */

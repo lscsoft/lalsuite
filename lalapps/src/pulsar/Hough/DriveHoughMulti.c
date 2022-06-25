@@ -86,24 +86,17 @@
 
 #include "config.h"
 
-/* lalapps/hough includes */
-#include "./DriveHoughColor.h"
-#include "./MCInjectHoughMulti.h"
-
-/* lalapps includes */
-#include <LALAppsVCSInfo.h>
-#include "FstatToplist.h"
-
-/* lal includes */
-#include <lal/DopplerScan.h>
-#include <lal/LogPrintf.h>
-
-/* gsl includes */
 #include <gsl/gsl_permutation.h>
 
+#include <lal/LogPrintf.h>
+#include <lal/DopplerScan.h>
+#include <lal/LALPulsarVCSInfo.h>
+
+#include "DriveHoughColor.h"
+#include "MCInjectHoughMulti.h"
+#include "FstatToplist.h"
+
 /* globals, constants and defaults */
-
-
 
 /* boolean global variables for controlling output */
 BOOLEAN uvar_EnableExtraInfo, uvar_EnableChi2, uvar_EnableToplistPatch;
@@ -445,7 +438,7 @@ int main(int argc, char *argv[]){
     
     /* read all command line variables */
     BOOLEAN should_exit = 0;
-    XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
     if (should_exit)
         exit(1);
     

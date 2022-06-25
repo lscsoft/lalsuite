@@ -38,8 +38,7 @@
 #include <lal/LALInitBarycenter.h>
 #include <lal/ComputeFstat.h>
 #include <lal/LALString.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /* ----- compile switches ----- */
 
@@ -100,7 +99,7 @@ main(int argc, char *argv[])
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit(1);
   }

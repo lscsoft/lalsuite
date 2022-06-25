@@ -25,15 +25,13 @@
 
 #include "config.h"
 
-/*LAL header files*/
-#include <LALAppsVCSInfo.h>
 #include <lal/SFTutils.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
-
+#include <lal/LALPulsarVCSInfo.h>
 
 /*---------- DEFINES ----------*/
 #define POWER(x) (((REAL8)crealf(x)*(REAL8)crealf(x)) + ((REAL8)cimagf(x)*(REAL8)cimagf(x)))
@@ -93,7 +91,7 @@ int main(int argc, char **argv)
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&auto_track,    "autoTrack",     REAL8,  'a', OPTIONAL, "If specified, also track any frequency whose persistency is >= this threshold within range [0,1]") == XLAL_SUCCESS, XLAL_EFUNC );
 
     BOOLEAN should_exit = 0;
-    XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv, lalAppsVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN(XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
     if (should_exit)
     {
         return(1);

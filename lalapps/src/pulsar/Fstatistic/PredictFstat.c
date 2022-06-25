@@ -32,10 +32,8 @@
  */
 #include "config.h"
 
-/* System includes */
 #include <stdio.h>
 
-/* LAL-includes */
 #include <lal/LALString.h>
 #include <lal/AVFactories.h>
 #include <lal/LALInitBarycenter.h>
@@ -48,8 +46,7 @@
 #include <lal/LogPrintf.h>
 #include <lal/FstatisticTools.h>
 #include <lal/TransientCW_utils.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /* local includes */
 
@@ -133,7 +130,7 @@ int main(int argc,char *argv[])
   REAL8 rho2;	/* SNR^2 */
 
   UserInput_t XLAL_INIT_DECL(uvar);
-  CHAR *VCSInfoString;          /**< LAL + LALapps Git version string */
+  CHAR *VCSInfoString;          /* Git version string */
 
   vrbflg = 1;	/* verbose error-messages */
 
@@ -145,12 +142,12 @@ int main(int argc,char *argv[])
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalAppsVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
     exit (1);
   }
 
-  XLAL_CHECK_MAIN ( (VCSInfoString = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( (VCSInfoString = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ")) != NULL, XLAL_EFUNC );
 
   /* Initialize code-setup */
   XLAL_CHECK_MAIN ( InitPFS ( &GV, &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );

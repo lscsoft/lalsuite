@@ -17,19 +17,19 @@
 *  MA  02110-1301  USA
 */
 
-#include <config.h>
+#include "config.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
-#include "FstatToplist.h"
-#include <lal/HeapToplist.h>
-#include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
 
+#include <lal/StringInput.h>
 #include <lal/LALStdio.h>
 #include <lal/LogPrintf.h>
-
 #include <lal/LogPrintf.h>
+#include <lal/HeapToplist.h>
+
+#include "FstatToplist.h"
 
 /* MSC specifics */
 #ifdef _MSC_VER

@@ -44,14 +44,11 @@
 
 #include "config.h"
 
-/* System includes */
 #include <stdio.h>
 #include <stdbool.h>
 
-/* GSL includes */
 #include <gsl/gsl_rng.h>
 
-/* LAL-includes */
 #include <lal/LALString.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/AVFactories.h>
@@ -59,17 +56,12 @@
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
 #include <lal/ComputeFstat.h>
-
 #include <lal/TransientCW_utils.h>
 #include <lal/ProbabilityDensity.h>
-
 #include <lal/SynthesizeCWDraws.h>
-
 #include <lal/LineRobustStats.h>
-
 #include <lal/StringVector.h>
-
-#include <LALAppsVCSInfo.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 /*---------- DEFINES ----------*/
 #define SQ(x) ((x)*(x))
@@ -200,7 +192,7 @@ int main(int argc,char *argv[])
 
   /* do ALL cmdline and cfgfile handling */
   BOOLEAN should_exit = 0;
-  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv, lalAppsVCSInfoList ) != XLAL_SUCCESS ) {
+  if ( XLALUserVarReadAllInput ( &should_exit, argc, argv, lalPulsarVCSInfoList ) != XLAL_SUCCESS ) {
     LogPrintf ( LOG_CRITICAL, "%s: XLALUserVarReadAllInput() failed with errno=%d\n", __func__, xlalErrno );
     return 1;
   }
@@ -497,7 +489,7 @@ XLALInitCode ( ConfigVariables *cfg, const UserInput_t *uvar )
 {
   /* generate log-string for file-output, containing cmdline-options + code VCS version info */
   char *vcs;
-  if ( (vcs = XLALVCSInfoString(lalAppsVCSInfoList, 0, "%% ")) == NULL ) {	  /* short VCS version string */
+  if ( (vcs = XLALVCSInfoString(lalPulsarVCSInfoList, 0, "%% ")) == NULL ) {	  /* short VCS version string */
     XLALPrintError ( "%s: XLALVCSInfoString failed with errno=%d.\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
   }

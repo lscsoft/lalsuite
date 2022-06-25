@@ -39,8 +39,6 @@
 #include <math.h>
 #include <sys/stat.h>
 
-/*LAL Functions */
-#include <LALAppsVCSInfo.h>
 #include <lal/Units.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALFrStream.h>
@@ -61,6 +59,7 @@
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALString.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #define STRINGLENGTH 256              /* the length of general string */
 
