@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#       lalapps_knope_collate_results.py
+#       lalpulsar_knope_collate_results.py
 #
 #       Copyright 2013, 2016
 #       Matthew Pitkin <matthew.pitkin@ligo.org>,

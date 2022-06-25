@@ -1,9 +1,9 @@
 ##---------- names of codes and input/output files
-mfdv4_code="lalapps_Makefakedata_v4"
-mfdv5_code="lalapps_Makefakedata_v5"
-cfsv2_code="lalapps_ComputeFstatistic_v2"
-cmp_code="lalapps_compareFstats"
-LTC_code="lalapps_ComputeFstatLatticeCount"
+mfdv4_code="lalpulsar_Makefakedata_v4"
+mfdv5_code="lalpulsar_Makefakedata_v5"
+cfsv2_code="lalpulsar_ComputeFstatistic_v2"
+cmp_code="lalpulsar_compareFstats"
+LTC_code="lalpulsar_ComputeFstatLatticeCount"
 
 # ---------- fixed parameter of our test-signal
 Tsft=1800;

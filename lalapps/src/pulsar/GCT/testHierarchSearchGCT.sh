@@ -1,7 +1,7 @@
 ##---------- names of codes and input/output files
-mfd_code="lalapps_Makefakedata_v5"
-cfs_code="lalapps_ComputeFstatistic_v2"
-gct_code="lalapps_HierarchSearchGCT"
+mfd_code="lalpulsar_Makefakedata_v5"
+cfs_code="lalpulsar_ComputeFstatistic_v2"
+gct_code="lalpulsar_HierarchSearchGCT"
 
 SFTfiles="./*.sft"
 SFTfiles_H1="./H1-*.sft"

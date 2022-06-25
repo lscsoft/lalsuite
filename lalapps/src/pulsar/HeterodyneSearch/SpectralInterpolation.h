@@ -47,7 +47,7 @@
 
 /* Usage format string. */
 #define USAGE \
-"Usage: lalapps_SplInter [options]\n\n"\
+"Usage: lalpulsar_SplInter [options]\n\n"\
 " --help (-h)           display this message\n"\
 "\nRequired Input Variables:\n\n"\
 " --ifo (-i)            name of ifo e.g. L1, H1, H2, G1\n"\

@@ -56,10 +56,10 @@ duration=86400
 numDraws=1000
 common_args="--IFOs=H1 --dataStartGPS=$timestamp1 --dataDuration=$duration --numDraws=$numDraws --randSeed=1"
 
-## lalapps_synthesizeTransientStats with a single square window should give the same results as lalapps_synthesizeLVStats
+## lalpulsar_synthesizeTransientStats with a single square window should give the same results as lalpulsar_synthesizeLVStats
 
-synthLVcode="lalapps_synthesizeLVStats"
-synthTScode="lalapps_synthesizeTransientStats"
+synthLVcode="lalpulsar_synthesizeLVStats"
+synthTScode="lalpulsar_synthesizeTransientStats"
 
 transient_args="--injectWindow-type=rect --injectWindow-tauDays=1 --injectWindow-tauDaysBand=0 --injectWindow-t0Days=0 --injectWindow-t0DaysBand=0 --searchWindow-type=rect --searchWindow-tauDays=1 --searchWindow-tauDaysBand=0 --searchWindow-t0Days=0 --searchWindow-t0DaysBand=0"
 

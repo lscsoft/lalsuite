@@ -1,6 +1,6 @@
-## call lalapps_FstatMetric_v2
+## call lalpulsar_FstatMetric_v2
 
-lalapps_FstatMetric_v2 \
+lalpulsar_FstatMetric_v2 \
     --Alpha=1.42 --Delta=0.73 \
     --Freq=101.2 --f1dot=1e-9 \
     --startTime=1100000000 --duration=259200 \

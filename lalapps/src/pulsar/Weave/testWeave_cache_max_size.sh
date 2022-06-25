@@ -32,14 +32,14 @@ for setup in short long; do
 
     echo "=== Setup '${setup}': Create search setup with ${weave_setup_options} ==="
     set -x
-    lalapps_WeaveSetup --first-segment=1122332211/90000 ${weave_setup_options} --detectors=H1,L1 --output-file=WeaveSetup.fits
-    lalapps_fits_overview WeaveSetup.fits
+    lalpulsar_WeaveSetup --first-segment=1122332211/90000 ${weave_setup_options} --detectors=H1,L1 --output-file=WeaveSetup.fits
+    lalpulsar_fits_overview WeaveSetup.fits
     set +x
     echo
 
     echo "=== Setup '${setup}': Restrict timestamps to segment list in WeaveSetup.fits ==="
     set -x
-    lalapps_fits_table_list 'WeaveSetup.fits[segments][col c1=start_s; col2=end_s]' \
+    lalpulsar_fits_table_list 'WeaveSetup.fits[segments][col c1=start_s; col2=end_s]' \
         | awk 'BEGIN { print "/^#/ { print }" } /^#/ { next } { printf "%i <= $1 && $1 <= %i { print }\n", $1, $2 + 1 }' > timestamp-filter.awk
     awk -f timestamp-filter.awk all-timestamps-1.txt > timestamps-1.txt
     awk -f timestamp-filter.awk all-timestamps-2.txt > timestamps-2.txt
@@ -48,10 +48,10 @@ for setup in short long; do
 
     echo "=== Setup '${setup}': ${verb} interpolating search without a maximum cache size ==="
     set -x
-    lalapps_Weave --cache-max-size=0 --output-file=WeaveOutNoMax.fits \
+    lalpulsar_Weave --cache-max-size=0 --output-file=WeaveOutNoMax.fits \
         --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         ${weave_sft_options} ${weave_search_options}
-    lalapps_fits_overview WeaveOutNoMax.fits
+    lalpulsar_fits_overview WeaveOutNoMax.fits
     set +x
     echo
 
@@ -59,7 +59,7 @@ for setup in short long; do
     set -x
     semi_ntmpl_prev=1
     for dim in SSKYA SSKYB NU1DOT NU0DOT; do
-        semi_ntmpl=`lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+        semi_ntmpl=`lalpulsar_fits_header_getval "WeaveOutNoMax.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
         expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
         semi_ntmpl_prev=${semi_ntmpl}
     done
@@ -68,31 +68,31 @@ for setup in short long; do
 
     echo "=== Setup '${setup}': ${verb} interpolating search with a maximum cache size ==="
     set -x
-    lalapps_Weave ${weave_cache_options} --output-file=WeaveOutMax.fits \
+    lalpulsar_Weave ${weave_cache_options} --output-file=WeaveOutMax.fits \
         --toplists=all --toplist-limit=2321 --segment-info --setup-file=WeaveSetup.fits \
         ${weave_sft_options} ${weave_search_options}
-    lalapps_fits_overview WeaveOutMax.fits
+    lalpulsar_fits_overview WeaveOutMax.fits
     set +x
     echo
 
     echo "=== Setup '${setup}': Check that number of coherent templates are equal ==="
     set -x
-    coh_ntmpl_no_max=`lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
-    coh_ntmpl_max=`lalapps_fits_header_getval "WeaveOutMax.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_ntmpl_no_max=`lalpulsar_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_ntmpl_max=`lalpulsar_fits_header_getval "WeaveOutMax.fits[0]" 'NCOHTPL' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${coh_ntmpl_no_max} '=' ${coh_ntmpl_max}
     set +x
     echo
 
     echo "=== Setup '${setup}': Check that without a maximum cache number of recomputed results is below tolerance ==="
     set -x
-    coh_nres_no_max=`lalapps_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_nres_no_max=`lalpulsar_fits_header_getval "WeaveOutNoMax.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     awk "BEGIN { print recomp = ( ${coh_nres_no_max} - ${coh_ntmpl_no_max} ) / ${coh_ntmpl_no_max}; exit ( recomp <= ${weave_recomp_threshold} ? 0 : 1 ) }"
     set +x
     echo
 
     echo "=== Setup '${setup}': Check that with a maximum cache number of recomputed results is above tolerance ==="
     set -x
-    coh_nres_max=`lalapps_fits_header_getval "WeaveOutMax.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    coh_nres_max=`lalpulsar_fits_header_getval "WeaveOutMax.fits[0]" 'NCOHRES' | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     awk "BEGIN { print recomp = ( ${coh_nres_max} - ${coh_ntmpl_max} ) / ${coh_ntmpl_max}; exit ( recomp > ${weave_recomp_threshold} ? 0 : 1 ) }"
     set +x
     echo
@@ -100,9 +100,9 @@ for setup in short long; do
     case ${setup} in
 
         short)
-            echo "=== Setup '${setup}': Compare F-statistics from lalapps_Weave without/with a maximum cache size ==="
+            echo "=== Setup '${setup}': Compare F-statistics from lalpulsar_Weave without/with a maximum cache size ==="
             set -x
-            lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoMax.fits --result-file-2=WeaveOutMax.fits
+            lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoMax.fits --result-file-2=WeaveOutMax.fits
             set +x
             echo
             ;;

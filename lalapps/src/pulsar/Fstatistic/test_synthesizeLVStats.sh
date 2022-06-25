@@ -1,8 +1,8 @@
 ##---------- names of codes
-synth_code="lalapps_synthesizeLVStats"
-cap_code="lalapps_ComputeAntennaPattern"
-mfd_code="lalapps_Makefakedata_v4"
-pfs_code="lalapps_PredictFstat"
+synth_code="lalpulsar_synthesizeLVStats"
+cap_code="lalpulsar_ComputeAntennaPattern"
+mfd_code="lalpulsar_Makefakedata_v4"
+pfs_code="lalpulsar_PredictFstat"
 
 ## awk commands needed for testing
 awk_absdiff='{printf "%.6f", sqrt(($1-$2)*($1-$2)) }'
@@ -274,8 +274,8 @@ fail_B_L1=$(echo $reldev_B_L1 $tolerance_p | awk "$awk_isgtr")
 fail_C_L1=$(echo $reldev_C_L1 $tolerance_p | awk "$awk_isgtr")
 fail_D_L1=$(echo $reldev_D_L1 $tolerance_p | awk "$awk_isgtr")
 
-echo "==> from lalapps_ComputeAntennaPattern: <A>=$A_cap, <B>=$B_cap, <C>=$C_cap, <D>=$D_cap, <A_H1>=$A_H1_cap, <B_H1>=$B_H1_cap, <C_H1>=$C_H1_cap, <D_H1>=$D_H1_cap, <A_L1>=$A_L1_cap, <B_L1>=$B_L1_cap, <C_L1>=$C_L1_cap, <D_L1>=$D_L1_cap"
-echo "    from lalapps_synthesizeLVStats:     <A>=$A_synth, <B>=$B_synth, <C>=$C_synth, <D>=$D_synth, <A_H1>=$A_H1_synth, <B_H1>=$B_H1_synth, <C_H1>=$C_H1_synth, <D_H1>=$D_H1_synth, <A_L1>=$A_L1_synth, <B_L1>=$B_L1_synth, <C_L1>=$C_L1_synth, <D_L1>=$D_L1_synth"
+echo "==> from lalpulsar_ComputeAntennaPattern: <A>=$A_cap, <B>=$B_cap, <C>=$C_cap, <D>=$D_cap, <A_H1>=$A_H1_cap, <B_H1>=$B_H1_cap, <C_H1>=$C_H1_cap, <D_H1>=$D_H1_cap, <A_L1>=$A_L1_cap, <B_L1>=$B_L1_cap, <C_L1>=$C_L1_cap, <D_L1>=$D_L1_cap"
+echo "    from lalpulsar_synthesizeLVStats:     <A>=$A_synth, <B>=$B_synth, <C>=$C_synth, <D>=$D_synth, <A_H1>=$A_H1_synth, <B_H1>=$B_H1_synth, <C_H1>=$C_H1_synth, <D_H1>=$D_H1_synth, <A_L1>=$A_L1_synth, <B_L1>=$B_L1_synth, <C_L1>=$C_L1_synth, <D_L1>=$D_L1_synth"
 
 if [ "$fail_A" -o "$fail_B" -o "$fail_C" -o "$fail_D" -o "$fail_A_H1" -o "$fail_B_H1" -o "$fail_C_H1" -o "$fail_D_H1" -o "$fail_A_L1" -o "$fail_B_L1" -o "$fail_C_L1" -o "$fail_D_L1" ]; then
     echo "==> FAILED at tolerance=$tolerance_p"
@@ -494,9 +494,9 @@ fail_B_L1=$(echo $reldev_B_L1 $tolerance_p | awk "$awk_isgtr")
 fail_C_L1=$(echo $reldev_C_L1 $tolerance_p | awk "$awk_isgtr")
 fail_D_L1=$(echo $reldev_D_L1 $tolerance_p | awk "$awk_isgtr")
 
-echo "==> from lalapps_ComputeAntennaPattern:"
+echo "==> from lalpulsar_ComputeAntennaPattern:"
 echo "<A>=$A_cap, <B>=$B_cap, <C>=$C_cap, <D>=$D_cap, <A_H1>=$A_H1_cap, <B_H1>=$B_H1_cap, <C_H1>=$C_H1_cap, <D_H1>=$D_H1_cap, <A_L1>=$A_L1_cap, <B_L1>=$B_L1_cap, <C_L1>=$C_L1_cap, <D_L1>=$D_L1_cap"
-echo "    from lalapps_synthesizeLVStats:"
+echo "    from lalpulsar_synthesizeLVStats:"
 echo "<A>=$A_synth, <B>=$B_synth, <C>=$C_synth, <D>=$D_synth, <A_H1>=$A_H1_synth, <B_H1>=$B_H1_synth, <C_H1>=$C_H1_synth, <D_H1>=$D_H1_synth, <A_L1>=$A_L1_synth, <B_L1>=$B_L1_synth, <C_L1>=$C_L1_synth, <D_L1>=$D_L1_synth"
 
 if [ "$fail_A" -o "$fail_B" -o "$fail_C" -o "$fail_D" -o "$fail_A_H1" -o "$fail_B_H1" -o "$fail_C_H1" -o "$fail_D_H1" -o "$fail_A_L1" -o "$fail_B_L1" -o "$fail_C_L1" -o "$fail_D_L1" ]; then

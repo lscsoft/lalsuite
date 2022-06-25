@@ -3,50 +3,50 @@ SFTwrite
 
 ## these SFTs have to pass
 for sft in SFT-good SFT-test*; do
-    echo "lalapps_SFTvalidate $sft"
-    if ! lalapps_SFTvalidate $sft; then
-        echo "lalapps_SFTvalidate failed SFT $sft; should have passed"
+    echo "lalpulsar_SFTvalidate $sft"
+    if ! lalpulsar_SFTvalidate $sft; then
+        echo "lalpulsar_SFTvalidate failed SFT $sft; should have passed"
         exit 1
     fi
     echo
 done
-echo "lalapps_SFTvalidate SFT-good SFT-test*"
-if ! lalapps_SFTvalidate SFT-good SFT-test*; then
-    echo "lalapps_SFTvalidate failed SFTs SFT-good SFT-test*; should have passed"
+echo "lalpulsar_SFTvalidate SFT-good SFT-test*"
+if ! lalpulsar_SFTvalidate SFT-good SFT-test*; then
+    echo "lalpulsar_SFTvalidate failed SFTs SFT-good SFT-test*; should have passed"
     exit 1
 fi
 echo
-echo "printf '%s\n' SFT-good '' SFT-test* | lalapps_SFTvalidate >valid-sfts.txt"
-if ! printf '%s\n' SFT-good '' SFT-test* | lalapps_SFTvalidate >valid-sfts.txt; then
-    echo "lalapps_SFTvalidate failed SFTs SFT-good SFT-test*; should have passed"
+echo "printf '%s\n' SFT-good '' SFT-test* | lalpulsar_SFTvalidate >valid-sfts.txt"
+if ! printf '%s\n' SFT-good '' SFT-test* | lalpulsar_SFTvalidate >valid-sfts.txt; then
+    echo "lalpulsar_SFTvalidate failed SFTs SFT-good SFT-test*; should have passed"
     exit 1
 fi
 echo
 
 ## these SFTs have to fail
 for sft in SFT-bad*; do
-    echo "lalapps_SFTvalidate $sft"
-    if lalapps_SFTvalidate $sft; then
-        echo "lalapps_SFTvalidate passed SFT $sft; should have failed"
+    echo "lalpulsar_SFTvalidate $sft"
+    if lalpulsar_SFTvalidate $sft; then
+        echo "lalpulsar_SFTvalidate passed SFT $sft; should have failed"
         exit 1
     fi
     echo
 done
-echo "lalapps_SFTvalidate SFT-bad*"
-if lalapps_SFTvalidate SFT-bad*; then
-    echo "lalapps_SFTvalidate passed SFTs SFT-bad*; should have failed"
+echo "lalpulsar_SFTvalidate SFT-bad*"
+if lalpulsar_SFTvalidate SFT-bad*; then
+    echo "lalpulsar_SFTvalidate passed SFTs SFT-bad*; should have failed"
     exit 1
 fi
 echo
-echo "printf '%s\n' SFT-bad* | lalapps_SFTvalidate"
-if printf '%s\n' SFT-bad* | lalapps_SFTvalidate; then
-    echo "lalapps_SFTvalidate passed SFTs SFT-bad*; should have failed"
+echo "printf '%s\n' SFT-bad* | lalpulsar_SFTvalidate"
+if printf '%s\n' SFT-bad* | lalpulsar_SFTvalidate; then
+    echo "lalpulsar_SFTvalidate passed SFTs SFT-bad*; should have failed"
     exit 1
 fi
 echo
-echo "printf '%s\n' SFT-good SFT-bad* SFT-test* | lalapps_SFTvalidate >valid-sfts-2.txt"
-if printf '%s\n' SFT-good SFT-bad* SFT-test* | lalapps_SFTvalidate >valid-sfts-2.txt; then
-    echo "lalapps_SFTvalidate passed SFT-good SFT-bad* SFT-test*; should have failed"
+echo "printf '%s\n' SFT-good SFT-bad* SFT-test* | lalpulsar_SFTvalidate >valid-sfts-2.txt"
+if printf '%s\n' SFT-good SFT-bad* SFT-test* | lalpulsar_SFTvalidate >valid-sfts-2.txt; then
+    echo "lalpulsar_SFTvalidate passed SFT-good SFT-bad* SFT-test*; should have failed"
     exit 1
 fi
 echo

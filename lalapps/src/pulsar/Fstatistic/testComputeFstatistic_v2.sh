@@ -4,10 +4,10 @@ if [ -n "$FSTAT_METHOD" ]; then
 fi
 
 ##---------- names of codes and input/output files
-mfd_code="lalapps_Makefakedata_v4"
+mfd_code="lalpulsar_Makefakedata_v4"
 saf_code="SemiAnalyticF"
-cmp_code="lalapps_compareFstats"
-cfsv2_code="lalapps_ComputeFstatistic_v2"
+cmp_code="lalpulsar_compareFstats"
+cfsv2_code="lalpulsar_ComputeFstatistic_v2"
 
 Dterms=8
 

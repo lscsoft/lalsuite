@@ -10,25 +10,25 @@ AM_CPPFLAGS += $(PAGER_CPPFLAGS)
 if CFITSIO
 
 bin_PROGRAMS = \
-	lalapps_fits_header_getval \
-	lalapps_fits_header_list \
-	lalapps_fits_overview \
-	lalapps_fits_table_list \
+	lalpulsar_fits_header_getval \
+	lalpulsar_fits_header_list \
+	lalpulsar_fits_overview \
+	lalpulsar_fits_table_list \
 	$(END_OF_LIST)
 
-lalapps_fits_header_getval_SOURCES = \
+lalpulsar_fits_header_getval_SOURCES = \
 	fits_header_getval.c \
 	$(END_OF_LIST)
 
-lalapps_fits_header_list_SOURCES = \
+lalpulsar_fits_header_list_SOURCES = \
 	fits_header_list.c \
 	$(END_OF_LIST)
 
-lalapps_fits_overview_SOURCES = \
+lalpulsar_fits_overview_SOURCES = \
 	fits_overview.c \
 	$(END_OF_LIST)
 
-lalapps_fits_table_list_SOURCES = \
+lalpulsar_fits_table_list_SOURCES = \
 	fits_table_list.c \
 	$(END_OF_LIST)
 

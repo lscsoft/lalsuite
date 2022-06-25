@@ -1158,7 +1158,7 @@ lalapps:koji:
   # test running C executables and finding data files
   - lalapps_version
   - env LAL_DEBUG_LEVEL=info lalsim-detector-noise --official --aligo-nsnsopt --duration 1 >/dev/null
-  - env LAL_DEBUG_LEVEL=info lalapps_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
+  - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
 
 # Build receipe for standalone wheels on Linux
 .wheel:manylinux:

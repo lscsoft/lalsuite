@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#       lalapps_knope_result_page.py
+#       lalpulsar_knope_result_page.py
 #
 #       Copyright 2015
 #       Matthew Pitkin <matthew.pitkin@ligo.org>,
@@ -1843,7 +1843,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     atnfurl += '&startUserDefined=true&pulsar_names=' + re.sub('\+', '%2B', pname)
     atnfurl += '&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query'
 
-    # try getting information already parsed from ATNF catalogue by lalapps_knope pipeline setup
+    # try getting information already parsed from ATNF catalogue by lalpulsar_knope pipeline setup
     jsonfile = os.path.join(outdir, pname+'.json')
     tryatnf = True
     if os.path.isfile(jsonfile):

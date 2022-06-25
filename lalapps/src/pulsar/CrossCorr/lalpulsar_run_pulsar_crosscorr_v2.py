@@ -1,4 +1,4 @@
-# script to call lalapps_pulsar_crosscorr_v2 (for use with e.g. condor)
+# script to call lalpulsar_pulsar_crosscorr_v2 (for use with e.g. condor)
 
 # Copyright (C) 2014 John Whelan
 
@@ -88,7 +88,7 @@ if cp.has_section('program') and cp.has_option('program','delay_secs'):
 if cp.has_section('program') and cp.has_option('program','executable'):
     program = cp.get('program','executable')
 else:
-    program = 'lalapps_pulsar_crosscorr_v2'
+    program = 'lalpulsar_pulsar_crosscorr_v2'
 
 print(program, program_args)
 check_call(([program]+program_args))

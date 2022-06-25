@@ -11,19 +11,19 @@ function assert {
 
 ## generate noise-only SFTs
 
-lalapps_Makefakedata_v5 \
+lalpulsar_Makefakedata_v5 \
     --randSeed=1234 \
     --startTime=858459411 --duration=1036800 --Tsft=1800 \
     --fmin=138.0 --Band=5.0 \
     --IFOs=H1,L1 --sqrtSX=3e-23,3e-23 \
     --outSingleSFT --outSFTdir=.
 
-## run lalapps_ComputeFstatMCUpperLimit
+## run lalpulsar_ComputeFstatMCUpperLimit
 
 h0_ref=7.47583e-25
 FDR_ref=0.05
 
-lalapps_ComputeFstatMCUpperLimit \
+lalpulsar_ComputeFstatMCUpperLimit \
     --alpha=6.12 --delta=1.02 \
     --freq=140.0 --freq-band=1.0 \
     --sft-patt='*.sft' \

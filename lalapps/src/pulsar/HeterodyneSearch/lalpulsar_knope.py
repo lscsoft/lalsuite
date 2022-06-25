@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-#       lalapps_knope.py
+#       lalpulsar_knope.py
 #
 #       Copyright 2015
 #       Matthew Pitkin <matthew.pitkin@ligo.org>,
@@ -21,7 +21,7 @@
 #       MA 02110-1301, USA.
 
 # DAG generation code for running the known pulsar search pipeline
-# The KNOwn Pulsar pipelinE - lalapps_knope
+# The KNOwn Pulsar pipelinE - lalpulsar_knope
 
 from __future__ import print_function, division
 

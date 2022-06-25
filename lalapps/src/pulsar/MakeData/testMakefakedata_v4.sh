@@ -1,6 +1,6 @@
-mfdCODE="lalapps_Makefakedata_v4"
-cmpCODE="lalapps_compareSFTs"
-extractCODE="lalapps_splitSFTs"
+mfdCODE="lalpulsar_Makefakedata_v4"
+cmpCODE="lalpulsar_compareSFTs"
+extractCODE="lalpulsar_splitSFTs"
 
 testDIR1="./mfdv4_TEST1"
 testDIR2="./mfdv4_TEST2"

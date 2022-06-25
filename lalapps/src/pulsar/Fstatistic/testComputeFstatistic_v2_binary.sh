@@ -1,7 +1,7 @@
 ##---------- names of codes and input/output files
-mfd_code="lalapps_Makefakedata_v4"
-cfs_code="lalapps_ComputeFstatistic_v2"
-pfs_code="lalapps_PredictFstat"
+mfd_code="lalpulsar_Makefakedata_v4"
+cfs_code="lalpulsar_ComputeFstatistic_v2"
+pfs_code="lalpulsar_PredictFstat"
 
 # ---------- fixed parameter of our test-signal
 Tsft=20
@@ -54,7 +54,7 @@ cmdline="$mfd_code $mfd_CL"
 echo $cmdline
 echo -n "Running $cmdline ... "
 if ! eval "$cmdline"; then
-    echo "lalapps_Makefakedata_v4 failed"
+    echo "lalpulsar_Makefakedata_v4 failed"
     exit 1;
 fi
 echo "done."

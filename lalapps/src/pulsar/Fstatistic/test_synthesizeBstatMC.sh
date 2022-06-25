@@ -22,14 +22,14 @@ function check_average {
     awk "${awk_script}" "${file}"
 }
 
-## common arguments to lalapps_synthesizeBstatMC
+## common arguments to lalpulsar_synthesizeBstatMC
 
 common_args="--A=0.154 --B=0.234 --C=-0.0104 --E=0 --numDraws=1e4"
 
 ## generate noise samples
 
 output_file="stats_noise.txt"
-lalapps_synthesizeBstatMC ${common_args} --outputStats="${output_file}"
+lalpulsar_synthesizeBstatMC ${common_args} --outputStats="${output_file}"
 
 check_average "${output_file}"  1 "h0Nat" 0.0
 check_average "${output_file}"  9 "rho2"  0.0
@@ -41,7 +41,7 @@ echo
 ## generate samples at SNR=4, cosi=0, psi=0
 
 output_file="stats_SNR-4_cosi-0.txt"
-lalapps_synthesizeBstatMC ${common_args} --SNR=4 --cosi=0 --psi=0 --outputStats="${output_file}"
+lalpulsar_synthesizeBstatMC ${common_args} --SNR=4 --cosi=0 --psi=0 --outputStats="${output_file}"
 
 check_average "${output_file}"  1 "h0Nat" 1.0
 check_average "${output_file}"  9 "rho2"  16.0
@@ -53,7 +53,7 @@ echo
 ## generate samples at SNR=4, cosi=0, psi=0
 
 output_file="stats_SNR-4_cosi-1.txt"
-lalapps_synthesizeBstatMC ${common_args} --SNR=4 --cosi=0.99 --psi=0 --outputStats="${output_file}"
+lalpulsar_synthesizeBstatMC ${common_args} --SNR=4 --cosi=0.99 --psi=0 --outputStats="${output_file}"
 
 check_average "${output_file}"  1 "h0Nat" 1.0
 check_average "${output_file}"  9 "rho2"  16.0
@@ -65,7 +65,7 @@ echo
 ## generate samples at SNR=4, cosi random, psi-random
 
 output_file="stats_SNR-4_cosi-random.txt"
-lalapps_synthesizeBstatMC ${common_args} --SNR=4 --outputStats="${output_file}"
+lalpulsar_synthesizeBstatMC ${common_args} --SNR=4 --outputStats="${output_file}"
 
 check_average "${output_file}"  1 "h0Nat" 1.0
 check_average "${output_file}"  9 "rho2"  16.0
@@ -77,7 +77,7 @@ echo
 ## generate samples at h0=10 sqrt(Sn), cosi random, psi-random
 
 output_file="stats_h0Nat-10_cosi-random.txt"
-lalapps_synthesizeBstatMC ${common_args} --h0Nat=10 --outputStats="${output_file}"
+lalpulsar_synthesizeBstatMC ${common_args} --h0Nat=10 --outputStats="${output_file}"
 
 check_average "${output_file}"  1 "h0Nat" 10.0
 check_average "${output_file}"  9 "rho2"  16.0

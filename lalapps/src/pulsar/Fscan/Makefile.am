@@ -6,20 +6,20 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
-	lalapps_spec_avg \
-	lalapps_spec_avg_long \
-	lalapps_spec_coherence \
+	lalpulsar_spec_avg \
+	lalpulsar_spec_avg_long \
+	lalpulsar_spec_coherence \
 	$(END_OF_LIST)
 
-lalapps_spec_avg_SOURCES = \
+lalpulsar_spec_avg_SOURCES = \
 	spec_avg.c \
 	$(END_OF_LIST)
 
-lalapps_spec_avg_long_SOURCES = \
+lalpulsar_spec_avg_long_SOURCES = \
 	spec_avg_long.c \
 	$(END_OF_LIST)
 
-lalapps_spec_coherence_SOURCES = \
+lalpulsar_spec_coherence_SOURCES = \
 	spec_coherence.c \
 	$(END_OF_LIST)
 

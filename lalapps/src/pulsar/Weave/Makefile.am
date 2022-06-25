@@ -6,20 +6,20 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
 bin_PROGRAMS = \
-	lalapps_Weave \
-	lalapps_WeaveCompare \
-	lalapps_WeaveConcat \
-	lalapps_WeaveSetup \
+	lalpulsar_Weave \
+	lalpulsar_WeaveCompare \
+	lalpulsar_WeaveConcat \
+	lalpulsar_WeaveSetup \
 	$(END_OF_LIST)
 
-lalapps_WeaveSetup_SOURCES = \
+lalpulsar_WeaveSetup_SOURCES = \
 	SetupData.c \
 	SetupData.h \
 	Weave.h \
 	WeaveSetup.c \
 	$(END_OF_LIST)
 
-lalapps_Weave_SOURCES = \
+lalpulsar_Weave_SOURCES = \
 	CacheResults.c \
 	CacheResults.h \
 	ComputeResults.c \
@@ -40,7 +40,7 @@ lalapps_Weave_SOURCES = \
 	Weave.h \
 	$(END_OF_LIST)
 
-lalapps_WeaveCompare_SOURCES = \
+lalpulsar_WeaveCompare_SOURCES = \
 	CacheResults.c \
 	CacheResults.h \
 	ComputeResults.c \
@@ -59,7 +59,7 @@ lalapps_WeaveCompare_SOURCES = \
 	WeaveCompare.c \
 	$(END_OF_LIST)
 
-lalapps_WeaveConcat_SOURCES = \
+lalpulsar_WeaveConcat_SOURCES = \
 	CacheResults.c \
 	CacheResults.h \
 	ComputeResults.c \

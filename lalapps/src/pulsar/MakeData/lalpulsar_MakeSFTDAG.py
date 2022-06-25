@@ -224,15 +224,15 @@ parser.add_argument('-j', '--datafind-path', type=str,
                     that order)')
 parser.add_argument('-J', '--makesfts-path', type=str,
                     help='string specifying a path to look for the \
-                    lalapps_MakeSFTs executable; if not set, will use \
+                    lalpulsar_MakeSFTs executable; if not set, will use \
                     MAKESFTS_PATH env variable or system default (in that \
                     order)')
 parser.add_argument('-Y', '--request-memory', type=int, default=2048,
                     help='memory allocation in MB to request from condor for \
-                    lalapps_MakeSFTs step')
+                    lalpulsar_MakeSFTs step')
 parser.add_argument('-s', '--request-disk', type=int, default=1024,
                     help='disk space allocation in MB to request from condor \
-                    for lalapps_MakeSFTs step')
+                    for lalpulsar_MakeSFTs step')
 parser.add_argument('-A', '--accounting-group', required=True, type=str,
                     help='Condor tag for the production of SFTs')
 parser.add_argument('-U', '--accounting-group-user', required=True, type=str,
@@ -269,7 +269,7 @@ if args.make_gps_dirs < 0 or args.make_gps_dirs > 10:
 if args.max_num_per_node <= 0:
     raise argparse.error('--max-num-per-node must be > 0')
 
-# Set the data find executable and lalapps_MakeSFTs executable
+# Set the data find executable and lalpulsar_MakeSFTs executable
 dataFindExe = 'gw_data_find'
 if args.datafind_path:
     dataFindExe = os.path.join(args.datafind_path, dataFindExe)
@@ -278,7 +278,7 @@ elif 'LSC_DATAFIND_PATH' in os.environ:
 else:
     dataFindExe = os.path.join('/usr/bin', dataFindExe)
 
-makeSFTsExe = 'lalapps_MakeSFTs'
+makeSFTsExe = 'lalpulsar_MakeSFTs'
 if args.makesfts_path:
     makeSFTsExe = os.path.join(args.makesfts_path, makeSFTsExe)
 elif 'MAKESFTS_PATH' in os.environ:

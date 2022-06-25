@@ -23,7 +23,7 @@ TELESCOPES = (
 @pytest.mark.parametrize("ra", np.arange(0, 24, 8))
 def test_ssb(telescope, ra):
     cmd = [
-        "lalapps_ssbtodetector",
+        "lalpulsar_ssbtodetector",
         "--gps", str(GPS_SSB),
         "--ra", f"{ra}:21:34.76",
         "--dec", "-1:53:12.36",

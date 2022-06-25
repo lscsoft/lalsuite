@@ -1,6 +1,6 @@
 ##---------- names of codes and input/output files
-mfd_code="lalapps_Makefakedata_v5"
-gct_code="lalapps_HierarchSearchGCT"
+mfd_code="lalpulsar_Makefakedata_v5"
+gct_code="lalpulsar_HierarchSearchGCT"
 
 ## ---------- fixed parameter of our test-signal -------------
 Alpha=3.1

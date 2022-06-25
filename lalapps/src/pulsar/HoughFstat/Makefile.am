@@ -6,10 +6,10 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
-	lalapps_HierarchicalSearch \
+	lalpulsar_HierarchicalSearch \
 	$(END_OF_LIST)
 
-lalapps_HierarchicalSearch_SOURCES = \
+lalpulsar_HierarchicalSearch_SOURCES = \
 	HierarchicalSearch.c \
 	HierarchicalSearch.h \
 	HoughFstatToplist.c \
@@ -18,20 +18,20 @@ lalapps_HierarchicalSearch_SOURCES = \
 	StackSlideFstat.h \
 	$(END_OF_LIST)
 
-lalapps_HierarchicalSearch_CPPFLAGS = $(AM_CPPFLAGS)
-lalapps_HierarchicalSearch_CFLAGS = $(AM_CFLAGS)
+lalpulsar_HierarchicalSearch_CPPFLAGS = $(AM_CPPFLAGS)
+lalpulsar_HierarchicalSearch_CFLAGS = $(AM_CFLAGS)
 
 if HAVE_SSE2_COMPILER
 
-lalapps_HierarchicalSearch_SOURCES += \
+lalpulsar_HierarchicalSearch_SOURCES += \
 	LocalComputeFstatHoughMap.c \
 	hough_sse2.i \
 	hough_x64.i \
 	hough_x87.i \
 	$(END_OF_LIST)
 
-lalapps_HierarchicalSearch_CPPFLAGS += -DCOMPUTEFSTATHOUGHMAP=LocalComputeFstatHoughMap
-lalapps_HierarchicalSearch_CFLAGS += $(SSE2_FLAGS)
+lalpulsar_HierarchicalSearch_CPPFLAGS += -DCOMPUTEFSTATHOUGHMAP=LocalComputeFstatHoughMap
+lalpulsar_HierarchicalSearch_CFLAGS += $(SSE2_FLAGS)
 
 endif
 

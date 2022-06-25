@@ -6,8 +6,8 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 noinst_PROGRAMS = \
-	lalapps_TwoSpect \
-	lalapps_TwoSpectTemplateBank \
+	lalpulsar_TwoSpect \
+	lalpulsar_TwoSpectTemplateBank \
 	$(END_OF_LIST)
 
 EXTRA_PROGRAMS = \
@@ -17,7 +17,7 @@ EXTRA_PROGRAMS = \
 	testVectorMath \
 	$(END_OF_LIST)
 
-lalapps_TwoSpect_SOURCES = \
+lalpulsar_TwoSpect_SOURCES = \
 	IHS.c\
 	IHS.h \
 	SFTfunctions.c \
@@ -47,7 +47,7 @@ lalapps_TwoSpect_SOURCES = \
 	vectormath.h \
 	$(END_OF_LIST)
 
-lalapps_TwoSpectTemplateBank_SOURCES = \
+lalpulsar_TwoSpectTemplateBank_SOURCES = \
 	TwoSpectSpecFunc.c \
 	TwoSpectSpecFunc.h \
 	TwoSpectTemplateBank.c \

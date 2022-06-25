@@ -519,8 +519,8 @@ class knopeDAG(pipeline.CondorDAG):
           except: # default from to 'matthew.pitkin@ligo.org'
             FROM = 'matthew.pitkin@ligo.org'
 
-          subject = "lalapps_knope: successful setup"
-          messagetxt = "Hi User,\n\nYour analysis using configuration file '%s' has successfully setup the analysis. Once complete the results will be found at %s.\n\nRegards\n\nlalapps_knope\n" % (configfilename, self.results_url)
+          subject = "lalpulsar_knope: successful setup"
+          messagetxt = "Hi User,\n\nYour analysis using configuration file '%s' has successfully setup the analysis. Once complete the results will be found at %s.\n\nRegards\n\nlalpulsar_knope\n" % (configfilename, self.results_url)
 
           emailtemplate = "From: {0}\nTo: {1}\nSubject: {2}\n\n{3}"
           message = emailtemplate.format(FROM, email, subject, messagetxt)
@@ -548,30 +548,30 @@ class knopeDAG(pipeline.CondorDAG):
     self.results_url = self.get_config_option('results_page', 'base_url')
 
     # run individual pulsar results page creation
-    self.results_exec = self.get_config_option('results_page', 'results_exec', default='/usr/bin/lalapps_knope_result_page')
+    self.results_exec = self.get_config_option('results_page', 'results_exec', default='/usr/bin/lalpulsar_knope_result_page')
     self.results_universe = self.get_config_option('results_page', 'universe', default='local')
 
     # check file exists and is executable
     if not os.path.isfile(self.results_exec) or not os.access(self.results_exec, os.X_OK):
       print("Warning... 'results_exec' in '[results_page]' does not exist or is not an executable. Try finding code in path.")
-      resultexec = self.find_exec_file('lalapps_knope_result_page')
+      resultexec = self.find_exec_file('lalpulsar_knope_result_page')
 
       if resultexec == None:
-        print("Error... could not find 'lalapps_knope_result_page' in 'PATH'", file=sys.stderr)
+        print("Error... could not find 'lalpulsar_knope_result_page' in 'PATH'", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
         self.results_exec = resultexec
 
-    self.collate_exec = self.get_config_option('results_page', 'collate_exec', default='/usr/bin/lalapps_knope_collate_results')
+    self.collate_exec = self.get_config_option('results_page', 'collate_exec', default='/usr/bin/lalpulsar_knope_collate_results')
 
     # check file exists and is executable
     if not os.path.isfile(self.collate_exec) or not os.access(self.collate_exec, os.X_OK):
       print("Warning... 'collate_exec' in '[results_page]' does not exist or is not an executable. Try finding code in path.")
-      collateexec = self.find_exec_file('lalapps_knope_collate_results')
+      collateexec = self.find_exec_file('lalpulsar_knope_collate_results')
 
       if collateexec == None:
-        print("Error... could not find 'lalapps_knope_collate_results' in 'PATH'", file=sys.stderr)
+        print("Error... could not find 'lalpulsar_knope_collate_results' in 'PATH'", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
@@ -686,7 +686,7 @@ class knopeDAG(pipeline.CondorDAG):
           except:
             print("Warning... could not copy previous results JSON file '%s'. Previous results may get overwritten." % jsonfile, file=sys.stderr)
 
-      # try getting some pulsar information (dist, p1_I and assoc) from the ATNF catalogue for use in lalapps_knope_result_page
+      # try getting some pulsar information (dist, p1_I and assoc) from the ATNF catalogue for use in lalpulsar_knope_result_page
       # NOTE: this is mainly required because on the ARCCA cluster the nodes cannot access the internet
       pinfo = pppu.get_atnf_info(pname)
       if pinfo is not None:
@@ -928,16 +928,16 @@ class knopeDAG(pipeline.CondorDAG):
     """
 
     # get executable
-    self.pe_exec = self.get_config_option('pe', 'pe_exec', default='lalapps_pulsar_parameter_estimation_nested')
+    self.pe_exec = self.get_config_option('pe', 'pe_exec', default='lalpulsar_pulsar_parameter_estimation_nested')
     if self.error_code != 0: return
 
     # check file exists and is executable
     if not os.path.isfile(self.pe_exec) or not os.access(self.pe_exec, os.X_OK):
       print("Warning... 'pe_exec' in '[pe]' does not exist or is not an executable. Try finding code in path.")
-      peexec = self.find_exec_file('lalapps_pulsar_parameter_estimation_nested')
+      peexec = self.find_exec_file('lalpulsar_pulsar_parameter_estimation_nested')
 
       if peexec == None:
-        print("Error... could not find 'lalapps_pulsar_parameter_estimation_nested' in 'PATH'", file=sys.stderr)
+        print("Error... could not find 'lalpulsar_pulsar_parameter_estimation_nested' in 'PATH'", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
@@ -2134,16 +2134,16 @@ class knopeDAG(pipeline.CondorDAG):
     """
 
     # get executable
-    self.heterodyne_exec = self.get_config_option('heterodyne', 'heterodyne_exec', default='lalapps_heterodyne_pulsar')
+    self.heterodyne_exec = self.get_config_option('heterodyne', 'heterodyne_exec', default='lalpulsar_heterodyne_pulsar')
     if self.error_code != 0: return
 
     # check file exists and is executable
     if not os.path.isfile(self.heterodyne_exec) or not os.access(self.heterodyne_exec, os.X_OK):
       print("Warning... 'heterodyne_exec' in '[heterodyne]' does not exist or is not an executable. Try finding code in path.")
-      hetexec = self.find_exec_file('lalapps_heterodyne_pulsar')
+      hetexec = self.find_exec_file('lalpulsar_heterodyne_pulsar')
 
       if hetexec == None:
-        print("Error... could not find 'lalapps_heterodyne_pulsar' in 'PATH'", file=sys.stderr)
+        print("Error... could not find 'lalpulsar_heterodyne_pulsar' in 'PATH'", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
@@ -2510,7 +2510,7 @@ class knopeDAG(pipeline.CondorDAG):
     # Spectral interpolation output files have the format Splinter_PSRJNAME_DET e.g. Splinter_J0534+2200_H1
 
     # get executable
-    self.splinter_exec = self.get_config_option('splinter', 'splinter_exec', default='lalapps_SplInter')
+    self.splinter_exec = self.get_config_option('splinter', 'splinter_exec', default='lalpulsar_SplInter')
     if self.error_code != 0: return
 
     self.splinter_modified_pars = {}
@@ -2520,10 +2520,10 @@ class knopeDAG(pipeline.CondorDAG):
     if not os.path.isfile(self.splinter_exec) or not os.access(self.splinter_exec, os.X_OK):
       print("Warning... 'splinter_exec' in '[splinter]' does not exist or is not an executable. Try finding code in path.")
 
-      splexec = self.find_exec_file('lalapps_SplInter')
+      splexec = self.find_exec_file('lalpulsar_SplInter')
 
       if splexec == None:
-        print("Error... could not find 'lalapps_SplInter' in 'PATH'", file=sys.stderr)
+        print("Error... could not find 'lalpulsar_SplInter' in 'PATH'", file=sys.stderr)
         self.error_code = KNOPE_ERROR_GENERAL
         return
       else:
@@ -2618,7 +2618,7 @@ class knopeDAG(pipeline.CondorDAG):
             if modsuffix == 'unmodified': self.splinter_unmodified_pars[pname] = parlink
             os.symlink(par, parlink)
 
-            # create dictionary to hold list of names of the output files that will be created by lalapps_SplInter
+            # create dictionary to hold list of names of the output files that will be created by lalpulsar_SplInter
             if pname not in self.processed_files:
               self.processed_files[pname] = {}
               self.splinter_data_location[pname] = {}
@@ -2645,7 +2645,7 @@ class knopeDAG(pipeline.CondorDAG):
               else: # for non-integers use 2 d.p. for dir name
                 ffdir = os.path.join(splintercpydir, '%.3ff' % int(freqfactor))
 
-              # the name of the file that will be output by lalapps_SplInter
+              # the name of the file that will be output by lalpulsar_SplInter
               self.processed_files[pname][ifo][freqfactor] = [os.path.join(ffdir, 'SplInter_%s_%s' % (pname, ifo))]
               if self.splinter_gzip_output:
                 self.processed_files[pname][ifo][freqfactor][0] += '.gz' # add gz suffix for gzipped files
@@ -3415,7 +3415,7 @@ class knopeDAG(pipeline.CondorDAG):
 
 class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A lalapps_heterodyne_pulsar job to heterodyne the data.
+  A lalpulsar_heterodyne_pulsar job to heterodyne the data.
   """
   def __init__(self, execu, univ='vanilla', accgroup=None, accuser=None, logdir=None, rundir=None, subprefix='', requestmemory=None):
     self.__executable = execu
@@ -3448,11 +3448,11 @@ class heterodyneJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
 
 class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
-  A heterodyneNode runs an instance of lalapps_heterodyne_pulsar in a condor DAG.
+  A heterodyneNode runs an instance of lalpulsar_heterodyne_pulsar in a condor DAG.
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of lalapps_heterodyne_pulsar
+    job = A CondorDAGJob that can run an instance of lalpulsar_heterodyne_pulsar
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
@@ -3615,7 +3615,7 @@ class heterodyneNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
 
 class splinterJob(pipeline.CondorDAGJob, pipeline.AnalysisJob):
   """
-  A lalapps_SplInter job to process SFT data.
+  A lalpulsar_SplInter job to process SFT data.
   """
   def __init__(self, execu, univ='vanilla', accgroup=None, accuser=None, logdir=None, rundir=None, requestmemory=None):
     self.__executable = execu
@@ -3652,7 +3652,7 @@ class splinterNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of lalapps_SplInter
+    job = A CondorDAGJob that can run an instance of lalpulsar_SplInter
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
@@ -4514,7 +4514,7 @@ class resultpageNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of lalapps_knope_result_page
+    job = A CondorDAGJob that can run an instance of lalpulsar_knope_result_page
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)
@@ -4563,7 +4563,7 @@ class collateNode(pipeline.CondorDAGNode, pipeline.AnalysisNode):
   """
   def __init__(self,job):
     """
-    job = A CondorDAGJob that can run an instance of lalapps_knope_collate_results
+    job = A CondorDAGJob that can run an instance of lalpulsar_knope_collate_results
     """
     pipeline.CondorDAGNode.__init__(self,job)
     pipeline.AnalysisNode.__init__(self)

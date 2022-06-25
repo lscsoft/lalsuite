@@ -6,21 +6,21 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
-	lalapps_ssbtodetector \
+	lalpulsar_ssbtodetector \
 	$(END_OF_LINE)
 
 noinst_PROGRAMS = \
-	lalapps_SplInter \
+	lalpulsar_SplInter \
 	$(END_OF_LINE)
 
 if LALFRAME
 
 bin_PROGRAMS += \
-	lalapps_heterodyne_pulsar \
+	lalpulsar_heterodyne_pulsar \
 	$(END_OF_LINE)
 
 noinst_PROGRAMS += \
-	lalapps_create_pulsar_signal_frame \
+	lalpulsar_create_pulsar_signal_frame \
 	$(END_OF_LINE)
 
 endif
@@ -28,17 +28,17 @@ endif
 if LALINFERENCE
 
 bin_PROGRAMS += \
-	lalapps_pulsar_frequency_evolution \
-	lalapps_pulsar_parameter_estimation_nested \
+	lalpulsar_pulsar_frequency_evolution \
+	lalpulsar_pulsar_parameter_estimation_nested \
 	$(END_OF_LINE)
 
 endif
 
-lalapps_ssbtodetector_SOURCES = \
+lalpulsar_ssbtodetector_SOURCES = \
 	ssbtodetector.c \
 	$(END_OF_LINE)
 
-lalapps_pulsar_frequency_evolution_SOURCES = \
+lalpulsar_pulsar_frequency_evolution_SOURCES = \
 	ppe_models.c \
 	ppe_models.h \
 	ppe_utils.c \
@@ -46,12 +46,12 @@ lalapps_pulsar_frequency_evolution_SOURCES = \
 	pulsar_frequency_evolution.c \
 	$(END_OF_LINE)
 
-lalapps_heterodyne_pulsar_SOURCES = \
+lalpulsar_heterodyne_pulsar_SOURCES = \
 	heterodyne_pulsar.c \
 	heterodyne_pulsar.h \
 	$(END_OF_LINE)
 
-lalapps_pulsar_parameter_estimation_nested_SOURCES = \
+lalpulsar_pulsar_parameter_estimation_nested_SOURCES = \
 	ppe_init.c \
 	ppe_init.h \
 	ppe_inject.c \
@@ -72,11 +72,11 @@ lalapps_pulsar_parameter_estimation_nested_SOURCES = \
 	pulsar_parameter_estimation_nested.h \
 	$(END_OF_LINE)
 
-lalapps_create_pulsar_signal_frame_SOURCES = \
+lalpulsar_create_pulsar_signal_frame_SOURCES = \
 	create_pulsar_signal_frame.c \
 	$(END_OF_LINE)
 
-lalapps_SplInter_SOURCES = \
+lalpulsar_SplInter_SOURCES = \
 	SpectralInterpolation.c \
 	SpectralInterpolation.h \
 	$(END_OF_LINE)
@@ -84,10 +84,10 @@ lalapps_SplInter_SOURCES = \
 if HAVE_PYTHON
 
 pybin_scripts = \
-	lalapps_knope \
-	lalapps_knope_automation_script \
-	lalapps_knope_collate_results \
-	lalapps_knope_result_page \
+	lalpulsar_knope \
+	lalpulsar_knope_automation_script \
+	lalpulsar_knope_collate_results \
+	lalpulsar_knope_result_page \
 	$(END_OF_LINE)
 
 pkgpython_PYTHON = \

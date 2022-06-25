@@ -6,20 +6,20 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
-	lalapps_DriveHoughMulti \
+	lalpulsar_DriveHoughMulti \
 	$(END_OF_LIST)
 
 noinst_PROGRAMS = \
-	lalapps_HoughValidate \
-	lalapps_HoughValidateAM \
-	lalapps_MCInjectHoughMulti \
-	lalapps_MCInjectHoughMultiChi2Test \
-	lalapps_MultiWeights \
-	lalapps_ValidateChi2Test \
-	lalapps_ValidateHoughMulti \
+	lalpulsar_HoughValidate \
+	lalpulsar_HoughValidateAM \
+	lalpulsar_MCInjectHoughMulti \
+	lalpulsar_MCInjectHoughMultiChi2Test \
+	lalpulsar_MultiWeights \
+	lalpulsar_ValidateChi2Test \
+	lalpulsar_ValidateHoughMulti \
 	$(END_OF_LIST)
 
-lalapps_HoughValidate_SOURCES = \
+lalpulsar_HoughValidate_SOURCES = \
 	DriveHoughColor.h \
 	HoughValidate.c \
 	MCInjectComputeHough.h \
@@ -27,7 +27,7 @@ lalapps_HoughValidate_SOURCES = \
 	PeakSelect.h \
 	$(END_OF_LIST)
 
-lalapps_DriveHoughMulti_SOURCES = \
+lalpulsar_DriveHoughMulti_SOURCES = \
 	DriveHoughColor.h \
 	DriveHoughMulti.c \
 	FstatToplist.c \
@@ -36,7 +36,7 @@ lalapps_DriveHoughMulti_SOURCES = \
 	PeakSelect.h \
 	$(END_OF_LIST)
 
-lalapps_ValidateHoughMulti_SOURCES = \
+lalpulsar_ValidateHoughMulti_SOURCES = \
 	DriveHoughColor.h \
 	MCInjectHoughMulti.h \
 	PeakSelect.c \
@@ -44,12 +44,12 @@ lalapps_ValidateHoughMulti_SOURCES = \
 	ValidateHoughMulti.c \
 	$(END_OF_LIST)
 
-lalapps_MultiWeights_SOURCES = \
+lalpulsar_MultiWeights_SOURCES = \
 	DriveHoughColor.h \
 	MultiWeights.c \
 	$(END_OF_LIST)
 
-lalapps_MCInjectHoughMulti_SOURCES = \
+lalpulsar_MCInjectHoughMulti_SOURCES = \
 	DriveHoughColor.h \
 	MCInjectHoughMulti.c \
 	MCInjectHoughMulti.h \
@@ -57,7 +57,7 @@ lalapps_MCInjectHoughMulti_SOURCES = \
 	PeakSelect.h \
 	$(END_OF_LIST)
 
-lalapps_ValidateChi2Test_SOURCES = \
+lalpulsar_ValidateChi2Test_SOURCES = \
 	DriveHoughColor.h \
 	MCInjectHoughMulti.h \
 	PeakSelect.c \
@@ -65,7 +65,7 @@ lalapps_ValidateChi2Test_SOURCES = \
 	ValidateHoughMultiChi2Test.c \
 	$(END_OF_LIST)
 
-lalapps_MCInjectHoughMultiChi2Test_SOURCES = \
+lalpulsar_MCInjectHoughMultiChi2Test_SOURCES = \
 	DriveHoughColor.h \
 	MCInjectHoughMulti.h \
 	MCInjectHoughMultiChi2Test.c \
@@ -73,7 +73,7 @@ lalapps_MCInjectHoughMultiChi2Test_SOURCES = \
 	PeakSelect.h \
 	$(END_OF_LIST)
 
-lalapps_HoughValidateAM_SOURCES = \
+lalpulsar_HoughValidateAM_SOURCES = \
 	DriveHoughColor.h \
 	HoughValidateAM.c \
 	MCInjectHoughS2.h \

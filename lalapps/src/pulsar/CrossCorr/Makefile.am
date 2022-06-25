@@ -6,19 +6,19 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
-	lalapps_pulsar_crosscorr_v2 \
+	lalpulsar_pulsar_crosscorr_v2 \
 	$(END_OF_LINE)
 
 noinst_PROGRAMS = \
-	lalapps_pulsar_crosscorr \
+	lalpulsar_pulsar_crosscorr \
 	$(END_OF_LINE)
 
-lalapps_pulsar_crosscorr_SOURCES = \
+lalpulsar_pulsar_crosscorr_SOURCES = \
 	pulsar_crosscorr.c \
 	pulsar_crosscorr.h \
 	$(END_OF_LINE)
 
-lalapps_pulsar_crosscorr_v2_SOURCES = \
+lalpulsar_pulsar_crosscorr_v2_SOURCES = \
 	CrossCorrToplist.c \
 	CrossCorrToplist.h \
 	pulsar_crosscorr_v2.c \
@@ -27,8 +27,8 @@ lalapps_pulsar_crosscorr_v2_SOURCES = \
 if HAVE_PYTHON
 
 pybin_scripts = \
-	lalapps_combine_crosscorr_toplists \
-	lalapps_run_pulsar_crosscorr_v2 \
+	lalpulsar_combine_crosscorr_toplists \
+	lalpulsar_run_pulsar_crosscorr_v2 \
 	$(END_OF_LINE)
 
 endif

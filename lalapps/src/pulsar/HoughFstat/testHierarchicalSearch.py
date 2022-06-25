@@ -22,7 +22,7 @@ testdir = "."
 
 mfd_cml = " ".join(
     [
-        "lalapps_Makefakedata_v5",
+        "lalpulsar_Makefakedata_v5",
         "--outSingleSFT=TRUE",
         f"--outSFTdir={testdir}",
         '--outLabel="simulated_signal"',
@@ -38,7 +38,7 @@ mfd_cml = " ".join(
 
 hs_cml = " ".join(
     [
-        "lalapps_HierarchicalSearch",
+        "lalpulsar_HierarchicalSearch",
         "--ephemSun=sun00-40-DE405.dat.gz",
         "--ephemEarth=earth00-40-DE405.dat.gz",
         "--method=0",

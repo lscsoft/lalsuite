@@ -33,7 +33,7 @@ int main( int argc, char *argv[] )
 {
 
   // Set help information
-  lalUserVarHelpBrief = "create setup file for use with lalapps_Weave";
+  lalUserVarHelpBrief = "create setup file for use with lalpulsar_Weave";
 
   ////////// Parse user input //////////
 
@@ -60,7 +60,7 @@ int main( int argc, char *argv[] )
   //
   XLALRegisterUvarMember(
     output_file, STRING, 'o', REQUIRED,
-    "Output file while stores the segment list, parameter-space metrics, and other data required by lalapps_Weave, e.g. ephemerides. "
+    "Output file while stores the segment list, parameter-space metrics, and other data required by lalpulsar_Weave, e.g. ephemerides. "
     );
   //
   // - Segment list input/generation
@@ -97,13 +97,13 @@ int main( int argc, char *argv[] )
   lalUserVarHelpOptionSubsection = "Parameter-space metric computation";
   XLALRegisterUvarMember(
     ref_time, EPOCH, 'r', NODEFAULT,
-    "Reference time for the search, including the parameter-space metrics computed here, and the parameter space and output of lalapps_Weave. "
+    "Reference time for the search, including the parameter-space metrics computed here, and the parameter space and output of lalpulsar_Weave. "
     "If omitted, the mid-point between the start of the first segment and the end of the last segment is used. "
     );
   XLALRegisterUvarMember(
     detectors, STRINGVector, 'd', REQUIRED,
     "Comma-separated list of 2-character detector names (e.g. H1,L1,...) for which the parameter-space metrics are computed. "
-    "Note that the detector names are always sorted, since their order impacts the interpretation of some options to lalapps_Weave. "
+    "Note that the detector names are always sorted, since their order impacts the interpretation of some options to lalpulsar_Weave. "
     );
   XLALRegisterUvarMember(
     detector_motion, STRING, 'm', DEVELOPER,
@@ -114,17 +114,17 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     ephem_earth, STRING, 'E', DEVELOPER,
-    "Earth ephemeris file, used to compute the parameter-space metrics and by lalapps_Weave. "
+    "Earth ephemeris file, used to compute the parameter-space metrics and by lalpulsar_Weave. "
     );
   XLALRegisterUvarMember(
     ephem_sun, STRING, 'S', DEVELOPER,
-    "Sun ephemeris file, used to compute the parameter-space metrics and by lalapps_Weave. "
+    "Sun ephemeris file, used to compute the parameter-space metrics and by lalpulsar_Weave. "
     );
   XLALRegisterUvarMember(
     spindowns, UINT4, 's', OPTIONAL,
     "Maximum number of spindowns for which the parameter-space metrics are computed. "
     "Must be at least 1. "
-    "This option limits the size of the spindown parameter space given to lalapps_Weave. "
+    "This option limits the size of the spindown parameter space given to lalpulsar_Weave. "
     );
 
   // Parse user input

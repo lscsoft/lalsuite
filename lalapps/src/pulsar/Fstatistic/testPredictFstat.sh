@@ -1,7 +1,7 @@
 ##---------- names of codes and input/output files
-mfd_code="lalapps_Makefakedata_v4"
+mfd_code="lalpulsar_Makefakedata_v4"
 saf_code="SemiAnalyticF"
-pfs_code="lalapps_PredictFstat"
+pfs_code="lalpulsar_PredictFstat"
 
 Ftolerance=0.05
 

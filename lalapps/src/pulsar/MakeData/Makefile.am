@@ -6,57 +6,57 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
-	lalapps_Makefakedata_v4 \
-	lalapps_Makefakedata_v5 \
+	lalpulsar_Makefakedata_v4 \
+	lalpulsar_Makefakedata_v5 \
 	$(END_OF_LIST)
 
 EXTRA_PROGRAMS =
 
-lalapps_Makefakedata_v4_SOURCES = \
+lalpulsar_Makefakedata_v4_SOURCES = \
 	makefakedata_v4.c \
 	$(END_OF_LIST)
 
-lalapps_Makefakedata_v5_SOURCES = \
+lalpulsar_Makefakedata_v5_SOURCES = \
 	makefakedata_v5.c \
 	$(END_OF_LIST)
 
 if LALFRAME
 
 bin_PROGRAMS += \
-	lalapps_MakeSFTs \
+	lalpulsar_MakeSFTs \
 	$(END_OF_LIST)
 
-lalapps_MakeSFTs_SOURCES = \
+lalpulsar_MakeSFTs_SOURCES = \
 	MakeSFTs.c \
 	$(END_OF_LIST)
 
-lalapps_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
+lalpulsar_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
 
 if PSS
 
-lalapps_MakeSFTs_SOURCES += XLALPSSInterface.c
-lalapps_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
+lalpulsar_MakeSFTs_SOURCES += XLALPSSInterface.c
+lalpulsar_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
 
 endif
 
 EXTRA_PROGRAMS += \
-	lalapps_sw_inj_frames \
+	lalpulsar_sw_inj_frames \
 	$(END_OF_LIST)
 
-lalapps_sw_inj_frames_SOURCES = \
+lalpulsar_sw_inj_frames_SOURCES = \
 	sw_inj_frames.c \
 	$(END_OF_LIST)
 
 endif
 
 dist_bin_SCRIPTS = \
-	lalapps_CopySFTs \
+	lalpulsar_CopySFTs \
 	$(END_OF_LIST)
 
 if HAVE_PYTHON
 
 pybin_scripts = \
-	lalapps_MakeSFTDAG \
+	lalpulsar_MakeSFTDAG \
 	$(END_OF_LIST)
 
 endif

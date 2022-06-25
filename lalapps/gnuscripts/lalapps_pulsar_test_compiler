@@ -105,7 +105,7 @@ if [ -f ${reftarball} ]; then
                     grep UNCLEAN "${file}"
                     ;;
                 *.fits)
-                    "${LAL_TEST_BUILDDIR}/../FITSTools/lalapps_fits_header_list" "${file}" | grep UNCLEAN
+                    "${LAL_TEST_BUILDDIR}/../FITSTools/lalpulsar_fits_header_list" "${file}" | grep UNCLEAN
                     ;;
                 *)
                     exit 1

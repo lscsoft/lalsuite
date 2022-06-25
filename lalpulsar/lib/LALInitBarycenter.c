@@ -76,7 +76,7 @@ int XLALCheckEphemerisRanges ( const EphemerisVector *ephemEarth, REAL8 avg[3], 
  * file TDB.1950.2050 and TIMEEPH_short.te405 within TEMPO2
  * http://www.atnf.csiro.au/research/pulsar/tempo2/. They are created from the
  * Chebychev polynomials in these files using the conversion in the lalapps code
- * lalapps_create_time_correction_ephemeris
+ * lalpulsar_create_time_correction_ephemeris
  *
  * \ingroup LALBarycenter_h
  */

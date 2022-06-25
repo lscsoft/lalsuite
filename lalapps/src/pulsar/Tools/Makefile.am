@@ -6,20 +6,20 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
-	lalapps_ComputeAntennaPattern \
-	lalapps_FstatMetric_v2 \
-	lalapps_PrintDetectorState \
+	lalpulsar_ComputeAntennaPattern \
+	lalpulsar_FstatMetric_v2 \
+	lalpulsar_PrintDetectorState \
 	$(END_OF_LIST)
 
-lalapps_ComputeAntennaPattern_SOURCES = \
+lalpulsar_ComputeAntennaPattern_SOURCES = \
 	ComputeAntennaPattern.c \
 	$(END_OF_LIST)
 
-lalapps_FstatMetric_v2_SOURCES = \
+lalpulsar_FstatMetric_v2_SOURCES = \
 	FstatMetric_v2.c \
 	$(END_OF_LIST)
 
-lalapps_PrintDetectorState_SOURCES = \
+lalpulsar_PrintDetectorState_SOURCES = \
 	PrintDetectorState.c \
 	$(END_OF_LIST)
 

@@ -22,7 +22,7 @@ testdir = "."
 
 mfd_cml = " ".join(
     [
-        "lalapps_Makefakedata_v5",
+        "lalpulsar_Makefakedata_v5",
         "--outSingleSFT=TRUE",
         f"--outSFTdir={testdir}",
         '--outLabel="simulated_signal"',
@@ -38,7 +38,7 @@ mfd_cml = " ".join(
 
 dhm_cml = " ".join(
     [
-        "lalapps_DriveHoughMulti",
+        "lalpulsar_DriveHoughMulti",
         "--sunEphemeris",
         "sun00-40-DE405.dat.gz",
         "--earthEphemeris",

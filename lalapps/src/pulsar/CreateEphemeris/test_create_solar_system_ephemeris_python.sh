@@ -10,7 +10,7 @@ fi
 # - For details of ./earth98.dat see ./test_create_solar_system_ephemeris.sh
 # - The binary SPK file ./de405-1998.bsp was creating using the command:
 #      python3 -m jplephem excerpt 1997/12/15 1999/1/15 https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/a_old_versions/de405.bsp de405-1998.bsp
-lalapps_create_solar_system_ephemeris_python --ephemeris ./de405-1998.bsp --output-file ./earth98-python.dat --gps-start 566784000 --num-years 1 --interval 4 --target EARTH
+lalpulsar_create_solar_system_ephemeris_python --ephemeris ./de405-1998.bsp --output-file ./earth98-python.dat --gps-start 566784000 --num-years 1 --interval 4 --target EARTH
 
 # strip comments from ephemeris files, put both in same (newer) format of one GPS time/position/velocity/acceleration entry per line
 cat earth98.dat | sed '/^#/d' | sed '1d' | awk '{ ORS=""; print $1, $2, $3; getline; print " ", $1, $2, $3; getline; print " ", $1, $2, $3; getline; print " ", $1, "\n"}' | awk 'NR <= 2192 { print }' > earth98.txt

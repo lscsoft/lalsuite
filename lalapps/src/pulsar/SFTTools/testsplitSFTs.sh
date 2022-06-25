@@ -1,9 +1,9 @@
-## run lalapps_Makefakedata_v5 to create fake broadband SFTs
+## run lalpulsar_Makefakedata_v5 to create fake broadband SFTs
 Tsft=1800
 start=1257800000
 span=9000
 misc='SFT_desc_w_us'   # test that 'misc' field can contain underscores
-cmdlinebase="lalapps_Makefakedata_v5 --outLabel '${misc}' --IFOs H1 --sqrtSX 1e-24 --startTime ${start} --duration ${span} --fmin 10 --Band 85 --injectionSources '{Alpha=0.1; Delta=0.4; Freq=30; f1dot=1e-10; h0=1e-24; cosi=0.7; refTime=1257800000}'"
+cmdlinebase="lalpulsar_Makefakedata_v5 --outLabel '${misc}' --IFOs H1 --sqrtSX 1e-24 --startTime ${start} --duration ${span} --fmin 10 --Band 85 --injectionSources '{Alpha=0.1; Delta=0.4; Freq=30; f1dot=1e-10; h0=1e-24; cosi=0.7; refTime=1257800000}'"
 mkdir -p broadband1a/
 cmdline="${cmdlinebase} --outSingleSFT=no --outSFTdir broadband1a/"
 if ! eval "$cmdline"; then
@@ -18,9 +18,9 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 
-## run lalapps_splitSFTs to create narrowband SFTs
+## run lalpulsar_splitSFTs to create narrowband SFTs
 mkdir -p narrowband1a/
-cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1a/"
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1a/"
 for sft in broadband1a/*.sft; do
     cmdline="${cmdline} $sft"
 done
@@ -30,14 +30,14 @@ if ! eval "$cmdline"; then
 fi
 mkdir -p narrowband1b/
 for sft in broadband1b/*.sft; do
-    cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1b/ $sft"
+    cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1b/ $sft"
     if ! eval "$cmdline"; then
         echo "ERROR: something failed when running '$cmdline'"
         exit 1
     fi
 done
 mkdir -p narrowband1c/
-cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1c/ -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1c/ -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -61,7 +61,7 @@ for i in 1a 1b 1c; do
 
     ## dump broadband and narrowband SFT bins, sorted by frequency
     for sftband in broadband narrowband; do
-        cmdline="lalapps_dumpSFT -d -i '${sftband}${i}/*' | sed '/^$/d;/^%/d' | sort -n -k1,3 > ${sftband}${i}_bins.txt"
+        cmdline="lalpulsar_dumpSFT -d -i '${sftband}${i}/*' | sed '/^$/d;/^%/d' | sort -n -k1,3 > ${sftband}${i}_bins.txt"
         if ! eval "$cmdline"; then
             echo "ERROR: something failed when running '$cmdline'"
             exit 1
@@ -85,14 +85,14 @@ span2=$(echo "$endTime2 - $startTime2" | bc)
 
 ## first using the constraint user options, but trying to get back the full split set
 mkdir -p narrowband2a/
-cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband2a/ -ts ${start} -te ${endTime1} -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband2a/ -ts ${start} -te ${endTime1} -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 ## then actually reduce the range
 mkdir -p narrowband2b/
-cmdline="lalapps_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband2b/ -ts ${startTime2} -te ${endTime2} -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband2b/ -ts ${startTime2} -te ${endTime2} -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -113,7 +113,7 @@ for freq in 10 18 26 34 42 50 58 66 74 82 90; do
 done
 
 ## dump narrowband2a/ (full range) SFT bins, sorted by frequency, should match broadband1c/ from before
-cmdline="lalapps_dumpSFT -d -i 'narrowband2a/*' | sed '/^$/d;/^%/d' | sort -n -k1,3 > narrowband2a_bins.txt"
+cmdline="lalpulsar_dumpSFT -d -i 'narrowband2a/*' | sed '/^$/d;/^%/d' | sort -n -k1,3 > narrowband2a_bins.txt"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -140,13 +140,13 @@ done
 
 ## check rounding of bins
 mkdir -p broadband3/
-cmdline="lalapps_Makefakedata_v5 --outLabel '${misc}' --IFOs H1 --sqrtSX 1e-24 --startTime ${start} --duration ${Tsft} --Tsft ${Tsft} --fmin 50 --Band 10 --outSingleSFT=no --outSFTdir broadband3/"
+cmdline="lalpulsar_Makefakedata_v5 --outLabel '${misc}' --IFOs H1 --sqrtSX 1e-24 --startTime ${start} --duration ${Tsft} --Tsft ${Tsft} --fmin 50 --Band 10 --outSingleSFT=no --outSFTdir broadband3/"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 mkdir -p narrowband3a/
-cmdline="lalapps_splitSFTs --output-directory narrowband3a/ --start-frequency 51 --frequency-bandwidth 1 --end-frequency 52 -- broadband3/H-1_H1_1800SFT_${misc}-1257800000-1800.sft"
+cmdline="lalpulsar_splitSFTs --output-directory narrowband3a/ --start-frequency 51 --frequency-bandwidth 1 --end-frequency 52 -- broadband3/H-1_H1_1800SFT_${misc}-1257800000-1800.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -157,7 +157,7 @@ if [ "X$files" != "Xnarrowband3a/H-1_H1_1800SFT_NBF0051Hz0W0001Hz0_${misc}-12578
     exit 1
 fi
 mkdir -p narrowband3b/
-cmdline="lalapps_splitSFTs --output-directory narrowband3b/ --start-frequency 51 --frequency-bandwidth 1.2212 --end-frequency 52.2212 -- broadband3/H-1_H1_1800SFT_${misc}-1257800000-1800.sft"
+cmdline="lalpulsar_splitSFTs --output-directory narrowband3b/ --start-frequency 51 --frequency-bandwidth 1.2212 --end-frequency 52.2212 -- broadband3/H-1_H1_1800SFT_${misc}-1257800000-1800.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -168,7 +168,7 @@ if [ "X$files" != "Xnarrowband3b/H-1_H1_1800SFT_NBF0051Hz0W0001Hz399_${misc}-125
     exit 1
 fi
 mkdir -p narrowband3c/
-cmdline="lalapps_splitSFTs --output-directory narrowband3c/ --start-frequency 50.9508 --frequency-bandwidth 1.2212 --end-frequency 52.172 -- broadband3/H-1_H1_1800SFT_${misc}-1257800000-1800.sft"
+cmdline="lalpulsar_splitSFTs --output-directory narrowband3c/ --start-frequency 50.9508 --frequency-bandwidth 1.2212 --end-frequency 52.172 -- broadband3/H-1_H1_1800SFT_${misc}-1257800000-1800.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1

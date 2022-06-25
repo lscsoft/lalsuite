@@ -6,40 +6,40 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
-	lalapps_ComputePSD \
-	lalapps_SFTclean \
-	lalapps_SFTvalidate  \
-	lalapps_WriteSFTsfromSFDBs \
-	lalapps_compareSFTs \
-	lalapps_dumpSFT \
-	lalapps_splitSFTs \
+	lalpulsar_ComputePSD \
+	lalpulsar_SFTclean \
+	lalpulsar_SFTvalidate  \
+	lalpulsar_WriteSFTsfromSFDBs \
+	lalpulsar_compareSFTs \
+	lalpulsar_dumpSFT \
+	lalpulsar_splitSFTs \
 	$(END_OF_LIST)
 
-lalapps_ComputePSD_SOURCES = \
+lalpulsar_ComputePSD_SOURCES = \
 	ComputePSD.c \
 	$(END_OF_LIST)
 
-lalapps_SFTclean_SOURCES = \
+lalpulsar_SFTclean_SOURCES = \
 	SFTclean.c \
 	$(END_OF_LIST)
 
-lalapps_SFTvalidate_SOURCES = \
+lalpulsar_SFTvalidate_SOURCES = \
 	SFTvalidate.c \
 	$(END_OF_LIST)
 
-lalapps_compareSFTs_SOURCES = \
+lalpulsar_compareSFTs_SOURCES = \
 	compareSFTs.c \
 	$(END_OF_LIST)
 
-lalapps_dumpSFT_SOURCES = \
+lalpulsar_dumpSFT_SOURCES = \
 	dumpSFT.c \
 	$(END_OF_LIST)
 
-lalapps_splitSFTs_SOURCES = \
+lalpulsar_splitSFTs_SOURCES = \
 	splitSFTs.c \
 	$(END_OF_LIST)
 
-lalapps_WriteSFTsfromSFDBs_SOURCES = \
+lalpulsar_WriteSFTsfromSFDBs_SOURCES = \
 	WriteSFTsfromSFDBs.c \
 	$(END_OF_LIST)
 

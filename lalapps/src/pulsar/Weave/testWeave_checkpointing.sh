@@ -4,14 +4,14 @@ export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
 echo "=== Create search setup with 3 segments ==="
 set -x
-lalapps_WeaveSetup --first-segment=1122332211/90000 --segment-count=3 --detectors=H1,L1 --output-file=WeaveSetup.fits
-lalapps_fits_overview WeaveSetup.fits
+lalpulsar_WeaveSetup --first-segment=1122332211/90000 --segment-count=3 --detectors=H1,L1 --output-file=WeaveSetup.fits
+lalpulsar_fits_overview WeaveSetup.fits
 set +x
 echo
 
 echo "=== Restrict timestamps to segment list in WeaveSetup.fits ==="
 set -x
-lalapps_fits_table_list 'WeaveSetup.fits[segments][col c1=start_s; col2=end_s]' \
+lalpulsar_fits_table_list 'WeaveSetup.fits[segments][col c1=start_s; col2=end_s]' \
     | awk 'BEGIN { print "/^#/ { print }" } /^#/ { next } { printf "%i <= $1 && $1 <= %i { print }\n", $1, $2 + 1 }' > timestamp-filter.awk
 awk -f timestamp-filter.awk all-timestamps-1.txt > timestamps-1.txt
 awk -f timestamp-filter.awk all-timestamps-2.txt > timestamps-2.txt
@@ -20,7 +20,7 @@ echo
 
 echo "=== Generate SFTs ==="
 set -x
-lalapps_Makefakedata_v5 --randSeed=3456 --fmin=49.5 --Band=2.0 --Tsft=1800 \
+lalpulsar_Makefakedata_v5 --randSeed=3456 --fmin=49.5 --Band=2.0 --Tsft=1800 \
     --outSingleSFT --outSFTdir=. --IFOs=H1,L1 --sqrtSX=1,1 \
     --timestampsFiles=timestamps-1.txt,timestamps-2.txt
 set +x
@@ -28,10 +28,10 @@ echo
 
 echo "=== Perform interpolating search without checkpointing ==="
 set -x
-lalapps_Weave --output-file=WeaveOutNoCkpt.fits \
+lalpulsar_Weave --output-file=WeaveOutNoCkpt.fits \
     --toplists=all --toplist-limit=232 --setup-file=WeaveSetup.fits --sft-files='*.sft' --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" \
     --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4 --recalc-statistics=all
-lalapps_fits_overview WeaveOutNoCkpt.fits
+lalpulsar_fits_overview WeaveOutNoCkpt.fits
 set +x
 echo
 
@@ -39,7 +39,7 @@ echo "=== Check for non-singular semicoherent dimensions ==="
 set -x
 semi_ntmpl_prev=1
 for dim in SSKYA SSKYB NU1DOT NU0DOT; do
-    semi_ntmpl=`lalapps_fits_header_getval "WeaveOutNoCkpt.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    semi_ntmpl=`lalpulsar_fits_header_getval "WeaveOutNoCkpt.fits[0]" "NSEMITMPL ${dim}" | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${semi_ntmpl} '>' ${semi_ntmpl_prev}
     semi_ntmpl_prev=${semi_ntmpl}
 done
@@ -76,39 +76,39 @@ for opt in nopart freqpart f1dotpart allpart; do
     echo "--- Start to first checkpoint ---"
     set -x
     rm -f WeaveCkpt.fits
-    lalapps_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.22 \
+    lalpulsar_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.22 \
         --toplists=all --toplist-limit=232 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
         --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4 --recalc-statistics=all
-    lalapps_fits_overview WeaveCkpt.fits
+    lalpulsar_fits_overview WeaveCkpt.fits
     set +x
     echo "--- First to second checkpoint ---"
     set -x
-    lalapps_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.63 \
+    lalpulsar_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits --ckpt-output-exit=0.63 \
         --toplists=all --toplist-limit=232 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
         --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4 --recalc-statistics=all
-    lalapps_fits_overview WeaveCkpt.fits
+    lalpulsar_fits_overview WeaveCkpt.fits
     set +x
     echo "--- Second checkpoint to end ---"
     set -x
-    lalapps_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits \
+    lalpulsar_Weave ${weave_part_options} --output-file=WeaveOutCkpt.fits --ckpt-output-file=WeaveCkpt.fits \
         --toplists=all --toplist-limit=232 --extra-statistics="mean2F_det,sum2F_det,coh2F,coh2F_det" --setup-file=WeaveSetup.fits --sft-files='*.sft' \
         --sky-patch-count=4 --sky-patch-index=0 --freq=50/0.01 --f1dot=-1e-9,0 --semi-max-mismatch=5 --coh-max-mismatch=0.4 --recalc-statistics=all
-    lalapps_fits_overview WeaveOutCkpt.fits
+    lalpulsar_fits_overview WeaveOutCkpt.fits
     set +x
     echo
 
     echo "=== Options '${opt}': Check number of times output results have been restored from a checkpoint ==="
     set -x
-    ckpt_count=`lalapps_fits_header_getval "WeaveCkpt.fits[0]" CKPTCNT | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    ckpt_count=`lalpulsar_fits_header_getval "WeaveCkpt.fits[0]" CKPTCNT | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${ckpt_count} '=' 2
-    num_ckpt=`lalapps_fits_header_getval "WeaveOutCkpt.fits[0]" NUMCKPT | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
+    num_ckpt=`lalpulsar_fits_header_getval "WeaveOutCkpt.fits[0]" NUMCKPT | tr '\n\r' '  ' | awk 'NF == 1 {printf "%d", $1}'`
     expr ${num_ckpt} '=' ${ckpt_count}
     set +x
     echo
 
-    echo "=== Options '${opt}': Compare F-statistics from lalapps_Weave without/with checkpointing ==="
+    echo "=== Options '${opt}': Compare F-statistics from lalpulsar_Weave without/with checkpointing ==="
     set -x
-    lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits
+    lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits
     set +x
     echo
 

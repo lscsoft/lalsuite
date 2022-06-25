@@ -1,8 +1,8 @@
-mfdv4_CODE="lalapps_Makefakedata_v4"
-mfdv5_CODE="lalapps_Makefakedata_v5"
-cmp_CODE="lalapps_compareSFTs"
-dump_code="lalapps_dumpSFT"
-split_code="lalapps_splitSFTs"
+mfdv4_CODE="lalpulsar_Makefakedata_v4"
+mfdv5_CODE="lalpulsar_Makefakedata_v5"
+cmp_CODE="lalpulsar_compareSFTs"
+dump_code="lalpulsar_dumpSFT"
+split_code="lalpulsar_splitSFTs"
 
 testDIR="./mfdv5_TEST"
 

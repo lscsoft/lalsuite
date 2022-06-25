@@ -12,8 +12,8 @@ segs="./segs"
 echo "${seg1_tstart} ${seg1_tend}" > $segs
 echo "${seg2_tstart} ${seg2_tend}" >> $segs
 
-## run lalapps_MakeSFTDAG to create a fake output
-cmdline="lalapps_MakeSFTDAG -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . -N H1:GDS-CALIB_STRAIN_CLEAN -F ${fmin} -B ${Band} -D 3 -X TEST -w 3 -P 0.5 -m 1 -A ligo.sim.o4.cw.explore.test -U albert.einstein -H -g segs -J /tmp/path/to"
+## run lalpulsar_MakeSFTDAG to create a fake output
+cmdline="lalpulsar_MakeSFTDAG -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . -N H1:GDS-CALIB_STRAIN_CLEAN -F ${fmin} -B ${Band} -D 3 -X TEST -w 3 -P 0.5 -m 1 -A ligo.sim.o4.cw.explore.test -U albert.einstein -H -g segs -J /tmp/path/to"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -76,7 +76,7 @@ fi
 
 testsftsubcontent=$(<$sftsub)
 sftsubfilecontent="universe = vanilla
-executable = /tmp/path/to/lalapps_MakeSFTs
+executable = /tmp/path/to/lalpulsar_MakeSFTs
 arguments = \$(argList)
 getenv = True
 accounting_group = ligo.sim.o4.cw.explore.test

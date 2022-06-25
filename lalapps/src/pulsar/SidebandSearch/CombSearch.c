@@ -31,7 +31,7 @@
  * \brief
  * Calculates the C-statistic for a given parameter-space of GW signals from binary sources with known sky position.
  *
- * Uses outputFstat file of lalapps_ComputeFstatistic_v2.c as input.
+ * Uses outputFstat file of lalpulsar_ComputeFstatistic_v2.c as input.
  *
  */
 

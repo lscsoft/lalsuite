@@ -1,8 +1,8 @@
 ##---------- names of codes
-cap_code="lalapps_ComputeAntennaPattern"
-pds_code="lalapps_PrintDetectorState"
-mfd_code="lalapps_Makefakedata_v4"
-pfs_code="lalapps_PredictFstat"
+cap_code="lalpulsar_ComputeAntennaPattern"
+pds_code="lalpulsar_PrintDetectorState"
+mfd_code="lalpulsar_Makefakedata_v4"
+pfs_code="lalpulsar_PredictFstat"
 
 tolerance=1e-3
 tolerance_pfs=1 ## more lenient because PFS has noise fluctuations from MFD
@@ -66,7 +66,7 @@ fi
 
 a=$( sed -n 's/^a = //p' $outPDS )
 b=$( sed -n 's/^b = //p' $outPDS )
-echo "==> lalapps_PrintDetectorState:      a=$a, b=$b"
+echo "==> lalpulsar_PrintDetectorState:      a=$a, b=$b"
 
 ## ----- run ComputeAntennaPattern
 cap_cmdline="${cap_code} --IFOs=H1 --timeGPS=$timestamp1 --outab=$outCAP --Alpha=$alpha --Delta=$delta"
@@ -78,7 +78,7 @@ fi
 
 a_cap=$(awk -v col=4 "$awk_print_wo_headers" $outCAP)
 b_cap=$(awk -v col=5 "$awk_print_wo_headers" $outCAP)
-echo "==> lalapps_ComputeAntennaPattern:   a=$a_cap, b=$b_cap"
+echo "==> lalpulsar_ComputeAntennaPattern:   a=$a_cap, b=$b_cap"
 
 reldev_a_cap=$(echo $a $a_cap | awk "$awk_reldev")
 reldev_b_cap=$(echo $b $b_cap | awk "$awk_reldev")
@@ -159,9 +159,9 @@ b3_cap=$(echo $outCAP3 |  awk '{print $5}')
 # read a1_cap a2_cap a3_cap <<< $(awk '!/%%/ && /[0-9]/ {print $4}' $outCAP)
 # read b1_cap b2_cap b3_cap <<< $(awk '!/%%/ && /[0-9]/ {print $5}' $outCAP)
 
-echo "==> alpha=0.0 delta= 0.0: lalapps_ComputeAntennaPattern: a=$a1_cap, b=$b1_cap / lalapps_PrintDetectorState: a=$a1_pds, b=$b1_pds"
-echo "    alpha=0.0 delta= 0.5: lalapps_ComputeAntennaPattern: a=$a2_cap, b=$b2_cap / lalapps_PrintDetectorState: a=$a2_pds, b=$b2_pds"
-echo "    alpha=3.0 delta=-0.5: lalapps_ComputeAntennaPattern: a=$a3_cap, b=$b3_cap / lalapps_PrintDetectorState: a=$a3_pds, b=$b3_pds"
+echo "==> alpha=0.0 delta= 0.0: lalpulsar_ComputeAntennaPattern: a=$a1_cap, b=$b1_cap / lalpulsar_PrintDetectorState: a=$a1_pds, b=$b1_pds"
+echo "    alpha=0.0 delta= 0.5: lalpulsar_ComputeAntennaPattern: a=$a2_cap, b=$b2_cap / lalpulsar_PrintDetectorState: a=$a2_pds, b=$b2_pds"
+echo "    alpha=3.0 delta=-0.5: lalpulsar_ComputeAntennaPattern: a=$a3_cap, b=$b3_cap / lalpulsar_PrintDetectorState: a=$a3_pds, b=$b3_pds"
 
 reldev_a1=$(echo $a1_pds $a1_cap | awk "$awk_reldev")
 reldev_b1=$(echo $b1_pds $b1_cap | awk "$awk_reldev")
@@ -269,8 +269,8 @@ B_pfs=$(grep 'B =' ${outPFS} | tr -d 'B =;')
 C_pfs=$(grep 'C =' ${outPFS} | tr -d 'C =;')
 D_pfs=$(grep 'D =' ${outPFS} | tr -d 'D =;')
 
-echo "==> lalapps_ComputeAntennaPattern:   A=$A_cap, B=$B_cap, C=$C_cap, D=$D_cap"
-echo "    lalapps_PredictFstat:            A=$A_pfs,   B=$B_pfs,   C=$C_pfs,   D=$D_pfs"
+echo "==> lalpulsar_ComputeAntennaPattern:   A=$A_cap, B=$B_cap, C=$C_cap, D=$D_cap"
+echo "    lalpulsar_PredictFstat:            A=$A_pfs,   B=$B_pfs,   C=$C_pfs,   D=$D_pfs"
 
 reldev_A=$(echo $A_cap $A_pfs | awk "$awk_reldev")
 fail_A=$(echo $reldev_A $tolerance | awk "$awk_isgtr")

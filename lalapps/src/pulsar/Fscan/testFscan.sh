@@ -7,7 +7,7 @@ Band=10
 fmax=`echo ${fmin} + ${Band} | bc`
 
 ## run MFDv5 to create some fake data
-cmdline="lalapps_Makefakedata_v5 --outSingleSFT=TRUE --outSFTdir=. --IFOs=H1 --sqrtSX=1e-22 --startTime=${tstart} --duration=${dur} --fmin=${fmin} --Band=${Band} --Tsft=${Tsft} --SFToverlap=0 --randSeed=42"
+cmdline="lalpulsar_Makefakedata_v5 --outSingleSFT=TRUE --outSFTdir=. --IFOs=H1 --sqrtSX=1e-22 --startTime=${tstart} --duration=${dur} --fmin=${fmin} --Band=${Band} --Tsft=${Tsft} --SFToverlap=0 --randSeed=42"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -23,7 +23,7 @@ done
 ## run spec_avg
 outdir=spec_avg
 mkdir -p ${outdir}
-cmdline="( cd ${outdir} && ../lalapps_spec_avg -p ../${MFDv5sft} -I H1 -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} -r 0.1 )"
+cmdline="( cd ${outdir} && ../lalpulsar_spec_avg -p ../${MFDv5sft} -I H1 -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} -r 0.1 )"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -153,7 +153,7 @@ echo "OK"
 ## run spec_avg_long to create an average ASD
 outdir=spec_avg_long
 mkdir -p ${outdir}
-cmdline="( cd ${outdir} && ../lalapps_spec_avg_long -p ../${MFDv5sft} -I H1 -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} )"
+cmdline="( cd ${outdir} && ../lalpulsar_spec_avg_long -p ../${MFDv5sft} -I H1 -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} )"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -207,7 +207,7 @@ echo "OK"
 ## run spec_coherence to compute coherence values
 outdir=spec_coherence
 mkdir -p ${outdir}
-cmdline="( cd ${outdir} && ../lalapps_spec_coherence -p ../${MFDv5sft} -q ../${MFDv5sft} -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} )"
+cmdline="( cd ${outdir} && ../lalpulsar_spec_coherence -p ../${MFDv5sft} -q ../${MFDv5sft} -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} )"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -251,7 +251,7 @@ done
 echo "OK"
 
 ## run MFDv5 to create some fake data
-cmdline="lalapps_Makefakedata_v5 --outSingleSFT=TRUE --outSFTdir=. --IFOs=L1 --sqrtSX=1e-22 --startTime=${tstart} --duration=${dur} --fmin=${fmin} --Band=${Band} --Tsft=${Tsft} --SFToverlap=0 --randSeed=43"
+cmdline="lalpulsar_Makefakedata_v5 --outSingleSFT=TRUE --outSFTdir=. --IFOs=L1 --sqrtSX=1e-22 --startTime=${tstart} --duration=${dur} --fmin=${fmin} --Band=${Band} --Tsft=${Tsft} --SFToverlap=0 --randSeed=43"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -267,7 +267,7 @@ done
 ## run spec_coherence to compute coherence values
 outdir=spec_coherence
 mkdir -p ${outdir}
-cmdline="( cd ${outdir} && ../lalapps_spec_coherence -p ../${MFDv5sft} -q ../${MFDv5sft2} -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} )"
+cmdline="( cd ${outdir} && ../lalpulsar_spec_coherence -p ../${MFDv5sft} -q ../${MFDv5sft2} -s 0 -e 2000000000 -f ${fmin} -F ${fmax} -t ${Tsft} )"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1

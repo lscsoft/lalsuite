@@ -1,6 +1,6 @@
-#=##---------- names of codes and input/output files
-mfd_code="lalapps_Makefakedata_v4"
-pcc_code="./lalapps_pulsar_crosscorr_v2"
+##---------- names of codes and input/output files
+mfd_code="lalpulsar_Makefakedata_v4"
+pcc_code="lalpulsar_pulsar_crosscorr_v2"
 
 Ftolerance=0.05
 

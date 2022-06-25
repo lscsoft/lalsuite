@@ -18,7 +18,7 @@
 Test script for the heterodyned pulsar model functions.
 
 These functions are tested against fiducial outputs from the reviewed
-lalapps_pulsar_parameter_estimation_nested code.
+lalpulsar_pulsar_parameter_estimation_nested code.
 """
 
 from __future__ import print_function, division
@@ -40,7 +40,7 @@ from lalpulsar.simulateHeterodynedCW import HeterodynedCWSimulator
 """
 The first test output is to create a signal model for a source assuming that
 the heterodyne precisely matches the signal, i.e., it only varies due to the
-antenna pattern. lalapps_pulsar_parameter_estimation_nested has been run with
+antenna pattern. lalpulsar_pulsar_parameter_estimation_nested has been run with
 the following pulsar parameter "inj.par" file:
 
 PSRJ     TEST
@@ -56,7 +56,7 @@ PHI0     2.3
 EPHEM    DE405
 UNITS    TCB
 
-lalapps_pulsar_parameter_estimation_nested --par-file inj.par --outfile test.hdf --harmonics 2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1,L1 --fake-starts 1000000000,1000000000 --fake-lengths 86400,86400 --fake-dt 3600,3600
+lalpulsar_pulsar_parameter_estimation_nested --par-file inj.par --outfile test.hdf --harmonics 2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1,L1 --fake-starts 1000000000,1000000000 --fake-lengths 86400,86400 --fake-dt 3600,3600
 
 The outputs of "inj.txt_H1_2.0_signal_only" and "inj.txt_L1_2.0_signal_only"
 are given below.
@@ -115,7 +115,7 @@ t1output = {'H1': np.array([[1000000000.0, -4.365015078242e-27, -4.216860020522e
 """
 The second test output is to create a signal model for a source assuming that
 the heterodyne and injected signal do not precisely match.
-lalapps_pulsar_parameter_estimation_nested has been run with the following
+lalpulsar_pulsar_parameter_estimation_nested has been run with the following
 pulsar parameter "inj.par" file:
 
 PSRJ     TEST
@@ -146,7 +146,7 @@ PHI0     2.3
 EPHEM    DE405
 UNITS    TCB
 
-lalapps_pulsar_parameter_estimation_nested --par-file het.par --outfile test.hdf --harmonics 2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1 --fake-starts 1000000000 --fake-lengths 600 --fake-dt 60
+lalpulsar_pulsar_parameter_estimation_nested --par-file het.par --outfile test.hdf --harmonics 2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1 --fake-starts 1000000000 --fake-lengths 600 --fake-dt 60
 
 The output of "inj.txt_H1_2.0_signal_only" is given below.
 """
@@ -167,7 +167,7 @@ t2output = np.array([[1000000000.0, -5.941104012924e-27, 1.561111119568e-27],
 The third test output is to create a signal model for a source assuming that
 the heterodyne and injected signal do not precisely matches, but with emission
 at both once and twice the rotation frequency.
-lalapps_pulsar_parameter_estimation_nested has been run with
+lalpulsar_pulsar_parameter_estimation_nested has been run with
 the following pulsar parameter "inj.par" file:
 
 PSRJ     TEST
@@ -202,7 +202,7 @@ PHI22    4.5
 EPHEM    DE405
 UNITS    TCB
 
-lalapps_pulsar_parameter_estimation_nested --par-file het.par --outfile test.hdf --harmonics 1,2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1 --fake-starts 1000000000,1000000000 --fake-lengths 600,600 --fake-dt 60,60
+lalpulsar_pulsar_parameter_estimation_nested --par-file het.par --outfile test.hdf --harmonics 1,2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1 --fake-starts 1000000000,1000000000 --fake-lengths 600,600 --fake-dt 60,60
 
 The outputs of "inj.txt_H1_1.0_signal_only" and "inj.txt_H1_2.0_signal_only"
 are given below.
@@ -234,7 +234,7 @@ t3output = {'1': np.array([[1000000000.0, -2.281620347081e-26, -7.267059337744e-
 The fourth test output is to create a signal model for a source assuming that
 the heterodyne and injected signal do not precisely matches, adding in some
 binary system parameters.
-lalapps_pulsar_parameter_estimation_nested has been run with
+lalpulsar_pulsar_parameter_estimation_nested has been run with
 the following pulsar parameter "inj.par" file:
 
 PSRJ     TEST
@@ -277,7 +277,7 @@ PB       0.54
 EPHEM    DE405
 UNITS    TCB
 
-lalapps_pulsar_parameter_estimation_nested --par-file het.par --outfile test.hdf --harmonics 2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1 --fake-starts 1000000000 --fake-lengths 600 --fake-dt 60
+lalpulsar_pulsar_parameter_estimation_nested --par-file het.par --outfile test.hdf --harmonics 2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1 --fake-starts 1000000000 --fake-lengths 600 --fake-dt 60
 
 The output of "inj.txt_H1_2.0_signal_only" is given below.
 """
@@ -298,7 +298,7 @@ t4output = np.array([[1000000000.0, -2.005382682171e-27, -5.806222964895e-27],
 The fifth test output is to create a signal model for a source assuming that
 the heterodyne precisely matches the signal, i.e., it only varies due to the
 antenna pattern, but including vector and scalar polarisation modes.
-lalapps_pulsar_parameter_estimation_nested has been run with
+lalpulsar_pulsar_parameter_estimation_nested has been run with
 the following pulsar parameter "inj.par" file:
 
 PSRJ       TEST
@@ -322,7 +322,7 @@ PSIVECTOR  2.4
 EPHEM      DE405
 UNITS      TCB
 
-lalapps_pulsar_parameter_estimation_nested --par-file inj.par --outfile test.hdf --harmonics 2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1 --fake-starts 1000000000 --fake-lengths 86400 --fake-dt 3600 --nonGR --inject-nonGR
+lalpulsar_pulsar_parameter_estimation_nested --par-file inj.par --outfile test.hdf --harmonics 2 --inject-file inj.par --inject-only --inject-output inj.txt --fake-data H1 --fake-starts 1000000000 --fake-lengths 86400 --fake-dt 3600 --nonGR --inject-nonGR
 
 The output of "inj.txt_H1_2.0_signal_only" is given below.
 """
@@ -360,7 +360,7 @@ in some binary system parameters, and glitch parameters for the updated signal.
 The first glitch is at GPS 1000000600 (in TDB, which puts it into the data set
 time, or MJD 55818.08161090822), second glitch is at GPS 1000000700 (or MJD
 55818.08276831563)
-lalapps_heterodyne_pulsar has been run with the following pulsar parameter
+lalpulsar_heterodyne_pulsar has been run with the following pulsar parameter
 "inj.par" file:
 
 PSRJ     TEST
@@ -401,7 +401,7 @@ PEPOCH   58000
 EPHEM    DE405
 UNITS    TCB
 
-lalapps_heterodyne_pulsar -i H1 --pulsar J0000+0000 -z 2 -f het.par -g inj.par -s 1/60 -r 1/60 -P -o testing.txt -l segments.txt -d inj.txt -L -e earth00-40-DE405.dat.gz -S sun00-40-DE405.dat.gz -t te405_2000-2040.dat.gz
+lalpulsar_heterodyne_pulsar -i H1 --pulsar J0000+0000 -z 2 -f het.par -g inj.par -s 1/60 -r 1/60 -P -o testing.txt -l segments.txt -d inj.txt -L -e earth00-40-DE405.dat.gz -S sun00-40-DE405.dat.gz -t te405_2000-2040.dat.gz
 
 where inj.txt contains 10 rows with times between 1000000000 and 1000000540,
 and segments.txt contains one row with:
@@ -427,7 +427,7 @@ The seventh test output is to create a signal model phase evolution for a source
 assuming that heterodyne and an updated signal do not precisely match, adding
 in some binary system parameters, glitch parameters and timing noise (FITWAVES)
 parameters for the updated signal.
-lalapps_heterodyne_pulsar has been run with the following pulsar parameter
+lalpulsar_heterodyne_pulsar has been run with the following pulsar parameter
 "inj.par" file:
 
 PSRJ     TEST
@@ -474,7 +474,7 @@ PEPOCH   55810
 EPHEM    DE405
 UNITS    TCB
 
-lalapps_heterodyne_pulsar -i H1 --pulsar J0000+0000 -z 2 -f het.par -g inj.par -s 1/60 -r 1/60 -P -o testing.txt -l segments.txt -d inj.txt -L -e earth00-40-DE405.dat.gz -S sun00-40-DE405.dat.gz -t te405_2000-2040.dat.gz
+lalpulsar_heterodyne_pulsar -i H1 --pulsar J0000+0000 -z 2 -f het.par -g inj.par -s 1/60 -r 1/60 -P -o testing.txt -l segments.txt -d inj.txt -L -e earth00-40-DE405.dat.gz -S sun00-40-DE405.dat.gz -t te405_2000-2040.dat.gz
 
 where inj.txt contains 10 rows with times between 1000000000 and 1000000540,
 and segments.txt contains one row with:
@@ -564,7 +564,7 @@ def test_one(det):
                                                      tdat,
                                                      lalpulsar.TIMECORRECTION_TCB)
 
-    # check output matches that from lalapps_pulsar_parameter_estimation_nested
+    # check output matches that from lalpulsar_pulsar_parameter_estimation_nested
     assert_allclose(fullsignal.data.data.real, t1output[det][:,1])
     assert_allclose(fullsignal.data.data.imag, t1output[det][:,2])
 
@@ -639,7 +639,7 @@ def test_two():
                                                      tdat,
                                                      lalpulsar.TIMECORRECTION_TCB)
 
-    # check output matches that from lalapps_pulsar_parameter_estimation_nested
+    # check output matches that from lalpulsar_pulsar_parameter_estimation_nested
     assert_allclose(fullsignal.data.data.real, t2output[:,1])
     assert_allclose(fullsignal.data.data.imag, t2output[:,2])
 
@@ -719,7 +719,7 @@ def test_three(harmonic):
                                                      tdat,
                                                      lalpulsar.TIMECORRECTION_TCB)
 
-    # check output matches that from lalapps_pulsar_parameter_estimation_nested
+    # check output matches that from lalpulsar_pulsar_parameter_estimation_nested
     assert_allclose(fullsignal.data.data.real, t3output[harmonic][:,1])
     assert_allclose(fullsignal.data.data.imag, t3output[harmonic][:,2])
 
@@ -814,7 +814,7 @@ def test_four():
                                                      tdat,
                                                      lalpulsar.TIMECORRECTION_TCB)
 
-    # check output matches that from lalapps_pulsar_parameter_estimation_nested
+    # check output matches that from lalpulsar_pulsar_parameter_estimation_nested
     assert_allclose(fullsignal.data.data.real, t4output[:,1])
     assert_allclose(fullsignal.data.data.imag, t4output[:,2])
 
@@ -889,7 +889,7 @@ def test_five():
                                                      lalpulsar.TIMECORRECTION_TCB)
 
 
-    # check output matches that from lalapps_pulsar_parameter_estimation_nested
+    # check output matches that from lalpulsar_pulsar_parameter_estimation_nested
     assert_allclose(fullsignal.data.data.real, t5output[:,1])
     assert_allclose(fullsignal.data.data.imag, t5output[:,2])
 
@@ -965,7 +965,7 @@ def test_six():
                                                            tdat,
                                                            lalpulsar.TIMECORRECTION_TCB)
 
-    # check output matches that from lalapps_heterodyne_pulsar
+    # check output matches that from lalpulsar_heterodyne_pulsar
     assert_allclose(2.0 * np.pi * np.fmod(fullphase.data, 1.), t6output, rtol=1e-4)
 
 
@@ -1055,7 +1055,7 @@ def test_seven():
                                                            tdat,
                                                            lalpulsar.TIMECORRECTION_TCB)
 
-    # check output matches that from lalapps_heterodyne_pulsar
+    # check output matches that from lalpulsar_heterodyne_pulsar
     assert_allclose(2.0 * np.pi * np.fmod(fullphase.data, 1.), t7output, rtol=1e-3)
 
 

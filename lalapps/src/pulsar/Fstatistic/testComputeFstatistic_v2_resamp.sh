@@ -1,7 +1,7 @@
 ##---------- names of codes and input/output files
-mfd_code="lalapps_Makefakedata_v5"
-cmp_code="lalapps_compareFstats"
-cfs_code="lalapps_ComputeFstatistic_v2"
+mfd_code="lalpulsar_Makefakedata_v5"
+cmp_code="lalpulsar_compareFstats"
+cfs_code="lalpulsar_ComputeFstatistic_v2"
 
 # ---------- fixed parameter of our test-signal
 Tsft=1800;

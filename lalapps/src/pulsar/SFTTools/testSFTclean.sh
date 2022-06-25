@@ -1,7 +1,7 @@
 ##---------- names of codes and input/output files
-clean_code="lalapps_SFTclean"
-mfd_code="lalapps_Makefakedata_v4"
-dump_code="lalapps_dumpSFT"
+clean_code="lalpulsar_SFTclean"
+mfd_code="lalpulsar_Makefakedata_v4"
+dump_code="lalpulsar_dumpSFT"
 
 retstatus=0
 

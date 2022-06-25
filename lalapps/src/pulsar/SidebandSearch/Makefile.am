@@ -6,10 +6,10 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 noinst_PROGRAMS = \
-	lalapps_CombSearch \
+	lalpulsar_CombSearch \
 	$(END_OF_LIST)
 
-lalapps_CombSearch_SOURCES = \
+lalpulsar_CombSearch_SOURCES = \
 	CombSearch.c \
 	$(END_OF_LIST)
 

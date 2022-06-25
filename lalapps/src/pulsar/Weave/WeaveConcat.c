@@ -33,7 +33,7 @@ int main( int argc, char *argv[] )
 {
 
   // Set help information
-  lalUserVarHelpBrief = "concatenate result files produced by lalapps_Weave";
+  lalUserVarHelpBrief = "concatenate result files produced by lalpulsar_Weave";
 
   ////////// Parse user input //////////
 
@@ -53,7 +53,7 @@ int main( int argc, char *argv[] )
   //
   XLALRegisterUvarMember(
     input_result_files, STRINGVector, 'i', REQUIRED,
-    "Input result files produced by lalapps_Weave for concatenation. "
+    "Input result files produced by lalpulsar_Weave for concatenation. "
     );
   XLALRegisterUvarMember(
     output_result_file, STRING, 'o', REQUIRED,

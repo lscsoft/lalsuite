@@ -6,50 +6,50 @@ include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
-	lalapps_ComputeFstatBenchmark \
-	lalapps_ComputeFstatLatticeCount \
-	lalapps_ComputeFstatMCUpperLimit \
-	lalapps_ComputeFstatistic_v2 \
-	lalapps_PredictFstat \
-	lalapps_compareFstats\
-	lalapps_synthesizeBstatMC \
-	lalapps_synthesizeLVStats \
-	lalapps_synthesizeTransientStats \
+	lalpulsar_ComputeFstatBenchmark \
+	lalpulsar_ComputeFstatLatticeCount \
+	lalpulsar_ComputeFstatMCUpperLimit \
+	lalpulsar_ComputeFstatistic_v2 \
+	lalpulsar_PredictFstat \
+	lalpulsar_compareFstats\
+	lalpulsar_synthesizeBstatMC \
+	lalpulsar_synthesizeLVStats \
+	lalpulsar_synthesizeTransientStats \
 	$(END_OF_LIST)
 
-lalapps_compareFstats_SOURCES = \
+lalpulsar_compareFstats_SOURCES = \
 	compareFstats.c \
 	$(END_OF_LIST)
 
-lalapps_ComputeFstatistic_v2_SOURCES = \
+lalpulsar_ComputeFstatistic_v2_SOURCES = \
 	ComputeFstatistic_v2.c \
 	$(END_OF_LIST)
 
-lalapps_PredictFstat_SOURCES = \
+lalpulsar_PredictFstat_SOURCES = \
 	PredictFstat.c \
 	$(END_OF_LIST)
 
-lalapps_ComputeFstatMCUpperLimit_SOURCES = \
+lalpulsar_ComputeFstatMCUpperLimit_SOURCES = \
 	ComputeFstatMCUpperLimit.c \
 	$(END_OF_LIST)
 
-lalapps_ComputeFstatLatticeCount_SOURCES = \
+lalpulsar_ComputeFstatLatticeCount_SOURCES = \
 	ComputeFstatLatticeCount.c \
 	$(END_OF_LIST)
 
-lalapps_synthesizeBstatMC_SOURCES = \
+lalpulsar_synthesizeBstatMC_SOURCES = \
 	synthesizeBstatMC.c \
 	$(END_OF_LIST)
 
-lalapps_synthesizeTransientStats_SOURCES = \
+lalpulsar_synthesizeTransientStats_SOURCES = \
 	synthesizeTransientStats.c \
 	$(END_OF_LIST)
 
-lalapps_synthesizeLVStats_SOURCES = \
+lalpulsar_synthesizeLVStats_SOURCES = \
 	synthesizeLVStats.c \
 	$(END_OF_LIST)
 
-lalapps_ComputeFstatBenchmark_SOURCES = \
+lalpulsar_ComputeFstatBenchmark_SOURCES = \
 	ComputeFstatBenchmark.c \
 	$(END_OF_LIST)
 

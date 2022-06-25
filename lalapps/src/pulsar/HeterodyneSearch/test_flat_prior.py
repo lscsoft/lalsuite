@@ -1,5 +1,5 @@
 """
-A script to run lalapps_pulsar_parameter_estimation_nested with increasing amplitude prior
+A script to run lalpulsar_pulsar_parameter_estimation_nested with increasing amplitude prior
 ranges. Samples supposedly generated from the prior will be output and checked using a KS test
 to see if they match the expected flat prior across the range.
 """
@@ -13,9 +13,9 @@ import h5py
 
 exit_code = 0
 
-execu = './lalapps_pulsar_parameter_estimation_nested' # executable
+execu = './lalpulsar_pulsar_parameter_estimation_nested' # executable
 
-# lalapps_pulsar_parameter_estimation_nested runs much slower with memory debugging
+# lalpulsar_pulsar_parameter_estimation_nested runs much slower with memory debugging
 os.environ['LAL_DEBUG_LEVEL'] = os.environ['LAL_DEBUG_LEVEL'].replace('memdbg', '')
 print("Modified LAL_DEBUG_LEVEL='%s'" % os.environ['LAL_DEBUG_LEVEL'])
 

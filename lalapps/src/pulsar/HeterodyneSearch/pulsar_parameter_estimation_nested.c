@@ -80,14 +80,14 @@ LALInference tools */
  *
  * The usage format is given below and can also be found by running the code with
  * \code
- * lalapps_pulsar_parameter_estimation_nested --help
+ * lalpulsar_pulsar_parameter_estimation_nested --help
  * \endcode
  *
  * An example of running the code to search over the four unknown parameters \f$ h_0 \f$, \f$ \phi_0 \f$, \f$ \psi \f$
  * and \f$ \cos{\iota} \f$, for pulsar J0534-2200, given heterodyned time domain data from the H1 detector in the file
  * \c finehet_J0534-2200_H1, is:
  * \code
- * lalapps_pulsar_parameter_estimation_nested --detectors H1 --par-file J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200.hdf --prior-file prior_J0534-2200.txt --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun lscsoft/share/lalpulsar/sun05-09.dat --Nlive 1000 --Nmcmcinitial 0 --tolerance 0.25
+ * lalpulsar_pulsar_parameter_estimation_nested --detectors H1 --par-file J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200.hdf --prior-file prior_J0534-2200.txt --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun lscsoft/share/lalpulsar/sun05-09.dat --Nlive 1000 --Nmcmcinitial 0 --tolerance 0.25
  * \endcode
  * The \c par-file is a TEMPO(2)-style file containing the parameters of the pulsar used to perform the heterodyne (the
  * frequency parameters are the rotation frequency and therefore not necessarily the gravitational wave frequency) e.g.
@@ -120,7 +120,7 @@ LALInference tools */
  * An example of running the code as above, but this time on fake data created using the Advanced LIGO design noise curves
  * and with a signal injected into the data is:
  * \code
- * lalapps_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file fake.par --par-file fake.par --outfile ns_fake.hdf --prior-file prior_fake.txt --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun lscsoft/share/lalpulsar/sun05-09.dat --Nlive 1000 --Nmcmcinitial 0 --tolerance 0.25
+ * lalpulsar_pulsar_parameter_estimation_nested --fake-data AH1 --inject-file fake.par --par-file fake.par --outfile ns_fake.hdf --prior-file prior_fake.txt --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun lscsoft/share/lalpulsar/sun05-09.dat --Nlive 1000 --Nmcmcinitial 0 --tolerance 0.25
  * \endcode
  * In this case the \c inject-file parameter file must contain the values of \c h0, \c phi0, \c psi and \c cosiota,
  * otherwise these will be set to zero by default. The parameter files given for \c inject-file and \c par-file do not

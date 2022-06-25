@@ -9,20 +9,20 @@ function assert {
     fi
 }
 
-## common arguments to lalapps_ComputeFstatBenchmark
+## common arguments to lalpulsar_ComputeFstatBenchmark
 
 Nseg=50
 common_args="--numSegments=${Nseg} --Tseg=86400 --numFreqBins=1000"
 
-## run lalapps_ComputeFstatBenchmark
+## run lalpulsar_ComputeFstatBenchmark
 
-cmd="lalapps_ComputeFstatBenchmark ${common_args} --FstatMethod=DemodBest --outputInfo=demod.txt"
+cmd="lalpulsar_ComputeFstatBenchmark ${common_args} --FstatMethod=DemodBest --outputInfo=demod.txt"
 echo "=== $cmd ==="
 eval $cmd
 echo "--- $cmd ---"
 echo
 
-cmd="lalapps_ComputeFstatBenchmark ${common_args} --FstatMethod=ResampBest --outputInfo=resamp.txt"
+cmd="lalpulsar_ComputeFstatBenchmark ${common_args} --FstatMethod=ResampBest --outputInfo=resamp.txt"
 echo "=== $cmd ==="
 eval $cmd
 echo "--- $cmd ---"

@@ -30,7 +30,7 @@ def validate_and_load_SFTs ( globstr, fmin, fmax ):
     sftnames = list(glob.glob(os.path.join(testdir,globstr)))
     assert len(sftnames) == 1
     sftname = sftnames[0]
-    app = "lalapps_SFTvalidate"
+    app = "lalpulsar_SFTvalidate"
     cl = app + " " + sftname
     print("Executing: " + cl)
     out = subprocess.check_output(cl, shell=True, stderr=subprocess.STDOUT, universal_newlines=True)
@@ -117,7 +117,7 @@ Toverlap = int(0.5*Tsft)
 
 
 print("\n=== Running WriteSFTsfromSFDBs on reference SFDB file ===\n")
-cl_SFDB = " ".join(["lalapps_WriteSFTsfromSFDBs",
+cl_SFDB = " ".join(["lalpulsar_WriteSFTsfromSFDBs",
                     "--file-pattern", ref_sfdb,
                     "--fmin", str(fmin),
                     "--fmax", str(fmax),

@@ -1,6 +1,6 @@
 ##---------- names of codes and input/output files
-psd_code="lalapps_ComputePSD"
-mfd_code="lalapps_Makefakedata_v4"
+psd_code="lalpulsar_ComputePSD"
+mfd_code="lalpulsar_Makefakedata_v4"
 
 retstatus=0
 
