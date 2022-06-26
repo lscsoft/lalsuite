@@ -191,6 +191,7 @@ outputs:
         - mkl {{ mkl }}  # [fft_impl == "mkl"]
         - openssl
       run:
+        - fftw  # [fft_impl == "fftw"]
         - {{ pin_subpackage('liblal', exact=True) }}
         - python
         - {{ pin_subpackage('python-lal', exact=True) }}

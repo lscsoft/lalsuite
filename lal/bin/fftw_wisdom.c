@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_general
+ * \ingroup lal_fft
  * \author Josh Willis
  *
  * \brief Utility to create double-precision FFTW wisdom files
@@ -50,7 +50,7 @@
  * written.  You may redirect stdout to save the human-readable description. This should
  * always be APPENDED to the human readable description of any existing wisdom files
  * (system or otherwise) that were read in as part of the execution; there is no way
- * for lalapps_fftw_wisdom to print out the human readable description of any existing
+ * for lal_fftw_wisdom to print out the human readable description of any existing
  * wisdom read in.
  *
  * So, as an example, suppose that there is an existing system-wide file in
@@ -64,7 +64,7 @@
  *
  * cp /etc/fftw/wisdom_description new_description
  *
- * lalapps_fftw_wisdom -i input_plans -o new_wisdom -l 3 \>\> new_description
+ * lal_fftw_wisdom -i input_plans -o new_wisdom -l 3 \>\> new_description
  *
  * When this has finished you can (as root) move new_wisdom to /etc/fftw/wisdom and
  * new_description to /etc/fftw/wisdom_description.  The same results could also be
@@ -80,7 +80,7 @@
  * - -w \<FILE\> or --wisdom=\<FILE\>  Read in existing wisdom from \<FILE\>.  Program exits if this
  * option is given but the corresponding file is not readable. As with the system wisdom, you
  * should append to a human readable description of the wisdom in this file; what is there
- * already will not be descirbed in the output of lalapps_fftw_wisdom.
+ * already will not be descirbed in the output of lal_fftw_wisdom.
  * - -l \<int\> or --measurelvl=\<int\>  The planning measure level used in creating the plans.
  * Defaults to 3 (exhaustive) if not given.  Levels 0 or 1 (estimate and measure, respectively)
  * are possible, but not appropriate for a system-wide wisdom file, as plans of those levels
@@ -112,7 +112,7 @@ int plan_problem(char type, char direc, UINT4 transform_size, int measurelvl);
 /** Print basic usage information about the program and exit */
 void print_help(void)
 {
-  fprintf(stderr,"\nlalapps_fftw_wisdom -i INPUT_FILE -o OUTPUT_FILE [OPTIONS]:\n");
+  fprintf(stderr,"\nlal_fftw_wisdom -i INPUT_FILE -o OUTPUT_FILE [OPTIONS]:\n");
   fprintf(stderr,"This program creates a wisdom file based on an input file specifying transform\n");
   fprintf(stderr,"kinds and sizes.  This is much like a simplified version of the fftw-wisdom\n");
   fprintf(stderr,"utility provided with FFTW. The transforms to be planned for must be specified\n");

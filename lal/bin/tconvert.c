@@ -34,7 +34,7 @@
 #include <lal/LALConstants.h>
 #include <lal/Date.h>
 #include "getdate.h"
-#include <LALAppsVCSInfo.h>
+#include <LALVCSInfo.h>
 
 #include "config.h"
 
@@ -832,7 +832,7 @@ char * parse_options( char *buf, int buflen, int argc, char **argv )
         break;
 
       case 'V': /* version */
-        XLALOutputVCSInfo(stderr, lalAppsVCSInfoList, 0, "%% ");
+        XLALOutputVCSInfo(stderr, lalVCSInfoList, 0, "%% ");
         exit( 0 );
         break;
 
