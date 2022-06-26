@@ -21,6 +21,7 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
+BuildRequires: bc
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gcc

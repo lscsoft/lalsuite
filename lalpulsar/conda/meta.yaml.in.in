@@ -44,6 +44,7 @@ build:
 
 requirements:
   build:
+    - bc  # [build_platform == target_platform]
     - {{ compiler('c') }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
