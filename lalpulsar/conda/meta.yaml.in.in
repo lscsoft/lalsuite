@@ -215,24 +215,52 @@ outputs:
   - name: lalpulsar
     script: install-bin.sh
     build:
+      script_env:
+        - GITLAB_CI
       ignore_run_exports:
         - openssl
         - python
+        - numpy
     requirements:
       build:
         - {{ compiler('c') }}
         - help2man >=1.37  # [build_platform == target_platform]
         - make
       host:
+        - bc  # [build_platform == target_platform]
+        - astropy  # [build_platform == target_platform]
+        - cfitsio
+        - gsl
+        - jplephem  # [build_platform == target_platform]
+        - h5py  # [build_platform == target_platform]
         - liblal >={{ lal_version }}
+        - liblalframe >={{ lalframe_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
+        - liblalinference >={{ lalinference_version }}
         - lalinference >={{ lalinference_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
+        - numpy   # [build_platform == target_platform]
+        - pytest  # [build_platform == target_platform]
         - python
+        - python-lal >={{ lal_version }}
+        - python-lalframe >={{ lalframe_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
+        - python-lalinference >={{ lalinference_version }}
+        - scipy   # [build_platform == target_platform]
         # extras to assist the solver, but not actually used
         - openssl
       run:
+        - astropy
+        - cfitsio
+        - gsl
+        - jplephem
         - liblal >={{ lal_version }}
+        - liblalframe >={{ lalframe_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
+        - liblalinference >={{ lalinference_version }}
+        - lalinference >={{ lalinference_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
+        - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
