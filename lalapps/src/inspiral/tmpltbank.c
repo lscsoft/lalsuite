@@ -513,10 +513,6 @@ int main ( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         searchsumm;
-  MetadataTable         searchsummvars;
-  MetadataTable         candle;
-  SummValueTable      **this_summvalue = &(candle.summValueTable);
-  SearchSummvarsTable  *this_search_summvar = NULL;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
 
@@ -559,12 +555,10 @@ int main ( int argc, char *argv[] )
   this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
-  candle.summValueTable = NULL;
 
-  /* create the search summary and zero out the summvars table */
+  /* create the search summary table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
-  searchsummvars.searchSummvarsTable = NULL;
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
@@ -768,13 +762,6 @@ int main ( int argc, char *argv[] )
           &status );
     }
 
-    /* store the input sample rate */
-    this_search_summvar = searchsummvars.searchSummvarsTable =
-      (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
-        "raw data sample rate" );
-    this_search_summvar->value = chan.deltaT;
-
     /* determine if we need to resample the channel */
     if ( vrbflg )
     {
@@ -920,12 +907,6 @@ int main ( int argc, char *argv[] )
       if ( writeRawData ) outFrame = fr_add_proc_REAL4TimeSeries( outFrame,
           &chan, "ct", "RAW_RESAMP" );
     }
-
-    /* store the filter data sample rate */
-    this_search_summvar = this_search_summvar->next =
-      (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX, "filter data sample rate" );
-    this_search_summvar->value = chan.deltaT;
   }
 
   /*
@@ -1093,17 +1074,6 @@ int main ( int argc, char *argv[] )
 
     if ( calGlobPattern ) LALFree( calGlobPattern );
 
-    /* store the name of the calibration files used */
-    for ( i = 0; i < calCache->length; ++i )
-    {
-      this_search_summvar = this_search_summvar->next =
-        (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-      snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
-          "calibration frame %d", i );
-      snprintf( this_search_summvar->string,
-          LIGOMETA_STRING_MAX, "%s", calCache->list[i].url );
-    }
-
     /* generate the response function for the current time */
     if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n"
         "response parameters f0 = %e, deltaF = %e, length = %d\n",
@@ -1183,55 +1153,12 @@ int main ( int argc, char *argv[] )
 
   if ( computeCandle )
   {
-    CHAR  candleComment[LIGOMETA_SUMMVALUE_COMM_MAX];
-    REAL8 distance = 0;
-    REAL8 candleDeltaT = 1.0 / (REAL8) sampleRate;
-
-    /* store the sample rate used to compute the candle */
-    if ( specType == specType_simulated )
-    {
-      /* search summary value was not previously initialized */
-      this_search_summvar = searchsummvars.searchSummvarsTable =
-          (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    }
-    else
-    {
-      this_search_summvar = this_search_summvar->next =
-          (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    }
-    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
-        "standard candle sample rate" );
-    this_search_summvar->value = candleDeltaT;
-
     while ( candleMinMass <= candleMaxMass )
     {
-      if ( approximant == EOB || approximant == EOBNR || approximant == EOBNRv2 ||
-          approximant == IMRPhenomA || approximant == IMRPhenomB || approximant == IMRPhenomC )
-      {
-        distance = XLALCandleDistanceTD(approximant, candleMinMass, candleMinMass,
-            candleSnr, candleDeltaT, numPoints, &(bankIn.shf), cut);
-      }
-      else
-      {
-        distance = compute_candle_distance(candleMinMass, candleMinMass,
-            candleSnr, candleDeltaT, numPoints, &(bankIn.shf), cut);
-      }
-
-      snprintf( candleComment, LIGOMETA_SUMMVALUE_COMM_MAX,
-          "%3.2f_%3.2f_%3.2f", candleMinMass, candleMinMass, candleSnr );
-
       if ( vrbflg ) fprintf( stdout, "maximum distance for (%3.2f,%3.2f) "
           "at signal-to-noise %3.2f = ", candleMinMass, candleMinMass, candleSnr );
 
-      this_summvalue =
-        add_summvalue_table(this_summvalue, gpsStartTime, gpsEndTime,
-            PROGRAM_NAME, ifo, "inspiral_effective_distance",
-            candleComment, distance);
-
-      if ( vrbflg ) fprintf( stdout, "%e Mpc\n", (*this_summvalue)->value );
-
       candleMinMass = candleMinMass + 1.0;
-      this_summvalue = &(*this_summvalue)->next;
     }
   }
 
@@ -1469,37 +1396,6 @@ cleanExit:
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm,
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-
-  /* write the search summvars table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results,
-        search_summvars_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars,
-        search_summvars_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  while( searchsummvars.searchSummvarsTable )
-  {
-    this_search_summvar = searchsummvars.searchSummvarsTable;
-    searchsummvars.searchSummvarsTable = this_search_summvar->next;
-    LALFree( this_search_summvar );
-  }
-
-  /* write the standard candle to the file */
-  if ( computeCandle )
-  {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ),
-        &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, candle,
-          summ_value_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-
-    while ( candle.summValueTable )
-    {
-      SummValueTable *tmp_summvalue = NULL;
-      tmp_summvalue = candle.summValueTable;
-      candle.summValueTable = candle.summValueTable->next;
-      LALFree( tmp_summvalue );
-    }
-  }
 
   /* write the template bank to the file */
   if ( templateBank.snglInspiralTable )

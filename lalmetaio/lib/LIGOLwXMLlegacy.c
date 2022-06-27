@@ -194,18 +194,6 @@ XLALFilePuts( "      <Stream Name=\"search_summary:table\" Type=\"Local\" Delimi
 #define SEARCH_SUMMARY_ROW \
 "         \"process:process_id:0\",\"standalone\",\"\",\"%s\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%d,%d"
 
-#define PRINT_LIGOLW_XML_SEARCH_SUMMVARS(fp) (  \
-XLALFilePuts( "   <Table Name=\"search_summvars:table\">\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"name\" Type=\"lstring\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"string\" Type=\"lstring\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"value\" Type=\"real_8\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"search_summvar_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
-XLALFilePuts( "      <Stream Name=\"search_summvars:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
-
-#define SEARCH_SUMMVARS_ROW \
-"         \"process:process_id:0\",\"%s\",\"%s\",%22.16e,\"search_summvars:search_summvar_id:%" LAL_UINT8_FORMAT "\""
-
 #define PRINT_LIGOLW_XML_SNGL_RINGDOWN(fp) ( \
 XLALFilePuts( "   <Table Name=\"sngl_ringdown:table\">\n", fp ) == EOF || \
 XLALFilePuts( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", fp ) == EOF || \
@@ -275,24 +263,6 @@ XLALFilePuts( "      <Stream Name=\"sim_ringdown:table\" Type=\"Local\" Delimite
 
 #define SIM_RINGDOWN_ROW \
   "         \"process:process_id:0\",\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%22.16e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,%e,\"sim_ringdown:simulation_id:%" LAL_UINT8_FORMAT "\""
-
-#define PRINT_LIGOLW_XML_SUMM_VALUE(fp) ( \
-XLALFilePuts( "   <Table Name=\"summ_value:table\">\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"program\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"start_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"start_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"end_time_ns\" Type=\"int_4s\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"ifo\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"name\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"value\" Type=\"real_4\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"comment\" Type=\"lstring\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Column Name=\"summ_value_id\" Type=\"ilwd:char\"/>\n" , fp ) == EOF || \
-XLALFilePuts( "      <Stream Name=\"summ_value:table\" Type=\"Local\" Delimiter=\",\">\n", fp ) == EOF )
-
-#define SUMM_VALUE_ROW \
-"         \"%s\",\"process:process_id:0\",%d,%d,%d,%d,\"%s\",\"%s\",%e,\"%s\",\"summ_value:summ_value_id:%" LAL_UINT8_FORMAT "\""
 
 #define PRINT_LIGOLW_XML_SNGL_INSPIRAL(fp) ( \
 XLALFilePuts( "   <Table Name=\"sngl_inspiral:table\">\n", fp ) == EOF || \
@@ -640,9 +610,6 @@ LALBeginLIGOLwXMLTable (
     case search_summary_table:
       (void)PRINT_LIGOLW_XML_SEARCH_SUMMARY( xml->fp );
       break;
-    case search_summvars_table:
-      (void)PRINT_LIGOLW_XML_SEARCH_SUMMVARS( xml->fp );
-      break;
     case sngl_inspiral_table:
       (void)PRINT_LIGOLW_XML_SNGL_INSPIRAL( xml->fp );
       break;
@@ -657,9 +624,6 @@ LALBeginLIGOLwXMLTable (
       break;
     case sim_ringdown_table:
       (void)PRINT_LIGOLW_XML_SIM_RINGDOWN( xml->fp );
-      break;
-    case summ_value_table:
-      (void)PRINT_LIGOLW_XML_SUMM_VALUE( xml->fp );
       break;
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
@@ -786,20 +750,6 @@ LALWriteLIGOLwXMLTable (
               tablePtr.searchSummaryTable->nnodes
               );
         tablePtr.searchSummaryTable = tablePtr.searchSummaryTable->next;
-        ++(xml->rowCount);
-      }
-      break;
-    case search_summvars_table:
-      while( tablePtr.searchSummvarsTable )
-      {
-        FIRST_TABLE_ROW
-          XLALFilePrintf( xml->fp, SEARCH_SUMMVARS_ROW,
-              tablePtr.searchSummvarsTable->name,
-              tablePtr.searchSummvarsTable->string,
-              tablePtr.searchSummvarsTable->value,
-              xml->rowCount
-              );
-        tablePtr.searchSummvarsTable = tablePtr.searchSummvarsTable->next;
         ++(xml->rowCount);
       }
       break;
@@ -1142,26 +1092,6 @@ LALWriteLIGOLwXMLTable (
           tablePtr.simRingdownTable = tablePtr.simRingdownTable->next;
           ++(xml->rowCount);
         }
-      }
-      break;
-    case summ_value_table:
-      while( tablePtr.summValueTable )
-      {
-        FIRST_TABLE_ROW
-          XLALFilePrintf( xml->fp, SUMM_VALUE_ROW,
-              tablePtr.summValueTable->program,
-              tablePtr.summValueTable->start_time.gpsSeconds,
-              tablePtr.summValueTable->start_time.gpsNanoSeconds,
-              tablePtr.summValueTable->end_time.gpsSeconds,
-              tablePtr.summValueTable->end_time.gpsNanoSeconds,
-              tablePtr.summValueTable->ifo,
-              tablePtr.summValueTable->name,
-              tablePtr.summValueTable->value,
-              tablePtr.summValueTable->comment,
-              xml->rowCount
-              );
-        tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
-        ++(xml->rowCount);
       }
       break;
     default:
