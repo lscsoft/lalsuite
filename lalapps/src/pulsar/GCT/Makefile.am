@@ -4,7 +4,7 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic -I$(top_srcdir)/src/pulsar/HoughFstat
+AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/HoughFstat
 
 bin_PROGRAMS = lalapps_HierarchSearchGCT
 
@@ -13,7 +13,6 @@ EXTRA_PROGRAMS = lalapps_HierarchSearchGCT_SSE2 lalapps_HierarchSearchGCT_SSE2_N
 lalapps_HierarchSearchGCT_SOURCES = \
 	GCTtoplist.c \
 	GCTtoplist.h \
-	HeapToplist.c \
 	HierarchSearchGCT.c \
 	HierarchSearchGCT.h \
 	RecalcToplistStats.c \

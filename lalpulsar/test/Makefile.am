@@ -17,6 +17,7 @@ test_programs += FileIOTest
 test_programs += GeneralMeshTest
 test_programs += GeneralMetricTest
 test_programs += GeneratePulsarSignalTest
+test_programs += HeapToplistTest
 test_programs += HoughMapTest
 test_programs += LALBarycenterTest
 test_programs += LFTandTSutilsTest

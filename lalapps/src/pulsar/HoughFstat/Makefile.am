@@ -4,13 +4,10 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic
-
 bin_PROGRAMS = lalapps_HierarchicalSearch
 EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2
 
 lalapps_HierarchicalSearch_SOURCES = \
-	HeapToplist.c \
 	HierarchicalSearch.c \
 	HierarchicalSearch.h \
 	HoughFstatToplist.c \

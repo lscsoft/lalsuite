@@ -4,8 +4,6 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic
-
 bin_PROGRAMS = lalapps_DriveHoughMulti
 
 noinst_PROGRAMS = \
@@ -15,8 +13,7 @@ noinst_PROGRAMS = \
 
 lalapps_HoughValidate_SOURCES = HoughValidate.c MCInjectComputeHough.h DriveHoughColor.h PeakSelect.h PeakSelect.c
 lalapps_DriveHoughMulti_SOURCES = DriveHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h \
-	 FstatToplist.c FstatToplist.h \
-	 HeapToplist.c
+	 FstatToplist.c FstatToplist.h
 
 lalapps_ValidateHoughMulti_SOURCES = ValidateHoughMulti.c  DriveHoughColor.h PeakSelect.c PeakSelect.h MCInjectHoughMulti.h
 lalapps_MultiWeights_SOURCES = MultiWeights.c  DriveHoughColor.h

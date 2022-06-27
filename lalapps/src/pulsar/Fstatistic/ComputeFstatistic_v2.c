@@ -76,8 +76,7 @@
 
 #include <LALAppsVCSInfo.h>
 
-/* local includes */
-#include "HeapToplist.h"
+#include <lal/HeapToplist.h>
 
 /*---------- DEFINES ----------*/
 

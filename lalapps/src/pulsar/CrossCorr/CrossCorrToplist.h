@@ -20,7 +20,7 @@
 #ifndef CROSSCORRTOPLIST_H
 #define CROSSCORRTOPLIST_H
 
-#include "HeapToplist.h"
+#include <lal/HeapToplist.h>
 #include <lal/LALDatatypes.h>
 
 

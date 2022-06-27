@@ -20,7 +20,7 @@
 #ifndef GCTFSTATTOPLIST_H
 #define GCTFSTATTOPLIST_H
 
-#include "HeapToplist.h"
+#include <lal/HeapToplist.h>
 #include <lal/LALDatatypes.h>
 #include <lal/PulsarDataTypes.h>
 

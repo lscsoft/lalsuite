@@ -20,8 +20,6 @@ lalapps_compareFstats_SOURCES = compareFstats.c
 
 lalapps_ComputeFstatistic_v2_SOURCES = \
 	ComputeFstatistic_v2.c \
-	HeapToplist.c \
-	HeapToplist.h \
 	$(END_OF_LIST)
 
 lalapps_PredictFstat_SOURCES = PredictFstat.c
