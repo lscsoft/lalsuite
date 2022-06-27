@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 A script to run lalapps_pulsar_parameter_estimation_nested with increasing amplitude prior
 ranges. For a range of h0 ranges the nested sampling will be run and the odds ratio extracted.
@@ -7,18 +5,38 @@ It will calculate the value of the log(odds ratio)-log(prior) and check that it 
 flat as the prior range increases.
 """
 
-from __future__ import division
-
 import os
-import glob
 import sys
 import numpy as np
 import subprocess as sp
-import matplotlib.pyplot as pl
 import h5py
 
-lalapps_root = os.environ['LALAPPS_PREFIX'] # install location for lalapps
-execu = lalapps_root+'/bin/lalapps_pulsar_parameter_estimation_nested' # executable
+# only run test on GitLab, unless LONGTESTS environment variable is defined
+if ('GITLAB_CI' not in os.environ) and ('LONGTESTS' not in os.environ):
+  print('''
+Due to the longer runtime of this test, it is only run by default as part of
+the GitLab CI pipeline. You can force this test to run locally by running:
+
+$ make check LONGTESTS=1
+''')
+  sys.exit(77)
+
+try:
+  import matplotlib as mpl
+  mpl.use('Agg')
+  import matplotlib.pyplot as pl
+  doplot = True
+except ModuleNotFoundError:
+  print("matplotlib unavailable; skipping plot")
+  doplot = False
+
+exit_code = 0
+
+execu = './lalapps_pulsar_parameter_estimation_nested' # executable
+
+# lalapps_pulsar_parameter_estimation_nested runs much slower with memory debugging
+os.environ['LAL_DEBUG_LEVEL'] = os.environ['LAL_DEBUG_LEVEL'].replace('memdbg', '')
+print("Modified LAL_DEBUG_LEVEL='%s'" % os.environ['LAL_DEBUG_LEVEL'])
 
 # create files needed to run the code
 
@@ -38,7 +56,7 @@ f.close()
 # data file
 datafile = 'data.txt.gz'
 dlen = 1440 # number of data points
-dt = 60     # number of seconds between each data point
+dt = 600    # number of seconds between each data point
 startgps = 900000000. # start GPS time
 endgps = startgps + dt*(dlen-1)
 ds = np.zeros((dlen,3))
@@ -57,32 +75,43 @@ h0uls = np.logspace(np.log10(5.*ulest), np.log10(500.*ulest), 4)
 
 # some default inputs
 dets='H1'
-Nlive=1024
+Nlive=16
 Nmcmcinitial=0
 outfile='test.hdf'
+outfile_SNR='test_SNR'
+outfile_Znoise='test_Znoise'
 
 # test two different proposals - the default proposal (which is currently --ensembleWalk 3 --uniformprop 1)
 # against just using the ensemble walk proposal
 proposals = ['', '--ensembleWalk 1 --uniformprop 0']
 labels = ['Default', 'Walk']
 pcolor = ['b', 'r']
+max_nsigma = [2., 3.]
+
+for i, proplabel in enumerate(labels):
+  if __file__.endswith('_%s.py' % proplabel.lower()):
+    print(f"Running {__file__} with proposal={proplabel} extracted from filename")
+    proposals = proposals[i:i+1]
+    labels = labels[i:i+1]
+    pcolor = pcolor[i:i+1]
+    max_nsigma = max_nsigma[i:i+1]
+    break
+else:
+  print(f"Running {__file__} with full proposal list")
 
 Ntests = 10 # number of times to run nested sampling for each h0 value to get average
 
-fig, ax = pl.subplots(1, 1)
+if doplot:
+  fig, ax = pl.subplots(1, 1)
 
 for i, prop in enumerate(proposals):
   odds_prior = []
   std_odds_prior = []
   logpriors = []
 
-  for h0ul in h0uls:
+  for h, h0ul in enumerate(h0uls):
     # prior file
-    priorfile="\
-H0 uniform 0 %e\n\
-PHI0 uniform 0 %f\n\
-COSIOTA uniform -1 1\n\
-PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
+    priorfile="H0 uniform 0 %e\n" % h0ul
 
     priorf = 'test.prior'
     f = open(priorf, 'w')
@@ -95,6 +124,8 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
     hodds = []
     # run Ntests times to get average
     for j in range(Ntests):
+      print("--- proposal=%i/%i h0=%i/%i test=%i/%i ---" % (i+1, len(proposals), h+1, len(h0uls), j+1, Ntests), flush=True)
+
       # run code
       commandline="%s --detectors %s --par-file %s --input-files %s --outfile %s --prior-file %s --Nlive %d --Nmcmcinitial %d %s" \
 % (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, prop)
@@ -107,6 +138,10 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
       hodds.append(a.attrs['log_bayes_factor'])
       f.close()
 
+      # clean up per-run temporary files
+      for fs in (outfile, outfile_SNR, outfile_Znoise):
+        os.remove(fs)
+
     odds_prior.append(np.mean(hodds)-logprior)
     std_odds_prior.append(np.std(hodds))
 
@@ -118,23 +153,23 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
   print("Reduced chi-squared test for linear relation = %f" % (p))
 
-  if nsigma > 2.:
-    print("This is potentially significantly (%f sigma) different from a flat line" % nsigma)
+  if nsigma > max_nsigma[i]:
+    print("This is potentially significantly (%f sigma > %f max sigma) different from a flat line" % (nsigma, max_nsigma[i]))
+    exit_code = 1
 
   # plot figure
-  ax.errorbar(-np.array(logpriors), odds_prior, yerr=std_odds_prior, fmt='o', label=labels[i], color=pcolor[i])
-  ax.set_xlabel('log(prior volume)')
-  ax.set_ylabel('log(odds ratio)-log(prior)')
+  if doplot:
+    ax.errorbar(-np.array(logpriors), odds_prior, yerr=std_odds_prior, fmt='o', label=labels[i], color=pcolor[i])
+    ax.set_xlabel('log(prior volume)')
+    ax.set_ylabel('log(odds ratio)-log(prior)')
 
-pl.legend()
-pl.show()
+if doplot:
+  pl.legend()
+  fig.savefig('odds_prior.png')
+  print("Saved plot to 'odds_prior.png'")
 
 # clean up temporary files
-os.remove(parf)
-os.remove(priorf)
-os.remove(datafile)
-ofs = glob.glob(outfile+'*')
-for fs in ofs:
+for fs in (priorf, parf, datafile):
   os.remove(fs)
 
-sys.exit(0)
+sys.exit(exit_code)

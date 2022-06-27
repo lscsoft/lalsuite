@@ -1,3 +1,7 @@
+.PHONY: test-mostlyclean-local
+
+mostlyclean-local: test-mostlyclean-local
+
 AM_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"' -DTEST_PKG_DATA_DIR='"$(abs_top_srcdir)/lib/"' @AM_CPPFLAGS@
 
 TEST_EXTENSIONS = .sh .m .py
@@ -44,3 +48,6 @@ test_script_compiler = $(test_script_runner) $(test_script_runner_args)
 SH_LOG_COMPILER = $(test_script_compiler) $(SHELL)
 M_LOG_COMPILER = $(test_script_compiler) "$(OCTAVE)" -fH
 PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u
+
+test-mostlyclean-local:
+	-rm -rf __pycache__ .pytest_cache junit*.xml

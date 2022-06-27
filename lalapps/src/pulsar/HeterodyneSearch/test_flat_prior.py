@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 """
 A script to run lalapps_pulsar_parameter_estimation_nested with increasing amplitude prior
 ranges. Samples supposedly generated from the prior will be output and checked using a KS test
@@ -7,15 +5,19 @@ to see if they match the expected flat prior across the range.
 """
 
 import os
-import glob
 import sys
 import numpy as np
 import subprocess as sp
 import scipy.stats as ss
 import h5py
 
-lalapps_root = os.environ['LALAPPS_PREFIX'] # install location for lalapps
-execu = lalapps_root+'/bin/lalapps_pulsar_parameter_estimation_nested' # executable
+exit_code = 0
+
+execu = './lalapps_pulsar_parameter_estimation_nested' # executable
+
+# lalapps_pulsar_parameter_estimation_nested runs much slower with memory debugging
+os.environ['LAL_DEBUG_LEVEL'] = os.environ['LAL_DEBUG_LEVEL'].replace('memdbg', '')
+print("Modified LAL_DEBUG_LEVEL='%s'" % os.environ['LAL_DEBUG_LEVEL'])
 
 # create files needed to run the code
 
@@ -46,12 +48,16 @@ h0uls = [1e-22, 1e-21, 1e-20, 1e-19, 1e-18, 1e-17]
 
 # some default inputs
 dets='H1'
-Nlive='10000'
+Nlive='5000'
 Nmcmcinitial='0'
 outfile='test.hdf'
+outfile_SNR='test_SNR'
+outfile_Znoise='test_Znoise'
 priorsamples=Nlive
 
-for h0ul in h0uls:
+for h, h0ul in enumerate(h0uls):
+  print("--- h0=%i/%i ---" % (h+1, len(h0uls)), flush=True)
+
   # prior file
   priorfile="\
 H0 uniform 0 %e\n\
@@ -86,23 +92,32 @@ PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
   if p < 0.005:
     print("There might be a problem for this prior distribution")
-    import matplotlib.pyplot as pl
+    try:
+      import matplotlib as mpl
+      mpl.use('Agg')
+      import matplotlib.pyplot as pl
+    except ModuleNotFoundError:
+      print("matplotlib unavailable; skipping plot")
+      exit_code = 1
+      break
     fig, ax = pl.subplots(1, 1)
-    ax.hist(h0samps, bins=20, normed=True, cumulative=True, histtype='stepfilled', alpha=0.2)
+    ax.hist(h0samps, bins=20, density=True, cumulative=True, histtype='stepfilled', alpha=0.2)
     ax.plot([0., h0ul], [0., 1], 'k--')
     ax.set_xlim((0., h0ul))
     ax.set_ylim((0., 1.))
     ax.set_xlabel('h_0')
     ax.set_ylabel('Cumulative probability')
-    pl.show()
+    fig.savefig('h0samps.png')
+    print("Saved plot to 'h0samps.png'")
+    exit_code = 1
     break
 
+  # clean up per-run temporary files
+  for fs in (outfile, outfile_SNR, outfile_Znoise):
+    os.remove(fs)
+
 # clean up temporary files
-os.remove(parf)
-os.remove(priorf)
-os.remove(datafile)
-ofs = glob.glob(outfile+'*')
-for fs in ofs:
+for fs in (priorf, parf, datafile):
   os.remove(fs)
 
-sys.exit(0)
+sys.exit(exit_code)

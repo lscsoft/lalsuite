@@ -18,7 +18,7 @@ SUBDIRS = \
 
 # Because many tests in lalapps/src/pulsar/ call executables from other
 # subdirectories in lalapps/src/pulsar/, it is safest to make sure the
-# whole of src/pulsar is built first
+# whole of lalapps/src/pulsar/ is built first
 check-recursive: all-recursive
 
 # All programs under lalapps/src/pulsar/ [1] must be executed by at least one
@@ -27,8 +27,18 @@ check-recursive: all-recursive
 #
 # [1] Certain directories are currently exempt from this requirement; in these
 # directories, Makefile.am includes lalapps.am instead of lalapps_pulsar.am
-.PHONY: check-execs-are-tested
+.PHONY: clean-execs-tested-logs check-execs-are-tested
+
+check-recursive: clean-execs-tested-logs
+
 check-local: check-execs-are-tested
+
+clean-execs-tested-logs:
+	@tested_logfiles=`find $(builddir) -name '.tested_*.log'`; \
+	for file in $${tested_logfiles}; do \
+		echo '# empty' > "$${file}"; \
+	done
+
 check-execs-are-tested:
 	@tested_logfiles=`find $(builddir) -name '.tested_*.log'`; \
 	not_tested=`$(AWK) ' \
@@ -46,4 +56,4 @@ check-execs-are-tested:
 		printf "\n" >&2; \
 		exit 1; \
 	fi; \
-	printf "OK: all executables under lalapps_pulsar.am test harness are tested\n"
+	printf "OK: all C executables under lalapps/src/pulsar/ have been tested\n"
