@@ -1974,8 +1974,9 @@ lint:gitignore:
   script:
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-swig --enable-python
-    # build in source directory
+    # build in source directory, including tests
     - make -j${CPU_COUNT} VERBOSE=1 all
+    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     # check for build files not in .gitignore
     - |
       if git status --short | grep '^?? ' >/dev/null 2>&1; then
