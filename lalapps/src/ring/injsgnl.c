@@ -31,7 +31,6 @@
 #include <lal/GenerateInspiral.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
-#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Units.h>
@@ -105,7 +104,7 @@ int ring_inject_signal(
 
   /* xml output data */
   CHAR                  fname[FILENAME_MAX];
-  LIGOLwXMLStream       xmlfp;
+  LIGOLwXMLStream       *xmlfp;
   Approximant injApproximant;
  
   /* copy injectFile to injFile (to get rid of const qual) */
@@ -214,22 +213,14 @@ int ring_inject_signal(
         fprintf( stdout, "Writing the injection details to %s\n", fname);
  
         /* open the xml file */
-        memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-        LALOpenLIGOLwXMLFile( &status, &xmlfp, fname);
+        xmlfp = XLALOpenLIGOLwXMLFile( fname );
  
         /* write the sim_ringdown table */
         if ( ringList )
-        {
-          MetadataTable ringinjections;
-          ringinjections.simRingdownTable = ringList;
-          LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ringdown_table );
-          LALWriteLIGOLwXMLTable( &status, &xmlfp, ringinjections,
-            sim_ringdown_table );
-          LALEndLIGOLwXMLTable ( &status, &xmlfp );
-        }
- 
+          XLALWriteLIGOLwXMLSimRingdownTable( xmlfp, ringList );
+
         /* close the injection file */
-        LALCloseLIGOLwXMLFile ( &status, &xmlfp );
+        XLALCloseLIGOLwXMLFile( xmlfp );
  
         /* free memory */
     

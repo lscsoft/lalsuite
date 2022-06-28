@@ -57,10 +57,10 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXMLlegacy.h>
-#include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
@@ -409,25 +409,10 @@ void InjectNumRelWaveformsUsingPSDREAL8(LALStatus *status,         /**< pointer 
 
 
   /* write and free the output simInspiral table */
-  if ( simTableOut ) {
-
-    LIGOLwXMLStream xmlfp;
-    MetadataTable dummyTable;
-    dummyTable.simInspiralTable = simTableOut;
-
-    /* write the xml table of actual injections */
-    if (fname) {
-      memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-      TRY( LALOpenLIGOLwXMLFile( status->statusPtr, &xmlfp, fname ), status );
-      TRY( LALBeginLIGOLwXMLTable( status->statusPtr, &xmlfp, sim_inspiral_table ),
-                status );
-
-      TRY( LALWriteLIGOLwXMLTable( status->statusPtr, &xmlfp, dummyTable,
-                                        sim_inspiral_table ), status );
-
-      TRY( LALEndLIGOLwXMLTable ( status->statusPtr, &xmlfp ), status );
-      TRY( LALCloseLIGOLwXMLFile ( status->statusPtr, &xmlfp ), status );
-    }
+  if ( simTableOut && fname ) {
+    LIGOLwXMLStream *xmlfp = XLALOpenLIGOLwXMLFile( fname );
+    XLALWriteLIGOLwXMLSimInspiralTable( xmlfp, simTableOut );
+    XLALCloseLIGOLwXMLFile( xmlfp );
   }
 
   while (simTableOut) {
@@ -521,21 +506,12 @@ void InjectNumRelWaveforms (LALStatus           *status,       /**< pointer to L
   /* write and free the output simInspiral table */
   if ( simTableOut ) {
 
-    LIGOLwXMLStream xmlfp;
-    MetadataTable dummyTable;
-      dummyTable.simInspiralTable = simTableOut;
+    LIGOLwXMLStream *xmlfp;
 
     /* write the xml table of actual injections */
-    memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-    TRY( LALOpenLIGOLwXMLFile( status->statusPtr, &xmlfp, fname ), status );
-    TRY( LALBeginLIGOLwXMLTable( status->statusPtr, &xmlfp, sim_inspiral_table ),
-              status );
-
-    TRY( LALWriteLIGOLwXMLTable( status->statusPtr, &xmlfp, dummyTable,
-                                      sim_inspiral_table ), status );
-
-    TRY( LALEndLIGOLwXMLTable ( status->statusPtr, &xmlfp ), status );
-    TRY( LALCloseLIGOLwXMLFile ( status->statusPtr, &xmlfp ), status );
+    xmlfp = XLALOpenLIGOLwXMLFile( fname );
+    XLALWriteLIGOLwXMLSimInspiralTable( xmlfp, simTableOut );
+    XLALCloseLIGOLwXMLFile( xmlfp );
 
   }
 
@@ -621,21 +597,12 @@ void InjectNumRelWaveformsREAL8 (LALStatus      *status,       /**< pointer to L
   /* write and free the output simInspiral table */
   if ( simTableOut ) {
 
-    LIGOLwXMLStream xmlfp;
-    MetadataTable dummyTable;
-    dummyTable.simInspiralTable = simTableOut;
+    LIGOLwXMLStream *xmlfp;
 
     /* write the xml table of actual injections */
-    memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-    TRY( LALOpenLIGOLwXMLFile( status->statusPtr, &xmlfp, fname ), status );
-    TRY( LALBeginLIGOLwXMLTable( status->statusPtr, &xmlfp, sim_inspiral_table ),
-              status );
-
-    TRY( LALWriteLIGOLwXMLTable( status->statusPtr, &xmlfp, dummyTable,
-                                      sim_inspiral_table ), status );
-
-    TRY( LALEndLIGOLwXMLTable ( status->statusPtr, &xmlfp ), status );
-    TRY( LALCloseLIGOLwXMLFile ( status->statusPtr, &xmlfp ), status );
+    xmlfp = XLALOpenLIGOLwXMLFile( fname );
+    XLALWriteLIGOLwXMLSimInspiralTable( xmlfp, simTableOut );
+    XLALCloseLIGOLwXMLFile( xmlfp );
 
   }
 

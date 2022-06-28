@@ -35,7 +35,7 @@
 
 #include <lal/LALgetopt.h>
 #include <lal/Date.h>
-#include <lal/LIGOLwXMLlegacy.h>
+#include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 
@@ -159,9 +159,6 @@ static int frSimEvent2simInspiral (SimInspiralTable **simInspiralEvent,
 
 int main( int argc, char *argv[] )
 {
-  /* lal initialization variables */
-  static LALStatus stat;
-
   /*  program option variables */
   char *inputFileName = NULL;
   char *outputFileName = NULL;
@@ -191,9 +188,8 @@ int main( int argc, char *argv[] )
   SimInspiralTable     *simInspiralEvent = NULL;
   SimInspiralTable     *simEvt = NULL;
 
-  LIGOLwXMLStream       xmlStream;
-  MetadataTable         outputTable;
-  MetadataTable         searchsumm;
+  LIGOLwXMLStream      *xmlStream;
+  SearchSummaryTable   *searchsumm;
 
   /*
    *
@@ -357,27 +353,21 @@ int main( int argc, char *argv[] )
          */
 
         /* create the search summary and zero out the summvars table */
-  searchsumm.searchSummaryTable = (SearchSummaryTable *)
-    calloc( 1, sizeof(SearchSummaryTable) );
+  searchsumm = (SearchSummaryTable *) calloc( 1, sizeof(SearchSummaryTable) );
 
-          
-        /* create the search summary and zero out the summvars table */
-  searchsumm.searchSummaryTable = (SearchSummaryTable *)
-    calloc( 1, sizeof(SearchSummaryTable) );
-
-        searchsumm.searchSummaryTable->in_start_time.gpsSeconds = tStart;
-  searchsumm.searchSummaryTable->in_end_time.gpsSeconds = tEnd;
+  searchsumm->in_start_time.gpsSeconds = tStart;
+  searchsumm->in_end_time.gpsSeconds = tEnd;
   
-  searchsumm.searchSummaryTable->out_start_time.gpsSeconds = tStart;
-        searchsumm.searchSummaryTable->out_end_time.gpsSeconds = tEnd;
-  searchsumm.searchSummaryTable->nnodes = 1;
+  searchsumm->out_start_time.gpsSeconds = tStart;
+  searchsumm->out_end_time.gpsSeconds = tEnd;
+  searchsumm->nnodes = 1;
         if (numEvt)
         {
-          searchsumm.searchSummaryTable->nevents = numEvt;
+          searchsumm->nevents = numEvt;
         }
         else if (numSim)
         {
-          searchsumm.searchSummaryTable->nevents = numSim;
+          searchsumm->nevents = numSim;
         }
         
 
@@ -388,39 +378,22 @@ int main( int argc, char *argv[] )
    */
 
   /* write xml output file */
-  memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-  LALOpenLIGOLwXMLFile( &stat, &xmlStream, outputFileName );
+  xmlStream = XLALOpenLIGOLwXMLFile( outputFileName );
 
         /* Write search_summary table */
-    LALBeginLIGOLwXMLTable( &stat, &xmlStream, 
-          search_summary_table );
-    LALWriteLIGOLwXMLTable( &stat, &xmlStream, searchsumm, 
-          search_summary_table );
-    LALEndLIGOLwXMLTable ( &stat, &xmlStream );
+    XLALWriteLIGOLwXMLSearchSummaryTable( xmlStream, searchsumm );
 
 
   /* Write the results to the inspiral table */
   if ( snglInspiralEvent )
-  {
-    outputTable.snglInspiralTable = snglInspiralEvent;
-    LALBeginLIGOLwXMLTable( &stat, &xmlStream, sngl_inspiral_table );
-    LALWriteLIGOLwXMLTable( &stat, &xmlStream, outputTable, 
-        sngl_inspiral_table );
-    LALEndLIGOLwXMLTable( &stat, &xmlStream );
-  }
+    XLALWriteLIGOLwXMLSnglInspiralTable( xmlStream, snglInspiralEvent );
 
   /* Write the results to the sim inspiral table */
   if ( simInspiralEvent )
-  {
-    outputTable.simInspiralTable = simInspiralEvent;
-    LALBeginLIGOLwXMLTable( &stat, &xmlStream, sim_inspiral_table );
-    LALWriteLIGOLwXMLTable( &stat, &xmlStream, outputTable, 
-        sim_inspiral_table );
-    LALEndLIGOLwXMLTable( &stat, &xmlStream );
-  }
+    XLALWriteLIGOLwXMLSimInspiralTable( xmlStream, simInspiralEvent );
 
   /* close the output file */
-  LALCloseLIGOLwXMLFile(&stat, &xmlStream);
+  XLALCloseLIGOLwXMLFile( xmlStream );
 
 
   /*

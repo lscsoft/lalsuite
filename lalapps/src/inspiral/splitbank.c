@@ -142,10 +142,10 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXMLlegacy.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 
 #include <LALAppsVCSInfo.h>
@@ -182,12 +182,12 @@ int main ( int argc, char *argv[] )
   REAL4   minMatch = -1;
 
   /* output data */
-  MetadataTable         inputBank;
-  MetadataTable         outputBank;
-  MetadataTable         proctable;
-  MetadataTable         procparams;
-  ProcessParamsTable   *this_proc_param = NULL;
-  LIGOLwXMLStream       xmlStream;
+  SnglInspiralTable    *inputBank;
+  SnglInspiralTable    *outputBank;
+  ProcessTable         *proctable;
+  ProcessParamsTable   *procparams;
+  ProcessParamsTable   *this_proc_param;
+  LIGOLwXMLStream      *xmlStream;
 
   /* counters and other variables */
   INT4 i, j;
@@ -231,11 +231,11 @@ int main ( int argc, char *argv[] )
   setvbuf( stdout, NULL, _IONBF, 0 );
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
+  proctable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  XLALGPSTimeNow(&(proctable->start_time));
+  XLALPopulateProcessTable(proctable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
       lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
-  this_proc_param = procparams.processParamsTable = 
+  this_proc_param = procparams =
     (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
@@ -283,14 +283,12 @@ int main ( int argc, char *argv[] )
         LALoptarg_len = strlen( LALoptarg ) + 1;
         bankFileName = (CHAR *) calloc( LALoptarg_len, sizeof(CHAR));
         memcpy( bankFileName, LALoptarg, LALoptarg_len );
-        snprintf( procparams.processParamsTable->program, 
+        snprintf( procparams->program,
             LIGOMETA_PROGRAM_MAX, "%s", PROGRAM_NAME );
-        snprintf( procparams.processParamsTable->type, 
-            LIGOMETA_TYPE_MAX, "string" );
-        snprintf( procparams.processParamsTable->param, 
+        snprintf( procparams->type, LIGOMETA_TYPE_MAX, "string" );
+        snprintf( procparams->param,
             LIGOMETA_PARAM_MAX, "--%s", long_options[option_index].name );
-        snprintf( procparams.processParamsTable->value, 
-            LIGOMETA_VALUE_MAX, "%s", LALoptarg );
+        snprintf( procparams->value, LIGOMETA_VALUE_MAX, "%s", LALoptarg );
         break;
 
       case 'n':
@@ -428,8 +426,8 @@ int main ( int argc, char *argv[] )
 
 
   /* read in the template bank from a ligo lw xml file */
-  inputBank.snglInspiralTable = NULL;
-  numTmplts = LALSnglInspiralTableFromLIGOLw( &(inputBank.snglInspiralTable), 
+  inputBank = NULL;
+  numTmplts = LALSnglInspiralTableFromLIGOLw( &inputBank,
       bankFileName, 0, -1 );
   if ( numTmplts < 0 )
   {
@@ -480,7 +478,7 @@ int main ( int argc, char *argv[] )
 
   /* compute the number of templates per output file */
   numPerFile = floor( ( numTmplts - 0.5 )/ numOutBanks + 1 );
-  thisTmplt = inputBank.snglInspiralTable;
+  thisTmplt = inputBank;
   if ( vrbflg ) fprintf( stdout, "writing around %d templates per file\n", 
       numPerFile );
 
@@ -491,37 +489,24 @@ int main ( int argc, char *argv[] )
     if(snprintf( outBankFileName, FILENAME_MAX, "%s_%02d-%s", 
         bankFileNameHead, i, bankFileNameTail ) >= FILENAME_MAX)
       abort();
-    memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
-    LAL_CALL( LALOpenLIGOLwXMLFile( &status , &xmlStream, outBankFileName), 
-        &status );
+    xmlStream = XLALOpenLIGOLwXMLFile( outBankFileName );
 
     if ( vrbflg ) 
       fprintf( stdout, "writing templates to %s... ", outBankFileName );
 
     /* write process table */
-    XLALGPSTimeNow(&(proctable.processTable->end_time));
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), 
-        &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, 
-          process_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+    XLALGPSTimeNow(&(proctable->end_time));
+    XLALWriteLIGOLwXMLProcessTable( xmlStream, proctable );
     
     /* write process_params table */
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, 
-          process_params_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, procparams, 
-          process_params_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+    XLALWriteLIGOLwXMLProcessParamsTable( xmlStream, procparams );
 
     /* write the templates to the file */
-    outputBank.snglInspiralTable = thisTmplt;
+    outputBank = thisTmplt;
     numTmpltsWritten = 0;
 
     if ( thisTmplt )
     {
-      LAL_CALL( LALBeginLIGOLwXMLTable( &status ,&xmlStream, 
-            sngl_inspiral_table), &status );
-
       for ( j = 0; j < numPerFile - 1 && thisTmplt->next; ++j )
       {
         thisTmplt = thisTmplt->next;
@@ -530,20 +515,18 @@ int main ( int argc, char *argv[] )
       thisTmplt->next = NULL;
       thisTmplt = tmpTmplt;
 
-      LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputBank,
-            sngl_inspiral_table), &status );
-      LAL_CALL( LALEndLIGOLwXMLTable( &status, &xmlStream), &status );
+      XLALWriteLIGOLwXMLSnglInspiralTable( xmlStream, outputBank );
     }
 
-    while ( outputBank.snglInspiralTable )
+    while ( outputBank )
     {
       ++numTmpltsWritten;
-      tmpTmplt = outputBank.snglInspiralTable;
-      outputBank.snglInspiralTable = outputBank.snglInspiralTable->next;
+      tmpTmplt = outputBank;
+      outputBank = outputBank->next;
       LALFree( tmpTmplt );
     }
 
-    LAL_CALL( LALCloseLIGOLwXMLFile( &status, &xmlStream), &status );
+    XLALCloseLIGOLwXMLFile( xmlStream );
 
     if ( vrbflg ) fprintf( stdout, "%d templates\n", numTmpltsWritten );
   }
