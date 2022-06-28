@@ -80,25 +80,6 @@ extern "C" {
 #define LIGOMETA_STD 100
 #define LIGOMETA_INSPIRALTAPER_MAX 35
 
-/**
- * The \c MetadataTableType contains an enum type for each of the possible
- * database tables that are provided.
- */
-typedef enum
-tagMetadataTableType
-{
-  no_table,
-  process_table,
-  process_params_table,
-  search_summary_table,
-  sngl_inspiral_table,
-  sngl_ringdown_table,
-  multi_inspiral_table,
-  sim_inspiral_table,
-  sim_ringdown_table
-}
-MetadataTableType;
-
 
 /**
  * The \c InterferometerNumber contains an enum type for describing the
@@ -676,22 +657,6 @@ tagTimeSlide
   REAL8          offset;
 }
 TimeSlide;
-
-typedef union
-tagMetadataTable
-{
-  ProcessTable          *processTable;
-  ProcessParamsTable    *processParamsTable;
-  SearchSummaryTable    *searchSummaryTable;
-  SnglBurst             *snglBurst;
-  SnglInspiralTable     *snglInspiralTable;
-  SnglRingdownTable     *snglRingdownTable;
-  MultiInspiralTable    *multiInspiralTable;
-  SimInspiralTable      *simInspiralTable;
-  SimRingdownTable      *simRingdownTable;
-  ExtTriggerTable       *extTriggerTable;
-}
-MetadataTable;
 
 typedef struct
 tagSegmentTable

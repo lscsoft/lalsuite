@@ -70,9 +70,6 @@ typedef struct
 tagLIGOLwXMLStream
 {
   LALFILE              *fp;
-  INT4                  first;
-  UINT8                 rowCount;
-  MetadataTableType     table;
 }
 LIGOLwXMLStream;
 

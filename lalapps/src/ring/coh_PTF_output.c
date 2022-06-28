@@ -85,11 +85,6 @@ static int XLALWriteLIGOLwXMLTimeSlideSegmentMapTable(
 {
 	const char *row_head = "\n\t\t\t";
 
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
-
 	/* table header */
 
 	XLALClearErrno();
