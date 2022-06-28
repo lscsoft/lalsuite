@@ -188,6 +188,9 @@ workflow:
 
 # -- templates ----------------------------------
 
+.print-env: &print-env
+  echo "===== env ====="; env; echo "----- env -----"
+
 .configure-ccache: &configure-ccache
   export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
 
@@ -205,6 +208,7 @@ workflow:
 # can be included in the before_script/script sections
 # via `*init-build-job`
 .build-init: &init-build-job
+  - *print-env
   - *configure-ccache
   - *configure-coredump
   - *configure-nightly-build
@@ -265,13 +269,25 @@ workflow:
     when: on_failure
 
 # helper template for jobs running on macOS
+.macos-job:
+  # if the build fails during the distcheck phase then subsequent builds will
+  # fail with permissions errors, reset the permissions
+  after_script:
+    - chmod -R +w $CI_PROJECT_DIR
+
 .macos:
+  extends:
+    - .macos-job
   tags:
     - macos_x86_64
 
 .macos-arm64:
+  extends:
+    - .macos-job
   tags:
     - macos_arm64
+
+
 
 # -- build templates ----------------------------
 
@@ -1237,6 +1253,7 @@ lalapps:koji:
 .wheel:macos:
   extends:
     - .wheel
+    - .macos-job
   script:
     # this build uses macports for the libraries and Python
     - . /opt/local/share/macports/setupenv.bash
@@ -1694,10 +1711,6 @@ platform:conda:macos-x86_64:
   extends:
     - .platform-test:conda
     - .macos
-  # if the build fails during the distcheck phase then subsequent builds will
-  # fail with permissions errors, reset the permissions
-  after_script:
-    - chmod -R +w $CI_PROJECT_DIR
   # https://git.ligo.org/lscsoft/lalsuite/-/issues/514
   allow_failure: true
 
@@ -1705,10 +1718,6 @@ platform:conda:macos-arm64:
   extends:
     - .platform-test:conda
     - .macos-arm64
-  # if the build fails during the distcheck phase then subsequent builds will
-  # fail with permissions errors, reset the permissions
-  after_script:
-    - chmod -R +w $CI_PROJECT_DIR
   # https://git.ligo.org/lscsoft/lalsuite/-/issues/514
   allow_failure: true
 
@@ -1965,8 +1974,9 @@ lint:gitignore:
   script:
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-swig --enable-python
-    # build in source directory
+    # build in source directory, including tests
     - make -j${CPU_COUNT} VERBOSE=1 all
+    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     # check for build files not in .gitignore
     - |
       if git status --short | grep '^?? ' >/dev/null 2>&1; then
