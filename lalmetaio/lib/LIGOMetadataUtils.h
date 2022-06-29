@@ -125,6 +125,18 @@ void XLALDestroySegmentTableRow(SegmentTable *row);
 #endif   // SWIG
 void XLALDestroySegmentTable(SegmentTable *head);
 
+SnglRingdownTable *XLALCreateSnglRingdownTableRow(const ProcessTable *process);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySnglRingdownTableRow(SnglRingdownTable *row);
+#endif   // SWIG
+void XLALDestroySnglRingdownTable(SnglRingdownTable *head);
+
+SimRingdownTable *XLALCreateSimRingdownTableRow(const ProcessTable *process);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySimRingdownTableRow(SimRingdownTable *row);
+#endif   // SWIG
+void XLALDestroySimRingdownTable(SimRingdownTable *head);
+
 int
 XLALCountProcessTable(
     ProcessTable *head

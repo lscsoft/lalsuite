@@ -22,16 +22,18 @@
 #include <math.h>
 #include <string.h>
 
+#include <lal/Date.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/AVFactories.h>
 #include <GenerateRing.h>
 #include <FindChirpIMRSimulation.h>
 #include <lal/GenerateInspiral.h>
+#include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLInspiralRead.h>
-#include <lal/LIGOLwXMLRingdownRead.h>
 #include <lal/LIGOLwXMLlegacy.h>
 #include <lal/LIGOMetadataRingdownUtils.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
 #include <lal/LALSimInspiral.h>
@@ -44,6 +46,33 @@
 
 /* maximum length of filename */
 #define FILENAME_LENGTH 255
+
+static void clip_sim_ringdown_to_series(
+    SimRingdownTable **sim,
+    REAL4TimeSeries   *series
+)
+{
+  LIGOTimeGPS stopgps = series->epoch;
+  XLALGPSAdd(&stopgps, series->data->length * series->deltaT);
+
+  while(*sim)
+  {
+    if(XLALGPSDiff(&(*sim)->geocent_start_time, &series->epoch) < 0 || XLALGPSDiff(&(*sim)->geocent_start_time, &stopgps) > 0)
+    {
+      /* free this sim, point the variable that contained its address at
+       * the next one in the list */
+      SimRingdownTable *next = (*sim)->next;
+      XLALDestroySimRingdownTableRow(*sim);
+      *sim = next;
+    }
+    else
+    {
+      /* keep this sim, advance to the next address in the list */
+      sim = &(*sim)->next;
+    }
+  }
+}
+
 
 /* routine to inject a signal with parameters read from a LIGOLw-format file */
 int ring_inject_signal(
@@ -76,7 +105,6 @@ int ring_inject_signal(
 
   /* xml output data */
   CHAR                  fname[FILENAME_MAX];
-  MetadataTable         ringinjections;
   LIGOLwXMLStream       xmlfp;
   Approximant injApproximant;
  
@@ -96,8 +124,8 @@ int ring_inject_signal(
   switch ( injectSignalType )
   {
     case LALRINGDOWN_RING_INJECT:
-      ringList = 
-      XLALSimRingdownTableFromLIGOLw( injFile, startSec, stopSec );
+      ringList = XLALSimRingdownTableFromLIGOLw( injFile );
+      clip_sim_ringdown_to_series( &ringList, series );
       numInject  = 0;
       for (ringInject=ringList; ringInject; ringInject = ringInject->next )
             ++numInject;
@@ -180,9 +208,6 @@ int ring_inject_signal(
     {
       case LALRINGDOWN_IMR_INJECT: case LALRINGDOWN_IMR_RING_INJECT:
         /* write output to LIGO_LW XML file    */
-        ringinjections.simRingdownTable = NULL;
-        ringinjections.simRingdownTable = ringList;
-
         /* create the output file name */
         snprintf( fname, sizeof(fname), "HL-INJECTIONS_0-%d-%d.xml", 
             startSec, stopSec - startSec );
@@ -193,19 +218,14 @@ int ring_inject_signal(
         LALOpenLIGOLwXMLFile( &status, &xmlfp, fname);
  
         /* write the sim_ringdown table */
-        if ( ringinjections.simRingdownTable )
+        if ( ringList )
         {
+          MetadataTable ringinjections;
+          ringinjections.simRingdownTable = ringList;
           LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ringdown_table );
           LALWriteLIGOLwXMLTable( &status, &xmlfp, ringinjections,
             sim_ringdown_table );
           LALEndLIGOLwXMLTable ( &status, &xmlfp );
-        }
- 
-        while ( ringinjections.simRingdownTable->next )
-        {
-          ringList=ringinjections.simRingdownTable;
-          ringinjections.simRingdownTable = ringinjections.simRingdownTable->next;
-          LALFree( ringList );
         }
  
         /* close the injection file */
@@ -223,12 +243,7 @@ int ring_inject_signal(
     }
  
     /* free memory */
-    while ( ringList )
-    {
-      ringinjections.simRingdownTable = ringList;
-      ringList = ringList->next;
-      LALFree( ringinjections.simRingdownTable );
-    }
+    XLALDestroySimRingdownTable( ringList );
  
     XLALDestroyCOMPLEX8Vector( response->data );
     LALFree( response );

@@ -91,6 +91,16 @@ XLALTimeSlideTableFromLIGOLw (
     const char *filename
 );
 
+SnglRingdownTable *
+XLALSnglRingdownTableFromLIGOLw (
+    const char *fileName
+);
+
+SimRingdownTable *
+XLALSimRingdownTableFromLIGOLw (
+    const char *fileName
+);
+
 SearchSummaryTable *
 XLALSearchSummaryTableFromLIGOLw (
     const char *fileName

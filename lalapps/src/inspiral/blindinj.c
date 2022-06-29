@@ -441,7 +441,7 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         inspInjections;
-  MetadataTable         ringInjections;
+  SimRingdownTable     *ringInjections;
   ProcessParamsTable   *this_proc_param;
   SimInspiralTable     *inj  = NULL;
   SimRingdownTable     *ringList = NULL;
@@ -654,7 +654,6 @@ int main( int argc, char *argv[] )
 
   /* null out the head of the linked list */
   memset( &inspInjections, 0, sizeof(MetadataTable) );
-  memset( &ringInjections, 0, sizeof(MetadataTable) );
   
 
   /*
@@ -667,7 +666,7 @@ int main( int argc, char *argv[] )
   inspInjections.simInspiralTable = inj = (SimInspiralTable *)
     LALCalloc( 1, sizeof(SimInspiralTable) );
   
-  ringInjections.simRingdownTable = ringList = (SimRingdownTable *) 
+  ringInjections = ringList = (SimRingdownTable *)
     LALCalloc( 1, sizeof(SimRingdownTable) );
   
 
@@ -970,20 +969,17 @@ int main( int argc, char *argv[] )
 
    
   /* write the sim_ringdown table */
-  if ( ringInjections.simRingdownTable )
+  if ( ringInjections )
   {
+    MetadataTable ringjections;
+    ringjections.simRingdownTable = ringInjections;
     LALBeginLIGOLwXMLTable( &status, &xmlfp, sim_ringdown_table );
-    LALWriteLIGOLwXMLTable( &status, &xmlfp, ringInjections,
+    LALWriteLIGOLwXMLTable( &status, &xmlfp, ringjections,
         sim_ringdown_table );
     LALEndLIGOLwXMLTable ( &status, &xmlfp );
   }
-  
-  while ( ringInjections.simRingdownTable )
-  {
-    ringList=ringInjections.simRingdownTable;
-    ringInjections.simRingdownTable = ringInjections.simRingdownTable->next;
-    LALFree( ringList );
-  }
+
+  XLALDestroySimRingdownTable( ringInjections );
 
 
   /* close the injection file */
