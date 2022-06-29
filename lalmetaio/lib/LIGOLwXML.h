@@ -122,6 +122,11 @@ int XLALWriteLIGOLwXMLSimInspiralTable(
 	const SimInspiralTable *
 );
 
+int XLALWriteLIGOLwXMLSimRingdownTable(
+	LIGOLwXMLStream *xml,
+	const SimRingdownTable *sim_ringdown
+);
+
 int XLALWriteLIGOLwXMLTimeSlideTable(
 	LIGOLwXMLStream *,
 	const TimeSlide *
