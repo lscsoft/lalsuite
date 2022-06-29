@@ -3,6 +3,7 @@ EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 bin_PROGRAMS = \
 	lalapps_ComputeFstatBenchmark \
@@ -16,27 +17,41 @@ bin_PROGRAMS = \
 	lalapps_synthesizeTransientStats \
 	$(END_OF_LIST)
 
-lalapps_compareFstats_SOURCES = compareFstats.c
+lalapps_compareFstats_SOURCES = \
+	compareFstats.c \
+	$(END_OF_LIST)
 
 lalapps_ComputeFstatistic_v2_SOURCES = \
 	ComputeFstatistic_v2.c \
-	HeapToplist.c \
-	HeapToplist.h \
 	$(END_OF_LIST)
 
-lalapps_PredictFstat_SOURCES = PredictFstat.c
+lalapps_PredictFstat_SOURCES = \
+	PredictFstat.c \
+	$(END_OF_LIST)
 
-lalapps_ComputeFstatMCUpperLimit_SOURCES = ComputeFstatMCUpperLimit.c
+lalapps_ComputeFstatMCUpperLimit_SOURCES = \
+	ComputeFstatMCUpperLimit.c \
+	$(END_OF_LIST)
 
-lalapps_ComputeFstatLatticeCount_SOURCES = ComputeFstatLatticeCount.c
+lalapps_ComputeFstatLatticeCount_SOURCES = \
+	ComputeFstatLatticeCount.c \
+	$(END_OF_LIST)
 
-lalapps_synthesizeBstatMC_SOURCES = synthesizeBstatMC.c
+lalapps_synthesizeBstatMC_SOURCES = \
+	synthesizeBstatMC.c \
+	$(END_OF_LIST)
 
-lalapps_synthesizeTransientStats_SOURCES = synthesizeTransientStats.c
+lalapps_synthesizeTransientStats_SOURCES = \
+	synthesizeTransientStats.c \
+	$(END_OF_LIST)
 
-lalapps_synthesizeLVStats_SOURCES = synthesizeLVStats.c
+lalapps_synthesizeLVStats_SOURCES = \
+	synthesizeLVStats.c \
+	$(END_OF_LIST)
 
-lalapps_ComputeFstatBenchmark_SOURCES = ComputeFstatBenchmark.c
+lalapps_ComputeFstatBenchmark_SOURCES = \
+	ComputeFstatBenchmark.c \
+	$(END_OF_LIST)
 
 # Add shell test scripts to this variable
 test_scripts += testPredictFstat.sh

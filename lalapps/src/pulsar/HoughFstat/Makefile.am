@@ -3,14 +3,13 @@ EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
-AM_CPPFLAGS += -I$(top_srcdir)/src/pulsar/Fstatistic
-
-bin_PROGRAMS = lalapps_HierarchicalSearch
-EXTRA_PROGRAMS = lalapps_HierarchicalSearch_sse lalapps_HierarchicalSearch_sse2
+bin_PROGRAMS = \
+	lalapps_HierarchicalSearch \
+	$(END_OF_LIST)
 
 lalapps_HierarchicalSearch_SOURCES = \
-	HeapToplist.c \
 	HierarchicalSearch.c \
 	HierarchicalSearch.h \
 	HoughFstatToplist.c \
@@ -19,18 +18,30 @@ lalapps_HierarchicalSearch_SOURCES = \
 	StackSlideFstat.h \
 	$(END_OF_LIST)
 
-# compilation of SSE targets requires a valid CPU architecture being set in AM_CFLAGS
-# (e.g. configure with CFLAGS=-march=pentium-m),
+lalapps_HierarchicalSearch_CPPFLAGS = $(AM_CPPFLAGS)
+lalapps_HierarchicalSearch_CFLAGS = $(AM_CFLAGS)
 
-lalapps_HierarchicalSearch_sse_SOURCES = $(HierarchicalSearchSources) LocalComputeFstatHoughMap.c
-lalapps_HierarchicalSearch_sse_CPPFLAGS = $(AM_CPPFLAGS) -DCOMPUTEFSTATHOUGHMAP=LocalComputeFstatHoughMap
-lalapps_HierarchicalSearch_sse_CFLAGS = $(AM_CFLAGS) -msse -mfpmath=sse
+if HAVE_SSE2_COMPILER
 
-lalapps_HierarchicalSearch_sse2_SOURCES = $(HierarchicalSearchSources) LocalComputeFstatHoughMap.c
-lalapps_HierarchicalSearch_sse2_CPPFLAGS = $(AM_CPPFLAGS) -DCOMPUTEFSTATHOUGHMAP=LocalComputeFstatHoughMap
-lalapps_HierarchicalSearch_sse2_CFLAGS = $(AM_CFLAGS) -msse -msse2 -mfpmath=sse
+lalapps_HierarchicalSearch_SOURCES += \
+	LocalComputeFstatHoughMap.c \
+	hough_sse2.i \
+	hough_x64.i \
+	hough_x87.i \
+	$(END_OF_LIST)
+
+lalapps_HierarchicalSearch_CPPFLAGS += -DCOMPUTEFSTATHOUGHMAP=LocalComputeFstatHoughMap
+lalapps_HierarchicalSearch_CFLAGS += $(SSE2_FLAGS)
+
+endif
 
 # Add shell test scripts to this variable
 if HAVE_PYTHON
 test_scripts += testHierarchicalSearch.py
 endif
+
+# Add any helper programs required by tests to this variable
+test_helpers +=
+
+# Add any extra files required by tests (e.g. helper scripts) to this variable
+test_extra_files +=

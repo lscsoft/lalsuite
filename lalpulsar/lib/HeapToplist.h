@@ -26,6 +26,9 @@
 #ifndef HEAPTOPLIST_H
 #define HEAPTOPLIST_H
 
+/* exclude from SWIG interface; functions/structs are not XLAL namespaced */
+#ifndef SWIG
+
 #include <stddef.h>
 
 /* toplist structure */
@@ -43,7 +46,7 @@ typedef struct {
    odering based on comparison function 'smaller'.
    returns -1 on error (out of memory), else 0 */
 extern int create_toplist(toplist_t**list, size_t length, size_t size,
-			  int (*smaller)(const void *, const void *));
+                          int (*smaller)(const void *, const void *));
 
 
 /* frees the space occupied by the toplist */
@@ -56,11 +59,11 @@ extern void free_toplist(toplist_t**list);
    Returns 1 if the element was actually inserted, 0 if not. */
 extern int insert_into_toplist(toplist_t*list, void *element);
 
-/* return non-zero value iff the passed element would be inserted into 
+/* return non-zero value iff the passed element would be inserted into
    the toplist by calling insert_into_toplist, but no actual insertion is done.
-   Can be called with a partially filled element to decide whether 
+   Can be called with a partially filled element to decide whether
    further processing of a candidate is even necessary. The field(s) used
-   for sorting the toplist must be filled */ 
+   for sorting the toplist must be filled */
 
 #define TEST_FSTAT_TOPLIST_INCLUSION(list, element) \
  ( ( (list)->elems < (list)->length ||( ((list)->smaller)  ((const void *)(element),((list)->heap)[0]) < 0) ) )
@@ -99,5 +102,6 @@ extern void* toplist_elem(toplist_t*list, size_t idx);
    2 if they are uncomparable (different data types or "smaller" functions */
 extern int compare_toplists(toplist_t*list1, toplist_t*list2);
 
+#endif /* SWIG */
 
 #endif /* HEAPTOPLIST_H - double inclusion protection */

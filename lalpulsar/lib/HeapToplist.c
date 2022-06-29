@@ -59,7 +59,7 @@ static void down_heap(toplist_t*list) {
   while ((succ = node+node+1) < list->elems) {
     if (succ+1 < list->elems)
       if ((list->smaller)((list->heap)[succ+1], (list->heap)[succ]) > 0)
-	succ++;
+        succ++;
     if ((list->smaller)((list->heap)[succ], (list->heap)[node]) > 0) {
       exch = (list->heap)[node];
       (list->heap)[node] = (list->heap)[succ];
@@ -72,7 +72,7 @@ static void down_heap(toplist_t*list) {
 
 
 /* this function gets a "partial heap", i.e. a heap where only an element on
-   the lowest level (potentially) violates the heap property. "node" is the 
+   the lowest level (potentially) violates the heap property. "node" is the
    index of this element. The function "bubbles up" this element so that the
    heap property is restored */
 static void up_heap(toplist_t*list, size_t node) {
@@ -94,9 +94,9 @@ static void up_heap(toplist_t*list, size_t node) {
 /* creates a toplist with length elements,
    returns -1 on error (out of memory), else 0 */
 int create_toplist(toplist_t**list,
-		   size_t length,
-		   size_t size,
-		   int (*smaller)(const void *, const void *)) {
+                   size_t length,
+                   size_t size,
+                   int (*smaller)(const void *, const void *)) {
   toplist_t *listp;
 
   if (!(listp = malloc(sizeof(toplist_t))))
@@ -110,7 +110,7 @@ int create_toplist(toplist_t**list,
     free(listp);
     return(-1);
   }
-  
+
   listp->length  = length;
   listp->elems   = 0;
   listp->size    = size;
@@ -186,8 +186,8 @@ int compare_toplists(toplist_t*list1, toplist_t*list2) {
       (list1->size    != list2->size))
     return(2);
   while((i < list1->elems) &&
-	(i < list2->elems) &&
-	(res == 0)) {
+        (i < list2->elems) &&
+        (res == 0)) {
     res = list1->smaller(toplist_elem(list1,i),toplist_elem(list2,i));
     i++;
   }

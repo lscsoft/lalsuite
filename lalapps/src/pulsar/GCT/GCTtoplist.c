@@ -24,7 +24,7 @@
 #include <unistd.h>
 #endif
 #include "GCTtoplist.h"
-#include "HeapToplist.h"
+#include <lal/HeapToplist.h>
 #include <lal/StringInput.h> /* for LAL_REAL8_FORMAT etc. */
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
