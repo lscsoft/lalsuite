@@ -22,11 +22,19 @@
 #ifndef _OPT_HOUGH_AMD64_LINUX_H
 #define _OPT_HOUGH_AMD64_LINUX_H
 
+#ifdef __APPLE__ 
+#define AD_FLOAT ".single " 
+#define AD_ASCII ".ascii " 
+#define AD_ALIGN16 ".align 4" 
+#define AD_ALIGN32 ".align 5" 
+#define AD_ALIGN64 ".align 6" 
+#else /* x86 gas */ 
 #define AD_FLOAT ".float " 
 #define AD_ASCII ".string " 
 #define AD_ALIGN16 ".align 16" 
 #define AD_ALIGN32 ".align 32" 
 #define AD_ALIGN64 ".align 64" 
+#endif 
 
 #define ADDPHMD2HD_WLR_LOOP(_XPIXEL,_YLOWER,_YUPPER,_XSIDEP1,_MAP,_WEIGHT)\
 __asm __volatile (					\

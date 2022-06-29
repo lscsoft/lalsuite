@@ -129,7 +129,7 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 
   UINT2  xSide, ySide, maxNBins, maxNBorders;
   INT8  fBinIni, fBinFin, fBin;
-  INT4  iHmap, nfdot;
+  INT4  nfdot;
   UINT4 k, nStacks ;
   REAL8 deltaF, dfdot, alpha, delta;
   REAL8 patchSizeX, patchSizeY;
@@ -330,7 +330,6 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 
   /* initialization */  
   fBin= fBinIni; /* initial search bin */
-  iHmap = 0; /* hough map index */
 
   while( fBin <= fBinFin ){
     INT8 fBinSearch, fBinSearchMax;
@@ -480,9 +479,6 @@ LocalComputeFstatHoughMap (LALStatus            *status,
 	  else {
 	    TRY(GetHoughCandidates_threshold( status->statusPtr, out, &ht, &patch, &parDem, params->threshold), status);
 	  }
-	  
-	  /* increment hough map index */ 	  
-	  ++iHmap;
 	  
 	} /* end loop over spindown trajectories */
 
