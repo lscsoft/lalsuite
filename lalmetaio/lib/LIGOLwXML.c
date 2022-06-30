@@ -93,7 +93,7 @@ XLALOpenLIGOLwXMLFile (
 
   /* write the XML header */
 
-  if ( PRINT_LIGOLW_XML_HEADER( new->fp ) < 0 )
+  if ( XLALFilePuts( LAL_LIGOLW_XML_HEADER, new->fp ) < 0 )
   {
     XLALFileClose( new->fp );
     XLALFree( new );
@@ -121,7 +121,7 @@ XLALCloseLIGOLwXMLFile (
     if ( xml->table != no_table)
       /* trying to close the file in the middle of a table */
       XLAL_ERROR(XLAL_EFAILED);
-    if ( PRINT_LIGOLW_XML_FOOTER( xml->fp ) < 0 )
+    if ( XLALFilePuts( LAL_LIGOLW_XML_FOOTER, xml->fp ) < 0 )
       /* can't write XML footer */
       XLAL_ERROR( XLAL_EIO );
     if ( XLALFileClose( xml->fp ) )

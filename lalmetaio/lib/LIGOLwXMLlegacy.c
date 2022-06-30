@@ -137,6 +137,10 @@
 #define LIGOLWXMLH_MSGETNOP "Table not begun for writing"
 /** @} */
 
+#define PRINT_LIGOLW_XML_HEADER(fp) XLALFilePuts( LAL_LIGOLW_XML_HEADER, fp )
+#define PRINT_LIGOLW_XML_FOOTER(fp) XLALFilePuts( LAL_LIGOLW_XML_FOOTER, fp )
+#define PRINT_LIGOLW_XML_TABLE_FOOTER(fp) XLALFilePuts( "\n      </Stream>\n   </Table>\n", fp )
+
 #define PRINT_LIGOLW_XML_PROCESS(fp) ( \
 XLALFilePuts( "   <Table Name=\"process:table\">\n", fp ) == EOF || \
 XLALFilePuts( "      <Column Name=\"program\" Type=\"lstring\"/>\n", fp ) == EOF || \
