@@ -87,6 +87,12 @@ static LALUnit strainSquaredPerHertzUnit = { 0, { 0, 0, 1, 0, 0, 2, 0}, { 0, 0, 
 /* prefix for noise psd files provided by LIGO-T1800044 */
 #define T1800545 "LIGO-T1800545-v1-"
 
+#define DEPRECATED_PSD(OLD_PSD, NEW_PSD) \
+int OLD_PSD(REAL8FrequencySeries *psd, double flow) { \
+	XLAL_PRINT_DEPRECATION_WARNING ( #NEW_PSD ); \
+	return NEW_PSD(psd, flow); \
+}
+
 /**
  * @addtogroup LALSimNoisePSD_c
  * @brief Routines to compute noise power spectral densities for
@@ -1566,7 +1572,7 @@ int XLALSimNoisePSDaLIGOAPlusDesignSensitivityT1800042(
  * to an updated aLIGO configuration design sensitivity scenario in 
  * LIGO-T1800044.
  */
-int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(
+int XLALSimNoisePSDaLIGODesignSensitivityT1800044(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1574,6 +1580,11 @@ int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(
 	return XLALSimNoisePSDFromFile(psd, flow,
 		T1800044 "aLIGO_DESIGN.txt");
 }
+
+/**
+ * \deprecated Use XLALSimNoisePSDaLIGODesignSensitivityT1800044.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044, XLALSimNoisePSDaLIGODesignSensitivityT1800044 )
 
 /** @} */
 
@@ -1587,7 +1598,7 @@ int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(
  * to aLIGO O3 low 120 Mpc range in LIGO-T1800545.
  */
 
-int XLALSimNoisePSDaLIGOaLIGOO3LowT1800545(
+int XLALSimNoisePSDaLIGOO3LowT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1597,11 +1608,16 @@ int XLALSimNoisePSDaLIGOaLIGOO3LowT1800545(
 }
 
 /**
+ * \deprecated Use XLALSimNoisePSDaLIGOO3LowT1800545.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOaLIGOO3LowT1800545, XLALSimNoisePSDaLIGOO3LowT1800545 )
+
+/**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
  * to aLIGO 140 Mpc range in LIGO-T1800545.
  */
 
-int XLALSimNoisePSDaLIGOaLIGO140MpcT1800545(
+int XLALSimNoisePSDaLIGO140MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1611,11 +1627,16 @@ int XLALSimNoisePSDaLIGOaLIGO140MpcT1800545(
 }
 
 /**
+ * \deprecated Use XLALSimNoisePSDaLIGO140MpcT1800545.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOaLIGO140MpcT1800545, XLALSimNoisePSDaLIGO140MpcT1800545 )
+
+/**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
  * to aLIGO 175 Mpc range (design) in LIGO-T1800545.
  */
 
-int XLALSimNoisePSDaLIGOaLIGO175MpcT1800545(
+int XLALSimNoisePSDaLIGO175MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1625,11 +1646,16 @@ int XLALSimNoisePSDaLIGOaLIGO175MpcT1800545(
 }
 
 /**
+ * \deprecated Use XLALSimNoisePSDaLIGO175MpcT1800545.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOaLIGO175MpcT1800545, XLALSimNoisePSDaLIGO175MpcT1800545 )
+
+/**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
  * to advanced Virgo 100 Mpc range (O4 intermediate) in LIGO-T1800545.
  */
 
-int XLALSimNoisePSDaLIGOAdVO4IntermediateT1800545(
+int XLALSimNoisePSDAdVO4IntermediateT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1639,11 +1665,16 @@ int XLALSimNoisePSDaLIGOAdVO4IntermediateT1800545(
 }
 
 /**
+ * \deprecated Use XLALSimNoisePSDAdVO4IntermediateT1800545.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOAdVO4IntermediateT1800545, XLALSimNoisePSDAdVO4IntermediateT1800545 )
+
+/**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
  * to advanced Virgo 120 Mpc range (O4 design) in LIGO-T1800545.
  */
 
-int XLALSimNoisePSDaLIGOAdVO4T1800545(
+int XLALSimNoisePSDAdVO4T1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1653,11 +1684,16 @@ int XLALSimNoisePSDaLIGOAdVO4T1800545(
 }
 
 /**
+ * \deprecated Use XLALSimNoisePSDAdVO4T1800545.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOAdVO4T1800545, XLALSimNoisePSDAdVO4T1800545 )
+
+/**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
  * to advanced Virgo 65 Mpc range (O3 low) in LIGO-T1800545.
  */
 
-int XLALSimNoisePSDaLIGOAdVO3LowT1800545(
+int XLALSimNoisePSDAdVO3LowT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1667,11 +1703,16 @@ int XLALSimNoisePSDaLIGOAdVO3LowT1800545(
 }
 
 /**
+ * \deprecated Use XLALSimNoisePSDAdVO3LowT1800545.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOAdVO3LowT1800545, XLALSimNoisePSDAdVO3LowT1800545 )
+
+/**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
  * to advanced KAGRA 128 Mpc range in LIGO-T1800545.
  */
 
-int XLALSimNoisePSDaLIGOKAGRA128MpcT1800545(
+int XLALSimNoisePSDKAGRA128MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1681,11 +1722,16 @@ int XLALSimNoisePSDaLIGOKAGRA128MpcT1800545(
 }
 
 /**
+ * \deprecated Use XLALSimNoisePSDKAGRA128MpcT1800545.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOKAGRA128MpcT1800545, XLALSimNoisePSDKAGRA128MpcT1800545 )
+
+/**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
  * to advanced KAGRA 25 Mpc range in LIGO-T1800545.
  */
 
-int XLALSimNoisePSDaLIGOKAGRA25MpcT1800545(
+int XLALSimNoisePSDKAGRA25MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1695,11 +1741,16 @@ int XLALSimNoisePSDaLIGOKAGRA25MpcT1800545(
 }
 
 /**
+ * \deprecated Use XLALSimNoisePSDKAGRA25MpcT1800545.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOKAGRA25MpcT1800545, XLALSimNoisePSDKAGRA25MpcT1800545 )
+
+/**
  * Returns a frequency series psd with low frequency cutoff flow corresponding
  * to advanced KAGRA 80 Mpc range in LIGO-T1800545.
  */
 
-int XLALSimNoisePSDaLIGOKAGRA80MpcT1800545(
+int XLALSimNoisePSDKAGRA80MpcT1800545(
 	REAL8FrequencySeries *psd,	/**< frequency series to be computed */
 	double flow 			/**< low frequency cutoff (Hz) */
 )
@@ -1707,6 +1758,11 @@ int XLALSimNoisePSDaLIGOKAGRA80MpcT1800545(
 	return XLALSimNoisePSDFromFile(psd, flow,
 		T1800545 "KAGRA_80Mpc.txt");
 }
+
+/**
+ * \deprecated Use XLALSimNoisePSDKAGRA80MpcT1800545.
+ */
+DEPRECATED_PSD( XLALSimNoisePSDaLIGOKAGRA80MpcT1800545, XLALSimNoisePSDKAGRA80MpcT1800545 )
 
 /** @} */
 
