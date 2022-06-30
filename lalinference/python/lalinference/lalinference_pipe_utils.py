@@ -191,7 +191,8 @@ class Event():
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
 def create_events_from_coinc_and_psd(
-    coinc_xml_obj, psd_dict, gid=None, threshold_snr=None, flow=20.0, roq=False
+    coinc_xml_obj, psd_dict=None, gid=None, threshold_snr=None, flow=20.0,
+    roq=False, use_gracedbpsd=False
 ):
     """This function calculates seglen, fhigh, srate and horizon distance from
     coinc.xml and psd.xml.gz from GraceDB and create list of Events as input of
@@ -209,6 +210,8 @@ def create_events_from_coinc_and_psd(
         lower frequecy cutoff for overlap calculation
     roq: bool
         Whether the run uses ROQ or not
+    use_gracedbpsd: bool
+        Whether the gracedb PSD is used or not in PE
     """
     output=[]
     import lal
@@ -229,7 +232,7 @@ def create_events_from_coinc_and_psd(
     # Parse PSD
     srate_psdfile=16384
     fhigh=None
-    if psd_dict is not None:
+    if psd_dict is not None and use_gracedbpsd:
         psd = list(psd_dict.values())[0]
         srate_psdfile = pow(
             2.0, ceil(log(psd.f0 + psd.deltaF * (psd.data.length - 1), 2))
@@ -296,7 +299,7 @@ def create_events_from_coinc_and_psd(
                 srate = max(srate)
             else:
                 srate = srate_psdfile
-                if psd_dict is not None:
+                if psd_dict is not None and use_gracedbpsd:
                     fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
         else:
             srate = None
@@ -1133,9 +1136,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             else:
                 psd_dict = None
 
+            try:
+                use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
+            except (NoOptionError, NoSectionError):
+                use_gracedbpsd = True
             events = create_events_from_coinc_and_psd(
-                         coinc_xml_obj, psd_dict, gid, threshold_snr=threshold_snr, flow=flow,
-                         roq=self.config.getboolean('analysis','roq')
+                         coinc_xml_obj, psd_dict=psd_dict, gid=gid,
+                         threshold_snr=threshold_snr, flow=flow,
+                         roq=self.config.getboolean('analysis','roq'),
+                         use_gracedbpsd=use_gracedbpsd
                      )
 
         # pipedown-database
