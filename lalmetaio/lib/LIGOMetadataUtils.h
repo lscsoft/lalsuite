@@ -64,19 +64,6 @@ extern "C" {
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALDetectors.h>
 
-/**
- * The \c LALPlaygroundDataMask contains an enum type for describing the
- * subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
- */
-typedef enum tagLALPlaygroundDataMask
-{
-  unspecified_data_type,
-  playground_only,
-  exclude_play,
-  all_data
-}
-LALPlaygroundDataMask;
-
 
 /*
  *
