@@ -160,9 +160,6 @@ tagProcessParamsTable
 ProcessParamsTable;
 
 
-
-/* shared object is lalapps, lalwrapper_cvs_tag is lalapps cvs tag */
-/* lal_cvs tag is populated automatically                          */
 typedef struct
 tagSearchSummaryTable
 {
@@ -201,6 +198,7 @@ tagSnglBurst
 	long event_id;
 }
 SnglBurst;
+
 
 typedef struct
 tagSnglInspiralTable
@@ -327,7 +325,6 @@ tagSnglRingdownTable
   long          event_id;
 }
 SnglRingdownTable;
-
 
 
 typedef struct
@@ -715,6 +712,7 @@ tagSegmentTable
 }
 SegmentTable;
 
+
 typedef struct
 tagTimeSlideSegmentMapTable
 {
@@ -723,6 +721,7 @@ tagTimeSlideSegmentMapTable
   long time_slide_id;
 }
 TimeSlideSegmentMapTable;
+
 
 #if 0
 { /* so that editors will match succeeding brace */
