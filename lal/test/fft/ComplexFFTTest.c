@@ -161,7 +161,12 @@ main( int argc, char *argv[] )
   }
 
   XLALDestroyCOMPLEX8FFTPlan( prev );
+  XLALDestroyCOMPLEX8FFTPlan( pfwd );
 
+  /* Null pointers should be a no-op */
+  prev = NULL;
+  pfwd = NULL;
+  XLALDestroyCOMPLEX8FFTPlan( prev );
   XLALDestroyCOMPLEX8FFTPlan( pfwd );
 
   LALCDestroyVector( &status, &cvec );

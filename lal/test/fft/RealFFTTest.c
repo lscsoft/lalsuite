@@ -301,6 +301,13 @@ int main( int argc, char *argv[] )
     TestStatus( &status, CODES( 0 ), 1 );
     XLALDestroyREAL4FFTPlan( fwd );
     XLALDestroyREAL4FFTPlan( rev );
+
+    /* Null pointers should be a no-op */
+    rev = NULL;
+    fwd = NULL;
+    XLALDestroyREAL4FFTPlan( fwd );
+    XLALDestroyREAL4FFTPlan( rev );
+
     TestStatus( &status, CODES( 0 ), 1 );
   }
 
