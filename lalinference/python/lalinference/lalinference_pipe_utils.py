@@ -2212,6 +2212,8 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
                 self.osg=False
         else:
             self.osg=False
+        # 500 MB should be enough for anyone
+        self.add_condor_cmd('request_disk','500M')
         self.add_condor_cmd('getenv','True')
         # Only remove the job from the queue if it completed successfully
         # self.add_condor_cmd('on_exit_remove','(ExitBySignal == False) && (ExitCode == 0)')
@@ -2393,8 +2395,6 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
 
         # Set the options which are always used
         self.set_sub_file(os.path.abspath(submitFile))
-        # 500 MB should be enough for anyone
-        self.add_condor_cmd('request_disk','500M')
         if self.engine=='lalinferencemcmc':
             self.binary=cp.get('condor',self.engine.replace('mpi',''))
             self.mpirun=cp.get('condor','mpirun')
