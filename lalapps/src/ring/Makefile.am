@@ -40,5 +40,7 @@ lalapps_coh_PTF_inspiral_SOURCES = \
 	GenerateRing.h \
 	GenerateRing.c \
 	Inject.h \
-	InjectTimeSeries.c
+	InjectTimeSeries.c \
+	InspiralTmpltBankFromLIGOLw.c \
+	InspiralTmpltBankFromLIGOLw.h \
 	$(END_OF_LIST)

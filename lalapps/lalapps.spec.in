@@ -30,6 +30,7 @@ BuildRequires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: liblalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
+BuildRequires: libmetaio-devel >= @MIN_METAIO_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
@@ -51,6 +52,7 @@ Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
 Requires: libframel >= @MIN_FRAMEL_VERSION@
+Requires: libmetaio >= @MIN_METAIO_VERSION@
 Requires: python
 Requires: python%{python3_pkgversion}-h5py
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@

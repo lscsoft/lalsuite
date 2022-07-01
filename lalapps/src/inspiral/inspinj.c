@@ -373,7 +373,6 @@
 #include <lal/LALgetopt.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
@@ -387,6 +386,7 @@
 #include <lal/LALDatatypes.h>
 #include <lal/FrequencySeries.h>
 #include "inspiral.h"
+#include "LALExtTriggerTableFromLIGOLw.h"
 
 #define CVS_REVISION "$Revision$"
 #define CVS_ID_STRING "$Id$"
