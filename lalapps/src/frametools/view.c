@@ -428,8 +428,6 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 	REAL8TimeSeries *injections;
 	COMPLEX8FrequencySeries *response;
 	// REAL8 deltaF;
-	LIGOTimeGPS tbeg = series->epoch;
-	LIGOTimeGPS tend = series->epoch;
 	unsigned i;
 
 	if ( ! burstinjfile )
@@ -439,16 +437,14 @@ int burstinj( REAL4TimeSeries *series, const char *burstinjfile, const char *cal
 		return 0;
 	}
 
-	XLALGPSAdd(&tend, series->deltaT * series->data->length);
-
 	time_slide = XLALTimeSlideTableFromLIGOLw( burstinjfile );
-	sim_burst = XLALSimBurstTableFromLIGOLw( burstinjfile, &tbeg, &tend );
+	sim_burst = XLALSimBurstTableFromLIGOLw( burstinjfile );
 	if ( !sim_burst || !time_slide ) {
 		fprintf( stderr, "error: could not read file %s\n", burstinjfile );
 		exit( 1 );
 	}
 
-	verbose( "injecting bursts listed in file %s between times %d and %d\n", burstinjfile, tbeg, tend );
+	verbose( "injecting bursts listed in file %s\n", burstinjfile );
 
 	// deltaF = 1.0 / ( series->deltaT * series->data->length );
 	// response = getresp( calfile, series->name, &series->epoch, deltaF, series->data->length, 1.0 );

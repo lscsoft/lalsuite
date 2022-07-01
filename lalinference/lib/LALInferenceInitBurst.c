@@ -259,7 +259,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
       endtime=atof(ppt->value);
   ppt=LALInferenceGetProcParamVal(commandLine,"--binj");
   if (ppt) {
-    BinjTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value,0,0);
+    BinjTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value);
     if (BinjTable){
       //burst_inj=1;
       ppt=LALInferenceGetProcParamVal(commandLine,"--event");

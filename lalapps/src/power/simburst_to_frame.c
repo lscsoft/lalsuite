@@ -208,7 +208,7 @@ int main(int argc, char **argv)
      
 	options = parse_command_line(&argc, &argv);
 	
-    injs=XLALSimBurstTableFromLIGOLw(options.simburst_file,0,0);
+    injs=XLALSimBurstTableFromLIGOLw(options.simburst_file);
     cutinjs=injs;
     
     time_slide_table_head=XLALTimeSlideTableFromLIGOLw(options.simburst_file);

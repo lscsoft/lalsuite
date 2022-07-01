@@ -20,7 +20,6 @@
 #ifndef _LIGOLWXMLBURSTREAD_H_
 #define _LIGOLWXMLBURSTREAD_H_
 
-#include <lal/Date.h>
 #include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
@@ -36,9 +35,7 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 );
 
 SimBurst *XLALSimBurstTableFromLIGOLw(
-    const char *filename,
-    const LIGOTimeGPS *start,
-    const LIGOTimeGPS *end
+    const char *filename
 );
 
 #ifdef  __cplusplus

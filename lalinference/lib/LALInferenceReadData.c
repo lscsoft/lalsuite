@@ -2769,7 +2769,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
         else if((procparam=LALInferenceGetProcParamVal(commandLine,"--binj"))){
             /* Check if it is a SimBurst table */
             fprintf(stdout,"Checking if the xml table is a burst table... \n");
-            burstTable=XLALSimBurstTableFromLIGOLw(procparam->value,0,0);
+            burstTable=XLALSimBurstTableFromLIGOLw(procparam->value);
             if(burstTable){
                 procparam=LALInferenceGetProcParamVal(commandLine,"--event");
                 if(procparam) {

@@ -31,6 +31,7 @@
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/SnglBurstUtils.h>
 
+
 /**
  * Read the sngl_burst table from a LIGO Light Weight XML file into a
  * linked list of SnglBurst structures.
@@ -172,14 +173,10 @@ SnglBurst *XLALSnglBurstTableFromLIGOLw(
 
 /**
  * Read the sim_burst table from a LIGO Light Weight XML file into a linked
- * list of SimBurst structures.  If start is not NULL, then only rows whose
- * geocentre peak times are \f$\ge\f$ the given GPS time will be loaded, similarly
- * if end is not NULL.
+ * list of SimBurst structures.
  */
 SimBurst *XLALSimBurstTableFromLIGOLw(
-	const char *filename,
-	const LIGOTimeGPS *start,
-	const LIGOTimeGPS *end
+	const char *filename
 )
 {
 	static const char table_name[] = "sim_burst";
@@ -357,13 +354,6 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 			MetaioAbort(&env);
 			XLALPrintError("%s(): unrecognized waveform \"%s\" in %s table\n", __func__, row->waveform, table_name);
 			XLAL_ERROR_NULL(XLAL_EIO);
-		}
-
-		/* if outside accepted time window, discard */
-
-		if((start && XLALGPSDiff(start, &row->time_geocent_gps) > 0) || (end && XLALGPSDiff(end, &row->time_geocent_gps) < 0)) {
-			XLALDestroySimBurst(row);
-			continue;
 		}
 
 		/* append to linked list */

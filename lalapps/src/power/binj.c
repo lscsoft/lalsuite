@@ -585,7 +585,7 @@ static int load_tisl_file_and_merge(const char *filename, ProcessTable **process
 	} else
 		tisl_search_summary_table_head = NULL;
 	if(XLALLIGOLwHasTable(filename, "sim_burst")) {
-		tisl_sim_burst_table_head = XLALSimBurstTableFromLIGOLw(filename, NULL, NULL);
+		tisl_sim_burst_table_head = XLALSimBurstTableFromLIGOLw(filename);
 		if(!tisl_sim_burst_table_head)
 			return -1;
 	}
