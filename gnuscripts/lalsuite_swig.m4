@@ -2,11 +2,11 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 110
+# serial 111
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
-  AC_SUBST([MIN_SWIG_VERSION],[3.0.10])
+  AC_SUBST([MIN_SWIG_VERSION],[3.0.11])
   AC_SUBST([MIN_NUMPY_VERSION],[1.7])
   # end $0
 ])
