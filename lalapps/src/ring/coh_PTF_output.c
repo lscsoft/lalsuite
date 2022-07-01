@@ -20,7 +20,7 @@
 #include "config.h"
 #include "coh_PTF.h"
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLlegacy.h>
+#include "LIGOLwXMLlegacy.h"
 
 /*
  *

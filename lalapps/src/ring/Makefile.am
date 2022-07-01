@@ -43,4 +43,6 @@ lalapps_coh_PTF_inspiral_SOURCES = \
 	InjectTimeSeries.c \
 	InspiralTmpltBankFromLIGOLw.c \
 	InspiralTmpltBankFromLIGOLw.h \
+	LIGOLwXMLlegacy.c \
+	LIGOLwXMLlegacy.h \
 	$(END_OF_LIST)

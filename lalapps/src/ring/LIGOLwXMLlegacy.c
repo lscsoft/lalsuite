@@ -106,10 +106,10 @@
  */
 
 
-#include <LIGOLwXMLlegacy.h>
-#include <LIGOLwXMLHeaders.h>
-#include <lal/LALVCSInfo.h>
+#include <lal/LIGOLwXMLHeaders.h>
 #include <lal/LIGOMetadataTables.h>
+#include <LALAppsVCSInfo.h>
+#include "LIGOLwXMLlegacy.h"
 
 
 /**\name Error Codes */ /** @{ */
@@ -721,7 +721,7 @@ LALWriteLIGOLwXMLTable (
       {
         FIRST_TABLE_ROW
           XLALFilePrintf( xml->fp, SEARCH_SUMMARY_ROW,
-              lalVCSInfo.vcsTag,
+              lalAppsVCSInfo.vcsTag,
               tablePtr.searchSummaryTable->comment,
               tablePtr.searchSummaryTable->ifos,
               tablePtr.searchSummaryTable->in_start_time.gpsSeconds,

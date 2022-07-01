@@ -10,7 +10,6 @@ pkginclude_HEADERS = \
 	LIGOLwXML.h \
 	LIGOLwXMLArray.h \
 	LIGOLwXMLHeaders.h \
-	LIGOLwXMLlegacy.h \
 	LIGOLwXMLRead.h \
 	LIGOMetadataTables.h \
 	LIGOMetadataUtils.h
@@ -19,7 +18,6 @@ lib_LTLIBRARIES = liblalmetaio.la
 
 liblalmetaio_la_SOURCES = \
 	LIGOLwXML.c \
-	LIGOLwXMLlegacy.c \
 	LIGOLwXMLArray.c \
 	LIGOLwXMLRead.c \
 	LIGOMetadataUtils.c \
