@@ -1961,6 +1961,19 @@ coverage:
     - *skip-lint
     - *default
 
+lint:depends:
+  extends:
+    - .build-job
+    - .lint
+  image: igwn/lalsuite-dev:el7
+  before_script:
+    - python3 -m pip install
+          pyyaml
+          python-debian
+          python-rpm-spec
+  script:
+    - ./gnuscripts/check_library_dependencies
+
 lint:gitignore:
   extends:
     - .build-job

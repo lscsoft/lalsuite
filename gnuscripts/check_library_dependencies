@@ -1,0 +1,242 @@
+#!/usr/bin/env python3
+# Author: Karl Wette, 2022
+
+import os
+import sys
+import re
+from subprocess import check_call, check_output, DEVNULL
+import yaml
+from debian.deb822 import Deb822, PkgRelation
+from pyrpm.spec import Spec, replace_macros
+
+# safe YAML loader which ignores unknown tags
+class SafeLoaderIgnoreUnknown(yaml.SafeLoader):
+    def ignore_unknown(self, node):
+        return None
+SafeLoaderIgnoreUnknown.add_constructor(None, SafeLoaderIgnoreUnknown.ignore_unknown)
+def safe_load_ignore_unknown(f):
+    return yaml.load(f, Loader=SafeLoaderIgnoreUnknown)
+
+# list of LALSuite library dependencies
+# - originally derived from C header usage, i.e. libA depends on libB if libA uses a header from libB
+lallib_depends = {
+    'lal': set(),
+    'lalapps': set(['lal', 'lalburst', 'lalframe', 'lalinference', 'lalinspiral', 'lalmetaio', 'lalpulsar', 'lalsimulation']),
+    'lalburst': set(['lal', 'lalmetaio', 'lalsimulation']),
+    'lalframe': set(['lal']),
+    'lalinference': set(['lal', 'lalburst', 'lalframe', 'lalinspiral', 'lalmetaio', 'lalpulsar', 'lalsimulation']),
+    'lalinspiral': set(['lal', 'lalburst', 'lalframe', 'lalmetaio', 'lalsimulation']),
+    'lalmetaio': set(['lal']),
+    'lalpulsar': set(['lal', 'lalframe']),
+    'lalsimulation': set(['lal']),
+}
+
+# ensure that dependencies of dependencies are included
+for lallib in lallib_depends:
+    while True:
+        full_deps = lallib_depends[lallib].copy()
+        for dep in lallib_depends[lallib]:
+            full_deps = full_deps.union(lallib_depends[dep])
+        if full_deps == lallib_depends[lallib]:
+            break
+        lallib_depends[lallib] = full_deps
+
+# gitlab CI
+
+with open('.gitlab-ci.yml') as f:
+    gitlab_ci = safe_load_ignore_unknown(f)
+
+# check dependencies
+exit_status = 0
+for lallib in sorted(lallib_depends):
+    if not lallib_depends[lallib]:
+        continue
+    print('----- checking {} depends on {} -----'.format(lallib, ', '.join(sorted(lallib_depends[lallib]))))
+    print()
+
+    # autoconf
+
+    # autoconf --trace only works if autoreconf has been run
+    if not os.path.exists(os.path.join(lallib, 'configure')):
+        check_call(['./00boot'], cwd=lallib, stdout=DEVNULL, stderr=DEVNULL)
+
+    # trace use of macros LALSUITE_CHECK_LIB and LALSUITE_CHECK_OPT_LIB in configure.ac
+    deps = set()
+    for macro in ('LALSUITE_CHECK_LIB', 'LALSUITE_CHECK_OPT_LIB'):
+        autoconf_output = check_output(['autoconf', f'--trace={macro}:$1'], cwd=lallib, stderr=DEVNULL)
+        for dep in autoconf_output.decode('utf-8').lower().split('\n'):
+            if not dep in ('', 'lalsupport'):
+                deps.add(dep)
+    if deps != lallib_depends[lallib]:
+        print(f"autoconf: incorrect dependencies in '{lallib}/configure.ac':")
+        print("   currently: {}".format(', '.join(sorted(deps))))
+        print("   should be: {}".format(', '.join(sorted(lallib_depends[lallib]))))
+        print()
+        exit_status = 1
+
+    # gitlab CI
+
+    for pkg in ('conda', 'deb', 'rpm', 'koji'):
+        deps = set()
+        ci_job_name = f'{lallib}:{pkg}'
+        for needs in gitlab_ci[ci_job_name]['needs']:
+            if needs.startswith('lal'):
+                dep = ':'.join(needs.split(':')[0:2])
+                deps.add(dep)
+        correct_deps = set([f'{dep}:{pkg}' for dep in lallib_depends[lallib]])
+        if deps != correct_deps:
+            print(f"gitlab CI: incorrect dependencies in '{ci_job_name}':")
+            print("   currently: {}".format(', '.join(sorted(deps))))
+            print("   should be: {}".format(', '.join(sorted(correct_deps))))
+            print()
+            exit_status = 1
+
+    # conda
+
+    # parse conda meta.yaml.in.in, stripping out jinja templates and invalid characters
+    conda_meta_file = os.path.join(lallib, 'conda', 'meta.yaml.in.in')
+    conda_meta_data = ''
+    jinja_bracket = 0
+    invalid_characters = '@'
+    with open(conda_meta_file, 'r') as f:
+        while True:
+            c = f.read(1)
+            if not c:
+                break
+            if c == '{':
+                jinja_bracket += 1
+            if jinja_bracket == 0 and not c in invalid_characters:
+                conda_meta_data += c
+            if c == '}':
+                jinja_bracket -= 1
+    conda_meta = safe_load_ignore_unknown(conda_meta_data)
+
+    # check dependencies
+    # - check top-level 'requirements'
+    # - 'liblal*' and dependencies appear in 'host' and 'run' sections
+    # - 'python-lal*' dependencies appear in 'run' section
+    sections = { 'lib{}': ('host', 'run'), 'python-{}': ('run',) }
+    requirements = []
+    if 'requirements' in conda_meta:
+        requirements.append(('requirements', ('lib{}', 'python-{}'), conda_meta['requirements']))
+    for conda_meta_path, templates, requirement in requirements:
+        for template in templates:
+            template_display = template.format(r'lal*')
+            template_regex = template.format(r'lal[^-]*')
+            for section in sections[template]:
+                if section in requirement:
+                    deps = set()
+                    for entry in requirement[section]:
+                        if not entry:
+                            continue
+                        entry_first_word = entry.split()[0]
+                        if re.fullmatch(template_regex, entry_first_word):
+                            deps.add(entry_first_word)
+                    correct_deps = set([template.format(dep) for dep in lallib_depends[lallib]])
+                    if deps != correct_deps:
+                        print(f"conda: incorrect dependencies in '{conda_meta_file}', section '{conda_meta_path}->{section}', dependencies '{template_display}':")
+                        print("   currently: {}".format(', '.join(sorted(deps))))
+                        print("   should be: {}".format(', '.join(sorted(correct_deps))))
+                        print()
+                        exit_status = 1
+
+    # debian
+
+    # parse debian/control.in
+    debian_control_file = os.path.join(lallib, 'debian', 'control.in')
+    debian_control = []
+    with open(debian_control_file, 'r') as f:
+        debian_control = list(Deb822.iter_paragraphs(f))
+
+    # check dependencies
+    # - check 'Build-Depends' in 'Source' paragraph
+    # - check 'Depends' in 'Package' paragraphs
+    # - 'Source' requires 'liblal*-dev', and 'python3-lal*', packages
+    # - 'Package' named 'liblal*-dev' requires 'liblal*-dev' packages
+    # - 'Package' named 'python3-lal*' requires 'python3-lal*' packages
+    # - 'Package' named 'lal*-octave' requires 'lal*-octave' packages
+    for paragraph in debian_control:
+        depends_str = None
+        if 'Source' in paragraph:
+            depends_str = paragraph['Build-Depends']
+            templates = ('lib{}-dev', 'python3-{}')
+            debian_control_path = f"{paragraph['Source']}:Build-Depends"
+        else:
+            if paragraph['Package'] == f'lib{lallib}-dev':
+                depends_str = paragraph['Depends']
+                templates = ('lib{}-dev',)
+            if paragraph['Package'] == f'python3-{lallib}':
+                depends_str = paragraph['Depends']
+                templates = ('python3-{}',)
+            elif paragraph['Package'] == f'{lallib}-octave':
+                depends_str = paragraph['Depends']
+                templates = ('{}-octave',)
+            debian_control_path = f"{paragraph['Package']}:Depends"
+        if depends_str is not None:
+            depends_str = re.sub('[${}]', '', depends_str)
+            depends_str = re.sub('@[A-Z_]*@', '0.0', depends_str)
+            depends_str = re.sub(',\s*$', '', depends_str)
+            depends = PkgRelation.parse_relations(depends_str)
+            for template in templates:
+                template_display = template.format(r'lal*')
+                template_regex = template.format(r'lal[^-]*')
+                deps = set()
+                for debdeplist in depends:
+                    for debdep in debdeplist:
+                        if re.fullmatch(template_regex, debdep['name']):
+                            deps.add(debdep['name'])
+                correct_deps = set([template.format(dep) for dep in lallib_depends[lallib]])
+                if deps != correct_deps:
+                    print(f"deb: incorrect dependencies in '{debian_control_file}', paragraph '{debian_control_path}', dependencies '{template_display}':")
+                    print("   currently: {}".format(', '.join(sorted(deps))))
+                    print("   should be: {}".format(', '.join(sorted(correct_deps))))
+                    print()
+                    exit_status = 1
+
+    # rpm
+
+    # parse rpm .spec file
+    rpm_spec_file = os.path.join(lallib, f'{lallib}.spec.in')
+    rpm_spec = Spec.from_file(rpm_spec_file)
+    rpm_spec.macros['python3_pkgversion'] = '3x'
+
+    # check dependencies
+    # - check 'BuildRequires' in base package
+    # - check 'Requires' in sub-packages
+    # - base package requires 'liblal*-devel', and 'python3x-lal*' packages
+    # - package named 'liblal*-devel' requires 'liblal*-devel' packages
+    # - package named 'liblal*' requires 'liblal*' packages
+    # - package named 'python3x-lal*' requires 'python3x-lal*' packages
+    # - package named 'lal*-octave' requires 'lal*-octave' packages
+    package_name = replace_macros(rpm_spec.name, rpm_spec).replace('@PACKAGE@', lallib)
+    requires_list = [(f"{package_name}:BuildRequires", ('lib{}-devel', 'python3x-{}'), rpm_spec.build_requires)]
+    for package in rpm_spec.packages:
+        package_name = replace_macros(package.name, rpm_spec).replace('@PACKAGE@', lallib)
+        if package_name == f'lib{lallib}-devel':
+            requires_list.append((f"{package_name}:Requires", ('lib{}-devel',), package.requires))
+        if package_name == f'lib{lallib}':
+            requires_list.append((f"{package_name}:Requires", ('lib{}',), package.requires))
+        if package_name == f'python3x-{lallib}':
+            requires_list.append((f"{package_name}:Requires", ('python3x-{}',), package.requires))
+        if package_name == f'{lallib}-octave':
+            requires_list.append((f"{package_name}:Requires", ('{}-octave',), package.requires))
+    for rpm_spec_path, templates, requires in requires_list:
+        for template in templates:
+            template_display = template.format(r'lal*')
+            template_regex = template.format(r'lal[^-]*')
+            deps = set()
+            for req in requires:
+                req_name = replace_macros(req.name, rpm_spec).replace('@PACKAGE@', lallib)
+                if re.fullmatch(template_regex, req_name):
+                    deps.add(req_name)
+            correct_deps = set([template.format(dep) for dep in lallib_depends[lallib]])
+            if deps != correct_deps:
+                print(f"rpm: incorrect dependencies in '{rpm_spec_file}', tag '{rpm_spec_path}', dependencies '{template_display}':")
+                print("   currently: {}".format(', '.join(sorted(deps))))
+                print("   should be: {}".format(', '.join(sorted(correct_deps))))
+                print()
+                exit_status = 1
+
+# return exit status
+print(f'----- done: exit status {exit_status} -----')
+sys.exit(exit_status)
