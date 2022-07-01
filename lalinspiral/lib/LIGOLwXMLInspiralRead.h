@@ -33,27 +33,11 @@ extern "C" {
  */
 
 int
-LALSnglInspiralTableFromLIGOLw (
-    SnglInspiralTable **eventHead,
-    const CHAR         *fileName,
-    INT4                startEvent,
-    INT4                stopEvent
-    );
-
-int
 InspiralTmpltBankFromLIGOLw (
     InspiralTemplate   **bankHead,
     const CHAR         *fileName,
     INT4                startTmplt,
     INT4                stopTmplt
-    );
-
-int
-SimInspiralTableFromLIGOLw (
-    SimInspiralTable   **simHead,
-    const CHAR          *fileName,
-    INT4                 startTime,
-    INT4                 endTime
     );
 
 int
