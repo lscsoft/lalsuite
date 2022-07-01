@@ -373,6 +373,10 @@ REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps);
 // Test Python dict to LALDict typemap
 int swig_lal_test_pydict_to_laldict(LALDict *laldict);
 
+// Test Python conversion of NumPy integer types
+INT8 swig_lal_test_numpy_int_types(int a, INT2 b, INT4 c, INT8 d);
+UINT8 swig_lal_test_numpy_uint_types(unsigned int a, UINT2 b, UINT4 c, UINT8 d);
+
 #ifdef __cplusplus
 }
 #endif

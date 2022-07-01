@@ -260,6 +260,39 @@ SWIGINTERN int swiglal_output_stdouterr(void) {
 %typemaps_primitive(%checkcode(CPLXFLT), COMPLEX8);
 %typemaps_primitive(%checkcode(CPLXDBL), COMPLEX16);
 
+// Handle NumPy integer types
+// - Since all SWIG integer type conversions ultimately used either SWIG_AsVal_long()
+//   or SWIG_AsVal_unsigned_SS_long(), it is most straightforward to replace those
+//   functions with custom versions using C preprocessor macros
+%fragment(SWIG_AsVal_frag(long));
+%fragment(SWIG_AsVal_frag(unsigned long));
+%header %{
+SWIGINTERN int swiglal_SWIG_AsVal_long(PyObject *obj, long* val) {
+  if (PyArray_IsScalar(obj, Integer)) {
+    /* handle NumPy signed integer types */
+    PyArray_Descr *longDescr = PyArray_DescrFromType(NPY_LONG);
+    PyArray_CastScalarToCtype(obj, (void*)val, longDescr);
+    Py_DECREF(longDescr);
+    return SWIG_OK;
+  }
+  /* fall back to SWIG default behaviour */
+  return SWIG_AsVal_long(obj, val);
+}
+SWIGINTERN int swiglal_SWIG_AsVal_unsigned_SS_long(PyObject *obj, unsigned long *val) {
+  if (PyArray_IsScalar(obj, Integer)) {
+    /* handle NumPy unsigned integer types */
+    PyArray_Descr *ulongDescr = PyArray_DescrFromType(NPY_ULONG);
+    PyArray_CastScalarToCtype(obj, (void*)val, ulongDescr);
+    Py_DECREF(ulongDescr);
+    return SWIG_OK;
+  }
+  /* fall back to SWIG default behaviour */
+  return SWIG_AsVal_unsigned_SS_long(obj, val);
+}
+#define SWIG_AsVal_long(obj, val) swiglal_SWIG_AsVal_long(obj, val)
+#define SWIG_AsVal_unsigned_SS_long(obj, val) swiglal_SWIG_AsVal_unsigned_SS_long(obj, val)
+%}
+
 // Typemaps which convert to/from the C broken-down date/time struct.
 %typemap(in) struct tm* (struct tm temptm) {
 

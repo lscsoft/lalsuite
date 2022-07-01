@@ -1309,5 +1309,23 @@ lal.swig_lal_test_pydict_to_laldict(laldict)
 lal.swig_lal_test_pydict_to_laldict(pydict)
 print("PASSED Python dict to LALDict typemap (Python specific)")
 
+# test Python conversion of NumPy integer types
+print("checking Python conversion of NumPy integer types (Python specific)")
+assert lal.swig_lal_test_numpy_int_types(10, numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
+assert lal.swig_lal_test_numpy_int_types(numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
+assert lal.swig_lal_test_numpy_int_types(numpy.int16(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
+assert lal.swig_lal_test_numpy_int_types(numpy.int32(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
+assert lal.swig_lal_test_numpy_int_types(numpy.int64(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
+assert lal.swig_lal_test_numpy_uint_types(10, numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
+assert lal.swig_lal_test_numpy_uint_types(numpy.uint8(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
+assert lal.swig_lal_test_numpy_uint_types(numpy.uint16(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
+assert lal.swig_lal_test_numpy_uint_types(numpy.uint32(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
+assert lal.swig_lal_test_numpy_uint_types(numpy.uint64(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
+assert int(lal.LIGOTimeGPS(numpy.int8(123))) == 123
+assert int(lal.LIGOTimeGPS(numpy.int16(123))) == 123
+assert int(lal.LIGOTimeGPS(numpy.int32(123))) == 123
+assert int(lal.LIGOTimeGPS(numpy.int64(123))) == 123
+print("PASSED Python conversion of NumPy integer types (Python specific)")
+
 # passed all tests!
 print("PASSED all tests")
