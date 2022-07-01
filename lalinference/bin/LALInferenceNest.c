@@ -28,7 +28,6 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
 #include <lal/StringInput.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALInferenceNestedSampler.h>
 #include <lal/LALInferencePrior.h>
