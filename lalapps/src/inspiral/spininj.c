@@ -319,12 +319,7 @@ void LALSimInspiralTablePopulate(LALStatus        *status,
                                     sim_inspiral_table ), status );
   LAL_CALL( LALEndLIGOLwXMLTable ( status, &xmlfp ), status );
   
-  while ( injections.simInspiralTable )
-    {
-      this_inj = injections.simInspiralTable;
-      injections.simInspiralTable = injections.simInspiralTable->next;
-      XLALFreeSimInspiral( &this_inj );
-    }
+  XLALDestroySimInspiralTable( injections.simInspiralTable );
 }
 
 

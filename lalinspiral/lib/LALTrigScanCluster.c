@@ -368,7 +368,7 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
         {
           TriggerErrorList *tmpClusterList = thisClusterList;
           thisClusterList = thisClusterList->next;
-          XLALFreeSnglInspiral( &(tmpClusterList->trigger) );
+          XLALDestroySnglInspiralTableRow( tmpClusterList->trigger );
           XLAL_CALLGSL( gsl_matrix_free( tmpClusterList->err_matrix ) );
           XLAL_CALLGSL( gsl_vector_free( tmpClusterList->position ) );
           LALFree( tmpClusterList );
@@ -454,7 +454,7 @@ int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters )
       {
         previous->next = tmpCluster->next;
       }
-      XLALFreeSnglInspiral( &(tmpCluster->element->trigger) );
+      XLALDestroySnglInspiralTableRow( tmpCluster->element->trigger );
       XLAL_CALLGSL( gsl_matrix_free( tmpCluster->element->err_matrix ) );
       XLAL_CALLGSL( gsl_vector_free( tmpCluster->element->position ) );
       LALFree( tmpCluster );
@@ -512,7 +512,7 @@ int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster )
 
     if ( tmpTrigger != triggerToKeep )
     {
-      XLALFreeSnglInspiral( &(tmpTrigger->trigger ) );
+      XLALDestroySnglInspiralTableRow( tmpTrigger->trigger );
       XLAL_CALLGSL( gsl_matrix_free( tmpTrigger->err_matrix ) );
       XLAL_CALLGSL( gsl_vector_free( tmpTrigger->position ) );
       LALFree( tmpTrigger );
@@ -564,7 +564,7 @@ void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
   {
     for ( thisList = cluster->element; thisList; thisList = thisList->next )
     {
-      XLALFreeSnglInspiral( &(thisList->trigger ) );
+      XLALDestroySnglInspiralTableRow( thisList->trigger );
     }
   }
 

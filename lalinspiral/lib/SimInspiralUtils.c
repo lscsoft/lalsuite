@@ -127,7 +127,7 @@ XLALSimInspiralChirpMassCut(
     else
     {
       /* discard this template */
-      XLALFreeSimInspiral ( &tmpEvent );
+      XLALDestroySimInspiralTableRow ( tmpEvent );
     }
   }
 
@@ -198,7 +198,7 @@ XLALSimInspiralCompMassCut(
     else
     {
       /* discard this template */
-      XLALFreeSimInspiral ( &tmpEvent );
+      XLALDestroySimInspiralTableRow ( tmpEvent );
     }
   }
 
@@ -252,7 +252,7 @@ XLALSimInspiralTotalMassCut(
     else
     {
       /* discard this template */
-      XLALFreeSimInspiral ( &tmpEvent );
+      XLALDestroySimInspiralTableRow ( tmpEvent );
     }
   }
 
@@ -611,40 +611,4 @@ XLALCompareSimInspiralByGeocentEndTime(
   if(ta < tb - epsilon)
     return(-1);
   return(0);
-}
-
-
-
-int
-XLALFreeSimInspiral (
-    SimInspiralTable **eventHead
-    )
-
-{
-  LALFree( *eventHead );
-
-  return (0);
-}
-
-
-/**
- * Assign simulation_id values to the entries in a SimInspiral linked list.
- * All SimInspiral rows in the list will be blamed on the given process_id,
- * and assigned sequential simulation_ids starting with the given
- * simulation_id.  The return value is the next simulation_id after the
- * last one assigned to a row in the list.
- */
-long
-XLALSimInspiralAssignIDs (
-    SimInspiralTable *head,
-    long process_id,
-    long simulation_id
-)
-{
-  for( ; head; head = head->next )
-  {
-    head->process_id = process_id;
-    head->simulation_id = simulation_id++;
-  }
-  return simulation_id;
 }

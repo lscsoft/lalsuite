@@ -960,12 +960,7 @@ int main( int argc, char *argv[] )
           sim_inspiral_table ), &status );
     LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlfp ), &status );
   }
-  while ( inspInjections.simInspiralTable )
-  {
-    inj = inspInjections.simInspiralTable;
-    inspInjections.simInspiralTable = inspInjections.simInspiralTable->next;
-    XLALFreeSimInspiral( &inj );
-  }
+  XLALDestroySimInspiralTable( inspInjections.simInspiralTable );
 
    
   /* write the sim_ringdown table */

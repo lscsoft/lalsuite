@@ -368,12 +368,7 @@ int main(INT4 argc, CHAR *argv[])
   LogPrintf(LOG_NORMAL, "Free memory and exiting...");
 
   /* close the various xml tables */
-  while (injections.simInspiralTable)
-  {
-    this_inj = injections.simInspiralTable;
-    injections.simInspiralTable = injections.simInspiralTable->next;
-    XLALFreeSimInspiral(&this_inj);
-  }
+  XLALDestroySimInspiralTable( injections.simInspiralTable );
 
 #if 0
   while (procparams.processParamsTable)

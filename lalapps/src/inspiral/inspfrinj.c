@@ -927,12 +927,7 @@ int main( int argc, char *argv[] )
     LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
 
     /* free the temporary memory containing the events */
-    while ( injections )
-    {
-      thisInj = injections;
-      injections = injections->next;
-      XLALFreeSimInspiral( &thisInj );
-    }
+    XLALDestroySimInspiralTable( injections );
   }
 
   /* close the output xml file */

@@ -2973,7 +2973,7 @@ UINT8 coh_PTF_add_sngl_triggers(
       if (coh_PTF_trig_time_check(params,currEvent->end,\
                                          currEvent->end))
       {
-        XLALFreeSnglInspiral(&currEvent);
+        XLALDestroySnglInspiralTableRow(currEvent);
         continue;
       }
       /* And add the trigger to the lists. IF it passes clustering! */
@@ -2996,7 +2996,7 @@ UINT8 coh_PTF_add_sngl_triggers(
         }
         else
         {
-          XLALFreeSnglInspiral(&currEvent);
+          XLALDestroySnglInspiralTableRow(currEvent);
         }
       }
     }
@@ -3214,7 +3214,7 @@ void coh_PTF_cluster_sngl_triggers(
     else
     {
       currEvent2 = currEvent->next;
-      XLALFreeSnglInspiral(&currEvent);
+      XLALDestroySnglInspiralTableRow(currEvent);
       currEvent = currEvent2;
     }
     triggerNum+=1;
@@ -3290,7 +3290,7 @@ void coh_PTF_cleanup(
     SnglInspiralTable *thisSnglEvent;
     thisSnglEvent = snglEvents;
     snglEvents = snglEvents->next;
-    XLALFreeSnglInspiral( &thisSnglEvent );
+    XLALDestroySnglInspiralTableRow( thisSnglEvent );
   }
 
   while ( PTFbankhead )
