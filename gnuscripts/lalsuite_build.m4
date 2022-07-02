@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 160
+# serial 161
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -211,7 +211,10 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
         [-L*],[
           AS_CASE([" ${AM_LDFLAGS} "],
             [*" ${flag} "*],[:],
-            [pre_AM_LDFLAGS="${pre_AM_LDFLAGS} ${flag}"]
+            [
+              flag_libdir=`expr "X${flag}" : "X-L\(.*\)"`
+              pre_AM_LDFLAGS="${pre_AM_LDFLAGS} -L${flag_libdir} -R${flag_libdir}"
+            ]
           )
         ],
         [-l*|*.la],[pre_LIBS="${pre_LIBS} ${flag}"],
@@ -896,9 +899,9 @@ AC_ARG_WITH(
       ],
       [cuda_libdir=lib]
     )
-    CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
+    CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -lcufft -lcudart"
     CUDA_CFLAGS="-I${with_cuda}/include"
-    LALSUITE_ADD_FLAGS([C],${CUDA_CFLAGS},${CUDA_LIBS})
+    LALSUITE_ADD_FLAGS([C],[${CUDA_CFLAGS}],[${CUDA_LIBS}])
     AC_SUBST(CUDA_LIBS)
     AC_SUBST(CUDA_CFLAGS)
     AC_PATH_PROGS(NVCC,[nvcc],[],[${cuda_path}/bin:${PATH}])
