@@ -3339,7 +3339,7 @@ class ROMJob(LALInferenceDAGSharedFSJob, pipeline.CondorDAGJob,pipeline.Analysis
         if cp.has_option('engine', 'approx'):
             self.add_arg('-a ' + str(cp.get('engine', 'approx')))
         if cp.has_option('condor','computeroqweights_memory'):
-            computeroqweights_memory=str(cp.get('condor','computeroqweights_memory'))
+            required_memory = str(cp.get('condor','computeroqweights_memory'))
         else:
             roq_dir = cp.get('paths','roq_b_matrix_directory')
             params = np.genfromtxt(os.path.join(roq_dir, 'params.dat'), names=True)
