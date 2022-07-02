@@ -35,7 +35,6 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceReadBurstData.h>
 #include <lal/LALInferenceInit.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/GenerateBurst.h>
 #include <lal/LALSimBurst.h>
 #include <lal/LALInferenceCalibrationErrors.h>

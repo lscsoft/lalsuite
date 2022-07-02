@@ -63,7 +63,6 @@
 #include <lal/LALInference.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/GenerateBurst.h>
 #include <lal/LALInferenceBurstRoutines.h>
 #include <lal/LALInferenceReadBurstData.h>

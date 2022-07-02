@@ -1,5 +1,5 @@
 /*
- * LIGOLwXMLBurstRead.c
+ * LIGOLwXMLReadBurst.c
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -26,10 +26,9 @@
 
 
 #include <lal/Date.h>
-#include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOLwXMLRead.h>
-#include <lal/SnglBurstUtils.h>
+#include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 
 
 /**

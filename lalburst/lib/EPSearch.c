@@ -45,6 +45,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXMLArray.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/RealFFT.h>
 #include <lal/SnglBurstUtils.h>
 #include <lal/TimeFreqFFT.h>

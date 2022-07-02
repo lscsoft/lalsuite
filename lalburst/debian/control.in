@@ -12,7 +12,6 @@ Build-Depends:
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
- libmetaio-dev (>= 8.2),
  python3-all-dev,
  python3-glue,
  python3-numpy (>= @MIN_NUMPY_VERSION@),
@@ -55,7 +54,6 @@ Depends:
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
  libgsl-dev | libgsl0-dev (>= 1.9),
  liblalburst@LIBMAJOR@ (= ${binary:Version}),
- libmetaio-dev (>= 8.2),
 Description: LSC Algorithm Library Burst Developers
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL

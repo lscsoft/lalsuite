@@ -20,6 +20,7 @@ liblalmetaio_la_SOURCES = \
 	LIGOLwXML.c \
 	LIGOLwXMLArray.c \
 	LIGOLwXMLRead.c \
+	LIGOLwXMLReadBurst.c \
 	LIGOMetadataUtils.c \
 	processtable.c \
 	$(END_OF_LIST)

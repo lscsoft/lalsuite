@@ -136,6 +136,19 @@ void XLALDestroySimRingdownTableRow(SimRingdownTable *row);
 #endif   // SWIG
 void XLALDestroySimRingdownTable(SimRingdownTable *head);
 
+
+SnglBurst *XLALCreateSnglBurst(void);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySnglBurst(SnglBurst *event);
+#endif   // SWIG
+void XLALDestroySnglBurstTable(SnglBurst *head);
+
+SimBurst *XLALCreateSimBurst(void);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySimBurst(SimBurst *row);
+#endif   // SWIG
+void XLALDestroySimBurstTable(SimBurst *head);
+
 int
 XLALCountProcessTable(
     ProcessTable *head

@@ -111,6 +111,14 @@ XLALSimRingdownTableFromLIGOLw (
     const char *fileName
 );
 
+SnglBurst *XLALSnglBurstTableFromLIGOLw(
+    const char *filename
+);
+
+SimBurst *XLALSimBurstTableFromLIGOLw(
+    const char *filename
+);
+
 SearchSummaryTable *
 XLALSearchSummaryTableFromLIGOLw (
     const char *fileName

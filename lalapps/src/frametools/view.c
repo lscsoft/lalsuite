@@ -44,7 +44,6 @@
 #include <lal/SnglBurstUtils.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/FindChirp.h>
 #include <lal/GenerateBurst.h>
 

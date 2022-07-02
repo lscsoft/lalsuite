@@ -921,3 +921,110 @@ void XLALDestroySimRingdownTable(SimRingdownTable *head)
     head = next;
   }
 }
+
+
+/**
+ * Create a SnglBurst structure.
+ */
+SnglBurst *XLALCreateSnglBurst(void)
+{
+	SnglBurst *new = XLALMalloc(sizeof(*new));
+
+	if(!new)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	new->next = NULL;
+	new->process_id = new->event_id = -1;
+	memset(new->ifo, 0, sizeof(new->ifo));
+	memset(new->search, 0, sizeof(new->search));
+	memset(new->channel, 0, sizeof(new->channel));
+	XLALGPSSet(&new->start_time, 0, 0);
+	XLALGPSSet(&new->peak_time, 0, 0);
+	new->duration = XLAL_REAL4_FAIL_NAN;
+	new->central_freq = XLAL_REAL4_FAIL_NAN;
+	new->bandwidth = XLAL_REAL4_FAIL_NAN;
+	new->amplitude = XLAL_REAL4_FAIL_NAN;
+	new->snr = XLAL_REAL4_FAIL_NAN;
+	new->confidence = XLAL_REAL4_FAIL_NAN;
+	new->chisq = XLAL_REAL8_FAIL_NAN;
+	new->chisq_dof = XLAL_REAL8_FAIL_NAN;
+
+	return new;
+}
+
+
+/**
+ * Free a SnglBurst.
+ */
+void XLALDestroySnglBurst(SnglBurst *event)
+{
+	XLALFree(event);
+}
+
+
+/**
+ * Free a SnglBurst linked list.
+ */
+void XLALDestroySnglBurstTable(SnglBurst *head)
+{
+	while(head) {
+		SnglBurst *next = head->next;
+		XLALDestroySnglBurst(head);
+		head = next;
+	}
+}
+
+
+/**
+ * Create a SimBurst structure.
+ */
+SimBurst *XLALCreateSimBurst(void)
+{
+	SimBurst *new = XLALMalloc(sizeof(*new));
+
+	if(!new)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	new->next = NULL;
+	new->process_id = new->time_slide_id = new->simulation_id = -1;
+	memset(new->waveform, 0, sizeof(new->waveform));
+	new->ra = XLAL_REAL8_FAIL_NAN;
+	new->dec = XLAL_REAL8_FAIL_NAN;
+	new->psi = XLAL_REAL8_FAIL_NAN;
+	XLALGPSSet(&new->time_geocent_gps, 0, 0);
+	new->time_geocent_gmst = XLAL_REAL8_FAIL_NAN;
+	new->duration = XLAL_REAL8_FAIL_NAN;
+	new->frequency = XLAL_REAL8_FAIL_NAN;
+	new->bandwidth = XLAL_REAL8_FAIL_NAN;
+	new->q = XLAL_REAL8_FAIL_NAN;
+	new->pol_ellipse_angle = XLAL_REAL8_FAIL_NAN;
+	new->pol_ellipse_e= XLAL_REAL8_FAIL_NAN;
+	new->amplitude = XLAL_REAL8_FAIL_NAN;
+	new->hrss = XLAL_REAL8_FAIL_NAN;
+	new->egw_over_rsquared = XLAL_REAL8_FAIL_NAN;
+	new->waveform_number = 0;
+
+	return new;
+}
+
+
+/**
+ * Destroy a SimBurst structure.
+ */
+void XLALDestroySimBurst(SimBurst *sim_burst)
+{
+	XLALFree(sim_burst);
+}
+
+
+/**
+ * Destroy a SimBurst linked list.
+ */
+void XLALDestroySimBurstTable(SimBurst *head)
+{
+	while(head) {
+		SimBurst *next = head->next;
+		XLALDestroySimBurst(head);
+		head = next;
+	}
+}

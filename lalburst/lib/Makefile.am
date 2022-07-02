@@ -9,7 +9,6 @@ pkginclude_HEADERS = \
 	LALBurstConfig.h \
 	LALBurstVCSInfo.h \
 	LALBurstVCSInfoHeader.h \
-	LIGOLwXMLBurstRead.h \
 	SnglBurstUtils.h \
 	cs_cosmo.h \
 	cs_lambda_cosmo.h
@@ -20,7 +19,6 @@ liblalburst_la_SOURCES = \
 	EPFilters.c \
 	EPSearch.c \
 	GenerateBurst.c \
-	LIGOLwXMLBurstRead.c \
 	SnglBurstUtils.c \
 	cs_lambda_cosmo.c \
 	$(END_OF_LIST)

@@ -69,7 +69,6 @@
 #include <lal/LALInspiral.h>
 #include <lal/LALSimulation.h>
 #include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 
 #include <lal/LALInference.h>
 #include <lal/LALInferenceReadData.h>

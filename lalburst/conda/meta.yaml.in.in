@@ -54,7 +54,6 @@ requirements:
     - liblal >={{ lal_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
-    - libmetaio
 
 outputs:
   - name: liblalburst
@@ -72,13 +71,11 @@ outputs:
         - liblal >={{ lal_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
-        - libmetaio
       run:
         - gsl
         - liblal >={{ lal_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
-        - libmetaio
       run_constrained:
         - lalburst >=1.5.7
         - python-lalburst >=1.5.7
