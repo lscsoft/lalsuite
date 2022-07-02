@@ -37,6 +37,7 @@ of the Bayesian parameter estimation codes.
 #standard library imports
 import os
 import sys
+import warnings
 from math import cos,ceil,floor,sqrt,pi as pi_constant
 from xml.dom import minidom
 from operator import itemgetter
@@ -7315,8 +7316,11 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
         oneDPDFParams={par_name:50}
         try:
             rbins,plotFig=plot_one_param_pdf(pos,oneDPDFParams,pdf,cdf,plotkde=False)
-        except:
-            print("Failed to produce plot for %s."%par_name)
+        except Exception as exc:
+            warnings.warn(
+                f"failed to produce plot for {par_name}: "
+                f"[{type(exc).__name__}] {exc}",
+            )
             continue
 
         figname=par_name+'.png'
