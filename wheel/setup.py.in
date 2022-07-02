@@ -176,6 +176,7 @@ setup(
         'setuptools',
     ],
     install_requires=[
+        'astropy',
         'ligo-segments',
         'lscsoft-glue',
         'matplotlib',
