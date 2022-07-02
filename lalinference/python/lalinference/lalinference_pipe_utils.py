@@ -2849,7 +2849,10 @@ class PESummaryResultsPageJob(LALInferenceDAGSharedFSJob,pipeline.AnalysisJob):
         self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
         self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('request_memory','2000')
+        try:
+            self.add_condor_cmd('request_memory', cp.get('condor', 'resultspage_memory'))
+        except NoOptionError:
+            self.add_condor_cmd('request_memory', '2000')
 
 
 class ResultsPageJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
@@ -2862,7 +2865,10 @@ class ResultsPageJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline.A
         self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
         self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('request_memory','2000')
+        try:
+            self.add_condor_cmd('request_memory', cp.get('condor', 'resultspage_memory'))
+        except NoOptionError:
+            self.add_condor_cmd('request_memory', '2000')
         self.add_ini_opts(cp,'resultspage')
 
         if cp.has_option('results','skyres'):
