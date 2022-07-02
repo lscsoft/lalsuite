@@ -1096,9 +1096,7 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
           *hlms = NULL;
           //SphHarmFrequencySeries *hlms = NULL;
-          XLAL_TRY(ret=XLALSimIMRSEOBNRv4HMROM_Modes(hlms, phi0,
-              deltaF,f_start,f_max,f_ref,corrected_distance, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1z,
-              spin2z,-1,5,true), errnum);
+          XLAL_TRY(*hlms=XLALSimInspiralChooseFDModes(m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, deltaF, f_start, f_max, f_ref, phi0, corrected_distance, 0., grParams, approximant), errnum);
           //the last 1 means that we are only generating the 22 mode. Remember to modify that later
 
           /* apply FTA corrections */
