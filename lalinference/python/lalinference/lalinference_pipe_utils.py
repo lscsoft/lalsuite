@@ -1559,7 +1559,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     self.add_gracedb_log_node(respagenode,event.GID,server=gdb_srv)
         if self.config.has_option('condor','ligo-skymap-plot') and self.config.has_option('condor','ligo-skymap-from-samples'):
             mapnode = SkyMapNode(self.mapjob, posfile = mergenode.get_pos_file(), parent=mergenode,
-                    prefix= 'LALInference', outdir=pagedir, ifos=enginenodes[0].get_ifos())
+                    prefix= 'LALInference', outdir=pagedir, ifos=self.ifos)
             plotmapnode = PlotSkyMapNode(self.plotmapjob, parent=mapnode, inputfits = mapnode.outfits, output=os.path.join(pagedir,'skymap.png'))
             self.add_node(mapnode)
             self.add_node(plotmapnode)
