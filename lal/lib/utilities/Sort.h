@@ -106,6 +106,34 @@ extern "C" {
  * The C library's \c qsort() does not guarantee that order is preserved.
  * This function is not fast, it just is what it is.
  *
+ * ## Merge Sort ##
+ *
+ * This is also a stable sort algorithm, faster than insertion sort, but
+ * requires more temporary memory.
+ *
+ * ## Search Sorted ##
+ *
+ * The routine \c XLALIsSorted() returns \f$1\f$ if the array is sorted (in
+ * ascending order) or \f$0\f$ otherwise.  To determine if an array is sorted
+ * in descending order, reverse the arguments in the \c compar routine.
+ *
+ * The routine \c XLALSearchSorted() returns the index in which the element
+ * given by \c key should be inserted in order to maintain the sort order.
+ *
+ * If \f${\mathtt{side}} < 0\f$ then the index to insert is on the left:
+ * \code
+ * a[i-1] < v <= a[i]
+ * \endcode
+ * If \f${\mathtt{side}} > 0\f$ then the index to insert is on the right:
+ * \code
+ * a[i-1] <= v < a[i]
+ * \endcode
+ * If \f${\mathtt{side}} = 0\f$ then the index is that of a matching element:
+ * \code
+ * a[i] == v
+ * \endcode
+ * or \f$-1\f$ is returned if there is no matching element.
+ *
  * ### Algorithm ###
  *
  * ## Heap Sort ##
@@ -151,6 +179,19 @@ int XLALHeapRank( INT4 *rank, void *base, UINT4 nobj, UINT4 size, void *params,
 /** \see See \ref Sort_h for documentation */
 int XLALInsertionSort( void *base, size_t nobj, size_t size, void *params,
     int (*compar)(void *, const void *, const void *) );
+
+/* ----- MergeSort.c ----- */
+
+/** \see See \ref Sort_h for documentation */
+int XLALMergeSort(void *base, size_t nobj, size_t size, void *params, int (*compar)(void *, const void *, const void *));
+
+/* ----- SearchSorted.c ----- */
+
+/** \see See \ref Sort_h for documentation */
+int XLALIsSorted(void *base, size_t nobj, size_t size, void *params, int (*compar)(void *, const void *, const void *));
+
+/** \see See \ref Sort_h for documentation */
+ssize_t XLALSearchSorted(const void *key, const void *base, size_t nobj, size_t size, void *params, int (*compar)(void *, const void *, const void *), int side);
 
 /** @} */
 
