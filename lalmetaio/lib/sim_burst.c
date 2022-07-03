@@ -1,5 +1,5 @@
 /*
- * LIGOLwXMLReadBurst.c
+ * sim_burst.c
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -26,147 +26,66 @@
 
 
 #include <lal/Date.h>
+#include <lal/LALMalloc.h>
+#include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
+#include <lal/XLALError.h>
 
 
 /**
- * Read the sngl_burst table from a LIGO Light Weight XML file into a
- * linked list of SnglBurst structures.
+ * Create a SimBurst structure.
  */
-SnglBurst *XLALSnglBurstTableFromLIGOLw(
-	const char *filename
-)
+SimBurst *XLALCreateSimBurst(void)
 {
-	static const char table_name[] = "sngl_burst";
-	int miostatus;
-	SnglBurst *head = NULL;
-	SnglBurst **next = &head;
-	struct MetaioParseEnvironment env;
-	struct {
-		int process_id;
-		int ifo;
-		int search;
-		int channel;
-		int start_time;
-		int start_time_ns;
-		int peak_time;
-		int peak_time_ns;
-		int duration;
-		int central_freq;
-		int bandwidth;
-		int amplitude;
-		int snr;
-		int confidence;
-		int chisq;
-		int chisq_dof;
-		int event_id;
-	} column_pos;
+	SimBurst *new = XLALMalloc(sizeof(*new));
 
-	/* open the file and find table */
-
-	if(MetaioOpenFile(&env, filename)) {
-		XLALPrintError("%s(): error opening \"%s\": %s\n", __func__, filename, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(XLAL_EIO);
-	}
-	if(MetaioOpenTableOnly(&env, table_name)) {
-		MetaioAbort(&env);
-		XLALPrintError("%s(): cannot find %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(XLAL_EIO);
-	}
-
-	/* find columns */
-
-	XLALClearErrno();
-	column_pos.process_id = XLALLIGOLwFindColumn(&env, "process_id", METAIO_TYPE_INT_8S, 1);
-	column_pos.ifo = XLALLIGOLwFindColumn(&env, "ifo", METAIO_TYPE_LSTRING, 1);
-	column_pos.search = XLALLIGOLwFindColumn(&env, "search", METAIO_TYPE_LSTRING, 1);
-	column_pos.channel = XLALLIGOLwFindColumn(&env, "channel", METAIO_TYPE_LSTRING, 1);
-	column_pos.start_time = XLALLIGOLwFindColumn(&env, "start_time", METAIO_TYPE_INT_4S, 1);
-	column_pos.start_time_ns = XLALLIGOLwFindColumn(&env, "start_time_ns", METAIO_TYPE_INT_4S, 1);
-	column_pos.peak_time = XLALLIGOLwFindColumn(&env, "peak_time", METAIO_TYPE_INT_4S, 1);
-	column_pos.peak_time_ns = XLALLIGOLwFindColumn(&env, "peak_time_ns", METAIO_TYPE_INT_4S, 1);
-	column_pos.duration = XLALLIGOLwFindColumn(&env, "duration", METAIO_TYPE_REAL_4, 1);
-	column_pos.central_freq = XLALLIGOLwFindColumn(&env, "central_freq", METAIO_TYPE_REAL_4, 1);
-	column_pos.bandwidth = XLALLIGOLwFindColumn(&env, "bandwidth", METAIO_TYPE_REAL_4, 1);
-	column_pos.amplitude = XLALLIGOLwFindColumn(&env, "amplitude", METAIO_TYPE_REAL_4, 1);
-	column_pos.snr = XLALLIGOLwFindColumn(&env, "snr", METAIO_TYPE_REAL_4, 1);
-	column_pos.confidence = XLALLIGOLwFindColumn(&env, "confidence", METAIO_TYPE_REAL_4, 1);
-	column_pos.chisq = XLALLIGOLwFindColumn(&env, "chisq", METAIO_TYPE_REAL_8, 1);
-	column_pos.chisq_dof = XLALLIGOLwFindColumn(&env, "chisq_dof", METAIO_TYPE_REAL_8, 1);
-	column_pos.event_id = XLALLIGOLwFindColumn(&env, "event_id", METAIO_TYPE_INT_8S, 1);
-
-	/* check for failure (== a required column is missing) */
-
-	if(XLALGetBaseErrno()) {
-		MetaioAbort(&env);
-		XLALPrintError("%s(): failure reading %s table: missing required column\n", __func__, table_name);
+	if(!new)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	new->next = NULL;
+	new->process_id = new->time_slide_id = new->simulation_id = -1;
+	memset(new->waveform, 0, sizeof(new->waveform));
+	new->ra = XLAL_REAL8_FAIL_NAN;
+	new->dec = XLAL_REAL8_FAIL_NAN;
+	new->psi = XLAL_REAL8_FAIL_NAN;
+	XLALGPSSet(&new->time_geocent_gps, 0, 0);
+	new->time_geocent_gmst = XLAL_REAL8_FAIL_NAN;
+	new->duration = XLAL_REAL8_FAIL_NAN;
+	new->frequency = XLAL_REAL8_FAIL_NAN;
+	new->bandwidth = XLAL_REAL8_FAIL_NAN;
+	new->q = XLAL_REAL8_FAIL_NAN;
+	new->pol_ellipse_angle = XLAL_REAL8_FAIL_NAN;
+	new->pol_ellipse_e= XLAL_REAL8_FAIL_NAN;
+	new->amplitude = XLAL_REAL8_FAIL_NAN;
+	new->hrss = XLAL_REAL8_FAIL_NAN;
+	new->egw_over_rsquared = XLAL_REAL8_FAIL_NAN;
+	new->waveform_number = 0;
+
+	return new;
+}
+
+
+/**
+ * Destroy a SimBurst structure.
+ */
+void XLALDestroySimBurst(SimBurst *sim_burst)
+{
+	XLALFree(sim_burst);
+}
+
+
+/**
+ * Destroy a SimBurst linked list.
+ */
+void XLALDestroySimBurstTable(SimBurst *head)
+{
+	while(head) {
+		SimBurst *next = head->next;
+		XLALDestroySimBurst(head);
+		head = next;
 	}
-
-	/* loop over the rows in the file */
-
-	while((miostatus = MetaioGetRow(&env)) > 0) {
-		/* create a new row */
-
-		SnglBurst *row = XLALCreateSnglBurst();
-
-		if(!row) {
-			XLALDestroySnglBurstTable(head);
-			MetaioAbort(&env);
-			XLAL_ERROR_NULL(XLAL_EFUNC);
-		}
-
-		/* append to linked list */
-
-		*next = row;
-		next = &(*next)->next;
-
-		/* populate the columns */
-
-		row->process_id = env.ligo_lw.table.elt[column_pos.process_id].data.int_8s;
-		if(strlen(env.ligo_lw.table.elt[column_pos.ifo].data.lstring.data) >= sizeof(row->ifo) ||
-		strlen(env.ligo_lw.table.elt[column_pos.search].data.lstring.data) >= sizeof(row->search) ||
-		strlen(env.ligo_lw.table.elt[column_pos.channel].data.lstring.data) >= sizeof(row->channel)) {
-			XLALDestroySnglBurstTable(head);
-			MetaioAbort(&env);
-			XLALPrintError("%s(): failure reading %s table: string too long\n", __func__, table_name);
-			XLAL_ERROR_NULL(XLAL_EIO);
-		}
-		strncpy(row->ifo, env.ligo_lw.table.elt[column_pos.ifo].data.lstring.data, sizeof(row->ifo) - 1);
-		strncpy(row->search, env.ligo_lw.table.elt[column_pos.search].data.lstring.data, sizeof(row->search) - 1);
-		strncpy(row->channel, env.ligo_lw.table.elt[column_pos.channel].data.lstring.data, sizeof(row->channel) - 1);
-		XLALGPSSet(&row->start_time, env.ligo_lw.table.elt[column_pos.start_time].data.int_4s, env.ligo_lw.table.elt[column_pos.start_time_ns].data.int_4s);
-		XLALGPSSet(&row->peak_time, env.ligo_lw.table.elt[column_pos.peak_time].data.int_4s, env.ligo_lw.table.elt[column_pos.peak_time_ns].data.int_4s);
-		row->duration = env.ligo_lw.table.elt[column_pos.duration].data.real_4;
-		row->central_freq = env.ligo_lw.table.elt[column_pos.central_freq].data.real_4;
-		row->bandwidth = env.ligo_lw.table.elt[column_pos.bandwidth].data.real_4;
-		row->amplitude = env.ligo_lw.table.elt[column_pos.amplitude].data.real_4;
-		row->snr = env.ligo_lw.table.elt[column_pos.snr].data.real_4;
-		row->confidence = env.ligo_lw.table.elt[column_pos.confidence].data.real_4;
-		row->chisq = env.ligo_lw.table.elt[column_pos.chisq].data.real_8;
-		row->chisq_dof = env.ligo_lw.table.elt[column_pos.chisq_dof].data.real_8;
-		row->event_id = env.ligo_lw.table.elt[column_pos.event_id].data.int_8s;
-	}
-	if(miostatus < 0) {
-		XLALDestroySnglBurstTable(head);
-		MetaioAbort(&env);
-		XLALPrintError("%s(): I/O error parsing %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(XLAL_EIO);
-	}
-
-	/* close file */
-
-	if(MetaioClose(&env)) {
-		XLALDestroySnglBurstTable(head);
-		XLALPrintError("%s(): error parsing document after %s table: %s\n", __func__, table_name, env.mierrmsg.data ? env.mierrmsg.data : "unknown reason");
-		XLAL_ERROR_NULL(XLAL_EIO);
-	}
-
-	/* done */
-
-	return head;
 }
 
 
@@ -378,4 +297,83 @@ SimBurst *XLALSimBurstTableFromLIGOLw(
 	/* done */
 
 	return head;
+}
+
+
+/**
+ * Write a sim_burst table to an XML file.
+ */
+int XLALWriteLIGOLwXMLSimBurstTable(
+	LIGOLwXMLStream *xml,
+	const SimBurst *sim_burst
+)
+{
+	const char *row_head = "\n\t\t\t";
+
+	/* table header */
+
+	XLALClearErrno();
+	XLALFilePuts("\t<Table Name=\"sim_burst:table\">\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:ra\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:dec\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:psi\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:time_geocent_gps\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:time_geocent_gps_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:time_geocent_gmst\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:duration\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:frequency\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:bandwidth\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:q\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:pol_ellipse_angle\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:pol_ellipse_e\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:amplitude\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:hrss\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:egw_over_rsquared\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:waveform_number\" Type=\"int_8u\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"time_slide:time_slide_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"sim_burst:simulation_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Stream Name=\"sim_burst:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* rows */
+
+	for(; sim_burst; sim_burst = sim_burst->next) {
+		if(XLALFilePrintf(xml->fp, "%s%ld,\"%s\",%.16g,%.16g,%.16g,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%lu,%ld,%ld",
+			row_head,
+			sim_burst->process_id,
+			sim_burst->waveform,
+			sim_burst->ra,
+			sim_burst->dec,
+			sim_burst->psi,
+			sim_burst->time_geocent_gps.gpsSeconds,
+			sim_burst->time_geocent_gps.gpsNanoSeconds,
+			sim_burst->time_geocent_gmst,
+			sim_burst->duration,
+			sim_burst->frequency,
+			sim_burst->bandwidth,
+			sim_burst->q,
+			sim_burst->pol_ellipse_angle,
+			sim_burst->pol_ellipse_e,
+			sim_burst->amplitude,
+			sim_burst->hrss,
+			sim_burst->egw_over_rsquared,
+			sim_burst->waveform_number,
+			sim_burst->time_slide_id,
+			sim_burst->simulation_id
+		) < 0)
+			XLAL_ERROR(XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(XLALFilePuts("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
 }
