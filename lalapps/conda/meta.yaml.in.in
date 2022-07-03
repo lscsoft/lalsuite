@@ -207,6 +207,8 @@ test:
     - lalapps_string_plot_likelihood --help
     - test "$(lalapps_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"
     - test "$(lalapps_tconvert Fri, 13 May 2005 06:13:07 +0000)" -eq 800000000
+    - test "$(lalapps_tconvert 1831518865)" == "Tue Jan 19 03:14:07 GMT 2038"   # Y2038 check
+    - test "$(lalapps_tconvert 1831518866)" == "Tue Jan 19 03:14:08 GMT 2038"   # Y2038 check
     - lalapps_tmpltbank --help
     - lalapps_version
 

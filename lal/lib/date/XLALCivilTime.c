@@ -263,6 +263,33 @@ struct tm *XLALFillUTC( struct tm *utc /**< [In] UTC time in a broken down time 
 
 
 /**
+ * Compute Unix epoch time: seconds since 1970 January 1 0h UTC
+ * (POSIX:2001 definition of Unix Epoch).
+ *
+ * Note: all fields of \c utc must be filled; you may need to
+ * use XLALFillUTC().
+ */
+time_t XLALSecondsSinceUnixEpoch( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
+{
+
+  /* NOTE: 'struct tm' fields are 'int' (32 bits) so must perform */
+  /*       calculation in 'time_t' (64 bits) to avoid Y2038 problem */
+  const time_t tm_sec = (time_t)utc->tm_sec;
+  const time_t tm_min = (time_t)utc->tm_min;
+  const time_t tm_hour = (time_t)utc->tm_hour;
+  const time_t tm_yday = (time_t)utc->tm_yday;
+  const time_t tm_year = (time_t)utc->tm_year;
+
+  return tm_sec + tm_min * 60 + tm_hour * 3600 +
+    tm_yday * 86400 + (tm_year - 70) * 31536000 +
+    ((tm_year - 69) / 4) * 86400 -
+    ((tm_year - 1) / 100) * 86400 +
+    ((tm_year + 299) / 400) * 86400;
+
+}
+
+
+/**
  * Returns the GPS seconds since the GPS epoch for a
  * specified UTC time structure.
  */
@@ -283,11 +310,7 @@ INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time
   if ( leapsec < 0 )
     XLAL_ERROR( XLAL_EFUNC );
   /* compute unix epoch time: seconds since 1970 JAN 1 0h UTC */
-  /* POSIX:2001 definition of seconds since the (UNIX) Epoch */
-  unixsec = utc->tm_sec + utc->tm_min*60 + utc->tm_hour*3600
-    + utc->tm_yday*86400 + (utc->tm_year-70)*31536000
-    + ((utc->tm_year-69)/4)*86400 - ((utc->tm_year-1)/100)*86400
-    + ((utc->tm_year+299)/400)*86400;
+  unixsec = XLALSecondsSinceUnixEpoch( utc );
   gpssec  = unixsec;
   gpssec -= XLAL_EPOCH_UNIX_GPS; /* change to gps epoch */
   gpssec += leapsec - XLAL_EPOCH_GPS_TAI_UTC;

@@ -202,6 +202,9 @@ int XLALLeapSecondsUTC( const struct tm *utc );
 /* Fill in derived fields in a given UTC time structure */
 struct tm *XLALFillUTC( struct tm *utc );
 
+/* Compute Unix epoch time: seconds since 1970 January 1 0h UTC */
+time_t XLALSecondsSinceUnixEpoch( const struct tm *utc );
+
 /* Returns the GPS seconds since the GPS epoch for a specified UTC time structure. */
 INT4 XLALUTCToGPS( const struct tm *utc );
 

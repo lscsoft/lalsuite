@@ -507,10 +507,7 @@ time_t gps_to_unix( int gps_sec, int *leap )
   }
 
   /* posix definition of the unix time */
-  unix_sec = utc.tm_sec + utc.tm_min*60 + utc.tm_hour*3600
-    + utc.tm_yday*86400 + (utc.tm_year-70)*31536000
-    + ((utc.tm_year-69)/4)*86400 - ((utc.tm_year-1)/100)*86400
-    + ((utc.tm_year+299)/400)*86400;
+  unix_sec = XLALSecondsSinceUnixEpoch( &utc );
 
   return unix_sec;
 }
