@@ -26,6 +26,8 @@ libutilities_la_SOURCES = \
 	FindRoot.c \
 	HeapSort.c \
 	InsertionSort.c \
+	MergeSort.c \
+	SearchSorted.c \
 	Integrate.c \
 	Interpolate.c \
 	LALAdaptiveRungeKuttaIntegrator.c \
