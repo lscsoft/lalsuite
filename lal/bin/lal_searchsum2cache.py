@@ -41,12 +41,12 @@ from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from functools import reduce
-#from lalapps import git_version
+from lal import git_version
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-#__version__ = "git id %s" % git_version.id
-#__date__ = git_version.date
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
 
 
 #
