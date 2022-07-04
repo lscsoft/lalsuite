@@ -335,7 +335,7 @@
 #include <lal/ResampleTimeSeries.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
@@ -526,9 +526,7 @@ int main ( int argc, char *argv[] )
   REAL8 dynRange = 0;
 
   /* TD follow-up variables */
-  int numTdFollow;           /* Number of events to follow up in this time */
   SnglInspiralTable *tdFollowUp   = NULL;
-  SnglInspiralTable *thisTdFollow = NULL;
 
   /*
    *
@@ -580,42 +578,28 @@ int main ( int argc, char *argv[] )
    */
   if ( tdFileNames )
   {
+    SnglInspiralTable **thisTdFollow = &tdFollowUp;
+
     if ( vrbflg )
     {
       fprintf( stdout, "We are doing a TD follow-up\n" );
       fprintf( stdout, "Following up %d files...\n", numTDFiles );
     }
 
-    numTdFollow = 0;
-
     for (i = 0; i < (UINT4)numTDFiles; i++ )
     {
-      INT4 thisTDNum = 0;
-      if ( !tdFollowUp )
-      {
-        thisTDNum = LALSnglInspiralTableFromLIGOLw(&tdFollowUp,
-          tdFileNames[i], 0, -1);
-        thisTdFollow = tdFollowUp;
-      }
-      else
-      {
-        thisTDNum = LALSnglInspiralTableFromLIGOLw(&(thisTdFollow->next),
-          tdFileNames[i], 0, -1);
-      }
-      if ( thisTDNum < 0 )
+      *thisTdFollow = XLALSnglInspiralTableFromLIGOLw(tdFileNames[i]);
+      if ( !*thisTdFollow )
       {
         fprintf( stderr, "Error reading file %s\n", tdFileNames[i] );
         exit( 1 );
       }
-      numTdFollow += thisTDNum;
 
-      while ( thisTdFollow->next )
+      while ( (*thisTdFollow)->next )
       {
-        thisTdFollow = thisTdFollow->next;
+        thisTdFollow = &(*thisTdFollow)->next;
       }
     }
-
-    if (numTdFollow <= 0) goto cleanExit;
 
     tdFollowUp  = XLALIfoCutSingleInspiral( &tdFollowUp, ifo );
     if ( tdFollowUp )
@@ -626,12 +610,7 @@ int main ( int argc, char *argv[] )
     if ( !tdFollowUp ) goto cleanExit;
 
     /* Free the follow-up events */
-    while (tdFollowUp)
-    {
-      thisTdFollow = tdFollowUp;
-      tdFollowUp = tdFollowUp->next;
-      XLALFreeSnglInspiral(&thisTdFollow);
-    }
+    XLALDestroySnglInspiralTable( tdFollowUp );
   }
 
 

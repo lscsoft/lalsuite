@@ -372,10 +372,11 @@
 #include <lal/Date.h>
 #include <lal/LALgetopt.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Random.h>
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>
@@ -1227,16 +1228,15 @@ read_nr_data( char* filename )
   SimInspiralTable  *thisEvent= NULL;
   INT4               j = 0;
 
-  num_nr = SimInspiralTableFromLIGOLw( &nrSimHead, filename, 0, 0 );
-
-
-  if ( num_nr < 0 )
+  nrSimHead = XLALSimInspiralTableFromLIGOLw( filename );
+  if ( !nrSimHead )
   {
     fprintf( stderr, "error: unable to read sim_inspiral table from %s\n",
         filename );
     exit( 1 );
   }
-  else if ( num_nr == 0 )
+  for(num_nr = 0, thisEvent = nrSimHead; thisEvent; num_nr++, thisEvent = thisEvent->next);
+  if ( !num_nr )
   {
     fprintf( stderr, "error: zero events in sim_inspiral table from %s\n",
         filename );

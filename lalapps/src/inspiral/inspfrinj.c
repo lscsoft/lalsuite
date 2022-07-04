@@ -282,7 +282,7 @@
 #include <lal/LALFrameIO.h>
 #include <lal/FindChirp.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
@@ -336,7 +336,6 @@ CHAR  *injChanName      = NULL;         /* the injection channel name   */
 
 REAL4 injFlow           = 0;            /* injection start frequency    */
 int   injectOverhead    = 0;            /* inject h+ into detector      */
-int   numInjections     = 0;
 SimInspiralTable *injections = NULL;
 SimInspiralTable    *thisInj = NULL;
 
@@ -603,19 +602,15 @@ int main( int argc, char *argv[] )
      */
 
     /* read in the injection data from XML */
-    numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
-        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds + injectSafety );
+    injections = XLALSimInspiralTableFromLIGOLw( injectionFile );
 
-    if ( numInjections < 0 )
+    if ( !injections )
     {
       fprintf( stderr, "error: cannot read injection file" );
       exit( 1 );
     }
-    else if ( numInjections )
+    else
     {
-      /* store number of injections in search summary */
-      searchsumm->nevents = numInjections;
-
       /* set the injection start frequency */
       if ( injFlow )
       {
@@ -671,14 +666,10 @@ int main( int argc, char *argv[] )
             &injResp ), &status );
       snprintf( inj.name,  LALNameLength, "%s", tmpChName );
 
-      if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
-          numInjections, injectionFile, inj.name );
+      if ( vrbflg ) fprintf( stdout, "injected signals from %s into %s\n",
+          injectionFile, inj.name );
 
       LAL_CALL( LALCDestroyVector( &status, &(injResp.data) ), &status );
-    }
-    else
-    {
-      if ( vrbflg ) fprintf( stdout, "no injections in this data\n" );
     }
   }
 

@@ -143,7 +143,7 @@
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
@@ -426,16 +426,19 @@ int main ( int argc, char *argv[] )
 
 
   /* read in the template bank from a ligo lw xml file */
-  inputBank = NULL;
-  numTmplts = LALSnglInspiralTableFromLIGOLw( &inputBank,
-      bankFileName, 0, -1 );
-  if ( numTmplts < 0 )
+  inputBank = XLALSnglInspiralTableFromLIGOLw( bankFileName );
+  if ( !inputBank )
   {
     fprintf( stderr, "error: unable to read templates from %s\n", 
         bankFileName );
     exit( 1 );
   }
-  
+
+  {
+  SnglInspiralTable *row;
+  for(numTmplts = 0, row = inputBank; row; numTmplts++, row = row->next);
+  }
+
   if ( vrbflg ) fprintf( stdout, "read %d templates from %s\n", 
       numTmplts, bankFileName );
 

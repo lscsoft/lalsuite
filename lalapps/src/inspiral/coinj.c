@@ -29,7 +29,7 @@
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
 #include <lal/FindChirp.h>
 #include <lal/Units.h>
@@ -279,7 +279,7 @@ int main(int argc, char *argv[])
   memset(&status,0,sizeof(status));
 
   /* Read in the input XML */
-  SimInspiralTableFromLIGOLw(&injTable,inputfile,0,0);
+  injTable = XLALSimInspiralTableFromLIGOLw(inputfile);
   headTable=injTable;
   Nsamples = (UINT4)injLength/deltaT;
 

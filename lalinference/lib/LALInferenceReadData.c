@@ -49,7 +49,6 @@
 #include <lal/XLALError.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 
 #include <lal/SeqFactories.h>
 #include <lal/DetectorSite.h>
@@ -69,6 +68,8 @@
 #include <math.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALSimulation.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLBurstRead.h>
 
 #include <lal/LALInference.h>
 #include <lal/LALInferenceReadData.h>
@@ -79,7 +80,6 @@
 #include <LALInferenceRemoveLines.h>
 /* LIB deps */
 #include <lal/LALInferenceBurstRoutines.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 
 struct fvec {
   REAL8 f;
@@ -393,7 +393,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
 
   procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
   if(procparam){
-    SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
+    injTable = XLALSimInspiralTableFromLIGOLw(procparam->value);
     if(!injTable){
       fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
       exit(1);
@@ -1385,7 +1385,6 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	memset(&status,0,sizeof(status));
 	SimInspiralTable *injTable=NULL;
   SimInspiralTable *injEvent=NULL;
-	UINT4 Ninj=0;
 	UINT4 event=0;
 	UINT4 i=0,j=0;
   REAL8 responseScale=1.0;
@@ -1428,10 +1427,8 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 	else
 		sprintf(SNRpath, "snr.txt");
 
-	Ninj=SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(commandLine,"--inj")->value,0,0);
-	REPORTSTATUS(&status);
-	printf("Ninj %d\n", Ninj);
-	if(Ninj<=event){
+	injTable=XLALSimInspiralTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--inj")->value);
+	if(!injTable){
           fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--inj")->value);
           exit(1);
         }
@@ -2315,7 +2312,7 @@ LALInferenceVariables *LALInferencePrintInjectionSample(LALInferenceRunState *ru
     LALInferenceVariables *injparams = XLALCalloc(1, sizeof(LALInferenceVariables));
     LALInferenceCopyVariables(model->params, injparams);
 
-    SimInspiralTableFromLIGOLw(&injTable, ppt->value, 0, 0);
+    injTable = XLALSimInspiralTableFromLIGOLw(ppt->value);
 
     ppt = LALInferenceGetProcParamVal(runState->commandLine, "--outfile");
     if (ppt) {
@@ -2450,7 +2447,7 @@ void LALInferenceSetupROQmodel(LALInferenceModel *model, ProcessParamsTable *com
 	  model->roq_flag = 1;
 	  procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
 	  if(procparam){
-	    SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
+	    injTable = XLALSimInspiralTableFromLIGOLw(procparam->value);
 	    if(!injTable){
 	      fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
 	      exit(1);
@@ -2575,7 +2572,7 @@ void LALInferenceSetupROQdata(LALInferenceIFOData *IFOdata, ProcessParamsTable *
 
   procparam=LALInferenceGetProcParamVal(commandLine,"--inj");
   if(procparam) {
-    SimInspiralTableFromLIGOLw(&injTable,procparam->value,0,0);
+    injTable = XLALSimInspiralTableFromLIGOLw(procparam->value);
     if (!injTable) {
       fprintf(stderr,"Unable to open injection file(LALInferenceReadData) %s\n",procparam->value);
       exit(1);
@@ -2742,7 +2739,7 @@ static void LALInferenceSetGPSTrigtime(LIGOTimeGPS *GPStrig, ProcessParamsTable 
         if((procparam=LALInferenceGetProcParamVal(commandLine,"--inj"))){
             fprintf(stdout,"Checking if the xml table is an inspiral table... \n");
             /* Check if it is a SimInspiralTable */
-            SimInspiralTableFromLIGOLw(&inspiralTable,procparam->value,0,0);
+            inspiralTable = XLALSimInspiralTableFromLIGOLw(procparam->value);
 
             if (inspiralTable){
                 procparam=LALInferenceGetProcParamVal(commandLine,"--event");

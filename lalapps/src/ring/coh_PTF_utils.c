@@ -421,10 +421,10 @@ RingDataSegments *coh_PTF_get_segments(
       segListToDo[i] = 0;
     SimInspiralTable        *injectList = NULL;
     REAL8 deltaTime,segBoundDiff;
-    INT4 segNumber, UNUSED ninj;
+    INT4 segNumber;
     if (! params->injectList)
     {
-      ninj = SimInspiralTableFromLIGOLw( &injectList, params->injectFile, params->startTime.gpsSeconds, params->startTime.gpsSeconds + params->duration );
+      injectList = XLALSimInspiralTableFromLIGOLw( params->injectFile );
       params->injectList = injectList;
     }
     else

@@ -44,8 +44,6 @@
 #include <lal/DetResponse.h>
 #include <lal/TimeDelay.h>
 #include <lal/LALSimulation.h>
-#include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
@@ -208,15 +206,10 @@ int main(int argc, char **argv)
 	 */
      
 	options = parse_command_line(&argc, &argv);
-  int Ninj;
 
   // two copies of the injection file. Will *modify* cutinjs to remove those injections outside the desired time lapse
-  /* Edit, actually the last two options of SimInspiralTableFromLIGOLw can be used to only select events in a time range. Thus some of the code below is reinventing the wheel. Will need to update */
-  Ninj=SimInspiralTableFromLIGOLw(&injs,options.siminspiral_file,0,0);
-  Ninj=SimInspiralTableFromLIGOLw(&cutinjs,options.siminspiral_file,0,0);
-
-  // we won't need Ninj. Set it void to avoid complaints by the complier
-  (void) Ninj;
+  injs = XLALSimInspiralTableFromLIGOLw(options.siminspiral_file);
+  cutinjs = XLALSimInspiralTableFromLIGOLw(options.siminspiral_file);
 
   double xml_gps_start;
   double xml_gps_end;

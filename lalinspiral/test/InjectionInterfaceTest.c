@@ -93,7 +93,7 @@
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 
 #include <lal/Date.h>
 #include <lal/Units.h>
@@ -135,11 +135,8 @@ char *program;
 int main(int UNUSED argc, char **argv)
 {
   /* some variables to create the data */
-  UINT4 	startTime;
-  UINT4		endTime;
   UINT4 	k;
   UINT4 	numPoints 	= 524288  ; /* arbitrary length of the data*/
-  UINT4         numInjections   = 0; /* by default no injection. */
   REAL8 	sampling	= 2048.;
   static  LALStatus 	status;
   /* injection structure */
@@ -182,9 +179,6 @@ int main(int UNUSED argc, char **argv)
 
   /* --- Let's fix some variables we have to be in agreement with the xml file data --- */
   ts.epoch.gpsSeconds 	= 729273600;		       	/* gps time of the time series		*/
-  startTime 		= 729273600;		       	/* start time and end time of ..	*/
-  endTime   		= startTime + 200;	       	/* ..injection; should be in agreement..*/
-  						       	/* ..with the xml file			*/
   ts.sampleUnits 	= lalADCCountUnit;	       	/*  UNITY ?? 				*/
   ts.deltaT 		= 1./sampling;		       	/* sampling				*/
   ts.name[0]='H'; 					/* L, H, G, V or T for the detector
@@ -210,13 +204,10 @@ int main(int UNUSED argc, char **argv)
 
 
   /* --- read injection  here --- */
-  SUB(numInjections = SimInspiralTableFromLIGOLw( &injections,
-						  filename,
-						  startTime,
-						  endTime), &status);
+  injections = XLALSimInspiralTableFromLIGOLw(filename);
 
   /* any injection to do ? */
-  if ( numInjections <= 0 )
+  if ( !injections )
     {
       ERROR(INJECTIONINTERFACETESTC_EINJECT, INJECTIONINTERFACETESTC_MSGEINJECT, 0);
       exit( 1 );

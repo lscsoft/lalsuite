@@ -58,7 +58,7 @@
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/Date.h>
@@ -184,9 +184,6 @@ int main( int argc, char *argv[] )
 
   COMPLEX8Vector               *unity = NULL;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
-
-  int                           numInjections = 0;
-  int                           numTriggers = 0;
 
   /* template bank simulation variables */
   INT4                         injSimCount = 0;
@@ -527,15 +524,15 @@ int main( int argc, char *argv[] )
   /* read in injections from injection file */
   /* set endtime to 0 so that we read in all events */
   if ( vrbflg ) fprintf( stdout, "Reading sim_inspiral table of %s\n", injectionFile );
-  LAL_CALL(numInjections = SimInspiralTableFromLIGOLw( &injectionHead, injectionFile, 0, 0), &status);
-  if ( vrbflg ) fprintf( stdout, "Read %d injections from sim_inspiral table of %s\n", 
-                                    numInjections, injectionFile );
+  injectionHead = XLALSimInspiralTableFromLIGOLw( injectionFile );
+  if ( vrbflg ) fprintf( stdout, "Read injections from sim_inspiral table of %s\n",
+                                    injectionFile );
 
   if (coireflg){
      if ( vrbflg ) fprintf( stdout, "Reading sngl_inspiral table of %s\n", injectionFile );
-     LAL_CALL(numTriggers = LALSnglInspiralTableFromLIGOLw(&snglHead, injectionFile, 0, -1), &status);
-     if ( vrbflg ) fprintf( stdout, "Read %d triggers from sngl_inspiral table of %s\n", 
-                                    numTriggers, injectionFile );
+     snglHead = XLALSnglInspiralTableFromLIGOLw(injectionFile);
+     if ( vrbflg ) fprintf( stdout, "Read triggers from sngl_inspiral table of %s\n",
+                                    injectionFile );
      if ( vrbflg ) {
            fprintf( stdout, "Reading search_summary table of %s ...", injectionFile );
            fflush( stdout );
@@ -544,9 +541,6 @@ int main( int argc, char *argv[] )
      if ( vrbflg ) fprintf( stdout, " done\n");
   }
 
- /* make sure we start at head of linked list */
- thisInjection = injectionHead;
-
   /* setting fixed waveform injection parameters */
   memset( &ppnParams, 0, sizeof(PPNParamStruc) );
   ppnParams.deltaT   = deltaT;
@@ -554,12 +548,9 @@ int main( int argc, char *argv[] )
   ppnParams.ppn      = NULL;
 
   /* loop over injections */
-  injSimCount = 0;
-    
-        
-  do
+  for(injSimCount = 1, thisInjection = injectionHead; thisInjection; injSimCount++, thisInjection = thisInjection->next)
   {
-     fprintf( stdout, "injection %d/%d\n", injSimCount+1, numInjections );
+     fprintf( stdout, "injection %d\n", injSimCount );
 
      /* reset waveform structure */
      memset( &waveform, 0, sizeof(CoherentGW) );
@@ -778,15 +769,7 @@ int main( int argc, char *argv[] )
        thisCombSnr_H1H2 = bitten_H2;
     }
     thisInjection->eff_dist_v = 1./thisCombSnr_H1H2;
-
-
-    /* increment the bank sim sim_inspiral table if necessary */
-    if ( injectionHead )
-    {
-      thisInjection = thisInjection->next;
-    }
-
-  } while ( ++injSimCount < numInjections ); 
+  };
   /* end loop over injections */
 
   /* try opening, writing and closing an xml file */
@@ -854,12 +837,7 @@ int main( int argc, char *argv[] )
   XLALDestroyProcessParamsTable( procparams );
 
   /* free the sim inspiral tables */
-  while ( injectionHead )
-  {
-    thisInjection = injectionHead;
-    injectionHead = injectionHead->next;
-    LALFree( thisInjection );
-  }
+  XLALDestroySimInspiralTable( injectionHead );
 
   /*check for memory leaks */
   LALCheckMemoryLeaks(); 
