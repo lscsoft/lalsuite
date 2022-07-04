@@ -79,7 +79,7 @@ LIGOTimeGPS * XLALGPSSetREAL8( LIGOTimeGPS *epoch, REAL8 t )
     XLAL_ERROR_NULL(XLAL_EFPINVAL);
   }
   if(fabs(t) > 0x7fffffff) {
-    XLALPrintError("%s(): overflow %.17g", __func__, t);
+    XLALPrintError("%s(): overflow: %.17g out of range of a 32-bit signed integer\n", __func__, t);
     XLAL_ERROR_NULL(XLAL_EDOM);
   }
   /* use XLALGPSSet() to normalize the nanoseconds */
