@@ -134,6 +134,7 @@ export LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_PATH LALSUPPORT_PYTHON_PATH
 # configure optional packages
 # - 2nd argument lists library dependencies
 #   * used by lalsuite_config_subdir() to generate DATA/OCTAVE/PYTHON_PATHs including dependencies
+#   * used by gnuscripts/check_library_dependencies to check for consistent dependencies throughout build system
 lalsuite_config_subdir([LALFrame],[LAL])
 lalsuite_config_subdir([LALMetaIO],[LAL])
 lalsuite_config_subdir([LALSimulation],[LAL])
