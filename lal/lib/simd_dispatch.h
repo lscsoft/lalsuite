@@ -28,21 +28,26 @@
  * Helper macros for performing runtime dispatch using function pointers
  * Sample usage:
  *
- * int SIMDFunction_AVX(...);
- * int SIMDFunction_SSE(...);
+ * int SIMDFunction(...);
+ *
  * int SIMDFunction_GEN(...);
+ * int SIMDFunction_SSE(...);
+ * int SIMDFunction_AVX(...);
+ * ...
  *
- * int (*SIMDFunctionPtr)(...) = SIMDFunction_DISPATCH;
+ * static int SIMDFunction_DISPATCH(...);
+ * static int (*SIMDFunctionPtr)(...) = SIMDFunction_DISPATCH;
  *
- * int SIMDFunction_DISPATCH(...) {
+ * int SIMDFunction(...) {
+ *   return (SIMDFunctionPtr)(...);
+ * }
  *
+ * static int SIMDFunction_DISPATCH(...) {
  *   DISPATCH_SELECT_BEGIN();
  *   DISPATCH_SELECT_AVX(SIMDFunctionPtr = SIMDFunction_AVX);
  *   DISPATCH_SELECT_SSE(SIMDFunctionPtr = SIMDFunction_SSE);
  *   DISPATCH_SELECT_END(SIMDFunctionPtr = SIMDFunction_GEN);
- *
  *   return SIMDFunction(...);
- *
  * }
  */
 #define DISPATCH_SELECT_BEGIN()			do { do { } while(0)
