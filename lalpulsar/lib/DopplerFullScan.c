@@ -193,8 +193,10 @@ XLALInitDopplerFullScan ( const DopplerFullScanInit *init       /**< [in] initia
           /* if requested by user, suppress padding in the fkdot (k>0) dimensions;
            * if not, default padding is kept the same as in XLALCreateLatticeTiling()
            */
-          for (size_t i = 1; i < PULSAR_MAX_SPINS; ++i) {
-            XLAL_CHECK_NULL( XLALSetLatticeTilingPaddingFlags( thisScan->spindownTiling, 2 + i, init->extraArgs[0] ? ( LATTICE_TILING_PAD_LHBBX | LATTICE_TILING_PAD_UHBBX ) : LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+          if ( !init->extraArgs[0] ) {
+            for (size_t i = 1; i < PULSAR_MAX_SPINS; ++i) {
+              XLAL_CHECK_NULL( XLALSetLatticeTilingPadding( thisScan->spindownTiling, 2 + i, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+            }
           }
 
         } else if (thisScan->gridType == GRID_SPINDOWN_AGEBRK) { /* age-braking index parameter space */

@@ -794,14 +794,14 @@ static int StrictBoundaryTest(
   LatticeTiling *tiling = XLALCreateLatticeTiling( 2 );
   XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
 
-  // Add bounds
+  // Add bounds with strict padding
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, -1.0, 1.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 0, LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 0, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   {
     const double c_m_lower[] = { -y_range, 5.0 };
     const double c_m_upper[] = { +y_range, 5.0 };
     XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, LinearBound, sizeof(c_m_lower), c_m_lower, c_m_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 1, LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 1, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Set metric to the Lehmer matrix
