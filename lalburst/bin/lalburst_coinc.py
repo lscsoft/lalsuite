@@ -42,8 +42,6 @@ from ligo.segments import utils as segmentsUtils
 class LIGOLWContentHandler(ligolw.LIGOLWContentHandler):
 	pass
 
-lsctables.SnglBurstTable.RowType = burca.SnglBurst
-
 process_program_name = "lalburst_coinc"
 
 
