@@ -353,6 +353,9 @@ AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/lib ${AM_CPPFLAGS}"
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+# make sure local library module is in python path
+LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
+
 # output
 AC_OUTPUT
 AC_MSG_NOTICE([
