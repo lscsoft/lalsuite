@@ -213,11 +213,11 @@ int XLALWriteLIGOLwXMLProcessParamsTable(
 
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"process_params:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process_params:program\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"program\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process_params:param\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process_params:type\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process_params:value\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"param\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"type\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"value\" Type=\"lstring\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"process_params:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(XLAL_EFUNC);

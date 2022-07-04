@@ -480,21 +480,21 @@ int XLALWriteLIGOLwXMLProcessTable(
 
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"process:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:program\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:version\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:cvs_repository\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:cvs_entry_time\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:comment\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:is_online\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:node\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:username\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:unix_procid\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:start_time\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:end_time\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:jobid\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:domain\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:ifos\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"program\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"version\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"cvs_repository\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"cvs_entry_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"comment\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"is_online\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"node\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"username\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"unix_procid\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"start_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"jobid\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"domain\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"ifos\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process_id\" Type=\"int_8s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"process:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(XLAL_EFUNC);

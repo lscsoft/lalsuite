@@ -232,9 +232,9 @@ int XLALWriteLIGOLwXMLTimeSlideTable(
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"time_slide:table\">\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"time_slide:time_slide_id\" Type=\"int_8s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"time_slide:instrument\" Type=\"lstring\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"time_slide:offset\" Type=\"real_8\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"time_slide_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"instrument\" Type=\"lstring\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"offset\" Type=\"real_8\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"time_slide:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(XLAL_EFUNC);

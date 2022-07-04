@@ -102,15 +102,13 @@ int XLALWriteLIGOLwXMLSegmentTable(
 
 	XLALClearErrno();
 	XLALFilePuts("\t<Table Name=\"segment:table\">\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"segment:creator_db\" Type=\"int_4s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"int_8s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"segment:segment_id\" Type=\"int_8s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"segment:start_time\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"segment:start_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"segment:end_time\" Type=\"int_4s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"segment:end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"segment_id\" Type=\"int_8s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"start_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"start_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"end_time\" Type=\"int_4s\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"end_time_ns\" Type=\"int_4s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Column Name=\"segment_definer:segment_def_id\" Type=\"int_8s\"/>\n", xml->fp);
-	XLALFilePuts("\t\t<Column Name=\"segment:segment_def_cdb\" Type=\"int_4s\"/>\n", xml->fp);
 	XLALFilePuts("\t\t<Stream Name=\"segment:table\" Type=\"Local\" Delimiter=\",\">", xml->fp);
 	if(XLALGetBaseErrno())
 		XLAL_ERROR(XLAL_EFUNC);
@@ -118,7 +116,7 @@ int XLALWriteLIGOLwXMLSegmentTable(
 	/* rows */
 
 	for(; segment_table; segment_table = segment_table->next) {
-		if(XLALFilePrintf(xml->fp, "%s%d,%ld,%ld,%d,%d,%d,%d,%ld,%d", row_head, segment_table->creator_db, segment_table->process_id, segment_table->segment_id, segment_table->start_time.gpsSeconds, segment_table->start_time.gpsNanoSeconds, segment_table->end_time.gpsSeconds, segment_table->end_time.gpsNanoSeconds, segment_table->segment_def_id, segment_table->segment_def_cdb) < 0)
+		if(XLALFilePrintf(xml->fp, "%s%ld,%ld,%d,%d,%d,%d,%ld", row_head, segment_table->process_id, segment_table->segment_id, segment_table->start_time.gpsSeconds, segment_table->start_time.gpsNanoSeconds, segment_table->end_time.gpsSeconds, segment_table->end_time.gpsNanoSeconds, segment_table->segment_def_id) < 0)
 			XLAL_ERROR(XLAL_EFUNC);
 		row_head = ",\n\t\t\t";
 	}
