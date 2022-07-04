@@ -49,7 +49,7 @@ LIGOTimeGPS * XLALINT8NSToGPS( LIGOTimeGPS *epoch, INT8 ns )
   epoch->gpsSeconds     = gpsSeconds;
   epoch->gpsNanoSeconds = ns % XLAL_BILLION_INT8;
   if( (INT8) epoch->gpsSeconds != gpsSeconds ) {
-    XLALPrintError( "%s(): overflow: %" LAL_INT8_FORMAT, __func__, ns );
+    XLALPrintError( "%s(): overflow: %" LAL_INT8_FORMAT " out of range of a 32-bit signed integer\n", __func__, gpsSeconds );
     XLAL_ERROR_NULL( XLAL_EDOM );
   }
   return epoch;
