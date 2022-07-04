@@ -81,11 +81,24 @@ AC_DEFUN([lalsuite_config_subdir],[
       # export precious environment variables
       uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/lib/lib[]lowercase.la"
       uppercase[]_CFLAGS="-I${lalsuite_abs_top_builddir}/lowercase/include"
+      uppercase[]_HTMLDIR="${htmldir}/../lowercase"
+      export uppercase[]_LIBS uppercase[]_CFLAGS uppercase[]_HTMLDIR
+
+      # export precious environment paths
+      # - check that dependent environment paths are non-empty, indicating correct dependency order
       uppercase[]_DATA_PATH="${lalsuite_abs_top_srcdir}/lowercase/lib:${lalsuite_abs_top_srcdir}/lowercase/test"
       uppercase[]_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lowercase/octave"
       uppercase[]_PYTHON_PATH="${lalsuite_abs_top_builddir}/lowercase/python"
-      uppercase[]_HTMLDIR="${htmldir}/../lowercase"
-      export uppercase[]_LIBS uppercase[]_CFLAGS uppercase[]_HTMLDIR
+      m4_foreach_w([suffix],DATA_PATH OCTAVE_PATH PYTHON_PATH,[
+        m4_foreach_w([dep],$2,[
+          m4_pushdef([dep_uppercase],m4_translit(dep, [a-z], [A-Z]))
+          AS_IF([test "x${dep_uppercase[]_[]suffix}" = x],[
+            AC_MSG_ERROR([[lalsuite_config_subdir(]$1[)]: dep_uppercase[]_[]suffix is empty; [lalsuite_config_subdir()] may be in wrong dependency order])
+          ])
+          LALSUITE_ADD_PATH(uppercase[]_[]suffix,"${dep_uppercase[]_[]suffix}")
+          m4_popdef([dep_uppercase])
+        ])
+      ])
       export uppercase[]_DATA_PATH uppercase[]_OCTAVE_PATH uppercase[]_PYTHON_PATH
 
     ])
@@ -108,7 +121,7 @@ AC_DEFUN([lalsuite_config_subdir],[
 ])
 
 # lal and lalsupport are always configured
-lalsuite_config_subdir([LAL])
+lalsuite_config_subdir([LAL],[])
 LALSUPPORT_LIBS="${lalsuite_abs_top_builddir}/lal/lib/support/liblalsupport.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
 LALSUPPORT_DATA_PATH="${LAL_DATA_PATH}"
@@ -119,14 +132,16 @@ export LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALSUPPORT_HTMLDIR
 export LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_PATH LALSUPPORT_PYTHON_PATH
 
 # configure optional packages
-lalsuite_config_subdir([LALFrame])
-lalsuite_config_subdir([LALMetaIO])
-lalsuite_config_subdir([LALSimulation])
-lalsuite_config_subdir([LALBurst])
-lalsuite_config_subdir([LALInspiral])
-lalsuite_config_subdir([LALPulsar])
-lalsuite_config_subdir([LALInference])
-lalsuite_config_subdir([LALApps])
+# - 2nd argument lists library dependencies
+#   * used by lalsuite_config_subdir() to generate DATA/OCTAVE/PYTHON_PATHs including dependencies
+lalsuite_config_subdir([LALFrame],[LAL])
+lalsuite_config_subdir([LALMetaIO],[LAL])
+lalsuite_config_subdir([LALSimulation],[LAL])
+lalsuite_config_subdir([LALBurst],[LAL LALMetaIO LALSimulation])
+lalsuite_config_subdir([LALInspiral],[LAL LALFrame LALMetaIO LALSimulation LALBurst])
+lalsuite_config_subdir([LALPulsar],[LAL LALFrame])
+lalsuite_config_subdir([LALInference],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral LALPulsar])
+lalsuite_config_subdir([LALApps],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral LALPulsar LALInference])
 
 # indicate to configure.ac in subdirectories that this is a top-level build
 LALSUITE_BUILD="true"
