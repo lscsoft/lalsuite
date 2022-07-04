@@ -25,9 +25,6 @@
 #
 
 
-from __future__ import print_function
-
-
 import os.path
 import sys
 from optparse import OptionParser
@@ -140,7 +137,7 @@ for line in src:
 
 if options.verbose:
 	print("Size of cache: %d URLs" % path_count, file=sys.stderr)
-	for instrument, seglist in seglists.items():
+	for instrument, seglist in list(seglists.items()):
 		ext = seglist.extent()
 		dur = abs(seglist)
 		print("Interval spanned by %s: %s (%s s total, %.4g%% duty cycle)" % (instrument, str(ext), str(dur), 100.0 * float(dur) / float(abs(ext))), file=sys.stderr)
