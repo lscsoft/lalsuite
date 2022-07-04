@@ -296,7 +296,7 @@ time_t XLALSecondsSinceUnixEpoch( const struct tm *utc /**< [In] UTC time in a b
 INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time structure. */ )
 {
   time_t unixsec;
-  INT4 gpssec;
+  INT8 gpssec;
   int leapsec;
 
   /* make sure derived fields in 'utc' are filled correctly */
@@ -317,7 +317,14 @@ INT4 XLALUTCToGPS( const struct tm *utc /**< [In] UTC time in a broken down time
   /* now check to see if this is an additional leap second */
   if ( utc->tm_sec == 60 )
     --gpssec;
-  return gpssec;
+  /* check for overflow in gps seconds */
+  if ( ((INT4)gpssec) != gpssec ) {
+    char buf[128];
+    strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", utc);
+    XLALPrintError( "%s(): overflow: %" LAL_INT8_FORMAT " (UTC %s) out of range of a 32-bit signed integer\n", __func__, gpssec, buf );
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+  return ((INT4)gpssec);
 }
 
 
