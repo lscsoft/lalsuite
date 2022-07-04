@@ -41,7 +41,6 @@
 
 #include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALFrStream.h>
@@ -271,13 +270,10 @@ XLALNRInjectionStrain(const char *ifo, SimInspiralTable *inj)
   REAL8TimeSeries *strain = NULL;
 
   REAL8 deltaT = 1./16384.;
-  InterferometerNumber ifoNumber = LAL_UNKNOWN_IFO;
   LALDetector det;
 
   /* look up detector */
-  memset( &det, 0, sizeof(LALDetector) );
-  ifoNumber = XLALIFONumber( ifo );
-  XLALReturnDetector( &det, ifoNumber );
+  memcpy( &det, XLALDetectorPrefixToLALDetector( ifo ), sizeof(LALDetector) );
 
   /* generate plus and cross polarizations */
   XLALNRInjectionFromSimInspiral(&hplus, &hcross, inj, deltaT);

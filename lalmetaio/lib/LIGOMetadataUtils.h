@@ -166,11 +166,6 @@ XLALSimInspiralAssignIDs (
     long simulation_id
     );
 
-int
-XLALIFONumber(
-    const char *ifo
-    );
-
 void
 XLALReturnIFO(
     char                *ifo,
