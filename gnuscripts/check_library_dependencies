@@ -234,6 +234,34 @@ for lallib in sorted(lallib_direct_depends):
                 print()
                 exit_status = 1
 
+    # pkg-config: needs direct dependencies only
+
+    if lallib != 'lalapps':
+
+        # parse pkg-config .pc.in file
+        pkg_config_file = os.path.join(lallib, f'{lallib}.pc.in')
+        missing_deps = []
+        with open(pkg_config_file) as f:
+            for line in f:
+                if ':' not in line:
+                    continue
+                key, val = line.strip().split(':', maxsplit=2)
+                if key != 'Requires.private':
+                    continue
+
+                # check for dependencies
+                for dep in lallib_direct_depends[lallib]:
+                    dep_spec = f'{dep} >= @{dep.upper()}_VERSION@'
+                    if dep_spec not in val:
+                        missing_deps.append(dep_spec)
+
+        # print missing dependencies
+        if missing_deps:
+            print(f"pkg-config: missing dependencies in '{pkg_config_file}':")
+            print(f"   {', '.join(missing_deps)}")
+            print()
+            exit_status = 1
+
 # return exit status
 print(f'----- done: exit status {exit_status} -----')
 sys.exit(exit_status)
