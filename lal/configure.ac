@@ -259,6 +259,8 @@ else
   fi
   AC_CHECK_HEADERS([mkl_dfti.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
 fi
+LALSUITE_ENABLE_MODULE([INTELFFT])
+LALSUITE_ENABLE_MODULE([FFTW3])
 
 # check for fft headers
 if test "${intelfft}" = "false" ; then

@@ -31,9 +31,6 @@ summary tables.
 """
 
 
-from __future__ import print_function
-
-
 import glob
 from optparse import OptionParser
 import os
@@ -43,12 +40,13 @@ from lal.utils import CacheEntry
 from ligo.lw import ligolw
 from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
-#from lalapps import git_version
+from functools import reduce
+from lal import git_version
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
-#__version__ = "git id %s" % git_version.id
-#__date__ = git_version.date
+__version__ = "git id %s" % git_version.id
+__date__ = git_version.date
 
 
 #
@@ -134,7 +132,7 @@ for n, filename in enumerate(filenames):
 	# extract process_ids for the requested program
 	if options.program is not None:
 		process_table = lsctables.ProcessTable.get_table(xmldoc)
-		process_ids = reduce(lambda a, b: a | b, map(process_table.get_ids_by_program, options.program))
+		process_ids = reduce(lambda a, b: a | b, list(map(process_table.get_ids_by_program, options.program)))
 	else:
 		process_ids = None
 

@@ -12,6 +12,7 @@ __pycache__
 *.o
 *.pc
 *.pyc
+*.pyman
 *.pyo
 /_build/
 /_inst/
@@ -56,7 +57,12 @@ lib/LALVCSInfo.h
 lib/LALVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
+bin/lal_cache
+bin/lal_fftw*_wisdom
+bin/lal_path2cache
+bin/lal_searchsum2cache
 bin/lal_simd_detect
+bin/lal_tconvert
 bin/lal_version
 bin/version.c
 swig/.swigdeps

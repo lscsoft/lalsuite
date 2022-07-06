@@ -63,7 +63,6 @@ requirements:
   host:
     - astropy
     - cfitsio
-    - fftw * nompi*
     - gsl
     - jplephem
     - libframel >={{ framel_version }}
@@ -94,7 +93,6 @@ requirements:
   run:
     - astropy
     - cfitsio
-    - fftw
     - gsl
     - h5py
     - jplephem
@@ -139,7 +137,6 @@ test:
     # run --help
     - lalapps_binj --help
     - lalapps_blindinj --help
-    - lalapps_cache Z-ilwd_test_frame-600000000-1.gwf
     - lalapps_cafe --help
     - lalapps_calcexpsnr --help
     - lalapps_cbc_stochasticbank --help
@@ -152,8 +149,6 @@ test:
     - lalapps_create_time_correction_ephemeris --help
     - lalapps_effdist --help
     - lalapps_exc_resp -h
-    - lalapps_fftw_wisdom --help
-    - lalapps_fftwf_wisdom --help
     - lalapps_fits_header_getval --help
     - lalapps_fits_header_list --help
     - lalapps_fits_overview --help
@@ -174,7 +169,6 @@ test:
     - lalapps_knope_collate_results --help
     #- lalapps_knope_result_page --help  <- needs scotchcorner
     - lalapps_make_nr_hdf_catalog --help
-    - lalapps_path2cache <<< Z-ilwd_test_frame-600000000-1.gwf
     - lalapps_power --help
     - lalapps_power_likelihood_pipe --help
     - lalapps_power_pipe --help
@@ -184,7 +178,6 @@ test:
     - lalapps_random_bank 10 20 10
     - lalapps_randombank --minimum-mass 10 --maximum-mass 20 --number-of-templates 10
     - lalapps_run_sqlite --help
-    - lalapps_searchsum2cache --help
     - lalapps_splitSFTs --help
     - lalapps_splitbank --verbose --bank-file P1-TMPLTBANK-0-0.xml --number-of-banks 2 --minimal-match 0.9
     - test "$(lalapps_ssbtodetector --gps 1000000000 --ra 0 --dec 0 --telescope JBO)" == "999999506.306100250"
@@ -198,10 +191,6 @@ test:
     - lalapps_string_meas_likelihood --help
     - lalapps_string_plot_binj --help
     - lalapps_string_plot_likelihood --help
-    - test "$(lalapps_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"
-    - test "$(lalapps_tconvert Fri, 13 May 2005 06:13:07 +0000)" -eq 800000000
-    - test "$(lalapps_tconvert 1831518865)" == "Tue Jan 19 03:14:07 GMT 2038"   # Y2038 check
-    - test "$(lalapps_tconvert 1831518866)" == "Tue Jan 19 03:14:08 GMT 2038"   # Y2038 check
     - lalapps_tmpltbank --help
     - lalapps_version
 
