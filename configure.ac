@@ -93,6 +93,20 @@ AC_DEFUN([lalsuite_config_subdir],[
       uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/lib/lib[]lowercase.la"
       uppercase[]_CFLAGS="-I${lalsuite_abs_top_builddir}/lowercase/include"
       uppercase[]_HTMLDIR="${htmldir}/../lowercase"
+      m4_foreach_w([dep],$2,[
+        m4_pushdef([dep_uppercase],m4_translit(dep, [a-z], [A-Z]))
+        for flag in ${dep_uppercase[]_CFLAGS}; do
+          AS_CASE([${flag}],
+            [-I*],[
+              AS_CASE([" ${uppercase[]_CFLAGS} "],
+                [*" ${flag} "*],[:],
+                [uppercase[]_CFLAGS="${uppercase[]_CFLAGS} ${flag}"]
+              )
+            ]
+          )
+        done
+        m4_popdef([dep_uppercase])
+      ])
       export uppercase[]_LIBS uppercase[]_CFLAGS uppercase[]_HTMLDIR
 
       # export precious environment paths
