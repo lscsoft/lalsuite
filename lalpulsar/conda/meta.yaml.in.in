@@ -20,6 +20,7 @@
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set lalframe_version = "@MIN_LALFRAME_VERSION@a0" %}
+{% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set lalinference_version = "@MIN_LALINFERENCE_VERSION@a0" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
@@ -55,6 +56,7 @@ requirements:
     - gsl
     - liblal >={{ lal_version }} fftw*
     - liblalframe >={{ lalframe_version }}
+    - liblalsimulation >={{ lalsimulation_version }}
     - liblalinference >={{ lalinference_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
@@ -106,6 +108,7 @@ outputs:
         - {{ pin_subpackage('lalpulsar-data', exact=True) }}
         - liblal >={{ lal_version }} fftw*
         - liblalframe >={{ lalframe_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
         - liblalinference >={{ lalinference_version }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
@@ -116,6 +119,7 @@ outputs:
         - {{ pin_subpackage('lalpulsar-data', exact=True) }}
         - liblal >={{ lal_version }}
         - liblalframe >={{ lalframe_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
         - liblalinference >={{ lalinference_version }}
       run_constrained:
         - lalpulsar >=3.0.0
@@ -174,6 +178,7 @@ outputs:
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalinference >={{ lalinference_version }}
         - six
     test:
@@ -227,6 +232,7 @@ outputs:
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalinference >={{ lalinference_version }}
         - {{ pin_subpackage('python-lalpulsar', exact=True) }}
     test:

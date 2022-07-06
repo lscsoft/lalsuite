@@ -25,6 +25,7 @@ noinst_PROGRAMS += \
 
 endif
 
+if LALSIMULATION
 if LALINFERENCE
 
 bin_PROGRAMS += \
@@ -32,6 +33,7 @@ bin_PROGRAMS += \
 	lalpulsar_parameter_estimation_nested \
 	$(END_OF_LINE)
 
+endif
 endif
 
 lalpulsar_ssbtodetector_SOURCES = \
