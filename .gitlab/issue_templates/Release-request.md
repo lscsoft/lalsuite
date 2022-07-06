@@ -9,9 +9,9 @@
 - [ ] `lalmetaio`
 - [ ] `lalsimulation`
 - [ ] `lalburst`
-- [ ] `lalpulsar`
 - [ ] `lalinspiral`
 - [ ] `lalinference`
+- [ ] `lalpulsar`
 - [ ] `lalapps`
 
 #### Commit information

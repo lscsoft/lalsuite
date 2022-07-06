@@ -24,7 +24,6 @@
 {% set lalframe_version = "@MIN_LALFRAME_VERSION@a0" %}
 {% set lalinspiral_version = "@MIN_LALINSPIRAL_VERSION@a0" %}
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
-{% set lalpulsar_version = "@MIN_LALPULSAR_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
@@ -61,7 +60,6 @@ requirements:
     - liblalsimulation >={{ lalsimulation_version }}
     - liblalburst >={{ lalburst_version }}
     - liblalinspiral >={{ lalinspiral_version }}
-    - liblalpulsar >={{ lalpulsar_version }}
 
 outputs:
   - name: lalinference-data
@@ -112,7 +110,6 @@ outputs:
         - liblalsimulation >={{ lalsimulation_version }}
         - liblalburst >={{ lalburst_version }}
         - liblalinspiral >={{ lalinspiral_version }}
-        - liblalpulsar >={{ lalpulsar_version }}
         - llvm-openmp  # [osx]
       run:
         - gsl
@@ -123,7 +120,6 @@ outputs:
         - liblalsimulation >={{ lalsimulation_version }}
         - liblalburst >={{ lalburst_version }}
         - liblalinspiral >={{ lalinspiral_version }}
-        - liblalpulsar >={{ lalpulsar_version }}
         - llvm-openmp  # [osx]
       run_constrained:
         - lalinference >=2.0.6
@@ -187,7 +183,6 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalburst >={{ lalburst_version }}
         - python-lalinspiral >={{ lalinspiral_version }}
-        - python-lalpulsar >={{ lalpulsar_version }}
         - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
     test:

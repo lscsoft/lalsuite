@@ -18,8 +18,8 @@ stages:
   - LALSimulation
   - LALBurst
   - LALInspiral
-  - LALPulsar
   - LALInference
+  - LALPulsar
   - LALApps
   - wheels
   # end-to-end tests
@@ -675,7 +675,7 @@ tarballs:
   script:
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --enable-swig
-    - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalpulsar lalinference lalapps; do
+    - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalinference lalpulsar lalapps; do
         pushd ${subdir};
         make dist;
         popd;
@@ -954,50 +954,6 @@ lalinspiral:koji:
     - lalsimulation:koji
     - lalburst:koji
 
-# -- lalpulsar ----------------------------------
-#
-# build packages for LALPulsar
-#
-
-.lalpulsar:
-  stage: LALPulsar
-
-lalpulsar:rpm:
-  extends:
-    - .rpmbuild
-    - .lalpulsar
-  needs:
-    - tarballs
-    - lal:rpm
-    - lalframe:rpm
-
-lalpulsar:deb:
-  extends:
-    - .debuild
-    - .lalpulsar
-  needs:
-    - tarballs
-    - lal:deb
-    - lalframe:deb
-
-lalpulsar:conda:
-  extends:
-    - .conda-build
-    - .lalpulsar
-  needs:
-    - tarballs
-    - lal:conda:fftw
-    - lalframe:conda
-
-lalpulsar:koji:
-  extends:
-    - .koji:build
-    - .lalpulsar
-  needs:
-    - tarballs
-    - lal:koji
-    - lalframe:koji
-
 # -- lalinference -------------------------------
 #
 # build packages for LALInference
@@ -1017,7 +973,6 @@ lalinference:rpm:
     - lalmetaio:rpm
     - lalsimulation:rpm
     - lalburst:rpm
-    - lalpulsar:rpm
     - lalinspiral:rpm
 
 lalinference:deb:
@@ -1031,7 +986,6 @@ lalinference:deb:
     - lalmetaio:deb
     - lalsimulation:deb
     - lalburst:deb
-    - lalpulsar:deb
     - lalinspiral:deb
 
 lalinference:conda:
@@ -1045,7 +999,6 @@ lalinference:conda:
     - lalmetaio:conda
     - lalsimulation:conda
     - lalburst:conda
-    - lalpulsar:conda
     - lalinspiral:conda
 
 lalinference:koji:
@@ -1059,8 +1012,71 @@ lalinference:koji:
     - lalmetaio:koji
     - lalsimulation:koji
     - lalburst:koji
-    - lalpulsar:koji
     - lalinspiral:koji
+
+# -- lalpulsar ----------------------------------
+#
+# build packages for LALPulsar
+#
+
+.lalpulsar:
+  stage: LALPulsar
+
+lalpulsar:rpm:
+  extends:
+    - .rpmbuild
+    - .lalpulsar
+  needs:
+    - tarballs
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+
+lalpulsar:deb:
+  extends:
+    - .debuild
+    - .lalpulsar
+  needs:
+    - tarballs
+    - lal:deb
+    - lalframe:deb
+    - lalmetaio:deb
+    - lalsimulation:deb
+    - lalburst:deb
+    - lalinspiral:deb
+    - lalinference:deb
+
+lalpulsar:conda:
+  extends:
+    - .conda-build
+    - .lalpulsar
+  needs:
+    - tarballs
+    - lal:conda:fftw
+    - lalframe:conda
+    - lalmetaio:conda
+    - lalsimulation:conda
+    - lalburst:conda
+    - lalinspiral:conda
+    - lalinference:conda
+
+lalpulsar:koji:
+  extends:
+    - .koji:build
+    - .lalpulsar
+  needs:
+    - tarballs
+    - lal:koji
+    - lalframe:koji
+    - lalmetaio:koji
+    - lalsimulation:koji
+    - lalburst:koji
+    - lalinspiral:koji
+    - lalinference:koji
 
 # -- lalapps ------------------------------------
 #
@@ -1081,9 +1097,9 @@ lalapps:rpm:
     - lalmetaio:rpm
     - lalsimulation:rpm
     - lalburst:rpm
-    - lalpulsar:rpm
     - lalinspiral:rpm
     - lalinference:rpm
+    - lalpulsar:rpm
 
 lalapps:deb:
   extends:
@@ -1096,9 +1112,9 @@ lalapps:deb:
     - lalmetaio:deb
     - lalsimulation:deb
     - lalburst:deb
-    - lalpulsar:deb
     - lalinspiral:deb
     - lalinference:deb
+    - lalpulsar:deb
 
 lalapps:conda:
   extends:
@@ -1111,9 +1127,9 @@ lalapps:conda:
     - lalmetaio:conda
     - lalsimulation:conda
     - lalburst:conda
-    - lalpulsar:conda
     - lalinspiral:conda
     - lalinference:conda
+    - lalpulsar:conda
   variables:
     CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.____cpython"
 
@@ -1387,7 +1403,6 @@ lalinference_testjob:
     - lalmetaio:rpm
     - lalsimulation:rpm
     - lalburst:rpm
-    - lalpulsar:rpm
     - lalinspiral:rpm
     - lalinference:rpm
   rules:
@@ -1541,9 +1556,9 @@ upgrade:rpm:el7:
     - lalmetaio:rpm
     - lalsimulation:rpm
     - lalburst:rpm
-    - lalpulsar:rpm
     - lalinspiral:rpm
     - lalinference:rpm
+    - lalpulsar:rpm
     - lalapps:rpm
   script:
     # install latest release
@@ -1574,9 +1589,9 @@ upgrade:debian:buster:
     - lalmetaio:deb
     - lalsimulation:deb
     - lalburst:deb
-    - lalpulsar:deb
     - lalinspiral:deb
     - lalinference:deb
+    - lalpulsar:deb
     - lalapps:deb
   script:
     - apt-get -y -q -q update
@@ -1608,9 +1623,9 @@ upgrade:conda:linux:
     - lalmetaio:conda
     - lalsimulation:conda
     - lalburst:conda
-    - lalpulsar:conda
     - lalinspiral:conda
     - lalinference:conda
+    - lalpulsar:conda
     - lalapps:conda
   script:
     # properly index the newly built packages
@@ -1624,8 +1639,8 @@ upgrade:conda:linux:
           lalsimulation
           lalburst
           lalinspiral
-          lalpulsar
           lalinference
+          lalpulsar
           lalapps
     # install new packages
     - mamba update -n upgrade-test --use-local
@@ -1635,8 +1650,8 @@ upgrade:conda:linux:
           lalsimulation
           lalburst
           lalinspiral
-          lalpulsar
           lalinference
+          lalpulsar
           lalapps
 
 # -- platform tests -----------------------------
@@ -1780,9 +1795,9 @@ platform:conda:macos-arm64:
     - lalmetaio:rpm
     - lalsimulation:rpm
     - lalburst:rpm
-    - lalpulsar:rpm
     - lalinspiral:rpm
     - lalinference:rpm
+    - lalpulsar:rpm
     - lalapps:rpm
 
 # template for Debian docker builds
@@ -1802,9 +1817,9 @@ platform:conda:macos-arm64:
     - lalmetaio:deb
     - lalsimulation:deb
     - lalburst:deb
-    - lalpulsar:deb
     - lalinspiral:deb
     - lalinference:deb
+    - lalpulsar:deb
     - lalapps:deb
 
 # template for Koji docker builds

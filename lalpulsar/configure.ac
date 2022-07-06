@@ -71,8 +71,10 @@ AM_INIT_AUTOMAKE([ \
 # version requirements
 MIN_LAL_VERSION="7.1.5"
 MIN_LALFRAME_VERSION="2.0.0"
+MIN_LALINFERENCE_VERSION="3.0.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
+AC_SUBST([MIN_LALINFERENCE_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -92,6 +94,7 @@ LALSUITE_ENABLE_GCC_FLAGS
 
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
+LALSUITE_ENABLE_LALINFERENCE
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
@@ -176,6 +179,7 @@ LALSUITE_USE_CFITSIO
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_OPT_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[XLALFrStreamOpen],[lal/LALFrStream.h])
+LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
@@ -211,6 +215,8 @@ AC_MSG_NOTICE([
 LALPulsar has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
+* LALFrame library support is $LALFRAME_ENABLE_VAL
+* LALInference library support is $LALINFERENCE_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL

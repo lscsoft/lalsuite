@@ -13,7 +13,6 @@ Build-Depends:
  lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
  lalburst-octave (>= @MIN_LALBURST_VERSION@~),
  lalinspiral-octave (>= @MIN_LALINSPIRAL_VERSION@~),
- lalpulsar-octave (>= @MIN_LALPULSAR_VERSION@~),
  libgsl-dev | libgsl0-dev (>= 1.15),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
@@ -21,7 +20,6 @@ Build-Depends:
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
  liblalburst-dev (>= @MIN_LALBURST_VERSION@~),
  liblalinspiral-dev (>= @MIN_LALINSPIRAL_VERSION@~),
- liblalpulsar-dev (>= @MIN_LALPULSAR_VERSION@~),
  liboctave-dev,
  libopenmpi-dev,
  pkg-config (>= 0.18.0),
@@ -37,7 +35,6 @@ Build-Depends:
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
  python3-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
- python3-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
  python3-matplotlib (>= 1.2.0),
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-pytest,
@@ -73,7 +70,6 @@ Depends:
  liblalinference@LIBMAJOR@ (= ${binary:Version}),
  liblalinspiral-dev (>= @MIN_LALINSPIRAL_VERSION@~),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
- liblalpulsar-dev (>= @MIN_LALPULSAR_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
 Description: LSC Algorithm Library Inference Developers
  The LSC Algorithm Inference Library for gravitational wave data analysis.
@@ -101,7 +97,6 @@ Depends:
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
  python3-lalburst (>= @MIN_LALBURST_VERSION@~),
  python3-lalinspiral (>= @MIN_LALINSPIRAL_VERSION@~),
- python3-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
  python3-ligo-gracedb,
  python3-ligo-lw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
  python3-ligo-segments,
@@ -126,7 +121,6 @@ Depends:
  lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
  lalburst-octave (>= @MIN_LALBURST_VERSION@~),
  lalinspiral-octave (>= @MIN_LALINSPIRAL_VERSION@~),
- lalpulsar-octave (>= @MIN_LALPULSAR_VERSION@~),
  liblalinference@LIBMAJOR@ (= ${binary:Version}),
  octave,
 Description: Octave bindings for LALInference
