@@ -72,6 +72,17 @@ AC_DEFUN([lalsuite_config_subdir],[
   # if $1 is enabled
   AS_IF([test "x${lowercase}" = xtrue],[
 
+    # check that environment for enabled dependent pacakges has been set
+    m4_foreach_w([dep],$2,[
+      m4_pushdef([dep_lowercase],m4_translit(dep, [A-Z], [a-z]))
+      m4_pushdef([dep_uppercase],m4_translit(dep, [a-z], [A-Z]))
+      AS_IF([test "x${dep_lowercase}" = xtrue && test "x${dep_uppercase[]_[]CFLAGS}" = x],[
+        AC_MSG_ERROR([$1 depends on dep but dep environment is not set; [lalsuite_config_subdir()] calls may be in wrong dependency order])
+      ])
+      m4_popdef([dep_lowercase])
+      m4_popdef([dep_uppercase])
+    ])
+
     # re-run top-level ./00boot if any package-level ./configure.ac have changed
     # - this is needed to pick up e.g. any new inter-package dependencies
     lalsuite_package_configure_deps="${lalsuite_package_configure_deps} "'$(top_srcdir)/lowercase/configure.ac'
@@ -85,16 +96,12 @@ AC_DEFUN([lalsuite_config_subdir],[
       export uppercase[]_LIBS uppercase[]_CFLAGS uppercase[]_HTMLDIR
 
       # export precious environment paths
-      # - check that dependent environment paths are non-empty, indicating correct dependency order
       uppercase[]_DATA_PATH="${lalsuite_abs_top_srcdir}/lowercase/lib:${lalsuite_abs_top_srcdir}/lowercase/test"
       uppercase[]_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lowercase/octave"
       uppercase[]_PYTHON_PATH="${lalsuite_abs_top_builddir}/lowercase/python"
       m4_foreach_w([suffix],DATA_PATH OCTAVE_PATH PYTHON_PATH,[
         m4_foreach_w([dep],$2,[
           m4_pushdef([dep_uppercase],m4_translit(dep, [a-z], [A-Z]))
-          AS_IF([test "x${dep_uppercase[]_[]suffix}" = x],[
-            AC_MSG_ERROR([[lalsuite_config_subdir(]$1[)]: dep_uppercase[]_[]suffix is empty; [lalsuite_config_subdir()] may be in wrong dependency order])
-          ])
           LALSUITE_ADD_PATH(uppercase[]_[]suffix,"${dep_uppercase[]_[]suffix}")
           m4_popdef([dep_uppercase])
         ])
