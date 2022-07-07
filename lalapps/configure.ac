@@ -26,22 +26,7 @@ AC_CONFIG_FILES([\
   src/lalapps/Makefile \
   src/lalapps/version2.c \
   src/power/Makefile \
-  src/pulsar/CreateEphemeris/Makefile \
-  src/pulsar/CrossCorr/Makefile \
-  src/pulsar/FITSTools/Makefile \
-  src/pulsar/Fscan/Makefile \
-  src/pulsar/Fstatistic/Makefile \
-  src/pulsar/GCT/Makefile \
-  src/pulsar/HeterodyneSearch/Makefile \
-  src/pulsar/Hough/Makefile \
-  src/pulsar/HoughFstat/Makefile \
-  src/pulsar/MakeData/Makefile \
   src/pulsar/Makefile \
-  src/pulsar/SFTTools/Makefile \
-  src/pulsar/SidebandSearch/Makefile \
-  src/pulsar/Tools/Makefile \
-  src/pulsar/TwoSpect/Makefile \
-  src/pulsar/Weave/Makefile \
   src/ring/Makefile \
   src/string/Makefile \
 ])
@@ -96,7 +81,6 @@ LALAPPS_ENABLE_STATIC_BINARIES
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAMEL
 LALSUITE_ENABLE_CFITSIO
-LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_GDS
 
 LALSUITE_ENABLE_LALFRAME
@@ -240,45 +224,6 @@ LALSUITE_ENABLE_MODULE([FRAMEL])
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
-# check for pss
-if test "${pss}" = "true"; then
-  PKG_CHECK_MODULES([PSS],[pss],[true],[false])
-  lal_pre_pss_LIBS="$LIBS"
-  LALSUITE_ADD_FLAGS([C],[],[${PSS_LIBS}])
-  AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,
-                 [pss="false"]
-                 [LIBS="$lal_pre_pss_LIBS"])
-  AC_SEARCH_LIBS([pss_set_gw],[pss],,
-                 [pss="false"]
-                 [LIBS="$lal_pre_pss_LIBS"])
-  AC_SEARCH_LIBS([PSS_utc2tdt],[pssastro],,
-                 [pss="false"]
-                 [LIBS="$lal_pre_pss_LIBS"])
-  AC_SEARCH_LIBS([app_star],[pssnovas],,
-                 [pss="false"]
-                 [LIBS="$lal_pre_pss_LIBS"])
-fi
-
-
-# check for pss headers
-if test "${pss}" = "true"; then
-  lal_pre_pss_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_FLAGS([C],[${PSS_CFLAGS}],[])
-  AC_CHECK_HEADERS([pss_sfdb.h],,
-                   [pss="false"]
-                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-  AC_CHECK_HEADERS([pss_gw.h],,
-                   [pss="false"]
-                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-  AC_CHECK_HEADERS([pss_astro.h],,
-                   [pss="false"]
-                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-  AC_CHECK_HEADERS([novas.h],,
-                   [pss="false"]
-                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([PSS])
-
 # check for lal libararies and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
@@ -341,7 +286,6 @@ LALApps has now been successfully configured:
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
-* PSS library support is $PSS_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL
 * GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL

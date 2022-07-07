@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 18
+# serial 19
 
 AC_DEFUN([LALAPPS_ENABLE_CONDOR], [
   AC_ARG_ENABLE(
@@ -71,18 +71,6 @@ AC_DEFUN([LALAPPS_ENABLE_FRAMEL],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-framel) ;;
     esac
   ], [ framel=true ] )
-])
-
-AC_DEFUN([LALAPPS_ENABLE_PSS],
-[AC_ARG_ENABLE(
-  [pss],
-  AS_HELP_STRING([--enable-pss],[compile code that requires pss library [default=no]]),
-  [ case "${enableval}" in
-      yes) pss=true;;
-      no) pss=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-pss) ;;
-    esac
-  ], [pss=false])
 ])
 
 AC_DEFUN([LALAPPS_ENABLE_GDS],

@@ -2,66 +2,6 @@ MOSTLYCLEANFILES =
 dist_bin_SCRIPTS =
 include $(top_srcdir)/gnuscripts/lalsuite_old_exec_name_stubs.am
 
-SUBDIRS = \
-	Tools \
-	SFTTools \
-	FITSTools \
-	MakeData \
-	Fscan \
-	CreateEphemeris \
-	Fstatistic \
-	HeterodyneSearch \
-	Hough \
-	HoughFstat \
-	GCT \
-	CrossCorr \
-	SidebandSearch \
-	TwoSpect \
-	Weave \
-	$(END_OF_LINE)
-
-# Because many tests in lalapps/src/pulsar/ call executables from other
-# subdirectories in lalapps/src/pulsar/, it is safest to make sure the
-# whole of lalapps/src/pulsar/ is built first
-check-recursive: all-recursive
-
-# All programs under lalapps/src/pulsar/ [1] must be executed by at least one
-# test script run by "make check". This applies to C executables, Python
-# scripts, etc. The following rule enforces this requirement.
-#
-# [1] Certain directories are currently exempt from this requirement; in these
-# directories, Makefile.am includes lalapps.am instead of lalapps_pulsar.am
-.PHONY: clean-execs-tested-logs check-execs-are-tested
-
-check-recursive: clean-execs-tested-logs
-
-check-local: check-execs-are-tested
-
-clean-execs-tested-logs:
-	@tested_logfiles=`find $(builddir) -name '.tested_*.log'`; \
-	for file in $${tested_logfiles}; do \
-		echo '# empty' > "$${file}"; \
-	done
-
-check-execs-are-tested:
-	@tested_logfiles=`find $(builddir) -name '.tested_*.log'`; \
-	not_tested=`$(AWK) ' \
-	BEGIN { anyprog = 0 } \
-	$$1 == "programs" { anyprog = 1; for (i = 3; i <= NF; ++i) { prog[$$i] = 1; progpath[$$i] = $$2 "/" $$i } } \
-	$$1 == "tested" { for (i = 2; i <= NF; ++i) { tested[$$i] = 1; } } \
-	END { if (anyprog) { for (e in prog) { if (!tested[e]) { print progpath[e]; } } } else { print "NONE"; } } \
-	' $${tested_logfiles} /dev/null | $(SED) 's|^$(subdir)/||' | sort`; \
-	if test "X$${not_tested}" = XNONE; then \
-		exit 0; \
-	fi; \
-	if test "X$${not_tested}" != X; then \
-		printf "\nERROR: the following executables under lalapps_pulsar.am test harness are not tested:\n" >&2; \
-		printf "   %s\n" $${not_tested} >&2; \
-		printf "\n" >&2; \
-		exit 1; \
-	fi; \
-	printf "OK: all C executables under lalapps/src/pulsar/ have been tested\n"
-
 old_exec_name_stubs = \
 	lalapps_ComputeAntennaPattern \
 	lalapps_ComputeFstatBenchmark \
@@ -126,3 +66,77 @@ new_exec_name_regex = ' \
 	s|^lalapps_|lalpulsar_|'
 
 EXTRA_DIST = old_exec_name_stubs.dox
+
+CLEANFILES = \
+	CreateEphemeris/lalapps_create_solar_system_ephemeris \
+	CreateEphemeris/lalapps_create_solar_system_ephemeris_python \
+	CreateEphemeris/lalapps_create_time_correction_ephemeris \
+	CrossCorr/lalapps_combine_crosscorr_toplists \
+	CrossCorr/lalapps_pulsar_crosscorr \
+	CrossCorr/lalapps_pulsar_crosscorr_v2 \
+	CrossCorr/lalapps_run_pulsar_crosscorr_v2 \
+	FITSTools/lalapps_fits_header_getval \
+	FITSTools/lalapps_fits_header_list \
+	FITSTools/lalapps_fits_overview \
+	FITSTools/lalapps_fits_table_list \
+	Fscan/lalapps_spec_avg \
+	Fscan/lalapps_spec_avg_long \
+	Fscan/lalapps_spec_coherence \
+	Fstatistic/lalapps_compareFstats \
+	Fstatistic/lalapps_ComputeFstatBenchmark \
+	Fstatistic/lalapps_ComputeFstatistic_v2 \
+	Fstatistic/lalapps_ComputeFstatLatticeCount \
+	Fstatistic/lalapps_ComputeFstatMCUpperLimit \
+	Fstatistic/lalapps_PredictFstat \
+	Fstatistic/lalapps_synthesizeBstatMC \
+	Fstatistic/lalapps_synthesizeLVStats \
+	Fstatistic/lalapps_synthesizeTransientStats \
+	Fstatistic/SemiAnalyticF \
+	GCT/lalapps_HierarchSearchGCT \
+	HeterodyneSearch/lalapps_create_pulsar_signal_frame \
+	HeterodyneSearch/lalapps_heterodyne_pulsar \
+	HeterodyneSearch/lalapps_knope \
+	HeterodyneSearch/lalapps_knope_automation_script \
+	HeterodyneSearch/lalapps_knope_collate_results \
+	HeterodyneSearch/lalapps_knope_result_page \
+	HeterodyneSearch/lalapps_pulsar_frequency_evolution \
+	HeterodyneSearch/lalapps_pulsar_parameter_estimation_nested \
+	HeterodyneSearch/lalapps_SplInter \
+	HeterodyneSearch/lalapps_ssbtodetector \
+	HoughFstat/lalapps_HierarchicalSearch \
+	Hough/lalapps_DriveHoughMulti \
+	Hough/lalapps_HoughValidate \
+	Hough/lalapps_HoughValidateAM \
+	Hough/lalapps_MCInjectHoughMulti \
+	Hough/lalapps_MCInjectHoughMultiChi2Test \
+	Hough/lalapps_MultiWeights \
+	Hough/lalapps_ValidateChi2Test \
+	Hough/lalapps_ValidateHoughMulti \
+	MakeData/compareTS \
+	MakeData/lalapps_Makefakedata_v4 \
+	MakeData/lalapps_Makefakedata_v5 \
+	MakeData/lalapps_MakeSFTDAG \
+	MakeData/lalapps_MakeSFTs \
+	SFTTools/lalapps_compareSFTs \
+	SFTTools/lalapps_ComputePSD \
+	SFTTools/lalapps_dumpSFT \
+	SFTTools/lalapps_SFTclean \
+	SFTTools/lalapps_SFTvalidate \
+	SFTTools/lalapps_splitSFTs \
+	SFTTools/lalapps_WriteSFTsfromSFDBs \
+	SFTTools/SFTwrite \
+	SidebandSearch/lalapps_CombSearch \
+	Tools/lalapps_ComputeAntennaPattern \
+	Tools/lalapps_FstatMetric_v2 \
+	Tools/lalapps_PrintDetectorState \
+	TwoSpect/lalapps_TwoSpect \
+	TwoSpect/lalapps_TwoSpectTemplateBank \
+	Weave/lalapps_Weave \
+	Weave/lalapps_WeaveCompare \
+	Weave/lalapps_WeaveConcat \
+	Weave/lalapps_WeaveSetup \
+	$(END_OF_LIST)
+
+clean-local:
+	-rm -rf */*/.deps */*/.libs */.deps */.libs */*.testdir */__pycache__ */.pytest_cache
+	-rm -f */.*.log */*.log */*.o */*.trs */*.xml */Makefile */Makefile.in

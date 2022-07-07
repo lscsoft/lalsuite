@@ -3,6 +3,9 @@
 .PHONY: gen-tested-programs-log
 .PHONY: test-ref-tarball-dist-hook
 
+check-local: gen-tested-programs-log
+clean-local: clean-local-test-dirs clean-tested-logs
+
 ## so that additional flags can be easily appended with
 ##   AM_CPPFLAGS += ...
 AM_CPPFLAGS = @AM_CPPFLAGS@
@@ -49,10 +52,6 @@ skip_tests =
 TEST_EXTENSIONS = .sh .py
 SH_LOG_COMPILER = $(test_script_compiler) sh "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
 PY_LOG_COMPILER = $(test_script_compiler) py "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
-
-check-local: gen-tested-programs-log
-
-clean-local: clean-local-test-dirs clean-tested-logs
 
 gen-tested-programs-log:
 	@echo "# $(abs_builddir)/.tested_programs.log" > .tested_programs.log; \
