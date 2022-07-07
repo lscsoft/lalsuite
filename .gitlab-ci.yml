@@ -1427,6 +1427,23 @@ top-level:
     - *scheduled
     - *manual
 
+top-level:pulsar:
+  image: igwn/lalsuite-dev:el7-testing
+  variables:
+    # test that LALPulsar builds with optional dependencies disabled
+    CONFIGURE_FLAGS: |
+      --enable-doxygen --enable-swig --enable-python
+      --disable-all-lal --enable-lalpulsar
+  needs: []
+  extends:
+    - .make-distcheck
+    - .integration-tests
+  rules:
+    - *skip-integration
+    - *pushes
+    - *scheduled
+    - *manual
+
 # -- compiler tests -----------------------------
 #
 # Top-level build tests for various non-default
