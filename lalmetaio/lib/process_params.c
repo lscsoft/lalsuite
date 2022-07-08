@@ -63,11 +63,13 @@ ProcessParamsTable *XLALCreateProcessParamsTableRow(
 /**
  * Destroy a ProcessParamsTable structure.
  */
-void XLALDestroyProcessParamsTableRow(
+ProcessParamsTable *XLALDestroyProcessParamsTableRow(
 	ProcessParamsTable *row
 )
 {
+	ProcessParamsTable *next = row ? row->next : NULL;
 	XLALFree(row);
+	return next;
 }
 
 
@@ -75,14 +77,11 @@ void XLALDestroyProcessParamsTableRow(
  * Destroy a ProcessParamsTable linked list.
  */
 void XLALDestroyProcessParamsTable(
-	ProcessParamsTable * head
+	ProcessParamsTable *head
 )
 {
-	while(head) {
-		ProcessParamsTable *next = head->next;
-		XLALDestroyProcessParamsTableRow(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroyProcessParamsTableRow(head);
 }
 
 

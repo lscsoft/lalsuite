@@ -65,11 +65,13 @@ SegmentTable *XLALCreateSegmentTableRow(
 /*
  * Destroy a SegmentTable structure.
  */
-void XLALDestroySegmentTableRow(
+SegmentTable *XLALDestroySegmentTableRow(
 	SegmentTable * row
 )
 {
+	SegmentTable *next = row ? row->next : NULL;
 	XLALFree(row);
+	return next;
 }
 
 
@@ -80,11 +82,8 @@ void XLALDestroySegmentTable(
 	SegmentTable * head
 )
 {
-	while(head) {
-		SegmentTable *next = head->next;
-		XLALDestroySegmentTableRow(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroySegmentTableRow(head);
 }
 
 

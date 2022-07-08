@@ -61,9 +61,11 @@ SnglInspiralTable *XLALCreateSnglInspiralTableRow(const ProcessTable *process)
 /**
  * Destroy a SnglInspiralTable structure.
  */
-void XLALDestroySnglInspiralTableRow(SnglInspiralTable *row)
+SnglInspiralTable *XLALDestroySnglInspiralTableRow(SnglInspiralTable *row)
 {
+	SnglInspiralTable *next = row ? row->next : NULL;
 	XLALFree(row);
+	return next;
 }
 
 
@@ -72,11 +74,8 @@ void XLALDestroySnglInspiralTableRow(SnglInspiralTable *row)
  */
 void XLALDestroySnglInspiralTable(SnglInspiralTable *head)
 {
-	while(head) {
-		SnglInspiralTable *next = head->next;
-		XLALDestroySnglInspiralTableRow(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroySnglInspiralTableRow(head);
 }
 
 

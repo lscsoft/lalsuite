@@ -62,11 +62,13 @@ SimRingdownTable *XLALCreateSimRingdownTableRow(
 /**
  * Destroy a SimRingdownTable structure.
  */
-void XLALDestroySimRingdownTableRow(
+SimRingdownTable *XLALDestroySimRingdownTableRow(
 	SimRingdownTable *row
 )
 {
+	SimRingdownTable *next = row ? row->next : NULL;
 	XLALFree(row);
+	return next;
 }
 
 
@@ -77,11 +79,8 @@ void XLALDestroySimRingdownTable(
 	SimRingdownTable *head
 )
 {
-	while(head) {
-		SimRingdownTable *next = head->next;
-		XLALDestroySimRingdownTableRow(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroySimRingdownTableRow(head);
 }
 
 

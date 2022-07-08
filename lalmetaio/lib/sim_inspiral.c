@@ -64,11 +64,13 @@ SimInspiralTable *XLALCreateSimInspiralTableRow(
 /**
  * Destroy a SimInspiralTable structure.
  */
-void XLALDestroySimInspiralTableRow(
+SimInspiralTable *XLALDestroySimInspiralTableRow(
 	SimInspiralTable *row
 )
 {
+	SimInspiralTable *next = row ? row->next : NULL;
 	XLALFree(row);
+	return next;
 }
 
 
@@ -79,11 +81,8 @@ void XLALDestroySimInspiralTable(
 	SimInspiralTable *head
 )
 {
-	while(head) {
-		SimInspiralTable *next = head->next;
-		XLALDestroySimInspiralTableRow(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroySimInspiralTableRow(head);
 }
 
 

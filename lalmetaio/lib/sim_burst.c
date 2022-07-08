@@ -70,9 +70,11 @@ SimBurst *XLALCreateSimBurst(void)
 /**
  * Destroy a SimBurst structure.
  */
-void XLALDestroySimBurst(SimBurst *sim_burst)
+SimBurst *XLALDestroySimBurst(SimBurst *row)
 {
-	XLALFree(sim_burst);
+	SimBurst *next = row ? row->next : NULL;
+	XLALFree(row);
+	return next;
 }
 
 
@@ -81,11 +83,8 @@ void XLALDestroySimBurst(SimBurst *sim_burst)
  */
 void XLALDestroySimBurstTable(SimBurst *head)
 {
-	while(head) {
-		SimBurst *next = head->next;
-		XLALDestroySimBurst(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroySimBurst(head);
 }
 
 

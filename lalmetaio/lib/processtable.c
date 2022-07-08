@@ -80,9 +80,11 @@ ProcessTable *XLALCreateProcessTableRow(void)
 /**
  * Destroy a ProcessTable structure.
  */
-void XLALDestroyProcessTableRow(ProcessTable *row)
+ProcessTable *XLALDestroyProcessTableRow(ProcessTable *row)
 {
+	ProcessTable *next = row ? row->next : NULL;
 	XLALFree(row);
+	return next;
 }
 
 
@@ -91,11 +93,8 @@ void XLALDestroyProcessTableRow(ProcessTable *row)
  */
 void XLALDestroyProcessTable(ProcessTable *head)
 {
-	while(head) {
-		ProcessTable *next = head->next;
-		XLALDestroyProcessTableRow(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroyProcessTableRow(head);
 }
 
 

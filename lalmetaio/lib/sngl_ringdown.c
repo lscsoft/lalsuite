@@ -62,11 +62,13 @@ SnglRingdownTable *XLALCreateSnglRingdownTableRow(
 /**
  * Destroy a SnglRingdownTable structure.
  */
-void XLALDestroySnglRingdownTableRow(
+SnglRingdownTable *XLALDestroySnglRingdownTableRow(
 	SnglRingdownTable *row
 )
 {
+	SnglRingdownTable *next = row ? row->next : NULL;
 	XLALFree(row);
+	return next;
 }
 
 
@@ -77,11 +79,8 @@ void XLALDestroySnglRingdownTable(
 	SnglRingdownTable *head
 )
 {
-	while(head) {
-		SnglRingdownTable *next = head->next;
-		XLALDestroySnglRingdownTableRow(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroySnglRingdownTableRow(head);
 }
 
 

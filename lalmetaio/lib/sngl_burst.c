@@ -67,9 +67,11 @@ SnglBurst *XLALCreateSnglBurst(void)
 /**
  * Free a SnglBurst.
  */
-void XLALDestroySnglBurst(SnglBurst *event)
+SnglBurst *XLALDestroySnglBurst(SnglBurst *row)
 {
-	XLALFree(event);
+	SnglBurst *next = row ? row->next : NULL;
+	XLALFree(row);
+	return next;
 }
 
 
@@ -78,11 +80,8 @@ void XLALDestroySnglBurst(SnglBurst *event)
  */
 void XLALDestroySnglBurstTable(SnglBurst *head)
 {
-	while(head) {
-		SnglBurst *next = head->next;
-		XLALDestroySnglBurst(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroySnglBurst(head);
 }
 
 

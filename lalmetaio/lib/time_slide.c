@@ -59,11 +59,13 @@ TimeSlide *XLALCreateTimeSlide(
 /**
  * Destroy a TimeSlide structure.
  */
-void XLALDestroyTimeSlide(
-	TimeSlide * row
+TimeSlide *XLALDestroyTimeSlide(
+	TimeSlide *row
 )
 {
+	TimeSlide *next = row ? row->next : NULL;
 	XLALFree(row);
+	return next;
 }
 
 
@@ -71,14 +73,11 @@ void XLALDestroyTimeSlide(
  * Destroy a TimeSlide linked list.
  */
 void XLALDestroyTimeSlideTable(
-	TimeSlide * head
+	TimeSlide *head
 )
 {
-	while(head) {
-		TimeSlide *next = head->next;
-		XLALDestroyTimeSlide(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroyTimeSlide(head);
 }
 
 

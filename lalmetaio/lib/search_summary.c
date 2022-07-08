@@ -68,11 +68,13 @@ SearchSummaryTable *XLALCreateSearchSummaryTableRow(
 /**
  * Destroy a SearchSummaryTable structure.
  */
-void XLALDestroySearchSummaryTableRow(
+SearchSummaryTable *XLALDestroySearchSummaryTableRow(
 	SearchSummaryTable *row
 )
 {
+	SearchSummaryTable *next = row ? row->next : NULL;
 	XLALFree(row);
+	return next;
 }
 
 
@@ -83,11 +85,8 @@ void XLALDestroySearchSummaryTable(
 	SearchSummaryTable *head
 )
 {
-	while(head) {
-		SearchSummaryTable *next = head->next;
-		XLALDestroySearchSummaryTableRow(head);
-		head = next;
-	}
+	while(head)
+		head = XLALDestroySearchSummaryTableRow(head);
 }
 
 
