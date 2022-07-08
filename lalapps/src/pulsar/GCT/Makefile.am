@@ -10,7 +10,7 @@ bin_PROGRAMS = \
 	$(END_OF_LIST)
 
 EXTRA_PROGRAMS = \
-	lalapps_HierarchSearchGCT_NONC \
+	lalapps_HierarchSearchGCT_no_num_count \
 	$(END_OF_LIST)
 
 lalapps_HierarchSearchGCT_SOURCES = \
@@ -25,9 +25,9 @@ lalapps_HierarchSearchGCT_SOURCES = \
 lalapps_HierarchSearchGCT_CPPFLAGS = $(AM_CPPFLAGS)
 lalapps_HierarchSearchGCT_CFLAGS = $(AM_CFLAGS)
 
-lalapps_HierarchSearchGCT_NONC_SOURCES = $(lalapps_HierarchSearchGCT_SOURCES)
-lalapps_HierarchSearchGCT_NONC_CPPFLAGS = $(AM_CPPFLAGS) -DEXP_NO_NUM_COUNT
-lalapps_HierarchSearchGCT_NONC_CFLAGS = $(AM_CFLAGS)
+lalapps_HierarchSearchGCT_no_num_count_SOURCES = $(lalapps_HierarchSearchGCT_SOURCES)
+lalapps_HierarchSearchGCT_no_num_count_CPPFLAGS = $(AM_CPPFLAGS) -DEXP_NO_NUM_COUNT
+lalapps_HierarchSearchGCT_no_num_count_CFLAGS = $(AM_CFLAGS)
 
 if HAVE_SSE2_COMPILER
 
@@ -38,8 +38,8 @@ lalapps_HierarchSearchGCT_SOURCES += \
 lalapps_HierarchSearchGCT_CPPFLAGS += -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT -DGC_SSE2_OPT
 lalapps_HierarchSearchGCT_CFLAGS += $(SSE2_FLAGS)
 
-lalapps_HierarchSearchGCT_NONC_CPPFLAGS += -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT -DGC_SSE2_OPT
-lalapps_HierarchSearchGCT_NONC_CFLAGS += $(SSE2_FLAGS)
+lalapps_HierarchSearchGCT_no_num_count_CPPFLAGS += -DHS_OPTIMIZATION -DHIERARCHSEARCHGCT -DGC_SSE2_OPT
+lalapps_HierarchSearchGCT_no_num_count_CFLAGS += $(SSE2_FLAGS)
 
 endif
 

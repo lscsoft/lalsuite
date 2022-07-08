@@ -12,6 +12,14 @@ bin_PROGRAMS = \
 
 EXTRA_PROGRAMS =
 
+lalapps_Makefakedata_v4_SOURCES = \
+	makefakedata_v4.c \
+	$(END_OF_LIST)
+
+lalapps_Makefakedata_v5_SOURCES = \
+	makefakedata_v5.c \
+	$(END_OF_LIST)
+
 if LALFRAME
 
 bin_PROGRAMS += \
@@ -35,19 +43,11 @@ EXTRA_PROGRAMS += \
 	lalapps_sw_inj_frames \
 	$(END_OF_LIST)
 
-endif
-
-lalapps_Makefakedata_v4_SOURCES = \
-	makefakedata_v4.c \
-	$(END_OF_LIST)
-
-lalapps_Makefakedata_v5_SOURCES = \
-	makefakedata_v5.c \
-	$(END_OF_LIST)
-
 lalapps_sw_inj_frames_SOURCES = \
 	sw_inj_frames.c \
 	$(END_OF_LIST)
+
+endif
 
 dist_bin_SCRIPTS = \
 	lalapps_CopySFTs \
@@ -79,4 +79,5 @@ test_extra_files +=
 # These tests require LALFrame
 if !LALFRAME
 skip_tests += testMakeSFTs.sh
+skip_tests += testMakefakedata_v5.sh
 endif
