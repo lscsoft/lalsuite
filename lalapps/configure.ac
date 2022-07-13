@@ -18,7 +18,6 @@ AC_CONFIG_FILES([\
   src/Makefile \
   src/findchirp/Makefile \
   src/frametools/Makefile \
-  src/hwinjection/Makefile \
   src/inspiral/Makefile \
   src/lalapps/__init__.py \
   src/lalapps/LALAppsVCSInfo.c \
@@ -79,7 +78,6 @@ LALAPPS_ENABLE_STATIC_BINARIES
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAMEL
 LALSUITE_ENABLE_CFITSIO
-LALAPPS_ENABLE_GDS
 
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
@@ -193,14 +191,6 @@ if test "${fftw}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([FFTW])
 
-# check for GDS system, for pulsar hardware injections
-if test "${gds}" = "true"; then
-  AC_CHECK_LIB([awg],[awgGetChannelNames],,[AC_MSG_ERROR([could not find the GDS library])])
-  AC_CHECK_HEADERS([gdstype.h],,[AC_MSG_ERROR([could not find the GDS library])])
-  AC_SUBST([GDS_LIBS],["-lawg -ltestpoint"])
-fi
-LALSUITE_ENABLE_MODULE([GDS])
-
 # check for FrameL
 if test "${framel}" = "true"; then
   PKG_CHECK_MODULES([FRAMEL],[framel],[true],[false])
@@ -287,7 +277,6 @@ LALApps has now been successfully configured:
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL
-* GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
 * help2man documentation is $HELP2MAN_ENABLE_VAL

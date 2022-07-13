@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalpulsar.m4 - LALPulsar specific macros
 #
-# serial 3
+# serial 4
 
 AC_DEFUN([LALPULSAR_ENABLE_PSS],
 [AC_ARG_ENABLE(
@@ -13,6 +13,18 @@ AC_DEFUN([LALPULSAR_ENABLE_PSS],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-pss) ;;
     esac
   ], [pss=false])
+])
+
+AC_DEFUN([LALPULSAR_ENABLE_GDS],
+[AC_ARG_ENABLE(
+  [gds],
+  AS_HELP_STRING([--enable-gds],[compile code that requires GDS library [default=no]]),
+  [ case "${enableval}" in
+      yes) gds=true;;
+      no) gds=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-gds) ;;
+    esac
+  ], [gds=false])
 ])
 
 AC_DEFUN([LALPULSAR_CHECK_ALTIVEC],[

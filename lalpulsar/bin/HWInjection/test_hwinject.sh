@@ -1,10 +1,12 @@
-set -e
-tar xf ./test_hwinject.tar.gz
+if test "${LALFRAME_ENABLED}" = false; then
+    echo "Skipping test: requires LALFrame"
+    exit 77
+fi
 
 # create injection input files
 mfd_args="--hardwareTDD --actuation=./H1PCALXactuationfunction_withDelay.txt --actuationScale=1.0 --Tsft=20 --duration=5"
 for inj in 0 1 2; do
-    echo "../../../lalpulsar/bin/MakeData/lalpulsar_Makefakedata_v4 @Pulsar${inj}_StrainAmp.cfg --logfile=pulsar${inj}.log ${mfd_args}" > "in.${inj}"
+    echo "lalpulsar_Makefakedata_v4 @Pulsar${inj}_StrainAmp.cfg --logfile=pulsar${inj}.log ${mfd_args}" > "in.${inj}"
 done
 echo "===== $0: injection input files ====="
 grep . in.*
@@ -136,7 +138,3 @@ END {
    exit(exitcode)
 }'
 echo "----- $0: compare frame output to reference result -----"
-
-rm -f H1PCALXactuationfunction_withDelay.txt Pulsar?_StrainAmp.cfg out.ref
-rm -f in.? out pulsar*.log
-rm -f *.gwf*

@@ -150,7 +150,6 @@ test:
     - lalapps_power --help
     - lalapps_power_likelihood_pipe --help
     - lalapps_power_pipe --help
-    - lalapps_psinject -h
     - lalapps_random_bank 10 20 10
     - lalapps_randombank --minimum-mass 10 --maximum-mass 20 --number-of-templates 10
     - lalapps_run_sqlite --help

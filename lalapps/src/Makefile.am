@@ -44,4 +44,6 @@ endif
 endif
 endif
 
-SUBDIRS += hwinjection
+clean-local:
+	-rm -rf hwinjection/.deps hwinjection/.libs
+	-rm -f hwinjection/lal*inject hwinjection/*inject.o hwinjection/*.trs hwinjection/*.log hwinjection/Makefile.in hwinjection/Makefile

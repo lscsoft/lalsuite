@@ -1,7 +1,7 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps.am
+include $(top_srcdir)/gnuscripts/lalpulsar_bin.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 if GDS
@@ -31,8 +31,3 @@ endif
 
 # Add shell test scripts to this variable
 test_scripts += test_hwinject.sh
-
-# These tests require LALFrame
-if !LALFRAME
-#skip_tests += test_hwinject.sh
-endif

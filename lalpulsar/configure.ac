@@ -54,6 +54,7 @@ AC_CONFIG_FILES([ \
   bin/Fscan/Makefile \
   bin/Fstatistic/Makefile \
   bin/GCT/Makefile \
+  bin/HWInjection/Makefile \
   bin/HeterodyneSearch/Makefile \
   bin/Hough/Makefile \
   bin/HoughFstat/Makefile \
@@ -108,6 +109,9 @@ LALSUITE_ENABLE_CFITSIO
 
 # enable pss support
 LALPULSAR_ENABLE_PSS
+
+# enable gds support
+LALPULSAR_ENABLE_GDS
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
@@ -218,6 +222,14 @@ if test "${pss}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([PSS])
 
+# check for GDS system, for pulsar hardware injections
+if test "${gds}" = "true"; then
+  AC_CHECK_LIB([awg],[awgGetChannelNames],,[AC_MSG_ERROR([could not find the GDS library])])
+  AC_CHECK_HEADERS([gdstype.h],,[AC_MSG_ERROR([could not find the GDS library])])
+  AC_SUBST([GDS_LIBS],["-lawg -ltestpoint"])
+fi
+LALSUITE_ENABLE_MODULE([GDS])
+
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
@@ -267,6 +279,7 @@ LALPulsar has now been successfully configured:
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
 * PSS library support is $PSS_ENABLE_VAL
+* GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL

@@ -19,7 +19,7 @@
 
 /**
  * \file
- * \ingroup lalapps_hwinjection
+ * \ingroup lalpulsar_bin_Tools
  * \author Bruce Allen, Peter Shawhan
  * \brief multipulsar injection routine
  */
@@ -42,7 +42,8 @@
 
 #define _GNU_SOURCE   /* for SA_RESTART */
 
-#include <config.h>
+#include "config.h"
+
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -59,23 +60,20 @@
 #include <math.h>
 #include <sys/stat.h>
 
-#include <config.h>
 #ifdef ONLINE
 #include "SIStr.h"
 #endif
 
+#include <lal/XLALError.h>
 #include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
+#include <lal/LALPulsarVCSInfo.h>
 
 #ifdef HAVE_LIBLALFRAME
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALFrameIO.h>
 #endif
-
-#include <lal/XLALError.h>
-#include <LALAppsVCSInfo.h>
-
 
 #define MAXPULSARS 64
 /* blocksize for gathering results from children */
@@ -261,7 +259,7 @@ int parseinput(int argc, char **argv){
     double tempamp;
     switch (c) {
     case 'v':
-      if ( XLALOutputVCSInfo(stdout, lalAppsVCSInfoList, 0, "%% ") != XLAL_SUCCESS ) {
+      if ( XLALOutputVCSInfo(stdout, lalPulsarVCSInfoList, 0, "%% ") != XLAL_SUCCESS ) {
         XLALPrintError("XLALOutputVCSInfo() failed!\n");
         exit(1);
       }
