@@ -4,18 +4,27 @@ MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
-progs = lalapps_psinject
-
 if GDS
-progs += online_psinject
+
+bin_PROGRAMS = lalpulsar_hwinject
+
+lalpulsar_hwinject_SOURCES = \
+	SIStr.c \
+	SIStr.h \
+	hwinject.c \
+	$(END_OF_LIST)
+
+lalpulsar_hwinject_CPPFLAGS = $(AM_CPPFLAGS) -DONLINE
+lalpulsar_hwinject_LIBS = $(GDS_LIBS)
+
+else
+
+noinst_PROGRAMS = lalpulsar_hwinject
+
+lalpulsar_hwinject_CPPFLAGS = $(AM_CPPFLAGS)
+
+lalpulsar_hwinject_SOURCES = \
+	hwinject.c \
+	$(END_OF_LIST)
+
 endif
-
-bin_PROGRAMS = $(progs)
-
-lalapps_psinject_SOURCES = psinject.c
-
-## ---------- compile ONLINE psinject code for LIGO/GEO hardware injections ----------
-online_psinject_SOURCES = psinject.c SIStr.c SIStr.h
-online_psinject_CPPFLAGS = -DONLINE
-online_psinject_LDFLAGS = -lawg -ltestpoint
-## --------------------------------------------------------------------------------

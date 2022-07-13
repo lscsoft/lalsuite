@@ -62,8 +62,7 @@ src/frametools/lalapps_frjoin
 src/frametools/lalapps_frread
 src/frametools/lalapps_frview
 src/frametools/lalapps_xtefitstoframe
-src/hwinjection/lalapps_psinject
-src/hwinjection/online_psinject
+src/hwinjection/lalpulsar_hwinject
 src/inspiral/ihope_ssipe.ini
 src/inspiral/lalapps_blindinj
 src/inspiral/lalapps_calcexpsnr

@@ -193,11 +193,11 @@ if test "${fftw}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([FFTW])
 
-# check for GDS system: we check if we can link against libawg which is in GDS
-# GDS is a requirements for building 'online_psinject', which is used for hardware injections
+# check for GDS system, for pulsar hardware injections
 if test "${gds}" = "true"; then
   AC_CHECK_LIB([awg],[awgGetChannelNames],,[AC_MSG_ERROR([could not find the GDS library])])
   AC_CHECK_HEADERS([gdstype.h],,[AC_MSG_ERROR([could not find the GDS library])])
+  AC_SUBST([GDS_LIBS],["-lawg -ltestpoint"])
 fi
 LALSUITE_ENABLE_MODULE([GDS])
 
