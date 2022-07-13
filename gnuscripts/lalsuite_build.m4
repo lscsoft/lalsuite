@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 163
+# serial 164
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -326,6 +326,15 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   # end $0
 ])
 
+AC_DEFUN([LALSUITE_ADD_TESTS_ENV_CONFIG_VAR],[
+  AC_SUBST(TESTS_ENV_CONFIG_VARS)
+  m4_if($2,[true],[
+    TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=true;"
+  ],[
+    TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=false;"
+  ])
+])
+
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # $0: require a C++ compiler
   lalsuite_require_cxx=true
@@ -475,8 +484,10 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   AM_CONDITIONAL([HAVE_PYTHON],[test "x${python}" != xfalse])
   AM_COND_IF([HAVE_PYTHON],[
     PYTHON_ENABLE_VAL=ENABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_PYTHON],[true])
   ],[
     PYTHON_ENABLE_VAL=DISABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_PYTHON],[false])
   ])
   # end $0
 ])
@@ -540,8 +551,10 @@ AC_DEFUN([LALSUITE_ENABLE_MODULE],[
   AM_CONDITIONAL(uppercase,[test "x${lowercase}" = xtrue])
   AS_IF([test "${lowercase}" = "true"],[
     uppercase[]_ENABLE_VAL=ENABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR(uppercase[]_ENABLED,[true])
   ],[
     uppercase[]_ENABLE_VAL=DISABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR(uppercase[]_ENABLED,[false])
   ])
   _AS_ECHO_LOG([module $1 is ${]uppercase[_ENABLE_VAL}])
   m4_popdef([lowercase])
@@ -1244,6 +1257,9 @@ double volatile d = round(c);
       # add to list of supported instruction sets
       simd_supported="${simd_supported} iset"
 
+      LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_]symbol[_COMPILER],[true])
+    ],[
+      LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_]symbol[_COMPILER],[false])
     ])
 
     m4_popdef([option])
