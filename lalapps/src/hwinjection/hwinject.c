@@ -380,6 +380,10 @@ int parseinput(int argc, char **argv){
         syserror (0, "%s: need positive sampling rate! %d\n", argv[0], sampling_rate );
         exit(1);
       }
+      if ( sampling_rate % 2 != 0 ) {
+        syserror (0, "%s: need sampling rate divisible by 2! %d\n", argv[0], sampling_rate );
+        exit(1);
+      }
 #ifdef HAVE_LIBLALFRAME
       if ( BLOCKSIZE % sampling_rate != 0 ) {
           syserror (0, "%s: sampling rate %d must divide evenly into block size %d for frame output\n", argv[0], sampling_rate, BLOCKSIZE );
@@ -536,6 +540,13 @@ int main(int argc, char *argv[]){
     /* IFO */
     length=strlen(command);
     if ( snprintf(command+length, MAXLINE-length, " -I %s", ifo_name) > MAXLINE-length-1 ) {
+      command[length]='\0';
+      syserror(0, "%s: command line has >= MAXLINE=%d characters\n", programname, MAXLINE);
+      exit(1);
+    }
+    /* frequency band; zero to half the sampling rate */
+    length=strlen(command);
+    if ( snprintf(command+length, MAXLINE-length, " --fmin=0 --Band=%d", sampling_rate / 2) > MAXLINE-length-1 ) {
       command[length]='\0';
       syserror(0, "%s: command line has >= MAXLINE=%d characters\n", programname, MAXLINE);
       exit(1);

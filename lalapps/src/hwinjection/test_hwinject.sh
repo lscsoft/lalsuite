@@ -2,7 +2,7 @@ set -e
 tar xf ./test_hwinject.tar.gz
 
 # create injection input files
-mfd_args="--hardwareTDD --actuation=./H1PCALXactuationfunction_withDelay.txt --actuationScale=1.0 --fmin=0 --Band=8192 --Tsft=20 --duration=5"
+mfd_args="--hardwareTDD --actuation=./H1PCALXactuationfunction_withDelay.txt --actuationScale=1.0 --Tsft=20 --duration=5"
 for inj in 0 1 2; do
     echo "../../../lalpulsar/bin/MakeData/lalpulsar_Makefakedata_v4 @Pulsar${inj}_StrainAmp.cfg --logfile=pulsar${inj}.log ${mfd_args}" > "in.${inj}"
 done
