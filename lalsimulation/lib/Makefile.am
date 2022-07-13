@@ -251,6 +251,7 @@ noinst_HEADERS = \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimNeutronStarEOSSpectralDecomposition.c \
+	LALSimNeutronStarEOSDynamicPolytrope.c \
 	LALSimIMRSpinEOBHamiltonian.h \
 	LALSimIMRPrecessingNRSur.h \
 	LALSimNRSurrogateUtilities.h \

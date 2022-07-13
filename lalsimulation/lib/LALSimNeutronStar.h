@@ -74,6 +74,15 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double
     gamma[], int size);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterSpectralDecomposition(
     double SDgamma0, double SDgamma1, double SDgamma2, double SDgamma3);
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSDynamicAnalytic(double parameters[],
+    size_t nsec, int causal);
+LALSimNeutronStarEOS *XLALSimNeutronStarEOS3PieceDynamicPolytrope(double g0,
+    double log10p1_si, double g1, double log10p2_si, double g2);
+LALSimNeutronStarEOS *XLALSimNeutronStarEOS3PieceCausalAnalytic(double v1,
+    double log10p1_si, double v2, double log10p2_si, double v3);
+int XLALSimNeutronStarEOS4ParamSDGammaCheck(double g0, double g1, double g2, double g3);
+int XLALSimNeutronStarEOS4ParamSDViableFamilyCheck(double g0, double g1, double g2, double g3);
+int XLALSimNeutronStarEOS3PDViableFamilyCheck(double p0, double log10p1_si, double p1, double log10p2_si, double p2, int causal);
 
 double XLALSimNeutronStarEOSMaxPressure(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
