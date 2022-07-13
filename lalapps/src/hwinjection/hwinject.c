@@ -67,8 +67,10 @@
 #include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
 
-#ifdef HAVE_FRAMEL_H
-#include <FrameL.h>
+#ifdef HAVE_LIBLALFRAME
+#include <lal/Units.h>
+#include <lal/TimeSeries.h>
+#include <lal/LALFrameIO.h>
 #endif
 
 #include <lal/XLALError.h>
@@ -93,7 +95,6 @@ int show=0;
 int do_axis=0;
 int do_text=0;
 int write_frames=0;
-int secs_per_framefile=60;
 long long count=0;
 long blocks=0;
 const char *ifo_name = NULL;
@@ -228,7 +229,7 @@ void usage(FILE *filep){
 	  "-p            Print the calibration line frequencies in Hz then exit(0)\n"
 	  "-I STRING     Detector: LHO, LLO, GEO, VIRGO, TAMA, CIT, ROME [REQUIRED]\n"
 	  "-A STRING     File containing detector actuation-function     [OPTIONAL]\n"
-#ifdef HAVE_FRAMEL_H
+#ifdef HAVE_LIBLALFRAME
           "-F INT        Keep N frame files on disk.  If N==0 write all frames immediately.\n"
 	  "-S INT        Number of 1-second frames per frame file (default 60).\n"
 #endif
@@ -359,7 +360,7 @@ int parseinput(int argc, char **argv){
       actuation = LALoptarg;
       break;
     case 'F':
-#ifdef HAVE_FRAMEL_H
+#ifdef HAVE_LIBLALFRAME
 	{
 	    int how_many = atoi(LALoptarg);
 	    if (how_many < 0) {
@@ -373,28 +374,18 @@ int parseinput(int argc, char **argv){
           exit(1);
 #endif
           break;
-    case 'S':
-#ifdef HAVE_FRAMEL_H
-	secs_per_framefile = atoi(LALoptarg);
-        if (secs_per_framefile < 1) {
-	    syserror(0,"%s: fatal error, argument -S %d must be at least 1 second.\n", argv[0], secs_per_framefile);
-	    exit(1);
-	}
-        if (secs_per_framefile > 3600) {
-	    syserror(0,"%s: caution, argument -S %d seconds is more than one hour!\n", argv[0], secs_per_framefile);
-	}
-#else
-          syserror(0,"%s: -S specified, but this binary was built without frame support.\n", argv[0] );
-          exit(1);
-#endif
-          break;
-
     case 'r':
       sampling_rate = atoi(LALoptarg);
       if ( sampling_rate <= 0 ) {
         syserror (0, "%s: need positive sampling rate! %d\n", argv[0], sampling_rate );
         exit(1);
       }
+#ifdef HAVE_LIBLALFRAME
+      if ( BLOCKSIZE % sampling_rate != 0 ) {
+          syserror (0, "%s: sampling rate %d must divide evenly into block size %d for frame output\n", argv[0], sampling_rate, BLOCKSIZE );
+        exit(1);
+      }
+#endif
       break;
 
     case 'z':
@@ -464,6 +455,11 @@ int main(int argc, char *argv[]){
   SIStream sis;
   char info[MAXLINE];
   memset(&sis, '\0', sizeof(SIStream));
+#endif
+
+#ifdef HAVE_LIBLALFRAME
+  int framecounter = 0;
+  REAL4TimeSeries *framesim = NULL;
 #endif
 
   parseinput(argc, argv);
@@ -741,83 +737,69 @@ int main(int argc, char *argv[]){
     /* now output the total signal to frames */
 
     if (write_frames) {
-#ifdef HAVE_FRAMEL_H
-	static int counter = 0;
-	static FrFile *oFile;
+#ifdef HAVE_LIBLALFRAME
 
-	FrameH *frame;
-	FrSimData *sim;
+        const int secs_per_framefile = BLOCKSIZE / sampling_rate;
 
-	int m, level = 0;
-	long ndata = BLOCKSIZE;
-	char framename[256];
-	struct stat statbuf;
+        /* allocate time series */
+        if (!framesim) {
+            const char frName[] = "CW_simulated";
+            framesim = XLALCreateREAL4TimeSeries(frName, 0, 0, 1.0 / sampling_rate, &lalDimensionlessUnit, BLOCKSIZE);
+            if (!framesim) {
+                syserror(1, "XLALCreateREAL4TimeSeries() failed");
+                exit(1);
+            }
+        }
 
-	/* This leads to a names like: CW_Injection-921517800-60.gwf */
-	sprintf(framename, "CW_Injection");
-	frame = FrameHNew(framename);
-	if (!frame) {
-	    syserror(1, "FrameNew failed (%s)", FrErrorGetHistory());
-	    exit(1);
-	}
+        /* set up GPS time, copy data */
+        framesim->epoch.gpsSeconds = gpstime + framecounter*secs_per_framefile;
+        for (size_t m = 0; m < BLOCKSIZE; m++) {
+            framesim->data->data[m] = total[m];
+        }
 
-	/* set up GPS time, sample interval, copy data */
-	frame->GTimeS = gpstime + counter;
-	frame->GTimeN = 0;
-	frame->dt = ndata/sampling_rate;
-        char frName[] = "CW_simulated";
-	sim = FrSimDataNew(frame, frName, sampling_rate, ndata, -32);
-	for (m=0; m < ndata; m++) {
-	    sim->data->dataF[m] = total[m];
-	}
+        /* create frame */
+        const char framename[] = "CW_Injection";
+        LALFrameH *frame = XLALFrameNew(&framesim->epoch, secs_per_framefile, framename, 1, framecounter, 0);
+        if (!frame) {
+            syserror(1, "XLALFrameNew() failed");
+            exit(1);
+        }
 
-	/* open framefile, to contain secs_per_framefile of data */
-	if (!counter) {
-	    oFile = FrFileONewM(framename, level, argv[0], secs_per_framefile);
-	    if (!oFile) {
-		syserror(1, "Cannot open output file %s\n", framename);
-		exit(1);
-	    }
-	    /* Turn off the 'framefile boundary alignment'.  Without this one gets:
-	       CW_Injection-921517807-3.gwf
-	       CW_Injection-921517810-10.gwf
-	       CW_Injection-921517820-10.gwf
-	       ...
-	       With this one gets
-	       CW_Injection-921517807-10.gwf
-	       CW_Injection-921517817-10.gwf
-	       ...
-	    */
-	    oFile->aligned  = FR_NO;
-	}
+        /* add data to frame */
+        if (XLALFrameAddREAL4TimeSeriesSimData(frame, framesim) != XLAL_SUCCESS) {
+            syserror(1, "!XLALFrameAddREAL4TimeSeriesSimData() failed");
+            exit(1);
+        }
 
-	/* write data to framefile */
-	if (FR_OK != FrameWrite(frame, oFile)) {
-	    syserror(1, "Error during frame write\n"
-		     "  Last errors are:\n%s", FrErrorGetHistory());
-	    exit(1);
-	}
+        /* write data to framefile */
+        char framefilename[256];
+        snprintf(framefilename, sizeof(framefilename), "%s-%d-%d.gwf", framename, framesim->epoch.gpsSeconds, secs_per_framefile);
+        if (XLALFrameWrite(frame, framefilename)) {
+            syserror(1, "Error during frame write");
+            exit(1);
+        }
 
-	/* free memory for frames and for simdata structures */
-	FrameFree(frame);
+        /* free memory for frames and for simdata structures */
+        XLALFrameFree(frame);
 
-	/* Do we keep a limited set of frames on disk? */
-	if (write_frames>1) {
-	    char listname[256];
-	    int watchtime = gpstime + secs_per_framefile*(counter/secs_per_framefile - write_frames + 1);
-	    sprintf(listname, "CW_Injection-%d-%d.gwf",  watchtime, secs_per_framefile);
-	    /* syserror(0, "Watching for file %s to disappear....\n", listname); */
-	    while (!stat(listname, &statbuf)) {
-		/* if enough files already in place, then sleep 0.1 seconds */
-		struct timespec rqtp;
-		rqtp.tv_sec = 0;
-		rqtp.tv_nsec = 100000000;
-		nanosleep(&rqtp, NULL);
-	    }
-	}
+        /* Do we keep a limited set of frames on disk? */
+        if (write_frames>1) {
+            char listname[256];
+            int watchtime = gpstime + secs_per_framefile*(framecounter/secs_per_framefile - write_frames + 1);
+            sprintf(listname, "%s-%d-%d.gwf", framename, watchtime, secs_per_framefile);
+            /* syserror(0, "Watching for file %s to disappear....\n", listname); */
+            struct stat statbuf;
+            while (!stat(listname, &statbuf)) {
+                /* if enough files already in place, then sleep 0.1 seconds */
+                struct timespec rqtp;
+                rqtp.tv_sec = 0;
+                rqtp.tv_nsec = 100000000;
+                nanosleep(&rqtp, NULL);
+            }
+        }
 
-	/* increment counter for the next second */
-	counter++;
+        /* increment counter for the next second */
+        framecounter++;
 #else
 	syserror(0, "ERROR: write_frames!=0, but binary was built without Frame support\n" );
         exit(1);
@@ -922,6 +904,10 @@ int main(int argc, char *argv[]){
       exit(1);
     }
   }
+#endif
+
+#ifdef HAVE_LIBLALFRAME
+  XLALDestroyREAL4TimeSeries(framesim);
 #endif
 
   /* and exit cleanly */

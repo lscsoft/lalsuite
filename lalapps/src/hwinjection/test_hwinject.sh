@@ -73,12 +73,12 @@ echo "----- $0: compare text output to reference result -----"
 echo
 
 # generate hardware injection frame output
-hwinj_cmd="${hwinj_base_cmd} -F 0 -S 5"
+hwinj_cmd="${hwinj_base_cmd} -F 0"
 echo "===== $0: run ${hwinj_cmd} ====="
 eval "${hwinj_cmd}" >/dev/null || true   # lalpulsar_hwinject may not exit nicely
 gwf_files=
-for n in `seq 395 5 410`; do
-    gwf_file="CW_Injection-1341748${n}-5.gwf"
+for n in `seq 395 1 400`; do
+    gwf_file="CW_Injection-1341748${n}-1.gwf"
     if test -f "${gwf_file}"; then
         gwf_files="${gwf_files} ${gwf_file}"
     fi
