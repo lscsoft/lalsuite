@@ -109,8 +109,8 @@ int XLALListAddREAL8Value(LALList *list, REAL8 value);
 int XLALListAddCOMPLEX8Value(LALList *list, COMPLEX8 value);
 int XLALListAddCOMPLEX16Value(LALList *list, COMPLEX16 value);
 
-char * XLALListAsStringAppend(char *s, LALList *list);
-void XLALListPrint(LALList *list, int fd);
+char * XLALListAsStringAppend(char *s, const LALList *list);
+void XLALListPrint(const LALList *list, int fd);
 
 
 #if 0
