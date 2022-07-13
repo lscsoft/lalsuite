@@ -29,6 +29,7 @@ TESTS_ENVIRONMENT = \
 	export LAL_TEST_SRCDIR; LAL_TEST_SRCDIR="$(abs_srcdir)"; \
 	export LAL_TEST_BUILDDIR; LAL_TEST_BUILDDIR="$(abs_builddir)"; \
 	export LAL_DATA_PATH; LAL_DATA_PATH="$(LAL_DATA_PATH)"; \
+	export PATH; PATH=".:$(LAL_BIN_PATH):$${PATH}"; \
 	export PYTHON; PYTHON="$(PYTHON)"; \
 	lalsuite_path="$(abs_top_builddir)/python"; \
 	test "x$(builddir)" = "x$(srcdir)" || lalsuite_path="$${lalsuite_path}:$(abs_top_srcdir)/python"; \
