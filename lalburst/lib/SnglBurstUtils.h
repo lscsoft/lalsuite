@@ -35,13 +35,6 @@ XLALSnglBurstTableLength(
 	SnglBurst *head
 );
 
-long
-XLALSnglBurstAssignIDs(
-	SnglBurst *head,
-	long process_id,
-	long event_id
-);
-
 SnglBurst **
 XLALSortSnglBurst(
 	SnglBurst **head,
@@ -52,14 +45,6 @@ int
 XLALCompareSnglBurstByPeakTimeAndSNR(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
-);
-
-long
-XLALSimBurstAssignIDs(
-	SimBurst *head,
-	long process_id,
-	long time_slide_id,
-	long event_id
 );
 
 #ifdef  __cplusplus

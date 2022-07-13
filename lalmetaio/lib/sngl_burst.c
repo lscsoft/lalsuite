@@ -296,3 +296,24 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 
 	return 0;
 }
+
+
+/**
+ * Assign event_id values to the entries in a SnglBurst linked list.  All
+ * SnglBurst rows in the list will be blamed on the given process_id, and
+ * assigned sequential event_ids starting with the given event_id.  The
+ * return value is the next event_id after the last one assigned to a row
+ * in the list.
+ */
+long XLALSnglBurstAssignIDs(
+	SnglBurst *head,
+	long process_id,
+	long event_id
+)
+{
+	for(; head; head = head->next) {
+		head->process_id = process_id;
+		head->event_id = event_id++;
+	}
+	return event_id;
+}

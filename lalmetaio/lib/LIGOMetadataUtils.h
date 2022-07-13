@@ -166,6 +166,21 @@ XLALSimInspiralAssignIDs (
     long simulation_id
     );
 
+long
+XLALSnglBurstAssignIDs(
+    SnglBurst *head,
+    long process_id,
+    long event_id
+    );
+
+long
+XLALSimBurstAssignIDs(
+    SimBurst *head,
+    long process_id,
+    long time_slide_id,
+    long event_id
+    );
+
 void
 XLALReturnIFO(
     char                *ifo,
