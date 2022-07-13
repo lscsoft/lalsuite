@@ -1,3 +1,8 @@
+if test "${CFITSIO_ENABLED}" = false; then
+    echo "Skipping test: requires CFITSIO"
+    exit 77
+fi
+
 # Perform an interpolating search without/with simulation, and check for consistent results
 
 for setup in short mid long; do

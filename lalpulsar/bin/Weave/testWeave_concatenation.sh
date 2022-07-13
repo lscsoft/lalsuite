@@ -1,3 +1,8 @@
+if test "${CFITSIO_ENABLED}" = false; then
+    echo "Skipping test: requires CFITSIO"
+    exit 77
+fi
+
 # Perform several searches, concatenate output files with lalpulsar_WeaveConcat, and check for consistent results
 
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE

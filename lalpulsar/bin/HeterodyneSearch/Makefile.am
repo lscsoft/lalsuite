@@ -109,16 +109,3 @@ test_helpers +=
 
 # Add any extra files required by tests (e.g. helper scripts) to this variable
 test_extra_files += make_frame_cache.py
-
-# These tests require LALFrame
-if !LALFRAME
-skip_tests += test_heterodyne.sh
-endif
-
-# These tests require LALInference
-if !LALINFERENCE
-skip_tests += test_frequency_evolution.sh
-skip_tests += test_flat_prior.py
-skip_tests += test_flat_evidence_default.py
-skip_tests += test_flat_evidence_walk.py
-endif

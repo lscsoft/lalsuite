@@ -11,6 +11,10 @@ import numpy as np
 import subprocess as sp
 import h5py
 
+if os.environ['LALINFERENCE_ENABLED'] == 'false':
+  print('Skipping test: requires LALInference')
+  sys.exit(77)
+
 # only run test on GitLab, unless LONGTESTS environment variable is defined
 if ('GITLAB_CI' not in os.environ) and ('LONGTESTS' not in os.environ):
   print('''

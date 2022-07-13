@@ -1,3 +1,8 @@
+if test "${CFITSIO_ENABLED}" = false; then
+    echo "Skipping test: requires CFITSIO"
+    exit 77
+fi
+
 # Perform an interpolating search with a random injection, and compare to injection generated with lalpulsar_Makefakedata_v5
 
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE

@@ -11,6 +11,10 @@ import subprocess as sp
 import scipy.stats as ss
 import h5py
 
+if os.environ['LALINFERENCE_ENABLED'] == 'false':
+  print('Skipping test: requires LALInference')
+  sys.exit(77)
+
 exit_code = 0
 
 execu = './lalpulsar_parameter_estimation_nested' # executable

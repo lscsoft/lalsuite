@@ -1,3 +1,8 @@
+if test "${LALFRAME_ENABLED}" = false; then
+    echo "Skipping test: requires LALFrame"
+    exit 77
+fi
+
 mfdv4_CODE="lalpulsar_Makefakedata_v4"
 mfdv5_CODE="lalpulsar_Makefakedata_v5"
 cmp_CODE="lalpulsar_compareSFTs"

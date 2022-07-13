@@ -1,3 +1,8 @@
+if test "${CFITSIO_ENABLED}" = false; then
+    echo "Skipping test: requires CFITSIO"
+    exit 77
+fi
+
 # Require at least one test that compares against reference results to pass/skip
 
 exitcode=1

@@ -1,3 +1,8 @@
+if test "${LALINFERENCE_ENABLED}" = false; then
+    echo "Skipping test: requires LALInference"
+    exit 77
+fi
+
 # generate frequency evolution of pulsar given by test.par
 
 grep . test.par

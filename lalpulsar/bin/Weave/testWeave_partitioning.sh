@@ -1,3 +1,8 @@
+if test "${CFITSIO_ENABLED}" = false; then
+    echo "Skipping test: requires CFITSIO"
+    exit 77
+fi
+
 # Perform an interpolating search without/with frequency/spindown partitions, and check for consistent results
 
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE

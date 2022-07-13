@@ -49,10 +49,9 @@ EXTRA_DIST += $(test_script_runner)
 test_script_compiler = $(top_srcdir)/gnuscripts/lalpulsar_bin_test_compiler
 EXTRA_DIST += $(test_script_compiler)
 
-skip_tests =
 TEST_EXTENSIONS = .sh .py
-SH_LOG_COMPILER = $(test_script_compiler) sh "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
-PY_LOG_COMPILER = $(test_script_compiler) py "$(skip_tests)" "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
+SH_LOG_COMPILER = $(test_script_compiler) sh "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
+PY_LOG_COMPILER = $(test_script_compiler) py "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
 
 gen-tested-programs-log:
 	@echo "# $(abs_builddir)/.tested_programs.log" > .tested_programs.log; \

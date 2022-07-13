@@ -1,3 +1,8 @@
+if test "${CFITSIO_ENABLED}" = false; then
+    echo "Skipping test: requires CFITSIO"
+    exit 77
+fi
+
 # Perform a fully-coherent search of a single segment, and compare F-statistics to reference results
 
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE

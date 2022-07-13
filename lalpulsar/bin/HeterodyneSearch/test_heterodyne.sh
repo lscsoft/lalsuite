@@ -1,3 +1,8 @@
+if test "${LALFRAME_ENABLED}" = false; then
+    echo "Skipping test: requires LALFrame"
+    exit 77
+fi
+
 CODENAME=lalpulsar_heterodyne
 
 FRAMEFILE=H-CW_Injection-875206560-120.gwf

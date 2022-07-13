@@ -1,3 +1,8 @@
+if test "${LALFRAME_ENABLED}" = false; then
+    echo "Skipping test: requires LALFrame"
+    exit 77
+fi
+
 ## common variables
 tstart=1257741529
 Tsft=1800

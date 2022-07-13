@@ -1,3 +1,8 @@
+if test "${CFITSIO_ENABLED}" = false; then
+    echo "Skipping test: requires CFITSIO"
+    exit 77
+fi
+
 ## create test commands
 echo "lalpulsar_fits_overview 'FITSFileIOTest.fits'"         >  test_lalpulsar_fits_overview.sh
 echo "lalpulsar_fits_overview 'FITSFileIOTest.fits[array1]'" >> test_lalpulsar_fits_overview.sh

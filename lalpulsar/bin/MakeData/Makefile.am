@@ -75,9 +75,3 @@ test_helpers += compareTS
 
 # Add any extra files required by tests (e.g. helper scripts) to this variable
 test_extra_files +=
-
-# These tests require LALFrame
-if !LALFRAME
-skip_tests += testMakeSFTs.sh
-skip_tests += testMakefakedata_v5.sh
-endif

@@ -1,3 +1,8 @@
+if test "${CFITSIO_ENABLED}" = false; then
+    echo "Skipping test: requires CFITSIO"
+    exit 77
+fi
+
 # Perform search with mean-2F histogram, and check for consistent results with toplist
 
 export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE

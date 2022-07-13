@@ -107,12 +107,5 @@ test_helpers +=
 # Add any extra files required by tests (e.g. helper scripts) to this variable
 test_extra_files +=
 
-# All tests require CFITSIO
-if !CFITSIO
-
-skip_tests += $(test_scripts)
-
-endif
-
 # testWeave_reference_results.sh requires output from tests that compare against reference results
 testWeave_reference_results.log: testWeave_interpolating.log testWeave_non_interpolating.log testWeave_single_segment.log

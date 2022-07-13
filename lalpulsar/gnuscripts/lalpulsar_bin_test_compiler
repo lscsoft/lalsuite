@@ -9,9 +9,6 @@ echo
 script_extn="$1"
 echo "script_extn=${script_extn}"
 shift
-skip_tests="$1"
-echo "skip_tests=${skip_tests}"
-shift
 test_extra_files="$1"
 echo "test_extra_files=${test_extra_files}"
 shift
@@ -72,14 +69,6 @@ case "${script_extn}" in
     *)
         echo "Test script '${script}' does not have a recognised extension"
         exit 1
-        ;;
-esac
-
-# Skip test if requested
-case " ${skip_tests} " in
-    *" ${script_name}.${script_extn} "*)
-        echo "Skipping test ${test}"
-        exit 77
         ;;
 esac
 
