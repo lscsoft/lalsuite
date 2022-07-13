@@ -329,7 +329,6 @@
 #include <lal/LALConstants.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/LALFrStream.h>
-#include <lal/FrameCalibration.h>
 #include <lal/Window.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/IIRFilter.h>
@@ -484,11 +483,8 @@ int main ( int argc, char *argv[] )
   /* frame input data */
   LALCache     *frInCache = NULL;
   LALCache     *frGlobCache = NULL;
-  LALCache     *calCache = NULL;
   LALFrStream     *frStream = NULL;
   FrChanIn      frChan;
-  const size_t  calGlobLen = FILENAME_MAX;
-  CHAR         *calGlobPattern;
 
   /* frame output data */
   struct FrFile *frOutFile = NULL;
@@ -528,7 +524,6 @@ int main ( int argc, char *argv[] )
   const REAL8 epsilon = 1.0e-8;
   UINT4 resampleChan = 0;
   REAL8 tsLength;
-  CalibrationUpdateParams calfacts;
   REAL8 dynRange = 0;
 
   /* TD follow-up variables */
@@ -1039,55 +1034,8 @@ int main ( int argc, char *argv[] )
   }
   else
   {
-    /* initialize the calfacts */
-    memset( &calfacts, 0, sizeof(CalibrationUpdateParams) );
-
-    if ( pointCal )
-    {
-      calfacts.duration.gpsSeconds = 1;
-      calfacts.duration.gpsNanoSeconds = 0;
-    }
-    else
-    {
-      calfacts.duration.gpsSeconds = gpsEndTime.gpsSeconds
-        - gpsStartTime.gpsSeconds;
-    }
-    calfacts.ifo = ifo;
-
-    /* create the lal calibration frame cache */
-    if ( globCalData )
-    {
-      calGlobPattern = (CHAR *) LALCalloc( calGlobLen, sizeof(CHAR) );
-      snprintf( calGlobPattern, calGlobLen, "*CAL*%s*.gwf", ifo );
-      if ( vrbflg ) fprintf( stdout, "globbing for %s calibration frame files "
-          "in current directory\n", calGlobPattern );
-    }
-    else
-    {
-      calGlobPattern = NULL;
-      if ( vrbflg ) fprintf( stdout,
-          "reading calibration data from cache: %s\n", calCacheName );
-    }
-
-    LAL_CALL( LALCreateCalibFrCache( &status, &calCache, calCacheName,
-          NULL, calGlobPattern ), &status );
-
-    if ( calGlobPattern ) LALFree( calGlobPattern );
-
-    /* generate the response function for the current time */
-    if ( vrbflg ) fprintf( stdout, "generating response at time %d sec %d ns\n"
-        "response parameters f0 = %e, deltaF = %e, length = %d\n",
-        resp.epoch.gpsSeconds, resp.epoch.gpsNanoSeconds,
-        resp.f0, resp.deltaF, resp.data->length );
-    LAL_CALL( LALExtractFrameResponse( &status, &resp, calCache,
-          &calfacts ), &status );
-
-    /* descroy the frame cache for the calibrated data */
-    XLALDestroyCache( calCache );
-
-    if ( vrbflg ) fprintf( stdout, "Values of calibration coefficients \n"
-        "alpha = %f, alpha_beta = %f\n",
-        crealf(calfacts.alpha), crealf(calfacts.alphabeta) );
+    fprintf( stderr, "uncalibrated data no longer supported" );
+    exit( 1 );
   }
 
   /* write the calibration data to a file */
