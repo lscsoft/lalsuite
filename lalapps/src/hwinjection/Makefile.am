@@ -28,3 +28,11 @@ lalpulsar_hwinject_SOURCES = \
 	$(END_OF_LIST)
 
 endif
+
+# Add shell test scripts to this variable
+test_scripts += test_hwinject.sh
+
+# These tests require LALFrame
+if !LALFRAME
+#skip_tests += test_hwinject.sh
+endif
