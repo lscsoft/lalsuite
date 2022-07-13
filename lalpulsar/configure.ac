@@ -224,9 +224,13 @@ LALSUITE_ENABLE_MODULE([PSS])
 
 # check for GDS system, for pulsar hardware injections
 if test "${gds}" = "true"; then
-  AC_CHECK_LIB([awg],[awgGetChannelNames],,[AC_MSG_ERROR([could not find the GDS library])])
-  AC_CHECK_HEADERS([gdstype.h],,[AC_MSG_ERROR([could not find the GDS library])])
-  AC_SUBST([GDS_LIBS],["-lawg -ltestpoint"])
+  AC_CHECK_HEADERS([gds/dtt/SIStr.h],,[AC_MSG_ERROR([could not find the GDS SIStr header])])
+  AC_CHECK_LIB([SIStr],[SIStrAppInfo],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
+  AC_CHECK_LIB([SIStr],[SIStrErrorMsg],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
+  AC_CHECK_LIB([SIStr],[SIStrOpen],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
+  AC_CHECK_LIB([SIStr],[SIStrAppend],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
+  AC_CHECK_LIB([SIStr],[SIStrClose],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
+  AC_SUBST([GDS_LIBS],["-lSIStr"])
 fi
 LALSUITE_ENABLE_MODULE([GDS])
 

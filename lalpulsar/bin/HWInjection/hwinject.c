@@ -61,7 +61,7 @@
 #include <sys/stat.h>
 
 #ifdef ONLINE
-#include "SIStr.h"
+#include <gds/dtt/SIStr.h>
 #endif
 
 #include <lal/XLALError.h>

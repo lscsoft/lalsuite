@@ -9,8 +9,6 @@ if GDS
 bin_PROGRAMS = lalpulsar_hwinject
 
 lalpulsar_hwinject_SOURCES = \
-	SIStr.c \
-	SIStr.h \
 	hwinject.c \
 	$(END_OF_LIST)
 
