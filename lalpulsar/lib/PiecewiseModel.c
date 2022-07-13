@@ -809,6 +809,88 @@ static double ktauconversion(
 }
 
 ///
+/// Returns the upper or lower bound for the dimension 'dim' given values for all previous dimensions, point_up_to_dim, as well as the relevant parameter space information
+///
+double XLALPiecewiseParameterBounds(
+  const size_t      dim,              /// The dimension of the parameter we wish to calculate the bounds for
+  const gsl_vector* point_up_to_dim,  /// The point up the given dimension
+  const int         upperlower,       /// +1 to return upper bound, -1 to return lower bound
+  const double      fmin,             /// Global maximum frequency
+  const double      fmax,             /// Global minimum frequency
+  const double      nmin,             /// Minimum braking index
+  const double      nmax,             /// Maximum braking index
+  const double      ntol,             /// Tolerance (percentage per second) between braking indices on adjacent knots
+  const double      kmin,             /// Minimum k value
+  const double      kmax,             /// Maximum k value
+  const double      ktol,             /// Tolerance (percentage per second) between k values on adjacent knots
+  const double      seglength         /// The length of the segment. The time between the previous knot and the knot that the parameter 'dim' resides on
+  )
+{ 
+  
+  double bound;
+  size_t zero = 0;
+  gsl_matrix *cache = gsl_matrix_alloc(zero, zero);
+  
+  
+  if (dim == 0){
+    if (upperlower == 1){
+      return fmax;
+    }
+    else {
+      return fmin;
+    }
+  }
+  
+  if (dim < 3){
+    FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot );
+    
+    info_first_knot.fmin = fmin;
+    info_first_knot.fmax = fmax;
+    info_first_knot.nmin = nmin;
+    info_first_knot.nmax = nmax;
+    info_first_knot.kmin = kmin;
+    info_first_knot.kmax = kmax;
+    
+    info_first_knot.minmax = upperlower;
+    
+    info_first_knot.reset = 1;
+    
+    
+    bound = FirstKnotDerivBound(&info_first_knot, dim, cache, point_up_to_dim);
+  }
+  else {
+    PiecewiseBoundInfo XLAL_INIT_DECL( info_knot );
+    
+    info_knot.fmin = fmin;
+    info_knot.fmax = fmax;
+    info_knot.nmin = nmin;
+    info_knot.nmax = nmax;
+    info_knot.ntol = ntol;
+    info_knot.kmin = kmin;
+    info_knot.kmax = kmax;
+    info_knot.ktol = ktol;
+    info_knot.segmentlength = seglength;
+    
+    info_knot.upperlower = upperlower;
+    
+    info_knot.reset = 1;
+    
+    if (dim % 3 == 0){
+      bound = F0Bound(&info_knot, dim, cache, point_up_to_dim);
+    } else if (dim % 3 == 1){
+      bound = F1Bound(&info_knot, dim, cache, point_up_to_dim);
+    } else if (dim % 3 == 2){
+      bound = F2Bound(&info_knot, dim, cache, point_up_to_dim);
+    }
+  }
+  
+  gsl_matrix_free(cache);
+  return bound;
+}
+
+
+
+///
 /// Sets the bounds for the piecewise model
 ///
 int XLALSetLatticeTilingPiecewiseBounds(
@@ -826,7 +908,9 @@ int XLALSetLatticeTilingPiecewiseBounds(
   const double ktol,       ///< Tolerance (percentage per second) between k values on adjacent knots
   const gsl_vector* knots, ///< List of knots
   const int finalknot,      ///< The number of the final knot
-  const int flagnum       ///< Use this number to specify the flags we want to use
+  const gsl_vector* bboxpad, ///< Vector containing fractional bounding box padding
+  const gsl_vector_int* intpad, ///< Vector containing number of integer points to use for padding
+  const int maxdim
   )
 {
   // Converting tau values to k values
@@ -844,9 +928,6 @@ int XLALSetLatticeTilingPiecewiseBounds(
   XLAL_CHECK(nmax0 <= nmax, XLAL_EINVAL, "nmax0 greater than nmax: [%f, %f]", nmax0, nmax);
   XLAL_CHECK(taumin < taumax, XLAL_EINVAL, "Bad tau range: [%f, %f]", taumin, taumax);
   XLAL_CHECK(kmin < kmax, XLAL_EINVAL, "Bad k range: [%f, %f]", kmin, kmax);
-  
-  ///< Setting the first knot bounds
-  XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
   
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_lower );
   FirstKnotBoundInfo XLAL_INIT_DECL( info_first_knot_upper );
@@ -869,19 +950,57 @@ int XLALSetLatticeTilingPiecewiseBounds(
   
   //LatticeTilingPaddingFlags flagoptions[6] = {LATTICE_TILING_PAD_NONE, LATTICE_TILING_PAD_LHBBX, LATTICE_TILING_PAD_UHBBX, LATTICE_TILING_PAD_LINTP, LATTICE_TILING_PAD_UINTP, LATTICE_TILING_PAD_MAX};
   
-  LatticeTilingPaddingFlags flags = flagnum;
+  //LatticeTilingPaddingFlags flags = flagnum;
   
   ///< We only need to use the resetting methods if flags != LATTICE_TILING_PAD_NONE
-  if (flags == LATTICE_TILING_PAD_NONE){
-    info_first_knot_lower.reset = info_first_knot_upper.reset = -1;
+  //if (flags == LATTICE_TILING_PAD_NONE){
+  //  info_first_knot_lower.reset = info_first_knot_upper.reset = -1;
+  ///}
+  
+  int current_dim = 0;
+  ///< Setting the first knot bounds
+  XLALSetLatticeTilingConstantBound(tiling, 0, fmin, fmax);
+  XLALSetLatticeTilingPadding(tiling, 0, gsl_vector_get(bboxpad, 0), gsl_vector_get(bboxpad, 0), gsl_vector_int_get(intpad, 0), gsl_vector_int_get(intpad, 0));
+  
+  if (current_dim == maxdim){
+    return XLAL_SUCCESS;
+  }
+  else {
+    current_dim += 1;
   }
   
   XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 1, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_lower, &info_first_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
-  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 2, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_upper, &info_first_knot_lower) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLALSetLatticeTilingPadding(tiling, 1, gsl_vector_get(bboxpad, 1), gsl_vector_get(bboxpad, 1), gsl_vector_int_get(intpad, 1), gsl_vector_int_get(intpad, 1));
   
+  if (current_dim == maxdim){
+    return XLAL_SUCCESS;
+  }
+  else {
+    current_dim += 1;
+  }
+  
+  XLAL_CHECK(XLALSetLatticeTilingBound(tiling, 2, FirstKnotDerivBound, sizeof( info_first_knot_lower ), &info_first_knot_upper, &info_first_knot_lower) == XLAL_SUCCESS, XLAL_EFAILED);
+  XLALSetLatticeTilingPadding(tiling, 2, gsl_vector_get(bboxpad, 2), gsl_vector_get(bboxpad, 2), gsl_vector_int_get(intpad, 2), gsl_vector_int_get(intpad, 2));
+  
+  if (current_dim == maxdim){
+    return XLAL_SUCCESS;
+  }
+  else {
+    current_dim += 1;
+  }
+  
+  /*
   XLALSetLatticeTilingPaddingFlags(tiling, 0, flags);
   XLALSetLatticeTilingPaddingFlags(tiling, 1, flags);
   XLALSetLatticeTilingPaddingFlags(tiling, 2, flags);
+  */
+  
+  /*
+  for (int dim = 0; dim < 3; ++dim){
+    XLALSetLatticeTilingPadding(tiling, dim, gsl_vector_get(bboxpad, dim), gsl_vector_get(bboxpad, dim), gsl_vector_int_get(intpad, dim), gsl_vector_int_get(intpad, dim));
+  }
+  */
+  
   
   ///< Setting the bounds for all following knots
   
@@ -907,26 +1026,62 @@ int XLALSetLatticeTilingPiecewiseBounds(
     info_knot_lower.reset = info_knot_upper.reset = 1;
     
     ///< We only need to use the resetting methods if flags != LATTICE_TILING_PAD_NONE
-    if (flags == LATTICE_TILING_PAD_NONE){
-      info_knot_lower.reset = info_knot_upper.reset = -1;
-    }
+    //if (flags == LATTICE_TILING_PAD_NONE){
+    //  info_knot_lower.reset = info_knot_upper.reset = -1;
+    ///}
     
     int dimindex = 3 * knot;
     
     XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex,     F0Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
-    XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 1, F1Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
-    XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 2, F2Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+    XLALSetLatticeTilingPadding(tiling, dimindex, gsl_vector_get(bboxpad, dimindex), gsl_vector_get(bboxpad, dimindex), gsl_vector_int_get(intpad, dimindex), gsl_vector_int_get(intpad, dimindex));
+  
+    if (current_dim == maxdim){
+      return XLAL_SUCCESS;
+    }
+    else {
+      current_dim += 1;
+    }
     
+    
+    XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 1, F1Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+    XLALSetLatticeTilingPadding(tiling, dimindex + 1, gsl_vector_get(bboxpad, dimindex + 1), gsl_vector_get(bboxpad, dimindex), gsl_vector_int_get(intpad, dimindex + 1), gsl_vector_int_get(intpad, dimindex + 1));
+  
+    if (current_dim == maxdim){
+      return XLAL_SUCCESS;
+    }
+    else {
+      current_dim += 1;
+    }
+    
+    
+    XLAL_CHECK(XLALSetLatticeTilingBound(tiling, dimindex + 2, F2Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper) == XLAL_SUCCESS, XLAL_EFAILED);
+    XLALSetLatticeTilingPadding(tiling, dimindex + 2, gsl_vector_get(bboxpad, dimindex + 2), gsl_vector_get(bboxpad, dimindex + 2), gsl_vector_int_get(intpad, dimindex + 2), gsl_vector_int_get(intpad, dimindex + 2));
+  
+    if (current_dim == maxdim){
+      return XLAL_SUCCESS;
+    }
+    else {
+      current_dim += 1;
+    }
+    
+    /*
+    for (int dim = dimindex; dim < dimindex + 3; ++dim){
+      XLALSetLatticeTilingPadding(tiling, dim, gsl_vector_get(bboxpad, dim), gsl_vector_get(bboxpad, dim), gsl_vector_int_get(intpad, dim), gsl_vector_int_get(intpad, dim));
+    }
+    */
+    
+    /*
     XLALSetLatticeTilingPaddingFlags(tiling, dimindex,     flags);
     XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 1, flags);
     XLALSetLatticeTilingPaddingFlags(tiling, dimindex + 2, flags);
+    */
   }
   
   
   return XLAL_SUCCESS;
 }
 
-
+/*
 /// Methods below are for when S = 2
 
 
@@ -1453,4 +1608,5 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
   
   return XLAL_SUCCESS;
 }
+*/
 
