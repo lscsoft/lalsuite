@@ -455,7 +455,7 @@ int main(int argc, char *argv[]){
   int i,j;
 #ifdef ONLINE
   char *cwd;
-  int iarg, status;
+  int status;
   SIStream sis;
   char info[MAXLINE];
   memset(&sis, '\0', sizeof(SIStream));
