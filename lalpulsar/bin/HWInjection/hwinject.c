@@ -21,24 +21,294 @@
  * \file
  * \ingroup lalpulsar_bin_Tools
  * \author Bruce Allen, Peter Shawhan
- * \brief multipulsar injection routine
+ * \brief Multipulsar injection routine
+ *
+ * How it works
+ * ============
+ *
+ * (adapted from \c README.s3inject by Bruce Allen)
+ *
+ * There are two executables: \c lalpulsar_Makefakedata_v4 and \c lalpulsar_hwinject.
+ *
+ * \c lalpulsar_Makefakedata_v4 generates a continuous stream of data for a single
+ * pulsar, using a file called \c Pulsar.N to get the pulsar's parameters,
+ * and command line arguments to get the starting GPS time and detector
+ * name.  It can write either to files or to stdout.
+ *
+ * \c lalpulsar_hwinject starts up M copies of \c lalpulsar_Makefakedata_v4, each with a
+ * different set of parameters, gathers their output, and adds it
+ * together, writing it to stdout.
+ *
+ * Both of these executables support a \c -h command-line argument that
+ * will give you a command-line argument summary description.  Try it
+ * before reading further:
+ * \code
+ * lalpulsar_Makefakedata_v4 -h
+ * lalpulsar_hwinject -h
+ * \endcode
+ *
+ * In this document we assume you will inject 5 pulsar signals total.
+ *
+ * Create pulsar parameter files
+ * -----------------------------
+ *
+ * Create a files called \c Pulsar.0 to \c Pulsar.4 containing the parameters
+ * of the pulsars that you wish the inject.  These files should be
+ * "almost" identical at the different sites.  They only differ because
+ * the Actuation function differs between the sites.
+ *
+ * I have included five files - but note that the parameters to be used
+ * "for real" still need to be determined.  People who should help
+ * creating these parameter files include: Riles, S. Anderson,
+ * G. Mendell, X. Siemens, G. Woan and M. Landry.  These files, once
+ * created, should be made read-only, and should only be modified if the
+ * instrument Actuation function changes.  Be sure to save a copy of them
+ * someplace safe.
+ *
+ * Note: Each pulsar's parameters are defined at a particular fiducial
+ * Solar System Barycenter (SSB) time.  In this document, I call this
+ * time \f$t_S\f$.  The actual choice of this time is not important,
+ * but it should be fixed and invariant.  The team defining pulsar
+ * parameters may wish to change the value to something that they find
+ * convenient.
+ *
+ * At the end of this document is a more detailed description of the
+ * \c Pulsar.N parameter files.
+ *
+ * Create command-line argument files
+ * ----------------------------------
+ *
+ * Create files called \c in.0 to \c in.4.  Each file should contain one line.
+ * This is used to construct the command-line arguments for
+ * \c lalpulsar_Makefakedata_v4.
+ *
+ * The file \c in.0 should look like this:
+ * \code
+ * lalpulsar_Makefakedata_v4 @Pulsar.0 -I LHO -S 751680013 -b
+ * \endcode
+ *
+ * and the other \c in.N files should be identical except that they should
+ * contain \c Pulsar.N.  The \c in.N files at LLO should contain \c LLO rather
+ * than \c LHO.
+ *
+ * Verify setup
+ * ------------
+ *
+ * To test your setup, do the following:
+ * \code
+ * lalpulsar_hwinject -n 5 -G 751680013 -s
+ * \endcode
+ *
+ * The \c -s option is a show option.  It makes \c lalpulsar_hwinject read
+ * the command line files \c in.N and show you the \b exact commands it would
+ * actually run (preceeded by an integer count of the form <tt>[XX]</tt>).  The
+ * \c -G command line argument is the GPS time at which to start producing
+ * data.
+ *
+ * Now let's make some output (but just from one pulsar):
+ * \code
+ * lalpulsar_hwinject -n 1 -G 751680013 -T -X 2> infolog  | head -20
+ * \endcode
+ *
+ * The <tt>2> infolog</tt> redirects stderr into an information log. Have a look.
+ *
+ * The \c -T option makes \c lalpulsar_hwinject output in human readable text
+ * rather than binary
+ *
+ * The \c -X option makes \c lalpulsar_hwinject output an X axis as well.
+ *
+ * Notice that the first number output by \c lalpulsar_hwinject is \c always
+ * 1234.5, which is a key to use in checking endian ordering and general
+ * sanity.
+ *
+ * Now let's go "whole hog":
+ * \code
+ * lalpulsar_hwinject -n 5 -G 751680013 2> infolog  | od -w4 -f | more
+ * \endcode
+ *
+ * This shows you the raw binary output in single column format
+ *
+ * CPU and resource use
+ * --------------------
+ *
+ * On my 1 GHz PIII laptop, this job:
+ * \code
+ * lalpulsar_hwinject -n 5 -G 751680013 2> infolog  > /dev/null
+ * \endcode
+ *
+ * runs at five time real time speed, has a starup latency of around 1
+ * second, and uses 11 MB of memory per pulsar (55 MB total).
+ *
+ * Defining Pulsar.* files
+ * -----------------------
+ *
+ * Here is a typical file:
+ * \code
+ * refTime          = 751680013            ## pulsar reference time in SSB frame
+ * aPlus            = 4.996981857609109e-26        ## plus-polarization signal amplitude
+ * aCross           = 4.868177666869495e-26        ## cross-polarization signal amplitude
+ * psi              = 0.770087086          ## polarization angle psi (radians)
+ * phi0             = 2.66                 ## phase at reference time
+ * Freq             = 265.5771052          ## GW frequency at reference time
+ * Delta            = -0.981180225         ## declination (radians)
+ * Alpha            = 1.248816734          ## right ascension (radians)
+ * f1dot            = -4.15E-12            ## 1st frequency derivative
+ * f2dot            = 0.0                  ## 2nd frequency derivative
+ * f3dot            = 0.0                  ## 3rd frequency derivative
+ * \endcode
+ *
+ * This structure contains gravitational wave source position (in
+ * Equatorial coordinates), and orientation angle.
+ * Equatorial coordinates are the standard sky-fixed coordinate
+ * system. The z-axis is defined as for geographic coordinates, above;
+ * the plane orthogonal to this passing through the Earth's centre is
+ * called the equator. The x-axis is defined to be the direction, as
+ * viewed from the centre of the Earth, where the Sun appears to cross
+ * the equator moving north in spring. This is called the vernal equinox,
+ * and is shown in Fig. 16.6. In this coordinate system, the latitude
+ * coordinate is called the declination \f$\delta\f$ and the longitude
+ * coordinate is called the right ascension \f$\alpha\f$.
+ * (See also \ref SkyCoordinates_h.)
+ *
+ * \c aPlus and \c aCross set the amplitude of the two polarizations.  This is
+ * where you can insert an amplitude calibration factor.
+ *
+ * The only other value to note is \c phi0.  This is where you can insert a
+ * phase calibration offset, if needed.  Note: \c phi0 is \b not scaled by a
+ * factor of two.  In other words, if you set <tt>phi=PI</tt>, you'll find the
+ * output inverted.  If you set <tt>phi=PI/2</tt>, you'll see the output phase
+ * retarted.  In other words, the peak of a particular cycle occurs one
+ * quarter of a cycle \b earlier.
+ *
+ * To see this clearly, just do something like:
+ * \code
+ * lalpulsar_hwinject -n 1 -G 751680013 -T | head -100 > junk1
+ * \endcode
+ * Then change the value of \c phi0 in \c Pulsar.0, and do it again:
+ * \code
+ * lalpulsar_hwinject -n 1 -G 751680013 -T | head -100 > junk2
+ * \endcode
+ * Comparing \c junk1 and \c junk2 should make the sign convention of \c phi0 very
+ * clear.
+ *
+ * Calibration lines
+ * -----------------
+ *
+ * The \c lalpulsar_hwinject executable can inject up to three calibration
+ * lines.  Here they are denoted by <tt>L==low</tt>, <tt>M==medium</tt> and
+ * <tt>H==high</tt> to indicate the frequency.  They are defined by:
+ * \code
+ *   DARM = A_L sin(2 pi f_L (GPS-GPS_0)) +
+ *          A_M sin(2 pi f_M (GPS-GPS_0)) +
+ *          A_H sin(2 pi f_H (GPS-GPS_0))
+ * \endcode
+ * where <tt>GPS_0 = 751680013</tt>.  In the code, the frequencies are hardwired to:
+ * \code
+ *   f_L = 52.296875 = 52+1/4+1/32+1/64 Hz
+ *   f_M = 166.6875  = 166+1/2+1/8+1/16 Hz
+ *   f_H = 927.6875  = 927+1/2+1/8+1/16 Hz
+ * \endcode
+ * These can be changed, but (1) MUST be exactly represented as IEEE754
+ * floats (not doubles) and (2) MUST be positive.
+ *
+ * The amplitudes of the injected lines are defined by three arguments (\c -L, \c -M and \c -H) to
+ * \c lalpulsar_hwinject which set the amplitudes of the three lines.  The arguments are, for example:
+ * \code
+ * lalpulsar_hwinject -n 0 -T  -G 12345678 -L 17.76 | more
+ * \endcode
+ * will inject a calibration line at low frequency with an amplitude of
+ * 17.76.  You can include any combination of \c -L, \c -M and \c -H.  If one of
+ * these arguments is not present, then its assumed amplitude is zero.
+ *
+ * You can inject five pulsars plus three calibration lines with:
+ * \code
+ * lalpulsar_hwinject -n 5 -L 0.003 -M 0.0006 -H 0.8 -G 751680013 -T | more
+ * \endcode
+ *
+ * Note: a good check that the calibration line injection code works
+ * correctly is to compare the output with GPS times offset by integer
+ * multiples of 64 seconds.  Since the smallest fractional part of the
+ * frequencies above is 1/64 Hz, the calibration signal should repeat
+ * exactly every 64 seconds.
+ *
+ * The \c -p option to \c lalpulsar_hwinject prints out the built-in
+ * calibration line frequencies.
+ *
+ * Comments
+ * --------
+ *
+ * I've tried to make \c lalpulsar_hwinject fairly robust.  In particular,
+ * it catches \c SIGCHLD and if a child has been terminated (rather than
+ * just being stopped) it tries to say why.  System related errors print
+ * errno and it's interpretation.  Most error messages should come with a
+ * PID to help figure out which process is going bad.
+ *
+ * Note that under Solaris, the pid returned with these error messages
+ * appears to be the PID of the shell (started by popen) under which the
+ * child was started.  This is usually one less than the PID of the
+ * associated \c lalpulsar_Makefakedata_v4 process.
+ *
+ * If you send SIGUSR1 to \c lalpulsar_hwinject:
+ * \code
+ * kill -SIGUSR1 PID
+ * \endcode
+ * then it will report to stderr the amount of simulated data that it has
+ * made (days/hours/minutes/seconds). Be careful \b not to send the signal
+ * to the entire process group, since the children don't catch this
+ * signal and will respond to it by terminating!
+ *
+ * The \c lalpulsar_hwinject program can be used to inject signals from sources \b other
+ * than pulsars.  To use it in this way, your code must do the following:
+ *
+ *  1. write data to stdout, errors to stderr
+ *
+ *  2. take a command line argument which is GPS seconds and start its
+ *     output at that time: <tt>-G secs</tt>
+ *
+ *  3. be able to run faster than real time under Solaris.  It should
+ *     produce data at a sample rate of 16384 Hz in blocks of an integer
+ *     number of seconds (called S below).
+ *
+ *  4. have the following internal structure.  Here \c S is the number of
+ *     seconds, for example, 30, that your code uses internally to compute
+ *     the next block of output.
+ *     \code
+ *     main() {
+ *
+ *         int length=S*16384;
+ *
+ *         float magic=1234.5;
+ *         fwrite(&magic,  sizeof(float), 1, stdout);
+ *
+ *         while (1) {
+ *
+ *             // compute next output data, may be time-consuming ...
+ *
+ *             fwrite(&data, sizeof(float), length, stdout);
+ *
+ *             fflush(stdout);
+ *         }
+ *     }
+ *     \endcode
+ *     The <tt>fflush(stdout)</tt> is \b very important.  It ensures that your program
+ *     will have time to compute its next block of data \b before it is needed
+ *     by \c lalpulsar_hwinject.
+ *  5. create an \c in.N file for your executable.  See description above.
+ *
+ * Changelog
+ * =========
+ *
+ * - Multipulsar injection routine, written for E10/S3 by Bruce Allen, 10/2003.
+ * - Calls to Signal Injection Library added by Peter Shawhan.
+ * - 2005/02: Duncan Brown renamed variable to avoid Condor conflict.
+ * - 2005/02: Reinhard Prix removed the actuation scaling options.
+ * - 28 May 2009: renamed this code from 's3inject' to 'psinject' in lalsuite-GIT
+ * - 19 March - 10 August: Bruce Allen, added ability to output FRAME format
+ *   files for VIRGO real-time hardware injections.
+ * - 2022/07: Karl Wette added test script, ported FRAME writing to LALFrame,
+ *   add '--fmin' and '--Band' options to command line, moved code to LALPulsar,
+ *   renamed lalpulsar_hwinject, RPM packaging
  */
-
-/*
-   multipulsar injection routine, written for E10/S3 by Bruce Allen,
-   10/2003.  Calls to Signal Injection Library added by Peter
-   Shawhan.
-
-   2005/02 - Duncan Brown renamed variable to avoid Condor conflict
-
-   2005/02 - Reinhard Prix removed the actuation scaling options
-
-   28 May 2009 - renamed this code from 's3inject' to 'psinject' in lalsuite-GIT
-
-   19 March - 10 August: Bruce Allen, added ability to output FRAME format files
-              for VIRGO real-time hardware injections.   Code version XXX reviewed
-              by YYY.
-*/
 
 #define _GNU_SOURCE   /* for SA_RESTART */
 
