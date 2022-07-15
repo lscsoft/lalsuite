@@ -110,6 +110,7 @@ AC_DEFUN([lalsuite_config_subdir],[
       export uppercase[]_LIBS uppercase[]_CFLAGS uppercase[]_HTMLDIR
 
       # export precious environment paths
+      uppercase[]_BIN_PATH="${lalsuite_abs_top_builddir}/lowercase/bin"
       uppercase[]_DATA_PATH="${lalsuite_abs_top_srcdir}/lowercase/lib:${lalsuite_abs_top_srcdir}/lowercase/test"
       uppercase[]_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lowercase/octave"
       uppercase[]_PYTHON_PATH="${lalsuite_abs_top_builddir}/lowercase/python"
@@ -120,7 +121,7 @@ AC_DEFUN([lalsuite_config_subdir],[
           m4_popdef([dep_uppercase])
         ])
       ])
-      export uppercase[]_DATA_PATH uppercase[]_OCTAVE_PATH uppercase[]_PYTHON_PATH
+      export uppercase[]_BIN_PATH uppercase[]_DATA_PATH uppercase[]_OCTAVE_PATH uppercase[]_PYTHON_PATH
 
     ])
 
@@ -145,12 +146,13 @@ AC_DEFUN([lalsuite_config_subdir],[
 lalsuite_config_subdir([LAL],[])
 LALSUPPORT_LIBS="${lalsuite_abs_top_builddir}/lal/lib/support/liblalsupport.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
+LALSUPPORT_BIN_PATH="${LAL_BIN_PATH}"
 LALSUPPORT_DATA_PATH="${LAL_DATA_PATH}"
 LALSUPPORT_OCTAVE_PATH="${LAL_OCTAVE_PATH}"
 LALSUPPORT_PYTHON_PATH="${LAL_PYTHON_PATH}"
 LALSUPPORT_HTMLDIR="${htmldir}/../lal"
 export LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALSUPPORT_HTMLDIR
-export LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_PATH LALSUPPORT_PYTHON_PATH
+export LALSUPPORT_BIN_PATH LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_PATH LALSUPPORT_PYTHON_PATH
 
 # configure optional packages
 # - 2nd argument lists library dependencies

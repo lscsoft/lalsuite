@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 162
+# serial 164
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -15,6 +15,7 @@ m4_define([uvar_orig_prefix],[lalsuite_uvar_])
 m4_define([uvar_prefix],uvar_orig_prefix)
 
 AC_DEFUN([LALSUITE_ARG_VAR],[
+  AC_ARG_VAR(LAL_BIN_PATH,[Location of LAL executables])
   AC_ARG_VAR(LAL_DATA_PATH,[Location of LAL data files])
   AC_ARG_VAR(LAL_OCTAVE_PATH,[Location of LAL octave files])
   AC_ARG_VAR(LAL_PYTHON_PATH,[Location of LAL python files])
@@ -325,6 +326,15 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   # end $0
 ])
 
+AC_DEFUN([LALSUITE_ADD_TESTS_ENV_CONFIG_VAR],[
+  AC_SUBST(TESTS_ENV_CONFIG_VARS)
+  m4_if($2,[true],[
+    TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=true;"
+  ],[
+    TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=false;"
+  ])
+])
+
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # $0: require a C++ compiler
   lalsuite_require_cxx=true
@@ -474,8 +484,10 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   AM_CONDITIONAL([HAVE_PYTHON],[test "x${python}" != xfalse])
   AM_COND_IF([HAVE_PYTHON],[
     PYTHON_ENABLE_VAL=ENABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_PYTHON],[true])
   ],[
     PYTHON_ENABLE_VAL=DISABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_PYTHON],[false])
   ])
   # end $0
 ])
@@ -539,8 +551,10 @@ AC_DEFUN([LALSUITE_ENABLE_MODULE],[
   AM_CONDITIONAL(uppercase,[test "x${lowercase}" = xtrue])
   AS_IF([test "${lowercase}" = "true"],[
     uppercase[]_ENABLE_VAL=ENABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR(uppercase[]_ENABLED,[true])
   ],[
     uppercase[]_ENABLE_VAL=DISABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR(uppercase[]_ENABLED,[false])
   ])
   _AS_ECHO_LOG([module $1 is ${]uppercase[_ENABLE_VAL}])
   m4_popdef([lowercase])
@@ -564,14 +578,16 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
   AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_LIBS])
 
-  # prepend to CFLAGS, CPPFLAGS, LDFLAGS, LIBS, LAL_DATA_PATH, LAL_OCTAVE_PATH, LAL_PYTHON_PATH, LAL_HTMLDIR
+  # prepend to CFLAGS, CPPFLAGS, LDFLAGS, LIBS, LAL_BIN_PATH, LAL_DATA_PATH, LAL_OCTAVE_PATH, LAL_PYTHON_PATH, LAL_HTMLDIR
   PKG_CHECK_MODULES(uppercase, [lowercase >= $2], [lowercase="true"], [lowercase="false"])
+  PKG_CHECK_VAR(uppercase[]_BIN_PATH, [lowercase >= $2], uppercase[]_BIN_PATH,,)
   PKG_CHECK_VAR(uppercase[]_DATA_PATH, [lowercase >= $2], uppercase[]_DATA_PATH,,)
   PKG_CHECK_VAR(uppercase[]_OCTAVE_PATH, [lowercase >= $2], uppercase[]_OCTAVE_PATH,,)
   PKG_CHECK_VAR(uppercase[]_PYTHON_PATH, [lowercase >= $2], uppercase[]_PYTHON_PATH,,)
   PKG_CHECK_VAR(uppercase[]_HTMLDIR, [lowercase >= $2], htmldir,,)
   if test "$lowercase" = "true"; then
     LALSUITE_ADD_FLAGS([C],$[]uppercase[]_CFLAGS,$[]uppercase[]_LIBS)
+    LALSUITE_ADD_PATH(LAL_BIN_PATH,"$[]uppercase[]_BIN_PATH")
     LALSUITE_ADD_PATH(LAL_DATA_PATH,"$[]uppercase[]_DATA_PATH")
     LALSUITE_ADD_PATH(LAL_OCTAVE_PATH,"$[]uppercase[]_OCTAVE_PATH")
     LALSUITE_ADD_PATH(LAL_PYTHON_PATH,"$[]uppercase[]_PYTHON_PATH")
@@ -1241,6 +1257,9 @@ double volatile d = round(c);
       # add to list of supported instruction sets
       simd_supported="${simd_supported} iset"
 
+      LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_]symbol[_COMPILER],[true])
+    ],[
+      LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_]symbol[_COMPILER],[false])
     ])
 
     m4_popdef([option])
