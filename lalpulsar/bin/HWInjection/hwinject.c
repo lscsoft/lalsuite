@@ -331,7 +331,11 @@
 #include <sys/stat.h>
 
 #ifdef ONLINE
+#ifdef HAVE_GDS_DTT_SISTR_H
 #include <gds/dtt/SIStr.h>
+#else
+#error SIStr header is not available
+#endif
 #endif
 
 #include <lal/XLALError.h>

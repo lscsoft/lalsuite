@@ -110,8 +110,8 @@ LALSUITE_ENABLE_CFITSIO
 # enable pss support
 LALPULSAR_ENABLE_PSS
 
-# enable gds support
-LALPULSAR_ENABLE_GDS
+# enable SIStr support
+LALPULSAR_ENABLE_SISTR
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
@@ -222,17 +222,17 @@ if test "${pss}" = "true"; then
 fi
 LALSUITE_ENABLE_MODULE([PSS])
 
-# check for GDS system, for pulsar hardware injections
-if test "${gds}" = "true"; then
-  AC_CHECK_HEADERS([gds/dtt/SIStr.h],,[AC_MSG_ERROR([could not find the GDS SIStr header])])
-  AC_CHECK_LIB([SIStr],[SIStrAppInfo],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
-  AC_CHECK_LIB([SIStr],[SIStrErrorMsg],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
-  AC_CHECK_LIB([SIStr],[SIStrOpen],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
-  AC_CHECK_LIB([SIStr],[SIStrAppend],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
-  AC_CHECK_LIB([SIStr],[SIStrClose],,[AC_MSG_ERROR([could not find the GDS SIStr library])])
-  AC_SUBST([GDS_LIBS],["-lSIStr"])
+# check for SIStr library, for pulsar hardware injections
+if test "${sistr}" = "true"; then
+  AC_CHECK_HEADERS([gds/dtt/SIStr.h],[break],[AC_MSG_ERROR([could not find the SIStr header])])
+  AC_CHECK_LIB([SIStr],[SIStrAppInfo],,[AC_MSG_ERROR([could not find the SIStr library])])
+  AC_CHECK_LIB([SIStr],[SIStrErrorMsg],,[AC_MSG_ERROR([could not find the SIStr library])])
+  AC_CHECK_LIB([SIStr],[SIStrOpen],,[AC_MSG_ERROR([could not find the SIStr library])])
+  AC_CHECK_LIB([SIStr],[SIStrAppend],,[AC_MSG_ERROR([could not find the SIStr library])])
+  AC_CHECK_LIB([SIStr],[SIStrClose],,[AC_MSG_ERROR([could not find the SIStr library])])
+  AC_SUBST([SISTR_LIBS],["-lSIStr"])
 fi
-LALSUITE_ENABLE_MODULE([GDS])
+LALSUITE_ENABLE_MODULE([SISTR])
 
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
@@ -283,7 +283,7 @@ LALPulsar has now been successfully configured:
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
 * PSS library support is $PSS_ENABLE_VAL
-* GDS support is $GDS_ENABLE_VAL
+* SIStr support is $SISTR_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
