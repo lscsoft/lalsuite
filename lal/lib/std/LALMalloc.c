@@ -190,7 +190,7 @@ void *XLALReallocAlignedLong(void *ptr, size_t size, const char *file, int line)
 	/* need to do a new allocation and a memcpy, inefficient... */
 	ptr = XLALMallocAlignedLong(size, file, line);
 	memcpy(ptr, p, size);
-	XLALFree(p);
+	free(p);
 	return ptr;
 }
 
@@ -209,7 +209,7 @@ void *(XLALReallocAligned)(void *ptr, size_t size)
 	/* need to do a new allocation and a memcpy, inefficient... */
 	ptr = XLALMallocAligned(size);
 	memcpy(ptr, p, size);
-	XLALFree(p);
+	free(p);
 	return ptr;
 }
 
