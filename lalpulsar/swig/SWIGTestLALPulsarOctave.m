@@ -12,6 +12,21 @@ lal;
 assert(exist("lal"));
 disp("PASSED module load");
 
+# set error handlers
+function set_nice_error_handlers()
+  swig_set_nice_error_handlers();
+endfunction
+function set_default_error_handlers()
+  lal;
+  if swig_version >= 0x040002
+    # see https://github.com/swig/swig/pull/1789
+    swig_set_nasty_error_handlers();
+  else
+    swig_set_nice_error_handlers();
+  endif
+endfunction
+set_default_error_handlers();
+
 ## check object parent tracking
 disp("checking object parent tracking ...");
 a = lalpulsar.new_swig_lalpulsar_test_parent_map_struct();
@@ -38,7 +53,7 @@ mts.data(1) = ts0;
 lal.swig_set_nasty_error_handlers();
 clear mts;
 clear ts0;
-lal.swig_set_nice_error_handlers();
+set_default_error_handlers();
 LALCheckMemoryLeaks();
 disp("PASSED array element assignment");
 
