@@ -381,6 +381,9 @@ workflow:
       # log files
       - "rpmbuild/BUILD/**/config.log"
       - "rpmbuild/BUILD/**/test-suite.log"
+      # generated sources
+      - "rpmbuild/BUILD/**/swiglal_octave.cpp"
+      - "rpmbuild/BUILD/**/swiglal_python.c"
     reports:
       junit: "rpmbuild/BUILD/**/*junit*.xml"
     when: always
@@ -457,6 +460,9 @@ workflow:
       # log files
       - "${CI_JOB_NAME%%:*}*/**/config.log"
       - "${CI_JOB_NAME%%:*}*/**/test-suite.log"
+      # generated sources
+      - "${CI_JOB_NAME%%:*}*/**/swiglal_octave.cpp"
+      - "${CI_JOB_NAME%%:*}*/**/swiglal_python.c"
       # the orig tarball
       - "${CI_JOB_NAME%%:*}*.orig.*"
     reports:
@@ -589,6 +595,9 @@ workflow:
       # log files
       - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/config.log"
       - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/test-suite.log"
+      # generated sources
+      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/swiglal_octave.cpp"
+      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/swiglal_python.c"
       # the feedstock
       - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
     reports:
