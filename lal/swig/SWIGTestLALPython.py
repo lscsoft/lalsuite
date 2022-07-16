@@ -23,6 +23,13 @@ lal_c_si = lal.C_SI
 lal_180_pi = lal.LAL_180_PI
 print("PASSED module load")
 
+# set error handlers
+def set_nice_error_handlers():
+    lal.swig_set_nice_error_handlers()
+def set_default_error_handlers():
+    lal.swig_set_nasty_error_handlers()
+set_default_error_handlers()
+
 # check memory allocation
 print("checking memory allocation ...")
 if not lal.NoDebug:
@@ -32,11 +39,13 @@ if not lal.NoDebug:
     mem3 = lal.CreateREAL8Vector(3)
     mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.DimensionlessUnit, 10)
     print("*** below should be an error message from CheckMemoryLeaks() ***")
+    set_nice_error_handlers()
     try:
         lal.CheckMemoryLeaks()
         expected_exception = True
     except:
         pass
+    set_default_error_handlers()
     assert not expected_exception
     print("*** above should be an error message from CheckMemoryLeaks() ***")
     del mem1
@@ -136,11 +145,13 @@ assert sts.mat.shape == (2, 3)
 sts.vec = [3, 2, 1]
 assert (sts.vec == [3, 2, 1]).all()
 sts.mat = [[4, 5, 6], (9, 8, 7)]
+set_nice_error_handlers()
 try:
     sts.mat = [[1.1, 2.3, 4.5], [6.5, 4.3, 2.1]]
     expected_exception = True
 except:
     pass
+set_default_error_handlers()
 assert not expected_exception
 assert (sts.mat == [[4, 5, 6], [9, 8, 7]]).all()
 for i in range(0, 3):
@@ -166,11 +177,13 @@ assert lalglobalvar.swig_lal_test_INT4_const_vector[2] == 4
 lalglobalvar.swig_lal_test_INT4_matrix = lalglobalvar.swig_lal_test_INT4_const_matrix
 assert (lalglobalvar.swig_lal_test_INT4_matrix == [[1, 2, 4], [2, 4, 8]]).all()
 assert lalglobalvar.swig_lal_test_INT4_const_matrix[1, 2] == 8
+set_nice_error_handlers()
 try:
     lalglobalvar.swig_lal_test_INT4_const_vector(20)
     expected_exception = True
 except:
     pass
+set_default_error_handlers()
 assert not expected_exception
 lalglobalvar.swig_lal_test_REAL8_vector[0] = 3.4
 assert lalglobalvar.swig_lal_test_REAL8_vector[0] == 3.4
@@ -199,17 +212,21 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
     assert (rv.data == [1.2, 3.4, 2.6, 4.8, 3.5]).all()
     rv.data[rvl - 1] = 7.5
     assert rv.data[rvl - 1] == 7.5
+    set_nice_error_handlers()
     try:
         rv.data[rvl] = 99.9
         expected_exception = True
     except:
         pass
+    set_default_error_handlers()
     assert not expected_exception
+    set_nice_error_handlers()
     try:
         iv.data = rv.data
         expected_exception = True
     except:
         pass
+    set_default_error_handlers()
     assert not expected_exception
     rv.data = iv.data
     assert (rv.data == iv.data).all()
@@ -220,6 +237,7 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
             cm.data[i, j] = complex(i / 4.0, j / 2.0)
     assert cm.data[2, 3] == complex(0.5, 1.5)
     assert cm.data[3, 2] == complex(0.75, 1.0)
+    set_nice_error_handlers()
     try:
         iv.data[0] = cm.data[2, 3]
         if not hasattr(numpy, "ComplexWarning"):
@@ -227,7 +245,9 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
         expected_exception = True
     except:
         pass
+    set_default_error_handlers()
     assert not expected_exception
+    set_nice_error_handlers()
     try:
         rv.data[0] = cm.data[3, 2]
         if not hasattr(numpy, "ComplexWarning"):
@@ -235,6 +255,7 @@ def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
         expected_exception = True
     except:
         pass
+    set_default_error_handlers()
     assert not expected_exception
 # check LAL vector and matrix datatypes
 iv = lal.CreateINT4Vector(5)
@@ -279,17 +300,21 @@ assert (lal.swig_lal_test_copyin_array2(a2in, 15) == a2out).all()
 a3in = numpy.array([lal.LIGOTimeGPS(1234.5), lal.LIGOTimeGPS(678.9)])
 a3out = a3in * 3
 assert (lal.swig_lal_test_copyin_array3(a3in, 3) == a3out).all()
+set_nice_error_handlers()
 try:
     lal.swig_lal_test_copyin_array1(numpy.array([0,0,0,0], dtype=numpy.double), 0)
     expected_exception = True
 except:
     pass
+set_default_error_handlers()
 assert not expected_exception
+set_nice_error_handlers()
 try:
     lal.swig_lal_test_copyin_array2(numpy.array([[1.2,3.4],[0,0],[0,0]], dtype=numpy.double), 0)
     expected_exception = True
 except:
     pass
+set_default_error_handlers()
 assert not expected_exception
 del a3in
 del a3out
@@ -828,17 +853,21 @@ print("PASSED input views of numeric array structs (GSL)")
 def check_input_view_type_safety(f, a, b, expect_exception):
     expected_exception = False
     if expect_exception:
+        set_nice_error_handlers()
         try:
             f(a, b)
             expected_exception = True
         except:
             pass
+        set_default_error_handlers()
         assert not expected_exception
+        set_nice_error_handlers()
         try:
             f(b, a)
             expected_exception = True
         except:
             pass
+        set_default_error_handlers()
         assert not expected_exception
     else:
         f(a, b)
@@ -1136,26 +1165,32 @@ assert t4struct.t == 1234.5
 t5 = LIGOTimeGPS("1000")
 assert t5 == 1000
 print("*** below should be error messages from LIGOTimeGPS constructor ***")
+set_nice_error_handlers()
 try:
     t5 = LIGOTimeGPS("abc1000")
     expected_exception = True
 except:
     pass
+set_default_error_handlers()
 assert not expected_exception
+set_nice_error_handlers()
 try:
     t5 = LIGOTimeGPS("1000abc")
     expected_exception = True
 except:
     pass
+set_default_error_handlers()
 assert not expected_exception
 print("*** above should be error messages from LIGOTimeGPS constructor ***")
 assert lal.swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.swig_lal_test_noptrgps(1234.5)
 print("*** below should be error messages from LIGOTimeGPS constructor ***")
+set_nice_error_handlers()
 try:
     LIGOTimeGPS(None)
     expected_exception = True
 except:
     pass
+set_default_error_handlers()
 assert not expected_exception
 print("*** above should be error messages from LIGOTimeGPS constructor ***")
 del t0
@@ -1199,11 +1234,13 @@ u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ** 2
 assert is_value_and_type(u2, u1, lal.Unit)
 u2 = lal.MeterUnit**(1,2) * lal.KiloGramUnit**(1,2) * lal.SecondUnit ** -1
 assert is_value_and_type(u2, u1**(1,2), lal.Unit)
+set_nice_error_handlers()
 try:
     lal.SecondUnit ** (1,0)
     expected_exception = True
 except:
     pass
+set_default_error_handlers()
 assert not expected_exception
 u1 *= lal.MeterUnit
 assert is_value_and_type(u1, lal.JouleUnit, lal.Unit)
@@ -1219,11 +1256,13 @@ assert u1 == lal.MegaUnit / 1000 * lal.WattUnit
 assert int(u1) == 1000
 u1 /= 10000
 assert u1 == 100 * lal.MilliUnit * lal.WattUnit
+set_nice_error_handlers()
 try:
     u1 *= 1.234
     expected_exception = True
 except:
     pass
+set_default_error_handlers()
 assert not expected_exception
 assert u1.norm() == u1
 del u1

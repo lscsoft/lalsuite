@@ -19,11 +19,13 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 .PHONY: swig-octave-install-hook
 .PHONY: swig-octave-uninstall-hook
 .PHONY: run-octave
+.PHONY: debug-octave-test
 .PHONY: swig-python-all-local
 .PHONY: swig-python-clean-local
 .PHONY: swig-python-install-hook
 .PHONY: swig-python-uninstall-hook
 .PHONY: run-python
+.PHONY: debug-python-test
 
 header-links: header-links-local
 
@@ -197,7 +199,10 @@ swig-octave-uninstall-hook:
 test_scripts += SWIGTest$(PACKAGE_NAME)Octave.m
 
 run-octave: $(octexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(OCTAVE) $(RUNARGS)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(OCTAVE)
+
+debug-octave-test: $(octexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(OCTAVE) ./SWIGTest$(PACKAGE_NAME)Octave.m
 
 endif # SWIG_BUILD_OCTAVE
 
@@ -266,7 +271,10 @@ swig-python-uninstall-hook:
 test_scripts += SWIGTest$(PACKAGE_NAME)Python.py
 
 run-python: $(pkgpyexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(PYTHON) $(RUNARGS)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(PYTHON)
+
+debug-python-test: $(pkgpyexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(PYTHON) ./SWIGTest$(PACKAGE_NAME)Python.py
 
 endif # SWIG_BUILD_PYTHON
 

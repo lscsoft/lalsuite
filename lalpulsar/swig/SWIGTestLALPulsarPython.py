@@ -9,6 +9,13 @@ from lalpulsar import globalvar as lalpulsarglobalvar
 from lal import globalvar as lalglobalvar
 print("PASSED module load")
 
+# set error handlers
+def set_nice_error_handlers():
+    lal.swig_set_nice_error_handlers()
+def set_default_error_handlers():
+    lal.swig_set_nasty_error_handlers()
+set_default_error_handlers()
+
 # check object parent tracking
 print("checking object parent tracking ...")
 a = lalpulsar.swig_lalpulsar_test_parent_map_struct()
@@ -32,7 +39,7 @@ mts.data[0] = ts0
 lal.swig_set_nasty_error_handlers()
 del mts
 del ts0
-lal.swig_set_nice_error_handlers()
+set_default_error_handlers()
 lal.CheckMemoryLeaks()
 print("PASSED array element assignment")
 
