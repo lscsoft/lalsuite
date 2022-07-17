@@ -336,27 +336,8 @@ LALFrOpen(LALStatus * status, LALFrStream ** stream, const CHAR * dirname,
 
 void LALFrClose(LALStatus * status, LALFrStream ** stream);
 
-void LALFrSetMode(LALStatus * status, INT4 mode, LALFrStream * stream);
-
-void LALFrEnd(LALStatus * status, INT4 * end, LALFrStream * stream);
-
-void LALFrNext(LALStatus * status, LALFrStream * stream);
-
-void LALFrRewind(LALStatus * status, LALFrStream * stream);
-
 void LALFrSeek(LALStatus * status, const LIGOTimeGPS * epoch,
     LALFrStream * stream);
-
-void LALFrTell(LALStatus * status, LIGOTimeGPS * epoch, LALFrStream * stream);
-
-void LALFrGetPos(LALStatus * status, LALFrStreamPos * position,
-    LALFrStream * stream);
-
-void LALFrSetPos(LALStatus * status, LALFrStreamPos * position,
-    LALFrStream * stream);
-
-void LALFrGetTimeSeriesType(LALStatus * status, LALTYPECODE * output,
-    FrChanIn * chanin, LALFrStream * stream);
 
 void LALFrGetINT2TimeSeries(LALStatus * status, INT2TimeSeries * series,
     FrChanIn * chanin, LALFrStream * stream);
@@ -394,58 +375,15 @@ void LALFrGetCOMPLEX8TimeSeries(LALStatus * status,
 void LALFrGetCOMPLEX8TimeSeriesMetadata(LALStatus * status,
     COMPLEX8TimeSeries * series, FrChanIn * chanin, LALFrStream * stream);
 
-void LALFrGetCOMPLEX16TimeSeries(LALStatus * status,
-    COMPLEX16TimeSeries * series, FrChanIn * chanin, LALFrStream * stream);
-
-void LALFrGetCOMPLEX16TimeSeriesMetadata(LALStatus * status,
-    COMPLEX16TimeSeries * series, FrChanIn * chanin, LALFrStream * stream);
-
-void LALFrGetREAL4FrequencySeries(LALStatus * status,
-    REAL4FrequencySeries * series, FrChanIn * chanin, LALFrStream * stream);
-
-void LALFrGetREAL8FrequencySeries(LALStatus * status,
-    REAL8FrequencySeries * series, FrChanIn * chanin, LALFrStream * stream);
-
 void LALFrGetCOMPLEX8FrequencySeries(LALStatus * status,
     COMPLEX8FrequencySeries * series,
     FrChanIn * chanin, LALFrStream * stream);
 
-void LALFrGetCOMPLEX16FrequencySeries(LALStatus * status,
-    COMPLEX16FrequencySeries * series,
-    FrChanIn * chanin, LALFrStream * stream);
-
-void LALFrWriteINT2TimeSeries(LALStatus * status,
-    INT2TimeSeries * series, FrOutPar * params);
-
 void LALFrWriteINT4TimeSeries(LALStatus * status,
     INT4TimeSeries * series, FrOutPar * params);
 
-void LALFrWriteINT8TimeSeries(LALStatus * status,
-    INT8TimeSeries * series, FrOutPar * params);
-
 void LALFrWriteREAL4TimeSeries(LALStatus * status,
     REAL4TimeSeries * series, FrOutPar * params);
-
-void LALFrWriteREAL8TimeSeries(LALStatus * status,
-    REAL8TimeSeries * series, FrOutPar * params);
-
-void LALFrWriteCOMPLEX8TimeSeries(LALStatus * status,
-    COMPLEX8TimeSeries * series, FrOutPar * params);
-
-void LALFrWriteCOMPLEX16TimeSeries(LALStatus * status,
-    COMPLEX16TimeSeries * series, FrOutPar * params);
-
-void LALFrWriteREAL4FrequencySeries(LALStatus * status,
-    REAL4FrequencySeries * series, FrOutPar * params, INT4 subtype);
-
-void LALFrWriteREAL8FrequencySeries(LALStatus * status,
-    REAL8FrequencySeries * series, FrOutPar * params, INT4 subtype);
-
-void LALFrWriteCOMPLEX8FrequencySeries(LALStatus * status,
-    COMPLEX8FrequencySeries * series, FrOutPar * params, INT4 subtype);
-
-void LALFrWriteCOMPLEX16FrequencySeries(LALStatus * status,
-    COMPLEX16FrequencySeries * series, FrOutPar * params, INT4 subtype);
 /** @} */
 
 

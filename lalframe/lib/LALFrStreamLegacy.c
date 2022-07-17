@@ -81,85 +81,6 @@ void LALFrClose(LALStatus * status, LALFrStream ** stream)
     RETURN(status);
 }
 
-void LALFrSetMode(LALStatus * status, INT4 mode, LALFrStream * stream)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamSetMode");
-    INITSTATUS(status);
-    ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    stream->mode = mode;
-    RETURN(status);
-}
-
-void LALFrEnd(LALStatus * status, INT4 * end, LALFrStream * stream)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamEnd");
-    INITSTATUS(status);
-    ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    ASSERT(end, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    *end = XLALFrStreamState(stream) & LAL_FR_STREAM_END;
-    RETURN(status);
-}
-
-void LALFrRewind(LALStatus * status, LALFrStream * stream)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamRewind");
-    INITSTATUS(status);
-    ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    if (XLALFrStreamRewind(stream)) {
-        XLALClearErrno();
-        if (stream->state & LAL_FR_STREAM_URL) {        /* problem was in opening a file */
-            ABORT(status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN);
-        }
-        if (stream->state & LAL_FR_STREAM_TOC) {        /* problem was in reading a file */
-            ABORT(status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD);
-        }
-    }
-    RETURN(status);
-}
-
-void LALFrNext(LALStatus * status, LALFrStream * stream)
-{
-    CHAR frErrMsg[1024];
-    int code;
-
-    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamNext");
-    INITSTATUS(status);
-    ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-
-    if (stream->state & LAL_FR_STREAM_ERR) {
-        ABORT(status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR);
-    }
-    if (stream->state & LAL_FR_STREAM_END) {
-        ABORT(status, FRAMESTREAMH_EDONE, FRAMESTREAMH_MSGEDONE);
-    }
-
-    code = XLALFrStreamNext(stream);
-    if (code < 0) {
-        XLALClearErrno();
-        if (stream->state & LAL_FR_STREAM_ERR) {
-            if (stream->state & LAL_FR_STREAM_URL) {    /* must have failed to open a file */
-                snprintf(frErrMsg, XLAL_NUM_ELEM(frErrMsg),
-                    "Could not open URL %s\n",
-                    stream->cache->list[stream->fnum].url);
-                LALError(status, frErrMsg);
-                ABORT(status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN);
-            }
-            if (stream->state & LAL_FR_STREAM_TOC) {    /* must have failed to read a file */
-                snprintf(frErrMsg, XLAL_NUM_ELEM(frErrMsg),
-                    "Could not read TOC from %s\n",
-                    stream->cache->list[stream->fnum].url);
-                LALError(status, frErrMsg);
-                ABORT(status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD);
-            }
-        } else {        /* must be a gap error */
-
-            ABORT(status, FRAMESTREAMH_EDGAP, FRAMESTREAMH_MSGEDGAP);
-        }
-    }
-
-    RETURN(status);
-}
-
 void LALFrSeek(LALStatus * status, const LIGOTimeGPS * epoch,
     LALFrStream * stream)
 {
@@ -198,68 +119,6 @@ void LALFrSeek(LALStatus * status, const LIGOTimeGPS * epoch,
         }
     }
 
-    RETURN(status);
-}
-
-void LALFrTell(LALStatus * status, LIGOTimeGPS * epoch, LALFrStream * stream)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamTell");
-    INITSTATUS(status);
-    ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    ASSERT(epoch, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    if (stream->state & LAL_FR_STREAM_ERR) {
-        ABORT(status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR);
-    }
-    XLALFrStreamTell(epoch, stream);
-    RETURN(status);
-}
-
-void
-LALFrGetPos(LALStatus * status, LALFrStreamPos * position,
-    LALFrStream * stream)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamGetpos");
-    INITSTATUS(status);
-    ASSERT(position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    if (stream->state & LAL_FR_STREAM_ERR) {
-        ABORT(status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR);
-    }
-    XLALFrStreamGetpos(position, stream);
-    RETURN(status);
-}
-
-void
-LALFrSetPos(LALStatus * status, LALFrStreamPos * position,
-    LALFrStream * stream)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamSetpos");
-    INITSTATUS(status);
-    ASSERT(position, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    ASSERT(stream, status, FRAMESTREAMH_ENULL, FRAMESTREAMH_MSGENULL);
-    if (stream->state & LAL_FR_STREAM_ERR) {
-        ABORT(status, FRAMESTREAMH_ERROR, FRAMESTREAMH_MSGERROR);
-    }
-    if (XLALFrStreamSetpos(stream, position)) {
-        XLALClearErrno();
-        if (stream->state & LAL_FR_STREAM_ERR) {
-            if (stream->state & LAL_FR_STREAM_URL) {    /* must have failed to open a file */
-                ABORT(status, FRAMESTREAMH_EOPEN, FRAMESTREAMH_MSGEOPEN);
-            }
-            if (stream->state & LAL_FR_STREAM_TOC) {    /* must have failed to read a file */
-                ABORT(status, FRAMESTREAMH_EREAD, FRAMESTREAMH_MSGEREAD);
-            }
-        }
-    }
-    RETURN(status);
-}
-
-void LALFrGetTimeSeriesType(LALStatus * status, LALTYPECODE * output,
-    FrChanIn * chanin, LALFrStream * stream)
-{
-    XLAL_PRINT_DEPRECATION_WARNING("XLALFrStreamGetTimeSeriesType");
-    INITSTATUS(status);
-    *output = XLALFrStreamGetTimeSeriesType(chanin->name, stream);
     RETURN(status);
 }
 
@@ -318,7 +177,6 @@ DEFINE_LAL_GET_TS_FUNCTION(INT8)
 DEFINE_LAL_GET_TS_FUNCTION(REAL4)
 DEFINE_LAL_GET_TS_FUNCTION(REAL8)
 DEFINE_LAL_GET_TS_FUNCTION(COMPLEX8)
-DEFINE_LAL_GET_TS_FUNCTION(COMPLEX16)
 
 DEFINE_LAL_GET_TSM_FUNCTION(INT2)
 DEFINE_LAL_GET_TSM_FUNCTION(INT4)
@@ -326,12 +184,8 @@ DEFINE_LAL_GET_TSM_FUNCTION(INT8)
 DEFINE_LAL_GET_TSM_FUNCTION(REAL4)
 DEFINE_LAL_GET_TSM_FUNCTION(REAL8)
 DEFINE_LAL_GET_TSM_FUNCTION(COMPLEX8)
-DEFINE_LAL_GET_TSM_FUNCTION(COMPLEX16)
 
-DEFINE_LAL_GET_FS_FUNCTION(REAL4)
-DEFINE_LAL_GET_FS_FUNCTION(REAL8)
 DEFINE_LAL_GET_FS_FUNCTION(COMPLEX8)
-DEFINE_LAL_GET_FS_FUNCTION(COMPLEX16)
 /* *INDENT-ON* */
 
 /* WRITE SERIES FUNCTIONS */
@@ -360,41 +214,7 @@ DEFINE_LAL_GET_FS_FUNCTION(COMPLEX16)
         RETURN(status); \
     }
 
-#define DEFINE_LAL_WRITE_FS_FUNCTION(laltype) \
-    void LALFrWrite ## laltype ## FrequencySeries(LALStatus *status, laltype ## FrequencySeries *series, FrOutPar *params, int subtype) \
-    { \
-        LALFrameH *frame; \
-        char fname[FILENAME_MAX]; \
-        double duration; \
-        int t0, dt; \
-        XLAL_PRINT_DEPRECATION_WARNING("XLALFrWrite" #laltype "FrequencySeries"); \
-        INITSTATUS(status); \
-        duration = series->deltaF ? 1.0 / series->deltaF : 1.0; \
-        t0 = series->epoch.gpsSeconds; \
-        dt = (int)ceil(XLALGPSGetREAL8(&series->epoch)+duration) - t0; \
-        dt = dt < 1 ? 1 : dt; \
-        snprintf(fname, sizeof(fname), "%s-%s-%d-%d.gwf", \
-             params->source ? params->source : "F", \
-             params->description ? params->description : "UNKNOWN", \
-             t0, dt); \
-        frame = XLALFrameNew(&series->epoch, duration, "LAL", params->run, params->frame, 0); \
-        XLALFrameAdd ## laltype ## FrequencySeriesProcData(frame, series, subtype); \
-        XLALFrameWrite(frame, fname); \
-        XLALFrameFree(frame); \
-        RETURN(status); \
-    }
-
 /* *INDENT-OFF* */
-DEFINE_LAL_WRITE_TS_FUNCTION(INT2)
 DEFINE_LAL_WRITE_TS_FUNCTION(INT4)
-DEFINE_LAL_WRITE_TS_FUNCTION(INT8)
 DEFINE_LAL_WRITE_TS_FUNCTION(REAL4)
-DEFINE_LAL_WRITE_TS_FUNCTION(REAL8)
-DEFINE_LAL_WRITE_TS_FUNCTION(COMPLEX8)
-DEFINE_LAL_WRITE_TS_FUNCTION(COMPLEX16)
-
-DEFINE_LAL_WRITE_FS_FUNCTION(REAL4)
-DEFINE_LAL_WRITE_FS_FUNCTION(REAL8)
-DEFINE_LAL_WRITE_FS_FUNCTION(COMPLEX8)
-DEFINE_LAL_WRITE_FS_FUNCTION(COMPLEX16)
 /* *INDENT-ON* */
