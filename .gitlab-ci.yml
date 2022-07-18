@@ -37,9 +37,9 @@ stages:
   # deploy packages
   - deploy
 
-# include job templates from the gitlab-ci-templates repo
-# see https://computing.docs.ligo.org/gitlab-ci-templates/
 include:
+  # include job templates from the gitlab-ci-templates repo
+  # see https://computing.docs.ligo.org/gitlab-ci-templates/
   - project: computing/gitlab-ci-templates
     file:
       # helpers for codequality jobs
@@ -50,6 +50,9 @@ include:
       - rhel.yml
       # a flake8 job template
       - python.yml
+
+  # job rules
+  - local: '/.gitlab/ci/rules.yml'
 
 # -- global settings ----------------------------
 
@@ -89,102 +92,6 @@ variables:
 default:
   # retry running jobs on failure
   retry: 1
-
-# -- rules --------------------------------------
-
-workflow:
-  rules:
-    # do not run detached merge_request_event pipelines
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
-    # run all other pipelines
-    - when: always
-
-# default run
-.default-rule: &default
-  - when: on_success
-
-# tag on the upstream repo
-.tag-rule: &tags
-  - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG'
-
-# normal push
-.push-rule: &pushes
-  - if: '$CI_PIPELINE_SOURCE == "push"'
-
-# nightly build on the upstream pipeline
-.nightly-rule: &nightly
-  - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_PIPELINE_SOURCE == "schedule"'
-    variables:
-      ENABLE_NIGHTLY: "--enable-nightly"
-
-# nightly build on default branch of the upstream repo
-.nightly-default-rule: &nightly-default
-  - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-    variables:
-      ENABLE_NIGHTLY: "--enable-nightly"
-
-# scheduled pipeline
-.scheduled-rule: &scheduled
-  - if: '$CI_PIPELINE_SOURCE == "schedule"'
-    variables:
-      ENABLE_NIGHTLY: "--enable-nightly"
-
-# manually-triggered pipeline
-.manual-rule: &manual
-  - if: '$CI_PIPELINE_SOURCE == "web" || $CI_COMMIT_MESSAGE =~ /\[nightly ci\]/'
-    variables:
-      ENABLE_NIGHTLY: "--enable-nightly"
-
-# -- skip rules
-
-.skip-compiler-rule: &skip-compiler
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip compiler\]/'
-    when: never
-
-.skip-conda-rule: &skip-conda
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip conda\]/'
-    when: never
-
-.skip-coverage-rule: &skip-coverage
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip coverage\]/'
-    when: never
-
-.skip-debian-rule: &skip-debian
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip debian\]/'
-    when: never
-
-.skip-docs-rule: &skip-docs
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip docs\]/'
-    when: never
-
-.skip-docker-rule: &skip-docker
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip docker\]/'
-    when: never
-
-.skip-integration-rule: &skip-integration
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip integration\]/'
-    when: never
-
-.skip-lint-rule: &skip-lint
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip lint\]/'
-    when: never
-
-.skip-platform-rule: &skip-platform
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip platform\]/'
-    when: never
-
-.skip-rhel-rule: &skip-rhel
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip rhel\]/'
-    when: never
-
-.skip-wheels-rule: &skip-wheels
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip wheels\]/'
-    when: never
-
-.skip-koji-rule: &skip-koji
-  - if: '$CI_COMMIT_MESSAGE =~ /\[skip koji\]/'
-    when: never
 
 # -- templates ----------------------------------
 
@@ -388,8 +295,8 @@ workflow:
       junit: "rpmbuild/BUILD/**/*junit*.xml"
     when: always
   rules:
-    - *skip-rhel
-    - *default
+    - !reference [.skip-rhel, rules]
+    - !reference [.default, rules]
 
 # -- debian
 
@@ -469,8 +376,8 @@ workflow:
       junit: "${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
     when: always
   rules:
-    - *skip-debian
-    - *default
+    - !reference [.skip-debian, rules]
+    - !reference [.default, rules]
 
 # -- conda
 
@@ -606,8 +513,8 @@ workflow:
       junit: "*junit*.xml"
     when: always
   rules:
-    - *skip-conda
-    - *default
+    - !reference [.skip-conda, rules]
+    - !reference [.default, rules]
 
 # -- koji ---------------------------------------
 
@@ -645,8 +552,8 @@ workflow:
     # untag all but the latest three builds
     - koji list-tagged epel7-lalsuite --quiet ${PACKAGE} | awk '{ print $1 }' | head -n -3 | xargs -d '\n' -r koji untag-build epel7-lalsuite --
   rules:
-    - *skip-koji
-    - *nightly-default
+    - !reference [.skip-koji, rules]
+    - !reference [.nightly-default, rules]
 
 # -- tarballs -----------------------------------
 #
@@ -1146,7 +1053,7 @@ lalapps:conda:
 # conda jobs will have run over all python versions
 .lalapps:conda:extra:
   rules:
-    - *nightly
+    - !reference [.nightly, rules]
 
 lalapps:conda:py37:
   extends:
@@ -1196,15 +1103,15 @@ lalapps:koji:
   extends:
     - .build-job
   rules:
-    - *skip-wheels
+    - !reference [.skip-wheels, rules]
     # if this commit modified the wheel code, always run the job
     - if: '$CI_PIPELINE_SOURCE == "push"'
       changes:
         - wheel/*
     # otherwise run the job on tags or scheduled builds
     # (not on normal push events or manually-triggered pipelines)
-    - *tags
-    - *scheduled
+    - !reference [.tag, rules]
+    - !reference [.scheduled, rules]
   artifacts:
     expire_in: 18h
     paths:
@@ -1216,7 +1123,7 @@ lalapps:koji:
     # use the upstream rules
     - !reference [.wheel, rules]
     # also run on manually triggered pipelines
-    - *manual
+    - !reference [.manual, rules]
 
 # do some simple sanity checks in a virtualenv
 .wheel-test: &wheel-test
@@ -1371,8 +1278,8 @@ wheel:cp310-cp310-macosx-arm64:
 .integration-tests:
   stage: integration tests
   rules:
-    - *skip-integration
-    - *default
+    - !reference [.skip-integration, rules]
+    - !reference [.default, rules]
 
 lalinference_testjob:
   extends:
@@ -1415,9 +1322,9 @@ lalinference_testjob:
     - lalinspiral:rpm
     - lalinference:rpm
   rules:
-    - *skip-integration
-    - *scheduled
-    - *manual
+    - !reference [.skip-integration, rules]
+    - !reference [.scheduled, rules]
+    - !reference [.manual, rules]
   artifacts:
     expire_in: 18h
     paths:
@@ -1431,10 +1338,10 @@ top-level:
     - .make-distcheck
     - .integration-tests
   rules:
-    - *skip-integration
-    - *pushes
-    - *scheduled
-    - *manual
+    - !reference [.skip-integration, rules]
+    - !reference [.push, rules]
+    - !reference [.scheduled, rules]
+    - !reference [.manual, rules]
 
 top-level:pulsar:
   image: igwn/lalsuite-dev:el7-testing
@@ -1448,10 +1355,10 @@ top-level:pulsar:
     - .make-distcheck
     - .integration-tests
   rules:
-    - *skip-integration
-    - *pushes
-    - *scheduled
-    - *manual
+    - !reference [.skip-integration, rules]
+    - !reference [.push, rules]
+    - !reference [.scheduled, rules]
+    - !reference [.manual, rules]
 
 # -- compiler tests -----------------------------
 #
@@ -1465,9 +1372,9 @@ top-level:pulsar:
   extends:
     - .make-distcheck
   rules:
-    - *skip-compiler
-    - *scheduled
-    - *manual
+    - !reference [.skip-compiler, rules]
+    - !reference [.scheduled, rules]
+    - !reference [.manual, rules]
 
 clang:11:
   extends:
@@ -1690,9 +1597,9 @@ upgrade:conda:linux:
   extends:
     - .make-distcheck
   rules:
-    - *skip-platform
-    - *scheduled
-    - *manual
+    - !reference [.skip-platform, rules]
+    - !reference [.scheduled, rules]
+    - !reference [.manual, rules]
 
 platform:debian:bullseye:
   extends:
@@ -1775,10 +1682,10 @@ platform:conda:macos-arm64:
     DOCKER_DRIVER: overlay
   stage: docker
   rules:
-    - *skip-docker
-    - *pushes
-    - *scheduled
-    - *manual
+    - !reference [.skip-docker, rules]
+    - !reference [.push, rules]
+    - !reference [.scheduled, rules]
+    - !reference [.manual, rules]
   script:
     # build container and push to registry
     - IMAGE_TAG=${CI_JOB_NAME##*:}
@@ -1792,8 +1699,8 @@ platform:conda:macos-arm64:
   variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/nightly"
   rules:
-    - *skip-docker
-    - *scheduled
+    - !reference [.skip-docker, rules]
+    - !reference [.scheduled, rules]
 
 .docker:tags:
   extends:
@@ -1801,8 +1708,8 @@ platform:conda:macos-arm64:
   variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_TAG"
   rules:
-    - *skip-docker
-    - *tags
+    - !reference [.skip-docker, rules]
+    - !reference [.tag, rules]
 
 # template for RHEL docker builds
 .docker:el:
@@ -1865,8 +1772,8 @@ platform:conda:macos-arm64:
     - lalinference:koji
     - lalapps:koji
   rules:
-    - *skip-koji
-    - *nightly-default
+    - !reference [.skip-koji, rules]
+    - !reference [.nightly-default, rules]
 
 # build a nightly container from the RPMs
 docker:nightly:el7:
@@ -1986,8 +1893,8 @@ coverage:
         coverage_format: cobertura
         path: coverage.xml
   rules:
-    - *skip-coverage
-    - *default
+    - !reference [.skip-coverage, rules]
+    - !reference [.default, rules]
 
 # -- linting ------------------------------------
 #
@@ -1999,8 +1906,8 @@ coverage:
   stage: lint
   needs: []
   rules:
-    - *skip-lint
-    - *default
+    - !reference [.skip-lint, rules]
+    - !reference [.default, rules]
 
 lint:depends:
   extends:
@@ -2142,8 +2049,8 @@ documentation:
       - html/index.html
       - html
   rules:
-    - *skip-docs
-    - *default
+    - !reference [.skip-docs, rules]
+    - !reference [.default, rules]
 
 # -- deploy -------------------------------------
 #
@@ -2168,8 +2075,8 @@ repository:koji:
     # generate repository
     - koji dist-repo --allow-missing-signatures --arch=x86_64 --with-src epel7-lalsuite
   rules:
-    - *skip-koji
-    - *nightly-default
+    - !reference [.skip-koji, rules]
+    - !reference [.nightly-default, rules]
 
 .deploy:
   stage: deploy
@@ -2191,11 +2098,11 @@ pages:
     paths:
       - public
   rules:
-    - *skip-docs
-    - *skip-coverage
+    - !reference [.skip-docs, rules]
+    - !reference [.skip-coverage, rules]
     # build nightly or tags
-    - *tags
-    - *nightly
+    - !reference [.tag, rules]
+    - !reference [.nightly, rules]
 
 # deploy wheels
 deploy:wheel:
@@ -2217,5 +2124,5 @@ deploy:wheel:
     - wheel:cp39-cp39-macosx-arm64
     - wheel:cp310-cp310-macosx-arm64
   rules:
-    - *tags
-    - *nightly
+    - !reference [.tag, rules]
+    - !reference [.nightly, rules]
