@@ -54,6 +54,9 @@ include:
   # job rules
   - local: '/.gitlab/ci/rules.yml'
 
+  # documentation
+  - local: '/.gitlab/ci/docs.yml'
+
 # -- global settings ----------------------------
 
 # by default cache everything in the .cache directory
@@ -2026,32 +2029,6 @@ lint:combine-reports:
     # don't need this file
     - rm -f coala.json
 
-# -- documentation ------------------------------
-#
-# Generate the documentation
-#
-
-documentation:
-  image: igwn/lalsuite-dev:buster
-  stage: documentation
-  needs: []
-  script:
-    - ./00boot
-    - ./configure --enable-doxygen --prefix=$(pwd)/_inst
-    - make -j${CPU_COUNT} install-html
-    - mv _inst/share/doc html
-    - cd html
-    - cp lalsuite/index.html index.html
-    - sed -i 's/..\/lal/lal/g' index.html
-  artifacts:
-    expose_as: html
-    paths:
-      - html/index.html
-      - html
-  rules:
-    - !reference [.skip-docs, rules]
-    - !reference [.default, rules]
-
 # -- deploy -------------------------------------
 #
 # Deploy outputs to various locations
@@ -2082,27 +2059,6 @@ repository:koji:
   stage: deploy
   variables:
     GIT_STRATEGY: none
-
-# deploy documentation to gitlab pages
-pages:
-  extends:
-    - .deploy
-  image: igwn/lalsuite-dev:buster
-  needs:
-    - documentation
-    - coverage
-  script:
-    - mv html public
-    - cp coverage.html public/
-  artifacts:
-    paths:
-      - public
-  rules:
-    - !reference [.skip-docs, rules]
-    - !reference [.skip-coverage, rules]
-    # build nightly or tags
-    - !reference [.tag, rules]
-    - !reference [.nightly, rules]
 
 # deploy wheels
 deploy:wheel:

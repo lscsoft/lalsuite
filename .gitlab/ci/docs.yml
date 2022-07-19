@@ -1,0 +1,49 @@
+# ---------------------------
+# LALSuite Documentation
+# ---------------------------
+
+include:
+  # import the rules
+  - local: '/.gitlab/ci/rules.yml'
+
+documentation:
+  image: igwn/lalsuite-dev:buster
+  stage: documentation
+  needs: []
+  script:
+    - ./00boot
+    - ./configure --enable-doxygen --prefix=$(pwd)/_inst
+    - make -j${CPU_COUNT} install-html
+    - mv _inst/share/doc html
+    - cd html
+    - cp lalsuite/index.html index.html
+    - sed -i 's/..\/lal/lal/g' index.html
+  artifacts:
+    expose_as: html
+    paths:
+      - html/index.html
+      - html
+  rules:
+    - !reference [.skip-docs, rules]
+    - !reference [.default, rules]
+
+pages:
+  stage: deploy
+  image: igwn/lalsuite-dev:buster
+  needs:
+    - documentation
+    - coverage
+  variables:
+    GIT_STRATEGY: none
+  script:
+    - mv html public
+    - cp coverage.html public/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - !reference [.skip-docs, rules]
+    - !reference [.skip-coverage, rules]
+    # build nightly or tags
+    - !reference [.tag, rules]
+    - !reference [.nightly, rules]
