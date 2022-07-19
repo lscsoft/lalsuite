@@ -47,6 +47,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/LALFrStream.h>

@@ -204,8 +204,8 @@ int main(int argc,char *argv[])
   int NTemplates_fix; /* number of template given by the template bank file */
   REAL8 fcutoff_fix[MAXTEMPLATES]; /* high frequency cutoffs given by the template bank file */
   SnglBurst *events=NULL;
-  MetadataTable  process;
-  MetadataTable  procparams;
+  ProcessTable *process;
+  ProcessParamsTable *procparams = NULL;
   REAL8TimeSeries *ht;        /* strain data */
   REAL8FFTPlan *fplan;        /* fft plan */
   REAL8FFTPlan *rplan;        /* fft plan */
@@ -213,15 +213,14 @@ int main(int argc,char *argv[])
 
 
   /* create the process and process params tables */
-  procparams.processParamsTable = NULL;
-  process.processTable = XLALCreateProcessTableRow();
-  XLALGPSTimeNow(&(process.processTable->start_time));
-  if(XLALPopulateProcessTable(process.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0))
+  process = XLALCreateProcessTableRow();
+  XLALGPSTimeNow(&(process->start_time));
+  if(XLALPopulateProcessTable(process, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId, lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0))
     exit(1);
 
   /****** ReadCommandLine ******/
   XLALPrintInfo("ReadCommandLine()\n");
-  if (ReadCommandLine(argc,argv,&CommandLineArgs, process.processTable, &procparams.processParamsTable)) return 1;
+  if (ReadCommandLine(argc,argv,&CommandLineArgs, process, &procparams)) return 1;
   XLALPrintInfo("\t%c%c detector\n",CommandLineArgs.ChannelName[0],CommandLineArgs.ChannelName[1]);
   /* set the trigger cluster window global variable */
   cluster_window = CommandLineArgs.cluster;
@@ -302,17 +301,17 @@ int main(int argc,char *argv[])
   /****** XLALSnglBurstAssignIDs ******/
   XLALPrintInfo("XLALSnglBurstAssignIDs()\n");
   if(!XLALSortSnglBurst(&events, XLALCompareSnglBurstByPeakTimeAndSNR)) return 12;
-  XLALSnglBurstAssignIDs(events, process.processTable->process_id, 0);
+  XLALSnglBurstAssignIDs(events, process->process_id, 0);
 
   /****** OutputEvents ******/
   XLALPrintInfo("OutputEvents()\n");
-  if (OutputEvents(&CommandLineArgs, process.processTable, procparams.processParamsTable, events)) return 13;
+  if (OutputEvents(&CommandLineArgs, process, procparams, events)) return 13;
 
   /****** FreeMem ******/
   XLALPrintInfo("FreeMem()\n");
-  XLALDestroyProcessParamsTable(procparams.processParamsTable);
+  XLALDestroyProcessParamsTable(procparams);
   XLALDestroySnglBurstTable(events);
-  XLALDestroyProcessTable(process.processTable);
+  XLALDestroyProcessTable(process);
   if (FreeMem(strtemplate, NTemplates)) return 14;
 
   XLALPrintInfo("StringJob is done\n");
@@ -459,7 +458,7 @@ static ProcessParamsTable **add_process_param(ProcessParamsTable **proc_param,
 
 int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, ProcessParamsTable *procparamtable, SnglBurst *events){
   LIGOLwXMLStream *xml;
-  MetadataTable  searchsumm;
+  SearchSummaryTable *searchsumm;
   char ifo[3];
 
   strncpy( ifo, CLA->ChannelName, 2 );
@@ -484,26 +483,26 @@ int OutputEvents(const struct CommandLineArgsTag *CLA, ProcessTable *proctable, 
   if(XLALWriteLIGOLwXMLProcessParamsTable(xml, procparamtable)) return -1;
 
   /* create the search summary table */
-  searchsumm.searchSummaryTable = XLALCreateSearchSummaryTableRow(proctable);
+  searchsumm = XLALCreateSearchSummaryTableRow(proctable);
   /* the number of nodes for a standalone job is always 1 */
-  searchsumm.searchSummaryTable->nnodes = 1;
+  searchsumm->nnodes = 1;
   /* store the input and output start and end times */
-  searchsumm.searchSummaryTable->in_start_time = CLA->GPSStart;
-  searchsumm.searchSummaryTable->in_end_time = CLA->GPSEnd;
+  searchsumm->in_start_time = CLA->GPSStart;
+  searchsumm->in_end_time = CLA->GPSEnd;
   if (XLALGPSToINT8NS(&CLA->trigstarttime) > 0)
-    searchsumm.searchSummaryTable->out_start_time = CLA->trigstarttime;
+    searchsumm->out_start_time = CLA->trigstarttime;
   else {
-    searchsumm.searchSummaryTable->out_start_time = CLA->GPSStart;
-    XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, CLA->ShortSegDuration/4+CLA->pad);
+    searchsumm->out_start_time = CLA->GPSStart;
+    XLALGPSAdd(&searchsumm->out_start_time, CLA->ShortSegDuration/4+CLA->pad);
   }
-  searchsumm.searchSummaryTable->out_end_time = CLA->GPSEnd;
-  XLALGPSAdd(&searchsumm.searchSummaryTable->out_end_time, -CLA->ShortSegDuration/4-CLA->pad);
-  snprintf(searchsumm.searchSummaryTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
-  searchsumm.searchSummaryTable->nevents = XLALSnglBurstTableLength(events);
+  searchsumm->out_end_time = CLA->GPSEnd;
+  XLALGPSAdd(&searchsumm->out_end_time, -CLA->ShortSegDuration/4-CLA->pad);
+  snprintf(searchsumm->ifos, LIGOMETA_IFOS_MAX, "%s", ifo);
+  searchsumm->nevents = XLALSnglBurstTableLength(events);
 
   /* write search_summary table */
-  if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, searchsumm.searchSummaryTable)) return -1;
-  XLALDestroySearchSummaryTable(searchsumm.searchSummaryTable);
+  if(XLALWriteLIGOLwXMLSearchSummaryTable(xml, searchsumm)) return -1;
+  XLALDestroySearchSummaryTable(searchsumm);
 
   /* burst table */
   if(XLALWriteLIGOLwXMLSnglBurstTable(xml, events)) return -1;

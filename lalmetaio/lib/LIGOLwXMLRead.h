@@ -91,12 +91,10 @@ XLALTimeSlideTableFromLIGOLw (
     const char *filename
 );
 
-/* these functions need to be lalified, but they are in support... */
-
 SearchSummaryTable *
 XLALSearchSummaryTableFromLIGOLw (
     const char *fileName
-    );
+);
 
 #ifdef  __cplusplus
 }

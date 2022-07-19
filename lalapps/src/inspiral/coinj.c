@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include <LALAppsVCSInfo.h>
+#include <lal/LALNoiseModels.h>
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>

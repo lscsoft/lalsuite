@@ -152,7 +152,6 @@ XLALReturnDetector(
     InterferometerNumber   IFONumber
     );
 
-
 int
 XLALCompareSearchSummaryByOutTime (
     const void *a,
