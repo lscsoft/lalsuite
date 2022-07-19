@@ -54,6 +54,9 @@ include:
   # job rules
   - local: '/.gitlab/ci/rules.yml'
 
+  # Koji build pipeline
+  - local: '/.gitlab/ci/koji.yml'
+
   # documentation
   - local: '/.gitlab/ci/docs.yml'
 
@@ -523,45 +526,6 @@ default:
     - !reference [.skip-conda, rules]
     - !reference [.default, rules]
 
-# -- koji ---------------------------------------
-
-# authenticate against koji server
-.koji:authentication:
-  image: igwn/koji-client:el7
-  before_script:
-    # initialise keytab for communication with koji server
-    - echo "${ROBOT_KEYTAB}" | base64 -d | install -m 0600 /dev/stdin keytab
-    - PRINCIPAL=$(klist -k keytab | head -n 4 | tail -n 1 | sed -E 's/^.* +//')
-    - kinit $PRINCIPAL -k -t keytab
-    - klist
-
-# build rpm under koji
-.koji:build:
-  extends:
-    - .koji:authentication
-  retry: 0
-  script:
-    # build src.rpm
-    - PACKAGE=${CI_JOB_NAME%%:*}
-    - cd ${PACKAGE}/
-    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
-    - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${TARBALL}
-    - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${PACKAGE}-*.src.rpm
-    - NVR=`basename ${SRCRPM} .src.rpm`
-    # lint src.rpm
-    - rpmlint ${SRCRPM}
-    # build with koji
-    - koji build --background --wait epel7-lalsuite ${SRCRPM}
-    # wait for build to show up in koji
-    - koji wait-repo --target epel7-lalsuite --build=${NVR}
-    # regenerate epel7-lscsoft-build tag
-    - koji regen-repo epel7-lscsoft-build
-    # untag all but the latest three builds
-    - koji list-tagged epel7-lalsuite --quiet ${PACKAGE} | awk '{ print $1 }' | head -n -3 | xargs -d '\n' -r koji untag-build epel7-lalsuite --
-  rules:
-    - !reference [.skip-koji, rules]
-    - !reference [.nightly-default, rules]
-
 # -- tarballs -----------------------------------
 #
 # make tarballs for each subpackage
@@ -648,11 +612,6 @@ lal:conda:mkl:
   variables:
     CONDA_CONFIG: "linux_64_fft_implmkl"
 
-lal:koji:
-  extends:
-    - .koji:build
-    - .lal
-
 # -- lalframe------------------------------------
 #
 # build packages for LALFrame
@@ -684,14 +643,6 @@ lalframe:conda:
   needs:
     - tarballs
     - lal:conda:fftw
-
-lalframe:koji:
-  extends:
-    - .koji:build
-    - .lalframe
-  needs:
-    - tarballs
-    - lal:koji
 
 # -- lalmetaio ----------------------------------
 #
@@ -725,14 +676,6 @@ lalmetaio:conda:
     - tarballs
     - lal:conda:fftw
 
-lalmetaio:koji:
-  extends:
-    - .koji:build
-    - .lalmetaio
-  needs:
-    - tarballs
-    - lal:koji
-
 # -- lalsimulation ------------------------------
 #
 # build packages for LALSimulation
@@ -764,14 +707,6 @@ lalsimulation:conda:
   needs:
     - tarballs
     - lal:conda:fftw
-
-lalsimulation:koji:
-  extends:
-    - .koji:build
-    - .lalsimulation
-  needs:
-    - tarballs
-    - lal:koji
 
 # -- lalburst -----------------------------------
 #
@@ -810,16 +745,6 @@ lalburst:conda:
     - lal:conda:fftw
     - lalmetaio:conda
     - lalsimulation:conda
-
-lalburst:koji:
-  extends:
-    - .koji:build
-    - .lalburst
-  needs:
-    - tarballs
-    - lal:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
 
 # -- lalinspiral --------------------------------
 #
@@ -864,18 +789,6 @@ lalinspiral:conda:
     - lalmetaio:conda
     - lalsimulation:conda
     - lalburst:conda
-
-lalinspiral:koji:
-  extends:
-    - .koji:build
-    - .lalinspiral
-  needs:
-    - tarballs
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
 
 # -- lalinference -------------------------------
 #
@@ -923,19 +836,6 @@ lalinference:conda:
     - lalsimulation:conda
     - lalburst:conda
     - lalinspiral:conda
-
-lalinference:koji:
-  extends:
-    - .koji:build
-    - .lalinference
-  needs:
-    - tarballs
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
-    - lalinspiral:koji
 
 # -- lalpulsar ----------------------------------
 #
@@ -986,20 +886,6 @@ lalpulsar:conda:
     - lalburst:conda
     - lalinspiral:conda
     - lalinference:conda
-
-lalpulsar:koji:
-  extends:
-    - .koji:build
-    - .lalpulsar
-  needs:
-    - tarballs
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
-    - lalinspiral:koji
-    - lalinference:koji
 
 # -- lalapps ------------------------------------
 #
@@ -1082,21 +968,6 @@ lalapps:conda:py310:
     - .lalapps:conda:extra
   variables:
     LALSUITE_PYTHON_VERSION: "3.10"
-
-lalapps:koji:
-  extends:
-    - .koji:build
-    - .lalapps
-  needs:
-    - tarballs
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
-    - lalpulsar:koji
-    - lalinspiral:koji
-    - lalinference:koji
 
 # -- wheels -------------------------------------
 #
@@ -2079,27 +1950,6 @@ lint:combine-reports:
 #
 # Deploy outputs to various locations
 #
-
-repository:koji:
-  extends:
-    - .koji:authentication
-  stage: deploy
-  needs:
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
-    - lalinspiral:koji
-    - lalpulsar:koji
-    - lalinference:koji
-    - lalapps:koji
-  script:
-    # generate repository
-    - koji dist-repo --allow-missing-signatures --arch=x86_64 --with-src epel7-lalsuite
-  rules:
-    - !reference [.skip-koji, rules]
-    - !reference [.nightly-default, rules]
 
 .deploy:
   stage: deploy
