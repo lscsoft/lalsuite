@@ -202,7 +202,7 @@ run-octave: $(octexec_LTLIBRARIES)
 	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(OCTAVE)
 
 debug-octave-test: $(octexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(OCTAVE) ./SWIGTest$(PACKAGE_NAME)Octave.m
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(OCTAVE) $${SCRIPT:-./SWIGTest$(PACKAGE_NAME)Octave.m}
 
 endif # SWIG_BUILD_OCTAVE
 
@@ -274,7 +274,7 @@ run-python: $(pkgpyexec_LTLIBRARIES)
 	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(PYTHON)
 
 debug-python-test: $(pkgpyexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(PYTHON) ./SWIGTest$(PACKAGE_NAME)Python.py
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(PYTHON) $${SCRIPT:-./SWIGTest$(PACKAGE_NAME)Python.py}
 
 endif # SWIG_BUILD_PYTHON
 
