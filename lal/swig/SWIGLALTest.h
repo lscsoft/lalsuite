@@ -376,6 +376,8 @@ int swig_lal_test_pydict_to_laldict(LALDict *laldict);
 // Test Python conversion of NumPy integer types
 INT8 swig_lal_test_numpy_int_types(int a, INT2 b, INT4 c, INT8 d);
 UINT8 swig_lal_test_numpy_uint_types(unsigned int a, UINT2 b, UINT4 c, UINT8 d);
+REAL8 swig_lal_test_numpy_flt_types(REAL4 a, REAL8 b, REAL4 c, REAL8 d);
+COMPLEX16 swig_lal_test_numpy_cpx_types(COMPLEX8 a, COMPLEX16 b, COMPLEX8 c, COMPLEX16 d);
 
 #ifdef __cplusplus
 }
