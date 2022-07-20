@@ -147,7 +147,7 @@ if SWIG_BUILD_OCTAVE
 swig_octave_flags = -octave $(SWIG_OCTAVE_FLAGS) -outdir swiglal_octave/ $(swig_flags)
 
 octexec_LTLIBRARIES = swiglal_octave.la
-nodist_swiglal_octave_la_SOURCES = swiglal_octave.cpp
+nodist_swiglal_octave_la_SOURCES = swiglal_@PACKAGE@_octave.cpp
 swiglal_octave_la_SOURCES = SWIGTest.c
 swiglal_octave_la_CPPFLAGS = $(SWIG_OCTAVE_CPPFLAGS_IOCTAVE) $(swig_cppflags) $(SWIG_OCTAVE_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
 swiglal_octave_la_CXXFLAGS = $(SWIG_OCTAVE_CXXFLAGS)
@@ -162,14 +162,10 @@ endif
 
 $(nodist_swiglal_octave_la_SOURCES): $(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_octave/ && \
-	if $(SWIG) $(swig_octave_flags) -o $@.tmp $<; then \
+	if $(SWIG) $(swig_octave_flags) -o $@ $<; then \
 		$(swig_deps_if)mv -f $(SWIG_DEPDIR)/swiglal_octave.deps.tmp $(SWIG_DEPDIR)/swiglal_octave.deps; \
-		echo '#line 2 "$@<$(PACKAGE)>"' > $@; \
-		cat $@.tmp >> $@; \
-		rm -f $@.tmp; \
 	else \
 		$(swig_deps_if)rm -f $(SWIG_DEPDIR)/swiglal_octave.deps.tmp; \
-		rm -f $@.tmp; \
 		exit 1; \
 	fi
 
@@ -212,7 +208,7 @@ swig_python_flags = -python $(SWIG_PYTHON_FLAGS) -outdir swiglal_python/ $(swig_
 
 pkgpyexec_LTLIBRARIES = swiglal_python.la
 nodist_pkgpyexec_PYTHON = swiglal_python/$(PACKAGE).py
-nodist_swiglal_python_la_SOURCES = swiglal_python.c
+nodist_swiglal_python_la_SOURCES = swiglal_@PACKAGE@_python.c
 swiglal_python_la_SOURCES = SWIGTest.c
 swiglal_python_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
 swiglal_python_la_CFLAGS = $(SWIG_PYTHON_CFLAGS)
@@ -227,14 +223,10 @@ endif
 
 $(nodist_swiglal_python_la_SOURCES): $(swig_iface) swiglal_config.h
 	$(AM_V_GEN)$(MKDIR_P) swiglal_python/ && \
-	if $(SWIG) $(swig_python_flags) -o $@.tmp $<; then \
+	if $(SWIG) $(swig_python_flags) -o $@ $<; then \
 		$(swig_deps_if)mv -f $(SWIG_DEPDIR)/swiglal_python.deps.tmp $(SWIG_DEPDIR)/swiglal_python.deps; \
-		echo '#line 2 "$@<$(PACKAGE)>"' > $@; \
-		cat $@.tmp >> $@; \
-		rm -f $@.tmp; \
 	else \
 		$(swig_deps_if)rm -f $(SWIG_DEPDIR)/swiglal_python.deps.tmp; \
-		rm -f $@.tmp; \
 		exit 1; \
 	fi
 

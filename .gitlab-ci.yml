@@ -292,8 +292,8 @@ default:
       - "rpmbuild/BUILD/**/config.log"
       - "rpmbuild/BUILD/**/test-suite.log"
       # generated sources
-      - "rpmbuild/BUILD/**/swiglal_octave.cpp"
-      - "rpmbuild/BUILD/**/swiglal_python.c"
+      - "rpmbuild/BUILD/**/swiglal_lal*_octave.cpp"
+      - "rpmbuild/BUILD/**/swiglal_lal*_python.c"
     reports:
       junit: "rpmbuild/BUILD/**/*junit*.xml"
     when: always
@@ -371,8 +371,8 @@ default:
       - "${CI_JOB_NAME%%:*}*/**/config.log"
       - "${CI_JOB_NAME%%:*}*/**/test-suite.log"
       # generated sources
-      - "${CI_JOB_NAME%%:*}*/**/swiglal_octave.cpp"
-      - "${CI_JOB_NAME%%:*}*/**/swiglal_python.c"
+      - "${CI_JOB_NAME%%:*}*/**/swiglal_lal*_octave.cpp"
+      - "${CI_JOB_NAME%%:*}*/**/swiglal_lal*_python.c"
       # the orig tarball
       - "${CI_JOB_NAME%%:*}*.orig.*"
     reports:
@@ -506,8 +506,8 @@ default:
       - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/config.log"
       - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/test-suite.log"
       # generated sources
-      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/swiglal_octave.cpp"
-      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/swiglal_python.c"
+      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/swiglal_lal*_octave.cpp"
+      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/swiglal_lal*_python.c"
       # the feedstock
       - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
     reports:
