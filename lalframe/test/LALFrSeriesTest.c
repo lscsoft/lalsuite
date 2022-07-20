@@ -43,12 +43,8 @@
 #include <lal/AVFactories.h>
 #include <lal/PrintFTSeries.h>
 #include <lal/LALFrStream.h>
-
-#define TESTSTATUS( pstat ) \
-  if ( (pstat)->statusCode ) { \
-    fprintf( stderr, "Failure on line %d\n", __LINE__ ); \
-    REPORTSTATUS(pstat); return 1; \
-  } else ((void)0)
+#include <lal/TimeSeries.h>
+#include <lal/Units.h>
 
 #ifndef CHANNEL
 #define CHANNEL "H1:LSC-AS_Q"
@@ -57,23 +53,18 @@
 
 int main( void )
 {
-  static LALStatus status;
-  const UINT4 npts = 200001;
-  FrChanIn  chanin = { CHANNEL, ADCDataChannel };
-  LALFrStream *stream = NULL;
-  LALFrStreamPos     frpos;
-  static INT4TimeSeries chan; /* must zero the f0 field */
+  const UINT4 npts = 200001; /* read data in weirdly sized blocks */
+  LALFrStream *stream;
+  LALFrStreamPos frpos;
+  INT4TimeSeries *chan;
   LIGOTimeGPS epoch;
-  INT4 file = 0;
+  INT4 file;
 
   XLALSetErrorHandler(XLALAbortErrorHandler);
 
-  chan.data = NULL;
-  LALI4CreateVector( &status, &chan.data, npts );
-  TESTSTATUS( &status );
-
-  LALFrOpen( &status, &stream, TEST_DATA_DIR, "F-TEST-*.gwf" );
-  TESTSTATUS( &status );
+  stream = XLALFrStreamOpen( TEST_DATA_DIR, "F-TEST-*.gwf" );
+  if ( !stream )
+    return 1;
 
   if ( XLALFrStreamSetMode( stream, LAL_FR_STREAM_VERBOSE_MODE | LAL_FR_STREAM_CHECKSUM_MODE ) )
     return 1;
@@ -81,53 +72,49 @@ int main( void )
   /* seek to some initial time */
   epoch.gpsSeconds     = 600000071;
   epoch.gpsNanoSeconds = 123456789;
-  LALFrSeek( &status, &epoch, stream );
-  TESTSTATUS( &status );
+  if ( XLALFrStreamSeek( stream, &epoch ) )
+    return 1;
 
   /* save this position */
-  LALFrGetPos( &status, &frpos, stream );
-  TESTSTATUS( &status );
+  if ( XLALFrStreamGetpos( &frpos, stream ) )
+    return 1;
 
-  while ( 1 )
+  /* only channel name and npts are used.  other metadata will be filled in
+   * later */
+  chan = XLALCreateINT4TimeSeries( CHANNEL, &epoch, 0.0, 0.0, &lalDimensionlessUnit, npts );
+  if ( !chan )
+    return 1;
+
+  for ( file = 0; file < 8; file++ )
   {
-    LALTYPECODE typecode;
     CHAR fname[256];
-    LALFrGetTimeSeriesType( &status, &typecode, &chanin, stream );
-    if ( status.statusCode == FRAMESTREAMH_EDONE )
-    {
-      break;
-    }
-    TESTSTATUS( &status );
+    LALTYPECODE typecode = XLALFrStreamGetTimeSeriesType( CHANNEL, stream );
     if ( typecode != LAL_I4_TYPE_CODE )
     {
-      fprintf( stderr, "Wrong data type!\n" );
+      if ( typecode < 0 )
+        fprintf( stderr, "failure\n" );
+      else
+        fprintf( stderr, "Wrong data type!\n" );
       return 1;
     }
-    LALFrGetINT4TimeSeries( &status, &chan, &chanin, stream );
-    if ( status.statusCode == FRAMESTREAMH_EDONE )
-    {
-      break;
-    }
-    TESTSTATUS( &status );
-    sprintf( fname, CHANNEL ".%03d", file++ );
-    LALI4PrintTimeSeries( &chan, fname );
+    if ( XLALFrStreamGetINT4TimeSeries( chan, stream ) )
+      return 1;
+    sprintf( fname, CHANNEL ".%03d", file );
+    LALI4PrintTimeSeries( chan, fname );
   }
 
   /* go back to saved time */
-  LALFrSetPos( &status, &frpos, stream );
-  TESTSTATUS( &status );
+  if ( XLALFrStreamSetpos( stream, &frpos ) )
+    return 1;
 
-  LALFrGetINT4TimeSeries( &status, &chan, &chanin, stream );
-  TESTSTATUS( &status );
+  if ( XLALFrStreamGetINT4TimeSeries( chan, stream ) )
+    return 1;
 
-  LALI4PrintTimeSeries( &chan, CHANNEL ".999" );
+  LALI4PrintTimeSeries( chan, CHANNEL ".999" );
 
-  LALFrClose( &status, &stream );
-  TESTSTATUS( &status );
+  XLALFrStreamClose( stream );
 
-  LALI4DestroyVector( &status, &chan.data );
-  TESTSTATUS( &status );
+  XLALDestroyINT4TimeSeries( chan );
 
-  LALCheckMemoryLeaks();
   return 0;
 }
