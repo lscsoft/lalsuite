@@ -276,9 +276,11 @@ SWIGINTERN int swiglal_output_stdouterr(void) {
 SWIGINTERN int swiglal_SWIG_AsVal_long(PyObject *obj, long* val) {
   if (PyArray_IsScalar(obj, Integer)) {
     /* handle NumPy signed integer types */
-    PyArray_Descr *longDescr = PyArray_DescrFromType(NPY_LONG);
-    PyArray_CastScalarToCtype(obj, (void*)val, longDescr);
-    Py_DECREF(longDescr);
+    if (val) {
+      PyArray_Descr *longDescr = PyArray_DescrFromType(NPY_LONG);
+      PyArray_CastScalarToCtype(obj, (void*)val, longDescr);
+      Py_DECREF(longDescr);
+    }
     return SWIG_OK;
   }
   /* fall back to SWIG default behaviour */
@@ -287,9 +289,11 @@ SWIGINTERN int swiglal_SWIG_AsVal_long(PyObject *obj, long* val) {
 SWIGINTERN int swiglal_SWIG_AsVal_unsigned_SS_long(PyObject *obj, unsigned long *val) {
   if (PyArray_IsScalar(obj, Integer)) {
     /* handle NumPy unsigned integer types */
-    PyArray_Descr *ulongDescr = PyArray_DescrFromType(NPY_ULONG);
-    PyArray_CastScalarToCtype(obj, (void*)val, ulongDescr);
-    Py_DECREF(ulongDescr);
+    if (val) {
+      PyArray_Descr *ulongDescr = PyArray_DescrFromType(NPY_ULONG);
+      PyArray_CastScalarToCtype(obj, (void*)val, ulongDescr);
+      Py_DECREF(ulongDescr);
+    }
     return SWIG_OK;
   }
   /* fall back to SWIG default behaviour */
@@ -298,9 +302,11 @@ SWIGINTERN int swiglal_SWIG_AsVal_unsigned_SS_long(PyObject *obj, unsigned long 
 SWIGINTERN int swiglal_SWIG_AsVal_float(PyObject *obj, float* val) {
   if (PyArray_IsScalar(obj, Integer) || PyArray_IsScalar(obj, Floating)) {
     /* handle NumPy signed integer types */
-    PyArray_Descr *floatDescr = PyArray_DescrFromType(NPY_FLOAT);
-    PyArray_CastScalarToCtype(obj, (void*)val, floatDescr);
-    Py_DECREF(floatDescr);
+    if (val) {
+      PyArray_Descr *floatDescr = PyArray_DescrFromType(NPY_FLOAT);
+      PyArray_CastScalarToCtype(obj, (void*)val, floatDescr);
+      Py_DECREF(floatDescr);
+    }
     return SWIG_OK;
   }
   /* fall back to SWIG default behaviour */
@@ -309,9 +315,11 @@ SWIGINTERN int swiglal_SWIG_AsVal_float(PyObject *obj, float* val) {
 SWIGINTERN int swiglal_SWIG_AsVal_double(PyObject *obj, double* val) {
   if (PyArray_IsScalar(obj, Integer) || PyArray_IsScalar(obj, Floating)) {
     /* handle NumPy signed integer types */
-    PyArray_Descr *doubleDescr = PyArray_DescrFromType(NPY_DOUBLE);
-    PyArray_CastScalarToCtype(obj, (void*)val, doubleDescr);
-    Py_DECREF(doubleDescr);
+    if (val) {
+      PyArray_Descr *doubleDescr = PyArray_DescrFromType(NPY_DOUBLE);
+      PyArray_CastScalarToCtype(obj, (void*)val, doubleDescr);
+      Py_DECREF(doubleDescr);
+    }
     return SWIG_OK;
   }
   /* fall back to SWIG default behaviour */
@@ -320,9 +328,11 @@ SWIGINTERN int swiglal_SWIG_AsVal_double(PyObject *obj, double* val) {
 SWIGINTERN int swiglal_SWIG_AsVal_COMPLEX8(PyObject *obj, COMPLEX8* val) {
   if (PyArray_IsScalar(obj, Integer) || PyArray_IsScalar(obj, Floating) || PyArray_IsScalar(obj, ComplexFloating)) {
     /* handle NumPy signed integer types */
-    PyArray_Descr *floatComplexDescr = PyArray_DescrFromType(NPY_COMPLEX64);
-    PyArray_CastScalarToCtype(obj, (void*)val, floatComplexDescr);
-    Py_DECREF(floatComplexDescr);
+    if (val) {
+      PyArray_Descr *floatComplexDescr = PyArray_DescrFromType(NPY_COMPLEX64);
+      PyArray_CastScalarToCtype(obj, (void*)val, floatComplexDescr);
+      Py_DECREF(floatComplexDescr);
+    }
     return SWIG_OK;
   }
   /* fall back to SWIG default behaviour */
@@ -331,9 +341,11 @@ SWIGINTERN int swiglal_SWIG_AsVal_COMPLEX8(PyObject *obj, COMPLEX8* val) {
 SWIGINTERN int swiglal_SWIG_AsVal_COMPLEX16(PyObject *obj, COMPLEX16* val) {
   if (PyArray_IsScalar(obj, Integer) || PyArray_IsScalar(obj, Floating) || PyArray_IsScalar(obj, ComplexFloating)) {
     /* handle NumPy signed integer types */
-    PyArray_Descr *doubleComplexDescr = PyArray_DescrFromType(NPY_COMPLEX128);
-    PyArray_CastScalarToCtype(obj, (void*)val, doubleComplexDescr);
-    Py_DECREF(doubleComplexDescr);
+    if (val) {
+      PyArray_Descr *doubleComplexDescr = PyArray_DescrFromType(NPY_COMPLEX128);
+      PyArray_CastScalarToCtype(obj, (void*)val, doubleComplexDescr);
+      Py_DECREF(doubleComplexDescr);
+    }
     return SWIG_OK;
   }
   /* fall back to SWIG default behaviour */
