@@ -176,6 +176,8 @@ default:
     paths:
       - config.log
       - Makefile
+      - lal*/config.log
+      - lal*/Makefile
     when: on_failure
 
 # helper template for jobs running on macOS
@@ -1953,6 +1955,8 @@ lint:gitignore:
     paths:
       - config.log
       - Makefile
+      - lal*/config.log
+      - lal*/Makefile
     when: on_failure
 
 lint:python:
