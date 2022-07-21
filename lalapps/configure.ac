@@ -88,8 +88,6 @@ LALSUITE_ARG_VAR
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
-LALSUITE_WITH_CUDA
-
 LALSUITE_ENABLE_GCC_FLAGS
 LALSUITE_ENABLE_NIGHTLY
 LALAPPS_ENABLE_CONDOR
@@ -111,6 +109,12 @@ LALSUITE_ENABLE_LALPULSAR
 
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
+
+# enable CUDA
+LALSUITE_WITH_CUDA
+if test "${cuda}" = "true"; then
+  AC_DEFINE([LALAPPS_CUDA_ENABLED],[1],[Define if using cuda library])
+fi
 
 # enable help2man documentation
 LALSUITE_ENABLE_HELP2MAN
@@ -289,6 +293,9 @@ LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat]
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
 
+# configure CUDA
+LALSUITE_USE_CUDA
+
 # check for qthread
 LALAPPS_CHECK_QTHREAD
 
@@ -303,11 +310,6 @@ AC_CHECK_FUNCS([setenv])
 
 # set prefix
 AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
-
-# define if CUDA is enabled
-if test "${cuda}" = "true"; then
-  AC_DEFINE([LALAPPS_CUDA_ENABLED],[1],[Define if using cuda library])
-fi
 
 LALSUITE_ADD_GCC_FLAGS
 

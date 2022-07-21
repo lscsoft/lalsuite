@@ -187,6 +187,9 @@ LALSUITE_USE_SWIG
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
 
+# configure CUDA
+LALSUITE_USE_CUDA
+
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 
