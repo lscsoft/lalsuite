@@ -23,12 +23,12 @@
 #include <lal/LALMalloc.h>
 #include <lal/XLALError.h>
 #include <lal/ComplexFFT.h>
-#include <lal/CudaPlan.h>
 #include <lal/FFTWMutex.h>
 #include <fftw3.h>
 
 #include "CudaFunctions.h"
 #include "CudaFFT.h"
+#include "CudaPlan.h"
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
