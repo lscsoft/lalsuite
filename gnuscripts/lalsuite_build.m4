@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 164
+# serial 165
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -891,19 +891,33 @@ AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
 ])
 
 AC_DEFUN([LALSUITE_WITH_CUDA],[
-AC_ARG_WITH(
-  [cuda],
-  AS_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),[
-    AS_CASE([${with_cuda}],
-      [no],[cuda=false],
-      [yes],[cuda=true; cuda_path=/opt/cuda],
-      [cuda=true; cuda_path=${with_cuda}]
-    )
-  ],[
-    cuda=false
-  ])
+  AC_ARG_WITH(
+    [cuda],
+    AS_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),
+    [
+      AS_CASE([${with_cuda}],
+        [no],[cuda=false],
+        [yes],[cuda=true; cuda_path=/opt/cuda],
+        [cuda=true; cuda_path=${with_cuda}]
+      )
+    ],[
+      cuda=false
+    ]
+  )
+  AC_ARG_WITH(
+    [nvcc_cflags],
+    AS_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
+    [
+      NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"
+    ]
+  )
   AS_IF([test "${cuda}" = true],[
     LALSUITE_REQUIRE_CXX
+  ])
+])
+
+AC_DEFUN([LALSUITE_USE_CUDA],[
+  AS_IF([test "${cuda}" = true],[
     AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
     AS_CASE([$build_os],
       [linux*],[
@@ -927,13 +941,6 @@ AC_ARG_WITH(
     AC_SUBST(NVCC_CFLAGS)
   ])
   LALSUITE_ENABLE_MODULE([CUDA])
-  AC_ARG_WITH(
-    [nvcc_cflags],
-    AS_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
-    [
-      NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"
-    ]
-  )
 ])
 
 

@@ -131,8 +131,6 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LAL_ENABLE_INTELFFT
 LAL_ENABLE_FFTW3_MEMALIGN
 
-LALSUITE_WITH_CUDA
-
 LALSUITE_ENABLE_GCC_FLAGS
 
 LAL_WITH_DEFAULT_DEBUG_LEVEL
@@ -148,6 +146,12 @@ LALSUITE_ENABLE_SWIG
 
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
+
+# enable CUDA
+LALSUITE_WITH_CUDA
+if test "${cuda}" = "true"; then
+  AC_DEFINE([LAL_CUDA_ENABLED],[1],[Define if using cuda library])
+fi
 
 # enable help2man documentation
 LALSUITE_ENABLE_HELP2MAN
@@ -259,23 +263,18 @@ else
   fi
   AC_CHECK_HEADERS([mkl_dfti.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
 fi
+if test "${fftw3}" = "true"; then
+  AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
+  if test "${fftw3_memalign}" = "true"; then
+    AC_DEFINE([LAL_FFTW3_MEMALIGN_ENABLED],[1],[Define if using fftw3 library])
+  fi
+fi
 LALSUITE_ENABLE_MODULE([INTELFFT])
 LALSUITE_ENABLE_MODULE([FFTW3])
 
 # check for fft headers
 if test "${intelfft}" = "false" ; then
   AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find the fftw3.h header])])
-fi
-
-# define what is being enabled
-if test "${cuda}" = "true"; then
-  AC_DEFINE([LAL_CUDA_ENABLED],[1],[Define if using cuda library])
-fi
-if test "${fftw3}" = "true"; then
-  AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
-  if test "${fftw3_memalign}" = "true"; then
-    AC_DEFINE([LAL_FFTW3_MEMALIGN_ENABLED],[1],[Define if using fftw3 library])
-  fi
 fi
 
 # check for hdf5 support
@@ -339,6 +338,9 @@ LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
+
+# configure CUDA
+LALSUITE_USE_CUDA
 
 # add gcc specific flags --- must be done at end or tests will break!
 LALSUITE_ADD_GCC_FLAGS

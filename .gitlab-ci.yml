@@ -176,6 +176,8 @@ default:
     paths:
       - config.log
       - Makefile
+      - lal*/config.log
+      - lal*/Makefile
     when: on_failure
 
 # helper template for jobs running on macOS
@@ -1454,7 +1456,14 @@ cuda:
   image: igwn/lalsuite-dev-cuda:el7
   script:
     - ./00boot
+    # test ./configure works with non-system CUDA install path
+    - rm -f $PWD/gitlab-ci-non-sys-cuda-path
+    - ln -s /usr/local/cuda $PWD/gitlab-ci-non-sys-cuda-path
+    - ./configure --with-cuda=$PWD/gitlab-ci-non-sys-cuda-path
+    - rm -f $PWD/gitlab-ci-non-sys-cuda-path
+    # test ./configure works with system CUDA install path
     - ./configure --with-cuda=/usr/local/cuda
+    # check compilation and tarball
     - make -j${CPU_COUNT} dist
     - make -j${CPU_COUNT}
     # just compile test suite; some tests require a CUDA device to run
@@ -1953,6 +1962,8 @@ lint:gitignore:
     paths:
       - config.log
       - Makefile
+      - lal*/config.log
+      - lal*/Makefile
     when: on_failure
 
 lint:python:
