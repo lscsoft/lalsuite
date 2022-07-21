@@ -259,6 +259,12 @@ else
   fi
   AC_CHECK_HEADERS([mkl_dfti.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
 fi
+if test "${fftw3}" = "true"; then
+  AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
+  if test "${fftw3_memalign}" = "true"; then
+    AC_DEFINE([LAL_FFTW3_MEMALIGN_ENABLED],[1],[Define if using fftw3 library])
+  fi
+fi
 LALSUITE_ENABLE_MODULE([INTELFFT])
 LALSUITE_ENABLE_MODULE([FFTW3])
 
@@ -270,12 +276,6 @@ fi
 # define what is being enabled
 if test "${cuda}" = "true"; then
   AC_DEFINE([LAL_CUDA_ENABLED],[1],[Define if using cuda library])
-fi
-if test "${fftw3}" = "true"; then
-  AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
-  if test "${fftw3_memalign}" = "true"; then
-    AC_DEFINE([LAL_FFTW3_MEMALIGN_ENABLED],[1],[Define if using fftw3 library])
-  fi
 fi
 
 # check for hdf5 support
