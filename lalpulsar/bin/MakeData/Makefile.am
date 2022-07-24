@@ -28,6 +28,7 @@ bin_PROGRAMS += \
 
 lalpulsar_MakeSFTs_SOURCES = \
 	MakeSFTs.c \
+	SFTWindowFuncs.c \
 	$(END_OF_LIST)
 
 lalpulsar_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
