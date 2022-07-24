@@ -18,7 +18,6 @@ lalpulsar/                      @david-keitel @evan-goetz @john-whelan @karl-wet
 # lalapps
 lalapps/src/findchirp/          @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/frametools/         @adam-mercer @ed-maros @jolien-creighton
-lalapps/src/hwinjection/        @david-keitel @evan-goetz @john-whelan @karl-wette @matthew-pitkin
 lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
 lalapps/src/power/              @adam-mercer @kipp.cannon @soichiro.kuwahara
