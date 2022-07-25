@@ -1450,7 +1450,7 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
     config->dPorbdTascShear =
       ( config->norb
 	/ ( SQR(config->norb)
-	    + SQR((uvar->orbitPSecSigma/uvar->orbitTimeAscSigma)) ) );
+	    + SQR((uvar->orbitTimeAscSigma/uvar->orbitPSecSigma)) ) );
   } else {
     if ( uvar->useShearedPorb == TRUE ) {
       printf("Error!  Sheared period requires values for --orbitPSecCenter --orbitPSecSigma --orbitTimeAscCenter --orbitTimeAscSigma\n");
