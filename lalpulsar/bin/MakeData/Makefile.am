@@ -10,6 +10,10 @@ bin_PROGRAMS = \
 	lalpulsar_Makefakedata_v5 \
 	$(END_OF_LIST)
 
+noinst_PROGRAMS = \
+	genSFTWindows \
+	$(END_OF_LIST)
+
 EXTRA_PROGRAMS =
 
 lalpulsar_Makefakedata_v4_SOURCES = \
@@ -18,6 +22,11 @@ lalpulsar_Makefakedata_v4_SOURCES = \
 
 lalpulsar_Makefakedata_v5_SOURCES = \
 	makefakedata_v5.c \
+	$(END_OF_LIST)
+
+genSFTWindows_SOURCES = \
+	SFTWindowFuncs.c \
+	genSFTWindows.c \
 	$(END_OF_LIST)
 
 if LALFRAME
@@ -69,10 +78,12 @@ test_scripts += testMakefakedata_v4_hwinjection.sh
 test_scripts += testMakefakedata_v5.sh
 if HAVE_PYTHON
 test_scripts += testMakeSFTDAG.sh
+test_scripts += testSFTWindows.py
 endif
 
 # Add any helper programs required by tests to this variable
 test_helpers += compareTS
+test_helpers += genSFTWindows
 
 # Add any extra files required by tests (e.g. helper scripts) to this variable
 test_extra_files +=
