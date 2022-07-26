@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 165
+# serial 166
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -329,9 +329,23 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
 AC_DEFUN([LALSUITE_ADD_TESTS_ENV_CONFIG_VAR],[
   AC_SUBST(TESTS_ENV_CONFIG_VARS)
   m4_if($2,[true],[
-    TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=true;"
+    AS_CASE([" ${TESTS_ENV_CONFIG_VARS} "],
+      [*" export $1; $1=true; "*],[:],
+      [*" export $1; $1=false; "*],[AC_MSG_ERROR([tried to add inconsistent value of $1=true (already $1=false) to TESTS_ENV_CONFIG_VARS])],
+      [*],[
+        TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=true;"
+        _AS_ECHO_LOG([added $1=true to TESTS_ENV_CONFIG_VARS])
+      ]
+    )
   ],[
-    TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=false;"
+    AS_CASE([" ${TESTS_ENV_CONFIG_VARS} "],
+      [*" export $1; $1=true; "*],[AC_MSG_ERROR([tried to add inconsistent value of $1=false (already $1=true) to TESTS_ENV_CONFIG_VARS])],
+      [*" export $1; $1=false; "*],[:],
+      [*],[
+        TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=false;"
+        _AS_ECHO_LOG([added $1=false to TESTS_ENV_CONFIG_VARS])
+      ]
+    )
   ])
 ])
 
