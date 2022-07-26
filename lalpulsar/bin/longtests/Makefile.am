@@ -2,7 +2,8 @@ EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalpulsar_bin.am
 
 # Add shell test scripts to this variable
-test_scripts +=
+test_scripts += testHeterodyneSearch_flat_evidence_default.py
+test_scripts += testHeterodyneSearch_flat_evidence_walk.py
 
 # Add any helper programs required by tests to this variable
 test_helpers +=

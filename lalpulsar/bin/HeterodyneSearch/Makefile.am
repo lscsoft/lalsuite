@@ -100,8 +100,6 @@ if HAVE_PYTHON
 test_scripts += test_heterodyne.sh
 test_scripts += test_ssbtodetector.py
 test_scripts += test_flat_prior.py
-test_scripts += test_flat_evidence_default.py
-#test_scripts += test_flat_evidence_walk.py
 endif
 
 # Add any helper programs required by tests to this variable
