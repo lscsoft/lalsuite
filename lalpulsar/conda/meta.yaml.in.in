@@ -221,6 +221,8 @@ outputs:
         - openssl
         - python
         - numpy
+        # FIXME
+        - libopenblas
     requirements:
       build:
         - {{ compiler('c') }}
@@ -249,6 +251,8 @@ outputs:
         - scipy   # [build_platform == target_platform]
         # extras to assist the solver, but not actually used
         - openssl
+        # FIXME
+        - libopenblas
       run:
         - astropy
         - cfitsio
@@ -267,6 +271,8 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalinference >={{ lalinference_version }}
         - {{ pin_subpackage('python-lalpulsar', exact=True) }}
+        # FIXME
+        - libopenblas
     test:
       commands:
         - lalpulsar_version --verbose
