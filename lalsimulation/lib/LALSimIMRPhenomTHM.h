@@ -56,7 +56,7 @@ int LALSimIMRPhenomTHM_Modes(
   REAL8 fRef,               /**< reference GW frequency (Hz) */
   REAL8 phiRef,               /**< reference orbital phase (rad) */
   LALDict *lalParams,            /**< LAL dictionary containing accessory parameters */
-  UINT4 only22              /* Internal flag for mode array check */
+  UINT4 only22              /**< Internal flag for mode array check */
   );
 
 /* Function to adapt user requested mode list to modes included in the model */

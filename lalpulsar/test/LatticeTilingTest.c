@@ -672,8 +672,8 @@ static int SuperskyTests(
     .length = 1,
     .sites = { lalCachedDetectors[LAL_LLO_4K_DETECTOR] }
   };
-  EphemerisData *edat = XLALInitBarycenter( TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz",
-                                            TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz" );
+  EphemerisData *edat = XLALInitBarycenter( TEST_PKG_DATA_DIR "earth00-40-DE405.dat.gz",
+                                            TEST_PKG_DATA_DIR "sun00-40-DE405.dat.gz" );
   XLAL_CHECK( edat != NULL, XLAL_EFUNC );
   const double freq_max = 40.0;
   SuperskyMetrics *metrics = XLALComputeSuperskyMetrics( SUPERSKY_METRIC_TYPE, 1, &ref_time, &segments, freq_max, &detectors, NULL, DETMOTION_SPIN | DETMOTION_PTOLEORBIT, edat );
@@ -794,14 +794,14 @@ static int StrictBoundaryTest(
   LatticeTiling *tiling = XLALCreateLatticeTiling( 2 );
   XLAL_CHECK( tiling != NULL, XLAL_EFUNC );
 
-  // Add bounds
+  // Add bounds with strict padding
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, -1.0, 1.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 0, LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 0, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   {
     const double c_m_lower[] = { -y_range, 5.0 };
     const double c_m_upper[] = { +y_range, 5.0 };
     XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, LinearBound, sizeof(c_m_lower), c_m_lower, c_m_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetLatticeTilingPaddingFlags( tiling, 1, LATTICE_TILING_PAD_NONE ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 1, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Set metric to the Lehmer matrix

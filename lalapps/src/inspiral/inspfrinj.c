@@ -300,28 +300,6 @@
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "inspiral"
 
-
-#define ADD_SUMM_VALUE( sv_name, sv_comment, val, intval ) \
-  if ( this_summ_value ) \
-{ \
-  this_summ_value = this_summ_value->next = (SummValueTable *) \
-  LALCalloc( 1, sizeof(SummValueTable) ); \
-} \
-else \
-{ \
-  summvalue.summValueTable = this_summ_value = (SummValueTable *) \
-  LALCalloc( 1, sizeof(SummValueTable) ); \
-} \
-this_summ_value->version = 0; \
-this_summ_value->start_time = searchsumm.searchSummaryTable->in_start_time; \
-this_summ_value->end_time = searchsumm.searchSummaryTable->in_end_time; \
-this_summ_value->value = (REAL4) val; \
-this_summ_value->intvalue = (INT4) intval; \
-snprintf( this_summ_value->name, LIGOMETA_SUMMVALUE_NAME_MAX, "%s", \
-    sv_name ); \
-snprintf( this_summ_value->comment, LIGOMETA_SUMMVALUE_COMM_MAX, \
-    "%s", sv_comment ); \
-
 int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
 
 /*
@@ -396,11 +374,7 @@ int main( int argc, char *argv[] )
   MetadataTable         proctable;
   MetadataTable         procparams;
   MetadataTable         searchsumm;
-  MetadataTable         searchsummvars;
   MetadataTable         siminspiral;
-  SearchSummvarsTable  *this_search_summvar;
-  MetadataTable         summvalue;
-  SummValueTable       *this_summ_value = NULL;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       results;
 
@@ -415,7 +389,6 @@ int main( int argc, char *argv[] )
   REAL4 inj_alpha = 0;
   REAL4 inj_alphabeta = 0;
   CHAR tmpChName[LALNameLength];
-  REAL8 inputDeltaT;
 
   /*
    *
@@ -438,10 +411,9 @@ int main( int argc, char *argv[] )
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
-  /* create the search summary and zero out the summvars table */
+  /* create the search summary table */
   searchsumm.searchSummaryTable = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
-  searchsummvars.searchSummvarsTable = NULL;
 
   /* zero out the outfileName */
   memset( outfileName, 0, FILENAME_MAX * sizeof(CHAR) );
@@ -512,13 +484,6 @@ int main( int argc, char *argv[] )
     /* determine the sample rate of the raw data */
     LAL_CALL( LALFrGetREAL4TimeSeries( &status, &chan, &frChan, frStream ),
         &status );
-
-    /* store the input sample rate */
-    this_search_summvar = searchsummvars.searchSummvarsTable = 
-      (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-    snprintf( this_search_summvar->name, LIGOMETA_NAME_MAX,
-        "raw data sample rate" );
-    this_search_summvar->value = inputDeltaT = chan.deltaT;
 
     /* determine the number of points to get and create storage for the data */
     numPoints = (UINT4) floor( ((REAL8) inputLengthNS) / (chan.deltaT * 1.0e9) 
@@ -974,43 +939,6 @@ int main( int argc, char *argv[] )
   LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
         search_summary_table ), &status );
   LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-
-  /* write the search summvars table */
-  if ( searchsummvars.searchSummvarsTable )
-  {
-    if ( vrbflg ) fprintf( stdout, "  search_summvars table...\n" );
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
-          search_summvars_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars, 
-          search_summvars_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-    while( searchsummvars.searchSummvarsTable )
-    {
-      this_search_summvar = searchsummvars.searchSummvarsTable;
-      searchsummvars.searchSummvarsTable = this_search_summvar->next;
-      LALFree( this_search_summvar );
-    }
-  }
-  /* write the summ_value table with the calibration data used for injections */
-  if ( frInCacheName && injectionFile)
-  {
-    ADD_SUMM_VALUE( "calibration alpha", "injection", inj_alpha, 0 );
-    ADD_SUMM_VALUE( "calibration alphabeta", "injection", inj_alphabeta, 0 );
-
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, summ_value_table ), 
-        &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, summvalue, 
-          summ_value_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-
-
-    while ( summvalue.summValueTable )
-    {
-      this_summ_value = summvalue.summValueTable;
-      summvalue.summValueTable = summvalue.summValueTable->next;
-      LALFree( this_summ_value );
-    }
-  }
 
   /* free the search summary table */
   free( searchsumm.searchSummaryTable );

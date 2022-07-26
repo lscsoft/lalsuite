@@ -22,12 +22,18 @@ package
 #
 # ### Synopsis ###
 #
-#~~~
-#from lal import gpstime
-#~~~
-#This module wraps the LAL \ref Date_h module into Python providing functions to convert from the `datetime.datetime` objects from the Python standard library into LIGOTimeGPS numbers, and vice-versa. See in particular ::gps_to_utc and ::utc_to_gps.
+# ~~~
+# from lal import gpstime
+# ~~~
+# This module wraps the LAL \ref Date_h module into Python providing
+# functions to convert from the `datetime.datetime` objects from the
+# Python standard library into LIGOTimeGPS numbers, and vice-versa.
+# See in particular ::gps_to_utc and ::utc_to_gps.
 #
-#This module also provides a Python implementation of the `tconvert' module, allowing conversion from strings of dates and times into LIGOTimeGPS, and vice-versa. See in particular ::gps_to_str and ::str_to_gps.
+# This module also provides a Python implementation of the `tconvert'
+# module, allowing conversion from strings of dates and times into
+# LIGOTimeGPS, and vice-versa. See in particular ::gps_to_str and
+# ::str_to_gps.
 #
 # \author Duncan Macleod <duncan.macleod@ligo.org>
 #@{
@@ -47,11 +53,19 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 __version__ = git_version.verbose_msg
 __date__ = git_version.date
 
-TIME_ZONES = {"PST": -8*3600, "PDT": -7*3600,
-              "CST": -6*3600, "CDT": -5*3600,
-              "EST": -5*3600, "EDT": -4*3600,
-              "GMT": 0, "UTC": 0, "BST": 1*3600,
-              "CET": 1*3600, "CEST": 2*3600}
+TIME_ZONES = {
+    "PST": -8*3600,
+    "PDT": -7*3600,
+    "CST": -6*3600,
+    "CDT": -5*3600,
+    "EST": -5*3600,
+    "EDT": -4*3600,
+    "GMT": 0,
+    "UTC": 0,
+    "BST": 1*3600,
+    "CET": 1*3600,
+    "CEST": 2*3600,
+}
 GPS_EPOCH = _datetime.datetime(1980, 1, 6, 0, 0, 0)
 LAL_GPS_MAX = _datetime.datetime(2048, 1, 24, 3, 13, 55)
 
@@ -61,7 +75,7 @@ def _check_utc(utc_time):
     """
     if utc_time < GPS_EPOCH:
         raise ValueError("Given UTC time is before the start of the GPS era.")
-    elif utc_time > LAL_GPS_MAX:
+    if utc_time > LAL_GPS_MAX:
         raise ValueError("Given UTC time is too far in the future, "
                          "LAL will SegmentationFault.")
     return
@@ -86,14 +100,20 @@ def utc_to_gps(utc_time):
     return LIGOTimeGPS(_utc_to_gps(utc_time.utctimetuple()))
 
 
-def gps_to_utc(gps_time):
+def gps_to_utc(gps):
     """Convert a GPS time into a `datetime.datetime`
 
     @returns a Python `datetime.datetime` object in UTC
     """
-    return _datetime.datetime(
-        *_gps_to_utc(int(gps_time))[:7]
-    ).replace(microsecond=0)
+    gps = LIGOTimeGPS(gps)
+    dt = _datetime.datetime(
+        *_gps_to_utc(gps.gpsSeconds)[:7]
+    ).replace(microsecond=0)  # force microseconds to 0
+    if gps.gpsNanoSeconds:
+        return dt.replace(
+            microsecond=int(round(gps.gpsNanoSeconds * 1e-3)),
+        )
+    return dt
 
 
 def utc_time_now():
@@ -105,7 +125,7 @@ def utc_time_now():
 
 
 def str_to_gps(time_string=None):
-    """Converts a date/time string into a GPS time.
+    r"""Converts a date/time string into a GPS time.
 
     The following special words are permitted:
         - "now"
@@ -143,8 +163,8 @@ def str_to_gps(time_string=None):
     return gps + micro / 1000000.0
 
 
-def gps_to_str(gps_time, form=None):
-    """
+def gps_to_str(gps, form=None):
+    r"""
     Convert a LIGOTimeGPS time object into a string.
     The output format can be given explicitly, but will default
     as shown in the example.
@@ -158,21 +178,17 @@ def gps_to_str(gps_time, form=None):
 
     @returns a string with the given format.
     """
-    if not isinstance(gps_time, LIGOTimeGPS):
-        gps_time = LIGOTimeGPS(float(gps_time))
-    nano = gps_time.gpsNanoSeconds
-    utc = _datetime.datetime(*_gps_to_utc(int(gps_time))[:6])
-    utc += _datetime.timedelta(microseconds=nano/1000.0)
-    if nano and not form:
+    gps = LIGOTimeGPS(gps)
+    utc = gps_to_utc(gps)
+    if gps.gpsNanoSeconds and not form:
         form = "%B %d %Y, %H:%M:%S.%f UTC"
     elif not form:
         form = "%B %d %Y, %H:%M:%S UTC"
-    utc_str = utc.strftime(form)
-    return utc_str
+    return utc.strftime(form)
 
 
 def tconvert(arg=None, form=None):
-    """Convert date/time strings to and from GPS times.
+    r"""Convert date/time strings to and from GPS times.
     If no argument is given, the current GPS time is returned.
 
     The following special words are permitted:

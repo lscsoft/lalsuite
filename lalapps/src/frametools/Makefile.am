@@ -1,4 +1,5 @@
 BUILT_SOURCES =
+EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
@@ -43,6 +44,6 @@ lalapps_xtefitstoframe_SOURCES = xtefitstoframe.c
 endif
 endif
 
-EXTRA_DIST = \
+EXTRA_DIST += \
 	animate.png \
 	$(END_OF_LIST)

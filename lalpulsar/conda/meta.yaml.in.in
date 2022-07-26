@@ -20,6 +20,7 @@
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set lalframe_version = "@MIN_LALFRAME_VERSION@a0" %}
+{% set lalinference_version = "@MIN_LALINFERENCE_VERSION@a0" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
@@ -35,13 +36,14 @@ build:
   error_overlinking: true
   number: 9999
   script_env:
+    - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - GITLAB_CI
   skip: true  # [win]
 
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man >=1.37
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
     - make
@@ -53,19 +55,41 @@ requirements:
     - gsl
     - liblal >={{ lal_version }} fftw*
     - liblalframe >={{ lalframe_version }}
+    - liblalinference >={{ lalinference_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
 
 outputs:
+  - name: lalpulsar-data
+    script: install-data.sh
+    build:
+      script_env: {}
+    requirements:
+      build:
+        - make
+      run_constrained:
+        - liblalpulsar >=4.0.0
+    test:
+      commands:
+        - test -f ${LALPULSAR_DATADIR}/sun00-40-DE405.dat.gz  # [unix]
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite.git
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Pulsar Library data files
+      description: |
+        The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+        This package contains the data files needed to run various applications
+        and routines that use the LAL Pulsar library.
+
   - name: liblalpulsar
     script: install-lib.sh
     build:
       error_overdepending: true
       error_overlinking: true
-      ignore_run_exports:
-        # run_exports parsing for fftw is broken, so we ignore it
-        # manually, for now
-        - fftw
       run_exports:
         - {{ pin_subpackage("liblalpulsar", max_pin="x") }}
     requirements:
@@ -79,16 +103,20 @@ outputs:
         - cfitsio
         - fftw * nompi*
         - gsl
+        - {{ pin_subpackage('lalpulsar-data', exact=True) }}
         - liblal >={{ lal_version }} fftw*
         - liblalframe >={{ lalframe_version }}
+        - liblalinference >={{ lalinference_version }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
       run:
         - cfitsio
         - fftw
         - gsl
+        - {{ pin_subpackage('lalpulsar-data', exact=True) }}
         - liblal >={{ lal_version }}
         - liblalframe >={{ lalframe_version }}
+        - liblalinference >={{ lalinference_version }}
       run_constrained:
         - lalpulsar >=3.0.0
         - python-lalpulsar >=3.0.0
@@ -96,8 +124,10 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - pkg-config --print-errors --exact-version "{{ version }}" lalpulsar
-        - test -f ${PREFIX}/lib/liblalpulsar${SHLIB_EXT}  # [not win]
+        # check library
+        - test -f ${PREFIX}/lib/liblalpulsar${SHLIB_EXT}  # [unix]
+        # check pkg-config
+        - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalpulsar
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalpulsar/
@@ -117,28 +147,34 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        # ignore run_exports from python's recipe
+        - numpy
+        - openssl
         - python
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
         - pkg-config
         - swig >={{ swig_version }}
+        # extras for cross-compiling:
+        - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+        - numpy                               # [build_platform != target_platform]
+        - python                              # [build_platform != target_platform]
       host:
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - numpy
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - astropy
-        - gsl  # [linux]
-        - liblal # [linux]
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
+        - python-lalinference >={{ lalinference_version }}
         - six
     test:
       requires:
@@ -171,20 +207,26 @@ outputs:
     script: install-bin.sh
     build:
       ignore_run_exports:
+        - openssl
         - python
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
       host:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - python
+        - python-lal >={{ lal_version }}
+        - python-lalframe >={{ lalframe_version }}
+        - python-lalinference >={{ lalinference_version }}
         - {{ pin_subpackage('python-lalpulsar', exact=True) }}
     test:
       commands:

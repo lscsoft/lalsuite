@@ -120,12 +120,14 @@
  *
  */
 
+#include <ctype.h>
 #include <lal/LALInspiral.h>
 #include <lal/LALNoiseModels.h>
 #include <lal/LALStdlib.h>
 #include <lal/GeneratePPNInspiral.h>
 #include <lal/LALSQTPNWaveformInterface.h>
 #include <lal/TimeSeries.h>
+#include <lal/LALString.h>
 #include <lal/LALDict.h>
 
 /**
@@ -266,6 +268,46 @@ int XLALInspiralTDWaveformFromSimInspiral(
 
    /* note: the condition waveform already does tapering... ignore any request to do so get taper option */
    /* taper = XLALGetTaperFromString(thisRow->taper); */
+
+   /* get extra parameters from numrel_data column */
+   /* format is: "param1=3.14,param2:INT4=7,param3:string=hello" */
+   if (*thisRow->numrel_data && approximant != NR_hdf5) {
+      char *str = XLALStringDuplicate(thisRow->numrel_data);
+      char *head = str;
+      char *tok;
+      int i = 0;
+      /* remove whitespace from string */
+      for (int j=0; str[j]; ++j)
+         if (!isspace(str[j]))
+            str[i++] = str[j];
+      str[i] = '\0';
+      while ((tok = XLALStringToken(&str, ",", 0))) {
+         char *key = tok;
+         char *val = strchr(tok, '=');
+         char *type;
+         if (val == NULL) {
+            XLALDestroyDict(params);
+            XLALFree(head);
+            XLAL_ERROR(XLAL_ENAME, "could not parse extra params from numrel_data column `%s'", thisRow->numrel_data);
+         }
+         *val++ = 0;
+         type = strchr(key, ':');
+         if (type)
+             *type++ = 0;
+         if (type == NULL || XLALStringCaseCompare(type, "REAL8") == 0)
+            XLALDictInsertREAL8Value(params, key, atof(val));
+         else if (XLALStringCaseCompare(type, "INT4") == 0)
+            XLALDictInsertINT4Value(params, key, atoi(val));
+         else if (XLALStringCaseCompare(type, "STRING") == 0)
+            XLALDictInsertStringValue(params, key, val);
+         else {
+            XLALDestroyDict(params);
+            XLALFree(head);
+            XLAL_ERROR(XLAL_ENAME, "could not parse extra params from numrel_data column `%s'", thisRow->numrel_data);
+         }
+      }
+      XLALFree(head);
+   }
 
    /* generate +,x waveforms */
    ret = XLALSimInspiralTD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phi0, 0.0, 0.0, 0.0, deltaT, f_min, f_ref, params, approximant);

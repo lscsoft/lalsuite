@@ -7,7 +7,6 @@ EXTRA_DIST = \
 	lalmetaio-octave.install \
 	liblalmetaio-dev.install \
 	liblalmetaio@LIBMAJOR@.install \
-	python-lalmetaio.install \
 	python3-lalmetaio.install \
 	rules \
 	lalsuite.mk \

@@ -195,12 +195,26 @@ int XLALSimNoisePSDaLIGOAPlusDesignSensitivityT1800042(REAL8FrequencySeries *psd
  * NOISE PSDs FROM LIGO-P1800044
  */
 
+int XLALSimNoisePSDaLIGODesignSensitivityT1800044(REAL8FrequencySeries *psd, double flow);
+
+/* deprecated function with an extra `aLIGO` typo in the name */
 int XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(REAL8FrequencySeries *psd, double flow);
 
 /*
- * NOISE PSDs FROM LIGO-P1800545
+ * NOISE PSDs FROM LIGO-T1800545
  */
 
+int XLALSimNoisePSDaLIGOO3LowT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGO140MpcT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDaLIGO175MpcT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDAdVO4IntermediateT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDAdVO4T1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDAdVO3LowT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDKAGRA128MpcT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDKAGRA25MpcT1800545(REAL8FrequencySeries *psd, double flow);
+int XLALSimNoisePSDKAGRA80MpcT1800545(REAL8FrequencySeries *psd, double flow);
+
+/* deprecated functions with an extra `aLIGO` typo in the names */
 int XLALSimNoisePSDaLIGOaLIGOO3LowT1800545(REAL8FrequencySeries *psd, double flow);
 int XLALSimNoisePSDaLIGOaLIGO140MpcT1800545(REAL8FrequencySeries *psd, double flow);
 int XLALSimNoisePSDaLIGOaLIGO175MpcT1800545(REAL8FrequencySeries *psd, double flow);

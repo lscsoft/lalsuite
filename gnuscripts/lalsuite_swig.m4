@@ -2,11 +2,11 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 109
+# serial 111
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
-  AC_SUBST([MIN_SWIG_VERSION],[3.0.10])
+  AC_SUBST([MIN_SWIG_VERSION],[3.0.11])
   AC_SUBST([MIN_NUMPY_VERSION],[1.7])
   # end $0
 ])
@@ -39,7 +39,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   # $0: enable SWIG bindings
   AC_ARG_ENABLE(
     [swig],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-swig],
       [generate SWIG bindings for all languages]
     ),[
@@ -54,7 +54,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG],[
   )
   AC_ARG_ENABLE(
     [swig_iface],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-swig-iface],
       [generate SWIG interface only]
     ),[
@@ -114,7 +114,7 @@ AC_DEFUN([LALSUITE_ENABLE_SWIG_LANGUAGE],[
   m4_pushdef([lowercase],m4_translit([$1],[A-Z],[a-z]))
   AC_ARG_ENABLE(
     [swig-]lowercase,
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-swig-]lowercase,
       [generate SWIG bindings for $1]
     ),[
@@ -350,11 +350,17 @@ AC_DEFUN([LALSUITE_USE_SWIG_OCTAVE],[
         min_swig_version_info="for Octave version ${octave_version}"
       ])
     ])
+    debian_version=[`cat /etc/debian_version 2>/dev/null`]
     LALSUITE_VERSION_COMPARE([${octave_version}],[>=],[4.4.0],[
       LALSUITE_VERSION_COMPARE([${MIN_SWIG_VERSION}],[<],[4.0.2],[
-        # TODO: once SWIG 4.0.2 is released and widely available, replace 'min_swig_recommend_version' with 'MIN_SWIG_VERSION'
-        min_swig_recommend_version=4.0.2
-        min_swig_version_info="for Octave version ${octave_version}"
+        # Debian Buster backports 4.0.2 fixes to 3.0.12, so can accept that
+        AX_COMPARE_VERSION([${debian_version}],[eq1],[10],[
+          min_swig_recommend_version=4.0.2
+          min_swig_version_info="for Octave version ${octave_version}"
+        ],[
+          MIN_SWIG_VERSION=4.0.2
+          min_swig_version_info="for Octave version ${octave_version}"
+        ])
       ])
     ])
 

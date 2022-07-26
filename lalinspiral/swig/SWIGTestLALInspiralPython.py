@@ -9,6 +9,13 @@ from lalinspiral import globalvar as lalinspiralglobalvar
 from lal import globalvar as lalglobalvar
 print("PASSED module load")
 
+# set error handlers
+def set_nice_error_handlers():
+    lal.swig_set_nice_error_handlers()
+def set_default_error_handlers():
+    lal.swig_set_nasty_error_handlers()
+set_default_error_handlers()
+
 # check object parent tracking
 print("checking object parent tracking ...")
 a = lalinspiral.swig_lalinspiral_test_parent_map_struct()

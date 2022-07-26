@@ -103,8 +103,6 @@ int main ( int argc, char *argv[] )
   MetadataTable         templateBank;
   MetadataTable         proctable;
   MetadataTable         procparams;
-  MetadataTable         searchsummvars;
-  SearchSummvarsTable  *this_search_summvar = NULL;
   ProcessParamsTable   *this_proc_param = NULL;
   LIGOLwXMLStream       results;
 
@@ -145,12 +143,6 @@ int main ( int argc, char *argv[] )
    */
 
 
-  /* store the seed in the search summvars table */
-  this_search_summvar = searchsummvars.searchSummvarsTable =
-    (SearchSummvarsTable *) LALCalloc( 1, sizeof(SearchSummvarsTable) );
-  snprintf( this_search_summvar->name,
-      LIGOMETA_NAME_MAX, "template bank simulation seed" );
-
   if ( randSeedType == urandom )
   {
     FILE   *fpRand = NULL;
@@ -182,9 +174,6 @@ int main ( int argc, char *argv[] )
       fprintf( stdout, "using user specified random seed: " );
   }
 
-  this_search_summvar->value = randomSeed;
-  snprintf( this_search_summvar->string, LIGOMETA_STRING_MAX,
-      "%d", randomSeed );
   if ( vrbflg ) fprintf( stdout, "%d\n", randomSeed );
 
   /* create the tmplt bank random parameter structure */
@@ -324,19 +313,6 @@ int main ( int argc, char *argv[] )
     this_proc_param = procparams.processParamsTable;
     procparams.processParamsTable = this_proc_param->next;
     free( this_proc_param );
-  }
-
-  /* write the search summvars table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results,
-        search_summvars_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsummvars,
-        search_summvars_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  while( searchsummvars.searchSummvarsTable )
-  {
-    this_search_summvar = searchsummvars.searchSummvarsTable;
-    searchsummvars.searchSummvarsTable = this_search_summvar->next;
-    LALFree( this_search_summvar );
   }
 
   /* write the template bank to the file */

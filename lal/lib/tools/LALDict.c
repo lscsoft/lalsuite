@@ -30,14 +30,16 @@
 
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
+#include <lal/LALString.h>
 #include <lal/LALDict.h>
 #include "LALValue_private.h"
+#include "config.h"
 
 #define LAL_DICT_HASHSIZE 101
 
 struct tagLALDictEntry {
         struct tagLALDictEntry *next;
-        char key[LAL_KEYNAME_MAX + 1];
+        char *key;
 	LALValue value;
 };
 
@@ -60,6 +62,8 @@ void XLALDictEntryFree(LALDictEntry *list)
 {
 	while (list) {
 		LALDictEntry *next = list->next;
+		if (list->key)
+			LALFree(list->key);
 		LALFree(list);
 		list = next;
 	}
@@ -72,6 +76,7 @@ LALDictEntry * XLALDictEntryAlloc(size_t size)
 	entry = XLALMalloc(sizeof(*entry) + size);
 	if (!entry)
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
+	entry->key = NULL;
 	entry->value.size = size;
 	return entry;
 }
@@ -91,8 +96,10 @@ LALDictEntry * XLALDictEntryRealloc(LALDictEntry *entry, size_t size)
 
 LALDictEntry * XLALDictEntrySetKey(LALDictEntry *entry, const char *key)
 {
-	if ((size_t)snprintf(entry->key, sizeof(entry->key), "%s", key) >= sizeof(entry->key))
-		XLAL_ERROR_NULL(XLAL_ENAME, "Key name `%s' too long (max %d characters)", key, LAL_KEYNAME_MAX);
+	if (entry->key)
+		LALFree(entry->key);
+	if ((entry->key = XLALStringDuplicate(key)) == NULL)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 	return entry;
 }
 
@@ -115,6 +122,8 @@ const LALValue * XLALDictEntryGetValue(const LALDictEntry *entry)
 	return &entry->value;
 }
 
+/* DICT ROUTINES */
+
 void XLALDestroyDict(LALDict *dict)
 {
 	if (dict) {
@@ -125,8 +134,6 @@ void XLALDestroyDict(LALDict *dict)
 	}
 	return;
 }
-
-/* DICT ROUTINES */
 
 LALDict * XLALCreateDict(void)
 {
@@ -292,6 +299,8 @@ int XLALDictRemove(LALDict *dict, const char *key)
 				dict->hashes[hashidx] = this->next;
 			else
 				prev->next = this->next;
+			if (this->key)
+				LALFree(this->key);
 			LALFree(this);
 			return 0;
 		}
@@ -361,10 +370,17 @@ int XLALDictInsertValue(LALDict *dict, const char *key, const LALValue *value)
 	return XLALDictInsert(dict, key, data, size, type);
 }
 
-int XLALDictInsertStringValue(LALDict *dict, const char *key, const char *value)
+int XLALDictInsertBLOBValue(LALDict *dict, const char *key, const void *blob, size_t size)
 {
-	size_t size = strlen(value) + 1;
-	if (XLALDictInsert(dict, key, value, size, LAL_CHAR_TYPE_CODE) < 0)
+	if (XLALDictInsert(dict, key, blob, size, LAL_UCHAR_TYPE_CODE) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+	return 0;
+}
+
+int XLALDictInsertStringValue(LALDict *dict, const char *key, const char *string)
+{
+	size_t size = strlen(string) + 1;
+	if (XLALDictInsert(dict, key, string, size, LAL_CHAR_TYPE_CODE) < 0)
 		XLAL_ERROR(XLAL_EFUNC);
 	return 0;
 }
@@ -391,6 +407,19 @@ DEFINE_INSERT_FUNC(COMPLEX8, LAL_C_TYPE_CODE)
 DEFINE_INSERT_FUNC(COMPLEX16, LAL_Z_TYPE_CODE)
 
 #undef DEFINE_INSERT_FUNC
+
+void * XLALDictLookupBLOBValue(LALDict *dict, const char *key)
+{
+	LALDictEntry *entry = XLALDictLookup(dict, key);
+	const LALValue *value;
+	if (entry == NULL)
+		XLAL_ERROR_NULL(XLAL_ENAME, "Key `%s' not found", key);
+	value = XLALDictEntryGetValue(entry);
+	if (value == NULL)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+/* FIXME TODO */
+	return XLALValueGetBLOB(value);
+}
 
 /* warning: shallow pointer */
 const char * XLALDictLookupStringValue(LALDict *dict, const char *key)
@@ -445,20 +474,50 @@ REAL8 XLALDictLookupValueAsREAL8(LALDict *dict, const char *key)
 	return XLALValueGetAsREAL8(value);
 }
 
-static void XLALDictEntryPrintFunc(char *key, LALValue *value, void *thunk)
+struct LALDictAsStringAppendValueFuncParams {char *s; int first;};
+
+static void XLALDictAsStringAppendValueFunc(char *key, LALValue *value, void *thunk)
 {
-	int fd = *(int *)(thunk);
-	int fd2 = dup(fd);
-	FILE *fp = fdopen(fd2, "w");
-	fprintf(fp, "\"%s\": ", key);
-	XLALValuePrint(value, fd);
-	fprintf(fp, "\n");
-	fclose(fp);
+	struct LALDictAsStringAppendValueFuncParams *p = (struct LALDictAsStringAppendValueFuncParams *)(thunk);
+	if (p->first)
+		p->first = 0;
+	else
+		p->s = XLALStringAppend(p->s, ", ");
+	p->s = XLALStringAppendFmt(p->s, "\"%s\": ", key);
+	p->s = XLALValueAsStringAppend(p->s, value);
 	return;
+}
+
+char * XLALDictAsStringAppend(char *s, LALDict *list)
+{
+	struct LALDictAsStringAppendValueFuncParams p = {s, 1};
+        p.s = XLALStringAppend(p.s, "{");
+	XLALDictForeach(list, XLALDictAsStringAppendValueFunc, &p);
+        p.s = XLALStringAppend(p.s, "}");
+	return p.s;
 }
 
 void XLALDictPrint(LALDict *dict, int fd)
 {
-	XLALDictForeach(dict, XLALDictEntryPrintFunc, &fd);
+	char *s = NULL;
+	s = XLALDictAsStringAppend(s, dict);
+	XLAL_CHECK_VOID(s, XLAL_EFUNC);
+#if HAVE_DPRINTF
+	dprintf(fd, "%s", s);
+#else
+	/* hack... */
+	switch (fd) {
+	case 1:
+		fprintf(stdout, "%s", s);
+		break;
+	case 2:
+		fprintf(stderr, "%s", s);
+		break;
+	default:
+		LALFree(s);
+		XLAL_ERROR_VOID(XLAL_EIO, "Don't know what to do with file descriptor %d", fd);
+	}
+#endif
+	LALFree(s);
 	return;
 }

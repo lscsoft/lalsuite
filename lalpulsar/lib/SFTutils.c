@@ -1386,6 +1386,9 @@ XLALReadSegmentsFromFile ( const char *fname	/**< name of file containing segmen
  * This uses the conventions in XLALFindCoveringSFTBins() to determine
  * the 'effective' frequency-band to extract.
  *
+ * \warning This convention is deprecated. Please use either
+ * XLALExtractStrictBandFromSFTVector(), or else XLALSFTVectorResizeBand()
+ * if you really need a covering frequency band.
  */
 SFTVector *
 XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
@@ -1393,6 +1396,8 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
                                REAL8 Band		///< [in] band width of frequency interval to return
                                )
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALExtractStrictBandFromSFTVector");
+
   XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input SFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input SFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
@@ -1427,6 +1432,9 @@ XLALExtractBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
  * This uses the conventions in XLALFindCoveringSFTBins() to determine
  * the 'effective' frequency-band to extract.
  *
+ * \warning This convention is deprecated. Please use either
+ * XLALExtractStrictBandFromSFT(), or else XLALSFTResizeBand()
+ * if you really need a covering frequency band.
  */
 int
 XLALExtractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re-alloced as required)
@@ -1435,6 +1443,8 @@ XLALExtractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re
                          REAL8 Band		///< [in] band width of frequency interval to return
                          )
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALExtractStrictBandFromSFT");
+
   XLAL_CHECK ( outSFT != NULL, XLAL_EINVAL );
   XLAL_CHECK ( inSFT != NULL, XLAL_EINVAL );
   XLAL_CHECK ( inSFT->data != NULL, XLAL_EINVAL );
@@ -1492,6 +1502,9 @@ XLALExtractBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re
  * This uses the conventions in XLALFindCoveringSFTBins() to determine
  * the 'effective' frequency-band to extract.
  *
+ * \warning This convention is deprecated. Please use either
+ * XLALExtractStrictBandFromMultiSFTVector(), or else XLALMultiSFTVectorResizeBand()
+ * if you really need a covering frequency band.
  */
 MultiSFTVector *
 XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in] input MultiSFTs
@@ -1499,6 +1512,8 @@ XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in]
                                     REAL8 Band                         ///< [in] band width of frequency interval to return
                                     )
 {
+  XLAL_PRINT_DEPRECATION_WARNING("XLALExtractStrictBandFromMultiSFTVector");
+
   XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input MultiSFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input MultiSFT vector 'inSFTs'\n");
   XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
@@ -1515,6 +1530,123 @@ XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in]
 
   return ret;
 } //XLALExtractBandFromMultiSFTVector()
+
+
+/**
+ * Return a copy of a vector of SFTs containing only the bins in [fMin, fMin+Band).
+ */
+SFTVector *
+XLALExtractStrictBandFromSFTVector ( const SFTVector *inSFTs,	///< [in] input SFTs
+                                     REAL8 fMin,		///< [in] lower end of frequency interval to return
+                                     REAL8 Band		///< [in] band width of frequency interval to return
+  )
+{
+  XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input SFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input SFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
+  XLAL_CHECK_NULL ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  UINT4 numSFTs = inSFTs->length;
+
+  SFTVector *ret;
+  XLAL_CHECK_NULL ( (ret = XLALCreateSFTVector ( numSFTs, 0 )) != NULL, XLAL_EFUNC );
+
+  for ( UINT4 i = 0; i < numSFTs; i ++ )
+    {
+      SFTtype *dest = &(ret->data[i]);
+      SFTtype *src =  &(inSFTs->data[i]);
+
+      XLAL_CHECK_NULL ( XLALExtractStrictBandFromSFT ( &dest, src, fMin, Band ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    } /* for i < numSFTs */
+
+  /* return final SFT-vector */
+  return ret;
+
+} /* XLALExtractStrictBandFromSFTVector() */
+
+/**
+ * Return a copy of an SFT containing only the bins in [fMin, fMin+Band).
+ */
+int
+XLALExtractStrictBandFromSFT ( SFTtype **outSFT,	///< [out] output SFT (alloc'ed or re-alloced as required)
+                               const SFTtype *inSFT,	///< [in] input SFT
+                               REAL8 fMin,		///< [in] lower end of frequency interval to return
+                               REAL8 Band		///< [in] band width of frequency interval to return
+  )
+{
+  XLAL_CHECK ( outSFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( inSFT != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( inSFT->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
+  XLAL_CHECK ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  REAL8 df = inSFT->deltaF;
+
+  REAL8 fMinSFT    = inSFT->f0;
+  UINT4 numBinsSFT = inSFT->data->length;
+  UINT4 firstBinSFT= round ( fMinSFT / df );	// round to closest bin
+  UINT4 lastBinSFT = firstBinSFT + ( numBinsSFT - 1 );
+
+  UINT4 firstBinExt = XLALRoundFrequencyDownToSFTBin( fMin, df );
+  UINT4 lastBinExt = XLALRoundFrequencyUpToSFTBin( fMin + Band, df ) - 1;
+  UINT4 numBinsExt = lastBinExt - firstBinExt + 1;
+
+  XLAL_CHECK ( firstBinExt >= firstBinSFT && (lastBinExt <= lastBinSFT), XLAL_EINVAL,
+               "Requested frequency-bins [%f,%f)Hz = [%d, %d] not contained within SFT's [%f, %f)Hz = [%d,%d].\n",
+               fMin, fMin + Band, firstBinExt, lastBinExt, fMinSFT, fMinSFT + (numBinsSFT-1) * df, firstBinSFT, lastBinSFT );
+
+  INT4 firstBinOffset = firstBinExt - firstBinSFT;
+
+  if ( (*outSFT) == NULL ) {
+    XLAL_CHECK ( ((*outSFT) = XLALCalloc(1, sizeof(*(*outSFT)))) != NULL, XLAL_ENOMEM );
+  }
+  if ( (*outSFT)->data == NULL ) {
+    XLAL_CHECK ( ((*outSFT)->data = XLALCreateCOMPLEX8Vector ( numBinsExt )) != NULL, XLAL_EFUNC );
+  }
+  if ( (*outSFT)->data->length != numBinsExt ) {
+    XLAL_CHECK ( ((*outSFT)->data->data = XLALRealloc ( (*outSFT)->data->data, numBinsExt * sizeof((*outSFT)->data->data[0]))) != NULL, XLAL_ENOMEM );
+    (*outSFT)->data->length = numBinsExt;
+  }
+
+  COMPLEX8Vector *ptr = (*outSFT)->data;	// keep copy to data-pointer
+  (*(*outSFT)) = (*inSFT);			// copy complete header
+  (*outSFT)->data = ptr;	  		// restore data-pointer
+  (*outSFT)->f0 = firstBinExt * df ;	  	// set correct new fMin
+
+  /* copy the relevant part of the data */
+  memcpy ( (*outSFT)->data->data, inSFT->data->data + firstBinOffset, numBinsExt * sizeof( (*outSFT)->data->data[0] ) );
+
+  return XLAL_SUCCESS;
+
+} // XLALExtractStrictBandFromSFT()
+
+/**
+ * Return a copy of a MultiSFT vector containing only the bins in [fMin, fMin+Band).
+ */
+MultiSFTVector *
+XLALExtractStrictBandFromMultiSFTVector ( const MultiSFTVector *inSFTs,      ///< [in] input MultiSFTs
+                                          REAL8 fMin,                        ///< [in] lower end of frequency interval to return
+                                          REAL8 Band                         ///< [in] band width of frequency interval to return
+  )
+{
+  XLAL_CHECK_NULL ( inSFTs != NULL, XLAL_EINVAL, "Invalid NULL input MultiSFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( inSFTs->length > 0, XLAL_EINVAL, "Invalid zero-length input MultiSFT vector 'inSFTs'\n");
+  XLAL_CHECK_NULL ( fMin >= 0, XLAL_EDOM, "Invalid negative frequency fMin = %g\n", fMin );
+  XLAL_CHECK_NULL ( Band > 0, XLAL_EDOM, "Invalid non-positive Band = %g\n", Band );
+
+  MultiSFTVector *ret = NULL;
+  XLAL_CHECK_NULL ( (ret = XLALCalloc(1, sizeof(*ret))) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL ( (ret->data = XLALCalloc(inSFTs->length, sizeof(ret->data[0]))) != NULL, XLAL_ENOMEM );
+  ret->length = inSFTs->length;
+
+  for (UINT4 X = 0; X < inSFTs->length; X++) {
+     XLAL_CHECK_NULL( (ret->data[X] = XLALExtractStrictBandFromSFTVector(inSFTs->data[X], fMin, Band)) != NULL, XLAL_EFUNC );
+  }
+
+  return ret;
+} //XLALExtractStrictBandFromMultiSFTVector()
+
 
 /**
  * Resize the frequency-band of a given multi-SFT vector to [f0, f0+Band].
@@ -1726,6 +1858,11 @@ XLALSFTAdd ( SFTtype *a,		/**< [in/out] SFT to be added to */
  * The 'fudge region' allowing for numerical noise is eps= 10*LAL_REAL8_EPS ~2e-15
  * relative deviation: ie if the SFT contains a bin at 'fi', then we consider for example
  * "fMin == fi" if  fabs(fi - fMin)/fi < eps.
+ *
+ * Note: this function is most useful for internal operations, e.g. where a generated
+ * time series needs to be over-sampled to cover the SFT frequency band of interest.
+ * Ultimately SFTs covering a half-open interval [fMinIn,BandIn) should be returned to
+ * the user using XLALExtractStrictBandFromSFTVector().
  */
 int
 XLALFindCoveringSFTBins ( UINT4 *firstBin,	///< [out] effective lower frequency-bin fMinEff = firstBin/Tsft
@@ -2340,14 +2477,16 @@ XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, /* [out] final PSD avera
     /* check band wide enough for wings */
     UINT4 rngmedSideBandBins = blocksRngMed / 2 + 1; /* truncates down plus add one bin extra safety! */
     REAL8 rngmedSideBand = rngmedSideBandBins * dFreq;
-    if ( ( FreqMin-rngmedSideBand < fminSFTs ) || ( FreqMin+FreqBand+rngmedSideBand > fmaxSFTs ) ) {
-        /* FIXME: should this be an error instead? */
-        XLAL_PRINT_WARNING ( "Requested frequency range [%f,%f]Hz means rngmedSideBand=%fHz (%d bins) would spill over available SFT band [%f,%f]Hz", FreqMin, FreqMin+FreqBand, rngmedSideBand, rngmedSideBandBins, fminSFTs, fmaxSFTs );
-    }
     /* set the actual output range in bins */
     UINT4 minBinPSD = XLALRoundFrequencyDownToSFTBin(FreqMin, dFreq);
+    UINT4 maxBinPSD = XLALRoundFrequencyUpToSFTBin(FreqMin + FreqBand, dFreq) - 1;
     UINT4 minBinSFTs = XLALRoundFrequencyDownToSFTBin(fminSFTs, dFreq);
-    UINT4 binsBand = XLALRoundFrequencyUpToSFTBin(FreqBand, dFreq) + 1; /* +1 inherited from old local rounding convention: ceil ( (FreqBand - 1e-9) / dFreq ) + 1 */
+    UINT4 maxBinSFTs = XLALRoundFrequencyUpToSFTBin(fmaxSFTs, dFreq) - 1;
+    if ( ( minBinPSD < minBinSFTs ) || ( maxBinPSD > maxBinSFTs ) ) {
+      XLAL_ERROR( XLAL_ERANGE, "Requested frequency range [%f,%f)Hz means rngmedSideBand=%fHz (%d bins) would spill over available SFT band [%f,%f)Hz",
+                  FreqMin, FreqMin+FreqBand, rngmedSideBand, rngmedSideBandBins, fminSFTs, fmaxSFTs );
+    }
+    UINT4 binsBand = maxBinPSD - minBinPSD + 1;
     firstBin = minBinPSD - minBinSFTs;
     lastBin = firstBin + binsBand - 1;
   }

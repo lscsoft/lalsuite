@@ -437,7 +437,7 @@ UINT4 PulsarGetUINT4Param( const PulsarParameters *pars, const CHAR *name );
 UINT4 PulsarGetUINT4ParamOrZero( const PulsarParameters *pars, const CHAR *name );
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
+SWIGLAL(OWNS_THIS_ARG(const CHAR*, value));
 #endif
 
 /** \brief Return a string parameter
@@ -453,7 +453,7 @@ const CHAR *PulsarGetStringParam( const PulsarParameters *pars, const CHAR *name
 void PulsarAddStringParam(PulsarParameters *pars, const CHAR * name, const CHAR *value);
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
+SWIGLAL_CLEAR(OWNS_THIS_ARG(const CHAR*, value));
 #endif
 
 #ifdef SWIG   /* SWIG interface directives */

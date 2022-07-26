@@ -35,6 +35,7 @@ import lal
 
 import lalpulsar
 from lalpulsar.PulsarParametersWrapper import PulsarParametersPy
+from lalpulsar.simulateHeterodynedCW import HeterodynedCWSimulator
 
 """
 The first test output is to create a signal model for a source assuming that
@@ -281,16 +282,16 @@ lalapps_pulsar_parameter_estimation_nested --par-file het.par --outfile test.hdf
 The output of "inj.txt_H1_2.0_signal_only" is given below.
 """
 
-t4output = np.array([[1000000000.0, -2.005382688010e-27, -5.806222962878e-27],
-                     [1000000060.0, 6.157890501156e-27, 5.097038871699e-28],
-                     [1000000120.0, -2.949373852705e-27, 5.470793562975e-27],
-                     [1000000180.0, -3.871712827206e-27, -4.908194386786e-27],
-                     [1000000240.0, 6.071606930851e-27, -1.634398269891e-27],
-                     [1000000300.0, -8.720670796956e-28, 6.263634603914e-27],
-                     [1000000360.0, -5.468817487024e-27, -3.247498058720e-27],
-                     [1000000420.0, 5.125788383325e-27, -3.826689389048e-27],
-                     [1000000480.0, 1.601886962341e-27, 6.230292960469e-27],
-                     [1000000540.0, -6.411302897381e-27, -8.632664101744e-28]])
+t4output = np.array([[1000000000.0, -2.005382682171e-27, -5.806222964895e-27],
+                     [1000000060.0, 6.157890500690e-27, 5.097038927998e-28],
+                     [1000000120.0, -2.949373857456e-27, 5.470793560413e-27],
+                     [1000000180.0, -3.871712822495e-27, -4.908194390501e-27],
+                     [1000000240.0, 6.071607014385e-27, -1.634397959568e-27],
+                     [1000000300.0, -8.720674118593e-28, 6.263634557667e-27],
+                     [1000000360.0, -5.468817484054e-27, -3.247498063718e-27],
+                     [1000000420.0, 5.125788386822e-27, -3.826689384362e-27],
+                     [1000000480.0, 1.601886955222e-27, 6.230292962298e-27],
+                     [1000000540.0, -6.411302862101e-27, -8.632666722102e-28]])
 
 
 """
@@ -495,7 +496,7 @@ t7output = np.array([2.420723736,
 
 
 # set ephemeris files
-earthephem = os.path.join(os.environ['LAL_TEST_PKGDATADIR'], 'earth00-19-DE405.dat.gz')
+earthephem = os.path.join(os.environ['LAL_TEST_PKGDATADIR'], 'earth00-40-DE405.dat.gz')
 sunephem = os.path.join(os.environ['LAL_TEST_PKGDATADIR'], 'sun00-40-DE405.dat.gz')
 timefile = os.path.join(os.environ['LAL_TEST_PKGDATADIR'], 'te405_2000-2040.dat.gz')
 
@@ -1056,6 +1057,54 @@ def test_seven():
 
     # check output matches that from lalapps_heterodyne_pulsar
     assert_allclose(2.0 * np.pi * np.fmod(fullphase.data, 1.), t7output, rtol=1e-3)
+
+
+@pytest.mark.parametrize('det', ["H1", "L1", "V1"])
+def test_transient(det):
+    """
+    Test the transient signal models with a rectangular and exponential decay.
+    """
+
+    parhet = PulsarParametersPy()
+    parhet["F"] = [153.4567, -2.876e-11]  # set frequency
+    parhet["RAJ"] = lal.TranslateHMStoRAD("04:23:34.6")  # set right ascension
+    parhet["DECJ"] = lal.TranslateDMStoRAD("-05:01:23.5")  # set declination
+    pepoch = lal.TranslateStringMJDTTtoGPS("55810")
+    parhet["PEPOCH"] = pepoch.gpsSeconds + 1e-9 * pepoch.gpsNanoSeconds
+
+    parhet["H0"] = 1e-24
+    parhet["COSIOTA"] = 0.4
+    parhet["PSI"] = 1.3
+    parhet["PHI0"] = 2.9
+
+    times = np.arange(1000000000, 1000000000 + 8 * 86400, 600)
+
+    parhet["TRANSIENTSTARTTIME"] = times[0] + 86400.0
+    parhet["TRANSIENTTAU"] = 86400.0 * 2
+
+    # model with no transient window
+    hetfull = HeterodynedCWSimulator(parhet, det, times=times, earth_ephem=earthephem, sun_ephem=sunephem, time_corr=timefile)
+    fullmodel = hetfull.model(usephase=True)
+
+    # model with rectangular window
+    parhet["TRANSIENTWINDOWTYPE"] = "RECT"
+    hetrect = HeterodynedCWSimulator(parhet, det, times=times, earth_ephem=earthephem, sun_ephem=sunephem, time_corr=timefile)
+    rectmodel = hetrect.model()
+
+    # model with exponential decay window
+    parhet["TRANSIENTWINDOWTYPE"] = "EXP"
+    hetexp = HeterodynedCWSimulator(parhet, det, times=times, earth_ephem=earthephem, sun_ephem=sunephem, time_corr=timefile)
+    expmodel = hetexp.model()
+
+    # check rectangular window
+    wintimes = (times >= parhet["TRANSIENTSTARTTIME"]) & (times <= parhet["TRANSIENTSTARTTIME"] + parhet["TRANSIENTTAU"])
+    assert_equal(fullmodel[wintimes], rectmodel[wintimes])
+    assert_equal(rectmodel[~wintimes], np.zeros_like(rectmodel[~wintimes]))
+
+    # check exponential window
+    for i, time in enumerate(np.arange(parhet["TRANSIENTSTARTTIME"], times[-1], parhet["TRANSIENTTAU"])):
+        idx = int((time - times[0]) / 600)
+        assert_allclose([expmodel[idx]], [fullmodel[idx] / (np.e ** i)], rtol=1e-3)
 
 
 if __name__ == '__main__':

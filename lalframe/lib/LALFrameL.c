@@ -379,16 +379,34 @@ void XLALFrameUFrameHFree_FrameL_(LALFrameUFrameH * frame)
     return;
 }
 
-LALFrameUFrameH *XLALFrameUFrameHAlloc_FrameL_(const char *name, double start, double dt, int frnum)
+LALFrameUFrameH *XLALFrameUFrameHAlloc_FrameL_(const char *name, double start1, double start2, double dt, int frnum)
 {
+    double fp, fp1, fp2;
+    double ip, ip1, ip2;
     LALFrameUFrameH *frame;
+
     frame = calloc(1, sizeof(*frame));
     if (!frame)
         XLAL_ERROR_NULL(XLAL_ENOMEM);
+
+    /* break start time into integer and fractional parts */
+    fp1 = modf(start1, &ip1);
+    fp2 = modf(start2, &ip2);
+    fp = modf(fp1 + fp2, &ip);
+    ip += ip1 + ip2;
+    if (fp < 0.0) { /* make sure fractional part is positive */
+        fp += 1.0;
+        ip -= 1.0;
+    }
+
     frame->classe = FrameHDef();
     frame->name = strdup(name);
-    frame->GTimeS = floor(start);
-    frame->GTimeN = floor(0.5 + 1e9 * (start - frame->GTimeS));
+    frame->GTimeS = ip;
+    frame->GTimeN = floor(0.5 + 1e9 * fp);
+    if (frame->GTimeN >= 1000000000) { /* handle round-up corner case */
+        frame->GTimeN -= 1000000000;
+        frame->GTimeS += 1;
+    }
     frame->frame = frnum;
     frame->dt = dt;
     frame->ULeapS = XLALLeapSeconds(frame->GTimeS);
@@ -1083,7 +1101,20 @@ int XLALFrameUFrChanSetTimeOffset_FrameL_(LALFrameUFrChan * channel, double time
         channel->handle.sim->timeOffset = timeOffset;
         return 0;
     case XLAL_FRAMEU_FR_CHAN_TYPE_PROC:
-        channel->handle.sim->timeOffset = timeOffset;
+        channel->handle.proc->timeOffset = timeOffset;
+        return 0;
+    default:   /* unrecognized channel type */
+        XLAL_ERROR(XLAL_ETYPE);
+    }
+}
+
+int XLALFrameUFrChanSetTRange_FrameL_(LALFrameUFrChan * channel, double tRange)
+{
+    if (tRange < 0) /* timeOffset must be non-negative */
+        XLAL_ERROR(XLAL_EINVAL, "Time range must be non-negative");
+    switch (channel->type) {
+    case XLAL_FRAMEU_FR_CHAN_TYPE_PROC:
+        channel->handle.proc->tRange = tRange;
         return 0;
     default:   /* unrecognized channel type */
         XLAL_ERROR(XLAL_ETYPE);

@@ -5,7 +5,7 @@
 AC_DEFUN([LALAPPS_ENABLE_CONDOR], [
   AC_ARG_ENABLE(
     [condor],
-    AC_HELP_STRING([--enable-condor],[compile for use with condor @<:@default=no@:>@]),
+    AS_HELP_STRING([--enable-condor],[compile for use with condor @<:@default=no@:>@]),
     AS_CASE(["${enableval}"],
       [yes],[condor=true],
       [no],[condor=false],
@@ -52,7 +52,7 @@ AC_DEFUN([LALAPPS_ENABLE_STATIC_BINARIES], [
 AC_DEFUN([LALAPPS_ENABLE_FFTW],
 [AC_ARG_ENABLE(
   [fftw],
-  AC_HELP_STRING([--enable-fftw],[compile code that requires FFTW3 library [default=yes]]),
+  AS_HELP_STRING([--enable-fftw],[compile code that requires FFTW3 library [default=yes]]),
   [ case "${enableval}" in
       yes) fftw=true;;
       no)  fftw=false ;;
@@ -64,7 +64,7 @@ AC_DEFUN([LALAPPS_ENABLE_FFTW],
 AC_DEFUN([LALAPPS_ENABLE_FRAMEL],
 [AC_ARG_ENABLE(
   [framel],
-  AC_HELP_STRING([--enable-framel],[compile code that requires FrameL library [default=yes]]),
+  AS_HELP_STRING([--enable-framel],[compile code that requires FrameL library [default=yes]]),
   [ case "${enableval}" in
       yes) framel=true;;
       no)  framel=false ;;
@@ -76,7 +76,7 @@ AC_DEFUN([LALAPPS_ENABLE_FRAMEL],
 AC_DEFUN([LALAPPS_ENABLE_PSS],
 [AC_ARG_ENABLE(
   [pss],
-  AC_HELP_STRING([--enable-pss],[compile code that requires pss library [default=no]]),
+  AS_HELP_STRING([--enable-pss],[compile code that requires pss library [default=no]]),
   [ case "${enableval}" in
       yes) pss=true;;
       no) pss=false;;
@@ -88,7 +88,7 @@ AC_DEFUN([LALAPPS_ENABLE_PSS],
 AC_DEFUN([LALAPPS_ENABLE_GDS],
 [AC_ARG_ENABLE(
   [gds],
-  AC_HELP_STRING([--enable-gds],[compile code that requires GSD library [default=no]]),
+  AS_HELP_STRING([--enable-gds],[compile code that requires GDS library [default=no]]),
   [ case "${enableval}" in
       yes) gds=true;;
       no) gds=false;;
@@ -99,14 +99,14 @@ AC_DEFUN([LALAPPS_ENABLE_GDS],
 
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],
 [AC_MSG_CHECKING([whether LAL has been compiled with Intel MKL and qthread])
-AC_TRY_RUN([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <lal/LALConfig.h>
 #ifdef LAL_QTHREAD
 int main( void ) { return 0; }
 #else
 int main( void ) { return 1; }
 #endif
-],
+]])],
 AC_MSG_RESULT([yes])
 [
 if test x$condor != xtrue ; then

@@ -20,7 +20,7 @@
 #ifndef HOUGHFSTATTOPLIST_H
 #define HOUGHFSTATTOPLIST_H
 
-#include "HeapToplist.h"
+#include <lal/HeapToplist.h>
 #include <lal/LALDatatypes.h>
 
 

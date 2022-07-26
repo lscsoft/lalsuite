@@ -754,7 +754,7 @@ INT4 clusterCandidates(candidateVector **output, const candidateVector *input, c
 
    XLAL_CHECK( *output != NULL && input != NULL && ffdata != NULL && params != NULL && ffplanenoise != NULL && fbinaveratios != NULL && rng != NULL, XLAL_EINVAL );
 
-   UINT4 loc, loc2, numcandoutlist;
+   UINT4 loc, loc2;
    REAL8 avefsig, aveperiod, mindf, maxdf;
 
    //Allocate int vectors for storage
@@ -774,7 +774,6 @@ INT4 clusterCandidates(candidateVector **output, const candidateVector *input, c
    REAL4FFTPlan *plan = NULL;
    if (exactflag==1) XLAL_CHECK( (plan = XLALCreateForwardREAL4FFTPlan(ffdata->numffts, 1)) != NULL, XLAL_EFUNC );
 
-   numcandoutlist = 0;
    for (UINT4 ii=0; ii<input->numofcandidates; ii++) {
 
       //Make note of first candidate available
@@ -903,7 +902,6 @@ INT4 clusterCandidates(candidateVector **output, const candidateVector *input, c
 
                if ((*output)->numofcandidates == (*output)->length-1) XLAL_CHECK( (*output = resizecandidateVector(*output, 2*(*output)->length)) != NULL, XLAL_EFUNC );
                loadCandidateData(&((*output)->data[(*output)->numofcandidates]), avefsig, aveperiod, bestmoddepth, input->data[0].ra, input->data[0].dec, bestR, besth0, bestProb, bestproberrcode, input->data[0].normalization, -1, 0);
-               numcandoutlist++;
                (*output)->numofcandidates++;
             }
 

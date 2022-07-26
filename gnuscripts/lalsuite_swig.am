@@ -19,11 +19,13 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 .PHONY: swig-octave-install-hook
 .PHONY: swig-octave-uninstall-hook
 .PHONY: run-octave
+.PHONY: debug-octave-test
 .PHONY: swig-python-all-local
 .PHONY: swig-python-clean-local
 .PHONY: swig-python-install-hook
 .PHONY: swig-python-uninstall-hook
 .PHONY: run-python
+.PHONY: debug-python-test
 
 header-links: header-links-local
 
@@ -145,7 +147,7 @@ if SWIG_BUILD_OCTAVE
 swig_octave_flags = -octave $(SWIG_OCTAVE_FLAGS) -outdir swiglal_octave/ $(swig_flags)
 
 octexec_LTLIBRARIES = swiglal_octave.la
-nodist_swiglal_octave_la_SOURCES = swiglal_octave.cpp
+nodist_swiglal_octave_la_SOURCES = swiglal_@PACKAGE@_octave.cpp
 swiglal_octave_la_SOURCES = SWIGTest.c
 swiglal_octave_la_CPPFLAGS = $(SWIG_OCTAVE_CPPFLAGS_IOCTAVE) $(swig_cppflags) $(SWIG_OCTAVE_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
 swiglal_octave_la_CXXFLAGS = $(SWIG_OCTAVE_CXXFLAGS)
@@ -164,7 +166,6 @@ $(nodist_swiglal_octave_la_SOURCES): $(swig_iface) swiglal_config.h
 		$(swig_deps_if)mv -f $(SWIG_DEPDIR)/swiglal_octave.deps.tmp $(SWIG_DEPDIR)/swiglal_octave.deps; \
 	else \
 		$(swig_deps_if)rm -f $(SWIG_DEPDIR)/swiglal_octave.deps.tmp; \
-		rm -f $@; \
 		exit 1; \
 	fi
 
@@ -194,7 +195,10 @@ swig-octave-uninstall-hook:
 test_scripts += SWIGTest$(PACKAGE_NAME)Octave.m
 
 run-octave: $(octexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(OCTAVE) $(RUNARGS)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(OCTAVE)
+
+debug-octave-test: $(octexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(OCTAVE) $${SCRIPT:-./SWIGTest$(PACKAGE_NAME)Octave.m}
 
 endif # SWIG_BUILD_OCTAVE
 
@@ -204,7 +208,7 @@ swig_python_flags = -python $(SWIG_PYTHON_FLAGS) -outdir swiglal_python/ $(swig_
 
 pkgpyexec_LTLIBRARIES = swiglal_python.la
 nodist_pkgpyexec_PYTHON = swiglal_python/$(PACKAGE).py
-nodist_swiglal_python_la_SOURCES = swiglal_python.c
+nodist_swiglal_python_la_SOURCES = swiglal_@PACKAGE@_python.c
 swiglal_python_la_SOURCES = SWIGTest.c
 swiglal_python_la_CPPFLAGS = $(swig_cppflags) $(SWIG_PYTHON_CPPFLAGS) $(LAL_SYSTEM_INCLUDES)
 swiglal_python_la_CFLAGS = $(SWIG_PYTHON_CFLAGS)
@@ -223,7 +227,6 @@ $(nodist_swiglal_python_la_SOURCES): $(swig_iface) swiglal_config.h
 		$(swig_deps_if)mv -f $(SWIG_DEPDIR)/swiglal_python.deps.tmp $(SWIG_DEPDIR)/swiglal_python.deps; \
 	else \
 		$(swig_deps_if)rm -f $(SWIG_DEPDIR)/swiglal_python.deps.tmp; \
-		rm -f $@; \
 		exit 1; \
 	fi
 
@@ -260,7 +263,10 @@ swig-python-uninstall-hook:
 test_scripts += SWIGTest$(PACKAGE_NAME)Python.py
 
 run-python: $(pkgpyexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(RUNTOOL) $(PYTHON) $(RUNARGS)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(PYTHON)
+
+debug-python-test: $(pkgpyexec_LTLIBRARIES)
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(PYTHON) $${SCRIPT:-./SWIGTest$(PACKAGE_NAME)Python.py}
 
 endif # SWIG_BUILD_PYTHON
 

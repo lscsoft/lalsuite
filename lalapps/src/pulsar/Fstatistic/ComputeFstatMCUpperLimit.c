@@ -279,12 +279,16 @@ int main(int argc, char *argv[]) {
       XLALPrintError("Couldn't allocate a gsl_rng\n");
       return EXIT_FAILURE;
     }
-    if ((fpr = fopen("/dev/random", "r")) == NULL) {
-      XLALPrintError("Couldn't open '/dev/random'\n");
+    /*
+     * Note: /dev/random can be slow after the first few accesses, which is why we're using urandom instead.
+     * [Cryptographic safety isn't a concern here at all]
+     */
+    if ((fpr = fopen("/dev/urandom", "r")) == NULL) {
+      XLALPrintError("Couldn't open '/dev/urandom'\n");
       return EXIT_FAILURE;
     }
     if (fread(&seed, sizeof(seed), 1, fpr) != 1) {
-      XLALPrintError("Couldn't read from '/dev/random'\n");
+      XLALPrintError("Couldn't read from '/dev/urandom'\n");
       return EXIT_FAILURE;
     }
     fclose(fpr);

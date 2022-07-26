@@ -501,10 +501,10 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   REAL8 T0 = pepoch;
 
   /* check if we want to calculate the phase at a the downsampled rate */
-  datatimes = ifo->times;
+  datatimes = IFO_XTRA_DATA( ifo )->times;
 
   /* if edat is NULL then return a NULL pointer */
-  if( ifo->ephem == NULL ) return NULL;
+  if( IFO_XTRA_DATA( ifo )->ephem == NULL ) return NULL;
 
   length = datatimes->length;
 
@@ -514,13 +514,13 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
   /* get time delays */
   fixdts = LALInferenceGetREAL8VectorVariable( ifo->params, "ssb_delays" );
   if( LALInferenceCheckVariable( ifo->params, "varyskypos" ) ){
-    dts = get_ssb_delay( params, datatimes, ifo->ephem, ifo->tdat, ifo->ttype, ifo->detector );
+    dts = get_ssb_delay( params, datatimes, IFO_XTRA_DATA( ifo )->ephem, IFO_XTRA_DATA( ifo )->tdat, IFO_XTRA_DATA( ifo )->ttype, ifo->detector );
   }
 
   if( LALInferenceCheckVariable( ifo->params, "varybinary" ) ){
     /* get binary system time delays */
-    if ( dts != NULL ){ bdts = get_bsb_delay( params, datatimes, dts, ifo->ephem ); }
-    else{ bdts = get_bsb_delay( params, datatimes, fixdts, ifo->ephem ); }
+    if ( dts != NULL ){ bdts = get_bsb_delay( params, datatimes, dts, IFO_XTRA_DATA( ifo )->ephem ); }
+    else{ bdts = get_bsb_delay( params, datatimes, fixdts, IFO_XTRA_DATA( ifo )->ephem ); }
   }
   if( LALInferenceCheckVariable( ifo->params, "bsb_delays" ) ){
     fixbdts = LALInferenceGetREAL8VectorVariable( ifo->params, "bsb_delays" );
@@ -1002,7 +1002,7 @@ void get_amplitude_model( PulsarParameters *pars, LALInferenceIFOModel *ifo ){
         /* get the sidereal time since the initial data point % sidereal day */
         sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "siderealDay" );
 
-        length = ifo->times->length;
+        length = IFO_XTRA_DATA( ifo )->times->length;
 
         for( i=0; i<length; i++ ){
           REAL8 plus00, plus01, cross00, cross01, plus = 0., cross = 0.;

@@ -315,6 +315,14 @@ static inline herr_t threadsafe_H5Pclose(hid_t plist_id)
 	return retval;
 }
 
+static inline hid_t threadsafe_H5Pcopy(hid_t plist_id)
+{
+	LAL_HDF5_MUTEX_LOCK
+	hid_t retval = H5Pcopy(plist_id);
+	LAL_HDF5_MUTEX_UNLOCK
+	return retval;
+}
+
 static inline hid_t threadsafe_H5Pcreate(hid_t cls_id)
 {
 	LAL_HDF5_MUTEX_LOCK
@@ -327,6 +335,14 @@ static inline herr_t threadsafe_H5Pset_create_intermediate_group(hid_t plist_id,
 {
 	LAL_HDF5_MUTEX_LOCK
 	herr_t retval = H5Pset_create_intermediate_group(plist_id, crt_intmd);
+	LAL_HDF5_MUTEX_UNLOCK
+	return retval;
+}
+
+static inline herr_t threadsafe_H5Pset_vlen_mem_manager(hid_t plist_id, H5MM_allocate_t alloc_func, void *alloc_info, H5MM_free_t free_func, void *free_info)
+{
+	LAL_HDF5_MUTEX_LOCK
+	herr_t retval = H5Pset_vlen_mem_manager(plist_id, alloc_func, alloc_info,  free_func, free_info);
 	LAL_HDF5_MUTEX_UNLOCK
 	return retval;
 }
@@ -664,8 +680,10 @@ static inline herr_t threadsafe_H5open(void)
 #define threadsafe_H5Oget_info_by_idx H5Oget_info_by_idx
 #define threadsafe_H5Oopen_by_addr H5Oopen_by_addr
 #define threadsafe_H5Pclose H5Pclose
+#define threadsafe_H5Pcopy H5Pcopy
 #define threadsafe_H5Pcreate H5Pcreate
 #define threadsafe_H5Pset_create_intermediate_group H5Pset_create_intermediate_group
+#define threadsafe_H5Pset_vlen_mem_manager H5Pset_vlen_mem_manager
 #define threadsafe_H5Sclose H5Sclose
 #define threadsafe_H5Screate H5Screate
 #define threadsafe_H5Screate_simple H5Screate_simple

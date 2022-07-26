@@ -463,7 +463,11 @@ LALInferenceRunState *initialize(ProcessParamsTable *commandLine)
 	if (ppt != NULL)
 		randomseed = atoi(ppt->value);
 	else { /* otherwise generate "random" random seed: */
-		if ((devrandom = fopen("/dev/random","r")) == NULL) {
+		/*
+		 * Note: /dev/random can be slow after the first few accesses, which is why we're using urandom instead.
+		 * [Cryptographic safety isn't a concern here at all]
+		 */
+		if ((devrandom = fopen("/dev/urandom","r")) == NULL) {
 			gettimeofday(&tv, 0);
 			randomseed = tv.tv_sec + tv.tv_usec;
 		} 

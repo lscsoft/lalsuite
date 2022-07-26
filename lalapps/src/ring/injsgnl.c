@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <string.h>
 
 #include <lal/LALStdlib.h>

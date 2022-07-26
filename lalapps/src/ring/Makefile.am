@@ -1,13 +1,15 @@
 BUILT_SOURCES =
+EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 bin_PROGRAMS = \
 	lalapps_coh_PTF_inspiral \
-	lalapps_coh_PTF_spin_checker
+	$(END_OF_LIST)
 
-COH_PTF_SOURCES = \
+lalapps_coh_PTF_inspiral_SOURCES = \
+	coh_PTF_inspiral.c \
 	errutil.c \
 	errutil.h \
 	gpstime.c \
@@ -39,9 +41,4 @@ COH_PTF_SOURCES = \
 	GenerateRing.c \
 	Inject.h \
 	InjectTimeSeries.c
-lalapps_coh_PTF_inspiral_SOURCES = \
-	coh_PTF_inspiral.c \
-	$(COH_PTF_SOURCES)
-lalapps_coh_PTF_spin_checker_SOURCES = \
-	coh_PTF_spin_checker.c \
-	$(COH_PTF_SOURCES)
+	$(END_OF_LIST)

@@ -29,6 +29,23 @@
 #include <lal/UserInputPrint.h>
 
 ///
+/// Histogram bin width of mean multi-F-statistics
+///
+const REAL4 mean2F_hgrm_bin_width = 0.1;
+
+///
+/// Histogram bin of mean multi-F-statistics
+///
+typedef struct {
+  // Lower bin boundary
+  REAL4 lower;
+  // Upper bin boundary
+  REAL4 upper;
+  // Bin count
+  UINT8 count;
+} WeaveMean2FHistogramBin;
+
+///
 /// Output results from a search
 ///
 struct tagWeaveOutputResults {
@@ -48,6 +65,16 @@ struct tagWeaveOutputResults {
   BOOLEAN toplist_tmpl_idx;
   /// Output result toplists
   WeaveResultsToplist *toplists[8];
+  // Vector to store histogram of mean multi-F-statistics
+  UINT8Vector* mean2F_hgrm_bins;
+  // Number of mean multi-F-statistics below range of histogram
+  UINT8 mean2F_hgrm_underflow;
+  // Number of mean multi-F-statistics above range of histogram
+  UINT8 mean2F_hgrm_overflow;
+  // Temporary REAL4 vector for generating histogram of mean multi-F-statistics
+  REAL4Vector* mean2F_hgrm_tmp_REAL4;
+  // Temporary INT4 vector for generating histogram of mean multi-F-statistics
+  INT4Vector* mean2F_hgrm_tmp_INT4;
 };
 
 ///
@@ -161,7 +188,8 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const size_t nspins,
   WeaveStatisticsParams *statistics_params,
   const UINT4 toplist_limit,
-  const BOOLEAN toplist_tmpl_idx
+  const BOOLEAN toplist_tmpl_idx,
+  const BOOLEAN mean2F_hgrm
   )
 {
   // Check input
@@ -227,6 +255,13 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   // Comnsistency check on number of toplists
   XLAL_CHECK_NULL( out->ntoplists == statistics_params->ntoplists, XLAL_EFAILED );
 
+  // Create histogram of mean multi-F-statistic
+  if ( mean2F_hgrm ) {
+    out->mean2F_hgrm_bins = XLALCreateUINT8Vector( 10000 );
+    XLAL_CHECK_NULL( out->mean2F_hgrm_bins != NULL, XLAL_EFUNC );
+    memset( out->mean2F_hgrm_bins->data, 0, sizeof( out->mean2F_hgrm_bins->data[0] ) * out->mean2F_hgrm_bins->length );
+  }
+
   return out;
 
 }
@@ -243,6 +278,9 @@ void XLALWeaveOutputResultsDestroy(
     for ( size_t i = 0; i < out->ntoplists; ++i ) {
       XLALWeaveResultsToplistDestroy( out->toplists[i] );
     }
+    XLALDestroyUINT8Vector( out->mean2F_hgrm_bins );
+    XLALDestroyREAL4Vector( out->mean2F_hgrm_tmp_REAL4 );
+    XLALDestroyINT4Vector( out->mean2F_hgrm_tmp_INT4 );
     XLALFree( out );
   }
 }
@@ -261,17 +299,42 @@ int XLALWeaveOutputResultsAdd(
   XLAL_CHECK( out != NULL, XLAL_EFAULT );
   XLAL_CHECK( semi_res != NULL, XLAL_EFAULT );
 
-  // Store main-loop parameters relevant for completion-loop statistics calculation
-  static BOOLEAN firstTime = 1;
-  if ( firstTime ) {
-    out->statistics_params->nsum2F = semi_res->nsum2F;
-    memcpy( out->statistics_params->nsum2F_det, semi_res->nsum2F_det, sizeof( semi_res->nsum2F_det ) );
-    firstTime = 0;
-  }
-
   // Add results to toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
     XLAL_CHECK( XLALWeaveResultsToplistAdd( out->toplists[i], semi_res, semi_nfreqs ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Add to histogram of mean multi-F-statistics
+  if ( out->mean2F_hgrm_bins != NULL ) {
+
+    // Check input
+    XLAL_CHECK( semi_res->mean2F != NULL, XLAL_EINVAL );
+
+    // Allocate memory
+    if ( out->mean2F_hgrm_tmp_REAL4 == NULL || out->mean2F_hgrm_tmp_REAL4->length < semi_res->mean2F->length ) {
+      out->mean2F_hgrm_tmp_REAL4 = XLALResizeREAL4Vector( out->mean2F_hgrm_tmp_REAL4, semi_res->mean2F->length );
+      XLAL_CHECK( out->mean2F_hgrm_tmp_REAL4 != NULL, XLAL_EFUNC );
+      out->mean2F_hgrm_tmp_INT4 = XLALResizeINT4Vector( out->mean2F_hgrm_tmp_INT4, semi_res->mean2F->length );
+      XLAL_CHECK( out->mean2F_hgrm_tmp_INT4 != NULL, XLAL_EFUNC );
+    }
+
+    // Put mean multi-F-statistics into bins
+    XLAL_CHECK( XLALVectorScaleREAL4( out->mean2F_hgrm_tmp_REAL4->data, 1.0 / mean2F_hgrm_bin_width, semi_res->mean2F->data, semi_res->mean2F->length ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALVectorINT4FromREAL4( out->mean2F_hgrm_tmp_INT4->data, out->mean2F_hgrm_tmp_REAL4->data, semi_res->mean2F->length ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Add to histogram bins
+    for ( size_t j = 0; j < semi_res->mean2F->length; ++j ) {
+      INT4 bin = out->mean2F_hgrm_tmp_INT4->data[j];
+      const INT4 bin_max = out->mean2F_hgrm_bins->length;
+      if ( bin < 0 ) {
+        ++out->mean2F_hgrm_underflow;
+      } else if ( bin >= bin_max ) {
+        ++out->mean2F_hgrm_overflow;
+      } else {
+        ++out->mean2F_hgrm_bins->data[bin];
+      }
+    }
+
   }
 
   return XLAL_SUCCESS;
@@ -355,9 +418,48 @@ int XLALWeaveOutputResultsWrite(
   // Write whether to output semicoherent/coherent template indexes
   XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "toptmpli", out->toplist_tmpl_idx, "output template indexes?" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Write whether a histogram of mean multi-F-statistics will be written
+  XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "m2Fhgrm", out->mean2F_hgrm_bins != NULL, "mean 2F histogram?" ) == XLAL_SUCCESS, XLAL_EFUNC );
+
   // Write toplists
   for ( size_t i = 0; i < out->ntoplists; ++i ) {
     XLAL_CHECK( XLALWeaveResultsToplistWrite( file, out->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Write histogram of mean multi-F-statistics
+  if ( out->mean2F_hgrm_bins != NULL ) {
+
+    // Open and describe FITS table for writing histogram bins
+    XLAL_CHECK( XLALFITSTableOpenWrite( file, "mean2F_hgrm", "histogram of mean multi-F-statistics" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveMean2FHistogramBin );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, lower ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT8, count ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Write histogram bins
+    WeaveMean2FHistogramBin bin;
+    if ( out->mean2F_hgrm_underflow > 0 ) {
+      bin.lower = GSL_NEGINF;
+      bin.upper = 0;
+      bin.count = out->mean2F_hgrm_underflow;
+      XLAL_CHECK( XLALFITSTableWriteRow( file, &bin ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+    for ( size_t j = 0; j < out->mean2F_hgrm_bins->length; ++j ) {
+      const UINT4 bin_count = out->mean2F_hgrm_bins->data[j];
+      if ( bin_count > 0 ) {
+        bin.lower = mean2F_hgrm_bin_width * j;
+        bin.upper = mean2F_hgrm_bin_width * (j + 1);
+        bin.count = bin_count;
+        XLAL_CHECK( XLALFITSTableWriteRow( file, &bin ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    }
+    if ( out->mean2F_hgrm_underflow > 0 ) {
+      bin.lower = mean2F_hgrm_bin_width * out->mean2F_hgrm_bins->length;
+      bin.upper = GSL_POSINF;
+      bin.count = out->mean2F_hgrm_underflow;
+      XLAL_CHECK( XLALFITSTableWriteRow( file, &bin ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+
   }
 
   return XLAL_SUCCESS;
@@ -424,11 +526,6 @@ int XLALWeaveOutputResultsReadAppend(
   // Compute and fill the full stats-dependency map
   XLAL_CHECK( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, toplist_stats, extra_stats, recalc_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Read maximum size of toplists, if not supplied
-  if ( toplist_limit == 0 ) {
-    XLAL_CHECK( XLALFITSHeaderReadUINT4( file, "toplimit", &toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
   // Read whether to output semicoherent/coherent template indexes
   BOOLEAN toplist_tmpl_idx = 0;
   {
@@ -439,10 +536,20 @@ int XLALWeaveOutputResultsReadAppend(
     }
   }
 
+  // Read whether a histogram of mean multi-F-statistics will be written
+  BOOLEAN mean2F_hgrm = 0;
+  {
+    exists = 0;
+    XLAL_CHECK( XLALFITSHeaderQueryKeyExists( file, "m2Fhgrm", &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
+    if ( exists ) {
+      XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "m2Fhgrm", &mean2F_hgrm ) == XLAL_SUCCESS, XLAL_EFUNC );
+    }
+  }
+
   if ( *out == NULL ) {
 
     // Create new output results
-    *out = XLALWeaveOutputResultsCreate( &ref_time, nspins, statistics_params, toplist_limit, toplist_tmpl_idx );
+    *out = XLALWeaveOutputResultsCreate( &ref_time, nspins, statistics_params, toplist_limit, toplist_tmpl_idx, mean2F_hgrm );
     XLAL_CHECK( *out != NULL, XLAL_EFUNC );
 
   } else {
@@ -496,11 +603,42 @@ int XLALWeaveOutputResultsReadAppend(
     // Check whether to output semicoherent/coherent template indexes
     XLAL_CHECK( !toplist_tmpl_idx == !( *out )->toplist_tmpl_idx, XLAL_EIO, "Inconsistent output template indexes? %i != %i", toplist_tmpl_idx, ( *out )->toplist_tmpl_idx );
 
+    // Check whether a histogram of mean multi-F-statistics will be written
+    XLAL_CHECK( !mean2F_hgrm == !(( *out )->mean2F_hgrm_bins != NULL), XLAL_EIO, "Inconsistent mean 2F histogram? %i != %i", mean2F_hgrm, ( *out )->mean2F_hgrm_bins != NULL );
+
   }
 
   // Read and append to toplists
   for ( size_t i = 0; i < ( *out )->ntoplists; ++i ) {
     XLAL_CHECK( XLALWeaveResultsToplistReadAppend( file, ( *out )->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
+  // Read and append histogram of mean multi-F-statistics
+  if ( ( *out )->mean2F_hgrm_bins != NULL ) {
+
+    // Open and describe FITS table for writing histogram bins
+    UINT8 nrows = 0;
+    XLAL_CHECK( XLALFITSTableOpenRead( file, "mean2F_hgrm", &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_FITS_TABLE_COLUMN_BEGIN( WeaveMean2FHistogramBin );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, lower ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, REAL4, upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLAL_FITS_TABLE_COLUMN_ADD( file, UINT8, count ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    // Read histogram bins
+    WeaveMean2FHistogramBin bin;
+    const REAL4 bin_upper_max = mean2F_hgrm_bin_width * ( *out )->mean2F_hgrm_bins->length;
+    while ( nrows > 0 ) {
+      XLAL_CHECK( XLALFITSTableReadRow( file, &bin, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( bin.lower < 0 ) {
+        ( *out )->mean2F_hgrm_underflow += bin.count;
+      } else if ( bin.upper >= bin_upper_max ) {
+        ( *out )->mean2F_hgrm_overflow += bin.count;
+      } else {
+        const size_t j = bin.lower / mean2F_hgrm_bin_width;
+        ( *out )->mean2F_hgrm_bins->data[j] += bin.count;
+      }
+    }
+
   }
 
   return XLAL_SUCCESS;

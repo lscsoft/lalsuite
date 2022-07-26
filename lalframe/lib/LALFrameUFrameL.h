@@ -43,7 +43,7 @@ const char *XLALFrameUFrTOCQueryProcName_FrameL_(const LALFrameUFrTOC * toc, siz
 size_t XLALFrameUFrTOCQueryDetectorN_FrameL_(const LALFrameUFrTOC * toc);
 const char *XLALFrameUFrTOCQueryDetectorName_FrameL_(const LALFrameUFrTOC * toc, size_t det);
 void XLALFrameUFrameHFree_FrameL_(LALFrameUFrameH * frame);
-LALFrameUFrameH *XLALFrameUFrameHAlloc_FrameL_(const char *name, double start, double dt, int frnum);
+LALFrameUFrameH *XLALFrameUFrameHAlloc_FrameL_(const char *name, double start1, double start2, double dt, int frnum);
 LALFrameUFrameH *XLALFrameUFrameHRead_FrameL_(LALFrameUFrFile * stream, int pos);
 int XLALFrameUFrameHWrite_FrameL_(LALFrameUFrFile * stream, LALFrameUFrameH * frame);
 int XLALFrameUFrameHFrChanAdd_FrameL_(LALFrameUFrameH * frame, LALFrameUFrChan * channel);
@@ -66,6 +66,7 @@ const char *XLALFrameUFrChanQueryName_FrameL_(const LALFrameUFrChan * channel);
 double XLALFrameUFrChanQueryTimeOffset_FrameL_(const LALFrameUFrChan * channel);
 int XLALFrameUFrChanSetSampleRate_FrameL_(LALFrameUFrChan * channel, double sampleRate);
 int XLALFrameUFrChanSetTimeOffset_FrameL_(LALFrameUFrChan * channel, double timeOffset);
+int XLALFrameUFrChanSetTRange_FrameL_(LALFrameUFrChan * channel, double tRange);
 int XLALFrameUFrChanVectorAlloc_FrameL_(LALFrameUFrChan * channel, int dtype, size_t ndata);
 int XLALFrameUFrChanVectorCompress_FrameL_(LALFrameUFrChan * channel, int compressLevel);
 int XLALFrameUFrChanVectorExpand_FrameL_(LALFrameUFrChan * channel);

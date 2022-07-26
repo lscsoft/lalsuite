@@ -27,7 +27,7 @@ import sys, argparse
 import h5py
 from lalsimulation import SimInspiralNRWaveformGetSpinsFromHDF5File
 
-from glue.ligolw import (ligolw, lsctables, ilwd, utils)
+from glue.ligolw import (ligolw, lsctables, utils)
 from glue.ligolw.utils import process as ligolw_process
 
 import lalapps.git_version
@@ -91,8 +91,7 @@ for count, inj in enumerate(inj_list):
     fill_missing_columns(curr_sim)
     # Set id columns
     curr_sim.process_id = proc_id
-    curr_sim.simulation_id = ilwd.ilwdchar("sim_inspiral:simulation_id:%d"\
-                                           %(count))
+    curr_sim.simulation_id = sim_table.get_next_id()
     curr_sim.numrel_data = inj
     f = h5py.File(inj, 'r')
     curr_sim.eta = f.attrs['eta']
@@ -121,5 +120,4 @@ for count, inj in enumerate(inj_list):
     sim_table.append(curr_sim)
 
 xmldoc.childNodes[-1].appendChild(sim_table)
-utils.write_filename(xmldoc, args.output_file,
-                     gz=args.output_file.endswith('gz'))
+utils.write_filename(xmldoc, args.output_file)

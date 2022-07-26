@@ -1,4 +1,4 @@
-# Copyright (C) 2009--2018  Kipp Cannon
+# Copyright (C) 2009--2019,2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,9 +22,6 @@
 #
 # =============================================================================
 #
-
-
-from __future__ import print_function
 
 
 try:
@@ -266,6 +263,18 @@ class StringCoincParamsDistributions(snglcoinc.LnLikelihoodRatioMixin):
 		self.denominator += other.denominator
 		self.candidates += other.candidates
 		return self
+
+	def __call__(self, **kwargs):
+		# recover the instrument set.  FIXME:  this is stupid, but
+		# it's how we have to do it for now
+		instruments = set(param[:2] for param in kwargs if param.endswith("_snr2_chi2"))
+
+		# disallow H1+H2 only coincs
+		if instruments == set(("H1", "H2")):
+			return NegInf
+
+		# normal likelihood ratio
+		return super(StringCoincParamsDistributions, self).__call__(**kwargs)
 
 	def copy(self):
 		new = type(self)([])

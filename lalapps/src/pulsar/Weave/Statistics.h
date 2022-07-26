@@ -109,10 +109,8 @@ struct tagWeaveStatisticsParams {
   /// Number of segments
   UINT4 nsegments;
 
-  /// Number of multi-detector 2F summands (should be == number of segments)
-  UINT4 nsum2F;
-  /// Number of per-detector 2F summands (should be <= number of segments)
-  UINT4 nsum2F_det[PULSAR_MAX_DETECTORS];
+  /// Number of per-detector F-statistics
+  UINT4 n2F_det[PULSAR_MAX_DETECTORS];
 
   /// ---------- statistics dependency map
   /// Bitflag: set of toplist-ranking statistics

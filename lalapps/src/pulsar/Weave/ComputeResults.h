@@ -59,6 +59,8 @@ struct tagWeaveSemiResults {
   PulsarDopplerParams *coh_phys;
   /// Per-segment multi-detector F-statistics per frequency (optional)
   const REAL4 **coh2F;
+  /// Per-segment multi-detector F-statistics per frequency (optional), stored in CUDA device memory
+  const REAL4 **coh2F_CUDA;
   /// Per-segment per-detector F-statistics per frequency (optional)
   const REAL4 **coh2F_det[PULSAR_MAX_DETECTORS];
   /// Number of coherent results processed thus far
@@ -69,20 +71,12 @@ struct tagWeaveSemiResults {
   PulsarDopplerParams semi_phys;
   /// Maximized-over-segments multi-detector F-statistics per frequency
   REAL4VectorAligned *max2F;
-  /// Number of max-comparison of multi-detector F-statistics thus far
-  UINT4 nmax2F;
   /// Maximized-over-segments per-detector F-statistics per frequency
   REAL4VectorAligned *max2F_det[PULSAR_MAX_DETECTORS];
-  /// Number of max-comparison to per-detector F-statistics thus far
-  UINT4 nmax2F_det[PULSAR_MAX_DETECTORS];
   /// Summed multi-detector F-statistics per frequency
   REAL4VectorAligned *sum2F;
-  /// Number of additions to multi-detector F-statistics thus far
-  UINT4 nsum2F;
   /// Summed per-detector F-statistics per frequency
   REAL4VectorAligned *sum2F_det[PULSAR_MAX_DETECTORS];
-  /// Number of additions to per-detector F-statistics thus far
-  UINT4 nsum2F_det[PULSAR_MAX_DETECTORS];
   /// Mean multi-detector F-statistics per frequency
   REAL4VectorAligned *mean2F;
   /// Line-robust log10(B_S/GL) statistic
@@ -106,7 +100,7 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   const LALStringVector *sft_noise_sqrtSX,
   const LALStringVector *Fstat_assume_sqrtSX,
   FstatOptionalArgs *Fstat_opt_args,
-  const WeaveStatisticsParams *statistics_params,
+  WeaveStatisticsParams *statistics_params,
   BOOLEAN recalc_stage
   );
 void XLALWeaveCohInputDestroy(
@@ -143,11 +137,12 @@ int XLALWeaveSemiResultsInit(
   const UINT4 semi_nfreqs,
   const WeaveStatisticsParams *statistics_params
   );
-int XLALWeaveSemiResultsAdd(
+int XLALWeaveSemiResultsComputeSegs(
   WeaveSemiResults *semi_res,
-  const WeaveCohResults *coh_res,
-  const UINT8 coh_index,
-  const UINT4 coh_offset,
+  const UINT4 nsegments,
+  const WeaveCohResults **coh_res,
+  const UINT8 *coh_index,
+  const UINT4 *coh_offset,
   WeaveSearchTiming *tim
   );
 int XLALWeaveSemiResultsComputeMain(
@@ -164,6 +159,11 @@ int XLALWeaveCohResultsExtract(
   BOOLEAN *have_coh2F_det,
   WeaveCohResults *coh_res,
   const WeaveCohInput *coh_input
+  );
+int XLALWeaveSemiCoh2FExtract(
+  REAL4 *coh2F,
+  const WeaveSemiResults *semi_res,
+  const UINT4 freq_idx
   );
 
 #ifdef __cplusplus

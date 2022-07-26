@@ -7,17 +7,12 @@
 %undefine nightly
 %endif
 
-# borrowed from python3-rpm-macros
-%define pyYdir %{_builddir}/pythonY-%{name}-%{version}-%{release}
-
 # -- metadata ---------------
 
 Name: @PACKAGE@
 Version: @BASE_VERSION@
 Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
-Summary: LSC Algorithm Burst Library
 License: GPLv2+
-Group: LAL
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
@@ -40,24 +35,6 @@ BuildRequires: pkgconfig >= 0.18.0
 # swig
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2
-BuildRequires: pytest
-BuildRequires: python-devel
-BuildRequires: python-pathlib
-BuildRequires: python2-glue
-BuildRequires: python2-lal >= @MIN_LAL_VERSION@
-BuildRequires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
-BuildRequires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python2-ligo-lw
-BuildRequires: python2-matplotlib
-BuildRequires: python2-mock
-BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python2-rpm-macros
-BuildRequires: python2-scipy
-BuildRequires: rsync
-%endif
-
 # python3x
 BuildRequires: epel-rpm-macros
 BuildRequires: python-srpm-macros
@@ -66,9 +43,10 @@ BuildRequires: python%{python3_pkgversion}-glue
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: python%{python3_pkgversion}-ligo-lw
+BuildRequires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
 BuildRequires: python%{python3_pkgversion}-matplotlib
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
+BuildRequires: python%{python3_pkgversion}-pillow
 BuildRequires: python%{python3_pkgversion}-pytest
 BuildRequires: python%{python3_pkgversion}-scipy
 BuildRequires: python3-rpm-macros
@@ -84,7 +62,18 @@ BuildRequires: octave-devel
 # lalburst
 Summary: LSC Algorithm Burst Libary - runtime tools
 Requires: lib%{name} = %{version}-%{release}
+Requires: python%{python3_pkgversion}-lal
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+Requires: python%{python3_pkgversion}-lalmetaio
+Requires: python%{python3_pkgversion}-lalsimulation
+Requires: python%{python3_pkgversion}-ligo-lw
+Requires: python%{python3_pkgversion}-ligo-segments
+Requires: python%{python3_pkgversion}-matplotlib
+Requires: python%{python3_pkgversion}-numpy
+Requires: python%{python3_pkgversion}-pillow
+Requires: python%{python3_pkgversion}-scipy
+Requires: python%{python3_pkgversion}-tqdm
+Obsoletes: python2-%{name} <= 1.5.8-1
 %description
 The LSC Algorithm Burst Library for gravitational wave data analysis.
 This package provides the runtime tools.
@@ -103,7 +92,6 @@ that use the LAL Burst library.
 # liblalburst-devel
 %package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Burst
-Group: LAL
 Requires: gsl-devel
 Requires: lib%{name} = %{version}-%{release}
 Requires: liblal-devel >= @MIN_LAL_VERSION@
@@ -117,34 +105,9 @@ The LSC Algorithm Burst Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL Burst
 library.
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2-lalburst
-%package -n python2-%{name}
-Summary: Python %{python2_version} Bindings for LALBurst
-Group: LAL
-Requires: lib%{name} = %{version}-%{release}
-Requires: python
-Requires: python2-glue
-Requires: python2-lal >= @MIN_LAL_VERSION@
-Requires: python2-lalmetaio >= @MIN_LALMETAIO_VERSION@
-Requires: python2-lalsimulation >= @MIN_LALSIMULATION_VERSION@
-Requires: python2-ligo-lw
-Requires: python2-ligo-segments
-Requires: python2-numpy >= @MIN_NUMPY_VERSION@
-Requires: python2-scipy
-Provides: %{name}-python = %{version}-%{release}
-Provides: deprecated()
-Obsoletes: %{name}-python < %{version}-%{release}
-%{?python_provide:%python_provide python2-%{name}}
-%description -n python2-%{name}
-The LSC Algorithm Library for gravitational wave data analysis.
-This package provides the Python %{python2_version} bindings for LALBurst.
-%endif
-
 # python3x-lalburst
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} Bindings for LALBurst
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-glue
@@ -155,6 +118,8 @@ Requires: python%{python3_pkgversion}-ligo-lw
 Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-scipy
+Requires: python%{python3_pkgversion}-tqdm
+Obsoletes: python2-%{name} < 1.5.9-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
 The LSC Algorithm Library for gravitational wave data analysis.
@@ -163,7 +128,6 @@ This package provides the Python %{python3_version} bindings for LALBurst.
 # lalburst-octave
 %package octave
 Summary: Octave Bindings for LALBurst
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
@@ -179,42 +143,14 @@ This package provides the Octave bindings for LALBurst.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-# build C library with python3
 %configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# build python2 library (copy things so we don't have to rebuild them)
-rm -rf %{pyYdir}
-rsync -ra . %{pyYdir}
-pushd %{pyYdir}
-rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
-%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python2}
-%{__make} V=1 -C swig
-%{__make} V=1 -C python/%{name}
-%{__make} V=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
-popd
-%endif
-
 %check
-# C + python3 + octave
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2
-[ -d %pyYdir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %pyYdir -C test/python check
-%endif
-
 %install
-# C + python3 + octave
 %make_install
-
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2
-%{__make} -C %pyYdir -C swig install-exec-am DESTDIR=%{?buildroot}
-%{__make} -C %pyYdir -C python/%{name} install DESTDIR=%{?buildroot}
-%endif
-
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post -n lib%{name} -p /sbin/ldconfig
@@ -242,15 +178,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-%files -n python2-%{name}
-%defattr(-,root,root)
-%doc README.md
-%license COPYING
-%{python2_sitearch}/*
-%exclude %{python2_sitearch}/%{name}/*.a
-%endif
-
 %files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)
 %doc README.md
@@ -276,6 +203,18 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Mar 03 2022 Adam Mercer <adam.mercer@ligo.org> 1.5.12-1
+- Update for 1.5.12
+
+* Mon Jan 10 2022 Adam Mercer <adam.mercer@ligo.org> 1.5.11-1
+- Update for 1.5.11
+
+* Fri Dec 03 2021 Adam Mercer <adam.mercer@ligo.org> 1.5.10-1
+- Update for 1.5.10
+
+* Mon May 17 2021 Adam Mercer <adam.mercer@ligo.org> 1.5.9-1
+- Update for 1.5.9
+
 * Fri Feb 05 2021 Adam Mercer <adam.mercer@ligo.org> 1.5.8-1
 - Update for 1.5.8
 

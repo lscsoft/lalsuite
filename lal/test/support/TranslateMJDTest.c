@@ -62,7 +62,7 @@ test_MJDTT_GPS ( void )
   mjdTTDays = 51544;
   mjdTTFracDays = 0.5;
   gpsRef.gpsSeconds = 630763148; // $ lalapps_tconvert "Jan 01 2000 11:58:55 UTC"
-  gpsRef.gpsNanoSeconds = 0.816 * 1e9;
+  gpsRef.gpsNanoSeconds = 816000000;
 
   XLAL_CHECK ( XLALTranslateMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,
@@ -79,7 +79,7 @@ test_MJDTT_GPS ( void )
   mjdTTDays = 50814;
   mjdTTFracDays = 0;
   gpsRef.gpsSeconds = 567647948;
-  gpsRef.gpsNanoSeconds = 0.816 * 1e9;
+  gpsRef.gpsNanoSeconds = 816000000;
 
   XLAL_CHECK ( XLALTranslateMJDTTtoGPS ( &gps, mjdTTDays, mjdTTFracDays ) != NULL, XLAL_EFUNC );
   XLAL_CHECK ( (gps.gpsSeconds == gpsRef.gpsSeconds) && (gps.gpsNanoSeconds == gpsRef.gpsNanoSeconds), XLAL_ETOL,

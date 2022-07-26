@@ -28,6 +28,7 @@
 
 #include "config.h"
 #include "ppe_roq.h"
+#include "ppe_models.h"
 
 /******************************************************************************/
 /*                     REDUCED ORDER QUADRATURE FUNCTIONS                     */
@@ -224,6 +225,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
         /* a temporary run state containing just the required data for a single detector */
         LALInferenceRunState *tmpRS = XLALMalloc(sizeof(LALInferenceRunState));
         LALInferenceIFOModel *ifotmp = XLALMalloc(sizeof(LALInferenceIFOModel));
+        ifotmp->extraData = XLALCalloc(1, sizeof(IFOModelExtraData));
         ifotmp->next = NULL;
         tmpRS->threads = LALInferenceInitThreads(1);
         tmpRS->threads[0].model = XLALMalloc(sizeof(LALInferenceModel));
@@ -236,16 +238,16 @@ void generate_interpolant( LALInferenceRunState *runState ){
         tmpRS->prior = runState->prior;
         tmpRS->commandLine = runState->commandLine;
 
-        ifotmp->times = XLALCreateTimestampVector( tlen );
+        IFO_XTRA_DATA( ifotmp )->times = XLALCreateTimestampVector( tlen );
         /* create a new model vector */
         ifotmp->compTimeSignal = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, tlen );
 
         ifotmp->params = XLALCalloc(1, sizeof(LALInferenceVariables));
         LALInferenceCopyVariables(ifo->params, ifotmp->params); /* copy parameters */
-        ifotmp->ephem = ifo->ephem;
+        IFO_XTRA_DATA( ifotmp )->ephem = IFO_XTRA_DATA( ifo )->ephem;
         ifotmp->detector = ifo->detector;
-        ifotmp->tdat = ifo->tdat;
-        ifotmp->ttype = ifo->ttype;
+        IFO_XTRA_DATA( ifotmp )->tdat = IFO_XTRA_DATA( ifo )->tdat;
+        IFO_XTRA_DATA( ifotmp )->ttype = IFO_XTRA_DATA( ifo )->ttype;
 
         REAL8Vector *thissiddayfrac = NULL;
         thissiddayfrac = XLALCreateREAL8Vector( tlen );
@@ -269,7 +271,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
 
         /* get chunk times */
         for ( j=0; j<tlen; j++ ){
-          ifotmp->times->data[j] = ifo->times->data[startidx+j];
+          IFO_XTRA_DATA( ifotmp )->times->data[j] = IFO_XTRA_DATA( ifo )->times->data[startidx+j];
           thissiddayfrac->data[j] = sidDayFrac->data[startidx+j];
           thisssbdelay->data[j] = ssbdelays->data[startidx+j];
           if ( bsbdelays != NULL ){ thisbsbdelay->data[j] = bsbdelays->data[startidx+j]; }
@@ -454,7 +456,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
         XLALDestroyREAL8Array( RBquad );
 
         XLALDestroyREAL8Vector( deltas );
-        XLALDestroyTimestampVector( ifotmp->times );
+        XLALDestroyTimestampVector( IFO_XTRA_DATA( ifotmp )->times );
         XLALDestroyCOMPLEX16TimeSeries( ifotmp->compTimeSignal );
         LALInferenceClearVariables( ifotmp->params );
         XLALFree( tmpRS->threads[0].model );
@@ -586,7 +588,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
       if ( glitchphase != NULL ){ gpnodes = XLALResizeREAL8Vector( gpnodes, tnlength ); }
 
       for ( j=0; j<nbases0; j++ ){
-        timenodes->data[dlen+j] = ifo->times->data[startidx+interp->nodes[j]];
+        timenodes->data[dlen+j] = IFO_XTRA_DATA( ifo )->times->data[startidx+interp->nodes[j]];
         sidtimenodes->data[dlen+j] = sidDayFrac->data[startidx+interp->nodes[j]];
         ssbnodes->data[dlen+j] = ssbdelays->data[startidx+interp->nodes[j]];
         if ( bsbdelays != NULL ){ bsbnodes->data[dlen+j] = bsbdelays->data[startidx+interp->nodes[j]]; }
@@ -605,7 +607,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
       if ( glitchphase != NULL ){ gpnodes = XLALResizeREAL8Vector( gpnodes, tnlength ); }
 
       for ( j=0; j<nbases0quad; j++ ){
-        timenodes->data[dlen+j] = ifo->times->data[startidx+interpquad->nodes[j]];
+        timenodes->data[dlen+j] = IFO_XTRA_DATA( ifo )->times->data[startidx+interpquad->nodes[j]];
         sidtimenodes->data[dlen+j] = sidDayFrac->data[startidx+interpquad->nodes[j]];
         ssbnodes->data[dlen+j] = ssbdelays->data[startidx+interpquad->nodes[j]];
         if ( bsbdelays != NULL ){ bsbnodes->data[dlen+j] = bsbdelays->data[startidx+interpquad->nodes[j]]; }
@@ -619,14 +621,14 @@ void generate_interpolant( LALInferenceRunState *runState ){
       dlen += nbases0quad;
     }
 
-    ndatatot += ifo->times->length;
+    ndatatot += IFO_XTRA_DATA( ifo )->times->length;
 
     /* resize time vectors and model vectors, so they just contain values at the interpolation nodes */
-    LIGOTimeGPSVector *timescopy = XLALCreateTimestampVector( ifo->times->length );
-    memcpy(timescopy->data, ifo->times->data, sizeof(LIGOTimeGPS)*ifo->times->length);
+    LIGOTimeGPSVector *timescopy = XLALCreateTimestampVector( IFO_XTRA_DATA( ifo )->times->length );
+    memcpy(timescopy->data, IFO_XTRA_DATA( ifo )->times->data, sizeof(LIGOTimeGPS)*IFO_XTRA_DATA( ifo )->times->length);
     LALInferenceAddVariable( ifo->params, "timeStampVectorFull", &timescopy, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
-    XLALDestroyTimestampVector(ifo->times);
-    ifo->times = timenodes;
+    XLALDestroyTimestampVector(IFO_XTRA_DATA( ifo )->times);
+    IFO_XTRA_DATA( ifo )->times = timenodes;
 
     /* make a copy of the original sidereal time vectors and time stamp vectors - this is needed when calculating the SNR of the maximum likelihood point */
     REAL8Vector *siddaycopy = XLALCreateREAL8Vector( sidDayFrac->length );
@@ -739,7 +741,7 @@ COMPLEX16Array *generate_training_set( LALInferenceRunState *rs, UINT4 n ){
   UINT4 j = 0;
   UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
   dims->data[0] = n;
-  dims->data[1] = rs->threads[0].model->ifo->times->length;
+  dims->data[1] = IFO_XTRA_DATA( rs->threads[0].model->ifo )->times->length;
   COMPLEX16Array *ts = XLALCreateCOMPLEX16Array( dims );
   gsl_matrix_complex_view tsview = gsl_matrix_complex_view_array( (double *)ts->data, dims->data[0], dims->data[1] );
   XLALDestroyUINT4Vector( dims );
@@ -796,7 +798,7 @@ COMPLEX16Array *generate_training_set( LALInferenceRunState *rs, UINT4 n ){
 
     /* place model into an array */
     gsl_vector_complex_view cview;
-    cview = gsl_vector_complex_view_array((double*)rs->threads[0].model->ifo->compTimeSignal->data->data, rs->threads[0].model->ifo->times->length);
+    cview = gsl_vector_complex_view_array((double*)rs->threads[0].model->ifo->compTimeSignal->data->data, IFO_XTRA_DATA( rs->threads[0].model->ifo )->times->length);
     gsl_matrix_complex_set_row(&tsview.matrix, j, &cview.vector);
     j++;
   }
@@ -830,7 +832,7 @@ REAL8Array *generate_training_set_quad( LALInferenceRunState *rs, UINT4 n ){
   UINT4 j = 0, k = 0;
   UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
   dims->data[0] = n;
-  dims->data[1] = rs->threads[0].model->ifo->times->length;
+  dims->data[1] = IFO_XTRA_DATA( rs->threads[0].model->ifo )->times->length;
   REAL8Array *ts = XLALCreateREAL8Array( dims );
   gsl_matrix_view tsview = gsl_matrix_view_array( ts->data, dims->data[0], dims->data[1] );
   XLALDestroyUINT4Vector( dims );
@@ -885,7 +887,7 @@ REAL8Array *generate_training_set_quad( LALInferenceRunState *rs, UINT4 n ){
     rs->threads[0].model->templt( rs->threads[0].model );
 
     /* place model*model^* into an array */
-    for ( k = 0; k < rs->threads[0].model->ifo->times->length; k++ ){
+    for ( k = 0; k < IFO_XTRA_DATA( rs->threads[0].model->ifo )->times->length; k++ ){
       COMPLEX16 cval = rs->threads[0].model->ifo->compTimeSignal->data->data[k];
       gsl_matrix_set(&tsview.matrix, j, k, creal(cval*conj(cval)));
     }

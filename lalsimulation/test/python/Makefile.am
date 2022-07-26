@@ -18,8 +18,14 @@ test_scripts += \
 	test_enum_compatibility.py \
 	test_liv.py \
 	test_wf_property_lists.py \
+	test_spintaylor_evolveorbit.py \
+	test_prec_avg_evol.py \
+	test_hybrid_evol.py \
 	$(END_OF_LIST)
 
+EXTRA_DIST += \
+	reviewed_evolveorbit.ini \
+	$(END_OF_LIST)
 
 # Add any helper programs required by tests to this variable
 test_helpers +=

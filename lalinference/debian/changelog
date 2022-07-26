@@ -1,3 +1,27 @@
+lalinference (3.0.3-1) unstable; urgency=low
+
+  * Update for 3.0.3
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 03 Mar 2022 12:46:05 -0700
+
+lalinference (3.0.2-1) unstable; urgency=low
+
+  * Update for 3.0.2
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 10 Jan 2022 15:40:57 -0700
+
+lalinference (3.0.1-1) unstable; urgency=low
+
+  * Update for 3.0.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 03 Dec 2021 12:13:14 -0700
+
+lalinference (3.0.0-1) unstable; urgency=low
+
+  * Update for 3.0.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 17 May 2021 15:31:55 -0700
+
 lalinference (2.0.7-1) unstable; urgency=low
 
   * Update for 2.0.7

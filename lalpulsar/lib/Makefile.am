@@ -2,6 +2,7 @@ BUILT_SOURCES =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
+include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
 pkginclude_HEADERS = \
 	BinaryPulsarTiming.h \
@@ -20,6 +21,7 @@ pkginclude_HEADERS = \
 	GenerateSpinOrbitCW.h \
 	GenerateTaylorCW.h \
 	GetEarthTimes.h \
+	HeapToplist.h \
 	HeterodynedPulsarModel.h \
 	HoughMap.h \
 	LALBarycenter.h \
@@ -70,7 +72,7 @@ liblalpulsar_la_SOURCES = \
 	ComputeFstat_Demod.c \
 	ComputeFstat_DemodHL_Generic.c \
 	ComputeFstat_DemodHL_OptC.c \
-	ComputeFstat_Resamp.c \
+	ComputeFstat_Resamp_Generic.c \
 	ComputeSky.c \
 	ConstructPLUT.c \
 	DetectorStates.c \
@@ -88,6 +90,7 @@ liblalpulsar_la_SOURCES = \
 	GenerateSpinOrbitCW.c \
 	GenerateTaylorCW.c \
 	GetEarthTimes.c \
+	HeapToplist.c \
 	HeterodynedPulsarModel.c \
 	HoughMap.c \
 	LALBarycenter.c \
@@ -149,6 +152,14 @@ libcomputefstat_demodhl_sse_la_SOURCES = ComputeFstat_DemodHL_SSE.c
 libcomputefstat_demodhl_sse_la_CFLAGS = $(AM_CFLAGS) $(SSE_CFLAGS)
 endif
 
+if CUDA
+noinst_LTLIBRARIES += libcomputefstat_resamp_cuda.la
+liblalpulsar_la_LIBADD += libcomputefstat_resamp_cuda.la
+libcomputefstat_resamp_cuda_la_SOURCES = ComputeFstat_Resamp_CUDA.cu
+libcomputefstat_resamp_cuda_la_LDFLAGS = -no-undefined
+MOSTLYCLEANFILES += ComputeFstat_Resamp_CUDA.cpp
+endif
+
 EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_DemodHL_Altivec.i \
 	ComputeFstat_DemodHL_Generic.i \
@@ -156,6 +167,7 @@ EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_DemodHL_SSE.i \
 	ComputeFstat_Demod_ComputeFaFb.c \
 	ComputeFstat_internal.h \
+	ComputeFstat_Resamp_internal.h \
 	SinCosLUT.i \
 	$(END_OF_LIST)
 
@@ -168,15 +180,19 @@ vcs_info_sources = LALPulsarVCSInfoHeader.h
 build_info_source = LALPulsarBuildInfoHeader.h
 build_info_dependencies = $(liblalpulsar_la_DEPENDENCIES)
 
-LDADD = liblalpulsar.la
+minimal_ephemerides = \
+	earth00-40-DE405.dat.gz \
+	sun00-40-DE405.dat.gz \
+	tdb_2000-2040.dat.gz \
+	te405_2000-2040.dat.gz \
+	$(END_OF_LIST)
 
-pkgdata_DATA = \
+all_ephemerides = \
 	earth00-19-DE200.dat.gz \
 	earth00-19-DE405.dat.gz \
 	earth00-19-DE414.dat.gz \
 	earth00-19-DE421.dat.gz \
 	earth00-40-DE200.dat.gz \
-	earth00-40-DE405.dat.gz \
 	earth00-40-DE421.dat.gz \
 	earth00-40-DE430.dat.gz \
 	sun00-19-DE200.dat.gz \
@@ -184,14 +200,19 @@ pkgdata_DATA = \
 	sun00-19-DE414.dat.gz \
 	sun00-19-DE421.dat.gz \
 	sun00-40-DE200.dat.gz \
-	sun00-40-DE405.dat.gz \
 	sun00-40-DE421.dat.gz \
 	sun00-40-DE430.dat.gz \
 	tdb_2000-2019.dat.gz \
 	te405_2000-2019.dat.gz \
-	tdb_2000-2040.dat.gz \
-	te405_2000-2040.dat.gz \
 	$(END_OF_LIST)
+
+pkgdata_DATA = \
+	$(minimal_ephemerides) \
+	$(END_OF_LIST)
+
+if !INSTALL_MINIMAL_EPHEM
+pkgdata_DATA += $(all_ephemerides)
+endif
 
 EXTRA_DIST = \
 	$(pkgdata_DATA) \

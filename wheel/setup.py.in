@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 LIGO Scientific Collaboration Algorithm Library - minimal Python package
 
@@ -19,26 +21,31 @@ To install, simply run::
     $ pip install lalsuite
 """
 
-from glob import glob
 import os
-import re
-from string import Template
 import shutil
+import sysconfig
 import tempfile
-
-from setuptools import Extension, find_packages, setup
-from setuptools.command.build_ext import build_ext as _build_ext
-from setuptools.command.build_py import build_py as _build_py
 from distutils.command.build_scripts import build_scripts as _build_scripts
-from distutils import log
+from pathlib import Path
+from string import Template
+
+from setuptools import (
+    Extension,
+    find_packages,
+    setup,
+)
+from setuptools.command.build_ext import build_ext as _build_ext
 
 # These variables come from automake.
-subst = dict(prefix=os.path.abspath('build/inst'))
+subst = {}
+subst['prefix'] = subst['PYTHON_PREFIX'] = subst['PYTHON_EXEC_PREFIX'] = (
+    os.path.abspath('build/inst')
+)
 subst['exec_prefix'] = Template('@exec_prefix@').substitute(**subst)
-BINDIR = Template('@bindir@').substitute(**subst)
-DATADIR = Template('$prefix/share').substitute(**subst)
-LIBEXECDIR = Template('@libexecdir@').substitute(**subst)
-PYTHONDIR = Template('@pythondir@').substitute(**subst)
+BINDIR = Path(Template('@bindir@').substitute(**subst))
+DATADIR = Path(Template('$prefix/share').substitute(**subst))
+LIBEXECDIR = Path(Template('@libexecdir@').substitute(**subst))
+PYTHONDIR = Path(Template('@pythondir@').substitute(**subst))
 BASE_VERSION = '@BASE_VERSION@'
 NIGHTLY_VERSION = '@NIGHTLY_VERSION@'
 
@@ -47,88 +54,47 @@ if NIGHTLY_VERSION:
 else:
     VERSION = BASE_VERSION
 
+SHLIB_SUFFIX = sysconfig.get_config_var("SHLIB_SUFFIX")
+
 
 class build_ext(_build_ext):
-    """Override setuptools build_ext: just copy pre-built modules."""
-
+    """Override setuptools build_ext: just copy pre-built modules.
+    """
     def build_extension(self, ext):
-        src = os.path.join(PYTHONDIR, ext.name.replace('.', '/') + '.so')
+        src = PYTHONDIR / (ext.name.replace('.', os.path.sep) + SHLIB_SUFFIX)
         dst = self.get_ext_fullpath(ext.name)
         self.copy_file(src, dst)
 
 
-lal_data_path_fixup = '''
-
-
-#
-# This section was added automatically to support using LALSuite as a wheel.
-#
-import os
-try:
-    from importlib import resources
-except ImportError:
-    # FIXME: remove after dropping support for Python < 3.7
-    import importlib_resources as resources
-with resources.path('lalapps', '__init__.py') as new_path:
-    new_path = str(new_path.parent / 'data')
-path = os.environ.get('LAL_DATA_PATH')
-path = path.split(':') if path else []
-if new_path not in path:
-    path.append(new_path)
-os.environ['LAL_DATA_PATH'] = ':'.join(path)
-'''
-
-
-
-class build_py(_build_py):
-    """Override setuptools build_py: add line to fix up LAL_DATA_PATH
-    environment variable."""
-
-    def build_module(self, module, module_file, package):
-        outfile, copied = _build_py.build_module(self, module, module_file,
-                                                 package)
-        if copied and '.' not in package \
-                and os.path.basename(module_file) == '__init__.py':
-            log.info('adding LAL_DATA_PATH patch to %s', outfile)
-            with open(outfile, 'a') as f:
-                f.write(lal_data_path_fixup)
-        return outfile, copied
-
-
-stub = '''\
+stub = """
 #!python
 import os
 import sys
-try:
-    from importlib import resources
-except ImportError:
-    # FIXME: remove after dropping support for Python < 3.7
-    import importlib_resources as resources
+from importlib import resources
 with resources.path('lalapps', '__init__.py') as new_path:
     new_path = str(new_path.parent / 'bin' / '{}')
 os.execv(new_path, sys.argv)
-'''
+""".strip()
 
 
 class build_scripts(_build_scripts):
     """Override setuptools install_scripts: strip the .py extensions and
-    add the shebang lines."""
-
+    add the shebang lines.
+    """
     def run(self):
         old_scripts = self.scripts[:]
         new_scripts = set()
         self.mkpath(self.build_dir)
-        tmpdir = tempfile.mkdtemp(dir=self.build_dir)
-        try:
-            for old_script in old_scripts:
-                basename = os.path.basename(old_script)
-                base, ext = os.path.splitext(basename)
-                if not old_script.startswith(LIBEXECDIR):
-                    new_script = os.path.join(tmpdir, basename)
-                    with open(new_script, 'w') as outfile:
-                        outfile.write(stub.format(os.path.basename(old_script)))
-                elif ext == '.py':
-                    new_script = os.path.join(tmpdir, base)
+        with tempfile.TemporaryDirectory(dir=self.build_dir) as tmpdir:
+            tmpdir = Path(tmpdir)
+            for old_script in map(Path, old_scripts):
+                basename = old_script.name
+                base = old_script.with_suffix("").name
+                if LIBEXECDIR not in old_script.parents:  # C executable
+                    new_script = tmpdir / basename
+                    new_script.write_text(stub.format(basename))
+                elif old_script.suffix == '.py':  # Python script
+                    new_script = tmpdir / base
                     with open(new_script, 'wb') as outfile:
                         outfile.write(b'#!python\n')
                         with open(old_script, 'rb') as infile:
@@ -139,54 +105,92 @@ class build_scripts(_build_scripts):
             self.scripts = list(new_scripts)
             _build_scripts.run(self)
             self.scripts = old_scripts
-        finally:
-            shutil.rmtree(tmpdir)
 
 
 setup(
+    # metadata
     name='lalsuite',
     license='GPL-2+',
     version=VERSION,
     description=__doc__.strip().split('\n')[0],
     long_description='\n'.join(__doc__.strip().split('\n')[1:]).strip(),
-    url='https://git.ligo.org/lscsoft/lalsuite',
     author='LIGO Scientific Collaboration',
     author_email='lal-discuss@ligo.org',
     maintainer='Adam Mercer',
     maintainer_email='adam.mercer@ligo.org',
+    url='https://git.ligo.org/lscsoft/lalsuite',
+    project_urls={
+        "Bug Tracker": "https://git.ligo.org/lscsoft/lalsuite/-/issues/",
+        "Documentation": "https://lscsoft.docs.ligo.org/lalsuite/",
+        "Source Code": "https://git.ligo.org/lscsoft/lalsuite",
+    },
     classifiers=[
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: GNU General Public License v2 or later (GPLv2+)',
+        'License :: OSI Approved :: '
+        'GNU General Public License v2 or later (GPLv2+)',
         'Operating System :: POSIX',
+        'Natural Language :: English',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Astronomy',
-        'Topic :: Scientific/Engineering :: Physics'],
-    cmdclass={'build_ext': build_ext,
-              'build_py': build_py,
-              'build_scripts': build_scripts},
-    package_dir={'': PYTHONDIR,
-                 'lalapps.bin': BINDIR, 'lalapps.data': DATADIR},
-    package_data={'lalapps.bin': ['*'], 'lalapps.data': ['*'],
-                  '': ['*.csv']},
-    # FIXME: exclude lalpulsar data files because they cause the wheel to
-    # exceed the PyPI upload size limit.
-    exclude_package_data={'lalapps.data': ['earth*.dat.gz', 'sun*.dat.gz',
-                                           'tdb*.dat.gz', 'te*.dat.gz']},
-    packages=find_packages(PYTHONDIR) + ['lalapps.bin', 'lalapps.data'],
-    scripts=(glob(BINDIR + '/*', recursive=True) +
-			 glob(LIBEXECDIR + '/**/*.py', recursive=True)),
-    ext_modules=[Extension(os.path.relpath(filename, PYTHONDIR)
-                           .replace('.so', '')
-                           .replace('/', '.'), [])
-                 for filename in glob(PYTHONDIR + '/**/*.so', recursive=True)],
-    extras_require={
-        'lalinference': ['gwpy', 'gwdatafind']
+        'Topic :: Scientific/Engineering :: Physics',
+    ],
+    # build
+    cmdclass={
+        'build_ext': build_ext,
+        'build_scripts': build_scripts,
     },
-    install_requires=['lscsoft-glue', 'ligo-segments', 'matplotlib',
-                      'numpy>=1.7', 'python-dateutil', 'scipy',
-                     'importlib_resources;python_version<"3.7"']
+    # contents
+    package_dir={
+        '': str(PYTHONDIR),
+        'lalapps.bin': str(BINDIR),
+        'lalapps.data': str(DATADIR),
+    },
+    package_data={
+        'lalapps.bin': ['*'],
+        'lalapps.data': ['*'],
+        '': ['*.csv'],
+    },
+    packages=find_packages(PYTHONDIR) + [
+        'lalapps.bin',
+        'lalapps.data',
+    ],
+    scripts=list(map(str, (
+        list(BINDIR.glob("*"))
+        + list(LIBEXECDIR.glob('**/*.py'))
+    ))),
+    ext_modules=[
+        Extension(
+            str(path.relative_to(PYTHONDIR).with_suffix("")).replace('/', '.'),
+            [],
+        ) for path in PYTHONDIR.glob('**/*.so')
+    ],
+    # requirements
+    python_requires='>=3.7',
+    setup_requires=[
+        'setuptools',
+    ],
+    install_requires=[
+        'astropy',
+        'ligo-segments',
+        'lscsoft-glue',
+        'matplotlib',
+        'numpy>=1.7',
+        'python-dateutil',
+        'scipy',
+    ],
+    extras_require={
+        'lalinference': [
+            'gwdatafind',
+            'gwpy',
+        ],
+        'test': [
+            'pytest',
+        ],
+    },
 )

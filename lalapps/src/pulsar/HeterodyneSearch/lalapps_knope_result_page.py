@@ -504,7 +504,7 @@ class posteriors:
 
           if self._usegwphase and priorlinevals[0].lower() == 'phi0': # adjust phi0 priors if using GW phase
             ranges = 2.*ranges
-        elif priorlinevals[1] is 'gmm':
+        elif priorlinevals[1] == 'gmm':
           try:
             ranges = {}
             ranges['nmodes'] = priorlinevals[2]
@@ -982,8 +982,8 @@ class posteriors:
 
   def plot_prior(self, ax, param, prior, orientation='horizontal', truth=0., npoints=100):
     # plot the prior distribution (with truth subtracted if non-zero)
-    priortype = prior[param].keys()[0]
-    priorrange = prior[param].values()[0]
+    priortype = list(prior[param].keys())[0]
+    priorrange = list(prior[param].values())[0]
 
     if truth is None:
       truth = 0.
@@ -1956,6 +1956,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
   ifos = [] # list of detectors to use
   withjoint = False
   preprocdat = None
+  datatable = None
   if not jointonly:
     try:
       ifos = ast.literal_eval(cp.get('general', 'detectors'))
@@ -2073,8 +2074,9 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
     htmlinput['evidenceplots'] = ""
 
   # add data plots
-  htmlinput['dataplots'] = str(datatable)
-  linkstable.adddata(atag("#dataplots", linktext="Data Plots").text, dataclass="rightborder")
+  if datatable is not None:
+    htmlinput['dataplots'] = str(datatable)
+    linkstable.adddata(atag("#dataplots", linktext="Data Plots").text, dataclass="rightborder")
 
   # add posterior samples plots
   htmlinput['posteriorsamples'] = postinfo.create_sample_plot_table(figformats=figformat)

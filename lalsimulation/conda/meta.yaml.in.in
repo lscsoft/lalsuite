@@ -34,13 +34,14 @@ build:
   error_overlinking: true
   number: 9999
   script_env:
+    - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - GITLAB_CI
   skip: true  # [win]
 
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man >=1.37
     - llvm-openmp  # [osx]
     - make
     - pkg-config >=0.18.0
@@ -52,6 +53,31 @@ requirements:
     - llvm-openmp  # [osx]
 
 outputs:
+  - name: lalsimulation-data
+    script: install-data.sh
+    build:
+      script_env: {}
+    requirements:
+      build:
+        - make
+      run_constrained:
+        - liblalsimulation >=3.1.2
+    test:
+      commands:
+        - test -f ${LALSIMULATION_DATADIR}/LIGO-P1200087-v18-AdV_DESIGN.txt  # [unix]
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite.git
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Simulation Library data files
+      description: |
+        The LSC Algorithm Simulation Library for gravitational wave data analysis.
+        This package contains the data files needed to run various applications
+        and routines that use the LAL Simulation library.
+
   - name: liblalsimulation
     script: install-lib.sh
     build:
@@ -67,11 +93,13 @@ outputs:
         - swig >={{ swig_version }}
       host:
         - gsl
+        - {{ pin_subpackage('lalsimulation-data', exact=True) }}
         - liblal >={{ lal_version }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
       run:
         - gsl
+        - {{ pin_subpackage('lalsimulation-data', exact=True) }}
         - liblal >={{ lal_version }}
         - llvm-openmp  # [osx]
       run_constrained:
@@ -81,8 +109,10 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - pkg-config --print-errors --exact-version "{{ version }}" lalsimulation
-        - test -f ${PREFIX}/lib/liblalsimulation${SHLIB_EXT}  # [not win]
+        # check library
+        - test -f ${PREFIX}/lib/liblalsimulation${SHLIB_EXT}  # [unix]
+        # check pkg-config
+        - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalsimulation
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
@@ -103,22 +133,29 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        # ignore run_exports from python's recipe
+        - numpy
+        - openssl
         - python
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
         - pkg-config >=0.18.0
         - swig >={{ swig_version }}
+        # extras for cross-compilation:
+        - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+        - numpy                               # [build_platform != target_platform]
+        - python                              # [build_platform != target_platform]
       host:
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - numpy
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
-        - liblal  # [linux]
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - mpmath >=1.0.0
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
@@ -132,6 +169,7 @@ outputs:
       imports:
         - lalsimulation
         - lalsimulation.nrfits
+        - lalsimulation.tilts_at_infinity
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
@@ -151,21 +189,25 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         - python
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
       host:
         - gsl
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - gsl
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - mpmath >=1.0.0
         - python
         - {{ pin_subpackage('python-lalsimulation', exact=True) }}
     test:

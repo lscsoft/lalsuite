@@ -24,17 +24,19 @@ import sys
 
 import pytest
 
-from glue.lal import Cache as GlueCache
-
 from lal import (
     LIGOTimeGPS,
     utils as lal_utils,
 )
 
-GlueCache.entry_class = lal_utils.CacheEntry
-
 
 def test_lalcache_from_gluecache():
+    try:
+        from glue.lal import Cache as GlueCache
+    except ImportError as exc:  # no glue installation
+        pytest.skip(str(exc))
+    GlueCache.entry_class = lal_utils.CacheEntry
+
     files = [
         "X-TEST-0-1.gwf",
         "X-TEST-1-1.gwf",

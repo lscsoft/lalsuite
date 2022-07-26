@@ -27,6 +27,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalpulsar_version = "@MIN_LALPULSAR_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
+{% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 
 package:
   name: {{ name }}
@@ -40,27 +41,30 @@ build:
   error_overdepending: true
   error_overlinking: true
   ignore_run_exports:
-    # run_exports parsing for fftw is broken, so we ignore it
-    # manually, for now
-    - fftw
-    # ignore run_exports from python's recipe
+    - numpy
     - python
   number: 9999
   script_env:
+    - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - GITLAB_CI
   skip: true  # [win]
 
 requirements:
   build:
+    - bc  # [build_platform == target_platform]
     - {{ compiler('c') }}
-    - help2man >=1.37
+    - help2man >=1.37  # [build_platform == target_platform]
     - make
     - pkg-config
+    # extras for cross-compiling
+    - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+    - python                              # [build_platform != target_platform]
   host:
-    - bc
+    - astropy
     - cfitsio
-    - fftw * nompi*
     - gsl
+    - jplephem
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
     - liblalburst >={{ lalburst_version }}
@@ -71,23 +75,32 @@ requirements:
     - liblalpulsar >={{ lalpulsar_version }}
     - liblalsimulation >={{ lalsimulation_version }}
     - python
-    - python-lal >={{ lal_version }}
-    - python-lalburst >={{ lalburst_version }}
-    - python-lalinference >={{ lalinference_version }}
-    - python-lalinspiral >={{ lalinspiral_version }}
-    - python-lalframe >={{ lalframe_version }}
-    - python-lalmetaio >={{ lalmetaio_version }}
-    - python-lalpulsar >={{ lalpulsar_version }}
-    - python-lalsimulation >={{ lalsimulation_version }}
+    # extras needed for help2man (not when cross compiling)
+    - h5py  # [build_platform == target_platform]
+    - ligo-segments  # [build_platform == target_platform]
+    - numpy  # [build_platform == target_platform]
+    - pillow  # [build_platform == target_platform]
+    - python-lal >={{ lal_version }}  # [build_platform == target_platform]
+    - python-lalburst >={{ lalburst_version }}  # [build_platform == target_platform]
+    - python-lalinference >={{ lalinference_version }}  # [build_platform == target_platform]
+    - python-lalinspiral >={{ lalinspiral_version }}  # [build_platform == target_platform]
+    - python-lalframe >={{ lalframe_version }}  # [build_platform == target_platform]
+    - python-lalmetaio >={{ lalmetaio_version }}  # [build_platform == target_platform]
+    - python-lalpulsar >={{ lalpulsar_version }}  # [build_platform == target_platform]
+    - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
+    - python-ligo-lw  # [build_platform == target_platform]
+    - tqdm
   run:
+    - astropy
     - cfitsio
-    - fftw
     - gsl
     - h5py
+    - jplephem
     - lalinference >={{ lalinference_version }}
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
     - liblalframe >={{ lalframe_version }}
+    - liblalinference >={{ lalinference_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
     - liblalburst >={{ lalburst_version }}
@@ -99,19 +112,20 @@ requirements:
     - python
     - python-lal >={{ lal_version }}
     - python-lalburst >={{ lalburst_version }}
+    - python-lalframe >={{ lalframe_version }}
     - python-lalinference >={{ lalinference_version }}
     - python-lalinspiral >={{ lalinspiral_version }}
     - python-lalmetaio >={{ lalmetaio_version }}
     - python-lalpulsar >={{ lalpulsar_version }}
     - python-lalsimulation >={{ lalsimulation_version }}
-    - python-ligo-lw
+    - python-ligo-lw >={{ python_ligo_lw_version }}
+    - tqdm
 
 test:
   imports:
     - lalapps
     - lalapps.cosmicstring
     - lalapps.inspiral
-    - lalapps.inspiralutils
     - lalapps.knope_utils
     - lalapps.pulsarhtmlutils
     - lalapps.pulsarpputils
@@ -122,37 +136,19 @@ test:
     - framecpp_sample
     # run --help
     - lalapps_binj --help
-    - lalapps_binj_pic --help
-    - lalapps_binjfind --help
     - lalapps_blindinj --help
-    - lalapps_bucluster --help
-    - lalapps_bucut --help
-    - lalapps_burca --help
-    - lalapps_burca_tailor --help
-    - lalapps_cache Z-ilwd_test_frame-600000000-1.gwf
     - lalapps_cafe --help
     - lalapps_calcexpsnr --help
-    - lalapps_cbc_sbank --help
-    - lalapps_cbc_sbank_choose_mchirp_boundaries --help
-    - lalapps_cbc_sbank_hdf5_bankcombiner --help
-    - lalapps_cbc_sbank_hdf5_choose_mchirp_boundaries --help
-    - TMPDIR="." lalapps_cbc_sbank_pipe --help
-    - lalapps_cbc_sbank_sim --help
-    - TMPDIR="." lalapps_cbc_sbank_sim_pipe --help
     - lalapps_cbc_stochasticbank --help
     - lalapps_chirplen --m1 1.4 --m2 1.4 --flow 30
     - lalapps_coh_PTF_inspiral --help
-    - lalapps_coh_PTF_spin_checker --help
     - lalapps_coinj --help
     - lalapps_cosmicstring_pipe --help
-    - lalapps_create_pulsar_signal_frame --help
     - lalapps_create_solar_system_ephemeris --help
     - lalapps_create_solar_system_ephemeris_python --help
-    - TEMPO2="" lalapps_create_time_correction_ephemeris --help
+    - lalapps_create_time_correction_ephemeris --help
     - lalapps_effdist --help
     - lalapps_exc_resp -h
-    - lalapps_fftw_wisdom --help
-    - lalapps_fftwf_wisdom --help
     - lalapps_fits_header_getval --help
     - lalapps_fits_header_list --help
     - lalapps_fits_overview --help
@@ -169,27 +165,19 @@ test:
     - lalapps_inspfrinj --help
     - lalapps_inspinj --f-lower 30 --waveform IMRPhenomD --gps-start-time 1000000000 --gps-end-time 1000000010 --d-distr volume --l-distr random --m-distr log --i-distr gaussian --incl-std 2 --min-distance 100000 --max-distance 120000 --min-mass1 10 --max-mass1 20 --min-mass2 10 --max-mass2 20 --disable-spin --time-step
       2
-    - lalapps_inspinjfind --help
     - lalapps_knope --help
     - lalapps_knope_collate_results --help
     #- lalapps_knope_result_page --help  <- needs scotchcorner
     - lalapps_make_nr_hdf_catalog --help
-    - lalapps_path2cache <<< Z-ilwd_test_frame-600000000-1.gwf
-    - lalapps_plot_tisi --help
     - lalapps_power --help
-    - lalapps_power_calc_likelihood --help
-    - lalapps_power_final --help
     - lalapps_power_likelihood_pipe --help
     - lalapps_power_pipe --help
-    - lalapps_power_plot_binj --help
-    - lalapps_power_plot_binjtf --help
     - lalapps_psinject -h
     - lalapps_pulsar_frequency_evolution --help
     - lalapps_pulsar_parameter_estimation_nested --help
     - lalapps_random_bank 10 20 10
     - lalapps_randombank --minimum-mass 10 --maximum-mass 20 --number-of-templates 10
     - lalapps_run_sqlite --help
-    - lalapps_searchsum2cache --help
     - lalapps_splitSFTs --help
     - lalapps_splitbank --verbose --bank-file P1-TMPLTBANK-0-0.xml --number-of-banks 2 --minimal-match 0.9
     - test "$(lalapps_ssbtodetector --gps 1000000000 --ra 0 --dec 0 --telescope JBO)" == "999999506.306100250"
@@ -203,9 +191,6 @@ test:
     - lalapps_string_meas_likelihood --help
     - lalapps_string_plot_binj --help
     - lalapps_string_plot_likelihood --help
-    - test "$(lalapps_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"
-    - test "$(lalapps_tconvert Fri, 13 May 2005 06:13:07 +0000)" -eq 800000000
-    - lalapps_thinca --help
     - lalapps_tmpltbank --help
     - lalapps_version
 

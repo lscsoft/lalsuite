@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALBurst],[1.5.8.1],[lal-discuss@ligo.org])
+AC_INIT([LALBurst],[1.5.12.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([lib/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[6])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBREVISION],[4])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalburst${LIBMAJOR}.install:debian/liblalburst.install.in \
@@ -68,11 +69,13 @@ AM_INIT_AUTOMAKE([ \
 
 # version requirements
 MIN_LAL_VERSION="7.1.0"
-MIN_LALMETAIO_VERSION="2.0.0"
-MIN_LALSIMULATION_VERSION="2.5.0"
+MIN_LALMETAIO_VERSION="2.1.0"
+MIN_LALSIMULATION_VERSION="3.1.0"
+MIN_PYTHON_LIGO_LW_VERSION="1.7.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
+AC_SUBST([MIN_PYTHON_LIGO_LW_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -107,10 +110,11 @@ LALSUITE_PROG_COMPILERS
 
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -118,14 +122,11 @@ LALSUITE_OSX_VERSION_CHECK
 # link tests using libtool
 LALSUITE_USE_LIBTOOL
 
-# check for header files
-AC_HEADER_STDC
-
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
 # check for Python
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
@@ -174,6 +175,9 @@ AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# make sure local library module is in python path
+LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
 
 # check whether we have the packages to pass the snglcoinc_verify.py tests
 # see https://git.ligo.org/lscsoft/lalsuite/issues/208

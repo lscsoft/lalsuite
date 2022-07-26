@@ -60,11 +60,6 @@
  * \c fileName.  It returns a pointer to the head of a linked list of
  * \c SearchSummaryTables.
  *
- * The routine \c SummValueTableFromLIGOLw reads in a \c summ_value
- * table from the LIGOLwXML file specified in \c fileName.  It returns the
- * number of rows read in and \c sumHead provides a pointer to the head of a
- * linked list of \c SummValueTables.
- *
  * ### Algorithm ###
  *
  * None.

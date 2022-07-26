@@ -631,7 +631,7 @@ XLALCreateCrossCorrWorkspace(
     MultiCOMPLEX8TimeSeries    **        multiTimeSeries_SRC_a,
     MultiCOMPLEX8TimeSeries    **        multiTimeSeries_SRC_b,
     const PulsarDopplerParams            binaryTemplateSpacings,
-    const FstatInput           *_LAL_RESTRICT_ resampFstatInput, 
+    FstatInput                 *         resampFstatInput, 
     const UINT4                          numFreqBins,
     const REAL8                          tCoh,
     const BOOLEAN                        treatWarningsAsErrors

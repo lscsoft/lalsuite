@@ -39,7 +39,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
-    CHAR *segment_list, *detector_motion, *ephem_earth, *ephem_sun, *output_file;
+    CHAR *segment_list, *sft_files, *detector_motion, *ephem_earth, *ephem_sun, *output_file;
     LALStringVector *detectors;
     LIGOTimeGPS ref_time;
     LIGOTimeGPSRange first_segment;
@@ -85,6 +85,11 @@ int main( int argc, char *argv[] )
     segment_gap, REAL8, 'g', DEVELOPER,
     "When generating segments, increase the translation of the first segment by this amount (in seconds). "
     "A positive value gives non-contiguous segments; a negative value gives overlapping segments. "
+    );
+  XLALRegisterUvarMember(
+    sft_files, STRING, 'I', NODEFAULT,
+    "Pattern matching the SFT files to be analysed; used to discard empty segments. Possibilities are:\n"
+    " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'"
     );
   //
   // - Parameter-space metric computation
@@ -203,6 +208,38 @@ int main( int argc, char *argv[] )
       XLALGPSAdd( &seg.start, dt );
       XLALGPSAdd( &seg.end, dt );
     }
+
+  }
+
+  // Load SFT catalog to check for empty segments
+  if ( UVAR_SET( sft_files ) ) {
+
+    // Load SFT catalog from files given by 'sft_files'
+    LogPrintf( LOG_NORMAL, "Loading SFTs matching '%s' into catalog ...\n", uvar->sft_files );
+    SFTCatalog *sft_catalog = XLALSFTdataFind( uvar->sft_files, NULL );
+    XLAL_CHECK_MAIN( sft_catalog != NULL, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( sft_catalog->length > 0, XLAL_EFUNC );
+    LogPrintf( LOG_NORMAL, "Loaded SFT catalog from SFTs matching '%s'\n", uvar->sft_files );
+
+    // Build new segment list without empty segments
+    LALSegList *nonempty_segments = XLALSegListCreate();
+    XLAL_CHECK_MAIN( nonempty_segments != NULL, XLAL_EFUNC );
+    for ( UINT4 n = 0; n < setup.segments->length; ++n ) {
+      const LALSeg *seg = &setup.segments->segs[n];
+      SFTCatalog XLAL_INIT_DECL( sft_catalog_seg );
+      XLAL_CHECK_MAIN( XLALSFTCatalogTimeslice( &sft_catalog_seg, sft_catalog, &seg->start, &seg->end ) == XLAL_SUCCESS, XLAL_EFUNC );
+      if ( sft_catalog_seg.length > 0 ) {
+        XLAL_CHECK_MAIN( XLALSegListAppend( nonempty_segments, seg ) == XLAL_SUCCESS, XLAL_EFUNC );
+      } else {
+        LogPrintf( LOG_NORMAL, "Discarding empty segment %u, range = [%" LAL_GPS_FORMAT ", %" LAL_GPS_FORMAT "] GPS\n", n, LAL_GPS_PRINT( seg->start ), LAL_GPS_PRINT( seg->end ) );
+      }
+    }
+    XLAL_CHECK_MAIN( nonempty_segments->length > 0, XLAL_EINVAL, "No SFTs found in any segments" );
+    XLALSegListFree( setup.segments );
+    setup.segments = nonempty_segments;
+
+    // Cleanup memory from SFT catalog
+    XLALDestroySFTCatalog( sft_catalog );
 
   }
 

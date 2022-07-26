@@ -14,8 +14,6 @@ if FRAMEL
 FRAMEUSRCS += $(FRAMELSRCS)
 endif
 
-LDADD = liblalframe.la
-
 pkginclude_HEADERS = \
 	FrameCalibration.h \
 	LALFrStream.h \

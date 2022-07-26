@@ -1,5 +1,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
+#include <lal/StringVector.h>
 #include <lal/H5FileIO.h>
 
 #define FAILVAL XLAL_FAILURE
@@ -349,6 +350,27 @@
  * @copydoc XLALH5DatasetAllocCHARVector()
  */
 
+/**
+ * @fn LALH5Dataset *XLALH5DatasetAllocStringVector(LALH5File *file, const char *name, LALStringVector *vector)
+ * @copydoc XLALH5DatasetAllocCHARVector()
+ */
+LALH5Dataset *XLALH5DatasetAllocStringVector(LALH5File *file, const char *name, LALStringVector *vector)
+{
+	LALH5Dataset *dataset;
+	if (!file || !name || !vector)
+		XLAL_ERROR_NULL(XLAL_EFAULT);
+	if (!vector->length || !vector->data)
+		XLAL_ERROR_NULL(XLAL_EINVAL);
+		dataset = XLALH5DatasetAllocStringData(file, name, vector->length);
+	if (!dataset)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	if (XLALH5DatasetWrite(dataset, vector->data) < 0) {
+		XLALH5DatasetFree(dataset);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	}
+        return dataset;
+}
+
 /** @} */
 
 /**
@@ -485,6 +507,42 @@
  * @fn COMPLEX16Vector *XLALH5DatasetReadCOMPLEX16Vector(LALH5Dataset *dset)
  * @copydoc XLALH5DatasetReadCHARVector()
  */
+
+/**
+ * @fn LALStringVector *XLALH5DatasetReadStringVector(LALH5Dataset *dset)
+ * @copydoc XLALH5DatasetReadCHARVector()
+ */
+LALStringVector *XLALH5DatasetReadStringVector(LALH5Dataset *dset)
+{
+	LALStringVector *vector;
+	size_t npoints;
+	int ndim;
+
+	if (!dset)
+		XLAL_ERROR_NULL(XLAL_EFAULT);
+
+	ndim = XLALH5DatasetQueryNDim(dset);
+	if (ndim != 1)
+		XLAL_ERROR_NULL(XLAL_EDIMS);
+ 
+	if (!XLALH5DatasetCheckStringData(dset))
+		XLAL_ERROR_NULL(XLAL_ETYPE);
+ 
+	npoints = XLALH5DatasetQueryNPoints(dset);
+	if (npoints == (size_t)(-1))
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	vector = XLALCreateEmptyStringVector(npoints);
+	if (!vector)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+
+	if (XLALH5DatasetQueryData(vector->data, dset) == -1) {
+		XLALDestroyStringVector(vector);
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	}
+
+	return vector;
+}
 
 /** @} */
 

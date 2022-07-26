@@ -518,6 +518,7 @@ static void LALInferencePrintDataWithInjection(LALInferenceIFOData *IFOdata, Pro
     (--glob-frame-data)         Will search for frame files containing data in the PWD.\n\
      				Filenames must begin with the IFO's 1-letter code, e.g. H-*.gwf\n\
     (--dont-dump-extras)        If given, won't save PSD and SNR files\n\
+    (--dump-geocenter-pols)     If given, print out the TD/FD h_plus and h_cross polarisations\n\
     (--trigtime GPStime)        GPS time of the trigger to analyse\n\
                                     (optional when using --margtime or --margtimephi)\n\
     (--segment-start)           GPS time of the start of the segment\n\
@@ -849,7 +850,7 @@ LALInferenceIFOData *LALInferenceReadData(ProcessParamsTable *commandLine)
             if(!strcmp(caches[i],"LALAdLIGO")) {PSD = &LALAdvLIGOPsd; scalefactor = 1E-49;}
             if(!strcmp(caches[i],"LALSimLIGO")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDiLIGOSRD ) ; LALSimPsd=1;}
             if(!strcmp(caches[i],"LALSimVirgo")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDVirgo ); LALSimPsd=1;}
-            if(!strcmp(caches[i],"LALSimAdLIGO")) {XLALSimNoisePSDaLIGOaLIGODesignSensitivityT1800044(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow) ;LALSimPsd=1;}
+            if(!strcmp(caches[i],"LALSimAdLIGO")) {XLALSimNoisePSDaLIGODesignSensitivityT1800044(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow) ;LALSimPsd=1;}
             if(!strcmp(caches[i],"LALSimAdVirgo")) {XLALSimNoisePSD(IFOdata[i].oneSidedNoisePowerSpectrum,IFOdata[i].fLow,XLALSimNoisePSDAdvVirgo) ;LALSimPsd=1;}
             if(interpFlag) {PSD=NULL; scalefactor=1.0;}
             if(PSD==NULL && !(interpFlag|| LALSimPsd)) {fprintf(stderr,"Error: unknown simulated PSD: %s\n",caches[i]); exit(-1);}
@@ -1729,6 +1730,25 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       XLALGPSAddGPS(&(hplus->epoch), &(injEvent->geocent_end_time));
       XLALGPSAddGPS(&(hcross->epoch), &(injEvent->geocent_end_time));
 
+      if((ppt=LALInferenceGetProcParamVal(commandLine,"--dump-geocenter-pols"))) {
+
+        fprintf(stdout,"Dump injected TimeDomain h_plus and h_cross at geocenter (for IFO %s)\n", thisData->name);
+
+        char filename[320];
+        sprintf(filename,"%s_TD_geocenter_pols.dat",thisData->name);
+
+        FILE* file=fopen(filename, "w");
+        if(!file){
+          fprintf(stderr,"Unable to open the path %s for writing injected TimeDomain h_plus and h_cross at geocenter\n",filename);
+          exit(1);
+        }
+
+        for(j=0; j<hplus->data->length; j++){
+          fprintf(file, "%.6f %g %g \n", XLALGPSGetREAL8(&hplus->epoch) + hplus->deltaT*j, hplus->data->data[j], hcross->data->data[j]);
+        }
+        fclose(file);
+      }
+
       signalvecREAL8=XLALSimDetectorStrainREAL8TimeSeries(hplus, hcross, injEvent->longitude, injEvent->latitude, injEvent->polarization, det.site);
       if (!signalvecREAL8) XLAL_ERROR_VOID(XLAL_EFUNC);
 
@@ -2027,6 +2047,24 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   if (errnum != XLAL_SUCCESS) {
     XLALPrintError(" ERROR in InjectFD(): error encountered when injecting waveform. errnum=%d\n",errnum);
     exit(1);
+  }
+
+  if((ppt=LALInferenceGetProcParamVal(commandLine,"--dump-geocenter-pols"))) {
+    fprintf(stdout,"Dump injected FreqDomain h_plus and h_cross at geocenter (for IFO %s)\n", IFOdata->name);
+    char filename[320];
+    sprintf(filename,"%s_FD_geocenter_pols.dat",IFOdata->name);
+    FILE* file=fopen(filename, "w");
+    if(!file){
+      fprintf(stderr,"Unable to open the path %s for writing injected FreqDomain h_plus and h_cross\n",filename);
+    exit(1);
+    }
+    UINT4 j;
+    for(j=0; j<hptilde->data->length; j++){     
+      fprintf(file, "%10.10g %10.10g %10.10g %10.10g %10.10g\n", deltaF*j, 
+        creal(hptilde->data->data[j]), cimag(hptilde->data->data[j]), 
+        creal(hctilde->data->data[j]), cimag(hctilde->data->data[j]));
+    }
+    fclose(file);
   }
 
   REAL8 Fplus, Fcross;

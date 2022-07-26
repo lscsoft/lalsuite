@@ -122,12 +122,24 @@ else
 fi
 echo
 
-# Create links to any executables in lalapps/src/pulsar/ used by test script, and set PATH
+# Create stubs to any executables in lalapps/src/pulsar/ used by test script, and set PATH
+tested_logfile="${LAL_TEST_BUILDDIR}/.tested_log_${script_name}.log"
+echo "# ${tested_logfile}" > "${tested_logfile}"
 for execfile in $(find "${LAL_TEST_BUILDDIR}/.." "${LAL_TEST_SRCDIR}/.." -maxdepth 2 -type f -perm -u+x); do
     execname=$(expr "X${execfile}" : "X.*/\([^/]*\)$")
-    linkfile="${testdir}/${execname}"
-    if grep -q "${execname}" "${script}"; then
-        [ -h "${linkfile}" ] || ln -s "${execfile}" "${linkfile}"
+    stubfile="${testdir}/${execname}"
+    div_regex='[^A-Za-z0-9_]'
+    if cat "${script}" | sed 's/#.*$//g;s/^/ /;s/$/ /' | grep -q "${div_regex}${execname}${div_regex}"; then
+
+        # Stub script logs that this executable has been called from a test script
+        echo "#!/bin/sh" > "${stubfile}"
+        echo "case \"\$@\" in" >> "${stubfile}"
+        echo "--help|-h|--version|-v) ;;" >> "${stubfile}"
+        echo "*) echo 'tested ${execname}' >> '${tested_logfile}' ;;" >> "${stubfile}"
+        echo "esac" >> "${stubfile}"
+        echo "exec '${execfile}' \"\$@\"" >> "${stubfile}"
+        chmod +x "${stubfile}"
+
     fi
 done
 export PATH="${testdir}:${PATH}"
@@ -175,6 +187,11 @@ case $status in
         ;;
 esac
 echo
+
+# Move any junit XML files out of test directory
+for junitxml in `find ${testdir} -name 'junit-*.xml'`; do
+    mv -f "${junitxml}" "${LAL_TEST_BUILDDIR}"
+done
 
 # Remove test directory, unless NOCLEANUP is set
 if [ "X${NOCLEANUP}" = X ]; then

@@ -47,6 +47,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALNoiseModels.h>
 #include <lal/AVFactories.h>
 #include <lal/LALConstants.h>
 #include <lal/LALFrStream.h>
@@ -194,7 +195,6 @@ int main( int argc, char *argv[] )
   SimInspiralTable            *thisInjection  = NULL;
   SnglInspiralTable           *snglHead       = NULL;
   SearchSummaryTable          *searchSummHead = NULL;
-  /*SummValueTable              *summValueHead  = NULL;    */
 
   /* raw input data storage */
   REAL8FrequencySeries          *specH1        = NULL;

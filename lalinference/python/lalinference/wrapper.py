@@ -1,8 +1,8 @@
 import lal
 import lalinference as li
-import collections
+import collections.abc
 
-class LIVariablesWrap(collections.MutableMapping):
+class LIVariablesWrap(collections.abc.MutableMapping):
     def __init__(self,init=None):
         """
         Wrapper to present a LALInferenceVariable as a dict.

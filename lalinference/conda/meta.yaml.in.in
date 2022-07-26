@@ -24,8 +24,8 @@
 {% set lalframe_version = "@MIN_LALFRAME_VERSION@a0" %}
 {% set lalinspiral_version = "@MIN_LALINSPIRAL_VERSION@a0" %}
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
-{% set lalpulsar_version = "@MIN_LALPULSAR_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
+{% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
@@ -41,7 +41,9 @@ build:
   error_overlinking: true
   number: {{ build }}
   script_env:
+    - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - GITLAB_CI
   skip: true  # [win]
 
 requirements:
@@ -58,9 +60,33 @@ requirements:
     - liblalsimulation >={{ lalsimulation_version }}
     - liblalburst >={{ lalburst_version }}
     - liblalinspiral >={{ lalinspiral_version }}
-    - liblalpulsar >={{ lalpulsar_version }}
 
 outputs:
+  - name: lalinference-data
+    script: install-data.sh
+    build:
+      script_env: {}
+    requirements:
+      build:
+        - make
+      run_constrained:
+        - liblalinference >=3.0.3
+    test:
+      commands:
+        - test -f ${LALINFERENCE_DATADIR}/fiducialBNS.xml  # [unix]
+    about:
+      home: https://wiki.ligo.org/Computing/LALSuite
+      doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalinference/
+      dev_url: https://git.ligo.org/lscsoft/lalsuite.git
+      license: GPL-2.0-or-later
+      license_family: GPL
+      license_file: COPYING
+      summary: LSC Algorithm Inference Library data files
+      description: |
+        The LSC Algorithm Inference Library for gravitational wave data analysis.
+        This package contains the data files needed to run various applications
+        and routines that use the LAL Inference library.
+
   - name: liblalinference
     script: install-lib.sh
     build:
@@ -76,6 +102,7 @@ outputs:
         - swig >={{ swig_version }}
       host:
         - gsl
+        - {{ pin_subpackage("lalinference-data", exact=True) }}
         - libgomp  # [linux]
         - liblal >={{ lal_version }} fftw*
         - liblalframe >={{ lalframe_version }}
@@ -83,17 +110,16 @@ outputs:
         - liblalsimulation >={{ lalsimulation_version }}
         - liblalburst >={{ lalburst_version }}
         - liblalinspiral >={{ lalinspiral_version }}
-        - liblalpulsar >={{ lalpulsar_version }}
         - llvm-openmp  # [osx]
       run:
         - gsl
+        - {{ pin_subpackage("lalinference-data", exact=True) }}
         - liblal >={{ lal_version }} fftw*
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
         - liblalburst >={{ lalburst_version }}
         - liblalinspiral >={{ lalinspiral_version }}
-        - liblalpulsar >={{ lalpulsar_version }}
         - llvm-openmp  # [osx]
       run_constrained:
         - lalinference >=2.0.6
@@ -123,7 +149,8 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        # ignore run_exports from python's recipe
+        - numpy
+        - openssl
         - python
     requirements:
       build:
@@ -131,15 +158,20 @@ outputs:
         - make
         - pkg-config
         - swig >={{ swig_version }}
+        # extras for cross compiling with python
+        - python                              # [build_platform != target_platform]
+        - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+        - numpy                               # [build_platform != target_platform]
       host:
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - python
         - numpy
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - astropy >=1.1.1
         - healpy >=1.9.1
         - h5py
-        - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - ligo-segments
         - lscsoft-glue >=1.54.1
@@ -151,8 +183,7 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalburst >={{ lalburst_version }}
         - python-lalinspiral >={{ lalinspiral_version }}
-        - python-lalpulsar >={{ lalpulsar_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
     test:
       requires:
@@ -192,6 +223,7 @@ outputs:
     script: install-bin.sh
     build:
       ignore_run_exports:
+        - openssl
         - python
       # Prioritise nompi via build number
       number: {{ (build + 100) if (mpi or "nompi") == "nompi" else build }}
@@ -199,10 +231,15 @@ outputs:
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - llvm-openmp  # [osx and mpi != 'nompi']
         - make
         - pkg-config >=0.18.0
+        # extras for cross-compiling:
+        - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+        - numpy                               # [build_platform != target_platform]
+        - python                              # [build_platform != target_platform]
+        - {{ mpi }}                           # [build_platform != target_platform and mpi == 'openmpi']
       host:
         - gsl  # [mpi != 'nompi']
         - libgomp  # [linux and mpi != 'nompi']
@@ -213,17 +250,19 @@ outputs:
         - {{ mpi }}  # [mpi != 'nompi']
         - python
         - {{ pin_subpackage('python-lalinference', exact=True) }}
-        # run requirements needed for help2man
-        - astropy >=1.1.1
-        - h5py
-        - ligo-gracedb
-        - lscsoft-glue >=1.54.1
-        - matplotlib-base >=1.2.0
-        - python-lal >={{ lal_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw
-        - scipy >=0.9.0
-        - six
+        # run requirements needed for help2man (not when cross compiling)
+        - astropy >=1.1.1  # [build_platform == target_platform]
+        - h5py  # [build_platform == target_platform]
+        - ligo-gracedb  # [build_platform == target_platform]
+        - lscsoft-glue >=1.54.1  # [build_platform == target_platform]
+        - matplotlib-base >=1.2.0  # [build_platform == target_platform]
+        - python-lal >={{ lal_version }}  # [build_platform == target_platform]
+        - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
+        - python-ligo-lw  # [build_platform == target_platform]
+        - scipy >=0.9.0  # [build_platform == target_platform]
+        - six  # [build_platform == target_platform]
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - astropy >=1.1.1
         - gsl  # [mpi != 'nompi']
@@ -240,13 +279,13 @@ outputs:
         - python-lal >={{ lal_version }}
         - {{ pin_subpackage('python-lalinference', exact=True) }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0
         - six
     test:
       requires:
         - cpnest
-        - openssh
+        - openssh  # [mpi != 'nompi']
       commands:
         # data files
         - test -f "${LALINFERENCE_DATADIR}/lalinference_pipe_example.ini"  # [unix]
@@ -255,8 +294,8 @@ outputs:
         #- lalinference_burst --help
         - lalinference_datadump --help
         - lalinference_injectedlike --help
-        - lalinference_kombine --help
-        - lalinference_mcmc --help
+        - lalinference_kombine --help  # [mpi != 'nompi']
+        - lalinference_mcmc --help  # [mpi != 'nompi']
         - lalinference_nest --help
         - lalinference_version --verbose
         # python scripts

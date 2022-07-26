@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2011--2014 Karl Wette
+// Copyright (C) 2011--2014, 2022 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -68,6 +68,41 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 // Evaluates true if a PyObject represents a null pointer, false otherwise.
 %header %{
 #define swiglal_null_ptr(v)  ((v) == Py_None)
+%}
+
+// Python-specific function for standard output/error redirection
+%header %{
+SWIGINTERN int swiglal_output_stdouterr(void) {
+
+  // Flush and rewind temporary files
+  fflush(swiglal_tmp_stdout);
+  rewind(swiglal_tmp_stdout);
+  fflush(swiglal_tmp_stderr);
+  rewind(swiglal_tmp_stderr);
+
+  // Write standard output
+  {
+    char buf[512];
+    while (fgets(buf, sizeof(buf), swiglal_tmp_stdout) != NULL) {
+      PySys_WriteStdout("%s", buf);
+    }
+  }
+
+  // Write standard error
+  {
+    char buf[512];
+    while (fgets(buf, sizeof(buf), swiglal_tmp_stderr) != NULL) {
+      PySys_WriteStderr("%s", buf);
+    }
+  }
+
+  // Close temporary files
+  fclose(swiglal_tmp_stdout);
+  fclose(swiglal_tmp_stderr);
+
+  return 1;
+
+}
 %}
 
 //
@@ -224,6 +259,105 @@ SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); r
 %swig_cplxdbl_convn(COMPLEX16, crect, creal, cimag);
 %typemaps_primitive(%checkcode(CPLXFLT), COMPLEX8);
 %typemaps_primitive(%checkcode(CPLXDBL), COMPLEX16);
+
+// Handle NumPy fixed-width integer/float types
+// - Since all SWIG integer type conversions ultimately use either SWIG_AsVal_long() or
+//   SWIG_AsVal_unsigned_SS_long(), and all SWIG floating-point type conversions ultimately use
+//   SWIG_AsVal_float() or SWIG_AsVal_double(), it is most straightforward to replace those
+//   functions with custom versions using C preprocessor macros
+// - SWIGLAL maps complex floating-point types to COMPLEX{8|16} via %swig_cplx{flt|dbl}_convn()
+%fragment(SWIG_AsVal_frag(long));
+%fragment(SWIG_AsVal_frag(unsigned long));
+%fragment(SWIG_AsVal_frag(float));
+%fragment(SWIG_AsVal_frag(double));
+%fragment(SWIG_AsVal_frag(COMPLEX8));
+%fragment(SWIG_AsVal_frag(COMPLEX16));
+%header %{
+SWIGINTERN int swiglal_SWIG_AsVal_long(PyObject *obj, long* val) {
+  if (PyArray_IsScalar(obj, Integer)) {
+    /* handle NumPy signed integer types */
+    if (val) {
+      PyArray_Descr *longDescr = PyArray_DescrFromType(NPY_LONG);
+      PyArray_CastScalarToCtype(obj, (void*)val, longDescr);
+      Py_DECREF(longDescr);
+    }
+    return SWIG_OK;
+  }
+  /* fall back to SWIG default behaviour */
+  return SWIG_AsVal_long(obj, val);
+}
+SWIGINTERN int swiglal_SWIG_AsVal_unsigned_SS_long(PyObject *obj, unsigned long *val) {
+  if (PyArray_IsScalar(obj, Integer)) {
+    /* handle NumPy unsigned integer types */
+    if (val) {
+      PyArray_Descr *ulongDescr = PyArray_DescrFromType(NPY_ULONG);
+      PyArray_CastScalarToCtype(obj, (void*)val, ulongDescr);
+      Py_DECREF(ulongDescr);
+    }
+    return SWIG_OK;
+  }
+  /* fall back to SWIG default behaviour */
+  return SWIG_AsVal_unsigned_SS_long(obj, val);
+}
+SWIGINTERN int swiglal_SWIG_AsVal_float(PyObject *obj, float* val) {
+  if (PyArray_IsScalar(obj, Integer) || PyArray_IsScalar(obj, Floating)) {
+    /* handle NumPy signed integer types */
+    if (val) {
+      PyArray_Descr *floatDescr = PyArray_DescrFromType(NPY_FLOAT);
+      PyArray_CastScalarToCtype(obj, (void*)val, floatDescr);
+      Py_DECREF(floatDescr);
+    }
+    return SWIG_OK;
+  }
+  /* fall back to SWIG default behaviour */
+  return SWIG_AsVal_float(obj, val);
+}
+SWIGINTERN int swiglal_SWIG_AsVal_double(PyObject *obj, double* val) {
+  if (PyArray_IsScalar(obj, Integer) || PyArray_IsScalar(obj, Floating)) {
+    /* handle NumPy signed integer types */
+    if (val) {
+      PyArray_Descr *doubleDescr = PyArray_DescrFromType(NPY_DOUBLE);
+      PyArray_CastScalarToCtype(obj, (void*)val, doubleDescr);
+      Py_DECREF(doubleDescr);
+    }
+    return SWIG_OK;
+  }
+  /* fall back to SWIG default behaviour */
+  return SWIG_AsVal_double(obj, val);
+}
+SWIGINTERN int swiglal_SWIG_AsVal_COMPLEX8(PyObject *obj, COMPLEX8* val) {
+  if (PyArray_IsScalar(obj, Integer) || PyArray_IsScalar(obj, Floating) || PyArray_IsScalar(obj, ComplexFloating)) {
+    /* handle NumPy signed integer types */
+    if (val) {
+      PyArray_Descr *floatComplexDescr = PyArray_DescrFromType(NPY_COMPLEX64);
+      PyArray_CastScalarToCtype(obj, (void*)val, floatComplexDescr);
+      Py_DECREF(floatComplexDescr);
+    }
+    return SWIG_OK;
+  }
+  /* fall back to SWIG default behaviour */
+  return SWIG_AsVal_COMPLEX8(obj, val);
+}
+SWIGINTERN int swiglal_SWIG_AsVal_COMPLEX16(PyObject *obj, COMPLEX16* val) {
+  if (PyArray_IsScalar(obj, Integer) || PyArray_IsScalar(obj, Floating) || PyArray_IsScalar(obj, ComplexFloating)) {
+    /* handle NumPy signed integer types */
+    if (val) {
+      PyArray_Descr *doubleComplexDescr = PyArray_DescrFromType(NPY_COMPLEX128);
+      PyArray_CastScalarToCtype(obj, (void*)val, doubleComplexDescr);
+      Py_DECREF(doubleComplexDescr);
+    }
+    return SWIG_OK;
+  }
+  /* fall back to SWIG default behaviour */
+  return SWIG_AsVal_COMPLEX16(obj, val);
+}
+#define SWIG_AsVal_long(obj, val) swiglal_SWIG_AsVal_long(obj, val)
+#define SWIG_AsVal_unsigned_SS_long(obj, val) swiglal_SWIG_AsVal_unsigned_SS_long(obj, val)
+#define SWIG_AsVal_float(obj, val) swiglal_SWIG_AsVal_float(obj, val)
+#define SWIG_AsVal_double(obj, val) swiglal_SWIG_AsVal_double(obj, val)
+#define SWIG_AsVal_COMPLEX8(obj, val) swiglal_SWIG_AsVal_COMPLEX8(obj, val)
+#define SWIG_AsVal_COMPLEX16(obj, val) swiglal_SWIG_AsVal_COMPLEX16(obj, val)
+%}
 
 // Typemaps which convert to/from the C broken-down date/time struct.
 %typemap(in) struct tm* (struct tm temptm) {
@@ -584,10 +718,15 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     swiglal_py_array_tinfo_from_descr(&isptr, &tinfo, PyArray_DESCR(nparr));
     assert(tinfo != NULL);
 
-    // When assigning Python objects to a C array, assume the struct who owns the C array takes
-    // ownership of the memory of the C array element. The Python object wrapping the C array
-    // element should therefore disown the underlying memory.
-    const int tflags = SWIG_POINTER_DISOWN;
+    // When assigning Python objects to a C array of pointers, assume the struct
+    // who owns the C array takes ownership of the memory of the C array element.
+    // The Python object wrapping the C array element should therefore disown the
+    // underlying memory.
+    // When assigning Python objects to a C array of data blocks, however, the C
+    // array just struct-copies the object rather than taking ownership of its
+    // pointer, and so the Python object should not be disowned so that it can
+    // be garbage-collected later.
+    const int tflags = isptr ? SWIG_POINTER_DISOWN : 0;
 
     // Set the C array element to the supplied Python object.
     const size_t esize = PyArray_DESCR(nparr)->elsize;

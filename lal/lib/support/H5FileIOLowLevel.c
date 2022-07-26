@@ -1,6 +1,8 @@
 #include <config.h>
 
 #ifdef HAVE_HDF5
+/* FIXME: should really update interface */
+#define H5_USE_110_API
 #include <hdf5.h>
 #include <hdf5_hl.h>
 #endif
@@ -292,6 +294,9 @@ static LALTYPECODE XLALTypeFromH5Type(hid_t dtype_id)
 		}
 		break;
 	}
+	case H5T_STRING:
+		/* overload CHAR type */
+		return LAL_CHAR_TYPE_CODE;
 	default:
 		XLAL_ERROR(XLAL_ETYPE, "Unsupported data type\n");
 		break;
@@ -1083,6 +1088,82 @@ LALH5Dataset * XLALH5DatasetAlloc1D(LALH5File UNUSED *file, const char UNUSED *n
 }
 
 /**
+ * @brief Allocates a variable-length string ::LALH5Dataset
+ * @details
+ * Creates a new HDF5 dataset with name @p name within a HDF5 file
+ * associated with the ::LALH5File @p file structure and allocates a
+ * ::LALH5Dataset structure associated with the dataset.  The type
+ * of data to be stored in the dataset is variable length strings
+ * and the number of strings in the dataset is given by the @p length
+ * parameter.
+ *
+ * The ::LALH5File @p file passed to this routine must be a file
+ * opened for writing.
+ *
+ * @param file Pointer to a ::LALH5File structure in which to create the dataset.
+ * @param name Pointer to a string with the name of the dataset to create.
+ * @param length The number of variable length strings in the dataset.
+ * @returns A pointer to a ::LALH5Dataset structure associated with the
+ * specified dataset within a HDF5 file.
+ * @retval NULL An error occurred creating the dataset.
+ */
+LALH5Dataset * XLALH5DatasetAllocStringData(LALH5File UNUSED *file, const char UNUSED *name, size_t UNUSED length)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR_NULL(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	LALH5Dataset *dset;
+	hsize_t npoints = length;
+	size_t namelen;
+
+	if (name == NULL || file == NULL)
+		XLAL_ERROR_NULL(XLAL_EFAULT);
+	if (file->mode != LAL_H5_FILE_MODE_WRITE)
+		XLAL_ERROR_NULL(XLAL_EINVAL, "Attempting to write to a read-only HDF5 file");
+
+	namelen = strlen(name);
+	dset = LALCalloc(1, sizeof(*dset) + namelen + 1);  /* use flexible array member to record name */
+	if (!dset)
+		XLAL_ERROR_NULL(XLAL_ENOMEM);
+
+	/* create datatype; here we use ASCII encoding */
+	dset->dtype_id = threadsafe_H5Tcopy(H5T_C_S1);
+	if (dset->dtype_id < 0) {
+		LALFree(dset);
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not copy datatype");
+	}
+	if (threadsafe_H5Tset_size(dset->dtype_id, H5T_VARIABLE) < 0) {
+		threadsafe_H5Tclose(dset->dtype_id);
+		LALFree(dset);
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not set datatype size");
+	}
+
+	/* create dataspace */
+	dset->space_id = threadsafe_H5Screate_simple(1, &npoints, NULL);
+	if (dset->space_id < 0) {
+		threadsafe_H5Tclose(dset->dtype_id);
+		LALFree(dset);
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not create dataspace for dataset `%s'", name);
+	}
+
+	/* create dataset */
+	dset->dataset_id = threadsafe_H5Dcreate2(file->file_id, name, dset->dtype_id, dset->space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+	if (dset->dataset_id < 0) {
+		threadsafe_H5Tclose(dset->dtype_id);
+		threadsafe_H5Sclose(dset->space_id);
+		LALFree(dset);
+		XLAL_ERROR_NULL(XLAL_EIO, "Could not create dataset `%s'", name);
+	}
+
+	/* record name of dataset and parent id */
+	snprintf(dset->name, namelen + 1, "%s", name);
+	dset->parent_id = file->file_id;
+
+	return dset;
+#endif
+}
+
+/**
  * @brief Writes data to a ::LALH5Dataset
  * @details
  * Writes the data contained in @p data to a HDF5 dataset associated
@@ -1172,6 +1253,22 @@ LALH5Dataset * XLALH5DatasetRead(LALH5File UNUSED *file, const char UNUSED *name
 	snprintf(dset->name, namelen + 1, "%s", name);
 	dset->parent_id = file->file_id;
 	return dset;
+#endif
+}
+
+/**
+ * @brief Checks if a ::LALH5Dataset contains variable length string data
+ * @param dset Pointer to a ::LALH5Dataset to be checked.
+ * @retval 1 ::LALH5Dataset is of variable length string type
+ * @retval 0 ::LALH5Dataset is not of variable length string type
+ * @retval -1 Failure.
+ */
+int XLALH5DatasetCheckStringData(LALH5Dataset UNUSED *dset)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	return threadsafe_H5Tget_class(dset->dtype_id) == H5T_STRING;
 #endif
 }
 
@@ -1313,6 +1410,19 @@ UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset UNUSED *dset)
 #endif
 }
 
+/* LALMalloc and LALFree hooks to give to HDF5 library for memory allocation */
+#ifdef HAVE_HDF5
+static void *lal_malloc_hook(size_t size, void UNUSED *alloc_info)
+{
+    return XLALMalloc(size);
+}
+static void lal_free_hook(void *mem, void UNUSED *free_info)
+{
+    XLALFree(mem);
+    return;
+}
+#endif
+
 /**
  * @brief Gets the data contained in a ::LALH5Dataset
  * @details
@@ -1321,6 +1431,11 @@ UINT4Vector * XLALH5DatasetQueryDims(LALH5Dataset UNUSED *dset)
  * @p data.  This buffer should be sufficiently large to hold
  * the entire contents of the dataset; this size can be determined
  * with the routine XLALH5DatasetQueryNBytes().
+ * If the dataset contains variable-length string data, @p data
+ * should instead be a pointer to an array of length npoints of
+ * char* pointers where npoints can be determined with the
+ * routine XLALH5DatasetQueryNPoints(). In this case, each of the npoints
+ * strings will be allocated using LALMalloc().
  * @param data Pointer to a memory in which to store the data.
  * @param dset Pointer to a ::LALH5Dataset from which to extract the data.
  * @retval 0 Success.
@@ -1331,12 +1446,32 @@ int XLALH5DatasetQueryData(void UNUSED *data, LALH5Dataset UNUSED *dset)
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
+	int isstrdata;
+	hid_t plist;
 	if (data == NULL || dset == NULL)
 		XLAL_ERROR(XLAL_EFAULT);
-	if (threadsafe_H5Dread(dset->dataset_id, dset->dtype_id, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
-		LALFree(data);
+        isstrdata = XLALH5DatasetCheckStringData(dset);
+	if (isstrdata < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+	if (isstrdata) {
+        	/* string data: tell HDF5 library to use LALMalloc */
+		plist = threadsafe_H5Pcreate(H5P_DATASET_XFER);
+		if (plist < 0)
+			XLAL_ERROR(XLAL_EIO, "Could not create property list");
+		if (threadsafe_H5Pset_vlen_mem_manager(plist, lal_malloc_hook, NULL, lal_free_hook, NULL) < 0) {
+			threadsafe_H5Pclose(plist);
+			XLAL_ERROR(XLAL_EIO, "Could not set memory manager");
+		}
+	} else { /* not string data */
+		plist = threadsafe_H5Pcopy(H5P_DEFAULT);
+		if (plist < 0)
+			XLAL_ERROR(XLAL_EIO, "Could not create property list");
+	}
+	if (threadsafe_H5Dread(dset->dataset_id, dset->dtype_id, H5S_ALL, H5S_ALL, plist, data) < 0) {
+		threadsafe_H5Pclose(plist);
 		XLAL_ERROR(XLAL_EIO, "Could not read data from dataset");
 	}
+	threadsafe_H5Pclose(plist);
 	return 0;
 #endif
 }

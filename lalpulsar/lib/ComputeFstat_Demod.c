@@ -104,6 +104,10 @@ int XLALComputeFaFb_SSE     ( COMPLEX8 *Fa, COMPLEX8 *Fb, FstatAtomVector **Fsta
                               const PulsarSpins fkdot, const SSBtimes *tSSB, const AMCoeffs *amcoe, const UINT4 Dterms );
 #endif
 
+int XLALGetFstatTiming_Demod ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
+void *XLALFstatInputTimeslice_Demod ( const void *method_data, const UINT4 iStart[PULSAR_MAX_DETECTORS], const UINT4 iEnd[PULSAR_MAX_DETECTORS] );
+void XLALDestroyFstatInputTimeslice_Demod ( void *method_data );
+
 // ----- local function definitions ----------
 static int
 XLALComputeFstatDemod ( FstatResults* Fstats,
@@ -269,6 +273,10 @@ XLALComputeFstatDemod ( FstatResults* Fstats,
       if ( whatToCompute & FSTATQ_2F )
         {
           Fstats->twoF[k] = compute_fstat_from_fa_fb ( Fa, Fb, Ad, Bd, Cd, Ed, Dd_inv );
+        }
+      if ( Fstats->whatWasComputed & FSTATQ_2F_CUDA )
+        {
+          XLAL_ERROR ( XLAL_EINVAL, "Not implemented for FSTATQ_2F_CUDA" );
         }
 
       // Return multi-detector Fa & Fb

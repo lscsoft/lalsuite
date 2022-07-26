@@ -15,7 +15,7 @@
 -- 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 
--- SQL script to remove traces of lalapps_burca from a database.
+-- SQL script to remove traces of lalburst_coinc from a database.
 -- apply with sqlite3 command interpreter, or lalapps_runsqlite
 
 
@@ -28,7 +28,7 @@ WHERE
 		FROM
 			process
 		WHERE
-			program == 'lalapps_burca'
+			program == 'lalburst_coinc'
 	);
 	
 DELETE FROM
@@ -40,7 +40,7 @@ WHERE
 		FROM
 			process
 		WHERE
-			program == 'lalapps_burca'
+			program == 'lalburst_coinc'
 	);
 
 DELETE FROM
@@ -58,7 +58,7 @@ WHERE
 				FROM
 					process
 				WHERE
-					program == 'lalapps_burca'
+					program == 'lalburst_coinc'
 			)
 	);
 	
@@ -71,5 +71,5 @@ WHERE
 		FROM
 			process
 		WHERE
-			program == 'lalapps_burca'
+			program == 'lalburst_coinc'
 	);

@@ -24,7 +24,7 @@ typedef struct tagParamData{
   const CHAR *fitFlag; /* add a TEMPO-style fitting flag to some parameters */
 }ParamData;
 
-#define NUMPARS 86
+#define NUMPARS 89
 
 /* setup a collection of allowed .par file parameters */
 ParamData p[NUMPARS] =
@@ -124,6 +124,10 @@ ParamData p[NUMPARS] =
   { "PSISCALAR_F",  "0.286",        "0.28600",          "0.10",         "0.10000",      " " },
   { "PHI0SCALAR",   "2.10230",      "2.10230",          "0.11",         "0.11000",      " " },
   { "PHI0SCALAR_F", "0.476",        "0.47600",          "0.12",         "0.12000",      " " },
+  /* transient signal parameters */
+  { "TRANSIENTWINDOWTYPE", "RECT",  "RECT",             NULL,           NULL,           " " },
+  { "TRANSIENTSTARTTIME", "54321.0", "870652748.81600", NULL,           NULL,           " " },
+  { "TRANSIENTTAU", "1.23",         "106272.00000",     NULL,           NULL,           " " },
 };
 
 

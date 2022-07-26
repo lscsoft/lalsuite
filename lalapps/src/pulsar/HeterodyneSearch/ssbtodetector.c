@@ -227,13 +227,20 @@ int main( int argc, char *argv[] ){
   params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* get the Earth and Sun ephemeris files - note yo may have to change this for different systems */
-  sprintf(earth, "%s/earth00-40-DE405.dat.gz", getenv("LALPULSAR_DATADIR"));
-  sprintf(sun, "%s/sun00-40-DE405.dat.gz", getenv("LALPULSAR_DATADIR"));
+  char *lalpulsar_datadir = getenv("LALPULSAR_DATADIR");
+  if( lalpulsar_datadir != NULL ) {
+    sprintf(earth, "%s/earth00-40-DE405.dat.gz", lalpulsar_datadir);
+    sprintf(sun, "%s/sun00-40-DE405.dat.gz", lalpulsar_datadir);
 
-  /* double check that the files exist */
-  if( fopen(sun, "r") == NULL || fopen(earth, "r") == NULL ){
-    fprintf(stderr, "Error... ephemeris files not, or incorrectly, defined!\n");
-    exit(1);
+    /* double check that the files exist */
+    if( fopen(sun, "r") == NULL || fopen(earth, "r") == NULL ){
+      fprintf(stderr, "Error... ephemeris files not, or incorrectly, defined!\n");
+      exit(1);
+    }
+  } else {
+    /* let LALPulsar find the ephemeris files */
+    sprintf(earth, "earth00-40-DE405.dat.gz");
+    sprintf(sun, "sun00-40-DE405.dat.gz");
   }
 
   /* set up ephemeris files */

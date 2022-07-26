@@ -248,13 +248,13 @@ while filenames:
 	# Finish off the document.
 	#
 
-	ligolw_process.set_process_end_time(process)
+	process.set_end_time_now()
 
 	#
 	# Write.
 	#
 
 	filename = filenames.pop(0)
-	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose, gz = (filename or "stdout").endswith(".gz"))
+	ligolw_utils.write_filename(xmldoc, filename, verbose = options.verbose)
 
 assert not time_slides

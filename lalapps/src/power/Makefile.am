@@ -1,6 +1,6 @@
 BUILT_SOURCES =
-MOSTLYCLEANFILES =
 EXTRA_DIST =
+MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
@@ -16,21 +16,11 @@ bin_PROGRAMS = $(BURSTPROGS) $(INSPPROGS)
 
 if HAVE_PYTHON
 pybin_scripts = \
-	lalapps_binj_pic \
-	lalapps_binjfind \
-	lalapps_bucluster \
-	lalapps_bucut \
-	lalapps_burca \
-	lalapps_burca_tailor \
 	lalapps_cafe \
 	lalapps_gen_timeslides \
-	lalapps_plot_tisi \
-	lalapps_power_calc_likelihood \
-	lalapps_power_final \
 	lalapps_power_likelihood_pipe \
 	lalapps_power_pipe \
-	lalapps_power_plot_binjtf \
-	lalapps_power_plot_binj
+	$(END_OF_LIST)
 endif
 
 pkgdata_DATA = power_pipe.ini
@@ -56,4 +46,7 @@ EXTRA_DIST += \
 	timedomainfilter_04hz.png \
 	timedomainfilter_16hz.png \
 	windows.png \
+	$(END_OF_LIST)
+
+MOSTLYCLEANFILES += \
 	$(END_OF_LIST)

@@ -50,9 +50,13 @@ int main ( int argc, char *argv[] )
     exit( 1 );
   }
 
-  if ( ! (fp = fopen( "/dev/random", "r" )) )
+  /*
+   * Note: /dev/random can be slow after the first few accesses, which is why we're using urandom instead.
+   * [Cryptographic safety isn't a concern here at all]
+   */
+  if ( ! (fp = fopen( "/dev/urandom", "r" )) )
   {
-    perror( "could not open /dev/random" );
+    perror( "could not open /dev/urandom" );
     exit ( 1 );
   }
   

@@ -31,6 +31,17 @@
 extern "C" {
 #endif
 
+/* defines */
+#define IFO_XTRA_DATA( ifo ) ( (IFOModelExtraData*) ( ifo )->extraData )
+
+/* types */
+typedef struct tagIFOModelExtraData {
+  LIGOTimeGPSVector  *times;   /** Vector of time stamps for time domain data */
+  EphemerisData      *ephem;   /** Ephemeris data */
+  TimeCorrectionData *tdat;    /** Einstein delay time correction data */
+  TimeCorrectionType  ttype;   /** The time correction type e.g. TDB, TCB */
+} IFOModelExtraData;
+
 /* global variables */
 
 /* model functions */

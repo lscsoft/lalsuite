@@ -123,21 +123,14 @@ XLALSimInspiralPNEnergy_4PNS1S2Coeff(
 /*  Eq. (6) of arXiv:astro-ph/0504538v2
  */
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_4PNS1S2OCoeffAvg(
+XLALSimInspiralPNEnergy_4PNS1OS2OCoeffAvg(
 	REAL8 eta)
 {
 	return -3./eta;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_4PNS1S2OCoeff(
-	REAL8 UNUSED eta)
-{
-	return 0.;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralPNEnergy_4PNS1S2nCoeff(
+XLALSimInspiralPNEnergy_4PNS1nS2nCoeff(
 	REAL8 UNUSED eta)
 {
 	return 6./eta;
@@ -146,7 +139,7 @@ XLALSimInspiralPNEnergy_4PNS1S2nCoeff(
 /*  Eq. (6) of arXiv:astro-ph/0504538v2
  */
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(
+XLALSimInspiralPNEnergy_4PNQMS1S1CoeffAvg(
 	REAL8 mByM)
 {
 	return .5/mByM/mByM;
@@ -155,31 +148,24 @@ XLALSimInspiralPNEnergy_4PNQM2SCoeffAvg(
 /*  Eq. (6) of arXiv:astro-ph/0504538v2
  */
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_4PNQM2SOCoeffAvg(
+XLALSimInspiralPNEnergy_4PNQMS1OS1OCoeffAvg(
 	REAL8 mByM)
 {
 	return -1.5/mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_4PNQM2SCoeff(
+XLALSimInspiralPNEnergy_4PNQMS1S1Coeff(
 	REAL8 mByM)
 {
-	return 2./mByM/mByM;
+	return -1./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_4PNQM2SOCoeff(
+XLALSimInspiralPNEnergy_4PNQMS1nS1nCoeff(
 	REAL8 mByM)
 {
-	return -3./mByM/mByM;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralPNEnergy_4PNQM2SnCoeff(
-	REAL8 mByM)
-{
-	return -3./mByM/mByM;
+	return 3./mByM/mByM;
 }
 
 /*  Eq. 4.6 of arXiv:1212.5520
@@ -197,80 +183,125 @@ static REAL8 UNUSED
 XLALSimInspiralPNEnergy_6PNS1S2Coeff(
 	REAL8 eta)
 {
-	return -2./eta -1./3.;
+	return -7./eta -1./3.;
 }
 
 /*  From (3.30) of arXiv:1501.01529
  */
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_6PNS1S2OCoeff(
+XLALSimInspiralPNEnergy_6PNS1OS2OCoeff(
 	REAL8 eta)
 {
-	return 1./3./eta - 2./9.;
+	return 16./3./eta - 2./9.;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_6PNS1S2nCoeff(
+XLALSimInspiralPNEnergy_6PNS1nS2nCoeff(
 	REAL8 eta)
 {
-        return 8./eta - 3.;
+        return 13./eta - 3.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNS1vS2vCoeff(
+	REAL8 eta)
+{
+        return 5./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNS1S2CoeffAvg(
+	REAL8 eta)
+{
+	return 2./eta -11./6.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNS1OS2OCoeffAvg(
+	REAL8 eta)
+{
+  return -11./3./eta + 2.3/1.8;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNS1S1Coeff(
+	REAL8 mByM)
+{
+        return 2./(mByM*mByM) - 1./mByM -1.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNS1OS1OCoeff(
+	REAL8 mByM)
+{
+        return 3./(mByM*mByM) -2./(3.*mByM) -1./9.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNS1nS1nCoeff(
+	REAL8 mByM)
+{
+         return -8./(mByM*mByM)+11./3./mByM+1.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNS1vS1vCoeff(
+	REAL8 mByM)
+{
+        return 2./(mByM*mByM)-2./mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNS1S1CoeffAvg(
+	REAL8 mByM)
+{
+        return -1./(mByM*mByM) - 1./6./mByM -0.5;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNEnergy_6PNS1OS1OCoeffAvg(
+	REAL8 mByM)
+{
+        return 6./(mByM*mByM) -1.5/mByM -1.1/1.8;
 }
 
 /*  From (3.30) of arXiv:1501.01529
  */
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_6PNSelf2SCoeff(
+XLALSimInspiralPNEnergy_6PNQMS1S1Coeff(
 	REAL8 mByM)
 {
-	return 4./mByM/mByM - 3./mByM - 1.;
+	return -2.5/mByM/mByM - 2.5/mByM - 5./6.;
 }
 
 /*  From (3.30) of arXiv:1501.01529
  */
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_6PNSelf2SOCoeff(
+XLALSimInspiralPNEnergy_6PNQMS1nS1nCoeff(
 	REAL8 mByM)
 {
-	return 1./mByM/mByM + 4./3./mByM - 1./9.;
+	return 6.5/mByM/mByM + 8./5./mByM + 2.5;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_6PNSelf2SnCoeff(
+XLALSimInspiralPNEnergy_6PNQMS1vS1vCoeff(
 	REAL8 mByM)
 {
-	return -10./mByM/mByM + 17./3./mByM + 1.;
-}
-
-/*  From (3.30) of arXiv:1501.01529
- */
-static REAL8 UNUSED
-XLALSimInspiralPNEnergy_6PNQM2SCoeff(
-	REAL8 mByM)
-{
-	return -1.5/mByM/mByM - 3.5/mByM - 5./6.;
-}
-
-/*  From (3.30) of arXiv:1501.01529
- */
-static REAL8 UNUSED
-XLALSimInspiralPNEnergy_6PNQM2SOCoeff(
-	REAL8 mByM)
-{
-	return -1./mByM/mByM + 1./mByM;
+	return 1./mByM/mByM -1./mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_6PNQM2SOCoeffAvg(
+XLALSimInspiralPNEnergy_6PNQMS1S1CoeffAvg(
 	REAL8 mByM)
 {
-	return -15./4./mByM/mByM - 15./4./mByM - 1.25;
+	return 1.25/mByM/mByM + 1.25/mByM + 5./12.;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNEnergy_6PNQM2SnCoeff(
+XLALSimInspiralPNEnergy_6PNQMS1OS1OCoeffAvg(
 	REAL8 mByM)
 {
-	return 5.5/mByM/mByM + 9.5/mByM + 2.5;
+	return -3.75/mByM/mByM - 3.75/mByM - 1.25;
 }
 
 /*  Eq. (4.6) of arXiv:1212.5520
@@ -351,21 +382,35 @@ static REAL8 UNUSED
 XLALSimInspiralPNFlux_4PNS1S2Coeff(
     REAL8 eta)
 {
-    return 41./6./eta;
+    return 31./8./eta;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNS1S2OCoeff(
+XLALSimInspiralPNFlux_4PNS1nS2nCoeff(
     REAL8 eta)
 {
-    return -71./24./eta;
+    return -15./eta;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNS1S2nCoeff(
+XLALSimInspiralPNFlux_4PNS1vS2vCoeff(
     REAL8 eta)
 {
-    return -431./24./eta;
+    return 71./24./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNS1S1Coeff(
+    REAL8 mByM)
+{
+    return 1./(16.*mByM*mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_4PNS1vS1vCoeff(
+    REAL8 mByM)
+{
+    return 1./48./(mByM*mByM);
 }
 
 static REAL8 UNUSED
@@ -376,77 +421,56 @@ XLALSimInspiralPNFlux_4PNS1S2CoeffAvg(
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNS1S2OCoeffAvg(
+XLALSimInspiralPNFlux_4PNS1OS2OCoeffAvg(
     REAL8 eta)
 {
     return 289./48./eta;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNSelf2SCoeff(
+XLALSimInspiralPNFlux_4PNS1S1CoeffAvg(
     REAL8 mByM)
 {
-    return 1./12./mByM/mByM;
+    return 7./96./(mByM*mByM);
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNSelf2SOCoeff(
+XLALSimInspiralPNFlux_4PNS1OS1OCoeffAvg(
     REAL8 mByM)
 {
-    return -1./48./mByM/mByM;
+    return -1./96./(mByM*mByM);
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNSelf2SnCoeff(
+XLALSimInspiralPNFlux_4PNQMS1S1Coeff(
     REAL8 mByM)
 {
-    return -1./48./mByM/mByM;
+    return 2./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNSelf2SCoeffAvg(
+XLALSimInspiralPNFlux_4PNQMS1nS1nCoeff(
     REAL8 mByM)
 {
-    return 7./96./mByM/mByM;
+    return -7.5/mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNSelf2SOCoeffAvg(
+XLALSimInspiralPNFlux_4PNQMS1vS1vCoeff(
     REAL8 mByM)
 {
-    return -1./96./mByM/mByM;
+    return 1.5/mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNQM2SCoeff(
-    REAL8 mByM)
-{
-    return 3.5/mByM/mByM;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNQM2SOCoeff(
-    REAL8 mByM)
-{
-    return -1.5/mByM/mByM;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNQM2SnCoeff(
-    REAL8 mByM)
-{
-    return -9./mByM/mByM;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNQM2SCoeffAvg(
+XLALSimInspiralPNFlux_4PNQMS1S1CoeffAvg(
     REAL8 mByM)
 {
     return -1./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_4PNQM2SOCoeffAvg(
+XLALSimInspiralPNFlux_4PNQMS1OS1OCoeffAvg(
     REAL8 mByM)
 {
     return 3./mByM/mByM;
@@ -498,65 +522,124 @@ XLALSimInspiralPNFlux_6PNSOCoeff(
  */
 static REAL8 UNUSED
 XLALSimInspiralPNFlux_6PNS1S2Coeff(
-    REAL8 eta)
+        REAL8 eta)
 {
-	return -182.5/5.6/eta - 129.05/5.04;
+	return -2.9/16.8/eta - 25.9/1.2;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_6PNS1S2OCoeff(
-    REAL8 eta)
+XLALSimInspiralPNFlux_6PNS1OS2OCoeff(
+        REAL8 eta)
 {
-    return 97./4./eta + 49.9/5.6;
+        return -49./6./eta + 44./9.;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_6PNS1S2nCoeff(
-    REAL8 eta)
+XLALSimInspiralPNFlux_6PNS1nS2nCoeff(
+        REAL8 eta)
 {
-    return 972.1/8.4/eta +  466.3/6.3;
+        return 349.9/4.2/eta +  117.59/1.68;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_6PNSelf2SCoeff(
+XLALSimInspiralPNFlux_6PNS1vS2vCoeff(
+        REAL8 eta)
+{
+        return -38.9/1.2/eta - 20.27/5.04;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNS1S2CoeffAvg(
+        REAL8 eta)
+{
+        return 212.3/8.4/eta + 82.1/7.2;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNS1OS2OCoeffAvg(
+        REAL8 eta)
+{
+        return -564.7/16.8/eta - 202.3/7.2;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNS1S1Coeff(
+        REAL8 mByM)
+{
+        return -21./(8.*mByM*mByM) + 21.5/2.4/mByM - 1./24.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNS1OS1OCoeff(
+        REAL8 mByM)
+{
+        return -.5/(mByM*mByM) - 43./(6.*mByM) + 22./9.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNS1nS1nCoeff(
+        REAL8 mByM)
+{
+        return 23.53/(1.12*mByM*mByM) - 6.47/1.68/mByM + 2.27/3.36;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNS1vS1vCoeff(
+        REAL8 mByM)
+{
+        return 8.81/(1.12*mByM*mByM) - 36.67/2.52/mByM + 6.1/100.8;
+}
+
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNS1S1CoeffAvg(
+        REAL8 mByM)
+{
+        return 18.9/(1.6*mByM*mByM) - 3.5/14.4/mByM +4.7/14.4;
+}
+
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNS1OS1OCoeffAvg(
+        REAL8 mByM)
+{
+        return -23.9/(1.6*mByM*mByM) + 2.93/1.44/mByM + 2.99/1.44;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNQMS1S1Coeff(
+        REAL8 mByM)
+{
+        return  -27.9/(5.6*mByM*mByM) - 45./(8.*mByM) + 43./4.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNQMS1nS1nCoeff(
+        REAL8 mByM)
+{
+        return 154.1/(4.2*mByM*mByM) + 15.17/(1.68*mByM) - 96.1/2.8;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNQMS1vS1vCoeff(
     REAL8 mByM)
 {
-    return 5.87/(1.12*mByM*mByM) - 28.19/(5.04*mByM) + 1.9/100.8;
+    return  -36.53/(1.68*mByM*mByM) + 65.9/(8.4*mByM) + 2.9/1.4;
+}
+
+
+static REAL8 UNUSED
+XLALSimInspiralPNFlux_6PNQMS1S1CoeffAvg(
+        REAL8 mByM)
+{
+        return  27.9/(11.2*mByM*mByM) + 4.5/(1.6*mByM) - 43./8.;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralPNFlux_6PNSelf2SOCoeff(
-    REAL8 mByM)
+XLALSimInspiralPNFlux_6PNQMS1OS1OCoeffAvg(
+        REAL8 mByM)
 {
-    return -9.37/(1.12*mByM*mByM) + 18.61/(2.52*mByM) + 2.67/1.12;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralPNFlux_6PNSelf2SnCoeff(
-    REAL8 mByM)
-{
-    return 92./7./mByM/mByM + 53.93/5.04/mByM + 1.55/2.52;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralPNFlux_6PNQM2SCoeff(
-    REAL8 mByM)
-{
-    return  -224.5/(8.4*mByM*mByM) + 3.73/(1.68*mByM) + 35.9/2.8;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralPNFlux_6PNQM2SOCoeff(
-    REAL8 mByM)
-{
-    return 36.53/(1.68*mByM*mByM) - 65.9/(8.4*mByM) - 2.9/1.4;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralPNFlux_6PNQM2SnCoeff(
-    REAL8 mByM)
-{
-    return  98.17/(1.68*mByM*mByM) + 1.99/(1.68*mByM) - 101.9/2.8;
+        return -8.37/(1.12*mByM*mByM) - 13.5/(1.6*mByM) + 12.9/8.;
 }
 
 /*
@@ -707,6 +790,11 @@ XLALSimInspiralTaylorF2Phasing_7PNSOCoeff(
  * Compute 2.0PN SS, QM, and self-spin
  * See Eq. (6.24) in arXiv:0810.5336
  * 9b,c,d in arXiv:astro-ph/0504538
+ * Note that these terms are understood to multiply
+ * dimensionless spin magnitudes \chi_i=S_i/m_i^2
+ * differently from the convention adopted for SpinTaylorTX
+ * whose spinning coefficients multiply \chi_LAL=S_i/M^2
+ * where M=m_1+m_2.
  * See also https://dcc.ligo.org/T1800298
  */
 
@@ -828,11 +916,16 @@ XLALSimInspiralTaylorF2Phasing_14PNTidalCoeff(
 /* literature: Agathos et al (arxiv 1503.0545) eq (5)
  * caveat: these are incomplete terms
  * conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above
+ * --> completed by the terms given in equation (4) of :
+ * Tatsuya Narikawa, Nami Uchikata, Takahiro Tanaka,
+ * "Gravitational-wave constraints on the GWTC-2 events by measuring
+ * the tidal deformability and the spin-induced quadrupole moment",
+ * Phys. Rev. D 104, 084056 (2021), arXiv:2106.09193
  */
 {
   REAL8 mByM3 = mByM*mByM*mByM;
   REAL8 mByM4 = mByM3 * mByM;
-  return - mByM4 * 24.L*(39927845.L/508032.L - 480043345.L/9144576.L*mByM + 9860575.L/127008.L*mByM*mByM - 421821905.L/2286144.L*mByM3 + 4359700.L/35721.L*mByM4 - 10578445.L/285768.L*mByM4*mByM);
+  return - mByM4 * 5.L*(193986935.L/571536.L - 14415613.L/381024.L*mByM - 57859.L/378.L*mByM*mByM - 209495.L/1512.L*mByM3 + 965.L/54.L*mByM4 - 4.L*mByM4*mByM);
 }
 
 static REAL8 UNUSED
@@ -841,12 +934,17 @@ XLALSimInspiralTaylorF2Phasing_15PNTidalCoeff(
     )
 /* literature: Agathos et al (arxiv 1503.0545) eq (5)
  * conversion see XLALSimInspiralTaylorF2Phasing_13PNTidalCoeff above 
+ * --> corrected by the terms given in equation (4) of :
+ * Tatsuya Narikawa, Nami Uchikata, Takahiro Tanaka,
+ * "Gravitational-wave constraints on the GWTC-2 events by measuring
+ * the tidal deformability and the spin-induced quadrupole moment",
+ * Phys. Rev. D 104, 084056 (2021), arXiv:2106.09193
  */
 {
   REAL8 mByM2 = mByM*mByM;
   REAL8 mByM3 = mByM2*mByM;
   REAL8 mByM4 = mByM3*mByM;
-  return mByM4 * 1.L/28.L*LAL_PI*(27719.L - 22127.L*mByM + 7022.L*mByM2 - 10232.L*mByM3) ;
+  return mByM4 * 1.L/28.L*LAL_PI*(27719.L - 22415.L*mByM + 7598.L*mByM2 - 10520.L*mByM3) ;
 }
 
 /* The phasing function for TaylorF2 frequency-domain waveform.
@@ -1177,7 +1275,21 @@ static REAL8 UNUSED
 XLALSimInspiralTaylorT2dtdv_4PNS1S2Coeff(
     REAL8 eta)
 {
-    return -77./6./eta;
+    return -79./8./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNS1vS2vCoeff(
+    REAL8 eta)
+{
+    return -71./24./eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNS1nS2nCoeff(
+    REAL8 eta)
+{
+    return 33./eta;
 }
 
 static REAL8 UNUSED
@@ -1188,140 +1300,189 @@ XLALSimInspiralTaylorT2dtdv_4PNS1S2CoeffAvg(
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNS1S2OCoeff(
-    REAL8 eta)
-{
-    return 71./24./eta;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNS1S2OCoeffAvg(
+XLALSimInspiralTaylorT2dtdv_4PNS1OS2OCoeffAvg(
     REAL8 eta)
 {
     return -721./48./eta;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNS1S2nCoeff(
-    REAL8 eta)
-{
-    return 863./24./eta;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNSelf2SCoeff(
+XLALSimInspiralTaylorT2dtdv_4PNS1S1Coeff(
     REAL8 mByM)
 {
-    return -1./12./mByM/mByM;
+    return -1./16./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNSelf2SCoeffAvg(
+XLALSimInspiralTaylorT2dtdv_4PNS1vS1vCoeff(
+        REAL8 mByM)
+{
+    return -1./48./mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_4PNS1S1CoeffAvg(
     REAL8 mByM)
 {
     return - 7./96./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNSelf2SOCoeff(
-        REAL8 mByM)
-{
-    return 1./48./mByM/mByM;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNSelf2SOCoeffAvg(
+XLALSimInspiralTaylorT2dtdv_4PNS1OS1OCoeffAvg(
         REAL8 mByM)
 {
     return 1./96./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNSelf2SnCoeff(
+XLALSimInspiralTaylorT2dtdv_4PNQMS1S1Coeff(
         REAL8 mByM)
 {
-    return 1./48./mByM/mByM;
+        return -5./mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNQM2SCoeff(
-        REAL8 mByM)
-{
-        return -6.5/mByM/mByM;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNQM2SOCoeff(
+XLALSimInspiralTaylorT2dtdv_4PNQMS1nS1nCoeff(
 	REAL8 mByM)
 {
-	return 1.5/mByM/mByM;
+	return 16.5/mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNQM2SnCoeff(
+XLALSimInspiralTaylorT2dtdv_4PNQMS1vS1vCoeff(
 	REAL8 mByM)
 {
-	return 18./mByM/mByM;
+	return -1.5/mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNQM2SCoeffAvg(
+XLALSimInspiralTaylorT2dtdv_4PNQMS1S1CoeffAvg(
         REAL8 mByM)
 {
         return 2.5/mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_4PNQM2SOCoeffAvg(
+XLALSimInspiralTaylorT2dtdv_4PNQMS1OS1OCoeffAvg(
 	REAL8 mByM)
 {
 	return -7.5/mByM/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_6PNSelf2SCoeff(
-    REAL8 mByM)
-{
-    return -37.427/(2.304*mByM*mByM) - 2.41/2.88/mByM - 5.51/2.88;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_6PNSelf2SOCoeff(
-    REAL8 mByM)
-{
-    return 754.979/(16.128*mByM*mByM) + 15.43/2.88/mByM + 4.9/28.8;
-}
-
-static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_6PNSelf2SnCoeff(
-    REAL8 mByM)
-{
-    return -427.549/(8.064*mByM*mByM) + 12.181/1.008/mByM + 3.293/1.008;
-}
-
-static REAL8 UNUSED
 XLALSimInspiralTaylorT2dtdv_6PNS1S2Coeff(
     REAL8 eta)
 {
-    return  52.973/8.064/eta + 3.13/1.44;
+    return -98.173/(1.344*eta) - 46.1/2.4;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_6PNS1S2OCoeff(
+XLALSimInspiralTaylorT2dtdv_6PNS1OS2OCoeff(
     REAL8 eta)
 {
-    return  -170.603/8.064/eta - 25.43/1.44;
+    return 140.3/(2.4*eta) + 6.7/1.8;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_6PNQM2SCoeff(
+XLALSimInspiralTaylorT2dtdv_6PNS1nS2nCoeff(
+    REAL8 eta)
+{
+    return 373./(3.*eta) + 93.25/1.68;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNS1vS2vCoeff(
+    REAL8 eta)
+{
+    return 140.699/(4.032*eta) - 32.11/2.52;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNS1S1Coeff(
     REAL8 mByM)
 {
-    return  94.07/(6.72*mByM*mByM) + 58.7/4.8/mByM - 3.;
+    return 27.565/(2.688*mByM*mByM) - 21.3/(1.6*mByM) - 17.3/4.8;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT2dtdv_6PNQM2SOCoeff(
+XLALSimInspiralTaylorT2dtdv_6PNS1OS1OCoeff(
+    REAL8 mByM)
+{
+    return 32.5/(1.6*mByM*mByM) + 107./6./mByM + 67./36.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNS1nS1nCoeff(
+    REAL8 mByM)
+{
+    return -59.37/(1.12*mByM*mByM) + 103.7/5.6/mByM + 11.17/3.36;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNS1vS1vCoeff(
+    REAL8 mByM)
+{
+    return  8.5/(806.4*mByM*mByM) + 6.485/1.008/mByM +2.9/50.4;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNQMS1S1Coeff(
+    REAL8 mByM)
+{
+    return  -94.07/(3.36*mByM*mByM) -58.7/2.4/mByM + 6.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNQMS1nS1nCoeff(
+    REAL8 mByM)
+{
+    return  563.9/(8.4*mByM*mByM) + 157.45/1.68/mByM - 171./7;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNQMS1vS1vCoeff(
+    REAL8 mByM)
+{
+    return  56.65/(3.36*mByM*mByM) - 170.9/8.4/mByM + 45./7.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNS1S2CoeffAvg(
+    REAL8 eta)
+{
+    return 52.973/(8.064*eta) + 3.13/1.44;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNS1OS2OCoeffAvg(
+    REAL8 eta)
+{
+    return -170.603/(8.064*eta) - 25.43/1.44;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNS1S1CoeffAvg(
+    REAL8 mByM)
+{
+    return -37.427/(2.304*mByM*mByM) - 2.41/(2.88*mByM) - 5.51/2.88;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNS1OS1OCoeffAvg(
+    REAL8 mByM)
+{
+    return 75.4979/(1.6128*mByM*mByM) + 15.43/2.88/mByM + 4.9/28.8;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNQMS1S1CoeffAvg(
+    REAL8 mByM)
+{
+    return  94.07/(6.72*mByM*mByM) + 58.7/4.8/mByM -3.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT2dtdv_6PNQMS1OS1OCoeffAvg(
     REAL8 mByM)
 {
     return  -94.07/(2.24*mByM*mByM) -58.7/1.6/mByM + 9.;
@@ -1694,7 +1855,21 @@ static REAL8 UNUSED
 XLALSimInspiralTaylorT4wdot_4PNS1S2Coeff(
 	REAL8 eta)
 {
-	return 77. / 6. / eta;
+       return 79. / (8. * eta);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNS1nS2nCoeff(
+	REAL8 eta)
+{
+	return -33. / eta;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNS1vS2vCoeff(
+	REAL8 eta)
+{
+	return 7.1 / 2.4 / eta;
 }
 
 static REAL8 UNUSED
@@ -1704,82 +1879,74 @@ XLALSimInspiralTaylorT4wdot_4PNS1S2CoeffAvg(
 	return - 247. / 48. / eta;
 }
 
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeff(
-	REAL8 eta)
-{
-	return -71. / 24. / eta;
-}
-
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNS1S2OCoeffAvg(
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNS1OS2OCoeffAvg(
 	REAL8 eta)
 {
 	return 721. / 48. / eta;
 }
 
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNS1S2nCoeff(
-	REAL8 eta)
-{
-	return -863./24./eta;
-}
-
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeff(
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNS1S1Coeff(
         REAL8 mByM)
 {
-        return 1./12./mByM/mByM;
+        return 1./(16.*mByM*mByM);
 }
 
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNSelf2SCoeffAvg(
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNS1vS1vCoeff(
+        REAL8 mByM)
+{
+        return 1./48./mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNS1S1CoeffAvg(
         REAL8 mByM)
 {
         return 7./96./mByM/mByM;
 }
 
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeff(
-        REAL8 mByM)
-{
-        return -1./48./mByM/mByM;
-}
-
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNSelf2SOCoeffAvg(
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNS1OS1OCoeffAvg(
         REAL8 mByM)
 {
         return -1./96./mByM/mByM;
 }
 
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNSelf2SnCoeff(
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNQMS1S1Coeff(
         REAL8 mByM)
 {
-        return -1./48./mByM/mByM;
+        return 5./mByM/mByM;
 }
 
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNQM2SCoeff(
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNQMS1nS1nCoeff(
         REAL8 mByM)
 {
-        return 6.5/mByM/mByM;
+        return -16.5/mByM/mByM;
 }
 
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNQM2SCoeffAvg(
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNQMS1vS1vCoeff(
+        REAL8 mByM)
+{
+        return 1.5/mByM/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNQMS1S1CoeffAvg(
         REAL8 mByM)
 {
         return -2.5/mByM/mByM;
 }
 
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeff(
-        REAL8 mByM)
-{
-        return -1.5/mByM/mByM;
-}
-
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNQM2SOCoeffAvg(
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_4PNQMS1OS1OCoeffAvg(
         REAL8 mByM)
 {
         return 7.5/mByM/mByM;
-}
-
-static REAL8 UNUSED XLALSimInspiralTaylorT4wdot_4PNQM2SnCoeff(
-        REAL8 mByM)
-{
-        return -18./mByM/mByM;
 }
 
 static REAL8 UNUSED
@@ -1834,63 +2001,119 @@ static REAL8 UNUSED
 XLALSimInspiralTaylorT4wdot_6PNS1S2Coeff(
 	REAL8 eta)
 {
-	return -52.1/(2.8*eta) - 194.71/5.04;
+	return 98.69/(3.36*eta) - 168.5/4.8;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_6PNS1S2OCoeff(
+XLALSimInspiralTaylorT4wdot_6PNS1OS2OCoeff(
 	REAL8 eta)
 {
-	return 514.7/(4.8*eta) +20.021/1.008;
+	return 237./(4.*eta) + 49./3.;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_6PNS1S2nCoeff(
+XLALSimInspiralTaylorT4wdot_6PNS1nS2nCoeff(
 	REAL8 eta)
 {
-	return 233.83/(3.36*eta) + 130.559/1.008;
+	return 36.31/(1.68*eta) + 211.67/1.68;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_6PNSelf2SCoeff(
-	REAL8 mByM)
+XLALSimInspiralTaylorT4wdot_6PNS1vS2vCoeff(
+	REAL8 eta)
 {
-	return -11.91/(1.12*mByM*mByM) + 8.09/(1.26*mByM) + 4.037/1.008;
+	return -230.3/(4.8*eta) - 3.557/1.008;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_6PNSelf2SOCoeff(
-	REAL8 mByM)
+XLALSimInspiralTaylorT4wdot_6PNS1S2CoeffAvg(
+	REAL8 eta)
 {
-	return 42.23/(2.24*mByM*mByM) + 57.049/(2.016*mByM) + 16.349/2.016;
+	return 108.79/(6.72*eta) + 75.25/2.88;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_6PNSelf2SnCoeff(
-	REAL8 mByM)
+XLALSimInspiralTaylorT4wdot_6PNS1OS2OCoeffAvg(
+	REAL8 eta)
 {
-	return 118.97/(2.24*mByM*mByM) -24.131/(2.016*mByM) - 6.817/2.016;
+        return 162.25/(2.24*eta) - 129.31/2.88;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_6PNQM2SCoeff(
+XLALSimInspiralTaylorT4wdot_6PNS1S1Coeff(
 	REAL8 mByM)
 {
-	return -59.17/(3.36*mByM*mByM) + 50.7/(5.6*mByM) + 65.3/2.8;
+        return -33.7/(3.2*mByM*mByM) + 41.5/(3.2*mByM) + 37.9/9.6;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_6PNQM2SOCoeff(
+XLALSimInspiralTaylorT4wdot_6PNS1OS1OCoeff(
 	REAL8 mByM)
 {
-	return 39.47/(1.68*mByM*mByM) - 25.4/(2.1*mByM) - 5.1/2.8;
+	return 75./(4.*mByM*mByM) + 87./(4.*mByM) + 49./6.;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralTaylorT4wdot_6PNQM2SnCoeff(
+XLALSimInspiralTaylorT4wdot_6PNS1nS1nCoeff(
 	REAL8 mByM)
 {
-	return 98.57/(3.36*mByM*mByM) - 25.31/(1.68*mByM) -477./7.;
+	return 59.37/(1.12*mByM*mByM) - 103.7/(5.6*mByM) - 11.17/3.36;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_6PNS1vS1vCoeff(
+	REAL8 mByM)
+{
+	return -2.3/(22.4*mByM*mByM) -13.201/(2.016*mByM) + 1.15/20.16;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_6PNS1S1CoeffAvg(
+	REAL8 mByM)
+{
+        return 101.9/(6.4*mByM*mByM) + 2.51/(5.76*mByM) + 13.33/5.76;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_6PNS1OS1OCoeffAvg(
+	REAL8 mByM)
+{
+	return -49.3/(6.4*mByM*mByM) + 197.47/(5.76*mByM) + 56.45/5.76;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_6PNQMS1S1Coeff(
+	REAL8 mByM)
+{
+	return 6.59/(1.12*mByM*mByM) - 7.3/(2.4*mByM) + 21.5;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_6PNQMS1nS1nCoeff(
+	REAL8 mByM)
+{
+	return 19.63/(3.36*mByM*mByM) - 4.99/(1.68*mByM) - 185.7/2.8;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_6PNQMS1vS1vCoeff(
+	REAL8 mByM)
+{
+	return -39.47/(1.68*mByM*mByM) + 25.4/(2.1*mByM) + 5.1/2.8;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_6PNQMS1S1CoeffAvg(
+	REAL8 mByM)
+{
+	return -6.59/(2.24*mByM*mByM) + 7.3/(4.8*mByM) - 43./4.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralTaylorT4wdot_6PNQMS1OS1OCoeffAvg(
+	REAL8 mByM)
+{
+	return 19.77/(2.24*mByM*mByM) - 7.3/(1.6*mByM) + 129./4.;
 }
 
 static REAL8 UNUSED
@@ -1958,46 +2181,71 @@ static REAL8 UNUSED
 XLALSimInspiralL_2PN(
         REAL8 eta)
 {
-        return 3./2. + eta/6.;
+        return 1.5 + eta/6.;
 }
 
 /* Orbital averaged from eq.(2.9c) of
  * \cite Kidder:1995zr, see also eq.(4.7) of \cite Bohe:2012mr.
- * Explicit formula can be found in https://dcc.ligo.org/T1500554/public.
+ * Explicit formula can be found in eq.(9) of https://dcc.ligo.org/T1500554/public.
  */
+
 static REAL8 UNUSED
-XLALSimInspiralL_3PNSiAvgcoeff(
+XLALSimInspiralL_3PNSicoeff(
         REAL8 mByM)
 {
-        return -0.25*(3.+1./mByM);
+        return -(1.+1./mByM);
 }
 
 static REAL8 UNUSED
-XLALSimInspiralL_3PNLiSLAvgcoeff(
+XLALSimInspiralL_3PNSincoeff(
         REAL8 mByM)
 {
-        return -1./12.-2.25/mByM;
+        return 0.5*(1.+3./mByM);
 }
 
 static REAL8 UNUSED
-XLALSimInspiralL_3PNniSncoeff(
+XLALSimInspiralL_3PNSiLcoeff(
         REAL8 mByM)
 {
-        return -0.5+0.5/mByM;
+        return 0.5*(1./3.-3./mByM);
 }
 
 static REAL8 UNUSED
-XLALSimInspiralL_3PNviSvcoeff(
+XLALSimInspiralL_3PNSicoeffAvg(
         REAL8 mByM)
 {
-        return -1.-1./mByM;
+        return -0.75-0.25/mByM;
 }
 
 static REAL8 UNUSED
-XLALSimInspiralL_3PNLiSLcoeff(
+XLALSimInspiralL_3PNSiLcoeffAvg(
         REAL8 mByM)
 {
-        return -5./6.-2.5/mByM;
+        return -(1./3.+9./mByM)/4.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_5PNSicoeff(
+        REAL8 mByM)
+{
+  REAL8 eta=mByM*(1.-mByM);
+  return -0.5*(5.+1./mByM)+eta/3.*(1.+4./mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_5PNSincoeff(
+        REAL8 mByM)
+{
+  REAL8 eta=mByM*(1.-mByM);
+  return 3./8.*(3.+5./mByM)-7.*eta/4.*(1./6.+1./mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_5PNSiLcoeff(
+        REAL8 mByM)
+{
+  REAL8 eta=mByM*(1.-mByM);
+  return -1./8.*(15.+17./mByM)+eta/4.*(-1.7/1.8+19./3./mByM);
 }
 
 /* eq. 4.7 of http://arxiv.org/pdf/1212.5520.pdf */
@@ -2005,7 +2253,14 @@ static REAL8 UNUSED
 XLALSimInspiralL_4PN(
         REAL8 eta)
 {
-        return 27./8. - 19./8.*eta +eta*eta/24;
+        return 27./8. - 19./8.*eta + eta*eta/24.;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralL_6PN(
+        REAL8 eta)
+{
+  return 13.5/1.6 + (-68.89/1.44 + 4.1/2.4 * LAL_PI*LAL_PI)*eta + 3.1/2.4*eta*eta + 7./1296.*eta*eta*eta;
 }
 
 /*
@@ -2105,7 +2360,7 @@ static REAL8 UNUSED
 XLALSimInspiralSpinDot_4PNQMSnCoeff(
 	REAL8 mByM)
 {
-	return 3 * (1./mByM - 1.);
+	return 3. * (1./mByM - 1.);
 }
 
 /* dS1, 2.5PN
@@ -2116,6 +2371,91 @@ XLALSimInspiralSpinDot_5PNCoeff(
 	REAL8 mByM)
 {
 	return 9./8. - mByM/2. + 7.*mByM*mByM/12. - 7.*mByM*mByM*mByM/6. - mByM*mByM*mByM*mByM/24.;
+}
+
+/* S1S2 contribution
+ * again eq. A.2 of arXiv:1501.01529
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNS2Coeff(
+	REAL8 mByM)
+{
+        return -1.5 -mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNS1nCoeff(
+	REAL8 mByM)
+{
+        return 3.5-3./mByM-.5*mByM*mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNS2nCoeff(
+	REAL8 mByM)
+{
+        return 1.5 +2.*mByM+mByM*mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNS1vCoeff(
+	REAL8 mByM)
+{
+        return 3. -1.5*mByM-1.5/mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNS2vCoeff(
+	REAL8 mByM)
+{
+        return 1.5 +mByM;
+}
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNS2CoeffAvg(
+	REAL8 mByM)
+{
+  return XLALSimInspiralSpinDot_6PNS2Coeff(mByM)+0.5*(XLALSimInspiralSpinDot_6PNS2nCoeff(mByM)+XLALSimInspiralSpinDot_6PNS2vCoeff(mByM));
+}
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNS1OCoeffAvg(
+	REAL8 mByM)
+{
+  return -0.5*(XLALSimInspiralSpinDot_6PNS1nCoeff(mByM)+XLALSimInspiralSpinDot_6PNS1vCoeff(mByM));
+}
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNS2OCoeffAvg(
+	REAL8 mByM)
+{
+  return -0.5*(XLALSimInspiralSpinDot_6PNS2nCoeff(mByM)+XLALSimInspiralSpinDot_6PNS2vCoeff(mByM));
+}
+
+/* S1S1 contribution
+ * again eq. A.2 of arXiv:1501.01529
+ */
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNQMSnCoeff(
+	REAL8 mByM)
+{
+        return 3. * (.5/mByM + 1. - mByM - .5*mByM*mByM);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNQMSvCoeff(
+	REAL8 mByM)
+{
+        return 3. * (1./mByM -1.);
+}
+
+static REAL8 UNUSED
+XLALSimInspiralSpinDot_6PNQMSOCoeffAvg(
+	REAL8 mByM)
+{
+  return -0.5*(XLALSimInspiralSpinDot_6PNQMSnCoeff(mByM)+XLALSimInspiralSpinDot_6PNQMSvCoeff(mByM));
 }
 
 /* dS1, 3.5PN

@@ -333,13 +333,13 @@ REAL4VectorAligned * coherentlyAddSFTs(const MultiSFTVector *multiSFTvector, con
          if (jj==0 && whichIFOsToBeUsed->data[jj]==1) {
             //Copy the data from the multiSFTvector into the combinedSFTs vector, ignoring 10 bins on both ends of the SFT (newFmin and newBand)
             SFTtype *thisSFT = &(combinedSFTs->data[ii]);
-            XLAL_CHECK_NULL( XLALExtractBandFromSFT(&thisSFT, &(multiSFTvector->data[0]->data[whichSFTinMultiSFTvector->data[0]]), newFmin, newBand) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_NULL( XLALExtractStrictBandFromSFT(&thisSFT, &(multiSFTvector->data[0]->data[whichSFTinMultiSFTvector->data[0]]), newFmin, newBand) == XLAL_SUCCESS, XLAL_EFUNC );
             createSFT = 0;
             whichSFTinMultiSFTvector->data[0]++;
          } else if (jj>0 && whichIFOsToBeUsed->data[jj]==1) {
             //Create a copy of the SFT to be shifted since we will manipulate the SFT coefficients
             SFTtype *sftcopySubset = NULL;
-            XLAL_CHECK_NULL( XLALExtractBandFromSFT(&sftcopySubset, &(multiSFTvector->data[jj]->data[whichSFTinMultiSFTvector->data[jj]]), newFmin, newBand) == XLAL_SUCCESS, XLAL_EFUNC );
+            XLAL_CHECK_NULL( XLALExtractStrictBandFromSFT(&sftcopySubset, &(multiSFTvector->data[jj]->data[whichSFTinMultiSFTvector->data[jj]]), newFmin, newBand) == XLAL_SUCCESS, XLAL_EFUNC );
             REAL8 sftstart = XLALGPSGetREAL8(&(sftcopySubset->epoch));
             XLAL_CHECK_NULL( xlalErrno == 0, XLAL_EFUNC );
             INT4 fftnum = (INT4)round((sftstart - params->t0)/params->SFToverlap);

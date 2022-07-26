@@ -13,6 +13,21 @@ lal_c_si = LAL_C_SI;
 lal_180_pi = LAL_180_PI;
 disp("PASSED module load");
 
+# set error handlers
+function set_nice_error_handlers()
+  swig_set_nice_error_handlers();
+endfunction
+function set_default_error_handlers()
+  lal;
+  if swig_version >= 0x040002
+    # see https://github.com/swig/swig/pull/1789
+    swig_set_nasty_error_handlers();
+  else
+    swig_set_nice_error_handlers();
+  endif
+endfunction
+set_default_error_handlers();
+
 ## check memory allocation
 disp("checking memory allocation ...");
 if !lal.NoDebug
@@ -22,10 +37,12 @@ if !lal.NoDebug
   mem3 = XLALCreateREAL8Vector(3);
   mem4 = XLALCreateREAL4TimeSeries("test", LIGOTimeGPS(0), 100, 0.1, lal.DimensionlessUnit, 10);
   disp("*** below should be an error message from CheckMemoryLeaks() ***");
+  set_nice_error_handlers();
   try
     LALCheckMemoryLeaks();
     expected_exception = 1;
   end_try_catch
+  set_default_error_handlers();
   assert(!expected_exception);
   disp("*** above should be an error message from CheckMemoryLeaks() ***");
   clear mem1;
@@ -135,10 +152,12 @@ assert(all(size(sts.mat) == [2, 3]));
 sts.vec = [3; 2; 1];
 assert(all(sts.vec == [3; 2; 1]));
 sts.mat = [4, 5, 6; 9, 8, 7];
+set_nice_error_handlers();
 try
   sts.mat = [1.1, 2.3, 4.5; 6.5, 4.3, 2.1];
   expected_exception = 1;
 end_try_catch
+set_default_error_handlers();
 assert(!expected_exception);
 assert(all(all(sts.mat == [4, 5, 6; 9, 8, 7])));
 for i = 1:3
@@ -166,10 +185,12 @@ assert(lal.swig_lal_test_INT4_const_vector(3) == 4);
 lal.swig_lal_test_INT4_matrix = lal.swig_lal_test_INT4_const_matrix;
 assert(all(lal.swig_lal_test_INT4_matrix == [[1, 2, 4]; [2, 4, 8]]));
 assert(lal.swig_lal_test_INT4_const_matrix(2, 3) == 8);
+set_nice_error_handlers();
 try
   lal.swig_lal_test_INT4_const_vector(20);
   expected_exception = 1;
 end_try_catch
+set_default_error_handlers();
 assert(!expected_exception);
 lal.swig_lal_test_REAL8_vector(1) = 3.4;
 assert(lal.swig_lal_test_REAL8_vector(1) == 3.4);
@@ -198,15 +219,19 @@ function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   assert(all(rv.data == [1.2; 3.4; 2.6; 4.8; 3.5]));
   rv.data(rvl) = 7.5;
   assert(rv.data(rvl) == 7.5);
+  set_nice_error_handlers();
   try
     rv.data(rvl + 1) = 99.9;
     expected_exception = 1;
   end_try_catch
+  set_default_error_handlers();
   assert(!expected_exception);
+  set_nice_error_handlers();
   try
     iv.data = rv.data;
     expected_exception = 1;
   end_try_catch
+  set_default_error_handlers();
   assert(!expected_exception);
   rv.data = iv.data;
   assert(all(rv.data == iv.data));
@@ -219,15 +244,19 @@ function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   endfor
   assert(cm.data(2, 3) == complex(0.5, 1.5));
   assert(cm.data(3, 2) == complex(0.75, 1.0));
+  set_nice_error_handlers();
   try
     iv.data(0) = cm.data(2, 3);
     expected_exception = 1;
   end_try_catch
+  set_default_error_handlers();
   assert(!expected_exception);
+  set_nice_error_handlers();
   try
     rv.data(0) = cm.data(3, 2);
     expected_exception = 1;
   end_try_catch
+  set_default_error_handlers();
   assert(!expected_exception);
 endfunction
 ## check LAL vector and matrix datatypes
@@ -278,15 +307,19 @@ assert(all(swig_lal_test_copyin_array2(a2in, 15) == a2out));
 a3in = {lal.LIGOTimeGPS(1234.5); lal.LIGOTimeGPS(678.9)};
 a3out = {a3in{1} * 3; a3in{2} * 3};
 assert(all(cellfun(@(x, y) x == y, lal.swig_lal_test_copyin_array3(a3in, 3), a3out)));
+set_nice_error_handlers();
 try
   swig_lal_test_viewin_array1([0,0,0,0], 0);
   expected_exception = 1;
 end_try_catch
+set_default_error_handlers();
 assert(!expected_exception);
+set_nice_error_handlers();
 try
   swig_lal_test_viewin_array2([1.2,3.4; 0,0; 0,0], 0);
   expected_exception = 1;
 end_try_catch
+set_default_error_handlers();
 assert(!expected_exception);
 clear a3in;
 clear a3out;
@@ -794,15 +827,19 @@ disp("PASSED input views of numeric array structs (GSL)");
 function check_input_view_type_safety(f, a, b, expect_exception)
   expected_exception = 0;
   if expect_exception
+    set_nice_error_handlers();
     try
       f(a, b);
       expected_exception = 1;
     end_try_catch
+    set_default_error_handlers();
     assert(!expected_exception);
+    set_nice_error_handlers();
     try
       f(b, a);
       expected_exception = 1;
     end_try_catch
+    set_default_error_handlers();
     assert(!expected_exception);
   else
     f(a, b);
@@ -1011,12 +1048,32 @@ disp("checking typemaps for strings and double pointers ...");
 sts = new_swig_lal_test_struct();
 [ptr_ptr, ptr_null_ptr, null_ptr_ptr] = swig_lal_test_typemaps_string_ptrptr("abcde", "", [], sts, 0, []);
 assert(swig_this(ptr_ptr) == swig_this(sts));
-assert(swig_this(ptr_null_ptr) == swig_this(sts));
+assert(swig_this(ptr_null_ptr) != 0);
 assert(swig_this(null_ptr_ptr) == 0);
 clear sts;
 clear ptr_ptr;
 clear ptr_null_ptr;
 clear null_ptr_ptr;
+LALCheckMemoryLeaks();
+ptr_ptr = 0;
+for i = 1:9
+  ptr_ptr = swig_lal_test_typemaps_ptrptr(ptr_ptr);
+  assert(swig_this(ptr_ptr) != 0);
+  assert(ptr_ptr.n == i);
+endfor
+clear ptr_ptr;
+ptr_ptr_list = {0};
+for i = 1:9
+  ptr_ptr_list{end+1} = swig_lal_test_typemaps_ptrptr(ptr_ptr_list{end});
+  assert(swig_this(ptr_ptr_list{end}) != 0);
+  assert(ptr_ptr_list{end}.n == i);
+endfor
+while length(ptr_ptr_list) > 0
+  assert(swig_this(ptr_ptr_list{end}) != 0);
+  assert(ptr_ptr_list{end}.n == i);
+  ptr_ptr_list = ptr_ptr_list(2:end);
+endwhile
+clear ptr_ptr_list;
 LALCheckMemoryLeaks();
 disp("PASSED typemaps for strings and double pointers");
 
@@ -1072,6 +1129,11 @@ assert(LIGOTimeGPS("-127965.770535834") == LIGOTimeGPS("-914984.929117316") / 7.
 t1 += 812345667.75;
 assert(strcmp(t1.__str__(), "812345678.25"));
 assert(new_LIGOTimeGPS(t1.__str__()) == t1);
+assert(strcmp(LIGOTimeGPS(1100000000).asutcstr(), "Fri, 14 Nov 2014 11:33:04 +0000"));   # lalapps_tconvert -u -R
+assert(strcmp(LIGOTimeGPS(1100000000, 100).asutcstr(), "Fri, 14 Nov 2014 11:33:04.0000001 +0000"));
+assert(strcmp(LIGOTimeGPS(0, 0).asutcstr(), "Sun, 06 Jan 1980 00:00:00 +0000"));
+assert(strcmp(LIGOTimeGPS(-1, 0).asutcstr(), "Sat, 05 Jan 1980 23:59:59 +0000"));
+assert(strcmp(LIGOTimeGPS(0, -1).asutcstr(), "Sat, 05 Jan 1980 23:59:59.999999999 +0000"));
 assert(t1.ns() == 812345678250000000);
 t4struct = new_swig_lal_test_gps;
 t4struct.t = 1234.5;
@@ -1079,23 +1141,31 @@ assert(t4struct.t == 1234.5);
 t5 = LIGOTimeGPS("1000");
 assert(t5 == 1000);
 disp("*** below should be error messages from LIGOTimeGPS constructor ***");
+set_nice_error_handlers();
 try
   t5 = LIGOTimeGPS("abc1000");
   expected_exception = 1;
 end_try_catch
+set_default_error_handlers();
 assert(!expected_exception);
+set_nice_error_handlers();
 try
   t5 = LIGOTimeGPS("1000abc");
   expected_exception = 1;
 end_try_catch
+set_default_error_handlers();
 assert(!expected_exception);
 disp("*** above should be error messages from LIGOTimeGPS constructor ***");
 assert(swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == swig_lal_test_noptrgps(1234.5))
+disp("*** below should be error messages from LIGOTimeGPS constructor ***");
+set_nice_error_handlers();
 try
   LIGOTimeGPS([]);
   expected_exception = 1;
 end_try_catch
+set_default_error_handlers();
 assert(!expected_exception);
+disp("*** above should be error messages from LIGOTimeGPS constructor ***");
 clear t0;
 clear t1;
 clear t2;
@@ -1116,10 +1186,12 @@ u2 = lal.MeterUnit * lal.KiloGramUnit / lal.SecondUnit ^ 2;
 assert(u1 == u2 && strcmp(swig_type(u2), "LALUnit"));
 u2 = lal.MeterUnit^[1,2] * lal.KiloGramUnit^[1,2] * lal.SecondUnit ^ -1;
 assert(u1^[1,2] == u2 && strcmp(swig_type(u2), "LALUnit"));
+set_nice_error_handlers();
 try
   lal.SecondUnit ^ [1,0];
   expected_exception = 1;
 end_try_catch
+set_default_error_handlers();
 assert(!expected_exception);
 u1 *= lal.MeterUnit;
 assert(u1 == lal.JouleUnit && strcmp(swig_type(u1), "LALUnit"));
@@ -1135,10 +1207,12 @@ assert(u1 == lal.MegaUnit / 1000 * lal.WattUnit);
 assert(u1.__int__() == 1000);
 u1 /= 10000;
 assert(u1 == 100 * lal.MilliUnit * lal.WattUnit);
+set_nice_error_handlers();
 try
   u1 *= 1.234;
   expected_exception = 1;
 end_try_catch
+set_default_error_handlers();
 assert(!expected_exception);
 assert(u1.norm() == u1);
 clear u1;

@@ -1,3 +1,7 @@
+.PHONY: test-mostlyclean-local
+
+mostlyclean-local: test-mostlyclean-local
+
 AM_CPPFLAGS = -DTEST_DATA_DIR='"$(abs_srcdir)/"' -DTEST_PKG_DATA_DIR='"$(abs_top_srcdir)/lib/"' @AM_CPPFLAGS@
 
 TEST_EXTENSIONS = .sh .m .py
@@ -9,12 +13,14 @@ TEST_EXTENSIONS = .sh .m .py
 ## should switch to using OMP_THREAD_LIMIT instead of OMP_NUM_THREADS
 
 TESTS_ENVIRONMENT = \
+	$(TESTS_ENV_CONFIG_VARS) \
 	export LC_ALL; LC_ALL=C; \
 	export OMP_NUM_THREADS; OMP_NUM_THREADS=2; \
 	export LAL_DEBUG_LEVEL; LAL_DEBUG_LEVEL="msglvl1,memdbg,${EXTRA_LAL_DEBUG_LEVEL}"; \
 	export LAL_TEST_SRCDIR; LAL_TEST_SRCDIR="$(abs_srcdir)"; \
 	export LAL_TEST_BUILDDIR; LAL_TEST_BUILDDIR="$(abs_builddir)"; \
 	export LAL_TEST_PKGDATADIR; LAL_TEST_PKGDATADIR="$(abs_top_srcdir)/lib"; \
+	export PATH; PATH=".:$(abs_top_builddir)/bin:$(LAL_BIN_PATH):$${PATH}"; \
 	lalsuite_path="$(abs_top_builddir)/octave"; \
 	test "x$(builddir)" = "x$(srcdir)" || lalsuite_path="$${lalsuite_path}:$(abs_top_srcdir)/octave"; \
 	test "x$(LAL_OCTAVE_PATH)" = x || lalsuite_path="$${lalsuite_path}:$(LAL_OCTAVE_PATH)"; \
@@ -43,3 +49,6 @@ test_script_compiler = $(test_script_runner) $(test_script_runner_args)
 SH_LOG_COMPILER = $(test_script_compiler) $(SHELL)
 M_LOG_COMPILER = $(test_script_compiler) "$(OCTAVE)" -fH
 PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u
+
+test-mostlyclean-local:
+	-rm -rf __pycache__ .pytest_cache junit*.xml

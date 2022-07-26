@@ -21,6 +21,7 @@
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
+{% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
@@ -36,13 +37,15 @@ build:
   error_overlinking: true
   number: 9999
   script_env:
+    - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - GITLAB_CI
   skip: true  # [win]
 
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man >=1.37
+    - help2man >=1.37  # [build_platform == target_platform]
     - make
     - pkg-config >=0.18.0
     - swig >={{ swig_version }}
@@ -83,8 +86,10 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - pkg-config --print-errors --exact-version "{{ version }}" lalburst
-        - test -f ${PREFIX}/lib/liblalburst${SHLIB_EXT}  # [not win]
+        # check library
+        - test -f ${PREFIX}/lib/liblalburst${SHLIB_EXT}  # [unix]
+        # check pkg-config
+        - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalburst
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalframe/
@@ -104,15 +109,20 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        # ignore run_exports from python's recipe
+        - numpy
+        - openssl
         - python
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
         - pkg-config >=0.18.0
         - swig >={{ swig_version }}
+        # extras for cross compiling with python
+        - python                              # [build_platform != target_platform]
+        - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+        - numpy                               # [build_platform != target_platform]
       host:
         - gsl
         - {{ pin_subpackage('liblalburst', exact=True) }}
@@ -123,9 +133,11 @@ outputs:
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy
+        - tqdm
+        # provided to assist the solver, but not actually used
+        - openssl
       run:
         - gsl
-        - liblal  # [linux]
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - ligo-segments
         - lscsoft-glue
@@ -135,8 +147,9 @@ outputs:
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - python-ligo-lw
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy
+        - tqdm
     test:
       requires:
         - pytest >=4.0.0a0
@@ -178,23 +191,38 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - openssl
         - python
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
       host:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - python
+        # provided to assist the solver, but not actually used
+        - openssl
       run:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - python
+        - pillow
         - {{ pin_subpackage('python-lalburst', exact=True) }}
     test:
       commands:
+        - lalburst_cluster --help
+        - lalburst_coinc --help
+        - lalburst_cut --help
+        - lalburst_injfind --help
+        - lalburst_inj_pic --help
+        - lalburst_plot_tisi --help
+        - lalburst_power_calc_likelihood --help
+        - lalburst_power_final --help
+        - lalburst_power_meas_likelihood --help
+        - lalburst_power_plot_binj --help
+        - lalburst_power_plot_binjtf --help
         - lalburst_version --verbose
       imports:
         - lalburst

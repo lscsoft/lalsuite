@@ -22,17 +22,8 @@
 import os
 import sys
 from importlib import import_module
-try:
-    from pathlib import Path
-except ImportError as exc:
-    import warnings
-    warnings.warn(str(exc))
-    sys.exit(77)
-try:
-    from unittest import mock
-except ImportError:  # python < 3
-    import mock
-    FileNotFoundError = IOError
+from pathlib import Path
+from unittest import mock
 
 import pytest
 

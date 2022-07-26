@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[6.82.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[7.5.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -26,7 +26,7 @@ AC_PROG_AWK
 AC_PROG_SED
 
 LALSUITE_ENABLE_NIGHTLY
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # provide LAL library enable/disable options
 LALSUITE_ENABLE_ALL_LAL
@@ -36,8 +36,8 @@ LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
-LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
+LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALAPPS
 
 # configure Doxygen top-level page
@@ -64,6 +64,7 @@ lalsuite_abs_top_builddir="`pwd`"
 lalsuite_abs_top_srcdir='$(abs_top_srcdir)/..'
 
 # configure a lalsuite package
+lalsuite_package_configure_deps=
 AC_DEFUN([lalsuite_config_subdir],[
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
   m4_pushdef([uppercase],m4_translit([[$1]], [a-z], [A-Z]))
@@ -71,19 +72,58 @@ AC_DEFUN([lalsuite_config_subdir],[
   # if $1 is enabled
   AS_IF([test "x${lowercase}" = xtrue],[
 
+    # check that environment for enabled dependent pacakges has been set
+    m4_foreach_w([dep],$2,[
+      m4_pushdef([dep_lowercase],m4_translit(dep, [A-Z], [a-z]))
+      m4_pushdef([dep_uppercase],m4_translit(dep, [a-z], [A-Z]))
+      AS_IF([test "x${dep_lowercase}" = xtrue && test "x${dep_uppercase[]_[]CFLAGS}" = x],[
+        AC_MSG_ERROR([$1 depends on dep but dep environment is not set; [lalsuite_config_subdir()] calls may be in wrong dependency order])
+      ])
+      m4_popdef([dep_lowercase])
+      m4_popdef([dep_uppercase])
+    ])
+
     # re-run top-level ./00boot if any package-level ./configure.ac have changed
     # - this is needed to pick up e.g. any new inter-package dependencies
     lalsuite_package_configure_deps="${lalsuite_package_configure_deps} "'$(top_srcdir)/lowercase/configure.ac'
 
-    # export precious environment variables
-    uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/lib/lib[]lowercase.la"
-    uppercase[]_CFLAGS="-I${lalsuite_abs_top_builddir}/lowercase/include"
-    uppercase[]_DATA_PATH="${lalsuite_abs_top_srcdir}/lowercase/lib:${lalsuite_abs_top_srcdir}/lowercase/test"
-    uppercase[]_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lowercase/octave"
-    uppercase[]_PYTHON_PATH="${lalsuite_abs_top_builddir}/lowercase/python"
-    uppercase[]_HTMLDIR="${htmldir}/../lowercase"
-    export uppercase[]_LIBS uppercase[]_CFLAGS uppercase[]_HTMLDIR
-    export uppercase[]_DATA_PATH uppercase[]_OCTAVE_PATH uppercase[]_PYTHON_PATH
+    m4_if($1,[LALApps],[],[
+
+      # export precious environment variables
+      uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/lib/lib[]lowercase.la"
+      uppercase[]_CFLAGS="-I${lalsuite_abs_top_builddir}/lowercase/include"
+      uppercase[]_HTMLDIR="${htmldir}/../lowercase"
+      m4_foreach_w([dep],$2,[
+        m4_pushdef([dep_uppercase],m4_translit(dep, [a-z], [A-Z]))
+        for flag in ${dep_uppercase[]_CFLAGS}; do
+          AS_CASE([${flag}],
+            [-I*],[
+              AS_CASE([" ${uppercase[]_CFLAGS} "],
+                [*" ${flag} "*],[:],
+                [uppercase[]_CFLAGS="${uppercase[]_CFLAGS} ${flag}"]
+              )
+            ]
+          )
+        done
+        m4_popdef([dep_uppercase])
+      ])
+      export uppercase[]_LIBS uppercase[]_CFLAGS uppercase[]_HTMLDIR
+
+      # export precious environment paths
+      uppercase[]_BIN_PATH="${lalsuite_abs_top_builddir}/lowercase/bin"
+      uppercase[]_DATA_PATH="${lalsuite_abs_top_srcdir}/lowercase/lib:${lalsuite_abs_top_srcdir}/lowercase/test"
+      uppercase[]_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lowercase/octave"
+      uppercase[]_PYTHON_PATH="${lalsuite_abs_top_builddir}/lowercase/python"
+      m4_foreach_w([suffix],DATA_PATH OCTAVE_PATH PYTHON_PATH,[
+        m4_foreach_w([dep],$2,[
+          m4_pushdef([dep_uppercase],m4_translit(dep, [a-z], [A-Z]))
+          LALSUITE_ADD_PATH(uppercase[]_[]suffix,"${dep_uppercase[]_[]suffix}")
+          m4_popdef([dep_uppercase])
+        ])
+      ])
+      export uppercase[]_BIN_PATH uppercase[]_DATA_PATH uppercase[]_OCTAVE_PATH uppercase[]_PYTHON_PATH
+
+    ])
 
     # configure Doxygen top-level page
     lalsuite_config_doxygen([$1])
@@ -103,44 +143,33 @@ AC_DEFUN([lalsuite_config_subdir],[
 ])
 
 # lal and lalsupport are always configured
-lalsuite_config_doxygen([LAL])
-AC_CONFIG_SUBDIRS(lal)
-lalsuite_package_configure_deps='$(top_srcdir)/lal/configure.ac'
-LAL_LIBS="${lalsuite_abs_top_builddir}/lal/lib/liblal.la"
-LAL_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
-LAL_DATA_PATH="${lalsuite_abs_top_srcdir}/lal/test"
-LAL_OCTAVE_PATH="${lalsuite_abs_top_builddir}/lal/octave"
-LAL_PYTHON_PATH="${lalsuite_abs_top_builddir}/lal/python"
-LAL_HTMLDIR="${htmldir}/../lal"
+lalsuite_config_subdir([LAL],[])
 LALSUPPORT_LIBS="${lalsuite_abs_top_builddir}/lal/lib/support/liblalsupport.la"
 LALSUPPORT_CFLAGS="-I${lalsuite_abs_top_builddir}/lal/include"
+LALSUPPORT_BIN_PATH="${LAL_BIN_PATH}"
 LALSUPPORT_DATA_PATH="${LAL_DATA_PATH}"
 LALSUPPORT_OCTAVE_PATH="${LAL_OCTAVE_PATH}"
 LALSUPPORT_PYTHON_PATH="${LAL_PYTHON_PATH}"
 LALSUPPORT_HTMLDIR="${htmldir}/../lal"
-LALSUITE_BUILD="true"
-export LALSUITE_BUILD
-export LAL_LIBS LAL_CFLAGS LAL_DATA_PATH LAL_OCTAVE_PATH LAL_PYTHON_PATH LAL_HTMLDIR
-export LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_PATH LALSUPPORT_PYTHON_PATH LALSUPPORT_HTMLDIR
+export LALSUPPORT_LIBS LALSUPPORT_CFLAGS LALSUPPORT_HTMLDIR
+export LALSUPPORT_BIN_PATH LALSUPPORT_DATA_PATH LALSUPPORT_OCTAVE_PATH LALSUPPORT_PYTHON_PATH
 
 # configure optional packages
-lalsuite_config_subdir([LALFrame])
-lalsuite_config_subdir([LALMetaIO])
-lalsuite_config_subdir([LALSimulation])
-lalsuite_config_subdir([LALBurst])
-lalsuite_config_subdir([LALInspiral])
-lalsuite_config_subdir([LALPulsar])
-lalsuite_config_subdir([LALInference])
+# - 2nd argument lists library dependencies
+#   * used by lalsuite_config_subdir() to generate DATA/OCTAVE/PYTHON_PATHs including dependencies
+#   * used by gnuscripts/check_library_dependencies to check for consistent dependencies throughout build system
+lalsuite_config_subdir([LALFrame],[LAL])
+lalsuite_config_subdir([LALMetaIO],[LAL])
+lalsuite_config_subdir([LALSimulation],[LAL])
+lalsuite_config_subdir([LALBurst],[LAL LALMetaIO LALSimulation])
+lalsuite_config_subdir([LALInspiral],[LAL LALFrame LALMetaIO LALSimulation LALBurst])
+lalsuite_config_subdir([LALInference],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral])
+lalsuite_config_subdir([LALPulsar],[LAL LALFrame LALInference])
+lalsuite_config_subdir([LALApps],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral LALPulsar LALInference])
 
-# optionally configure lalapps
-AS_IF([test "x$lalapps" = xtrue],[
-  lalsuite_package_configure_deps="${lalsuite_package_configure_deps} "'$(top_srcdir)/lalapps/configure.ac'
-  lalsuite_config_doxygen([LALApps])
-  AC_CONFIG_SUBDIRS(lalapps)
-  LALAPPS_ENABLE_VAL=ENABLED
-],[
-  LALAPPS_ENABLE_VAL=DISABLED
-])
+# indicate to configure.ac in subdirectories that this is a top-level build
+LALSUITE_BUILD="true"
+export LALSUITE_BUILD
 
 AC_SUBST([ac_configure_args])
 AC_SUBST([lalsuite_package_configure_deps])
@@ -154,8 +183,8 @@ LALSuite has now been successfully configured:
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
 * LALBurst library support is $LALBURST_ENABLE_VAL
 * LALInspiral library support is $LALINSPIRAL_ENABLE_VAL
-* LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
+* LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * LALApps library support is $LALAPPS_ENABLE_VAL
 * Doxygen documentation is $DOXYGEN_ENABLE_VAL
 

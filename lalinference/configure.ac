@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[2.0.7.1],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[3.0.3.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([lib/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,8 +19,8 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[21])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBCURRENT],[22])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalinference${LIBMAJOR}.install:debian/liblalinference.install.in \
@@ -76,12 +77,12 @@ AM_INIT_AUTOMAKE([ \
 # version requirements
 MIN_GLUE_VERSION="1.54.1"
 MIN_LAL_VERSION="7.1.0"
-MIN_LALMETAIO_VERSION="2.0.0"
-MIN_LALFRAME_VERSION="1.5.0"
-MIN_LALSIMULATION_VERSION="2.5.0"
+MIN_LALMETAIO_VERSION="2.1.0"
+MIN_LALFRAME_VERSION="2.0.0"
+MIN_LALSIMULATION_VERSION="3.1.0"
 MIN_LALBURST_VERSION="1.5.3"
 MIN_LALINSPIRAL_VERSION="2.0.0"
-MIN_LALPULSAR_VERSION="3.0.0"
+MIN_PYTHON_LIGO_LW_VERSION="1.7.0"
 AC_SUBST([MIN_GLUE_VERSION])
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALMETAIO_VERSION])
@@ -89,7 +90,7 @@ AC_SUBST([MIN_LALFRAME_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
 AC_SUBST([MIN_LALBURST_VERSION])
 AC_SUBST([MIN_LALINSPIRAL_VERSION])
-AC_SUBST([MIN_LALPULSAR_VERSION])
+AC_SUBST([MIN_PYTHON_LIGO_LW_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -111,7 +112,6 @@ LALSUITE_ENABLE_GCC_FLAGS
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALINSPIRAL
-LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALBURST
 
 # enable SWIG wrapping modules
@@ -151,10 +151,11 @@ LALSUITE_ENABLE_MODULE([MPI])
 
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -163,7 +164,6 @@ LALSUITE_OSX_VERSION_CHECK
 LALSUITE_USE_LIBTOOL
 
 # check for header files
-AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h])
 
 # check for specific functions
@@ -193,7 +193,6 @@ LALSUITE_CHECK_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALLIGOLwHasTable],[
 LALSUITE_CHECK_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[XLALFrStreamOpen],[lal/LALFrStream.h])
 LALSUITE_CHECK_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
 LALSUITE_CHECK_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
 
 # configure SWIG wrapping modules
@@ -219,6 +218,9 @@ AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# make sure local library module is in python path
+LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
 
 # output
 AC_OUTPUT

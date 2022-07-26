@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALPulsar],[3.0.1.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[4.0.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([lib/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,8 +19,8 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[23])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBCURRENT],[25])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalpulsar${LIBMAJOR}.install:debian/liblalpulsar.install.in \
@@ -68,10 +69,12 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.1.0"
-MIN_LALFRAME_VERSION="1.5.0"
+MIN_LAL_VERSION="7.1.5"
+MIN_LALFRAME_VERSION="2.0.0"
+MIN_LALINFERENCE_VERSION="3.0.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
+AC_SUBST([MIN_LALINFERENCE_VERSION])
 
 AC_CANONICAL_HOST
 
@@ -91,12 +94,19 @@ LALSUITE_ENABLE_GCC_FLAGS
 
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
+LALSUITE_ENABLE_LALINFERENCE
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
+
+# enable CUDA
+LALSUITE_WITH_CUDA
+if test "${cuda}" = "true"; then
+  AC_DEFINE([LALPULSAR_CUDA_ENABLED],[1],[Define if using cuda library])
+fi
 
 # enable help2man documentation
 LALSUITE_ENABLE_HELP2MAN
@@ -114,12 +124,16 @@ LALSUITE_PROG_COMPILERS
 LALSUITE_CHECK_SIMD
 LALPULSAR_CHECK_ALTIVEC
 
+# install only a minimal set of ephemeris files
+LALPULSAR_INSTALL_MINIMAL_EPHEM
+
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -128,7 +142,6 @@ LALSUITE_OSX_VERSION_CHECK
 LALSUITE_USE_LIBTOOL
 
 # check for header files
-AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h])
 
 # check for specific functions
@@ -166,12 +179,16 @@ LALSUITE_USE_CFITSIO
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_OPT_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[XLALFrStreamOpen],[lal/LALFrStream.h])
+LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
 
 # configure SWIG wrapping modules
 LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
+
+# configure CUDA
+LALSUITE_USE_CUDA
 
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
@@ -191,6 +208,9 @@ AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
 
+# make sure local library module is in python path
+LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
+
 # output
 AC_OUTPUT
 AC_MSG_NOTICE([
@@ -198,7 +218,10 @@ AC_MSG_NOTICE([
 LALPulsar has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
+* LALFrame library support is $LALFRAME_ENABLE_VAL
+* LALInference library support is $LALINFERENCE_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
+* CUDA support is $CUDA_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL
 * OpenMP acceleration is $OPENMP_ENABLE_VAL

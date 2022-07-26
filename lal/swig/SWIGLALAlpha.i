@@ -1,5 +1,5 @@
 //
-// Copyright (C) 2011--2014 Karl Wette
+// Copyright (C) 2011--2014, 2022 Karl Wette
 //
 // This program is free software; you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,20 @@
 /// \brief SWIG code which must appear \e before the LAL headers.
 /// \author Karl Wette
 ///
+
+///
+/// # Standard output/error redirection
+///
+/// The \b swig_redirect_standard_output_error() function turns on standard output/error redirection
+/// for all LAL libraries. The \c swig_lal_do_redirect_stdouterr variable is defined in
+/// <tt>SWIGSharedVars.c</tt>. See <tt>SWIGCommon.i</tt> for further information.
+///
+
+%inline %{
+void swig_redirect_standard_output_error(void) {
+  swig_lal_do_redirect_stdouterr = 1;
+}
+%}
 
 ///
 /// # Error handling

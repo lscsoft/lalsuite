@@ -778,6 +778,32 @@ void XLALWeaveCacheDestroy(
 }
 
 ///
+/// Determine the mean maximum size obtained by caches
+///
+int XLALWeaveGetCacheMeanMaxSize(
+  REAL4 *cache_mean_max_size,
+  const size_t ncache,
+  WeaveCache *const *cache
+  )
+{
+
+  // Check input
+  XLAL_CHECK( cache_mean_max_size != NULL, XLAL_EFAULT );
+  XLAL_CHECK( ncache > 0, XLAL_ESIZE );
+  XLAL_CHECK( cache != NULL, XLAL_EFAULT );
+
+  // Determine the mean maximum size obtained by caches
+  *cache_mean_max_size = 0;
+  for ( size_t i = 0; i < ncache; ++i ) {
+    *cache_mean_max_size += cache[i]->heap_max_size;
+  }
+  *cache_mean_max_size /= ncache;
+
+  return XLAL_SUCCESS;
+
+}
+
+///
 /// Write various information from caches to a FITS file
 ///
 int XLALWeaveCacheWriteInfo(
@@ -792,14 +818,10 @@ int XLALWeaveCacheWriteInfo(
   XLAL_CHECK( ncache > 0, XLAL_ESIZE );
   XLAL_CHECK( cache != NULL, XLAL_EFAULT );
 
-  // Write total maximum size obtained by relevance heaps
-  {
-    UINT4 heap_max_size = 0;
-    for ( size_t i = 0; i < ncache; ++i ) {
-      heap_max_size += cache[i]->heap_max_size;
-    }
-    XLAL_CHECK_MAIN( XLALFITSHeaderWriteUINT4( file, "cachemax", heap_max_size, "maximum size obtained by cache" ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
+  // Write the mean maximum size obtained by caches
+  REAL4 cache_mean_max_size = 0;
+  XLAL_CHECK( XLALWeaveGetCacheMeanMaxSize( &cache_mean_max_size, ncache, cache ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALFITSHeaderWriteREAL4( file, "cachemmx", cache_mean_max_size, "Mean maximum size obtained by cache" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

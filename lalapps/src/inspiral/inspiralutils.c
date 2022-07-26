@@ -186,30 +186,6 @@ REAL4 XLALCandleDistanceTD(
   return (REAL4)distance;
 }
 
-SummValueTable **add_summvalue_table(SummValueTable **newTable,
-    LIGOTimeGPS gpsStartTime, LIGOTimeGPS gpsEndTime,
-    const CHAR *programName, const CHAR *ifoName,
-    const CHAR *summValueName, const CHAR *comment, REAL8 value
-    )
-{
-  /* add value to summ_value table */
-  *newTable = (SummValueTable *) LALCalloc( 1, sizeof(SummValueTable) );
-  snprintf( (*newTable)->program, LIGOMETA_PROGRAM_MAX,
-      "%s", programName );
-  (*newTable)->version = 0;
-  (*newTable)->start_time = gpsStartTime;
-  (*newTable)->end_time = gpsEndTime;
-  snprintf( (*newTable)->ifo, LIGOMETA_IFO_MAX, "%s", ifoName );
-  snprintf( (*newTable)->name, LIGOMETA_SUMMVALUE_NAME_MAX,
-      "%s", summValueName );
-  snprintf( (*newTable)->comment, LIGOMETA_SUMMVALUE_COMM_MAX,
-      "%s", comment );
-  (*newTable)->value = value;
-
-  return (newTable);
-}
-
-
 
 void AddNumRelStrainModes(  LALStatus              *status,     /**< pointer to LALStatus structure */
                             REAL4TimeVectorSeries  **outStrain, /**< [out]  h+, hx data    */

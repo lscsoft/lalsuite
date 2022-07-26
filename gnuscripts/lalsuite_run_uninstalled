@@ -53,8 +53,11 @@ newlibs="${libs}"
 libs=
 for newlib in ${newlibs}; do
     case ${newlib} in
-        ../*)
+        /*)
+            ;;
+        *)
             newlib="${abs_builddir}/${newlib}"
+            ;;
     esac
     dirpart=`expr "X${newlib}" : "^X\(.*\)/[^/]*"`
     basepart=`expr "X${newlib}" : "^X.*/\([^/]*\)"`
@@ -94,10 +97,10 @@ while :; do
                 /lib/*|/usr/*|/opt/*)
                     continue
                     ;;
-                ../*.la)
-                    newlib="${abs_builddir}/${newlib}"
+                /*.la)
                     ;;
                 *.la)
+                    newlib="${abs_builddir}/${newlib}"
                     ;;
                 *)
                     continue
@@ -150,6 +153,10 @@ if test "x${verbose}" = xyes || test "x${LALSUITE_RUN_UNINSTALLED_VERBOSE}" != x
     echo "========== $0 environment =========="
     eval "${ltcmd} env" 2>/dev/null | sed -n -e '/^LAL/p;/PATH=/p' | sed -e 's/^/environment: /'
     echo "---------- $0 environment ----------"
+    echo
+    echo "========== $0 libtool dry run =========="
+    eval "${ltcmd} --dry-run ${cmd}"
+    echo "---------- $0 libtool dry run ----------"
     echo
     echo "========== $0 command =========="
     echo "${ltcmd} ${cmd}"

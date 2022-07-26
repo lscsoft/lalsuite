@@ -1,4 +1,4 @@
-# Copyright (C) 2009,2010,2016,2017  Kipp Cannon
+# Copyright (C) 2009,2010,2016-2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -24,11 +24,9 @@
 #
 
 
-import math
-import sys
+from tqdm import tqdm
 
 
-from glue.text_progress_bar import ProgressBar
 from lal import iterutils
 from ligo import segments
 
@@ -97,45 +95,39 @@ def cluster_events(events, testfunc, clusterfunc, sortkeyfunc = None, bailoutfun
 	"""
 	# changed indicates if the event list has changed
 	changed = False
-	while True:
-		if verbose:
-			progress = ProgressBar("clustering %d events" % len(events), max = len(events))
-			progress.show()
-		else:
-			progress = None
+	while 1:
+		with tqdm(desc = "clustering %d events" % len(events), total = len(events), disable = not verbose) as progress:
+			if sortkeyfunc is not None:
+				events.sort(key = sortkeyfunc)
 
-		if sortkeyfunc is not None:
-			events.sort(key = sortkeyfunc)
-
-		# outer_did_cluster indicates if the event list changes on
-		# this pass
-		outer_did_cluster = False
-		i = 0
-		while i < len(events):
-			if progress is not None:
-				progress.update(i)
-			if events[i] is None:
-				# this event has been clustered away
-				i += 1
-				continue
-			# inner_did_cluster indicates if events[i] has
-			# changed
-			inner_did_cluster = False
-			for j, event_j in enumerate(events[i + 1:], 1):
-				if event_j is not None:
-					if not testfunc(events[i], event_j):
-						events[i] = clusterfunc(events[i], event_j)
-						events[i + j] = None
-						inner_did_cluster = True
-					elif (sortkeyfunc is not None) and bailoutfunc(events[i], event_j):
-						break
-			if inner_did_cluster:
-				outer_did_cluster = True
-				# don't advance until events[i] stops
-				# changing
-			else:
-				i += 1
-		del progress
+			# outer_did_cluster indicates if the event list changes on
+			# this pass
+			outer_did_cluster = False
+			i = 0
+			while i < len(events):
+				if events[i] is None:
+					# this event has been clustered away
+					i += 1
+					progress.update()
+					continue
+				# inner_did_cluster indicates if events[i] has
+				# changed
+				inner_did_cluster = False
+				for j, event_j in enumerate(events[i + 1:], i + 1):
+					if event_j is not None:
+						if not testfunc(events[i], event_j):
+							events[i] = clusterfunc(events[i], event_j)
+							events[j] = None
+							inner_did_cluster = True
+						elif (sortkeyfunc is not None) and bailoutfunc(events[i], event_j):
+							break
+				if inner_did_cluster:
+					outer_did_cluster = True
+					# don't advance until events[i] stops
+					# changing
+				else:
+					i += 1
+					progress.update()
 		# repeat until we do a pass without the listing changing
 		if not outer_did_cluster:
 			break

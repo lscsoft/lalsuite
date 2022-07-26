@@ -1,72 +1,88 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
-bin_PROGRAMS = lalapps_TwoSpect \
-	lalapps_TwoSpectTemplateBank
+noinst_PROGRAMS = \
+	lalapps_TwoSpect \
+	lalapps_TwoSpectTemplateBank \
+	$(END_OF_LIST)
 
-lalapps_TwoSpect_SOURCES = statistics.c \
-	falsealarm.c \
-	TwoSpectSpecFunc.c \
-	IHS.c\
-	candidates.c \
-	templates.c \
-	antenna.c \
-	vectormath.c \
-	cdfwchisq.c \
-	upperlimits.c \
-	cdfdist.c \
-	SFTfunctions.c \
-	TwoSpect.c \
-	statistics.h \
-	falsealarm.h \
-	TwoSpectSpecFunc.h \
-	IHS.h \
-	candidates.h \
-	templates.h \
-	antenna.h \
-	vectormath.h \
-	cdfwchisq.h \
-	upperlimits.h \
-	cdfdist.h \
-	SFTfunctions.h \
-	TwoSpectTypes.h \
-	TwoSpect.h
-
-lalapps_TwoSpectTemplateBank_SOURCES = TwoSpectTemplateBank.c \
-	templates.c \
-	vectormath.c \
-	TwoSpectSpecFunc.c \
-	statistics.c \
-	templates.h \
-	vectormath.h \
-	TwoSpectSpecFunc.h \
-	statistics.h
-
-EXTRA_PROGRAMS = skygridsetup \
+EXTRA_PROGRAMS = \
 	compareCandidates \
+	computeSignalDetector \
+	skygridsetup \
 	testVectorMath \
-	computeSignalDetector
+	$(END_OF_LIST)
 
-skygridsetup_SOURCES = helperprograms/skygridsetup.c \
-	antenna.c \
-	antenna.h
-
-compareCandidates_SOURCES = helperprograms/compareCandidates.c
-
-testVectorMath_SOURCES = helperprograms/testVectorMath.c \
-	vectormath.c \
-	vectormath.h
-
-computeSignalDetector_SOURCES = helperprograms/computeSignalDetector.c \
+lalapps_TwoSpect_SOURCES = \
+	IHS.c\
+	IHS.h \
+	SFTfunctions.c \
+	SFTfunctions.h \
+	TwoSpect.c \
+	TwoSpect.h \
 	TwoSpectSpecFunc.c \
-	TwoSpectSpecFunc.h
+	TwoSpectSpecFunc.h \
+	TwoSpectTypes.h \
+	antenna.c \
+	antenna.h \
+	candidates.c \
+	candidates.h \
+	cdfdist.c \
+	cdfdist.h \
+	cdfwchisq.c \
+	cdfwchisq.h \
+	falsealarm.c \
+	falsealarm.h \
+	statistics.c \
+	statistics.h \
+	templates.c \
+	templates.h \
+	upperlimits.c \
+	upperlimits.h \
+	vectormath.c \
+	vectormath.h \
+	$(END_OF_LIST)
+
+lalapps_TwoSpectTemplateBank_SOURCES = \
+	TwoSpectSpecFunc.c \
+	TwoSpectSpecFunc.h \
+	TwoSpectTemplateBank.c \
+	statistics.c \
+	statistics.h \
+	templates.c \
+	templates.h \
+	vectormath.c \
+	vectormath.h \
+	$(END_OF_LIST)
+
+skygridsetup_SOURCES = \
+	antenna.c \
+	antenna.h \
+	helperprograms/skygridsetup.c \
+	$(END_OF_LIST)
+
+compareCandidates_SOURCES = \
+	helperprograms/compareCandidates.c \
+	$(END_OF_LIST)
+
+testVectorMath_SOURCES = \
+	helperprograms/testVectorMath.c \
+	vectormath.c \
+	vectormath.h \
+	$(END_OF_LIST)
+
+computeSignalDetector_SOURCES = \
+	TwoSpectSpecFunc.c \
+	TwoSpectSpecFunc.h \
+	helperprograms/computeSignalDetector.c \
+	$(END_OF_LIST)
 
 # Add shell test scripts to this variable
-test_scripts += testTwoSpect.py
+test_scripts +=
 
 # Add any helper programs required by tests to this variable
 test_helpers +=

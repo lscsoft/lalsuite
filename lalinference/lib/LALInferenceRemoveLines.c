@@ -43,8 +43,6 @@
 #include <lal/LALNoiseModels.h>
 #include <lal/XLALError.h>
 #include <lal/GenerateInspiral.h>
-//#include <lal/LIGOLwXMLRead.h>
-//#include <lal/LIGOLwXMLInspiralRead.h>
 
 #include <lal/SeqFactories.h>
 #include <lal/DetectorSite.h>

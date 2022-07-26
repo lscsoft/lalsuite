@@ -449,11 +449,29 @@ void XLALFrameUFrameHFree_FrameC_(LALFrameUFrameH * frame)
     TRY_FRAMEC_FUNCTION_VOID(FrameCFrameHFree, frame);
 }
 
-LALFrameUFrameH *XLALFrameUFrameHAlloc_FrameC_(const char *name, double start, double dt, int frnum)
+LALFrameUFrameH *XLALFrameUFrameHAlloc_FrameC_(const char *name, double start1, double start2, double dt, int frnum)
 {
+    double fp, fp1, fp2;
+    double ip, ip1, ip2;
     frame_h_gtime_t gtime;
-    gtime.sec = (int)start;
-    gtime.nan = (int)floor(0.5 + 1e9 * (start - gtime.sec));
+
+    /* break start time into integer and fractional parts */
+    fp1 = modf(start1, &ip1);
+    fp2 = modf(start2, &ip2);
+    fp = modf(fp1 + fp2, &ip);
+    ip += ip1 + ip2;
+    if (fp < 0.0) { /* make sure fractional part is positive */
+        fp += 1.0;
+        ip -= 1.0;
+    }
+
+    gtime.sec = ip;
+    gtime.nan = floor(0.5 + 1e9 * fp);
+    if (gtime.nan >= 1000000000) { /* handle round-up corner case */
+        gtime.nan -= 1000000000;
+        gtime.sec += 1;
+    }
+
     TRY_FRAMEC_FUNCTION_PTR(FrameCFrameHAlloc, name, gtime, dt, frnum);
 }
 
@@ -644,6 +662,12 @@ int XLALFrameUFrChanSetTimeOffset_FrameC_(LALFrameUFrChan * channel, double time
 {
     fr_chan_time_offset_t offset = timeOffset;
     TRY_FRAMEC_FUNCTION(FrameCFrChanSet, channel, FR_CHAN_FIELD_TIME_OFFSET, offset, FR_CHAN_FIELD_LAST);
+}
+
+int XLALFrameUFrChanSetTRange_FrameC_(LALFrameUFrChan * channel, double tRange)
+{
+    fr_chan_t_range_t dt = tRange;
+    TRY_FRAMEC_FUNCTION(FrameCFrChanSet, channel, FR_CHAN_FIELD_T_RANGE, dt, FR_CHAN_FIELD_LAST);
 }
 
 /*

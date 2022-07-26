@@ -207,17 +207,17 @@ int XLALSimInspiralTaylorF2CoreEcc(
 	case LAL_SIM_INSPIRAL_TIDAL_ORDER_ALL:
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_75PN:
             pft15 = pfa.v[15];
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_7PN:
             pft14 = pfa.v[14];
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_65PN:
             pft13 = pfa.v[13];
-#if __GNUC__ >= 7
+#if __GNUC__ >= 7 && !defined __INTEL_COMPILER
             __attribute__ ((fallthrough));
 #endif
         case LAL_SIM_INSPIRAL_TIDAL_ORDER_6PN:

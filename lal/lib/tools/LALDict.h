@@ -20,6 +20,7 @@
 #ifndef _LAL_DICT_H
 #define _LAL_DICT_H
 
+#include <stdio.h>
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALValue.h>
@@ -30,8 +31,6 @@ extern "C" {
 #elif 0
 }       /* so that editors will match preceding brace */
 #endif
-
-#define LAL_KEYNAME_MAX 31
 
 struct tagLALDictEntry;
 typedef struct tagLALDictEntry LALDictEntry;
@@ -75,7 +74,8 @@ size_t XLALDictSize(const LALDict *dict);
 int XLALDictRemove(LALDict *dict, const char *key);
 int XLALDictInsert(LALDict *dict, const char *key, const void *data, size_t size, LALTYPECODE type);
 int XLALDictInsertValue(LALDict *dict, const char *key, const LALValue *value);
-int XLALDictInsertStringValue(LALDict *dict, const char *key, const char *value);
+int XLALDictInsertBLOBValue(LALDict *dict, const char *key, const void *blob, size_t size);
+int XLALDictInsertStringValue(LALDict *dict, const char *key, const char *string);
 int XLALDictInsertCHARValue(LALDict *dict, const char *key, CHAR value);
 int XLALDictInsertINT2Value(LALDict *dict, const char *key, INT2 value);
 int XLALDictInsertINT4Value(LALDict *dict, const char *key, INT4 value);
@@ -90,6 +90,7 @@ int XLALDictInsertCOMPLEX8Value(LALDict *dict, const char *key, COMPLEX8 value);
 int XLALDictInsertCOMPLEX16Value(LALDict *dict, const char *key, COMPLEX16 value);
 
 LALDictEntry *XLALDictLookup(LALDict *dict, const char *key);
+void * XLALDictLookupBLOBValue(LALDict *dict, const char *key);
 /* warning: shallow pointer */
 const char * XLALDictLookupStringValue(LALDict *dict, const char *key);
 CHAR XLALDictLookupCHARValue(LALDict *dict, const char *key);
@@ -107,6 +108,7 @@ COMPLEX16 XLALDictLookupCOMPLEX16Value(LALDict *dict, const char *key);
 
 REAL8 XLALDictLookupValueAsREAL8(LALDict *dict, const char *key);
 
+char * XLALDictAsStringAppend(char *s, LALDict *dict);
 void XLALDictPrint(LALDict *dict, int fd);
 
 #if 0

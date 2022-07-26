@@ -151,7 +151,7 @@ void IMRPhenomXHM_SetHMWaveformVariables(
       break;
     }
     default:
-      {XLALPrintError("Error in IMRPhenomXHM_SetHMWaveformVariables: mode selected is not currently available. Modes available are ((2,|2|),(2,|1|),(3,|2|),(3,|3|),(4,|4|)).\n");}
+      {XLALPrintError("Error in IMRPhenomXHM_SetHMWaveformVariables: mode (%i,%i) selected is not currently available. Modes available are ((2,|2|),(2,|1|),(3,|2|),(3,|3|),(4,|4|)).\n", wf->ell, wf->emm);}
   }
 
     /* Here we select the version of the fits and of the reconstruction that will be used in the code.

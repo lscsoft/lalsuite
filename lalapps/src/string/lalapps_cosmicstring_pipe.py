@@ -25,10 +25,7 @@ from optparse import OptionParser
 import os
 import sys
 import tempfile
-try:
-	from configparser import ConfigParser
-except ImportError:  # python < 3
-	from ConfigParser import ConfigParser
+from configparser import ConfigParser
 
 
 from glue import pipeline
@@ -367,7 +364,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 				lladd_nodes |= these_lladd_nodes
 
 		#
-		# lalapps_burca pool.  these are the burca jobs that don't
+		# lalburst_coinc pool.  these are the burca jobs that don't
 		# require special clipping command line options, and so can
 		# bulk-process many files with each job
 		#
@@ -379,7 +376,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 			print("done %s %d/%d" % (tag, n + 1, len(time_slides)), file=sys.stderr)
 
 	#
-	# lalapps_binjfind
+	# lalburst_injfind
 	#
 
 	if do_injections:

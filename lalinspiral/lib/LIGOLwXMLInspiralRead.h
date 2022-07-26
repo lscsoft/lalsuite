@@ -57,36 +57,11 @@ SimInspiralTableFromLIGOLw (
     );
 
 int
-SummValueTableFromLIGOLw (
-    SummValueTable **sumHead,
-    CHAR           *fileName
-    );
-
-int
 LALExtTriggerTableFromLIGOLw (
     ExtTriggerTable   **eventHead,
     CHAR               *fileName,
     INT4                startEvent,
     INT4                stopEvent
-    );
-
-int
-XLALReadSummValueFile (
-    SummValueTable **summValueList,
-    CHAR                  *fileName
-    );
-int
-XLALReadInspiralTriggerFile (
-    SnglInspiralTable    **inspiralEventList,
-    SnglInspiralTable    **lastTrigger,
-    SearchSummaryTable   **searchSummList,
-    SearchSummvarsTable  **inputFileList,
-    CHAR                  *fileName
-    );
-
-void
-XLALCleanSummValueTable (
-    SummValueTable **summValueList
     );
 
 #ifdef  __cplusplus

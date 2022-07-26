@@ -105,17 +105,14 @@ void DESTROY_PLAN_FUNCTION(PLAN_TYPE * plan)
 {
     INT8  fftStat;
 
-    if (!plan)
-        XLAL_ERROR_VOID( XLAL_EFAULT );
+    if (plan) {
+        /* destroy intel fft descriptor */
+        fftStat = DftiFreeDescriptor(&(plan->plan));
+        CHECKINTELFFTSTATUS_VOID(fftStat);
 
-    /* destroy intel fft descriptor */
-    fftStat = DftiFreeDescriptor(&(plan->plan));
-    CHECKINTELFFTSTATUS_VOID(fftStat);
-
-    XLALFree(plan->tmp);
-    XLALFree(plan);
-
-    return;
+        XLALFree(plan->tmp);
+        XLALFree(plan);
+    }
 }
 
 

@@ -1265,7 +1265,7 @@ int XLALSimBurstChooseFDWaveformFromCache(
  * avoid re-computation of waveforms that differ only by simple
  * scaling relations in extrinsic parameters.
  */
-LALSimBurstWaveformCache *XLALCreateSimBurstWaveformCache()
+LALSimBurstWaveformCache *XLALCreateSimBurstWaveformCache(void)
 {
     LALSimBurstWaveformCache *cache = XLALCalloc(1,
             sizeof(LALSimBurstWaveformCache));

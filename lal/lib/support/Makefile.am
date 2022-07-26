@@ -53,6 +53,10 @@ liblalsupport_la_SOURCES = \
 	LALgetopt.c \
 	$(END_OF_LIST)
 
+if SWIG_BUILD
+liblalsupport_la_SOURCES += SWIGSharedVars.c
+endif
+
 liblalsupport_la_LIBADD = \
 	libtypeZ.la \
 	libtypeC.la \
@@ -65,7 +69,8 @@ liblalsupport_la_LIBADD = \
 	libtypeU4.la \
 	libtypeU8.la \
 	libtypeCHAR.la \
-	libtype.la
+	libtype.la \
+	$(END_OF_LIST)
 
 noinst_LTLIBRARIES = $(liblalsupport_la_LIBADD)
 
@@ -166,6 +171,8 @@ noinst_HEADERS = \
 	StreamSeriesOutput_source.c \
 	StreamVectorInput_source.c \
 	StreamVectorSequenceInput_source.c \
+	whereami.h \
+	whereami.c \
 	$(END_OF_LIST)
 
 EXTRA_DIST = \

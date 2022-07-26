@@ -377,7 +377,7 @@ class AlignedSpinTemplate(object):
         match the length of the ASD, so its normalization depends on
         its own length.
         """
-        if not self._wf.has_key(df):
+        if not df in self._wf:
             wf = self._compute_waveform(df, self.f_final)
             if ASD is None:
                 ASD = PSD**0.5
@@ -471,7 +471,7 @@ class IMRPhenomDTemplate(IMRAlignedSpinTemplate):
             0, 0, df, # ref phase, ref frequency, df
             self.m1 * MSUN_SI, self.m2 * MSUN_SI,
             self.spin1z, self.spin2z,
-            self.flow, f_final, 1000000 * PC_SI, None)
+            self.flow, f_final, 1000000 * PC_SI, None, lalsim.NRTidalv2NSBH_V)
 
     def _get_dur(self):
         dur = lalsim.SimIMRPhenomDChirpTime(self.m1 * MSUN_SI,
@@ -679,7 +679,7 @@ class PrecessingSpinTemplate(AlignedSpinTemplate):
         match the length of the ASD, so its normalization depends on
         its own length.
         """
-        if not self._wf_hp.has_key(df):
+        if not df in self._wf_hp:
             # Clear self._wf as it won't be needed any more if calling here
             self._wf = {}
             # Generate a new wf

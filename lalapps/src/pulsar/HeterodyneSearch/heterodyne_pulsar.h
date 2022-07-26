@@ -138,7 +138,7 @@ extern "C" {
 
 #define MAXDATALENGTH 256   /* maximum length of data to be read from frames */
 #define MAXSTRLENGTH 1024   /* maximum number of characters in a frame filename */
-#define MAXLISTLENGTH 20000 /* maximum length of a list of frames files */
+#define MAXLISTLENGTH 25000 /* maximum length of a list of frames files */
 
 #define ALPHAMIN 0.0 /* minimum acceptable value of alpha calib coefficient */
 #define ALPHAMAX 2.0 /* maximum acceptable value of alpha calib coefficient */

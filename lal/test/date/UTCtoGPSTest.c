@@ -131,6 +131,26 @@ int main(void)
   utcDate.tm_isdst =  0;
   XLAL_CHECK_MAIN(test(&utcDate, 468979210) == XLAL_SUCCESS, XLAL_EFAILED);
 
+  /* Y2038 check */
+  const time_t max_32bit_unix_time = (time_t)LAL_INT4_MAX;
+  const int max_32bit_unix_time_as_gps = 1831518865;
+  utcDate.tm_year = 138;
+  utcDate.tm_yday =  18;
+  utcDate.tm_wday =   2;
+  utcDate.tm_mon  =   0;
+  utcDate.tm_mday =  19;
+  utcDate.tm_hour =   3;
+  utcDate.tm_min  =  14;
+  utcDate.tm_sec  =   7;
+  utcDate.tm_isdst =  0;
+  XLAL_CHECK_MAIN(XLALSecondsSinceUnixEpoch(&utcDate) == max_32bit_unix_time, XLAL_EFAILED);
+  XLAL_CHECK_MAIN(test(&utcDate, max_32bit_unix_time_as_gps) == XLAL_SUCCESS, XLAL_EFAILED);
+  utcDate.tm_yday =  18;
+  utcDate.tm_wday =   2;
+  utcDate.tm_sec  =   8;
+  XLAL_CHECK_MAIN(XLALSecondsSinceUnixEpoch(&utcDate) == max_32bit_unix_time + 1, XLAL_EFAILED);
+  XLAL_CHECK_MAIN(test(&utcDate, max_32bit_unix_time_as_gps + 1) == XLAL_SUCCESS, XLAL_EFAILED);
+
   LALCheckMemoryLeaks();
 
   return EXIT_SUCCESS;

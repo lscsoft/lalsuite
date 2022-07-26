@@ -127,6 +127,16 @@ int XLALGenerateStringKinkKink(
 );
 
 
+int XLALSimBurstCherenkovRadiation(
+	REAL8TimeSeries **hplus,
+	REAL8TimeSeries **hcross,
+	double f_natural,
+	double beta,
+	double Eover_Rsquared,
+	double deltaT
+	);
+
+
 double XLALSimBurstSineGaussianQ(
 	double duration,
 	double centre_frequency

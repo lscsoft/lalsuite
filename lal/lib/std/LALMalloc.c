@@ -28,6 +28,12 @@
 #include <lal/LALStdio.h>
 #include <lal/LALError.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 /* global variables */
 size_t lalMallocTotal = 0;	/**< current amount of memory allocated by process */
 size_t lalMallocTotalPeak = 0;	/**< peak amount of memory allocated so far */
@@ -104,10 +110,17 @@ void *XLALReallocLong(void *p, size_t n, const char *file, int line)
     return p;
 }
 
-void XLALFree(void *p)
+void (XLALFree) (void *p)
 {
     if (p)
-        LALFree(p);
+        LALFreeShort(p);
+    return;
+}
+
+void XLALFreeLong(void *p, const char *file UNUSED, int line UNUSED)
+{
+    if (p)
+        LALFreeLong(p, file, line);
     return;
 }
 
@@ -177,7 +190,7 @@ void *XLALReallocAlignedLong(void *ptr, size_t size, const char *file, int line)
 	/* need to do a new allocation and a memcpy, inefficient... */
 	ptr = XLALMallocAlignedLong(size, file, line);
 	memcpy(ptr, p, size);
-	XLALFree(p);
+	free(p);
 	return ptr;
 }
 
@@ -196,7 +209,7 @@ void *(XLALReallocAligned)(void *ptr, size_t size)
 	/* need to do a new allocation and a memcpy, inefficient... */
 	ptr = XLALMallocAligned(size);
 	memcpy(ptr, p, size);
-	XLALFree(p);
+	free(p);
 	return ptr;
 }
 
@@ -402,7 +415,7 @@ UNUSED static struct allocNode *FindAlloc(void *p)
 }
 
 
-static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
+static void *PadAlloc(size_t * p, size_t n, int keep, const char *func, const char *file, int line)
 {
     size_t i;
 
@@ -415,8 +428,8 @@ static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
     }
 
     if (lalDebugLevel & LALMEMINFOBIT) {
-        XLALPrintError("%s meminfo: allocating %zu bytes at address %p\n",
-                      func, n, p + nprefix);
+        XLALPrintError("%s meminfo: allocating %zu bytes at address %p in %s:%d\n",
+                       func, n, p + nprefix, file, line);
     }
 
     /* store the size in a known position */
@@ -437,7 +450,7 @@ static void *PadAlloc(size_t * p, size_t n, int keep, const char *func)
 }
 
 
-static void *UnPadAlloc(void *p, int keep, const char *func)
+static void *UnPadAlloc(void *p, int keep, const char *func, const char *file, int line)
 {
     size_t n;
     size_t i;
@@ -449,8 +462,8 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
     }
 
     if (!p || !(q = ((size_t *) p) - nprefix)) {
-        lalRaiseHook(SIGSEGV, "%s error: tried to free NULL pointer\n",
-                     func);
+        lalRaiseHook(SIGSEGV, "%s error: tried to free NULL pointer in %s:%d\n",
+                     func, file, line);
         return NULL;
     }
 
@@ -458,28 +471,28 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
     s = (char *) q;
 
     if (lalDebugLevel & LALMEMINFOBIT) {
-        XLALPrintError("%s meminfo: freeing %zu bytes at address %p\n",
-                      func, n, p);
+        XLALPrintError("%s meminfo: freeing %zu bytes at address %p in %s:%d\n",
+                       func, n, p, file, line);
     }
 
     if (n == (size_t)(-1)) {
         lalRaiseHook(SIGSEGV,
-                     "%s error: tried to free a freed pointer at address %p\n",
-                     func, p);
+                     "%s error: tried to free a freed pointer at address %p in %s:%d\n",
+                     func, p, file, line);
         return NULL;
     }
 
     if (q[1] != magic) {
         lalRaiseHook(SIGSEGV,
-                     "%s error: wrong magic for pointer at address %p\n",
-                     func, p);
+                     "%s error: wrong magic for pointer at address %p in %s:%d\n",
+                     func, p, file, line);
         return NULL;
     }
 
     if (((long) n) < 0) {
         lalRaiseHook(SIGSEGV,
-                     "%s error: corrupt size descriptor for pointer at address %p\n",
-                     func, p);
+                     "%s error: corrupt size descriptor for pointer at address %p in %s:%d\n",
+                     func, p, file, line);
         return NULL;
     }
 
@@ -488,8 +501,9 @@ static void *UnPadAlloc(void *p, int keep, const char *func)
         if (s[i + prefix] != (char) (i ^ padding)) {
             lalRaiseHook(SIGSEGV, "%s error: array bounds overwritten\n"
                          "Byte %ld past end of array has changed\n"
-                         "Corrupted address: %p\nArray address: %p\n",
-                         func, i - n + 1, s + i + prefix, s + prefix);
+                         "Corrupted address: %p\nArray address: %p\n"
+                         "Location: %s:%d\n",
+                         func, i - n + 1, s + i + prefix, s + prefix, file, line);
             return NULL;
         }
     }
@@ -543,7 +557,7 @@ static void *PushAlloc(void *p, size_t n, const char *file, int line)
 }
 
 
-static void *PopAlloc(void *p, const char *func)
+static void *PopAlloc(void *p, const char *func, const char *file, int line)
 {
     if (!(lalDebugLevel & LALMEMTRKBIT)) {
         return p;
@@ -556,7 +570,9 @@ static void *PopAlloc(void *p, const char *func)
     struct allocNode *node = AllocHashTblExtract(&key);
     if (node == NULL) {
         pthread_mutex_unlock(&mut);
-        lalRaiseHook(SIGSEGV, "%s error: alloc %p not found\n", func, p);
+        lalRaiseHook(SIGSEGV, "%s error: alloc %p not found\n"
+                     "Location: %s:%d\n",
+                     func, p, file, line);
         return NULL;
     }
     free(node);
@@ -579,7 +595,9 @@ static void *ModAlloc(void *p, void *q, size_t n, const char *func,
     struct allocNode *node = AllocHashTblExtract(&key);
     if (node == NULL) {
         pthread_mutex_unlock(&mut);
-        lalRaiseHook(SIGSEGV, "%s error: alloc %p not found\n", func, p);
+        lalRaiseHook(SIGSEGV, "%s error: alloc %p not found\n"
+                     "Location: %s:%d\n",
+                     func, p, file, line);
         return NULL;
     }
     node->addr = q;
@@ -613,7 +631,7 @@ void *LALMallocLong(size_t n, const char *file, int line)
     }
 
     p = malloc(allocsz(n));
-    q = PushAlloc(PadAlloc(p, n, 0, "LALMalloc"), n, file, line);
+    q = PushAlloc(PadAlloc(p, n, 0, "LALMalloc", file, line), n, file, line);
     lalMemDbgPtr = lalMemDbgRetPtr = q;
     lalIsMemDbgPtr = lalIsMemDbgRetPtr = (lalMemDbgRetPtr == lalMemDbgUsrPtr);
     if (!q) {
@@ -651,7 +669,7 @@ void *LALCallocLong(size_t m, size_t n, const char *file, int line)
 
     sz = m * n;
     p = malloc(allocsz(sz));
-    q = PushAlloc(PadAlloc(p, sz, 1, "LALCalloc"), sz, file, line);
+    q = PushAlloc(PadAlloc(p, sz, 1, "LALCalloc", file, line), sz, file, line);
     lalMemDbgPtr = lalMemDbgRetPtr = q;
     lalIsMemDbgPtr = lalIsMemDbgRetPtr = (lalMemDbgRetPtr == lalMemDbgUsrPtr);
     if (!q) {
@@ -687,7 +705,7 @@ void *LALReallocLong(void *q, size_t n, const char *file, const int line)
     lalIsMemDbgPtr = lalIsMemDbgArgPtr = (lalMemDbgArgPtr == lalMemDbgUsrPtr);
     if (!q) {
         p = malloc(allocsz(n));
-        q = PushAlloc(PadAlloc(p, n, 0, "LALRealloc"), n, file, line);
+        q = PushAlloc(PadAlloc(p, n, 0, "LALRealloc", file, line), n, file, line);
         if (!q) {
             XLALPrintError("LALMalloc: failed to allocate %zd bytes of memory\n", n);
             XLALPrintError("LALMalloc: %zd bytes of memory already allocated\n", lalMallocTotal);
@@ -702,19 +720,19 @@ void *LALReallocLong(void *q, size_t n, const char *file, const int line)
     }
 
     if (!n) {
-        p = UnPadAlloc(PopAlloc(q, "LALRealloc"), 0, "LALRealloc");
+        p = UnPadAlloc(PopAlloc(q, "LALRealloc", file, line), 0, "LALRealloc", file, line);
         if (p) {
             free(p);
         }
         return NULL;
     }
 
-    p = UnPadAlloc(q, 1, "LALRealloc");
+    p = UnPadAlloc(q, 1, "LALRealloc", file, line);
     if (!p) {
         return NULL;
     }
 
-    q = ModAlloc(q, PadAlloc(realloc(p, allocsz(n)), n, 1, "LALRealloc"), n, "LALRealloc", file, line);
+    q = ModAlloc(q, PadAlloc(realloc(p, allocsz(n)), n, 1, "LALRealloc", file, line), n, "LALRealloc", file, line);
     lalMemDbgPtr = lalMemDbgRetPtr = q;
     lalIsMemDbgPtr = lalIsMemDbgRetPtr = (lalMemDbgRetPtr == lalMemDbgUsrPtr);
 
@@ -723,7 +741,27 @@ void *LALReallocLong(void *q, size_t n, const char *file, const int line)
 
 
 
-void LALFree(void *q)
+/* To avoid a backward-incompatible API change, LALFree() is still available as
+ * a function, so that any dependent libraries that expect to find a function
+ * LALFree() in liblal.so will do so. This function is not declared in
+ * LALMalloc.h, however, which now defines LALFree() as a macro.
+ */
+/** \cond DONT_DOXYGEN */
+void (LALFree)(void *q);
+void (LALFree)(void *q)
+{
+    LALFreeShort(q);
+    return;
+}
+/** \endcond */
+
+void LALFreeShort(void *q)
+{
+    LALFreeLong(q, "unknown", -1);
+    return;
+}
+
+void LALFreeLong(void *q, const char *file, const int line)
 {
     void *p;
     if (q == NULL)
@@ -734,7 +772,7 @@ void LALFree(void *q)
     }
     lalMemDbgPtr = lalMemDbgArgPtr = q;
     lalIsMemDbgPtr = lalIsMemDbgArgPtr = (lalMemDbgArgPtr == lalMemDbgUsrPtr);
-    p = UnPadAlloc(PopAlloc(q, "LALFree"), 0, "LALFree");
+    p = UnPadAlloc(PopAlloc(q, "LALFree", file, line), 0, "LALFree", file, line);
     if (p) {
         free(p);
     }

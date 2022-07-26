@@ -38,11 +38,13 @@ pcc_orbitTimeAsc=1245967374
 pcc_orbitTimeAscBand=20
 pcc_numBins=1
 
-mfd_CL="--fmin=$mfd_fmin --Band=$mfd_Band --Freq=$mfd_Freq --outSFTbname=. --noiseSqrtSh=$mfd_noiseSqrtSh --Alpha=$alphaRad --Delta=$deltaRad --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$mfd_h0 --cosi=$mfd_cosi --psi=$mfd_psi --phi0=$mfd_phi0"
+mkdir -p sfts/
+
+mfd_CL="--fmin=$mfd_fmin --Band=$mfd_Band --Freq=$mfd_Freq --outSFTbname=./sfts --noiseSqrtSh=$mfd_noiseSqrtSh --Alpha=$alphaRad --Delta=$deltaRad --Tsft=$Tsft --startTime=$startTime --duration=$duration --h0=$mfd_h0 --cosi=$mfd_cosi --psi=$mfd_psi --phi0=$mfd_phi0"
 mfd_CL1="${mfd_CL} --IFO=$mfd_ifo1 --randSeed=$mfd_seed1"
 mfd_CL2="${mfd_CL} --IFO=$mfd_ifo2 --randSeed=$mfd_seed2"
 
-pcc_CL="--startTime=$startTime --endTime=$endTime --sftLocation='./*.sft' --fStart=$pcc_fStart --fBand=$pcc_fBand --alphaRad=$alphaRad --deltaRad=$deltaRad --maxLag=$pcc_maxLag --orbitAsiniSec=$pcc_orbitAsiniSec --orbitAsiniSecBand=$pcc_orbitAsiniSecBand --orbitPSec=$pcc_orbitPSec --orbitTimeAsc=$pcc_orbitTimeAsc --orbitTimeAscBand=$pcc_orbitTimeAscBand --numBins=$pcc_numBins"
+pcc_CL="--startTime=$startTime --endTime=$endTime --sftLocation='./sfts/*.sft' --fStart=$pcc_fStart --fBand=$pcc_fBand --alphaRad=$alphaRad --deltaRad=$deltaRad --maxLag=$pcc_maxLag --orbitAsiniSec=$pcc_orbitAsiniSec --orbitAsiniSecBand=$pcc_orbitAsiniSecBand --orbitPSec=$pcc_orbitPSec --orbitTimeAsc=$pcc_orbitTimeAsc --orbitTimeAscBand=$pcc_orbitTimeAscBand --numBins=$pcc_numBins"
 
 ## ---------- Run MFDv4 ----------
 cmdline="$mfd_code $mfd_CL1";
@@ -78,3 +80,6 @@ if ! tmp=`eval $cmdline`; then
 else
     echo "OK."
 fi
+
+rm -rf ./sfts/
+rm -f ./toplist_crosscorr.dat

@@ -9,19 +9,20 @@
 lal/                            @adam-mercer @jolien-creighton @kipp.cannon
 lalframe/                       @adam-mercer @ed-maros @jolien-creighton
 lalmetaio/                      @adam-mercer @jolien-creighton @kipp.cannon
-lalsimulation/                  @kipp.cannon @maria.haney @geraint.pratten @sebastian-khan
+lalsimulation/                  @kipp.cannon @maria.haney @geraint.pratten @vijay.varma
 lalburst/                       @adam-mercer @duncanmmacleod @gabriele-vedovato @kipp.cannon @marco-drago
-lalpulsar/                      @david-keitel @karl-wette @matthew-pitkin
 lalinspiral/                    @adam-mercer @ian-harry @jolien-creighton @kipp.cannon
 lalinference/                   @aaron.zimmerman @bfarr @cjhaster @gregory.ashton @john-veitch @patricia-schmidt @salvatore-vitale @vivien
+lalpulsar/                      @david-keitel @evan-goetz @karl-wette @matthew-pitkin
 
 # lalapps
 lalapps/src/findchirp/          @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/frametools/         @adam-mercer @ed-maros @jolien-creighton
+lalapps/src/hwinjection/        @david-keitel @evan-goetz @karl-wette @matthew-pitkin
 lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
-lalapps/src/power/              @kipp.cannon @soichiro.kuwahara @xavier.siemens
-lalapps/src/pulsar/             @david-keitel @karl-wette @matthew-pitkin
+lalapps/src/power/              @adam-mercer @kipp.cannon @soichiro.kuwahara
+lalapps/src/pulsar/             @david-keitel @evan-goetz @karl-wette @matthew-pitkin
 lalapps/src/ring/               @andrew-williamson @francesco-pannarale @ian-harry
 lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 

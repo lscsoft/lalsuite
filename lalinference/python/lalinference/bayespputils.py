@@ -37,6 +37,7 @@ of the Bayesian parameter estimation codes.
 #standard library imports
 import os
 import sys
+import warnings
 from math import cos,ceil,floor,sqrt,pi as pi_constant
 from xml.dom import minidom
 from operator import itemgetter
@@ -57,7 +58,6 @@ from scipy import signal
 from scipy.optimize import newton
 from scipy import interpolate
 from scipy import integrate
-from numpy import linspace
 import random
 import socket
 from itertools import combinations
@@ -169,7 +169,7 @@ calibParams=['calpha_l1','calpha_h1','calpha_v1','calamp_l1','calamp_h1','calamp
 ## Greedy bin sizes for cbcBPP and confidence leves used for the greedy bin intervals
 confidenceLevels=[0.67,0.9,0.95,0.99]
 
-greedyBinSizes={'mc':0.025,'m1':0.1,'m2':0.1,'mass1':0.1,'mass2':0.1,'mtotal':0.1,'mc_source':0.025,'m1_source':0.1,'m2_source':0.1,'mtotal_source':0.1,'mc_source_maxldist':0.025,'m1_source_maxldist':0.1,'m2_source_maxldist':0.1,'mtotal_source_maxldist':0.1,'eta':0.001,'q':0.01,'asym_massratio':0.01,'iota':0.01,'cosiota':0.02,'time':1e-4,'time_mean':1e-4,'distance':1.0,'dist':1.0,'distance_maxl':1.0,'redshift':0.01,'redshift_maxldist':0.01,'mchirp':0.025,'chirpmass':0.025,'spin1':0.04,'spin2':0.04,'a1z':0.04,'a2z':0.04,'a1':0.02,'a2':0.02,'phi1':0.05,'phi2':0.05,'theta1':0.05,'theta2':0.05,'ra':0.05,'dec':0.05,'chi':0.05,'chi_eff':0.05,'chi_tot':0.05,'chi_p':0.05,'costilt1':0.02,'costilt2':0.02,'thatas':0.05,'costheta_jn':0.02,'beta':0.05,'omega':0.05,'cosbeta':0.02,'ppealpha':1.0,'ppebeta':1.0,'ppelowera':0.01,'ppelowerb':0.01,'ppeuppera':0.01,'ppeupperb':0.01,'polarisation':0.04,'rightascension':0.05,'declination':0.05,'massratio':0.001,'inclination':0.01,'phase':0.05,'tilt1':0.05,'tilt2':0.05,'phi_jl':0.05,'theta_jn':0.05,'phi12':0.05,'flow':1.0,'phase_maxl':0.05,'calamp_l1':0.01,'calamp_h1':0.01,'calamp_v1':0.01,'calpha_h1':0.01,'calpha_l1':0.01,'calpha_v1':0.01,'logdistance':0.1,'psi':0.1,'costheta_jn':0.1,'mf':0.1,'mf_evol':0.1,'mf_source':0.1,'mf_source_evol':0.1,'mf_source_nonevol':0.1,'mf_source_maxldist':0.1,'mf_source_maxldist_evol':0.1,'mf_source_maxldist_nonevol':0.1,'af':0.02,'af_evol':0.02,'af_nonevol':0.02,'afz':0.02,'afz_evol':0.01,'afz_nonevol':0.01,'e_rad':0.1,'e_rad_evol':0.1,'e_rad_nonevol':0.1,'e_rad_maxldist':0.1,'e_rad_maxldist_evol':0.1,'e_rad_maxldist_nonevol':0.1,'l_peak':0.1,'l_peak_evol':0.1,'l_peak_nonevol':0.1}
+greedyBinSizes={'mc':0.025,'m1':0.1,'m2':0.1,'mass1':0.1,'mass2':0.1,'mtotal':0.1,'mc_source':0.025,'m1_source':0.1,'m2_source':0.1,'mtotal_source':0.1,'mc_source_maxldist':0.025,'m1_source_maxldist':0.1,'m2_source_maxldist':0.1,'mtotal_source_maxldist':0.1,'eta':0.001,'q':0.01,'asym_massratio':0.01,'iota':0.01,'cosiota':0.02,'time':1e-4,'time_mean':1e-4,'distance':1.0,'dist':1.0,'distance_maxl':1.0,'redshift':0.01,'redshift_maxldist':0.01,'mchirp':0.025,'chirpmass':0.025,'spin1':0.04,'spin2':0.04,'a1z':0.04,'a2z':0.04,'a1':0.02,'a2':0.02,'phi1':0.05,'phi2':0.05,'theta1':0.05,'theta2':0.05,'ra':0.05,'dec':0.05,'chi':0.05,'chi_eff':0.05,'chi_tot':0.05,'chi_p':0.05,'costilt1':0.02,'costilt2':0.02,'thatas':0.05,'costheta_jn':0.02,'beta':0.05,'omega':0.05,'cosbeta':0.02,'ppealpha':1.0,'ppebeta':1.0,'ppelowera':0.01,'ppelowerb':0.01,'ppeuppera':0.01,'ppeupperb':0.01,'polarisation':0.04,'rightascension':0.05,'declination':0.05,'massratio':0.001,'inclination':0.01,'phase':0.05,'tilt1':0.05,'tilt2':0.05,'phi_jl':0.05,'theta_jn':0.05,'phi12':0.05,'flow':1.0,'phase_maxl':0.05,'calamp_l1':0.01,'calamp_h1':0.01,'calamp_v1':0.01,'calpha_h1':0.01,'calpha_l1':0.01,'calpha_v1':0.01,'logdistance':0.1,'psi':0.1,'costheta_jn':0.1,'mf':0.1,'mf_evol':0.1,'mf_nonevol':0.1,'mf_source':0.1,'mf_source_evol':0.1,'mf_source_nonevol':0.1,'mf_source_maxldist':0.1,'mf_source_maxldist_evol':0.1,'mf_source_maxldist_nonevol':0.1,'af':0.02,'af_evol':0.02,'af_nonevol':0.02,'afz':0.02,'afz_evol':0.01,'afz_nonevol':0.01,'e_rad':0.1,'e_rad_evol':0.1,'e_rad_nonevol':0.1,'e_rad_maxldist':0.1,'e_rad_maxldist_evol':0.1,'e_rad_maxldist_nonevol':0.1,'l_peak':0.1,'l_peak_evol':0.1,'l_peak_nonevol':0.1}
 for s in snrParams:
     greedyBinSizes[s]=0.05
 for derived_time in ['h1_end_time','l1_end_time','v1_end_time','h1l1_delay','l1v1_delay','h1v1_delay']:
@@ -910,9 +910,9 @@ class Posterior(object):
                             'f_ref': lambda inj: self._injFref,
                             'polarisation':lambda inj:inj.polarization,
                             'polarization':lambda inj:inj.polarization,
-                            'h1_end_time':lambda inj:det_end(time('H', inj)),
-                            'l1_end_time':lambda inj:det_end(time('L', inj)),
-                            'v1_end_time':lambda inj:det_end(time('V', inj)),
+                            'h1_end_time':lambda inj:det_end_time('H', inj),
+                            'l1_end_time':lambda inj:det_end_time('L', inj),
+                            'v1_end_time':lambda inj:det_end_time('V', inj),
                             'lal_amporder':lambda inj:inj.amp_order}
 
         # Add on all spin parameterizations
@@ -1657,7 +1657,7 @@ class Posterior(object):
             samps = func(old_post.samples)
             new_post = PosteriorOneDPDF(new_param_names, samps, injected_value=new_inj, trigger_values=new_trigs)
             if new_post.samples.ndim is 0:
-                print("WARNING: No posterior calculated for %s ..." % post.name)
+                print("WARNING: No posterior calculated for %s ..." % new_post.name)
             else:
                 self.append(new_post)
         #MultiD input
@@ -2212,7 +2212,7 @@ class BurstPosterior(Posterior):
                             'centre_frequency':lambda inj:inj.frequency,
                             'quality':lambda inj:inj.q,
                             'hrss':lambda inj:inj.hrss,
-                            'loghrss':lambda inj:log(inj.hrss),
+                            'loghrss':lambda inj:np.log(inj.hrss),
                             'polar_angle':lambda inj:inj.pol_ellipse_angle,
                             'pol_ellipse_angle':lambda inj:inj.pol_ellipse_angle,
                             'pol_ellipse_e':lambda inj:inj.pol_ellipse_e,
@@ -2234,9 +2234,9 @@ class BurstPosterior(Posterior):
                             'polarisation':lambda inj:inj.psi,
                             'polarization':lambda inj:inj.psi,
                             'duration':lambda inj:inj.duration,
-                            'h1_end_time':lambda inj:get_end_time('H', inj),
-                            'l1_end_time':lambda inj:get_end_time('L', inj),
-                            'v1_end_time':lambda inj:get_end_time('V', inj),
+                            'h1_end_time':lambda inj:det_end_time('H', inj),
+                            'l1_end_time':lambda inj:det_end_time('L', inj),
+                            'v1_end_time':lambda inj:det_end_time('V', inj),
                            }
 
         for one_d_posterior_samples,param_name in zip(np.hsplit(common_output_table_raw,common_output_table_raw.shape[1]),common_output_table_header):
@@ -2973,11 +2973,11 @@ class htmlPage(htmlChunk):
 
 
     @property
-    def body():
+    def body(self):
         return self._body
 
     @property
-    def head():
+    def head(self):
         return self._head
 
 
@@ -3766,7 +3766,7 @@ def ang_dist(long1,lat1,long2,lat2):
     x2=np.cos(lat2)*np.cos(long2)
     y2=np.cos(lat2)*np.sin(long2)
     z2=np.sin(lat2)
-    sep=math.acos(x1*x2+y1*y2+z1*z2)
+    sep=np.acos(x1*x2+y1*y2+z1*z2)
     return(sep)
 #
 #
@@ -3829,20 +3829,8 @@ def rotation_matrix(angle, direction):
                           [ direction[2],  0.0,              -direction[0]],
                           [-direction[1],  direction[0],    0.0          ]] ) * sina
     return R
-#
-#
 
-def rotate_vector(R, vec):
-    """
-    Rotate vectors using the given rotation matrices.
-    """
-    if vec.ndim == 1:
-        newVec = np.dot(R[i],vec[i])
-    else:
-        newVec = np.array( [np.dot(R[i],vec[i]) for i in range(len(vec))] )
-    return newVec
-#
-#
+
 def ROTATEZ(angle, vx, vy, vz):
     # This is the ROTATEZ in LALSimInspiral.c.
     tmp1 = vx*np.cos(angle) - vy*np.sin(angle);
@@ -4122,9 +4110,6 @@ def plot_one_param_pdf_kde(fig,onedpos):
         plt.plot(ind,kdepdf,color='green')
     return
 
-def plot_one_param_pdf_line_hist(fig,pos_samps):
-    plt.hist(pos_samps,kdepdf)
-
 
 def plot_one_param_pdf(posterior,plot1DParams,analyticPDF=None,analyticCDF=None,plotkde=False):
     """
@@ -4305,73 +4290,7 @@ class DecFormatter(matplotlib.ticker.FuncFormatter):
     def __init__(self,accuracy='auto'):
         matplotlib.ticker.FuncFormatter.__init__(self,getDecString)
 
-def formatRATicks(locs, accuracy='auto'):
-    """
-    Format locs, ticks to RA angle with given accuracy
-    accuracy can be 'hour', 'min', 'sec', 'all'
-    returns (locs, ticks)
-    'all' does no rounding, just formats the tick strings
-    'auto' will use smallest appropriate units
-    """
-    newmax=max(locs)
-    newmin=min(locs)
-    if(accuracy=='auto'):
-        acc='hour'
-        if abs(newmax-newmin)<pi_constant/12.:
-            acc='min'
-        if abs(newmax-newmin)<pi_constant/(12.*60.):
-            acc='sec'
-    else:
-        acc=accuracy
 
-    if max(locs)>2*pi_constant: newmax=2.0*pi_constant
-    if min(locs)<0.0: newmin=0.0
-    locs=linspace(newmin,newmax,len(locs))
-
-    roundlocs=map(lambda a: roundRadAngle(a, accuracy=acc), locs)
-
-    newlocs=filter(lambda a:a>=0 and a<=2.0*pi_constant, roundlocs)
-    return (list(newlocs), map(getRAString, list(newlocs) ) )
-
-def formatDecTicks(locs, accuracy='auto'):
-    """
-    Format locs to Dec angle with given accuracy
-    accuracy can be 'deg', 'arcmin', 'arcsec', 'all'
-    'all' does no rounding, just formats the tick strings
-    """
-    newmax=max(locs)
-    newmin=min(locs)
-    if(accuracy=='auto'):
-        acc='deg'
-        if abs(newmax-newmin)<pi_constant/360.:
-            acc='arcmin'
-        if abs(newmax-newmin)<pi_constant/(360.*60.):
-            acc='arcsec'
-    else:
-        acc=accuracy
-    if newmax>0.5*pi_constant: newmax=0.5*pi_constant
-    if newmin<-0.5*pi_constant: newmin=-0.5*pi_constant
-    locs=linspace(newmin,newmax,len(locs))
-
-    roundlocs=map(lambda a: roundRadAngle(a, accuracy=acc), locs)
-    newlocs=filter(lambda a:a>=-pi_constant/2.0 and a<=pi_constant/2.0, roundlocs)
-    return (list(newlocs), map(getDecString, list(newlocs) ) )
-
-def roundRadAngle(rads,accuracy='all'):
-    """
-    round given angle in radians to integer hours, degrees, mins or secs
-    accuracy can be 'hour'. 'deg', 'min', 'sec', 'all', all does nothing
-    'arcmin', 'arcsec'
-    """
-    if accuracy=='all': return locs
-    if accuracy=='hour': mult=24
-    if accuracy=='deg': mult=360
-    if accuracy=='min': mult=24*60
-    if accuracy=='sec': mult=24*60*60
-    if accuracy=='arcmin': mult=360*60
-    if accuracy=='arcsec': mult=360*60*60
-    mult=mult/(2.0*pi_constant)
-    return round(rads*mult)/mult
 
 def getRAString(radians,accuracy='auto'):
     secs=radians*12.0*3600/pi_constant
@@ -4666,7 +4585,6 @@ def plot_two_param_kde_greedy_levels(posteriors_by_name,plot2DkdeParams,levels,c
     #locatorX.view_limits(bins[0],bins[-1])
     axes.xaxis.set_major_locator(locatorX)
 
-    fix_axis_names(plt,par1_name,par2_name)
 
     if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
         xmin,xmax=plt.xlim()
@@ -4675,7 +4593,6 @@ def plot_two_param_kde_greedy_levels(posteriors_by_name,plot2DkdeParams,levels,c
         plt.xlim(xmax,xmin)
 
     return fig
-
 
 def plot_two_param_kde(posterior,plot2DkdeParams):
     """
@@ -4721,14 +4638,6 @@ def plot_two_param_kde(posterior,plot2DkdeParams):
     z = kde(grid_coords.T)
     z = z.reshape(Nx,Ny)
 
-    values=[]
-    for level in levels:
-        ilevel = int(Npts*level + 0.5)
-        if ilevel >= Npts:
-            ilevel = Npts-1
-            zvalues.append(densort[ilevel])
-
-            pp.contour(XS, YS, ZS, zvalues)
 
     asp=xax.ptp()/yax.ptp()
 #    if(asp<0.8 or asp > 1.6): asp=1.4
@@ -4757,29 +4666,9 @@ def plot_two_param_kde(posterior,plot2DkdeParams):
     if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
         xmin,xmax=plt.xlim()
         plt.xlim(xmax,xmin)
-    #if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-    #        locs, ticks = plt.xticks()
-    #        (newlocs, newticks)=formatRATicks(locs, ticks)
-    #        plt.xticks(newlocs,newticks,rotation=45)
-    #if(par1_name.lower()=='dec' or par1_name.lower()=='declination'):
-    #        locs, ticks = plt.xticks()
-    #        newlocs, newticks = formatDecTicks(locs)
-    #        plt.xticks(newlocs,newticks,rotation=45)
 
-    #if(par2_name.lower()=='ra' or par2_name.lower()=='rightascension'):
-    #    ymin,ymax=plt.ylim()
-    #    plt.ylim(ymax,ymin)
-    #if(par2_name.lower()=='ra' or par2_name.lower()=='rightascension'):
-    #    locs, ticks = plt.yticks()
-    #    newlocs,newticks=formatRATicks(locs)
-    #    plt.yticks(newlocs,newticks)
-    #if(par2_name.lower()=='dec' or par2_name.lower()=='declination'):
-    #    locs, ticks = plt.yticks()
-    #    newlocs,newticks=formatDecTicks(locs)
-    #    plt.yticks(newlocs,newticks)
 
     return myfig
-#
 
 def get_inj_by_time(injections,time):
     """
@@ -4880,267 +4769,10 @@ def plot_two_param_greedy_bins_contourf(posteriors_by_name,greedy2Params,confide
             twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right')
         for text in twodcontour_legend.get_texts():
             text.set_fontsize('small')
-    fix_axis_names(plt,par1_name,par2_name)
-    return fig
-
-def fix_axis_names(plt,par1_name,par2_name):
-    """
-    Fixes names of axes
-    """
-    return
-
-    # For ra and dec set custom labels and for RA reverse
-    if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-        ymin,ymax=plt.ylim()
-        if(ymin<0.0): ylim=0.0
-        if(ymax>2.0*pi_constant): ymax=2.0*pi_constant
-        plt.ylim(ymax,ymin)
-    if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-        locs, ticks = plt.yticks()
-        newlocs, newticks = formatRATicks(locs)
-        plt.yticks(newlocs,newticks)
-    if(par1_name.lower()=='dec' or par1_name.lower()=='declination'):
-        locs, ticks = plt.yticks()
-        newlocs,newticks=formatDecTicks(locs)
-        plt.yticks(newlocs,newticks)
-
-    if(par2_name.lower()=='ra' or par2_name.lower()=='rightascension'):
-        xmin,xmax=plt.xlim()
-        if(xmin<0.0): xmin=0.0
-        if(xmax>2.0*pi_constant): xmax=2.0*pi_constant
-        plt.xlim(xmax,xmin)
-    if(par2_name.lower()=='ra' or par2_name.lower()=='rightascension'):
-        locs, ticks = plt.xticks()
-        newlocs, newticks = formatRATicks(locs)
-        plt.xticks(newlocs,newticks,rotation=45)
-    if(par2_name.lower()=='dec' or par2_name.lower()=='declination'):
-        locs, ticks = plt.xticks()
-        newlocs, newticks = formatDecTicks(locs)
-        plt.xticks(newlocs,newticks,rotation=45)
-    return plt
-
-def plot_two_param_greedy_bins_contour(posteriors_by_name,greedy2Params,confidence_levels,colors_by_name,line_styles=__default_line_styles,figsize=(4,3),dpi=250,figposition=[0.2,0.2,0.48,0.75],legend='right'):
-    """
-    Plots the confidence level contours as determined by the 2-parameter
-    greedy binning algorithm.
-
-    @param posteriors_by_name: A dict containing Posterior instances referenced by some id.
-
-    @param greedy2Params: a dict ;{param1Name:param1binSize,param2Name:param2binSize}
-
-    @param confidence_levels: a list of the required confidence levels to plot on the contour map.
-
-    @param colors_by_name: A dict of colors cross-referenced to the above Posterior ids.
-
-    @param legend: Argument for legend placement or None for no legend ('right', 'upper left', 'center' etc)
-
-    @param line_styles: list of line styles for credible regions
-
-    @param figsize: figsize to pass to matplotlib
-
-    @param dpi: dpi to pass to matplotlib
-
-    @param figposition: figposition to pass to matplotlib
-
-    """
-
-    fig=plt.figure(1,figsize=figsize,dpi=dpi)
-    plt.clf()
-
-    axes=fig.add_axes(figposition)
-
-    #This fixes the precedence of line styles in the plot
-    if len(line_styles)<len(confidence_levels):
-        raise RuntimeError("Error: Need as many or more line styles to choose from as confidence levels to plot!")
-
-    CSlst=[]
-    name_list=[]
-    for name,posterior in posteriors_by_name.items():
-
-        name_list.append(name)
-        #Extract parameter names
-        par1_name,par2_name=greedy2Params.keys()
-        #Extract bin sizes
-        par1_bin=greedy2Params[par1_name]
-        par2_bin=greedy2Params[par2_name]
-
-        #Extract injection information
-        par1_injvalue=posterior[par1_name.lower()].injval
-        par2_injvalue=posterior[par2_name.lower()].injval
-
-        #Extract trigger information
-        par1_trigvalues=posterior[par1_name.lower()].trigvals
-        par2_trigvalues=posterior[par2_name.lower()].trigvals
-
-        a=np.squeeze(posterior[par1_name].samples)
-        b=np.squeeze(posterior[par2_name].samples)
-
-        #Create 2D bin array
-        par1pos_min=a.min()
-        par2pos_min=b.min()
-
-        par1pos_max=a.max()
-        par2pos_max=b.max()
-
-        par1pos_Nbins= int(ceil((par1pos_max - par1pos_min)/par1_bin))+1
-        par2pos_Nbins= int(ceil((par2pos_max - par2pos_min)/par2_bin))+1
-
-        if par1_name.find('time')!=-1:
-            offset=floor(min(a))
-            a=a-offset
-            if par1_injvalue:
-                par1_injvalue=par1_injvalue-offset
-            ax1_name=par1_name+' + %i'%(int(offset))
-        else: ax1_name=par1_name
-
-        if par2_name.find('time')!=-1:
-            offset=floor(min(b))
-            b=b-offset
-            if par2_injvalue:
-                par2_injvalue=par2_injvalue-offset
-            ax2_name=par2_name+' + %i'%(int(offset))
-        else: ax2_name=par2_name
-
-
-        majorFormatterX=ScalarFormatter(useMathText=True)
-        majorFormatterX.format_data=lambda data:'%.4g'%(data)
-        majorFormatterY=ScalarFormatter(useMathText=True)
-        majorFormatterY.format_data=lambda data:'%.4g'%(data)
-        majorFormatterX.set_scientific(True)
-        majorFormatterY.set_scientific(True)
-        axes.xaxis.set_major_formatter(majorFormatterX)
-        axes.yaxis.set_major_formatter(majorFormatterY)
-
-        H, xedges, yedges = np.histogram2d(a,b, bins=(par1pos_Nbins, par2pos_Nbins),density=True)
-
-        extent = [xedges[0], yedges[-1], xedges[-1], xedges[0]]
-
-        temp=np.copy(H)
-        temp=temp.ravel()
-        confidence_levels.sort()
-        Hsum=0
-        Hlasts=[]
-        idxes=np.argsort(temp)
-        j=len(idxes)-1
-        for cl in confidence_levels:
-            while float(Hsum/np.sum(H))<cl:
-                #ind = np.argsort(temp)
-                max_i=idxes[j]
-                j-=1
-                val = temp[max_i]
-                Hlast=val
-                Hsum+=val
-                temp[max_i]=0
-            Hlasts.append(Hlast)
-        CS=plt.contour(yedges[:-1],xedges[:-1],H,Hlasts,colors=[colors_by_name[name]],linestyles=line_styles)
-        plt.grid()
-        if(par1_injvalue is not None and par2_injvalue is not None):
-            plt.plot([par2_injvalue],[par1_injvalue],'b*',scalex=False,scaley=False,markersize=12)
-        if(par1_trigvalues is not None and par2_trigvalues is not None):
-            par1IFOs = set([IFO for IFO in par1_trigvalues.keys()])
-            par2IFOs = set([IFO for IFO in par2_trigvalues.keys()])
-            IFOs = par1IFOs.intersection(par2IFOs)
-            if IFO=='H1': color = 'r'
-            elif IFO=='L1': color = 'g'
-            elif IFO=='V1': color = 'm'
-            else: color = 'c'
-            plt.plot([par2_trigvalues[IFO]],[par1_trigvalues[IFO]],color=color,marker='*',scalex=False,scaley=False)
-        CSlst.append(CS)
-
-        Nchars=max(map(lambda d:len(majorFormatterX.format_data(d)),axes.get_xticks()))
-        if Nchars>8:
-            Nticks=3
-        elif Nchars>5:
-            Nticks=4
-        elif Nchars>4:
-            Nticks=5
-        else:
-            Nticks=6
-        locatorX=matplotlib.ticker.MaxNLocator(nbins=Nticks-1)
-        if par2_name=='rightascension' or par2_name=='ra':
-            (ramin,ramax)=plt.xlim()
-            locatorX=RALocator(min=ramin,max=ramax)
-            majorFormatterX=RAFormatter()
-        if par2_name=='declination' or par2_name=='dec':
-            (decmin,decmax)=plt.xlim()
-            locatorX=DecLocator(min=decmin,max=decmax)
-            majorFormatterX=DecFormatter()
-        axes.xaxis.set_major_formatter(majorFormatterX)
-        if par1_name=='rightascension' or par1_name=='ra':
-            (ramin,ramax)=plt.ylim()
-            locatorY=RALocator(ramin,ramax)
-            axes.yaxis.set_major_locator(locatorY)
-            majorFormatterY=RAFormatter()
-        if par1_name=='declination' or par1_name=='dec':
-            (decmin,decmax)=plt.ylim()
-            locatorY=DecLocator(min=decmin,max=decmax)
-            majorFormatterY=DecFormatter()
-            axes.yaxis.set_major_locator(locatorY)
-
-        axes.yaxis.set_major_formatter(majorFormatterY)
-        #locatorX.view_limits(bins[0],bins[-1])
-        axes.xaxis.set_major_locator(locatorX)
-
-    #plt.title("%s-%s confidence contours (greedy binning)"%(par1_name,par2_name)) # add a title
-    plt.xlabel(plot_label(ax2_name))
-    plt.ylabel(plot_label(ax1_name))
-
-    if len(name_list)!=len(CSlst):
-        raise RuntimeError("Error number of contour objects does not equal number of names! Use only *one* contour from each set to associate a name.")
-    full_name_list=[]
-    dummy_lines=[]
-
-    for plot_name in name_list:
-        full_name_list.append(plot_name)
-    if len(confidence_levels)>1:
-        for ls_,cl in zip(line_styles[0:len(confidence_levels)],confidence_levels):
-            dummy_lines.append(mpl_lines.Line2D(np.array([0.,1.]),np.array([0.,1.]),ls=ls_,color='k'))
-            full_name_list.append('%s%%'%str(int(cl*100)))
-
-    fig_actor_lst = [cs.collections[0] for cs in CSlst]
-
-    fig_actor_lst.extend(dummy_lines)
-
-    if legend is not None:
-        try:
-            twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right',framealpha=0.1)
-        except:
-            twodcontour_legend=plt.figlegend(tuple(fig_actor_lst), tuple(full_name_list), loc='right')
-        for text in twodcontour_legend.get_texts():
-            text.set_fontsize('small')
-
-
-    # For ra and dec set custom labels and for RA reverse
-    #if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-    #        ymin,ymax=plt.ylim()
-    #        if(ymin<0.0): ylim=0.0
-    #        if(ymax>2.0*pi_constant): ymax=2.0*pi_constant
-    #        plt.ylim(ymax,ymin)
-    #if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-    #        locs, ticks = plt.yticks()
-    #        newlocs, newticks = formatRATicks(locs)
-    #        plt.yticks(newlocs,newticks)
-    #if(par1_name.lower()=='dec' or par1_name.lower()=='declination'):
-    #        locs, ticks = plt.yticks()
-    #        newlocs,newticks=formatDecTicks(locs)
-    #        plt.yticks(newlocs,newticks)
-
-    if(par2_name.lower()=='ra' or par2_name.lower()=='rightascension'):
-        xmin,xmax=plt.xlim()
-        if(xmin<0.0): xmin=0.0
-        if(xmax>2.0*pi_constant): xmax=2.0*pi_constant
-        plt.xlim(xmax,xmin)
-    #if(par2_name.lower()=='ra' or par2_name.lower()=='rightascension'):
-    #    locs, ticks = plt.xticks()
-    #    newlocs, newticks = formatRATicks(locs)
-    #    plt.xticks(newlocs,newticks,rotation=45)
-    #if(par2_name.lower()=='dec' or par2_name.lower()=='declination'):
-    #    locs, ticks = plt.xticks()
-    #    newlocs, newticks = formatDecTicks(locs)
-    #    plt.xticks(newlocs,newticks,rotation=45)
 
     return fig
-#
+
+
 
 def plot_two_param_greedy_bins_hist(posterior,greedy2Params,confidence_levels):
     """
@@ -5288,42 +4920,14 @@ def plot_two_param_greedy_bins_hist(posterior,greedy2Params,confidence_levels):
     if par1_injvalue is not None and par2_injvalue is not None:
         plt.plot([par2_injvalue],[par1_injvalue],'bo',scalex=False,scaley=False)
 
-    if par1_trigvalues is not None and par2_trigvalues is not None:
-        par1IFOs = set([IFO for IFO in par1_trigvalues.keys()])
-        par2IFOs = set([IFO for IFO in par2_trigvalues.keys()])
-        IFOs = par1IFOs.intersection(par2IFOs)
-        if IFO=='H1': color = 'r'
-        elif IFO=='L1': color = 'g'
-        elif IFO=='V1': color = 'm'
-        else: color = 'c'
-        plt.plot([par2_trigvalues[IFO]],[par1_trigvalues[IFO]],color=color,marker='o',scalex=False,scaley=False)
 
-    # For RA and dec set custom labels and for RA reverse
-    #if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-    #        ymin,ymax=plt.ylim()
-    #        plt.ylim(ymax,ymin)
-    #if(par1_name.lower()=='ra' or par1_name.lower()=='rightascension'):
-    #        locs, ticks = plt.yticks()
-    #        newlocs, newticks = formatRATicks(locs)
-    #        plt.yticks(newlocs,newticks)
-    #if(par1_name.lower()=='dec' or par1_name.lower()=='declination'):
-    #        locs, ticks = plt.yticks()
-    #        newlocs, newticks = formatDecTicks(locs)
-    #        plt.yticks(newlocs,newticks)
 
     if(par2_name.lower()=='ra' or par2_name.lower()=='rightascension'):
         xmin,xmax=plt.xlim()
         if(xmin)<0.0: xmin=0.0
         if(xmax>2.0*pi_constant): xmax=2.0*pi_constant
         plt.xlim(xmax,xmin)
-    #if(par2_name.lower()=='ra' or par2_name.lower()=='rightascension'):
-    #    locs, ticks = plt.xticks()
-    #    newlocs, newticks = formatRATicks(locs)
-    #    plt.xticks(newlocs,newticks,rotation=45)
-    #if(par2_name.lower()=='dec' or par2_name.lower()=='declination'):
-    #    locs, ticks = plt.xticks()
-    #    newlocs, newticks = formatDecTicks(locs)
-    #    plt.xticks(newlocs,newticks,rotation=45)
+
 
     return myfig
 
@@ -5427,13 +5031,12 @@ def contigious_interval_one_param(posterior,contInt1Params,confidence_levels):
         try:
             greedyHist[par_binNumber]+=1
         except IndexError:
-            print("IndexError: bin number: %i total bins: %i parsamp: %f bin: %f - %f"\
+            print("IndexError: bin number: %i total bins: %i parsamp: %f bin: %i"\
                 %(
                   par_binNumber,
                   parpos_Nbins,
                   par_samp,
-                  greedyPoints[par_binNumber-1,0],
-                  greedyPoints[par_binNumber-1,0]+par_bin
+                  par_binNumber
                   ))
 
     injbin=None
@@ -5505,12 +5108,6 @@ def contigious_interval_one_param(posterior,contInt1Params,confidence_levels):
         j+=1
 
     return oneDContCL,oneDContInj
-#
-def burnin(data,spin_flag,deltaLogP,outputfile):
-
-    pos,bayesfactor=_burnin(data,spin_flag,deltaLogP,outputfile)
-
-    return pos,bayesfactor
 
 
 class ACLError(Exception):
@@ -5610,7 +5207,7 @@ def readCoincXML(xml_file, trignum):
     snglInsps = lsctables.SnglInspiralTable.get_table(coincXML)
 
     if (trignum>len(coinc)):
-        raise RuntimeError("Error: You asked for trigger %d, but %s contains only %d triggers" %(trignum,coincfile,len(tiggers)))
+        raise RuntimeError("Error: You asked for trigger %d, but %s contains only %d triggers" %(trignum,xml_file,len(coinc)))
     else:
         coincEventID = coinc.getColumnByName('coinc_event_id')[trignum]
         eventIDs = [row.event_id for row in coincMap if row.coinc_event_id == coincEventID]
@@ -5677,9 +5274,7 @@ class PEOutputParser(object):
     inherited by each method .
     """
     def __init__(self,inputtype):
-        if inputtype is 'mcmc_burnin':
-            self._parser=self._mcmc_burnin_to_pos
-        elif inputtype is 'ns':
+        if inputtype is 'ns':
             self._parser=self._ns_to_pos
         elif inputtype is 'common':
             self._parser=self._common_to_pos
@@ -6013,15 +5608,6 @@ class PEOutputParser(object):
             raise RuntimeError("couldn't find line with 'cycle' in LALInferenceMCMC input")
         return runInfo[:-1],headers
 
-
-    def _mcmc_burnin_to_pos(self,files,spin=False,deltaLogP=None):
-        """
-        Parser for SPINspiral output .
-        """
-        raise NotImplementedError
-        if deltaLogP is not None:
-            pos,bayesfactor=burnin(data,spin,deltaLogP,"posterior_samples.dat")
-            return self._common_to_pos(open("posterior_samples.dat",'r'))
 
     def _ns_to_pos(self,files,Nlive=None,Npost=None,posfilename='posterior_samples.dat'):
         """
@@ -6656,7 +6242,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
         skip=0
         try:
             xmldoc = utils.load_filename(siminspiral,contenthandler=lsctables.use_in(ligolw.LIGOLWContentHandler))
-            tbl = lsctables.table.get_table(xmldoc, "sim_inspiral")
+            tbl = lsctables.SimInspiralTable.get_table(xmldoc)
             if event>0:
                 tbl=tbl[event]
             else:
@@ -6787,7 +6373,7 @@ def plot_waveform(pos=None,siminspiral=None,event=0,path=None,ifos=['H1','L1','V
             elif 'distance' in pos.names:
                 D=pos['distance'].samples[which][0]
             elif 'logdistance' in pos.names:
-                D=exp(pos['distance'].samples[which][0])
+                D=np.exp(pos['distance'].samples[which][0])
 
             m1=M1*LAL_MSUN_SI
             m2=M2*LAL_MSUN_SI
@@ -7438,7 +7024,7 @@ def plot_burst_waveform(pos=None,simburst=None,event=0,path=None,ifos=['H1','L1'
             try:
                 hrss=pos['hrss'].samples[which][0]
             except:
-                hrss=exp(pos['loghrss'].samples[which][0])
+                hrss=np.exp(pos['loghrss'].samples[which][0])
             if np.isnan(q) and not np.isnan(dur):
                 q=sqrt(2)*pi*dur
             alpha=None
@@ -7730,8 +7316,11 @@ def make_1d_table(html,legend,label,pos,pars,noacf,GreedyRes,onepdfdir,sampsdir,
         oneDPDFParams={par_name:50}
         try:
             rbins,plotFig=plot_one_param_pdf(pos,oneDPDFParams,pdf,cdf,plotkde=False)
-        except:
-            print("Failed to produce plot for %s."%par_name)
+        except Exception as exc:
+            warnings.warn(
+                f"failed to produce plot for {par_name}: "
+                f"[{type(exc).__name__}] {exc}",
+            )
             continue
 
         figname=par_name+'.png'

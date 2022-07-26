@@ -1,4 +1,4 @@
-# Copyright (C) 2006--2017  Kipp Cannon
+# Copyright (C) 2006--2018  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the

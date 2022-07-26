@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 159
+# serial 166
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -15,6 +15,7 @@ m4_define([uvar_orig_prefix],[lalsuite_uvar_])
 m4_define([uvar_prefix],uvar_orig_prefix)
 
 AC_DEFUN([LALSUITE_ARG_VAR],[
+  AC_ARG_VAR(LAL_BIN_PATH,[Location of LAL executables])
   AC_ARG_VAR(LAL_DATA_PATH,[Location of LAL data files])
   AC_ARG_VAR(LAL_OCTAVE_PATH,[Location of LAL octave files])
   AC_ARG_VAR(LAL_PYTHON_PATH,[Location of LAL python files])
@@ -211,7 +212,10 @@ AC_DEFUN([LALSUITE_ADD_FLAGS],[
         [-L*],[
           AS_CASE([" ${AM_LDFLAGS} "],
             [*" ${flag} "*],[:],
-            [pre_AM_LDFLAGS="${pre_AM_LDFLAGS} ${flag}"]
+            [
+              flag_libdir=`expr "X${flag}" : "X-L\(.*\)"`
+              pre_AM_LDFLAGS="${pre_AM_LDFLAGS} -L${flag_libdir} -R${flag_libdir}"
+            ]
           )
         ],
         [-l*|*.la],[pre_LIBS="${pre_LIBS} ${flag}"],
@@ -322,6 +326,29 @@ AC_DEFUN([LALSUITE_VERSION_CONFIGURE_INFO],[
   # end $0
 ])
 
+AC_DEFUN([LALSUITE_ADD_TESTS_ENV_CONFIG_VAR],[
+  AC_SUBST(TESTS_ENV_CONFIG_VARS)
+  m4_if($2,[true],[
+    AS_CASE([" ${TESTS_ENV_CONFIG_VARS} "],
+      [*" export $1; $1=true; "*],[:],
+      [*" export $1; $1=false; "*],[AC_MSG_ERROR([tried to add inconsistent value of $1=true (already $1=false) to TESTS_ENV_CONFIG_VARS])],
+      [*],[
+        TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=true;"
+        _AS_ECHO_LOG([added $1=true to TESTS_ENV_CONFIG_VARS])
+      ]
+    )
+  ],[
+    AS_CASE([" ${TESTS_ENV_CONFIG_VARS} "],
+      [*" export $1; $1=true; "*],[AC_MSG_ERROR([tried to add inconsistent value of $1=false (already $1=true) to TESTS_ENV_CONFIG_VARS])],
+      [*" export $1; $1=false; "*],[:],
+      [*],[
+        TESTS_ENV_CONFIG_VARS="${TESTS_ENV_CONFIG_VARS} export $1; $1=false;"
+        _AS_ECHO_LOG([added $1=false to TESTS_ENV_CONFIG_VARS])
+      ]
+    )
+  ])
+])
+
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
   # $0: require a C++ compiler
   lalsuite_require_cxx=true
@@ -347,11 +374,14 @@ m4_foreach([lang],[[C++],[Fortran 77],[Fortran]],[
 
 AC_DEFUN([LALSUITE_PROG_COMPILERS],[
   # $0: check for C/C++/Fortran compilers
+  AC_REQUIRE([AC_PROG_CC])
+  AC_REQUIRE([AC_PROG_CPP])
 
   # check for C99 compiler
-  AC_REQUIRE([AC_PROG_CC])
-  AC_REQUIRE([AC_PROG_CC_C99])
-  AC_REQUIRE([AC_PROG_CPP])
+  # NOTE: AC_PROG_CC_C99 is deprecated in autoconf-2.70, so avoid calling it;
+  #       on systems that have 2.70 c99 or greater will be the compiler
+  #       default anyway, so we don't _need_ to use AC_PROG_CC_C99
+  m4_version_prereq([2.70], [], [AC_REQUIRE([AC_PROG_CC_C99])])
 
   # set default CFLAGS
   CFLAGS=
@@ -379,8 +409,8 @@ AC_DEFUN([LALSUITE_PROG_COMPILERS],[
       CXXFLAGS="${CXXFLAGS} -g"
     ])
 
-    # define C99 constant and limit macros for C++ sources
-    CXXFLAGS="${CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS"
+    # define C99 constant, limit, and format macros for C++ sources
+    CXXFLAGS="${CXXFLAGS} -D__STDC_CONSTANT_MACROS -D__STDC_LIMIT_MACROS -D__STDC_FORMAT_MACROS"
 
   ],[
     CXX=
@@ -431,7 +461,7 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   # $0: check for Python
   AC_ARG_ENABLE(
     [python],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-python],
       [build Python programs and modules]
     ),[
@@ -468,8 +498,10 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
   AM_CONDITIONAL([HAVE_PYTHON],[test "x${python}" != xfalse])
   AM_COND_IF([HAVE_PYTHON],[
     PYTHON_ENABLE_VAL=ENABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_PYTHON],[true])
   ],[
     PYTHON_ENABLE_VAL=DISABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_PYTHON],[false])
   ])
   # end $0
 ])
@@ -533,8 +565,10 @@ AC_DEFUN([LALSUITE_ENABLE_MODULE],[
   AM_CONDITIONAL(uppercase,[test "x${lowercase}" = xtrue])
   AS_IF([test "${lowercase}" = "true"],[
     uppercase[]_ENABLE_VAL=ENABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR(uppercase[]_ENABLED,[true])
   ],[
     uppercase[]_ENABLE_VAL=DISABLED
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR(uppercase[]_ENABLED,[false])
   ])
   _AS_ECHO_LOG([module $1 is ${]uppercase[_ENABLE_VAL}])
   m4_popdef([lowercase])
@@ -558,14 +592,16 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
   AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_CFLAGS])
   AS_UNSET([PKG_CONFIG_ALLOW_SYSTEM_LIBS])
 
-  # prepend to CFLAGS, CPPFLAGS, LDFLAGS, LIBS, LAL_DATA_PATH, LAL_OCTAVE_PATH, LAL_PYTHON_PATH, LAL_HTMLDIR
+  # prepend to CFLAGS, CPPFLAGS, LDFLAGS, LIBS, LAL_BIN_PATH, LAL_DATA_PATH, LAL_OCTAVE_PATH, LAL_PYTHON_PATH, LAL_HTMLDIR
   PKG_CHECK_MODULES(uppercase, [lowercase >= $2], [lowercase="true"], [lowercase="false"])
+  PKG_CHECK_VAR(uppercase[]_BIN_PATH, [lowercase >= $2], uppercase[]_BIN_PATH,,)
   PKG_CHECK_VAR(uppercase[]_DATA_PATH, [lowercase >= $2], uppercase[]_DATA_PATH,,)
   PKG_CHECK_VAR(uppercase[]_OCTAVE_PATH, [lowercase >= $2], uppercase[]_OCTAVE_PATH,,)
   PKG_CHECK_VAR(uppercase[]_PYTHON_PATH, [lowercase >= $2], uppercase[]_PYTHON_PATH,,)
   PKG_CHECK_VAR(uppercase[]_HTMLDIR, [lowercase >= $2], htmldir,,)
   if test "$lowercase" = "true"; then
     LALSUITE_ADD_FLAGS([C],$[]uppercase[]_CFLAGS,$[]uppercase[]_LIBS)
+    LALSUITE_ADD_PATH(LAL_BIN_PATH,"$[]uppercase[]_BIN_PATH")
     LALSUITE_ADD_PATH(LAL_DATA_PATH,"$[]uppercase[]_DATA_PATH")
     LALSUITE_ADD_PATH(LAL_OCTAVE_PATH,"$[]uppercase[]_OCTAVE_PATH")
     LALSUITE_ADD_PATH(LAL_PYTHON_PATH,"$[]uppercase[]_PYTHON_PATH")
@@ -734,7 +770,7 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
   BASE_VERSION="${VERSION}"
   AC_ARG_ENABLE(
     [nightly],
-    AC_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
+    AS_HELP_STRING([--enable-nightly],[nightly build [default=no]]),
     [ case "${enableval}" in
         yes) NIGHTLY_VERSION=dev`date -u +"%Y%m%d"`
              VERSION="${BASE_VERSION}-${NIGHTLY_VERSION}" ;;
@@ -751,7 +787,7 @@ AC_DEFUN([LALSUITE_ENABLE_NIGHTLY],
 AC_DEFUN([LALSUITE_ENABLE_ALL_LAL],
 [AC_ARG_ENABLE(
   [all_lal],
-  AC_HELP_STRING([--enable-all-lal],[enable/disable compilation of all LAL libraries]),
+  AS_HELP_STRING([--enable-all-lal],[enable/disable compilation of all LAL libraries]),
   [ case "${enableval}" in
       yes) all_lal=true;;
       no) all_lal=false;;
@@ -764,7 +800,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALFRAME],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalframe],
-  AC_HELP_STRING([--enable-lalframe],[compile code that requires lalframe library [default=yes]]),
+  AS_HELP_STRING([--enable-lalframe],[compile code that requires lalframe library [default=yes]]),
   [ case "${enableval}" in
       yes) lalframe=true;;
       no) lalframe=false;;
@@ -777,7 +813,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALMETAIO],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalmetaio],
-  AC_HELP_STRING([--enable-lalmetaio],[compile code that requires lalmetaio library [default=yes]]),
+  AS_HELP_STRING([--enable-lalmetaio],[compile code that requires lalmetaio library [default=yes]]),
   [ case "${enableval}" in
       yes) lalmetaio=true;;
       no) lalmetaio=false;;
@@ -790,7 +826,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALSIMULATION],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalsimulation],
-  AC_HELP_STRING([--enable-lalsimulation],[compile code that requires lalsimulation library [default=yes]]),
+  AS_HELP_STRING([--enable-lalsimulation],[compile code that requires lalsimulation library [default=yes]]),
   [ case "${enableval}" in
       yes) lalsimulation=true;;
       no) lalsimulation=false;;
@@ -803,7 +839,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALBURST],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalburst],
-  AC_HELP_STRING([--enable-lalburst],[compile code that requires lalburst library [default=yes]]),
+  AS_HELP_STRING([--enable-lalburst],[compile code that requires lalburst library [default=yes]]),
   [ case "${enableval}" in
       yes) lalburst=true;;
       no) lalburst=false;;
@@ -816,7 +852,7 @@ AC_DEFUN([LALSUITE_ENABLE_LALINSPIRAL],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalinspiral],
-  AC_HELP_STRING([--enable-lalinspiral],[compile code that requires lalinspiral library [default=yes]]),
+  AS_HELP_STRING([--enable-lalinspiral],[compile code that requires lalinspiral library [default=yes]]),
   [ case "${enableval}" in
       yes) lalinspiral=true;;
       no) lalinspiral=false;;
@@ -825,24 +861,11 @@ AC_ARG_ENABLE(
   ], [ lalinspiral=${all_lal:-true} ] )
 ])
 
-AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
-[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
-AC_ARG_ENABLE(
-  [lalpulsar],
-  AC_HELP_STRING([--enable-lalpulsar],[compile code that requires lalpulsar library [default=yes]]),
-  [ case "${enableval}" in
-      yes) lalpulsar=true;;
-      no) lalpulsar=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalpulsar) ;;
-    esac
-  ], [ lalpulsar=${all_lal:-true} ] )
-])
-
 AC_DEFUN([LALSUITE_ENABLE_LALINFERENCE],
 [AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
 AC_ARG_ENABLE(
   [lalinference],
-  AC_HELP_STRING([--enable-lalinference],[compile code that requires lalinference library [default=yes]]),
+  AS_HELP_STRING([--enable-lalinference],[compile code that requires lalinference library [default=yes]]),
   [ case "${enableval}" in
       yes) lalinference=true;;
       no) lalinference=false;;
@@ -851,11 +874,24 @@ AC_ARG_ENABLE(
   ], [ lalinference=${all_lal:-true} ] )
 ])
 
+AC_DEFUN([LALSUITE_ENABLE_LALPULSAR],
+[AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
+AC_ARG_ENABLE(
+  [lalpulsar],
+  AS_HELP_STRING([--enable-lalpulsar],[compile code that requires lalpulsar library [default=yes]]),
+  [ case "${enableval}" in
+      yes) lalpulsar=true;;
+      no) lalpulsar=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-lalpulsar) ;;
+    esac
+  ], [ lalpulsar=${all_lal:-true} ] )
+])
+
 AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
   AC_REQUIRE([LALSUITE_ENABLE_ALL_LAL])
   AC_ARG_ENABLE(
     [lalapps],
-    AC_HELP_STRING([--enable-lalapps],[compile lalapps [default=yes]]),
+    AS_HELP_STRING([--enable-lalapps],[compile lalapps [default=yes]]),
     [
       case "${enableval}" in
         yes) lalapps=true ;;
@@ -869,19 +905,33 @@ AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
 ])
 
 AC_DEFUN([LALSUITE_WITH_CUDA],[
-AC_ARG_WITH(
-  [cuda],
-  AC_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),[
-    AS_CASE([${with_cuda}],
-      [no],[cuda=false],
-      [yes],[cuda=true; cuda_path=/opt/cuda],
-      [cuda=true; cuda_path=${with_cuda}]
-    )
-  ],[
-    cuda=false
-  ])
+  AC_ARG_WITH(
+    [cuda],
+    AS_HELP_STRING([--with-cuda=PATH],[specify location of CUDA [/opt/cuda]]),
+    [
+      AS_CASE([${with_cuda}],
+        [no],[cuda=false],
+        [yes],[cuda=true; cuda_path=/opt/cuda],
+        [cuda=true; cuda_path=${with_cuda}]
+      )
+    ],[
+      cuda=false
+    ]
+  )
+  AC_ARG_WITH(
+    [nvcc_cflags],
+    AS_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
+    [
+      NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"
+    ]
+  )
   AS_IF([test "${cuda}" = true],[
     LALSUITE_REQUIRE_CXX
+  ])
+])
+
+AC_DEFUN([LALSUITE_USE_CUDA],[
+  AS_IF([test "${cuda}" = true],[
     AC_MSG_NOTICE([Using ${with_cuda} as CUDA path])
     AS_CASE([$build_os],
       [linux*],[
@@ -893,9 +943,9 @@ AC_ARG_WITH(
       ],
       [cuda_libdir=lib]
     )
-    CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -Wl,-rpath -Wl,${cuda_path}/${cuda_libdir} -lcufft -lcudart"
+    CUDA_LIBS="-L${cuda_path}/${cuda_libdir} -lcufft -lcudart"
     CUDA_CFLAGS="-I${with_cuda}/include"
-    LALSUITE_ADD_FLAGS([C],${CUDA_CFLAGS},${CUDA_LIBS})
+    LALSUITE_ADD_FLAGS([C],[${CUDA_CFLAGS}],[${CUDA_LIBS}])
     AC_SUBST(CUDA_LIBS)
     AC_SUBST(CUDA_CFLAGS)
     AC_PATH_PROGS(NVCC,[nvcc],[],[${cuda_path}/bin:${PATH}])
@@ -905,13 +955,6 @@ AC_ARG_WITH(
     AC_SUBST(NVCC_CFLAGS)
   ])
   LALSUITE_ENABLE_MODULE([CUDA])
-  AC_ARG_WITH(
-    [nvcc_cflags],
-    AC_HELP_STRING([--with-nvcc-cflags=NVCC_CFLAGS],[NVCC compiler flags]),
-    [
-      NVCC_CFLAGS="$NVCC_CFLAGS ${with_nvcc_cflags}"
-    ]
-  )
 ])
 
 
@@ -919,7 +962,8 @@ AC_DEFUN([LALSUITE_CHECK_GSL_VERSION],[
   # $0: check for GSL version
   lal_min_gsl_version=m4_normalize([$1])
   AC_MSG_CHECKING(for GSL version >= $lal_min_gsl_version)
-  AC_TRY_RUN([
+  AC_RUN_IFELSE(
+    [AC_LANG_SOURCE([[
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -944,13 +988,10 @@ int main(void)
   }
   return 0;
 }
-  ],[
-    AC_MSG_RESULT([yes])
-  ],[
-    AC_MSG_ERROR([could not find required version of GSL])
-  ],[
-    AC_MSG_WARN([cross compiling; assumed OK...])
-  ])
+]])],
+    [AC_MSG_RESULT([yes])],
+    [AC_MSG_ERROR([could not find required version of GSL])],
+    [AC_MSG_WARN([cross compiling; assumed OK...])])
   # end $0
 ])
 
@@ -958,7 +999,7 @@ AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],[
   # $0: enable/disable fast/inline GSL code
   AC_ARG_ENABLE(
     [fast_gsl],
-    AC_HELP_STRING([--enable-fast-gsl],[enable fast/inline GSL code [default=no]]),
+    AS_HELP_STRING([--enable-fast-gsl],[enable fast/inline GSL code [default=no]]),
     AS_CASE(["${enableval}"],
       [yes],[
         AC_DEFINE([HAVE_INLINE],[1],[Define to 1 to use inline code])
@@ -975,7 +1016,7 @@ AC_DEFUN([LALSUITE_ENABLE_FAST_GSL],[
 AC_DEFUN([LALSUITE_ENABLE_OSX_VERSION_CHECK],
 [AC_ARG_ENABLE(
   [osx_version_check],
-  AC_HELP_STRING([--enable-osx-version-check],[disable OS X version check [default=yes]]),
+  AS_HELP_STRING([--enable-osx-version-check],[disable OS X version check [default=yes]]),
   AS_CASE(["${enableval}"],
     [yes],[osx_version_check=true],
     [no],[osx_version_check=false],
@@ -1000,14 +1041,14 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
 
 AC_DEFUN([LALSUITE_CHECK_CUDA],
 [AC_MSG_CHECKING([whether LAL has been compiled with CUDA support])
-AC_TRY_RUN([
+AC_RUN_IFELSE([AC_LANG_SOURCE([[
 #include <lal/LALConfig.h>
 #ifdef LAL_CUDA_ENABLED
 int main( void ) { return 0; }
 #else
 int main( void ) { return 1; }
 #endif
-],
+]])],
 AC_MSG_RESULT([yes])
 [cuda=true],
 AC_MSG_RESULT([no])
@@ -1020,7 +1061,7 @@ AC_DEFUN([LALSUITE_ENABLE_DOXYGEN],[
   # $0: enable Doxygen documentation
   AC_ARG_ENABLE(
     [doxygen],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--enable-doxygen],
       [generate Doxygen documentation]
     ),[
@@ -1043,7 +1084,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
   # add configuration option for MathJax installation
   AC_ARG_WITH(
     [mathjax],
-    AC_HELP_STRING(
+    AS_HELP_STRING(
       [--with-mathjax=PATH],
       [use MathJax installation at PATH [default: use CDN]]
     ),[
@@ -1237,6 +1278,9 @@ double volatile d = round(c);
       # add to list of supported instruction sets
       simd_supported="${simd_supported} iset"
 
+      LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_]symbol[_COMPILER],[true])
+    ],[
+      LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HAVE_]symbol[_COMPILER],[false])
     ])
 
     m4_popdef([option])
@@ -1265,7 +1309,7 @@ AC_DEFUN([LALSUITE_ENABLE_CFITSIO],[
   # $0: enable/disable cfitsio library
   AC_ARG_ENABLE(
     [cfitsio],
-    AC_HELP_STRING([--enable-cfitsio],[compile code that requires cfitsio library [default=yes]]),
+    AS_HELP_STRING([--enable-cfitsio],[compile code that requires cfitsio library [default=yes]]),
     AS_CASE(["${enableval}"],
       [yes],[cfitsio=true],
       [no],[cfitsio=false],
@@ -1301,7 +1345,7 @@ AC_DEFUN([LALSUITE_CHECK_PAGER],[
   # $0: check for pager programs and required functions
   AC_ARG_WITH(
     [pager],
-    AC_HELP_STRING([--with-pager=PAGER],[specify pager program [default: less/more]]),
+    AS_HELP_STRING([--with-pager=PAGER],[specify pager program [default: less/more]]),
     [
       AS_CASE([${with_pager}],
         [no],[pager="false"],
@@ -1367,7 +1411,7 @@ AC_DEFUN([LALSUITE_ENABLE_HELP2MAN],[
   )
   AC_ARG_ENABLE(
     [help2man],
-    AC_HELP_STRING([--enable-help2man],[automatically generate man pages with help2man @<:@default=yes@:>@]),
+    AS_HELP_STRING([--enable-help2man],[automatically generate man pages with help2man @<:@default=yes@:>@]),
     AS_CASE([${enableval}],
       [yes], [],
       [no], [HELP2MAN=],
@@ -1436,7 +1480,7 @@ AC_DEFUN([LALSUITE_ENABLE_OPENMP],[
 AC_DEFUN([LALSUITE_ENABLE_MPI],
 [AC_ARG_ENABLE(
   [mpi],
-  AC_HELP_STRING([--enable-mpi],[compile using MPI for supported codes [default=no]]),
+  AS_HELP_STRING([--enable-mpi],[compile using MPI for supported codes [default=no]]),
   [ case "${enableval}" in
       yes) mpi=true;;
       no)  mpi=false;;

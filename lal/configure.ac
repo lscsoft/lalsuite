@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LAL],[7.1.2.1],[lal-discuss@ligo.org])
+AC_INIT([LAL],[7.1.7.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALConfig.h])
 AC_CONFIG_SRCDIR([lib/std/LALStdio.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[21])
-AC_SUBST([LIBREVISION],[2])
+AC_SUBST([LIBREVISION],[3])
 AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -59,6 +59,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblal${LIBMAJOR}.install:debian/liblal.install.in \
@@ -122,10 +123,6 @@ AM_INIT_AUTOMAKE([ \
   no-dist-gzip \
 ])
 
-# version requirements
-MIN_GLUE_VERSION="1.54.1"
-AC_SUBST([MIN_GLUE_VERSION])
-
 AC_CANONICAL_HOST
 
 LALSUITE_CHECK_GIT_REPO
@@ -134,11 +131,10 @@ LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 LAL_ENABLE_INTELFFT
 LAL_ENABLE_FFTW3_MEMALIGN
 
-LALSUITE_WITH_CUDA
-
 LALSUITE_ENABLE_GCC_FLAGS
 
 LAL_WITH_DEFAULT_DEBUG_LEVEL
+LAL_WITH_DATA_PATH
 LAL_ENABLE_MACROS
 LAL_ENABLE_PTHREAD_LOCK
 LALSUITE_ENABLE_NIGHTLY
@@ -150,6 +146,12 @@ LALSUITE_ENABLE_SWIG
 
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
+
+# enable CUDA
+LALSUITE_WITH_CUDA
+if test "${cuda}" = "true"; then
+  AC_DEFINE([LAL_CUDA_ENABLED],[1],[Define if using cuda library])
+fi
 
 # enable help2man documentation
 LALSUITE_ENABLE_HELP2MAN
@@ -168,10 +170,11 @@ LALSUITE_CHECK_SIMD
 
 # check for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -196,7 +199,6 @@ case "${host_os}" in
 esac
 
 # check for system headers files
-AC_HEADER_STDC
 AC_CHECK_HEADERS([sys/time.h sys/resource.h unistd.h malloc.h regex.h glob.h execinfo.h])
 AC_CHECK_HEADERS([stdint.h],,[AC_MSG_ERROR([could not find stdint.h])])
 AC_CHECK_HEADERS([inttypes.h],,[AC_MSG_ERROR([could not find inttypes.h])])
@@ -261,21 +263,18 @@ else
   fi
   AC_CHECK_HEADERS([mkl_dfti.h],,[AC_MSG_ERROR([could not find the Intel FFT header])])
 fi
-
-# check for fft headers
-if test "${intelfft}" = "false" ; then
-  AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find the fftw3.h header])])
-fi
-
-# define what is being enabled
-if test "${cuda}" = "true"; then
-  AC_DEFINE([LAL_CUDA_ENABLED],[1],[Define if using cuda library])
-fi
 if test "${fftw3}" = "true"; then
   AC_DEFINE([LAL_FFTW3_ENABLED],[1],[Define if using fftw3 library])
   if test "${fftw3_memalign}" = "true"; then
     AC_DEFINE([LAL_FFTW3_MEMALIGN_ENABLED],[1],[Define if using fftw3 library])
   fi
+fi
+LALSUITE_ENABLE_MODULE([INTELFFT])
+LALSUITE_ENABLE_MODULE([FFTW3])
+
+# check for fft headers
+if test "${intelfft}" = "false" ; then
+  AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find the fftw3.h header])])
 fi
 
 # check for hdf5 support
@@ -299,12 +298,18 @@ AC_C_CONST
 AC_C_STRINGIZE
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
-AC_HEADER_TIME
 
 # checks for library functions
-AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace clock_gettime])
+AC_CHECK_FUNCS([gmtime_r localtime_r stat putenv posix_memalign backtrace])
 
 # check for CPU timer
+LALSUITE_PUSH_UVARS
+LALSUITE_CLEAR_UVARS
+AC_SEARCH_LIBS([clock_gettime],[rt])
+clock_gettime_LIBS="${LIBS}"
+LALSUITE_POP_UVARS
+LALSUITE_ADD_FLAGS([C],[],[${clock_gettime_LIBS}])
+AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_DECLS([CLOCK_PROCESS_CPUTIME_ID],,,[AC_INCLUDES_DEFAULT
 #include <time.h>
 ])
@@ -319,7 +324,7 @@ m4_pushdef([includes],[AC_INCLUDES_DEFAULT
 #include <sys/ioctl.h>
 #endif
 ])
-AC_CHECK_FUNCS([isatty fileno ioctl],,,includes)
+AC_CHECK_FUNCS([isatty dprintf fileno ioctl],,,includes)
 AC_CHECK_DECLS([TIOCGWINSZ],,,includes)
 AC_CHECK_MEMBERS([struct winsize.ws_col],,,includes)
 m4_popdef([includes])
@@ -333,6 +338,9 @@ LALSUITE_USE_SWIG
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
+
+# configure CUDA
+LALSUITE_USE_CUDA
 
 # add gcc specific flags --- must be done at end or tests will break!
 LALSUITE_ADD_GCC_FLAGS
@@ -348,6 +356,9 @@ AM_CPPFLAGS="-I\$(top_builddir)/include -I\$(top_srcdir)/lib ${AM_CPPFLAGS}"
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# make sure local library module is in python path
+LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
 
 # output
 AC_OUTPUT

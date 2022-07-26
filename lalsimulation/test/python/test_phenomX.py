@@ -184,7 +184,7 @@ def test_IMRPhenomXPHM():
     np.testing.assert_allclose(new_result, expected_result, rtol=1e-5, err_msg="IMRPhenomXPHM no 32 mode test failed")
 
 
-    expected_result = np.array([68.09797391055203, 235.35545843385682, 24.39359538033152, 229.92386957103975])
+    expected_result = np.array([68.9282789725476, 240.20999880535206, 25.111569754767224, 234.7465084316962])
 
     new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[3,2]]))
 

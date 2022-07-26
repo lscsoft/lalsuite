@@ -83,6 +83,11 @@ WeaveCache *XLALWeaveCacheCreate(
 void XLALWeaveCacheDestroy(
   WeaveCache *cache
   );
+int XLALWeaveGetCacheMeanMaxSize(
+  REAL4 *cache_mean_max_size,
+  const size_t ncache,
+  WeaveCache *const *cache
+  );
 int XLALWeaveCacheWriteInfo(
   FITSFile *file,
   const size_t ncache,

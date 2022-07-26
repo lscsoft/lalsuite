@@ -143,7 +143,9 @@ PPUNITS = {'F':            u.Hz,                     # Hz
            'HVECTORX_F':   u.dimensionless_unscaled,
            'HVECTORY_F':   u.dimensionless_unscaled,
            'PSIVECTOR_F':  u.rad,                    # radians
-           'PHI0VECTOR_F': u.rad                     # radians
+           'PHI0VECTOR_F': u.rad,                    # radians
+           'TRANSIENTSTARTTIME': u.s,                # GPS seconds
+           'TRANSIENTTAU': u.s,                      # seconds
           }
 
 # set units of parameters in a TEMPO-style parameter file if different from above
@@ -181,7 +183,9 @@ TEMPOUNITS = {'DIST':      u.kpc,                  # kpc
               'WAVEEPOCH': u.d,                    # MJD(TT) (days)
               'START':     u.d,                    # MJD(TT) (days)
               'FINISH':    u.d,                    # MJD(TT) (days)
-              'TRES':      u.us                    # microsecs
+              'TRES':      u.us,                   # microsecs
+              'TRANSIENTSTARTTIME': u.d,           # MJD(TT) (day)
+              'TRANSIENTTAU': u.d,                 # days
              }
 
 # set units of error values in tempo if different from above
@@ -443,7 +447,8 @@ class PulsarParametersPy(object):
                      'START',
                      'FINISH',
                      'DMEPOCH',
-                     'GLEP']
+                     'GLEP',
+                     'TRANSIENTSTARTTIME']
 
         uname = name.upper()
 

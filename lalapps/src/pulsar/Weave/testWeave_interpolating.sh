@@ -4,7 +4,7 @@ export LAL_FSTAT_FFT_PLAN_MODE=ESTIMATE
 
 echo "=== Create search setup with 3 segments spanning ~260 days ==="
 set -x
-lalapps_WeaveSetup --ephem-earth=earth00-19-DE405.dat.gz --ephem-sun=sun00-19-DE405.dat.gz --first-segment=1122332211/90000 --segment-count=3 --segment-gap=11130000 --detectors=H1,L1 --output-file=WeaveSetup.fits
+lalapps_WeaveSetup --ephem-earth=earth00-40-DE405.dat.gz --ephem-sun=sun00-40-DE405.dat.gz --first-segment=1122332211/90000 --segment-count=3 --segment-gap=11130000 --detectors=H1,L1 --output-file=WeaveSetup.fits
 lalapps_fits_overview WeaveSetup.fits
 set +x
 echo
@@ -41,7 +41,7 @@ lalapps_Weave --output-file=WeaveOut.fits \
     --extra-statistics="coh2F,coh2F_det,mean2F_det,ncount,ncount_det" --lrs-Fstar0sc=2000 --lrs-oLGX=4,0.1 \
     --toplist-tmpl-idx --segment-info --time-search \
     --setup-file=WeaveSetup.fits --sft-files='*.sft' \
-    --Fstat-run-med-window=50 \
+    --Fstat-method=ResampBest --Fstat-run-med-window=50 \
     --alpha=2.3/0.05 --delta=-1.2/0.1 --freq=50.5~0.005 --f1dot=-3e-10,0 \
     --semi-max-mismatch=6.5 --coh-max-mismatch=0.4
 lalapps_fits_overview WeaveOut.fits
@@ -72,6 +72,7 @@ echo
 ### Make updating reference results a little easier ###
 mkdir newtarball/
 cd newtarball/
+cp ../all-timestamps-1.txt ../all-timestamps-2.txt .
 cp ../RefSeg1Exact.txt ../RefSeg2Exact.txt ../RefSeg3Exact.txt .
 cp ../WeaveOut.fits RefWeaveOut.fits
 tar zcf ../new_testWeave_interpolating.tar.gz *
@@ -80,11 +81,11 @@ rm -rf newtarball/
 
 echo "=== Compare semicoherent F-statistics from lalapps_Weave to reference results ==="
 set -x
-if env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits; then
+if lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits; then
     exitcode=0
 else
     exitcode=77
-    env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
+    lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
 fi
 set +x
 echo

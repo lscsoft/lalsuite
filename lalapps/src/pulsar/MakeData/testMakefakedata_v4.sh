@@ -98,9 +98,7 @@ echo "... and extracting the relevant frequency band ..."
 echo
 
 ## extract relevant frequency-band
-fmax2=`echo "${fmax} + 0.0006" | bc`   ## add 0.0006 to bandwidth to get same number of SFT bins as MDFv4
-Band2=`echo "${Band} + 0.0006" | bc`   ## add 0.0006 to bandwidth to get same number of SFT bins as MDFv4
-extractCL="-fs $fmin -fe $fmax2 -fb $Band2 -n ${testDIR3} -- $testDIR3/*.sft"
+extractCL="-fs $fmin -fe $fmax -fb $Band -n ${testDIR3} -- $testDIR3/*.sft"
 cmdline="$extractCODE $extractCL"
 echo $cmdline;
 if ! eval $cmdline; then

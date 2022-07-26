@@ -77,8 +77,6 @@ extern "C" {
 #define LIGOMETA_CHANNEL_MAX 65
 #define LIGOMETA_FRAMESETG_MAX 49
 #define LIGOMETA_SEGMENTG_MAX 49
-#define LIGOMETA_SUMMVALUE_NAME_MAX 129
-#define LIGOMETA_SUMMVALUE_COMM_MAX 81
 #define LIGOMETA_UNIQUE_MAX 65
 #define LIGOMETA_DBUNIQUE_MAX 13
 #define LIGOMETA_SOURCE_MAX 30
@@ -98,13 +96,11 @@ tagMetadataTableType
   process_table,
   process_params_table,
   search_summary_table,
-  search_summvars_table,
   sngl_inspiral_table,
   sngl_ringdown_table,
   multi_inspiral_table,
   sim_inspiral_table,
-  sim_ringdown_table,
-  summ_value_table
+  sim_ringdown_table
 }
 MetadataTableType;
 
@@ -164,9 +160,6 @@ tagProcessParamsTable
 ProcessParamsTable;
 
 
-
-/* shared object is lalapps, lalwrapper_cvs_tag is lalapps cvs tag */
-/* lal_cvs tag is populated automatically                          */
 typedef struct
 tagSearchSummaryTable
 {
@@ -182,16 +175,6 @@ tagSearchSummaryTable
   CHAR          ifos[LIGOMETA_IFOS_MAX];
 }
 SearchSummaryTable;
-
-typedef struct
-tagSearchSummvarsTable
-{
-  struct tagSearchSummvarsTable *next;
-  CHAR          name[LIGOMETA_NAME_MAX];
-  CHAR          string[LIGOMETA_STRING_MAX];
-  REAL8         value;
-}
-SearchSummvarsTable;
 
 
 typedef struct
@@ -215,6 +198,7 @@ tagSnglBurst
 	long event_id;
 }
 SnglBurst;
+
 
 typedef struct
 tagSnglInspiralTable
@@ -341,7 +325,6 @@ tagSnglRingdownTable
   long          event_id;
 }
 SnglRingdownTable;
-
 
 
 typedef struct
@@ -638,26 +621,6 @@ SimRingdownTable;
 
 
 typedef struct
-tagSummValueTable
-{
-  struct tagSummValueTable *next;
-  CHAR          program[LIGOMETA_PROGRAM_MAX];
-  CHAR          frameset_group[LIGOMETA_FRAMESETG_MAX];
-  CHAR          segment_group[LIGOMETA_SEGMENTG_MAX];
-  INT4          version;
-  LIGOTimeGPS   start_time;
-  LIGOTimeGPS   end_time;
-  CHAR          ifo[LIGOMETA_IFO_MAX];
-  CHAR          name[LIGOMETA_SUMMVALUE_NAME_MAX];
-  REAL4         value;
-  REAL4         error;
-  INT4          intvalue;
-  CHAR          comment[LIGOMETA_SUMMVALUE_COMM_MAX];
-}
-SummValueTable;
-
-
-typedef struct
 tagExtTriggerTable
 {
   struct        tagExtTriggerTable *next;
@@ -725,14 +688,12 @@ tagMetadataTable
   ProcessTable          *processTable;
   ProcessParamsTable    *processParamsTable;
   SearchSummaryTable    *searchSummaryTable;
-  SearchSummvarsTable   *searchSummvarsTable;
   SnglBurst             *snglBurst;
   SnglInspiralTable     *snglInspiralTable;
   SnglRingdownTable     *snglRingdownTable;
   MultiInspiralTable    *multiInspiralTable;
   SimInspiralTable      *simInspiralTable;
   SimRingdownTable      *simRingdownTable;
-  SummValueTable        *summValueTable;
   ExtTriggerTable       *extTriggerTable;
 }
 MetadataTable;
@@ -751,6 +712,7 @@ tagSegmentTable
 }
 SegmentTable;
 
+
 typedef struct
 tagTimeSlideSegmentMapTable
 {
@@ -759,6 +721,7 @@ tagTimeSlideSegmentMapTable
   long time_slide_id;
 }
 TimeSlideSegmentMapTable;
+
 
 #if 0
 { /* so that editors will match succeeding brace */

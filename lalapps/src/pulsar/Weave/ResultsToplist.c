@@ -409,13 +409,12 @@ int toplist_fill_completionloop_stats(
     }
 
     if ( stage_stats & WEAVE_STATISTIC_MEAN2F ) {
-      item->stage[istage].mean2F = item->stage[istage].sum2F / stats_params->nsum2F;
+      item->stage[istage].mean2F = item->stage[istage].sum2F / nsegments;
     }
 
     if ( stage_stats & WEAVE_STATISTIC_MEAN2F_DET ) {
       for ( size_t X = 0; X < ndetectors; ++X ) {
-        UINT4 nsum2F_X = stats_params->nsum2F_det[X];
-        item->stage[istage].mean2F_det[X] = (nsum2F_X > 0) ? (item->stage[istage].sum2F_det[X] / nsum2F_X) : 0;
+        item->stage[istage].mean2F_det[X] = item->stage[istage].sum2F_det[X] / stats_params->n2F_det[X];
       }
     }
 
@@ -750,9 +749,7 @@ int XLALWeaveResultsToplistAdd(
     WeaveStatisticType stats_to_keep = params->mainloop_statistics_to_keep;
 
     if ( stats_to_keep & WEAVE_STATISTIC_COH2F ) {
-      for ( size_t j = 0; j < semi_res->nsegments; ++j ) {
-        item->stage[0].coh2F[j] = ( semi_res->coh2F[j] != NULL ) ? semi_res->coh2F[j][freq_idx] : NAN;
-      }
+      XLAL_CHECK( XLALWeaveSemiCoh2FExtract( item->stage[0].coh2F, semi_res, freq_idx ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     if ( stats_to_keep & WEAVE_STATISTIC_COH2F_DET ) {
       for ( size_t i = 0; i < semi_res->ndetectors; ++i ) {
@@ -1060,7 +1057,7 @@ int XLALWeaveResultsToplistCompare(
             }
 
             if ( !equal_semi ) {
-              XLALPrintError( "Negative: failed comparison\n" );
+              XLALPrintInfo( "Negative: failed comparison\n" );
               ( *equal ) = 0;	// Neither candidate close to threshold ==> comparison failed
             }
           } else { // Keep track of all successfully 'matched' templates for further comparisons

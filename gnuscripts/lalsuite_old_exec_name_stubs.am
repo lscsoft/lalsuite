@@ -1,0 +1,25 @@
+# lalsuite_old_exec_name_stubs.am usage:
+#
+# - set Automake variable 'old_exec_name_stubs' to a list of
+#   the old executable names to generate stubs for
+#
+# - set Automake variable 'new_exec_name_regex' to a
+#   sed-compatible regular expression which generates the
+#   new executable name from the old one
+
+dist_bin_SCRIPTS += $(old_exec_name_stubs)
+MOSTLYCLEANFILES += $(old_exec_name_stubs)
+
+$(old_exec_name_stubs): Makefile
+	$(AM_V_GEN) newname=`echo $@ | $(SED) -e $(new_exec_name_regex)`; \
+	echo "#!/bin/bash" > $@; \
+	echo "newexec=\"\$${0%/$@}/$${newname}\"" >> $@; \
+	echo "echo >&2" >> $@; \
+	echo "echo \"WARNING: '$@' has been renamed to '$${newname}'\" >&2" >> $@; \
+	echo "echo \"WARNING: please update your scripts\" >&2" >> $@; \
+	echo "echo \"WARNING: now running '\$${newexec}' ...\" >&2" >> $@; \
+	echo "echo >&2" >> $@; \
+	echo "case \"\$$1\" in -h|--help) exit 1;; esac" >> $@; \
+	echo "exec \"\$${newexec}\" \"\$$@\"" >> $@; \
+	echo "exit 1" >> $@; \
+	chmod +x $@ || exit 1

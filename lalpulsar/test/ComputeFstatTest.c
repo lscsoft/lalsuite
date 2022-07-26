@@ -44,7 +44,7 @@ main ( int argc, char *argv[] )
 
   // ----- load ephemeris
   EphemerisData *ephem;
-  XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz", TEST_PKG_DATA_DIR "sun00-19-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK ( (ephem = XLALInitBarycenter ( TEST_PKG_DATA_DIR "earth00-40-DE405.dat.gz", TEST_PKG_DATA_DIR "sun00-40-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
 
   // ----- setup injection and data parameters
   LALStringVector *detNames = NULL;
@@ -180,6 +180,9 @@ main ( int argc, char *argv[] )
         {
           for ( UINT4 iPeriod = 0; iPeriod < numPeriodPoints; iPeriod ++ )
             {
+              MultiCOMPLEX8TimeSeries *first_SRC_a = NULL;
+              MultiCOMPLEX8TimeSeries *first_SRC_b = NULL;
+
               // ----- loop over all available methods and compare Fstat results
               FstatMethodType firstMethod = FMETHOD_START;
               for ( UINT4 iMethod = FMETHOD_START; iMethod < FMETHOD_END; iMethod ++ )
@@ -216,6 +219,52 @@ main ( int argc, char *argv[] )
                           XLALPrintError ("Comparison between method '%s' and '%s' failed on 'seg2'\n", XLALGetFstatInputMethodName(input_seg1[firstMethod]), XLALGetFstatInputMethodName(input_seg1[iMethod]) );
                           XLAL_ERROR ( XLAL_EFUNC );
                         }
+
+                      // for resampling methods, check time series extraction and consistency
+                      if ( iMethod >= FMETHOD_RESAMP_GENERIC ) {
+                        if ( first_SRC_a == NULL) {
+                          XLAL_CHECK ( XLALExtractResampledTimeseries ( &first_SRC_a, &first_SRC_b, input_seg2[iMethod] ) == XLAL_SUCCESS, XLAL_EFUNC );
+                          XLAL_CHECK ( first_SRC_a != NULL, XLAL_EFAULT );
+                          XLAL_CHECK ( first_SRC_b != NULL, XLAL_EFAULT );
+                          XLAL_CHECK ( first_SRC_a->length == first_SRC_b->length, XLAL_EFAILED );
+                          for ( UINT4 X = 0; X < first_SRC_a->length; ++X ) {
+                            XLAL_CHECK ( first_SRC_a->data[X] != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( first_SRC_b->data[X] != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( first_SRC_a->data[X]->data != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( first_SRC_b->data[X]->data != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( XLALGPSCmp ( &first_SRC_a->data[X]->epoch, &first_SRC_b->data[X]->epoch ) == 0, XLAL_EFAILED );
+                            XLAL_CHECK ( fabs( first_SRC_a->data[X]->f0 - first_SRC_b->data[X]->f0 ) < 10 * LAL_REAL8_EPS, XLAL_EFAILED );
+                            XLAL_CHECK ( fabs( first_SRC_a->data[X]->deltaT - first_SRC_b->data[X]->deltaT ) < 10 * LAL_REAL8_EPS, XLAL_EFAILED );
+                            XLAL_CHECK ( first_SRC_a->data[X]->data->data != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( first_SRC_b->data[X]->data->data != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( first_SRC_a->data[X]->data->length == first_SRC_b->data[X]->data->length, XLAL_EFAILED );
+                          }
+                        } else {
+                          MultiCOMPLEX8TimeSeries *SRC_a = NULL;
+                          MultiCOMPLEX8TimeSeries *SRC_b = NULL;
+                          XLAL_CHECK ( XLALExtractResampledTimeseries ( &SRC_a, &SRC_b, input_seg2[iMethod] ) == XLAL_SUCCESS, XLAL_EFUNC );
+                          XLAL_CHECK ( SRC_a != NULL, XLAL_EFAULT );
+                          XLAL_CHECK ( SRC_b != NULL, XLAL_EFAULT );
+                          XLAL_CHECK ( SRC_a->length == first_SRC_a->length, XLAL_EFAILED );
+                          XLAL_CHECK ( SRC_b->length == first_SRC_b->length, XLAL_EFAILED );
+                          for ( UINT4 X = 0; X < first_SRC_a->length; ++X ) {
+                            XLAL_CHECK ( SRC_a->data[X] != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( SRC_b->data[X] != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( SRC_a->data[X]->data != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( SRC_b->data[X]->data != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( XLALGPSCmp ( &SRC_a->data[X]->epoch, &first_SRC_a->data[X]->epoch ) == 0, XLAL_EFAILED );
+                            XLAL_CHECK ( fabs( SRC_a->data[X]->f0 - first_SRC_a->data[X]->f0 ) < 10 * LAL_REAL8_EPS, XLAL_EFAILED );
+                            XLAL_CHECK ( fabs( SRC_a->data[X]->deltaT - first_SRC_a->data[X]->deltaT ) < 10 * LAL_REAL8_EPS, XLAL_EFAILED );
+                            XLAL_CHECK ( SRC_a->data[X]->data->data != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( SRC_b->data[X]->data->data != NULL, XLAL_EFAULT );
+                            XLAL_CHECK ( SRC_a->data[X]->data->length == first_SRC_a->data[X]->data->length, XLAL_EFAILED );
+                            VectorComparison tol = { .relErr_L1 = 5e-5, .relErr_L2 = 5e-5, .angleV = 5e-5, .relErr_atMaxAbsx = 5e-5, .relErr_atMaxAbsy = 5e-5 };
+                            VectorComparison XLAL_INIT_DECL(cmp);
+                            XLAL_CHECK ( XLALCompareCOMPLEX8Vectors ( &cmp, SRC_a->data[X]->data, first_SRC_a->data[X]->data, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+                          }
+                        }
+                      }
+
                     }
 
                 }  // for i < FMETHOD_END

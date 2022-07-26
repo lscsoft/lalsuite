@@ -16,10 +16,7 @@
 
 import datetime
 import sys
-try:
-    from unittest import mock
-except ImportError:  # python < 3
-    import mock
+from unittest import mock
 
 import pytest
 
@@ -43,13 +40,13 @@ def test_utc_to_gps(date, gps):
     assert out == LIGOTimeGPS(gps)
 
 
-@pytest.mark.parametrize('date, gps', [
-    (630720013, datetime.datetime(2000, 1, 1, 0, 0, 0), ),
+@pytest.mark.parametrize('gps, date', [
+    (630720013, datetime.datetime(2000, 1, 1, 0, 0, 0)),
+    (LIGOTimeGPS(630720013, 12345), datetime.datetime(2000, 1, 1, 0, 0, 0, 12)),
+    (LIGOTimeGPS(630720013, 12999), datetime.datetime(2000, 1, 1, 0, 0, 0, 13)),
 ])
 def test_gps_to_utc(gps, date):
-    assert gpstime.gps_to_utc(
-        630720013,
-    ) == datetime.datetime(2000, 1, 1, 0, 0, 0)
+    assert gpstime.gps_to_utc(gps) == date
 
 
 @mock.patch("lal.gpstime._gps_time_now", return_value=LIGOTimeGPS(100))

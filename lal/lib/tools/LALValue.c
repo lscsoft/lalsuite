@@ -24,6 +24,7 @@
 #include <lal/LALStdio.h>
 #include <lal/LALValue.h>
 #include "LALValue_private.h"
+#include "config.h"
 
 /* warning: garbage until set */
 LALValue * XLALValueAlloc(size_t size)
@@ -40,7 +41,7 @@ LALValue * XLALValueRealloc(LALValue *value, size_t size)
 {
 	if (value == NULL)
 		return XLALValueAlloc(size);
-	value = XLALRealloc(value->data, sizeof(*value) + size);
+	value = XLALRealloc(value, sizeof(*value) + size);
 	if (!value)
 		XLAL_ERROR_NULL(XLAL_ENOMEM);
 	value->size = size;
@@ -83,7 +84,7 @@ LALValue * XLALValueSet(LALValue *value, const void *data, size_t size, LALTYPEC
 		XLAL_CHECK_NULL(size == sizeof(INT8), XLAL_ETYPE, "Wrong size for type");
 		break;
 	case LAL_UCHAR_TYPE_CODE:
-		XLAL_CHECK_NULL(size == sizeof(UCHAR), XLAL_ETYPE, "Wrong size for type");
+		/* variable length BLOBs allowed */
 		break;
 	case LAL_U2_TYPE_CODE:
 		XLAL_CHECK_NULL(size == sizeof(UINT2), XLAL_ETYPE, "Wrong size for type");
@@ -135,10 +136,18 @@ LALValue *XLALCreateValue(const void * data, size_t size, LALTYPECODE type)
 	return v;
 }
 
-LALValue *XLALCreateStringValue(const char *value)
+LALValue *XLALCreateBLOBValue(const void * blob, size_t size)
 {
-	size_t size = strlen(value) + 1;
-	LALValue *v = XLALCreateValue(value, size, LAL_CHAR_TYPE_CODE);
+	LALValue *v = XLALCreateValue(blob, size, LAL_UCHAR_TYPE_CODE);
+	if (v == NULL)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	return v;
+}
+
+LALValue *XLALCreateStringValue(const char *string)
+{
+	size_t size = strlen(string) + 1;
+	LALValue *v = XLALCreateValue(string, size, LAL_CHAR_TYPE_CODE);
 	if (v == NULL)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	return v;
@@ -196,6 +205,18 @@ int XLALValueEqual(const LALValue *value1, const LALValue *value2)
 	if (value1->size == value2->size && value1->type == value2->type)
 		return memcmp(value1->data, value2->data, value1->size) == 0;
 	return 0;
+}
+
+void * XLALValueGetBLOB(const LALValue *value)
+{
+	void *blob;
+	/* sanity check the type */
+	if (value->type != LAL_UCHAR_TYPE_CODE)
+		XLAL_ERROR_NULL(XLAL_ETYPE, "Value is not a BLOB");
+	blob = LALMalloc(value->size);
+	if (blob == NULL)
+		XLAL_ERROR_NULL(XLAL_ENOMEM);
+	return memcpy(blob, value->data, value->size);
 }
 
 /* warning: shallow pointer */
@@ -258,7 +279,10 @@ REAL8 XLALValueGetAsREAL8(const LALValue *value)
 			XLAL_PRINT_WARNING("Loss of precision");
 		break;
 	case LAL_UCHAR_TYPE_CODE:
-		result = XLALValueGetUCHAR(value);
+		if (value->size == 1)
+			result = XLALValueGetUCHAR(value);
+		else
+			XLAL_ERROR_REAL8(XLAL_ETYPE, "Cannot convert BLOB to float");
 		break;
 	case LAL_U2_TYPE_CODE:
 		result = XLALValueGetUINT2(value);
@@ -286,101 +310,106 @@ REAL8 XLALValueGetAsREAL8(const LALValue *value)
 	return result;
 }
 
-void XLALValuePrint(const LALValue *value, int fd)
+char * XLALValueAsStringAppend(char *s, const LALValue *value)
 {
-	int fd2 = dup(fd);
-	FILE *fp = fdopen(fd2, "w");
 	COMPLEX8 c;
 	COMPLEX16 z;
 	switch (value->type) {
 	case LAL_CHAR_TYPE_CODE:
 		if (value->size == 1)
-			fprintf(fp, "'%c'", *(const CHAR *)(value->data));
+			s = XLALStringAppendFmt(s, "'%c'", *(const CHAR *)(value->data));
 		else
-			fprintf(fp, "\"%s\"", (const CHAR *)(value->data));
+			s = XLALStringAppendFmt(s, "\"%s\"", (const CHAR *)(value->data));
 		break;
 	case LAL_I2_TYPE_CODE:
-		if (value->size != sizeof(INT2)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%" LAL_INT2_PRId, XLALValueGetINT2(value));
+		if (value->size != sizeof(INT2))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%" LAL_INT2_PRId, XLALValueGetINT2(value));
 		break;
 	case LAL_I4_TYPE_CODE:
-		if (value->size != sizeof(INT4)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%" LAL_INT4_PRId, XLALValueGetINT4(value));
+		if (value->size != sizeof(INT4))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%" LAL_INT4_PRId, XLALValueGetINT4(value));
 		break;
 	case LAL_I8_TYPE_CODE:
-		if (value->size != sizeof(INT8)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%" LAL_INT8_PRId, XLALValueGetINT8(value));
+		if (value->size != sizeof(INT8))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%" LAL_INT8_PRId, XLALValueGetINT8(value));
 		break;
 	case LAL_UCHAR_TYPE_CODE:
-		if (value->size != sizeof(UCHAR)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
+		if (value->size == sizeof(UCHAR))
+			s = XLALStringAppendFmt(s, "0x%x", XLALValueGetUCHAR(value));
+		else {
+			s = XLALStringAppendFmt(s, "b\"");
+			for (size_t i = 0; i < value->size; ++i)
+				s = XLALStringAppendFmt(s, "\\x%02x", ((const UCHAR *)(value->data))[i]);
+			s = XLALStringAppendFmt(s, "\"");
 		}
-		fprintf(fp, "0x%x", XLALValueGetUCHAR(value));
 		break;
 	case LAL_U2_TYPE_CODE:
-		if (value->size != sizeof(UINT2)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%" LAL_INT2_PRIu, XLALValueGetUINT2(value));
+		if (value->size != sizeof(UINT2))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%" LAL_INT2_PRIu, XLALValueGetUINT2(value));
 		break;
 	case LAL_U4_TYPE_CODE:
-		if (value->size != sizeof(UINT4)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%" LAL_INT4_PRIu, XLALValueGetUINT4(value));
+		if (value->size != sizeof(UINT4))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%" LAL_INT4_PRIu, XLALValueGetUINT4(value));
 		break;
 	case LAL_U8_TYPE_CODE:
-		if (value->size != sizeof(UINT8)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%" LAL_INT8_PRIu, XLALValueGetUINT8(value));
+		if (value->size != sizeof(UINT8))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%" LAL_INT8_PRIu, XLALValueGetUINT8(value));
 		break;
 	case LAL_S_TYPE_CODE:
-		if (value->size != sizeof(REAL4)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%g", XLALValueGetREAL4(value));
+		if (value->size != sizeof(REAL4))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%.8g", XLALValueGetREAL4(value));
 		break;
 	case LAL_D_TYPE_CODE:
-		if (value->size != sizeof(REAL8)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%g", XLALValueGetREAL8(value));
+		if (value->size != sizeof(REAL8))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%.16g", XLALValueGetREAL8(value));
 		break;
 	case LAL_C_TYPE_CODE:
 		c = XLALValueGetCOMPLEX8(value);
-		if (value->size != sizeof(COMPLEX8)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%g + %gj", crealf(c), cimagf(c));
+		if (value->size != sizeof(COMPLEX8))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%.8g%+.8gj", crealf(c), cimagf(c));
 		break;
 	case LAL_Z_TYPE_CODE:
 		z = XLALValueGetCOMPLEX16(value);
-		if (value->size != sizeof(COMPLEX16)) {
-			fclose(fp);
-			XLAL_ERROR_VOID(XLAL_ESIZE, "Value has incorrect size for type");
-		}
-		fprintf(fp, "%g + %gj", creal(z), cimag(z));
+		if (value->size != sizeof(COMPLEX16))
+			XLAL_ERROR_NULL(XLAL_ESIZE, "Value has incorrect size for type");
+		s = XLALStringAppendFmt(s, "%.16g%+.16gj", creal(z), cimag(z));
 		break;
 	default:
-		XLAL_ERROR_VOID(XLAL_ETYPE, "Unsupported LALTYPECODE value 0%o", (unsigned int)value->type);
+		XLAL_ERROR_NULL(XLAL_ETYPE, "Unsupported LALTYPECODE value 0%o", (unsigned int)value->type);
 	}
-	fclose(fp);
+	return s;
+}
+
+void XLALValuePrint(const LALValue *value, int fd)
+{
+	char *s = NULL;
+	s = XLALValueAsStringAppend(s, value);
+	XLAL_CHECK_VOID(s, XLAL_EFUNC);
+#if HAVE_DPRINTF
+	dprintf(fd, "%s", s);
+#else
+	/* hack... */
+	switch (fd) {
+	case 1:
+		fprintf(stdout, "%s", s);
+		break;
+	case 2:
+		fprintf(stderr, "%s", s);
+		break;
+	default:
+		LALFree(s);
+		XLAL_ERROR_VOID(XLAL_EIO, "Don't know what to do with file descriptor %d", fd);
+	}
+#endif
+	LALFree(s);
 	return;
 }

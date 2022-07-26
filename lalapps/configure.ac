@@ -1,13 +1,14 @@
-AC_PREREQ([2.63])
-AC_INIT([LALApps],[7.2.0.1],[lal-discuss@ligo.org])
+XAC_PREREQ([2.63])
+AC_INIT([LALApps],[8.1.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
-AC_CONFIG_SRCDIR([src/lalapps/tconvert.c])
+AC_CONFIG_SRCDIR([src/lalapps/version2.c.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_CONFIG_FILES([\
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   doxygen/Makefile \
@@ -17,7 +18,9 @@ AC_CONFIG_FILES([\
   src/Makefile \
   src/findchirp/Makefile \
   src/frametools/Makefile \
+  src/hwinjection/Makefile \
   src/inspiral/Makefile \
+  src/lalapps/__init__.py \
   src/lalapps/LALAppsVCSInfo.c \
   src/lalapps/LALAppsVCSInfo.h \
   src/lalapps/Makefile \
@@ -30,7 +33,6 @@ AC_CONFIG_FILES([\
   src/pulsar/Fstatistic/Makefile \
   src/pulsar/GCT/Makefile \
   src/pulsar/HeterodyneSearch/Makefile \
-  src/pulsar/HWInjection/Makefile \
   src/pulsar/Hough/Makefile \
   src/pulsar/HoughFstat/Makefile \
   src/pulsar/MakeData/Makefile \
@@ -58,13 +60,14 @@ AM_INIT_AUTOMAKE([ \
 # version requirements
 MIN_FRAMEL_VERSION="8.39.2"
 MIN_LAL_VERSION="7.1.0"
-MIN_LALFRAME_VERSION="1.5.0"
-MIN_LALMETAIO_VERSION="2.0.0"
-MIN_LALSIMULATION_VERSION="2.5.0"
+MIN_LALFRAME_VERSION="2.0.0"
+MIN_LALMETAIO_VERSION="2.1.0"
+MIN_LALSIMULATION_VERSION="3.1.0"
 MIN_LALBURST_VERSION="1.5.3"
 MIN_LALINSPIRAL_VERSION="2.0.0"
-MIN_LALPULSAR_VERSION="3.0.0"
-MIN_LALINFERENCE_VERSION="2.0.0"
+MIN_LALINFERENCE_VERSION="3.0.0"
+MIN_LALPULSAR_VERSION="4.0.0"
+MIN_PYTHON_LIGO_LW_VERSION="1.7.0"
 AC_SUBST([MIN_FRAMEL_VERSION])
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
@@ -72,8 +75,9 @@ AC_SUBST([MIN_LALMETAIO_VERSION])
 AC_SUBST([MIN_LALSIMULATION_VERSION])
 AC_SUBST([MIN_LALBURST_VERSION])
 AC_SUBST([MIN_LALINSPIRAL_VERSION])
-AC_SUBST([MIN_LALPULSAR_VERSION])
 AC_SUBST([MIN_LALINFERENCE_VERSION])
+AC_SUBST([MIN_LALPULSAR_VERSION])
+AC_SUBST([MIN_PYTHON_LIGO_LW_VERSION])
 
 LT_INIT()
 
@@ -83,8 +87,6 @@ LALSUITE_ARG_VAR
 
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
-
-LALSUITE_WITH_CUDA
 
 LALSUITE_ENABLE_GCC_FLAGS
 LALSUITE_ENABLE_NIGHTLY
@@ -102,11 +104,17 @@ LALSUITE_ENABLE_LALMETAIO
 LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
-LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALINFERENCE
+LALSUITE_ENABLE_LALPULSAR
 
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
+
+# enable CUDA
+LALSUITE_WITH_CUDA
+if test "${cuda}" = "true"; then
+  AC_DEFINE([LALAPPS_CUDA_ENABLED],[1],[Define if using cuda library])
+fi
 
 # enable help2man documentation
 LALSUITE_ENABLE_HELP2MAN
@@ -120,6 +128,9 @@ AM_SILENT_RULES([yes])
 # check for required compilers
 LALSUITE_PROG_COMPILERS
 
+# check for SIMD extensions
+LALSUITE_CHECK_SIMD
+
 # link tests using libtool
 if test "${static_binaries}" = "true"; then
   lalsuite_libtool_flags="-all-static"
@@ -128,10 +139,11 @@ LALSUITE_USE_LIBTOOL
 
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for pager programs
 LALSUITE_CHECK_PAGER
@@ -166,7 +178,6 @@ LALSUITE_OSX_VERSION_CHECK
 AC_CHECK_LIB([m],[sin])
 
 # check for system headers
-AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h glob.h])
 
 # check for specific functions
@@ -276,11 +287,14 @@ LALSUITE_CHECK_OPT_LIB([LALMetaIO],[${MIN_LALMETAIO_VERSION}],[XLALLIGOLwHasTabl
 LALSUITE_CHECK_OPT_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_OPT_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
 LALSUITE_CHECK_OPT_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
-LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
 LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
+LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
+
+# configure CUDA
+LALSUITE_USE_CUDA
 
 # check for qthread
 LALAPPS_CHECK_QTHREAD
@@ -296,11 +310,6 @@ AC_CHECK_FUNCS([setenv])
 
 # set prefix
 AC_DEFINE_UNQUOTED([PREFIX],["$prefix"],[Install prefix])
-
-# define if CUDA is enabled
-if test "${cuda}" = "true"; then
-  AC_DEFINE([LALAPPS_CUDA_ENABLED],[1],[Define if using cuda library])
-fi
 
 LALSUITE_ADD_GCC_FLAGS
 
@@ -329,8 +338,8 @@ LALApps has now been successfully configured:
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
 * LALBurst library support is $LALBURST_ENABLE_VAL
 * LALInspiral library support is $LALINSPIRAL_ENABLE_VAL
-* LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
+* LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
 * PSS library support is $PSS_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL

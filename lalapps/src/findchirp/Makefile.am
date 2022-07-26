@@ -1,4 +1,5 @@
 BUILT_SOURCES =
+EXTRA_DIST =
 MOSTLYCLEANFILES =
 include $(top_srcdir)/gnuscripts/lalapps.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
@@ -26,7 +27,7 @@ lalapps_exc_resp_SOURCES = exc_resp.c
 lalapps_chirplen_SOURCES = chirplen.c
 endif
 
-EXTRA_DIST = \
+EXTRA_DIST += \
 	chirplen.c \
 	exc_resp.c \
 	$(END_OF_LIST)

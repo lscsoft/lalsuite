@@ -8,6 +8,7 @@ __pycache__
 *.o
 *.pc
 *.pyc
+*.pyman
 *.pyo
 /_build/
 /_inst/
@@ -53,6 +54,8 @@ lib/LALInspiralVCSInfo.h
 lib/LALInspiralVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
+bin/lalinspiral_injfind
+bin/lalinspiral_thinca
 bin/lalinspiral_version
 bin/version.c
 swig/.swigdeps
@@ -95,6 +98,12 @@ test/myderivs.dat
 test/NRWaveIOTest
 test/PNTemplates
 test/PNTemplates.out
+test/python/brute_min1.xml.gz
+test/python/brute_min2.xml.gz
+test/python/thinca_brute_force_coinc
+test/python/thinca_compare_coinc_lists
+test/python/thinca_min1.xml.gz
+test/python/thinca_min2.xml.gz
 test/RandomInspiralSignalTest
 test/RandomInspiralSignalTest.out
 test/sp_rhosq.out

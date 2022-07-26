@@ -25,7 +25,7 @@
 
 #include <lal/LALDatatypes.h>
 #include <lal/LALConstants.h>
-#include <HeapToplist.h>
+#include <lal/HeapToplist.h>
 
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a filename */
 /** Type to hold the fields that will be output in unclustered output file  */

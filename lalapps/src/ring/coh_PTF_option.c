@@ -845,17 +845,6 @@ int coh_PTF_params_inspiral_sanity_check( struct coh_PTF_params *params )
   return 0;
 }
 
-/* Sanity check for coh_PTF_spin_checker specific */
-int coh_PTF_params_spin_checker_sanity_check( struct coh_PTF_params *params )
-{
-  sanity_check( params->spinSNR2threshold > 0 );
-  sanity_check( params->nonspinSNR2threshold > 0 );
-  sanity_check( params->spinBank );
-  sanity_check( params->noSpinBank);
-
-  return 0;
-}
-
 
 /* prints a help message */
 int coh_PTF_usage( const char *program )

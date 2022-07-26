@@ -209,12 +209,12 @@ fi
 echo
 echo "========== MFDv5 =========="
 echo
-mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR} --fmin=$fmin --Band=$Band"
+mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR}"
 
 echo "----- Method 1: single multi-IFO, multi-signal call"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig13="--injectionSources='${injFile1},${injFile2}'"
-cmdline="$mfdv5_CL ${outIFOs} ${sig13}"
+cmdline="$mfdv5_CL ${outIFOs} ${sig13} --fmin=$fmin --Band=$Band"
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
@@ -226,7 +226,7 @@ echo "----- Method 2: and again the same, using different input methods"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig1="--injectionSources='${injString}'"
 sig23="--injectionSources='${injFile2}'"
-cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outLabel='mfdv5_meth2'"
+cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outLabel='mfdv5_meth2' --fmin=$fmin --Band=$Band"
 echo $cmdline1;
 if ! eval $cmdline1; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
@@ -311,9 +311,7 @@ if ! eval $cmdline; then
 fi
 
 SFTs_orig="H-1_H1_${Tsft}SFT_mfdv5-${startTime}-${Tsft}.sft"
-# FIXME: currently need to add "Hz1" to the width part of the SFTs_split filename
-# due to the nudging required below
-SFTs_split="H-1_H1_${Tsft}SFT_NB_F0${fmin}Hz0_W00${Band}Hz1-${startTime}-${Tsft}.sft"
+SFTs_split="H-1_H1_${Tsft}SFT_NBF0${fmin}Hz0W00${Band}Hz0_mfdv5-${startTime}-${Tsft}.sft"
 SFTs_fromframes="H-1_H1_${Tsft}SFT_mfdv5fromframes-${startTime}-${Tsft}.sft"
 dumps_split="${testDIR}/dump_${SFTs_split}.txt"
 dumps_fromframes="${testDIR}/dump_${SFTs_fromframes}.txt"
@@ -321,12 +319,8 @@ SFTs_orig="${testDIR}/${SFTs_orig}"
 SFTs_split="${testDIR}/${SFTs_split}"
 SFTs_fromframes="${testDIR}/${SFTs_fromframes}"
 
-# FIXME: currently need to nudge the end frequency a bit higher for splitSFTs
-# because by default, unlike MFDv5, it wouldn't include the last bin
-fbin=$(echo "1 / $Tsft" | bc -l)
-fmax=$(echo "$fmin + $Band + $fbin" | bc)
-splitband=$(echo "$Band + $fbin" | bc)
-cmdline="$split_code -fs $fmin -fb $splitband -fe $fmax -n $testDIR -- $SFTs_orig"
+fmax=$(echo "$fmin + $Band" | bc)
+cmdline="$split_code -fs $fmin -fb $Band -fe $fmax -n $testDIR -- $SFTs_orig"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$split_code' ..."

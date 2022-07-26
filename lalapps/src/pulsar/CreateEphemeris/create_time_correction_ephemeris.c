@@ -159,11 +159,6 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
     exit(0);
   }
 
-  if( (tempo2path = getenv("TEMPO2")) == NULL ){
-    fprintf(stderr, "Error... TEMPO2 environment variable not set!\n");
-    exit(1);
-  }
-
   /* set defaults */
   inputParams->interval = 60.; /* default to 60 seconds between */
 
@@ -213,6 +208,11 @@ void get_input_args(inputParams_t *inputParams, int argc, char *argv[]){
       default:
         fprintf(stderr, "Unknown error while parsing options\n");
     }
+  }
+
+  if( (tempo2path = getenv("TEMPO2")) == NULL ){
+    fprintf(stderr, "Error... TEMPO2 environment variable not set!\n");
+    exit(1);
   }
 
   /* set the ephemeris file */

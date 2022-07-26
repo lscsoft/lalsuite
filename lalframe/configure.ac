@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALFrame],[1.5.4.1],[lal-discuss@ligo.org])
+AC_INIT([LALFrame],[2.0.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([lib/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,8 +19,8 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[11])
-AC_SUBST([LIBREVISION],[3])
+AC_SUBST([LIBCURRENT],[13])
+AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalframe${LIBMAJOR}.install:debian/liblalframe.install.in \
@@ -118,10 +119,11 @@ AM_CONDITIONAL([PTHREAD],[test x$lalframe_pthread = xtrue])
 
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -130,7 +132,6 @@ LALSUITE_OSX_VERSION_CHECK
 LALSUITE_USE_LIBTOOL
 
 # check for header files
-AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h])
 
 # check for gethostname in unistd.h
@@ -212,6 +213,9 @@ AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# make sure local library module is in python path
+LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
 
 # output
 AC_OUTPUT

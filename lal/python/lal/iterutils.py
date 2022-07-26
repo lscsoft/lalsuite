@@ -1,4 +1,4 @@
-# Copyright (C) 2007,2008,2010--2016,2019  Kipp Cannon, Nickolas Fotopoulos
+# Copyright (C) 2007,2008,2010--2016,2021  Kipp Cannon, Nickolas Fotopoulos
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -137,6 +137,23 @@ def choices(vals, n):
 	>>> Y.reverse()
 	>>> list(zip(X, Y))
 	[(('a', 'b'), ('c', 'd', 'e')), (('a', 'c'), ('b', 'd', 'e')), (('a', 'd'), ('b', 'c', 'e')), (('a', 'e'), ('b', 'c', 'd')), (('b', 'c'), ('a', 'd', 'e')), (('b', 'd'), ('a', 'c', 'e')), (('b', 'e'), ('a', 'c', 'd')), (('c', 'd'), ('a', 'b', 'e')), (('c', 'e'), ('a', 'b', 'd')), (('d', 'e'), ('a', 'b', 'c'))]
+
+	NOTE:  this generator is identical to the itertools.combinations()
+	generator in Python's standard library.  This routine was written
+	before Python provided that functionality, and is now only
+	preserved for two reasons.  The first is to maintain this API for
+	existing codes that were written before the standard library
+	provided the capability.  But the second reason is because the
+	Python standard library doesn't make the guarantees that we do,
+	here, about the order of the results.  Specifically, there is no
+	guarantee that itertools.combinations() is repeatable, nor is there
+	a statement on how to obtain the inverse of the sequence as
+	described above.  At the time of writing the order in which results
+	are produced is identical to this generator and in all use cases
+	they are exact substitutes for each other, and new code should use
+	itertools.combinations().  Be careful making assumptions about the
+	order of the results, add safety checks where needed, and if a
+	problem arises this generator can be used as a fall-back.
 	"""
 	if n == len(vals):
 		yield tuple(vals)

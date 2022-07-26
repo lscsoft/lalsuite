@@ -47,3 +47,7 @@ lalsimulation/lib/lalsimburst_btlwnbexamples.svg filter=lfs diff=lfs merge=lfs -
 lalsimulation/lib/lalsimburst_sinegaussianexamples.svg filter=lfs diff=lfs merge=lfs -text
 lalsimulation/test/reviewed_waveforms.asc filter=lfs diff=lfs merge=lfs -text
 lal/test/tools/resamp_10x4.eps filter=lfs diff=lfs merge=lfs -text
+lalburst/test/python/snglcoinc_coincs_verify_input.xml.gz filter=lfs diff=lfs merge=lfs -text
+lalinspiral/test/python/test_thinca_input.xml.gz filter=lfs diff=lfs merge=lfs -text
+lalinspiral/test/python/test_thinca_correct_min1.xml.gz filter=lfs diff=lfs merge=lfs -text
+lalinspiral/test/python/test_thinca_correct_min2.xml.gz filter=lfs diff=lfs merge=lfs -text

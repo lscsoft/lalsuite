@@ -1,4 +1,4 @@
-# Copyright (C) 2007--2014  Kipp Cannon
+# Copyright (C) 2007--2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -24,15 +24,12 @@
 #
 
 
-from __future__ import print_function
-
-
 import sys
+from tqdm import tqdm
 import traceback
 
 
 from ligo.lw import lsctables
-from glue.text_progress_bar import ProgressBar
 
 
 __author__ = "Kipp Cannon <kipp.cannon@ligo.org>"
@@ -111,21 +108,10 @@ def assign_likelihood_ratios_xml(xmldoc, coinc_def_id, offset_vectors, vetosegli
 	# Iterate over all coincs, assigning likelihood ratios.
 	#
 
-	coinc_event_table = lsctables.CoincTable.get_table(xmldoc)
-
-	if verbose:
-		progressbar = ProgressBar("computing ln L", max = len(coinc_event_table))
-	else:
-		progressbar = None
-
-	for coinc_event in coinc_event_table:
-		if progressbar is not None:
-			progressbar.increment()
+	for coinc_event in tqdm(lsctables.CoincTable.get_table(xmldoc), desc = "computing ln L", disable = not verbose):
 		if coinc_event.coinc_def_id != coinc_def_id:
 			continue
 		coinc_event.likelihood = ln_likelihood_ratio_func([event for event in events_func(None, coinc_event.coinc_event_id) if veto_func(event, vetoseglists)], offset_vectors[coinc_event.time_slide_id])
-
-	del progressbar
 
 	#
 	# Done

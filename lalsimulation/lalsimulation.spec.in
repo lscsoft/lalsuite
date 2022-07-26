@@ -1,23 +1,18 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
-%define configure_opts --enable-openmp GSL_LIBS="-lgsl"
+%define configure_opts --enable-openmp
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
 %endif
-
-# borrowed from python3-rpm-macros
-%define pyYdir %{_builddir}/pythonY-%{name}-%{version}-%{release}
 
 # -- metadata ---------------
 
 Name: @PACKAGE@
 Version: @BASE_VERSION@
 Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
-Summary: LSC Algorithm Simulation Library
 License: GPLv2+
-Group: LAL
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
@@ -37,18 +32,6 @@ BuildRequires: pkgconfig >= 0.18.0
 # swig
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2
-BuildRequires: python2-rpm-macros
-BuildRequires: python-devel
-BuildRequires: python2-lal >= @MIN_LAL_VERSION@
-BuildRequires: python2-mock
-BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python-pathlib
-BuildRequires: pytest
-BuildRequires: rsync
-%endif
-
 # python3x
 BuildRequires: python-srpm-macros
 BuildRequires: python3-rpm-macros
@@ -66,17 +49,28 @@ BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 
 # lalsimulation
 Summary: LSC Algorithm Simulation Library - runtime tools
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
+Requires: %{name}-data
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+Obsoletes: python2-%{name} <= 2.5.1-1
 %description
 The LSC Algorithm Simulation Library for gravitational wave data analysis.
 This package provides the runtime tools.
+
+# lalsimulation-data
+%package data
+BuildArch: noarch
+Summary: Data files for LALSimulation
+%description data
+The LSC Algorithm Simulation Library for gravitational wave data analysis.
+This package contains the data files needed to run various applications and
+rountines that use the LAL Simulation Library.
 
 # liblalsimulation
 %package -n lib%{name}
 Summary: LSC Algorithm Simulation Library - library package
 Requires: liblal >= @MIN_LAL_VERSION@
+Requires: %{name}-data
 Conflicts: %{name} <= 2.3.0-1
 %description -n lib%{name}
 The LSC Algorithm Simulation Library for gravitational wave data analysis.
@@ -86,7 +80,6 @@ that use the LAL Simulation library.
 # liblalsimulation-devel
 %package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL Simulation
-Group: LAL
 Requires: gsl-devel
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Requires: lib%{name} = %{version}-%{release}
@@ -97,31 +90,14 @@ The LSC Algorithm Simulation Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
 Simulation library.
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2-lalsimulation
-%package -n python2-%{name}
-Summary: Python %{python2_version} bindings for LALSimulation
-Group: LAL
-Requires: lib%{name} = %{version}-%{release}
-Requires: python
-Requires: python2-lal >= @MIN_LAL_VERSION@
-Requires: python2-numpy >= @MIN_NUMPY_VERSION@
-Provides: %{name}-python = %{version}-%{release}
-Provides: deprecated()
-Obsoletes: %{name}-python < %{version}-%{release}
-%{?python_provide:%python_provide python2-%{name}}
-%description -n python2-%{name}
-This package provides the Python %{python2_version} Bindings for LALSimulation.
-%endif
-
 # python3x-lalsimulation
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} bindings for LALSimulation
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
+Obsoletes: python2-%{name} < 3.0.0-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
 This package provides the Python %{python3_version} Bindings for LALSimulation.
@@ -129,7 +105,6 @@ This package provides the Python %{python3_version} Bindings for LALSimulation.
 # lalsimulation-octave
 %package octave
 Summary: Octave bindings for LALSimulation
-Group: LAL
 Requires: %{name} = %{version}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
@@ -142,42 +117,14 @@ This package provides the Octave Bindings for LALSimulation.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-# build C library with python3
 %configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# build python2 library (copy things so we don't have to rebuild them)
-rm -rf %pyYdir
-rsync -ra . %pyYdir
-pushd %pyYdir
-rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
-%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python2}
-%{__make} V=1 -C swig
-%{__make} V=1 -C python/%{name}
-#%%{__make} V=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
-popd
-%endif
-
 %check
-# C + python3 + octave
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2
-%{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %pyYdir -C test/python check
-%endif
-
 %install
-# C + python3 + octave
 %make_install
-
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2
-%{__make} -C %pyYdir -C swig install-exec-am DESTDIR=%{?buildroot}
-%{__make} -C %pyYdir -C python/%{name} install DESTDIR=%{?buildroot}
-%endif
-
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
 %post -n lib%{name} -p /sbin/ldconfig
@@ -190,11 +137,16 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # -- files ------------------
 
-%files -n lib%{name}
+%files data
 %defattr(-,root,root)
 %doc README.md
 %license COPYING
 %{_datarootdir}/%{name}/*
+
+%files -n lib%{name}
+%defattr(-,root,root)
+%doc README.md
+%license COPYING
 %{_libdir}/*.so.*
 
 %files -n lib%{name}-devel
@@ -205,14 +157,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.a
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
-
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-%files -n python2-%{name}
-%defattr(-,root,root)
-%doc README.md
-%license COPYING
-%{python2_sitearch}/*
-%endif
 
 %files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)
@@ -238,6 +182,18 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Mar 03 2022 Adam Mercer <adam.mercer@ligo.org> 3.1.2-1
+- Update for 3.1.2
+
+* Mon Jan 10 2022 Adam Mercer <adam.mercer@ligolorg> 3.1.1-1
+- Update for 3.1.1
+
+* Fri Dec 03 2021 Adam Mercer <adam.mercer@ligo.org> 3.1.0-1
+- Update for 3.1.0
+
+* Mon May 17 2021 Adam Mercer <adam.mercer@ligo.org> 3.0.0-1
+- Update for 3.0.0
+
 * Fri Feb 05 2021 Adam Mercer <adam.mercer@ligo.org> 2.5.1-1
 - Update for 2.5.1
 

@@ -23,6 +23,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALList.h>
 #include "LALValue_private.h"
+#include "config.h"
 
 struct tagLALListItem {
 	struct tagLALListItem *next;
@@ -98,6 +99,14 @@ void * XLALListItemGetValueData(void * data, size_t size, LALTYPECODE type, cons
 	if (value == NULL)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
 	return XLALValueGetData(data, size, type, value);
+}
+
+void * XLALListItemGetBLOBValue(const LALListItem *item)
+{
+	const LALValue *value = XLALListItemGetValue(item);
+	if (value == NULL)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
+	return XLALValueGetBLOB(value);
 }
 
 /* warning: shallow pointer */
@@ -505,6 +514,11 @@ int XLALListAddValue(LALList *list, const LALValue *value)
 	return XLALListAdd(list, data, size, type);
 }
 
+int XLALListAddBLOBValue(LALList *list, const void *blob, size_t size)
+{
+	return XLALListAdd(list, blob, size, LAL_UCHAR_TYPE_CODE);
+}
+
 int XLALListAddStringValue(LALList *list, const char *string)
 {
 	size_t size = strlen(string) + 1;
@@ -529,19 +543,50 @@ DEFINE_ADD_FUNC(COMPLEX8, LAL_C_TYPE_CODE)
 DEFINE_ADD_FUNC(COMPLEX16, LAL_Z_TYPE_CODE)
 
 #undef DEFINE_ADD_FUNC
-static void XLALListValuePrintFunc(LALValue *value, void *thunk)
+
+struct LALListAsStringAppendValueFuncParams {char *s; int first;};
+
+static void XLALListAsStringAppendValueFunc(LALValue *value, void *thunk)
 {
-	int fd = *(int *)(thunk);
-	int fd2 = dup(fd);
-	FILE *fp = fdopen(fd2, "w");
-	XLALValuePrint(value, fd);
-	fprintf(fp, "\n");
-	fclose(fp);
+	struct LALListAsStringAppendValueFuncParams *p = (struct LALListAsStringAppendValueFuncParams *)(thunk);
+	if (p->first)
+		p->first = 0;
+	else
+		p->s = XLALStringAppend(p->s, ", ");
+	p->s = XLALValueAsStringAppend(p->s, value);
 	return;
+}
+
+char * XLALListAsStringAppend(char *s, LALList *list)
+{
+	struct LALListAsStringAppendValueFuncParams p = {s, 1};
+        p.s = XLALStringAppend(p.s, "[");
+	XLALListForeach(list, XLALListAsStringAppendValueFunc, &p);
+        p.s = XLALStringAppend(p.s, "]");
+	return p.s;
 }
 
 void XLALListPrint(LALList *list, int fd)
 {
-	XLALListForeach(list, XLALListValuePrintFunc, &fd);
+	char *s = NULL;
+	s = XLALListAsStringAppend(s, list);
+	XLAL_CHECK_VOID(s, XLAL_EFUNC);
+#if HAVE_DPRINTF
+	dprintf(fd, "%s", s);
+#else
+	/* hack... */
+	switch (fd) {
+	case 1:
+		fprintf(stdout, "%s", s);
+		break;
+	case 2:
+		fprintf(stderr, "%s", s);
+		break;
+	default:
+		LALFree(s);
+		XLAL_ERROR_VOID(XLAL_EIO, "Don't know what to do with file descriptor %d", fd);
+	}
+#endif
+	LALFree(s);
 	return;
 }

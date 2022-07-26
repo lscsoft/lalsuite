@@ -168,13 +168,17 @@ Sections of the CI pipeline can be skipped by adding special key text to your co
 | `[skip coverage]`    | Skip coverage jobs                            |
 | `[skip debian]`      | Skip Debian build jobs (and their dependents) |
 | `[skip docs]`        | Skip documentation jobs                       |
+| `[skip docker]`      | Skip Docker build jobs                        |
 | `[skip integration]` | Skip integration test jobs                    |
+| `[skip koji]`        | Skip koji test jobs                           |
 | `[skip lint]`        | Skip lint jobs                                |
 | `[skip platform]`    | Skip platform test jobs                       |
 | `[skip rhel]`        | Skip RHEL build jobs (and their dependents)   |
 | `[skip wheels]`      | Skip Python wheel build jobs test jobs        |
 
 **It is important that this feature is not abused, please do not skip any jobs when making library changes.**
+
+On the other hand, if you are adding a feature you know will only be fully tested by the nightly pipeline, you can add the special key text `[nightly ci]` to your commit messages to trigger this pipeline. **The nightly pipeline will take longer to run and consume more resources, so please use only when necessary.**
 
 ## More Information
 

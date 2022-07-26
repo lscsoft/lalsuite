@@ -9,30 +9,24 @@ Build-Depends:
  help2man (>= 1.37),
  lal-octave (>= @MIN_LAL_VERSION@~),
  lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
+ lalinference-octave (>= @MIN_LALINFERENCE_VERSION@~),
  libcfitsio3-dev | libcfitsio-dev,
  libfftw3-dev,
  libgsl-dev | libgsl0-dev (>= 1.9),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
+ liblalinference-dev (>= @MIN_LALINFERENCE_VERSION@~),
  liboctave-dev,
  pkg-config (>= 0.18.0),
- python-all-dev,
- python-astropy,
- python-lal (>= @MIN_LAL_VERSION@~),
- python-lalframe (>= @MIN_LALFRAME_VERSION@~),
- python-mock,
- python-numpy (>= @MIN_NUMPY_VERSION@),
- python-pathlib,
- python-pytest,
  python3-all-dev,
  python3-astropy,
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
+ python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-pytest,
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
-X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
@@ -41,6 +35,7 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
+ lalpulsar-data,
 Description: LSC Algorithm Library Pulsar
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
@@ -59,6 +54,7 @@ Depends:
  libgsl-dev | libgsl0-dev (>= 1.9),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
+ liblalinference-dev (>= @MIN_LALINFERENCE_VERSION@~),
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
 Description: LSC Algorithm Library Pulsar Developers
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
@@ -68,36 +64,10 @@ Provides: lalpulsar-dev (= ${binary:Version})
 Breaks: lalpulsar-dev (<< 2.1.0-2~)
 Replaces: lalpulsar-dev (<< 2.1.0-2~)
 
-Package: lalpulsar-python
-Depends: python-lalpulsar, ${misc:Depends}
-Architecture: all
-Priority: extra
-Section: oldlibs
-Description: transitional package
- lalpulsar-python was renamed python-lalpulsar,
- this is a transitional package, it can safely be removed.
-
-Package: python-lalpulsar
-Section: python
-Replaces: lalpulsar-python (<< 1.16.0.1-1~)
-Breaks: lalpulsar-python (<< 1.16.0.1-1~)
-Architecture: any
-Depends:
- ${misc:Depends},
- ${python:Depends},
- ${shlibs:Depends},
- liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
- python-astropy,
- python-lal (>= @MIN_LAL_VERSION@~),
- python-lalframe (>= @MIN_LALFRAME_VERSION@~),
-Description: Python bindings for LALPulsar.
- The LSC Algorithm Pulsar Library for gravitational wave data analysis.
- This package contains Python bindings for the LAL Pulsar library.
-
 Package: lalpulsar-python3
 Depends: python3-lalpulsar, ${misc:Depends}
 Architecture: all
-Priority: extra
+Priority: optional
 Section: oldlibs
 Description: transitional package
  lalpulsar-python3 was renamed python3-lalpulsar,
@@ -116,6 +86,7 @@ Depends:
  python3-astropy,
  python3-lal (>= @MIN_LAL_VERSION@~),
  python3-lalframe (>= @MIN_LALFRAME_VERSION@~),
+ python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
 Description: Python 3 bindings for LALPulsar.
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Pulsar library.
@@ -127,6 +98,7 @@ Depends:
  ${shlibs:Depends},
  lal-octave (>= @MIN_LAL_VERSION@~),
  lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
+ lalinference-octave (>= @MIN_LALINFERENCE_VERSION@~),
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
  octave,
 Description: Octave bindings for LALPulsar.
@@ -140,6 +112,16 @@ Depends:
  ${shlibs:Depends},
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
  python3-lalpulsar (= ${binary:Version}),
+ lalpulsar-data,
 Description: LSC Algorithm Library Pulsar
  The LSC Algorithm Pulsar Library for gravitational wave data analysis.
  This package provides the runtime tools.
+
+Package: lalpulsar-data
+Architecture: all
+Depends: ${misc:Depends}
+Description: LSC Algorithm Library Pulsar
+ The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+ This package provides the data files.
+Replaces: liblalpulsar23 (<< 3.1.2.1-1~)
+Breaks: liblalpulsar23 (<< 3.1.2.1-1~)

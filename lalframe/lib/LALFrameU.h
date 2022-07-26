@@ -41,7 +41,7 @@ extern "C" {
  * in the "Frame Format for Interferometric Gravitational Wave Detectors".
  * @sa <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa Virgo Frame Library [http://lappweb.in2p3.fr/virgo/FrameL].
  * @sa FrameCPP Library [http://www.ldas-sw.ligo.caltech.edu/doc/framecpp/html].
  */
@@ -59,7 +59,7 @@ struct tagLALFrameUFrHistory;
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 typedef struct tagLALFrameUFrameH LALFrameUFrameH;
 
@@ -73,7 +73,7 @@ typedef struct tagLALFrameUFrFile LALFrameUFrFile;
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 typedef struct tagLALFrameUFrTOC LALFrameUFrTOC;
 
@@ -82,7 +82,7 @@ typedef struct tagLALFrameUFrTOC LALFrameUFrTOC;
  * @sa Sections 4.3.2.4, 4.3.2.11, and 4.3.2.14 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 typedef struct tagLALFrameUFrChan LALFrameUFrChan;
 
@@ -91,7 +91,7 @@ typedef struct tagLALFrameUFrChan LALFrameUFrChan;
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 typedef struct tagLALFrameUFrDetector LALFrameUFrDetector;
 
@@ -100,7 +100,7 @@ typedef struct tagLALFrameUFrDetector LALFrameUFrDetector;
  * @sa Section 4.3.2.9 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 typedef struct tagLALFrameUFrHistory LALFrameUFrHistory;
 
@@ -109,7 +109,7 @@ typedef struct tagLALFrameUFrHistory LALFrameUFrHistory;
  * @details These compression scheme Id codes are from Appendix B of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 enum LALFrameUFrVectCompressionScheme {
     /** @brief Id for uncompressed raw values. */
@@ -135,7 +135,7 @@ enum LALFrameUFrVectCompressionScheme {
  * @details These data type Id codes are from Appendix C of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 enum LALFrameUFrVectDataType {
     /** @brief Id for 8-bit signed char data type. */
@@ -183,7 +183,7 @@ enum LALFrameUFrVectDataType {
  * @details These type codes are from section 4.3.2.11 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 enum LALFrameUFrProcDataType {
     /** @brief Id for unknown or user-defined data. */
@@ -213,7 +213,7 @@ enum LALFrameUFrProcDataType {
  * @details These type codes are from section 4.3.2.11 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 enum LALFrameUFrProcDataSubType {
     /** @brief Id for unknown or user-defined data. */
@@ -287,7 +287,7 @@ int XLALFrameUFileCksumValid(LALFrameUFrFile * stream);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 void XLALFrameUFrTOCFree(LALFrameUFrTOC * toc);
 
@@ -305,7 +305,7 @@ void XLALFrameUFrTOCFree(LALFrameUFrTOC * toc);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 LALFrameUFrTOC *XLALFrameUFrTOCRead(LALFrameUFrFile * stream);
 
@@ -324,7 +324,7 @@ LALFrameUFrTOC *XLALFrameUFrTOCRead(LALFrameUFrFile * stream);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 size_t XLALFrameUFrTOCQueryNFrame(const LALFrameUFrTOC * toc);
 
@@ -338,7 +338,7 @@ size_t XLALFrameUFrTOCQueryNFrame(const LALFrameUFrTOC * toc);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc, size_t pos);
 
@@ -351,7 +351,7 @@ double XLALFrameUFrTOCQueryGTimeModf(double *iptr, const LALFrameUFrTOC * toc, s
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 double XLALFrameUFrTOCQueryDt(const LALFrameUFrTOC * toc, size_t pos);
 
@@ -363,7 +363,7 @@ double XLALFrameUFrTOCQueryDt(const LALFrameUFrTOC * toc, size_t pos);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 size_t XLALFrameUFrTOCQueryAdcN(const LALFrameUFrTOC * toc);
 
@@ -379,7 +379,7 @@ size_t XLALFrameUFrTOCQueryAdcN(const LALFrameUFrTOC * toc);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrTOCQueryAdcName(const LALFrameUFrTOC * toc, size_t adc);
 
@@ -391,7 +391,7 @@ const char *XLALFrameUFrTOCQueryAdcName(const LALFrameUFrTOC * toc, size_t adc);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 size_t XLALFrameUFrTOCQuerySimN(const LALFrameUFrTOC * toc);
 
@@ -407,7 +407,7 @@ size_t XLALFrameUFrTOCQuerySimN(const LALFrameUFrTOC * toc);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrTOCQuerySimName(const LALFrameUFrTOC * toc, size_t sim);
 
@@ -419,7 +419,7 @@ const char *XLALFrameUFrTOCQuerySimName(const LALFrameUFrTOC * toc, size_t sim);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 size_t XLALFrameUFrTOCQueryProcN(const LALFrameUFrTOC * toc);
 
@@ -435,7 +435,7 @@ size_t XLALFrameUFrTOCQueryProcN(const LALFrameUFrTOC * toc);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrTOCQueryProcName(const LALFrameUFrTOC * toc, size_t proc);
 
@@ -446,7 +446,7 @@ const char *XLALFrameUFrTOCQueryProcName(const LALFrameUFrTOC * toc, size_t proc
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 size_t XLALFrameUFrTOCQueryDetectorN(const LALFrameUFrTOC * toc);
 
@@ -462,7 +462,7 @@ size_t XLALFrameUFrTOCQueryDetectorN(const LALFrameUFrTOC * toc);
  * @sa Section 4.3.2.19 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrTOCQueryDetectorName(const LALFrameUFrTOC * toc, size_t det);
 
@@ -482,19 +482,23 @@ void XLALFrameUFrameHFree(LALFrameUFrameH * frame);
 /**
  * @brief Allocate memory for a new frame header FrameH structure.
  * @param name Name for this FrameH structure.
- * @param start GPS start time in seconds for this FrameH structure.
+ * @param start1 First of two double precision floating point numbers specifying the GPS start time in seconds for this FrameH structure (to be added to start2).
+ * @param start2 Second of two double precision floating point numbers GPS start time in seconds for this FrameH structure (to be added to start1).
  * @param dt Duration in seconds for this FrameH structure.
  * @param frnum Number for this FrameH structure.
  * @return Pointer to a new FrameH structure.
  * @retval NULL Failure.
+ * @note To maintain precision, the start time is broken into two double
+ * precision floating point values, start1 and start2, which, when added
+ * together is the GPS start time in seconds.
  * @attention The calling routine is responsible for freeing the returned
  * pointer with XLALFrameUFrameHFree().
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
-LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start, double dt, int frnum);
+LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start1, double start2, double dt, int frnum);
 
 /**
  * @brief Read a frame header FrameH structure from a FrFile stream.
@@ -507,7 +511,7 @@ LALFrameUFrameH *XLALFrameUFrameHAlloc(const char *name, double start, double dt
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 LALFrameUFrameH *XLALFrameUFrameHRead(LALFrameUFrFile * stream, int pos);
 
@@ -520,7 +524,7 @@ LALFrameUFrameH *XLALFrameUFrameHRead(LALFrameUFrFile * stream, int pos);
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrameHWrite(LALFrameUFrFile * stream, LALFrameUFrameH * frame);
 
@@ -540,7 +544,7 @@ int XLALFrameUFrameHWrite(LALFrameUFrFile * stream, LALFrameUFrameH * frame);
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrameHFrChanAdd(LALFrameUFrameH * frame, LALFrameUFrChan * channel);
 
@@ -553,7 +557,7 @@ int XLALFrameUFrameHFrChanAdd(LALFrameUFrameH * frame, LALFrameUFrChan * channel
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrameHFrDetectorAdd(LALFrameUFrameH * frame, LALFrameUFrDetector * detector);
 
@@ -566,7 +570,7 @@ int XLALFrameUFrameHFrDetectorAdd(LALFrameUFrameH * frame, LALFrameUFrDetector *
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrameHFrHistoryAdd(LALFrameUFrameH * frame, LALFrameUFrHistory * history);
 
@@ -588,7 +592,7 @@ int XLALFrameUFrameHFrHistoryAdd(LALFrameUFrameH * frame, LALFrameUFrHistory * h
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrameHQueryName(const LALFrameUFrameH * frame);
 
@@ -600,7 +604,7 @@ const char *XLALFrameUFrameHQueryName(const LALFrameUFrameH * frame);
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrameHQueryRun(const LALFrameUFrameH * frame);
 
@@ -612,7 +616,7 @@ int XLALFrameUFrameHQueryRun(const LALFrameUFrameH * frame);
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrameHQueryFrame(const LALFrameUFrameH * frame);
 
@@ -624,7 +628,7 @@ int XLALFrameUFrameHQueryFrame(const LALFrameUFrameH * frame);
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrameHQueryDataQuality(const LALFrameUFrameH * frame);
 
@@ -637,7 +641,7 @@ int XLALFrameUFrameHQueryDataQuality(const LALFrameUFrameH * frame);
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 double XLALFrameUFrameHQueryGTimeModf(double *iptr, const LALFrameUFrameH * frame);
 
@@ -649,7 +653,7 @@ double XLALFrameUFrameHQueryGTimeModf(double *iptr, const LALFrameUFrameH * fram
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrameHQueryULeapS(const LALFrameUFrameH * frame);
 
@@ -661,7 +665,7 @@ int XLALFrameUFrameHQueryULeapS(const LALFrameUFrameH * frame);
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 double XLALFrameUFrameHQueryDt(const LALFrameUFrameH * frame);
 
@@ -681,7 +685,7 @@ double XLALFrameUFrameHQueryDt(const LALFrameUFrameH * frame);
  * @sa Section 4.3.2.3 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrameHSetRun(LALFrameUFrameH * frame, int run);
 
@@ -698,7 +702,7 @@ int XLALFrameUFrameHSetRun(LALFrameUFrameH * frame, int run);
  * @sa Sections 4.3.2.4, 4.3.2.11, and 4.3.2.14 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 void XLALFrameUFrChanFree(LALFrameUFrChan * channel);
 
@@ -714,7 +718,7 @@ void XLALFrameUFrChanFree(LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.4, 4.3.2.11, and 4.3.2.14 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 LALFrameUFrChan *XLALFrameUFrChanRead(LALFrameUFrFile * stream, const char *name, size_t pos);
 
@@ -730,7 +734,7 @@ LALFrameUFrChan *XLALFrameUFrChanRead(LALFrameUFrFile * stream, const char *name
  * @sa Sections 4.3.2.4 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 LALFrameUFrChan *XLALFrameUFrAdcChanAlloc(const char *name, int dtype, size_t ndata);
 
@@ -746,7 +750,7 @@ LALFrameUFrChan *XLALFrameUFrAdcChanAlloc(const char *name, int dtype, size_t nd
  * @sa Sections 4.3.2.11 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 LALFrameUFrChan *XLALFrameUFrSimChanAlloc(const char *name, int dtype, size_t ndata);
 
@@ -764,7 +768,7 @@ LALFrameUFrChan *XLALFrameUFrSimChanAlloc(const char *name, int dtype, size_t nd
  * @sa Sections 4.3.2.14 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type, int subtype, int dtype, size_t ndata);
 
@@ -786,7 +790,7 @@ LALFrameUFrChan *XLALFrameUFrProcChanAlloc(const char *name, int type, int subty
  * @sa Sections 4.3.2.4, 4.3.2.11, and 4.3.2.14 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrChanQueryName(const LALFrameUFrChan * channel);
 
@@ -804,7 +808,7 @@ const char *XLALFrameUFrChanQueryName(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.4, 4.3.2.11, and 4.3.2.14 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel);
 
@@ -824,7 +828,7 @@ double XLALFrameUFrChanQueryTimeOffset(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.4, 4.3.2.11, and 4.3.2.14 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel, double sampleRate);
 
@@ -843,9 +847,27 @@ int XLALFrameUFrChanSetSampleRate(LALFrameUFrChan * channel, double sampleRate);
  * @sa Sections 4.3.2.4, 4.3.2.11, and 4.3.2.14 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel, double timeOffset);
+
+/**
+ * @brief Set the time range in a FrChan structure.
+ * @param channel Pointer to the FrChan structure to be modified.
+ * @param tRange The duration of sampled data in seconds.
+ * @retval 0 Success.
+ * @retval <0 Failure.
+ * @remark tRange is redundant with the axis informatino in the data vector
+ * in some cases.  If a redundancy exists, the data must be identical to that
+ * in the FrVect for the earliest time dimension (e.g., for a time series,
+ * tRange = dx[0]*nx[0]).  If a discrepancy exists then the FrVect values
+ * take precedence.
+ * @sa Section 4.3.2.11 of
+ * <em>Specification of a Common Data Frame Format for Interferometric
+ * Gravitational Wave Detectors (IGWD)</em>
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
+ */
+int XLALFrameUFrChanSetTRange(LALFrameUFrChan * channel, double tRange);
 
 /** @} */
 
@@ -864,7 +886,7 @@ int XLALFrameUFrChanSetTimeOffset(LALFrameUFrChan * channel, double timeOffset);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype, size_t ndata);
 
@@ -878,7 +900,7 @@ int XLALFrameUFrChanVectorAlloc(LALFrameUFrChan * channel, int dtype, size_t nda
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorCompress(LALFrameUFrChan * channel, int compressLevel);
 
@@ -890,7 +912,7 @@ int XLALFrameUFrChanVectorCompress(LALFrameUFrChan * channel, int compressLevel)
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorExpand(LALFrameUFrChan * channel);
 
@@ -912,7 +934,7 @@ int XLALFrameUFrChanVectorExpand(LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrChanVectorQueryName(const LALFrameUFrChan * channel);
 
@@ -926,7 +948,7 @@ const char *XLALFrameUFrChanVectorQueryName(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorQueryCompress(const LALFrameUFrChan * channel);
 
@@ -939,7 +961,7 @@ int XLALFrameUFrChanVectorQueryCompress(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorQueryType(const LALFrameUFrChan * channel);
 
@@ -954,7 +976,7 @@ int XLALFrameUFrChanVectorQueryType(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 void *XLALFrameUFrChanVectorQueryData(const LALFrameUFrChan * channel);
 
@@ -967,7 +989,7 @@ void *XLALFrameUFrChanVectorQueryData(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 size_t XLALFrameUFrChanVectorQueryNBytes(const LALFrameUFrChan * channel);
 
@@ -980,7 +1002,7 @@ size_t XLALFrameUFrChanVectorQueryNBytes(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 size_t XLALFrameUFrChanVectorQueryNData(const LALFrameUFrChan * channel);
 
@@ -993,7 +1015,7 @@ size_t XLALFrameUFrChanVectorQueryNData(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 size_t XLALFrameUFrChanVectorQueryNDim(const LALFrameUFrChan * channel);
 
@@ -1008,7 +1030,7 @@ size_t XLALFrameUFrChanVectorQueryNDim(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 size_t XLALFrameUFrChanVectorQueryNx(const LALFrameUFrChan * channel, size_t dim);
 
@@ -1023,7 +1045,7 @@ size_t XLALFrameUFrChanVectorQueryNx(const LALFrameUFrChan * channel, size_t dim
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 double XLALFrameUFrChanVectorQueryDx(const LALFrameUFrChan * channel, size_t dim);
 
@@ -1038,7 +1060,7 @@ double XLALFrameUFrChanVectorQueryDx(const LALFrameUFrChan * channel, size_t dim
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel, size_t dim);
 
@@ -1056,7 +1078,7 @@ double XLALFrameUFrChanVectorQueryStartX(const LALFrameUFrChan * channel, size_t
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel, size_t dim);
 
@@ -1073,7 +1095,7 @@ const char *XLALFrameUFrChanVectorQueryUnitX(const LALFrameUFrChan * channel, si
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrChanVectorQueryUnitY(const LALFrameUFrChan * channel);
 
@@ -1093,7 +1115,7 @@ const char *XLALFrameUFrChanVectorQueryUnitY(const LALFrameUFrChan * channel);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorSetName(LALFrameUFrChan * channel, const char *name);
 
@@ -1107,7 +1129,7 @@ int XLALFrameUFrChanVectorSetName(LALFrameUFrChan * channel, const char *name);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorSetDx(LALFrameUFrChan * channel, double dx);
 
@@ -1122,7 +1144,7 @@ int XLALFrameUFrChanVectorSetDx(LALFrameUFrChan * channel, double dx);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorSetStartX(LALFrameUFrChan * channel, double x0);
 
@@ -1137,7 +1159,7 @@ int XLALFrameUFrChanVectorSetStartX(LALFrameUFrChan * channel, double x0);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel, const char *unit);
 
@@ -1152,7 +1174,7 @@ int XLALFrameUFrChanVectorSetUnitX(LALFrameUFrChan * channel, const char *unit);
  * @sa Sections 4.3.2.20 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel, const char *unit);
 
@@ -1171,7 +1193,7 @@ int XLALFrameUFrChanVectorSetUnitY(LALFrameUFrChan * channel, const char *unit);
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 void XLALFrameUFrDetectorFree(LALFrameUFrDetector * detector);
 
@@ -1186,7 +1208,7 @@ void XLALFrameUFrDetectorFree(LALFrameUFrDetector * detector);
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream, const char *name);
 
@@ -1215,10 +1237,10 @@ LALFrameUFrDetector *XLALFrameUFrDetectorRead(LALFrameUFrFile * stream, const ch
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
     const char *prefix, double latitude, double longitude, double elevation,
@@ -1242,7 +1264,7 @@ LALFrameUFrDetector *XLALFrameUFrDetectorAlloc(const char *name,
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector * detector);
 
@@ -1257,7 +1279,7 @@ const char *XLALFrameUFrDetectorQueryName(const LALFrameUFrDetector * detector);
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 const char *XLALFrameUFrDetectorQueryPrefix(const LALFrameUFrDetector * detector);
 
@@ -1269,10 +1291,10 @@ const char *XLALFrameUFrDetectorQueryPrefix(const LALFrameUFrDetector * detector
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 double XLALFrameUFrDetectorQueryLongitude(const LALFrameUFrDetector * detector);
 
@@ -1284,10 +1306,10 @@ double XLALFrameUFrDetectorQueryLongitude(const LALFrameUFrDetector * detector);
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 double XLALFrameUFrDetectorQueryLatitude(const LALFrameUFrDetector * detector);
 
@@ -1299,10 +1321,10 @@ double XLALFrameUFrDetectorQueryLatitude(const LALFrameUFrDetector * detector);
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 double XLALFrameUFrDetectorQueryElevation(const LALFrameUFrDetector * detector);
 
@@ -1314,10 +1336,10 @@ double XLALFrameUFrDetectorQueryElevation(const LALFrameUFrDetector * detector);
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 double XLALFrameUFrDetectorQueryArmXAzimuth(const LALFrameUFrDetector * detector);
 
@@ -1329,10 +1351,10 @@ double XLALFrameUFrDetectorQueryArmXAzimuth(const LALFrameUFrDetector * detector
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 double XLALFrameUFrDetectorQueryArmYAzimuth(const LALFrameUFrDetector * detector);
 
@@ -1345,10 +1367,10 @@ double XLALFrameUFrDetectorQueryArmYAzimuth(const LALFrameUFrDetector * detector
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 double XLALFrameUFrDetectorQueryArmXAltitude(const LALFrameUFrDetector * detector);
 
@@ -1361,10 +1383,10 @@ double XLALFrameUFrDetectorQueryArmXAltitude(const LALFrameUFrDetector * detecto
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 double XLALFrameUFrDetectorQueryArmYAltitude(const LALFrameUFrDetector * detector);
 
@@ -1377,10 +1399,10 @@ double XLALFrameUFrDetectorQueryArmYAltitude(const LALFrameUFrDetector * detecto
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 double XLALFrameUFrDetectorQueryArmXMidpoint(const LALFrameUFrDetector * detector);
 
@@ -1393,10 +1415,10 @@ double XLALFrameUFrDetectorQueryArmXMidpoint(const LALFrameUFrDetector * detecto
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 double XLALFrameUFrDetectorQueryArmYMidpoint(const LALFrameUFrDetector * detector);
 
@@ -1407,10 +1429,10 @@ double XLALFrameUFrDetectorQueryArmYMidpoint(const LALFrameUFrDetector * detecto
  * @sa Section 4.3.2.5 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  * @sa <em>Beam Pattern Response Functions and Times of Arrival for Earthbound
  * Interferometer</em>
- * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110-v1/public]
+ * LIGO-T010110 [https://dcc.ligo.org/LIGO-T010110/public]
  */
 int XLALFrameUFrDetectorQueryLocalTime(const LALFrameUFrDetector * detector);
 
@@ -1427,7 +1449,7 @@ int XLALFrameUFrDetectorQueryLocalTime(const LALFrameUFrDetector * detector);
  * @sa Section 4.3.2.9 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 void XLALFrameUFrHistoryFree(LALFrameUFrHistory * history);
 
@@ -1443,7 +1465,7 @@ void XLALFrameUFrHistoryFree(LALFrameUFrHistory * history);
  * @sa Section 4.3.2.9 of
  * <em>Specification of a Common Data Frame Format for Interferometric
  * Gravitational Wave Detectors (IGWD)</em>
- * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130-v1/public].
+ * LIGO-T970130 [https://dcc.ligo.org/LIGO-T970130/public].
  */
 LALFrameUFrHistory *XLALFrameUFrHistoryAlloc(const char *name, double gpssec, const char *comment);
 

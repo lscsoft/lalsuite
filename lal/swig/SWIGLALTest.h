@@ -345,14 +345,23 @@ void swig_lal_test_Destroy_arrayofptrs(swig_lal_test_arrayofptrs* ap);
 
 // Test typemaps for strings and double pointers
 #ifdef SWIG
-SWIGLAL(INOUT_STRUCTS(const swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
+SWIGLAL(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
 #endif // SWIG
 int swig_lal_test_typemaps_string_ptrptr(
   const char *str, const char *empty_str, const char *null_str,
-  const swig_lal_test_struct** ptr_ptr, const swig_lal_test_struct** ptr_null_ptr, const swig_lal_test_struct** null_ptr_ptr
+  swig_lal_test_struct** ptr_ptr, swig_lal_test_struct** ptr_null_ptr, swig_lal_test_struct** null_ptr_ptr
   );
 #ifdef SWIG
-SWIGLAL_CLEAR(INOUT_STRUCTS(const swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
+SWIGLAL_CLEAR(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr, ptr_null_ptr, null_ptr_ptr));
+#endif // SWIG
+#ifdef SWIG
+SWIGLAL(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr));
+#endif // SWIG
+int swig_lal_test_typemaps_ptrptr(
+  swig_lal_test_struct** ptr_ptr
+  );
+#ifdef SWIG
+SWIGLAL_CLEAR(INOUT_STRUCTS(swig_lal_test_struct**, ptr_ptr));
 #endif // SWIG
 
 // Test LIGOTimeGPS operations.
@@ -363,6 +372,12 @@ REAL8 swig_lal_test_noptrgps(const LIGOTimeGPS gps);
 
 // Test Python dict to LALDict typemap
 int swig_lal_test_pydict_to_laldict(LALDict *laldict);
+
+// Test Python conversion of NumPy integer types
+INT8 swig_lal_test_numpy_int_types(int a, INT2 b, INT4 c, INT8 d);
+UINT8 swig_lal_test_numpy_uint_types(unsigned int a, UINT2 b, UINT4 c, UINT8 d);
+REAL8 swig_lal_test_numpy_flt_types(REAL4 a, REAL8 b, REAL4 c, REAL8 d);
+COMPLEX16 swig_lal_test_numpy_cpx_types(COMPLEX8 a, COMPLEX16 b, COMPLEX8 c, COMPLEX16 d);
 
 #ifdef __cplusplus
 }

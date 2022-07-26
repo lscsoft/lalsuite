@@ -176,6 +176,7 @@ INT4 main( INT4 argc, CHAR *argv[] ){
     runState.data->templa_counter = 0;
     runState.data->next = NULL;
     runState.threads[0].model->ifo = XLALMalloc(sizeof(LALInferenceIFOModel));
+    runState.threads[0].model->ifo->extraData = XLALCalloc(1, sizeof(IFOModelExtraData) );
     runState.threads[0].model->ifo->params = XLALCalloc(1, sizeof(LALInferenceVariables) );
     runState.threads[0].model->ifo->next = NULL;
     runState.threads[0].model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8) );

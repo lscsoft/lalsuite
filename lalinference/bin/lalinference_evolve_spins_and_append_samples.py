@@ -137,7 +137,7 @@ for i, _ in enumerate(m1):
         mtot_s = (m1[i] + m2[i])*MTSUN_SI # total mass in seconds
         f_final = v_final*v_final*v_final/(mtot_s*np.pi)
 
-        _, _, chi1x_v_data, chi1y_v_data, chi1z_v_data, chi2x_v_data, chi2y_v_data, chi2z_v_data, Lnx_v_data, Lny_v_data, Lnz_v_data, _, _, _ = lalsim.SimInspiralSpinTaylorPNEvolveOrbit(deltaT=dt*mtot_s, m1=m1[i]*MSUN_SI, m2=m2[i]*MSUN_SI, fStart=f_start[i], fEnd=f_final, s1x=chi1[i]*np.sin(tilt1[i]), s1y=0., s1z=chi1[i]*np.cos(tilt1[i]), s2x=chi2[i]*np.sin(tilt2[i])*np.cos(phi12[i]), s2y=chi2[i]*np.sin(tilt2[i])*np.sin(phi12[i]), s2z=chi2[i]*np.cos(tilt2[i]), lnhatx=0., lnhaty=0., lnhatz=1., e1x=1., e1y=0., e1z=0., lambda1=0., lambda2=0., quadparam1=1., quadparam2=1., spinO=7, tideO=0, phaseO=7, lscorr=0, approx=approx)
+        _, _, chi1x_v_data, chi1y_v_data, chi1z_v_data, chi2x_v_data, chi2y_v_data, chi2z_v_data, Lnx_v_data, Lny_v_data, Lnz_v_data, _, _, _ = lalsim.SimInspiralSpinTaylorPNEvolveOrbit(deltaT=dt*mtot_s, m1=m1[i]*MSUN_SI, m2=m2[i]*MSUN_SI, fStart=f_start[i], fEnd=f_final, s1x=chi1[i]*np.sin(tilt1[i]), s1y=0., s1z=chi1[i]*np.cos(tilt1[i]), s2x=chi2[i]*np.sin(tilt2[i])*np.cos(phi12[i]), s2y=chi2[i]*np.sin(tilt2[i])*np.sin(phi12[i]), s2z=chi2[i]*np.cos(tilt2[i]), lnhatx=0., lnhaty=0., lnhatz=1., e1x=1., e1y=0., e1z=0., lambda1=0., lambda2=0., quadparam1=1., quadparam2=1., spinO=6, tideO=0, phaseO=7, lscorr=0, approx=approx)
 
         # Set index to take from array output by lalsim.SimInspiralSpinTaylorPNEvolveOrbit: -1 for evolving forward in time and 0 for evolving backward in time
         if f_start[i] <= f_final:

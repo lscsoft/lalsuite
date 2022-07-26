@@ -634,6 +634,15 @@ int MAIN( int argc, char *argv[]) {
   usefulParams.Dterms = uvar_Dterms;
   usefulParams.dopplerMax = uvar_dopplerMax;
 
+  /* set Fstat calculation frequency resolution
+     -- default is 1/tstack */
+  if ( XLALUserVarWasSet(&uvar_dFreq) ) {
+    usefulParams.dFreqStack = uvar_dFreq;
+  }
+  else {
+    usefulParams.dFreqStack = 1.0/usefulParams.tStack;
+  }
+
   /* set reference time for pular parameters */
   if ( XLALUserVarWasSet(&uvar_refTime))
     usefulParams.refTime = uvar_refTime;
@@ -660,15 +669,6 @@ int MAIN( int argc, char *argv[]) {
 
 
   /*------- set frequency and spindown resolutions and ranges for Fstat and semicoherent steps -----*/
-
-  /* set Fstat calculation frequency resolution
-     -- default is 1/tstack */
-  if ( XLALUserVarWasSet(&uvar_dFreq) ) {
-    usefulParams.dFreqStack = uvar_dFreq;
-  }
-  else {
-    usefulParams.dFreqStack = 1.0/tStack;
-  }
 
   /* set Fstat spindown resolution
      -- default is 1/Tstack^2 */

@@ -41,7 +41,7 @@ extern "C" {
 
 /********************************* IMRPhenomT 22 Frequency Fits *********************************/
 
-/*static double IMRPhenomT_MECOTime(double eta, double S, double dchi, double delta);/*FIXME: Promote some interesting quantities to XLAL functions*/
+/*static double IMRPhenomT_MECOTime(double eta, double S, double dchi, double delta); FIXME: Promote some interesting quantities to XLAL functions*/
 
 static double IMRPhenomT_Inspiral_TaylorT3_t0(double eta, double S, double dchi, double delta); // theta = 0.45
 

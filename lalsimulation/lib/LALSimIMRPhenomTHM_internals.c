@@ -405,7 +405,8 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
 	 The value of the first row of basis matrix are the arcsinh powers of the ansatz evaluated at the boundary time tCut. */
 
 	gsl_complex phi = gsl_complex_rect(pPhase->alpha1RD*tCut,0);
-	REAL8 ascut = GSL_REAL(gsl_complex_arcsinh(phi));
+	gsl_complex arcsinhphi = gsl_complex_arcsinh(phi);
+	REAL8 ascut = GSL_REAL(arcsinhphi);
 	REAL8 ascut2 = ascut*ascut;
 	REAL8 ascut3 = ascut*ascut2;
 	REAL8 ascut4 = ascut*ascut3;
@@ -421,7 +422,8 @@ int IMRPhenomTSetPhase22Coefficients(IMRPhenomTPhase22Struct *pPhase, IMRPhenomT
 	 The value of the second row of basis matrix are the arcsinh powers of the ansatz evaluated at the collocation point time tMerger22 (determined from theta(t)=0.95). */
 
 	phi = gsl_complex_rect(pPhase->alpha1RD*tMerger22,0);
-	REAL8 as025cut = GSL_REAL(gsl_complex_arcsinh(phi));
+	arcsinhphi = gsl_complex_arcsinh(phi);
+	REAL8 as025cut = GSL_REAL(arcsinhphi);
 	REAL8 as025cut2 = as025cut*as025cut;
 	REAL8 as025cut3 = as025cut*as025cut2;
 	REAL8 as025cut4 = as025cut*as025cut3;
@@ -908,8 +910,10 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 	pAmp->c2_prec = 0.5*(pAmp->alpha2RD_prec - pAmp->alpha1RD_prec);
 
 	phi = gsl_complex_rect(pAmp->c3,0); // Needed complex parameter for gsl hyperbolic functions
-	coshc3 =  GSL_REAL(gsl_complex_cosh(phi));
-	tanhc3 =  GSL_REAL(gsl_complex_tanh(phi));
+	gsl_complex coshphi = gsl_complex_cosh(phi);
+	coshc3 =  GSL_REAL(coshphi);
+	gsl_complex tanhphi = gsl_complex_tanh(phi);
+	tanhc3 =  GSL_REAL(tanhphi);
 
 	/* This condition ensures that the second derivative of the amplitude at the mode peak is always zero or negative, not producing then a second peak in the ringdown */
 	if(fabs(pAmp->c2) > fabs(0.5*pAmp->alpha1RD/tanhc3))
@@ -1019,9 +1023,11 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 	/* Here we compute the needed hyperbolic secant functions for the merger ansatz basis matrix */
 	/* Time parameterisation of merger ansatz is in tau=t-tshift, so peak occurs at tau=0 */ 
 	phi = gsl_complex_rect(pAmp->alpha1RD*(tCut-pAmp->tshift),0);
-	gsl_complex phi2 = gsl_complex_rect(2*pAmp->alpha1RD*(tCut-pAmp->tshift),0);
-	REAL8 sech1 = GSL_REAL(gsl_complex_sech(phi));
-	REAL8 sech2 = GSL_REAL(gsl_complex_sech(phi2));
+	gsl_complex sechphi = gsl_complex_sech(phi);
+	REAL8 sech1 = GSL_REAL(sechphi);
+	phi = gsl_complex_rect(2*pAmp->alpha1RD*(tCut-pAmp->tshift),0);
+	sechphi = gsl_complex_sech(phi);
+	REAL8 sech2 = GSL_REAL(sechphi);
 
 	/* Set the first row of the basis matrix. Just the functions that multiply each unknown coefficient of the ansatz */
 	gsl_matrix_set(A,0,0,1.0);
@@ -1037,9 +1043,11 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 
 	/* Here we compute the needed hyperbolic secant functions for the merger ansatz basis matrix */
 	phi = gsl_complex_rect(pAmp->alpha1RD*(tcpMerger-pAmp->tshift),0);
-	phi2 = gsl_complex_rect(2*pAmp->alpha1RD*(tcpMerger-pAmp->tshift),0);
-	sech1 = GSL_REAL(gsl_complex_sech(phi));
-	sech2 = GSL_REAL(gsl_complex_sech(phi2));
+	sechphi = gsl_complex_sech(phi);
+	sech1 = GSL_REAL(sechphi);
+	phi = gsl_complex_rect(2*pAmp->alpha1RD*(tcpMerger-pAmp->tshift),0);
+	sechphi = gsl_complex_sech(phi);
+	sech2 = GSL_REAL(sechphi);
 
 	/* Set the second row of the basis matrix. Just the functions that multiply each unknown coefficient of the ansatz */
 	gsl_matrix_set(A,1,0,1.0);
@@ -1077,11 +1085,15 @@ int IMRPhenomTSetHMAmplitudeCoefficients(int l, int m, IMRPhenomTHMAmpStruct *pA
 
 	/* Here we compute the needed hyperbolic  functions for the merger ansatz derivative basis matrix */
 	phi = gsl_complex_rect(pAmp->alpha1RD*(tCut-pAmp->tshift),0);
-	phi2 = gsl_complex_rect(2*pAmp->alpha1RD*(tCut-pAmp->tshift),0);
-	sech1 = GSL_REAL(gsl_complex_sech(phi));
-	sech2 = GSL_REAL(gsl_complex_sech(phi2));
-	REAL8 tanh = GSL_REAL(gsl_complex_tanh(phi));
-	REAL8 sinh = GSL_REAL(gsl_complex_sinh(phi2));
+	sechphi = gsl_complex_sech(phi);
+	sech1 = GSL_REAL(sechphi);
+	gsl_complex phi2 = gsl_complex_rect(2*pAmp->alpha1RD*(tCut-pAmp->tshift),0);
+	sechphi = gsl_complex_sech(phi2);
+	sech2 = GSL_REAL(sechphi);
+	tanhphi = gsl_complex_tanh(phi);
+	REAL8 tanh = GSL_REAL(tanhphi);
+	gsl_complex sinhphi = gsl_complex_sinh(phi2);
+	REAL8 sinh = GSL_REAL(sinhphi);
 
 	/* Basis functions of the analytical time derivative of the merger ansatz */
 	REAL8 aux1 = -pAmp->alpha1RD*sech1*tanh;
@@ -1369,7 +1381,8 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 	/* A_{0,i}, imposing continuity at the inspiral boundary. */
 
 	gsl_complex phi = gsl_complex_rect(pPhaseHM->alpha1RD*tCut,0);
-	REAL8 ascut = GSL_REAL(gsl_complex_arcsinh(phi));
+	gsl_complex arcsinhphi = gsl_complex_arcsinh(phi);
+	REAL8 ascut = GSL_REAL(arcsinhphi);
 	REAL8 ascut2 = ascut*ascut;
 	REAL8 ascut3 = ascut*ascut2;
 	REAL8 ascut4 = ascut*ascut3;
@@ -1383,7 +1396,8 @@ int IMRPhenomTSetHMPhaseCoefficients(int l, int m, IMRPhenomTHMPhaseStruct *pPha
 	/* A_{1,i}, imposing collocation point. */
 
 	phi = gsl_complex_rect(pPhaseHM->alpha1RD*tcpMerger,0);
-	REAL8 as025cut = GSL_REAL(gsl_complex_arcsinh(phi));
+	arcsinhphi = gsl_complex_arcsinh(phi);
+	REAL8 as025cut = GSL_REAL(arcsinhphi);
 	REAL8 as025cut2 = as025cut*as025cut;
 	REAL8 as025cut3 = as025cut*as025cut2;
 	REAL8 as025cut4 = as025cut*as025cut3;
@@ -1487,8 +1501,9 @@ double IMRPhenomTInspiralOmegaAnsatz22(REAL8 theta, IMRPhenomTPhase22Struct *pPh
    The ansatz described here corresponds to the rescaled frequency \bar{\omega}=1 - (\omega / \omega_ring) of equation 27. */
 double IMRPhenomTMergerOmegaAnsatz22(REAL8 t, IMRPhenomTPhase22Struct *pPhase){
 
-	gsl_complex phi = gsl_complex_rect(pPhase->alpha1RD*t,0);
-   REAL8 x = GSL_REAL(gsl_complex_arcsinh(phi));
+   gsl_complex phi = gsl_complex_rect(pPhase->alpha1RD*t,0);
+   gsl_complex arcsinhphi = gsl_complex_arcsinh(phi);
+   REAL8 x = GSL_REAL(arcsinhphi);
    REAL8 x2 = x*x;
    REAL8 x3 = x2*x;
    REAL8 x4 = x2*x2;
@@ -1548,8 +1563,9 @@ double IMRPhenomTInspiralPhaseAnsatz22(REAL8 t, REAL8 thetabar, IMRPhenomTWavefo
 /* 22 merger phase ansatz is an analytical integral of the 22 frequency ansatz of IMRPhenomTMergerOmegaAnsatz22 */
 double IMRPhenomTMergerPhaseAnsatz22(REAL8 t, IMRPhenomTPhase22Struct *pPhase){
 
-	gsl_complex phi = gsl_complex_rect(pPhase->alpha1RD*t,0);
-   REAL8 x = GSL_REAL(gsl_complex_arcsinh(phi));
+   gsl_complex phi = gsl_complex_rect(pPhase->alpha1RD*t,0);
+   gsl_complex arcsinhphi = gsl_complex_arcsinh(phi);
+   REAL8 x = GSL_REAL(arcsinhphi);
 
    REAL8 alpha1RD = pPhase->alpha1RD;
    REAL8 omegaPeak = pPhase->omegaPeak;
@@ -1604,8 +1620,9 @@ double IMRPhenomTRDPhaseAnsatz22(REAL8 t, IMRPhenomTPhase22Struct *pPhase){
 
 double IMRPhenomTMergerOmegaAnsatzHM(REAL8 t, IMRPhenomTHMPhaseStruct *pPhase){
 
-	gsl_complex phi = gsl_complex_rect(pPhase->alpha1RD*t,0);
-   REAL8 x = GSL_REAL(gsl_complex_arcsinh(phi));
+   gsl_complex phi = gsl_complex_rect(pPhase->alpha1RD*t,0);
+   gsl_complex sinhphi = gsl_complex_arcsinh(phi);
+   REAL8 x = GSL_REAL(sinhphi);
    REAL8 x2 = x*x;
    REAL8 x3 = x2*x;
    REAL8 x4 = x2*x2;
@@ -1641,8 +1658,9 @@ double IMRPhenomTRDOmegaAnsatzHM(REAL8 t, IMRPhenomTHMPhaseStruct *pPhase){
 
 double IMRPhenomTMergerPhaseAnsatzHM(REAL8 t, IMRPhenomTHMPhaseStruct *pPhase){
 
-	gsl_complex phi = gsl_complex_rect(pPhase->alpha1RD*t,0);
-   REAL8 x = GSL_REAL(gsl_complex_arcsinh(phi));
+   gsl_complex phi = gsl_complex_rect(pPhase->alpha1RD*t,0);
+   gsl_complex sinhphi = gsl_complex_arcsinh(phi);
+   REAL8 x = GSL_REAL(sinhphi);
 
    REAL8 alpha1RD = pPhase->alpha1RD;
    REAL8 omegaPeak = pPhase->omegaPeak;
@@ -1734,9 +1752,11 @@ double IMRPhenomTMergerAmpAnsatzHM(REAL8 t, IMRPhenomTHMAmpStruct *pAmp)
 
 	gsl_complex phi = gsl_complex_rect(pAmp->alpha1RD*(t-tpeak),0);
 	gsl_complex phi2 = gsl_complex_rect(2*pAmp->alpha1RD*(t-tpeak),0);
+	gsl_complex secphi = gsl_complex_sech(phi);
+	gsl_complex secphi2 = gsl_complex_sech(phi2);
 
-	REAL8 sech1 = GSL_REAL(gsl_complex_sech(phi));
-	REAL8 sech2 = GSL_REAL(gsl_complex_sech(phi2)); 
+	REAL8 sech1 = GSL_REAL(secphi);
+	REAL8 sech2 = GSL_REAL(secphi2);
 
 	REAL8 aux = pAmp->mergerC1 + pAmp->mergerC2*sech1 + pAmp->mergerC3*pow(sech2,1./7) + pAmp->mergerC4*(t-tpeak)*(t-tpeak);
 	return aux;
@@ -1753,7 +1773,8 @@ double IMRPhenomTRDAmpAnsatzHM(REAL8 t, IMRPhenomTHMAmpStruct *pAmp)
   REAL8 c1 = pAmp->c1_prec;
 
   gsl_complex phi = gsl_complex_rect(c2*(t-tpeak) + c3,0);
-  REAL8 tanh = GSL_REAL(gsl_complex_tanh(phi));
+  gsl_complex tanhphi = gsl_complex_tanh(phi);
+  REAL8 tanh = GSL_REAL(tanhphi);
 
   REAL8 expAlpha = exp(-pAmp->alpha1RD_prec*(t-tpeak));
 

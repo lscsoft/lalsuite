@@ -1,12 +1,15 @@
 #define CONCAT2x(a,b) a##b
 #define CONCAT2(a,b) CONCAT2x(a,b)
 
-#define VTYPE CONCAT2(TYPE,Vector)
+#define TYPEV CONCAT2(TYPE,Vector)
+#ifndef VTYPE
+#define VTYPE TYPEV
+#endif
 
-#define WRITEFUNC CONCAT2(XLALH5FileWrite,VTYPE)
-#define READFUNC CONCAT2(XLALH5FileRead,VTYPE)
-#define DSETALLOCFUNC CONCAT2(XLALH5DatasetAlloc,VTYPE)
-#define DSETREADFUNC CONCAT2(XLALH5DatasetRead,VTYPE)
+#define WRITEFUNC CONCAT2(XLALH5FileWrite,TYPEV)
+#define READFUNC CONCAT2(XLALH5FileRead,TYPEV)
+#define DSETALLOCFUNC CONCAT2(XLALH5DatasetAlloc,TYPEV)
+#define DSETREADFUNC CONCAT2(XLALH5DatasetRead,TYPEV)
 
 int WRITEFUNC(LALH5File *file, const char *name, VTYPE *vector)
 {
@@ -47,3 +50,4 @@ VTYPE *READFUNC(LALH5File *file, const char *dset)
 #undef CONCAT2
 
 #undef VTYPE
+#undef TYPEV

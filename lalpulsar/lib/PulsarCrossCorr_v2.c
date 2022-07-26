@@ -622,7 +622,6 @@ int XLALCreateSFTPairIndexListShortResamp
 
   /* do two passes, one to count the number of pairs so the list can be allocated, and one to actually populate the list. */
   /* maximum possible number of pairs */
-  UINT4 numMatchMultiResampLists = 0;
   /* MULTI-RESAMPLING maximum possible number of pairs */
   UINT4 lMinMulti;
   UINT4 lMaxMulti =0;
@@ -651,7 +650,6 @@ int XLALCreateSFTPairIndexListShortResamp
             REAL8 timeDiff = XLALGPSDiff(&gps1, &gps2);
             if (fabs(timeDiff) <= maxLag) {
               ++LmatchingGivenKMulti;
-              ++numMatchMultiResampLists;
             }
           }
           MultiListOfLmatchingGivenMultiK->data[detX].data[k].data[detY].detInd = detY;
@@ -2990,7 +2988,7 @@ XLALCreateCrossCorrWorkspace(
     MultiCOMPLEX8TimeSeries   **        multiTimeSeries_SRC_aOut, /**< [out] resampling A time series */
     MultiCOMPLEX8TimeSeries   **        multiTimeSeries_SRC_bOut, /**< [out] resampling B time series */
     const PulsarDopplerParams           binaryTemplateSpacings,   /**< [in ]binary template spacings */
-    const FstatInput          *restrict resampFstatInput,         /**< [in] resampling f-statistic input */
+    FstatInput                *         resampFstatInput,         /**< [in] resampling f-statistic input */
     const UINT4                         numFreqBins,              /**< [in] number of frequency bins */
     const REAL8                         tCoh,                     /**< [in] Tcoh = 2 * max lag + resampling tShort */
     const BOOLEAN                       treatWarningsAsErrors     /**< [in] abort program if any warnings encountered */

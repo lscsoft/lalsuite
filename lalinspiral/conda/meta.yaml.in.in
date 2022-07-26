@@ -38,13 +38,14 @@ build:
   error_overlinking: true
   number: 9999
   script_env:
+    - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - GITLAB_CI
   skip: true  # [win]
 
 requirements:
   build:
     - {{ compiler('c') }}
-    - help2man >=1.37
     - make
     - pkg-config
     - swig >={{ swig_version }}
@@ -52,6 +53,7 @@ requirements:
     - gsl
     - liblal >={{ lal_version }}
     - liblalframe >={{ lalframe_version }}
+    - liblalburst >={{ lalburst_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
     - metaio
@@ -72,6 +74,7 @@ outputs:
       host:
         - gsl
         - liblal >={{ lal_version }}
+        - liblalburst >={{ lalburst_version }}
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
@@ -79,6 +82,7 @@ outputs:
       run:
         - gsl
         - liblal >={{ lal_version }}
+        - liblalburst >={{ lalburst_version }}
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
@@ -90,8 +94,10 @@ outputs:
       requires:
         - pkg-config
       commands:
-        - pkg-config --print-errors --exact-version "{{ version }}" lalinspiral
-        - test -f ${PREFIX}/lib/liblalinspiral${SHLIB_EXT}  # [not win]
+        # check library
+        - test -f ${PREFIX}/lib/liblalinspiral${SHLIB_EXT}  # [unix]
+        # check pkg-config
+        - pkg-config --print-errors --exact-version "${PKG_VERSION}" lalinspiral
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://docs.ligo.org/lscsoft/lalsuite/lalinspiral/
@@ -113,21 +119,28 @@ outputs:
       ignore_run_exports:
         # liblalburst is required because python-lalburst is used
         - liblalburst
+        - numpy
+        - openssl
         - python
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
         - pkg-config
         - swig >={{ swig_version }}
+        # extras for cross-compilation:
+        - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+        - numpy                               # [build_platform != target_platform]
+        - python                              # [build_platform != target_platform]
       host:
         - liblalburst >={{ lalburst_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - numpy
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
-        - liblal  # [linux]
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - lscsoft-glue
         - {{ pin_compatible('numpy') }}
@@ -138,6 +151,7 @@ outputs:
         - python-lalmetaio >={{ lalmetaio_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-ligo-lw
+        - tqdm
     test:
       requires:
         - pytest >=4.0.0a0
@@ -169,24 +183,30 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - liblalburst
+        - openssl
         - python
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37
+        - help2man >=1.37  # [build_platform == target_platform]
         - make
       host:
         - liblal >={{ lal_version }}
         - liblalburst >={{ lalburst_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - python
+        # extras to assist the solver, but not actually used
+        - openssl
       run:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
+        - ligo-segments
         - python
         - {{ pin_subpackage('python-lalinspiral', exact=True) }}
     test:
       commands:
+        - lalinspiral_injfind --help
+        - lalinspiral_thinca --help
         - lalinspiral_version --verbose
       imports:
         - lalinspiral

@@ -9,6 +9,13 @@ from lalpulsar import globalvar as lalpulsarglobalvar
 from lal import globalvar as lalglobalvar
 print("PASSED module load")
 
+# set error handlers
+def set_nice_error_handlers():
+    lal.swig_set_nice_error_handlers()
+def set_default_error_handlers():
+    lal.swig_set_nasty_error_handlers()
+set_default_error_handlers()
+
 # check object parent tracking
 print("checking object parent tracking ...")
 a = lalpulsar.swig_lalpulsar_test_parent_map_struct()
@@ -22,16 +29,19 @@ del a
 lal.CheckMemoryLeaks()
 print("PASSED object parent tracking")
 
-# check multi-vector element assignment
-print("checking multi-vector element assignment ...")
+# check array element assignment
+print("checking array element assignment ...")
 mts = lalpulsar.CreateMultiLIGOTimeGPSVector(2)
 ts0 = lalpulsar.CreateTimestampVector(3)
+for i in range(ts0.length):
+    ts0.data[i] = lal.LIGOTimeGPS(900000000 + i)
 mts.data[0] = ts0
 lal.swig_set_nasty_error_handlers()
 del mts
 del ts0
-lal.swig_set_nice_error_handlers()
-print("PASSED multi-vector element assignment")
+set_default_error_handlers()
+lal.CheckMemoryLeaks()
+print("PASSED array element assignment")
 
 # passed all tests!
 print("PASSED all tests")

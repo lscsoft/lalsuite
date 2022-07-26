@@ -124,7 +124,6 @@ int main( int argc, char *argv[] )
   INT4 ntiles = 0;                 /* number of tiles */
   INT2 Math3DPlot = 0;             /* option flag for Mathematica plot */
   INT4 opt = 0;                    /* returning value of LALgetopt() */
-  INT4 optflag = -1;               /* Command Line option */
   REAL8Vector *psd = NULL;
   REAL8 df = 1.0;
   InspiralTemplate inspiralTemplate;
@@ -150,7 +149,6 @@ int main( int argc, char *argv[] )
  /* Parse options. */
   do
   {
-    optflag++;
     switch (opt)
     {
       case 'b':

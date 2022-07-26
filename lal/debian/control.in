@@ -14,22 +14,9 @@ Build-Depends:
  libhdf5-dev,
  liboctave-dev,
  pkg-config (>= 0.18.0),
- python-all-dev,
- python-dateutil,
- python-freezegun,
- python-glue (>= @MIN_GLUE_VERSION@),
- python-ligo-lw,
- python-ligo-segments,
- python-mock,
- python-numpy (>= @MIN_NUMPY_VERSION@),
- python-pathlib,
- python-pytest,
- python-scipy,
- python-six,
  python3-all-dev,
  python3-dateutil,
  python3-freezegun,
- python3-glue (>= @MIN_GLUE_VERSION@),
  python3-ligo-lw,
  python3-ligo-segments,
  python3-numpy (>= @MIN_NUMPY_VERSION@),
@@ -39,7 +26,6 @@ Build-Depends:
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
  zlib1g-dev,
-X-Python-Version: >= 2.7
 X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
@@ -87,44 +73,12 @@ Provides: lal-dev (= ${binary:Version})
 Replaces: lal-dev (<< 7.1.0-2~)
 Breaks: lal-dev (<< 7.1.0-2~)
 
-Package: lal-python
-Depends:
- ${misc:Depends},
- python-lal,
-Architecture: all
-Priority: extra
-Section: oldlibs
-Description: transitional package
- lal-python was renamed python-lal,
- this is a transitional package, it can safely be removed.
-
-Package: python-lal
-Replaces: lal-python (<< 6.18.0.1-1~)
-Breaks: lal-python (<< 6.18.0.1-1~)
-Section: python
-Architecture: any
-Depends:
- ${misc:Depends},
- ${python:Depends},
- ${shlibs:Depends},
- liblal@LIBMAJOR@ (= ${binary:Version}),
- liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
- python-dateutil,
- python-glue (>= @MIN_GLUE_VERSION@),
- python-ligo-lw,
- python-ligo-segments,
- python-scipy,
- python-six,
-Description: Python bindings for LAL
- The LSC Algorithm Library for gravitational wave analysis.
- This package contains Python bindings for the LAL library.
-
 Package: lal-python3
 Depends:
  ${misc:Depends},
  python3-lal,
 Architecture: all
-Priority: extra
+Priority: optional
 Section: oldlibs
 Description: transitional package
  lal-python3 was renamed python3-lal,
@@ -142,7 +96,6 @@ Depends:
  liblal@LIBMAJOR@ (= ${binary:Version}),
  liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
  python3-dateutil,
- python3-glue (>= @MIN_GLUE_VERSION@),
  python3-ligo-lw,
  python3-ligo-segments,
  python3-scipy,

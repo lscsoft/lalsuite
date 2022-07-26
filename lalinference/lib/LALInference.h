@@ -60,19 +60,13 @@
 #include <lal/Window.h>
 #include <lal/LALString.h>
 #include <lal/StringInput.h>
+#include <lal/StringVector.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimInspiralWaveformCache.h>
 #include <lal/LALSimNeutronStar.h>
 #include <lal/LALHashTbl.h>
 #include <lal/RealFFT.h>
-
-#include <lal/SFTutils.h>
-#include <lal/SFTfileIO.h>
 #include <lal/LALDetectors.h>
-#include <lal/LALBarycenter.h>
-#include <lal/LALInitBarycenter.h>
-#include <lal/BinaryPulsarTiming.h>
-
 
 #include <gsl/gsl_linalg.h>
 #include <gsl/gsl_errno.h>
@@ -423,12 +417,9 @@ tagLALInferenceIFOModel
 {
   LALInferenceVariables       *params; /** Parameters used when filling the buffers - template functions should copy to here */
 
-  LIGOTimeGPSVector           *times; /** Vector of time stamps for time domain data */
-
   LALDetector                 *detector; /** LALDetector structure for where this data came from */
-  EphemerisData               *ephem;  /** Ephemeris data */
-  TimeCorrectionData          *tdat; /** Einstein delay time correction data */
-  TimeCorrectionType           ttype; /** The time correction type e.g. TDB, TCB */
+
+  void                        *extraData; /** Pointer to extra detector-dependent parameters, used by pulsar analyses */
 
   REAL8TimeSeries             *timehPlus, *timehCross; /** Time series model buffers */
   COMPLEX16FrequencySeries    *freqhPlus, *freqhCross; /** Freq series model buffers */
@@ -658,7 +649,6 @@ tagLALInferenceIFOData
   REAL8FFTPlan              *margFFTPlan; /** FFT plan needed for time/time-and-phase marginalisation */
   REAL8                     fLow, fHigh;	/** integration limits for overlap integral in F-domain */
   LALDetector               *detector;          /** LALDetector structure for where this data came from */
-  BarycenterInput           *bary;              /** Barycenter information */
   LIGOTimeGPS		    epoch;              /** The epoch of this observation (the time of the first sample) */
   REAL8                     SNR;                /** IF INJECTION ONLY, E(SNR) of the injection in the detector.*/
   REAL8                     STDOF;              /** Degrees of freedom for IFO to be used in Student-T Likelihood. */
@@ -1176,7 +1166,7 @@ LALInferenceMCMCRunPhase* LALInferenceGetMCMCrunphase_ptrVariable(LALInferenceVa
 void LALInferenceSetMCMCrunphase_ptrVariable(LALInferenceVariables* vars,const char* name,LALInferenceMCMCRunPhase* value);
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL(OWNS_THIS_STRING(const CHAR*, value));
+SWIGLAL(OWNS_THIS_ARG(const CHAR*, value));
 #endif
 
 void LALInferenceAddstringVariable(LALInferenceVariables * vars, const char * name, const CHAR* value, LALInferenceParamVaryType vary);
@@ -1186,7 +1176,7 @@ const CHAR* LALInferenceGetstringVariable(LALInferenceVariables * vars, const ch
 void LALInferenceSetstringVariable(LALInferenceVariables* vars,const char* name, const CHAR* value);
 
 #ifdef SWIG   /* SWIG interface directives */
-SWIGLAL_CLEAR(OWNS_THIS_STRING(const CHAR*, value));
+SWIGLAL_CLEAR(OWNS_THIS_ARG(const CHAR*, value));
 #endif
 
 /**

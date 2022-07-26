@@ -401,6 +401,189 @@ int XLALAdaptiveRungeKutta4Hermite(LALAdaptiveRungeKuttaIntegrator * integrator,
     return outputlen;
 }
 
+/**
+ * Fourth-order Runge-Kutta ODE integrator using Runge-Kutta-Fehlberg (RKF45)
+ * steps with adaptive step size control.  Version that only outputs the final
+ * state of the integration, intended for use for spin evolution in
+ * lalsimulation/lib/LALSimInspiralSpinTaylor.c, based on
+ * XLALAdaptiveRungeKutta4Hermite. Specifically, this assumes that the criterion
+ * used to set the end of the evolution (and included in the integrator's stopping
+ * condition) is given by deltat*y[1] < deltat*y1_final, where y is the vector of
+ * variables.
+ *
+ * The method is described in
+ *
+ * Abramowitz & Stegun, Handbook of Mathematical Functions, Tenth Printing,
+ * National Bureau of Standards, Washington, DC, 1972
+ * (available online at http://people.math.sfu.ca/~cbm/aands/ )
+ *
+ * This function also includes "on-the-fly" interpolation of the
+ * differential equations at regular intervals in-between integration
+ * steps. This "on-the-fly" interpolation method is derived and
+ * described in the Mathematica notebook "RKF_with_interpolation.nb";
+ * see
+ * https://www.lsc-group.phys.uwm.edu/ligovirgo/cbcnote/InspiralPipelineDevelopment/120312111836InspiralPipelineDevelopmentImproved%20Adaptive%20Runge-Kutta%20integrator
+ */
+int XLALAdaptiveRungeKutta4HermiteOnlyFinal(LALAdaptiveRungeKuttaIntegrator * integrator,       /**< struct holding dydt, stopping test, stepper, etc. */
+    void *params,                                                       /**< params struct used to compute dydt and stopping test */
+    REAL8 * yinit,                                                      /**< pass in initial values of all variables - overwritten to final values */
+    REAL8 tinit,                                                        /**< integration start time */
+    REAL8 tend_in,                                                      /**< maximum integration time */
+    REAL8 y1_final,                                                     /**< final value of y[1] */ 
+    REAL8 deltat                                                        /**< step size for integration */
+    )
+{
+    int errnum = 0;
+    int status;
+    size_t dim, retries, i;
+
+    REAL8 t, tintp, h;
+
+    REAL8 *ytemp = NULL;
+
+    REAL8 tend = tend_in;
+
+    XLAL_BEGINGSL;
+
+    /* If want to stop only on test, then tend = +/-infinity; otherwise
+     * tend_in */
+    if (integrator->stopontestonly) {
+        if (tend < tinit)
+            tend = -1.0 / 0.0;
+        else
+            tend = 1.0 / 0.0;
+    }
+
+    dim = integrator->sys->dimension;
+
+    if ((tend < tinit && deltat > 0) || (tend > tinit && deltat < 0)) {
+        XLALPrintError
+            ("XLAL Error - %s: (tend_in - tinit) and deltat must have the same sign\ntend_in: %f, tinit: %f, deltat: %f\n",
+            __func__, tend_in, tinit, deltat);
+        errnum = XLAL_EINVAL;
+        goto bail_out;
+    }
+
+    ytemp = XLALCalloc(dim, sizeof(REAL8));
+
+    if (!ytemp) {
+        errnum = XLAL_ENOMEM;
+        goto bail_out;
+    }
+
+    /* Initialize ytemp[1] with the initial value of yinit[1] so that the initial check below is satisfied even if we are integrating backwards */
+    ytemp[1] = yinit[1];
+
+    /* Setup. */
+    integrator->sys->params = params;
+    integrator->returncode = 0;
+    retries = integrator->retries;
+    t = tinit;
+    tintp = tinit;
+    h = deltat;
+
+    /* We are starting a fresh integration; clear GSL step and evolve
+     * objects. */
+    gsl_odeiv_step_reset(integrator->step);
+    gsl_odeiv_evolve_reset(integrator->evolve);
+
+    /* Enter evolution loop.  NOTE: we *always* take at least one
+     * step. */
+    while (1) {
+        REAL8 told = t;
+
+        status =
+            gsl_odeiv_evolve_apply(integrator->evolve, integrator->control, integrator->step, integrator->sys, &t, tend, &h,
+            yinit);
+
+        /* Check for failure, retry if haven't retried too many times
+         * already. */
+        if (status != GSL_SUCCESS) {
+            if (retries--) {
+                /* Retries to spare; reduce h, try again. */
+                h /= 10.0;
+                continue;
+            } else {
+                /* Out of retries, bail with status code. */
+                integrator->returncode = status;
+                break;
+            }
+        } else {
+            /* Successful step, reset retry counter. */
+            retries = integrator->retries;
+        }
+
+        /* If we're at the final timestep, interpolate to get the output at the desired final value, y1_final.
+         * Note we square to get an absolute value, because we may be
+         * integrating t in the positive or negative direction
+	 * We multiply yinit, ytemp[1], and y1_final by deltat so that this check works when integrating forward or backward */
+	if (deltat*yinit[1] >= deltat*y1_final) {
+	        tintp = told;
+
+		REAL8 hUsed = t - told;
+
+		while (deltat*ytemp[1] < deltat*y1_final) {
+		  tintp += deltat;
+
+		  /* tintp = told + (t-told)*theta, 0 <= theta <= 1.  We have to
+		   * compute h = (t-told) because the integrator returns a
+		   * suggested next h, not the actual stepsize taken. */
+		  REAL8 theta = (tintp - told) / hUsed;
+
+		  /* These are the interpolating coefficients for y(t + h*theta) =
+		   * ynew + i1*h*k1 + i5*h*k5 + i6*h*k6 + O(h^4). */
+		  REAL8 i0 = 1.0 + theta * theta * (3.0 - 4.0 * theta);
+		  REAL8 i1 = -theta * (theta - 1.0);
+		  REAL8 i6 = -4.0 * theta * theta * (theta - 1.0);
+		  REAL8 iend = theta * theta * (4.0 * theta - 3.0);
+
+		  /* Grab the k's from the integrator state. */
+		  rkf45_state_t *rkfState = integrator->step->state;
+		  REAL8 *k1 = rkfState->k1;
+		  REAL8 *k6 = rkfState->k6;
+		  REAL8 *y0 = rkfState->y0;
+
+		  for (i = 0; i < dim; i++) {
+		    ytemp[i] = i0 * y0[i] + iend * yinit[i] + hUsed * i1 * k1[i] + hUsed * i6 * k6[i];
+		  }
+		}
+	}
+
+        /* Now check for termination criteria. */
+        if (!integrator->stopontestonly && t >= tend)
+            break;
+
+        /* If there is a stopping function in integrator, call it with the
+         * last value of y and dydt from the integrator. */
+        if (integrator->stop) {
+            if ((status = integrator->stop(t, yinit, integrator->evolve->dydt_out, params)) != GSL_SUCCESS) {
+                integrator->returncode = status;
+                break;
+            }
+        }
+    }
+
+    /* Store the final *interpolated* sample before the stopping criterion in yinit. */
+    for (i = 0; i < dim; i++) {
+      yinit[i] = ytemp[i];
+    }
+
+
+  bail_out:
+
+    XLAL_ENDGSL;
+
+    /* If we have an error, then we should free allocated memory, and
+     * then return. */
+    XLALFree(ytemp);
+
+    if (errnum) {
+        XLAL_ERROR(errnum);
+    }
+
+    return 1;
+}
+
 int XLALAdaptiveRungeKutta4NoInterpolate(LALAdaptiveRungeKuttaIntegrator * integrator,
          void * params, REAL8 * yinit, REAL8 tinit, REAL8 tend, REAL8 deltat_or_h0, REAL8 min_deltat_or_h0,
 					 REAL8Array ** t_and_y_out, INT4 EOBversion)

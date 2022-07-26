@@ -33,7 +33,7 @@ main(int argc, char *argv[])
   XLAL_CHECK ( argc == 1, XLAL_EINVAL, "No input arguments allowed.\n" );
   XLAL_CHECK ( argv != NULL, XLAL_EINVAL );
 
-  char testFilePath[] = TEST_PKG_DATA_DIR "earth00-19-DE405.dat.gz";
+  char testFilePath[] = TEST_PKG_DATA_DIR "earth00-40-DE405.dat.gz";
 
  // read gzipped ephemeris file once with XLALCHARReadSequence() and once with XLALFileLoad()
   CHARSequence *sequence = NULL;
@@ -68,7 +68,7 @@ main(int argc, char *argv[])
   REAL8 time_ParseDataFileContent = XLALGetTimeOfDay() - tic;
 
   // output results
-  XLALPrintInfo ( "'earth00-19-DE405.dat.gz' read and uncompressed by XLALCHARReadSequence() and XLALFileLoadData() is identical!\n" );
+  XLALPrintInfo ( "'earth00-40-DE405.dat.gz' read and uncompressed by XLALCHARReadSequence() and XLALFileLoadData() is identical!\n" );
   XLALPrintInfo ( "time XLALCHARReadSequence():     %f s\n", time_CHARReadSequence );
   XLALPrintInfo ( "time XLALFileLoad():             %f s\n", time_FileLoad );
   XLALPrintInfo ( "time XLALCreateTokenList():      %f s\n", time_CreateTokenList );

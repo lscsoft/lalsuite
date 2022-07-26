@@ -9,7 +9,6 @@ TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
 INSPINJSRC = inspinj.c inspiralutils.c inspiral.h
 BLINDINJSRC = blindinj.c
 SPLITBANKSRC = splitbank.c
-TRIGSCANSRC = trigscan.c
 INSPFRINJSRC = inspfrinj.c
 GWF2XMLSRC = gwf2xml.c
 SPININJSRC = spininj.c
@@ -24,7 +23,6 @@ lalapps_tmpltbank_SOURCES = $(TMPLTBANKSRC)
 lalapps_inspinj_SOURCES = $(INSPINJSRC)
 lalapps_blindinj_SOURCES = $(BLINDINJSRC)
 lalapps_splitbank_SOURCES = $(SPLITBANKSRC)
-lalapps_trigscan_SOURCES = $(TRIGSCANSRC)
 lalapps_spininj_SOURCES = $(SPININJSRC)
 lalapps_inspfrinj_SOURCES = $(INSPFRINJSRC)
 lalapps_gwf2xml_SOURCES = $(GWF2XMLSRC)
@@ -38,7 +36,6 @@ lalapps_cbc_stochasticbank_SOURCES = $(STOCHBANKSRC)
 bin_PROGRAMS = \
 	lalapps_splitbank \
 	lalapps_blindinj \
-	lalapps_trigscan \
 	lalapps_spininj \
 	lalapps_randombank \
 	lalapps_fr_ninja \
@@ -59,23 +56,12 @@ endif
 
 if HAVE_PYTHON
 pybin_scripts = \
-	lalapps_inspinjfind \
-	lalapps_thinca \
-	lalapps_cbc_sbank \
-	lalapps_cbc_sbank_choose_mchirp_boundaries \
-	lalapps_cbc_sbank_hdf5_choose_mchirp_boundaries \
-	lalapps_cbc_sbank_hdf5_bankcombiner \
-	lalapps_cbc_sbank_pipe \
-	lalapps_cbc_sbank_plot_sim \
-	lalapps_cbc_sbank_sim \
-	lalapps_cbc_sbank_sim_pipe \
 	lalapps_make_nr_hdf_catalog \
 	lalapps_run_sqlite \
 	$(END_OF_LIST)
 
 pkgpython_PYTHON = \
 	inspiral.py \
-	inspiralutils.py \
 	$(END_OF_LIST)
 endif
 

@@ -106,7 +106,7 @@ for setup in onefreq short long; do
 
     echo "=== Setup '${setup}': Compare F-statistics from lalapps_Weave without/with frequency/spindown partitions ==="
     set -x
-    env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoPart.fits --result-file-2=WeaveOutPart.fits
+    lalapps_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoPart.fits --result-file-2=WeaveOutPart.fits
     set +x
     echo
 

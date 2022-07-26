@@ -3,6 +3,17 @@ Upstream-Name: LALSuite
 Upstream-Contact: Adam Mercer <adam.mercer@ligo.org>
 Upstream-Source: https://versions.ligo.org/cgit/lalsuite/
 
+Files: *
+Copyright: 2008-2016 The LIGO Scientific Collaboration
+License: GPL-2+
+
+Files: debian/*
+Copyright: 2008-2016 The LIGO Scientific Collaboration
+           2005 Kipp Cannon <kipp.cannon@ligo.org>
+           2007-2016 Steffen Grunewald <steffen.grunewald@aei.mpg.de>
+           2016 Leo Singer <leo.singer@ligo.org>
+License: GPL-2+
+
 License: GPL-2+
  This program is free software; you can redistribute it
  and/or modify it under the terms of the GNU General Public
@@ -25,13 +36,4 @@ License: GPL-2+
  License version 2 can be found in the file
  `/usr/share/common-licenses/GPL-2'.
 
-Files: *
-Copyright: 2008-2016 The LIGO Scientific Collaboration
-License: GPL-2+
 
-Files: debian/*
-Copyright: 2008-2016 The LIGO Scientific Collaboration
-           2005 Kipp Cannon <kipp.cannon@ligo.org>
-           2007-2016 Steffen Grunewald <steffen.grunewald@aei.mpg.de>
-           2016 Leo Singer <leo.singer@ligo.org>
-License: GPL-2+

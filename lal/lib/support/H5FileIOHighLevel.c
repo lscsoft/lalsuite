@@ -93,6 +93,12 @@
 #undef TYPECODE
 #undef TYPE
 
+#define TYPE String
+#define VTYPE LALStringVector
+#include "H5FileIOVectorHL_source.c"
+#undef StringVector
+#undef TYPE
+
 /**
  * @addtogroup H5FileIOHighLevel_c
  * @brief High-level routines for reading/writing HDF5 files.
@@ -171,6 +177,11 @@
 
 /**
  * @fn int XLALH5FileWriteCOMPLEX16Vector(LALH5File *file, const char *name, COMPLEX16Vector *vector)
+ * @copydoc XLALH5FileWriteCHARVector()
+ */
+
+/**
+ * @fn int XLALH5FileWriteStringVector(LALH5File *file, const char *name, LALStringVector *vector)
  * @copydoc XLALH5FileWriteCHARVector()
  */
 
@@ -427,6 +438,11 @@
 
 /**
  * @fn COMPLEX16Vector *XLALH5FileReadCOMPLEX16Vector(LALH5File *file, const char *name)
+ * @copydoc XLALH5FileReadCHARVector()
+ */
+
+/**
+ * @fn LALStringVector *XLALH5FileReadStringVector(LALH5File *file, const char *name)
  * @copydoc XLALH5FileReadCHARVector()
  */
 

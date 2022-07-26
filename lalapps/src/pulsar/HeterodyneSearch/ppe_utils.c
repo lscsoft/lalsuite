@@ -23,6 +23,7 @@
 
 #include "config.h"
 #include "ppe_utils.h"
+#include "ppe_models.h"
 
 /** \brief Compute the noise variance for each data segment
  *
@@ -99,7 +100,7 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax ){
 
   UINT4Vector *chunkLengths = NULL;
 
-  length = ifo->times->length;
+  length = IFO_XTRA_DATA( ifo )->times->length;
 
   chunkLengths = XLALCreateUINT4Vector( length );
 
@@ -119,8 +120,8 @@ UINT4Vector *get_chunk_lengths( LALInferenceIFOModel *ifo, UINT4 chunkMax ){
 
     i++;
 
-    t1 = XLALGPSGetREAL8( &ifo->times->data[i-1] );
-    t2 = XLALGPSGetREAL8( &ifo->times->data[i] );
+    t1 = XLALGPSGetREAL8( &IFO_XTRA_DATA( ifo )->times->data[i-1] );
+    t2 = XLALGPSGetREAL8( &IFO_XTRA_DATA( ifo )->times->data[i] );
 
     /* if consecutive points are within two sample times of each other count as in the same chunk */
     if( t2 - t1 > 2.*dt || count == chunkMax ){

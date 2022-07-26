@@ -1,23 +1,18 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
-%define configure_opts GSL_LIBS="-lgsl"
+%define configure_opts %{nil}
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
 %endif
-
-# borrowed from python3-rpm-macros
-%define pyYdir %{_builddir}/pythonY-%{name}-%{version}-%{release}
 
 # -- metadata ---------------
 
 Name: @PACKAGE@
 Version: @BASE_VERSION@
 Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
-Summary: LSC Algorithm Library
 License: GPLv2+
-Group: LAL
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
@@ -40,25 +35,6 @@ BuildRequires: pkgconfig >= 0.18.0
 # swig
 BuildRequires: swig >= @MIN_SWIG_VERSION@
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2
-BuildRequires: python2-rpm-macros
-BuildRequires: python
-BuildRequires: python-devel
-BuildRequires: python2-dateutil
-BuildRequires: python2-freezegun
-BuildRequires: python2-glue >= @MIN_GLUE_VERSION@
-BuildRequires: python2-ligo-lw
-BuildRequires: python2-ligo-segments
-BuildRequires: python2-mock
-BuildRequires: python2-numpy >= @MIN_NUMPY_VERSION@
-BuildRequires: python-pathlib
-BuildRequires: pytest
-BuildRequires: python2-six
-BuildRequires: python2-scipy
-BuildRequires: rsync
-%endif
-
 # python3x
 BuildRequires: python-srpm-macros
 BuildRequires: python3-rpm-macros
@@ -67,7 +43,6 @@ BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-dateutil
 BuildRequires: python%{python3_pkgversion}-freezegun
-BuildRequires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
 BuildRequires: python%{python3_pkgversion}-ligo-lw
 BuildRequires: python%{python3_pkgversion}-ligo-segments
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
@@ -82,9 +57,9 @@ BuildRequires: octave-devel
 
 # lal
 Summary: LSC Algorithm Library - runtime tools
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
+Obsoletes: python2-%{name} <= 7.1.2-1
 %description
 The LSC Algorithm Library for gravitational wave data analysis.
 This package provides the runtime tools.
@@ -103,7 +78,6 @@ that use the LAL library.
 # liblal-devel
 %package -n lib%{name}-devel
 Summary: Files and documentation needed for compiling programs that use LAL
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: fftw-devel
 Requires: gsl-devel
@@ -115,48 +89,18 @@ The LSC Algorithm Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL library
 as well as the documentation for the library.
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2-lal
-%package -n python2-%{name}
-Summary: Python %{python2_version} bindings for LAL
-Group: LAL
-Requires: lib%{name} = %{version}-%{release}
-Requires: python
-Requires: python2-dateutil
-Requires: python2-glue >= @MIN_GLUE_VERSION@
-Requires: python2-ligo-lw
-Requires: python2-ligo-segments
-Requires: python2-numpy >= @MIN_NUMPY_VERSION@
-Requires: python2-scipy
-Requires: python2-six
-# temporariliy commented out.  if it was said to be a requirement it would
-# create a dependency loop, but it's an optional runtime dependency.
-# unfortunately the "Recommends" key-word is not yet available in the
-# package management system of LDG clusters.  uncomment when the feature
-# becomes available.
-#Recommends: python-ligo-lw
-Provides: %{name}-python = %{version}-%{release}
-Provides: deprecated()
-Obsoletes: %{name}-python < %{version}-%{release}
-%{?python_provide:%python_provide python2-%{name}}
-%description -n python2-%{name}
-The LSC Algorithm Library for gravitational wave data analysis.
-This package provides the Python %{python2_version} bindings.
-%endif
-
 # python3x-lal
 %package -n python%{python3_pkgversion}-%{name}
 Summary: Python %{python3_version} bindings for LAL
-Group: LAL
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-dateutil
-Requires: python%{python3_pkgversion}-glue >= @MIN_GLUE_VERSION@
 Requires: python%{python3_pkgversion}-ligo-lw
 Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-scipy
 Requires: python%{python3_pkgversion}-six
+Obsoletes: python2-%{name} <= 7.1.3-1
 # temporariliy commented out.  if it was said to be a requirement it would
 # create a dependency loop, but it's an optional runtime dependency.
 # unfortunately the "Recommends" key-word is not yet available in the
@@ -171,7 +115,6 @@ This package provides the Python %{python3_version} bindings.
 # lal-octave
 %package octave
 Summary: Octave bindings for LAL
-Group: LAL
 Requires: %{name} = %{version}-%{release}
 Requires: octave
 %description octave
@@ -184,41 +127,14 @@ This package provides the Octave bindings.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-# build C library with python3
 %configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# build python2 library (copy things so we don't have to rebuild them)
-rm -rf %pyYdir
-rsync -ra . %pyYdir
-pushd %pyYdir
-rm -rfv python/%{name}/*.{la,lo,o} python/%{name}/.libs
-%configure %{configure_opts} --disable-doxygen --disable-gcc-flags --disable-swig-octave --enable-swig-python PYTHON=%{__python2}
-%{__make} %{?_smp_mflags} V=1 -C swig
-%{__make} %{?_smp_mflags} V=1 -C python/%{name}
-##%%{__make} V=1 -C bin bin_PROGRAMS="" dist_bin_SCRIPTS=""
-popd
-%endif
-
 %check
-# C + python3 + octave
 %{__make} %{?_smp_mflags} V=1 VERBOSE=1 check
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2
-[ -d %pyYdir/test/python ] && %{__make} %{?_smp_mflags} V=1 VERBOSE=1 -C %pyYdir -C test/python check
-%endif
-
 %install
-# C + python3 + octave
 %make_install
-
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-# python2
-%{__make} -C %pyYdir -C swig install-exec-am DESTDIR=%{?buildroot}
-%{__make} -C %pyYdir -C python install DESTDIR=%{?buildroot}
-%endif
 
 find $RPM_BUILD_ROOT%{_libdir} -name '*.la' -delete
 
@@ -247,14 +163,6 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %{_libdir}/*.so
 %{_libdir}/pkgconfig/*
 
-%if 0%{?rhel} != 0 && 0%{?rhel} < 8
-%files -n python2-%{name}
-%defattr(-,root,root)
-%doc README.md
-%license COPYING
-%{python2_sitearch}/*
-%endif
-
 %files -n python%{python3_pkgversion}-%{name}
 %defattr(-,root,root)
 %doc README.md
@@ -279,6 +187,21 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Thu Mar 03 2022 Adam Mercer <adam.mercer@ligo.org> 7.1.7-1
+- Update for 7.1.7
+
+* Mon Jan 10 2022 Adam Mercer <adam.mercer@ligo.org> 7.1.6-1
+- Update for 7.1.6
+
+* Fri Dec 03 2021 Adam Mercer <adam.mercer@ligo.org> 7.1.5-1
+- Update for 7.1.5
+
+* Wed Nov 17 2021 Adam Mercer <adam.mercer@ligo.org> 7.1.4-1
+- Update for 7.1.4
+
+* Mon May 17 2021 Adam Mercer <adam.mercer@ligo.org> 7.1.3-1
+- Update for 7.1.3
+
 * Fri Feb 05 2021 Adam Mercer <adam.mercer@ligo.org> 7.1.2-1
 - Update for 7.1.2
 

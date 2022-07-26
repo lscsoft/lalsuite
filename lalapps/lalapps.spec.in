@@ -11,7 +11,6 @@ Version: @BASE_VERSION@
 Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
 Summary: LSC Algorithm Library Applications
 License: GPLv2+
-Group: LAL
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
 Packager: Adam Mercer <adam.mercer@ligo.org>
@@ -39,8 +38,8 @@ BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 BuildRequires: python3-rpm-macros
 Requires: lal >= @MIN_LAL_VERSION@
 Requires: lalburst >= @MIN_LALBURST_VERSION@
@@ -60,14 +59,15 @@ Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
-Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
-Requires: python%{python3_pkgversion}-ligo-lw
+Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
+Requires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
 Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-matplotlib
 Requires: python%{python3_pkgversion}-numpy
 Requires: python%{python3_pkgversion}-scipy
 Requires: python%{python3_pkgversion}-six
+Requires: python%{python3_pkgversion}-tqdm
 Obsoletes: lalxml < 1.2.5-1
 Obsoletes: lalxml-debuginfo < 1.2.5-1
 Obsoletes: lalxml-devel < 1.2.5-1
@@ -148,6 +148,21 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Mon Apr 11 2022 Adam Mercer <adam.mercer@ligo.org> 8.1.1-1
+- Update for 8.1.1
+
+* Thu Mar 03 2022 Adam Mercer <adam.mercer@ligo.org> 8.1.0-1
+- Update for 8.1.0
+
+* Mon Jan 10 2022 Adam Mercer <adam.mercer@ligo.org> 8.0.0-1
+- Update for 8.0.0
+
+* Fri Dec 03 2021 Adam Mercer <adam.mercer@ligo.org> 7.4.0-1
+- Update for 7.4.0
+
+* Tue May 25 2021 Adam Mercer <adam.mercer@ligo.org> 7.3.0-1
+- Update for 7.3.0
+
 * Fri Feb 05 2021 Adam Mercer <adam.mercer@ligo.org> 7.2.0-1
 - Update for 7.2.0
 

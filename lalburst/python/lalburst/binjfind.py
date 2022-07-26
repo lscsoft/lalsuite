@@ -1,4 +1,4 @@
-# Copyright (C) 2006-2010  Kipp Cannon
+# Copyright (C) 2006-2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -34,9 +34,6 @@ checked for cases where all the burst events in a coincidence match an
 injection, and these are recorded as coinc <--> injection coincidences,
 again using the standard coincidence infrastructure.
 """
-
-
-from __future__ import print_function
 
 
 import bisect
@@ -129,37 +126,37 @@ lsctables.SimInspiralTable.RowType = lsctables.SimInspiral = SimInspiral
 #
 
 
-ExcessPowerSBBCoincDef = lsctables.CoincDef(search = u"excesspower", search_coinc_type = 1, description = u"sim_burst<-->sngl_burst coincidences")
-ExcessPowerSIBCoincDef = lsctables.CoincDef(search = u"excesspower", search_coinc_type = 4, description = u"sim_inspiral<-->sngl_burst coincidences")
-ExcessPowerSBCCoincDef = lsctables.CoincDef(search = u"excesspower", search_coinc_type = 2, description = u"sim_burst<-->coinc_event coincidences (exact)")
-ExcessPowerSBCNearCoincDef = lsctables.CoincDef(search = u"excesspower", search_coinc_type = 3, description = u"sim_burst<-->coinc_event coincidences (nearby)")
-ExcessPowerSICCoincDef = lsctables.CoincDef(search = u"excesspower", search_coinc_type = 5, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
-ExcessPowerSICNearCoincDef = lsctables.CoincDef(search = u"excesspower", search_coinc_type = 6, description = u"sim_inspiral<-->coinc_event coincidences (nearby)")
+ExcessPowerSBBCoincDef = lsctables.CoincDef(search = "excesspower", search_coinc_type = 1, description = "sim_burst<-->sngl_burst coincidences")
+ExcessPowerSIBCoincDef = lsctables.CoincDef(search = "excesspower", search_coinc_type = 4, description = "sim_inspiral<-->sngl_burst coincidences")
+ExcessPowerSBCCoincDef = lsctables.CoincDef(search = "excesspower", search_coinc_type = 2, description = "sim_burst<-->coinc_event coincidences (exact)")
+ExcessPowerSBCNearCoincDef = lsctables.CoincDef(search = "excesspower", search_coinc_type = 3, description = "sim_burst<-->coinc_event coincidences (nearby)")
+ExcessPowerSICCoincDef = lsctables.CoincDef(search = "excesspower", search_coinc_type = 5, description = "sim_inspiral<-->coinc_event coincidences (exact)")
+ExcessPowerSICNearCoincDef = lsctables.CoincDef(search = "excesspower", search_coinc_type = 6, description = "sim_inspiral<-->coinc_event coincidences (nearby)")
 
 
-StringCuspSBBCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_type = 1, description = u"sim_burst<-->sngl_burst coincidences")
-StringCuspSIBCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_type = 4, description = u"sim_inspiral<-->sngl_burst coincidences")
-StringCuspSBCCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_type = 2, description = u"sim_burst<-->coinc_event coincidences (exact)")
-StringCuspSBCNearCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_type = 3, description = u"sim_burst<-->coinc_event coincidences (nearby)")
-StringCuspSICCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_type = 5, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
-StringCuspSICNearCoincDef = lsctables.CoincDef(search = u"StringCusp", search_coinc_type = 6, description = u"sim_inspiral<-->coinc_event coincidences (nearby)")
+StringCuspSBBCoincDef = lsctables.CoincDef(search = "StringCusp", search_coinc_type = 1, description = "sim_burst<-->sngl_burst coincidences")
+StringCuspSIBCoincDef = lsctables.CoincDef(search = "StringCusp", search_coinc_type = 4, description = "sim_inspiral<-->sngl_burst coincidences")
+StringCuspSBCCoincDef = lsctables.CoincDef(search = "StringCusp", search_coinc_type = 2, description = "sim_burst<-->coinc_event coincidences (exact)")
+StringCuspSBCNearCoincDef = lsctables.CoincDef(search = "StringCusp", search_coinc_type = 3, description = "sim_burst<-->coinc_event coincidences (nearby)")
+StringCuspSICCoincDef = lsctables.CoincDef(search = "StringCusp", search_coinc_type = 5, description = "sim_inspiral<-->coinc_event coincidences (exact)")
+StringCuspSICNearCoincDef = lsctables.CoincDef(search = "StringCusp", search_coinc_type = 6, description = "sim_inspiral<-->coinc_event coincidences (nearby)")
 
 
-OmegaBBCoincDef = lsctables.CoincDef(search = u"omega", search_coinc_type = 0, description = u"sngl_burst<-->sngl_burst coincidences")
-OmegaSBBCoincDef = lsctables.CoincDef(search = u"omega", search_coinc_type = 1, description = u"sim_burst<-->sngl_burst coincidences")
-OmegaSIBCoincDef = lsctables.CoincDef(search = u"omega", search_coinc_type = 4, description = u"sim_inspiral<-->sngl_burst coincidences")
-OmegaSBCCoincDef = lsctables.CoincDef(search = u"omega", search_coinc_type = 2, description = u"sim_burst<-->coinc_event coincidences (exact)")
-OmegaSBCNearCoincDef = lsctables.CoincDef(search = u"omega", search_coinc_type = 3, description = u"sim_burst<-->coinc_event coincidences (nearby)")
-OmegaSICCoincDef = lsctables.CoincDef(search = u"omega", search_coinc_type = 5, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
-OmegaSICNearCoincDef = lsctables.CoincDef(search = u"omega", search_coinc_type = 6, description = u"sim_inspiral<-->coinc_event coincidences (nearby)")
+OmegaBBCoincDef = lsctables.CoincDef(search = "omega", search_coinc_type = 0, description = "sngl_burst<-->sngl_burst coincidences")
+OmegaSBBCoincDef = lsctables.CoincDef(search = "omega", search_coinc_type = 1, description = "sim_burst<-->sngl_burst coincidences")
+OmegaSIBCoincDef = lsctables.CoincDef(search = "omega", search_coinc_type = 4, description = "sim_inspiral<-->sngl_burst coincidences")
+OmegaSBCCoincDef = lsctables.CoincDef(search = "omega", search_coinc_type = 2, description = "sim_burst<-->coinc_event coincidences (exact)")
+OmegaSBCNearCoincDef = lsctables.CoincDef(search = "omega", search_coinc_type = 3, description = "sim_burst<-->coinc_event coincidences (nearby)")
+OmegaSICCoincDef = lsctables.CoincDef(search = "omega", search_coinc_type = 5, description = "sim_inspiral<-->coinc_event coincidences (exact)")
+OmegaSICNearCoincDef = lsctables.CoincDef(search = "omega", search_coinc_type = 6, description = "sim_inspiral<-->coinc_event coincidences (nearby)")
 
-CWBBBCoincDef = lsctables.CoincDef(search = u"waveburst", search_coinc_type = 0, description = u"sngl_burst<-->sngl_burst coincidences")
-CWBSBBCoincDef = lsctables.CoincDef(search = u"waveburst", search_coinc_type = 1, description = u"sim_burst<-->sngl_burst coincidences")
-CWBSIBCoincDef = lsctables.CoincDef(search = u"waveburst", search_coinc_type = 4, description = u"sim_inspiral<-->sngl_burst coincidences")
-CWBSBCCoincDef = lsctables.CoincDef(search = u"waveburst", search_coinc_type = 2, description = u"sim_burst<-->coinc_event coincidences (exact)")
-CWBSBCNearCoincDef = lsctables.CoincDef(search = u"waveburst", search_coinc_type = 3, description = u"sim_burst<-->coinc_event coincidences (nearby)")
-CWBSICCoincDef = lsctables.CoincDef(search = u"waveburst", search_coinc_type = 5, description = u"sim_inspiral<-->coinc_event coincidences (exact)")
-CWBSICNearCoincDef = lsctables.CoincDef(search = u"waveburst", search_coinc_type = 6, description = u"sim_inspiral<-->coinc_event coincidences (nearby)")
+CWBBBCoincDef = lsctables.CoincDef(search = "waveburst", search_coinc_type = 0, description = "sngl_burst<-->sngl_burst coincidences")
+CWBSBBCoincDef = lsctables.CoincDef(search = "waveburst", search_coinc_type = 1, description = "sim_burst<-->sngl_burst coincidences")
+CWBSIBCoincDef = lsctables.CoincDef(search = "waveburst", search_coinc_type = 4, description = "sim_inspiral<-->sngl_burst coincidences")
+CWBSBCCoincDef = lsctables.CoincDef(search = "waveburst", search_coinc_type = 2, description = "sim_burst<-->coinc_event coincidences (exact)")
+CWBSBCNearCoincDef = lsctables.CoincDef(search = "waveburst", search_coinc_type = 3, description = "sim_burst<-->coinc_event coincidences (nearby)")
+CWBSICCoincDef = lsctables.CoincDef(search = "waveburst", search_coinc_type = 5, description = "sim_inspiral<-->coinc_event coincidences (exact)")
+CWBSICNearCoincDef = lsctables.CoincDef(search = "waveburst", search_coinc_type = 6, description = "sim_inspiral<-->coinc_event coincidences (nearby)")
 
 
 class DocContents(object):
@@ -391,7 +388,7 @@ class DocContents(object):
 #
 
 
-process_program_name = "lalapps_binjfind"
+process_program_name = "lalburst_injfind"
 
 
 def append_process(xmldoc, match_algorithm, comment):
@@ -405,7 +402,7 @@ def append_process(xmldoc, match_algorithm, comment):
 			"match_algorithm": match_algorithm
 		},
 		version = __version__,
-		cvs_repository = u"lscsoft",
+		cvs_repository = "lscsoft",
 		cvs_entry_time = __date__,
 		comment = comment
 	)

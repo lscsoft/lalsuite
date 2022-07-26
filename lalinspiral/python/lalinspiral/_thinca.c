@@ -18,6 +18,39 @@
 
 
 /*
+ * how does this work?  this is a "get_coincs" class for the gstlal
+ * inspiral search to use with the snglcoinc machinery.  a get_coincs
+ * object is a callable object initialized with a time-ordered sequence of
+ * triggers from one detector.  subsequently, when called with a single
+ * trigger (from some other detector) it returns the in-order sequence of
+ * triggers from its initialization set that are coincident with the given
+ * trigger.  this provides the double-coincidences upon which the rest of
+ * the coincidence machinery is built.
+ *
+ * for the gstlal inspiral search, two triggers are coincident if they were
+ * obtained from the same template and are within some time window of each
+ * other.  to find coincidences quickly, the initial sequence of triggers
+ * is organized into a data structure like:
+ *
+ * array of event lists:
+ *	template ID 0: [event, event, event, ...]
+ *	template ID 1: [event, event, event, ...]
+ *	...
+ *
+ * the event lists are sorted by template ID, and the events in each list
+ * are time-ordered (which is ensured by providing them to the
+ * initialization code in time order).  the events coincident with a
+ * trigger are found by retrieving the event list matching that trigger's
+ * ID with a bisection search, then the start and stop of the range of
+ * times coincident with the trigger are computed and the sequence of
+ * events that fall within that time range is returned by performing a
+ * bisection search to identify the first such event, and then a brute
+ * force search to find the last one (measured to be faster than a second
+ * bisection search).
+ */
+
+
+/*
  * ============================================================================
  *
  *                                  Preamble
@@ -32,7 +65,10 @@
 #include <Python.h>
 #pragma GCC diagnostic pop
 
+#include <math.h>
 #include <stdlib.h>
+
+#include <lal/LALAtomicDatatypes.h>
 
 
 /*
@@ -44,6 +80,15 @@
  */
 
 
+/* retrieve the template ID of an event.  in modern versions of the
+ * pipeline any integer may be used as a template ID, including negative
+ * values, so error status must be checked in the calling code using
+ * PyErr_Occurred() instead of by the return value alone.  mirroring the
+ * behaviour of PyLong_AsLong(), we return -1 on error so that calling
+ * codes can test for that special value before calling PyErr_Occurred() to
+ * avoid the cost of that additional test when not needed */
+
+
 static long get_template_id(PyObject *event)
 {
 	PyObject *template_id = PyObject_GetAttrString(event, "template_id");
@@ -52,65 +97,55 @@ static long get_template_id(PyObject *event)
 	if(!template_id)
 		return -1;
 
-#if PY_MAJOR_VERSION < 3
-	val = PyInt_AsLong(template_id);
-#else
 	val = PyLong_AsLong(template_id);
-#endif
 	Py_DECREF(template_id);
-	if(val < 0 && PyErr_Occurred())
-		return -1;
+	/* PyLong_AsLong()'s error code is the same as ours, so we don't do
+	 * error checking here.  the calling code is responsible */
 
 	return val;
 }
 
 
-static int compute_start_stop(PyObject **start, PyObject **stop, PyObject *event, PyObject *offset, PyObject* coinc_window)
+/* get the end time of an event as integer nanoseconds from the GPS epoch.
+ * returns -1 on error, but use PyErr_Occured() to confirm that an error
+ * has occured, and that -1 is not actually the return value. */
+
+
+static INT8 get_end_ns(PyObject *event)
 {
+	INT8 val = -1;
 	PyObject *end = PyObject_GetAttrString(event, "end");
-	if(!end)
-		return -1;
-
-	{
-	PyObject *tmp = PyNumber_InPlaceAdd(end, offset);
-	Py_DECREF(end);
-	if(!tmp)
-		return -1;
-	end = tmp;
+	if(end) {
+		PyObject *ns = PyObject_CallMethod(end, "ns", NULL);
+		Py_DECREF(end);
+		if(ns) {
+			val = PyLong_AsLong(ns);
+			Py_DECREF(ns);
+		}
 	}
-
-	*start = PyNumber_Subtract(end, coinc_window);
-	*stop = PyNumber_Add(end, coinc_window);
-	Py_DECREF(end);
-	if(!*start || !*stop) {
-		Py_XDECREF(*start);
-		Py_XDECREF(*stop);
-		return -1;
-	}
-
-	return 0;
+	return val;
 }
 
 
-static Py_ssize_t bisect_left(PyObject **items, Py_ssize_t hi, PyObject *val)
+/* compute the range of times, [start, stop), for which triggers from other
+ * detectors are coincident with this one. */
+
+
+static int compute_start_stop(INT8 *start_ns, INT8 *stop_ns, PyObject *event, PyObject *offset, PyObject* coinc_window)
 {
-	Py_ssize_t lo = 0;
+	INT8 end_ns = get_end_ns(event);
+	double offset_ns = PyFloat_AsDouble(offset);
+	double coinc_window_ns = PyFloat_AsDouble(coinc_window);
 
-	while(lo < hi) {
-		Py_ssize_t mid = (lo + hi) / 2;
-		int result = PyObject_RichCompareBool(items[mid], val, Py_LT);
-		if(result > 0)
-			/* items[mid] < val */
-			lo = mid + 1;
-		else if(result == 0)
-			/* items[mid] >= val */
-			hi = mid;
-		else
-			/* error */
-			return -1;
-	}
+	if((end_ns == -1 || offset_ns == -1. || coinc_window_ns == -1.) && PyErr_Occurred())
+		return -1;
+	offset_ns *= 1e9;
+	coinc_window_ns *= 1e9;
 
-	return lo;
+	*start_ns = end_ns + lround(offset_ns - coinc_window_ns);
+	*stop_ns = end_ns + lround(offset_ns + coinc_window_ns);
+
+	return 0;
 }
 
 
@@ -119,49 +154,61 @@ static Py_ssize_t bisect_left(PyObject **items, Py_ssize_t hi, PyObject *val)
  */
 
 
+struct event {
+	INT8 end_ns;
+	PyObject *event;
+};
+
+
 struct event_sequence {
 	long template_id;
-	PyObject **events;
+	struct event *events;
 	int length;
 };
 
+/* comparison operator used with bsearch() to find an event list
+ * corresponding to a given template ID */
 
 static int event_sequence_get_cmp(const void *key, const void *obj)
 {
 	return (long) key - ((const struct event_sequence *) obj)->template_id;
 }
 
+/* comparison operator used with qsort() to sort event lists by template
+ * ID */
 
 static int event_sequence_sort_cmp(const void *a, const void *b)
 {
 	return ((const struct event_sequence *) a)->template_id - ((const struct event_sequence *) b)->template_id;
 }
 
+/* bsearch() wrapper to retrieve an event list by template ID */
 
 static struct event_sequence *event_sequence_get(struct event_sequence *event_sequences, int n, long template_id)
 {
 	return bsearch((void *) template_id, event_sequences, n, sizeof(*event_sequences), event_sequence_get_cmp);
 }
 
+/* insert a time-ordered event into the array of event list arrays */
 
-/* this consumes a reference for event */
 static int event_sequence_insert(struct event_sequence **event_sequences, int *n, PyObject *event)
 {
 	long template_id = get_template_id(event);
+	INT8 end_ns = get_end_ns(event);
 	struct event_sequence *event_sequence;
-	PyObject **new_events;
 	int need_sort = 0;
 
-	if(template_id < 0) {
-		Py_DECREF(event);
+	if((template_id == -1 || end_ns == -1) && PyErr_Occurred())
 		return -1;
-	}
+
+	/* get the event list for this template ID or create a new empty
+	 * one if there isn't one yet.  the new list is appeneded, and the
+	 * array of event lists put into the correct order later.  */
 
 	event_sequence = event_sequence_get(*event_sequences, *n, template_id);
 	if(!event_sequence) {
 		struct event_sequence *new = realloc(*event_sequences, (*n + 1) * sizeof(**event_sequences));
 		if(!new) {
-			Py_DECREF(event);
 			PyErr_SetString(PyExc_MemoryError, "realloc() failed");
 			return -1;
 		}
@@ -174,15 +221,27 @@ static int event_sequence_insert(struct event_sequence **event_sequences, int *n
 		need_sort = 1;
 	}
 
-	new_events = realloc(event_sequence->events, (event_sequence->length + 1) * sizeof(*event_sequence->events));
-	if(!new_events) {
-		Py_DECREF(event);
-		PyErr_SetString(PyExc_MemoryError, "realloc() failed");
-		return -1;
+	/* make room for the new event.  allocate space for triggers 128 at
+	 * a time */
+
+	if(!(event_sequence->length & 0x7f)) {
+		struct event *new = realloc(event_sequence->events, ((event_sequence->length | 0x7f) + 1) * sizeof(*event_sequence->events));
+		if(!new) {
+			PyErr_SetString(PyExc_MemoryError, "realloc() failed");
+			return -1;
+		}
+		event_sequence->events = new;
 	}
-	event_sequence->events = new_events;
-	event_sequence->events[event_sequence->length] = event;
+
+	/* record the event in the event list */
+
+	Py_INCREF(event);
+	event_sequence->events[event_sequence->length].end_ns = end_ns;
+	event_sequence->events[event_sequence->length].event = event;
 	event_sequence->length++;
+
+	/* if a new event list was created, put the array of event lists in
+	 * order by template ID */
 
 	if(need_sort)
 		qsort(*event_sequences, *n, sizeof(**event_sequences), event_sequence_sort_cmp);
@@ -196,7 +255,7 @@ static void event_sequence_free(struct event_sequence *event_sequences, int n)
 	while(n--) {
 		struct event_sequence *event_sequence = &event_sequences[n];
 		while(event_sequence->length--)
-			Py_DECREF(event_sequence->events[event_sequence->length]);
+			Py_DECREF(event_sequence->events[event_sequence->length].event);
 		free(event_sequence->events);
 		event_sequence->events = NULL;
 	}
@@ -205,39 +264,39 @@ static void event_sequence_free(struct event_sequence *event_sequences, int n)
 }
 
 
-static PyObject *event_sequence_extract(struct event_sequence *event_sequence, PyObject *start, PyObject *stop)
+static Py_ssize_t bisect_left(struct event *items, Py_ssize_t hi, INT8 end_ns)
 {
-	Py_ssize_t lo = bisect_left(event_sequence->events, event_sequence->length, start);
+	Py_ssize_t lo = 0;
+
+	while(lo < hi) {
+		Py_ssize_t mid = (lo + hi) / 2;
+		if(items[mid].end_ns < end_ns)
+			lo = mid + 1;
+		else
+			/* items[mid].end_ns >= end_ns */
+			hi = mid;
+	}
+
+	return lo;
+}
+
+static PyObject *event_sequence_extract(struct event_sequence *event_sequence, INT8 start_ns, INT8 stop_ns)
+{
+	Py_ssize_t lo = bisect_left(event_sequence->events, event_sequence->length, start_ns);
 	Py_ssize_t hi;
 	Py_ssize_t i;
 	PyObject *result;
 
-	Py_DECREF(start);
-
-	if(lo < 0) {
-		Py_DECREF(stop);
+	if(lo < 0)
 		return NULL;
-	}
 
-	for(hi = lo; hi < event_sequence->length; hi++) {
-		int LT = PyObject_RichCompareBool(event_sequence->events[hi], stop, Py_LT);
-		if(LT > 0)
-			/* events[hi] < stop */
-			continue;
-		else if(LT == 0)
-			/* events[hi] >= stop */
-			break;
-		/* error */
-		Py_DECREF(stop);
-		return NULL;
-	}
-	Py_DECREF(stop);
+	for(hi = lo; event_sequence->events[hi].end_ns < stop_ns && hi < event_sequence->length; hi++);
 
 	result = PyTuple_New(hi - lo);
 	if(!result)
 		return NULL;
 	for(i = 0; lo < hi; i++, lo++) {
-		PyObject *item = event_sequence->events[lo];
+		PyObject *item = event_sequence->events[lo].event;
 		Py_INCREF(item);
 		PyTuple_SET_ITEM(result, i, item);
 	}
@@ -312,22 +371,13 @@ static int get_coincs__init__(PyObject *self, PyObject *args, PyObject *kwds)
 	if(!item)
 		return -1;
 	last = item + PySequence_Length(events);
-	for(; item < last; item++) {
-		long template_id = get_template_id(*item);
-		if(template_id < 0) {
-			event_sequence_free(get_coincs->event_sequences, get_coincs->n_sequences);
-			get_coincs->event_sequences = NULL;
-			get_coincs->n_sequences = 0;
-			return -1;
-		}
-		Py_INCREF(*item);
+	for(; item < last; item++)
 		if(event_sequence_insert(&get_coincs->event_sequences, &get_coincs->n_sequences, *item) < 0) {
 			event_sequence_free(get_coincs->event_sequences, get_coincs->n_sequences);
 			get_coincs->event_sequences = NULL;
 			get_coincs->n_sequences = 0;
 			return -1;
 		}
-	}
 
 	return 0;
 }
@@ -346,7 +396,7 @@ static PyObject *get_coincs__call__(PyObject *self, PyObject *args, PyObject *kw
 	PyObject *coinc_window;
 	long template_id;
 	struct event_sequence *event_sequence;
-	PyObject *start, *stop;
+	INT8 start_ns, stop_ns;
 
 	if(kwds) {
 		PyErr_SetString(PyExc_ValueError, "unexpected keyword arguments");
@@ -356,7 +406,7 @@ static PyObject *get_coincs__call__(PyObject *self, PyObject *args, PyObject *kw
 		return NULL;
 
 	template_id = get_template_id(event_a);
-	if(template_id < 0)
+	if(template_id == -1 && PyErr_Occurred())
 		return NULL;
 	event_sequence = event_sequence_get(get_coincs->event_sequences, get_coincs->n_sequences, template_id);
 	if(!(event_sequence && event_sequence->length)) {
@@ -365,13 +415,14 @@ static PyObject *get_coincs__call__(PyObject *self, PyObject *args, PyObject *kw
 		return Py_None;
 	}
 
-	if(compute_start_stop(&start, &stop, event_a, offset_a, coinc_window) < 0)
+	if(compute_start_stop(&start_ns, &stop_ns, event_a, offset_a, coinc_window) < 0)
 		return NULL;
 
 	/* return the events matching event_a's .template_id and having end
 	 * times in the range t - coinc_window <= end < t + coinc_window
 	 * where t = event_a.end + offset_a */
-	return event_sequence_extract(event_sequence, start, stop);
+
+	return event_sequence_extract(event_sequence, start_ns, stop_ns);
 }
 
 
@@ -381,21 +432,13 @@ static PyObject *get_coincs__call__(PyObject *self, PyObject *args, PyObject *kw
 
 
 static PyTypeObject get_coincs_Type = {
-#if PY_MAJOR_VERSION < 3
-	PyObject_HEAD_INIT(NULL)
-#else
 	PyVarObject_HEAD_INIT(NULL, 0)
-#endif
 	.tp_name = MODULE_NAME ".get_coincs",
 	.tp_basicsize = sizeof(struct get_coincs),
 	.tp_dealloc = get_coincs__del__,
 	.tp_call = get_coincs__call__,
 	.tp_doc = "",
-#if PY_MAJOR_VERSION < 3
-	.tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_CHECKTYPES,
-#else
 	.tp_flags = Py_TPFLAGS_DEFAULT,
-#endif
 	.tp_init = get_coincs__init__,
 	.tp_new = PyType_GenericNew,
 };
@@ -410,17 +453,9 @@ static PyTypeObject get_coincs_Type = {
  */
 
 
-#if PY_MAJOR_VERSION < 3
-PyMODINIT_FUNC init_thinca(void);	/* silence warning */
-PyMODINIT_FUNC init_thinca(void)
-#else
 PyMODINIT_FUNC PyInit__thinca(void);	/* silence warning */
 PyMODINIT_FUNC PyInit__thinca(void)
-#endif
 {
-#if PY_MAJOR_VERSION < 3
-	PyObject *module = Py_InitModule3(MODULE_NAME, NULL, "");
-#else
 	static struct PyModuleDef modef = {
 		PyModuleDef_HEAD_INIT,
 		.m_name = MODULE_NAME,
@@ -429,7 +464,6 @@ PyMODINIT_FUNC PyInit__thinca(void)
 		.m_methods = NULL,
 	};
 	PyObject *module = PyModule_Create(&modef);
-#endif
 
 	if(PyType_Ready(&get_coincs_Type) < 0) {
 		Py_DECREF(module);
@@ -444,9 +478,5 @@ PyMODINIT_FUNC PyInit__thinca(void)
 	}
 
 done:
-#if PY_MAJOR_VERSION < 3
-	return;
-#else
 	return module;
-#endif
 }

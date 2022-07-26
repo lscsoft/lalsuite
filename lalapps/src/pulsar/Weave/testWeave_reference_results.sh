@@ -1,4 +1,4 @@
-# Require at least one test that compares against reference results to pass
+# Require at least one test that compares against reference results to pass/skip
 
 exitcode=1
 for test in single_segment interpolating non_interpolating; do
@@ -6,8 +6,9 @@ for test in single_segment interpolating non_interpolating; do
     teststatus=`tail -n 1 ${testlog}`
     echo "${teststatus}"
     case "${teststatus}" in
-        PASS*)
+        PASS*|SKIP*)
             exitcode=0
             ;;
     esac
 done
+exit ${exitcode}

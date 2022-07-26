@@ -537,7 +537,7 @@ static INT4 EOBNRv2HMROMCore(
     datac[j] = conj(datac[j]);
   }
 
-  return(XLAL_SUCCESS);
+  return(ret);
 }
 
 /* Setup EOBNRv2HMROM model using data files installed in $LAL_DATA_PATH */

@@ -24,8 +24,7 @@ echo "H H1_mfdv5 ${tstart} ${Tsft} file://localhost$PWD/$MFDv5gwf" > $framecache
 
 ## run MakeSFTs to create an SFT from the fake frame
 tend=`echo "${tstart} + ${Tsft}" | bc`
-Band2=`echo "${Band} + 0.0006" | bc`   ## add 0.0006 to bandwidth to get same number of SFT bins as MDFv5
-cmdline="lalapps_MakeSFTs -f 0 -t ${Tsft} -p . -C $framecache -s ${tstart} -e ${tend} -N H1:mfdv5 -v 2 -i H1 -u PROC_REAL8 -w 0 -F 0 -B ${Band2} -D 4 -X MSFT"
+cmdline="lalapps_MakeSFTs -f 0 -t ${Tsft} -p . -C $framecache -s ${tstart} -e ${tend} -N H1:mfdv5 -v 2 -i H1 -u PROC_REAL8 -w 0 -F 0 -B ${Band} -D 4 -X MSFT"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1

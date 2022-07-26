@@ -22,17 +22,9 @@
 import os
 import sys
 import warnings
-try:
-    from pathlib import Path
-except ImportError as exc:
-    warnings.warn(str(exc))
-    sys.exit(77)
+from pathlib import Path
 from subprocess import check_call
-try:
-    from unittest import mock
-except ImportError:  # python < 3
-    import mock
-    FileNotFoundError = IOError
+from unittest import mock
 
 import pytest
 

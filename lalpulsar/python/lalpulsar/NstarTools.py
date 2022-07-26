@@ -106,8 +106,8 @@ def _convert_array_to_gsl_matrix(array):
 
 def get_Nstar_estimate(
         nsegs, tref, minStartTime, maxStartTime, prior, detector_names,
-        earth_ephem_file="earth00-19-DE405.dat.gz",
-        sun_ephem_file="sun00-19-DE405.dat.gz"):
+        earth_ephem_file="earth00-40-DE405.dat.gz",
+        sun_ephem_file="sun00-40-DE405.dat.gz"):
     """ Returns N* estimated from the super-sky metric
 
     Nstar is the approximate number of unit-mismatch templates, see

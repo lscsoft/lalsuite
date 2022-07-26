@@ -12,6 +12,21 @@ lal;
 assert(exist("lal"));
 disp("PASSED module load");
 
+# set error handlers
+function set_nice_error_handlers()
+  swig_set_nice_error_handlers();
+endfunction
+function set_default_error_handlers()
+  lal;
+  if swig_version >= 0x040002
+    # see https://github.com/swig/swig/pull/1789
+    swig_set_nasty_error_handlers();
+  else
+    swig_set_nice_error_handlers();
+  endif
+endfunction
+set_default_error_handlers();
+
 ## check object parent tracking
 disp("checking object parent tracking ...");
 a = lalsimulation.new_swig_lalsimulation_test_parent_map_struct();

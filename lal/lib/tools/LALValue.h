@@ -20,6 +20,7 @@
 #ifndef _LAL_VALUE_H
 #define _LAL_VALUE_H
 
+#include <stdio.h>
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
 
@@ -41,7 +42,8 @@ LALValue *XLALValueSet(LALValue *value, const void *data, size_t size, LALTYPECO
 void XLALDestroyValue(LALValue *value);
 
 LALValue *XLALCreateValue(const void * data, size_t size, LALTYPECODE type);
-LALValue *XLALCreateStringValue(const char *value);
+LALValue *XLALCreateBLOBValue(const void *blob, size_t size);
+LALValue *XLALCreateStringValue(const char *string);
 LALValue *XLALCreateCHARValue(CHAR value);
 LALValue *XLALCreateINT2Value(INT2 value);
 LALValue *XLALCreateINT4Value(INT4 value);
@@ -62,6 +64,7 @@ const void * XLALValueGetDataPtr(const LALValue *value);
 void * XLALValueGetData(void *data, size_t size, LALTYPECODE type, const LALValue *value);
 int XLALValueEqual(const LALValue *value1, const LALValue *value2);
 
+void * XLALValueGetBLOB(const LALValue *value);
 /* warning: shallow pointer */
 const char * XLALValueGetString(const LALValue *value);
 CHAR XLALValueGetCHAR(const LALValue *value);
@@ -79,6 +82,7 @@ COMPLEX16 XLALValueGetCOMPLEX16(const LALValue *value);
 
 REAL8 XLALValueGetAsREAL8(const LALValue *value);
 
+char * XLALValueAsStringAppend(char *s, const LALValue *value);
 void XLALValuePrint(const LALValue *value, int fd);
 
 #if 0

@@ -17,16 +17,21 @@
  *  MA  02110-1301  USA
  */
 
+#ifndef _SFTREFERENCELIBRARY_H   /* Double-include protection. */
+#define _SFTREFERENCELIBRARY_H
+
+#ifdef  __cplusplus   /* C++ protection. */
+extern "C" {
+#endif
+
 /**
+ * \defgroup SFTReferenceLibrary_h Header SFTReferenceLibrary.h
+ * \ingroup lalpulsar_sft
  * \author Bruce Allen, Reinhard Prix
- * \file
- * \ingroup lalapps_pulsar_SFTTools
- * \brief
- * This is a reference library for the SFT data format
+ * \brief This is a reference library for the SFT data format \cite SFT-spec
  */
 
-#ifndef REFERENCESFTLIBRARY_H_
-#define REFERENCESFTLIBRARY_H_
+/** @{ */
 
 /* header for version 2 SFTs */
 struct headertag2 {
@@ -117,4 +122,10 @@ const char *ReferenceSFTLibraryVersion(void);
 /* internal functions for checking validity of detector-entry */
 int unknownDetector (const char *detector);	/* returns zero if detector is known */
 
-#endif /* REFERENCESFTLIBRARY_H_ */
+/** @} */
+
+#ifdef  __cplusplus
+}                /* Close C++ protection */
+#endif
+
+#endif     /* Close double-include protection _SFTREFERENCELIBRARY_H */

@@ -1269,7 +1269,7 @@ BstatIntegrand ( double Amp[], size_t dim, void *p )
 
   integrand = exp(Xi); /* * pow(gammaSQ, -0.5) * gsl_sf_bessel_I0(Xi); */
 
-  if ( lalDebugLevel >= 2 )
+  if ( lalDebugLevel & LALINFOBIT )
     printf ("%f   %f    %f   %f %f\n", eta, psi, integrand, gammaSQ, Xi );
 
   return integrand;

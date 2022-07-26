@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSimulation],[2.5.1.1],[lal-discuss@ligo.org])
+AC_INIT([LALSimulation],[3.1.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALSimulationConfig.h])
 AC_CONFIG_SRCDIR([lib/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,9 +19,9 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[28])
+AC_SUBST([LIBCURRENT],[30])
 AC_SUBST([LIBREVISION],[1])
-AC_SUBST([LIBAGE],[5])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
   [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
@@ -32,6 +32,7 @@ AC_CONFIG_FILES([ \
   Makefile \
   conda/Makefile \
   conda/meta.yaml.in \
+  conda/migrations/Makefile \
   debian/Makefile \
   debian/control \
   debian/liblalsimulation${LIBMAJOR}.install:debian/liblalsimulation.install.in \
@@ -45,6 +46,7 @@ AC_CONFIG_FILES([ \
   python/lalsimulation/Makefile \
   python/lalsimulation/__init__.py \
   python/lalsimulation/nrfits/Makefile \
+  python/lalsimulation/tilts_at_infinity/Makefile \
   lib/LALSimulationVCSInfo.c \
   lib/LALSimulationVCSInfo.h \
   lib/Makefile \
@@ -106,10 +108,11 @@ LALSUITE_PROG_COMPILERS
 
 # checks for programs
 AC_PROG_INSTALL
+AC_PROG_MKDIR_P
 AC_PROG_LN_S
 AC_PROG_AWK
 AC_PROG_SED
-LALSUITE_CHECK_PYTHON([2.6])
+LALSUITE_CHECK_PYTHON([3.5])
 
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
@@ -118,7 +121,6 @@ LALSUITE_OSX_VERSION_CHECK
 LALSUITE_USE_LIBTOOL
 
 # check for header files
-AC_HEADER_STDC
 AC_CHECK_HEADERS([unistd.h])
 
 # check for gethostname in unistd.h
@@ -171,6 +173,9 @@ AC_SUBST([pkgincludedir], ["\${includedir}/lal"])
 # pure-python library code from being split across lib and lib64 on
 # RedHat-derived systems.
 AC_SUBST([pkgpythondir], ["\${pkgpyexecdir}"])
+
+# make sure local library module is in python path
+LAL_PYTHON_PATH="\$(abs_top_builddir)/python:${LAL_PYTHON_PATH}"
 
 # output
 AC_OUTPUT

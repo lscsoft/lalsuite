@@ -27,6 +27,11 @@
 
 #include "ComputeFstat_internal.h"
 
+#ifdef LALPULSAR_CUDA_ENABLED
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#endif
+
 #include <lal/LALString.h>
 #include <lal/LALSIMD.h>
 #include <lal/NormalizeSFTRngMed.h>
@@ -50,10 +55,23 @@ struct tagFstatInput {
 
 // ---------- Internal prototypes ---------- //
 
-static int XLALSelectBestFstatMethod ( FstatMethodType *method );
+int XLALSetupFstatDemod ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALGetFstatTiming_Demod ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
+void *XLALFstatInputTimeslice_Demod ( const void *method_data, const UINT4 iStart[PULSAR_MAX_DETECTORS], const UINT4 iEnd[PULSAR_MAX_DETECTORS] );
+void XLALDestroyFstatInputTimeslice_Demod ( void *method_data );
 
-int XLALSetupFstatDemod  ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
-int XLALSetupFstatResamp ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALSetupFstatResampGeneric ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALExtractResampledTimeseries_ResampGeneric ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, void* method_data );
+int XLALGetFstatTiming_ResampGeneric ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
+
+#ifdef LALPULSAR_CUDA_ENABLED
+int XLALSetupFstatResampCUDA ( void **method_data, FstatCommon *common, FstatMethodFuncs* funcs, MultiSFTVector *multiSFTs, const FstatOptionalArgs *optArgs );
+int XLALExtractResampledTimeseries_ResampCUDA ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, void* method_data );
+int XLALGetFstatTiming_ResampCUDA ( const void *method_data, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
+#endif
+
+static int XLALSelectBestFstatMethod ( FstatMethodType *method );
+static void XLALDestroyFstatInputTimeslice_common ( FstatCommon *common );
 
 // ---------- Constant variable definitions ---------- //
 
@@ -65,6 +83,7 @@ static const char *const FstatMethodNames[FMETHOD_END] = {
   [FMETHOD_DEMOD_BEST]		= "DemodBest",
 
   [FMETHOD_RESAMP_GENERIC]	= "ResampGeneric",
+  [FMETHOD_RESAMP_CUDA]		= "ResampCUDA",
   [FMETHOD_RESAMP_BEST]		= "ResampBest",
 };
 
@@ -411,9 +430,18 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     setupFuncMethod = XLALSetupFstatDemod;
     break;
 
+  case FMETHOD_RESAMP_CUDA:		// Resamp: CUDA implementation
+#ifdef LALPULSAR_CUDA_ENABLED
+    extraBinsMethod = 8;   // use 8 extra bins to give better agreement with Demod(w Dterms=8) near the boundaries
+    setupFuncMethod = XLALSetupFstatResampCUDA;
+#else
+    XLAL_ERROR_NULL ( XLAL_EFAILED, "Unexpected selection of unavailable optArgs.FstatMethod='%d'\n", optArgs.FstatMethod );
+#endif
+    break;
+
   case FMETHOD_RESAMP_GENERIC:		// Resamp: generic implementation
     extraBinsMethod = 8;   // use 8 extra bins to give better agreement with Demod(w Dterms=8) near the boundaries
-    setupFuncMethod = XLALSetupFstatResamp;
+    setupFuncMethod = XLALSetupFstatResampGeneric;
     break;
 
   default:
@@ -535,8 +563,14 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
     {
       // Initialise parameters struct for XLALCWMakeFakeMultiData()
       CWMFDataParams XLAL_INIT_DECL(MFDparams);
-      MFDparams.fMin = input->minFreqFull;
-      MFDparams.Band = input->maxFreqFull - input->minFreqFull;
+      if (multiSFTs != NULL) {
+        const SFTtype *sft = &multiSFTs->data[0]->data[0];
+        MFDparams.fMin = sft->f0;
+        MFDparams.Band = sft->data->length * sft->deltaF;
+      } else {
+        MFDparams.fMin = input->minFreqFull;
+        MFDparams.Band = input->maxFreqFull - input->minFreqFull;
+      }
       MFDparams.multiIFO = common->detectors;
       MFDparams.multiTimestamps = *(common->multiTimestamps);
       MFDparams.randSeed = optArgs.randSeed;
@@ -768,6 +802,9 @@ XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of
           (*Fstats)->twoF = XLALRealloc ( (*Fstats)->twoF, numFreqBins*sizeof((*Fstats)->twoF[0]) );
           XLAL_CHECK ( (*Fstats)->twoF != NULL, XLAL_EINVAL, "Failed to (re)allocate (*Fstats)->twoF to length %u", numFreqBins );
         }
+#ifndef LALPULSAR_CUDA_ENABLED
+      XLAL_CHECK ( (*Fstats)->twoF_CUDA == NULL, XLAL_EINVAL, "CUDA not enabled" );
+#endif
 
       // Enlarge multi-detector Fa & Fb array
       if ( (whatToCompute & FSTATQ_FAFB) && moreFreqBins )
@@ -914,6 +951,11 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] \c FstatResults struct
   }
 
   XLALFree ( Fstats->twoF );
+#ifdef LALPULSAR_CUDA_ENABLED
+  if ( Fstats->twoF_CUDA != NULL ) {
+    cudaFree(Fstats->twoF_CUDA);
+  }
+#endif
   XLALFree ( Fstats->Fa );
   XLALFree ( Fstats->Fb );
   for ( UINT4 X = 0; X < PULSAR_MAX_DETECTORS; ++X )
@@ -935,42 +977,6 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] \c FstatResults struct
 
   return;
 } // XLALDestroyFstatResults()
-
-///
-/// Add +4 to any multi-detector or per-detector 2F values computed by XLALComputeFstat().
-///
-/// This is for compatibility with programs which expect this normalisation if SFTs do not
-/// contain noise, e.g. \c lalapps_ComputeFstatistic_v2 historically used to do so
-/// with the (now removed) \c --SignalOnly option.
-///
-int
-XLALAdd4ToFstatResults ( FstatResults* Fstats    ///< [in/out] \c FstatResults structure.
-                         )
-{
-  // Check input
-  XLAL_CHECK( Fstats != NULL, XLAL_EINVAL );
-
-  // Add +4 to multi-detector 2F array
-  if ( Fstats->whatWasComputed & FSTATQ_2F )
-    {
-      for ( UINT4 k = 0; k < Fstats->numFreqBins; ++k ) {
-        Fstats->twoF[k] += 4;
-      }
-    }
-
-  // Add +4 to 2F per detector arrays
-  if ( Fstats->whatWasComputed & FSTATQ_2F_PER_DET )
-    {
-      for ( UINT4 X = 0; X < Fstats->numDetectors; ++X ) {
-        for ( UINT4 k = 0; k < Fstats->numFreqBins; ++k ) {
-          Fstats->twoFPerDet[X][k] += 4;
-        }
-      }
-    }
-
-  return XLAL_SUCCESS;
-
-} // XLALAdd4ToFstatResults()
 
 
 /// Compute the \f$\mathcal{F}\f$-statistic from the complex \f$F_a\f$ and \f$F_b\f$ components
@@ -1126,6 +1132,14 @@ XLALFstatMethodIsAvailable ( FstatMethodType method )
     return 0;
 #endif
 
+  case FMETHOD_RESAMP_CUDA:
+    // This medthod is available only if compiled with CUDA support
+#ifdef LALPULSAR_CUDA_ENABLED
+    return 1;
+#else
+    return 0;
+#endif
+
   default:
     return 0;
 
@@ -1199,18 +1213,27 @@ XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric,
   XLAL_CHECK ( timingGeneric != NULL, XLAL_EINVAL );
   XLAL_CHECK ( timingModel != NULL, XLAL_EINVAL );
 
-  if ( input->method >= FMETHOD_DEMOD_GENERIC && input->method <= FMETHOD_DEMOD_BEST)
-    {
-      XLAL_CHECK ( XLALGetFstatTiming_Demod ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else if ( input->method >= FMETHOD_RESAMP_GENERIC && input->method <= FMETHOD_RESAMP_BEST)
-    {
-      XLAL_CHECK ( XLALGetFstatTiming_Resamp ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  else
-    {
-      XLAL_ERROR ( XLAL_EINVAL, "Unsupported F-stat method '%s'\n", FstatMethodNames [ input->method ] );
-    }
+  switch ( input->method ) {
+  case FMETHOD_DEMOD_GENERIC:
+  case FMETHOD_DEMOD_OPTC:
+  case FMETHOD_DEMOD_ALTIVEC:
+  case FMETHOD_DEMOD_SSE:
+    XLAL_CHECK ( XLALGetFstatTiming_Demod ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+
+  case FMETHOD_RESAMP_GENERIC:
+    XLAL_CHECK ( XLALGetFstatTiming_ResampGeneric ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+
+#ifdef LALPULSAR_CUDA_ENABLED
+  case FMETHOD_RESAMP_CUDA:
+    XLAL_CHECK ( XLALGetFstatTiming_ResampCUDA ( input->method_data, timingGeneric, timingModel ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+#endif
+
+  default:
+    XLAL_ERROR ( XLAL_EINVAL, "Unsupported F-stat method '%s'\n", FstatMethodNames [ input->method ] );
+  }
 
   timingGeneric->help = FstatTimingGenericHelp;	// set static help-string pointer (not used or set otherwise)
 
@@ -1267,15 +1290,26 @@ XLALAppendFstatTiming2File ( const FstatInput* input, FILE *fp, BOOLEAN printHea
 int
 XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, ///< [out] \c multi-detector SRC-frame timeseries, multiplied by AM function a(t).
                                  MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, ///< [out] \c multi-detector SRC-frame timeseries, multiplied by AM function b(t).
-                                 const FstatInput *input ///< [in] \c FstatInput structure.
+                                 FstatInput *input ///< [in] \c FstatInput structure.
                                  )
 {
   XLAL_CHECK ( input != NULL, XLAL_EINVAL );
   XLAL_CHECK ( ( multiTimeSeries_SRC_a != NULL ) && ( multiTimeSeries_SRC_b != NULL ) , XLAL_EINVAL );
-  XLAL_CHECK ( (input->method >= FMETHOD_RESAMP_GENERIC) && (input->method <= FMETHOD_RESAMP_BEST), XLAL_EINVAL,
-               "%s() only works for resampling-Fstat methods, not with '%s'\n", __func__, XLALGetFstatInputMethodName ( input ) );
 
-  XLAL_CHECK ( XLALExtractResampledTimeseries_intern ( multiTimeSeries_SRC_a, multiTimeSeries_SRC_b, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  switch ( input->method ) {
+  case FMETHOD_RESAMP_GENERIC:
+    XLAL_CHECK ( XLALExtractResampledTimeseries_ResampGeneric ( multiTimeSeries_SRC_a, multiTimeSeries_SRC_b, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+
+#ifdef LALPULSAR_CUDA_ENABLED
+  case FMETHOD_RESAMP_CUDA:
+    XLAL_CHECK ( XLALExtractResampledTimeseries_ResampCUDA ( multiTimeSeries_SRC_a, multiTimeSeries_SRC_b, input->method_data ) == XLAL_SUCCESS, XLAL_EFUNC );
+    break;
+#endif
+
+  default:
+    XLAL_ERROR ( XLAL_EINVAL, "%s() only works for resampling-Fstat methods, not with '%s'\n", __func__, FstatMethodNames [ input->method ] );
+  }
 
   return XLAL_SUCCESS;
 } // XLALExtractResampledTimeseries()
@@ -1423,7 +1457,7 @@ XLALFstatInputTimeslice ( FstatInput ** slice,                ///< [out] Address
 } // XLALFstatInputTimeslice()
 
 
-void
+static void
 XLALDestroyFstatInputTimeslice_common ( FstatCommon *common )
 {
   if ( !common ) {

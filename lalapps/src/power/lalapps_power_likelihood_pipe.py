@@ -37,10 +37,7 @@ import itertools
 from optparse import OptionParser
 import sys
 import tempfile
-try:
-    from configparser import ConfigParser
-except ImportError:  # python < 3
-    from ConfigParser import SafeConfigParser as ConfigParser
+from configparser import ConfigParser
 
 
 from ligo.segments import utils as segmentsUtils

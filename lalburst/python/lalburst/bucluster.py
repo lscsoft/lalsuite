@@ -1,4 +1,4 @@
-# Copyright (C) 2006  Kipp Cannon
+# Copyright (C) 2006--2021  Kipp Cannon
 #
 # This program is free software; you can redistribute it and/or modify it
 # under the terms of the GNU General Public License as published by the
@@ -22,9 +22,6 @@
 #
 # =============================================================================
 #
-
-
-from __future__ import print_function
 
 
 import math
@@ -52,7 +49,7 @@ from .git_version import version as __version__
 #
 
 
-process_program_name = "lalapps_bucluster"
+process_program_name = "lalburst_cluster"
 
 
 def append_process(xmldoc, cluster_algorithm, comment):
@@ -63,7 +60,7 @@ def append_process(xmldoc, cluster_algorithm, comment):
 			"cluster_algorithm": cluster_algorithm
 		},
 		version = __version__,
-		cvs_repository = u"lscsoft",
+		cvs_repository = "lscsoft",
 		cvs_entry_time = __date__,
 		comment = comment
 	)
@@ -146,10 +143,10 @@ def ExcessPowerPostFunc(sngl_burst_table, offset):
 		row.peak = offset + row.peak_time
 
 
-def ExcessPowerSortKeyFunc(a, b):
+def ExcessPowerSortKeyFunc(a):
 	"""
-	Sort key to grouping excess power triggers near triggers with which
-	they might cluster.
+	Sort key for grouping excess power triggers near triggers with
+	which they might cluster.
 	"""
 	return (a.ifo, a.channel, a.search, a.start)
 
@@ -373,7 +370,7 @@ def bucluster(
 		if verbose:
 			print("document does not contain a sngl_burst table, skipping ...", file=sys.stderr)
 		return xmldoc, False
-	seglists = ligolw_search_summary.segmentlistdict_fromsearchsummary(xmldoc, program = program).coalesce()
+	seglists = ligolw_search_summary.segmentlistdict_fromsearchsummary_out(xmldoc, program = program).coalesce()
 
 	#
 	# Preprocess candidates

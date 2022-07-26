@@ -191,7 +191,8 @@ class Event():
 dummyCacheNames=['LALLIGO','LALVirgo','LALAdLIGO','LALAdVirgo']
 
 def create_events_from_coinc_and_psd(
-    coinc_xml_obj, psd_dict, gid=None, threshold_snr=None, flow=20.0, roq=False
+    coinc_xml_obj, psd_dict=None, gid=None, threshold_snr=None, flow=20.0,
+    roq=False, use_gracedbpsd=False
 ):
     """This function calculates seglen, fhigh, srate and horizon distance from
     coinc.xml and psd.xml.gz from GraceDB and create list of Events as input of
@@ -209,6 +210,8 @@ def create_events_from_coinc_and_psd(
         lower frequecy cutoff for overlap calculation
     roq: bool
         Whether the run uses ROQ or not
+    use_gracedbpsd: bool
+        Whether the gracedb PSD is used or not in PE
     """
     output=[]
     import lal
@@ -229,7 +232,7 @@ def create_events_from_coinc_and_psd(
     # Parse PSD
     srate_psdfile=16384
     fhigh=None
-    if psd_dict is not None:
+    if psd_dict is not None and use_gracedbpsd:
         psd = list(psd_dict.values())[0]
         srate_psdfile = pow(
             2.0, ceil(log(psd.f0 + psd.deltaF * (psd.data.length - 1), 2))
@@ -296,7 +299,7 @@ def create_events_from_coinc_and_psd(
                 srate = max(srate)
             else:
                 srate = srate_psdfile
-                if psd_dict is not None:
+                if psd_dict is not None and use_gracedbpsd:
                     fhigh = srate_psdfile/2.0 * 0.95 # Because of the drop-off near Nyquist of the PSD from gstlal
         else:
             srate = None
@@ -802,7 +805,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             self.results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspage.sub'),self.logpath)
             self.cotest_results_page_job = ResultsPageJob(self.config,os.path.join(self.basepath,'resultspagecoherent.sub'),self.logpath)
         if self.config.has_section('spin_evol'):
-            self.evolve_spins_job=EvolveSamplesJob(self.config, os.path.join(self.basepath,'evolve_spins.sub'),self.logpath,dax=self.is_dax())
+            self.evolve_spins_job=EvolveSamplesJob(self.config, os.path.join(self.basepath,'evolve_spins.sub'),self.logpath)
         if self.engine=='lalinferencemcmc':
             self.combine_job = CombineMCMCJob(self.config,os.path.join(self.basepath,'combine_files.sub'),self.logpath)
             self.merge_job = MergeJob(self.config,os.path.join(self.basepath,'merge_runs.sub'),self.logpath,engine='mcmc')
@@ -1119,7 +1122,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     contenthandler = lalseries.PSDContentHandler
                 )[0]
                 psd_dict = lalseries.read_psd_xmldoc(psd_xml_obj)
-                ligolw_utils.write_filename(psd_xml_obj, path_to_psd, gz = True)
+                ligolw_utils.write_filename(psd_xml_obj, path_to_psd)
                 ifos = sorted(
                     lsctables.CoincInspiralTable.get_table(
                         coinc_xml_obj
@@ -1133,9 +1136,15 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             else:
                 psd_dict = None
 
+            try:
+                use_gracedbpsd = (not self.config.getboolean('input','ignore-gracedb-psd'))
+            except (NoOptionError, NoSectionError):
+                use_gracedbpsd = True
             events = create_events_from_coinc_and_psd(
-                         coinc_xml_obj, psd_dict, gid, threshold_snr=threshold_snr, flow=flow,
-                         roq=self.config.getboolean('analysis','roq')
+                         coinc_xml_obj, psd_dict=psd_dict, gid=gid,
+                         threshold_snr=threshold_snr, flow=flow,
+                         roq=self.config.getboolean('analysis','roq'),
+                         use_gracedbpsd=use_gracedbpsd
                      )
 
         # pipedown-database
@@ -1550,7 +1559,7 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
                     self.add_gracedb_log_node(respagenode,event.GID,server=gdb_srv)
         if self.config.has_option('condor','ligo-skymap-plot') and self.config.has_option('condor','ligo-skymap-from-samples'):
             mapnode = SkyMapNode(self.mapjob, posfile = mergenode.get_pos_file(), parent=mergenode,
-                    prefix= 'LALInference', outdir=pagedir, ifos=enginenodes[0].get_ifos())
+                    prefix= 'LALInference', outdir=pagedir, ifos=self.ifos)
             plotmapnode = PlotSkyMapNode(self.plotmapjob, parent=mapnode, inputfits = mapnode.outfits, output=os.path.join(pagedir,'skymap.png'))
             self.add_node(mapnode)
             self.add_node(plotmapnode)
@@ -2203,6 +2212,8 @@ class LALInferenceDAGJob(pipeline.CondorDAGJob):
                 self.osg=False
         else:
             self.osg=False
+        # 500 MB should be enough for anyone
+        self.add_condor_cmd('request_disk','500M')
         self.add_condor_cmd('getenv','True')
         # Only remove the job from the queue if it completed successfully
         # self.add_condor_cmd('on_exit_remove','(ExitBySignal == False) && (ExitCode == 0)')
@@ -2384,8 +2395,6 @@ class EngineJob(LALInferenceDAGJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
 
         # Set the options which are always used
         self.set_sub_file(os.path.abspath(submitFile))
-        # 500 MB should be enough for anyone
-        self.add_condor_cmd('request_disk','500M')
         if self.engine=='lalinferencemcmc':
             self.binary=cp.get('condor',self.engine.replace('mpi',''))
             self.mpirun=cp.get('condor','mpirun')
@@ -2840,7 +2849,10 @@ class PESummaryResultsPageJob(LALInferenceDAGSharedFSJob,pipeline.AnalysisJob):
         self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
         self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('request_memory','2000')
+        try:
+            self.add_condor_cmd('request_memory', cp.get('condor', 'resultspage_memory'))
+        except NoOptionError:
+            self.add_condor_cmd('request_memory', '2000')
 
 
 class ResultsPageJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline.AnalysisJob):
@@ -2853,7 +2865,10 @@ class ResultsPageJob(LALInferenceDAGSharedFSJob,pipeline.CondorDAGJob,pipeline.A
         self.set_stdout_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).out'))
         self.set_stderr_file(os.path.join(logdir,'resultspage-$(cluster)-$(process).err'))
         self.add_condor_cmd('getenv','True')
-        self.add_condor_cmd('request_memory','2000')
+        try:
+            self.add_condor_cmd('request_memory', cp.get('condor', 'resultspage_memory'))
+        except NoOptionError:
+            self.add_condor_cmd('request_memory', '2000')
         self.add_ini_opts(cp,'resultspage')
 
         if cp.has_option('results','skyres'):
@@ -3330,7 +3345,7 @@ class ROMJob(LALInferenceDAGSharedFSJob, pipeline.CondorDAGJob,pipeline.Analysis
         if cp.has_option('engine', 'approx'):
             self.add_arg('-a ' + str(cp.get('engine', 'approx')))
         if cp.has_option('condor','computeroqweights_memory'):
-            computeroqweights_memory=str(cp.get('condor','computeroqweights_memory'))
+            required_memory = str(cp.get('condor','computeroqweights_memory'))
         else:
             roq_dir = cp.get('paths','roq_b_matrix_directory')
             params = np.genfromtxt(os.path.join(roq_dir, 'params.dat'), names=True)
@@ -3585,10 +3600,10 @@ class EvolveSamplesJob(pipeline.CondorDAGJob,pipeline.AnalysisJob):
   """
   Class for evolving the spins of posterior samples
   """
-  def __init__(self,cp,submitFile,logdir,dax=False):
+  def __init__(self,cp,submitFile,logdir):
       exe=cp.get('condor','evolve_spins')
       pipeline.CondorDAGJob.__init__(self,"vanilla",exe)
-      pipeline.AnalysisJob.__init__(self,cp,dax=dax)
+      pipeline.AnalysisJob.__init__(self,cp)
       if cp.has_option('condor','accounting_group'):
         self.add_condor_cmd('accounting_group',cp.get('condor','accounting_group'))
       if cp.has_option('condor','accounting_group_user'):

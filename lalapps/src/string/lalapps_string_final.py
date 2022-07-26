@@ -34,12 +34,8 @@ from __future__ import print_function
 
 
 import bisect
-try:
-    import copyreg
-    import pickle
-except ImportError:  # python < 3
-    import copy_reg as copyreg
-    import cPickle as pickle
+import copyreg
+import pickle
 import heapq
 import itertools
 from optparse import OptionParser
@@ -807,7 +803,7 @@ def process_file(filename, products, live_time_program, tmp_path = None, veto_se
 
 	contents.filename = filename
 
-	contents.coincidence_segments = ligolwprocess.get_process_params(contents.xmldoc, "lalapps_burca", "--coincidence-segments")
+	contents.coincidence_segments = ligolwprocess.get_process_params(contents.xmldoc, "lalburst_coinc", "--coincidence-segments")
 	if contents.coincidence_segments:
 		# as a side-effect, this enforces the rule that
 		# burca has been run on the input file exactly once

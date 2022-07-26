@@ -527,6 +527,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     ifodata->next = NULL;
 
     ifomodel = XLALMalloc(sizeof(LALInferenceIFOModel));
+    ifomodel->extraData = XLALCalloc(1, sizeof(IFOModelExtraData));
     ifomodel->params = XLALCalloc(1, sizeof(LALInferenceVariables) );
     ifomodel->next = NULL;
 
@@ -724,12 +725,12 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       datalength = ifodata->compTimeData->data->length;
 
       /* allocate data time stamps */
-      ifomodel->times = NULL;
-      ifomodel->times = XLALCreateTimestampVector( datalength );
+      IFO_XTRA_DATA( ifomodel )->times = NULL;
+      IFO_XTRA_DATA( ifomodel )->times = XLALCreateTimestampVector( datalength );
 
       /* fill in time stamps as LIGO Time GPS Vector */
       for ( k = 0; k < datalength; k++ ) {
-        XLALGPSSetREAL8( &ifomodel->times->data[k], temptimes->data[k] );
+        XLALGPSSetREAL8( &IFO_XTRA_DATA( ifomodel )->times->data[k], temptimes->data[k] );
       }
 
       /* sort temporary time vector into ascending order (to get minimum time difference) */
@@ -752,7 +753,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
         INT4 randshufseed = atoi(LALInferenceGetProcParamVal( commandLine, "--randomise" )->value);
         INT4 prevseed = gsl_rng_get( runState->GSLrandom );  // get previous RNG value
         gsl_rng_set( runState->GSLrandom, randshufseed ); // set to value from randomise
-        gsl_ran_shuffle( runState->GSLrandom, &ifomodel->times->data[0], (size_t)datalength, sizeof(LIGOTimeGPS) ); // shuffle data times
+        gsl_ran_shuffle( runState->GSLrandom, &IFO_XTRA_DATA( ifomodel )->times->data[0], (size_t)datalength, sizeof(LIGOTimeGPS) ); // shuffle data times
         gsl_rng_set( runState->GSLrandom, prevseed );     // reset to previous value
       }
 
@@ -774,8 +775,8 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       REAL8 psdscale = 0.;
 
       /* allocate data time stamps */
-      ifomodel->times = NULL;
-      ifomodel->times = XLALCreateTimestampVector( (UINT4)datalength );
+      IFO_XTRA_DATA( ifomodel )->times = NULL;
+      IFO_XTRA_DATA( ifomodel )->times = XLALCreateTimestampVector( (UINT4)datalength );
 
       /* add data sample interval */
       LALInferenceAddVariable( ifomodel->params, "dt", &fdt[0], LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
@@ -798,21 +799,21 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
       /* create time stamps and scale data with the PSD */
       for( k = 0; k < datalength; k++ ){
         /* set time stamp */
-        XLALGPSSetREAL8( &ifomodel->times->data[k], fstarts[i] + fdt[i] * (REAL8)k );
+        XLALGPSSetREAL8( &IFO_XTRA_DATA( ifomodel )->times->data[k], fstarts[i] + fdt[i] * (REAL8)k );
 
         ifodata->compTimeData->data->data[k] = (REAL8)realdata->data[k] * psdscale + I * (REAL8)imagdata->data[k] * psdscale;
       }
 
-      ifodata->compTimeData->epoch = ifomodel->times->data[0];
-      ifomodel->compTimeSignal->epoch = ifomodel->times->data[0];
-      ifodata->varTimeData->epoch = ifomodel->times->data[0];
+      ifodata->compTimeData->epoch = IFO_XTRA_DATA( ifomodel )->times->data[0];
+      ifomodel->compTimeSignal->epoch = IFO_XTRA_DATA( ifomodel )->times->data[0];
+      ifodata->varTimeData->epoch = IFO_XTRA_DATA( ifomodel )->times->data[0];
 
       XLALDestroyREAL4Vector( realdata );
       XLALDestroyREAL4Vector( imagdata );
     }
 
     /* set ephemeris data */
-    ifomodel->ephem = XLALMalloc( sizeof(EphemerisData) );
+    IFO_XTRA_DATA( ifomodel )->ephem = XLALMalloc( sizeof(EphemerisData) );
 
     /* get ephemeris files */
     ppte = LALInferenceGetProcParamVal( commandLine, "--ephem-earth" );
@@ -845,17 +846,17 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     }
     else{ /* try getting files automatically */
       if( !( ttype = XLALAutoSetEphemerisFiles( &efile, &sfile, &tfile, pulsar,
-            ifomodel->times->data[0].gpsSeconds, ifomodel->times->data[datalength-1].gpsSeconds ) ) ){
+            IFO_XTRA_DATA( ifomodel )->times->data[0].gpsSeconds, IFO_XTRA_DATA( ifomodel )->times->data[datalength-1].gpsSeconds ) ) ){
         fprintf(stderr, "Error... not been able to set ephemeris files!\n");
         exit(3);
       }
     }
 
     /* set up ephemeris information */
-    XLAL_CHECK_VOID( ( ifomodel->ephem = XLALInitBarycenter( efile, sfile ) ) != NULL, XLAL_EFUNC );
-    if( tfile ){ XLAL_CHECK_VOID( (ifomodel->tdat = XLALInitTimeCorrections( tfile ) ) != NULL, XLAL_EFUNC ); }
-    else { ifomodel->tdat = NULL; }
-    ifomodel->ttype = ttype;
+    XLAL_CHECK_VOID( ( IFO_XTRA_DATA( ifomodel )->ephem = XLALInitBarycenter( efile, sfile ) ) != NULL, XLAL_EFUNC );
+    if( tfile ){ XLAL_CHECK_VOID( (IFO_XTRA_DATA( ifomodel )->tdat = XLALInitTimeCorrections( tfile ) ) != NULL, XLAL_EFUNC ); }
+    else { IFO_XTRA_DATA( ifomodel )->tdat = NULL; }
+    IFO_XTRA_DATA( ifomodel )->ttype = ttype;
 
     if ( efile ) { XLALFree( efile ); }
     if ( sfile ) { XLALFree( sfile ); }
@@ -1074,7 +1075,7 @@ void setup_from_par_file( LALInferenceRunState *runState )
   while( data ){
     REAL8Vector *freqFactors = NULL;
     UINT4 j = 0, k = 0;
-    REAL8 dt = XLALGPSGetREAL8( &ifo_model->times->data[ifo_model->times->length-1] ) - XLALGPSGetREAL8( &ifo_model->times->data[0] );
+    REAL8 dt = XLALGPSGetREAL8( &IFO_XTRA_DATA( ifo_model )->times->data[IFO_XTRA_DATA( ifo_model )->times->length-1] ) - XLALGPSGetREAL8( &IFO_XTRA_DATA( ifo_model )->times->data[0] );
 
     if ( dt > DeltaT ){ DeltaT = dt; }
 
@@ -1104,8 +1105,8 @@ void setup_from_par_file( LALInferenceRunState *runState )
 
       if ( LALInferenceGetProcParamVal( runState->commandLine, "--inject-only" ) && LALInferenceGetProcParamVal( runState->commandLine, "--inject-coarse" ) ){
         /* use this if just wanting to create an injection that has only been "coarse heterodyned" */
-        dts = XLALCreateREAL8Vector( ifo_model->times->length );
-        if ( binarymodel != NULL ) { bdts = XLALCreateREAL8Vector( ifo_model->times->length ); }
+        dts = XLALCreateREAL8Vector( IFO_XTRA_DATA( ifo_model )->times->length );
+        if ( binarymodel != NULL ) { bdts = XLALCreateREAL8Vector( IFO_XTRA_DATA( ifo_model )->times->length ); }
         /* set the time delays to zero, so they do not get removed during the injected signal generation */
         for ( k = 0; k < dts->length; k++ ){
           dts->data[k] = 0.;
@@ -1113,9 +1114,9 @@ void setup_from_par_file( LALInferenceRunState *runState )
         }
       }
       else{
-        dts = get_ssb_delay( pulsar, ifo_model->times, ifo_model->ephem, ifo_model->tdat, ifo_model->ttype, data->detector );
-        bdts = get_bsb_delay( pulsar, ifo_model->times, dts, ifo_model->ephem );
-        glitchphase = get_glitch_phase( pulsar, ifo_model->times, dts, bdts );
+        dts = get_ssb_delay( pulsar, IFO_XTRA_DATA( ifo_model )->times, IFO_XTRA_DATA( ifo_model )->ephem, IFO_XTRA_DATA( ifo_model )->tdat, IFO_XTRA_DATA( ifo_model )->ttype, data->detector );
+        bdts = get_bsb_delay( pulsar, IFO_XTRA_DATA( ifo_model )->times, dts, IFO_XTRA_DATA( ifo_model )->ephem );
+        glitchphase = get_glitch_phase( pulsar, IFO_XTRA_DATA( ifo_model )->times, dts, bdts );
       }
 
       LALInferenceAddVariable( ifo_model->params, "ssb_delays", &dts, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );

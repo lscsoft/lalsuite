@@ -341,7 +341,7 @@ main ( int argc, char *argv[] )
   for ( UINT4 i = 0; i < Ntrials; i ++ ) {
     xIn[i] = 10000.0f * frand() + 1e-6;
   } // for i < Ntrials
-  abstol = 2e-6, reltol = 2e-7;
+  abstol = 2e-6, reltol = 4e-7;
 
   TESTBENCH_VECTORMATH_S2S(Log,xIn);
 

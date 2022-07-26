@@ -109,6 +109,18 @@ static int compar( void *p, const void *a, const void *b )
 }
 
 
+static int lt( void *p, const void *a, const void *b )
+{
+  return compar( p, a, b ) < 0;
+}
+
+
+static int lte( void *p, const void *a, const void *b )
+{
+  return compar( p, a, b ) <= 0;
+}
+
+
 static int check( int *data, int *sort, int nobj, int ascend )
 {
   int i, j;
@@ -179,6 +191,9 @@ int main(int argc, char **argv)
 
     freedata( data, sort, indx, rank );
   }
+  fprintf(stderr, "Passed XLALHeapSort\n");
+  fprintf(stderr, "Passed XLALHeapRank\n");
+  fprintf(stderr, "Passed XLALHeapIndex\n");
 
   for ( testnum = 0; testnum < 200; testnum++ )
   {
@@ -198,7 +213,123 @@ int main(int argc, char **argv)
 
     freedata( data, sort, indx, rank );
   }
+  fprintf(stderr, "Passed XLALInsertionSort\n");
 
+  for ( testnum = 0; testnum < 200; testnum++ )
+  {
+    int nobj = rand() % 24;
+    int ascend = rand() & 1;
+    int *data;
+    int *sort;
+    int *indx;	/* unused for these tests */
+    int *rank;	/* unused for these tests */
+
+    makedata( nobj, &data, &sort, &indx, &rank );
+
+    if ( XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
+      abort();
+
+    check( data, sort, nobj, ascend );
+
+    freedata( data, sort, indx, rank );
+  }
+  fprintf(stderr, "Passed XLALMergeSort\n");
+
+  for ( testnum = 0; testnum < 200; testnum++ )
+  {
+    int nobj = rand() % 24 + 1; /* these tests require at least one element */
+    int ascend = rand() & 1;
+    int *data;
+    int *sort;
+    int *indx;	/* unused for these tests */
+    int *rank;	/* unused for these tests */
+
+    makedata( nobj, &data, &sort, &indx, &rank );
+
+    if ( XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
+      abort();
+
+    if ( !XLALIsSorted( sort, nobj, sizeof(*data), &ascend, compar ) )
+      abort();
+
+    freedata( data, sort, indx, rank );
+  }
+  fprintf(stderr, "Passed XLALIsSorted\n");
+
+  for ( testnum = 0; testnum < 200; testnum++ )
+  {
+    int nobj = rand() % 24;
+    int ascend = rand() & 1;
+    int *data;
+    int *sort;
+    int *indx;	/* unused for these tests */
+    int *rank;	/* unused for these tests */
+    int v;
+    int i;
+
+    makedata( nobj, &data, &sort, &indx, &rank );
+
+    if ( XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
+      abort();
+
+    v = rand() % 100;
+    i = XLALSearchSorted( &v, sort, nobj, sizeof(*data), &ascend, compar, -1 );
+    if ( i < 0 || i > nobj) {
+      fprintf(stderr, "Error: i=%d, nobj=%d\n", i, nobj);
+      abort();
+    } else if ( nobj == 0 ) {
+      if ( i != 0 )
+        abort();
+    } else if ( i == 0 ) {
+      // if ( !( v <= sort[i] ) )
+      if ( !( lte( &ascend, &v, &sort[i] ) ) )
+        abort();
+    } else if ( i == nobj ) {
+      // if ( !( sort[i-1] < v) )
+      if ( !( lt( &ascend, &sort[i-1], &v ) ) )
+        abort();
+    // } else if ( !(sort[i-1] < v && v <= sort[i]) )
+    } else if ( !( lt( &ascend, &sort[i-1], &v ) && lte( &ascend, &v , &sort[i] ) ) )
+      abort();
+
+    v = rand() % 100;
+    i = XLALSearchSorted( &v, sort, nobj, sizeof(*data), &ascend, compar, +1 );
+    if ( i < 0 || i > nobj)
+      abort();
+    else if ( nobj == 0 ) {
+      if ( i != 0 )
+        abort();
+    } else if ( i == 0 ) {
+        // if ( !( v <= sort[i] ) )
+        if ( !( lte( &ascend, &v, &sort[i] ) ) )
+          abort();
+    } else if ( i == nobj ) {
+        // if ( ! (sort[i-1] <= v) )
+        if ( ! ( lte( &ascend, &sort[i-1], &v ) ) )
+          abort();
+    // } else if ( !(sort[i-1] <= v && v < sort[i]) )
+    } else if ( !( lte( &ascend, &sort[i-1], &v ) && lt( &ascend, &v, &sort[i] ) ) )
+      abort();
+
+    if ( nobj > 0 ) {
+       /* select one of the data points */
+       int j = rand() % nobj;
+       v = data[j];
+    } else {
+       v = rand() % 100;
+    }
+    i = XLALSearchSorted( &v, sort, nobj, sizeof(*data), &ascend, compar, 0 );
+    if ( nobj == 0 ) {
+      if (i != -1)
+        abort();
+    } else if ( i < 0 ) {
+      abort();
+    } else if ( sort[i] != v)
+      abort();
+
+    freedata( data, sort, indx, rank );
+  }
+  fprintf(stderr, "Passed XLALSearchSorted\n");
 
   return 0;
 }

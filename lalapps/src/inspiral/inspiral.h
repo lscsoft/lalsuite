@@ -83,17 +83,6 @@ REAL4 XLALCandleDistanceTD(
     REAL8FrequencySeries *spec,
     UINT4 cut);
 
-SummValueTable **add_summvalue_table(
-    SummValueTable **newTable,
-    LIGOTimeGPS gpsStartTime,
-    LIGOTimeGPS gpsEndTime,
-    const CHAR *programName,
-    const CHAR *ifoName,
-    const CHAR *summValueName,
-    const CHAR *comment,
-    REAL8 value
-    );
-
 void AddNumRelStrainModes( LALStatus              *status,
                            REAL4TimeVectorSeries  **outStrain,
                            SimInspiralTable *thisinj);

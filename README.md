@@ -1,6 +1,12 @@
 # LALSuite
 
 This is the main LALSuite development repository.
+If you would like to just use a released version,
+see [here](https://computing.docs.ligo.org/conda/)
+for IGWN conda environments including LALSuite,
+or the project pages
+on [conda-forge](https://anaconda.org/conda-forge/lalsuite)
+and on [PyPI](https://pypi.org/project/lalsuite/).
 
 ## Acknowledgment
 
@@ -37,6 +43,94 @@ This only needs to be done once for each machine you access the
 repository. It can then be cloned using:
 
      $ git clone git@git.ligo.org:lscsoft/lalsuite.git
+
+## Building from Source
+
+The recommended way to build LALSuite from source is in a `conda` environment.
+[A recipe file](conda/environment.yml) is available with all main dependencies.
+This can serve as the base for custom recipes,
+or be used directly via:
+
+     $ conda env create -f conda/environment.yml
+
+Pulling in dependencies may take a while depending on your internet connection.
+After the environment setup succeeded, you can activate it with:
+
+     $ conda activate lalsuite-dev
+
+The first time building LALSuite from source, you need to set up the build
+system by running (from the top level of the Git repository):
+
+     $ ./00boot
+
+The next step is to configure the LALSuite build system, which determines what
+components of LALSuite are built, and with what features. This is done by
+running (from the top level of the Git repository):
+
+     $ ./configure [options...]
+
+A full list of options is available by running `./configure --help=recursive`.
+Some commonly-used options are:
+
+- `--prefix=<path>`: Sets which `<path>` LALSuite will be installed into. By
+  default, LALSuite is installed into a directory `./_inst/` at the top level of
+  the Git repository.
+
+- `--enable-all-lal`: Build all component libraries of LALSuite, including
+  `lalapps`; the default.
+
+- `--disable-all-lal`: Build only the `lal` library component of LALSuite.
+
+- `--enable-lal<name>`: Build the `lal<name>` component of LALSuite. This option
+  can be combined with the `--disable-all-lal` option to selectively build
+  LALSuite components, e.g.  `--disable-all-lal --enable-lalframe
+  --enable-lalinference` will build only the `lal`, `lalframe`, and
+  `lalinference` components.
+
+- `--enable-swig-python`, `--enable-swig-octave`: Build Python and/or Octave
+  interfaces to the LALSuite libraries (using the SWIG tool), which allow
+  LALSuite library functions to be called directly from Python/Octave. By
+  default, only the Python interface is built. Use `--enable-swig` to build both
+  interfaces.
+
+- `--enable-fftw`, `--enable-intelfft`: Perform Fast Fourier Transforms using
+  either the FFTW library (the default) or the Intel MKL library. To enable
+  aligned memory optimisations with FFTW, use the `--enable-fftw3-memalign`
+  option.
+
+- `--enable-framel`, `--enable-framec`: Read/write gravitational wave frame
+  files using either the FrameL or FrameCPPC libraries. By default, the LALSuite
+  build system will use whichever library is available on your system; if
+  neither are available, frame file reading/writing will be disabled.
+
+- `--with-hdf5`: Build support for reading/writing to HDF5 files.
+
+- `--with-cfitsio`: Build support for reading/writing to FITS files.
+
+- `--with-cuda=<path>`: Build CUDA code which runs on graphics processing
+  units. `<path>` should specify the top-level directory of a local install of
+  the CUDA Toolkit.
+
+- `PYTHON=<pythonX.Y>`: set the Python interpreter used by LALSuite to run
+  Python scripts and compile Python modules. By default the LALSuite build
+  system will find the default system Python interpreter, so this is only needed
+  if you want to build against a specific Python version `X.Y`.
+
+Once LALSuite has been configured, you can then build and install LALSuite by
+running (from the top level of the Git repository):
+
+     $ make [-j<processes>] && make install
+
+where `<processes>` optionally specifies the number of processes used for
+building in parallel. If the build is successful, `make install` will install
+LALSuite into the directory given by `--prefix`.
+
+After pulling updates or making your own changes, you will usually only need to
+call `make && make install` again, as reconfiguration and re-running `00boot`
+should be handled automatically if needed.
+
+If you prefer managing dependencies yourself without conda,
+see [here](https://wiki.ligo.org/Computing/LALSuite#Dependencies).
 
 ## Contributing to LALSuite
 

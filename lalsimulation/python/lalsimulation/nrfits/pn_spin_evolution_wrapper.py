@@ -3,7 +3,7 @@ import lalsimulation as lalsim
 from lal import MSUN_SI, MTSUN_SI
 
 def spin_evolution(q, chiA0, chiB0, omega0, approximant='SpinTaylorT4',
-        dt=0.1, spinO=7, phaseO=7):
+        dt=0.1, spinO=6, phaseO=7):
     """
     Wrapper for PN spin and dynamics evolution in LAL.
     Inputs:

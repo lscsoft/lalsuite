@@ -109,9 +109,10 @@ class CacheEntry(object):
     >>> filename = "874000000-20000.cache"
     >>> # adjustment for doctest in out-of-tree builds
     >>> inname = os.path.join(os.environ.get("LAL_TEST_SRCDIR", "."), filename)
-    >>> cache = map(CacheEntry, open(inname))
-    >>> f = open(filename + ".new", "w")
-    >>> for cacheentry in cache: print(str(cacheentry), file=f)
+    >>> # one-liner to read
+    >>> cache = list(map(CacheEntry, open(inname)))
+    >>> # one-liner to write
+    >>> print(*cache, sep = "\\n", file = open(filename + ".new", "w"))
 
     Example (extract segmentlist dictionary from LAL cache):
 

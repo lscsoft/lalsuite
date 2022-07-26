@@ -86,11 +86,6 @@ int main( void )
   */
   for ( i = 0; i < series.data->length; ++i )
   {
-    INT8 ns;
-    ns  = (INT8)1000000000 * (INT8)series.epoch.gpsSeconds;
-    ns += (INT8)series.epoch.gpsNanoSeconds;
-    ns += (INT8)( 1e9 * i * series.deltaT );
-    ns %= (INT8)1000000000;
     series.data->data[i] = count++;
   }
 
@@ -106,11 +101,6 @@ int main( void )
   */
   for ( i = 0; i < series.data->length; ++i )
   {
-    INT8 ns;
-    ns  = (INT8)1000000000 * (INT8)series.epoch.gpsSeconds;
-    ns += (INT8)series.epoch.gpsNanoSeconds;
-    ns += (INT8)( 1e9 * i * series.deltaT );
-    ns %= (INT8)1000000000;
     series.data->data[i] = count++;
   }
 
@@ -126,11 +116,6 @@ int main( void )
   */
   for ( i = 0; i < series.data->length; ++i )
   {
-    INT8 ns;
-    ns  = (INT8)1000000000 * (INT8)series.epoch.gpsSeconds;
-    ns += (INT8)series.epoch.gpsNanoSeconds;
-    ns += (INT8)( 1e9 * i * series.deltaT );
-    ns %= (INT8)1000000000;
     series.data->data[i] = count++;
   }
 

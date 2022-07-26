@@ -70,8 +70,12 @@ int main(void){
   REAL8 incl=0.1;
   REAL8 lam1=1.e3;
   REAL8 lam2=5.e2;
-  int ampO=2;//Test will fail if amplitude order >2, as it will involve l=5 modes which are not yet coded
   const UINT4 LMAX=4;
+  const INT4 ampO=(INT4) LMAX-2;
+  /*Test will fail if ampO>LMAX-2,
+   * as polarizations will involve terms belonging to l higher than LMAX.
+   * The highest possible LMAX is 4, as only l=2,3,4 hlm modes have been coded.
+   */
 
   LALDict *params=XLALCreateDict();
   int errCode=XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(params,ampO);

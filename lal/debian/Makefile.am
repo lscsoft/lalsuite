@@ -8,7 +8,6 @@ EXTRA_DIST = \
 	liblal-dev.install \
 	liblal@LIBMAJOR@.install \
 	liblalsupport@LIBMAJOR_SUPPORT@.install \
-	python-lal.install \
 	python3-lal.install \
 	rules \
 	lalsuite.mk \

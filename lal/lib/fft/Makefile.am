@@ -1,16 +1,12 @@
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
-if CUDA
-CUDAHDRS = CudaPlan.h
-endif
-
 pkginclude_HEADERS = \
 	ComplexFFT.h \
 	RealFFT.h \
 	FFTWMutex.h \
 	TimeFreqFFT.h \
-	$(CUDAHDRS)
+	$(END_OF_LIST)
 
 if QTHREAD
 QTHREADSRC = qthread.c
@@ -84,6 +80,7 @@ EXTRA_DIST = \
 	CudaFFT.cu \
 	CudaFFT.h \
 	CudaFunctions.h \
+	CudaPlan.h \
 	CudaRealFFT.c \
 	FFTWMutex.c \
 	IntelComplexFFT.c \

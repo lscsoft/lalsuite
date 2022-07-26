@@ -24,6 +24,7 @@ dependencies:
   - make
   - matplotlib-base
   - metaio
+  - mpmath >=1.0.0
   - numpy
   - openmpi
   - pillow

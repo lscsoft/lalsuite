@@ -1,14 +1,15 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
-include $(top_srcdir)/gnuscripts/lalapps.am
-include $(top_srcdir)/gnuscripts/lalapps_pulsar_test.am
+include $(top_srcdir)/gnuscripts/lalapps_pulsar.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
+include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
 
 bin_PROGRAMS = \
-	lalapps_WeaveSetup \
 	lalapps_Weave \
 	lalapps_WeaveCompare \
+	lalapps_WeaveConcat \
+	lalapps_WeaveSetup \
 	$(END_OF_LIST)
 
 lalapps_WeaveSetup_SOURCES = \
@@ -41,6 +42,9 @@ lalapps_Weave_SOURCES = \
 
 lalapps_WeaveCompare_SOURCES = \
 	CacheResults.c \
+	CacheResults.h \
+	ComputeResults.c \
+	ComputeResults.h \
 	OutputResults.c \
 	OutputResults.h \
 	ResultsToplist.c \
@@ -51,11 +55,38 @@ lalapps_WeaveCompare_SOURCES = \
 	SetupData.h \
 	Statistics.c \
 	Statistics.h \
-	ComputeResults.c \
-	ComputeResults.h \
 	Weave.h \
 	WeaveCompare.c \
 	$(END_OF_LIST)
+
+lalapps_WeaveConcat_SOURCES = \
+	CacheResults.c \
+	CacheResults.h \
+	ComputeResults.c \
+	ComputeResults.h \
+	OutputResults.c \
+	OutputResults.h \
+	ResultsToplist.c \
+	ResultsToplist.h \
+	SearchTiming.c \
+	SearchTiming.h \
+	Statistics.c \
+	Statistics.h \
+	Weave.h \
+	WeaveConcat.c \
+	$(END_OF_LIST)
+
+noinst_LTLIBRARIES =
+
+if CUDA
+
+noinst_LTLIBRARIES += libweave_computeresults_cuda.la
+LDADD += libweave_computeresults_cuda.la
+libweave_computeresults_cuda_la_SOURCES = ComputeResults_CUDA.cu
+libweave_computeresults_cuda_la_LDFLAGS = -no-undefined
+MOSTLYCLEANFILES += ComputeResults_CUDA.cpp
+
+endif
 
 # Add shell test scripts to this variable
 test_scripts += testWeave_interpolating.sh
@@ -66,6 +97,9 @@ test_scripts += testWeave_simulate_search.sh
 test_scripts += testWeave_cache_max_size.sh
 test_scripts += testWeave_checkpointing.sh
 test_scripts += testWeave_partitioning.sh
+test_scripts += testWeave_histograms.sh
+test_scripts += testWeave_concatenation.sh
+test_scripts += testWeave_random_injection.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
@@ -75,7 +109,9 @@ test_extra_files +=
 
 # All tests require CFITSIO
 if !CFITSIO
+
 skip_tests += $(test_scripts)
+
 endif
 
 # testWeave_reference_results.sh requires output from tests that compare against reference results

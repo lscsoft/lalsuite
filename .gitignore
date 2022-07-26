@@ -1,5 +1,6 @@
 .dirstamp
 .DS_Store
+.idea
 .vscode
 *.dSYM
 *.egg-info
@@ -7,6 +8,8 @@
 *.trs
 *~
 __pycache__/
+/.cache/
+/.config/
 /_build/
 /_inst/
 /index.html
@@ -20,6 +23,7 @@ __pycache__/
 /wheel/Makefile
 /wheel/Makefile.in
 /wheel/setup.py
+/wheelhouse/
 aclocal.m4
 auto/
 autom4te.cache/

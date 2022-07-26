@@ -24,10 +24,10 @@ import pytest
 
 # load Earth and Sun ephemerides
 earth_ephem_file = os.path.join(
-    os.environ["LAL_TEST_PKGDATADIR"], "earth00-19-DE405.dat.gz"
+    os.environ["LAL_TEST_PKGDATADIR"], "earth00-40-DE405.dat.gz"
 )
 sun_ephem_file = os.path.join(
-    os.environ["LAL_TEST_PKGDATADIR"], "sun00-19-DE405.dat.gz"
+    os.environ["LAL_TEST_PKGDATADIR"], "sun00-40-DE405.dat.gz"
 )
 ephemerides = lalpulsar.InitBarycenter(earth_ephem_file, sun_ephem_file)
 

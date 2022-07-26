@@ -3163,7 +3163,6 @@ void coh_PTF_cluster_sngl_triggers(
   SnglInspiralTable *newEventHead = NULL;
   UINT4 triggerNum = 0;
   UINT4 lenTriggers = 0;
-  UINT4 numRemovedTriggers = 0;
 
   /* find number of triggers */
   while (currEvent)
@@ -3188,7 +3187,6 @@ void coh_PTF_cluster_sngl_triggers(
     {
       rejectTriggers[triggerNum] = 1;
       triggerNum += 1;
-      numRemovedTriggers += 1;
     }
     currEvent = currEvent->next;
   }

@@ -4,10 +4,10 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	lalinference.install \
+	lalinference-data.install \
 	lalinference-octave.install \
 	liblalinference@LIBMAJOR@.install \
 	liblalinference-dev.install \
-	python-lalinference.install \
 	python3-lalinference.install \
 	rules \
 	lalsuite.mk \

@@ -227,7 +227,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   /* Norm of in-plane vector sum: Norm[ S1perp + S2perp ] */
   pPrec->STot_perp     = sqrt( (pPrec->S1x+pPrec->S2x)*(pPrec->S1x+pPrec->S2x) + (pPrec->S1y+pPrec->S2y)*(pPrec->S1y+pPrec->S2y) );
 
-  /* This is called chiTot_perp to distinguish from Sperp used in contrusction of chi_p. For normalization, see Sec. IV D of arXiv:XXXX.YYYY */
+  /* This is called chiTot_perp to distinguish from Sperp used in contrusction of chi_p. For normalization, see Sec. IV D of arXiv:2004.06503 */
   pPrec->chiTot_perp   = pPrec->STot_perp * (M*M) / m1_2;
 
   /*
@@ -274,7 +274,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
         // In version 220, 223 and 224 if the MSA system fails to initialize we default to the NNLO PN angles using the 3PN aligned-spin orbital angular momentum
         if(pflag == 220 || pflag == 223 || pflag == 224)
         {
-          XLAL_PRINT_ERROR("Initialization of MSA system failed. Defaulting to NNLO angles using 3PN aligned-spin approximation.");
+          XLAL_PRINT_WARNING("Warning: Initialization of MSA system failed. Defaulting to NNLO angles using 3PN aligned-spin approximation.");
           pPrec->IMRPhenomXPrecVersion = 102;
           pflag  = pPrec->IMRPhenomXPrecVersion;
         }
@@ -308,8 +308,8 @@ int IMRPhenomXGetAndSetPrecessionVariables(
         REAL8 af      = copysign(1.0, af_parallel) * sqrt(Sperp*Sperp + af_parallel*af_parallel);
   */
   REAL8 af_parallel = XLALSimIMRPhenomXFinalSpin2017(eta,pPrec->chi1z,pPrec->chi2z);
-  double Lfinal = M*M*af_parallel - m1_2*pPrec->chi1z - m2_2*pPrec->chi2z;
-  
+  double Lfinal     = M*M*af_parallel - m1_2*pPrec->chi1z - m2_2*pPrec->chi2z;
+
   int fsflag = XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod(lalParams);
   if (fsflag == 4) fsflag = 3;
 
@@ -502,7 +502,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   /*
     In the following code block we construct the convetions that relate the source frame and the LAL frame.
 
-    A detailed discussion of the conventions can be found in Appendix C and D of arXiv:XXXX.YYYY and https://dcc.ligo.org/LIGO-T1500602
+    A detailed discussion of the conventions can be found in Appendix C and D of arXiv:2004.06503 and https://dcc.ligo.org/LIGO-T1500602
   */
 
   /* Get source frame (*_Sf) J = L + S1 + S2. This is an instantaneous frame in which L is aligned with z */
@@ -1005,7 +1005,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   pPrec->Y42          = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 4,  2);
   pPrec->Y43          = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 4,  3);
   pPrec->Y44          = XLALSpinWeightedSphericalHarmonic(ytheta, yphi, -2, 4,  4);
-  
+
   /*
       Check whether maximum opening angle becomes larger than \pi/2 or \pi/4.
 
@@ -1219,7 +1219,7 @@ REAL8 XLALSimIMRPhenomXL4PNLOSIAS(const REAL8 v, const REAL8 eta, const REAL8 ch
 
     - P. Schmidt, 2014, http://orca.cf.ac.uk/64062/
     - A. Bohé et al, https://dcc.ligo.org/LIGO-T1500602
-    - Discussion in arXiv:XXXX.YYYY Sec. IV. A.
+    - Discussion in arXiv:2004.06503 Sec. IV. A.
 */
 /* Wrapper to NNLO PN alpha angle */
 REAL8 XLALSimIMRPhenomXPNEuleralphaNNLO(
@@ -1387,7 +1387,7 @@ double IMRPhenomX_PN_Euler_epsilon_NNLO(
   return epsilon;
 }
 
-/* Core twisting up routine, see Section III. A of arXiv:XXXX.YYYY */
+/* Core twisting up routine, see Section III. A of arXiv:2004.06503 */
 int IMRPhenomXPTwistUp22(
   const REAL8 Mf,                           /**< Frequency (Hz) */
   const COMPLEX16 hAS,                      /**< Underlying aligned-spin IMRPhenomXAS strain */
@@ -1418,7 +1418,7 @@ int IMRPhenomXPTwistUp22(
 
   switch(pPrec->IMRPhenomXPrecVersion)
   {
-    /* ~~~~~ Use NNLO PN Euler Angles - Appendix G of arXiv:XXXX.YYYY and https://dcc.ligo.org/LIGO-T1500602 ~~~~~ */
+    /* ~~~~~ Use NNLO PN Euler Angles - Appendix G of arXiv:2004.06503 and https://dcc.ligo.org/LIGO-T1500602 ~~~~~ */
     case 101:
     case 102:
     case 103:
@@ -1477,7 +1477,7 @@ int IMRPhenomXPTwistUp22(
 
 
   /*
-      Compute the Wigner d coefficients, see Appendix A of arXiv:XXXX.YYYY
+      Compute the Wigner d coefficients, see Appendix A of arXiv:2004.06503
         d22  = Table[WignerD[{2, mp, 2}, 0, -\[Beta], 0], {mp, -2, 2}]
         d2m2 = Table[WignerD[{2, mp, -2}, 0, -\[Beta], 0], {mp, -2, 2}]
   */
@@ -1502,7 +1502,7 @@ int IMRPhenomXPTwistUp22(
   /* Loop over m' modes and perform the actual twisting up */
   for(int m=-2; m<=2; m++)
   {
-    /* Transfer functions, see Eq. 3.5 and 3.6 of arXiv:XXXX.YYYY */
+    /* Transfer functions, see Eq. 3.5 and 3.6 of arXiv:2004.06503 */
     COMPLEX16 A2m2emm    = cexp_im_alpha_l2[-m+2] * d2m2[m+2]  * Y2mA[m+2];        /*  = cexp(I*m*alpha) * d22[m+2]   * Y2mA[m+2] */
     COMPLEX16 A22emmstar = cexp_im_alpha_l2[m+2]  * d22[m+2]   * conj(Y2mA[m+2]);  /*  = cexp(-I*m*alpha) * d2m2[m+2] * conj(Y2mA[m+2])  */
     hp_sum +=    A2m2emm + A22emmstar;
@@ -2278,7 +2278,7 @@ int IMRPhenomX_Initialize_MSA_System(IMRPhenomXWaveformStruct *pWF, IMRPhenomXPr
     if(fabs(pPrec->Omegaz5) > 1000.0)
     {
       pPrec->MSA_ERROR = 1;
-      XLAL_PRINT_ERROR("Error, |Omegaz5| = %.16f, which is larger than expected and may be pathological. Triggering MSA failure.\n",pPrec->Omegaz5);
+      XLAL_PRINT_WARNING("Warning, |Omegaz5| = %.16f, which is larger than expected and may be pathological. Triggering MSA failure.\n",pPrec->Omegaz5);
     }
 
     const double g0 = pPrec->g0;

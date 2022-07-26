@@ -21,6 +21,7 @@
  */
 
 #include <mpi.h>
+#include <lal/Date.h>
 #include <lal/LALInference.h>
 #include "LALInferenceKombineSampler.h"
 #include <lal/LALInferenceProposal.h>

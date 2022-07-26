@@ -39,10 +39,12 @@ void *XLALCallocLong(size_t m, size_t n, const char *file, int line);
 void *XLALRealloc(void *p, size_t n);
 void *XLALReallocLong(void *p, size_t n, const char *file, int line);
 void XLALFree(void *p);
+void XLALFreeLong(void *p, const char *file, const int line);
 #ifndef SWIG    /* exclude from SWIG interface */
 #define XLALMalloc( n )        XLALMallocLong( n, __FILE__, __LINE__ )
 #define XLALCalloc( m, n )     XLALCallocLong( m, n, __FILE__, __LINE__ )
 #define XLALRealloc( p, n )    XLALReallocLong( p, n, __FILE__, __LINE__ )
+#define XLALFree( p )          XLALFreeLong( p, __FILE__, __LINE__ )
 #endif /* SWIG */
 /** @} */
 
@@ -80,6 +82,8 @@ void XLALFreeAligned(void *ptr);
 #define LALReallocShort                    realloc
 #define LALReallocLong( p, n, file, line ) realloc( p, n )
 #define LALFree                            free
+#define LALFreeShort                       free
+#define LALFreeLong( p, file, line )       free( p )
 #define LALCheckMemoryLeaks()
 #endif /* SWIG */
 
@@ -89,6 +93,7 @@ void XLALFreeAligned(void *ptr);
 #define LALMalloc( n )        LALMallocLong( n, __FILE__, __LINE__ )
 #define LALCalloc( m, n )     LALCallocLong( m, n, __FILE__, __LINE__ )
 #define LALRealloc( p, n )    LALReallocLong( p, n, __FILE__, __LINE__ )
+#define LALFree( p )          LALFreeLong( p, __FILE__, __LINE__ )
 #endif /* SWIG */
 
 /* global variables to assist in memory debugging */
@@ -109,10 +114,11 @@ extern int lalIsMemDbgPtr;      /* ( lalMemDbgUsrPtr == lalMemDbgPtr ) */
 void *LALMallocShort(size_t n);
 void *LALMallocLong(size_t n, const char *file, int line);
 void *LALCallocShort(size_t m, size_t n);
-void LALFree(void *p);
 void *LALCallocLong(size_t m, size_t n, const char *file, int line);
 void *LALReallocShort(void *p, size_t n);
 void *LALReallocLong(void *p, size_t n, const char *file, int line);
+void LALFreeShort(void *p);
+void LALFreeLong(void *p, const char *file, int line);
 /** @} */
 
 #endif /* NDEBUG  */
