@@ -1337,6 +1337,40 @@ lalinference_testjob:
       - example/
     when: always
 
+lalpulsar_longtests:
+  extends:
+    - .long-test-job
+  script:
+    - *init-build-job
+    - PACKAGE=lalpulsar
+    - cd ${PACKAGE}/
+    # unpack tarball
+    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
+    - tar -xf ${TARBALL}
+    - cd ${PACKAGE}-*/
+    # configure and build
+    - ./configure
+          --disable-doxygen
+          --enable-python
+          --enable-swig-python
+    - make -j${CPU_COUNT}
+    # run long-running tests under bin/longtests/
+    - make -j${CPU_COUNT} check -C bin/longtests/ LONGTESTS=1
+  needs:
+    - tarballs
+    - lal:rpm
+    - lalframe:rpm
+    - lalmetaio:rpm
+    - lalsimulation:rpm
+    - lalburst:rpm
+    - lalinspiral:rpm
+    - lalinference:rpm
+  artifacts:
+    # upload some files to debug failures
+    paths:
+      - "lalpulsar/**/*.log"
+    when: on_failure
+
 top-level:
   image: igwn/lalsuite-dev:el7-testing
   needs: []
