@@ -7,6 +7,7 @@ flat as the prior range increases.
 
 import os
 import sys
+import time
 import numpy as np
 import subprocess as sp
 import h5py
@@ -65,11 +66,11 @@ print("Estimated upper limit is %.4e" % (ulest))
 np.savetxt(datafile, ds, fmt='%.12e');
 
 # range of upper limits on h0 in prior file
-h0uls = np.logspace(np.log10(5.*ulest), np.log10(500.*ulest), 4)
+h0uls = np.logspace(np.log10(5.*ulest), np.log10(500.*ulest), 6)
 
 # some default inputs
 dets='H1'
-Nlive=16
+Nlive=100
 Nmcmcinitial=0
 outfile='test.hdf'
 outfile_SNR='test_SNR'
@@ -93,10 +94,12 @@ for i, proplabel in enumerate(labels):
 else:
   print(f"Running {__file__} with full proposal list")
 
-Ntests = 10 # number of times to run nested sampling for each h0 value to get average
+Ntests = 15 # number of times to run nested sampling for each h0 value to get average
 
 if doplot:
   fig, ax = pl.subplots(1, 1)
+
+walltime = time.time()
 
 for i, prop in enumerate(proposals):
   odds_prior = []
@@ -118,7 +121,8 @@ for i, prop in enumerate(proposals):
     hodds = []
     # run Ntests times to get average
     for j in range(Ntests):
-      print("--- proposal=%i/%i h0=%i/%i test=%i/%i ---" % (i+1, len(proposals), h+1, len(h0uls), j+1, Ntests), flush=True)
+      elapsed_walltime = time.time() - walltime
+      print("--- proposal=%i/%i h0=%i/%i test=%i/%i elapsed=%0.1fs ---" % (i+1, len(proposals), h+1, len(h0uls), j+1, Ntests, elapsed_walltime), flush=True)
 
       # run code
       commandline="%s --detectors %s --par-file %s --input-files %s --outfile %s --prior-file %s --Nlive %d --Nmcmcinitial %d %s" \
