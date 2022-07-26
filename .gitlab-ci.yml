@@ -1282,13 +1282,11 @@ wheel:cp310-cp310-macosx-arm64:
     - !reference [.skip-integration, rules]
     - !reference [.default, rules]
 
-lalinference_testjob:
+.long-test-job:
+  image: igwn/lalsuite-dev:el7-testing
   extends:
     - .rpmbuild
     - .integration-tests
-  variables:
-    # we need the git repo to run the test script
-    GIT_STRATEGY: fetch
   before_script:
     # init yum stuff from the template
     - !reference [".rhel:base", before_script]
@@ -1309,8 +1307,19 @@ lalinference_testjob:
       enabled=1
       gpgcheck=0
       EOF
-    # install require packages
-    - yum -y -q install lal* python*-lal* --exclude lalsuite*
+    # install required packages
+    - yum -y -q install lal* liblal*-devel python*-lal* --exclude lalsuite*
+  rules:
+    - !reference [.skip-integration, rules]
+    - !reference [.scheduled, rules]
+    - !reference [.manual, rules]
+
+lalinference_testjob:
+  extends:
+    - .long-test-job
+  variables:
+    # we need the git repo to run the test script
+    GIT_STRATEGY: fetch
   script:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
@@ -1322,10 +1331,6 @@ lalinference_testjob:
     - lalburst:rpm
     - lalinspiral:rpm
     - lalinference:rpm
-  rules:
-    - !reference [.skip-integration, rules]
-    - !reference [.scheduled, rules]
-    - !reference [.manual, rules]
   artifacts:
     expire_in: 18h
     paths:
