@@ -48,6 +48,7 @@ LIGOTimeGPSVector * setup_epochs(const SFTCatalog *catalog, const INT4 persistAv
 SFTVector * extract_one_sft(const SFTCatalog *full_catalog, const UINT4 sft_index, const REAL8 f_min, const REAL8 f_max);
 int set_sft_avg_epoch(struct tm *utc, LIGOTimeGPS *epoch_start, const LIGOTimeGPS first_sft_epoch, const INT4 persistAvgOpt, const BOOLEAN persistAvgOptWasSet);
 int validate_line_freq(LALStringVector **line_freq, const REAL8 f0, const REAL8 deltaF, const UINT4 numBins);
+REAL8Vector * line_freq_str2dbl(const LALStringVector *line_freq);
 int rngmean(const REAL8Vector *input, const REAL8Vector *output, const INT4 blocksRngMean);
 int rngstd(const REAL8Vector *input, const REAL8Vector *means, const REAL8Vector *output, const INT4 blocksRngMean);
 int select_mean_std_from_vect(REAL8 *mean, REAL8 *std, const REAL8Vector *means, const REAL8Vector *stds, const UINT4 idx, const UINT4 nside);
@@ -69,6 +70,7 @@ int main(int argc, char **argv)
     REAL8 f_min = 0.0, f_max = 0.0, timebaseline = 0, persistSNRthresh = 3.0, auto_track;
 
     LALStringVector *line_freq = NULL;
+    REAL8Vector *freq_vect = NULL;
     INT4 persistAvgSeconds = 0;
     INT4 persistAvgOpt;
     REAL8Vector *this_epoch_avg = NULL, *this_epoch_avg_wt = NULL, *new_epoch_avg = NULL, *new_epoch_wt = NULL;
@@ -171,6 +173,7 @@ int main(int argc, char **argv)
 
 	    if (line_freq != NULL) {
 		XLAL_CHECK_MAIN( validate_line_freq(&line_freq, f0, deltaF, numBins) == XLAL_SUCCESS, XLAL_EFUNC );
+		XLAL_CHECK_MAIN( (freq_vect = line_freq_str2dbl(line_freq)) != NULL, XLAL_EFUNC );
 	    }
 
 	    XLAL_CHECK_MAIN( (timeavg = XLALCreateREAL8Vector(numBins)) != NULL, XLAL_EFUNC );
@@ -297,27 +300,27 @@ int main(int argc, char **argv)
 
 	// if auto tracking, append any frequencies to the list
 	if (XLALUserVarWasSet(&auto_track) && (persistency->data[i] >= auto_track)) {
-	    char val_as_str[25];
-	    XLAL_CHECK_MAIN( snprintf(val_as_str, sizeof(val_as_str), "%g", f0 + deltaF*i) >= 0, XLAL_EFUNC);
-	    XLAL_CHECK_MAIN( (line_freq = XLALAppendString2Vector(line_freq, val_as_str)) != NULL, XLAL_EFUNC );
+	    if (freq_vect != NULL) {
+		XLAL_CHECK_MAIN( (freq_vect = XLALResizeREAL8Vector(freq_vect, freq_vect->length + 1)) != NULL, XLAL_EFUNC );
+	    } else {
+		XLAL_CHECK_MAIN( (freq_vect = XLALCreateREAL8Vector(1)) != NULL, XLAL_EFUNC );
+	    }
+	    freq_vect->data[freq_vect->length-1] = f0 + deltaF*i;
 	}
     } // end loop over frequency bins
 
     // allocate arrays for monitoring specific line frequencies
     REAL8VectorSequence *line_excess_in_epochs = NULL;
-    if (line_freq != NULL) {
+    if (freq_vect != NULL) {
 	INT4Vector *line_freq_bin_in_sft = NULL;
-	REAL8Vector *line_freq_array = NULL;
-        XLAL_CHECK_MAIN( (line_freq_array = XLALCreateREAL8Vector(line_freq->length)) != NULL, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( (line_freq_bin_in_sft = XLALCreateINT4Vector(line_freq->length)) != NULL, XLAL_EFUNC );
-	XLAL_CHECK_MAIN( (line_excess_in_epochs = XLALCreateREAL8VectorSequence(line_freq->length, epoch_gps_times->length)) != NULL, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( (line_freq_bin_in_sft = XLALCreateINT4Vector(freq_vect->length)) != NULL, XLAL_EFUNC );
+	XLAL_CHECK_MAIN( (line_excess_in_epochs = XLALCreateREAL8VectorSequence(freq_vect->length, epoch_gps_times->length)) != NULL, XLAL_EFUNC );
         memset(line_excess_in_epochs->data, 0, sizeof(REAL8)*line_excess_in_epochs->length*line_excess_in_epochs->vectorLength);
 
         // Set line_freq_array as the REAL8 values of the line_freq string vector
         // Set line_freq_bin_in_sft as the nearest INT4 values of the line frequencies to track
-        for (UINT4 n=0; n<line_freq->length; n++) {
-	    line_freq_array->data[n] = atof(line_freq->data[n]);
-	    line_freq_bin_in_sft->data[n] = (INT4)round((line_freq_array->data[n]-f0)/deltaF);
+        for (UINT4 n=0; n<freq_vect->length; n++) {
+	    line_freq_bin_in_sft->data[n] = (INT4)round((freq_vect->data[n]-f0)/deltaF);
         }
 
 	// Loop over chunks checking if the line frequencies to track are above threshold in each chunk
@@ -337,7 +340,6 @@ int main(int argc, char **argv)
 	    } // end loop over lines to track
 	} // end loop over chunks of SFT averages
 
-	XLALDestroyREAL8Vector(line_freq_array);
 	XLALDestroyINT4Vector(line_freq_bin_in_sft);
     } // end if line tracking
 
@@ -367,7 +369,7 @@ int main(int argc, char **argv)
     fclose(WTOUT);
 
     // If user specified a list of line frequencies to monitor then print those data to a file
-    if (line_freq != NULL) {
+    if (freq_vect != NULL) {
         // open the line tracking output file for writing
         LINEOUT = fopen(outfile2, "w");
 	if (!XLALUserVarWasSet(&persistAvgOpt)) {
@@ -375,19 +377,20 @@ int main(int argc, char **argv)
 	} else {
 	    fprintf(LINEOUT, "# GPS Epoch (option = %d)", persistAvgOpt);
 	}
-	for (UINT4 n=0; n<line_freq->length; n++) {
-	    fprintf(LINEOUT,",%s Hz", line_freq->data[n]);
+	for (UINT4 n=0; n<freq_vect->length; n++) {
+	    fprintf(LINEOUT,",%16.8f Hz", freq_vect->data[n]);
 	}
 	fprintf(LINEOUT, "\n");
 	for (UINT4 i = 0; i < epoch_gps_times->length; i++) {
 	    fprintf(LINEOUT, "%d", epoch_gps_times->data[i].gpsSeconds);
-	    for (UINT4 n=0; n<line_freq->length; n++) {
+	    for (UINT4 n=0; n<freq_vect->length; n++) {
 		fprintf(LINEOUT, ",%.4f", line_excess_in_epochs->data[n*line_excess_in_epochs->vectorLength + i]);
 	    }
 	    fprintf(LINEOUT, "\n");
 	}
 	fclose(LINEOUT);
 	XLALDestroyREAL8VectorSequence(line_excess_in_epochs);
+	XLALDestroyREAL8Vector(freq_vect);
     }
 
 	/*------------------------------------------------------------------------------------------------------------------------*/
@@ -557,6 +560,17 @@ int validate_line_freq(LALStringVector **line_freq, const REAL8 f0, const REAL8 
     XLALDestroyUINT4Vector(valid);
 
     return XLAL_SUCCESS;
+}
+
+
+REAL8Vector * line_freq_str2dbl(const LALStringVector *line_freq)
+{
+    REAL8Vector *freq_vect = NULL;
+    XLAL_CHECK_NULL( (freq_vect = XLALCreateREAL8Vector(line_freq->length)) != NULL, XLAL_EFUNC );
+    for (UINT4 i=0; i<line_freq->length; i++) {
+	freq_vect->data[i] = atof(line_freq->data[i]);
+    }
+    return freq_vect;
 }
 
 
