@@ -58,6 +58,7 @@ AC_CONFIG_FILES([ \
   bin/HeterodyneSearch/Makefile \
   bin/Hough/Makefile \
   bin/HoughFstat/Makefile \
+  bin/longtests/Makefile \
   bin/MakeData/Makefile \
   bin/Makefile \
   bin/SFTTools/Makefile \

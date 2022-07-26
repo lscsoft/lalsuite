@@ -24,6 +24,7 @@ SUBDIRS = \
 	SidebandSearch \
 	TwoSpect \
 	Weave \
+	longtests \
 	$(END_OF_LINE)
 
 # Because many tests in lalpulsar/bin/ call executables from other
