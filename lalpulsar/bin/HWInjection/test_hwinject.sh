@@ -55,7 +55,7 @@ NF == 4 {
       exitcode = 1
    }
    relerr = sqrt( ($2 - $4)^2 )
-   if (relerr > 1e-6) {
+   if (relerr > 2e-4) {
       printf "ERROR: line %5i: %0.8f does not compare to reference %0.8f (relerr=%g)\n", FNR, $2, $4, relerr
       exitcode = 1
    }
@@ -121,7 +121,7 @@ NF == 4 {
       exitcode = 1
    }
    relerr = sqrt( ($2 - $4)^2 )
-   if (relerr > 1e-6) {
+   if (relerr > 2e-4) {
       printf "ERROR: line %5i: %0.8f does not compare to reference %0.8f (relerr=%g)\n", FNR, $2, $4, relerr
       exitcode = 1
    }
