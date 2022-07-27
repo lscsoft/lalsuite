@@ -936,7 +936,7 @@ int XLALSimInspiralChooseTDWaveform(
       /* Call the waveform driver routine */
       polariz+=-LAL_PI/2.;
       //R.C. this rotation of -pi/2 is needed to go from the EOB wave frame to the LAL wave frame, see slide 9 of https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/blob/master/tests/conventions/con \ventions.pdf                                                                                                                                                                                                
-      if(approximant==SEOBNRv4HM_PA) SpinAlignedEOBversion = 4111;
+      SpinAlignedEOBversion = 4111;
 
       ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
 					 deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
