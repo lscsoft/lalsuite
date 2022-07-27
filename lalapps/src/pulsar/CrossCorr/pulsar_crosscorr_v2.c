@@ -2,6 +2,7 @@
  *  Copyright (C) 2013 Badri Krishnan, Shane Larson, John Whelan
  *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *  Copyright (C) 2016, 2017 Grant David Meadors
+ *  Copyright (C) 2020, 2021 Jared Wofford, John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -35,10 +36,13 @@
 #include <lal/LALString.h>
 #include <lal/PulsarCrossCorr_v2.h>
 #include "CrossCorrToplist.h"
+#include <lal/LatticeTiling.h>
+#include <lal/TascPorbTiling.h>
+
 
 /**
- * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang, G.D. Meadors
- * \date 2013, 2014, 2015, 2016, 2017
+ * \author B.Krishnan, S.Larson, J.T.Whelan, Y.Zhang, G.D.Meadors, J.K.Wofford
+ * \date 2013, 2014, 2015, 2016, 2017, 2020, 2021
  * \file
  * \ingroup lalapps_pulsar_CrossCorr
  * \brief Perform CW cross-correlation search - version 2
@@ -99,9 +103,27 @@ typedef struct tagUserInput_t {
   BOOLEAN testShortFunctions;    /**< alternative pathway with tShort using resampMultiPairs and new functions */
   BOOLEAN testResampNoTShort;    /**< use resampling without tShort (for e.g., comparison in gapless Gaussian data) */
   INT4    Dterms;                /**< number of Dirichlet terms to use for resampling sinc interpolation */
+  REAL8   allowedMismatchFromSFTLength;  /**< mismatch to tolerate in XLALFstatCheckSFTLengthMismatch() */
   BOOLEAN inclSameDetector;      /**< include cross-correlations of detector with itself */
   BOOLEAN treatWarningsAsErrors; /**< treat any warnings as errors and abort */
   LALStringVector *injectionSources; /**< CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}' */
+
+  BOOLEAN useLattice;           /**< use latticeTiling for template placement */
+  BOOLEAN useShearedPorb;   /**< use sheared orbital period */
+  REAL8 unresolvedPorbMismatch; /**< use only one point in period direction if maximum mismatch in that direction is below this */
+  BOOLEAN reallocatePorbMismatch; /**< subtract actual period mismatch from other directions rather than maximum */
+  INT4    latticeType;          /**< lattice to use */
+  REAL8   mismatchMax;          /**< total mismatch */
+
+  /*elliptical boundary */
+  REAL8   orbitPSecCenter;          /**< Center of prior ellipse for binary orbital period (seconds) */
+  REAL8   orbitPSecSigma;          /**< One-sigma uncertainty of prior ellipse for binary orbital period (seconds) */
+  REAL8   orbitTimeAscCenter;   /**< Center of prior ellipse for binary time of ascension (GPS seconds) */
+  REAL8   orbitTimeAscSigma;          /**< One-sigma uncertainty of prior ellipse for binary time of ascension (seconds) */
+  REAL8   orbitTPEllipseRadius;          /**< Radius of search ellipse (sigma) */
+
+  CHAR    *LatticeOutputFilename; /**< output filename to write list of sft index pairs */
+
 } UserInput_t;
 
 /* struct to store useful variables */
@@ -110,12 +132,24 @@ typedef struct tagConfigVariables{
   EphemerisData *edat; /**< ephemeris data */
   LALStringVector *lineFiles; /**< list of line files */
   REAL8   refTime;     /**< reference time for pulsar phase definition */
+  REAL8   orbitPSecMin;      /**< minimum binary orbital period in seconds */
+  REAL8   orbitPSecMax;      /**< maximum binary orbital period in seconds*/
+  BOOLEAN useTPEllipse;  /**< whether to use elliptical boundary for Tasc-Porb search space */
+  int    norb;          /**< number of orbits to shift prior elliptical boundary for Tasc-Porb search space */
+  REAL8  orbitTimeAscCenterShifted; /**< shifted center of prior ellipse for binary time of ascension (GPS seconds) */
+  REAL8  dPorbdTascShear; /**< slope of centerline of prior ellipse */
+  REAL8  unshearedgTT; /**< metric element gTT in unsheared coordinates */
+  REAL8  unshearedgTP; /**< metric element gTP in unsheared coordinates */
+  REAL8 mismatchMaxP; /**< maximum mismatch in porb */
+  REAL8 mismatchMaxThreeD; /**< mismatch used for 3d lattice */
 } ConfigVariables;
 
 #define TRUE (1==1)
 #define FALSE (1==0)
 #define MAXFILENAMELENGTH 512
 #define MAXLINELENGTH 1024
+// Square of a number
+#define SQR(x)       ((x)*(x))
 
 #define MYMAX(x,y) ( (x) > (y) ? (x) : (y) )
 #define MYMIN(x,y) ( (x) < (y) ? (x) : (y) )
@@ -125,10 +159,10 @@ typedef struct tagConfigVariables{
 int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, ConfigVariables *config);
 int GetNextCrossCorrTemplateResamp(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
 int GetNextCrossCorrTemplateForResamp(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount);
-int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist );
+int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, int DEMODndim, int DEMODdimf, int DEMODdima, int DEMODdimT, int DEMODdimP, gsl_matrix *metric_ij, int* DEMODnumpoints, int* DEMODnumorb, ConfigVariables *config);
 int resampLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist );
 int resampForLoopCrossCorr(PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftGlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, UserInput_t uvar, MultiNoiseWeights *multiWeights, REAL8Vector *ccStatVector, REAL8Vector *evSquaredVector, REAL8Vector *numeEquivAve, REAL8Vector *numeEquivCirc, REAL8 estSens, REAL8Vector *resampGammaAve, MultiResampSFTPairMultiIndexList *resampMultiPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, REAL8 tShort, ConfigVariables *config);
 int testShortFunctionsBlock ( UserInput_t uvar, MultiSFTVector *inputSFTs, REAL8 Tsft, REAL8 resampTshort, SFTIndexList **sftIndices, SFTPairIndexList **sftPairs, REAL8Vector** GammaAve, REAL8Vector** GammaCirc, MultiResampSFTPairMultiIndexList **resampMultiPairs, MultiLALDetector* multiDetectors, MultiDetectorStateSeries **multiStates, MultiDetectorStateSeries **resampMultiStates, MultiNoiseWeights **multiWeights,  MultiLIGOTimeGPSVector **multiTimes, MultiLIGOTimeGPSVector **resampMultiTimes, MultiSSBtimes **multiSSBTimes, REAL8VectorSequence **phaseDerivs, gsl_matrix **g_ij, gsl_vector **eps_i, REAL8 estSens, SkyPosition *skypos, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *thisBinaryTemplate, ConfigVariables config, const DopplerCoordinateSystem coordSys );
@@ -255,6 +289,18 @@ int main(int argc, char *argv[]){
   if (XLALUserVarWasSet(&uvar.spacingP) && XLALUserVarWasSet(&uvar.mismatchP))
     LogPrintf (LOG_CRITICAL, "spacingP and mismatchP are both set, use spacingP %.9g by default\n\n", uvar.spacingP);
 
+  if ( uvar.resamp == TRUE && uvar.useLattice == TRUE ) {
+      printf("Error!  LatticeTiling placement not yet implemented with resampling\n");
+      XLAL_ERROR( XLAL_EFUNC );
+  }
+
+  if ( uvar.useLattice == TRUE
+       && uvar.mismatchMax < uvar.unresolvedPorbMismatch ) {
+    printf("Error!  Unresolved P threshold (%g) exceeds max mismatch (%g)",
+	   uvar.unresolvedPorbMismatch,uvar.mismatchMax);
+    XLAL_ERROR( XLAL_EFUNC );
+  }
+
   /* create the toplist */
   create_crossCorrBinary_toplist( &ccToplist, uvar.numCand);
   /* now read the data */
@@ -321,7 +367,7 @@ int main(int argc, char *argv[]){
   /* FIXME: this running median buffer is overkill, since the running median block need not be centered on the search frequency */
   /* Note by GDM: above two "fixme" statements appear resolved, but have been left
    * in place pending contact with original author */
-  REAL8 vMax = LAL_TWOPI * (uvar.orbitAsiniSec + uvar.orbitAsiniSecBand) / uvar.orbitPSec + LAL_TWOPI * LAL_REARTH_SI / (LAL_DAYSID_SI * LAL_C_SI) + LAL_TWOPI * LAL_AU_SI/(LAL_YRSID_SI * LAL_C_SI); /*calculate the maximum relative velocity in speed of light*/
+  REAL8 vMax = LAL_TWOPI * (uvar.orbitAsiniSec + uvar.orbitAsiniSecBand) / config.orbitPSecMin + LAL_TWOPI * LAL_REARTH_SI / (LAL_DAYSID_SI * LAL_C_SI) + LAL_TWOPI * LAL_AU_SI/(LAL_YRSID_SI * LAL_C_SI); /*calculate the maximum relative velocity in speed of light*/
   fMin = uvar.fStart * (1 - vMax) - 0.5 * uvar.rngMedBlock * deltaF;
   fMax = (uvar.fStart + uvar.fBand) * (1 + vMax) + 0.5 * uvar.rngMedBlock * deltaF;
 
@@ -501,6 +547,7 @@ int main(int argc, char *argv[]){
     fclose(fp);
   }
 
+
   else if(XLALUserVarWasSet(&uvar.sftListInputFilename)){ /*do a sanity check of the order of SFTs list if the name of input SFT list is given*/
     UINT4 numofsft=0;
     if((fp = fopen(uvar.sftListInputFilename, "r")) == NULL){
@@ -548,7 +595,7 @@ int main(int argc, char *argv[]){
 
   MultiUINT4Vector *badBins = NULL;
 
-#define PCC_LINEFILE_HEADER "%% %2s lines cleaning file for O1\n"\
+#define PCC_LINEFILE_HEADER "%% %2s lines cleaning file for %s\n"\
 "%%\n"\
 "%% File contains %d (non-comment) lines\n"\
 "%%\n"\
@@ -585,7 +632,8 @@ int main(int argc, char *argv[]){
       }
       CHAR ifo[3];
       UINT4 numLines;
-      if(fscanf(fp,PCC_LINEFILE_HEADER,&ifo[0],&numLines)==EOF){
+      CHAR linesLabel;
+      if(fscanf(fp,PCC_LINEFILE_HEADER,&ifo[0],&linesLabel, &numLines)==EOF){
 	LogPrintf ( LOG_CRITICAL, "can't parse header of line file %s\n",config.lineFiles->data[i_f]);
 	XLAL_ERROR( XLAL_EINVAL );
       }
@@ -741,6 +789,7 @@ int main(int argc, char *argv[]){
     fclose(fp);
   }
 
+
   /*initialize binary parameters structure*/
   XLAL_INIT_MEM(minBinaryTemplate);
   XLAL_INIT_MEM(maxBinaryTemplate);
@@ -751,14 +800,14 @@ int main(int argc, char *argv[]){
   minBinaryTemplate.argp = 0.0;
   minBinaryTemplate.asini = uvar.orbitAsiniSec;
   minBinaryTemplate.ecc = 0.0;
-  minBinaryTemplate.period = uvar.orbitPSec;
+  minBinaryTemplate.period = config.orbitPSecMin;
   minBinaryTemplate.fkdot[0] = uvar.fStart;
   /*fill in maxBinaryParams*/
   XLALGPSSetREAL8( &maxBinaryTemplate.tp, uvar.orbitTimeAsc + uvar.orbitTimeAscBand);
   maxBinaryTemplate.argp = 0.0;
   maxBinaryTemplate.asini = uvar.orbitAsiniSec + uvar.orbitAsiniSecBand;
   maxBinaryTemplate.ecc = 0.0;
-  maxBinaryTemplate.period = uvar.orbitPSec + uvar.orbitPSecBand;
+  maxBinaryTemplate.period = config.orbitPSecMax;
   maxBinaryTemplate.fkdot[0] = uvar.fStart + uvar.fBand;
   /*fill in thisBinaryTemplate*/
   XLALGPSSetREAL8( &thisBinaryTemplate.tp, uvar.orbitTimeAsc + 0.5 * uvar.orbitTimeAscBand);
@@ -836,10 +885,10 @@ int main(int argc, char *argv[]){
 
   const DopplerCoordinateSystem coordSys = {
     .dim = 4,
-    .coordIDs = { DOPPLERCOORD_FREQ,
+    .coordIDs = { DOPPLERCOORD_TASC,
+		  DOPPLERCOORD_PORB, 
 		  DOPPLERCOORD_ASINI,
-		  DOPPLERCOORD_TASC,
-		  DOPPLERCOORD_PORB, },
+		  DOPPLERCOORD_FREQ, },
   };
 
   REAL8VectorSequence *phaseDerivs = NULL;
@@ -872,17 +921,37 @@ int main(int argc, char *argv[]){
 
   XLALfprintfGSLvector(fp, "%g", eps_i);
   XLALfprintfGSLmatrix(fp, "%g", g_ij);*/
+  int ndim = 4;
+  int dimT = 0;
+  int dimP = 1;
+  int dima = 2;
+  int dimf = 3;
 
-  REAL8 diagff = gsl_matrix_get(g_ij, 0, 0);
-  REAL8 diagaa = gsl_matrix_get(g_ij, 1, 1);
-  REAL8 diagTT = gsl_matrix_get(g_ij, 2, 2);
-  REAL8 diagpp = gsl_matrix_get(g_ij, 3, 3);
+  /* Modify metric if using sheared coordinates */
+  if ( uvar.useShearedPorb == TRUE ) {
+    REAL8 gTT = gsl_matrix_get(g_ij, dimT, dimT);
+    REAL8 gTP = gsl_matrix_get(g_ij, dimT, dimP);
+    REAL8 gPP = gsl_matrix_get(g_ij, dimP, dimP);
+    config.unshearedgTT = gTT;
+    config.unshearedgTP = gTP;
+    REAL8 gtildeTT = gTT + 2. * config.dPorbdTascShear * gTP
+      + SQR(config.dPorbdTascShear) * gPP;
+    REAL8 gtildeTP = gTP + config.dPorbdTascShear * gPP;
+    gsl_matrix_set(g_ij, dimT, dimT, gtildeTT);
+    gsl_matrix_set(g_ij, dimT, dimP, gtildeTP);
+    gsl_matrix_set(g_ij, dimP, dimT, gtildeTP);
+  }
+
+  REAL8 diagff = gsl_matrix_get(g_ij, dimf, dimf);
+  REAL8 diagaa = gsl_matrix_get(g_ij, dima, dima);
+  REAL8 diagTT = gsl_matrix_get(g_ij, dimT, dimT);
+  REAL8 diagpp = gsl_matrix_get(g_ij, dimP, dimP);
 
   dimName = XLALCreateCHARVector(coordSys.dim);
-  dimName->data[0] = 'f';
-  dimName->data[1] = 'a';
-  dimName->data[2] = 'T';
-  dimName->data[3] = 'p';
+  dimName->data[0] = 'T';
+  dimName->data[1] = 'p';
+  dimName->data[2] = 'a';
+  dimName->data[3] = 'f';
 
   /* spacing in frequency from diagff */ /* set spacings in new dopplerparams struct */
   if (XLALUserVarWasSet(&uvar.spacingF)) /* If spacing was given by CMD line, use it, else calculate spacing by mismatch*/
@@ -910,7 +979,7 @@ int main(int argc, char *argv[]){
   const UINT8 fSpacingNum = floor( uvar.fBand / binaryTemplateSpacings.fkdot[0]);
   const UINT8 aSpacingNum = floor( uvar.orbitAsiniSecBand / binaryTemplateSpacings.asini);
   const UINT8 tSpacingNum = floor( uvar.orbitTimeAscBand / XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
-  const UINT8 pSpacingNum = floor( uvar.orbitPSecBand / binaryTemplateSpacings.period);
+  const UINT8 pSpacingNum = floor( (config.orbitPSecMax-config.orbitPSecMin) / binaryTemplateSpacings.period);
 
   /* Initialize output arrays */
   REAL8Vector *ccStatVector = NULL;
@@ -926,15 +995,23 @@ int main(int argc, char *argv[]){
   minBinaryTemplate.fkdot[0] = uvar.fStart + 0.5 * (uvar.fBand - fSpacingNum * binaryTemplateSpacings.fkdot[0]);
   minBinaryTemplate.asini = uvar.orbitAsiniSec + 0.5 * (uvar.orbitAsiniSecBand - aSpacingNum * binaryTemplateSpacings.asini);
   XLALGPSSetREAL8( &minBinaryTemplate.tp, uvar.orbitTimeAsc + 0.5 * (uvar.orbitTimeAscBand - tSpacingNum * XLALGPSGetREAL8(&binaryTemplateSpacings.tp)));
-  minBinaryTemplate.period = uvar.orbitPSec + 0.5 * (uvar.orbitPSecBand - pSpacingNum * binaryTemplateSpacings.period);
+  minBinaryTemplate.period = config.orbitPSecMin + 0.5 * (config.orbitPSecMax-config.orbitPSecMin - pSpacingNum * binaryTemplateSpacings.period);
   /*also reset dopplerpos orbital parameters and frequency*/
   dopplerpos.fkdot[0] = minBinaryTemplate.fkdot[0];
   dopplerpos.asini = minBinaryTemplate.asini;
   dopplerpos.tp = minBinaryTemplate.tp;
   dopplerpos.period = minBinaryTemplate.period;
+  if (config.dPorbdTascShear != 0) {
+    dopplerpos.period +=
+      ( XLALGPSGetREAL8(&dopplerpos.tp)
+	- config.orbitTimeAscCenterShifted )
+      * config.dPorbdTascShear;
+  }
 
   /* BEGIN section resampled */
 
+  int numpoints = 0;
+  int numorb = 0;
   if (uvar.resamp == TRUE){
       // Resampled loop 
       XLALDestroyMultiSFTVector ( inputSFTs );
@@ -948,7 +1025,8 @@ int main(int argc, char *argv[]){
         LogPrintf ( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
         XLAL_ERROR( XLAL_EFUNC );
       }
-      demodLoopCrossCorr(multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist );
+      demodLoopCrossCorr(multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist, ndim, dimf, dima, dimT, dimP, g_ij, &numpoints, &numorb, &config);
+
       XLALDestroyMultiSFTVector ( inputSFTs );
       XLALDestroyCOMPLEX8Vector ( expSignalPhases );
   } 
@@ -986,6 +1064,10 @@ int main(int argc, char *argv[]){
     fprintf(fp, "[UserInput]\n\n");
     fprintf(fp, "%s\n", CMDInputStr);
     fprintf(fp, "[CalculatedValues]\n\n");
+    if (config.norb != 0) {
+      fprintf(fp, "norb = %d\n", config.norb);
+      fprintf(fp, "orbitTimeAscCenterShifted = %.9f\n", config.orbitTimeAscCenterShifted);
+    }
     REAL8 g_lm, eps_n;
     for (UINT4 l = 0; l < coordSys.dim; l++){
       for (UINT4 m = 0; m < coordSys.dim; m++){
@@ -1012,15 +1094,29 @@ int main(int argc, char *argv[]){
     fprintf(fp, "old_diagaa = %.9g\n", old_diagaa);
     fprintf(fp, "old_diagTT = %.9g\n", old_diagTT);
     fprintf(fp, "old_diagpp = %.9g\n", old_diagpp);
-    fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
-    fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
-    fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
-    fprintf(fp, "PSpacing = %.9g\n", binaryTemplateSpacings.period);
-    fprintf(fp, "TemplatenumF = %" LAL_UINT8_FORMAT "\n", (fSpacingNum + 1));
-    fprintf(fp, "TemplatenumA = %" LAL_UINT8_FORMAT "\n", (aSpacingNum + 1));
-    fprintf(fp, "TemplatenumT = %" LAL_UINT8_FORMAT "\n", (tSpacingNum + 1));
-    fprintf(fp, "TemplatenumP = %" LAL_UINT8_FORMAT "\n", (pSpacingNum + 1));
-    fprintf(fp, "TemplatenumTotal = %" LAL_UINT8_FORMAT "\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
+    if (uvar.useShearedPorb == TRUE) {
+      fprintf(fp, "unsheared_gTT = %.9"LAL_REAL8_FORMAT"\n", config.unshearedgTT);
+      fprintf(fp, "unsheared_gTP = %.9"LAL_REAL8_FORMAT"\n", config.unshearedgTP);
+      fprintf(fp, "dPorbdTascShear = %.9"LAL_REAL8_FORMAT"\n", config.dPorbdTascShear);
+    }
+    fprintf(fp, "orbitPSecMin = %.9"LAL_REAL8_FORMAT"\n", config.orbitPSecMin);
+    fprintf(fp, "orbitPSecMax = %.9"LAL_REAL8_FORMAT"\n", config.orbitPSecMax);
+
+    if (uvar.useLattice == TRUE){
+      fprintf(fp, "TemplatenumTotal = %d\n", numpoints);
+      fprintf(fp, "TemplatenumOrb = %d\n", numorb);
+    }
+    else{
+      fprintf(fp, "FSpacing = %.9g\n", binaryTemplateSpacings.fkdot[0]);
+      fprintf(fp, "ASpacing = %.9g\n", binaryTemplateSpacings.asini);
+      fprintf(fp, "TSpacing = %.9g\n", XLALGPSGetREAL8(&binaryTemplateSpacings.tp));
+      fprintf(fp, "PSpacing = %.9g\n", binaryTemplateSpacings.period);
+      fprintf(fp, "TemplatenumF = %" LAL_UINT8_FORMAT "\n", (fSpacingNum + 1));
+      fprintf(fp, "TemplatenumA = %" LAL_UINT8_FORMAT "\n", (aSpacingNum + 1));
+      fprintf(fp, "TemplatenumT = %" LAL_UINT8_FORMAT "\n", (tSpacingNum + 1));
+      fprintf(fp, "TemplatenumP = %" LAL_UINT8_FORMAT "\n", (pSpacingNum + 1));
+      fprintf(fp, "TemplatenumTotal = %" LAL_UINT8_FORMAT "\n",(fSpacingNum + 1) * (aSpacingNum + 1) * (tSpacingNum + 1) * (pSpacingNum + 1));
+      }
     fprintf(fp, "Sens = %.9g\n", estSens); /*(E[rho]/h0^2)^2*/
     fprintf(fp, "h0_min_SNR10 = %.9g\n", h0Sens); /*for rho = 10 in our pipeline*/
     fprintf(fp, "weightedMutAve = %.9f\n", weightedMuTAve); /*weighted average of mean SFT from each pair of SFT*/
@@ -1031,6 +1127,13 @@ int main(int argc, char *argv[]){
     fprintf(fp, "pairnum = %" LAL_UINT4_FORMAT "\n", sftPairs->length); /*total number of pair of SFT*/
     fprintf(fp, "Tsft = %.6g\n", Tsft); /*SFT duration*/
     fprintf(fp, "Tshort = %.6g\n", resampTshort); /* resampling tShort duration */
+    if (config.mismatchMaxP != 0.0) {
+      fprintf(fp, "mismatchMaxP = %.9f\n", config.mismatchMaxP);
+    }
+    if (config.mismatchMaxThreeD != 0.0) {
+      fprintf(fp, "mismatchMax3D = %.9f\n", config.mismatchMaxThreeD);
+    }
+    fprintf(fp, "mismatchMax = %"LAL_REAL8_FORMAT"\n", uvar.mismatchMax);
     fprintf(fp, "\n[Version]\n\n");
     fprintf(fp, "%s",  VCSInfoString);
     fclose(fp);
@@ -1097,6 +1200,9 @@ int XLALInitUserVars (UserInput_t *uvar)
   uvar->orbitTimeAsc = 0;
   uvar->orbitTimeAscBand = 0;
 
+  /* Default radius for elliptical boundary in Tasc-Porb */
+  uvar->orbitTPEllipseRadius = 3.3;
+
   /*default mismatch values */
   /* set to 0.1 by default -- for no real reason */
   /* make 0.1 a macro? */
@@ -1129,12 +1235,24 @@ int XLALInitUserVars (UserInput_t *uvar)
    * the optimization is very shallow: 32 is also fine.
    */
   uvar->Dterms = 8;
+  /* override default value in XLALFstatCheckSFTLengthMismatch(), which is 0.05 */
+  /* Note that per Whelan et al PRD _91_, 102005 (2015) the starting point for CrossCorr searches is 1/17 ~= 0.059 */
+  uvar->allowedMismatchFromSFTLength = 0.10;
 
   /* initialize overall principles */
   uvar->inclSameDetector = TRUE;
   uvar->treatWarningsAsErrors = TRUE;
   uvar->testShortFunctions = FALSE;
   uvar->testResampNoTShort = FALSE;
+
+  /* lattice choices */
+  uvar->useLattice = FALSE;
+  uvar->latticeType = TILING_LATTICE_ANSTAR;
+
+  /* sheared period coordinate */
+  uvar->useShearedPorb = FALSE;
+  uvar->unresolvedPorbMismatch = 0.0;
+  uvar->reallocatePorbMismatch = FALSE;
 
   /* register  user-variables */
   XLALRegisterUvarMember( startTime,       INT4, 0,  REQUIRED, "Desired start time of analysis in GPS seconds (SFT timestamps must be >= this)");
@@ -1182,9 +1300,24 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( testShortFunctions, BOOLEAN, 0,  OPTIONAL, "Use alternative functions for resampMultiPairs with tShort");
   XLALRegisterUvarMember( testResampNoTShort, BOOLEAN, 0, OPTIONAL, "Use resampling without tShort (for e.g., comparison in gapless Gaussian data)");
   XLALRegisterUvarMember( Dterms, INT4, 0, OPTIONAL, "Number of Dirichlet terms for resampling sinc interpolation");
+  XLALRegisterUvarMember( allowedMismatchFromSFTLength, REAL8, 0, OPTIONAL, "override default value in XLALFstatCheckSFTLengthMismatch() (only relevant for resamp)");
   XLALRegisterUvarMember( inclSameDetector, BOOLEAN, 0, OPTIONAL, "Cross-correlate a detector with itself at a different time (if inclAutoCorr, then also same time)");
   XLALRegisterUvarMember( treatWarningsAsErrors, BOOLEAN, 0, OPTIONAL, "Abort program if any warnings arise (for e.g., zero-maxLag radiometer mode)");
   XLALRegisterUvarMember( injectionSources, STRINGVector, 0 , OPTIONAL, "CSV file list containing sources to inject or '{Alpha=0;Delta=0;...}'");
+  XLALRegisterUvarMember( useLattice,    BOOLEAN, 0,  OPTIONAL, "Use latticeTiling for template placement");
+  XLALRegisterUvarMember( useShearedPorb, BOOLEAN, 0,  OPTIONAL, "Use sheared period coordinate for template placement");
+  XLALRegisterUvarMember( unresolvedPorbMismatch, REAL8, 0,  OPTIONAL, "If maximum mismatch in period direction is less than this, only one point compensate in overall mismatch");
+  XLALRegisterUvarMember( reallocatePorbMismatch, BOOLEAN, 0,  OPTIONAL, "Compensate for unresolved period with actual mismatch in that direction.  (Otherwise use mismatch threshold, which is more conservative.)");
+  XLALRegisterUvarAuxDataMember( latticeType, UserEnum, &TilingLatticeChoices, 0, OPTIONAL, "Type of lattice used for template placement");
+  XLALRegisterUvarMember( mismatchMax,    REAL8, 0,  OPTIONAL, "maximum mismatch to use for the lattice ");
+  XLALRegisterUvarMember( orbitPSecCenter,    REAL8, 0,  OPTIONAL, " Center of prior ellipse for binary orbital period (seconds) ");
+  XLALRegisterUvarMember( orbitPSecSigma,    REAL8, 0,  OPTIONAL, "One-sigma semiaxis for binary orbital period (seconds) ");
+  XLALRegisterUvarMember( orbitTimeAscCenter,    REAL8, 0,  OPTIONAL, "Center of prior ellipse for orbital time-of-ascension in GPS seconds");
+  XLALRegisterUvarMember( orbitTimeAscSigma,    REAL8, 0,  OPTIONAL, "One-sigma semiaxis for orbital time of ascension (seconds)");
+  XLALRegisterUvarMember( orbitTPEllipseRadius,    REAL8, 0,  OPTIONAL, "Radius in sigma for Tasc-Porb search ellipse");
+
+  XLALRegisterUvarMember( LatticeOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write lattice");
+
   if ( xlalErrno ) {
     XLALPrintError ("%s: user variable initialization failed with errno = %d.\n", __func__, xlalErrno );
     XLAL_ERROR ( XLAL_EFUNC );
@@ -1253,6 +1386,89 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
       }
     }
 
+  if (XLALUserVarWasSet(&uvar->orbitPSecCenter) || XLALUserVarWasSet(&uvar->orbitPSecSigma) || XLALUserVarWasSet(&uvar->orbitTimeAscCenter) || XLALUserVarWasSet(&uvar->orbitTimeAscSigma)) {
+    /* Consistency checks */
+    if ( !(XLALUserVarWasSet(&uvar->orbitPSecCenter)) || !(XLALUserVarWasSet(&uvar->orbitPSecSigma)) || !(XLALUserVarWasSet(&uvar->orbitTimeAscCenter)) || !(XLALUserVarWasSet(&uvar->orbitTimeAscSigma))) {
+      printf("Error!  Need to set all or none of --orbitPSecCenter --orbitPSecSigma --orbitTimeAscCenter --orbitTimeAscSigma\n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    /* If these parameters have been set, it's because we're using the sheared perior coordinate, or the elliptical boundaries, or both */
+    if ( uvar->useShearedPorb ) {
+      if ( (uvar->orbitPSec != 0.0) ) {
+	if ( XLALUserVarWasSet(&uvar->orbitTPEllipseRadius) ) {
+	  /* If we get here, both --orbitTPEllipseRadius and --orbitPSec were set, which was probably a mistake, but we ignore --orbitPSec */
+	  config->useTPEllipse = TRUE;
+	  printf("Warning!  --orbitPSec not expected with elliptical boundaries; ignored\n");
+	  if ( uvar->treatWarningsAsErrors ) {
+	    printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	    XLAL_ERROR( XLAL_EFUNC );
+	  }
+	}
+	/* If we get here, --useShearedPorb and --orbitPSec were set, so we're doing a search with constant boundaries in the sheared period coordinate and config->useTPEllipse remains false */
+      } else {
+	config->useTPEllipse = TRUE;
+	if ( (uvar->orbitPSecBand != 0.0) ) {
+	  printf("Warning!  --orbitPSecBand not expected with elliptical boundaries\n; ignored\n");
+	  if ( uvar->treatWarningsAsErrors ) {
+	    printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	    XLAL_ERROR( XLAL_EFUNC );
+	  }
+	}
+      }
+    } else {
+      /* If we get here, we specified the parameters of the elliptical boundary but are not using the sheared period coordinate, so we go with the default value for --orbitTPEllipseRadius if it wasn't set on the command line */
+      if ( (uvar->orbitPSec != 0.0) ) {
+	printf("Warning!  --orbitPSec not expected with elliptical boundaries; ignored\n");
+	if ( uvar->treatWarningsAsErrors ) {
+	  printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
+      }
+      if ( (uvar->orbitPSecBand != 0.0) ) {
+	printf("Warning!  --orbitPSecBand not expected with elliptical boundaries\n; ignored\n");
+	if ( uvar->treatWarningsAsErrors ) {
+	  printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
+      }
+      if ( uvar->useLattice == FALSE ) {
+	printf("Error!  Elliptical boundary only works with LatticeTiling\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+      config->useTPEllipse = TRUE;
+    }
+    if ( uvar->resamp == TRUE ) {
+      printf("Error!  Elliptical boundary and sheared coordinates not yet implemented with resampling\n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    /* End consistency checks */
+    /* Compute number of orbits to shift prior ellipse */
+    config->norb = (int) round ( ( uvar->orbitTimeAsc
+				   + 0.5 * uvar->orbitTimeAscBand
+				   - uvar->orbitTimeAscCenter )
+				 / uvar->orbitPSecCenter );
+    config->dPorbdTascShear =
+      ( config->norb
+	/ ( SQR(config->norb)
+	    + SQR((uvar->orbitTimeAscSigma/uvar->orbitPSecSigma)) ) );
+  } else {
+    if ( uvar->useShearedPorb == TRUE ) {
+      printf("Error!  Sheared period requires values for --orbitPSecCenter --orbitPSecSigma --orbitTimeAscCenter --orbitTimeAscSigma\n");
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    config->useTPEllipse = FALSE;
+    config->norb = 0; /* undefined since we don't know the epoch of the uncorrelated Tasc and Porb estimates */
+    config->dPorbdTascShear = 0;
+  }
+  if ( config->useTPEllipse == TRUE ) {
+    config->orbitPSecMin = uvar->orbitPSecCenter - uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
+    config->orbitPSecMax = uvar->orbitPSecCenter + uvar->orbitTPEllipseRadius * uvar->orbitPSecSigma;
+  } else {
+    config->orbitPSecMin = uvar->orbitPSec;
+    config->orbitPSecMax = uvar->orbitPSec + uvar->orbitPSecBand;
+  }
+  config->orbitTimeAscCenterShifted = uvar->orbitTimeAscCenter + config->norb * uvar->orbitPSecCenter;
+
   return XLAL_SUCCESS;
 
 }
@@ -1271,7 +1487,7 @@ int XLALDestroyConfigVars (ConfigVariables *config)
 /* getting the next template */
 /** FIXME: spacings and min, max values of binary parameters are not used yet */
 
-int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum)
+int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, ConfigVariables *config)
 {
 
   /* basic sanity checks */
@@ -1309,6 +1525,12 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 	  if ( *pCount < pSpacingNum )  /*after looping the plane of f and a_p, initialize f, a_p and loop over P*/
 	    {
 	      dopplerpos->period = minBinaryTemplate->period + (*pCount + 1) * binaryTemplateSpacings->period;
+	      if (config->dPorbdTascShear != 0) {
+		dopplerpos->period +=
+		  ( XLALGPSGetREAL8(&dopplerpos->tp)
+		    - config->orbitTimeAscCenterShifted )
+		  * config->dPorbdTascShear;
+	      }
 	      dopplerpos->fkdot[0] =  minBinaryTemplate->fkdot[0];
 	      *fCount = 0;
 	      dopplerpos->asini = minBinaryTemplate->asini;
@@ -1329,6 +1551,11 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 		  dopplerpos->asini = minBinaryTemplate->asini;
 		  *aCount = 0;
 		  dopplerpos->period = minBinaryTemplate->period;
+		  if (config->dPorbdTascShear != 0) {
+		    dopplerpos->period +=
+		      ( nextGPSTime - config->orbitTimeAscCenterShifted )
+		      * config->dPorbdTascShear;
+		  }
 		  *pCount = 0;
 		  *binaryParamsFlag = TRUE;
 		  *tCount += 1;
@@ -1343,6 +1570,12 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 		      dopplerpos->asini = minBinaryTemplate->asini;
 		      dopplerpos->period = minBinaryTemplate->period;
 		      dopplerpos->tp = minBinaryTemplate->tp;
+		      if (config->dPorbdTascShear != 0) {
+			dopplerpos->period +=
+			  ( XLALGPSGetREAL8(&dopplerpos->tp)
+			    - config->orbitTimeAscCenterShifted )
+			  * config->dPorbdTascShear;
+		      }
 		      *firstPoint = FALSE;
 		      *binaryParamsFlag = TRUE;
 		      return 0;
@@ -1567,57 +1800,247 @@ INT4 XLALFindBadBins
 }
 
 /** Function to isolate the loop for demod */
-int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist ){
-  /* args should be : spacings, min and max doppler params */
-  BOOLEAN firstPoint = TRUE; /* a boolean to help to search at the beginning point in parameter space, after the search it is set to be FALSE to end the loop*/
-  if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  } /*Need to apply additional doppler shifting before the loop, or the first point in parameter space will be lost and return a wrong SNR when fBand!=0*/
+int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, int DEMODndim, int DEMODdimf, int DEMODdima, int DEMODdimT, int DEMODdimP, gsl_matrix *metric_ij, int* DEMODnumpoints, int* DEMODnumorb, ConfigVariables *config){
 
-  //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false");
+  if (uvar.useLattice == TRUE) {
+    FILE *LatticeFile = NULL;
+    if (uvar.LatticeOutputFilename != NULL) { /* Write the list of pairs to a file, if a name was provided */
+      if((LatticeFile = fopen(uvar.LatticeOutputFilename, "w")) == NULL) {
+	LogPrintf ( LOG_CRITICAL, "Can't write in Lattice file \n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
 
-  while ( GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0)
-    {
-      /* do useful stuff here*/
+    LatticeTiling *tiling = XLALCreateLatticeTiling(DEMODndim);
+    XLALSetLatticeTilingConstantBound(tiling, DEMODdimT, uvar.orbitTimeAsc, uvar.orbitTimeAsc + uvar.orbitTimeAscBand);
 
-      /* Apply additional Doppler shifting using current binary orbital parameters */
-      /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
-      if (dopplerShiftFlag == TRUE)
-	{
-	  if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
-	    LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
-	    XLAL_ERROR( XLAL_EFUNC );
-	  }
+    REAL8 mismatchMax = uvar.mismatchMax;
+    if (uvar.unresolvedPorbMismatch > 0.0) {
+      gsl_matrix *ginv_ij = gsl_matrix_alloc(DEMODndim,DEMODndim);
+
+      XLAL_CHECK( gsl_matrix_memcpy( ginv_ij, metric_ij )  == 0, XLAL_EFAILED );
+      XLAL_CHECK( gsl_linalg_cholesky_decomp( ginv_ij ) == 0, XLAL_EFAILED );
+      XLAL_CHECK( gsl_linalg_cholesky_invert( ginv_ij ) == 0, XLAL_EFAILED ); 
+      REAL8 deltaP;
+      if ( config->useTPEllipse == TRUE ) {
+	deltaP = uvar.orbitTPEllipseRadius * uvar.orbitPSecSigma;
+	/* printf('DeltaP = %g',deltaP) */
+	if ( uvar.useShearedPorb ) {
+	  deltaP *= 1. / sqrt ( 1. + SQR(config->norb*uvar.orbitPSecSigma/uvar.orbitTimeAscSigma) );
+	  /* printf('DeltaPtilde = %g',deltaP) */
+	}
+      } else {
+	deltaP = 0.5 * uvar.orbitPSecBand;
+      }
+      /* Adjust maximum mismatch in constant-P surface to account for finite width in P coordinate (Porb or sheared Ptilde) */
+      config->mismatchMaxP = SQR(deltaP) / gsl_matrix_get(ginv_ij, DEMODdimP, DEMODdimP);
+      if (config->mismatchMaxP < uvar.unresolvedPorbMismatch) {
+	if (uvar.reallocatePorbMismatch) {
+	  mismatchMax -= config->mismatchMaxP;
+	} else {
+	  mismatchMax -= uvar.unresolvedPorbMismatch;
+	}
+	config->mismatchMaxThreeD = mismatchMax;
+	if ( uvar.useShearedPorb ) {
+	  XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecCenter);
+	} else {
+	  XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec + deltaP, uvar.orbitPSec + deltaP);
 	}
 
-      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, badBins, Tsft )  != XLAL_SUCCESS ) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
+      /* The following check should be unneccesary since we check that uvar.unresolvedPorbMismatch <= uvar.mismatchMax */
+      /* if (mismatchMax < 0) {
+	printf("Error! Remaining mismatch after setting period is negative: %g\n", mismatchMax);
+        XLAL_ERROR( XLAL_EFUNC );
+	} */
       }
+      gsl_matrix_free(ginv_ij);
+    }
 
-      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, GammaAve, expSignalPhases, lowestBins, sincList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: XLALCalculatePulsarCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
+      /* If we haven't adjusted the mismatch for an unresolved period, we need to set the usual boundaries for the period */
+    if (mismatchMax == uvar.mismatchMax) {
+      if ( config->useTPEllipse == TRUE ) {
+	XLALSetLatticeTilingPorbEllipticalBound(tiling, DEMODdimT, DEMODdimP, uvar.orbitPSecCenter, uvar.orbitPSecSigma, uvar.orbitTimeAscCenter, uvar.orbitTimeAscSigma, config->norb, uvar.orbitTPEllipseRadius, uvar.useShearedPorb);
+      } else {
+	XLALSetLatticeTilingConstantBound(tiling, DEMODdimP, uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand);
       }
+    }
+    XLALSetLatticeTilingConstantBound(tiling, DEMODdima, uvar.orbitAsiniSec, uvar.orbitAsiniSec + uvar.orbitAsiniSecBand);
 
-      /* fill candidate struct and insert into toplist if necessary */
-      thisCandidate.freq = dopplerpos.fkdot[0];
-      thisCandidate.tp = XLALGPSGetREAL8( &dopplerpos.tp );
-      thisCandidate.argp = dopplerpos.argp;
-      thisCandidate.asini = dopplerpos.asini;
-      thisCandidate.ecc = dopplerpos.ecc;
-      thisCandidate.period = dopplerpos.period;
-      thisCandidate.rho = ccStat;
-      thisCandidate.evSquared = evSquared;
-      thisCandidate.estSens = estSens;
+    XLALSetLatticeTilingConstantBound(tiling, DEMODdimf, uvar.fStart, uvar.fStart + uvar.fBand);
+    int lattice = uvar.latticeType;
 
-      insert_into_crossCorrBinary_toplist(ccToplist, thisCandidate);
+    XLALSetTilingLatticeAndMetric(tiling, lattice, metric_ij, mismatchMax);
+    LatticeTilingIterator *iterator = XLALCreateLatticeTilingIterator(tiling, DEMODndim);
 
-      //fprintf(stdout,"Inner loop: freq %f , tp %f , asini %f \n", thisCandidate.freq, thisCandidate.tp, thisCandidate.asini);
+    gsl_vector *curr_point  = gsl_vector_alloc (DEMODndim);
+    gsl_vector *prev_point  = gsl_vector_alloc (DEMODndim);
+    curr_point->data[DEMODdimP] = 0.5*(config->orbitPSecMin+config->orbitPSecMax);
+    if (uvar.useShearedPorb) {
+      curr_point->data[DEMODdimP] -=
+	( curr_point->data[DEMODdimT] - config->orbitTimeAscCenterShifted )
+	* config->dPorbdTascShear;
+    }
+    curr_point->data[DEMODdimT] = uvar.orbitTimeAsc + (uvar.orbitTimeAscBand/2.0);
+    curr_point->data[DEMODdima] = uvar.orbitAsiniSec + (uvar.orbitAsiniSecBand/2.0);
+    curr_point->data[DEMODdimf]  = uvar.fStart + (uvar.fBand/2.0);
+    if (LatticeFile != NULL) {
+      if (uvar.useShearedPorb) {
+	fprintf(LatticeFile, "# TASC\tPTILDE\tASINI\tFREQ\n");
+      } else {
+	fprintf(LatticeFile, "# TASC\tPORB\tASINI\tFREQ\n");
+      }
+      fprintf(LatticeFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]);
+    }
+    while ( XLALNextLatticeTilingPoint(iterator, curr_point) > 0 )
+      {
+	dopplerpos.fkdot[0] = curr_point->data[DEMODdimf];
+	dopplerpos.asini = curr_point->data[DEMODdima];
+	dopplerpos.period = curr_point->data[DEMODdimP];
+	XLALGPSSetREAL8(&(dopplerpos.tp), curr_point->data[DEMODdimT]);
+	*DEMODnumpoints += 1;
+	if ( uvar.useShearedPorb ) {
+	  dopplerpos.period +=
+	    ( curr_point->data[DEMODdimT] - config->orbitTimeAscCenterShifted)
+	    * config->dPorbdTascShear;
+	}
 
-    } /* end while loop over templates */
-    return 0;
+	if (LatticeFile != NULL){
+	  fprintf(LatticeFile, "%f\t%f\t%f\t%f\n", curr_point->data[DEMODdimT], curr_point->data[DEMODdimP], curr_point->data[DEMODdima], curr_point->data[DEMODdimf]);
+	}
+	/* if counter is on first point, the orbital points haven't changed so make the dopplerShiftFlag = FALSE*/
+	if (*DEMODnumpoints == 1)
+	  {
+	    dopplerShiftFlag = TRUE;
+	    /* dopplerShiftFlag = FALSE; */
+	    /* prev_point->data[DEMODdimf] = curr_point->data[DEMODdimf]; */
+	    /* prev_point->data[DEMODdima] = curr_point->data[DEMODdima]; */
+	    /* prev_point->data[DEMODdimP] = curr_point->data[DEMODdimP]; */
+	    /* prev_point->data[DEMODdimT] = curr_point->data[DEMODdimT]; */
+	  } else if ((prev_point->data[DEMODdima] == curr_point->data[DEMODdima])
+		 && (prev_point->data[DEMODdimP] == curr_point->data[DEMODdimP])
+		 && (prev_point->data[DEMODdimT] == curr_point->data[DEMODdimT])) {
+	  dopplerShiftFlag = FALSE;
+	}
+	else{
+	  dopplerShiftFlag = TRUE;
+	}
+
+	/* if not on the first point, check that the previous orbital points are the same as the current points. If it is the same, the dopplerShiftFlag is false and we don't need additional doppler shifting */
+	/**	else if (prev_point->data[DEMODdima] == curr_point->data[DEMODdima] && prev_point->data[DEMODdimP] == curr_point->data[DEMODdimP] && prev_point->data[DEMODdimT] == curr_point->data[DEMODdimT]) **/
+	/**{
+	    dopplerShiftFlag = FALSE;
+	    }**/
+	/* if not on the first point, check that the previous orbital points are different current point. If it is the differennt, the dopplerShiftFlag is true and we need additional doppler shifting */
+	/**	else if (prev_point->data[DEMODdima] != curr_point->data[DEMODdima] || prev_point->data[DEMODdimP] != curr_point->data[DEMODdimP] || prev_point->data[DEMODdimT] != curr_point->data[DEMODdimT]) **/
+	/**	  {
+	    dopplerShiftFlag = TRUE;
+	    }**/
+	
+	/* save the current point into the previous point*/
+	XLAL_CHECK( gsl_vector_memcpy( prev_point, curr_point ) == 0, XLAL_EFAILED );
+	
+      /* Apply additional Doppler shifting using current binary orbital parameters */
+      /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
+	if (dopplerShiftFlag == TRUE)
+	  {
+	    if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
+	      LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
+	      XLAL_ERROR( XLAL_EFUNC );
+	    }
+	    *DEMODnumorb += 1;
+	  }
+
+	if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, badBins, Tsft )  != XLAL_SUCCESS ) ) {
+	  LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
+
+	if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, GammaAve, expSignalPhases, lowestBins, sincList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
+	  LogPrintf ( LOG_CRITICAL, "%s: XLALCalculatePulsarCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
+
+	/* fill candidate struct and insert into toplist if necessary */
+	thisCandidate.freq = dopplerpos.fkdot[0];
+	thisCandidate.tp = XLALGPSGetREAL8( &dopplerpos.tp );
+	thisCandidate.argp = dopplerpos.argp;
+	thisCandidate.asini = dopplerpos.asini;
+	thisCandidate.ecc = dopplerpos.ecc;
+	thisCandidate.period = dopplerpos.period;
+	thisCandidate.rho = ccStat;
+	thisCandidate.evSquared = evSquared;
+	thisCandidate.estSens = estSens;
+
+	insert_into_crossCorrBinary_toplist(ccToplist, thisCandidate);
+
+	//fprintf(stdout,"Inner loop: freq %f , tp %f , asini %f \n", thisCandidate.freq, thisCandidate.tp, thisCandidate.asini);
+
+      } /* end while loop over templates */
+
+    gsl_vector_free ( curr_point );
+    gsl_vector_free ( prev_point );
+    XLALDestroyLatticeTilingIterator(iterator);
+    XLALDestroyLatticeTiling(tiling);
+    if (LatticeFile != NULL){
+      fclose(LatticeFile);
+    }
+  } else {
+    /* args should be : spacings, min and max doppler params */
+    BOOLEAN firstPoint = TRUE; /* a boolean to help to search at the beginning point in parameter space, after the search it is set to be FALSE to end the loop*/
+    if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
+      LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    } /*Need to apply additional doppler shifting before the loop, or the first point in parameter space will be lost and return a wrong SNR when fBand!=0*/
+
+    //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false");
+
+    while (GetNextCrossCorrTemplate(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, config) == 0)
+      {
+      /* do useful stuff here*/
+	
+      /* Apply additional Doppler shifting using current binary orbital parameters */
+      /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
+	if (dopplerShiftFlag == TRUE)
+	  {
+	    if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
+	      LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
+	      XLAL_ERROR( XLAL_EFUNC );
+	    }
+	  }
+
+	if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, badBins, Tsft )  != XLAL_SUCCESS ) ) {
+	  LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
+
+	if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, GammaAve, expSignalPhases, lowestBins, sincList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
+	  LogPrintf ( LOG_CRITICAL, "%s: XLALCalculatePulsarCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
+	  XLAL_ERROR( XLAL_EFUNC );
+	}
+
+	/* fill candidate struct and insert into toplist if necessary */
+	thisCandidate.freq = dopplerpos.fkdot[0];
+	thisCandidate.tp = XLALGPSGetREAL8( &dopplerpos.tp );
+	thisCandidate.argp = dopplerpos.argp;
+	thisCandidate.asini = dopplerpos.asini;
+	thisCandidate.ecc = dopplerpos.ecc;
+	thisCandidate.period = dopplerpos.period;
+	thisCandidate.rho = ccStat;
+	thisCandidate.evSquared = evSquared;
+	thisCandidate.estSens = estSens;
+
+	insert_into_crossCorrBinary_toplist(ccToplist, thisCandidate);
+
+	// fprintf(stdout,"Inner loop: freq %f , asini %f , tasc %f , porb %f \n", thisCandidate.freq, thisCandidate.asini, thisCandidate.tp, thisCandidate.period);
+
+      } /* end while loop over templates */
+
+
+  }
+
+
+
+  return 0;
 } /* end demodLoopCrossCorr */
 
 /** Function to isolate the loop for resampling */
@@ -1696,6 +2119,7 @@ int resampForLoopCrossCorr(PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftF
   }
   optionalArgs.injectSources = injectSources;
   optionalArgs.injectSqrtSX = injectSqrtSX;
+  optionalArgs.allowedMismatchFromSFTLength = uvar.allowedMismatchFromSFTLength;
 
   /* Set environmental variable for Fstat FFT planning: creating F stat input
    * automatically invokes the FFT planner, but we never use it, so want to
@@ -1713,19 +2137,19 @@ int resampForLoopCrossCorr(PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftF
   REAL8 dFreq = 1.0/Tobs; /* Reinhard's trick for resamp function*/
   REAL8 fCoverMin, fCoverMax;
   const REAL8 binaryMaxAsini = MYMAX( uvar.orbitAsiniSec, uvar.orbitAsiniSec + uvar.orbitAsiniSecBand );
-  const REAL8 binaryMinPeriod = MYMIN( uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand );
+  const REAL8 binaryMinPorb = MYMIN( uvar.orbitPSec, uvar.orbitPSec + uvar.orbitPSecBand );
   /* for now, a zero-eccentricity search with no spindown */
   const REAL8 binaryMaxEcc = 0.0;
   //PulsarSpinRange spinRangeRef;
   REAL8 extraPerFreq = 1.05 * LAL_TWOPI / LAL_C_SI * ( (LAL_AU_SI/LAL_YRSID_SI) + (LAL_REARTH_SI/LAL_DAYSID_SI) );
-  REAL8 maxOmega = LAL_TWOPI / binaryMinPeriod;
+  REAL8 maxOmega = LAL_TWOPI / binaryMinPorb;
   extraPerFreq += maxOmega * binaryMaxAsini / ( 1.0 - binaryMaxEcc );
   fCoverMin = (uvar.fStart) * (1.0 - extraPerFreq);
   fCoverMax = (uvar.fStart + uvar.fBand) * (1.0 + extraPerFreq);
-  //printf("%f %f\n", (2 * LAL_PI * binaryMaxAsini)/binaryMinPeriod, extraPerFreq);
-  //fCoverMin = uvar.fStart * (1.0 - (2 * LAL_PI * binaryMaxAsini)/binaryMinPeriod);
-  //fCoverMax = (uvar.fStart + uvar.fBand) * (1 + (2 * LAL_PI * binaryMaxAsini)/binaryMinPeriod);
-  //XLALCWSignalCoveringBand( &fCoverMin, &fCoverMax, &startTimeGPS, &endTimeGPS, &spinRangeRef, binaryMaxAsini, binaryMinPeriod, binaryMaxEcc);
+  //printf("%f %f\n", (2 * LAL_PI * binaryMaxAsini)/binaryMinPorb, extraPerFreq);
+  //fCoverMin = uvar.fStart * (1.0 - (2 * LAL_PI * binaryMaxAsini)/binaryMinPorb);
+  //fCoverMax = (uvar.fStart + uvar.fBand) * (1 + (2 * LAL_PI * binaryMaxAsini)/binaryMinPorb);
+  //XLALCWSignalCoveringBand( &fCoverMin, &fCoverMax, &startTimeGPS, &endTimeGPS, &spinRangeRef, binaryMaxAsini, binaryMinPorb, binaryMaxEcc);
   //printf("min, max %f, %f\n", fCoverMin, fCoverMax);
   /* Important: resampling uses 8 bins on either side, 16 total, to buffer
    * the SFTs read in from the catalog by create f-stat input.

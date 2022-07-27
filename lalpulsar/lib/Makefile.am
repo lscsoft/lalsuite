@@ -56,6 +56,7 @@ pkginclude_HEADERS = \
 	Statistics.h \
 	SuperskyMetrics.h \
 	SynthesizeCWDraws.h \
+	TascPorbTiling.h \
 	TransientCW_utils.h \
 	TwoDMesh.h \
 	UniversalDopplerMetric.h \
@@ -122,6 +123,7 @@ liblalpulsar_la_SOURCES = \
 	Stereographic.c \
 	SuperskyMetrics.c \
 	SynthesizeCWDraws.c \
+	TascPorbTiling.c \
 	TransientCW_utils.c \
 	TwoDMesh.c \
 	TwoDMeshInternal.c \

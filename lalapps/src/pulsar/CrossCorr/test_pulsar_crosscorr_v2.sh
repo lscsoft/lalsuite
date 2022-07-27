@@ -1,6 +1,6 @@
-##---------- names of codes and input/output files
+#=##---------- names of codes and input/output files
 mfd_code="lalapps_Makefakedata_v4"
-pcc_code="lalapps_pulsar_crosscorr_v2"
+pcc_code="./lalapps_pulsar_crosscorr_v2"
 
 Ftolerance=0.05
 
@@ -73,7 +73,7 @@ fi
 cmdline="$pcc_code $pcc_CL"
 echo $cmdline
 echo -n "Running ${pcc_code} ... "
-if ! tmp=`eval $cmdline 2> /dev/null`; then
+if ! tmp=`eval $cmdline`; then
     echo "FAILED:"
     echo $cmdline
     exit 1;
