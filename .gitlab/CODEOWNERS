@@ -13,12 +13,12 @@ lalsimulation/                  @kipp.cannon @maria.haney @geraint.pratten @vija
 lalburst/                       @adam-mercer @duncanmmacleod @gabriele-vedovato @kipp.cannon @marco-drago
 lalinspiral/                    @adam-mercer @ian-harry @jolien-creighton @kipp.cannon
 lalinference/                   @aaron.zimmerman @bfarr @cjhaster @gregory.ashton @john-veitch @patricia-schmidt @salvatore-vitale @vivien
-lalpulsar/                      @david-keitel @evan-goetz @karl-wette @matthew-pitkin
+lalpulsar/                      @david-keitel @evan-goetz @john-whelan @karl-wette @matthew-pitkin
 
 # lalapps
 lalapps/src/findchirp/          @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/frametools/         @adam-mercer @ed-maros @jolien-creighton
-lalapps/src/hwinjection/        @david-keitel @evan-goetz @karl-wette @matthew-pitkin
+lalapps/src/hwinjection/        @david-keitel @evan-goetz @john-whelan @karl-wette @matthew-pitkin
 lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
 lalapps/src/power/              @adam-mercer @kipp.cannon @soichiro.kuwahara
