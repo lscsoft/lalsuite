@@ -75,8 +75,8 @@ int XLALCheckEphemerisRanges ( const EphemerisVector *ephemEarth, REAL8 avg[3], 
  * The tables for the conversion to TDB and Teph are derived from the ephemeris
  * file TDB.1950.2050 and TIMEEPH_short.te405 within TEMPO2
  * http://www.atnf.csiro.au/research/pulsar/tempo2/. They are created from the
- * Chebychev polynomials in these files using the conversion in the lalapps code
- * lalapps_create_time_correction_ephemeris
+ * Chebychev polynomials in these files using the conversion in the code
+ * lalpulsar_create_time_correction_ephemeris
  *
  * \ingroup LALBarycenter_h
  */

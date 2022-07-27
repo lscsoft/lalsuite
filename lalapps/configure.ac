@@ -26,22 +26,7 @@ AC_CONFIG_FILES([\
   src/lalapps/Makefile \
   src/lalapps/version2.c \
   src/power/Makefile \
-  src/pulsar/CreateEphemeris/Makefile \
-  src/pulsar/CrossCorr/Makefile \
-  src/pulsar/FITSTools/Makefile \
-  src/pulsar/Fscan/Makefile \
-  src/pulsar/Fstatistic/Makefile \
-  src/pulsar/GCT/Makefile \
-  src/pulsar/HeterodyneSearch/Makefile \
-  src/pulsar/Hough/Makefile \
-  src/pulsar/HoughFstat/Makefile \
-  src/pulsar/MakeData/Makefile \
   src/pulsar/Makefile \
-  src/pulsar/SFTTools/Makefile \
-  src/pulsar/SidebandSearch/Makefile \
-  src/pulsar/Tools/Makefile \
-  src/pulsar/TwoSpect/Makefile \
-  src/pulsar/Weave/Makefile \
   src/ring/Makefile \
   src/string/Makefile \
 ])
@@ -66,7 +51,6 @@ MIN_LALSIMULATION_VERSION="3.1.0"
 MIN_LALBURST_VERSION="1.5.3"
 MIN_LALINSPIRAL_VERSION="2.0.0"
 MIN_LALINFERENCE_VERSION="3.0.0"
-MIN_LALPULSAR_VERSION="4.0.0"
 MIN_PYTHON_LIGO_LW_VERSION="1.7.0"
 AC_SUBST([MIN_FRAMEL_VERSION])
 AC_SUBST([MIN_LAL_VERSION])
@@ -76,7 +60,6 @@ AC_SUBST([MIN_LALSIMULATION_VERSION])
 AC_SUBST([MIN_LALBURST_VERSION])
 AC_SUBST([MIN_LALINSPIRAL_VERSION])
 AC_SUBST([MIN_LALINFERENCE_VERSION])
-AC_SUBST([MIN_LALPULSAR_VERSION])
 AC_SUBST([MIN_PYTHON_LIGO_LW_VERSION])
 
 LT_INIT()
@@ -96,7 +79,6 @@ LALAPPS_ENABLE_STATIC_BINARIES
 LALAPPS_ENABLE_FFTW
 LALAPPS_ENABLE_FRAMEL
 LALSUITE_ENABLE_CFITSIO
-LALAPPS_ENABLE_PSS
 LALAPPS_ENABLE_GDS
 
 LALSUITE_ENABLE_LALFRAME
@@ -105,7 +87,11 @@ LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALBURST
 LALSUITE_ENABLE_LALINSPIRAL
 LALSUITE_ENABLE_LALINFERENCE
+
+# lalapps no longer depends on lalpulsar; this exists only to enable
+# whether to build the old lalapps_... stubs in lalapps/src/pulsar
 LALSUITE_ENABLE_LALPULSAR
+LALSUITE_ENABLE_MODULE([LALPULSAR])
 
 # enable Doxygen documentation
 LALSUITE_ENABLE_DOXYGEN
@@ -240,45 +226,6 @@ LALSUITE_ENABLE_MODULE([FRAMEL])
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
-# check for pss
-if test "${pss}" = "true"; then
-  PKG_CHECK_MODULES([PSS],[pss],[true],[false])
-  lal_pre_pss_LIBS="$LIBS"
-  LALSUITE_ADD_FLAGS([C],[],[${PSS_LIBS}])
-  AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,
-                 [pss="false"]
-                 [LIBS="$lal_pre_pss_LIBS"])
-  AC_SEARCH_LIBS([pss_set_gw],[pss],,
-                 [pss="false"]
-                 [LIBS="$lal_pre_pss_LIBS"])
-  AC_SEARCH_LIBS([PSS_utc2tdt],[pssastro],,
-                 [pss="false"]
-                 [LIBS="$lal_pre_pss_LIBS"])
-  AC_SEARCH_LIBS([app_star],[pssnovas],,
-                 [pss="false"]
-                 [LIBS="$lal_pre_pss_LIBS"])
-fi
-
-
-# check for pss headers
-if test "${pss}" = "true"; then
-  lal_pre_pss_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_FLAGS([C],[${PSS_CFLAGS}],[])
-  AC_CHECK_HEADERS([pss_sfdb.h],,
-                   [pss="false"]
-                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-  AC_CHECK_HEADERS([pss_gw.h],,
-                   [pss="false"]
-                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-  AC_CHECK_HEADERS([pss_astro.h],,
-                   [pss="false"]
-                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-  AC_CHECK_HEADERS([novas.h],,
-                   [pss="false"]
-                   [CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([PSS])
-
 # check for lal libararies and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
@@ -288,7 +235,6 @@ LALSUITE_CHECK_OPT_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDe
 LALSUITE_CHECK_OPT_LIB([LALBurst],[${MIN_LALBURST_VERSION}],[XLALEPSearch],[lal/EPSearch.h])
 LALSUITE_CHECK_OPT_LIB([LALInspiral],[${MIN_LALINSPIRAL_VERSION}],[LALInspiralParameterCalc],[lal/LALInspiral.h])
 LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
-LALSUITE_CHECK_OPT_LIB([LALPulsar],[${MIN_LALPULSAR_VERSION}],[XLALComputeFstat],[lal/ComputeFstat.h])
 
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
@@ -339,9 +285,7 @@ LALApps has now been successfully configured:
 * LALBurst library support is $LALBURST_ENABLE_VAL
 * LALInspiral library support is $LALINSPIRAL_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
-* LALPulsar library support is $LALPULSAR_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
-* PSS library support is $PSS_ENABLE_VAL
 * Condor support is $CONDOR_ENABLE_VAL
 * GDS support is $GDS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL

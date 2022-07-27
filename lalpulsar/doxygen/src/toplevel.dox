@@ -64,4 +64,14 @@
 
 \defgroup lalpulsar_python		Python Packages
 
+\defgroup lalpulsar_bin			Pulsar Applications
+@{
+   \defgroup lalpulsar_bin_Tools		General Tools
+   @{
+      \defgroup lalpulsar_bin_SFTTools		SFT Tools
+      \defgroup lalpulsar_bin_FITSTools		FITS Tools
+   @}
+   \defgroup lalpulsar_bin_Apps		Search Applications
+@}
+
 */

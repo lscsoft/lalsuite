@@ -21,6 +21,7 @@ Prefix: %{_prefix}
 # -- build requirements -----
 
 # C
+BuildRequires: bc
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gcc
@@ -29,6 +30,7 @@ BuildRequires: gsl-devel
 BuildRequires: help2man >= 1.37
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
+BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: liblalinference-devel >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
@@ -45,6 +47,7 @@ BuildRequires: python%{python3_pkgversion}-devel
 BuildRequires: python%{python3_pkgversion}-astropy
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
@@ -53,6 +56,7 @@ BuildRequires: python%{python3_pkgversion}-pytest
 BuildRequires: octave-devel
 BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 BuildRequires: lalframe-octave >= @MIN_LALFRAME_VERSION@
+BuildRequires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: lalinference-octave >= @MIN_LALINFERENCE_VERSION@
 
 # -- packages ---------------
@@ -82,6 +86,7 @@ rountines that use the LAL Pulsar Library.
 Summary: LSC Algorithm Simulation Library - library package
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalframe >= @MIN_LALFRAME_VERSION@
+Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: liblalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: %{name}-data
 Conflicts: %{name} <= 2.1.0-1
@@ -99,6 +104,7 @@ Requires: fftw-devel
 Requires: gsl-devel
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Requires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
+Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 Requires: liblalinference-devel >= @MIN_LALINFERENCE_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 3.0.0-1
@@ -115,6 +121,7 @@ Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-astropy
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
+Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Obsoletes: python2-%{name} < 3.1.0-1
@@ -129,6 +136,7 @@ Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
 Requires: lalframe-octave >= @MIN_LALFRAME_VERSION@
+Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 Requires: lalinference-octave >= @MIN_LALINFERENCE_VERSION@
 %description octave
 This package provides the Octave bindings for LALPulsar.

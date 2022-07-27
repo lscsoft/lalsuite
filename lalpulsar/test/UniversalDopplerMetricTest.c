@@ -204,7 +204,7 @@ test_XLALComputeDopplerMetrics ( void )
 
     // 1) compute metric using old FstatMetric code, now wrapped into XLALOldDopplerFstatMetric()
     XLAL_CHECK ( (metric1 = XLALOldDopplerFstatMetric ( OLDMETRIC_TYPE_PHASE, &pars2, edat )) != NULL, XLAL_EFUNC );
-    // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+    // 2) compute metric using modern UniversalDopplerMetric module: (used in lalpulsar_FstatMetric_v2)
     XLAL_CHECK ( (metric2P = XLALComputeDopplerPhaseMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
 
     // compare metrics against each other:
@@ -231,7 +231,7 @@ test_XLALComputeDopplerMetrics ( void )
 
     // 1) compute metric using old FstatMetric code, now wrapped into XLALOldDopplerFstatMetric()
     XLAL_CHECK ( (metric1 = XLALOldDopplerFstatMetric ( OLDMETRIC_TYPE_PHASE, &pars2, edat )) != NULL, XLAL_EFUNC );
-    // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+    // 2) compute metric using modern UniversalDopplerMetric module: (used in lalpulsar_FstatMetric_v2)
     XLAL_CHECK ( (metric2P = XLALComputeDopplerPhaseMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
 
     // compare all 3 metrics against each other:
@@ -257,7 +257,7 @@ test_XLALComputeDopplerMetrics ( void )
 
     // 1) compute metric using old FstatMetric code, now wrapped into XLALOldDopplerFstatMetric()
     XLAL_CHECK ( (metric1 = XLALOldDopplerFstatMetric ( OLDMETRIC_TYPE_FSTAT, &pars2, edat )) != NULL, XLAL_EFUNC );
-    // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+    // 2) compute metric using modern UniversalDopplerMetric module: (used in lalpulsar_FstatMetric_v2)
     XLAL_CHECK ( (metric2F = XLALComputeDopplerFstatMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
 
     // compare both metrics against each other:
@@ -389,7 +389,7 @@ test_XLALComputeDopplerMetrics ( void )
     }
     XLAL_CHECK ( XLALScaleOldDopplerMetric ( metric1, 1.0 / Nseg ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    // 2) compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+    // 2) compute metric using modern UniversalDopplerMetric module: (used in lalpulsar_FstatMetric_v2)
     XLAL_CHECK ( (metric2P = XLALComputeDopplerPhaseMetric ( &pars2, edat )) != NULL, XLAL_EFUNC );
 
     GPMAT( metric1->g_ij, "%0.4e" );
@@ -443,7 +443,7 @@ test_XLALComputeDopplerMetrics ( void )
     pars_ScoX1.multiIFO.length = 1;	// truncate to first detector
     pars_ScoX1.multiNoiseFloor.length = 1;	// truncate to first detector
 
-    // compute metric using modern UniversalDopplerMetric module: (used in lalapps_FstatMetric_v2)
+    // compute metric using modern UniversalDopplerMetric module: (used in lalpulsar_FstatMetric_v2)
     DopplerPhaseMetric *metric_ScoX1;
     XLAL_CHECK ( (metric_ScoX1 = XLALComputeDopplerPhaseMetric ( &pars_ScoX1, edat )) != NULL, XLAL_EFUNC );
 

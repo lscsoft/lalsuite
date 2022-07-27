@@ -6,6 +6,6 @@ includedir=@includedir@
 Name: LALPulsar
 Description: LAL Pulsar Library
 Version: @VERSION@
-Requires.private: gsl, lal >= @LAL_VERSION@, lalframe >= @LALFRAME_VERSION@, lalinference >= @LALINFERENCE_VERSION@
+Requires.private: gsl, lal >= @LAL_VERSION@, lalframe >= @LALFRAME_VERSION@, lalsimulation >= @LALSIMULATION_VERSION@, lalinference >= @LALINFERENCE_VERSION@
 Libs: -L${libdir} -llalpulsar
 Cflags: -I${includedir}

@@ -36,7 +36,7 @@ export GSL_LIBS=""  # swig bindings don't need GSL
 
 # configure only python bindings and pure-python extras
 ${SRC_DIR}/configure \
-	--disable-cfitsio \
+	--enable-cfitsio \
 	--disable-doxygen \
 	--disable-swig-iface \
 	--enable-python \

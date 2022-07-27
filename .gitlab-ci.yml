@@ -1020,7 +1020,6 @@ lalapps:rpm:
     - lalburst:rpm
     - lalinspiral:rpm
     - lalinference:rpm
-    - lalpulsar:rpm
 
 lalapps:deb:
   extends:
@@ -1035,7 +1034,6 @@ lalapps:deb:
     - lalburst:deb
     - lalinspiral:deb
     - lalinference:deb
-    - lalpulsar:deb
 
 lalapps:conda:
   extends:
@@ -1050,7 +1048,6 @@ lalapps:conda:
     - lalburst:conda
     - lalinspiral:conda
     - lalinference:conda
-    - lalpulsar:conda
   variables:
     CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.____cpython"
 
@@ -1092,7 +1089,6 @@ lalapps:koji:
     - lalmetaio:koji
     - lalsimulation:koji
     - lalburst:koji
-    - lalpulsar:koji
     - lalinspiral:koji
     - lalinference:koji
 
@@ -1158,7 +1154,7 @@ lalapps:koji:
   # test running C executables and finding data files
   - lalapps_version
   - env LAL_DEBUG_LEVEL=info lalsim-detector-noise --official --aligo-nsnsopt --duration 1 >/dev/null
-  - env LAL_DEBUG_LEVEL=info lalapps_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
+  - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
 
 # Build receipe for standalone wheels on Linux
 .wheel:manylinux:

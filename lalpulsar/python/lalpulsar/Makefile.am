@@ -18,6 +18,9 @@ pymodule_PYTHON = \
 	NstarTools.py \
 	PulsarParametersWrapper.py \
 	simulateHeterodynedCW.py \
+	knope_utils.py \
+	pulsarhtmlutils.py \
+	pulsarpputils.py \
 	$(END_OF_LIST)
 
 endif

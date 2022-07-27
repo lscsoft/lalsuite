@@ -1,7 +1,19 @@
 # -*- mode: autoconf; -*-
 # lalpulsar.m4 - LALPulsar specific macros
 #
-# serial 2
+# serial 3
+
+AC_DEFUN([LALPULSAR_ENABLE_PSS],
+[AC_ARG_ENABLE(
+  [pss],
+  AS_HELP_STRING([--enable-pss],[compile code that requires pss library [default=no]]),
+  [ case "${enableval}" in
+      yes) pss=true;;
+      no) pss=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-pss) ;;
+    esac
+  ], [pss=false])
+])
 
 AC_DEFUN([LALPULSAR_CHECK_ALTIVEC],[
   # $0: check for Altivec support for ComputeFstat Demod hotloop

@@ -48,7 +48,22 @@ AC_CONFIG_FILES([ \
   lib/LALPulsarVCSInfo.c \
   lib/LALPulsarVCSInfo.h \
   lib/Makefile \
+  bin/CreateEphemeris/Makefile \
+  bin/CrossCorr/Makefile \
+  bin/FITSTools/Makefile \
+  bin/Fscan/Makefile \
+  bin/Fstatistic/Makefile \
+  bin/GCT/Makefile \
+  bin/HeterodyneSearch/Makefile \
+  bin/Hough/Makefile \
+  bin/HoughFstat/Makefile \
+  bin/MakeData/Makefile \
   bin/Makefile \
+  bin/SFTTools/Makefile \
+  bin/SidebandSearch/Makefile \
+  bin/Tools/Makefile \
+  bin/TwoSpect/Makefile \
+  bin/Weave/Makefile \
   bin/version.c \
   swig/Makefile \
   test/Makefile \
@@ -71,9 +86,11 @@ AM_INIT_AUTOMAKE([ \
 # version requirements
 MIN_LAL_VERSION="7.1.5"
 MIN_LALFRAME_VERSION="2.0.0"
+MIN_LALSIMULATION_VERSION="3.1.0"
 MIN_LALINFERENCE_VERSION="3.0.0"
 AC_SUBST([MIN_LAL_VERSION])
 AC_SUBST([MIN_LALFRAME_VERSION])
+AC_SUBST([MIN_LALSIMULATION_VERSION])
 AC_SUBST([MIN_LALINFERENCE_VERSION])
 
 AC_CANONICAL_HOST
@@ -89,11 +106,15 @@ LALSUITE_ENABLE_NIGHTLY
 # enable cfitsio support
 LALSUITE_ENABLE_CFITSIO
 
+# enable pss support
+LALPULSAR_ENABLE_PSS
+
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
+LALSUITE_ENABLE_LALSIMULATION
 LALSUITE_ENABLE_LALINFERENCE
 
 # enable SWIG wrapping modules
@@ -175,10 +196,33 @@ AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find the fftw3.h header])])
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
+# check for pss
+if test "${pss}" = "true"; then
+  PKG_CHECK_MODULES([PSS],[pss],[true],[false])
+  lal_pre_pss_LIBS="$LIBS"
+  LALSUITE_ADD_FLAGS([C],[],[${PSS_LIBS}])
+  AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,[pss="false"; LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([pss_set_gw],[pss],,[pss="false"; LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([PSS_utc2tdt],[pssastro],,[pss="false"; LIBS="$lal_pre_pss_LIBS"])
+  AC_SEARCH_LIBS([app_star],[pssnovas],,[pss="false"; LIBS="$lal_pre_pss_LIBS"])
+fi
+
+# check for pss headers
+if test "${pss}" = "true"; then
+  lal_pre_pss_CPPFLAGS="$CPPFLAGS"
+  LALSUITE_ADD_FLAGS([C],[${PSS_CFLAGS}],[])
+  AC_CHECK_HEADERS([pss_sfdb.h],,[pss="false"; CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([pss_gw.h],,[pss="false"; CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([pss_astro.h],,[pss="false"; CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+  AC_CHECK_HEADERS([novas.h],,[pss="false"; CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
+fi
+LALSUITE_ENABLE_MODULE([PSS])
+
 # check for lal libraries and headers
 LALSUITE_CHECK_LIB([LAL],[${MIN_LAL_VERSION}],[XLALPerror],[lal/XLALError.h])
 LALSUITE_CHECK_LIB([LALSupport],[${MIN_LAL_VERSION}],[XLALCacheImport],[lal/LALCache.h])
 LALSUITE_CHECK_OPT_LIB([LALFrame],[${MIN_LALFRAME_VERSION}],[XLALFrStreamOpen],[lal/LALFrStream.h])
+LALSUITE_CHECK_OPT_LIB([LALSimulation],[${MIN_LALSIMULATION_VERSION}],[XLALSimDetectorStrainREAL8TimeSeries],[lal/LALSimulation.h])
 LALSUITE_CHECK_OPT_LIB([LALInference],[${MIN_LALINFERENCE_VERSION}],[LALInferenceAddVariable],[lal/LALInference.h])
 
 # configure SWIG wrapping modules
@@ -219,8 +263,10 @@ LALPulsar has now been successfully configured:
 
 * Python support is $PYTHON_ENABLE_VAL
 * LALFrame library support is $LALFRAME_ENABLE_VAL
+* LALSimulation library support is $LALSIMULATION_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
+* PSS library support is $PSS_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
 * SWIG bindings for Python are $SWIG_BUILD_PYTHON_ENABLE_VAL

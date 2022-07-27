@@ -22,7 +22,6 @@ lalapps/src/hwinjection/        @david-keitel @evan-goetz @karl-wette @matthew-p
 lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
 lalapps/src/power/              @adam-mercer @kipp.cannon @soichiro.kuwahara
-lalapps/src/pulsar/             @david-keitel @evan-goetz @karl-wette @matthew-pitkin
 lalapps/src/ring/               @andrew-williamson @francesco-pannarale @ian-harry
 lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 

@@ -3,8 +3,6 @@ lalapps/src/calibration/S5H1_NoiseCompTimes.txt filter=lfs diff=lfs merge=lfs -t
 lalapps/src/calibration/S5L1_NoiseCompTimes.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/inspiral/BNSMasses.dat filter=lfs diff=lfs merge=lfs -text
 lalapps/src/inspiral/inspsrcs100Mpc.errors filter=lfs diff=lfs merge=lfs -text
-lalapps/src/pulsar/CreateEphemeris/ephemMLDC.dat filter=lfs diff=lfs merge=lfs -text
-lalapps/src/pulsar/*/test*.tar.gz filter=lfs diff=lfs merge=lfs -text
 lalapps/src/string/S5-H1H2-cat2.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/string/S5-H2-cat2.txt filter=lfs diff=lfs merge=lfs -text
 lalapps/src/string/S5-L1-cat2.txt filter=lfs diff=lfs merge=lfs -text
@@ -51,3 +49,5 @@ lalburst/test/python/snglcoinc_coincs_verify_input.xml.gz filter=lfs diff=lfs me
 lalinspiral/test/python/test_thinca_input.xml.gz filter=lfs diff=lfs merge=lfs -text
 lalinspiral/test/python/test_thinca_correct_min1.xml.gz filter=lfs diff=lfs merge=lfs -text
 lalinspiral/test/python/test_thinca_correct_min2.xml.gz filter=lfs diff=lfs merge=lfs -text
+lalpulsar/bin/CreateEphemeris/ephemMLDC.dat filter=lfs diff=lfs merge=lfs -text
+lalpulsar/bin/*/test*.tar.gz filter=lfs diff=lfs merge=lfs -text
