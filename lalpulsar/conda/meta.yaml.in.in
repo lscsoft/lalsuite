@@ -57,6 +57,7 @@ requirements:
     - gsl
     - liblal >={{ lal_version }} fftw*
     - liblalframe >={{ lalframe_version }}
+    - lalframe >={{ lalframe_version }}
     - liblalsimulation >={{ lalsimulation_version }}
     - liblalinference >={{ lalinference_version }}
     - libgomp  # [linux]
@@ -235,6 +236,7 @@ outputs:
         - gsl
         - jplephem  # [build_platform == target_platform]
         - h5py  # [build_platform == target_platform]
+        - lalframe >={{ lalframe_version }}
         - liblal >={{ lal_version }}
         - liblalframe >={{ lalframe_version }}
         - liblalsimulation >={{ lalsimulation_version }}

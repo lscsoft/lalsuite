@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalpulsar.m4 - LALPulsar specific macros
 #
-# serial 3
+# serial 5
 
 AC_DEFUN([LALPULSAR_ENABLE_PSS],
 [AC_ARG_ENABLE(
@@ -13,6 +13,18 @@ AC_DEFUN([LALPULSAR_ENABLE_PSS],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-pss) ;;
     esac
   ], [pss=false])
+])
+
+AC_DEFUN([LALPULSAR_ENABLE_SISTR],
+[AC_ARG_ENABLE(
+  [sistr],
+  AS_HELP_STRING([--enable-sistr],[compile code that requires SIStr library [default=no]]),
+  [ case "${enableval}" in
+      yes) sistr=true;;
+      no) sistr=false;;
+      *) AC_MSG_ERROR(bad value ${enableval} for --enable-sistr) ;;
+    esac
+  ], [sistr=false])
 ])
 
 AC_DEFUN([LALPULSAR_CHECK_ALTIVEC],[

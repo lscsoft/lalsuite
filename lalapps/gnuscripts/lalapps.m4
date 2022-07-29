@@ -1,6 +1,6 @@
 # lalapps.m4 - lalapps specific autoconf macros
 #
-# serial 19
+# serial 20
 
 AC_DEFUN([LALAPPS_ENABLE_CONDOR], [
   AC_ARG_ENABLE(
@@ -71,18 +71,6 @@ AC_DEFUN([LALAPPS_ENABLE_FRAMEL],
       *) AC_MSG_ERROR(bad value ${enableval} for --enable-framel) ;;
     esac
   ], [ framel=true ] )
-])
-
-AC_DEFUN([LALAPPS_ENABLE_GDS],
-[AC_ARG_ENABLE(
-  [gds],
-  AS_HELP_STRING([--enable-gds],[compile code that requires GDS library [default=no]]),
-  [ case "${enableval}" in
-      yes) gds=true;;
-      no) gds=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-gds) ;;
-    esac
-  ], [gds=false])
 ])
 
 AC_DEFUN([LALAPPS_CHECK_QTHREAD],

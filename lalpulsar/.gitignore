@@ -98,6 +98,7 @@ bin/Hough/lalpulsar_MultiWeights
 bin/Hough/lalpulsar_ValidateChi2Test
 bin/Hough/lalpulsar_ValidateHoughMulti
 bin/HoughFstat/lalpulsar_HierarchicalSearch
+bin/HWInjection/lalpulsar_hwinject
 bin/MakeData/compareTS
 bin/MakeData/lalpulsar_MakeSFTDAG
 bin/MakeData/lalpulsar_MakeSFTs
