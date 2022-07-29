@@ -1,6 +1,14 @@
 # Import SWIG wrappings, if available
 @SWIG_BUILD_PYTHON_TRUE@from .lal import *
 
+# Redirect standard output/error when running under IPython
+@SWIG_BUILD_PYTHON_TRUE@try:
+@SWIG_BUILD_PYTHON_TRUE@    get_ipython()
+@SWIG_BUILD_PYTHON_TRUE@except:
+@SWIG_BUILD_PYTHON_TRUE@    pass
+@SWIG_BUILD_PYTHON_TRUE@else:
+@SWIG_BUILD_PYTHON_TRUE@    lal.swig_redirect_standard_output_error()
+
 __version__ = "@PACKAGE_VERSION@"
 
 ## \addtogroup lal_python
