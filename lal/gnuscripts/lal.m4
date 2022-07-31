@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 22
+# serial 23
 
 AC_DEFUN([LAL_WITH_DEFAULT_DEBUG_LEVEL],[
   AC_ARG_WITH(
@@ -77,17 +77,6 @@ AC_DEFUN([LAL_ENABLE_MEMORY_FUNCTIONS],
   ),)
 ])
 
-AC_DEFUN([LAL_ENABLE_MACROS],
-[AC_ARG_ENABLE(
-  [macros],
-  AS_HELP_STRING([--enable-macros],[use LAL macros [default=yes]]),
-  AS_CASE(["${enableval}"],
-    [yes],,
-    [no],AC_DEFINE([NOLALMACROS],[1],[Use functions rather than macros]),
-    AC_MSG_ERROR([bad value for ${enableval} for --enable-macros])
-  ),)
-])
-
 AC_DEFUN([LAL_ENABLE_PTHREAD_LOCK], [
   AC_ARG_ENABLE([pthread_lock],
     AS_HELP_STRING([--enable-pthread-lock],[use pthread mutex lock for threadsafety @<:@default=yes@:>@]),
@@ -148,20 +137,4 @@ AC_DEFUN([LAL_INTEL_FFT_LIBS_MSG_ERROR],
  echo "* Please see the instructions in the file INSTALL.           *"
  echo "**************************************************************"
 AC_MSG_ERROR([Intel FFT must use either static or shared libraries])
-])
-
-AC_DEFUN([LAL_ENABLE_DEBUG],[
-  AC_ARG_ENABLE(
-    [debug],
-    AS_HELP_STRING([--enable-debug],[THIS OPTION IS NO LONGER SUPPORTED]),
-    AC_MSG_ERROR([[
-**************************************************************************
-* The options --enable-debug/--disable-debug are no longer supported.    *
-* The only important thing that this option used to do was to change the *
-* default value of lalDebugLevel - if you still want to do this, please  *
-* use the new option --with-default-debug-level. Otherwise simply remove *
-* --enable-debug/--disable-debug from your ./configure command line.     *
-**************************************************************************
-]])
-  )
 ])
