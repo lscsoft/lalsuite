@@ -491,25 +491,24 @@ dispensation.
 LAL provides two flags that can be used to exclude or modify debugging
 code at compile time.  Although these flags are typically
 <tt>\#define</tt>d or <tt>\#undef</tt>ined globally and can affect many
-modules (notably modules in the \c support package), their primary
-effect is on the debugging and status-reporting tools defined in this
-header.  The two flags are named \c NDEBUG and \c LAL_STATUS_MACROS_DISABLED.
+modules, their primary effect is on the debugging and status-reporting
+tools defined in this header.  The two flags are named
+\c NDEBUG and \c LAL_STATUS_MACROS_DISABLED.
 
 \subsection ss_ndebug_flag The NDEBUG flag
 
-Setting the \c NDEBUG flag turns off debugging and
-error-reporting code, in order to get condensed production-line programs.  As
-far as error reporting is concerned, setting the \c NDEBUG flag at compile
-time is similar to setting \c lalDebugLevel equal to zero at runtime, in
-that it suppresses all status messages and memory leak detection.  However,
-the \c NDEBUG flag accoplishes this by telling the compiler preprocessor
-to remove the relevant code from the object file, thus eliminating frequent
-and unnecessary tests on \c lalDebugLevel.
+Compiling with the \c NDEBUG flag set removes all <tt>ASSERT()</tt> macros from
+the object code, in keeping with the philosophy that <tt>ASSERT()</tt>
+statements should only be used to catch coding bugs, not runtime errors.
 
-Compiling with the \c NDEBUG flag set also removes all
-<tt>ASSERT()</tt> macros from the object code, in keeping with the
-philosophy that <tt>ASSERT()</tt> statements should only be used to
-catch coding bugs, not runtime errors.
+This is the only purpose for which the \c NDEBUG flag should be used. Code that
+checks function input arguments for correctness, reports error messages,
+etc. should not be disabled even in production code. The performance impact of
+such checks is likely minimal, particularly compared to the human cost of
+diagnosing obscure failures in production code because checks/error messages
+were disabled. (Error messages and other diagnostics should use the
+error-printing functions in \ref LALError_h to selective print messages
+according to \c lalDebugLevel.)
 
 \subsection ss_nolalmacros_flag The LAL_STATUS_MACROS_DISABLED flag
 

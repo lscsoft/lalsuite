@@ -16,9 +16,6 @@
 /* LAL Version Devel Number  */
 #undef LAL_VERSION_DEVEL
 
-/* Suppress debugging code */
-#undef LAL_NDEBUG
-
 /* Define if using CUDA library */
 #undef LAL_CUDA_ENABLED
 

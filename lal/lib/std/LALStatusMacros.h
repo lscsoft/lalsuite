@@ -23,11 +23,6 @@
 #define _LALSTATUSMACROS_H
 
 #include <lal/LALConfig.h>
-#ifdef NDEBUG
-#ifndef LAL_NDEBUG
-#define LAL_NDEBUG
-#endif
-#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -118,7 +113,7 @@ extern "C" {
     return;                                                                   \
   } while ( 0 )
 
-#ifdef LAL_NDEBUG
+#ifdef NDEBUG
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \
@@ -197,7 +192,7 @@ extern "C" {
 #define ABORT( statusptr, code, mesg ) \
   do { if ( LALPrepareAbort( statusptr, code, mesg, __FILE__, __LINE__ ), 1 ) return; } while ( 0 )
 
-#ifdef LAL_NDEBUG
+#ifdef NDEBUG
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \
