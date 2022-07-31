@@ -1970,7 +1970,7 @@ lint:depends:
           python-debian
           python-rpm-spec
   script:
-    - ./gnuscripts/check_library_dependencies
+    - ./common/maintainer-scripts/check_library_dependencies
 
 lint:gitignore:
   extends:
