@@ -40,4 +40,7 @@
 /* Define if using qthread library */
 #undef LAL_QTHREAD
 
+/* Disable LAL memory functions */
+#undef LAL_MEMORY_FUNCTIONS_DISABLED
+
 #endif /* LAL_VERSION */

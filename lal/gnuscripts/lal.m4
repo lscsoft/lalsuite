@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 21
+# serial 22
 
 AC_DEFUN([LAL_WITH_DEFAULT_DEBUG_LEVEL],[
   AC_ARG_WITH(
@@ -64,6 +64,17 @@ AC_DEFUN([LAL_ENABLE_INTELFFT],
     [condor],[intelfft=true; qthread=tru; AC_DEFINE([LALQTHREAD],[1],[Use fake qthread library for MKL Condor compatibility])],
     AC_MSG_ERROR([bad value for ${enableval} for --enable-intelfft])
   ),[intelfft=false])
+])
+
+AC_DEFUN([LAL_ENABLE_MEMORY_FUNCTIONS],
+[AC_ARG_ENABLE(
+  [memory-functions],
+  AS_HELP_STRING([--enable-memory-functions],[use LAL memory functions [default=yes]]),
+  AS_CASE(["${enableval}"],
+    [yes],,
+    [no],[AC_DEFINE([LAL_MEMORY_FUNCTIONS_DISABLED],[1],[Disable LAL memory functions])],
+    AC_MSG_ERROR([bad value for ${enableval} for --enable-memory-functions])
+  ),)
 ])
 
 AC_DEFUN([LAL_ENABLE_MACROS],
