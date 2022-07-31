@@ -90,15 +90,6 @@ void REPORTSTATUS(LALStatus * status);
 
 #endif
 
-#ifdef NDEBUG
-
-#define LALError( statusptr, statement ) (void)(0)
-#define LALWarning( statusptr, warning ) (void)(0)
-#define LALInfo( statusptr, info )       (void)(0)
-#define LALTrace( statusptr, exitflg )   (void)(0)
-
-#else
-
 #ifndef LAL_STATUS_MACROS_DISABLED
 
 #define LALError( statusptr, statement )                                    \
@@ -132,8 +123,6 @@ void REPORTSTATUS(LALStatus * status);
       : 0 )
 
 #endif /* LAL_STATUS_MACROS_DISABLED */
-
-#endif /* NDEBUG */
 
 /*
  * Error handlers for LALApps applications
