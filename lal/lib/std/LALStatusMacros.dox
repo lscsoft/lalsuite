@@ -504,9 +504,7 @@ time is similar to setting \c lalDebugLevel equal to zero at runtime, in
 that it suppresses all status messages and memory leak detection.  However,
 the \c NDEBUG flag accoplishes this by telling the compiler preprocessor
 to remove the relevant code from the object file, thus eliminating frequent
-and unnecessary tests on \c lalDebugLevel.  When debugging is turned off,
-the global integer variable \c lalNoDebug is non-zero; otherwise it is
-zero.
+and unnecessary tests on \c lalDebugLevel.
 
 Compiling with the \c NDEBUG flag set also removes all
 <tt>ASSERT()</tt> macros from the object code, in keeping with the

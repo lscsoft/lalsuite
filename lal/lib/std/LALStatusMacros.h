@@ -44,8 +44,6 @@ extern "C" {
 }       /* so that editors will match preceding brace */
 #endif
 
-extern const int lalNoDebug;
-
 #define LAL_EXLAL     16384
 #define LAL_MSGEXLAL  "Failure in an XLAL routine"
 #define ABORTXLAL(sp) ABORT(sp,LAL_EXLAL,LAL_MSGEXLAL)

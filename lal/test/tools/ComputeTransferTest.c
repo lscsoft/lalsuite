@@ -105,9 +105,6 @@ int main( int argc, char *argv[] )
   calrec.transfer = &fser;
 
   /* check response to invalid input */
-# ifndef LAL_NDEBUG
-  if ( ! lalNoDebug )
-  {
     CalibrationRecord badcalrec;
 
     LALComputeTransfer( &status, NULL );
@@ -129,8 +126,6 @@ int main( int argc, char *argv[] )
     TESTSTATUSERR( &status, CALIBRATIONH_ENULL );
 
     fputs( "PASS: Test response to invalid data\n", stderr );
-  }
-# endif /* LAL_NDEBUG */
 
   LALComputeTransfer( &status, &calrec );
   TESTSTATUS( &status );

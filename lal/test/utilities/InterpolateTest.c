@@ -192,10 +192,6 @@ int main (int argc, char *argv[])
   TestStatus (&status, CODES(0), 1);
 
 
-#ifndef LAL_NDEBUG
-
-  if ( ! lalNoDebug )
-  {
     if ( verbose )
       printf ("\nCheck error conditions:\n");
 
@@ -272,8 +268,6 @@ int main (int argc, char *argv[])
       abort();
     if ( verbose )
       printf ("Zero divide check passed.\n");
-  }
-#endif
 
 
   LALSDestroyVector (&status, &x);

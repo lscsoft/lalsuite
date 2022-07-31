@@ -131,10 +131,6 @@ static void FUNC ( void )
    *
    */
 
-#ifndef LAL_NDEBUG
-
-  if ( ! lalNoDebug )
-  {
     if (verbose)
       {
         printf("VFT line %d\n", __LINE__);
@@ -162,11 +158,6 @@ static void FUNC ( void )
 
     DFUNC ( &status, &vector );
     TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
-  }
-
-#else
-  vector = &vstore;
-#endif
 
   LALCheckMemoryLeaks();
   printf( "PASS: tests of %s, %s, and %s\n", STRING(CFUNC), STRING(RFUNC), STRING(DFUNC));

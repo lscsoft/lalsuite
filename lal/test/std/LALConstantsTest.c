@@ -25,13 +25,6 @@
 
 #define MAX_FRACTIONAL_ERROR 1e-15
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG) /* debugging is turned off */
-int main( void )
-{
-	return 77; /* don't do any testing */
-}
-#else
-
 static int compare_within_fraction(double a, double b, double max_fractional_difference)
 {
 	if(fabs(a - b) / fabs(a > b ? a : b) <= fabs(max_fractional_difference))
@@ -48,8 +41,6 @@ static int compare_within_fraction(double a, double b, double max_fractional_dif
 
 int main( void )
 {
-	if(lalNoDebug) /* library was not compiled with debugging */
-		return 77; /* don't do any testing */
 
 	REQUIRE_EQUAL(sqrt(2), LAL_SQRT2);
 	REQUIRE_EQUAL(1/sqrt(2), LAL_SQRT1_2);
@@ -74,4 +65,3 @@ int main( void )
 
 	return 0;
 }
-#endif

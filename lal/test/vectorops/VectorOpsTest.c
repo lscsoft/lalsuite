@@ -167,9 +167,6 @@ main ( int argc, char *argv[] )
         x1->data[i], x2->data[i], x3->data[i]);
 
   if (verbose) printf("\n");
-#ifndef LAL_NDEBUG
-  if ( ! lalNoDebug )
-  {
     LALSSVectorMultiply(&status, x3, x1, NULL);
     TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALSSVectorMultiply(&status, x3, y2, x2);
@@ -178,8 +175,6 @@ main ( int argc, char *argv[] )
     TestStatus( &status, CODES(VECTOROPSH_ESIZE), 1 );
     LALSSVectorMultiply(&status, x3, x1, y_1);
     TestStatus( &status, CODES(VECTOROPSH_ESZMM), 1 );
-  }
-#endif
 
   LALCDestroyVector(&status, &z1);
   TestStatus( &status, CODES(0), 1 );
@@ -256,9 +251,6 @@ main ( int argc, char *argv[] )
 
   if (verbose) printf("\n");
 
-#ifndef LAL_NDEBUG
-  if ( ! lalNoDebug )
-  {
     LALCVectorAbs(&status, x1, NULL);
     TestStatus( &status, CODES(VECTOROPSH_ENULL), 1 );
     LALCVectorAbs(&status, NULL, z1);
@@ -294,8 +286,6 @@ main ( int argc, char *argv[] )
     TestStatus( &status, CODES(VECTOROPSH_ESIZE), 1 );
     LALUnwrapREAL4Angle(&status, x2, x2);
     TestStatus( &status, CODES(VECTOROPSH_ESAME), 1 );
-  }
-#endif
 
 
   LALCDestroyVector(&status, &z1);

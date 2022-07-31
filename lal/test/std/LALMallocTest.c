@@ -62,9 +62,6 @@ char caughtMessage[1024];
 jmp_buf jump;
 FILE *mystderr;
 
-#if defined(NDEBUG)
-/* debugging is turned off */
-#else
 /* replacement for LALRaise */
 static int TestRaise( int sig, const char *fmt, ... )
 {
@@ -75,7 +72,6 @@ static int TestRaise( int sig, const char *fmt, ... )
   longjmp( jump, sig );
   return -1;
 }
-#endif
 
 #define STR( a ) #a
 #define XSTR( a ) STR( a )
@@ -127,10 +123,6 @@ size_t  *r;
 size_t  *s;
 size_t **v;
 
-#if defined(NDEBUG)
-/* debugging is turned off */
-#else
-/* do a bunch of allocations/deallocations that are OK */
 static int testOK( void )
 {
   int keep = lalDebugLevel;
@@ -332,14 +324,10 @@ static int stressTestRealloc( void )
   XLALClobberDebugLevel(keep);
   return 0;
 }
-#endif
 
 
 int main( void )
 {
-#if defined(NDEBUG) /* debugging is turned off */
-  return 77; /* don't do any testing */
-#else
   XLALGetDebugLevel();
   XLALClobberDebugLevel(LALMEMDBG);
 
@@ -350,9 +338,6 @@ int main( void )
 
   lalRaiseHook = TestRaise;
 
-  if ( lalNoDebug ) /* library was not compiled with debugging */
-    return 77; /* don't do any testing */
-
   if ( testOK() ) return 1;
   if ( testPadding() ) return 1;
   if ( testAllocList() ) return 1;
@@ -361,7 +346,6 @@ int main( void )
   trial( LALCheckMemoryLeaks(), 0, "" );
 
   return 0;
-#endif
 }
 
 /** \endcond */

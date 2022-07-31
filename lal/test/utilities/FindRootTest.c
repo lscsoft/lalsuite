@@ -70,12 +70,8 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
 static void
 ClearStatus (LALStatus *status);
-#endif
 
 /*
  *
@@ -230,10 +226,6 @@ main (int argc, char *argv[])
    *
    */
 
-#ifndef LAL_NDEBUG
-
-  if ( ! lalNoDebug )
-  {
 
     if (verbose || lalDebugLevel)
     {
@@ -360,9 +352,6 @@ main (int argc, char *argv[])
     LALDBisectionFindRoot (&status, &droot, &dinput, &yy0);
     TestStatus (&status, CODES(FINDROOTH_EBRKT), 1);
 
-  }
-
-#endif
 
   return 0;
 }
@@ -414,9 +403,6 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
 }
 
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
 /*
  *
  * ClearStatus ()
@@ -434,7 +420,6 @@ ClearStatus (LALStatus *status)
     DETATCHSTATUSPTR (status);
   }
 }
-#endif
 
 /*
  * Usage ()

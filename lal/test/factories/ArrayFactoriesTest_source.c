@@ -23,12 +23,10 @@ static void FUNC ( void )
 {
   static UINT4   dims[3]    = { 1, 2, 4 };
   UINT4Vector    dimLength  = { 3, dims };
-#ifndef LAL_NDEBUG
   static UINT4   dbad[3]    = { 1, 0, 4 };
   UINT4Vector    badLength1 = { 3, NULL };
   UINT4Vector    badLength2 = { 0, dims };
   UINT4Vector    badLength3 = { 3, dbad };
-#endif
   static LALStatus  status;
   static VTYPE  *array;
   static VTYPE   astore;
@@ -90,10 +88,6 @@ static void FUNC ( void )
    */
 
 
-#ifndef LAL_NDEBUG
-
-  if ( ! lalNoDebug )
-  {
     CFUNC ( &status, &array, &badLength1 );
     TestStatus( &status, CODES( AVFACTORIESH_EVPTR ), 1 );
 
@@ -145,12 +139,6 @@ static void FUNC ( void )
     DFUNC ( &status, &array );
     TestStatus( &status, CODES( AVFACTORIESH_EDPTR ), 1 );
     ClearStatus( &status );
-  }
-
-#else
-  array = &astore;
-  array->data = &datum;
-#endif
 
   LALCheckMemoryLeaks();
   printf( "PASS: tests of %s, %s, and %s\n", STRING(CFUNC), STRING(RFUNC), STRING(DFUNC));
