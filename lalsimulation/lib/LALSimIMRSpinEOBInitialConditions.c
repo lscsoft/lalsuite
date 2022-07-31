@@ -605,12 +605,10 @@ static int XLALSimIMRSpinEOBInitialConditions(
                       )
 {
 
-#ifndef LAL_NDEBUG
   if ( !initConds )
   {
     XLAL_ERROR( XLAL_EINVAL );
   }
-#endif
 
 
   static const int UNUSED lMax = 8;

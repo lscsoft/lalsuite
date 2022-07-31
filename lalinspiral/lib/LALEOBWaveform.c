@@ -977,7 +977,6 @@ XLALEOBWaveform(
    UINT4 count;
    InspiralInit paramsInit;
 
-#ifndef LAL_NDEBUG
    if ( !signalvec )
    {
      XLAL_ERROR( XLAL_EFAULT );
@@ -1010,7 +1009,6 @@ XLALEOBWaveform(
      XLALPrintError( "totalMass must be > 0.\n");
      XLAL_ERROR( XLAL_EDOM );
    }
-#endif
 
    if ( XLALInspiralSetup (&(paramsInit.ak), params) == XLAL_FAILURE )
    {
@@ -1046,7 +1044,6 @@ XLALEOBWaveformTemplates(
 
    InspiralInit paramsInit;
 
-#ifndef LAL_NDEBUG
    if ( !signalvec1 )
    {
      XLAL_ERROR( XLAL_EFAULT );
@@ -1087,7 +1084,6 @@ XLALEOBWaveformTemplates(
      XLALPrintError( "totalMass must be > 0.\n");
      XLAL_ERROR( XLAL_EDOM );
    }
-#endif
 
    if ( XLALInspiralSetup (&(paramsInit.ak), params) == XLAL_FAILURE )
    {
@@ -1141,7 +1137,6 @@ int XLALEOBWaveformForInjection(
   /* We need a blank LIGOTimeGPS for creating time series */
   LIGOTimeGPS epoch = {0, 0};
 
-#ifndef LAL_NDEBUG
   /* Make sure parameter and waveform structures exist. */
   if ( !params )
     XLAL_ERROR( XLAL_EFAULT );
@@ -1175,7 +1170,6 @@ int XLALEOBWaveformForInjection(
     XLALPrintError( "Pointer for waveform->shift exists. Was expecting NULL.\n" );
     XLAL_ERROR( XLAL_EFAULT );
   }
-#endif
 
   params->ampOrder = (LALPNOrder) 0;
   XLALPrintInfo( "WARNING: Amp Order has been reset to %d\n", params->ampOrder);

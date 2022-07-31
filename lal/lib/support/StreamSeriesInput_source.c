@@ -159,13 +159,11 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 	  endValue++;
 	*endValue = '\0';
 	if ( XLALParseUnitString( &unit, startValue ) == NULL ) {
-#ifndef NDEBUG
 	  if ( lalDebugLevel & LALERROR ) {
 	    LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );
 	    DETATCHSTATUSPTR( stat );
 	    ATTATCHSTATUSPTR( stat );
 	  }
-#endif
 	  LALWarning( stat, LALREADSERIESC_HEADER "sampleUnits" );
 	} else {
 	  BEGINFAIL( stat ) {
@@ -190,7 +188,6 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
       }
 
       /* Parse datatype field. */
-#ifndef NDEBUG
       else if ( !strcmp( start, "datatype" ) ) {
 	if ( lalDebugLevel & LALWARNING ) {
 	  endValue = startValue;
@@ -203,7 +200,6 @@ SFUNC ( LALStatus *stat, STYPE *series, FILE *stream )
 	  }
 	}
       }
-#endif
 
       /* No other recognized tags; ignore anything else. */
     }
@@ -556,13 +552,11 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 	  endValue++;
 	*endValue = '\0';
 	if ( XLALParseUnitString( &unit, startValue ) == NULL ) {
-#ifndef NDEBUG
 	  if ( lalDebugLevel & LALERROR ) {
 	    LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );
 	    DETATCHSTATUSPTR( stat );
 	    ATTATCHSTATUSPTR( stat );
 	  }
-#endif
 	  LALWarning( stat, LALREADSERIESC_HEADER "sampleUnits" );
 	} else {
 	  BEGINFAIL( stat ) {
@@ -601,7 +595,6 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
       }
 
       /* Parse datatype field. */
-#ifndef NDEBUG
       else if ( !strcmp( start, "datatype" ) ) {
 	if ( lalDebugLevel & LALWARNING ) {
 	  endValue = startValue;
@@ -614,7 +607,6 @@ VFUNC ( LALStatus *stat, VTYPE *series, FILE *stream )
 	  }
 	}
       }
-#endif
 
       /* No other recognized tags; ignore anything else. */
     }
@@ -1049,13 +1041,11 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 	  endValue++;
 	*endValue = '\0';
 	if ( XLALParseUnitString( &unit, startValue ) == NULL ) {
-#ifndef NDEBUG
 	  if ( lalDebugLevel & LALERROR ) {
 	    LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );
 	    DETATCHSTATUSPTR( stat );
 	    ATTATCHSTATUSPTR( stat );
 	  }
-#endif
 	  LALWarning( stat, LALREADSERIESC_HEADER "sampleUnits" );
 	} else {
 	  BEGINFAIL( stat ) {
@@ -1187,7 +1177,6 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
       }
 
       /* Parse datatype field. */
-#ifndef NDEBUG
       else if ( !strcmp( start, "datatype" ) ) {
 	if ( lalDebugLevel & LALWARNING ) {
 	  endValue = startValue;
@@ -1200,7 +1189,6 @@ AFUNC ( LALStatus *stat, ATYPE *series, FILE *stream )
 	  }
 	}
       }
-#endif
 
       /* No other recognized tags; ignore anything else. */
     }
@@ -1588,13 +1576,11 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
 	  endValue++;
 	*endValue = '\0';
 	if ( XLALParseUnitString( &unit, startValue ) == NULL ) {
-#ifndef NDEBUG
 	  if ( lalDebugLevel & LALERROR ) {
 	    LALPrintError( "\tCONTINUE: Ignoring preceding error\n" );
 	    DETATCHSTATUSPTR( stat );
 	    ATTATCHSTATUSPTR( stat );
 	  }
-#endif
 	  LALWarning( stat, LALREADSERIESC_HEADER "sampleUnits" );
 	} else {
 	  BEGINFAIL( stat ) {
@@ -1619,7 +1605,6 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
       }
 
       /* Parse datatype field. */
-#ifndef NDEBUG
       else if ( !strcmp( start, "datatype" ) ) {
 	if ( lalDebugLevel & LALWARNING ) {
 	  endValue = startValue;
@@ -1632,7 +1617,6 @@ FFUNC ( LALStatus *stat, FTYPE *series, FILE *stream )
 	  }
 	}
       }
-#endif
 
       /* No other recognized tags; ignore anything else. */
     }

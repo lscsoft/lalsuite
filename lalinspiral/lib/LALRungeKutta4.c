@@ -160,7 +160,6 @@ XLALRungeKutta4(
    REAL8 h;
    gsl_odeiv_system sys;
 
-#ifndef LAL_NDEBUG
    if ( !yout )
      XLAL_ERROR( XLAL_EFAULT );
 
@@ -175,7 +174,6 @@ XLALRungeKutta4(
    
    if ( !params )
      XLAL_ERROR( XLAL_EFAULT );
-#endif
 
   /* Initialise GSL integrator */
 

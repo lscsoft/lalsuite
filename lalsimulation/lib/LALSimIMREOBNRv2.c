@@ -235,10 +235,8 @@ XLALrOfOmegaP4PN(
   REAL8  omega1,omega2;
   pr3In *pr3in;
 
-#ifndef LAL_NDEBUG
   if ( !params )
     XLAL_ERROR_REAL8( XLAL_EFAULT );
-#endif
 
   pr3in = (pr3In *) params;
 

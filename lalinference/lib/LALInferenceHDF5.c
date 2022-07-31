@@ -33,9 +33,7 @@ const char LALInferenceHDF5NestedSamplesDatasetName[] = "nested_samples";
 static void assert_not_reached(void);
 static void assert_not_reached(void)
 {
-#ifndef NDEBUG
     abort();
-#endif
 }
 
 int LALInferencePrintCheckpointFileInfo(char *filename)

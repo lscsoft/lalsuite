@@ -282,10 +282,8 @@ XLALGenerateInspiralPopulatePPN(
     SimInspiralTable * restrict thisEvent
     )
 {
-#ifndef LAL_NDEBUG
   if ( !ppnParams || !thisEvent )
     XLAL_ERROR( XLAL_EFAULT );
-#endif
 
   /* input fields */
   ppnParams->mTot     = thisEvent->mass1 + thisEvent->mass2;
@@ -330,10 +328,8 @@ XLALGenerateInspiralPopulateInspiral(
     )
 {
 
-#ifndef LAL_NDEBUG
   if ( !inspiralParams || !thisEvent || !ppnParams )
     XLAL_ERROR( XLAL_EFAULT );
-#endif
 
   /* --- Let's fill the inspiral structure now --- */
   inspiralParams->mass1	  =  thisEvent->mass1;  	/* masses 1 */

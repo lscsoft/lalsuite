@@ -86,7 +86,6 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   /* The maximum time difference associated with an ellipsoid */
   REAL8 tcMax;
 
-#ifndef LAL_NDEBUG
   if ( !table )
   {
     XLAL_ERROR( XLAL_EFAULT );
@@ -96,7 +95,6 @@ int XLALTrigScanClusterTriggers( SnglInspiralTable **table,
   {
     XLAL_ERROR( XLAL_EINVAL );
   }
-#endif
 
   tableHead = *table;
 
@@ -279,7 +277,6 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
   fContactWorkSpace *workSpace        = NULL;
   REAL8             fContactValue;
 
-#ifndef LAL_NDEBUG
   if ( !errorListHead )
   {
     XLAL_ERROR_NULL( XLAL_EFAULT );
@@ -294,7 +291,6 @@ TrigScanCluster * XLALTrigScanCreateCluster( TriggerErrorList **errorListHead,
   {
     XLAL_ERROR_NULL( XLAL_EINVAL );
   }
-#endif
 
   /* Allocate memory for the cluster */
   cluster = LALCalloc( 1, sizeof( TrigScanCluster ) );
@@ -436,12 +432,10 @@ int XLALTrigScanRemoveStragglers( TrigScanCluster **clusters )
   TrigScanCluster *previous    = NULL; /* Keeping track of the previous element */
   TrigScanCluster *thisCluster = NULL;
 
-#ifndef LAL_NDEBUG
   if ( !clusters )
   {
     XLAL_ERROR( XLAL_EFAULT );
   }
-#endif
 
   /* Loop through the list and remove all clusters containing 1 trigger */
   while ( thisCluster )
@@ -481,7 +475,6 @@ int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster )
   TriggerErrorList *triggerToKeep;
   TriggerErrorList *thisTrigger;
 
-#ifndef LAL_NDEBUG
   if ( !cluster )
   {
     XLAL_ERROR( XLAL_EFAULT );
@@ -492,7 +485,6 @@ int XLALTrigScanKeepLoudestTrigger( TrigScanCluster *cluster )
     XLALPrintError( "Invalid number of triggers in cluster: %d\n", cluster->nelements );
     XLAL_ERROR( XLAL_EINVAL );
   }
-#endif
 
   if ( cluster->nelements == 1 )
   {
@@ -561,13 +553,11 @@ void XLALTrigScanDestroyCluster( TrigScanCluster *cluster,
 {
   TriggerErrorList *thisList;
 
-#ifndef LAL_NDEBUG
   if ( !cluster )
     XLAL_ERROR_VOID( XLAL_EFAULT );
 
   if ( (UINT4) status >= (UINT4) TRIGSCAN_NUM_STATUS )
     XLAL_ERROR_VOID( XLAL_EINVAL );
-#endif
 
   /* If something has failed, we need to free the SnglInspirals */
   if ( status == TRIGSCAN_ERROR )

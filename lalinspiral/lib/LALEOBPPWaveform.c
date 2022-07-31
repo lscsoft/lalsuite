@@ -815,10 +815,8 @@ XLALrOfOmegaP4PN(
   REAL8  omega1,omega2;
   pr3In *pr3in;
 
-#ifndef LAL_NDEBUG
   if ( !params )
     XLAL_ERROR_REAL8( XLAL_EFAULT );
-#endif
 
   pr3in = (pr3In *) params;
 
@@ -1134,7 +1132,6 @@ XLALEOBPPWaveform(
    UINT4 count;
    InspiralInit paramsInit;
 
-#ifndef LAL_NDEBUG
    if ( !signalvec )
    {
      XLAL_ERROR( XLAL_EFAULT );
@@ -1167,7 +1164,6 @@ XLALEOBPPWaveform(
      XLALPrintError( "totalMass must be > 0.\n");
      XLAL_ERROR( XLAL_EDOM );
    }
-#endif
 
    if ( XLALInspiralSetup( &(paramsInit.ak), params) == XLAL_FAILURE )
    {
@@ -1204,7 +1200,6 @@ XLALEOBPPWaveformTemplates (
 
    InspiralInit paramsInit;
 
-#ifndef LAL_NDEBUG
    if ( !signalvec1 )
    {
      XLAL_ERROR( XLAL_EFAULT );
@@ -1245,7 +1240,6 @@ XLALEOBPPWaveformTemplates (
      XLALPrintError( "totalMass must be > 0.\n");
      XLAL_ERROR( XLAL_EDOM );
    }
-#endif
 
    if ( XLALInspiralSetup( &(paramsInit.ak), params) == XLAL_FAILURE )
    {
@@ -1291,7 +1285,6 @@ XLALEOBPPWaveformForInjection (
   REAL8 phiC;/* phase at coalescence */
   InspiralInit paramsInit;
 
-#ifndef LAL_NDEBUG
   /* Make sure parameter and waveform structures exist. */
   if ( !params )
     XLAL_ERROR( XLAL_EFAULT );
@@ -1325,7 +1318,6 @@ XLALEOBPPWaveformForInjection (
     XLALPrintError( "Pointer for waveform->shift exists. Was expecting NULL.\n" );
     XLAL_ERROR( XLAL_EFAULT );
   }
-#endif
 
   params->ampOrder = (LALPNOrder) 0;
   XLALPrintWarning( "WARNING: Amp Order has been reset to %d\n", params->ampOrder);

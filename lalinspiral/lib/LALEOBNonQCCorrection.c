@@ -329,12 +329,10 @@ int XLALGetCalibratedNQCCoeffs( EOBNonQCCoeffs *coeffs,
                                 )
 {
 
-#ifndef LAL_NDEBUG
   if ( !coeffs )
   {
     XLAL_ERROR( XLAL_EINVAL );
   }
-#endif
 
   if ( l != 2 || m != 2 )
   {
