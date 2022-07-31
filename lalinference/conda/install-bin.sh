@@ -8,7 +8,7 @@ cp -r _build${PY_VER} ${_builddir}
 cd ${_builddir}
 
 # customisation for LALSuite development CI
-if [[ "${GITLAB_CI}" == "true" ]] && [[ -z "${CI_COMMIT_TAG+x}" ]]; then
+if [[ "${GITLAB_CI}" == "true" ]] && [[ "x${CI_COMMIT_TAG}" == x ]]; then
 	# allow debugging information
 	export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
 

@@ -113,6 +113,10 @@ outputs:
         - numpy
         - openssl
         - python
+      script_env:
+        - CI_COMMIT_TAG
+        - CI_PIPELINE_SOURCE
+        - GITLAB_CI
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
       build:
