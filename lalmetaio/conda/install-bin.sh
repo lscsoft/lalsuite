@@ -1,1 +1,1 @@
-../../conda/install-bin.sh
+../../common/conda/install-bin.sh

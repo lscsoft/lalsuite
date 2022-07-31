@@ -1,1 +1,1 @@
-../../conda/install-lib.sh
+../../common/conda/install-lib.sh

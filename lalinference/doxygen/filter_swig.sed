@@ -1,1 +1,1 @@
-../../doxygen/filter_swig.sed
+../../common/doxygen/filter_swig.sed

@@ -47,11 +47,11 @@ repository. It can then be cloned using:
 ## Building from Source
 
 The recommended way to build LALSuite from source is in a `conda` environment.
-[A recipe file](conda/environment.yml) is available with all main dependencies.
+[A recipe file](common/conda/environment.yml) is available with all main dependencies.
 This can serve as the base for custom recipes,
 or be used directly via:
 
-     $ conda env create -f conda/environment.yml
+     $ conda env create -f common/conda/environment.yml
 
 Pulling in dependencies may take a while depending on your internet connection.
 After the environment setup succeeded, you can activate it with:

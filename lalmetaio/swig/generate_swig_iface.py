@@ -1,1 +1,1 @@
-../../lal/swig/generate_swig_iface.py
+../../common/swig/generate_swig_iface.py
