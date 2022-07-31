@@ -51,7 +51,7 @@ extern const int lalNoDebug;
 #define ABORTXLAL(sp) ABORT(sp,LAL_EXLAL,LAL_MSGEXLAL)
 #define XLAL_CHECK_LAL(sp, assertion, ...) _XLAL_CHECK_IMPL_(ABORTXLAL(sp), assertion, __VA_ARGS__)
 
-#ifndef NOLALMACROS
+#ifndef LAL_STATUS_MACROS_DISABLED
 
 #define INITSTATUS( statusptr )                                               \
   do { if ( (statusptr) )                                                     \
@@ -182,7 +182,7 @@ extern const int lalNoDebug;
     }                                                                         \
   } while ( 0 )
 
-#else /* NOLALMACROS */
+#else /* LAL_STATUS_MACROS_DISABLED */
 
 #define INITSTATUS( statusptr ) \
   do { if ( LALInitStatus( statusptr, __func__, "$Id$", __FILE__, __LINE__ ) ) return; } while ( 0 )
@@ -226,7 +226,7 @@ extern const int lalNoDebug;
 #define CHECKSTATUSPTR( statusptr )                                           \
   do { if ( LALCheckStatusPtr( statusptr, "CHECKSTATUSPTR:", __FILE__, __LINE__ ) ) return; } while ( 0 )
 
-#endif /* NOLALMACROS */
+#endif /* LAL_STATUS_MACROS_DISABLED */
 
 /* these just have to be macros... */
 

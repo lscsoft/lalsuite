@@ -136,7 +136,7 @@ compilation flag.
 
 ### Macro replacement functions ###
 
-When a LAL module is compiled with the flag \c NOLALMACROS set,
+When a LAL module is compiled with the flag \c LAL_STATUS_MACROS_DISABLED set,
 the usual status-handling macros defined in \ref LALStatusMacros.h
 are replaced with function calls to specialized support functions that
 perform the same operations.  These functions are necessarily global
