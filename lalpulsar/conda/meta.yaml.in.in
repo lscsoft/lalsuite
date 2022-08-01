@@ -156,6 +156,10 @@ outputs:
         - numpy
         - openssl
         - python
+      script_env:
+        - CI_COMMIT_TAG
+        - CI_PIPELINE_SOURCE
+        - GITLAB_CI
     requirements:
       build:
         - {{ compiler('c') }}

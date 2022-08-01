@@ -479,6 +479,8 @@ default:
     - if [[ "${CONDA_CONFIG}" != *"python"* ]] && [ -z "${ENABLE_NIGHTLY}" ]; then
          CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
       fi
+    # ensure $CI_COMMIT_TAG is set for script_env
+    - export CI_COMMIT_TAG=${CI_COMMIT_TAG:-}
     # build packages
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
     - xargs -t conda ${CONDA_BUILD_CMD:-build}
