@@ -98,14 +98,12 @@ void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
   fBinMin = phmdVS->fBinMin;
-#ifndef LAL_NDEBUG
-  REAL8 deltaF =  phmdVS->deltaF = lutV->lut[0].deltaF;   /* frequency resolution */
-#endif
+  phmdVS->deltaF = lutV->lut[0].deltaF;   /* frequency resolution */
 
   for ( k=0; k<length; ++k ){
 
     /* make sure all deltaF are consistent */
-    ASSERT (deltaF == lutV->lut[k].deltaF,
+    ASSERT (phmdVS->deltaF == lutV->lut[k].deltaF,
 	    status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
 
     fBin = fBinMin;
@@ -172,9 +170,6 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
-#ifndef LAL_NDEBUG
-  REAL8 deltaF =  phmdVS->deltaF;
-#endif
 
   breakLine = phmdVS->breakLine; /* old Break Line */
   fBinMin = phmdVS->fBinMin; /* initial frequency value  */
@@ -190,7 +185,7 @@ void LALHOUGHupdateSpacePHMDup  (LALStatus            *status,
 
   for ( k=0; k<length; ++k ){
     /* make sure all deltaF are consistent */
-    ASSERT (deltaF == lutV->lut[k].deltaF,
+    ASSERT (phmdVS->deltaF == lutV->lut[k].deltaF,
 	    status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
 
     phmdVS->phmd[ breakLine*length+k ].fBin = fBin;
@@ -258,9 +253,6 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 
   length = phmdVS->length;
   nfSize = phmdVS->nfSize;
-#ifndef LAL_NDEBUG
-  REAL8 deltaF =  phmdVS->deltaF;
-#endif
 
   breakLine = phmdVS->breakLine; /* old Break Line */
 
@@ -282,7 +274,7 @@ void LALHOUGHupdateSpacePHMDdn  (LALStatus            *status,
 
   for ( k=0; k<length; ++k ){
     /* make sure all deltaF are consistent */
-    ASSERT (deltaF == lutV->lut[k].deltaF,
+    ASSERT (phmdVS->deltaF == lutV->lut[k].deltaF,
 	    status, LALHOUGHH_EVAL, LALHOUGHH_MSGEVAL);
 
     phmdVS->phmd[ breakLine*length+k ].fBin = fBin;
