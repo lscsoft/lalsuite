@@ -32,6 +32,7 @@ TESTS_ENVIRONMENT = \
 	test "x$(LAL_PYTHON_PATH)" = x || lalsuite_path="$${lalsuite_path}:$(LAL_PYTHON_PATH)"; \
 	test "x$${PYTHONPATH}" = x || lalsuite_path="$${lalsuite_path}:$${PYTHONPATH}"; \
 	export PYTHONPATH; PYTHONPATH="$${lalsuite_path}"; \
+	$(test_script_compiler__longtests); \
 	$(END_OF_LIST)
 
 test_programs =
@@ -49,9 +50,19 @@ EXTRA_DIST += $(test_script_runner)
 test_script_compiler = $(top_srcdir)/gnuscripts/lalpulsar_bin_test_compiler
 EXTRA_DIST += $(test_script_compiler)
 
+test_script_compiler__longtests = \
+	skip_longtest=; \
+	if [ "X$(subdir)" = "Xbin/longtests" ]; then \
+		if [ "X$${LONGTESTS}" != X ]; then \
+			echo "RUNNING: $$f"; \
+		else \
+			skip_longtest=1; \
+		fi \
+        fi
+
 TEST_EXTENSIONS = .sh .py
-SH_LOG_COMPILER = $(test_script_compiler) sh "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
-PY_LOG_COMPILER = $(test_script_compiler) py "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
+SH_LOG_COMPILER = $(test_script_compiler) "$${skip_longtest}" sh "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
+PY_LOG_COMPILER = $(test_script_compiler) "$${skip_longtest}" py "$(test_extra_files)" "$(test_script_runner) $(test_script_runner_args)"
 
 gen-tested-programs-log:
 	@echo "# $(abs_builddir)/.tested_programs.log" > .tested_programs.log; \

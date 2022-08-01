@@ -6,6 +6,9 @@ echo "--- Test compiler is $0 ---"
 echo
 
 # Parse command line
+skip_longtest="$1"
+shift
+echo "skip_longtest=${skip_longtest}"
 script_extn="$1"
 echo "script_extn=${script_extn}"
 shift
@@ -71,6 +74,12 @@ case "${script_extn}" in
         exit 1
         ;;
 esac
+
+## Check whether to skip long test
+if [ "X${skip_longtest}" != X ]; then
+    echo "Skipping long test '${script_name}'; LONGTESTS must be defined to run test"
+    exit 77
+fi
 
 # Create directory for test
 testdir="${LAL_TEST_BUILDDIR}/${script_name}.testdir"

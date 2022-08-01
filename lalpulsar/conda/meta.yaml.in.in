@@ -220,8 +220,6 @@ outputs:
   - name: lalpulsar
     script: install-bin.sh
     build:
-      script_env:
-        - GITLAB_CI
       ignore_run_exports:
         - openssl
         - python
