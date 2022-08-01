@@ -24,10 +24,44 @@ import sys
 
 import pytest
 
+from ligo import segments
+
 from lal import (
     LIGOTimeGPS,
     utils as lal_utils,
 )
+
+
+class TestCacheEntry():
+    """Test suite for `lal.utils.CacheEntry`.
+    """
+    CacheEntry = lal_utils.CacheEntry
+
+    @pytest.mark.parametrize(("args", "segs"), (
+        # normal
+        (
+            ("A", "TEST", segments.segment(0, 1), "test.gwf"),
+            {'A': [segments.segment(0, 1)]},
+        ),
+        # empty instruments
+        (
+            ("-", "-", segments.segment(2, 10), "test.gwf"),
+            {None: [segments.segment(2, 10)]},
+        ),
+        # multiple instruments (not sure this is every actually valid)
+        (
+            ("H1,L1", "TEST", segments.segment(5, 10), "test.gwf"),
+            {
+                'H1': [segments.segment(5, 10)],
+                'L1': [segments.segment(5, 10)],
+            },
+        ),
+    ))
+    def test_segmentlistdict(self, args, segs):
+        """Test that `CacheEntry.segmentlistdict` works.
+        """
+        a = self.CacheEntry(*args)
+        assert a.segmentlistdict == segs
 
 
 def test_lalcache_from_gluecache():
