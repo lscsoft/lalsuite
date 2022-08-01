@@ -99,7 +99,6 @@ src/inspiral/lalapps_multi_hipe
 src/inspiral/lalapps_ninja
 src/inspiral/lalapps_plot_hipe
 src/inspiral/lalapps_randombank
-src/inspiral/lalapps_run_sqlite
 src/inspiral/lalapps_siminspiral_to_frame
 src/inspiral/lalapps_skymap
 src/inspiral/lalapps_spininj
