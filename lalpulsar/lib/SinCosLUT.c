@@ -25,6 +25,12 @@
 
 #define OOTWOPI         (1.0 / LAL_TWOPI)      // 1/2pi
 
+#ifdef __GNUC__
+#define unlikely(x)       __builtin_expect((x),0)
+#else
+#define unlikely(x)       (x)
+#endif
+
 // main definition of lookup table code
 #include "SinCosLUT.i"
 
@@ -107,15 +113,15 @@ XLALSinCos2PiLUT ( REAL4 *sin2pix, REAL4 *cos2pix, REAL8 x )
 int XLALSinCos2PiLUTtrimmed ( REAL4 *s, REAL4 *c, REAL8 x )
 {
   /* check range of input only in DEBUG mode */
-#ifndef LAL_NDEBUG
-  if(x > SINCOS_ADDS) {
-    XLALPrintError("%s: x too large: %22f > %f\n", __func__, x, SINCOS_ADDS);
-    return XLAL_FAILURE;
-  } else if(x < -SINCOS_ADDS) {
-    XLALPrintError("%s: x too small: %22f < %f\n", __func__, x, -SINCOS_ADDS);
-    return XLAL_FAILURE;
+  if (unlikely(x > SINCOS_ADDS || x < -SINCOS_ADDS)) {
+    if(x > SINCOS_ADDS) {
+      XLALPrintError("%s: x too large: %22f > %f\n", __func__, x, SINCOS_ADDS);
+      return XLAL_FAILURE;
+    } else if(x < -SINCOS_ADDS) {
+      XLALPrintError("%s: x too small: %22f < %f\n", __func__, x, -SINCOS_ADDS);
+      return XLAL_FAILURE;
+    }
   }
-#endif
 
   /* the first time we get called, we set up the lookup-table */
   if ( ! haveLUT ) {
