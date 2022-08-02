@@ -64,7 +64,7 @@ if [ -x "${script}" ]; then
 fi
 case "${script_extn}" in
     sh)
-        cmdline="time ${test_script_runner} bash ${flags} -c 'set -e; source ${script}'"
+        cmdline="time ${test_script_runner} /bin/bash ${flags} -c 'set -e; source ${script}'"
         ;;
     py)
         cmdline="time ${test_script_runner} ${PYTHON} ${flags} '${script}'"
