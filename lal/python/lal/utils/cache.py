@@ -316,10 +316,10 @@ class CacheEntry(object):
         >>> c.segmentlistdict['H1H2']
         [segment(LIGOTimeGPS(815901601, 0), LIGOTimeGPS(815902177, 500000000))]
         """
-        # the import has to be done here to break the cyclic
-        # dependancy
-        from ligo.lw.lsctables import instrumentsproperty
-        instruments = instrumentsproperty.get(self.observatory) or (None,)
+        if self.observatory is None:
+            instruments = (None,)
+        else:
+            instruments = {obs for obs in map(str.strip, self.observatory.split(",")) if obs}
         return segments.segmentlistdict((instrument, segments.segmentlist(self.segment is not None and [self.segment] or [])) for instrument in instruments)
 
     @classmethod
