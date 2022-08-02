@@ -49,6 +49,11 @@ ${SRC_DIR}/configure \
 	${CONFIGURE_ARGS} \
 ;
 
+# test binaries
+if [[ "${build_platform}" == "${target_platform}" ]]; then
+	make -j ${CPU_COUNT} V=1 VERBOSE=1 check -C bin
+fi
+
 # install binaries
 make -j ${CPU_COUNT} V=1 VERBOSE=1 install -C bin
 
