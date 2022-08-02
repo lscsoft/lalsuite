@@ -797,32 +797,14 @@ XLALSimIMRSpinAlignedEOBModes (
   /**<< parameter kappa_1 of the spin-induced quadrupole for body 1, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
   const REAL8 quadparam2,
   /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
-  const REAL8 domega220,
-  /**<<Fractional deviation in the frequency of the  220 mode; */
-  const REAL8 dtau220,
-  /**<<Fractional deviation in the damping time of the  220 mode; */
-  const REAL8 domega210,
-  /**<<Fractional deviation in the frequency of the  210 mode; */
-  const REAL8 dtau210,
-  /**<<Fractional deviation in the damping time of the  210 mode; */
-  const REAL8 domega330,
-  /**<<Fractional deviation in the frequency of the  330 mode; */
-  const REAL8 dtau330,
-  /**<<Fractional deviation in the damping time of the  330 mode; */
-  const REAL8 domega440,
-  /**<<Fractional deviation in the frequency of the  440 mode; */
-  const REAL8 dtau440,
-  /**<<Fractional deviation in the damping time of the  440 mode; */
-  const REAL8 domega550,
-  /**<<Fractional deviation in the frequency of the  550 mode; */
-  const REAL8 dtau550,
-  /**<<Fractional deviation in the damping time of the  550 mode; */
   REAL8Vector *nqcCoeffsInput,
   /**<< Input NQC coeffs */
   const INT4 nqcFlag,
   /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
-  LALDict *PAParams
+  LALDict *PAParams,
   /**<< dictionary containing parameters for the post-adiabatic routine */
+  LALDict *TGRParams,
+  /**<< dictionary containing parameters for tests of General Relativity */
 )
 {
   UNUSED REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
@@ -2988,13 +2970,41 @@ for ( UINT4 k = 0; k<nModes; k++) {
         }
         else if (SpinAlignedEOBversion == 4)
         {
+            REAL8 domega220 = 0;
+            REAL8 dtau220 = 0;
+            REAL8 domega210 = 0;
+            REAL8 dtau210 = 0;
+            REAL8 domega330 = 0;
+            REAL8 dtau330 = 0;
+            REAL8 domega440 = 0;
+            REAL8 dtau440 = 0;
+            REAL8 domega550 = 0;
+            REAL8 dtau550 = 0;
 
-            if (XLALSimIMREOBAttachFitRingdown (sigReHi, sigImHi, modeL, modeM,
-					  deltaTHigh, m1, m2, spin1[0],
-					  spin1[1], spin1[2], spin2[0],
-                                          spin2[1], spin2[2], domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550,&timeHi,
-					  rdMatchPoint,
-					  SpinAlignedEOBapproximant, &indAmpMax) ==
+            domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(TGRParams);
+            dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(TGRParams);
+            domega210 = XLALSimInspiralWaveformParamsLookupDOmega210(TGRParams);
+            dtau210 = XLALSimInspiralWaveformParamsLookupDTau210(TGRParams);
+            domega330 = XLALSimInspiralWaveformParamsLookupDOmega330(TGRParams);
+            dtau330 = XLALSimInspiralWaveformParamsLookupDTau330(TGRParams);
+            domega440 = XLALSimInspiralWaveformParamsLookupDOmega440(TGRParams);
+            dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(TGRParams);
+            domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(TGRParams);
+            dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(TGRParams);
+
+            if (XLALSimIMREOBAttachFitRingdown (
+                sigReHi, sigImHi, modeL, modeM,
+                deltaTHigh, m1, m2,
+                spin1[0], spin1[1], spin1[2],
+                spin2[0], spin2[1], spin2[2],
+                domega220, dtau220,
+                domega210, dtau210,
+                domega330, dtau330,
+                domega440, dtau440,
+                domega550, dtau550,
+                &timeHi,
+                rdMatchPoint,
+                SpinAlignedEOBapproximant, &indAmpMax) ==
                 XLAL_FAILURE)
             {
               if(tmpValues){
@@ -3807,24 +3817,44 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     //SM
 
     LALDict *PAParams = XLALCreateDict();
+    LALDict *TGRParams = XLALCreateDict();
+
+    XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
+    XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
+    XLALSimInspiralWaveformParamsInsertDOmega210(TGRParams, domega210);
+    XLALSimInspiralWaveformParamsInsertDTau210(TGRParams, dtau210);
+    XLALSimInspiralWaveformParamsInsertDOmega330(TGRParams, domega330);
+    XLALSimInspiralWaveformParamsInsertDTau330(TGRParams, dtau330);
+    XLALSimInspiralWaveformParamsInsertDOmega440(TGRParams, domega440);
+    XLALSimInspiralWaveformParamsInsertDTau440(TGRParams, dtau440);
+    XLALSimInspiralWaveformParamsInsertDOmega550(TGRParams, domega550);
+    XLALSimInspiralWaveformParamsInsertDTau550(TGRParams, dtau550);
 
     //RC: XLALSimIMRSpinAlignedEOBModes computes the modes and put them into hlm
 
-    if(XLALSimIMRSpinAlignedEOBModes (&hlms,
-                                   //SM
-                                   &dynamics, &dynamicsHi,
-                                   //SM
-                                   deltaT, m1SI, m2SI, fMin, r, spin1z, spin2z, SpinAlignedEOBversion,
-                                               lambda2Tidal1, lambda2Tidal2,
-                                               omega02Tidal1, omega02Tidal2,
-                                               lambda3Tidal1, lambda3Tidal2,
-                                               omega03Tidal1, omega03Tidal2,
-                                               quadparam1, quadparam2, domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550,
-                                               nqcCoeffsInput, nqcFlag, PAParams) == XLAL_FAILURE){
-                                                 if(dynamics) XLALDestroyREAL8Vector(dynamics);
-                                                 if(dynamicsHi) XLALDestroyREAL8Vector(dynamicsHi);
-                                                 XLAL_ERROR (XLAL_EFUNC);
-                                               };
+    if(XLALSimIMRSpinAlignedEOBModes (
+        &hlms, //SM
+        &dynamics, &dynamicsHi, //SM
+        deltaT,
+        m1SI, m2SI,
+        fMin,
+        r,
+        spin1z, spin2z,
+        SpinAlignedEOBversion,
+        lambda2Tidal1, lambda2Tidal2,
+        omega02Tidal1, omega02Tidal2,
+        lambda3Tidal1, lambda3Tidal2,
+        omega03Tidal1, omega03Tidal2,
+        quadparam1, quadparam2,
+        nqcCoeffsInput, nqcFlag,
+        PAParams,
+        TGRParams,
+    ) == XLAL_FAILURE
+    ){
+        if(dynamics) XLALDestroyREAL8Vector(dynamics);
+        if(dynamicsHi) XLALDestroyREAL8Vector(dynamicsHi);
+        XLAL_ERROR (XLAL_EFUNC);
+    };
 
     //RC: For SEOBNRv4T we also need to exit from this function when  nqcFlag == 1 because when this flag is 1, it is only computing the NQCs and not the wf
     if (nqcFlag == 1){
