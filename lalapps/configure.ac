@@ -1,4 +1,4 @@
-XAC_PREREQ([2.63])
+AC_PREREQ([2.63])
 AC_INIT([LALApps],[8.1.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/version2.c.in])
