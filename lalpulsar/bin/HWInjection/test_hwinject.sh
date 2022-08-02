@@ -18,16 +18,23 @@ hwinj_base_cmd="lalpulsar_hwinject -I H1 -n 3 -G 1341748395"
 
 # generate hardware injection text output
 hwinj_cmd="${hwinj_base_cmd} -T -X"
-echo "===== $0: run ${hwinj_cmd} ====="
-eval "${hwinj_cmd}" > out || true   # lalpulsar_hwinject may not exit nicely
-outlines=`cat out | wc -l`
+for try in `seq 1 5`; do
+    echo "===== $0: run ${hwinj_cmd} (try ${try}) ====="
+    ( ulimit -t 60; eval "${hwinj_cmd}" > out || true )   # lalpulsar_hwinject may hang or not exit nicely
+    outlines=`cat out | wc -l`
+    if test ${outlines} -lt 1000; then
+        echo "ERROR: got only ${outlines} lines of output"
+        continue
+    fi
+    echo "----- $0: run ${hwinj_cmd} -----"
+    break
+done
 if test ${outlines} -lt 1000; then
     echo "ERROR: got only ${outlines} lines of output"
     exit 1
 else
     echo "OK: got ${outlines} lines of output"
 fi
-echo "----- $0: run ${hwinj_cmd} -----"
 echo
 
 # output MFDv4 logs
@@ -76,14 +83,28 @@ echo
 
 # generate hardware injection frame output
 hwinj_cmd="${hwinj_base_cmd} -F 0"
-echo "===== $0: run ${hwinj_cmd} ====="
-eval "${hwinj_cmd}" >/dev/null || true   # lalpulsar_hwinject may not exit nicely
-gwf_files=
-for n in `seq 395 1 400`; do
-    gwf_file="CW_Injection-1341748${n}-1.gwf"
-    if test -f "${gwf_file}"; then
-        gwf_files="${gwf_files} ${gwf_file}"
+for try in `seq 1 5`; do
+    echo "===== $0: run ${hwinj_cmd} (try ${try}) ====="
+    ( ulimit -t 60; eval "${hwinj_cmd}" > out || true )   # lalpulsar_hwinject may hang or not exit nicely
+    gwf_files=
+    for n in `seq 395 1 400`; do
+        gwf_file="CW_Injection-1341748${n}-1.gwf"
+        if test -f "${gwf_file}"; then
+            gwf_files="${gwf_files} ${gwf_file}"
+        fi
+    done
+    if test "x${gwf_files}" = x; then
+        echo "ERROR: did not get any frame files"
+        continue
     fi
+    ( echo 1234.5; lalfr-print ${gwf_files} | grep '^1341748' | sort -n -k1,1 ) > out
+    outlines=`cat out | wc -l`
+    if test ${outlines} -lt 1000; then
+        echo "ERROR: got only ${outlines} lines of output"
+        continue
+    fi
+    echo "----- $0: run ${hwinj_cmd} -----"
+    break
 done
 if test "x${gwf_files}" = x; then
     echo "ERROR: did not get any frame files"
@@ -99,7 +120,6 @@ if test ${outlines} -lt 1000; then
 else
     echo "OK: got ${outlines} lines of output"
 fi
-echo "----- $0: run ${hwinj_cmd} -----"
 echo
 
 # compare frame output to reference result
