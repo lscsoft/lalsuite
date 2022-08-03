@@ -628,6 +628,18 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALParams);
   dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALParams);
 
+  LALDict *TGRParams = XLALCreateDict();
+
+  XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
+  XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
+  XLALSimInspiralWaveformParamsInsertDOmega210(TGRParams, domega210);
+  XLALSimInspiralWaveformParamsInsertDTau210(TGRParams, dtau210);
+  XLALSimInspiralWaveformParamsInsertDOmega330(TGRParams, domega330);
+  XLALSimInspiralWaveformParamsInsertDTau330(TGRParams, dtau330);
+  XLALSimInspiralWaveformParamsInsertDOmega440(TGRParams, domega440);
+  XLALSimInspiralWaveformParamsInsertDTau440(TGRParams, dtau440);
+  XLALSimInspiralWaveformParamsInsertDOmega550(TGRParams, domega550);
+  XLALSimInspiralWaveformParamsInsertDTau550(TGRParams, dtau550);
 
   lambda2Tidal1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
   lambda2Tidal2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
@@ -690,11 +702,29 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
 #if debugOutput
       printf("First run SEOBNRv4 to compute NQCs\n");
 #endif
-      ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross, phiC, 1./32768, m1BH, m2BH, 2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI), r, inc, spin1z, spin2z, 400,
-                                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550, nqcCoeffsInput, nqcFlag, ModeArray);
+      ret = XLALSimIMRSpinAlignedEOBWaveformAll (
+        hplus, hcross,
+        phiC,
+        1./32768,
+        m1BH, m2BH,
+        2*pow(10.,-1.5)/(2.*LAL_PI)/((m1BH + m2BH)*LAL_MTSUN_SI/LAL_MSUN_SI),
+        r,
+        inc,
+        spin1z, spin2z,
+        400,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        0, 0,
+        nqcCoeffsInput, nqcFlag,
+        ModeArray,
+        TGRParams
+    );
       if (ret == XLAL_FAILURE){
         if ( nqcCoeffsInput ) XLALDestroyREAL8Vector( nqcCoeffsInput );
         if(ModeArray) XLALDestroyValue(ModeArray);
+        XLALDestroyDict(TGRParams);
         XLAL_ERROR(XLAL_EFUNC);
       }
       nqcFlag = 2;
@@ -705,23 +735,38 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
     {
       //REAL8Vector *nqcCoeffsInput = XLALCreateREAL8Vector(10);
       //INT4 nqcFlag = 0;
-      ret = XLALSimIMRSpinAlignedEOBWaveformAll (hplus, hcross,
-                                                 phiC, deltaT, m1SI, m2SI, fMin, r, inc, spin1z, spin2z, SpinAlignedEOBversion,
-                                                 lambda2Tidal1, lambda2Tidal2,
-                                                 omega02Tidal1, omega02Tidal2,
-                                                 lambda3Tidal1, lambda3Tidal2,
-                                                 omega03Tidal1, omega03Tidal2,
-                                                 quadparam1, quadparam2, domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550,
-                                                 nqcCoeffsInput, nqcFlag, ModeArray);
+      ret = XLALSimIMRSpinAlignedEOBWaveformAll (
+        hplus, hcross,
+        phiC,
+        deltaT,
+        m1SI, m2SI,
+        fMin,
+        r,
+        inc,
+        spin1z, spin2z,
+        SpinAlignedEOBversion,
+        lambda2Tidal1, lambda2Tidal2,
+        omega02Tidal1, omega02Tidal2,
+        lambda3Tidal1, lambda3Tidal2,
+        omega03Tidal1, omega03Tidal2,
+        quadparam1, quadparam2,
+        domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550,
+        nqcCoeffsInput, nqcFlag,
+        ModeArray,
+        TGRParams
+    );
      if (ret == XLAL_FAILURE){
        if ( nqcCoeffsInput ) XLALDestroyREAL8Vector( nqcCoeffsInput );
        if (ModeArray) XLALDestroyValue(ModeArray);
+       XLALDestroyDict(TGRParams);
        XLAL_ERROR(XLAL_EFUNC);
      }
       if(ModeArray) XLALDestroyValue(ModeArray);
 
       if ( nqcCoeffsInput )
         XLALDestroyREAL8Vector( nqcCoeffsInput );
+
+        XLALDestroyDict(TGRParams);
     }
   return ret;
 }
@@ -3745,67 +3790,59 @@ for ( UINT4 k = 0; k<nModes; k++) {
  */
 
 int
-XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
-				     /**<< OUTPUT, real part of the modes */
-				     REAL8TimeSeries ** hcross,
-				     /**<< OUTPUT, complex part of the modes */
-				     const REAL8 phiC,
-				     /**<< coalescence orbital phase (rad) */
-				     REAL8 deltaT,
-				     /**<< sampling time step */
-				     const REAL8 m1SI,
-				     /**<< mass-1 in SI unit */
-				     const REAL8 m2SI,
-				     /**<< mass-2 in SI unit */
-				     const REAL8 fMin,
-				     /**<< starting frequency of the 22 mode (Hz) */
-				     const REAL8 r,
-				     /**<< distance in SI unit */
-				     const REAL8 inc,
-				     /**<< inclination angle */
-				     const REAL8 spin1z,
-				     /**<< z-component of spin-1, dimensionless */
-				     const REAL8 spin2z,
-				      /**<< z-component of spin-2, dimensionless */
-                     UINT4 SpinAlignedEOBversion,
-                     /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
-				     const REAL8 lambda2Tidal1,
-                     /**<< dimensionless adiabatic quadrupole tidal deformability for body 1 (2/3 k2/C^5) */
-				     const REAL8 lambda2Tidal2,
-                     /**<< dimensionless adiabatic quadrupole tidal deformability for body 2 (2/3 k2/C^5) */
-				     const REAL8 omega02Tidal1,
-                     /**<< quadrupole f-mode angular freq for body 1 m_1*omega_{02,1}*/
-				     const REAL8 omega02Tidal2,
-                      /**<< quadrupole f-mode angular freq for body 2 m_2*omega_{02,2}*/
-				     const REAL8 lambda3Tidal1,
-                     /**<< dimensionless adiabatic octupole tidal deformability for body 1 (2/15 k3/C^7) */
-				     const REAL8 lambda3Tidal2,
-                     /**<< dimensionless adiabatic octupole tidal deformability for body 2 (2/15 k3/C^7) */
-				     const REAL8 omega03Tidal1,
-                     /**<< octupole f-mode angular freq for body 1 m_1*omega_{03,1}*/
-				     const REAL8 omega03Tidal2,
-                     /**<< octupole f-mode angular freq for body 2 m_2*omega_{03,2}*/
-             const REAL8 quadparam1,
-                     /**<< parameter kappa_1 of the spin-induced quadrupole for body 1, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
-				     const REAL8 quadparam2,
-                     /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
-                                     const REAL8 domega220,	/**<<Fractional deviation in the frequency of the  220 mode; */
-                                     const REAL8 dtau220,	/**<<Fractional deviation in the damping time of the  220 mode; */
-                                     const REAL8 domega210,	/**<<Fractional deviation in the frequency of the  210 mode; */
-                                     const REAL8 dtau210,	/**<<Fractional deviation in the damping time of the  210 mode; */
-                                     const REAL8 domega330,	/**<<Fractional deviation in the frequency of the  330 mode; */
-                                     const REAL8 dtau330,	/**<<Fractional deviation in the damping time of the  330 mode; */
-                                     const REAL8 domega440,	/**<<Fractional deviation in the frequency of the  440 mode; */
-                                     const REAL8 dtau440,	/**<<Fractional deviation in the damping time of the  440 mode; */
-                                     const REAL8 domega550,	/**<<Fractional deviation in the frequency of the  550 mode; */
-                                     const REAL8 dtau550,	/**<<Fractional deviation in the damping time of the  550 mode; */
-                     REAL8Vector *nqcCoeffsInput,
-                     /**<< Input NQC coeffs */
-                     const INT4 nqcFlag,
-                     /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
-            LALValue *ModeArray
-            /**<< Structure containing the modes to use in the waveform */
-  )
+XLALSimIMRSpinAlignedEOBWaveformAll (
+    REAL8TimeSeries ** hplus,
+    /**<< OUTPUT, real part of the modes */
+    REAL8TimeSeries ** hcross,
+    /**<< OUTPUT, complex part of the modes */
+    const REAL8 phiC,
+    /**<< coalescence orbital phase (rad) */
+    REAL8 deltaT,
+    /**<< sampling time step */
+    const REAL8 m1SI,
+    /**<< mass-1 in SI unit */
+    const REAL8 m2SI,
+    /**<< mass-2 in SI unit */
+    const REAL8 fMin,
+    /**<< starting frequency of the 22 mode (Hz) */
+    const REAL8 r,
+    /**<< distance in SI unit */
+    const REAL8 inc,
+    /**<< inclination angle */
+    const REAL8 spin1z,
+    /**<< z-component of spin-1, dimensionless */
+    const REAL8 spin2z,
+    /**<< z-component of spin-2, dimensionless */
+    UINT4 SpinAlignedEOBversion,
+    /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM */
+    const REAL8 lambda2Tidal1,
+    /**<< dimensionless adiabatic quadrupole tidal deformability for body 1 (2/3 k2/C^5) */
+    const REAL8 lambda2Tidal2,
+    /**<< dimensionless adiabatic quadrupole tidal deformability for body 2 (2/3 k2/C^5) */
+    const REAL8 omega02Tidal1,
+    /**<< quadrupole f-mode angular freq for body 1 m_1*omega_{02,1}*/
+    const REAL8 omega02Tidal2,
+    /**<< quadrupole f-mode angular freq for body 2 m_2*omega_{02,2}*/
+    const REAL8 lambda3Tidal1,
+    /**<< dimensionless adiabatic octupole tidal deformability for body 1 (2/15 k3/C^7) */
+    const REAL8 lambda3Tidal2,
+    /**<< dimensionless adiabatic octupole tidal deformability for body 2 (2/15 k3/C^7) */
+    const REAL8 omega03Tidal1,
+    /**<< octupole f-mode angular freq for body 1 m_1*omega_{03,1}*/
+    const REAL8 omega03Tidal2,
+    /**<< octupole f-mode angular freq for body 2 m_2*omega_{03,2}*/
+    const REAL8 quadparam1,
+    /**<< parameter kappa_1 of the spin-induced quadrupole for body 1, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
+    const REAL8 quadparam2,
+    /**<< parameter kappa_2 of the spin-induced quadrupole for body 2, quadrupole is Q_A = -kappa_A m_A^3 chi_A^2 */
+    REAL8Vector *nqcCoeffsInput,
+    /**<< Input NQC coeffs */
+    const INT4 nqcFlag,
+    /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
+    LALValue *ModeArray,
+    /**<< Structure containing the modes to use in the waveform */
+    LALDict *TGRParams
+)
   {
 
     REAL8 coa_phase = phiC;
@@ -3817,18 +3854,6 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
     //SM
 
     LALDict *PAParams = XLALCreateDict();
-    LALDict *TGRParams = XLALCreateDict();
-
-    XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
-    XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
-    XLALSimInspiralWaveformParamsInsertDOmega210(TGRParams, domega210);
-    XLALSimInspiralWaveformParamsInsertDTau210(TGRParams, dtau210);
-    XLALSimInspiralWaveformParamsInsertDOmega330(TGRParams, domega330);
-    XLALSimInspiralWaveformParamsInsertDTau330(TGRParams, dtau330);
-    XLALSimInspiralWaveformParamsInsertDOmega440(TGRParams, domega440);
-    XLALSimInspiralWaveformParamsInsertDTau440(TGRParams, dtau440);
-    XLALSimInspiralWaveformParamsInsertDOmega550(TGRParams, domega550);
-    XLALSimInspiralWaveformParamsInsertDTau550(TGRParams, dtau550);
 
     //RC: XLALSimIMRSpinAlignedEOBModes computes the modes and put them into hlm
 
@@ -3903,7 +3928,6 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       XLALDestroySphHarmTimeSeries(hlms);
 
     XLALDestroyDict(PAParams);
-    XLALDestroyDict(TGRParams);
 
     //SM
     if(dynamics) XLALDestroyREAL8Vector(dynamics);

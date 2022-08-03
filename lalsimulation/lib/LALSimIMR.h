@@ -169,7 +169,34 @@ SphHarmTimeSeries *XLALSimIMREOBNRv2Modes(const REAL8 deltaT, const REAL8 m1, co
 
 double XLALSimIMRSpinAlignedEOBPeakFrequency(REAL8 m1SI, REAL8 m2SI, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion);
 int XLALSimIMRSpinAlignedEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, LALDict *LALparams);
-int XLALSimIMRSpinAlignedEOBWaveformAll(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1z, const REAL8 spin2z, UINT4 SpinAlignedEOBversion, const REAL8 lambda2Tidal1, const REAL8 lambda2Tidal2, const REAL8 omega02Tidal1, const REAL8 omega02Tidal2, const REAL8 lambda3Tidal1, const REAL8 lambda3Tidal2, const REAL8 omega03Tidal1, const REAL8 omega03Tidal2, const REAL8 quadparam1, const REAL8 quadparam2, const REAL8 domega220, const REAL8 dtau220, const REAL8 domega210, const REAL8 dtau210, const REAL8 domega330, const REAL8 dtau330, const REAL8 domega440, const REAL8 dtau440, const REAL8 domega550, const REAL8 dtau550, REAL8Vector *nqcCoeffsInput, const INT4 nqcFlag, LALValue *ModeArray);
+int XLALSimIMRSpinAlignedEOBWaveformAll(
+    REAL8TimeSeries **hplus,
+    REAL8TimeSeries **hcross,
+    const REAL8 phiC,
+    REAL8 deltaT,
+    const REAL8 m1SI,
+    const REAL8 m2SI,
+    const REAL8 fMin,
+    const REAL8 r,
+    const REAL8 inc,
+    const REAL8 spin1z,
+    const REAL8 spin2z,
+    UINT4 SpinAlignedEOBversion,
+    const REAL8 lambda2Tidal1,
+    const REAL8 lambda2Tidal2,
+    const REAL8 omega02Tidal1,
+    const REAL8 omega02Tidal2,
+    const REAL8 lambda3Tidal1,
+    const REAL8 lambda3Tidal2,
+    const REAL8 omega03Tidal1,
+    const REAL8 omega03Tidal2,
+    const REAL8 quadparam1,
+    const REAL8 quadparam2,
+    REAL8Vector *nqcCoeffsInput,
+    const INT4 nqcFlag,
+    LALValue *ModeArray,
+    LALDict *TGRParams
+);
 int XLALSimIMRSpinAlignedEOBModes(
     SphHarmTimeSeries ** hlmmode, //SM
     REAL8Vector ** dynamics_out, /**<< OUTPUT, low-sampling dynamics */
