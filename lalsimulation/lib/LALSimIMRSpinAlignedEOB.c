@@ -803,7 +803,7 @@ XLALSimIMRSpinAlignedEOBModes (
   /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
   LALDict *PAParams,
   /**<< dictionary containing parameters for the post-adiabatic routine */
-  LALDict *TGRParams,
+  LALDict *TGRParams
   /**<< dictionary containing parameters for tests of General Relativity */
 )
 {
