@@ -195,7 +195,7 @@ int XLALSimIMRSpinAlignedEOBModes(
     REAL8Vector *nqcCoeffsInput,
     const INT4 nqcFlag,
     LALDict *PAParams,
-    LALDict *TGRParams,
+    LALDict *TGRParams
 );
 /*int XLALSimIMRSpinEOBWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, const REAL8 phiC, const REAL8 deltaT, const REAL8 m1SI, const REAL8 m2SI, const REAL8 fMin, const REAL8 r, const REAL8 inc, const REAL8 spin1[], const REAL8 spin2[]);
  */
