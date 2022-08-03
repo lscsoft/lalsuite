@@ -3841,6 +3841,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (
     LALValue *ModeArray,
     /**<< Structure containing the modes to use in the waveform */
     LALDict *TGRParams
+    /**<< dictionary containing parameters for tests of General Relativity */
 )
   {
 
