@@ -20,7 +20,8 @@ hwinj_base_cmd="lalpulsar_hwinject -I H1 -n 3 -G 1341748395"
 hwinj_cmd="${hwinj_base_cmd} -T -X"
 for try in `seq 1 5`; do
     echo "===== $0: run ${hwinj_cmd} (try ${try}) ====="
-    ( ulimit -t 60; eval "${hwinj_cmd}" > out || true )   # lalpulsar_hwinject may hang or not exit nicely
+    # lalpulsar_hwinject may hang or not exit nicely
+    perl -e 'print STDERR "Setting alarm clock\n"; alarm 60; exec @ARGV' ${hwinj_cmd} > out || true
     outlines=`cat out | wc -l`
     if test ${outlines} -lt 1000; then
         echo "ERROR: got only ${outlines} lines of output"
@@ -85,7 +86,8 @@ echo
 hwinj_cmd="${hwinj_base_cmd} -F 0"
 for try in `seq 1 5`; do
     echo "===== $0: run ${hwinj_cmd} (try ${try}) ====="
-    ( ulimit -t 60; eval "${hwinj_cmd}" > out || true )   # lalpulsar_hwinject may hang or not exit nicely
+    # lalpulsar_hwinject may hang or not exit nicely
+    perl -e 'print STDERR "Setting alarm clock\n"; alarm 60; exec @ARGV' ${hwinj_cmd} > out || true
     gwf_files=
     for n in `seq 395 1 400`; do
         gwf_file="CW_Injection-1341748${n}-1.gwf"
