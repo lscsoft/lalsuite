@@ -750,7 +750,6 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
         lambda3Tidal1, lambda3Tidal2,
         omega03Tidal1, omega03Tidal2,
         quadparam1, quadparam2,
-        domega220, dtau220, domega210, dtau210, domega330, dtau330, domega440, dtau440, domega550, dtau550,
         nqcCoeffsInput, nqcFlag,
         ModeArray,
         TGRParams
