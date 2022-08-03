@@ -3903,6 +3903,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
       XLALDestroySphHarmTimeSeries(hlms);
 
     XLALDestroyDict(PAParams);
+    XLALDestroyDict(TGRParams);
 
     //SM
     if(dynamics) XLALDestroyREAL8Vector(dynamics);
