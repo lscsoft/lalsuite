@@ -3848,8 +3848,7 @@ XLALSimIMRSpinAlignedEOBWaveformAll (REAL8TimeSeries ** hplus,
         quadparam1, quadparam2,
         nqcCoeffsInput, nqcFlag,
         PAParams,
-        TGRParams,
-    ) == XLAL_FAILURE
+        TGRParams) == XLAL_FAILURE
     ){
         if(dynamics) XLALDestroyREAL8Vector(dynamics);
         if(dynamicsHi) XLALDestroyREAL8Vector(dynamicsHi);
