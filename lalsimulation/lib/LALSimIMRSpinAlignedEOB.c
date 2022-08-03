@@ -1959,6 +1959,28 @@ XLALSimIMRSpinAlignedEOBModes (
   prHi.data = dynamicsHi->data + 3 * retLen;
   pPhiHi.data = dynamicsHi->data + 4 * retLen;
 
+  REAL8 domega220 = 0;
+  REAL8 dtau220 = 0;
+  REAL8 domega210 = 0;
+  REAL8 dtau210 = 0;
+  REAL8 domega330 = 0;
+  REAL8 dtau330 = 0;
+  REAL8 domega440 = 0;
+  REAL8 dtau440 = 0;
+  REAL8 domega550 = 0;
+  REAL8 dtau550 = 0;
+
+  domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(TGRParams);
+  dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(TGRParams);
+  domega210 = XLALSimInspiralWaveformParamsLookupDOmega210(TGRParams);
+  dtau210 = XLALSimInspiralWaveformParamsLookupDTau210(TGRParams);
+  domega330 = XLALSimInspiralWaveformParamsLookupDOmega330(TGRParams);
+  dtau330 = XLALSimInspiralWaveformParamsLookupDTau330(TGRParams);
+  domega440 = XLALSimInspiralWaveformParamsLookupDOmega440(TGRParams);
+  dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(TGRParams);
+  domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(TGRParams);
+  dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(TGRParams);
+
   /* Allocate the high sample rate vectors */
   if(dtau220 > 0)
     {
@@ -2970,28 +2992,6 @@ for ( UINT4 k = 0; k<nModes; k++) {
         }
         else if (SpinAlignedEOBversion == 4)
         {
-            REAL8 domega220 = 0;
-            REAL8 dtau220 = 0;
-            REAL8 domega210 = 0;
-            REAL8 dtau210 = 0;
-            REAL8 domega330 = 0;
-            REAL8 dtau330 = 0;
-            REAL8 domega440 = 0;
-            REAL8 dtau440 = 0;
-            REAL8 domega550 = 0;
-            REAL8 dtau550 = 0;
-
-            domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(TGRParams);
-            dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(TGRParams);
-            domega210 = XLALSimInspiralWaveformParamsLookupDOmega210(TGRParams);
-            dtau210 = XLALSimInspiralWaveformParamsLookupDTau210(TGRParams);
-            domega330 = XLALSimInspiralWaveformParamsLookupDOmega330(TGRParams);
-            dtau330 = XLALSimInspiralWaveformParamsLookupDTau330(TGRParams);
-            domega440 = XLALSimInspiralWaveformParamsLookupDOmega440(TGRParams);
-            dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(TGRParams);
-            domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(TGRParams);
-            dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(TGRParams);
-
             if (XLALSimIMREOBAttachFitRingdown (
                 sigReHi, sigImHi, modeL, modeM,
                 deltaTHigh, m1, m2,
