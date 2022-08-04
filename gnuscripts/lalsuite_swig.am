@@ -196,7 +196,7 @@ $(nodist_swiglal_octave_la_SOURCES): $(swig_iface) $(swig_config_header)
 	fi
 
 all-local: swig-octave-all-local
-swig-octave-all-local:
+swig-octave-all-local: $(octexec_LTLIBRARIES)
 	$(AM_V_at)$(MKDIR_P) $(top_builddir)/octave && \
 	cd $(top_builddir)/octave && \
 	rm -f $(PACKAGE).oct && \
@@ -220,11 +220,11 @@ swig-octave-uninstall-hook:
 
 test_scripts += SWIGTest$(PACKAGE_NAME)Octave.m
 
-run-octave: $(octexec_LTLIBRARIES)
+run-octave: swig-octave-all-local
 	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(OCTAVE)
 
-debug-octave-test: $(octexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(OCTAVE) $${SCRIPT:-./SWIGTest$(PACKAGE_NAME)Octave.m}
+debug-octave-test: swig-octave-all-local
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(OCTAVE) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Octave.m}
 
 endif # SWIG_BUILD_OCTAVE
 
@@ -259,7 +259,7 @@ $(nodist_swiglal_python_la_SOURCES): $(swig_iface) $(swig_config_header)
 $(nodist_pkgpyexec_PYTHON): $(nodist_swiglal_python_la_SOURCES)
 
 all-local: swig-python-all-local
-swig-python-all-local:
+swig-python-all-local: $(pkgpyexec_LTLIBRARIES)
 	$(AM_V_at)$(MKDIR_P) $(top_builddir)/python/$(PACKAGE) && \
 	cd $(top_builddir)/python/$(PACKAGE) && \
 	rm -f _$(PACKAGE)$(SWIG_SOEXT) $(PACKAGE).py && \
@@ -288,11 +288,11 @@ swig-python-uninstall-hook:
 
 test_scripts += SWIGTest$(PACKAGE_NAME)Python.py
 
-run-python: $(pkgpyexec_LTLIBRARIES)
+run-python: swig-python-all-local
 	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(PYTHON)
 
-debug-python-test: $(pkgpyexec_LTLIBRARIES)
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(PYTHON) $${SCRIPT:-./SWIGTest$(PACKAGE_NAME)Python.py}
+debug-python-test: swig-python-all-local
+	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(PYTHON) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Python.py}
 
 endif # SWIG_BUILD_PYTHON
 
