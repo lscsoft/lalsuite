@@ -1310,7 +1310,7 @@ wheel:cp310-cp310-macosx-arm64:
       gpgcheck=0
       EOF
     # install required packages
-    - yum -y -q install lal* liblal*-devel python*-lal* --exclude lalsuite*
+    - yum -y -q install lal* liblal*-devel python*-lal* --exclude lalsuite* --exclude lalapps
   rules:
     - !reference [.skip-integration, rules]
     - !reference [.scheduled, rules]
