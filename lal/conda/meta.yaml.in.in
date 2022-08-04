@@ -133,6 +133,7 @@ outputs:
         # provided to assist the solver, but not actually used
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
         - openssl
+        - six
       run:
         - {{ pin_subpackage('liblal', exact=True) }}
         - ligo-segments

@@ -142,6 +142,11 @@ outputs:
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - numpy
         - python
+        - python-lal >={{ lal_version }}
+        - python-lalburst >={{ lalburst_version }}
+        - python-lalframe >={{ lalframe_version }}
+        - python-lalmetaio >={{ lalmetaio_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
         # extras to assist the solver, but not actually used
         - openssl
       run:

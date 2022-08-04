@@ -169,6 +169,12 @@ outputs:
       host:
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - python
+        - python-lal >={{ lal_version }}
+        - python-lalmetaio >={{ lalmetaio_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
+        - python-lalburst >={{ lalburst_version }}
+        - python-lalinspiral >={{ lalinspiral_version }}
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - numpy
         # extras to assist the solver, but not actually used
         - openssl

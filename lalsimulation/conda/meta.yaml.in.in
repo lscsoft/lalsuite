@@ -155,6 +155,7 @@ outputs:
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - numpy
         - python
+        - python-lal >={{ lal_version }}
         # extras to assist the solver, but not actually used
         - openssl
       run:

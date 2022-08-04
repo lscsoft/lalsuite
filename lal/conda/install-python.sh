@@ -54,6 +54,11 @@ ${SRC_DIR}/configure \
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C swig
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C python
 
+# test
+if [[ "${build_platform}" == "${target_platform}" ]]; then
+	make -j ${CPU_COUNT} V=1 VERBOSE=1 check -C swig
+fi
+
 # install
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C swig install-exec  # swig bindings
 make -j ${CPU_COUNT} V=1 VERBOSE=1 -C python install  # pure-python extras

@@ -153,6 +153,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - cfitsio
         - numpy
         - openssl
         - python
@@ -175,7 +176,12 @@ outputs:
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - numpy
         - python
+        - python-lal >={{ lal_version }}
+        - python-lalframe >={{ lalframe_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
+        - python-lalinference >={{ lalinference_version }}
         # extras to assist the solver, but not actually used
+        - cfitsio
         - openssl
       run:
         - astropy
