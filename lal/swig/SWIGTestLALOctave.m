@@ -30,7 +30,7 @@ set_default_error_handlers();
 
 ## check memory allocation
 disp("checking memory allocation ...");
-if !lal.NoDebug
+if !LAL_MEMORY_FUNCTIONS_DISABLED
   LALCheckMemoryLeaks();
   mem1 = new_LALDetector();
   mem2 = XLALCreateCOMPLEX8Vector(5);
