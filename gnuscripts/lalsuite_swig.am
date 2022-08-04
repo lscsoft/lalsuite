@@ -58,9 +58,14 @@ endif
 
 if SWIG_BUILD
 
+swig_verbose   = $(swig_verbose_$(SWIGVERBOSE))
+swig_verbose_  = $(swig_verbose_0)
+swig_verbose_0 =
+swig_verbose_1 = -v
+
 swig_iface = swig$(PACKAGE).i
 swig_preproc_flags = -Werror -Wextra -w201,302 -I$(top_builddir)/include -includeall -ignoremissing -xml -xmllite -MP -MD -MT $@
-swig_flags = -Werror -Wextra -w314,506,511 -I$(top_builddir)/include $(SWIG_CPPFLAGS) $(LAL_SYSTEM_INCLUDES) -MP -MD -MT $@
+swig_flags = $(swig_verbose) -Werror -Wextra -w314,506,511 -I$(top_builddir)/include $(SWIG_CPPFLAGS) $(LAL_SYSTEM_INCLUDES) -MP -MD -MT $@
 swig_cppflags = -shared -I. -I$(top_builddir)/include $(SWIG_CPPFLAGS)
 swig_ldflags = -module -avoid-version -version-info 0:0:0 $(SWIG_LDFLAGS) $(AM_LDFLAGS)
 swig_libtoolflags = --tag=disable-static
