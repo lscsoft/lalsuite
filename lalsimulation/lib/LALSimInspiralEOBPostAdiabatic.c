@@ -31,15 +31,19 @@
 #include "LALSimIMRSpinEOBFactorizedFluxOptimized.c"
 
 
-#define PA_AD_THRS 8.0e-3
-
 #define ROOT_SOLVER_ABS_TOL 1.0e-10
 #define ROOT_SOLVER_REL_TOL 1.0e-8
 
+/**
+ * Function which comstructs the radial grid on which the post-adiabatic
+ * approximation will be computed
+ */
 int
 XLALSimInspiralEOBPACalculateRadialGrid(
 	REAL8Vector *rVec,
+    /**<< OUTPUT, the computed radial grid */
 	LALDict *LALParams
+    /**<< dictionary containing parameters for calculating the radial grid */
 )
 {
 	const REAL8 rInitial = XLALDictLookupREAL8Value(LALParams, "rInitial");
@@ -56,10 +60,16 @@ XLALSimInspiralEOBPACalculateRadialGrid(
 	return XLAL_SUCCESS;
 }
 
+/**
+ * Function which implements eq. (2.5) of the paper for the purposes of
+ * root solving
+ */
 double
 XLALSimInspiralEOBPostAdiabaticj0Func(
 	REAL8 j0_sol,
+    /**<< The value of j0 = pphi */
 	void *params
+    /**<< Struct of parameters necessary for evaluating the function */
 )
 {
 	struct PostAdiabaticRootSolveParams *j0Params = (struct PostAdiabaticRootSolveParams *)params;
@@ -70,7 +80,6 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
    	REAL8 prstar = j0Params->prstar;
     LALDict *LALParams = j0Params->LALParams;
 
-    // RHS of eq. (2) of the document
     REAL8 partialHBypartialr = XLALSimInspiralEOBPAPartialHByPartialr(
 		dr,
 		r,
@@ -83,10 +92,16 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
 	return partialHBypartialr;
 }
 
+/**
+ * Function which implements eq. (2.6) of the paper for the purposes of
+ * root solving
+ */
 double
 XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 	REAL8 prstar_sol,
+    /**<< The value of prstar (pr*) */
 	void *params
+    /**<< Struct of parameters necessary for evaluating the function */
 )
 {
 	struct PostAdiabaticRootSolveParams *prstarParams = (struct PostAdiabaticRootSolveParams *)params;
@@ -103,7 +118,10 @@ XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 
 	LALDict *LALParams = prstarParams->LALParams;
 
-	const UINT2 analyticFlag = XLALDictLookupUINT2Value(LALParams, "analyticFlag");
+	const UINT2 analyticFlag = XLALDictLookupUINT2Value(
+        LALParams,
+        "analyticFlag"
+    );
 
 	REAL8 pol[4] = {r, 0., prstar, pphi};
 	REAL8 omega;
@@ -139,7 +157,7 @@ XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 			LALParams
 		);
 
-		result = dpphiBydr*partialHByPartialprstar*dprstarBydpr - flux/omega;
+		result = dpphiBydr * partialHByPartialprstar * dprstarBydpr - flux / omega;
 	}
 	else
 	{
@@ -174,10 +192,16 @@ XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 	return result;
 }
 
+/**
+ * Function which implements eq. (2.7) of the paper for the purposes of
+ * root solving
+ */
 double 
 XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 	REAL8 pphi_sol,
+    /**<< The value of pphi */
 	void *params
+    /**<< Struct of parameters necessary for evaluating the function */
 )
 {
 	struct PostAdiabaticRootSolveParams *pphiParams = (struct PostAdiabaticRootSolveParams *)params;
@@ -284,16 +308,28 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 	return result;
 }
 
+/**
+ * Root finder function which is used for computing the adiabatic and 
+ * post-adiabatic approximations.
+ */
 int
 XLALSimInspiralEOBPostAdiabaticRootFinder(
 	struct PostAdiabaticRoot *result,
+    /**<< OUTPUT, a structure containing the result of the root finding */
 	double (*Func)(REAL8, void *),
+    /**<< The function which needs to be solved */
 	struct PostAdiabaticRootSolveParams *params,
+    /**<< Struct of parameters necessary for evaluating the function */
 	REAL8 x_lower,
+    /**<< Lower end of the interval in which the finding will be done */
 	REAL8 x_upper,
+    /**<< Upper end of the interval in which the finding will be done */
 	REAL8 absTol,
+    /**<< Absolute tolerance for the root finding */
 	REAL8 relTol,
+    /**<< Relative tolerance for the root finding */
 	INT2 parity
+    /**<< Parity indicating which variable is being solved for */
 )
 {
 	INT4 maxIters = 1000;
@@ -311,7 +347,6 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 
     const gsl_root_fsolver_type *solver_type;
     solver_type = gsl_root_fsolver_falsepos;
-    // solver_type = gsl_root_fsolver_brent;
 
 	gsl_root_fsolver *solver;
 	solver = gsl_root_fsolver_alloc(solver_type);
@@ -355,18 +390,15 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
 	{
 		iters++;
 
-        /* iterate one step of the solver */
         status = gsl_root_fsolver_iterate(solver);
 
         if (status != GSL_SUCCESS)
             break;
 
-        /* get the solver's current best solution and bounds */
         x = gsl_root_fsolver_root(solver);
         x_lower = gsl_root_fsolver_x_lower(solver);
         x_upper = gsl_root_fsolver_x_upper(solver);
 
-        /* Check to see if the solution is within the tolerance */
         status = gsl_root_test_interval(x_lower, x_upper, absTol, relTol);
     }
     while (iters <= maxIters && status == GSL_CONTINUE);
@@ -386,41 +418,15 @@ XLALSimInspiralEOBPostAdiabaticRootFinder(
     return XLAL_SUCCESS;
 }
 
-UNUSED REAL8 XLALSimInspiralEOBPACalculateAdibaticParameter(
-	REAL8 r,
-	REAL8 prstar,
-	REAL8 pphi,
-	SpinEOBParams *seobParams,
-	REAL8 csi,
-	LALDict *LALParams,
-	REAL8 omega,
-	REAL8 domegadr
-)
-{
-	// Compute the adiabatic parameter \dot{\Omega}/2\Omega^{2}
-	// where \Omega is the *orbital* frequency
-
-	// We compute dOmega/dt = dOmega/dr * dr/dt
-	
-	//dr/dt = dHdpr
-	REAL8 partialHBypartialprstar;
-	partialHBypartialprstar = XLALSimInspiralEOBPAPartialHByPartialprstar(
-		1e-4,
-		r,
-		prstar,
-		pphi,
-		seobParams,
-		LALParams
-	);
-
-	REAL8 drdt = partialHBypartialprstar*csi;
-	return drdt*domegadr/(2*omega*omega);
-}
-
+/**
+ * Function which reverses a 1D array
+ */
 int
 XLALReverseREAL8Vector(
-		       REAL8Vector *Vec,
-		       REAL8Vector *reverseVec
+    REAL8Vector *Vec,
+    /**<< The vector which will be reversed */
+    REAL8Vector *reverseVec
+    /**<< OUTPUT, the reversed vector */
 )
 {
 	UINT4 vecLength;
@@ -436,11 +442,17 @@ XLALReverseREAL8Vector(
 	return XLAL_SUCCESS;
 }
 
+/**
+ * Function which add a constant to each element of an array
+ */
 int
 XLALOffsetREAL8Vector(
 	REAL8Vector *Vec,
+    /**<< The vector which will be shifted */
 	REAL8 offset,
+    /**<< The constant offset */
 	REAL8Vector *offsetVec
+    /**<< OUTPUT, the offset vector */
 )
 {
 	UINT4 vecLength;
@@ -456,11 +468,17 @@ XLALOffsetREAL8Vector(
 	return XLAL_SUCCESS;
 }
 
+/**
+ * This function rescales each element of an array by a given factor
+ */
 int
 XLALRescaleREAL8Vector(
 	REAL8Vector *Vec,
+    /**<< The vector which will be rescaled */
 	REAL8 factor,
+    /**<< The rescaling factor */
 	REAL8Vector *rescaledVec
+    /**<< OUTPUT, the rescaled vector */
 )
 {
 	UINT4 vecLength;
@@ -479,6 +497,7 @@ XLALRescaleREAL8Vector(
 int
 XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	REAL8Vector *rVec,
+    /**<< pointer to the vector containing the radial grid */
 	REAL8Vector *phiVec,
 	REAL8Vector *prstarVec,
 	REAL8Vector *pphiVec,
@@ -789,6 +808,9 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 	return XLAL_SUCCESS;
 }
 
+/**
+ * Function which calculates the partial derivative dH/dr
+ */
 REAL8
 XLALSimInspiralEOBPAPartialHByPartialr(
 	REAL8 h,
@@ -797,15 +819,22 @@ XLALSimInspiralEOBPAPartialHByPartialr(
 	REAL8 pphi,
 	SpinEOBParams *seobParams,
 	LALDict *LALParams
+    /**<< pointer to a dictionary containing parameters for the
+    post-adiabatic routine */
 )
 {
-	const UINT2 analyticFlag = XLALDictLookupUINT2Value(LALParams, "analyticFlag");
+	const UINT2 analyticFlag = XLALDictLookupUINT2Value(
+        LALParams,
+        "analyticFlag"
+    );
 
 	REAL8 partialHByPartialr = 0.;
 
 	if (analyticFlag == 0)
 	{
-		REAL8 coeffs[9] = {1./280., -4./105., 1./5., -4./5., 0, 4./5., -1./5., 4./105., -1./280.};
+		REAL8 coeffs[9] = {
+            1./280., -4./105., 1./5., -4./5., 0, 4./5., -1./5., 4./105., -1./280.
+        };
 
 		INT4 i;
 
@@ -847,6 +876,9 @@ XLALSimInspiralEOBPAPartialHByPartialr(
 	return partialHByPartialr;
 }
 
+/**
+ * Function which calculates the partial derivative dH/dprstar
+ */
 REAL8
 XLALSimInspiralEOBPAPartialHByPartialprstar(
 	REAL8 h,
@@ -855,6 +887,8 @@ XLALSimInspiralEOBPAPartialHByPartialprstar(
 	REAL8 pphi,
 	SpinEOBParams *seobParams,
 	LALDict *LALParams
+    /**<< pointer to a dictionary containing parameters for the
+    post-adiabatic routine */
 )
 {
 	REAL8 coeffs[9] = {1./280., -4./105., 1./5., -4./5., 0, 4./5., -1./5., 4./105., -1./280.};
@@ -899,6 +933,9 @@ XLALSimInspiralEOBPAPartialHByPartialprstar(
 	return partialHByPartialprstar;
 }
 
+/**
+ * Function which performs an 8-order mean smoothing of a vector
+ */
 int
 XLALSimInspiralEOBPAMeanValueOrder8(
 	REAL8Vector *inputVec,
@@ -982,6 +1019,9 @@ XLALSimInspiralEOBPAMeanValueOrder8(
 	return XLAL_SUCCESS;
 }
 
+/**
+ * A wrapper for the SEOB Hamiltonian, depending on the user choices
+ */
 REAL8
 XLALSimInspiralEOBPAHamiltonianWrapper(
 	REAL8 r,
@@ -989,6 +1029,8 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
 	REAL8 pphi,
 	SpinEOBHCoeffs *seobCoeffs,
 	LALDict *LALParams
+    /**<< pointer to a dictionary containing parameters for the
+    post-adiabatic routine */
 )
 {
 	const REAL8 nu = XLALDictLookupREAL8Value(LALParams, "nu");
@@ -1058,6 +1100,9 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
     return H;
 }
 
+/**
+ * A wrapper for the factorized flux, depending on the user choices
+ */
 REAL8
 XLALSimInspiralEOBPAFluxWrapper(
 	REAL8 r,
@@ -1067,19 +1112,24 @@ XLALSimInspiralEOBPAFluxWrapper(
 	SpinEOBParams *seobParams,
 	EOBNonQCCoeffs *nqcCoeffs,
 	LALDict *LALParams
+    /**<< pointer to a dictionary containing parameters for the
+    post-adiabatic routine */
 )
 {
 	const REAL8 nu = XLALDictLookupREAL8Value(LALParams, "nu");
-	const UINT2 analyticFlag = XLALDictLookupUINT2Value(LALParams, "analyticFlag");
+	const UINT2 analyticFlag = XLALDictLookupUINT2Value(
+        LALParams,
+        "analyticFlag"
+    );
 
 	REAL8 H;
 	H = XLALSimInspiralEOBPAHamiltonianWrapper(
-			r,
-			prstar,
-			pphi,
-			seobParams->seobCoeffs,
-			LALParams
-		);
+        r,
+        prstar,
+        pphi,
+        seobParams->seobCoeffs,
+        LALParams
+    );
 	H *= nu;
 
 	/* polarDynamics contains r, phi, pr, pphi */
@@ -1097,26 +1147,26 @@ XLALSimInspiralEOBPAFluxWrapper(
     if (analyticFlag == 0)
     {
 	    Flux = XLALInspiralSpinFactorizedFlux_PA(
-	    			&polarDynamics,
-	    			nqcCoeffs,
-	    			omega,
-	    			seobParams,
-	    			H,
-	    			lMax,
-	    			SpinAlignedEOBversion
-	    		);
+            &polarDynamics,
+            nqcCoeffs,
+            omega,
+            seobParams,
+            H,
+            lMax,
+            SpinAlignedEOBversion
+        );
 	}
 	else
 	{
 		Flux = XLALInspiralSpinFactorizedFluxOptimized(
-					&polarDynamics,
-	    			nqcCoeffs,
-	    			omega,
-	    			seobParams,
-	    			H,
-	    			lMax,
-	    			SpinAlignedEOBversion
-	    		);
+            &polarDynamics,
+            nqcCoeffs,
+            omega,
+            seobParams,
+            H,
+            lMax,
+            SpinAlignedEOBversion
+        );
 	}
 
     Flux /= nu;
@@ -1125,6 +1175,21 @@ XLALSimInspiralEOBPAFluxWrapper(
     return Flux;
 }
 
+/**
+ * This function generates post-adiabatic inspiral for spin-aligned
+ * binary in the SEOB formalism. The procedure is described in 
+ * https://arxiv.org/abs/2105.06983 (or
+ * https://journals.aps.org/prd/abstract/10.1103/PhysRevD.104.124087)
+ * STEP 0) Initialise variables and set up a radial grid on which the 
+ * post-adiabatic routine will be done.
+ * STEP 1) Compute the (quasi-circular) adiabatic approximation
+ * according to eq. (2.5) of the paper.
+ * STEP 2) Perform the post-adiabatic routine, by computing improvements
+ * to prstar and pphi in alternating order, according to eqs. (2.6) and 
+ * (2.7) of the paper.
+ * STEP 3) The time t and orbital phase phi are computed via cubic
+ * quadrature using eqs. (2.10) from the paper.
+ */
 int
 XLALSimInspiralEOBPostAdiabatic(
 	REAL8Array **dynamics,
@@ -1146,12 +1211,16 @@ XLALSimInspiralEOBPostAdiabatic(
 	EOBNonQCCoeffs *nqcCoeffs,
 	/**<< NQC coefficients */
 	LALDict *PAParams
-	/**<< pointer to a dictionary containing parameters for the post-adiabatic routine */
+	/**<< pointer to a dictionary containing parameters for the
+    post-adiabatic routine */
 )
 {
 	if (SpinAlignedEOBversion != 4)
 	{
-		XLAL_ERROR(XLAL_EFUNC, "XLALSimInspiralEOBPostAdiabatic can only be used with SpinAlignedEOBversion = 4.\n");
+		XLAL_ERROR(
+            XLAL_EFUNC,
+            "XLALSimInspiralEOBPostAdiabatic can only be used with SpinAlignedEOBversion = 4.\n"
+        );
 	}
 
 	REAL8 q = XLALSimInspiralEOBPACalculateMassRatio(m1, m2);
@@ -1162,7 +1231,10 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	const UINT4 PAOrder = XLALDictLookupUINT4Value(PAParams, "PAOrder");
 
-	const UINT2 analyticFlag = XLALDictLookupUINT2Value(PAParams, "analyticFlag");
+	const UINT2 analyticFlag = XLALDictLookupUINT2Value(
+        PAParams,
+        "analyticFlag"
+    );
 
 	REAL8 X1 = XLALSimInspiralEOBPACalculateX1(nu);
 	REAL8 X2 = XLALSimInspiralEOBPACalculateX2(nu);
@@ -1176,31 +1248,24 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	REAL8 rInitial = initVals.data[0];
 
-	// REAL8 rFinalPrefactor = XLALDictLookupREAL8Value(PAParams, "rFinal");
 	REAL8 rFinalPrefactor = 1.6;
-	REAL8 rf =  XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(seobParams->a);
+	REAL8 rf =  XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(
+        seobParams->a
+    );
 	REAL8 rFinal = rFinalPrefactor * rf;
-	//XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	if (rInitial <= rFinal)
 	{
 		XLAL_ERROR(XLAL_ERANGE);
 	}
 
-	// REAL8 rSwitchPrefactor = XLALDictLookupREAL8Value(PAParams, "rSwitch");
 	REAL8 rSwitchPrefactor = 1.6;
 	REAL8 rSwitch = rSwitchPrefactor * rf;
-	//XLALSimInspiralEOBPostAdiabaticFinalRadius(q, a1, a2);
 
 	if (rInitial <= rSwitch)
 	{
 		XLAL_ERROR(XLAL_ERANGE);
 	}
-
-	// UINT4 rSize = 100;
-	// UINT4 rSize = XLALDictLookupUINT4Value(PAParams, "rSize");
-	
-	// REAL8 dr = XLALSimInspiralEOBPACalculatedr(rInitial, rFinal, rSize);
 
 	REAL8 dr = 0.3;
 	
@@ -1338,7 +1403,10 @@ XLALSimInspiralEOBPostAdiabatic(
 			LALparams
 		) != XLAL_SUCCESS)
 	{
-		XLAL_ERROR(XLAL_EFUNC, "XLALSimInspiralEOBPACalculateAdiabaticDynamics failed.");
+		XLAL_ERROR(
+            XLAL_EFUNC,
+            "XLALSimInspiralEOBPACalculateAdiabaticDynamics failed.
+        ");
 	}
 
  	XLALReverseREAL8Vector(rVec, rReverseVec);
@@ -1361,7 +1429,10 @@ XLALSimInspiralEOBPostAdiabatic(
 				LALparams
 			) != XLAL_SUCCESS)
 		{
-			XLAL_ERROR(XLAL_EFUNC, "XLALSimInspiralEOBPACalculatePostAdiabaticDynamics failed.");
+			XLAL_ERROR(
+                XLAL_EFUNC,
+                "XLALSimInspiralEOBPACalculatePostAdiabaticDynamics failed.
+            ");
 		}
 	}
 
@@ -1380,23 +1451,6 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	UINT4 idx_stop = 0;
 
-	// for (j=0; j<rSize; j++)
-	// {
-	// 	r = rVec->data[j];
-	// 	prstar = prstarVec->data[j];
-	// 	pphi = pphiVec->data[j];
-	// 	csi = csiVec->data[j];
-	// 	omega = omegaVec->data[j];
-	// 	domegadr = domegadrVec->data[j];
-	// 	adiabatic_param = XLALSimInspiralEOBPACalculateAdibaticParameter(r,prstar,pphi,seobParams,csi,LALparams, omega, domegadr);
-	// 	adiabatic_param_Vec->data[j]=adiabatic_param;
-	// 	//printf("r=%.17f, omega=%.17f,domegadr=%.17f, adibatic_param = %.17f\n",r,omega,domegadr,adiabatic_param_Vec->data[j]);
-	// 	if(idx_stop==0 && adiabatic_param>PA_AD_THRS){
-	// 		printf("r=%.18e Q = %.18e\n",r,adiabatic_param);
-	// 		idx_stop = j;
-	// 	}
-	// }
-
 	for (j=0; j<rSize; j++)
 	{
 		r = rVec->data[j];
@@ -1412,26 +1466,6 @@ XLALSimInspiralEOBPostAdiabatic(
 	{
 		idx_stop = rSize - 1;
 	}
-
-	// FILE *out = fopen ("pa_dyn.dat", "w");
-	
-	// for (i = 0; i < rSize; i++)
- //    {
- //        fprintf(
- //        	out,
- //        	"%.18e %.18e %.18e %.18e %.18e %.18e %.18e %.18e\n",
- //        	tVec->data[i],
- //        	rVec->data[i],
- //            phiVec->data[i],
- //            prstarVec->data[i],
- //            pphiVec->data[i],
- //            dtBydrVec->data[i],
- //            domegadrVec->data[i],
- //            adiabatic_param_Vec->data[i]
- //        );
- //    }
-
- //    fclose (out);
 
   	UINT4 outSize = idx_stop;
 
@@ -1475,12 +1509,13 @@ XLALSimInspiralEOBPostAdiabatic(
 
 	XLALDestroyDict(LALparams);
 
-	// This needs to be revisited
 	if (outSize < 4)
 	{
-		XLAL_ERROR(XLAL_EFUNC, "PA inspiral doesn't have enough points for interpolation.");
+		XLAL_ERROR(
+            XLAL_EFUNC,
+            "PA inspiral doesn't have enough points for interpolation."
+        );
 	}
-	// please fix before the end
 	
     return XLAL_SUCCESS;
 }

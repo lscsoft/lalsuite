@@ -18,40 +18,52 @@
 
 #include "LALSimInspiralEOBPostAdiabatic.h"
 
-REAL8Vector
-XLALPostAdiabaticSplineDerivative(
-	REAL8Vector *VecX,
-	REAL8Vector *VecY)
-{
-	UINT4 vecLength;
-	vecLength = VecX->length;
+/**
+ * Function which interpolates a numerical function and returns its 
+ * derivative
+ */
+// REAL8Vector
+// XLALPostAdiabaticSplineDerivative(
+// 	REAL8Vector *VecX,
+// 	REAL8Vector *VecY)
+// {
+// 	UINT4 vecLength;
+// 	vecLength = VecX->length;
 
-	REAL8Vector *splineDerivative = XLALCreateREAL8Vector(vecLength);
-	memset(splineDerivative->data, 0, splineDerivative->length * sizeof(REAL8));
+// 	REAL8Vector *splineDerivative = XLALCreateREAL8Vector(vecLength);
+// 	memset(splineDerivative->data, 0, splineDerivative->length * sizeof(REAL8));
 
-    gsl_interp_accel *acc = gsl_interp_accel_alloc();
-    gsl_spline *spline = gsl_spline_alloc(gsl_interp_akima, vecLength);
+//     gsl_interp_accel *acc = gsl_interp_accel_alloc();
+//     gsl_spline *spline = gsl_spline_alloc(gsl_interp_akima, vecLength);
 
-    gsl_spline_init(spline, VecX->data, VecY->data, vecLength);
+//     gsl_spline_init(spline, VecX->data, VecY->data, vecLength);
 
-    UINT4 i;
+//     UINT4 i;
 
-    for (i = 0; i < vecLength; i++)
-    {
-        splineDerivative->data[i] = gsl_spline_eval_deriv(spline, VecX->data[i], acc);
-    }
+//     for (i = 0; i < vecLength; i++)
+//     {
+//         splineDerivative->data[i] = gsl_spline_eval_deriv(spline, VecX->data[i], acc);
+//     }
 
-    gsl_spline_free (spline);
-    gsl_interp_accel_free (acc);
+//     gsl_spline_free (spline);
+//     gsl_interp_accel_free (acc);
 
-    return *splineDerivative;
-}
+//     return *splineDerivative;
+// }
 
+/**
+ * Function which calculates the 4-order first finite difference
+ * derivative of a numerical function
+ */
 int
 XLALFDDerivative1Order4(
 	REAL8Vector *XVec,
+    /**< An array of X values */
 	REAL8Vector *YVec,
-	REAL8Vector *derivativeVec)
+    /**< An array of Y values */
+	REAL8Vector *derivativeVec
+    /**< OUTPUT, the derivative dY/dX */
+)
 {
 	REAL8 fourthOrderCoeffs[5][5] = {
 		{-25./12., 4., -3., 4./3., -1./4.},
@@ -60,7 +72,6 @@ XLALFDDerivative1Order4(
 		{-1./12., 1./2., -3./2., 5./6., 1./4.},
 		{1./4., -4./3., 3., -4., 25./12.}
 	};
-
 
 	UINT4 vecLength;
 	vecLength = XVec->length;
@@ -115,11 +126,19 @@ XLALFDDerivative1Order4(
     return XLAL_SUCCESS;
 }
 
+/**
+ * Function which calculates the 2-order first finite difference
+ * derivative of a numerical function
+ */
 int
 XLALFDDerivative1Order2(
 	REAL8Vector *XVec,
+    /**< An array of X values */
 	REAL8Vector *YVec,
-	REAL8Vector *derivativeVec)
+    /**< An array of Y values */
+	REAL8Vector *derivativeVec
+    /**< OUTPUT, the derivative dY/dX */
+)
 {
 	REAL8 secondOrderCoeffs[3][3] = {
 		{-3./2., 2, -1./2.},
@@ -167,11 +186,19 @@ XLALFDDerivative1Order2(
     return XLAL_SUCCESS;
 }
 
+/**
+ * Function which calculates the 6-order first finite difference
+ * derivative of a numerical function
+ */
 int
 XLALFDDerivative1Order6(
 	REAL8Vector *XVec,
+    /**< An array of X values */
 	REAL8Vector *YVec,
-	REAL8Vector *derivativeVec)
+    /**< An array of Y values */
+	REAL8Vector *derivativeVec
+    /**< OUTPUT, the derivative dY/dX */
+)
 {
 	REAL8 sixthOrderCoeffs[7][7] = {
 		{-49./20., 6., -15./2., 20./3., -15./4., 6./5., -1./6.},
@@ -251,12 +278,19 @@ XLALFDDerivative1Order6(
     return XLAL_SUCCESS;
 }
 
-
+/**
+ * Function which calculates the 8-order first finite difference
+ * derivative of a numerical function
+ */
 int
 XLALFDDerivative1Order8(
 	REAL8Vector *XVec,
+    /**< An array of X values */
 	REAL8Vector *YVec,
-	REAL8Vector *derivativeVec)
+    /**< An array of Y values */
+	REAL8Vector *derivativeVec
+    /**< OUTPUT, the derivative dY/dX */
+)
 {
 	REAL8 eightOrderCoeffs[9][9] = {
 		{-761./280., 8., -14., 56./3., -35./2., 56./5., -14./3., 8./7., -1./8.},
@@ -352,11 +386,19 @@ XLALFDDerivative1Order8(
 	return XLAL_SUCCESS;
 }
 
+/**
+ * Function which calculates the 3-order cumulative derivative of a 
+ * numerical function
+ */
 int
 XLALCumulativeIntegral3(
 	REAL8Vector *XVec,
+    /**< An array of X values */
 	REAL8Vector *YVec,
-	REAL8Vector *integralVec)
+    /**< An array of Y values */
+	REAL8Vector *integralVec
+    /**< OUTPUT, the integral of Y dX */
+)
 {
 	UINT4 vecLength;
 	vecLength = XVec->length;
