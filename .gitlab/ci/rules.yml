@@ -22,6 +22,11 @@ workflow:
   rules:
     - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG'
 
+# lalsuite tag on the upstream repo
+.lalsuite-tag:
+  rules:
+    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
+
 # normal push
 .push:
   rules:
