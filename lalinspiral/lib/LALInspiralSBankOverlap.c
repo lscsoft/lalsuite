@@ -20,6 +20,7 @@
 #include <string.h>
 #include <math.h>
 #include <complex.h>
+#include <lal/LALError.h>
 #include <lal/AVFactories.h>
 #include <lal/ComplexFFT.h>
 #include <lal/XLALError.h>
@@ -54,8 +55,8 @@ void XLALDestroySBankWorkspaceCache(WS *workspace_cache) {
 
 static WS *get_workspace(WS *workspace_cache, const size_t n) {
     if (!n) {
-        fprintf(stderr, "Zero size workspace requested\n");
-        abort();
+        lalAbortHook("%s: Zero size workspace requested\n", __func__);
+        return NULL;
     }
 
     /* if n already in cache, return it */
