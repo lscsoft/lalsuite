@@ -177,7 +177,7 @@ int main (int argc, char *argv[])
   expect = 8.153364119811650205L;
   dresult = XLALREAL8RombergIntegrate (&xff1, &count, 0, 2, ClosedInterval);
   if (xlalErrno)
-    abort();
+    XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
   else if (verbose)
     printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
   if ( verbose )
@@ -208,7 +208,7 @@ int main (int argc, char *argv[])
   expect = 1.0L/200.0L;
   dresult = XLALREAL8RombergIntegrate (&xff2, &count, 10, 1e300, InfiniteDomainPow);
   if (xlalErrno)
-    abort();
+    XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
   else if (verbose)
     printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
   if ( verbose )
@@ -239,7 +239,7 @@ int main (int argc, char *argv[])
   expect = 0.0570261239928920483L;
   dresult = XLALREAL8RombergIntegrate (&xff3, &count, 2, 1e300, InfiniteDomainExp);
   if (xlalErrno)
-    abort();
+    XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
   else if (verbose)
     printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
   if ( verbose )
@@ -270,7 +270,7 @@ int main (int argc, char *argv[])
   expect = 2.0L;
   dresult = XLALREAL8RombergIntegrate (&xff4, &count, 0, 1, SingularLowerLimit);
   if (xlalErrno)
-    abort();
+    XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
   else if (verbose)
     printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
   if ( verbose )
@@ -301,7 +301,7 @@ int main (int argc, char *argv[])
   expect = 6.5L;
   dresult = XLALREAL8RombergIntegrate (&xff5, &count, 4, 5, SingularUpperLimit);
   if (xlalErrno)
-    abort();
+    XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
   else if (verbose)
     printf("\nXLALREAL8RombergIntegrate exitted with xlalErrno: %d\n", xlalErrno);
   if ( verbose )
@@ -340,7 +340,7 @@ int main (int argc, char *argv[])
     if (xlalErrno == XLAL_EINVAL)
       xlalErrno = 0;
     else
-      abort();
+      XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
     if ( verbose )
       printf ("Unknown integral type check passed.\n");
 
@@ -350,7 +350,7 @@ int main (int argc, char *argv[])
     if (xlalErrno == XLAL_EMAXITER)
       xlalErrno = 0;
     else
-      abort();
+      XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
     if ( verbose )
       printf ("Maximum iterations exceeded check passed.\n");
 
@@ -360,7 +360,7 @@ int main (int argc, char *argv[])
     if (xlalErrno == XLAL_EFUNC + XLAL_EFAULT)
       xlalErrno = 0;
     else
-      abort();
+      XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
     if ( verbose )
       printf ("Recursive error check passed.\n");
   }
