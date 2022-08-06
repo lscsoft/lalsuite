@@ -19,6 +19,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <lal/LALError.h>
 #include <lal/LALFrameU.h>
 #include "utils.h"
 
@@ -217,7 +218,8 @@ int copychannel(LALFrameUFrameH * frame, LALFrameUFrChan * channel,
         chancopy = XLALFrameUFrSimChanAlloc(channame, dtype, ndata);
         break;
     default:
-        abort();
+        lalAbortHook("%s: unsupported chantype=%i\n", __func__, chantype);
+        return 1;
     }
 
     XLALFrameUFrChanSetTimeOffset(chancopy, toffset);
