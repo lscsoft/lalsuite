@@ -24,6 +24,7 @@ SUBDIRS = \
 	SidebandSearch \
 	TwoSpect \
 	Weave \
+	PiecewiseSearch \
 	longtests \
 	$(END_OF_LINE)
 

@@ -45,6 +45,7 @@ AC_CONFIG_FILES([ \
   python/Makefile \
   python/lalpulsar/Makefile \
   python/lalpulsar/__init__.py \
+  python/lalpulsar/piecewise_model/Makefile \
   lib/LALPulsarVCSInfo.c \
   lib/LALPulsarVCSInfo.h \
   lib/Makefile \
@@ -61,6 +62,7 @@ AC_CONFIG_FILES([ \
   bin/longtests/Makefile \
   bin/MakeData/Makefile \
   bin/Makefile \
+  bin/PiecewiseSearch/Makefile \
   bin/SFTTools/Makefile \
   bin/SidebandSearch/Makefile \
   bin/Tools/Makefile \
