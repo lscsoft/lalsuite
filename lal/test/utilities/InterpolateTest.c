@@ -253,7 +253,7 @@ int main (int argc, char *argv[])
     if (xlalErrno == XLAL_ESIZE)
       xlalErrno = 0;
     else
-      abort();
+      XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
     if ( verbose )
       printf ("Invalid size check passed.\n");
 
@@ -269,7 +269,7 @@ int main (int argc, char *argv[])
     if (xlalErrno == XLAL_EFPDIV0)
       xlalErrno = 0;
     else
-      abort();
+      XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
     if ( verbose )
       printf ("Zero divide check passed.\n");
   }
