@@ -23,8 +23,6 @@ This also handles on-the-fly symbol renaming, mainly to make the SWIG interface
 more natural for high-level languages that support namespaces.
 """
 
-from __future__ import print_function
-
 __author__ = "Karl Wette <karl.wette@ligo.org>"
 __copyright__ = 'Copyright (C) 2011--2014 Karl Wette'
 
