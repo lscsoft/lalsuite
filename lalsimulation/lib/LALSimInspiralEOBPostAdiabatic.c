@@ -1405,8 +1405,8 @@ XLALSimInspiralEOBPostAdiabatic(
 	{
 		XLAL_ERROR(
             XLAL_EFUNC,
-            "XLALSimInspiralEOBPACalculateAdiabaticDynamics failed.
-        ");
+            "XLALSimInspiralEOBPACalculateAdiabaticDynamics failed."
+        );
 	}
 
  	XLALReverseREAL8Vector(rVec, rReverseVec);
@@ -1431,8 +1431,8 @@ XLALSimInspiralEOBPostAdiabatic(
 		{
 			XLAL_ERROR(
                 XLAL_EFUNC,
-                "XLALSimInspiralEOBPACalculatePostAdiabaticDynamics failed.
-            ");
+                "XLALSimInspiralEOBPACalculatePostAdiabaticDynamics failed."
+            );
 		}
 	}
 
