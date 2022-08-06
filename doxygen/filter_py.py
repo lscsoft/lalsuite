@@ -1,5 +1,3 @@
-from __future__ import print_function
-
 __applicationName__ = "doxypy"
 __blurb__ = """
 doxypy is an input filter for Doxygen. It preprocesses python
