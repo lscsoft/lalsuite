@@ -1,3 +1,9 @@
+lalsimulation (4.0.0-1) unstable; urgency=low
+
+  * Update for 4.0.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 02 Aug 2022 15:46:38 -0700
+
 lalsimulation (3.1.2-1) unstable; urgency=low
 
   * Update for 3.1.2

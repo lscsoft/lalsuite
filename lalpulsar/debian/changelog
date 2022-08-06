@@ -1,3 +1,9 @@
+lalpulsar (4.0.1-1) unstable; urgency=low
+
+  * Update for 4.0.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Tue, 02 Aug 2022 16:45:10 -0700
+
 lalpulsar (4.0.0-1) unstable; urgency=low
 
   * Update for 4.0.0

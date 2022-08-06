@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALFrame],[2.0.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALFrame],[2.0.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALFrameConfig.h])
 AC_CONFIG_SRCDIR([lib/LALFrameIO.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -69,7 +69,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.1.0"
+MIN_LAL_VERSION="7.2.0"
 MIN_FRAMECPPC_VERSION="2.5.5"
 MIN_FRAMEL_VERSION="8.39.2"
 AC_SUBST([MIN_LAL_VERSION])
