@@ -43,7 +43,8 @@ XLALSimInspiralEOBPACalculateRadialGrid(
 	REAL8Vector *rVec,
     /**<< OUTPUT, the computed radial grid */
 	LALDict *LALParams
-    /**<< dictionary containing parameters for calculating the radial grid */
+    /**<< Pointer to a dictionary containing parameters for the
+    post-adiabatic routine */
 )
 {
 	const REAL8 rInitial = XLALDictLookupREAL8Value(LALParams, "rInitial");
@@ -212,7 +213,6 @@ XLALSimInspiralEOBPostAdiabaticdpphiFunc(
 	REAL8 pphi = pphi_sol;
 	REAL8 dprstarBydr = pphiParams->dprstarBydr;
 	REAL8 dprstarBydpr = pphiParams->csi;
-	// SpinEOBParams *seobParams = pphiParams->seobParams;
 	LALDict *LALParams = pphiParams->LALParams;
 
 	const REAL8 dr = XLALDictLookupREAL8Value(LALParams, "dr");
@@ -497,16 +497,26 @@ XLALRescaleREAL8Vector(
 int
 XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 	REAL8Vector *rVec,
-    /**<< pointer to the vector containing the radial grid */
+    /**<< Pointer to the vector containing the radial grid */
 	REAL8Vector *phiVec,
+    /**<< Pointer to the vector containing the phi values */
 	REAL8Vector *prstarVec,
+    /**<< Pointer to the vector containing the prstar values */
 	REAL8Vector *pphiVec,
+    /**<< Pointer to the vector containing the pphi values */
 	REAL8Vector *pphi0Vec,
+    /**<< Pointer to the vector containing the initial pphi values */
 	REAL8Vector *dpphiBydrVec,
+    /**<< Pointer to the vector containing the dpphi/dr values */
 	REAL8Vector *csiVec,
+    /**<< Pointer to the vector containing the csi values */
 	REAL8Vector *omegaVec,
+    /**<< Pointer to the vector containing the omega values */
 	SpinEOBParams *seobParams,
+    /**<< SEOB parameters */
 	LALDict *LALParams
+    /**<< Pointer to a dictionary containing parameters for the
+    post-adiabatic routine */
 )
 {
 	const UINT4 rSize = XLALDictLookupUINT4Value(LALParams, "rSize");
@@ -599,18 +609,32 @@ XLALSimInspiralEOBPACalculateAdiabaticDynamics(
 int
 XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 	REAL8Vector *rVec,
+    /**<< Pointer to the vector containing the radial grid */
 	REAL8Vector *phiVec,
+    /**<< Pointer to the vector containing the phi values */
 	REAL8Vector *dphiBydrVec,
+    /**<< Pointer to the vector containing the dphi/dr values */
 	REAL8Vector *prstarVec,
+    /**<< Pointer to the vector containing the prstar (pr*) values */
 	REAL8Vector *dprstarBydrVec,
+    /**<< Pointer to the vector containing the dprstar/dr values */
 	REAL8Vector *pphiVec,
+    /**<< Pointer to the vector containing the pphi values */
 	REAL8Vector *dpphiBydrVec,
+    /**<< Pointer to the vector containing the dpphi/dr values */
 	REAL8Vector *dtBydrVec,
+    /**<< Pointer to the vector containing the dt/dr values */
 	REAL8Vector *csiVec,
+    /**<< Pointer to the vector containing the csi values */
 	REAL8Vector *omegaVec,
+    /**<< Pointer to the vector containing the omega values */
 	SpinEOBParams *seobParams,
+    /**<< SEOB parameters */
 	EOBNonQCCoeffs *nqcCoeffs,
+    /**<< Input NQC coeffs */
 	LALDict *LALParams
+    /**<< Pointer to a dictionary containing parameters for the
+    post-adiabatic routine */
 )
 {
 	const UINT4 PAOrder = XLALDictLookupUINT4Value(LALParams, "PAOrder");
@@ -814,12 +838,17 @@ XLALSimInspiralEOBPACalculatePostAdiabaticDynamics(
 REAL8
 XLALSimInspiralEOBPAPartialHByPartialr(
 	REAL8 h,
+    /**<< Value of the differentiation step h */
 	REAL8 r,
+    /**<< Value of the radial coordinate r */
 	REAL8 prstar,
+    /**<< Value of the radial momentum in tortoise coordinates prstar */
 	REAL8 pphi,
+    /**<< Value of the angular momentum pphhi */
 	SpinEOBParams *seobParams,
+    /**<< SEOB parameters */
 	LALDict *LALParams
-    /**<< pointer to a dictionary containing parameters for the
+    /**<< Pointer to a dictionary containing parameters for the
     post-adiabatic routine */
 )
 {
@@ -882,12 +911,17 @@ XLALSimInspiralEOBPAPartialHByPartialr(
 REAL8
 XLALSimInspiralEOBPAPartialHByPartialprstar(
 	REAL8 h,
+    /**<< Value of the differentiation step h */
 	REAL8 r,
+    /**<< Value of the radial coordinate r */
 	REAL8 prstar,
+    /**<< Value of the radial momentum in tortoise coordinates prstar */
 	REAL8 pphi,
+    /**<< Value of the angular momentum pphhi */
 	SpinEOBParams *seobParams,
+    /**<< SEOB parameters */
 	LALDict *LALParams
-    /**<< pointer to a dictionary containing parameters for the
+    /**<< Pointer to a dictionary containing parameters for the
     post-adiabatic routine */
 )
 {
@@ -939,7 +973,9 @@ XLALSimInspiralEOBPAPartialHByPartialprstar(
 int
 XLALSimInspiralEOBPAMeanValueOrder8(
 	REAL8Vector *inputVec,
+    /**<< The vector which should be smoothed */
 	REAL8Vector *meanVec
+    /**<< OUTPUT, the vector after mean smoothing */
 )
 {
 	UINT4 vecLength = inputVec->length;
@@ -1025,11 +1061,15 @@ XLALSimInspiralEOBPAMeanValueOrder8(
 REAL8
 XLALSimInspiralEOBPAHamiltonianWrapper(
 	REAL8 r,
+    /**<< Value of the radial coordinate r */
 	REAL8 prstar,
+    /**<< Value of the radial momentum in tortoise coordinates prstar */
 	REAL8 pphi,
+    /**<< Value of the angular momentum pphhi */
 	SpinEOBHCoeffs *seobCoeffs,
+    /**<< SEOB parameters */
 	LALDict *LALParams
-    /**<< pointer to a dictionary containing parameters for the
+    /**<< Pointer to a dictionary containing parameters for the
     post-adiabatic routine */
 )
 {
@@ -1069,16 +1109,16 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
     if (analyticFlag == 0)
     {
 	    H = XLALSimIMRSpinEOBHamiltonian(
-	    		nu,
-	    		&xCartVec,
-	    		&pCartVec,
-	    		&a1CartVec,
-	    		&a2CartVec,
-	    		&aKCartVec,
-	    		&SstarCartVec,
-	    		tortoiseFlag,
-	    		seobCoeffs
-	    	);
+            nu,
+            &xCartVec,
+            &pCartVec,
+            &a1CartVec,
+            &a2CartVec,
+            &aKCartVec,
+            &SstarCartVec,
+            tortoiseFlag,
+            seobCoeffs
+        );
 	}
 	else
 	{
@@ -1106,13 +1146,19 @@ XLALSimInspiralEOBPAHamiltonianWrapper(
 REAL8
 XLALSimInspiralEOBPAFluxWrapper(
 	REAL8 r,
+    /**<< Value of the radial coordinate r */
 	REAL8 prstar,
+    /**<< Value of the radial momentum in tortoise coordinates prstar */
 	REAL8 pphi,
+    /**<< Value of the angular momentum pphhi */
 	REAL8 omega,
+    /**<< Value of the orbital frequency omega */
 	SpinEOBParams *seobParams,
+    /**<< SEOB parameters */
 	EOBNonQCCoeffs *nqcCoeffs,
+    /**<< Input NQC coeffs */
 	LALDict *LALParams
-    /**<< pointer to a dictionary containing parameters for the
+    /**<< Pointer to a dictionary containing parameters for the
     post-adiabatic routine */
 )
 {
@@ -1211,7 +1257,7 @@ XLALSimInspiralEOBPostAdiabatic(
 	EOBNonQCCoeffs *nqcCoeffs,
 	/**<< NQC coefficients */
 	LALDict *PAParams
-	/**<< pointer to a dictionary containing parameters for the
+	/**<< Pointer to a dictionary containing parameters for the
     post-adiabatic routine */
 )
 {

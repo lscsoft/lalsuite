@@ -846,9 +846,9 @@ XLALSimIMRSpinAlignedEOBModes (
   const INT4 nqcFlag,
   /**<< Flag to tell the code to use the NQC coeffs input thorugh nqcCoeffsInput */
   LALDict *PAParams,
-  /**<< dictionary containing parameters for the post-adiabatic routine */
+  /**<< Dictionary containing parameters for the post-adiabatic routine */
   LALDict *TGRParams
-  /**<< dictionary containing parameters for tests of General Relativity */
+  /**<< Dictionary containing parameters for tests of General Relativity */
 )
 {
   UNUSED REAL8 STEP_SIZE = STEP_SIZE_CALCOMEGA;
