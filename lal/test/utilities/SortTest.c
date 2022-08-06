@@ -128,13 +128,17 @@ static int check( int *data, int *sort, int nobj, int ascend )
   for ( i = 1; i < nobj; ++i )
     if ( ascend )
     {
-      if ( sort[i] < sort[i-1] )
-        abort();
+      if ( sort[i] < sort[i-1] ) {
+        LALPrintError( "ERROR: sort[i] < sort[i-1] at line %i\n", __LINE__ );
+        exit(1);
+      }
     }
     else
     {
-      if ( sort[i] > sort[i-1] )
-        abort();
+      if ( sort[i] > sort[i-1] ) {
+        LALPrintError( "ERROR: sort[i] > sort[i-1] at line %i\n", __LINE__ );
+        exit(1);
+      }
     }
   /* make sure every element from the original data can be found somewhere
    * in the result, and every element in the result can be found in the
@@ -142,14 +146,18 @@ static int check( int *data, int *sort, int nobj, int ascend )
   for ( i = 0; i < nobj; ++i )
   {
     for ( j = 0; j < nobj && sort[j] != data[i]; ++j );
-    if ( j == nobj )
-      abort();
+    if ( j == nobj ) {
+      LALPrintError( "ERROR: j == nobj at line %i\n", __LINE__ );
+      exit(1);
+    }
   }
   for ( i = 0; i < nobj; ++i )
   {
     for ( j = 0; j < nobj && data[j] != sort[i]; ++j );
-    if ( j == nobj )
-      abort();
+    if ( j == nobj ) {
+      LALPrintError( "ERROR: j == nobj at line %i\n", __LINE__ );
+      exit(1);
+    }
   }
   return 0;
 }
@@ -176,16 +184,24 @@ int main(int argc, char **argv)
 
     makedata( nobj, &data, &sort, &indx, &rank );
 
-    if ( XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
-    if ( XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
-    if ( XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
+    if ( XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar ) < 0 ) {
+      LALPrintError( "ERROR: XLALHeapIndex( indx, data, nobj, sizeof(*data), &ascend, compar ) < 0 at line %i\n", __LINE__ );
+      exit(1);
+    }
+    if ( XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar ) < 0 ) {
+      LALPrintError( "ERROR: XLALHeapRank( rank, data, nobj, sizeof(*data), &ascend, compar ) < 0 at line %i\n", __LINE__ );
+      exit(1);
+    }
+    if ( XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 ) {
+      LALPrintError( "ERROR: XLALHeapSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 at line %i\n", __LINE__ );
+      exit(1);
+    }
 
     for ( i = 0; i < nobj; ++i )
-      if ( sort[i] != data[indx[i]] )
-        abort();
+      if ( sort[i] != data[indx[i]] ) {
+        LALPrintError( "ERROR: sort[i] != data[indx[i]] at line %i\n", __LINE__ );
+        exit(1);
+      }
 
     check( data, sort, nobj, ascend );
 
@@ -206,8 +222,10 @@ int main(int argc, char **argv)
 
     makedata( nobj, &data, &sort, &indx, &rank );
 
-    if ( XLALInsertionSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
+    if ( XLALInsertionSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 ) {
+      LALPrintError( "ERROR: XLALInsertionSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 at line %i\n", __LINE__ );
+      exit(1);
+    }
 
     check( data, sort, nobj, ascend );
 
@@ -226,8 +244,10 @@ int main(int argc, char **argv)
 
     makedata( nobj, &data, &sort, &indx, &rank );
 
-    if ( XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
+    if ( XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 ) {
+      LALPrintError( "ERROR: XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 at line %i\n", __LINE__ );
+      exit(1);
+    }
 
     check( data, sort, nobj, ascend );
 
@@ -246,11 +266,15 @@ int main(int argc, char **argv)
 
     makedata( nobj, &data, &sort, &indx, &rank );
 
-    if ( XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
+    if ( XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 ) {
+      LALPrintError( "ERROR: XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 at line %i\n", __LINE__ );
+      exit(1);
+    }
 
-    if ( !XLALIsSorted( sort, nobj, sizeof(*data), &ascend, compar ) )
-      abort();
+    if ( !XLALIsSorted( sort, nobj, sizeof(*data), &ascend, compar ) ) {
+      LALPrintError( "ERROR: !XLALIsSorted( sort, nobj, sizeof(*data), &ascend, compar ) at line %i\n", __LINE__ );
+      exit(1);
+    }
 
     freedata( data, sort, indx, rank );
   }
@@ -269,47 +293,67 @@ int main(int argc, char **argv)
 
     makedata( nobj, &data, &sort, &indx, &rank );
 
-    if ( XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 )
-      abort();
+    if ( XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 ) {
+      LALPrintError( "ERROR: XLALMergeSort( sort, nobj, sizeof(*data), &ascend, compar ) < 0 at line %i\n", __LINE__ );
+      exit(1);
+    }
 
     v = rand() % 100;
     i = XLALSearchSorted( &v, sort, nobj, sizeof(*data), &ascend, compar, -1 );
-    if ( i < 0 || i > nobj) {
-      fprintf(stderr, "Error: i=%d, nobj=%d\n", i, nobj);
-      abort();
+    if ( i < 0 || i > nobj ) {
+      LALPrintError( "ERROR: i=%d, nobj=%d, i < 0 || i > nobj at line %i\n", i, nobj, __LINE__ );
+      exit(1);
     } else if ( nobj == 0 ) {
-      if ( i != 0 )
-        abort();
+      if ( i != 0 ) {
+        LALPrintError( "ERROR: i != 0 at line %i\n", __LINE__ );
+        exit(1);
+      }
     } else if ( i == 0 ) {
       // if ( !( v <= sort[i] ) )
-      if ( !( lte( &ascend, &v, &sort[i] ) ) )
-        abort();
+      if ( !( lte( &ascend, &v, &sort[i] ) ) ) {
+        LALPrintError( "ERROR: !( lte( &ascend, &v, &sort[i] ) ) at line %i\n", __LINE__ );
+        exit(1);
+      }
     } else if ( i == nobj ) {
       // if ( !( sort[i-1] < v) )
-      if ( !( lt( &ascend, &sort[i-1], &v ) ) )
-        abort();
+      if ( !( lt( &ascend, &sort[i-1], &v ) ) ) {
+        LALPrintError( "ERROR: !( lt( &ascend, &sort[i-1], &v ) ) at line %i\n", __LINE__ );
+        exit(1);
+      }
     // } else if ( !(sort[i-1] < v && v <= sort[i]) )
-    } else if ( !( lt( &ascend, &sort[i-1], &v ) && lte( &ascend, &v , &sort[i] ) ) )
-      abort();
+    } else if ( !( lt( &ascend, &sort[i-1], &v ) && lte( &ascend, &v , &sort[i] ) ) ) {
+      LALPrintError( "ERROR: !( lt( &ascend, &sort[i-1], &v ) && lte( &ascend, &v , &sort[i] ) ) at line %i\n", __LINE__ );
+      exit(1);
+    }
 
     v = rand() % 100;
     i = XLALSearchSorted( &v, sort, nobj, sizeof(*data), &ascend, compar, +1 );
-    if ( i < 0 || i > nobj)
-      abort();
+    if ( i < 0 || i > nobj ) {
+      LALPrintError( "ERROR: i < 0 || i > nobj at line %i\n", __LINE__ );
+      exit(1);
+    }
     else if ( nobj == 0 ) {
-      if ( i != 0 )
-        abort();
+      if ( i != 0 ) {
+        LALPrintError( "ERROR: i != 0 at line %i\n", __LINE__ );
+        exit(1);
+      }
     } else if ( i == 0 ) {
         // if ( !( v <= sort[i] ) )
-        if ( !( lte( &ascend, &v, &sort[i] ) ) )
-          abort();
+        if ( !( lte( &ascend, &v, &sort[i] ) ) ) {
+          LALPrintError( "ERROR: !( lte( &ascend, &v, &sort[i] ) ) at line %i\n", __LINE__ );
+          exit(1);
+        }
     } else if ( i == nobj ) {
         // if ( ! (sort[i-1] <= v) )
-        if ( ! ( lte( &ascend, &sort[i-1], &v ) ) )
-          abort();
+        if ( ! ( lte( &ascend, &sort[i-1], &v ) ) ) {
+          LALPrintError( "ERROR: ! ( lte( &ascend, &sort[i-1], &v ) ) at line %i\n", __LINE__ );
+          exit(1);
+        }
     // } else if ( !(sort[i-1] <= v && v < sort[i]) )
-    } else if ( !( lte( &ascend, &sort[i-1], &v ) && lt( &ascend, &v, &sort[i] ) ) )
-      abort();
+    } else if ( !( lte( &ascend, &sort[i-1], &v ) && lt( &ascend, &v, &sort[i] ) ) ) {
+      LALPrintError( "ERROR: !( lte( &ascend, &sort[i-1], &v ) && lt( &ascend, &v, &sort[i] ) ) at line %i\n", __LINE__ );
+      exit(1);
+    }
 
     if ( nobj > 0 ) {
        /* select one of the data points */
@@ -320,12 +364,17 @@ int main(int argc, char **argv)
     }
     i = XLALSearchSorted( &v, sort, nobj, sizeof(*data), &ascend, compar, 0 );
     if ( nobj == 0 ) {
-      if (i != -1)
-        abort();
+      if ( i != -1 ) {
+        LALPrintError( "ERROR: i != -1 at line %i\n", __LINE__ );
+        exit(1);
+      }
     } else if ( i < 0 ) {
-      abort();
-    } else if ( sort[i] != v)
-      abort();
+      LALPrintError( "ERROR: i < 0 at line %i\n", __LINE__ );
+      exit(1);
+    } else if ( sort[i] != v ) {
+      LALPrintError( "ERROR: sort[i] != v at line %i\n", __LINE__ );
+      exit(1);
+    }
 
     freedata( data, sort, indx, rank );
   }
