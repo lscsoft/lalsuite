@@ -30,12 +30,6 @@ const char LALInferenceHDF5PosteriorSamplesDatasetName[] = "posterior_samples";
 const char LALInferenceHDF5NestedSamplesDatasetName[] = "nested_samples";
 
 
-static void assert_not_reached(void);
-static void assert_not_reached(void)
-{
-    abort();
-}
-
 int LALInferencePrintCheckpointFileInfo(char *filename)
 {
     struct stat st;
@@ -113,7 +107,10 @@ int LALInferenceH5DatasetToVariablesArray(
             case LAL_C_TYPE_CODE:
                 column_types[i] = LALINFERENCE_COMPLEX8_t; break;
             default:
-                assert_not_reached();
+                lalAbortHook(
+                    "%s: Unknown type code column_type=%i\n", __func__, column_type);
+                return(XLAL_FAILURE);
+
         }
     }
 
@@ -188,7 +185,7 @@ int LALInferenceH5DatasetToVariablesArray(
                 lalinftype = LALINFERENCE_COMPLEX8_t; break;
             default:
                 XLALPrintWarning(
-                    "%s: Unknown type code %i\n", __func__, laltype);
+                    "%s: Unknown type code laltype=%i\n", __func__, laltype);
                 continue;
         }
 
