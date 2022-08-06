@@ -60,11 +60,11 @@ XLALSimInspiralEOBPACalculatea(
     REAL8 chi
 );
 
-REAL8
-XLALSimInspiralEOBPACalculateS(
-    REAL8 X,
-    REAL8 chi
-);
+// REAL8
+// XLALSimInspiralEOBPACalculateS(
+//     REAL8 X,
+//     REAL8 chi
+// );
 
 REAL8
 XLALSimInspiralEOBPACalculateSstar(
@@ -74,29 +74,29 @@ XLALSimInspiralEOBPACalculateSstar(
     REAL8 chi2
 );
 
-double
-XLALSimInspiralEOBPostAdiabaticTimeUnitsFactor(
-    REAL8 M
-);
+// double
+// XLALSimInspiralEOBPostAdiabaticTimeUnitsFactor(
+//     REAL8 M
+// );
 
-double
-XLALSimInspiralEOBPostAdiabaticDynr0Kepler(
-    REAL8 f0
-);
+// double
+// XLALSimInspiralEOBPostAdiabaticDynr0Kepler(
+//     REAL8 f0
+// );
 
-REAL8
-XLALSimInspiralEOBPostAdiabaticTotalSpin(
-    REAL8 q,
-    REAL8 a1,
-    REAL8 a2
-);
+// REAL8
+// XLALSimInspiralEOBPostAdiabaticTotalSpin(
+//     REAL8 q,
+//     REAL8 a1,
+//     REAL8 a2
+// );
 
-REAL8
-XLALSimInspiralEOBPostAdiabaticFinalRadius(
-    REAL8 q,
-    REAL8 a1,
-    REAL8 a2
-);
+// REAL8
+// XLALSimInspiralEOBPostAdiabaticFinalRadius(
+//     REAL8 q,
+//     REAL8 a1,
+//     REAL8 a2
+// );
 
 REAL8
 XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(
@@ -240,11 +240,11 @@ XLALRescaleREAL8Vector(
     REAL8Vector *offsetVec
 );
 
-REAL8Vector
-XLALPostAdiabaticSplineDerivative(
-    REAL8Vector *VecX,
-    REAL8Vector *VecY
-);
+// REAL8Vector
+// XLALPostAdiabaticSplineDerivative(
+//     REAL8Vector *VecX,
+//     REAL8Vector *VecY
+// );
 
 int
 XLALFDDerivative1Order2(
