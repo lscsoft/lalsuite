@@ -122,21 +122,6 @@ XLALSimInspiralEOBPACalculatea(
 }
 
 /**
- * Function which calculates the spin parameter S
- */
-// REAL8
-// XLALSimInspiralEOBPACalculateS(
-// 	REAL8 X,
-// 	REAL8 chi
-// )
-// {
-// 	REAL8 S;
-// 	S = X * X * chi;
-
-// 	return S;
-// }
-
-/**
  * Function which calculates the spin parameter Sstar (S*)
  */
 REAL8
@@ -194,81 +179,6 @@ XLALSimIMRSpinAlignedEOBPACalculateOmega(
 
 	return omega;
 }
-
-/**
- * Function which calculates the time units factor
- */
-// double
-// XLALSimInspiralEOBPostAdiabaticTimeUnitsFactor(
-// 	REAL8 M
-// 	/**< Total mass in SI units */)
-// {
-// 	REAL8 time_units_factor = 1. / (M*LAL_MTSUN_SI);
-
-// 	return time_units_factor;
-// }
-
-/**
- * Function which calculates the time units factor
- */
-// double
-// XLALSimInspiralEOBPostAdiabaticDynr0Kepler(
-// 	REAL8 f0
-// 	/**< Mass in SI units */)
-// {
-// 	const REAL8 omg_orb0 = LAL_PI * f0; // = 2 * Pi * (f0/2)
-
-// 	REAL8 r0 = pow(omg_orb0, -2./3.);
-
-// 	return r0;
-// }
-
-/**
- * Function which calculates the total spin
- */
-// REAL8
-// XLALSimInspiralEOBPostAdiabaticTotalSpin(
-// 	REAL8 q,
-// 	REAL8 a1,
-// 	REAL8 a2)
-// {
-// 	REAL8 invQ;
-// 	REAL8 onePlusInvQ;
-// 	REAL8 aTotal;
-
-// 	invQ = 1. / q;
-// 	onePlusInvQ = 1. + invQ;
-
-// 	aTotal = (a1 + a2*invQ*invQ) / (onePlusInvQ * onePlusInvQ);
-
-// 	return aTotal;
-// }
-
-/**
- * Function which calculates the final radius at which the post-adiabatic
- * routine stops
- */
-// REAL8
-// XLALSimInspiralEOBPostAdiabaticFinalRadius(
-// 	REAL8 q,
-// 	REAL8 a1,
-// 	REAL8 a2)
-// {
-// 	REAL8 aTotal;
-
-// 	REAL8 rISCO;
-// 	REAL8 finalRadiusPrefactor;
-// 	REAL8 rFinal;
-
-// 	aTotal = XLALSimInspiralEOBPostAdiabaticTotalSpin(q, a1, a2);
-	
-// 	rISCO = XLALSimRadiusKerrISCO(aTotal);
-// 	finalRadiusPrefactor = 1.0;
-
-// 	rFinal = finalRadiusPrefactor * rISCO;
-
-// 	return rFinal;
-// }
 
 /**
  * Function which calculates the final radius at which the post-adiabatic

@@ -60,12 +60,6 @@ XLALSimInspiralEOBPACalculatea(
     REAL8 chi
 );
 
-// REAL8
-// XLALSimInspiralEOBPACalculateS(
-//     REAL8 X,
-//     REAL8 chi
-// );
-
 REAL8
 XLALSimInspiralEOBPACalculateSstar(
     REAL8 X1,
@@ -73,30 +67,6 @@ XLALSimInspiralEOBPACalculateSstar(
     REAL8 chi1,
     REAL8 chi2
 );
-
-// double
-// XLALSimInspiralEOBPostAdiabaticTimeUnitsFactor(
-//     REAL8 M
-// );
-
-// double
-// XLALSimInspiralEOBPostAdiabaticDynr0Kepler(
-//     REAL8 f0
-// );
-
-// REAL8
-// XLALSimInspiralEOBPostAdiabaticTotalSpin(
-//     REAL8 q,
-//     REAL8 a1,
-//     REAL8 a2
-// );
-
-// REAL8
-// XLALSimInspiralEOBPostAdiabaticFinalRadius(
-//     REAL8 q,
-//     REAL8 a1,
-//     REAL8 a2
-// );
 
 REAL8
 XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(
@@ -240,12 +210,6 @@ XLALRescaleREAL8Vector(
     REAL8Vector *offsetVec
 );
 
-// REAL8Vector
-// XLALPostAdiabaticSplineDerivative(
-//     REAL8Vector *VecX,
-//     REAL8Vector *VecY
-// );
-
 int
 XLALFDDerivative1Order2(
     REAL8Vector *XVec,
@@ -309,15 +273,6 @@ XLALSimInspiralEOBPAPartialHByPartialprstar(
     SpinEOBParams *seobParams,
     LALDict *LALParams
 );
-
-// REAL8Vector
-// XLALSimInspiralEOBPAHamiltonianPartialDerivativeprstarBetter(
-//     REAL8Vector *rVec,
-//     REAL8Vector *prstarVec,
-//     REAL8Vector *pphiVec,
-//     SpinEOBHCoeffs *seobCoeffs,
-//     LALDict *LALParams
-// );
 
 int
 XLALSimInspiralEOBPAMeanValueOrder8(

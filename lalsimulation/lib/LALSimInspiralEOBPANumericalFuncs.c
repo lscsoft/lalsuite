@@ -19,39 +19,6 @@
 #include "LALSimInspiralEOBPostAdiabatic.h"
 
 /**
- * Function which interpolates a numerical function and returns its 
- * derivative
- */
-// REAL8Vector
-// XLALPostAdiabaticSplineDerivative(
-// 	REAL8Vector *VecX,
-// 	REAL8Vector *VecY)
-// {
-// 	UINT4 vecLength;
-// 	vecLength = VecX->length;
-
-// 	REAL8Vector *splineDerivative = XLALCreateREAL8Vector(vecLength);
-// 	memset(splineDerivative->data, 0, splineDerivative->length * sizeof(REAL8));
-
-//     gsl_interp_accel *acc = gsl_interp_accel_alloc();
-//     gsl_spline *spline = gsl_spline_alloc(gsl_interp_akima, vecLength);
-
-//     gsl_spline_init(spline, VecX->data, VecY->data, vecLength);
-
-//     UINT4 i;
-
-//     for (i = 0; i < vecLength; i++)
-//     {
-//         splineDerivative->data[i] = gsl_spline_eval_deriv(spline, VecX->data[i], acc);
-//     }
-
-//     gsl_spline_free (spline);
-//     gsl_interp_accel_free (acc);
-
-//     return *splineDerivative;
-// }
-
-/**
  * Function which calculates the 4-order first finite difference
  * derivative of a numerical function
  */
@@ -438,9 +405,6 @@ XLALCumulativeIntegral3(
 	Y1 = &YVecExt->data[1];
 	Y2 = &YVecExt->data[2];
 	Y3 = &YVecExt->data[3];
-
-	//REAL8Vector *integralVec = XLALCreateREAL8Vector(vecLength);
-	//memset(integralVec->data, 0, integralVec->length * sizeof(REAL8));
 
 	for (i=0; i < vecLength-1; i++)
 	{
