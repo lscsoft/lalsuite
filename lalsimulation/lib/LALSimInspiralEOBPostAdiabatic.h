@@ -22,18 +22,6 @@ XLALSimInspiralEOBPostAdiabatic(
 );
 
 REAL8
-XLALSimInspiralEOBPACalculateAdibaticParameter(
-    REAL8 r,
-    REAL8 prstar,
-    REAL8 pphi,
-    SpinEOBParams *seobParams,
-    REAL8 csi,
-    LALDict *LALParams,
-    REAL8 omega,
-    REAL8 domegadr
-);
-
-REAL8
 XLALSimInspiralEOBPACalculateMassRatio(
     const REAL8 m1,
     const REAL8 m2
@@ -70,25 +58,14 @@ XLALSimInspiralEOBPACalculateSstar(
 
 REAL8
 XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(
-					   REAL8 a);
+    REAL8 a
+);
 
 REAL8
 XLALSimInspiralEOBPACalculatedr(
     REAL8 rStart,
     REAL8 rFinal,
     UINT4 rSize
-);
-
-double
-XLALSimInspiralEOBPostAdiabaticFitGlobalc3(
-    REAL8 nu,
-    REAL8 a1,
-    REAL8 a2
-);
-
-double
-XLALSimInspiralEOBPostAdiabaticz3(
-    const REAL8 nu
 );
 
 int
@@ -154,7 +131,8 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
     void *params
 );
 
-struct PostAdiabaticRootSolveParams
+struct
+PostAdiabaticRootSolveParams
 {
     REAL8 r;
     REAL8 dr;
@@ -171,7 +149,8 @@ struct PostAdiabaticRootSolveParams
     LALDict *LALParams;
 };
 
-struct PostAdiabaticRoot
+struct
+PostAdiabaticRoot
 {
     REAL8 root;
     INT4 status;
