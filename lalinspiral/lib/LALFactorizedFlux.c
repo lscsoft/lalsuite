@@ -47,12 +47,10 @@ REAL8 XLALInspiralFactorizedFlux(
   EOBNonQCCoeffs *nqcCoeffs;
   COMPLEX16       hNQC;
 
-#ifndef LAL_NDEBUG
   if ( !values || !ak )
   {
     XLAL_ERROR_REAL8( XLAL_EFAULT );
   }
-#endif
 
   if ( lMax < 2 )
   {

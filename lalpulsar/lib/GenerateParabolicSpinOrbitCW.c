@@ -220,13 +220,11 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
     ABORT( stat, GENERATESPINORBITCWH_ESGN,
 	   GENERATESPINORBITCWH_MSGESGN );
   }
-#ifndef NDEBUG
   if ( lalDebugLevel & LALWARNING ) {
     if ( f0*n*dt*vp*vp > 0.5 )
       LALWarning( stat, "Orbit may have significant relativistic"
 		  " effects that are not included" );
   }
-#endif
 
   /* Compute offset between time series epoch and periapsis, and
      betweem periapsis and spindown reference epoch. */
@@ -258,7 +256,6 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
   de = 2.0*pBy3;
 
   /* Check whether REAL8 precision is good enough. */
-#ifndef NDEBUG
   if ( lalDebugLevel & LALWARNING ) {
     REAL8 x = fabs( c0 + n*dc ); /* a temporary computation variable */
     if ( x < fabs( c0 ) )
@@ -268,7 +265,6 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
       LALWarning( stat, "REAL8 arithmetic may not have sufficient"
 		  " precision for this orbit" );
   }
-#endif
 
   /* Allocate output structures. */
   if ( ( output->a = (REAL4TimeVectorSeries *)

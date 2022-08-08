@@ -44,10 +44,8 @@ REAL8 XLALETBPsd( REAL8 f )
   REAL8 xt;
   REAL8 psd;
 
-#ifndef LAL_NDEBUG
   if ( f <= 0 )
     XLAL_ERROR_REAL8( XLAL_EINVAL );
-#endif
 
   xt = f / 100.;
 

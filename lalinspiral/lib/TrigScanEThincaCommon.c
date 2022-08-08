@@ -63,13 +63,11 @@ TriggerErrorList * XLALCreateTriggerErrorList( SnglInspiralTable *tableHead,
 
   SnglInspiralTable *currentTrigger = NULL;
 
-#ifndef LAL_NDEBUG
   if ( !tableHead )
     XLAL_ERROR_NULL( XLAL_EFAULT );
 
   if ( scaleFactor <= 0 )
     XLAL_ERROR_NULL( XLAL_EINVAL );
-#endif
 
   /* Loop through triggers and assign each of them an error ellipsoid */
   for (currentTrigger = tableHead; currentTrigger;

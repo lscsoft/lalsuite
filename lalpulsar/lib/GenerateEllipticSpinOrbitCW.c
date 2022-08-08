@@ -260,12 +260,9 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
     dxMax = 0.01/( f0*p );
   if ( dxMax < 1.0e-15 ) {
     dxMax = 1.0e-15;
-#ifndef NDEBUG
     LALWarning( stat, "REAL8 arithmetic may not have sufficient"
 		" precision for this orbit" );
-#endif
   }
-#ifndef NDEBUG
   if ( lalDebugLevel & LALWARNING ) {
     REAL8 tau = n*dt;
     if ( tau > p )
@@ -274,7 +271,6 @@ LALGenerateEllipticSpinOrbitCW( LALStatus             *stat,
       LALWarning( stat, "Orbit may have significant relativistic"
 		  " effects that are not included" );
   }
-#endif
 
   /* Compute offset between time series epoch and observed periapsis,
      and betweem true periapsis and spindown reference epoch. */

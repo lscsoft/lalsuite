@@ -795,6 +795,8 @@ LocalHOUGHAddPHMD2HD_Wlr  (LALStatus*    status UNUSED,
 #endif
 #define EAH_HOUGH_BATCHSIZE (1 << EAH_HOUGH_BATCHSIZE_LOG2)
 
+#undef NO_CHECK_INDEX   // define this macro to skip CHECK_INDEX() calls
+
 #define CHECK_INDEX(IDX,OFFSET) \
       if ((IDX < 0) || ( IDX >= ySide*(xSide+1))|| xPixel[OFFSET] < 0 || xPixel[OFFSET] >= xSideP1) { \
 	fprintf(stderr,"\nERROR: %s %d: map index out of bounds: %d [0..%d] j:%d xp[j]:%d xSide:%d\n", \
@@ -876,7 +878,7 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
     for(j=yLower; j < yLower+offs; j++) {
         sidx0=xPixel[j]+ j*xSideP1;
         PREFETCH(pf_addr[c_c++] = map + sidx0);
-#ifndef LAL_NDEBUG
+#ifndef NO_CHECK_INDEX
         CHECK_INDEX(sidx0,j);
 #endif
     }		
@@ -896,7 +898,7 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
       PREFETCH(pf_addr[c_n+2] = map + sidx2);
       PREFETCH(pf_addr[c_n+3] = map + sidx3);
 
-#ifndef LAL_NDEBUG 
+#ifndef NO_CHECK_INDEX
       CHECK_INDEX(sidx0,j+EAH_HOUGH_BATCHSIZE);
       CHECK_INDEX(sidx1,j+EAH_HOUGH_BATCHSIZE+1);
       CHECK_INDEX(sidx2,j+EAH_HOUGH_BATCHSIZE+2);
@@ -923,7 +925,7 @@ LocalHOUGHAddPHMD2HD_Wlr (LALStatus*    status,
     sidxBase=j*xSideP1;
     for(; j<=yUpper;++j){
       sidx = sidxBase + xPixel[j];
-#ifndef LAL_NDEBUG
+#ifndef NO_CHECK_INDEX
       CHECK_INDEX(sidx0,j);
 #endif
       map[sidx] += weight;

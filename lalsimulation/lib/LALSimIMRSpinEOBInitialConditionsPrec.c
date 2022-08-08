@@ -715,11 +715,9 @@ XLALSimIMRSpinEOBInitialConditionsPrec(
 )
 {
 
-#ifndef LAL_NDEBUG
 	if (!initConds) {
 		XLAL_ERROR(XLAL_EINVAL);
 	}
-#endif
 
 	int	debugPK = 0; int printPK = 0;
   FILE* UNUSED out = NULL;

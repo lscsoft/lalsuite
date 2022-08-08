@@ -29,7 +29,6 @@
   The following macros determine the code that is actually built:
   _MSC_VER       : are we using the Microsoft compiler that doesn't know C99?
   _ARCH_PPC      : are we compiling for PowerPC?
-  LAL_NDEBUG     : are we compiling in LAL debug mode?
   __BIG_ENDIAN__ : has the architecture big-endian byt order?
 */
 

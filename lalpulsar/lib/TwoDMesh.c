@@ -122,7 +122,6 @@ LALCreateTwoDMesh( LALStatus          *stat,
 
   /* Ben wants a warning if the widthMaxFac or widthRetryFac are
      larger than is reasonable. */
-#ifndef NDEBUG
   if ( lalDebugLevel&LALWARNING ) {
     REAL4 retry = params->widthRetryFac;
     if ( params->widthMaxFac > LAL_SQRT2 )
@@ -130,25 +129,20 @@ LALCreateTwoDMesh( LALStatus          *stat,
     if ( retry > 1.0 && retry*retry > params->widthMaxFac )
       LALWarning( stat, "widthRetryFac > sqrt(widthMaxFac)" );
   }
-#endif
 
   /* Create the list using LALTwoDMesh(). */
   params->nOut = 0;
   head.next = NULL;
   headPtr = &head;
-#ifndef NDEBUG
   if ( lalDebugLevel&LALINFO )
     LALInfo( stat, "Generating mesh\n" );
-#endif
   TRY( LALTwoDMesh( stat->statusPtr, &headPtr, params ), stat );
-#ifndef NDEBUG
   if ( lalDebugLevel&LALINFO )
     if ( ( params->nIn == 0 ) || ( params->nOut < params->nIn ) ) {
       XLALPrintError( "\n" );
       LALInfo( stat, "Mesh complete" );
       XLALPrintError( "\tnumber of mesh points: %u\n", params->nOut );
     }
-#endif
 
   /* Update the output, and exit. */
   *mesh = head.next;
@@ -295,7 +289,6 @@ LALRefineTwoDMesh( LALStatus    *stat,
       }
     }
     /* If no coarse tile overlapped, make a note of this. */
-#ifndef NDEBUG
     if ( !found ) {
       lost++;
       if ( lalDebugLevel&LALINFO ) {
@@ -303,16 +296,13 @@ LALRefineTwoDMesh( LALStatus    *stat,
 	XLALPrintError( "\tlocation: (%f,%f)\n", xFine, yFine );
       }
     }
-#endif
   }
   /* If any fine mesh tiles were lost, warn the user. */
-#ifndef NDEBUG
   if ( lalDebugLevel&LALWARNING )
     if ( lost > 0 ) {
       LALWarning( stat, "Some fine mesh tiles were lost" );
       XLALPrintError( "\tnumber lost = %u\n", lost );
     }
-#endif
 
   /* Done. */
   DETATCHSTATUSPTR( stat );

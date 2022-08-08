@@ -74,12 +74,10 @@ gsl_matrix * XLALGetErrorMatrixFromSnglInspiral(SnglInspiralTable *event,
 
   int xlalStatus;
 
-#ifndef LAL_NDEBUG
   if (!event)
   {
     XLAL_ERROR_NULL( XLAL_EFAULT );
   }
-#endif
 
   /* Allocate memory for the various matrices */
   XLAL_CALLGSL( shape  = gsl_matrix_alloc( 3, 3 ) );
@@ -118,7 +116,6 @@ int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
   int signum;
   int gslStatus;
 
-#ifndef LAL_NDEBUG
   if ( !event )
     XLAL_ERROR( XLAL_EFAULT );
 
@@ -127,7 +124,6 @@ int XLALSetErrorMatrixFromSnglInspiral(gsl_matrix        *shape,
 
   if ( shape->size1 != 3 || shape->size1 != shape->size2 )
     XLAL_ERROR( XLAL_EBADLEN );
-#endif
 
   if ( !event->Gamma[0] )
   {
@@ -203,10 +199,8 @@ gsl_vector * XLALGetPositionFromSnglInspiral( SnglInspiralTable *table )
   REAL8 fLow = 0.0;
   REAL8 mtotal = 0.0;
 
-#ifndef LAL_NDEBUG
   if ( !table )
     XLAL_ERROR_NULL( XLAL_EFAULT );
-#endif
 
   XLAL_CALLGSL( position = gsl_vector_alloc( 3 ) );
   if ( !position )
@@ -235,10 +229,8 @@ int XLALSetTimeInPositionVector( gsl_vector *position,
                                  REAL8 timeShift)
 
 {
-#ifndef LAL_NDEBUG
     if ( !position )
       XLAL_ERROR( XLAL_EFAULT );
-#endif
 
     gsl_vector_set( position, 0, timeShift );
 

@@ -79,13 +79,11 @@ int XLALSimInspiralREAL4WaveTaper(
   REAL4 z, sigma;
   REAL4 realN, realI;  /* REAL4 values of n & i used for the calculations */
 
-#ifndef LAL_NDEBUG
   if ( !signalvec )
     XLAL_ERROR( XLAL_EFAULT );
 
   if ( !signalvec->data )
     XLAL_ERROR( XLAL_EFAULT );
-#endif
 
   /* Check we have chosen a valid tapering method */
   if ( (UINT4) bookends >= (UINT4) LAL_SIM_INSPIRAL_TAPER_NUM_OPTS )
@@ -230,13 +228,11 @@ int XLALSimInspiralREAL8WaveTaper(
   REAL8 z, sigma;
   REAL8 realN, realI;  /* REAL4 values of n & i used for the calculations */
 
-#ifndef LAL_NDEBUG
   if ( !signalvec )
     XLAL_ERROR( XLAL_EFAULT );
 
   if ( !signalvec->data )
     XLAL_ERROR( XLAL_EFAULT );
-#endif
 
   /* Check we have chosen a valid tapering method */
   if ( (UINT4) bookends >= (UINT4) LAL_SIM_INSPIRAL_TAPER_NUM_OPTS )

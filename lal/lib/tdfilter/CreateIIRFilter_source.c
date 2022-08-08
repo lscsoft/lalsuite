@@ -90,9 +90,7 @@
  * The code associated with the warning messages is potentially rather
  * cumbersome for production algorithms; therefore, the value of
  * \c lalDebugLevel is tested before performing any other tests
- * associated with warning messages.  Furthermore, this code block is
- * surrounded with compiler directives to exclude the code entirely if
- * the module is compiled with the \c NDEBUG flag set.
+ * associated with warning messages.
  *
  */
 /** @{ */
@@ -138,7 +136,6 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
     else if(cimagf(zeros[i])>0.0){
       num+=2;
 
-#ifndef NDEBUG
       if(lalDebugLevel&LALWARNING){
 	/* Check to see that another zero is an actual conjugate.
            This is not a foolproof test, as it can be fooled by
@@ -165,7 +162,6 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
               crealf(zeros[k]),cimagf(zeros[k]));
 	}
       }
-#endif
     }
 
   if ( num != numZeros )
@@ -184,7 +180,6 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
     else if(cimagf(poles[i])>0.0){
       num+=2;
 
-#ifndef NDEBUG
       if(lalDebugLevel&LALWARNING){
 	/* Check to see that another pole is an actual conjugate.
            This is not a foolproof test, as it can be fooled by
@@ -211,13 +206,11 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
               crealf(poles[k]),cimagf(poles[k]));
 	}
       }
-#endif
     }
 
   if ( num != numPoles )
     XLAL_ERROR_NULL( XLAL_EINVAL );
 
-#ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
     if(fabs(cimag(input->gain))>fabs(LAL_REAL4_EPS*creal(input->gain))){
@@ -254,7 +247,6 @@ REAL4IIRFilter *XLALCreateREAL4IIRFilter( COMPLEX8ZPGFilter *input )
       }
     }
   }
-#endif
 
   /* Everything seems okay, so initialize the filter. */
   output=LALCalloc(1,sizeof(*output));
@@ -371,7 +363,6 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
     else if(cimag(zeros[i])>0.0){
       num+=2;
 
-#ifndef NDEBUG
       if(lalDebugLevel&LALWARNING){
 	/* Check to see that another zero is an actual conjugate.
            This is not a foolproof test, as it can be fooled by
@@ -398,7 +389,6 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
               creal(zeros[k]),cimag(zeros[k]));
 	}
       }
-#endif
     }
 
   if ( num != numZeros )
@@ -417,7 +407,6 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
     else if(cimag(poles[i])>0.0){
       num+=2;
 
-#ifndef NDEBUG
       if(lalDebugLevel&LALWARNING){
 	/* Check to see that another pole is an actual conjugate.
            This is not a foolproof test, as it can be fooled by
@@ -444,13 +433,11 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
               creal(poles[k]),cimag(poles[k]));
 	}
       }
-#endif
     }
 
   if ( num != numPoles )
     XLAL_ERROR_NULL( XLAL_EINVAL );
 
-#ifndef NDEBUG
   if(lalDebugLevel&LALWARNING){
     /* Issue a warning if the gain is nonreal. */
     if(fabs(cimag(input->gain))>fabs(LAL_REAL8_EPS*creal(input->gain))){
@@ -487,7 +474,6 @@ REAL8IIRFilter *XLALCreateREAL8IIRFilter( COMPLEX16ZPGFilter *input )
       }
     }
   }
-#endif
 
   /* Everything seems okay, so initialize the filter. */
   output=LALCalloc(1,sizeof(*output));

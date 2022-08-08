@@ -563,13 +563,11 @@ static int FindTimeSeriesStartAndEnd (
   UINT4 flag, safe = 1;
   UINT4 length;
 
-#ifndef LAL_NDEBUG
   if ( !signalvec )
     XLAL_ERROR( XLAL_EFAULT );
 
   if ( !signalvec->data )
     XLAL_ERROR( XLAL_EFAULT );
-#endif
 
   length = signalvec->length;
 

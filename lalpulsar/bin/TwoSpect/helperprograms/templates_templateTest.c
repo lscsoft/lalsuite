@@ -1675,12 +1675,10 @@ int twospect_sin_cos_2PI_LUT(REAL8 *sin2pix, REAL8 *cos2pix, REAL8 x)
    else xt = modf(x, &dummy);
    
    if ( xt < 0.0 ) xt += 1.0;                  /* xt in [0, 1 ) */
-   #ifndef LAL_NDEBUG
       if ( xt < 0.0 || xt > 1.0 ) {
          XLALPrintError("\nFailed numerica in twospect_sin_cos_2PI_LUT(): xt = %f not in [0,1)\n\n", xt );
          return XLAL_FAILURE;
       }
-   #endif
    
    i0 = (INT4)( xt * LUT_RES_F + 0.5 );  /* i0 in [0, LUT_RES ] */
    d = d2 = LAL_TWOPI * (xt - OO_LUT_RES * i0);

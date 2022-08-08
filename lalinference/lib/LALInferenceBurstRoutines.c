@@ -64,10 +64,8 @@ static void semi_major_minor_from_e(double e, double *a, double *b)
 
 int XLALGetBurstApproximantFromString(const CHAR *inString)
 {
-#ifndef LAL_NDEBUG
   if ( !inString )
     XLAL_ERROR( XLAL_EFAULT );
-#endif
   if ( strstr(inString, "SineGaussianF" ) )
   {
     return SineGaussianF;
@@ -102,10 +100,8 @@ int XLALGetBurstApproximantFromString(const CHAR *inString)
 /* FIXME ORDER*/
 int XLALCheckBurstApproximantFromString(const CHAR *inString)
 {
-#ifndef LAL_NDEBUG
   if ( !inString )
     XLAL_ERROR( XLAL_EFAULT );
-#endif
   if ( strstr(inString, "Gaussian" ) )
     return 1;
   else if ( strstr(inString, "GaussianF" ) )

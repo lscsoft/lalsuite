@@ -64,13 +64,11 @@ int XLALInspiralGetApproximantString( CHAR        *output,
   CHAR approxString[LIGOMETA_SEARCH_MAX];
   CHAR orderString[LIGOMETA_SEARCH_MAX];
 
-#ifndef LAL_NDEBUG
   if (!output)
     XLAL_ERROR( XLAL_EFAULT );
 
   if (length < 1)
     XLAL_ERROR( XLAL_EINVAL );
-#endif
 
   /* Set the approximant string */
 
