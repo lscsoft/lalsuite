@@ -1863,6 +1863,7 @@ docker:nightly:el7-koji:
 coverage:
   stage: coverage
   image: igwn/lalsuite-dev-gcc:8
+  timeout: 2 hours
   needs: []
   before_script:
     - *init-build-job
