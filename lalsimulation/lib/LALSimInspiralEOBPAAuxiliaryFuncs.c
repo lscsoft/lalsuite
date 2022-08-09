@@ -29,9 +29,9 @@
 REAL8
 XLALSimInspiralEOBPACalculateMassRatio(
 	const REAL8 m1,
-    /**< Mass of the primary */
+    /**<< Mass of the primary */
 	const REAL8 m2
-    /**< Mass of the secondary */
+    /**<< Mass of the secondary */
 )
 {
 	REAL8 q;
@@ -53,7 +53,7 @@ XLALSimInspiralEOBPACalculateMassRatio(
 REAL8
 XLALSimInspiralEOBPACalculateSymmetricMassRatio(
 	const REAL8 q
-	/**< Mass ratio */
+	/**<< Mass ratio */
 )
 {
 	REAL8 nu = 0.;
@@ -73,12 +73,15 @@ XLALSimInspiralEOBPACalculateSymmetricMassRatio(
 REAL8
 XLALSimInspiralEOBPACalculateX1(
 	const REAL8 nu
-	/**< Symmetric mass ratio */
+	/**<< Symmetric mass ratio */
 )
 {
 	if ( (nu < 0.) || (nu > 0.25) )
 	{
-		XLALPrintError("XLAL Error - %s: Symmetric mass ratio is 0 <= nu <= 1/4.\n", __func__);
+		XLALPrintError(
+            "XLAL Error - %s: Symmetric mass ratio is 0 <= nu <= 1/4.\n",
+            __func__
+        );
 		XLAL_ERROR(XLAL_EINVAL);
 	}
 
@@ -94,7 +97,7 @@ XLALSimInspiralEOBPACalculateX1(
 REAL8
 XLALSimInspiralEOBPACalculateX2(
 	const REAL8 nu
-	/**< Symmetric mass ratio */
+	/**<< Symmetric mass ratio */
 )
 {
 	REAL8 X1 = XLALSimInspiralEOBPACalculateX1(nu);
@@ -110,9 +113,9 @@ XLALSimInspiralEOBPACalculateX2(
 REAL8
 XLALSimInspiralEOBPACalculatea(
 	REAL8 X,
-    /**< Parameter X for the binary component */
+    /**<< Parameter X for the binary component */
 	REAL8 chi
-    /**< Spin of the binary component */
+    /**<< Spin of the binary component */
 )
 {
 	REAL8 a;
@@ -127,13 +130,13 @@ XLALSimInspiralEOBPACalculatea(
 REAL8
 XLALSimInspiralEOBPACalculateSstar(
 	REAL8 X1,
-    /**< Parameter X1 */
+    /**<< Parameter X1 */
 	REAL8 X2,
-    /**< Parameter X2 */
+    /**<< Parameter X2 */
 	REAL8 chi1,
-    /**< Spin of the primary component */
+    /**<< Spin of the primary component */
 	REAL8 chi2
-    /**< Spin of the secondary component */
+    /**<< Spin of the secondary component */
 )
 {
 	REAL8 Sstar;
@@ -148,16 +151,18 @@ XLALSimInspiralEOBPACalculateSstar(
 REAL8
 XLALSimIMRSpinAlignedEOBPACalculateOmega(
     REAL8 polarDynamics[],
-    /**< The polar coordinates of a point along the binary inspiral */
+    /**<< The polar coordinates of a point along the binary inspiral */
     REAL8 dr,
-    /**< The spacing of the radial grid */
+    /**<< The spacing of the radial grid */
     SpinEOBParams *seobParams,
-    /**< Struct of additional parameters */
+    /**<< Struct of additional parameters */
     LALDict *LALParams
-    /**< Pointer to a dictionary containing additional */
+    /**<< Pointer to a dictionary containing additional */
 )
 {
-	const UINT2 analyticFlag = XLALDictLookupUINT2Value(LALParams, "analyticFlag");
+	const UINT2 analyticFlag = XLALDictLookupUINT2Value(
+        LALParams, "analyticFlag"
+    );
 
 	REAL8 omega;
 
@@ -187,7 +192,7 @@ XLALSimIMRSpinAlignedEOBPACalculateOmega(
 REAL8
 XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(
     REAL8 a
-    /**< Spin parameter a */
+    /**<< Spin parameter a */
 )
 {
 
@@ -210,11 +215,11 @@ XLALSimInspiralEOBPostAdiabaticFinalRadiusAlternative(
 REAL8
 XLALSimInspiralEOBPACalculatedr(
 	REAL8 rStart,
-    /**< The starting radius */
+    /**<< The starting radius */
 	REAL8 rFinal,
-    /**< The final radius */
+    /**<< The final radius */
 	UINT4 rSize
-    /**< The number of points along the post-adiabatic inspiral */
+    /**<< The number of points along the post-adiabatic inspiral */
 )
 {
 	REAL8 dr;
@@ -230,7 +235,7 @@ XLALSimInspiralEOBPACalculatedr(
 REAL8
 XLALSimInspiralEOBPACalculateNewtonianj0(
 	REAL8 r
-    /**< Value of the radius */
+    /**<< Value of the radius */
 )
 {
 	REAL8 Newtonianj0;

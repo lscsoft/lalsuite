@@ -25,11 +25,11 @@
 int
 XLALFDDerivative1Order4(
 	REAL8Vector *XVec,
-    /**< An array of X values */
+    /**<< An array of X values */
 	REAL8Vector *YVec,
-    /**< An array of Y values */
+    /**<< An array of Y values */
 	REAL8Vector *derivativeVec
-    /**< OUTPUT, the derivative dY/dX */
+    /**<< OUTPUT, the derivative dY/dX */
 )
 {
 	REAL8 fourthOrderCoeffs[5][5] = {
@@ -55,35 +55,45 @@ XLALFDDerivative1Order4(
 		{
 			for (j = 0; j <= 4; j++)
 			{
-				derivativeVec->data[i] += fourthOrderCoeffs[0][j]*YVec->data[j];
+				derivativeVec->data[i] += (
+                    fourthOrderCoeffs[0][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == 1)
 		{
 			for (j = 0; j <= 4; j++)
 			{
-				derivativeVec->data[i] += fourthOrderCoeffs[1][j]*YVec->data[j];
+				derivativeVec->data[i] += (
+                    fourthOrderCoeffs[1][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == vecLength-2)
 		{
 			for (j = 0; j <= 4; j++)
 			{
-				derivativeVec->data[i] += fourthOrderCoeffs[3][j]*YVec->data[i+j-3];
+				derivativeVec->data[i] += (
+                    fourthOrderCoeffs[3][j] * YVec->data[i+j-3]
+                );
 			}
 		}
 		else if (i == vecLength-1)
 		{
 			for (j = 0; j <= 4; j++)
 			{
-				derivativeVec->data[i] += fourthOrderCoeffs[4][j]*YVec->data[i+j-4];
+				derivativeVec->data[i] += (
+                    fourthOrderCoeffs[4][j] * YVec->data[i+j-4]
+                );
 			}
 		}
 		else
 		{
 			for (j = 0; j <= 4; j++)
 			{
-				derivativeVec->data[i] += fourthOrderCoeffs[2][j]*YVec->data[i+j-2];
+				derivativeVec->data[i] += (
+                    fourthOrderCoeffs[2][j] * YVec->data[i+j-2]
+                );
 			}
 		}
 
@@ -100,11 +110,11 @@ XLALFDDerivative1Order4(
 int
 XLALFDDerivative1Order2(
 	REAL8Vector *XVec,
-    /**< An array of X values */
+    /**<< An array of X values */
 	REAL8Vector *YVec,
-    /**< An array of Y values */
+    /**<< An array of Y values */
 	REAL8Vector *derivativeVec
-    /**< OUTPUT, the derivative dY/dX */
+    /**<< OUTPUT, the derivative dY/dX */
 )
 {
 	REAL8 secondOrderCoeffs[3][3] = {
@@ -129,21 +139,27 @@ XLALFDDerivative1Order2(
 		{
 			for (j = 0; j <= 2; j++)
 			{
-				derivativeVec->data[i] += secondOrderCoeffs[0][j] * YVec->data[j];
+				derivativeVec->data[i] += (
+                    secondOrderCoeffs[0][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == vecLength-1)
 		{
 			for (j = 0; j <= 2; j++)
 			{
-				derivativeVec->data[i] += secondOrderCoeffs[2][j] * YVec->data[i+j-2];
+				derivativeVec->data[i] += (
+                    secondOrderCoeffs[2][j] * YVec->data[i+j-2]
+                );
 			}
 		}
 		else
 		{
 			for (j = 0; j <= 2; j++)
 			{
-				derivativeVec->data[i] += secondOrderCoeffs[1][j] * YVec->data[i+j-1];
+				derivativeVec->data[i] += (
+                    secondOrderCoeffs[1][j] * YVec->data[i+j-1]
+                );
 			}
 		}
 
@@ -160,11 +176,11 @@ XLALFDDerivative1Order2(
 int
 XLALFDDerivative1Order6(
 	REAL8Vector *XVec,
-    /**< An array of X values */
+    /**<< An array of X values */
 	REAL8Vector *YVec,
-    /**< An array of Y values */
+    /**<< An array of Y values */
 	REAL8Vector *derivativeVec
-    /**< OUTPUT, the derivative dY/dX */
+    /**<< OUTPUT, the derivative dY/dX */
 )
 {
 	REAL8 sixthOrderCoeffs[7][7] = {
@@ -193,49 +209,63 @@ XLALFDDerivative1Order6(
 		{
 			for (j = 0; j <= 6; j++)
 			{
-				derivativeVec->data[i] += sixthOrderCoeffs[0][j] * YVec->data[j];
+				derivativeVec->data[i] += (
+                    sixthOrderCoeffs[0][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == 1)
 		{
 			for (j = 0; j <= 6; j++)
 			{
-				derivativeVec->data[i] += sixthOrderCoeffs[1][j] * YVec->data[j];
+				derivativeVec->data[i] += (
+                    sixthOrderCoeffs[1][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == 2)
 		{
 			for (j = 0; j <= 6; j++)
 			{
-				derivativeVec->data[i] += sixthOrderCoeffs[2][j] * YVec->data[j];
+				derivativeVec->data[i] += (
+                    sixthOrderCoeffs[2][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == vecLength-3)
 		{
 			for (j = 0; j <= 6; j++)
 			{
-				derivativeVec->data[i] += sixthOrderCoeffs[4][j] * YVec->data[i+j-4];
+				derivativeVec->data[i] += (
+                    sixthOrderCoeffs[4][j] * YVec->data[i+j-4]
+                );
 			}
 		}
 		else if (i == vecLength-2)
 		{
 			for (j = 0; j <= 6; j++)
 			{
-				derivativeVec->data[i] += sixthOrderCoeffs[5][j] * YVec->data[i+j-5];
+				derivativeVec->data[i] += (
+                    sixthOrderCoeffs[5][j] * YVec->data[i+j-5]
+                );
 			}
 		}
 		else if (i == vecLength-1)
 		{
 			for (j = 0; j <= 6; j++)
 			{
-				derivativeVec->data[i] += sixthOrderCoeffs[6][j] * YVec->data[i+j-6];
+				derivativeVec->data[i] += (
+                    sixthOrderCoeffs[6][j] * YVec->data[i+j-6]
+                );
 			}
 		}
 		else
 		{
 			for (j = 0; j <= 6; j++)
 			{
-				derivativeVec->data[i] += sixthOrderCoeffs[3][j] * YVec->data[i+j-3];
+				derivativeVec->data[i] += (
+                    sixthOrderCoeffs[3][j] * YVec->data[i+j-3]
+                );
 			}
 		}
 
@@ -252,11 +282,11 @@ XLALFDDerivative1Order6(
 int
 XLALFDDerivative1Order8(
 	REAL8Vector *XVec,
-    /**< An array of X values */
+    /**<< An array of X values */
 	REAL8Vector *YVec,
-    /**< An array of Y values */
+    /**<< An array of Y values */
 	REAL8Vector *derivativeVec
-    /**< OUTPUT, the derivative dY/dX */
+    /**<< OUTPUT, the derivative dY/dX */
 )
 {
 	REAL8 eightOrderCoeffs[9][9] = {
@@ -287,63 +317,81 @@ XLALFDDerivative1Order8(
 		{
 			for (j = 0; j <= 8; j++)
 			{
-				derivativeVec->data[i] += eightOrderCoeffs[0][j] * YVec->data[j];
+				derivativeVec->data[i] += (
+                    eightOrderCoeffs[0][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == 1)
 		{
 			for (j = 0; j <= 8; j++)
 			{
-				derivativeVec->data[i] += eightOrderCoeffs[1][j] * YVec->data[j];
+				derivativeVec->data[i] += (
+                    eightOrderCoeffs[1][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == 2)
 		{
 			for (j = 0; j <= 8; j++)
 			{
-				derivativeVec->data[i] += eightOrderCoeffs[2][j] * YVec->data[j];
+				derivativeVec->data[i] += (
+                    eightOrderCoeffs[2][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == 3)
 		{
 			for (j = 0; j <= 8; j++)
 			{
-				derivativeVec->data[i] += eightOrderCoeffs[3][j] * YVec->data[j];
+				derivativeVec->data[i] += (
+                    eightOrderCoeffs[3][j] * YVec->data[j]
+                );
 			}
 		}
 		else if (i == vecLength-4)
 		{
 			for (j = 0; j <= 8; j++)
 			{
-				derivativeVec->data[i] += eightOrderCoeffs[5][j] * YVec->data[i+j-5];
+				derivativeVec->data[i] += (
+                    eightOrderCoeffs[5][j] * YVec->data[i+j-5]
+                );
 			}
 		}
 		else if (i == vecLength-3)
 		{
 			for (j = 0; j <= 8; j++)
 			{
-				derivativeVec->data[i] += eightOrderCoeffs[6][j] * YVec->data[i+j-6];
+				derivativeVec->data[i] += (
+                    eightOrderCoeffs[6][j] * YVec->data[i+j-6]
+                );
 			}
 		}
 		else if (i == vecLength-2)
 		{
 			for (j = 0; j <= 8; j++)
 			{
-				derivativeVec->data[i] += eightOrderCoeffs[7][j] * YVec->data[i+j-7];
+				derivativeVec->data[i] += (
+                    eightOrderCoeffs[7][j] * YVec->data[i+j-7]
+                );
 			}
 		}
 		else if (i == vecLength-1)
 		{
 			for (j = 0; j <= 8; j++)
 			{
-				derivativeVec->data[i] += eightOrderCoeffs[8][j] * YVec->data[i+j-8];
+				derivativeVec->data[i] += (
+                    eightOrderCoeffs[8][j] * YVec->data[i+j-8]
+                );
 			}
 		}
 		else
 		{
 			for (j = 0; j <= 8; j++)
 			{
-				derivativeVec->data[i] += eightOrderCoeffs[4][j] * YVec->data[i+j-4];
+				derivativeVec->data[i] += (
+                    eightOrderCoeffs[4][j] * YVec->data[i+j-4]
+                );
 			}
 		}
 
@@ -360,11 +408,11 @@ XLALFDDerivative1Order8(
 int
 XLALCumulativeIntegral3(
 	REAL8Vector *XVec,
-    /**< An array of X values */
+    /**<< An array of X values */
 	REAL8Vector *YVec,
-    /**< An array of Y values */
+    /**<< An array of Y values */
 	REAL8Vector *integralVec
-    /**< OUTPUT, the integral of Y dX */
+    /**<< OUTPUT, the integral of Y dX */
 )
 {
 	UINT4 vecLength;
@@ -415,7 +463,14 @@ XLALCumulativeIntegral3(
 		e = Y2[i] - Y1[i];
 		h = Y3[i] - Y2[i];
 		g = 0.5 * (Y1[i]+Y2[i]);
-		z = b*g + oo12*b*b*(c*b*(2*c+b)*(c+b)*d-a*c*(c-a)*(2*c+2*a+3*b)*e-a*b*(2*a+b)*(a+b)*h)/(a*c*(a+b)*(c+b)*(c+a+b));
+		z = (
+            b * g
+            + oo12 * b * b * (
+                c * b * (2 * c + b) * (c + b) * d
+                - a * c * (c - a) * (2 * c + 2 * a + 3 * b) * e
+                - a * b * (2 * a + b) * (a + b) * h
+            ) / (a * c * (a + b) * (c + b) * (c + a + b))
+        );
 		integralVec->data[i+1] = integralVec->data[i] + z;
 	}	
 	XLALDestroyREAL8Vector(XVecExt);
