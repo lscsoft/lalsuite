@@ -62,8 +62,8 @@ XLALSimInspiralEOBPACalculateRadialGrid(
 }
 
 /**
- * Function which implements eq. (2.5) of the paper for the purposes of
- * root solving
+ * Function which implements eq. (2.5) of arXiv:2105.06983 for the
+ * purposes of root solving
  */
 double
 XLALSimInspiralEOBPostAdiabaticj0Func(
@@ -94,8 +94,8 @@ XLALSimInspiralEOBPostAdiabaticj0Func(
 }
 
 /**
- * Function which implements eq. (2.6) of the paper for the purposes of
- * root solving
+ * Function which implements eq. (2.6) of arXiv:2105.06983 for the 
+ * purposes of root solving
  */
 double
 XLALSimInspiralEOBPostAdiabaticdprstarFunc(
@@ -194,8 +194,8 @@ XLALSimInspiralEOBPostAdiabaticdprstarFunc(
 }
 
 /**
- * Function which implements eq. (2.7) of the paper for the purposes of
- * root solving
+ * Function which implements eq. (2.7) of arXiv:2105.06983 for the 
+ * purposes of root solving
  */
 double 
 XLALSimInspiralEOBPostAdiabaticdpphiFunc(
