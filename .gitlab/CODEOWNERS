@@ -41,7 +41,6 @@ Makefile.am                     @adam-mercer @duncanmmacleod @karl-wette
 conda/                          @adam-mercer @duncanmmacleod @karl-wette
 configure.ac                    @adam-mercer @duncanmmacleod @karl-wette
 debian/                         @adam-mercer @duncanmmacleod @karl-wette
-docker/                         @adam-mercer @duncanmmacleod @karl-wette
 doxygen/                        @adam-mercer @duncanmmacleod @karl-wette
 gnuscripts/                     @adam-mercer @duncanmmacleod @karl-wette
 include/                        @adam-mercer @duncanmmacleod @karl-wette
