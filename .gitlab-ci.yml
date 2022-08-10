@@ -2129,5 +2129,5 @@ deploy:wheel:
     - wheel:cp39-cp39-macosx-arm64
     - wheel:cp310-cp310-macosx-arm64
   rules:
-    - !reference [.tag, rules]
+    - !reference [.lalsuite-tag, rules]
     - !reference [.nightly, rules]

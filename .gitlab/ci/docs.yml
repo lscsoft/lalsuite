@@ -44,6 +44,5 @@ pages:
   rules:
     - !reference [.skip-docs, rules]
     - !reference [.skip-coverage, rules]
-    # build nightly or tags
-    - !reference [.tag, rules]
+    # build nightly
     - !reference [.nightly, rules]
