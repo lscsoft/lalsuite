@@ -1,6 +1,7 @@
 .dirstamp
 .DS_Store
 .idea
+.hypothesis/
 .vscode
 *.dSYM
 *.egg-info
