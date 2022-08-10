@@ -108,7 +108,7 @@ static int delta_tai_utc( INT4 gpssec )
   {
     fprintf( stderr, "error: don't know leap seconds before gps time %d\n",
         leaps[0].gpssec );
-    abort();
+    XLAL_ERROR(...);
   }
   */
 

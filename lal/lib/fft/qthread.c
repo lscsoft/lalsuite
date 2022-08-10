@@ -157,37 +157,33 @@ void * pthread_getspecific(pthread_key_t key)
 /* these functions are needed to resolve the symbols when       */
 /* linking in the DFT routines from the Intel Math Kernel       */
 /* Library but are not actually called during execution if      */
-/* the environment variable MKL_SERIAL=YES. They throw an       */
-/* abort() since there is no implementation defined here.       */
+/* the environment variable MKL_SERIAL=YES. lalAbortHook()      */
+/* is called since there is no implementation defined here.     */
 
 int pthread_cancel(pthread_t thread)
 {
-  fprintf( stderr, "attempt to call pthread_cancel(%ld)\n", thread );
-  abort();
+  lalAbortHook( "attempt to call pthread_cancel(%ld)\n", thread );
   return 0;
 }
 
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
     void * (*start_routine)(void *), void *arg)
 {
-  fprintf( stderr, "attempt to call pthread_create(%p,%p,%p,%p)\n",
+  lalAbortHook( "attempt to call pthread_create(%p,%p,%p,%p)\n",
       thread, attr, start_routine, arg );
-  abort();
   return 0;
 }
 
 int pthread_join(pthread_t thread_id, void ** thread_return)
 {
-  fprintf( stderr, "attempt to call pthread_join(%ld,%p)\n",
+  lalAbortHook( "attempt to call pthread_join(%ld,%p)\n",
       thread_id, thread_return );
-  abort();
   return 0;
 }
 
 int pthread_sigmask(int how, const sigset_t * newmask, sigset_t * oldmask)
 {
-  fprintf( stderr, "attempt to call pthread_sigmask(%d,%p,%p)\n",
+  lalAbortHook( "attempt to call pthread_sigmask(%d,%p,%p)\n",
       how, newmask, oldmask );
-  abort();
   return 0;
 }
