@@ -46,3 +46,5 @@ doxygen/                        @adam-mercer @duncanmmacleod @karl-wette
 gnuscripts/                     @adam-mercer @duncanmmacleod @karl-wette
 include/                        @adam-mercer @duncanmmacleod @karl-wette
 swig/                           @adam-mercer @duncanmmacleod @karl-wette
+test_python_imports.py.in       @adam-mercer @duncanmmacleod @karl-wette
+test_python_scripts.py.in       @adam-mercer @duncanmmacleod @karl-wette
