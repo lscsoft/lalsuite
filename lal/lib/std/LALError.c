@@ -145,16 +145,6 @@ int LALTrace(LALStatus * status, int exitflg)
 }
 
 
-#ifdef LAL_NDEBUG
-
-#define LALError( statusptr, statement ) 0
-#define LALWarning( statusptr, warning ) 0
-#define LALInfo( statusptr, info )       0
-#define LALTrace( statusptr, exitflg )   0
-
-#endif
-
-
 int
 LALInitStatus(LALStatus * status, const char *function, const char *id,
               const char *file, const int line)

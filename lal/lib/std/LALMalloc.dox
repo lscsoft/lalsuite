@@ -10,17 +10,16 @@
 #include <lal/LALMalloc.h>
 \endcode
 
-This header covers routines that replace the standard
-<tt>malloc()</tt>, <tt>calloc()</tt>, <tt>realloc()</tt>, and <tt>free()</tt>.
-All memory allocation and deallocation in LAL should use these
-replacement functions.  If the \c NDEBUG flag is set at compile
-time, the LAL routines are <tt>\#define</tt>d to be the same as the
-standard C routines.
+This header covers routines that replace the standard <tt>malloc()</tt>,
+<tt>calloc()</tt>, <tt>realloc()</tt>, and <tt>free()</tt>.  All memory
+allocation and deallocation in LAL should use these replacement functions.  If
+the \c LAL_MEMORY_FUNCTIONS_DISABLED flag is set in \ref LALConfig.h, the LAL
+routines are <tt>\#define</tt>d to be the same as the standard C routines.
 
 ### Macros ###
 
 \code
-#if defined NDEBUG
+#ifdef LAL_MEMORY_FUNCTIONS_DISABLED
 
 #define LALMalloc                           malloc
 #define LALMallocShort                      malloc
@@ -79,23 +78,24 @@ violation signal \c SIGSEGV.  (The signal is raised using the signal
 raising hook \c lalRaiseHook, which can be reset to a different handler if
 desired.)
 
-Memory leak detection adds significant computational overhead to a
-program.  It also requires the use of static memory, making the code
-non-thread-safe (but it can be made posix-thread-safe using the
-<tt>--enable-pthread-lock</tt> configure option).  Production code should
-suppress memory leak detection at runtime by setting the global
-\c lalDebugLevel equal to zero or by setting the \c LALNMEMDBG bit of
-\c lalDebugLevel, or at compile time by compiling all modules with the
-\c NDEBUG flag.
-This causes <tt>LALCheckMemoryLeaks()</tt> to do nothing, and the other functions
-to revert to their standard C counterparts.  In addition, you can turn off
-individual components of the memory debugging tools.  Setting the
-\c LALNMEMPAD bit of \c lalDebugLevel prevents the allocation routines
-from "padding out" the arrays in an effort to detect buffer overflows.
-Setting the \c LALNMEMTRK  bit of \c lalDebugLevel prevents tracking
-the allocations/frees.  Setting the \c LALMEMINFO bit of
-\c lalDebugLevel produces copious output describing each memory allocation
-and deallocation.
+Memory leak detection adds significant computational overhead to a program.  It
+also requires the use of static memory, making the code non-thread-safe (but it
+can be made posix-thread-safe using the <tt>--enable-pthread-lock</tt> configure
+option).  Production code should suppress memory leak detection at runtime by
+setting the global \c lalDebugLevel equal to zero or by setting the \c
+LALNMEMDBG bit of \c lalDebugLevel.  In addition, you can turn off individual
+components of the memory debugging tools.  Setting the \c LALNMEMPAD bit of \c
+lalDebugLevel prevents the allocation routines from "padding out" the arrays in
+an effort to detect buffer overflows.  Setting the \c LALNMEMTRK bit of \c
+lalDebugLevel prevents tracking the allocations/frees.  Setting the \c
+LALMEMINFO bit of \c lalDebugLevel produces copious output describing each
+memory allocation and deallocation.
+
+If one wishes to completely disable the LAL routines, one can configure LAL with
+the <tt>--disable-memory-functions</tt> option, which sets the \c
+LAL_MEMORY_FUNCTIONS_DISABLED flag in \ref LALConfig.h.  This causes
+<tt>LALCheckMemoryLeaks()</tt> to do nothing, and the other functions to revert
+to their standard C counterparts.
 
 ### Algorithm ###
 
@@ -129,9 +129,10 @@ are considered a distinct class of status message, and can be activated or
 suppressed independently of other status messages.  See the discussion in
 \ref LALStatusMacros.h.
 
-When \c lalDebugLevel is set to zero or the \c LALNMEMDBG bit is set,
-or when compiled with the \c NDEBUG flag set, these functions revert to
-their standard system versions, and <tt>LALCheckMemoryLeaks()</tt> does nothing.
+When \c lalDebugLevel is set to zero or the \c LALNMEMDBG bit is set, or when
+compiled with the \c LAL_MEMORY_FUNCTIONS_DISABLED flag set, these functions
+revert to their standard system versions, and <tt>LALCheckMemoryLeaks()</tt>
+does nothing.
 
 ### Notes ###
 

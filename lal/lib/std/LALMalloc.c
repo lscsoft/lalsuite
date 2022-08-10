@@ -228,7 +228,7 @@ void XLALFreeAligned(void *ptr)
  */
 
 
-#if ! defined NDEBUG
+#ifndef LAL_MEMORY_FUNCTIONS_DISABLED
 
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
@@ -817,8 +817,8 @@ void LALCheckMemoryLeaks(void)
     return;
 }
 
-#else
+#else /* LAL_MEMORY_FUNCTIONS_DISABLED */
 
 void (LALCheckMemoryLeaks)(void) { return; }
 
-#endif /* ! defined NDEBUG */
+#endif /* !LAL_MEMORY_FUNCTIONS_DISABLED */

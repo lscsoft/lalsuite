@@ -66,7 +66,7 @@ LALSBracketRoot (
     }
 
     /* increment iteration count */
-#ifndef LAL_NDEBUG
+#ifndef NDEBUG
     INT4 imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
 #endif
@@ -186,7 +186,7 @@ LALDBracketRoot (
     }
 
     /* increment iteration count */
-#ifndef LAL_NDEBUG
+#ifndef NDEBUG
     INT4 imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
 #endif
@@ -269,7 +269,7 @@ LALSBisectionFindRoot (
     REAL4 ymid;
 
     /* increment iteration count */
-#ifndef LAL_NDEBUG
+#ifndef NDEBUG
     INT4 imax = 40;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
 #endif
@@ -437,7 +437,7 @@ LALDBisectionFindRoot (
     REAL8 ymid;
 
     /* increment iteration count */
-#ifndef LAL_NDEBUG
+#ifndef NDEBUG
     INT4 imax = 80;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
 #endif

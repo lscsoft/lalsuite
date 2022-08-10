@@ -180,9 +180,6 @@ main (int argc, char *argv[])
    */
 
 
-#ifndef LAL_NDEBUG
-  if ( ! lalNoDebug )
-  {
     if (verbose || lalDebugLevel)
     {
       printf ("\n===== Check Errors =====\n");
@@ -203,8 +200,6 @@ main (int argc, char *argv[])
         exit (1);
       XLALClearErrno();
     }
-  }
-#endif
 
 
   /*

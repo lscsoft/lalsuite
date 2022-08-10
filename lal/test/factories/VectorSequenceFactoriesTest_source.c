@@ -22,10 +22,8 @@
 static void FUNC ( void )
 {
   CreateVectorSequenceIn input   = { 2, 8 };
-#ifndef LAL_NDEBUG
   CreateVectorSequenceIn badslen = { 0, 8 };
   CreateVectorSequenceIn badvlen = { 2, 0 };
-#endif
   static LALStatus  status;
   static VTYPE  *sequence;
   static VTYPE   sstore;
@@ -55,10 +53,6 @@ static void FUNC ( void )
    *
    */
 
-#ifndef LAL_NDEBUG
-
-  if ( ! lalNoDebug )
-  {
     CFUNC ( &status, &sequence, &badslen );
     TestStatus( &status, CODES( SEQFACTORIESH_ESLENGTH ), 1 );
 
@@ -83,11 +77,6 @@ static void FUNC ( void )
 
     DFUNC ( &status, &sequence );
     TestStatus( &status, CODES( SEQFACTORIESH_EDPTR ), 1 );
-  }
-
-#else
-  sequence = &sstore;
-#endif
 
   LALCheckMemoryLeaks();
   printf( "PASS: tests of %s and %s\n", STRING(CFUNC), STRING(DFUNC));

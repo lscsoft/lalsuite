@@ -28,10 +28,6 @@ pkginclude_HEADERS = \
 	LALVCSInfoHeader.h \
 	$(END_OF_LIST)
 
-liblal_la_SOURCES = \
-	LALMisc.c \
-	$(END_OF_LIST)
-
 nodist_liblal_la_SOURCES = \
 	LALBuildInfoHeader.h \
 	LALVCSInfo.c \

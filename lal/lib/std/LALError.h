@@ -82,7 +82,7 @@ int
 LALCheckStatusPtr(LALStatus * status, const char *statement,
                   const char *file, const int line);
 
-#ifdef NOLALMACROS
+#ifdef LAL_STATUS_MACROS_DISABLED
 
 void FREESTATUSPTR(LALStatus * status);
 
@@ -90,16 +90,7 @@ void REPORTSTATUS(LALStatus * status);
 
 #endif
 
-#ifdef NDEBUG
-
-#define LALError( statusptr, statement ) (void)(0)
-#define LALWarning( statusptr, warning ) (void)(0)
-#define LALInfo( statusptr, info )       (void)(0)
-#define LALTrace( statusptr, exitflg )   (void)(0)
-
-#else
-
-#ifndef NOLALMACROS
+#ifndef LAL_STATUS_MACROS_DISABLED
 
 #define LALError( statusptr, statement )                                    \
   ( lalDebugLevel & LALERROR ?                                                 \
@@ -131,9 +122,7 @@ void REPORTSTATUS(LALStatus * status);
         (statusptr)->Id )     \
       : 0 )
 
-#endif /* NOLALMACROS */
-
-#endif /* NDEBUG */
+#endif /* LAL_STATUS_MACROS_DISABLED */
 
 /*
  * Error handlers for LALApps applications

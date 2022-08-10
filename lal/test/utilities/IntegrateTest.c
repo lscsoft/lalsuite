@@ -130,9 +130,6 @@ static REAL8 xff5 (REAL8 x, void *p)
   return y;
 }
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
 /*
  *
  * This function produces random numbers.  Integration of this function should
@@ -143,7 +140,6 @@ static REAL8 xbbad (REAL8 UNUSED x, void *p)
 {
   return (REAL8)(++(*(INT4 *)p));
 }
-#endif
 
 
 
@@ -327,10 +323,6 @@ int main (int argc, char *argv[])
    *
    */
 
-#ifndef LAL_NDEBUG
-
-  if ( ! lalNoDebug )
-  {
     if ( verbose )
       printf ("\nChecking error conditions:\n");
 
@@ -363,9 +355,6 @@ int main (int argc, char *argv[])
       XLAL_ERROR_MAIN(xlalErrno, "xlalErrno=%i (%s) at line %i", xlalErrno, XLALErrorString(xlalErrno), __LINE__);
     if ( verbose )
       printf ("Recursive error check passed.\n");
-  }
-
-#endif
 
   return 0;
 }

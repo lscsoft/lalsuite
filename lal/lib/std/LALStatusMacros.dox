@@ -491,31 +491,28 @@ dispensation.
 LAL provides two flags that can be used to exclude or modify debugging
 code at compile time.  Although these flags are typically
 <tt>\#define</tt>d or <tt>\#undef</tt>ined globally and can affect many
-modules (notably modules in the \c support package), their primary
-effect is on the debugging and status-reporting tools defined in this
-header.  The two flags are named \c NDEBUG and \c NOLALMACROS.
+modules, their primary effect is on the debugging and status-reporting
+tools defined in this header.  The two flags are named
+\c NDEBUG and \c LAL_STATUS_MACROS_DISABLED.
 
 \subsection ss_ndebug_flag The NDEBUG flag
 
-Setting the \c NDEBUG flag turns off debugging and
-error-reporting code, in order to get condensed production-line programs.  As
-far as error reporting is concerned, setting the \c NDEBUG flag at compile
-time is similar to setting \c lalDebugLevel equal to zero at runtime, in
-that it suppresses all status messages and memory leak detection.  However,
-the \c NDEBUG flag accoplishes this by telling the compiler preprocessor
-to remove the relevant code from the object file, thus eliminating frequent
-and unnecessary tests on \c lalDebugLevel.  When debugging is turned off,
-the global integer variable \c lalNoDebug is non-zero; otherwise it is
-zero.
+Compiling with the \c NDEBUG flag set removes all <tt>ASSERT()</tt> macros from
+the object code, in keeping with the philosophy that <tt>ASSERT()</tt>
+statements should only be used to catch coding bugs, not runtime errors.
 
-Compiling with the \c NDEBUG flag set also removes all
-<tt>ASSERT()</tt> macros from the object code, in keeping with the
-philosophy that <tt>ASSERT()</tt> statements should only be used to
-catch coding bugs, not runtime errors.
+This is the only purpose for which the \c NDEBUG flag should be used. Code that
+checks function input arguments for correctness, reports error messages,
+etc. should not be disabled even in production code. The performance impact of
+such checks is likely minimal, particularly compared to the human cost of
+diagnosing obscure failures in production code because checks/error messages
+were disabled. (Error messages and other diagnostics should use the
+error-printing functions in \ref LALError_h to selective print messages
+according to \c lalDebugLevel.)
 
-\subsection ss_nolalmacros_flag The NOLALMACROS flag
+\subsection ss_nolalmacros_flag The LAL_STATUS_MACROS_DISABLED flag
 
-Setting the \c NOLALMACROS flag replaces the status-handling
+Setting the \c LAL_STATUS_MACROS_DISABLED flag replaces the status-handling
 macros described above with actual functions that accomplish the same
 results.  These functions are defined in the module \ref LALError.c.
 Function calls introduce computational and memory overheads that are
@@ -538,7 +535,7 @@ When compiling your own modules, the flags can be set using one or
 more <tt>\#define</tt> statements within the module or its header file:
 \code
 #define NDEBUG
-#define NOLALMACROS
+#define LAL_STATUS_MACROS_DISABLED
 \endcode
 To restrict the scope of these flags, they should later be unset using
 the corresponding <tt>\#undef</tt> statements.
@@ -547,22 +544,22 @@ Alternatively, these can be set in the \c Makefile or when
 compiling.  The syntax for most UNIX C compilers is something like the
 following:
 \code
-> gcc ... -DNDEBUG -DNOLALMACROS ...
+> gcc ... -DNDEBUG -DLAL_STATUS_MACROS_DISABLED ...
 \endcode
 
 If you want to compile a large number of modules, or the entire
 library, under the effects of one or more of these flags, you will not
 want to go through and modify every header or \c Makefile.
-Instead, you may add either <tt>-DNDEBUG</tt> or <tt>-DNOLALMACROS</tt>
+Instead, you may add either <tt>-DNDEBUG</tt> or <tt>-DLAL_STATUS_MACROS_DISABLED</tt>
 (or both) to the environment variable \c CPPFLAGS.  They will then
 automatically be set for all compilations done in that environment.
 The command for doing this in \c sh or \c bash shells is:
 \code
-> CPPFLAGS="\f$CPPFLAGS -DNDEBUG -DNOLALMACROS"
+> CPPFLAGS="\f$CPPFLAGS -DNDEBUG -DLAL_STATUS_MACROS_DISABLED"
 \endcode
 while in \c csh or \c tcsh shells it is:
 \code
-> setenv CPPFLAGS "\f$CPPFLAGS -DNDEBUG -DNOLALMACROS"
+> setenv CPPFLAGS "\f$CPPFLAGS -DNDEBUG -DLAL_STATUS_MACROS_DISABLED"
 \endcode
 Note that if you plan to do further LAL code development on the same
 system, you may want to keep two versions of the library around: one
@@ -594,7 +591,7 @@ extensive error trapping in all their routines, without having to
 worry about compromising performance.
 
 It should be mentioned that, for these reasons, compiling a module
-with the \c NOLALMACROS flag above does not actually eliminate the
+with the \c LAL_STATUS_MACROS_DISABLED flag above does not actually eliminate the
 status handling macros.  Rather, the macros are modified to call
 specialized functions that do most (but not all) of the processing.
 

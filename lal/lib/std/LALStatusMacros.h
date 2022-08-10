@@ -23,11 +23,6 @@
 #define _LALSTATUSMACROS_H
 
 #include <lal/LALConfig.h>
-#ifdef NDEBUG
-#ifndef LAL_NDEBUG
-#define LAL_NDEBUG
-#endif
-#endif
 
 #include <stdlib.h>
 #include <string.h>
@@ -44,14 +39,12 @@ extern "C" {
 }       /* so that editors will match preceding brace */
 #endif
 
-extern const int lalNoDebug;
-
 #define LAL_EXLAL     16384
 #define LAL_MSGEXLAL  "Failure in an XLAL routine"
 #define ABORTXLAL(sp) ABORT(sp,LAL_EXLAL,LAL_MSGEXLAL)
 #define XLAL_CHECK_LAL(sp, assertion, ...) _XLAL_CHECK_IMPL_(ABORTXLAL(sp), assertion, __VA_ARGS__)
 
-#ifndef NOLALMACROS
+#ifndef LAL_STATUS_MACROS_DISABLED
 
 #define INITSTATUS( statusptr )                                               \
   do { if ( (statusptr) )                                                     \
@@ -120,7 +113,7 @@ extern const int lalNoDebug;
     return;                                                                   \
   } while ( 0 )
 
-#ifdef LAL_NDEBUG
+#ifdef NDEBUG
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \
@@ -182,7 +175,7 @@ extern const int lalNoDebug;
     }                                                                         \
   } while ( 0 )
 
-#else /* NOLALMACROS */
+#else /* LAL_STATUS_MACROS_DISABLED */
 
 #define INITSTATUS( statusptr ) \
   do { if ( LALInitStatus( statusptr, __func__, "$Id$", __FILE__, __LINE__ ) ) return; } while ( 0 )
@@ -199,7 +192,7 @@ extern const int lalNoDebug;
 #define ABORT( statusptr, code, mesg ) \
   do { if ( LALPrepareAbort( statusptr, code, mesg, __FILE__, __LINE__ ), 1 ) return; } while ( 0 )
 
-#ifdef LAL_NDEBUG
+#ifdef NDEBUG
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \
@@ -226,7 +219,7 @@ extern const int lalNoDebug;
 #define CHECKSTATUSPTR( statusptr )                                           \
   do { if ( LALCheckStatusPtr( statusptr, "CHECKSTATUSPTR:", __FILE__, __LINE__ ) ) return; } while ( 0 )
 
-#endif /* NOLALMACROS */
+#endif /* LAL_STATUS_MACROS_DISABLED */
 
 /* these just have to be macros... */
 

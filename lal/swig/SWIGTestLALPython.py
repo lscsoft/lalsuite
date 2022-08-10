@@ -32,7 +32,7 @@ set_default_error_handlers()
 
 # check memory allocation
 print("checking memory allocation ...")
-if not lal.NoDebug:
+if not lal.MEMORY_FUNCTIONS_DISABLED:
     lal.CheckMemoryLeaks()
     mem1 = lal.Detector()
     mem2 = lal.CreateCOMPLEX8Vector(5)

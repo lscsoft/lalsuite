@@ -126,17 +126,9 @@ message will be printed; if it is 0, that type of message will be
 suppressed.  See the documentation in \ref LALStatusMacros.h for
 information about how to set the value of \c lalDebugLevel.
 
-These four functions are also suppressed if a module is compiled with
-the \c NDEBUG flag set.  In this case, however, the function calls
-are actually \e removed from the object code (i.e.\ they are
-replaced with the integer 0, representing their return value).  This
-is used to generate streamlined production code.  Again, see the
-\ref LALStatusMacros.h documentation for more discussion of this
-compilation flag.
-
 ### Macro replacement functions ###
 
-When a LAL module is compiled with the flag \c NOLALMACROS set,
+When a LAL module is compiled with the flag \c LAL_STATUS_MACROS_DISABLED set,
 the usual status-handling macros defined in \ref LALStatusMacros.h
 are replaced with function calls to specialized support functions that
 perform the same operations.  These functions are necessarily global

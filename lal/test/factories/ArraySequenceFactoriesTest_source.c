@@ -56,10 +56,6 @@ static void FUNC ( void )
    *
    */
 
-#ifndef LAL_NDEBUG
-
-  if ( ! lalNoDebug )
-  {
     input.length = 0;
     CFUNC ( &status, &sequence, &input );
     TestStatus( &status, CODES( SEQFACTORIESH_ESLENGTH ), 1 );
@@ -88,11 +84,6 @@ static void FUNC ( void )
 
     DFUNC ( &status, &sequence );
     TestStatus( &status, CODES( SEQFACTORIESH_EDPTR ), 1 );
-  }
-#else
-  (void)sstore;
-  (void)dataBad;
-#endif
 
 
   LALCheckMemoryLeaks();

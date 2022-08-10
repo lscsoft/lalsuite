@@ -204,8 +204,6 @@ int main( int argc, char *argv[] )
         }
     }
 
-  /* set_debug_level( "NDEBUG" ); */ /* 05/20/03 gam */
-
   /*
    * Read in Configuration File
    */

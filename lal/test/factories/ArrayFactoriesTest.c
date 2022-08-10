@@ -65,12 +65,8 @@ ParseOptions (int argc, char *argv[]);
 static void
 TestStatus (LALStatus *status, const char *expectedCodes, int exitCode);
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
 static void
 ClearStatus (LALStatus *status);
-#endif
 
 #define TYPECODE Z
 #define TYPE COMPLEX16
@@ -203,9 +199,6 @@ TestStatus (LALStatus *status, const char *ignored, int exitcode)
 }
 
 
-#if defined(NDEBUG) || defined(LAL_NDEBUG)
-/* debugging is turned off */
-#else
 /*
  *
  * ClearStatus ()
@@ -223,7 +216,6 @@ ClearStatus (LALStatus *status)
     DETATCHSTATUSPTR (status);
   }
 }
-#endif
 
 /*
  * Usage ()

@@ -404,12 +404,9 @@ int main( int argc, char **argv )
 
   /* test error conditions */
 
-#ifndef LAL_NDEBUG
   REAL4Sequence *medians4=NULL;
   REAL8Sequence *medians8=NULL;
 
-    if ( ! lalNoDebug )
-        {
 
   /* create median vectors */
   LALDCreateVector( &stat, &medians8, length - blocksize + 1 );
@@ -481,16 +478,11 @@ int main( int argc, char **argv )
     EXIT( LALRUNNINGMEDIANTESTC_EERR, argv0, LALRUNNINGMEDIANTESTC_MSGEERR );
   }
 
-        } /* if ( ! lalNoDebug ) */
-#endif /* LAL_NDEBUG */
 
 
   /* now set the blocksize corretly for the rest of the program */
   param.blocksize = blocksize;
 
-#ifndef LAL_NDEBUG
-    if ( ! lalNoDebug )
-        {
 
   /* NULL pointer input check */
 
@@ -617,8 +609,6 @@ int main( int argc, char **argv )
       EXIT( LALRUNNINGMEDIANTESTC_EALOC, argv0, LALRUNNINGMEDIANTESTC_MSGEALOC );
   }
 
-        } /* if ( ! lalNoDebug ) */
-#endif /* LAL_NDEBUG */
 
   /* finaly restore status after checking error conditions */
   memset(&stat, 0, sizeof(LALStatus));

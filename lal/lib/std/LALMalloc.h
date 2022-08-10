@@ -69,7 +69,7 @@ void XLALFreeAligned(void *ptr);
 #endif /* LAL_FFTW3_MEMALIGN_ENABLED */
 /** @} */
 
-#if defined NDEBUG
+#ifdef LAL_MEMORY_FUNCTIONS_DISABLED
 
 #ifndef SWIG    /* exclude from SWIG interface */
 #define LALMalloc                          malloc
@@ -87,7 +87,7 @@ void XLALFreeAligned(void *ptr);
 #define LALCheckMemoryLeaks()
 #endif /* SWIG */
 
-#else
+#else /* !LAL_MEMORY_FUNCTIONS_DISABLED */
 
 #ifndef SWIG    /* exclude from SWIG interface */
 #define LALMalloc( n )        LALMallocLong( n, __FILE__, __LINE__ )
@@ -121,7 +121,7 @@ void LALFreeShort(void *p);
 void LALFreeLong(void *p, const char *file, int line);
 /** @} */
 
-#endif /* NDEBUG  */
+#endif /* LAL_MEMORY_FUNCTIONS_DISABLED */
 
 void (LALCheckMemoryLeaks) (void);
 
