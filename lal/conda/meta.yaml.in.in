@@ -133,6 +133,7 @@ outputs:
         # provided to assist the solver, but not actually used
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
         - openssl
+        - six
       run:
         - {{ pin_subpackage('liblal', exact=True) }}
         - ligo-segments
@@ -177,6 +178,7 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - openssl
+        - numpy
         - python
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
@@ -190,6 +192,8 @@ outputs:
         - numpy                               # [build_platform != target_platform]
       host:
         - {{ pin_subpackage('liblal', exact=True) }}
+        - ligo-segments                       # [build_platform == target_platform]
+        - numpy                               # [build_platform == target_platform]
         - python
         # extras to help the solver
         - mkl {{ mkl }}  # [fft_impl == "mkl"]
@@ -197,6 +201,8 @@ outputs:
       run:
         - fftw  # [fft_impl == "fftw"]
         - {{ pin_subpackage('liblal', exact=True) }}
+        - ligo-segments
+        - {{ pin_compatible('numpy') }}
         - python
         - {{ pin_subpackage('python-lal', exact=True) }}
     about:

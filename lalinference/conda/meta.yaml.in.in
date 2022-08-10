@@ -169,6 +169,12 @@ outputs:
       host:
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - python
+        - python-lal >={{ lal_version }}
+        - python-lalmetaio >={{ lalmetaio_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
+        - python-lalburst >={{ lalburst_version }}
+        - python-lalinspiral >={{ lalinspiral_version }}
+        - python-ligo-lw >={{ python_ligo_lw_version }}
         - numpy
         # extras to assist the solver, but not actually used
         - openssl
@@ -229,6 +235,10 @@ outputs:
       ignore_run_exports:
         - openssl
         - python
+      script_env:
+        - CI_COMMIT_TAG
+        - CI_PIPELINE_SOURCE
+        - GITLAB_CI
       # Prioritise nompi via build number
       number: {{ (build + 100) if (mpi or "nompi") == "nompi" else build }}
       string: {{ "nompi" if (mpi or "nompi") == "nompi" else ("mpi_" + mpi) }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
