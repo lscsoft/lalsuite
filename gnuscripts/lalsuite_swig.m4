@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 112
+# serial 113
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -434,8 +434,37 @@ int main() { std::string s = "a"; return 0; }
       AC_MSG_ERROR([configured C++ compiler "${CXX}" is incompatible with ${OCTAVE} C++ compiler "${octave_CXX}"])
     ])
 
+    # check how to define _GLIBCXX_USE_CXX11_ABI
+    # - https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dual_abi.html
+    cat > conftest.$ac_ext <<EOF
+#include <octave/oct.h>
+DEFUN_DLD( conftest, args, nargout, "usage" ) {
+  return octave_value_list();
+}
+EOF
+    m4_foreach([abival],[0,1],[
+      AC_MSG_CHECKING([whether Octave modules compiled with -D_GLIBCXX_USE_CXX11_ABI=]abival[ are loadable])
+      AS_IF([${mkoctfile} -D_GLIBCXX_USE_CXX11_ABI=]abival[ -o conftest conftest.$ac_ext >/dev/null 2>&1],[
+        AS_IF([${OCTAVE} --eval 'conftest' >/dev/null 2>&1],[
+          abi]abival[result=yes
+        ],[
+          abi]abival[result=no
+        ])
+      ],[
+        abi]abival[result=error
+      ])
+      AC_MSG_RESULT([${abi]abival[result}])
+    ])
+    AS_CASE(["${abi0result}|${abi1result}"],
+      ["yes|no"],[abiflag="-D_GLIBCXX_USE_CXX11_ABI=0"],
+      ["no|yes"],[abiflag="-D_GLIBCXX_USE_CXX11_ABI=1"],
+      ["yes|yes"],[abiflag=""],
+      [*],[AC_MSG_ERROR([could not determine how to define _GLIBCXX_USE_CXX11_ABI flag])]
+    )
+    AC_MSG_NOTICE([Octave modules will be compiled with ${abiflag:-no _GLIBCXX_USE_CXX11_ABI flag}])
+
     # determine Octave preprocessor flags
-    AC_SUBST([SWIG_OCTAVE_CPPFLAGS],[])
+    AC_SUBST([SWIG_OCTAVE_CPPFLAGS],["${abiflag}"])
     AC_SUBST([SWIG_OCTAVE_CPPFLAGS_IOCTAVE],[])
     for arg in CPPFLAGS INCFLAGS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
