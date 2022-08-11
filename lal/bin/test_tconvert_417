@@ -1,0 +1,9 @@
+#!/bin/bash
+#
+# Regression test for https://git.ligo.org/lscsoft/lalsuite/-/issues/417
+# Should be configured as XFAIL on macOS
+# When that issue is resolved this test can be migrated back into test_tconvert
+#
+
+set -ex
+test "$(./lal_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"
