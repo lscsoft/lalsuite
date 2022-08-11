@@ -1,1 +1,1 @@
-../../gnuscripts/debian/lalsuite.mk
+../../common/debian/lalsuite.mk

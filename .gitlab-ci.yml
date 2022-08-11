@@ -1663,7 +1663,7 @@ platform:debian:bullseye:
     - .platform-test
   variables:
     CONFIGURE_FLAGS: "--disable-swig-octave --enable-python --enable-swig-python"
-    ENVIRONMENT_FILE: "conda/environment.yml"
+    ENVIRONMENT_FILE: "common/conda/environment.yml"
   before_script:
     # configure conda
     - source ${CONDA_ROOT:-/opt/conda}/etc/profile.d/conda.sh
@@ -1969,7 +1969,7 @@ lint:depends:
           python-debian
           python-rpm-spec
   script:
-    - ./gnuscripts/check_library_dependencies
+    - ./common/maintainer-scripts/check_library_dependencies
 
 lint:gitignore:
   extends:

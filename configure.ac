@@ -44,7 +44,7 @@ LALSUITE_ENABLE_LALAPPS
 LALSUITE_ENABLE_DOXYGEN
 LALSUITE_ENABLE_MODULE([DOXYGEN])
 AS_IF([test "x${doxygen}" = xtrue],[
-  AC_CONFIG_FILES([index.html:gnuscripts/lalsuite_index.html.in])
+  AC_CONFIG_FILES([index.html:common/doxygen/lalsuite_index.html.in])
   AC_SUBST([DOXYGEN_PACKAGE_LINKS],[])
   AM_SUBST_NOTMAKE([DOXYGEN_PACKAGE_LINKS])
   AC_SUBST([DOXYGEN_LAST_PACKAGE],[])

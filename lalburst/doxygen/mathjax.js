@@ -1,1 +1,1 @@
-../../doxygen/mathjax.js
+../../common/doxygen/mathjax.js
