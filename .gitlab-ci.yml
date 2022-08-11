@@ -1686,18 +1686,17 @@ platform:debian:bullseye:
           --quiet
     - conda list --name lalsuite-platform-tests
     - conda activate lalsuite-platform-tests
-    # don't use NDEBUG
-    - export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
-    - export CONFIGURE_FLAGS="${CONFIGURE_FLAGS} CPPFLAGS='${CPPFLAGS}'"
     # manually install packages that have circular dependencies upon lal
-    # then forcibly remove lalsuite
-    - mamba install --yes --quiet --name lalsuite-platform-tests
+    - conda install --yes --quiet --name lalsuite-platform-tests
           python-ligo-lw
-    # need to use `conda` here, see https://github.com/mamba-org/mamba/issues/1239
+    # then forcibly remove lalsuite
     - conda uninstall --yes --quiet --name lalsuite-platform-tests --force-remove
           "liblal*"
           "lal*"
           "python-lal*"
+    # don't use NDEBUG
+    - export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
+    - export CONFIGURE_FLAGS="${CONFIGURE_FLAGS} CPPFLAGS='${CPPFLAGS}'"
 
 platform:conda:linux:
   image: igwn/base:conda
