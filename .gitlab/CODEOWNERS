@@ -25,6 +25,7 @@ lalapps/src/ring/               @andrew-williamson @francesco-pannarale @ian-har
 lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 
 # build / packaging / support files
+*.md                            @adam-mercer @duncanmmacleod @karl-wette
 *.pc.in                         @adam-mercer @duncanmmacleod @karl-wette
 *.spec.in                       @adam-mercer @duncanmmacleod @karl-wette
 .AUTHORS                        @adam-mercer @duncanmmacleod @karl-wette
@@ -35,7 +36,6 @@ lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 .gitlab/                        @adam-mercer @duncanmmacleod @karl-wette
 .mailmap                        @adam-mercer @duncanmmacleod @karl-wette
 00boot                          @adam-mercer @duncanmmacleod @karl-wette
-CONTRIBUTING.md                 @adam-mercer @duncanmmacleod @karl-wette
 COPYING                         @adam-mercer @duncanmmacleod @karl-wette
 Makefile.am                     @adam-mercer @duncanmmacleod @karl-wette
 conda/                          @adam-mercer @duncanmmacleod @karl-wette
