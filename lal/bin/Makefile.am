@@ -39,6 +39,14 @@ test_programs += lal_version
 test_scripts += test_cache
 test_scripts += test_tconvert
 
+# see https://git.ligo.org/lscsoft/lalsuite/-/issues/417;
+# once resolved test_tconvert_417 should be merged back
+# into test_tconvert
+test_scripts += test_tconvert_417
+if HOST_OS_DARWIN
+XFAIL_TESTS = test_tconvert_417
+endif
+
 # Add any helper programs required by tests to this variable
 test_helpers +=
 
