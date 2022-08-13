@@ -32,7 +32,7 @@ IFO=H1
 ## ---------- data parameters ----------
 timestamps="./H1-timestamps.dat"
 echo "${startTime}" > ${timestamps}
-for i in `seq 1 $(( ${duration} / ${Tsft} - 1 ))`
+for i in `seq -f '%.0f' 1 $(( ${duration} / ${Tsft} - 1 ))`
 do
   echo "$((${startTime} + $i * ${Tsft}))" >> ${timestamps}
 done
