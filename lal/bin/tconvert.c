@@ -239,7 +239,14 @@ static void output_date( int gps_sec )
   if ( leap )
     ++tp->tm_sec;
 
+  if ( utc_flag )
+    set_zone( "00" );
+
   strftime( date_string, sizeof( date_string ), fmt, tp );
+
+  if ( utc_flag )
+    set_zone( tz );
+
   puts( date_string );
 
   return;
