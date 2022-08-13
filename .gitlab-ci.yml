@@ -1707,15 +1707,11 @@ platform:conda:macos-x86_64:
   extends:
     - .platform-test:conda
     - .macos
-  # https://git.ligo.org/lscsoft/lalsuite/-/issues/514
-  allow_failure: true
 
 platform:conda:macos-arm64:
   extends:
     - .platform-test:conda
     - .macos-arm64
-  # https://git.ligo.org/lscsoft/lalsuite/-/issues/514
-  allow_failure: true
 
 # -- docker -------------------------------------
 #
