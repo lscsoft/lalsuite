@@ -120,10 +120,10 @@ tsL1="ts_L1.txt"
 TSFT=1800
 Nsfts=48
 Tend=$(($timestamp1 + $duration - $TSFT)) # last SFT should *end* on first+duration
-for i in `seq $timestamp1 $TSFT $Tend`; do
+for i in `seq -f '%.0f' $timestamp1 $TSFT $Tend`; do
     echo "$i 0" >> ${tsH1}
 done
-for i in `seq $timestamp1 $TSFT $Tend`; do
+for i in `seq -f '%.0f' $timestamp1 $TSFT $Tend`; do
     echo "$(($i + 900)) 0" >> ${tsL1}
 done
 
