@@ -331,7 +331,9 @@ SWIGINTERN int swiglal_redirect_stdouterr(void) {
 
   // Flush standard output & error
   fflush(stdout);
+  fsync(STDOUT_FILENO);
   fflush(stderr);
+  fsync(STDERR_FILENO);
 
   // Save the original standard output & error
   swiglal_save_stdout_fd = dup(STDOUT_FILENO);
@@ -410,7 +412,9 @@ SWIGINTERN int swiglal_restore_stdouterr(void) {
 
   // Flush standard output & error
   fflush(stdout);
+  fsync(STDOUT_FILENO);
   fflush(stderr);
+  fsync(STDERR_FILENO);
 
   // Restore the original standard output & error
   if (dup2(swiglal_save_stdout_fd, STDOUT_FILENO) < 0) {
