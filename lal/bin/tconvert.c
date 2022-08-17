@@ -90,6 +90,7 @@ void set_zone_llo( void );
 const char *iso_8601_format = "%Y-%m-%dT%H:%M:%S%z";
 const char *rfc_822_format = "%a, %d %b %Y %H:%M:%S %z";
 const char *unix_date_format = "%a %b %d %H:%M:%S %Z %Y";
+const char *utc_unix_date_format = "%a %b %d %H:%M:%S UTC %Y";
 const char *output_date_format = NULL;
 const char *tz = NULL;
 
@@ -229,7 +230,7 @@ static void output_date( int gps_sec )
   const char *fmt;
   int leap;
 
-  fmt = output_date_format ? output_date_format : unix_date_format;
+  fmt = output_date_format ? output_date_format : ( utc_flag ? utc_unix_date_format : unix_date_format );
   unix_sec = gps_to_unix( gps_sec, &leap );
   if ( utc_flag )
     tp = gmtime( &unix_sec );
@@ -238,7 +239,14 @@ static void output_date( int gps_sec )
   if ( leap )
     ++tp->tm_sec;
 
+  if ( utc_flag )
+    set_zone( "00" );
+
   strftime( date_string, sizeof( date_string ), fmt, tp );
+
+  if ( utc_flag )
+    set_zone( tz );
+
   puts( date_string );
 
   return;
