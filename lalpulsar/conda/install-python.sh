@@ -32,7 +32,7 @@ if [[ "${build_platform}" != "${target_platform}" ]]; then
 fi
 
 # only link libraries we actually use
-export GSL_LIBS=""  # swig bindings don't need GSL
+export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 
 # configure only python bindings and pure-python extras
 ${SRC_DIR}/configure \
