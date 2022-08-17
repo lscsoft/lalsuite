@@ -276,11 +276,18 @@ SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
 ///   from external C libraries such as LAL, which can result in e.g. error messages from LAL being printed
 ///   to a terminal (if any) instead of the environment in which the scripting language is being used.
 /// - The \b lal.swig_redirect_standard_output_error() function turns on standard output/error redirection
-///   for all LAL libraries. See <tt>SWIGLALAlpha.i</tt> for its definition.
+///   for all LAL libraries; see <tt>SWIGLALAlpha.i</tt> for its definition. The current redirection state
+///   is stored in the \c swig_lal_do_redirect_stdouterr variable.
+/// - It is possible for a SWIG wrapper function to call another SWIG wrapper function (e.g. through
+///   destructors), whereas standard output/error redirection should only happen once (within the outermost
+///   SWIG wrapper function). The \c swig_lal_has_stdouterr_been_redirected variable indicates whether
+///   redirection is already in place.
 /// - The \b SWIGLAL_REDIRECT_STDOUTERR and \b SWIGLAL_RESTORE_OUTPUT_STDOUTERR hooks are inserted by an
 ///   \b %exception block (see below) and implement standard output/error redirection. These macros refer
 ///   to a locally saved value of \c swig_lal_do_redirect_stdouterr in case its value is changed by
-///   \c $action (i.e. by a call to \b lal.swig_redirect_standard_output_error()).
+///   \c $action (i.e. by a call to \b lal.swig_redirect_standard_output_error()). If the value of
+//    \c swig_lal_has_stdouterr_been_redirected is true then redirection is already in place and these
+//    macros do nothing.
 /// - The common function \b swiglal_redirect_stdouterr() redirects standard output & error to temporary
 ///   files \c swiglal_tmp_stdout and \c swiglal_tmp_stderr respectively.
 /// - The common function \b swiglal_restore_stdouterr() restores the system standard output & error.
@@ -290,6 +297,7 @@ SWIGINTERNINLINE gsl_complex_float gsl_complex_float_rect(float x, float y) {
 ///
 %header %{
 extern int swig_lal_do_redirect_stdouterr;
+extern int swig_lal_has_stdouterr_been_redirected;
 
 static int swiglal_save_stdout_fd, swiglal_save_stderr_fd;
 static FILE *swiglal_tmp_stdout, *swiglal_tmp_stderr;
@@ -300,8 +308,9 @@ SWIGINTERN int swiglal_output_stdouterr(void);
 
 #define SWIGLAL_REDIRECT_STDOUTERR \
   { \
-    const int local_swig_lal_do_redirect_stdouterr = swig_lal_do_redirect_stdouterr; \
+    const int local_swig_lal_do_redirect_stdouterr = swig_lal_has_stdouterr_been_redirected ? 0 : swig_lal_do_redirect_stdouterr; \
     if (local_swig_lal_do_redirect_stdouterr) { \
+      swig_lal_has_stdouterr_been_redirected = 1; \
       if (!swiglal_redirect_stdouterr()) { \
         SWIG_exception(SWIG_RuntimeError, "swiglal_redirect_stdouterr() failed"); \
       } \
@@ -314,6 +323,7 @@ SWIGINTERN int swiglal_output_stdouterr(void);
       if (!swiglal_output_stdouterr()) { \
         SWIG_exception(SWIG_RuntimeError, "swiglal_output_stdouterr() failed"); \
       } \
+      swig_lal_has_stdouterr_been_redirected = 0; \
     } \
  }
 
@@ -321,7 +331,9 @@ SWIGINTERN int swiglal_redirect_stdouterr(void) {
 
   // Flush standard output & error
   fflush(stdout);
+  fsync(STDOUT_FILENO);
   fflush(stderr);
+  fsync(STDERR_FILENO);
 
   // Save the original standard output & error
   swiglal_save_stdout_fd = dup(STDOUT_FILENO);
@@ -400,7 +412,9 @@ SWIGINTERN int swiglal_restore_stdouterr(void) {
 
   // Flush standard output & error
   fflush(stdout);
+  fsync(STDOUT_FILENO);
   fflush(stderr);
+  fsync(STDERR_FILENO);
 
   // Restore the original standard output & error
   if (dup2(swiglal_save_stdout_fd, STDOUT_FILENO) < 0) {
