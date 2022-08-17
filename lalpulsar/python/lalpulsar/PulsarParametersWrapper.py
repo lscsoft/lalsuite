@@ -559,6 +559,9 @@ class PulsarParametersPy(object):
         Return a list of the parameter names stored in the PulsarParameters structure
         """
 
+        # https://git.ligo.org/lscsoft/lalsuite/-/issues/582
+        redirect = lal.swig_redirect_standard_output_error(False)
+
         thisitem = self._pulsarparameters.head
         self.keynames = [] # clear any previous key names
         self.length = 0
@@ -568,6 +571,10 @@ class PulsarParametersPy(object):
             self.length += 1
 
             thisitem = thisitem.next # move on to next value
+
+        # https://git.ligo.org/lscsoft/lalsuite/-/issues/582
+        del thisitem
+        lal.swig_redirect_standard_output_error(redirect)
 
         # reverse the order of the names, so they're in the same order as read from a par file
         self.keynames = self.keynames[::-1]
