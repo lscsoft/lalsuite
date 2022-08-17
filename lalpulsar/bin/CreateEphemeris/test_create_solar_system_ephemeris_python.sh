@@ -26,8 +26,8 @@ for i in `seq 1 10`; do
         5|6|7)  rmsmax='1e-15';;        # velocity
         8|9|10) rmsmax='1e-20';;        # acceleration
     esac
-    paste earth98.txt earth98-python.txt | awk -v "i=$i" -v "rmsmax=$rmsmax" '
-        BEGINFILE { j = i + 10; rms = 0 }
+    paste earth98.txt earth98-python.txt | awk -v "i=$i" -v "j=$((i+10))" -v "rmsmax=$rmsmax" '
+        BEGINFILE { rms = 0 }
         { rms += ($i - $j)^2 }
         ENDFILE { rms = sqrt(rms / NR); printf "i=%i rms=%g rmsmax=%g\n", i, rms, rmsmax; exit ( rms <= rmsmax ? 0 : 1 ) }
     '
