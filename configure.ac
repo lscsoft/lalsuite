@@ -165,7 +165,7 @@ lalsuite_config_subdir([LALBurst],[LAL LALMetaIO LALSimulation])
 lalsuite_config_subdir([LALInspiral],[LAL LALFrame LALMetaIO LALSimulation LALBurst])
 lalsuite_config_subdir([LALInference],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral])
 lalsuite_config_subdir([LALPulsar],[LAL LALFrame LALSimulation LALInference])
-lalsuite_config_subdir([LALApps],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral LALInference])
+lalsuite_config_subdir([LALApps],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral LALInference LALPulsar])
 
 # indicate to configure.ac in subdirectories that this is a top-level build
 LALSUITE_BUILD="true"
