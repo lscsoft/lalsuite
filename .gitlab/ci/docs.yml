@@ -37,7 +37,8 @@ pages:
     GIT_STRATEGY: none
   script:
     - mv html public
-    - cp coverage.html public/
+    # don't fail if coverage not present
+    - cp coverage.html public/ || true
   artifacts:
     paths:
       - public
