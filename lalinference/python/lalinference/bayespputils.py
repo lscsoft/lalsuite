@@ -151,7 +151,8 @@ tidalParams=['lambda1','lambda2','lam_tilde','dlam_tilde','lambdat','dlambdat','
 fourPiecePolyParams=['logp1','gamma1','gamma2','gamma3']
 spectralParams=['sdgamma0','sdgamma1','sdgamma2','sdgamma3']
 energyParams=['e_rad', 'e_rad_evol', 'e_rad_nonevol', 'l_peak', 'l_peak_evol', 'l_peak_nonevol', 'e_rad_maxldist', 'e_rad_maxldist_evol', 'e_rad_maxldist_nonevol']
-strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams+lorentzInvarianceViolationParams
+spininducedquadParams = ['dquadmon1','dquadmon2','dquadmona', 'dquadmona']
+strongFieldParams=ppEParams+tigerParams+bransDickeParams+massiveGravitonParams+tidalParams+fourPiecePolyParams+spectralParams+energyParams+lorentzInvarianceViolationParams+spininducedquadParams
 
 #Extrinsic
 distParams=['distance','distMPC','dist','distance_maxl']
@@ -183,6 +184,8 @@ for param in tidalParams:
 for param in fourPiecePolyParams:
     greedyBinSizes[param]=2.5
 for param in spectralParams:
+    greedyBinSizes[param]=2.5
+for param in spininducedquadParams:
     greedyBinSizes[param]=2.5
     #Confidence levels
 for loglname in statsParams:
@@ -563,6 +566,10 @@ def plot_label(param):
         'dsigma2':r'$d\sigma_2$',
         'dsigma3':r'$d\sigma_3$',
         'dsigma4':r'$d\sigma_4$',
+        'dquadmon1':r'$\delta\kappa_1$',
+        'dquadmon2':r'$\delta\kappa_2$',
+        'dquadmons':r'$\delta\kappa_s$',
+        'dquadmona':r'$\delta\kappa_a$',
         'optimal_snr':r'$\rho^{opt}$',
         'h1_optimal_snr':r'$\rho^{opt}_{H1}$',
         'l1_optimal_snr':r'$\rho^{opt}_{L1}$',

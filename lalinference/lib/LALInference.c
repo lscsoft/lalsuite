@@ -2319,6 +2319,13 @@ void LALInferenceQ2Eta(double q, double *eta)
   *eta = q/((1+q)*(1+q));
   return;
 }
+/* Calculate dQuadMon1 and dQuadMon2 from dQaudMonS and dQuadMonA */
+void LALInferencedQuadMonSdQuadMonA(REAL8 dQuadMonS, REAL8 dQuadMonA, REAL8 *dQuadMon1, REAL8 *dQuadMon2){
+  *dQuadMon1=(dQuadMonS+dQuadMonA);
+  *dQuadMon2=(dQuadMonS-dQuadMonA);
+  return;
+}
+
 
 void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2){
   REAL8 a=(8./13.)*(1.+7.*eta-31.*eta*eta);
