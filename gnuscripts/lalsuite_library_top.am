@@ -40,7 +40,7 @@ check-AUTHORS: AUTHORS
 	echo "**************************************************" >&2; \
 	echo "It looks like the following entries in AUTHORS are" >&2; \
 	echo "not nicely formatted names:" >&2; \
-	$(SED) "$${notniceregex}" AUTHORS | $(SED) 's/^/   /' >&2; \
+	$(SED) "$${notniceregex}" "$${authorsfile}" | $(SED) 's/^/   /' >&2; \
 	echo "(By 'nicely formatted' we mean properly capitalised" >&2; \
 	echo "human names, e.g. Albert Einstein, as opposed to" >&2; \
 	echo "computer user names, e.g. albert.einstein.)" >&2; \
