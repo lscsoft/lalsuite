@@ -22,7 +22,8 @@ endif # HAVE_GIT_REPO
 .PHONY: check-AUTHORS
 check-local: check-AUTHORS
 check-AUTHORS: AUTHORS
-	$(AM_V_at)export LC_ALL=C; \
+	@echo "Checking $(PACKAGE_NAME) AUTHORS file"; \
+	export LC_ALL=C; \
 	if test -r "$(builddir)/AUTHORS"; then \
 		authorsfile="$(builddir)/AUTHORS"; \
 	elif test -r "$(srcdir)/AUTHORS"; then \
