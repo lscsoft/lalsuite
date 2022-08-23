@@ -22,7 +22,8 @@ endif # HAVE_GIT_REPO
 .PHONY: check-AUTHORS
 check-local: check-AUTHORS
 check-AUTHORS: AUTHORS
-	$(AM_V_at)export LC_ALL=C; \
+	@echo "Checking $(PACKAGE_NAME) AUTHORS file"; \
+	export LC_ALL=C; \
 	if test -r "$(builddir)/AUTHORS"; then \
 		authorsfile="$(builddir)/AUTHORS"; \
 	elif test -r "$(srcdir)/AUTHORS"; then \
@@ -31,7 +32,7 @@ check-AUTHORS: AUTHORS
 		echo "ERROR: AUTHORS file is missing" >&2; \
 		exit 1; \
 	fi; \
-	notniceregex='/[\x80-\xff]/d;/^[A-Z][a-z][-A-Za-z]* /d;/^[A-Z][.] /d'; \
+	notniceregex='/[\x80-\xff]/d;/^[A-Z][a-z][-A-Za-z]* /d;/^[A-Z][.] /d;/^[A-Z][A-Z]* [A-Z][a-z]/d'; \
 	sedresult=`$(SED) "$${notniceregex}" "$${authorsfile}"`; \
 	if test "x$${sedresult}" = x; then \
 		exit 0; \
@@ -40,7 +41,7 @@ check-AUTHORS: AUTHORS
 	echo "**************************************************" >&2; \
 	echo "It looks like the following entries in AUTHORS are" >&2; \
 	echo "not nicely formatted names:" >&2; \
-	$(SED) "$${notniceregex}" AUTHORS | $(SED) 's/^/   /' >&2; \
+	$(SED) "$${notniceregex}" "$${authorsfile}" | $(SED) 's/^/   /' >&2; \
 	echo "(By 'nicely formatted' we mean properly capitalised" >&2; \
 	echo "human names, e.g. Albert Einstein, as opposed to" >&2; \
 	echo "computer user names, e.g. albert.einstein.)" >&2; \
