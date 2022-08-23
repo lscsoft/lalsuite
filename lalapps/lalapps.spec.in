@@ -28,12 +28,14 @@ BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: liblalinference-devel >= @MIN_LALINFERENCE_VERSION@
 BuildRequires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
+BuildRequires: liblalpulsar-devel >= @MIN_LALPULSAR_VERSION@
 BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+BuildRequires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
@@ -45,6 +47,7 @@ Requires: lalframe >= @MIN_LALFRAME_VERSION@
 Requires: lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: lalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
 Requires: libframel >= @MIN_FRAMEL_VERSION@
@@ -53,6 +56,7 @@ Requires: python%{python3_pkgversion}-h5py
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
+Requires: python%{python3_pkgversion}-lalpulsar >= @MIN_LALPULSAR_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python%{python3_pkgversion}-lalinspiral >= @MIN_LALINSPIRAL_VERSION@
