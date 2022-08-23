@@ -32,7 +32,7 @@ check-AUTHORS: AUTHORS
 		echo "ERROR: AUTHORS file is missing" >&2; \
 		exit 1; \
 	fi; \
-	notniceregex='/[\x80-\xff]/d;/^[A-Z][a-z][-A-Za-z]* /d;/^[A-Z][.] /d'; \
+	notniceregex='/[\x80-\xff]/d;/^[A-Z][a-z][-A-Za-z]* /d;/^[A-Z][.] /d;/^[A-Z][A-Z]* [A-Z][a-z]/d'; \
 	sedresult=`$(SED) "$${notniceregex}" "$${authorsfile}"`; \
 	if test "x$${sedresult}" = x; then \
 		exit 0; \
