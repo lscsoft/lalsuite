@@ -95,7 +95,9 @@ if lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.
     exitcode=0
 else
     exitcode=77
-    lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
+    if test "`uname -m`" == "x86_64"; then
+        lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
+    fi
 fi
 set +x
 echo
