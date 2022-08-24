@@ -46,31 +46,32 @@ int XLALSetLatticeTilingPiecewiseBounds(
   const double ktol,            /// Tolerance (percentage per second) between k values on adjacent knots
   const gsl_vector* knots,      /// List of knots
   const int finalknot,          /// The number of the final knot
-  const gsl_vector* bboxpad,    ///< Vector containing fractional bounding box padding
-  const gsl_vector_int* intpad, ///< Vector containing number of integer points to use for padding
-  const int maxdim
+  const gsl_vector* bboxpad,    /// Vector containing fractional bounding box padding
+  const gsl_vector_int* intpad /// Vector containing number of integer points to use for padding
   );
-/*
+
 ///
 /// Sets the bounds for the piecewise model when we are using 2 spin down parameters for each knot
 ///
 int XLALSetLatticeTilingPiecewiseBoundsS2(
   LatticeTiling* tiling,
-  const double fmin,       /// Minimum spin frequency to search over
-  const double fmax,       /// Maximum spin frequency to search over
-  const double fmaxtrue,   /// Maximum spin frequency used to calculate k and knots (useful for computing tiles in parrallel and fmax != fmaxtrue)
-  const double nmin,       /// Minimum braking index
-  const double nmax,       /// Maximum braking index
-  const double nmin0,      /// Minimum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
-  const double nmax0,      /// Maximum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
-  const double ntol,       /// Tolerance (percentage per second) between braking indices on adjacent knots
-  const double taumin,     /// Minimum spin half life when n = nmax, f0 = fmaxtrue
-  const double taumax,     /// Maximum spin half life when n = nmax, f0 = fmaxtrue
-  const double ktol,       /// Tolerance (percentage per second) between k values on adjacent knots
-  const gsl_vector* knots, /// List of knots
-  const int finalknot      /// The number of the final knot
+  const double fmin,            /// Minimum spin frequency to search over
+  const double fmax,            /// Maximum spin frequency to search over
+  const double fmaxtrue,        /// Maximum spin frequency used to calculate k and knots (useful for computing tiles in parrallel and fmax != fmaxtrue)
+  const double nmin,            /// Minimum braking index
+  const double nmax,            /// Maximum braking index
+  const double nmin0,           /// Minimum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
+  const double nmax0,           /// Maximum braking index for the first knot. Useful if you want to brake up a search into partitions separated by templates with braking indices within a certain range
+  const double ntol,            /// Tolerance (percentage per second) between braking indices on adjacent knots
+  const double taumin,          /// Minimum spin half life when n = nmax, f0 = fmaxtrue
+  const double taumax,          /// Maximum spin half life when n = nmax, f0 = fmaxtrue
+  const double ktol,            /// Tolerance (percentage per second) between k values on adjacent knots
+  const gsl_vector* knots,      /// List of knots
+  const int finalknot,          /// The number of the final knot
+  const gsl_vector* bboxpad,    /// Vector containing fractional bounding box padding
+  const gsl_vector_int* intpad  /// Vector containing number of integer points to use for padding
   );
-*/
+
 
 ///
 /// Returns the upper or lower bound for the dimension 'dim' given values for all previous dimensions, point_up_to_dim, as well as the relevant parameter space information
