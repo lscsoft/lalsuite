@@ -85,12 +85,7 @@ rm -rf newtarball/
 
 echo "=== Compare semicoherent F-statistics from lalpulsar_Weave to reference results ==="
 set -x
-if lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits; then
-    exitcode=0
-else
-    exitcode=77
-    lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits --param-tol-mism=0
-fi
+lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits
 set +x
 echo
 
@@ -127,5 +122,3 @@ mean_mu=0.15
 awk "BEGIN { print mu = ( ${coh2F_loud} - ${coh2F_loud_single} ) / ${coh2F_loud}; exit ( mu < ${mean_mu} ? 0 : 1 ) }"
 set +x
 echo
-
-exit ${exitcode}
