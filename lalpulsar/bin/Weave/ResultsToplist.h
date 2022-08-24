@@ -42,8 +42,8 @@ extern "C" {
 /// Toplist item
 ///
 struct tagWeaveResultsToplistItem {
-  /// Index of semicoherent template
-  UINT8 semi_index;
+  /// Serial number of template
+  UINT8 serial;
   /// Index of coherent templates (only needed for per-segment output)
   UINT8 *coh_index;
   /// Physical right ascension of semicoherent template
@@ -83,7 +83,6 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   const char *stat_name,
   const char *stat_desc,
   const UINT4 toplist_limit,
-  const BOOLEAN toplist_tmpl_idx,
   WeaveResultsToplistRankingStats toplist_rank_stats_fcn,
   WeaveResultsToplistItemGetRankStat toplist_item_get_rank_stat_fcn,
   WeaveResultsToplistItemSetRankStat toplist_item_set_rank_stat_fcn
@@ -110,6 +109,7 @@ int XLALWeaveResultsToplistReadAppend(
 int XLALWeaveResultsToplistCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
+  const BOOLEAN sort_by_semi_phys,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
   const WeaveResultsToplist *toplist_1,

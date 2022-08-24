@@ -39,6 +39,7 @@ int main( int argc, char *argv[] )
 
   // Initialise user input variables
   struct uvar_type {
+    BOOLEAN sort_by_semi_phys;
     CHAR *setup_file, *result_file_1, *result_file_2;
     REAL8 param_tol_mism, result_tol_L1, result_tol_L2, result_tol_angle, result_tol_at_max;
     UINT4 toplist_limit;
@@ -98,6 +99,14 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     toplist_limit, UINT4, 'n', OPTIONAL,
     "Maximum number of candidates to compare in an output toplist; if 0, all candidates are compared. "
+    );
+  //
+  // - Comparison order
+  //
+  lalUserVarHelpOptionSubsection = "Comparison order";
+  XLALRegisterUvarMember(
+    sort_by_semi_phys, BOOLEAN, 'p', OPTIONAL,
+    "Sort toplist items by semicoherent physical coordinates, instead of serial number. "
     );
 
   // Parse user input
@@ -201,7 +210,7 @@ int main( int argc, char *argv[] )
   // Compare output results
   BOOLEAN equal = 0;
   LogPrintf( LOG_NORMAL, "Comparing result files '%s' and '%s ...\n", uvar->result_file_1, uvar->result_file_2 );
-  XLAL_CHECK_FAIL( XLALWeaveOutputResultsCompare( &equal, &setup, uvar->param_tol_mism, &result_tol, out_1, out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( XLALWeaveOutputResultsCompare( &equal, &setup, uvar->sort_by_semi_phys, uvar->param_tol_mism, &result_tol, out_1, out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Result files compare %s\n", equal ? "EQUAL" : "NOT EQUAL" );
 
   ////////// Cleanup memory and exit //////////

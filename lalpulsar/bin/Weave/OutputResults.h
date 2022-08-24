@@ -37,12 +37,18 @@
 extern "C" {
 #endif
 
+///
+/// Extra toplist output fields
+///
+enum tagWeaveToplistExtraOutputs {
+  WEAVE_TOPLIST_EXTRA_OUTPUTS
+};
+
 WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const LIGOTimeGPS *ref_time,
   const size_t nspins,
   WeaveStatisticsParams *statistics_params,
   const UINT4 toplist_limit,
-  const BOOLEAN toplist_tmpl_idx,
   const BOOLEAN mean2F_hgrm
   );
 void XLALWeaveOutputResultsDestroy(
@@ -68,6 +74,7 @@ int XLALWeaveOutputResultsReadAppend(
 int XLALWeaveOutputResultsCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
+  const BOOLEAN sort_by_semi_phys,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
   const WeaveOutputResults *out_1,

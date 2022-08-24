@@ -61,8 +61,6 @@ struct tagWeaveOutputResults {
   UINT4 toplist_limit;
   /// Number of output results toplists
   size_t ntoplists;
-  /// Whether to output semicoherent/coherent template indexes
-  BOOLEAN toplist_tmpl_idx;
   /// Output result toplists
   WeaveResultsToplist *toplists[8];
   // Vector to store histogram of mean multi-F-statistics
@@ -188,7 +186,6 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   const size_t nspins,
   WeaveStatisticsParams *statistics_params,
   const UINT4 toplist_limit,
-  const BOOLEAN toplist_tmpl_idx,
   const BOOLEAN mean2F_hgrm
   )
 {
@@ -204,7 +201,6 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   out->ref_time = *ref_time;
   out->nspins = nspins;
   out->toplist_limit = toplist_limit;
-  out->toplist_tmpl_idx = toplist_tmpl_idx;
   out->statistics_params = statistics_params;
 
   WeaveStatisticType toplist_statistics = statistics_params->toplist_statistics;
@@ -214,7 +210,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by mean multi-detector F-statistic
   if ( toplist_statistics & WEAVE_STATISTIC_MEAN2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_MEAN2F ), "average multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_mean2F, toplist_item_get_mean2F, toplist_item_set_mean2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_MEAN2F ), "average multi-detector F-statistic", toplist_limit, toplist_results_mean2F, toplist_item_get_mean2F, toplist_item_set_mean2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -222,7 +218,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by summed multi-detector F-statistic
   if ( toplist_statistics & WEAVE_STATISTIC_SUM2F ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_SUM2F ), "summed multi-detector F-statistic", toplist_limit, toplist_tmpl_idx, toplist_results_sum2F, toplist_item_get_sum2F, toplist_item_set_sum2F );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_SUM2F ), "summed multi-detector F-statistic", toplist_limit, toplist_results_sum2F, toplist_item_get_sum2F, toplist_item_set_sum2F );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -230,7 +226,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by line-robust log10(B_S/GL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BSGL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BSGL ), "line-robust log10BSGL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGL, toplist_item_get_log10BSGL, toplist_item_set_log10BSGL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BSGL ), "line-robust log10BSGL statistic", toplist_limit, toplist_results_log10BSGL, toplist_item_get_log10BSGL, toplist_item_set_log10BSGL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -238,7 +234,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by transient-line-robust log10(B_S/GLtL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BSGLtL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BSGLtL ), "transient line-robust log10BSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BSGLtL, toplist_item_get_log10BSGLtL, toplist_item_set_log10BSGLtL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BSGLtL ), "transient line-robust log10BSGLtL statistic", toplist_limit, toplist_results_log10BSGLtL, toplist_item_get_log10BSGLtL, toplist_item_set_log10BSGLtL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -246,7 +242,7 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
 
   // Create a toplist which ranks results by transient-signal line-robust log10(B_tS/GLtL) statistic
   if ( toplist_statistics & WEAVE_STATISTIC_BtSGLtL ) {
-    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BtSGLtL ), "transient signal line-robust log10BtSGLtL statistic", toplist_limit, toplist_tmpl_idx, toplist_results_log10BtSGLtL, toplist_item_get_log10BtSGLtL, toplist_item_set_log10BtSGLtL );
+    out->toplists[out->ntoplists] = XLALWeaveResultsToplistCreate( nspins, statistics_params, WEAVE_STATISTIC_NAME( WEAVE_STATISTIC_BtSGLtL ), "transient signal line-robust log10BtSGLtL statistic", toplist_limit, toplist_results_log10BtSGLtL, toplist_item_get_log10BtSGLtL, toplist_item_set_log10BtSGLtL );
     XLAL_CHECK_NULL( out->toplists[out->ntoplists] != NULL, XLAL_EFUNC );
     XLAL_CHECK_NULL( out->ntoplists < XLAL_NUM_ELEM( out->toplists ), XLAL_EFAILED );
     out->ntoplists++;
@@ -415,9 +411,6 @@ int XLALWeaveOutputResultsWrite(
   // Write maximum size of toplists
   XLAL_CHECK( XLALFITSHeaderWriteUINT4( file, "toplimit", out->toplist_limit, "maximum size of toplists" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Write whether to output semicoherent/coherent template indexes
-  XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "toptmpli", out->toplist_tmpl_idx, "output template indexes?" ) == XLAL_SUCCESS, XLAL_EFUNC );
-
   // Write whether a histogram of mean multi-F-statistics will be written
   XLAL_CHECK( XLALFITSHeaderWriteBOOLEAN( file, "m2Fhgrm", out->mean2F_hgrm_bins != NULL, "mean 2F histogram?" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -526,16 +519,6 @@ int XLALWeaveOutputResultsReadAppend(
   // Compute and fill the full stats-dependency map
   XLAL_CHECK( XLALWeaveStatisticsParamsSetDependencyMap( statistics_params, toplist_stats, extra_stats, recalc_stats ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  // Read whether to output semicoherent/coherent template indexes
-  BOOLEAN toplist_tmpl_idx = 0;
-  {
-    exists = 0;
-    XLAL_CHECK( XLALFITSHeaderQueryKeyExists( file, "toptmpli", &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
-    if ( exists ) {
-      XLAL_CHECK( XLALFITSHeaderReadBOOLEAN( file, "toptmpli", &toplist_tmpl_idx ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
-  }
-
   // Read whether a histogram of mean multi-F-statistics will be written
   BOOLEAN mean2F_hgrm = 0;
   {
@@ -549,7 +532,7 @@ int XLALWeaveOutputResultsReadAppend(
   if ( *out == NULL ) {
 
     // Create new output results
-    *out = XLALWeaveOutputResultsCreate( &ref_time, nspins, statistics_params, toplist_limit, toplist_tmpl_idx, mean2F_hgrm );
+    *out = XLALWeaveOutputResultsCreate( &ref_time, nspins, statistics_params, toplist_limit, mean2F_hgrm );
     XLAL_CHECK( *out != NULL, XLAL_EFUNC );
 
   } else {
@@ -600,9 +583,6 @@ int XLALWeaveOutputResultsReadAppend(
 
     XLALWeaveStatisticsParamsDestroy( statistics_params );  // Not creating a new output, so we need to free this
 
-    // Check whether to output semicoherent/coherent template indexes
-    XLAL_CHECK( !toplist_tmpl_idx == !( *out )->toplist_tmpl_idx, XLAL_EIO, "Inconsistent output template indexes? %i != %i", toplist_tmpl_idx, ( *out )->toplist_tmpl_idx );
-
     // Check whether a histogram of mean multi-F-statistics will be written
     XLAL_CHECK( !mean2F_hgrm == !(( *out )->mean2F_hgrm_bins != NULL), XLAL_EIO, "Inconsistent mean 2F histogram? %i != %i", mean2F_hgrm, ( *out )->mean2F_hgrm_bins != NULL );
 
@@ -651,6 +631,7 @@ int XLALWeaveOutputResultsReadAppend(
 int XLALWeaveOutputResultsCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
+  const BOOLEAN sort_by_semi_phys,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
   const WeaveOutputResults *out_1,
@@ -746,7 +727,7 @@ int XLALWeaveOutputResultsCompare(
 
   // Compare toplists
   for ( size_t i = 0; i < out_1->ntoplists; ++i ) {
-    XLAL_CHECK( XLALWeaveResultsToplistCompare( equal, setup, param_tol_mism, result_tol, out_1->toplists[i], out_2->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveResultsToplistCompare( equal, setup, sort_by_semi_phys, param_tol_mism, result_tol, out_1->toplists[i], out_2->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( !*equal ) {
       return XLAL_SUCCESS;
     }
