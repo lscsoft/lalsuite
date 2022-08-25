@@ -66,8 +66,9 @@ struct tagWeaveResultsToplist {
 /// @{
 
 static WeaveResultsToplistItem *toplist_item_create( const WeaveResultsToplist *toplist );
-static int compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const REAL8 param_tol_mism, const gsl_matrix *metric, const SuperskyTransformData *rssky_transf, const UINT8 serial_1, const UINT8 serial_2, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
+static int compare_templates( BOOLEAN *equal, const char *loc_str, const char *tmpl_str, const UINT4 round_param_to_n_sf, const REAL8 param_tol_mism, const gsl_matrix *metric, const SuperskyTransformData *rssky_transf, const UINT8 serial_1, const UINT8 serial_2, const PulsarDopplerParams *phys_1, const PulsarDopplerParams *phys_2 );
 static int compare_vectors( BOOLEAN *equal, const VectorComparison *result_tol, const REAL4Vector *res_1, const REAL4Vector *res_2 );
+static double round_to_n_sf( const double x, const UINT4 n );
 static int toplist_fits_table_init( FITSFile *file, const WeaveResultsToplist *toplist );
 static int toplist_fits_table_write_visitor( void *param, const void *x );
 static int toplist_item_sort_by_semi_phys( const void *x, const void *y );
@@ -77,6 +78,19 @@ static int toplist_item_compare( void *param, const void *x, const void *y );
 static int toplist_fill_completionloop_stats( void *param, void *x );
 
 /// @}
+
+///
+/// Round a floating-point number 'x' to 'n' significant figures
+///
+static double round_to_n_sf(
+  const double x,
+  const UINT4 n
+  )
+{
+  char buf[32];
+  snprintf( buf, sizeof( buf ), "%0.*e", n - 1, x );
+  return atof(buf);
+}
 
 ///
 /// Create a toplist item
@@ -505,6 +519,7 @@ int compare_templates(
   BOOLEAN *equal,
   const char *loc_str,
   const char *tmpl_str,
+  const UINT4 round_param_to_n_sf,
   const REAL8 param_tol_mism,
   const gsl_matrix *metric,
   const SuperskyTransformData *rssky_transf,
@@ -525,22 +540,36 @@ int compare_templates(
   XLAL_CHECK( phys_1 != NULL, XLAL_EFAULT );
   XLAL_CHECK( phys_2 != NULL, XLAL_EFAULT );
 
+  // Local copies of physical coordinates
+  PulsarDopplerParams phys[2] = { *phys_1, *phys_2 };
+
+  // Round physical coordinates
+  if ( round_param_to_n_sf > 0 ) {
+    for ( size_t i = 0; i < 2; ++i ) {
+      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i+1, phys[i].Alpha, phys[i].Delta, phys[i].fkdot[0], phys[i].fkdot[1] );
+      phys[i].Alpha = round_to_n_sf( phys[i].Alpha, round_param_to_n_sf );
+      phys[i].Delta = round_to_n_sf( phys[i].Delta, round_param_to_n_sf );
+      phys[i].fkdot[0] = round_to_n_sf( phys[i].fkdot[0], round_param_to_n_sf );
+      phys[i].fkdot[1] = round_to_n_sf( phys[i].fkdot[1], round_param_to_n_sf );
+      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g} rounded to %u s.f.\n", __func__, i+1, phys[i].Alpha, phys[i].Delta, phys[i].fkdot[0], phys[i].fkdot[1], round_param_to_n_sf );
+    }
+  }
+
   // Transform physical point to reduced supersky coordinates
-  double rssky_1_array[metric->size1];
-  gsl_vector_view rssky_1_view = gsl_vector_view_array( rssky_1_array, metric->size1 );
-  gsl_vector *const rssky_1 = &rssky_1_view.vector;
-  XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( rssky_1, phys_1, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
-  double rssky_2_array[metric->size1];
-  gsl_vector_view rssky_2_view = gsl_vector_view_array( rssky_2_array, metric->size1 );
-  gsl_vector *const rssky_2 = &rssky_2_view.vector;
-  XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( rssky_2, phys_2, rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  double rssky_array[2][metric->size1];
+  gsl_vector_view rssky_view[2] = { gsl_vector_view_array( rssky_array[0], metric->size1 ), gsl_vector_view_array( rssky_array[1], metric->size1 ) };
+  gsl_vector *const rssky[2] = { &rssky_view[0].vector, &rssky_view[1].vector };
+  for ( size_t i = 0; i < 2; ++i ) {
+    XLAL_CHECK( XLALConvertPhysicalToSuperskyPoint( rssky[i], &phys[i], rssky_transf ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
+
 
   // Store difference between reduced supersky coordinates in 'u'
   double u_array[metric->size1];
   gsl_vector_view u_view = gsl_vector_view_array( u_array, metric->size1 );
   gsl_vector *const u = &u_view.vector;
-  gsl_vector_memcpy( u, rssky_1 );
-  gsl_vector_sub( u, rssky_2 );
+  gsl_vector_memcpy( u, rssky[0] );
+  gsl_vector_sub( u, rssky[1] );
 
   // Multiply 'u' by metric, storing result in 'v'
   double v_array[metric->size1];
@@ -558,10 +587,8 @@ int compare_templates(
     XLALPrintInfo( "%s: at %s, mismatch between %s template parameters exceeds tolerance: %g > %g\n", __func__, loc_str, tmpl_str, mism, param_tol_mism );
     XLALPrintInfo( "%s:     serial 1 = %"LAL_UINT8_FORMAT"\n", __func__, serial_1 );
     XLALPrintInfo( "%s:     serial 2 = %"LAL_UINT8_FORMAT"\n", __func__, serial_2 );
-    const PulsarDopplerParams *phys[2] = { phys_1, phys_2 };
-    gsl_vector *rssky[2] = { rssky_1, rssky_2 };
     for ( size_t i = 0; i < 2; ++i ) {
-      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i+1, phys[i]->Alpha, phys[i]->Delta, phys[i]->fkdot[0], phys[i]->fkdot[1] );
+      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i+1, phys[i].Alpha, phys[i].Delta, phys[i].fkdot[0], phys[i].fkdot[1] );
     }
     for ( size_t i = 0; i < 2; ++i ) {
       XLALPrintInfo( "%s:     reduced supersky %zu = ", __func__, i+1 );
@@ -919,6 +946,7 @@ int XLALWeaveResultsToplistCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
   const BOOLEAN sort_by_semi_phys,
+  const UINT4 round_param_to_n_sf,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
   const WeaveResultsToplist *toplist_1,
@@ -1025,7 +1053,7 @@ int XLALWeaveResultsToplistCompare(
           semi_phys_1.fkdot[k] = matched_1[i]->semi_fkdot[k];
           semi_phys_2.fkdot[k] = matched_2[i]->semi_fkdot[k];
         };
-        XLAL_CHECK( compare_templates( equal, loc_str, "semicoherent", param_tol_mism, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, serial_1, serial_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK( compare_templates( equal, loc_str, "semicoherent", round_param_to_n_sf, param_tol_mism, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, serial_1, serial_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
       if ( !*equal ) {
         break;
@@ -1050,7 +1078,7 @@ int XLALWeaveResultsToplistCompare(
             coh_phys_1.fkdot[k] = matched_1[i]->coh_fkdot[k][j];
             coh_phys_2.fkdot[k] = matched_2[i]->coh_fkdot[k][j];
           };
-          XLAL_CHECK( compare_templates( equal, loc_str, "coherent", param_tol_mism, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], serial_1, serial_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK( compare_templates( equal, loc_str, "coherent", round_param_to_n_sf, param_tol_mism, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], serial_1, serial_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
       }
       if ( !*equal ) {
