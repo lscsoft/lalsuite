@@ -677,7 +677,7 @@ UNUSED static INT4 XLALSimIMRNRWaveformGetModes(
   /* These keys follow a strict formulation and cannot be longer than 11
    * characters */
   char amp_key[30];
-  char phase_key[30];
+  char phase_key[31];
   gsl_vector *tmpVector=NULL;
   LALH5File *group;
   LIGOTimeGPS tmpEpoch = LIGOTIMEGPSZERO;
