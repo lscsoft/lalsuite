@@ -1065,6 +1065,9 @@ int XLALWeaveResultsToplistCompare(
           semi_phys_2.fkdot[k] = matched_2[i]->semi_fkdot[k];
         };
         XLAL_CHECK( compare_templates( equal, loc_str, "semicoherent", round_param_to_n_sf, param_tol_mism, setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf, serial_1, serial_2, &semi_phys_1, &semi_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        if ( !*equal ) {
+          break;
+        }
       }
       if ( !*equal ) {
         break;
@@ -1090,6 +1093,9 @@ int XLALWeaveResultsToplistCompare(
             coh_phys_2.fkdot[k] = matched_2[i]->coh_fkdot[k][j];
           };
           XLAL_CHECK( compare_templates( equal, loc_str, "coherent", round_param_to_n_sf, param_tol_mism, setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j], serial_1, serial_2, &coh_phys_1, &coh_phys_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+        }
+        if ( !*equal ) {
+          break;
         }
       }
       if ( !*equal ) {
