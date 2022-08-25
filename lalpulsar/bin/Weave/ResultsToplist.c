@@ -1037,7 +1037,6 @@ int XLALWeaveResultsToplistCompare(
   if ( unmatched_n > unmatched_item_tol_n ) {
     *equal = 0;
     XLALPrintInfo( "%s: number of unmatched %s toplist items %lu exceeds tolerance %0.3e * %zu = %lu\n", __func__, toplist->stat_desc, unmatched_n, unmatched_item_tol, n, unmatched_item_tol_n );
-    return XLAL_SUCCESS;
   }
 
   // Allocate vectors for storing results for comparison with compare_vectors()
@@ -1046,7 +1045,7 @@ int XLALWeaveResultsToplistCompare(
   REAL4Vector *res_2 = XLALCreateREAL4Vector( n );
   XLAL_CHECK( res_2 != NULL, XLAL_EFUNC );
 
-  do { // So we can use 'break' to skip comparisons on failure
+  while ( *equal ) { // So we can use 'break' to skip comparisons on failure
 
     // Compare semicoherent template parameters
     if ( ( *equal ) && ( param_tol_mism > 0 ) ) {
@@ -1291,7 +1290,7 @@ int XLALWeaveResultsToplistCompare(
 
     } // istage
 
-  } while ( 0 );
+  } // while ( *equal )
 
   // Cleanup
   XLALFree( items_1 );
