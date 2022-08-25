@@ -122,8 +122,8 @@ int XLALGenerateSimBurst(
 		if(XLALGenerateImpulseBurst(hplus, hcross, sim_burst->amplitude, delta_t))
 			XLAL_ERROR(XLAL_EFUNC);
 	} else if(!strcmp(sim_burst->waveform, "Cherenkov")) {
-		XLALPrintInfo("%s(): Cherenkov @ %9d.%09u s (GPS): natural_freq = %.16g Hz, beta = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->frequency, sim_burst->bandwidth);
-		if(XLALSimBurstCherenkovRadiation(hplus, hcross, sim_burst->frequency, sim_burst->bandwidth, sim_burst->egw_over_rsquared, delta_t))
+		XLALPrintInfo("%s(): Cherenkov @ %9d.%09u s (GPS): length = %.16g\n", __func__, sim_burst->time_geocent_gps.gpsSeconds, sim_burst->time_geocent_gps.gpsNanoSeconds, sim_burst->bandwidth);
+		if(XLALSimBurstCherenkovRadiation(hplus, hcross, sim_burst->bandwidth, sim_burst->amplitude, delta_t))
 			XLAL_ERROR(XLAL_EFUNC);
 	} else {
 		/* unrecognized waveform */

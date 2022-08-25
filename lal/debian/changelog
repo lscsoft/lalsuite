@@ -1,3 +1,9 @@
+lal (7.2.1-1) unstable; urgency=low
+
+  * Update for 7.2.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 18 Aug 2022 14:38:46 -0700
+
 lal (7.2.0-1) unstable; urgency=low
 
   * Update for 7.2.0
