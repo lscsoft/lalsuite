@@ -1296,6 +1296,9 @@ int XLALWeaveResultsToplistCompare(
 
     } // istage
 
+    // All comparisons are done
+    break;
+
   } // while ( *equal )
 
   // Cleanup
