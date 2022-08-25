@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInspiral],[3.0.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALInspiral],[3.0.1.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALInspiralConfig.h])
 AC_CONFIG_SRCDIR([lib/LALInspiral.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[17])
-AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBREVISION],[1])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -69,7 +69,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.2.0"
+MIN_LAL_VERSION="7.2.1"
 MIN_LALFRAME_VERSION="2.0.0"
 MIN_LALMETAIO_VERSION="3.0.0"
 MIN_LALSIMULATION_VERSION="4.0.0"
