@@ -111,6 +111,7 @@ int XLALWeaveResultsToplistCompare(
   const WeaveSetupData *setup,
   const BOOLEAN sort_by_semi_phys,
   const UINT4 round_param_to_n_sf,
+  const REAL8 unmatched_item_tol,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
   const WeaveResultsToplist *toplist_1,

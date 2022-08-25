@@ -41,9 +41,10 @@ int main( int argc, char *argv[] )
   struct uvar_type {
     BOOLEAN sort_by_semi_phys;
     CHAR *setup_file, *result_file_1, *result_file_2;
-    REAL8 param_tol_mism, result_tol_L1, result_tol_L2, result_tol_angle, result_tol_at_max;
+    REAL8 unmatched_item_tol, param_tol_mism, result_tol_L1, result_tol_L2, result_tol_angle, result_tol_at_max;
     UINT4 round_param_to_n_sf, toplist_limit;
   } uvar_struct = {
+    .unmatched_item_tol = 0,
     .param_tol_mism = 1e-3,
     .result_tol_L1 = 5.5e-2,
     .result_tol_L2 = 4.5e-2,
@@ -84,6 +85,10 @@ int main( int argc, char *argv[] )
   // - Tolerances
   //
   lalUserVarHelpOptionSubsection = "Tolerances";
+  XLALRegisterUvarMember(
+    unmatched_item_tol, REAL8, 'u', OPTIONAL,
+    "When comparing toplists, allow this fraction of items to be umatched to an item in the other toplist (must in in range [0, 1]). "
+    );
   XLALRegisterUvarMember(
     param_tol_mism, REAL8, 'm', OPTIONAL,
     "Allowed tolerance on mismatch between parameter-space points (must be >0, or zero to disable comparison). "
@@ -131,8 +136,11 @@ int main( int argc, char *argv[] )
   // - Tolerances
   //
   XLALUserVarCheck( &should_exit,
+                    0 <= uvar->unmatched_item_tol && uvar->unmatched_item_tol <= 1,
+                    UVAR_STR( unmatched_item_tol ) " must be within range [0,1]" );
+  XLALUserVarCheck( &should_exit,
                     0 <= uvar->param_tol_mism,
-                    UVAR_STR( mismatch_tol ) " must be >=0" );
+                    UVAR_STR( param_tol_mism ) " must be >=0" );
   XLALUserVarCheck( &should_exit,
                     0 <= uvar->result_tol_L1 && uvar->result_tol_L1 <= 2,
                     UVAR_STR( result_tol_L1 ) " must be within range [0,2]" );
@@ -218,7 +226,7 @@ int main( int argc, char *argv[] )
   // Compare output results
   BOOLEAN equal = 0;
   LogPrintf( LOG_NORMAL, "Comparing result files '%s' and '%s ...\n", uvar->result_file_1, uvar->result_file_2 );
-  XLAL_CHECK_FAIL( XLALWeaveOutputResultsCompare( &equal, &setup, uvar->sort_by_semi_phys, uvar->round_param_to_n_sf, uvar->param_tol_mism, &result_tol, out_1, out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( XLALWeaveOutputResultsCompare( &equal, &setup, uvar->sort_by_semi_phys, uvar->round_param_to_n_sf, uvar->unmatched_item_tol, uvar->param_tol_mism, &result_tol, out_1, out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Result files compare %s\n", equal ? "EQUAL" : "NOT EQUAL" );
 
   ////////// Cleanup memory and exit //////////
