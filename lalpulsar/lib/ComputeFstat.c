@@ -574,6 +574,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
       MFDparams.multiIFO = common->detectors;
       MFDparams.multiTimestamps = *(common->multiTimestamps);
       MFDparams.randSeed = optArgs.randSeed;
+      MFDparams.sourceDeltaT = optArgs.sourceDeltaT;
 
       // Set noise floors if sqrtSX is given; otherwise noise floors are zero
       if ( optArgs.injectSqrtSX != NULL ) {

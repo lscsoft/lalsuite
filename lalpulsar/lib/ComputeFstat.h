@@ -146,6 +146,7 @@ typedef struct tagFstatOptionalArgs {
   BOOLEAN collectTiming;		///< a flag to turn on/off the collection of F-stat-method-specific timing-data
   BOOLEAN resampFFTPowerOf2;		///< \a Resamp: round up FFT lengths to next power of 2; see \c FstatMethodType.
   REAL8 allowedMismatchFromSFTLength;      ///<  Optional override for XLALFstatCheckSFTLengthMismatch().
+  REAL8 sourceDeltaT;			///< Optional source-frame sampling period for XLALCWMakeFakeData(); if zero, use the previous internal defaults.
 } FstatOptionalArgs;
 
 ///
