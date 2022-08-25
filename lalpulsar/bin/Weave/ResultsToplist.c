@@ -541,17 +541,16 @@ int compare_templates(
   XLAL_CHECK( phys_2 != NULL, XLAL_EFAULT );
 
   // Local copies of physical coordinates
-  PulsarDopplerParams phys[2] = { *phys_1, *phys_2 };
+  const PulsarDopplerParams phys_orig[2] = { *phys_1, *phys_2 };
+  PulsarDopplerParams phys[2] = { phys_orig[0], phys_orig[1] };
 
   // Round physical coordinates
   if ( round_param_to_n_sf > 0 ) {
     for ( size_t i = 0; i < 2; ++i ) {
-      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i+1, phys[i].Alpha, phys[i].Delta, phys[i].fkdot[0], phys[i].fkdot[1] );
       phys[i].Alpha = round_to_n_sf( phys[i].Alpha, round_param_to_n_sf );
       phys[i].Delta = round_to_n_sf( phys[i].Delta, round_param_to_n_sf );
       phys[i].fkdot[0] = round_to_n_sf( phys[i].fkdot[0], round_param_to_n_sf );
       phys[i].fkdot[1] = round_to_n_sf( phys[i].fkdot[1], round_param_to_n_sf );
-      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g} rounded to %u s.f.\n", __func__, i+1, phys[i].Alpha, phys[i].Delta, phys[i].fkdot[0], phys[i].fkdot[1], round_param_to_n_sf );
     }
   }
 
@@ -588,7 +587,10 @@ int compare_templates(
     XLALPrintInfo( "%s:     serial 1 = %"LAL_UINT8_FORMAT"\n", __func__, serial_1 );
     XLALPrintInfo( "%s:     serial 2 = %"LAL_UINT8_FORMAT"\n", __func__, serial_2 );
     for ( size_t i = 0; i < 2; ++i ) {
-      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i+1, phys[i].Alpha, phys[i].Delta, phys[i].fkdot[0], phys[i].fkdot[1] );
+      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i+1, phys_orig[i].Alpha, phys_orig[i].Delta, phys_orig[i].fkdot[0], phys_orig[i].fkdot[1] );
+      if ( round_param_to_n_sf > 0 ) {
+        XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g} rounded to %u s.f.\n", __func__, i+1, phys[i].Alpha, phys[i].Delta, phys[i].fkdot[0], phys[i].fkdot[1], round_param_to_n_sf );
+      }
     }
     for ( size_t i = 0; i < 2; ++i ) {
       XLALPrintInfo( "%s:     reduced supersky %zu = ", __func__, i+1 );
