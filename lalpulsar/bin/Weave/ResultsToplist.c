@@ -1005,6 +1005,7 @@ int XLALWeaveResultsToplistCompare(
     // Assume this order is matched
     memcpy( matched_1, items_1, n * sizeof( *matched_1 ) );
     memcpy( matched_2, items_2, n * sizeof( *matched_2 ) );
+    matched_n = n;
 
   } else {
 
