@@ -69,6 +69,14 @@ int main( int argc, char *argv[] )
     "Second result file produced by lalpulsar_Weave for comparison. "
     );
   //
+  // - Comparison options
+  //
+  lalUserVarHelpOptionSubsection = "Comparison options";
+  XLALRegisterUvarMember(
+    sort_by_semi_phys, BOOLEAN, 'p', OPTIONAL,
+    "Sort toplist items by semicoherent physical coordinates, instead of serial number. "
+    );
+  //
   // - Tolerances
   //
   lalUserVarHelpOptionSubsection = "Tolerances";
@@ -100,14 +108,6 @@ int main( int argc, char *argv[] )
     toplist_limit, UINT4, 'n', OPTIONAL,
     "Maximum number of candidates to compare in an output toplist; if 0, all candidates are compared. "
     );
-  //
-  // - Comparison order
-  //
-  lalUserVarHelpOptionSubsection = "Comparison order";
-  XLALRegisterUvarMember(
-    sort_by_semi_phys, BOOLEAN, 'p', OPTIONAL,
-    "Sort toplist items by semicoherent physical coordinates, instead of serial number. "
-    );
 
   // Parse user input
   XLAL_CHECK_FAIL( xlalErrno == 0, XLAL_EFUNC, "A call to XLALRegisterUvarMember() failed" );
@@ -117,6 +117,10 @@ int main( int argc, char *argv[] )
   // Check user input:
   //
   // - General
+  //
+
+  //
+  // - Comparison options
   //
 
   //
