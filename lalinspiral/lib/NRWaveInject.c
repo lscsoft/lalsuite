@@ -639,13 +639,6 @@ XLALFindNRFile( NRWaveMetaData   *out,       /**< output wave data */
   /* initialize diff */
   diff = -1;
   for (k = 0; k < nrCatalog->length; k++) {
-
-    /* check catalog data is not null */
-    if ( nrCatalog->data + k == NULL ) {
-      LALPrintError ("\n NR Catalog data is NULL !\n\n");
-      XLAL_ERROR ( XLAL_EINVAL);
-    }
-
     /* look for waveforms with correct mode values */
     if ((modeL == nrCatalog->data[k].mode[0]) && (modeM == nrCatalog->data[k].mode[1])) {
 
