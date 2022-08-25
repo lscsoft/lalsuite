@@ -721,8 +721,8 @@ int fstat_cpt_file_compact(FstatCheckpointFile*cptf) {
 	      mess,filename,__LINE__,_doserrno,((fp)?(ferror(fp)):0),errno,strerror(errno))
 #else
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, ferr:%d, errno:%d: %s\n",\
-	      mess,filename,__LINE__,((fp)?(ferror(fp)):0),errno,strerror(errno))
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: line:%d, errno:%d: %s\n",\
+	      mess,filename,__LINE__,errno,strerror(errno))
 #endif
 
 /* dumps toplist to a temporary file, then renames the file to filename */
