@@ -218,7 +218,7 @@ static double F0BoundMinMax(
 /// Function which determines the minimum/maximum value of the first derivative parameters
 ///
 static double F1BoundMinMax(
-  double UNUSED f0,        ///< Frequency parameter at the corresponding knot
+  double f0,               ///< Frequency parameter at the current knot
   double fprev,            ///< Frequency parameter at the previous knot
   double na,               ///< A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb. Revision: For upper bound, na should be minimised
   double UNUSED nb,        ///< A braking index value. For calculating upper bound, na < nb. For calculating lower bound na > nb
