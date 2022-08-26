@@ -134,7 +134,7 @@ static int NMinMax(
   double nextnmax = n;
   //printf("Next n values are, %f, %f \n", nextnmin, nextnmax);
   ///< If the code is running properly (at least with padding flags turned off) this shouldn't ever really come up, but if it does, it doesn't necessarily 
-  ///< mean things will go wrong. It usually just means that nextnmax/nextnmin are very close to the either nmin or nmax
+  ///< mean things will go wrong. It usually just means that nextnmax/nextnmin are very close to either nmin or nmax
   if (nextnmax < nmin || nextnmin > nmax){
     XLAL_PRINT_WARNING("Calculated n ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", n, nmin, nmax, nextnmin, nextnmax, n - nmin, n - nmax);
   }
@@ -177,7 +177,7 @@ static int KMinMax(
   ///< If the code is running properly (at least with padding flags turned off) this shouldn't ever really come up, but if it does, it doesn't necessarily 
   ///< mean things will go wrong. It usually just means that nextkmax/nextkmin are very close to either kmin or kmax
   if (nextkmax < kmin || nextkmin > kmax){
-    XLAL_PRINT_WARNING("Calculated ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax, k - kmin, k - kmax);
+    XLAL_PRINT_WARNING("Calculated k ranges outside of global range, %E, %E, %E, %E, %E, %E, %E \n", k, kmin, kmax, nextkmin, nextkmax, k - kmin, k - kmax);
   }
   
   if (nextkmin < kmin){
