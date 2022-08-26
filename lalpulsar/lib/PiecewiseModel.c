@@ -268,9 +268,9 @@ static double F2BoundMinMax(
   XLAL_CHECK((ka <= kb && minmax == -1) || (ka >= kb && minmax == 1), XLAL_EINVAL, "F2BoundMinMax being called incorrectly, with [ka, kb, minmax] = [%E, %E, %d]", ka, kb, minmax);
   
   ///< Braking index and parameter range conditions.
-  double bindexcriteria = n * pow(f1, 2) / f0;
-  double prangecriteria = GTEAndDerivs(fprev, n, ka, seglength, 2);
-  double kcriteria = - pow(f1, 2) * log(- kb / f1) / (f0 * log(f0));
+  double bindexcriteria = n * pow(f1, 2) / f0;                          /// For upper bound, n  should be maximised
+  double prangecriteria = GTEAndDerivs(fprev, n, ka, seglength, 2);     /// For upper bound, n  should be maximised, ka should be maximised
+  double kcriteria = pow(f1, 2) * log(- f1 / ka) / (f0 * log(f0));      /// For upper bound, kb should be minimised
   
   gsl_vector* vals = gsl_vector_alloc(3);
   gsl_vector_set(vals, 0, bindexcriteria);
@@ -279,6 +279,12 @@ static double F2BoundMinMax(
   
   double rtn = NAN;
   
+  double n0 = bindexcriteria * f0 / pow(f1, 2);
+  double n1 = prangecriteria * f0 / pow(f1, 2);
+  double n2 = kcriteria * f0 / pow(f1, 2);
+  
+  printf("Possible F2 Bounds: %d, %E, %E, %E \n", minmax, bindexcriteria, prangecriteria, kcriteria);
+  printf("Associted n values: %f, %f, %f \n", n0, n1, n2);
   if(minmax == 1){
     double max = gsl_vector_min(vals);
     rtn =  max;
@@ -331,10 +337,10 @@ static double resetvalwithintol(
   double UNUSED valtol     ///< Percentage tolerance val may lie outside of range
   )
 {
-  if (val > valmax && val * (1 - 0.001) <= valmax){
+  if (val > valmax && val * (1 - 0.0001) <= valmax){
     val = valmax;
   }
-  else if (val < valmin && val * (1 + 0.001) >= valmin){
+  else if (val < valmin && val * (1 + 0.0001) >= valmin){
     val = valmin;
   }
   return val;
@@ -544,7 +550,7 @@ static double FirstKnotDerivBound(
   )
 {
   size_t vectorlength = pointorig->size;
-  gsl_vector* point = gsl_vector_alloc(vectorlength);
+  gsl_vector* point   = gsl_vector_alloc(vectorlength);
   gsl_vector_memcpy(point, pointorig);
   
   const FirstKnotBoundInfo* info = (const FirstKnotBoundInfo*)data;
@@ -555,8 +561,8 @@ static double FirstKnotDerivBound(
   double nmax = info->nmax;
   double kmin = info->kmin;
   double kmax = info->kmax;
-  int minmax = info->minmax;
-  int reset = info->reset;
+  int minmax  = info->minmax;
+  int reset   = info->reset;
   
   double f0 = gsl_vector_get(point, 0);
   
