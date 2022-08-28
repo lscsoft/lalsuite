@@ -186,7 +186,6 @@ INT4 sort_float_smallest(REAL4VectorAligned *output, const REAL4VectorAligned *i
 /**
  * Sort a REAL8Vector in ascending order, modifying the input vector
  * \param [in,out] vector Pointer to a REAL8Vector to be sorted
- * \return Status value
  */
 void sort_double_ascend(REAL8Vector *vector)
 {
@@ -197,7 +196,6 @@ void sort_double_ascend(REAL8Vector *vector)
 /**
  * Sort a REAL4VectorAligned in ascending order, modifying the input vector
  * \param [in,out] vector Pointer to a REAL4VectorAligned to be sorted
- * \return Status value
  */
 void sort_float_ascend(REAL4VectorAligned *vector)
 {
