@@ -632,7 +632,8 @@ int XLALWeaveOutputResultsCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
   const BOOLEAN sort_by_semi_phys,
-  const UINT4 round_param_to_n_sf,
+  const UINT4 round_param_to_dp,
+  const UINT4 round_param_to_sf,
   const REAL8 unmatched_item_tol,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
@@ -730,7 +731,11 @@ int XLALWeaveOutputResultsCompare(
 
   // Compare toplists
   for ( size_t i = 0; i < out_1->ntoplists; ++i ) {
-    XLAL_CHECK( XLALWeaveResultsToplistCompare( equal, setup, sort_by_semi_phys, round_param_to_n_sf, unmatched_item_tol, param_tol_mism, result_tol, out_1->toplists[i], out_2->toplists[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALWeaveResultsToplistCompare( equal,
+                                                setup, sort_by_semi_phys,
+                                                round_param_to_dp, round_param_to_sf, unmatched_item_tol, param_tol_mism, result_tol,
+                                                out_1->toplists[i], out_2->toplists[i]
+                  ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( !*equal ) {
       return XLAL_SUCCESS;
     }

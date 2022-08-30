@@ -42,7 +42,7 @@ int main( int argc, char *argv[] )
     BOOLEAN sort_by_semi_phys;
     CHAR *setup_file, *result_file_1, *result_file_2;
     REAL8 unmatched_item_tol, param_tol_mism, result_tol_L1, result_tol_L2, result_tol_angle, result_tol_at_max;
-    UINT4 round_param_to_n_sf, toplist_limit;
+    UINT4 round_param_to_dp, round_param_to_sf, toplist_limit;
   } uvar_struct = {
     .unmatched_item_tol = 0,
     .param_tol_mism = 1e-3,
@@ -78,8 +78,12 @@ int main( int argc, char *argv[] )
     "Sort toplist items by semicoherent physical coordinates, instead of serial number. "
     );
   XLALRegisterUvarMember(
-    round_param_to_n_sf, UINT4, 'f', OPTIONAL,
-    "Round parammeter-space points to the given number of significant figures (must be >0, or zero to disable). "
+    round_param_to_dp, UINT4, 'f', OPTIONAL,
+    "Round parameter-space points to the given number of decimal places (must be >0, or zero to disable). "
+    );
+  XLALRegisterUvarMember(
+    round_param_to_sf, UINT4, 'e', OPTIONAL,
+    "Round parameter-space points to the given number of significant figures (must be >0, or zero to disable). "
     );
   //
   // - Tolerances
@@ -226,7 +230,11 @@ int main( int argc, char *argv[] )
   // Compare output results
   BOOLEAN equal = 0;
   LogPrintf( LOG_NORMAL, "Comparing result files '%s' and '%s ...\n", uvar->result_file_1, uvar->result_file_2 );
-  XLAL_CHECK_FAIL( XLALWeaveOutputResultsCompare( &equal, &setup, uvar->sort_by_semi_phys, uvar->round_param_to_n_sf, uvar->unmatched_item_tol, uvar->param_tol_mism, &result_tol, out_1, out_2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_FAIL( XLALWeaveOutputResultsCompare( &equal,
+                                                  &setup, uvar->sort_by_semi_phys,
+                                                  uvar->round_param_to_dp, uvar->round_param_to_sf, uvar->unmatched_item_tol, uvar->param_tol_mism, &result_tol,
+                                                  out_1, out_2
+                     ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Result files compare %s\n", equal ? "EQUAL" : "NOT EQUAL" );
 
   ////////// Cleanup memory and exit //////////
