@@ -108,6 +108,9 @@ LALSUITE_ENABLE_MPI
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
+# enable strict definitions
+LALSUITE_ENABLE_STRICT_DEFS
+
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME
 LALSUITE_ENABLE_LALMETAIO

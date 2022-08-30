@@ -95,6 +95,9 @@ LALFRAME_ENABLE_FRAMEL
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
 
+# enable strict definitions
+LALSUITE_ENABLE_STRICT_DEFS
+
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG
 
