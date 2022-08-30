@@ -20,8 +20,6 @@
 #include "bayestar_cosmology.h"
 #include "omp_interruptible.h"
 
-#include <assert.h>
-
 #include <lal/LALError.h>
 #include <lal/LALMalloc.h>
 
@@ -72,13 +70,13 @@ void dVC_dVL_init(void)
 {
     const size_t len = sizeof(dVC_dVL_data) / sizeof(*dVC_dVL_data);
     dVC_dVL_interp = gsl_spline_alloc(gsl_interp_cspline, len);
-    assert(dVC_dVL_interp);
+    XLAL_CHECK_ABORT(dVC_dVL_interp);
     double x[len];
     for (size_t i = 0; i < len; i ++)
         x[i] = dVC_dVL_tmin + i * dVC_dVL_dt;
     int ret = gsl_spline_init(dVC_dVL_interp, x, dVC_dVL_data, len);
     (void) ret;
-    assert(ret == GSL_SUCCESS);
+    XLAL_CHECK_ABORT(ret == GSL_SUCCESS);
 }
 
 static double radial_integrand(double r, void *params)
@@ -286,12 +284,12 @@ log_radial_integrator *log_radial_integrator_init(double r1, double r2, int k, i
     double *z1=calloc(size,sizeof(*z1));
     double *z2=calloc(size,sizeof(*z2));
     double *z0=calloc(size*size,sizeof(*z0));
-    assert(z0 && z1 && z2);
+    XLAL_CHECK_ABORT(z0 && z1 && z2);
     /*
     for (size_t i=0;i<size;i++)
     {
         z0[i]=calloc(size,sizeof(*z0[i]));
-        assert(z0[i]);
+        XLAL_CHECK_ABORT(z0[i]);
     }
     */
     /* const double umax = xmax - vmax; */ /* unused */
@@ -383,11 +381,11 @@ double log_radial_integrator_eval(const log_radial_integrator *integrator, doubl
     const double x = log_p;
     const double y = M_LN2 + 2 * log_p - log_b;
     double result;
-    assert(x <= integrator->xmax);
+    XLAL_CHECK_ABORT(x <= integrator->xmax);
 
     if (p == 0) {
         /* note: p2 == 0 implies b == 0 */
-        assert(b == 0);
+        XLAL_CHECK_ABORT(b == 0);
         int k1 = integrator->k + 1;
 
         if (k1 == 0)
