@@ -1698,9 +1698,6 @@ platform:debian:bullseye:
           "liblal*"
           "lal*"
           "python-lal*"
-    # don't use NDEBUG
-    - export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
-    - export CONFIGURE_FLAGS="${CONFIGURE_FLAGS} CPPFLAGS='${CPPFLAGS}'"
 
 platform:conda:linux:
   image: igwn/base:conda
