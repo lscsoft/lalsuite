@@ -21,8 +21,8 @@
 #include <lal/cubic_interp.h>
 #include <gsl/gsl_test.h>
 #include <gsl/gsl_math.h>
-#include <assert.h>
 
+#include <lal/XLALError.h>
 
 #ifdef __GNUC__
 #define UNUSED __attribute__ ((unused))
@@ -36,7 +36,7 @@ int main(int UNUSED argc, char UNUSED **argv)
     {
         static const double data[] = {0, 0, 0, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -50,7 +50,7 @@ int main(int UNUSED argc, char UNUSED **argv)
     {
         static const double data[] = {1, 1, 1, 1};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -64,7 +64,7 @@ int main(int UNUSED argc, char UNUSED **argv)
     {
         static const double data[] = {1, 0, 1, 4};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -79,7 +79,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             GSL_POSINF, GSL_POSINF, GSL_POSINF, GSL_POSINF};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -94,7 +94,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, GSL_POSINF, GSL_POSINF, GSL_POSINF};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -109,7 +109,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             GSL_POSINF, GSL_POSINF, GSL_POSINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -124,7 +124,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, GSL_POSINF, GSL_POSINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -139,7 +139,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, 0, GSL_POSINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0.01; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -154,7 +154,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, GSL_NEGINF, GSL_POSINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         const double result = cubic_interp_eval(interp, 1);
         cubic_interp_free(interp);
         const double expected = GSL_POSINF;
@@ -166,7 +166,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, GSL_POSINF, GSL_NEGINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         const double result = cubic_interp_eval(interp, 0);
         cubic_interp_free(interp);
         const double expected = GSL_POSINF;
@@ -178,7 +178,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, GSL_NEGINF, GSL_NEGINF, GSL_NEGINF};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -193,7 +193,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             GSL_NEGINF, GSL_NEGINF, GSL_NEGINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -208,7 +208,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, GSL_NEGINF, GSL_NEGINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -223,7 +223,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, 0, GSL_NEGINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0.01; t <= 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -238,7 +238,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, GSL_NEGINF, GSL_POSINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         const double result = cubic_interp_eval(interp, 0);
         cubic_interp_free(interp);
         const double expected = GSL_NEGINF;
@@ -250,7 +250,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, GSL_POSINF, GSL_NEGINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         const double result = cubic_interp_eval(interp, 1);
         cubic_interp_free(interp);
         const double expected = GSL_NEGINF;
@@ -262,7 +262,7 @@ int main(int UNUSED argc, char UNUSED **argv)
         static const double data[] = {
             0, GSL_NEGINF, GSL_POSINF, 0};
         cubic_interp *interp = cubic_interp_init(data, 4, -1, 1);
-        assert(interp);
+        XLAL_CHECK_EXIT(interp);
         for (double t = 0.01; t < 1; t += 0.01)
         {
             const double result = cubic_interp_eval(interp, t);
@@ -296,7 +296,7 @@ int main(int UNUSED argc, char UNUSED **argv)
                         constants[k]);
                 }
             }
-            assert(interp);
+            XLAL_CHECK_EXIT(interp);
             bicubic_interp_free(interp);
         }
     }
@@ -320,7 +320,7 @@ int main(int UNUSED argc, char UNUSED **argv)
                         "testing bicubic interpolant for s^%d input", k);
                 }
             }
-            assert(interp);
+            XLAL_CHECK_EXIT(interp);
             bicubic_interp_free(interp);
         }
 
@@ -341,7 +341,7 @@ int main(int UNUSED argc, char UNUSED **argv)
                         "testing bicubic interpolant for t^%d input", k);
                 }
             }
-            assert(interp);
+            XLAL_CHECK_EXIT(interp);
             bicubic_interp_free(interp);
         }
 
@@ -364,7 +364,7 @@ int main(int UNUSED argc, char UNUSED **argv)
                         k, k);
                 }
             }
-            assert(interp);
+            XLAL_CHECK_EXIT(interp);
             bicubic_interp_free(interp);
         }
     }

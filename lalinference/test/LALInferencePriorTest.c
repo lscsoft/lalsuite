@@ -25,7 +25,6 @@
 #include <lal/LALInference.h>
 #include <lal/XLALError.h>
 #include <math.h>
-#include <assert.h>
 #include "LALInferenceTest.h"
 
 #define EPSILON 1e-13
