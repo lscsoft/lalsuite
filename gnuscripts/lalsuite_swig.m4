@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 113
+# serial 114
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -606,7 +606,7 @@ EOD`]
 import sys
 import distutils.sysconfig as cfg
 cflags = cfg.get_config_var('CFLAGS').split()
-cflags = [f for f in cflags if f != '-DNDEBUG']
+cflags = [f for f in cflags]
 sys.stdout.write(" ".join(cflags))
 EOD`]
     AS_IF([test $? -ne 0],[
