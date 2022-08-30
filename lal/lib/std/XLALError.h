@@ -74,8 +74,7 @@ extern "C" {
  *
  * Assert-like error checking can be performed with <tt>#XLAL_CHECK</tt>-style
  * macros.  Unlike <tt>assert()</tt> statements, <tt>#XLAL_CHECK</tt> macros
- * do <i>not</i> get removed when the code is not compiled with
- * <tt>NDEBUG</tt> defined.
+ * do <i>not</i> get removed when the code is compiled with <tt>-DNDEBUG</tt>.
  *
  * Additional error, warning, and informational messages can be generated using
  * the routines <tt>XLALPrintError()</tt>, <tt>XLALPrintWarning()</tt> and
