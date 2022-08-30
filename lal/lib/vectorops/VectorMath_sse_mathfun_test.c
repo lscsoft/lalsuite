@@ -137,7 +137,6 @@ void print4i(__m128i v) {
 #include <math.h>
 #include <stdlib.h>
 #include <time.h>
-#include <assert.h>
 
 #ifdef HAVE_SYS_TIMES
 #include <sys/times.h>

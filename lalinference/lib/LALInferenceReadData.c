@@ -80,7 +80,6 @@
 /* LIB deps */
 #include <lal/LALInferenceBurstRoutines.h>
 #include <lal/LIGOLwXMLBurstRead.h>
-#include <assert.h>
 
 struct fvec {
   REAL8 f;

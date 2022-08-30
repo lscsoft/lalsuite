@@ -33,7 +33,6 @@
 
 #include <math.h>
 #include <ctype.h>
-#include <assert.h>
 #include <string.h>
 #include <time.h>
 #include <lal/LALStdio.h>
