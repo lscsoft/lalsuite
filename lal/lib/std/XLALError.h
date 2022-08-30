@@ -899,6 +899,42 @@ void XLALError(const char *func,
  */
 #define XLAL_CHECK_FAIL(assertion, ...) _XLAL_CHECK_IMPL_(goto XLAL_FAIL, assertion, __VA_ARGS__)
 
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
+ * by calling <tt>lalAbortHook()</tt>.
+ *
+ * Prototype: <b>XLAL_CHECK_ABORT(assertion)</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * </ul>
+ */
+#define XLAL_CHECK_ABORT(assertion) \
+	do { \
+		if (!(assertion)) { \
+			XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
+			lalAbortHook("XLAL_CHECK_ABORT() failed"); \
+		} \
+	} while (0)
+
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
+ * by calling <tt>exit(1)</tt>.
+ *
+ * Prototype: <b>XLAL_CHECK_EXIT(assertion)</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * </ul>
+ */
+#define XLAL_CHECK_EXIT(assertion) \
+	do { \
+		if (!(assertion)) { \
+			XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
+			exit(1); \
+		} \
+	} while (0)
+
 
 #endif /* SWIG */
 
