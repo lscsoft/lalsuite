@@ -82,7 +82,7 @@ double  XLALSimLocateOmegaTime(
     timeHi.data = dynamicsHi->data;
 
     double dt = timeHi.data[1] - timeHi.data[0];
-    double ddradiusVec[timeHi.length - 1];
+    double XLAL_INIT_DECL(ddradiusVec, [timeHi.length - 1]);
     unsigned int k;
     for (k = 1; k < timeHi.length-1; k++) {
         ddradiusVec[k] = (radiusVec->data[k+1] - 2.*radiusVec->data[k] + radiusVec->data[k-1])/dt/dt;
@@ -440,7 +440,7 @@ double XLALSimLocateAmplTime(
     if (debugPK) {debugRD = 0;}
 
     double dt = timeHi->data[1] - timeHi->data[0];
-    double ddradiusVec[timeHi->length - 1];
+    double XLAL_INIT_DECL(ddradiusVec, [timeHi->length - 1]);
     unsigned int k;
 
     /* check that timeHi->length is at least 2 */
