@@ -1,5 +1,5 @@
 /*
-*  Copyright (C) 2014 Karl Wette
+*  Copyright (C) 2014, 2020 Karl Wette
 *  Copyright (C) 2013 Jolien Creighton
 *
 *  This program is free software; you can redistribute it and/or modify
@@ -20,6 +20,15 @@
 
 #ifndef _LALSTDDEF_H
 #define _LALSTDDEF_H
+
+/* forbid certain definitions in LAL code */
+#if defined(LAL_STRICT_DEFS_ENABLED)
+# if defined(__GNUC__)
+/* assert() is often misused for error-checking code
+   which should never be disabled in production usage */
+#  pragma GCC poison assert
+# endif
+#endif
 
 /* macros for certain keywords */
 #if __STDC_VERSION__ >= 199901L

@@ -21,7 +21,6 @@
 
 
 #include <stdio.h>
-#include <assert.h>
 #include <errno.h>
 #include <lal/Date.h>
 #include <lal/GenerateInspiral.h>
@@ -654,7 +653,7 @@ void LALInferenceRegisterGaussianVariableREAL8(LALInferenceRunState *state, LALI
   }
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,valopt))) startval=atof(ppt->value);
 
-  assert(stdev>0);
+  XLAL_CHECK_ABORT(stdev>0);
   LALInferenceAddVariable(var,name,&startval,LALINFERENCE_REAL8_t,varytype);
   LALInferenceAddGaussianPrior(state->priorArgs, name, &mean, &stdev, LALINFERENCE_REAL8_t);
 

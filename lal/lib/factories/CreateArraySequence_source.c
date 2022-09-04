@@ -41,13 +41,11 @@ void FUNC ( LALStatus *status, STYPE **aseq, CreateArraySequenceIn *in )
    * Use of unsigned for length means we can't check if negative
    * length was passed
    */
-#ifndef NDEBUG
   for ( i = 0; i < in->dimLength->length; i++ )
   {
     ASSERT (in->dimLength->data[i] > 0, status,
 	    SEQFACTORIESH_EALENGTH, SEQFACTORIESH_MSGEALENGTH);
   }
-#endif
 
   /*
    * Check return structure: If return pointer does not point to a

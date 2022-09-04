@@ -27,7 +27,6 @@
 #define UNUSED
 #endif
 
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -295,12 +294,12 @@ static void PrecessingNRSur_LoadFitData(
     UNUSED size_t nwritten;
 
     nwritten = snprintf(tmp_name, str_size, "%s_coefs", name);
-    assert(nwritten < str_size);
+    XLAL_CHECK_ABORT(nwritten < str_size);
     (*fit_data)->coefs = NULL;
     ReadHDF5RealVectorDataset(sub, tmp_name, &((*fit_data)->coefs));
 
     nwritten = snprintf(tmp_name, str_size, "%s_bfOrders", name);
-    assert(nwritten < str_size);
+    XLAL_CHECK_ABORT(nwritten < str_size);
     (*fit_data)->basisFunctionOrders = NULL;
     ReadHDF5LongMatrixDataset(sub, tmp_name,
             &((*fit_data)->basisFunctionOrders));
@@ -329,7 +328,7 @@ static void NRSur7dq4_LoadVectorFitData(
 
     for (size_t i=0; i<size; i++) {
         nwritten = snprintf(tmp_name, str_size, "%s_%zu", name, i);
-        assert(nwritten < str_size);
+        XLAL_CHECK_ABORT(nwritten < str_size);
         FitData *fit_data = NULL;
         PrecessingNRSur_LoadFitData(&fit_data, sub, tmp_name);
         (*vector_fit_data)->fit_data[i] = fit_data;

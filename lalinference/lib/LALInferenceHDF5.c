@@ -22,7 +22,6 @@
 #include <lal/H5FileIO.h>
 #include <lal/LALVCSInfoType.h>
 #include <lal/LALInferenceHDF5.h>
-#include <assert.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 
@@ -116,9 +115,9 @@ int LALInferenceH5DatasetToVariablesArray(
 
     size_t nbytes = XLALH5DatasetQueryNBytes(dataset);
     char *data = XLALMalloc(nbytes);
-    assert(data);
+    XLAL_CHECK_ABORT(data);
     ret = XLALH5DatasetQueryData(data, dataset);
-    assert(ret == 0);
+    XLAL_CHECK_ABORT(ret == 0);
 
     LALInferenceVariables **va = NULL;
     UINT4 Nsamples = XLALH5DatasetQueryNPoints(dataset);
@@ -133,7 +132,7 @@ int LALInferenceH5DatasetToVariablesArray(
         snprintf(pname, sizeof(pname), "FIELD_%d_VARY", i);
         INT4 value;
         ret = XLALH5AttributeQueryScalarValue(&value, gdataset, pname);
-        assert(ret == 0);
+        XLAL_CHECK_ABORT(ret == 0);
         vary[i] = value;
     }
 
@@ -276,7 +275,7 @@ int LALInferenceH5VariablesArrayToDataset(
 
     /* Gather together data in one big array */
     char *data = XLALCalloc(N, type_size);
-    assert(data);
+    XLAL_CHECK_ABORT(data);
     for (UINT4 i = 0; i < N; i++)
     {
         for (UINT4 j = 0; j < Nvary; j++)
@@ -290,11 +289,11 @@ int LALInferenceH5VariablesArrayToDataset(
     /* Create table */
     LALH5Dataset *dataset = XLALH5TableAlloc(h5file, TableName, Nvary,
         column_names, column_types, column_offsets, type_size);
-    assert(dataset);
+    XLAL_CHECK_ABORT(dataset);
     int ret = XLALH5TableAppend(
         dataset, column_offsets, column_sizes, N, type_size, data);
     (void) ret;
-    assert(ret == 0);
+    XLAL_CHECK_ABORT(ret == 0);
     XLALFree(data);
 
     LALH5Generic gdataset = {.dset = dataset};
@@ -305,7 +304,7 @@ int LALInferenceH5VariablesArrayToDataset(
         snprintf(pname, sizeof(pname), "FIELD_%d_VARY", i);
         ret = XLALH5AttributeAddScalar(
             gdataset, pname, &value, LAL_I4_TYPE_CODE);
-        assert(ret == 0);
+        XLAL_CHECK_ABORT(ret == 0);
     }
 
     /* Write attributes, if any */
