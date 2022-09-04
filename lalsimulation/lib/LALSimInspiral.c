@@ -42,6 +42,7 @@
 #include <lal/LALSimBlackHoleRingdown.h>
 #include <lal/LALSimInspiralPrecess.h>
 #include <lal/LALSimInspiralWaveformParams.h>
+#include <lal/AVFactories.h>
 
 #include "LALSimInspiralPNCoefficients.c"
 #include "check_series_macros.h"
