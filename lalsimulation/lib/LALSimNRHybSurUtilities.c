@@ -37,7 +37,6 @@
 
 #include "LALSimNRHybSurUtilities.h"
 
-#include <assert.h>
 #include <gsl/gsl_bspline.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_spline.h>
@@ -164,7 +163,7 @@ static int NRHybSur_LoadDataPiece(
     for (int i=0; i<n_nodes; i++) {
 
         nwritten = snprintf(node_name, str_size, "node_num_%d", i);
-        assert(nwritten < str_size);
+        XLAL_CHECK_ABORT(nwritten < str_size);
         LALH5File *node_function = XLALH5GroupOpen(sub, node_name);
         NRHybSurFitData *fit_data = XLALMalloc(sizeof(NRHybSurFitData));
 
@@ -289,7 +288,7 @@ static int NRHybSur_LoadSingleModeData(
 
         // Amplitude of 22 mode
         nwritten = snprintf(sub_grp_name, str_size, "l%u_m%u/amp", ell, m);
-        assert(nwritten < str_size);
+        XLAL_CHECK_ABORT(nwritten < str_size);
         ret = NRHybSur_LoadDataPiece(&(data_pieces)->ampl_data_piece,
                 file, sub_grp_name);
         if(ret != XLAL_SUCCESS) {
@@ -300,7 +299,7 @@ static int NRHybSur_LoadSingleModeData(
 
         // phase of 22 mode
         nwritten = snprintf(sub_grp_name, str_size, "l%u_m%u/phase", ell, m);
-        assert(nwritten < str_size);
+        XLAL_CHECK_ABORT(nwritten < str_size);
         ret = NRHybSur_LoadDataPiece(&(data_pieces)->phase_res_data_piece,
                 file, sub_grp_name);
         if(ret != XLAL_SUCCESS) {
@@ -316,7 +315,7 @@ static int NRHybSur_LoadSingleModeData(
         if (m != 0 || ell % 2 == 0) {
             // Real part of coorbital frame mode
             nwritten = snprintf(sub_grp_name, str_size, "l%u_m%u/re", ell, m);
-            assert(nwritten < str_size);
+            XLAL_CHECK_ABORT(nwritten < str_size);
             ret = NRHybSur_LoadDataPiece(&(data_pieces)->coorb_re_data_piece,
                     file, sub_grp_name);
             if(ret != XLAL_SUCCESS) {
@@ -332,7 +331,7 @@ static int NRHybSur_LoadSingleModeData(
         if (m != 0 || ell % 2 == 1) {
             // Imaginary part of coorbital frame mode
             nwritten = snprintf(sub_grp_name, str_size, "l%u_m%u/im", ell, m);
-            assert(nwritten < str_size);
+            XLAL_CHECK_ABORT(nwritten < str_size);
             ret = NRHybSur_LoadDataPiece(&(data_pieces)->coorb_im_data_piece,
                     file, sub_grp_name);
             if(ret != XLAL_SUCCESS) {

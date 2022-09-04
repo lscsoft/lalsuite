@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <assert.h>
 #include <float.h>
 
 #include <lal/Units.h>
@@ -78,7 +77,7 @@ static void Test_fGWinKerr(void) {
       input_fGWinKerr[i][1],
       input_fGWinKerr[i][2]);
     print_difference("XLALSimNSBH_fGWinKerr", output, expected_fGWinKerr[i]);
-    assert(approximatelyEqual(output, expected_fGWinKerr[i], TOLERANCE_FGWINKERR));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_fGWinKerr[i], TOLERANCE_FGWINKERR));
   }
 }
 
@@ -96,7 +95,7 @@ static void Test_rKerrISCO(void) {
     double output = XLALSimNSBH_rKerrISCO(
       input_rKerrISCO[i][0]);
     print_difference("XLALSimNSBH_rKerrISCO", output, expected_rKerrISCO[i]);
-    assert(approximatelyEqual(output, expected_rKerrISCO[i], TOLERANCE_RKERRISCO));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_rKerrISCO[i], TOLERANCE_RKERRISCO));
   }
 }
 
@@ -130,7 +129,7 @@ static void Test_xi_tide(void) {
       input_xi_tide[i][1],
       input_xi_tide[i][2]);
     print_difference("XLALSimNSBH_xi_tide", output, expected_xi_tide[i]);
-    assert(approximatelyEqual(output, expected_xi_tide[i], TOLERANCE_XI_TIDE));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_xi_tide[i], TOLERANCE_XI_TIDE));
   }
 }
 
@@ -155,7 +154,7 @@ static void Test_compactness_from_lambda(void) {
     double output = XLALSimNSBH_compactness_from_lambda(
       input_compactness_from_lambda[i][0]);
     print_difference("XLALSimNSBH_compactness_from_lambda", output, expected_compactness_from_lambda[i]);
-    assert(approximatelyEqual(output, expected_compactness_from_lambda[i], TOLERANCE_COMPACTNESS_FROM_LAMBDA));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_compactness_from_lambda[i], TOLERANCE_COMPACTNESS_FROM_LAMBDA));
   }
 }
 
@@ -186,7 +185,7 @@ static void Test_torus_mass_fit(void) {
       input_torus_mass_fit[i][1],
       input_torus_mass_fit[i][2]);
     print_difference("XLALSimNSBH_torus_mass_fit", output, expected_torus_mass_fit[i]);
-    assert(approximatelyEqual(output, expected_torus_mass_fit[i], TOLERANCE_TORUS_MASS_FIT));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_torus_mass_fit[i], TOLERANCE_TORUS_MASS_FIT));
   }
 }
 

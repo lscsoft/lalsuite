@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <stdlib.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_deriv.h>
@@ -42,7 +41,7 @@ double  XLALSimLocateOmegaTime(
     )
 {
     /* check that retLenHi is at least 2 */
-    assert( retLenHi > 2 && "retLenHi must be greater than 2" );
+    XLAL_CHECK_ABORT( retLenHi > 2 && "retLenHi must be greater than 2" );
 
     *tMaxOmega = 0; //Zach E: Fixes Heisenbug with ICC 16 and 17 compilers (5181); removing this line will result in segfaults with both compilers.
     /*
@@ -83,7 +82,7 @@ double  XLALSimLocateOmegaTime(
     timeHi.data = dynamicsHi->data;
 
     double dt = timeHi.data[1] - timeHi.data[0];
-    double ddradiusVec[timeHi.length - 1];
+    double XLAL_INIT_DECL(ddradiusVec, [timeHi.length - 1]);
     unsigned int k;
     for (k = 1; k < timeHi.length-1; k++) {
         ddradiusVec[k] = (radiusVec->data[k+1] - 2.*radiusVec->data[k] + radiusVec->data[k-1])/dt/dt;
@@ -441,11 +440,11 @@ double XLALSimLocateAmplTime(
     if (debugPK) {debugRD = 0;}
 
     double dt = timeHi->data[1] - timeHi->data[0];
-    double ddradiusVec[timeHi->length - 1];
+    double XLAL_INIT_DECL(ddradiusVec, [timeHi->length - 1]);
     unsigned int k;
 
     /* check that timeHi->length is at least 2 */
-    assert( timeHi->length > 2 && "timeHi->length must be greater than 2" );
+    XLAL_CHECK_ABORT( timeHi->length > 2 && "timeHi->length must be greater than 2" );
 
     for (k = 1; k < timeHi->length-1; k++) {
         ddradiusVec[k] = (radiusVec->data[k+1] - 2.*radiusVec->data[k] + radiusVec->data[k-1])/dt/dt;

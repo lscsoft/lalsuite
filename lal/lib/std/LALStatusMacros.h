@@ -113,7 +113,7 @@ extern "C" {
     return;                                                                   \
   } while ( 0 )
 
-#ifdef NDEBUG
+#ifdef LAL_ASSERT_MACRO_DISABLED
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \
@@ -192,7 +192,7 @@ extern "C" {
 #define ABORT( statusptr, code, mesg ) \
   do { if ( LALPrepareAbort( statusptr, code, mesg, __FILE__, __LINE__ ), 1 ) return; } while ( 0 )
 
-#ifdef NDEBUG
+#ifdef LAL_ASSERT_MACRO_DISABLED
 #define ASSERT( assertion, statusptr, code, mesg )
 #else
 #define ASSERT( assertion, statusptr, code, mesg )                            \

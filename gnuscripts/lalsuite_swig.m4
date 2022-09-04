@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 113
+# serial 115
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -464,7 +464,7 @@ EOF
     AC_MSG_NOTICE([Octave modules will be compiled with ${abiflag:-no _GLIBCXX_USE_CXX11_ABI flag}])
 
     # determine Octave preprocessor flags
-    AC_SUBST([SWIG_OCTAVE_CPPFLAGS],["${abiflag}"])
+    AC_SUBST([SWIG_OCTAVE_CPPFLAGS],["-ULAL_STRICT_DEFS_ENABLED ${abiflag}"])
     AC_SUBST([SWIG_OCTAVE_CPPFLAGS_IOCTAVE],[])
     for arg in CPPFLAGS INCFLAGS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
@@ -584,7 +584,7 @@ EOD`]
     ])
 
     # determine Python preprocessor flags
-    AC_SUBST([SWIG_PYTHON_CPPFLAGS],[])
+    AC_SUBST([SWIG_PYTHON_CPPFLAGS],["-ULAL_STRICT_DEFS_ENABLED"])
     python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
 import sys
 import distutils.sysconfig as cfg
@@ -606,7 +606,7 @@ EOD`]
 import sys
 import distutils.sysconfig as cfg
 cflags = cfg.get_config_var('CFLAGS').split()
-cflags = [f for f in cflags if f != '-DNDEBUG']
+cflags = [f for f in cflags]
 sys.stdout.write(" ".join(cflags))
 EOD`]
     AS_IF([test $? -ne 0],[

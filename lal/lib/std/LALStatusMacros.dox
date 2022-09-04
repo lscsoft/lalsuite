@@ -493,19 +493,25 @@ code at compile time.  Although these flags are typically
 <tt>\#define</tt>d or <tt>\#undef</tt>ined globally and can affect many
 modules, their primary effect is on the debugging and status-reporting
 tools defined in this header.  The two flags are named
-\c NDEBUG and \c LAL_STATUS_MACROS_DISABLED.
+\c LAL_ASSERT_MACRO_DISABLED and \c LAL_STATUS_MACROS_DISABLED.
 
-\subsection ss_ndebug_flag The NDEBUG flag
+\subsection ss_ndebug_flag The LAL_ASSERT_MACRO_DISABLED flag
 
-Compiling with the \c NDEBUG flag set removes all <tt>ASSERT()</tt> macros from
-the object code, in keeping with the philosophy that <tt>ASSERT()</tt>
-statements should only be used to catch coding bugs, not runtime errors.
+Compiling with the \c LAL_ASSERT_MACRO_DISABLED flag set removes all
+<tt>ASSERT()</tt> macros from the object code, in keeping with the philosophy
+that <tt>ASSERT()</tt> statements should only be used to catch coding bugs, not
+runtime errors.
 
-This is the only purpose for which the \c NDEBUG flag should be used. Code that
-checks function input arguments for correctness, reports error messages,
-etc. should not be disabled even in production code. The performance impact of
-such checks is likely minimal, particularly compared to the human cost of
-diagnosing obscure failures in production code because checks/error messages
+Compiling with \c LAL_ASSERT_MACRO_DISABLED set is not
+recommended. Notwithstanding the philosophy behind <tt>ASSERT()</tt>, it is
+quite likely in places that this macro has been (mis)used for critical checks
+without which code will not operate as expected. Correct function with \c
+LAL_ASSERT_MACRO_DISABLED set is therefore not guaranteed.
+
+Code that checks function input arguments for correctness, reports error
+messages, etc. should not be disabled even in production code. The performance
+impact of such checks is likely minimal, particularly compared to the human cost
+of diagnosing obscure failures in production code because checks/error messages
 were disabled. (Error messages and other diagnostics should use the
 error-printing functions in \ref LALError_h to selective print messages
 according to \c lalDebugLevel.)
@@ -534,7 +540,7 @@ libraries.
 When compiling your own modules, the flags can be set using one or
 more <tt>\#define</tt> statements within the module or its header file:
 \code
-#define NDEBUG
+#define LAL_ASSERT_MACRO_DISABLED
 #define LAL_STATUS_MACROS_DISABLED
 \endcode
 To restrict the scope of these flags, they should later be unset using
@@ -544,22 +550,22 @@ Alternatively, these can be set in the \c Makefile or when
 compiling.  The syntax for most UNIX C compilers is something like the
 following:
 \code
-> gcc ... -DNDEBUG -DLAL_STATUS_MACROS_DISABLED ...
+> gcc ... -DLAL_ASSERT_MACRO_DISABLED -DLAL_STATUS_MACROS_DISABLED ...
 \endcode
 
-If you want to compile a large number of modules, or the entire
-library, under the effects of one or more of these flags, you will not
-want to go through and modify every header or \c Makefile.
-Instead, you may add either <tt>-DNDEBUG</tt> or <tt>-DLAL_STATUS_MACROS_DISABLED</tt>
-(or both) to the environment variable \c CPPFLAGS.  They will then
-automatically be set for all compilations done in that environment.
-The command for doing this in \c sh or \c bash shells is:
+If you want to compile a large number of modules, or the entire library, under
+the effects of one or more of these flags, you will not want to go through and
+modify every header or \c Makefile.  Instead, you may add either
+<tt>-DLAL_ASSERT_MACRO_DISABLED</tt> or <tt>-DLAL_STATUS_MACROS_DISABLED</tt>
+(or both) to the environment variable \c CPPFLAGS.  They will then automatically
+be set for all compilations done in that environment.  The command for doing
+this in \c sh or \c bash shells is:
 \code
-> CPPFLAGS="\f$CPPFLAGS -DNDEBUG -DLAL_STATUS_MACROS_DISABLED"
+> CPPFLAGS="\f$CPPFLAGS -DLAL_ASSERT_MACRO_DISABLED -DLAL_STATUS_MACROS_DISABLED"
 \endcode
 while in \c csh or \c tcsh shells it is:
 \code
-> setenv CPPFLAGS "\f$CPPFLAGS -DNDEBUG -DLAL_STATUS_MACROS_DISABLED"
+> setenv CPPFLAGS "\f$CPPFLAGS -DLAL_ASSERT_MACRO_DISABLED -DLAL_STATUS_MACROS_DISABLED"
 \endcode
 Note that if you plan to do further LAL code development on the same
 system, you may want to keep two versions of the library around: one

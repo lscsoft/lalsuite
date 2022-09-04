@@ -36,7 +36,6 @@
 
 #include <libgen.h>
 
-#include <assert.h>
 #include <gsl/gsl_bspline.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_spline.h>
@@ -220,7 +219,7 @@ int NRSurRemnant_LoadVectorFit(
     for (UINT4 i=0; i<vec_dim; i++){
 
         nwritten = snprintf(sub_grp_name, str_size, "%s/comp_%u", grp_name, i);
-        assert(nwritten < str_size);
+        XLAL_CHECK_ABORT(nwritten < str_size);
 
         ScalarFitData *fit_data = NULL;
         ret = NRSurRemnant_LoadScalarFit(&fit_data, file, sub_grp_name);

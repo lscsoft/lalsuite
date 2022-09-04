@@ -169,7 +169,8 @@ default:
     - ./00boot
     # we use xargs here in case CONFIGURE_FLAGS contains
     # variables with spaces, etc etc
-    - xargs ./configure ${ENABLE_NIGHTLY} <<< ${CONFIGURE_FLAGS}
+    - DEFAULT_CONFIGURE_FLAGS="--enable-strict-defs ${ENABLE_NIGHTLY}"
+    - xargs ./configure ${DEFAULT_CONFIGURE_FLAGS} <<< ${CONFIGURE_FLAGS}
     - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
   artifacts:
     # upload some files to debug failures
@@ -1698,9 +1699,6 @@ platform:debian:bullseye:
           "liblal*"
           "lal*"
           "python-lal*"
-    # don't use NDEBUG
-    - export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
-    - export CONFIGURE_FLAGS="${CONFIGURE_FLAGS} CPPFLAGS='${CPPFLAGS}'"
 
 platform:conda:linux:
   image: igwn/base:conda

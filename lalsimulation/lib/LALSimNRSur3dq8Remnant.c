@@ -64,7 +64,6 @@
 
 #include <libgen.h>
 
-#include <assert.h>
 #include <gsl/gsl_bspline.h>
 #include <gsl/gsl_blas.h>
 #include <gsl/gsl_spline.h>
