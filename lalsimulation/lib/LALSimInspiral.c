@@ -3442,7 +3442,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
                 PAParams,
                 TGRParams) == XLAL_FAILURE
             ){
-                XLAL_ERROR (XLAL_EFUNC);
+                XLAL_ERROR_NULL (XLAL_EFUNC);
             };
             
             if(dynamics) XLALDestroyREAL8Vector(dynamics);
