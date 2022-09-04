@@ -3397,6 +3397,61 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             hlm = XLALSimIMRPhenomTPHM_ChooseTDModes(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, r, deltaT, f_min, f_ref, LALpars);
             break;
 
+        case SEOBNRv4HM_PA:
+            /* Waveform-specific sanity checks */
+            if (!XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars))
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if (!checkTidesZero(lambda1, lambda2))
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+            if (f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            REAL8Vector *dynamics = NULL;
+            REAL8Vector *dynamicsHi = NULL;
+            UINT4 SpinAlignedEOBversion = 4111;
+            REAL8 lambda2Tidal1 = 0.0;
+            REAL8 lambda2Tidal2 = 0.0;
+            REAL8 omega02Tidal1 = 0.0;
+            REAL8 omega02Tidal2 = 0.0;
+            REAL8 lambda3Tidal1 = 0.0;
+            REAL8 lambda3Tidal2 = 0.0;
+            REAL8 omega03Tidal1 = 0.0;
+            REAL8 omega03Tidal2 = 0.0;
+            REAL8 quadparam1 = 0.0;
+            REAL8 quadparam2 = 0.0;
+            REAL8Vector *nqcCoeffsInput = NULL;
+            INT4 nqcFlag = 0;
+            LALDict *PAParams = XLALCreateDict();
+            LALDict *TGRParams = XLALCreateDict();
+
+            if(XLALSimIMRSpinAlignedEOBModes (
+                &hlm,
+                &dynamics, &dynamicsHi,
+                deltaT,
+                m1, m2,
+                f_min,
+                r,
+                S1z, S2z,
+                SpinAlignedEOBversion,
+                lambda2Tidal1, lambda2Tidal2,
+                omega02Tidal1, omega02Tidal2,
+                lambda3Tidal1, lambda3Tidal2,
+                omega03Tidal1, omega03Tidal2,
+                quadparam1, quadparam2,
+                nqcCoeffsInput, nqcFlag,
+                PAParams,
+                TGRParams) == XLAL_FAILURE
+            ){
+                XLAL_ERROR (XLAL_EFUNC);
+            };
+            
+            if(dynamics) XLALDestroyREAL8Vector(dynamics);
+            if(dynamicsHi) XLALDestroyREAL8Vector(dynamicsHi);
+            XLALDestroyDict(PAParams);
+            XLALDestroyDict(TGRParams);
+
+            break;
+
         case SEOBNRv4P:
             /* Waveform-specific sanity checks */
             if (!XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars))
