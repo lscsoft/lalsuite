@@ -189,7 +189,12 @@ def check_autoconf_depends(lib, depends):
 
 def check_gitlab_depends(lib, depends):
     LOGGER.debug("checking gitlab-ci")
-    gitlab_ci = safe_load_ignore_unknown(Path(".gitlab-ci.yml"))
+    with open('.gitlab-ci.yml') as f:
+        gitlab_ci = safe_load_ignore_unknown(f)
+    for include in gitlab_ci.get("include", []):
+        if "local" in include:
+            with open(include["local"].lstrip("/")) as f:
+                gitlab_ci.update(safe_load_ignore_unknown(f))
     error = 0
 
     for pkg in ('conda', 'deb', 'rpm', 'koji'):
