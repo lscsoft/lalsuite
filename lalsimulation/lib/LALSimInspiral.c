@@ -3442,16 +3442,16 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             REAL8 domega550 = 0;
             REAL8 dtau550 = 0;
 
-            domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(LALParams);
-            dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(LALParams);
-            domega210 = XLALSimInspiralWaveformParamsLookupDOmega210(LALParams);
-            dtau210 = XLALSimInspiralWaveformParamsLookupDTau210(LALParams);
-            domega330 = XLALSimInspiralWaveformParamsLookupDOmega330(LALParams);
-            dtau330 = XLALSimInspiralWaveformParamsLookupDTau330(LALParams);
-            domega440 = XLALSimInspiralWaveformParamsLookupDOmega440(LALParams);
-            dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALParams);
-            domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALParams);
-            dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALParams);
+            domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(LALpars);
+            dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(LALpars);
+            domega210 = XLALSimInspiralWaveformParamsLookupDOmega210(LALpars);
+            dtau210 = XLALSimInspiralWaveformParamsLookupDTau210(LALpars);
+            domega330 = XLALSimInspiralWaveformParamsLookupDOmega330(LALpars);
+            dtau330 = XLALSimInspiralWaveformParamsLookupDTau330(LALpars);
+            domega440 = XLALSimInspiralWaveformParamsLookupDOmega440(LALpars);
+            dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALpars);
+            domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALpars);
+            dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALpars);
 
             XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
             XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
