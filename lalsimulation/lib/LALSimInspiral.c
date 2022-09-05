@@ -3405,7 +3405,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             if (!checkTidesZero(lambda1, lambda2))
                 XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
             if (f_ref != 0.)
-                XLALPrintWarning("XLAL Warning - %s: This approximant does use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
 
             REAL8Vector *dynamics = NULL;
             REAL8Vector *dynamicsHi = NULL;
@@ -3422,8 +3422,47 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             REAL8 quadparam2 = 0.0;
             REAL8Vector *nqcCoeffsInput = NULL;
             INT4 nqcFlag = 0;
+
             LALDict *PAParams = XLALCreateDict();
+            XLALDictInsertUINT4Value(PAParams, "PAFlag", 1);
+            XLALDictInsertUINT4Value(PAParams, "PAOrder", 8);
+            XLALDictInsertREAL8Value(PAParams, "rFinal", 1.8);
+            XLALDictInsertREAL8Value(PAParams, "rSwitch", 1.8);
+            XLALDictInsertUINT2Value(PAParams, "analyticFlag", 1);
+
             LALDict *TGRParams = XLALCreateDict();
+            REAL8 domega220 = 0;
+            REAL8 dtau220 = 0;
+            REAL8 domega210 = 0;
+            REAL8 dtau210 = 0;
+            REAL8 domega330 = 0;
+            REAL8 dtau330 = 0;
+            REAL8 domega440 = 0;
+            REAL8 dtau440 = 0;
+            REAL8 domega550 = 0;
+            REAL8 dtau550 = 0;
+
+            domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(LALParams);
+            dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(LALParams);
+            domega210 = XLALSimInspiralWaveformParamsLookupDOmega210(LALParams);
+            dtau210 = XLALSimInspiralWaveformParamsLookupDTau210(LALParams);
+            domega330 = XLALSimInspiralWaveformParamsLookupDOmega330(LALParams);
+            dtau330 = XLALSimInspiralWaveformParamsLookupDTau330(LALParams);
+            domega440 = XLALSimInspiralWaveformParamsLookupDOmega440(LALParams);
+            dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALParams);
+            domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALParams);
+            dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALParams);
+
+            XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
+            XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
+            XLALSimInspiralWaveformParamsInsertDOmega210(TGRParams, domega210);
+            XLALSimInspiralWaveformParamsInsertDTau210(TGRParams, dtau210);
+            XLALSimInspiralWaveformParamsInsertDOmega330(TGRParams, domega330);
+            XLALSimInspiralWaveformParamsInsertDTau330(TGRParams, dtau330);
+            XLALSimInspiralWaveformParamsInsertDOmega440(TGRParams, domega440);
+            XLALSimInspiralWaveformParamsInsertDTau440(TGRParams, dtau440);
+            XLALSimInspiralWaveformParamsInsertDOmega550(TGRParams, domega550);
+            XLALSimInspiralWaveformParamsInsertDTau550(TGRParams, dtau550);
 
             if(XLALSimIMRSpinAlignedEOBModes (
                 &hlm,
