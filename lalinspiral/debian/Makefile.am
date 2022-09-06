@@ -4,7 +4,6 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	lalinspiral.install \
-	lalinspiral-octave.install \
 	liblalinspiral@LIBMAJOR@.install \
 	liblalinspiral-dev.install \
 	python3-lalinspiral.install \
