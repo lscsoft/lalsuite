@@ -1963,6 +1963,7 @@ lint:depends:
   image: igwn/lalsuite-dev:el7
   before_script:
     - python3 -m pip install
+          coloredlogs
           pyyaml
           python-debian
           python-rpm-spec
