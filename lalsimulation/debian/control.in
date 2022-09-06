@@ -7,10 +7,8 @@ Build-Depends:
  debhelper (>= 9),
  dh-python,
  help2man (>= 1.37),
- lal-octave (>= @MIN_LAL_VERSION@~),
  libgsl-dev | libgsl0-dev (>= 1.9),
  liblal-dev (>= @MIN_LAL_VERSION@~),
- liboctave-dev,
  pkg-config (>= 0.18.0),
  python3-all-dev,
  python3-lal (>= @MIN_LAL_VERSION@~),
@@ -75,18 +73,6 @@ Depends:
 Description: Python 3 bindings for LALSimulation
  The LSC Algorithm Simulation Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Simulation library.
-
-Package: lalsimulation-octave
-Architecture: any
-Depends:
- ${misc:Depends},
- ${shlibs:Depends},
- lal-octave (>= @MIN_LAL_VERSION@~),
- liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
- octave,
-Description: Octave bindings for LALSimulation
- The LSC Algorithm Simulation Library for gravitational wave data analysis.
- This package contains Octave bindings for the LAL Simulation library.
 
 Package: lalsimulation
 Architecture: any

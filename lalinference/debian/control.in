@@ -7,12 +7,6 @@ Build-Depends:
  debhelper (>= 9),
  dh-python,
  help2man (>= 1.37),
- lal-octave (>= @MIN_LAL_VERSION@~),
- lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
- lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
- lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
- lalburst-octave (>= @MIN_LALBURST_VERSION@~),
- lalinspiral-octave (>= @MIN_LALINSPIRAL_VERSION@~),
  libgsl-dev | libgsl0-dev (>= 1.15),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalframe-dev (>= @MIN_LALFRAME_VERSION@~),
@@ -20,7 +14,6 @@ Build-Depends:
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
  liblalburst-dev (>= @MIN_LALBURST_VERSION@~),
  liblalinspiral-dev (>= @MIN_LALINSPIRAL_VERSION@~),
- liboctave-dev,
  libopenmpi-dev,
  pkg-config (>= 0.18.0),
  python3-all-dev,
@@ -109,23 +102,6 @@ Breaks: lalapps (<< 6.21.0.1-1), lalinference-python (<< 1.9.4.1-1~), lalinferen
 Description: Python 3 bindings for LALInference
  The LSC Algorithm Inference Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Inference library.
-
-Package: lalinference-octave
-Architecture: any
-Depends:
- ${misc:Depends},
- ${shlibs:Depends},
- lal-octave (>= @MIN_LAL_VERSION@~),
- lalframe-octave (>= @MIN_LALFRAME_VERSION@~),
- lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
- lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
- lalburst-octave (>= @MIN_LALBURST_VERSION@~),
- lalinspiral-octave (>= @MIN_LALINSPIRAL_VERSION@~),
- liblalinference@LIBMAJOR@ (= ${binary:Version}),
- octave,
-Description: Octave bindings for LALInference
- The LSC Algorithm Inference Library for gravitational wave data analysis.
- This package contains Octave bindings for the LAL Inference library.
 
 Package: lalinference
 Architecture: any
