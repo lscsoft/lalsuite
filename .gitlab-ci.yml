@@ -374,7 +374,6 @@ default:
       - "${CI_JOB_NAME%%:*}*/**/config.log"
       - "${CI_JOB_NAME%%:*}*/**/test-suite.log"
       # generated sources
-      - "${CI_JOB_NAME%%:*}*/**/swiglal_lal*_octave.cpp"
       - "${CI_JOB_NAME%%:*}*/**/swiglal_lal*_python.c"
       # the orig tarball
       - "${CI_JOB_NAME%%:*}*.orig.*"
@@ -1591,9 +1590,9 @@ upgrade:debian:buster:
     - rm *.changes *.dsc *.orig.tar.xz
     - ls | grep -P "lal.*-\d+(\.\d+)+" | xargs -d"\n" rm -rf
     # install latest lalsuite release
-    - apt-get -y -q install lalsuite lalsuite-dev lalsuite-octave
+    - apt-get -y -q install lalsuite lalsuite-dev
     # remove lalsuite meta-packages
-    - dpkg -r lalsuite lalsuite-dev lalsuite-octave
+    - dpkg -r lalsuite lalsuite-dev
     # generate local apt repository metadata
     - /usr/lib/local-apt-repository/rebuild
     # install new packages
