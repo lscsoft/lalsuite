@@ -86,7 +86,7 @@ rm -rf newtarball/
 echo "=== Compare semicoherent F-statistics from lalpulsar_Weave to reference results ==="
 set -x
 env LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOut.fits --result-file-2=RefWeaveOut.fits \
-    --round-param-to-dp=9 --round-param-to-sf=3 --unmatched-item-tol=0.5
+    --round-param-to-dp=9 --round-param-to-sf=3 --toplist-limit=25
 set +x
 echo
 
