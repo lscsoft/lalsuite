@@ -47,7 +47,8 @@ int XLALSetLatticeTilingPiecewiseBounds(
   const gsl_vector* knots,      /// List of knots
   const int finalknot,          /// The number of the final knot
   const gsl_vector* bboxpad,    /// Vector containing fractional bounding box padding
-  const gsl_vector_int* intpad /// Vector containing number of integer points to use for padding
+  const gsl_vector_int* intpad, ///< Vector containing number of integer points to use for padding
+  const int reset               ///< 1 to use the resetting methods, -1 to not. If the bboxpad and intpad vectors contain non-zero elements, then this will automatically be set to 1
   );
 
 ///
@@ -78,7 +79,7 @@ int XLALSetLatticeTilingPiecewiseBoundsS2(
 ///
 double XLALPiecewiseParameterBounds(
   const size_t      dim,              /// The dimension of the parameter we wish to calculate the bounds for
-  const gsl_vector* point_up_to_dim,  /// The point up the given dimension
+  const gsl_vector* point_up_to_dim,  /// The point/vector containing all parameter values up to the given dimension
   const int         upperlower,       /// +1 to return upper bound, -1 to return lower bound
   const double      fmin,             /// Global maximum frequency
   const double      fmax,             /// Global minimum frequency
@@ -88,7 +89,9 @@ double XLALPiecewiseParameterBounds(
   const double      kmin,             /// Minimum k value
   const double      kmax,             /// Maximum k value
   const double      ktol,             /// Tolerance (percentage per second) between k values on adjacent knots
-  const double      seglength         /// The length of the segment. The time between the previous knot and the knot that the parameter 'dim' resides on
+  const double      segment_length,   /// The length of the segment. The time between the previous knot and the knot that the parameter 'dim' resides on
+  const gsl_vector* knots,            /// The knots of the piecewise model
+  const double      reset             /// 1 to use the resetting methods, -1 to not.
   );
 
 
