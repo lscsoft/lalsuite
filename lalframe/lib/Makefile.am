@@ -15,7 +15,6 @@ FRAMEUSRCS += $(FRAMELSRCS)
 endif
 
 pkginclude_HEADERS = \
-	FrameCalibration.h \
 	LALFrStream.h \
 	LALFrameConfig.h \
 	LALFrameIO.h \
@@ -32,7 +31,6 @@ liblalframe_la_SOURCES = \
 	LALFrStream.c \
 	LALFrStreamRead.c \
 	LALFrStreamLegacy.c \
-	FrameCalibration.c \
 	$(END_OF_LIST)
 
 nodist_liblalframe_la_SOURCES = \
