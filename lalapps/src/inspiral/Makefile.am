@@ -57,7 +57,6 @@ endif
 if HAVE_PYTHON
 pybin_scripts = \
 	lalapps_make_nr_hdf_catalog \
-	lalapps_run_sqlite \
 	$(END_OF_LIST)
 
 pkgpython_PYTHON = \
