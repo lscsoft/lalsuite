@@ -200,6 +200,14 @@ SWIGINTERN int swiglal_output_stdouterr(void) {
 // Python-specific extensions to structs
 //
 
+// Mark all SWIG wrappings of C structs as "non-dynamic", so that they do not
+// allow arbitrary attributes to be set. This prevents bugs due to trivial
+// typos/misspellings of C struct fields; without %pythonnondynamic, if a C
+// struct has a field "foo" but one misspells it as "Foo" in assigning the field
+// in Python, SWIG will silently store "Foo" somewhere in the Python wrapper but
+// will not modify the underlying C struct field "foo".
+%pythonnondynamic;
+
 // Extend a struct TAGNAME.
 %define %swiglal_struct_extend_specific(TAGNAME, OPAQUE, DTORFUNC)
 

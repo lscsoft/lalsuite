@@ -1270,6 +1270,25 @@ del u2
 lal.CheckMemoryLeaks()
 print("PASSED LALUnit operations")
 
+# check non-dynamic structs (Python specific)
+print("checking non-dynamic structs (Python specific)")
+sts = lal.swig_lal_test_struct()
+sts.n = 1
+sts.Alpha = 1.234
+set_nice_error_handlers()
+try:
+    sts.N = 1
+    sts.alpha = 1.234
+    sts.zzzzz = "does not exist"
+    expected_exception = True
+except:
+    pass
+set_default_error_handlers()
+assert not expected_exception
+del sts
+lal.CheckMemoryLeaks()
+print("PASSED non-dynamic structs (Python specific)")
+
 # check pickling (Python specific)
 print("checking pickling (Python specific) ...")
 for datatype in ['INT2', 'INT4', 'INT8', 'UINT2', 'UINT4', 'UINT8',
