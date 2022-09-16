@@ -14,14 +14,6 @@
     - !reference [.scheduled, rules]
     - !reference [.manual, rules]
 
-clang:11:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-clang:11
-  variables:
-    CC: clang-11
-    CXX: clang++-11
-
 clang:12:
   extends:
     - .compiler-test
