@@ -1054,9 +1054,9 @@ int XLALWeaveResultsToplistCompare(
   }
 
   // Allocate vectors for storing results for comparison with compare_vectors()
-  REAL4Vector *res_1 = XLALCreateREAL4Vector( n );
+  REAL4Vector *res_1 = XLALCreateREAL4Vector( matched_n );
   XLAL_CHECK( res_1 != NULL, XLAL_EFUNC );
-  REAL4Vector *res_2 = XLALCreateREAL4Vector( n );
+  REAL4Vector *res_2 = XLALCreateREAL4Vector( matched_n );
   XLAL_CHECK( res_2 != NULL, XLAL_EFUNC );
 
   while ( *equal ) { // So we can use 'break' to skip comparisons on failure
