@@ -8,15 +8,11 @@ Build-Depends:
  dh-python,
  help2man (>= 1.37),
  pkg-config (>= 0.18.0),
- lal-octave (>= @MIN_LAL_VERSION@~),
- lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
- lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
  libgsl-dev | libgsl0-dev (>= 1.9),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
  libmetaio-dev (>= 8.2),
- liboctave-dev,
  python3-all-dev,
  python3-glue,
  python3-numpy (>= @MIN_NUMPY_VERSION@),
@@ -99,20 +95,6 @@ Depends:
 Description: Python 3 bindings foar LALBurst
  The LSC Algorithm Burst Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Burst library.
-
-Package: lalburst-octave
-Architecture: any
-Depends:
- ${misc:Depends},
- ${shlibs:Depends},
- lal-octave (>= @MIN_LAL_VERSION@~),
- lalmetaio-octave (>= @MIN_LALMETAIO_VERSION@~),
- lalsimulation-octave (>= @MIN_LALSIMULATION_VERSION@~),
- liblalburst@LIBMAJOR@ (= ${binary:Version}),
- octave,
-Description: Octave bindings for LALBurst
- The LSC Algorithm Burst Library for gravitational wave data analysis.
- This package contains Octave bindings for the LAL Burst library.
 
 Package: lalburst
 Architecture: any

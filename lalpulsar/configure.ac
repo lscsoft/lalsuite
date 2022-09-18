@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALPulsar],[5.0.1.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[5.0.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([lib/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -86,7 +86,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.2.1"
+MIN_LAL_VERSION="7.2.2"
 MIN_LALFRAME_VERSION="2.0.0"
 MIN_LALSIMULATION_VERSION="3.1.0"
 MIN_LALINFERENCE_VERSION="4.1.0"
@@ -116,6 +116,9 @@ LALPULSAR_ENABLE_SISTR
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
+
+# enable strict definitions
+LALSUITE_ENABLE_STRICT_DEFS
 
 # optional lal libraries
 LALSUITE_ENABLE_LALFRAME

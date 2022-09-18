@@ -7,10 +7,8 @@ Build-Depends:
  debhelper (>= 9),
  dh-python,
  help2man (>= 1.37),
- lal-octave (>= @MIN_LAL_VERSION@~),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  libmetaio-dev (>= @MIN_METAIO_VERSION@),
- liboctave-dev,
  pkg-config (>= 0.18.0),
  python3-all-dev,
  python3-lal (>= @MIN_LAL_VERSION@~),
@@ -72,18 +70,6 @@ Depends:
 Description: Python 3 bindings for LALMetaIO
  The LSC Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL MetaIO library.
-
-Package: lalmetaio-octave
-Architecture: any
-Depends:
- ${misc:Depends},
- ${shlibs:Depends},
- lal-octave (>= @MIN_LAL_VERSION@~),
- liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
- octave,
-Description: Octave bindings for LALMetaIO
- The LSC Algorithm MetaIO Library for gravitational wave data analysis.
- This package contains Octave bindings for the LAL MetaIO library.
 
 Package: lalmetaio
 Architecture: any

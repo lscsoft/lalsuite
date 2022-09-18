@@ -26,8 +26,6 @@
  */
 
 
-#include <assert.h>
-
 #include <lal/Sequence.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/TimeSeries.h>
@@ -92,7 +90,7 @@ int main(void){
 		}
 		XLALSphHarmTimeSeriesSetTData( ts, tdata );
 		REAL8Sequence *tdata_hlm = XLALSphHarmTimeSeriesGetTData( ts );
-		assert( tdata_hlm == tdata );
+		XLAL_CHECK_EXIT( tdata_hlm == tdata );
 
 		XLALDestroySphHarmTimeSeries( ts );
 

@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSimulation],[4.0.1.1],[lal-discuss@ligo.org])
+AC_INIT([LALSimulation],[4.0.2.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALSimulationConfig.h])
 AC_CONFIG_SRCDIR([lib/LALSimulation.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -20,7 +20,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
 AC_SUBST([LIBCURRENT],[31])
-AC_SUBST([LIBREVISION],[1])
+AC_SUBST([LIBREVISION],[2])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
@@ -72,7 +72,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.2.1"
+MIN_LAL_VERSION="7.2.2"
 AC_SUBST([MIN_LAL_VERSION])
 
 AC_CANONICAL_HOST
@@ -87,6 +87,9 @@ LALSUITE_ENABLE_NIGHTLY
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
+
+# enable strict definitions
+LALSUITE_ENABLE_STRICT_DEFS
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG

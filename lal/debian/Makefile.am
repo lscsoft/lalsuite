@@ -4,7 +4,6 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	lal.install \
-	lal-octave.install \
 	liblal-dev.install \
 	liblal@LIBMAJOR@.install \
 	liblalsupport@LIBMAJOR_SUPPORT@.install \

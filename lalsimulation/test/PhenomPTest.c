@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <assert.h>
 #include <float.h>
 
 #include <lal/Units.h>
@@ -194,7 +193,7 @@ static void Test_alpha_epsilon(void) {
 
   const REAL8 eps = 1e-5;
 
-  assert(
+  XLAL_CHECK_EXIT(
        approximatelyEqual(alpha,    alpha_expected,   eps)
     && approximatelyEqual(epsilon,  epsilon_expected, eps)
     && "Test_alpha_epsilon()"
@@ -257,7 +256,7 @@ static void Test_XLALSimIMRPhenomPCalculateModelParameters(void) {
   //const REAL8 eps = DBL_EPSILON;
   const REAL8 eps = 1e-5;
 
-  assert(approximatelyEqual(chi_eff,  chi_eff_expected, eps)
+  XLAL_CHECK_EXIT(approximatelyEqual(chi_eff,  chi_eff_expected, eps)
     && approximatelyEqual(chip,     chip_expected, eps)
     && approximatelyEqual(thetaJ,   thetaJ_expected, eps)
     && approximatelyEqual(alpha0,   alpha0_expected, eps)
@@ -305,7 +304,7 @@ static void Test_PhenomC(void) {
 
   const REAL8 eps = 1e-5;
 
-  assert(
+  XLAL_CHECK_EXIT(
        approximatelyEqualC(hPC,      hPC_expected, eps)
     && "Test_PhenomC()"
   );
@@ -388,7 +387,7 @@ static void Test_PhenomPCore(void) {
   COMPLEX16 hc_expected = -9.29441e-23 - I * 2.06616e-23;
   const REAL8 eps = 1e-5;
 
-  assert(
+  XLAL_CHECK_EXIT(
        approximatelyEqualC(hp, hp_expected, eps)
     && approximatelyEqualC(hc, hc_expected, eps)
     && "Test_PhenomPCore()"
@@ -478,7 +477,7 @@ static void Test_XLALSimIMRPhenomP(void) {
   COMPLEX16 hc_expected =  2.6046e-23 + I * 5.17592e-23;
   const REAL8 eps = 1e-5;
 
-  assert(
+  XLAL_CHECK_EXIT(
        approximatelyEqualC(hp, hp_expected, eps)
     && approximatelyEqualC(hc, hc_expected, eps)
     && "XLALSimIMRPhenomP()"
@@ -610,7 +609,7 @@ static void Test_PhenomC_PhenomP(void) {
 
   const REAL8 eps = 1e-5;
 
-  assert(
+  XLAL_CHECK_EXIT(
        approximatelyEqualC(match, match_expected, eps)
     && "Test_PhenomC_PhenomP()"
   );
@@ -757,7 +756,7 @@ static void Test_XLALSimIMRPhenomP_f_ref(void) {
 
   const REAL8 eps = 1e-5;
 
-  assert(
+  XLAL_CHECK_EXIT(
        approximatelyEqualC(hp, hp2, eps)
     && approximatelyEqualC(hc, hc2, eps)
     && "XLALSimIMRPhenomP_f_ref()"

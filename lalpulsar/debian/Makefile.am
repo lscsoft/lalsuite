@@ -5,7 +5,6 @@ EXTRA_DIST = \
 	copyright \
 	lalpulsar.install \
 	lalpulsar-data.install \
-	lalpulsar-octave.install \
 	liblalpulsar-dev.install \
 	liblalpulsar@LIBMAJOR@.install \
 	python3-lalpulsar.install \

@@ -33,7 +33,6 @@
 #include <alloca.h>
 #include <string.h>
 #include <libgen.h>
-#include <assert.h>
 
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_bspline.h>
@@ -235,7 +234,7 @@ static int TaylorF2Amplitude1PN(
 UNUSED static void save_gsl_frequency_series(const char filename[], gsl_vector *x, gsl_vector *y) {
   FILE *fp = fopen(filename, "w");
   fprintf(stderr, "save_gsl_frequency_series: %s: %zu %zu\n", filename, x->size, y->size);
-  assert(x->size == y->size);
+  XLAL_CHECK_ABORT(x->size == y->size);
   for (size_t i=0; i<x->size; i++) {
     fprintf(fp, "%g\t%g\n", gsl_vector_get(x, i), gsl_vector_get(y, i));
   }

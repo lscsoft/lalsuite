@@ -5,7 +5,6 @@ EXTRA_DIST = \
 	copyright \
 	lalinference.install \
 	lalinference-data.install \
-	lalinference-octave.install \
 	liblalinference@LIBMAJOR@.install \
 	liblalinference-dev.install \
 	python3-lalinference.install \

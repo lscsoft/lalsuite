@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 168
+# serial 169
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -358,6 +358,25 @@ AC_DEFUN([LALSUITE_ADD_TESTS_ENV_CONFIG_VAR],[
       ]
     )
   ])
+])
+
+AC_DEFUN([LALSUITE_ENABLE_STRICT_DEFS],[
+  # $0: forbid certain definitions in LAL code
+  AC_ARG_ENABLE(
+    [strict-defs],
+    AS_HELP_STRING(
+      [--enable-strict-defs],
+      [forbid certain definitions in LAL code [default=no]]
+    ),[
+      AS_CASE(["${enableval}"],
+        [yes],[LALSUITE_ADD_FLAGS([C],[-DLAL_STRICT_DEFS_ENABLED])],
+        [no],[:],
+        [AC_MSG_ERROR([bad value for ${enableval} for --enable-strict-defs])]
+      )
+    ],[
+    ]
+  )
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[

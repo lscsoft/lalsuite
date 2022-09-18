@@ -13,9 +13,6 @@ cd ${_builddir}
 
 # customisation for LALSuite development CI
 if [[ "${GITLAB_CI}" == "true" ]] && [[ "x${CI_COMMIT_TAG}" == x ]]; then
-	# allow debugging information
-	export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
-
 	# declare nightly builds
 	if [ "${CI_PIPELINE_SOURCE}" = "schedule" ] || [ "${CI_PIPELINE_SOURCE}" = "web" ]; then
 		CONFIGURE_ARGS="${CONFIGURE_ARGS} --enable-nightly"

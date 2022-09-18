@@ -66,10 +66,8 @@ LALSBracketRoot (
     }
 
     /* increment iteration count */
-#ifndef NDEBUG
-    INT4 imax = 64;
+    const INT4 imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
-#endif
     ++i;
 
     if (fabs(y_1) < fabs(y_2))
@@ -186,10 +184,8 @@ LALDBracketRoot (
     }
 
     /* increment iteration count */
-#ifndef NDEBUG
-    INT4 imax = 64;
+    const INT4 imax = 64;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
-#endif
     ++i;
 
     if (fabs(y_1) < fabs(y_2))
@@ -269,10 +265,8 @@ LALSBisectionFindRoot (
     REAL4 ymid;
 
     /* increment iteration count */
-#ifndef NDEBUG
-    INT4 imax = 40;
+    const INT4 imax = 40;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
-#endif
     ++i;
 
     /* locate midpoint of domain */
@@ -437,10 +431,8 @@ LALDBisectionFindRoot (
     REAL8 ymid;
 
     /* increment iteration count */
-#ifndef NDEBUG
-    INT4 imax = 80;
+    const INT4 imax = 80;
     ASSERT (i < imax, status, FINDROOTH_EMXIT, FINDROOTH_MSGEMXIT);
-#endif
     ++i;
 
     /* locate midpoint of domain */

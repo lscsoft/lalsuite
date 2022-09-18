@@ -54,6 +54,12 @@ include:
   # job rules
   - local: '/.gitlab/ci/rules.yml'
 
+  # compilers
+  - local:  '/.gitlab/ci/compilers.yml'
+
+  # Koji build pipeline
+  - local: '/.gitlab/ci/koji.yml'
+
   # documentation
   - local: '/.gitlab/ci/docs.yml'
 
@@ -169,7 +175,8 @@ default:
     - ./00boot
     # we use xargs here in case CONFIGURE_FLAGS contains
     # variables with spaces, etc etc
-    - xargs ./configure ${ENABLE_NIGHTLY} <<< ${CONFIGURE_FLAGS}
+    - DEFAULT_CONFIGURE_FLAGS="--enable-strict-defs ${ENABLE_NIGHTLY}"
+    - xargs ./configure ${DEFAULT_CONFIGURE_FLAGS} <<< ${CONFIGURE_FLAGS}
     - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
   artifacts:
     # upload some files to debug failures
@@ -373,7 +380,6 @@ default:
       - "${CI_JOB_NAME%%:*}*/**/config.log"
       - "${CI_JOB_NAME%%:*}*/**/test-suite.log"
       # generated sources
-      - "${CI_JOB_NAME%%:*}*/**/swiglal_lal*_octave.cpp"
       - "${CI_JOB_NAME%%:*}*/**/swiglal_lal*_python.c"
       # the orig tarball
       - "${CI_JOB_NAME%%:*}*.orig.*"
@@ -523,45 +529,6 @@ default:
     - !reference [.skip-conda, rules]
     - !reference [.default, rules]
 
-# -- koji ---------------------------------------
-
-# authenticate against koji server
-.koji:authentication:
-  image: igwn/koji-client:el7
-  before_script:
-    # initialise keytab for communication with koji server
-    - echo "${ROBOT_KEYTAB}" | base64 -d | install -m 0600 /dev/stdin keytab
-    - PRINCIPAL=$(klist -k keytab | head -n 4 | tail -n 1 | sed -E 's/^.* +//')
-    - kinit $PRINCIPAL -k -t keytab
-    - klist
-
-# build rpm under koji
-.koji:build:
-  extends:
-    - .koji:authentication
-  retry: 0
-  script:
-    # build src.rpm
-    - PACKAGE=${CI_JOB_NAME%%:*}
-    - cd ${PACKAGE}/
-    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
-    - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${TARBALL}
-    - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${PACKAGE}-*.src.rpm
-    - NVR=`basename ${SRCRPM} .src.rpm`
-    # lint src.rpm
-    - rpmlint ${SRCRPM}
-    # build with koji
-    - koji build --background --wait epel7-lalsuite ${SRCRPM}
-    # wait for build to show up in koji
-    - koji wait-repo --target epel7-lalsuite --build=${NVR}
-    # regenerate epel7-lscsoft-build tag
-    - koji regen-repo epel7-lscsoft-build
-    # untag all but the latest three builds
-    - koji list-tagged epel7-lalsuite --quiet ${PACKAGE} | awk '{ print $1 }' | head -n -3 | xargs -d '\n' -r koji untag-build epel7-lalsuite --
-  rules:
-    - !reference [.skip-koji, rules]
-    - !reference [.nightly-default, rules]
-
 # -- tarballs -----------------------------------
 #
 # make tarballs for each subpackage
@@ -648,11 +615,6 @@ lal:conda:mkl:
   variables:
     CONDA_CONFIG: "linux_64_fft_implmkl"
 
-lal:koji:
-  extends:
-    - .koji:build
-    - .lal
-
 # -- lalframe------------------------------------
 #
 # build packages for LALFrame
@@ -684,14 +646,6 @@ lalframe:conda:
   needs:
     - tarballs
     - lal:conda:fftw
-
-lalframe:koji:
-  extends:
-    - .koji:build
-    - .lalframe
-  needs:
-    - tarballs
-    - lal:koji
 
 # -- lalmetaio ----------------------------------
 #
@@ -725,14 +679,6 @@ lalmetaio:conda:
     - tarballs
     - lal:conda:fftw
 
-lalmetaio:koji:
-  extends:
-    - .koji:build
-    - .lalmetaio
-  needs:
-    - tarballs
-    - lal:koji
-
 # -- lalsimulation ------------------------------
 #
 # build packages for LALSimulation
@@ -764,14 +710,6 @@ lalsimulation:conda:
   needs:
     - tarballs
     - lal:conda:fftw
-
-lalsimulation:koji:
-  extends:
-    - .koji:build
-    - .lalsimulation
-  needs:
-    - tarballs
-    - lal:koji
 
 # -- lalburst -----------------------------------
 #
@@ -810,16 +748,6 @@ lalburst:conda:
     - lal:conda:fftw
     - lalmetaio:conda
     - lalsimulation:conda
-
-lalburst:koji:
-  extends:
-    - .koji:build
-    - .lalburst
-  needs:
-    - tarballs
-    - lal:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
 
 # -- lalinspiral --------------------------------
 #
@@ -864,18 +792,6 @@ lalinspiral:conda:
     - lalmetaio:conda
     - lalsimulation:conda
     - lalburst:conda
-
-lalinspiral:koji:
-  extends:
-    - .koji:build
-    - .lalinspiral
-  needs:
-    - tarballs
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
 
 # -- lalinference -------------------------------
 #
@@ -923,19 +839,6 @@ lalinference:conda:
     - lalsimulation:conda
     - lalburst:conda
     - lalinspiral:conda
-
-lalinference:koji:
-  extends:
-    - .koji:build
-    - .lalinference
-  needs:
-    - tarballs
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
-    - lalinspiral:koji
 
 # -- lalpulsar ----------------------------------
 #
@@ -986,20 +889,6 @@ lalpulsar:conda:
     - lalburst:conda
     - lalinspiral:conda
     - lalinference:conda
-
-lalpulsar:koji:
-  extends:
-    - .koji:build
-    - .lalpulsar
-  needs:
-    - tarballs
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
-    - lalinspiral:koji
-    - lalinference:koji
 
 # -- lalapps ------------------------------------
 #
@@ -1082,21 +971,6 @@ lalapps:conda:py310:
     - .lalapps:conda:extra
   variables:
     LALSUITE_PYTHON_VERSION: "3.10"
-
-lalapps:koji:
-  extends:
-    - .koji:build
-    - .lalapps
-  needs:
-    - tarballs
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
-    - lalpulsar:koji
-    - lalinspiral:koji
-    - lalinference:koji
 
 # -- wheels -------------------------------------
 #
@@ -1406,122 +1280,6 @@ top-level:pulsar:
     - !reference [.scheduled, rules]
     - !reference [.manual, rules]
 
-# -- compiler tests -----------------------------
-#
-# Top-level build tests for various non-default
-# compilers
-#
-
-.compiler-test:
-  stage: compiler tests
-  needs: []
-  extends:
-    - .make-distcheck
-  rules:
-    - !reference [.skip-compiler, rules]
-    - !reference [.scheduled, rules]
-    - !reference [.manual, rules]
-
-clang:11:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-clang:11
-  variables:
-    CC: clang-11
-    CXX: clang++-11
-
-clang:12:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-clang:12
-  variables:
-    CC: clang-12
-    CXX: clang++-12
-
-clang:13:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-clang:13
-  variables:
-    CC: clang-13
-    CXX: clang++-13
-
-clang:dev:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-clang:dev
-  variables:
-    CC: clang
-    CXX: clang++
-
-.compiler-test:gcc:
-  extends:
-    - .compiler-test
-  variables:
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave"
-
-gcc:7:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:7
-
-gcc:8:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:8
-
-gcc:9:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:9
-
-gcc:10:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:10
-
-gcc:11:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:11
-
-gcc:12:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:12
-  allow_failure: true
-
-cuda:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-cuda:el7
-  script:
-    - ./00boot
-    # test ./configure works with non-system CUDA install path
-    - rm -f $PWD/gitlab-ci-non-sys-cuda-path
-    - ln -s /usr/local/cuda $PWD/gitlab-ci-non-sys-cuda-path
-    - ./configure --with-cuda=$PWD/gitlab-ci-non-sys-cuda-path
-    - rm -f $PWD/gitlab-ci-non-sys-cuda-path
-    # test ./configure works with system CUDA install path
-    - ./configure --with-cuda=/usr/local/cuda
-    # check compilation and tarball
-    - make -j${CPU_COUNT} dist
-    - make -j${CPU_COUNT}
-    # just compile test suite; some tests require a CUDA device to run
-    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
-    - make -j${CPU_COUNT} install
-  artifacts:
-    # we don't run the test suite, so there are no reports
-    reports:
-      junit: []
-
-icc:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-icc:el7
-  variables:
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave --disable-static --enable-intelfft"
-
 # -- upgrade tests ------------------------------
 #
 # Check that users can cleanly update/upgrade
@@ -1590,9 +1348,9 @@ upgrade:debian:buster:
     - rm *.changes *.dsc *.orig.tar.xz
     - ls | grep -P "lal.*-\d+(\.\d+)+" | xargs -d"\n" rm -rf
     # install latest lalsuite release
-    - apt-get -y -q install lalsuite lalsuite-dev lalsuite-octave
+    - apt-get -y -q install lalsuite lalsuite-dev
     # remove lalsuite meta-packages
-    - dpkg -r lalsuite lalsuite-dev lalsuite-octave
+    - dpkg -r lalsuite lalsuite-dev
     # generate local apt repository metadata
     - /usr/lib/local-apt-repository/rebuild
     # install new packages
@@ -1698,9 +1456,6 @@ platform:debian:bullseye:
           "liblal*"
           "lal*"
           "python-lal*"
-    # don't use NDEBUG
-    - export CPPFLAGS="${CPPFLAGS} -UNDEBUG"
-    - export CONFIGURE_FLAGS="${CONFIGURE_FLAGS} CPPFLAGS='${CPPFLAGS}'"
 
 platform:conda:linux:
   image: igwn/base:conda
@@ -1965,6 +1720,7 @@ lint:depends:
   image: igwn/lalsuite-dev:el7
   before_script:
     - python3 -m pip install
+          coloredlogs
           pyyaml
           python-debian
           python-rpm-spec
@@ -2081,27 +1837,6 @@ lint:combine-reports:
 #
 # Deploy outputs to various locations
 #
-
-repository:koji:
-  extends:
-    - .koji:authentication
-  stage: deploy
-  needs:
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
-    - lalinspiral:koji
-    - lalpulsar:koji
-    - lalinference:koji
-    - lalapps:koji
-  script:
-    # generate repository
-    - koji dist-repo --allow-missing-signatures --arch=x86_64 --with-src epel7-lalsuite
-  rules:
-    - !reference [.skip-koji, rules]
-    - !reference [.nightly-default, rules]
 
 .deploy:
   stage: deploy

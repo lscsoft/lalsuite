@@ -4,7 +4,6 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	lalmetaio.install \
-	lalmetaio-octave.install \
 	liblalmetaio-dev.install \
 	liblalmetaio@LIBMAJOR@.install \
 	python3-lalmetaio.install \

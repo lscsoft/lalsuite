@@ -22,7 +22,6 @@
  */
 
 #include <complex.h>
-#include <assert.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInference.h>
@@ -83,9 +82,9 @@ static int get_calib_spline(LALInferenceVariables *vars, const char *ifoname, RE
   if(!*logfreqs) *logfreqs = XLALCreateREAL8Vector(npts);
   if(!*amps) *amps = XLALCreateREAL8Vector(npts);
   if(!*phases) *phases = XLALCreateREAL8Vector(npts);
-  assert((*logfreqs)->length==npts);
-  assert((*amps)->length==npts);
-  assert((*phases)->length==npts);
+  XLAL_CHECK_ABORT((*logfreqs)->length==npts);
+  XLAL_CHECK_ABORT((*amps)->length==npts);
+  XLAL_CHECK_ABORT((*phases)->length==npts);
 
   for(UINT4 i=0;i<npts;i++)
   {

@@ -385,7 +385,7 @@ def make_coinc_branch(dag, datafinds, seglists, time_slides, min_segment_length,
 		coinc_nodes = [power.make_binjfind_fragment(dag, these_coinc_nodes, "%s_%d" % (tag, n), verbose = verbose) for n, these_coinc_nodes in enumerate(coinc_nodes)]
 
 	#
-	# ligolw_sqlite and lalapps_run_sqlite
+	# ligolw_sqlite and ligolw_run_sqlite
 	#
 
 	if verbose:

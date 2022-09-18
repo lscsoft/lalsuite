@@ -105,16 +105,20 @@ END {
     } else {
       fisharraytranslate = ""
     }
-    print "csh:if ( ! ${?" name "} ) setenv " name
     print "sh:export " name
     if (sed[name] != "") {
+      print "csh:if ( ! ${?" name "} ) setenv " name
       print "csh:setenv " name " `echo \"$" name "\" | @SED@ -e '" sed[name] "'`"
+      print "csh:setenv " name " `echo \"" env[name] "\" | @SED@ -e 's|:$||;'`"
       print "sh:" name "=`echo \"$" name "\" | @SED@ -e '" sed[name] "'`"
+      print "sh:" name "=`echo \"" env[name] "\" | @SED@ -e 's|:$||;'`"
       print "fish:set " name " (echo \"$" name "\" | @SED@ -e 's| |:|g;" sed[name] "'" fisharraytranslate ")"
+      print "fish:set " name " (echo \"" env[name] "\" | @SED@ -e 's| |:|g;s|:$||'" fisharraytranslate ")"
+    } else {
+      print "csh:setenv " name " \"" env[name] "\""
+      print "sh:" name "=\"" env[name] "\""
+      print "fish:set " name " (echo \"" env[name] "\" | @SED@ -e 's| |:|g;'" fisharraytranslate ")"
     }
-    print "csh:setenv " name " \"" env[name] "\""
-    print "sh:" name "=\"" env[name] "\""
-    print "fish:set " name " (echo \"" env[name] "\" | @SED@ -e 's| |:|g;'" fisharraytranslate ")"
   }
   if (envempty) {
     print "generate_user_env.awk: no user environment script was generated" >"/dev/stderr"
