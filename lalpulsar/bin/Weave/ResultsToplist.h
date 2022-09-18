@@ -115,6 +115,7 @@ int XLALWeaveResultsToplistCompare(
   const REAL8 unmatched_item_tol,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
+  const UINT4 toplist_compare_limit,
   const WeaveResultsToplist *toplist_1,
   const WeaveResultsToplist *toplist_2
   );

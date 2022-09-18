@@ -964,6 +964,7 @@ int XLALWeaveResultsToplistCompare(
   const REAL8 unmatched_item_tol,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
+  const UINT4 toplist_compare_limit,
   const WeaveResultsToplist *toplist_1,
   const WeaveResultsToplist *toplist_2
   )
@@ -1045,12 +1046,19 @@ int XLALWeaveResultsToplistCompare(
 
   }
 
-  // Check that number of unmatched toplist items does not exceed tolerance
-  const long int unmatched_n = n - matched_n;
-  const long int unmatched_item_tol_n = lrint( unmatched_item_tol * n );
-  if ( unmatched_n > unmatched_item_tol_n ) {
-    *equal = 0;
-    XLALPrintInfo( "%s: number of unmatched %s toplist items %lu exceeds tolerance %0.3e * %zu = %lu\n", __func__, toplist->stat_desc, unmatched_n, unmatched_item_tol, n, unmatched_item_tol_n );
+  // Limit number of items to match
+  if ( toplist_compare_limit > 0 && matched_n > toplist_compare_limit ) {
+    matched_n = toplist_compare_limit;
+  } else {
+
+    // Check that number of unmatched toplist items does not exceed tolerance
+    const long int unmatched_n = n - matched_n;
+    const long int unmatched_item_tol_n = lrint( unmatched_item_tol * n );
+    if ( unmatched_n > unmatched_item_tol_n ) {
+      *equal = 0;
+      XLALPrintInfo( "%s: number of unmatched %s toplist items %lu exceeds tolerance %0.3e * %zu = %lu\n", __func__, toplist->stat_desc, unmatched_n, unmatched_item_tol, n, unmatched_item_tol_n );
+    }
+
   }
 
   // Allocate vectors for storing results for comparison with compare_vectors()

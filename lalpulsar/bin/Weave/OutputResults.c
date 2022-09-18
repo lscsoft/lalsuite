@@ -637,6 +637,7 @@ int XLALWeaveOutputResultsCompare(
   const REAL8 unmatched_item_tol,
   const REAL8 param_tol_mism,
   const VectorComparison *result_tol,
+  const UINT4 toplist_compare_limit,
   const WeaveOutputResults *out_1,
   const WeaveOutputResults *out_2
   )
@@ -733,7 +734,7 @@ int XLALWeaveOutputResultsCompare(
   for ( size_t i = 0; i < out_1->ntoplists; ++i ) {
     XLAL_CHECK( XLALWeaveResultsToplistCompare( equal,
                                                 setup, sort_by_semi_phys,
-                                                round_param_to_dp, round_param_to_sf, unmatched_item_tol, param_tol_mism, result_tol,
+                                                round_param_to_dp, round_param_to_sf, unmatched_item_tol, param_tol_mism, result_tol, toplist_compare_limit,
                                                 out_1->toplists[i], out_2->toplists[i]
                   ) == XLAL_SUCCESS, XLAL_EFUNC );
     if ( !*equal ) {

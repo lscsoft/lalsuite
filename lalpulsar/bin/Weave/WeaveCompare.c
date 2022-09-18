@@ -195,7 +195,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_FAIL( file != NULL, XLAL_EFUNC );
 
     // Read output results
-    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_1, uvar->toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_1, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close result file
     XLALFITSFileClose( file );
@@ -209,7 +209,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_FAIL( file != NULL, XLAL_EFUNC );
 
     // Read output results
-    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_2, uvar->toplist_limit ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_FAIL( XLALWeaveOutputResultsReadAppend( file, &out_2, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Close result file
     XLALFITSFileClose( file );
@@ -232,7 +232,7 @@ int main( int argc, char *argv[] )
   LogPrintf( LOG_NORMAL, "Comparing result files '%s' and '%s ...\n", uvar->result_file_1, uvar->result_file_2 );
   XLAL_CHECK_FAIL( XLALWeaveOutputResultsCompare( &equal,
                                                   &setup, uvar->sort_by_semi_phys,
-                                                  uvar->round_param_to_dp, uvar->round_param_to_sf, uvar->unmatched_item_tol, uvar->param_tol_mism, &result_tol,
+                                                  uvar->round_param_to_dp, uvar->round_param_to_sf, uvar->unmatched_item_tol, uvar->param_tol_mism, &result_tol, uvar->toplist_limit,
                                                   out_1, out_2
                      ) == XLAL_SUCCESS, XLAL_EFUNC );
   LogPrintf( LOG_NORMAL, "Result files compare %s\n", equal ? "EQUAL" : "NOT EQUAL" );
