@@ -987,9 +987,6 @@ int XLALWeaveResultsToplistCompare(
   // Results toplists are assumed equal until we find otherwise
   *equal = 1;
 
-  // Compare toplists
-  XLALPrintInfo( "%s: comparing toplists ranked by %s ...\n", __func__, toplist->stat_desc );
-
   // Compare lengths of heaps
   const size_t n = XLALHeapSize( toplist_1->heap );
   {
@@ -1066,6 +1063,9 @@ int XLALWeaveResultsToplistCompare(
   XLAL_CHECK( res_1 != NULL, XLAL_EFUNC );
   REAL4Vector *res_2 = XLALCreateREAL4Vector( matched_n );
   XLAL_CHECK( res_2 != NULL, XLAL_EFUNC );
+
+  // Print toplists being compared and number of matched items
+  XLALPrintInfo( "%s: comparing %zu matched items from toplists ranked by %s ...\n", __func__, matched_n, toplist->stat_desc );
 
   while ( *equal ) { // So we can use 'break' to skip comparisons on failure
 
