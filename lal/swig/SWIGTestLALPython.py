@@ -1286,6 +1286,9 @@ except:
 set_default_error_handlers()
 assert not expected_exception
 del sts
+t = LIGOTimeGPS(1234)
+t.event = "this happened"
+del t
 lal.CheckMemoryLeaks()
 print("PASSED non-dynamic structs (Python specific)")
 
