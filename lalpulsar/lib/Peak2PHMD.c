@@ -93,6 +93,10 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   }
   /* ASSERT (lut,  status, PHMDH_ENULL, PHMDH_MSGENULL); */
 
+  if (lut->border == NULL) {
+    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
+  }
+
   if (pg == NULL) {
     /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
     ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);

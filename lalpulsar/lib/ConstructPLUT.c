@@ -165,6 +165,14 @@ void LALHOUGHConstructPLUT(LALStatus       *status,
   }
   /* ASSERT (lut, status, LUTH_ENULL, LUTH_MSGENULL); */
 
+  if (lut->bin == NULL) {
+    ABORT( status, LUTH_ENULL, LUTH_MSGENULL);
+  }
+
+  if (lut->border == NULL) {
+    ABORT( status, LUTH_ENULL, LUTH_MSGENULL);
+  }
+
   if (patch == NULL) {
     ABORT( status, LUTH_ENULL, LUTH_MSGENULL);
   }
