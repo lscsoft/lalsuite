@@ -29,7 +29,7 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 outfilebase="${outdir}/spec_10.00_20.00_H1_0_2000000000"
-for file in ${outfilebase} ${outfilebase}_date ${outfilebase}_timeaverage ${outfilebase}_timestamps; do
+for file in ${outfilebase}_spectrogram.txt ${outfilebase}_date.txt ${outfilebase}_timeaverage.txt ${outfilebase}_timestamps.txt; do
     if ! test -f $file; then
         echo "ERROR: could not find file '$file'"
         exit 1
@@ -37,8 +37,8 @@ for file in ${outfilebase} ${outfilebase}_date ${outfilebase}_timeaverage ${outf
 done
 
 ## do a simple test
-echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_date to reference ... "
-firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_date`
+echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_date.txt to reference ... "
+firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_date.txt`
 firstline_ref='0	 2011	 9	 14	 1	 46	 25'
 for f in 1 2 3 4 5 6 7; do
     field=`echo "$firstline" | awk '{ print $'"$f"' }'`
@@ -51,8 +51,8 @@ for f in 1 2 3 4 5 6 7; do
     fi
 done
 echo "OK"
-echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_date to reference ... "
-lastline=`awk 'NR == 2 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_date`
+echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_date.txt to reference ... "
+lastline=`awk 'NR == 2 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_date.txt`
 lastline_ref='1	 2011	 9	 14	 2	 16	 25'
 for f in 1 2 3 4 5 6 7; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
@@ -65,8 +65,8 @@ for f in 1 2 3 4 5 6 7; do
     fi
 done
 echo "OK"
-echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps to reference ... "
-firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps`
+echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps.txt to reference ... "
+firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps.txt`
 firstline_ref='0.	1000000000'
 for f in 1 2; do
     field=`echo "$firstline" | awk '{ print $'"$f"' }'`
@@ -79,8 +79,8 @@ for f in 1 2; do
     fi
 done
 echo "OK"
-echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps to reference ... "
-lastline=`awk 'NR == 2 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps`
+echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps.txt to reference ... "
+lastline=`awk 'NR == 2 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timestamps.txt`
 lastline_ref='1.	1000001800'
 for f in 1 2; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
@@ -93,8 +93,8 @@ for f in 1 2; do
     fi
 done
 echo "OK"
-echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage to reference ... "
-firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage`
+echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage.txt to reference ... "
+firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage.txt`
 firstline_ref='       10.000000            0.239'
 for f in 1 2; do
     field=`echo "$firstline" | awk '{ print $'"$f"' }'`
@@ -107,8 +107,8 @@ for f in 1 2; do
     fi
 done
 echo "OK"
-echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage to reference ... "
-lastline=`awk 'NR == 18000 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage`
+echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage.txt to reference ... "
+lastline=`awk 'NR == 18000 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_timeaverage.txt`
 lastline_ref='       19.999444            1.224'
 for f in 1 2; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
@@ -121,10 +121,10 @@ for f in 1 2; do
     fi
 done
 echo "OK"
-echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000 to reference ... "
-firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000`
-firstline_ref='1.015133e-22    1.035036e-22    9.887402e-23    1.008830e-22'
-for f in 1 2 3 4; do
+echo -n "Comparing first line of spec_avg/spec_10.00_20.00_H1_0_2000000000_spectrogram.txt to reference ... "
+firstline=`awk 'NR == 1 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_spectrogram.txt`
+firstline_ref='0	10.000000	10.100000	10.200000'
+for f in 2 3 4; do
     field=`echo "$firstline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$firstline_ref" | awk '{ print $'"$f"' }'`
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
@@ -135,10 +135,24 @@ for f in 1 2 3 4; do
     fi
 done
 echo "OK"
-echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000 to reference ... "
-lastline=`awk 'NR == 2 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000`
-lastline_ref='9.351592e-23    9.947149e-23    9.312546e-23    9.680045e-23'
-for f in 1 2 3 4; do
+echo -n "Comparing second line of spec_avg/spec_10.00_20.00_H1_0_2000000000_spectrogram.txt to reference ... "
+lastline=`awk 'NR == 2 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_spectrogram.txt`
+lastline_ref='1000000000	1.015133e-22    1.035036e-22    9.887402e-23    1.008830e-22'
+for f in 1 2 3 4 5; do
+    field=`echo "$lastline" | awk '{ print $'"$f"' }'`
+    field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
+    cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    if ! eval "$cmdline"; then
+        echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
+        printf '=== lastline ===\n%s\n=== lastline_ref ===\n%s\n---' "${lastline}" "${lastline_ref}"
+        exit 1
+    fi
+done
+echo "OK"
+echo -n "Comparing last line of spec_avg/spec_10.00_20.00_H1_0_2000000000_spectrogram.txt to reference ... "
+lastline=`awk 'NR == 3 { print }' spec_avg/spec_10.00_20.00_H1_0_2000000000_spectrogram.txt`
+lastline_ref='1000001800	9.351592e-23    9.947149e-23    9.312546e-23    9.680045e-23'
+for f in 1 2 3 4 5; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
     cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
@@ -173,10 +187,10 @@ firstline_ref='10.00000000 2.1753e-45 4.66401e-23 1.84129e-45 4.29102e-23 0'
 for f in 1 2 3 4 5 6; do
     field=`echo "$firstline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$firstline_ref" | awk '{ print $'"$f"' }'`
-    if f < 6; then
-       cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    if ((f < 6)); then
+        cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
     else
-	cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
+        cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
     fi
     if ! eval "$cmdline"; then
         echo "ERROR: $field and $field_ref differ by more than 1e-5 relative tolerance"
@@ -191,8 +205,8 @@ lastline_ref='19.99944444 1.26395e-44 1.12425e-22 1.29723e-44 1.13896e-22 0'
 for f in 1 2 3 4 5 6; do
     field=`echo "$lastline" | awk '{ print $'"$f"' }'`
     field_ref=`echo "$lastline_ref" | awk '{ print $'"$f"' }'`
-    if f < 6; then
-       cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
+    if ((f < 6)); then
+        cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) / \$2 < 1e-5 ? 0 : 1 ) }'"
     else
 	cmdline="echo $field $field_ref | awk '{ exit ( sqrt( (\$1 - \$2)^2 ) < 1e-5 ? 0 : 1 ) }'"
     fi
