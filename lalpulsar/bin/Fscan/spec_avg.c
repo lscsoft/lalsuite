@@ -98,14 +98,15 @@ int main(int argc, char **argv)
 
     if (XLALUserVarWasSet(&outputBname)) strcpy(outbase, outputBname);
     else snprintf(outbase, sizeof(outbase), "spec_%.2f_%.2f_%s_%d_%d", f_min, f_max, constraints.detector, startTime.gpsSeconds, endTime.gpsSeconds);
-    
-    snprintf(outfile, sizeof(outfile),  "%s", outbase);/*cg; name of first file to be output*/
-    snprintf(outfile2, sizeof(outfile2), "%s_timestamps", outbase);/*cg: name of second file to be output*/
-    /* snprintf(outfile3, sizeof(outfile3), "%s.txt", outbase); */ /*cg; name of third file to be output*/
-    snprintf(outfile3, sizeof(outfile3), "%s_timeaverage", outbase); /* Use the old outfile3 name from this code; python code will output the .txt version of this file. */
-    snprintf(outfile4, sizeof(outfile4), "%s_date", outbase);/*cg;file for outputting the date, which is used in matlab plotting.*/
 
-    fp = fopen(outfile, "w");/*cg;  open all three files for writing, if they don't exist create them, if they do exist overwrite them*/
+    // Create filenames from the outbase value
+    snprintf(outfile, sizeof(outfile),  "%s_spectrogram.txt", outbase);
+    snprintf(outfile2, sizeof(outfile2), "%s_timestamps.txt", outbase);
+    snprintf(outfile3, sizeof(outfile3), "%s_timeaverage.txt", outbase);
+    snprintf(outfile4, sizeof(outfile4), "%s_date.txt", outbase);
+
+    // Open the files for writing using the "w" mode, which overwrites files if they exist
+    fp = fopen(outfile, "w");
     fp2 = fopen(outfile2, "w");
     fp3 = fopen(outfile3, "w");
     fp4 = fopen(outfile4, "w");
@@ -138,10 +139,30 @@ int main(int argc, char **argv)
         XLAL_CHECK_MAIN( XLALResizeINT4Vector(timestamps, timestamps->length + 1) != NULL, XLAL_EFUNC );
         timestamps->data[timestamps->length-1] = sft_vect->data[j].epoch.gpsSeconds;
 
+	// First line will be the frequencies of the spectrogram indicating what is in each column
+	// The first value is 0 simply because column 0 are the GPS times. It keeps the entire
+	// output numeric, in case that matters.
+	if (j==0)
+	{
+	    UINT4 step = 0;
+	    for (UINT4 i=NumBinsAvg-1; i<sft_vect->data[j].data->length; i+=NumBinsAvg)
+	    {
+		if (step==0) fprintf(fp, "0\t");
+		fprintf(fp, "%.6f\t", sft_vect->data->f0 + NumBinsAvg*sft_vect->data->deltaF*step);
+		step++;
+	    }
+	    fprintf(fp, "\n");
+	}
+
 	// Loop over the number of bins in each SFT, jumping by the average number
 	// Start at the highest bin index and average down. This avoids running off the end of the SFT
         for (UINT4 i=NumBinsAvg-1; i<sft_vect->data[j].data->length; i+=NumBinsAvg)
         {
+	    // First value in each row is the GPS time
+	    if (i==NumBinsAvg-1)
+	    {
+		fprintf(fp, "%i\t", sft_vect->data[j].epoch.gpsSeconds);
+	    }
             REAL8 avg = 0.0;
 	    for (UINT4 k=0; k<NumBinsAvg; k++) {
               const REAL8 re = (REAL8)crealf(sft_vect->data[j].data->data[i-k]);
