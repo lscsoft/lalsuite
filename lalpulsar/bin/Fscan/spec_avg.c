@@ -189,6 +189,11 @@ int main(int argc, char **argv)
 
 		for (UINT4 i=NumBinsAvg-1; i<sft_vect->data[j].data->length; i+=NumBinsAvg)
                 {
+		    // First value in each row is the GPS time
+		    if (i==NumBinsAvg-1)
+		    {
+			fprintf(fp, "%i\t", cur_epoch);
+		    }
                     REAL8 avg = 0.0;
                     fprintf(fp, "%e\t", avg);
                 }
