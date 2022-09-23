@@ -645,7 +645,7 @@ int compare_vectors(
   VectorComparison XLAL_INIT_DECL( result_diff );
   int errnum = 0;
   XLAL_TRY( XLALCompareREAL4Vectors( &result_diff, &res_1_n, &res_2_n, result_tol ), errnum );
-  if ( errnum == XLAL_ETOL ) {
+  if ( errnum & XLAL_ETOL ) {
     *equal = 0;
   } else if ( errnum != 0 ) {
     XLAL_ERROR( XLAL_EFUNC );
@@ -1156,9 +1156,6 @@ int XLALWeaveResultsToplistCompare(
           res_2->data[r2++] = matched_2[i]->stage[istage].mean2F;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare mean per-detector F-statistic
@@ -1172,9 +1169,6 @@ int XLALWeaveResultsToplistCompare(
           }
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare per-segment coherent multi-detector F-statistics
@@ -1188,9 +1182,6 @@ int XLALWeaveResultsToplistCompare(
           }
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare per-segment per-detector F-statistics
@@ -1208,9 +1199,6 @@ int XLALWeaveResultsToplistCompare(
           }
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare segment-max multi-detector F-statistics
@@ -1222,9 +1210,6 @@ int XLALWeaveResultsToplistCompare(
           res_2->data[r2++] = matched_2[i]->stage[istage].max2F;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare segment-max per-detector F-statistic
@@ -1238,9 +1223,6 @@ int XLALWeaveResultsToplistCompare(
           }
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare summed multi-detector F-statistics
@@ -1252,9 +1234,6 @@ int XLALWeaveResultsToplistCompare(
           res_2->data[r2++] = matched_2[i]->stage[istage].sum2F;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare sum per-detector F-statistic
@@ -1268,9 +1247,6 @@ int XLALWeaveResultsToplistCompare(
           }
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare line-robust BSGL statistic
@@ -1282,9 +1258,6 @@ int XLALWeaveResultsToplistCompare(
           res_2->data[r2++] = matched_2[i]->stage[istage].log10BSGL;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare transient line-robust BSGLtL statistic
@@ -1296,9 +1269,6 @@ int XLALWeaveResultsToplistCompare(
           res_2->data[r2++] = matched_2[i]->stage[istage].log10BSGLtL;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare transient signal line-robust BtSGLtL statistic
@@ -1310,9 +1280,6 @@ int XLALWeaveResultsToplistCompare(
           res_2->data[r2++] = matched_2[i]->stage[istage].log10BtSGLtL;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare 'Hough' multi-detector line statistics
@@ -1324,9 +1291,6 @@ int XLALWeaveResultsToplistCompare(
           res_2->data[r2++] = matched_2[i]->stage[istage].ncount;
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
       }
 
       // Compare 'Hough' per-detector line statistics
@@ -1340,9 +1304,10 @@ int XLALWeaveResultsToplistCompare(
           }
         }
         XLAL_CHECK( compare_vectors( equal, result_tol, res_1, res_2, r1, r2 ) == XLAL_SUCCESS, XLAL_EFUNC );
-        if ( !*equal ) {
-          break;
-        }
+      }
+
+      if ( !*equal ) {
+        break;
       }
 
     } // istage
