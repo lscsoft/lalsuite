@@ -190,32 +190,45 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
         pfa->v[2] = 5.L*(743.L/84.L + 11.L * eta)/9.L;
         pfa->v[2] *= XLALSimInspiralWaveformParamsLookupNonGRDChi2(LALpars);
     }
-    if (XLALDictContains(LALpars,"dchi3"))
+
+    if (XLALDictContains(LALpars,"dchi3") || XLALDictContains(LALpars,"dchi3NS") || XLALDictContains(LALpars,"dchi3S"))
     {
         pfa->v[3] = -16.L*LAL_PI;
         pfa->v[3] += 188.L*SL/3.L + 25.L*dSigmaL;
         pfa->v[3] *= XLALSimInspiralWaveformParamsLookupNonGRDChi3(LALpars);
+
+/* Splitting the deviation parameter into spin and no-spin parts and then adding them here */
+        pfa->v[3] += -16.L*LAL_PI*XLALSimInspiralWaveformParamsLookupNonGRDChi3NS(LALpars) + (188.L*SL/3.L + 25.L*dSigmaL)*XLALSimInspiralWaveformParamsLookupNonGRDChi3S(LALpars); 
     }
-    if (XLALDictContains(LALpars,"dchi4"))
+
+        if (XLALDictContains(LALpars,"dchi4") || XLALDictContains(LALpars,"dchi4NS") || XLALDictContains(LALpars,"dchi4S"))
     {
         pfa->v[4] = 5.L*(3058.673L/7.056L + 5429.L/7.L * eta
                         + 617.L * eta*eta)/72.L;
         pfa->v[4] += -10.L * pn_sigma;
         pfa->v[4] *= XLALSimInspiralWaveformParamsLookupNonGRDChi4(LALpars);
+
+/* Splitting the deviation parameter into spin and no-spin parts and then adding them here */
+	pfa->v[4] += (5.L*(3058.673L/7.056L + 5429.L/7.L * eta + 617.L * eta*eta)/72.L)*XLALSimInspiralWaveformParamsLookupNonGRDChi4NS(LALpars) - 10.L*pn_sigma*XLALSimInspiralWaveformParamsLookupNonGRDChi4S(LALpars);
     }
+
     if (XLALDictContains(LALpars,"dchi5"))
     {
         pfa->v[5] = 5.L/9.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
         pfa->v[5] += -1.L * pn_gamma;
         pfa->v[5] *= XLALSimInspiralWaveformParamsLookupNonGRDChi5(LALpars);
     }
-    if (XLALDictContains(LALpars,"dchi5l"))
+    if (XLALDictContains(LALpars,"dchi5l") || XLALDictContains(LALpars,"dchi5lNS") || XLALDictContains(LALpars,"dchi5lS"))
     {
         pfa->vlogv[5] = 5.L/3.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
         pfa->vlogv[5] += -3.L * pn_gamma;
         pfa->vlogv[5] *= XLALSimInspiralWaveformParamsLookupNonGRDChi5L(LALpars);
+
+/* Splitting the deviation parameter into spin and no-spin parts and then adding them here */
+	pfa->vlogv[5] += (5.L/3.L * (7729.L/84.L - 13.L * eta) * LAL_PI)*XLALSimInspiralWaveformParamsLookupNonGRDChi5LNS(LALpars) - 3.L*pn_gamma*XLALSimInspiralWaveformParamsLookupNonGRDChi5LS(LALpars);
     }
-    if (XLALDictContains(LALpars,"dchi6"))
+
+    if (XLALDictContains(LALpars,"dchi6") || XLALDictContains(LALpars,"dchi6NS") || XLALDictContains(LALpars,"dchi6S"))
     {
         pfa->v[6] = (11583.231236531L/4.694215680L
                      - 640.L/3.L * LAL_PI * LAL_PI - 6848.L/21.L*LAL_GAMMA)
@@ -226,20 +239,32 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
         pfa->v[6] += (-6848.L/21.L)*log(4.);
         pfa->v[6] += LAL_PI * (3760.L*SL + 1490.L*dSigmaL)/3.L + pn_ss3;
         pfa->v[6] *= XLALSimInspiralWaveformParamsLookupNonGRDChi6(LALpars);
+
+/* Splitting the deviation parameter into spin and no-spin parts and then adding them here */
+	pfa->v[6] += ((11583.231236531L/4.694215680L
+                     - 640.L/3.L * LAL_PI * LAL_PI - 6848.L/21.L*LAL_GAMMA)
+        + eta * (-15737.765635L/3.048192L
+                 + 2255./12. * LAL_PI * LAL_PI)
+        + eta*eta * 76055.L/1728.L
+        - eta*eta*eta * 127825.L/1296.L + (-6848.L/21.L)*log(4.))*XLALSimInspiralWaveformParamsLookupNonGRDChi6NS(LALpars) + (LAL_PI * (3760.L*SL + 1490.L*dSigmaL)/3.L + pn_ss3)*XLALSimInspiralWaveformParamsLookupNonGRDChi6S(LALpars);
     }
+
     if (XLALDictContains(LALpars,"dchi6l"))
     {
         pfa->vlogv[6] = -6848.L/21.L;
         pfa->vlogv[6] *= XLALSimInspiralWaveformParamsLookupNonGRDChi6L(LALpars);
     }
-    if (XLALDictContains(LALpars,"dchi7"))
+    if (XLALDictContains(LALpars,"dchi7")|| XLALDictContains(LALpars,"dchi7NS") || XLALDictContains(LALpars,"dchi7S")) 
     {
         pfa->v[7] = LAL_PI * ( 77096675.L/254016.L
                               + 378515.L/1512.L * eta - 74045.L/756.L * eta*eta);
         pfa->v[7] += (-8980424995.L/762048.L + 6586595.L*eta/756.L - 305.L*eta*eta/36.L)*SL - (170978035.L/48384.L - 2876425.L*eta/672.L - 4735.L*eta*eta/144.L) * dSigmaL;
         pfa->v[7] *= XLALSimInspiralWaveformParamsLookupNonGRDChi7(LALpars);
+
+/* Splitting the deviation parameter into spin and no-spin parts and then adding them here */
+	pfa->v[7] += (LAL_PI * ( 77096675.L/254016.L + 378515.L/1512.L * eta - 74045.L/756.L * eta*eta))*XLALSimInspiralWaveformParamsLookupNonGRDChi7NS(LALpars) + ((-8980424995.L/762048.L + 6586595.L*eta/756.L - 305.L*eta*eta/36.L)*SL - (170978035.L/48384.L - 2876425.L*eta/672.L - 4735.L*eta*eta/144.L) * dSigmaL)*XLALSimInspiralWaveformParamsLookupNonGRDChi7S(LALpars);
     }
-  
+
     /* At the very end, multiply everything in the series by the newtonian term */
     for(int ii = 0; ii <= PN_PHASING_SERIES_MAX_ORDER; ii++)
     {
@@ -450,6 +475,7 @@ REAL8 PNPhaseSecondDerivative(REAL8 f,    /* frequency in Hz */
 {
   
     const REAL8 piM = LAL_PI * mtot;
+
     const REAL8 pfa7 = pfa.v[7];
     const REAL8 pfa6 = pfa.v[6];
     const REAL8 pfl6 = pfa.vlogv[6];
