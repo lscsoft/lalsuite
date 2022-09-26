@@ -103,6 +103,8 @@ bin/MakeData/lalpulsar_MakeSFTDAG
 bin/MakeData/lalpulsar_MakeSFTs
 bin/MakeData/lalpulsar_Makefakedata_v4
 bin/MakeData/lalpulsar_Makefakedata_v5
+bin/PiecewiseSearch/lalpulsar_PiecewiseSearch
+bin/PiecewiseSearch/lalpulsar_PiecewiseSearchTemplateBank
 bin/SFTTools/SFTwrite
 bin/SFTTools/lalpulsar_ComputePSD
 bin/SFTTools/lalpulsar_SFTclean

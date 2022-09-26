@@ -7,9 +7,13 @@ include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
 if HAVE_PYTHON
 
-#pybin_scripts = \
-#	lalpulsar_PiecewiseSearch \
-#	$(END_OF_LINE)
+pybin_scripts = \
+	lalpulsar_PiecewiseSearch \
+	$(END_OF_LINE)
+
+noinst_pybin_scripts = \
+	lalpulsar_PiecewiseSearchTemplateBank \
+	$(END_OF_LINE)
 
 endif
 
