@@ -1,9 +1,9 @@
 import numpy as np
 from scipy import integrate
-import BasisFunctions as bf
-import SamplingMethods as sm
-import GTEandOtherMethods as gom
-import MyErrors
+from . import BasisFunctions as bf
+from . import SamplingMethods as sm
+from . import GTEandOtherMethods as gom
+from . import MyErrors
 import matplotlib.pyplot as plt
 import copy
 import time

@@ -1,13 +1,13 @@
 import lalpulsar as lp
 import lal
 
-import SemicoherentMetricMethods as scmm
-import GTEandOtherMethods as gom
-import BasisFunctions as bf
-import TBankEstimates as tbe
-import MOLSforGTE as mols
-import TemplatePlottingMethods as tpm
-import TemplateChecks as tc
+from . import SemicoherentMetricMethods as scmm
+from . import GTEandOtherMethods as gom
+from . import BasisFunctions as bf
+from . import TBankEstimates as tbe
+from . import MOLSforGTE as mols
+from . import TemplatePlottingMethods as tpm
+from . import TemplateChecks as tc
 
 import numpy as np
 import math

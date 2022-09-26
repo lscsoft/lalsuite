@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as matpat
-import BasisFunctions as bf
-import ClassDefinitions as cd
-import SemicoherentMetricMethods as scmm
+from . import BasisFunctions as bf
+from . import ClassDefinitions as cd
+from . import SemicoherentMetricMethods as scmm
 
 import lalpulsar as lp
 import random

@@ -1,13 +1,13 @@
 import lalpulsar as lp
 import lal
 
-import EstimatingKnots as ek
-import SemicoherentMetricMethods as scmm
-import BasisFunctions as bf
-import GlobalVariableDeclarations as gvd
-import MonteCarloTempBankEstimate as mctb
-import ClassDefinitions as cd
-import TemplateTransformations as tt
+from . import EstimatingKnots as ek
+from . import SemicoherentMetricMethods as scmm
+from . import BasisFunctions as bf
+from . import GlobalVariableDeclarations as gvd
+from . import MonteCarloTempBankEstimate as mctb
+from . import ClassDefinitions as cd
+from . import TemplateTransformations as tt
 
 import numpy as np
 import matplotlib.pyplot as plt

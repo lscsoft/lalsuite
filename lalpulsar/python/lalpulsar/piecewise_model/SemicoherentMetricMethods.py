@@ -1,5 +1,5 @@
-import BasisFunctions as bf
-import MyErrors
+from . import BasisFunctions as bf
+from . import MyErrors
 
 import numpy as np
 from scipy import integrate

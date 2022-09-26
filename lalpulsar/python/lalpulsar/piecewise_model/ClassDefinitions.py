@@ -1,6 +1,6 @@
 
-import BasisFunctions as bf
-import EstimatingKnots as ek
+from . import BasisFunctions as bf
+from . import EstimatingKnots as ek
 import numpy as np
 
 class TBank:

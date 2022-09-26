@@ -1,8 +1,8 @@
-import MOLSforGTE as mols
-import BasisFunctions as bf
-import SemicoherentMetricMethods as scmm
-import GTEandOtherMethods as gom
-import MyErrors
+from . import MOLSforGTE as mols
+from . import BasisFunctions as bf
+from . import SemicoherentMetricMethods as scmm
+from . import GTEandOtherMethods as gom
+from . import MyErrors
 
 import numpy as np
 import ast

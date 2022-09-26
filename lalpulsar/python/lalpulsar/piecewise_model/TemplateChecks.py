@@ -1,10 +1,10 @@
 import lalpulsar as lp
 
-import BasisFunctions as bf
-import ClassDefinitions as cd
-import PWFStat as pwf
-import GTEandOtherMethods as gom
-import EstimatingKnots as ek
+from . import BasisFunctions as bf
+from . import ClassDefinitions as cd
+from . import PWFStat as pwf
+from . import GTEandOtherMethods as gom
+from . import EstimatingKnots as ek
 
 import numpy as np
 import logging

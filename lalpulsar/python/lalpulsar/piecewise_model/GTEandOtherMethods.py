@@ -1,5 +1,5 @@
 import numpy as np
-import BasisFunctions as bf
+from . import BasisFunctions as bf
 import matplotlib.pyplot as plt
 
 # The general torque equation we have formulated

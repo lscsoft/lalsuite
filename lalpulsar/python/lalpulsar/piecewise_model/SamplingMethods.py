@@ -1,7 +1,7 @@
 import numpy as np
-import BasisFunctions as bf
-import GTEandOtherMethods as gom
-import MyErrors
+from . import BasisFunctions as bf
+from . import GTEandOtherMethods as gom
+from . import MyErrors
 
 
 # Returns sample points where a 'ppint' number of points are evenly spaced between each knot
