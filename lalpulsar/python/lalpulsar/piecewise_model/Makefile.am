@@ -9,6 +9,18 @@ pymoduledir = $(pkgpythondir)
 
 pymodule_PYTHON = \
 	__init__.py \
+	BasisFunctions.py \
+	ClassDefinitions.py \
+	EstimatingKnots.py \
+	GTEandOtherMethods.py \
+	MOLSforGTE.py \
+	MyErrors.py \
+	PWFStat.py \
+	SamplingMethods.py \
+	SemicoherentMetricMethods.py \
+	TBankEstimates.py \
+	TemplateChecks.py \
+	TemplatePlottingMethods.py \
 	$(END_OF_LIST)
 
 endif
