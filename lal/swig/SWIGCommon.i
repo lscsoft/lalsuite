@@ -1948,6 +1948,8 @@ if (strides[I-1] == 0) {
 /// Typemaps for pointers to primitive scalars. These are treated as output-only arguments by
 /// default, by globally applying the SWIG <tt>OUTPUT</tt> typemaps.
 ///
+%apply bool* OUTPUT { bool* };
+%apply BOOLEAN* OUTPUT { BOOLEAN* };
 %apply int* OUTPUT { enum SWIGTYPE* };
 %apply short* OUTPUT { short* };
 %apply unsigned short* OUTPUT { unsigned short* };
