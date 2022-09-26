@@ -689,7 +689,7 @@ def allidealisedknots(s, dur, steps, f0, nmax, tau, mu, knotnum=None):
     spindownspecifications = [f0, nmax, tau, s, mu, fullMOLS]
     
     if os.path.exists("KnotArchive"):
-        continue
+        pass
     else:
         with open("KnotArchive", "w") as knot_archive:
             pass
