@@ -161,6 +161,8 @@ DEFINE_INSERT_FUNC(EnableLIV, INT4, "liv", 0)
 DEFINE_INSERT_FUNC(NonGRLIVLogLambdaEff, REAL8, "log10lambda_eff", 100)
 DEFINE_INSERT_FUNC(NonGRLIVASign, REAL8, "LIV_A_sign", 1)
 DEFINE_INSERT_FUNC(NonGRLIVAlpha, REAL8, "nonGR_alpha", 0)
+DEFINE_INSERT_FUNC(NonGRDChikappaS, REAL8, "dchikappaS", 0)
+DEFINE_INSERT_FUNC(NonGRDChikappaA, REAL8, "dchikappaA", 0)
 
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
@@ -340,6 +342,8 @@ DEFINE_LOOKUP_FUNC(EnableLIV, INT4, "liv", 0)
 DEFINE_LOOKUP_FUNC(NonGRLIVLogLambdaEff, REAL8, "log10lambda_eff", 100)
 DEFINE_LOOKUP_FUNC(NonGRLIVASign, REAL8, "LIV_A_sign", 1)
 DEFINE_LOOKUP_FUNC(NonGRLIVAlpha, REAL8, "nonGR_alpha", 0)
+DEFINE_LOOKUP_FUNC(NonGRDChikappaS, REAL8, "dchikappaS", 0)
+DEFINE_LOOKUP_FUNC(NonGRDChikappaA, REAL8, "dchikappaA", 0)
 
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
@@ -500,6 +504,8 @@ DEFINE_ISDEFAULT_FUNC(EnableLIV, INT4, "liv", 0)
 DEFINE_ISDEFAULT_FUNC(NonGRLIVLogLambdaEff, REAL8, "log10lambda_eff", 100)
 DEFINE_ISDEFAULT_FUNC(NonGRLIVASign, REAL8, "LIV_A_sign", 1)
 DEFINE_ISDEFAULT_FUNC(NonGRLIVAlpha, REAL8, "nonGR_alpha", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRDChikappaS, REAL8, "dchikappaS", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRDChikappaA, REAL8, "dchikappaA", 0)
 /* SEOBNRv4P */
 DEFINE_ISDEFAULT_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
 DEFINE_ISDEFAULT_FUNC(EOBEllMaxForNyquistCheck, INT4, "EOBEllMaxForNyquistCheck", 5)

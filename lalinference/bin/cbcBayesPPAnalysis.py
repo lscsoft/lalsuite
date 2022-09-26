@@ -95,7 +95,9 @@ posterior_name_to_latex_name = {
     'dbeta1':r'$d\beta_1$',
     'dbeta2':r'$d\beta_2$',
     'dbeta3':r'$d\beta_3$',
-    'dbeta4':r'$d\beta_4$'
+    'dbeta4':r'$d\beta_4$',
+    'dchikappaS':r'$d\chi_{\kappa_{S}}$',
+    'dchikappaA':r'$d\chi_{\kappa_{A}}$'
 }
 
 def fractional_rank(x, xs):

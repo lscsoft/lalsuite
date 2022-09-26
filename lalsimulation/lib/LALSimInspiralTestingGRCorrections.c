@@ -172,6 +172,14 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
     pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m1M-120.L*m1M*m1M)*qm_def1 + (-4108.25L/6.72L-108.5L/1.2L*m1M+125.5L/3.6L*m1M*m1M)) *m1M*m1M * chi1sq;
     pn_ss3 += ((4703.5L/8.4L+2935.L/6.L*m2M-120.L*m2M*m2M)*qm_def2 + (-4108.25L/6.72L-108.5L/1.2L*m2M+125.5L/3.6L*m2M*m2M)) *m2M*m2M * chi2sq;
     const REAL8 pn_gamma = (554345.L/1134.L + 110.L*eta/9.L)*SL + (13915.L/84.L - 10.L*eta/3.L)*dSigmaL;
+    /* Introducing here the SIQM test PN cofficients..*/
+    /* See eq. (0.5a) of https://arxiv.org/pdf/1701.06318.pdf */
+    const REAL8 chiS = 0.5L * (chi1L + chi2L);
+    const REAL8 chiA = 0.5L * (chi1L - chi2L);
+    const REAL8 siqm_2pn_kappaS = 50.L * (2.L*eta - 1.L) * (chiS*chiS + chiA*chiA) -100.L * d * chiA * chiS;   
+    const REAL8 siqm_2pn_kappaA = -50.L * d * (chiS*chiS + chiA*chiA) + 100.L * (2.L*eta - 1.L) * chiA * chiS;
+    const REAL8 siqm_3pn_kappaS = (chiS*chiS + chiA*chiA) * (26015.L/28.L - 44255.L/21.L * eta - 240.L * eta*eta) + chiA * chiS * d * (26015.L/14.L - 1495.L/3. * eta); 
+    const REAL8 siqm_3pn_kappaA = (26015.L/14.L - 1495.L/6.L * eta) * d * (chiS*chiS + chiA*chiA) + (26015.L/14.L  - 88510.L/21.L *eta - 480.L *eta*eta) * chiS * chiA;
 
     /* initialise the PN correction  coefficients to 0 identically */
     memset(pfa, 0, sizeof(PNPhasingSeries));
@@ -201,7 +209,7 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
         pfa->v[3] += -16.L*LAL_PI*XLALSimInspiralWaveformParamsLookupNonGRDChi3NS(LALpars) + (188.L*SL/3.L + 25.L*dSigmaL)*XLALSimInspiralWaveformParamsLookupNonGRDChi3S(LALpars); 
     }
 
-        if (XLALDictContains(LALpars,"dchi4") || XLALDictContains(LALpars,"dchi4NS") || XLALDictContains(LALpars,"dchi4S"))
+        if (XLALDictContains(LALpars,"dchi4") || XLALDictContains(LALpars,"dchi4NS") || XLALDictContains(LALpars,"dchi4S") || XLALDictContains(LALpars,"dchikappaS") || XLALDictContains(LALpars,"dchikappaA"))
     {
         pfa->v[4] = 5.L*(3058.673L/7.056L + 5429.L/7.L * eta
                         + 617.L * eta*eta)/72.L;
@@ -210,6 +218,10 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
 
 /* Splitting the deviation parameter into spin and no-spin parts and then adding them here */
 	pfa->v[4] += (5.L*(3058.673L/7.056L + 5429.L/7.L * eta + 617.L * eta*eta)/72.L)*XLALSimInspiralWaveformParamsLookupNonGRDChi4NS(LALpars) - 10.L*pn_sigma*XLALSimInspiralWaveformParamsLookupNonGRDChi4S(LALpars);
+
+/* Adding 2PN SIQM test here..*/
+	pfa->v[4] += siqm_2pn_kappaS*XLALSimInspiralWaveformParamsLookupNonGRDChikappaS(LALpars);
+	pfa->v[4] += siqm_2pn_kappaA*XLALSimInspiralWaveformParamsLookupNonGRDChikappaA(LALpars);
     }
 
     if (XLALDictContains(LALpars,"dchi5"))
@@ -228,7 +240,7 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
 	pfa->vlogv[5] += (5.L/3.L * (7729.L/84.L - 13.L * eta) * LAL_PI)*XLALSimInspiralWaveformParamsLookupNonGRDChi5LNS(LALpars) - 3.L*pn_gamma*XLALSimInspiralWaveformParamsLookupNonGRDChi5LS(LALpars);
     }
 
-    if (XLALDictContains(LALpars,"dchi6") || XLALDictContains(LALpars,"dchi6NS") || XLALDictContains(LALpars,"dchi6S"))
+    if (XLALDictContains(LALpars,"dchi6") || XLALDictContains(LALpars,"dchi6NS") || XLALDictContains(LALpars,"dchi6S") || XLALDictContains(LALpars,"dchikappaS") || XLALDictContains(LALpars,"dchikappaA"))
     {
         pfa->v[6] = (11583.231236531L/4.694215680L
                      - 640.L/3.L * LAL_PI * LAL_PI - 6848.L/21.L*LAL_GAMMA)
@@ -247,6 +259,11 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
                  + 2255./12. * LAL_PI * LAL_PI)
         + eta*eta * 76055.L/1728.L
         - eta*eta*eta * 127825.L/1296.L + (-6848.L/21.L)*log(4.))*XLALSimInspiralWaveformParamsLookupNonGRDChi6NS(LALpars) + (LAL_PI * (3760.L*SL + 1490.L*dSigmaL)/3.L + pn_ss3)*XLALSimInspiralWaveformParamsLookupNonGRDChi6S(LALpars);
+
+/* Adding 3PN SIQM test here..*/
+	pfa->v[6] += siqm_3pn_kappaS * XLALSimInspiralWaveformParamsLookupNonGRDChikappaS(LALpars);
+	pfa->v[6] += siqm_3pn_kappaA * XLALSimInspiralWaveformParamsLookupNonGRDChikappaA(LALpars); 
+
     }
 
     if (XLALDictContains(LALpars,"dchi6l"))

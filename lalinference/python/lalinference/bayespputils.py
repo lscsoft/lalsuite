@@ -594,7 +594,9 @@ def plot_label(param):
         'lambda_eff':r'$\lambda_{eff} [\mathrm{m}]$',
         'lambda_a':r'$\lambda_{\mathbb{A}} [\mathrm{m}]$',
         'liv_amp':r'$\mathbb{A} [\mathrm{{eV}^{2-\alpha}}]$' ,
-        'log10livamp':r'$\log \mathbb{A}[\mathrm{{eV}^{2-\alpha}}]$'
+        'log10livamp':r'$\log \mathbb{A}[\mathrm{{eV}^{2-\alpha}}]$',
+	'dchikappaS':r'$d\chi_{\kappa_{S}}$',
+	'dchikappaA':r'$d\chi_{\kappa_{A}}$'
       }
 
     # Handle cases where multiple names have been used
