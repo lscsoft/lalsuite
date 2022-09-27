@@ -4,10 +4,7 @@ import lal
 from . import EstimatingKnots as ek
 from . import SemicoherentMetricMethods as scmm
 from . import BasisFunctions as bf
-from . import GlobalVariableDeclarations as gvd
-from . import MonteCarloTempBankEstimate as mctb
 from . import ClassDefinitions as cd
-from . import TemplateTransformations as tt
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -649,33 +646,6 @@ def PWTBankSizeWithObjectEnMass(tbank, jobid, stats=False):
 		f.write(s.getvalue())
 
 	return temp
-
-
-
-
-
-
-
-
-def run_multiple():
-	parameter_spaces = tt.BNSRParameterSpaces()
-	
-	for i, p_space in enumerate(parameter_spaces):
-		if i == 0:
-			continue
-		
-		tbank = cd.TBank()
-		tt.SetBank(tbank, i)
-		bf.knotslist = tbank.knots
-		print(tbank.knots)
-		print(bf.knotslist)
-		print("Doing TBank number: " + str(i) + ", " + tbank.toString())
-		PWTBankSizeWithObject(tbank, stats=True)
-
-
-
-
-
 
 
 

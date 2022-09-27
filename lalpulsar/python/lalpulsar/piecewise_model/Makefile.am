@@ -16,8 +16,10 @@ pymodule_PYTHON = \
 	MOLSforGTE.py \
 	MyErrors.py \
 	PWFStat.py \
+	PWModelSimulations.py \
 	SamplingMethods.py \
 	SemicoherentMetricMethods.py \
+	SFTFileReadingMethods.py \
 	TBankEstimates.py \
 	TemplateChecks.py \
 	TemplatePlottingMethods.py \

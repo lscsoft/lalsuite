@@ -28,8 +28,9 @@ log.setLevel(logging.DEBUG)
 # fmax (and fmin) should be chosen with the same reasoning outlined in the pwsim notbook. fmax = f0 + 10^-4 * f0 + 58/TSFT,
 # fmin is the same except fmin = f0 - .... AND fmin should be lower than the minimum value any given template we might use
 # over the time period of the relevant SFTs!
-def fstatinputfromSFTFiles(SFTfmin, SFTfmax, finputdata, timeint=[bf.knotslist[0], bf.knotslist[1]], directory=""):
 
+def fstatinputfromSFTFiles(SFTfmin, SFTfmax, finputdata, timeint=[-1, -2], directory=""):
+	
 	Fstat_opt_args = lp.FstatOptionalArgs(lp.FstatOptionalArgsDefaults)
 	Fstat_opt_args.FstatMethod = lp.FMETHOD_DEMOD_BEST
 	Fstat_opt_args.sourceDeltaT = finputdata.sourceDeltaT
@@ -54,7 +55,7 @@ def SFTCatalog(tstart, Tdata, Tsft, detector='H1'):
 	return sft_catalog
 
 # Builds SFTs in memory rather than files
-def fstatinput(SFTfmin, SFTfmax, sft_catalog, finputdata, dopplerparams, timeint=[bf.knotslist[0], bf.knotslist[1]], trefsegfrac=0.):
+def fstatinput(SFTfmin, SFTfmax, sft_catalog, finputdata, dopplerparams, timeint=[-1, -2], trefsegfrac=0.):
 	
 	Tdata = timeint[1] - timeint[0]
 	dfreq = finputdata.dfreq
