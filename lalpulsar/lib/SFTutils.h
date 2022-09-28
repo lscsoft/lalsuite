@@ -192,7 +192,15 @@ SFTCatalog *XLALAddToFakeSFTCatalog( SFTCatalog *catalog, const CHAR *detector, 
 SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVector *detectors, const MultiLIGOTimeGPSVector *timestamps );
 int XLALCopySFT ( SFTtype *dest, const SFTtype *src );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( RETURN_OWNED_BY_1ST_ARG( SFTCatalog*, XLALReturnSFTCatalogTimeslice) );
+#endif
+SFTCatalog *XLALReturnSFTCatalogTimeslice(const SFTCatalog *catalog, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
+
+#ifndef SWIG // exclude from SWIG interface
 int XLALSFTCatalogTimeslice( SFTCatalog *slice, const SFTCatalog *catalog, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
+#endif
+
 int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVector *timestamps, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
 
 SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
