@@ -2145,6 +2145,28 @@ int XLALSFTCatalogTimeslice(
 
 } // XLALSFTCatalogTimeslice()
 
+//
+// Like XLALSFTCatalogTimeslice, but actually returning the resulting SFTCatalog
+// so that memory can be properly freed whenever using SWIG bindings.
+//
+SFTCatalog *XLALReturnSFTCatalogTimeslice(
+  const SFTCatalog *catalog,		///< [in] SFT catalog
+  const LIGOTimeGPS *minStartGPS,	///< [in] Minimum starting GPS time
+  const LIGOTimeGPS *maxStartGPS	///< [in] Maximum starting GPS time
+  )
+{
+
+  // Allocate the output SFTCatalog
+  SFTCatalog *slice = NULL;
+  XLAL_CHECK_NULL ( (slice = LALCalloc ( 1, sizeof (*slice) )) != NULL, XLAL_ENOMEM );
+
+  XLAL_CHECK_NULL ( XLALSFTCatalogTimeslice(slice, catalog, minStartGPS, maxStartGPS) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  return slice;
+
+} // XLALReturnSFTCatalogTimeslice()
+
+
 // Find index values of first and last timestamp within given timeslice range XLALCWGPSinRange(minStartGPS, maxStartGPS)
 int
 XLALFindTimesliceBounds ( UINT4 *iStart,
