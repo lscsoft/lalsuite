@@ -2,6 +2,17 @@ if test "${CFITSIO_ENABLED}" = false; then
     echo "Skipping test: requires CFITSIO"
     exit 77
 fi
+if test "${HOST_OS_DARWIN}" = true; then
+    echo "Skipping test; results computed on MacOSX are too different to reference results (computed on Ubuntu Linux)"
+    exit 77
+fi
+case "${CC}" in
+    icc*)
+        echo "Skipping test; results computed with '${CC}' compiler are too different to reference results (computed with GCC compiler)"
+        exit 77
+        ;;
+    *)
+esac
 
 # Perform an interpolating search, and compare F-statistics to reference results
 
