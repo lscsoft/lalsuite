@@ -5,8 +5,6 @@ from . import SamplingMethods as sm
 from . import GTEandOtherMethods as gom
 from . import MyErrors
 import matplotlib.pyplot as plt
-import copy
-import time
 
 # Our b vector for MOLS
 def bvec(points, f0, n, kgte):

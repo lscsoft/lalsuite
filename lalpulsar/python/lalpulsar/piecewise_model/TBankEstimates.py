@@ -4,10 +4,8 @@ import lal
 from . import EstimatingKnots as ek
 from . import SemicoherentMetricMethods as scmm
 from . import BasisFunctions as bf
-from . import ClassDefinitions as cd
 
 import numpy as np
-import matplotlib.pyplot as plt
 import time
 import os
 import logging

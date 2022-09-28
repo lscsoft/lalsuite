@@ -5,21 +5,16 @@ from . import SemicoherentMetricMethods as scmm
 from . import GTEandOtherMethods as gom
 from . import BasisFunctions as bf
 from . import TBankEstimates as tbe
-from . import MOLSforGTE as mols
 from . import TemplatePlottingMethods as tpm
 from . import TemplateChecks as tc
 
 import numpy as np
-import math
 import heapq as hq
-import ast
 import time
 import logging
 import copy
 
 import matplotlib.pyplot as plt
-
-from math import factorial
 
 log = logging.getLogger()
 log.setLevel(logging.DEBUG)

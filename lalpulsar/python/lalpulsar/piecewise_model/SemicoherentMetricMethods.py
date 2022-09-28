@@ -3,8 +3,6 @@ from . import MyErrors
 
 import numpy as np
 from scipy import integrate
-import matplotlib.pyplot as plt
-import time
 
 # In this notebook we build the methods that generate the semi-coherent metric for our piecewise model. Each piecewise
 # segment being a semi-coherent segment.

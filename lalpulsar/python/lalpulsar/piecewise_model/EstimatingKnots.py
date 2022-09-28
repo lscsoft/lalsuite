@@ -6,9 +6,6 @@ from . import MyErrors
 
 import numpy as np
 import ast
-import matplotlib.pyplot as plt
-from matplotlib.ticker import MaxNLocator
-import time
 import copy
 import os.path
 

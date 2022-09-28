@@ -4,16 +4,12 @@ from lalpulsar import simulateCW
 
 from . import BasisFunctions as bf
 from . import MOLSforGTE as mols
-from . import EstimatingKnots as ek
-from . import GTEandOtherMethods as gom
 from . import SemicoherentMetricMethods as scmm
 from . import TBankEstimates as tbe
 
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import logging
-from random import random
 
 #dts = []
 

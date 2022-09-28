@@ -1,13 +1,10 @@
 import lalpulsar as lp
 
 from . import BasisFunctions as bf
-from . import ClassDefinitions as cd
-from . import PWFStat as pwf
 from . import GTEandOtherMethods as gom
 from . import EstimatingKnots as ek
 
 import numpy as np
-import logging
 
 # Converts a template given as a list of parameters into a template made up of a list of knot templates
 def templatetoknottemplates(temp, s):

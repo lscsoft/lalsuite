@@ -9,7 +9,6 @@ import lalpulsar.piecewise_model.GTEandOtherMethods as gom
 import lalpulsar.piecewise_model.EstimatingKnots as ek
 import lalpulsar.piecewise_model.SemicoherentMetricMethods as scmm
 import lalpulsar.piecewise_model.TBankEstimates as tbe
-import lalpulsar.piecewise_model.MOLSforGTE as mols
 
 import argparse as ap
 import numpy as np

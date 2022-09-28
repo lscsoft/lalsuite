@@ -1,14 +1,11 @@
 import matplotlib.pyplot as plt
-import matplotlib.patches as matpat
 from . import BasisFunctions as bf
-from . import ClassDefinitions as cd
 from . import SemicoherentMetricMethods as scmm
 
 import lalpulsar as lp
 import random
 
 import numpy as np
-import copy
 
 def metric_ellipse(g11, mutilde, tol=0.01):
         zz = [0]
