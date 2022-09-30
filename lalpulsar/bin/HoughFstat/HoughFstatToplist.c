@@ -511,8 +511,8 @@ int final_write_houghFstat_toplist_to_file(toplist_t *l, const char *filename, U
 	      mess,filename,__func__,__FILE__,__LINE__,_doserrno,((fp)?(ferror(fp)):0),errno,strerror(errno))
 #else
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: %s (%s:%d): ferr:%d, errno:%d: %s\n",\
-	      mess,filename,__func__,__FILE__,__LINE__,((fp)?(ferror(fp)):0),errno,strerror(errno))
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: %s (%s:%d): errno:%d: %s\n",\
+	      mess,filename,__func__,__FILE__,__LINE__,errno,strerror(errno))
 #endif
 
 /* dumps toplist to a temporary file, then renames the file to filename */

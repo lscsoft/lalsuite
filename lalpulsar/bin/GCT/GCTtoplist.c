@@ -650,12 +650,12 @@ static int _atomic_write_gctFstat_toplist_to_file(toplist_t *l, const char *file
 
 #ifdef _WIN32
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: %s (%s:%d): doserr:%d, ferr:%d, errno:%d: %s\n",\
-	      mess,filename,__func__,__FILE__,__LINE__,_doserrno,((fp)?(ferror(fp)):0),errno,strerror(errno))
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: %s (%s:%d): doserr:%d, errno:%d: %s\n",\
+	      mess,filename,__func__,__FILE__,__LINE__,_doserrno,errno,strerror(errno))
 #else
 #define LOGIOERROR(mess,filename) \
-    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: %s (%s:%d): ferr:%d, errno:%d: %s\n",\
-	      mess,filename,__func__,__FILE__,__LINE__,((fp)?(ferror(fp)):0),errno,strerror(errno))
+    LogPrintf(LOG_CRITICAL, "ERROR: %s %s: %s (%s:%d): errno:%d: %s\n",\
+	      mess,filename,__func__,__FILE__,__LINE__,errno,strerror(errno))
 #endif
 
 /* dumps toplist to a temporary file, then renames the file to filename */
@@ -1144,8 +1144,6 @@ int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist
  * returns 0 on success, errno on failure
  */
 int clear_gct_checkpoint(const char*filename) {
-  FILE*fp=NULL; /* referenced in LOGIOERROR */
-
   /* do nothing with an empty filename */
   if (!filename) {
     LogPrintf(LOG_DETAIL, "%s(): checkpoint filename NULL\n", __func__);

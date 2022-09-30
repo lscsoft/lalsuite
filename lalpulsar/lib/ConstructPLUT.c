@@ -249,12 +249,6 @@ static void  PLUTInitialize(HOUGHptfLUT  *lut){
   maxNBorders = lut->maxNBorders;
 
   for(i=0;i<maxNBins;++i){
-
-    /* check lut->bin is not null */
-    if ( lut->bin + i == NULL ) {
-      fprintf(stderr," pointer lut->bin+%d is null [ConstructPLUT.c %d]\n", i, __LINE__);
-    }
-
     lut->bin[i].leftB1  = 0;
     lut->bin[i].rightB1 = 0;
     lut->bin[i].leftB2  = 0;
@@ -266,12 +260,6 @@ static void  PLUTInitialize(HOUGHptfLUT  *lut){
   }
 
   for(i=0;i<maxNBorders;++i){
-
-    /* check lut->border is not null */
-    if ( lut->border + i == NULL ) {
-      fprintf(stderr," pointer lut->border+%d is null [ConstructPLUT.c %d]\n", i, __LINE__);
-    }
-
     lut->border[i].yUpper = -1;
     lut->border[i].yLower = 0;
   }
