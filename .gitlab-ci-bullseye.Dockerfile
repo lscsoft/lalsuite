@@ -15,6 +15,5 @@ RUN apt-get update && \
       apt-get -y install local-apt-repository && \
       /usr/lib/local-apt-repository/rebuild && \
       apt-get update && \
-      PACKAGES=$(lz4cat -d /var/lib/apt/lists/_var_lib_local-apt-repository_._Packages* | grep "^Package:" | awk '{print $2}') && \
-      xargs -t apt-get -y install <<< ${PACKAGES} && \
+      apt-get upgrade && \
       rm -rf /var/lib/apts/lists/*
