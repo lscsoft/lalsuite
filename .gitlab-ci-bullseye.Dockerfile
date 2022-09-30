@@ -4,8 +4,6 @@ LABEL name="LALSuite Nightly - Debian Bullseye" \
       maintainer="Adam Mercer <adam.mercer@ligo.org>" \
       support="Not Supported"
 
-SHELL ["/bin/bash", "-e", "-c"]
-
 # add debian packages to container
 COPY debs /srv/local-apt-repository
 
