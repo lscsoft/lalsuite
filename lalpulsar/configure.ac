@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALPulsar],[5.0.2.1],[lal-discuss@ligo.org])
+AC_INIT([LALPulsar],[5.1.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALPulsarConfig.h])
 AC_CONFIG_SRCDIR([lib/ComputeFstat.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,9 +19,9 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[26])
-AC_SUBST([LIBREVISION],[1])
-AC_SUBST([LIBAGE],[0])
+AC_SUBST([LIBCURRENT],[27])
+AC_SUBST([LIBREVISION],[0])
+AC_SUBST([LIBAGE],[1])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
 AS_CASE([${host_os}],
   [freebsd-aout|qnx|sco|sunos], [AC_SUBST([LIBMAJOR],[${LIBCURRENT}])],
@@ -86,7 +86,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.2.2"
+MIN_LAL_VERSION="7.2.3"
 MIN_LALFRAME_VERSION="2.0.0"
 MIN_LALSIMULATION_VERSION="3.1.0"
 MIN_LALINFERENCE_VERSION="4.1.0"
