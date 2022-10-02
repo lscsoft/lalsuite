@@ -54,6 +54,9 @@ include:
   # job rules
   - local: '/.gitlab/ci/rules.yml'
 
+  # basic package-level build
+  - local: '/.gitlab/ci/pkg.yml'
+
   # compilers
   - local:  '/.gitlab/ci/compilers.yml'
 

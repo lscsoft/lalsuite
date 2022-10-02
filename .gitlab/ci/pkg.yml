@@ -1,0 +1,156 @@
+# ---------------------------
+# Basic package-level build
+# ---------------------------
+
+# -- templates
+
+.pkgbuild:
+  extends:
+    - .build-job
+    - .build-from-tarball
+  retry: 0
+  image: igwn/lalsuite-dev:el7-testing
+  variables:
+    # default configure flags (can be overridden from dependents)
+    CONFIGURE_FLAGS: "--enable-swig --enable-python"
+    # set default python as python3
+    # TODO: this can be removed when all packages require python>=3
+    #       on their own
+    PYTHON: "python3"
+  script:
+    # set up environment
+    - |
+      for userenv in lal*/_inst/etc/lal*-user-env.sh; do
+        if test -f "${userenv}"; then
+          echo "source ${userenv}"
+          source ${userenv}
+        fi
+      done
+    # unpack tarball
+    - PACKAGE=${CI_JOB_NAME%%:*}
+    - cd ${PACKAGE}/
+    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
+    - tar -xf ${TARBALL}
+    - cd ${PACKAGE}-*/
+    # we use xargs here in case CONFIGURE_FLAGS contains
+    # variables with spaces, etc etc
+    - DEFAULT_CONFIGURE_FLAGS="--prefix=${PWD}/../_inst --enable-strict-defs"
+    - xargs ./configure ${DEFAULT_CONFIGURE_FLAGS} <<< ${CONFIGURE_FLAGS}
+    # build, test, and install package
+    - make -j${CPU_COUNT} VERBOSE=1 all
+    - make -j${CPU_COUNT} VERBOSE=1 check
+    - make -j${CPU_COUNT} VERBOSE=1 install
+    - make -j${CPU_COUNT} VERBOSE=1 installcheck
+  artifacts:
+    expire_in: 18h
+    paths:
+      # install directory
+      - "lal*/_inst/"
+      # log files
+      - "lal*/**/config.log"
+      - "lal*/**/test-suite.log"
+      # generated sources
+      - "lal*/**/swiglal_lal*_octave.cpp"
+      - "lal*/**/swiglal_lal*_python.c"
+    when: always
+  rules:
+    - !reference [.ci-pkg, rules]
+    - !reference [.ci-push-build, rules]
+    - when: never
+
+# -- builds
+
+lal:pkg:
+  extends:
+    - .pkgbuild
+  stage: LAL
+  needs:
+    - tarball:lal
+
+lalframe:pkg:
+  extends:
+    - .pkgbuild
+  stage: LALFrame
+  needs:
+    - tarballs
+    - lal:pkg
+
+lalmetaio:pkg:
+  extends:
+    - .pkgbuild
+  stage: LALMetaIO
+  needs:
+    - tarballs
+    - lal:pkg
+
+lalsimulation:pkg:
+  extends:
+    - .pkgbuild
+  stage: LALSimulation
+  needs:
+    - tarballs
+    - lal:pkg
+
+lalburst:pkg:
+  extends:
+    - .pkgbuild
+  stage: LALBurst
+  needs:
+    - tarballs
+    - lal:pkg
+    - lalmetaio:pkg
+    - lalsimulation:pkg
+
+lalinspiral:pkg:
+  extends:
+    - .pkgbuild
+  stage: LALInspiral
+  needs:
+    - tarballs
+    - lal:pkg
+    - lalframe:pkg
+    - lalmetaio:pkg
+    - lalsimulation:pkg
+    - lalburst:pkg
+
+lalinference:pkg:
+  extends:
+    - .pkgbuild
+  stage: LALInference
+  needs:
+    - tarballs
+    - lal:pkg
+    - lalframe:pkg
+    - lalmetaio:pkg
+    - lalsimulation:pkg
+    - lalburst:pkg
+    - lalinspiral:pkg
+
+lalpulsar:pkg:
+  extends:
+    - .pkgbuild
+  stage: LALPulsar
+  needs:
+    - tarballs
+    - lal:pkg
+    - lalframe:pkg
+    - lalmetaio:pkg
+    - lalsimulation:pkg
+    - lalburst:pkg
+    - lalinspiral:pkg
+    - lalinference:pkg
+
+lalapps:pkg:
+  extends:
+    - .pkgbuild
+  stage: LALApps
+  needs:
+    - tarballs
+    - lal:pkg
+    - lalframe:pkg
+    - lalmetaio:pkg
+    - lalsimulation:pkg
+    - lalburst:pkg
+    - lalpulsar:pkg
+    - lalinspiral:pkg
+    - lalinference:pkg

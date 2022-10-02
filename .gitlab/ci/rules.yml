@@ -88,6 +88,11 @@ workflow:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci platform\]/'
       when: always
 
+.ci-pkg:
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci pkg\]/'
+      when: always
+
 .ci-rhel:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci rhel\]/'
