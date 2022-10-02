@@ -1670,7 +1670,7 @@ coverage:
         path: coverage.xml
   rules:
     - !reference [.skip-coverage, rules]
-    - !reference [.default, rules]
+    - !reference [.ci-merge-build, rules]
 
 # -- linting ------------------------------------
 #
