@@ -25,7 +25,9 @@ documentation:
       - html
   rules:
     - !reference [.skip-docs, rules]
-    - !reference [.default, rules]
+    - !reference [.ci-push-build, rules]
+    - !reference [.ci-merge-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 pages:
   stage: deploy
