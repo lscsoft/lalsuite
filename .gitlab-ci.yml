@@ -1260,7 +1260,7 @@ top-level:
     - .integration-tests
   rules:
     - !reference [.skip-integration, rules]
-    - !reference [.push, rules]
+    - !reference [.ci-push-build, rules]
     - !reference [.scheduled, rules]
     - !reference [.manual, rules]
 
@@ -1277,7 +1277,7 @@ top-level:pulsar:
     - .integration-tests
   rules:
     - !reference [.skip-integration, rules]
-    - !reference [.push, rules]
+    - !reference [.ci-push-build, rules]
     - !reference [.scheduled, rules]
     - !reference [.manual, rules]
 
@@ -1487,7 +1487,7 @@ platform:conda:macos-arm64:
   stage: docker
   rules:
     - !reference [.skip-docker, rules]
-    - !reference [.push, rules]
+    - !reference [.ci-push-build, rules]
     - !reference [.scheduled, rules]
     - !reference [.manual, rules]
   script:
