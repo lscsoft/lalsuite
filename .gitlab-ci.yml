@@ -307,7 +307,7 @@ default:
       junit: "rpmbuild/BUILD/**/*junit*.xml"
     when: always
   rules:
-    - !reference [.skip-rhel, rules]
+    - !reference [.ci-rhel, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
 
@@ -389,7 +389,7 @@ default:
       junit: "${CI_JOB_NAME%%:*}-*/**/*junit*.xml"
     when: always
   rules:
-    - !reference [.skip-debian, rules]
+    - !reference [.ci-debian, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
 
@@ -529,7 +529,7 @@ default:
       junit: "*junit*.xml"
     when: always
   rules:
-    - !reference [.skip-conda, rules]
+    - !reference [.ci-conda, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
 
@@ -988,7 +988,7 @@ lalapps:conda:py310:
   extends:
     - .build-job
   rules:
-    - !reference [.skip-wheels, rules]
+    - !reference [.ci-wheels, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
@@ -1147,7 +1147,7 @@ wheel:cp310-cp310-macosx-arm64:
 .integration-tests:
   stage: integration tests
   rules:
-    - !reference [.skip-integration, rules]
+    - !reference [.ci-integration, rules]
     - !reference [.ci-merge-build, rules]
 
 .long-test-job:
@@ -1242,7 +1242,7 @@ top-level:
     - .make-distcheck
     - .integration-tests
   rules:
-    - !reference [.skip-integration, rules]
+    - !reference [.ci-integration, rules]
     - !reference [.ci-push-build, rules]
     - !reference [.ci-merge-build, rules]
 
@@ -1386,7 +1386,7 @@ upgrade:conda:linux:
   extends:
     - .make-distcheck
   rules:
-    - !reference [.skip-platform, rules]
+    - !reference [.ci-platform, rules]
     - !reference [.ci-merge-build, rules]
 
 platform:debian:bullseye:
@@ -1474,7 +1474,7 @@ platform:conda:macos-arm64:
   variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/nightly"
   rules:
-    - !reference [.skip-docker, rules]
+    - !reference [.ci-docker, rules]
     - !reference [.ci-nightly-deploy, rules]
 
 .docker:tags:
@@ -1483,7 +1483,7 @@ platform:conda:macos-arm64:
   variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_TAG"
   rules:
-    - !reference [.skip-docker, rules]
+    - !reference [.ci-docker, rules]
     - !reference [.ci-tag-build, rules]
 
 # template for RHEL docker builds
@@ -1547,7 +1547,7 @@ platform:conda:macos-arm64:
     - lalinference:koji
     - lalapps:koji
   rules:
-    - !reference [.skip-koji, rules]
+    - !reference [.ci-koji, rules]
     - !reference [.ci-nightly-deploy, rules]
 
 # build a nightly container from the RPMs
@@ -1669,7 +1669,7 @@ coverage:
         coverage_format: cobertura
         path: coverage.xml
   rules:
-    - !reference [.skip-coverage, rules]
+    - !reference [.ci-coverage, rules]
     - !reference [.ci-merge-build, rules]
 
 # -- linting ------------------------------------
@@ -1682,7 +1682,7 @@ coverage:
   stage: lint
   needs: []
   rules:
-    - !reference [.skip-lint, rules]
+    - !reference [.ci-lint, rules]
     - !reference [.ci-push-build, rules]
     - !reference [.ci-merge-build, rules]
 
@@ -1700,7 +1700,7 @@ lint:depends:
   script:
     - ./common/maintainer-scripts/check_library_dependencies
   rules:
-    - !reference [.skip-lint, rules]
+    - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
 
 lint:gitignore:
@@ -1809,7 +1809,7 @@ lint:combine-reports:
     # don't need this file
     - rm -f coala.json
   rules:
-    - !reference [.skip-lint, rules]
+    - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
 
 # -- deploy -------------------------------------

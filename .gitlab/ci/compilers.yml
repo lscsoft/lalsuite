@@ -10,7 +10,7 @@
   extends:
     - .make-distcheck
   rules:
-    - !reference [.skip-compiler, rules]
+    - !reference [.ci-compiler, rules]
     - !reference [.ci-merge-build, rules]
 
 clang:12:

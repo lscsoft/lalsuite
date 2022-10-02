@@ -24,7 +24,7 @@ documentation:
       - html/index.html
       - html
   rules:
-    - !reference [.skip-docs, rules]
+    - !reference [.ci-docs, rules]
     - !reference [.ci-push-build, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
@@ -44,7 +44,4 @@ pages:
     paths:
       - public
   rules:
-    - !reference [.skip-docs, rules]
-    - !reference [.skip-coverage, rules]
-    # build nightly
     - !reference [.ci-nightly-deploy, rules]

@@ -38,7 +38,7 @@
     # untag all but the latest three builds
     - koji list-tagged epel7-lalsuite --quiet ${PACKAGE} | awk '{ print $1 }' | head -n -3 | xargs -d '\n' -r koji untag-build epel7-lalsuite --
   rules:
-    - !reference [.skip-koji, rules]
+    - !reference [.ci-koji, rules]
     - !reference [.ci-nightly-deploy, rules]
 
 # -- builds
@@ -160,5 +160,4 @@ repository:koji:
     # generate repository
     - koji dist-repo --allow-missing-signatures --arch=x86_64 --with-src epel7-lalsuite
   rules:
-    - !reference [.skip-koji, rules]
     - !reference [.ci-nightly-deploy, rules]

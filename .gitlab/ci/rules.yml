@@ -36,64 +36,64 @@ workflow:
       variables:
         ENABLE_NIGHTLY: "--enable-nightly"
 
-# -- skip rules
+# -- include CI jobs using commit message
 
-.skip-compiler:
+.ci-compiler:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip compiler\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci compiler\]/'
+      when: always
 
-.skip-conda:
+.ci-conda:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip conda\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci conda\]/'
+      when: always
 
-.skip-coverage:
+.ci-coverage:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip coverage\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci coverage\]/'
+      when: always
 
-.skip-debian:
+.ci-debian:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip debian\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci debian\]/'
+      when: always
 
-.skip-docs:
+.ci-docs:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip docs\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci docs\]/'
+      when: always
 
-.skip-docker:
+.ci-docker:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip docker\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci docker\]/'
+      when: always
 
-.skip-integration:
+.ci-integration:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip integration\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci integration\]/'
+      when: always
 
-.skip-koji:
+.ci-koji:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip koji\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci koji\]/'
+      when: always
 
-.skip-lint:
+.ci-lint:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip lint\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci lint\]/'
+      when: always
 
-.skip-platform:
+.ci-platform:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip platform\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci platform\]/'
+      when: always
 
-.skip-rhel:
+.ci-rhel:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip rhel\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci rhel\]/'
+      when: always
 
-.skip-wheels:
+.ci-wheels:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip wheels\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci wheels\]/'
+      when: always
