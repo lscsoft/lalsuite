@@ -1,11 +1,10 @@
+# ----------------------------------------------------------------------
+# LALSuite: Gitlab-CI configuration
 #
-# Gitlab-CI configuration for LALSuite
-#
-# This file is complicated, but hopefully robust,
-# if you have any questions please email lal-discuss@ligo.org
-# or open a question ticket at
-# https://git.ligo.org/lscsoft/lalsuite/-/issues/
-#
+# This file is complicated, but hopefully robust. If you have any
+# questions, please email lal-discuss@ligo.org, or open a question
+# ticket at https://git.ligo.org/lscsoft/lalsuite/-/issues/
+# ----------------------------------------------------------------------
 
 # -- setup --------------------------------------
 
@@ -51,19 +50,19 @@ include:
       # a flake8 job template
       - python.yml
 
-  # job rules
+  # CI rules
   - local: '/.gitlab/ci/rules.yml'
 
   # basic package-level build
   - local: '/.gitlab/ci/pkg.yml'
 
-  # compilers
-  - local:  '/.gitlab/ci/compilers.yml'
-
-  # Koji build pipeline
+  # Koji build
   - local: '/.gitlab/ci/koji.yml'
 
-  # documentation
+  # compiler tests
+  - local: '/.gitlab/ci/compilers.yml'
+
+  # documentation build
   - local: '/.gitlab/ci/docs.yml'
 
 # -- global settings ----------------------------

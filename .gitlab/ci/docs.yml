@@ -1,10 +1,8 @@
-# ---------------------------
-# LALSuite Documentation
-# ---------------------------
-
-include:
-  # import the rules
-  - local: '/.gitlab/ci/rules.yml'
+# ----------------------------------------------------------------------
+# LALSuite: documentation build
+#
+# Build and deploy the Doxygen documentation.
+# ----------------------------------------------------------------------
 
 documentation:
   image: igwn/lalsuite-dev:bullseye

@@ -1,6 +1,11 @@
-# ---------------------------
-# Basic package-level build
-# ---------------------------
+# ----------------------------------------------------------------------
+# LALSuite: basic package-level build
+#
+# Test building LALSuite package by package, without the additional
+# overhead of a package management system (Debian/RPM/Conda/etc.).
+# Intended to be run on normal pushes to minimise run time and resource
+# usage, reserving the Debian/RPM/Conda/etc. builds for merge requests.
+# ----------------------------------------------------------------------
 
 # -- templates
 

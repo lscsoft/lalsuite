@@ -1,8 +1,8 @@
-# -- compiler tests -----------------------------
+# ----------------------------------------------------------------------
+# LALSuite: compiler tests
 #
-# Top-level build tests for various non-default
-# compilers
-#
+# Top-level build tests for various non-default compilers.
+# ----------------------------------------------------------------------
 
 .compiler-test:
   stage: compiler tests
