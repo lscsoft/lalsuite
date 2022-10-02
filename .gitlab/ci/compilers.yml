@@ -11,8 +11,7 @@
     - .make-distcheck
   rules:
     - !reference [.skip-compiler, rules]
-    - !reference [.scheduled, rules]
-    - !reference [.manual, rules]
+    - !reference [.ci-merge-build, rules]
 
 clang:12:
   extends:
