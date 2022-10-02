@@ -1387,8 +1387,7 @@ upgrade:conda:linux:
     - .make-distcheck
   rules:
     - !reference [.skip-platform, rules]
-    - !reference [.scheduled, rules]
-    - !reference [.manual, rules]
+    - !reference [.ci-merge-build, rules]
 
 platform:debian:bullseye:
   extends:
