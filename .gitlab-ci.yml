@@ -1461,11 +1461,6 @@ platform:conda:macos-arm64:
   variables:
     DOCKER_DRIVER: overlay
   stage: docker
-  rules:
-    - !reference [.skip-docker, rules]
-    - !reference [.ci-push-build, rules]
-    - !reference [.scheduled, rules]
-    - !reference [.manual, rules]
   script:
     # build container and push to registry
     - IMAGE_TAG=${CI_JOB_NAME##*:}
@@ -1480,7 +1475,7 @@ platform:conda:macos-arm64:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/nightly"
   rules:
     - !reference [.skip-docker, rules]
-    - !reference [.scheduled, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 .docker:tags:
   extends:
