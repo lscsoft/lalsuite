@@ -1148,7 +1148,7 @@ wheel:cp310-cp310-macosx-arm64:
   stage: integration tests
   rules:
     - !reference [.skip-integration, rules]
-    - !reference [.default, rules]
+    - !reference [.ci-merge-build, rules]
 
 .long-test-job:
   image: igwn/lalsuite-dev:el7-testing
@@ -1177,10 +1177,6 @@ wheel:cp310-cp310-macosx-arm64:
       EOF
     # install required packages
     - yum -y -q install lal* liblal*-devel python*-lal* --exclude lalsuite* --exclude lalapps
-  rules:
-    - !reference [.skip-integration, rules]
-    - !reference [.scheduled, rules]
-    - !reference [.manual, rules]
 
 lalinference_testjob:
   extends:
@@ -1248,8 +1244,7 @@ top-level:
   rules:
     - !reference [.skip-integration, rules]
     - !reference [.ci-push-build, rules]
-    - !reference [.scheduled, rules]
-    - !reference [.manual, rules]
+    - !reference [.ci-merge-build, rules]
 
 top-level:pulsar:
   image: igwn/lalsuite-dev:el7-testing
@@ -1262,11 +1257,6 @@ top-level:pulsar:
   extends:
     - .make-distcheck
     - .integration-tests
-  rules:
-    - !reference [.skip-integration, rules]
-    - !reference [.ci-push-build, rules]
-    - !reference [.scheduled, rules]
-    - !reference [.manual, rules]
 
 # -- upgrade tests ------------------------------
 #
