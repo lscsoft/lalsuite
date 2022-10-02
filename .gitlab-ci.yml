@@ -308,7 +308,8 @@ default:
     when: always
   rules:
     - !reference [.skip-rhel, rules]
-    - !reference [.default, rules]
+    - !reference [.ci-merge-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 # -- debian
 
@@ -389,7 +390,8 @@ default:
     when: always
   rules:
     - !reference [.skip-debian, rules]
-    - !reference [.default, rules]
+    - !reference [.ci-merge-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 # -- conda
 
@@ -528,7 +530,8 @@ default:
     when: always
   rules:
     - !reference [.skip-conda, rules]
-    - !reference [.default, rules]
+    - !reference [.ci-merge-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 # -- tarballs -----------------------------------
 #
