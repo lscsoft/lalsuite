@@ -9,11 +9,6 @@ workflow:
 
 # -- CI pipelines
 
-# default run
-.default:
-  rules:
-    - when: on_success
-
 # CI build for normal pushes
 .ci-push-build:
   rules:
@@ -38,20 +33,6 @@ workflow:
 .ci-nightly-deploy:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      variables:
-        ENABLE_NIGHTLY: "--enable-nightly"
-
-# scheduled pipeline
-.scheduled:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-      variables:
-        ENABLE_NIGHTLY: "--enable-nightly"
-
-# manually-triggered pipeline
-.manual:
-  rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" || $CI_COMMIT_MESSAGE =~ /\[nightly ci\]/'
       variables:
         ENABLE_NIGHTLY: "--enable-nightly"
 
