@@ -4,9 +4,6 @@
 
 workflow:
   rules:
-    # do not run detached merge_request_event pipelines
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
     # run all other pipelines
     - when: always
 
@@ -31,6 +28,11 @@ workflow:
 .ci-push-build:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
+
+# CI build for merge requests
+.ci-merge-build:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
 # CI nightly deployment from default branch of the upstream repo
 .ci-nightly-deploy:
