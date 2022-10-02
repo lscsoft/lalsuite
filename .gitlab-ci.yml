@@ -989,26 +989,13 @@ lalapps:conda:py310:
     - .build-job
   rules:
     - !reference [.skip-wheels, rules]
-    # if this commit modified the wheel code, always run the job
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-      changes:
-        - wheel/*
-    # otherwise run the job on tags or scheduled builds
-    # (not on normal push events or manually-triggered pipelines)
-    - !reference [.tag, rules]
-    - !reference [.scheduled, rules]
+    - !reference [.ci-merge-build, rules]
+    - !reference [.lalsuite-tag, rules]
+    - !reference [.ci-nightly-deploy, rules]
   artifacts:
     expire_in: 18h
     paths:
       - wheelhouse
-
-# template to run wheels on manually-triggered pipelines as well
-.wheel-manual-rule:
-  rules:
-    # use the upstream rules
-    - !reference [.wheel, rules]
-    # also run on manually triggered pipelines
-    - !reference [.manual, rules]
 
 # do some simple sanity checks in a virtualenv
 .wheel-test: &wheel-test
@@ -1044,7 +1031,6 @@ lalapps:conda:py310:
 .wheel:manylinux:
   extends:
     - .wheel
-    - .wheel-manual-rule
   script:
     - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
     # Build wheel
@@ -1136,7 +1122,6 @@ wheel:cp39-cp39-macosx-x86_64:  # macOS wheel reference build
   extends:
     - .wheel:macos
     - .wheel:macos:x86_64
-    - .wheel-manual-rule
 wheel:cp310-cp310-macosx-x86_64:
   extends:
      - .wheel:macos
@@ -1149,7 +1134,6 @@ wheel:cp39-cp39-macosx-arm64:  # macOS wheel reference build
   extends:
     - .wheel:macos
     - .wheel:macos:arm64
-    - .wheel-manual-rule
 wheel:cp310-cp310-macosx-arm64:
   extends:
      - .wheel:macos
