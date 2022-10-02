@@ -10,7 +10,7 @@ workflow:
     # run all other pipelines
     - when: always
 
-# -- job control
+# -- CI pipelines
 
 # default run
 .default:
@@ -32,17 +32,10 @@ workflow:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push"'
 
-# nightly build on the upstream repo
-.nightly:
+# CI nightly deployment from default branch of the upstream repo
+.ci-nightly-deploy:
   rules:
-    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_PIPELINE_SOURCE == "schedule"'
-      variables:
-        ENABLE_NIGHTLY: "--enable-nightly"
-
-# nightly build on default branch of the upstream repo
-.nightly-default:
-  rules:
-    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       variables:
         ENABLE_NIGHTLY: "--enable-nightly"
 

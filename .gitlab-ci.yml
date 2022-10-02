@@ -950,7 +950,7 @@ lalapps:conda:
 # conda jobs will have run over all python versions
 .lalapps:conda:extra:
   rules:
-    - !reference [.nightly, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 lalapps:conda:py37:
   extends:
@@ -1577,7 +1577,7 @@ platform:conda:macos-arm64:
     - lalapps:koji
   rules:
     - !reference [.skip-koji, rules]
-    - !reference [.nightly-default, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 # build a nightly container from the RPMs
 docker:nightly:el7:
@@ -1865,4 +1865,4 @@ deploy:wheel:
     - wheel:cp310-cp310-macosx-arm64
   rules:
     - !reference [.lalsuite-tag, rules]
-    - !reference [.nightly, rules]
+    - !reference [.ci-nightly-deploy, rules]

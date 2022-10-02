@@ -45,4 +45,4 @@ pages:
     - !reference [.skip-docs, rules]
     - !reference [.skip-coverage, rules]
     # build nightly
-    - !reference [.nightly, rules]
+    - !reference [.ci-nightly-deploy, rules]
