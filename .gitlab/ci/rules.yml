@@ -14,16 +14,6 @@ workflow:
   rules:
     - when: on_success
 
-# tag on the upstream repo
-.tag:
-  rules:
-    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG'
-
-# lalsuite tag on the upstream repo
-.lalsuite-tag:
-  rules:
-    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
-
 # CI build for normal pushes
 .ci-push-build:
   rules:
@@ -33,6 +23,16 @@ workflow:
 .ci-merge-build:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+# CI build for tags on the upstream repo
+.ci-tag-build:
+  rules:
+    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG'
+
+# CI build for "lalsuite" tags on the upstream repo
+.ci-lalsuite-tag-build:
+  rules:
+    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
 
 # CI nightly deployment from default branch of the upstream repo
 .ci-nightly-deploy:

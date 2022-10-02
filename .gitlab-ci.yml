@@ -990,7 +990,7 @@ lalapps:conda:py310:
   rules:
     - !reference [.skip-wheels, rules]
     - !reference [.ci-merge-build, rules]
-    - !reference [.lalsuite-tag, rules]
+    - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
   artifacts:
     expire_in: 18h
@@ -1484,7 +1484,7 @@ platform:conda:macos-arm64:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_TAG"
   rules:
     - !reference [.skip-docker, rules]
-    - !reference [.tag, rules]
+    - !reference [.ci-tag-build, rules]
 
 # template for RHEL docker builds
 .docker:el:
@@ -1842,5 +1842,5 @@ deploy:wheel:
     - wheel:cp39-cp39-macosx-arm64
     - wheel:cp310-cp310-macosx-arm64
   rules:
-    - !reference [.lalsuite-tag, rules]
+    - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
