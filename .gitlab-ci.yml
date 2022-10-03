@@ -103,6 +103,8 @@ variables:
 default:
   # do not retry running jobs on failure
   retry: 0
+  # cancel job when a newer pipeline starts
+  interruptible: true
 
 # -- templates ----------------------------------
 
@@ -201,6 +203,9 @@ default:
   # fail with permissions errors, reset the permissions
   after_script:
     - chmod -R +w $CI_PROJECT_DIR
+  # do not cancel macOS job when a newer pipeline starts, to avoid issues
+  # with permission errors (see above)
+  interruptible: false
 
 .macos:
   extends:
@@ -1835,6 +1840,7 @@ lint:combine-reports:
   stage: deploy
   variables:
     GIT_STRATEGY: none
+  interruptible: false
 
 # deploy wheels
 deploy:wheel:

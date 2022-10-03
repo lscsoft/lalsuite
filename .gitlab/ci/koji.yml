@@ -143,8 +143,8 @@ lalapps:koji:
 
 repository:koji:
   extends:
+    - .deploy
     - .koji:authentication
-  stage: deploy
   needs:
     - lal:koji
     - lalframe:koji
@@ -155,8 +155,6 @@ repository:koji:
     - lalpulsar:koji
     - lalinference:koji
     - lalapps:koji
-  variables:
-    GIT_STRATEGY: none
   script:
     # generate repository
     - koji dist-repo --allow-missing-signatures --arch=x86_64 --with-src epel7-lalsuite
