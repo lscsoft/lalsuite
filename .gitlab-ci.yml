@@ -101,8 +101,8 @@ variables:
 
 # default parameters for jobs
 default:
-  # retry running jobs on failure
-  retry: 1
+  # do not retry running jobs on failure
+  retry: 0
 
 # -- templates ----------------------------------
 
@@ -153,6 +153,10 @@ default:
     done
   }
 
+# retry running jobs on failure
+.retry-job:
+  retry: 1
+
 # basic before_script template for a compiling job
 .build-job:
   before_script:
@@ -191,6 +195,8 @@ default:
 
 # helper template for jobs running on macOS
 .macos-job:
+  extends:
+    - .retry-job
   # if the build fails during the distcheck phase then subsequent builds will
   # fail with permissions errors, reset the permissions
   after_script:
@@ -224,6 +230,7 @@ default:
 # template for RPM packaging jobs
 .rpmbuild:
   extends:
+    - .retry-job
     - .rhel:rpm
     - .build-from-tarball
   image: igwn/base:el7-testing
@@ -318,6 +325,7 @@ default:
 # template for debian packaging jobs
 .debuild:
   extends:
+    - .retry-job
     - .debian:deb
     - .build-from-tarball
   image: igwn/base:bullseye
@@ -449,6 +457,7 @@ default:
 # template for `conda build` jobs
 .conda-build:
   extends:
+    - .retry-job
     - .conda-job
   variables:
     # default to mambabuild from boa
@@ -1386,6 +1395,7 @@ upgrade:conda:linux:
 .platform-test:
   stage: platform tests
   extends:
+    - .retry-job
     - .make-distcheck
   rules:
     - !reference [.ci-platform, rules]
@@ -1590,6 +1600,8 @@ docker:nightly:el7-koji:
 # Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap
 coverage:
   stage: coverage
+  extends:
+    - .retry-job
   image: igwn/lalsuite-dev-gcc:8
   timeout: 2 hours
   needs: []

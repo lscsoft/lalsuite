@@ -13,7 +13,6 @@
   extends:
     - .build-job
     - .build-from-tarball
-  retry: 0
   image: igwn/lalsuite-dev:el7-testing
   variables:
     # default configure flags (can be overridden from dependents)
