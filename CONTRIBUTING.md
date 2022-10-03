@@ -142,33 +142,43 @@ Once the changes are merged into the upstream repository, you should remove the 
 git branch -d my-new-feature
 ```
 
-A feature branch should *not* be repurposed for further development as this can result in problems merging upstream changes. 
+A feature branch should *not* be repurposed for further development as this can result in problems merging upstream changes.
 
-### Speeding up the continuous integration pipeline
+### Continuous integration
 
-The Gitlab-CI (continuous integration) pipeline runs for all changes to ensure that the software still builds and passes all of the tests.
-The full pipeline (and even more so the nightly pipeline) takes a long time to carefully go through all of the package builds, but for minor changes to documentation or infrastructure this can be a waste of time and resources.
+GitLab runs continuous integration (CI) pipelines on LALSuite to ensure that it builds and passes its test suite on a wide variety of platforms. There are 2 main CI pipelines:
 
-Sections of the CI pipeline can be skipped by adding special key text to your commit messages as follows:
+1. The push CI pipeline runs whenever you push commit(s) to your LALSuite fork. This pipeline performs some basic checks that LALSuite still builds and passes its tests with your changes:
+   - each component LALSuite package can be build and installed in sequence (the so-called *package-level build*);
+   - LALSuite can build all component packages at once (the so-called *top-level build*);
+   - the LALSuite [Doxygen](https://doxygen.nl/) documentation can be built;
+   - some basic checks for code style/formatting/whitespace errors, build byproduct files missing from `.gitignore`, etc.
 
-| Commit message text  | Action                                        |
-| -------------------- | --------------------------------------------- |
-| `[skip compiler]`    | Skip compiler test jobs                       |
-| `[skip conda]`       | Skip Conda build jobs (and their dependents)  |
-| `[skip coverage]`    | Skip coverage jobs                            |
-| `[skip debian]`      | Skip Debian build jobs (and their dependents) |
-| `[skip docs]`        | Skip documentation jobs                       |
-| `[skip docker]`      | Skip Docker build jobs                        |
-| `[skip integration]` | Skip integration test jobs                    |
-| `[skip koji]`        | Skip koji test jobs                           |
-| `[skip lint]`        | Skip lint jobs                                |
-| `[skip platform]`    | Skip platform test jobs                       |
-| `[skip rhel]`        | Skip RHEL build jobs (and their dependents)   |
-| `[skip wheels]`      | Skip Python wheel build jobs test jobs        |
+2. The merge CI pipeline runs when you are ready to submit your changes to the upstream LALSuite fork via a merge request. This pipeline runs a much more comprehensive series of checks that LALSuite still builds and passes its tests with a wide variety of platforms (e.g. MacOS, various Linux distributions) and compilers (e.g. `clang`, `icc`, `gcc`). It also checks that LALSuite packages for a number of package management systems (e.g. RPM, Debian, Conda, Python wheels) are built correctly.
 
-**It is important that this feature is not abused, please do not skip any jobs when making library changes.**
+3. (A third CI pipeline runs nightly on the main [`lscsoft/lalsuite`](https://git.ligo.org/lscsoft/lalsuite) fork for deployment tasks, e.g. updating the [online documentation](https://lscsoft.docs.ligo.org/lalsuite/).
 
-On the other hand, if you are adding a feature you know will only be fully tested by the nightly pipeline, you can add the special key text `[nightly ci]` to your commit messages to trigger this pipeline. **The nightly pipeline will take longer to run and consume more resources, so please use only when necessary.**
+You can request a subset of the jobs which normally run as part of the merge pipeline to also be run as part of the push pipeline. This is useful if you are making changes to LALSuite which could potentially cause problems with different platforms/compilers, or which could affect the packaging, and you want to test the effect of your changes before submitting a merge request.
+
+For individual commits, you can request a subset of merge pipeline jobs to run by adding key text to the commit message, as listed in the table below. If instead you have a branch where you want a subset of merge pipeline jobs to be run on every push, you can name the branch to match one of the regular expressions given in the table below.
+
+| If commit message contains | Or branch name matches    | Action                                                       |
+| -------------------------- | ------------------------- | ------------------------------------------------------------ |
+| `[ci compiler]`            | `/[-_]ci[-_]compiler/`    | Test different compilers (e.g. `clang`, `icc`, `gcc`)        |
+| `[ci conda]`               | `/[-_]ci[-_]conda/`       | Build Conda packages                                         |
+| `[ci coverage]`            | `/[-_]ci[-_]coverage/`    | Report test suite coverage                                   |
+| `[ci debian]`              | `/[-_]ci[-_]debian/`      | Build Debian packages                                        |
+| `[ci docker]`              | `/[-_]ci[-_]docker/`      | Build Docker containers                                      |
+| `[ci docs]`                | `/[-_]ci[-_]docs/`        | Build the documentation                                      |
+| `[ci full]`                | n/a                       | Run all jobs in the merge pipeline                           |
+| `[ci integration]`         | `/[-_]ci[-_]integration/` | Longer-running integration tests, different<br/>top-level build configurations, etc. |
+| `[ci koji]`                | `/[-_]ci[-_]koji/`        | Build RPM packages on a Koji server                          |
+| `[ci lint]`                | `/[-_]ci[-_]lint/`        | Perform "lint" checks for code style/formatting/whitespace<br/>errors, build byproduct files missing from `.gitignore`, etc. |
+| `[ci macos]`               | `/[-_]ci[-_]macos/`       | Run all MacOS jobs in the merge pipeline                     |
+| `[ci pkg]`                 | `/[-_]ci[-_]pkg/`         | Perform a basic package-level build from tarballs            |
+| `[ci platform]`            | `/[-_]ci[-_]platform/`    | Test different platforms (e.g. MacOS, various Linux distributions) |
+| `[ci rhel]`                | `/[-_]ci[-_]rhel/`        | Build RPM packages                                           |
+| `[ci wheels]`              | `/[-_]ci[-_]wheels/`      | Build Python wheel packages                                  |
 
 ## More information
 
