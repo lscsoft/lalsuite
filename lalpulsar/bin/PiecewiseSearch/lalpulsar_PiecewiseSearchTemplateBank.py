@@ -16,36 +16,34 @@ pr.enable()
 
 parser = ap.ArgumentParser()
 
-parser.add_argument("--tbankcode",	type=str,	help="Specifies the tbank object to use for a search", 	required=True)
-parser.add_argument("--j",		type=int,	help="The job array number on OzSTAR",			required=True)
-parser.add_argument("--SizeOrTemps",	type=str,	help="Use a capital S or T to specify whether you want to calculate the size of the template bank, or the templates themselves",	required=True)
-
+parser.add_argument("--tbankcode",      type=str,       help="Specifies the tbank object to use for a search",          required=True)
+parser.add_argument("--j",              type=int,       help="The job array number on OzSTAR",                          required=True)
+parser.add_argument("--SizeOrTemps",    type=str,       help="Use a capital S or T to specify whether you want to calculate the size of the template bank, or the templates themselves",        required=True)
 
 # Non-parameter space/non-tbank object optional arguments
-parser.add_argument("--tstart",	type=int,	help="Start time of SFTs", default=900000000)
-parser.add_argument("--flags_bbox",	type=float,	help="List of what fraction of bounding box to use for padding flags", 	nargs='+',          default=[0])
-parser.add_argument("--flags_int",	type=int,	help="List of what number of templates to use as padding flags",		nargs='+',          default=[0])
-parser.add_argument("--stats",		 	help="Whether to write the statistics of the tiling to a file or not", action='store_true')
-parser.add_argument("--reset",			help="Whether or not to use the reseting methods in PiecewiseModel. If Either flags_bbox or flags_int are non-zero, this will automatically be set to true", action='store_true')
+parser.add_argument("--tstart",         type=int,       help="Start time of SFTs", default=900000000)
+parser.add_argument("--flags_bbox",     type=float,     help="List of what fraction of bounding box to use for padding flags",          nargs='+',          default=[0])
+parser.add_argument("--flags_int",      type=int,       help="List of what number of templates to use as padding flags",                nargs='+',          default=[0])
+parser.add_argument("--stats",                          help="Whether to write the statistics of the tiling to a file or not", action='store_true')
+parser.add_argument("--reset",                          help="Whether or not to use the reseting methods in PiecewiseModel. If Either flags_bbox or flags_int are non-zero, this will automatically be set to true", action='store_true')
 
 # Optional parameter space arguments
-parser.add_argument("--s",		type=int,	help="Set the s parameter", 							nargs='?', const=1, default=-1)
-parser.add_argument("--fmin",		type=float,	help="Set the fmin parameter", 						nargs='?', const=1, default=-1)
-parser.add_argument("--fmax",		type=float,	help="Set the fmax parameter", 						nargs='?', const=1, default=-1)
-parser.add_argument("--fmaxtrue",	type=float,	help="Set the fmaxtrue parameter", 						nargs='?', const=1, default=-1)
-parser.add_argument("--nmin",		type=float,	help="Set the nmin parameter", 						nargs='?', const=1, default=-1)
-parser.add_argument("--nmax",		type=float,	help="Set the nmax parameter", 						nargs='?', const=1, default=-1)
-parser.add_argument("--nmin0",	type=float,	help="Set the nmin0 parameter", 						nargs='?', const=1, default=-1)
-parser.add_argument("--nmax0",	type=float,	help="Set the nmax- parameter", 						nargs='?', const=1, default=-1)
-parser.add_argument("--ntol",		type=float,	help="The time over which the braking index is allowed to change by 1%",	nargs='?', const=1, default=-1)
-parser.add_argument("--taumin",	type=float,	help="Set the taumin parameter",						nargs='?', const=1, default=-1)
-parser.add_argument("--taumax",	type=float,	help="Set the taumax parameter", 						nargs='?', const=1, default=-1)
-parser.add_argument("--ktol",		type=float,	help="The time over which the k value is allowed to change by 1%",		nargs='?', const=1, default=-1)
-parser.add_argument("--dur",		type=float,	help="The maximum duration we want the knot algorithm to calculate up to",	nargs='?', const=1, default=-1)
-parser.add_argument("--knots",	type=float,	help="Use user defined knots", 						nargs='+',          default=[0])
-parser.add_argument("--mismatch",	type=float,	help="Set the mismatch parameter", 						nargs='?', const=1, default=-1)
-parser.add_argument("--maxtemps",	type=int,	help="Set a roof on the maximum templates to calculate", 			nargs='?', const=1, default=-1)
-
+parser.add_argument("--s",              type=int,       help="Set the s parameter",                                                     nargs='?', const=1, default=-1)
+parser.add_argument("--fmin",           type=float,     help="Set the fmin parameter",                                                  nargs='?', const=1, default=-1)
+parser.add_argument("--fmax",           type=float,     help="Set the fmax parameter",                                                  nargs='?', const=1, default=-1)
+parser.add_argument("--fmaxtrue",       type=float,     help="Set the fmaxtrue parameter",                                              nargs='?', const=1, default=-1)
+parser.add_argument("--nmin",           type=float,     help="Set the nmin parameter",                                                  nargs='?', const=1, default=-1)
+parser.add_argument("--nmax",           type=float,     help="Set the nmax parameter",                                                  nargs='?', const=1, default=-1)
+parser.add_argument("--nmin0",          type=float,     help="Set the nmin0 parameter",                                                 nargs='?', const=1, default=-1)
+parser.add_argument("--nmax0",          type=float,     help="Set the nmax- parameter",                                                 nargs='?', const=1, default=-1)
+parser.add_argument("--ntol",           type=float,     help="The time over which the braking index is allowed to change by 1%",        nargs='?', const=1, default=-1)
+parser.add_argument("--taumin",         type=float,     help="Set the taumin parameter",                                                nargs='?', const=1, default=-1)
+parser.add_argument("--taumax",         type=float,     help="Set the taumax parameter",                                                nargs='?', const=1, default=-1)
+parser.add_argument("--ktol",           type=float,     help="The time over which the k value is allowed to change by 1%",              nargs='?', const=1, default=-1)
+parser.add_argument("--dur",            type=float,     help="The maximum duration we want the knot algorithm to calculate up to",      nargs='?', const=1, default=-1)
+parser.add_argument("--knots",          type=float,     help="Use user defined knots",                                                  nargs='+',          default=[0])
+parser.add_argument("--mismatch",       type=float,     help="Set the mismatch parameter",                                              nargs='?', const=1, default=-1)
+parser.add_argument("--maxtemps",       type=int,       help="Set a roof on the maximum templates to calculate",                        nargs='?', const=1, default=-1)
 
 args = parser.parse_args()
 
@@ -61,7 +59,7 @@ padding_flags_bbox = args.flags_bbox
 padding_flags_int  = args.flags_int
 
 reset              = -1
-if args.reset: reset = 1 
+if args.reset: reset = 1
 
 #Logging
 logging.basicConfig(filename="TBankCommandLineLog_" + str(j) + ".log", level=logging.DEBUG, filemode='w', format='%(asctime)s %(message)s')
@@ -72,13 +70,13 @@ log.setLevel(logging.DEBUG)
 tbank = cd.TBank()
 
 if tbankcode == "GW170817":
-	tbank.SetDefaultBNSR()
+        tbank.SetDefaultBNSR()
 
 if tbankcode == "1987A":
-	tbank.SetDefault1987A()
+        tbank.SetDefault1987A()
 
 if tbankcode == "Small":
-	tbank.SetSmallTestCase()
+        tbank.SetSmallTestCase()
 
 s        = args.s
 fmin     = args.fmin
@@ -116,15 +114,15 @@ if maxtemps != -1:    tbank.maxtemps = maxtemps
 
 # Checking if we are using user defined knots or if we need to recalculate the knots in case any changed parameters affect knot choice
 if knots != [0]:
-	bf.knotslist = knots
-	tbank.dur = knots[-1] - knots[0]
+        bf.knotslist = knots
+        tbank.dur = knots[-1] - knots[0]
 else:
-	ek.allidealisedknots(tbank.s, tbank.dur, 40, tbank.fmaxtrue, tbank.nmax, tbank.taumin, tbank.mismatch)
+        ek.allidealisedknots(tbank.s, tbank.dur, 40, tbank.fmaxtrue, tbank.nmax, tbank.taumin, tbank.mismatch)
 
 # Adjusting knot start time
 if bf.knotslist[0] != tstart:
-	for i, knot in enumerate(bf.knotslist):
-		bf.knotslist[i] = knot + tstart
+        for i, knot in enumerate(bf.knotslist):
+                bf.knotslist[i] = knot + tstart
 
 print(tbank.toString())
 
@@ -141,33 +139,33 @@ print(bf.knotslist)
 
 # Creating appropriate padding flags lists if they are not provided
 if padding_flags_bbox == [0]:
-	padding_flags_bbox = [0] * tbank.s * len(bf.knotslist)
+        padding_flags_bbox = [0] * tbank.s * len(bf.knotslist)
 if padding_flags_int == [0]:
-	padding_flags_int = [0] * tbank.s * len(bf.knotslist)
+        padding_flags_int = [0] * tbank.s * len(bf.knotslist)
 
 if SizeOrTemps == "S":
-	temps = tbe.PWTBankSizeWithObject(tbank, reset, stats=stats, padding_flags_bbox=padding_flags_bbox, padding_flags_int=padding_flags_int)
-	print("Number of temps found: " + str(temps))
+        temps = tbe.PWTBankSizeWithObject(tbank, reset, stats=stats, padding_flags_bbox=padding_flags_bbox, padding_flags_int=padding_flags_int)
+        print("Number of temps found: " + str(temps))
 elif SizeOrTemps == "T":
-	print(padding_flags_bbox)
-	temps = tbe.PWTBankWithObject(tbank, padding_flags_bbox=padding_flags_bbox, padding_flags_int=padding_flags_int)
-	print("Number of temps found: " + str(len(temps)))
-	
-	midway = int(np.ceil(len(temps) / 2))
-	
-	first  = temps[0]
-	midway = temps[midway]
-	last   = temps[-1]
-	
-	print("First:  " + str( first[0:(2 * tbank.s)]) + " ... " + str( first[-(2 * tbank.s + 1):-1]))
-	print("Midway: " + str(midway[0:(2 * tbank.s)]) + " ... " + str(midway[-(2 * tbank.s + 1):-1]))
-	print("Last:   " + str(  last[0:(2 * tbank.s)]) + " ... " + str(  last[-(2 * tbank.s + 1):-1]))
-	
-	gom.PlotPWModel(first,  show=False, label="First",  linewidth=4)
-	gom.PlotPWModel(midway, show=False, label="Midway", linewidth=3)
-	gom.PlotPWModel(last,   show=False, label="Last",   linewidth=2)
-	plt.legend()
-	plt.show()
+        print(padding_flags_bbox)
+        temps = tbe.PWTBankWithObject(tbank, padding_flags_bbox=padding_flags_bbox, padding_flags_int=padding_flags_int)
+        print("Number of temps found: " + str(len(temps)))
+
+        midway = int(np.ceil(len(temps) / 2))
+
+        first  = temps[0]
+        midway = temps[midway]
+        last   = temps[-1]
+
+        print("First:  " + str( first[0:(2 * tbank.s)]) + " ... " + str( first[-(2 * tbank.s + 1):-1]))
+        print("Midway: " + str(midway[0:(2 * tbank.s)]) + " ... " + str(midway[-(2 * tbank.s + 1):-1]))
+        print("Last:   " + str(  last[0:(2 * tbank.s)]) + " ... " + str(  last[-(2 * tbank.s + 1):-1]))
+
+        gom.PlotPWModel(first,  show=False, label="First",  linewidth=4)
+        gom.PlotPWModel(midway, show=False, label="Midway", linewidth=3)
+        gom.PlotPWModel(last,   show=False, label="Last",   linewidth=2)
+        plt.legend()
+        plt.show()
 
 # Profiling
 pr.disable()
@@ -177,7 +175,4 @@ ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
 ps.print_stats()
 
 with open("TBankCommandLineProfile_" + str(j) + ".txt", 'w+') as f:
-	f.write(s.getvalue())
-
-
-
+        f.write(s.getvalue())

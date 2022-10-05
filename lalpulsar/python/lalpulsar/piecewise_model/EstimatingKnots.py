@@ -41,7 +41,6 @@ import os.path
 #
 # Knots generated in this notebook are saved to the KnotArchive text file.
 
-
 # Another word of caution, some methods in this notebook are outdated, being replaced by more efficient methods later
 # in the notebook. These methods typically run much slower than those which they are replaced by. Further more, many of
 # these methods do not make use of the KnotArchive file which stores all generated values of knots. I have tried to
@@ -52,11 +51,9 @@ import os.path
 # When using this notebook be sure to check that the method p and the knotslist parameter in the BasisFunctions notebook
 # are defined correctly or are being properly updated.
 
-
 # List that we append the maximum parameter spacing for each segment we build knots for in this notebook. Kept only for
 # inspection, not used in any methods except for printing.
 parameterspacings = []
-
 
 # Returns the parameter spacing associated with the zeroth derivative at the lth knot. Note, if the knotslist variable
 # in the BasisFunctions is never updated, then this method will only work for l = 0
@@ -67,7 +64,6 @@ def metricelementspacingonl(l, coeffs, mu):
     stepsize = np.sqrt(mu / metvalue)
 
     return stepsize
-
 
 # Returns the values of the function, max(|f_GTE(t) - F_PP(t)| - Delta f_i0, for different possible interval lengths.
 # the output is in the form [Value list, associated values of functions], can be used for plotting and having an
@@ -110,7 +106,6 @@ def differencebetweenerrorandmetric(l, s, durmin, durmax, steps, f0, n, kgte, mu
 
     return [durlist, allvals]
 
-
 # Testing of the above methods
 """
 durmax = 150
@@ -129,7 +124,6 @@ plt.legend()
 plt.xlabel("p1")
 plt.show()
 """
-
 
 # This method is an outdated method, replaced later in this notebook. Chronologiclly this was replaced first by the
 # knotatleff method and then finally by the knotatleffusinggivenknotlist method. No other methods in this notebook use
@@ -165,7 +159,6 @@ def knotatl(l, s, durmin, durmax, steps, f0, n, kgte, mu):
 
     print("No root found for specified duration, increasing duration span")
     return knotatl(l, s, durmax, 2 * durmax, steps, f0, n, kgte)
-
 
 # Adds a knot to the archive if knotnum is the correct value for the list of knots already in the KnotArchive. Although
 # this method functions correctly, it is not used by any other methods in this notebook. It is kept none the less.
@@ -210,7 +203,6 @@ def addknottoarchive(f0, nmax, kmax, knotnum, s, knotval, mu):
     knotarchive.close()
 
     return None
-
 
 # This method is not used in our finalised knot generating method. It is however used in the buildcompleteknotlist
 # method. It was kept because the buildcompelteknotlist method (and this method) do not read or write to any files.
@@ -355,7 +347,6 @@ def knotatleff(l, s, negdur, posdur, steps, f0, n, kgte, mu, checkfirst=False, r
         elif diffval > 0:
             return knotatleff(l, s, negdur, halfdur, steps, f0, n, kgte, mu, False, recursiondepth + 1)
 
-
 # This method is not our finalised knot generating method. It is however useful because it does not read or write to
 # any files. As such, if we want to do some experimentation with how we build our knots but not interfere and risk
 # altering our library of knots we can use this methods instead. The finalised knot generating method which does
@@ -422,7 +413,6 @@ def buildcompleteknotlist(s, dur, steps, f0, n, kgte, mu):
     #print("Maximum difference between model and GTE for each segment is")
     #print(parameterspacings)
     return newknots
-
 
 # Same as the knotatleff method but instead of refering to the bf.knotslist parameter we instead include this list of
 # previous knots as the parameter knotslist. The motivation behind this is that previous methods used to generate
@@ -563,11 +553,9 @@ def knotatleffusinggivenknotlist(l, s, negdur, posdur, steps, f0, n, kgte, knots
         elif diffval > 0:
             return knotatleffusinggivenknotlist(l, s, negdur, halfdur, steps, f0, n, kgte, knotslist, mu, counter=counter + 1)
 
-
 # knotlist = [0, 2.107421875, 4.18438720703125]
 # ints = len(knotlist)
 # print(knotatleffusinggivenknotlist(ints - 1, 1, ints, 1, 10, 30, knotlist, checkfirst=True, ps=knotlist[-1]))
-
 
 # Calculates and adds the next knot to the KnotArchive file with the appropriate specifications by using the
 # knotatleffusinggivenknotlist method
@@ -635,7 +623,6 @@ def addnextknottofile(f0, nmax, tau, s, mu, steps=30):
 
     return newknot
 
-
 # Calculates and writes all knots up the knotnum th knot to the KnotArchive file. E.g. If we want to know the first 10
 # knots for certain model specifications, if we run this method with knotnum = 10, if the KnotArchive file does not
 # already have those 10 knot values, this method will calculate and add those knot values to that file until all knots
@@ -660,7 +647,6 @@ def addknottoknotnum(s, knotnum, f0, nmax, tau, mu, steps=30):
         addnextknottofile(f0, nmax, tau, s, mu, steps=steps)
         currentknotnum += 1
 
-
 # Ad the above method but now instead of calculating up to a given knotnumber instead calculates all knots up to a given
 # signal duration.
 def addknottodur(s, dur, f0, nmax, tau, mu, steps=30):
@@ -682,18 +668,17 @@ def addknottodur(s, dur, f0, nmax, tau, mu, steps=30):
     while currentdur < dur:
         currentdur = addnextknottofile(f0, nmax, tau, s, mu, steps=steps)
 
-
 # Calculates and returns all knots either up to the time dur or given knot number from the KnotArchive file. By using
 # this method we no longer need to always recalculate our knots, hopefully speeding up some of our other notebooks.
 def allidealisedknots(s, dur, steps, f0, nmax, tau, mu, knotnum=None):
     spindownspecifications = [f0, nmax, tau, s, mu, fullMOLS]
-    
+
     if os.path.exists("KnotArchive"):
         pass
     else:
         with open("KnotArchive", "w") as knot_archive:
             pass
-    
+
     if knotnum:
         addknottoknotnum(s, knotnum, f0, nmax, tau, mu, steps=steps)
     else:
@@ -708,9 +693,9 @@ def allidealisedknots(s, dur, steps, f0, nmax, tau, mu, knotnum=None):
 
         if thisline[0] == spindownspecifications:
             bf.knotslist = thisline[1]
-            
+
             knotsbelowdur = []
-            
+
             # In case the knots stored in KnotArchive go well past the specified duration, we make sure we only set the knots to go to the duration we require
             for knot in bf.knotslist:
                 if knot < dur:
@@ -718,11 +703,10 @@ def allidealisedknots(s, dur, steps, f0, nmax, tau, mu, knotnum=None):
                 else:
                     knotsbelowdur.append(dur)
                     break
-            
-            bf.knotslist = knotsbelowdur
-            
-            return bf.knotslist
 
+            bf.knotslist = knotsbelowdur
+
+            return bf.knotslist
 
 # Returns the number of the first knot which exceeds the time 'dur.'
 def getknotnum(s, dur, f0, nmax, tau, mu):
@@ -768,7 +752,6 @@ s = 3
 print(ktau)
 allidealisedknots(s, dur, 40, f0, n, tau, mu)
 print(bf.knotslist)
-
 
 p0 = 0
 durmax = bf.knotslist[p0] + 2 * (bf.knotslist[p0 + 1] - bf.knotslist[p0])
@@ -833,4 +816,3 @@ plt.xlabel("Knot number")
 plt.ylabel("Knot Value (s)")
 plt.show()
 """
-

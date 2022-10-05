@@ -3,7 +3,6 @@ from . import BasisFunctions as bf
 from . import GTEandOtherMethods as gom
 from . import MyErrors
 
-
 # Returns sample points where a 'ppint' number of points are evenly spaced between each knot
 def pointsbyknot(ppint):
     ints = len(bf.knotslist) - 1
@@ -17,7 +16,6 @@ def pointsbyknot(ppint):
             points.append(point)
 
     return points
-
 
 # Returns sample points that correspond with values of frequency that are evenly spaced (number of points = ppint *
 # ints)
@@ -36,7 +34,6 @@ def pointsbyfrequency(ppint, f0, n, kgte):
 
     return points
 
-
 # Returns sample points that are randomly chosen. Number of sample points = ppint * ints
 def pointsrandom(ppint):
     points = []
@@ -49,11 +46,9 @@ def pointsrandom(ppint):
 
     return points
 
-
 normalpoints = False  # Points chosen to be evenly spaced between knots
 freqpoints = True  # Points chosen in time to correspond with points evenly spaced in frequency by the GTE (runs into problems for long signal durations)
 randomknots = False  # Points chosen randomly in time
-
 
 # Returns an integer value corresponding to the interval that point lies in
 def thisint(point):
@@ -71,7 +66,6 @@ def thisint(point):
 
     if point == bf.knotslist[-1]:
         return ints - 1
-
 
 # Returns an integer list with numbers corresponding to which intervals do not contain sample points
 def samplepointcheck(points, checkfirstintervals=True):
@@ -95,7 +89,6 @@ def samplepointcheck(points, checkfirstintervals=True):
 
     return intscontainingnopoint
 
-
 # Returns our sample points depending upon the boolean values above
 def samplepoints(ppint, f0, n, kgte):
     if normalpoints:
@@ -111,7 +104,6 @@ def samplepoints(ppint, f0, n, kgte):
         print("These intervals contain no sample point: " + str(sadints))
         raise MyErrors.SegmentContainsNoSamplePoints
     return points
-
 
 # As the pointsbyfrequency method but now instead we choose sample points between the times corresponding with the
 # knotnumbers knotnuma and knotnumb. Can be used for calculating the MOLS model of the GTE between two specific times
@@ -136,7 +128,6 @@ def pointsbyfrequencywithinknots(knotnuma, knotnumb, ppint, f0, n, kgte):
 
     return points
 
-
 # As the the samplepoints method but now instead only generates sample points between the two given knots. As the above
 # method, can be used for calculating the MOLS model between two specific knots instead of the default times 0 to the
 # signal duration.
@@ -152,7 +143,6 @@ def samplepointswithinknots(knotnuma, knotnumb, ppint, f0, n, kgte):
                 raise MyErrors.SegmentContainsNoSamplePoints
 
     return points
-
 
 """
 f0 = 1000

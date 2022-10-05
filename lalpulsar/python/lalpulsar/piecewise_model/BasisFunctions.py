@@ -19,7 +19,6 @@ wdashcondnumbers = []
 
 knotslist = [0.]
 
-
 # Returns the value of the ith knot. If we are using the methods in the EstimatingKnots notebook, this method should
 # simply extract the ith element from the knotslist variable above.
 def p(i):
@@ -34,7 +33,6 @@ def p(i):
 # Our basis function
 def u(t, i):
     return (t - p(i)) / (p(i + 1) - p(i))
-
 
 # Builds the W matrix whose inverse is the coefficients of our basis function
 def w(i, s):
@@ -68,7 +66,6 @@ def w(i, s):
 
     return np.array(matrixupper + matrixlower)
 
-
 # Returns the pseudo inverse of a list to the given power
 def listpseudoinv(lst, pwr=1):
     invlist = []
@@ -81,17 +78,14 @@ def listpseudoinv(lst, pwr=1):
 
     return invlist
 
-
 # Builds a diagonal matrix with elements equal to the inverse of the diagonal elements of the given matrix
 def d(mat):
     return np.diag(listpseudoinv(np.diagonal(mat)))
-
 
 # Returns a conditioned matrix where each row is divided by its diagonal element
 def dcond(mat):
 
     return np.matmul(d(mat), mat)
-
 
 # Returns the coefficients of our basis function in a 3D list. Reference elements by [ B or C ][ k ][ specific coeff ]
 def basiscoeffs(i, s, conditioning=True):
@@ -123,7 +117,6 @@ def basiscoeffs(i, s, conditioning=True):
 
     return np.array([blist, clist])
 
-
 # Returns the coefficients of all basis functions in a 4D list. Reference elements by [ int ][ B or C][ k ][ specific
 # coeff ]
 def allcoeffs(s):
@@ -132,7 +125,6 @@ def allcoeffs(s):
     #print("The largest condition number for a W j is: " + "{:.2E}".format(max(wcondnumbers)))
     #print("The largest condition number for a W'j is: " + "{:.2E}".format(max(wdashcondnumbers)))
     return np.array(coeffs)
-
 
 #allcoeffs(3, 10, 10000)
 
@@ -149,7 +141,6 @@ def basisfunctionvalue(t, i, borc, s, coeffs):
         val += coeff * u(t, i) ** m
 
     return val
-
 
 # Plots all basis functions
 def allfunctionplotter(s):
@@ -193,7 +184,6 @@ def allfunctionplotter(s):
 
     plt.tight_layout()
     plt.show()
-
 
 # Plots the basis functions with the given coefficients. Coeffs parameter in the same form as the output of the
 # allcoeffs method
@@ -250,4 +240,3 @@ print(knotslist)
 print(coeffseg)
 plotcoeffs(coeffseg)
 """
-

@@ -8,11 +8,9 @@ import matplotlib.pyplot as plt
 import copy
 import time
 
-
 # Our b vector for MOLS
 def bvec(points, f0, n, kgte):
     return [gom.gte(t - bf.knotslist[0], f0, n, kgte) for t in points]
-
 
 # Constructs an individual row of the a matrix for the sample point 'point' and the coefficients of our basis functions
 # 'coeffs'
@@ -34,7 +32,6 @@ def rowofa(point, coeffs, s):
 
     return firstzeros + coeffsb + coeffsc + lastzeros
 
-
 # Builds our a matrix
 def a(points, coeffs, s):
     amat = []
@@ -44,11 +41,9 @@ def a(points, coeffs, s):
 
     return amat
 
-
 # Returns a diagonal matrix containing the diagonal elements of mat to power -1/2
 def pmat(mat):
     return np.diag(bf.listpseudoinv(np.diagonal(mat), 1 / 2))
-
 
 # Conditions mat by multiplying mat by pmat on each of its sides
 def matdash(mat):
@@ -56,11 +51,9 @@ def matdash(mat):
 
     return np.matmul(pm, np.matmul(mat, pm))
 
-
 # Returns mat multiplied by its transpose
 def ata(mat):
     return np.matmul(np.transpose(mat), mat)
-
 
 # Returns the solutions for our LSTSQ problem
 def sols(coeffs, ppint, s, f0, n, kgte, conditioning=True):
@@ -98,7 +91,6 @@ def sols(coeffs, ppint, s, f0, n, kgte, conditioning=True):
 
     return params
 
-
 # Partitions the 1D list params into a 3D list for our parameters. Extract parameter by [ int ][ B or C ][ k ]
 def solsbyint(params, s):
     ints = int(len(params) / s) - 1
@@ -113,7 +105,6 @@ def solsbyint(params, s):
         partedsols[i][1] = solsc
 
     return partedsols
-
 
 def solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, kgte, conditioning=True):
 
@@ -157,7 +148,6 @@ def solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, kgte, conditio
 
     return paramszerobuff
 
-
 # Comparison of the two different 'sols' methods
 """
 s = 3
@@ -182,10 +172,10 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
     f0 = params[0][0][0]
     f1 = params[0][0][1]
     f2 = params[0][0][2]
-    
+
     t = point - bf.knotslist[0]
     #print("Model t: " + str(t))
-    
+
     return f0 + f1 * t + 1/2 * f2 * t ** 2
     """
 
@@ -208,7 +198,7 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
                 f2 = params[-1][1][2]
 
                 return f0 + f1 * t + 1/2 * f2 * t ** 2
-            
+
             return 0
     else:
         j = sm.thisint(point)
@@ -217,7 +207,7 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
     #    j = 0
 
     points.append(point)
-    
+
     s = np.shape(params)[2]
 
     val = 0
@@ -225,7 +215,6 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
     for thiss in range(s):
         basisfuncs = bf.basisfunctionvalue(point, j, 0, thiss, coeffs)
         basisfunce = bf.basisfunctionvalue(point, j, 1, thiss, coeffs)
-
 
         if singleseg:
             val += params[0][0][thiss] * basisfuncs
@@ -235,7 +224,6 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
             val += params[j][1][thiss] * basisfunce
 
     return val
-
 
 def phase(point, coeffs, params, ignoreintcheck=False):
 
@@ -249,12 +237,11 @@ def phase(point, coeffs, params, ignoreintcheck=False):
     freq = params[0][0][0]
     f1dot = params[0][0][1]
     f2dot = params[0][0][2]
-    
+
     print("Dt is: " + str(dt))
-    
+
     return 2 * np.pi * (freq * dt + f1dot * 0.5 * dt**2 + f2dot * 1/6 * dt**3) #phasemodel
     """
-
 
 # Builds a list of the 'correct' physical parameters as by the general torque equation
 def correctparams(s, f0, n, kgte):
@@ -274,7 +261,6 @@ def correctparams(s, f0, n, kgte):
         params.append([paramsstart, paramsend])
 
     return params
-
 
 # Plots our model
 def modelplotter(ppint, s, f0, n, kgte, trueparams=False):
@@ -311,7 +297,6 @@ def modelplotter(ppint, s, f0, n, kgte, trueparams=False):
     plt.legend()
     plt.show()
 
-
 def modelplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, n, kgte, trueparams=False):
     res = 1
 
@@ -342,13 +327,11 @@ def modelplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, n, kgte, truepara
     plt.legend()
     plt.show()
 
-
 # Gives the value of the error bound for a particular point 't' for the interval it lies in
 def errorbounds(t):
     j = sm.thisint(t)
 
     return 1 / (bf.knotslist[j + 1] - bf.knotslist[j])
-
 
 # Plots our error
 def errorplotter(ppint, s, f0, n, kgte):
@@ -389,7 +372,6 @@ def errorplotter(ppint, s, f0, n, kgte):
     plt.title(title)
     plt.show()
 
-
 def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, n, kgte):
     res = 1
 
@@ -429,13 +411,11 @@ def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, n, kgte):
     plt.title(title)
     plt.show()
 
-
 # Returns the value of the error of our model at a given point
 def errorvalueatpoint(point, coeffs, params, f0, n, kgte):
     error = np.abs(modelvalueatpoint(point, coeffs, params) - gom.gte(point - bf.knotslist[0], f0, n, kgte))
 
     return error
-
 
 # Plots a template against the gte with the parameters f0, n and k. Template should be a list of knot templates
 def plotatemplate(template, f0, n, kgte):
@@ -471,7 +451,6 @@ def plotatemplate(template, f0, n, kgte):
     plt.legend()
     plt.show()
 
-
 def plotGTE(f0, n, kgte, ts, te, show=True, label=''):
 
     xpoints = np.linspace(ts, te, 50)
@@ -484,7 +463,6 @@ def plotGTE(f0, n, kgte, ts, te, show=True, label=''):
     plt.plot(xpoints, ypoints, label=label)
     if show:
         plt.show()
-
 
 """
 tstart = 5000000000000

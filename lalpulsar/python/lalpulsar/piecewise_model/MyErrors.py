@@ -1,13 +1,10 @@
-
 class TooManyNegdurReductions(Exception):
     print()
     pass
 
-
 class SegmentContainsNoSamplePoints(Exception):
     print()
     pass
-
 
 class KminValueLargerThanKmax(Exception):
     print()
@@ -20,7 +17,6 @@ class InvalidKnotNumber(Exception):
 class PointNotWithinKnotBoundaries(Exception):
     print()
     pass
-
 
 class ValueOfSNotAccountedFor(Exception):
     print()

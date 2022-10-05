@@ -6,11 +6,9 @@ import matplotlib.pyplot as plt
 def gte(t, f0, n, kgte):
     return f0 * (1 + (n - 1) * f0 ** (n - 1) * kgte * t) ** (1 / (1 - n))
 
-
 # Inverse of the GTE
 def gteinv(freq, f0, n, kgte):
     return ((freq / f0) ** (1 - n) - 1) / ((n - 1) * f0 ** (n - 1) * kgte)
-
 
 # Arbitrary derivative of the gte
 def gtederivs(t, f0, n, kgte, deriv):
@@ -33,7 +31,6 @@ def gtederivs(t, f0, n, kgte, deriv):
 
         return prefactor * factorialfactor * (1 + (n - 1) * f0 ** (n - 1) * kgte * t) ** (1 / (n - 1) - deriv)
 
-
 # Returns the minimum and maximum values of the GTE at a time t with initial frequency f0 where n and tau can vary
 # between the given ranges
 def gteminmax(t, fmin, fmax, nmin, nmax, kmin, kmax):
@@ -41,7 +38,6 @@ def gteminmax(t, fmin, fmax, nmin, nmax, kmin, kmax):
         return [gte(t, fmin, nmin, kmin), gte(t, fmax, nmax, kmax)]
     else:
         return [gte(t, fmin, nmax, kmax), gte(t, fmax, nmin, kmin)]
-
 
 # Returns the minimum and maximum values of the derivatives of the GTE given the parameter ranges
 def gtederivminmax(t, fmin, fmax, nmin, nmax, kmin, kmax, deriv):
@@ -57,12 +53,10 @@ def gtederivminmax(t, fmin, fmax, nmin, nmax, kmin, kmax, deriv):
 
     return [minderiv, maxderiv]
 
-
 # Rounds number to certain number of significant figures. Written to simplify how k is expressed when converting from
 # tau to k in the GlobalVariableDeclarations notebook
 def roundsig(x, sig=4):
     return round(x, sig - int(np.floor(np.log10(abs(x)))) - 1)
-
 
 # Returns the braking index range for the next knot given n and our tolerance for n between knots.
 def nminmax(n, ntol, seglength):
@@ -71,7 +65,6 @@ def nminmax(n, ntol, seglength):
 
     return [nmin, nmax]
 
-
 # Written to give the braking index range on the previous knot given n and out tolerance on some knot. Should be written
 # to be the inverse of the above method.
 def nminmaxinverse(n, ntol, seglength):
@@ -79,7 +72,6 @@ def nminmaxinverse(n, ntol, seglength):
     nmax = n / (1 - ntol * seglength)
 
     return [nmin, nmax]
-
 
 # Returns the allowed braking index range if we start with an allowed braking index range at t = 0 of [n0min, n0max]
 # and a range that we are allowed to evole into of [nmin, nmax]. Method based on the result of recursively using the
@@ -100,7 +92,6 @@ def nminmaxatknot(n0min, n0max, nmin, nmax, ntol, knotnum):
 
     return [thisnmin, thisnmax]
 
-
 # Returns the allowed range for the braking index on the next knot if we have an initial range of n0min and n0max and
 # the value of the braking index at knotnum - 1
 def nextnminmax(n, n0min, n0max, nmin, nmax, ntol, knotnum, seglength):
@@ -115,14 +106,12 @@ def nextnminmax(n, n0min, n0max, nmin, nmax, ntol, knotnum, seglength):
 
     return [nextmin, nextmax]
 
-
 # Gives the next allowed ranges of the k on the next knot.
 def kminmax(k, ktol, seglength):
     kmin = k * (1 - ktol * seglength)
     kmax = k  # * (1 + ktol * seglength)
 
     return [kmin, kmax]
-
 
 # Gives the minimum and maximum allowed values of the value k at a given knot given its initial starting values. Written
 # as applying the kminmax method recursively
@@ -142,7 +131,6 @@ def kminmaxatknot(k0min, k0max, kmin, kmax, ktol, knotnum):
 
     return [thiskmin, thiskmax]
 
-
 # As the nextnminmax method but now for the constant k
 def nextkminmax(k, k0min, k0max, kmin, kmax, ktol, knotnum, seglength):
     nextmin, nextmax = kminmax(k, ktol, seglength)
@@ -156,11 +144,9 @@ def nextkminmax(k, k0min, k0max, kmin, kmax, ktol, knotnum, seglength):
 
     return [nextmin, nextmax]
 
-
 # Returns the time at which the GTE is at half its initial frequency value
 def timeatwhichfreqishalved(f0, n, k):
     return roundsig((2 ** (n - 1) - 1) / ((n - 1) * f0 ** (n - 1) * k))
-
 
 # Returns the value of k which results in the GTE being at half its frequency at the given time. Minimised when f0,
 # n and t are at their maximum values, likewise maximised when f0, n and t are minimised.
@@ -169,7 +155,6 @@ def kwhichresultsingivenhalflife(t, f0, n, roundoff=True):
         return roundsig((2 ** (n - 1) - 1) / ((n - 1) * f0 ** (n - 1) * t))
     else:
         return (2 ** (n - 1) - 1) / ((n - 1) * f0 ** (n - 1) * t)
-
 
 # Returns a 2D list containing the running braking indices and k values of a given template in the form [n's, k's].
 def runningbrakingindexandk(template):
@@ -192,7 +177,6 @@ def runningbrakingindexandk(template):
             print(thisn)
             print(f0 ** thisn)
             thisk = -fd0 / f0 ** thisn
-            
 
             ns.append(thisn)
             ks.append(thisk)
@@ -247,12 +231,12 @@ temp = []
 knottemp = []
 
 for string in tempsplit:
-	if len(knottemp) < 3:
-		knottemp.append(float(string))
-	else:
-		temp.append(knottemp)
-		knottemp = [float(string)]
-		
+        if len(knottemp) < 3:
+                knottemp.append(float(string))
+        else:
+                temp.append(knottemp)
+                knottemp = [float(string)]
+
 nsandks = runningbrakingindexandk(temp)
 print(nsandks[0])
 print()
@@ -266,7 +250,6 @@ def rangeinsiderange(rangea, rangeb):
     else:
         return False
 
-
 # Quick plotting for the GTE and Taylor Expansions
 
 def texp(tx, f0, n, kgte):
@@ -275,7 +258,6 @@ def texp(tx, f0, n, kgte):
     fdd0 = gtederivs(t, f0, n, kgte, 2)
 
     return f0 + fd0 * t + 1 / 2 * fdd0 * t ** 2
-
 
 # A component of the matrix which converts a list of knot template params to taylor expansion params. BUT we force p0 to be zero.
 # The reason being is that this matrix is very ill-conditioned/numerically unstable. By substituting p0 = 0 and making p1
@@ -313,7 +295,6 @@ def knotmatrixdash(p0orig, p1orig):
 
     return kmd
 
-
 # A component of the matrix which converts a list of knot template params to taylor expansion params
 def dpmat(p0, p1):
     dp = p0 - p1
@@ -331,9 +312,6 @@ print()
 print(np.matmul(knotmatrixdash(p0, p1, settozero=False), np.linalg.inv(dpmat(p0, p1))))
 print(np.linalg.cond(np.matmul(knotmatrixdash(9 * 10 ** 8, 9 * 10 ** 8 + 528, settozero=False), np.linalg.inv(dpmat(p0, p1)))))
 """
-
-
-
 
 # Converts a list of template params [f00, f01, f02, f10, f11, f12] to the equivalent Taylor expansion parameters. The
 # Taylor expansion parameters are those of the form f0 + f1 t + 1/2 f2 t^2 + ... This method is only valid when S = 3.
@@ -371,7 +349,7 @@ def KnotTempToTExpParams(temp, p0, p1):
 
     diag = np.diag(diagelems)
     tempdash = np.matmul(np.linalg.inv(diag), temp)
-    
+
     pmatdash = np.matmul(pmat, diag)
     """
     condpmat = np.linalg.cond(pmat)
@@ -383,7 +361,6 @@ def KnotTempToTExpParams(temp, p0, p1):
     newtexpparams = np.matmul(pmatdash, tempdash)
 
     return newtexpparams
-
 
 # Calculated the value of a taylor expansion given parameters [f0, f1, f2, f3, f4, f5] at a time t with tref
 def TExpModelValue(texpparams, t, tref=0):
@@ -397,7 +374,6 @@ def TExpModelValue(texpparams, t, tref=0):
     ti = t - tref
 
     return f0 + f1 * ti + 1 / 2 * f2 * ti ** 2 + 1 / 6 * f3 * ti ** 3 + 1 / 24 * f4 * ti ** 4 + 1 / 120 * f5 * ti ** 5
-
 
 # Converts taylor expansion parameters f0 + f1 * t + ... + 1/120 f5 t^5 to taylor parameters f0 + f1 (t - tref) + ...
 # + 1/120 f5 (t - tref)^5. Once again, this is an ill-conditioned problem and it is worth subtracting the start time
@@ -441,13 +417,12 @@ def TExpParamsToTExpRefParams(texpparams, tref):
 
     return trefparams
 
-
 # The matrix which transforms from the PW parameters to tref parameters
 def ParamTransformationMatrix(tstart, tend, reftime, s):
-    
+
     dt   = tend - tstart
     dref = reftime - tstart
-    
+
     if s == 3:
         matrix = [[1 -(6*dref**5)/dt**5 + (15*dref**4)/dt**4 - (10*dref**3)/dt**3, dref - (3*dref**5)/dt**4 + (8*dref**4)/dt**3 - (6*dref**3)/dt**2, dref**2/2. - dref**5/(2.*dt**3) + (3*dref**4)/(2.*dt**2) - (3*dref**3)/(2.*dt), (6*dref**5)/dt**5 - (15*dref**4)/dt**4 + (10*dref**3)/dt**3, (-3*dref**5)/dt**4 + (7*dref**4)/dt**3 - (4*dref**3)/dt**2,dref**5/(2.*dt**3) - dref**4/dt**2 + dref**3/(2.*dt)],
                   [ (-30*dref**4)/dt**5 + (60*dref**3)/dt**4 - (30*dref**2)/dt**3, 1 - (15*dref**4)/dt**4 + (32*dref**3)/dt**3 - (18*dref**2)/dt**2, dref - (5*dref**4)/(2.*dt**3) + (6*dref**3)/dt**2 - (9*dref**2)/(2.*dt), (30*dref**4)/dt**5 - (60*dref**3)/dt**4 + (30*dref**2)/dt**3, (-15*dref**4)/dt**4 + (28*dref**3)/dt**3 - (12*dref**2)/dt**2, (5*dref**4)/(2.*dt**3) - (4*dref**3)/dt**2 + (3*dref**2)/(2.*dt)],
@@ -455,14 +430,14 @@ def ParamTransformationMatrix(tstart, tend, reftime, s):
                   [(-360*dref**2)/dt**5 + (360*dref)/dt**4 - 60/dt**3, (-180*dref**2)/dt**4 + (192*dref)/dt**3 - 36/dt**2, (-30*dref**2)/dt**3 + (36*dref)/dt**2 - 9/dt, (360*dref**2)/dt**5 - (360*dref)/dt**4 + 60/dt**3, (-180*dref**2)/dt**4 + (168*dref)/dt**3 - 24/dt**2, (30*dref**2)/dt**3 - (24*dref)/dt**2 + 3/dt],
                   [(-720*dref)   /dt**5 + 360/dt**4, (-360*dref)/dt**4 + 192/dt**3, (-60*dref)/dt**3 + 36/dt**2, (720*dref)/dt**5 - 360/dt**4, (-360*dref)/dt**4 + 168/dt**3, (60*dref)/dt**3 - 24/dt**2],
                   [ -720         /dt**5, -360/dt**4, -60/dt**3, 720/dt**5, -360/dt**4, 60/dt**3]]
-        
+
     elif s == 2:
-        
-        matrix = [[1 - (3*dref**2)/dt**2 - (2*dref**3)/dt**3,dref + (2*dref**2)/dt + dref**3/dt**2,(3*dref**2)/dt**2 + (2*dref**3)/dt**3,dref**2/dt + dref**3/dt**2], 
-                  [(-6*dref)/dt**2 - (6*dref**2)/dt**3,1 + (4*dref)/dt + (3*dref**2)/dt**2,(6*dref)/dt**2 + (6*dref**2)/dt**3,(2*dref)/dt + (3*dref**2)/dt**2], 
-                  [-6/dt**2 - (12*dref)/dt**3,4/dt + (6*dref)/dt**2,6/dt**2 + (12*dref)/dt**3,2/dt + (6*dref)/dt**2], 
+
+        matrix = [[1 - (3*dref**2)/dt**2 - (2*dref**3)/dt**3,dref + (2*dref**2)/dt + dref**3/dt**2,(3*dref**2)/dt**2 + (2*dref**3)/dt**3,dref**2/dt + dref**3/dt**2],
+                  [(-6*dref)/dt**2 - (6*dref**2)/dt**3,1 + (4*dref)/dt + (3*dref**2)/dt**2,(6*dref)/dt**2 + (6*dref**2)/dt**3,(2*dref)/dt + (3*dref**2)/dt**2],
+                  [-6/dt**2 - (12*dref)/dt**3,4/dt + (6*dref)/dt**2,6/dt**2 + (12*dref)/dt**3,2/dt + (6*dref)/dt**2],
                   [-12/dt**3,6/dt**2,12/dt**3,6/dt**2]]
-                  
+
     return matrix
 
 # The matrix used for conditioning the PW params to Tref params matrix. This matrix is included to hopefully avoid re-computing it over and over to
@@ -486,10 +461,10 @@ def ParamTransformationConditioningMatrix(tstart, tend, reftime):
 
     diagmat = np.diag(diagelems)
     """
-    
+
     dt   = tend - tstart
     dref = reftime - tstart
-    
+
     elems = [abs(abs(1 - (6*dref**5)/dt**5 + (15*dref**4)/dt**4 - (10*dref**3)/dt**3)**2 + abs((6*dref**5)/dt**5 - (15*dref**4)/dt**4 + (10*dref**3)/dt**3)**2 +
            abs(dref - (3*dref**5)/dt**4 + (8*dref**4)/dt**3 - (6*dref**3)/dt**2)**2 + abs((-3*dref**5)/dt**4 + (7*dref**4)/dt**3 - (4*dref**3)/dt**2)**2 +
            abs(dref**2/2. - dref**5/(2.*dt**3) + (3*dref**4)/(2.*dt**2) - (3*dref**3)/(2.*dt))**2 + abs(dref**5/(2.*dt**3) - dref**4/dt**2 + dref**3/(2.*dt))**2)**
@@ -499,39 +474,36 @@ def ParamTransformationConditioningMatrix(tstart, tend, reftime):
            abs((-15*dref**4)/dt**4 + (28*dref**3)/dt**3 - (12*dref**2)/dt**2)**2 + abs(dref - (5*dref**4)/(2.*dt**3) + (6*dref**3)/dt**2 - (9*dref**2)/(2.*dt))**2 +
            abs((5*dref**4)/(2.*dt**3) - (4*dref**3)/dt**2 + (3*dref**2)/(2.*dt))**2)**0.25/
         abs(2 + abs(dref)**2 + abs(((-8640*dref)/dt**9 + 8640/dt**8)*dt**9)**2/7.46496e7)**0.25,
-     
+
        abs(abs((-120*dref**3)/dt**5 + (180*dref**2)/dt**4 - (60*dref)/dt**3)**2 + abs((120*dref**3)/dt**5 - (180*dref**2)/dt**4 + (60*dref)/dt**3)**2 +
            abs((-60*dref**3)/dt**4 + (96*dref**2)/dt**3 - (36*dref)/dt**2)**2 + abs((-60*dref**3)/dt**4 + (84*dref**2)/dt**3 - (24*dref)/dt**2)**2 +
            abs(1 - (10*dref**3)/dt**3 + (18*dref**2)/dt**2 - (9*dref)/dt)**2 + abs((10*dref**3)/dt**3 - (12*dref**2)/dt**2 + (3*dref)/dt)**2)**0.25/
         abs(2 + abs(dref)**2 + abs(dref)**4/4. + abs(((-8640*dref)/dt**9 + 8640/dt**8)*dt**9)**2/7.46496e7 +
            abs(((4320*dref**2)/dt**9 - (8640*dref)/dt**8 + 4320/dt**7)*dt**9)**2/7.46496e7)**0.25,
-     
+
        abs(abs((-360*dref**2)/dt**5 + (360*dref)/dt**4 - 60/dt**3)**2 + abs((360*dref**2)/dt**5 - (360*dref)/dt**4 + 60/dt**3)**2 +
            abs((-180*dref**2)/dt**4 + (192*dref)/dt**3 - 36/dt**2)**2 + abs((-180*dref**2)/dt**4 + (168*dref)/dt**3 - 24/dt**2)**2 +
            abs((-30*dref**2)/dt**3 + (36*dref)/dt**2 - 9/dt)**2 + abs((30*dref**2)/dt**3 - (24*dref)/dt**2 + 3/dt)**2)**0.25/
         abs(abs(dref)**2 + abs(dref)**4/4. + abs(dref)**6/36. + abs(((-8640*dref)/dt**9 + 8640/dt**8)*dt**9)**2/7.46496e7 +
            abs(((4320*dref**2)/dt**9 - (8640*dref)/dt**8 + 4320/dt**7)*dt**9)**2/7.46496e7 +
            abs(((-1440*dref**3)/dt**9 + (4320*dref**2)/dt**8 - (4320*dref)/dt**7 + 1440/dt**6)*dt**9)**2/7.46496e7)**0.25,
-     
+
        abs(abs((720*dref)/dt**5 - 360/dt**4)**2 + abs((-720*dref)/dt**5 + 360/dt**4)**2 + abs((-360*dref)/dt**4 + 168/dt**3)**2 +
            abs((-360*dref)/dt**4 + 192/dt**3)**2 + abs((60*dref)/dt**3 - 24/dt**2)**2 + abs((-60*dref)/dt**3 + 36/dt**2)**2)**0.25/
         abs(abs(dref)**4/4. + abs(dref)**6/36. + abs(dref)**8/576. + abs(((4320*dref**2)/dt**9 - (8640*dref)/dt**8 + 4320/dt**7)*dt**9)**2/7.46496e7 +
            abs(((-1440*dref**3)/dt**9 + (4320*dref**2)/dt**8 - (4320*dref)/dt**7 + 1440/dt**6)*dt**9)**2/7.46496e7 +
            abs(((360*dref**4)/dt**9 - (1440*dref**3)/dt**8 + (2160*dref**2)/dt**7 - (1440*dref)/dt**6 + 360/dt**5)*dt**9)**2/7.46496e7)**0.25,
-     
+
        abs(1036800/abs(dt)**10 + 259200/abs(dt)**8 + 7200/abs(dt)**6)**0.25/
         abs(abs(dref)**6/36. + abs(dref)**8/576. + abs(dref)**10/14400. +
            abs(((-1440*dref**3)/dt**9 + (4320*dref**2)/dt**8 - (4320*dref)/dt**7 + 1440/dt**6)*dt**9)**2/7.46496e7 +
            abs(((360*dref**4)/dt**9 - (1440*dref**3)/dt**8 + (2160*dref**2)/dt**7 - (1440*dref)/dt**6 + 360/dt**5)*dt**9)**2/7.46496e7 +
            abs(((-72*dref**5)/dt**9 + (360*dref**4)/dt**8 - (720*dref**3)/dt**7 + (720*dref**2)/dt**6 - (360*dref)/dt**5 + 72/dt**4)*dt**9)**2/7.46496e7)**0.25]
-    
-    
+
     return np.diag(elems)
-    
 
 previousconds = []
 newconds = []
-
 
 # An alternative method to transoform our PW parameters to Doppler parameters in a taylor expansion with (t - tref) terms.
 # Like the above methods, this is ill-conditioned, however less so than the above. Again similar to the above methods,
@@ -540,26 +512,24 @@ newconds = []
 def PWParamstoTrefParams(pwparams, p0, p1, tref, s):
 
     matrix = ParamTransformationMatrix(p0, p1, tref, s)
-        
+
     print(len(matrix))
     print(len(pwparams))
     print(pwparams)
     # If no conditioning is required
     return np.matmul(matrix, pwparams)
-    
+
     # Uncomment for conditioning
     """
     diagmat = ParamTransformationConditioningMatrix(p0, p1, tref)
-    
+
     pwparamsdash = np.matmul(np.linalg.inv(diagmat), pwparams)
 
     matrixdash = np.matmul(matrix, diagmat)
     trefparams = np.matmul(matrixdash, pwparamsdash)
-    
+
     return trefparams
     """
-    
-   
 
 # As the above method, but now we accept the transformation and conditioning matrices as input. In this way, if this method is needed a large
 # number of times, these matrices can be computed once initially and then reused. Conditioning is not always required, so consider just
@@ -570,90 +540,79 @@ def PWParamstoTrefParamsPreComputed(pwparams, PWtoTrefMat, CondMat):
 
     matrixdash = np.matmul(PWtoTrefMat, CondMat)
     trefparams = np.matmul(matrixdash, pwparamsdash)
-    
-    return trefparams   
 
-
+    return trefparams
 
 # Plot a PW model. pwparams only needs to be a list of parameters. Knots should be defined before using this method
 def PlotPWModel(pwparams, show=True, label="", linewidth=2):
-	times = np.linspace(bf.knotslist[0], bf.knotslist[-1], 200)
-	values = []
-	
-	s = int(len(pwparams) / len(bf.knotslist))
-	
-	basiscoeffs = bf.allcoeffs(s)
-	
-	for t in times:
-		segment = 0
-		
-		for i in range(len(bf.knotslist)):
-			if bf.knotslist[i] <= t <= bf.knotslist[i + 1]:
-				segment = i
-				break
-			
-		value = 0
-		s = int(len(pwparams)/len(bf.knotslist))
-		
-		for spindown in range(s):
-			value += pwparams[segment * s + spindown] * bf.basisfunctionvalue(t, segment, 0, spindown, basiscoeffs) + pwparams[(segment + 1) * s + spindown] * bf.basisfunctionvalue(t, segment, 1, spindown, basiscoeffs)
-			
-		values.append(value)
-	
-	plt.plot(times, values, label=label, linewidth=linewidth)
-	
-	if show:
-		plt.legend()
-		plt.show()
+        times = np.linspace(bf.knotslist[0], bf.knotslist[-1], 200)
+        values = []
 
+        s = int(len(pwparams) / len(bf.knotslist))
+
+        basiscoeffs = bf.allcoeffs(s)
+
+        for t in times:
+                segment = 0
+
+                for i in range(len(bf.knotslist)):
+                        if bf.knotslist[i] <= t <= bf.knotslist[i + 1]:
+                                segment = i
+                                break
+
+                value = 0
+                s = int(len(pwparams)/len(bf.knotslist))
+
+                for spindown in range(s):
+                        value += pwparams[segment * s + spindown] * bf.basisfunctionvalue(t, segment, 0, spindown, basiscoeffs) + pwparams[(segment + 1) * s + spindown] * bf.basisfunctionvalue(t, segment, 1, spindown, basiscoeffs)
+
+                values.append(value)
+
+        plt.plot(times, values, label=label, linewidth=linewidth)
+
+        if show:
+                plt.legend()
+                plt.show()
 
 # Not finished
 def isvalidtemplate(template, tbank):
-	
-	# Check initial frequency is within global range. We use fmaxtrue, because fmax is only used for parralelisation 
-	# purposes
-	if not (tbank.fmin <= template[0] <= tbank.fmaxtrue):
-		return False
-	
-	kmin = kwhichresultsingivenhalflife(tbank.taumax, tbank.fmax, tbank.nmax)
-	kmax = kwhichresultsingivenhalflife(tbank.taumin, tbank.fmax, tbank.nmax)
-	
-	# Check first spin down on first knot
-	if not (-kmax * tbank.fmax ** tbank.nmax <= template[1] <= -kmin * tbank.fmin ** tbank.nmin):
-		return False
-	
-	s = (len(template) / len(bf.knotslist))
-	
-	knottemplates = []
-	thisknottemplate = []
-	
-	for elem in template:
-		thisknottemplate.append(elem)
-		if len(thisknottemplate) == s:
-			knottemplates.append(thisknottemplate)
-			thisknottempalte = []
-	
-	ns = [knot[2] * knot[0] / knot[1] ** 2 for knot in knottemplates]
-	ks = [-knot[1] / knot[0] ** (knot[2] * knot[0] / knot[1] ** 2) for knot in knottemplates]
-	
-	ntol = tbank.ntol
-	ktol = tbank.ktol
-	
-	# Check all braking indices are within global range
-	if max(ns) > tbank.nmax or min(ns) < tbank.nmin:
-		return False
-	
-	# Check all k values are within global range defined by taumin/taumax
-	if max(ks) > kmax or min(ks) < kmin:
-		return False
-		
-	
-	
-	
-	
-	
-	
 
+        # Check initial frequency is within global range. We use fmaxtrue, because fmax is only used for parralelisation
+        # purposes
+        if not (tbank.fmin <= template[0] <= tbank.fmaxtrue):
+                return False
+
+        kmin = kwhichresultsingivenhalflife(tbank.taumax, tbank.fmax, tbank.nmax)
+        kmax = kwhichresultsingivenhalflife(tbank.taumin, tbank.fmax, tbank.nmax)
+
+        # Check first spin down on first knot
+        if not (-kmax * tbank.fmax ** tbank.nmax <= template[1] <= -kmin * tbank.fmin ** tbank.nmin):
+                return False
+
+        s = (len(template) / len(bf.knotslist))
+
+        knottemplates = []
+        thisknottemplate = []
+
+        for elem in template:
+                thisknottemplate.append(elem)
+                if len(thisknottemplate) == s:
+                        knottemplates.append(thisknottemplate)
+                        thisknottempalte = []
+
+        ns = [knot[2] * knot[0] / knot[1] ** 2 for knot in knottemplates]
+        ks = [-knot[1] / knot[0] ** (knot[2] * knot[0] / knot[1] ** 2) for knot in knottemplates]
+
+        ntol = tbank.ntol
+        ktol = tbank.ktol
+
+        # Check all braking indices are within global range
+        if max(ns) > tbank.nmax or min(ns) < tbank.nmin:
+                return False
+
+        # Check all k values are within global range defined by taumin/taumax
+        if max(ks) > kmax or min(ks) < kmin:
+                return False
 
 """
 day = 24 * 3600

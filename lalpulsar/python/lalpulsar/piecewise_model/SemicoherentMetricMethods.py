@@ -6,10 +6,8 @@ from scipy import integrate
 import matplotlib.pyplot as plt
 import time
 
-
 # In this notebook we build the methods that generate the semi-coherent metric for our piecewise model. Each piecewise
 # segment being a semi-coherent segment.
-
 
 # This method checks whether an integral on the lth segment (starting from a segment number 0) will have a non-zero
 # value if we integrate a basis function attached to the parameter with coordinates (i, borc) (ommitting the s value
@@ -36,7 +34,6 @@ def integralzerocheck(i, borc, l):
     else:
         return False
 
-
 # The same as the integralzerocheck method except if we are integrating the product of two basis functions on intervals
 # i1 and i2. Again included only for computational efficiency
 def doubleintegralzerocheck(i1, i2, borc1, borc2, l):
@@ -44,7 +41,6 @@ def doubleintegralzerocheck(i1, i2, borc1, borc2, l):
         return True
     else:
         return False
-
 
 # Integrates a basis function on the lth interval corresponding to coordinates l, borc and s and then multiplied by
 # 2pi. For the remainder of this file l will refer to the interval we are working on, whereas a coordinate i will
@@ -57,7 +53,6 @@ def integratebasisfunctiononl(pe, l, borc, s, coeffs):
     phasederiv = 2 * np.pi * integrate.quad(basisfunc, ps, pe, epsabs=0)[0]
 
     return phasederiv
-
 
 # Calculates the time average for the part of our phase that belongs to the lth interval for a parameter with
 # coordinates i, borc and k
@@ -81,7 +76,6 @@ def singlephaseaverageonl(l, i, borc, s, coeffs):
 
     return 1 / (pe - ps) * integrate.quad(phasederiv, ps, pe)[0]
 
-
 # Calculates the product of two averaged phase functions for the given parameter coordinates on the lth interval
 def singlephaseaveragesquaredonl(l, i1, i2, borc1, borc2, s1, s2, coeffs):
     if doubleintegralzerocheck(i1, i2, borc1, borc2, l):
@@ -99,7 +93,6 @@ def singlephaseaveragesquaredonl(l, i1, i2, borc1, borc2, s1, s2, coeffs):
 
     else:
         return 0
-
 
 # Calculates the average of the product of two phase functions for the given parameter coordinates on the lth interval
 def doublephaseaverageonl(l, i1, i2, borc1, borc2, s1, s2, coeffs):
@@ -130,14 +123,12 @@ def doublephaseaverageonl(l, i1, i2, borc1, borc2, s1, s2, coeffs):
     else:
         return 0
 
-
 # Calculates the metric element corresponding to the parameter with the given coordinates on the lth interval
 def metricelementonl(l, i1, i2, borc1, borc2, s1, s2, coeffs):
     singleaveragedsquared = singlephaseaveragesquaredonl(l, i1, i2, borc1, borc2, s1, s2, coeffs)
     doubleaverage = doublephaseaverageonl(l, i1, i2, borc1, borc2, s1, s2, coeffs)
 
     return doubleaverage - singleaveragedsquared
-
 
 # Converts the coordinates (i, borc, k) to the coordinates (i, k). These coordinates are explained in the
 # CoherentMetricMethods python file
@@ -147,7 +138,6 @@ def threecoordstotwocoords(i, borc, s):
     else:
         return [i, s]
 
-
 # Converts from the coordinates (i, k) to (i, borc, k)
 def twocoordstothreecoords(i, s):
     if i == -1:
@@ -155,7 +145,6 @@ def twocoordstothreecoords(i, s):
 
     else:
         return [i, 1, s]
-
 
 # Returns the list of coordinates that correspond to all parameters that will go into the computation of the metric
 # without repetition
@@ -167,7 +156,6 @@ def coordslist(s):
             coords.append([i, thiss])
 
     return coords
-
 
 # Calculates the metric associated with the lth interval. The appropriate coordinates for all parameters and
 # coefficients for all basis functions must be given as input. Returns matrix with dimensions equal to the full
@@ -192,7 +180,6 @@ def metriconl(l, coords, coeffs):
 
     return np.array(thismet)
 
-
 # Takes in a 1D list (whose length is a square number) and turns it into a square matrix
 def makesquare(elems):
     side = int(np.sqrt(len(elems)))
@@ -207,7 +194,6 @@ def makesquare(elems):
 
     return mat
 
-
 # As the metriconl method but now returns the metric with the dimensions if considering only the given segment
 def metriconlcorrectdims(l, coords, coeffs):
     met = metriconl(l, coords, coeffs)
@@ -220,7 +206,6 @@ def metriconlcorrectdims(l, coords, coeffs):
         newmet.append(list(row[l * s: (l + 2) * s]))
 
     return newmet
-
 
 # Calculates only the diagonal components of the metric for the lth interval
 def diagmetriconl(l, coords, coeffs):
@@ -237,7 +222,6 @@ def diagmetriconl(l, coords, coeffs):
         thismet.append(metelem)
 
     return np.array(thismet)
-
 
 # Calculates the semicoherent metric for the given parameters
 def metric(s):
@@ -256,7 +240,6 @@ def metric(s):
 
     return 1 / ints * thismet
 
-
 # Calculates only the diagonal components of the semicoherent metric
 def diagmetric(s):
     coeffs = bf.allcoeffs(s)
@@ -274,7 +257,6 @@ def diagmetric(s):
 
     return 1 / ints * thismet
 
-
 # Returns the metric component for a single segment of length Tdata, symbolically computed in Mathematica.
 # As the value of the metric should be independent of the start time, we do not need the knot values p0, p1,
 # but only the length of the segment, Tdata. While it may appear that some of the float denominators are not
@@ -282,7 +264,7 @@ def diagmetric(s):
 def PreCompSingleSegMetric(Tdata, s):
     p1 = Tdata
     Pi = np.pi
-    
+
     if s == 3:
         firstrow  = [(5975  *p1**2*Pi**2)/63063.,     (13859*p1**3*Pi**2)/630630.,    (475*p1**4*Pi**2)/252252.,     (9071*p1**2*Pi**2)/126126.,   (-23333*p1**3*Pi**2)/1.26126e6, (4259*p1**4*Pi**2)/2.52252e6]
         secondrow = [(13859 *p1**3*Pi**2)/630630.,     (2764*p1**4*Pi**2)/525525.,    (321*p1**5*Pi**2)/700700.,    (23333*p1**3*Pi**2)/1.26126e6, (-29713*p1**4*Pi**2)/6.3063e6,  (8077*p1**5*Pi**2)/1.89189e7]
@@ -290,102 +272,69 @@ def PreCompSingleSegMetric(Tdata, s):
         fourthrow = [(9071  *p1**2*Pi**2)/126126.,    (23333*p1**3*Pi**2)/1.26126e6, (4259*p1**4*Pi**2)/2.52252e6,   (5975*p1**2*Pi**2)/63063.,    (-13859*p1**3*Pi**2)/630630.,    (475*p1**4*Pi**2)/252252.]
         fifthrow  = [(-23333*p1**3*Pi**2)/1.26126e6, (-29713*p1**4*Pi**2)/6.3063e6, (-8077*p1**5*Pi**2)/1.89189e7, (-13859*p1**3*Pi**2)/630630.,     (2764*p1**4*Pi**2)/525525.,   (-321*p1**5*Pi**2)/700700.]
         sixthrow  = [(4259  *p1**4*Pi**2)/2.52252e6,   (8077*p1**5*Pi**2)/1.89189e7,  (233*p1**6*Pi**2)/6.054048e6,   (475*p1**4*Pi**2)/252252.,     (-321*p1**5*Pi**2)/700700.,    (127*p1**6*Pi**2)/3.15315e6]
-        
+
         metric = [firstrow, secondrow, thirdrow, fourthrow, fifthrow, sixthrow]
-    
-        return metric 
+
+        return metric
     elif s == 2:
         firstrow  = [(583  *p1**2*Pi**2)/6300.,  (223*p1**3*Pi**2)/12600.,  (467*p1**2*Pi**2)/6300., (-197*p1**3*Pi**2)/12600.]
         secondrow = [(223  *p1**3*Pi**2)/12600.,  (11*p1**4*Pi**2)/3150.,   (197*p1**3*Pi**2)/12600., (-41*p1**4*Pi**2)/12600.]
         thirdrow  = [(467  *p1**2*Pi**2)/6300.,  (197*p1**3*Pi**2)/12600.,  (583*p1**2*Pi**2)/6300., (-223*p1**3*Pi**2)/12600.]
         fourthrow = [(-197 *p1**3*Pi**2)/12600., (-41*p1**4*Pi**2)/12600., (-223*p1**3*Pi**2)/12600.,  (11*p1**4*Pi**2)/3150.]
-        
+
         return [firstrow, secondrow, thirdrow, fourthrow]
-        
+
     else:
         print("Given value of S has not yet been accounted for. Value of S given: " + str(s))
         raise MyErrors.ValueOfSNotAccountedFor()
-
 
 def PreCompMetric(s):
     if s != 3 and s != 2:
         print("Given value of S has not yet been accounted for. Value of S given: " + str(s))
         raise MyErrors.ValueOfSNotAccountedFor()
-    
+
     segs = len(bf.knotslist) - 1
-    
+
     segmentmetrics = []
-    
-    
+
     for seg in range(segs):
         Tseg = bf.knotslist[seg + 1] - bf.knotslist[seg]
-        
+
         thismetric = PreCompSingleSegMetric(Tseg, s)
-        
+
         segmentmetrics.append(thismetric)
-   
+
     metric = np.zeros((s * (segs + 1), s * (segs + 1)))
-    
+
     for i, thismetric in enumerate(segmentmetrics):
-        
+
         prependzeros = [0 for j in range(i * s)]
         appendzeros  = [0 for j in range((segs - 1 - i) * s)]
         zerorow      = [0 for j in range((segs + 1) * s)]
-        
+
         submetric = []
-        
+
         prependzerorows = i * s
         appendzerorows  = (segs - 1 - i) * s
-        
+
         for j in range(prependzerorows):
             submetric.append(zerorow)
-       
+
         for row in thismetric:
             thisrow = []
-            
+
             thisrow = thisrow + prependzeros
             thisrow = thisrow + row
             thisrow = thisrow + appendzeros
-            
+
             submetric.append(thisrow)
-        
+
         for j in range(appendzerorows):
             submetric.append(zerorow)
-        
-        
-        metric += np.array(submetric)
-    
-    return 1/segs * metric
-   
-           
-           
-           
-           
-           
-           
-           
-       
-       
-       
-       
-       
-       
-       
-       
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
+        metric += np.array(submetric)
+
+    return 1/segs * metric
 
 """
 bf.knotslist = [0, 20, 40]
