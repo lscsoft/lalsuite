@@ -31,6 +31,10 @@ import numpy as np
 import os
 import logging
 import cProfile, pstats, io
+import signal
+
+# Allow liblalpulsar C code to be interrupted with Ctrl+C
+signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 print("Making the profiler")
 
