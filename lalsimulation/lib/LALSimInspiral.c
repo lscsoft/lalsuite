@@ -3418,8 +3418,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             REAL8 lambda3Tidal2 = 0.0;
             REAL8 omega03Tidal1 = 0.0;
             REAL8 omega03Tidal2 = 0.0;
-            REAL8 quadparam1 = 0.0;
-            REAL8 quadparam2 = 0.0;
+            REAL8 quadparam1 = 1.0;
+            REAL8 quadparam2 = 1.0;
             REAL8Vector *nqcCoeffsInput = NULL;
             INT4 nqcFlag = 0;
 
@@ -3431,16 +3431,16 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             XLALDictInsertUINT2Value(PAParams, "analyticFlag", 1);
 
             LALDict *TGRParams = XLALCreateDict();
-            REAL8 domega220 = 0;
-            REAL8 dtau220 = 0;
-            REAL8 domega210 = 0;
-            REAL8 dtau210 = 0;
-            REAL8 domega330 = 0;
-            REAL8 dtau330 = 0;
-            REAL8 domega440 = 0;
-            REAL8 dtau440 = 0;
-            REAL8 domega550 = 0;
-            REAL8 dtau550 = 0;
+            REAL8 domega220 = 0.0;
+            REAL8 dtau220 = 0.0;
+            REAL8 domega210 = 0.0;
+            REAL8 dtau210 = 0.0;
+            REAL8 domega330 = 0.0;
+            REAL8 dtau330 = 0.0;
+            REAL8 domega440 = 0.0;
+            REAL8 dtau440 = 0.0;
+            REAL8 domega550 = 0.0;
+            REAL8 dtau550 = 0.0;
 
             domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(LALpars);
             dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(LALpars);
@@ -3484,11 +3484,25 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             ){
                 XLAL_ERROR_NULL (XLAL_EFUNC);
             };
-            
+
             if(dynamics) XLALDestroyREAL8Vector(dynamics);
             if(dynamicsHi) XLALDestroyREAL8Vector(dynamicsHi);
             XLALDestroyDict(PAParams);
             XLALDestroyDict(TGRParams);
+            
+            UINT4 i;
+
+            SphHarmTimeSeries *modes = hlm;
+            while (modes) {
+                if (XLALSimInspiralModeArrayIsModeActive(
+                XLALSimInspiralWaveformParamsLookupModeArray(LALpars),
+                modes->l, modes->m) == 1) {
+                    for (i = 0; i < modes->mode->data->length; i++)
+                        modes->mode->data->data[i] *= -1;
+                }
+                
+                modes = modes->next;
+            }
 
             break;
 

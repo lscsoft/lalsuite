@@ -921,7 +921,7 @@ XLALSimIMRSpinAlignedEOBModes (
 
       	XLALDictInsertREAL8Value(PAParams, "rFinal", 1.8);
       	XLALDictInsertREAL8Value(PAParams, "rSwitch", 1.8);
-      	XLALDictInsertUINT2Value(PAParams, "analyticFlag",1);
+      	XLALDictInsertUINT2Value(PAParams, "analyticFlag", 1);
     }
 
     /* If we want SEOBNRv4HM, then reset SpinAlignedEOBversion=4 and set use_hm=1 */
