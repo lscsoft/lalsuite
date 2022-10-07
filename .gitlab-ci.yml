@@ -1690,6 +1690,7 @@ coverage:
   rules:
     - !reference [.ci-coverage, rules]
     - !reference [.ci-merge-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 # -- linting ------------------------------------
 #
