@@ -148,7 +148,7 @@ outputs:
         applications that use the LAL MetaIO library.
 
   - name: python-lalpulsar
-    script: install-python.sh
+    script: build-python.sh
     build:
       error_overdepending: true
       error_overlinking: true
