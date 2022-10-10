@@ -178,7 +178,7 @@ static int compareSFTloc(const void *ptr1, const void *ptr2);
 static int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
 static int compareSFTepoch(const void *ptr1, const void *ptr2);
 
-static UINT8 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc);
+unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
 static BOOLEAN has_valid_v2_crc64 (FILE *fp );
 
 static int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
@@ -1359,12 +1359,12 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   rawheader.comment_length 		= comment_len + pad_len;
 
   /* ----- compute CRC */
-  rawheader.crc64 = calc_crc64((const CHAR*)&rawheader, sizeof(rawheader), ~(0ULL));
+  rawheader.crc64 = crc64((const unsigned char*)&rawheader, sizeof(rawheader), ~(0ULL));
 
-  rawheader.crc64 = calc_crc64((const CHAR*)_SFTcomment, comment_len, rawheader.crc64);
-  rawheader.crc64 = calc_crc64((const CHAR*)pad, pad_len, rawheader.crc64);
+  rawheader.crc64 = crc64((const unsigned char*)_SFTcomment, comment_len, rawheader.crc64);
+  rawheader.crc64 = crc64((const unsigned char*)pad, pad_len, rawheader.crc64);
 
-  rawheader.crc64 = calc_crc64((const CHAR*) sft->data->data, sft->data->length * sizeof( *sft->data->data ), rawheader.crc64);
+  rawheader.crc64 = crc64((const unsigned char*) sft->data->data, sft->data->length * sizeof( *sft->data->data ), rawheader.crc64);
 
   /* ----- write the header to file */
   if (1 != fwrite( &rawheader, sizeof(rawheader), 1, fp) ) {
@@ -2585,7 +2585,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
     UINT8 save_crc = rawheader.crc64;
     rawheader.crc64 = 0;
 
-    crc = calc_crc64((const CHAR*)&rawheader, sizeof(rawheader), ~(0ULL));
+    crc = crc64((const unsigned char*)&rawheader, sizeof(rawheader), ~(0ULL));
 
     rawheader.crc64 = save_crc;
     /* NOTE: we're not done with crc yet, because we also need to
@@ -2685,8 +2685,8 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
 	  UINT4 comment_len = strlen(comm) + 1;
 	  UINT4 pad_len = (8 - (comment_len % 8)) % 8;
 
-	  crc = calc_crc64((const CHAR*)comm, comment_len, crc);
-	  crc = calc_crc64((const CHAR*)pad, pad_len, crc);
+	  crc = crc64((const unsigned char*)comm, comment_len, crc);
+	  crc = crc64((const unsigned char*)pad, pad_len, crc);
 	}
 
     } /* if comment_length > 0 */
@@ -3173,61 +3173,6 @@ static long get_file_len ( FILE *fp )
 } /* get_file_len() */
 
 
-/* ----- the following function crc64() was taken from SFTReferenceLibrary.c
- * and adapted to LAL .
- *
- *  The quantity below is: D800000000000000 (base-16) =
- *  1101100000000000000000000000000000000000000000000000000000000000
- *  (base-2).  The primitive polynomial is x^64 + x^4 + x^3 + x + 1.
- */
-#define POLY64 0xd800000000000000ULL
-#define TABLELEN 256
-
-/* The crc64 checksum of M bytes of data at address data is returned
- * by crc64(data, M, ~(0ULL)). Call the function multiple times to
- * compute the checksum of data made in contiguous chunks, setting
- * final argument to the previously accumulated checksum value.
- *
- * The function calc_crc64() here is based on crc64() in SFTReferenceLibrary.c.
- */
-static UINT8
-calc_crc64(const CHAR *data, UINT4 length, UINT8 crc)
-{
-  UINT8 CRCTable[TABLELEN];
-  UINT4 i;
-
-  /* is there is no data, simply return previous checksum value */
-  if (!length || !data )
-    return crc;
-
-  /* initialize the CRC table for fast computation.  We could keep
-     this table in memory to make the computation faster, but that is
-     not re-entrant for multi-threaded code.
-  */
-  for (i = 0; i < TABLELEN; i++) {
-    UINT4 j;
-    UINT8 part = i;
-    for (j = 0; j < 8; j++) {
-      if (part & 1)
-        part = (part >> 1) ^ POLY64;
-      else
-        part >>= 1;
-    }
-    CRCTable[i] = part;
-  }
-
-  /* compute the CRC-64 code */
-  for (i=0; i<length; i++) {
-    UINT8 temp1 = crc >> 8;
-    UINT8 temp2 = CRCTable[(crc ^ (UINT8) data[i]) & 0xff];
-    crc = temp1 ^ temp2;
-  }
-
-  return crc;
-
-} /* calc_crc64() */
-
-
 /**
  * Check the v2 SFT-block starting at fp for valid crc64 checksum.
  * Restores filepointer before leaving.
@@ -3291,7 +3236,7 @@ has_valid_v2_crc64 ( FILE *fp )
       data_len -= toread;
 
       /* compute CRC64: don't endian-swap for that! */
-      computed_crc = calc_crc64( (const CHAR*)block, toread, computed_crc );
+      computed_crc = crc64((const unsigned char*)block, toread, computed_crc );
 
     } /* while data */
 
