@@ -134,24 +134,6 @@ typedef struct tagPulsarCandidate {
 } PulsarCandidate;
 
 
-/**
- * DEPRECATED Type defining the parameters of a pulsar-source of Gravitational waves.
- * \note this type is obsolete and should no longer be used,
- * however, it's too entrenched in LALGeneratePulsarSignal() et al, and codes using it,
- * so we can't easily get rid of it and keep it for now....
- * \deprecated Use \c PulsarParams instead.
- */
-typedef struct tagPulsarSourceParams {
-   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
-   SkyPosition position; /**< source location (in radians) */
-   REAL4 psi;            /**< polarization angle (radians) at tRef */
-   REAL4 aPlus; 	/**< plus-polarization amplitude at tRef */
-   REAL4 aCross;  	/**< cross-polarization amplitude at tRef */
-   REAL8 phi0;           /**< initial phase (radians) at tRef */
-   REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
-   REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
-} PulsarSourceParams;
-
 /** @} */
 
 #ifdef  __cplusplus
