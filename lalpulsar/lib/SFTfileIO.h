@@ -315,6 +315,8 @@ extern const UserChoices MathOpTypeChoices;
  */
 /** @{ */
 
+// These functions are defined in SFTtypes.c
+
 int XLALCWGPSinRange( const LIGOTimeGPS gps, const LIGOTimeGPS* minGPS, const LIGOTimeGPS* maxGPS );
 
 UINT4 XLALRoundFrequencyDownToSFTBin( const REAL8 freq, const REAL8 df );
@@ -329,6 +331,8 @@ int XLALFindCoveringSFTBins ( UINT4 *firstBin, UINT4 *numBins, REAL8 fMinIn, REA
  * \anchor SFT-type-cdtor-func
  */
 /** @{ */
+
+// These functions are defined in SFTtypes.c
 
 SFTtype* XLALCreateSFT ( UINT4 numBins );
 void XLALDestroySFT (SFTtype *sft);
@@ -359,6 +363,8 @@ MultiSFTVector *XLALExtractStrictBandFromMultiSFTVector ( const MultiSFTVector *
  */
 /** @{ */
 
+// These functions are defined in SFTtypes.c
+
 int XLALAppendSFT2Vector (SFTVector *vect, const SFTtype *sft );
 
 int XLALReorderMultiSFTVector( MultiSFTVector *multiSFTs, const LALStringVector *IFOs);
@@ -379,6 +385,8 @@ int XLALMultiSFTVectorResizeBand ( MultiSFTVector *multiSFTs, REAL8 f0, REAL8 Ba
  */
 /** @{ */
 
+// These functions are defined in SFTtypes.c
+
 int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
 int XLALLatestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
 
@@ -392,6 +400,8 @@ MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVec
  * \anchor SFT-timestamp-cdtor-func
  */
 /** @{ */
+
+// These functions are defined in SFTtimestamps.c
 
 LIGOTimeGPSVector *XLALCreateTimestampVector (UINT4 len);
 void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
@@ -408,6 +418,8 @@ void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
  */
 /** @{ */
 
+// These functions are defined in SFTtimestamps.c
+
 int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVector *timestamps, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
 
 /** @} */
@@ -417,6 +429,8 @@ int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVecto
  * \anchor SFT-timestamp-gen-func
  */
 /** @{ */
+
+// These functions are defined in SFTtimestamps.c
 
 LIGOTimeGPSVector *XLALMakeTimestamps ( LIGOTimeGPS tStart, REAL8 Tspan, REAL8 Tsft, REAL8 Toverlap );
 MultiLIGOTimeGPSVector *XLALMakeMultiTimestamps ( LIGOTimeGPS tStart, REAL8 Tspan, REAL8 Tsft, REAL8 Toverlap, UINT4 numDet );
@@ -445,6 +459,8 @@ LIGOTimeGPSVector *XLALTimestampsFromSegmentFile( const char *filename, REAL8 Ts
  */
 /** @{ */
 
+// These functions are defined in SFTcatalog.c
+
 SFTCatalog *XLALSFTdataFind ( const CHAR *file_pattern, const SFTConstraints *constraints );
 void XLALDestroySFTCatalog ( SFTCatalog *catalog );
 
@@ -458,6 +474,8 @@ void XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView );
  * \anchor SFT-catalog-prop-func
  */
 /** @{ */
+
+// These functions are defined in SFTcatalog.c
 
 int XLALCheckCRCSFTCatalog( BOOLEAN *crc_check, SFTCatalog *catalog );
 
@@ -482,6 +500,8 @@ SFTCatalog *XLALReturnSFTCatalogTimeslice(const SFTCatalog *catalog, const LIGOT
  */
 /** @{ */
 
+// These functions are defined in SFTcatalog.c
+
 SFTCatalog *XLALAddToFakeSFTCatalog( SFTCatalog *catalog, const CHAR *detector, const LIGOTimeGPSVector *timestamps );
 SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVector *detectors, const MultiLIGOTimeGPSVector *timestamps );
 
@@ -492,6 +512,8 @@ SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVe
  * \anchor SFT-file-naming-func
  */
 /** @{ */
+
+// These functions are defined in SFTnaming.c
 
 int XLALFindCWDetector ( CHAR** prefix, INT4 *lalCachedIndex, const CHAR *name, const BOOLEAN exactMatch );
 BOOLEAN XLALIsValidCWDetector ( const CHAR *name );
@@ -512,12 +534,18 @@ int XLALCheckValidDescriptionField ( const char *desc );
  */
 /** @{ */
 
+// These functions are defined in FindFiles.c
+
 LALStringVector *XLALFindFiles (const CHAR *globstring);
+
+// These functions are defined in SFTfileIO.c
 
 SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 
 MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
 MultiSFTVector *XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView, REAL8 fMin, REAL8 fMax );
+
+// These functions are defined in SFDBfileIO.c
 
 MultiSFTVector* XLALReadSFDB(REAL8 f_min, REAL8 f_max, const CHAR *file_pattern, const CHAR *timeStampsStarting, const CHAR *timeStampsFinishing);
 
@@ -528,6 +556,8 @@ MultiSFTVector* XLALReadSFDB(REAL8 f_min, REAL8 f_max, const CHAR *file_pattern,
  * \anchor SFT-file-write-func
  */
 /** @{ */
+
+// These functions are defined in SFTfileIO.c
 
 int XLALWriteSFT2fp   ( const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
 int XLALWriteSFT2file ( const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
@@ -546,6 +576,8 @@ int XLALValidateSFTFile ( const char *fname );
  */
 /** @{ */
 
+// These functions are defined in PSDutils.c
+
 void XLALDestroyPSDVector ( PSDVector *vect );
 void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
 
@@ -559,6 +591,8 @@ void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
  */
 /** @{ */
 
+// These functions are defined in PSDutils.c
+
 int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
 
 /** @} */
@@ -569,6 +603,8 @@ int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector
  */
 /** @{ */
 
+// These functions are defined in PSDutils.c
+
 MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
 
 /** @} */
@@ -578,6 +614,8 @@ MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, 
  * \anchor PSD-type-gen-func
  */
 /** @{ */
+
+// These functions are defined in PSDutils.c
 
 REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
 REAL8 XLALMathOpOverArray(const REAL8* data, const size_t length, const MathOpType optype);
@@ -596,6 +634,8 @@ int XLALComputePSDfromSFTs ( REAL8Vector **finalPSD, MultiSFTVector *inputSFTs, 
  * \anchor PSD-file-write-func
  */
 /** @{ */
+
+// These functions are defined in PSDutils.c
 
 int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
 
