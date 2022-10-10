@@ -355,3 +355,27 @@ if ! eval $diff_cmd; then
     echo "error: $dumps_split and $dumps_fromframes should be equal."
     exit 1
 fi
+
+echo
+echo "-------------------------------------------------------"
+echo " Test proper failure whenever windows are misspecified "
+echo "-------------------------------------------------------"
+mkdir -p testwinpar/
+base_call="$mfdv5_CODE --fmin 10 --Band 1 --IFOs H1 --startTime 100000000 --duration=1800 --outSFTdir=testwinpar/"
+base_sft="./testwinpar/H-1_H1_1800SFT_mfdv5-100000000-1800.sft" # Produced by `base_call`
+echo "Creating ${base_sft}..."
+echo ${base_call}
+if ! eval ${base_call}; then
+    echo "Should not have failed!"
+    exit 1
+fi
+
+no_beta_call="$mfdv5_CODE --noiseSFTs=./testwinpar/H-1_H1_1800SFT_mfdv5-100000000-1800.sft --SFTWindowType=tukey"
+echo "Calling with --noiseSFTs and --SFTWindowType=tukey without specifying window beta, should fail:"
+echo ${no_beta_call}
+if ! eval ${no_beta_call}; then
+    echo "Failed, as expected."
+else
+    echo "Did not fail, but it should have!"
+    exit 1
+fi
