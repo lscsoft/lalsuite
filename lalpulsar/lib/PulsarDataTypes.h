@@ -46,6 +46,62 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 #include <lal/SkyCoordinates.h>
 
+// ---------- generic time/frequencies series vector types ----------
+
+/** A collection of (multi-IFO) REAL4 time-series */
+typedef struct tagMultiREAL4TimeSeries {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiREAL4TimeSeries, REAL4TimeSeries*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  REAL4TimeSeries **data; /**< Pointer to the data array. */
+} MultiREAL4TimeSeries;
+
+/** A collection of (multi-IFO) REAL8 time-series */
+typedef struct tagMultiREAL8TimeSeries {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiREAL8TimeSeries, REAL8TimeSeries*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  REAL8TimeSeries **data; /**< Pointer to the data array. */
+} MultiREAL8TimeSeries;
+
+/** A vector of COMPLEX8FrequencySeries */
+typedef struct tagCOMPLEX8FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(COMPLEX8FrequencySeriesVector, COMPLEX8FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  COMPLEX8FrequencySeries *data; /**< Pointer to the data array. */
+} COMPLEX8FrequencySeriesVector;
+
+/** A vector of COMPLEX16FrequencySeries */
+typedef struct tagCOMPLEX16FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(COMPLEX16FrequencySeriesVector, COMPLEX16FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  COMPLEX16FrequencySeries *data; /**< Pointer to the data array. */
+} COMPLEX16FrequencySeriesVector;
+
+/** A vector of REAL4FrequencySeries */
+typedef struct tagREAL4FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(REAL4FrequencySeriesVector, REAL4FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  REAL4FrequencySeries *data; /**< Pointer to the data array. */
+} REAL4FrequencySeriesVector;
+
+/** A vector of REAL8FrequencySeries */
+typedef struct tagREAL8FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(REAL8FrequencySeriesVector, REAL8FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  REAL8FrequencySeries *data; /**< Pointer to the data array. */
+} REAL8FrequencySeriesVector;
+
 // ---------- types describing the CW amplitude and phase parameters ----------
 
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
