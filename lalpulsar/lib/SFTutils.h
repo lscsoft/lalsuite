@@ -62,16 +62,6 @@ extern "C" {
 
 /*---------- exported types ----------*/
 
-/** A vector of REAL8FrequencySeries */
-typedef struct tagREAL8FrequencySeriesVector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(REAL8FrequencySeriesVector, REAL8FrequencySeries, data, UINT4, length));
-#endif /* SWIG */
-  UINT4                  length;
-  REAL8FrequencySeries   *data;
-} REAL8FrequencySeriesVector;
-
-
 /** Special type for holding a PSD vector (over several SFTs) */
 typedef REAL8FrequencySeriesVector PSDVector;
 

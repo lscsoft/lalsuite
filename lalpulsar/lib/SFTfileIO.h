@@ -36,6 +36,7 @@ extern "C" {
 #include <lal/LALConstants.h>
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
+#include <lal/PulsarDataTypes.h>
 
 /**
  * \defgroup SFTfileIO_h Header SFTfileIO.h
@@ -142,42 +143,6 @@ extern "C" {
 
 // ---------- exported types ----------
 
-/** A vector of COMPLEX8FrequencySeries */
-typedef struct tagCOMPLEX8FrequencySeriesVector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(COMPLEX8FrequencySeriesVector, COMPLEX8FrequencySeries, data, UINT4, length));
-#endif /* SWIG */
-  UINT4 			length;		/**< number of SFTs */
-  COMPLEX8FrequencySeries 	*data;		/**< array of SFTs */
-} COMPLEX8FrequencySeriesVector;
-
-
-/** A vector of REAL4FrequencySeries */
-typedef struct tagREAL4FrequencySeriesVector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(REAL4FrequencySeriesVector, REAL4FrequencySeries, data, UINT4, length));
-#endif /* SWIG */
-  UINT4                  length;
-  REAL4FrequencySeries   *data;
-} REAL4FrequencySeriesVector;
-
-/** A collection of (multi-IFO) REAL4 time-series */
-typedef struct tagMultiREAL4TimeSeries {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiREAL4TimeSeries, REAL4TimeSeries*, data, UINT4, length));
-#endif /* SWIG */
-  UINT4 length;			/**< number of ifos */
-  REAL4TimeSeries **data;	/**< vector of REAL4 timeseries */
-} MultiREAL4TimeSeries;
-
-/** A collection of (multi-IFO) REAL8 time-series */
-typedef struct tagMultiREAL8TimeSeries {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiREAL8TimeSeries, REAL8TimeSeries*, data, UINT4, length));
-#endif /* SWIG */
-  UINT4 length;			/**< number of ifos */
-  REAL8TimeSeries **data;	/**< vector of REAL8 timeseries */
-} MultiREAL8TimeSeries;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct tagLIGOTimeGPSVector {
