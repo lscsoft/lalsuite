@@ -83,10 +83,11 @@ liblalpulsar_la_SOURCES = \
 	DopplerFullScan.c \
 	DopplerScan.c \
 	DriveHough.c \
-	FstatisticTools.c \
 	ExtrapolatePulsarSpins.c \
 	FITSFileIO.c \
 	FITSPulsarIO.c \
+	FindFiles.c \
+	FstatisticTools.c \
 	GenerateEllipticSpinOrbitCW.c \
 	GenerateHyperbolicSpinOrbitCW.c \
 	GenerateParabolicSpinOrbitCW.c \
@@ -107,6 +108,7 @@ liblalpulsar_la_SOURCES = \
 	MetricUtils.c \
 	NDParamPLUT.c \
 	NormalizeSFTRngMed.c \
+	PSDutils.c \
 	ParamPLUT.c \
 	PatchGrid.c \
 	Peak2PHMD.c \
@@ -116,10 +118,14 @@ liblalpulsar_la_SOURCES = \
 	PulsarCrossCorr_v2.c \
 	PulsarSimulateCoherentGW.c \
 	ReadPulsarParFile.c \
+	SFDBfileIO.c \
 	SFTClean.c \
-	SFTfileIO.c \
 	SFTReferenceLibrary.c \
-	SFTutils.c \
+	SFTcatalog.c \
+	SFTfileIO.c \
+	SFTnaming.c \
+	SFTtimestamps.c \
+	SFTtypes.c \
 	SSBtimes.c \
 	SimulatePulsarSignal.c \
 	SinCosLUT.c \
@@ -172,6 +178,7 @@ EXTRA_liblalpulsar_la_SOURCES = \
 	ComputeFstat_Demod_ComputeFaFb.c \
 	ComputeFstat_internal.h \
 	ComputeFstat_Resamp_internal.h \
+	SFTinternal.h \
 	SinCosLUT.i \
 	$(END_OF_LIST)
 
