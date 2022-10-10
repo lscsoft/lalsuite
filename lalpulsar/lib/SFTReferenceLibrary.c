@@ -47,10 +47,6 @@ static void swap4(char *location);
 static void swap8(char *location);
 static int validate_sizes(void);
 
-const char* ReferenceSFTLibraryVersion(void) {
-  return PACKAGE_VERSION;
-}
-
 /* The crc64 checksum of M bytes of data at address data is returned
    by crc64(data, M, ~(0ULL)). Call the function multiple times to
    compute the checksum of data made in contiguous chunks, setting
