@@ -63,7 +63,7 @@
 #include <lal/FrequencySeries.h>
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALString.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>

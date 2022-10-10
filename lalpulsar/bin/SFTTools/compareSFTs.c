@@ -29,7 +29,6 @@
 #include <lal/Date.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
-#include <lal/SFTutils.h>
 #include <lal/LALPulsarVCSInfo.h>
 
 /* User variables */

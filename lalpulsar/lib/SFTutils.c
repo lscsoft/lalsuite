@@ -35,7 +35,7 @@
 #include <lal/LALString.h>
 #include <lal/ConfigFile.h>
 
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/SFTReferenceLibrary.h>
 
 #if defined(__GNUC__)

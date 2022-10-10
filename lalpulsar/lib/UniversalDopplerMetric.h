@@ -53,7 +53,7 @@ extern "C" {
 #include <lal/LALBarycenter.h>
 #include <lal/XLALGSL.h>
 #include <lal/DetectorStates.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/Segments.h>
 
 /*---------- exported types ----------*/

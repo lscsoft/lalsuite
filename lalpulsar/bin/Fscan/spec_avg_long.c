@@ -25,12 +25,11 @@
 
 #include "config.h"
 
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
-#include <lal/SFTfileIO.h>
 #include <lal/LALPulsarVCSInfo.h>
 
 /*---------- DEFINES ----------*/

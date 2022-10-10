@@ -31,7 +31,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/SeqFactories.h>
 #include <lal/RealFFT.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/Window.h>
 #include <lal/Random.h>
 

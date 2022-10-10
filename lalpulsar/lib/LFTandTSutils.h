@@ -35,7 +35,7 @@ extern "C" {
 #endif
 
 /*---------- exported INCLUDES ----------*/
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALComputeAM.h>
 #include <lal/SSBtimes.h>

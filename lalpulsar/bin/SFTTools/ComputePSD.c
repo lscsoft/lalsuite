@@ -51,7 +51,6 @@
 #include <lal/Segments.h>
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
-#include <lal/SFTutils.h>
 #include <lal/LogPrintf.h>
 #include <lal/LALPulsarVCSInfo.h>
 

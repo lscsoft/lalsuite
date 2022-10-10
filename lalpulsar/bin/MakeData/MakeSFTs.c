@@ -94,7 +94,6 @@
 #include <lal/RealFFT.h>
 #include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
-#include <lal/SFTutils.h>
 #include <lal/LALVCSInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 

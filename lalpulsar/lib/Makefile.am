@@ -49,7 +49,6 @@ pkginclude_HEADERS = \
 	SFTClean.h \
 	SFTfileIO.h \
 	SFTReferenceLibrary.h \
-	SFTutils.h \
 	SSBtimes.h \
 	SimulatePulsarSignal.h \
 	SinCosLUT.h \
@@ -61,6 +60,11 @@ pkginclude_HEADERS = \
 	TwoDMesh.h \
 	UniversalDopplerMetric.h \
 	Velocity.h \
+	$(END_OF_LIST)
+
+deprecatedpkgincludedir = $(pkgincludedir)
+deprecatedpkginclude_HEADERS = \
+	SFTutils.h \
 	$(END_OF_LIST)
 
 lib_LTLIBRARIES = liblalpulsar.la
