@@ -46,6 +46,8 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 #include <lal/SkyCoordinates.h>
 
+// ---------- types describing the CW amplitude and phase parameters ----------
+
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7
 
@@ -95,6 +97,7 @@ typedef struct tagPulsarDopplerParams {
 } PulsarDopplerParams;
 
 // ---------- transient-CW related types ----------
+
 /** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
 typedef enum tagtransientWindowType_t {
   TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
@@ -113,7 +116,6 @@ typedef struct tagtransientWindow_t
   UINT4 t0;			/**< GPS start-time 't0' */
   UINT4 tau;			/**< transient timescale tau in seconds */
 } transientWindow_t;
-
 
 // ---------- 'integrated' types describing a complete CW signal ----------
 
