@@ -21,20 +21,6 @@
  *  MA  02110-1301  USA
  */
 
-/**
- * \addtogroup SFTfileIO_h
- * \author R. Prix, B. Machenschalk, A.M. Sintes, B. Krishnan
- *
- * \brief IO library for reading/writing "Short Fourier transform" (SFT) data files.
- *
- * This implements the SFTv2 standard defined in LIGO-T040164-01-Z
- * A previous non-LAL implementation of this standard is found in the "SFT reference library"
- * gravity.phys.uwm.edu:2402/usr/local/cvs/lscsoft sftlib, Copyright (C) 2004 Bruce Allen
- *
- * The function calc_crc64() here is based on crc64() in SFTReferenceLibrary.c.
- *
- */
-
 /*---------- INCLUDES ----------*/
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -57,7 +43,7 @@
 #include <lal/Sequence.h>
 #include <lal/ConfigFile.h>
 #include <lal/UserInputParse.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 
 /*---------- DEFINES ----------*/
 
@@ -3200,7 +3186,10 @@ static long get_file_len ( FILE *fp )
 /* The crc64 checksum of M bytes of data at address data is returned
  * by crc64(data, M, ~(0ULL)). Call the function multiple times to
  * compute the checksum of data made in contiguous chunks, setting
- * final argument to the previously accumulated checksum value. */
+ * final argument to the previously accumulated checksum value.
+ *
+ * The function calc_crc64() here is based on crc64() in SFTReferenceLibrary.c.
+ */
 static UINT8
 calc_crc64(const CHAR *data, UINT4 length, UINT8 crc)
 {

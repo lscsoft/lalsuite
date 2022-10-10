@@ -30,7 +30,6 @@
  #include <lal/UserInput.h>
  #include <lal/PulsarDataTypes.h>
  #include <lal/SFTfileIO.h>
- #include <lal/SFTutils.h>
  #include <lal/LogPrintf.h>
 
 typedef struct

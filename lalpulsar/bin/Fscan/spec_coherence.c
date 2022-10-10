@@ -22,10 +22,9 @@
 * \ingroup lalpulsar_bin_fscan
 */
 
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
-#include <lal/SFTfileIO.h>
 #include <lal/LALPulsarVCSInfo.h>
 
 

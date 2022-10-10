@@ -46,7 +46,7 @@
 #include <lal/SkyCoordinates.h>
 #include <lal/ComputeFstat.h>
 #include <lal/GetEarthTimes.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALString.h>
 
 #include <lal/ComputeFstat.h>

@@ -24,7 +24,7 @@ mismatch from  1 - { (1/T) \int cos( phi1 - phi2 ) dt }^2. */
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/Random.h>
 #include <lal/LALString.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/MatrixUtils.h>

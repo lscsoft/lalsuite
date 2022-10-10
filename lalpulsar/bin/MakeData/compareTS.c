@@ -36,7 +36,7 @@
 #include <lal/AVFactories.h>
 #include <lal/UserInput.h>
 #include <lal/LogPrintf.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALPulsarVCSInfo.h>
 
 /* User variables */

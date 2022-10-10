@@ -21,7 +21,6 @@
 #include <math.h>
 #include <sys/times.h>
 
-#include <lal/SFTutils.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/SFTfileIO.h>
 
