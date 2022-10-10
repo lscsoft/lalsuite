@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 169
+# serial 170
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -91,6 +91,11 @@ AC_DEFUN([LALSUITE_CHECK_PLATFORM],[
       ;;
   esac
   AM_CONDITIONAL([HOST_OS_DARWIN], [test x"${host_darwin}" = xyes])
+  AM_COND_IF([HOST_OS_DARWIN],[
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HOST_OS_DARWIN],[true])
+  ],[
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HOST_OS_DARWIN],[false])
+  ])
 ])
 
 AC_DEFUN([LALSUITE_CHECK_COMPILE_FLAGS],[
