@@ -36,7 +36,7 @@
 // Test various combinations of 1D and 2D fixed arrays
 // with structs, struct/enum type, and global variables.
 UNUSED const swig_lal_test_struct swig_lal_test_struct_const = {
-  2, 3, 5.7, "abcde", {1,2,3}, {{4,5,6},{7,8,9}},
+  2, 3, 5.7, 0.0, "abcde", {1,2,3}, {{4,5,6},{7,8,9}},
   {swig_lal_test_enum_a,swig_lal_test_enum_b,swig_lal_test_enum_c}
 };
 UNUSED swig_lal_test_struct swig_lal_test_struct_vector[3];

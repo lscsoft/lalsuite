@@ -46,6 +46,7 @@ typedef struct tagswig_lal_test_struct {
   int n;
   INT4 i;
   REAL4 f;
+  REAL8 Alpha;
   CHAR str[10];
   INT4 vec[3];
   INT4 mat[2][3];

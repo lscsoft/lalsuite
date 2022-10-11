@@ -457,6 +457,11 @@ typedef struct {
 /// # Specialised typemaps for <tt>LIGOTimeGPS</tt>
 ///
 
+/// Allow arbitrary attributes to be attached to the <tt>LIGOTimeGPS</tt> class in Python.
+#if defined(SWIGPYTHON)
+%pythondynamic tagLIGOTimeGPS;
+#endif
+
 ///
 /// Specialised input typemaps for <tt>LIGOTimeGPS</tt> structs.  Accepts a SWIG-wrapped <tt>LIGOTimeGPS</tt> or a
 /// double as input; in Python, also accepts any object with .gpsSeconds and .gpsNanoSeconds attributes.

@@ -1270,7 +1270,29 @@ del u2
 lal.CheckMemoryLeaks()
 print("PASSED LALUnit operations")
 
-# check pickling
+# check non-dynamic structs (Python specific)
+print("checking non-dynamic structs (Python specific)")
+sts = lal.swig_lal_test_struct()
+sts.n = 1
+sts.Alpha = 1.234
+set_nice_error_handlers()
+try:
+    sts.N = 1
+    sts.alpha = 1.234
+    sts.zzzzz = "does not exist"
+    expected_exception = True
+except:
+    pass
+set_default_error_handlers()
+assert not expected_exception
+del sts
+t = LIGOTimeGPS(1234)
+t.event = "this happened"
+del t
+lal.CheckMemoryLeaks()
+print("PASSED non-dynamic structs (Python specific)")
+
+# check pickling (Python specific)
 print("checking pickling (Python specific) ...")
 for datatype in ['INT2', 'INT4', 'INT8', 'UINT2', 'UINT4', 'UINT8',
                  'REAL4', 'REAL8', 'COMPLEX8', 'COMPLEX16']:
@@ -1304,7 +1326,7 @@ for datatype in ['INT2', 'INT4', 'INT8', 'UINT2', 'UINT4', 'UINT8',
     assert (a.data.data == b.data.data).all()
 print("PASSED pickling (Python specific)")
 
-# test Python dict to LALDict typemap
+# test Python dict to LALDict typemap (Python specific)
 print("checking Python dict to LALDict typemap (Python specific) ...")
 pydict = {
     "str": "A string value",
@@ -1335,7 +1357,7 @@ lal.swig_lal_test_pydict_to_laldict(laldict)
 lal.swig_lal_test_pydict_to_laldict(pydict)
 print("PASSED Python dict to LALDict typemap (Python specific)")
 
-# test Python conversion of NumPy fixed-width integer/float types
+# test Python conversion of NumPy fixed-width integer/float types (Python specific)
 print("checking Python conversion of NumPy fixed-width integer/float types (Python specific)")
 assert lal.swig_lal_test_numpy_int_types(10, numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
 assert lal.swig_lal_test_numpy_int_types(numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
