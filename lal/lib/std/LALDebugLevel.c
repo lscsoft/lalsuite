@@ -72,7 +72,7 @@ static void XLALSetDebugLevel(void)
         size_t toklen = strcspn(token, seps);
         if (toklen > 0) {
             if (XLALStringNCaseCompare("NDEBUG", token, toklen) == 0) {
-                level |= 0; /* no debugging */
+                level = LALNDEBUG; /* no debugging */
             } else if (XLALStringNCaseCompare("ERROR", token, toklen) == 0) {
                 level |= LALERRORBIT; /* enable error messages */
             } else if (XLALStringNCaseCompare("WARNING", token, toklen) == 0) {
