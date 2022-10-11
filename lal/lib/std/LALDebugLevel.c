@@ -74,25 +74,25 @@ static void XLALSetDebugLevel(void)
             if (XLALStringNCaseCompare("NDEBUG", token, toklen) == 0) {
                 level = LALNDEBUG; /* no debugging */
             } else if (XLALStringNCaseCompare("ERROR", token, toklen) == 0) {
-                level |= LALERRORBIT; /* enable error messages */
+                level |= LALERROR; /* enable error messages */
             } else if (XLALStringNCaseCompare("WARNING", token, toklen) == 0) {
-                level |= LALWARNINGBIT; /* enable warning messages */
+                level |= LALWARNING; /* enable warning messages */
             } else if (XLALStringNCaseCompare("INFO", token, toklen) == 0) {
-                level |= LALINFOBIT; /* enable info messages */
+                level |= LALINFO; /* enable info messages */
             } else if (XLALStringNCaseCompare("TRACE", token, toklen) == 0) {
-                level |= LALTRACEBIT; /* enable tracing messages */
+                level |= LALTRACE; /* enable tracing messages */
             } else if (XLALStringNCaseCompare("MSGLVL1", token, toklen) == 0) {
-                level |= LALERRORBIT; /* enable error messages */
+                level |= LALMSGLVL1; /* enable error messages */
             } else if (XLALStringNCaseCompare("MSGLVL2", token, toklen) == 0) {
-                level |= LALERRORBIT | LALWARNINGBIT; /* enable error and warning messages */
+                level |= LALMSGLVL2; /* enable error and warning messages */
             } else if (XLALStringNCaseCompare("MSGLVL3", token, toklen) == 0) {
-                level |= LALERRORBIT | LALWARNINGBIT | LALINFOBIT; /* enable error, warning, and info messages */
+                level |= LALMSGLVL3; /* enable error, warning, and info messages */
             } else if (XLALStringNCaseCompare("MEMDBG", token, toklen) == 0) {
-                level |= LALMEMDBGBIT | LALMEMPADBIT | LALMEMTRKBIT; /* enable memory debugging tools */
+                level |= LALMEMDBG; /* enable memory debugging tools */
             } else if (XLALStringNCaseCompare("MEMTRACE", token, toklen) == 0) {
-                level |= LALTRACEBIT | LALMEMDBG | LALMEMINFOBIT; /* enable memory tracing tools */
+                level |= LALMEMTRACE; /* enable memory tracing tools */
             } else if (XLALStringNCaseCompare("ALLDBG", token, toklen) == 0) {
-                level |= ~LALNDEBUG; /* enable all debugging */
+                level |= LALALLDBG; /* enable all debugging */
             } else {
               /* not a valid debug level name */
                 lalAbortHook("%s: could not parse LAL_DEBUG_LEVEL='%s'\n", __func__, env);
