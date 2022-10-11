@@ -47,6 +47,8 @@ lal:koji:
   extends:
     - .koji:build
   stage: LAL
+  needs:
+    - tarball:lal
 
 lalframe:koji:
   extends:
