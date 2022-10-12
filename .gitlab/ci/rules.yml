@@ -85,6 +85,11 @@ workflow:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci lint\]/'
       when: always
 
+.ci-macos:
+  rules:
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci macos\]/'
+      when: always
+
 .ci-platform:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci platform\]/'
