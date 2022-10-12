@@ -75,6 +75,7 @@ for file, i, N in S.write_frame_files(fs=1, Tframe=1800, comment="simCW"):
 from __future__ import (division, print_function)
 
 import os
+import sys
 import re
 import math
 
@@ -212,10 +213,12 @@ class CWSimulator(object):
 
         # add Gaussian noise, if requested
         if noise_sqrt_Sh > 0:
+            assert noise_seed is not None
+            assert noise_seed > 0
             noise_sigma = math.sqrt(0.5 / h.deltaT) * noise_sqrt_Sh
             lalpulsar.AddGaussianNoise(h, noise_sigma, noise_seed)
 
-    def get_strain(self, fs, tmin=0, tmax=None, noise_sqrt_Sh=0, noise_seed=0):
+    def get_strain(self, fs, tmin=0, tmax=None, noise_sqrt_Sh=0, noise_seed=None):
         """
         Generate strain time series of a continuous-wave signal in the detector frame.
 
@@ -224,7 +227,8 @@ class CWSimulator(object):
         @param tmax: start time for strain time series, as offsets from self.__tstart
         @param noise_sqrt_Sh: if >0, add Gaussian noise with square-root single-sided power
             spectral density given by this value, in Hz^(-1/2)
-        @param noise_seed: use this need for the random number generator used to create noise
+        @param noise_seed: use this seed for the random number generator used to create noise;
+            required if noise_sqrt_Sh >0
 
         @return (@b t, @b h), where:
             @b t = start of time strain time series, in GPS seconds;
@@ -249,7 +253,7 @@ class CWSimulator(object):
         self._simulate_coherent_gw(h, noise_sqrt_Sh, noise_seed)
         return (h.epoch, h.data.data)
 
-    def get_strain_blocks(self, fs, Tblock, noise_sqrt_Sh=0, noise_seed=0):
+    def get_strain_blocks(self, fs, Tblock, noise_sqrt_Sh=0, noise_seed=None):
         """
         Generate strain time series of a continuous-wave signal in the detector frame, in contiguous blocks.
 
@@ -257,7 +261,8 @@ class CWSimulator(object):
         @param Tblock: length of each block, in seconds; should divide evenly into @b Tdata
         @param noise_sqrt_Sh: if >0, add Gaussian noise with square-root single-sided power
             spectral density given by this value, in Hz^(-1/2)
-        @param noise_seed: use this need for the random number generator used to create noise
+        @param noise_seed: use this seed for the random number generator used to create noise;
+            if None, generate a random seed using os.urandom()
 
         @return (@b t, @b h, @b i, @b N), where:
             @b t = start of time strain time series, in GPS seconds;
@@ -278,6 +283,12 @@ class CWSimulator(object):
         if Tblock * Nblock > self.__Tdata:
             raise ValueError("Length of block Tblock=%g does not divide evenly into Tdata=%g" % (Tblock, self.__Tdata))
 
+        # if no noise seed is given, generate a (non-zero) random seed using os.urandom()
+        if not noise_seed:
+            noise_seed = 0
+            while not (0 < noise_seed and noise_seed < lal.LAL_INT4_MAX - Nblock):
+                noise_seed = int.from_bytes(os.urandom(4), sys.byteorder, signed=False)
+
         # generate strain time series in blocks of length 'Tblock'
         tmin = 0
         for iblock in range(0, Nblock):
@@ -287,7 +298,7 @@ class CWSimulator(object):
             yield epoch, hoft, iblock, Nblock
             tmin += Tblock
 
-    def write_frame_files(self, fs, Tframe, comment, out_dir=".", noise_sqrt_Sh=0, noise_seed=0):
+    def write_frame_files(self, fs, Tframe, comment, out_dir=".", noise_sqrt_Sh=0, noise_seed=None):
         """
         Write frame files [1] containing strain time series of a continuous-wave signal.
 
@@ -302,7 +313,8 @@ class CWSimulator(object):
         @param out_dir: output directory to write frame files into
         @param noise_sqrt_Sh: if >0, add Gaussian noise with square-root single-sided power
             spectral density given by this value, in Hz^(-1/2)
-        @param noise_seed: use this need for the random number generator used to create noise
+        @param noise_seed: use this seed for the random number generator used to create noise;
+            if None, generate a random seed using os.urandom()
 
         @return (@b file, @b i, @b N), where:
             @b file = name of frame file just written;
@@ -364,7 +376,7 @@ class CWSimulator(object):
             # yield current file name for e.g. printing progress
             yield frame_path, i, N
 
-    def get_sfts(self, fmax, Tsft, noise_sqrt_Sh=0, noise_seed=0, window=None, window_param=0):
+    def get_sfts(self, fmax, Tsft, noise_sqrt_Sh=0, noise_seed=None, window=None, window_param=0):
         """
         Generate SFTs [2] containing strain time series of a continuous-wave signal.
 
@@ -372,7 +384,8 @@ class CWSimulator(object):
         @param Tsft: length of each SFT, in seconds; should divide evenly into @b Tdata
         @param noise_sqrt_Sh: if >0, add Gaussian noise with square-root single-sided power
             spectral density given by this value, in Hz^(-1/2)
-        @param noise_seed: use this need for the random number generator used to create noise
+        @param noise_seed: use this seed for the random number generator used to create noise;
+            if None, generate a random seed using os.urandom()
         @param window: if not None, window the time series before performing the FFT, using
             the named window function; see XLALCreateNamedREAL8Window()
         @param window_param: parameter for the window function given by @b window, if needed
@@ -415,7 +428,7 @@ class CWSimulator(object):
             # yield current SFT
             yield sft_vect.data[0], i, N
 
-    def write_sft_files(self, fmax, Tsft, comment, out_dir=".", noise_sqrt_Sh=0, noise_seed=0, window=None, window_param=0):
+    def write_sft_files(self, fmax, Tsft, comment, out_dir=".", noise_sqrt_Sh=0, noise_seed=None, window=None, window_param=0):
         """
         Write SFT files [2] containing strain time series of a continuous-wave signal.
 
@@ -425,7 +438,8 @@ class CWSimulator(object):
         @param out_dir: output directory to write SFT files into
         @param noise_sqrt_Sh: if >0, add Gaussian noise with square-root single-sided power
             spectral density given by this value, in Hz^(-1/2)
-        @param noise_seed: use this need for the random number generator used to create noise
+        @param noise_seed: use this seed for the random number generator used to create noise;
+            if None, generate a random seed using os.urandom()
         @param window: if not None, window the time series before performing the FFT, using
             the named window function; see XLALCreateNamedREAL8Window()
         @param window_param: parameter for the window function given by @b window, if needed
