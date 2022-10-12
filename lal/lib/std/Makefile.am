@@ -45,5 +45,6 @@ EXTRA_DIST = \
 	LALError.dox \
 	LALMalloc.dox \
 	LALStatusMacros.dox \
+	LAL_DEBUG_LEVEL.dox \
 	$(MANS) \
 	$(END_OF_LIST)

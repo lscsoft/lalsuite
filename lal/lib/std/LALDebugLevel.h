@@ -26,6 +26,8 @@ extern "C" {
 }       /* so that editors will match preceding brace */
 #endif
 
+/** \addtogroup LALDebugLevel_h */ /** @{ */
+
 /** lalDebugLevel bit field values */
 enum {
     LALERRORBIT = 0001,   /**< enable error messages */
@@ -56,6 +58,8 @@ enum {
 #define lalDebugLevel (XLALGetDebugLevel())
 int XLALGetDebugLevel(void);
 void XLALClobberDebugLevel(int level);
+
+/** @} */
 
 #if 0
 {       /* so that editors will match succeeding brace */

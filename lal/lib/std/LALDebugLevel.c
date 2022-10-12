@@ -18,6 +18,14 @@
 *  MA  02110-1301  USA
 */
 
+/**
+ * \defgroup LALDebugLevel_h Header LALDebugLevel.h
+ * \author Jolien Creighton, Kipp Cannon, Karl Wette
+ * \ingroup lal_std
+ *
+ * \brief Control LALSuite debugging information verbosity and memory debugging features
+*/
+
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
