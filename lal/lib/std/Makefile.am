@@ -35,10 +35,16 @@ libstd_la_SOURCES = \
 	XLALError.c \
 	$(END_OF_LIST)
 
+man_MANS = \
+	LAL_DEBUG_LEVEL.7 \
+	$(END_OF_LIST)
+
 EXTRA_DIST = \
 	LALConfig.dox \
 	LALDatatypes.dox \
 	LALError.dox \
 	LALMalloc.dox \
 	LALStatusMacros.dox \
+	LAL_DEBUG_LEVEL.dox \
+	$(MANS) \
 	$(END_OF_LIST)

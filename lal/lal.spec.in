@@ -181,6 +181,7 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 %license COPYING
 %{_bindir}/*
 %{_mandir}/man1/*
+%{_mandir}/man7/*
 %{_sysconfdir}/*
 
 # -- changelog --------------
