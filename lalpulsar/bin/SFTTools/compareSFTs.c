@@ -171,8 +171,10 @@ main(int argc, char *argv[])
   if ( maxd <= uvar.relErrorMax ) {
     return 0;
   }
-  else if ( !uvar.quiet ) {
-    XLALPrintError("Tolerance exceeded! maxd=%10.3e, relErrMax=%10.3e\n", maxd, uvar.relErrorMax);
+  else {
+    if ( !uvar.quiet ) {
+      XLALPrintError("Tolerance exceeded! maxd=%10.3e, relErrMax=%10.3e\n", maxd, uvar.relErrorMax);
+    }
     return 1;
   }
 
