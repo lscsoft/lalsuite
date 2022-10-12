@@ -1844,7 +1844,7 @@ lint:combine-reports:
   interruptible: false
 
 # deploy wheels
-deploy:wheel:
+wheel:pypi:
   extends:
     - .deploy
   image: python
