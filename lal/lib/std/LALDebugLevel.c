@@ -95,7 +95,7 @@ static void XLALSetDebugLevel(void)
                 level |= LALALLDBG; /* enable all debugging */
             } else {
               /* not a valid debug level name */
-                lalAbortHook("%s: could not parse LAL_DEBUG_LEVEL='%s'\n", __func__, env);
+                lalAbortHook("%s: could not parse LAL_DEBUG_LEVEL='%s'. For help try 'man LAL_DEBUG_LEVEL'.\n", __func__, env);
                 return;
             }
         }
