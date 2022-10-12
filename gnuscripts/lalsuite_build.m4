@@ -658,7 +658,7 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
     # use standard include paths
     save_IFS="$IFS"
     IFS=:
-    for flag in $C_INCLUDE_PATH $CPLUS_INCLUDE_PATH /usr/include ; do
+    for flag in $C_INCLUDE_PATH $CPLUS_INCLUDE_PATH ; do
       test -n "$flag" && flag="-I$flag"
       AS_CASE([" $CPPFLAGS $LAL_SYSTEM_INCLUDES "],
         [*" ${flag} "*],[:],
