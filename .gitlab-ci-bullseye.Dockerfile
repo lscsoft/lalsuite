@@ -15,5 +15,5 @@ RUN apt-get update && \
       apt-get -y install local-apt-repository && \
       /usr/lib/local-apt-repository/rebuild && \
       apt-get update && \
-      apt-get upgrade && \
+      apt-get -y upgrade && \
       rm -rf /var/lib/apts/lists/*
