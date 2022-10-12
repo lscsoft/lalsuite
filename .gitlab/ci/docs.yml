@@ -28,12 +28,11 @@ documentation:
     - !reference [.ci-nightly-deploy, rules]
 
 pages:
-  stage: deploy
+  extends:
+    - .deploy
   needs:
     - documentation
     - coverage
-  variables:
-    GIT_STRATEGY: none
   script:
     - mv html public
     # don't fail if coverage not present
