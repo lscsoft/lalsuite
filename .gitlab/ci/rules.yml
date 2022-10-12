@@ -38,74 +38,74 @@ workflow:
       variables:
         ENABLE_NIGHTLY: "--enable-nightly"
 
-# -- include CI jobs using commit message
+# -- include CI jobs using commit message or branch name
 
 .ci-compiler:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci compiler\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci compiler\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]compiler/'
       when: always
 
 .ci-conda:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci conda\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci conda\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]conda/'
       when: always
 
 .ci-coverage:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci coverage\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci coverage\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]coverage/'
       when: always
 
 .ci-debian:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci debian\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci debian\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]debian/'
       when: always
 
 .ci-docs:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci docs\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci docs\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]docs/'
       when: always
 
 .ci-docker:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci docker\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci docker\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]docker/'
       when: always
 
 .ci-integration:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci integration\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci integration\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]integration/'
       when: always
 
 .ci-koji:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci koji\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci koji\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]koji/'
       when: always
 
 .ci-lint:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci lint\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci lint\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]lint/'
       when: always
 
 .ci-macos:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci macos\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci macos\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]macos/'
       when: always
 
 .ci-platform:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci platform\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci platform\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]platform/'
       when: always
 
 .ci-pkg:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci pkg\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci pkg\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]pkg/'
       when: always
 
 .ci-rhel:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci rhel\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci rhel\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]rhel/'
       when: always
 
 .ci-wheels:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci wheels\]/'
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci wheels\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]wheels/'
       when: always
