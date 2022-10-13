@@ -115,7 +115,6 @@ struct CommandLineArgsTag {
   char *stringT;          /* 12/27/05 gam; string with SFT duration */
   INT4 GPSStart;
   INT4 GPSEnd;
-  INT4 makeGPSDirs;        /* 12/27/05 gam; add option to make directories based on gps time */
   char *commentField;      /* 12/28/05 gam; string comment for version 2 SFTs */
   BOOLEAN makeTmpFile;     /* 01/09/06 gam */
   char *FrCacheFile;       /* Frame cache file */
@@ -184,7 +183,6 @@ int FreeMem(struct CommandLineArgsTag CLA);
 /* prototypes */
 FILE* tryopen(char *name, const char *mode);
 void getSFTDescField(CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc);
-void mkSFTDir(CHAR *sftPath, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc,CHAR *gpstime, INT4 numGPSdigits);
 void mkSFTFilename(CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc,CHAR *gpstime);
 void mvFilenames(CHAR *filename1, CHAR *filename2);
 
@@ -223,21 +221,6 @@ void getSFTDescField(CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT
           strcat(sftDescField, "_");
           strcat(sftDescField, typeMisc);
        }
-}
-
-/* 12/27/05 gam; concat to the sftPath the directory name based on GPS time; make this directory if it does not already exist */
-void mkSFTDir(CHAR *sftPath, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc,CHAR *gpstime, INT4 numGPSdigits) {
-     CHAR sftDescField[256];
-     CHAR mkdirCommand[256];
-     strcat(sftPath,"/");
-     strcat(sftPath,site);
-     strcat(sftPath,"-");
-     getSFTDescField(sftDescField, numSFTs, ifo, stringT, typeMisc);
-     strcat(sftPath,sftDescField);
-     strcat(sftPath,"-");
-     strncat(sftPath,gpstime,numGPSdigits);
-     sprintf(mkdirCommand,"mkdir -p %s",sftPath);
-     if ( system(mkdirCommand) ) XLALPrintError ("system() returned non-zero status\n");
 }
 
 /* 12/27/05 gam; make SFT file name according to LIGO T040164-01 specification */
@@ -351,7 +334,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"comment-field",        required_argument, NULL,          'c'},
     {"start-freq",           required_argument, NULL,          'F'},
     {"band",                 required_argument, NULL,          'B'},
-    {"make-gps-dirs",        required_argument, NULL,          'D'},
+    /* {"make-gps-dirs",        required_argument, NULL,          'D'}, */
     {"make-tmp-file",        required_argument, NULL,          'Z'},
     {"misc-desc",            required_argument, NULL,          'X'},
     /* {"frame-struct-type",    required_argument, NULL,          'u'}, */
@@ -374,7 +357,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->FrCacheFile=NULL;
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
-  CLA->makeGPSDirs=0; /* 12/27/05 gam; add option to make directories based on gps time */
   CLA->ChannelName=NULL;
   CLA->IFO=NULL;        /* 01/14/07 gam */
   CLA->SFTpath=NULL;
@@ -462,10 +444,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'B':
       /* 12/28/05 gam; band */
       DF=(REAL8)atof(LALoptarg);
-      break;
-    case 'D':
-      /* 12/27/05 gam; make directories based on GPS time */
-      CLA->makeGPSDirs=atof(LALoptarg);
       break;
     case 'c':
       /* 12/28/05 gam; comment for version 2 SFTs */
@@ -573,12 +551,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(DF < 0.0)
     {
       fprintf(stderr,"Illegal band option given.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }
-  if(CLA->makeGPSDirs < 0)
-    {
-      fprintf(stderr,"Illegal make-gps-dirs option given.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
@@ -728,11 +700,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   sprintf(gpstime,"%09d",gpsepoch.gpsSeconds);
 
   strcpy( sftname, CLA.SFTpath );
-  /* 12/27/05 gam; add option to make directories based on gps time */
-  if (CLA.makeGPSDirs > 0) {
-     /* 12/27/05 gam; concat to the sftname the directory name based on GPS time; make this directory if it does not already exist */
-     mkSFTDir(sftname, site, numSFTs, ifo, CLA.stringT, CLA.miscDesc, gpstime, CLA.makeGPSDirs);
-  }
 
   strcat(sftname,"/");
   mkSFTFilename(sftFilename, site, numSFTs, ifo, CLA.stringT, CLA.miscDesc, gpstime);
