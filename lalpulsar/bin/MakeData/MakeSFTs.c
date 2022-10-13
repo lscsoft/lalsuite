@@ -97,9 +97,6 @@
 #include <lal/LALVCSInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 
-/* track memory usage under linux */
-#define TRACKMEMUSE 0
-
 /* print the first NUMTOPRINT, middle NUMTOPRINT, and last NUMTOPRINT input/ouput data at various stages */
 #define PRINTEXAMPLEDATA 0
 #define NUMTOPRINT       2
@@ -285,17 +282,6 @@ void mvFilenames(CHAR *filename1, CHAR *filename2) {
      if ( system(mvFilenamesCommand) ) XLALPrintError ("system() returned non-zero status\n");
 }
 
-#if TRACKMEMUSE
-void printmemuse() {
-   pid_t mypid=getpid();
-   char commandline[256];
-   fflush(NULL);
-   sprintf(commandline,"cat /proc/%d/status | /bin/grep Vm | /usr/bin/fmt -140 -u", (int)mypid);
-   if ( system(commandline) ) XLALPrintError ("system() returned non-zero status\n");
-   fflush(NULL);
- }
-#endif
-
 #if PRINTEXAMPLEDATA
 void printExampleDataSingle() {
       INT4 i,dataLength;
@@ -440,10 +426,6 @@ int main(int argc,char *argv[])
 {
   /* int j; */ /* 12/28/05 gam */
 
-  #if TRACKMEMUSE
-    printf("Memory use at startup is:\n"); printmemuse();
-  #endif
-
   if (ReadCommandLine(argc,argv,&CommandLineArgs)) return 1;
   SegmentDuration = CommandLineArgs.GPSEnd - CommandLineArgs.GPSStart ;
 
@@ -452,10 +434,6 @@ int main(int argc,char *argv[])
   LALFrCacheOpen(&status,&framestream,framecache);
   TESTSTATUS( &status );
   XLALDestroyCache(framecache);
-
-  #if TRACKMEMUSE
-    printf("Memory use after reading command line arguments and reading frame cache:\n"); printmemuse();
-  #endif
 
   if( SegmentDuration < CommandLineArgs.T)
     {
@@ -512,10 +490,6 @@ int main(int argc,char *argv[])
     }
 
   if(FreeMem(CommandLineArgs)) return 8;
-
-  #if TRACKMEMUSE
-        printf("Memory use after freeing all allocated memory:\n"); printmemuse();
-  #endif
 
   return 0;
 }
@@ -910,31 +884,15 @@ int AllocateData(struct CommandLineArgsTag CLA)
       LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
       TESTSTATUS( &status );
 
-      #if TRACKMEMUSE
-         printf("Memory use after creating dataSingle and before calling XLALCreateForwardREAL4FFTPlan.\n"); printmemuse();
-      #endif
-
       fftPlanSingle = XLALCreateForwardREAL4FFTPlan( dataSingle.data->length, 0 );
       XLAL_CHECK( fftPlanSingle != NULL, XLAL_EFUNC );
-
-      #if TRACKMEMUSE
-         printf("Memory use after creating dataSingle and after calling XLALCreateForwardREAL4FFTPlan.\n"); printmemuse();
-      #endif
 
   } else {  
       LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
       TESTSTATUS( &status );
 
-      #if TRACKMEMUSE
-         printf("Memory use after creating dataDouble and before calling XLALCreateForwardREAL8FFTPlan.\n"); printmemuse();
-      #endif
-      
       fftPlanDouble = XLALCreateForwardREAL8FFTPlan( dataDouble.data->length, 0 );
       XLAL_CHECK( fftPlanDouble != NULL, XLAL_EFUNC );
-
-      #if TRACKMEMUSE
-            printf("Memory use after creating dataDouble and after calling XLALCreateForwardREAL8FFTPlan.\n"); printmemuse();
-      #endif
   }
 
   return 0;
@@ -956,20 +914,12 @@ int ReadData(struct CommandLineArgsTag CLA)
     if(CLA.htdata)
     {
 
-      #if TRACKMEMUSE
-        printf("Memory use before creating dataDouble and calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
-      #endif
-
       LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
       TESTSTATUS( &status );
 
       chanin.type  = ProcDataChannel;
       LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
       TESTSTATUS( &status );
-
-      #if TRACKMEMUSE
-        printf("Memory use after creating dataDouble and calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
-      #endif
 
       /*copy the data into the single precision timeseries */
       for (k = 0; k < (int)dataSingle.data->length; k++) {
@@ -978,10 +928,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 
       LALDDestroyVector(&status,&dataDouble.data);
       TESTSTATUS( &status );
-
-      #if TRACKMEMUSE
-        printf("Memory use after destroying dataDouble.\n"); printmemuse();
-      #endif
 
     }
     else if (CLA.frameStructType != NULL)
@@ -995,19 +941,12 @@ int ReadData(struct CommandLineArgsTag CLA)
         return 1; 
       }
       if ( strstr(CLA.frameStructType,"REAL8") ) {
-         #if TRACKMEMUSE
-           printf("Memory use before creating dataDouble and calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
-         #endif
 
          LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
          TESTSTATUS( &status );
 
          LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
          TESTSTATUS( &status );
-
-         #if TRACKMEMUSE
-           printf("Memory use after creating dataDouble and calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
-         #endif
 
          /*copy the data into the single precision timeseries */
          for (k = 0; k < (int)dataSingle.data->length; k++) {
@@ -1017,34 +956,18 @@ int ReadData(struct CommandLineArgsTag CLA)
          LALDDestroyVector(&status,&dataDouble.data);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after destroying dataDouble.\n"); printmemuse();
-         #endif
       } else if ( strstr(CLA.frameStructType,"REAL4") ) {      
-         #if TRACKMEMUSE
-           printf("Memory use before calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-         #endif
 
          LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-         #endif
       } else if ( strstr(CLA.frameStructType,"INT2") ) {
-         #if TRACKMEMUSE
-           printf("Memory use before creating dataINT2 and calling LALFrGetINT2TimeSeries.\n"); printmemuse();
-         #endif
 
          LALI2CreateVector(&status,&dataINT2.data,(UINT4)(CLA.T/dataINT2.deltaT +0.5));
          TESTSTATUS( &status );
 
          LALFrGetINT2TimeSeries(&status,&dataINT2,&chanin,framestream);
          TESTSTATUS( &status );
-
-         #if TRACKMEMUSE
-           printf("Memory use after creating dataINT2 and calling LALFrGetINT2TimeSeries.\n"); printmemuse();
-         #endif
 
          /*copy the data into the single precision timeseries */
          for (k = 0; k < (int)dataDouble.data->length; k++) {
@@ -1054,23 +977,13 @@ int ReadData(struct CommandLineArgsTag CLA)
          LALI2DestroyVector(&status,&dataINT2.data);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after destroying dataINT2.\n"); printmemuse();
-         #endif
       } else if ( strstr(CLA.frameStructType,"INT4") ) {
-         #if TRACKMEMUSE
-           printf("Memory use before creating dataINT4 and calling LALFrGetINT4TimeSeries.\n"); printmemuse();
-         #endif
 
          LALI4CreateVector(&status,&dataINT4.data,(UINT4)(CLA.T/dataINT4.deltaT +0.5));
          TESTSTATUS( &status );
 
          LALFrGetINT4TimeSeries(&status,&dataINT4,&chanin,framestream);
          TESTSTATUS( &status );
-
-         #if TRACKMEMUSE
-           printf("Memory use after creating dataINT4 and calling LALFrGetINT4TimeSeries.\n"); printmemuse();
-         #endif
 
          /*copy the data into the single precision timeseries */
          for (k = 0; k < (int)dataDouble.data->length; k++) {
@@ -1080,23 +993,13 @@ int ReadData(struct CommandLineArgsTag CLA)
          LALI4DestroyVector(&status,&dataINT4.data);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after destroying dataINT4.\n"); printmemuse();
-         #endif
       } else if ( strstr(CLA.frameStructType,"INT8") ) {
-         #if TRACKMEMUSE
-           printf("Memory use before creating dataINT8 and calling LALFrGetINT8TimeSeries.\n"); printmemuse();
-         #endif
 
          LALI8CreateVector(&status,&dataINT8.data,(UINT4)(CLA.T/dataINT8.deltaT +0.5));
          TESTSTATUS( &status );
 
          LALFrGetINT8TimeSeries(&status,&dataINT8,&chanin,framestream);
          TESTSTATUS( &status );
-
-         #if TRACKMEMUSE
-           printf("Memory use after creating dataINT8 and calling LALFrGetINT8TimeSeries.\n"); printmemuse();
-         #endif
 
          /*copy the data into the single precision timeseries */
          for (k = 0; k < (int)dataDouble.data->length; k++) {
@@ -1106,9 +1009,6 @@ int ReadData(struct CommandLineArgsTag CLA)
          LALI8DestroyVector(&status,&dataINT8.data);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after destroying dataINT8.\n"); printmemuse();
-         #endif
       } else {
         return 1;
       }      
@@ -1116,17 +1016,9 @@ int ReadData(struct CommandLineArgsTag CLA)
     else
     {
 
-      #if TRACKMEMUSE
-        printf("Memory use before calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-      #endif
-
       chanin.type  = ADCDataChannel;
       LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
       TESTSTATUS( &status );
-
-      #if TRACKMEMUSE
-        printf("Memory use after calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-      #endif
 
     }
 
@@ -1139,17 +1031,9 @@ int ReadData(struct CommandLineArgsTag CLA)
     if(CLA.htdata)
     {
     
-      #if TRACKMEMUSE
-        printf("Memory use before calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
-      #endif
-    
       chanin.type  = ProcDataChannel;
       LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
       TESTSTATUS( &status );
-
-      #if TRACKMEMUSE
-        printf("Memory use after calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
-      #endif
 
     }
     else if (CLA.frameStructType != NULL) 
@@ -1163,20 +1047,11 @@ int ReadData(struct CommandLineArgsTag CLA)
         return 1; 
       }
       if ( strstr(CLA.frameStructType,"REAL8") ) {
-         #if TRACKMEMUSE
-           printf("Memory use before calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
-         #endif
 
          LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after calling LALFrGetREAL8TimeSeries.\n"); printmemuse();
-         #endif
       } else if ( strstr(CLA.frameStructType,"REAL4") ) {      
-         #if TRACKMEMUSE
-           printf("Memory use before creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-         #endif
 
          LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
          TESTSTATUS( &status );
@@ -1184,10 +1059,6 @@ int ReadData(struct CommandLineArgsTag CLA)
          LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
          TESTSTATUS( &status );
  
-         #if TRACKMEMUSE
-           printf("Memory use after creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-         #endif
-
          /*copy the data into the double precision timeseries */
          for (k = 0; k < (int)dataDouble.data->length; k++) {
              dataDouble.data->data[k] = dataSingle.data->data[k];
@@ -1196,23 +1067,13 @@ int ReadData(struct CommandLineArgsTag CLA)
          LALDestroyVector(&status,&dataSingle.data);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after destroying dataSingle.\n"); printmemuse();
-         #endif      
       } else if ( strstr(CLA.frameStructType,"INT2") ) {
-         #if TRACKMEMUSE
-           printf("Memory use before creating dataINT2 and calling LALFrGetINT2TimeSeries.\n"); printmemuse();
-         #endif
 
          LALI2CreateVector(&status,&dataINT2.data,(UINT4)(CLA.T/dataINT2.deltaT +0.5));
          TESTSTATUS( &status );
 
          LALFrGetINT2TimeSeries(&status,&dataINT2,&chanin,framestream);
          TESTSTATUS( &status );
-
-         #if TRACKMEMUSE
-           printf("Memory use after creating dataINT2 and calling LALFrGetINT2TimeSeries.\n"); printmemuse();
-         #endif
 
          /*copy the data into the double precision timeseries */
          for (k = 0; k < (int)dataDouble.data->length; k++) {
@@ -1222,23 +1083,13 @@ int ReadData(struct CommandLineArgsTag CLA)
          LALI2DestroyVector(&status,&dataINT2.data);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after destroying dataINT2.\n"); printmemuse();
-         #endif
       } else if ( strstr(CLA.frameStructType,"INT4") ) {
-         #if TRACKMEMUSE
-           printf("Memory use before creating dataINT4 and calling LALFrGetINT4TimeSeries.\n"); printmemuse();
-         #endif
 
          LALI4CreateVector(&status,&dataINT4.data,(UINT4)(CLA.T/dataINT4.deltaT +0.5));
          TESTSTATUS( &status );
 
          LALFrGetINT4TimeSeries(&status,&dataINT4,&chanin,framestream);
          TESTSTATUS( &status );
-
-         #if TRACKMEMUSE
-           printf("Memory use after creating dataINT4 and calling LALFrGetINT4TimeSeries.\n"); printmemuse();
-         #endif
 
          /*copy the data into the double precision timeseries */
          for (k = 0; k < (int)dataDouble.data->length; k++) {
@@ -1248,23 +1099,13 @@ int ReadData(struct CommandLineArgsTag CLA)
          LALI4DestroyVector(&status,&dataINT4.data);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after destroying dataINT4.\n"); printmemuse();
-         #endif
       } else if ( strstr(CLA.frameStructType,"INT8") ) {
-         #if TRACKMEMUSE
-           printf("Memory use before creating dataINT8 and calling LALFrGetINT8TimeSeries.\n"); printmemuse();
-         #endif
 
          LALI8CreateVector(&status,&dataINT8.data,(UINT4)(CLA.T/dataINT8.deltaT +0.5));
          TESTSTATUS( &status );
 
          LALFrGetINT8TimeSeries(&status,&dataINT8,&chanin,framestream);
          TESTSTATUS( &status );
-
-         #if TRACKMEMUSE
-           printf("Memory use after creating dataINT8 and calling LALFrGetINT8TimeSeries.\n"); printmemuse();
-         #endif
 
          /*copy the data into the double precision timeseries */
          for (k = 0; k < (int)dataDouble.data->length; k++) {
@@ -1274,19 +1115,12 @@ int ReadData(struct CommandLineArgsTag CLA)
          LALI8DestroyVector(&status,&dataINT8.data);
          TESTSTATUS( &status );
 
-         #if TRACKMEMUSE
-           printf("Memory use after destroying dataINT8.\n"); printmemuse();
-         #endif
       } else {
         return 1;
       }      
     }
     else
     {
-      #if TRACKMEMUSE
-        printf("Memory use before creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-      #endif
-
       /* 11/02/05 gam; add next two lines */
       LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
       TESTSTATUS( &status );
@@ -1294,10 +1128,6 @@ int ReadData(struct CommandLineArgsTag CLA)
       chanin.type  = ADCDataChannel;
       LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
       TESTSTATUS( &status );
- 
-      #if TRACKMEMUSE
-        printf("Memory use after creating dataSingle and calling LALFrGetREAL4TimeSeries.\n"); printmemuse();
-      #endif
 
       /*copy the data into the double precision timeseries */
       for (k = 0; k < (int)dataDouble.data->length; k++) {
@@ -1306,10 +1136,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 
       LALDestroyVector(&status,&dataSingle.data);
       TESTSTATUS( &status );
-
-      #if TRACKMEMUSE
-        printf("Memory use after destroying dataSingle.\n"); printmemuse();
-      #endif
 
     }
 
@@ -1339,33 +1165,19 @@ int HighPass(struct CommandLineArgsTag CLA)
   if (CLA.HPf > 0.0 )
     {
       if(CLA.useSingle) {
-        #if TRACKMEMUSE
-          printf("Memory use before calling LALDButterworthREAL4TimeSeries:\n"); printmemuse();
-        #endif
 
         /* High pass the time series */
         LALDButterworthREAL4TimeSeries(&status,&dataSingle,&filterpar);
         TESTSTATUS( &status );
 
-        #if TRACKMEMUSE
-          printf("Memory use after calling LALDButterworthREAL4TimeSeries:\n"); printmemuse();
-        #endif
-
         #if PRINTEXAMPLEDATA
             printf("\nExample dataSingle values after filtering data in HighPass:\n"); printExampleDataSingle();
         #endif
       } else {
-        #if TRACKMEMUSE
-          printf("Memory use before calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
-        #endif
 
         /* High pass the time series */
         LALButterworthREAL8TimeSeries(&status,&dataDouble,&filterpar);
         TESTSTATUS( &status );
-
-        #if TRACKMEMUSE
-          printf("Memory use after calling LALButterworthREAL8TimeSeries:\n"); printmemuse();
-        #endif
 
         #if PRINTEXAMPLEDATA
             printf("\nExample dataDouble values after filtering data in HighPass:\n"); printExampleDataDouble();
@@ -1383,9 +1195,6 @@ int CreateSFT(struct CommandLineArgsTag CLA)
 
   /* 11/19/05 gam */
   if(CLA.useSingle) {
-      #if TRACKMEMUSE
-        printf("Memory use before creating output vector fftDataSingle and calling XLALREAL4ForwardFFT:\n"); printmemuse();
-      #endif
 
       /* 11/02/05 gam; allocate container for SFT data */
       LALCCreateVector( &status, &fftDataSingle, dataSingle.data->length / 2 + 1 );
@@ -1394,17 +1203,10 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       /* compute sft */
       XLAL_CHECK( XLALREAL4ForwardFFT( fftDataSingle, dataSingle.data, fftPlanSingle ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      #if TRACKMEMUSE
-        printf("Memory use after creating output vector fftDataSingle and calling XLALREAL4ForwardFFT:\n"); printmemuse();
-      #endif
-
       #if PRINTEXAMPLEDATA
         printf("\nExample real and imaginary value of fftDataSingle from CreateSFT:\n"); printExampleFFTData(CLA);
       #endif      
   } else {
-      #if TRACKMEMUSE
-        printf("Memory use before creating output vector fftDataDouble and calling XLALREAL8ForwardFFT:\n"); printmemuse();
-      #endif
 
       /* 11/02/05 gam; allocate container for SFT data */
       LALZCreateVector( &status, &fftDataDouble, dataDouble.data->length / 2 + 1 );
@@ -1412,10 +1214,6 @@ int CreateSFT(struct CommandLineArgsTag CLA)
 
       /* compute sft */
       XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      #if TRACKMEMUSE
-        printf("Memory use after creating output vector fftDataDouble and calling XLALREAL8ForwardFFT:\n"); printmemuse();
-      #endif
 
       #if PRINTEXAMPLEDATA
         printf("\nExample real and imaginary value of fftDataDouble from CreateSFT:\n"); printExampleFFTData(CLA);
@@ -1517,9 +1315,6 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     #endif     
     LALCDestroyVector( &status, &fftDataSingle );
     TESTSTATUS( &status );
-    #if TRACKMEMUSE
-      printf("Memory use after destroying fftDataSingle in WriteSFT:\n"); printmemuse();
-    #endif
   } else {    
     /* Write SFT */
     for (k=0; k<header.nsamples; k++)
@@ -1543,9 +1338,6 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     #endif
     LALZDestroyVector( &status, &fftDataDouble );
     TESTSTATUS( &status );
-    #if TRACKMEMUSE
-      printf("Memory use after destroying fftDataDouble in WriteSFT:\n"); printmemuse();
-    #endif
   }
 
   /* Check that there were no errors while writing SFTS */
@@ -1620,9 +1412,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
 
   /* make container to store the SFT data */
   XLAL_CHECK( ( oneSFT = XLALCreateSFT ( ((UINT4)nBins)) ) != NULL, XLAL_EFUNC );
-  #if TRACKMEMUSE
-      printf("Memory use after creating oneSFT and calling XLALCreateSFT in WriteVersion2SFT:\n"); printmemuse();
-  #endif
   
   /* copy the data to oneSFT */
   strcpy(oneSFT->name,ifo);
@@ -1651,9 +1440,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     #endif
     LALCDestroyVector( &status, &fftDataSingle );
     TESTSTATUS( &status );
-    #if TRACKMEMUSE
-      printf("Memory use after destroying fftDataSingle in WriteVersion2SFT:\n"); printmemuse();
-    #endif
   } else {
     /*doubleDeltaT = ((REAL8)dataDouble.deltaT); */ /* 01/05/06 gam; and normalize SFTs using this below */
     doubleDeltaT = (REAL8)(dataDouble.deltaT/winFncRMS); /* include 1 over window function RMS */
@@ -1673,9 +1459,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     #endif
     LALZDestroyVector( &status, &fftDataDouble );
     TESTSTATUS( &status );
-    #if TRACKMEMUSE
-      printf("Memory use after destroying fftDataDouble in WriteVersion2SFT:\n"); printmemuse();
-    #endif
   }  
 
   /* write the SFT */
@@ -1687,9 +1470,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   }
 
   XLALDestroySFT (oneSFT);
-  #if TRACKMEMUSE
-      printf("Memory use after destroying oneSFT and calling XLALDestroySFT in WriteVersion2SFT:\n"); printmemuse();
-  #endif
 
   return 0;
 }
