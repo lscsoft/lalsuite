@@ -40,15 +40,6 @@ lalpulsar_MakeSFTs_SOURCES = \
 	SFTWindowFuncs.c \
 	$(END_OF_LIST)
 
-lalpulsar_MakeSFTs_CPPFLAGS = $(AM_CPPFLAGS)
-
-if PSS
-
-lalpulsar_MakeSFTs_SOURCES += XLALPSSInterface.c
-lalpulsar_MakeSFTs_CPPFLAGS += -DPSS_ENABLED
-
-endif
-
 EXTRA_PROGRAMS += \
 	lalpulsar_sw_inj_frames \
 	$(END_OF_LIST)

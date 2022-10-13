@@ -109,9 +109,6 @@ LALSUITE_ENABLE_NIGHTLY
 # enable cfitsio support
 LALSUITE_ENABLE_CFITSIO
 
-# enable pss support
-LALPULSAR_ENABLE_PSS
-
 # enable SIStr support
 LALPULSAR_ENABLE_SISTR
 
@@ -205,28 +202,6 @@ AC_CHECK_HEADERS([fftw3.h],,[AC_MSG_ERROR([could not find the fftw3.h header])])
 # check for cfitsio
 LALSUITE_USE_CFITSIO
 
-# check for pss
-if test "${pss}" = "true"; then
-  PKG_CHECK_MODULES([PSS],[pss],[true],[false])
-  lal_pre_pss_LIBS="$LIBS"
-  LALSUITE_ADD_FLAGS([C],[],[${PSS_LIBS}])
-  AC_SEARCH_LIBS([crea_sfdbheader],[psssfdb],,[pss="false"; LIBS="$lal_pre_pss_LIBS"])
-  AC_SEARCH_LIBS([pss_set_gw],[pss],,[pss="false"; LIBS="$lal_pre_pss_LIBS"])
-  AC_SEARCH_LIBS([PSS_utc2tdt],[pssastro],,[pss="false"; LIBS="$lal_pre_pss_LIBS"])
-  AC_SEARCH_LIBS([app_star],[pssnovas],,[pss="false"; LIBS="$lal_pre_pss_LIBS"])
-fi
-
-# check for pss headers
-if test "${pss}" = "true"; then
-  lal_pre_pss_CPPFLAGS="$CPPFLAGS"
-  LALSUITE_ADD_FLAGS([C],[${PSS_CFLAGS}],[])
-  AC_CHECK_HEADERS([pss_sfdb.h],,[pss="false"; CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-  AC_CHECK_HEADERS([pss_gw.h],,[pss="false"; CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-  AC_CHECK_HEADERS([pss_astro.h],,[pss="false"; CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-  AC_CHECK_HEADERS([novas.h],,[pss="false"; CPPFLAGS="$lal_pre_pss_CPPFLAGS"])
-fi
-LALSUITE_ENABLE_MODULE([PSS])
-
 # check for SIStr library, for pulsar hardware injections
 if test "${sistr}" = "true"; then
   AC_CHECK_HEADERS([gds/dtt/SIStr.h],[break],[AC_MSG_ERROR([could not find the SIStr header])])
@@ -287,7 +262,6 @@ LALPulsar has now been successfully configured:
 * LALSimulation library support is $LALSIMULATION_ENABLE_VAL
 * LALInference library support is $LALINFERENCE_ENABLE_VAL
 * CFITSIO library support is $CFITSIO_ENABLE_VAL
-* PSS library support is $PSS_ENABLE_VAL
 * SIStr support is $SISTR_ENABLE_VAL
 * CUDA support is $CUDA_ENABLE_VAL
 * SWIG bindings for Octave are $SWIG_BUILD_OCTAVE_ENABLE_VAL
