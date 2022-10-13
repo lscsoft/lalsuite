@@ -152,9 +152,6 @@ int AllocateData( void );
 /* Reads data */
 int ReadData( void );
 
-/* High passes data */
-int HighPass( void );
-
 /* Windows data */
 int WindowData( REAL8 r );
 int WindowDataTukey2( void );
@@ -249,8 +246,25 @@ int main( int argc, char *argv[] )
     }
 
     /* High-pass data with Butterworth filter */
-    if ( HighPass( ) ) {
-      return 4;
+    {
+      PassBandParamStruc filterpar;
+      char tmpname[] = "Butterworth High Pass";
+
+      filterpar.name  = tmpname;
+      filterpar.nMax  = 10;
+      filterpar.f2    = CLA.HPf;
+      filterpar.a2    = 0.5;
+      filterpar.f1    = -1.0;
+      filterpar.a1    = -1.0;
+
+      if ( CLA.HPf > 0.0 ) {
+
+        /* High pass the time series */
+        LALButterworthREAL8TimeSeries( &status, &dataDouble, &filterpar );
+        TESTSTATUS( &status );
+
+      }
+
     }
 
     /* Window data; 12/28/05 gam; add options */
@@ -651,27 +665,3 @@ int ReadData( )
   return 0;
 }
 /*******************************************************************************/
-
-/*******************************************************************************/
-int HighPass( )
-{
-  PassBandParamStruc filterpar;
-  char tmpname[] = "Butterworth High Pass";
-
-  filterpar.name  = tmpname;
-  filterpar.nMax  = 10;
-  filterpar.f2    = CLA.HPf;
-  filterpar.a2    = 0.5;
-  filterpar.f1    = -1.0;
-  filterpar.a1    = -1.0;
-
-  if ( CLA.HPf > 0.0 ) {
-
-    /* High pass the time series */
-    LALButterworthREAL8TimeSeries( &status, &dataDouble, &filterpar );
-    TESTSTATUS( &status );
-
-  }
-
-  return 0;
-}
