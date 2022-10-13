@@ -178,32 +178,12 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA);
 int FreeMem(struct CommandLineArgsTag CLA);
 
 /* prototypes */
-FILE* tryopen(char *name, const char *mode);
 void getSFTDescField(CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc);
 void mkSFTFilename(CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc,CHAR *gpstime);
 void mvFilenames(CHAR *filename1, CHAR *filename2);
 
 
 /* -------------------- function definitions -------------------- */
-
-
-/* This repeatedly tries to re-open a file.  This is useful on a
-   cluster because automount may fail or time out.  This allows a
-   number of tries with a bit of rest in between.
-*/
-FILE* tryopen(char *name, const char *mode){
-  int count=0;
-  FILE *fp;
-  
-  while (!(fp=fopen(name, mode))){
-    fprintf(stderr,"Unable to open file %s in mode %s.  Will retry...\n", name, mode);
-    if (count++<10)
-      sleep(10);
-    else
-      exit(3);
-  }
-  return fp;
-}
 
 
 /* 12/27/05 gam; function to create sftDescField for output directory or filename. */
