@@ -121,7 +121,6 @@ struct CommandLineArgsTag {
   char *ChannelName;
   char *IFO;               /* 01/14/07 gam */
   char *SFTpath;           /* path to SFT file location */
-  char *miscDesc;          /* 12/28/05 gam; string giving misc. part of the SFT description field in the filename */
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 windowR;
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
@@ -336,7 +335,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"band",                 required_argument, NULL,          'B'},
     /* {"make-gps-dirs",        required_argument, NULL,          'D'}, */
     {"make-tmp-file",        required_argument, NULL,          'Z'},
-    {"misc-desc",            required_argument, NULL,          'X'},
+    /* {"misc-desc",            required_argument, NULL,          'X'}, */
     /* {"frame-struct-type",    required_argument, NULL,          'u'}, */
     {"ifo",                  required_argument, NULL,          'i'},
     {"window-type",          required_argument, NULL,          'w'},
@@ -360,7 +359,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->ChannelName=NULL;
   CLA->IFO=NULL;        /* 01/14/07 gam */
   CLA->SFTpath=NULL;
-  CLA->miscDesc=NULL;   /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
   CLA->commentField=NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
   CLA->windowOption=1;  /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   CLA->windowR = 0.001;
@@ -452,10 +450,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       strcat(CLA->commentField,LALoptarg);
       strcat(CLA->commentField,"\n");
       break;
-    case 'X':
-      /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
-      CLA->miscDesc=LALoptarg;
-      break;
     case 'w':
       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
       CLA->windowOption=atoi(LALoptarg);
@@ -493,7 +487,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tband (-B)       \tFLOAT\t (optional) Frequency band of the SFTs (default is 2000 Hz).\n");
       fprintf(stdout,"\tmake-gps-dirs (-D)\tINT\t (optional) Make directories for output SFTs based on this many digits of the GPS time.\n");
       fprintf(stdout,"\tmake-tmp-file (-Z)\tINT\t (optional) Write SFT to .*.tmp file, then move to final filename.\n");
-      fprintf(stdout,"\tmisc-desc (-X)   \tSTRING\t (optional) Misc. part of the SFT description field in the filename (also used if make-gps-dirs, -D option, is > 0)\n");
       fprintf(stdout,"\twindow-type (-w)\tINT\t (optional) 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window\n");
       fprintf(stdout,"\twindow-radius (-r)\tFLOAT\t (optional) default = 0.001\n");
       fprintf(stdout,"\toverlap-fraction (-P)\tFLOAT\t (optional) Overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n");
@@ -702,7 +695,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   strcpy( sftname, CLA.SFTpath );
 
   strcat(sftname,"/");
-  mkSFTFilename(sftFilename, site, numSFTs, ifo, CLA.stringT, CLA.miscDesc, gpstime);
+  mkSFTFilename(sftFilename, site, numSFTs, ifo, CLA.stringT, NULL, gpstime);
   /* 01/09/06 gam; sftname will be temporary; will move to sftnameFinal. */
   if(CLA.makeTmpFile) {
     /* set up sftnameFinal with usual SFT name */
