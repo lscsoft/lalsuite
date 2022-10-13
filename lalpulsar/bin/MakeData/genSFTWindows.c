@@ -31,42 +31,15 @@
 #include <lal/AVFactories.h>
 #include <lal/Window.h>
 
-/* STRUCTURES */
-struct CommandLineArgsTag {
-  REAL8 HPf;              /* High pass filtering frequency */
-  INT4 T;                 /* SFT duration */
-  char *stringT;          /* 12/27/05 gam; string with SFT duration */
-  INT4 GPSStart;
-  INT4 GPSEnd;
-  INT4 makeGPSDirs;        /* 12/27/05 gam; add option to make directories based on gps time */
-  INT4 sftVersion;         /* 12/28/05 gam; output SFT version */
-  char *commentField;      /* 12/28/05 gam; string comment for version 2 SFTs */
-  BOOLEAN htdata;          /* flag that indicates we're doing h(t) data */
-  BOOLEAN makeTmpFile;     /* 01/09/06 gam */
-  char *FrCacheFile;       /* Frame cache file */
-  char *ChannelName;
-  char *IFO;               /* 01/14/07 gam */
-  char *SFTpath;           /* path to SFT file location */
-  char *miscDesc;          /* 12/28/05 gam; string giving misc. part of the SFT description field in the filename */
-  INT4 PSSCleaning;	   /* 1=YES and 0=NO*/
-  REAL8 PSSCleanHPf;       /* Cut frequency for the bilateral highpass filter. It has to be used only if PSSCleaning is YES.*/
-  INT4 PSSCleanExt;        /* Extend the timeseries at the beginning before calculating the autoregressive mean */
-  INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-  REAL8 windowR;
-  REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
-  BOOLEAN useSingle;       /* 11/19/05 gam; use single rather than double precision */
-  char *frameStructType;   /* 01/10/07 gam */
-};
-
 /* GLOBAL VARIABLES */
-REAL8 winFncRMS;
-REAL8TimeSeries dataDouble;
-REAL4TimeSeries dataSingle;
+extern REAL8 winFncRMS;
+extern REAL8TimeSeries dataDouble;
+extern REAL4TimeSeries dataSingle;
 
 /* FUNCTION PROTOTYPES */
-int WindowData(struct CommandLineArgsTag CLA);
-int WindowDataTukey2(struct CommandLineArgsTag CLA);
-int WindowDataHann(struct CommandLineArgsTag CLA);
+int WindowData( REAL8 r );
+int WindowDataTukey2( void );
+int WindowDataHann( void );
 
 int main(void) {
 
@@ -74,10 +47,7 @@ int main(void) {
   const size_t WINDOWLENGTH = 256 * 1800;
 
   // default command line arguments from MakeSFTs.c
-  struct CommandLineArgsTag CLA = {
-    .useSingle = 0,
-    .windowR = 0.001,
-  };
+  const REAL8 windowR = 0.001;
 
   // allocate memory
   char windownames[NWINDOWS][1024];
@@ -94,9 +64,9 @@ int main(void) {
   size_t w = 0;
 
   {
-    snprintf(windownames[w], sizeof(windownames[w]), "lalpulsar_MakeSFTs Matlab style Tukey window [windowR=%g]", CLA.windowR);
+    snprintf(windownames[w], sizeof(windownames[w]), "lalpulsar_MakeSFTs Matlab style Tukey window [windowR=%g]", windowR);
     dataDouble.data = windows[w];
-    WindowData(CLA);
+    WindowData(windowR);
     winrms[w] = winFncRMS;
   }
 
@@ -105,14 +75,14 @@ int main(void) {
   {
     snprintf(windownames[w], sizeof(windownames[w]), "lalpulsar_MakeSFTs Hann window");
     dataDouble.data = windows[w];
-    WindowDataHann(CLA);
+    WindowDataHann();
     winrms[w] = winFncRMS;
   }
 
   ++w;
 
   {
-    REAL8 beta = CLA.windowR;
+    REAL8 beta = windowR;
     REAL8Window *win = XLALCreateTukeyREAL8Window(WINDOWLENGTH, beta);
     XLAL_CHECK_MAIN(win != NULL, XLAL_EFUNC);
     snprintf(windownames[w], sizeof(windownames[w]), "XLALCreateTukeyREAL8Window(beta=%g)", beta);

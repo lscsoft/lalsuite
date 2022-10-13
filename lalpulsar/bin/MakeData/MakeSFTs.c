@@ -128,17 +128,17 @@ struct CommandLineArgsTag {
 /***************************************************************************/
 
 /* GLOBAL VARIABLES */
+extern REAL8 winFncRMS;
+extern REAL8TimeSeries dataDouble;
+extern REAL4TimeSeries dataSingle;
+
 REAL8 FMIN = 48.0; /* default start frequency */
 REAL8 DF = 2000.0; /* default band */
-
-REAL8 winFncRMS = 1.0; /* 10/05/12 gam; global variable with the RMS of the window function; default value is 1.0 */
 
 static LALStatus status;
 LALCache *framecache;         /* frame reading variables */
 LALFrStream *framestream = NULL;
 
-REAL8TimeSeries dataDouble;
-REAL4TimeSeries dataSingle;
 INT4 SegmentDuration;
 LIGOTimeGPS gpsepoch;
 
@@ -162,9 +162,9 @@ int ReadData( struct CommandLineArgsTag CLA );
 int HighPass( struct CommandLineArgsTag CLA );
 
 /* Windows data */
-int WindowData( struct CommandLineArgsTag CLA );
-int WindowDataTukey2( struct CommandLineArgsTag CLA );
-int WindowDataHann( struct CommandLineArgsTag CLA );
+int WindowData( REAL8 r );
+int WindowDataTukey2( void );
+int WindowDataHann( void );
 
 /* create an SFT */
 int CreateSFT( struct CommandLineArgsTag CLA );
@@ -270,15 +270,15 @@ int main( int argc, char *argv[] )
 
     /* Window data; 12/28/05 gam; add options */
     if ( CommandLineArgs.windowOption == 1 ) {
-      if ( WindowData( CommandLineArgs ) ) {
+      if ( WindowData( CommandLineArgs.windowR ) ) {
         return 5;  /* CommandLineArgs.windowOption==1 is the default */
       }
     } else if ( CommandLineArgs.windowOption == 2 ) {
-      if ( WindowDataTukey2( CommandLineArgs ) ) {
+      if ( WindowDataTukey2( ) ) {
         return 5;
       }
     } else if ( CommandLineArgs.windowOption == 3 ) {
-      if ( WindowDataHann( CommandLineArgs ) ) {
+      if ( WindowDataHann( ) ) {
         return 5;
       }
     } else {
