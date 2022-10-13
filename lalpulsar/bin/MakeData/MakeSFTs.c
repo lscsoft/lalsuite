@@ -143,9 +143,6 @@ CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentFie
 /***************************************************************************/
 
 /* FUNCTION PROTOTYPES */
-/* Reads the command line */
-int ReadCommandLine( int argc, char *argv[] );
-
 /* Windows data */
 int WindowData( REAL8 r );
 int WindowDataTukey2( void );
@@ -207,9 +204,246 @@ void mvFilenames( CHAR *filename1, CHAR *filename2 )
 int main( int argc, char *argv[] )
 {
 
-  if ( ReadCommandLine( argc, argv ) ) {
-    return 1;
+  {
+    INT4 errflg = 0;
+    INT4 i;              /* 06/26/07 gam */
+    struct LALoption long_options[] = {
+      {"high-pass-freq",       required_argument, NULL,          'f'},
+      {"sft-duration",         required_argument, NULL,          't'},
+      {"sft-write-path",       required_argument, NULL,          'p'},
+      {"frame-cache",          required_argument, NULL,          'C'},
+      {"channel-name",         required_argument, NULL,          'N'},
+      {"gps-start-time",       required_argument, NULL,          's'},
+      {"gps-end-time",         required_argument, NULL,          'e'},
+      /* {"sft-version",          required_argument, NULL,          'v'}, */
+      {"comment-field",        required_argument, NULL,          'c'},
+      {"start-freq",           required_argument, NULL,          'F'},
+      {"band",                 required_argument, NULL,          'B'},
+      /* {"make-gps-dirs",        required_argument, NULL,          'D'}, */
+      /* {"make-tmp-file",        required_argument, NULL,          'Z'}, */
+      /* {"misc-desc",            required_argument, NULL,          'X'}, */
+      /* {"frame-struct-type",    required_argument, NULL,          'u'}, */
+      /* {"ifo",                  required_argument, NULL,          'i'}, */
+      {"window-type",          required_argument, NULL,          'w'},
+      {"window-radius",        required_argument, NULL,          'r'},
+      {"overlap-fraction",     required_argument, NULL,          'P'},
+      /* {"ht-data",              no_argument,       NULL,          'H'}, */
+      /* {"use-single",           no_argument,       NULL,          'S'}, */
+      {"help",                 no_argument,       NULL,          'h'},
+      {"version",              no_argument,       NULL,          'V'},
+      {0, 0, 0, 0}
+    };
+    char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:r:P:p:ab:";
+
+    /* Initialize default values */
+    CLA.HPf = -1.0;
+    CLA.T = 0.0;
+    CLA.stringT = NULL; /* 12/27/05 gam */
+    CLA.FrCacheFile = NULL;
+    CLA.GPSStart = 0;
+    CLA.GPSEnd = 0;
+    CLA.ChannelName = NULL;
+    CLA.SFTpath = NULL;
+    CLA.commentField = NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
+    CLA.windowOption = 1; /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
+    CLA.windowR = 0.001;
+    CLA.overlapFraction = 0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
+
+    strcat( allargs, "\nMakeSFTs " );
+    strcat( allargs, lalVCSIdentInfo.vcsId );
+    strcat( allargs, lalVCSIdentInfo.vcsStatus );
+    strcat( allargs, "\nMakeSFTs " );
+    strcat( allargs, lalPulsarVCSIdentInfo.vcsId );
+    strcat( allargs, lalPulsarVCSIdentInfo.vcsStatus );
+    strcat( allargs, "\nMakeSFTs command line args: " ); /* 06/26/07 gam; copy all command line args into commentField */
+    for ( i = 0; i < argc; i++ ) {
+      /* if the argument describes an additioanl comment, don't record it
+         in the command-line as well, as it will be recoeded in the comment later.
+         if the option is a single argument and does not include the comment itself,
+         skip the next argument as well, as this should be the comment then. */
+      if ( ( strstr( argv[i], "-c" ) == argv[i] ) ) {
+        strcat( allargs, "-c ... " );
+        if ( strcmp( argv[i], "-c" ) == 0 ) {
+          i++;
+        }
+        continue;
+      }
+      if ( ( strstr( argv[i], "--comment-field" ) == argv[i] ) ) {
+        strcat( allargs, "--comment-field ... " );
+        if ( strcmp( argv[i], "--comment-field" ) == 0 ) {
+          i++;
+        }
+        continue;
+      }
+      strcat( allargs, argv[i] );
+      strcat( allargs, " " );
+    }
+    strcat( allargs, "\n" );
+    CLA.commentField = allargs;
+
+    /* Scan through list of command line arguments */
+    while ( 1 ) {
+      int option_index = 0; /* LALgetopt_long stores long option here */
+      int c;
+
+      c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
+      if ( c == -1 ) { /* end of options */
+        break;
+      }
+
+      switch ( c ) {
+      case 'f':
+        /* high pass frequency */
+        CLA.HPf = atof( LALoptarg );
+        break;
+      case 't':
+        /* SFT time */
+        CLA.stringT = LALoptarg;  /* 12/27/05 gam; keep pointer to string that gives the SFT duration */
+        CLA.T = atoi( LALoptarg );
+        break;
+      case 'C':
+        /* name of frame cache file */
+        CLA.FrCacheFile = LALoptarg;
+        break;
+      case 's':
+        /* GPS start */
+        CLA.GPSStart = atof( LALoptarg );
+        break;
+      case 'e':
+        /* GPS end */
+        CLA.GPSEnd = atof( LALoptarg );
+        break;
+      case 'F':
+        /* 12/28/05 gam; start frequency */
+        FMIN = ( REAL8 )atof( LALoptarg );
+        break;
+      case 'B':
+        /* 12/28/05 gam; band */
+        DF = ( REAL8 )atof( LALoptarg );
+        break;
+      case 'c':
+        /* 12/28/05 gam; comment for version 2 SFTs */
+        strcat( CLA.commentField, "MakeSFTs additional comment: " ); /* 06/26/07 gam; copy all command line args into commentField */
+        strcat( CLA.commentField, LALoptarg );
+        strcat( CLA.commentField, "\n" );
+        break;
+      case 'w':
+        /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
+        CLA.windowOption = atoi( LALoptarg );
+        break;
+      case 'r':
+        /* defulat 0.001 */
+        CLA.windowR = ( REAL8 )atof( LALoptarg );
+        break;
+      case 'P':
+        /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
+        CLA.overlapFraction = ( REAL8 )atof( LALoptarg );
+        break;
+      case 'N':
+        CLA.ChannelName = LALoptarg;
+        break;
+      case 'p':
+        CLA.SFTpath = LALoptarg;
+        break;
+      case 'h':
+        /* print usage/help message */
+        fprintf( stdout, "Arguments are:\n" );
+        fprintf( stdout, "\thigh-pass-freq (-f)\tFLOAT\t High pass filtering frequency in Hz.\n" );
+        fprintf( stdout, "\tsft-duration (-t)\tFLOAT\t SFT duration in seconds.\n" );
+        fprintf( stdout, "\tsft-write-path (-p)\tFLOAT\t Location of output SFTs.\n" );
+        fprintf( stdout, "\tframe-cache (-C)\tSTRING\t Path to frame cache file (including the filename).\n" );
+        fprintf( stdout, "\tgps-start-time (-s)\tINT\t GPS start time of segment.\n" );
+        fprintf( stdout, "\tgps-end-time (-e)\tINT\t GPS end time of segment.\n" );
+        fprintf( stdout, "\tchannel-name (-N)\tSTRING\t Name of channel to read within a frame.\n" );
+        fprintf( stdout, "\tifo (-i)\t\tSTRING\t (optional) Name of IFO, i.e., H1, H2, L1, or G1; use if channel name begins with H0, L0, or G0; default: use first two characters from channel name.\n" );
+        fprintf( stdout, "\tcomment-field (-c)\tSTRING\t (optional) Comment for version 2 SFT header.\n" );
+        fprintf( stdout, "\tstart-freq (-F) \tFLOAT\t (optional) Start frequency of the SFTs (default is 48 Hz).\n" );
+        fprintf( stdout, "\tband (-B)       \tFLOAT\t (optional) Frequency band of the SFTs (default is 2000 Hz).\n" );
+        fprintf( stdout, "\tmake-gps-dirs (-D)\tINT\t (optional) Make directories for output SFTs based on this many digits of the GPS time.\n" );
+        fprintf( stdout, "\tmake-tmp-file (-Z)\tINT\t (optional) Write SFT to .*.tmp file, then move to final filename.\n" );
+        fprintf( stdout, "\twindow-type (-w)\tINT\t (optional) 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window\n" );
+        fprintf( stdout, "\twindow-radius (-r)\tFLOAT\t (optional) default = 0.001\n" );
+        fprintf( stdout, "\toverlap-fraction (-P)\tFLOAT\t (optional) Overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n" );
+        fprintf( stdout, "\tversion (-V)\t\tFLAG\t Print LAL & LALPulsar version and exit.\n" );
+        fprintf( stdout, "\thelp (-h)\t\tFLAG\t This message.\n" );
+        exit( 0 );
+      case 'V':
+        /* print version */
+        fprintf( stdout, "MakeSFTs %s %s\n", lalVCSIdentInfo.vcsId, lalVCSIdentInfo.vcsStatus );
+        fprintf( stdout, "MakeSFTs %s %s\n", lalPulsarVCSIdentInfo.vcsId, lalPulsarVCSIdentInfo.vcsStatus );
+        exit( 0 );
+      default:
+        /* unrecognized option */
+        errflg++;
+        if ( ( c >= 48 ) && ( c < 128 ) ) {
+          fprintf( stderr, "Unrecognized option '%c'\n", c );
+        } else {
+          fprintf( stderr, "Unrecognized option %d\n", c );
+        }
+        exit( 1 );
+        break;
+      }
+    }
+
+    if ( CLA.HPf < 0 ) {
+      fprintf( stderr, "No high pass filtering frequency specified.\n" );
+      fprintf( stderr, "If you don't want to high pass filter set the frequency to 0.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( CLA.T == 0.0 ) {
+      fprintf( stderr, "No SFT duration specified.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( CLA.GPSStart == 0 ) {
+      fprintf( stderr, "No GPS start time specified.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( CLA.GPSEnd == 0 ) {
+      fprintf( stderr, "No GPS end time specified.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( FMIN < 0.0 ) {
+      fprintf( stderr, "Illegal start-freq option given.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( DF < 0.0 ) {
+      fprintf( stderr, "Illegal band option given.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( ( CLA.windowOption < 0 ) || ( CLA.windowOption > 3 ) ) {
+      fprintf( stderr, "Illegal window-type given.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( ( CLA.overlapFraction < 0.0 ) || ( CLA.overlapFraction >= 1.0 ) ) {
+      fprintf( stderr, "Illegal overlap-fraction given.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( CLA.FrCacheFile == NULL ) {
+      fprintf( stderr, "No frame cache file specified.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( CLA.ChannelName == NULL ) {
+      fprintf( stderr, "No data channel name specified.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+    if ( CLA.SFTpath == NULL ) {
+      fprintf( stderr, "No output path specified for SFTs.\n" );
+      fprintf( stderr, "Try %s -h \n", argv[0] );
+      return 1;
+    }
+
   }
+
   SegmentDuration = CLA.GPSEnd - CLA.GPSStart ;
 
   /* create Frame cache, open frame stream and delete frame cache */
@@ -394,251 +628,3 @@ int main( int argc, char *argv[] )
 
   return 0;
 }
-
-/************************************* MAIN PROGRAM ENDS *************************************/
-
-/*** FUNCTIONS ***/
-
-/*******************************************************************************/
-int ReadCommandLine( int argc, char *argv[] )
-{
-  INT4 errflg = 0;
-  INT4 i;              /* 06/26/07 gam */
-  struct LALoption long_options[] = {
-    {"high-pass-freq",       required_argument, NULL,          'f'},
-    {"sft-duration",         required_argument, NULL,          't'},
-    {"sft-write-path",       required_argument, NULL,          'p'},
-    {"frame-cache",          required_argument, NULL,          'C'},
-    {"channel-name",         required_argument, NULL,          'N'},
-    {"gps-start-time",       required_argument, NULL,          's'},
-    {"gps-end-time",         required_argument, NULL,          'e'},
-    /* {"sft-version",          required_argument, NULL,          'v'}, */
-    {"comment-field",        required_argument, NULL,          'c'},
-    {"start-freq",           required_argument, NULL,          'F'},
-    {"band",                 required_argument, NULL,          'B'},
-    /* {"make-gps-dirs",        required_argument, NULL,          'D'}, */
-    /* {"make-tmp-file",        required_argument, NULL,          'Z'}, */
-    /* {"misc-desc",            required_argument, NULL,          'X'}, */
-    /* {"frame-struct-type",    required_argument, NULL,          'u'}, */
-    /* {"ifo",                  required_argument, NULL,          'i'}, */
-    {"window-type",          required_argument, NULL,          'w'},
-    {"window-radius",        required_argument, NULL,          'r'},
-    {"overlap-fraction",     required_argument, NULL,          'P'},
-    /* {"ht-data",              no_argument,       NULL,          'H'}, */
-    /* {"use-single",           no_argument,       NULL,          'S'}, */
-    {"help",                 no_argument,       NULL,          'h'},
-    {"version",              no_argument,       NULL,          'V'},
-    {0, 0, 0, 0}
-  };
-  char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:r:P:p:ab:";
-
-  /* Initialize default values */
-  CLA.HPf = -1.0;
-  CLA.T = 0.0;
-  CLA.stringT = NULL; /* 12/27/05 gam */
-  CLA.FrCacheFile = NULL;
-  CLA.GPSStart = 0;
-  CLA.GPSEnd = 0;
-  CLA.ChannelName = NULL;
-  CLA.SFTpath = NULL;
-  CLA.commentField = NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
-  CLA.windowOption = 1; /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-  CLA.windowR = 0.001;
-  CLA.overlapFraction = 0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
-
-  strcat( allargs, "\nMakeSFTs " );
-  strcat( allargs, lalVCSIdentInfo.vcsId );
-  strcat( allargs, lalVCSIdentInfo.vcsStatus );
-  strcat( allargs, "\nMakeSFTs " );
-  strcat( allargs, lalPulsarVCSIdentInfo.vcsId );
-  strcat( allargs, lalPulsarVCSIdentInfo.vcsStatus );
-  strcat( allargs, "\nMakeSFTs command line args: " ); /* 06/26/07 gam; copy all command line args into commentField */
-  for ( i = 0; i < argc; i++ ) {
-    /* if the argument describes an additioanl comment, don't record it
-       in the command-line as well, as it will be recoeded in the comment later.
-       if the option is a single argument and does not include the comment itself,
-       skip the next argument as well, as this should be the comment then. */
-    if ( ( strstr( argv[i], "-c" ) == argv[i] ) ) {
-      strcat( allargs, "-c ... " );
-      if ( strcmp( argv[i], "-c" ) == 0 ) {
-        i++;
-      }
-      continue;
-    }
-    if ( ( strstr( argv[i], "--comment-field" ) == argv[i] ) ) {
-      strcat( allargs, "--comment-field ... " );
-      if ( strcmp( argv[i], "--comment-field" ) == 0 ) {
-        i++;
-      }
-      continue;
-    }
-    strcat( allargs, argv[i] );
-    strcat( allargs, " " );
-  }
-  strcat( allargs, "\n" );
-  CLA.commentField = allargs;
-
-  /* Scan through list of command line arguments */
-  while ( 1 ) {
-    int option_index = 0; /* LALgetopt_long stores long option here */
-    int c;
-
-    c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
-    if ( c == -1 ) { /* end of options */
-      break;
-    }
-
-    switch ( c ) {
-    case 'f':
-      /* high pass frequency */
-      CLA.HPf = atof( LALoptarg );
-      break;
-    case 't':
-      /* SFT time */
-      CLA.stringT = LALoptarg;  /* 12/27/05 gam; keep pointer to string that gives the SFT duration */
-      CLA.T = atoi( LALoptarg );
-      break;
-    case 'C':
-      /* name of frame cache file */
-      CLA.FrCacheFile = LALoptarg;
-      break;
-    case 's':
-      /* GPS start */
-      CLA.GPSStart = atof( LALoptarg );
-      break;
-    case 'e':
-      /* GPS end */
-      CLA.GPSEnd = atof( LALoptarg );
-      break;
-    case 'F':
-      /* 12/28/05 gam; start frequency */
-      FMIN = ( REAL8 )atof( LALoptarg );
-      break;
-    case 'B':
-      /* 12/28/05 gam; band */
-      DF = ( REAL8 )atof( LALoptarg );
-      break;
-    case 'c':
-      /* 12/28/05 gam; comment for version 2 SFTs */
-      strcat( CLA.commentField, "MakeSFTs additional comment: " ); /* 06/26/07 gam; copy all command line args into commentField */
-      strcat( CLA.commentField, LALoptarg );
-      strcat( CLA.commentField, "\n" );
-      break;
-    case 'w':
-      /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-      CLA.windowOption = atoi( LALoptarg );
-      break;
-    case 'r':
-      /* defulat 0.001 */
-      CLA.windowR = ( REAL8 )atof( LALoptarg );
-      break;
-    case 'P':
-      /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
-      CLA.overlapFraction = ( REAL8 )atof( LALoptarg );
-      break;
-    case 'N':
-      CLA.ChannelName = LALoptarg;
-      break;
-    case 'p':
-      CLA.SFTpath = LALoptarg;
-      break;
-    case 'h':
-      /* print usage/help message */
-      fprintf( stdout, "Arguments are:\n" );
-      fprintf( stdout, "\thigh-pass-freq (-f)\tFLOAT\t High pass filtering frequency in Hz.\n" );
-      fprintf( stdout, "\tsft-duration (-t)\tFLOAT\t SFT duration in seconds.\n" );
-      fprintf( stdout, "\tsft-write-path (-p)\tFLOAT\t Location of output SFTs.\n" );
-      fprintf( stdout, "\tframe-cache (-C)\tSTRING\t Path to frame cache file (including the filename).\n" );
-      fprintf( stdout, "\tgps-start-time (-s)\tINT\t GPS start time of segment.\n" );
-      fprintf( stdout, "\tgps-end-time (-e)\tINT\t GPS end time of segment.\n" );
-      fprintf( stdout, "\tchannel-name (-N)\tSTRING\t Name of channel to read within a frame.\n" );
-      fprintf( stdout, "\tifo (-i)\t\tSTRING\t (optional) Name of IFO, i.e., H1, H2, L1, or G1; use if channel name begins with H0, L0, or G0; default: use first two characters from channel name.\n" );
-      fprintf( stdout, "\tcomment-field (-c)\tSTRING\t (optional) Comment for version 2 SFT header.\n" );
-      fprintf( stdout, "\tstart-freq (-F) \tFLOAT\t (optional) Start frequency of the SFTs (default is 48 Hz).\n" );
-      fprintf( stdout, "\tband (-B)       \tFLOAT\t (optional) Frequency band of the SFTs (default is 2000 Hz).\n" );
-      fprintf( stdout, "\tmake-gps-dirs (-D)\tINT\t (optional) Make directories for output SFTs based on this many digits of the GPS time.\n" );
-      fprintf( stdout, "\tmake-tmp-file (-Z)\tINT\t (optional) Write SFT to .*.tmp file, then move to final filename.\n" );
-      fprintf( stdout, "\twindow-type (-w)\tINT\t (optional) 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window\n" );
-      fprintf( stdout, "\twindow-radius (-r)\tFLOAT\t (optional) default = 0.001\n" );
-      fprintf( stdout, "\toverlap-fraction (-P)\tFLOAT\t (optional) Overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n" );
-      fprintf( stdout, "\tversion (-V)\t\tFLAG\t Print LAL & LALPulsar version and exit.\n" );
-      fprintf( stdout, "\thelp (-h)\t\tFLAG\t This message.\n" );
-      exit( 0 );
-    case 'V':
-      /* print version */
-      fprintf( stdout, "MakeSFTs %s %s\n", lalVCSIdentInfo.vcsId, lalVCSIdentInfo.vcsStatus );
-      fprintf( stdout, "MakeSFTs %s %s\n", lalPulsarVCSIdentInfo.vcsId, lalPulsarVCSIdentInfo.vcsStatus );
-      exit( 0 );
-    default:
-      /* unrecognized option */
-      errflg++;
-      if ( ( c >= 48 ) && ( c < 128 ) ) {
-        fprintf( stderr, "Unrecognized option '%c'\n", c );
-      } else {
-        fprintf( stderr, "Unrecognized option %d\n", c );
-      }
-      exit( 1 );
-      break;
-    }
-  }
-
-  if ( CLA.HPf < 0 ) {
-    fprintf( stderr, "No high pass filtering frequency specified.\n" );
-    fprintf( stderr, "If you don't want to high pass filter set the frequency to 0.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( CLA.T == 0.0 ) {
-    fprintf( stderr, "No SFT duration specified.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( CLA.GPSStart == 0 ) {
-    fprintf( stderr, "No GPS start time specified.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( CLA.GPSEnd == 0 ) {
-    fprintf( stderr, "No GPS end time specified.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( FMIN < 0.0 ) {
-    fprintf( stderr, "Illegal start-freq option given.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( DF < 0.0 ) {
-    fprintf( stderr, "Illegal band option given.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( ( CLA.windowOption < 0 ) || ( CLA.windowOption > 3 ) ) {
-    fprintf( stderr, "Illegal window-type given.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( ( CLA.overlapFraction < 0.0 ) || ( CLA.overlapFraction >= 1.0 ) ) {
-    fprintf( stderr, "Illegal overlap-fraction given.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( CLA.FrCacheFile == NULL ) {
-    fprintf( stderr, "No frame cache file specified.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( CLA.ChannelName == NULL ) {
-    fprintf( stderr, "No data channel name specified.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-  if ( CLA.SFTpath == NULL ) {
-    fprintf( stderr, "No output path specified for SFTs.\n" );
-    fprintf( stderr, "Try %s -h \n", argv[0] );
-    return 1;
-  }
-
-  return errflg;
-}
-/*******************************************************************************/
