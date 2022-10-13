@@ -142,8 +142,6 @@ REAL4TimeSeries dataSingle;
 INT4 SegmentDuration;
 LIGOTimeGPS gpsepoch;
 
-/* REAL8Vector *window; */ /* 11/02/05 gam */
-
 REAL8FFTPlan *fftPlanDouble;           /* fft plan and data container, double precision case */
 COMPLEX16Vector *fftDataDouble = NULL;
 
@@ -232,7 +230,6 @@ void mvFilenames( CHAR *filename1, CHAR *filename2 )
 
 int main( int argc, char *argv[] )
 {
-  /* int j; */ /* 12/28/05 gam */
 
   if ( ReadCommandLine( argc, argv, &CommandLineArgs ) ) {
     return 1;
@@ -259,11 +256,7 @@ int main( int argc, char *argv[] )
     return 2;
   }
 
-  /* for(j=0; j < SegmentDuration/CommandLineArgs.T; j++) */ /* 12/28/05 gam */
   while ( gpsepoch.gpsSeconds + CommandLineArgs.T <= CommandLineArgs.GPSEnd ) {
-
-    /* gpsepoch.gpsSeconds = CommandLineArgs.GPSStart + j*CommandLineArgs.T;
-    gpsepoch.gpsNanoSeconds = 0; */ /* 12/28/05 gam; now updated at the bottom of while loop */
 
     /* Reads T seconds of data */
     if ( ReadData( CommandLineArgs ) ) {
@@ -438,7 +431,6 @@ int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA )
       break;
     case 'c':
       /* 12/28/05 gam; comment for version 2 SFTs */
-      /* CLA->commentField=LALoptarg; */ /* 06/26/07 gam */
       strcat( CLA->commentField, "MakeSFTs additional comment: " ); /* 06/26/07 gam; copy all command line args into commentField */
       strcat( CLA->commentField, LALoptarg );
       strcat( CLA->commentField, "\n" );
@@ -691,7 +683,6 @@ int WriteVersion2SFT( struct CommandLineArgsTag CLA )
   oneSFT->deltaF = 1.0 / ( ( REAL8 )CLA.T );
   oneSFT->data->length = nBins;
 
-  /*doubleDeltaT = ((REAL8)dataDouble.deltaT); */ /* 01/05/06 gam; and normalize SFTs using this below */
   doubleDeltaT = ( REAL8 )( dataDouble.deltaT / winFncRMS ); /* include 1 over window function RMS */
   for ( k = 0; k < nBins; k++ ) {
     oneSFT->data->data[k] = crectf( doubleDeltaT * creal( fftDataDouble->data[k + firstbin] ), doubleDeltaT * cimag( fftDataDouble->data[k + firstbin] ) );
