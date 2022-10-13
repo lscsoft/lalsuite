@@ -166,9 +166,6 @@ int CreateSFT( void );
 /* writes out an SFT */
 int WriteVersion2SFT( void );
 
-/* Frees the memory */
-int FreeMem( void );
-
 /* prototypes */
 void getSFTDescField( CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc );
 void mkSFTFilename( CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc, CHAR *gpstime );
@@ -293,9 +290,14 @@ int main( int argc, char *argv[] )
     gpsepoch.gpsNanoSeconds = 0;
   }
 
-  if ( FreeMem( ) ) {
-    return 8;
-  }
+  LALFrClose( &status, &framestream );
+  TESTSTATUS( &status );
+
+  LALDDestroyVector( &status, &dataDouble.data );
+  TESTSTATUS( &status );
+  XLALDestroyREAL8FFTPlan( fftPlanDouble );
+
+  LALCheckMemoryLeaks();
 
   return 0;
 }
@@ -696,23 +698,6 @@ int WriteVersion2SFT( )
   mvFilenames( sftname, sftnameFinal );
 
   XLALDestroySFT( oneSFT );
-
-  return 0;
-}
-/*******************************************************************************/
-
-/*******************************************************************************/
-int FreeMem( )
-{
-
-  LALFrClose( &status, &framestream );
-  TESTSTATUS( &status );
-
-  LALDDestroyVector( &status, &dataDouble.data );
-  TESTSTATUS( &status );
-  XLALDestroyREAL8FFTPlan( fftPlanDouble );
-
-  LALCheckMemoryLeaks();
 
   return 0;
 }
