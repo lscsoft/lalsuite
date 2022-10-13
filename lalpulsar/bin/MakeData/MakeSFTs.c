@@ -146,9 +146,6 @@ CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentFie
 /* Reads the command line */
 int ReadCommandLine( int argc, char *argv[] );
 
-/* Allocates space for data time series */
-int AllocateData( void );
-
 /* Windows data */
 int WindowData( REAL8 r );
 int WindowDataTukey2( void );
@@ -231,8 +228,26 @@ int main( int argc, char *argv[] )
   gpsepoch.gpsNanoSeconds = 0;
 
   /* Allocates space for data */
-  if ( AllocateData( ) ) {
-    return 2;
+  {
+    static FrChanIn chanin;
+
+    chanin.name  = CLA.ChannelName;
+
+    /* These calls just return deltaT for the channel */
+    chanin.type  = ProcDataChannel;
+    /* Get channel time step size by calling LALFrGetREAL8TimeSeries */
+    LALFrSeek( &status, &gpsepoch, framestream );
+    TESTSTATUS( &status );
+    LALFrGetREAL8TimeSeries( &status, &dataDouble, &chanin, framestream );
+    TESTSTATUS( &status );
+    dataSingle.deltaT = dataDouble.deltaT;
+
+    LALDCreateVector( &status, &dataDouble.data, ( UINT4 )( CLA.T / dataDouble.deltaT + 0.5 ) );
+    TESTSTATUS( &status );
+
+    fftPlanDouble = XLALCreateForwardREAL8FFTPlan( dataDouble.data->length, 0 );
+    XLAL_CHECK( fftPlanDouble != NULL, XLAL_EFUNC );
+
   }
 
   while ( gpsepoch.gpsSeconds + CLA.T <= CLA.GPSEnd ) {
@@ -625,31 +640,5 @@ int ReadCommandLine( int argc, char *argv[] )
   }
 
   return errflg;
-}
-/*******************************************************************************/
-
-/*******************************************************************************/
-int AllocateData( )
-{
-  static FrChanIn chanin;
-
-  chanin.name  = CLA.ChannelName;
-
-  /* These calls just return deltaT for the channel */
-  chanin.type  = ProcDataChannel;
-  /* Get channel time step size by calling LALFrGetREAL8TimeSeries */
-  LALFrSeek( &status, &gpsepoch, framestream );
-  TESTSTATUS( &status );
-  LALFrGetREAL8TimeSeries( &status, &dataDouble, &chanin, framestream );
-  TESTSTATUS( &status );
-  dataSingle.deltaT = dataDouble.deltaT;
-
-  LALDCreateVector( &status, &dataDouble.data, ( UINT4 )( CLA.T / dataDouble.deltaT + 0.5 ) );
-  TESTSTATUS( &status );
-
-  fftPlanDouble = XLALCreateForwardREAL8FFTPlan( dataDouble.data->length, 0 );
-  XLAL_CHECK( fftPlanDouble != NULL, XLAL_EFUNC );
-
-  return 0;
 }
 /*******************************************************************************/
