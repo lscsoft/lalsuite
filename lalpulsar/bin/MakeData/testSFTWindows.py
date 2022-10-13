@@ -4,6 +4,7 @@ import subprocess
 import numpy as np
 
 maxd = 2e-3
+maxdrms = 1e-5
 
 exitcode = 0
 
@@ -23,14 +24,17 @@ window_data = subprocess.check_output(['./genSFTWindows']).decode('utf-8').split
 window_csv = csv.reader(window_data)
 window_csv_itr = iter(window_csv)
 header = next(window_csv)
-win = dict()
+csv_cols = dict()
 for name in header:
-    win[name] = list()
+    csv_cols[name] = list()
 for row in window_csv_itr:
     for name, value in zip(header, row):
-        win[name].append(float(value))
-for name in win:
-    win[name] = np.array(win[name])
+        csv_cols[name].append(float(value))
+winrms = dict()
+win = dict()
+for name in csv_cols:
+    winrms[name] = csv_cols[name][0]
+    win[name] = np.array(csv_cols[name][1:])
 t = np.arange(len(win[name])) / 256
 
 # compare windows
@@ -61,6 +65,10 @@ for k in ('Tukey', 'Hann'):
         md = max(abs(d))
         print(f'max(|{win_cmp_name} - {win_ref_name}|) = {md:0.2e}, max = {maxd:0.2e}')
         if md > maxd:
+            exitcode = 1
+        drms = abs(winrms[win_cmp_name] - winrms[win_ref_name])
+        print(f'abs(|{win_cmp_name}.rms - {win_ref_name}.rms|) = {drms:0.2e}, max = {maxdrms:0.2e}')
+        if drms > maxdrms:
             exitcode = 1
         if plot:
             for i, ax in enumerate(axs[3:]):

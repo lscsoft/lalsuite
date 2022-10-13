@@ -25,6 +25,8 @@
 
 #include "config.h"
 
+#include <math.h>
+
 #include <lal/LALStdlib.h>
 #include <lal/AVFactories.h>
 #include <lal/Window.h>
@@ -80,6 +82,7 @@ int main(void) {
   // allocate memory
   char windownames[NWINDOWS][1024];
   REAL8Vector* windows[NWINDOWS];
+  REAL8 winrms[NWINDOWS];
   for (size_t i = 0; i < NWINDOWS; ++i) {
     windows[i] = XLALCreateREAL8Vector(WINDOWLENGTH);
     XLAL_CHECK_MAIN(windows[i] != NULL, XLAL_ENOMEM);
@@ -94,6 +97,7 @@ int main(void) {
     snprintf(windownames[w], sizeof(windownames[w]), "lalpulsar_MakeSFTs Matlab style Tukey window [windowR=%g]", CLA.windowR);
     dataDouble.data = windows[w];
     WindowData(CLA);
+    winrms[w] = winFncRMS;
   }
 
   ++w;
@@ -102,6 +106,7 @@ int main(void) {
     snprintf(windownames[w], sizeof(windownames[w]), "lalpulsar_MakeSFTs Hann window");
     dataDouble.data = windows[w];
     WindowDataHann(CLA);
+    winrms[w] = winFncRMS;
   }
 
   ++w;
@@ -114,6 +119,7 @@ int main(void) {
     for (size_t j = 0; j < WINDOWLENGTH; ++j) {
       windows[w]->data[j] *= win->data->data[j];
     }
+    winrms[w] = sqrt(win->sumofsquares / win->data->length);
     XLALDestroyREAL8Window(win);
   }
 
@@ -126,6 +132,7 @@ int main(void) {
     for (size_t j = 0; j < WINDOWLENGTH; ++j) {
       windows[w]->data[j] *= win->data->data[j];
     }
+    winrms[w] = sqrt(win->sumofsquares / win->data->length);
     XLALDestroyREAL8Window(win);
   }
 
@@ -134,6 +141,9 @@ int main(void) {
   // output windows
   for (size_t i = 0; i < NWINDOWS; ++i) {
     printf("%s%c", windownames[i], i + 1 < NWINDOWS ? ',' : '\n');
+  }
+  for (size_t i = 0; i < NWINDOWS; ++i) {
+    printf("%0.8f%c", winrms[i], i + 1 < NWINDOWS ? ',' : '\n');
   }
   for (size_t j = 0; j < WINDOWLENGTH; ++j) {
     for (size_t i = 0; i < NWINDOWS; ++i) {
