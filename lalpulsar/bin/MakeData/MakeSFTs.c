@@ -160,9 +160,6 @@ int WindowData( REAL8 r );
 int WindowDataTukey2( void );
 int WindowDataHann( void );
 
-/* create an SFT */
-int CreateSFT( void );
-
 /* writes out an SFT */
 int WriteVersion2SFT( void );
 
@@ -277,9 +274,12 @@ int main( int argc, char *argv[] )
     }
 
     /* create an SFT */
-    if ( CreateSFT( ) ) {
-      return 6;
-    }
+    /* 11/02/05 gam; allocate container for SFT data */
+    LALZCreateVector( &status, &fftDataDouble, dataDouble.data->length / 2 + 1 );
+    TESTSTATUS( &status );
+
+    /* compute sft */
+    XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     /* write out sft */
     if ( WriteVersion2SFT( ) ) {
@@ -612,21 +612,6 @@ int HighPass( )
     TESTSTATUS( &status );
 
   }
-
-  return 0;
-}
-/*******************************************************************************/
-
-/*******************************************************************************/
-int CreateSFT( )
-{
-
-  /* 11/02/05 gam; allocate container for SFT data */
-  LALZCreateVector( &status, &fftDataDouble, dataDouble.data->length / 2 + 1 );
-  TESTSTATUS( &status );
-
-  /* compute sft */
-  XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return 0;
 }
