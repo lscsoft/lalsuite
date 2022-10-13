@@ -97,6 +97,12 @@
 #include <lal/LALVCSInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 
+#ifdef __GNUC__
+#define UNUSED __attribute__ ((unused))
+#else
+#define UNUSED
+#endif
+
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
@@ -122,7 +128,6 @@ struct CommandLineArgsTag {
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 windowR;
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
-  BOOLEAN useSingle;       /* 11/19/05 gam; use single rather than double precision */
   char *frameStructType;   /* 01/10/07 gam */
 } CommandLineArgs;
 
@@ -160,9 +165,6 @@ LIGOTimeGPS gpsepoch;
 
 REAL8FFTPlan *fftPlanDouble;           /* fft plan and data container, double precision case */
 COMPLEX16Vector *fftDataDouble = NULL;
-
-REAL4FFTPlan *fftPlanSingle;           /* 11/19/05 gam; fft plan and data container, single precision case */
-COMPLEX8Vector *fftDataSingle = NULL;
 
 CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentField, based on lalapps/src/calibration/ComputeStrainDriver.c */
 /***************************************************************************/
@@ -381,7 +383,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"window-radius",        required_argument, NULL,          'r'},
     {"overlap-fraction",     required_argument, NULL,          'P'},
     {"ht-data",              no_argument,       NULL,          'H'},
-    {"use-single",           no_argument,       NULL,          'S'},
+    /* {"use-single",           no_argument,       NULL,          'S'}, */
     {"help",                 no_argument,       NULL,          'h'},
     {"version",              no_argument,       NULL,          'V'},
     {0, 0, 0, 0}
@@ -407,7 +409,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->overlapFraction=0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
   CLA->htdata = 0;
   CLA->makeTmpFile = 0; /* 01/09/06 gam */  
-  CLA->useSingle = 0;        /* 11/19/05 gam; default is to use double precision, not single. */
   CLA->frameStructType=NULL; /* 01/10/07 gam */
 
   strcat(allargs, "\nMakeSFTs ");
@@ -462,10 +463,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     case 'Z':
       /* make tmp file */
       CLA->makeTmpFile=1;
-      break;
-    case 'S':
-      /* use single precision */
-      CLA->useSingle=1;
       break;
     case 'f':
       /* high pass frequency */
@@ -561,7 +558,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\twindow-radius (-r)\tFLOAT\t (optional) default = 0.001\n");
       fprintf(stdout,"\toverlap-fraction (-P)\tFLOAT\t (optional) Overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n");
       fprintf(stdout,"\tht-data (-H)\t\tFLAG\t (optional) Input data is h(t) data (input is PROC_REAL8 data ).\n");
-      fprintf(stdout,"\tuse-single (-S)\t\tFLAG\t (optional) Use single precision for window, plan, and fft; double precision filtering is always done.\n");
       fprintf(stdout,"\tframe-struct-type (-u)\tSTRING\t (optional) String specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.\n");
       fprintf(stdout,"\tversion (-V)\t\tFLAG\t Print LAL & LALPulsar version and exit.\n");
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
@@ -736,21 +732,11 @@ int AllocateData(struct CommandLineArgsTag CLA)
       dataDouble.deltaT=dataSingle.deltaT;
     }
 
-  /*  11/19/05 gam; will keep dataDouble or dataSingle in memory at all times, depending on whether using single or double precision */
-  if(CLA.useSingle) {
-      LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
-      TESTSTATUS( &status );
-
-      fftPlanSingle = XLALCreateForwardREAL4FFTPlan( dataSingle.data->length, 0 );
-      XLAL_CHECK( fftPlanSingle != NULL, XLAL_EFUNC );
-
-  } else {  
       LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
       TESTSTATUS( &status );
 
       fftPlanDouble = XLALCreateForwardREAL8FFTPlan( dataDouble.data->length, 0 );
       XLAL_CHECK( fftPlanDouble != NULL, XLAL_EFUNC );
-  }
 
   return 0;
 }
@@ -764,122 +750,6 @@ int ReadData(struct CommandLineArgsTag CLA)
   chanin.name  = CLA.ChannelName;
   LALFrSeek(&status,&gpsepoch,framestream);
   TESTSTATUS( &status );
-
-  /* 11/19/05 gam */
-  if(CLA.useSingle) {
-    
-    if(CLA.htdata)
-    {
-
-      LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
-      TESTSTATUS( &status );
-
-      chanin.type  = ProcDataChannel;
-      LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
-      TESTSTATUS( &status );
-
-      /*copy the data into the single precision timeseries */
-      for (k = 0; k < (int)dataSingle.data->length; k++) {
-          dataSingle.data->data[k] = dataDouble.data->data[k];
-      }
-
-      LALDDestroyVector(&status,&dataDouble.data);
-      TESTSTATUS( &status );
-
-    }
-    else if (CLA.frameStructType != NULL)
-    {
-      /* 01/10/07 gam */  
-      if ( strstr(CLA.frameStructType,"ADC_") ) {
-         chanin.type  = ADCDataChannel;
-      } else if ( strstr(CLA.frameStructType,"PROC_") ) {
-         chanin.type  = ProcDataChannel;
-      } else {
-        return 1; 
-      }
-      if ( strstr(CLA.frameStructType,"REAL8") ) {
-
-         LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
-         TESTSTATUS( &status );
-
-         LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
-         TESTSTATUS( &status );
-
-         /*copy the data into the single precision timeseries */
-         for (k = 0; k < (int)dataSingle.data->length; k++) {
-             dataSingle.data->data[k] = dataDouble.data->data[k];
-         }
-
-         LALDDestroyVector(&status,&dataDouble.data);
-         TESTSTATUS( &status );
-
-      } else if ( strstr(CLA.frameStructType,"REAL4") ) {      
-
-         LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
-         TESTSTATUS( &status );
-
-      } else if ( strstr(CLA.frameStructType,"INT2") ) {
-
-         LALI2CreateVector(&status,&dataINT2.data,(UINT4)(CLA.T/dataINT2.deltaT +0.5));
-         TESTSTATUS( &status );
-
-         LALFrGetINT2TimeSeries(&status,&dataINT2,&chanin,framestream);
-         TESTSTATUS( &status );
-
-         /*copy the data into the single precision timeseries */
-         for (k = 0; k < (int)dataDouble.data->length; k++) {
-             dataSingle.data->data[k] = (REAL4)(dataINT2.data->data[k]);
-         }     
-
-         LALI2DestroyVector(&status,&dataINT2.data);
-         TESTSTATUS( &status );
-
-      } else if ( strstr(CLA.frameStructType,"INT4") ) {
-
-         LALI4CreateVector(&status,&dataINT4.data,(UINT4)(CLA.T/dataINT4.deltaT +0.5));
-         TESTSTATUS( &status );
-
-         LALFrGetINT4TimeSeries(&status,&dataINT4,&chanin,framestream);
-         TESTSTATUS( &status );
-
-         /*copy the data into the single precision timeseries */
-         for (k = 0; k < (int)dataDouble.data->length; k++) {
-             dataSingle.data->data[k] = (REAL4)(dataINT4.data->data[k]);
-         }     
-
-         LALI4DestroyVector(&status,&dataINT4.data);
-         TESTSTATUS( &status );
-
-      } else if ( strstr(CLA.frameStructType,"INT8") ) {
-
-         LALI8CreateVector(&status,&dataINT8.data,(UINT4)(CLA.T/dataINT8.deltaT +0.5));
-         TESTSTATUS( &status );
-
-         LALFrGetINT8TimeSeries(&status,&dataINT8,&chanin,framestream);
-         TESTSTATUS( &status );
-
-         /*copy the data into the single precision timeseries */
-         for (k = 0; k < (int)dataDouble.data->length; k++) {
-             dataSingle.data->data[k] = (REAL4)(dataINT8.data->data[k]);
-         }     
-
-         LALI8DestroyVector(&status,&dataINT8.data);
-         TESTSTATUS( &status );
-
-      } else {
-        return 1;
-      }      
-    }
-    else
-    {
-
-      chanin.type  = ADCDataChannel;
-      LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
-      TESTSTATUS( &status );
-
-    }
-
-  } else {
 
     if(CLA.htdata)
     {
@@ -992,8 +862,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 
     }
 
-  } /* END if(CLA.useSingle) else */
-
   return 0;
 }
 /*******************************************************************************/
@@ -1013,19 +881,11 @@ int HighPass(struct CommandLineArgsTag CLA)
 
   if (CLA.HPf > 0.0 )
     {
-      if(CLA.useSingle) {
-
-        /* High pass the time series */
-        LALDButterworthREAL4TimeSeries(&status,&dataSingle,&filterpar);
-        TESTSTATUS( &status );
-
-      } else {
 
         /* High pass the time series */
         LALButterworthREAL8TimeSeries(&status,&dataDouble,&filterpar);
         TESTSTATUS( &status );
 
-      }
     }
 
   return 0;
@@ -1033,20 +893,8 @@ int HighPass(struct CommandLineArgsTag CLA)
 /*******************************************************************************/
 
 /*******************************************************************************/
-int CreateSFT(struct CommandLineArgsTag CLA)
+int CreateSFT(struct CommandLineArgsTag CLA UNUSED)
 {
-
-  /* 11/19/05 gam */
-  if(CLA.useSingle) {
-
-      /* 11/02/05 gam; allocate container for SFT data */
-      LALCCreateVector( &status, &fftDataSingle, dataSingle.data->length / 2 + 1 );
-      TESTSTATUS( &status );  
-
-      /* compute sft */
-      XLAL_CHECK( XLALREAL4ForwardFFT( fftDataSingle, dataSingle.data, fftPlanSingle ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  } else {
 
       /* 11/02/05 gam; allocate container for SFT data */
       LALZCreateVector( &status, &fftDataDouble, dataDouble.data->length / 2 + 1 );
@@ -1055,7 +903,6 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       /* compute sft */
       XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  }
       return 0;
 }
 /*******************************************************************************/
@@ -1128,26 +975,6 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     return 7;
   }
 
-  /* 11/19/05 gam */
-  if(CLA.useSingle) {
-    /* Write SFT */
-    for (k=0; k<header.nsamples; k++)
-    {
-      rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* crealf(fftDataSingle->data[k+firstbin]);
-      ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* cimagf(fftDataSingle->data[k+firstbin]);
-      /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-        if (!isfinite(rpw) || !isfinite(ipw)) {
-          fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
-          return 7;
-        }
-      errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
-      errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
-    }
-    LALCDestroyVector( &status, &fftDataSingle );
-    TESTSTATUS( &status );
-  } else {    
     /* Write SFT */
     for (k=0; k<header.nsamples; k++)
     {
@@ -1165,7 +992,6 @@ int WriteSFT(struct CommandLineArgsTag CLA)
     }
     LALZDestroyVector( &status, &fftDataDouble );
     TESTSTATUS( &status );
-  }
 
   /* Check that there were no errors while writing SFTS */
   if (errorcode1-1 || errorcode2-1)
@@ -1199,7 +1025,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   char gpstime[11]; /* 12/27/05 gam; allow for 10 digit GPS times and null termination */
   SFTtype *oneSFT = NULL;
   INT4 nBins = (INT4)(DF*CLA.T+0.5);
-  REAL4 singleDeltaT = 0.0; /* 01/05/06 gam */
   REAL8 doubleDeltaT = 0.0; /* 01/05/06 gam */
 
   /* 12/27/05 gam; set up the number of SFTs, site, and ifo as null terminated strings */
@@ -1248,21 +1073,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   oneSFT->deltaF = 1.0/((REAL8)CLA.T);
   oneSFT->data->length=nBins;
   
-  if(CLA.useSingle) {
-    /* singleDeltaT = ((REAL4)dataSingle.deltaT); */ /* 01/05/06 gam; and normalize SFTs using this below */
-    singleDeltaT = (REAL4)(dataSingle.deltaT/winFncRMS); /* include 1 over window function RMS */
-    for (k=0; k<nBins; k++)
-    {
-      oneSFT->data->data[k] = (((REAL4) singleDeltaT) * fftDataSingle->data[k+firstbin]);
-      /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-        if (!isfinite(crealf(oneSFT->data->data[k])) || !isfinite(cimagf(oneSFT->data->data[k]))) {
-          fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
-          return 7;
-        }
-    }
-    LALCDestroyVector( &status, &fftDataSingle );
-    TESTSTATUS( &status );
-  } else {
     /*doubleDeltaT = ((REAL8)dataDouble.deltaT); */ /* 01/05/06 gam; and normalize SFTs using this below */
     doubleDeltaT = (REAL8)(dataDouble.deltaT/winFncRMS); /* include 1 over window function RMS */
     for (k=0; k<nBins; k++)
@@ -1276,7 +1086,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     }
     LALZDestroyVector( &status, &fftDataDouble );
     TESTSTATUS( &status );
-  }  
 
   /* write the SFT */
   XLAL_CHECK( XLALWriteSFT2NamedFile(oneSFT, sftname, "unknown" /* FIXME */, 0, CLA.commentField) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -1293,22 +1102,15 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
 /*******************************************************************************/
 
 /*******************************************************************************/
-int FreeMem(struct CommandLineArgsTag CLA)
+int FreeMem(struct CommandLineArgsTag CLA UNUSED)
 {
 
   LALFrClose(&status,&framestream);
   TESTSTATUS( &status );
 
-  /* 11/19/05 gam */
-  if(CLA.useSingle) {
-    LALDestroyVector(&status,&dataSingle.data);
-    TESTSTATUS( &status );
-    XLALDestroyREAL4FFTPlan( fftPlanSingle );
-  } else {
     LALDDestroyVector(&status,&dataDouble.data);
     TESTSTATUS( &status );
     XLALDestroyREAL8FFTPlan( fftPlanDouble );
-  }
 
   LALCheckMemoryLeaks();
  
