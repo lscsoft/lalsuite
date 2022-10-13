@@ -97,10 +97,6 @@
 #include <lal/LALVCSInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 
-/* print the first NUMTOPRINT, middle NUMTOPRINT, and last NUMTOPRINT input/ouput data at various stages */
-#define PRINTEXAMPLEDATA 0
-#define NUMTOPRINT       2
-
 /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
 #define CHECKFORINFINITEANDNANS 1
 
@@ -282,142 +278,6 @@ void mvFilenames(CHAR *filename1, CHAR *filename2) {
      if ( system(mvFilenamesCommand) ) XLALPrintError ("system() returned non-zero status\n");
 }
 
-#if PRINTEXAMPLEDATA
-void printExampleDataSingle() {
-      INT4 i,dataLength;
-      dataLength = dataSingle.data->length;
-      fprintf(stdout,"dataSingle.deltaT, 1.0/dataSingle.deltaT = %23.16e, %23.16e\n",dataSingle.deltaT,1.0/dataSingle.deltaT);
-      fprintf(stdout,"dataSingle.epoch.gpsSeconds,dataSingle.epoch.gpsNanoSeconds = %i, %i\n",dataSingle.epoch.gpsSeconds,dataSingle.epoch.gpsNanoSeconds);
-      for (i=0;i<NUMTOPRINT;i++) {
-        fprintf(stdout,"%i %23.16e\n",i,dataSingle.data->data[i]);
-      }
-      for (i=dataLength/2;i<dataLength/2+NUMTOPRINT;i++) {
-        fprintf(stdout,"%i %23.16e\n",i,dataSingle.data->data[i]);
-      }
-      for (i=dataLength-NUMTOPRINT;i<dataLength;i++) {
-        fprintf(stdout,"%i %23.16e\n",i,dataSingle.data->data[i]);
-      }
-      fflush(stdout);
-}    
-
-void printExampleDataDouble() {
-      INT4 i,dataLength;
-      dataLength = dataDouble.data->length;
-      fprintf(stdout,"dataDouble.deltaT, 1.0/dataDouble.deltaT = %23.16e, %23.16e\n",dataDouble.deltaT,1.0/dataDouble.deltaT);
-      fprintf(stdout,"dataDouble.epoch.gpsSeconds,dataDouble.epoch.gpsNanoSeconds = %i, %i\n",dataDouble.epoch.gpsSeconds,dataDouble.epoch.gpsNanoSeconds);
-      for (i=0;i<NUMTOPRINT;i++) {
-        fprintf(stdout,"%i %23.16e\n",i,dataDouble.data->data[i]);
-      }
-      for (i=dataLength/2;i<dataLength/2+NUMTOPRINT;i++) {
-        fprintf(stdout,"%i %23.16e\n",i,dataDouble.data->data[i]);
-      }
-      for (i=dataLength-NUMTOPRINT;i<dataLength;i++) {
-        fprintf(stdout,"%i %23.16e\n",i,dataDouble.data->data[i]);
-      }
-      fflush(stdout);
-}
-
-void printExampleFFTData(struct CommandLineArgsTag CLA)
-{
-  int firstbin=(INT4)(FMIN*CLA.T+0.5);
-  int k;
-  INT4 nsamples=(INT4)(DF*CLA.T+0.5);
-
-  if(CLA.useSingle) {
-    for (k=0; k<NUMTOPRINT; k++) {
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataSingle->data[k+firstbin].re,fftDataSingle->data[k+firstbin].im);
-    }
-    for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataSingle->data[k+firstbin].re,fftDataSingle->data[k+firstbin].im);
-    }
-    for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataSingle->data[k+firstbin].re,fftDataSingle->data[k+firstbin].im);
-    }    
-  } else {
-    for (k=0; k<NUMTOPRINT; k++) {
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataDouble->data[k+firstbin].re,fftDataDouble->data[k+firstbin].im);
-    }
-    for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataDouble->data[k+firstbin].re,fftDataDouble->data[k+firstbin].im);
-    }
-    for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,fftDataDouble->data[k+firstbin].re,fftDataDouble->data[k+firstbin].im);
-    }    
-  }
-  fflush(stdout);
-}
-
-void printExampleSFTDataGoingToFile(struct CommandLineArgsTag CLA)
-{
-  int firstbin=(INT4)(FMIN*CLA.T+0.5);
-  int k;
-  INT4 nsamples=(INT4)(DF*CLA.T+0.5);
-  REAL4 rpw,ipw;
-
-  if(CLA.useSingle) {
-    for (k=0; k<NUMTOPRINT; k++) {
-      rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].re;
-      ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].im;
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
-    }
-    for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
-      rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].re;
-      ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].im;
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
-    }
-    for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
-      rpw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].re;
-      ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
-	* fftDataSingle->data[k+firstbin].im;
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
-    }    
-  } else {
-    for (k=0; k<NUMTOPRINT; k++) {
-      rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].re;
-      ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].im;
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
-    }
-    for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
-      rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].re;
-      ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].im;
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
-    }
-    for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
-      rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].re;
-      ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* fftDataDouble->data[k+firstbin].im;
-      fprintf(stdout,"%i %23.16e %23.16e\n",k,rpw,ipw);
-    }    
-  }
-  fflush(stdout);
-}
-
-void printExampleVersion2SFTDataGoingToFile(struct CommandLineArgsTag CLA, SFTtype *oneSFT)
-{
-  int k;
-  INT4 nsamples=(INT4)(DF*CLA.T+0.5);
-
-  for (k=0; k<NUMTOPRINT; k++) {  
-    fprintf(stdout,"%i %23.16e %23.16e\n",k,oneSFT->data->data[k].re,oneSFT->data->data[k].im);
-  }
-  for (k=nsamples/2; k<nsamples/2+NUMTOPRINT; k++) {
-    fprintf(stdout,"%i %23.16e %23.16e\n",k,oneSFT->data->data[k].re,oneSFT->data->data[k].im);
-  }
-  for (k=nsamples-NUMTOPRINT; k<nsamples; k++) {
-    fprintf(stdout,"%i %23.16e %23.16e\n",k,oneSFT->data->data[k].re,oneSFT->data->data[k].im);
-  }    
-}
-#endif
 
 
 /************************************* MAIN PROGRAM *************************************/
@@ -1022,10 +882,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 
     }
 
-    #if PRINTEXAMPLEDATA
-        printf("\nExample dataSingle values after reading data from frames in ReadData:\n"); printExampleDataSingle();
-    #endif
-
   } else {
 
     if(CLA.htdata)
@@ -1139,10 +995,6 @@ int ReadData(struct CommandLineArgsTag CLA)
 
     }
 
-    #if PRINTEXAMPLEDATA
-        printf("\nExample dataDouble values after reading data from frames in ReadData:\n"); printExampleDataDouble();
-    #endif
-
   } /* END if(CLA.useSingle) else */
 
   return 0;
@@ -1170,18 +1022,12 @@ int HighPass(struct CommandLineArgsTag CLA)
         LALDButterworthREAL4TimeSeries(&status,&dataSingle,&filterpar);
         TESTSTATUS( &status );
 
-        #if PRINTEXAMPLEDATA
-            printf("\nExample dataSingle values after filtering data in HighPass:\n"); printExampleDataSingle();
-        #endif
       } else {
 
         /* High pass the time series */
         LALButterworthREAL8TimeSeries(&status,&dataDouble,&filterpar);
         TESTSTATUS( &status );
 
-        #if PRINTEXAMPLEDATA
-            printf("\nExample dataDouble values after filtering data in HighPass:\n"); printExampleDataDouble();
-        #endif
       }
     }
 
@@ -1203,9 +1049,6 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       /* compute sft */
       XLAL_CHECK( XLALREAL4ForwardFFT( fftDataSingle, dataSingle.data, fftPlanSingle ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      #if PRINTEXAMPLEDATA
-        printf("\nExample real and imaginary value of fftDataSingle from CreateSFT:\n"); printExampleFFTData(CLA);
-      #endif      
   } else {
 
       /* 11/02/05 gam; allocate container for SFT data */
@@ -1215,9 +1058,6 @@ int CreateSFT(struct CommandLineArgsTag CLA)
       /* compute sft */
       XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      #if PRINTEXAMPLEDATA
-        printf("\nExample real and imaginary value of fftDataDouble from CreateSFT:\n"); printExampleFFTData(CLA);
-      #endif      
   }
       return 0;
 }
@@ -1310,9 +1150,6 @@ int WriteSFT(struct CommandLineArgsTag CLA)
       errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
       errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
     }
-    #if PRINTEXAMPLEDATA
-        printf("\nExample real and imaginary SFT values going to file from fftDataSingle in WriteSFT:\n"); printExampleSFTDataGoingToFile(CLA);
-    #endif     
     LALCDestroyVector( &status, &fftDataSingle );
     TESTSTATUS( &status );
   } else {    
@@ -1333,9 +1170,6 @@ int WriteSFT(struct CommandLineArgsTag CLA)
       errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
       errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
     }
-    #if PRINTEXAMPLEDATA
-        printf("\nExample real and imaginary SFT values going to file from fftDataDouble in WriteSFT:\n"); printExampleSFTDataGoingToFile(CLA);
-    #endif
     LALZDestroyVector( &status, &fftDataDouble );
     TESTSTATUS( &status );
   }
@@ -1435,9 +1269,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
         }
       #endif      
     }
-    #if PRINTEXAMPLEDATA
-        printf("\nExample real and imaginary SFT values going to file from fftDataSingle in WriteVersion2SFT:\n"); printExampleVersion2SFTDataGoingToFile(CLA,oneSFT);
-    #endif
     LALCDestroyVector( &status, &fftDataSingle );
     TESTSTATUS( &status );
   } else {
@@ -1454,9 +1285,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
         }
       #endif
     }
-    #if PRINTEXAMPLEDATA
-        printf("\nExample real and imaginary SFT values going to file from fftDataDouble in WriteVersion2SFT:\n"); printExampleVersion2SFTDataGoingToFile(CLA,oneSFT);
-    #endif
     LALZDestroyVector( &status, &fftDataDouble );
     TESTSTATUS( &status );
   }  
