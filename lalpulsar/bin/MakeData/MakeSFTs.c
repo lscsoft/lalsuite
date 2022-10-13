@@ -116,7 +116,6 @@ struct CommandLineArgsTag {
   INT4 GPSStart;
   INT4 GPSEnd;
   char *commentField;      /* 12/28/05 gam; string comment for version 2 SFTs */
-  BOOLEAN makeTmpFile;     /* 01/09/06 gam */
   char *FrCacheFile;       /* Frame cache file */
   char *ChannelName;
   char *IFO;               /* 01/14/07 gam */
@@ -334,7 +333,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"start-freq",           required_argument, NULL,          'F'},
     {"band",                 required_argument, NULL,          'B'},
     /* {"make-gps-dirs",        required_argument, NULL,          'D'}, */
-    {"make-tmp-file",        required_argument, NULL,          'Z'},
+    /* {"make-tmp-file",        required_argument, NULL,          'Z'}, */
     /* {"misc-desc",            required_argument, NULL,          'X'}, */
     /* {"frame-struct-type",    required_argument, NULL,          'u'}, */
     {"ifo",                  required_argument, NULL,          'i'},
@@ -363,7 +362,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->windowOption=1;  /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   CLA->windowR = 0.001;
   CLA->overlapFraction=0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
-  CLA->makeTmpFile = 0; /* 01/09/06 gam */  
 
   strcat(allargs, "\nMakeSFTs ");
   strcat(allargs, lalVCSIdentInfo.vcsId);
@@ -410,10 +408,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
     switch ( c )
     {
-    case 'Z':
-      /* make tmp file */
-      CLA->makeTmpFile=1;
-      break;
     case 'f':
       /* high pass frequency */
       CLA->HPf=atof(LALoptarg);
@@ -697,7 +691,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   strcat(sftname,"/");
   mkSFTFilename(sftFilename, site, numSFTs, ifo, CLA.stringT, NULL, gpstime);
   /* 01/09/06 gam; sftname will be temporary; will move to sftnameFinal. */
-  if(CLA.makeTmpFile) {
     /* set up sftnameFinal with usual SFT name */
     strcpy(sftnameFinal,sftname);
     strcat(sftnameFinal,sftFilename);
@@ -705,9 +698,6 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     strcat(sftname,".");
     strcat(sftname,sftFilename);
     strcat(sftname,".tmp");
-  } else {
-    strcat(sftname,sftFilename);
-  }  
 
   /* make container to store the SFT data */
   XLAL_CHECK( ( oneSFT = XLALCreateSFT ( ((UINT4)nBins)) ) != NULL, XLAL_EFUNC );
@@ -738,9 +728,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   XLAL_CHECK( XLALWriteSFT2NamedFile(oneSFT, sftname, "unknown" /* FIXME */, 0, CLA.commentField) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
-  if(CLA.makeTmpFile) {  
     mvFilenames(sftname,sftnameFinal);
-  }
 
   XLALDestroySFT (oneSFT);
 
