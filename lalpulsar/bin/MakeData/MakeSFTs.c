@@ -149,9 +149,6 @@ int ReadCommandLine( int argc, char *argv[] );
 /* Allocates space for data time series */
 int AllocateData( void );
 
-/* Reads data */
-int ReadData( void );
-
 /* Windows data */
 int WindowData( REAL8 r );
 int WindowDataTukey2( void );
@@ -241,8 +238,15 @@ int main( int argc, char *argv[] )
   while ( gpsepoch.gpsSeconds + CLA.T <= CLA.GPSEnd ) {
 
     /* Reads T seconds of data */
-    if ( ReadData( ) ) {
-      return 3;
+    {
+      static FrChanIn chanin;
+      chanin.name  = CLA.ChannelName;
+      LALFrSeek( &status, &gpsepoch, framestream );
+      TESTSTATUS( &status );
+
+      chanin.type  = ProcDataChannel;
+      LALFrGetREAL8TimeSeries( &status, &dataDouble, &chanin, framestream );
+      TESTSTATUS( &status );
     }
 
     /* High-pass data with Butterworth filter */
@@ -645,22 +649,6 @@ int AllocateData( )
 
   fftPlanDouble = XLALCreateForwardREAL8FFTPlan( dataDouble.data->length, 0 );
   XLAL_CHECK( fftPlanDouble != NULL, XLAL_EFUNC );
-
-  return 0;
-}
-/*******************************************************************************/
-
-/*******************************************************************************/
-int ReadData( )
-{
-  static FrChanIn chanin;
-  chanin.name  = CLA.ChannelName;
-  LALFrSeek( &status, &gpsepoch, framestream );
-  TESTSTATUS( &status );
-
-  chanin.type  = ProcDataChannel;
-  LALFrGetREAL8TimeSeries( &status, &dataDouble, &chanin, framestream );
-  TESTSTATUS( &status );
 
   return 0;
 }
