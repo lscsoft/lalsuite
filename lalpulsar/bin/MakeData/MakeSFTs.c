@@ -97,9 +97,6 @@
 #include <lal/LALVCSInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 
-/* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-#define CHECKFORINFINITEANDNANS 1
-
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
@@ -1141,12 +1138,10 @@ int WriteSFT(struct CommandLineArgsTag CLA)
       ipw=((REAL4)(((REAL8)DF)/(0.5*(REAL8)(1/dataSingle.deltaT))))
 	* cimagf(fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-      #if CHECKFORINFINITEANDNANS
         if (!isfinite(rpw) || !isfinite(ipw)) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
-      #endif
       errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
       errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
     }
@@ -1161,12 +1156,10 @@ int WriteSFT(struct CommandLineArgsTag CLA)
       ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
 	* cimag(fftDataDouble->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-      #if CHECKFORINFINITEANDNANS
         if (!isfinite(rpw) || !isfinite(ipw)) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
-      #endif
       errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
       errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
     }
@@ -1262,12 +1255,10 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     {
       oneSFT->data->data[k] = (((REAL4) singleDeltaT) * fftDataSingle->data[k+firstbin]);
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-      #if CHECKFORINFINITEANDNANS
         if (!isfinite(crealf(oneSFT->data->data[k])) || !isfinite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
-      #endif      
     }
     LALCDestroyVector( &status, &fftDataSingle );
     TESTSTATUS( &status );
@@ -1278,12 +1269,10 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
     {
       oneSFT->data->data[k] = crectf( doubleDeltaT*creal(fftDataDouble->data[k+firstbin]), doubleDeltaT*cimag(fftDataDouble->data[k+firstbin]) );
       /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-      #if CHECKFORINFINITEANDNANS
         if (!isfinite(crealf(oneSFT->data->data[k])) || !isfinite(cimagf(oneSFT->data->data[k]))) {
           fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
           return 7;
         }
-      #endif
     }
     LALZDestroyVector( &status, &fftDataDouble );
     TESTSTATUS( &status );
