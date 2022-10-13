@@ -57,7 +57,7 @@ echo "H H1_mfdv5 ${tstart2} ${duration2} file://localhost$PWD/MFDv5/H-H1_mfdv5-$
 
 ## run MakeSFTs to create SFTs from the fake frames
 mkdir -p MSFTs/
-MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment' --frame-struct-type PROC_REAL8"
+MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment'"
 cmdline="${MSFTs_cmdline_base} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type 0"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"

@@ -117,7 +117,6 @@ struct CommandLineArgsTag {
   INT4 GPSEnd;
   INT4 makeGPSDirs;        /* 12/27/05 gam; add option to make directories based on gps time */
   char *commentField;      /* 12/28/05 gam; string comment for version 2 SFTs */
-  BOOLEAN htdata;          /* flag that indicates we're doing h(t) data */
   BOOLEAN makeTmpFile;     /* 01/09/06 gam */
   char *FrCacheFile;       /* Frame cache file */
   char *ChannelName;
@@ -127,7 +126,6 @@ struct CommandLineArgsTag {
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 windowR;
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
-  char *frameStructType;   /* 01/10/07 gam */
 } CommandLineArgs;
 
 
@@ -145,9 +143,6 @@ LALFrStream *framestream=NULL;
 
 REAL8TimeSeries dataDouble;
 REAL4TimeSeries dataSingle;
-INT2TimeSeries dataINT2;
-INT4TimeSeries dataINT4;
-INT8TimeSeries dataINT8;
 INT4 SegmentDuration;
 LIGOTimeGPS gpsepoch;
 
@@ -359,12 +354,12 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"make-gps-dirs",        required_argument, NULL,          'D'},
     {"make-tmp-file",        required_argument, NULL,          'Z'},
     {"misc-desc",            required_argument, NULL,          'X'},
-    {"frame-struct-type",    required_argument, NULL,          'u'},
+    /* {"frame-struct-type",    required_argument, NULL,          'u'}, */
     {"ifo",                  required_argument, NULL,          'i'},
     {"window-type",          required_argument, NULL,          'w'},
     {"window-radius",        required_argument, NULL,          'r'},
     {"overlap-fraction",     required_argument, NULL,          'P'},
-    {"ht-data",              no_argument,       NULL,          'H'},
+    /* {"ht-data",              no_argument,       NULL,          'H'}, */
     /* {"use-single",           no_argument,       NULL,          'S'}, */
     {"help",                 no_argument,       NULL,          'h'},
     {"version",              no_argument,       NULL,          'V'},
@@ -388,9 +383,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->windowOption=1;  /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   CLA->windowR = 0.001;
   CLA->overlapFraction=0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
-  CLA->htdata = 0;
   CLA->makeTmpFile = 0; /* 01/09/06 gam */  
-  CLA->frameStructType=NULL; /* 01/10/07 gam */
 
   strcat(allargs, "\nMakeSFTs ");
   strcat(allargs, lalVCSIdentInfo.vcsId);
@@ -437,10 +430,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
 
     switch ( c )
     {
-    case 'H':
-      /* high pass frequency */
-      CLA->htdata=1;
-      break;
     case 'Z':
       /* make tmp file */
       CLA->makeTmpFile=1;
@@ -489,9 +478,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* 12/28/05 gam; misc. part of the SFT description field in the filename (also used if makeGPSDirs > 0) */
       CLA->miscDesc=LALoptarg;
       break;
-    case 'u':
-      CLA->frameStructType=LALoptarg; /* 01/10/07 gam */
-      break;
     case 'w':
       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
       CLA->windowOption=atoi(LALoptarg);
@@ -533,8 +519,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\twindow-type (-w)\tINT\t (optional) 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window\n");
       fprintf(stdout,"\twindow-radius (-r)\tFLOAT\t (optional) default = 0.001\n");
       fprintf(stdout,"\toverlap-fraction (-P)\tFLOAT\t (optional) Overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0).\n");
-      fprintf(stdout,"\tht-data (-H)\t\tFLAG\t (optional) Input data is h(t) data (input is PROC_REAL8 data ).\n");
-      fprintf(stdout,"\tframe-struct-type (-u)\tSTRING\t (optional) String specifying the input frame structure and data type. Must begin with ADC_ or PROC_ followed by REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; -H is the same as PROC_REAL8.\n");
       fprintf(stdout,"\tversion (-V)\t\tFLAG\t Print LAL & LALPulsar version and exit.\n");
       fprintf(stdout,"\thelp (-h)\t\tFLAG\t This message.\n");
       exit(0);
@@ -641,8 +625,6 @@ int AllocateData(struct CommandLineArgsTag CLA)
   chanin.name  = CLA.ChannelName;
 
   /* These calls just return deltaT for the channel */
-  if(CLA.htdata)
-    {
       chanin.type  = ProcDataChannel;
       /* Get channel time step size by calling LALFrGetREAL8TimeSeries */
       LALFrSeek(&status,&gpsepoch,framestream);
@@ -650,57 +632,6 @@ int AllocateData(struct CommandLineArgsTag CLA)
       LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
       TESTSTATUS( &status );
       dataSingle.deltaT=dataDouble.deltaT;      
-    }
-  else if (CLA.frameStructType != NULL) 
-    {
-      /* 01/10/07 gam */  
-      if ( strstr(CLA.frameStructType,"ADC_") ) {
-         chanin.type  = ADCDataChannel;
-      } else if ( strstr(CLA.frameStructType,"PROC_") ) {
-         chanin.type  = ProcDataChannel;
-      } else {
-        return 1; 
-      }
-      /* Get channel time step size by calling LALFrGet... functions: */
-      LALFrSeek(&status,&gpsepoch,framestream);
-      TESTSTATUS( &status );      
-      if ( strstr(CLA.frameStructType,"REAL8") ) {
-         LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
-         TESTSTATUS( &status );
-         dataSingle.deltaT=dataDouble.deltaT;
-      } else if ( strstr(CLA.frameStructType,"REAL4") ) { 
-         LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
-         TESTSTATUS( &status );
-         dataDouble.deltaT=dataSingle.deltaT;
-      } else if ( strstr(CLA.frameStructType,"INT2") ) {
-         LALFrGetINT2TimeSeries(&status,&dataINT2,&chanin,framestream);
-         TESTSTATUS( &status );
-         dataDouble.deltaT = dataINT2.deltaT;
-         dataSingle.deltaT=dataDouble.deltaT;
-      } else if ( strstr(CLA.frameStructType,"INT4") ) {
-         LALFrGetINT4TimeSeries(&status,&dataINT4,&chanin,framestream);
-         TESTSTATUS( &status );
-         dataDouble.deltaT = dataINT4.deltaT;
-         dataSingle.deltaT=dataDouble.deltaT;
-      } else if ( strstr(CLA.frameStructType,"INT8") ) {      
-         LALFrGetINT8TimeSeries(&status,&dataINT8,&chanin,framestream);
-         TESTSTATUS( &status );
-         dataDouble.deltaT = dataINT8.deltaT;
-         dataSingle.deltaT=dataDouble.deltaT;
-      } else {
-        return 1;
-      }      
-    }
-  else
-    {
-      chanin.type  = ADCDataChannel;
-      /* Get channel time step size by calling LALFrGetREAL4TimeSeries */
-      LALFrSeek(&status,&gpsepoch,framestream);
-      TESTSTATUS( &status );
-      LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
-      TESTSTATUS( &status );
-      dataDouble.deltaT=dataSingle.deltaT;
-    }
 
       LALDCreateVector(&status,&dataDouble.data,(UINT4)(CLA.T/dataDouble.deltaT +0.5));
       TESTSTATUS( &status );
@@ -716,121 +647,13 @@ int AllocateData(struct CommandLineArgsTag CLA)
 int ReadData(struct CommandLineArgsTag CLA)
 {
   static FrChanIn chanin;
-  INT4 k;
   chanin.name  = CLA.ChannelName;
   LALFrSeek(&status,&gpsepoch,framestream);
   TESTSTATUS( &status );
 
-    if(CLA.htdata)
-    {
-    
       chanin.type  = ProcDataChannel;
       LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
       TESTSTATUS( &status );
-
-    }
-    else if (CLA.frameStructType != NULL) 
-    {
-      /* 01/10/07 gam */  
-      if ( strstr(CLA.frameStructType,"ADC_") ) {
-         chanin.type  = ADCDataChannel;
-      } else if ( strstr(CLA.frameStructType,"PROC_") ) {
-         chanin.type  = ProcDataChannel;
-      } else {
-        return 1; 
-      }
-      if ( strstr(CLA.frameStructType,"REAL8") ) {
-
-         LALFrGetREAL8TimeSeries(&status,&dataDouble,&chanin,framestream);
-         TESTSTATUS( &status );
-
-      } else if ( strstr(CLA.frameStructType,"REAL4") ) {      
-
-         LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
-         TESTSTATUS( &status );
-
-         LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
-         TESTSTATUS( &status );
- 
-         /*copy the data into the double precision timeseries */
-         for (k = 0; k < (int)dataDouble.data->length; k++) {
-             dataDouble.data->data[k] = dataSingle.data->data[k];
-         }     
-
-         LALDestroyVector(&status,&dataSingle.data);
-         TESTSTATUS( &status );
-
-      } else if ( strstr(CLA.frameStructType,"INT2") ) {
-
-         LALI2CreateVector(&status,&dataINT2.data,(UINT4)(CLA.T/dataINT2.deltaT +0.5));
-         TESTSTATUS( &status );
-
-         LALFrGetINT2TimeSeries(&status,&dataINT2,&chanin,framestream);
-         TESTSTATUS( &status );
-
-         /*copy the data into the double precision timeseries */
-         for (k = 0; k < (int)dataDouble.data->length; k++) {
-             dataDouble.data->data[k] = (REAL8)(dataINT2.data->data[k]);
-         }     
-
-         LALI2DestroyVector(&status,&dataINT2.data);
-         TESTSTATUS( &status );
-
-      } else if ( strstr(CLA.frameStructType,"INT4") ) {
-
-         LALI4CreateVector(&status,&dataINT4.data,(UINT4)(CLA.T/dataINT4.deltaT +0.5));
-         TESTSTATUS( &status );
-
-         LALFrGetINT4TimeSeries(&status,&dataINT4,&chanin,framestream);
-         TESTSTATUS( &status );
-
-         /*copy the data into the double precision timeseries */
-         for (k = 0; k < (int)dataDouble.data->length; k++) {
-             dataDouble.data->data[k] = (REAL8)(dataINT4.data->data[k]);
-         }     
-
-         LALI4DestroyVector(&status,&dataINT4.data);
-         TESTSTATUS( &status );
-
-      } else if ( strstr(CLA.frameStructType,"INT8") ) {
-
-         LALI8CreateVector(&status,&dataINT8.data,(UINT4)(CLA.T/dataINT8.deltaT +0.5));
-         TESTSTATUS( &status );
-
-         LALFrGetINT8TimeSeries(&status,&dataINT8,&chanin,framestream);
-         TESTSTATUS( &status );
-
-         /*copy the data into the double precision timeseries */
-         for (k = 0; k < (int)dataDouble.data->length; k++) {
-             dataDouble.data->data[k] = (REAL8)(dataINT8.data->data[k]);
-         }     
-
-         LALI8DestroyVector(&status,&dataINT8.data);
-         TESTSTATUS( &status );
-
-      } else {
-        return 1;
-      }      
-    }
-    else
-    {
-      /* 11/02/05 gam; add next two lines */
-      LALCreateVector(&status,&dataSingle.data,(UINT4)(CLA.T/dataSingle.deltaT +0.5));
-      TESTSTATUS( &status );
-      
-      chanin.type  = ADCDataChannel;
-      LALFrGetREAL4TimeSeries(&status,&dataSingle,&chanin,framestream);
-      TESTSTATUS( &status );
-
-      /*copy the data into the double precision timeseries */
-      for (k = 0; k < (int)dataDouble.data->length; k++) {
-          dataDouble.data->data[k] = dataSingle.data->data[k];
-      }     
-
-      LALDestroyVector(&status,&dataSingle.data);
-      TESTSTATUS( &status );
-
-    }
 
   return 0;
 }
