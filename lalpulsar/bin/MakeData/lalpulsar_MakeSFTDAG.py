@@ -41,6 +41,7 @@ __version__ = '$Revision$'
 # 07/24/14 eag; Change default to version 2 SFTs
 # 12/2020  eag; Update script to conform to modern python3 and pep8
 # 10/2020  kww; Pass args directly to writeToDag(), use Python f-strings
+# 10/2022  kww; Deprecate options that have been removed from MakeSFTs
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
@@ -61,29 +62,14 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
     argList.append(f'-s {startTimeThisNode}')
     argList.append(f'-e {endTimeThisNode}')
     argList.append(f'-N {args.channel_name}')
-    argList.append(f'-v {args.sft_version}')
     argList.append(f'-F {args.start_freq}')
     argList.append(f'-B {args.band}')
-    if args.ifo:
-        argList.append(f'-i {args.ifo}')
     if args.comment_field:
         argList.append(f'-c {args.comment_field}')
-    if args.frame_struct_type and not args.use_hot:
-        argList.append(f'-u {args.frame_struct_type}')
-    if args.make_gps_dirs:
-        argList.append(f'-D {args.make_gps_dirs}')
-    if args.misc_desc:
-        argList.append(f'-X {args.misc_desc}')
     if args.window_type:
         argList.append(f'-w {args.window_type}')
     if args.overlap_fraction:
         argList.append(f'-P {args.overlap_fraction}')
-    if args.use_single:
-        argList.append('-S')
-    if args.use_hot:
-        argList.append(f'-H')
-    if args.make_tmp_file:
-        argList.append(f'-Z')
     argStr = ' '.join(argList)
 
     dagFID.write(f'JOB {LSCdataFind} datafind.sub\n')
@@ -97,6 +83,7 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
 #
 # MAIN CODE START HERE
 #
+
 parser = argparse.ArgumentParser(
     description='This script creates datafind.sub, MakeSFTs.sub, and a dag \
     file that generates SFTs based on the options given.',
@@ -147,24 +134,12 @@ parser.add_argument('-o', '--sub-log-path', type=str, default='logs',
 parser.add_argument('-N', '--channel-name', required=True, type=str,
                     help='name of input time-domain channel to read from \
                     frames')
-parser.add_argument('-i', '--ifo', type=str,
-                    help='Name of IFO, i.e., H1, H2, L1, or G1; use if \
-                    channel name begins with H0, L0, or G0; default: use \
-                    first two characters from channel name')
-parser.add_argument('-v', '--sft-version', type=int, choices=[1, 2], default=2,
-                    help='sft version to output')
 parser.add_argument('-c', '--comment-field', type=str,
                     help='comment for version 2 SFT header')
 parser.add_argument('-F', '--start-freq', type=int, default=10,
                     help='start frequency of the SFTs')
 parser.add_argument('-B', '--band', type=int, default=1990,
                     help='frequency band of the SFTs')
-parser.add_argument('-D', '--make-gps-dirs', type=int, default=0,
-                    help='make directories for output SFTs based on this many \
-                    digits of the GPS time')
-parser.add_argument('-X', '--misc-desc', type=str,
-                    help='misc. part of the SFT description field in the \
-                    filename (also used if -D option is > 0)')
 parser.add_argument('-w', '--window-type', type=int, choices=[0, 1, 2, 3],
                     default=1, help='type of windowing of time-domain to do \
                     before generating SFTs (0 = None, 1 = Tukey given by \
@@ -198,22 +173,6 @@ parser.add_argument('-Q', '--node-path', type=str,
 parser.add_argument('-R', '--output-jobs-per-node', type=int, default=0,
                     help='number of jobs to output per node in the list of \
                     nodes given with the -q option')
-parser.add_argument('-S', '--use-single', action='store_true',
-                    help='use single precision in MakeSFTs for windowing, \
-                    plan and fft; filtering is always done in double \
-                    precision. Use of double precision in MakeSFTs is the \
-                    default')
-parser.add_argument('-H', '--use-hot', action='store_true',
-                    help='input data is from h(t) calibrated frames (h of t = \
-                    hot!)')
-parser.add_argument('-u', '--frame-struct-type', type=str, default='ADC_REAL4',
-                    help='string specifying the input frame structure and \
-                    data type. Must begin with ADC_ or PROC_ followed by \
-                    REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; \
-                    -H is the same as PROC_REAL8')
-parser.add_argument('-Z', '--make-tmp-file', action='store_true',
-                    help='write SFT to *.tmp file, then move to final \
-                    filename')
 parser.add_argument('-j', '--datafind-path', type=str,
                     help='string specifying a path to look for the \
                     gw_data_find executable; if not set, will use \
@@ -234,6 +193,34 @@ parser.add_argument('-A', '--accounting-group', required=True, type=str,
                     help='Condor tag for the production of SFTs')
 parser.add_argument('-U', '--accounting-group-user', required=True, type=str,
                     help='albert.einstein username (do not add @LIGO.ORG)')
+
+
+##### DEPRECATED OPTIONS #####
+class DeprecateAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        parser.error(f'Argument {self.option_strings} has been deprecated in lalpulsar_MakeSFTs')
+
+parser.add_argument('-u', '--frame-struct-type', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer required; \
+                    the frame channel type is determined automatically')
+parser.add_argument('-H', '--use-hot', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer required; \
+                    the frame channel type is determined automatically')
+parser.add_argument('-i', '--ifo', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer required; \
+                    the detector prefix is deduced from the channel name')
+parser.add_argument('-D', '--make-gps-dirs', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer supported')
+parser.add_argument('-Z', '--make-tmp-file', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. Default behaviour')
+parser.add_argument('-X', '--misc-desc', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer supported \
+                    in the public SFT filename specification')
+parser.add_argument('-v', '--sft-version', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer supported')
+parser.add_argument('-S', '--use-single', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer supported')
+
 
 args = parser.parse_args()
 
@@ -259,9 +246,6 @@ if args.band <= 0 or args.band >= 8192.0:
 
 if args.start_freq + args.band >= 8192.0:
     raise argparse.error('--start-freq + --band must be < 8192')
-
-if args.make_gps_dirs < 0 or args.make_gps_dirs > 10:
-    raise argparse.error('--make-gps-dirs must be in the range [0,10]')
 
 if args.max_num_per_node <= 0:
     raise argparse.error('--max-num-per-node must be > 0')
