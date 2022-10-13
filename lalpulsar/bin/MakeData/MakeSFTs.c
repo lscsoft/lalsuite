@@ -116,7 +116,6 @@ struct CommandLineArgsTag {
   INT4 GPSStart;
   INT4 GPSEnd;
   INT4 makeGPSDirs;        /* 12/27/05 gam; add option to make directories based on gps time */
-  INT4 sftVersion;         /* 12/28/05 gam; output SFT version */
   char *commentField;      /* 12/28/05 gam; string comment for version 2 SFTs */
   BOOLEAN htdata;          /* flag that indicates we're doing h(t) data */
   BOOLEAN makeTmpFile;     /* 01/09/06 gam */
@@ -130,15 +129,6 @@ struct CommandLineArgsTag {
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
   char *frameStructType;   /* 01/10/07 gam */
 } CommandLineArgs;
-
-struct headertag {
-  REAL8 endian;
-  INT4  gps_sec;
-  INT4  gps_nsec;
-  REAL8 tbase;
-  INT4  firstfreqindex;
-  INT4  nsamples;
-} header;
 
 
 /***************************************************************************/
@@ -191,7 +181,6 @@ int WindowDataHann(struct CommandLineArgsTag CLA);
 int CreateSFT(struct CommandLineArgsTag CLA);
 
 /* writes out an SFT */
-int WriteSFT(struct CommandLineArgsTag CLA);
 int WriteVersion2SFT(struct CommandLineArgsTag CLA);
 
 /* Frees the memory */
@@ -335,14 +324,7 @@ int main(int argc,char *argv[])
       if(CreateSFT(CommandLineArgs)) return 6;
 
       /* write out sft */
-      if (CommandLineArgs.sftVersion==1) {
-        if(WriteSFT(CommandLineArgs)) return 7;
-      } else if (CommandLineArgs.sftVersion==2) {
-        if(WriteVersion2SFT(CommandLineArgs)) return 7; /* default now is to output version 2 SFTs */
-      } else {
-        fprintf( stderr, "Invalid input for 'sft-version = %d', must be either '1' or '2'\n", CommandLineArgs.sftVersion );
-        return 0;;
-      }
+      if(WriteVersion2SFT(CommandLineArgs)) return 7; /* default now is to output version 2 SFTs */
 
       gpsepoch.gpsSeconds = gpsepoch.gpsSeconds + (INT4)((1.0 - CommandLineArgs.overlapFraction)*((REAL8)CommandLineArgs.T));
       gpsepoch.gpsNanoSeconds = 0;
@@ -370,7 +352,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     {"channel-name",         required_argument, NULL,          'N'},
     {"gps-start-time",       required_argument, NULL,          's'},
     {"gps-end-time",         required_argument, NULL,          'e'},
-    {"sft-version",          required_argument, NULL,          'v'},
+    /* {"sft-version",          required_argument, NULL,          'v'}, */
     {"comment-field",        required_argument, NULL,          'c'},
     {"start-freq",           required_argument, NULL,          'F'},
     {"band",                 required_argument, NULL,          'B'},
@@ -398,7 +380,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
   CLA->makeGPSDirs=0; /* 12/27/05 gam; add option to make directories based on gps time */
-  CLA->sftVersion=2;  /* 07/24/14 eag; output SFT version; default is version 2 SFTs */
   CLA->ChannelName=NULL;
   CLA->IFO=NULL;        /* 01/14/07 gam */
   CLA->SFTpath=NULL;
@@ -497,10 +478,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       /* 12/27/05 gam; make directories based on GPS time */
       CLA->makeGPSDirs=atof(LALoptarg);
       break;
-    case 'v':
-      /* 07/24/14 eag; output SFT version; default is version 2 SFTs */
-      CLA->sftVersion=atoi(LALoptarg);
-      break;
     case 'c':
       /* 12/28/05 gam; comment for version 2 SFTs */
       /* CLA->commentField=LALoptarg; */ /* 06/26/07 gam */
@@ -547,7 +524,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       fprintf(stdout,"\tgps-end-time (-e)\tINT\t GPS end time of segment.\n");
       fprintf(stdout,"\tchannel-name (-N)\tSTRING\t Name of channel to read within a frame.\n");
       fprintf(stdout,"\tifo (-i)\t\tSTRING\t (optional) Name of IFO, i.e., H1, H2, L1, or G1; use if channel name begins with H0, L0, or G0; default: use first two characters from channel name.\n");
-      fprintf(stdout,"\tsft-version (-v)\tINT\t (optional) SFT version (1 = output version 1 SFTs; 2 = default = output version 2 SFTs.\n");
       fprintf(stdout,"\tcomment-field (-c)\tSTRING\t (optional) Comment for version 2 SFT header.\n");
       fprintf(stdout,"\tstart-freq (-F) \tFLOAT\t (optional) Start frequency of the SFTs (default is 48 Hz).\n");
       fprintf(stdout,"\tband (-B)       \tFLOAT\t (optional) Frequency band of the SFTs (default is 2000 Hz).\n");
@@ -619,12 +595,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   if(CLA->makeGPSDirs < 0)
     {
       fprintf(stderr,"Illegal make-gps-dirs option given.\n");
-      fprintf(stderr,"Try %s -h \n", argv[0]);
-      return 1;
-    }
-  if( (CLA->sftVersion < 1) || (CLA->sftVersion > 2) )
-    {
-      fprintf(stderr,"Illegal sft-version given.\n");
       fprintf(stderr,"Try %s -h \n", argv[0]);
       return 1;
     }
@@ -905,112 +875,6 @@ int CreateSFT(struct CommandLineArgsTag CLA UNUSED)
 
       return 0;
 }
-/*******************************************************************************/
-int WriteSFT(struct CommandLineArgsTag CLA)
-{
-  char sftname[256];
-  char sftnameFinal[256]; /* 01/09/06 gam */
-  char numSFTs[2]; /* 12/27/05 gam */
-  char site[2];    /* 12/27/05 gam */
-  char ifo[3];     /* 12/27/05 gam; allow 3rd charactor for null termination */
-  int firstbin=(INT4)(FMIN*CLA.T+0.5), k;
-  FILE *fpsft;
-  int errorcode1=0,errorcode2=0;
-  char gpstime[11]; /* 12/27/05 gam; allow for 10 digit GPS times and null termination */
-  REAL4 rpw,ipw;
-
-  /* 12/27/05 gam; set up the number of SFTs, site, and ifo as null terminated strings */
-  numSFTs[0] = '1';
-  numSFTs[1] = '\0'; /* null terminate */
-  strncpy( site, CLA.ChannelName, 1 );
-  site[1] = '\0'; /* null terminate */
-  if (CLA.IFO != NULL) {
-    strncpy( ifo, CLA.IFO, 2 );
-  } else {
-    strncpy( ifo, CLA.ChannelName, 2 );
-  }
-  ifo[2] = '\0'; /* null terminate */
-  sprintf(gpstime,"%09d",gpsepoch.gpsSeconds);
-
-  strcpy( sftname, CLA.SFTpath );
-  /* 12/27/05 gam; add option to make directories based on gps time */
-  if (CLA.makeGPSDirs > 0) {
-     /* 12/27/05 gam; concat to the sftname the directory name based on GPS time; make this directory if it does not already exist */
-     mkSFTDir(sftname, site, numSFTs, ifo, CLA.stringT, CLA.miscDesc, gpstime, CLA.makeGPSDirs);
-  }
-
-  /* 01/09/06 gam; sftname will be temporary; will move to sftnameFinal. */
-  if(CLA.makeTmpFile) {
-    /* set up sftnameFinal with usual SFT name */
-    strcpy(sftnameFinal,sftname);
-    strcat(sftnameFinal,"/SFT_");
-    strcat(sftnameFinal,ifo);
-    strcat(sftnameFinal,".");
-    strcat(sftnameFinal,gpstime);
-    /* sftname begins with . and ends in .tmp */
-    strcat(sftname,"/.SFT_");
-    strcat(sftname,ifo);
-    strcat(sftname,".");
-    strcat(sftname,gpstime);
-    strcat(sftname,".tmp");
-  } else {     
-    strcat(sftname,"/SFT_");
-    strcat(sftname,ifo);
-    strcat(sftname,".");
-    strcat(sftname,gpstime);
-  }  
-
-  /* open SFT file for writing */
-  fpsft=tryopen(sftname,"w");
-
-  /* write header */
-  header.endian=1.0;
-  header.gps_sec=gpsepoch.gpsSeconds;
-  header.gps_nsec=gpsepoch.gpsNanoSeconds;
-  header.tbase=CLA.T;
-  header.firstfreqindex=firstbin;
-  header.nsamples=(INT4)(DF*CLA.T+0.5);
-  if (1!=fwrite((void*)&header,sizeof(header),1,fpsft)){
-    fprintf(stderr,"Error in writing header into file %s!\n",sftname);
-    return 7;
-  }
-
-    /* Write SFT */
-    for (k=0; k<header.nsamples; k++)
-    {
-      rpw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* creal(fftDataDouble->data[k+firstbin]);
-      ipw=(((REAL8)DF)/(0.5*(REAL8)(1/dataDouble.deltaT))) 
-	* cimag(fftDataDouble->data[k+firstbin]);
-      /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-        if (!isfinite(rpw) || !isfinite(ipw)) {
-          fprintf(stderr, "Infinite or NaN data at freq bin %d.\n", k);
-          return 7;
-        }
-      errorcode1=fwrite((void*)&rpw, sizeof(REAL4),1,fpsft);
-      errorcode2=fwrite((void*)&ipw, sizeof(REAL4),1,fpsft);
-    }
-    LALZDestroyVector( &status, &fftDataDouble );
-    TESTSTATUS( &status );
-
-  /* Check that there were no errors while writing SFTS */
-  if (errorcode1-1 || errorcode2-1)
-    {
-      fprintf(stderr,"Error in writing data into SFT file %s!\n",sftname);
-      return 8;
-    }
-  
-  fclose(fpsft);
-
-  /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
-  if(CLA.makeTmpFile) {  
-    mvFilenames(sftname,sftnameFinal);
-  }
-
-  return 0;
-}
-/*******************************************************************************/
-
 /*******************************************************************************/
 /* 12/28/05 gam; write out version 2 SFT */
 int WriteVersion2SFT(struct CommandLineArgsTag CLA) 
