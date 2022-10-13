@@ -97,19 +97,13 @@
 #include <lal/LALVCSInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 
-#ifdef __GNUC__
-#define UNUSED __attribute__ ((unused))
-#else
-#define UNUSED
-#endif
-
 #define TESTSTATUS( pstat ) \
   if ( (pstat)->statusCode ) { REPORTSTATUS(pstat); return 100; } else ((void)0)
 
 /***************************************************************************/
 
 /* STRUCTURES */
-struct CommandLineArgsTag {
+struct {
   REAL8 HPf;              /* High pass filtering frequency */
   INT4 T;                 /* SFT duration */
   char *stringT;          /* 12/27/05 gam; string with SFT duration */
@@ -122,7 +116,7 @@ struct CommandLineArgsTag {
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 windowR;
   REAL8 overlapFraction;   /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
-} CommandLineArgs;
+} CLA;
 
 
 /***************************************************************************/
@@ -150,16 +144,16 @@ CHAR allargs[16384]; /* 06/26/07 gam; copy all command line args into commentFie
 
 /* FUNCTION PROTOTYPES */
 /* Reads the command line */
-int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA );
+int ReadCommandLine( int argc, char *argv[] );
 
 /* Allocates space for data time series */
-int AllocateData( struct CommandLineArgsTag CLA );
+int AllocateData( void );
 
 /* Reads data */
-int ReadData( struct CommandLineArgsTag CLA );
+int ReadData( void );
 
 /* High passes data */
-int HighPass( struct CommandLineArgsTag CLA );
+int HighPass( void );
 
 /* Windows data */
 int WindowData( REAL8 r );
@@ -167,13 +161,13 @@ int WindowDataTukey2( void );
 int WindowDataHann( void );
 
 /* create an SFT */
-int CreateSFT( struct CommandLineArgsTag CLA );
+int CreateSFT( void );
 
 /* writes out an SFT */
-int WriteVersion2SFT( struct CommandLineArgsTag CLA );
+int WriteVersion2SFT( void );
 
 /* Frees the memory */
-int FreeMem( struct CommandLineArgsTag CLA );
+int FreeMem( void );
 
 /* prototypes */
 void getSFTDescField( CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc );
@@ -231,53 +225,53 @@ void mvFilenames( CHAR *filename1, CHAR *filename2 )
 int main( int argc, char *argv[] )
 {
 
-  if ( ReadCommandLine( argc, argv, &CommandLineArgs ) ) {
+  if ( ReadCommandLine( argc, argv ) ) {
     return 1;
   }
-  SegmentDuration = CommandLineArgs.GPSEnd - CommandLineArgs.GPSStart ;
+  SegmentDuration = CLA.GPSEnd - CLA.GPSStart ;
 
   /* create Frame cache, open frame stream and delete frame cache */
-  framecache = XLALCacheImport( CommandLineArgs.FrCacheFile );
+  framecache = XLALCacheImport( CLA.FrCacheFile );
   LALFrCacheOpen( &status, &framestream, framecache );
   TESTSTATUS( &status );
   XLALDestroyCache( framecache );
 
-  if ( SegmentDuration < CommandLineArgs.T ) {
+  if ( SegmentDuration < CLA.T ) {
     fprintf( stderr, "Cannot fit an SFT of duration %d between %d and %d\n",
-             CommandLineArgs.T, CommandLineArgs.GPSStart, CommandLineArgs.GPSEnd );
+             CLA.T, CLA.GPSStart, CLA.GPSEnd );
     return 0;;
   }
 
-  gpsepoch.gpsSeconds = CommandLineArgs.GPSStart;
+  gpsepoch.gpsSeconds = CLA.GPSStart;
   gpsepoch.gpsNanoSeconds = 0;
 
   /* Allocates space for data */
-  if ( AllocateData( CommandLineArgs ) ) {
+  if ( AllocateData( ) ) {
     return 2;
   }
 
-  while ( gpsepoch.gpsSeconds + CommandLineArgs.T <= CommandLineArgs.GPSEnd ) {
+  while ( gpsepoch.gpsSeconds + CLA.T <= CLA.GPSEnd ) {
 
     /* Reads T seconds of data */
-    if ( ReadData( CommandLineArgs ) ) {
+    if ( ReadData( ) ) {
       return 3;
     }
 
     /* High-pass data with Butterworth filter */
-    if ( HighPass( CommandLineArgs ) ) {
+    if ( HighPass( ) ) {
       return 4;
     }
 
     /* Window data; 12/28/05 gam; add options */
-    if ( CommandLineArgs.windowOption == 1 ) {
-      if ( WindowData( CommandLineArgs.windowR ) ) {
-        return 5;  /* CommandLineArgs.windowOption==1 is the default */
+    if ( CLA.windowOption == 1 ) {
+      if ( WindowData( CLA.windowR ) ) {
+        return 5;  /* CLA.windowOption==1 is the default */
       }
-    } else if ( CommandLineArgs.windowOption == 2 ) {
+    } else if ( CLA.windowOption == 2 ) {
       if ( WindowDataTukey2( ) ) {
         return 5;
       }
-    } else if ( CommandLineArgs.windowOption == 3 ) {
+    } else if ( CLA.windowOption == 3 ) {
       if ( WindowDataHann( ) ) {
         return 5;
       }
@@ -286,20 +280,20 @@ int main( int argc, char *argv[] )
     }
 
     /* create an SFT */
-    if ( CreateSFT( CommandLineArgs ) ) {
+    if ( CreateSFT( ) ) {
       return 6;
     }
 
     /* write out sft */
-    if ( WriteVersion2SFT( CommandLineArgs ) ) {
+    if ( WriteVersion2SFT( ) ) {
       return 7;  /* default now is to output version 2 SFTs */
     }
 
-    gpsepoch.gpsSeconds = gpsepoch.gpsSeconds + ( INT4 )( ( 1.0 - CommandLineArgs.overlapFraction ) * ( ( REAL8 )CommandLineArgs.T ) );
+    gpsepoch.gpsSeconds = gpsepoch.gpsSeconds + ( INT4 )( ( 1.0 - CLA.overlapFraction ) * ( ( REAL8 )CLA.T ) );
     gpsepoch.gpsNanoSeconds = 0;
   }
 
-  if ( FreeMem( CommandLineArgs ) ) {
+  if ( FreeMem( ) ) {
     return 8;
   }
 
@@ -311,7 +305,7 @@ int main( int argc, char *argv[] )
 /*** FUNCTIONS ***/
 
 /*******************************************************************************/
-int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA )
+int ReadCommandLine( int argc, char *argv[] )
 {
   INT4 errflg = 0;
   INT4 i;              /* 06/26/07 gam */
@@ -344,18 +338,18 @@ int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA )
   char args[] = "hHZSf:t:C:N:i:s:e:v:c:F:B:D:X:u:w:r:P:p:ab:";
 
   /* Initialize default values */
-  CLA->HPf = -1.0;
-  CLA->T = 0.0;
-  CLA->stringT = NULL; /* 12/27/05 gam */
-  CLA->FrCacheFile = NULL;
-  CLA->GPSStart = 0;
-  CLA->GPSEnd = 0;
-  CLA->ChannelName = NULL;
-  CLA->SFTpath = NULL;
-  CLA->commentField = NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
-  CLA->windowOption = 1; /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-  CLA->windowR = 0.001;
-  CLA->overlapFraction = 0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
+  CLA.HPf = -1.0;
+  CLA.T = 0.0;
+  CLA.stringT = NULL; /* 12/27/05 gam */
+  CLA.FrCacheFile = NULL;
+  CLA.GPSStart = 0;
+  CLA.GPSEnd = 0;
+  CLA.ChannelName = NULL;
+  CLA.SFTpath = NULL;
+  CLA.commentField = NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
+  CLA.windowOption = 1; /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
+  CLA.windowR = 0.001;
+  CLA.overlapFraction = 0.0; /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0). */
 
   strcat( allargs, "\nMakeSFTs " );
   strcat( allargs, lalVCSIdentInfo.vcsId );
@@ -387,7 +381,7 @@ int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA )
     strcat( allargs, " " );
   }
   strcat( allargs, "\n" );
-  CLA->commentField = allargs;
+  CLA.commentField = allargs;
 
   /* Scan through list of command line arguments */
   while ( 1 ) {
@@ -402,24 +396,24 @@ int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA )
     switch ( c ) {
     case 'f':
       /* high pass frequency */
-      CLA->HPf = atof( LALoptarg );
+      CLA.HPf = atof( LALoptarg );
       break;
     case 't':
       /* SFT time */
-      CLA->stringT = LALoptarg;  /* 12/27/05 gam; keep pointer to string that gives the SFT duration */
-      CLA->T = atoi( LALoptarg );
+      CLA.stringT = LALoptarg;  /* 12/27/05 gam; keep pointer to string that gives the SFT duration */
+      CLA.T = atoi( LALoptarg );
       break;
     case 'C':
       /* name of frame cache file */
-      CLA->FrCacheFile = LALoptarg;
+      CLA.FrCacheFile = LALoptarg;
       break;
     case 's':
       /* GPS start */
-      CLA->GPSStart = atof( LALoptarg );
+      CLA.GPSStart = atof( LALoptarg );
       break;
     case 'e':
       /* GPS end */
-      CLA->GPSEnd = atof( LALoptarg );
+      CLA.GPSEnd = atof( LALoptarg );
       break;
     case 'F':
       /* 12/28/05 gam; start frequency */
@@ -431,27 +425,27 @@ int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA )
       break;
     case 'c':
       /* 12/28/05 gam; comment for version 2 SFTs */
-      strcat( CLA->commentField, "MakeSFTs additional comment: " ); /* 06/26/07 gam; copy all command line args into commentField */
-      strcat( CLA->commentField, LALoptarg );
-      strcat( CLA->commentField, "\n" );
+      strcat( CLA.commentField, "MakeSFTs additional comment: " ); /* 06/26/07 gam; copy all command line args into commentField */
+      strcat( CLA.commentField, LALoptarg );
+      strcat( CLA.commentField, "\n" );
       break;
     case 'w':
       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-      CLA->windowOption = atoi( LALoptarg );
+      CLA.windowOption = atoi( LALoptarg );
       break;
     case 'r':
       /* defulat 0.001 */
-      CLA->windowR = ( REAL8 )atof( LALoptarg );
+      CLA.windowR = ( REAL8 )atof( LALoptarg );
       break;
     case 'P':
       /* 12/28/05 gam; overlap fraction (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 1.0). */
-      CLA->overlapFraction = ( REAL8 )atof( LALoptarg );
+      CLA.overlapFraction = ( REAL8 )atof( LALoptarg );
       break;
     case 'N':
-      CLA->ChannelName = LALoptarg;
+      CLA.ChannelName = LALoptarg;
       break;
     case 'p':
-      CLA->SFTpath = LALoptarg;
+      CLA.SFTpath = LALoptarg;
       break;
     case 'h':
       /* print usage/help message */
@@ -493,23 +487,23 @@ int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA )
     }
   }
 
-  if ( CLA->HPf < 0 ) {
+  if ( CLA.HPf < 0 ) {
     fprintf( stderr, "No high pass filtering frequency specified.\n" );
     fprintf( stderr, "If you don't want to high pass filter set the frequency to 0.\n" );
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
   }
-  if ( CLA->T == 0.0 ) {
+  if ( CLA.T == 0.0 ) {
     fprintf( stderr, "No SFT duration specified.\n" );
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
   }
-  if ( CLA->GPSStart == 0 ) {
+  if ( CLA.GPSStart == 0 ) {
     fprintf( stderr, "No GPS start time specified.\n" );
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
   }
-  if ( CLA->GPSEnd == 0 ) {
+  if ( CLA.GPSEnd == 0 ) {
     fprintf( stderr, "No GPS end time specified.\n" );
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
@@ -524,27 +518,27 @@ int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA )
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
   }
-  if ( ( CLA->windowOption < 0 ) || ( CLA->windowOption > 3 ) ) {
+  if ( ( CLA.windowOption < 0 ) || ( CLA.windowOption > 3 ) ) {
     fprintf( stderr, "Illegal window-type given.\n" );
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
   }
-  if ( ( CLA->overlapFraction < 0.0 ) || ( CLA->overlapFraction >= 1.0 ) ) {
+  if ( ( CLA.overlapFraction < 0.0 ) || ( CLA.overlapFraction >= 1.0 ) ) {
     fprintf( stderr, "Illegal overlap-fraction given.\n" );
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
   }
-  if ( CLA->FrCacheFile == NULL ) {
+  if ( CLA.FrCacheFile == NULL ) {
     fprintf( stderr, "No frame cache file specified.\n" );
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
   }
-  if ( CLA->ChannelName == NULL ) {
+  if ( CLA.ChannelName == NULL ) {
     fprintf( stderr, "No data channel name specified.\n" );
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
   }
-  if ( CLA->SFTpath == NULL ) {
+  if ( CLA.SFTpath == NULL ) {
     fprintf( stderr, "No output path specified for SFTs.\n" );
     fprintf( stderr, "Try %s -h \n", argv[0] );
     return 1;
@@ -555,7 +549,7 @@ int ReadCommandLine( int argc, char *argv[], struct CommandLineArgsTag *CLA )
 /*******************************************************************************/
 
 /*******************************************************************************/
-int AllocateData( struct CommandLineArgsTag CLA )
+int AllocateData( )
 {
   static FrChanIn chanin;
 
@@ -581,7 +575,7 @@ int AllocateData( struct CommandLineArgsTag CLA )
 /*******************************************************************************/
 
 /*******************************************************************************/
-int ReadData( struct CommandLineArgsTag CLA )
+int ReadData( )
 {
   static FrChanIn chanin;
   chanin.name  = CLA.ChannelName;
@@ -597,7 +591,7 @@ int ReadData( struct CommandLineArgsTag CLA )
 /*******************************************************************************/
 
 /*******************************************************************************/
-int HighPass( struct CommandLineArgsTag CLA )
+int HighPass( )
 {
   PassBandParamStruc filterpar;
   char tmpname[] = "Butterworth High Pass";
@@ -622,7 +616,7 @@ int HighPass( struct CommandLineArgsTag CLA )
 /*******************************************************************************/
 
 /*******************************************************************************/
-int CreateSFT( struct CommandLineArgsTag CLA UNUSED )
+int CreateSFT( )
 {
 
   /* 11/02/05 gam; allocate container for SFT data */
@@ -636,7 +630,7 @@ int CreateSFT( struct CommandLineArgsTag CLA UNUSED )
 }
 /*******************************************************************************/
 /* 12/28/05 gam; write out version 2 SFT */
-int WriteVersion2SFT( struct CommandLineArgsTag CLA )
+int WriteVersion2SFT( )
 {
   char sftname[256];
   char sftFilename[256];
@@ -708,7 +702,7 @@ int WriteVersion2SFT( struct CommandLineArgsTag CLA )
 /*******************************************************************************/
 
 /*******************************************************************************/
-int FreeMem( struct CommandLineArgsTag CLA UNUSED )
+int FreeMem( )
 {
 
   LALFrClose( &status, &framestream );
