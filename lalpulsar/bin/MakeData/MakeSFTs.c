@@ -160,9 +160,6 @@ int WindowData( REAL8 r );
 int WindowDataTukey2( void );
 int WindowDataHann( void );
 
-/* writes out an SFT */
-int WriteVersion2SFT( void );
-
 /* prototypes */
 void getSFTDescField( CHAR *sftDescField, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc );
 void mkSFTFilename( CHAR *sftFilename, CHAR *site, CHAR *numSFTs, CHAR *ifo, CHAR *stringT, CHAR *typeMisc, CHAR *gpstime );
@@ -282,8 +279,71 @@ int main( int argc, char *argv[] )
     XLAL_CHECK( XLALREAL8ForwardFFT( fftDataDouble, dataDouble.data, fftPlanDouble ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     /* write out sft */
-    if ( WriteVersion2SFT( ) ) {
-      return 7;  /* default now is to output version 2 SFTs */
+    {
+      char sftname[256];
+      char sftFilename[256];
+      char sftnameFinal[256]; /* 01/09/06 gam */
+      char numSFTs[2]; /* 12/27/05 gam */
+      char site[2];    /* 12/27/05 gam */
+      char ifo[3];     /* 12/27/05 gam; allow 3rd charactor for null termination */
+      int firstbin = ( INT4 )( FMIN * CLA.T + 0.5 ), k;
+      char gpstime[11]; /* 12/27/05 gam; allow for 10 digit GPS times and null termination */
+      SFTtype *oneSFT = NULL;
+      INT4 nBins = ( INT4 )( DF * CLA.T + 0.5 );
+      REAL8 doubleDeltaT = 0.0; /* 01/05/06 gam */
+
+      /* 12/27/05 gam; set up the number of SFTs, site, and ifo as null terminated strings */
+      numSFTs[0] = '1';
+      numSFTs[1] = '\0'; /* null terminate */
+      strncpy( site, CLA.ChannelName, 1 );
+      site[1] = '\0'; /* null terminate */
+      strncpy( ifo, CLA.ChannelName, 2 );
+      ifo[2] = '\0'; /* null terminate */
+      sprintf( gpstime, "%09d", gpsepoch.gpsSeconds );
+
+      strcpy( sftname, CLA.SFTpath );
+
+      strcat( sftname, "/" );
+      mkSFTFilename( sftFilename, site, numSFTs, ifo, CLA.stringT, NULL, gpstime );
+      /* 01/09/06 gam; sftname will be temporary; will move to sftnameFinal. */
+      /* set up sftnameFinal with usual SFT name */
+      strcpy( sftnameFinal, sftname );
+      strcat( sftnameFinal, sftFilename );
+      /* sftname begins with . and ends in .tmp */
+      strcat( sftname, "." );
+      strcat( sftname, sftFilename );
+      strcat( sftname, ".tmp" );
+
+      /* make container to store the SFT data */
+      XLAL_CHECK( ( oneSFT = XLALCreateSFT( ( ( UINT4 )nBins ) ) ) != NULL, XLAL_EFUNC );
+
+      /* copy the data to oneSFT */
+      strcpy( oneSFT->name, ifo );
+      oneSFT->epoch.gpsSeconds = gpsepoch.gpsSeconds;
+      oneSFT->epoch.gpsNanoSeconds = gpsepoch.gpsNanoSeconds;
+      oneSFT->f0 = FMIN;
+      oneSFT->deltaF = 1.0 / ( ( REAL8 )CLA.T );
+      oneSFT->data->length = nBins;
+
+      doubleDeltaT = ( REAL8 )( dataDouble.deltaT / winFncRMS ); /* include 1 over window function RMS */
+      for ( k = 0; k < nBins; k++ ) {
+        oneSFT->data->data[k] = crectf( doubleDeltaT * creal( fftDataDouble->data[k + firstbin] ), doubleDeltaT * cimag( fftDataDouble->data[k + firstbin] ) );
+        /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
+        if ( !isfinite( crealf( oneSFT->data->data[k] ) ) || !isfinite( cimagf( oneSFT->data->data[k] ) ) ) {
+          fprintf( stderr, "Infinite or NaN data at freq bin %d.\n", k );
+          return 7;
+        }
+      }
+      LALZDestroyVector( &status, &fftDataDouble );
+      TESTSTATUS( &status );
+
+      /* write the SFT */
+      XLAL_CHECK( XLALWriteSFT2NamedFile(oneSFT, sftname, "unknown" /* FIXME */, 0, CLA.commentField) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
+      mvFilenames( sftname, sftnameFinal );
+
+      XLALDestroySFT( oneSFT );
     }
 
     gpsepoch.gpsSeconds = gpsepoch.gpsSeconds + ( INT4 )( ( 1.0 - CLA.overlapFraction ) * ( ( REAL8 )CLA.T ) );
@@ -615,75 +675,3 @@ int HighPass( )
 
   return 0;
 }
-/*******************************************************************************/
-/* 12/28/05 gam; write out version 2 SFT */
-int WriteVersion2SFT( )
-{
-  char sftname[256];
-  char sftFilename[256];
-  char sftnameFinal[256]; /* 01/09/06 gam */
-  char numSFTs[2]; /* 12/27/05 gam */
-  char site[2];    /* 12/27/05 gam */
-  char ifo[3];     /* 12/27/05 gam; allow 3rd charactor for null termination */
-  int firstbin = ( INT4 )( FMIN * CLA.T + 0.5 ), k;
-  char gpstime[11]; /* 12/27/05 gam; allow for 10 digit GPS times and null termination */
-  SFTtype *oneSFT = NULL;
-  INT4 nBins = ( INT4 )( DF * CLA.T + 0.5 );
-  REAL8 doubleDeltaT = 0.0; /* 01/05/06 gam */
-
-  /* 12/27/05 gam; set up the number of SFTs, site, and ifo as null terminated strings */
-  numSFTs[0] = '1';
-  numSFTs[1] = '\0'; /* null terminate */
-  strncpy( site, CLA.ChannelName, 1 );
-  site[1] = '\0'; /* null terminate */
-  strncpy( ifo, CLA.ChannelName, 2 );
-  ifo[2] = '\0'; /* null terminate */
-  sprintf( gpstime, "%09d", gpsepoch.gpsSeconds );
-
-  strcpy( sftname, CLA.SFTpath );
-
-  strcat( sftname, "/" );
-  mkSFTFilename( sftFilename, site, numSFTs, ifo, CLA.stringT, NULL, gpstime );
-  /* 01/09/06 gam; sftname will be temporary; will move to sftnameFinal. */
-  /* set up sftnameFinal with usual SFT name */
-  strcpy( sftnameFinal, sftname );
-  strcat( sftnameFinal, sftFilename );
-  /* sftname begins with . and ends in .tmp */
-  strcat( sftname, "." );
-  strcat( sftname, sftFilename );
-  strcat( sftname, ".tmp" );
-
-  /* make container to store the SFT data */
-  XLAL_CHECK( ( oneSFT = XLALCreateSFT( ( ( UINT4 )nBins ) ) ) != NULL, XLAL_EFUNC );
-
-  /* copy the data to oneSFT */
-  strcpy( oneSFT->name, ifo );
-  oneSFT->epoch.gpsSeconds = gpsepoch.gpsSeconds;
-  oneSFT->epoch.gpsNanoSeconds = gpsepoch.gpsNanoSeconds;
-  oneSFT->f0 = FMIN;
-  oneSFT->deltaF = 1.0 / ( ( REAL8 )CLA.T );
-  oneSFT->data->length = nBins;
-
-  doubleDeltaT = ( REAL8 )( dataDouble.deltaT / winFncRMS ); /* include 1 over window function RMS */
-  for ( k = 0; k < nBins; k++ ) {
-    oneSFT->data->data[k] = crectf( doubleDeltaT * creal( fftDataDouble->data[k + firstbin] ), doubleDeltaT * cimag( fftDataDouble->data[k + firstbin] ) );
-    /* 06/26/07 gam; use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values */
-    if ( !isfinite( crealf( oneSFT->data->data[k] ) ) || !isfinite( cimagf( oneSFT->data->data[k] ) ) ) {
-      fprintf( stderr, "Infinite or NaN data at freq bin %d.\n", k );
-      return 7;
-    }
-  }
-  LALZDestroyVector( &status, &fftDataDouble );
-  TESTSTATUS( &status );
-
-  /* write the SFT */
-  XLAL_CHECK( XLALWriteSFT2NamedFile(oneSFT, sftname, "unknown" /* FIXME */, 0, CLA.commentField) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  /* 01/09/06 gam; sftname is temporary; move to sftnameFinal. */
-  mvFilenames( sftname, sftnameFinal );
-
-  XLALDestroySFT( oneSFT );
-
-  return 0;
-}
-/*******************************************************************************/
