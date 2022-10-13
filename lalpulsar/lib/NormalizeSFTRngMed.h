@@ -47,6 +47,7 @@ extern "C" {
 #include <lal/AVFactories.h>
 #include <lal/SeqFactories.h>
 #include <lal/SFTfileIO.h>
+#include <lal/PSDutils.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/RngMedBias.h>
 #include <lal/LALRunningMedian.h>
