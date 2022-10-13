@@ -39,6 +39,7 @@ pkginclude_HEADERS = \
 	MetricUtils.h \
 	NormalizeSFTRngMed.h \
 	PHMD.h \
+	PSDutils.h \
 	ProbabilityDensity.h \
 	PtoleMetric.h \
 	PulsarCrossCorr.h \

@@ -64,8 +64,7 @@ extern "C" {
  * in \cite SFT-spec . It contains various helper functions to create, handle,
  * combine, and destroy SFTs and related data structures, including SFTtype,
  * SFTVector, SFTCatalog (and their multi-detector generalizations) as well as
- * tools for dealing with timestamps, segments and ASD/PSD (Amplitude/Power
- * Spectral Density) estimates.
+ * tools for dealing with SFT timestamps and semicoherent analysis segments.
  *
  * <p>
  * <h2>Overview</h2>
@@ -86,12 +85,6 @@ extern "C" {
  *   \ref SFT-file-naming-func "file naming convention functions",
  *   \ref SFT-file-read-func "file reading functions",
  *   \ref SFT-file-write-func "file writing functions".
- * - PSD types:
- *   \ref PSD-type-cdtor-func "create/destroy functions",
- *   \ref PSD-type-mod-func "modify functions",
- *   \ref PSD-type-prop-func "property functions",
- *   \ref PSD-type-gen-func "generation functions",
- *   \ref PSD-file-write-func "file writing functions".
  *
  * <p>
  * <h2>Usage: Reading of SFT-files</h2>
@@ -265,47 +258,6 @@ typedef struct tagMultiSFTCatalogView
   UINT4 length;			/**< number of detectors */
   SFTCatalog *data;		/**< array of SFT-catalog pointers */
 } MultiSFTCatalogView;
-
-/** Special type for holding a PSD vector (over several SFTs) */
-typedef REAL8FrequencySeriesVector PSDVector;
-
-/** A collection of PSD vectors -- one for each IFO in a multi-IFO search */
-typedef struct tagMultiPSDVector {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiPSDVector, PSDVector*, data, UINT4, length));
-#endif /* SWIG */
-  UINT4      length;  	/**< number of ifos */
-  PSDVector  **data; 	/**< sftvector for each ifo */
-} MultiPSDVector;
-
-/** One noise-weight (number) per SFT (therefore indexed over IFOs and SFTs */
-typedef struct tagMultiNoiseWeights {
-#ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiNoiseWeights, REAL8Vector*, data, UINT4, length));
-#endif /* SWIG */
-  UINT4 length;		/**< number of detectors */
-  REAL8Vector **data;	/**< weights-vector for each detector */
-  REAL8 Sinv_Tsft;	/**< normalization factor used: \f$\mathcal{S}^{-1}\,T_\mathrm{SFT}\f$ (using single-sided PSD!) */
-  BOOLEAN isNotNormalized;  /**< if true: weights are saved unnormalized (divide by Sinv_Tsft to get normalized version). */
-} MultiNoiseWeights;
-
-/** common types of mathematical operations over an array */
-typedef enum tagMathOpType {
-  MATH_OP_ARITHMETIC_SUM = 0,   /**< \f$\sum_k x_k\f$      */
-  MATH_OP_ARITHMETIC_MEAN,      /**< \f$\sum_k x_k / N\f$ */
-  MATH_OP_ARITHMETIC_MEDIAN,    /**< \f$x_1 \leq \dots \leq  x_{N/2} \leq \dots \leq x_n\f$ */
-  MATH_OP_HARMONIC_SUM,         /**< \f$1 / \sum_k (1/x_k)\f$ */
-  MATH_OP_HARMONIC_MEAN,        /**< \f$N / \sum_k (1/x_k)\f$ */
-  MATH_OP_POWERMINUS2_SUM,      /**< \f$1 / \sqrt{ \sum_k (1/x_k^2) }\f$ */
-  MATH_OP_POWERMINUS2_MEAN,     /**< \f$1 / \sqrt{ \sum_k (1/x_k^2) / N }\f$ */
-  MATH_OP_MINIMUM,              /**< \f$\min_k(x_k)\f$ */
-  MATH_OP_MAXIMUM,              /**< \f$\max_k(x_k)\f$ */
-  MATH_OP_LAST
-} MathOpType;
-
-/*---------- global variables ----------*/
-
-extern const UserChoices MathOpTypeChoices;
 
 /*---------- exported prototypes [API] ----------*/
 
@@ -567,80 +519,6 @@ int XLALWriteSFTVector2File ( const SFTVector *sftVect, const CHAR *dirname, con
 int XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment );
 
 int XLALValidateSFTFile ( const char *fname );
-
-/** @} */
-
-/**
- * \name PSD type create/destroy functions
- * \anchor PSD-type-cdtor-func
- */
-/** @{ */
-
-// These functions are defined in PSDutils.c
-
-void XLALDestroyPSDVector ( PSDVector *vect );
-void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
-
-void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
-
-/** @} */
-
-/**
- * \name PSD type modify functions
- * \anchor PSD-type-mod-func
- */
-/** @{ */
-
-// These functions are defined in PSDutils.c
-
-int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
-
-/** @} */
-
-/**
- * \name PSD type property functions
- * \anchor PSD-type-prop-func
- */
-/** @{ */
-
-// These functions are defined in PSDutils.c
-
-MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
-
-/** @} */
-
-/**
- * \name PSD generation functions
- * \anchor PSD-type-gen-func
- */
-/** @{ */
-
-// These functions are defined in PSDutils.c
-
-REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
-REAL8 XLALMathOpOverArray(const REAL8* data, const size_t length, const MathOpType optype);
-REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs (  const UINT4 totalNumSFTs, const MathOpType optypeSFTs );
-
-int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, MultiPSDVector **multiPSDVector, REAL8Vector **normSFT, MultiSFTVector *inputSFTs, const BOOLEAN returnMultiPSDVector, const BOOLEAN returnNormSFT,
-                                    const UINT4 blocksRngMed, const MathOpType PSDmthopSFTs, const MathOpType PSDmthopIFOs, const MathOpType nSFTmthopSFTs, const MathOpType nSFTmthopIFOs,
-                                    const BOOLEAN normalizeByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand, const BOOLEAN normalizeSFTsInPlace );
-int XLALComputePSDfromSFTs ( REAL8Vector **finalPSD, MultiSFTVector *inputSFTs, const UINT4 blocksRngMed, const MathOpType PSDmthopSFTs, const MathOpType PSDmthopIFOs,
-                             const BOOLEAN normalizeByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand );
-
-/** @} */
-
-/**
- * \name PSD file writing functions
- * \anchor PSD-file-write-func
- */
-/** @{ */
-
-// These functions are defined in PSDutils.c
-
-int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
-
-int XLALWritePSDtoFilePointer ( FILE *fpOut, REAL8Vector *PSDVect, REAL8Vector *normSFTVect, BOOLEAN outputNormSFT, BOOLEAN outFreqBinEnd, INT4 PSDmthopBins, INT4 nSFTmthopBins,
-                                INT4 binSize, INT4 binStep, REAL8 Freq0, REAL8 dFreq );
 
 /** @} */
 

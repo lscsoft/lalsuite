@@ -33,6 +33,7 @@
 #include <lal/FrequencySeries.h>
 #include <lal/NormalizeSFTRngMed.h>
 
+#include <lal/PSDutils.h>
 #include "SFTinternal.h"
 
 /*---------- global variables ----------*/
