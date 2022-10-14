@@ -163,10 +163,8 @@ test/NewGetAMCoeffsTest
 test/NormalizeSFTRngMedTest
 test/OutHistogram.asc
 test/OutHough.asc
-test/outputsftv2_r1.sft
-test/outputsftv2_r2.sft
-test/outputsftv2_v1.sft
-test/outputsftv2_v2.sft
+test/outputsft_r1.sft
+test/outputsft_r2.sft
 test/Peak2PHMDTest
 test/PtoleMeshTest
 test/PtoleMetricTest

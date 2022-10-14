@@ -151,7 +151,7 @@ int main( void )
       return EXIT_FAILURE;
     }
 
-  /* check that proper v2-SFTs are read-in properly */
+  /* check that proper SFTs are read-in properly */
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test1", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
   XLALDestroySFTCatalog(catalog);
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test2", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
@@ -167,7 +167,7 @@ int main( void )
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test7", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
   XLALDestroySFTCatalog(catalog);
 
-  /* now completely read-in a v2 merged-SFT */
+  /* now completely read-in a merged-SFT */
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test*", NULL ) ) == NULL, XLAL_EFUNC ); XLALClearErrno();
   /* skip sft nr 4 with has Tsft=50 instead of Tsft=60 */
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test[123567]*", NULL ) ) != NULL, XLAL_EFUNC );
@@ -217,12 +217,12 @@ int main( void )
       } /* for X < numIFOs */
   } /* ------ */
 
-  /* ----- v2 SFT writing ----- */
-  /* write v2-SFT to disk */
-  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(multsft_vect->data[0]->data[0]), "outputsftv2_r1.sft", "A v2-SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN ( XLALWriteSFTVector2Dir(multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test") == XLAL_SUCCESS, XLAL_EFUNC);
+  /* ----- SFT writing ----- */
+  /* write SFT to disk */
+  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(multsft_vect->data[0]->data[0]), "outputsft_r1.sft", "A SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALWriteSFTVector2Dir(multsft_vect->data[0], ".", "A SFT file for testing!", "test") == XLAL_SUCCESS, XLAL_EFUNC);
 
-  /* write v2-SFT to single file */
+  /* write SFT to single file */
   {
     const CHAR *currSingleSFT = NULL;
     UINT4 i = 0;
@@ -230,7 +230,7 @@ int main( void )
     int concat = 0, single = 0;
 
     xlalErrno = 0;
-    if (XLAL_SUCCESS != XLALWriteSFTVector2File ( multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test_concat" )) {
+    if (XLAL_SUCCESS != XLALWriteSFTVector2File ( multsft_vect->data[0], ".", "A SFT file for testing!", "test_concat" )) {
       LALPrintError ( "\n XLALWriteSFTVector2File failed to write multi-SFT vector to file!\n\n");
       return EXIT_FAILURE;
     }
@@ -297,9 +297,9 @@ int main( void )
     printf( "*** Comparing was successful!!! ***\n");
   }
 
-  /* write v2-SFT again */
+  /* write SFT again */
   multsft_vect->data[0]->data[0].epoch.gpsSeconds += 60;       /* shift start-time so they don't look like segmented SFTs! */
-  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(multsft_vect->data[0]->data[0]), "outputsftv2_r2.sft", "A v2-SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(multsft_vect->data[0]->data[0]), "outputsft_r2.sft", "A SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroySFTVector ( sft_vect );
   sft_vect = NULL;
@@ -309,15 +309,15 @@ int main( void )
   multsft_vect2 = NULL;
 
   /* ----- read the previous SFTs back */
-  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsftv2_r*.sft", NULL ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsft_r*.sft", NULL ) ) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);
   constraints.detector = detector;
-  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsftv2_r*.sft", &constraints ) ) != NULL, XLAL_EFUNC);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsft_r*.sft", &constraints ) ) != NULL, XLAL_EFUNC);
   XLAL_CHECK_MAIN ( ( sft_vect = XLALLoadSFTs ( catalog, -1, -1 ) ) != NULL, XLAL_EFUNC );
 
   if ( sft_vect->length != 2 )
     {
-      if ( lalDebugLevel ) XLALPrintError ("\nFailed to read back in 'outputsftv2_r*.sft'\n\n");
+      if ( lalDebugLevel ) XLALPrintError ("\nFailed to read back in 'outputsft_r*.sft'\n\n");
       return EXIT_FAILURE;
     }
 

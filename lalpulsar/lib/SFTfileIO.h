@@ -60,7 +60,7 @@ extern "C" {
  *
  * \brief Module for reading/writing/manipulating SFTs (Short Fourier Transforms)
  *
- * This implements the SFT (Short Fourier Transforms) version 2 standard defined
+ * This implements the SFT (Short Fourier Transforms) standard defined
  * in \cite SFT-spec . It contains various helper functions to create, handle,
  * combine, and destroy SFTs and related data structures, including SFTtype,
  * SFTVector, SFTCatalog (and their multi-detector generalizations) as well as
@@ -95,7 +95,7 @@ extern "C" {
  * - XLALLoadSFTs(): load a frequency-band into a single-IFO SFTVector defined by the catalogue, OR <br>
  *   XLALLoadMultiSFTs(): load a frequency-band into a MultiSFTVector defined by the catalogue
  *
- * <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v2 files.
+ * <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT files.
  * This might be extended in the future to support further file-formats (frames?).
  * None of the following API depends on the details of the underlying file-format. This will ensure that
  * codes using the following functions will NOT have to be changed irrespective of SFT file-format used.
@@ -225,7 +225,7 @@ typedef struct tagSFTDescriptor
 {
   struct tagSFTLocator *locator; 	/**< *internal* description of where to find this SFT [opaque!] */
   SFTtype header;			/**< SFT-header info */
-  CHAR *comment;			/**< comment-entry in SFT-header (v2 only) */
+  CHAR *comment;			/**< comment-entry in SFT-header */
   UINT4 numBins;			/**< number of frequency-bins in this SFT */
   UINT4 version;			/**< SFT-specification version */
   UINT8 crc64;				/**< crc64 checksum */

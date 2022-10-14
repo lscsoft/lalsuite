@@ -88,10 +88,9 @@ FILE * fopen_SFTLocator ( const struct tagSFTLocator *locator );
 
 int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
 int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins );
-int read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **SFTcomment, BOOLEAN swapEndian);
 UINT4 read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 
-BOOLEAN has_valid_v2_crc64 (FILE *fp );
+BOOLEAN has_valid_crc64 (FILE *fp );
 
 // These functions are defined in SFTReferenceLibrary.c
 

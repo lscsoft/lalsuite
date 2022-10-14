@@ -576,7 +576,7 @@ XLALCheckCRCSFTCatalog(
 			      XLALshowSFTLocator ( catalog->data[i].locator ) );
               return XLAL_FAILURE;
 	    }
-	  if ( !(has_valid_v2_crc64 ( fp ) != 0) )
+	  if ( !(has_valid_crc64 ( fp ) != 0) )
 	    {
 	      XLALPrintError ( "CRC64 checksum failure for SFT '%s'\n",
 			      XLALshowSFTLocator ( catalog->data[i].locator ) );
