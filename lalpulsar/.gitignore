@@ -175,6 +175,7 @@ test/ReadTEMPOFileTest
 test/ResampleTest
 test/SFTCleanTest
 test/SFTfileIOTest
+test/SFTnamingTest
 test/SimulateTaylorCWTest
 test/SkyMetricTest
 test/StackMetricTest

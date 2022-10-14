@@ -21,11 +21,34 @@
 
 /*---------- includes ----------*/
 
+#define _XOPEN_SOURCE   // for isascii()
+
 #include <ctype.h>
 
 #include <lal/LISAspecifics.h>
 
 #include "SFTinternal.h"
+
+/*---------- macros ----------*/
+
+#define LAST_ELEMENT(buf) ( (buf)[XLAL_NUM_ELEM(buf) - 1] )
+
+/*---------- constants ----------*/
+
+/** SFT window specification; see \cite SFT-spec */
+static const struct {
+  const char *window_type;
+  const char *short_name;
+  UINT2 A;
+  UINT2 B;
+} windowspec_table[] = {
+  /* zero-parameter windows */
+  { .window_type = "unknown",     .short_name = "UNKN", .B = 0 },
+  { .window_type = "rectangular", .short_name = "RECT", .B = 1 },
+  { .window_type = "hann",        .short_name = "HANN", .B = 2 },
+  /* one-parameter windows */
+  { .window_type = "tukey",       .short_name = "TKEY", .A = 1 },
+};
 
 /*========== function definitions ==========*/
 
@@ -201,6 +224,167 @@ XLALGetSiteInfo ( const CHAR *name )
 
 
 /**
+ * Build an SFT file name from the given specification
+ */
+char *XLALBuildSFTFilenameFromSpec(
+  const SFTFilenameSpec *spec   /**< [in] SFT filename specification */
+  )
+{
+
+  // check input
+  XLAL_CHECK_NULL( spec != NULL, XLAL_EFAULT );
+
+  // check specification
+  XLAL_CHECK_NULL( LAST_ELEMENT(spec->path) == 0, XLAL_EINVAL,
+                   "'path' is not a null-terminated string" );
+  XLAL_CHECK_NULL( LAST_ELEMENT(spec->extn) == 0, XLAL_EINVAL,
+                   "'extn' is not a null-terminated string" );
+  XLAL_CHECK_NULL( spec->numSFTs > 0, XLAL_EINVAL,
+                   "'numSFTs' must be strictly positive" );
+  XLAL_CHECK_NULL( LAST_ELEMENT(spec->detector) == 0, XLAL_EINVAL,
+                   "'detector' is not a null-terminated string" );
+  XLAL_CHECK_NULL( XLALIsValidCWDetector( spec->detector ), XLAL_EINVAL,
+                   "'%s' is not a valid 2-character detector prefix", spec->detector );
+  XLAL_CHECK_NULL( spec->SFTtimebase > 0, XLAL_EINVAL,
+                   "'SFTtimebase' must be strictly positive" );
+  XLAL_CHECK_NULL( LAST_ELEMENT(spec->window_type) == 0, XLAL_EINVAL,
+                   "'window_type' is not a null-terminated string" );
+  XLAL_CHECK_NULL( LAST_ELEMENT(spec->privMisc) == 0, XLAL_EINVAL,
+                   "'privMisc' is not a null-terminated string" );
+  XLAL_CHECK_NULL( spec->pubObsRun == 0 || strlen(spec->privMisc) == 0, XLAL_EINVAL,
+                   "Public SFTs (with pubObsRun=%u) cannot include a private description '%s'",
+                   spec->pubObsRun, spec->privMisc );
+  XLAL_CHECK_NULL( strlen(spec->privMisc) == 0 || XLALCheckValidDescriptionField(spec->privMisc) == XLAL_SUCCESS, XLAL_EINVAL,
+                   "Private description '%s' contains disallowed characters", spec->privMisc );
+  XLAL_CHECK_NULL( LAST_ELEMENT(spec->pubObsKind) == 0, XLAL_EINVAL,
+                   "'pubObsKind' is not a null-terminated string" );
+  XLAL_CHECK_NULL( spec->pubObsRun == 0 ||
+                   strcmp(spec->pubObsKind, "RUN") == 0 ||
+                   strcmp(spec->pubObsKind, "AUX") == 0 ||
+                   strcmp(spec->pubObsKind, "SIM") == 0 ||
+                   strcmp(spec->pubObsKind, "DEV") == 0, XLAL_EINVAL,
+                   "'pubObsKind=%s' must be one of 'RUN'|'AUX'|'SIM'|'DEV'", spec->pubObsKind );
+  XLAL_CHECK_NULL( spec->pubObsRun == 0 || spec->pubVersion > 0, XLAL_EINVAL,
+                   "Public SFTs (with pubObsRun=%u) must include a positive version 'pubVersion'",
+                   spec->pubObsRun );
+  XLAL_CHECK_NULL( LAST_ELEMENT(spec->pubChannel) == 0, XLAL_EINVAL,
+                   "'pubChannel' is not a null-terminated string" );
+  XLAL_CHECK_NULL( spec->pubObsRun == 0 || strlen(spec->pubChannel) > 0, XLAL_EINVAL,
+                   "Public SFTs (with pubObsRun=%u) must include a channel name 'pubChannel'",
+                   spec->pubObsRun );
+  XLAL_CHECK_NULL( spec->pubObsRun == 0 || strlen(spec->window_type) > 0, XLAL_EINVAL,
+                   "Public SFTs (with pubObsRun=%u) must include a window function 'window_type'",
+                   spec->pubObsRun );
+  XLAL_CHECK_NULL( spec->nbFirstBinFreq == 0 || spec->nbBinWidthFreq > 0, XLAL_EINVAL,
+                   "Narrow-band SFTs (with nbFirstBinFreq>0) must have nbBinWidthFreq>0" );
+  XLAL_CHECK_NULL( spec->gpsStart > 0, XLAL_EINVAL,
+                   "'gpsStart' must be strictly positive" );
+  XLAL_CHECK_NULL( spec->SFTspan > 0, XLAL_EINVAL,
+                   "'SFTspan' must be strictly positive" );
+
+  char windowspec_str[9];
+  if ( spec->pubObsRun > 0 ) {
+    XLAL_CHECK_NULL( build_sft_windowspec( NULL, &windowspec_str, spec->window_type, spec->window_beta ) == XLAL_SUCCESS, XLAL_EINVAL,
+                     "'%s' is not a valid SFT window function", spec->window_type );
+  }
+
+  // SFT filename string
+  char *fname = NULL;
+
+  // append SFT path, if any
+  if (strlen(spec->path) > 0) {
+    fname = XLALStringAppendFmt(
+      fname,
+      "%s/",
+      spec->path
+      );
+    XLAL_CHECK_NULL( fname != NULL, XLAL_EFUNC );
+  }
+
+  // append SFT filename fields <S>, <D1>, <D2>, <D3> (see \cite SFT-spec)
+  fname = XLALStringAppendFmt(
+    fname,
+    "%c-%d_%s_%dSFT",
+    spec->detector[0],
+    spec->numSFTs,
+    spec->detector,
+    spec->SFTtimebase
+    );
+  XLAL_CHECK_NULL( fname != NULL, XLAL_EFUNC );
+
+  // append optional SFT filename field <D4> (see \cite SFT-spec)
+  if ( spec->pubObsRun == 0 ) {   // private SFT
+
+    if (strlen(spec->privMisc) > 0) {   // miscellaneous description
+
+      // append private SFT miscellaneous description
+      fname = XLALStringAppendFmt(
+        fname,
+        "_%s",
+        spec->privMisc
+        );
+      XLAL_CHECK_NULL( fname != NULL, XLAL_EFUNC );
+
+    }
+
+  } else {   // public SFT
+
+    // strip prefix and disallowed characters from channel name
+    char pubChannel[XLAL_NUM_ELEM(spec->pubChannel)];
+    strcpy(pubChannel, spec->pubChannel);
+    char *pubChannel_no_prefix = strchr(pubChannel, ':');
+    if (!pubChannel_no_prefix) {
+      pubChannel_no_prefix = pubChannel;
+    }
+    XLAL_CHECK_NULL( XLALStringKeepChars(pubChannel_no_prefix, isascii) != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL( XLALStringKeepChars(pubChannel_no_prefix, isalnum) != NULL, XLAL_EFUNC );
+
+    // append public SFT descriptor
+    fname = XLALStringAppendFmt(
+      fname,
+      "_O%d%s+V%d+C%s+W%s",
+      spec->pubObsRun,
+      spec->pubObsKind,
+      spec->pubVersion,
+      pubChannel_no_prefix,
+      windowspec_str
+      );
+    XLAL_CHECK_NULL( fname != NULL, XLAL_EFUNC );
+
+  }
+
+  // append optional SFT filename field <D5> (see \cite SFT-spec)
+  if (spec->nbFirstBinFreq > 0) {   // narrow-band SFTs
+
+    // append narrow-band SFT descriptor
+    fname = XLALStringAppendFmt(
+      fname,
+      "_NBF%04dHz%dW%04dHz%d",
+      spec->nbFirstBinFreq,
+      spec->nbFirstBinRem,
+      spec->nbBinWidthFreq,
+      spec->nbBinWidthRem
+      );
+    XLAL_CHECK_NULL( fname != NULL, XLAL_EFUNC );
+
+  }
+
+  // append optional SFT filename fields <G>, <T> (see \cite SFT-spec), and extension
+  fname = XLALStringAppendFmt(
+    fname,
+    "-%09d-%d.%s",
+    spec->gpsStart,
+    spec->SFTspan,
+    strlen(spec->extn) > 0 ? spec->extn : "sft"
+    );
+  XLAL_CHECK_NULL( fname != NULL, XLAL_EFUNC );
+
+  return fname;
+
+} // XLALBuildSFTFilenameFromSpec(()
+
+
+/**
  * Return the 'official' file name for a given SFT, folllowing the SFT-v2 naming convention
  * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385, namely
  *
@@ -362,3 +546,64 @@ XLALCheckValidDescriptionField ( const char *desc )
   return XLAL_SUCCESS;
 
 } // XLALCheckValidDescriptionField()
+
+
+/**
+ * Build an SFT 2-byte 'windowspec' or filename field 'windowspec_str' for the window given by 'window_type' and 'window_beta'
+ */
+int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const char *window_type, REAL8 window_beta )
+{
+
+  // check input
+  XLAL_CHECK ( window_type != NULL, XLAL_EFAULT );
+
+  // default to unknown window
+  if (windowspec) {
+    *windowspec = windowspec_table[0].B;
+  }
+  if (windowspec_str) {
+    XLAL_CHECK ( snprintf( *windowspec_str, sizeof(*windowspec_str), "%s", windowspec_table[0].short_name ) < (int) sizeof(*windowspec_str), XLAL_ESYS );
+  }
+
+  // lookup windows
+  for (size_t w = 0; w < XLAL_NUM_ELEM(windowspec_table); ++w) {
+    if ( XLALStringCaseCompare(window_type, windowspec_table[w].window_type) == 0 ) {
+
+      // build windowspec and windowspec_str
+      if ( windowspec_table[w].A == 0 ) {   /* zero-parameter windows */
+
+        XLAL_CHECK ( window_beta <= 0, XLAL_EINVAL, "Invalid window_beta=%0.10g for SFT window type '%s'", window_beta, window_type );
+
+        if (windowspec) {
+          *windowspec = windowspec_table[w].B;
+        }
+
+        if (windowspec_str) {
+          XLAL_CHECK ( snprintf( *windowspec_str, sizeof(*windowspec_str), "%s", windowspec_table[w].short_name ) < (int) sizeof(*windowspec_str), XLAL_ESYS );
+        }
+
+      } else {                              /* one-parameter windows */
+
+        REAL8 Breal = window_beta * 5000;
+        long B = lrint(Breal);
+        XLAL_CHECK ( B == ((long) Breal), XLAL_ETOL, "SFT window_beta=%0.10g cannot be exactly represented by an integer [0,5000]", window_beta );
+        XLAL_CHECK ( 0 <= B && B <= 5000, XLAL_ERANGE, "SFT window_beta=%0.10g is out of range [0.0,1.0] (B=%ld)", window_beta, B );
+
+        if (windowspec) {
+          *windowspec = windowspec_table[w].A * 5001 + B;
+        }
+
+        if (windowspec_str) {
+          XLAL_CHECK ( snprintf( *windowspec_str, sizeof(*windowspec_str), "%s%ld", windowspec_table[w].short_name, B ) < (int) sizeof(*windowspec_str), XLAL_ESYS );
+        }
+
+      }
+
+      break;
+
+    }
+  }
+
+  return XLAL_SUCCESS;
+
+}

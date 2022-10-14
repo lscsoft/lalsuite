@@ -259,6 +259,30 @@ typedef struct tagMultiSFTCatalogView
   SFTCatalog *data;		/**< array of SFT-catalog pointers */
 } MultiSFTCatalogView;
 
+/**
+ * Structure specifying an SFT file name, following the convention in \cite SFT-spec .
+ */
+typedef struct tagSFTFilenameSpec {
+  CHAR path[4096];              /**< Path to the SFT file */
+  CHAR extn[32];                /**< Extension of the SFT file; defaults to 'sft' */
+  UINT4 numSFTs;                /**< Number of SFTs in the file */
+  CHAR detector[3];             /**< 2-character detector prefix (e.g. 'H1', 'L1', 'V1') */
+  UINT4 SFTtimebase;            /**< Timebase in seconds of the SFT */
+  CHAR window_type[32];         /**< window function applied to SFT */
+  REAL8 window_beta;            /**< parameter of window function, if required */
+  UINT4 gpsStart;               /**< GPS time in seconds at the beginning of the first SFT in the file */
+  UINT4 SFTspan;                /**< Total time interval in seconds covered by SFT file */
+  CHAR privMisc[256];           /**< For private SFTs: miscellaneous description field */
+  UINT4 pubObsRun;              /**< For public SFTs: observing run number */
+  CHAR pubObsKind[4];           /**< For public SFTs: kind of data ('RUN', 'AUX', 'SIM', 'DEV') */
+  UINT4 pubVersion;             /**< For public SFTs: version number of SFT production */
+  CHAR pubChannel[256];         /**< For public SFTs: channel name of data used to make SFTs */
+  UINT4 nbFirstBinFreq;         /**< For narrow-band SFTs: SFT first bin frequency divided by SFT time base, rounded down */
+  UINT4 nbFirstBinRem;          /**< For narrow-band SFTs: remainder of division of SFT first bin frequency by SFT time base */
+  UINT4 nbBinWidthFreq;         /**< For narrow-band SFTs: SFT bandwidth divided by SFT time base, rounded down */
+  UINT4 nbBinWidthRem;          /**< For narrow-band SFTs: remainder of division of SFT bandwidth by SFT time base */
+} SFTFilenameSpec;
+
 /*---------- exported prototypes [API] ----------*/
 
 /**
@@ -471,6 +495,8 @@ int XLALFindCWDetector ( CHAR** prefix, INT4 *lalCachedIndex, const CHAR *name, 
 BOOLEAN XLALIsValidCWDetector ( const CHAR *name );
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
+
+char *XLALBuildSFTFilenameFromSpec( const SFTFilenameSpec *spec );
 
 char *XLALOfficialSFTFilename ( char site, char channel, UINT4 numSFTs, UINT4 Tsft, UINT4 GPS_start, UINT4 Tspan, const char *Misc );
 char *XLALGetOfficialName4SFT ( const SFTtype *sft, const char *Misc );

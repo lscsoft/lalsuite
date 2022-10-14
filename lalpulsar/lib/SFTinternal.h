@@ -74,6 +74,10 @@ int compareSFTloc(const void *ptr1, const void *ptr2);
 int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
 int compareSFTepoch(const void *ptr1, const void *ptr2);
 
+// These functions are defined in SFTnaming.c
+
+int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const char *window_type, REAL8 window_beta );
+
 // These functions are defined in SFTfileIO.c
 
 void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
