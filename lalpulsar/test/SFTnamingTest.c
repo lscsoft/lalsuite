@@ -123,6 +123,31 @@ int main(void) {
     XLALFree( fname );
   }
 
+  for (size_t i = 0; i < XLAL_NUM_ELEM(SFT_spec); ++i) {
+    SFTFilenameSpec spec;
+    XLAL_CHECK_MAIN( XLALParseSFTFilenameIntoSpec(&spec, SFT_filenames[i]) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( strcmp( spec.path, SFT_spec[i].path ) == 0, XLAL_EFAILED, "path '%s' should be '%s'", spec.path, SFT_spec[i].path );
+    XLAL_CHECK_MAIN( spec.numSFTs == SFT_spec[i].numSFTs, XLAL_EFAILED, "numSFTs '%d' should be '%d'", spec.numSFTs, SFT_spec[i].numSFTs );
+    XLAL_CHECK_MAIN( strcmp( spec.detector, SFT_spec[i].detector ) == 0, XLAL_EFAILED, "detector '%s' should be '%s'", spec.detector, SFT_spec[i].detector );
+    XLAL_CHECK_MAIN( spec.SFTtimebase == SFT_spec[i].SFTtimebase, XLAL_EFAILED, "SFTtimebase '%d' should be '%d'", spec.SFTtimebase, SFT_spec[i].SFTtimebase );
+    XLAL_CHECK_MAIN( strcmp( spec.window_type, SFT_spec[i].window_type ) == 0, XLAL_EFAILED, "window_type '%s' should be '%s'", spec.window_type, SFT_spec[i].window_type );
+    XLAL_CHECK_MAIN( spec.window_beta == SFT_spec[i].window_beta, XLAL_EFAILED, "window_beta '%g' should be '%g'", spec.window_beta, SFT_spec[i].window_beta );
+    XLAL_CHECK_MAIN( spec.gpsStart == SFT_spec[i].gpsStart, XLAL_EFAILED, "gpsStart '%d' should be '%d'", spec.gpsStart, SFT_spec[i].gpsStart );
+    XLAL_CHECK_MAIN( spec.SFTspan == SFT_spec[i].SFTspan, XLAL_EFAILED, "SFTspan '%d' should be '%d'", spec.SFTspan, SFT_spec[i].SFTspan );
+    XLAL_CHECK_MAIN( strcmp( spec.privMisc, SFT_spec[i].privMisc ) == 0, XLAL_EFAILED, "privMisc '%s' should be '%s'", spec.privMisc, SFT_spec[i].privMisc );
+    XLAL_CHECK_MAIN( spec.pubObsRun == SFT_spec[i].pubObsRun, XLAL_EFAILED, "pubObsRun '%d' should be '%d'", spec.pubObsRun, SFT_spec[i].pubObsRun );
+    XLAL_CHECK_MAIN( strcmp( spec.pubObsKind, SFT_spec[i].pubObsKind ) == 0, XLAL_EFAILED, "pubObsKind '%s' should be '%s'", spec.pubObsKind, SFT_spec[i].pubObsKind );
+    XLAL_CHECK_MAIN( spec.pubVersion == SFT_spec[i].pubVersion, XLAL_EFAILED, "pubVersion '%d' should be '%d'", spec.pubVersion, SFT_spec[i].pubVersion );
+    if (strlen(spec.pubChannel) > 0) {
+      const char *SFT_spec_pubChannel_stripped = "DCHCLEANSTRAINC02";
+      XLAL_CHECK_MAIN( strcmp( spec.pubChannel, SFT_spec_pubChannel_stripped ) == 0, XLAL_EFAILED, "pubChannel '%s' should be '%s'", spec.pubChannel, SFT_spec_pubChannel_stripped );
+    }
+    XLAL_CHECK_MAIN( spec.nbFirstBinFreq == SFT_spec[i].nbFirstBinFreq, XLAL_EFAILED, "nbFirstBinFreq '%d' should be '%d'", spec.nbFirstBinFreq, SFT_spec[i].nbFirstBinFreq );
+    XLAL_CHECK_MAIN( spec.nbFirstBinRem == SFT_spec[i].nbFirstBinRem, XLAL_EFAILED, "nbFirstBinRem '%d' should be '%d'", spec.nbFirstBinRem, SFT_spec[i].nbFirstBinRem );
+    XLAL_CHECK_MAIN( spec.nbBinWidthFreq == SFT_spec[i].nbBinWidthFreq, XLAL_EFAILED, "nbBinWidthFreq '%d' should be '%d'", spec.nbBinWidthFreq, SFT_spec[i].nbBinWidthFreq );
+    XLAL_CHECK_MAIN( spec.nbBinWidthRem == SFT_spec[i].nbBinWidthRem, XLAL_EFAILED, "nbBinWidthRem '%d' should be '%d'", spec.nbBinWidthRem, SFT_spec[i].nbBinWidthRem );
+  }
+
   LALCheckMemoryLeaks();
 
 }

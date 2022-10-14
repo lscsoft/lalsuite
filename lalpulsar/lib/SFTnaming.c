@@ -33,6 +33,12 @@
 
 #define LAST_ELEMENT(buf) ( (buf)[XLAL_NUM_ELEM(buf) - 1] )
 
+#define STRCPYCHK(name, dest, src) do { \
+    const char *const STRCPYCHK_p = (src); \
+    XLAL_CHECK( strlen(STRCPYCHK_p) < sizeof(dest), XLAL_ESIZE, "%s '%s' does not fit in a buffer of size %zu", name, STRCPYCHK_p, sizeof(dest) ); \
+    strncpy((dest), STRCPYCHK_p, sizeof(dest)); \
+  } while(0)
+
 /*---------- constants ----------*/
 
 /** SFT window specification; see \cite SFT-spec */
@@ -385,6 +391,155 @@ char *XLALBuildSFTFilenameFromSpec(
 
 
 /**
+ * Parse a SFT file path and return its specification
+ */
+int XLALParseSFTFilenameIntoSpec(
+  SFTFilenameSpec *spec,        /**< [out] SFT filename specification */
+  const char *SFTpath           /**< [in] SFT file path */
+  )
+{
+
+  // check input
+  XLAL_CHECK( spec != NULL, XLAL_EFAULT );
+  XLAL_CHECK( SFTpath != NULL, XLAL_EFAULT );
+  XLALPrintInfo("%s(): SFTpath='%s'\n",
+                __func__, SFTpath);
+
+  // clear specification
+  memset(spec, 0, sizeof(*spec));
+
+  // local copy of path
+  char localSFTpath[8192];
+  STRCPYCHK( "SFT filename and path", localSFTpath, SFTpath );
+
+  // split SFT filename
+  char *SFTfname = strrchr(localSFTpath, '/');
+  if ( !SFTfname ) {
+    SFTfname = localSFTpath;
+  } else {
+    *SFTfname++ = '\0';
+    STRCPYCHK( "SFT path", spec->path, localSFTpath );
+  }
+  XLALPrintInfo("%s(): spec->path='%s' SFTfname='%s'\n",
+                __func__, spec->path, SFTfname);
+
+  // split SFT filename <S>, <D>, <G>, <T> fields (see \cite SFT-spec)
+  char *S, *D, *G, *T;
+  {
+    char *p = SFTfname;
+    S = XLALStringToken(&p, "-", 1);
+    XLAL_CHECK( S != NULL, XLAL_EINVAL,
+                "SFT file path '%s' contains no <S> field", SFTpath );
+    D = XLALStringToken(&p, "-", 1);
+    XLAL_CHECK( D != NULL, XLAL_EINVAL,
+                "SFT file path '%s' contains no <D> field", SFTpath );
+    G = XLALStringToken(&p, "-", 1);
+    XLAL_CHECK( G != NULL, XLAL_EINVAL,
+                "SFT file path '%s' contains no <G> field", SFTpath );
+    T = XLALStringToken(&p, ".", 1);
+    XLAL_CHECK( T != NULL, XLAL_EINVAL,
+                "SFT file path '%s' contains no <T> field", SFTpath );
+    XLALPrintInfo("%s(): S='%s' D='%s' G='%s' T='%s' extn='%s'\n",
+                  __func__, S, D, G, T, p);
+    STRCPYCHK( "SFT extension", spec->extn, p );
+  }
+
+  // split SFT filename <D> field into <D1>, <D2>, <D3>[, <D4>, <D5>] fields (see \cite SFT-spec)
+  char *D1, *D2, *D3, *D4, *D5;
+  {
+    char *p = D;
+    D1 = XLALStringToken(&p, "_", 1);
+    XLAL_CHECK( D1 != NULL, XLAL_EINVAL,
+                "SFT file path '%s' contains no <D1> field", SFTpath );
+    D2 = XLALStringToken(&p, "_", 1);
+    XLAL_CHECK( D2 != NULL, XLAL_EINVAL,
+                "SFT file path '%s' contains no <D2> field", SFTpath );
+    D3 = XLALStringToken(&p, "_", 1);
+    XLAL_CHECK( D3 != NULL, XLAL_EINVAL,
+                "SFT file path '%s' contains no <D3> field", SFTpath );
+    D4 = XLALStringToken(&p, "_", 1);
+    D5 = XLALStringToken(&p, "_", 1);
+    XLALPrintInfo("%s(): D1='%s' D2='%s' D3='%s' D4='%s' D5='%s' p='%s'\n",
+                  __func__, D1, D2, D3, D4, D5, p);
+  }
+
+  // parse required SFT filename fields <S>, <D1>, <D2>, <D3>, <G>, <T>
+  XLAL_CHECK( sscanf( D1, "%d", &spec->numSFTs ) == 1, XLAL_EFUNC,
+              "Could not parse 'numSFTs' from field D1='%s'", D1 );
+  XLAL_CHECK( spec->numSFTs > 0, XLAL_EINVAL,
+              "'numSFTs' must be strictly positive" );
+  STRCPYCHK( "SFT detector prefix", spec->detector, D2 );
+  XLAL_CHECK( XLALIsValidCWDetector( spec->detector ), XLAL_EINVAL,
+              "'%s' is not a valid 2-character detector prefix", spec->detector );
+  XLAL_CHECK( S[0] == spec->detector[0] && S[1] == '\0', XLAL_EINVAL,
+              "Inconsistent site/detector fields S='%s' and D2='%s'", S, D2 );
+  XLAL_CHECK( sscanf( D3, "%dSFT", &spec->SFTtimebase ) == 1, XLAL_EFUNC,
+              "Could not parse 'SFTtimebase' from field D3='%s'", D3 );
+  XLAL_CHECK( spec->SFTtimebase > 0, XLAL_EINVAL,
+              "'SFTtimebase' must be strictly positive" );
+  XLAL_CHECK( sscanf( G, "%d", &spec->gpsStart ) == 1, XLAL_EFUNC,
+              "Could not parse 'gpsStart' from field G='%s'", G );
+  XLAL_CHECK( spec->gpsStart > 0, XLAL_EINVAL,
+              "'gpsStart' must be strictly positive" );
+  XLAL_CHECK( sscanf( T, "%d", &spec->SFTspan ) == 1, XLAL_EFUNC,
+              "Could not parse 'SFTspan' from field T='%s'", T );
+  XLAL_CHECK( spec->SFTspan > 0, XLAL_EINVAL,
+              "'SFTspan' must be strictly positive" );
+
+  // parse optional SFT filename field <D4>
+  if (D4 != NULL) {
+    if (strchr(D4, '+')) {   // public SFT
+      char *D41, *D42, *D43, *D44;
+      char *p = D4;
+      D41 = XLALStringToken(&p, "+", 1);
+      XLAL_CHECK( D41 != NULL, XLAL_EINVAL,
+                  "SFT file path '%s' contains no <D41> field", SFTpath );
+      D42 = XLALStringToken(&p, "+", 1);
+      XLAL_CHECK( D42 != NULL, XLAL_EINVAL,
+                  "SFT file path '%s' contains no <D42> field", SFTpath );
+      D43 = XLALStringToken(&p, "+", 1);
+      XLAL_CHECK( D43 != NULL, XLAL_EINVAL,
+                  "SFT file path '%s' contains no <D43> field", SFTpath );
+      D44 = XLALStringToken(&p, "+", 1);
+      XLAL_CHECK( D44 != NULL, XLAL_EINVAL,
+                  "SFT file path '%s' contains no <D44> field", SFTpath );
+      XLALPrintInfo("%s(): D41='%s' D42='%s' D43='%s' D44='%s' p='%s'\n",
+                    __func__, D41, D42, D43, D44, p);
+      char buf[8192];
+      XLAL_CHECK( sscanf( D41, "O%d%255s", &spec->pubObsRun, buf ) == 2, XLAL_EINVAL,
+                  "Could not parse public SFT fields 'pubObsRun' and 'pubObsKind' from field D41='%s'", D41 );
+      STRCPYCHK( "Public SFT field 'pubObsKind'", spec->pubObsKind, buf );
+      XLAL_CHECK( sscanf( D42, "V%d", &spec->pubVersion ) == 1, XLAL_EFUNC,
+                  "Could not parse public SFT field 'pubVersion' from field D42='%s'", D42 );
+      XLAL_CHECK( sscanf( D43, "C%255s", buf ) == 1, XLAL_EINVAL,
+                  "Could not parse public SFT field 'pubChannel' from field D43='%s'", D43 );
+      STRCPYCHK( "Public SFT field 'pubChannel'", spec->pubChannel, buf );
+      XLAL_CHECK( sscanf( D44, "W%255s", buf ) == 1, XLAL_EINVAL,
+                  "Could not parse public SFT fields 'window_type' and 'window_beta' from field D44='%s'", D44 );
+      XLAL_CHECK( parse_sft_windowspec_str( buf, &spec->window_type, &spec->window_beta ) == XLAL_SUCCESS, XLAL_EINVAL,
+                  "'%s' does not specify a valid SFT window function", buf );
+    } else { // private SFT
+      XLAL_CHECK( XLALCheckValidDescriptionField(D4) == XLAL_SUCCESS, XLAL_EINVAL,
+                  "Private description '%s' contains disallowed characters", D4 );
+      STRCPYCHK( "Private SFT miscellaneous description", spec->privMisc, D4 );
+    }
+  }
+
+  // parse optional SFT filename field <D5>
+  if (D5 != NULL) {   // narrow-band SFTs
+    XLAL_CHECK( sscanf( D5, "NBF%dHz%dW%dHz%d",
+                        &spec->nbFirstBinFreq, &spec->nbFirstBinRem,
+                        &spec->nbBinWidthFreq, &spec->nbBinWidthRem
+                  ) == 4, XLAL_EINVAL,
+                "Could not parse narrow-band SFT field D5='%s'", D5 );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALParseSFTFilenameIntoSpec()
+
+
+/**
  * Return the 'official' file name for a given SFT, folllowing the SFT-v2 naming convention
  * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385, namely
  *
@@ -605,5 +760,99 @@ int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const c
   }
 
   return XLAL_SUCCESS;
+
+}
+
+
+/**
+ * Parse an SFT 2-byte 'windowspec' into a window name 'window_type' and possible parameter 'window_beta'
+ */
+int parse_sft_windowspec ( const UINT2 windowspec, const char **window_type, REAL8 *window_beta )
+{
+
+  // parse windowspec
+  const UINT2 A = windowspec / 5001;
+  const UINT2 B = windowspec - 5001 * A;
+
+  // lookup windows
+  for (size_t w = 0; w < XLAL_NUM_ELEM(windowspec_table); ++w) {
+    if ( A == windowspec_table[w].A ) {
+
+      // build window_type and window_beta
+      if ( A == 0 && B == windowspec_table[w].B ) {   /* zero-parameter windows */
+
+        if (window_type) {
+          *window_type = windowspec_table[w].window_type;
+        }
+
+        if (window_beta) {
+          *window_beta = 0;
+        }
+
+        return XLAL_SUCCESS;
+
+      } else if ( A > 0 ) {                              /* one-parameter windows */
+
+        if (window_type) {
+          *window_type = windowspec_table[w].window_type;
+        }
+
+        if (window_beta) {
+          *window_beta = ((REAL8) B) / 5000;
+        }
+
+        return XLAL_SUCCESS;
+
+      }
+
+    }
+  }
+
+  XLAL_ERROR ( XLAL_EINVAL, "Illegal SFT windowspec=%d : windowspecA=%d, windowspecB=%d",
+               windowspec, A, B );
+
+}
+
+
+/**
+ * Parse an SFT filename field 'windowspec_str' into a window name 'window_type' and possible parameter 'window_beta'
+ */
+int parse_sft_windowspec_str ( const CHAR *windowspec_str, CHAR (*window_type)[32], REAL8 *window_beta )
+{
+
+  // check input
+  XLAL_CHECK ( windowspec_str != NULL, XLAL_EFAULT );
+
+  // parse windowspec_str
+  char short_name[5];
+  long B = 0;
+  int parsed = sscanf( windowspec_str, "%4s%li", short_name, &B );
+  XLAL_CHECK ( 0 < parsed, XLAL_EINVAL, "Could not parse SFT filename field windowspec_str='%s'", windowspec_str );
+  XLAL_CHECK ( 0 <= B && B <= 5000, XLAL_ERANGE, "SFT window_beta=%0.10g is out of range [0.0,1.0] (B=%ld)", ((REAL8) B) / 5000, B );
+
+  // lookup windows
+  for (size_t w = 0; w < XLAL_NUM_ELEM(windowspec_table); ++w) {
+    if ( strcmp(short_name, windowspec_table[w].short_name) == 0 ) {
+
+      // build window_type
+      if (window_type) {
+        XLAL_CHECK ( snprintf( *window_type, sizeof(*window_type), "%s", windowspec_table[w].window_type ) < (int) sizeof(*window_type), XLAL_ESYS );
+      }
+
+      // build window_beta
+      if (window_beta) {
+        if ( windowspec_table[w].A == 0 ) {   /* zero-parameter windows */
+          *window_beta = 0;
+        } else {                              /* one-parameter windows */
+          *window_beta = ((REAL8) B) / 5000;
+        }
+      }
+
+      return XLAL_SUCCESS;
+
+    }
+  }
+
+  XLAL_ERROR ( XLAL_EINVAL, "Illegal SFT windowspec_str='%s'", windowspec_str );
 
 }

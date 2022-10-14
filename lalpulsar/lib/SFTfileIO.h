@@ -497,6 +497,7 @@ CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
 char *XLALBuildSFTFilenameFromSpec( const SFTFilenameSpec *spec );
+int XLALParseSFTFilenameIntoSpec( SFTFilenameSpec *spec, const char *SFTpath );
 
 char *XLALOfficialSFTFilename ( char site, char channel, UINT4 numSFTs, UINT4 Tsft, UINT4 GPS_start, UINT4 Tspan, const char *Misc );
 char *XLALGetOfficialName4SFT ( const SFTtype *sft, const char *Misc );

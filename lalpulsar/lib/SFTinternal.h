@@ -77,6 +77,8 @@ int compareSFTepoch(const void *ptr1, const void *ptr2);
 // These functions are defined in SFTnaming.c
 
 int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const char *window_type, REAL8 window_beta );
+int parse_sft_windowspec ( const UINT2 windowspec, const char **window_type, REAL8 *window_beta );
+int parse_sft_windowspec_str ( const CHAR *windowspec_str, CHAR (*window_type)[32], REAL8 *window_beta );
 
 // These functions are defined in SFTfileIO.c
 
