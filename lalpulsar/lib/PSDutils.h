@@ -41,7 +41,7 @@ extern "C" {
  * \defgroup PSDutils_h Header PSDutils.h
  * \ingroup lalpulsar_sft
  *
- * \brief Module for handling structues which store PSD (Power Spectral Density) estimates
+ * \brief Module for computing PSD (Power Spectral Density) estimates and handling related structures 
  *
  * Overview:
  * \ref PSD-type-cdtor-func "create/destroy functions",

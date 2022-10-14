@@ -27,7 +27,7 @@
 /**
  * \author John T. Whelan
  * \file
- * \ingroup SFTutils_h
+ * \ingroup SFTfileIO_h
  * \brief Tests for XLALComputeMultiNoiseWeights()
  *
  * PSDs are calculated using the test SFTs created for
