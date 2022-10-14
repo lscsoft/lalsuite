@@ -1107,10 +1107,10 @@ read_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_
       goto failed;
     }
 
-  if ( ! XLALIsValidCWDetector ( rawheader.detector ) )
+  const CHAR detector[3] = { rawheader.detector[0], rawheader.detector[1], 0 };
+  if ( ! XLALIsValidCWDetector ( detector ) )
     {
-      XLALPrintError ("\nIllegal detector-name in SFT: '%c%c'\n\n",
-					  rawheader.detector[0], rawheader.detector[1] );
+      XLALPrintError ("\nIllegal detector-name in SFT: '%s'\n\n", detector );
       goto failed;
     }
 
@@ -1165,9 +1165,7 @@ read_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_
   /*  ok: */
   memset ( header, 0, sizeof( *header ) );
 
-  header->name[0]		= rawheader.detector[0];
-  header->name[1]		= rawheader.detector[1];
-  header->name[2]		= 0;
+  strncpy( header->name, detector, sizeof( header->name ) );
 
   header->epoch.gpsSeconds 	= rawheader.gps_sec;
   header->epoch.gpsNanoSeconds 	= rawheader.gps_nsec;
