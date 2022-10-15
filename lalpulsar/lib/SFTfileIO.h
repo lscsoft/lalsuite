@@ -496,6 +496,7 @@ BOOLEAN XLALIsValidCWDetector ( const CHAR *name );
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
 LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
+int XLALFillSFTFilenameSpecStrings( SFTFilenameSpec *spec, const CHAR* path, const CHAR *extn, const CHAR* detector, const CHAR* window_type, const CHAR* privMisc, const CHAR* pubObsKind, const CHAR* pubChannel );
 char *XLALBuildSFTFilenameFromSpec( const SFTFilenameSpec *spec );
 int XLALParseSFTFilenameIntoSpec( SFTFilenameSpec *spec, const char *SFTpath );
 

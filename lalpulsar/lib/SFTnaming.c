@@ -230,6 +230,51 @@ XLALGetSiteInfo ( const CHAR *name )
 
 
 /**
+ * Convenience function for filling out the string fields in a SFTFilenameSpec
+ */
+int XLALFillSFTFilenameSpecStrings(
+  SFTFilenameSpec *spec,            /**< [out] SFT filename specification */
+  const CHAR *path,                 /**< [in] Extension of the SFT file; defaults to 'sft' */
+  const CHAR *extn,                 /**< [in] Path to the SFT file */
+  const CHAR *detector,             /**< [in] 2-character detector prefix (e.g. 'H1', 'L1', 'V1') */
+  const CHAR *window_type,          /**< [in] window function applied to SFT */
+  const CHAR *privMisc,             /**< [in] For private SFTs: miscellaneous description field */
+  const CHAR *pubObsKind,           /**< [in] For public SFTs: kind of data ('RUN', 'AUX', 'SIM', 'DEV') */
+  const CHAR *pubChannel            /**< [in] For public SFTs: channel name of data used to make SFTs */
+  )
+{
+
+  // check input
+  XLAL_CHECK( spec != NULL, XLAL_EFAULT );
+
+  // fill string fields
+  if ( path != NULL ) {
+    STRCPYCHK( "'spec->path'", spec->path, path );
+  }
+  if ( extn != NULL ) {
+    STRCPYCHK( "'spec->extn'", spec->extn, extn );
+  }
+  if ( detector != NULL ) {
+    STRCPYCHK( "'spec->detector'", spec->detector, detector );
+  }
+  if ( window_type != NULL ) {
+    STRCPYCHK( "'spec->window_type'", spec->window_type, window_type );
+  }
+  if ( privMisc != NULL ) {
+    STRCPYCHK( "'spec->privMisc'", spec->privMisc, privMisc );
+  }
+  if ( pubObsKind != NULL ) {
+    STRCPYCHK( "'spec->pubObsKind'", spec->pubObsKind, pubObsKind );
+  }
+  if ( pubChannel != NULL ) {
+    STRCPYCHK( "'spec->pubChannel'", spec->pubChannel, pubChannel );
+  }
+
+  return XLAL_SUCCESS;
+
+}
+
+/**
  * Build an SFT file name from the given specification
  */
 char *XLALBuildSFTFilenameFromSpec(
