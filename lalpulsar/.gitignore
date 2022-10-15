@@ -188,4 +188,4 @@ test/UniversalDopplerMetricTest
 test/VelocityTest
 test/XLALComputeAMTest
 test/XLALMultiNoiseWeightsTest
-test/python/V-1_V1_1800SFT_simCW_simulateCWTest*-1800.sft
+test/python/V-1_V1_1800SFT_simCWTest*-1800.sft
