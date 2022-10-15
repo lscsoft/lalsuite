@@ -79,7 +79,7 @@ extern "C" {
  * and LALPulsarSimulateCoherentGW() to turn it into a time-series at the detector.
  *
  * LALSignalToSFTs() uses LALForwardRealFFT() appropriately on the input-timeseries to
- * produce the required output-SFTs ( v2-normalization! ).
+ * produce the required output-SFTs.
  *
  * \note
  *

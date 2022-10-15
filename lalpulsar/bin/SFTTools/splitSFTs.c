@@ -23,7 +23,7 @@
  * \ingroup lalpulsar_bin_SFTTools
  * \author Bernd Machenschalk, Bruce Allen
  *
- * \brief This program reads in binary SFTs (v2) and writes out narrow-banded merged SFTs (v2).
+ * \brief This program reads in binary SFTs and writes out narrow-banded merged SFTs.
  *
  * Writen by Bernd Machenschalk for Einstein\@home 2008
  *
@@ -261,8 +261,8 @@ int main( int argc, char **argv )
              "  [-n|--output-directory <outputdirectory>]\n"
              "  [--] <inputfile> ...\n"
              "\n"
-             "  This program reads in binary SFTs (v2) and writes out narrow-banded\n"
-             "  merged SFTs (v2).\n"
+             "  This program reads in binary SFTs and writes out narrow-banded\n"
+             "  merged SFTs.\n"
              "\n"
              "  The frequency bands of the ouput SFTs (first frequency bin of first output SFT,\n"
              "  last frequency bin of last output SFT, number of bins in each output SFT)\n"

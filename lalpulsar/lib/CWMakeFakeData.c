@@ -581,11 +581,8 @@ XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries,	//!< input 
       thisSFT->f0 = timeseries->f0;			// SFT starts at heterodyning frequency
       thisSFT->deltaF = df;
 
-      // normalize DFT-data to conform to v2 specification ==> multiply DFT by (dt/sigma{window})
-      // the SFT normalization in case of windowing follows the conventions detailed in the SFTv2 specification,
-      // namely LIGO-T040164, and in particular Eqs.(3),(4) and (6) in T010095-00.pdf
-      // https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?.submit=Number&docid=T010095
-      // https://dcc.ligo.org/DocDB/0026/T010095/000/T010095-00.pdf
+      // normalize DFT-data to conform to SFT specification ==> multiply DFT by (dt/sigma{window})
+      // the SFT normalization in case of windowing follows the conventions detailed in \cite SFT-spec
       REAL8 norm = dt / sigma_window;
       for ( UINT4 k = 0; k < numSFTBins ; k ++ ) {
         thisSFT->data->data[k] = (COMPLEX8) ( norm * fftOut[k] );
