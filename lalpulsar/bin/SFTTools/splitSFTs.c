@@ -209,7 +209,6 @@ int main( int argc, char **argv )
   char *outname;                  /* name of output SFT file */
   char outdir0[] = ".";
   char *outdir = ( char * )outdir0; /* output filename prefix */
-  char *detector = NULL;          /* detector name */
   double factor = 1.0;            /* "mystery" factor */
   int firstfile = TRUE;           /* are we processing the first input SFT file? */
   int allcomments = FALSE;        /* write comment into _every_ SFT in the file */
@@ -259,7 +258,6 @@ int main( int argc, char **argv )
              "  [-te|--maxStartTime <maxStartTime (exclusively)>]\n"
 	     "  [-as|--assumeSorted 1|0]\n"
              "  [-m|--factor <factor>]\n"
-             "  [-d|--detector <detector>]\n"
              "  [-n|--output-directory <outputdirectory>]\n"
              "  [--] <inputfile> ...\n"
              "\n"
@@ -355,10 +353,7 @@ int main( int argc, char **argv )
 
   /* get parameters from command-line */
   for ( arg = 1; arg < argc; arg++ ) {
-    if ( ( strcmp( argv[arg], "-d" ) == 0 ) ||
-         ( strcmp( argv[arg], "--detector" ) == 0 ) ) {
-      detector = argv[++arg];
-    } else if ( ( strcmp( argv[arg], "-c" ) == 0 ) ||
+    if ( ( strcmp( argv[arg], "-c" ) == 0 ) ||
                 ( strcmp( argv[arg], "--add-comment" ) == 0 ) ) {
       add_comment = atoi( argv[++arg] );
     } else if ( ( strcmp( argv[arg], "-a" ) == 0 ) ||
@@ -657,7 +652,7 @@ int main( int argc, char **argv )
       } /* else (add_comment == CMT_NONE) and (comment == NULL) i.e. no comment at all */
 
       /* get the detector name from SFT header */
-      detector = hd.detector;
+      const char detector[] = { hd.detector[0], hd.detector[1], 0 };
 
       /* calculate number of bins to actually read (from width + overlap) */
       /* add width-overlap samples as lon as they are < the total number og bins to write */
