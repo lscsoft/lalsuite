@@ -151,6 +151,8 @@ sftsv5_meth2=${testDIR}/*_mfdv5meth2-*.sft
 ## ----------
 ## produce SFTs for 2 detectors, containing Gaussian noise + N signals, compare between mfdv4 and mfdv5
 ## ----------
+window="tukey"
+windowBeta="0.5"
 
 echo
 echo "========== MFDv4 =========="
@@ -159,7 +161,7 @@ mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --fmin=$fmin --Band=$Band --generationMode=
 echo "---------- mfdv4: inject first signal ----------"
 sig1="--refTime=${s1_refTime} --h0=${s1_h0} --cosi=${s1_cosi} --psi=${s1_psi} --phi0=${s1_phi0} --Freq=${s1_Freq} --Alpha=${s1_Alpha} --Delta=${s1_Delta} --f1dot=${s1_f1dot} --f2dot=${s1_f2dot}"
 ##----- first IFO
-out_IFO1="--IFO=${IFO1} --timestampsFile=${timestamps1}  --outSFTbname=${sftsv4_1} --noiseSqrtSh=${sqrtSn1} --randSeed=1"
+out_IFO1="--IFO=${IFO1} --timestampsFile=${timestamps1} --window=${window} --tukeyBeta=${windowBeta} --outSFTbname=${sftsv4_1} --noiseSqrtSh=${sqrtSn1} --randSeed=1"
 cmdline="$mfdv4_CL ${sig1} ${out_IFO1}"
 echo $cmdline
 if ! eval $cmdline; then
@@ -167,7 +169,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 ##----- second IFO
-out_IFO2="--IFO=${IFO2} --timestampsFile=${timestamps2}  --outSFTbname=${sftsv4_2} --noiseSqrtSh=${sqrtSn2} --randSeed=2"
+out_IFO2="--IFO=${IFO2} --timestampsFile=${timestamps2} --window=${window} --tukeyBeta=${windowBeta} --outSFTbname=${sftsv4_2} --noiseSqrtSh=${sqrtSn2} --randSeed=2"
 cmdline="$mfdv4_CL  ${sig1} ${out_IFO2}"
 echo $cmdline
 if ! eval $cmdline; then
@@ -177,7 +179,7 @@ fi
 echo "---------- mfdv4: inject second signal on top ----------"
 sig2="--refTime=${s2_refTime} --h0=${s2_h0} --cosi=${s2_cosi} --psi=${s2_psi} --phi0=${s2_phi0} --Freq=${s2_Freq} --Alpha=${s2_Alpha} --Delta=${s2_Delta} --f1dot=${s2_f1dot} --f2dot=${s2_f2dot}"
 ##----- first IFO
-out_IFO1="--IFO=${IFO1} --noiseSFTs=${sftsv4_1} --window=None --outSFTbname=${sftsv4_1}"
+out_IFO1="--IFO=${IFO1} --noiseSFTs=${sftsv4_1} --outSFTbname=${sftsv4_1}"
 cmdline="$mfdv4_CL ${sig2} ${out_IFO1}"
 echo $cmdline
 if ! eval $cmdline; then
@@ -185,7 +187,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 ##----- second IFO
-out_IFO2="--IFO=${IFO2} --noiseSFTs=${sftsv4_2} --window=None --outSFTbname=${sftsv4_2}"
+out_IFO2="--IFO=${IFO2} --noiseSFTs=${sftsv4_2} --outSFTbname=${sftsv4_2}"
 cmdline="$mfdv4_CL ${sig2} ${out_IFO2}"
 echo $cmdline
 if ! eval $cmdline; then
@@ -196,7 +198,7 @@ echo "---------- mfdv4: inject third signal on top ----------"
 sig2="--refTime=${s3_refTime} --h0=${s3_h0} --cosi=${s3_cosi} --psi=${s3_psi} --phi0=${s3_phi0} --Freq=${s3_Freq} --Alpha=${s3_Alpha} --Delta=${s3_Delta} --f1dot=${s3_f1dot} --f2dot=${s3_f2dot} --transientWindowType=${s3_transientWindowType} --transientStartTime=${s3_transientStartTime} --transientTauDays=${s3_transientTauDays} --orbitasini=${s3_orbitasini} --orbitPeriod=${s3_orbitPeriod} --orbitTp=${s3_orbitTp} --orbitArgp=${s3_orbitArgp} --orbitEcc=${s3_orbitEcc}"
 
 ##----- first IFO
-out_IFO1="--IFO=${IFO1} --noiseSFTs=${sftsv4_1} --window=None --outSFTbname=${sftsv4_1}"
+out_IFO1="--IFO=${IFO1} --noiseSFTs=${sftsv4_1} --outSFTbname=${sftsv4_1}"
 cmdline="$mfdv4_CL ${sig2} ${out_IFO1}"
 echo $cmdline
 if ! eval $cmdline; then
@@ -204,7 +206,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 ##----- second IFO
-out_IFO2="--IFO=${IFO2} --noiseSFTs=${sftsv4_2} --window=None --outSFTbname=${sftsv4_2}"
+out_IFO2="--IFO=${IFO2} --noiseSFTs=${sftsv4_2} --outSFTbname=${sftsv4_2}"
 cmdline="$mfdv4_CL ${sig2} ${out_IFO2}"
 echo $cmdline
 if ! eval $cmdline; then
@@ -220,7 +222,7 @@ mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR}"
 echo "----- Method 1: single multi-IFO, multi-signal call"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig13="--injectionSources='${injFile1},${injFile2}'"
-cmdline="$mfdv5_CL ${outIFOs} ${sig13} --fmin=$fmin --Band=$Band"
+cmdline="$mfdv5_CL ${outIFOs} ${sig13} --fmin=$fmin --Band=$Band --SFTWindowType=${window} --SFTWindowBeta=${windowBeta}"
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
@@ -232,13 +234,13 @@ echo "----- Method 2: and again the same, using different input methods"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig1="--injectionSources='${injString}'"
 sig23="--injectionSources='${injFile2}'"
-cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outLabel='mfdv5meth2' --fmin=$fmin --Band=$Band"
+cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --SFTWindowType=${window} --SFTWindowBeta=${windowBeta} --outLabel='mfdv5meth2' --fmin=$fmin --Band=$Band"
 echo $cmdline1;
 if ! eval $cmdline1; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
     exit 1
 fi
-cmdline2="$mfdv5_CL ${sig23} --noiseSFTs='${sftsv5_meth2}' --SFTWindowType=rectangular --outLabel='mfdv5meth2'"
+cmdline2="$mfdv5_CL ${sig23} --noiseSFTs='${sftsv5_meth2}' --outLabel='mfdv5meth2'"
 echo $cmdline2;
 if ! eval $cmdline2; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
@@ -296,7 +298,7 @@ echo "--------------------------------------------------"
 
 startTime=1238112018
 
-mfdv5_cmd_Base="$mfdv5_CODE --outSFTdir=$testDIR --outSingleSFT=False --SFTWindowType=tukey --SFTWindowBeta=0.001"
+mfdv5_cmd_Base="$mfdv5_CODE --outSFTdir=$testDIR --outSingleSFT=False"
 
 cmdline="$mfdv5_cmd_Base --IFOs=H1 --fmin=0.0 --Band=512.0 --sqrtSX=$sqrtSn1 --startTime=$startTime --duration=$Tsft --outFrameDir=$testDIR"
 echo $cmdline;
