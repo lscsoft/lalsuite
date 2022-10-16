@@ -3,7 +3,7 @@ Tsft=1800
 start=1257800000
 span=9000
 misc='SFTdesc'
-cmdlinebase="lalpulsar_Makefakedata_v5 --outLabel '${misc}' --IFOs H1 --sqrtSX 1e-24 --startTime ${start} --duration ${span} --fmin 10 --Band 85 --injectionSources '{Alpha=0.1; Delta=0.4; Freq=30; f1dot=1e-10; h0=1e-24; cosi=0.7; refTime=1257800000}'"
+cmdlinebase="lalpulsar_Makefakedata_v5 --outLabel '${misc}' --IFOs H1 --sqrtSX 1e-24 --startTime ${start} --duration ${span} --fmin 10 --Band 85.5 --injectionSources '{Alpha=0.1; Delta=0.4; Freq=30; f1dot=1e-10; h0=1e-24; cosi=0.7; refTime=1257800000}'"
 mkdir -p broadband1a/
 cmdline="${cmdlinebase} --outSingleSFT=no --outSFTdir broadband1a/"
 if ! eval "$cmdline"; then
@@ -17,10 +17,19 @@ if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
+mkdir -p broadband1d/
+cmdline="${cmdlinebase} --outSingleSFT=yes --outSFTdir broadband1d/"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+## simulate a public SFT
+pubspec='O2RUN+V1+CDCHCLEANSTRAINC02+WTKEY5'
+mv "broadband1d/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft" "broadband1d/H-5_H1_${Tsft}SFT_${pubspec}-${start}-${span}.sft"
 
 ## run lalpulsar_splitSFTs to create narrowband SFTs
 mkdir -p narrowband1a/
-cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1a/"
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 95.5 -fb 8 -n narrowband1a/"
 for sft in broadband1a/*.sft; do
     cmdline="${cmdline} $sft"
 done
@@ -30,29 +39,40 @@ if ! eval "$cmdline"; then
 fi
 mkdir -p narrowband1b/
 for sft in broadband1b/*.sft; do
-    cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1b/ $sft"
+    cmdline="lalpulsar_splitSFTs -fs 10 -fe 95.5 -fb 8 -n narrowband1b/ $sft"
     if ! eval "$cmdline"; then
         echo "ERROR: something failed when running '$cmdline'"
         exit 1
     fi
 done
 mkdir -p narrowband1c/
-cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband1c/ -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 95.5 -fb 8 -n narrowband1c/ -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+mkdir -p narrowband1d/
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 95.5 -fb 8 -n narrowband1d/ -- broadband1d/H-5_H1_${Tsft}SFT_${pubspec}-${start}-${span}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 
-for i in 1a 1b 1c; do
+for i in 1a 1b 1c 1d; do
 
     ## check narrowband SFT names
+    if [ "$i" = "1d" ]; then
+        D4="${pubspec}"
+    else
+        D4="${misc}"
+    fi
     for freq in 10 18 26 34 42 50 58 66 74 82 90; do
         if [ $freq = 90 ]; then
-            binwidth="0005Hz0"
+            binwidth="0005Hz900"
         else
             binwidth="0008Hz0"
         fi
-        sft="narrowband${i}/H-5_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_${misc}-${start}-${span}.sft"
+        sft="narrowband${i}/H-5_H1_${Tsft}SFT_${D4}_NBF00${freq}Hz0W${binwidth}-${start}-${span}.sft"
         if ! test -f $sft; then
             echo "ERROR: could not find file '$sft'"
             exit 1
@@ -85,14 +105,14 @@ span2=$(echo "$endTime2 - $startTime2" | bc)
 
 ## first using the constraint user options, but trying to get back the full split set
 mkdir -p narrowband2a/
-cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband2a/ -ts ${start} -te ${endTime1} -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 95.5 -fb 8 -n narrowband2a/ -ts ${start} -te ${endTime1} -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 ## then actually reduce the range
 mkdir -p narrowband2b/
-cmdline="lalpulsar_splitSFTs -fs 10 -fe 95 -fb 8 -n narrowband2b/ -ts ${startTime2} -te ${endTime2} -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 95.5 -fb 8 -n narrowband2b/ -ts ${startTime2} -te ${endTime2} -- broadband1c/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -101,11 +121,11 @@ fi
 ## check narrowband2a/ SFT names (full range)
 for freq in 10 18 26 34 42 50 58 66 74 82 90; do
     if [ $freq = 90 ]; then
-        binwidth="0005Hz0"
+        binwidth="0005Hz900"
     else
         binwidth="0008Hz0"
     fi
-    sft="narrowband2a/H-5_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_${misc}-${start}-${span}.sft"
+    sft="narrowband2a/H-5_H1_${Tsft}SFT_${misc}_NBF00${freq}Hz0W${binwidth}-${start}-${span}.sft"
     if ! test -f $sft; then
         echo "ERROR: could not find file '$sft'"
         exit 1
@@ -127,11 +147,11 @@ fi
 ## check narrowband2b/ SFT names (reduced range)
 for freq in 10 18 26 34 42 50 58 66 74 82 90; do
     if [ $freq = 90 ]; then
-        binwidth="0005Hz0"
+        binwidth="0005Hz900"
     else
         binwidth="0008Hz0"
     fi
-    sft="narrowband2b/H-3_H1_${Tsft}SFT_NBF00${freq}Hz0W${binwidth}_${misc}-${startTime2}-${span2}.sft"
+    sft="narrowband2b/H-3_H1_${Tsft}SFT_${misc}_NBF00${freq}Hz0W${binwidth}-${startTime2}-${span2}.sft"
     if ! test -f $sft; then
         echo "ERROR: could not find file '$sft'"
         exit 1
@@ -152,7 +172,7 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 files=`echo narrowband3a/*.sft`
-if [ "X$files" != "Xnarrowband3a/H-1_H1_1800SFT_NBF0051Hz0W0001Hz0_${misc}-1257800000-1800.sft" ]; then
+if [ "X$files" != "Xnarrowband3a/H-1_H1_1800SFT_${misc}_NBF0051Hz0W0001Hz0-1257800000-1800.sft" ]; then
     echo "ERROR: extra SFTs generated in narrowband3a/: ${files}"
     exit 1
 fi
@@ -163,7 +183,7 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 files=`echo narrowband3b/*.sft`
-if [ "X$files" != "Xnarrowband3b/H-1_H1_1800SFT_NBF0051Hz0W0001Hz399_${misc}-1257800000-1800.sft" ]; then
+if [ "X$files" != "Xnarrowband3b/H-1_H1_1800SFT_${misc}_NBF0051Hz0W0001Hz399-1257800000-1800.sft" ]; then
     echo "ERROR: extra SFTs generated in narrowband3b/: ${files}"
     exit 1
 fi
@@ -174,7 +194,7 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 files=`echo narrowband3c/*.sft`
-if [ "X$files" != "Xnarrowband3c/H-1_H1_1800SFT_NBF0050Hz1711W0001Hz399_${misc}-1257800000-1800.sft" ]; then
+if [ "X$files" != "Xnarrowband3c/H-1_H1_1800SFT_${misc}_NBF0050Hz1711W0001Hz399-1257800000-1800.sft" ]; then
     echo "ERROR: extra SFTs generated in narrowband3c/: ${files}"
     exit 1
 fi

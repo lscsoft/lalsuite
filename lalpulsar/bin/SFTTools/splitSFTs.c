@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2020 Karl Wette
+ *  Copyright (C) 2020, 2022 Karl Wette
  *  Copyright (C) 2008, 2010 Bernd Machenschalk, Bruce Allen
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -60,12 +60,6 @@
 #include <lal/SFTReferenceLibrary.h>
 #include <lal/LALPulsarVCSInfo.h>
 
-#ifndef _WIN32
-#define DIR_SEPARATOR '/'
-#else
-#define DIR_SEPARATOR '\\'
-#endif
-
 #define FALSE 0
 #define TRUE (!FALSE)
 
@@ -75,20 +69,6 @@
 
 // Compare two quantities, and return a sort order value if they are unequal
 #define COMPARE_BY( x, y ) do { if ( (x) < (y) ) return -1; if ( (x) > (y) ) return +1; } while(0)
-
-typedef struct {
-  /* hashed fields */
-  char det[2];         /**< detector name */
-  long timebase;       /**< SFT timebase */
-  long firstbin;       /**< first bin */
-  long binwidth;       /**< bin width */
-  /* value fields */
-  long int nSFT;       /**< number of SFTs */
-  long startTime;      /**< GPS start time */
-  long int span;       /**< timespan */
-  char *misc;          /**< misc field in SFT filename */
-  char *filename;      /**< SFT filename */
-} SFT_RECORD;
 
 typedef struct {
   int resource_units;  /**< number of resource units available for consumption */
@@ -149,40 +129,33 @@ static int is_directory( const char *fname )
 
 }
 
-/* hash an SFT_RECORD */
-static UINT8 hash_SFT_RECORD( const void *x )
+/* hash an SFTFilenameSpec */
+static UINT8 hash_SFTFilenameSpec( const void *x )
 {
-  const SFT_RECORD *rec = ( const SFT_RECORD * ) x;
+  const SFTFilenameSpec *rec = ( const SFTFilenameSpec * ) x;
   UINT4 hval = 0;
-  XLALPearsonHash( &hval, sizeof( hval ), &rec->det, sizeof( rec->det ) );
-  XLALPearsonHash( &hval, sizeof( hval ), &rec->timebase, sizeof( rec->timebase ) );
-  XLALPearsonHash( &hval, sizeof( hval ), &rec->firstbin, sizeof( rec->firstbin ) );
-  XLALPearsonHash( &hval, sizeof( hval ), &rec->binwidth, sizeof( rec->binwidth ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->detector,       sizeof( rec->detector    ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->SFTtimebase,    sizeof( rec->SFTtimebase ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbFirstBinFreq, sizeof( rec->nbFirstBinFreq   ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbFirstBinRem,  sizeof( rec->nbFirstBinRem    ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbBinWidthFreq, sizeof( rec->nbBinWidthFreq   ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbBinWidthRem,  sizeof( rec->nbBinWidthRem    ) );
   return hval;
 }
 
-/* compare an SFT_RECORD */
-static int compare_SFT_RECORD( const void *x, const void *y )
+/* compare an SFTFilenameSpec */
+static int compare_SFTFilenameSpec( const void *x, const void *y )
 {
-  const SFT_RECORD *recx = ( const SFT_RECORD * ) x;
-  const SFT_RECORD *recy = ( const SFT_RECORD * ) y;
-  COMPARE_BY( recx->det[0], recy->det[0] );
-  COMPARE_BY( recx->det[1], recy->det[1] );
-  COMPARE_BY( recx->timebase, recy->timebase );
-  COMPARE_BY( recx->firstbin, recy->firstbin );
-  COMPARE_BY( recx->binwidth, recy->binwidth );
+  const SFTFilenameSpec *recx = ( const SFTFilenameSpec * ) x;
+  const SFTFilenameSpec *recy = ( const SFTFilenameSpec * ) y;
+  COMPARE_BY( recx->detector[0],    recy->detector[0]    );
+  COMPARE_BY( recx->detector[1],    recy->detector[1]    );
+  COMPARE_BY( recx->SFTtimebase,    recy->SFTtimebase    );
+  COMPARE_BY( recx->nbFirstBinFreq, recy->nbFirstBinFreq );
+  COMPARE_BY( recx->nbFirstBinRem,  recy->nbFirstBinRem  );
+  COMPARE_BY( recx->nbBinWidthFreq, recy->nbBinWidthFreq );
+  COMPARE_BY( recx->nbBinWidthRem,  recy->nbBinWidthRem  );
   return 0;
-}
-
-/* destroy an SFT_RECORD */
-static void destroy_SFT_RECORD( void *x )
-{
-  SFT_RECORD *rec = ( SFT_RECORD * ) x;
-  if ( rec != NULL ) {
-    XLALFree( rec->misc );
-    XLALFree( rec->filename );
-    XLALFree( rec );
-  }
 }
 
 static int move_to_next_SFT ( FILE *fpin, int nsamples, int comment_length )
@@ -206,7 +179,6 @@ int main( int argc, char **argv )
   char *comment = NULL;           /* comment to be written into output SFT file */
   int swap;                       /* do we need to swap bytes? */
   float *data;                    /* SFT data */
-  char *outname;                  /* name of output SFT file */
   char outdir0[] = ".";
   char *outdir = ( char * )outdir0; /* output filename prefix */
   double factor = 1.0;            /* "mystery" factor */
@@ -450,99 +422,49 @@ int main( int argc, char **argv )
   /* check output directory exists */
   XLAL_CHECK_MAIN( is_directory( outdir ), XLAL_ESYS, "output directory does not exist" );
 
-  /* allocate space for output filename */
-  const size_t outnamelen = strlen( outdir ) + 1024;
-  XLAL_CHECK_MAIN( ( outname = ( char * )XLALMalloc( outnamelen ) ) != NULL, XLAL_ENOMEM, "out of memory allocating outname" );
-
   /* find existing narrow-band SFTs */
-  nbsfts = XLALHashTblCreate( destroy_SFT_RECORD, hash_SFT_RECORD, compare_SFT_RECORD );
+  nbsfts = XLALHashTblCreate( XLALFree, hash_SFTFilenameSpec, compare_SFTFilenameSpec );
   XLAL_CHECK_MAIN( nbsfts != NULL, XLAL_EFUNC, "XLALHashTblCreate() failed" );
   {
-    XLAL_CHECK_MAIN( snprintf( outname, outnamelen, "%s/*SFT_NBF*.sft", outdir ) < ( int )outnamelen,
-                     XLAL_ESYS, "output of snprintf() was truncated" );
+    char *pattern = XLALStringAppendFmt( NULL, "%s/*.sft", outdir );
+    XLAL_CHECK( pattern != NULL, XLAL_ENOMEM );
     glob_t globbuf;
-    glob( outname, GLOB_MARK | GLOB_NOSORT, NULL, &globbuf );
+    glob( pattern, GLOB_MARK | GLOB_NOSORT, NULL, &globbuf );
     for ( size_t i = 0; i < globbuf.gl_pathc; ++i ) {
 
-      /* find the filename component */
-      char *filename = strrchr( globbuf.gl_pathv[i], DIR_SEPARATOR );
-      XLAL_CHECK_MAIN( filename != NULL, XLAL_ESYS, "could not extract filename from '%s'", globbuf.gl_pathv[i] );
-      ++filename;
-      XLAL_CHECK_MAIN( *filename != '\0', XLAL_ESYS, "'%s' is a directory", globbuf.gl_pathv[i] );
+      /* parse SFT filename */
+      SFTFilenameSpec nbSFTspec;
+      XLAL_CHECK_MAIN( XLALParseSFTFilenameIntoSpec( &nbSFTspec, globbuf.gl_pathv[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+      /* filter the narrow-band SFTs */
+      if (nbSFTspec.nbFirstBinFreq == 0) {
+        continue;
+      }
 
       /* create new SFT record */
-      SFT_RECORD *rec = NULL;
-      XLAL_CHECK_MAIN( ( rec = XLALCalloc( 1, sizeof( *rec ) ) ) != NULL, XLAL_ENOMEM, "out of memory allocating SFT_RECORD" );
-
-      /* parse SFT filename */
-      char obs = 0;
-      char misc[1024];
-      long int firstbinfreq = 0, firstbinrem = 0, binwidthfreq = 0, binwidthrem = 0;
-      int sscanf_matched = sscanf( filename, "%c-%ld_%c%c_%ldSFT_NBF%ldHz%ldW%ldHz%ld%1023[^-]-%ld-%ld.sft",
-                                   &obs, &rec->nSFT, &rec->det[0], &rec->det[1], &rec->timebase, &firstbinfreq,
-                                   &firstbinrem, &binwidthfreq, &binwidthrem, misc, &rec->startTime, &rec->span );
-      XLAL_CHECK_MAIN( sscanf_matched == 12, XLAL_ESYS,
-                       "sscanf() matched only %i fields in narrow-band SFT filename '%s'; partial match = '%c-%ld_%c%c_%ldSFT_NBF%ldHz%ldW%ldHz%ld%s-%ld-%ld.sft'",
-                       sscanf_matched, filename,
-                       obs, rec->nSFT, rec->det[0], rec->det[1], rec->timebase, firstbinfreq,
-                       firstbinrem, binwidthfreq, binwidthrem, misc, rec->startTime, rec->span );
-      XLAL_CHECK_MAIN( obs == rec->det[0], XLAL_EINVAL, "inconsistent observatory (%c) vs detector (%c%c) in SFT filename '%s'", obs, rec->det[0], rec->det[1], filename );
-      XLAL_CHECK_MAIN( strlen(misc) < 1023, XLAL_EINVAL, "misc description field (%s) has overflowed internal buffer", misc );
-      XLAL_CHECK_MAIN( misc[0] == '\0' || misc[0] == '_', XLAL_EINVAL, "misc description field (%s) must be separated from narrow-band descriptor by an underscore", misc );
-      XLAL_CHECK_MAIN( rec->span > 0, XLAL_EINVAL, "nonpositive timespan (%ld) in SFT filename '%s'", rec->span, filename );
-
-      /* complete SFT record */
-      rec->firstbin = firstbinfreq * rec->timebase + firstbinrem;
-      rec->binwidth = binwidthfreq * rec->timebase + binwidthrem;
-      XLAL_CHECK_MAIN( ( rec->misc = XLALStringDuplicate( misc ) ) != NULL, XLAL_ENOMEM, "out of memory allocating misc" );
-      XLAL_CHECK_MAIN( ( rec->filename = XLALStringDuplicate( globbuf.gl_pathv[i] ) ) != NULL, XLAL_ENOMEM, "out of memory allocating filename" );
+      SFTFilenameSpec *rec = NULL;
+      XLAL_CHECK_MAIN( ( rec = XLALMalloc( sizeof( *rec ) ) ) != NULL, XLAL_ENOMEM, "out of memory allocating SFT record" );
+      *rec = nbSFTspec;
 
       /* add SFT record */
-      XLALPrintInfo( "Existing SFT: det=%c%c timebase=%ld firstbin=%ld binwidth=%ld misc=%s filename=%s\n",
-                     rec->det[0], rec->det[1], rec->timebase, rec->firstbin, rec->binwidth, rec->misc, rec->filename );
+      XLALPrintInfo( "Existing SFT: det=%c%c timebase=%u firstbin=(%u,%u) binwidth=(%u,%u) filename=%s\n",
+                     rec->detector[0], rec->detector[1], rec->SFTtimebase,
+                     rec->nbFirstBinFreq, rec->nbFirstBinRem, rec->nbBinWidthFreq, rec->nbBinWidthRem,
+                     globbuf.gl_pathv[i] );
       XLAL_CHECK_MAIN( XLALHashTblAdd( nbsfts, rec ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALHashTblAdd() failed" );
 
     }
     globfree( &globbuf );
+    XLALFree( pattern );
   }
 
   int stopInputCauseSorted=0;
   /* loop over all input SFT files */
   for ( ; (arg < argc) && !stopInputCauseSorted; arg++ ) {
 
-    /* find the filename component */
-    char *filename = strrchr( argv[arg], DIR_SEPARATOR );
-    XLAL_CHECK_MAIN( filename != NULL, XLAL_ESYS, "could not extract filename from '%s'", argv[arg] );
-    ++filename;
-    XLAL_CHECK_MAIN( *filename != '\0', XLAL_ESYS, "'%s' is a directory", argv[arg] );
-
-    /* parse SFT filename to get misc field */
-    char *misc = NULL;
-    {
-      char S[1024], D_numSFTs[1024], D_IFO[1024], D_SFTtype[1024], D_misc[1024], G[1024], T[1024];
-      int sscanf_matched = sscanf( filename, "%1023[^-]-%1023[^_-]_%1023[^_-]_%1023[^_-]%1023[^-]-%1023[^-]-%1023[^.].sft",
-                                   S, D_numSFTs, D_IFO, D_SFTtype, D_misc, G, T );
-      XLAL_CHECK_MAIN( sscanf_matched == 7, XLAL_ESYS,
-                       "sscanf() matched only %i fields in broad-band SFT filename '%s'; partial match = '%s-%s_%s_%s%s-%s-%s.sft'",
-                       sscanf_matched, filename,
-                       S, D_numSFTs, D_IFO, D_SFTtype, D_misc, G, T );
-      XLAL_CHECK_MAIN( strlen(S) > 0, XLAL_EINVAL, "SFT filename 'S' field (%s) is missing", S );
-      XLAL_CHECK_MAIN( strlen(S) < 1023, XLAL_EINVAL, "SFT filename 'S' field (%s) has overflowed internal buffer", S );
-      XLAL_CHECK_MAIN( strlen(D_numSFTs) > 0, XLAL_EINVAL, "SFT filename 'D_numSFTs' field (%s) is missing", D_numSFTs );
-      XLAL_CHECK_MAIN( strlen(D_numSFTs) < 1023, XLAL_EINVAL, "SFT filename 'D_numSFTs' field (%s) has overflowed internal buffer", D_numSFTs );
-      XLAL_CHECK_MAIN( strlen(D_IFO) > 0, XLAL_EINVAL, "SFT filename 'D_IFO' field (%s) is missing", D_IFO );
-      XLAL_CHECK_MAIN( strlen(D_IFO) < 1023, XLAL_EINVAL, "SFT filename 'D_IFO' field (%s) has overflowed internal buffer", D_IFO );
-      XLAL_CHECK_MAIN( strlen(D_SFTtype) > 0, XLAL_EINVAL, "SFT filename 'D_SFTtype' field (%s) is missing", D_SFTtype );
-      XLAL_CHECK_MAIN( strlen(D_SFTtype) < 1023, XLAL_EINVAL, "SFT filename 'D_SFTtype' field (%s) has overflowed internal buffer", D_SFTtype );
-      XLAL_CHECK_MAIN( strlen(D_misc) < 1023, XLAL_EINVAL, "SFT filename 'D_misc' field (%s) has overflowed internal buffer", D_misc );
-      XLAL_CHECK_MAIN( D_misc[0] == '\0' || D_misc[0] == '_', XLAL_EINVAL, "SFT filename 'D_misc' field (%s) must be separated from 'D_SFTtype' field by an underscore", D_misc );
-      XLAL_CHECK_MAIN( strlen(G) > 0, XLAL_EINVAL, "SFT filename 'G' field (%s) is missing", G );
-      XLAL_CHECK_MAIN( strlen(G) < 1023, XLAL_EINVAL, "SFT filename 'G' field (%s) has overflowed internal buffer", G );
-      XLAL_CHECK_MAIN( strlen(T) > 0, XLAL_EINVAL, "SFT filename 'T' field (%s) is missing", T );
-      XLAL_CHECK_MAIN( strlen(T) < 1023, XLAL_EINVAL, "SFT filename 'T' field (%s) has overflowed internal buffer", T );
-      misc = XLALStringDuplicate( D_misc );
-      XLAL_CHECK_MAIN( misc != NULL, XLAL_ENOMEM, "out of memory allocation misc" );
-    }
+    /* parse SFT filename */
+    SFTFilenameSpec inputSFTspec;
+    XLAL_CHECK_MAIN( XLALParseSFTFilenameIntoSpec( &inputSFTspec, argv[arg] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     /* open input SFT file */
     request_resource( &read_open_rate, 1 );
@@ -686,70 +608,90 @@ int main( int argc, char **argv )
         int max_output_width = endBin - bin + 1;
         int this_width       = max_input_width < max_output_width ? max_input_width : max_output_width;
 
+        int timebase = ( int ) round( hd.tbase );
+        int outfreq = ( int )floor( bin / timebase );
+        int outfreqbin = bin - outfreq * timebase;
+        int outwidth = ( int )floor( this_width / timebase );
+        int outwidthbin = this_width - outwidth * timebase;
+
         /* check if this narrow-band SFT exists */
-        SFT_RECORD key = {
-          .det = { detector[0], detector[1] },
-          .timebase = ( int ) round( hd.tbase ),
-          .firstbin = bin,
-          .binwidth = this_width
+        SFTFilenameSpec key = {
+          .detector = { detector[0], detector[1], 0 },
+          .SFTtimebase = timebase,
+          .nbFirstBinFreq = outfreq,
+          .nbFirstBinRem = outfreqbin,
+          .nbBinWidthFreq = outwidth,
+          .nbBinWidthRem = outwidthbin,
         };
-        XLALPrintInfo( "Looking for SFT: det=%c%c timebase=%ld firstbin=%ld binwidth=%ld\n",
-                       key.det[0], key.det[1], key.timebase, key.firstbin, key.binwidth );
-        SFT_RECORD *rec = NULL;
+        XLALPrintInfo( "Looking for SFT:det=%c%c timebase=%u firstbin=(%u,%u) binwidth=(%u,%u)\n",
+                       key.detector[0], key.detector[1], key.SFTtimebase,
+                       key.nbFirstBinFreq, key.nbFirstBinRem, key.nbBinWidthFreq, key.nbBinWidthRem );
+        SFTFilenameSpec *rec = NULL;
         XLAL_CHECK_MAIN( XLALHashTblExtract( nbsfts, &key, ( void ** ) &rec ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALHashTblExtract() failed" );
+        char *existingSFTfilename = NULL;
         if ( rec == NULL ) {
 
-          /* create new SFT record */
-          XLAL_CHECK_MAIN( ( rec = XLALCalloc( 1, sizeof( *rec ) ) ) != NULL, XLAL_ENOMEM, "out of memory allocating SFT_RECORD" );
-          *rec = key;
-          rec->nSFT = 0;
-          rec->startTime = hd.gps_sec;
+          /* create new SFT record, starting from input SFT filename */
+          XLAL_CHECK_MAIN( ( rec = XLALCalloc( 1, sizeof( *rec ) ) ) != NULL, XLAL_ENOMEM, "out of memory allocating SFT record" );
+          *rec = inputSFTspec;
+
+          /* change to output directory */
+          XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( rec, outdir, NULL, NULL, NULL, NULL, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+          /* zero number of SFTs & SFT span (to be updated) */
+          rec->numSFTs = 0;
+          rec->SFTspan = 0;
+
+          /* set starting GPS time from header (respecting -ts, -te) */
+          rec->gpsStart = hd.gps_sec;
+
+          /* add narrow-band fields */
+          rec->nbFirstBinFreq = outfreq;
+          rec->nbFirstBinRem = outfreqbin;
+          rec->nbBinWidthFreq = outwidth;
+          rec->nbBinWidthRem = outwidthbin;
 
         } else {
+
+          /* reconstruct filename of existing SFT */
+          existingSFTfilename = XLALBuildSFTFilenameFromSpec(rec);
+          XLAL_CHECK( existingSFTfilename != NULL, XLAL_EFUNC );
+
           /* check if added record would break increasing timestamps */
-          XLAL_CHECK_MAIN( hd.gps_sec >= rec->startTime+rec->span,
-                           XLAL_EDOM,
-                           "New SFT timestamp %d is before startTime+span=%ld+%ld=%ld from existing file %s. Appending would yield an invalid merged SFT file.", hd.gps_sec, rec->startTime, rec->span, rec->startTime+rec->span, rec->filename );
+          int rec_last_gpsStart = rec->gpsStart + rec->SFTspan - rec->SFTtimebase;
+          XLAL_CHECK_MAIN( hd.gps_sec >= rec_last_gpsStart, XLAL_EDOM,
+                           "New SFT timestamp %d is before startTime+span-timebase=%u+%u-%u=%u from existing file %s. Appending would yield an invalid merged SFT file.",
+                           hd.gps_sec, rec->gpsStart, rec->SFTspan, rec->SFTtimebase, rec_last_gpsStart, existingSFTfilename );
+
         }
 
-        /* update number of SFTs */
-        rec->nSFT += 1;
+        /* update number of SFTs and SFT timespan */
+        rec->numSFTs += 1;
+        rec->SFTspan = hd.gps_sec - rec->gpsStart + rec->SFTtimebase;
+        if ( hd.gps_nsec > 0 ) {
+          rec->SFTspan += 1;
+        }
 
         /* construct filename for this output SFT */
-        int outfreq = ( int )floor( bin / rec->timebase );
-        int outfreqbin = bin - outfreq * rec->timebase;
-        int outwidth = ( int )floor( this_width / rec->timebase );
-        int outwidthbin = this_width - outwidth * rec->timebase;
-        long int span = hd.gps_sec - rec->startTime + rec->timebase;
-        if ( hd.gps_nsec > 0 ) {
-          span += 1;
-        }
-        XLAL_CHECK_MAIN( snprintf( outname, outnamelen, "%s/%c-%ld_%c%c_%ldSFT_NBF%04dHz%dW%04dHz%d%s-%ld-%ld.sft",
-                                   outdir, detector[0], rec->nSFT, detector[0], detector[1],
-                                   rec->timebase, outfreq, outfreqbin, outwidth, outwidthbin,
-                                   misc, rec->startTime, span ) < ( int )outnamelen,
-                         XLAL_ESYS, "output of snprintf() was truncated" );
+        char *newSFTfilename = XLALBuildSFTFilenameFromSpec(rec);
+        XLAL_CHECK( newSFTfilename != NULL, XLAL_EFUNC );
 
         /* update SFT filename */
-        if ( rec->filename == NULL ) {
-          rec->filename = outname;
-          XLAL_CHECK_MAIN( ( outname = ( char * )XLALMalloc( outnamelen ) ) != NULL, XLAL_ENOMEM, "out of memory allocating outname" );
-        } else if ( strcmp( rec->filename, outname ) != 0 ) {
-          XLALPrintInfo( "Renaming SFT '%s' to '%s'\n", rec->filename, outname );
-          rename( rec->filename, outname );
-          char *const tmp = rec->filename;
-          rec->filename = outname;
-          outname = tmp;
+        if ( existingSFTfilename != NULL && strcmp( existingSFTfilename, newSFTfilename ) != 0 ) {
+          XLALPrintInfo( "Renaming SFT '%s' to '%s'\n", existingSFTfilename, newSFTfilename );
+          rename( existingSFTfilename, newSFTfilename );
         }
 
         /* store new SFT record */
-        XLALPrintInfo( "New/updated SFT: det=%c%c timebase=%ld firstbin=%ld binwidth=%ld misc=%s filename=%s\n",
-                       rec->det[0], rec->det[1], rec->timebase, rec->firstbin, rec->binwidth, rec->misc, rec->filename );
+        XLALPrintInfo( "New/updated SFT: det=%c%c timebase=%u firstbin=(%u,%u) binwidth=(%u,%u) filename=%s\n",
+                       rec->detector[0], rec->detector[1], rec->SFTtimebase,
+                       rec->nbFirstBinFreq, rec->nbFirstBinRem, rec->nbBinWidthFreq, rec->nbBinWidthRem,
+                       newSFTfilename );
         XLAL_CHECK_MAIN( XLALHashTblAdd( nbsfts, rec ) == XLAL_SUCCESS, XLAL_EFUNC, "XLALHashTblAdd() failed" );
 
         /* append this SFT */
         request_resource( &write_open_rate, 1 );
-        XLAL_CHECK_MAIN( ( fpout = fopen( rec->filename, "a" ) ) != NULL, XLAL_EIO, "could not open SFT for writing" );
+        XLAL_CHECK_MAIN( ( fpout = fopen( newSFTfilename, "a" ) ) != NULL, XLAL_EIO, "could not open SFT for writing" );
 
         /* write the data */
         /* write the comment only to the first SFT of a "block", i.e. of a call of this program */
@@ -759,6 +701,9 @@ int main( int argc, char **argv )
 
         /* close output SFT file */
         fclose( fpout );
+
+        XLALFree( existingSFTfilename );
+        XLALFree( newSFTfilename );
 
       } /* loop over output SFTs */
 
@@ -781,13 +726,9 @@ int main( int argc, char **argv )
     /* close the input SFT file */
     fclose( fpin );
 
-    /* free memory */
-    XLALFree( misc );
-
   } /* loop over input SFT files */
 
   /* cleanup */
-  XLALFree( outname );
   XLALFree( constraint_str );
   if ( add_comment > CMT_OLD ) {
     XLALFree( cmdline );

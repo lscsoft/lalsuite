@@ -9,10 +9,11 @@ cmp_CODE="lalpulsar_compareSFTs"
 dump_code="lalpulsar_dumpSFT"
 split_code="lalpulsar_splitSFTs"
 
-testDIR="./mfdv5_TEST"
+testDIR="."
+testDIRnb="./nb"
 
-# prepare test subdirectory
-mkdir -p $testDIR
+# prepare test subdirectories
+mkdir -p $testDIRnb
 
 tol=1e-3;	## tolerance on relative difference between SFTs in comparison
 # input parameters
@@ -316,16 +317,16 @@ if ! eval $cmdline; then
 fi
 
 SFTs_orig="H-1_H1_${Tsft}SFT_mfdv5-${startTime}-${Tsft}.sft"
-SFTs_split="H-1_H1_${Tsft}SFT_NBF0${fmin}Hz0W00${Band}Hz0_mfdv5-${startTime}-${Tsft}.sft"
+SFTs_split="H-1_H1_${Tsft}SFT_mfdv5_NBF0${fmin}Hz0W00${Band}Hz0-${startTime}-${Tsft}.sft"
 SFTs_fromframes="H-1_H1_${Tsft}SFT_mfdv5fromframes-${startTime}-${Tsft}.sft"
 dumps_split="${testDIR}/dump_${SFTs_split}.txt"
 dumps_fromframes="${testDIR}/dump_${SFTs_fromframes}.txt"
 SFTs_orig="${testDIR}/${SFTs_orig}"
-SFTs_split="${testDIR}/${SFTs_split}"
+SFTs_split="${testDIRnb}/${SFTs_split}"
 SFTs_fromframes="${testDIR}/${SFTs_fromframes}"
 
 fmax=$(echo "$fmin + $Band" | bc)
-cmdline="$split_code -fs $fmin -fb $Band -fe $fmax -n $testDIR -- $SFTs_orig"
+cmdline="$split_code -fs $fmin -fb $Band -fe $fmax -n $testDIRnb -- $SFTs_orig"
 echo $cmdline
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$split_code' ..."
