@@ -156,7 +156,7 @@ GitLab runs continuous integration (CI) pipelines on LALSuite to ensure that it 
 
 2. The merge CI pipeline runs when you are ready to submit your changes to the upstream LALSuite fork via a merge request. This pipeline runs a much more comprehensive series of checks that LALSuite still builds and passes its tests with a wide variety of platforms (e.g. MacOS, various Linux distributions) and compilers (e.g. `clang`, `icc`, `gcc`). It also checks that LALSuite packages for a number of package management systems (e.g. RPM, Debian, Conda, Python wheels) are built correctly.
 
-3. (A third CI pipeline runs nightly on the main [`lscsoft/lalsuite`](https://git.ligo.org/lscsoft/lalsuite) fork for deployment tasks, e.g. updating the [online documentation](https://lscsoft.docs.ligo.org/lalsuite/).
+3. (A third CI pipeline runs nightly on the main [`lscsoft/lalsuite`](https://git.ligo.org/lscsoft/lalsuite) fork for deployment tasks, e.g. updating the [online documentation](https://lscsoft.docs.ligo.org/lalsuite/)).
 
 You can request a subset of the jobs which normally run as part of the merge pipeline to also be run as part of the push pipeline. This is useful if you are making changes to LALSuite which could potentially cause problems with different platforms/compilers, or which could affect the packaging, and you want to test the effect of your changes before submitting a merge request.
 
