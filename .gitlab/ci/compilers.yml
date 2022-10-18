@@ -1,8 +1,8 @@
-# -- compiler tests -----------------------------
+# ----------------------------------------------------------------------
+# LALSuite: compiler tests
 #
-# Top-level build tests for various non-default
-# compilers
-#
+# Top-level build tests for various non-default compilers.
+# ----------------------------------------------------------------------
 
 .compiler-test:
   stage: compiler tests
@@ -10,9 +10,8 @@
   extends:
     - .make-distcheck
   rules:
-    - !reference [.skip-compiler, rules]
-    - !reference [.scheduled, rules]
-    - !reference [.manual, rules]
+    - !reference [.ci-compiler, rules]
+    - !reference [.ci-merge-build, rules]
 
 clang:12:
   extends:
