@@ -833,27 +833,28 @@ XLALCheckVectorComparisonTolerances ( const VectorComparison *result,	///< [in] 
   XLAL_CHECK ( result != NULL, XLAL_EINVAL );
 
   VectorComparison XLAL_INIT_DECL(localTol);
-  BOOLEAN failed = 0;
-
   if ( tol != NULL ) {
     localTol = (*tol);
-    failed = ( (result->relErr_L1 > tol->relErr_L1) || (result->relErr_L2 > tol->relErr_L2) ||
-               (result->angleV > tol->angleV) ||
-               (result->relErr_atMaxAbsx > tol->relErr_atMaxAbsx) || (result->relErr_atMaxAbsy > tol->relErr_atMaxAbsy) );
-  }
+  }    
 
-  if ( failed || (lalDebugLevel & LALINFO) )
-    {
-      XLALPrintError( "relErr_L1        = %.1e (%.1e)\n"
-                      "relErr_L2        = %.1e (%.1e)\n"
-                      "angleV           = %.1e (%.1e)\n"
-                      "relErr_atMaxAbsx = %.1e (%.1e)\n"
-                      "relErr_atMaxAbsy = %.1e (%.1e)\n",
-                      result->relErr_L1, localTol.relErr_L1, result->relErr_L2, localTol.relErr_L2, result->angleV,
-                      localTol.angleV,
-                      result->relErr_atMaxAbsx, localTol.relErr_atMaxAbsx,
-                      result->relErr_atMaxAbsy, localTol.relErr_atMaxAbsy );
+  const char* names[5]   = { "relErr_L1",        "relErr_L2",        "angleV",        "relErr_atMaxAbsx",        "relErr_atMaxAbsy"        };
+  const REAL4 results[5] = { result->relErr_L1,  result->relErr_L2,  result->angleV,  result->relErr_atMaxAbsx,  result->relErr_atMaxAbsy  };
+  const REAL4 tols[5]    = { localTol.relErr_L1, localTol.relErr_L2, localTol.angleV, localTol.relErr_atMaxAbsx, localTol.relErr_atMaxAbsy };
+
+  BOOLEAN failed = 0;
+
+  for (size_t i = 0; i < XLAL_NUM_ELEM(names); ++i) {
+
+    if ( results[i] > tols[i] ) {
+      failed = 1;
     }
+
+    if (lalDebugLevel & LALINFO ) {
+      XLALPrintError( "%-16s = %.1e (%.1e): %s\n", names[i], results[i], tols[i],
+                      ( results[i] > tols[i] ) ? "FAILED. Exceeded tolerance." : "OK." );
+    }
+
+  }
 
   if ( failed ) {
     XLAL_ERROR ( XLAL_ETOL, "FAILED. Exceeded at least one tolerance level.\n");

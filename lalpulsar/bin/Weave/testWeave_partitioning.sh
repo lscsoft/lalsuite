@@ -111,7 +111,7 @@ for setup in onefreq short long; do
 
     echo "=== Setup '${setup}': Compare F-statistics from lalpulsar_Weave without/with frequency/spindown partitions ==="
     set -x
-    lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoPart.fits --result-file-2=WeaveOutPart.fits
+    lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoPart.fits --result-file-2=WeaveOutPart.fits --sort-by-semi-phys
     set +x
     echo
 
