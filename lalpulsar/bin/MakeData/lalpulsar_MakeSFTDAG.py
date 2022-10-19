@@ -40,62 +40,59 @@ __version__ = '$Revision$'
 # 04/XX/13 eag; Add -y option to synchronize the start times of SFTs.
 # 07/24/14 eag; Change default to version 2 SFTs
 # 12/2020  eag; Update script to conform to modern python3 and pep8
+# 10/2020  kww; Pass args directly to writeToDag(), use Python f-strings
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
 #
-def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline,
-               outputSFTPath, cachePath, startTimeThisNode,
-               endTimeThisNode, channelName, site, inputDataType,
-               extraDatafindTime, useSingle, useHoT, makeTmpFile,
-               tagString, windowType, overlapFraction, sftVersion,
-               makeGPSDirs, miscDesc, commentField, startFreq, freqBand,
-               frameStructType, IFO):
-    LSCdataFind = 'LSCdataFind_{}'.format(nodeCount)
-    MakeSFTs = 'MakeSFTs_{}'.format(nodeCount)
-    startTimeDatafind = startTimeThisNode - extraDatafindTime
-    endTimeDatafind = endTimeThisNode + extraDatafindTime
-    tagStringOut = '{}_{}'.format(tagString, nodeCount)
-    cacheFile = '{}/{}-{}-{}.cache'.format(cachePath, site, startTimeDatafind,
-                                           endTimeDatafind)
-    argList = '-f {} -t {} -p {} -C {} -s {} -e {} -N {} -v {}'.format(
-        filterKneeFreq, timeBaseline, outputSFTPath, cacheFile,
-        startTimeThisNode, endTimeThisNode, channelName, sftVersion)
-    if IFO is not None:
-        argList = '{} -i {}'.format(argList, IFO)
-    if commentField is not None:
-        argList = '{} -c {}'.format(argList, commentField)
-    if frameStructType is not None and not useHoT:
-        argList = '{} -u {}'.format(argList, frameStructType)
-    argList = '{} -F {} -B {}'.format(argList, startFreq, freqBand)
-    if makeGPSDirs != 0:
-        argList = '{} -D {}'.format(argList, makeGPSDirs)
-    if miscDesc is not None:
-        argList = '{} -X {}'.format(argList, miscDesc)
-    if windowType != 1:
-        argList = '{} -w {}'.format(argList, windowType)
-    if overlapFraction != 0.0:
-        argList = '{} -P {}'.format(argList, overlapFraction)
-    if useSingle:
-        argList = '{} -S'.format(argList)
-    if useHoT:
-        argList = '{} -H'.format(argList)
-    if makeTmpFile:
-        argList = '{} -Z'.format(argList)
+def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args):
+    LSCdataFind = f'LSCdataFind_{nodeCount}'
+    MakeSFTs = f'MakeSFTs_{nodeCount}'
+    startTimeDatafind = startTimeThisNode - args.extra_datafind_time
+    endTimeDatafind = endTimeThisNode + args.extra_datafind_time
+    tagStringOut = f'{args.tag_string}_{nodeCount}'
+    cacheFile = f'{args.cache_path}/{site}-{startTimeDatafind}-{endTimeDatafind}.cache'
 
-    dagFID.write('JOB {} datafind.sub\n'.format(LSCdataFind))
-    dagFID.write('RETRY {} 10\n'.format(LSCdataFind))
-    dagFID.write('VARS {} gpsstarttime="{}" '.format(LSCdataFind,
-                                                     startTimeDatafind))
-    dagFID.write('gpsendtime="{}" observatory="{}" '.format(endTimeDatafind,
-                                                            site))
-    dagFID.write('inputdatatype="{}" '.format(inputDataType))
-    dagFID.write('tagstring="{}"\n'.format(tagStringOut))
-    dagFID.write('JOB {} MakeSFTs.sub\n'.format(MakeSFTs))
-    dagFID.write('RETRY {} 5\n'.format(MakeSFTs))
-    dagFID.write('VARS {} argList="{}" tagstring="{}"\n'.format(
-        MakeSFTs, argList, tagStringOut))
-    dagFID.write('PARENT {} CHILD {}\n'.format(LSCdataFind, MakeSFTs))
+    argList = []
+    argList.append(f'-f {args.filter_knee_freq}')
+    argList.append(f'-t {args.time_baseline}')
+    argList.append(f'-p {args.output_sft_path}')
+    argList.append(f'-C {cacheFile}')
+    argList.append(f'-s {startTimeThisNode}')
+    argList.append(f'-e {endTimeThisNode}')
+    argList.append(f'-N {args.channel_name}')
+    argList.append(f'-v {args.sft_version}')
+    argList.append(f'-F {args.start_freq}')
+    argList.append(f'-B {args.band}')
+    if args.ifo:
+        argList.append(f'-i {args.ifo}')
+    if args.comment_field:
+        argList.append(f'-c {args.comment_field}')
+    if args.frame_struct_type and not args.use_hot:
+        argList.append(f'-u {args.frame_struct_type}')
+    if args.make_gps_dirs:
+        argList.append(f'-D {args.make_gps_dirs}')
+    if args.misc_desc:
+        argList.append(f'-X {args.misc_desc}')
+    if args.window_type:
+        argList.append(f'-w {args.window_type}')
+    if args.overlap_fraction:
+        argList.append(f'-P {args.overlap_fraction}')
+    if args.use_single:
+        argList.append('-S')
+    if args.use_hot:
+        argList.append(f'-H')
+    if args.make_tmp_file:
+        argList.append(f'-Z')
+    argStr = ' '.join(argList)
+
+    dagFID.write(f'JOB {LSCdataFind} datafind.sub\n')
+    dagFID.write(f'RETRY {LSCdataFind} 10\n')
+    dagFID.write(f'VARS {LSCdataFind} gpsstarttime="{startTimeDatafind}" gpsendtime="{endTimeDatafind}" observatory="{site}" inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n')
+    dagFID.write(f'JOB {MakeSFTs} MakeSFTs.sub\n')
+    dagFID.write(f'RETRY {MakeSFTs} 5\n')
+    dagFID.write(f'VARS {MakeSFTs} argList="{argStr}" tagstring="{tagStringOut}"\n')
+    dagFID.write(f'PARENT {LSCdataFind} CHILD {MakeSFTs}\n')
 
 #
 # MAIN CODE START HERE
@@ -578,18 +575,7 @@ with open(args.dag_file, 'w') as dagFID:
 
                     if (nodeCount == 1):
                         startTimeAllNodes = startTimeThisNode
-                    writeToDag(dagFID,nodeCount, args.filter_knee_freq,
-                               args.time_baseline, args.output_sft_path,
-                               args.cache_path, startTimeThisNode,
-                               endTimeThisNode, args.channel_name, site,
-                               args.input_data_type, args.extra_datafind_time,
-                               args.use_single, args.use_hot,
-                               args.make_tmp_file, args.tag_string,
-                               args.window_type, args.overlap_fraction,
-                               args.sft_version, args.make_gps_dirs,
-                               args.misc_desc, args.comment_field,
-                               args.start_freq, args.band,
-                               args.frame_struct_type, args.ifo)
+                    writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args)
                     # Update for next node
                     numThisNode       = 0
                     if args.overlap_fraction != 0.0:
@@ -616,16 +602,7 @@ with open(args.dag_file, 'w') as dagFID:
 
                 if (nodeCount == 1):
                     startTimeAllNodes = startTimeThisNode
-                writeToDag(dagFID,nodeCount, args.filter_knee_freq,
-                           args.time_baseline, args.output_sft_path,
-                           args.cache_path, startTimeThisNode, endTimeThisNode,
-                           args.channel_name, site, args.input_data_type,
-                           args.extra_datafind_time, args.use_single,
-                           args.use_hot, args.make_tmp_file, args.tag_string,
-                           args.window_type, args.overlap_fraction,
-                           args.sft_version, args.make_gps_dirs,
-                           args.misc_desc, args.comment_field, args.start_freq,
-                           args.band, args.frame_struct_type, args.ifo)
+                writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args)
         # END while (endTimeAllNodes < args.analysis_end_time)
     # END for seg in segList
 # Close the DAG file
