@@ -496,10 +496,11 @@ SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVe
 
 // These functions are defined in SFTnaming.c
 
+int XLALRegisterSpecialCWDetector( const LALDetector* specialDetector );
 int XLALFindCWDetector ( CHAR** prefix, INT4 *lalCachedIndex, const CHAR *name, const BOOLEAN exactMatch );
 BOOLEAN XLALIsValidCWDetector ( const CHAR *name );
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
-LALDetector *XLALGetSiteInfo ( const CHAR *name );
+const LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
 int XLALFillSFTFilenameSpecStrings( SFTFilenameSpec *spec, const CHAR* path, const CHAR *extn, const CHAR* detector, const CHAR* window_type, const CHAR* privMisc, const CHAR* pubObsKind, const CHAR* pubChannel );
 char *XLALBuildSFTFilenameFromSpec( const SFTFilenameSpec *spec );

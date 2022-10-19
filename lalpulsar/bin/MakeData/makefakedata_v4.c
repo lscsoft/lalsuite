@@ -689,7 +689,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   CHAR *channelName = NULL;
   /* ---------- prepare detector ---------- */
   {
-    LALDetector *site;
+    const LALDetector *site;
 
     site = XLALGetSiteInfo ( uvar->IFO );
     XLAL_CHECK ( site != NULL, XLAL_EFUNC, "XLALGetSiteInfo('%s') failed\n", uvar->IFO );
@@ -697,7 +697,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     XLAL_CHECK ( channelName != NULL, XLAL_EFUNC, "XLALGetChannelPrefix('%s') failed.\n", uvar->IFO );
 
     cfg->site = (*site);
-    XLALFree ( site );
   }
 
    /* check for negative fmin and Band, which would break the fmin_eff, fBand_eff calculation below */

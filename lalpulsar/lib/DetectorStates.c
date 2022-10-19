@@ -670,11 +670,10 @@ XLALParseMultiLALDetector ( MultiLALDetector *detInfo,        /**< [out] parsed 
   /* parse input strings and fill detInfo */
   for ( UINT4 X = 0; X < numDet; X ++ )
     {
-      LALDetector *ifo;
+      const LALDetector *ifo;
       /* first parse detector name */
       XLAL_CHECK ( (ifo = XLALGetSiteInfo ( detNames->data[X] ) ) != NULL, XLAL_EINVAL, "Failed to parse detector-name '%s'\n", detNames->data[X] );
       detInfo->sites[X] = (*ifo);	// struct copy
-      XLALFree ( ifo );
 
     } /* for X < numDet */
 
@@ -702,10 +701,9 @@ XLALMultiLALDetectorFromMultiSFTCatalogView ( MultiLALDetector *multiIFO,		//!< 
   multiIFO->length = numIFOs;
   for ( UINT4 X=0; X < numIFOs; X ++ )
     {
-      LALDetector *site;
+      const LALDetector *site;
       XLAL_CHECK ( (site = XLALGetSiteInfo ( multiView->data[X].data->header.name )) != NULL, XLAL_EFUNC );
       multiIFO->sites[X] = (*site);	 // struct-copy
-      XLALFree ( site );
     } /* for X < numIFOs */
 
   return XLAL_SUCCESS;
@@ -731,10 +729,9 @@ XLALMultiLALDetectorFromMultiSFTs ( MultiLALDetector *multiIFO,	//!< [out] list 
   multiIFO->length = numIFOs;
   for ( UINT4 X=0; X < numIFOs; X ++ )
     {
-      LALDetector *site;
+      const LALDetector *site;
       XLAL_CHECK ( (site = XLALGetSiteInfo ( multiSFTs->data[X]->data[0].name )) != NULL, XLAL_EFUNC );
       multiIFO->sites[X] = (*site);	 // struct-copy
-      XLALFree ( site );
     } /* for X < numIFOs */
 
   return XLAL_SUCCESS;

@@ -25,8 +25,6 @@
 
 #include <ctype.h>
 
-#include <lal/LISAspecifics.h>
-
 #include "SFTinternal.h"
 
 /*---------- macros ----------*/
@@ -56,7 +54,43 @@ static const struct {
   { .window_type = "tukey",       .short_name = "TKEY", .A = 1 },
 };
 
+/*---------- internal variables ----------*/
+
+/* Registry for special CW detectors which are assigned prefixes "[XYZ][0123456789]" */
+static LALDetector SpecialDetectorRegistry[30];
+
 /*========== function definitions ==========*/
+
+/**
+ * Register a special detector for use with CW codes.
+ *
+ * The special detector much have a 2-character prefix of the form "[XYZ][0123456789]".
+ */
+int
+XLALRegisterSpecialCWDetector( const LALDetector* specialDetector )
+{
+
+  // check input
+  XLAL_CHECK ( specialDetector != NULL, XLAL_EFAULT );
+  XLAL_CHECK ( specialDetector->frDetector.prefix[2] == 0, XLAL_EINVAL );
+
+  // store special CW detector in registry indexed by prefix
+
+  const int index_1 = ((int) specialDetector->frDetector.prefix[0]) - ((int) 'X');
+  XLAL_CHECK ( 0 <= index_1 && index_1 < 3, XLAL_EINVAL,
+               "Special CW detector prefix '%s' must start with one of [XYZ]", specialDetector->frDetector.prefix );
+
+  const int index_2 = ((int) specialDetector->frDetector.prefix[1]) - ((int) '0');
+  XLAL_CHECK ( 0 <= index_1 && index_1 < 9, XLAL_EINVAL,
+               "Special CW detector prefix '%s' must start with one of [XYZ]", specialDetector->frDetector.prefix );
+
+  const int index = 10*index_1 + index_2;
+
+  SpecialDetectorRegistry[index] = *specialDetector;
+
+  return XLAL_SUCCESS;
+
+}
 
 /**
  * Parses valid CW detector names and prefixes. 'name' input can be either a valid detector name or prefix
@@ -83,39 +117,28 @@ XLALFindCWDetector ( CHAR** prefix, INT4 *lalCachedIndex, const CHAR *name, cons
   XLAL_CHECK ( name != NULL, XLAL_EINVAL );
   XLAL_CHECK ( strlen ( name ) >= 2, XLAL_EINVAL );	// need at least a full prefix 'letter+number'
 
-  // ----- first check if 'name' corresponds to one of our 'CW special' detectors (LISA and X-ray satellites)
-  const CHAR *specialDetectors[] =
+  // ----- first check if 'name' corresponds to one of our 'CW special' detectors
+  const UINT4 numSpecialDetectors = sizeof(SpecialDetectorRegistry) / sizeof(SpecialDetectorRegistry[0]);
+  for ( UINT4 i = 0; i < numSpecialDetectors; i ++ )
     {
-      "Z1",	  /* LISA effective IFO 1 */
-      "Z2",	  /* LISA effective IFO 2 */
-      "Z3",	  /* LISA effective IFO 3 */
-      "Z4",	  /* LISA effective IFO 2 minus 3 */
-      "Z5",	  /* LISA effective IFO 3 minus 1 */
-      "Z6",	  /* LISA effective IFO 1 minus 2 */
-      "Z7",	  /* LISA pseudo TDI A */
-      "Z8",	  /* LISA pseudo TDI E */
-      "Z9",	  /* LISA pseudo TDI T */
-      NULL
-    };
-  for ( UINT4 i = 0; specialDetectors[i] != NULL; i ++ )
-    {
-      if ( strncmp ( specialDetectors[i], name, 2 ) == 0 )
+      const CHAR *prefix_i = SpecialDetectorRegistry[i].frDetector.prefix;
+      if ( strncmp ( prefix_i, name, 2 ) == 0 )
         {
-          if ( exactMatch && strcmp( name + strlen ( specialDetectors[i] ), "" ) != 0 ) {
-            XLAL_ERROR ( XLAL_EINVAL, "Trailing garbage '%s' after detector prefix\n", name + strlen ( specialDetectors[i] ) );
+          if ( exactMatch && strcmp( name + strlen ( prefix_i ), "" ) != 0 ) {
+            XLAL_ERROR ( XLAL_EINVAL, "Trailing garbage '%s' after detector prefix\n", name + strlen ( prefix_i ) );
           }
           if ( prefix != NULL ) {
-            (*prefix) = XLALStringDuplicate ( specialDetectors[i] );
+            (*prefix) = XLALStringDuplicate ( prefix_i );
           }
           if ( lalCachedIndex != NULL ) {
             (*lalCachedIndex) = -1;
           }
           return XLAL_SUCCESS;
         }
-    } // for i < len(specialDetectors)
+    } // for i < numSpecialDetectors
 
   // ----- if not found, go through list of 'official' cached lalsuite detectors
-  UINT4 numLALDetectors = sizeof(lalCachedDetectors) / sizeof(lalCachedDetectors[0]);
+  const UINT4 numLALDetectors = sizeof(lalCachedDetectors) / sizeof(lalCachedDetectors[0]);
   for ( UINT4 i = 0; i < numLALDetectors; i ++)
     {
       const CHAR *prefix_i = lalCachedDetectors[i].frDetector.prefix;
@@ -192,10 +215,8 @@ XLALGetChannelPrefix ( const CHAR *name )
 
 /**
  * Find the site geometry-information 'LALDetector' for given a detector name (or prefix).
- *
- * \note The LALDetector struct is allocated here and needs to be free'ed by caller!
  */
-LALDetector *
+const LALDetector *
 XLALGetSiteInfo ( const CHAR *name )
 {
   XLAL_CHECK_NULL ( name != NULL, XLAL_EINVAL );
@@ -207,20 +228,26 @@ XLALGetSiteInfo ( const CHAR *name )
   CHAR *prefix;
   XLAL_CHECK_NULL ( XLALFindCWDetector ( &prefix, &lalCachedIndex, name, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  LALDetector *site;
-  XLAL_CHECK_NULL ( ( site = XLALCalloc ( 1, sizeof( *site) )) != NULL, XLAL_ENOMEM );
+  const LALDetector *site;
 
-  switch ( prefix[0] )
+  if ( strchr( "XYZ", prefix[0] ) != NULL )     // special CW detector
     {
-    case 'Z':       // create dummy-sites for LISA
-      XLAL_CHECK_NULL ( XLALcreateLISA ( site, prefix[1] ) == XLAL_SUCCESS, XLAL_EFUNC, "Failed to created LISA detector 'name=%s, prefix=%s'\n", name, prefix );
-      break;
+      const int index_1 = ((int) prefix[0]) - ((int) 'X');
+      XLAL_CHECK_NULL ( 0 <= index_1 && index_1 < 3, XLAL_EFAILED );
 
-    default:
+      const int index_2 = ((int) prefix[1]) - ((int) '0');
+      XLAL_CHECK_NULL ( 0 <= index_1 && index_1 < 9, XLAL_EINVAL,
+                        "Special CW detector prefix '%s' must be of the form [XYZ][0123456789]", prefix );
+
+      const int index = 10*index_1 + index_2;
+
+      site = &SpecialDetectorRegistry[index];
+    }
+  else                                          // official LALSuite detector
+    {
       XLAL_CHECK_NULL ( (lalCachedIndex >= 0) && (lalCachedIndex < numLALDetectors), XLAL_EFAILED, "Internal inconsistency found (for 'name=%s, prefix=%s')\n", name, prefix );
-      (*site) = lalCachedDetectors[lalCachedIndex];
-      break;
-    } /* switch channel[0] */
+      site = &lalCachedDetectors[lalCachedIndex];
+    }
 
   XLALFree ( prefix );
 
