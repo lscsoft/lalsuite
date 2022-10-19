@@ -513,14 +513,14 @@ XLALWriteSFT2FilePointer(
   /* concat sft->name + SFTcomment for SFT-file comment-field */
   comment_len = strlen(sft->name) + 1;
   if ( SFTcomment )
-    comment_len += strlen(SFTcomment) + 2;	/* separate by "; " */
+    comment_len += strlen(SFTcomment) + 1;	/* separate by "\n" */
 
   if ( (_SFTcomment = XLALCalloc( comment_len, sizeof(CHAR) )) == NULL ) {
     XLAL_ERROR( XLAL_ENOMEM );
   }
   strcpy ( _SFTcomment, sft->name );
   if ( SFTcomment ) {
-    strcat ( _SFTcomment, "; " );
+    strcat ( _SFTcomment, "\n" );
     strcat ( _SFTcomment, SFTcomment );
   }
 
