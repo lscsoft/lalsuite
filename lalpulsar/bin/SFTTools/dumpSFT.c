@@ -31,7 +31,6 @@
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
-#include <lal/SFTutils.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/LALString.h>
 #include <lal/LALPulsarVCSInfo.h>

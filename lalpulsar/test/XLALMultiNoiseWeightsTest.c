@@ -21,14 +21,13 @@
 #include <math.h>
 #include <sys/times.h>
 
-#include <lal/SFTutils.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/SFTfileIO.h>
 
 /**
  * \author John T. Whelan
  * \file
- * \ingroup SFTutils_h
+ * \ingroup SFTfileIO_h
  * \brief Tests for XLALComputeMultiNoiseWeights()
  *
  * PSDs are calculated using the test SFTs created for

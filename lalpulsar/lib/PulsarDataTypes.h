@@ -46,6 +46,64 @@ extern "C" {
 #include <lal/LALDatatypes.h>
 #include <lal/SkyCoordinates.h>
 
+// ---------- generic time/frequencies series vector types ----------
+
+/** A collection of (multi-IFO) REAL4 time-series */
+typedef struct tagMultiREAL4TimeSeries {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiREAL4TimeSeries, REAL4TimeSeries*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  REAL4TimeSeries **data; /**< Pointer to the data array. */
+} MultiREAL4TimeSeries;
+
+/** A collection of (multi-IFO) REAL8 time-series */
+typedef struct tagMultiREAL8TimeSeries {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(MultiREAL8TimeSeries, REAL8TimeSeries*, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  REAL8TimeSeries **data; /**< Pointer to the data array. */
+} MultiREAL8TimeSeries;
+
+/** A vector of COMPLEX8FrequencySeries */
+typedef struct tagCOMPLEX8FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(COMPLEX8FrequencySeriesVector, COMPLEX8FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  COMPLEX8FrequencySeries *data; /**< Pointer to the data array. */
+} COMPLEX8FrequencySeriesVector;
+
+/** A vector of COMPLEX16FrequencySeries */
+typedef struct tagCOMPLEX16FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(COMPLEX16FrequencySeriesVector, COMPLEX16FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  COMPLEX16FrequencySeries *data; /**< Pointer to the data array. */
+} COMPLEX16FrequencySeriesVector;
+
+/** A vector of REAL4FrequencySeries */
+typedef struct tagREAL4FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(REAL4FrequencySeriesVector, REAL4FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  REAL4FrequencySeries *data; /**< Pointer to the data array. */
+} REAL4FrequencySeriesVector;
+
+/** A vector of REAL8FrequencySeries */
+typedef struct tagREAL8FrequencySeriesVector {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(ARRAY_1D(REAL8FrequencySeriesVector, REAL8FrequencySeries, data, UINT4, length));
+#endif /* SWIG */
+  UINT4 length; /**< Number of elements in array. */
+  REAL8FrequencySeries *data; /**< Pointer to the data array. */
+} REAL8FrequencySeriesVector;
+
+// ---------- types describing the CW amplitude and phase parameters ----------
+
 /** maximal number of spin-parameters (Freq + spindowns) we can handle */
 #define PULSAR_MAX_SPINS	7
 
@@ -95,6 +153,7 @@ typedef struct tagPulsarDopplerParams {
 } PulsarDopplerParams;
 
 // ---------- transient-CW related types ----------
+
 /** Struct to define parameters of a 'transient window' to be applied to obtain transient signals */
 typedef enum tagtransientWindowType_t {
   TRANSIENT_NONE = 0,		/**< Note: in this case the window-parameters will be ignored, and treated as rect={data},
@@ -114,7 +173,6 @@ typedef struct tagtransientWindow_t
   UINT4 tau;			/**< transient timescale tau in seconds */
 } transientWindow_t;
 
-
 // ---------- 'integrated' types describing a complete CW signal ----------
 
 /** Type defining the parameters of a pulsar-source of CW Gravitational waves */
@@ -132,25 +190,6 @@ typedef struct tagPulsarCandidate {
   REAL8 significance;			/**< a (user-chosen) measure of 'significance': Fstat, Hough-count,... */
   gsl_matrix *AmpFisherMatrix;		/**< Fisher-matrix of amplitude-subspace: has more info than dAmp! */
 } PulsarCandidate;
-
-
-/**
- * DEPRECATED Type defining the parameters of a pulsar-source of Gravitational waves.
- * \note this type is obsolete and should no longer be used,
- * however, it's too entrenched in LALGeneratePulsarSignal() et al, and codes using it,
- * so we can't easily get rid of it and keep it for now....
- * \deprecated Use \c PulsarParams instead.
- */
-typedef struct tagPulsarSourceParams {
-   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
-   SkyPosition position; /**< source location (in radians) */
-   REAL4 psi;            /**< polarization angle (radians) at tRef */
-   REAL4 aPlus; 	/**< plus-polarization amplitude at tRef */
-   REAL4 aCross;  	/**< cross-polarization amplitude at tRef */
-   REAL8 phi0;           /**< initial phase (radians) at tRef */
-   REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
-   REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
-} PulsarSourceParams;
 
 /** @} */
 

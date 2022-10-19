@@ -54,7 +54,6 @@
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/LALComputeAM.h>
-#include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LALPulsarVCSInfo.h>
 

@@ -46,7 +46,6 @@
 #include <lal/LALError.h>
 #include <lal/Date.h>
 #include <lal/SFTfileIO.h>
-#include <lal/SFTutils.h>
 #include <lal/SSBtimes.h>
 
 #include "ExtrapolatePulsarSpins.h"

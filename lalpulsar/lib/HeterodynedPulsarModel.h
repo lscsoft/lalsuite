@@ -30,7 +30,7 @@
 #include <lal/LALBarycenter.h>
 #include <lal/ReadPulsarParFile.h>
 #include <lal/BinaryPulsarTiming.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/TimeSeries.h>
 #include <lal/Units.h>
 

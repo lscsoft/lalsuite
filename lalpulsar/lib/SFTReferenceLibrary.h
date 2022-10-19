@@ -116,9 +116,6 @@ int ValidateSFTFile ( const char *fname );
    description as null-terminated string */
 const char *SFTErrorMessage(int errorcode);
 
-/* returns a null-terminated string with the package version (eg, 2.0) */
-const char *ReferenceSFTLibraryVersion(void);
-
 /* internal functions for checking validity of detector-entry */
 int unknownDetector (const char *detector);	/* returns zero if detector is known */
 

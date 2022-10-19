@@ -35,7 +35,7 @@
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeSky.h>
 #include <lal/Window.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 
 /* C++ protection. */
 #ifdef  __cplusplus
@@ -278,7 +278,16 @@ extern "C" {
 #ifndef SWIG   /* exclude from SWIG interface; nested struct */
 typedef struct tagPulsarSignalParams {
   /* source-parameters */
-  PulsarSourceParams pulsar;		/**< the actual pulsar-source */
+  struct {
+   LIGOTimeGPS refTime;	/**< reference time of pulsar parameters (in SSB!) */
+   SkyPosition position; /**< source location (in radians) */
+   REAL4 psi;            /**< polarization angle (radians) at tRef */
+   REAL4 aPlus; 	/**< plus-polarization amplitude at tRef */
+   REAL4 aCross;  	/**< cross-polarization amplitude at tRef */
+   REAL8 phi0;           /**< initial phase (radians) at tRef */
+   REAL8 f0;             /**< WAVE-frequency(!) at tRef (in Hz) */
+   REAL8Vector *spindown;/**< wave-frequency spindowns at tRef (NOT f0-normalized!) */
+  } pulsar;
   struct {
     LIGOTimeGPS tp;         /**< time of observed periapsis passage (in SSB) */
     REAL8 argp;             /**< argument of periapsis (radians) */

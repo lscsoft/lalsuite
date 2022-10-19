@@ -47,7 +47,7 @@
 #include <lal/LALgetopt.h>
 #include <lal/GeneratePulsarSignal.h>
 #include <lal/BinaryPulsarTiming.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALString.h>
 #include <lal/TranslateAngles.h>
 

@@ -41,15 +41,11 @@
 #define BLOCKSIZE 65536
 
 /* some local prototypes */
-static unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
+unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
 static void swap2(char *location);
 static void swap4(char *location);
 static void swap8(char *location);
 static int validate_sizes(void);
-
-const char* ReferenceSFTLibraryVersion(void) {
-  return PACKAGE_VERSION;
-}
 
 /* The crc64 checksum of M bytes of data at address data is returned
    by crc64(data, M, ~(0ULL)). Call the function multiple times to
@@ -63,7 +59,7 @@ unsigned long long crc64(const unsigned char* data,
   unsigned int i;
 
   /* is there is no data, simply return previous checksum value */
-  if (!length)
+  if (!length || !data )
     return crc;
   
   /* initialize the CRC table for fast computation.  We could keep
