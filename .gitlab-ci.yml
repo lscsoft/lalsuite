@@ -214,8 +214,6 @@ default:
   # do not cancel macOS job when a newer pipeline starts, to avoid issues
   # with permission errors (see above)
   interruptible: false
-  rules:
-    - !reference [.ci-macos, rules]
 
 .macos:
   extends:

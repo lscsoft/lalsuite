@@ -174,7 +174,6 @@ For individual commits, you can request a subset of merge pipeline jobs to run b
 | `[ci integration]`         | `/[-_]ci[-_]integration/` | Longer-running integration tests, different<br/>top-level build configurations, etc. |
 | `[ci koji]`                | `/[-_]ci[-_]koji/`        | Build RPM packages on a Koji server                          |
 | `[ci lint]`                | `/[-_]ci[-_]lint/`        | Perform "lint" checks for code style/formatting/whitespace<br/>errors, build byproduct files missing from `.gitignore`, etc. |
-| `[ci macos]`               | `/[-_]ci[-_]macos/`       | Run all MacOS jobs in the merge pipeline                     |
 | `[ci pkg]`                 | `/[-_]ci[-_]pkg/`         | Perform a basic package-level build from tarballs            |
 | `[ci platform]`            | `/[-_]ci[-_]platform/`    | Test different platforms (e.g. MacOS, various Linux distributions) |
 | `[ci rhel]`                | `/[-_]ci[-_]rhel/`        | Build RPM packages                                           |
