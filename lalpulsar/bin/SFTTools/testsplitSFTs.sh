@@ -2,7 +2,7 @@
 Tsft=1800
 start=1257800000
 span=9000
-misc='SFT_desc_w_us'   # test that 'misc' field can contain underscores
+misc='SFTdesc'
 cmdlinebase="lalpulsar_Makefakedata_v5 --outLabel '${misc}' --IFOs H1 --sqrtSX 1e-24 --startTime ${start} --duration ${span} --fmin 10 --Band 85 --injectionSources '{Alpha=0.1; Delta=0.4; Freq=30; f1dot=1e-10; h0=1e-24; cosi=0.7; refTime=1257800000}'"
 mkdir -p broadband1a/
 cmdline="${cmdlinebase} --outSingleSFT=no --outSFTdir broadband1a/"

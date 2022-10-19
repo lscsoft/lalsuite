@@ -30,6 +30,9 @@
 #define TRUE    1
 #define FALSE   0
 
+#define MIN_SFT_VERSION 2
+#define MAX_SFT_VERSION 3
+
 static const REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static const REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
 
@@ -87,7 +90,7 @@ void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
 FILE * fopen_SFTLocator ( const struct tagSFTLocator *locator );
 
 int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
-int read_sft_header_from_fp (FILE *fp, SFTtype  *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins );
+int read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, UINT2 *SFTwindowspec, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins );
 UINT4 read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
 
 BOOLEAN has_valid_crc64 (FILE *fp );

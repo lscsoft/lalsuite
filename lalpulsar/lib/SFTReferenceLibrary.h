@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2022 Karl Wette
  *  Copyright (C) 2004, 2005 Bruce Allen, Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -33,7 +34,7 @@ extern "C" {
 
 /** @{ */
 
-/* header for version 2 SFTs */
+/* SFT header */
 struct headertag2 {
   double              version;
   int                 gps_sec;
@@ -43,7 +44,7 @@ struct headertag2 {
   int                 nsamples;
   unsigned long long  crc64;
   char                detector[2];
-  char                padding[2];
+  unsigned short      windowspec;
   int                 comment_length;
 };
 
@@ -54,6 +55,7 @@ int WriteSFT(FILE   *fp,            /* stream to write to.  On return, is at the
 	     int    firstfreqindex, /* index of first frequency bin included in data (0=DC)*/
 	     int    nsamples,       /* number of frequency bins to include in SFT */
 	     const char *detector,  /* channel-prefix defining detector */
+             unsigned short windowspec, /* SFT windowspec */
 	     const char *comment,       /* null-terminated comment string to include in SFT */
 	     float  *data           /* points to nsamples x 2 x floats (Real/Imag)  */
 	     );
@@ -111,6 +113,7 @@ int ValidateSFTFile ( const char *fname );
 #define SFTEBEFOREDATA         27
 #define SFTEAFTERDATA          28
 #define SFTNOTFINITE           29
+#define SFTEWINDOWSPECCHANGES  300
 
 /* takes error code from above list and returns static human-readable
    description as null-terminated string */

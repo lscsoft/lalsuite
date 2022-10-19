@@ -143,9 +143,9 @@ sftsv4_2=${testDIR}/${IFO2}-sftsv4.sft
 sftsv5_1_meth1=${testDIR}/H-*_mfdv5-*.sft
 sftsv5_2_meth1=${testDIR}/L-*_mfdv5-*.sft
 
-sftsv5_1_meth2=${testDIR}/H-*_mfdv5_meth2-*.sft
-sftsv5_2_meth2=${testDIR}/L-*_mfdv5_meth2-*.sft
-sftsv5_meth2=${testDIR}/*_mfdv5_meth2-*.sft
+sftsv5_1_meth2=${testDIR}/H-*_mfdv5meth2-*.sft
+sftsv5_2_meth2=${testDIR}/L-*_mfdv5meth2-*.sft
+sftsv5_meth2=${testDIR}/*_mfdv5meth2-*.sft
 
 ## ----------
 ## produce SFTs for 2 detectors, containing Gaussian noise + N signals, compare between mfdv4 and mfdv5
@@ -231,13 +231,13 @@ echo "----- Method 2: and again the same, using different input methods"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig1="--injectionSources='${injString}'"
 sig23="--injectionSources='${injFile2}'"
-cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outLabel='mfdv5_meth2' --fmin=$fmin --Band=$Band"
+cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --outLabel='mfdv5meth2' --fmin=$fmin --Band=$Band"
 echo $cmdline1;
 if ! eval $cmdline1; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
     exit 1
 fi
-cmdline2="$mfdv5_CL ${sig23} --noiseSFTs='${sftsv5_meth2}' --SFTWindowType=rectangular --outLabel='mfdv5_meth2'"
+cmdline2="$mfdv5_CL ${sig23} --noiseSFTs='${sftsv5_meth2}' --SFTWindowType=rectangular --outLabel='mfdv5meth2'"
 echo $cmdline2;
 if ! eval $cmdline2; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."

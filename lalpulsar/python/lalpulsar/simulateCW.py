@@ -464,19 +464,21 @@ class CWSimulator(object):
         if not valid_comment.match(comment):
             raise ValueError("SFT file comment='%s' may only contain A-Z, a-z, 0-9 characters" % comment)
 
+        # create SFT filename specification
+        spec = lalpulsar.SFTFilenameSpec()
+        spec.path = out_dir
+        spec.window_type = None
+        spec.window_beta = window_param
+        spec.privMisc = comment
 
         # generate SFTs
         for sft, i, N in self.get_sfts(fmax, Tsft, noise_sqrt_Sh=noise_sqrt_Sh, noise_seed=noise_seed, window=window, window_param=window_param):
 
-            # create standard SFT file name (see LIGO-T040164)
-            sft_desc = comment
-            sft_name = lalpulsar.GetOfficialName4SFT(sft, sft_desc)
-            sft_path = os.path.join(out_dir, sft_name)
-
             # write SFT
-            lalpulsar.WriteSFT2file(sft, sft_path, self.__origin_str)
+            lalpulsar.WriteSFT2StandardFile(sft, spec, self.__origin_str)
 
             # yield current file name for e.g. printing progress
+            sft_path = lalpulsar.BuildSFTFilenameFromSpec(spec)
             yield sft_path, i, N
 
 ## @}

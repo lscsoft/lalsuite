@@ -147,7 +147,16 @@ XLALprintDescriptor ( const SFTDescriptor *desc )
   printf ( "SFT version: %d\n", desc->version );
   printf ( "numBins:     %d\n", desc->numBins );
   printf ( "crc64:       %" LAL_UINT8_FORMAT "\n", desc->crc64 );
-  printf ( "comment:     %s\n", (desc->comment)?(desc->comment) : "<none>" );
+  printf ( "window:      %s(%0.10g)\n", desc->window_type, desc->window_beta );
+  if ( desc->comment ) {
+    if ( strchr( desc->comment, '\n' ) ) {
+      printf ( "comment: ==========\n%s\nend comment: ------\n", desc->comment );
+    } else {
+      printf ( "comment:     %s\n", desc->comment );
+    }
+  } else {
+    printf ( "comment:     <none>\n" );
+  }
 
   return XLAL_SUCCESS;
 

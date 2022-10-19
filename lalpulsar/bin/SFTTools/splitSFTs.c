@@ -754,7 +754,7 @@ int main( int argc, char **argv )
         /* write the data */
         /* write the comment only to the first SFT of a "block", i.e. of a call of this program */
         request_resource( &write_bandwidth, 40 + this_width * 8 );
-        sfterrno = WriteSFT( fpout, hd.gps_sec, hd.gps_nsec, hd.tbase, bin, this_width, detector, ( firstfile || allcomments ) ? comment : NULL, data + 2 * ( bin - startBin ) );
+        sfterrno = WriteSFT( fpout, hd.gps_sec, hd.gps_nsec, hd.tbase, bin, this_width, detector, hd.windowspec, ( firstfile || allcomments ) ? comment : NULL, data + 2 * ( bin - startBin ) );
         XLAL_CHECK_MAIN( sfterrno == 0, XLAL_EIO, "could not write SFT data: %s", SFTErrorMessage( sfterrno ) );
 
         /* close output SFT file */

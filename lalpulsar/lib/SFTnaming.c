@@ -585,144 +585,8 @@ int XLALParseSFTFilenameIntoSpec(
 
 
 /**
- * Return the 'official' file name for a given SFT, folllowing the SFT-v2 naming convention
- * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385, namely
- *
- * name = S-D-G-T.sft
- * where
- * S = Source: upper-case single letter site designation 'G', 'H', 'L', 'V', ...
- * D = description: a free-form string of alphanumerics and {_, +, #}
- * G = GPS start time of first SFT in seconds (9- or 10-digit number)
- * T = total time interval covered by the data in this file
- *
- * furthermore, the v2-spec uses the following convention for the description field 'D':
- * D = numSFTs_IFO_SFTtype[_Misc]
- * where
- * numSFTs : number of SFTs in the file
- * IFO     : 2-character detector name, eg 'G1', 'H1', 'H2', 'L1', 'V1', ...
- * SFTtype : SFT-timebase, in the form '[T]SFT', where [T] is the SFT-duration in seconds, eg "1800SFT"
- * Misc    : optional string providing additional information
- */
-char *
-XLALOfficialSFTFilename ( char site,		//!< site-character 'G', 'H', 'L', ...
-                          char channel,	//!< channel character '1', '2', ...
-                          UINT4 numSFTs,	//!< number of SFTs in SFT-file
-                          UINT4 Tsft,		//!< time-baseline in (integer) seconds
-                          UINT4 GPS_start,	//!< GPS seconds of first SFT start time
-                          UINT4 Tspan,		//!< total time-spanned by all SFTs in seconds
-                          const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
-                          )
-{
-  if ( Misc != NULL ) {
-    XLAL_CHECK_NULL ( XLALCheckValidDescriptionField ( Misc ) == XLAL_SUCCESS, XLAL_EINVAL );
-  }
-
-  // ----- S
-  char S[2] = { site, 0 };
-
-  // ----- D
-  char D[512];
-  char IFO[2] = { site, channel };
-  size_t written = snprintf ( D, sizeof(D), "%d_%c%c_%dSFT%s%s", numSFTs, IFO[0], IFO[1], Tsft, Misc ? "_" : "", Misc ? Misc : "" );
-  XLAL_CHECK_NULL ( written < sizeof(D), XLAL_EINVAL, "Description field length of %zu exceeds buffer length of %zu characters\n", written, sizeof(D)-1 );
-
-  // ----- G
-  char G[11];
-  written = snprintf ( G, sizeof(G), "%09d", GPS_start );
-  XLAL_CHECK_NULL ( written < sizeof(G), XLAL_EINVAL, "GPS seconds %d exceed buffer length of %zu characters\n", GPS_start, sizeof(G)-1 );
-
-  // ----- T
-  char T[10];
-  written = snprintf ( T, sizeof(T), "%d", Tspan );
-  XLAL_CHECK_NULL ( written < sizeof(T), XLAL_EINVAL, "Tspan=%d s exceed buffer length of %zu characters\n", Tspan, sizeof(T)-1 );
-
-  // S-D-G-T.sft
-  size_t len = strlen(S) + 1 + strlen(D) + 1 + strlen(G) + 1 + strlen(T) + 4 + 1;
-  char *filename;
-  XLAL_CHECK_NULL ( (filename = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
-
-  written = snprintf ( filename, len, "%s-%s-%s-%s.sft", S, D, G, T );
-  XLAL_CHECK_NULL ( written < len, XLAL_EFAILED, "Miscounted string-length, expected %zu characters but got %zu\n", len - 1, written );
-
-  return filename;
-
-} // XLALGetOfficialName4SFT()
-
-
-/**
- * Return the 'official' file name for a given SFT, folllowing the SFT-v2 naming convention
- * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385,
- * see also XLALOfficialSFTFilename() for details.
- */
-char *
-XLALGetOfficialName4SFT ( const SFTtype *sft,	//!< [in] input SFT to generate name for
-                          const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
-                          )
-{
-  XLAL_CHECK_NULL ( sft != NULL, XLAL_EINVAL );
-
-
-  UINT4 Tsft = (UINT4) round ( 1.0 / sft->deltaF );
-
-  /* calculate sft 'duration' -- may be different from timebase if nanosecond of sft-epoch is non-zero */
-  UINT4 Tspan = Tsft;
-  if ( sft->epoch.gpsNanoSeconds > 0) {
-    Tspan += 1;
-  }
-
-  char *filename;
-  XLAL_CHECK_NULL ( (filename = XLALOfficialSFTFilename ( sft->name[0], sft->name[1], 1, Tsft, sft->epoch.gpsSeconds, Tspan, Misc )) != NULL, XLAL_EFUNC );
-
-  return filename;
-
-} // XLALGetOfficialName4SFT()
-
-
-/**
- * Return the 'official' file name for a given SFT-vector written into a single "merged SFT-file",
- * folllowing the SFT-v2 naming convention
- * LIGO-T040164-01 https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=27385,
- * see also XLALOfficialSFTFilename() for details.
- */
-char *
-XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts,	//!< [in] input SFT vector to generate name for
-                                 const char *Misc	//!< [in] optional 'Misc' entry in the SFT 'D' field (can be NULL)
-                                 )
-{
-  XLAL_CHECK_NULL ( sfts != NULL, XLAL_EINVAL );
-  XLAL_CHECK_NULL ( sfts->length > 0, XLAL_EINVAL );
-
-  UINT4 numSFTs = sfts->length;
-  SFTtype *sftStart       = &(sfts->data[0]);
-  SFTtype *sftEnd         = &(sfts->data[numSFTs-1]);
-  LIGOTimeGPS *epochStart = &(sftStart->epoch);
-  LIGOTimeGPS *epochEnd   = &(sftEnd->epoch);
-
-  const char *name = sftStart->name;
-  UINT4 Tsft = (UINT4) round ( 1.0 / sftStart->deltaF );
-
-  /* calculate time interval covered -- may be different from timebase if nanosecond of sft-epochs are non-zero */
-  UINT4 Tspan = epochEnd->gpsSeconds - epochStart->gpsSeconds + Tsft;
-  if ( epochStart->gpsNanoSeconds > 0) {
-    Tspan += 1;
-  }
-  if ( epochEnd->gpsNanoSeconds > 0) {
-    Tspan += 1;
-  }
-
-  char *filename;
-  XLAL_CHECK_NULL ( (filename = XLALOfficialSFTFilename ( name[0], name[1], numSFTs, Tsft, epochStart->gpsSeconds, Tspan, Misc )) != NULL, XLAL_EFUNC );
-
-  return filename;
-
-} // XLALGetOfficialName4MergedSFTs()
-
-
-/**
- * Check whether given string qualifies as a valid 'description' field of a FRAME (or SFT)
- * filename, according to  LIGO-T010150-00-E "Naming Convention for Frame Files which are to be Processed by LDAS",
- * LIGO-T040164-01 at https://dcc.ligo.org/LIGO-T040164-x0/public
- *
+ * Check whether given string qualifies as a valid 'description' field of a
+ * FRAME filename (per \cite frame-naming-spec) or SFT filename (per \cite SFT-spec)
  */
 int
 XLALCheckValidDescriptionField ( const char *desc )
@@ -738,9 +602,8 @@ XLALCheckValidDescriptionField ( const char *desc )
   for ( UINT4 i=0; i < len; i ++ )
     {
       int c = desc[i];
-      if ( !isalnum(c) && (c!='_') && (c!='+') && (c!='#') ) {	// all the valid characters allowed
-        XLAL_ERROR ( XLAL_EINVAL, "Invalid chacter '%c' found, only alphanumeric and ['_', '+', '#'] are allowed\n", c );
-      }
+      // SFT filenames only allow alphanumeric characters, which is more restrictive than FRAME filenames which also allow [_+#]
+      XLAL_CHECK ( isascii(c) && isalnum(c), XLAL_EINVAL, "Invalid chacter '%c' found, only ASCII alphanumeric are allowed\n", c );
     } // for i < len
 
   return XLAL_SUCCESS;
