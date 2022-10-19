@@ -26,42 +26,17 @@
  * \brief Generate SFTs
  */
 
-#include "config.h"
-
-#ifdef HAVE_UNISTD_H
-#include <unistd.h>
-#endif
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
-#include <math.h>
-#include <time.h>
-#include <glob.h>
-#include <errno.h>
-#include <stdarg.h>
+#include <stdio.h>
 
-#include <lal/LALDatatypes.h>
-#include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
-#include <lal/FileIO.h>
-#include <lal/AVFactories.h>
-#include <lal/LALCache.h>
-#include <lal/LALFrStream.h>
-#include <lal/Window.h>
-#include <lal/Calibration.h>
-#include <lal/LALConstants.h>
+#include <lal/LALgetopt.h>
 #include <lal/BandPassTimeSeries.h>
-#include <lal/LALStdlib.h>
-#include <lal/LALConstants.h>
-#include <lal/AVFactories.h>
-#include <lal/TimeFreqFFT.h>
+#include <lal/Window.h>
 #include <lal/RealFFT.h>
-#include <lal/ComplexFFT.h>
 #include <lal/SFTfileIO.h>
+#include <lal/LALFrStream.h>
 #include <lal/LALVCSInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 
