@@ -1228,6 +1228,17 @@ CHAR *
 XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as config-file or command-line */
                     )
 {
+  return XLALUserVarGetLogEx ( format, 1 );
+}
+
+/**
+ * Return a log-string representing the <em>complete</em> user-input.
+ */
+CHAR *
+XLALUserVarGetLogEx ( UserVarLogFormat format, 	/**< output format: return as config-file or command-line */
+                      const BOOLEAN skip_unset	/**< if true, do not include unset variables in output */
+                      )
+{
   XLAL_CHECK_NULL ( UVAR_vars.next != NULL, XLAL_EINVAL, "No UVAR memory allocated. Did you register any user-variables?" );
   XLAL_CHECK_NULL ( format < UVAR_LOGFMT_LAST, XLAL_EINVAL );
 
@@ -1247,7 +1258,7 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr = ptr->next) )
     {
-      if ( ! ptr->was_set ) { // skip unset variables
+      if ( skip_unset && ! ptr->was_set ) { // skip unset variables
 	continue;
       }
       if ( ! ptr->cvar ) { // skip defunct variables
