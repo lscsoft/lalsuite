@@ -118,7 +118,6 @@ struct CommandLineArgsTag {
   char *commentField;      /* 12/28/05 gam; string comment for version 2 SFTs */
   char *FrCacheFile;       /* Frame cache file */
   char *ChannelName;
-  char *IFO;               /* 01/14/07 gam */
   char *SFTpath;           /* path to SFT file location */
   INT4 windowOption;       /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
   REAL8 windowR;
@@ -336,7 +335,7 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
     /* {"make-tmp-file",        required_argument, NULL,          'Z'}, */
     /* {"misc-desc",            required_argument, NULL,          'X'}, */
     /* {"frame-struct-type",    required_argument, NULL,          'u'}, */
-    {"ifo",                  required_argument, NULL,          'i'},
+    /* {"ifo",                  required_argument, NULL,          'i'}, */
     {"window-type",          required_argument, NULL,          'w'},
     {"window-radius",        required_argument, NULL,          'r'},
     {"overlap-fraction",     required_argument, NULL,          'P'},
@@ -356,7 +355,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
   CLA->GPSStart=0;
   CLA->GPSEnd=0;
   CLA->ChannelName=NULL;
-  CLA->IFO=NULL;        /* 01/14/07 gam */
   CLA->SFTpath=NULL;
   CLA->commentField=NULL; /* 12/28/05 gam; comment for version 2 SFT header. */
   CLA->windowOption=1;  /* 12/28/05 gam; window options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
@@ -458,9 +456,6 @@ int ReadCommandLine(int argc,char *argv[],struct CommandLineArgsTag *CLA)
       break;
     case 'N':
       CLA->ChannelName=LALoptarg;
-      break;
-    case 'i':
-      CLA->IFO=LALoptarg; /* 01/14/07 gam */
       break;
     case 'p':
       CLA->SFTpath=LALoptarg;
@@ -678,11 +673,7 @@ int WriteVersion2SFT(struct CommandLineArgsTag CLA)
   numSFTs[1] = '\0'; /* null terminate */
   strncpy( site, CLA.ChannelName, 1 );
   site[1] = '\0'; /* null terminate */
-  if (CLA.IFO != NULL) {
-    strncpy( ifo, CLA.IFO, 2 );
-  } else {  
-    strncpy( ifo, CLA.ChannelName, 2 );
-  }
+  strncpy( ifo, CLA.ChannelName, 2 );
   ifo[2] = '\0'; /* null terminate */
   sprintf(gpstime,"%09d",gpsepoch.gpsSeconds);
 
