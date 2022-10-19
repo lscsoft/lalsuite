@@ -101,8 +101,16 @@ variables:
 
 # default parameters for jobs
 default:
-  # do not retry running jobs on failure
-  retry: 0
+  # retry running jobs on some failure types
+  retry:
+    max: 1
+    when:
+      - api_failure
+      - runner_system_failure
+      - stale_schedule
+      - archived_failure
+      - scheduler_failure
+      - data_integrity_failure
   # cancel job when a newer pipeline starts
   interruptible: true
 
