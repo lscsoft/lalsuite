@@ -281,7 +281,7 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variable to link
                       const CHAR *help		/**< help-string explaining this input-variable */
                       )
 {
-  XLAL_CHECK ( cvar != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( cvar != NULL || category == UVAR_CATEGORY_DEFUNCT, XLAL_EINVAL );
   XLAL_CHECK ( name != NULL, XLAL_EINVAL );
   XLAL_CHECK ( strlen(name) < sizeof(UVAR_vars.name), XLAL_EINVAL, "User-variable name '%s' is too long", name );
   XLAL_CHECK ( (category > UVAR_CATEGORY_START) && (category < UVAR_CATEGORY_END), XLAL_EINVAL );
@@ -334,7 +334,7 @@ XLALRegisterUserVar ( void *cvar,		/**< pointer to the actual C-variable to link
   // fill in entry values
   ptr->type 	= type;
   ptr->optchar 	= optchar;
-  ptr->cvar 	= cvar;
+  ptr->cvar 	= category == UVAR_CATEGORY_DEFUNCT ? NULL : cvar;
   ptr->cdata 	= cdata;
   ptr->category = category;
 
@@ -358,7 +358,7 @@ XLALDestroyUserVars ( void )
 
       // is there a destructor function registered for this type?
       if ( UserVarTypeMap [ ptr->type ].destructor != NULL )
-        {
+        if ( ptr->cvar ) {
           UserVarTypeMap [ ptr->type ].destructor ( *(CHAR**)ptr->cvar );
           *(CHAR**)ptr->cvar = NULL;
         }
@@ -547,7 +547,9 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[], const LAL
             }
 
 	  if ( LALoptarg == NULL ) { // if no argument given, defaults to TRUE
-            *(BOOLEAN*)(ptr->cvar) = TRUE;
+            if ( ptr->cvar ) {
+              *(BOOLEAN*)(ptr->cvar) = TRUE;
+            }
           } else {
             if ( LALoptarg == NULL || strlen(LALoptarg) == 0 )
               {
@@ -555,12 +557,15 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[], const LAL
                 *should_exit = 1;
                 return XLAL_SUCCESS;
               }
-            int retn = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].parser_cdata( ptr->cvar, ptr->cdata, LALoptarg ) : UserVarTypeMap [ ptr->type ].parser( ptr->cvar, LALoptarg );
-            if ( retn != XLAL_SUCCESS )
+            if ( ptr->cvar )
               {
-                XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, LALoptarg, ptr->name );
-                *should_exit = 1;
-                return XLAL_SUCCESS;
+                int retn = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].parser_cdata( ptr->cvar, ptr->cdata, LALoptarg ) : UserVarTypeMap [ ptr->type ].parser( ptr->cvar, LALoptarg );
+                if ( retn != XLAL_SUCCESS )
+                  {
+                    XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, LALoptarg, ptr->name );
+                    *should_exit = 1;
+                    return XLAL_SUCCESS;
+                  }
               }
           }
 	  break;
@@ -568,7 +573,7 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[], const LAL
 	default:
           // all other UVAR_TYPE_ types can be handled canonically: first destroy previous value, the parse new one
           if ( UserVarTypeMap [ ptr->type ].destructor != NULL )
-            {
+            if ( ptr->cvar ) {
               UserVarTypeMap [ ptr->type ].destructor( *(char**)ptr->cvar );
               *(char**)ptr->cvar = NULL;
             } // if a destructor was registered
@@ -578,12 +583,15 @@ XLALUserVarReadCmdline ( BOOLEAN *should_exit, int argc, char *argv[], const LAL
               *should_exit = 1;
               return XLAL_SUCCESS;
             }
-          int retn = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].parser_cdata( ptr->cvar, ptr->cdata, LALoptarg ) : UserVarTypeMap [ ptr->type ].parser( ptr->cvar, LALoptarg );
-          if ( retn != XLAL_SUCCESS )
+          if ( ptr->cvar )
             {
-              XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, LALoptarg, ptr->name );
-              *should_exit = 1;
-              return XLAL_SUCCESS;
+              int retn = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].parser_cdata( ptr->cvar, ptr->cdata, LALoptarg ) : UserVarTypeMap [ ptr->type ].parser( ptr->cvar, LALoptarg );
+              if ( retn != XLAL_SUCCESS )
+                {
+                  XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, LALoptarg, ptr->name );
+                  *should_exit = 1;
+                  return XLAL_SUCCESS;
+                }
             }
 	  break;
 
@@ -661,7 +669,7 @@ XLALUserVarReadCfgfile ( BOOLEAN *should_exit, const CHAR *cfgfile )
         {
           // destroy previous value, is applicable, then parse new one
           if ( UserVarTypeMap [ ptr->type ].destructor != NULL )
-            {
+            if ( ptr->cvar ) {
               UserVarTypeMap [ ptr->type ].destructor( *(char**)ptr->cvar );
               *(char**)ptr->cvar = NULL;
             } // if a destructor was registered
@@ -671,12 +679,15 @@ XLALUserVarReadCfgfile ( BOOLEAN *should_exit, const CHAR *cfgfile )
               *should_exit = 1;
               return XLAL_SUCCESS;
             }
-          int retn = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].parser_cdata( ptr->cvar, ptr->cdata, valString ) : UserVarTypeMap [ ptr->type ].parser( ptr->cvar, valString );
-          if ( retn != XLAL_SUCCESS )
+          if ( ptr->cvar )
             {
-              XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, valString, ptr->name );
-              *should_exit = 1;
-              return XLAL_SUCCESS;
+              int retn = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].parser_cdata( ptr->cvar, ptr->cdata, valString ) : UserVarTypeMap [ ptr->type ].parser( ptr->cvar, valString );
+              if ( retn != XLAL_SUCCESS )
+                {
+                  XLALPrintError( "\n%s: could not parse value '%s' given to option " UVAR_FMT "\n\n", program_name, valString, ptr->name );
+                  *should_exit = 1;
+                  return XLAL_SUCCESS;
+                }
             }
           XLALFree (valString);
 
@@ -1005,7 +1016,7 @@ XLALUserVarPrintHelp ( FILE *file )
                     {
                       fprintf( f, " [optional]" );
                     }
-                  else
+                  else if ( ptr->cvar )
                     {
                       CHAR *valstr = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].printer_cdata( ptr->cvar, ptr->cdata ) : UserVarTypeMap [ ptr->type ].printer( ptr->cvar );
                       XLAL_CHECK_FAIL( valstr != NULL, XLAL_EFUNC );
@@ -1170,7 +1181,7 @@ XLALUserVarWasSet ( const void *cvar )
   LALUserVariable *ptr = &UVAR_vars;
   while ( (ptr = ptr->next) != NULL )
     {
-      if ( ptr->cvar == cvar) {
+      if ( ptr->cvar != NULL && ptr->cvar == cvar) {
         break;
       }
     } // while ptr = ptr->next
@@ -1238,6 +1249,9 @@ XLALUserVarGetLog ( UserVarLogFormat format 	/**< output format: return as confi
     {
       if ( ! ptr->was_set ) { // skip unset variables
 	continue;
+      }
+      if ( ! ptr->cvar ) { // skip defunct variables
+        continue;
       }
 
       CHAR *valstr = ptr->cdata != NULL ? UserVarTypeMap [ ptr->type ].printer_cdata( ptr->cvar, ptr->cdata ) : UserVarTypeMap [ ptr->type ].printer( ptr->cvar );
