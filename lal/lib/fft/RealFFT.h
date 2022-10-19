@@ -305,8 +305,7 @@ REAL4FFTPlan * XLALCreateReverseREAL4FFTPlan( UINT4 size, int measurelvl );
 /**
  * Destroys a REAL4FFTPlan
  * @param[in] plan A pointer to the REAL4FFTPlan to be destroyed.
- * @return None.
- */
+  */
 void XLALDestroyREAL4FFTPlan( REAL4FFTPlan *plan );
 
 /**
@@ -533,8 +532,7 @@ REAL8FFTPlan * XLALCreateReverseREAL8FFTPlan( UINT4 size, int measurelvl );
 /**
  * Destroys a REAL8FFTPlan
  * @param[in] plan A pointer to the REAL8FFTPlan to be destroyed.
- * @return None.
- */
+  */
 void XLALDestroyREAL8FFTPlan( REAL8FFTPlan *plan );
 
 /**

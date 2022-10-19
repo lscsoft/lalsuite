@@ -305,7 +305,6 @@ REAL8 gsl_dprobRdR(const REAL8 R, void *param)
  * \param [in]  param        A gsl_probR_pars struct
  * \param [out] probabilityR The difference between the threshold and the probability of the R value in question
  * \param [out] dprobRdR     The slope of the inverse cumulative distribution function
- * \return The slope of the inverse distribution function
  */
 void gsl_probRandDprobRdR(const REAL8 R, void *param, REAL8 *probabilityR, REAL8 *dprobRdR)
 {

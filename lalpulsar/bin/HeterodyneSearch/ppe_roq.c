@@ -75,8 +75,6 @@ REAL8 *chebyshev_gauss_lobatto_nodes( REAL8 freqmin, REAL8 freqmax, UINT4 nnodes
  * the model.
  *
  * @param[in] runState The algorithm run state
- *
- * @return A structure holding the real and complex orthonormal bases
  */
 void generate_interpolant( LALInferenceRunState *runState ){
   REAL8 tolerance = ROQTOLERANCE;
