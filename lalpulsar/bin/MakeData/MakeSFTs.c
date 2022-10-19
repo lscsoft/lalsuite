@@ -1,62 +1,30 @@
 /*
-*  Copyright (C) 2007 Gregory Mendell
-*  Copyright (C) 2010,2011,2016 Bernd Machenschalk
-*
-*  This program is free software; you can redistribute it and/or modify
-*  it under the terms of the GNU General Public License as published by
-*  the Free Software Foundation; either version 2 of the License, or
-*  (at your option) any later version.
-*
-*  This program is distributed in the hope that it will be useful,
-*  but WITHOUT ANY WARRANTY; without even the implied warranty of
-*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-*  GNU General Public License for more details.
-*
-*  You should have received a copy of the GNU General Public License
-*  along with with program; see the file COPYING. If not, write to the
-*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-*  MA  02110-1301  USA
-*/
+ * Copyright (C) 2011, 2015, 2022 Karl Wette
+ * Copyright (C) 2007, 2009, 2011, 2015, 2016 Bernd Machenschalk
+ * Copyright (C) 2005--2007, 2012 Gregory Mendell
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with with program; see the file COPYING. If not, write to the
+ * Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+ * MA  02110-1301  USA
+ */
 
 /**
  * \file
  * \ingroup lalpulsar_bin_SFTTools
- * \author Gregory Mendell, Xavier Siemens, Bruce Allen, Bernd Machenschalk
- * \brief generate SFTs
+ * \author Karl Wette, Evan Goetz, Gregory Mendell, Bernd Machenschalk, Xavier Siemens, Bruce Allen
+ * \brief Generate SFTs
  */
-
-/*********************************************************************************/
-/*                                                                               */
-/* File: MakeSFTs.c                                                              */
-/* Purpose: generate SFTs                                                        */
-/* Origin: first written by Xavier Siemens, UWM - May 2005,                      */
-/*         based on make_sfts.c by Bruce Allen                                   */
-/*********************************************************************************/
-
-/* REVISIONS: */
-/* 11/02/05 gam; To save memory, change lalDebugLevel to 0; note when this is set to 3 that 3x the memory is used! */
-/* 11/02/05 gam; To save memory, do not save the window function in memory; just recompute this for each SFT. */
-/* 11/02/05 gam; To save memory, do not hold dataSingle.data and vtilde in memory at the same time. */
-/* 11/03/05 gam; Add TRACKMEMUSE preprocessor flag and function for tracking memory usage; copied from make_sfts.c */
-/* 11/19/05 gam; Reorganize code so that function appear in order called */
-/* 11/19/05 gam; Add command line option to use single rather than double precision; will use LALDButterworthREAL4TimeSeries in single precision case. */
-/* 11/19/05 gam; Rename vtilde fftDataDouble; add in fftDatasingle; rename fplan fftPlanDouble; add in fftPlanSingle */
-/* 11/29/05 gam; Add PRINTEXAMPLEDATA to print the first NUMTOPRINT, middle NUMTOPRINT, and last NUMTOPRINT input/ouput data at various stages */
-/* 12/27/05 gam; Add option make-gps-dirs, -D <num>, to make directory based on this many GPS digits. */
-/* 12/28/05 gam; Add option misc-desc, -X <string> giving misc. part of the SFT description field in the filename */
-/* 12/28/05 gam; Make FMIN = 48.0 and DF = 2000.0 global variables, add start-freq -F and band -B options to enter these */
-/* 12/28/05 gam; Add in window-type options; 0 = no window, 1 = default = Matlab style Tukey window; 2 = make_sfts.c Tukey window; 3 = Hann window */
-/* 12/28/05 gam; Add option --overlap-fraction -P (for use with windows; e.g., use -P 0.5 with -w 3 Hann windows; default is 0.0) */
-/* 12/28/05 gam; Add sft-version, -v option to select output SFT version (1 = default is version 1 SFTs; 2 = version 2 SFTs */
-/* 12/28/05 gam; Add comment-field, -c option, for comment for version 2 SFTs */
-/* 01/05/06 gam; Add in version 2 normalization; add function to print example version 2 SFT data; add memory checking */
-/* 01/09/06 gam; Add make-tmp-file, -Z option; write SFT to .*.tmp file, then move to final file name. */
-/* 01/10/07 gam; Add -u --frame-struct-type option; specified the input data type in the frames (default ADC_REAL4) */
-/* 01/14/07 gam; Add -i --ifo option to specify the ifo independent of the channel name which can begin with H0, L0, or G0. */
-/* 06/26/07 gam; Write all command line arguments to commentField of version 2 SFTs, based on lalapps/src/calibration/ComputeStrainDriver.c */
-/* 06/26/07 gam; Use finite to check that data does not contains a non-FINITE (+/- Inf, NaN) values, based on sftlib/SFTvalidate.c */
-/* 10/05/12 gam; Add to version 2 normalization one over the root mean square of the window function (defined here as winFncRMS) as per RedMine LALSuite CW Bug #560*/
-/* 24/07/14 eag; Change default SFT output to version 2 per RedMine LALSuite CW patch #1518 */
 
 #include "config.h"
 
