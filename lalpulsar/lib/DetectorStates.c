@@ -58,17 +58,16 @@ XLALFillDetectorTensor (DetectorState *detState,	/**< [out,in]: detector state: 
 			const LALDetector *detector	/**< [in]: which detector */
 			)
 {
-  const CHAR *prefix;
 
   if ( !detState || !detector ) {
     xlalErrno = XLAL_EINVAL;
     return -1;
   }
 
-  prefix = detector->frDetector.prefix;
+  const CHAR *prefix = detector->frDetector.prefix;
 
   /* we need to distinguish two cases: space-borne (i.e. LISA) and Earth-based detectors */
-  if ( prefix[0] == 'Z' )	/* LISA */
+  if ( XLALisLISAdetector( detector ) )	/* LISA */
     {
       if ( XLALprecomputeLISAarms ( detState ) != 0 ) {
 	XLALPrintError ("\nXLALprecomputeLISAarms() failed !\n\n");
@@ -376,7 +375,7 @@ XLALGetDetectorStates ( const LIGOTimeGPSVector *timestamps,	/**< array of GPS t
   ret->deltaT = timestamps->deltaT;
 
   /* set SSB coordinate system used: EQUATORIAL for Earth-based, ECLIPTIC for LISA */
-  if ( detector->frDetector.prefix[0] == 'Z' )	/* LISA */
+  if ( XLALisLISAdetector( detector ) )	/* LISA */
     ret->system = COORDINATESYSTEM_ECLIPTIC;
   else	/* Earth-based */
     ret->system = COORDINATESYSTEM_EQUATORIAL;
