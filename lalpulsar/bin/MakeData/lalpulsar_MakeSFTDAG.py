@@ -42,6 +42,7 @@ __version__ = '$Revision$'
 # 12/2020  eag; Update script to conform to modern python3 and pep8
 # 10/2020  kww; Pass args directly to writeToDag(), use Python f-strings
 # 10/2022  kww; Deprecate options that have been removed from MakeSFTs
+# 10/2022  kww; Parse window type as a string, parameter separated by colon
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
@@ -67,7 +68,11 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
     if args.comment_field:
         argList.append(f'-c {args.comment_field}')
     if args.window_type:
-        argList.append(f'-w {args.window_type}')
+        if ':' in args.window_type:
+            window_type, window_radius = args.window_type.split(':')
+            argList.append(f'-w {window_type} -r {window_radius}')
+        else:
+            argList.append(f'-w {args.window_type}')
     if args.overlap_fraction:
         argList.append(f'-P {args.overlap_fraction}')
     argStr = ' '.join(argList)
@@ -140,14 +145,13 @@ parser.add_argument('-F', '--start-freq', type=int, default=10,
                     help='start frequency of the SFTs')
 parser.add_argument('-B', '--band', type=int, default=1990,
                     help='frequency band of the SFTs')
-parser.add_argument('-w', '--window-type', type=int, choices=[0, 1, 2, 3],
-                    default=1, help='type of windowing of time-domain to do \
-                    before generating SFTs (0 = None, 1 = Tukey given by \
-                    Matlab, 2 = Tukey given in \
-                    lalapps/src/pulsar/make_sfts.c, 3 = Hann given by Matlab')
+parser.add_argument('-w', '--window-type', type=str,
+                    help='type of windowing of time-domain to do \
+                    before generating SFTs, e.g. "rectangular", \
+                    "hann", "tukey:<parameter>"')
 parser.add_argument('-P', '--overlap-fraction', type=float, default=0,
                     help='overlap fraction (for use with windows; e.g., use \
-                    -P 0.5 with -w 3 Hann windows)')
+                    --overlap-fraction 0.5 with --window-type hann windows)')
 parser.add_argument('-m', '--max-num-per-node', type=int, default=1,
                     help='maximum number of SFTs to generate on one node')
 parser.add_argument('-L', '--max-length-all-jobs', type=int,
