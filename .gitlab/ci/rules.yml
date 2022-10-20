@@ -14,7 +14,7 @@ workflow:
 # CI build for normal pushes
 .ci-push-build:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE !~ /\[ci full\]/'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE !~ /\[ci full\]/ && ($CI_PROJECT_PATH != "lscsoft/lalsuite" || $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH)'
 
 # CI build for merge requests
 .ci-merge-build:
