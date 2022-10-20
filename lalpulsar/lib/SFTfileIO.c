@@ -815,12 +815,12 @@ XLALWriteSFTVector2StandardFile(
  * \return: XLAL_SUCCESS if no validation errors encountered.
  */
 int
-XLALValidateSFTFile ( const char *fname )
+XLALCheckSFTFileIsValid ( const char *fname )
 {
     int errcode = ValidateSFTFile(fname);
-    XLAL_CHECK ( errcode==0, XLAL_EFUNC, "SFT validation error code %d on file %s.", errcode, fname );
+    XLAL_CHECK ( errcode==0, XLAL_EFUNC, "SFT validation error on file '%s': %s", fname, SFTErrorMessage( errcode ) );
     return XLAL_SUCCESS;
-} /* XLALValidateSFTFile */
+} /* XLALCheckSFTFileIsValid */
 
 
 /* a little endian-swapper needed for SFT reading/writing */

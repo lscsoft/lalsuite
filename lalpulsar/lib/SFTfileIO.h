@@ -547,7 +547,7 @@ int XLALWriteSFT2StandardFile ( const SFTtype *sft, SFTFilenameSpec *SFTfnspec, 
 int XLALWriteSFTVector2NamedFile    ( const SFTVector *sftVect, const CHAR *SFTfilename, const CHAR* SFTwindowtype, const REAL8 SFTwindowbeta, const CHAR *SFTcomment );
 int XLALWriteSFTVector2StandardFile ( const SFTVector *sftVect, SFTFilenameSpec *SFTfnspec, const CHAR *SFTcomment, const BOOLEAN merged );
 
-int XLALValidateSFTFile ( const char *fname );
+int XLALCheckSFTFileIsValid ( const char *fname );
 
 /** @} */
 
