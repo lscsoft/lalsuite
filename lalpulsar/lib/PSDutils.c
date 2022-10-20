@@ -131,6 +131,36 @@ XLALCreateMultiNoiseWeights ( const UINT4 length )  ///< [in] Length of the \c M
 
 } // XLALCreateMultiNoiseWeights()
 
+///
+/// Create a full copy of a \c MultiNoiseWeights object.
+///
+MultiNoiseWeights*
+XLALCopyMultiNoiseWeights ( const MultiNoiseWeights *multiWeights )  ///< [in] Length of the \c MultiNoiseWeights.
+{
+
+  // check input sanity
+  XLAL_CHECK_NULL ( multiWeights != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( multiWeights->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL ( multiWeights->length > 0, XLAL_EINVAL );
+
+  MultiNoiseWeights *copiedWeights = NULL;
+  XLAL_CHECK_NULL ( ( copiedWeights = XLALCreateMultiNoiseWeights ( multiWeights->length ) ) != NULL, XLAL_EFUNC );
+  copiedWeights->length = multiWeights->length;
+  copiedWeights->Sinv_Tsft = multiWeights->Sinv_Tsft;
+  copiedWeights->isNotNormalized = multiWeights->isNotNormalized;
+
+  for ( UINT4 X = 0; X < multiWeights->length; X++) {
+    /* create k^th weights vector */
+    XLAL_CHECK_NULL ( ( copiedWeights->data[X] = XLALCreateREAL8Vector ( multiWeights->data[X]->length ) ) != NULL, XLAL_EFUNC );
+    for ( UINT4 alpha = 0; alpha < multiWeights->data[X]->length; alpha++) {
+        copiedWeights->data[X]->data[alpha] = multiWeights->data[X]->data[alpha];
+    }
+  }
+
+  return copiedWeights;
+
+} // XLALCopyMultiNoiseWeights()
+
 
 /** Destroy a MultiNoiseWeights object */
 void

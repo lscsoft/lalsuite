@@ -130,6 +130,8 @@ int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector
 
 MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
 
+MultiNoiseWeights *XLALCopyMultiNoiseWeights ( const MultiNoiseWeights *multiWeights );
+
 /** @} */
 
 /**
