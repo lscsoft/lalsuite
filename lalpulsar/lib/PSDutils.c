@@ -111,6 +111,26 @@ XLALDestroyMultiPSDVector ( MultiPSDVector *multvect )	/**< the SFT-vector to fr
 
 } /* XLALDestroyMultiPSDVector() */
 
+///
+/// Create a \c MultiNoiseWeights of the given length.
+///
+/// NOTE: this does not allocate the individual data entries.
+///
+MultiNoiseWeights*
+XLALCreateMultiNoiseWeights ( const UINT4 length )  ///< [in] Length of the \c MultiNoiseWeights.
+{
+
+  MultiNoiseWeights *multiWeights = NULL;
+  XLAL_CHECK_NULL ( (multiWeights = XLALCalloc(1, sizeof(*multiWeights))) != NULL, XLAL_ENOMEM );
+  multiWeights->length = length;
+  if ( length > 0 ) {
+    XLAL_CHECK_NULL ( (multiWeights->data = XLALCalloc ( length, sizeof(*multiWeights->data))) != NULL, XLAL_ENOMEM );
+  }
+
+  return multiWeights;
+
+} // XLALCreateMultiNoiseWeights()
+
 
 /** Destroy a MultiNoiseWeights object */
 void
@@ -239,9 +259,7 @@ XLALComputeMultiNoiseWeights ( const MultiPSDVector  *rngmed,
 
   /* create multi noise weights for output */
   MultiNoiseWeights *multiWeights = NULL;
-  XLAL_CHECK_NULL ( (multiWeights = XLALCalloc(1, sizeof(*multiWeights))) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK_NULL ( (multiWeights->data = XLALCalloc ( numIFOs, sizeof(*multiWeights->data))) != NULL, XLAL_ENOMEM );
-  multiWeights->length = numIFOs;
+  XLAL_CHECK_NULL ( ( multiWeights = XLALCreateMultiNoiseWeights ( numIFOs ) ) != NULL, XLAL_EFUNC );
 
   UINT4 numSFTsTot = 0;
   REAL8 sumWeights = 0;

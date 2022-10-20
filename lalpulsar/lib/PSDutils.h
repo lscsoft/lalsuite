@@ -107,6 +107,7 @@ extern const UserChoices MathOpTypeChoices;
 void XLALDestroyPSDVector ( PSDVector *vect );
 void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
 
+MultiNoiseWeights* XLALCreateMultiNoiseWeights ( const UINT4 length );
 void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
 
 /** @} */
