@@ -86,9 +86,15 @@ main (  void )
   /* Compare XLAL weights to reference */
   XLAL_CHECK ( XLALCompareMultiNoiseWeights ( multiWeightsXLAL, multiWeightsCorrect, tolerance ) == XLAL_SUCCESS, XLAL_EFAILED, "Comparison between XLAL and reference MultiNoiseWeights failed\n" );
 
+  /* Also check copying some weights */
+  MultiNoiseWeights *copiedMultiWeights = NULL;
+  XLAL_CHECK ( ( copiedMultiWeights = XLALCopyMultiNoiseWeights ( multiWeightsCorrect ) ) != NULL, XLAL_EFUNC, "XLALCopyMultiNoiseWeights failed\n" );
+  XLAL_CHECK ( XLALCompareMultiNoiseWeights ( copiedMultiWeights, multiWeightsCorrect, tolerance ) == XLAL_SUCCESS, XLAL_EFAILED, "Comparison between reference MultiNoiseWeights and a copy failed\n" );
+
   /* Clean up memory */
   XLALDestroyMultiNoiseWeights ( multiWeightsCorrect );
   XLALDestroyMultiNoiseWeights ( multiWeightsXLAL );
+  XLALDestroyMultiNoiseWeights ( copiedMultiWeights );
   XLALDestroyMultiPSDVector ( multiPSDs );
   XLALDestroyMultiSFTVector ( multiSFTs );
   XLALDestroySFTCatalog ( catalog );
