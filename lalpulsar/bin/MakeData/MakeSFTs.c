@@ -45,16 +45,6 @@
 #include <lal/LALVCSInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 
-/* GLOBAL VARIABLES */
-extern REAL8 winFncRMS;
-extern REAL8TimeSeries dataDouble;
-
-/* FUNCTION PROTOTYPES */
-/* Windows data */
-int WindowData( REAL8 r );
-int WindowDataTukey2( void );
-int WindowDataHann( void );
-
 int main( int argc, char *argv[] )
 {
 
@@ -72,7 +62,7 @@ int main( int argc, char *argv[] )
     INT4 sft_duration;
     REAL8 overlap_fraction;
     REAL8 high_pass_freq;
-    INT4 window_type;
+    char *window_type;
     REAL8 window_radius;
     REAL8 start_freq;
     REAL8 band;
@@ -82,7 +72,7 @@ int main( int argc, char *argv[] )
     .sft_duration = 1800,
     .overlap_fraction = 0,
     .high_pass_freq = 0,
-    .window_type = 1,
+    .window_type = XLALStringDuplicate("tukey"),
     .window_radius = 0.001,
     .start_freq = 48,
     .band = 2000,
@@ -122,14 +112,13 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     overlap_fraction, REAL8, 'P', OPTIONAL,
     "Fraction of SFT duration to overlap SFTs by. "
-    "Example: use " UVAR_STR( overlap_fraction ) "=0.5 with " UVAR_STR( window_type ) "=3 Hann windows. " );
+    "Example: use " UVAR_STR( overlap_fraction ) "=0.5 with " UVAR_STR( window_type ) "=hann windows. " );
   XLALRegisterUvarMember(
     high_pass_freq, REAL8, 'f', REQUIRED,
     "High pass filtering frequency in Hertz. " );
   XLALRegisterUvarMember(
-    window_type, INT4, 'w', OPTIONAL,
+    window_type, STRING, 'w', OPTIONAL,
     "Window to apply to SFTs. "
-    "0 = no window, 1 = Matlab style Tukey window, 2 = make_sfts.c Tukey window, 3 = Hann window. "
     );
   XLALRegisterUvarMember(
     window_radius, REAL8, 'r', OPTIONAL,
@@ -225,9 +214,30 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     uvar->high_pass_freq >= 0,
                     UVAR_STR( high_pass_freq ) " must be positive" );
+  if ( strcmp( uvar->window_type, "0" ) == 0 ) {
+    XLALUserVarCheck( &should_exit, 0,
+                      UVAR_STR( window_type ) "=0 is deprecated; use " UVAR_STR( window_type ) "=rectangular" );
+  } else if ( strcmp( uvar->window_type, "1" ) == 0 ) {
+    XLALUserVarCheck( &should_exit, 0,
+                      UVAR_STR( window_type ) "=1 is the old 'Matlab style Tukey window'; this EXACT window is "
+                      "no longer supported BUT " UVAR_STR( window_type ) "=tukey will give you almost exactly "
+                      "the same window; see https://dcc.ligo.org/LIGO-T040164/public for details" );
+  } else if ( strcmp( uvar->window_type, "2" ) == 0 ) {
+    XLALUserVarCheck( &should_exit, 0,
+                      UVAR_STR( window_type ) "=2 is the old 'make_sfts.c Tukey window'; this window is "
+                      "no longer supported. You probably want to use " UVAR_STR( window_type ) "=tukey, "
+                      "although this will NOT give you exactly the same window" );
+  } else if ( strcmp( uvar->window_type, "3" ) == 0 ) {
+    XLALUserVarCheck( &should_exit, 0,
+                      UVAR_STR( window_type ) "=3 is deprecated; use " UVAR_STR( window_type ) "=hann" );
+  } else if ( XLALUserVarWasSet( &uvar->window_type ) ) {
+    XLALUserVarCheck( &should_exit,
+                      XLALCheckNamedWindow( uvar->window_type, XLALUserVarWasSet( &uvar->window_radius ) ) == XLAL_SUCCESS,
+                      "Invalid/inconsistent " UVAR_STR( window_type ) " and/or " UVAR_STR( window_radius ) );
+  }
   XLALUserVarCheck( &should_exit,
-                    0 <= uvar->window_type && uvar->window_type <= 3,
-                    UVAR_STR( >window_type ) " must be 0, 1, 2, or 3" );
+                    uvar->window_radius >= 0,
+                    UVAR_STR( window_radius ) " must be positive" );
   XLALUserVarCheck( &should_exit,
                     uvar->start_freq >= 0,
                     UVAR_STR( start_freq ) " must be positive" );
@@ -298,6 +308,12 @@ int main( int argc, char *argv[] )
   XLAL_CHECK_MAIN( SFT_time_series != NULL, XLAL_EFUNC,
                    "Failed to allocate SFT time series to %g elements", uvar->sft_duration / SFT_time_series->deltaT );
 
+  // Create SFT time series window
+  const REAL8 window_beta = XLALUserVarWasSet( &uvar->window_radius ) ? uvar->window_radius : 0;
+  REAL8Window *SFT_window = XLALCreateNamedREAL8Window( uvar->window_type, window_beta, SFT_time_series->data->length );
+  XLAL_CHECK_MAIN( SFT_window != NULL, XLAL_EFUNC,
+                   "Failed to allocate SFT time series window of %u elements", SFT_time_series->data->length );
+
   // Create SFT FFT data vector and plan
   COMPLEX16Vector *SFT_fft_data = XLALCreateCOMPLEX16Vector( SFT_time_series->data->length / 2 + 1 );
   XLAL_CHECK_MAIN( SFT_fft_data != NULL, XLAL_EFUNC,
@@ -366,22 +382,8 @@ int main( int argc, char *argv[] )
     }
 
     // Window SFT time series data
-    {
-      dataDouble = *SFT_time_series;
-      if ( uvar->window_type == 1 ) {
-        if ( WindowData( uvar->window_radius ) ) {
-          return 5;  /* uvar->window_type==1 is the default */
-        }
-      } else if ( uvar->window_type == 2 ) {
-        if ( WindowDataTukey2( ) ) {
-          return 5;
-        }
-      } else if ( uvar->window_type == 3 ) {
-        if ( WindowDataHann( ) ) {
-          return 5;
-        }
-      }
-    }
+    XLAL_CHECK_MAIN( XLALUnitaryWindowREAL8Sequence( SFT_time_series->data, SFT_window ) != NULL, XLAL_EFUNC,
+                     "Failed to apply window to SFT data at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
 
     // Fourier transform SFT time series data
     XLAL_CHECK_MAIN( XLALREAL8ForwardFFT( SFT_fft_data, SFT_time_series->data, SFT_fft_plan ) == XLAL_SUCCESS, XLAL_EFUNC,
@@ -396,7 +398,7 @@ int main( int argc, char *argv[] )
     SFT->deltaF = 1.0 / ((REAL8) uvar->sft_duration);
 
     // Copy and normalise SFT frequency series data into SFT
-    const REAL8 SFT_normalisation = SFT_time_series->deltaT / winFncRMS;   /* Include 1 over window function RMS */
+    const REAL8 SFT_normalisation = SFT_time_series->deltaT;
     for ( UINT4 k = 0; k < SFT_bins; ++k ) {
       const REAL8 SFT_fft_re = creal( SFT_fft_data->data[k + SFT_first_bin] );
       const REAL8 SFT_fft_im = cimag( SFT_fft_data->data[k + SFT_first_bin] );
@@ -405,7 +407,8 @@ int main( int argc, char *argv[] )
 
     // Build SFT filename spec
     SFTFilenameSpec XLAL_INIT_DECL(spec);
-    XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path, "sft_TO_BE_VALIDATED", NULL, "unknown" /* FIXME */, NULL, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path, "sft_TO_BE_VALIDATED", NULL, uvar->window_type, NULL, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+    spec.window_beta = window_beta;
 
     // Write out SFT and retrieve filename
     char *temp_SFT_filename = NULL;
@@ -453,6 +456,7 @@ int main( int argc, char *argv[] )
   XLALFrStreamClose( framestream );
 
   XLALDestroyREAL8TimeSeries( SFT_time_series );
+  XLALDestroyREAL8Window( SFT_window );
   XLALDestroyCOMPLEX16Vector( SFT_fft_data );
   XLALDestroyREAL8FFTPlan( SFT_fft_plan );
   XLALDestroySFT( SFT );

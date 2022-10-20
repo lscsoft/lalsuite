@@ -58,7 +58,7 @@ echo "H H1_mfdv5 ${tstart2} ${duration2} file://localhost$PWD/MFDv5/H-H1_mfdv5-$
 ## run MakeSFTs to create SFTs from the fake frames
 mkdir -p MSFTs/
 MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment'"
-cmdline="${MSFTs_cmdline_base} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend2} --window-type 0"
+cmdline="${MSFTs_cmdline_base} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend2} --window-type rectangular"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -86,7 +86,7 @@ done
 
 ## run MakeSFTs to create overlapped SFTs from the 1st fake frame
 mkdir -p MSFTs-overlapped/
-cmdline="${MSFTs_cmdline_base} --sft-write-path MSFTs-overlapped/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type 0 --overlap-fraction 0.5"
+cmdline="${MSFTs_cmdline_base} --sft-write-path MSFTs-overlapped/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type rectangular --overlap-fraction 0.5"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
