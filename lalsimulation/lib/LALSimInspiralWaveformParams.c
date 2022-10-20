@@ -306,6 +306,10 @@ DEFINE_INSERT_FUNC(NonGRDB4, REAL8, "nongr_db4", 0)
 DEFINE_INSERT_FUNC(NonGRParameterization, INT4, "tgr_parameterization", 0)
 
 
+/* Subdominant mode amplitude corrections - TGR */
+DEFINE_INSERT_FUNC(NonGRAmp21, REAL8, "damp21", 0)
+DEFINE_INSERT_FUNC(NonGRAmp33, REAL8, "damp33", 0)
+
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
 DEFINE_INSERT_FUNC(NLTidesA1, REAL8, "nlTidesA1", 0)
@@ -1400,6 +1404,10 @@ DEFINE_LOOKUP_FUNC(NonGRDB4, REAL8, "nongr_db4", 0)
 DEFINE_LOOKUP_FUNC(NonGRParameterization, INT4, "tgr_parameterization", 0)
 
 
+/* Subdominant mode amplitude corrections - TGR */
+DEFINE_LOOKUP_FUNC(NonGRAmp21, REAL8, "damp21", 0)
+DEFINE_LOOKUP_FUNC(NonGRAmp33, REAL8, "damp33", 0)
+
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
 DEFINE_LOOKUP_FUNC(NLTidesA1, REAL8, "nlTidesA1", 0)
@@ -1633,6 +1641,10 @@ DEFINE_ISDEFAULT_FUNC(NonGRDB2, REAL8, "nongr_db2", 0)
 DEFINE_ISDEFAULT_FUNC(NonGRDB3, REAL8, "nongr_db3", 0)
 DEFINE_ISDEFAULT_FUNC(NonGRDB4, REAL8, "nongr_db4", 0)
 DEFINE_ISDEFAULT_FUNC(NonGRParameterization, INT4, "tgr_parameterization", 0)
+
+//Amplitude parameters default
+DEFINE_ISDEFAULT_FUNC(NonGRAmp21, REAL8, "damp21", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRAmp33, REAL8, "damp33", 0)
 
 /* SEOBNRv4P */
 DEFINE_ISDEFAULT_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)

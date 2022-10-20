@@ -1591,6 +1591,20 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         fprintf(stdout,"Injection lambda1 set to %f\n",lambda1);
       }
 
+      // Inject amplitude nonGR params
+      
+      REAL8 damp21 = 0.;
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-damp21")){
+	damp21 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-damp21")->value);
+	fprintf(stdout,"Injection nonGR 21 amplitude set to %f\n",damp21);
+       }
+      
+      REAL8 damp33 = 0.;
+      if(LALInferenceGetProcParamVal(commandLine,"--inj-damp33")){
+	damp33 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-damp33")->value);
+	fprintf(stdout,"Injection nonGR 33 amplitude set to %f\n",damp33);
+      }
+      
       // Inject (lambdaT,dLambdaT)
       REAL8 lambdaT = 0.;
       REAL8 dLambdaT = 0.;
@@ -1797,6 +1811,10 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,amporder);
       XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,order);
 
+      XLALSimInspiralWaveformParamsInsertNonGRAmp21(LALpars,damp21);
+      XLALSimInspiralWaveformParamsInsertNonGRAmp33(LALpars,damp33);
+      fprintf(stdout,"Injected damp21 and damp33 are %f and %f\n",damp21,damp33);
+      
       XLALSimInspiralChooseTDWaveform(&hplus, &hcross, injEvent->mass1*LAL_MSUN_SI, injEvent->mass2*LAL_MSUN_SI,
 				      injEvent->spin1x, injEvent->spin1y, injEvent->spin1z,
 				      injEvent->spin2x, injEvent->spin2y, injEvent->spin2z,
@@ -1994,7 +2012,20 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     fprintf(stdout,"Injection lambda2 set to %f\n",lambda2);
   }
 
-
+  // Inject amplitude nonGR params
+  
+   REAL8 damp21 = 0.;
+   if(LALInferenceGetProcParamVal(commandLine,"--inj-damp21")){
+     damp21 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-damp21")->value);
+     fprintf(stdout,"Injection nonGR 21 amplitude set to %f\n",damp21);
+    }
+  
+   REAL8 damp33 = 0.;
+   if(LALInferenceGetProcParamVal(commandLine,"--inj-damp33")){
+     damp33 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-damp33")->value);
+     fprintf(stdout,"Injection nonGR 33 amplitude set to %f\n",damp33);
+   }
+  
   // Inject (lambdaT,dLambdaT)
   REAL8 lambdaT = 0.;
   REAL8 dLambdaT = 0.;
@@ -2203,6 +2234,10 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,amp_order);
   XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,phase_order);
 
+  XLALSimInspiralWaveformParamsInsertNonGRAmp21(LALpars, damp21);
+  XLALSimInspiralWaveformParamsInsertNonGRAmp33(LALpars, damp33);
+  fprintf(stdout,"Injected damp21 and damp33 are %f and %f\n",damp21,damp33);
+  
   XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde, inj_table->mass1*LAL_MSUN_SI, inj_table->mass2*LAL_MSUN_SI,
 				  inj_table->spin1x, inj_table->spin1y, inj_table->spin1z,
 				  inj_table->spin2x, inj_table->spin2y, inj_table->spin2z,

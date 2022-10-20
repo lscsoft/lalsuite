@@ -252,6 +252,10 @@ int XLALSimInspiralWaveformParamsInsertNonGRDB4(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertNonGRParameterization(LALDict *params, INT4 value);
 
 
+/* Subdominant mode amplitude corrections - TGR */
+int XLALSimInspiralWaveformParamsInsertNonGRAmp21(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNonGRAmp33(LALDict *params, REAL8 value);
+
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
 int XLALSimInspiralWaveformParamsInsertNLTidesA1(LALDict *params, REAL8 value);
@@ -530,6 +534,10 @@ REAL8 XLALSimInspiralWaveformParamsLookupNonGRDB4(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupNonGRParameterization(LALDict *params);
 
 
+/* Subdominant mode amplitude corrections - TGR */
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRAmp21(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRAmp33(LALDict *params);
+
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
 REAL8 XLALSimInspiralWaveformParamsLookupNLTidesA1(LALDict *params);
@@ -755,6 +763,9 @@ int XLALSimInspiralWaveformParamsNonGRDB3IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRDB4IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRParameterizationIsDefault(LALDict *params);
 
+//Amplitude corrections
+int XLALSimInspiralWaveformParamsNonGRAmp21IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsNonGRAmp33IsDefault(LALDict *params);
 
 /* SEOBNRv4P */
 INT4 XLALSimInspiralWaveformParamsEOBChooseNumOrAnalHamDerIsDefault(LALDict *params);
