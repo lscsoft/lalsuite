@@ -11,28 +11,47 @@ workflow:
 
 # -- CI pipelines
 
-# CI build for normal pushes
+# CI build for normal pushes:
+# - runs if ALL of the following criteria are satisfied:
+#   - the trigger is a commit push
+#   - the commit message does NOT contain the text "[ci full]"
+#   - the branch is NOT the main branch at lscsoft/lalsuite
 .ci-push-build:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE !~ /\[ci full\]/ && ($CI_PROJECT_PATH != "lscsoft/lalsuite" || $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH)'
 
-# CI build for merge requests
+# CI build for merge requests:
+# - runs if EITHER of the following criteria are satisfied:
+#   - the trigger is opening a merge request
+#   - the trigger is running a pipeline manually from the web interface
+#   - the commit message contains the text "[ci full]"
+#   - the trigger is a commit push AND the branch is the main branch at lscsoft/lalsuite
 .ci-merge-build:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web" || $CI_COMMIT_MESSAGE =~ /\[ci full\]/'
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
 
-# CI build for tags on the upstream repo
+# CI build for tags:
+# - runs if ALL of the following criteria are satisfied:
+#   - the commit has been tagged
+#   - the repository is lscsoft/lalsuite
 .ci-tag-build:
   rules:
     - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG'
 
-# CI build for "lalsuite" tags on the upstream repo
+# CI build for "lalsuite" tags:
+# - runs if ALL of the following criteria are satisfied:
+#   - the commit has been tagged
+#   - the tag name begins with "lalsuite-v"
+#   - the repository is lscsoft/lalsuite
 .ci-lalsuite-tag-build:
   rules:
     - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
 
-# CI nightly deployment from default branch of the upstream repo
+# CI nightly deployment build:
+# - runs if ALL of the following criteria are satisfied:
+#   - the trigger is a scheduled pipeline
+#   - the branch is the main branch at lscsoft/lalsuite
 .ci-nightly-deploy:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
