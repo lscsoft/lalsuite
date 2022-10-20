@@ -43,6 +43,7 @@ __version__ = '$Revision$'
 # 10/2020  kww; Pass args directly to writeToDag(), use Python f-strings
 # 10/2022  kww; Deprecate options that have been removed from MakeSFTs
 # 10/2022  kww; Parse window type as a string, parameter separated by colon
+# 10/2022  kww; Merge -O and -o log path options to free up -O option
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
@@ -128,13 +129,9 @@ parser.add_argument('-C', '--cache-path', type=str, default='cache',
                     LSCdataFind (default is $PWD/cache; this directory is \
                     created if it does not exist and must agree with that \
                     given in .sub files)')
-parser.add_argument('-O', '--log-path', type=str, default='logs',
-                    help='path to some log, output, and error files (default \
+parser.add_argument('-o', '--log-path', type=str, default='logs',
+                    help='path to log, output, and error files (default \
                     is $PWD/logs; this directory is created if it does not \
-                    exist and should agree with that given in .sub files)')
-parser.add_argument('-o', '--sub-log-path', type=str, default='logs',
-                    help='path to log file to give in datafind.sub and \
-                    MakeSFTs.sub (default is $PWD/logs; this directory must \
                     exist and usually should be under a local file system)')
 parser.add_argument('-N', '--channel-name', required=True, type=str,
                     help='name of input time-domain channel to read from \
@@ -370,7 +367,7 @@ makesfts_sub = os.path.join(path_to_dag_file, 'MakeSFTs.sub')
 
 # create datafind.sub
 with open(datafind_sub, 'w') as datafindFID:
-    datafindLogFile = '{}/datafind_{}.log'.format(args.sub_log_path,
+    datafindLogFile = '{}/datafind_{}.log'.format(args.log_path,
                                                   dag_filename)
     datafindFID.write('universe = vanilla\n')
     datafindFID.write('executable = {}\n'.format(dataFindExe))
@@ -399,7 +396,7 @@ with open(datafind_sub, 'w') as datafindFID:
 
 # create MakeSFTs.sub
 with open(makesfts_sub, 'w') as MakeSFTsFID:
-    MakeSFTsLogFile = '{}/MakeSFTs_{}.log'.format(args.sub_log_path,
+    MakeSFTsLogFile = '{}/MakeSFTs_{}.log'.format(args.log_path,
                                                   dag_filename)
     MakeSFTsFID.write('universe = vanilla\n')
     MakeSFTsFID.write('executable = {}\n'.format(makeSFTsExe))
