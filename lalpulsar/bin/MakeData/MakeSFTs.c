@@ -67,6 +67,9 @@ int main( int argc, char *argv[] )
     REAL8 start_freq;
     REAL8 band;
     char *sft_write_path;
+    UINT4 observing_run;
+    char *observing_kind;
+    UINT4 observing_version;
     char *comment_field;
   } uvar_struct = {
     .sft_duration = 1800,
@@ -139,6 +142,18 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     sft_write_path, STRING, 'p', OPTIONAL,
     "Path to write SFTs to. "
+    );
+  XLALRegisterUvarMember(
+    observing_run, UINT4, 'O', REQUIRED,
+    "Observing run SFTs are generated from. "
+    );
+  XLALRegisterUvarMember(
+    observing_kind, STRING, 'K', REQUIRED,
+    "Kind of SFTs being generated: 'RUN', 'AUX', 'SIM', or 'DEV'. "
+    );
+  XLALRegisterUvarMember(
+    observing_version, UINT4, 'V', REQUIRED,
+    "Version number of the SFT production. "
     );
   XLALRegisterUvarMember(
     comment_field, STRING, 'c', OPTIONAL,
@@ -244,6 +259,21 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     uvar->band > 0,
                     UVAR_STR( band ) " must be strictly positive" );
+  //
+  // - SFT output
+  //
+  XLALUserVarCheck( &should_exit,
+                    uvar->observing_run > 0,
+                    UVAR_STR( observing_run ) " must be strictly positive" );
+  XLALUserVarCheck( &should_exit,
+                    strcmp( uvar->observing_kind, "RUN" ) == 0
+                    || strcmp( uvar->observing_kind, "AUX" ) == 0
+                    || strcmp( uvar->observing_kind, "SIM" ) == 0
+                    || strcmp( uvar->observing_kind, "DEV" ) == 0,
+                    UVAR_STR( observing_kind ) " must be one of 'RUN', 'AUX', 'SIM', or 'DEV'" );
+  XLALUserVarCheck( &should_exit,
+                    uvar->observing_version > 0,
+                    UVAR_STR( observing_version ) " must be strictly positive" );
 
   // Exit if required
   if ( should_exit ) {
@@ -407,8 +437,10 @@ int main( int argc, char *argv[] )
 
     // Build SFT filename spec
     SFTFilenameSpec XLAL_INIT_DECL(spec);
-    XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path, "sft_TO_BE_VALIDATED", NULL, uvar->window_type, NULL, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path, "sft_TO_BE_VALIDATED", NULL, uvar->window_type, NULL, uvar->observing_kind, uvar->channel_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     spec.window_beta = window_beta;
+    spec.pubObsRun = uvar->observing_run;
+    spec.pubVersion = uvar->observing_version;
 
     // Write out SFT and retrieve filename
     char *temp_SFT_filename = NULL;

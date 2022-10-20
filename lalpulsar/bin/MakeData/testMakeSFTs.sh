@@ -57,14 +57,18 @@ echo "H H1_mfdv5 ${tstart2} ${duration2} file://localhost$PWD/MFDv5/H-H1_mfdv5-$
 
 ## run MakeSFTs to create SFTs from the fake frames
 mkdir -p MSFTs/
-MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment'"
+pubObsRun=4
+pubObsKind="DEV"
+pubVersion=1
+MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment' --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-version ${pubVersion}"
 cmdline="${MSFTs_cmdline_base} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend2} --window-type rectangular"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
+pubField="O${pubObsRun}${pubObsKind}+V${pubVersion}+Cmfdv5+WRECT"
 for ts in ${timestamps}; do
-    MSFTsft="./MSFTs/H-1_H1_${Tsft}SFT-${ts}-${Tsft}.sft"
+    MSFTsft="./MSFTs/H-1_H1_${Tsft}SFT_${pubField}-${ts}-${Tsft}.sft"
     if ! test -f $MSFTsft; then
         echo "ERROR: could not find file '$MSFTsft'"
         exit 1
@@ -75,7 +79,7 @@ done
 tol=1e-10
 for ts in ${timestamps}; do
     MFDv5sft="./MFDv5/H-1_H1_${Tsft}SFT_mfdv5-${ts}-${Tsft}.sft"
-    MSFTsft="./MSFTs/H-1_H1_${Tsft}SFT-${ts}-${Tsft}.sft"
+    MSFTsft="./MSFTs/H-1_H1_${Tsft}SFT_${pubField}-${ts}-${Tsft}.sft"
     cmdline="lalpulsar_compareSFTs -V -e $tol -1 $MFDv5sft -2 $MSFTsft"
     echo "Comparing SFTs produced by MFDv5 and MakeSFTs, allowed tolerance=$tol:"
     if ! eval "$cmdline"; then
@@ -93,7 +97,7 @@ if ! eval "$cmdline"; then
 fi
 for i in 0.0 0.5 1.0 1.5 2.0; do
     ts=$(echo "( ${tstart1} + ${Tsft}*${i} ) / 1" | bc)
-    MSFTsft="./MSFTs-overlapped/H-1_H1_${Tsft}SFT-${ts}-${Tsft}.sft"
+    MSFTsft="./MSFTs-overlapped/H-1_H1_${Tsft}SFT_${pubField}-${ts}-${Tsft}.sft"
     if ! test -f $MSFTsft; then
         echo "ERROR: could not find file '$MSFTsft'"
         exit 1
