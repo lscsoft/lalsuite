@@ -28,7 +28,6 @@
 /* GLOBAL VARIABLES */
 REAL8 winFncRMS = 1.0; /* 10/05/12 gam; global variable with the RMS of the window function; default value is 1.0 */
 REAL8TimeSeries dataDouble;
-REAL4TimeSeries dataSingle;
 
 /* FUNCTION PROTOTYPES */
 int WindowData( REAL8 r );
