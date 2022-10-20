@@ -44,6 +44,7 @@ __version__ = '$Revision$'
 # 10/2022  kww; Deprecate options that have been removed from MakeSFTs
 # 10/2022  kww; Parse window type as a string, parameter separated by colon
 # 10/2022  kww; Merge -O and -o log path options to free up -O option
+# 10/2022  kww; Implement public SFT file naming convention
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
@@ -57,6 +58,9 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
     cacheFile = f'{args.cache_path}/{site}-{startTimeDatafind}-{endTimeDatafind}.cache'
 
     argList = []
+    argList.append(f'-O {args.observing_run}')
+    argList.append(f'-K {args.observing_kind}')
+    argList.append(f'-V {args.observing_version}')
     argList.append(f'-f {args.filter_knee_freq}')
     argList.append(f'-t {args.time_baseline}')
     argList.append(f'-p {args.output_sft_path}')
@@ -94,6 +98,21 @@ parser = argparse.ArgumentParser(
     description='This script creates datafind.sub, MakeSFTs.sub, and a dag \
     file that generates SFTs based on the options given.',
     fromfile_prefix_chars='@')
+parser.add_argument('-O', '--observing-run', required=True, type=int,
+                    help='Observing run data the SFTs are generated from, or \
+                    (in the case of mock data challenge data) the observing \
+                    run on which the data is most closely based')
+parser.add_argument('-K', '--observing-kind', required=True, type=str, choices=['RUN', 'AUX', 'SIM', 'DEV'],
+                    help='"RUN" for production SFTs of h(t) channels; \
+                    "AUX" for SFTs of non-h(t) channels; \
+                    "SIM" for mock data challenge or other simulated data; or \
+                    "DEV" for development/testing purposes')
+parser.add_argument('-V', '--observing-version', required=True, type=int,
+                    help='Version number starts at 1, and should be incremented once \
+                    SFTs have been widely distributed across clusters, advertised \
+                    as being ready for use, etc.  For example, if mistakes are found \
+                    in the initial SFT production run after they have been published, \
+                    regenerated SFTs should have a version number of at least 2')
 parser.add_argument('-a', '--analysis-start-time', type=int,
                     help='GPS start time of data from which to generate \
                     SFTs (optional and unused if a segment file is given)')
@@ -227,6 +246,12 @@ args = parser.parse_args()
 
 
 # Some basic argument value checking
+if args.observing_run <= 0:
+    raise argparse.error('--observing-run must be > 0')
+
+if args.observing_version <= 0:
+    raise argparse.error('--observing-version must be > 0')
+
 if args.extra_datafind_time < 0:
     raise argparse.error('--extra-datafind-time must be >= 0')
 
