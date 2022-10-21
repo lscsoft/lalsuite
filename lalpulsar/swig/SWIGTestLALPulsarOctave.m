@@ -64,6 +64,17 @@ assert(XLALMakeMultiTimestamps(0, 100, 1, 0, 3).data{end}.data{end} == LIGOTimeG
 LALCheckMemoryLeaks();
 disp("PASSED array element parent tracking");
 
+# check CWMFDataParams usage
+disp("checking CWMFDataParams usage");
+function cwmf = make_CWMFDataParams()
+  lalpulsar;
+  cwmf = CWMFDataParams();
+  cwmf.multiTimestamps = XLALMakeMultiTimestamps(0, 10, 1, 0, 3);
+endfunction
+assert(make_CWMFDataParams().multiTimestamps.data{end}.data{end} == LIGOTimeGPS(9));
+LALCheckMemoryLeaks();
+disp("PASSED CWMFDataParams usage");
+
 ## passed all tests!
 disp("PASSED all tests");
 if exist("swig_exit")
