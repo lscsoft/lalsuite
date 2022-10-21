@@ -1210,3 +1210,19 @@ XLALFITSWritePulsarParamsVector ( FITSFile *file, const CHAR *tableName, const P
   return XLAL_SUCCESS;
 
 } // XLALFITSWritePulsarParamsVector()
+
+/**
+ * Destructor for a CWMFDataParams type
+ *
+ * \note: This is mostly useful for the SWIG wrappers
+ */
+void
+XLALDestroyCWMFDataParams ( CWMFDataParams *params )
+{
+  if ( params ) {
+    fflush(stdout);
+    XLALDestroyMultiTimestamps ( params->multiTimestamps );
+    XLALDestroyMultiREAL8TimeSeries ( params->inputMultiTS );
+    XLALFree ( params );
+  }
+} // XLALDestroyCWMFDataParams()

@@ -118,6 +118,8 @@ void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
 
 int XLALFITSWritePulsarParamsVector ( FITSFile *file, const CHAR *tableName, const PulsarParamsVector *list );
 
+void XLALDestroyCWMFDataParams ( CWMFDataParams *params );
+
 /** @} */
 
 #ifdef  __cplusplus
