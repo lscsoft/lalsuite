@@ -190,7 +190,7 @@ main(int argc, char *argv[])
   CWMFDataParams XLAL_INIT_DECL(DataParams);
   DataParams.multiIFO           = GV.multiIFO;
   DataParams.multiNoiseFloor    = GV.multiNoiseFloor;
-  DataParams.multiTimestamps 	= (*GV.multiTimestamps);
+  DataParams.multiTimestamps 	= GV.multiTimestamps;
   DataParams.randSeed           = uvar.randSeed;
   DataParams.SFTWindowType      = uvar.SFTWindowType;
   DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
