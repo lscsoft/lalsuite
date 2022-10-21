@@ -43,5 +43,12 @@ set_default_error_handlers()
 lal.CheckMemoryLeaks()
 print("PASSED array element assignment")
 
+# check array element parent tracking
+print("checking array element parent tracking")
+assert lalpulsar.MakeTimestamps(0, 100, 1, 0).data[-1] == lal.LIGOTimeGPS(99)
+assert lalpulsar.MakeMultiTimestamps(0, 100, 1, 0, 3).data[-1].data[-1] == lal.LIGOTimeGPS(99)
+lal.CheckMemoryLeaks()
+print("PASSED array element parent tracking")
+
 # passed all tests!
 print("PASSED all tests")
