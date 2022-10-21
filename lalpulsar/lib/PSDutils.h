@@ -108,6 +108,7 @@ void XLALDestroyPSDVector ( PSDVector *vect );
 void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
 
 MultiNoiseWeights* XLALCreateMultiNoiseWeights ( const UINT4 length );
+MultiNoiseWeights *XLALCopyMultiNoiseWeights ( const MultiNoiseWeights *multiWeights );
 void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
 
 /** @} */
@@ -129,8 +130,6 @@ int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector
 /** @{ */
 
 MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
-
-MultiNoiseWeights *XLALCopyMultiNoiseWeights ( const MultiNoiseWeights *multiWeights );
 
 /** @} */
 
