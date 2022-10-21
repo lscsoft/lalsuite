@@ -1,6 +1,7 @@
 # Environment script generation
 # Author: Karl Wette, 2011--2014
 
+# trailingcolon[name] is set to ':' if 'name' requires a trailing colon
 # src[name] holds environment scripts to source, srclen its length
 # env[name] holds the value of environment variable 'name'
 # set[name,path] is defined if 'path' has already been set in 'name'
@@ -14,6 +15,13 @@ BEGIN {
 
 # first filter out any whitespace-only lines
 /^[ \n\t]*$/ {
+  next
+}
+
+# set trailing colon
+#   syntax: trailingcolon PATH
+$1 == "trailingcolon" {
+  trailingcolon[$2] = ":"
   next
 }
 
@@ -109,11 +117,11 @@ END {
     if (sed[name] != "") {
       print "csh:if ( ! ${?" name "} ) setenv " name
       print "csh:setenv " name " `echo \"$" name "\" | @SED@ -e '" sed[name] "'`"
-      print "csh:setenv " name " `echo \"" env[name] "\" | @SED@ -e 's|:$||;'`"
+      print "csh:setenv " name " `echo \"" env[name] "\" | @SED@ -e 's|:$|" trailingcolon[name] "|;'`"
       print "sh:" name "=`echo \"$" name "\" | @SED@ -e '" sed[name] "'`"
-      print "sh:" name "=`echo \"" env[name] "\" | @SED@ -e 's|:$||;'`"
+      print "sh:" name "=`echo \"" env[name] "\" | @SED@ -e 's|:$|" trailingcolon[name] "|;'`"
       print "fish:set " name " (echo \"$" name "\" | @SED@ -e 's| |:|g;" sed[name] "'" fisharraytranslate ")"
-      print "fish:set " name " (echo \"" env[name] "\" | @SED@ -e 's| |:|g;s|:$||'" fisharraytranslate ")"
+      print "fish:set " name " (echo \"" env[name] "\" | @SED@ -e 's| |:|g;s|:$|" trailingcolon[name] "|'" fisharraytranslate ")"
     } else {
       print "csh:setenv " name " \"" env[name] "\""
       print "sh:" name "=\"" env[name] "\""

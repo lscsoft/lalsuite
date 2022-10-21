@@ -19,6 +19,7 @@ SUBDIRS = \
 	$(END_OF_LIST)
 
 user_environment = \
+	trailingcolon MANPATH; \
 	set $(PACKAGE)_PREFIX $(prefix); \
 	set $(PACKAGE)_DATADIR $(pkgdatadir); \
 	prepend MANPATH $(mandir); \
