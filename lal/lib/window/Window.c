@@ -848,6 +848,28 @@ XLALParseWindowNameAndCheckBeta ( const char *windowName,	//< [in] window-name t
 } // XLALParseWindowNameAndCheckBeta()
 
 /**
+ * Check whether a named window-function exists and whether it requires a parameter
+ */
+int
+XLALCheckNamedWindow ( const char *windowName, const BOOLEAN haveBeta )
+{
+
+  int wintype = XLALParseWindowNameAndCheckBeta ( windowName, 0 );
+  XLAL_CHECK ( wintype >= 0, XLAL_EFUNC );
+
+  if ( AllowedWindows[wintype].hasBeta ^ haveBeta ) {
+    XLAL_ERROR ( XLAL_EINVAL,
+                 "Inconsistent Window-option: '%s' requires parameter = %s, but user supplied parameter = %s\n",
+                 AllowedWindows[wintype].name,
+                 AllowedWindows[wintype].hasBeta ? "yes" : "no",
+                 haveBeta ? "yes" : "no" );
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALCheckNamedWindow()
+
+/**
  * Generic window-function wrapper, allowing to select a window by its name.
  * windowBeta must be set to '0' for windows without parameter.
  */
