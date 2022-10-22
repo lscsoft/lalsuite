@@ -32,6 +32,8 @@
 #include <errno.h>
 #include <math.h>
 
+#include <lal/XLALError.h>
+
 #include "SFTReferenceLibrary.h"
 #include "SFTinternal.h"
 
@@ -447,10 +449,8 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
      
     /* check that checksum is consistent */
     if (crc != crc64save) {
-#ifdef SFTDEVEL
-      fprintf(stderr, "%s: CRC64 computes as %llu\n", __func__, crc);
-      fprintf(stderr, "%s: CRC64 in SFT is   %llu\n", __func__, crc64save);
-#endif
+      XLALPrintInfo("%s: CRC64 computes as %llu\n", __func__, crc);
+      XLALPrintInfo("%s: CRC64 in SFT is   %llu\n", __func__, crc64save);
       retval=SFTEBADCRC64;
       goto error;
     }
@@ -739,9 +739,9 @@ ValidateSFTFile ( const char *fname )
 
   /* open the file */
   if (!(fp=fopen(fname, "r"))) {
-    fprintf(stderr, "%s: Unable to open %s", __func__, fname);
+    XLALPrintError("%s: Unable to open %s", __func__, fname);
     if (errno)
-      perror(__func__);
+      XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
     return SFTENULLFP;
   }
 
@@ -761,17 +761,17 @@ ValidateSFTFile ( const char *fname )
 
     /* SFT was invalid: say why */
     if (err) {
-      fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
+      XLALPrintError("%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(__func__);
+        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
       break;
     }
 
     /* check that various bits of header information are consistent */
     if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info))) {
-      fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
+      XLALPrintError("%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(__func__);
+        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
       break;
     }
 
@@ -779,23 +779,23 @@ ValidateSFTFile ( const char *fname )
     data = (float *)realloc((void *)data, info.nsamples*4*2);
     if (!data) {
       errno=SFTENULLPOINTER;
-      fprintf(stderr, "%s: ran out of memory at %s (%s)\n", __func__, fname, SFTErrorMessage(err));
+      XLALPrintError("%s: ran out of memory at %s (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(__func__);
+        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
       break;
     }
 
     err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
     if (err) {
-      fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
+      XLALPrintError("%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(__func__);
+        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
       break;
     }
 
     for (j=0; j<info.nsamples; j++) {
       if (!isfinite(data[2*j]) || !isfinite(data[2*j+1])) {
-        fprintf(stderr, "%s: %s is not a valid SFT (data infinite at freq bin %d)\n", __func__, fname, j+info.firstfreqindex);
+        XLALPrintError("%s: %s is not a valid SFT (data infinite at freq bin %d)\n", __func__, fname, j+info.firstfreqindex);
         err=SFTNOTFINITE;
         break;
       }
