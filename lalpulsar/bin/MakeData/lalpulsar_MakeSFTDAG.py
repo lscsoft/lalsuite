@@ -1,16 +1,34 @@
+# Copyright (C) 2013, 2014, 2020--2022 Evan Goetz
+# Copyright (C) 2011, 2021, 2022 Karl Wette
+# Copyright (C) 2005, 2007 Gregory Mendell
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with with program; see the file COPYING. If not, write to the
+# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA  02110-1301  USA
+
+"""Creates DAGs to run jobs that generates SFTs"""
+
 import math
 import argparse
 import os
 
+from lalpulsar import git_version
 
-# MakeSFTDAG.py - Creates DAGs to run jobs that generates SFTs
-# can act as a dag generator for use with onasys.
-# Loosely based on lalapps_strain_pipe
+__author__ = 'Evan Goetz <evan.goetz@ligo.org>, Greg Mendell'
+__version__ = git_version.id
+__date__ = git_version.date
 
-
-__author__ = 'Greg Mendell<gmendell@ligo-wa.caltech.edu>'
-__date__ = '$Date$'
-__version__ = '$Revision$'
 
 # REVISIONS:
 # 12/02/05 gam; generate datafind.sub and MakeSFTs.sub as well as dag file in
@@ -45,6 +63,7 @@ __version__ = '$Revision$'
 # 10/2022  kww; Parse window type as a string, parameter separated by colon
 # 10/2022  kww; Merge -O and -o log path options to free up -O option
 # 10/2022  kww; Implement public SFT file naming convention
+
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
@@ -89,6 +108,7 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
     dagFID.write(f'RETRY {MakeSFTs} 5\n')
     dagFID.write(f'VARS {MakeSFTs} argList="{argStr}" tagstring="{tagStringOut}"\n')
     dagFID.write(f'PARENT {LSCdataFind} CHILD {MakeSFTs}\n')
+
 
 #
 # MAIN CODE START HERE
@@ -214,7 +234,6 @@ parser.add_argument('-A', '--accounting-group', required=True, type=str,
 parser.add_argument('-U', '--accounting-group-user', required=True, type=str,
                     help='albert.einstein username (do not add @LIGO.ORG)')
 
-
 ##### DEPRECATED OPTIONS #####
 class DeprecateAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
@@ -241,9 +260,7 @@ parser.add_argument('-v', '--sft-version', nargs=0, action=DeprecateAction,
 parser.add_argument('-S', '--use-single', nargs=0, action=DeprecateAction,
                     help='DEPRECATED. No longer supported')
 
-
 args = parser.parse_args()
-
 
 # Some basic argument value checking
 if args.observing_run <= 0:
@@ -629,4 +646,3 @@ if (endTimeAllNodes <= startTimeAllNodes):
   the DAG file contains no jobs!')
 
 print(startTimeAllNodes, endTimeAllNodes)
-
