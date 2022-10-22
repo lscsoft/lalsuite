@@ -52,6 +52,7 @@ endif
 if HAVE_PYTHON
 
 pybin_scripts = \
+	lalpulsar_CopyPublicSFTs \
 	lalpulsar_MakeSFTDAG \
 	$(END_OF_LIST)
 
@@ -63,6 +64,7 @@ test_scripts += testMakefakedata_v4.sh
 test_scripts += testMakefakedata_v4_hwinjection.sh
 test_scripts += testMakefakedata_v5.sh
 if HAVE_PYTHON
+test_scripts += testCopyPublicSFTs.sh
 test_scripts += testMakeSFTDAG.sh
 test_scripts += testSFTWindows.py
 endif
