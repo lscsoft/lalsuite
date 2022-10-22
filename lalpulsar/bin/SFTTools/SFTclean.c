@@ -96,7 +96,8 @@ int main(int argc, char *argv[]){
   uvar_outSingleSFT = FALSE;
 
   /* register user input variables */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,    "sftDir",    STRING,       'i', REQUIRED,  "Input SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,    "sftDir",    STRING,       'i', REQUIRED,  "Input SFT file pattern. Possibilities are:\n"
+                                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outDir,    "outDir",    STRING,       'o', REQUIRED,  "Output SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMin,      "fMin",      REAL8,        0,   OPTIONAL, "start Frequency (default: full input SFTs width)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMax,      "fMax",      REAL8,        0,   OPTIONAL, "Max Frequency  (default: full input SFTs width)") == XLAL_SUCCESS, XLAL_EFUNC);

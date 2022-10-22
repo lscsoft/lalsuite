@@ -409,7 +409,8 @@ int main(int argc, char *argv[]){
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printLog,           "printLog",           BOOLEAN,      0,   OPTIONAL,  "Print Log file") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris,     "earthEphemeris",     STRING,       'E', OPTIONAL,  "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,       "sunEphemeris",       STRING,       'S', OPTIONAL,  "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftData,            "sftData",            STRING,       'D', REQUIRED,  "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftData,            "sftData",            STRING,       'D', REQUIRED,  "SFT filename pattern. Possibilities are:\n"
+                                            " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dirnameOut,         "dirnameOut",         STRING,       'o', OPTIONAL,  "Output directory") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fbasenameOut,       "fbasenameOut",       STRING,       0,   OPTIONAL,  "Output file basename") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_binsHisto,          "binsHisto",          INT4,         0,   OPTIONAL,  "No. of bins for histogram") == XLAL_SUCCESS, XLAL_EFUNC);

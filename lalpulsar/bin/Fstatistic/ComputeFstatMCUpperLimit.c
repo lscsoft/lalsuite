@@ -130,7 +130,8 @@ int main(int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &twoFs,               "loudest-2F",       REAL8,  'F', REQUIRED,  "Loudest 2F value in this band") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &mism_hist_file,      "mism-hist-file",   STRING, 'M', OPTIONAL,  "File containing the mismatch PDF histogram") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &max_mismatch,        "max-mismatch",     REAL8,  'm', OPTIONAL,  "Maximum mismatch to scale histogram to") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &sft_pattern,         "sft-patt",         STRING, 'D', REQUIRED,  "File pattern of the input SFTs") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &sft_pattern,         "sft-patt",         STRING, 'D', REQUIRED,  "File pattern of the input SFTs. Possibilities are:\n"
+                                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &ephem_earth,         "ephem-earth",      STRING, 'E', OPTIONAL,  "Earth ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &ephem_sun,           "ephem-sun",        STRING, 'S', OPTIONAL,  "Sun ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &rng_med_win,         "rng-med-win",      INT4,   'k', OPTIONAL,  "Size of the running median window") == XLAL_SUCCESS, XLAL_EFUNC);

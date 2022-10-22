@@ -1697,7 +1697,8 @@ INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[])
    XLALRegisterUvarMember(configCopy,                  STRING, 0 , OPTIONAL,  "Copy of the input values");
    XLALRegisterUvarMember(ULfilename,                  STRING, 0 , OPTIONAL,  "Upper limit file name");
    XLALRegisterUvarMember(candidatesFilename,          STRING, 0 , OPTIONAL,  "Candidates file name");
-   XLALRegisterUvarMember(inputSFTs,                   STRING, 0 , OPTIONAL,  "Path and filename of SFTs, conflicts with timestampsFile and segmentFile");
+   XLALRegisterUvarMember(inputSFTs,                   STRING, 0 , OPTIONAL,  "Path and filename of SFTs, conflicts with timestampsFile and segmentFile. Possibilities are:\n"
+                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'");
    XLALRegisterUvarMember(ephemEarth,                  STRING, 0 , OPTIONAL,  "Earth ephemeris file to use");
    XLALRegisterUvarMember(ephemSun,                    STRING, 0 , OPTIONAL,  "Sun ephemeris file to use");
    XLALRegisterUvarMember(skyRegion,                   STRING, 0 , OPTIONAL,  "Region of the sky to search (e.g. (ra1,dec1),(ra2,dec2),(ra3,dec3)...) or allsky");
