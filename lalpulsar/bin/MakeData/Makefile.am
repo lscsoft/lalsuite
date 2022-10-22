@@ -49,10 +49,6 @@ lalpulsar_sw_inj_frames_SOURCES = \
 
 endif
 
-dist_bin_SCRIPTS = \
-	lalpulsar_CopySFTs \
-	$(END_OF_LIST)
-
 if HAVE_PYTHON
 
 pybin_scripts = \
