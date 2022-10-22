@@ -103,6 +103,8 @@ typedef struct
   /* SFT output */
   CHAR *outSFTdir;		/**< Output directory for SFTs */
   CHAR *outLabel;		/**< 'misc' entry in SFT-filenames, and description entry of output frame filenames */
+  UINT4 outPubObsRun;           /**< if >0, names SFTs using the public filename convention with this observing run number */
+  UINT4 outPubVersion;          /**< if outPubObsRun>0, names SFTs using the public filename convention with this version number */
   BOOLEAN outSingleSFT;	        /**< use to output a single concatenated SFT */
 
   CHAR *TDDfile;		/**< Filename for ASCII output time-series */
@@ -222,6 +224,35 @@ main(int argc, char *argv[])
       XLALDestroyMultiSFTVector ( mNoiseSFTs );
     }
 
+  // determine output channel names for frames and public SFT filenames
+  if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) {
+    XLAL_CHECK ( uvar.outFrChannels->length == mTseries->length, XLAL_EINVAL, "--outFrChannels: number of channel names (%d) must agree with number of IFOs (%d)\n",
+                 uvar.outFrChannels->length, mTseries->length );
+  }
+  LALStringVector *outChannelNames = XLALCreateEmptyStringVector( mTseries->length );
+  XLAL_CHECK ( outChannelNames != NULL, XLAL_EFUNC );
+  for ( UINT4 X=0; X < mTseries->length; X ++ )
+    {
+      REAL8TimeSeries *Tseries = mTseries->data[X];
+      char buffer[LALNameLength];
+
+      size_t written = 0;
+      if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) { // if output frame channel names given, use those
+        written = snprintf ( buffer, sizeof(buffer), "%s", uvar.outFrChannels->data[X] );
+        if ( buffer[2] == ':' ) { // check we got correct IFO association
+          XLAL_CHECK ( (buffer[0] == Tseries->name[0]) && (buffer[1] == Tseries->name[1]), XLAL_EINVAL,
+                       "Possible IFO mismatch: outFrChannel[%d] = '%s', IFO = '%c%c': be careful about --outFrChannel ordering\n", X, buffer, Tseries->name[0], Tseries->name[1] );
+        } // if buffer[2]==':'
+      } else if ( XLALUserVarWasSet ( &uvar.inFrChannels ) ) { // otherwise: if input frame channel names given, use them for output, append "-<outLabel>"
+        written = snprintf ( buffer, sizeof(buffer), "%s-%s", uvar.inFrChannels->data[X], uvar.outLabel );
+      } else { // otherwise: fall back to <IFO>:<outLabel> channel name
+        written = snprintf ( buffer, sizeof(buffer), "%c%c:%s", Tseries->name[0], Tseries->name[1], uvar.outLabel );
+      }
+      XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Output frame name exceeded max length (%d): '%s'\n", LALNameLength, buffer );
+
+      outChannelNames->data[X] = XLALStringDuplicate( buffer );
+    }
+
   if (uvar.outSFTdir)
     {
       XLAL_CHECK ( is_directory ( uvar.outSFTdir ), XLAL_EINVAL );
@@ -237,13 +268,32 @@ main(int argc, char *argv[])
       const char *window_type = ( GV.window_type != NULL ) ? GV.window_type : "rectangular";
       const REAL8 window_beta = ( GV.window_type != NULL ) ? GV.window_beta : 0;
 
-      SFTFilenameSpec XLAL_INIT_DECL(spec);
-      XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, uvar.outSFTdir, NULL, NULL, window_type, uvar.outLabel, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-      spec.window_beta = window_beta;
-
       for ( UINT4 X=0; X < mSFTs->length; X ++ )
         {
           SFTVector *sfts = mSFTs->data[X];
+
+          /* set up SFT filename */
+          SFTFilenameSpec XLAL_INIT_DECL(spec);
+          XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, uvar.outSFTdir, NULL, NULL, window_type, NULL, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+          spec.window_beta = window_beta;
+
+          if ( uvar.outPubObsRun > 0 ) { // public SFT filename
+
+            /* get channel name and check for consistency */
+            const char* channelName = outChannelNames->data[X];
+            const SFTtype *sft0 = &sfts->data[0];
+            XLAL_CHECK ( (channelName[0] == sft0->name[0]) && (channelName[1] == sft0->name[1]), XLAL_EINVAL,
+                         "Possible IFO mismatch: outFrChannel[%d] = '%s', IFO = '%c%c': be careful about --outFrChannel ordering\n", X, channelName, sft0->name[0], sft0->name[1] );
+
+            /* set public observing run, version, channel name */
+            XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, NULL, NULL, NULL, NULL, NULL, "SIM", channelName ) == XLAL_SUCCESS, XLAL_EFUNC );
+            spec.pubObsRun = uvar.outPubObsRun;
+            spec.pubVersion = uvar.outPubVersion;
+
+          } else { // private SFT filename; see private description from --outLabel
+            XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, NULL, NULL, NULL, NULL, uvar.outLabel, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+          }
+
           /* either write whole SFT-vector to single concatenated file */
           XLAL_CHECK ( XLALWriteSFTVector2StandardFile( sfts, &spec, comment, uvar.outSingleSFT ) == XLAL_SUCCESS, XLAL_EFUNC );
         } // for X < numIFOs
@@ -304,22 +354,7 @@ main(int argc, char *argv[])
           XLAL_CHECK ( (outFrame = XLALFrameNew ( &startTimeGPS, duration, uvar.outLabel, 1, 0, 0 )) != NULL, XLAL_EFUNC );
 
           /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
-          char buffer[LALNameLength];
-          // if output frame channel names given, use those
-          if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) {
-            written = snprintf ( buffer, sizeof(buffer), "%s", uvar.outFrChannels->data[X] );
-            if ( buffer[2] == ':' ) { // check we got correct IFO association
-              XLAL_CHECK ( (buffer[0] == Tseries->name[0]) && (buffer[1] == Tseries->name[1]), XLAL_EINVAL,
-                           "Possible IFO mismatch: outFrChannel[%d] = '%s', IFO = '%c%c': be careful about --outFrChannel ordering\n", X, buffer, Tseries->name[0], Tseries->name[1] );
-            } // if buffer[2]==':'
-          } else if ( XLALUserVarWasSet ( &uvar.inFrChannels ) ) { // otherwise: if input frame channel names given, use them for output, append "-<outLabel>"
-            written = snprintf ( buffer, sizeof(buffer), "%s-%s", uvar.inFrChannels->data[X], uvar.outLabel );
-          } else { // otherwise: fall back to <IFO>:<outLabel> channel name
-            written = snprintf ( buffer, sizeof(buffer), "%c%c:%s", Tseries->name[0], Tseries->name[1], uvar.outLabel );
-          }
-          XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Output frame name exceeded max length (%d): '%s'\n", LALNameLength, buffer );
-          strcpy ( Tseries->name, buffer );
-
+          strcpy ( Tseries->name, outChannelNames->data[X] );
           XLAL_CHECK ( (XLALFrameAddREAL8TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
 
           /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
@@ -345,6 +380,8 @@ main(int argc, char *argv[])
   /* ---------- free memory ---------- */
   XLALDestroyMultiREAL8TimeSeries ( mTseries );
   XLALDestroyMultiSFTVector ( mSFTs );
+
+  XLALDestroyStringVector( outChannelNames );
 
   XLALFreeMem ( &GV );	/* free the config-struct */
 
@@ -649,6 +686,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(   outSingleSFT,       BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
   XLALRegisterUvarMember( outSFTdir,          STRING, 'n', OPTIONAL, "Output SFTs:  directory for output SFTs");
   XLALRegisterUvarMember(  outLabel,	         STRING, 0, OPTIONAL, "'misc' entry in SFT-filenames or 'description' entry of frame filenames" );
+  XLALRegisterUvarMember( outPubObsRun,       UINT4, 'O', OPTIONAL, "if >0, names SFTs using the public filename convention with this observing run number" );
+  XLALRegisterUvarMember( outPubVersion,      UINT4, 'V', OPTIONAL, "if " UVAR_STR(outPubObsRun) ">0, names SFTs using the public filename convention with this version number" );
   XLALRegisterUvarMember( TDDfile,            STRING, 't', OPTIONAL, "Filename to output time-series into");
 
   XLALRegisterUvarMember( logfile,            STRING, 'l', OPTIONAL, "Filename for log-output");
