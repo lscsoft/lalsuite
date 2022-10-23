@@ -10,6 +10,7 @@ test_scripts += \
 	test_lineFileParser.py \
 	test_ReadSFDB.py \
 	test_simulateCW.py \
+	test_public_sft_directory.py \
 	$(END_OF_LIST)
 
 # Add any helper programs required by tests to this variable
