@@ -225,10 +225,12 @@ main(int argc, char *argv[])
     }
 
   // determine output channel names for frames and public SFT filenames
+#ifdef HAVE_LIBLALFRAME
   if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) {
     XLAL_CHECK ( uvar.outFrChannels->length == mTseries->length, XLAL_EINVAL, "--outFrChannels: number of channel names (%d) must agree with number of IFOs (%d)\n",
                  uvar.outFrChannels->length, mTseries->length );
   }
+#endif
   LALStringVector *outChannelNames = XLALCreateEmptyStringVector( mTseries->length );
   XLAL_CHECK ( outChannelNames != NULL, XLAL_EFUNC );
   for ( UINT4 X=0; X < mTseries->length; X ++ )
@@ -237,7 +239,9 @@ main(int argc, char *argv[])
       char buffer[LALNameLength];
 
       size_t written = 0;
-      if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) { // if output frame channel names given, use those
+      if ( 0 ) { // needed so that the 'else if' blocks can be removed if HAVE_LIBLALFRAME is not defined
+#ifdef HAVE_LIBLALFRAME
+      } else if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) { // if output frame channel names given, use those
         written = snprintf ( buffer, sizeof(buffer), "%s", uvar.outFrChannels->data[X] );
         if ( buffer[2] == ':' ) { // check we got correct IFO association
           XLAL_CHECK ( (buffer[0] == Tseries->name[0]) && (buffer[1] == Tseries->name[1]), XLAL_EINVAL,
@@ -245,6 +249,7 @@ main(int argc, char *argv[])
         } // if buffer[2]==':'
       } else if ( XLALUserVarWasSet ( &uvar.inFrChannels ) ) { // otherwise: if input frame channel names given, use them for output, append "-<outLabel>"
         written = snprintf ( buffer, sizeof(buffer), "%s-%s", uvar.inFrChannels->data[X], uvar.outLabel );
+#endif
       } else { // otherwise: fall back to <IFO>:<outLabel> channel name
         written = snprintf ( buffer, sizeof(buffer), "%c%c:%s", Tseries->name[0], Tseries->name[1], uvar.outLabel );
       }
@@ -283,7 +288,7 @@ main(int argc, char *argv[])
             const char* channelName = outChannelNames->data[X];
             const SFTtype *sft0 = &sfts->data[0];
             XLAL_CHECK ( (channelName[0] == sft0->name[0]) && (channelName[1] == sft0->name[1]), XLAL_EINVAL,
-                         "Possible IFO mismatch: outFrChannel[%d] = '%s', IFO = '%c%c': be careful about --outFrChannel ordering\n", X, channelName, sft0->name[0], sft0->name[1] );
+                         "Possible IFO mismatch: output channel[%d] = '%s', IFO = '%c%c': be careful about output channel ordering\n", X, channelName, sft0->name[0], sft0->name[1] );
 
             /* set public observing run, version, channel name */
             XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, NULL, NULL, NULL, NULL, NULL, "SIM", channelName ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -331,10 +336,6 @@ main(int argc, char *argv[])
       char *fname;
 
       char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
-      if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) {
-        XLAL_CHECK ( uvar.outFrChannels->length == mTseries->length, XLAL_EINVAL, "--outFrChannels: number of channel names (%d) must agree with number of IFOs (%d)\n",
-                     uvar.outFrChannels->length, mTseries->length );
-      }
 
       for ( UINT4 X=0; X < mTseries->length; X ++ )
         {
@@ -731,10 +732,10 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember ( inFrChannels,  STRINGVector,'N', OPTIONAL,  "CSV list (one per IFO) of frame channels to read timeseries from");
   XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  NODEFAULT, "CSV list (one per IFO) of output frame channel names [default: <inFrChannels>-<outLabel> or <IFO>:<outLabel>]");
 #else
-  XLALRegisterUvarMember ( outFrameDir,	 STRING,       'F', DEFUNCT, "Need to compile with lalframe support for this option to work");
-  XLALRegisterUvarMember ( inFrames,     STRINGVector, 'C', DEFUNCT, "Need to compile with lalframe support for this option to work");
-  XLALRegisterUvarMember ( inFrChannels, STRINGVector, 'N', DEFUNCT, "Need to compile with lalframe support for this option to work");
-  XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  DEFUNCT, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( outFrameDir,	 STRING,       'F', DEPRECATED, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( inFrames,     STRINGVector, 'C', DEPRECATED, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( inFrChannels, STRINGVector, 'N', DEPRECATED, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  DEPRECATED, "Need to compile with lalframe support for this option to work");
 #endif
 
   // ----- 'expert-user/developer' options ----- (only shown in help at lalDebugLevel >= warning)
