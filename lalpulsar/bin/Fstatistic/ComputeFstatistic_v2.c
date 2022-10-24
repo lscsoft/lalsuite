@@ -1087,7 +1087,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( 	dorbitArgp, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Spacing in Orbital argument of periapse in radians");
   XLALRegisterUvarMember( 	dorbitEcc, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Spacing in Orbital eccentricity");
 
-  XLALRegisterUvarMember(DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (also multi-IFO) input SFT-files");
+  XLALRegisterUvarMember(DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (also multi-IFO) input SFT-files. Possibilities are:\n"
+                         " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'");
 
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs).\nNote that, unlike the historic --SignalOnly flag, this option will not lead to explicitly adding a +4 'correction' for noiseless SFTs to the output F-statistic.");
 

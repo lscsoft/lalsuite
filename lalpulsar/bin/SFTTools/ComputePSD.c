@@ -343,7 +343,8 @@ initUserVars (int argc, char *argv[], UserVariables_t *uvar)
   uvar->binStep   = 1;
 
   /* register user input variables */
-  XLALRegisterUvarMember(inputData,        STRING, 'i', REQUIRED, "Input SFT pattern");
+  XLALRegisterUvarMember(inputData,        STRING, 'i', REQUIRED, "Input SFT pattern. Possibilities are:\n"
+                         " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'");
   XLALRegisterUvarMember(outputPSD,        STRING, 'o', OPTIONAL, "Output PSD into this file");
   XLALRegisterUvarMember(outputQ,	     STRING, 0,  OPTIONAL, "Output the 'data-quality factor' Q(f) into this file");
   XLALRegisterUvarMember(outputSpectBname,  STRING, 0 , OPTIONAL, "Filename-base for (binary) spectrograms (one per IFO)");

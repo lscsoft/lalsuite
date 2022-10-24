@@ -169,7 +169,8 @@ int main(int argc, char *argv[]){
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_weighNoise,     "weighNoise",     BOOLEAN,      0,   OPTIONAL, "Use SFT noise weights") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris, "earthEphemeris", STRING,       'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,   "sunEphemeris",   STRING,       'S', OPTIONAL, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",         STRING,       'D', REQUIRED, "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",         STRING,       'D', REQUIRED, "SFT filename pattern. Possibilities are:\n"
+                                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles,      "linefiles",      STRINGVector, 0,   OPTIONAL, "Comma separated List of linefiles (filenames must contain IFO name)") == XLAL_SUCCESS, XLAL_EFUNC);
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_Alpha,          "Alpha",          REAL8,        0,   OPTIONAL, "Sky location (longitude)") == XLAL_SUCCESS, XLAL_EFUNC);

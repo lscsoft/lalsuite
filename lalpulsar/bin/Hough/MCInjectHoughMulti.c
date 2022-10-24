@@ -248,7 +248,8 @@ int main(int argc, char *argv[]){
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_peakThreshold,  "peakThreshold",  REAL8,        't', OPTIONAL, "Peak selection threshold") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris, "earthEphemeris", STRING,       'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,   "sunEphemeris",   STRING,       'S', OPTIONAL, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",         STRING,       'D', OPTIONAL, "SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,         "sftDir",         STRING,       'D', OPTIONAL, "SFT Directory. Possibilities are:\n"
+                                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dirnameOut,     "dirnameOut",     STRING,       'o', OPTIONAL, "Output directory") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameOut,       "fnameout",       STRING,       '0', OPTIONAL, "Output file prefix") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_alpha,          "alpha",          REAL8,        'r', OPTIONAL, "Right ascension") == XLAL_SUCCESS, XLAL_EFUNC);

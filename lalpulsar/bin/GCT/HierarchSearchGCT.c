@@ -470,7 +470,8 @@ int main( int argc, char *argv[]) {
   /* register user input variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_log,                 "log",                 BOOLEAN,      0,   OPTIONAL,   "Write log file") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_semiCohToplist,      "semiCohToplist",      BOOLEAN,      0,   OPTIONAL,   "Print toplist of semicoherent candidates" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DataFiles1,          "DataFiles1",          STRING,       0,   REQUIRED,   "1st SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DataFiles1,          "DataFiles1",          STRING,       0,   REQUIRED,   "1st SFT file pattern. Possibilities are:\n"
+                                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyRegion,           "skyRegion",           STRING,       0,   OPTIONAL,   "sky-region polygon (or 'allsky')") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_numSkyPartitions,    "numSkyPartitions",    INT4,         0,   OPTIONAL,   "No. of (equi-)partitions to split skygrid into") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_partitionIndex,      "partitionIndex",      INT4,         0,   OPTIONAL,   "Index [0,numSkyPartitions-1] of sky-partition to generate") == XLAL_SUCCESS, XLAL_EFUNC);
