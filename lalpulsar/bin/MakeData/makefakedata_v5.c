@@ -645,7 +645,9 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember( sourceDeltaT,         REAL8,  0, OPTIONAL, "Source-frame sampling period. '0' implies implies defaults set in XLALGeneratePulsarSignal()." );
 
   /* noise */
-  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps, and frequency range unless separately specified.)");
+  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal. Possibilities are:\n"
+                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'\n"
+                          "(Used also to set IFOs and timestamps, and frequency range unless separately specified.)");
   XLALRegisterUvarMember( randSeed,           INT4, 0, OPTIONAL, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
 
   /* frame input/output options */

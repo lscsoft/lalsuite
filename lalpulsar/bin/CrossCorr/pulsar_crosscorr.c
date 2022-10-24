@@ -1777,7 +1777,8 @@ void initUserVars (LALStatus *status)
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_ephemEarth,             "ephemEarth",    STRING,  0,   OPTIONAL, "Earth ephemeris file to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_ephemSun,               "ephemSun",      STRING,  0,   OPTIONAL, "Sun ephemeris file to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_sftDir,                 "sftDir",        STRING,  'D', REQUIRED, "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_sftDir,                 "sftDir",        STRING,  'D', REQUIRED, "SFT filename pattern. Possibilities are:\n"
+                                                 " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_maxlag,                 "maxlag",        REAL8,   0,   OPTIONAL, "Maximum time lag for correlating sfts") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_dirnameOut,             "dirnameOut",    STRING,  'o', OPTIONAL, "Output directory") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_filenameOut,            "filenameOut",   STRING,  0,   OPTIONAL, "Output filename") == XLAL_SUCCESS, XLAL_EFUNC );

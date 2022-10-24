@@ -263,7 +263,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( Delta,         DECJ,       'd', OPTIONAL, "Sky position: equatorial J2000 right declination (required if " UVAR_STR4OR(h0, cosi, aPlus, aCross) " used)");
 
   lalUserVarHelpOptionSubsection = "Data and noise properties";
-  XLALRegisterUvarMember( DataFiles,     STRING,     'D', NODEFAULT,"Per-detector SFTs (for detectors, timestamps and noise-estimate)\n"
+  XLALRegisterUvarMember( DataFiles,     STRING,     'D', NODEFAULT,"Per-detector SFTs (for detectors, timestamps and noise-estimate). Possibilities are:\n"
+                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'\n"
                           "(Alternatives: " UVAR_STR2AND(assumeSqrtSX,IFOs)" and one of "UVAR_STR(timestampsFiles)" or "UVAR_STR2AND(minStartTime,duration)").");
   XLALRegisterUvarMember( Freq,          REAL8,      'F', NODEFAULT,"Frequency for noise-floor estimation (required if not given " UVAR_STR(assumeSqrtSX) ").");
   XLALRegisterUvarMember( RngMedWindow,  INT4,       'k', OPTIONAL, "Running median size for noise-floor estimation (only used if not given " UVAR_STR(assumeSqrtSX) ").");
