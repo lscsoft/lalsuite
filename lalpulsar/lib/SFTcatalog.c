@@ -156,7 +156,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	  /* if merged-SFT: check consistency constraints */
 	  if ( !mfirst_block )
 	    {
-	      if ( ! consistent_mSFT_header ( mprev_header, mprev_version, mprev_nsamples, mprev_windowspec, this_header, this_version, this_nsamples, mprev_windowspec ) )
+	      if ( ! consistent_mSFT_header ( mprev_header, mprev_version, mprev_nsamples, mprev_windowspec, this_header, this_version, this_nsamples, this_windowspec ) )
 		{
                   XLALPrintError ( "ERROR: merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
 		  XLALFree ( this_comment );
