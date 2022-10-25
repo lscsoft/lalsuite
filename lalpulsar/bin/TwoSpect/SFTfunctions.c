@@ -1227,7 +1227,7 @@ MultiSFTVector * generateSFTdata(UserInput_t *uvar, const MultiLALDetector *dete
    for (UINT4 ii=0; ii<detectors->length; ii++) DataParams.multiIFO.sites[ii] = detectors->sites[ii];
    DataParams.multiNoiseFloor.length = detectors->length;
    for (UINT4 ii=0; ii<detectors->length; ii++) DataParams.multiNoiseFloor.sqrtSn[ii] = 0.0;
-   DataParams.multiTimestamps = *multiTimestamps;
+   DataParams.multiTimestamps = multiTimestamps;
    DataParams.randSeed = uvar->injRandSeed;
    DataParams.SFTWindowType = "Hann";
    DataParams.SFTWindowBeta = 0;

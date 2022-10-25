@@ -43,6 +43,11 @@
 import_array();
 %}
 
+// Evaluates true if a PyObject is not empty, false otherwise.
+%header %{
+#define swiglal_not_empty(v)  ((v) != NULL)
+%}
+
 // Name of PyObject containing the SWIG wrapping of the struct whose members are being accessed.
 %header %{
 #define swiglal_self()    (self)

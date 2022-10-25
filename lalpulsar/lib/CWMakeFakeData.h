@@ -75,7 +75,7 @@ typedef struct tagCWMFDataParams
   REAL8 Band;					//!< smallest frequency band guaranteed to be generated [returned Band can be larger]
   MultiLALDetector multiIFO;			//!< detectors to generate data for
   MultiNoiseFloor multiNoiseFloor;		//!< ... and corresponding noise-floors to generate Gaussian white noise for
-  MultiLIGOTimeGPSVector multiTimestamps;	//!< timestamps to generate SFTs for
+  MultiLIGOTimeGPSVector *multiTimestamps;	//!< timestamps to generate SFTs for
   const char *SFTWindowType;			//!< window to apply to the SFT timeseries
   REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
   UINT4 randSeed;				//!< seed value for random-number generator
@@ -117,6 +117,8 @@ PulsarParamsVector * XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, co
 void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
 
 int XLALFITSWritePulsarParamsVector ( FITSFile *file, const CHAR *tableName, const PulsarParamsVector *list );
+
+void XLALDestroyCWMFDataParams ( CWMFDataParams *params );
 
 /** @} */
 

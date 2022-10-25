@@ -43,5 +43,22 @@ set_default_error_handlers()
 lal.CheckMemoryLeaks()
 print("PASSED array element assignment")
 
+# check array element parent tracking
+print("checking array element parent tracking")
+assert lalpulsar.MakeTimestamps(0, 100, 1, 0).data[-1] == lal.LIGOTimeGPS(99)
+assert lalpulsar.MakeMultiTimestamps(0, 100, 1, 0, 3).data[-1].data[-1] == lal.LIGOTimeGPS(99)
+lal.CheckMemoryLeaks()
+print("PASSED array element parent tracking")
+
+# check CWMFDataParams usage
+print("checking CWMFDataParams usage")
+def make_CWMFDataParams():
+    cwmf = lalpulsar.CWMFDataParams()
+    cwmf.multiTimestamps = lalpulsar.MakeMultiTimestamps(0, 10, 1, 0, 3)
+    return cwmf
+assert make_CWMFDataParams().multiTimestamps.data[-1].data[-1] == lal.LIGOTimeGPS(9)
+lal.CheckMemoryLeaks()
+print("PASSED CWMFDataParams usage")
+
 # passed all tests!
 print("PASSED all tests")

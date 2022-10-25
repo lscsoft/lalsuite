@@ -572,7 +572,7 @@ XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Cata
         MFDparams.Band = input->maxFreqFull - input->minFreqFull;
       }
       MFDparams.multiIFO = common->detectors;
-      MFDparams.multiTimestamps = *(common->multiTimestamps);
+      MFDparams.multiTimestamps = common->multiTimestamps;
       MFDparams.randSeed = optArgs.randSeed;
       MFDparams.sourceDeltaT = optArgs.sourceDeltaT;
 

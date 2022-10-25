@@ -57,6 +57,24 @@ set_default_error_handlers();
 LALCheckMemoryLeaks();
 disp("PASSED array element assignment");
 
+# check array element parent tracking
+disp("checking array element parent tracking");
+assert(XLALMakeTimestamps(0, 100, 1, 0).data{end} == LIGOTimeGPS(99));
+assert(XLALMakeMultiTimestamps(0, 100, 1, 0, 3).data{end}.data{end} == LIGOTimeGPS(99));
+LALCheckMemoryLeaks();
+disp("PASSED array element parent tracking");
+
+# check CWMFDataParams usage
+disp("checking CWMFDataParams usage");
+function cwmf = make_CWMFDataParams()
+  lalpulsar;
+  cwmf = CWMFDataParams();
+  cwmf.multiTimestamps = XLALMakeMultiTimestamps(0, 10, 1, 0, 3);
+endfunction
+assert(make_CWMFDataParams().multiTimestamps.data{end}.data{end} == LIGOTimeGPS(9));
+LALCheckMemoryLeaks();
+disp("PASSED CWMFDataParams usage");
+
 ## passed all tests!
 disp("PASSED all tests");
 if exist("swig_exit")

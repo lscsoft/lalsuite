@@ -99,7 +99,7 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
 
-  const MultiLIGOTimeGPSVector *multiTimestamps = &(dataParams->multiTimestamps);
+  const MultiLIGOTimeGPSVector *multiTimestamps = dataParams->multiTimestamps;
 
   // check multi-detector input
   XLAL_CHECK ( dataParams->multiIFO.length >= 1, XLAL_EINVAL );
@@ -179,7 +179,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( detectorIndex < dataParams->multiIFO.length, XLAL_EINVAL );
   XLAL_CHECK ( detectorIndex < dataParams->multiNoiseFloor.length, XLAL_EINVAL );
-  XLAL_CHECK ( detectorIndex < dataParams->multiTimestamps.length, XLAL_EINVAL );
+  XLAL_CHECK ( detectorIndex < dataParams->multiTimestamps->length, XLAL_EINVAL );
   XLAL_CHECK ( (dataParams->inputMultiTS == NULL) || (detectorIndex < dataParams->inputMultiTS->length), XLAL_EINVAL );
 
   // initial default values fMin, sampling rate from caller input or timeseries
@@ -197,7 +197,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       XLAL_CHECK ( ( dataParams->fMin >= fMin ) && ( dataParams->fMin + dataParams->Band <= fMin + fBand ), XLAL_EINVAL, "Requested fMin=%f and fBand=%f are not covered by what the input timeseries can provide (fMin=%f, fBand=%f).", dataParams->fMin, dataParams->Band, fMin, fBand );
     }
 
-  const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[detectorIndex];
+  const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps->data[detectorIndex];
   const LALDetector *site = &dataParams->multiIFO.sites[detectorIndex];
   REAL8 Tsft = timestamps->deltaT;
 
@@ -1210,3 +1210,19 @@ XLALFITSWritePulsarParamsVector ( FITSFile *file, const CHAR *tableName, const P
   return XLAL_SUCCESS;
 
 } // XLALFITSWritePulsarParamsVector()
+
+/**
+ * Destructor for a CWMFDataParams type
+ *
+ * \note: This is mostly useful for the SWIG wrappers
+ */
+void
+XLALDestroyCWMFDataParams ( CWMFDataParams *params )
+{
+  if ( params ) {
+    fflush(stdout);
+    XLALDestroyMultiTimestamps ( params->multiTimestamps );
+    XLALDestroyMultiREAL8TimeSeries ( params->inputMultiTS );
+    XLALFree ( params );
+  }
+} // XLALDestroyCWMFDataParams()

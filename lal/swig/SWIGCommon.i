@@ -503,8 +503,12 @@ static const LALStatus swiglal_empty_LALStatus = {0, NULL, NULL, NULL, NULL, 0, 
     void *vptr = isptr ? *((void**)ptr) : ptr;
     if (copyobj) {
       vptr = memcpy(XLALCalloc(1, len), vptr, len);
+      tflags |= SWIG_POINTER_OWN;
+    } else if (vptr != NULL && swiglal_not_empty(self)) {
+      swiglal_store_parent(vptr, self);
+      tflags |= SWIG_POINTER_OWN;
     }
-    return SWIG_NewPointerObj(vptr, tinfo, copyobj ? tflags | SWIG_POINTER_OWN : tflags);
+    return SWIG_NewPointerObj(vptr, tinfo, tflags);
   }
 }
 %fragment("swiglal_as_SWIGTYPE", "header") {

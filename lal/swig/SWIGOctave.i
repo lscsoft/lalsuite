@@ -44,6 +44,11 @@ extern "C++" {
 }
 %}
 
+// Evaluates true if an octave_value is not empty, false otherwise.
+%header %{
+#define swiglal_not_empty(v)  (!(v).is_empty())
+%}
+
 // Name of octave_value containing the SWIG wrapping of the struct whose members are being accessed.
 %header %{
 #define swiglal_self()    (args.length() > 0 ? args(0) : octave_value())
