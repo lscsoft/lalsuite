@@ -3491,17 +3491,38 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             XLALDestroyDict(TGRParams);
             
             UINT4 i;
+            UINT4 modeArrayCreated = 0;
+
+            LALValue *modeArray = XLALSimInspiralWaveformParamsLookupModeArray(
+                LALpars
+            );
+            
+                if (modeArray == NULL) {
+                    modeArray = XLALSimInspiralCreateModeArray();
+                    modeArrayCreated = 1;
+
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 2, 2);
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 2, 1);
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 3, 3);
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 4, 4);
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 5, 5);
+            }
 
             SphHarmTimeSeries *modes = hlm;
+
             while (modes) {
                 if (XLALSimInspiralModeArrayIsModeActive(
-                XLALSimInspiralWaveformParamsLookupModeArray(LALpars),
-                modes->l, modes->m) == 1) {
+                    modeArray, modes->l, modes->m
+                ) == 1) {
                     for (i = 0; i < modes->mode->data->length; i++)
                         modes->mode->data->data[i] *= -1;
                 }
                 
                 modes = modes->next;
+            }
+
+            if (modeArrayCreated) {
+                XLALDestroyValue(modeArray);
             }
 
             break;
