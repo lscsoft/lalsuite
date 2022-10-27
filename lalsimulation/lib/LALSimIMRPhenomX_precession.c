@@ -79,6 +79,10 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   INT4 debug_flag
 )
 {
+
+  /* Place the lalParams into the pWF*/
+  pWF->LALparams = lalParams;
+  
   /*
       Here we assume m1 > m2, q > 1, dm = m1 - m2 = delta = sqrt(1-4eta) > 0
   */

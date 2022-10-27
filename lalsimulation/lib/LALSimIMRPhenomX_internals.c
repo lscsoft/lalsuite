@@ -1052,6 +1052,8 @@ int IMRPhenomXGetPhaseCoefficients(
 
 	REAL8 delta           = pWF->delta;
 
+	//LALDict *LALparams    = pWF->LALparams;
+	
 	/* Pre-initialize all phenomenological coefficients */
 	pPhase->a0 = 0.0;
 	pPhase->a1 = 0.0;
@@ -1304,6 +1306,7 @@ int IMRPhenomXGetPhaseCoefficients(
 	/* We now solve the system A x = b via an LU decomposition */
 	gsl_linalg_LU_decomp(A,p,&s);
 	gsl_linalg_LU_solve(A,p,b,x);
+
 
 	pPhase->c0  = gsl_vector_get(x,0); // x[0]; 	// a0
 	pPhase->c1  = gsl_vector_get(x,1); // x[1];		// a1
