@@ -17,7 +17,6 @@ bin_PROGRAMS = $(BURSTPROGS) $(INSPPROGS)
 if HAVE_PYTHON
 pybin_scripts = \
 	lalapps_cafe \
-	lalapps_gen_timeslides \
 	lalapps_power_likelihood_pipe \
 	lalapps_power_pipe \
 	$(END_OF_LIST)

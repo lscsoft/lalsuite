@@ -25,9 +25,6 @@
 #
 
 
-from __future__ import print_function
-
-
 from optparse import OptionParser
 import sys
 
@@ -37,7 +34,7 @@ from ligo.lw import lsctables
 from ligo.lw import utils as ligolw_utils
 from ligo.lw.utils import process as ligolw_process
 from ligo.lw.utils import time_slide as ligolw_time_slide
-from lalapps import git_version
+from lalburst import git_version
 from lalburst import timeslides
 
 
@@ -96,10 +93,10 @@ def new_doc(comment = None, **kwargs):
 	doc.appendChild(ligolw.LIGO_LW())
 	process = ligolw_process.register_to_xmldoc(
 		doc,
-		program = u"lalapps_gen_timeslides",
+		program = "lalburst_gen_timeslides",
 		paramdict = kwargs,
 		version = __version__,
-		cvs_repository = u"lscsoft",
+		cvs_repository = "lscsoft",
 		cvs_entry_time = __date__,
 		comment = comment
 	)

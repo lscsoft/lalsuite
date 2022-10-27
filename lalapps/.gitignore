@@ -143,7 +143,6 @@ src/lalapps/version2.c
 src/online/lalapps_online_datafind
 src/power/lalapps_binj
 src/power/lalapps_cafe
-src/power/lalapps_gen_timeslides
 src/power/lalapps_power
 src/power/lalapps_power_likelihood_pipe
 src/power/lalapps_power_online_pipe

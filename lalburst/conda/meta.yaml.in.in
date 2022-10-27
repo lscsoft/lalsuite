@@ -219,6 +219,7 @@ outputs:
         - lalburst_cluster --help
         - lalburst_coinc --help
         - lalburst_cut --help
+        - lalburst_gen_timeslides --help
         - lalburst_injfind --help
         - lalburst_inj_pic --help
         - lalburst_plot_tisi --help
