@@ -126,6 +126,14 @@ All changes should be developed on a feature branch in order to keep them separa
 
    If there are conflicts between `upstream` changes and your changes, you will need to resolve them before pushing everything to your fork.
 
+### Adding yourself to the author list
+
+If you've never contributed to LALSuite before, you'll also need to add your name to the author list by running
+```bash
+make update-authors
+```
+from the top level of the repository. You can further edit the `.mailmap` file to adjust how your name is presented; special characters (e.g. accents) are supported.
+
 ### Open a merge request
 
 When you feel that your work is finished, you should create a merge request to propose that your changes be merged into the main (`upstream`) repository.
