@@ -52,8 +52,6 @@ foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
   my $pmail = shift @pmails;
   die "Could not determine email address for $pname" unless defined($pmail);
 
-  next unless keys(%{$name2mails{$pname}}) > 1 || $name2mails{$pname}->{$pmail} <= 0;
-
   push @mailmap, "$pname <$pmail>";
   foreach my $mail (sort { $a cmp $b } keys(%{$name2mails{$pname}})) {
     next if $mail eq $pmail;
