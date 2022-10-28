@@ -53,17 +53,21 @@ include:
   # CI rules
   - local: '/.gitlab/ci/rules.yml'
 
-  # basic package-level build
+  # build packages for each subpackage
   - local: '/.gitlab/ci/pkg.yml'
-
-  # Koji build
   - local: '/.gitlab/ci/koji.yml'
 
-  # compiler tests
+  # end-to-end tests
   - local: '/.gitlab/ci/compilers.yml'
 
-  # documentation build
+  # build containers
+  # quality checks
+  - local: '/.gitlab/ci/lint.yml'
+
+  # documentation
   - local: '/.gitlab/ci/docs.yml'
+
+  # deploy packages
 
 # -- global settings ----------------------------
 
@@ -1714,146 +1718,6 @@ coverage:
     - !reference [.ci-coverage, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
-
-# -- linting ------------------------------------
-#
-# Run some quality checks on the source code
-#
-
-# job template for lint jobs
-.lint:
-  stage: lint
-  needs: []
-  rules:
-    - !reference [.ci-lint, rules]
-    - !reference [.ci-push-build, rules]
-    - !reference [.ci-merge-build, rules]
-
-lint:depends:
-  extends:
-    - .build-job
-    - .lint
-  image: igwn/lalsuite-dev:el7
-  before_script:
-    - python3 -m pip install
-          coloredlogs
-          pyyaml
-          python-debian
-          python-rpm-spec
-  script:
-    - ./common/maintainer-scripts/check_library_dependencies
-  rules:
-    - !reference [.ci-lint, rules]
-    - !reference [.ci-merge-build, rules]
-
-lint:gitignore:
-  extends:
-    - .build-job
-    - .lint
-  image: igwn/lalsuite-dev:el7
-  variables:
-    # TODO: this can be removed when all packages require python>=3
-    #       on their own
-    PYTHON: "python3"
-  needs: []
-  script:
-    - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-swig --enable-python
-    # build in source directory, including tests
-    - make -j${CPU_COUNT} VERBOSE=1 all
-    - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
-    # check for build files not in .gitignore
-    - |
-      if git status --short | grep '^?? ' >/dev/null 2>&1; then
-        echo 'ERROR: the following files need to be added to .gitignore:'
-        git status --short
-        exit 1
-      fi
-  artifacts:
-    # upload some files to debug failures
-    paths:
-      - config.log
-      - Makefile
-      - lal*/config.log
-      - lal*/Makefile
-    when: on_failure
-
-lint:python:
-  extends:
-    - .python:flake8
-    - .lint
-  variables:
-    FLAKE8_PLUGINS: "flake8-executable"
-  artifacts:
-    paths:
-      - flake8*.json
-    reports:
-      # don't upload report, see lint:combine-reports
-      codequality: null
-    when: always
-
-lint:coala:
-  extends:
-    - .lint
-  image: coala/base
-  script:
-    # run first for codeclimate (using --json)
-    - coala --ci --json -o coala.json || true
-    # run again to get plaintxt output for the user
-    # (and the exit code)
-    - coala --ci
-  after_script:
-    - |
-      python3 - <<EOF
-      import json
-      import sys
-      SEVERITY = ['info', 'minor', 'major', 'critical', 'blocker']
-      with open('coala.json', 'r') as file:
-          indata = json.load(file)
-      outdata = []
-      for key in indata['results']:
-          for e in indata['results'][key]:
-              start = e['affected_code'][0]['start']
-              end = e['affected_code'][0]['end']
-              outdata.append({
-                  'type': 'issue',
-                  'check_name': e['origin'],
-                  'content': e['additional_info'] or None,
-                  'description': e['message'],
-                  'fingerprint': e['id'],
-                  'severity': SEVERITY[e['severity']],
-                  'location': {
-                      'path': start['file'],
-                      'begin': start['line'],
-                      'end': end['line'],
-                  },
-              })
-      with open('codequality.json', 'w') as file:
-          json.dump(outdata, file, separators=(',', ':'))
-      EOF
-  artifacts:
-    paths:
-      - coala.json
-      - codequality.json
-    reports:
-      # don't upload report, see lint:combine-reports
-      codequality: null
-    when: always
-
-lint:combine-reports:
-  extends:
-    - .codequality:combine
-    - .lint
-  stage: .post
-  needs:
-    - lint:coala
-    - lint:python
-  before_script:
-    # don't need this file
-    - rm -f coala.json
-  rules:
-    - !reference [.ci-lint, rules]
-    - !reference [.ci-merge-build, rules]
 
 # -- deploy -------------------------------------
 #
