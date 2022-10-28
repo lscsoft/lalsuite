@@ -21,7 +21,7 @@ while (<IN>) {
 }
 close IN;
 
-open IN, "git shortlog -s -e -n |" or die $!;
+open IN, "git log HEAD | git shortlog --summary --email --numbered |" or die $!;
 while (<IN>) {
   chomp;
 
