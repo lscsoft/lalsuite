@@ -16,7 +16,6 @@
 /_build/
 /_inst/
 /lal-*/
-AUTHORS
 config.lt
 debian/control
 debian/liblal*.install

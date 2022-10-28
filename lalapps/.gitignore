@@ -12,7 +12,6 @@
 /_build/
 /_inst/
 /lalapps-*/
-AUTHORS
 config.lt
 debian/control
 doxygen/autogen.dox
