@@ -65,3 +65,14 @@ uninstall-local:
 	-rm -rf "$(DESTDIR)$(htmldir)/"
 
 endif
+
+.PHONY: update-authors
+update-authors:
+	$(AM_V_at)cd $(top_srcdir); \
+	echo "Updating .mailmap entries"; \
+	./common/maintainer-scripts/update_mailmap || exit 1; \
+	cd $(top_srcdir); for subdir in @subdirs@; do \
+		echo "Updating authors of $${subdir}"; \
+		./common/maintainer-scripts/update_authors $${subdir} || exit 1; \
+	done; \
+	git diff --exit-code -- .mailmap lal*/AUTHORS
