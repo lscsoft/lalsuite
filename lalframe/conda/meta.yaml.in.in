@@ -21,7 +21,7 @@
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set framel_version = "@MIN_FRAMEL_VERSION@" %}
 {% set framecpp_version = "@MIN_FRAMECPPC_VERSION@" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.1.0a0" %}
 
 package:
   name: {{ name }}-split
