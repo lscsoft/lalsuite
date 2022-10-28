@@ -27,9 +27,9 @@ binmode IN, ":encoding(UTF-8)";
 while (<IN>) {
   chomp;
 
-  my ($n, $cname, $cmail) = m/^\s*(\d+)\s+([^<>]+)\s+<([^>]+)>\s*$/ or die;
+  my ($n, $name, $mail) = m/^\s*(\d+)\s+([^<>]+)\s+<([^>]+)>\s*$/ or die;
 
-  $name2mails{$cname}->{$cmail} = $n if !defined($name2mails{$cname}->{$cmail});
+  $name2mails{$name}->{$mail} = $n if !defined($name2mails{$name}->{$mail});
 
 }
 close IN;
