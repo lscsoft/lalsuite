@@ -1108,9 +1108,15 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
 
           COMPLEX16FrequencySeries *hlm_mode = NULL;
           SphHarmFrequencySeries *hlms_temp = *hlms;
+          INT4 length;
           while(hlms_temp){
             /* Extract the mode from the SphericalHarmFrequencySeries */
             hlm_mode = XLALSphHarmFrequencySeriesGetMode(hlms_temp, hlms_temp->l,hlms_temp->m);
+
+            /* Resize the modes to keep only positive frequencies. ChooseFDModes returns both positive and negative frequencies */
+            length = hlm_mode->data->length -1;
+            hlm_mode = XLALResizeCOMPLEX16FrequencySeries(hlm_mode, (INT4) length/2 + 1, length);
+
 
             /* Apply FTA correction */
             XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hlm_mode,hlms_temp->l,abs(hlms_temp->m),m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
