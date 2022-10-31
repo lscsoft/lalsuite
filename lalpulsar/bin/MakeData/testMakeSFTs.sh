@@ -60,8 +60,9 @@ mkdir -p MSFTs/
 pubObsRun=4
 pubObsKind="DEV"
 pubVersion=1
-MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment' --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-version ${pubVersion}"
-cmdline="${MSFTs_cmdline_base} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend2} --window-type rectangular"
+MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment'"
+MSFTs_cmdline_public="${MSFTs_cmdline_base} --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-version ${pubVersion}"
+cmdline="${MSFTs_cmdline_public} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend2} --window-type rectangular"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
@@ -90,14 +91,15 @@ done
 
 ## run MakeSFTs to create overlapped SFTs from the 1st fake frame
 mkdir -p MSFTs-overlapped/
-cmdline="${MSFTs_cmdline_base} --sft-write-path MSFTs-overlapped/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type rectangular --overlap-fraction 0.5"
+MSFTs_cmdline_private="${MSFTs_cmdline_base} --observing-run 0 --misc-desc private"
+cmdline="${MSFTs_cmdline_private} --sft-write-path MSFTs-overlapped/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type rectangular --overlap-fraction 0.5"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
 for i in 0.0 0.5 1.0 1.5 2.0; do
     ts=$(echo "( ${tstart1} + ${Tsft}*${i} ) / 1" | bc)
-    MSFTsft="./MSFTs-overlapped/H-1_H1_${Tsft}SFT_${pubField}-${ts}-${Tsft}.sft"
+    MSFTsft="./MSFTs-overlapped/H-1_H1_${Tsft}SFT_private-${ts}-${Tsft}.sft"
     if ! test -f $MSFTsft; then
         echo "ERROR: could not find file '$MSFTsft'"
         exit 1

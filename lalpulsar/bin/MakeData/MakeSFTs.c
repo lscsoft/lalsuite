@@ -70,6 +70,7 @@ int main( int argc, char *argv[] )
     UINT4 observing_run;
     char *observing_kind;
     UINT4 observing_version;
+    char *misc_desc;
     char *comment_field;
   } uvar_struct = {
     .sft_duration = 1800,
@@ -145,15 +146,19 @@ int main( int argc, char *argv[] )
     );
   XLALRegisterUvarMember(
     observing_run, UINT4, 'O', REQUIRED,
-    "Observing run SFTs are generated from. "
+    "For public SFTs, observing run SFTs are generated from. "
     );
   XLALRegisterUvarMember(
-    observing_kind, STRING, 'K', REQUIRED,
-    "Kind of SFTs being generated: 'RUN', 'AUX', 'SIM', or 'DEV'. "
+    observing_kind, STRING, 'K', OPTIONAL,
+    "For public SFTs, kind of SFTs being generated: 'RUN', 'AUX', 'SIM', or 'DEV'. "
     );
   XLALRegisterUvarMember(
-    observing_version, UINT4, 'V', REQUIRED,
-    "Version number of the SFT production. "
+    observing_version, UINT4, 'V', OPTIONAL,
+    "For public SFTs, version number of the SFT production. "
+    );
+  XLALRegisterUvarMember(
+    misc_desc, STRING, 'X', OPTIONAL,
+    "For private SFTs, miscellaneous description field. "
     );
   XLALRegisterUvarMember(
     comment_field, STRING, 'c', OPTIONAL,
@@ -181,10 +186,6 @@ int main( int argc, char *argv[] )
   XLALRegisterNamedUvar(
     NULL, "make_tmp_file", BOOLEAN, 'Z', DEFUNCT,
     "Default behaviour. "
-    );
-  XLALRegisterNamedUvar(
-    NULL, "misc_desc", STRING, 'X', DEFUNCT,
-    "No longer supported in the public SFT filename specification. "
     );
   XLALRegisterNamedUvar(
     NULL, "sft_version", INT4, 0, DEFUNCT,
@@ -263,17 +264,18 @@ int main( int argc, char *argv[] )
   // - SFT output
   //
   XLALUserVarCheck( &should_exit,
-                    uvar->observing_run > 0,
-                    UVAR_STR( observing_run ) " must be strictly positive" );
-  XLALUserVarCheck( &should_exit,
-                    strcmp( uvar->observing_kind, "RUN" ) == 0
+                    uvar->observing_run == 0
+                    || strcmp( uvar->observing_kind, "RUN" ) == 0
                     || strcmp( uvar->observing_kind, "AUX" ) == 0
                     || strcmp( uvar->observing_kind, "SIM" ) == 0
                     || strcmp( uvar->observing_kind, "DEV" ) == 0,
                     UVAR_STR( observing_kind ) " must be one of 'RUN', 'AUX', 'SIM', or 'DEV'" );
   XLALUserVarCheck( &should_exit,
-                    uvar->observing_version > 0,
+                    uvar->observing_run == 0 || uvar->observing_version > 0,
                     UVAR_STR( observing_version ) " must be strictly positive" );
+  XLALUserVarCheck( &should_exit,
+                    uvar->observing_run == 0 || !XLALUserVarWasSet( &uvar->misc_desc ),
+                    UVAR_STR( observing_version ) "=0 is mutually exclusive with " UVAR_STR( misc_desc ) );
 
   // Exit if required
   if ( should_exit ) {
@@ -437,7 +439,7 @@ int main( int argc, char *argv[] )
 
     // Build SFT filename spec
     SFTFilenameSpec XLAL_INIT_DECL(spec);
-    XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path, "sft_TO_BE_VALIDATED", NULL, uvar->window_type, NULL, uvar->observing_kind, uvar->channel_name ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path, "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name ) == XLAL_SUCCESS, XLAL_EFUNC );
     spec.window_beta = window_beta;
     spec.pubObsRun = uvar->observing_run;
     spec.pubVersion = uvar->observing_version;

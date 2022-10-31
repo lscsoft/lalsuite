@@ -22,6 +22,7 @@
 import math
 import argparse
 import os
+import re
 
 from lalpulsar import git_version
 
@@ -78,8 +79,11 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
 
     argList = []
     argList.append(f'-O {args.observing_run}')
-    argList.append(f'-K {args.observing_kind}')
-    argList.append(f'-V {args.observing_version}')
+    if args.observing_run > 0:
+        argList.append(f'-K {args.observing_kind}')
+        argList.append(f'-V {args.observing_version}')
+    elif args.misc_desc:
+        argList.append(f'-X {args.misc_desc}')
     argList.append(f'-f {args.filter_knee_freq}')
     argList.append(f'-t {args.time_baseline}')
     argList.append(f'-p {args.output_sft_path}')
@@ -119,20 +123,23 @@ parser = argparse.ArgumentParser(
     file that generates SFTs based on the options given.',
     fromfile_prefix_chars='@')
 parser.add_argument('-O', '--observing-run', required=True, type=int,
-                    help='Observing run data the SFTs are generated from, or \
+                    help='For public SFTs, observing run data the SFTs are generated from, or \
                     (in the case of mock data challenge data) the observing \
                     run on which the data is most closely based')
-parser.add_argument('-K', '--observing-kind', required=True, type=str, choices=['RUN', 'AUX', 'SIM', 'DEV'],
-                    help='"RUN" for production SFTs of h(t) channels; \
+parser.add_argument('-K', '--observing-kind', type=str, choices=['RUN', 'AUX', 'SIM', 'DEV'],
+                    help='For public SFTs, one of: "RUN" for production SFTs of h(t) channels; \
                     "AUX" for SFTs of non-h(t) channels; \
                     "SIM" for mock data challenge or other simulated data; or \
                     "DEV" for development/testing purposes')
-parser.add_argument('-V', '--observing-version', required=True, type=int,
-                    help='Version number starts at 1, and should be incremented once \
+parser.add_argument('-V', '--observing-version', type=int,
+                    help='For public SFTs: version number starts at 1, and should be incremented once \
                     SFTs have been widely distributed across clusters, advertised \
                     as being ready for use, etc.  For example, if mistakes are found \
                     in the initial SFT production run after they have been published, \
                     regenerated SFTs should have a version number of at least 2')
+parser.add_argument('-X', '--misc-desc', type=str,
+                    help='For private SFTs, miscellaneous part of the SFT \
+                    description field in the filename')
 parser.add_argument('-a', '--analysis-start-time', type=int,
                     help='GPS start time of data from which to generate \
                     SFTs (optional and unused if a segment file is given)')
@@ -252,9 +259,6 @@ parser.add_argument('-D', '--make-gps-dirs', nargs=0, action=DeprecateAction,
                     help='DEPRECATED. No longer supported')
 parser.add_argument('-Z', '--make-tmp-file', nargs=0, action=DeprecateAction,
                     help='DEPRECATED. Default behaviour')
-parser.add_argument('-X', '--misc-desc', nargs=0, action=DeprecateAction,
-                    help='DEPRECATED. No longer supported \
-                    in the public SFT filename specification')
 parser.add_argument('-v', '--sft-version', nargs=0, action=DeprecateAction,
                     help='DEPRECATED. No longer supported')
 parser.add_argument('-S', '--use-single', nargs=0, action=DeprecateAction,
@@ -263,11 +267,23 @@ parser.add_argument('-S', '--use-single', nargs=0, action=DeprecateAction,
 args = parser.parse_args()
 
 # Some basic argument value checking
-if args.observing_run <= 0:
-    raise argparse.error('--observing-run must be > 0')
+if args.observing_run < 0:
+    raise argparse.error('--observing-run must be >= 0')
 
-if args.observing_version <= 0:
+if args.observing_run > 0 and not args.observing_kind:
+    raise argparse.error('--observing-run requires --observing-kind')
+
+if args.observing_run > 0 and not args.observing_version:
+    raise argparse.error('--observing-run requires --observing-version')
+
+if args.observing_version and args.observing_version <= 0:
     raise argparse.error('--observing-version must be > 0')
+
+if args.observing_run > 0 and args.misc_desc:
+    raise argparse.error(f'--observing-run={args.observing_run} incompatible with --misc-desc')
+
+if args.misc_desc and not re.compile(r'^[A-Za-z0-9]+$').match(args.misc_desc):
+    raise argparse.error('--misc-desc may only contain A-Z, a-z, 0-9 characters')
 
 if args.extra_datafind_time < 0:
     raise argparse.error('--extra-datafind-time must be >= 0')
