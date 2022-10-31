@@ -24,7 +24,6 @@ import sys
 import warnings
 from pathlib import Path
 from subprocess import check_call
-from unittest import mock
 
 import pytest
 
@@ -147,10 +146,7 @@ if SCRIPTS:
 # run from command line
 if __name__ == "__main__":
     args = sys.argv[1:] or DEFAULT_PYTEST_ARGUMENTS
-
-    # run pytest with patch to not resolve symlinks
-    with mock.patch("py._path.local.LocalPath.realpath", lambda x: x):
-        code = pytest.main(args=[__file__] + args)
+    code = pytest.main(args=[__file__] + args)
 
     # handle exit code
     if code == 5:  # (pytest.ExitCode.NO_TESTS_COLLECTED)
