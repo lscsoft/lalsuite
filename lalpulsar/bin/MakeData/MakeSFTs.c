@@ -408,16 +408,16 @@ int main( int argc, char *argv[] )
         .a1   = -1.0,
       };
       XLAL_CHECK_MAIN( XLALButterworthREAL8TimeSeries( SFT_time_series, &filterpar ) == XLAL_SUCCESS, XLAL_EFUNC,
-                       "Failed to apply %s filter to SFT data at GPS time %" LAL_GPS_FORMAT, filterpar.name, LAL_GPS_PRINT( gps_tell ) );
+                       "Failed to apply %s filter to SFT time series data at GPS time %" LAL_GPS_FORMAT, filterpar.name, LAL_GPS_PRINT( gps_tell ) );
     }
 
     // Window SFT time series data
     XLAL_CHECK_MAIN( XLALUnitaryWindowREAL8Sequence( SFT_time_series->data, SFT_window ) != NULL, XLAL_EFUNC,
-                     "Failed to apply window to SFT data at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
+                     "Failed to apply window to SFT time series data at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
 
     // Fourier transform SFT time series data
     XLAL_CHECK_MAIN( XLALREAL8ForwardFFT( SFT_fft_data, SFT_time_series->data, SFT_fft_plan ) == XLAL_SUCCESS, XLAL_EFUNC,
-                     "Failed to Fourier transform SFT data at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
+                     "Failed to Fourier transform SFT time series data at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
 
     // Initialise SFT type
     SFT->name[0] = uvar->channel_name[0];
