@@ -63,6 +63,7 @@ typedef struct tagLT_Bound {
   double upper_bbox_pad;                ///< Upper padding as multiple of metric ellipse bounding box
   UINT4 lower_intp_pad;                 ///< Lower padding as integer number of points
   UINT4 upper_intp_pad;                 ///< Upper padding as integer number of points
+  bool find_bound_extrema;              ///< Whether to find the extrema of the parameter-space bounds
 } LT_Bound;
 
 ///
@@ -825,7 +826,7 @@ LatticeTiling *XLALCreateLatticeTiling(
 
   // Initialise default padding
   for ( size_t i = 0; i < ndim; ++i ) {
-    XLAL_CHECK_NULL( XLALSetLatticeTilingPadding( tiling, i, -1, -1, -1, -1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_NULL( XLALSetLatticeTilingPadding( tiling, i, -1, -1, -1, -1, -1 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Allocate and initialise vectors and matrices
@@ -994,7 +995,8 @@ int XLALSetLatticeTilingPadding(
   const double lower_bbox_pad,
   const double upper_bbox_pad,
   const int lower_intp_pad,
-  const int upper_intp_pad
+  const int upper_intp_pad,
+  const int find_bound_extrema
   )
 {
 
@@ -1008,6 +1010,9 @@ int XLALSetLatticeTilingPadding(
   tiling->bounds[dim].upper_bbox_pad = upper_bbox_pad < 0 ? 0.5 : upper_bbox_pad;
   tiling->bounds[dim].lower_intp_pad = lower_intp_pad < 0 ?   0 : lower_intp_pad;
   tiling->bounds[dim].upper_intp_pad = upper_intp_pad < 0 ?   0 : upper_intp_pad;
+
+  // Set whether to find the extrema of the parameter-space bounds
+  tiling->bounds[dim].find_bound_extrema = find_bound_extrema < 0 ? true : ( find_bound_extrema ? true : false );
 
   return XLAL_SUCCESS;
 
@@ -1882,10 +1887,10 @@ int XLALNextLatticeTilingPoint(
     // If tiled, reset parameter-space bounds
     if ( bound->is_tiled && ti >= reset_ti ) {
 
-      // Find the extrema of the parameter-space bounds on the current dimension
+      // Find the parameter-space bounds on the current dimension
       gsl_vector_memcpy( itr->phys_sampl, itr->phys_point );
       double phys_lower = GSL_POSINF, phys_upper = GSL_NEGINF;
-      if ( STRICT_BOUND_PADDING( bound ) ) {
+      if ( STRICT_BOUND_PADDING( bound ) || !bound->find_bound_extrema ) {
         LT_CallBoundFunc( itr->tiling, i, itr->phys_point_cache, itr->phys_sampl, &phys_lower, &phys_upper );
       } else {
         LT_FindBoundExtrema( itr->tiling, 0, i, itr->phys_sampl_cache, itr->phys_sampl, &phys_lower, &phys_upper );
