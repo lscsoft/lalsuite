@@ -23,7 +23,6 @@ import os
 import sys
 from importlib import import_module
 from pathlib import Path
-from unittest import mock
 
 import pytest
 
@@ -119,6 +118,4 @@ if MODULES:
 
 if __name__ == "__main__":
     args = sys.argv[1:] or DEFAULT_PYTEST_ARGUMENTS
-    # patch pytest to not resolve symlinks
-    with mock.patch("py._path.local.LocalPath.realpath", lambda x: x):
-        sys.exit(pytest.main(args=[__file__] + args))
+    sys.exit(pytest.main(args=[__file__] + args))
