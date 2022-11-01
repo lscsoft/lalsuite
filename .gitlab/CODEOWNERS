@@ -36,6 +36,7 @@ lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 .gitlab/                        @adam-mercer @duncanmmacleod @karl-wette
 .mailmap                        @adam-mercer @duncanmmacleod @karl-wette
 00boot                          @adam-mercer @duncanmmacleod @karl-wette
+AUTHORS                         @adam-mercer @duncanmmacleod @karl-wette
 COPYING                         @adam-mercer @duncanmmacleod @karl-wette
 Makefile.am                     @adam-mercer @duncanmmacleod @karl-wette
 conda/                          @adam-mercer @duncanmmacleod @karl-wette
