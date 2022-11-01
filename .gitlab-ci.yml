@@ -1251,6 +1251,9 @@ wheel:cp39-cp39-manylinux2014:
 wheel:cp310-cp310-manylinux2014:
   extends:
     - .wheel:manylinux2014
+wheel:cp311-cp311-manylinux2014:
+  extends:
+    - .wheel:manylinux2014
 wheel:cp38-cp38-macosx-x86_64:
   extends:
     - .wheel:macos
@@ -1264,6 +1267,10 @@ wheel:cp310-cp310-macosx-x86_64:
   extends:
      - .wheel:macos
      - .wheel:macos:x86_64
+wheel:cp311-cp311-macosx-x86_64:
+  extends:
+     - .wheel:macos
+     - .wheel:macos:x86_64
 wheel:cp38-cp38-macosx-arm64:
   extends:
     - .wheel:macos
@@ -1274,6 +1281,10 @@ wheel:cp39-cp39-macosx-arm64:  # macOS wheel reference build
     - .wheel:macos:arm64
     - .wheel-manual-rule
 wheel:cp310-cp310-macosx-arm64:
+  extends:
+     - .wheel:macos
+     - .wheel:macos:arm64
+wheel:cp311-cp311-macosx-arm64:
   extends:
      - .wheel:macos
      - .wheel:macos:arm64
@@ -2119,12 +2130,15 @@ deploy:wheel:
     - wheel:cp38-cp38-manylinux2014
     - wheel:cp39-cp39-manylinux2014
     - wheel:cp310-cp310-manylinux2014
+    - wheel:cp311-cp311-manylinux2014
     - wheel:cp38-cp38-macosx-x86_64
     - wheel:cp39-cp39-macosx-x86_64
     - wheel:cp310-cp310-macosx-x86_64
+    - wheel:cp311-cp311-macosx-x86_64
     - wheel:cp38-cp38-macosx-arm64
     - wheel:cp39-cp39-macosx-arm64
     - wheel:cp310-cp310-macosx-arm64
+    - wheel:cp311-cp311-macosx-arm64
   rules:
     - !reference [.lalsuite-tag, rules]
     - !reference [.nightly, rules]
