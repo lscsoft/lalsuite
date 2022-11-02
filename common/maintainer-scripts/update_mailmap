@@ -7,6 +7,7 @@ my %name2mails;
 my %cmail2cname;
 
 open IN, ".mailmap" or die $!;
+binmode IN, ":encoding(UTF-8)";
 while (<IN>) {
   chomp;
 
@@ -21,13 +22,14 @@ while (<IN>) {
 }
 close IN;
 
-open IN, "git shortlog -s -e -n |" or die $!;
+open IN, "git log HEAD | git shortlog --summary --email --numbered |" or die $!;
+binmode IN, ":encoding(UTF-8)";
 while (<IN>) {
   chomp;
 
-  my ($n, $cname, $cmail) = m/^\s*(\d+)\s+([^<>]+)\s+<([^>]+)>\s*$/ or die;
+  my ($n, $name, $mail) = m/^\s*(\d+)\s+([^<>]+)\s+<([^>]+)>\s*$/ or die;
 
-  $name2mails{$cname}->{$cmail} = $n if !defined($name2mails{$cname}->{$cmail});
+  $name2mails{$name}->{$mail} = $n if !defined($name2mails{$name}->{$mail});
 
 }
 close IN;
@@ -50,8 +52,6 @@ foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
   my $pmail = shift @pmails;
   die "Could not determine email address for $pname" unless defined($pmail);
 
-  next unless keys(%{$name2mails{$pname}}) > 1 || $name2mails{$pname}->{$pmail} <= 0;
-
   push @mailmap, "$pname <$pmail>";
   foreach my $mail (sort { $a cmp $b } keys(%{$name2mails{$pname}})) {
     next if $mail eq $pmail;
@@ -65,6 +65,7 @@ foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
 }
 
 open OUT, ">.mailmap" or die $!;
+binmode OUT, ":encoding(UTF-8)";
 foreach my $line (@mailmap) {
   print OUT "$line\n";
 }

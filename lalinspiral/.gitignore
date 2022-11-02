@@ -12,7 +12,6 @@
 /_build/
 /_inst/
 /lalinspiral-*/
-AUTHORS
 config.lt
 debian/control
 debian/liblal*.install

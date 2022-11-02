@@ -12,7 +12,6 @@
 /_build/
 /_inst/
 /lalburst-*/
-AUTHORS
 bin/lalburst_cluster
 bin/lalburst_coinc
 bin/lalburst_cut
