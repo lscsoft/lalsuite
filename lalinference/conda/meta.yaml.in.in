@@ -168,6 +168,7 @@ outputs:
         - numpy                               # [build_platform != target_platform]
       host:
         - {{ pin_subpackage('liblalinference', exact=True) }}
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}

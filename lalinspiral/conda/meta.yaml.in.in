@@ -141,6 +141,7 @@ outputs:
         - liblalburst >={{ lalburst_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - numpy
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         - python-lalburst >={{ lalburst_version }}
