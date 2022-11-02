@@ -18,8 +18,7 @@ function set_nice_error_handlers()
 endfunction
 function set_default_error_handlers()
   lal;
-  if swig_version >= 0x040002
-    # see https://github.com/swig/swig/pull/1789
+  if length(getenv("NASTY_ERROR_HANDLERS")) > 0
     swig_set_nasty_error_handlers();
   else
     swig_set_nice_error_handlers();

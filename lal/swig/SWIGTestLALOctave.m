@@ -3,7 +3,6 @@
 
 page_screen_output(0);
 crash_dumps_octave_core(0);
-expected_exception = 0;
 
 # assertion helper functions
 function assert_LIGOTimeGPS(t1, t2)
@@ -31,8 +30,7 @@ function set_nice_error_handlers()
 endfunction
 function set_default_error_handlers()
   lal;
-  if swig_version >= 0x040002
-    # see https://github.com/swig/swig/pull/1789
+  if length(getenv("NASTY_ERROR_HANDLERS")) > 0
     swig_set_nasty_error_handlers();
   else
     swig_set_nice_error_handlers();
@@ -50,6 +48,7 @@ if !LAL_MEMORY_FUNCTIONS_DISABLED
   mem4 = XLALCreateREAL4TimeSeries("test", LIGOTimeGPS(0), 100, 0.1, lal.DimensionlessUnit, 10);
   disp("*** below should be an error message from CheckMemoryLeaks() ***");
   set_nice_error_handlers();
+  expected_exception = 0;
   try
     LALCheckMemoryLeaks();
     expected_exception = 1;
@@ -165,6 +164,7 @@ sts.vec = [3; 2; 1];
 assert(sts.vec(:), int32([3; 2; 1]));
 sts.mat = [4, 5, 6; 9, 8, 7];
 set_nice_error_handlers();
+expected_exception = 0;
 try
   sts.mat = [1.1, 2.3, 4.5; 6.5, 4.3, 2.1];
   expected_exception = 1;
@@ -198,6 +198,7 @@ lal.swig_lal_test_INT4_matrix = lal.swig_lal_test_INT4_const_matrix;
 assert(lal.swig_lal_test_INT4_matrix(:,:), int32([[1, 2, 4]; [2, 4, 8]]));
 assert(lal.swig_lal_test_INT4_const_matrix(2, 3), int32(8));
 set_nice_error_handlers();
+expected_exception = 0;
 try
   lal.swig_lal_test_INT4_const_vector(20);
   expected_exception = 1;
@@ -232,6 +233,7 @@ function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   rv.data(rvl) = 7.5;
   assert(rv.data(rvl), 7.5);
   set_nice_error_handlers();
+  expected_exception = 0;
   try
     rv.data(rvl + 1) = 99.9;
     expected_exception = 1;
@@ -239,6 +241,7 @@ function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   set_default_error_handlers();
   assert(!expected_exception);
   set_nice_error_handlers();
+  expected_exception = 0;
   try
     iv.data = rv.data;
     expected_exception = 1;
@@ -257,6 +260,7 @@ function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   assert(double(cm.data(2, 3)), complex(0.5, 1.5));
   assert(double(cm.data(3, 2)), complex(0.75, 1.0));
   set_nice_error_handlers();
+  expected_exception = 0;
   try
     iv.data(0) = cm.data(2, 3);
     expected_exception = 1;
@@ -264,6 +268,7 @@ function check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2)
   set_default_error_handlers();
   assert(!expected_exception);
   set_nice_error_handlers();
+  expected_exception = 0;
   try
     rv.data(0) = cm.data(3, 2);
     expected_exception = 1;
@@ -320,6 +325,7 @@ a3in = {lal.LIGOTimeGPS(1234.5); lal.LIGOTimeGPS(678.9)};
 a3out = {a3in{1} * 3; a3in{2} * 3};
 assert(all(cellfun(@(x, y) x == y, lal.swig_lal_test_copyin_array3(a3in, 3), a3out)));
 set_nice_error_handlers();
+expected_exception = 0;
 try
   swig_lal_test_viewin_array1([0,0,0,0], 0);
   expected_exception = 1;
@@ -327,6 +333,7 @@ end_try_catch
 set_default_error_handlers();
 assert(!expected_exception);
 set_nice_error_handlers();
+expected_exception = 0;
 try
   swig_lal_test_viewin_array2([1.2,3.4; 0,0; 0,0], 0);
   expected_exception = 1;
@@ -840,6 +847,7 @@ function check_input_view_type_safety(f, a, b, expect_exception)
   expected_exception = 0;
   if expect_exception
     set_nice_error_handlers();
+    expected_exception = 0;
     try
       f(a, b);
       expected_exception = 1;
@@ -847,6 +855,7 @@ function check_input_view_type_safety(f, a, b, expect_exception)
     set_default_error_handlers();
     assert(!expected_exception);
     set_nice_error_handlers();
+    expected_exception = 0;
     try
       f(b, a);
       expected_exception = 1;
@@ -1172,6 +1181,7 @@ t5 = LIGOTimeGPS("1000");
 assert_LIGOTimeGPS(t5, 1000);
 disp("*** below should be error messages from LIGOTimeGPS constructor ***");
 set_nice_error_handlers();
+expected_exception = 0;
 try
   t5 = LIGOTimeGPS("abc1000");
   expected_exception = 1;
@@ -1179,6 +1189,7 @@ end_try_catch
 set_default_error_handlers();
 assert(!expected_exception);
 set_nice_error_handlers();
+expected_exception = 0;
 try
   t5 = LIGOTimeGPS("1000abc");
   expected_exception = 1;
@@ -1189,6 +1200,7 @@ disp("*** above should be error messages from LIGOTimeGPS constructor ***");
 assert(swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == swig_lal_test_noptrgps(1234.5))
 disp("*** below should be error messages from LIGOTimeGPS constructor ***");
 set_nice_error_handlers();
+expected_exception = 0;
 try
   LIGOTimeGPS([]);
   expected_exception = 1;
@@ -1220,6 +1232,7 @@ u2 = lal.MeterUnit^[1,2] * lal.KiloGramUnit^[1,2] * lal.SecondUnit ^ -1;
 assert_LALUnit(u1^[1,2], u2);
 assert(swig_type(u2), "LALUnit");
 set_nice_error_handlers();
+expected_exception = 0;
 try
   lal.SecondUnit ^ [1,0];
   expected_exception = 1;
@@ -1243,6 +1256,7 @@ assert_LALUnit(u1.__int__(), 1000);
 u1 /= 10000;
 assert_LALUnit(u1, 100 * lal.MilliUnit * lal.WattUnit);
 set_nice_error_handlers();
+expected_exception = 0;
 try
   u1 *= 1.234;
   expected_exception = 1;
