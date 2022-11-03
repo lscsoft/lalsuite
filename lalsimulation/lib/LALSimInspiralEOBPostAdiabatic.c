@@ -1386,13 +1386,13 @@ int
 XLALSimInspiralEOBPostAdiabatic(
 	REAL8Array **dynamics,
 	/**<< OUTPUT, real part of the modes */
-	const REAL8 m1,
+	REAL8 m1,
 	/**<< mass-1 */
-	const REAL8 m2,
+	REAL8 m2,
 	/**<< mass-2 */
-	const REAL8 spin1z,
+	REAL8 spin1z,
 	/**<< z-component of spin-1, dimensionless */
-	const REAL8 spin2z,
+	REAL8 spin2z,
 	/**<< z-component of spin-2, dimensionless */
 	const REAL8Vector initVals,
 	/**<< initial values (r, phi, pr, pphi) for the post-adiabatic 
@@ -1416,7 +1416,16 @@ XLALSimInspiralEOBPostAdiabatic(
             "XLALSimInspiralEOBPostAdiabatic can only be used with SpinAlignedEOBversion = 4.\n"
         );
 	}
-
+	REAL8 mass_swap = 0.0;
+	REAL8 spin_swap = 0.0;
+	if (m2>m1){
+	  mass_swap = m1;
+	  spin_swap = spin1z;
+	  m1 = m2;
+	  m2 = mass_swap;
+	  spin1z = spin2z;
+	  spin2z = spin_swap;
+	}
 	REAL8 q = XLALSimInspiralEOBPACalculateMassRatio(m1, m2);
 	REAL8 nu = XLALSimInspiralEOBPACalculateSymmetricMassRatio(q);
 

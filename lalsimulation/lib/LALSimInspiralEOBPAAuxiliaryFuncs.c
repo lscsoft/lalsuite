@@ -72,10 +72,13 @@ XLALSimInspiralEOBPACalculateSymmetricMassRatio(
  */
 REAL8
 XLALSimInspiralEOBPACalculateX1(
-	const REAL8 nu
+	REAL8 nu
 	/**<< Symmetric mass ratio */
 )
 {
+  if (nu > 0.25 && fabs(nu-0.25) < 1e-4){
+    nu = 0.25;
+  }
 	if ( (nu < 0.) || (nu > 0.25) )
 	{
 		XLALPrintError(
