@@ -2340,8 +2340,8 @@ int XLALSetSuperskyEqualAreaSkyBounds(
   XLAL_CHECK( XLALSetLatticeTilingOrigin( tiling, 1, 0.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Set the parameter-space padding control flags for reduced supersky sky coordinates A and B (-1 denotes default padding)
-  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 0, A_lower_bbox_pad, A_upper_bbox_pad, -1, -1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 1, B_lower_bbox_pad, B_upper_bbox_pad, -1, -1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 0, A_lower_bbox_pad, A_upper_bbox_pad, -1, -1, -1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 1, B_lower_bbox_pad, B_upper_bbox_pad, -1, -1, -1 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 
@@ -2430,7 +2430,7 @@ int XLALSetSuperskyPhysicalSpinBoundPadding(
 
   // Set padding (-1 denotes default padding)
   const double bbox_pad = padding ? -1 : 0;
-  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ), bbox_pad, bbox_pad, -1, -1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, RSSKY_FKDOT_DIM( rssky_transf, s ), bbox_pad, bbox_pad, -1, -1, -1 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;
 

@@ -195,7 +195,7 @@ XLALInitDopplerFullScan ( const DopplerFullScanInit *init       /**< [in] initia
            */
           if ( !init->extraArgs[0] ) {
             for (size_t i = 1; i < PULSAR_MAX_SPINS; ++i) {
-              XLAL_CHECK_NULL( XLALSetLatticeTilingPadding( thisScan->spindownTiling, 2 + i, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+              XLAL_CHECK_NULL( XLALSetLatticeTilingPadding( thisScan->spindownTiling, 2 + i, 0, 0, 0, 0, -1 ) == XLAL_SUCCESS, XLAL_EFUNC );
             }
           }
 
