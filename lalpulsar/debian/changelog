@@ -1,6 +1,18 @@
+lalpulsar (5.2.0-1) unstable; urgency=low
+
+  * Update for 5.2.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 03 Nov 2022 10:36:12 -0700
+
+lalpulsar (5.1.1-1) unstable; urgency=low
+
+  * Update for 5.1.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Wed, 28 Sep 2022 13:58:57 -0700
+
 lalpulsar (5.1.0-1) unstable; urgency=low
 
-  * Update got 5.1.0
+  * Update for 5.1.0
 
  -- Adam Mercer <adam.mercer@ligo.org>  Wed, 28 Sep 2022 13:58:51 -0700
 
