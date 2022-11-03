@@ -441,7 +441,8 @@ int MAIN( int argc, char *argv[]) {
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_method,           "method",           INT4,    0,   OPTIONAL,  "0=Hough, 1=stackslide, -1=fstat" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_semiCohToplist,   "semiCohToplist",  BOOLEAN,  0,   OPTIONAL,  "Print semicoh toplist?" ) == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_useWeights,       "useWeights",       BOOLEAN, 0,   OPTIONAL,  "Weight each stack using noise and AM?" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DataFiles1,       "DataFiles1",       STRING,  0,   REQUIRED,  "1st SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_DataFiles1,       "DataFiles1",       STRING,  0,   REQUIRED,  "1st SFT file pattern. Possibilities are:\n"
+                                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_skyRegion,        "skyRegion",        STRING,  0,   OPTIONAL,  "Sky-region by polygon of form '(ra1,dec1),(ra2,dec2),(ra3,dec3),...' or 'allsky'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_numSkyPartitions, "numSkyPartitions",INT4,     0,  OPTIONAL,   "Number of (equi-)partitions to split skygrid into") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_partitionIndex,   "partitionIndex",  INT4,     0,   OPTIONAL,  "Index [0,numSkyPartitions-1] of sky-partition to generate") == XLAL_SUCCESS, XLAL_EFUNC);

@@ -22,10 +22,9 @@
 * \ingroup lalpulsar_bin_fscan
 */
 
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
-#include <lal/SFTfileIO.h>
 #include <lal/LALPulsarVCSInfo.h>
 
 
@@ -46,8 +45,10 @@ int main(int argc, char **argv)
     INT4 startGPS = 0, endGPS = 0;
     REAL8 f_min = 0.0, f_max = 0.0, timebaseline = 0;
 
-    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&SFTpattA,      "ChASFTs",         STRING, 'p', REQUIRED, "SFT location/pattern" ) == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&SFTpattB,      "ChBSFTs",         STRING, 'q', REQUIRED, "SFT location/pattern" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&SFTpattA,      "ChASFTs",         STRING, 'p', REQUIRED, "SFT location/pattern. Possibilities are:\n"
+                                           " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&SFTpattB,      "ChBSFTs",         STRING, 'q', REQUIRED, "SFT location/pattern. Possibilities are:\n"
+                                           " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&startGPS,     "startGPS",     INT4,   's', REQUIRED, "Starting GPS time (SFT timestamps must be >= this)" ) == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&endGPS,       "endGPS",       INT4,   'e', REQUIRED, "Ending GPS time (SFT timestamps must be < this)" ) == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&f_min,        "fMin",         REAL8,  'f', REQUIRED, "Minimum frequency" ) == XLAL_SUCCESS, XLAL_EFUNC);

@@ -34,7 +34,7 @@ extern "C" {
 /* LAL-includes */
 #include <lal/AVFactories.h>
 #include <lal/LogPrintf.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/ComputeFstat.h>
 #include <lal/SinCosLUT.h> /* for XLALFastNegExp() */

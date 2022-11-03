@@ -38,7 +38,7 @@ extern "C" {
 #include <lal/PulsarDataTypes.h>
 #include <lal/SeqFactories.h>
 #include <lal/LALBarycenter.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 
 /*---------- exported DEFINES ----------*/
 

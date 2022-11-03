@@ -23,7 +23,6 @@
 
 #include <lal/LALStdio.h>
 #include <lal/SFTfileIO.h>
-#include <lal/SFTutils.h>
 #include <lal/Units.h>
 
 /*---------- DEFINES ----------*/

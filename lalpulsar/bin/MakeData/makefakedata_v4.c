@@ -1154,7 +1154,9 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(  orbitArgp,            REAL8, 0, OPTIONAL, "Argument of periapsis (radians)");
 
   /* noise */
-  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile, and ONLY within (--fmin,--Band).)");
+  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal. Possibilities are:\n"
+                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'\n"
+                          "(Uses ONLY SFTs falling within (--startTime,--duration) or the set given in --timstampsFile, and ONLY within (--fmin,--Band).)");
   XLALRegisterUvarMember(  noiseSqrtSh,          REAL8, 0, OPTIONAL,  "Gaussian noise with single-sided PSD sqrt(Sh)");
 
   XLALRegisterUvarMember(  lineFeature,          BOOLEAN, 0, OPTIONAL, "Generate a monochromatic 'line' of amplitude h0 and frequency 'Freq'}");

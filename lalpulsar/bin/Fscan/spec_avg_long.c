@@ -25,12 +25,11 @@
 
 #include "config.h"
 
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
 #include <lal/LALStdio.h>
 #include <lal/UserInput.h>
-#include <lal/SFTfileIO.h>
 #include <lal/LALPulsarVCSInfo.h>
 
 /*---------- DEFINES ----------*/
@@ -75,7 +74,8 @@ int main(int argc, char **argv)
     LIGOTimeGPSVector *epoch_gps_times = NULL;
     REAL8VectorSequence *epoch_avg = NULL;
 
-    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&SFTpatt,       "SFTs",          STRING, 'p', REQUIRED, "SFT location/pattern" ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&SFTpatt,       "SFTs",          STRING, 'p', REQUIRED, "SFT location/pattern. Possibilities are:\n"
+                                           " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&IFO,           "IFO",           STRING, 'I', REQUIRED, "Detector (e.g., H1)" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&startGPS,      "startGPS",      INT4,   's', REQUIRED, "Starting GPS time (SFT timestamps must be >= this time)" ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar(&endGPS,        "endGPS",        INT4,   'e', REQUIRED, "Ending GPS time (SFT timestamps must be < this time)" ) == XLAL_SUCCESS, XLAL_EFUNC );
