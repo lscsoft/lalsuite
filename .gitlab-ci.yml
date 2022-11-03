@@ -81,7 +81,7 @@ variables:
   # run autoreconf in pedantic and loud mode
   AUTORECONF: "autoreconf --verbose --warnings=error"
   # version of python to use for builds
-  LALSUITE_PYTHON_VERSION: "3.8"
+  LALSUITE_PYTHON_VERSION: "3.10"
   # gitlab runners have 4 cores per job
   CPU_COUNT: 4
   # don't need git history
@@ -985,12 +985,12 @@ lalapps:conda:
   rules:
     - !reference [.ci-nightly-deploy, rules]
 
-lalapps:conda:py37:
+lalapps:conda:py38:
   extends:
     - lalapps:conda
     - .lalapps:conda:extra
   variables:
-    LALSUITE_PYTHON_VERSION: "3.7"
+    LALSUITE_PYTHON_VERSION: "3.8"
 
 lalapps:conda:py39:
   extends:
@@ -998,13 +998,6 @@ lalapps:conda:py39:
     - .lalapps:conda:extra
   variables:
     LALSUITE_PYTHON_VERSION: "3.9"
-
-lalapps:conda:py310:
-  extends:
-    - lalapps:conda
-    - .lalapps:conda:extra
-  variables:
-    LALSUITE_PYTHON_VERSION: "3.10"
 
 # -- wheels -------------------------------------
 #
