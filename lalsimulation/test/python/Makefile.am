@@ -1,4 +1,4 @@
-include $(top_srcdir)/gnuscripts/lalsuite_test_python.am
+\0;95;0cinclude $(top_srcdir)/gnuscripts/lalsuite_test_python.am
 
 # Add compiled test programs to this variable
 test_programs +=
@@ -22,7 +22,7 @@ test_scripts += \
 	test_prec_avg_evol.py \
 	test_hybrid_evol.py \
 	test_SEOBNRv5HM_ROM.py \
-	test_SEOBNRv4HM_PA \
+	test_SEOBNRv4HM_PA.py \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
