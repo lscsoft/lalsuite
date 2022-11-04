@@ -557,7 +557,7 @@ AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
 
     # check for distutils
     AC_MSG_CHECKING([for distutils])
-    cat <<EOD | ${PYTHON} - 2>/dev/null
+    ${PYTHON} - 2>/dev/null <<EOD
 import distutils
 EOD
     AS_IF([test $? -ne 0],[
@@ -567,7 +567,7 @@ EOD
 
     # check for NumPy
     AC_MSG_CHECKING([for NumPy])
-    numpy_version=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+    numpy_version=[`${PYTHON} - 2>/dev/null <<EOD
 import numpy
 print(numpy.__version__)
 EOD`]
@@ -585,7 +585,7 @@ EOD`]
 
     # determine Python preprocessor flags
     AC_SUBST([SWIG_PYTHON_CPPFLAGS],["-ULAL_STRICT_DEFS_ENABLED"])
-    python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+    python_out=[`${PYTHON} - 2>/dev/null <<EOD
 import sys
 import distutils.sysconfig as cfg
 import numpy.lib.utils as npyutil
@@ -602,7 +602,7 @@ EOD`]
 
     # determine Python compiler flags
     AC_SUBST([SWIG_PYTHON_CFLAGS],[])
-    python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+    python_out=[`${PYTHON} - 2>/dev/null <<EOD
 import sys
 import distutils.sysconfig as cfg
 cflags = cfg.get_config_var('CFLAGS').split()
@@ -628,7 +628,7 @@ EOD`]
 
     # determine Python linker flags
     AC_SUBST([SWIG_PYTHON_LDFLAGS],[])
-    python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+    python_out=[`${PYTHON} - 2>/dev/null <<EOD
 import sys, os
 import distutils.sysconfig as cfg
 sys.stdout.write(cfg.get_config_var('LDFLAGS'))
