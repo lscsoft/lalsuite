@@ -1,4 +1,4 @@
-\0;95;0cinclude $(top_srcdir)/gnuscripts/lalsuite_test_python.am
+include $(top_srcdir)/gnuscripts/lalsuite_test_python.am
 
 # Add compiled test programs to this variable
 test_programs +=
