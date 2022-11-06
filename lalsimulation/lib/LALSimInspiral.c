@@ -3509,11 +3509,35 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             }
 
             SphHarmTimeSeries *modes = hlm;
+            COMPLEX16TimeSeries *tmpMode = NULL;
+            char modeName[40];
 
             while (modes) {
                 if (XLALSimInspiralModeArrayIsModeActive(
+                    modeArray, modes->l, -modes->m
+                ) == 1) {
+                    sprintf(modeName, "h%dm%d", modes->l, modes->m);
+
+                    tmpMode = XLALCreateCOMPLEX16TimeSeries(
+                        modeName,
+                        &modes->mode->epoch,
+                        0,
+                        deltaT,
+                        &lalStrainUnit,
+                        modes->mode->data->length
+                    );
+
+                    for (i = 0; i < modes->mode->data->length; i++) {
+                        tmpMode->data->data[i] = pow(-1, modes->l) * conj(- modes->mode->data->data[i]);
+                    }
+
+                    hlm = XLALSphHarmTimeSeriesAddMode(hlm, tmpMode, modes->l, -(modes->m));
+                }
+
+                if (XLALSimInspiralModeArrayIsModeActive(
                     modeArray, modes->l, modes->m
                 ) == 1) {
+                    
                     for (i = 0; i < modes->mode->data->length; i++)
                         modes->mode->data->data[i] *= -1;
                 }
@@ -3524,6 +3548,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             if (modeArrayCreated) {
                 XLALDestroyValue(modeArray);
             }
+            
+            XLALDestroyCOMPLEX16TimeSeries(tmpMode);
 
             break;
 
