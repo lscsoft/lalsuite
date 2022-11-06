@@ -48,7 +48,7 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - liblal >={{ lal_version }}
-    - metaio >={{ metaio_version }}
+    - libmetaio >={{ metaio_version }}
 
 outputs:
   - name: liblalmetaio
@@ -65,10 +65,10 @@ outputs:
         - swig >={{ swig_version }}
       host:
         - liblal >={{ lal_version }}
-        - metaio >={{ metaio_version }}
+        - libmetaio >={{ metaio_version }}
       run:
         - liblal >={{ lal_version }}
-        - metaio >={{ metaio_version }}
+        - libmetaio >={{ metaio_version }}
       run_constrained:
         - lalmetaio >=2.0.1
         - python-lalmetaio >=2.0.1
