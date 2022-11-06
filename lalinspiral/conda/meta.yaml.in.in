@@ -56,7 +56,7 @@ requirements:
     - liblalburst >={{ lalburst_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
-    - metaio
+    - libmetaio
 
 outputs:
   - name: liblalinspiral
@@ -78,7 +78,7 @@ outputs:
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
-        - metaio
+        - libmetaio
       run:
         - gsl
         - liblal >={{ lal_version }}
@@ -86,7 +86,7 @@ outputs:
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
-        - metaio
+        - libmetaio
       run_constrained:
         - lalinspiral >=2.0.1
         - python-lalinspiral >=2.0.1
