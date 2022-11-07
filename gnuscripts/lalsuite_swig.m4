@@ -555,19 +555,19 @@ AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
     ])
     AC_MSG_RESULT([${PYTHON_VERSION}])
 
-    # check for distutils
-    AC_MSG_CHECKING([for distutils])
-    cat <<EOD | ${PYTHON} - 2>/dev/null
-import distutils
+    # check for sysconfig
+    AC_MSG_CHECKING([for sysconfig])
+    ${PYTHON} - 2>/dev/null <<EOD
+import sysconfig
 EOD
     AS_IF([test $? -ne 0],[
-      AC_MSG_ERROR([could not import distutils])
+      AC_MSG_ERROR([could not import sysconfig])
     ])
     AC_MSG_RESULT([yes])
 
     # check for NumPy
     AC_MSG_CHECKING([for NumPy])
-    numpy_version=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+    numpy_version=[`${PYTHON} - 2>/dev/null <<EOD
 import numpy
 print(numpy.__version__)
 EOD`]
@@ -585,13 +585,18 @@ EOD`]
 
     # determine Python preprocessor flags
     AC_SUBST([SWIG_PYTHON_CPPFLAGS],["-ULAL_STRICT_DEFS_ENABLED"])
-    python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
-import sys
-import distutils.sysconfig as cfg
-import numpy.lib.utils as npyutil
-sys.stdout.write( '-I' + cfg.get_python_inc())
-sys.stdout.write(' -I' + cfg.get_python_inc(plat_specific=1))
-sys.stdout.write(' -I' + npyutil.get_include())
+    python_out=[`${PYTHON} - 2>/dev/null <<EOD
+try:
+    import distutils.sysconfig
+except ImportError:  # python >= 3.11
+    import sysconfig
+    print('-I' + sysconfig.get_path('include'), end='')
+    print(' -I' + sysconfig.get_path('platinclude'), end='')
+else:
+    print( '-I' + distutils.sysconfig.get_python_inc(), end='')
+    print(' -I' + distutils.sysconfig.get_python_inc(plat_specific=1), end='')
+import numpy
+print(' -I' + numpy.get_include(), end='')
 EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python preprocessor flags])
@@ -602,12 +607,11 @@ EOD`]
 
     # determine Python compiler flags
     AC_SUBST([SWIG_PYTHON_CFLAGS],[])
-    python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
-import sys
-import distutils.sysconfig as cfg
-cflags = cfg.get_config_var('CFLAGS').split()
+    python_out=[`${PYTHON} - 2>/dev/null <<EOD
+import sysconfig
+cflags = sysconfig.get_config_var('CFLAGS').split()
 cflags = [f for f in cflags]
-sys.stdout.write(" ".join(cflags))
+print(" ".join(cflags), end='')
 EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python compiler flags])
@@ -628,14 +632,23 @@ EOD`]
 
     # determine Python linker flags
     AC_SUBST([SWIG_PYTHON_LDFLAGS],[])
-    python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
-import sys, os
-import distutils.sysconfig as cfg
-sys.stdout.write(cfg.get_config_var('LDFLAGS'))
-sys.stdout.write(' -L' + cfg.get_python_lib())
-sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
-sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
-sys.stdout.write(' -L' + cfg.get_config_var('LIBDIR'))
+    python_out=[`${PYTHON} - 2>/dev/null <<EOD
+try:
+    from distutils import sysconfig
+except ImportError:  # python >= 3.11
+    import sysconfig
+    print(sysconfig.get_config_var('LDFLAGS'), end='')
+    print(' -L' + sysconfig.get_path('purelib'), end='')
+    print(' -L' + sysconfig.get_path('platlib'), end='')
+    print(' -L' + sysconfig.get_path('platstdlib'), end='')
+    print(' -L' + sysconfig.get_config_var('LIBDIR'), end='')
+else:
+    import distutils.sysconfig as cfg
+    print(cfg.get_config_var('LDFLAGS'), end='')
+    print(' -L' + cfg.get_python_lib(), end='')
+    print(' -L' + cfg.get_python_lib(plat_specific=1), end='')
+    print(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1), end='')
+    print(' -L' + cfg.get_config_var('LIBDIR'), end='')
 EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python linker flags])
