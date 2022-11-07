@@ -1091,6 +1091,10 @@ lalapps:conda:py39:
     - python -m pip install
           delocate
           oldest-supported-numpy
+          pip
+          setuptools
+          wheel
+    - python -m pip list installed
     # Build wheel
     - ./00boot
     - ./configure
