@@ -20,6 +20,7 @@
 .koji:build:
   extends:
     - .koji:authentication
+  retry: 0
   script:
     # build src.rpm
     - PACKAGE=${CI_JOB_NAME%%:*}
