@@ -76,9 +76,10 @@ XLALSimInspiralEOBPACalculateX1(
 	/**<< Symmetric mass ratio */
 )
 {
-  if (nu > 0.25 && fabs(nu-0.25) < 1e-4){
-    nu = 0.25;
-  }
+	if (nu > 0.25 && fabs(nu - 0.25) < 1e-4) {
+		nu = 0.25;
+	}
+
 	if ( (nu < 0.) || (nu > 0.25) )
 	{
 		XLALPrintError(
@@ -88,7 +89,7 @@ XLALSimInspiralEOBPACalculateX1(
 		XLAL_ERROR(XLAL_EINVAL);
 	}
 
-	REAL8 X1 = 0.5 * (1.+sqrt(1.-4.*nu));
+	REAL8 X1 = 0.5 * (1. + sqrt(1. - 4. * nu));
 
 	return X1;
 }
