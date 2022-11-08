@@ -370,15 +370,19 @@ int main( int argc, char *argv[] )
     LIGOTimeGPS gps_tell;
     XLALFrStreamTell( &gps_tell, framestream );
 
-    // Break if not enough data remaining
-    if ( XLALFrStreamEnd( framestream ) ) {
-      LogPrintf( LOG_NORMAL, "Reached end of frame stream at GPS time %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT( gps_tell ) );
-      break;
-    }
-
     // Try to read in time series data for the next SFT
-    XLAL_CHECK_MAIN( XLALFrStreamGetREAL8TimeSeries( SFT_time_series, framestream ) == XLAL_SUCCESS, XLAL_EFUNC,
-                     "XLALFrStreamGetREAL8TimeSeries() failed at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
+    {
+      int errnum = 0;
+      XLAL_TRY_SILENT( XLALFrStreamGetREAL8TimeSeries( SFT_time_series, framestream ), errnum );
+      if ( errnum != XLAL_SUCCESS ) {
+        if ( XLALFrStreamEnd( framestream) ) {    // Break if not enough data remaining
+          LogPrintf( LOG_NORMAL, "Reached end of frame stream at GPS time %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT( gps_tell ) );
+          break;
+        } else {                                  // Otherwise re-raise error
+          XLAL_ERROR( errnum | XLAL_EFUNC, "XLALFrStreamGetREAL8TimeSeries() failed at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
+        }
+      }
+    }
 
     // Break if time series data for next SFT is after GPS end time
     {
