@@ -83,7 +83,9 @@ $(pybin_scripts) $(noinst_pybin_scripts): Makefile pyscripts-all-local
 		exit 1; \
 	fi; \
 	echo "$${shebang}/bin/sh" > .libs/$@.bin; \
-	echo "PYTHONPATH=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH):\$${PYTHONPATH}\"" >> .libs/$@.bin; \
+	echo "LAL_DATA_PATH=\"$(abs_top_srcdir)/lib:$(abs_top_srcdir)/test:$(LAL_DATA_PATH)\"" | $(SED) 's|:::*|:|g' >> .libs/$@.bin; \
+	echo "export LAL_DATA_PATH" >> .libs/$@.bin; \
+	echo "PYTHONPATH=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH):\$${PYTHONPATH}\"" | $(SED) 's|:::*|:|g' >> .libs/$@.bin; \
 	echo "export PYTHONPATH" >> .libs/$@.bin; \
 	echo "test -d '$(abs_builddir)/.libs' || mkdir '$(abs_builddir)/.libs' >/dev/null 2>&1" >> .libs/$@.bin; \
 	echo "echo '$${dummy_shebang}' > '$(abs_builddir)/.libs/$@.py'" >> .libs/$@.bin; \
