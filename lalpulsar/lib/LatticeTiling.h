@@ -72,6 +72,11 @@ typedef enum tagTilingLattice {
 extern const UserChoices TilingLatticeChoices;
 
 ///
+/// Log level at which to print progress messages when counting templates and performing callbacks
+///
+extern int LatticeTilingProgressLogLevel;
+
+///
 /// Function which returns a bound on a dimension of the lattice tiling.
 ///
 typedef double( *LatticeTilingBound )(
