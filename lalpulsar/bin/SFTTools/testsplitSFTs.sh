@@ -24,7 +24,7 @@ if ! eval "$cmdline"; then
     exit 1
 fi
 ## simulate a public SFT
-pubspec='O2RUN+V1+CDCHCLEANSTRAINC02+WTKEY5'
+pubspec='O2RUN+R1+CDCHCLEANSTRAINC02+WTKEY5'
 mv "broadband1d/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft" "broadband1d/H-5_H1_${Tsft}SFT_${pubspec}-${start}-${span}.sft"
 
 ## run lalpulsar_splitSFTs to create narrowband SFTs

@@ -385,25 +385,25 @@ echo "-------------------------------------------------------"
 echo " Test creation of SFTs with public filenames "
 echo "-------------------------------------------------------"
 mkdir -p pubSFT/
-cmdline="$mfdv5_CODE --fmin 10 --Band 1 --IFOs H1 --startTime 200000000 --duration=1800 -O 100 -V 1 --outLabel=testPubSFT --outSFTdir=pubSFT/"
+cmdline="$mfdv5_CODE --fmin 10 --Band 1 --IFOs H1 --startTime 200000000 --duration=1800 -O 100 -R 1 --outLabel=testPubSFT --outSFTdir=pubSFT/"
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error: something failed when running '$mfdv5_CODE' ..."
     exit 1
 fi
-for pubSFTname in "./pubSFT/H-1_H1_1800SFT_O100SIM+V1+CtestPubSFT+WRECT-200000000-1800.sft"; do
+for pubSFTname in "./pubSFT/H-1_H1_1800SFT_O100SIM+R1+CtestPubSFT+WRECT-200000000-1800.sft"; do
     if ! test -f "${pubSFTname}"; then
         echo "Error: '$mfdv5_CODE' failed to create public SFT '${pubSFTname}' as expected"
         exit 1
     fi
 done
-cmdline="$mfdv5_CODE --fmin 10 --Band 1 --IFOs 'H1,L1' --startTime 300000000 --duration=1800 --SFTWindowType=hann -O 100 -V 1 --outFrChannels='H1:test123,L1:test456' --outSFTdir=pubSFT/"
+cmdline="$mfdv5_CODE --fmin 10 --Band 1 --IFOs 'H1,L1' --startTime 300000000 --duration=1800 --SFTWindowType=hann -O 100 -R 1 --outFrChannels='H1:test123,L1:test456' --outSFTdir=pubSFT/"
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error: something failed when running '$mfdv5_CODE' ..."
     exit 1
 fi
-for pubSFTname in "./pubSFT/H-1_H1_1800SFT_O100SIM+V1+Ctest123+WHANN-300000000-1800.sft" "./pubSFT/L-1_L1_1800SFT_O100SIM+V1+Ctest456+WHANN-300000000-1800.sft"; do
+for pubSFTname in "./pubSFT/H-1_H1_1800SFT_O100SIM+R1+Ctest123+WHANN-300000000-1800.sft" "./pubSFT/L-1_L1_1800SFT_O100SIM+R1+Ctest456+WHANN-300000000-1800.sft"; do
     if ! test -f "${pubSFTname}"; then
         echo "Error: '$mfdv5_CODE' failed to create public SFT '${pubSFTname}' as expected"
         exit 1

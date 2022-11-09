@@ -104,7 +104,7 @@ typedef struct
   CHAR *outSFTdir;		/**< Output directory for SFTs */
   CHAR *outLabel;		/**< 'misc' entry in SFT-filenames, and description entry of output frame filenames */
   UINT4 outPubObsRun;           /**< if >0, names SFTs using the public filename convention with this observing run number */
-  UINT4 outPubVersion;          /**< if outPubObsRun>0, names SFTs using the public filename convention with this version number */
+  UINT4 outPubRevision;         /**< if outPubObsRun>0, names SFTs using the public filename convention with this revision number */
   BOOLEAN outSingleSFT;	        /**< use to output a single concatenated SFT */
 
   CHAR *TDDfile;		/**< Filename for ASCII output time-series */
@@ -290,10 +290,10 @@ main(int argc, char *argv[])
             XLAL_CHECK ( (channelName[0] == sft0->name[0]) && (channelName[1] == sft0->name[1]), XLAL_EINVAL,
                          "Possible IFO mismatch: output channel[%d] = '%s', IFO = '%c%c': be careful about output channel ordering\n", X, channelName, sft0->name[0], sft0->name[1] );
 
-            /* set public observing run, version, channel name */
+            /* set public observing run, revision, channel name */
             XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, NULL, NULL, NULL, NULL, NULL, "SIM", channelName ) == XLAL_SUCCESS, XLAL_EFUNC );
             spec.pubObsRun = uvar.outPubObsRun;
-            spec.pubVersion = uvar.outPubVersion;
+            spec.pubRevision = uvar.outPubRevision;
 
           } else { // private SFT filename; see private description from --outLabel
             XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, NULL, NULL, NULL, NULL, uvar.outLabel, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -688,7 +688,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember( outSFTdir,          STRING, 'n', OPTIONAL, "Output SFTs:  directory for output SFTs");
   XLALRegisterUvarMember(  outLabel,	         STRING, 0, OPTIONAL, "'misc' entry in SFT-filenames or 'description' entry of frame filenames" );
   XLALRegisterUvarMember( outPubObsRun,       UINT4, 'O', OPTIONAL, "if >0, names SFTs using the public filename convention with this observing run number" );
-  XLALRegisterUvarMember( outPubVersion,      UINT4, 'V', OPTIONAL, "if " UVAR_STR(outPubObsRun) ">0, names SFTs using the public filename convention with this version number" );
+  XLALRegisterUvarMember( outPubRevision,     UINT4, 'R', OPTIONAL, "if " UVAR_STR(outPubObsRun) ">0, names SFTs using the public filename convention with this revision number" );
   XLALRegisterUvarMember( TDDfile,            STRING, 't', OPTIONAL, "Filename to output time-series into");
 
   XLALRegisterUvarMember( logfile,            STRING, 'l', OPTIONAL, "Filename for log-output");

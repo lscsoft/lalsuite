@@ -280,7 +280,7 @@ typedef struct tagSFTFilenameSpec {
   CHAR privMisc[256];           /**< For private SFTs: miscellaneous description field */
   UINT4 pubObsRun;              /**< For public SFTs: observing run number */
   CHAR pubObsKind[4];           /**< For public SFTs: kind of data ('RUN', 'AUX', 'SIM', 'DEV') */
-  UINT4 pubVersion;             /**< For public SFTs: version number of SFT production */
+  UINT4 pubRevision;            /**< For public SFTs: revision number of SFT production */
   CHAR pubChannel[256];         /**< For public SFTs: channel name of data used to make SFTs */
   UINT4 nbFirstBinFreq;         /**< For narrow-band SFTs: SFT first bin frequency divided by SFT time base, rounded down */
   UINT4 nbFirstBinRem;          /**< For narrow-band SFTs: remainder of division of SFT first bin frequency by SFT time base */

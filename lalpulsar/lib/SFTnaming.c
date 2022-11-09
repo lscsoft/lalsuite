@@ -342,8 +342,8 @@ char *XLALBuildSFTFilenameFromSpec(
                    strcmp(spec->pubObsKind, "SIM") == 0 ||
                    strcmp(spec->pubObsKind, "DEV") == 0, XLAL_EINVAL,
                    "'pubObsKind=%s' must be one of 'RUN'|'AUX'|'SIM'|'DEV'", spec->pubObsKind );
-  XLAL_CHECK_NULL( spec->pubObsRun == 0 || spec->pubVersion > 0, XLAL_EINVAL,
-                   "Public SFTs (with pubObsRun=%u) must include a positive version 'pubVersion'",
+  XLAL_CHECK_NULL( spec->pubObsRun == 0 || spec->pubRevision > 0, XLAL_EINVAL,
+                   "Public SFTs (with pubObsRun=%u) must include a positive revision 'pubRevision'",
                    spec->pubObsRun );
   XLAL_CHECK_NULL( LAST_ELEMENT(spec->pubChannel) == 0, XLAL_EINVAL,
                    "'pubChannel' is not a null-terminated string" );
@@ -420,10 +420,10 @@ char *XLALBuildSFTFilenameFromSpec(
     // append public SFT descriptor
     fname = XLALStringAppendFmt(
       fname,
-      "_O%d%s+V%d+C%s+W%s",
+      "_O%d%s+R%d+C%s+W%s",
       spec->pubObsRun,
       spec->pubObsKind,
-      spec->pubVersion,
+      spec->pubRevision,
       pubChannel_no_prefix,
       windowspec_str
       );
@@ -581,8 +581,8 @@ int XLALParseSFTFilenameIntoSpec(
       XLAL_CHECK( sscanf( D41, "O%d%255s", &spec->pubObsRun, buf ) == 2, XLAL_EINVAL,
                   "Could not parse public SFT fields 'pubObsRun' and 'pubObsKind' from field D41='%s'", D41 );
       STRCPYCHK( "Public SFT field 'pubObsKind'", spec->pubObsKind, buf );
-      XLAL_CHECK( sscanf( D42, "V%d", &spec->pubVersion ) == 1, XLAL_EFUNC,
-                  "Could not parse public SFT field 'pubVersion' from field D42='%s'", D42 );
+      XLAL_CHECK( sscanf( D42, "R%d", &spec->pubRevision ) == 1, XLAL_EFUNC,
+                  "Could not parse public SFT field 'pubRevision' from field D42='%s'", D42 );
       XLAL_CHECK( sscanf( D43, "C%255s", buf ) == 1, XLAL_EINVAL,
                   "Could not parse public SFT field 'pubChannel' from field D43='%s'", D43 );
       STRCPYCHK( "Public SFT field 'pubChannel'", spec->pubChannel, buf );
