@@ -356,6 +356,19 @@ int XLALRandomLatticeTilingPoints(
   );
 
 ///
+/// Get a parameter-space bound on a dimension of the lattice tiling. This is a convenience function
+/// which returns the bounds set by XLALSetLatticeTilingBound() for debugging, plotting, etc.
+///
+int XLALGetLatticeTilingBound(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t dim,                     ///< [in] Dimension on which bound applies
+  const gsl_vector *point,              ///< [in] Point at which bound applies
+  const bool padding,                   ///< [in] Whether to add padding to bounds
+  double *lower,                        ///< [out] Lower parameter-space bound
+  double *upper                         ///< [out] Upper parameter-space bound
+  );
+
+///
 /// Create a new lattice tiling iterator.
 ///
 #ifdef SWIG // SWIG interface directives

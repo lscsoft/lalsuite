@@ -1680,6 +1680,60 @@ int XLALRandomLatticeTilingPoints(
 
 }
 
+int XLALGetLatticeTilingBound(
+  const LatticeTiling *tiling,
+  const size_t dim,
+  const gsl_vector *point,
+  const bool padding,
+  double *lower,
+  double *upper
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( point != NULL, XLAL_EFAULT );
+  XLAL_CHECK( lower != NULL, XLAL_EFAULT );
+  XLAL_CHECK( upper != NULL, XLAL_EFAULT );
+
+  const size_t n = tiling->ndim;
+
+  // Get bound information for this dimension
+  const LT_Bound *bound = &tiling->bounds[dim];
+
+  // Get the parameter-space bounds on the current dimension:
+  // - If tiled, or padding requested, get bounds respecting strict/extrema settings, and add padding
+  // - Otherwise, get bounds without extrema/padding
+  gsl_vector *GAVEC( phys_sampl, n );
+  gsl_matrix *GAMAT( phys_point_cache, n, LT_CACHE_MAX_SIZE );
+  gsl_matrix *GAMAT( phys_sampl_cache, n, LT_CACHE_MAX_SIZE );
+  gsl_vector_memcpy( phys_sampl, point );
+  *lower = GSL_POSINF;
+  *upper = GSL_NEGINF;
+  if ( bound->is_tiled && padding ) {
+    if ( STRICT_BOUND_PADDING( bound ) || !bound->find_bound_extrema ) {
+      LT_CallBoundFunc( tiling, dim, phys_point_cache, phys_sampl, lower, upper );
+    } else {
+      LT_FindBoundExtrema( tiling, 0, dim, phys_sampl_cache, phys_sampl, lower, upper );
+    }
+    const double phys_bbox_dim = gsl_vector_get( tiling->phys_bbox, dim );
+    *lower -= bound->lower_bbox_pad * phys_bbox_dim;
+    *upper += bound->upper_bbox_pad * phys_bbox_dim;
+  } else {
+    LT_CallBoundFunc( tiling, dim, phys_point_cache, phys_sampl, lower, upper );
+  }
+
+  // Cleanup
+  GFVEC( phys_sampl );
+  GFMAT( phys_point_cache );
+  GFMAT( phys_sampl_cache );
+
+  return XLAL_SUCCESS;
+
+}
+
 LatticeTilingIterator *XLALCreateLatticeTilingIterator(
   const LatticeTiling *tiling,
   const size_t itr_ndim
