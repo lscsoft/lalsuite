@@ -468,7 +468,7 @@ class CWSimulator(object):
         spec = lalpulsar.SFTFilenameSpec()
         spec.path = out_dir
         spec.window_type = None
-        spec.window_beta = window_param
+        spec.window_param = window_param
         spec.privMisc = comment
 
         # generate SFTs

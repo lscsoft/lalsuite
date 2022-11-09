@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
         
         /* either write whole SFT-vector to single concatenated file or as individual SFT-files */
         if (uvar.outSFTnames) {
-          XLAL_CHECK_MAIN ( XLALWriteSFTVector2NamedFile(sfts, fnames->data[X], spec.window_type, spec.window_beta, comment) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK_MAIN ( XLALWriteSFTVector2NamedFile(sfts, fnames->data[X], spec.window_type, spec.window_param, comment) == XLAL_SUCCESS, XLAL_EFUNC );
         }
         else {
           XLAL_CHECK_MAIN ( XLALWriteSFTVector2StandardFile( sfts, &spec, comment, uvar.outSingleSFT ) == XLAL_SUCCESS, XLAL_EFUNC );

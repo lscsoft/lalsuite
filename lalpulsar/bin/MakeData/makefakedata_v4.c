@@ -93,7 +93,7 @@ typedef struct
 
   REAL4Window *window;		/**< window function for the time series */
   CHAR *window_type;            /**< name of window function */
-  REAL8 window_beta;            /**< parameter of window function */
+  REAL8 window_param;           /**< parameter of window function */
 
   COMPLEX8FrequencySeries *transfer;  /**< detector's transfer function for use in hardware-injection */
 
@@ -144,8 +144,8 @@ typedef struct
   REAL8 noiseSqrtSh;		/**< single-sided sqrt(Sh) for Gaussian noise */
 
   /* Window function [OPTIONAL] */
-  CHAR *window;		/**< Windowing function for the time series */
-  REAL8 tukeyBeta;          /**< Hann fraction of Tukey window (0.0=rect; 1,0=han; 0.5=default */
+  CHAR *window;               /**< Windowing function for the time series */
+  REAL8 windowParam;          /**< Hann fraction of Tukey window (0.0=rect; 1,0=han; 0.5=default */
 
   /* Detector and ephemeris */
   CHAR *IFO;			/**< Detector: H1, L1, H2, V1, ... */
@@ -482,13 +482,13 @@ main(int argc, char *argv[])
           /* if user requesting single concatenated SFT */
           SFTFilenameSpec XLAL_INIT_DECL(spec);
           XLAL_CHECK( XLALFillSFTFilenameSpecStrings( &spec, uvar.outSFTbname, NULL, NULL, GV.window_type, "mfdv4", NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-          spec.window_beta = GV.window_beta;
+          spec.window_param = GV.window_param;
           if ( uvar.outSingleSFT )
             {
               /* write all SFTs to concatenated file */
               for ( UINT4 k = 0; k < SFTs->length; k++ )
                 {
-                  int ret = XLALWriteSFT2FilePointer ( &(SFTs->data[k]), fpSingleSFT, spec.window_type, spec.window_beta, comment );
+                  int ret = XLALWriteSFT2FilePointer ( &(SFTs->data[k]), fpSingleSFT, spec.window_type, spec.window_param, comment );
                   XLAL_CHECK ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALWriteSFT2FilePointer() failed to write SFT %d / %d to '%s'!\n", k+1, SFTs->length, uvar.outSFTbname );
                 } // for k < numSFTs
             } // if outSingleSFT
@@ -549,7 +549,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   BinaryPulsarParams pulparams;
 
   char* window_type_from_noiseSFTs = NULL;
-  REAL8 window_beta_from_noiseSFTs = 0;
+  REAL8 window_param_from_noiseSFTs = 0;
 
   /* read in par file parameters if given */
    if (have_parfile)
@@ -835,7 +835,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
         /* extract SFT window function */
         window_type_from_noiseSFTs = XLALStringDuplicate(catalog->data[0].window_type);
         XLAL_CHECK ( window_type_from_noiseSFTs != NULL, XLAL_ENOMEM );
-        window_beta_from_noiseSFTs = catalog->data[0].window_beta;
+        window_param_from_noiseSFTs = catalog->data[0].window_param;
 
 	/* load effective frequency-band from noise-SFTs */
 	fMin = cfg->fmin_eff;
@@ -919,16 +919,16 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   /*--------------------- Prepare windowing of time series ---------------------*/
   cfg->window = NULL;
   cfg->window_type = NULL;
-  cfg->window_beta = 0;
+  cfg->window_param = 0;
 
   {
     const BOOLEAN have_window = XLALUserVarWasSet ( &uvar->window );
-    const BOOLEAN have_beta = XLALUserVarWasSet( &uvar->tukeyBeta );
+    const BOOLEAN have_param = XLALUserVarWasSet( &uvar->windowParam );
     const CHAR* window_type_from_uvar = uvar->window;
-    const REAL8 window_beta_from_uvar = have_beta ? uvar->tukeyBeta : 0;
+    const REAL8 window_param_from_uvar = have_param ? uvar->windowParam : 0;
     if ( have_window )
       {
-        XLAL_CHECK ( XLALCheckNamedWindow ( window_type_from_uvar, have_beta ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK ( XLALCheckNamedWindow ( window_type_from_uvar, have_param ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     if ( uvar->noiseSFTs )
       {
@@ -937,7 +937,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
           {
             cfg->window_type = XLALStringDuplicate( have_window_type_from_noiseSFTs ? window_type_from_noiseSFTs : window_type_from_uvar );
             XLAL_CHECK ( cfg->window_type != NULL, XLAL_ENOMEM );
-            cfg->window_beta = have_window_type_from_noiseSFTs ? window_beta_from_noiseSFTs : window_beta_from_uvar;
+            cfg->window_param = have_window_type_from_noiseSFTs ? window_param_from_noiseSFTs : window_param_from_uvar;
           }
         else
           {
@@ -949,15 +949,15 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
       {
         cfg->window_type = XLALStringDuplicate( window_type_from_uvar );
         XLAL_CHECK ( cfg->window_type != NULL, XLAL_ENOMEM );
-        cfg->window_beta = window_beta_from_uvar;
+        cfg->window_param = window_param_from_uvar;
       }
     if ( cfg->window_type )
       {
         /* NOTE: a timeseries of length N*dT has no timestep at N*dT !! (convention) */
         UINT4 lengthOfTimeSeries = (UINT4)round(uvar->Tsft * 2 * cfg->fBand_eff);
 
-        cfg->window = XLALCreateNamedREAL4Window( cfg->window_type, cfg->window_beta, lengthOfTimeSeries );
-        XLAL_CHECK ( cfg->window != NULL, XLAL_EFUNC, "XLALCreateNamedREAL4Window('%s', %g, %d) failed\n", cfg->window_type, cfg->window_beta, lengthOfTimeSeries );
+        cfg->window = XLALCreateNamedREAL4Window( cfg->window_type, cfg->window_param, lengthOfTimeSeries );
+        XLAL_CHECK ( cfg->window != NULL, XLAL_EFUNC, "XLALCreateNamedREAL4Window('%s', %g, %d) failed\n", cfg->window_type, cfg->window_param, lengthOfTimeSeries );
       }
   }
 
@@ -1138,8 +1138,9 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* SFT properties */
   XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds");
   XLALRegisterUvarMember(  SFToverlap,           REAL8, 0, OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFile)");
-  XLALRegisterUvarMember(window,               STRING, 0, OPTIONAL, "Window function to apply to the SFTs ('rectangular', 'hann', 'tukey', etc.); when --noiseSFTs is given, required ONLY if noise SFTs have unknown window");
-  XLALRegisterUvarMember(  tukeyBeta,            REAL8, 0, OPTIONAL, "Fraction of Tukey window which is transition (0.0=rect, 1.0=Hann)");
+  XLALRegisterUvarMember( window,               STRING, 0, OPTIONAL, "Window function to apply to the SFTs ('rectangular', 'hann', 'tukey', etc.); when --noiseSFTs is given, required ONLY if noise SFTs have unknown window");
+  XLALRegisterUvarMember( windowParam,           REAL8, 0, OPTIONAL, "Window parameter required for a few window-types (eg. 'tukey')");
+  XLALRegisterNamedUvar( NULL, "tukeyBeta",      REAL8, 0, DEFUNCT,  "Use " UVAR_STR( windowParam ) " instead");
 
   /* pulsar params */
   XLALRegisterUvarMember( refTime,             EPOCH, 'S', OPTIONAL, "Pulsar SSB reference epoch: format 'xx.yy[GPS|MJD]' [default: startTime]");

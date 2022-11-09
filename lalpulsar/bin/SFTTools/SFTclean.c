@@ -171,7 +171,7 @@ int main(int argc, char *argv[]){
     FILE *fpout = NULL;
     UINT4 numSFTs = multiCatalogView->data[X].length;
     const char* window_type = multiCatalogView->data[X].data[0].window_type;
-    const REAL8 window_beta = multiCatalogView->data[X].data[0].window_beta;
+    const REAL8 window_param = multiCatalogView->data[X].data[0].window_param;
     if ( uvar_outSingleSFT ) {
       /* grab the first and last entry from the single-IFO catalog,
        * relying here on XLALSFTdataFind returning a catalogue with SFTs sorted by increasing GPS-epochs
@@ -249,7 +249,7 @@ int main(int argc, char *argv[]){
       if ( uvar_outSingleSFT ) {
         for ( UINT4 k = 0; k < inputSFTs->data[0]->length; k++ ) {
           SFTtype *this_sft = &( inputSFTs->data[0]->data[k] );
-          XLAL_CHECK ( XLALWriteSFT2FilePointer ( this_sft, fpout, window_type, window_beta, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALWriteSFT2FilePointer ( this_sft, fpout, window_type, window_param, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
       } else {
         SFTFilenameSpec XLAL_INIT_DECL(spec);

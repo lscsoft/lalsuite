@@ -376,7 +376,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
     {
       // compute SFTs from timeseries
       SFTVector *sftVect;
-      XLAL_CHECK ( (sftVect = XLALMakeSFTsFromREAL8TimeSeries ( outTS, timestamps, dataParams->SFTWindowType, dataParams->SFTWindowBeta)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (sftVect = XLALMakeSFTsFromREAL8TimeSeries ( outTS, timestamps, dataParams->SFTWindowType, dataParams->SFTWindowParam)) != NULL, XLAL_EFUNC );
 
       // extract requested band
       XLAL_CHECK ( ((*SFTvect) = XLALExtractStrictBandFromSFTVector ( sftVect, dataParams->fMin, dataParams->Band )) != NULL, XLAL_EFUNC );
@@ -492,7 +492,7 @@ SFTVector *
 XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries,	//!< input time-series
                                   const LIGOTimeGPSVector *timestamps, 	//!< timestamps to produce SFTs for (can be NULL), if given must all lies within timeseries' time-span
                                   const char *windowType,		//!< optional time-domain window function to apply before FFTing
-                                  REAL8 windowBeta			//!< window parameter, if any
+                                  REAL8 windowParam			//!< window parameter, if any
                                   )
 {
   XLAL_CHECK_NULL ( timeseries != NULL, XLAL_EINVAL, "Invalid NULL input 'timeseries'\n");
@@ -512,7 +512,7 @@ XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries,	//!< input 
   // prepare window function if requested
   REAL8Window *window = NULL;
   if ( windowType != NULL ) {
-    XLAL_CHECK_NULL ( (window = XLALCreateNamedREAL8Window ( windowType, windowBeta, timestepsSFT )) != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL ( (window = XLALCreateNamedREAL8Window ( windowType, windowParam, timestepsSFT )) != NULL, XLAL_EFUNC );
   }
 
   // ---------- Prepare FFT ----------

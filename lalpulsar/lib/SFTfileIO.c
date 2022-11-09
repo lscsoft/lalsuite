@@ -483,7 +483,7 @@ XLALWriteSFT2FilePointer(
   const SFTtype *sft,	        /**< SFT to write to disk */
   FILE *fp,		        /**< pointer to open file */
   const CHAR* SFTwindowtype,    /**< window applied to SFT, if any */
-  const REAL8 SFTwindowbeta,    /**< parameter of window */
+  const REAL8 SFTwindowparam,   /**< parameter of window */
   const CHAR *SFTcomment        /**< optional comment */
   )
 {
@@ -541,7 +541,7 @@ XLALWriteSFT2FilePointer(
   rawheader.detector[1]    		= sft->name[1];
   rawheader.comment_length 		= comment_len + pad_len;
 
-  XLAL_CHECK ( build_sft_windowspec( &rawheader.windowspec, NULL, SFTwindowtype, SFTwindowbeta ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( build_sft_windowspec( &rawheader.windowspec, NULL, SFTwindowtype, SFTwindowparam ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- compute CRC */
   rawheader.crc64 = crc64((const unsigned char*)&rawheader, sizeof(rawheader), ~(0ULL));
@@ -588,7 +588,7 @@ XLALWriteSFT2NamedFile(
   const SFTtype *sft,           /**< SFT to write to disk */
   const CHAR *SFTfilename,      /**< SFT filename */
   const CHAR* SFTwindowtype,    /**< window applied to SFT, if any */
-  const REAL8 SFTwindowbeta,    /**< parameter of window */
+  const REAL8 SFTwindowparam,   /**< parameter of window */
   const CHAR *SFTcomment        /**< optional comment */
   )
 {
@@ -617,7 +617,7 @@ XLALWriteSFT2NamedFile(
     }
 
   /* write SFT to file */
-  if ( XLALWriteSFT2FilePointer (sft, fp, SFTwindowtype, SFTwindowbeta, SFTcomment) != XLAL_SUCCESS ) {
+  if ( XLALWriteSFT2FilePointer (sft, fp, SFTwindowtype, SFTwindowparam, SFTcomment) != XLAL_SUCCESS ) {
     XLAL_ERROR ( XLAL_EIO );
   }
 
@@ -679,7 +679,7 @@ XLALWriteSFT2StandardFile(
   XLAL_CHECK ( SFTfilename != NULL, XLAL_EFUNC );
 
   // write SFT
-  XLAL_CHECK ( XLALWriteSFT2NamedFile ( sft, SFTfilename, SFTfnspec->window_type, SFTfnspec->window_beta, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALWriteSFT2NamedFile ( sft, SFTfilename, SFTfnspec->window_type, SFTfnspec->window_param, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALFree( SFTfilename );
   
@@ -697,7 +697,7 @@ XLALWriteSFTVector2NamedFile(
   const SFTVector *sftVect,     /**< SFT vector to write to disk */
   const CHAR *SFTfilename,      /**< SFT filename */
   const CHAR* SFTwindowtype,    /**< window applied to SFT, if any */
-  const REAL8 SFTwindowbeta,    /**< parameter of window */
+  const REAL8 SFTwindowparam,   /**< parameter of window */
   const CHAR *SFTcomment        /**< optional comment */
   )
 {
@@ -717,7 +717,7 @@ XLALWriteSFTVector2NamedFile(
       SFTtype *sft = &( sftVect->data[k] );
 
       /* write the k^th sft */
-      XLAL_CHECK ( XLALWriteSFT2FilePointer ( sft, fp, SFTwindowtype, SFTwindowbeta, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALWriteSFT2FilePointer ( sft, fp, SFTwindowtype, SFTwindowparam, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } // for k < numSFTs
 
@@ -780,7 +780,7 @@ XLALWriteSFTVector2StandardFile(
     XLAL_CHECK ( SFTfilename != NULL, XLAL_EFUNC );
 
     // write SFT
-    XLAL_CHECK ( XLALWriteSFTVector2NamedFile ( sftVect, SFTfilename, SFTfnspec->window_type, SFTfnspec->window_beta, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK ( XLALWriteSFTVector2NamedFile ( sftVect, SFTfilename, SFTfnspec->window_type, SFTfnspec->window_param, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     XLALFree ( SFTfilename );
 

@@ -239,7 +239,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	      strcpy ( desc->locator->fname, fname );
 	      desc->locator->offset = this_filepos;
 
-	      XLAL_CHECK_NULL( parse_sft_windowspec( this_windowspec, &desc->window_type, &desc->window_beta ) == XLAL_SUCCESS, XLAL_EFUNC );
+	      XLAL_CHECK_NULL( parse_sft_windowspec( this_windowspec, &desc->window_type, &desc->window_param ) == XLAL_SUCCESS, XLAL_EFUNC );
 
 	      desc->header  = this_header;
 	      desc->comment = this_comment;

@@ -229,7 +229,7 @@ typedef struct tagSFTDescriptor
   struct tagSFTLocator *locator; 	/**< *internal* description of where to find this SFT [opaque!] */
   SFTtype header;			/**< SFT-header info */
   const char *window_type;              /**< window function applied to SFT */
-  REAL8 window_beta;                    /**< parameter of window function, if required */
+  REAL8 window_param;                   /**< parameter of window function, if required */
   CHAR *comment;			/**< comment-entry in SFT-header */
   UINT4 numBins;			/**< number of frequency-bins in this SFT */
   UINT4 version;			/**< SFT-specification version */
@@ -274,7 +274,7 @@ typedef struct tagSFTFilenameSpec {
   CHAR detector[3];             /**< 2-character detector prefix (e.g. 'H1', 'L1', 'V1') */
   UINT4 SFTtimebase;            /**< Timebase in seconds of the SFT */
   CHAR window_type[32];         /**< window function applied to SFT */
-  REAL8 window_beta;            /**< parameter of window function, if required */
+  REAL8 window_param;           /**< parameter of window function, if required */
   UINT4 gpsStart;               /**< GPS time in seconds at the beginning of the first SFT in the file */
   UINT4 SFTspan;                /**< Total time interval in seconds covered by SFT file */
   CHAR privMisc[256];           /**< For private SFTs: miscellaneous description field */
@@ -540,11 +540,11 @@ MultiSFTVector* XLALReadSFDB(REAL8 f_min, REAL8 f_max, const CHAR *file_pattern,
 
 // These functions are defined in SFTfileIO.c
 
-int XLALWriteSFT2FilePointer  ( const SFTtype *sft, FILE *fp, const CHAR* SFTwindowtype, const REAL8 SFTwindowbeta, const CHAR *SFTcomment );
-int XLALWriteSFT2NamedFile    ( const SFTtype *sft, const CHAR *SFTfilename, const CHAR* SFTwindowtype, const REAL8 SFTwindowbeta, const CHAR *SFTcomment );
+int XLALWriteSFT2FilePointer  ( const SFTtype *sft, FILE *fp, const CHAR* SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
+int XLALWriteSFT2NamedFile    ( const SFTtype *sft, const CHAR *SFTfilename, const CHAR* SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
 int XLALWriteSFT2StandardFile ( const SFTtype *sft, SFTFilenameSpec *SFTfnspec, const CHAR *SFTcomment );
 
-int XLALWriteSFTVector2NamedFile    ( const SFTVector *sftVect, const CHAR *SFTfilename, const CHAR* SFTwindowtype, const REAL8 SFTwindowbeta, const CHAR *SFTcomment );
+int XLALWriteSFTVector2NamedFile    ( const SFTVector *sftVect, const CHAR *SFTfilename, const CHAR* SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
 int XLALWriteSFTVector2StandardFile ( const SFTVector *sftVect, SFTFilenameSpec *SFTfnspec, const CHAR *SFTcomment, const BOOLEAN merged );
 
 int XLALCheckSFTFileIsValid ( const char *fname );

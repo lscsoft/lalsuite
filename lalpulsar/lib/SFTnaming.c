@@ -362,7 +362,7 @@ char *XLALBuildSFTFilenameFromSpec(
 
   char windowspec_str[9];
   if ( spec->pubObsRun > 0 ) {
-    XLAL_CHECK_NULL( build_sft_windowspec( NULL, &windowspec_str, spec->window_type, spec->window_beta ) == XLAL_SUCCESS, XLAL_EINVAL,
+    XLAL_CHECK_NULL( build_sft_windowspec( NULL, &windowspec_str, spec->window_type, spec->window_param ) == XLAL_SUCCESS, XLAL_EINVAL,
                      "'%s' is not a valid SFT window function", spec->window_type );
   }
 
@@ -587,8 +587,8 @@ int XLALParseSFTFilenameIntoSpec(
                   "Could not parse public SFT field 'pubChannel' from field D43='%s'", D43 );
       STRCPYCHK( "Public SFT field 'pubChannel'", spec->pubChannel, buf );
       XLAL_CHECK( sscanf( D44, "W%255s", buf ) == 1, XLAL_EINVAL,
-                  "Could not parse public SFT fields 'window_type' and 'window_beta' from field D44='%s'", D44 );
-      XLAL_CHECK( parse_sft_windowspec_str( buf, &spec->window_type, &spec->window_beta ) == XLAL_SUCCESS, XLAL_EINVAL,
+                  "Could not parse public SFT fields 'window_type' and 'window_param' from field D44='%s'", D44 );
+      XLAL_CHECK( parse_sft_windowspec_str( buf, &spec->window_type, &spec->window_param ) == XLAL_SUCCESS, XLAL_EINVAL,
                   "'%s' does not specify a valid SFT window function", buf );
     } else { // private SFT
       XLAL_CHECK( XLALCheckValidDescriptionField(D4) == XLAL_SUCCESS, XLAL_EINVAL,
@@ -639,9 +639,9 @@ XLALCheckValidDescriptionField ( const char *desc )
 
 
 /**
- * Build an SFT 2-byte 'windowspec' or filename field 'windowspec_str' for the window given by 'window_type' and 'window_beta'
+ * Build an SFT 2-byte 'windowspec' or filename field 'windowspec_str' for the window given by 'window_type' and 'window_param'
  */
-int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const char *window_type, REAL8 window_beta )
+int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const char *window_type, REAL8 window_param )
 {
 
   // check input
@@ -662,7 +662,7 @@ int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const c
       // build windowspec and windowspec_str
       if ( windowspec_table[w].A == 0 ) {   /* zero-parameter windows */
 
-        XLAL_CHECK ( window_beta <= 0, XLAL_EINVAL, "Invalid window_beta=%0.10g for SFT window type '%s'", window_beta, window_type );
+        XLAL_CHECK ( window_param <= 0, XLAL_EINVAL, "Invalid window_param=%0.10g for SFT window type '%s'", window_param, window_type );
 
         if (windowspec) {
           *windowspec = windowspec_table[w].B;
@@ -674,10 +674,10 @@ int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const c
 
       } else {                              /* one-parameter windows */
 
-        REAL8 Breal = window_beta * 5000;
+        REAL8 Breal = window_param * 5000;
         long B = lrint(Breal);
-        XLAL_CHECK ( B == ((long) Breal), XLAL_ETOL, "SFT window_beta=%0.10g cannot be exactly represented by an integer [0,5000]", window_beta );
-        XLAL_CHECK ( 0 <= B && B <= 5000, XLAL_ERANGE, "SFT window_beta=%0.10g is out of range [0.0,1.0] (B=%ld)", window_beta, B );
+        XLAL_CHECK ( B == ((long) Breal), XLAL_ETOL, "SFT window_param=%0.10g cannot be exactly represented by an integer [0,5000]", window_param );
+        XLAL_CHECK ( 0 <= B && B <= 5000, XLAL_ERANGE, "SFT window_param=%0.10g is out of range [0.0,1.0] (B=%ld)", window_param, B );
 
         if (windowspec) {
           *windowspec = windowspec_table[w].A * 5001 + B;
@@ -700,9 +700,9 @@ int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const c
 
 
 /**
- * Parse an SFT 2-byte 'windowspec' into a window name 'window_type' and possible parameter 'window_beta'
+ * Parse an SFT 2-byte 'windowspec' into a window name 'window_type' and possible parameter 'window_param'
  */
-int parse_sft_windowspec ( const UINT2 windowspec, const char **window_type, REAL8 *window_beta )
+int parse_sft_windowspec ( const UINT2 windowspec, const char **window_type, REAL8 *window_param )
 {
 
   // parse windowspec
@@ -713,15 +713,15 @@ int parse_sft_windowspec ( const UINT2 windowspec, const char **window_type, REA
   for (size_t w = 0; w < XLAL_NUM_ELEM(windowspec_table); ++w) {
     if ( A == windowspec_table[w].A ) {
 
-      // build window_type and window_beta
+      // build window_type and window_param
       if ( A == 0 && B == windowspec_table[w].B ) {   /* zero-parameter windows */
 
         if (window_type) {
           *window_type = windowspec_table[w].window_type;
         }
 
-        if (window_beta) {
-          *window_beta = 0;
+        if (window_param) {
+          *window_param = 0;
         }
 
         return XLAL_SUCCESS;
@@ -732,8 +732,8 @@ int parse_sft_windowspec ( const UINT2 windowspec, const char **window_type, REA
           *window_type = windowspec_table[w].window_type;
         }
 
-        if (window_beta) {
-          *window_beta = ((REAL8) B) / 5000;
+        if (window_param) {
+          *window_param = ((REAL8) B) / 5000;
         }
 
         return XLAL_SUCCESS;
@@ -750,9 +750,9 @@ int parse_sft_windowspec ( const UINT2 windowspec, const char **window_type, REA
 
 
 /**
- * Parse an SFT filename field 'windowspec_str' into a window name 'window_type' and possible parameter 'window_beta'
+ * Parse an SFT filename field 'windowspec_str' into a window name 'window_type' and possible parameter 'window_param'
  */
-int parse_sft_windowspec_str ( const CHAR *windowspec_str, CHAR (*window_type)[32], REAL8 *window_beta )
+int parse_sft_windowspec_str ( const CHAR *windowspec_str, CHAR (*window_type)[32], REAL8 *window_param )
 {
 
   // check input
@@ -763,7 +763,7 @@ int parse_sft_windowspec_str ( const CHAR *windowspec_str, CHAR (*window_type)[3
   long B = 0;
   int parsed = sscanf( windowspec_str, "%4s%li", short_name, &B );
   XLAL_CHECK ( 0 < parsed, XLAL_EINVAL, "Could not parse SFT filename field windowspec_str='%s'", windowspec_str );
-  XLAL_CHECK ( 0 <= B && B <= 5000, XLAL_ERANGE, "SFT window_beta=%0.10g is out of range [0.0,1.0] (B=%ld)", ((REAL8) B) / 5000, B );
+  XLAL_CHECK ( 0 <= B && B <= 5000, XLAL_ERANGE, "SFT window_param=%0.10g is out of range [0.0,1.0] (B=%ld)", ((REAL8) B) / 5000, B );
 
   // lookup windows
   for (size_t w = 0; w < XLAL_NUM_ELEM(windowspec_table); ++w) {
@@ -774,12 +774,12 @@ int parse_sft_windowspec_str ( const CHAR *windowspec_str, CHAR (*window_type)[3
         XLAL_CHECK ( snprintf( *window_type, sizeof(*window_type), "%s", windowspec_table[w].window_type ) < (int) sizeof(*window_type), XLAL_ESYS );
       }
 
-      // build window_beta
-      if (window_beta) {
+      // build window_param
+      if (window_param) {
         if ( windowspec_table[w].A == 0 ) {   /* zero-parameter windows */
-          *window_beta = 0;
+          *window_param = 0;
         } else {                              /* one-parameter windows */
-          *window_beta = ((REAL8) B) / 5000;
+          *window_param = ((REAL8) B) / 5000;
         }
       }
 

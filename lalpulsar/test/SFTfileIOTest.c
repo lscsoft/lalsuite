@@ -220,11 +220,11 @@ int main( void )
   /* ----- SFT writing ----- */
   SFTFilenameSpec XLAL_INIT_DECL(spec);
   XLAL_CHECK_MAIN ( XLALFillSFTFilenameSpecStrings( &spec, ".", NULL, NULL, "tukey", NULL, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-  spec.window_beta = 0.5;   // SFT aren't actually windowed; just testing that window-spec is correctly written and read
+  spec.window_param = 0.5;   // SFT aren't actually windowed; just testing that window-spec is correctly written and read
 
   /* write SFT to disk */
   strcpy(spec.privMisc, "test");
-  XLAL_CHECK_MAIN ( XLALWriteSFT2NamedFile(&(multsft_vect->data[0]->data[0]), "outputsft_r1.sft", spec.window_type, spec.window_beta, "A SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALWriteSFT2NamedFile(&(multsft_vect->data[0]->data[0]), "outputsft_r1.sft", spec.window_type, spec.window_param, "A SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN ( XLALWriteSFTVector2StandardFile(multsft_vect->data[0], &spec, "A SFT file for testing!", 0) == XLAL_SUCCESS, XLAL_EFUNC);
 
   /* write SFT to single file */
@@ -305,7 +305,7 @@ int main( void )
 
   /* write SFT again */
   multsft_vect->data[0]->data[0].epoch.gpsSeconds += 60;       /* shift start-time so they don't look like segmented SFTs! */
-  XLAL_CHECK_MAIN ( XLALWriteSFT2NamedFile(&(multsft_vect->data[0]->data[0]), "outputsft_r2.sft", spec.window_type, spec.window_beta, "A SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALWriteSFT2NamedFile(&(multsft_vect->data[0]->data[0]), "outputsft_r2.sft", spec.window_type, spec.window_param, "A SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroySFTVector ( sft_vect );
   sft_vect = NULL;
@@ -329,9 +329,9 @@ int main( void )
   XLAL_CHECK_MAIN ( strcmp( catalog->data[0].window_type, spec.window_type ) == 0,
                     XLAL_EFAILED, "catalog window type '%s' should be '%s'",
                     catalog->data[0].window_type, spec.window_type );
-  XLAL_CHECK_MAIN ( catalog->data[0].window_beta == spec.window_beta,
-                    XLAL_EFAILED, "catalog window beta %g should be %g",
-                    catalog->data[0].window_beta, spec.window_beta );
+  XLAL_CHECK_MAIN ( catalog->data[0].window_param == spec.window_param,
+                    XLAL_EFAILED, "catalog window parameter %g should be %g",
+                    catalog->data[0].window_param, spec.window_param );
 
   XLAL_CHECK_MAIN ( ( sft_vect = XLALLoadSFTs ( catalog, -1, -1 ) ) != NULL, XLAL_EFUNC );
 

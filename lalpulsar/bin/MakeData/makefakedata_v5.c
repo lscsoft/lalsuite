@@ -90,7 +90,7 @@ typedef struct
   REAL8 BandOut;				/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
 
   const CHAR *window_type;			/**< name of window function */
-  REAL8 window_beta;				/**< parameter of window function */
+  REAL8 window_param;				/**< parameter of window function */
 
   transientWindow_t transientWindow;	/**< properties of transient-signal window */
   CHAR *VCSInfoString;			/**< Git version string */
@@ -139,7 +139,7 @@ typedef struct
 
   /* Window function [OPTIONAL] */
   CHAR *SFTWindowType;		/**< Windowing function to apply to the SFT time series */
-  REAL8 SFTWindowBeta;         	/**< 'beta' parameter required for certain window-types */
+  REAL8 SFTWindowParam;        	/**< parameter required for certain window-types */
 
   CHAR *ephemEarth;		/**< Earth ephemeris file to use */
   CHAR *ephemSun;		/**< Sun ephemeris file to use */
@@ -198,7 +198,7 @@ main(int argc, char *argv[])
   DataParams.multiTimestamps 	= GV.multiTimestamps;
   DataParams.randSeed           = uvar.randSeed;
   DataParams.SFTWindowType      = GV.window_type;
-  DataParams.SFTWindowBeta      = GV.window_beta;
+  DataParams.SFTWindowParam     = GV.window_param;
   DataParams.sourceDeltaT       = uvar.sourceDeltaT;
   DataParams.inputMultiTS       = GV.inputMultiTS;
   DataParams.fMin               = GV.fminOut;
@@ -271,7 +271,7 @@ main(int argc, char *argv[])
 
       /* default window is rectangular */
       const char *window_type = ( GV.window_type != NULL ) ? GV.window_type : "rectangular";
-      const REAL8 window_beta = ( GV.window_type != NULL ) ? GV.window_beta : 0;
+      const REAL8 window_param = ( GV.window_type != NULL ) ? GV.window_param : 0;
 
       for ( UINT4 X=0; X < mSFTs->length; X ++ )
         {
@@ -280,7 +280,7 @@ main(int argc, char *argv[])
           /* set up SFT filename */
           SFTFilenameSpec XLAL_INIT_DECL(spec);
           XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, uvar.outSFTdir, NULL, NULL, window_type, NULL, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-          spec.window_beta = window_beta;
+          spec.window_param = window_param;
 
           if ( uvar.outPubObsRun > 0 ) { // public SFT filename
 
@@ -529,22 +529,22 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   // determine SFT window to use
   {
     const BOOLEAN have_window = XLALUserVarWasSet( &uvar->SFTWindowType );
-    const BOOLEAN have_beta = XLALUserVarWasSet( &uvar->SFTWindowBeta );
+    const BOOLEAN have_param = XLALUserVarWasSet( &uvar->SFTWindowParam );
     const CHAR* window_type_from_uvar = uvar->SFTWindowType;
-    const REAL8 window_beta_from_uvar = have_beta ? uvar->SFTWindowBeta : 0;
+    const REAL8 window_param_from_uvar = have_param ? uvar->SFTWindowParam : 0;
     if ( have_window )
       {
-        XLAL_CHECK ( XLALCheckNamedWindow ( window_type_from_uvar, have_beta ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK ( XLALCheckNamedWindow ( window_type_from_uvar, have_param ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
     if ( have_noiseSFTs )
       {
         const CHAR* window_type_from_noiseSFTs = cfg->noiseCatalog->data[0].window_type;
-        const REAL8 window_beta_from_noiseSFTs = cfg->noiseCatalog->data[0].window_beta;
+        const REAL8 window_param_from_noiseSFTs = cfg->noiseCatalog->data[0].window_param;
         const BOOLEAN have_window_type_from_noiseSFTs = ( XLALStringCaseCompare( window_type_from_noiseSFTs, "unknown" ) != 0 );
         if ( have_window_type_from_noiseSFTs ^ have_window )
           {
             cfg->window_type = have_window_type_from_noiseSFTs ? window_type_from_noiseSFTs : window_type_from_uvar;
-            cfg->window_beta = have_window_type_from_noiseSFTs ? window_beta_from_noiseSFTs : window_beta_from_uvar;
+            cfg->window_param = have_window_type_from_noiseSFTs ? window_param_from_noiseSFTs : window_param_from_uvar;
           }
         else
           {
@@ -555,7 +555,7 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
     else if ( have_window )
       {
         cfg->window_type = window_type_from_uvar;
-        cfg->window_beta = window_beta_from_uvar;
+        cfg->window_param = window_param_from_uvar;
       }
   }
 
@@ -713,7 +713,7 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds");
   XLALRegisterUvarMember(  SFToverlap,           REAL8, 0, OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFiles)");
   XLALRegisterUvarMember( SFTWindowType,        STRING, 0, OPTIONAL, "Window function to apply to the SFTs ('rectangular', 'hann', 'tukey', etc.); when --noiseSFTs is given, required ONLY if noise SFTs have unknown window");
-  XLALRegisterUvarMember(  SFTWindowBeta,        REAL8, 0, OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
+  XLALRegisterUvarMember( SFTWindowParam,        REAL8, 0, OPTIONAL, "Window parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
   XLALRegisterUvarMember( injectionSources,     STRINGVector, 0, OPTIONAL, "%s", InjectionSourcesHelpString );

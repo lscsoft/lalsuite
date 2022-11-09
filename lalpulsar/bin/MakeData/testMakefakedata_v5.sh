@@ -152,7 +152,7 @@ sftsv5_meth2=${testDIR}/*_mfdv5meth2-*.sft
 ## produce SFTs for 2 detectors, containing Gaussian noise + N signals, compare between mfdv4 and mfdv5
 ## ----------
 window="tukey"
-windowBeta="0.5"
+windowParam="0.5"
 
 echo
 echo "========== MFDv4 =========="
@@ -161,7 +161,7 @@ mfdv4_CL="$mfdv4_CODE ${mfdv4_extra} --fmin=$fmin --Band=$Band --generationMode=
 echo "---------- mfdv4: inject first signal ----------"
 sig1="--refTime=${s1_refTime} --h0=${s1_h0} --cosi=${s1_cosi} --psi=${s1_psi} --phi0=${s1_phi0} --Freq=${s1_Freq} --Alpha=${s1_Alpha} --Delta=${s1_Delta} --f1dot=${s1_f1dot} --f2dot=${s1_f2dot}"
 ##----- first IFO
-out_IFO1="--IFO=${IFO1} --timestampsFile=${timestamps1} --window=${window} --tukeyBeta=${windowBeta} --outSFTbname=${sftsv4_1} --noiseSqrtSh=${sqrtSn1} --randSeed=1"
+out_IFO1="--IFO=${IFO1} --timestampsFile=${timestamps1} --window=${window} --windowParam=${windowParam} --outSFTbname=${sftsv4_1} --noiseSqrtSh=${sqrtSn1} --randSeed=1"
 cmdline="$mfdv4_CL ${sig1} ${out_IFO1}"
 echo $cmdline
 if ! eval $cmdline; then
@@ -169,7 +169,7 @@ if ! eval $cmdline; then
     exit 1
 fi
 ##----- second IFO
-out_IFO2="--IFO=${IFO2} --timestampsFile=${timestamps2} --window=${window} --tukeyBeta=${windowBeta} --outSFTbname=${sftsv4_2} --noiseSqrtSh=${sqrtSn2} --randSeed=2"
+out_IFO2="--IFO=${IFO2} --timestampsFile=${timestamps2} --window=${window} --windowParam=${windowParam} --outSFTbname=${sftsv4_2} --noiseSqrtSh=${sqrtSn2} --randSeed=2"
 cmdline="$mfdv4_CL  ${sig1} ${out_IFO2}"
 echo $cmdline
 if ! eval $cmdline; then
@@ -222,7 +222,7 @@ mfdv5_CL="$mfdv5_CODE ${mfdv5_extra} --outSingleSFT --outSFTdir=${testDIR}"
 echo "----- Method 1: single multi-IFO, multi-signal call"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig13="--injectionSources='${injFile1},${injFile2}'"
-cmdline="$mfdv5_CL ${outIFOs} ${sig13} --fmin=$fmin --Band=$Band --SFTWindowType=${window} --SFTWindowBeta=${windowBeta}"
+cmdline="$mfdv5_CL ${outIFOs} ${sig13} --fmin=$fmin --Band=$Band --SFTWindowType=${window} --SFTWindowParam=${windowParam}"
 echo $cmdline;
 if ! eval $cmdline; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
@@ -234,7 +234,7 @@ echo "----- Method 2: and again the same, using different input methods"
 outIFOs="--IFOs=${IFO1},${IFO2} --timestampsFiles=${timestamps1},${timestamps2} --sqrtSX=${sqrtSn1},${sqrtSn2} --randSeed=1"
 sig1="--injectionSources='${injString}'"
 sig23="--injectionSources='${injFile2}'"
-cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --SFTWindowType=${window} --SFTWindowBeta=${windowBeta} --outLabel='mfdv5meth2' --fmin=$fmin --Band=$Band"
+cmdline1="$mfdv5_CL ${outIFOs} ${sig1} --SFTWindowType=${window} --SFTWindowParam=${windowParam} --outLabel='mfdv5meth2' --fmin=$fmin --Band=$Band"
 echo $cmdline1;
 if ! eval $cmdline1; then
     echo "Error.. something failed when running '$mfdv5_CODE' ..."
@@ -370,10 +370,10 @@ if ! eval ${base_call}; then
     exit 1
 fi
 
-no_beta_call="$mfdv5_CODE --noiseSFTs=./testwinpar/H-1_H1_1800SFT_mfdv5-100000000-1800.sft --SFTWindowType=tukey"
-echo "Calling with --noiseSFTs and --SFTWindowType=tukey without specifying window beta, should fail:"
-echo ${no_beta_call}
-if ! eval ${no_beta_call}; then
+no_param_call="$mfdv5_CODE --noiseSFTs=./testwinpar/H-1_H1_1800SFT_mfdv5-100000000-1800.sft --SFTWindowType=tukey"
+echo "Calling with --noiseSFTs and --SFTWindowType=tukey without specifying window param, should fail:"
+echo ${no_param_call}
+if ! eval ${no_param_call}; then
     echo "Failed, as expected."
 else
     echo "Did not fail, but it should have!"
