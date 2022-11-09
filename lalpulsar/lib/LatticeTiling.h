@@ -72,6 +72,11 @@ typedef enum tagTilingLattice {
 extern const UserChoices TilingLatticeChoices;
 
 ///
+/// Log level at which to print progress messages when counting templates and performing callbacks
+///
+extern int LatticeTilingProgressLogLevel;
+
+///
 /// Function which returns a bound on a dimension of the lattice tiling.
 ///
 typedef double( *LatticeTilingBound )(
@@ -348,6 +353,19 @@ int XLALRandomLatticeTilingPoints(
   const double scale,                   ///< [in] Scale of random points
   RandomParams *rng,                    ///< [in] Random number generator used to generate points
   gsl_matrix *random_points             ///< [out] Matrix whose columns are the random points
+  );
+
+///
+/// Get a parameter-space bound on a dimension of the lattice tiling. This is a convenience function
+/// which returns the bounds set by XLALSetLatticeTilingBound() for debugging, plotting, etc.
+///
+int XLALGetLatticeTilingBound(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t dim,                     ///< [in] Dimension on which bound applies
+  const gsl_vector *point,              ///< [in] Point at which bound applies
+  const bool padding,                   ///< [in] Whether to add padding to bounds
+  double *lower,                        ///< [out] Lower parameter-space bound
+  double *upper                         ///< [out] Upper parameter-space bound
   );
 
 ///

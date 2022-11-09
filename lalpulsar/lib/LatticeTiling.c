@@ -149,6 +149,8 @@ const UserChoices TilingLatticeChoices = {
   { TILING_LATTICE_ANSTAR,              "optimal" },
 };
 
+int LatticeTilingProgressLogLevel = LOG_DEBUG;
+
 ///
 /// Zero out the strictly upper triangular part of the matrix \c A.
 ///
@@ -320,7 +322,7 @@ static int LT_StatsCallback(
 
   LatticeTilingStats *stats = ( LatticeTilingStats * ) out;
 
-  const size_t n = XLALTotalLatticeTilingDimensions( tiling );
+  const size_t n = tiling->ndim;
 
   // Initialise statistics
   if ( first_call ) {
@@ -1551,13 +1553,14 @@ int XLALPerformLatticeTilingCallbacks(
   }
 
   const size_t n = tiling->ndim;
+  const size_t tn = tiling->tiled_ndim;
 
   // Create iterator over tiling (except highest dimension)
   LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n - 1 );
   XLAL_CHECK( itr != NULL, XLAL_EFUNC );
 
   // Iterate over all points
-  double old_progress = -1.0;
+  double volume_pc_prev = 0;
   bool first_call = true;
   int changed_ti_p1;
   double point_array[n];
@@ -1570,20 +1573,36 @@ int XLALPerformLatticeTilingCallbacks(
       LT_Callback *cb = tiling->callbacks[m];
       XLAL_CHECK( (cb->func)( first_call, tiling, itr, &point_view.vector, changed_i, cb->param, cb->out ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
-    first_call = false;
 
-    // Log progress
-    if ( tiling->tiled_ndim > 0 && changed_ti_p1 == 1 ) {
-      double progress = 0.1 * round( 1000.0 * ( (double) ( itr->int_point[0] - itr->int_lower[0] ) ) / ( (double) ( itr->int_upper[0] - itr->int_lower[0] ) ) );
-      if ( progress > old_progress ) {
-        old_progress = progress;
-        UINT8 total_points = 1 + itr->index;
-        LogPrintf( LOG_DEBUG, "%s() progress %0.1f%%, total points %" LAL_UINT8_FORMAT "\n", __func__, progress, total_points );
-      }
+    // Estimate volume of parameter space covered
+    double volume_pc = 0.0;
+    double volume_pc_norm = 1.0;
+    for ( size_t tj = 0; tj < tn; ++tj ) {
+      const size_t j = itr->tiling->tiled_idx[tj];
+      const INT8 count_j = itr->int_point[j] - itr->int_lower[j];
+      const INT8 total_j = itr->int_upper[j] - itr->int_lower[j] + 1;
+      volume_pc += 100.0 * ( (double) count_j ) / ( (double) total_j ) / volume_pc_norm;
+      volume_pc_norm *= (double) total_j;
     }
 
+    // Log progress if:
+    // - at least 1000 points have been counted
+    // - parameter space covered has increased by ( EITHER a factor of 3 OR 5 percentage points ) since last log
+    const UINT8 total_points = tiling->stats[n-1].total_points;
+    if ( total_points >= 1000 && ( volume_pc >= 3.0 * volume_pc_prev || volume_pc - volume_pc_prev >= 5.0 ) ) {
+      volume_pc_prev = volume_pc;
+      LogPrintf( LatticeTilingProgressLogLevel, "LatticeTiling: counted %" LAL_UINT8_FORMAT " templates; estimated %0.2g%% done\n", total_points, volume_pc );
+    }
+
+    first_call = false;
   }
   XLAL_CHECK( xlalErrno == 0, XLAL_EFAILED );
+
+  // Log final progress
+  {
+    const UINT8 total_points = tiling->stats[n-1].total_points;
+    LogPrintf( LatticeTilingProgressLogLevel, "LatticeTiling: counted %" LAL_UINT8_FORMAT " templates; done\n", total_points );
+  }
 
   // Mark callbacks as have been successfully performed
   *tiling->ncallback_done = tiling->ncallback;
@@ -1656,6 +1675,60 @@ int XLALRandomLatticeTilingPoints(
 
   // Cleanup
   GFMAT( phys_point_cache );
+
+  return XLAL_SUCCESS;
+
+}
+
+int XLALGetLatticeTilingBound(
+  const LatticeTiling *tiling,
+  const size_t dim,
+  const gsl_vector *point,
+  const bool padding,
+  double *lower,
+  double *upper
+  )
+{
+
+  // Check input
+  XLAL_CHECK( tiling != NULL, XLAL_EFAULT );
+  XLAL_CHECK( tiling->lattice < TILING_LATTICE_MAX, XLAL_EINVAL );
+  XLAL_CHECK( dim < tiling->ndim, XLAL_ESIZE );
+  XLAL_CHECK( point != NULL, XLAL_EFAULT );
+  XLAL_CHECK( lower != NULL, XLAL_EFAULT );
+  XLAL_CHECK( upper != NULL, XLAL_EFAULT );
+
+  const size_t n = tiling->ndim;
+
+  // Get bound information for this dimension
+  const LT_Bound *bound = &tiling->bounds[dim];
+
+  // Get the parameter-space bounds on the current dimension:
+  // - If tiled, or padding requested, get bounds respecting strict/extrema settings, and add padding
+  // - Otherwise, get bounds without extrema/padding
+  gsl_vector *GAVEC( phys_sampl, n );
+  gsl_matrix *GAMAT( phys_point_cache, n, LT_CACHE_MAX_SIZE );
+  gsl_matrix *GAMAT( phys_sampl_cache, n, LT_CACHE_MAX_SIZE );
+  gsl_vector_memcpy( phys_sampl, point );
+  *lower = GSL_POSINF;
+  *upper = GSL_NEGINF;
+  if ( bound->is_tiled && padding ) {
+    if ( STRICT_BOUND_PADDING( bound ) || !bound->find_bound_extrema ) {
+      LT_CallBoundFunc( tiling, dim, phys_point_cache, phys_sampl, lower, upper );
+    } else {
+      LT_FindBoundExtrema( tiling, 0, dim, phys_sampl_cache, phys_sampl, lower, upper );
+    }
+    const double phys_bbox_dim = gsl_vector_get( tiling->phys_bbox, dim );
+    *lower -= bound->lower_bbox_pad * phys_bbox_dim;
+    *upper += bound->upper_bbox_pad * phys_bbox_dim;
+  } else {
+    LT_CallBoundFunc( tiling, dim, phys_point_cache, phys_sampl, lower, upper );
+  }
+
+  // Cleanup
+  GFVEC( phys_sampl );
+  GFMAT( phys_point_cache );
+  GFMAT( phys_sampl_cache );
 
   return XLAL_SUCCESS;
 
