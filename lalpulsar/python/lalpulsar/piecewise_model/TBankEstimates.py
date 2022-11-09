@@ -83,15 +83,10 @@ def tilingstatstofile(tilingstats, path, tbank):
                 second_line_columns += "{:^5}".format("S")
                 second_line_columns += "{:^8}".format("fmin")
                 second_line_columns += "{:^8}".format("fmax")
-                second_line_columns += "{:^8}".format("fmaxtrue")
                 second_line_columns += "{:^9}".format("nmin")
                 second_line_columns += "{:^9}".format("nmax")
-                second_line_columns += "{:^9}".format("nmin0")
-                second_line_columns += "{:^9}".format("nmax0")
-                second_line_columns += "{:^20}".format("ntol")
-                second_line_columns += "{:^20}".format("taumin")
-                second_line_columns += "{:^20}".format("taumax")
-                second_line_columns += "{:^20}".format("ktol")
+                second_line_columns += "{:^20}".format("kmin")
+                second_line_columns += "{:^20}".format("kmax")
                 second_line_columns += "{:^8}".format("mismatch")
                 second_line_columns += "{:^20}".format("dur")
                 second_line_columns += "| "
@@ -134,16 +129,11 @@ def tilingstatstofile(tilingstats, path, tbank):
         new_statistics += "{:^5}".format(tbank.s)
         new_statistics += "{:^8}".format(tbank.fmin)
         new_statistics += "{:^8}".format(tbank.fmax)
-        new_statistics += "{:^8}".format(tbank.fmaxtrue)
         new_statistics += "{:^9.3f}".format(tbank.nmin)
         new_statistics += "{:^9.3f}".format(tbank.nmax)
-        new_statistics += "{:^9.3f}".format(tbank.nmin0)
-        new_statistics += "{:^9.3f}".format(tbank.nmax0)
-        new_statistics += "{:^20.10G}".format(tbank.ntol)
-        new_statistics += "{:^20}".format(tbank.taumin)
-        new_statistics += "{:^20}".format(tbank.taumax)
-        new_statistics += "{:^20.10G}".format(tbank.ktol)
-        new_statistics += "{:^8.2f}".format(tbank.mismatch)
+        new_statistics += "{:^20}".format(tbank.kmin)
+        new_statistics += "{:^20}".format(tbank.kmax)
+        new_statistics += "{:^8.2f}".format(tbank.maxmismatch)
         new_statistics += "{:^20}".format(tbank.dur)
         new_statistics += "| "
 
@@ -178,12 +168,7 @@ def tilingstatstofile(tilingstats, path, tbank):
         stats_file.close()
 
 # Returns number of templates required to cover a parameter space with given knots
-def pwboundtbanksizecustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, reset, maxtemps=10000000, printouts=1000000, stats=False, dirname=None, filename=None, tbank=None, padding_flags_bbox=[], padding_flags_int=[]):
-
-        if padding_flags_bbox == []:
-                padding_flags_bbox = [0] * s * len(bf.knotslist)
-        if padding_flags_int == []:
-                padding_flags_int  = [0] * s * len(bf.knotslist)
+def pwboundtbanksizecustomknots(s, fmin, fmax, nmin, nmax, kmin, kmax, knots, mismatch, maxtemps, printouts, stats=False, dirname=None, filename=None, tbank=None):
 
         finalknot = len(knots)
 
@@ -201,10 +186,7 @@ def pwboundtbanksizecustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax
         logging.info("Maximum parameter step sizes: %s", str(stepsizes))
 
         # Set Bounds
-        if s == 3:
-                lp.SetLatticeTilingPiecewiseBounds(  tiling, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, finalknot, padding_flags_bbox, padding_flags_int, reset)
-        elif s == 2:
-                lp.SetLatticeTilingPiecewiseBoundsS2(tiling, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, finalknot, padding_flags_bbox, padding_flags_int, reset)
+        lp.SetLatticeTilingPiecewiseBounds(tiling, s, fmin, fmax, nmin, nmax, kmin, kmax, knots)
 
         # Set metric, mismatch and lattice type
         lp.SetTilingLatticeAndMetric(tiling, lp.TILING_LATTICE_ANSTAR, metric, mismatch)
@@ -286,23 +268,18 @@ def pwboundtbanksizecustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax
                 return tiles
 
 # Returns number of templates required to cover a parameter space using knot algorithm
-def pwboundtbanksize(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, dur, mismatch, reset, printouts=0, stats=False, dirname=None, filename=None):
+def pwboundtbanksize(s, fmin, fmax, nmin, nmax, kmin, kmax, dur, mismatch, printouts=0, stats=False, dirname=None, filename=None):
 
-        ek.allidealisedknots(s, dur, 40, fmaxtrue, nmax, taumin, mu=mismatch)
-        knotnum = ek.getknotnum(s, dur, fmaxtrue, nmax, taumin, mu=mismatch)
+        ek.allidealisedknots(s, dur, 40, fmax, nmax, kmax, mu=mismatch)
+        knotnum = ek.getknotnum(s, dur, fmax, nmax, kmax, mu=mismatch)
         knots = bf.knotslist[:knotnum + 1]
         # This way our signal length is exactly dur and we don't have our last segment extending potentiall well beyond what we need it to be, and hence increasing computational cost
         knots[-1] = dur
 
-        return pwboundtbanksizecustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, reset, printouts=printouts, stats=stats, dirname=dirname, filename=filename)
+        return pwboundtbanksizecustomknots(s, fmin, fmax, nmin, nmax, kmin, kmax, knots, mismatch, printouts=printouts, stats=stats, dirname=dirname, filename=filename)
 
 # Returns the values of the centres of each template required to cover a given parameter space. Will only return up to maxtemps
-def pwboundtempscustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, maxtemps=10000, padding_flags_bbox=[], padding_flags_int=[]):
-
-        if padding_flags_bbox == []:
-                padding_flags_bbox = [0] * s * len(bf.knotslist)
-        if padding_flags_int == []:
-                padding_flags_int  = [0] * s * len(bf.knotslist)
+def pwboundtempscustomknots(s, fmin, fmax, nmin, nmax, kmin, kmax, knots, mismatch, maxtemps):
 
         finalknot = len(knots)
 
@@ -315,10 +292,7 @@ def pwboundtempscustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, n
         metric = scmm.metric(s)
 
         # Set Bounds
-        if s == 3:
-                lp.SetLatticeTilingPiecewiseBounds(  tiling, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, finalknot, padding_flags_bbox, padding_flags_int)
-        elif s == 2:
-                lp.SetLatticeTilingPiecewiseBoundsS2(tiling, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, finalknot, padding_flags_bbox, padding_flags_int)
+        lp.SetLatticeTilingPiecewiseBounds(tiling, s, fmin, fmax, nmin, nmax, kmin, kmax, knots)
 
         # Set metric, mismatch and lattice type
         lp.SetTilingLatticeAndMetric(tiling, lp.TILING_LATTICE_ANSTAR, metric, mismatch)
@@ -340,32 +314,26 @@ def pwboundtempscustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, n
         return temps
 
 # Returns the templates to cover a given parameter space with knots built from the knot algorithm
-def pwboundtemplates(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, dur, mismatch, maxtemps=1000, padding_flags_bbox=[], padding_flags_int=[]):
+def pwboundtemplates(s, fmin, fmax, nmin, nmax, kmin, kmax, dur, mismatch):
 
-        ek.allidealisedknots(s, dur, 30, fmaxtrue, nmax, taumin, mu=mismatch)
-        knotnum = ek.getknotnum(s, dur, fmaxtrue, nmax, taumin, mu=mismatch)
+        ek.allidealisedknots(s, dur, 30, fmax, nmax, kmax, mu=mismatch)
+        knotnum = ek.getknotnum(s, dur, fmax, nmax, kmax, mu=mismatch)
         knots = bf.knotslist[:knotnum + 1]
         knots[-1] = dur
 
-        return pwboundtempscustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, maxtemps=maxtemps, padding_flags_bbox=padding_flags_bbox, padding_flags_int=padding_flags_int)
+        return pwboundtempscustomknots(s, fmin, fmax, nmin, nmax, kmin, kmax, knots, mismatch)
 
 # Sets the bounds on the tiling lattice by the parameters given in a TBank object
-def setbounds(tiling, padding_flags_bbox, padding_flags_int, tbank, reset):
+def setbounds(tiling, tbank):
         s        = tbank.s
         fmin     = tbank.fmin
         fmax     = tbank.fmax
-        fmaxtrue = tbank.fmaxtrue
         nmin     = tbank.nmin
         nmax     = tbank.nmax
-        nmin0    = tbank.nmin0
-        nmax0    = tbank.nmax0
-        ntol     = tbank.ntol
-        taumin   = tbank.taumin
-        taumax   = tbank.taumax
-        ktol     = tbank.ktol
+        kmin     = tbank.kmin
+        kmax     = tbank.kmax
         dur      = tbank.dur
-        mismatch = tbank.mismatch
-        maxtemps = tbank.maxtemps
+        mismatch = tbank.maxmismatch
 
         knots = bf.knotslist
 
@@ -373,13 +341,10 @@ def setbounds(tiling, padding_flags_bbox, padding_flags_int, tbank, reset):
 
         flagoption = tbank.flagoption
 
-        if s == 3:
-                lp.SetLatticeTilingPiecewiseBounds(  tiling, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, finalknot, padding_flags_bbox, padding_flags_int, reset)
-        elif s == 2:
-                lp.SetLatticeTilingPiecewiseBoundsS2(tiling, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, finalknot, padding_flags_bbox, padding_flags_int)
+        lp.SetLatticeTilingPiecewiseBounds(tiling, s, fmin, fmax, nmin, nmax, kmin, kmax, knots)
 
 # Calculates the size of a template bank for a TBank object
-def PWTBankSizeWithObject(tbank, reset, stats=False, padding_flags_bbox=[], padding_flags_int=[]):
+def PWTBankSizeWithObject(tbank, stats=False):
 
         pr = cProfile.Profile()
         pr.enable()
@@ -387,24 +352,20 @@ def PWTBankSizeWithObject(tbank, reset, stats=False, padding_flags_bbox=[], padd
         s = tbank.s
         fmin = tbank.fmin
         fmax = tbank.fmax
-        fmaxtrue = tbank.fmaxtrue
         nmin = tbank.nmin
         nmax = tbank.nmax
-        nmin0 = tbank.nmin0
-        nmax0 = tbank.nmax0
-        ntol = tbank.ntol
-        taumin = tbank.taumin
-        taumax = tbank.taumax
-        ktol = tbank.ktol
-        mismatch = tbank.mismatch
+        nmin = tbank.nmin
+        nmax = tbank.nmax
+        kmin = tbank.kmin
+        kmax = tbank.kmax
+        mismatch = tbank.maxmismatch
         dur = tbank.dur
-        maxtemps = tbank.maxtemps
 
-        #ek.allidealisedknots(s, dur, 40, fmaxtrue, nmax, taumin, mismatch)
+        #ek.allidealisedknots(s, dur, 40, fmax, nmax, kmax, mismatch)
         #tbank.knots = bf.knotslist
         knots = tbank.knots
 
-        temp = pwboundtbanksizecustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, reset, maxtemps=maxtemps, tbank=tbank, stats=stats, padding_flags_bbox=padding_flags_bbox, padding_flags_int=padding_flags_int)
+        temp = pwboundtbanksizecustomknots(s, fmin, fmax, nmin, nmax, kmin, kmax, knots, mismatch, tbank=tbank, stats=stats)
 
         pr.disable()
 
@@ -419,38 +380,34 @@ def PWTBankSizeWithObject(tbank, reset, stats=False, padding_flags_bbox=[], padd
         return temp
 
 # Gives the template bank for a given TBank object
-def PWTBankWithObject(tbank, padding_flags_bbox=[], padding_flags_int=[]):
+def PWTBankWithObject(tbank):
         s = tbank.s
         fmin = tbank.fmin
         fmax = tbank.fmax
-        fmaxtrue = tbank.fmaxtrue
         nmin = tbank.nmin
         nmax = tbank.nmax
-        nmin0 = tbank.nmin0
-        nmax0 = tbank.nmax0
-        ntol = tbank.ntol
-        taumin = tbank.taumin
-        taumax = tbank.taumax
-        ktol = tbank.ktol
-        mismatch = tbank.mismatch
+        nmin = tbank.nmin
+        nmax = tbank.nmax
+        kmin = tbank.kmin
+        kmax = tbank.kmax
+        mismatch = tbank.maxmismatch
         dur = tbank.dur
-        maxtemps = tbank.maxtemps
 
-        #ek.allidealisedknots(s, dur, 40, fmaxtrue, nmax, taumin, mismatch)
+        #ek.allidealisedknots(s, dur, 40, fmax, nmax, kmax, mismatch)
         #tbank.knots = bf.knotslist
         knots = tbank.knots
 
-        temps = pwboundtempscustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, maxtemps=tbank.maxtemps, padding_flags_bbox=padding_flags_bbox, padding_flags_int=padding_flags_int)
+        temps = pwboundtempscustomknots(s, fmin, fmax, nmin, nmax, kmin, kmax, knots, mismatch)
 
         return temps
 
 # Returns number of templates required to cover a parameter space with given knots
-def recursivetbanksize(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, printouts=1000000, recdepth=1, prevalidtempsandnmin0=[-1, -1], metric=[]):
+def recursivetbanksize(s, fmin, fmax, nmin, nmax, kmin, kmax, knots, mismatch, printouts=1000000, recdepth=1, prevalidtempsandnmin=[-1, -1], metric=[]):
 
         filename = "BInd_" + str(fmin) + "_" + str(fmax) + ".txt"
 
-        if nmin0 < nmin:
-                return prevalidtempsandnmin0
+        if nmin < nmin:
+                return prevalidtempsandnmin
 
         finalknot = len(knots)
 
@@ -471,10 +428,7 @@ def recursivetbanksize(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, 
         logging.info("Maximum parameter step sizes: %s", str(stepsizes))
 
         # Set Bounds
-        if s == 3:
-                lp.SetLatticeTilingPiecewiseBounds(  tiling, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, finalknot, padding_flags_bbox, padding_flags_int)
-        elif s == 2:
-                lp.SetLatticeTilingPiecewiseBoundsS2(tiling, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, finalknot, padding_flags_bbox, padding_flags_int)
+        lp.SetLatticeTilingPiecewiseBounds(tiling, s, fmin, fmax, nmin, nmax, kmin, kmax, knots)
 
         # Set metric, mismatch and lattice type
         lp.SetTilingLatticeAndMetric(tiling, lp.TILING_LATTICE_ANSTAR, metric, mismatch)
@@ -502,87 +456,81 @@ def recursivetbanksize(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, 
 
                 if recdepth >= 12:
 
-                        if prevalidtempsandnmin0[0] != -1:
-                                logging.info("Final recursive step. Valid range found. Frequency range: %s, braking index range: %s", str([fmin, fmax]), str([nmin0, nmax0]))
+                        if prevalidtempsandnmin[0] != -1:
+                                logging.info("Final recursive step. Valid range found. Frequency range: %s, braking index range: %s", str([fmin, fmax]), str([nmin, nmax]))
 
                                 f=open(filename,'a')
-                                f.write(str([nmin0, tiles]) + "\n")
+                                f.write(str([nmin, tiles]) + "\n")
                                 f.close()
 
-                                return prevalidtempsandnmin0
+                                return prevalidtempsandnmin
 
                         else:
-                                logging.info("Final recdepth %s reached with no valid range found. Frequency range: %s, braking index range: %s", str(recdepth), str([fmin, fmax]), str([nmin0, nmax0]))
+                                logging.info("Final recdepth %s reached with no valid range found. Frequency range: %s, braking index range: %s", str(recdepth), str([fmin, fmax]), str([nmin, nmax]))
 
                                 f=open(filename,'a')
-                                f.write(str([nmin0, tiles]) + "\n")
+                                f.write(str([nmin, tiles]) + "\n")
                                 f.close()
 
                                 return [-1, 10 ** 8]
 
                 else:
-                        logging.info("Recursive step %s. No valid range found for this nmin0. Frequency range: %s, braking index range: %s", str(recdepth), str([fmin, fmax]), str([nmin0, nmax0]))
+                        logging.info("Recursive step %s. No valid range found for this nmin. Frequency range: %s, braking index range: %s", str(recdepth), str([fmin, fmax]), str([nmin, nmax]))
 
                         f=open(filename,'a')
-                        f.write(str([nmin0, tiles]) + "\n")
+                        f.write(str([nmin, tiles]) + "\n")
                         f.close()
 
-                        newnmin0 = nmin0 + (nmax - nmin) * 2 ** -(recdepth + 1)
-                        return recursivetbanksize(s, fmin, fmax, fmaxtrue, nmin, nmax, newnmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, printouts=printouts, recdepth=recdepth + 1, metric=metric)
+                        newnmin = nmin + (nmax - nmin) * 2 ** -(recdepth + 1)
+                        return recursivetbanksize(s, fmin, fmax, newnmin, nmax, kmin, kmax, knots, mismatch, printouts=printouts, recdepth=recdepth + 1, metric=metric)
 
         else:
                 if recdepth >= 12:
                         logging.info("Statistics calculated: %s", str(tilingstatistics(tiling, s * finalknot, iterator=lp.NextLatticeTilingPoint(iterator, p))))
-                        logging.info("Frequency range: %s, Braking index range: %s", str([fmin, fmax]), str([nmin0, nmax0]))
+                        logging.info("Frequency range: %s, Braking index range: %s", str([fmin, fmax]), str([nmin, nmax]))
                         logging.info("Final tile count: %s", str(tiles))
                         logging.info("Total elapsed time: %s", str(time.time() - start))
 
-                        logging.info("Final recursive step. Valid range found. Frequency range: %s, braking index range: %s", str([fmin, fmax]), str([nmin0, nmax0]))
+                        logging.info("Final recursive step. Valid range found. Frequency range: %s, braking index range: %s", str([fmin, fmax]), str([nmin, nmax]))
 
                         f=open(filename,'a')
-                        f.write(str([nmin0, tiles]) + "\n")
+                        f.write(str([nmin, tiles]) + "\n")
                         f.close()
 
-                        return [tiles, nmin0]
+                        return [tiles, nmin]
 
                 else:
                         logging.info("Statistics calculated: %s", str(tilingstatistics(tiling, s * finalknot, iterator=lp.NextLatticeTilingPoint(iterator, p))))
-                        logging.info("Frequency range: %s, Braking index range: %s", str([fmin, fmax]), str([nmin0, nmax0]))
+                        logging.info("Frequency range: %s, Braking index range: %s", str([fmin, fmax]), str([nmin, nmax]))
                         logging.info("Final tile count: %s", str(tiles))
                         logging.info("Total elapsed time: %s", str(time.time() - start))
 
-                        logging.info("Recursive step %s. Valid range found for this nmin0. Frequency range: %s, braking index range: %s", str(recdepth), str([fmin, fmax]), str([nmin0, nmax0]))
+                        logging.info("Recursive step %s. Valid range found for this nmin. Frequency range: %s, braking index range: %s", str(recdepth), str([fmin, fmax]), str([nmin, nmax]))
 
                         f=open(filename,'a')
-                        f.write(str([nmin0, tiles]) + "\n")
+                        f.write(str([nmin, tiles]) + "\n")
                         f.close()
 
-                        newnmin0 = nmin0 - (nmax - nmin) * 2 ** -(recdepth + 1)
-                        return recursivetbanksize(s, fmin, fmax, fmaxtrue, nmin, nmax, newnmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, printouts=printouts, prevalidtempsandnmin0=[tiles, nmin0], recdepth=recdepth + 1, metric=metric)
+                        newnmin = nmin - (nmax - nmin) * 2 ** -(recdepth + 1)
+                        return recursivetbanksize(s, fmin, fmax, newnmin, nmax, kmin, kmax, knots, mismatch, printouts=printouts, prevalidtempsandnmin=[tiles, nmin], recdepth=recdepth + 1, metric=metric)
 
 # Gives the template bank for a given TBank object
 def PWTBankSizeWithObjectRecursive(tbank):
         s = tbank.s
         fmin = tbank.fmin
         fmax = tbank.fmax
-        fmaxtrue = tbank.fmaxtrue
         nmin = tbank.nmin
         nmax = tbank.nmax
-        nmin0 = tbank.nmin0
-        nmax0 = tbank.nmax0
-        ntol = tbank.ntol
-        taumin = tbank.taumin
-        taumax = tbank.taumax
-        ktol = tbank.ktol
-        mismatch = tbank.mismatch
+        kmin = tbank.kmin
+        kmax = tbank.kmax
+        mismatch = tbank.maxmismatch
         dur = tbank.dur
-        maxtemps = tbank.maxtemps
 
-        ek.allidealisedknots(s, dur, 40, fmaxtrue, nmax, taumin, mismatch)
+        ek.allidealisedknots(s, dur, 40, fmax, nmax, kmax, mismatch)
         tbank.knots = bf.knotslist
         knots = tbank.knots
 
-        return recursivetbanksize(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch)
+        return recursivetbanksize(s, fmin, fmax, nmin, nmax, kmin, kmax, knots, mismatch)
 
 # Calculates the size of a template bank for a TBank object
 def PWTBankSizeWithObjectEnMass(tbank, jobid, stats=False):
@@ -609,29 +557,23 @@ def PWTBankSizeWithObjectEnMass(tbank, jobid, stats=False):
         s = tbank.s
         fmin = freqsandbinds[jobid - 1][0]
         fmax = fmin + 0.01
-        fmaxtrue = tbank.fmaxtrue
-        nmin = tbank.nmin
-        nmax = tbank.nmax
-        nmin0 = freqsandbinds[jobid - 1][1][0]
-        nmax0 = freqsandbinds[jobid - 1][1][1]
-        ntol = tbank.ntol
-        taumin = tbank.taumin
-        taumax = tbank.taumax
-        ktol = tbank.ktol
-        mismatch = tbank.mismatch
+        nmin = freqsandbinds[jobid - 1][1][0]
+        nmax = freqsandbinds[jobid - 1][1][1]
+        kmin = tbank.kmin
+        kmax = tbank.kmax
+        mismatch = tbank.maxmismatch
         dur = tbank.dur
-        maxtemps = tbank.maxtemps
 
-        ek.allidealisedknots(s, dur, 40, fmaxtrue, nmax, taumin, mismatch)
+        ek.allidealisedknots(s, dur, 40, fmax, nmax, kmax, mismatch)
         tbank.knots = bf.knotslist
         knots = tbank.knots
 
-        temp = pwboundtbanksizecustomknots(s, fmin, fmax, fmaxtrue, nmin, nmax, nmin0, nmax0, ntol, taumin, taumax, ktol, knots, mismatch, stats=stats)
+        temp = pwboundtbanksizecustomknots(s, fmin, fmax, nmin, nmax, kmin, kmax, knots, mismatch, stats=stats)
 
         filename = "TempsEnMass.txt"
 
         f=open(filename,'a')
-        f.write(str([fmin, fmax, nmin0, nmax0, temp]) + "\n")
+        f.write(str([fmin, fmax, nmin, nmax, temp]) + "\n")
         f.close()
 
         pr.disable()

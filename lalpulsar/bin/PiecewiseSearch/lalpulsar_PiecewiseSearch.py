@@ -55,7 +55,7 @@ parser.add_argument("--rtnsum",                         help="Whether to return 
 parser.add_argument("--SFTFiles",                       help="Whether to write SFT files or have them stored in memory", action='store_true')
 
 # Parameters to be used when creating the necessary elements to use lp.ComputeFStat
-parser.add_argument("--Tsft",           type=int,       help="The length of each SFT to be built", default=5)
+parser.add_argument("--Tsft",           type=int,       help="The length of each SFT to be built", default=None)
 parser.add_argument("--h0",             type=float,     help="Strain of the injected signal", default=1e-24)
 parser.add_argument("--cosi",           type=float,     help="Default injection cos-iota", default=0.123)
 parser.add_argument("--psi",            type=float,     help="Default injection psi", default=2.345)
@@ -69,22 +69,16 @@ parser.add_argument("--dfreq",          type=float,     help="Frequency spacing 
 parser.add_argument("--sourceDeltaT",   type=float,     help="sourceDeltaT option for ComputeFstat()", default=0.1)
 
 # Parameters used in defining the parameter space
-parser.add_argument("--s",              type=int,       help="Set the s parameter",                                                     nargs='?', const=1, default=-1)
-parser.add_argument("--fmin",           type=float,     help="Set the fmin parameter",                                                  nargs='?', const=1, default=-1)
-parser.add_argument("--fmax",           type=float,     help="Set the fmax parameter",                                                  nargs='?', const=1, default=-1)
-parser.add_argument("--fmaxtrue",       type=float,     help="Set the fmaxtrue parameter",                                              nargs='?', const=1, default=-1)
-parser.add_argument("--nmin",           type=float,     help="Set the nmin parameter",                                                  nargs='?', const=1, default=-1)
-parser.add_argument("--nmax",           type=float,     help="Set the nmax parameter",                                                  nargs='?', const=1, default=-1)
-parser.add_argument("--nmin0",          type=float,     help="Set the nmin0 parameter",                                                 nargs='?', const=1, default=-1)
-parser.add_argument("--nmax0",          type=float,     help="Set the nmax parameter",                                                  nargs='?', const=1, default=-1)
-parser.add_argument("--ntol",           type=float,     help="The time over which the braking index is allowed to change by 1%",        nargs='?', const=1, default=-1)
-parser.add_argument("--taumin",         type=float,     help="Set the taumin parameter",                                                nargs='?', const=1, default=-1)
-parser.add_argument("--taumax",         type=float,     help="Set the taumax parameter",                                                nargs='?', const=1, default=-1)
-parser.add_argument("--ktol",           type=float,     help="The time over which the k value is allowed to change by 1%",              nargs='?', const=1, default=-1)
-parser.add_argument("--dur",            type=float,     help="The maximum duration the knot algorithm to calculate up to",              nargs='?', const=1, default=-1)
+parser.add_argument("--s",              type=int,       help="Set the s parameter",                                                     nargs='?', const=1, default=None)
+parser.add_argument("--fmin",           type=float,     help="Set the fmin parameter",                                                  nargs='?', const=1, default=None)
+parser.add_argument("--fmax",           type=float,     help="Set the fmax parameter",                                                  nargs='?', const=1, default=None)
+parser.add_argument("--nmin",           type=float,     help="Set the nmin parameter",                                                  nargs='?', const=1, default=None)
+parser.add_argument("--nmax",           type=float,     help="Set the nmax parameter",                                                  nargs='?', const=1, default=None)
+parser.add_argument("--kmin",           type=float,     help="Set the kmin parameter",                                                  nargs='?', const=1, default=None)
+parser.add_argument("--kmax",           type=float,     help="Set the kmax parameter",                                                  nargs='?', const=1, default=None)
+parser.add_argument("--dur",            type=float,     help="The maximum duration the knot algorithm to calculate up to",              nargs='?', const=1, default=None)
 parser.add_argument("--knots",          type=float,     help="Use user defined knots",                                                  nargs='+',          default=[0])
-parser.add_argument("--maxmismatch",    type=float,     help="Set the mismatch parameter",                                              nargs='?', const=1, default=-1)
-parser.add_argument("--maxtemps",       type=int,       help="The maximum number of templates to calculate using this tbank",                       default=-1)
+parser.add_argument("--maxmismatch",    type=float,     help="Set the mismatch parameter",                                              nargs='?', const=1, default=None)
 
 # Parameters controlling outputs
 parser.add_argument("--outbasedir",     type=str,       help="Output base directory",                                  default='.')
@@ -130,29 +124,6 @@ rtnsum        = args.rtnsum
 tempsperfile  = args.tempsperfile
 SFTFiles      = args.SFTFiles
 
-# Padding flags
-padding_flags_bbox = args.flags_bbox
-padding_flags_int  = args.flags_int
-reset              = -1
-if args.reset: reset = 1
-
-# Setting the FInput object
-finputdata               = cd.FInput()
-finputdata.Tsft          = args.Tsft
-finputdata.h0            = args.h0
-finputdata.cosi          = args.cosi
-finputdata.psi           = args.psi
-finputdata.phi0          = args.phi0
-finputdata.dt_wf         = args.dt_wf
-finputdata.Alpha         = args.Alpha
-finputdata.Delta         = args.Delta
-finputdata.detector      = args.detector
-finputdata.assume_sqrtSh = args.assume_sqrtSh
-finputdata.dfreq         = args.dfreq
-finputdata.sourceDeltaT  = args.sourceDeltaT
-
-h0 = finputdata.h0
-
 # Setting the template bank object and changing user specified parameters
 tbank = cd.TBank()
 
@@ -172,22 +143,42 @@ if tbankcode == "CasA":
 tbank.SetTBankParams(args)
 
 # Checking if we are using user defined knots or if we need to recalculate the knots in case any changed parameters affect knot choice
-if tbank.knots != [0]:
+if args.knots != [0]:
         logging.info("Setting knots from command line")
         bf.knotslist = args.knots
+elif hasattr(tbank, "knots"):
+        logging.info("Using default knots")
+        bf.knotslist = tbank.knots
 else:
         logging.info("Setting knots from algorithm")
         tbank.SetKnotsByAlg()
 
 tbank.knots = bf.knotslist
-tbank.dur = tbank.knots[-1]
+tbank.dur = tbank.knots[-1] - tbank.knots[0]
 
-# Adjusting knot start time
-if bf.knotslist[0] != tstart:
+# Adjusting knot start time and duration
+if bf.knotslist[0] == 0:
         for i, knot in enumerate(bf.knotslist):
                 bf.knotslist[i] = knot + tstart
 
 logging.info("Knots: %s", str(bf.knotslist))
+
+# Setting the FInput object
+finputdata               = cd.FInput()
+finputdata.Tsft          = tbank.Tsft
+finputdata.h0            = args.h0
+finputdata.cosi          = args.cosi
+finputdata.psi           = args.psi
+finputdata.phi0          = args.phi0
+finputdata.dt_wf         = args.dt_wf
+finputdata.Alpha         = args.Alpha
+finputdata.Delta         = args.Delta
+finputdata.detector      = args.detector
+finputdata.assume_sqrtSh = args.assume_sqrtSh
+finputdata.dfreq         = args.dfreq
+finputdata.sourceDeltaT  = args.sourceDeltaT
+
+h0 = finputdata.h0
 
 # Building the name of the directory where the SFTs will be saved. Directory name is based off the tbank object. In this way, any searches completed
 # using the same tbank will have all SFTs in the same directory for neatness. Within the tbankdirectory, sub folders are used to contain the SFTs
@@ -284,8 +275,9 @@ logging.debug("Setting Antenna Pattern")
 lp.SetAntennaPatternMaxCond(10 ** 5)
 
 # The minimum and maximum frequencies needed to load in from SFTs to cover all frequencies any template may cover
-SFTfmin = max(gom.gte(tbank.dur, tbank.fmin, tbank.nmax, gom.kwhichresultsingivenhalflife(tbank.taumin, tbank.fmax, tbank.nmin)), 50)
-SFTfmax = tbank.fmax + 50
+SFTfpad = 1800 / tbank.Tsft + tbank.dur / 86400 + 5
+SFTfmin = gom.gte(tbank.dur, tbank.fmin, tbank.nmax, tbank.kmax) - SFTfpad
+SFTfmax = gom.gte(0        , tbank.fmax, tbank.nmin, tbank.kmin) + SFTfpad
 logging.info(f"SFTfmin/fmax: [{SFTfmin}, {SFTfmax}]")
 
 # Build parameter space and begin calculated 2Fs

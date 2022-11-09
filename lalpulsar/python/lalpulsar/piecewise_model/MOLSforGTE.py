@@ -23,8 +23,8 @@ from . import MyErrors
 import matplotlib.pyplot as plt
 
 # Our b vector for MOLS
-def bvec(points, f0, n, kgte):
-    return [gom.gte(t - bf.knotslist[0], f0, n, kgte) for t in points]
+def bvec(points, f0, ngte, kgte):
+    return [gom.gte(t - bf.knotslist[0], f0, ngte, kgte) for t in points]
 
 # Constructs an individual row of the a matrix for the sample point 'point' and the coefficients of our basis functions
 # 'coeffs'
@@ -70,16 +70,16 @@ def ata(mat):
     return np.matmul(np.transpose(mat), mat)
 
 # Returns the solutions for our LSTSQ problem
-def sols(coeffs, ppint, s, f0, n, kgte, conditioning=True):
+def sols(coeffs, ppint, s, f0, ngte, kgte, conditioning=True):
     while True:
         try:
-            points = sm.samplepoints(ppint, f0, n, kgte)
+            points = sm.samplepoints(ppint, f0, ngte, kgte)
             break
         except MyErrors.SegmentContainsNoSamplePoints:
             print("Reattempting MOLS fitting with greater sampling")
             ppint *= 2
 
-    b = bvec(points, f0, n, kgte)
+    b = bvec(points, f0, ngte, kgte)
     amat = a(points, coeffs, s)
 
     atamat = ata(amat)
@@ -119,17 +119,17 @@ def solsbyint(params, s):
 
     return partedsols
 
-def solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, kgte, conditioning=True):
+def solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, ngte, kgte, conditioning=True):
 
     while True:
         try:
-            points = sm.samplepointswithinknots(knotnuma, knotnumb, ppint, f0, n, kgte)
+            points = sm.samplepointswithinknots(knotnuma, knotnumb, ppint, f0, ngte, kgte)
             break
         except MyErrors.SegmentContainsNoSamplePoints:
             logging.debug("Reattempting MOLS fitting with greater sampling")
             ppint *= 2
 
-    b = bvec(points, f0, n, kgte)
+    b = bvec(points, f0, ngte, kgte)
     amat = a(points, coeffs, s)
 
     for i in range(knotnuma * s):
@@ -164,7 +164,7 @@ def solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, kgte, conditio
 """
 s = 3
 f0 = 1000
-n = 5
+ngte = 5
 kgte = 10 ** -14
 ppint = 30
 bf.knotslist = [0, 20, 40, 60, 80, 100]
@@ -173,8 +173,8 @@ knotnuma = 0
 knotnumb = 2
 
 logging.debug(bf.knotslist)
-logging.debug(list(solsbyint(list(sols(coeffs, ppint, s, f0, n, tau, conditioning=True)), s)))
-logging.debug(list(solsbyint(list(solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, tau, conditioning=True)), s)))
+logging.debug(list(solsbyint(list(sols(coeffs, ppint, s, f0, ngte, kgte, conditioning=True)), s)))
+logging.debug(list(solsbyint(list(solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, ngte, kgte, conditioning=True)), s)))
 """
 points = []
 
@@ -256,7 +256,7 @@ def phase(point, coeffs, params, ignoreintcheck=False):
     """
 
 # Builds a list of the 'correct' physical parameters as by the general torque equation
-def correctparams(s, f0, n, kgte):
+def correctparams(s, f0, ngte, kgte):
     ints = len(bf.knotslist) - 1
     params = []
 
@@ -267,22 +267,22 @@ def correctparams(s, f0, n, kgte):
             ti = bf.knotslist[i] - bf.knotslist[0]
             tip1 = bf.knotslist[i + 1] - bf.knotslist[0]
 
-            paramsstart.append(gom.gtederivs(ti, f0, n, kgte, thisk))
-            paramsend.append(gom.gtederivs(tip1, f0, n, kgte, thisk))
+            paramsstart.append(gom.gtederivs(ti, f0, ngte, kgte, thisk))
+            paramsend.append(gom.gtederivs(tip1, f0, ngte, kgte, thisk))
 
         params.append([paramsstart, paramsend])
 
     return params
 
 # Plots our model
-def modelplotter(ppint, s, f0, n, kgte, trueparams=False):
+def modelplotter(ppint, s, f0, ngte, kgte, trueparams=False):
     res = 1
 
     coeffs = bf.allcoeffs(s)
-    params = sols(coeffs, ppint, s, f0, n, kgte)
+    params = sols(coeffs, ppint, s, f0, ngte, kgte)
     partparams = solsbyint(params, s)
 
-    correctps = correctparams(s, f0, n, kgte)
+    correctps = correctparams(s, f0, ngte, kgte)
 
     xpoints = np.linspace(bf.knotslist[0], bf.knotslist[-1], res * (bf.knotslist[-1] - bf.knotslist[0]))
 
@@ -292,7 +292,7 @@ def modelplotter(ppint, s, f0, n, kgte, trueparams=False):
 
     for x in xpoints:
         ypoints.append(modelvalueatpoint(x, coeffs, partparams))
-        gtepoints.append(gom.gte(x - bf.knotslist[0], f0, n, kgte))
+        gtepoints.append(gom.gte(x - bf.knotslist[0], f0, ngte, kgte))
 
         if trueparams:
             correctpoints.append(modelvalueatpoint(x, coeffs, correctps))
@@ -309,14 +309,14 @@ def modelplotter(ppint, s, f0, n, kgte, trueparams=False):
     plt.legend()
     plt.show()
 
-def modelplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, n, kgte, trueparams=False):
+def modelplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, ngte, kgte, trueparams=False):
     res = 1
 
     coeffs = bf.allcoeffs(s)
-    params = solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, kgte)
+    params = solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, ngte, kgte)
     partparams = solsbyint(params, s)
 
-    correctps = correctparams(s, f0, n, kgte)
+    correctps = correctparams(s, f0, ngte, kgte)
 
     xpoints = np.linspace(bf.knotslist[knotnuma], bf.knotslist[knotnumb], res * (bf.knotslist[knotnumb] - bf.knotslist[knotnuma]))
 
@@ -326,7 +326,7 @@ def modelplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, n, kgte, truepara
 
     for x in xpoints:
         ypoints.append(modelvalueatpoint(x, coeffs, partparams))
-        gtepoints.append(gom.gte(x - bf.knotslist[0], f0, n, kgte))
+        gtepoints.append(gom.gte(x - bf.knotslist[0], f0, ngte, kgte))
         if trueparams:
             correctpoints.append(modelvalueatpoint(x, coeffs, correctps))
 
@@ -346,14 +346,14 @@ def errorbounds(t):
     return 1 / (bf.knotslist[j + 1] - bf.knotslist[j])
 
 # Plots our error
-def errorplotter(ppint, s, f0, n, kgte):
+def errorplotter(ppint, s, f0, ngte, kgte):
     res = 1
 
     coeffs = bf.allcoeffs(s)
-    params = sols(coeffs, ppint, s, f0, n, kgte)
+    params = sols(coeffs, ppint, s, f0, ngte, kgte)
     partparams = solsbyint(params, s)
 
-    correctps = correctparams(s, f0, n, kgte)
+    correctps = correctparams(s, f0, ngte, kgte)
 
     xpoints = []
 
@@ -371,11 +371,11 @@ def errorplotter(ppint, s, f0, n, kgte):
     ypoints = []
 
     for i, x in enumerate(xpoints):
-        ypoints.append(np.abs(modelvalueatpoint(x, coeffs, partparams) - gom.gte(x - bf.knotslist[0], f0, n, kgte)))
-        correctpoints.append(modelvalueatpoint(x, coeffs, correctps) - gom.gte(x - bf.knotslist[0], f0, n, kgte))
+        ypoints.append(np.abs(modelvalueatpoint(x, coeffs, partparams) - gom.gte(x - bf.knotslist[0], f0, ngte, kgte)))
+        correctpoints.append(modelvalueatpoint(x, coeffs, correctps) - gom.gte(x - bf.knotslist[0], f0, ngte, kgte))
         errorpoints.append(errorbounds(x))
 
-    title = "f0, n, kgte: " + str([f0, n, kgte]) + ". S = " + str(s) + ", Ints = " + str(ints)
+    title = "f0, ngte, kgte: " + str([f0, ngte, kgte]) + ". S = " + str(s) + ", Ints = " + str(ints)
 
     plt.loglog(xpoints, ypoints, label="LSTSQ Model")
     plt.loglog(xpoints, correctpoints, label="Correct Coefficients")
@@ -384,16 +384,16 @@ def errorplotter(ppint, s, f0, n, kgte):
     plt.title(title)
     plt.show()
 
-def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, n, kgte):
+def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, ngte, kgte):
     res = 1
 
     ints = knotnumb - knotnuma
 
     coeffs = bf.allcoeffs(s)
-    params = solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, kgte)
+    params = solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, ngte, kgte)
     partparams = solsbyint(params, s)
 
-    correctps = correctparams(s, f0, n, kgte)
+    correctps = correctparams(s, f0, ngte, kgte)
 
     xpoints = []
 
@@ -410,11 +410,11 @@ def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, n, kgte):
     ypoints = []
 
     for i, x in enumerate(xpoints):
-        ypoints.append(np.abs(modelvalueatpoint(x, coeffs, partparams) - gom.gte(x - bf.knotslist[0], f0, n, kgte)))
-        correctpoints.append(modelvalueatpoint(x, coeffs, correctps) - gom.gte(x - bf.knotslist[0], f0, n, kgte))
+        ypoints.append(np.abs(modelvalueatpoint(x, coeffs, partparams) - gom.gte(x - bf.knotslist[0], f0, ngte, kgte)))
+        correctpoints.append(modelvalueatpoint(x, coeffs, correctps) - gom.gte(x - bf.knotslist[0], f0, ngte, kgte))
         errorpoints.append(errorbounds(x))
 
-    title = "f0, n, kgte: " + str([f0, n, kgte]) + ". S = " + str(s) + ", Ints = " + str(ints)
+    title = "f0, ngte, kgte: " + str([f0, ngte, kgte]) + ". S = " + str(s) + ", Ints = " + str(ints)
 
     plt.loglog(xpoints, ypoints, label="LSTSQ Model")
     plt.loglog(xpoints, correctpoints, label="Correct Coefficients")
@@ -424,13 +424,13 @@ def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, n, kgte):
     plt.show()
 
 # Returns the value of the error of our model at a given point
-def errorvalueatpoint(point, coeffs, params, f0, n, kgte):
-    error = np.abs(modelvalueatpoint(point, coeffs, params) - gom.gte(point - bf.knotslist[0], f0, n, kgte))
+def errorvalueatpoint(point, coeffs, params, f0, ngte, kgte):
+    error = np.abs(modelvalueatpoint(point, coeffs, params) - gom.gte(point - bf.knotslist[0], f0, ngte, kgte))
 
     return error
 
-# Plots a template against the gte with the parameters f0, n and k. Template should be a list of knot templates
-def plotatemplate(template, f0, n, kgte):
+# Plots a template against the gte with the parameters f0, ngte and kgte. Template should be a list of knot templates
+def plotatemplate(template, f0, ngte, kgte):
     s = len(template[0])
 
     basiscoeffs = bf.allcoeffs(s)
@@ -456,21 +456,21 @@ def plotatemplate(template, f0, n, kgte):
             modelpoint = 0
 
         ypoints.append(modelpoint)
-        gtepoints.append(gom.gte(x - bf.knotslist[0], f0, n, kgte))
+        gtepoints.append(gom.gte(x - bf.knotslist[0], f0, ngte, kgte))
 
     plt.plot(xpoints, ypoints, label="Template Model")
-    plt.plot(xpoints, gtepoints, label="GTE, n = " + str(n))
+    plt.plot(xpoints, gtepoints, label="GTE, ngte = " + str(ngte))
     plt.legend()
     plt.show()
 
-def plotGTE(f0, n, kgte, ts, te, show=True, label=''):
+def plotGTE(f0, ngte, kgte, ts, te, show=True, label=''):
 
     xpoints = np.linspace(ts, te, 50)
 
     ypoints = []
 
     for x in xpoints:
-        ypoints.append(gom.gte(x - bf.knotslist[0], f0, n, kgte))
+        ypoints.append(gom.gte(x - bf.knotslist[0], f0, ngte, kgte))
 
     plt.plot(xpoints, ypoints, label=label)
     if show:
@@ -482,12 +482,11 @@ tdata = 200
 tref = tstart + 1/2 * tdata
 s = 3
 f0 = 200
-n = 5
-tau = 21600
-kgte = gom.kwhichresultsingivenhalflife(tau, f0, n)
+ngte = 5
+kgte = gom.kforGWsource()
 
 bf.knotslist = np.array([tstart, tstart + 1/2 * tdata, tstart + tdata], dtype='float')
-someparams = correctparams(s, f0, n, kgte)
+someparams = correctparams(s, f0, ngte, kgte)
 
 ps = 1
 pe = ps + 1
@@ -500,7 +499,7 @@ logging.debug("Standard Taylor Expansion Template")
 logging.debug(texpparams)
 logging.debug("Tref Taylor Expansion template")
 logging.debug(texprefparams)
-logging.debug("GTE at tref: " + str(gom.gte(tref - bf.knotslist[ps], f0, n, tau)) + ", " + str(gom.gte(tref - bf.knotslist[ps], f0, n, tau) - texprefparams[0]))
+logging.debug("GTE at tref: " + str(gom.gte(tref - bf.knotslist[ps], f0, ngte, kgte)) + ", " + str(gom.gte(tref - bf.knotslist[ps], f0, ngte, kgte) - texprefparams[0]))
 
 times = np.linspace(bf.knotslist[ps], bf.knotslist[pe], 50)
 ytemp = []
@@ -518,7 +517,7 @@ for time in times:
     tempval = modelvalueatpoint(time, coeffs, someparams)
     texpval = gom.TExpModelValue(texpparams, time - bf.knotslist[ps], tref=0)
     texprefval = gom.TExpModelValue(texprefparams, time, tref=tref)
-    gteval = gom.gte(time - bf.knotslist[ps], f0, n, kgte)
+    gteval = gom.gte(time - bf.knotslist[ps], f0, ngte, kgte)
 
     ytemp.append(tempval)
     ytexp.append(texpval)
@@ -553,15 +552,15 @@ knotnuma = 1
 knotnumb = 4
 ppint = 30
 f0 = 1000
-n = 5
+ngte = 5
 kgte = 10 ** -14
 
 print(bf.knotslist)
 coeffs = bf.allcoeffs(s)
-modelplotter(ppint, s, f0, n, kgte)
-#modelplotterknotspecific(1, 4, ppint, s, f0, n, kgte)
-#errorplotter(ppint, s, f0, n, kgte)
-#errorplotterknotspecific(1, 4, ppint, s, f0, n, kgte)
+modelplotter(ppint, s, f0, ngte, kgte)
+#modelplotterknotspecific(1, 4, ppint, s, f0, ngte, kgte)
+#errorplotter(ppint, s, f0, ngte, kgte)
+#errorplotterknotspecific(1, 4, ppint, s, f0, ngte, kgte)
 """
 
 """

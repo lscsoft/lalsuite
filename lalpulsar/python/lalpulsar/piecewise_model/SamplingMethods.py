@@ -37,15 +37,15 @@ def pointsbyknot(ppint):
 
 # Returns sample points that correspond with values of frequency that are evenly spaced (number of points = ppint *
 # ints)
-def pointsbyfrequency(ppint, f0, n, kgte):
+def pointsbyfrequency(ppint, f0, ngte, kgte):
     points = []
     dur = bf.knotslist[-1] - bf.knotslist[0]
     ints = len(bf.knotslist) - 1
 
-    freqps = np.linspace(gom.gte(0, f0, n, kgte), gom.gte(dur, f0, n, kgte), ppint * ints)
+    freqps = np.linspace(gom.gte(0, f0, ngte, kgte), gom.gte(dur, f0, ngte, kgte), ppint * ints)
 
     for freq in freqps:
-        points.append(gom.gteinv(freq, f0, n, kgte) + bf.knotslist[0])
+        points.append(gom.gteinv(freq, f0, ngte, kgte) + bf.knotslist[0])
 
     if points[-1] > bf.knotslist[-1]:
         points[-1] = bf.knotslist[-1]
@@ -108,11 +108,11 @@ def samplepointcheck(points, checkfirstintervals=True):
     return intscontainingnopoint
 
 # Returns our sample points depending upon the boolean values above
-def samplepoints(ppint, f0, n, kgte):
+def samplepoints(ppint, f0, ngte, kgte):
     if normalpoints:
         points = pointsbyknot(ppint)
     elif freqpoints:
-        points = pointsbyfrequency(ppint, f0, n, kgte)
+        points = pointsbyfrequency(ppint, f0, ngte, kgte)
     else:
         points = pointsrandom(ppint)
 
@@ -126,7 +126,7 @@ def samplepoints(ppint, f0, n, kgte):
 # As the pointsbyfrequency method but now instead we choose sample points between the times corresponding with the
 # knotnumbers knotnuma and knotnumb. Can be used for calculating the MOLS model of the GTE between two specific times
 # instead of the default times 0 to the signal duration
-def pointsbyfrequencywithinknots(knotnuma, knotnumb, ppint, f0, n, kgte):
+def pointsbyfrequencywithinknots(knotnuma, knotnumb, ppint, f0, ngte, kgte):
     points = []
 
     ts = bf.knotslist[knotnuma] - bf.knotslist[0]
@@ -134,10 +134,10 @@ def pointsbyfrequencywithinknots(knotnuma, knotnumb, ppint, f0, n, kgte):
 
     ints = knotnumb - knotnuma
 
-    freqps = np.linspace(gom.gte(ts, f0, n, kgte), gom.gte(te, f0, n, kgte), ppint * ints)
+    freqps = np.linspace(gom.gte(ts, f0, ngte, kgte), gom.gte(te, f0, ngte, kgte), ppint * ints)
 
     for freq in freqps:
-        points.append(gom.gteinv(freq, f0, n, kgte) + bf.knotslist[0])
+        points.append(gom.gteinv(freq, f0, ngte, kgte) + bf.knotslist[0])
 
     if points[0] < ts + bf.knotslist[0]:
         points[0] = ts + bf.knotslist[0]
@@ -149,8 +149,8 @@ def pointsbyfrequencywithinknots(knotnuma, knotnumb, ppint, f0, n, kgte):
 # As the the samplepoints method but now instead only generates sample points between the two given knots. As the above
 # method, can be used for calculating the MOLS model between two specific knots instead of the default times 0 to the
 # signal duration.
-def samplepointswithinknots(knotnuma, knotnumb, ppint, f0, n, kgte):
-    points = pointsbyfrequencywithinknots(knotnuma, knotnumb, ppint, f0, n, kgte)
+def samplepointswithinknots(knotnuma, knotnumb, ppint, f0, ngte, kgte):
+    points = pointsbyfrequencywithinknots(knotnuma, knotnumb, ppint, f0, ngte, kgte)
 
     sadints = samplepointcheck(points, checkfirstintervals=False)
 
@@ -164,11 +164,11 @@ def samplepointswithinknots(knotnuma, knotnumb, ppint, f0, n, kgte):
 
 """
 f0 = 1000
-n = 5
+ngte = 5
 kgte = 10 ** -14
 ppint = 5
 bf.knotslist = [50, 100, 200, 300, 400, 500]
 print(bf.knotslist)
-print(samplepoints(ppint, f0, n, kgte))
-print(samplepointswithinknots(0, 5, ppint, f0, n, kgte))
+print(samplepoints(ppint, f0, ngte, kgte))
+print(samplepointswithinknots(0, 5, ppint, f0, ngte, kgte))
 """

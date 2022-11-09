@@ -193,14 +193,14 @@ def writetempheaptofile(tempheap, filename, ascending=-1):
 # start of each segment, if trefsegfrac = 0.5, then tref will occur half way through each segment and so on. signalparams are the signal parameters of the signal
 # injected into the SFTs and rtnsum tells us whether to save the summed 2F across all segments or the average. rtnsum = False means the average is saved,
 # True and the sum will be saved
-def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filename, reset, padding_flags_bbox=[], padding_flags_int=[], directory="", trefsegfrac=0., rtnsum=False, SFTFiles=False, tempsperfile=1000):
+def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filename, padding_flags_bbox=[], padding_flags_int=[], directory="", trefsegfrac=0., rtnsum=False, SFTFiles=False, tempsperfile=1000):
         print("Beginning semifstatcatalogue")
         if padding_flags_bbox == []:
                 padding_flags_bbox = [0] * tbank.s * len(bf.knotslist)
         if padding_flags_int == []:
                 padding_flags_int  = [0] * tbank.s * len(bf.knotslist)
 
-        max_mismatch = tbank.mismatch
+        max_mismatch = tbank.maxmismatch
 
         #gom.PlotPWModel(signalparams, show=True, label="", linewidth=2)
 
@@ -237,7 +237,7 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
         diffvec = []
 
         for i in range(len(nearesttemp)):
-                                diffvec.append(nearesttemp[i] - signalparams[i])
+                diffvec.append(nearesttemp[i] - signalparams[i])
 
         nearestmismatch = np.dot(diffvec, np.dot(metric, diffvec))
 
@@ -246,6 +246,10 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
 
         # Create Iterator
         iterator = lp.CreateLatticeTilingIterator(tiling, s * finalknot)
+
+        for i in range(s * finalknot):
+                stats = lp.LatticeTilingStatistics(tiling, i)
+                logging.info(f"Total points in dim={i}: {stats.total_points}")
 
         fstatinputarray = []
         transformmatrices = []
@@ -287,9 +291,6 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
         fstattemptofile(directory + "/" + mismatchfilename, nearestpoint.data, nearestmismatch, nearestfstat)
 
         # fin is iterated through by the NextLatticeTilingPoint, when fin == 0, the parameter space associated with tbank has been completed tiled.
-        # The parameter maxtempsreached indicated whether the tempheap has exceed the specified maximum number of templates to store (specified in
-        # the tbank value tbank.maxtemps. The counter is used to print out how many templates have been counted, a print out message is made using
-        # counter every thousand templates
         fin = -1
 
         fstatmax = 0
@@ -371,8 +372,8 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
         # is contained within the freqindex and f1dotindex, although these parameters may not actually reference
         # a frequency and first spindown parameter).
 
-        kmin = gom.kwhichresultsingivenhalflife(tbank.taumax, tbank.fmax, tbank.nmax)
-        kmax = gom.kwhichresultsingivenhalflife(tbank.taumin, tbank.fmax, tbank.nmax)
+        kmin = tbank.kmin
+        kmax = tbank.kmax
 
         f0s = np.linspace(tbank.fmin, tbank.fmax, 100)
 
@@ -395,7 +396,7 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
 
                 crosssectiontemp = highest2F #templates[int(np.floor(len(templates) / 2))]
 
-                tpm.plottemplates(templates, crosssectiontemp, freqindex, f1dotindex, metric, tbank.mismatch, show=False)
+                tpm.plottemplates(templates, crosssectiontemp, freqindex, f1dotindex, metric, tbank.maxmismatch, show=False)
 
                 signalf0f1   = [signalparams[freqindex], signalparams[f1dotindex]]
                 highestf0f1  = [highest2F[freqindex], highest2F[f1dotindex]]

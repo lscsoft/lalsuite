@@ -225,8 +225,8 @@ def parameter_space_visualiser(tbank, points, segment, show=True, log=True):
 
         dimensions = len(bf.knotslist) * tbank.s
 
-        kmin = (2 ** (tbank.nmax - 1) - 1) / ((tbank.nmax - 1) * tbank.fmax ** tbank.nmax * tbank.taumax)
-        kmax = (2 ** (tbank.nmax - 1) - 1) / ((tbank.nmax - 1) * tbank.fmax ** tbank.nmax * tbank.taumin)
+        kmin = tbank.kmin
+        kmax = tbank.kmax
 
         # Randomly generating templates within bounds
         for i in range(points):
@@ -241,8 +241,9 @@ def parameter_space_visualiser(tbank, points, segment, show=True, log=True):
                         else:
                                 seglength = 0
 
-                        lowerbound = lp.PiecewiseParameterBounds(dim, this_template, -1, tbank.fmin, tbank.fmax, tbank.nmin, tbank.nmax, tbank.ntol, kmin, kmax, tbank.ktol, seglength)
-                        upperbound = lp.PiecewiseParameterBounds(dim, this_template,  1, tbank.fmin, tbank.fmax, tbank.nmin, tbank.nmax, tbank.ntol, kmin, kmax, tbank.ktol, seglength)
+                        # FIXME
+                        lowerbound = lp.PiecewiseParameterBounds(dim, this_template, -1, tbank.fmin, tbank.fmax, tbank.nmin, tbank.nmax, kmin, kmax, seglength)
+                        upperbound = lp.PiecewiseParameterBounds(dim, this_template,  1, tbank.fmin, tbank.fmax, tbank.nmin, tbank.nmax, kmin, kmax, seglength)
 
                         parameter = random.uniform(lowerbound, upperbound)
 
@@ -266,7 +267,7 @@ def parameter_space_visualiser(tbank, points, segment, show=True, log=True):
         metric = scmm.metric(tbank.s)
         metric_diagonals = np.diagonal(metric)
 
-        metric_spacing_list = [np.sqrt(tbank.mismatch / elem) for elem in metric_diagonals]
+        metric_spacing_list = [np.sqrt(tbank.maxmismatch / elem) for elem in metric_diagonals]
 
         metric_spacing_line_points = []
 

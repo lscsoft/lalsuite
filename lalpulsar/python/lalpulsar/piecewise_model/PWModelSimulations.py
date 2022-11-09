@@ -76,7 +76,7 @@ def buildSFTs(Tdata, tbank, tstart=900000000, trefsegfrac=0., Tsft=60, parentdir
         # Set Bounds, metric, mismatch and lattice type
         finalknot = len(bf.knotslist)
         s = tbank.s
-        mismatch = tbank.mismatch
+        mismatch = tbank.maxmismatch
 
         tiling = lp.CreateLatticeTiling(s * finalknot)
 

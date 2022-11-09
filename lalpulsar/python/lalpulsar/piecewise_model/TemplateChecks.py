@@ -70,28 +70,22 @@ def is_valid_temp(temp, tbank):
 
         fmin     = tbank.fmin
         fmax     = tbank.fmax
-        fmaxtrue = tbank.fmaxtrue
         nmin     = tbank.nmin
         nmax     = tbank.nmax
-        nmin0    = tbank.nmin0
-        nmax0    = tbank.nmax0
-        ntol     = tbank.ntol
-        taumin   = tbank.taumin
-        taumax   = tbank.taumax
-        ktol     = tbank.ktol
-
-        kmin = gom.kwhichresultsingivenhalflife(taumax, fmaxtrue, nmax)
-        kmax = gom.kwhichresultsingivenhalflife(taumin, fmaxtrue, nmax)
+        nmin    = tbank.nmin
+        nmax    = tbank.nmax
+        kmin   = tbank.kmin
+        kmax   = tbank.kmax
 
         ns = []
         ks = []
 
         for i, knottemp in enumerate(template):
 
-                n = -1
+                ngte = -1
 
                 if tbank.s == 3:
-                        n = knottemp[2] * knottemp[0] / (knottemp[1] ** 2)
+                        ngte = knottemp[2] * knottemp[0] / (knottemp[1] ** 2)
 
                 elif tbank.s == 2:
 
@@ -106,20 +100,20 @@ def is_valid_temp(temp, tbank):
 
                         segment_length = bf.knotslist[i] - bf.knotslist[i - 1]
 
-                        n = 1 + (f0prev * f1 - f0 * f1prev) / (f1prev * f1 * segment_length);
+                        ngte = 1 + (f0prev * f1 - f0 * f1prev) / (f1prev * f1 * segment_length);
 
                         if i == 1:
-                                ns.append(n)
+                                ns.append(ngte)
 
                 try:
-                        k = - knottemp[1] / (knottemp[0] ** n)
+                        kgte = - knottemp[1] / (knottemp[0] ** ngte)
                 except ZeroDivisionError:
-                        k = 10 ** 6
+                        kgte = 10 ** 6
                 except OverflowError:
-                        k = 0
+                        kgte = 0
 
-                ns.append(n)
-                ks.append(k)
+                ns.append(ngte)
+                ks.append(kgte)
         """
         print([nmin, nmax])
         print([kmin, kmax])
@@ -134,10 +128,11 @@ def is_valid_temp(temp, tbank):
         f1fails = 0
         f2fails = 0
 
-        if not 0.9999999 * nmin0 <= ns[0] <= nmax0 * 1.0000001:
+        if not 0.9999999 * nmin <= ns[0] <= nmax * 1.0000001:
                 print("First knot braking index fail: " + str(ns[0]))
                 nfails += 1
 
+        # FIXME
         nfails += checkrangesandtolerances(ns, nmin, nmax, ntol)
         kfails += checkrangesandtolerances(ks, kmin, kmax, ktol)
 
@@ -188,7 +183,7 @@ def is_valid_temp(temp, tbank):
 
         return [verdict, nfails, kfails, f0fails, f1fails, f2fails]
 
-def checkfstatfile(path, tbank, maxtemps = 10):
+def checkfstatfile(path, tbank, maxtemps=10):
 
         templates = []
 
@@ -228,11 +223,11 @@ def auto_valid_template(tbank, build_knots=[], reset=1):
 
         template = []
 
-        kmin = gom.kwhichresultsingivenhalflife(tbank.taumax, tbank.fmax, tbank.nmax)
-        kmax = gom.kwhichresultsingivenhalflife(tbank.taumin, tbank.fmax, tbank.nmax)
+        kmin = tbank.kmin
+        kmax = tbank.kmax
 
         if build_knots == []:
-                ek.allidealisedknots(tbank.s, tbank.dur, 40, tbank.fmaxtrue, tbank.nmax, tbank.taumin, tbank.mismatch)
+                ek.allidealisedknots(tbank.s, tbank.dur, 40, tbank.fmax, tbank.nmax, tbank.kmax, tbank.maxmismatch)
         else:
                 bf.knotslist = build_knots
 

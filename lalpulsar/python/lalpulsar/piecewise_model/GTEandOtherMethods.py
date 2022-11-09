@@ -19,35 +19,35 @@ from . import BasisFunctions as bf
 import matplotlib.pyplot as plt
 
 # The general torque equation we have formulated
-def gte(t, f0, n, kgte):
-    return f0 * (1 + (n - 1) * f0 ** (n - 1) * kgte * t) ** (1 / (1 - n))
+def gte(t, f0, ngte, kgte):
+    return f0 * (1 + (ngte - 1) * f0 ** (ngte - 1) * kgte * t) ** (1 / (1 - ngte))
 
 # Inverse of the GTE
-def gteinv(freq, f0, n, kgte):
-    return ((freq / f0) ** (1 - n) - 1) / ((n - 1) * f0 ** (n - 1) * kgte)
+def gteinv(freq, f0, ngte, kgte):
+    return ((freq / f0) ** (1 - ngte) - 1) / ((ngte - 1) * f0 ** (ngte - 1) * kgte)
 
 # Arbitrary derivative of the gte
-def gtederivs(t, f0, n, kgte, deriv):
+def gtederivs(t, f0, ngte, kgte, deriv):
     if deriv == 0:
-        return gte(t, f0, n, kgte)
+        return gte(t, f0, ngte, kgte)
     elif deriv == 1:
-        return -kgte * (f0 ** n) * (1 + (n - 1) * kgte * (f0 ** (n - 1)) * t) ** (1 / (1 - n) - 1)
+        return -kgte * (f0 ** ngte) * (1 + (ngte - 1) * kgte * (f0 ** (ngte - 1)) * t) ** (1 / (1 - ngte) - 1)
     elif deriv == 2:
-        return n * (kgte ** 2) * (f0 ** (2 * n - 1)) * (1 + (n - 1) * kgte * (f0 ** (n - 1)) * t) ** (1 / (1 - n) - 2)
+        return ngte * (kgte ** 2) * (f0 ** (2 * ngte - 1)) * (1 + (ngte - 1) * kgte * (f0 ** (ngte - 1)) * t) ** (1 / (1 - ngte) - 2)
 
     # The below expression may not correct
     else:
         print("Derivatives calculated here have not been thoroughly checked!")
-        prefactor = (kgte ** deriv) * (f0 ** (deriv * n - (deriv - 1)))
+        prefactor = (kgte ** deriv) * (f0 ** (deriv * ngte - (deriv - 1)))
 
-        factorialfactor = n - 1
+        factorialfactor = ngte - 1
 
         for i in range(deriv):
-            factorialfactor *= ((1 / (1 - n)) - i)
+            factorialfactor *= ((1 / (1 - ngte)) - i)
 
-        return prefactor * factorialfactor * (1 + (n - 1) * f0 ** (n - 1) * kgte * t) ** (1 / (n - 1) - deriv)
+        return prefactor * factorialfactor * (1 + (ngte - 1) * f0 ** (ngte - 1) * kgte * t) ** (1 / (ngte - 1) - deriv)
 
-# Returns the minimum and maximum values of the GTE at a time t with initial frequency f0 where n and tau can vary
+# Returns the minimum and maximum values of the GTE at a time t with initial frequency f0 where ngte and kgte can vary
 # between the given ranges
 def gteminmax(t, fmin, fmax, nmin, nmax, kmin, kmax):
     if t < 0:
@@ -69,23 +69,22 @@ def gtederivminmax(t, fmin, fmax, nmin, nmax, kmin, kmax, deriv):
 
     return [minderiv, maxderiv]
 
-# Rounds number to certain number of significant figures. Written to simplify how k is expressed when converting from
-# tau to k in the GlobalVariableDeclarations notebook
+# Rounds number to certain number of significant figures
 def roundsig(x, sig=4):
     return round(x, sig - int(np.floor(np.log10(abs(x)))) - 1)
 
-# Returns the braking index range for the next knot given n and our tolerance for n between knots.
-def nminmax(n, ntol, seglength):
-    nmin = n * (1 - ntol * seglength)
-    nmax = n  # * (1 + ntol * seglength)
+# Returns the braking index range for the next knot given ngte and our tolerance for ngte between knots.
+def nminmax(ngte, ntol, seglength):
+    nmin = ngte * (1 - ntol * seglength)
+    nmax = ngte  # * (1 + ntol * seglength)
 
     return [nmin, nmax]
 
-# Written to give the braking index range on the previous knot given n and out tolerance on some knot. Should be written
+# Written to give the braking index range on the previous knot given ngte and out tolerance on some knot. Should be written
 # to be the inverse of the above method.
-def nminmaxinverse(n, ntol, seglength):
-    nmin = n  # / (1 + ntol * seglength)
-    nmax = n / (1 - ntol * seglength)
+def nminmaxinverse(ngte, ntol, seglength):
+    nmin = ngte  # / (1 + ntol * seglength)
+    nmax = ngte / (1 - ntol * seglength)
 
     return [nmin, nmax]
 
@@ -110,8 +109,8 @@ def nminmaxatknot(n0min, n0max, nmin, nmax, ntol, knotnum):
 
 # Returns the allowed range for the braking index on the next knot if we have an initial range of n0min and n0max and
 # the value of the braking index at knotnum - 1
-def nextnminmax(n, n0min, n0max, nmin, nmax, ntol, knotnum, seglength):
-    nextmin, nextmax = nminmax(n, ntol, seglength)
+def nextnminmax(ngte, n0min, n0max, nmin, nmax, ntol, knotnum, seglength):
+    nextmin, nextmax = nminmax(ngte, ntol, seglength)
 
     allowedmin, allowedmax = nminmaxatknot(n0min, n0max, nmin, nmax, ntol, knotnum)
 
@@ -122,14 +121,14 @@ def nextnminmax(n, n0min, n0max, nmin, nmax, ntol, knotnum, seglength):
 
     return [nextmin, nextmax]
 
-# Gives the next allowed ranges of the k on the next knot.
-def kminmax(k, ktol, seglength):
-    kmin = k * (1 - ktol * seglength)
-    kmax = k  # * (1 + ktol * seglength)
+# Gives the next allowed ranges of the kgte on the next knot.
+def kminmax(kgte, ktol, seglength):
+    kmin = kgte * (1 - ktol * seglength)
+    kmax = kgte  # * (1 + ktol * seglength)
 
     return [kmin, kmax]
 
-# Gives the minimum and maximum allowed values of the value k at a given knot given its initial starting values. Written
+# Gives the minimum and maximum allowed values of the value kgte at a given knot given its initial starting values. Written
 # as applying the kminmax method recursively
 def kminmaxatknot(k0min, k0max, kmin, kmax, ktol, knotnum):
     thiskmin = k0min
@@ -147,9 +146,9 @@ def kminmaxatknot(k0min, k0max, kmin, kmax, ktol, knotnum):
 
     return [thiskmin, thiskmax]
 
-# As the nextnminmax method but now for the constant k
-def nextkminmax(k, k0min, k0max, kmin, kmax, ktol, knotnum, seglength):
-    nextmin, nextmax = kminmax(k, ktol, seglength)
+# As the nextnminmax method but now for the constant kgte
+def nextkminmax(kgte, k0min, k0max, kmin, kmax, ktol, knotnum, seglength):
+    nextmin, nextmax = kminmax(kgte, ktol, seglength)
 
     allowedmin, allowedmax = kminmaxatknot(k0min, k0max, kmin, kmax, ktol, knotnum)
 
@@ -161,18 +160,22 @@ def nextkminmax(k, k0min, k0max, kmin, kmax, ktol, knotnum, seglength):
     return [nextmin, nextmax]
 
 # Returns the time at which the GTE is at half its initial frequency value
-def timeatwhichfreqishalved(f0, n, k):
-    return roundsig((2 ** (n - 1) - 1) / ((n - 1) * f0 ** (n - 1) * k))
+def timeatwhichfreqishalved(f0, ngte, kgte):
+    return roundsig((2 ** (ngte - 1) - 1) / ((ngte - 1) * f0 ** (ngte - 1) * kgte))
 
-# Returns the value of k which results in the GTE being at half its frequency at the given time. Minimised when f0,
-# n and t are at their maximum values, likewise maximised when f0, n and t are minimised.
-def kwhichresultsingivenhalflife(t, f0, n, roundoff=True):
-    if roundoff:
-        return roundsig((2 ** (n - 1) - 1) / ((n - 1) * f0 ** (n - 1) * t))
-    else:
-        return (2 ** (n - 1) - 1) / ((n - 1) * f0 ** (n - 1) * t)
+# TODO: Return the value of kgte for a purely EM (ngte=3) source
+def kforEMsource():
+    return 1.9e-17   # units: s
 
-# Returns a 2D list containing the running braking indices and k values of a given template in the form [n's, k's].
+# TODO: Return the value of kgte for a purely GW (ngte=5) source
+def kforGWsource():
+    return 1.7e-20   # units: s^3
+
+# TODO: Return the value of kgte for a purely r-mode (ngte=7) source
+def kforRmodesource():
+    pass
+
+# Returns a 2D list containing the running braking indices and kgte values of a given template in the form [ngte's, kgte's].
 def runningbrakingindexandk(template):
     s = len(template[0])
     knotnum = len(template)
@@ -268,10 +271,10 @@ def rangeinsiderange(rangea, rangeb):
 
 # Quick plotting for the GTE and Taylor Expansions
 
-def texp(tx, f0, n, kgte):
+def texp(tx, f0, ngte, kgte):
     t = tx * 365 * 24 * 3600
-    fd0 = gtederivs(t, f0, n, kgte, 1)
-    fdd0 = gtederivs(t, f0, n, kgte, 2)
+    fd0 = gtederivs(t, f0, ngte, kgte, 1)
+    fdd0 = gtederivs(t, f0, ngte, kgte, 2)
 
     return f0 + fd0 * t + 1 / 2 * fdd0 * t ** 2
 
@@ -593,13 +596,13 @@ def PlotPWModel(pwparams, show=True, label="", linewidth=2):
 # Not finished
 def isvalidtemplate(template, tbank):
 
-        # Check initial frequency is within global range. We use fmaxtrue, because fmax is only used for parralelisation
+        # Check initial frequency is within global range.
         # purposes
-        if not (tbank.fmin <= template[0] <= tbank.fmaxtrue):
+        if not (tbank.fmin <= template[0] <= tbank.fmax):
                 return False
 
-        kmin = kwhichresultsingivenhalflife(tbank.taumax, tbank.fmax, tbank.nmax)
-        kmax = kwhichresultsingivenhalflife(tbank.taumin, tbank.fmax, tbank.nmax)
+        kmin = tbank.kmin
+        kmax = tbank.kmax
 
         # Check first spin down on first knot
         if not (-kmax * tbank.fmax ** tbank.nmax <= template[1] <= -kmin * tbank.fmin ** tbank.nmin):
@@ -626,7 +629,7 @@ def isvalidtemplate(template, tbank):
         if max(ns) > tbank.nmax or min(ns) < tbank.nmin:
                 return False
 
-        # Check all k values are within global range defined by taumin/taumax
+        # Check all kgte values are within global range
         if max(ks) > kmax or min(ks) < kmin:
                 return False
 
@@ -639,9 +642,9 @@ fs5 = gte(ts, 1000, 5, 10**-15)
 fs7 = gte(ts, 1000, 7, 10**-15)
 #fts = texp(ts, 200, 3, 10**-16)
 #plt.plot(ts, fs, label="Expected Spin Down")
-plt.plot(ts, fs3, label="EM radiation: n = 3")
-plt.plot(ts, fs5, label="GW radiation: n = 5")
-plt.plot(ts, fs7, label="R-modes: n = 7")
+plt.plot(ts, fs3, label="EM radiation: ngte = 3")
+plt.plot(ts, fs5, label="GW radiation: ngte = 5")
+plt.plot(ts, fs7, label="R-modes: ngte = 7")
 plt.xlabel("Seconds from NS Birth")
 plt.ylabel("Neutron Star Spin Frequency")
 plt.legend()
