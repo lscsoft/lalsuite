@@ -376,7 +376,7 @@ class CWSimulator(object):
             # yield current file name for e.g. printing progress
             yield frame_path, i, N
 
-    def get_sfts(self, fmax, Tsft, noise_sqrt_Sh=0, noise_seed=None, window=None, window_param=0):
+    def get_sfts(self, fmax, Tsft, noise_sqrt_Sh=0, noise_seed=None, window='rectangular', window_param=0):
         """
         Generate SFTs [2] containing strain time series of a continuous-wave signal.
 
@@ -428,7 +428,7 @@ class CWSimulator(object):
             # yield current SFT
             yield sft_vect.data[0], i, N
 
-    def write_sft_files(self, fmax, Tsft, comment="simCW", out_dir=".", noise_sqrt_Sh=0, noise_seed=None, window=None, window_param=0):
+    def write_sft_files(self, fmax, Tsft, comment="simCW", out_dir=".", noise_sqrt_Sh=0, noise_seed=None, window='rectangular', window_param=0):
         """
         Write SFT files [2] containing strain time series of a continuous-wave signal.
 
@@ -467,7 +467,7 @@ class CWSimulator(object):
         # create SFT filename specification
         spec = lalpulsar.SFTFilenameSpec()
         spec.path = out_dir
-        spec.window_type = None
+        spec.window_type = window
         spec.window_param = window_param
         spec.privMisc = comment
 
