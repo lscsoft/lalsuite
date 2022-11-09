@@ -69,13 +69,13 @@ IMRPhenomX_UsefulPowers powers_of_lalpiHM;
 
 
 //This is a wrapper function for adding higher modes to the ModeArray       - wrapper functions guard other areas of code from changes in the wrapped functions 
-static LALDict *IMRPhenomXHM_setup_mode_array(LALDict *lalParams);
+static LALDict *IMRPhenomXHM_setup_mode_array(LALDict *lalParams);          //static makes variable retain value in function 
 
 /*
 * Helper function to multiple hlm with Ylm.
 * Adapted from LALSimIMREOBNRv2HMROMUtilities.c
 */
-static int IMRPhenomXHMFDAddMode(
+static int IMRPhenomXHMFDAddMode(                                          //int represents a signed integer which can have positive or negative values
   COMPLEX16FrequencySeries *hptilde,  /**<[out] hp series*/
   COMPLEX16FrequencySeries *hctilde,  /**<[out] hc series */
   COMPLEX16FrequencySeries *hlmtilde, /**< hlm mode to add */
@@ -87,11 +87,11 @@ static int IMRPhenomXHMFDAddMode(
 );
 
 
-/* Return hptilde and hctilde from a sum of modes */
+/* Return hptilde and hctilde from a sum of modes */                                    //so this gives us population properties from multiple modes 
 static int IMRPhenomXHM_MultiMode(
-  COMPLEX16FrequencySeries **hptilde, /**< [out] Frequency domain h+ GW strain */
+  COMPLEX16FrequencySeries **hptilde, /**< [out] Frequency domain h+ GW strain */       //this and next line refer to both polarisations of grav wave signal
   COMPLEX16FrequencySeries **hctilde, /**< [out] Frequency domain hx GW strain */
-  REAL8 m1_SI,                        /**< primary mass [kg] */
+  REAL8 m1_SI,                        /**< primary mass [kg] */                         //these use what REAL8 is and binary properties 
   REAL8 m2_SI,                        /**< secondary mass [kg] */
   REAL8 chi1z,                        /**< aligned spin of primary */
   REAL8 chi2z,                        /**< aligned spin of secondary */
@@ -105,7 +105,7 @@ static int IMRPhenomXHM_MultiMode(
   LALDict *lalParams                  /**< LALDict struct */
 );
 
-/* Return hptilde and hctilde from a sum of modes */
+/* Return hptilde and hctilde from a sum of modes */                                  //this is the same as above but with constant REAL8 - CHECK THIS
 static int IMRPhenomXHM_MultiMode2(
   COMPLEX16FrequencySeries **hptilde, /**< [out] Frequency domain h+ GW strain */
   COMPLEX16FrequencySeries **hctilde, /**< [out] Frequency domain hx GW strain */
@@ -139,7 +139,7 @@ static LALDict *IMRPhenomXHM_setup_mode_array(LALDict *lalParams)
 
     /* Only define +m modes as we get -m modes for free */
     /* IMRPhenomXHM has the following calibrated modes. 22 mode taken from IMRPhenomXAS */
-    XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
+    XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);                                   //these are the modes of the grav wave that can be included in this analysis 
     XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 1);
     XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 3);
     XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 2);
