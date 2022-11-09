@@ -195,6 +195,7 @@ int main(int argc, char *argv[]){
       XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar_outDir, NULL, name, window_type, misc, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       spec.numSFTs = numSFTs;
       spec.SFTtimebase = Tsft;
+      spec.window_param = window_param;
       spec.gpsStart = epochStart->gpsSeconds;
       spec.SFTspan = Tspan;
       XLAL_CHECK_MAIN ( (outpath = XLALBuildSFTFilenameFromSpec(&spec)) != NULL, XLAL_EFUNC );
