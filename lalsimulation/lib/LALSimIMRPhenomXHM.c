@@ -36,31 +36,31 @@
 #include <stdlib.h>
 
 #ifndef _OPENMP
-#define omp ignore
+#define omp ignore          //if _OPENMP doesnt exist compiler defines function ignore
 #endif
 
 #define L_MAX 4
 
 #ifndef PHENOMXHMDEBUG
-#define DEBUG 0
+#define DEBUG 0               //0 is a preprocessor so before compiling a scan will make changes in the code according to all preprocessors
 #else
-#define DEBUG 1 //print debugging info
+#define DEBUG 1              //print debugging info
 #endif
 
 #ifndef PHENOMXHMMBAND
 #define MBAND 0
 #else
-#define MBAND PHENOMXHMMBAND //use multibanding
+#define MBAND PHENOMXHMMBAND      //use multibanding - operating across two or more frequency bands 
 #endif
 
-#include "LALSimIMRPhenomXHM_internals.h"
+#include "LALSimIMRPhenomXHM_internals.h"                     //FIND OUT WHAT THESE FILES ARE AND WHAT THEY DO
 #include "LALSimIMRPhenomXHM_internals.c"
 
 #include "LALSimIMRPhenomXHM_structs.h"
 #include "LALSimIMRPhenomXHM_qnm.h"
 #include "LALSimIMRPhenomXHM_multiband.c"
 
-//#include "LALSimIMRPhenomXHM.h" (non-precessing review version )
+//#include "LALSimIMRPhenomXHM.h" (non-precessing review version)
 
 #include "LALSimIMRPhenomXPHM.c"
 
@@ -68,7 +68,7 @@
 IMRPhenomX_UsefulPowers powers_of_lalpiHM;
 
 
-//This is a wrapper function for adding higher modes to the ModeArray
+//This is a wrapper function for adding higher modes to the ModeArray       - wrapper functions guard other areas of code from changes in the wrapped functions 
 static LALDict *IMRPhenomXHM_setup_mode_array(LALDict *lalParams);
 
 /*
