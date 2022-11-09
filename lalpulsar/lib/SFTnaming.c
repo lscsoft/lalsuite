@@ -64,7 +64,7 @@ static LALDetector SpecialDetectorRegistry[30];
 /**
  * Register a special detector for use with CW codes.
  *
- * The special detector much have a 2-character prefix of the form "[XYZ][0123456789]".
+ * The special detector must have a 2-character prefix of the form "[XYZ][0123456789]".
  */
 int
 XLALRegisterSpecialCWDetector( const LALDetector* specialDetector )
