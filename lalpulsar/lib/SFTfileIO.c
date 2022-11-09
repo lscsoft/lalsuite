@@ -635,7 +635,8 @@ XLALWriteSFT2NamedFile(
  * NOTE: the comment written into the SFT-file contains the 'sft->name' field concatenated with
  * the user-specified 'SFTcomment'
  *
- * NOTE: The SFT filename spec is updated to reflect the filename of the written SFT;
+ * NOTE: The SFT filename spec is updated to reflect the filename of the written SFT, by
+ * setting the \c numSFTs, \c detector, \c SFTtimebase, \c gpsStart, and \c SFTspan fields.
  * if needed, the SFT filename can be reconstructed with XLALBuildSFTFilenameFromSpec()
  */
 int
@@ -732,7 +733,8 @@ XLALWriteSFTVector2NamedFile(
  * Write the given SFTVector to SFT file(s) with a standard (\cite SFT-spec) filename(s).
  * Add the comment to SFT if SFTcomment != NULL.
  *
- * NOTE: The SFT filename spec is updated to reflect the filename of the first written SFT;
+ * NOTE: The SFT filename spec is updated to reflect the filename of the written SFT, by
+ * setting the \c numSFTs, \c detector, \c SFTtimebase, \c gpsStart, and \c SFTspan fields.
  * if needed, the SFT filename can be reconstructed with XLALBuildSFTFilenameFromSpec()
  */
 int

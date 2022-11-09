@@ -270,13 +270,13 @@ typedef struct tagMultiSFTCatalogView
 typedef struct tagSFTFilenameSpec {
   CHAR path[4096];              /**< Path to the SFT file */
   CHAR extn[32];                /**< Extension of the SFT file; defaults to 'sft' */
-  UINT4 numSFTs;                /**< Number of SFTs in the file */
-  CHAR detector[3];             /**< 2-character detector prefix (e.g. 'H1', 'L1', 'V1') */
-  UINT4 SFTtimebase;            /**< Timebase in seconds of the SFT */
+  UINT4 numSFTs;                /**< Number of SFTs in the file; set by \c XLALWriteSFT[Vector]2StandardFile() */
+  CHAR detector[3];             /**< 2-character detector prefix (e.g. 'H1', 'L1', 'V1'); set by \c XLALWriteSFT[Vector]2StandardFile() */
+  UINT4 SFTtimebase;            /**< Timebase in seconds of the SFT; set by \c XLALWriteSFT[Vector]2StandardFile() */
   CHAR window_type[32];         /**< window function applied to SFT */
   REAL8 window_param;           /**< parameter of window function, if required */
-  UINT4 gpsStart;               /**< GPS time in seconds at the beginning of the first SFT in the file */
-  UINT4 SFTspan;                /**< Total time interval in seconds covered by SFT file */
+  UINT4 gpsStart;               /**< GPS time in seconds at the beginning of the first SFT in the file; set by \c XLALWriteSFT[Vector]2StandardFile() */
+  UINT4 SFTspan;                /**< Total time interval in seconds covered by SFT file; set by \c XLALWriteSFT[Vector]2StandardFile() */
   CHAR privMisc[256];           /**< For private SFTs: miscellaneous description field */
   UINT4 pubObsRun;              /**< For public SFTs: observing run number */
   CHAR pubObsKind[4];           /**< For public SFTs: kind of data ('RUN', 'AUX', 'SIM', 'DEV') */
