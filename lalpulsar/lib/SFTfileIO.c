@@ -818,7 +818,7 @@ int
 XLALCheckSFTFileIsValid ( const char *fname )
 {
     int errcode = ValidateSFTFile(fname);
-    XLAL_CHECK ( errcode==0, XLAL_EFUNC, "SFT validation error on file '%s': %s", fname, SFTErrorMessage( errcode ) );
+    XLAL_CHECK ( errcode==0, XLAL_EFUNC, "SFT validation error on file '%s': code %d (%s)", fname, errcode, SFTErrorMessage( errcode ) );
     return XLAL_SUCCESS;
 } /* XLALCheckSFTFileIsValid */
 
