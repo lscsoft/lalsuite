@@ -82,7 +82,7 @@ XLALRegisterSpecialCWDetector( const LALDetector* specialDetector )
 
   const int index_2 = ((int) specialDetector->frDetector.prefix[1]) - ((int) '0');
   XLAL_CHECK ( 0 <= index_1 && index_1 < 9, XLAL_EINVAL,
-               "Special CW detector prefix '%s' must start with one of [XYZ]", specialDetector->frDetector.prefix );
+               "Special CW detector prefix '%s' must end with one of [0123456789]", specialDetector->frDetector.prefix );
 
   const int index = 10*index_1 + index_2;
 
