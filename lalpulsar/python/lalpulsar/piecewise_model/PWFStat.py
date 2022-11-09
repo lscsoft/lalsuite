@@ -29,11 +29,10 @@ import heapq as hq
 import time
 import logging
 import copy
+from tqdm import trange
 
 import matplotlib.pyplot as plt
-
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
+plt.set_loglevel("ERROR")
 
 # Returns our FstatInput object, currently uses SFTs built in pwsim
 # fmax (and fmin) should be chosen with the same reasoning outlined in the pwsim notbook. fmax = f0 + 10^-4 * f0 + 58/TSFT,
@@ -94,7 +93,7 @@ def fstatinput(SFTfmin, SFTfmax, sft_catalog, finputdata, dopplerparams, timeint
         Fstat_signal.data[0].Doppler.refTime = tref
         Fstat_signal.data[0].Doppler.Alpha   = Alpha
         Fstat_signal.data[0].Doppler.Delta   = Delta
-        print(dopplerparams)
+        logging.debug(f"Doppler parameters: {dopplerparams}")
         # Set doppler params. Done as a for loop in case dopplerparams changes length (it shouldn't, but just in case)
         for i in range(len(dopplerparams)):
                 Fstat_signal.data[0].Doppler.fkdot[i] = dopplerparams[i]
@@ -210,21 +209,19 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
 
         finalknot = len(bf.knotslist)
         s = tbank.s
-        print(bf.knotslist)
 
         # The below lines are required for finding the nearest lattice point to the signal parameters
 
         # Create LatticeTiling object
         tiling = lp.CreateLatticeTiling(s * finalknot)
 
-        print("Doing metric")
+        logging.debug("Doing metric")
         metric = scmm.PreCompMetric(s)
 
-        print("Doing Bounds")
-        # Set Bounds and reset knots (as knots are reset when setting bounds)
-        tbe.setbounds(tiling, padding_flags_bbox, padding_flags_int, tbank, reset)
+        logging.debug("Doing Bounds")
+        tbe.setbounds(tiling, tbank)
 
-        print("Setting tiling lattice and metric")
+        logging.debug("Setting tiling lattice and metric")
         # Set metric, mismatch and lattice type
         lp.SetTilingLatticeAndMetric(tiling, lp.TILING_LATTICE_ANSTAR, metric, max_mismatch)
 
@@ -233,14 +230,6 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
 
         nearestpoint = lal.gsl_vector(s * finalknot)
         UINT8vec     = lal.CreateUINT8Vector(s * finalknot)
-
-        # The below was used to see which point is the closest in the template bank, however, it is very slow. It has been commented out
-        # for now, and nearesttemp and nearestpoint.data have just been set to be the signal parameters
-        """
-        locator      = lp.CreateLatticeTilingLocator(tiling)
-        lp.NearestLatticeTilingPoint(locator, signalpoint, nearestpoint, UINT8vec)
-        nearesttemp = nearestpoint.data
-        """
 
         nearestpoint.data = signalpoint.data
         nearesttemp       = nearestpoint.data
@@ -261,9 +250,9 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
         fstatinputarray = []
         transformmatrices = []
         condmatrices = []
-        print("Doing Finputs matrices")
+        logging.info("Setting up Fstatistic input and transformation matrices")
         for seg in range(segs):
-                print("Doing seg: " + str(seg))
+                logging.debug(f"Doing seg: {seg}")
                 p0     = bf.knotslist[seg]
                 p1     = bf.knotslist[seg + 1]
                 tref   = p0 + (p1 - p0) * trefsegfrac
@@ -304,8 +293,6 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
         fin = -1
 
         fstatmax = 0
-        maxtempsreached = False
-        counter = 0
 
         # The temp heap, which will contain the highest 2F's and their associated templates. The elements of the tempheap have form (fstat, counter, template)
         template = lal.gsl_vector(s * finalknot)
@@ -315,27 +302,13 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
 
         templates = []
 
-        valid_temps   = 0
-        invalid_temps = 0
-        valid_stats = np.array([0, 0, 0, 0, 0])
-        #freqp0 = []
-        #f1dotp0 = []
-        print("max temps is: " + str(tbank.maxtemps))
-        while counter <= tbank.maxtemps:
+        logging.info("Counting templates ...")
+        tempcount = lp.TotalLatticeTilingPoints(iterator)
+        logging.info(f"... finished: number of templates = {tempcount}")
+
+        for counter in trange(tempcount):
                 fin = lp.NextLatticeTilingPoint(iterator, template)
                 thistemp = copy.copy(template.data)
-
-                """
-                this_valid_stats = tc.is_valid_temp(thistemp, tbank)
-                valid_stats += this_valid_stats[1:]
-
-                if this_valid_stats[0]:
-                        valid_temps += 1
-                else:
-                        invalid_temps += 1
-                """
-                #freqp0.append(thistemp[0])
-                #f1dotp0.append(thistemp[1])
 
                 templates.append(thistemp)
 
@@ -357,40 +330,26 @@ def semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, filena
                         hq.heappushpop(tempheap,     (fstat, tempmismatch, counter, thistemp))
                         hq.heappushpop(mismatchheap, (-tempmismatch, fstat, counter, thistemp))
 
-                counter += 1
+        # Check that end of template bank has been reached
+        fin = lp.NextLatticeTilingPoint(iterator, template)
+        assert fin == 0
 
-                if counter % 10000 == 0:
-                        print("Counter is at: " + str(counter))
-                        logging.info("Counter is at: %s", str(counter))
-
-                if fin == 0:
-                        break
-
-        signal_valid_stats = tc.is_valid_temp(signalparams, tbank)
-        print("Signal valid stats: " + str(signal_valid_stats))
-
-        print("Valid and Invalid temps are: " + str([valid_temps, invalid_temps]))
-        print("Valid stats are: " + str(valid_stats))
-
-        print("Lengt of tempheap: " + str(len(tempheap)))
-        print("Temps per file is: " + str(tbank.maxtemps))
-        print("Templates counted: " + str(counter))
-        print("Time Elapsed: " + str(time.time() - starttime))
-        print("Templates per second: " + str(counter / (time.time() - starttime)))
-
-        logging.info("Last template: %s", str(template.data))
-
+        logging.info(f"Length of tempheap: {len(tempheap)}")
+        logging.info(f"Templates per file is: {tempsperfile}")
+        logging.info(f"Templates counted: {counter}")
+        logging.info(f"Time Elapsed: {time.time() - starttime}")
+        logging.info(f"Templates per second: {counter / (time.time() - starttime)}")
         logging.info("Maximum f-stat: %s", str(fstatmax))
 
         tempheap.sort()
         mismatchheap.sort()
-
-        print("Sig f-stat: " + str(sigfstat))
-        print("Max f-stat: " + str(tempheap[-1][0]))
-        print("Lowest mismatch: " + str(-mismatchheap[-1][0]))
-        print("Mismatch of loudest: " + str(tempheap[-1][1]))
-
         logging.info("Heaps sorted")
+
+        logging.info(f"Sig f-stat: {sigfstat}")
+        logging.info(f"Max f-stat: {tempheap[-1][0]}")
+        logging.info(f"Lowest mismatch: {-mismatchheap[-1][0]}")
+        logging.info(f"Lowest mismatch template: {mismatchheap[-1][3]}")
+        logging.info(f"Mismatch of loudest: {tempheap[-1][1]}")
 
         # Write both heaps to files
         writetempheaptofile(tempheap,     directory + "/" + filename,         ascending=-1)

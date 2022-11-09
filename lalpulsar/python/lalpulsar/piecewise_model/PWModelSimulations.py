@@ -102,24 +102,22 @@ def buildSFTs(Tdata, tbank, tstart=900000000, trefsegfrac=0., Tsft=60, parentdir
         S = simulateCW.CWSimulator(tref, bf.knotslist[0], Tdata, wf, dt_wf, phi0, psi, Alpha, Delta, detector, tref_at_det=True)
 
         # Create directory to save SFTs into using strain and signal parameters as directory name
-        h0str = "{:.2E}".format(h0)
-        f0 = "{:.3f}".format(params[0][0][0])
-        f1 = "{:.2E}".format(params[0][0][1])
-        f2 = "{:.2E}".format(params[0][0][2])
+        f0 = params[0][0][0]
+        f1 = params[0][0][1]
+        f2 = params[0][0][2]
+        directoryname = os.path.join(parentdirectory, f"SFTs_h0-{h0:.2e}_f0-{f0:.3f}_f1-{f1:.2e}_f2-{f2:.2e}_dur-{tbank.dur}_tstart-{tstart}")
 
-        directoryname = h0str + "_" + f0 + "_" + f1 + "_" + f2 + "_" + str(tbank.dur) + "_" + str(tstart) + "/"
-
-        if not os.path.isdir(parentdirectory + "/" + directoryname):
-                os.mkdir(parentdirectory + "/" + directoryname)
+        if not os.path.isdir(directoryname):
+                os.mkdir(directoryname)
 
         # Write SFT files
 
         # Rule of thumb given by Karl for fmax -> fmax = f0 + 10^-4 * f0 + (50 + 8)/Tsft
         # The 10^-4 comes from an approximation doppler modulation, 50 + 8 is the number of bins extra either side we should have
-        for file, i, N in S.write_sft_files(fmax=tbank.fmax + 20, Tsft=Tsft, noise_sqrt_Sh=h0 / noiseratio, comment="PWModPhase", out_dir=parentdirectory + "/" + directoryname):
+        for file, i, N in S.write_sft_files(fmax=tbank.fmax + 20, Tsft=Tsft, noise_sqrt_Sh=h0 / noiseratio, comment="PWModPhase", out_dir=directoryname):
                 print('Generated SFT file %s (%i of %i)' % (file, i+1, N))
 
         # Return signal parameters so they can be known outside of this method
 
         #return [float(elem) for elem in paramsplitstr]
-        return np.transpose(signalparams.data)[0]
+        return np.transpose(signalparams.data)[0], directoryname

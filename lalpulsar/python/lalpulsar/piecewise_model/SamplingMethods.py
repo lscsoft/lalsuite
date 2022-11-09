@@ -19,6 +19,8 @@ from . import BasisFunctions as bf
 from . import GTEandOtherMethods as gom
 from . import MyErrors
 
+import logging
+
 # Returns sample points where a 'ppint' number of points are evenly spaced between each knot
 def pointsbyknot(ppint):
     ints = len(bf.knotslist) - 1
@@ -69,7 +71,7 @@ randomknots = False  # Points chosen randomly in time
 # Returns an integer value corresponding to the interval that point lies in
 def thisint(point):
     if point < bf.knotslist[0] or point > bf.knotslist[-1]:
-        #print("Sample point value not correctly chosen. Point and knot extrema are: " + str([point, bf.knotslist[0], bf.knotslist[-1]]))
+        logging.debug("Sample point value not correctly chosen. Point and knot extrema are: " + str([point, bf.knotslist[0], bf.knotslist[-1]]))
         raise MyErrors.PointNotWithinKnotBoundaries
 
     ints = len(bf.knotslist) - 1

@@ -29,20 +29,15 @@ import lalpulsar.piecewise_model.TBankEstimates as tbe
 import argparse as ap
 import numpy as np
 import os
+import sys
 import logging
-import cProfile, pstats, io
+import cProfile
+import pstats
+import io
 import signal
 
 # Allow liblalpulsar C code to be interrupted with Ctrl+C
 signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-print("Making the profiler")
-
-pr = cProfile.Profile()
-pr.enable()
-
-# Change ints I am using as Bools to bools
-# Change  no signal names by including H_0 parameters
 
 parser = ap.ArgumentParser()
 
@@ -60,23 +55,18 @@ parser.add_argument("--rtnsum",                         help="Whether to return 
 parser.add_argument("--SFTFiles",                       help="Whether to write SFT files or have them stored in memory", action='store_true')
 
 # Parameters to be used when creating the necessary elements to use lp.ComputeFStat
-parser.add_argument("--Tsft",           type=int,       help="The length of each SFT to be built", default=60)
+parser.add_argument("--Tsft",           type=int,       help="The length of each SFT to be built", default=5)
 parser.add_argument("--h0",             type=float,     help="Strain of the injected signal", default=1e-24)
-parser.add_argument("--cosi",           type=float,     help="", default=0.123)
-parser.add_argument("--psi",            type=float,     help="", default=2.345)
-parser.add_argument("--phi0",           type=float,     help="", default=3.210)
-parser.add_argument("--dt_wf",          type=float,     help="", default=10)
+parser.add_argument("--cosi",           type=float,     help="Default injection cos-iota", default=0.123)
+parser.add_argument("--psi",            type=float,     help="Default injection psi", default=2.345)
+parser.add_argument("--phi0",           type=float,     help="Default injection phi0", default=3.210)
+parser.add_argument("--dt_wf",          type=float,     help="Sampling time for waveform generation", default=10)
 parser.add_argument("--Alpha",          type=float,     help="Right Ascension to sky position of source", default=6.12)
 parser.add_argument("--Delta",          type=float,     help="Declination to sky position of source", default=1.02)
-parser.add_argument("--detector",       type=str,       help="Detector being used. Options H1, V1, uhhhhh", default='H1')
+parser.add_argument("--detector",       type=str,       help="Detector being used. Options H1, V1, etc.", default='H1')
 parser.add_argument("--assume_sqrtSh",  type=float,     help="Assumed noise level for calculating 2F", default=1e-23)
-parser.add_argument("--dfreq",          type=float,     help="", default=0)
-parser.add_argument("--sourceDeltaT",   type=float,     help="", default=2)
-
-# Parameter space padding flags
-parser.add_argument("--flags_bbox",     type=float,     help="List of what fraction of bounding box to use for padding flags",          nargs='+',          default=[0])
-parser.add_argument("--flags_int",      type=int,       help="List of what number of templates to use as padding flags",                nargs='+',          default=[0])
-parser.add_argument("--reset",                          help="Whether or not to use the reseting methods in PiecewiseModel. If Either flags_bbox or flags_int are non-zero, this will automatically be set to true", action='store_true')
+parser.add_argument("--dfreq",          type=float,     help="Frequency spacing for ComputeFstat()", default=0)
+parser.add_argument("--sourceDeltaT",   type=float,     help="sourceDeltaT option for ComputeFstat()", default=0.1)
 
 # Parameters used in defining the parameter space
 parser.add_argument("--s",              type=int,       help="Set the s parameter",                                                     nargs='?', const=1, default=-1)
@@ -96,18 +86,45 @@ parser.add_argument("--knots",          type=float,     help="Use user defined k
 parser.add_argument("--maxmismatch",    type=float,     help="Set the mismatch parameter",                                              nargs='?', const=1, default=-1)
 parser.add_argument("--maxtemps",       type=int,       help="The maximum number of templates to calculate using this tbank",                       default=-1)
 
+# Parameters controlling outputs
+parser.add_argument("--outbasedir",     type=str,       help="Output base directory",                                  default='.')
+parser.add_argument("--logfile",                        help="If true, log to file; if false, log to standard output", action='store_true')
+parser.add_argument("--loglevel",                       help="Level at which to log messages",                         default=logging.INFO)
+parser.add_argument("--profile",                        help="Profile the code",                                       action='store_true')
+
 args = parser.parse_args()
+basedirectory = args.outbasedir
+
+ek.setknotarchivepath(basedirectory)
+
+# For logging
+logging_format = '%(asctime)s : %(levelname)s : %(message)s'
+if args.logfile:
+        logging_filename = os.path.join(basedirectory, f'PiecewiseSearchLog_{j}.log')
+        logging.basicConfig(filename=logging_filename, filemode='w', level=args.loglevel, format=logging_format)
+        logging.info(f"Logging to {logging_filename}")
+else:
+        logging.basicConfig(level=args.loglevel, format=logging_format)
+        logging.info(f"Logging to standard output")
+logging.captureWarnings(True)
+if logging.getLogger().isEnabledFor(logging.INFO):
+        lp.globalvar.LatticeTilingProgressLogLevel = lal.LOG_NORMAL
+
+# For profiling
+if args.profile:
+        logging.info("Making the profiler")
+        pr = cProfile.Profile()
+        pr.enable()
+
+logging.debug("Doing the arg stuff")
 
 # Required arguments
 tbankcode     = args.tbankcode
 j             = args.j
 
-print("Doing the arg stuff")
-
 # Optional arguments
 tstart        = args.tstart
 trefsegfrac   = args.trefsegfrac
-directoryname = args.dirname
 noiseratio    = args.noiseratio
 rtnsum        = args.rtnsum
 tempsperfile  = args.tempsperfile
@@ -136,100 +153,49 @@ finputdata.sourceDeltaT  = args.sourceDeltaT
 
 h0 = finputdata.h0
 
-print("Making the logger")
-# For logging
-logging.basicConfig(filename='PWFCommandLineLog_' + str(j) + '.log', level=logging.DEBUG, filemode='w', format='%(asctime)s %(message)s')
-log = logging.getLogger()
-log.setLevel(logging.DEBUG)
-
 # Setting the template bank object and changing user specified parameters
 tbank = cd.TBank()
 
 if tbankcode == "GW170817":
+        logging.info(f"Starting with default parameter space: {tbankcode}")
         tbank.SetDefaultBNSR()
 
 if tbankcode == "1987A":
+        logging.info(f"Starting with default parameter space: {tbankcode}")
         tbank.SetDefault1987A()
 
-if tbankcode == "Small":
-        tbank.SetSmallTestCase()
-print(tbank.dur)
+if tbankcode == "CasA":
+        logging.info(f"Starting with default parameter space: {tbankcode}")
+        tbank.SetDefaultCasA()
 
-s            = args.s
-fmin         = args.fmin
-fmax         = args.fmax
-fmaxtrue     = args.fmaxtrue
-nmin         = args.nmin
-nmax         = args.nmax
-nmin0        = args.nmin0
-nmax0        = args.nmax0
-ntol         = 0.01 / args.ntol
-taumin       = args.taumin
-taumax       = args.taumax
-ktol         = 0.01 / args.ktol
-dur          = args.dur
-knots        = args.knots
-max_mismatch = args.maxmismatch
-maxtemps     = args.maxtemps
-
-# Changing the appropriate parameters
-if s                != -1: tbank.s        = s
-if fmin             != -1: tbank.fmin     = fmin
-if fmax             != -1: tbank.fmax     = fmax
-if fmaxtrue         != -1: tbank.fmaxtrue = fmaxtrue
-if nmin             != -1: tbank.nmin     = nmin
-if nmax             != -1: tbank.nmax     = nmax
-if nmin0            != -1: tbank.nmin0    = nmin0
-if nmax0            != -1: tbank.nmax0    = nmax0
-if ntol             != -0.01: tbank.ntol  = ntol
-if taumin           != -1: tbank.taumin   = taumin
-if taumax           != -1: tbank.taumax   = taumax
-if ktol             != -0.01: tbank.ktol  = ktol
-if dur              != -1: tbank.dur      = dur
-if max_mismatch     != -1: tbank.mismatch = max_mismatch
-if maxtemps         != -1: tbank.maxtemps = maxtemps
-
-print("Setting knots in PWFCommnadLine")
+# Override any tbank arguments set on the command line
+tbank.SetTBankParams(args)
 
 # Checking if we are using user defined knots or if we need to recalculate the knots in case any changed parameters affect knot choice
-if knots != [0]:
-        bf.knotslist = knots
-        tbank.dur = knots[-1]
+if tbank.knots != [0]:
+        logging.info("Setting knots from command line")
+        bf.knotslist = args.knots
 else:
-        ek.allidealisedknots(tbank.s, tbank.dur, 40, tbank.fmaxtrue, tbank.nmax, tbank.taumin, tbank.mismatch)
+        logging.info("Setting knots from algorithm")
+        tbank.SetKnotsByAlg()
+
+tbank.knots = bf.knotslist
+tbank.dur = tbank.knots[-1]
 
 # Adjusting knot start time
 if bf.knotslist[0] != tstart:
         for i, knot in enumerate(bf.knotslist):
                 bf.knotslist[i] = knot + tstart
 
-print("Knots are: " + str(bf.knotslist))
 logging.info("Knots: %s", str(bf.knotslist))
-
-tbank.knots = bf.knotslist
-
-print("Setting padding flag array in PWFCommandLine")
-# Creating appropriate padding flags lists if they are not provided
-if padding_flags_bbox == [0]:
-        padding_flags_bbox = [0] * tbank.s * len(bf.knotslist)
-if padding_flags_int == [0]:
-        padding_flags_int = [0] * tbank.s * len(bf.knotslist)
 
 # Building the name of the directory where the SFTs will be saved. Directory name is based off the tbank object. In this way, any searches completed
 # using the same tbank will have all SFTs in the same directory for neatness. Within the tbankdirectory, sub folders are used to contain the SFTs
 # and results of each different search
-tbankstr = tbank.toString()
-splitstr = tbankstr.split()
-
-tbankdirectory = str(tbank.s) + "_"
-
-for elem in splitstr[1:]:
-        tbankdirectory = tbankdirectory + str("{:.3f}".format(float(elem[:-1] ))) + "_"
-
-tbankdirectory = tbankdirectory[:-1]
-
+tbankdirectory = os.path.join(basedirectory, tbank.toString())
 if not os.path.isdir(tbankdirectory):
         os.mkdir(tbankdirectory)
+logging.info(f"TBank directory is {tbankdirectory}")
 
 # The name of the file that 2F and templates are stored to is only changed by whether the 2F values are averaged or only summed
 sumstr = ""
@@ -243,52 +209,40 @@ mismatchtempname = "Temps" + sumstr + "_Mismatch.txt"
 # the fstatinput method is called in PWFStat, however the randomly generate signal parameters are generated here
 
 if SFTFiles:
-        signalparams = pwsim.buildSFTs(tbank.dur, tbank, tstart=tstart, trefsegfrac=trefsegfrac, Tsft=finputdata.Tsft, parentdirectory=tbankdirectory, h0=h0, noiseratio=noiseratio)
+        signalparams, SFTdirectory = pwsim.buildSFTs(tbank.dur, tbank, tstart=tstart, trefsegfrac=trefsegfrac, Tsft=finputdata.Tsft, parentdirectory=tbankdirectory, h0=h0, noiseratio=noiseratio)
 else:
-        print("Creating tiling lattice")
+        logging.debug("Creating tiling lattice")
         tiling = lp.CreateLatticeTiling(tbank.s * len(bf.knotslist))
 
-        print("Building metric")
+        logging.debug("Building metric")
         metric = scmm.PreCompMetric(tbank.s)
 
-        print("Setting Bounds")
-        tbe.setbounds(tiling, padding_flags_bbox, padding_flags_int, tbank, reset)
+        logging.debug("Setting Bounds")
+        tbe.setbounds(tiling, tbank)
 
-        print("Setting tiling lattice and metric")
-        print(padding_flags_int)
-        lp.SetTilingLatticeAndMetric(tiling, lp.TILING_LATTICE_ANSTAR, metric, tbank.mismatch)
+        logging.debug("Setting tiling lattice and metric")
+        lp.SetTilingLatticeAndMetric(tiling, lp.TILING_LATTICE_ANSTAR, metric, tbank.maxmismatch)
 
-        print("Creating random signal params")
+        logging.debug("Creating random signal params")
         randparams = lal.CreateRandomParams(0)
         signalparams = lal.gsl_matrix(tbank.s * len(bf.knotslist), 1)
         lp.RandomLatticeTilingPoints(tiling, 0, randparams, signalparams);                                      # Chance 'scale' parameter to be non-zero (within range [-1, 0])
 
         signalparams = np.transpose(signalparams.data)[0]
 
-print("Random Signal params are: " + str(signalparams))
-logging.info("Random Signal Params are: %s", str(signalparams))
+        logging.info("Random Signal Params are: %s", str(signalparams))
 
-h0str = "{:.2E}".format(h0)
-f0 = "_{:.3f}".format(signalparams[0]) + "_"
+        f0 = signalparams[0]
+        f1 = signalparams[1]
+        f2 = signalparams[2]
 
-if tbank.s >= 2:
-        f1 = "{:.2E}".format(signalparams[1]) +"_"
-else:
-        f1 = ""
-if tbank.s == 3:
-        f2 = "{:.2E}".format(signalparams[2]) + "_"
-else:
-        f2 = ""
+        SFTdirectory = os.path.join(tbankdirectory, f"SFTs_h0-{h0:.2e}_f0-{f0:.3f}_f1-{f1:.2e}_f2-{f2:.2e}_dur-{tbank.dur}_tstart-{tstart}")
 
-# The directory where the SFTs will be saved to. This is the same directory name as in pwsim, so should not be altered unless also altered there (or SFTs are written
-# in memory and not to files in which case it shouldn't matter if the name is altered)
-directoryname = h0str + f0 + f1 + f2 + str(tbank.dur) + "_" + str(tstart)
-
-if not os.path.isdir(tbankdirectory + "/" + directoryname):
-                os.mkdir(tbankdirectory + "/" + directoryname)
+        if not os.path.isdir(SFTdirectory):
+                os.mkdir(SFTdirectory)
 
 # Create the text file where 2F and template data will be stored. The first line is added to the file which contains the column titles for all data.
-with open(tbankdirectory + "/" + directoryname + "/" + tempsfilename, "w") as reader:
+with open(os.path.join(SFTdirectory, tempsfilename), "w") as reader:
 
         commentline = "{:20s}".format("#FStat") + "     " + str("{:20s}".format("Mismatch")) + "     "
 
@@ -307,7 +261,7 @@ with open(tbankdirectory + "/" + directoryname + "/" + tempsfilename, "w") as re
         reader.write(commentline + "\n")
 
 # Create the text file where 2F and template data will be stored but ordered by mismatch. The first line is added which contains the column titles for all data.
-with open(tbankdirectory + "/" + directoryname + "/" + mismatchtempname, "w") as reader:
+with open(os.path.join(SFTdirectory, mismatchtempname), "w") as reader:
 
         commentline = "{:20s}".format("#Mismatch") + "     " + str("{:20s}".format("FStat")) + "     "
 
@@ -325,28 +279,25 @@ with open(tbankdirectory + "/" + directoryname + "/" + mismatchtempname, "w") as
 
         reader.write(commentline + "\n")
 
-print("Setting Antenna Pattern")
+logging.debug("Setting Antenna Pattern")
 # Set the maximum condition number for the antenna pattern above its default (get a warning using the piecewise model if not manually changed to be larger)
 lp.SetAntennaPatternMaxCond(10 ** 5)
 
 # The minimum and maximum frequencies needed to load in from SFTs to cover all frequencies any template may cover
-SFTfmin = gom.gte(tbank.dur, tbank.fmin, tbank.nmax, gom.kwhichresultsingivenhalflife(tbank.taumin, tbank.fmax, tbank.nmax)) - 10
+SFTfmin = max(gom.gte(tbank.dur, tbank.fmin, tbank.nmax, gom.kwhichresultsingivenhalflife(tbank.taumin, tbank.fmax, tbank.nmin)), 50)
 SFTfmax = tbank.fmax + 50
-
-if SFTfmin <= 0:
-        SFTfmin = 1
+logging.info(f"SFTfmin/fmax: [{SFTfmin}, {SFTfmax}]")
 
 # Build parameter space and begin calculated 2Fs
-print("SFTfmin/fmax: " + str([SFTfmin, SFTfmax]))
-print("SFT files is: " + str(SFTFiles))
-pwf.semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, tempsfilename, reset, padding_flags_bbox=padding_flags_bbox, padding_flags_int=padding_flags_int, directory=tbankdirectory + "/" + directoryname, trefsegfrac=trefsegfrac, rtnsum=rtnsum, SFTFiles=SFTFiles, tempsperfile=tempsperfile)
+logging.info(f"SFT files is: {SFTFiles}")
+pwf.semifstatcatalogue(SFTfmin, SFTfmax, tbank, finputdata, signalparams, tempsfilename, directory=SFTdirectory, trefsegfrac=trefsegfrac, rtnsum=rtnsum, SFTFiles=SFTFiles, tempsperfile=tempsperfile)
 
 # For logging and profiling
-pr.disable()
-s = io.StringIO()
-sortby = pstats.SortKey.CUMULATIVE
-ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
-ps.print_stats()
-
-with open("PWFCommandLineProfile.txt", 'w+') as f:
-        f.write(s.getvalue())
+if args.profile:
+        pr.disable()
+        s = io.StringIO()
+        sortby = pstats.SortKey.CUMULATIVE
+        ps = pstats.Stats(pr, stream=s).sort_stats('cumtime')
+        ps.print_stats()
+        with open(os.path.join(basedirectory, f'PiecewiseSearchProfile_{j}.txt'), 'w+') as f:
+                f.write(s.getvalue())

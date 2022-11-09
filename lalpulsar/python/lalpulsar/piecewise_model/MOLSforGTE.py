@@ -92,16 +92,15 @@ def sols(coeffs, ppint, s, f0, n, kgte, conditioning=True):
     lhs = np.matmul(pm, np.matmul(atamat, pm))
     rhs = np.matmul(np.matmul(pm, np.transpose(amat)), b)
 
-    # print("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
-    # print("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
+    # logging.debug("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
+    # logging.debug("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
 
     try:
         params = np.matmul(pm, np.linalg.solve(lhs, rhs))
     except np.linalg.LinAlgError as error:
-        print(error)
-        print("Error in calculating MOLS parameters, using Python LSTSQ method instead")
-        print()
-        params = np.matmul(pm, np.linalg.lstsq(lhs, rhs)[0])
+        logging.debug(error)
+        logging.debug("Error in calculating MOLS parameters, using Python LSTSQ method instead")
+        params = np.matmul(pm, np.linalg.lstsq(lhs, rhs, rcond=-1)[0])
 
     return params
 
@@ -127,7 +126,7 @@ def solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, kgte, conditio
             points = sm.samplepointswithinknots(knotnuma, knotnumb, ppint, f0, n, kgte)
             break
         except MyErrors.SegmentContainsNoSamplePoints:
-            print("Reattempting MOLS fitting with greater sampling")
+            logging.debug("Reattempting MOLS fitting with greater sampling")
             ppint *= 2
 
     b = bvec(points, f0, n, kgte)
@@ -146,15 +145,14 @@ def solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, kgte, conditio
     lhs = np.matmul(pm, np.matmul(atamat, pm))
     rhs = np.matmul(np.matmul(pm, np.transpose(amat)), b)
 
-    # print("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
-    # print("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
+    # logging.debug("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
+    # logging.debug("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
 
     try:
         params = np.matmul(pm, np.linalg.solve(lhs, rhs))
     except np.linalg.LinAlgError as error:
-        print(error)
-        print("Error in calculating MOLS parameters, using Python LSTSQ method instead")
-        print()
+        logging.debug(error)
+        logging.debug("Error in calculating MOLS parameters, using Python LSTSQ method instead")
         params = np.matmul(pm, np.linalg.lstsq(lhs, rhs)[0])
 
     zerobuff = [0] * (s * knotnuma)
@@ -174,9 +172,9 @@ coeffs = bf.allcoeffs(s)
 knotnuma = 0
 knotnumb = 2
 
-print(bf.knotslist)
-print(list(solsbyint(list(sols(coeffs, ppint, s, f0, n, kgte, conditioning=True)), s)))
-print(list(solsbyint(list(solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, kgte, conditioning=True)), s)))
+logging.debug(bf.knotslist)
+logging.debug(list(solsbyint(list(sols(coeffs, ppint, s, f0, n, tau, conditioning=True)), s)))
+logging.debug(list(solsbyint(list(solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, n, tau, conditioning=True)), s)))
 """
 points = []
 
@@ -188,7 +186,7 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
     f2 = params[0][0][2]
 
     t = point - bf.knotslist[0]
-    #print("Model t: " + str(t))
+    #logging.debug("Model t: " + str(t))
 
     return f0 + f1 * t + 1/2 * f2 * t ** 2
     """
@@ -242,7 +240,7 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
 def phase(point, coeffs, params, ignoreintcheck=False):
 
     model = lambda t: modelvalueatpoint(t, coeffs, params, ignoreintcheck=ignoreintcheck)
-    #print("Integral bounds: " + str([bf.knotslist[0], point]))
+    #logging.debug("Integral bounds: " + str([bf.knotslist[0], point]))
     phasemodel = 2 * np.pi * integrate.quad(model, bf.knotslist[0], point, epsabs=0)[0]
 
     return phasemodel
@@ -252,7 +250,7 @@ def phase(point, coeffs, params, ignoreintcheck=False):
     f1dot = params[0][0][1]
     f2dot = params[0][0][2]
 
-    print("Dt is: " + str(dt))
+    logging.debug("Dt is: " + str(dt))
 
     return 2 * np.pi * (freq * dt + f1dot * 0.5 * dt**2 + f2dot * 1/6 * dt**3) #phasemodel
     """
@@ -495,16 +493,14 @@ ps = 1
 pe = ps + 1
 texpparams = gom.KnotTempToTExpParams(someparams[ps][0] + someparams[ps][1], bf.knotslist[ps], bf.knotslist[pe])
 texprefparams = gom.TExpParamsToTExpRefParams(texpparams, tref - bf.knotslist[ps])
-print()
-print(bf.knotslist)
-print("Basis function template")
-print(someparams[ps][0] + someparams[ps][1])
-print("Standard Taylor Expansion Template")
-print(texpparams)
-print("Tref Taylor Expansion template")
-print(texprefparams)
-print()
-print("GTE at tref: " + str(gom.gte(tref - bf.knotslist[ps], f0, n, kgte)) + ", " + str(gom.gte(tref - bf.knotslist[ps], f0, n, kgte) - texprefparams[0]))
+logging.debug(bf.knotslist)
+logging.debug("Basis function template")
+logging.debug(someparams[ps][0] + someparams[ps][1])
+logging.debug("Standard Taylor Expansion Template")
+logging.debug(texpparams)
+logging.debug("Tref Taylor Expansion template")
+logging.debug(texprefparams)
+logging.debug("GTE at tref: " + str(gom.gte(tref - bf.knotslist[ps], f0, n, tau)) + ", " + str(gom.gte(tref - bf.knotslist[ps], f0, n, tau) - texprefparams[0]))
 
 times = np.linspace(bf.knotslist[ps], bf.knotslist[pe], 50)
 ytemp = []
