@@ -82,10 +82,10 @@ int main(void) {
   ++w;
 
   {
-    REAL8 beta = windowR;
-    REAL8Window *win = XLALCreateTukeyREAL8Window(WINDOWLENGTH, beta);
+    REAL8 param = windowR;
+    REAL8Window *win = XLALCreateTukeyREAL8Window(WINDOWLENGTH, param);
     XLAL_CHECK_MAIN(win != NULL, XLAL_EFUNC);
-    snprintf(windownames[w], sizeof(windownames[w]), "XLALCreateTukeyREAL8Window(beta=%g)", beta);
+    snprintf(windownames[w], sizeof(windownames[w]), "XLALCreateTukeyREAL8Window(param=%g)", param);
     for (size_t j = 0; j < WINDOWLENGTH; ++j) {
       windows[w]->data[j] *= win->data->data[j];
     }
