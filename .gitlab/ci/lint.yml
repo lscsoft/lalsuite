@@ -13,6 +13,106 @@
     - !reference [.ci-push-build, rules]
     - !reference [.ci-merge-build, rules]
 
+.lint:api:
+  extends:
+    - .build-job
+    - .lint
+  image: igwn/lalsuite-dev:el7-testing
+  variables:
+    CONFIGURE_FLAGS: "--disable-lalapps --disable-doxygen --disable-swig"
+  artifacts:
+    paths:
+      - api-reports
+  allow_failure:
+    exit_codes: 100
+
+lint:api-merge-diff:
+  extends:
+    - .lint:api
+  script:
+    # install required packages
+    - yum -y install
+          abi-dumper
+          abi-compliance-checker
+    # configure and build LALSuite before changes are merged
+    # - double-check CI_MERGE_REQUEST_TARGET_BRANCH_SHA is set
+    # - allow job to fail if target branch cannot be built (i.e. due to an unrelated failure)
+    - test "x${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}" != x
+    - git fetch ${CI_REPOSITORY_URL} ${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}
+    - git checkout ${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}
+    - ./00boot || exit 100
+    - ./configure --prefix=${PWD}/OLD <<< ${CONFIGURE_FLAGS} || exit 100
+    - make -j${CPU_COUNT} || exit 100
+    - make install || exit 100
+    - make distclean || exit 100
+    # configure and build LALSuite after changes are merged
+    - git checkout ${CI_COMMIT_SHA}
+    - ./00boot
+    - ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
+    - make -j${CPU_COUNT}
+    - make install
+    # compare API of LALSuite libraries before and after changes are merged
+    - export PYTHONUNBUFFERED=yes
+    - ./common/maintainer-scripts/compare_library_api
+          --old-lib-dir=./OLD/lib
+          --old-pub-header-dir=./OLD/include/lal
+          --old-sha=${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}
+          --new-lib-dir=./NEW/lib
+          --new-pub-header-dir=./NEW/include/lal
+          --new-sha=${CI_COMMIT_SHA}
+          --output-dir=./api-reports
+          --table-title="API Changes From Merge Request"
+          lal lalsupport
+          lalframe
+          lalmetaio
+          lalsimulation
+          lalburst
+          lalinspiral
+          lalinference
+          lalpulsar
+  rules:
+    # run for merge requests only
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+lint:api-last-release:
+  extends:
+    - .lint:api
+  script:
+    # install required packages
+    - yum -y install
+          lalsuite-devel
+          lalsuite-debug
+          abi-dumper
+          abi-compliance-checker
+    # configure and build LALSuite at current commit
+    - ./00boot
+    - ./configure --prefix=${PWD}/NEW <<< ${CONFIGURE_FLAGS}
+    - make -j${CPU_COUNT}
+    - make install
+    # compare API of LALSuite libraries between last release and current commit
+    - export PYTHONUNBUFFERED=yes
+    - ./common/maintainer-scripts/compare_library_api
+          --old-lib-dir=/usr/lib64
+          --old-pub-header-dir=/usr/include/lal
+          --old-debug-dir=/usr/lib/debug
+          --new-lib-dir=./NEW/lib
+          --new-pub-header-dir=./NEW/include/lal
+          --new-sha=${CI_COMMIT_SHA}
+          --output-dir=./api-reports
+          --table-title="API Changes Since Last Release"
+          lal lalsupport
+          lalframe
+          lalmetaio
+          lalsimulation
+          lalburst
+          lalinspiral
+          lalinference
+          lalpulsar
+  rules:
+    - !reference [.ci-lint, rules]
+    # run on release branches
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_REF_NAME =~ /release/'
+
 lint:authors:
   extends:
     - .build-job
