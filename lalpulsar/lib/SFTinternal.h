@@ -21,17 +21,44 @@
  * MA  02110-1301  USA
  */
 
+/**
+ * \file
+ * \ingroup SFTfileIO_h
+ * \brief Internal SFT types and functions
+ */
+
 /*---------- includes ----------*/
 
 #include <lal/SFTfileIO.h>
+
+/*---------- SFT versions ----------*/
+
+/**
+ * \name SFT versions
+ *
+ * - Version 1 (--2004):
+ *   - No formal specification.
+ *   - No longer supported.
+ * - Version 2 (2004--2022):
+ *   - Specified in https://dcc.ligo.org/LIGO-T040164-v1/public.
+ *   - Added header fields for detector name, checksum, comment string.
+ *   - Incompatible with version 1.
+ * - Version 3 (2022--):
+ *   - Specified in https://dcc.ligo.org/LIGO-T040164-v2/public.
+ *   - Modified header to record window type and parameter.
+ *   - Compatible with version 2.
+ */
+/** @{ */
+
+#define MIN_SFT_VERSION 2
+#define MAX_SFT_VERSION 3
+
+/** @} */
 
 /*---------- constants ----------*/
 
 #define TRUE    1
 #define FALSE   0
-
-#define MIN_SFT_VERSION 2
-#define MAX_SFT_VERSION 3
 
 static const REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
 static const REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
