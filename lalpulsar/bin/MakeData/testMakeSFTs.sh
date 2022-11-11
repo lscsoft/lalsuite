@@ -59,15 +59,15 @@ echo "H H1_mfdv5 ${tstart2} ${duration2} file://localhost$PWD/MFDv5/H-H1_mfdv5-$
 mkdir -p MSFTs/
 pubObsRun=4
 pubObsKind="DEV"
-pubVersion=1
+pubRevision=1
 MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:mfdv5 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment'"
-MSFTs_cmdline_public="${MSFTs_cmdline_base} --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-version ${pubVersion}"
+MSFTs_cmdline_public="${MSFTs_cmdline_base} --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-revision ${pubRevision}"
 cmdline="${MSFTs_cmdline_public} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend2} --window-type rectangular"
 if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
-pubField="O${pubObsRun}${pubObsKind}+V${pubVersion}+Cmfdv5+WRECT"
+pubField="O${pubObsRun}${pubObsKind}+R${pubRevision}+Cmfdv5+WRECT"
 for ts in ${timestamps}; do
     MSFTsft="./MSFTs/H-1_H1_${Tsft}SFT_${pubField}-${ts}-${Tsft}.sft"
     if ! test -f $MSFTsft; then

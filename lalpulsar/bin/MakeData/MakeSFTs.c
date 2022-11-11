@@ -63,13 +63,13 @@ int main( int argc, char *argv[] )
     REAL8 overlap_fraction;
     REAL8 high_pass_freq;
     char *window_type;
-    REAL8 window_radius;
+    REAL8 window_param;
     REAL8 start_freq;
     REAL8 band;
     char *sft_write_path;
     UINT4 observing_run;
     char *observing_kind;
-    UINT4 observing_version;
+    UINT4 observing_revision;
     char *misc_desc;
     char *comment_field;
   } uvar_struct = {
@@ -77,7 +77,7 @@ int main( int argc, char *argv[] )
     .overlap_fraction = 0,
     .high_pass_freq = 0,
     .window_type = XLALStringDuplicate("tukey"),
-    .window_radius = 0.001,
+    .window_param = 0.001,
     .start_freq = 48,
     .band = 2000,
     .sft_write_path = XLALStringDuplicate("."),
@@ -125,7 +125,7 @@ int main( int argc, char *argv[] )
     "Window to apply to SFTs. "
     );
   XLALRegisterUvarMember(
-    window_radius, REAL8, 'r', OPTIONAL,
+    window_param, REAL8, 'r', OPTIONAL,
     "Parameter (if required) of window to apply to SFTs. "
     );
   XLALRegisterUvarMember(
@@ -153,8 +153,8 @@ int main( int argc, char *argv[] )
     "For public SFTs, kind of SFTs being generated: 'RUN', 'AUX', 'SIM', or 'DEV'. "
     );
   XLALRegisterUvarMember(
-    observing_version, UINT4, 'V', OPTIONAL,
-    "For public SFTs, version number of the SFT production. "
+    observing_revision, UINT4, 'R', OPTIONAL,
+    "For public SFTs, revision number of the SFT production. "
     );
   XLALRegisterUvarMember(
     misc_desc, STRING, 'X', OPTIONAL,
@@ -188,12 +188,16 @@ int main( int argc, char *argv[] )
     "Default behaviour. "
     );
   XLALRegisterNamedUvar(
-    NULL, "sft_version", INT4, 0, DEFUNCT,
+    NULL, "sft_version", INT4, 'V', DEFUNCT,
     "No longer supported. "
     );
   XLALRegisterNamedUvar(
     NULL, "use_single", BOOLEAN, 'S', DEFUNCT,
     "No longer supported. "
+    );
+  XLALRegisterNamedUvar(
+    NULL, "window_radius", REAL8, 0, DEFUNCT,
+    "Use " UVAR_STR( window_param ) " instead. "
     );
 
   // Parse user input
@@ -248,12 +252,12 @@ int main( int argc, char *argv[] )
                       UVAR_STR( window_type ) "=3 is deprecated; use " UVAR_STR( window_type ) "=hann" );
   } else if ( XLALUserVarWasSet( &uvar->window_type ) ) {
     XLALUserVarCheck( &should_exit,
-                      XLALCheckNamedWindow( uvar->window_type, XLALUserVarWasSet( &uvar->window_radius ) ) == XLAL_SUCCESS,
-                      "Invalid/inconsistent " UVAR_STR( window_type ) " and/or " UVAR_STR( window_radius ) );
+                      XLALCheckNamedWindow( uvar->window_type, XLALUserVarWasSet( &uvar->window_param ) ) == XLAL_SUCCESS,
+                      "Invalid/inconsistent " UVAR_STR( window_type ) " and/or " UVAR_STR( window_param ) );
   }
   XLALUserVarCheck( &should_exit,
-                    uvar->window_radius >= 0,
-                    UVAR_STR( window_radius ) " must be positive" );
+                    uvar->window_param >= 0,
+                    UVAR_STR( window_param ) " must be positive" );
   XLALUserVarCheck( &should_exit,
                     uvar->start_freq >= 0,
                     UVAR_STR( start_freq ) " must be positive" );
@@ -271,11 +275,11 @@ int main( int argc, char *argv[] )
                     || strcmp( uvar->observing_kind, "DEV" ) == 0,
                     UVAR_STR( observing_kind ) " must be one of 'RUN', 'AUX', 'SIM', or 'DEV'" );
   XLALUserVarCheck( &should_exit,
-                    uvar->observing_run == 0 || uvar->observing_version > 0,
-                    UVAR_STR( observing_version ) " must be strictly positive" );
+                    uvar->observing_run == 0 || uvar->observing_revision > 0,
+                    UVAR_STR( observing_revision ) " must be strictly positive" );
   XLALUserVarCheck( &should_exit,
                     uvar->observing_run == 0 || !XLALUserVarWasSet( &uvar->misc_desc ),
-                    UVAR_STR( observing_version ) "=0 is mutually exclusive with " UVAR_STR( misc_desc ) );
+                    UVAR_STR( observing_revision ) "=0 is mutually exclusive with " UVAR_STR( misc_desc ) );
 
   // Exit if required
   if ( should_exit ) {
@@ -341,8 +345,8 @@ int main( int argc, char *argv[] )
                    "Failed to allocate SFT time series to %g elements", uvar->sft_duration / SFT_time_series->deltaT );
 
   // Create SFT time series window
-  const REAL8 window_beta = XLALUserVarWasSet( &uvar->window_radius ) ? uvar->window_radius : 0;
-  REAL8Window *SFT_window = XLALCreateNamedREAL8Window( uvar->window_type, window_beta, SFT_time_series->data->length );
+  const REAL8 window_param = XLALUserVarWasSet( &uvar->window_param ) ? uvar->window_param : 0;
+  REAL8Window *SFT_window = XLALCreateNamedREAL8Window( uvar->window_type, window_param, SFT_time_series->data->length );
   XLAL_CHECK_MAIN( SFT_window != NULL, XLAL_EFUNC,
                    "Failed to allocate SFT time series window of %u elements", SFT_time_series->data->length );
 
@@ -444,9 +448,9 @@ int main( int argc, char *argv[] )
     // Build SFT filename spec
     SFTFilenameSpec XLAL_INIT_DECL(spec);
     XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path, "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-    spec.window_beta = window_beta;
+    spec.window_param = window_param;
     spec.pubObsRun = uvar->observing_run;
-    spec.pubVersion = uvar->observing_version;
+    spec.pubRevision = uvar->observing_revision;
 
     // Write out SFT and retrieve filename
     char *temp_SFT_filename = NULL;
