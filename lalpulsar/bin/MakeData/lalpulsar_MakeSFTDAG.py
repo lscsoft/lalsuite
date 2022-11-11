@@ -64,6 +64,8 @@ __date__ = git_version.date
 # 10/2022  kww; Parse window type as a string, parameter separated by colon
 # 10/2022  kww; Merge -O and -o log path options to free up -O option
 # 10/2022  kww; Implement public SFT file naming convention
+# 11/2022  kww; -R command line option now used for --observing-revision
+#               instead of --output-jobs-per-node, which now uses -r
 
 
 #
@@ -81,7 +83,7 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
     argList.append(f'-O {args.observing_run}')
     if args.observing_run > 0:
         argList.append(f'-K {args.observing_kind}')
-        argList.append(f'-V {args.observing_version}')
+        argList.append(f'-R {args.observing_revision}')
     elif args.misc_desc:
         argList.append(f'-X {args.misc_desc}')
     argList.append(f'-f {args.filter_knee_freq}')
@@ -97,8 +99,8 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
         argList.append(f'-c {args.comment_field}')
     if args.window_type:
         if ':' in args.window_type:
-            window_type, window_radius = args.window_type.split(':')
-            argList.append(f'-w {window_type} -r {window_radius}')
+            window_type, window_param = args.window_type.split(':')
+            argList.append(f'-w {window_type} -r {window_param}')
         else:
             argList.append(f'-w {args.window_type}')
     if args.overlap_fraction:
@@ -131,12 +133,12 @@ parser.add_argument('-K', '--observing-kind', type=str, choices=['RUN', 'AUX', '
                     "AUX" for SFTs of non-h(t) channels; \
                     "SIM" for mock data challenge or other simulated data; or \
                     "DEV" for development/testing purposes')
-parser.add_argument('-V', '--observing-version', type=int,
-                    help='For public SFTs: version number starts at 1, and should be incremented once \
+parser.add_argument('-R', '--observing-revision', type=int,
+                    help='For public SFTs: revision number starts at 1, and should be incremented once \
                     SFTs have been widely distributed across clusters, advertised \
                     as being ready for use, etc.  For example, if mistakes are found \
                     in the initial SFT production run after they have been published, \
-                    regenerated SFTs should have a version number of at least 2')
+                    regenerated SFTs should have a revision number of at least 2')
 parser.add_argument('-X', '--misc-desc', type=str,
                     help='For private SFTs, miscellaneous part of the SFT \
                     description field in the filename')
@@ -183,7 +185,7 @@ parser.add_argument('-N', '--channel-name', required=True, type=str,
                     help='name of input time-domain channel to read from \
                     frames')
 parser.add_argument('-c', '--comment-field', type=str,
-                    help='comment for version 2 SFT header')
+                    help='comment for SFT header')
 parser.add_argument('-F', '--start-freq', type=int, default=10,
                     help='start frequency of the SFTs')
 parser.add_argument('-B', '--band', type=int, default=1990,
@@ -216,8 +218,8 @@ parser.add_argument('-Q', '--node-path', type=str,
                     options are given, the first output file will go into \
                     /data/node1/frames/S5/sfts/LHO; the next node in the list \
                     is used in constructing the path when the number of jobs \
-                    given by the -R option reached, and so on')
-parser.add_argument('-R', '--output-jobs-per-node', type=int, default=0,
+                    given by the -r option reached, and so on')
+parser.add_argument('-r', '--output-jobs-per-node', type=int, default=0,
                     help='number of jobs to output per node in the list of \
                     nodes given with the -q option')
 parser.add_argument('-j', '--datafind-path', type=str,
@@ -273,11 +275,11 @@ if args.observing_run < 0:
 if args.observing_run > 0 and not args.observing_kind:
     raise argparse.error('--observing-run requires --observing-kind')
 
-if args.observing_run > 0 and not args.observing_version:
-    raise argparse.error('--observing-run requires --observing-version')
+if args.observing_run > 0 and not args.observing_revision:
+    raise argparse.error('--observing-run requires --observing-revision')
 
-if args.observing_version and args.observing_version <= 0:
-    raise argparse.error('--observing-version must be > 0')
+if args.observing_revision and args.observing_revision <= 0:
+    raise argparse.error('--observing-revision must be > 0')
 
 if args.observing_run > 0 and args.misc_desc:
     raise argparse.error(f'--observing-run={args.observing_run} incompatible with --misc-desc')

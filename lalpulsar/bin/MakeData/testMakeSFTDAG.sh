@@ -12,7 +12,7 @@ segs="./segs"
 echo "${seg1_tstart} ${seg1_tend}" > $segs
 echo "${seg2_tstart} ${seg2_tend}" >> $segs
 
-for SFT_name_opts in "-O 4 -K DEV -V 1" "-O 0 -X private"; do
+for SFT_name_opts in "-O 4 -K DEV -R 1" "-O 0 -X private"; do
 
 ## run lalpulsar_MakeSFTDAG to create a fake output
 cmdline="lalpulsar_MakeSFTDAG ${SFT_name_opts} -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . -N H1:GDS-CALIB_STRAIN_CLEAN -F ${fmin} -B ${Band} -w 3 -P 0.5 -m 1 -A ligo.sim.o4.cw.explore.test -U albert.einstein -g segs -J /tmp/path/to"
