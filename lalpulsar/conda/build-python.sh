@@ -33,10 +33,11 @@ export GSL_LIBS="-L${PREFIX}/lib -lgsl"
 
 # configure only python bindings and pure-python extras
 ${SRC_DIR}/configure \
-	--enable-cfitsio \
 	--disable-doxygen \
 	--disable-swig-iface \
+	--enable-cfitsio \
 	--enable-python \
+	--enable-sistr \
 	--enable-swig-python \
 	--prefix="${PREFIX}" \
 	${CONFIGURE_ARGS} \

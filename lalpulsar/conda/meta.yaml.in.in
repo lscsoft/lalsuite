@@ -55,11 +55,11 @@ requirements:
     - cfitsio
     - fftw * nompi*
     - gsl
+    - lalframe >={{ lalframe_version }}
     - liblal >={{ lal_version }} fftw*
     - liblalframe >={{ lalframe_version }}
-    - lalframe >={{ lalframe_version }}
-    - liblalsimulation >={{ lalsimulation_version }}
     - liblalinference >={{ lalinference_version }}
+    - liblalsimulation >={{ lalsimulation_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
 
@@ -110,8 +110,8 @@ outputs:
         - {{ pin_subpackage('lalpulsar-data', exact=True) }}
         - liblal >={{ lal_version }} fftw*
         - liblalframe >={{ lalframe_version }}
-        - liblalsimulation >={{ lalsimulation_version }}
         - liblalinference >={{ lalinference_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
       run:
@@ -121,8 +121,8 @@ outputs:
         - {{ pin_subpackage('lalpulsar-data', exact=True) }}
         - liblal >={{ lal_version }}
         - liblalframe >={{ lalframe_version }}
-        - liblalsimulation >={{ lalsimulation_version }}
         - liblalinference >={{ lalinference_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
       run_constrained:
         - lalpulsar >=3.0.0
         - python-lalpulsar >=3.0.0
@@ -148,7 +148,7 @@ outputs:
         applications that use the LAL MetaIO library.
 
   - name: python-lalpulsar
-    script: install-python.sh
+    script: build-python.sh
     build:
       error_overdepending: true
       error_overlinking: true
@@ -174,12 +174,13 @@ outputs:
         - python                              # [build_platform != target_platform]
       host:
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
+        - libsistr  # [unix]
         - numpy
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalinference >={{ lalinference_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
         # extras to assist the solver, but not actually used
         - cfitsio
         - openssl
@@ -190,8 +191,8 @@ outputs:
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalinference >={{ lalinference_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
         - six
     test:
       requires:
@@ -243,19 +244,20 @@ outputs:
         - jplephem  # [build_platform == target_platform]
         - h5py  # [build_platform == target_platform]
         - lalframe >={{ lalframe_version }}
+        - lalinference >={{ lalinference_version }}
         - liblal >={{ lal_version }}
         - liblalframe >={{ lalframe_version }}
-        - liblalsimulation >={{ lalsimulation_version }}
         - liblalinference >={{ lalinference_version }}
-        - lalinference >={{ lalinference_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
+        - libsistr  # [unix]
         - numpy   # [build_platform == target_platform]
         - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalinference >={{ lalinference_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
         - scipy   # [build_platform == target_platform]
         # extras to assist the solver, but not actually used
         - openssl
@@ -264,18 +266,19 @@ outputs:
         - cfitsio
         - gsl
         - jplephem
+        - lalinference >={{ lalinference_version }}
         - liblal >={{ lal_version }}
         - liblalframe >={{ lalframe_version }}
-        - liblalsimulation >={{ lalsimulation_version }}
         - liblalinference >={{ lalinference_version }}
-        - lalinference >={{ lalinference_version }}
+        - liblalsimulation >={{ lalsimulation_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
+        - libsistr  # [unix]
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
-        - python-lalsimulation >={{ lalsimulation_version }}
         - python-lalinference >={{ lalinference_version }}
+        - python-lalsimulation >={{ lalsimulation_version }}
         - {{ pin_subpackage('python-lalpulsar', exact=True) }}
     test:
       commands:
@@ -288,6 +291,7 @@ outputs:
         - lalpulsar_fits_overview --help
         - lalpulsar_fits_table_list --help
         - lalpulsar_heterodyne --help
+        - lalpulsar_hwinject -h
         - lalpulsar_knope --help
         - lalpulsar_knope_collate_results --help
         #- lalpulsar_knope_result_page --help  <- needs scotchcorner
