@@ -39,6 +39,7 @@ lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 AUTHORS                         @adam-mercer @duncanmmacleod @karl-wette
 COPYING                         @adam-mercer @duncanmmacleod @karl-wette
 Makefile.am                     @adam-mercer @duncanmmacleod @karl-wette
+common/                         @adam-mercer @duncanmmacleod @karl-wette
 conda/                          @adam-mercer @duncanmmacleod @karl-wette
 configure.ac                    @adam-mercer @duncanmmacleod @karl-wette
 debian/                         @adam-mercer @duncanmmacleod @karl-wette
