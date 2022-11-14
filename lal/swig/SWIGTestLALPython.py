@@ -1388,32 +1388,66 @@ def test_Python_dict_to_LALDict_typemap():
     print("PASSED Python dict to LALDict typemap", file=sys.stderr)
 
 
-def test_Python_conversion_of_NumPy_fixed_width_integer_float_types():
-    """check Python conversion of NumPy fixed-width integer/float types
+@pytest.mark.parametrize(("inputs", "result"), [
+    ((10, numpy.int16(20), numpy.int32(30), numpy.int64(-40)), 20),
+    ((numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)), 20),
+    ((numpy.int16(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)), 20),
+    ((numpy.int32(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)), 20),
+    ((numpy.int64(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)), 20),
+])
+def test_conversion_of_numpy_fixed_width_types_int(inputs, result):
+    """Check conversion of NumPy fixed-width int types.
     """
-    print("checking Python conversion of NumPy fixed-width integer/float types", file=sys.stderr)
-    assert lal.swig_lal_test_numpy_int_types(10, numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
-    assert lal.swig_lal_test_numpy_int_types(numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
-    assert lal.swig_lal_test_numpy_int_types(numpy.int16(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
-    assert lal.swig_lal_test_numpy_int_types(numpy.int32(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
-    assert lal.swig_lal_test_numpy_int_types(numpy.int64(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
-    assert lal.swig_lal_test_numpy_uint_types(10, numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
-    assert lal.swig_lal_test_numpy_uint_types(numpy.uint8(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
-    assert lal.swig_lal_test_numpy_uint_types(numpy.uint16(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
-    assert lal.swig_lal_test_numpy_uint_types(numpy.uint32(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
-    assert lal.swig_lal_test_numpy_uint_types(numpy.uint64(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
-    assert lal.swig_lal_test_numpy_flt_types(numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
-    assert lal.swig_lal_test_numpy_flt_types(numpy.uint8(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
-    assert lal.swig_lal_test_numpy_flt_types(numpy.float_(10), numpy.float16(20), numpy.float32(30), numpy.float64(40)) == 100
-    assert lal.swig_lal_test_numpy_cpx_types(numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
-    assert lal.swig_lal_test_numpy_cpx_types(numpy.uint8(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)) == 100
-    assert lal.swig_lal_test_numpy_cpx_types(numpy.float_(10), numpy.float16(20), numpy.float32(30), numpy.float64(40)) == 100
-    assert lal.swig_lal_test_numpy_cpx_types(numpy.complex_(10), numpy.complex64(20), numpy.complex64(30), numpy.complex128(40)) == 100
-    assert int(lal.LIGOTimeGPS(numpy.int8(123))) == 123
-    assert int(lal.LIGOTimeGPS(numpy.int16(123))) == 123
-    assert int(lal.LIGOTimeGPS(numpy.int32(123))) == 123
-    assert int(lal.LIGOTimeGPS(numpy.int64(123))) == 123
-    print("PASSED Python conversion of NumPy fixed-width integer/float types", file=sys.stderr)
+    assert lal.swig_lal_test_numpy_int_types(*inputs) == result
+
+
+@pytest.mark.parametrize(("inputs", "result"), [
+    ((10, numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)), 100),
+    ((numpy.uint8(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)), 100),
+    ((numpy.uint16(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)), 100),
+    ((numpy.uint32(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)), 100),
+    ((numpy.uint64(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)), 100),
+])
+def test_conversion_of_numpy_fixed_width_types_uint(inputs, result):
+    """Check conversion of NumPy fixed-width uint types.
+    """
+    assert lal.swig_lal_test_numpy_uint_types(*inputs) == result
+
+
+@pytest.mark.parametrize(("inputs", "result"), [
+    ((numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)), 20),
+    ((numpy.uint8(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)), 100),
+    ((numpy.float_(10), numpy.float16(20), numpy.float32(30), numpy.float64(40)), 100),
+])
+def test_conversion_of_numpy_fixed_width_types_flt(inputs, result):
+    """Check conversion of NumPy fixed-width float types.
+    """
+    assert lal.swig_lal_test_numpy_flt_types(*inputs) == result
+
+
+@pytest.mark.parametrize(("inputs", "result"), [
+    ((numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)), 20),
+    ((numpy.uint8(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)), 100),
+    ((numpy.float_(10), numpy.float16(20), numpy.float32(30), numpy.float64(40)), 100),
+    ((numpy.complex_(10), numpy.complex64(20), numpy.complex64(30), numpy.complex128(40)), 100),
+])
+def test_conversion_of_numpy_fixed_width_types_cpx(inputs, result):
+    """Check conversion of NumPy complex types.
+    """
+    assert lal.swig_lal_test_numpy_cpx_types(*inputs) == result
+
+
+@pytest.mark.parametrize(("input_", "result"), [
+    (numpy.int8(123), 123),
+    (numpy.int16(123), 123),
+    (numpy.int32(123), 123),
+    (numpy.int64(123), 123),
+])
+def test_conversion_of_numpy_fixed_width_types_ligotimegps(input_, result):
+    """Check conversion of NumPy fixed-width types with LIGOTimeGPS.
+    """
+    assert int(lal.LIGOTimeGPS(input_)) == result
+
 
 if __name__ == '__main__':
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-SWIGTestLALPython.xml"]
