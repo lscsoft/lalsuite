@@ -53,13 +53,13 @@ def catch_errors(*args, **kwargs):
 
 # -- tests
 
+@pytest.mark.skipif(
+    lal.MEMORY_FUNCTIONS_DISABLED,
+    reason="LAL was built with MEMORY_FUNCTIONS_DISABLED",
+)
 def test_memory_allocation():
     """check memory allocation
     """
-
-    if lal.MEMORY_FUNCTIONS_DISABLED:
-        pytest.skip("LAL was built with MEMORY_FUNCTIONS_DISABLED")
-
     print("checking memory allocation ...", file=sys.stderr)
     lal.CheckMemoryLeaks()
     mem1 = lal.Detector()
