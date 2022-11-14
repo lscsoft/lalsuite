@@ -176,6 +176,7 @@ outputs:
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - libsistr  # [unix]
         - numpy
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}

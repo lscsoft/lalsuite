@@ -132,6 +132,7 @@ outputs:
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - lscsoft-glue
         - numpy
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}

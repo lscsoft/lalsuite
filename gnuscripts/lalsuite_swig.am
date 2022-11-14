@@ -56,6 +56,11 @@ else
 swig_deps_if = : swig-deps-false-
 endif
 
+DEBUG_TESTS_ENVIRONMENT = \
+	$(TESTS_ENVIRONMENT) \
+	export NASTY_ERROR_HANDLERS; NASTY_ERROR_HANDLERS=1; \
+	$(END_OF_LIST)
+
 if SWIG_BUILD
 
 swig_verbose   = $(swig_verbose_$(SWIGVERBOSE))
@@ -224,7 +229,7 @@ run-octave: swig-octave-all-local
 	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(OCTAVE)
 
 debug-octave-test: swig-octave-all-local
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(OCTAVE) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Octave.m}
+	$(AM_V_at)$(DEBUG_TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(OCTAVE) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Octave.m}
 
 endif # SWIG_BUILD_OCTAVE
 
@@ -292,7 +297,7 @@ run-python: swig-python-all-local
 	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(PYTHON)
 
 debug-python-test: swig-python-all-local
-	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(PYTHON) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Python.py}
+	$(AM_V_at)$(DEBUG_TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(PYTHON) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Python.py}
 
 endif # SWIG_BUILD_PYTHON
 

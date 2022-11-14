@@ -120,6 +120,7 @@ outputs:
       host:
         - {{ pin_subpackage('liblalmetaio', exact=True) }}
         - numpy
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         # extras to assist the solver, but not actually used

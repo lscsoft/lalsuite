@@ -4,6 +4,15 @@
 page_screen_output(0);
 crash_dumps_octave_core(0);
 
+# assertion helper functions
+function assert_LIGOTimeGPS(t1, t2)
+  if strcmp(typeinfo(t2), "swig_ref")
+    assert(char(t1), char(t2));
+  else
+    assert(double(t1), t2);
+  endif
+endfunction
+
 ## check module load
 disp("checking module load ...");
 lalpulsar;
@@ -18,8 +27,7 @@ function set_nice_error_handlers()
 endfunction
 function set_default_error_handlers()
   lal;
-  if swig_version >= 0x040002
-    # see https://github.com/swig/swig/pull/1789
+  if length(getenv("NASTY_ERROR_HANDLERS")) > 0
     swig_set_nasty_error_handlers();
   else
     swig_set_nice_error_handlers();
@@ -59,8 +67,8 @@ disp("PASSED array element assignment");
 
 # check array element parent tracking
 disp("checking array element parent tracking");
-assert(XLALMakeTimestamps(0, 100, 1, 0).data{end} == LIGOTimeGPS(99));
-assert(XLALMakeMultiTimestamps(0, 100, 1, 0, 3).data{end}.data{end} == LIGOTimeGPS(99));
+assert_LIGOTimeGPS(XLALMakeTimestamps(0, 100, 1, 0).data{end}, LIGOTimeGPS(99));
+assert_LIGOTimeGPS(XLALMakeMultiTimestamps(0, 100, 1, 0, 3).data{end}.data{end}, LIGOTimeGPS(99));
 LALCheckMemoryLeaks();
 disp("PASSED array element parent tracking");
 
@@ -71,7 +79,7 @@ function cwmf = make_CWMFDataParams()
   cwmf = CWMFDataParams();
   cwmf.multiTimestamps = XLALMakeMultiTimestamps(0, 10, 1, 0, 3);
 endfunction
-assert(make_CWMFDataParams().multiTimestamps.data{end}.data{end} == LIGOTimeGPS(9));
+assert_LIGOTimeGPS(make_CWMFDataParams().multiTimestamps.data{end}.data{end}, LIGOTimeGPS(9));
 LALCheckMemoryLeaks();
 disp("PASSED CWMFDataParams usage");
 
