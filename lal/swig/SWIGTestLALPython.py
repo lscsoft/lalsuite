@@ -1,6 +1,7 @@
 # Check SWIG Python bindings for LAL
 # Author: Karl Wette, 2011--2014
 
+import contextlib
 import os
 import sys
 import pytest
@@ -14,9 +15,6 @@ import numpy
 def is_value_and_type(x, v, t):
     return x == v and type(x) is t
 
-# turn NumPy's ComplexWarning into an error, if available
-if hasattr(numpy, "ComplexWarning"):
-    warnings.simplefilter("error", numpy.ComplexWarning)
 
 # check module load
 print("checking module load ...", file=sys.stderr)
@@ -26,15 +24,33 @@ lal_c_si = lal.C_SI
 lal_180_pi = lal.LAL_180_PI
 print("PASSED module load", file=sys.stderr)
 
+
+# -- configure error handling
+
 # set error handlers
 def set_nice_error_handlers():
     lal.swig_set_nice_error_handlers()
+
+
 def set_default_error_handlers():
     if 'NASTY_ERROR_HANDLERS' in os.environ:
         lal.swig_set_nasty_error_handlers()
     else:
         lal.swig_set_nice_error_handlers()
+
+
 set_default_error_handlers()
+
+
+@contextlib.contextmanager
+def catch_errors(*args, **kwargs):
+    set_nice_error_handlers()
+    with pytest.raises(*args, **kwargs):
+        yield
+    set_default_error_handlers()
+
+
+# -- tests
 
 def test_memory_allocation():
     """check memory allocation
@@ -50,15 +66,9 @@ def test_memory_allocation():
     mem3 = lal.CreateREAL8Vector(3)
     mem4 = lal.CreateREAL4TimeSeries("test", lal.LIGOTimeGPS(0), 100, 0.1, lal.DimensionlessUnit, 10)
     print("*** below should be an error message from CheckMemoryLeaks() ***", file=sys.stderr)
-    set_nice_error_handlers()
-    expected_exception = False
-    try:
+
+    with catch_errors(RuntimeError, match="Generic failure"):
         lal.CheckMemoryLeaks()
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
     print("*** above should be an error message from CheckMemoryLeaks() ***", file=sys.stderr)
     del mem1
     del mem2
@@ -172,15 +182,8 @@ def test_static_vector_matrix_conversions():
     sts.vec = [3, 2, 1]
     assert (sts.vec == [3, 2, 1]).all()
     sts.mat = [[4, 5, 6], (9, 8, 7)]
-    set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with catch_errors(TypeError):
         sts.mat = [[1.1, 2.3, 4.5], [6.5, 4.3, 2.1]]
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
     assert (sts.mat == [[4, 5, 6], [9, 8, 7]]).all()
     for i in range(0, 3):
         sts.evec[i] = 2*i + 3
@@ -205,15 +208,8 @@ def test_static_vector_matrix_conversions():
     lalglobalvar.swig_lal_test_INT4_matrix = lalglobalvar.swig_lal_test_INT4_const_matrix
     assert (lalglobalvar.swig_lal_test_INT4_matrix == [[1, 2, 4], [2, 4, 8]]).all()
     assert lalglobalvar.swig_lal_test_INT4_const_matrix[1, 2] == 8
-    set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with catch_errors(TypeError):
         lalglobalvar.swig_lal_test_INT4_const_vector(20)
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
     lalglobalvar.swig_lal_test_REAL8_vector[0] = 3.4
     assert lalglobalvar.swig_lal_test_REAL8_vector[0] == 3.4
     lalglobalvar.swig_lal_test_REAL8_matrix[0, 0] = 5.6
@@ -230,7 +226,6 @@ def test_dynamic_vector_matrix_conversions():
 
     print("checking dynamic vector/matrix conversions ...", file=sys.stderr)
     def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
-        expected_exception = False
         iv.data = numpy.zeros(ivl, dtype=iv.data.dtype)
         rv.data = numpy.zeros(rvl, dtype=rv.data.dtype)
         cm.data = numpy.zeros((cms1, cms2), dtype=cm.data.dtype)
@@ -244,24 +239,10 @@ def test_dynamic_vector_matrix_conversions():
         assert (rv.data == [1.2, 3.4, 2.6, 4.8, 3.5]).all()
         rv.data[rvl - 1] = 7.5
         assert rv.data[rvl - 1] == 7.5
-        set_nice_error_handlers()
-        expected_exception = False
-        try:
+        with catch_errors(IndexError):
             rv.data[rvl] = 99.9
-            expected_exception = True
-        except:
-            pass
-        set_default_error_handlers()
-        assert not expected_exception
-        set_nice_error_handlers()
-        expected_exception = False
-        try:
+        with catch_errors(TypeError):
             iv.data = rv.data
-            expected_exception = True
-        except:
-            pass
-        set_default_error_handlers()
-        assert not expected_exception
         rv.data = iv.data
         assert (rv.data == iv.data).all()
         assert cms1 == 4
@@ -272,27 +253,13 @@ def test_dynamic_vector_matrix_conversions():
         assert cm.data[2, 3] == complex(0.5, 1.5)
         assert cm.data[3, 2] == complex(0.75, 1.0)
         set_nice_error_handlers()
-        expected_exception = False
-        try:
+        with pytest.warns(numpy.ComplexWarning):
             iv.data[0] = cm.data[2, 3]
-            if not hasattr(numpy, "ComplexWarning"):
-                raise Exception("NumPy %s does not have ComplexWarning" % numpy.__version__)
-            expected_exception = True
-        except:
-            pass
         set_default_error_handlers()
-        assert not expected_exception
         set_nice_error_handlers()
-        expected_exception = False
-        try:
+        with pytest.warns(numpy.ComplexWarning):
             rv.data[0] = cm.data[3, 2]
-            if not hasattr(numpy, "ComplexWarning"):
-                raise Exception("NumPy %s does not have ComplexWarning" % numpy.__version__)
-            expected_exception = True
-        except:
-            pass
         set_default_error_handlers()
-        assert not expected_exception
     # check LAL vector and matrix datatypes
     iv = lal.CreateINT4Vector(5)
     rv = lal.CreateREAL8Vector(5)
@@ -340,24 +307,10 @@ def test_fixed_and_dynamic_arrays_typemaps():
     a3in = numpy.array([lal.LIGOTimeGPS(1234.5), lal.LIGOTimeGPS(678.9)])
     a3out = a3in * 3
     assert (lal.swig_lal_test_copyin_array3(a3in, 3) == a3out).all()
-    set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with catch_errors(ValueError):
         lal.swig_lal_test_copyin_array1(numpy.array([0,0,0,0], dtype=numpy.double), 0)
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
-    set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with pytest.raises(TypeError):
         lal.swig_lal_test_copyin_array2(numpy.array([[1.2,3.4],[0,0],[0,0]], dtype=numpy.double), 0)
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
     del a3in
     del a3out
     locals()   # update locals() to remove lingering references
@@ -917,26 +870,11 @@ def test_input_views_of_numeric_array_structs():
     lal.CheckMemoryLeaks()
     print("PASSED input views of numeric array structs (GSL)", file=sys.stderr)
     def check_input_view_type_safety(f, a, b, expect_exception):
-        expected_exception = False
         if expect_exception:
-            set_nice_error_handlers()
-            expected_exception = False
-            try:
+            with catch_errors(TypeError):
                 f(a, b)
-                expected_exception = True
-            except:
-                pass
-            set_default_error_handlers()
-            assert not expected_exception
-            set_nice_error_handlers()
-            expected_exception = False
-            try:
+            with catch_errors(TypeError):
                 f(b, a)
-                expected_exception = True
-            except:
-                pass
-            set_default_error_handlers()
-            assert not expected_exception
         else:
             f(a, b)
             f(b, a)
@@ -1264,36 +1202,15 @@ def test_LIGOTimeGPS_operations():
     t5 = LIGOTimeGPS("1000")
     assert t5 == 1000
     print("*** below should be error messages from LIGOTimeGPS constructor ***", file=sys.stderr)
-    set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with pytest.raises(RuntimeError):
         t5 = LIGOTimeGPS("abc1000")
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
-    set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with pytest.raises(RuntimeError):
         t5 = LIGOTimeGPS("1000abc")
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
     print("*** above should be error messages from LIGOTimeGPS constructor ***", file=sys.stderr)
     assert lal.swig_lal_test_noptrgps(LIGOTimeGPS(1234.5)) == lal.swig_lal_test_noptrgps(1234.5)
     print("*** below should be error messages from LIGOTimeGPS constructor ***", file=sys.stderr)
-    set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with pytest.raises(RuntimeError):
         LIGOTimeGPS(None)
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
     print("*** above should be error messages from LIGOTimeGPS constructor ***", file=sys.stderr)
     del t0
     del t1
@@ -1342,14 +1259,8 @@ def test_LALUnit_operations():
     u2 = lal.MeterUnit**(1,2) * lal.KiloGramUnit**(1,2) * lal.SecondUnit ** -1
     assert is_value_and_type(u2, u1**(1,2), lal.Unit)
     set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with pytest.raises((RuntimeError, TypeError)):
         lal.SecondUnit ** (1,0)
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
     u1 *= lal.MeterUnit
     assert is_value_and_type(u1, lal.JouleUnit, lal.Unit)
     assert repr(u1) == "m^2 kg s^-2"
@@ -1364,15 +1275,8 @@ def test_LALUnit_operations():
     assert int(u1) == 1000
     u1 /= 10000
     assert u1 == 100 * lal.MilliUnit * lal.WattUnit
-    set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with pytest.raises(ValueError):
         u1 *= 1.234
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
     assert u1.norm() == u1
     del u1
     del u2
@@ -1389,16 +1293,10 @@ def test_Python_non_dynamic_structs():
     sts.n = 1
     sts.Alpha = 1.234
     set_nice_error_handlers()
-    expected_exception = False
-    try:
+    with pytest.raises(AttributeError):
         sts.N = 1
         sts.alpha = 1.234
         sts.zzzzz = "does not exist"
-        expected_exception = True
-    except:
-        pass
-    set_default_error_handlers()
-    assert not expected_exception
     del sts
     t = lal.LIGOTimeGPS(1234)
     t.event = "this happened"
