@@ -363,7 +363,7 @@ int XLALSimInspiralInjectionSequenceToH5File(const LALSimInspiralInjectionSequen
             dblvec = XLALCreateREAL8Vector(sequence->length);
             scale = si_scale_factor(key);
             for (size_t i = 0; i < sequence->length; ++i)
-                dblvec->data[i] = XLALDictContains(sequence->data[i], key) ? XLALDictLookupREAL8Value(sequence->data[i], key) / scale : nan(NULL);
+                dblvec->data[i] = XLALDictContains(sequence->data[i], key) ? XLALDictLookupREAL8Value(sequence->data[i], key) / scale : NAN;
             dset = XLALH5DatasetAllocREAL8Vector(group, new, dblvec);
             XLAL_CHECK_FAIL(dset, XLAL_EFUNC);
             XLALDestroyREAL8Vector(dblvec);
