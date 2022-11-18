@@ -1002,6 +1002,7 @@ lalapps:conda:py39:
     expire_in: 18h
     paths:
       - wheelhouse
+    when: always
 
 # do some simple sanity checks in a virtualenv
 .wheel-test: &wheel-test
