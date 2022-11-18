@@ -1154,7 +1154,7 @@ int main( int argc, char *argv[]) {
   strcpy (scanInit.skyRegionString, uvar_skyRegion);
 
   // just use first SFTs' IFO for metric (should be irrelevant)
-  LALDetector* firstDetector = XLALGetSiteInfo( detectorIDs->data[0] );
+  const LALDetector* firstDetector = XLALGetSiteInfo( detectorIDs->data[0] );
   if ( firstDetector == NULL ) {
     LogPrintf ( LOG_CRITICAL, "\nXLALGetSiteInfo() failed for detector '%s'\n", detectorIDs->data[0] );
     return HIERARCHICALSEARCH_EXLAL;
@@ -1971,7 +1971,6 @@ int main( int argc, char *argv[]) {
     LALFree ( scanInit.skyRegionString );
 
   XLALDestroyStringVector ( detectorIDs );
-  XLALFree ( firstDetector );
 
   /* free fine grid and coarse grid */
   if (finegrid.nc) {

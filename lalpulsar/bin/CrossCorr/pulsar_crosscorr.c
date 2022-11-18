@@ -1286,7 +1286,7 @@ void GetBeamInfo(LALStatus *status,
   REAL8 phase1;
   REAL8Vector thisVel, thisPos;
   LIGOTimeGPSVector *ts=NULL;
-  LALDetector *det;
+  const LALDetector *det;
   REAL8 tOffs;
   AMCoeffs *AMcoef = NULL; 
   SFTListElement *sft = NULL;
@@ -1364,7 +1364,6 @@ printf("pos %1.15g %1.15g %1.15g\n\n", thisPos.data[0], thisPos.data[1], thisPos
     /* clean up AMcoefs */
     XLALDestroyAMCoeffs(AMcoef);
     XLALDestroyDetectorStateSeries(detState);
-    XLALFree(det);
     sft = (SFTListElement *)sft->nextSFT;
     freqtmp = (REAL8ListElement *)freqtmp->nextVal;
     phasetmp = (REAL8ListElement *)phasetmp->nextVal;

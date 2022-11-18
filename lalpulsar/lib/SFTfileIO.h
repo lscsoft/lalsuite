@@ -60,7 +60,7 @@ extern "C" {
  *
  * \brief Module for reading/writing/manipulating SFTs (Short Fourier Transforms)
  *
- * This implements the SFT (Short Fourier Transforms) version 2 standard defined
+ * This implements the SFT (Short Fourier Transforms) standard defined
  * in \cite SFT-spec . It contains various helper functions to create, handle,
  * combine, and destroy SFTs and related data structures, including SFTtype,
  * SFTVector, SFTCatalog (and their multi-detector generalizations) as well as
@@ -95,7 +95,7 @@ extern "C" {
  * - XLALLoadSFTs(): load a frequency-band into a single-IFO SFTVector defined by the catalogue, OR <br>
  *   XLALLoadMultiSFTs(): load a frequency-band into a MultiSFTVector defined by the catalogue
  *
- * <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT-v2 files.
+ * <b>Note 1:</b> currently supported SFT file-formats are (merged or single) SFT files.
  * This might be extended in the future to support further file-formats (frames?).
  * None of the following API depends on the details of the underlying file-format. This will ensure that
  * codes using the following functions will NOT have to be changed irrespective of SFT file-format used.
@@ -221,11 +221,16 @@ typedef struct tagSFTConstraints
  * A 'descriptor' of an SFT: basically containing the header-info plus an opaque description
  * of where exactly to load this SFT from.
  */
+#ifdef SWIG /* SWIG interface directives */
+SWIGLAL(IMMUTABLE_MEMBERS(tagSFTDescriptor, window_type));
+#endif /* SWIG */
 typedef struct tagSFTDescriptor
 {
   struct tagSFTLocator *locator; 	/**< *internal* description of where to find this SFT [opaque!] */
   SFTtype header;			/**< SFT-header info */
-  CHAR *comment;			/**< comment-entry in SFT-header (v2 only) */
+  const char *window_type;              /**< window function applied to SFT */
+  REAL8 window_param;                   /**< parameter of window function, if required */
+  CHAR *comment;			/**< comment-entry in SFT-header */
   UINT4 numBins;			/**< number of frequency-bins in this SFT */
   UINT4 version;			/**< SFT-specification version */
   UINT8 crc64;				/**< crc64 checksum */
@@ -258,6 +263,30 @@ typedef struct tagMultiSFTCatalogView
   UINT4 length;			/**< number of detectors */
   SFTCatalog *data;		/**< array of SFT-catalog pointers */
 } MultiSFTCatalogView;
+
+/**
+ * Structure specifying an SFT file name, following the convention in \cite SFT-spec .
+ */
+typedef struct tagSFTFilenameSpec {
+  CHAR path[4096];              /**< Path to the SFT file */
+  CHAR extn[32];                /**< Extension of the SFT file; defaults to 'sft' */
+  UINT4 numSFTs;                /**< Number of SFTs in the file; set by \c XLALWriteSFT[Vector]2StandardFile() */
+  CHAR detector[3];             /**< 2-character detector prefix (e.g. 'H1', 'L1', 'V1'); set by \c XLALWriteSFT[Vector]2StandardFile() */
+  UINT4 SFTtimebase;            /**< Timebase in seconds of the SFT; set by \c XLALWriteSFT[Vector]2StandardFile() */
+  CHAR window_type[32];         /**< window function applied to SFT */
+  REAL8 window_param;           /**< parameter of window function, if required */
+  UINT4 gpsStart;               /**< GPS time in seconds at the beginning of the first SFT in the file; set by \c XLALWriteSFT[Vector]2StandardFile() */
+  UINT4 SFTspan;                /**< Total time interval in seconds covered by SFT file; set by \c XLALWriteSFT[Vector]2StandardFile() */
+  CHAR privMisc[256];           /**< For private SFTs: miscellaneous description field */
+  UINT4 pubObsRun;              /**< For public SFTs: observing run number */
+  CHAR pubObsKind[4];           /**< For public SFTs: kind of data ('RUN', 'AUX', 'SIM', 'DEV') */
+  UINT4 pubRevision;            /**< For public SFTs: revision number of SFT production */
+  CHAR pubChannel[256];         /**< For public SFTs: channel name of data used to make SFTs */
+  UINT4 nbFirstBinFreq;         /**< For narrow-band SFTs: SFT first bin frequency divided by SFT time base, rounded down */
+  UINT4 nbFirstBinRem;          /**< For narrow-band SFTs: remainder of division of SFT first bin frequency by SFT time base */
+  UINT4 nbBinWidthFreq;         /**< For narrow-band SFTs: SFT bandwidth divided by SFT time base, rounded down */
+  UINT4 nbBinWidthRem;          /**< For narrow-band SFTs: remainder of division of SFT bandwidth by SFT time base */
+} SFTFilenameSpec;
 
 /*---------- exported prototypes [API] ----------*/
 
@@ -467,15 +496,15 @@ SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVe
 
 // These functions are defined in SFTnaming.c
 
+int XLALRegisterSpecialCWDetector( const LALDetector* specialDetector );
 int XLALFindCWDetector ( CHAR** prefix, INT4 *lalCachedIndex, const CHAR *name, const BOOLEAN exactMatch );
 BOOLEAN XLALIsValidCWDetector ( const CHAR *name );
 CHAR *XLALGetChannelPrefix ( const CHAR *name );
-LALDetector *XLALGetSiteInfo ( const CHAR *name );
+const LALDetector *XLALGetSiteInfo ( const CHAR *name );
 
-char *XLALOfficialSFTFilename ( char site, char channel, UINT4 numSFTs, UINT4 Tsft, UINT4 GPS_start, UINT4 Tspan, const char *Misc );
-char *XLALGetOfficialName4SFT ( const SFTtype *sft, const char *Misc );
-char *XLALGetOfficialName4MergedSFTs ( const SFTVector *sfts, const char *Misc );
-
+int XLALFillSFTFilenameSpecStrings( SFTFilenameSpec *spec, const CHAR* path, const CHAR *extn, const CHAR* detector, const CHAR* window_type, const CHAR* privMisc, const CHAR* pubObsKind, const CHAR* pubChannel );
+char *XLALBuildSFTFilenameFromSpec( const SFTFilenameSpec *spec );
+int XLALParseSFTFilenameIntoSpec( SFTFilenameSpec *spec, const char *SFTpath );
 int XLALCheckValidDescriptionField ( const char *desc );
 
 /** @} */
@@ -511,14 +540,14 @@ MultiSFTVector* XLALReadSFDB(REAL8 f_min, REAL8 f_max, const CHAR *file_pattern,
 
 // These functions are defined in SFTfileIO.c
 
-int XLALWriteSFT2fp   ( const SFTtype *sft, FILE *fp, const CHAR *SFTcomment );
-int XLALWriteSFT2file ( const SFTtype *sft, const CHAR *fname, const CHAR *SFTcomment );
+int XLALWriteSFT2FilePointer  ( const SFTtype *sft, FILE *fp, const CHAR* SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
+int XLALWriteSFT2NamedFile    ( const SFTtype *sft, const CHAR *SFTfilename, const CHAR* SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
+int XLALWriteSFT2StandardFile ( const SFTtype *sft, SFTFilenameSpec *SFTfnspec, const CHAR *SFTcomment );
 
-int XLALWriteSFTVector2Dir  ( const SFTVector *sftVect, const CHAR *dirname, const CHAR *SFTcomment, const CHAR *Misc );
-int XLALWriteSFTVector2File ( const SFTVector *sftVect, const CHAR *dirname, const CHAR *SFTcomment, const CHAR *Misc );
-int XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect, const CHAR *filename, const CHAR *SFTcomment );
+int XLALWriteSFTVector2NamedFile    ( const SFTVector *sftVect, const CHAR *SFTfilename, const CHAR* SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
+int XLALWriteSFTVector2StandardFile ( const SFTVector *sftVect, SFTFilenameSpec *SFTfnspec, const CHAR *SFTcomment, const BOOLEAN merged );
 
-int XLALValidateSFTFile ( const char *fname );
+int XLALCheckSFTFileIsValid ( const char *fname );
 
 /** @} */
 

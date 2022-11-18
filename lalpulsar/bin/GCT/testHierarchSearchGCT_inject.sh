@@ -108,7 +108,7 @@ echo "--------------------------------------------------------------------------
 echo
 
 ## generate sfts containing noise + signal
-label="noise+signal"
+label="noiseAndSignal"
 cmdline="$mfd_code $mfd_CL_common --outSFTdir=. --outLabel='$label' --injectionSources=\"$injectionSources\""
 echo "$cmdline";
 if ! eval "$cmdline"; then

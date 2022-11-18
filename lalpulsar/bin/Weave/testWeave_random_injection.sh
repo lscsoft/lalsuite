@@ -68,7 +68,7 @@ echo
 echo "=== Add extracted injected signal to SFTs ==="
 set -x
 mkdir -p inj/
-lalpulsar_Makefakedata_v5  --noiseSFTs='no_inj/*.sft' --SFTWindowType=rectangular \
+lalpulsar_Makefakedata_v5 --noiseSFTs='no_inj/*.sft' \
     --injectionSources=./random_injection.cfg \
     --outSingleSFT --outSFTdir=inj/
 set +x

@@ -146,7 +146,7 @@ test/H-1_H1_60SFT_test-000012465-61.sft
 test/H-1_H1_60SFT_test-000012585-61.sft
 test/H-1_H1_60SFT_test-000012765-61.sft
 test/H-1_H1_60SFT_test-000012825-61.sft
-test/H-3_H1_60SFT_test_concat-000012345-302.sft
+test/H-3_H1_60SFT_testconcat-000012345-302.sft
 test/HeapToplistTest
 test/HoughMapTest
 test/LALBarycenterTest
@@ -163,10 +163,8 @@ test/NewGetAMCoeffsTest
 test/NormalizeSFTRngMedTest
 test/OutHistogram.asc
 test/OutHough.asc
-test/outputsftv2_r1.sft
-test/outputsftv2_r2.sft
-test/outputsftv2_v1.sft
-test/outputsftv2_v2.sft
+test/outputsft_r1.sft
+test/outputsft_r2.sft
 test/Peak2PHMDTest
 test/PtoleMeshTest
 test/PtoleMetricTest
@@ -175,6 +173,7 @@ test/ReadTEMPOFileTest
 test/ResampleTest
 test/SFTCleanTest
 test/SFTfileIOTest
+test/SFTnamingTest
 test/SimulateTaylorCWTest
 test/SkyMetricTest
 test/StackMetricTest
@@ -189,4 +188,4 @@ test/UniversalDopplerMetricTest
 test/VelocityTest
 test/XLALComputeAMTest
 test/XLALMultiNoiseWeightsTest
-test/python/V-1_V1_1800SFT_simCW_simulateCWTest*-1800.sft
+test/python/V-1_V1_1800SFT_simCWTest*-1800.sft

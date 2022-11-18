@@ -114,13 +114,12 @@ int main(int argc, char *argv[])
   multiDet.length = numIFOs;
   for (X=0; X < numIFOs; X ++ )
     {
-      LALDetector *site;
+      const LALDetector *site;
       if ( (site = XLALGetSiteInfo ( sites[X] )) == NULL ) {
         XLALPrintError ("%s: Failed to get site-info for detector '%s'\n", __func__, sites[X] );
         return XLAL_EFAILED;
       }
       multiDet.sites[X] = (*site); 	/* copy! */
-      XLALFree ( site );
     }
 
   /* ----- init multi-IFO timestamps vector ---------- */

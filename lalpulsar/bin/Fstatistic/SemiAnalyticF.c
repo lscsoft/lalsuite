@@ -281,7 +281,7 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   EarthState earth;
   AMCoeffsParams *amParams;
   LIGOTimeGPS *midTS=NULL;           /* Time stamps for amplitude modulation coefficients */
-  LALDetector *Detector;              /* Our detector*/
+  const LALDetector *Detector;       /* Our detector*/
   INT4 k;
 
   INITSTATUS(status);
@@ -394,7 +394,6 @@ Initialize (LALStatus *status, struct CommandLineArgsTag *CLA)
   XLALDestroyTimestampVector ( timestamps);
 
   LALFree(midTS);
-  LALFree(Detector);
   XLALDestroyEphemerisData(edat);
 
   LALFree(amParams->das->pSource);

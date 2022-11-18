@@ -1230,7 +1230,7 @@ MultiSFTVector * generateSFTdata(UserInput_t *uvar, const MultiLALDetector *dete
    DataParams.multiTimestamps = multiTimestamps;
    DataParams.randSeed = uvar->injRandSeed;
    DataParams.SFTWindowType = "Hann";
-   DataParams.SFTWindowBeta = 0;
+   DataParams.SFTWindowParam = 0;
 
    MultiSFTVector *signalSFTs = NULL;
    PulsarParamsVector *injectionSources = NULL;

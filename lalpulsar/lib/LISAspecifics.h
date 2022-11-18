@@ -79,7 +79,8 @@ typedef struct tagFreqSkypos_t
 /* empty init-structs for the types defined in here */
 
 /*---------- exported prototypes [API] ----------*/
-int XLALcreateLISA ( LALDetector *Detector, CHAR channelNum );
+BOOLEAN XLALisLISAdetector ( const LALDetector *det );
+int XLALregisterLISAdetectors ( const CHAR prefixLetter );
 
 int XLALprecomputeLISAarms ( DetectorState *detState );
 

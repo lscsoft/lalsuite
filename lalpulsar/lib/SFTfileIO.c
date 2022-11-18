@@ -30,9 +30,6 @@
 
 /*---------- constants ----------*/
 
-#define MIN_SFT_VERSION 2
-#define MAX_SFT_VERSION 2
-
 /** blocksize used in SFT-reading for the CRC-checksum computation (has to be multiple of 8 !!) */
 #define BLOCKSIZE 8192 * 8
 
@@ -48,9 +45,9 @@ typedef struct
   INT4 nsamples;
   UINT8 crc64;
   CHAR detector[2];
-  CHAR padding[2];
+  UINT2 windowspec;
   INT4 comment_length;
-} _SFT_header_v2_t;
+} _SFT_header_t;
 
 /** segments read so far from one SFT */
 typedef struct {
@@ -59,6 +56,10 @@ typedef struct {
   LIGOTimeGPS epoch;               /**< timestamp of this SFT */
   struct tagSFTLocator *lastfrom;  /**< last bin read from this locator */
 } SFTReadSegment;
+
+/*---------- internal prototypes ----------*/
+
+static int read_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, UINT2 *SFTwindowspec, CHAR **SFTcomment, BOOLEAN swapEndian);
 
 /*========== function definitions ==========*/
 
@@ -73,7 +74,7 @@ typedef struct {
  * but is allowed to be larger, as it must be an interval of discrete frequency-bins as found
  * in the SFT-file.
  *
- * Note 3: This function has the capability to read sequences of (v2-)SFT segments and
+ * Note 3: This function has the capability to read sequences of SFT segments and
  * putting them together to single SFTs while reading.
  *
  * Note 4: The 'fudge region' allowing for numerical noise is fudge= 10*LAL_REAL8_EPS ~2e-15
@@ -471,23 +472,26 @@ XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView,/**< The
 
 
 /**
- * Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a FILE pointer.
+ * Write the given SFTtype to a FILE pointer.
  * Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: the comment written into the SFT-file contains the 'sft->name' field concatenated with
  * the user-specified 'SFTcomment'
- *
  */
 int
-XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
-                  FILE *fp,		/**< pointer to open file */
-                  const CHAR *SFTcomment)/**< optional comment (for v2 only) */
+XLALWriteSFT2FilePointer(
+  const SFTtype *sft,	        /**< SFT to write to disk */
+  FILE *fp,		        /**< pointer to open file */
+  const CHAR* SFTwindowtype,    /**< window applied to SFT, if any */
+  const REAL8 SFTwindowparam,   /**< parameter of window */
+  const CHAR *SFTcomment        /**< optional comment */
+  )
 {
   UINT4 comment_len = 0;
   CHAR *_SFTcomment;
   UINT4 pad_len = 0;
   CHAR pad[] = {0, 0, 0, 0, 0, 0, 0};	/* for comment-padding */
-  _SFT_header_v2_t rawheader;
+  _SFT_header_t rawheader;
 
   /* check input consistency */
   if (!sft || !sft->data || sft->deltaF <= 0 || sft->f0 < 0 || sft->data->length ==0 )
@@ -504,18 +508,19 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   if ( !fp )
     XLAL_ERROR ( XLAL_EINVAL );
 
+  XLAL_CHECK ( SFTwindowtype != NULL, XLAL_EFAULT );
 
   /* concat sft->name + SFTcomment for SFT-file comment-field */
   comment_len = strlen(sft->name) + 1;
   if ( SFTcomment )
-    comment_len += strlen(SFTcomment) + 2;	/* separate by "; " */
+    comment_len += strlen(SFTcomment) + 1;	/* separate by "\n" */
 
   if ( (_SFTcomment = XLALCalloc( comment_len, sizeof(CHAR) )) == NULL ) {
     XLAL_ERROR( XLAL_ENOMEM );
   }
   strcpy ( _SFTcomment, sft->name );
   if ( SFTcomment ) {
-    strcat ( _SFTcomment, "; " );
+    strcat ( _SFTcomment, "\n" );
     strcat ( _SFTcomment, SFTcomment );
   }
 
@@ -525,7 +530,7 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   pad_len = (8 - (comment_len % 8)) % 8;
 
   /* ----- fill out header */
-  rawheader.version        		= 2;
+  rawheader.version        		= MAX_SFT_VERSION;
   rawheader.gps_sec        		= sft->epoch.gpsSeconds;
   rawheader.gps_nsec       		= sft->epoch.gpsNanoSeconds;
   rawheader.tbase          		= TSFTfromDFreq ( sft->deltaF );
@@ -534,9 +539,9 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
   rawheader.crc64          		= 0;	/* set to 0 for crc-calculation */
   rawheader.detector[0]    		= sft->name[0];
   rawheader.detector[1]    		= sft->name[1];
-  rawheader.padding[0]     		= 0;
-  rawheader.padding[1]     		= 0;
   rawheader.comment_length 		= comment_len + pad_len;
+
+  XLAL_CHECK ( build_sft_windowspec( &rawheader.windowspec, NULL, SFTwindowtype, SFTwindowparam ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* ----- compute CRC */
   rawheader.crc64 = crc64((const unsigned char*)&rawheader, sizeof(rawheader), ~(0ULL));
@@ -568,22 +573,24 @@ XLALWriteSFT2fp ( const SFTtype *sft,	/**< SFT to write to disk */
 
   return XLAL_SUCCESS;
 
-} /* XLALWriteSFT2fp() */
+} /* XLALWriteSFT2FilePointer() */
 
 
 /**
- * Write the given *v2-normalized* (i.e. dt x DFT) SFTtype to a v2-SFT file.
+ * Write the given SFTtype to a SFT file with the supplied filename.
  * Add the comment to SFT if SFTcomment != NULL.
  *
  * NOTE: the comment written into the SFT-file contains the 'sft->name' field concatenated with
  * the user-specified 'SFTcomment'
- *
  */
 int
-XLALWriteSFT2file(
-		  const SFTtype *sft,		/**< SFT to write to disk */
-		  const CHAR *fname,		/**< filename */
-		  const CHAR *SFTcomment)	/**< optional comment (for v2 only) */
+XLALWriteSFT2NamedFile(
+  const SFTtype *sft,           /**< SFT to write to disk */
+  const CHAR *SFTfilename,      /**< SFT filename */
+  const CHAR* SFTwindowtype,    /**< window applied to SFT, if any */
+  const REAL8 SFTwindowparam,   /**< parameter of window */
+  const CHAR *SFTcomment        /**< optional comment */
+  )
 {
   FILE  *fp = NULL;
 
@@ -592,7 +599,7 @@ XLALWriteSFT2file(
     XLAL_ERROR ( XLAL_EINVAL );
   if (!( sft->data ))
     XLAL_ERROR ( XLAL_EINVAL );
-  if (!( fname ))
+  if (!( SFTfilename ))
     XLAL_ERROR ( XLAL_EINVAL );
  
   if ( !XLALIsValidCWDetector(sft->name) ) {
@@ -600,15 +607,17 @@ XLALWriteSFT2file(
     XLAL_ERROR ( XLAL_EINVAL );
   }
 
+  XLAL_CHECK ( SFTwindowtype != NULL, XLAL_EFAULT );
+
   /* open SFT-file for writing */
-  if ( (fp = fopen ( fname, "wb" )) == NULL )
+  if ( (fp = fopen ( SFTfilename, "wb" )) == NULL )
     {
-      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", fname, strerror(errno));
+      XLALPrintError ("\nFailed to open file '%s' for writing: %s\n\n", SFTfilename, strerror(errno));
       XLAL_ERROR ( XLAL_EIO );
     }
 
   /* write SFT to file */
-  if ( XLALWriteSFT2fp (sft, fp, SFTcomment) != XLAL_SUCCESS ) {
+  if ( XLALWriteSFT2FilePointer (sft, fp, SFTwindowtype, SFTwindowparam, SFTcomment) != XLAL_SUCCESS ) {
     XLAL_ERROR ( XLAL_EIO );
   }
 
@@ -616,116 +625,100 @@ XLALWriteSFT2file(
 
   return XLAL_SUCCESS;
 
-} /* XLALWriteSFT2file() */
+} /* XLALWriteSFT2NamedFile() */
 
 
 /**
- * Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a directory.
+ * Write the given SFTtype to a SFT file with a standard (\cite SFT-spec) filename.
  * Add the comment to SFT if SFTcomment != NULL.
  *
- * Output SFTs have naming convention following LIGO-T040164-01
+ * NOTE: the comment written into the SFT-file contains the 'sft->name' field concatenated with
+ * the user-specified 'SFTcomment'
+ *
+ * NOTE: The SFT filename spec is updated to reflect the filename of the written SFT, by
+ * setting the \c numSFTs, \c detector, \c SFTtimebase, \c gpsStart, and \c SFTspan fields.
+ * if needed, the SFT filename can be reconstructed with XLALBuildSFTFilenameFromSpec()
  */
 int
-XLALWriteSFTVector2Dir ( const SFTVector *sftVect,	/**< SFT vector to write to disk */
-                         const CHAR *dirname,		/**< base filename (including directory path)*/
-                         const CHAR *SFTcomment,	/**< optional comment */
-                         const CHAR *Misc         	/**< optional 'Misc' field in SFT description (can be NULL) */
-                         )
+XLALWriteSFT2StandardFile(
+  const SFTtype *sft,           /**< SFT to write to disk */
+  SFTFilenameSpec *SFTfnspec,   /**< SFT filename specification used to construct filename */
+  const CHAR *SFTcomment        /**< optional comment */
+  )
+{
+
+  /*   Make sure the arguments are not NULL */
+  if (!( sft ))
+    XLAL_ERROR ( XLAL_EINVAL );
+  if (!( sft->data ))
+    XLAL_ERROR ( XLAL_EINVAL );
+ 
+  if ( !XLALIsValidCWDetector(sft->name) ) {
+    XLALPrintError ("\nInvalid detector prefix '%c%c'\n\n", sft->name[0], sft->name[1] );
+    XLAL_ERROR ( XLAL_EINVAL );
+  }
+
+  XLAL_CHECK ( SFTfnspec != NULL, XLAL_EFAULT );
+
+  const UINT4 Tsft = (UINT4) round ( 1.0 / sft->deltaF );
+
+  SFTfnspec->numSFTs         = 1;
+  SFTfnspec->detector[0]     = sft->name[0];
+  SFTfnspec->detector[1]     = sft->name[1];
+  SFTfnspec->detector[2]     = 0;
+  SFTfnspec->SFTtimebase     = Tsft;
+  SFTfnspec->gpsStart        = sft->epoch.gpsSeconds;
+
+  /* calculate sft 'duration' -- may be different from timebase if nanosecond of sft-epoch is non-zero */
+  SFTfnspec->SFTspan = Tsft;
+  if ( sft->epoch.gpsNanoSeconds > 0) {
+    SFTfnspec->SFTspan += 1;
+  }
+
+  // build SFT filename
+  char *SFTfilename = XLALBuildSFTFilenameFromSpec ( SFTfnspec );
+  XLAL_CHECK ( SFTfilename != NULL, XLAL_EFUNC );
+
+  // write SFT
+  XLAL_CHECK ( XLALWriteSFT2NamedFile ( sft, SFTfilename, SFTfnspec->window_type, SFTfnspec->window_param, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  XLALFree( SFTfilename );
+  
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFT2StandardFile() */
+
+
+/**
+ * Write the given SFTVector to a single merged SFT file with the supplied filename.
+ * Add the comment to SFT if SFTcomment != NULL.
+ */
+int
+XLALWriteSFTVector2NamedFile(
+  const SFTVector *sftVect,     /**< SFT vector to write to disk */
+  const CHAR *SFTfilename,      /**< SFT filename */
+  const CHAR* SFTwindowtype,    /**< window applied to SFT, if any */
+  const REAL8 SFTwindowparam,   /**< parameter of window */
+  const CHAR *SFTcomment        /**< optional comment */
+  )
 {
   XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
   XLAL_CHECK ( sftVect->data != NULL, XLAL_EINVAL );
   XLAL_CHECK ( sftVect->length > 0, XLAL_EINVAL );
-  XLAL_CHECK ( dirname != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( SFTfilename != NULL, XLAL_EINVAL );
 
-  UINT4 numSFTs = sftVect->length;
-
-  for ( UINT4 k = 0; k < numSFTs; k++ )
-    {
-      SFTtype *sft = &(sftVect->data[k]);
-
-      CHAR *filename;
-      XLAL_CHECK ( (filename = XLALGetOfficialName4SFT ( sft, Misc )) != NULL, XLAL_EFUNC );
-
-      CHAR *path;
-      int len = strlen ( dirname ) + 1 + strlen ( filename ) + 1;
-      XLAL_CHECK ( (path = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
-      sprintf ( path, "%s/%s", dirname, filename );
-      XLAL_CHECK ( XLALWriteSFT2file( sft, path, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-      XLALFree ( path );
-      XLALFree ( filename );
-
-    } // for k < numSFTs
-
-  return XLAL_SUCCESS;
-
-} /* XLALWriteSFTVector2Dir() */
-
-
-/**
- * Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
- * Add the comment to SFT if SFTcomment != NULL.
- *
- * NOTE: user specifies output directory, but the output SFT-filename follows the SFT-v2 naming convention,
- * see XLALOfficialSFTFilename() for details.
- */
-int
-XLALWriteSFTVector2File ( const SFTVector *sftVect,	//!< SFT vector to write to disk */
-                          const CHAR *dirname,		//!< base filename (including directory path)*/
-                          const CHAR *SFTcomment,	//!< optional comment (can be NULL) */
-                          const CHAR *Misc         	//!< optional 'Misc' field in SFT description (can be NULL) */
-                          )
-{
-  XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( dirname != NULL, XLAL_EINVAL );
-
-  char *filename;
-  XLAL_CHECK ( (filename = XLALGetOfficialName4MergedSFTs ( sftVect, Misc )) != NULL, XLAL_EFUNC );
-
-  CHAR *path;
-  int len = strlen ( dirname ) + 1 + strlen ( filename ) + 1;
-  XLAL_CHECK ( (path = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
-  sprintf ( path, "%s/%s", dirname, filename );
-
-  XLAL_CHECK ( XLALWriteSFTVector2NamedFile( sftVect, path, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  XLALFree ( path );
-  XLALFree ( filename );
-
-  return XLAL_SUCCESS;
-
-} // XLALWriteSFTVector2File()
-
-
-/**
- * Write the given *v2-normalized* (i.e. dt x DFT) SFTVector to a single concatenated SFT file.
- * Add the comment to SFT if SFTcomment != NULL.
- *
- * Allows specifying a filename for the output merged-SFT file.
- */
-int
-XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect,	/**< SFT vector to write to disk */
-                               const CHAR *filename,		/**< complete path+filename for concatenated SFT */
-                               const CHAR *SFTcomment 		/**< optional comment */
-                               )
-{
-  XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( sftVect->data != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( sftVect->length > 0, XLAL_EINVAL );
-  XLAL_CHECK ( filename != NULL, XLAL_EINVAL );
-
-  UINT4 numSFTs = sftVect->length;
+  const UINT4 numSFTs = sftVect->length;
 
   /* open SFT-file for writing */
   FILE *fp;
-  XLAL_CHECK ( (fp = fopen ( filename, "wb" )) != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s\n\n", filename, strerror(errno));
+  XLAL_CHECK ( (fp = fopen ( SFTfilename, "wb" )) != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s\n\n", SFTfilename, strerror(errno));
 
   for ( UINT4 k = 0; k < numSFTs; k++ )
     {
       SFTtype *sft = &( sftVect->data[k] );
 
       /* write the k^th sft */
-      XLAL_CHECK ( XLALWriteSFT2fp ( sft, fp, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
+      XLAL_CHECK ( XLALWriteSFT2FilePointer ( sft, fp, SFTwindowtype, SFTwindowparam, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     } // for k < numSFTs
 
@@ -737,6 +730,86 @@ XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect,	/**< SFT vector to writ
 
 
 /**
+ * Write the given SFTVector to SFT file(s) with a standard (\cite SFT-spec) filename(s).
+ * Add the comment to SFT if SFTcomment != NULL.
+ *
+ * NOTE: The SFT filename spec is updated to reflect the filename of the written SFT, by
+ * setting the \c numSFTs, \c detector, \c SFTtimebase, \c gpsStart, and \c SFTspan fields.
+ * if needed, the SFT filename can be reconstructed with XLALBuildSFTFilenameFromSpec()
+ */
+int
+XLALWriteSFTVector2StandardFile(
+  const SFTVector *sftVect,     /**< SFT vector to write to disk */
+  SFTFilenameSpec *SFTfnspec,   /**< SFT filename specification used to construct filename(s) */
+  const CHAR *SFTcomment,       /**< optional comment */
+  const BOOLEAN merged          /**< If true, write a single merged SFT file; otherwise, write individual SFT files */
+  )
+{
+  XLAL_CHECK ( sftVect != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->data != NULL, XLAL_EINVAL );
+  XLAL_CHECK ( sftVect->length > 0, XLAL_EINVAL );
+
+  XLAL_CHECK ( SFTfnspec != NULL, XLAL_EFAULT );
+
+  const UINT4 numSFTs           = sftVect->length;
+  const SFTtype *sftStart       = &(sftVect->data[0]);
+  const SFTtype *sftEnd         = &(sftVect->data[numSFTs-1]);
+  const LIGOTimeGPS *epochStart = &(sftStart->epoch);
+  const LIGOTimeGPS *epochEnd   = &(sftEnd->epoch);
+
+  const UINT4 Tsft = (UINT4) round ( 1.0 / sftStart->deltaF );
+
+  if (merged) {   // write a single merged SFT file
+
+    SFTfnspec->numSFTs         = numSFTs;
+    SFTfnspec->detector[0]     = sftStart->name[0];
+    SFTfnspec->detector[1]     = sftStart->name[1];
+    SFTfnspec->detector[2]     = 0;
+    SFTfnspec->SFTtimebase     = Tsft;
+    SFTfnspec->gpsStart        = sftStart->epoch.gpsSeconds;
+
+    /* calculate time interval covered -- may be different from timebase if nanosecond of sft-epochs are non-zero */
+    SFTfnspec->SFTspan = epochEnd->gpsSeconds - epochStart->gpsSeconds + Tsft;
+    if ( epochStart->gpsNanoSeconds > 0) {
+      SFTfnspec->SFTspan += 1;
+    }
+    if ( epochEnd->gpsNanoSeconds > 0) {
+      SFTfnspec->SFTspan += 1;
+    }
+
+    // build SFT filename
+    char *SFTfilename = XLALBuildSFTFilenameFromSpec ( SFTfnspec );
+    XLAL_CHECK ( SFTfilename != NULL, XLAL_EFUNC );
+
+    // write SFT
+    XLAL_CHECK ( XLALWriteSFTVector2NamedFile ( sftVect, SFTfilename, SFTfnspec->window_type, SFTfnspec->window_param, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    XLALFree ( SFTfilename );
+
+  } else {   // write individual SFT files
+
+    // local copy of 'SFTfnspec' so that we can return name of first written SFT
+    SFTFilenameSpec spec = *SFTfnspec;
+
+    for ( UINT4 k = 0; k < numSFTs; k++ ) {
+
+      SFTtype *sft = &(sftVect->data[k]);
+
+      // return spec of first written SFT in 'SFTfnspec'; otherwise use local copy
+      SFTFilenameSpec *p_spec = ( k == 0 ) ? SFTfnspec : &spec;
+
+      XLAL_CHECK ( XLALWriteSFT2StandardFile( sft, p_spec, SFTcomment ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    } // for k < numSFTs
+
+  }
+
+  return XLAL_SUCCESS;
+
+} /* XLALWriteSFTVector2StandardFile() */
+
+
+/**
  * Verify that the contents of a SFT file are valid.
  *
  * This is just an XLAL wrapper to the SFTReferenceLibrary function ValidateSFTFile().
@@ -744,12 +817,12 @@ XLALWriteSFTVector2NamedFile ( const SFTVector *sftVect,	/**< SFT vector to writ
  * \return: XLAL_SUCCESS if no validation errors encountered.
  */
 int
-XLALValidateSFTFile ( const char *fname )
+XLALCheckSFTFileIsValid ( const char *fname )
 {
     int errcode = ValidateSFTFile(fname);
-    XLAL_CHECK ( errcode==0, XLAL_EFUNC, "SFT validation error code %d on file %s.", errcode, fname );
+    XLAL_CHECK ( errcode==0, XLAL_EFUNC, "SFT validation error on file '%s': code %d (%s)", fname, errcode, SFTErrorMessage( errcode ) );
     return XLAL_SUCCESS;
-} /* XLALValidateSFTFile */
+} /* XLALCheckSFTFileIsValid */
 
 
 /* a little endian-swapper needed for SFT reading/writing */
@@ -905,13 +978,14 @@ read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp )
  *
  */
 int
-read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins )
+read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, UINT2 *SFTwindowspec, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins )
 {
   SFTtype XLAL_INIT_DECL(head);
   UINT4 nsamples;
   CHAR *comm = NULL;
   UINT8 ref_crc = 0;
   UINT8 header_crc;
+  UINT2 windowspec;
 
   UINT4 ver;
   BOOLEAN need_swap;
@@ -938,12 +1012,12 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
   if ( read_SFTversion_from_fp ( &ver, &need_swap, fp ) != 0 )
     return -1;
 
-  /* read this SFT-header with version-specific code */
+  /* read this SFT-header */
   XLAL_INIT_MEM(head);
 
-  if ( ver == 2 )
+  if ( MIN_SFT_VERSION <= ver && ver <= MAX_SFT_VERSION )
     {
-      if ( read_v2_header_from_fp ( fp, &head, &nsamples, &header_crc, &ref_crc, &comm, need_swap ) != 0 )
+      if ( read_header_from_fp ( fp, &head, &nsamples, &header_crc, &ref_crc, &windowspec, &comm, need_swap ) != 0 )
         goto failed;
     }
   else
@@ -985,6 +1059,11 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
   (*swapEndian) = need_swap;
   (*crc64) = ref_crc;
   (*numBins) = nsamples;
+
+  if ( SFTwindowspec ) {     /* return of windowspec is optional */
+    (*SFTwindowspec) = windowspec;
+  }
+
   return 0;
 
   /* ---------- */
@@ -1002,7 +1081,7 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
 } /* read_sft_header_from_fp() */
 
 
-/* ----- SFT v2 -specific header-reading function:
+/* ----- SFT header-reading function:
  *
  * return general SFTtype header, place filepointer at the end of the header if it succeeds,
  * set fp to initial position if it fails.
@@ -1013,9 +1092,9 @@ read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64
  *
  */
 int
-read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, CHAR **SFTcomment, BOOLEAN swapEndian)
+read_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *header_crc64, UINT8 *ref_crc64, UINT2 *SFTwindowspec, CHAR **SFTcomment, BOOLEAN swapEndian)
 {
-  _SFT_header_v2_t rawheader;
+  _SFT_header_t rawheader;
   long save_filepos;
   CHAR *comm = NULL;
   UINT8 crc;
@@ -1024,12 +1103,12 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   /* check input-consistency */
   if ( !fp || !header || !nsamples || !SFTcomment )
     {
-      XLALPrintError ( "\nERROR read_v2_header_from_fp(): called with NULL input!\n\n");
+      XLALPrintError ( "\nERROR read_header_from_fp(): called with NULL input!\n\n");
       return -1;
     }
   if ( SFTcomment && (*SFTcomment != NULL) )
     {
-      XLALPrintError ("\nERROR: Comment-string passed to read_v2_header_from_fp() is not NULL!\n\n");
+      XLALPrintError ("\nERROR: Comment-string passed to read_header_from_fp() is not NULL!\n\n");
       return -1;
     }
 
@@ -1043,7 +1122,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   /* read the whole header */
   if (fread( &rawheader, sizeof(rawheader), 1, fp) != 1)
     {
-      if (lalDebugLevel) XLALPrintError ("\nCould not read v2-header. %s\n\n", strerror(errno) );
+      if (lalDebugLevel) XLALPrintError ("\nCould not read header. %s\n\n", strerror(errno) );
       goto failed;
     }
 
@@ -1072,18 +1151,17 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
       endian_swap((CHAR*)(&rawheader.tbase), 			sizeof(rawheader.tbase) 		, 1);
       endian_swap((CHAR*)(&rawheader.first_frequency_index), 	sizeof(rawheader.first_frequency_index) , 1);
       endian_swap((CHAR*)(&rawheader.nsamples), 		sizeof(rawheader.nsamples) 		, 1);
-
-      /* v2-specific */
       endian_swap((CHAR*)(&rawheader.crc64),			sizeof(rawheader.crc64)			, 1);
+      endian_swap((CHAR*)(&rawheader.windowspec),		sizeof(rawheader.windowspec)		, 1);
       endian_swap((CHAR*)(&rawheader.comment_length),		sizeof(rawheader.comment_length)	, 1);
       /* ----- */
 
     } /* if endian_swap */
 
   /* double-check version-number */
-  if ( rawheader.version != 2 )
+  if ( !( MIN_SFT_VERSION <= rawheader.version && rawheader.version <= MAX_SFT_VERSION ) )
     {
-      XLALPrintError ("\nWrong SFT-version %g in read_v2_header_from_fp()\n\n", rawheader.version );
+      XLALPrintError ("\nWrong SFT-version %g in read_header_from_fp()\n\n", rawheader.version );
       goto failed;
     }
 
@@ -1093,7 +1171,6 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
       goto failed;
     }
 
-  /* ----- v2-specific consistency-checks ----- */
   if ( rawheader.comment_length < 0 )
     {
       XLALPrintError ("\nNegative comment-length in SFT!\n\n");
@@ -1106,11 +1183,16 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
       goto failed;
     }
 
-  if ( ! XLALIsValidCWDetector ( rawheader.detector ) )
+  const CHAR detector[3] = { rawheader.detector[0], rawheader.detector[1], 0 };
+  if ( ! XLALIsValidCWDetector ( detector ) )
     {
-      XLALPrintError ("\nIllegal detector-name in SFT: '%c%c'\n\n",
-					  rawheader.detector[0], rawheader.detector[1] );
+      XLALPrintError ("\nIllegal detector-name in SFT: '%s'\n\n", detector );
       goto failed;
+    }
+
+  if ( rawheader.version == 2 )
+    {
+      rawheader.windowspec = 0;   /* window of version 2 SFTs is unknown */
     }
 
   /* ----- Now read comment (if any) ----- */
@@ -1164,9 +1246,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   /*  ok: */
   memset ( header, 0, sizeof( *header ) );
 
-  header->name[0]		= rawheader.detector[0];
-  header->name[1]		= rawheader.detector[1];
-  header->name[2]		= 0;
+  strncpy( header->name, detector, sizeof( header->name ) );
 
   header->epoch.gpsSeconds 	= rawheader.gps_sec;
   header->epoch.gpsNanoSeconds 	= rawheader.gps_nsec;
@@ -1178,7 +1258,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
   (*ref_crc64) = rawheader.crc64;
   (*SFTcomment) = comm;
   (*header_crc64) = crc;
-
+  (*SFTwindowspec) = rawheader.windowspec;
 
   return 0;
 
@@ -1193,7 +1273,7 @@ read_v2_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UINT8 *head
 
   return -1;
 
-} /* read_v2_header_from_fp() */
+} /* read_header_from_fp() */
 
 
 /*
@@ -1250,7 +1330,7 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 
   {
     COMPLEX8Sequence*data = ret->data;
-    if ( read_sft_header_from_fp (fp, ret, &version, &crc64, &swapEndian, NULL, &numSFTbins ) != 0 )
+    if ( read_sft_header_from_fp (fp, ret, &version, &crc64, NULL, &swapEndian, NULL, &numSFTbins ) != 0 )
       {
 	XLALPrintError ("read_sft_bins_from_fp(): Failed to read SFT-header!\n");
 	*firstBinRead = 2;
@@ -1337,16 +1417,17 @@ read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, 
 
 
 /**
- * Check the v2 SFT-block starting at fp for valid crc64 checksum.
+ * Check the SFT-block starting at fp for valid crc64 checksum.
  * Restores filepointer before leaving.
  */
 BOOLEAN
-has_valid_v2_crc64 ( FILE *fp )
+has_valid_crc64 ( FILE *fp )
 {
   long save_filepos;
   UINT8 computed_crc, ref_crc;
   SFTtype header;
   UINT4 numBins;
+  UINT2 windowspec;
   CHAR *SFTcomment = NULL;
   UINT4 data_len;
   char block[BLOCKSIZE];
@@ -1356,7 +1437,7 @@ has_valid_v2_crc64 ( FILE *fp )
   /* input consistency */
   if ( !fp )
     {
-      XLALPrintError ("\nhas_valid_v2_crc64() was called with NULL filepointer!\n\n");
+      XLALPrintError ("\nhas_valid_crc64() was called with NULL filepointer!\n\n");
       return FALSE;
     }
 
@@ -1370,15 +1451,15 @@ has_valid_v2_crc64 ( FILE *fp )
   if ( read_SFTversion_from_fp ( &version, &need_swap, fp ) != 0 )
     return -1;
 
-  if ( version != 2 )
+  if ( !( MIN_SFT_VERSION <= version && version <= MAX_SFT_VERSION ) )
     {
-      XLALPrintError ("\nhas_valid_v2_crc64() was called on non-v2 SFT.\n\n");
+      XLALPrintError ("\nhas_valid_crc64() was called on an invalid version(=%u) SFT.\n\n", version);
       return -1;
     }
 
   /* ----- compute CRC ----- */
   /* read the header, unswapped, only to obtain it's crc64 checksum */
-  if ( read_v2_header_from_fp ( fp, &header, &numBins, &computed_crc, &ref_crc, &SFTcomment, need_swap ) != 0 )
+  if ( read_header_from_fp ( fp, &header, &numBins, &computed_crc, &ref_crc, &windowspec, &SFTcomment, need_swap ) != 0 )
     {
       if ( SFTcomment ) LALFree ( SFTcomment );
       return FALSE;
@@ -1406,4 +1487,4 @@ has_valid_v2_crc64 ( FILE *fp )
   /* check that checksum is consistent */
   return ( computed_crc == ref_crc );
 
-} /* has_valid_v2_crc64 */
+} /* has_valid_crc64 */

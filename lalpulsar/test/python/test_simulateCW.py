@@ -122,11 +122,12 @@ def compute_Fstat_spindown_simulateCW():
     S = simCW.CWSimulator(tref, tstart, Tdata, waveform(h0, cosi, freq, f1dot), dt_wf, phi0, psi, alpha, delta, detector, earth_ephem_file=earth_ephem_file, sun_ephem_file=sun_ephem_file)
 
     # write SFTs
-    for path, i, N in S.write_sft_files(fmax, Tsft, 'simulateCWTest'):
-        pass
+    allpaths = []
+    for path, i, N in S.write_sft_files(fmax, Tsft, 'simCWTestFstatSpindown'):
+        allpaths.append(path)
 
     # load SFTs from catalog
-    sft_catalog = lalpulsar.SFTdataFind('V-1_V1_1800SFT_simCW_simulateCWTest-*.sft', None)
+    sft_catalog = lalpulsar.SFTdataFind('V-1_V1_1800SFT_simCWTestFstatSpindown-*.sft', None)
 
     # create default F-statistic optional arguments
     Fstat_opt_args = lalpulsar.FstatOptionalArgs(lalpulsar.FstatOptionalArgsDefaults)
@@ -148,6 +149,10 @@ def compute_Fstat_spindown_simulateCW():
 
     # search SFTs using F-statistic
     Fstat_res = lalpulsar.ComputeFstat(Fstat_res, Fstat_input, doppler, Nfs, lalpulsar.FSTATQ_2F)
+
+    # remove SFTs
+    for path in allpaths:
+        os.remove(path)
 
     return Fstat_res.twoF
 
@@ -181,19 +186,24 @@ def test_random_seeds():
     S = simCW.CWSimulator(tref, tstart, Tdata, waveform(h0=0, cosi=0, freq=0, f1dot=0), dt_wf, phi0, psi, alpha, delta, detector, earth_ephem_file=earth_ephem_file, sun_ephem_file=sun_ephem_file)
 
     # write sets of 2 SFTs each with different noise seed choices, two rounds each
+    allpaths = []
     paths = {}
     paths["None"] = [[],[]]
     paths["1"] = [[],[]]
-    for path, i, N in S.write_sft_files(fmax, Tsft, noise_sqrt_Sh=asd, comment='simulateCWTest_seedNone_round1'):
+    for path, i, N in S.write_sft_files(fmax, Tsft, noise_sqrt_Sh=asd, comment='simCWTestSeedNoneRound1'):
+        allpaths.append(path)
         paths["None"][0].append(path)
         pass
-    for path, i, N in S.write_sft_files(fmax, Tsft, noise_sqrt_Sh=asd, comment='simulateCWTest_seedNone_round2',):
+    for path, i, N in S.write_sft_files(fmax, Tsft, noise_sqrt_Sh=asd, comment='simCWTestSeedNoneRound2',):
+        allpaths.append(path)
         paths["None"][1].append(path)
         pass
-    for path, i, N in S.write_sft_files(fmax, Tsft, noise_sqrt_Sh=asd, comment='simulateCWTest_seed1_round1', noise_seed=1):
+    for path, i, N in S.write_sft_files(fmax, Tsft, noise_sqrt_Sh=asd, comment='simCWTestSeed1Round1', noise_seed=1):
+        allpaths.append(path)
         paths["1"][0].append(path)
         pass
-    for path, i, N in S.write_sft_files(fmax, Tsft, noise_sqrt_Sh=asd, comment='simulateCWTest_seed1_round2', noise_seed=1):
+    for path, i, N in S.write_sft_files(fmax, Tsft, noise_sqrt_Sh=asd, comment='simCWTestSeed1Round2', noise_seed=1):
+        allpaths.append(path)
         paths["1"][1].append(path)
         pass
     return_codes = {}
@@ -213,6 +223,10 @@ def test_random_seeds():
     for code in return_codes["1"]:
         # if seeds are fixed, we expect identical outputs from both rounds
         assert code == 0
+
+    # remove SFTs
+    for path in allpaths:
+        os.remove(path)
 
 if __name__ == '__main__':
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-simulateCW.xml"]

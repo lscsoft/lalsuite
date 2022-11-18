@@ -33,6 +33,7 @@ test_programs += PtoleMeshTest
 test_programs += PtoleMetricTest
 test_programs += ReadTEMPOFileTest
 test_programs += SFTfileIOTest
+test_programs += SFTnamingTest
 test_programs += SimulateTaylorCWTest
 test_programs += StatisticsTest
 test_programs += SuperskyMetricsTest

@@ -25,7 +25,7 @@ mfd_cml = " ".join(
         "lalpulsar_Makefakedata_v5",
         "--outSingleSFT=TRUE",
         f"--outSFTdir={testdir}",
-        '--outLabel="simulated_signal"',
+        '--outLabel="simulatedsignal"',
         '--IFOs="H1","L1"',
         '--sqrtSX="1e-22"',
         "--startTime=1000000000",

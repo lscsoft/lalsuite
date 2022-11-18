@@ -74,7 +74,7 @@ int main(int argc, char *argv[]){
 
   static LALStatus  status;  
 
-  static LALDetector          *detector;
+  static const LALDetector    *detector;
   static LIGOTimeGPSVector    timeV;
   static REAL8Cart3CoorVector velV;
   static REAL8Vector          timeDiffV;

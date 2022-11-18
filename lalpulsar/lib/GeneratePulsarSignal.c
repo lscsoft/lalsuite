@@ -252,7 +252,7 @@ LALGeneratePulsarSignal (LALStatus *status,		   /**< pointer to LALStatus struct
 } /* LALGeneratePulsarSignal() */
 
 /**
- * Turn the given time-series into (v2-)SFTs and add noise if given.
+ * Turn the given time-series into SFTs and add noise if given.
  */
 SFTVector *
 XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
@@ -390,8 +390,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       /* Now window the current time series stretch, if necessary */
       if ( params->window )
         {
-          // the SFT normalization in case of windowing follows the conventions detailed in the SFTv2 specification,
-          // namely LIGO-T040164, and in particular Eqs.(3),(4) and (6) in T010095-00.pdf
+	  // the SFT normalization in case of windowing follows the conventions detailed in \cite SFT-spec
 	  const float inv_sigma_win = 1.0 / sqrt ( params->window->sumofsquares / params->window->data->length );
 	  for( UINT4 idatabin = 0; idatabin < timeStretchCopy->length; idatabin++ )
             {
@@ -403,7 +402,7 @@ XLALSignalToSFTs ( const REAL4TimeSeries *signalvec, 	/**< input time-series */
       ret = XLALREAL4ForwardFFT ( thisSFT->data, timeStretchCopy, pfwd );
       XLAL_CHECK_NULL ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALREAL4ForwardFFT() failed.\n");
 
-      /* normalize DFT-data to conform to v2 ( ie. COMPLEX8FrequencySeries ) specification ==> multiply DFT by dt */
+      /* normalize DFT-data to conform to SFT specification ==> multiply DFT by dt */
       COMPLEX8 *data = thisSFT->data->data;
       for ( UINT4 i = 0; i < numBins ; i ++ )
 	{

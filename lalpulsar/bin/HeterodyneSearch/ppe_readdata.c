@@ -559,8 +559,10 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
     }
 
     /* set detector */
-    ifodata->detector = XLALGetSiteInfo( dets[FACTOR(i,ml)] );
-    ifomodel->detector = XLALGetSiteInfo( dets[FACTOR(i,ml)] );
+    ifodata->detector = XLALCalloc(1, sizeof(*ifodata->detector));
+    memcpy(ifodata->detector, XLALGetSiteInfo( dets[FACTOR(i,ml)] ), sizeof(*ifodata->detector));
+    ifomodel->detector = XLALCalloc(1, sizeof(*ifomodel->detector));
+    memcpy(ifomodel->detector, XLALGetSiteInfo( dets[FACTOR(i,ml)] ), sizeof(*ifomodel->detector));
     strncpy(ifodata->name, dets[FACTOR(i,ml)], DETNAMELEN-1);
 
     /* set dummy initial time */

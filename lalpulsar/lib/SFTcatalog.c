@@ -36,7 +36,7 @@
 
 static long get_file_len ( FILE *fp );
 
-static BOOLEAN consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTtype header2, UINT4 version2, UINT4 nsamples2 );
+static BOOLEAN consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, UINT2 windowspec1, SFTtype header2, UINT4 version2, UINT4 nsamples2, UINT2 windowspec2 );
 static BOOLEAN timestamp_in_list( LIGOTimeGPS timestamp, LIGOTimeGPSVector *list );
 
 /*========== function definitions ==========*/
@@ -100,6 +100,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
       UINT4   mprev_version = 0;
       SFTtype XLAL_INIT_DECL( mprev_header );
       REAL8   mprev_nsamples = 0;
+      UINT2   mprev_windowspec = 0;
 
       FILE *fp;
       if ( ( fp = fopen( fname, "rb" ) ) == NULL )
@@ -127,6 +128,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	  UINT4 this_version;
 	  UINT4 this_nsamples;
 	  UINT8 this_crc;
+	  UINT2 this_windowspec;
 	  CHAR *this_comment = NULL;
 	  BOOLEAN endian;
 	  BOOLEAN want_this_block = FALSE;
@@ -141,7 +143,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	      XLAL_ERROR_NULL ( XLAL_EIO );
 	    }
 
-	  if ( read_sft_header_from_fp (fp, &this_header, &this_version, &this_crc, &endian, &this_comment, &this_nsamples ) != 0 )
+	  if ( read_sft_header_from_fp (fp, &this_header, &this_version, &this_crc, &this_windowspec, &endian, &this_comment, &this_nsamples ) != 0 )
 	    {
               XLALPrintError ("ERROR: File-block '%s:%ld' is not a valid SFT!\n\n", fname, ftell(fp));
 	      XLALDestroyStringVector ( fnames );
@@ -154,7 +156,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	  /* if merged-SFT: check consistency constraints */
 	  if ( !mfirst_block )
 	    {
-	      if ( ! consistent_mSFT_header ( mprev_header, mprev_version, mprev_nsamples, this_header, this_version, this_nsamples ) )
+	      if ( ! consistent_mSFT_header ( mprev_header, mprev_version, mprev_nsamples, mprev_windowspec, this_header, this_version, this_nsamples, this_windowspec ) )
 		{
                   XLALPrintError ( "ERROR: merged SFT-file '%s' contains inconsistent SFT-blocks!\n\n", fname);
 		  XLALFree ( this_comment );
@@ -168,6 +170,7 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 	  mprev_header = this_header;
 	  mprev_version = this_version;
 	  mprev_nsamples = this_nsamples;
+	  mprev_windowspec = this_windowspec;
 
 	  want_this_block = TRUE;	/* default */
 	  /* but does this SFT-block satisfy the user-constraints ? */
@@ -235,6 +238,8 @@ XLALSFTdataFind ( const CHAR *file_pattern,		/**< which SFT-files */
 		}
 	      strcpy ( desc->locator->fname, fname );
 	      desc->locator->offset = this_filepos;
+
+	      XLAL_CHECK_NULL( parse_sft_windowspec( this_windowspec, &desc->window_type, &desc->window_param ) == XLAL_SUCCESS, XLAL_EFUNC );
 
 	      desc->header  = this_header;
 	      desc->comment = this_comment;
@@ -564,35 +569,21 @@ XLALCheckCRCSFTCatalog(
   for ( UINT4 i=0; i < catalog->length; i ++ )
     {
       FILE *fp;
-
-      switch ( catalog->data[i].version  )
-	{
-	case 1:	/* version 1 had no CRC  */
-	  continue;
-	case 2:
-	  if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
-	    {
-	      XLALPrintError ( "Failed to open locator '%s'\n",
-			      XLALshowSFTLocator ( catalog->data[i].locator ) );
-              return XLAL_FAILURE;
-	    }
-	  if ( !(has_valid_v2_crc64 ( fp ) != 0) )
-	    {
-	      XLALPrintError ( "CRC64 checksum failure for SFT '%s'\n",
-			      XLALshowSFTLocator ( catalog->data[i].locator ) );
-              *crc_check = 0;
-	      fclose(fp);
-              return XLAL_SUCCESS;
-	    }
-	  fclose(fp);
-	  break;
-
-	default:
-	  XLALPrintError ( "Illegal SFT-version encountered : %d\n", catalog->data[i].version );
+      if ( (fp = fopen_SFTLocator ( catalog->data[i].locator )) == NULL )
+        {
+          XLALPrintError ( "Failed to open locator '%s'\n",
+                          XLALshowSFTLocator ( catalog->data[i].locator ) );
           return XLAL_FAILURE;
-	  break;
-	} /* switch (version ) */
-
+        }
+      if ( !(has_valid_crc64 ( fp ) != 0) )
+        {
+          XLALPrintError ( "CRC64 checksum failure for SFT '%s'\n",
+                          XLALshowSFTLocator ( catalog->data[i].locator ) );
+          *crc_check = 0;
+          fclose(fp);
+          return XLAL_SUCCESS;
+        }
+      fclose(fp);
     } /* for i < numSFTs */
 
   return XLAL_SUCCESS;
@@ -767,10 +758,11 @@ XLALAddToFakeSFTCatalog ( SFTCatalog *catalog,                          /**< [in
     SFTDescriptor *desc = &catalog->data[catalog->length + i];
     memset(desc, 0, sizeof(*desc));
     strncpy(desc->header.name, channel, 2);
+    desc->window_type = "unknown";
     desc->header.epoch = timestamps->data[i];
     desc->header.deltaF = 1.0 / timestamps->deltaT;
     desc->header.sampleUnits = lalDimensionlessUnit;
-    desc->version = 2;
+    desc->version = MAX_SFT_VERSION;
   }
 
   // Set new catalog length
@@ -849,10 +841,9 @@ static long get_file_len ( FILE *fp )
 } /* get_file_len() */
 
 
-/* check consistency constraints for SFT-blocks within a merged SFT-file,
- * see SFT-v2 spec */
+/* check consistency constraints for SFT-blocks within a merged SFT-file, see \cite SFT-spec */
 static BOOLEAN
-consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTtype header2, UINT4 version2, UINT4 nsamples2 )
+consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, UINT2 windowspec1, SFTtype header2, UINT4 version2, UINT4 nsamples2, UINT2 windowspec2 )
 {
   /* 1) identical detector */
   if ( (header1.name[0] != header2.name[0]) || (header1.name[1] != header2.name[1]) )
@@ -893,6 +884,13 @@ consistent_mSFT_header ( SFTtype header1, UINT4 version1, UINT4 nsamples1, SFTty
   if ( nsamples1 != nsamples2 )
     {
       XLALPrintError ("\nInvalid merged SFT: non-identical number of frequency-bins\n\n" );
+      return FALSE;
+    }
+
+  /* 7) identical window specifications */
+  if ( windowspec1 != windowspec2 )
+    {
+      XLALPrintError ("\nInvalid merged SFT: non-identical window specifications\n\n" );
       return FALSE;
     }
 
