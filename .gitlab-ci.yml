@@ -1003,6 +1003,7 @@ lalapps:conda:py39:
     paths:
       - wheelhouse
     when: always
+  allow_failure: true
 
 # do some simple sanity checks in a virtualenv
 .wheel-test: &wheel-test
