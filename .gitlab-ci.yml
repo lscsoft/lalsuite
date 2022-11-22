@@ -1001,6 +1001,7 @@ lalapps:conda:py39:
   artifacts:
     expire_in: 18h
     paths:
+      - wheel
       - wheelhouse
     when: always
   allow_failure: true
