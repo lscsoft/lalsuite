@@ -74,7 +74,7 @@ try:
     from importlib.resources import files, as_file
 except ImportError:  # FIXME: Python < 3.9
     from importlib_resources import files, as_file
-with as_file(files('lalapps') / 'bin' / {}) as path:
+with as_file(files('lalapps') / 'bin' / '{}') as path:
     os.execv(path, sys.argv)
 """
 
