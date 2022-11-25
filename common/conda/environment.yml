@@ -34,6 +34,6 @@ dependencies:
   #- python-ligo-lw  <-- depends upon python-lal
   - scipy >=0.9.0
   - six
-  - swig >=3.0.10,<4.1.0a0
+  - swig >=3.0.10
   - texlive-core
   - zlib
