@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 115
+# serial 116
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -692,7 +692,11 @@ EOD`]
   ],[
 
     # determine SWIG Python flags
-    AC_SUBST([SWIG_PYTHON_FLAGS],["-py3 -relativeimport -O -builtin -globals globalvar"])
+    AC_SUBST([SWIG_PYTHON_FLAGS],["-relativeimport -O -builtin -globals globalvar"])
+    # for older SWIG versions, pass '-py3' to enable Python 3 features (default in SWIG >=4.1.0)
+    LALSUITE_VERSION_COMPARE([${swig_version}],[<],[4.1.0],[
+      SWIG_PYTHON_FLAGS="-py3 ${SWIG_PYTHON_FLAGS}"
+    ])
 
   ])
   # end $0

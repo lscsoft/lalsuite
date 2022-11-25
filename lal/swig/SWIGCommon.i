@@ -1809,10 +1809,18 @@ if (strides[I-1] == 0) {
     return res;
   }
 }
+#if SWIG_VERSION >= 0x040100
+%typemaps_string_alloc(%checkcode(STRING), %checkcode(char),
+                       SWIGWARN_TYPEMAP_CHARLEAK_MSG, char, LALchar,
+                       SWIG_AsLALcharPtrAndSize, SWIG_FromLALcharPtrAndSize,
+                       strlen, SWIG_strnlen, %swiglal_new_copy_array, XLALFree,
+                       "<limits.h>", CHAR_MIN, CHAR_MAX);
+#else
 %typemaps_string_alloc(%checkcode(STRING), %checkcode(char), char, LALchar,
                        SWIG_AsLALcharPtrAndSize, SWIG_FromLALcharPtrAndSize,
                        strlen, SWIG_strnlen, %swiglal_new_copy_array, XLALFree,
                        "<limits.h>", CHAR_MIN, CHAR_MAX);
+#endif
 
 ///
 /// Typemaps for string pointers.  By default, treat arguments of type <tt>char**</tt> as output-only
