@@ -52,7 +52,7 @@ extern "C" {
 /// The approach is described by Prix, Giampanis & Messenger
 /// in https://arxiv.org/abs/1104.1704
 
-// @{
+/// @{
 
 /* ---------- exported API defines ---------- */
 
@@ -233,7 +233,7 @@ XLALGetTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compu
 
 } /* XLALGetTransientWindowValue() */
 
-// @}
+/// @}
 
 
 #ifdef  __cplusplus

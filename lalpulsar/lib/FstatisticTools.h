@@ -40,7 +40,7 @@ extern "C" {
 /// \brief Functions to estimate amplitude parameters and convert between different parametrizations.
 ///
 
-// @{
+/// @{
 
 // ---------- API function prototypes ----------
 int XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams, const LIGOTimeGPS* FaFb_refTime,
@@ -51,7 +51,7 @@ int XLALAmplitudeVect2Params( PulsarAmplitudeParams *Amp, const PulsarAmplitudeV
 
 REAL8 XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, const AntennaPatternMatrix Mmunu );
 
-// @}
+/// @}
 
 #ifdef  __cplusplus
 }
