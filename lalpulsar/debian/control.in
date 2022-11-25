@@ -97,6 +97,7 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
+ gwdatafind,
  liblalpulsar@LIBMAJOR@ (= ${binary:Version}),
  python3-lalpulsar (= ${binary:Version}),
  lalpulsar-data,

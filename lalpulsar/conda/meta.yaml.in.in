@@ -263,6 +263,7 @@ outputs:
         - astropy
         - cfitsio
         - gsl
+        - gwdatafind
         - jplephem
         - liblal >={{ lal_version }}
         - liblalframe >={{ lalframe_version }}
