@@ -154,13 +154,13 @@ parser.add_argument('-G', '--tag-string', required=True, type=str,
                     help='tag string used in names of various files unique to \
                     jobs that will run under the DAG')
 parser.add_argument('-d', '--input-data-type', required=True, type=str,
-                    help='input data type for use with the LSCdataFind --type \
+                    help='input data type for use with the gw_data_find --type \
                     option')
 parser.add_argument('-x', '--extra-datafind-time', type=int, default=0,
                     help='extra time to subtract/add from/to start/end time \
-                    arguments of LSCdataFind')
+                    arguments of gw_data_find')
 parser.add_argument('-M', '--datafind-match', type=str,
-                    help='string to use with the LSCdataFind --match option')
+                    help='string to use with the gw_data_find --match option')
 parser.add_argument('-y', '--synchronize-start', action='store_true',
                     help='synchronize the start times of the SFTs so that the \
                     start times are synchronized when there are gaps in the \
@@ -174,7 +174,7 @@ parser.add_argument('-p', '--output-sft-path', required=True, type=str,
                     help='path to output SFTs')
 parser.add_argument('-C', '--cache-path', type=str, default='cache',
                     help='path to cache files that will be produced by \
-                    LSCdataFind (default is $PWD/cache; this directory is \
+                    gw_data_find (default is $PWD/cache; this directory is \
                     created if it does not exist and must agree with that \
                     given in .sub files)')
 parser.add_argument('-o', '--log-path', type=str, default='logs',
