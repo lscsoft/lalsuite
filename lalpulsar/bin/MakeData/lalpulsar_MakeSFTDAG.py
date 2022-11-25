@@ -66,6 +66,7 @@ __date__ = git_version.date
 # 10/2022  kww; Implement public SFT file naming convention
 # 11/2022  kww; -R command line option now used for --observing-revision
 #               instead of --output-jobs-per-node, which now uses -r
+# 11/2022  kww; --datafind-path and --makesfts-path accept executable names
 
 
 #
@@ -223,13 +224,13 @@ parser.add_argument('-r', '--output-jobs-per-node', type=int, default=0,
                     help='number of jobs to output per node in the list of \
                     nodes given with the -q option')
 parser.add_argument('-j', '--datafind-path', type=str,
-                    help='string specifying a path to look for the \
-                    gw_data_find executable; if not set, will use \
+                    help='string specifying the gw_data_find executable, \
+                    or a path to it; if not set, will use \
                     LSC_DATAFIND_PATH env variable or system default (in \
                     that order)')
 parser.add_argument('-J', '--makesfts-path', type=str,
-                    help='string specifying a path to look for the \
-                    lalpulsar_MakeSFTs executable; if not set, will use \
+                    help='string specifying the lalpulsar_MakeSFTs executable, \
+                    or a path to it; if not set, will use \
                     MAKESFTS_PATH env variable or system default (in that \
                     order)')
 parser.add_argument('-Y', '--request-memory', type=int, default=2048,
@@ -314,7 +315,10 @@ if args.max_num_per_node <= 0:
 # Set the data find executable and lalpulsar_MakeSFTs executable
 dataFindExe = 'gw_data_find'
 if args.datafind_path:
-    dataFindExe = os.path.join(args.datafind_path, dataFindExe)
+    if os.path.isfile(args.datafind_path):
+        dataFindExe = args.datafind_path
+    else:
+        dataFindExe = os.path.join(args.datafind_path, dataFindExe)
 elif 'LSC_DATAFIND_PATH' in os.environ:
     dataFindExe = os.path.join('$ENV(LSC_DATAFIND_PATH)', dataFindExe)
 else:
@@ -322,7 +326,10 @@ else:
 
 makeSFTsExe = 'lalpulsar_MakeSFTs'
 if args.makesfts_path:
-    makeSFTsExe = os.path.join(args.makesfts_path, makeSFTsExe)
+    if os.path.isfile(args.makesfts_path):
+        makeSFTsExe = args.makesfts_path
+    else:
+        makeSFTsExe = os.path.join(args.makesfts_path, makeSFTsExe)
 elif 'MAKESFTS_PATH' in os.environ:
     makeSFTsExe = os.path.join('$ENV(MAKESFTS_PATH)', makeSFTsExe)
 else:
