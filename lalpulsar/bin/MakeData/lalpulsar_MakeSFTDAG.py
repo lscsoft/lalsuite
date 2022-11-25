@@ -72,7 +72,7 @@ __date__ = git_version.date
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
 #
 def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args):
-    LSCdataFind = f'LSCdataFind_{nodeCount}'
+    datafind = f'datafind_{nodeCount}'
     MakeSFTs = f'MakeSFTs_{nodeCount}'
     startTimeDatafind = startTimeThisNode - args.extra_datafind_time
     endTimeDatafind = endTimeThisNode + args.extra_datafind_time
@@ -107,13 +107,13 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
         argList.append(f'-P {args.overlap_fraction}')
     argStr = ' '.join(argList)
 
-    dagFID.write(f'JOB {LSCdataFind} datafind.sub\n')
-    dagFID.write(f'RETRY {LSCdataFind} 10\n')
-    dagFID.write(f'VARS {LSCdataFind} gpsstarttime="{startTimeDatafind}" gpsendtime="{endTimeDatafind}" observatory="{site}" inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n')
+    dagFID.write(f'JOB {datafind} datafind.sub\n')
+    dagFID.write(f'RETRY {datafind} 10\n')
+    dagFID.write(f'VARS {datafind} gpsstarttime="{startTimeDatafind}" gpsendtime="{endTimeDatafind}" observatory="{site}" inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n')
     dagFID.write(f'JOB {MakeSFTs} MakeSFTs.sub\n')
     dagFID.write(f'RETRY {MakeSFTs} 5\n')
     dagFID.write(f'VARS {MakeSFTs} argList="{argStr}" tagstring="{tagStringOut}"\n')
-    dagFID.write(f'PARENT {LSCdataFind} CHILD {MakeSFTs}\n')
+    dagFID.write(f'PARENT {datafind} CHILD {MakeSFTs}\n')
 
 
 #

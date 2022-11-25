@@ -31,20 +31,20 @@ for file in $dagfile $datafindsub $sftsub; do
 done
 
 testdagcontent=$(<$dagfile)
-dagfilecontent="JOB LSCdataFind_1 datafind.sub
-RETRY LSCdataFind_1 10
-VARS LSCdataFind_1 gpsstarttime=\"1257741529\" gpsendtime=\"1257743329\" observatory=\"H\" inputdatatype=\"H1_HOFT_C00\" tagstring=\"TEST_1\"
+dagfilecontent="JOB datafind_1 datafind.sub
+RETRY datafind_1 10
+VARS datafind_1 gpsstarttime=\"1257741529\" gpsendtime=\"1257743329\" observatory=\"H\" inputdatatype=\"H1_HOFT_C00\" tagstring=\"TEST_1\"
 JOB MakeSFTs_1 MakeSFTs.sub
 RETRY MakeSFTs_1 5
 VARS MakeSFTs_1 argList=\"${SFT_name_opts} -f 7 -t 1800 -p . -C cache/H-1257741529-1257743329.cache -s 1257741529 -e 1257743329 -N H1:GDS-CALIB_STRAIN_CLEAN -F 10 -B 1990 -w 3 -P 0.5\" tagstring=\"TEST_1\"
-PARENT LSCdataFind_1 CHILD MakeSFTs_1
-JOB LSCdataFind_2 datafind.sub
-RETRY LSCdataFind_2 10
-VARS LSCdataFind_2 gpsstarttime=\"1257743330\" gpsendtime=\"1257745130\" observatory=\"H\" inputdatatype=\"H1_HOFT_C00\" tagstring=\"TEST_2\"
+PARENT datafind_1 CHILD MakeSFTs_1
+JOB datafind_2 datafind.sub
+RETRY datafind_2 10
+VARS datafind_2 gpsstarttime=\"1257743330\" gpsendtime=\"1257745130\" observatory=\"H\" inputdatatype=\"H1_HOFT_C00\" tagstring=\"TEST_2\"
 JOB MakeSFTs_2 MakeSFTs.sub
 RETRY MakeSFTs_2 5
 VARS MakeSFTs_2 argList=\"${SFT_name_opts} -f 7 -t 1800 -p . -C cache/H-1257743330-1257745130.cache -s 1257743330 -e 1257745130 -N H1:GDS-CALIB_STRAIN_CLEAN -F 10 -B 1990 -w 3 -P 0.5\" tagstring=\"TEST_2\"
-PARENT LSCdataFind_2 CHILD MakeSFTs_2"
+PARENT datafind_2 CHILD MakeSFTs_2"
 if ! [[ $testdagcontent == $dagfilecontent ]]; then
    echo "ERROR: dagfile content did not match expected content"
    echo "test content:"
