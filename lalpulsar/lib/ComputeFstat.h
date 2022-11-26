@@ -60,7 +60,7 @@ extern "C" {
 ///   Gholami, Yousuke Itoh, Maria Alessandra Papa
 ///
 
-// @{
+/// @{
 
 /// default maximum allowed F-stat mismatch from SFTs being too long,
 /// to be used in XLALFstatCheckSFTLengthMismatch()
@@ -376,7 +376,7 @@ REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REA
 
 REAL4 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms, const INT4 X );
 
-// @}
+/// @}
 
 #ifdef  __cplusplus
 }

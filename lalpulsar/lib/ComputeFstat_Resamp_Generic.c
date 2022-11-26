@@ -43,7 +43,7 @@
 /// computing the \f$\mathcal{F}\f$-statistic \cite JKS98 .
 ///
 
-// @{
+/// @{
 
 // ========== Resamp internals ==========
 
@@ -1096,4 +1096,4 @@ XLALGetFstatTiming_ResampGeneric ( const void *method_data, FstatTimingGeneric *
   return XLAL_SUCCESS;
 } // XLALGetFstatTiming_ResampGeneric()
 
-// @}
+/// @}
