@@ -96,8 +96,8 @@ void XLALDestroySphHarmPolarTimeSeries(SphHarmPolarTimeSeries* ts);
 UINT4 XLALSphHarmPolarTimeSeriesGetMaxL(SphHarmPolarTimeSeries* ts);
 
 #ifdef SWIG
-SWIGLAL(OWNED_BY_1ST_ARG(REAL8TimeSeries*, XLALSphHarmPolarTimeSeriesGetModeAmplitude));
-SWIGLAL(OWNED_BY_1ST_ARG(REAL8TimeSeries*, XLALSphHarmPolarTimeSeriesGetModePhase));
+SWIGLAL(RETURN_OWNED_BY_1ST_ARG(REAL8TimeSeries*, XLALSphHarmPolarTimeSeriesGetModeAmplitude));
+SWIGLAL(RETURN_OWNED_BY_1ST_ARG(REAL8TimeSeries*, XLALSphHarmPolarTimeSeriesGetModePhase));
 #endif
 
 REAL8TimeSeries* XLALSphHarmPolarTimeSeriesGetModeAmplitude(SphHarmPolarTimeSeries *ts, UINT4 l, INT4 m);
