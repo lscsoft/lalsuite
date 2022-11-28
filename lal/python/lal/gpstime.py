@@ -39,6 +39,9 @@ package
 #@{
 
 import datetime as _datetime
+from decimal import Decimal
+from numbers import Number
+
 from dateutil.parser import parse as str_to_utc
 
 from .lal import (
@@ -105,6 +108,8 @@ def gps_to_utc(gps):
 
     @returns a Python `datetime.datetime` object in UTC
     """
+    if isinstance(gps, (Decimal, Number)):
+        gps = str(gps)
     gps = LIGOTimeGPS(gps)
     dt = _datetime.datetime(
         *_gps_to_utc(gps.gpsSeconds)[:7]
