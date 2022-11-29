@@ -820,7 +820,7 @@ DEFINE_CONV_FACTOR_FUNCTION( KpcToMetres, LAL_PC_SI*1.e3, CONVFLOAT ) /* convert
 DEFINE_CONV_FACTOR_FUNCTION( BinaryUnits, 1.e-12, CONVBINUNITS ) /* convert certain binary units as defined in TEMPO2 with factor */
 DEFINE_CONV_FACTOR_FUNCTION( MJDToGPS, 0, CONVMJD ) /* convert from MJD to GPS time */
 DEFINE_CONV_FACTOR_FUNCTION( DegPerYrToRadPerSec, LAL_PI_180/(365.25*DAYSTOSECS), CONVFLOAT ) /* convert degs/year to rads/s */
-DEFINE_CONV_FACTOR_FUNCTION( SolarMassToKg, LAL_TEMPO2_MSUN_SI, CONVFLOAT ) /* convert solar masses to kg */
+DEFINE_CONV_FACTOR_FUNCTION( SolarMassToKg, LALPULSAR_TEMPO2_MSUN_SI, CONVFLOAT ) /* convert solar masses to kg */
 DEFINE_CONV_FACTOR_FUNCTION( RAToRads, 0, CONVHMS ) /* convert right ascension to radians */
 DEFINE_CONV_FACTOR_FUNCTION( DecToRads, 0, CONVDMS ) /* convert declination to radians */
 DEFINE_CONV_FACTOR_FUNCTION( MicrosecToSec, 1.e-6, CONVFLOAT ) /* convert microseconds to seconds */
@@ -2241,20 +2241,20 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
       }
     }
     else if( !strcmp(val[i], "mtot") || !strcmp(val[i], "MTOT")){
-      output->M = atof(val[i+1]) * LAL_TEMPO2_MSUN_SI;
+      output->M = atof(val[i+1]) * LALPULSAR_TEMPO2_MSUN_SI;
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->MErr = atof(val[i+3]) * LAL_TEMPO2_MSUN_SI;
+        output->MErr = atof(val[i+3]) * LALPULSAR_TEMPO2_MSUN_SI;
         j+=2;
       }
     }
     else if( !strcmp(val[i], "m2") || !strcmp(val[i], "M2")){
-      output->m2 = atof(val[i+1]) * LAL_TEMPO2_MSUN_SI;
+      output->m2 = atof(val[i+1]) * LALPULSAR_TEMPO2_MSUN_SI;
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->m2Err = atof(val[i+3]) * LAL_TEMPO2_MSUN_SI;
+        output->m2Err = atof(val[i+3]) * LALPULSAR_TEMPO2_MSUN_SI;
         j+=2;
       }
     }
