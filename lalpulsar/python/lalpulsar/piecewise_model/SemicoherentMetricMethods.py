@@ -276,7 +276,7 @@ def diagmetric(s):
 # but only the length of the segment, Tdata. While it may appear that some of the float denominators are not
 # exact (e.g. 1.89189e7), this is not the case and they are the exact value as calculated by Mathematica
 def PreCompSingleSegMetric(Tdata, s):
-    p1 = Tdata
+    p1 = float(Tdata)
     Pi = np.pi
 
     if s == 3:
