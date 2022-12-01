@@ -266,6 +266,7 @@ outputs:
         - astropy
         - cfitsio
         - gsl
+        - gwdatafind
         - jplephem
         - lalinference >={{ lalinference_version }}
         - liblal >={{ lal_version }}

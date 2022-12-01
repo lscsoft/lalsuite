@@ -97,7 +97,10 @@ bin/Hough/lalpulsar_ValidateChi2Test
 bin/Hough/lalpulsar_ValidateHoughMulti
 bin/HoughFstat/lalpulsar_HierarchicalSearch
 bin/HWInjection/lalpulsar_hwinject
+bin/MakeData/SFTWindows*.png
 bin/MakeData/compareTS
+bin/MakeData/genSFTWindows
+bin/MakeData/lalpulsar_CopyPublicSFTs
 bin/MakeData/lalpulsar_MakeSFTDAG
 bin/MakeData/lalpulsar_MakeSFTs
 bin/MakeData/lalpulsar_Makefakedata_v4
