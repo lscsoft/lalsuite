@@ -287,7 +287,9 @@ default:
           echo "Requires:" &&
           rpm -qp --requires "${rpmf}";
       done
-    # lint RPMs
+    # install the packages we built
+    - yum -y -q install ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
+    # lint packages (both installed packages and RPM files)
     - |
       cat << EOF > rpmlintrc
       # don't validate Source0
@@ -300,6 +302,7 @@ default:
       EOF
     - rpmlint
           -f rpmlintrc
+          "*${PACKAGE}*"
           ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
   artifacts:
     expire_in: 18h
