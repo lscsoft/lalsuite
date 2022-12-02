@@ -29,7 +29,6 @@
 #include <lal/Date.h>
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
-#include <lal/SFTutils.h>
 #include <lal/LALPulsarVCSInfo.h>
 
 /* User variables */
@@ -39,6 +38,7 @@ typedef struct
   CHAR *sftBname2;
   INT4 debug;
   BOOLEAN verbose;
+  BOOLEAN quiet;
   REAL8 relErrorMax;
 } UserInput_t;
 
@@ -171,6 +171,9 @@ main(int argc, char *argv[])
     return 0;
   }
   else {
+    if ( !uvar.quiet ) {
+      XLALPrintError("Tolerance exceeded! maxd=%10.3e, relErrMax=%10.3e\n", maxd, uvar.relErrorMax);
+    }
     return 1;
   }
 
@@ -187,13 +190,17 @@ initUserVars ( UserInput_t *uvar )
   /* set some defaults */
   uvar->debug = lalDebugLevel;
   uvar->verbose = 0;
+  uvar->quiet = 0;
   uvar->relErrorMax = 1e-4;
 
   /* now register all our user-variable */
 
-  XLAL_CHECK ( XLALRegisterUvarMember( sftBname1,       STRING,  '1', REQUIRED, "Path and basefilename for SFTs1") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALRegisterUvarMember( sftBname2,       STRING,  '2', REQUIRED, "Path and basefilename for SFTs2") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( sftBname1,       STRING,  '1', REQUIRED, "Path and basefilename for SFTs1. Possibilities are:\n"
+                                       " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( sftBname2,       STRING,  '2', REQUIRED, "Path and basefilename for SFTs2. Possibilities are:\n"
+                                       " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( verbose,         BOOLEAN, 'V', OPTIONAL, "Verbose output of differences") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK ( XLALRegisterUvarMember( quiet,           BOOLEAN, 'q', OPTIONAL, "No output of differences even on failure") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK ( XLALRegisterUvarMember( relErrorMax,     REAL8,   'e', OPTIONAL, "Maximal relative error acceptable to 'pass' comparison") == XLAL_SUCCESS, XLAL_EFUNC );
 
   return XLAL_SUCCESS;

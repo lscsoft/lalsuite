@@ -47,6 +47,7 @@ extern "C" {
 #include <lal/DetectorSite.h>
 #include <lal/LALBarycenter.h>
 #include <lal/DetectorStates.h>
+#include <lal/PSDutils.h>
 
 /* ---------- exported data types -------------------- */
 

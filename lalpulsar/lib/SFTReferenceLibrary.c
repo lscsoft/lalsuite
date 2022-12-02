@@ -1,4 +1,5 @@
 /*
+ *  Copyright (C) 2022 Karl Wette
  *  Copyright (C) 2004, 2005 Bruce Allen, Reinhard Prix
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -23,13 +24,18 @@
  * \brief This is a reference library for the SFT data format \cite SFT-spec
  */
 
+#include "config.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include "SFTReferenceLibrary.h"
-#include "config.h"
 #include <errno.h>
 #include <math.h>
+
+#include <lal/XLALError.h>
+
+#include "SFTReferenceLibrary.h"
+#include "SFTinternal.h"
 
 /*
   The quantity below is: D800000000000000 (base-16) =
@@ -41,15 +47,12 @@
 #define BLOCKSIZE 65536
 
 /* some local prototypes */
-static unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
+unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
 static void swap2(char *location);
 static void swap4(char *location);
 static void swap8(char *location);
 static int validate_sizes(void);
-
-const char* ReferenceSFTLibraryVersion(void) {
-  return PACKAGE_VERSION;
-}
+static int validate_version(double version);
 
 /* The crc64 checksum of M bytes of data at address data is returned
    by crc64(data, M, ~(0ULL)). Call the function multiple times to
@@ -63,7 +66,7 @@ unsigned long long crc64(const unsigned char* data,
   unsigned int i;
 
   /* is there is no data, simply return previous checksum value */
-  if (!length)
+  if (!length || !data )
     return crc;
   
   /* initialize the CRC table for fast computation.  We could keep
@@ -135,6 +138,16 @@ static int validate_sizes(void) {
 }
 
 
+static int validate_version(double version) {
+  for (int v = MIN_SFT_VERSION; v <= MAX_SFT_VERSION; ++v) {
+    if (version == v) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+
 /* translate return values from SFT routines into human-readable
    character string error messages */
 const char *SFTErrorMessage(int errorcode) {
@@ -149,7 +162,7 @@ const char *SFTErrorMessage(int errorcode) {
   case SFTEREAD:
     return "SFT fread() failed in stream";
   case SFTEUNKNOWN:
-    return "SFT version in header is unknown (not 2)";
+    return "SFT version in header is unknown";
   case SFTEGPSNSEC:
     return "SFT header GPS nsec not in range 0 to 10^9-1";
   case SFTEBADCOMMENT:
@@ -182,6 +195,8 @@ const char *SFTErrorMessage(int errorcode) {
     return "SFT first frequency index changes between SFT blocks";
   case SFTENSAMPLESCHANGES:
     return "SFT number of data samples changes between SFT blocks";
+  case SFTEWINDOWSPECCHANGES:
+    return "SFT window specification changes between SFT blocks";
   case SFTEINSTRUMENTCHANGES:
     return "SFT instrument changes between SFT blocks";
   case SFTEVERSIONCHANGES:
@@ -214,6 +229,7 @@ int WriteSFT(FILE *fp,            /* stream to write to */
 	     int firstfreqindex,  /* index of first frequency bin included in data (0=DC)*/
 	     int nsamples,        /* number of frequency bins to include in SFT */
 	     const char *detector,/* channel-prefix defining detector */
+             unsigned short windowspec, /* SFT windowspec */
 	     const char *comment, /* null-terminated comment string to include in SFT */
 	     float *data          /* points to nsamples x 2 x floats (Real/Imag)  */
 	     ) {
@@ -268,7 +284,7 @@ int WriteSFT(FILE *fp,            /* stream to write to */
   }
   
   /* fill out header */
-  header.version        = 2;
+  header.version        = MAX_SFT_VERSION;
   header.gps_sec        = gps_sec;
   header.gps_nsec       = gps_nsec;
   header.tbase          = tbase;
@@ -277,8 +293,7 @@ int WriteSFT(FILE *fp,            /* stream to write to */
   header.crc64          = 0;
   header.detector[0]    = detector[0];
   header.detector[1]    = detector[1];
-  header.padding[0]     = 0;
-  header.padding[1]     = 0;
+  header.windowspec     = windowspec;
   header.comment_length = comment_length+inc;
   
   /* compute CRC of header */
@@ -356,7 +371,7 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
   header_unswapped=header;
 
   /* check endian ordering, and swap if needed */
-  if (header.version != 2) {
+  if (!validate_version(header.version)) {
     swap8((char *)&header.version);
     swap4((char *)&header.gps_sec);
     swap4((char *)&header.gps_nsec);
@@ -364,12 +379,13 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
     swap4((char *)&header.firstfreqindex);
     swap4((char *)&header.nsamples);
     swap8((char *)&header.crc64);
+    swap2((char *)&header.windowspec);
     swap4((char *)&header.comment_length);
     swap = 1;
   }
   
   /* check if header version is recognized */
-  if (header.version != 2) {
+  if (!validate_version(header.version)) {
     retval=SFTEUNKNOWN;
     goto error;
   }
@@ -433,10 +449,8 @@ int ReadSFTHeader(FILE *fp,                  /* stream to read */
      
     /* check that checksum is consistent */
     if (crc != crc64save) {
-#ifdef SFTDEVEL
-      fprintf(stderr, "%s: CRC64 computes as %llu\n", __func__, crc);
-      fprintf(stderr, "%s: CRC64 in SFT is   %llu\n", __func__, crc64save);
-#endif
+      XLALPrintInfo("%s: CRC64 computes as %llu\n", __func__, crc);
+      XLALPrintInfo("%s: CRC64 in SFT is   %llu\n", __func__, crc64save);
       retval=SFTEBADCRC64;
       goto error;
     }
@@ -656,6 +670,10 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
   if ( (headerone->detector[0] != headertwo->detector[0]) || (headerone->detector[1] != headertwo->detector[1]) )
     return SFTEINSTRUMENTCHANGES;
 
+  /* Window specification the same */
+  if (headerone->windowspec != headertwo->windowspec)
+    return SFTEWINDOWSPECCHANGES;
+
   return SFTNOERROR;
 }
 
@@ -721,9 +739,9 @@ ValidateSFTFile ( const char *fname )
 
   /* open the file */
   if (!(fp=fopen(fname, "r"))) {
-    fprintf(stderr, "%s: Unable to open %s", __func__, fname);
+    XLALPrintError("%s: Unable to open %s", __func__, fname);
     if (errno)
-      perror(__func__);
+      XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
     return SFTENULLFP;
   }
 
@@ -743,17 +761,17 @@ ValidateSFTFile ( const char *fname )
 
     /* SFT was invalid: say why */
     if (err) {
-      fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
+      XLALPrintError("%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(__func__);
+        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
       break;
     }
 
     /* check that various bits of header information are consistent */
     if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info))) {
-      fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
+      XLALPrintError("%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(__func__);
+        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
       break;
     }
 
@@ -761,23 +779,23 @@ ValidateSFTFile ( const char *fname )
     data = (float *)realloc((void *)data, info.nsamples*4*2);
     if (!data) {
       errno=SFTENULLPOINTER;
-      fprintf(stderr, "%s: ran out of memory at %s (%s)\n", __func__, fname, SFTErrorMessage(err));
+      XLALPrintError("%s: ran out of memory at %s (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(__func__);
+        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
       break;
     }
 
     err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
     if (err) {
-      fprintf(stderr, "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
+      XLALPrintError("%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
       if (errno)
-        perror(__func__);
+        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
       break;
     }
 
     for (j=0; j<info.nsamples; j++) {
       if (!isfinite(data[2*j]) || !isfinite(data[2*j+1])) {
-        fprintf(stderr, "%s: %s is not a valid SFT (data infinite at freq bin %d)\n", __func__, fname, j+info.firstfreqindex);
+        XLALPrintError("%s: %s is not a valid SFT (data infinite at freq bin %d)\n", __func__, fname, j+info.firstfreqindex);
         err=SFTNOTFINITE;
         break;
       }

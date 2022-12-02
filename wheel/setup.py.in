@@ -66,15 +66,17 @@ class build_ext(_build_ext):
         self.copy_file(src, dst)
 
 
-stub = """
+stub = """\
 #!python
 import os
 import sys
-from importlib import resources
-with resources.path('lalapps', '__init__.py') as new_path:
-    new_path = str(new_path.parent / 'bin' / '{}')
-os.execv(new_path, sys.argv)
-""".strip()
+try:
+    from importlib.resources import files, as_file
+except ImportError:  # FIXME: Python < 3.9
+    from importlib_resources import files, as_file
+with as_file(files('lalapps') / 'bin' / '{}') as path:
+    os.execv(path, sys.argv)
+"""
 
 
 class build_scripts(_build_scripts):
@@ -136,6 +138,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Topic :: Scientific/Engineering',
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Scientific/Engineering :: Physics',
@@ -171,12 +174,13 @@ setup(
         ) for path in PYTHONDIR.glob('**/*.so')
     ],
     # requirements
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     setup_requires=[
         'setuptools',
     ],
     install_requires=[
         'astropy',
+        "importlib_resources>=1.3.0; python_version<'3.9'",
         'ligo-segments',
         'lscsoft-glue',
         'matplotlib',

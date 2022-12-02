@@ -59,63 +59,62 @@ static REAL4 safe_sinc ( REAL4 x );
 
 
 /**
- * Set up the \em LALDetector struct representing LISA X, Y, Z TDI observables.
- * INPUT: channelNum = '1', '2', '3', '4', '5', '6', '7', '8', '9': detector-tensor corresponding to TDIs X, Y, Z, Y-Z, Z-X, X-Y, A, E, T respectively.
- * return -1 on ERROR, 0 if OK
+ * Return true if 'det' is a LISA \em LALDetector struct
+ */
+BOOLEAN
+XLALisLISAdetector ( const LALDetector *det )
+{
+  return ( det != NULL ) && ( strncmp( det->frDetector.name, "LISA TDI ", 9 ) == 0 );
+}
+
+/**
+ * Set up the \em LALDetector structs representing LISA X, Y, Z TDI observables.
+ * Detectors will be registered with prefixes beginning with 'prefixLetter'.
  */
 int
-XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
-		CHAR channelNum		/**< [in] which TDI observable: '1' = X, '2'= Y, '3' = Z, '4' = Y-Z, '5' = Z-X, '6' = X-Y, '7' = A, '8' = E, '9' = T */
-		)
+XLALregisterLISAdetectors ( const CHAR prefixLetter )
 {
-  LALDetector XLAL_INIT_DECL(Detector1);
 
-  if ( !Detector )
-    return -1;
+  for ( CHAR channelNum = '1'; channelNum <= '9'; ++channelNum )
+  {
+  LALDetector XLAL_INIT_DECL(Detector1);
 
   switch ( channelNum )
     {
     case '1':
-      strcpy ( Detector1.frDetector.name, "Z1: LISA TDI X" );
-      strcpy ( Detector1.frDetector.prefix, "Z1");
+      strcpy ( Detector1.frDetector.name, "LISA TDI X" );
       break;
     case '2':
-      strcpy ( Detector1.frDetector.name, "Z2: LISA TDI Y" );
-      strcpy ( Detector1.frDetector.prefix, "Z2");
+      strcpy ( Detector1.frDetector.name, "LISA TDI Y" );
       break;
     case '3':
-      strcpy ( Detector1.frDetector.name, "Z3: LISA TDI Z" );
-      strcpy ( Detector1.frDetector.prefix, "Z3");
+      strcpy ( Detector1.frDetector.name, "LISA TDI Z" );
       break;
     case '4':
-      strcpy ( Detector1.frDetector.name, "Z4: LISA TDI Y-Z" );
-      strcpy ( Detector1.frDetector.prefix, "Z4");
+      strcpy ( Detector1.frDetector.name, "LISA TDI Y-Z" );
       break;
     case '5':
-      strcpy ( Detector1.frDetector.name, "Z5: LISA TDI Z-X" );
-      strcpy ( Detector1.frDetector.prefix, "Z5");
+      strcpy ( Detector1.frDetector.name, "LISA TDI Z-X" );
       break;
     case '6':
-      strcpy ( Detector1.frDetector.name, "Z6: LISA TDI X-Y" );
-      strcpy ( Detector1.frDetector.prefix, "Z6");
+      strcpy ( Detector1.frDetector.name, "LISA TDI X-Y" );
       break;
     case '7':
-      strcpy ( Detector1.frDetector.name, "Z7: LISA TDI A" );
-      strcpy ( Detector1.frDetector.prefix, "Z7");
+      strcpy ( Detector1.frDetector.name, "LISA TDI A" );
       break;
     case '8':
-      strcpy ( Detector1.frDetector.name, "Z8: LISA TDI E" );
-      strcpy ( Detector1.frDetector.prefix, "Z8");
+      strcpy ( Detector1.frDetector.name, "LISA TDI E" );
       break;
     case '9':
-      strcpy ( Detector1.frDetector.name, "Z9: LISA TDI T" );
-      strcpy ( Detector1.frDetector.prefix, "Z9");
+      strcpy ( Detector1.frDetector.name, "LISA TDI T" );
       break;
     default:
-      XLALPrintError ("\nIllegal LISA TDI index '%c': must be one of {'1', '2', '3', '4', '5', '6', '7', '8', '9'}.\n\n", channelNum );
-      return -1;
+      XLAL_ERROR( XLAL_EINVAL, "Illegal LISA TDI index '%c': must be one of {'1', '2', '3', '4', '5', '6', '7', '8', '9'}.\n\n", channelNum );
       break;
-    } /* switch (detIndex) */
+    } /* switch (channelNum) */
+
+  Detector1.frDetector.prefix[0] = prefixLetter;
+  Detector1.frDetector.prefix[1] = channelNum;
 
   /* fill frDetector with dummy numbers: meaningless for LISA */
   Detector1.frDetector.vertexLongitudeRadians = 0;
@@ -135,11 +134,13 @@ XLALcreateLISA (LALDetector *Detector,	/**< [out] LALDetector */
   Detector1.location[1] = 1;
   Detector1.location[2] = 1;
 
-  (*Detector) = Detector1;
+  XLAL_CHECK( XLALRegisterSpecialCWDetector( &Detector1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+  }
 
   return XLAL_SUCCESS;
 
-} /* XLALcreateLISA() */
+} /* XLALregisterLISAdetectors() */
 
 
 /**

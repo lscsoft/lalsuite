@@ -12,7 +12,6 @@ Build-Depends:
  libfftw3-dev,
  libgsl0-dev (>= 1.9) | libgsl-dev,
  libhdf5-dev,
- liboctave-dev,
  pkg-config (>= 0.18.0),
  python3-all-dev,
  python3-dateutil,
@@ -103,18 +102,6 @@ Depends:
 Description: Python 3 bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python 3 bindings for the LAL library.
-
-Package: lal-octave
-Architecture: any
-Depends:
- ${misc:Depends},
- ${shlibs:Depends},
- liblal@LIBMAJOR@ (= ${binary:Version}),
- liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
- octave,
-Description: Octave bindings for LAL
- The LSC Algorithm Library for gravitational wave analysis.
- This package contains Octave bindings for the LAL library.
 
 Package: lal
 Architecture: any

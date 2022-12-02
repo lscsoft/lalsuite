@@ -1655,12 +1655,13 @@ int XLALGenerateStringKinkKink(
  *    = \frac{e^2}{c^2}\left(1-\frac{1}{\beta^2n^2(\omega)}\right)\omega,n\beta>1
  * \f}
  *
- * Due to the fact that gravitational radiation occurs under the condition \f$n\beta>1\f$ and
- * the reflactive index \f$n\f$ is not constant but depends on frequency, there must be the high
- * frequency cut off. The high frequency cut off is decided by the natural frequecny of the medium
- * in the field of electrodynamics because \f$n(\omega)\f$ value is calculated by the real part of
- * complex dielectric function. In this function, the velocity ratio against speed of light and
- * this natural frequency is set to be free parameters to choose.
+ * \f$n\beta\f$ represents the ratio of velocity of the source and wave speed of the medium.
+ * On the purpose to mimic the situation into gravitational Cherenkov radiation, we choose \f$n\beta\f$
+ * as a speed of velocity in light speed units. The refractive index of the medium is actually a
+ * function of frequency, however, it should be considered as a fixed value for the situation where
+ * the source moving in vacuum. In the end, free parameter we can choose is length of the source
+ * which limits the cut off frequency although the nyquist frequency is sufficiently lower than the
+ * calculated cut off frequency assuming the length of the source to be about 100 meters order.
  *
  * @param[out] hplus Address of a REAL8TimeSeries pointer to be set to the address of the newly allocated
  *\f$h_{+}\f$ time series. Set to NULL on failure.
@@ -1668,24 +1669,22 @@ int XLALGenerateStringKinkKink(
  * @param[out] hcross Adress of a REAL8TimeSeries pointer to be set to the address of the newly allocated
  * \f$h_{\times}\f$ time series. Set to NULL on failure.
  *
- * @param[in] f_natural natural frequecny \f$f_{0}\f$, in Hertz.
+ * @param[in] source_length The length of the source in meters.
  *
- * @param[in] beta The ration of velocity of a point mass versus speed of light in vacuum.
- *
- * @param[in] Eover_Rsquared The waveform which is created with arbitrary amplitude is normalized
- * such that the energy over r squared value is what is intended by this parameter.in Joules per square metre.
+ * @param[in] dE_over_dA The waveform which is created with this arbitrary amplitude.in Joules per square metre.
  *
  * @param[in] deltaT Sample period of output time series in seconds.
  *
  * @retval 0 Success
  * @retval <0 Failure
  */
+
+
 int XLALSimBurstCherenkovRadiation(
 	REAL8TimeSeries **hplus,
 	REAL8TimeSeries **hcross,
-	double f_natural, /* natural frequency */
-	double beta, /* ratio of velocity of a point mass versus speed of light */
-	double Eover_Rsquared,
+	double source_length,
+	double dE_over_dA,
 	double deltaT
 	)
 {
@@ -1693,119 +1692,75 @@ int XLALSimBurstCherenkovRadiation(
 	REAL8FFTPlan *plan;
 	REAL8Window *window;
 	COMPLEX16FrequencySeries *tilde_h;
-	COMPLEX16FrequencySeries *spectrum;
 	int length;
 	unsigned int i;
-	double f_low = 20; /* low cut frequency, arbitrary choosen for the reason explained later, in Heltz */
-	double maximum = 0; /* maximum value of ipsilon which is used for checking the input parameter is okay */
-	double minimum = 1.; /* minimum value of ipsilon which is used for checking the input parameter is okay */
-	double f_high = f_natural; /* to memory the high frequency cut off */
+	const double f_low = 10; /* low cut frequency in Heltz */
+	double f_high;
 	double norm_factor;
 
-	/* length of the injection is nearest interger of 8/f_low. This length is choosen because
-	 * even if you set f_high as almost same as f_low, amplitude decayed to small enough value at
-	 * this length.*/
-	length = (int) floor(8.0/f_low/deltaT/2.0);
-	length = length*2 + 1;
+	/* length of the injection is nearest interger of 8/f_low. This
+	 * length is choosen because even if you set f_high as almost same
+	 * as f_low, amplitude decayed to small enough value at this
+	 * length.*/
+	length = (int) floor(8.0 / f_low / deltaT / 2.0);
+	length = length * 2 + 1;
 
 	/* middle of the sample is t=0 */
-	if(!XLALGPSSetREAL8(&epoch, -(length -1)/2 * deltaT))
+	if(!XLALGPSSetREAL8(&epoch, -(length - 1) / 2 * deltaT))
 		XLAL_ERROR(XLAL_EFUNC);
 
+	/* compute the high frequency cut off */
+	f_high = LAL_C_SI / source_length;
+
 	/* check the input */
-	if(f_natural < f_low || deltaT < 0 || f_natural > (1.0/deltaT/2.0)){
+	if(f_high < f_low || source_length <= 0. || deltaT <= 0. || dE_over_dA <= 0.){
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(XLAL_EDOM);
 	}
 
 	/* allocate memories. */
-	*hplus = XLALCreateREAL8TimeSeries("cherenkov +",&epoch,0.0,deltaT,&lalStrainUnit ,length);
-	*hcross = XLALCreateREAL8TimeSeries("cherenkov x",&epoch,0.0,deltaT,&lalStrainUnit ,length);
-	tilde_h = XLALCreateCOMPLEX16FrequencySeries("cherenkov +", &epoch, 0.0 , 1.0/ (length*deltaT) ,&lalDimensionlessUnit, length/2 + 1);
-	spectrum = XLALCreateCOMPLEX16FrequencySeries("cherenkov powerspectrum", &epoch, 0.0 , 1.0/ (length*deltaT) ,&lalDimensionlessUnit, length/2 + 1);
+	*hplus = XLALCreateREAL8TimeSeries("cherenkov +", &epoch, 0.0, deltaT, &lalStrainUnit, length);
+	*hcross = XLALCreateREAL8TimeSeries("cherenkov x", &epoch, 0.0, deltaT, &lalStrainUnit, length);
+	tilde_h = XLALCreateCOMPLEX16FrequencySeries("cherenkov +", &epoch, 0.0, 1.0 / (length * deltaT), &lalDimensionlessUnit, length / 2 + 1);
 	XLALUnitMultiply(&tilde_h->sampleUnits, &(*hplus)->sampleUnits, &lalSecondUnit);
 
 	/* set hcross to be 0 because it is linearly polarized. */
 
-	memset((*hcross)->data->data,0,(*hcross)->data->length * sizeof(*(*hcross)->data->data));
+	memset((*hcross)->data->data, 0, (*hcross)->data->length * sizeof(*(*hcross)->data->data));
 
-	/* check the input beta here because \f$\beta^2\ipsilon>1\f$ must happen in somewhere.
-	 * Also, elimnate the situation where \f$\beta^2\ipsilon>1\f$ is fullfilled in all frequency region because
-	 * it makes the spectrum looks far from the shape of cherenkov spectrum.
-	 * Note that this situation will only happen if \f$\beta>1\f$ which is the case of Lorentz violation.*/
-	for(i=0; i < spectrum->data->length; i++){
-		double f = spectrum->f0 + spectrum->deltaF * i;
-		double f_0 = f_natural;
-		double g = 80;
-		double ipsilon = 1 + 20000 / (f_0*f_0 - f*f - I * g * f);
-		if(creal(ipsilon) > maximum){
-			maximum = creal(ipsilon);
-		}
-		if(creal(ipsilon) < minimum){
-			minimum = creal(ipsilon);
-		}
-	}
-
-	for(i=0; i < spectrum->data->length; i++){
-		double f = spectrum->f0 + spectrum->deltaF * i;
-		double f_0 = f_natural;
-		double g = 80;
-		double ipsilon = 1 + 20000 / (f_0*f_0 - f*f - I * g * f);
-		if(f_natural < f && beta*beta*creal(ipsilon)<1){
-			f_high = f;
-			break;
-		}
-	}
-	if(beta*beta*maximum < 1 || beta*beta*minimum > 1){
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EDOM);
-	}
-
-	/* construct the wave form starting from creating cherenkov like energy spectrum */
-	for(i=0;i < spectrum->data->length; i++){
-		double f = spectrum->f0 + spectrum->deltaF * i;
-		double f_0 = f_natural;
-		/* the actual Cherenkov radiation driven by the change of dielectric coefficient
-		 * along frequency changes. The constants is decided arbitrary so that the spectrum
-		 * works fine in the frequecy domain where we want to look at.
-		 * In order not to cause diverge around \f$f=0\f$ in calculating \f$\tilde{h}\f$,
-		 * low cut frequency is placed. */
-		double g = 80;
-		double ipsilon = 1 + 20000 / (f_0*f_0 - f*f - I*g*f);
-		if(beta*beta*creal(ipsilon)>1 && f<f_high && f>f_low){
-			spectrum->data->data[i] = f * (1 - 1 / (beta*beta*creal(ipsilon)));
-		}
-		else{
-			spectrum->data->data[i] = 0.;
-		}
-	}
-
-	/* calculate the wave form in frequency domain from the given spectrum.
-	 * Assuming, the energy spectrum gravitaional waves in frequency domain is proportional to
-	 * /f$f^2|\tilde_h(f)|^2/f$ */
-	for(i=0; i<tilde_h->data->length; i++){
+	/* calculate the wave form in frequency domain from the given
+	 * spectrum.  Assuming, the energy spectrum gravitaional waves in
+	 * frequency domain is proportional to /f$f^2|\tilde_h(f)|^2/f$ */
+	norm_factor = sqrt(dE_over_dA * 4. * LAL_G_SI / (LAL_PI * LAL_C_SI * LAL_C_SI * LAL_C_SI * f_high * f_high));
+	/* correction of the removal of half of the waveform by causality window. */
+	norm_factor *= sqrt(2.);
+	for(i = 0; i < tilde_h->data->length; i++) {
 		double f = tilde_h->f0 + tilde_h->deltaF * i;
-		tilde_h->data->data[i] = sqrt(spectrum->data->data[i]) * (f==0 ? 0: 1/f);
-		tilde_h->data->data[i] *= cexp(I * LAL_PI * i * (length -1) / length);
+		if(f_low <= f && f <= f_high)
+			tilde_h->data->data[i] = norm_factor * cexp(I * LAL_PI * i * (length - 1) / length) / sqrt(f);
+		else
+			tilde_h->data->data[i] = 0.;
 	}
 
 	tilde_h->data->data[0] = tilde_h->data->data[tilde_h->data->length - 1] = 0;
 
 	/* perform ReverseFFT to create time domain series. */
 	plan = XLALCreateReverseREAL8FFTPlan((*hplus)->data->length, 0);
-	i = XLALREAL8FreqTimeFFT(*hplus,tilde_h,plan);
-	if(i){
+	if(XLALREAL8FreqTimeFFT(*hplus,tilde_h,plan)) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
+		XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+		XLALDestroyREAL8FFTPlan(plan);
 		*hplus = *hcross = NULL;
 		XLAL_ERROR(XLAL_EFUNC);
 	}
 	XLALDestroyREAL8FFTPlan(plan);
+	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
+	/* restore this to fix round-off issues */
+	(*hplus)->deltaT = deltaT;
 
 	/* apply Tukey window. */
-	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 1);
+	window = XLALCreateTukeyREAL8Window((*hplus)->data->length, 0.5);
 	if(!window) {
 		XLALDestroyREAL8TimeSeries(*hplus);
 		XLALDestroyREAL8TimeSeries(*hcross);
@@ -1813,63 +1768,62 @@ int XLALSimBurstCherenkovRadiation(
 		XLAL_ERROR(XLAL_EFUNC);
 	}
 
-	/* apply gaussian window in \f$t<0\f$ to make the waveform looks time causal
-	 * FIXME: multiplying window in time domain causes convolution in frequecny domain
-	 * It will changes the feature of spectrum from the one we want to get */
-	for(i=0;i < (*hplus)->data->length; i++){
-		int j = i;
-		if(j > (length-1) /2){
-			(*hplus)->data->data[i] *= 1 * window->data->data[i];
-		}
-		else{
-			const double t = ((int)i - (length-1)/2)*deltaT;
-			double duration = 3 / f_high;
-			(*hplus)->data->data[i] *= exp(-0.5*t*t/(duration*duration)) * window->data->data[i];
-		}
+	/* apply gaussian window in \f$t<0\f$ to make the waveform looks
+	 * time causal FIXME: multiplying window in time domain causes
+	 * convolution in frequecny domain It will changes the feature of
+	 * spectrum from the one we want to get */
+	for(i = 0; i < (window->data->length - 1) / 2; i++) {
+		double duration = 3. / f_high;
+		double t = (i - (window->data->length - 1) / 2) * deltaT;
+		window->data->data[i] *= exp(-0.5 * t * t / (duration * duration));
 	}
+
+	/* multiply waveform by window */
+	for(i = 0; i < (*hplus)->data->length; i++)
+		(*hplus)->data->data[i] *= window->data->data[i];
 
 	XLALDestroyREAL8Window(window);
 
-	/* In order to normalize, get the wave form in frequency domain again. */
-
-	memset(tilde_h->data->data,0,tilde_h->data->length * sizeof(*tilde_h->data->data));
-
-	plan = XLALCreateForwardREAL8FFTPlan((*hplus)->data->length, 0);
-	i = XLALREAL8TimeFreqFFT(tilde_h,*hplus,plan);
-	if(i){
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	XLALDestroyREAL8FFTPlan(plan);
-
-	/* normalize with the given input parameter. */
-
-	norm_factor = XLALMeasureEoverRsquared(*hplus, *hcross) / Eover_Rsquared;
-	if(Eover_Rsquared == 0 || norm_factor == 0){
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	for(i=0; i < tilde_h->data->length; i++){
-		tilde_h->data->data[i] /= sqrt(norm_factor);
-	}
-
-	/* perform ReverseFFT to create time domain series as the result. */
-	plan = XLALCreateReverseREAL8FFTPlan((*hplus)->data->length, 0);
-	i = XLALREAL8FreqTimeFFT(*hplus,tilde_h,plan);
-	if(i){
-		XLALDestroyREAL8TimeSeries(*hplus);
-		XLALDestroyREAL8TimeSeries(*hcross);
-		*hplus = *hcross = NULL;
-		XLAL_ERROR(XLAL_EFUNC);
-	}
-	XLALDestroyREAL8FFTPlan(plan);
-	XLALDestroyCOMPLEX16FrequencySeries(tilde_h);
-	XLALDestroyCOMPLEX16FrequencySeries(spectrum);
-
 	/* done the program. */
 	return XLAL_SUCCESS;
+}
+
+
+/*
+ * ============================================================================
+ *
+ *                        Cherenkov energy calculation
+ *
+ * ============================================================================
+ */
+
+
+/**
+ * @brief energy calculating function for Cherenkov burst.
+ *
+ * @details
+ * Calculate the energy intensity for the Cherenkov burst considering that Cherenkov radiation would
+ * make cone shaped wavefront.
+ *
+ * @param[in] power power of the source in watts
+ *
+ * @param[in] beta the velocity of the source in units of light speed
+ *
+ * @param[in] r impact parameter. perpendicular distance between antenna and particle path in metres
+ *
+ * @retval 0 Success
+ * @retval <0 Failure
+ */
+
+
+double XLALSimBurstCherenkov_dE_dA(
+	double power,
+	double beta,
+	double r
+	)
+{
+	/* dE / dx = P dt / (c * beta * dt)
+	 * dA / dx = 2 * pi * r * c * beta * sin(theta) * dt / (c * beta * dt)
+	 * the Cherenkov angle is decided by beta. cos(theta) = 1 / beta. */
+	return power / (LAL_TWOPI * r * LAL_C_SI * beta * sqrt(1. - 1. / beta / beta));
 }

@@ -125,7 +125,7 @@ cl_SFDB = " ".join(["lalpulsar_WriteSFTsfromSFDBs",
                    ])
 print("Executing: " + cl_SFDB)
 subprocess.check_call(cl_SFDB, shell=True)
-sfts_from_sfdb, _ = validate_and_load_SFTs ( IFOs[0][0]+"*_from_SFDBs-*.sft", fmin, fmax )
+sfts_from_sfdb, _ = validate_and_load_SFTs ( IFOs[0][0]+"*_fromSFDBs-*.sft", fmin, fmax )
 
 # TODO: also test and validate --outSFTnames, --outSingleSFT=False modes
 

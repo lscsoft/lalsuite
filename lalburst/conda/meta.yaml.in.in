@@ -22,7 +22,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.1.0a0" %}
 
 package:
   name: {{ name }}-split
@@ -54,7 +54,7 @@ requirements:
     - liblal >={{ lal_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
-    - metaio
+    - libmetaio
 
 outputs:
   - name: liblalburst
@@ -72,13 +72,13 @@ outputs:
         - liblal >={{ lal_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
-        - metaio
+        - libmetaio
       run:
         - gsl
         - liblal >={{ lal_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
-        - metaio
+        - libmetaio
       run_constrained:
         - lalburst >=1.5.7
         - python-lalburst >=1.5.7
@@ -132,6 +132,7 @@ outputs:
         - {{ pin_subpackage('liblalburst', exact=True) }}
         - lscsoft-glue
         - numpy
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
@@ -219,6 +220,7 @@ outputs:
         - lalburst_cluster --help
         - lalburst_coinc --help
         - lalburst_cut --help
+        - lalburst_gen_timeslides --help
         - lalburst_injfind --help
         - lalburst_inj_pic --help
         - lalburst_plot_tisi --help

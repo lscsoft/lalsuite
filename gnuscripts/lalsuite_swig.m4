@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 112
+# serial 115
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -434,8 +434,37 @@ int main() { std::string s = "a"; return 0; }
       AC_MSG_ERROR([configured C++ compiler "${CXX}" is incompatible with ${OCTAVE} C++ compiler "${octave_CXX}"])
     ])
 
+    # check how to define _GLIBCXX_USE_CXX11_ABI
+    # - https://gcc.gnu.org/onlinedocs/libstdc++/manual/using_dual_abi.html
+    cat > conftest.$ac_ext <<EOF
+#include <octave/oct.h>
+DEFUN_DLD( conftest, args, nargout, "usage" ) {
+  return octave_value_list();
+}
+EOF
+    m4_foreach([abival],[0,1],[
+      AC_MSG_CHECKING([whether Octave modules compiled with -D_GLIBCXX_USE_CXX11_ABI=]abival[ are loadable])
+      AS_IF([${mkoctfile} -D_GLIBCXX_USE_CXX11_ABI=]abival[ -o conftest conftest.$ac_ext >/dev/null 2>&1],[
+        AS_IF([${OCTAVE} --eval 'conftest' >/dev/null 2>&1],[
+          abi]abival[result=yes
+        ],[
+          abi]abival[result=no
+        ])
+      ],[
+        abi]abival[result=error
+      ])
+      AC_MSG_RESULT([${abi]abival[result}])
+    ])
+    AS_CASE(["${abi0result}|${abi1result}"],
+      ["yes|no"],[abiflag="-D_GLIBCXX_USE_CXX11_ABI=0"],
+      ["no|yes"],[abiflag="-D_GLIBCXX_USE_CXX11_ABI=1"],
+      ["yes|yes"],[abiflag=""],
+      [*],[AC_MSG_ERROR([could not determine how to define _GLIBCXX_USE_CXX11_ABI flag])]
+    )
+    AC_MSG_NOTICE([Octave modules will be compiled with ${abiflag:-no _GLIBCXX_USE_CXX11_ABI flag}])
+
     # determine Octave preprocessor flags
-    AC_SUBST([SWIG_OCTAVE_CPPFLAGS],[])
+    AC_SUBST([SWIG_OCTAVE_CPPFLAGS],["-ULAL_STRICT_DEFS_ENABLED ${abiflag}"])
     AC_SUBST([SWIG_OCTAVE_CPPFLAGS_IOCTAVE],[])
     for arg in CPPFLAGS INCFLAGS; do
       for flag in `${mkoctfile} -p ${arg} 2>/dev/null`; do
@@ -526,19 +555,19 @@ AC_DEFUN([LALSUITE_USE_SWIG_PYTHON],[
     ])
     AC_MSG_RESULT([${PYTHON_VERSION}])
 
-    # check for distutils
-    AC_MSG_CHECKING([for distutils])
-    cat <<EOD | ${PYTHON} - 2>/dev/null
-import distutils
+    # check for sysconfig
+    AC_MSG_CHECKING([for sysconfig])
+    ${PYTHON} - 2>/dev/null <<EOD
+import sysconfig
 EOD
     AS_IF([test $? -ne 0],[
-      AC_MSG_ERROR([could not import distutils])
+      AC_MSG_ERROR([could not import sysconfig])
     ])
     AC_MSG_RESULT([yes])
 
     # check for NumPy
     AC_MSG_CHECKING([for NumPy])
-    numpy_version=[`cat <<EOD | ${PYTHON} - 2>/dev/null
+    numpy_version=[`${PYTHON} - 2>/dev/null <<EOD
 import numpy
 print(numpy.__version__)
 EOD`]
@@ -555,14 +584,19 @@ EOD`]
     ])
 
     # determine Python preprocessor flags
-    AC_SUBST([SWIG_PYTHON_CPPFLAGS],[])
-    python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
-import sys
-import distutils.sysconfig as cfg
-import numpy.lib.utils as npyutil
-sys.stdout.write( '-I' + cfg.get_python_inc())
-sys.stdout.write(' -I' + cfg.get_python_inc(plat_specific=1))
-sys.stdout.write(' -I' + npyutil.get_include())
+    AC_SUBST([SWIG_PYTHON_CPPFLAGS],["-ULAL_STRICT_DEFS_ENABLED"])
+    python_out=[`${PYTHON} - 2>/dev/null <<EOD
+try:
+    import distutils.sysconfig
+except ImportError:  # python >= 3.11
+    import sysconfig
+    print('-I' + sysconfig.get_path('include'), end='')
+    print(' -I' + sysconfig.get_path('platinclude'), end='')
+else:
+    print( '-I' + distutils.sysconfig.get_python_inc(), end='')
+    print(' -I' + distutils.sysconfig.get_python_inc(plat_specific=1), end='')
+import numpy
+print(' -I' + numpy.get_include(), end='')
 EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python preprocessor flags])
@@ -573,12 +607,11 @@ EOD`]
 
     # determine Python compiler flags
     AC_SUBST([SWIG_PYTHON_CFLAGS],[])
-    python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
-import sys
-import distutils.sysconfig as cfg
-cflags = cfg.get_config_var('CFLAGS').split()
-cflags = [f for f in cflags if f != '-DNDEBUG']
-sys.stdout.write(" ".join(cflags))
+    python_out=[`${PYTHON} - 2>/dev/null <<EOD
+import sysconfig
+cflags = sysconfig.get_config_var('CFLAGS').split()
+cflags = [f for f in cflags]
+print(" ".join(cflags), end='')
 EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python compiler flags])
@@ -599,14 +632,23 @@ EOD`]
 
     # determine Python linker flags
     AC_SUBST([SWIG_PYTHON_LDFLAGS],[])
-    python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
-import sys, os
-import distutils.sysconfig as cfg
-sys.stdout.write(cfg.get_config_var('LDFLAGS'))
-sys.stdout.write(' -L' + cfg.get_python_lib())
-sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1))
-sys.stdout.write(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1))
-sys.stdout.write(' -L' + cfg.get_config_var('LIBDIR'))
+    python_out=[`${PYTHON} - 2>/dev/null <<EOD
+try:
+    from distutils import sysconfig
+except ImportError:  # python >= 3.11
+    import sysconfig
+    print(sysconfig.get_config_var('LDFLAGS'), end='')
+    print(' -L' + sysconfig.get_path('purelib'), end='')
+    print(' -L' + sysconfig.get_path('platlib'), end='')
+    print(' -L' + sysconfig.get_path('platstdlib'), end='')
+    print(' -L' + sysconfig.get_config_var('LIBDIR'), end='')
+else:
+    import distutils.sysconfig as cfg
+    print(cfg.get_config_var('LDFLAGS'), end='')
+    print(' -L' + cfg.get_python_lib(), end='')
+    print(' -L' + cfg.get_python_lib(plat_specific=1), end='')
+    print(' -L' + cfg.get_python_lib(plat_specific=1,standard_lib=1), end='')
+    print(' -L' + cfg.get_config_var('LIBDIR'), end='')
 EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python linker flags])

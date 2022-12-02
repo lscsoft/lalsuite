@@ -23,7 +23,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set lalburst_version = "@MIN_LALBURST_VERSION@a0" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.1.0a0" %}
 
 package:
   name: {{ name }}-split
@@ -56,7 +56,7 @@ requirements:
     - liblalburst >={{ lalburst_version }}
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalsimulation >={{ lalsimulation_version }}
-    - metaio
+    - libmetaio
 
 outputs:
   - name: liblalinspiral
@@ -78,7 +78,7 @@ outputs:
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
-        - metaio
+        - libmetaio
       run:
         - gsl
         - liblal >={{ lal_version }}
@@ -86,7 +86,7 @@ outputs:
         - liblalframe >={{ lalframe_version }}
         - liblalmetaio >={{ lalmetaio_version }}
         - liblalsimulation >={{ lalsimulation_version }}
-        - metaio
+        - libmetaio
       run_constrained:
         - lalinspiral >=2.0.1
         - python-lalinspiral >=2.0.1
@@ -141,6 +141,7 @@ outputs:
         - liblalburst >={{ lalburst_version }}
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - numpy
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         - python-lalburst >={{ lalburst_version }}

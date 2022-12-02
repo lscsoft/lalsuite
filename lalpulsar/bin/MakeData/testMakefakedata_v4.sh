@@ -5,11 +5,13 @@ extractCODE="lalpulsar_splitSFTs"
 testDIR1="./mfdv4_TEST1"
 testDIR2="./mfdv4_TEST2"
 testDIR3="./mfdv4_TEST3"
+testDIR3nb="./mfdv4_TEST3nb"
 
 # prepare test subdirectory
 mkdir $testDIR1
 mkdir $testDIR2
 mkdir $testDIR3
+mkdir $testDIR3nb
 
 tol="1e-4";	## tolerance on relative difference between SFTs in comparison
 # input parameters
@@ -98,7 +100,7 @@ echo "... and extracting the relevant frequency band ..."
 echo
 
 ## extract relevant frequency-band
-extractCL="-fs $fmin -fe $fmax -fb $Band -n ${testDIR3} -- $testDIR3/*.sft"
+extractCL="-fs $fmin -fe $fmax -fb $Band -n ${testDIR3nb} -- $testDIR3/*.sft"
 cmdline="$extractCODE $extractCL"
 echo $cmdline;
 if ! eval $cmdline; then
@@ -109,7 +111,7 @@ fi
 echo
 echo "comparison of resulting SFTs:"
 
-cmdline="$cmpCODE -V -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3}/*SFT_NB*.sft'"
+cmdline="$cmpCODE -V -e $tol -1 '${testDIR1}/*.sft' -2 '${testDIR3nb}/*.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."
@@ -119,7 +121,7 @@ else
 fi
 
 echo
-cmdline="$cmpCODE -V -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3}/*SFT_NB*.sft'"
+cmdline="$cmpCODE -V -e $tol -1 '${testDIR2}/*.sft' -2 '${testDIR3nb}/*.sft'"
 echo ${cmdline}
 if ! eval $cmdline; then
     echo "OUCH... SFTs differ by more than $tol. Something might be wrong..."

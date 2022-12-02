@@ -35,7 +35,7 @@
 #include <lal/ReadPulsarParFile.h>
 #include <lal/BinaryPulsarTiming.h>
 #include <lal/LALString.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LALBarycenter.h>
 #include <lal/LALInitBarycenter.h>
 #include <lal/LALConstants.h>

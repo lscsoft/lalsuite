@@ -43,6 +43,10 @@ check_PROGRAMS = $(test_programs) $(test_helpers)
 TESTS = $(test_programs) $(test_scripts)
 EXTRA_DIST += $(test_scripts) $(test_extra_files)
 
+## Builds all test helper programs before running tests
+## as these may be shared between lalpulsar/bin directories
+all-local: $(test_helpers)
+
 test_script_runner = $(top_srcdir)/gnuscripts/lalsuite_run_uninstalled
 test_script_runner_args = --verbose '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
 EXTRA_DIST += $(test_script_runner)

@@ -29,7 +29,6 @@
 
 #include <math.h>
 #include <ctype.h>
-#include <assert.h>
 #include <string.h>
 #include <time.h>
 #include <gsl/gsl_errno.h>

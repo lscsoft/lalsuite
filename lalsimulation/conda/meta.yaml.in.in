@@ -19,7 +19,7 @@
 
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.1.0a0" %}
 
 package:
   name: {{ name }}-split
@@ -154,6 +154,7 @@ outputs:
       host:
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - numpy
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         # extras to assist the solver, but not actually used

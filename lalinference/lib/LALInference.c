@@ -1133,7 +1133,6 @@ void LALInferenceDiscardPTMCMCHeader(FILE *filestream) {
  * @param     filestream  The PTMCMC input stream to be burned in.
  * @param[in] logl_idx    The column containing logl values.
  * @param     nPar        UNDOCUMENTED
- * @return The cycle to be used for burnin.
  */
 void LALInferenceBurninPTMCMC(FILE *filestream, INT4 logl_idx, INT4 nPar) {
     char *str = XLALCalloc(STR_MAX, sizeof(char));
@@ -2319,6 +2318,13 @@ void LALInferenceQ2Eta(double q, double *eta)
   *eta = q/((1+q)*(1+q));
   return;
 }
+/* Calculate dQuadMon1 and dQuadMon2 from dQaudMonS and dQuadMonA */
+void LALInferencedQuadMonSdQuadMonA(REAL8 dQuadMonS, REAL8 dQuadMonA, REAL8 *dQuadMon1, REAL8 *dQuadMon2){
+  *dQuadMon1=(dQuadMonS+dQuadMonA);
+  *dQuadMon2=(dQuadMonS-dQuadMonA);
+  return;
+}
+
 
 void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2){
   REAL8 a=(8./13.)*(1.+7.*eta-31.*eta*eta);

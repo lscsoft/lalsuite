@@ -281,7 +281,6 @@
 #include <lal/Calibration.h>
 #include <lal/LALFrameIO.h>
 #include <lal/FindChirp.h>
-#include <lal/FrameCalibration.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
@@ -358,7 +357,6 @@ int main( int argc, char *argv[] )
 
   /* frame input data */
   LALCache     *frInCache = NULL;
-  LALCache     *calCache = NULL;
   LALFrStream     *frStream = NULL;
   FrChanIn      frChan;
   FrChanIn      injChan;
@@ -384,10 +382,6 @@ int main( int argc, char *argv[] )
   CHAR  fname[FILENAME_MAX];
   UINT4 numPoints = 0;
   REAL8 tsLength;
-  INT8  durationNS      = 0;
-  CalibrationUpdateParams inj_calfacts;
-  REAL4 inj_alpha = 0;
-  REAL4 inj_alphabeta = 0;
   CHAR tmpChName[LALNameLength];
 
   /*
@@ -649,29 +643,7 @@ int main( int argc, char *argv[] )
       }
       else if ( calCacheName )
       {
-        /* generate the response function for the current time */
-        if ( vrbflg ) fprintf( stdout, 
-            "generating response function at time %d sec %d ns\n"
-            "length = %d points, deltaF = %e Hz\n",
-            injResp.epoch.gpsSeconds, injResp.epoch.gpsNanoSeconds,
-            injResp.data->length, injResp.deltaF );
-        injResp.sampleUnits = strainPerCount;
-
-        /* initialize the inj_calfacts */
-        memset( &inj_calfacts, 0, sizeof(CalibrationUpdateParams) );
-        inj_calfacts.ifo = ifo;
-        durationNS = gpsEndTimeNS - gpsStartTimeNS;
-        XLALINT8NSToGPS( &(inj_calfacts.duration), durationNS );
-
-        calCache = XLALCacheImport( calCacheName );
-        LAL_CALL( LALExtractFrameResponse( &status, &injResp, calCache, 
-              &inj_calfacts ), &status );
-        XLALDestroyCache( calCache );
-        inj_alpha = (REAL4) crealf(inj_calfacts.alpha);
-        inj_alphabeta = (REAL4) crealf(inj_calfacts.alphabeta);
-        if ( vrbflg ) fprintf( stdout, 
-            "for injections, alpha = %f and alphabeta = %f\n",
-            inj_alpha, inj_alphabeta);
+        XLAL_ERROR(XLAL_EERR, "Calibration cache no longer supported");
       }
       else 
       {

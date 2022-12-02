@@ -872,7 +872,8 @@ void LALInferenceMcQ2Masses(double mc, double q, double *m1, double *m2);
 
 /** Convert from q to eta (q = m2/m1, with m1 > m2). */
 void LALInferenceQ2Eta(double q, double *eta);
-
+/** Convert from dQuadMonS, dQuadMonA to dQuadMon1, dQuadMon2. */
+void LALInferencedQuadMonSdQuadMonA(REAL8 dQuadMonS, REAL8 dQuadMonA, REAL8 *dQuadMon1, REAL8 *dQuadMon2);
 /** Convert from lambdaT, dLambdaT, and eta to lambda1 and lambda2. */
 void LALInferenceLambdaTsEta2Lambdas(REAL8 lambdaT, REAL8 dLambdaT, REAL8 eta, REAL8 *lambda1, REAL8 *lambda2);
 

@@ -1,6 +1,6 @@
 /*
 *  Copyright (C) 2013, 2015 Reinhard Prix
-*  Copyright (C) 2008, 2010 Karl Wette
+*  Copyright (C) 2008, 2010, 2022 Karl Wette
 *  Copyright (C) 2008 Chris Messenger
 *  Copyright (C) 2007 Badri Krishnan, Reinhard Prix
 *
@@ -89,6 +89,9 @@ typedef struct
   REAL8 fminOut;				/**< Lowest frequency in output SFT (= heterodyning frequency) */
   REAL8 BandOut;				/**< bandwidth of output SFT in Hz (= 1/2 sampling frequency) */
 
+  const CHAR *window_type;			/**< name of window function */
+  REAL8 window_param;				/**< parameter of window function */
+
   transientWindow_t transientWindow;	/**< properties of transient-signal window */
   CHAR *VCSInfoString;			/**< Git version string */
   CHAR *outFrameDir;			/**< output frame directory */
@@ -100,6 +103,8 @@ typedef struct
   /* SFT output */
   CHAR *outSFTdir;		/**< Output directory for SFTs */
   CHAR *outLabel;		/**< 'misc' entry in SFT-filenames, and description entry of output frame filenames */
+  UINT4 outPubObsRun;           /**< if >0, names SFTs using the public filename convention with this observing run number */
+  UINT4 outPubRevision;         /**< if outPubObsRun>0, names SFTs using the public filename convention with this revision number */
   BOOLEAN outSingleSFT;	        /**< use to output a single concatenated SFT */
 
   CHAR *TDDfile;		/**< Filename for ASCII output time-series */
@@ -134,7 +139,7 @@ typedef struct
 
   /* Window function [OPTIONAL] */
   CHAR *SFTWindowType;		/**< Windowing function to apply to the SFT time series */
-  REAL8 SFTWindowBeta;         	/**< 'beta' parameter required for certain window-types */
+  REAL8 SFTWindowParam;        	/**< parameter required for certain window-types */
 
   CHAR *ephemEarth;		/**< Earth ephemeris file to use */
   CHAR *ephemSun;		/**< Sun ephemeris file to use */
@@ -190,10 +195,10 @@ main(int argc, char *argv[])
   CWMFDataParams XLAL_INIT_DECL(DataParams);
   DataParams.multiIFO           = GV.multiIFO;
   DataParams.multiNoiseFloor    = GV.multiNoiseFloor;
-  DataParams.multiTimestamps 	= (*GV.multiTimestamps);
+  DataParams.multiTimestamps 	= GV.multiTimestamps;
   DataParams.randSeed           = uvar.randSeed;
-  DataParams.SFTWindowType      = uvar.SFTWindowType;
-  DataParams.SFTWindowBeta      = uvar.SFTWindowBeta;
+  DataParams.SFTWindowType      = GV.window_type;
+  DataParams.SFTWindowParam     = GV.window_param;
   DataParams.sourceDeltaT       = uvar.sourceDeltaT;
   DataParams.inputMultiTS       = GV.inputMultiTS;
   DataParams.fMin               = GV.fminOut;
@@ -219,6 +224,40 @@ main(int argc, char *argv[])
       XLALDestroyMultiSFTVector ( mNoiseSFTs );
     }
 
+  // determine output channel names for frames and public SFT filenames
+#ifdef HAVE_LIBLALFRAME
+  if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) {
+    XLAL_CHECK ( uvar.outFrChannels->length == mTseries->length, XLAL_EINVAL, "--outFrChannels: number of channel names (%d) must agree with number of IFOs (%d)\n",
+                 uvar.outFrChannels->length, mTseries->length );
+  }
+#endif
+  LALStringVector *outChannelNames = XLALCreateEmptyStringVector( mTseries->length );
+  XLAL_CHECK ( outChannelNames != NULL, XLAL_EFUNC );
+  for ( UINT4 X=0; X < mTseries->length; X ++ )
+    {
+      REAL8TimeSeries *Tseries = mTseries->data[X];
+      char buffer[LALNameLength];
+
+      size_t written = 0;
+      if ( 0 ) { // needed so that the 'else if' blocks can be removed if HAVE_LIBLALFRAME is not defined
+#ifdef HAVE_LIBLALFRAME
+      } else if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) { // if output frame channel names given, use those
+        written = snprintf ( buffer, sizeof(buffer), "%s", uvar.outFrChannels->data[X] );
+        if ( buffer[2] == ':' ) { // check we got correct IFO association
+          XLAL_CHECK ( (buffer[0] == Tseries->name[0]) && (buffer[1] == Tseries->name[1]), XLAL_EINVAL,
+                       "Possible IFO mismatch: outFrChannel[%d] = '%s', IFO = '%c%c': be careful about --outFrChannel ordering\n", X, buffer, Tseries->name[0], Tseries->name[1] );
+        } // if buffer[2]==':'
+      } else if ( XLALUserVarWasSet ( &uvar.inFrChannels ) ) { // otherwise: if input frame channel names given, use them for output, append "-<outLabel>"
+        written = snprintf ( buffer, sizeof(buffer), "%s-%s", uvar.inFrChannels->data[X], uvar.outLabel );
+#endif
+      } else { // otherwise: fall back to <IFO>:<outLabel> channel name
+        written = snprintf ( buffer, sizeof(buffer), "%c%c:%s", Tseries->name[0], Tseries->name[1], uvar.outLabel );
+      }
+      XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Output frame name exceeded max length (%d): '%s'\n", LALNameLength, buffer );
+
+      outChannelNames->data[X] = XLALStringDuplicate( buffer );
+    }
+
   if (uvar.outSFTdir)
     {
       XLAL_CHECK ( is_directory ( uvar.outSFTdir ), XLAL_EINVAL );
@@ -230,15 +269,38 @@ main(int argc, char *argv[])
       XLAL_CHECK ( comment != NULL, XLAL_ENOMEM, "XLALCalloc(1,%zu) failed.\n", len );
       sprintf ( comment, "Generated by:\n%s\n%s\n", logstr, GV.VCSInfoString );
 
+      /* default window is rectangular */
+      const char *window_type = ( GV.window_type != NULL ) ? GV.window_type : "rectangular";
+      const REAL8 window_param = ( GV.window_type != NULL ) ? GV.window_param : 0;
+
       for ( UINT4 X=0; X < mSFTs->length; X ++ )
         {
           SFTVector *sfts = mSFTs->data[X];
-          /* either write whole SFT-vector to single concatenated file */
-          if ( uvar.outSingleSFT ) {
-            XLAL_CHECK ( XLALWriteSFTVector2File( sfts, uvar.outSFTdir, comment, uvar.outLabel ) == XLAL_SUCCESS, XLAL_EFUNC );
-          } else {	// or as individual SFT-files
-            XLAL_CHECK ( XLALWriteSFTVector2Dir( sfts, uvar.outSFTdir, comment, uvar.outLabel ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+          /* set up SFT filename */
+          SFTFilenameSpec XLAL_INIT_DECL(spec);
+          XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, uvar.outSFTdir, NULL, NULL, window_type, NULL, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+          spec.window_param = window_param;
+
+          if ( uvar.outPubObsRun > 0 ) { // public SFT filename
+
+            /* get channel name and check for consistency */
+            const char* channelName = outChannelNames->data[X];
+            const SFTtype *sft0 = &sfts->data[0];
+            XLAL_CHECK ( (channelName[0] == sft0->name[0]) && (channelName[1] == sft0->name[1]), XLAL_EINVAL,
+                         "Possible IFO mismatch: output channel[%d] = '%s', IFO = '%c%c': be careful about output channel ordering\n", X, channelName, sft0->name[0], sft0->name[1] );
+
+            /* set public observing run, revision, channel name */
+            XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, NULL, NULL, NULL, NULL, NULL, "SIM", channelName ) == XLAL_SUCCESS, XLAL_EFUNC );
+            spec.pubObsRun = uvar.outPubObsRun;
+            spec.pubRevision = uvar.outPubRevision;
+
+          } else { // private SFT filename; see private description from --outLabel
+            XLAL_CHECK ( XLALFillSFTFilenameSpecStrings( &spec, NULL, NULL, NULL, NULL, uvar.outLabel, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
           }
+
+          /* either write whole SFT-vector to single concatenated file */
+          XLAL_CHECK ( XLALWriteSFTVector2StandardFile( sfts, &spec, comment, uvar.outSingleSFT ) == XLAL_SUCCESS, XLAL_EFUNC );
         } // for X < numIFOs
 
       XLALFree ( logstr );
@@ -274,10 +336,6 @@ main(int argc, char *argv[])
       char *fname;
 
       char *hist = XLALUserVarGetLog (UVAR_LOGFMT_CMDLINE);
-      if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) {
-        XLAL_CHECK ( uvar.outFrChannels->length == mTseries->length, XLAL_EINVAL, "--outFrChannels: number of channel names (%d) must agree with number of IFOs (%d)\n",
-                     uvar.outFrChannels->length, mTseries->length );
-      }
 
       for ( UINT4 X=0; X < mTseries->length; X ++ )
         {
@@ -297,22 +355,7 @@ main(int argc, char *argv[])
           XLAL_CHECK ( (outFrame = XLALFrameNew ( &startTimeGPS, duration, uvar.outLabel, 1, 0, 0 )) != NULL, XLAL_EFUNC );
 
           /* add timeseries to the frame - make sure to change the timeseries name since this is used as the channel name */
-          char buffer[LALNameLength];
-          // if output frame channel names given, use those
-          if ( XLALUserVarWasSet ( &uvar.outFrChannels ) ) {
-            written = snprintf ( buffer, sizeof(buffer), "%s", uvar.outFrChannels->data[X] );
-            if ( buffer[2] == ':' ) { // check we got correct IFO association
-              XLAL_CHECK ( (buffer[0] == Tseries->name[0]) && (buffer[1] == Tseries->name[1]), XLAL_EINVAL,
-                           "Possible IFO mismatch: outFrChannel[%d] = '%s', IFO = '%c%c': be careful about --outFrChannel ordering\n", X, buffer, Tseries->name[0], Tseries->name[1] );
-            } // if buffer[2]==':'
-          } else if ( XLALUserVarWasSet ( &uvar.inFrChannels ) ) { // otherwise: if input frame channel names given, use them for output, append "-<outLabel>"
-            written = snprintf ( buffer, sizeof(buffer), "%s-%s", uvar.inFrChannels->data[X], uvar.outLabel );
-          } else { // otherwise: fall back to <IFO>:<outLabel> channel name
-            written = snprintf ( buffer, sizeof(buffer), "%c%c:%s", Tseries->name[0], Tseries->name[1], uvar.outLabel );
-          }
-          XLAL_CHECK ( written < LALNameLength, XLAL_ESIZE, "Output frame name exceeded max length (%d): '%s'\n", LALNameLength, buffer );
-          strcpy ( Tseries->name, buffer );
-
+          strcpy ( Tseries->name, outChannelNames->data[X] );
           XLAL_CHECK ( (XLALFrameAddREAL8TimeSeriesProcData ( outFrame, Tseries ) == XLAL_SUCCESS ) , XLAL_EFUNC );
 
           /* Here's where we add extra information into the frame - first we add the command line args used to generate it */
@@ -338,6 +381,8 @@ main(int argc, char *argv[])
   /* ---------- free memory ---------- */
   XLALDestroyMultiREAL8TimeSeries ( mTseries );
   XLALDestroyMultiSFTVector ( mSFTs );
+
+  XLALDestroyStringVector( outChannelNames );
 
   XLALFreeMem ( &GV );	/* free the config-struct */
 
@@ -387,11 +432,6 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   }
   if ( have_IFOs ) {
     XLAL_CHECK ( XLALParseMultiLALDetector ( &(cfg->multiIFO), uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
-  }
-
-  if ( have_noiseSFTs ) {
-    /* user must specify the window function used for the noiseSFTs */
-    XLAL_CHECK ( XLALUserVarWasSet ( &uvar->SFTWindowType ), XLAL_EINVAL, "Option --noiseSFTs requires to also set --SFTWindowType. Please try to ensure this matches how the input SFTs were generated." );
   }
 
   // ----- TIMESTAMPS: either from --timestampsFiles, --startTime+duration, or --noiseSFTs
@@ -484,6 +524,39 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
   } else {
     cfg->multiNoiseFloor.length = cfg->multiIFO.length;
     // values remain at their default sqrtSn[X] = 0;
+  }
+
+  // determine SFT window to use
+  {
+    const BOOLEAN have_window = XLALUserVarWasSet( &uvar->SFTWindowType );
+    const BOOLEAN have_param = XLALUserVarWasSet( &uvar->SFTWindowParam );
+    const CHAR* window_type_from_uvar = uvar->SFTWindowType;
+    const REAL8 window_param_from_uvar = have_param ? uvar->SFTWindowParam : 0;
+    if ( have_window )
+      {
+        XLAL_CHECK ( XLALCheckNamedWindow ( window_type_from_uvar, have_param ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+    if ( have_noiseSFTs )
+      {
+        const CHAR* window_type_from_noiseSFTs = cfg->noiseCatalog->data[0].window_type;
+        const REAL8 window_param_from_noiseSFTs = cfg->noiseCatalog->data[0].window_param;
+        const BOOLEAN have_window_type_from_noiseSFTs = ( XLALStringCaseCompare( window_type_from_noiseSFTs, "unknown" ) != 0 );
+        if ( have_window_type_from_noiseSFTs ^ have_window )
+          {
+            cfg->window_type = have_window_type_from_noiseSFTs ? window_type_from_noiseSFTs : window_type_from_uvar;
+            cfg->window_param = have_window_type_from_noiseSFTs ? window_param_from_noiseSFTs : window_param_from_uvar;
+          }
+        else
+          {
+            /* EITHER noise SFTs must have a known window OR user must specify the window function */
+            XLAL_ERROR ( XLAL_EINVAL, "When --noiseSFTs is given, --SFTWindowType is required ONLY if noise SFTs have unknown window.\n" );
+          }
+      }
+    else if ( have_window )
+      {
+        cfg->window_type = window_type_from_uvar;
+        cfg->window_param = window_param_from_uvar;
+      }
   }
 
 #ifdef HAVE_LIBLALFRAME
@@ -614,6 +687,8 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember(   outSingleSFT,       BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT file instead of individual files" );
   XLALRegisterUvarMember( outSFTdir,          STRING, 'n', OPTIONAL, "Output SFTs:  directory for output SFTs");
   XLALRegisterUvarMember(  outLabel,	         STRING, 0, OPTIONAL, "'misc' entry in SFT-filenames or 'description' entry of frame filenames" );
+  XLALRegisterUvarMember( outPubObsRun,       UINT4, 'O', OPTIONAL, "if >0, names SFTs using the public filename convention with this observing run number" );
+  XLALRegisterUvarMember( outPubRevision,     UINT4, 'R', OPTIONAL, "if " UVAR_STR(outPubObsRun) ">0, names SFTs using the public filename convention with this revision number" );
   XLALRegisterUvarMember( TDDfile,            STRING, 't', OPTIONAL, "Filename to output time-series into");
 
   XLALRegisterUvarMember( logfile,            STRING, 'l', OPTIONAL, "Filename for log-output");
@@ -637,15 +712,17 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   /* SFT properties */
   XLALRegisterUvarMember(  Tsft,                 REAL8, 0, OPTIONAL, "Time baseline of one SFT in seconds");
   XLALRegisterUvarMember(  SFToverlap,           REAL8, 0, OPTIONAL, "Overlap between successive SFTs in seconds (conflicts with --noiseSFTs or --timestampsFiles)");
-  XLALRegisterUvarMember( SFTWindowType,        STRING, 0, OPTIONAL, "Window function to be applied to the SFTs (required when using --noiseSFTs)");
-  XLALRegisterUvarMember(  SFTWindowBeta,        REAL8, 0, OPTIONAL, "Window 'beta' parameter required for a few window-types (eg. 'tukey')");
+  XLALRegisterUvarMember( SFTWindowType,        STRING, 0, OPTIONAL, "Window function to apply to the SFTs ('rectangular', 'hann', 'tukey', etc.); when --noiseSFTs is given, required ONLY if noise SFTs have unknown window");
+  XLALRegisterUvarMember( SFTWindowParam,        REAL8, 0, OPTIONAL, "Window parameter required for a few window-types (eg. 'tukey')");
 
   /* pulsar params */
   XLALRegisterUvarMember( injectionSources,     STRINGVector, 0, OPTIONAL, "%s", InjectionSourcesHelpString );
   XLALRegisterUvarMember( sourceDeltaT,         REAL8,  0, OPTIONAL, "Source-frame sampling period. '0' implies implies defaults set in XLALGeneratePulsarSignal()." );
 
   /* noise */
-  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal (Used also to set IFOs and timestamps, and frequency range unless separately specified.)");
+  XLALRegisterUvarMember( noiseSFTs,          STRING, 'D', OPTIONAL, "Noise-SFTs to be added to signal. Possibilities are:\n"
+                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'\n"
+                          "(Used also to set IFOs and timestamps, and frequency range unless separately specified.)");
   XLALRegisterUvarMember( randSeed,           INT4, 0, OPTIONAL, "Specify random-number seed for reproducible noise (0 means use /dev/urandom for seeding).");
 
   /* frame input/output options */
@@ -655,10 +732,10 @@ XLALInitUserVars ( UserVariables_t *uvar, int argc, char *argv[] )
   XLALRegisterUvarMember ( inFrChannels,  STRINGVector,'N', OPTIONAL,  "CSV list (one per IFO) of frame channels to read timeseries from");
   XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  NODEFAULT, "CSV list (one per IFO) of output frame channel names [default: <inFrChannels>-<outLabel> or <IFO>:<outLabel>]");
 #else
-  XLALRegisterUvarMember ( outFrameDir,	 STRING,       'F', DEFUNCT, "Need to compile with lalframe support for this option to work");
-  XLALRegisterUvarMember ( inFrames,     STRINGVector, 'C', DEFUNCT, "Need to compile with lalframe support for this option to work");
-  XLALRegisterUvarMember ( inFrChannels, STRINGVector, 'N', DEFUNCT, "Need to compile with lalframe support for this option to work");
-  XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  DEFUNCT, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( outFrameDir,	 STRING,       'F', DEPRECATED, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( inFrames,     STRINGVector, 'C', DEPRECATED, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( inFrChannels, STRINGVector, 'N', DEPRECATED, "Need to compile with lalframe support for this option to work");
+  XLALRegisterUvarMember ( outFrChannels, STRINGVector, 0,  DEPRECATED, "Need to compile with lalframe support for this option to work");
 #endif
 
   // ----- 'expert-user/developer' options ----- (only shown in help at lalDebugLevel >= warning)

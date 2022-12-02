@@ -1,123 +1,126 @@
-# ---------------------------
-# LALSuite CI rules
-# ---------------------------
+# ----------------------------------------------------------------------
+# LALSuite: CI rules
+#
+# Rules for CI pipelines, and for skipping/including CI jobs.
+# ----------------------------------------------------------------------
 
 workflow:
   rules:
-    # do not run detached merge_request_event pipelines
-    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
-      when: never
     # run all other pipelines
     - when: always
 
-# -- job control
+# -- CI pipelines
 
-# default run
-.default:
+# CI build for normal pushes:
+# - runs if ALL of the following criteria are satisfied:
+#   - the trigger is a commit push
+#   - the commit message does NOT contain the text "[ci full]"
+#   - the branch is NOT the main branch at lscsoft/lalsuite
+.ci-push-build:
   rules:
-    - when: on_success
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE !~ /\[ci full\]/ && ($CI_PROJECT_PATH != "lscsoft/lalsuite" || $CI_COMMIT_REF_NAME != $CI_DEFAULT_BRANCH)'
 
-# tag on the upstream repo
-.tag:
+# CI build for merge requests:
+# - runs if EITHER of the following criteria are satisfied:
+#   - the trigger is opening a merge request
+#   - the trigger is running a pipeline manually from the web interface
+#   - the commit message contains the text "[ci full]"
+#   - the trigger is a commit push AND the branch is the main branch at lscsoft/lalsuite
+.ci-merge-build:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web" || $CI_COMMIT_MESSAGE =~ /\[ci full\]/'
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+
+# CI build for tags:
+# - runs if ALL of the following criteria are satisfied:
+#   - the commit has been tagged
+#   - the repository is lscsoft/lalsuite
+.ci-tag-build:
   rules:
     - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG'
 
-# lalsuite tag on the upstream repo
-.lalsuite-tag:
+# CI build for "lalsuite" tags:
+# - runs if ALL of the following criteria are satisfied:
+#   - the commit has been tagged
+#   - the tag name begins with "lalsuite-v"
+#   - the repository is lscsoft/lalsuite
+.ci-lalsuite-tag-build:
   rules:
     - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
 
-# normal push
-.push:
+# CI nightly deployment build:
+# - runs if ALL of the following criteria are satisfied:
+#   - the trigger is a scheduled pipeline
+#   - the branch is the main branch at lscsoft/lalsuite
+.ci-nightly-deploy:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "push"'
-
-# nightly build on the upstream repo
-.nightly:
-  rules:
-    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_PIPELINE_SOURCE == "schedule"'
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       variables:
         ENABLE_NIGHTLY: "--enable-nightly"
 
-# nightly build on default branch of the upstream repo
-.nightly-default:
-  rules:
-    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      variables:
-        ENABLE_NIGHTLY: "--enable-nightly"
+# -- include CI jobs using commit message or branch name
 
-# scheduled pipeline
-.scheduled:
+.ci-compiler:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "schedule"'
-      variables:
-        ENABLE_NIGHTLY: "--enable-nightly"
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci compiler\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]compiler/'
+      when: always
 
-# manually-triggered pipeline
-.manual:
+.ci-conda:
   rules:
-    - if: '$CI_PIPELINE_SOURCE == "web" || $CI_COMMIT_MESSAGE =~ /\[nightly ci\]/'
-      variables:
-        ENABLE_NIGHTLY: "--enable-nightly"
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci conda\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]conda/'
+      when: always
 
-# -- skip rules
-
-.skip-compiler:
+.ci-coverage:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip compiler\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci coverage\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]coverage/'
+      when: always
 
-.skip-conda:
+.ci-debian:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip conda\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci debian\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]debian/'
+      when: always
 
-.skip-coverage:
+.ci-docs:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip coverage\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci docs\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]docs/'
+      when: always
 
-.skip-debian:
+.ci-docker:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip debian\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci docker\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]docker/'
+      when: always
 
-.skip-docs:
+.ci-integration:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip docs\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci integration\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]integration/'
+      when: always
 
-.skip-docker:
+.ci-koji:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip docker\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci koji\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]koji/'
+      when: always
 
-.skip-integration:
+.ci-lint:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip integration\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci lint\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]lint/'
+      when: always
 
-.skip-koji:
+.ci-platform:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip koji\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci platform\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]platform/'
+      when: always
 
-.skip-lint:
+.ci-pkg:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip lint\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci pkg\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]pkg/'
+      when: always
 
-.skip-platform:
+.ci-rhel:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip platform\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci rhel\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]rhel/'
+      when: always
 
-.skip-rhel:
+.ci-wheels:
   rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip rhel\]/'
-      when: never
-
-.skip-wheels:
-  rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[skip wheels\]/'
-      when: never
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci wheels\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]wheels/'
+      when: always

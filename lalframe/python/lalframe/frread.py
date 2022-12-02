@@ -174,7 +174,7 @@ def _ts_from_cache(cache, channels, start=None, duration=None, datatype=None,
     @returns a TimeSeries of the imported data
     """
     # open the cache into a stream
-    stream = lalframe.FrCacheOpen(cache)
+    stream = lalframe.FrStreamCacheOpen(cache)
     # read the stream
     return _ts_from_stream(stream, channels, start=start, duration=duration,
                            datatype=datatype, verbose=verbose)
@@ -229,8 +229,11 @@ def _ts_from_stream(stream, channels, start=None, duration=None, datatype=None,
     @returns a TimeSeries of the imported data
     """
     # set verbosity
-    lalframe.FrSetMode(verbose and lalframe.FR_STREAM_VERBOSE_MODE or
-                       lalframe.FR_STREAM_DEFAULT_MODE, stream)
+    lalframe.FrStreamSetMode(
+        stream,
+        verbose and lalframe.FR_STREAM_VERBOSE_MODE
+        or lalframe.FR_STREAM_DEFAULT_MODE,
+    )
     # determine default start time and duration
     epoch = lal.LIGOTimeGPS(stream.epoch)
     if start is None:

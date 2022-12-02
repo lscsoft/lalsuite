@@ -138,17 +138,18 @@ int main(int argc, char **argv){
   }
 
   /*init detector info */
-  LALDetector *site;
-  if ( ( site = XLALGetSiteInfo ( inputs.det )) == NULL ){
+  const LALDetector *p_site;
+  if ( ( p_site = XLALGetSiteInfo ( inputs.det )) == NULL ){
     XLALPrintError("%s: Failed to get site-info for detector '%s'\n", fn,
                    inputs.det );
     XLAL_ERROR ( XLAL_EFUNC );
   }
 
+  LALDetector site = *p_site;
   if( inputs.geocentre ){ /* set site to the geocentre */
-    site->location[0] = 0.0;
-    site->location[1] = 0.0;
-    site->location[2] = 0.0;
+    site.location[0] = 0.0;
+    site.location[1] = 0.0;
+    site.location[2] = 0.0;
   }
 
   struct dirent **pulsars;
@@ -288,7 +289,7 @@ int main(int argc, char **argv){
 
       /*Add binary later if needed!*/
 
-      params.site = site;
+      params.site = &site;
       params.ephemerides = edat;
       params.startTimeGPS = epoch;
       params.duration = ndata;

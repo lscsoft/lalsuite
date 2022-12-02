@@ -25,14 +25,17 @@
 ///
 /// This file contains definitions of internal variables which are shared between the LAL SWIG wrappers.
 /// For simple C variables (i.e. not scripting language objects) it is easier to share them as variables
-/// in the LAL library, which is then dynamically linked to each SWIG wrapper library.
+/// in the LALSupport library, which is then dynamically linked to each SWIG wrapper library.
 ///
 /// @{
 
 ///
-/// The \c swig_lal_do_redirect_stdouterr variable turns on standard output/error redirection for all
-/// LAL libraries. See <tt>SWIGCommon.i</tt> for further information.
+/// The \c swig_lal_do_redirect_stdouterr variable turns on standard output/error redirection for
+/// all LAL libraries. The \c swig_lal_has_stdouterr_been_redirected variable indicates where
+/// standard standard output/error redirection is currently in force. See <tt>SWIGCommon.i</tt> for
+/// further information.
 ///
 int swig_lal_do_redirect_stdouterr = 0;
+int swig_lal_has_stdouterr_been_redirected = 0;
 
 /// @}

@@ -31,7 +31,6 @@
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
-#include <lal/SFTutils.h>
 #include <lal/PulsarDataTypes.h>
 #include <lal/LALString.h>
 #include <lal/LALPulsarVCSInfo.h>
@@ -148,7 +147,16 @@ XLALprintDescriptor ( const SFTDescriptor *desc )
   printf ( "SFT version: %d\n", desc->version );
   printf ( "numBins:     %d\n", desc->numBins );
   printf ( "crc64:       %" LAL_UINT8_FORMAT "\n", desc->crc64 );
-  printf ( "comment:     %s\n", (desc->comment)?(desc->comment) : "<none>" );
+  printf ( "window:      %s(%0.10g)\n", desc->window_type, desc->window_param );
+  if ( desc->comment ) {
+    if ( strchr( desc->comment, '\n' ) ) {
+      printf ( "comment: ==========\n%s\nend comment: ------\n", desc->comment );
+    } else {
+      printf ( "comment:     %s\n", desc->comment );
+    }
+  } else {
+    printf ( "comment:     <none>\n" );
+  }
 
   return XLAL_SUCCESS;
 
@@ -229,7 +237,8 @@ XLALReadUserInput ( int argc, char *argv[], UserVariables_t *uvar )
   /* set a few defaults */
   uvar->Nmax = LAL_UINT4_MAX;
 
-  XLALRegisterUvarMember(	SFTfiles,	STRING,  'i', REQUIRED, "File-pattern for input SFTs");
+  XLALRegisterUvarMember(	SFTfiles,	STRING,  'i', REQUIRED, "File-pattern for input SFTs. Possibilities are:\n"
+                                " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'");
   XLALRegisterUvarMember(	headerOnly,	BOOLEAN, 'H', OPTIONAL, "Output only SFT headers");
   XLALRegisterUvarMember(	dataOnly,	BOOLEAN, 'd', OPTIONAL, "Output only SFT data, no header info");
   XLALRegisterUvarMember(	timestampsOnly,	BOOLEAN, 't', OPTIONAL, "Output only timestamps, in timestamps-file format");

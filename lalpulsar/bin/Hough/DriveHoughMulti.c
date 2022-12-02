@@ -409,7 +409,8 @@ int main(int argc, char *argv[]){
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_printLog,           "printLog",           BOOLEAN,      0,   OPTIONAL,  "Print Log file") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris,     "earthEphemeris",     STRING,       'E', OPTIONAL,  "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,       "sunEphemeris",       STRING,       'S', OPTIONAL,  "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftData,            "sftData",            STRING,       'D', REQUIRED,  "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftData,            "sftData",            STRING,       'D', REQUIRED,  "SFT filename pattern. Possibilities are:\n"
+                                            " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_dirnameOut,         "dirnameOut",         STRING,       'o', OPTIONAL,  "Output directory") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fbasenameOut,       "fbasenameOut",       STRING,       0,   OPTIONAL,  "Output file basename") == XLAL_SUCCESS, XLAL_EFUNC);
     XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_binsHisto,          "binsHisto",          INT4,         0,   OPTIONAL,  "No. of bins for histogram") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -2128,6 +2129,10 @@ void LALHOUGHCreateLUTs(LALStatus           *status,
         ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
     }
     
+    if (lutV->lut == NULL) {
+        ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+    }
+
     if (maxNBins <= 0) {
         ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
     }
@@ -2143,11 +2148,6 @@ void LALHOUGHCreateLUTs(LALStatus           *status,
     
     /* loop over luts and allocate memory */
     for(j = 0; j < lutV->length; j++){
-        
-        if (lutV->lut + j == NULL) {
-            ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-        }
-        
         lutV->lut[j].maxNBins = maxNBins;
         lutV->lut[j].maxNBorders = maxNBorders;
         lutV->lut[j].border = (HOUGHBorder *)LALCalloc(maxNBorders, sizeof(HOUGHBorder));
@@ -2260,6 +2260,10 @@ void LALHOUGHCreatePHMDs(LALStatus           *status,
         ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
     }
     
+    if ( phmdVS->phmd == NULL) {
+        ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
+    }
+
     if (maxNBins <= 0) {
         ABORT (status, DRIVEHOUGHCOLOR_EBAD, DRIVEHOUGHCOLOR_MSGEBAD);
     }
@@ -2273,11 +2277,6 @@ void LALHOUGHCreatePHMDs(LALStatus           *status,
     }
     
     for(j = 0; j < phmdVS->length * phmdVS->nfSize; j++){
-        
-        if ( phmdVS->phmd + j == NULL) {
-            ABORT (status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-        }
-        
         phmdVS->phmd[j].maxNBorders = maxNBorders;
         phmdVS->phmd[j].leftBorderP = (HOUGHBorder **)LALCalloc(maxNBorders, sizeof(HOUGHBorder *));
         phmdVS->phmd[j].rightBorderP = (HOUGHBorder **)LALCalloc(maxNBorders, sizeof(HOUGHBorder *));
@@ -2304,13 +2303,9 @@ void LALHOUGHDestroyPHMDs(LALStatus           *status,
     ATTATCHSTATUSPTR (status);
     
     for(j = 0; j < phmdVS->length * phmdVS->nfSize; j++){
-        
-        if (phmdVS->phmd + j) {
             LALFree( phmdVS->phmd[j].leftBorderP);
             LALFree( phmdVS->phmd[j].rightBorderP);
             LALFree( phmdVS->phmd[j].firstColumn);
-        }
-        
     }
     
     DETATCHSTATUSPTR (status);

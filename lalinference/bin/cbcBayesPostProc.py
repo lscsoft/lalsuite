@@ -730,6 +730,7 @@ def cbcBayesPostProc(
     polParams=['psi','polarisation','polarization']
     skyParams=['ra','rightascension','declination','dec']
     timeParams=['time']
+    spininducedquadParams = ['dquadmon1', 'dquadmon2','dquadmons','dquadmona']
     spinParams=['spin1','spin2','a1','a2','a1z','a2z','phi1','theta1','phi2','theta2','chi','effectivespin','chi_eff','chi_tot','chi_p','beta','tilt1','tilt2','phi_jl','theta_jn','phi12']
     sourceParams=['m1_source','m2_source','mtotal_source','mc_source','redshift']
     intrinsicParams=massParams+spinParams
@@ -1158,8 +1159,8 @@ if __name__=='__main__':
             fixedBurnins = [int(fixedBurnin) for fixedBurnin in opts.fixedBurnin]
     else:
         fixedBurnins = None
-
     from lalinference.bayespputils import massParams,spinParams,cosmoParam,strongFieldParams,distParams,incParams,polParams,skyParams,phaseParams,timeParams,endTimeParams,statsParams,calibParams,snrParams,tidalParams,fourPiecePolyParams,spectralParams
+
 
     oneDMenus={'Masses':None,'SourceFrame':None,'Timing':None,'Extrinsic':None,'Spins':None,'StrongField':None,'Others':None}
 

@@ -327,7 +327,7 @@ TestStatus( LALStatus *status, const char *ignored, int exitcode )
     }
     else
     {
-      if ( status->statusCode == atoi( tok ) )
+      if ( status->statusCode == atoi( str ) )
       {
         return;
       }

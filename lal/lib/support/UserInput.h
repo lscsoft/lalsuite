@@ -221,6 +221,7 @@ int XLALUserVarReadAllInput( BOOLEAN *should_exit, int argc, char *argv[], const
 int XLALUserVarWasSet( const void *cvar );
 void XLALUserVarCheck( BOOLEAN *should_exit, const int assertion, const CHAR *fmt, ... ) _LAL_GCC_PRINTF_FORMAT_(3,4);
 CHAR * XLALUserVarGetLog ( UserVarLogFormat format );
+CHAR * XLALUserVarGetLogEx ( UserVarLogFormat format, const BOOLEAN skip_unset );
 
 /**
  * \name Convenience macros for checking how many of a set of user input variables were set

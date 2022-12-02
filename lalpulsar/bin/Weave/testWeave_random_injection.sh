@@ -44,7 +44,7 @@ lalpulsar_Weave --rand-seed=9876 --output-file=WeaveOutRandInj.fits \
     --random-injection=0.5 \
     --toplists=mean2F --toplist-limit=10 \
     --extra-statistics="coh2F,coh2F_det,mean2F_det" \
-    --toplist-tmpl-idx --segment-info --time-search \
+    --segment-info --time-search \
     --setup-file=WeaveSetup.fits --sft-files='no_inj/*.sft' \
     --Fstat-method=ResampBest --Fstat-run-med-window=50 \
     --alpha=2.3/0.05 --delta=-1.2/0.1 --freq=50.5~0.005 --f1dot=-3e-10,0 \
@@ -68,7 +68,7 @@ echo
 echo "=== Add extracted injected signal to SFTs ==="
 set -x
 mkdir -p inj/
-lalpulsar_Makefakedata_v5  --noiseSFTs='no_inj/*.sft' --SFTWindowType=rectangular \
+lalpulsar_Makefakedata_v5 --noiseSFTs='no_inj/*.sft' \
     --injectionSources=./random_injection.cfg \
     --outSingleSFT --outSFTdir=inj/
 set +x
@@ -79,7 +79,7 @@ set -x
 lalpulsar_Weave --output-file=WeaveOutMFDInj.fits \
     --toplists=mean2F --toplist-limit=10 \
     --extra-statistics="coh2F,coh2F_det,mean2F_det" \
-    --toplist-tmpl-idx --segment-info --time-search \
+    --segment-info --time-search \
     --setup-file=WeaveSetup.fits --sft-files='inj/*.sft' \
     --Fstat-method=ResampBest --Fstat-run-med-window=50 \
     --alpha=2.3/0.05 --delta=-1.2/0.1 --freq=50.5~0.005 --f1dot=-3e-10,0 \
@@ -90,6 +90,6 @@ echo
 
 echo "=== Compare lalpulsar_Weave results ==="
 set -x
-LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutRandInj.fits --result-file-2=WeaveOutMFDInj.fits
+LAL_DEBUG_LEVEL="${LAL_DEBUG_LEVEL},info" lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutRandInj.fits --result-file-2=WeaveOutMFDInj.fits --sort-by-semi-phys
 set +x
 echo

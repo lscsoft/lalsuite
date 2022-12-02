@@ -47,7 +47,7 @@
 /// computing the \f$\mathcal{F}\f$-statistic \cite JKS98 .
 ///
 
-// @{
+/// @{
 
 // ========== Resamp internals ==========
 
@@ -1397,7 +1397,7 @@ XLALGetFstatTiming_ResampCUDA ( const void *method_data, FstatTimingGeneric *tim
   return XLAL_SUCCESS;
 } // XLALGetFstatTiming_ResampCUDA()
 
-// @}
+/// @}
 
 // Local Variables:
 // mode: c

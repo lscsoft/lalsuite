@@ -833,27 +833,28 @@ XLALCheckVectorComparisonTolerances ( const VectorComparison *result,	///< [in] 
   XLAL_CHECK ( result != NULL, XLAL_EINVAL );
 
   VectorComparison XLAL_INIT_DECL(localTol);
-  BOOLEAN failed = 0;
-
   if ( tol != NULL ) {
     localTol = (*tol);
-    failed = ( (result->relErr_L1 > tol->relErr_L1) || (result->relErr_L2 > tol->relErr_L2) ||
-               (result->angleV > tol->angleV) ||
-               (result->relErr_atMaxAbsx > tol->relErr_atMaxAbsx) || (result->relErr_atMaxAbsy > tol->relErr_atMaxAbsy) );
-  }
+  }    
 
-  if ( failed || (lalDebugLevel & LALINFO) )
-    {
-      XLALPrintError( "relErr_L1        = %.1e (%.1e)\n"
-                      "relErr_L2        = %.1e (%.1e)\n"
-                      "angleV           = %.1e (%.1e)\n"
-                      "relErr_atMaxAbsx = %.1e (%.1e)\n"
-                      "relErr_atMaxAbsy = %.1e (%.1e)\n",
-                      result->relErr_L1, localTol.relErr_L1, result->relErr_L2, localTol.relErr_L2, result->angleV,
-                      localTol.angleV,
-                      result->relErr_atMaxAbsx, localTol.relErr_atMaxAbsx,
-                      result->relErr_atMaxAbsy, localTol.relErr_atMaxAbsy );
+  const char* names[5]   = { "relErr_L1",        "relErr_L2",        "angleV",        "relErr_atMaxAbsx",        "relErr_atMaxAbsy"        };
+  const REAL4 results[5] = { result->relErr_L1,  result->relErr_L2,  result->angleV,  result->relErr_atMaxAbsx,  result->relErr_atMaxAbsy  };
+  const REAL4 tols[5]    = { localTol.relErr_L1, localTol.relErr_L2, localTol.angleV, localTol.relErr_atMaxAbsx, localTol.relErr_atMaxAbsy };
+
+  BOOLEAN failed = 0;
+
+  for (size_t i = 0; i < XLAL_NUM_ELEM(names); ++i) {
+
+    if ( results[i] > tols[i] ) {
+      failed = 1;
     }
+
+    if (lalDebugLevel & LALINFO ) {
+      XLALPrintError( "%-16s = %.1e (%.1e): %s\n", names[i], results[i], tols[i],
+                      ( results[i] > tols[i] ) ? "FAILED. Exceeded tolerance." : "OK." );
+    }
+
+  }
 
   if ( failed ) {
     XLAL_ERROR ( XLAL_ETOL, "FAILED. Exceeded at least one tolerance level.\n");
@@ -1088,3 +1089,84 @@ XLALSincInterpolateSFT ( const SFTtype *sft_in,		///< [in] input SFT
   return out;
 
 } // XLALSincInterpolateSFT()
+
+
+/**
+ * Interpolate frequency-series to newLen frequency-bins.
+ * This is using DFT-interpolation (derived from zero-padding).
+ */
+COMPLEX8Vector *
+XLALrefineCOMPLEX8Vector ( const COMPLEX8Vector *in,
+                           UINT4 refineby,
+                           UINT4 Dterms
+                           )
+{
+  UINT4 newLen, oldLen, l;
+  COMPLEX8Vector *ret = NULL;
+
+  if ( !in )
+    return NULL;
+
+  oldLen = in->length;
+  newLen = oldLen * refineby;
+
+  /* the following are used to speed things up in the innermost loop */
+  if ( (ret = XLALCreateCOMPLEX8Vector ( newLen )) == NULL )
+    return NULL;
+
+  for (l=0; l < newLen; l++)
+    {
+
+      REAL8 kappa_l_k;
+      REAL8 remain, kstarREAL;
+      UINT4 kstar, kmin, kmax, k;
+      REAL8 sink, coskm1;
+      REAL8 Yk_re, Yk_im, Xd_re, Xd_im;
+
+      kstarREAL = 1.0 * l  / refineby;
+      kstar = lround( kstarREAL );	/* round to closest bin */
+      kstar = MYMIN ( kstar, oldLen - 1 );	/* stay within the old SFT index-bounds */
+      remain = kstarREAL - kstar;
+
+      /* boundaries for innermost loop */
+      kmin = MYMAX( 0, (INT4)kstar - (INT4)Dterms );
+      kmax = MYMIN( oldLen, kstar + Dterms );
+
+      Yk_re = Yk_im = 0;
+      if ( fabs(remain) > 1e-5 )	/* denominater doens't vanish */
+	{
+	  /* Optimization: sin(2pi*kappa(l,k)) = sin(2pi*kappa(l,0) and idem for cos */
+	  sink = sin ( LAL_TWOPI * remain );
+	  coskm1 = cos ( LAL_TWOPI * remain ) - 1.0;
+
+	  /* ---------- innermost loop: k over 2*Dterms around kstar ---------- */
+	  for (k = kmin; k < kmax; k++)
+	    {
+	      REAL8 Plk_re, Plk_im;
+
+	      Xd_re = crealf(in->data[k]);
+	      Xd_im = cimagf(in->data[k]);
+
+	      kappa_l_k = kstarREAL - k;
+
+	      Plk_re = sink / kappa_l_k;
+	      Plk_im = coskm1 / kappa_l_k;
+
+	      Yk_re += Plk_re * Xd_re - Plk_im * Xd_im;
+	      Yk_im += Plk_re * Xd_im + Plk_im * Xd_re;
+
+	    } /* hotloop over Dterms */
+	}
+      else	/* kappa -> 0: Plk = 2pi delta(k, l) */
+	{
+	  Yk_re = LAL_TWOPI * crealf(in->data[kstar]);
+	  Yk_im = LAL_TWOPI * cimagf(in->data[kstar]);
+	}
+
+      ret->data[l] = crectf( OOTWOPI* Yk_re, OOTWOPI * Yk_im );
+
+    }  /* for l < newlen */
+
+  return ret;
+
+} /* XLALrefineCOMPLEX8Vector() */

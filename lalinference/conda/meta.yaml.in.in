@@ -26,7 +26,7 @@
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.1.0a0" %}
 
 package:
   name: {{ name }}-split
@@ -168,6 +168,7 @@ outputs:
         - numpy                               # [build_platform != target_platform]
       host:
         - {{ pin_subpackage('liblalinference', exact=True) }}
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}

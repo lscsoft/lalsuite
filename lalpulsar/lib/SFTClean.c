@@ -19,7 +19,7 @@
 
 #include <libgen.h>
 #include <lal/SFTClean.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/LogPrintf.h>
 
 /**

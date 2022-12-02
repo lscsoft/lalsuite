@@ -303,6 +303,8 @@ COMPLEX8Sequence *XLALUnitaryWindowCOMPLEX8Sequence(COMPLEX8Sequence *sequence, 
 REAL8Sequence *XLALUnitaryWindowREAL8Sequence(REAL8Sequence *sequence, const REAL8Window *window);
 COMPLEX16Sequence *XLALUnitaryWindowCOMPLEX16Sequence(COMPLEX16Sequence *sequence, const REAL8Window *window);
 
+int XLALCheckNamedWindow ( const char *windowName, const BOOLEAN haveBeta );
+
 REAL8Window *XLALCreateNamedREAL8Window ( const char *windowName, REAL8 beta, UINT4 length );
 REAL4Window *XLALCreateNamedREAL4Window ( const char *windowName, REAL8 beta, UINT4 length );
 

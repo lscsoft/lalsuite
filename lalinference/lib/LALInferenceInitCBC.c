@@ -21,7 +21,6 @@
 
 
 #include <stdio.h>
-#include <assert.h>
 #include <errno.h>
 #include <lal/Date.h>
 #include <lal/GenerateInspiral.h>
@@ -654,7 +653,7 @@ void LALInferenceRegisterGaussianVariableREAL8(LALInferenceRunState *state, LALI
   }
   if((ppt=LALInferenceGetProcParamVal(state->commandLine,valopt))) startval=atof(ppt->value);
 
-  assert(stdev>0);
+  XLAL_CHECK_ABORT(stdev>0);
   LALInferenceAddVariable(var,name,&startval,LALINFERENCE_REAL8_t,varytype);
   LALInferenceAddGaussianPrior(state->priorArgs, name, &mean, &stdev, LALINFERENCE_REAL8_t);
 
@@ -818,6 +817,14 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
      SDgamma2                     SDgamma2.\n\
      SDgamma3                     SDgamma3.\n\
     * \n\
+    * Spin-induced quadrupole moment test parameters:\n\
+     (requires --dQuadMon12)\n\
+     dQuadMon1                      dQuadMon1.\n\
+     dQuadMon2                      dQuadMon2.\n\
+     (requires --dQuadMonSA) \n\
+     dQuadMonS                      dQuadMonS.\n\
+     dQuadMonA                      dQuadMonA.\n\
+    (dQuadMonS and dQuadMonA are the symmetric and antisymmetric combinations of dQuadMon1 and dQuadMon2).\n\
     ----------------------------------------------\n\
     --- Prior Ranges -----------------------------\n\
     ----------------------------------------------\n\
@@ -897,6 +904,8 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   REAL8 lambdaTMax=3000.0;
   REAL8 dLambdaTMin=-500.0;
   REAL8 dLambdaTMax=500.0;
+  REAL8 dQuadMonMin=-200.0;
+  REAL8 dQuadMonMax=200.0;
   REAL8 logp1Min=33.6;
   REAL8 logp1Max=35.4;
   REAL8 gamma1Min=2.0;
@@ -1446,12 +1455,29 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     if(errnum!=XLAL_SUCCESS)
         XLAL_ERROR_NULL(errnum,"%s: %s",__func__,XLALErrorString(errnum));
     if(!model->eos_fam) XLAL_ERROR_NULL(XLAL_EINVAL, "Unable to initialise EOS family");
+
   // Pull in symmetric tidal deformability (lambdaS) and the uniform variable used to marginlise over the BinaryLove fit uncertainty
   } else if((ppt=LALInferenceGetProcParamVal(commandLine,"--BinaryLove"))){
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "lambdaS", zero, lambdaSMin, lambdaSMax, LALINFERENCE_PARAM_LINEAR);
     LALInferenceRegisterUniformVariableREAL8(state, model->params, "BLuni", 0.5, 0.0, 1.0, LALINFERENCE_PARAM_LINEAR);
   }    
   
+  
+
+    if(LALInferenceGetProcParamVal(commandLine,"--dQuadMon12")){
+        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon1", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
+        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMon2", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
+	}else if(LALInferenceGetProcParamVal(commandLine,"--dQuadMonSA")){
+        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonS", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
+        LALInferenceRegisterUniformVariableREAL8(state, model->params, "dQuadMonA", zero, dQuadMonMin, dQuadMonMax, LALINFERENCE_PARAM_LINEAR); 
+		}
+
+  if((!!LALInferenceGetProcParamVal(commandLine,"--dQuadMon12") + !!LALInferenceGetProcParamVal(commandLine,"--dQuadMonSA")) > 1 )
+  {    
+	XLALPrintError("Error: cannot use more than one of --dQuadMon12 and --dQuadMonSA.\n");
+	XLAL_ERROR_NULL(XLAL_EINVAL);
+  }
+
   LALSimInspiralSpinOrder spinO = LAL_SIM_INSPIRAL_SPIN_ORDER_ALL;
   ppt=LALInferenceGetProcParamVal(commandLine, "--spinOrder");
   if(ppt) {
@@ -2313,6 +2339,8 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         fprintf(stderr,"--grtest-parameters and --ppe-parameters are not simultaneously supported. Please choose one. Aborting\n");
         exit(-1);
     }
+
+
     ppt=LALInferenceGetProcParamVal(commandLine,"--grtest-parameters");
     if (ppt)
     {
@@ -2408,7 +2436,9 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
             LALInferenceRegisterUniformVariableREAL8(state, model->params, "log10lambda_eff", 3.0, log10lambda_eff_min, log10lambda_eff_max, LALINFERENCE_PARAM_LINEAR);
           }
       }
-    }
+
+  }
+
     ppt=LALInferenceGetProcParamVal(commandLine,"--ppe-parameters");
     if (ppt)
     {

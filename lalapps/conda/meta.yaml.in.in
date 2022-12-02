@@ -25,6 +25,7 @@
 {% set lalinference_version = "@MIN_LALINFERENCE_VERSION@a0" %}
 {% set lalinspiral_version = "@MIN_LALINSPIRAL_VERSION@a0" %}
 {% set lalmetaio_version = "@MIN_LALMETAIO_VERSION@a0" %}
+{% set lalpulsar_version = "@MIN_LALPULSAR_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set python_ligo_lw_version = "@MIN_PYTHON_LIGO_LW_VERSION@" %}
 
@@ -63,6 +64,7 @@ requirements:
     - astropy
     - cfitsio
     - gsl
+    - lalpulsar >={{ lalpulsar_version }}
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
     - liblalburst >={{ lalburst_version }}
@@ -70,6 +72,7 @@ requirements:
     - liblalinference >={{ lalinference_version }}
     - liblalinspiral >={{ lalinspiral_version }}
     - liblalmetaio >={{ lalmetaio_version }}
+    - liblalpulsar >={{ lalpulsar_version }}
     - liblalsimulation >={{ lalsimulation_version }}
     - python
     # extras needed for help2man (not when cross compiling)
@@ -83,6 +86,7 @@ requirements:
     - python-lalinspiral >={{ lalinspiral_version }}  # [build_platform == target_platform]
     - python-lalframe >={{ lalframe_version }}  # [build_platform == target_platform]
     - python-lalmetaio >={{ lalmetaio_version }}  # [build_platform == target_platform]
+    - python-lalpulsar >={{ lalpulsar_version }}  # [build_platform == target_platform]
     - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
     - python-ligo-lw  # [build_platform == target_platform]
     - tqdm
@@ -91,11 +95,13 @@ requirements:
     - cfitsio
     - gsl
     - h5py
+    - lalpulsar >={{ lalpulsar_version }}
     - libframel >={{ framel_version }}
     - liblal >={{ lal_version }}
     - liblalframe >={{ lalframe_version }}
     - liblalinference >={{ lalinference_version }}
     - liblalmetaio >={{ lalmetaio_version }}
+    - liblalpulsar >={{ lalpulsar_version }}
     - liblalsimulation >={{ lalsimulation_version }}
     - liblalburst >={{ lalburst_version }}
     - liblalinspiral >={{ lalinspiral_version }}
@@ -109,6 +115,7 @@ requirements:
     - python-lalinference >={{ lalinference_version }}
     - python-lalinspiral >={{ lalinspiral_version }}
     - python-lalmetaio >={{ lalmetaio_version }}
+    - python-lalpulsar >={{ lalpulsar_version }}
     - python-lalsimulation >={{ lalsimulation_version }}
     - python-ligo-lw >={{ python_ligo_lw_version }}
     - tqdm
@@ -141,7 +148,6 @@ test:
     - lalapps_frjoin --verbose --output test.gwf Z-ilwd_test_frame-600000000-1.gwf
     - lalapps_frread Z-ilwd_test_frame-600000000-1.gwf Z0:RAMPED_INT_2U_1
     - lalapps_frview --help
-    - lalapps_gen_timeslides --help
     - lalapps_gwf2xml --help
     - lalapps_inspfrinj --help
     - lalapps_inspinj --f-lower 30 --waveform IMRPhenomD --gps-start-time 1000000000 --gps-end-time 1000000010 --d-distr volume --l-distr random --m-distr log --i-distr gaussian --incl-std 2 --min-distance 100000 --max-distance 120000 --min-mass1 10 --max-mass1 20 --min-mass2 10 --max-mass2 20 --disable-spin --time-step
@@ -152,7 +158,6 @@ test:
     - lalapps_power_pipe --help
     - lalapps_random_bank 10 20 10
     - lalapps_randombank --minimum-mass 10 --maximum-mass 20 --number-of-templates 10
-    - lalapps_run_sqlite --help
     - lalapps_splitbank --verbose --bank-file P1-TMPLTBANK-0-0.xml --number-of-banks 2 --minimal-match 0.9
     - lalapps_string_apply_vetoes --help
     - lalapps_string_calc_likelihood --help
@@ -166,6 +171,24 @@ test:
     - lalapps_string_plot_likelihood --help
     - lalapps_tmpltbank --help
     - lalapps_version
+    # test lalapps_... stubs for lalpulsar_... executables
+    - ( set +e; lalapps_ComputeFstatistic_v2 --help; test $? -ne 127 )
+    - ( set +e; lalapps_ComputePSD --help; test $? -ne 127 )
+    - ( set +e; lalapps_Makefakedata_v5 --help; test $? -ne 127 )
+    - ( set +e; lalapps_Weave --help; test $? -ne 127 )
+    - ( set +e; lalapps_create_solar_system_ephemeris --help; test $? -ne 127 )
+    - ( set +e; lalapps_create_solar_system_ephemeris_python --help; test $? -ne 127 )
+    - ( set +e; lalapps_create_time_correction_ephemeris --help; test $? -ne 127 )
+    - ( set +e; lalapps_fits_header_getval --help; test $? -ne 127 )
+    - ( set +e; lalapps_fits_header_list --help; test $? -ne 127 )
+    - ( set +e; lalapps_fits_overview --help; test $? -ne 127 )
+    - ( set +e; lalapps_fits_table_list --help; test $? -ne 127 )
+    - ( set +e; lalapps_heterodyne_pulsar --help; test $? -ne 127 )
+    - ( set +e; lalapps_knope --help; test $? -ne 127 )
+    - ( set +e; lalapps_knope_collate_results --help; test $? -ne 127 )
+    - ( set +e; lalapps_pulsar_frequency_evolution --help; test $? -ne 127 )
+    - ( set +e; lalapps_pulsar_parameter_estimation_nested --help; test $? -ne 127 )
+    - ( set +e; lalapps_splitSFTs --help; test $? -ne 127 )
 
 about:
   home: https://wiki.ligo.org/Computing/LALSuite

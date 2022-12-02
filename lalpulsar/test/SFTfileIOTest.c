@@ -23,7 +23,6 @@
 
 #include <lal/LALStdio.h>
 #include <lal/SFTfileIO.h>
-#include <lal/SFTutils.h>
 #include <lal/Units.h>
 
 /*---------- DEFINES ----------*/
@@ -152,7 +151,7 @@ int main( void )
       return EXIT_FAILURE;
     }
 
-  /* check that proper v2-SFTs are read-in properly */
+  /* check that proper SFTs are read-in properly */
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test1", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
   XLALDestroySFTCatalog(catalog);
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test2", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
@@ -168,7 +167,7 @@ int main( void )
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test7", NULL ) ) != NULL, XLAL_EFUNC ); XLALClearErrno();
   XLALDestroySFTCatalog(catalog);
 
-  /* now completely read-in a v2 merged-SFT */
+  /* now completely read-in a merged-SFT */
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test*", NULL ) ) == NULL, XLAL_EFUNC ); XLALClearErrno();
   /* skip sft nr 4 with has Tsft=50 instead of Tsft=60 */
   XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( TEST_DATA_DIR "SFT-test[123567]*", NULL ) ) != NULL, XLAL_EFUNC );
@@ -218,12 +217,17 @@ int main( void )
       } /* for X < numIFOs */
   } /* ------ */
 
-  /* ----- v2 SFT writing ----- */
-  /* write v2-SFT to disk */
-  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(multsft_vect->data[0]->data[0]), "outputsftv2_r1.sft", "A v2-SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN ( XLALWriteSFTVector2Dir(multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test") == XLAL_SUCCESS, XLAL_EFUNC);
+  /* ----- SFT writing ----- */
+  SFTFilenameSpec XLAL_INIT_DECL(spec);
+  XLAL_CHECK_MAIN ( XLALFillSFTFilenameSpecStrings( &spec, ".", NULL, NULL, "tukey", NULL, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+  spec.window_param = 0.5;   // SFT aren't actually windowed; just testing that window-spec is correctly written and read
 
-  /* write v2-SFT to single file */
+  /* write SFT to disk */
+  strcpy(spec.privMisc, "test");
+  XLAL_CHECK_MAIN ( XLALWriteSFT2NamedFile(&(multsft_vect->data[0]->data[0]), "outputsft_r1.sft", spec.window_type, spec.window_param, "A SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALWriteSFTVector2StandardFile(multsft_vect->data[0], &spec, "A SFT file for testing!", 0) == XLAL_SUCCESS, XLAL_EFUNC);
+
+  /* write SFT to single file */
   {
     const CHAR *currSingleSFT = NULL;
     UINT4 i = 0;
@@ -231,8 +235,9 @@ int main( void )
     int concat = 0, single = 0;
 
     xlalErrno = 0;
-    if (XLAL_SUCCESS != XLALWriteSFTVector2File ( multsft_vect->data[0], ".", "A v2-SFT file for testing!", "test_concat" )) {
-      LALPrintError ( "\n XLALWriteSFTVector2File failed to write multi-SFT vector to file!\n\n");
+    strcpy(spec.privMisc, "testconcat");
+    if (XLAL_SUCCESS != XLALWriteSFTVector2StandardFile ( multsft_vect->data[0], &spec, "A SFT file for testing!", 1 )) {
+      LALPrintError ( "\n XLALWriteSFTVector2StandardFile failed to write multi-SFT vector to file!\n\n");
       return EXIT_FAILURE;
     }
     /* check that the single file SFT is the same as the single SFTs */
@@ -244,7 +249,7 @@ int main( void )
     };
     printf("*** Comparing single and concatenated SFTs ***\n");
     /* try to open concatenated SFT */
-    const CHAR *concatSFT = "H-3_H1_60SFT_test_concat-000012345-302.sft";
+    const CHAR *concatSFT = "H-3_H1_60SFT_testconcat-000012345-302.sft";
     if ( ( fpConcat = fopen(concatSFT, "rb" ) ) == NULL ) {
       LALPrintError ( "\n Cound not open SFT '%s'!\n\n", concatSFT);
       return EXIT_FAILURE;
@@ -298,9 +303,9 @@ int main( void )
     printf( "*** Comparing was successful!!! ***\n");
   }
 
-  /* write v2-SFT again */
+  /* write SFT again */
   multsft_vect->data[0]->data[0].epoch.gpsSeconds += 60;       /* shift start-time so they don't look like segmented SFTs! */
-  XLAL_CHECK_MAIN ( XLALWriteSFT2file(&(multsft_vect->data[0]->data[0]), "outputsftv2_r2.sft", "A v2-SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( XLALWriteSFT2NamedFile(&(multsft_vect->data[0]->data[0]), "outputsft_r2.sft", spec.window_type, spec.window_param, "A SFT file for testing!") == XLAL_SUCCESS, XLAL_EFUNC );
 
   XLALDestroySFTVector ( sft_vect );
   sft_vect = NULL;
@@ -310,15 +315,29 @@ int main( void )
   multsft_vect2 = NULL;
 
   /* ----- read the previous SFTs back */
-  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsftv2_r*.sft", NULL ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsft_r*.sft", NULL ) ) != NULL, XLAL_EFUNC );
   XLALDestroySFTCatalog(catalog);
   constraints.detector = detector;
-  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsftv2_r*.sft", &constraints ) ) != NULL, XLAL_EFUNC);
+  XLAL_CHECK_MAIN ( ( catalog = XLALSFTdataFind ( "outputsft_r*.sft", &constraints ) ) != NULL, XLAL_EFUNC);
+
+  if ( catalog->length != 2 )
+    {
+      if ( lalDebugLevel ) XLALPrintError ("\nFailed to find 'outputsft_r*.sft' in catalog\n\n");
+      return EXIT_FAILURE;
+    }
+
+  XLAL_CHECK_MAIN ( strcmp( catalog->data[0].window_type, spec.window_type ) == 0,
+                    XLAL_EFAILED, "catalog window type '%s' should be '%s'",
+                    catalog->data[0].window_type, spec.window_type );
+  XLAL_CHECK_MAIN ( catalog->data[0].window_param == spec.window_param,
+                    XLAL_EFAILED, "catalog window parameter %g should be %g",
+                    catalog->data[0].window_param, spec.window_param );
+
   XLAL_CHECK_MAIN ( ( sft_vect = XLALLoadSFTs ( catalog, -1, -1 ) ) != NULL, XLAL_EFUNC );
 
   if ( sft_vect->length != 2 )
     {
-      if ( lalDebugLevel ) XLALPrintError ("\nFailed to read back in 'outputsftv2_r*.sft'\n\n");
+      if ( lalDebugLevel ) XLALPrintError ("\nFailed to read back in 'outputsft_r*.sft'\n\n");
       return EXIT_FAILURE;
     }
 

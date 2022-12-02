@@ -25,6 +25,7 @@ pymodule_PYTHON = \
 	knope_utils.py \
 	pulsarhtmlutils.py \
 	pulsarpputils.py \
+	public_sft_directory.py \
 	$(END_OF_LIST)
 
 endif

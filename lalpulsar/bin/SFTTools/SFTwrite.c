@@ -126,13 +126,13 @@ int main(void) {
   int tmp;
   double dtmp;
 
-  printerror(WriteSFT(fp=openfile("SFT-test1"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test1", data)); fclose(fp);
-  printerror(WriteSFT(fp=openfile("SFT-test2"), 12345+60,       6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test2", data)); fclose(fp);
-  printerror(WriteSFT(fp=openfile("SFT-test3"), 12345+60+60,    6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test3", data)); fclose(fp);
-  printerror(WriteSFT(fp=openfile("SFT-test4"), 12345+60+60+60, 6789, 50, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test4", data)); fclose(fp);
-  printerror(WriteSFT(fp=openfile("SFT-test5"), 12345+60+60+60, 6789, 60, 1100, sizeof(data)/(2*sizeof(float)),  DET1, "test5", data)); fclose(fp);
-  printerror(WriteSFT(fp=openfile("SFT-test6"), 12345+60+60+60, 6789, 60, 1000, sizeof(data)/(2*sizeof(float))-1,DET1, "test6", data)); fclose(fp);
-  printerror(WriteSFT(fp=openfile("SFT-test7"), 12345+60+60+60, 6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET2, "test7", data)); fclose(fp);
+  printerror(WriteSFT(fp=openfile("SFT-test1"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, 1, "test1", data)); fclose(fp);
+  printerror(WriteSFT(fp=openfile("SFT-test2"), 12345+60,       6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, 1, "test2", data)); fclose(fp);
+  printerror(WriteSFT(fp=openfile("SFT-test3"), 12345+60+60,    6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, 1, "test3", data)); fclose(fp);
+  printerror(WriteSFT(fp=openfile("SFT-test4"), 12345+60+60+60, 6789, 50, 1000, sizeof(data)/(2*sizeof(float)),  DET1, 1, "test4", data)); fclose(fp);
+  printerror(WriteSFT(fp=openfile("SFT-test5"), 12345+60+60+60, 6789, 60, 1100, sizeof(data)/(2*sizeof(float)),  DET1, 1, "test5", data)); fclose(fp);
+  printerror(WriteSFT(fp=openfile("SFT-test6"), 12345+60+60+60, 6789, 60, 1000, sizeof(data)/(2*sizeof(float))-1,DET1, 1, "test6", data)); fclose(fp);
+  printerror(WriteSFT(fp=openfile("SFT-test7"), 12345+60+60+60, 6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET2, 1, "test7", data)); fclose(fp);
 
   dosystem("cat SFT-test[123] > SFT-good");
   /* GPS times not increasing */
@@ -157,7 +157,7 @@ int main(void) {
   modify_bytes("SFT-bad8", 49, "", 1);
   modify_checksum("SFT-bad8", 9546122005026447583ULL, 12540893872916896128ULL);
   /* SFT with comment no terminating null character containing hidden data */
-  printerror(WriteSFT(fp=openfile("SFT-bad9"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test567", data)); fclose(fp);
+  printerror(WriteSFT(fp=openfile("SFT-bad9"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, 0, "test567", data)); fclose(fp);
   modify_bytes("SFT-bad9", 55, "8", 1);
   modify_checksum("SFT-bad9", 8104828364422822013ULL, 6488197905334075682ULL);
   /* GPS nsec too big/small */
@@ -187,7 +187,7 @@ int main(void) {
 
   for (size_t i = 0; i < 8; i += 2) data[i] += 1e-5;
   for (size_t i = 1; i < 8; i += 2) data[i] -= 1e-5;
-  printerror(WriteSFT(fp=openfile("SFT-test8"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, "test8", data)); fclose(fp);
+  printerror(WriteSFT(fp=openfile("SFT-test8"), 12345,          6789, 60, 1000, sizeof(data)/(2*sizeof(float)),  DET1, 0, "test8", data)); fclose(fp);
 
   printf("Wrote good SFTs: SFT-test[12345678] SFT-good\n");
   printf("Wrote bad SFTs: SFT-bad[123456789] SFT-bad1[0-4]\n");

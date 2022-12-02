@@ -27,14 +27,17 @@
 ///
 /// # Standard output/error redirection
 ///
-/// The \b swig_redirect_standard_output_error() function turns on standard output/error redirection
-/// for all LAL libraries. The \c swig_lal_do_redirect_stdouterr variable is defined in
+/// The \b swig_redirect_standard_output_error() function turns on/off standard output/error
+/// redirection for all LAL libraries. It returns whether redirection was previously turned
+/// on/off. The \c swig_lal_do_redirect_stdouterr variable is defined in
 /// <tt>SWIGSharedVars.c</tt>. See <tt>SWIGCommon.i</tt> for further information.
 ///
 
 %inline %{
-void swig_redirect_standard_output_error(void) {
-  swig_lal_do_redirect_stdouterr = 1;
+BOOLEAN swig_redirect_standard_output_error(BOOLEAN redirect) {
+  BOOLEAN old_swig_lal_do_redirect_stdouterr = swig_lal_do_redirect_stdouterr;
+  swig_lal_do_redirect_stdouterr = redirect ? 1 : 0;
+  return old_swig_lal_do_redirect_stdouterr;
 }
 %}
 
@@ -453,6 +456,11 @@ typedef struct {
 ///
 /// # Specialised typemaps for <tt>LIGOTimeGPS</tt>
 ///
+
+/// Allow arbitrary attributes to be attached to the <tt>LIGOTimeGPS</tt> class in Python.
+#if defined(SWIGPYTHON)
+%pythondynamic tagLIGOTimeGPS;
+#endif
 
 ///
 /// Specialised input typemaps for <tt>LIGOTimeGPS</tt> structs.  Accepts a SWIG-wrapped <tt>LIGOTimeGPS</tt> or a

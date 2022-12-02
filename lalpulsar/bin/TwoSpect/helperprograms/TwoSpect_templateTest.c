@@ -25,7 +25,6 @@
 
 #include <lal/Window.h>
 #include <lal/LALMalloc.h>
-#include <lal/SFTutils.h>
 #include <lal/SFTfileIO.h>
 #include <lal/DopplerScan.h>
 #include <lal/VectorOps.h>

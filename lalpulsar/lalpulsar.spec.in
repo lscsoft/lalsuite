@@ -65,6 +65,7 @@ BuildRequires: lalinference-octave >= @MIN_LALINFERENCE_VERSION@
 # lalpulsar
 Summary: LSC Algorithm Pulsar Library - runtime tools
 Requires: cds-crtools
+Requires: gwdatafind
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Requires: %{name}-data
@@ -214,8 +215,23 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
-* Tue Aug 02 2022 Adam Mercer <adam.mercer@ligo.org> 4.0.1-1
-- Update for 4.0.1
+* Thu Nov 03 2022 Adam Mercer <adam.mercer@ligo.org> 5.2.0-1
+- Update for 5.2.0
+
+* Fri Sep 30 2022 Adam Mercer <adam.mercer@ligo.org> 5.1.1-1
+- Update for 5.1.1
+
+* Wed Sep 28 2022 Adam Mercer <adam.mercer@ligo.org> 5.1.0-1
+- Update for 5.1.0
+
+* Mon Sep 05 2022 Adam Mercer <adam.mercer@ligo.org> 5.0.2-1
+- Update for 5.0.2
+
+* Thu Aug 18 2022 Adam Mercer <adam.mercer@ligo.org> 5.0.1-1
+- Update for 5.0.1
+
+* Tue Aug 02 2022 Adam Mercer <adam.mercer@ligo.org> 5.0.0-1
+- Update for 5.0.0
 
 * Thu Mar 03 2022 Adam Mercer <adam.mercer@ligo.org> 4.0.0-1
 - Update for 4.0.0

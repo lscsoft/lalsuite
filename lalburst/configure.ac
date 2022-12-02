@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALBurst],[1.6.0.1],[lal-discuss@ligo.org])
+AC_INIT([LALBurst],[1.7.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALBurstConfig.h])
 AC_CONFIG_SRCDIR([lib/EPSearch.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -68,7 +68,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.2.0"
+MIN_LAL_VERSION="7.2.2"
 MIN_LALMETAIO_VERSION="3.0.0"
 MIN_LALSIMULATION_VERSION="4.0.0"
 MIN_PYTHON_LIGO_LW_VERSION="1.7.0"
@@ -81,6 +81,7 @@ AC_CANONICAL_HOST
 
 LALSUITE_ARG_VAR
 
+LALSUITE_CHECK_PLATFORM
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
 
@@ -89,6 +90,9 @@ LALSUITE_ENABLE_NIGHTLY
 
 # enable strict gcc flags
 LALSUITE_ENABLE_GCC_FLAGS
+
+# enable strict definitions
+LALSUITE_ENABLE_STRICT_DEFS
 
 # enable SWIG wrapping modules
 LALSUITE_ENABLE_SWIG

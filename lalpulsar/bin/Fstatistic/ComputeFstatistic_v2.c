@@ -1087,7 +1087,8 @@ initUserVars ( UserInput_t *uvar )
   XLALRegisterUvarMember( 	dorbitArgp, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Spacing in Orbital argument of periapse in radians");
   XLALRegisterUvarMember( 	dorbitEcc, 	 REAL8, 0,  OPTIONAL, "Binary Orbit: Spacing in Orbital eccentricity");
 
-  XLALRegisterUvarMember(DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (also multi-IFO) input SFT-files");
+  XLALRegisterUvarMember(DataFiles, 	STRING, 'D', OPTIONAL, "File-pattern specifying (also multi-IFO) input SFT-files. Possibilities are:\n"
+                         " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'");
 
   XLALRegisterUvarMember( assumeSqrtSX,	 STRINGVector, 0,  OPTIONAL, "Don't estimate noise-floors but assume (stationary) per-IFO sqrt{SX} (if single value: use for all IFOs).\nNote that, unlike the historic --SignalOnly flag, this option will not lead to explicitly adding a +4 'correction' for noiseless SFTs to the output F-statistic.");
 
@@ -1396,7 +1397,7 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     scanInit.Tspan     = cfg->Tspan;
 
     // just use first SFTs' IFO for metric (should be irrelevant)
-    LALDetector *detector;
+    const LALDetector *detector;
     XLAL_CHECK ( (detector = XLALGetSiteInfo ( catalog->data[0].header.name ) ) != NULL, XLAL_EFUNC );
     scanInit.Detector  = detector;
 
@@ -1414,7 +1415,6 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLAL_CHECK ( (cfg->scanState = XLALInitDopplerFullScan ( &scanInit)) != NULL, XLAL_EFUNC );
     LogPrintfVerbatim (LOG_NORMAL, "template grid ready.\n");
     XLALNumDopplerTemplates ( cfg->scanState );
-    XLALFree ( detector );
   }
 
   /* maximum ranges of binary orbit parameters */

@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <assert.h>
 #include <float.h>
 #include <complex.h>
 #include <lal/LALStdlib.h>
@@ -99,7 +98,7 @@ static void Test_BHNS_spin_aligned(void) {
       input_BHNS_spin_aligned[i][2],
       input_BHNS_spin_aligned[i][3]);
     print_difference("XLALBHNS_spin_aligned", output, expected_BHNS_spin_aligned[i]);
-    assert(approximatelyEqual(output, expected_BHNS_spin_aligned[i], TOLERANCE_BHNS_SPIN_ALIGNED));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_BHNS_spin_aligned[i], TOLERANCE_BHNS_SPIN_ALIGNED));
   }
 }
 
@@ -140,7 +139,7 @@ static void Test_BHNS_mass_aligned(void) {
       input_BHNS_mass_aligned[i][2],
       input_BHNS_mass_aligned[i][3]);
     print_difference("XLALBHNS_mass_aligned", output, expected_BHNS_mass_aligned[i]);
-    assert(approximatelyEqual(output, expected_BHNS_mass_aligned[i], TOLERANCE_BHNS_MASS_ALIGNED));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_BHNS_mass_aligned[i], TOLERANCE_BHNS_MASS_ALIGNED));
   }
 }
 
@@ -195,7 +194,7 @@ static void Test_bbh_final_spin_non_precessing_UIB2016(void) {
       input_bbh_final_spin_non_precessing_UIB2016[i][2],
       input_bbh_final_spin_non_precessing_UIB2016[i][3]);
     print_difference("XLALbbh_final_spin_non_precessing_UIB2016", output, expected_bbh_final_spin_non_precessing_UIB2016[i]);
-    assert(approximatelyEqual(output, expected_bbh_final_spin_non_precessing_UIB2016[i], TOLERANCE_BBH_FINAL_SPIN_NON_PRECESSING_UIB2016));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_bbh_final_spin_non_precessing_UIB2016[i], TOLERANCE_BBH_FINAL_SPIN_NON_PRECESSING_UIB2016));
   }
 }
 
@@ -250,7 +249,7 @@ static void Test_bbh_final_mass_non_precessing_UIB2016(void) {
       input_bbh_final_mass_non_precessing_UIB2016[i][2],
       input_bbh_final_mass_non_precessing_UIB2016[i][3]);
     print_difference("XLALbbh_final_mass_non_precessing_UIB2016", output, expected_bbh_final_mass_non_precessing_UIB2016[i]);
-    assert(approximatelyEqual(output, expected_bbh_final_mass_non_precessing_UIB2016[i], TOLERANCE_BBH_FINAL_MASS_NON_PRECESSING_UIB2016));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_bbh_final_mass_non_precessing_UIB2016[i], TOLERANCE_BBH_FINAL_MASS_NON_PRECESSING_UIB2016));
   }
 }
 

@@ -74,8 +74,7 @@ extern "C" {
  *
  * Assert-like error checking can be performed with <tt>#XLAL_CHECK</tt>-style
  * macros.  Unlike <tt>assert()</tt> statements, <tt>#XLAL_CHECK</tt> macros
- * do <i>not</i> get removed when the code is not compiled with
- * <tt>NDEBUG</tt> defined.
+ * do <i>not</i> get removed when the code is compiled with <tt>-DNDEBUG</tt>.
  *
  * Additional error, warning, and informational messages can be generated using
  * the routines <tt>XLALPrintError()</tt>, <tt>XLALPrintWarning()</tt> and
@@ -899,6 +898,42 @@ void XLALError(const char *func,
  * </ul>
  */
 #define XLAL_CHECK_FAIL(assertion, ...) _XLAL_CHECK_IMPL_(goto XLAL_FAIL, assertion, __VA_ARGS__)
+
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
+ * by calling <tt>lalAbortHook()</tt>.
+ *
+ * Prototype: <b>XLAL_CHECK_ABORT(assertion)</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * </ul>
+ */
+#define XLAL_CHECK_ABORT(assertion) \
+	do { \
+		if (!(assertion)) { \
+			XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
+			lalAbortHook("XLAL_CHECK_ABORT() failed"); \
+		} \
+	} while (0)
+
+/**
+ * \brief Macro to test an assertion and invoke a failure if it is not true
+ * by calling <tt>exit(1)</tt>.
+ *
+ * Prototype: <b>XLAL_CHECK_EXIT(assertion)</b>
+ *
+ * \b Parameters:<ul>
+ * <li> \b assertion The assertion to test.
+ * </ul>
+ */
+#define XLAL_CHECK_EXIT(assertion) \
+	do { \
+		if (!(assertion)) { \
+			XLAL_PRINT_ERROR("Check failed: %s", #assertion); \
+			exit(1); \
+		} \
+	} while (0)
 
 
 #endif /* SWIG */

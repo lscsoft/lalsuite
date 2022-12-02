@@ -29,23 +29,13 @@ libs="$1"
 shift
 if test "x$1" = x; then
     cmd=false
-    script=/dev/null
 else
     cmd="$1"
     shift
     while test "x$1" != x; do
         cmd="${cmd} '$1'"
-        if test "x$2" = x; then
-            script="$1"
-        fi
         shift
     done
-fi
-
-# check that script is not executable
-if test -x "${script}"; then
-    echo "$0: test script '${script}' must not be executable" >&2
-    exit 1
 fi
 
 # build unique list of absolute paths to libtool libraries
@@ -151,7 +141,7 @@ done
 # print verbose information
 if test "x${verbose}" = xyes || test "x${LALSUITE_RUN_UNINSTALLED_VERBOSE}" != x; then
     echo "========== $0 environment =========="
-    eval "${ltcmd} env" 2>/dev/null | sed -n -e '/^LAL/p;/PATH=/p' | sed -e 's/^/environment: /'
+    eval "${ltcmd} env" 2>/dev/null | sed -e 's/^/environment: /'
     echo "---------- $0 environment ----------"
     echo
     echo "========== $0 libtool dry run =========="

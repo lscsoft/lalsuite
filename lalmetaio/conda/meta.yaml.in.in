@@ -20,7 +20,7 @@
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
 {% set metaio_version = "@MIN_METAIO_VERSION@" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.1.0a0" %}
 
 package:
   name: {{ name }}-split
@@ -48,7 +48,7 @@ requirements:
     - swig >={{ swig_version }}
   host:
     - liblal >={{ lal_version }}
-    - metaio >={{ metaio_version }}
+    - libmetaio >={{ metaio_version }}
 
 outputs:
   - name: liblalmetaio
@@ -65,10 +65,10 @@ outputs:
         - swig >={{ swig_version }}
       host:
         - liblal >={{ lal_version }}
-        - metaio >={{ metaio_version }}
+        - libmetaio >={{ metaio_version }}
       run:
         - liblal >={{ lal_version }}
-        - metaio >={{ metaio_version }}
+        - libmetaio >={{ metaio_version }}
       run_constrained:
         - lalmetaio >=2.0.1
         - python-lalmetaio >=2.0.1
@@ -120,6 +120,7 @@ outputs:
       host:
         - {{ pin_subpackage('liblalmetaio', exact=True) }}
         - numpy
+        - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
         # extras to assist the solver, but not actually used

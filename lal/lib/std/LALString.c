@@ -318,14 +318,69 @@ char *XLALStringToken(char **s, const char *delim, int empty)
 }
 
 /**
+ * Return the string 's' applying the function 'f(c, param)' to all characters 'c'.
+ * If 'f()' returns < 0, the character is stripped from the string.
+ */
+char *XLALStringTranslate(char *s, int (*f)(int, void*), void *param)
+{
+
+    if (s == NULL || f == NULL) {
+        return s;
+    }
+
+    char *p = s;
+    for (char *q = s; *q != '\0'; ++q) {
+        int r = f( ((int) *q ), param );
+        if (r >= 0) {
+            *p = (char) r;
+            ++p;
+        }
+    }
+    *p = '\0';
+
+    return s;
+
+}
+
+static int strip_chars(int c, void *param)
+{
+    int (*f)(int) = (int (*)(int)) param;
+    return f(c) ? -1 : c;
+}
+
+/**
+ * Return the string 's' with all characters for which 'f()' is true removed
+ */
+char *XLALStringStripChars(char *s, int (*f)(int))
+{
+    return XLALStringTranslate(s, strip_chars, f);
+}
+
+static int keep_chars(int c, void *param)
+{
+    int (*f)(int) = (int (*)(int)) param;
+    return f(c) ? c : -1;
+}
+
+/**
+ * Return the string 's' with all characters for which 'f()' is false removed
+ */
+char *XLALStringKeepChars(char *s, int (*f)(int))
+{
+    return XLALStringTranslate(s, keep_chars, f);
+}
+
+static int replace(int c, void *param)
+{
+    int *from_to = ((int*) param);
+    return (c == from_to[0]) ? from_to[1] : c;
+}
+
+/**
  * Return the string 's' with all characters 'from' replaced with 'to'
  */
 char *XLALStringReplaceChar(char *s, const int from, const int to)
 {
-    for (char *c = s; c != NULL && *c != '\0'; ++c) {
-        if (*c == from) {
-            *c = to;
-        }
-    }
-    return s;
+    int from_to[2] = { from, to };
+    return XLALStringTranslate(s, replace, &from_to);
 }

@@ -1,19 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalpulsar.m4 - LALPulsar specific macros
 #
-# serial 5
-
-AC_DEFUN([LALPULSAR_ENABLE_PSS],
-[AC_ARG_ENABLE(
-  [pss],
-  AS_HELP_STRING([--enable-pss],[compile code that requires pss library [default=no]]),
-  [ case "${enableval}" in
-      yes) pss=true;;
-      no) pss=false;;
-      *) AC_MSG_ERROR(bad value ${enableval} for --enable-pss) ;;
-    esac
-  ], [pss=false])
-])
+# serial 6
 
 AC_DEFUN([LALPULSAR_ENABLE_SISTR],
 [AC_ARG_ENABLE(

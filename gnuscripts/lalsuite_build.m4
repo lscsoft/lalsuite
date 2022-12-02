@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 168
+# serial 170
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -91,6 +91,11 @@ AC_DEFUN([LALSUITE_CHECK_PLATFORM],[
       ;;
   esac
   AM_CONDITIONAL([HOST_OS_DARWIN], [test x"${host_darwin}" = xyes])
+  AM_COND_IF([HOST_OS_DARWIN],[
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HOST_OS_DARWIN],[true])
+  ],[
+    LALSUITE_ADD_TESTS_ENV_CONFIG_VAR([HOST_OS_DARWIN],[false])
+  ])
 ])
 
 AC_DEFUN([LALSUITE_CHECK_COMPILE_FLAGS],[
@@ -358,6 +363,25 @@ AC_DEFUN([LALSUITE_ADD_TESTS_ENV_CONFIG_VAR],[
       ]
     )
   ])
+])
+
+AC_DEFUN([LALSUITE_ENABLE_STRICT_DEFS],[
+  # $0: forbid certain definitions in LAL code
+  AC_ARG_ENABLE(
+    [strict-defs],
+    AS_HELP_STRING(
+      [--enable-strict-defs],
+      [forbid certain definitions in LAL code [default=no]]
+    ),[
+      AS_CASE(["${enableval}"],
+        [yes],[LALSUITE_ADD_FLAGS([C],[-DLAL_STRICT_DEFS_ENABLED])],
+        [no],[:],
+        [AC_MSG_ERROR([bad value for ${enableval} for --enable-strict-defs])]
+      )
+    ],[
+    ]
+  )
+  # end $0
 ])
 
 AC_DEFUN([LALSUITE_REQUIRE_CXX],[
@@ -634,7 +658,7 @@ AC_DEFUN([LALSUITE_CHECK_LIB],[
     # use standard include paths
     save_IFS="$IFS"
     IFS=:
-    for flag in $C_INCLUDE_PATH $CPLUS_INCLUDE_PATH /usr/include ; do
+    for flag in $C_INCLUDE_PATH $CPLUS_INCLUDE_PATH ; do
       test -n "$flag" && flag="-I$flag"
       AS_CASE([" $CPPFLAGS $LAL_SYSTEM_INCLUDES "],
         [*" ${flag} "*],[:],

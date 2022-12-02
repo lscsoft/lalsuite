@@ -4,7 +4,6 @@ EXTRA_DIST = \
 	control \
 	copyright \
 	lalburst.install \
-	lalburst-octave.install \
 	liblalburst@LIBMAJOR@.install \
 	liblalburst-dev.install \
 	python3-lalburst.install \

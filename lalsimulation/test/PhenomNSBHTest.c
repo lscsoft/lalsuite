@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <assert.h>
 #include <float.h>
 
 #include <lal/Units.h>
@@ -103,7 +102,7 @@ static void Test_x_D(void) {
       input_x_D[i][2],
       input_x_D[i][3]);
     print_difference("XLALSimIMRPhenomNSBH_x_D", output, expected_x_D[i]);
-    assert(approximatelyEqual(output, expected_x_D[i], TOLERANCE_X_D));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_x_D[i], TOLERANCE_X_D));
   }
 }
 
@@ -151,7 +150,7 @@ static void Test_epsilon_ins_with_torus_mass(void) {
       input_epsilon_ins_with_torus_mass[i][2],
       input_epsilon_ins_with_torus_mass[i][3]);
     print_difference("XLALSimIMRPhenomNSBH_epsilon_ins_with_torus_mass", output, expected_epsilon_ins_with_torus_mass[i]);
-    assert(approximatelyEqual(output, expected_epsilon_ins_with_torus_mass[i], TOLERANCE_EPSILON_INS_WITH_TORUS_MASS));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_epsilon_ins_with_torus_mass[i], TOLERANCE_EPSILON_INS_WITH_TORUS_MASS));
   }
 }
 
@@ -199,7 +198,7 @@ static void Test_x_D_prime(void) {
       input_x_D_prime[i][2],
       input_x_D_prime[i][3]);
     print_difference("XLALSimIMRPhenomNSBH_x_D_prime", output, expected_x_D_prime[i]);
-    assert(approximatelyEqual(output, expected_x_D_prime[i], TOLERANCE_X_D_PRIME));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_x_D_prime[i], TOLERANCE_X_D_PRIME));
   }
 }
 
@@ -247,7 +246,7 @@ static void Test_sigma_tide_with_torus_mass(void) {
       input_sigma_tide_with_torus_mass[i][2],
       input_sigma_tide_with_torus_mass[i][3]);
     print_difference("XLALSimIMRPhenomNSBH_sigma_tide_with_torus_mass", output, expected_sigma_tide_with_torus_mass[i]);
-    assert(approximatelyEqual(output, expected_sigma_tide_with_torus_mass[i], TOLERANCE_SIGMA_TIDE_WITH_TORUS_MASS));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_sigma_tide_with_torus_mass[i], TOLERANCE_SIGMA_TIDE_WITH_TORUS_MASS));
   }
 }
 
@@ -325,7 +324,7 @@ static void Test_epsilon_tide_ND(void) {
     double output = XLALSimIMRPhenomNSBH_epsilon_tide_ND(
       input_epsilon_tide_ND[i][0]);
     print_difference("XLALSimIMRPhenomNSBH_epsilon_tide_ND", output, expected_epsilon_tide_ND[i]);
-    assert(approximatelyEqual(output, expected_epsilon_tide_ND[i], TOLERANCE_EPSILON_TIDE_ND));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_epsilon_tide_ND[i], TOLERANCE_EPSILON_TIDE_ND));
   }
 }
 
@@ -389,7 +388,7 @@ static void Test_sigma_tide_ND(void) {
     double output = XLALSimIMRPhenomNSBH_sigma_tide_ND(
       input_sigma_tide_ND[i][0]);
     print_difference("XLALSimIMRPhenomNSBH_sigma_tide_ND", output, expected_sigma_tide_ND[i]);
-    assert(approximatelyEqual(output, expected_sigma_tide_ND[i], TOLERANCE_SIGMA_TIDE_ND));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_sigma_tide_ND[i], TOLERANCE_SIGMA_TIDE_ND));
   }
 }
 
@@ -479,7 +478,7 @@ static void Test_x_ND(void) {
       input_x_ND[i][2],
       input_x_ND[i][3]);
     print_difference("XLALSimIMRPhenomNSBH_x_ND", output, expected_x_ND[i]);
-    assert(approximatelyEqual(output, expected_x_ND[i], TOLERANCE_X_ND));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_x_ND[i], TOLERANCE_X_ND));
   }
 }
 
@@ -569,7 +568,7 @@ static void Test_x_ND_prime(void) {
       input_x_ND_prime[i][2],
       input_x_ND_prime[i][3]);
     print_difference("XLALSimIMRPhenomNSBH_x_ND_prime", output, expected_x_ND_prime[i]);
-    assert(approximatelyEqual(output, expected_x_ND_prime[i], TOLERANCE_X_ND_PRIME));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_x_ND_prime[i], TOLERANCE_X_ND_PRIME));
   }
 }
 
@@ -589,7 +588,7 @@ static void Test_delta2_prime(void) {
       input_delta2_prime[i][0],
       input_delta2_prime[i][1]);
     print_difference("XLALSimIMRPhenomNSBH_delta2_prime", output, expected_delta2_prime[i]);
-    assert(approximatelyEqual(output, expected_delta2_prime[i], TOLERANCE_DELTA2_PRIME));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_delta2_prime[i], TOLERANCE_DELTA2_PRIME));
   }
 }
 
@@ -610,7 +609,7 @@ static void Test_baryonic_mass_from_C(void) {
       input_baryonic_mass_from_C[i][0],
       input_baryonic_mass_from_C[i][1]);
     print_difference("XLALSimIMRPhenomNSBH_baryonic_mass_from_C", output, expected_baryonic_mass_from_C[i]);
-    assert(approximatelyEqual(output, expected_baryonic_mass_from_C[i], TOLERANCE_BARYONIC_MASS_FROM_C));
+    XLAL_CHECK_EXIT(approximatelyEqual(output, expected_baryonic_mass_from_C[i], TOLERANCE_BARYONIC_MASS_FROM_C));
   }
 }
 
@@ -634,11 +633,11 @@ static void Test_omega_tilde(void) {
 
     // Assert real part is approximately equal
     print_difference("XLALSimIMRPhenomNSBH_omega_tilde (real)", creal(output), creal(expected_omega_tilde[i]));
-    assert(approximatelyEqual(creal(output), creal(expected_omega_tilde[i]), TOLERANCE_OMEGA_TILDE));
+    XLAL_CHECK_EXIT(approximatelyEqual(creal(output), creal(expected_omega_tilde[i]), TOLERANCE_OMEGA_TILDE));
 
     // Assert imaginary part is approximately equal
     print_difference("XLALSimIMRPhenomNSBH_omega_tilde (imag)", cimag(output), cimag(expected_omega_tilde[i]));
-    assert(approximatelyEqual(cimag(output), cimag(expected_omega_tilde[i]), TOLERANCE_OMEGA_TILDE));
+    XLAL_CHECK_EXIT(approximatelyEqual(cimag(output), cimag(expected_omega_tilde[i]), TOLERANCE_OMEGA_TILDE));
   }
 }
 

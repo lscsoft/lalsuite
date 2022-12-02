@@ -7,7 +7,7 @@
 @SWIG_BUILD_PYTHON_TRUE@except:
 @SWIG_BUILD_PYTHON_TRUE@    pass
 @SWIG_BUILD_PYTHON_TRUE@else:
-@SWIG_BUILD_PYTHON_TRUE@    lal.swig_redirect_standard_output_error()
+@SWIG_BUILD_PYTHON_TRUE@    lal.swig_redirect_standard_output_error(True)
 
 __version__ = "@PACKAGE_VERSION@"
 

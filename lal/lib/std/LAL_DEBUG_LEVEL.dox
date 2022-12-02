@@ -1,0 +1,63 @@
+/* Keep in sync with LAL_DEBUG_LEVEL.1 */
+/**
+\addtogroup LALDebugLevel_h
+
+## The LAL_DEBUG_LEVEL environment variable ##
+
+### Synopsis ###
+
+\code{.sh}
+$ export LAL_DEBUG_LEVEL=level[,level...]
+
+$ env LAL_DEBUG_LEVEL=level[,level...] lalsuite-executable [args...]
+\endcode
+
+### Description ###
+
+The environment variable \c LAL_DEBUG_LEVEL controls the default verbosity of LALSuite debugging information printed through the functions defined in \ref LALError_h and \ref XLALError_h .
+It also controls several memory debugging features implemented for memory allocated using the functions defined in \ref LALMalloc_h .
+
+### Options ###
+
+\c LAL_DEBUG_LEVEL is parsed as a comma-separated series of <tt>level</tt>s. (Empty <tt>level</tt>s are ignored.)
+Each <tt>level</tt> is a case-insensitive string, and may be one of the following:
+
+- \c NDEBUG:
+  No debugging information is printed and memory debugging features are disabled.
+  This cancels out the effect of any previously-specified <tt>level</tt>s.
+
+- Debugging information verbosity <tt>level</tt>s:
+
+  + \c ERROR:
+    Error messages are printed (default).
+
+  + \c WARNING:
+    Warning messages are printed.
+
+  + \c INFO:
+    Information messages are printed.
+
+  + \c TRACE:
+    Function call tracing messages are printed.
+
+  + MSGLVL1:
+    Equivalent to \c ERROR.
+
+  + MSGLVL2:
+    Equivalent to \c ERROR and \c WARNING combined.
+
+  + MSGLVL3:
+    Equivalent to \c ERROR, \c WARNING, and \c INFO combined.
+
+- Memory debugging <tt>level</tt>s:
+
+  + \c MEMDBG:
+    Debugging of memory allocation routines is enabled, but no function call or memory allocation tracing messages are printed.
+
+  + \c MEMTRACE:
+    Debugging of memory allocation routines is enabled, and in addition function call and memory allocation tracing messages are printed.
+
+- \c ALLDBG:
+  All debugging information messages are printed, and all memory debugging features are enabled.
+
+*/

@@ -53,7 +53,7 @@ typedef struct
   LIGOTimeGPS timeGPS;			/**< GPS time to compute detector state for (LIGOtimeGPS format) */
   SkyPosition skypos;			/**< skyposition Alpha,Delta in radians, equatorial coords. */
   EphemerisData *edat;			/**< ephemeris data (from XLALInitBarycenter()) */
-  LALDetector *det;			/**< LIGODetector struct holding detector info */
+  const LALDetector *det;		/**< LIGODetector struct holding detector info */
   LIGOTimeGPSVector *timestamps;	/**< timestamps vector holding 1 element: timeGPS */
   REAL8 sinzeta;			/**< detector-arm angle correction (needed for GEO) */
 } ConfigVariables;
@@ -257,8 +257,6 @@ XLALDestroyConfig ( ConfigVariables *cfg )
   XLALDestroyTimestampVector ( cfg->timestamps );
 
   XLALDestroyEphemerisData ( cfg->edat );
-
-  XLALFree ( cfg->det );
 
   return XLAL_SUCCESS;
 

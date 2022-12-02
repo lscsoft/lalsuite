@@ -72,6 +72,11 @@ typedef enum tagTilingLattice {
 extern const UserChoices TilingLatticeChoices;
 
 ///
+/// Log level at which to print progress messages when counting templates and performing callbacks
+///
+extern int LatticeTilingProgressLogLevel;
+
+///
 /// Function which returns a bound on a dimension of the lattice tiling.
 ///
 typedef double( *LatticeTilingBound )(
@@ -182,13 +187,27 @@ int XLALSetLatticeTilingConstantBound(
 /// Control the padding of lattice tiling parameter-space bounds in the given dimension.
 /// This is an optional setting and should generally not be used unless specifically required.
 ///
+/// All parameters, if passed a negative value, will use their built-in defaults.
+///
+/// The <tt>{lower|upper}_{bbox|intp}_pad</tt> parameters set the extra padding added to the
+/// parameter space; see \cite Wette2014a , Fig. 6 for an illustration of why this is needed.
+///
+/// Setting all <tt>{lower|upper}_{bbox|intp}_pad</tt> parameters to zero triggers a \e strict
+/// mode, where the lattice tiling will not place points outside the prescribed parameter space
+/// bounds.
+///
+/// If \c find_bound_extrema is true, the parameter-space padding is extended to the extrema of
+/// the parameter-space bounds, by sampling the bounds around the current point. This is intended
+/// to address the "staircase" boundary template issue described in \cite Wette2014a , Sec. IV E.
+///
 int XLALSetLatticeTilingPadding(
   LatticeTiling *tiling,                ///< [in] Lattice tiling
   const size_t dim,                     ///< [in] Dimension on which to set padding control flags
   const double lower_bbox_pad,          ///< [in] Lower padding as multiple of metric ellipse bounding box; use default if negative
   const double upper_bbox_pad,          ///< [in] Upper padding as multiple of metric ellipse bounding box; use default if negative
   const int lower_intp_pad,             ///< [in] Lower padding as integer number of points; use default if negative
-  const int upper_intp_pad              ///< [in] Upper padding as integer number of points; use default if negative
+  const int upper_intp_pad,             ///< [in] Upper padding as integer number of points; use default if negative
+  const int find_bound_extrema          ///< [in] Whether to find the extrema of the parameter-space bounds; use default if negative
   );
 
 ///
@@ -334,6 +353,19 @@ int XLALRandomLatticeTilingPoints(
   const double scale,                   ///< [in] Scale of random points
   RandomParams *rng,                    ///< [in] Random number generator used to generate points
   gsl_matrix *random_points             ///< [out] Matrix whose columns are the random points
+  );
+
+///
+/// Get a parameter-space bound on a dimension of the lattice tiling. This is a convenience function
+/// which returns the bounds set by XLALSetLatticeTilingBound() for debugging, plotting, etc.
+///
+int XLALGetLatticeTilingBound(
+  const LatticeTiling *tiling,          ///< [in] Lattice tiling
+  const size_t dim,                     ///< [in] Dimension on which bound applies
+  const gsl_vector *point,              ///< [in] Point at which bound applies
+  const bool padding,                   ///< [in] Whether to add padding to bounds
+  double *lower,                        ///< [out] Lower parameter-space bound
+  double *upper                         ///< [out] Upper parameter-space bound
   );
 
 ///

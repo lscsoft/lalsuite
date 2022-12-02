@@ -12,7 +12,6 @@
 /_build/
 /_inst/
 /lalapps-*/
-AUTHORS
 config.lt
 debian/control
 doxygen/autogen.dox
@@ -99,7 +98,6 @@ src/inspiral/lalapps_multi_hipe
 src/inspiral/lalapps_ninja
 src/inspiral/lalapps_plot_hipe
 src/inspiral/lalapps_randombank
-src/inspiral/lalapps_run_sqlite
 src/inspiral/lalapps_siminspiral_to_frame
 src/inspiral/lalapps_skymap
 src/inspiral/lalapps_spininj
@@ -143,7 +141,6 @@ src/lalapps/version2.c
 src/online/lalapps_online_datafind
 src/power/lalapps_binj
 src/power/lalapps_cafe
-src/power/lalapps_gen_timeslides
 src/power/lalapps_power
 src/power/lalapps_power_likelihood_pipe
 src/power/lalapps_power_online_pipe

@@ -18,6 +18,7 @@
  */
 
 #include <string.h>
+#include <ctype.h>
 
 #include <lal/LALString.h>
 #include <lal/XLALError.h>
@@ -114,6 +115,30 @@ int main( void )
     XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), "" ) == 0, XLAL_EFAILED );
     XLAL_CHECK_MAIN( strcmp( XLALStringToken(&p, ",-", 1), "" ) == 0, XLAL_EFAILED );
     XLAL_CHECK_MAIN( XLALStringToken(&p, ",-", 1) == NULL, XLAL_EFAILED );
+  }
+
+  {
+    char s[256];
+    strcpy( s, "a0!bCd1$E2fG^&H3i*4(j5Kl$6mN %op&qRs7&t8V,..9VW/X?0YZ" );
+    XLAL_CHECK_MAIN( strcmp( XLALStringStripChars( s, isupper ), "a0!bd1$2f^&3i*4(j5l$6m %op&qs7&t8,..9/?0" ) == 0, XLAL_EFAILED );
+    strcpy( s, "a0!bCd1$E2fG^&H3i*4(j5Kl$6mN %op&qRs7&t8V,..9VW/X?0YZ" );
+    XLAL_CHECK_MAIN( strcmp( XLALStringStripChars( s, islower ), "0!C1$E2G^&H3*4(5K$6N %&R7&8V,..9VW/X?0YZ" ) == 0, XLAL_EFAILED );
+    strcpy( s, "a0!bCd1$E2fG^&H3i*4(j5Kl$6mN %op&qRs7&t8V,..9VW/X?0YZ" );
+    XLAL_CHECK_MAIN( strcmp( XLALStringStripChars( s, isalnum ), "!$^&*($ %&&,../?" ) == 0, XLAL_EFAILED );
+    strcpy( s, "a0!bCd1$E2fG^&H3i*4(j5Kl$6mN %op&qRs7&t8V,..9VW/X?0YZ" );
+    XLAL_CHECK_MAIN( strcmp( XLALStringStripChars( s, ispunct ), "a0bCd1E2fGH3i4j5Kl6mN opqRs7t8V9VWX0YZ" ) == 0, XLAL_EFAILED );
+  }
+
+  {
+    char s[256];
+    strcpy( s, "a0!bCd1$E2fG^&H3i*4(j5Kl$6mN %op&qRs7&t8V,..9VW/X?0YZ" );
+    XLAL_CHECK_MAIN( strcmp( XLALStringKeepChars( s, isupper ), "CEGHKNRVVWXYZ" ) == 0, XLAL_EFAILED );
+    strcpy( s, "a0!bCd1$E2fG^&H3i*4(j5Kl$6mN %op&qRs7&t8V,..9VW/X?0YZ" );
+    XLAL_CHECK_MAIN( strcmp( XLALStringKeepChars( s, islower ), "abdfijlmopqst" ) == 0, XLAL_EFAILED );
+    strcpy( s, "a0!bCd1$E2fG^&H3i*4(j5Kl$6mN %op&qRs7&t8V,..9VW/X?0YZ" );
+    XLAL_CHECK_MAIN( strcmp( XLALStringKeepChars( s, isalnum ), "a0bCd1E2fGH3i4j5Kl6mNopqRs7t8V9VWX0YZ" ) == 0, XLAL_EFAILED );
+    strcpy( s, "a0!bCd1$E2fG^&H3i*4(j5Kl$6mN %op&qRs7&t8V,..9VW/X?0YZ" );
+    XLAL_CHECK_MAIN( strcmp( XLALStringKeepChars( s, ispunct ), "!$^&*($%&&,../?" ) == 0, XLAL_EFAILED );
   }
 
   {

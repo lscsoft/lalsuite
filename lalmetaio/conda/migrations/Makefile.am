@@ -1,3 +1,3 @@
 EXTRA_DIST = \
-	python310.yaml \
+	python311.yaml \
 	$(END_OF_LIST)

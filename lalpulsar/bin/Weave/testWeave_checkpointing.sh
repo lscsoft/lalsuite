@@ -113,7 +113,7 @@ for opt in nopart freqpart f1dotpart allpart; do
 
     echo "=== Options '${opt}': Compare F-statistics from lalpulsar_Weave without/with checkpointing ==="
     set -x
-    lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits
+    lalpulsar_WeaveCompare --setup-file=WeaveSetup.fits --result-file-1=WeaveOutNoCkpt.fits --result-file-2=WeaveOutCkpt.fits --sort-by-semi-phys
     set +x
     echo
 

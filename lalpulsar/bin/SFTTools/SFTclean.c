@@ -33,7 +33,7 @@
 #include <glob.h>
 
 #include <lal/SFTClean.h>
-#include <lal/SFTutils.h>
+#include <lal/SFTfileIO.h>
 #include <lal/SFTReferenceLibrary.h>
 #include <lal/LALPulsarVCSInfo.h>
 
@@ -96,7 +96,8 @@ int main(int argc, char *argv[]){
   uvar_outSingleSFT = FALSE;
 
   /* register user input variables */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,    "sftDir",    STRING,       'i', REQUIRED,  "Input SFT file pattern") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,    "sftDir",    STRING,       'i', REQUIRED,  "Input SFT file pattern. Possibilities are:\n"
+                                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outDir,    "outDir",    STRING,       'o', REQUIRED,  "Output SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMin,      "fMin",      REAL8,        0,   OPTIONAL, "start Frequency (default: full input SFTs width)") == XLAL_SUCCESS, XLAL_EFUNC);
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMax,      "fMax",      REAL8,        0,   OPTIONAL, "Max Frequency  (default: full input SFTs width)") == XLAL_SUCCESS, XLAL_EFUNC);
@@ -169,6 +170,8 @@ int main(int argc, char *argv[]){
     char *outpath = NULL;
     FILE *fpout = NULL;
     UINT4 numSFTs = multiCatalogView->data[X].length;
+    const char* window_type = multiCatalogView->data[X].data[0].window_type;
+    const REAL8 window_param = multiCatalogView->data[X].data[0].window_param;
     if ( uvar_outSingleSFT ) {
       /* grab the first and last entry from the single-IFO catalog,
        * relying here on XLALSFTdataFind returning a catalogue with SFTs sorted by increasing GPS-epochs
@@ -188,13 +191,14 @@ int main(int argc, char *argv[]){
         Tspan += 1;
       }
       /* get the official-format filename for the merged output file for this detector */
-      char *filename;
-      XLAL_CHECK_MAIN ( (filename = XLALOfficialSFTFilename ( name[0], name[1], numSFTs, Tsft, epochStart->gpsSeconds, Tspan, misc )) != NULL, XLAL_EFUNC );
-      /* append to output directory name */
-      int len = strlen ( uvar_outDir ) + 1 + strlen ( filename ) + 1;
-      XLAL_CHECK_MAIN ( (outpath = XLALCalloc ( 1, len )) != NULL, XLAL_ENOMEM );
-      sprintf ( outpath, "%s/%s", uvar_outDir, filename );
-      XLALFree ( filename );
+      SFTFilenameSpec XLAL_INIT_DECL(spec);
+      XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar_outDir, NULL, name, window_type, misc, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+      spec.numSFTs = numSFTs;
+      spec.SFTtimebase = Tsft;
+      spec.window_param = window_param;
+      spec.gpsStart = epochStart->gpsSeconds;
+      spec.SFTspan = Tspan;
+      XLAL_CHECK_MAIN ( (outpath = XLALBuildSFTFilenameFromSpec(&spec)) != NULL, XLAL_EFUNC );
       printf ( "Writing %d cleaned SFTs for %s to merged output file %s ...\n", numSFTs, name, outpath );
       XLAL_CHECK_MAIN ( (fpout = fopen ( outpath, "wb" )) != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s\n\n", outpath, strerror(errno));
     } else {
@@ -246,10 +250,12 @@ int main(int argc, char *argv[]){
       if ( uvar_outSingleSFT ) {
         for ( UINT4 k = 0; k < inputSFTs->data[0]->length; k++ ) {
           SFTtype *this_sft = &( inputSFTs->data[0]->data[k] );
-          XLAL_CHECK ( XLALWriteSFT2fp ( this_sft, fpout, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK ( XLALWriteSFT2FilePointer ( this_sft, fpout, window_type, window_param, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
       } else {
-        XLAL_CHECK_MAIN( XLALWriteSFTVector2Dir ( inputSFTs->data[0], uvar_outDir, comment, misc ) == XLAL_SUCCESS, XLAL_EFUNC);
+        SFTFilenameSpec XLAL_INIT_DECL(spec);
+        XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar_outDir, NULL, NULL, window_type, misc, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALWriteSFTVector2StandardFile( inputSFTs->data[0], &spec, comment, 0 ) == XLAL_SUCCESS, XLAL_EFUNC);
       }
 
       XLALDestroyMultiSFTVector( inputSFTs);

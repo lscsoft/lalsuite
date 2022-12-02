@@ -12,10 +12,10 @@
 /_build/
 /_inst/
 /lalburst-*/
-AUTHORS
 bin/lalburst_cluster
 bin/lalburst_coinc
 bin/lalburst_cut
+bin/lalburst_gen_timeslides
 bin/lalburst_injfind
 bin/lalburst_inj_pic
 bin/lalburst_plot_tisi

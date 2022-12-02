@@ -1,0 +1,74 @@
+.TH LAL_DEBUG_LEVEL 7 "11 July 2001" LALSuite LALSuite
+.SH NAME
+LAL_DEBUG_LEVEL - control LALSuite debugging information verbosity and memory debugging features
+
+.SH SYNOPSIS
+.B export
+.IR LAL_DEBUG_LEVEL=level[,level...]
+
+.B env
+.IR LAL_DEBUG_LEVEL=level[,level...]
+.B lalsuite-executable
+.IR [args...]
+
+.SH DESCRIPTION
+The environment variable \fILAL_DEBUG_LEVEL\fP controls the default verbosity of LALSuite debugging information printed through the functions defined in \fILALError.h\fP and \fIXLALError.h\fP.
+It also controls several memory debugging features implemented for memory allocated using the functions defined in \fILALMalloc.h\fP.
+
+.SH OPTIONS
+\fILAL_DEBUG_LEVEL\fP is parsed as a comma-separated series of \fIlevel\fPs. (Empty \fIlevel\fPs are ignored.)
+Each \fIlevel\fP is a case-insensitive string, and may be one of the following:
+
+.RS
+.TP
+.B NDEBUG
+No debugging information is printed and memory debugging features are disabled.
+This cancels out the effect of any previously-specified \fIlevel\fPs.
+
+.TP
+Debugging information verbosity \fIlevel\fPs:
+.RS
+.TP
+.B ERROR
+Error messages are printed (default).
+.TP
+.B WARNING
+Warning messages are printed.
+.TP
+.B INFO
+Information messages are printed.
+.TP
+.B TRACE
+Function call tracing messages are printed.
+.TP
+.B MSGLVL1
+Equivalent to \fBERROR\fP.
+.TP
+.B MSGLVL2
+Equivalent to \fBERROR\fP and \fBWARNING\fP combined.
+.TP
+.B MSGLVL3
+Equivalent to \fBERROR\fP, \fBWARNING\fP, and \fBINFO\fP combined.
+.RE
+
+.TP
+Memory debugging \fIlevel\fPs:
+.RS
+.TP
+.B MEMDBG
+Debugging of memory allocation routines is enabled, but no function call or memory allocation tracing messages are printed.
+.TP
+.B MEMTRACE
+Debugging of memory allocation routines is enabled, and in addition function call and memory allocation tracing messages are printed.
+.TP
+.RE
+
+.TP
+.B ALLDBG
+All debugging information messages are printed, and all memory debugging features are enabled.
+
+.RE
+.PP
+
+.SH AUTHORS
+Jolien Creighton, Karl Wette

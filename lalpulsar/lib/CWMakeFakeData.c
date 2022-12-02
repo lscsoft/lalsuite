@@ -99,7 +99,7 @@ XLALCWMakeFakeMultiData ( MultiSFTVector **multiSFTs,			///< [out] pointer to op
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( edat != NULL, XLAL_EINVAL );
 
-  const MultiLIGOTimeGPSVector *multiTimestamps = &(dataParams->multiTimestamps);
+  const MultiLIGOTimeGPSVector *multiTimestamps = dataParams->multiTimestamps;
 
   // check multi-detector input
   XLAL_CHECK ( dataParams->multiIFO.length >= 1, XLAL_EINVAL );
@@ -179,7 +179,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
   XLAL_CHECK ( dataParams != NULL, XLAL_EINVAL );
   XLAL_CHECK ( detectorIndex < dataParams->multiIFO.length, XLAL_EINVAL );
   XLAL_CHECK ( detectorIndex < dataParams->multiNoiseFloor.length, XLAL_EINVAL );
-  XLAL_CHECK ( detectorIndex < dataParams->multiTimestamps.length, XLAL_EINVAL );
+  XLAL_CHECK ( detectorIndex < dataParams->multiTimestamps->length, XLAL_EINVAL );
   XLAL_CHECK ( (dataParams->inputMultiTS == NULL) || (detectorIndex < dataParams->inputMultiTS->length), XLAL_EINVAL );
 
   // initial default values fMin, sampling rate from caller input or timeseries
@@ -197,7 +197,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
       XLAL_CHECK ( ( dataParams->fMin >= fMin ) && ( dataParams->fMin + dataParams->Band <= fMin + fBand ), XLAL_EINVAL, "Requested fMin=%f and fBand=%f are not covered by what the input timeseries can provide (fMin=%f, fBand=%f).", dataParams->fMin, dataParams->Band, fMin, fBand );
     }
 
-  const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps.data[detectorIndex];
+  const LIGOTimeGPSVector *timestamps = dataParams->multiTimestamps->data[detectorIndex];
   const LALDetector *site = &dataParams->multiIFO.sites[detectorIndex];
   REAL8 Tsft = timestamps->deltaT;
 
@@ -376,7 +376,7 @@ XLALCWMakeFakeData ( SFTVector **SFTvect,
     {
       // compute SFTs from timeseries
       SFTVector *sftVect;
-      XLAL_CHECK ( (sftVect = XLALMakeSFTsFromREAL8TimeSeries ( outTS, timestamps, dataParams->SFTWindowType, dataParams->SFTWindowBeta)) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (sftVect = XLALMakeSFTsFromREAL8TimeSeries ( outTS, timestamps, dataParams->SFTWindowType, dataParams->SFTWindowParam)) != NULL, XLAL_EFUNC );
 
       // extract requested band
       XLAL_CHECK ( ((*SFTvect) = XLALExtractStrictBandFromSFTVector ( sftVect, dataParams->fMin, dataParams->Band )) != NULL, XLAL_EFUNC );
@@ -492,7 +492,7 @@ SFTVector *
 XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries,	//!< input time-series
                                   const LIGOTimeGPSVector *timestamps, 	//!< timestamps to produce SFTs for (can be NULL), if given must all lies within timeseries' time-span
                                   const char *windowType,		//!< optional time-domain window function to apply before FFTing
-                                  REAL8 windowBeta			//!< window parameter, if any
+                                  REAL8 windowParam			//!< window parameter, if any
                                   )
 {
   XLAL_CHECK_NULL ( timeseries != NULL, XLAL_EINVAL, "Invalid NULL input 'timeseries'\n");
@@ -512,7 +512,7 @@ XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries,	//!< input 
   // prepare window function if requested
   REAL8Window *window = NULL;
   if ( windowType != NULL ) {
-    XLAL_CHECK_NULL ( (window = XLALCreateNamedREAL8Window ( windowType, windowBeta, timestepsSFT )) != NULL, XLAL_EFUNC );
+    XLAL_CHECK_NULL ( (window = XLALCreateNamedREAL8Window ( windowType, windowParam, timestepsSFT )) != NULL, XLAL_EFUNC );
   }
 
   // ---------- Prepare FFT ----------
@@ -581,11 +581,8 @@ XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries,	//!< input 
       thisSFT->f0 = timeseries->f0;			// SFT starts at heterodyning frequency
       thisSFT->deltaF = df;
 
-      // normalize DFT-data to conform to v2 specification ==> multiply DFT by (dt/sigma{window})
-      // the SFT normalization in case of windowing follows the conventions detailed in the SFTv2 specification,
-      // namely LIGO-T040164, and in particular Eqs.(3),(4) and (6) in T010095-00.pdf
-      // https://dcc.ligo.org/cgi-bin/private/DocDB/ShowDocument?.submit=Number&docid=T010095
-      // https://dcc.ligo.org/DocDB/0026/T010095/000/T010095-00.pdf
+      // normalize DFT-data to conform to SFT specification ==> multiply DFT by (dt/sigma{window})
+      // the SFT normalization in case of windowing follows the conventions detailed in \cite SFT-spec
       REAL8 norm = dt / sigma_window;
       for ( UINT4 k = 0; k < numSFTBins ; k ++ ) {
         thisSFT->data->data[k] = (COMPLEX8) ( norm * fftOut[k] );
@@ -1210,3 +1207,19 @@ XLALFITSWritePulsarParamsVector ( FITSFile *file, const CHAR *tableName, const P
   return XLAL_SUCCESS;
 
 } // XLALFITSWritePulsarParamsVector()
+
+/**
+ * Destructor for a CWMFDataParams type
+ *
+ * \note: This is mostly useful for the SWIG wrappers
+ */
+void
+XLALDestroyCWMFDataParams ( CWMFDataParams *params )
+{
+  if ( params ) {
+    fflush(stdout);
+    XLALDestroyMultiTimestamps ( params->multiTimestamps );
+    XLALDestroyMultiREAL8TimeSeries ( params->inputMultiTS );
+    XLALFree ( params );
+  }
+} // XLALDestroyCWMFDataParams()

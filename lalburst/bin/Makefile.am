@@ -25,6 +25,7 @@ pybin_scripts = \
 	lalburst_cluster \
 	lalburst_coinc \
 	lalburst_cut \
+	lalburst_gen_timeslides \
 	lalburst_injfind \
 	lalburst_inj_pic \
 	lalburst_plot_tisi \

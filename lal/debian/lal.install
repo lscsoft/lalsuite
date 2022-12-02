@@ -1,1 +1,4 @@
-../../common/debian/pkg.install
+etc/*
+usr/bin/*
+usr/share/man/man1/*
+usr/share/man/man7/*

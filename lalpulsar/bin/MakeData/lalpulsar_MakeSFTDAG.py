@@ -1,16 +1,35 @@
+# Copyright (C) 2013, 2014, 2020--2022 Evan Goetz
+# Copyright (C) 2011, 2021, 2022 Karl Wette
+# Copyright (C) 2005, 2007 Gregory Mendell
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with with program; see the file COPYING. If not, write to the
+# Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+# MA  02110-1301  USA
+
+"""Creates DAGs to run jobs that generates SFTs"""
+
 import math
 import argparse
 import os
+import re
 
+from lalpulsar import git_version
 
-# MakeSFTDAG.py - Creates DAGs to run jobs that generates SFTs
-# can act as a dag generator for use with onasys.
-# Loosely based on lalapps_strain_pipe
+__author__ = 'Evan Goetz <evan.goetz@ligo.org>, Greg Mendell'
+__version__ = git_version.id
+__date__ = git_version.date
 
-
-__author__ = 'Greg Mendell<gmendell@ligo-wa.caltech.edu>'
-__date__ = '$Date$'
-__version__ = '$Revision$'
 
 # REVISIONS:
 # 12/02/05 gam; generate datafind.sub and MakeSFTs.sub as well as dag file in
@@ -40,70 +59,90 @@ __version__ = '$Revision$'
 # 04/XX/13 eag; Add -y option to synchronize the start times of SFTs.
 # 07/24/14 eag; Change default to version 2 SFTs
 # 12/2020  eag; Update script to conform to modern python3 and pep8
+# 10/2020  kww; Pass args directly to writeToDag(), use Python f-strings
+# 10/2022  kww; Deprecate options that have been removed from MakeSFTs
+# 10/2022  kww; Parse window type as a string, parameter separated by colon
+# 10/2022  kww; Merge -O and -o log path options to free up -O option
+# 10/2022  kww; Implement public SFT file naming convention
+# 11/2022  kww; -R command line option now used for --observing-revision
+#               instead of --output-jobs-per-node, which now uses -r
+# 11/2022  kww; --datafind-path and --makesfts-path accept executable names
+
 
 #
 # FUNCTION THAT WRITE ONE JOB TO DAG FILE
 #
-def writeToDag(dagFID, nodeCount, filterKneeFreq, timeBaseline,
-               outputSFTPath, cachePath, startTimeThisNode,
-               endTimeThisNode, channelName, site, inputDataType,
-               extraDatafindTime, useSingle, useHoT, makeTmpFile,
-               tagString, windowType, overlapFraction, sftVersion,
-               makeGPSDirs, miscDesc, commentField, startFreq, freqBand,
-               frameStructType, IFO):
-    LSCdataFind = 'LSCdataFind_{}'.format(nodeCount)
-    MakeSFTs = 'MakeSFTs_{}'.format(nodeCount)
-    startTimeDatafind = startTimeThisNode - extraDatafindTime
-    endTimeDatafind = endTimeThisNode + extraDatafindTime
-    tagStringOut = '{}_{}'.format(tagString, nodeCount)
-    cacheFile = '{}/{}-{}-{}.cache'.format(cachePath, site, startTimeDatafind,
-                                           endTimeDatafind)
-    argList = '-f {} -t {} -p {} -C {} -s {} -e {} -N {} -v {}'.format(
-        filterKneeFreq, timeBaseline, outputSFTPath, cacheFile,
-        startTimeThisNode, endTimeThisNode, channelName, sftVersion)
-    if IFO is not None:
-        argList = '{} -i {}'.format(argList, IFO)
-    if commentField is not None:
-        argList = '{} -c {}'.format(argList, commentField)
-    if frameStructType is not None and not useHoT:
-        argList = '{} -u {}'.format(argList, frameStructType)
-    argList = '{} -F {} -B {}'.format(argList, startFreq, freqBand)
-    if makeGPSDirs != 0:
-        argList = '{} -D {}'.format(argList, makeGPSDirs)
-    if miscDesc is not None:
-        argList = '{} -X {}'.format(argList, miscDesc)
-    if windowType != 1:
-        argList = '{} -w {}'.format(argList, windowType)
-    if overlapFraction != 0.0:
-        argList = '{} -P {}'.format(argList, overlapFraction)
-    if useSingle:
-        argList = '{} -S'.format(argList)
-    if useHoT:
-        argList = '{} -H'.format(argList)
-    if makeTmpFile:
-        argList = '{} -Z'.format(argList)
+def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args):
+    datafind = f'datafind_{nodeCount}'
+    MakeSFTs = f'MakeSFTs_{nodeCount}'
+    startTimeDatafind = startTimeThisNode - args.extra_datafind_time
+    endTimeDatafind = endTimeThisNode + args.extra_datafind_time
+    tagStringOut = f'{args.tag_string}_{nodeCount}'
+    cacheFile = f'{args.cache_path}/{site}-{startTimeDatafind}-{endTimeDatafind}.cache'
 
-    dagFID.write('JOB {} datafind.sub\n'.format(LSCdataFind))
-    dagFID.write('RETRY {} 10\n'.format(LSCdataFind))
-    dagFID.write('VARS {} gpsstarttime="{}" '.format(LSCdataFind,
-                                                     startTimeDatafind))
-    dagFID.write('gpsendtime="{}" observatory="{}" '.format(endTimeDatafind,
-                                                            site))
-    dagFID.write('inputdatatype="{}" '.format(inputDataType))
-    dagFID.write('tagstring="{}"\n'.format(tagStringOut))
-    dagFID.write('JOB {} MakeSFTs.sub\n'.format(MakeSFTs))
-    dagFID.write('RETRY {} 5\n'.format(MakeSFTs))
-    dagFID.write('VARS {} argList="{}" tagstring="{}"\n'.format(
-        MakeSFTs, argList, tagStringOut))
-    dagFID.write('PARENT {} CHILD {}\n'.format(LSCdataFind, MakeSFTs))
+    argList = []
+    argList.append(f'-O {args.observing_run}')
+    if args.observing_run > 0:
+        argList.append(f'-K {args.observing_kind}')
+        argList.append(f'-R {args.observing_revision}')
+    elif args.misc_desc:
+        argList.append(f'-X {args.misc_desc}')
+    argList.append(f'-f {args.filter_knee_freq}')
+    argList.append(f'-t {args.time_baseline}')
+    argList.append(f'-p {args.output_sft_path}')
+    argList.append(f'-C {cacheFile}')
+    argList.append(f'-s {startTimeThisNode}')
+    argList.append(f'-e {endTimeThisNode}')
+    argList.append(f'-N {args.channel_name}')
+    argList.append(f'-F {args.start_freq}')
+    argList.append(f'-B {args.band}')
+    if args.comment_field:
+        argList.append(f'-c {args.comment_field}')
+    if args.window_type:
+        if ':' in args.window_type:
+            window_type, window_param = args.window_type.split(':')
+            argList.append(f'-w {window_type} -r {window_param}')
+        else:
+            argList.append(f'-w {args.window_type}')
+    if args.overlap_fraction:
+        argList.append(f'-P {args.overlap_fraction}')
+    argStr = ' '.join(argList)
+
+    dagFID.write(f'JOB {datafind} datafind.sub\n')
+    dagFID.write(f'RETRY {datafind} 10\n')
+    dagFID.write(f'VARS {datafind} gpsstarttime="{startTimeDatafind}" gpsendtime="{endTimeDatafind}" observatory="{site}" inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n')
+    dagFID.write(f'JOB {MakeSFTs} MakeSFTs.sub\n')
+    dagFID.write(f'RETRY {MakeSFTs} 5\n')
+    dagFID.write(f'VARS {MakeSFTs} argList="{argStr}" tagstring="{tagStringOut}"\n')
+    dagFID.write(f'PARENT {datafind} CHILD {MakeSFTs}\n')
+
 
 #
 # MAIN CODE START HERE
 #
+
 parser = argparse.ArgumentParser(
     description='This script creates datafind.sub, MakeSFTs.sub, and a dag \
     file that generates SFTs based on the options given.',
     fromfile_prefix_chars='@')
+parser.add_argument('-O', '--observing-run', required=True, type=int,
+                    help='For public SFTs, observing run data the SFTs are generated from, or \
+                    (in the case of mock data challenge data) the observing \
+                    run on which the data is most closely based')
+parser.add_argument('-K', '--observing-kind', type=str, choices=['RUN', 'AUX', 'SIM', 'DEV'],
+                    help='For public SFTs, one of: "RUN" for production SFTs of h(t) channels; \
+                    "AUX" for SFTs of non-h(t) channels; \
+                    "SIM" for mock data challenge or other simulated data; or \
+                    "DEV" for development/testing purposes')
+parser.add_argument('-R', '--observing-revision', type=int,
+                    help='For public SFTs: revision number starts at 1, and should be incremented once \
+                    SFTs have been widely distributed across clusters, advertised \
+                    as being ready for use, etc.  For example, if mistakes are found \
+                    in the initial SFT production run after they have been published, \
+                    regenerated SFTs should have a revision number of at least 2')
+parser.add_argument('-X', '--misc-desc', type=str,
+                    help='For private SFTs, miscellaneous part of the SFT \
+                    description field in the filename')
 parser.add_argument('-a', '--analysis-start-time', type=int,
                     help='GPS start time of data from which to generate \
                     SFTs (optional and unused if a segment file is given)')
@@ -116,13 +155,13 @@ parser.add_argument('-G', '--tag-string', required=True, type=str,
                     help='tag string used in names of various files unique to \
                     jobs that will run under the DAG')
 parser.add_argument('-d', '--input-data-type', required=True, type=str,
-                    help='input data type for use with the LSCdataFind --type \
+                    help='input data type for use with the gw_data_find --type \
                     option')
 parser.add_argument('-x', '--extra-datafind-time', type=int, default=0,
                     help='extra time to subtract/add from/to start/end time \
-                    arguments of LSCdataFind')
+                    arguments of gw_data_find')
 parser.add_argument('-M', '--datafind-match', type=str,
-                    help='string to use with the LSCdataFind --match option')
+                    help='string to use with the gw_data_find --match option')
 parser.add_argument('-y', '--synchronize-start', action='store_true',
                     help='synchronize the start times of the SFTs so that the \
                     start times are synchronized when there are gaps in the \
@@ -136,46 +175,29 @@ parser.add_argument('-p', '--output-sft-path', required=True, type=str,
                     help='path to output SFTs')
 parser.add_argument('-C', '--cache-path', type=str, default='cache',
                     help='path to cache files that will be produced by \
-                    LSCdataFind (default is $PWD/cache; this directory is \
+                    gw_data_find (default is $PWD/cache; this directory is \
                     created if it does not exist and must agree with that \
                     given in .sub files)')
-parser.add_argument('-O', '--log-path', type=str, default='logs',
-                    help='path to some log, output, and error files (default \
+parser.add_argument('-o', '--log-path', type=str, default='logs',
+                    help='path to log, output, and error files (default \
                     is $PWD/logs; this directory is created if it does not \
-                    exist and should agree with that given in .sub files)')
-parser.add_argument('-o', '--sub-log-path', type=str, default='logs',
-                    help='path to log file to give in datafind.sub and \
-                    MakeSFTs.sub (default is $PWD/logs; this directory must \
                     exist and usually should be under a local file system)')
 parser.add_argument('-N', '--channel-name', required=True, type=str,
                     help='name of input time-domain channel to read from \
                     frames')
-parser.add_argument('-i', '--ifo', type=str,
-                    help='Name of IFO, i.e., H1, H2, L1, or G1; use if \
-                    channel name begins with H0, L0, or G0; default: use \
-                    first two characters from channel name')
-parser.add_argument('-v', '--sft-version', type=int, choices=[1, 2], default=2,
-                    help='sft version to output')
 parser.add_argument('-c', '--comment-field', type=str,
-                    help='comment for version 2 SFT header')
+                    help='comment for SFT header')
 parser.add_argument('-F', '--start-freq', type=int, default=10,
                     help='start frequency of the SFTs')
 parser.add_argument('-B', '--band', type=int, default=1990,
                     help='frequency band of the SFTs')
-parser.add_argument('-D', '--make-gps-dirs', type=int, default=0,
-                    help='make directories for output SFTs based on this many \
-                    digits of the GPS time')
-parser.add_argument('-X', '--misc-desc', type=str,
-                    help='misc. part of the SFT description field in the \
-                    filename (also used if -D option is > 0)')
-parser.add_argument('-w', '--window-type', type=int, choices=[0, 1, 2, 3],
-                    default=1, help='type of windowing of time-domain to do \
-                    before generating SFTs (0 = None, 1 = Tukey given by \
-                    Matlab, 2 = Tukey given in \
-                    lalapps/src/pulsar/make_sfts.c, 3 = Hann given by Matlab')
+parser.add_argument('-w', '--window-type', type=str,
+                    help='type of windowing of time-domain to do \
+                    before generating SFTs, e.g. "rectangular", \
+                    "hann", "tukey:<parameter>"')
 parser.add_argument('-P', '--overlap-fraction', type=float, default=0,
                     help='overlap fraction (for use with windows; e.g., use \
-                    -P 0.5 with -w 3 Hann windows)')
+                    --overlap-fraction 0.5 with --window-type hann windows)')
 parser.add_argument('-m', '--max-num-per-node', type=int, default=1,
                     help='maximum number of SFTs to generate on one node')
 parser.add_argument('-L', '--max-length-all-jobs', type=int,
@@ -197,34 +219,18 @@ parser.add_argument('-Q', '--node-path', type=str,
                     options are given, the first output file will go into \
                     /data/node1/frames/S5/sfts/LHO; the next node in the list \
                     is used in constructing the path when the number of jobs \
-                    given by the -R option reached, and so on')
-parser.add_argument('-R', '--output-jobs-per-node', type=int, default=0,
+                    given by the -r option reached, and so on')
+parser.add_argument('-r', '--output-jobs-per-node', type=int, default=0,
                     help='number of jobs to output per node in the list of \
                     nodes given with the -q option')
-parser.add_argument('-S', '--use-single', action='store_true',
-                    help='use single precision in MakeSFTs for windowing, \
-                    plan and fft; filtering is always done in double \
-                    precision. Use of double precision in MakeSFTs is the \
-                    default')
-parser.add_argument('-H', '--use-hot', action='store_true',
-                    help='input data is from h(t) calibrated frames (h of t = \
-                    hot!)')
-parser.add_argument('-u', '--frame-struct-type', type=str, default='ADC_REAL4',
-                    help='string specifying the input frame structure and \
-                    data type. Must begin with ADC_ or PROC_ followed by \
-                    REAL4, REAL8, INT2, INT4, or INT8; default: ADC_REAL4; \
-                    -H is the same as PROC_REAL8')
-parser.add_argument('-Z', '--make-tmp-file', action='store_true',
-                    help='write SFT to *.tmp file, then move to final \
-                    filename')
 parser.add_argument('-j', '--datafind-path', type=str,
-                    help='string specifying a path to look for the \
-                    gw_data_find executable; if not set, will use \
+                    help='string specifying the gw_data_find executable, \
+                    or a path to it; if not set, will use \
                     LSC_DATAFIND_PATH env variable or system default (in \
                     that order)')
 parser.add_argument('-J', '--makesfts-path', type=str,
-                    help='string specifying a path to look for the \
-                    lalpulsar_MakeSFTs executable; if not set, will use \
+                    help='string specifying the lalpulsar_MakeSFTs executable, \
+                    or a path to it; if not set, will use \
                     MAKESFTS_PATH env variable or system default (in that \
                     order)')
 parser.add_argument('-Y', '--request-memory', type=int, default=2048,
@@ -238,10 +244,50 @@ parser.add_argument('-A', '--accounting-group', required=True, type=str,
 parser.add_argument('-U', '--accounting-group-user', required=True, type=str,
                     help='albert.einstein username (do not add @LIGO.ORG)')
 
+##### DEPRECATED OPTIONS #####
+class DeprecateAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        parser.error(f'Argument {self.option_strings} has been deprecated in lalpulsar_MakeSFTs')
+
+parser.add_argument('-u', '--frame-struct-type', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer required; \
+                    the frame channel type is determined automatically')
+parser.add_argument('-H', '--use-hot', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer required; \
+                    the frame channel type is determined automatically')
+parser.add_argument('-i', '--ifo', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer required; \
+                    the detector prefix is deduced from the channel name')
+parser.add_argument('-D', '--make-gps-dirs', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer supported')
+parser.add_argument('-Z', '--make-tmp-file', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. Default behaviour')
+parser.add_argument('-v', '--sft-version', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer supported')
+parser.add_argument('-S', '--use-single', nargs=0, action=DeprecateAction,
+                    help='DEPRECATED. No longer supported')
+
 args = parser.parse_args()
 
-
 # Some basic argument value checking
+if args.observing_run < 0:
+    raise argparse.error('--observing-run must be >= 0')
+
+if args.observing_run > 0 and not args.observing_kind:
+    raise argparse.error('--observing-run requires --observing-kind')
+
+if args.observing_run > 0 and not args.observing_revision:
+    raise argparse.error('--observing-run requires --observing-revision')
+
+if args.observing_revision and args.observing_revision <= 0:
+    raise argparse.error('--observing-revision must be > 0')
+
+if args.observing_run > 0 and args.misc_desc:
+    raise argparse.error(f'--observing-run={args.observing_run} incompatible with --misc-desc')
+
+if args.misc_desc and not re.compile(r'^[A-Za-z0-9]+$').match(args.misc_desc):
+    raise argparse.error('--misc-desc may only contain A-Z, a-z, 0-9 characters')
+
 if args.extra_datafind_time < 0:
     raise argparse.error('--extra-datafind-time must be >= 0')
 
@@ -263,16 +309,16 @@ if args.band <= 0 or args.band >= 8192.0:
 if args.start_freq + args.band >= 8192.0:
     raise argparse.error('--start-freq + --band must be < 8192')
 
-if args.make_gps_dirs < 0 or args.make_gps_dirs > 10:
-    raise argparse.error('--make-gps-dirs must be in the range [0,10]')
-
 if args.max_num_per_node <= 0:
     raise argparse.error('--max-num-per-node must be > 0')
 
 # Set the data find executable and lalpulsar_MakeSFTs executable
 dataFindExe = 'gw_data_find'
 if args.datafind_path:
-    dataFindExe = os.path.join(args.datafind_path, dataFindExe)
+    if os.path.isfile(args.datafind_path):
+        dataFindExe = args.datafind_path
+    else:
+        dataFindExe = os.path.join(args.datafind_path, dataFindExe)
 elif 'LSC_DATAFIND_PATH' in os.environ:
     dataFindExe = os.path.join('$ENV(LSC_DATAFIND_PATH)', dataFindExe)
 else:
@@ -280,7 +326,10 @@ else:
 
 makeSFTsExe = 'lalpulsar_MakeSFTs'
 if args.makesfts_path:
-    makeSFTsExe = os.path.join(args.makesfts_path, makeSFTsExe)
+    if os.path.isfile(args.makesfts_path):
+        makeSFTsExe = args.makesfts_path
+    else:
+        makeSFTsExe = os.path.join(args.makesfts_path, makeSFTsExe)
 elif 'MAKESFTS_PATH' in os.environ:
     makeSFTsExe = os.path.join('$ENV(MAKESFTS_PATH)', makeSFTsExe)
 else:
@@ -385,7 +434,7 @@ makesfts_sub = os.path.join(path_to_dag_file, 'MakeSFTs.sub')
 
 # create datafind.sub
 with open(datafind_sub, 'w') as datafindFID:
-    datafindLogFile = '{}/datafind_{}.log'.format(args.sub_log_path,
+    datafindLogFile = '{}/datafind_{}.log'.format(args.log_path,
                                                   dag_filename)
     datafindFID.write('universe = vanilla\n')
     datafindFID.write('executable = {}\n'.format(dataFindExe))
@@ -414,7 +463,7 @@ with open(datafind_sub, 'w') as datafindFID:
 
 # create MakeSFTs.sub
 with open(makesfts_sub, 'w') as MakeSFTsFID:
-    MakeSFTsLogFile = '{}/MakeSFTs_{}.log'.format(args.sub_log_path,
+    MakeSFTsLogFile = '{}/MakeSFTs_{}.log'.format(args.log_path,
                                                   dag_filename)
     MakeSFTsFID.write('universe = vanilla\n')
     MakeSFTsFID.write('executable = {}\n'.format(makeSFTsExe))
@@ -578,18 +627,7 @@ with open(args.dag_file, 'w') as dagFID:
 
                     if (nodeCount == 1):
                         startTimeAllNodes = startTimeThisNode
-                    writeToDag(dagFID,nodeCount, args.filter_knee_freq,
-                               args.time_baseline, args.output_sft_path,
-                               args.cache_path, startTimeThisNode,
-                               endTimeThisNode, args.channel_name, site,
-                               args.input_data_type, args.extra_datafind_time,
-                               args.use_single, args.use_hot,
-                               args.make_tmp_file, args.tag_string,
-                               args.window_type, args.overlap_fraction,
-                               args.sft_version, args.make_gps_dirs,
-                               args.misc_desc, args.comment_field,
-                               args.start_freq, args.band,
-                               args.frame_struct_type, args.ifo)
+                    writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args)
                     # Update for next node
                     numThisNode       = 0
                     if args.overlap_fraction != 0.0:
@@ -616,16 +654,7 @@ with open(args.dag_file, 'w') as dagFID:
 
                 if (nodeCount == 1):
                     startTimeAllNodes = startTimeThisNode
-                writeToDag(dagFID,nodeCount, args.filter_knee_freq,
-                           args.time_baseline, args.output_sft_path,
-                           args.cache_path, startTimeThisNode, endTimeThisNode,
-                           args.channel_name, site, args.input_data_type,
-                           args.extra_datafind_time, args.use_single,
-                           args.use_hot, args.make_tmp_file, args.tag_string,
-                           args.window_type, args.overlap_fraction,
-                           args.sft_version, args.make_gps_dirs,
-                           args.misc_desc, args.comment_field, args.start_freq,
-                           args.band, args.frame_struct_type, args.ifo)
+                writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args)
         # END while (endTimeAllNodes < args.analysis_end_time)
     # END for seg in segList
 # Close the DAG file
@@ -642,4 +671,3 @@ if (endTimeAllNodes <= startTimeAllNodes):
   the DAG file contains no jobs!')
 
 print(startTimeAllNodes, endTimeAllNodes)
-

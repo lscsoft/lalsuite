@@ -1,13 +1,11 @@
-# ---------------------------
-# LALSuite Documentation
-# ---------------------------
-
-include:
-  # import the rules
-  - local: '/.gitlab/ci/rules.yml'
+# ----------------------------------------------------------------------
+# LALSuite: documentation build
+#
+# Build and deploy the Doxygen documentation.
+# ----------------------------------------------------------------------
 
 documentation:
-  image: igwn/lalsuite-dev:buster
+  image: igwn/lalsuite-dev:bullseye
   stage: documentation
   needs: []
   script:
@@ -24,25 +22,23 @@ documentation:
       - html/index.html
       - html
   rules:
-    - !reference [.skip-docs, rules]
-    - !reference [.default, rules]
+    - !reference [.ci-docs, rules]
+    - !reference [.ci-push-build, rules]
+    - !reference [.ci-merge-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 pages:
-  stage: deploy
-  image: igwn/lalsuite-dev:buster
+  extends:
+    - .deploy
   needs:
     - documentation
     - coverage
-  variables:
-    GIT_STRATEGY: none
   script:
     - mv html public
-    - cp coverage.html public/
+    # don't fail if coverage not present
+    - cp coverage.html public/ || true
   artifacts:
     paths:
       - public
   rules:
-    - !reference [.skip-docs, rules]
-    - !reference [.skip-coverage, rules]
-    # build nightly
-    - !reference [.nightly, rules]
+    - !reference [.ci-nightly-deploy, rules]

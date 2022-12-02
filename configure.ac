@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALSuite],[7.6.1],[lal-discuss@ligo.org])
+AC_INIT([LALSuite],[7.11.1],[lal-discuss@ligo.org])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
@@ -165,7 +165,7 @@ lalsuite_config_subdir([LALBurst],[LAL LALMetaIO LALSimulation])
 lalsuite_config_subdir([LALInspiral],[LAL LALFrame LALMetaIO LALSimulation LALBurst])
 lalsuite_config_subdir([LALInference],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral])
 lalsuite_config_subdir([LALPulsar],[LAL LALFrame LALSimulation LALInference])
-lalsuite_config_subdir([LALApps],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral LALInference])
+lalsuite_config_subdir([LALApps],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral LALInference LALPulsar])
 
 # indicate to configure.ac in subdirectories that this is a top-level build
 LALSUITE_BUILD="true"

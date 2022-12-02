@@ -84,14 +84,13 @@ int main(void)
   DetectorStateSeries *detStates;
   SkyPosition skypos_maxdoppler;
   REAL8 dT = 1800;
-  LALDetector *detector;
+  const LALDetector *detector;
   XLAL_CHECK_MAIN ( (detector = XLALGetSiteInfo ( "H1" )) != NULL, XLAL_EFUNC );
   EphemerisData *edat;
   XLAL_CHECK_MAIN ( (edat = XLALInitBarycenter ( TEST_PKG_DATA_DIR "earth00-40-DE405.dat.gz", TEST_PKG_DATA_DIR "sun00-40-DE405.dat.gz" )) != NULL, XLAL_EFUNC );
   tic = XLALGetCPUTime();
   XLAL_CHECK_MAIN ( (detStates = XLALPrepareCWSignalBand ( &skypos_maxdoppler, t0, Tspan, dT, detector, edat )) != NULL, XLAL_EFUNC );
   REAL8 time_XLALPrepareCWSignalBand = XLALGetCPUTime() - tic;
-  XLALFree ( detector );
   REAL8 minFreq, maxFreq;
   PulsarDopplerParams XLAL_INIT_DECL(doppler);
   doppler.refTime = refTime;

@@ -75,9 +75,9 @@ typedef struct tagCWMFDataParams
   REAL8 Band;					//!< smallest frequency band guaranteed to be generated [returned Band can be larger]
   MultiLALDetector multiIFO;			//!< detectors to generate data for
   MultiNoiseFloor multiNoiseFloor;		//!< ... and corresponding noise-floors to generate Gaussian white noise for
-  MultiLIGOTimeGPSVector multiTimestamps;	//!< timestamps to generate SFTs for
+  MultiLIGOTimeGPSVector *multiTimestamps;	//!< timestamps to generate SFTs for
   const char *SFTWindowType;			//!< window to apply to the SFT timeseries
-  REAL8 SFTWindowBeta;				//!< 'beta' parameter required for *some* windows [otherwise must be 0]
+  REAL8 SFTWindowParam;				//!< parameter required for *some* windows [otherwise must be 0]
   UINT4 randSeed;				//!< seed value for random-number generator
   MultiREAL8TimeSeries *inputMultiTS;		//!< [optional] input time-series for signals+noise to be added to
   REAL8 sourceDeltaT;                           //!< [optional] source-frame sampling period. '0' means to use the previous internal defaults
@@ -105,7 +105,7 @@ int XLALCWMakeFakeData ( SFTVector **SFTVect, REAL8TimeSeries **Tseries,
 REAL4TimeSeries *
 XLALGenerateCWSignalTS ( const PulsarParams *pulsarParams, const LALDetector *site, LIGOTimeGPS startTime, REAL8 duration, REAL8 fSamp, REAL8 fHet, const EphemerisData *edat, REAL8 sourceDeltaT );
 SFTVector *
-XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries, const LIGOTimeGPSVector *timestamps, const char *windowType, REAL8 windowBeta );
+XLALMakeSFTsFromREAL8TimeSeries ( const REAL8TimeSeries *timeseries, const LIGOTimeGPSVector *timestamps, const char *windowType, REAL8 windowParam );
 
 int XLALReadPulsarParams ( PulsarParams *pulsarParams, LALParsedDataFile *cfgdata, const CHAR *secName, const LIGOTimeGPS *refTimeDef );
 PulsarParamsVector *XLALPulsarParamsFromFile ( const char *fname, const LIGOTimeGPS *refTimeDef );
@@ -117,6 +117,8 @@ PulsarParamsVector * XLALPulsarParamsVectorAppend ( PulsarParamsVector *list, co
 void XLALDestroyPulsarParamsVector ( PulsarParamsVector *ppvect );
 
 int XLALFITSWritePulsarParamsVector ( FITSFile *file, const CHAR *tableName, const PulsarParamsVector *list );
+
+void XLALDestroyCWMFDataParams ( CWMFDataParams *params );
 
 /** @} */
 

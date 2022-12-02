@@ -1,4 +1,5 @@
 /*
+*  Copyright (C) 2018 Roberto Cotesta, Andrea Taracchini
 *  Copyright (C) 2011 Craig Robinson, Enrico Barausse, Yi Pan, Prayush Kumar
 *  (minor changes), Andrea Taracchini
 *

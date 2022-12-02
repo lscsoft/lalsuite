@@ -191,7 +191,6 @@ COMPLEX8FFTPlan * XLALCreateReverseCOMPLEX8FFTPlan( UINT4 size, int measurelvl )
 /**
  * Destroys a COMPLEX8FFTPlan
  * @param[in] plan A pointer to the COMPLEX8FFTPlan to be destroyed.
- * @return None.
  */
 void XLALDestroyCOMPLEX8FFTPlan( COMPLEX8FFTPlan *plan );
 
@@ -327,7 +326,6 @@ COMPLEX16FFTPlan * XLALCreateReverseCOMPLEX16FFTPlan( UINT4 size, int measurelvl
 /**
  * Destroys a COMPLEX16FFTPlan
  * @param[in] plan A pointer to the COMPLEX16FFTPlan to be destroyed.
- * @return None.
  */
 void XLALDestroyCOMPLEX16FFTPlan( COMPLEX16FFTPlan *plan );
 

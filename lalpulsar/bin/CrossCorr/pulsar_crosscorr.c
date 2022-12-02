@@ -1286,7 +1286,7 @@ void GetBeamInfo(LALStatus *status,
   REAL8 phase1;
   REAL8Vector thisVel, thisPos;
   LIGOTimeGPSVector *ts=NULL;
-  LALDetector *det;
+  const LALDetector *det;
   REAL8 tOffs;
   AMCoeffs *AMcoef = NULL; 
   SFTListElement *sft = NULL;
@@ -1364,7 +1364,6 @@ printf("pos %1.15g %1.15g %1.15g\n\n", thisPos.data[0], thisPos.data[1], thisPos
     /* clean up AMcoefs */
     XLALDestroyAMCoeffs(AMcoef);
     XLALDestroyDetectorStateSeries(detState);
-    XLALFree(det);
     sft = (SFTListElement *)sft->nextSFT;
     freqtmp = (REAL8ListElement *)freqtmp->nextVal;
     phasetmp = (REAL8ListElement *)phasetmp->nextVal;
@@ -1777,7 +1776,8 @@ void initUserVars (LALStatus *status)
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_ephemEarth,             "ephemEarth",    STRING,  0,   OPTIONAL, "Earth ephemeris file to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_ephemSun,               "ephemSun",      STRING,  0,   OPTIONAL, "Sun ephemeris file to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_sftDir,                 "sftDir",        STRING,  'D', REQUIRED, "SFT filename pattern") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_sftDir,                 "sftDir",        STRING,  'D', REQUIRED, "SFT filename pattern. Possibilities are:\n"
+                                                 " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_maxlag,                 "maxlag",        REAL8,   0,   OPTIONAL, "Maximum time lag for correlating sfts") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_dirnameOut,             "dirnameOut",    STRING,  'o', OPTIONAL, "Output directory") == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_LAL( status, XLALRegisterNamedUvar( &uvar_filenameOut,            "filenameOut",   STRING,  0,   OPTIONAL, "Output filename") == XLAL_SUCCESS, XLAL_EFUNC );

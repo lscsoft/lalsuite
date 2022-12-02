@@ -136,10 +136,9 @@ main ( int argc, char *argv[] )
   multiIFO.length = numDetectors;
   for ( UINT4 X = 0; X < numDetectors; X ++ )
     {
-      LALDetector *det = XLALGetSiteInfo ( sites[X] );
+      const LALDetector *det = XLALGetSiteInfo ( sites[X] );
       XLAL_CHECK ( det != NULL, XLAL_EFUNC, "XLALGetSiteInfo ('%s') failed for detector X=%d\n", sites[X], X );
       multiIFO.sites[X] = (*det);	 // struct copy
-      XLALFree ( det );
     }
 
   // load ephemeris

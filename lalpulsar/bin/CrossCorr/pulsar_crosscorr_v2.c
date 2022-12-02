@@ -24,7 +24,6 @@
 
 #include <lal/UserInput.h>
 #include <lal/SFTfileIO.h>
-#include <lal/SFTutils.h>
 #include <lal/LogPrintf.h>
 #include <lal/DopplerScan.h>
 #include <lal/DetectorStates.h>
@@ -1274,7 +1273,8 @@ int XLALInitUserVars (UserInput_t *uvar)
   XLALRegisterUvarMember( orbitTimeAscBand, REAL8, 0,  OPTIONAL, "Width of orbital time-of-ascension band (seconds)");
   XLALRegisterUvarMember( ephemEarth,      STRING, 0,  OPTIONAL, "Earth ephemeris file to use");
   XLALRegisterUvarMember( ephemSun,        STRING, 0,  OPTIONAL, "Sun ephemeris file to use");
-  XLALRegisterUvarMember( sftLocation,     STRING, 0,  REQUIRED, "Filename pattern for locating SFT data");
+  XLALRegisterUvarMember( sftLocation,     STRING, 0,  REQUIRED, "Filename pattern for locating SFT data. Possibilities are:\n"
+                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'");
   XLALRegisterUvarMember( rngMedBlock,     INT4, 0,  OPTIONAL, "Running median block size for PSD estimation");
   XLALRegisterUvarMember( numBins,         INT4, 0,  OPTIONAL, "Number of frequency bins to include in calculation");
   XLALRegisterUvarMember( mismatchF,       REAL8, 0,  OPTIONAL, "Desired mismatch for frequency spacing");

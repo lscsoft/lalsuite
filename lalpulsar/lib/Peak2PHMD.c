@@ -93,6 +93,10 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
   }
   /* ASSERT (lut,  status, PHMDH_ENULL, PHMDH_MSGENULL); */
 
+  if (lut->border == NULL) {
+    ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
+  }
+
   if (pg == NULL) {
     /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
     ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
@@ -247,56 +251,32 @@ void LALHOUGHPeak2PHMD (LALStatus    *status,
 	  /* border selection from lut */
 
 	  if(lb1){
-	    if (  lut->border + lb1 == NULL ) {
-	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
-	    }
 	    phmd->leftBorderP[lengthLeft] = &( lut->border[lb1] );
 	    ++lengthLeft;
 	  }
 
 
 	  if(lb2){
-	    if (  lut->border + lb2 == NULL ) {
-	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
-	    }
 	    phmd->leftBorderP[lengthLeft] = &( lut->border[lb2] );
 	    ++lengthLeft;
 	  }
 
 	  if(rb1){
-	    if (  lut->border + rb1 == NULL ) {
-	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
-	    }
 	    phmd->rightBorderP[lengthRight] = &( lut->border[rb1] );
 	    ++lengthRight;
 	  }
 
 	  if(rb2){
-	    if (  lut->border + rb2 == NULL ) {
-	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
-	    }
 	    phmd->rightBorderP[lengthRight] = &( lut->border[rb2] );
 	    ++lengthRight;
 	  }
 
 	  /* correcting 1st column */
 	  for(j=min1; j<=max1; ++j) {
-	    if (phmd->firstColumn + j == NULL) {
-	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
-	    }
 	    phmd->firstColumn[j] = 1;
 	  }
 
 	  for(j=min2; j<=max2; ++j) {
-	    if (phmd->firstColumn + j == NULL) {
-	      /* fprintf(stderr,"null pointer found [Peak2PHMD.c %d]\n", __LINE__); */
-	      ABORT( status, PHMDH_ENULL, PHMDH_MSGENULL);
-	    }
 	    phmd->firstColumn[j] = 1;
 	  }
 

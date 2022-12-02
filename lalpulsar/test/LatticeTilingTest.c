@@ -218,6 +218,16 @@ static int BasicTest(
     printf( "  Lattice type: %i\n", lattice );
   }
 
+  // Check bounds
+  for ( size_t i = 0; i < n; ++i ) {
+    gsl_vector *GAVEC( point, n );   // Unused for this parameter space, but still needed as input
+    double lower, upper;
+    XLAL_CHECK( XLALGetLatticeTilingBound( tiling, i, point, false, &lower, &upper ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( lower == 0.0, XLAL_EFUNC );
+    XLAL_CHECK( upper == bound_on[i] * pow( 100.0, 1.0/n ), XLAL_EFUNC );
+    GFVEC( point );
+  }
+
   // Check tiled status of lattce tiling dimensions
   for ( size_t i = 0, ti = 0; i < n; ++i ) {
     const int is_tiled_i = XLALIsTiledLatticeTilingDimension( tiling, i );
@@ -796,12 +806,12 @@ static int StrictBoundaryTest(
 
   // Add bounds with strict padding
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, -1.0, 1.0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 0, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 0, 0, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   {
     const double c_m_lower[] = { -y_range, 5.0 };
     const double c_m_upper[] = { +y_range, 5.0 };
     XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, LinearBound, sizeof(c_m_lower), c_m_lower, c_m_upper ) == XLAL_SUCCESS, XLAL_EFUNC );
-    XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 1, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, 1, 0, 0, 0, 0, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
   // Set metric to the Lehmer matrix

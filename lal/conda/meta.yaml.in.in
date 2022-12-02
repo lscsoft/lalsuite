@@ -18,7 +18,7 @@
 {% endif %}
 
 # dependencies
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.1.0a0" %}
 
 package:
   name: {{ name }}-split
@@ -129,6 +129,7 @@ outputs:
         - gsl
         - {{ pin_subpackage('liblal', exact=True) }}
         - numpy
+        - pytest  # [build_platform == target_platform]
         - python
         # provided to assist the solver, but not actually used
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]

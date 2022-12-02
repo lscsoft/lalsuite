@@ -38,7 +38,7 @@
 /// for computing the \f$\mathcal{F}\f$-statistic \cite Williams1999 .
 ///
 
-// @{
+/// @{
 
 // ========== Demod internals ==========
 
@@ -569,4 +569,4 @@ XLALDestroyFstatInputTimeslice_Demod ( void *method_data )
 
 } // XLALDestroyFstatInputTimeslice_Demod()
 
-// @}
+/// @}

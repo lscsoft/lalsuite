@@ -3,7 +3,6 @@ man_MANS = \
 	lalapps_frinfo.1 \
 	lalapps_frjoin.1 \
 	lalapps_frread.1 \
-	lalapps_hello.1 \
 	lalapps_mkcalfac.1 \
 	lalapps_mkcalref.1 \
 	lalapps_power.1 \

@@ -1,0 +1,163 @@
+# ----------------------------------------------------------------------
+# LALSuite: Koji build
+#
+# Build LALSuite RPM packages under Koji.
+# ----------------------------------------------------------------------
+
+# -- templates
+
+# authenticate against koji server
+.koji:authentication:
+  image: igwn/koji-client:el7
+  before_script:
+    # initialise keytab for communication with koji server
+    - echo "${ROBOT_KEYTAB}" | base64 -d | install -m 0600 /dev/stdin keytab
+    - PRINCIPAL=$(klist -k keytab | head -n 4 | tail -n 1 | sed -E 's/^.* +//')
+    - kinit $PRINCIPAL -k -t keytab
+    - klist
+
+# build rpm under koji
+.koji:build:
+  extends:
+    - .koji:authentication
+  retry: 0
+  script:
+    # build src.rpm
+    - PACKAGE=${CI_JOB_NAME%%:*}
+    - cd ${PACKAGE}/
+    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
+    - rpmbuild -ts --define "_topdir $CI_PROJECT_DIR/rpmbuild" ${TARBALL}
+    - SRCRPM=${CI_PROJECT_DIR}/rpmbuild/SRPMS/${PACKAGE}-*.src.rpm
+    - NVR=`basename ${SRCRPM} .src.rpm`
+    # lint src.rpm
+    - rpmlint ${SRCRPM}
+    # build with koji
+    - koji build --background --wait epel7-lalsuite ${SRCRPM}
+    # wait for build to show up in koji
+    - koji wait-repo --target epel7-lalsuite --build=${NVR}
+    # regenerate epel7-lscsoft-build tag
+    - koji regen-repo epel7-lscsoft-build
+    # untag all but the latest three builds
+    - koji list-tagged epel7-lalsuite --quiet ${PACKAGE} | awk '{ print $1 }' | head -n -3 | xargs -d '\n' -r koji untag-build epel7-lalsuite --
+  rules:
+    - !reference [.ci-koji, rules]
+    - !reference [.ci-nightly-deploy, rules]
+
+# -- builds
+
+lal:koji:
+  extends:
+    - .koji:build
+  stage: LAL
+  needs:
+    - tarball:lal
+
+lalframe:koji:
+  extends:
+    - .koji:build
+  stage: LALFrame
+  needs:
+    - tarballs
+    - lal:koji
+
+lalmetaio:koji:
+  extends:
+    - .koji:build
+  stage: LALMetaIO
+  needs:
+    - tarballs
+    - lal:koji
+
+lalsimulation:koji:
+  extends:
+    - .koji:build
+  stage: LALSimulation
+  needs:
+    - tarballs
+    - lal:koji
+
+lalburst:koji:
+  extends:
+    - .koji:build
+  stage: LALBurst
+  needs:
+    - tarballs
+    - lal:koji
+    - lalmetaio:koji
+    - lalsimulation:koji
+
+lalinspiral:koji:
+  extends:
+    - .koji:build
+  stage: LALInspiral
+  needs:
+    - tarballs
+    - lal:koji
+    - lalframe:koji
+    - lalmetaio:koji
+    - lalsimulation:koji
+    - lalburst:koji
+
+lalinference:koji:
+  extends:
+    - .koji:build
+  stage: LALInference
+  needs:
+    - tarballs
+    - lal:koji
+    - lalframe:koji
+    - lalmetaio:koji
+    - lalsimulation:koji
+    - lalburst:koji
+    - lalinspiral:koji
+
+lalpulsar:koji:
+  extends:
+    - .koji:build
+  stage: LALPulsar
+  needs:
+    - tarballs
+    - lal:koji
+    - lalframe:koji
+    - lalmetaio:koji
+    - lalsimulation:koji
+    - lalburst:koji
+    - lalinspiral:koji
+    - lalinference:koji
+
+lalapps:koji:
+  extends:
+    - .koji:build
+  stage: LALApps
+  needs:
+    - tarballs
+    - lal:koji
+    - lalframe:koji
+    - lalmetaio:koji
+    - lalsimulation:koji
+    - lalburst:koji
+    - lalpulsar:koji
+    - lalinspiral:koji
+    - lalinference:koji
+
+# -- deploy
+
+repository:koji:
+  extends:
+    - .deploy
+    - .koji:authentication
+  needs:
+    - lal:koji
+    - lalframe:koji
+    - lalmetaio:koji
+    - lalsimulation:koji
+    - lalburst:koji
+    - lalinspiral:koji
+    - lalpulsar:koji
+    - lalinference:koji
+    - lalapps:koji
+  script:
+    # generate repository
+    - koji dist-repo --allow-missing-signatures --arch=x86_64 --with-src epel7-lalsuite
+  rules:
+    - !reference [.ci-nightly-deploy, rules]

@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include <assert.h>
 #include <float.h>
 
 #include <lal/Units.h>
@@ -118,7 +117,7 @@ static void Test_amplitude_correction_disruptive(void){
     expected_amp_tidal->data[9]=0.8841072573277694;
 
     print_difference_FrequencySequence("Amplitude Correction",amp_tidal,expected_amp_tidal,freqs);
-    assert(approximatelyEqualREAL8Sequence(amp_tidal,expected_amp_tidal,1e-9));
+    XLAL_CHECK_EXIT(approximatelyEqualREAL8Sequence(amp_tidal,expected_amp_tidal,1e-9));
 }
 
 int main(int argc, char *argv[]) {
