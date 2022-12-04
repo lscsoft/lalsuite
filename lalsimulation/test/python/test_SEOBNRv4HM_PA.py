@@ -23,7 +23,7 @@ import pytest
 import lalsimulation as lalsim
 
 np.set_printoptions(precision=17)
-from rich.pretty import pprint
+
 
 
 def get_stored_data():
