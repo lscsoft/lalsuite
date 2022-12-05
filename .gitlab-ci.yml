@@ -1175,6 +1175,11 @@ wheel:cp311-cp311-macosx-x86_64:
   extends:
      - .wheel:macos
      - .wheel:macos:x86_64
+  rules:  # reference build for this platform
+    - !reference [.ci-wheels, rules]
+    - !reference [.ci-merge-build, rules]
+    - !reference [.ci-lalsuite-tag-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
 wheel:cp38-cp38-macosx-arm64:
   extends:
     - .wheel:macos
