@@ -186,6 +186,10 @@ void XLALSimInspiralDestroyTestGRParam(
 	}
 }
 
+// Function to check whether nonGR params are passed as extraParams
+// Called in LALSimInspiral.c to raise in error if nonGR parameters
+// are passed to the waveform but the approximant cannot handle them
+
 int XLALSimInspiralWaveformParamsNonGRAreDefault(LALDict *params)
 {
   return (XLALSimInspiralWaveformParamsNonGRPhi1IsDefault(params)

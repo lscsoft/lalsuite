@@ -2385,7 +2385,12 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         REAL8 db_max=1;
         REAL8 tmpVal=0.0;
 
-	//Sub-dominant mode Amplitude corrections limits
+	/*Default sub-dominant mode Amplitude corrections limits
+	  If no priors are specified in the *.ini file, these values are used.
+	  The min and max value were chosen based on some preliminary studies, the range for dc33 is smaller
+	  because we expect a smaller deviation in this parameter. 
+	  In the *.ini file, we need grtest-parameters=damp21 or grtest-parameters=damp33 to sample over them */
+	
 	REAL8 damp21_min = -5;
 	REAL8 damp21_max =  5;
 	REAL8 damp33_min = -3;

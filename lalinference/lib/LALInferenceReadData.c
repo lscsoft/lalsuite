@@ -1591,7 +1591,10 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
         fprintf(stdout,"Injection lambda1 set to %f\n",lambda1);
       }
 
-      // Inject amplitude nonGR params
+      /* Inject amplitude nonGR params
+	 Add inj-damp21 = *desired value* or inj-damp33 = *desired value* to the *.ini
+	 file in order to inject a signal with non-zero values for these parameters
+      */
       
       REAL8 damp21 = 0.;
       if(LALInferenceGetProcParamVal(commandLine,"--inj-damp21")){
@@ -1811,6 +1814,10 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
       XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,amporder);
       XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,order);
 
+      /* Insert damp21 or damp33 values given in the *.ini file in LALpars dictionary
+       to pass them to the waveform generator. The damp21 and damp33 values are printed 
+      in the *.out file just as a check */
+      
       XLALSimInspiralWaveformParamsInsertNonGRAmp21(LALpars,damp21);
       XLALSimInspiralWaveformParamsInsertNonGRAmp33(LALpars,damp33);
       fprintf(stdout,"Injected damp21 and damp33 are %f and %f\n",damp21,damp33);
@@ -2012,7 +2019,9 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     fprintf(stdout,"Injection lambda2 set to %f\n",lambda2);
   }
 
-  // Inject amplitude nonGR params
+  /* Inject amplitude nonGR params                                                                                                                                                 
+     Add inj-damp21 = *desired value* or inj-damp33 = *desired value* to the *.ini
+     file in order to inject a signal with non-zero values for these parameters */ 
   
    REAL8 damp21 = 0.;
    if(LALInferenceGetProcParamVal(commandLine,"--inj-damp21")){
@@ -2234,6 +2243,10 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
   XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALpars,amp_order);
   XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALpars,phase_order);
 
+  /* Insert damp21 or damp33 values given in the *.ini file in LALpars dictionary                                                                                                  
+     to pass them to the waveform generator. The damp21 and damp33 values are printed                                                                                               
+     in the *.out file just as a check */
+  
   XLALSimInspiralWaveformParamsInsertNonGRAmp21(LALpars, damp21);
   XLALSimInspiralWaveformParamsInsertNonGRAmp33(LALpars, damp33);
   fprintf(stdout,"Injected damp21 and damp33 are %f and %f\n",damp21,damp33);

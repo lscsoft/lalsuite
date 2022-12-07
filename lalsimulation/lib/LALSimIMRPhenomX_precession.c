@@ -80,7 +80,10 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 )
 {
 
-  /* Place the lalParams into the pWF*/
+  /* Place the lalParams into the pWF
+   Needed because otherwise the waveform cannot read LALparams,                                                                                                                  
+   and damp21 and damp33 are passed as LALparams*/
+
   pWF->LALparams = lalParams;
   
   /*
