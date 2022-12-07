@@ -16,6 +16,7 @@
 
 import datetime
 import sys
+from decimal import Decimal
 from unittest import mock
 
 import pytest
@@ -44,6 +45,7 @@ def test_utc_to_gps(date, gps):
     (630720013, datetime.datetime(2000, 1, 1, 0, 0, 0)),
     (LIGOTimeGPS(630720013, 12345), datetime.datetime(2000, 1, 1, 0, 0, 0, 12)),
     (LIGOTimeGPS(630720013, 12999), datetime.datetime(2000, 1, 1, 0, 0, 0, 13)),
+    (Decimal("1234567890.123456789"), datetime.datetime(2019, 2, 18, 23, 31, 12, 123457)),
 ])
 def test_gps_to_utc(gps, date):
     assert gpstime.gps_to_utc(gps) == date
