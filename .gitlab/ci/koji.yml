@@ -158,6 +158,6 @@ repository:koji:
     - lalapps:koji
   script:
     # generate repository
-    - koji dist-repo --allow-missing-signatures --arch=x86_64 --with-src epel7-lalsuite
+    - koji dist-repo --allow-missing-signatures --arch=x86_64 --non-latest --with-src epel7-lalsuite
   rules:
     - !reference [.ci-nightly-deploy, rules]
