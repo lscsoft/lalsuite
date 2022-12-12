@@ -38,7 +38,7 @@
     # regenerate epel7-lscsoft-build tag
     - koji regen-repo epel7-lscsoft-build
     # untag all but the latest three builds
-    - koji list-tagged epel7-lalsuite --quiet ${PACKAGE} | awk '{ print $1 }' | head -n -3 | xargs -d '\n' -r koji untag-build epel7-lalsuite --
+    - koji list-tagged epel7-lalsuite --quiet ${PACKAGE} | awk '{ print $1 }' | sort -V | head -n -3 | xargs -d '\n' -r koji untag-build epel7-lalsuite --
   rules:
     - !reference [.ci-koji, rules]
     - !reference [.ci-nightly-deploy, rules]
