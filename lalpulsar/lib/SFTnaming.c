@@ -261,8 +261,8 @@ XLALGetSiteInfo ( const CHAR *name )
  */
 int XLALFillSFTFilenameSpecStrings(
   SFTFilenameSpec *spec,            /**< [out] SFT filename specification */
-  const CHAR *path,                 /**< [in] Extension of the SFT file; defaults to 'sft' */
-  const CHAR *extn,                 /**< [in] Path to the SFT file */
+  const CHAR *path,                 /**< [in] Path to the SFT file */
+  const CHAR *extn,                 /**< [in] Extension of the SFT file; defaults to 'sft' */
   const CHAR *detector,             /**< [in] 2-character detector prefix (e.g. 'H1', 'L1', 'V1') */
   const CHAR *window_type,          /**< [in] window function applied to SFT */
   const CHAR *privMisc,             /**< [in] For private SFTs: miscellaneous description field */
