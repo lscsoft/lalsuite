@@ -1223,9 +1223,14 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     XLAL_CHECK ( XLALParseMultiLALDetector ( &(cfg->multiIFO), uvar->IFOs ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
 
+  LIGOTimeGPS minStartTime = uvar->minStartTime;
+  LIGOTimeGPS maxStartTime = uvar->maxStartTime;
+  constraints.minStartTime = &minStartTime;
+  constraints.maxStartTime = &maxStartTime;
+
   /* read timestamps if requested by the user */
   if (uvar->timestampsFiles != NULL) {
-      XLAL_CHECK ( (cfg->multiTimestamps = XLALReadMultiTimestampsFiles ( uvar->timestampsFiles )) != NULL, XLAL_EFUNC );
+      XLAL_CHECK ( (cfg->multiTimestamps = XLALReadMultiTimestampsFilesConstrained ( uvar->timestampsFiles, constraints.minStartTime,  constraints.maxStartTime )) != NULL, XLAL_EFUNC );
       XLAL_CHECK ( (cfg->multiTimestamps->length > 0) && (cfg->multiTimestamps->data != NULL), XLAL_EINVAL, "Got empty timestamps-list from XLALReadMultiTimestampsFiles()\n" );
 
       for ( UINT4 X=0; X < cfg->multiTimestamps->length; X ++ ) {
@@ -1233,14 +1238,8 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
       }
   }
 
-  LIGOTimeGPS minStartTime = uvar->minStartTime;
-  LIGOTimeGPS maxStartTime = uvar->maxStartTime;
-  constraints.minStartTime = &minStartTime;
-  constraints.maxStartTime = &maxStartTime;
-
   /* get full SFT-catalog of all matching (multi-IFO) SFTs */
   /* DataFiles optional because of injectSqrtSX option, don't try to load if no files given **/
-
   if( uvar->DataFiles != NULL ) {
     LogPrintf (LOG_NORMAL, "Finding all SFTs to load ... ");
     XLAL_CHECK ( (catalog = XLALSFTdataFind ( uvar->DataFiles, &constraints )) != NULL, XLAL_EFUNC );
@@ -1249,7 +1248,6 @@ InitFstat ( ConfigVariables *cfg, const UserInput_t *uvar )
     /* Build a fake catalog with timestamps and IFOs given on the commandline instead of noise data files */
     /* the data missing in the locators then signal to the Fstat code that fake noise needs to be generated, */
     /* the noise level is passed from the sqrtSX option */
-
     XLAL_CHECK ( (catalog = XLALMultiAddToFakeSFTCatalog ( NULL, uvar->IFOs,cfg-> multiTimestamps)) != NULL, XLAL_EFUNC );
   }
 
