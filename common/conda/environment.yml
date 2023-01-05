@@ -17,7 +17,7 @@ dependencies:
   - healpy
   - help2man >=1.37
   - ldas-tools-framecpp <3.0.0a0
-  - libframel
+  - libframel <9.0.0a0
   - ligo-gracedb
   - ligo-segments
   - lscsoft-glue >=2.0.0
