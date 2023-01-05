@@ -16,7 +16,7 @@ dependencies:
   - hdf5
   - healpy
   - help2man >=1.37
-  - ldas-tools-framecpp
+  - ldas-tools-framecpp <3.0.0a0
   - libframel
   - ligo-gracedb
   - ligo-segments

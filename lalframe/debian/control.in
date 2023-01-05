@@ -8,6 +8,7 @@ Build-Depends:
  dh-python,
  help2man (>= 1.37),
  ldas-tools-framecpp-c-dev (>= @MIN_FRAMECPPC_VERSION@),
+ ldas-tools-framecpp-c-dev (<< 3.0.0),
  libframel-dev (>= @MIN_FRAMEL_VERSION@),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  pkg-config (>= 0.18.0),

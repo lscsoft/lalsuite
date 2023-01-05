@@ -27,6 +27,7 @@ BuildRequires: gcc-c++
 BuildRequires: help2man >= 1.37
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: ldas-tools-framecpp-c-devel >= @MIN_FRAMECPPC_VERSION@
+BuildRequires: ldas-tools-framecpp-c-devel < 3.0.0
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
