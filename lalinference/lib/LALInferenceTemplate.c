@@ -43,9 +43,6 @@
 #include <lal/LALSimNeutronStar.h>
 #include <lal/LALSimInspiralTestingGRCorrections.h>
 
-/*TEMPORARY!!!!!!! This has to be changed when ChooseFDModes will be available */
-#include <lal/LALSimIMR.h>
-
 #include <lal/LALSimSphHarmMode.h>
 
 /* LIB imports*/
@@ -1066,11 +1063,13 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           XLALDictInsert(grParams, list_FTA_parameters[k], (void *) (&default_GR_value), sizeof(double), LAL_D_TYPE_CODE);
         }
         
-        /* for the time being I'm inserting a flag that has to be used when waveform with HM are used such that the
-        modifications are applied to the modes and not to the waveform */
-        INT4 flag_HM = 1;
+
+        /* check if HM version of non-GR correction should be used */
+        INT4 generic_fd_correction_hm = 0;
+        if (LALInferenceCheckVariable(model->params, "generic_fd_correction_hm"))
+          generic_fd_correction_hm = *(INT4*) LALInferenceGetVariable(model->params, "generic_fd_correction_hm");
         
-        if(flag_HM == 0){
+        if(generic_fd_correction_hm == 0){
           /* generate waveform with non-GR parameters set to default (zero) */
           XLAL_TRY(ret=XLALSimInspiralChooseFDWaveformFromCache(&hptilde, &hctilde, phi0,
               deltaF, m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z,
@@ -1090,14 +1089,12 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hctilde,2,2,m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);            
         }
         else{
-          /* generate modes with non-GR parameters set to default (zero)
-          at the moment I'm using the custom SEOBNRv4HM_ROM function to get the modes. This will be substituted with ChooseFDModes */
-          //allocate hlms
+          /* generate modes with non-GR parameters set to default (zero) */
           SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
           *hlms = NULL;
-          //SphHarmFrequencySeries *hlms = NULL;
           XLAL_TRY(*hlms=XLALSimInspiralChooseFDModes(m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, deltaF, f_start, f_max, f_ref, phi0, corrected_distance, 0., grParams, approximant), errnum);
-          //the last 1 means that we are only generating the 22 mode. Remember to modify that later
+          if(ret!=XLAL_SUCCESS)
+            goto ftahmfail;
 
           /* apply FTA corrections */
           REAL8 correction_window = 1.;
@@ -1141,8 +1138,9 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
             XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, hlms_temp->mode, inclination, LAL_PI/2. - phi0, hlms_temp->l, hlms_temp->m, 1), errnum);
             hlms_temp = hlms_temp->next;
           }
-
+ftahmfail:
           XLALDestroySphHarmFrequencySeries(*hlms);
+	  XLALFree(hlms);
         }
         
 

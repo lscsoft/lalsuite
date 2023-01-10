@@ -766,6 +766,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
     (--liv) this flag is now needed for launching a LIV run\n\
     (--grtest-parameters dchi0,..,dxi1,..,dalpha1,..) template will assume deformations in the corresponding phase coefficients.\n\
     (--generic-fd-correction) enables the generic frequency domain corrections to the template phase. \n\
+    (--generic-fd-correction-hm) apply generic frequency domain corrections to higher-modes waveform. \n\
     (--generic-fd-correction-window) sets the fraction of the peak frequency up to which the generic phase corrections are applied (default=1). \n\
     (--generic-fd-correction-ncycles) sets the number of  cycles for the tapering of the generic phase corrections (default=1). \n\
     (--ppe-parameters aPPE1,....     template will assume the presence of an arbitrary number of PPE parameters. They must be paired correctly.\n\
@@ -2338,6 +2339,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
     ProcessParamsTable *pptb=NULL;
 
     INT4 generic_fd_correction = 0;
+    INT4 generic_fd_correction_hm = 0;
     REAL8 correction_window = 1.0;
     REAL8 correction_ncycles_taper = 1.0;
 
@@ -2465,6 +2467,12 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
     {
         generic_fd_correction = 1;
         LALInferenceAddVariable(model->params,"generic_fd_correction", &generic_fd_correction, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+        ppt=LALInferenceGetProcParamVal(commandLine,"--generic-fd-correction-hm");
+        if (ppt)
+        {
+            generic_fd_correction_hm = 1;
+            LALInferenceAddVariable(model->params,"generic_fd_correction_hm", &generic_fd_correction_hm, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED);
+        }
         ppt=LALInferenceGetProcParamVal(commandLine,"--generic-fd-correction-window");
         if (ppt) correction_window = atof(ppt->value);
         LALInferenceAddVariable(model->params,"correction_window", &correction_window, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED);
