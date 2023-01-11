@@ -179,7 +179,7 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
     const REAL8 siqm_2pn_kappaS = 50.L * (2.L*eta - 1.L) * (chiS*chiS + chiA*chiA) -100.L * d * chiA * chiS;   
     const REAL8 siqm_2pn_kappaA = -50.L * d * (chiS*chiS + chiA*chiA) + 100.L * (2.L*eta - 1.L) * chiA * chiS;
     const REAL8 siqm_3pn_kappaS = (chiS*chiS + chiA*chiA) * (26015.L/28.L - 44255.L/21.L * eta - 240.L * eta*eta) + chiA * chiS * d * (26015.L/14.L - 1495.L/3. * eta); 
-    const REAL8 siqm_3pn_kappaA = (26015.L/14.L - 1495.L/6.L * eta) * d * (chiS*chiS + chiA*chiA) + (26015.L/14.L  - 88510.L/21.L *eta - 480.L *eta*eta) * chiS * chiA;
+    const REAL8 siqm_3pn_kappaA = (26015.L/28.L - 1495.L/6.L * eta) * d * (chiS*chiS + chiA*chiA) + (26015.L/14.L  - 88510.L/21.L *eta - 480.L *eta*eta) * chiS * chiA;
 
     /* initialise the PN correction  coefficients to 0 identically */
     memset(pfa, 0, sizeof(PNPhasingSeries));
