@@ -353,8 +353,8 @@ char *XLALBuildSFTFilenameFromSpec(
   XLAL_CHECK_NULL( spec->pubObsRun == 0 || strlen(spec->window_type) > 0, XLAL_EINVAL,
                    "Public SFTs (with pubObsRun=%u) must include a window function 'window_type'",
                    spec->pubObsRun );
-  XLAL_CHECK_NULL( spec->nbFirstBinFreq == 0 || spec->nbBinWidthFreq > 0, XLAL_EINVAL,
-                   "Narrow-band SFTs (with nbFirstBinFreq>0) must have nbBinWidthFreq>0" );
+  XLAL_CHECK_NULL( spec->nbFirstBinFreq == 0 || spec->nbBinWidthFreq > 0 || spec->nbBinWidthRem > 0, XLAL_EINVAL,
+                   "Narrow-band SFTs (with nbFirstBinFreq>0) must have nbBinWidthFreq>0 or nbBinWidthRem>0" );
   XLAL_CHECK_NULL( spec->gpsStart > 0, XLAL_EINVAL,
                    "'gpsStart' must be strictly positive" );
   XLAL_CHECK_NULL( spec->SFTspan > 0, XLAL_EINVAL,
