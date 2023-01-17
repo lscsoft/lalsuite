@@ -116,6 +116,6 @@ cuda:
 icc:
   extends:
     - .compiler-test
-  image: igwn/lalsuite-dev-icc:el7
+  image: igwn/lalsuite-dev-icc:bullseye
   variables:
     CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave --disable-static --enable-intelfft"
