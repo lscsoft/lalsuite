@@ -1543,7 +1543,7 @@ platform:conda:macos-arm64:
   variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_TAG"
   rules:
-    - !reference [.ci-tag-build, rules]
+    - !reference [.ci-lalsuite-tag-build, rules]
 
 # template for RHEL docker builds
 .docker:el:
