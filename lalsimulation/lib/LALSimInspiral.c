@@ -3455,8 +3455,10 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALpars);
 
             UINT2 TGRflag = 0;
-            TGRflag = XLALDictLookupUINT2Value(LALpars, "TGRflag");
-
+            if (XLALDictContains(LALpars, "TGRflag") == 1) {
+                TGRflag = XLALDictLookupUINT2Value(LALpars, "TGRflag");
+            }
+            
             XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
             XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
             XLALSimInspiralWaveformParamsInsertDOmega210(TGRParams, domega210);
