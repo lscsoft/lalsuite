@@ -616,6 +616,7 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   REAL8 dtau440 = 0;
   REAL8 domega550 = 0;
   REAL8 dtau550 = 0;
+  UINT2 TGRflag = 0;
 
   domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(LALParams);
   dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(LALParams);
@@ -627,6 +628,8 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALParams);
   domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALParams);
   dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALParams);
+
+  TGRflag = XLALDictLookupUINT2Value(LALParams, "TGRflag");
 
   LALDict *TGRParams = XLALCreateDict();
 
@@ -640,6 +643,8 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   XLALSimInspiralWaveformParamsInsertDTau440(TGRParams, dtau440);
   XLALSimInspiralWaveformParamsInsertDOmega550(TGRParams, domega550);
   XLALSimInspiralWaveformParamsInsertDTau550(TGRParams, dtau550);
+
+  XLALDictInsertUINT2Value(TGRParams, "TGRflag", TGRflag);
 
   lambda2Tidal1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
   lambda2Tidal2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
@@ -912,6 +917,7 @@ XLALSimIMRSpinAlignedEOBModes (
     REAL8Vector *hLMAll = NULL;
     UINT4 nModes = 1;
     UINT4 postAdiabaticFlag = 0;
+    UINT2 TGRflag = 0;
 
     if (SpinAlignedEOBversion == 4111)
     {
@@ -2025,6 +2031,8 @@ XLALSimIMRSpinAlignedEOBModes (
   domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(TGRParams);
   dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(TGRParams);
 
+  TGRflag = XLALDictLookupUINT2Value(TGRParams, "TGRflag");
+
   /* Allocate the high sample rate vectors */
   if(dtau220 > 0)
     {
@@ -3046,6 +3054,7 @@ for ( UINT4 k = 0; k<nModes; k++) {
                 domega330, dtau330,
                 domega440, dtau440,
                 domega550, dtau550,
+                TGRflag,
                 &timeHi,
                 rdMatchPoint,
                 SpinAlignedEOBapproximant, &indAmpMax) ==

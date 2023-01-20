@@ -396,6 +396,7 @@ int XLALSimInspiralChooseTDWaveform(
     UNUSED REAL8 dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALparams);
     UNUSED REAL8 domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALparams);
     UNUSED REAL8 dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALparams);
+    UNUSED UINT2 TGRflag = XLALDictLookupUINT2Value(LALparams, "TGRflag");
 
     int amplitudeO = XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALparams);
     int phaseO =XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
@@ -3453,6 +3454,9 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALpars);
             dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALpars);
 
+            UINT2 TGRflag = 0;
+            TGRflag = XLALDictLookupUINT2Value(LALpars, "TGRflag");
+
             XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
             XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
             XLALSimInspiralWaveformParamsInsertDOmega210(TGRParams, domega210);
@@ -3463,6 +3467,8 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             XLALSimInspiralWaveformParamsInsertDTau440(TGRParams, dtau440);
             XLALSimInspiralWaveformParamsInsertDOmega550(TGRParams, domega550);
             XLALSimInspiralWaveformParamsInsertDTau550(TGRParams, dtau550);
+
+            XLALDictInsertUINT2Value(TGRParams, "TGRflag", TGRflag);
 
             if(XLALSimIMRSpinAlignedEOBModes (
                 &hlm,

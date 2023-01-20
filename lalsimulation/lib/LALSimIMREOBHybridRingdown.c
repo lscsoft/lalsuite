@@ -1004,6 +1004,7 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     const REAL8 dtau440,    /**<<Fractional deviation in the damping time of the  440 mode; */
     const REAL8 domega550,  /**<<Fractional deviation in the frequency of the 550 mode; */
     const REAL8 dtau550,    /**<<Fractional deviation in the damping time of the  550 mode; */
+    const UINT2 TGRflag,
     REAL8Vector * timeVec, /**<< Vector containing the time values */
     REAL8Vector * matchrange,
                            /**<< Time values chosen as points for performing comb matching */
@@ -1257,7 +1258,14 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     /*                                            RD fitting formulas                                           */
     /*********************************************************************************************/
     /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-    UINT4 Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs22->data[0]) / dt);
+    UINT4 Nrdwave;
+
+    if (TGRflag == 0) {
+        Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs22->data[0]) / dt);
+    }
+    else {
+        Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
+    }
     //printf("Stas Nrdwave %d,  dt = %f", Nrdwave, dt);
     REAL8 dtM = dt / (mtot * LAL_MTSUN_SI);     // go to geometric units
     rdtime = XLALCreateREAL8Vector(Nrdwave);
