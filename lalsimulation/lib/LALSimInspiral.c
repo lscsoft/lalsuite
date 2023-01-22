@@ -2910,7 +2910,7 @@ int XLALSimInspiralFD(
     Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
     )
 {
-      XLAL_CHECK(f_max > 0, XLAL_EDOM, "Maximum frequency must be > 0\n");
+    XLAL_CHECK(f_max > 0, XLAL_EDOM, "Maximum frequency must be > 0\n");
 
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
@@ -3444,7 +3444,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALpars);
 
             UINT2 TGRflag = 0;
-            if (XLALDictLookup(LALpars, "TGRflag") != NULL) {
+            if (LALpars && XLALDictContains(LALpars, "TGRflag")) {
                 TGRflag = XLALDictLookupUINT2Value(LALpars, "TGRflag");
             }
             
@@ -7288,12 +7288,8 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case TEOBResum_ROM:
     case IMRPhenomT:
     case IMRPhenomTHM:
-<<<<<<< HEAD
-        case TEOBResumS:
-=======
 	case TEOBResumS:
     case SEOBNRv4HM_PA:
->>>>>>> Finalize changes for SEOBNRv4HM_PA
       spin_freq=LAL_SIM_INSPIRAL_SPINS_NONPRECESSING;
       break;
     case NR_hdf5:
