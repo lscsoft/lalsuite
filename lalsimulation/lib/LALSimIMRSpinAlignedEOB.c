@@ -2031,7 +2031,9 @@ XLALSimIMRSpinAlignedEOBModes (
   domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(TGRParams);
   dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(TGRParams);
 
-  TGRflag = XLALDictLookupUINT2Value(TGRParams, "TGRflag");
+  if (XLALDictContains(TGRParams, "TGRflag") == 1) {
+    TGRflag = XLALDictLookupUINT2Value(TGRParams, "TGRflag");
+  }
 
   /* Allocate the high sample rate vectors */
   if(dtau220 > 0)
