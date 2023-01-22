@@ -1262,8 +1262,7 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
 
     if (TGRflag == 0) {
         Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs22->data[0]) / dt);
-    }
-    else {
+    } else {
         Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
     }
     //printf("Stas Nrdwave %d,  dt = %f", Nrdwave, dt);

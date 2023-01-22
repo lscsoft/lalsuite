@@ -628,8 +628,10 @@ XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +
   dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALParams);
   domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALParams);
   dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALParams);
-
-  TGRflag = XLALDictLookupUINT2Value(LALParams, "TGRflag");
+  
+  if (XLALDictLookup(LALParams, "TGRflag") != NULL) {
+    TGRflag = XLALDictLookupUINT2Value(LALParams, "TGRflag");
+  }
 
   LALDict *TGRParams = XLALCreateDict();
 
@@ -2031,7 +2033,7 @@ XLALSimIMRSpinAlignedEOBModes (
   domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(TGRParams);
   dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(TGRParams);
 
-  if (XLALDictContains(TGRParams, "TGRflag") == 1) {
+  if (XLALDictLookup(TGRParams, "TGRflag") != NULL) {
     TGRflag = XLALDictLookupUINT2Value(TGRParams, "TGRflag");
   }
 

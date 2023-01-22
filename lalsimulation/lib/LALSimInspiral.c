@@ -921,7 +921,7 @@ int XLALSimInspiralChooseTDWaveform(
       if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
 	XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
       if( !checkTidesZero(lambda1, lambda2) )
-	XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+	XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant does not have tidal corrections.");
       if( f_ref != 0.)
 	XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
       /* Call the waveform driver routine */
@@ -3444,7 +3444,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALpars);
 
             UINT2 TGRflag = 0;
-            if (XLALDictContains(LALpars, "TGRflag") == 1) {
+            if (XLALDictLookup(LALpars, "TGRflag") != NULL) {
                 TGRflag = XLALDictLookupUINT2Value(LALpars, "TGRflag");
             }
             
