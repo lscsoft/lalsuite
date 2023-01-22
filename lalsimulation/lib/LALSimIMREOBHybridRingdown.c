@@ -1004,7 +1004,7 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     const REAL8 dtau440,    /**<<Fractional deviation in the damping time of the  440 mode; */
     const REAL8 domega550,  /**<<Fractional deviation in the frequency of the 550 mode; */
     const REAL8 dtau550,    /**<<Fractional deviation in the damping time of the  550 mode; */
-    const UINT2 TGRflag,
+    const UINT2 TGRflag,    /**<< Flag for using the TGR ringdown waveform length */
     REAL8Vector * timeVec, /**<< Vector containing the time values */
     REAL8Vector * matchrange,
                            /**<< Time values chosen as points for performing comb matching */
