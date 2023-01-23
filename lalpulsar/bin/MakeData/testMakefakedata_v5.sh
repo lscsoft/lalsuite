@@ -361,22 +361,84 @@ echo "-------------------------------------------------------"
 echo " Test proper failure whenever windows are misspecified "
 echo "-------------------------------------------------------"
 mkdir -p testwinpar/
-base_call="$mfdv5_CODE --fmin 10 --Band 1 --IFOs H1 --startTime 100000000 --duration=1800 --outSFTdir=testwinpar/"
-base_sft="./testwinpar/H-1_H1_1800SFT_mfdv5-100000000-1800.sft" # Produced by `base_call`
-echo "Creating ${base_sft}..."
-echo ${base_call}
-if ! eval ${base_call}; then
+base_call_nowin="$mfdv5_CODE --fmin 10 --Band 1 --IFOs H1 --startTime 100000000 --duration=1800 --outSFTdir=testwinpar/"
+base_sft_nowin="./testwinpar/H-1_H1_1800SFT_mfdv5-100000000-1800.sft" # Produced by `base_call`
+echo "Creating unwindowed base SFT ${base_sft_nowin}..."
+echo ${base_call_nowin}
+if ! eval ${base_call_nowin}; then
+    echo "Should not have failed!"
+    exit 1
+fi
+base_call_win="$mfdv5_CODE --fmin 10 --Band 1 --IFOs L1 --startTime 100000000 --duration=1800 --outSFTdir=testwinpar/ --SFTWindowType=tukey --SFTWindowParam 0.001"
+base_sft_win="./testwinpar/L-1_L1_1800SFT_mfdv5-100000000-1800.sft" # Produced by `base_call`
+echo "Creating Tukey-windowed base SFT ${base_sft_win}..."
+echo ${base_call_win}
+if ! eval ${base_call_win}; then
     echo "Should not have failed!"
     exit 1
 fi
 
-no_param_call="$mfdv5_CODE --noiseSFTs=./testwinpar/H-1_H1_1800SFT_mfdv5-100000000-1800.sft --SFTWindowType=tukey"
-echo "Calling with --noiseSFTs and --SFTWindowType=tukey without specifying window param, should fail:"
+no_win_call="$mfdv5_CODE --noiseSFTs=$base_sft_nowin"
+echo "Running on no-window noiseSFTs with --noiseSFTs and no window specification, should not fail:"
+echo ${no_win_call}
+if ! eval ${no_win_call}; then
+    echo "Should not have failed!"
+    exit 1
+fi
+
+wrong_win_call="$mfdv5_CODE --noiseSFTs=$base_sft_nowin --SFTWindowType=hann"
+echo "Running on no-window noiseSFTs with --noiseSFTs and --SFTWindowType=hann, should fail:"
+echo $wrong_win_call}
+if ! eval ${wrong_win_call}; then
+    echo "Failed, as expected."
+else
+    echo "Did not fail, but it should have!"
+    exit 1
+fi
+
+no_param_call="$mfdv5_CODE --noiseSFTs=$base_sft_nowin --SFTWindowType=tukey"
+echo "Running on unwindowed noiseSFTs with --noiseSFTs and --SFTWindowType=tukey without specifying window param, should fail:"
 echo ${no_param_call}
 if ! eval ${no_param_call}; then
     echo "Failed, as expected."
 else
     echo "Did not fail, but it should have!"
+    exit 1
+fi
+
+no_win_call="$mfdv5_CODE --noiseSFTs=$base_sft_win"
+echo "Running on Tukey-windowed noiseSFTs with --noiseSFTs and no window specification, should not fail:"
+echo ${no_win_call}
+if ! eval ${no_win_call}; then
+    echo "Should not have failed!"
+    exit 1
+fi
+
+wrong_win_call="$mfdv5_CODE --noiseSFTs=$base_sft_win --SFTWindowType=hann"
+echo "Running on Tukey-windowed noiseSFTs with --noiseSFTs and --SFTWindowType=hann, should fail:"
+echo ${wrong_win_call}
+if ! eval ${wrong_win_call}; then
+    echo "Failed, as expected."
+else
+    echo "Did not fail, but it should have!"
+    exit 1
+fi
+
+no_param_call="$mfdv5_CODE --noiseSFTs=$base_sft_win --SFTWindowType=tukey"
+echo "Running on Tukey-windowed noiseSFTs with --noiseSFTs and --SFTWindowType=tukey without specifying window param, should fail:"
+echo ${no_param_call}
+if ! eval ${no_param_call}; then
+    echo "Failed, as expected."
+else
+    echo "Did not fail, but it should have!"
+    exit 1
+fi
+
+right_win_call="$mfdv5_CODE --noiseSFTs=$base_sft_win --SFTWindowType=tukey --SFTWindowParam=0.001"
+echo "Running on Tukey-windowed noiseSFTs with --noiseSFTs and same type+params, should work"
+echo ${right_win_call}
+if ! eval ${right_win_call}; then
+    echo "Should not have failed!"
     exit 1
 fi
 
