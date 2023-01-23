@@ -506,6 +506,7 @@ int XLALFillSFTFilenameSpecStrings( SFTFilenameSpec *spec, const CHAR* path, con
 char *XLALBuildSFTFilenameFromSpec( const SFTFilenameSpec *spec );
 int XLALParseSFTFilenameIntoSpec( SFTFilenameSpec *spec, const char *SFTpath );
 int XLALCheckValidDescriptionField ( const char *desc );
+int XLALCompareSFTWindows ( const CHAR *type1, const REAL8 param1, const CHAR *type2, const REAL8 param2 );
 
 /** @} */
 
