@@ -123,3 +123,5 @@ icc:
     # initialise intel stuff
     - . /opt/intel/oneapi/setvars.sh
     - !reference [".compiler-test", "before_script"]
+  # best effort
+  allow_failure: true
