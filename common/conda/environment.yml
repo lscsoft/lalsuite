@@ -16,8 +16,8 @@ dependencies:
   - hdf5
   - healpy
   - help2man >=1.37
-  - ldas-tools-framecpp
-  - libframel
+  - ldas-tools-framecpp <3.0.0a0
+  - libframel <9.0.0a0
   - ligo-gracedb
   - ligo-segments
   - lscsoft-glue >=2.0.0
@@ -25,7 +25,7 @@ dependencies:
   - matplotlib-base
   - metaio
   - mpmath >=1.0.0
-  - numpy
+  - numpy <1.24.0
   - openmpi
   - pillow
   - pkg-config >=0.18.0
