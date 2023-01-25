@@ -639,6 +639,34 @@ XLALCheckValidDescriptionField ( const char *desc )
 
 
 /**
+ * Check whether two SFT windows, each defined by a type name and parameter value, match.
+ *
+ * This builds standardized windowspec numbers out of the inputs and compares those,
+ * ensuring consistent rounding before the comparison.
+ */
+int
+XLALCompareSFTWindows (
+    const CHAR *type1,  /**< [in] type name of the first window */
+    const REAL8 param1, /**< [in] parameter value of the first window */
+    const CHAR *type2,  /**< [in] type name of the second window */
+    const REAL8 param2  /**< [in] parameter value of the second window */
+ )
+{
+
+  UINT2 spec1 = 0;
+  UINT2 spec2 = 0;
+
+  XLAL_CHECK( build_sft_windowspec( &spec1, NULL, type1, param1 ) == XLAL_SUCCESS, XLAL_EINVAL, "Failed to build windowspec from type '%s' and param '%f'", type1, param1 );
+  XLAL_CHECK( build_sft_windowspec( &spec2, NULL, type2, param2 ) == XLAL_SUCCESS, XLAL_EINVAL, "Failed to build windowspec from type '%s' and param '%f'", type2, param2 );
+
+  XLAL_CHECK( spec1 == spec2, XLAL_EINVAL );
+
+  return XLAL_SUCCESS;
+
+} // XLALCompareSFTWindows()
+
+
+/**
  * Build an SFT 2-byte 'windowspec' or filename field 'windowspec_str' for the window given by 'window_type' and 'window_param'
  */
 int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const char *window_type, REAL8 window_param )

@@ -541,15 +541,26 @@ XLALInitMakefakedata ( ConfigVars_t *cfg, UserVariables_t *uvar )
         const CHAR* window_type_from_noiseSFTs = cfg->noiseCatalog->data[0].window_type;
         const REAL8 window_param_from_noiseSFTs = cfg->noiseCatalog->data[0].window_param;
         const BOOLEAN have_window_type_from_noiseSFTs = ( XLALStringCaseCompare( window_type_from_noiseSFTs, "unknown" ) != 0 );
-        if ( have_window_type_from_noiseSFTs ^ have_window )
+        /* need window info from noise SFTs or user input - if we have both, check for consistency */
+        if ( have_window_type_from_noiseSFTs && have_window )
           {
-            cfg->window_type = have_window_type_from_noiseSFTs ? window_type_from_noiseSFTs : window_type_from_uvar;
-            cfg->window_param = have_window_type_from_noiseSFTs ? window_param_from_noiseSFTs : window_param_from_uvar;
+            XLAL_CHECK ( XLALCompareSFTWindows ( window_type_from_noiseSFTs, window_param_from_noiseSFTs, window_type_from_uvar, window_param_from_uvar ) == XLAL_SUCCESS, XLAL_EFUNC, "Inconsistent SFT window between --noiseSFTs and user input: [%s,%f] vs [%s,%f].", window_type_from_noiseSFTs, window_param_from_noiseSFTs, window_type_from_uvar, window_param_from_uvar );
+            cfg->window_type = window_type_from_noiseSFTs;
+            cfg->window_param = window_param_from_noiseSFTs;
+          }
+        else if ( have_window_type_from_noiseSFTs )
+          {
+            cfg->window_type = window_type_from_noiseSFTs;
+            cfg->window_param = window_param_from_noiseSFTs;
+          }
+        else if ( have_window )
+          {
+            cfg->window_type = window_type_from_uvar;
+            cfg->window_param = window_param_from_uvar;
           }
         else
           {
-            /* EITHER noise SFTs must have a known window OR user must specify the window function */
-            XLAL_ERROR ( XLAL_EINVAL, "When --noiseSFTs is given, --SFTWindowType is required ONLY if noise SFTs have unknown window.\n" );
+            XLAL_ERROR ( XLAL_EINVAL, "When --noiseSFTs is given and have unknown window, --SFTWindowType is required.\n" );
           }
       }
     else if ( have_window )
