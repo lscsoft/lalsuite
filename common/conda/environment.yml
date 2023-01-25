@@ -25,7 +25,7 @@ dependencies:
   - matplotlib-base
   - metaio
   - mpmath >=1.0.0
-  - numpy <1.24.0
+  - numpy
   - openmpi
   - pillow
   - pkg-config >=0.18.0

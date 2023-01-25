@@ -135,7 +135,7 @@ def test_string_conversions():
     strs = ["a", "bc", "def"]
     sv = lal.CreateStringVector(*strs)
     assert sv.length == 3
-    assert (sv.data.astype(numpy.object) == strs).all()
+    assert (sv.data.astype(object) == strs).all()
     strs[0] = "ghijk"
     sv.data[0] = strs[0]
     strs.append("lmnopq")
