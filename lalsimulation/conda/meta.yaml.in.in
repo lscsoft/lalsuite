@@ -36,6 +36,7 @@ build:
   script_env:
     - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
     - GITLAB_CI
   skip: true  # [win]
 
@@ -128,17 +129,17 @@ outputs:
         applications that use the LAL Simulation library.
 
   - name: python-lalsimulation
-    script: install-python.sh
+    script: build-python.sh
     build:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - numpy
-        - openssl
         - python
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
+        - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
         - GITLAB_CI
     requirements:
       build:
@@ -157,8 +158,6 @@ outputs:
         - pytest  # [build_platform == target_platform]
         - python
         - python-lal >={{ lal_version }}
-        # extras to assist the solver, but not actually used
-        - openssl
       run:
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - mpmath >=1.0.0
@@ -195,7 +194,6 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        - openssl
         - python
     requirements:
       build:
@@ -207,8 +205,6 @@ outputs:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - python
-        # extras to assist the solver, but not actually used
-        - openssl
       run:
         - gsl
         - liblal >={{ lal_version }}
