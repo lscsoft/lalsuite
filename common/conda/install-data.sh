@@ -2,10 +2,12 @@
 
 set -e
 
+_make="make -j ${CPU_COUNT} V=1 VERBOSE=1"
+
 cd _build
 
 # install data files only
-make -j ${CPU_COUNT} V=1 VERBOSE=1 -C lib install-pkgdataDATA
+${_make} -C lib install-pkgdataDATA
 
 # install activate/deactivate scripts
 for action in activate deactivate; do
