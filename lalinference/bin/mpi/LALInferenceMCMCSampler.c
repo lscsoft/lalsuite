@@ -46,7 +46,6 @@
 #include <lal/LALInferenceTemplate.h>
 #include <lal/LALInferenceProposal.h>
 #include <lal/LIGOLwXMLRead.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceHDF5.h>
 #include <sys/time.h>
@@ -1731,7 +1730,7 @@ void LALInferencePrintPTMCMCInjectionSample(LALInferenceRunState *runState) {
         SimInspiralTable *injTable = NULL;
         SimInspiralTable *theEventTable = NULL;
 
-        SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
+        injTable = XLALSimInspiralTableFromLIGOLw(ppt->value);
 
         ppt2 = LALInferenceGetProcParamVal(runState->commandLine, "--event");
         if (ppt2) {

@@ -334,11 +334,11 @@
 #include <lal/IIRFilter.h>
 #include <lal/ResampleTimeSeries.h>
 #include <lal/BandPassTimeSeries.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
-#include <lal/LIGOLwXMLlegacy.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/LALInspiral.h>
@@ -356,7 +356,7 @@
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "tmpltbank"
 
-int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
+int arg_parse_check( int argc, char *argv[], ProcessParamsTable *procparams );
 
 /* type of data to analyze */
 enum
@@ -505,12 +505,11 @@ int main ( int argc, char *argv[] )
   INT4                          numCoarse = 0;
 
   /* output data */
-  MetadataTable         templateBank;
-  MetadataTable         proctable;
-  MetadataTable         procparams;
-  MetadataTable         searchsumm;
-  ProcessParamsTable   *this_proc_param;
-  LIGOLwXMLStream       results;
+  SnglInspiralTable    *templateBank = NULL;
+  ProcessTable         *proctable;
+  ProcessParamsTable   *procparams;
+  SearchSummaryTable   *searchsumm;
+  LIGOLwXMLStream      *results;
 
 
   /* counters and other variables */
@@ -527,9 +526,7 @@ int main ( int argc, char *argv[] )
   REAL8 dynRange = 0;
 
   /* TD follow-up variables */
-  int numTdFollow;           /* Number of events to follow up in this time */
   SnglInspiralTable *tdFollowUp   = NULL;
-  SnglInspiralTable *thisTdFollow = NULL;
 
   /*
    *
@@ -542,18 +539,15 @@ int main ( int argc, char *argv[] )
   lal_errhandler = LAL_ERR_EXIT;
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *)
-    calloc( 1, sizeof(ProcessTable) );
-  XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
+  proctable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  XLALGPSTimeNow(&(proctable->start_time));
+  XLALPopulateProcessTable(proctable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
       lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
-    calloc( 1, sizeof(ProcessParamsTable) );
+  procparams = (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
   /* create the search summary table */
-  searchsumm.searchSummaryTable = (SearchSummaryTable *)
-    calloc( 1, sizeof(SearchSummaryTable) );
+  searchsumm = (SearchSummaryTable *) calloc( 1, sizeof(SearchSummaryTable) );
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
@@ -563,23 +557,20 @@ int main ( int argc, char *argv[] )
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
   {
-    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( proctable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( searchsumm->comment, LIGOMETA_COMMENT_MAX,
         " " );
   }
   else
   {
-    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( proctable->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
-    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
+    snprintf( searchsumm->comment, LIGOMETA_COMMENT_MAX,
         "%s", comment );
   }
 
-  /* make sure the pointer to the first template is null */
-  templateBank.snglInspiralTable = NULL;
-
   /* the number of nodes for a standalone job is always 1 */
-  searchsumm.searchSummaryTable->nnodes = 1;
+  searchsumm->nnodes = 1;
 
 
   /* If we're doing a td follow-up we dont want to generate a bank
@@ -587,42 +578,28 @@ int main ( int argc, char *argv[] )
    */
   if ( tdFileNames )
   {
+    SnglInspiralTable **thisTdFollow = &tdFollowUp;
+
     if ( vrbflg )
     {
       fprintf( stdout, "We are doing a TD follow-up\n" );
       fprintf( stdout, "Following up %d files...\n", numTDFiles );
     }
 
-    numTdFollow = 0;
-
     for (i = 0; i < (UINT4)numTDFiles; i++ )
     {
-      INT4 thisTDNum = 0;
-      if ( !tdFollowUp )
-      {
-        thisTDNum = LALSnglInspiralTableFromLIGOLw(&tdFollowUp,
-          tdFileNames[i], 0, -1);
-        thisTdFollow = tdFollowUp;
-      }
-      else
-      {
-        thisTDNum = LALSnglInspiralTableFromLIGOLw(&(thisTdFollow->next),
-          tdFileNames[i], 0, -1);
-      }
-      if ( thisTDNum < 0 )
+      *thisTdFollow = XLALSnglInspiralTableFromLIGOLw(tdFileNames[i]);
+      if ( !*thisTdFollow )
       {
         fprintf( stderr, "Error reading file %s\n", tdFileNames[i] );
         exit( 1 );
       }
-      numTdFollow += thisTDNum;
 
-      while ( thisTdFollow->next )
+      while ( (*thisTdFollow)->next )
       {
-        thisTdFollow = thisTdFollow->next;
+        thisTdFollow = &(*thisTdFollow)->next;
       }
     }
-
-    if (numTdFollow <= 0) goto cleanExit;
 
     tdFollowUp  = XLALIfoCutSingleInspiral( &tdFollowUp, ifo );
     if ( tdFollowUp )
@@ -633,12 +610,7 @@ int main ( int argc, char *argv[] )
     if ( !tdFollowUp ) goto cleanExit;
 
     /* Free the follow-up events */
-    while (tdFollowUp)
-    {
-      thisTdFollow = tdFollowUp;
-      tdFollowUp = tdFollowUp->next;
-      XLALFreeSnglInspiral(&thisTdFollow);
-    }
+    XLALDestroySnglInspiralTable( tdFollowUp );
   }
 
 
@@ -863,13 +835,13 @@ int main ( int argc, char *argv[] )
 
     /* store the start and end time of the raw channel in the search summary */
     /* FIXME:  loss of precision;  consider
-    searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = chan.epoch;
-    XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, chan.deltaT * (REAL8) chan.data->length);
+    searchsumm->in_start_time = searchsumm->in_end_time = chan.epoch;
+    XLALGPSAdd(&searchsumm->in_end_time, chan.deltaT * (REAL8) chan.data->length);
     */
-    searchsumm.searchSummaryTable->in_start_time = chan.epoch;
+    searchsumm->in_start_time = chan.epoch;
     tsLength = XLALGPSGetREAL8(&(chan.epoch) );
     tsLength += chan.deltaT * (REAL8) chan.data->length;
-    XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->in_end_time), tsLength );
+    XLALGPSSetREAL8( &(searchsumm->in_end_time), tsLength );
 
     /* close the frame file stream and destroy the cache */
     LAL_CALL( LALFrClose( &status, &frStream ), &status );
@@ -955,13 +927,13 @@ int main ( int argc, char *argv[] )
 
     /* store the start and end time of the filter channel in the search summ */
     /* FIXME:  loss of precision;  consider
-    searchsumm.searchSummaryTable->out_start_time = chan.epoch;
-    XLALGPSAdd(&searchsumm.searchSummaryTable->out_start_time, chan.deltaT * (REAL8) chan.data->length);
+    searchsumm->out_start_time = chan.epoch;
+    XLALGPSAdd(&searchsumm->out_start_time, chan.deltaT * (REAL8) chan.data->length);
     */
-    searchsumm.searchSummaryTable->out_start_time = chan.epoch;
+    searchsumm->out_start_time = chan.epoch;
     tsLength = XLALGPSGetREAL8( &(chan.epoch) );
     tsLength += chan.deltaT * (REAL8) chan.data->length;
-    XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->out_end_time), tsLength );
+    XLALGPSSetREAL8( &(searchsumm->out_end_time), tsLength );
 
     /* compute the windowed power spectrum for the data channel */
     {	/* Kipp:  ported this block from LALStatus 20190806 */
@@ -1207,7 +1179,7 @@ int main ( int argc, char *argv[] )
 
   if ( numCoarse )
   {
-    templateBank.snglInspiralTable = tmplt;
+    templateBank = tmplt;
     snprintf( tmplt->ifo, LIGOMETA_IFO_MAX, "%s", ifo );
     snprintf( tmplt->search, LIGOMETA_SEARCH_MAX, "tmpltbank" );
     snprintf( tmplt->channel, LIGOMETA_CHANNEL_MAX,
@@ -1222,7 +1194,7 @@ int main ( int argc, char *argv[] )
   }
 
   /* save the number of templates in the search summary table */
-  searchsumm.searchSummaryTable->nevents = numCoarse;
+  searchsumm->nevents = numCoarse;
 
 
   /*
@@ -1257,7 +1229,6 @@ int main ( int argc, char *argv[] )
 
 cleanExit:
   /* open the output xml file */
-  memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( userTag && ifoTag && !outCompress)
   {
     snprintf( fname, sizeof(fname), "%s-TMPLTBANK_%s_%s-%d-%d.xml",
@@ -1306,63 +1277,40 @@ cleanExit:
         ifo, gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname ), &status );
+  results = XLALOpenLIGOLwXMLFile( fname );
 
   /* write the process table */
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "%s", ifo );
-  XLALGPSTimeNow(&(proctable.processTable->end_time));
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ),
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable,
-        process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  free( proctable.processTable );
+  snprintf( proctable->ifos, LIGOMETA_IFO_MAX, "%s", ifo );
+  XLALGPSTimeNow(&(proctable->end_time));
+  XLALWriteLIGOLwXMLProcessTable( results, proctable );
+  free( proctable );
 
   /* erase the first empty process params entry */
   {
-    ProcessParamsTable *emptyPPtable = procparams.processParamsTable;
-    procparams.processParamsTable = procparams.processParamsTable->next;
+    ProcessParamsTable *emptyPPtable = procparams;
+    procparams = procparams->next;
     free( emptyPPtable );
   }
 
   /* write the process params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ),
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams,
-        process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  while( procparams.processParamsTable )
-  {
-    this_proc_param = procparams.processParamsTable;
-    procparams.processParamsTable = this_proc_param->next;
-    free( this_proc_param );
-  }
+  XLALWriteLIGOLwXMLProcessParamsTable( results, procparams );
+  XLALDestroyProcessParamsTable( procparams );
 
   /* write the search summary table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results,
-        search_summary_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm,
-        search_summary_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  XLALWriteLIGOLwXMLSearchSummaryTable( results, searchsumm );
 
   /* write the template bank to the file */
-  if ( templateBank.snglInspiralTable )
+  if ( templateBank )
+    XLALWriteLIGOLwXMLSnglInspiralTable( results, templateBank );
+  while ( templateBank )
   {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ),
-        &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, templateBank,
-          sngl_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  }
-  while ( templateBank.snglInspiralTable )
-  {
-    tmplt = templateBank.snglInspiralTable;
-    templateBank.snglInspiralTable = templateBank.snglInspiralTable->next;
+    tmplt = templateBank;
+    templateBank = templateBank->next;
     LALFree( tmplt );
   }
 
   /* close the output xml file */
-  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+  XLALCloseLIGOLwXMLFile( results );
 
   /* free the rest of the memory, check for memory leaks and exit */
   if ( tdFileNames ) free( tdFileNames );
@@ -1496,7 +1444,7 @@ fprintf(a, "  --write-spectrum             write the uncalibrated psd to a frame
 fprintf(a, "  --write-strain-spectrum      write the calibrated strain psd to a text file\n");
 
 
-int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
+int arg_parse_check( int argc, char *argv[], ProcessParamsTable *procparams )
 {
   /* LALgetopt arguments */
   struct LALoption long_options[] =
@@ -1591,7 +1539,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
   INT4 gpuDeviceID = 0;
   cudaError_t cudaError = cudaSuccess;
 #endif
-  ProcessParamsTable *this_proc_param = procparams.processParamsTable;
+  ProcessParamsTable *this_proc_param = procparams;
   UINT4   haveOrder       = 0;
   UINT4   haveApprox      = 0;
   UINT4   haveSpace       = 0;

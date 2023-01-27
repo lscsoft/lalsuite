@@ -686,3 +686,238 @@ void XLALDestroySegmentTable(SegmentTable *head)
     head = next;
   }
 }
+
+
+/**
+ * Create a SnglInspiralTable structure.
+ */
+
+
+SnglInspiralTable *XLALCreateSnglInspiralTableRow(const ProcessTable *process)
+{
+  SnglInspiralTable *new = XLALMalloc(sizeof(*new));
+
+  if(!new)
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+
+  new->next = NULL;
+  memset(new->ifo, 0, sizeof(new->ifo));
+  memset(new->search, 0, sizeof(new->search));
+  memset(new->channel, 0, sizeof(new->channel));
+  if(process) {
+    new->process_id = process->process_id;
+  } else {
+    new->process_id = -1;	/* impossible */
+  }
+  new->event_id = -1;	/* impossible */
+
+  return new;
+}
+
+
+/**
+ * Destroy a SnglInspiralTable structure.
+ */
+
+
+void XLALDestroySnglInspiralTableRow(SnglInspiralTable *row)
+{
+  XLALFree(row);
+}
+
+
+/**
+ * Destroy a SnglInspiralTable linked list.
+ */
+
+
+void XLALDestroySnglInspiralTable(SnglInspiralTable *head)
+{
+  while(head)
+  {
+    SnglInspiralTable *next = head->next;
+    XLALDestroySnglInspiralTableRow(head);
+    head = next;
+  }
+}
+
+
+/**
+ * Create a SimInspiralTable structure.
+ */
+
+
+SimInspiralTable *XLALCreateSimInspiralTableRow(const ProcessTable *process)
+{
+  SimInspiralTable *new = XLALMalloc(sizeof(*new));
+
+  if(!new)
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+
+  new->next = NULL;
+  memset(new->waveform, 0, sizeof(new->waveform));
+  memset(new->source, 0, sizeof(new->source));
+  memset(new->numrel_data, 0, sizeof(new->numrel_data));
+  memset(new->taper, 0, sizeof(new->taper));
+  if(process) {
+    new->process_id = process->process_id;
+  } else {
+    new->process_id = -1;	/* impossible */
+  }
+  new->simulation_id = -1;	/* impossible */
+
+  return new;
+}
+
+
+/**
+ * Destroy a SimInspiralTable structure.
+ */
+
+
+void XLALDestroySimInspiralTableRow(SimInspiralTable *row)
+{
+  XLALFree(row);
+}
+
+
+/**
+ * Destroy a SimInspiralTable linked list.
+ */
+
+
+void XLALDestroySimInspiralTable(SimInspiralTable *head)
+{
+  while(head)
+  {
+    SimInspiralTable *next = head->next;
+    XLALDestroySimInspiralTableRow(head);
+    head = next;
+  }
+}
+
+
+/**
+ * Assign simulation_id values to the entries in a SimInspiral linked list.
+ * All SimInspiral rows in the list will be blamed on the given process_id,
+ * and assigned sequential simulation_ids starting with the given
+ * simulation_id.  The return value is the next simulation_id after the
+ * last one assigned to a row in the list.
+ */
+long
+XLALSimInspiralAssignIDs(
+	SimInspiralTable *head,
+	long process_id,
+	long simulation_id
+)
+{
+	for(; head; head = head->next) {
+		head->process_id = process_id;
+		head->simulation_id = simulation_id++;
+	}
+	return simulation_id;
+}
+
+
+/**
+ * Create a SnglRingdownTable structure.
+ */
+
+
+SnglRingdownTable *XLALCreateSnglRingdownTableRow(const ProcessTable *process)
+{
+  SnglRingdownTable *new = XLALMalloc(sizeof(*new));
+
+  if(!new)
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+
+  new->next = NULL;
+  memset(new->ifo, 0, sizeof(new->ifo));
+  memset(new->channel, 0, sizeof(new->channel));
+  if(process) {
+    /*new->process_id = process->process_id;*/
+  } else {
+    /*new->process_id = -1; */
+  }
+
+  return new;
+}
+
+
+/**
+ * Destroy a SnglRingdownTable structure.
+ */
+
+
+void XLALDestroySnglRingdownTableRow(SnglRingdownTable *row)
+{
+  XLALFree(row);
+}
+
+
+/**
+ * Destroy a SnglRingdownTable linked list.
+ */
+
+
+void XLALDestroySnglRingdownTable(SnglRingdownTable *head)
+{
+  while(head)
+  {
+    SnglRingdownTable *next = head->next;
+    XLALDestroySnglRingdownTableRow(head);
+    head = next;
+  }
+}
+
+
+/**
+ * Create a SimRingdownTable structure.
+ */
+
+
+SimRingdownTable *XLALCreateSimRingdownTableRow(const ProcessTable *process)
+{
+  SimRingdownTable *new = XLALMalloc(sizeof(*new));
+
+  if(!new)
+    XLAL_ERROR_NULL(XLAL_EFUNC);
+
+  new->next = NULL;
+  memset(new->waveform, 0, sizeof(new->waveform));
+  memset(new->coordinates, 0, sizeof(new->coordinates));
+  if(process) {
+    /*new->process_id = process->process_id;*/
+  } else {
+    /*new->process_id = -1; */
+  }
+
+  return new;
+}
+
+
+/**
+ * Destroy a SimRingdownTable structure.
+ */
+
+
+void XLALDestroySimRingdownTableRow(SimRingdownTable *row)
+{
+  XLALFree(row);
+}
+
+
+/**
+ * Destroy a SimRingdownTable linked list.
+ */
+
+
+void XLALDestroySimRingdownTable(SimRingdownTable *head)
+{
+  while(head)
+  {
+    SimRingdownTable *next = head->next;
+    XLALDestroySimRingdownTableRow(head);
+    head = next;
+  }
+}

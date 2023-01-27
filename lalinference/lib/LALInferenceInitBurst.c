@@ -27,7 +27,6 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
 #include <lal/StringInput.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceTemplate.h>
@@ -41,6 +40,7 @@
 #include <lal/LALSimBurst.h>
 #include <lal/LALInferenceCalibrationErrors.h>
 #include <lal/LALInferenceInit.h>
+#include <lal/LIGOLwXMLRead.h>
 
 
 LALInferenceModel *LALInferenceInitModelReviewBurstEvidence_unimod(LALInferenceRunState *state);
@@ -273,7 +273,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
     }
   }
   else if ((ppt=LALInferenceGetProcParamVal(commandLine,"--inj"))){
-      SimInspiralTableFromLIGOLw(&inj_table,LALInferenceGetProcParamVal(commandLine,"--inj")->value,0,0);
+      inj_table = XLALSimInspiralTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--inj")->value);
       if (inj_table){
         ppt=LALInferenceGetProcParamVal(commandLine,"--event");
         if(ppt){

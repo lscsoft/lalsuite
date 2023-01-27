@@ -28,7 +28,6 @@ pkginclude_HEADERS = \
 	LALSQTPNWaveform.h \
 	LALSQTPNWaveformInterface.h \
 	LIGOLwXMLInspiralRead.h \
-	LIGOLwXMLRingdownRead.h \
 	LIGOMetadataInspiralUtils.h \
 	LIGOMetadataRingdownUtils.h \
 	NRWaveIO.h \
@@ -135,7 +134,6 @@ liblalinspiral_la_SOURCES = \
 	LALTaylorF2ReducedSpin.c\
 	LALTrigScanCluster.c \
 	LIGOLwXMLInspiralRead.c \
-	LIGOLwXMLRingdownRead.c \
 	NDTemplateBank.c \
 	NRWaveIO.c \
 	NRWaveInject.c \

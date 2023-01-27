@@ -28,8 +28,8 @@
 #include <lal/LALStdio.h>
 #include <lal/LALgetopt.h>
 #include <lal/LALStdlib.h>
-#include <lal/LIGOLwXMLlegacy.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/Date.h>
 #include <lal/FindChirp.h>
 #include <lal/Units.h>
@@ -139,7 +139,6 @@ int main(int argc, char *argv[])
   SimInspiralTable *injTable=NULL;
   SimInspiralTable this_injection;
   SimInspiralTable *headTable=NULL;
-  MetadataTable MDT;
   REAL4TimeSeries *TimeSeries;
   double max_chirp_dist=0.0;
 
@@ -280,7 +279,7 @@ int main(int argc, char *argv[])
   memset(&status,0,sizeof(status));
 
   /* Read in the input XML */
-  SimInspiralTableFromLIGOLw(&injTable,inputfile,0,0);
+  injTable = XLALSimInspiralTableFromLIGOLw(inputfile);
   headTable=injTable;
   Nsamples = (UINT4)injLength/deltaT;
 
@@ -532,18 +531,13 @@ int main(int argc, char *argv[])
 
   /* If the distances were adjusted, re-write the SimInspiral table */
   if(rewriteXML){
-    memset(&MDT,0,sizeof(MDT));
-    MDT.simInspiralTable = headTable;
-        
     fprintf(stderr,"Overwriting %s with adjusted distances\n",inputfile);
     inputfile[strlen(inputfile)-4] = 0; /* Cut off the .xml */
     strncat(inputfile,"_adj.xml",FILENAME_MAX-1);
-    xmlfp=XLALOpenLIGOLwXMLFile((const char *)inputfile);
+    xmlfp=XLALOpenLIGOLwXMLFile(inputfile);
     if(xmlfp==NULL) fprintf(stderr,"Error! Cannot open %s for writing\n",inputfile);
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, xmlfp, sim_inspiral_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, xmlfp, MDT,sim_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, xmlfp ), &status );
-    LAL_CALL( LALCloseLIGOLwXMLFile ( &status, xmlfp ), &status );
+    XLALWriteLIGOLwXMLSimInspiralTable( xmlfp, headTable );
+    XLALCloseLIGOLwXMLFile( xmlfp );
   }
 
   return(0);

@@ -45,7 +45,6 @@
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOLwXMLBurstRead.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/FindChirp.h>
 #include <lal/GenerateBurst.h>
 
@@ -384,9 +383,6 @@ int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfi
 	COMPLEX8FrequencySeries *response;
 	REAL4TimeSeries keep;
 	// REAL8 deltaF;
-	int ninj;
-	int tbeg;
-	int tend;
 
 	if ( ! inspinjfile )
 		return 0;
@@ -395,19 +391,13 @@ int inspinj( REAL4TimeSeries *series, const char *inspinjfile, const char *calfi
 		return 0;
 	}
 
-	tbeg = series->epoch.gpsSeconds;
-	tend = tbeg + ceil( series->deltaT * series->data->length );
-	ninj = SimInspiralTableFromLIGOLw( &injections, inspinjfile, tbeg, tend );
+	injections = XLALSimInspiralTableFromLIGOLw( inspinjfile );
 
-	verbose( "injecting %d inspirals listed in file %s between times %d and %d\n", ninj, inspinjfile, tbeg, tend );
-
-	if ( ninj < 0 ) {
+	if ( !injections ) {
 		fprintf( stderr, "error: could not read file %s\n", inspinjfile );
 		exit( 1 );
-	} else if ( ninj == 0 ) {
-		fprintf( stderr, "warning: no relevant injections found in %s\n", inspinjfile );
-		return 0;
 	}
+	verbose( "injecting inspirals listed in file %s\n", inspinjfile );
 
 	// deltaF = 1.0 / ( series->deltaT * series->data->length );
 	// response = getresp( calfile, series->name, &series->epoch, deltaF, series->data->length, 1.0 );

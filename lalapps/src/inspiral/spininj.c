@@ -37,10 +37,10 @@
 #include <lal/LALStdio.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
+#include <lal/LIGOLwXML.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXMLlegacy.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
 #include <lal/GeneratePPNInspiral.h>
@@ -143,9 +143,7 @@ typedef struct {
 
 
 
-void LALSimInspiralTablePopulate(LALStatus        *status, 
-                                 MetadataTable     injections, 
-                                 SimInspiralTable *this_inj);
+void LALSimInspiralTablePopulate(SimInspiralTable **this_inj);
 
 
 
@@ -178,8 +176,7 @@ void LALSetGeoCentricEndTime(LALStatus *status,
                              InspiralInjectionParameters params,
                              SimInspiralTable *this_inj);
 
-void LALParserInspiralInjection(LALStatus *status,
-                                int,
+void LALParserInspiralInjection(int,
                                 char**,
                                 InspiralInjectionParameters *);
 
@@ -210,7 +207,7 @@ static ProcessParamsTable *next_process_param( const char *name, const char *typ
 
 
 extern int vrbflg;
-LIGOLwXMLStream       xmlfp;
+LIGOLwXMLStream      *xmlfp;
 CHAR                  fname[256];
 RandomParams *randParams = NULL;
 
@@ -223,20 +220,16 @@ int main( int argc, char *argv[] )
   /* command line options */
 
   InspiralInjectionParameters         paramsIn;     
-  MetadataTable                       injections;
+  SimInspiralTable                   *injections = NULL;
   SimInspiralTable                    *this_inj = NULL;
 
     /* set up inital debugging values */
   lal_errhandler = LAL_ERR_EXIT;
   
-  LAL_CALL( LALParserInspiralInjection(&status, argc, argv, &paramsIn), 
-           &status);
+  LALParserInspiralInjection( argc, argv, &paramsIn );
   
   LAL_CALL( LALCreateRandomParams( &status, &randParams, paramsIn.randSeed ), 
             &status );  
-  
-  /* null out the head of the linked list */
-  injections.simInspiralTable = NULL;
   
   /*
    *
@@ -251,14 +244,14 @@ int main( int argc, char *argv[] )
     /* r and phi are the geocentric galactic spherical coordinates       */
 
     /* create the sim_inspiral table */
-    if ( injections.simInspiralTable )
+    if ( injections )
     {
       this_inj = this_inj->next = (SimInspiralTable *)
         LALCalloc( 1, sizeof(SimInspiralTable) );
     }
     else
     {
-      injections.simInspiralTable = this_inj = (SimInspiralTable *)
+      injections = this_inj = (SimInspiralTable *)
         LALCalloc( 1, sizeof(SimInspiralTable) );
     }
 
@@ -291,13 +284,10 @@ int main( int argc, char *argv[] )
    */
 
   /* write the sim_inspiral table */
-  if ( injections.simInspiralTable ){
-    LAL_CALL(LALSimInspiralTablePopulate(&status, 
-                                         injections, 
-                                         this_inj), &status);
-  }
+  if ( injections )
+    LALSimInspiralTablePopulate( &injections );
   /* close the injection file */
-  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlfp ), &status );
+  XLALCloseLIGOLwXMLFile( xmlfp );
 
   /* check for memory leaks and exit */
   LALCheckMemoryLeaks();
@@ -307,24 +297,11 @@ int main( int argc, char *argv[] )
 
 
 /*################################################*/
-void LALSimInspiralTablePopulate(LALStatus        *status, 
-                                 MetadataTable     injections, 
-                                 SimInspiralTable *this_inj)
+void LALSimInspiralTablePopulate(SimInspiralTable **injtable)
 {
-  XLALSimInspiralAssignIDs ( injections.simInspiralTable, 0, 0 );
-
-  LAL_CALL( LALBeginLIGOLwXMLTable( status, &xmlfp, sim_inspiral_table ), 
-            status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( status, &xmlfp, injections, 
-                                    sim_inspiral_table ), status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( status, &xmlfp ), status );
-  
-  while ( injections.simInspiralTable )
-    {
-      this_inj = injections.simInspiralTable;
-      injections.simInspiralTable = injections.simInspiralTable->next;
-      XLALFreeSimInspiral( &this_inj );
-    }
+  XLALSimInspiralAssignIDs ( *injtable, 0, 0 );
+  XLALWriteLIGOLwXMLSimInspiralTable( xmlfp, *injtable );
+  XLALDestroySimInspiralTable( *injtable );
 }
 
 
@@ -625,27 +602,25 @@ void LALSetGeoCentricEndTime(LALStatus *status,
 
 
 
-void LALParserInspiralInjection(LALStatus *status, 
-                                int argc, 
+void LALParserInspiralInjection(int argc,
                                 char **argv, 
                                 InspiralInjectionParameters *params)
 {
-  MetadataTable         proctable;
-  MetadataTable         procparams;
+  ProcessTable         *proctable;
+  ProcessParamsTable   *procparams;
   ProcessParamsTable   *this_proc_param;
   int i;
   
 
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *) 
-    calloc( 1, sizeof(ProcessTable) );
+  proctable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
 
-  XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
+  XLALGPSTimeNow(&(proctable->start_time));
+  XLALPopulateProcessTable(proctable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
       lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
-  snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+  snprintf( proctable->comment, LIGOMETA_COMMENT_MAX, " " );
+  this_proc_param = procparams = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
   
   /* clear the waveform field */
@@ -929,43 +904,25 @@ void LALParserInspiralInjection(LALStatus *status,
   
   /* and finally stored the arguments in the process table */
 
-  memset( &xmlfp, 0, sizeof(LIGOLwXMLStream) );
-  LAL_CALL( LALOpenLIGOLwXMLFile( status, &xmlfp, fname), status );
+  xmlfp = XLALOpenLIGOLwXMLFile( fname );
   
   /* write the process table */
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
-  XLALGPSTimeNow(&(proctable.processTable->end_time));
+  snprintf( proctable->ifos, LIGOMETA_IFOS_MAX, "H1H2L1" );
+  XLALGPSTimeNow(&(proctable->end_time));
 
+  XLALWriteLIGOLwXMLProcessTable( xmlfp, proctable );
+
+  XLALDestroyProcessTable( proctable );
   
-  LAL_CALL(  LALBeginLIGOLwXMLTable( status, &xmlfp, process_table ),status), 
-
-  LAL_CALL(  LALWriteLIGOLwXMLTable( status, &xmlfp, proctable, 
-                                     process_table ), status );  
-
-  
-  LAL_CALL(  LALEndLIGOLwXMLTable ( status, &xmlfp ), status ); 
-
-
-  free( proctable.processTable );
-  
- this_proc_param = procparams.processParamsTable;
-  procparams.processParamsTable = procparams.processParamsTable->next;
+ this_proc_param = procparams;
+  procparams = procparams->next;
   free( this_proc_param );
 
      /* write the process params table */
-  if ( procparams.processParamsTable )
+  if ( procparams )
   {
-      LAL_CALL( LALBeginLIGOLwXMLTable( status, &xmlfp, process_params_table ), 
-        status );
-      LAL_CALL( LALWriteLIGOLwXMLTable( status, &xmlfp, procparams, 
-          process_params_table ), status );
-      LAL_CALL( LALEndLIGOLwXMLTable ( status, &xmlfp ), status );
-    while( procparams.processParamsTable )
-    {
-      this_proc_param = procparams.processParamsTable;
-      procparams.processParamsTable = this_proc_param->next;
-      free( this_proc_param );
-    }
+    XLALWriteLIGOLwXMLProcessParamsTable( xmlfp, procparams );
+    XLALDestroyProcessParamsTable( procparams );
   }
   /* We dont close right now. it will be done within the main function 
      after having written the injection data*/

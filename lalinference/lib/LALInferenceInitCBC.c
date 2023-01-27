@@ -28,7 +28,7 @@
 #include <lal/FrequencySeries.h>
 #include <lal/Units.h>
 #include <lal/StringInput.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALInferencePrior.h>
 #include <lal/LALInferenceTemplate.h>
@@ -956,7 +956,7 @@ LALInferenceModel *LALInferenceInitCBCModel(LALInferenceRunState *state) {
   /* Read injection XML file for parameters if specified */
   ppt=LALInferenceGetProcParamVal(commandLine,"--inj");
   if(ppt){
-    SimInspiralTableFromLIGOLw(&injTable,ppt->value,0,0);
+    injTable = XLALSimInspiralTableFromLIGOLw(ppt->value);
     if(!injTable){
       fprintf(stderr,"Unable to open injection file %s\n",ppt->value);
       exit(1);

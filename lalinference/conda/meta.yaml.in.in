@@ -260,7 +260,7 @@ outputs:
         - libgomp  # [linux and mpi != 'nompi']
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalinference', exact=True) }}
-        - liblalinspiral >={{ lalinspiral_version }}  # [mpi != 'nompi']
+        - liblalmetaio >={{ lalmetaio_version }}
         - llvm-openmp  # [osx and mpi != 'nompi']
         - {{ mpi }}  # [mpi != 'nompi']
         - python
@@ -284,7 +284,7 @@ outputs:
         - h5py
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalinference', exact=True) }}
-        - liblalinspiral >={{ lalinspiral_version }}  # [mpi != 'nompi']
+        - liblalmetaio >={{ lalmetaio_version }}
         - ligo-gracedb
         - llvm-openmp  # [osx and mpi != 'nompi']
         - lscsoft-glue >=1.54.1

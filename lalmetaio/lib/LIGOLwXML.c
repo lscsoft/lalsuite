@@ -839,6 +839,109 @@ int XLALWriteLIGOLwXMLSimInspiralTable(
 }
 
 
+/**
+ * Write a sim_ringdown table to an XML file.
+ */
+
+int XLALWriteLIGOLwXMLSimRingdownTable(
+	LIGOLwXMLStream *xml,
+	const SimRingdownTable *sim_ringdown
+)
+{
+	const char *row_head = "\n\t\t\t";
+
+	/* table header */
+
+	XLALClearErrno();
+	XLALFilePuts("\t<Table Name=\"sim_ringdown:table\">\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"process:process_id\" Type=\"ilwd:char\"/>\n", xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"waveform\" Type=\"lstring\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"coordinates\" Type=\"lstring\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"geocent_start_time\" Type=\"int_4s\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"geocent_start_time_ns\" Type=\"int_4s\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"h_start_time\" Type=\"int_4s\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"h_start_time_ns\" Type=\"int_4s\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"l_start_time\" Type=\"int_4s\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"l_start_time_ns\" Type=\"int_4s\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"v_start_time\" Type=\"int_4s\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"v_start_time_ns\" Type=\"int_4s\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"start_time_gmst\" Type=\"real_8\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"longitude\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"latitude\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"distance\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"inclination\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"polarization\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"frequency\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"quality\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"phase\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"mass\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"spin\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"epsilon\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"amplitude\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"eff_dist_h\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"eff_dist_l\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"eff_dist_v\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"hrss\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"hrss_h\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"hrss_l\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"hrss_v\" Type=\"real_4\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Column Name=\"simulation_id\" Type=\"ilwd:char\"/>\n" , xml->fp);
+	XLALFilePuts("\t\t<Stream Name=\"sim_ringdown:table\" Type=\"Local\" Delimiter=\",\">\n", xml->fp);
+	if(XLALGetBaseErrno())
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* rows */
+
+	for(; sim_ringdown; sim_ringdown = sim_ringdown->next) {
+		if(XLALFilePrintf(xml->fp, "%s%ld,\"%s\",\"%s\",%d,%d,%d,%d,%d,%d,%d,%d,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%.16g,%ld",
+			row_head,
+			0,	/* process_id */
+			sim_ringdown->waveform,
+			sim_ringdown->coordinates,
+			sim_ringdown->geocent_start_time.gpsSeconds,
+			sim_ringdown->geocent_start_time.gpsNanoSeconds,
+			sim_ringdown->h_start_time.gpsSeconds,
+			sim_ringdown->h_start_time.gpsNanoSeconds,
+			sim_ringdown->l_start_time.gpsSeconds,
+			sim_ringdown->l_start_time.gpsNanoSeconds,
+			sim_ringdown->v_start_time.gpsSeconds,
+			sim_ringdown->v_start_time.gpsNanoSeconds,
+			sim_ringdown->start_time_gmst,
+			sim_ringdown->longitude,
+			sim_ringdown->latitude,
+			sim_ringdown->distance,
+			sim_ringdown->inclination,
+			sim_ringdown->polarization,
+			sim_ringdown->frequency,
+			sim_ringdown->quality,
+			sim_ringdown->phase,
+			sim_ringdown->mass,
+			sim_ringdown->spin,
+			sim_ringdown->epsilon,
+			sim_ringdown->amplitude,
+			sim_ringdown->eff_dist_h,
+			sim_ringdown->eff_dist_l,
+			sim_ringdown->eff_dist_v,
+			sim_ringdown->hrss,
+			sim_ringdown->hrss_h,
+			sim_ringdown->hrss_l,
+			sim_ringdown->hrss_v,
+			sim_ringdown->simulation_id
+		) < 0)
+			XLAL_ERROR(XLAL_EFUNC);
+		row_head = ",\n\t\t\t";
+	}
+
+	/* table footer */
+
+	if(XLALFilePuts("\n\t\t</Stream>\n\t</Table>\n", xml->fp) < 0)
+		XLAL_ERROR(XLAL_EFUNC);
+
+	/* done */
+
+	return 0;
+}
+
 
 /**
  * Write a time_slide table to an XML file.

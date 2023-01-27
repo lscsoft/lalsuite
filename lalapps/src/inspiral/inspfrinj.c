@@ -281,11 +281,11 @@
 #include <lal/Calibration.h>
 #include <lal/LALFrameIO.h>
 #include <lal/FindChirp.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
-#include <lal/LIGOLwXMLlegacy.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
@@ -299,7 +299,7 @@
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "inspiral"
 
-int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
+int arg_parse_check( int argc, char *argv[], ProcessParamsTable *procparams );
 
 /*
  *
@@ -336,7 +336,6 @@ CHAR  *injChanName      = NULL;         /* the injection channel name   */
 
 REAL4 injFlow           = 0;            /* injection start frequency    */
 int   injectOverhead    = 0;            /* inject h+ into detector      */
-int   numInjections     = 0;
 SimInspiralTable *injections = NULL;
 SimInspiralTable    *thisInj = NULL;
 
@@ -369,12 +368,11 @@ int main( int argc, char *argv[] )
   COMPLEX8FrequencySeries       injResp;
 
   /* output data */
-  MetadataTable         proctable;
-  MetadataTable         procparams;
-  MetadataTable         searchsumm;
-  MetadataTable         siminspiral;
+  ProcessTable         *proctable;
+  ProcessParamsTable   *procparams;
+  SearchSummaryTable   *searchsumm;
   ProcessParamsTable   *this_proc_param;
-  LIGOLwXMLStream       results;
+  LIGOLwXMLStream      *results;
 
   /* counters and other variables */
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
@@ -397,16 +395,16 @@ int main( int argc, char *argv[] )
 
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
+  proctable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  XLALGPSTimeNow(&(proctable->start_time));
+  XLALPopulateProcessTable(proctable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
       lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+  this_proc_param = procparams = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
   /* create the search summary table */
-  searchsumm.searchSummaryTable = (SearchSummaryTable *)
+  searchsumm = (SearchSummaryTable *)
     calloc( 1, sizeof(SearchSummaryTable) );
 
   /* zero out the outfileName */
@@ -416,7 +414,7 @@ int main( int argc, char *argv[] )
   arg_parse_check( argc, argv, procparams );
 
   /* wind to the end of the process params table */
-  for ( this_proc_param = procparams.processParamsTable; this_proc_param->next;
+  for ( this_proc_param = procparams; this_proc_param->next;
       this_proc_param = this_proc_param->next );
 
   /* can use LALMalloc() and LALCalloc() from here onwards */
@@ -424,21 +422,18 @@ int main( int argc, char *argv[] )
   /* fill the comment, if a user has specified on, or leave it blank */
   if ( ! *comment )
   {
-    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX, 
-        " " );
+    snprintf( proctable->comment, LIGOMETA_COMMENT_MAX, " " );
+    snprintf( searchsumm->comment, LIGOMETA_COMMENT_MAX, " " );
   } 
   else 
   {
-    snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX,
-        "%s", comment );
-    snprintf( searchsumm.searchSummaryTable->comment, LIGOMETA_COMMENT_MAX,
-        "%s", comment );
+    snprintf( proctable->comment, LIGOMETA_COMMENT_MAX, "%s", comment );
+    snprintf( searchsumm->comment, LIGOMETA_COMMENT_MAX, "%s", comment );
   }
 
 
   /* the number of nodes for a standalone job is always 1 */
-  searchsumm.searchSummaryTable->nnodes = 1;
+  searchsumm->nnodes = 1;
 
   /* initialize the raw and injection data */
   memset( &chan, 0, sizeof(REAL4TimeSeries) );
@@ -496,13 +491,13 @@ int main( int argc, char *argv[] )
 
     /* store the start and end time of the raw channel in the search summary */
     /* FIXME:  loss of precision;  consider
-    searchsumm.searchSummaryTable->in_start_time = searchsumm.searchSummaryTable->in_end_time = chan.epoch;
-    XLALGPSAdd(&searchsumm.searchSummaryTable->in_end_time, chan.deltaT * (REAL8) chan.data->length);
+    searchsumm->in_start_time = searchsumm->in_end_time = chan.epoch;
+    XLALGPSAdd(&searchsumm->in_end_time, chan.deltaT * (REAL8) chan.data->length);
     */
-    searchsumm.searchSummaryTable->in_start_time = chan.epoch;
+    searchsumm->in_start_time = chan.epoch;
     tsLength = XLALGPSGetREAL8( &(chan.epoch) );
     tsLength += chan.deltaT * (REAL8) chan.data->length;
-    XLALGPSSetREAL8( &(searchsumm.searchSummaryTable->in_end_time), tsLength );
+    XLALGPSSetREAL8( &(searchsumm->in_end_time), tsLength );
 
     if ( vrbflg ) fprintf( stdout, "read channel %s from frame stream\n"
         "got %d points with deltaT %e\nstarting at GPS time %d sec %d ns\n", 
@@ -590,8 +585,8 @@ int main( int argc, char *argv[] )
       inj.epoch = gpsStartTime;
       inj.sampleUnits = lalADCCountUnit;
       snprintf( inj.name, LALNameLength, "%s:STRAIN", ifo );
-      searchsumm.searchSummaryTable->in_start_time = gpsStartTime;
-      searchsumm.searchSummaryTable->in_end_time = gpsEndTime;
+      searchsumm->in_start_time = gpsStartTime;
+      searchsumm->in_end_time = gpsEndTime;
       numPoints = (UINT4) floor( ((REAL8) inputLengthNS) / (inj.deltaT * 1.0e9) 
           + 0.5 );
     }
@@ -607,19 +602,15 @@ int main( int argc, char *argv[] )
      */
 
     /* read in the injection data from XML */
-    numInjections = SimInspiralTableFromLIGOLw( &injections, injectionFile,
-        gpsStartTime.gpsSeconds, gpsEndTime.gpsSeconds + injectSafety );
+    injections = XLALSimInspiralTableFromLIGOLw( injectionFile );
 
-    if ( numInjections < 0 )
+    if ( !injections )
     {
       fprintf( stderr, "error: cannot read injection file" );
       exit( 1 );
     }
-    else if ( numInjections )
+    else
     {
-      /* store number of injections in search summary */
-      searchsumm.searchSummaryTable->nevents = numInjections;
-
       /* set the injection start frequency */
       if ( injFlow )
       {
@@ -675,14 +666,10 @@ int main( int argc, char *argv[] )
             &injResp ), &status );
       snprintf( inj.name,  LALNameLength, "%s", tmpChName );
 
-      if ( vrbflg ) fprintf( stdout, "injected %d signals from %s into %s\n", 
-          numInjections, injectionFile, inj.name );
+      if ( vrbflg ) fprintf( stdout, "injected signals from %s into %s\n",
+          injectionFile, inj.name );
 
       LAL_CALL( LALCDestroyVector( &status, &(injResp.data) ), &status );
-    }
-    else
-    {
-      if ( vrbflg ) fprintf( stdout, "no injections in this data\n" );
     }
   }
 
@@ -846,7 +833,6 @@ int main( int argc, char *argv[] )
 
 
   /* open the output xml file */
-  memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if( userTag && outCompress )
   {
     if(snprintf( fname, FILENAME_MAX, "%s_%s-%d-%d.xml.gz", outfileName,
@@ -877,66 +863,38 @@ int main( int argc, char *argv[] )
   }
 
   if ( vrbflg ) fprintf( stdout, "writing XML data to %s...\n", fname );
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname ), &status );
+  results = XLALOpenLIGOLwXMLFile( fname );
 
   /* write the process table */
   if ( vrbflg ) fprintf( stdout, "  process table...\n" );
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
-  XLALGPSTimeNow(&(proctable.processTable->end_time));
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable, 
-        process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  free( proctable.processTable );
+  snprintf( proctable->ifos, LIGOMETA_IFOS_MAX, "%s", ifo );
+  XLALGPSTimeNow(&(proctable->end_time));
+  XLALWriteLIGOLwXMLProcessTable( results, proctable );
+  free( proctable );
 
   /* write the process params table */
   if ( vrbflg ) fprintf( stdout, "  process_params table...\n" );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ), 
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams, 
-        process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  while( procparams.processParamsTable )
-  {
-    this_proc_param = procparams.processParamsTable;
-    procparams.processParamsTable = this_proc_param->next;
-    free( this_proc_param );
-  }
+  XLALWriteLIGOLwXMLProcessParamsTable( results, procparams );
+  XLALDestroyProcessParamsTable( procparams );
 
   /* write the search summary table */
   if ( vrbflg ) fprintf( stdout, "  search_summary table...\n" );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
-        search_summary_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, searchsumm, 
-        search_summary_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
+  XLALWriteLIGOLwXMLSearchSummaryTable( results, searchsumm );
 
   /* free the search summary table */
-  free( searchsumm.searchSummaryTable );
+  free( searchsumm );
 
   /* write the sim_inspiral table */
   if ( injections )
   {
     if ( vrbflg ) fprintf( stdout, "sim_inspiral... " );
-    siminspiral.simInspiralTable = injections;
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, 
-          sim_inspiral_table ), &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, siminspiral, 
-          sim_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable( &status, &results ), &status );
-
+    XLALWriteLIGOLwXMLSimInspiralTable( results, injections );
     /* free the temporary memory containing the events */
-    while ( injections )
-    {
-      thisInj = injections;
-      injections = injections->next;
-      XLALFreeSimInspiral( &thisInj );
-    }
+    XLALDestroySimInspiralTable( injections );
   }
 
   /* close the output xml file */
-  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+  XLALCloseLIGOLwXMLFile( results );
   if ( vrbflg ) fprintf( stdout, "done. XML file closed\n" );
 
   /* free the rest of the memory, check for memory leaks and exit */
@@ -1015,7 +973,7 @@ static void print_usage(char *program)
       "\n", program );
 }
 
-int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
+int arg_parse_check( int argc, char *argv[], ProcessParamsTable *procparams )
 {
   /* LALgetopt arguments */
   struct LALoption long_options[] =
@@ -1057,7 +1015,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {0, 0, 0, 0}
   };
   int c;
-  ProcessParamsTable *this_proc_param = procparams.processParamsTable;
+  ProcessParamsTable *this_proc_param = procparams;
 
 
   /*

@@ -57,10 +57,10 @@
 #include <lal/TimeFreqFFT.h>
 #include <lal/IIRFilter.h>
 #include <lal/BandPassTimeSeries.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXMLlegacy.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
 #include <lal/FindChirp.h>
@@ -185,9 +185,6 @@ int main( int argc, char *argv[] )
   COMPLEX8Vector               *unity = NULL;
   const LALUnit strainPerCount = {0,{0,0,0,0,0,1,-1},{0,0,0,0,0,0,0}};
 
-  int                           numInjections = 0;
-  int                           numTriggers = 0;
-
   /* template bank simulation variables */
   INT4                         injSimCount = 0;
   SimInspiralTable            *injectionHead  = NULL;
@@ -218,10 +215,9 @@ int main( int argc, char *argv[] )
   InterferometerNumber       ifoNumber   = LAL_UNKNOWN_IFO;
 
   /* output data */
-  LIGOLwXMLStream       xmlStream;
-  MetadataTable         proctable;
-  MetadataTable         outputTable;
-  MetadataTable         procparams;
+  LIGOLwXMLStream      *xmlStream;
+  ProcessTable         *proctable;
+  ProcessParamsTable   *procparams;
   CHAR                  fname[256];         
   CHAR                  comment[LIGOMETA_COMMENT_MAX];
   ProcessParamsTable   *this_proc_param = NULL;
@@ -234,11 +230,11 @@ int main( int argc, char *argv[] )
   REAL4 thisCombSnr_H1H2 = 0;
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
-  XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
+  proctable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  XLALGPSTimeNow(&(proctable->start_time));
+  XLALPopulateProcessTable(proctable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
       lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *) 
+  this_proc_param = procparams = (ProcessParamsTable *)
                                       calloc( 1, sizeof(ProcessParamsTable) );
   memset( comment, 0, LIGOMETA_COMMENT_MAX * sizeof(CHAR) );
 
@@ -528,15 +524,15 @@ int main( int argc, char *argv[] )
   /* read in injections from injection file */
   /* set endtime to 0 so that we read in all events */
   if ( vrbflg ) fprintf( stdout, "Reading sim_inspiral table of %s\n", injectionFile );
-  LAL_CALL(numInjections = SimInspiralTableFromLIGOLw( &injectionHead, injectionFile, 0, 0), &status);
-  if ( vrbflg ) fprintf( stdout, "Read %d injections from sim_inspiral table of %s\n", 
-                                    numInjections, injectionFile );
+  injectionHead = XLALSimInspiralTableFromLIGOLw( injectionFile );
+  if ( vrbflg ) fprintf( stdout, "Read injections from sim_inspiral table of %s\n",
+                                    injectionFile );
 
   if (coireflg){
      if ( vrbflg ) fprintf( stdout, "Reading sngl_inspiral table of %s\n", injectionFile );
-     LAL_CALL(numTriggers = LALSnglInspiralTableFromLIGOLw(&snglHead, injectionFile, 0, -1), &status);
-     if ( vrbflg ) fprintf( stdout, "Read %d triggers from sngl_inspiral table of %s\n", 
-                                    numTriggers, injectionFile );
+     snglHead = XLALSnglInspiralTableFromLIGOLw(injectionFile);
+     if ( vrbflg ) fprintf( stdout, "Read triggers from sngl_inspiral table of %s\n",
+                                    injectionFile );
      if ( vrbflg ) {
            fprintf( stdout, "Reading search_summary table of %s ...", injectionFile );
            fflush( stdout );
@@ -545,9 +541,6 @@ int main( int argc, char *argv[] )
      if ( vrbflg ) fprintf( stdout, " done\n");
   }
 
- /* make sure we start at head of linked list */
- thisInjection = injectionHead;
-
   /* setting fixed waveform injection parameters */
   memset( &ppnParams, 0, sizeof(PPNParamStruc) );
   ppnParams.deltaT   = deltaT;
@@ -555,12 +548,9 @@ int main( int argc, char *argv[] )
   ppnParams.ppn      = NULL;
 
   /* loop over injections */
-  injSimCount = 0;
-    
-        
-  do
+  for(injSimCount = 1, thisInjection = injectionHead; thisInjection; injSimCount++, thisInjection = thisInjection->next)
   {
-     fprintf( stdout, "injection %d/%d\n", injSimCount+1, numInjections );
+     fprintf( stdout, "injection %d\n", injSimCount );
 
      /* reset waveform structure */
      memset( &waveform, 0, sizeof(CoherentGW) );
@@ -779,73 +769,51 @@ int main( int argc, char *argv[] )
        thisCombSnr_H1H2 = bitten_H2;
     }
     thisInjection->eff_dist_v = 1./thisCombSnr_H1H2;
-
-
-    /* increment the bank sim sim_inspiral table if necessary */
-    if ( injectionHead )
-    {
-      thisInjection = thisInjection->next;
-    }
-
-  } while ( ++injSimCount < numInjections ); 
+  };
   /* end loop over injections */
 
   /* try opening, writing and closing an xml file */
 
   /* open the output xml file */
-  memset( &xmlStream, 0, sizeof(LIGOLwXMLStream) );
   snprintf( fname, sizeof(fname), "%s", outputFile);
-  LAL_CALL( LALOpenLIGOLwXMLFile  ( &status, &xmlStream, fname), &status);
+  xmlStream = XLALOpenLIGOLwXMLFile( fname );
 
   /* write out the process and process params tables */
   if ( vrbflg ) fprintf( stdout, "process... " );
-  XLALGPSTimeNow(&(proctable.processTable->end_time));
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, proctable, process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
-  free( proctable.processTable );
+  XLALGPSTimeNow(&(proctable->end_time));
+  XLALWriteLIGOLwXMLProcessTable( xmlStream, proctable );
+  free( proctable );
   /* Just being pedantic here ... */
-  proctable.processTable = NULL;
+  proctable = NULL;
  
   /* free the unused process param entry */
-  this_proc_param = procparams.processParamsTable;
-  procparams.processParamsTable = procparams.processParamsTable->next;
+  this_proc_param = procparams;
+  procparams = procparams->next;
   free( this_proc_param );
   this_proc_param = NULL;
 
   /* write the process params table */
   if ( vrbflg ) fprintf( stdout, "process_params... " );
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, process_params_table ), &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, procparams, process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &xmlStream ), &status );
+  XLALWriteLIGOLwXMLProcessParamsTable( xmlStream, procparams );
 
   /* write the search summary table */
   if ( coireflg ){
      if ( vrbflg ) fprintf( stdout, "search_summary... " );
-     outputTable.searchSummaryTable = searchSummHead;
-     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, search_summary_table), &status);
-     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, search_summary_table), &status);
-     LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
+     XLALWriteLIGOLwXMLSearchSummaryTable( xmlStream, searchSummHead );
    }
 
   /* write the sim inspiral table */
   if ( vrbflg ) fprintf( stdout, "sim_inspiral... " );
-  outputTable.simInspiralTable = injectionHead;
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sim_inspiral_table), &status);
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, sim_inspiral_table), &status);
-  LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
+  XLALWriteLIGOLwXMLSimInspiralTable( xmlStream, injectionHead );
 
   /* write the sngl inspiral table */
   if ( coireflg ){
      if ( vrbflg ) fprintf( stdout, "sngl_inspiral... " );
-     outputTable.snglInspiralTable = snglHead;
-     LAL_CALL( LALBeginLIGOLwXMLTable( &status, &xmlStream, sngl_inspiral_table), &status);
-     LAL_CALL( LALWriteLIGOLwXMLTable( &status, &xmlStream, outputTable, sngl_inspiral_table), &status);
-     LAL_CALL( LALEndLIGOLwXMLTable  ( &status, &xmlStream), &status);
+     XLALWriteLIGOLwXMLSnglInspiralTable( xmlStream, snglHead );
   } 
 
   /* close the xml file */ 
-  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &xmlStream), &status);
+  XLALCloseLIGOLwXMLFile( xmlStream );
 
   /* Freeing memory */
   XLALDestroyREAL4TimeSeries(chan);
@@ -866,21 +834,10 @@ int main( int argc, char *argv[] )
   injectionFile = NULL;
 
   /* free the process params */
-  while( procparams.processParamsTable )
-  {
-    this_proc_param = procparams.processParamsTable;
-    procparams.processParamsTable = this_proc_param->next;
-    free( this_proc_param );
-    this_proc_param = NULL;
-  }
+  XLALDestroyProcessParamsTable( procparams );
 
   /* free the sim inspiral tables */
-  while ( injectionHead )
-  {
-    thisInjection = injectionHead;
-    injectionHead = injectionHead->next;
-    LALFree( thisInjection );
-  }
+  XLALDestroySimInspiralTable( injectionHead );
 
   /*check for memory leaks */
   LALCheckMemoryLeaks(); 

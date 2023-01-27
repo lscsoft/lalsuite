@@ -125,6 +125,30 @@ void XLALDestroySegmentTableRow(SegmentTable *row);
 #endif   // SWIG
 void XLALDestroySegmentTable(SegmentTable *head);
 
+SnglInspiralTable *XLALCreateSnglInspiralTableRow(const ProcessTable *process);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySnglInspiralTableRow(SnglInspiralTable *row);
+#endif   // SWIG
+void XLALDestroySnglInspiralTable(SnglInspiralTable *head);
+
+SimInspiralTable *XLALCreateSimInspiralTableRow(const ProcessTable *process);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySimInspiralTableRow(SimInspiralTable *row);
+#endif   // SWIG
+void XLALDestroySimInspiralTable(SimInspiralTable *head);
+
+SnglRingdownTable *XLALCreateSnglRingdownTableRow(const ProcessTable *process);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySnglRingdownTableRow(SnglRingdownTable *row);
+#endif   // SWIG
+void XLALDestroySnglRingdownTable(SnglRingdownTable *head);
+
+SimRingdownTable *XLALCreateSimRingdownTableRow(const ProcessTable *process);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySimRingdownTableRow(SimRingdownTable *row);
+#endif   // SWIG
+void XLALDestroySimRingdownTable(SimRingdownTable *head);
+
 int
 XLALCountProcessTable(
     ProcessTable *head
@@ -133,6 +157,13 @@ XLALCountProcessTable(
 int
 XLALCountProcessParamsTable(
     ProcessParamsTable *head
+    );
+
+long
+XLALSimInspiralAssignIDs (
+    SimInspiralTable *head,
+    long process_id,
+    long simulation_id
     );
 
 int

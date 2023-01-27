@@ -372,10 +372,11 @@
 #include <lal/Date.h>
 #include <lal/LALgetopt.h>
 #include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
+#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
 #include <lal/Random.h>
 #include <lal/AVFactories.h>
 #include <lal/InspiralInjectionParams.h>
@@ -1227,16 +1228,15 @@ read_nr_data( char* filename )
   SimInspiralTable  *thisEvent= NULL;
   INT4               j = 0;
 
-  num_nr = SimInspiralTableFromLIGOLw( &nrSimHead, filename, 0, 0 );
-
-
-  if ( num_nr < 0 )
+  nrSimHead = XLALSimInspiralTableFromLIGOLw( filename );
+  if ( !nrSimHead )
   {
     fprintf( stderr, "error: unable to read sim_inspiral table from %s\n",
         filename );
     exit( 1 );
   }
-  else if ( num_nr == 0 )
+  for(num_nr = 0, thisEvent = nrSimHead; thisEvent; num_nr++, thisEvent = thisEvent->next);
+  if ( !num_nr )
   {
     fprintf( stderr, "error: zero events in sim_inspiral table from %s\n",
         filename );
@@ -1899,10 +1899,10 @@ int main( int argc, char *argv[] )
   /* xml output data */
   CHAR                  fname[256];
   CHAR                 *userTag = NULL;
-  MetadataTable         proctable;
-  MetadataTable         procparams;
-  MetadataTable         injections;
-  MetadataTable         ringparams;
+  ProcessTable         *proctable;
+  ProcessParamsTable   *procparams;
+  SimInspiralTable     *injections;
+  SimRingdownTable     *ringparams;
   ProcessParamsTable   *this_proc_param;
   LIGOLwXMLStream       *xmlfp;
 
@@ -2031,13 +2031,12 @@ int main( int argc, char *argv[] )
   lal_errhandler = LAL_ERR_EXIT;
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *)
-    calloc( 1, sizeof(ProcessTable) );
-  XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
+  proctable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  XLALGPSTimeNow(&(proctable->start_time));
+  XLALPopulateProcessTable(proctable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
       lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
-  snprintf( proctable.processTable->comment, LIGOMETA_COMMENT_MAX, " " );
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
+  snprintf( proctable->comment, LIGOMETA_COMMENT_MAX, " " );
+  this_proc_param = procparams = (ProcessParamsTable *)
     calloc( 1, sizeof(ProcessParamsTable) );
 
   /* clear the waveform field */
@@ -3986,15 +3985,15 @@ int main( int argc, char *argv[] )
   /* set up the LAL random number generator */
   LALCreateRandomParams( &status, &randParams, rand_seed );
 
-  this_proc_param = procparams.processParamsTable;
-  procparams.processParamsTable = procparams.processParamsTable->next;
+  this_proc_param = procparams;
+  procparams = procparams->next;
   free( this_proc_param );
 
   /* create the first injection */
-  simTable = injections.simInspiralTable = (SimInspiralTable *)
+  simTable = injections = (SimInspiralTable *)
     calloc( 1, sizeof(SimInspiralTable) );
 
-  simRingTable = ringparams.simRingdownTable = (SimRingdownTable *)
+  simRingTable = ringparams = (SimRingdownTable *)
     calloc( 1, sizeof(SimRingdownTable) );
 
   /* set redshift to zero */
@@ -4481,27 +4480,27 @@ int main( int argc, char *argv[] )
   xmlfp = XLALOpenLIGOLwXMLFile( fname );
   if (!xmlfp) XLAL_ERROR(XLAL_EIO);
 
-  XLALGPSTimeNow(&(proctable.processTable->end_time));
+  XLALGPSTimeNow(&(proctable->end_time));
   
-  int retcode = XLALWriteLIGOLwXMLProcessTable(xmlfp, proctable.processTable);
+  int retcode = XLALWriteLIGOLwXMLProcessTable(xmlfp, proctable);
   if (retcode != XLAL_SUCCESS)
   {
     XLAL_ERROR(retcode);
   }
   
-  if ( procparams.processParamsTable )
+  if ( procparams )
   {
-    retcode = XLALWriteLIGOLwXMLProcessParamsTable(xmlfp, procparams.processParamsTable);
+    retcode = XLALWriteLIGOLwXMLProcessParamsTable(xmlfp, procparams);
     if (retcode != XLAL_SUCCESS)
     {
       XLAL_ERROR(retcode);
     }
   }
 
-  XLALSimInspiralAssignIDs ( injections.simInspiralTable, 0, 0 );
-  if ( injections.simInspiralTable )
+  XLALSimInspiralAssignIDs ( injections, 0, 0 );
+  if ( injections )
   {
-    retcode = XLALWriteLIGOLwXMLSimInspiralTable(xmlfp, injections.simInspiralTable);
+    retcode = XLALWriteLIGOLwXMLSimInspiralTable(xmlfp, injections);
     if ( retcode != XLAL_SUCCESS )
     {
         XLAL_ERROR(retcode);

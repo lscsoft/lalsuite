@@ -31,7 +31,7 @@
 #include <lal/TimeSeries.h>
 #include <lal/Sequence.h>
 #include <lal/StringInput.h>
-#include <lal/LIGOLwXMLInspiralRead.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LALInferenceInit.h>
 #include <lal/LALInferenceReadData.h> 
 #include <lal/LALInferenceLikelihood.h>
@@ -896,8 +896,7 @@ void DataTest(void)
     }
 
     IfoPtr=runstate->data;
-	SimInspiralTable *injTable=NULL;
-	printf("Ninj: %d\n", SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(ppt,"--injXML")->value,0,0));
+	SimInspiralTable *injTable= XLALSimInspiralTableFromLIGOLw(LALInferenceGetProcParamVal(ppt,"--injXML")->value);
 	
 	REAL8 mc = injTable->mchirp;
 	REAL8 eta = injTable->eta;
@@ -1146,8 +1145,7 @@ void PTMCMCTest(void)
 	thread->model->templt=LALInferenceTemplateXLALSimInspiralChooseWaveform;
 	
 	
-	SimInspiralTable *injTable=NULL;
-	printf("Ninj: %d\n", SimInspiralTableFromLIGOLw(&injTable,LALInferenceGetProcParamVal(ppt,"--injXML")->value,0,0));
+	SimInspiralTable *injTable= XLALSimInspiralTableFromLIGOLw(LALInferenceGetProcParamVal(ppt,"--injXML")->value);
 	
 	REAL8 mc = injTable->mchirp;
 	REAL8 eta = injTable->eta;

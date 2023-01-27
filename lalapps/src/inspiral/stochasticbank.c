@@ -47,10 +47,10 @@
 #include <lal/LALError.h>
 #include <lal/LALDatatypes.h>
 #include <lal/AVFactories.h>
+#include <lal/LIGOLwXML.h>
+#include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
-#include <lal/LIGOLwXMLlegacy.h>
-#include <lal/LIGOLwXMLRead.h>
 #include <lal/GenerateInspiral.h>
 #include <lal/TimeFreqFFT.h>
 #include <lal/Interpolate.h>
@@ -70,7 +70,7 @@
 #define CVS_DATE "$Date$"
 #define PROGRAM_NAME "tmpltbank"
 
-int arg_parse_check( int argc, char *argv[], MetadataTable procparams );
+int arg_parse_check( int argc, char *argv[], ProcessParamsTable *procparams );
 REAL4 ceil_pow_2(REAL4 x);
 REAL4 max_mass_ratio(REAL4 mchirp, REAL4 m, REAL4 M);
 REAL4FrequencySeries *readPSD(const char *fname, REAL4 fNyq, REAL4 df, UINT4 N, REAL4 fLow, REAL4 fHigh);
@@ -235,11 +235,10 @@ int main ( int argc, char *argv[] )
   SnglInspiralTable    *thisTmplt  = NULL;
 
   /* output data */
-  MetadataTable         templateBank;
-  MetadataTable         proctable;
-  MetadataTable         procparams;
-  ProcessParamsTable   *this_proc_param = NULL;
-  LIGOLwXMLStream       results;
+  SnglInspiralTable    *templateBank = NULL;
+  ProcessTable         *proctable;
+  ProcessParamsTable   *procparams;
+  LIGOLwXMLStream      *results;
 
   /* waveform storage */
 
@@ -279,13 +278,11 @@ int main ( int argc, char *argv[] )
   lal_errhandler = LAL_ERR_EXIT;
 
   /* create the process and process params tables */
-  proctable.processTable = (ProcessTable *)
-    calloc( 1, sizeof(ProcessTable) );
-  XLALGPSTimeNow(&(proctable.processTable->start_time));
-  XLALPopulateProcessTable(proctable.processTable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
+  proctable = (ProcessTable *) calloc( 1, sizeof(ProcessTable) );
+  XLALGPSTimeNow(&(proctable->start_time));
+  XLALPopulateProcessTable(proctable, PROGRAM_NAME, lalAppsVCSIdentInfo.vcsId,
       lalAppsVCSIdentInfo.vcsStatus, lalAppsVCSIdentInfo.vcsDate, 0);
-  this_proc_param = procparams.processParamsTable = (ProcessParamsTable *)
-    calloc( 1, sizeof(ProcessParamsTable) );
+  procparams = (ProcessParamsTable *) calloc( 1, sizeof(ProcessParamsTable) );
 
   /* call the argument parse and check function */
   arg_parse_check( argc, argv, procparams );
@@ -383,10 +380,6 @@ int main ( int argc, char *argv[] )
    *
    */
 
-
-  /* make sure the pointer to the first template is null */
-  
-  templateBank.snglInspiralTable = NULL;
 
   trynum = 0;
   numTmplts = 0;
@@ -508,9 +501,9 @@ int main ( int argc, char *argv[] )
 
     // save waveform in tmplt list
 
-    if ( ! templateBank.snglInspiralTable )
+    if ( ! templateBank )
     {
-      thisTmplt = templateBank.snglInspiralTable =
+      thisTmplt = templateBank =
         (SnglInspiralTable *) LALCalloc(1, sizeof(SnglInspiralTable));
     }
     else
@@ -564,7 +557,6 @@ int main ( int argc, char *argv[] )
    */
 
   /* open the output xml file */
-  memset( &results, 0, sizeof(LIGOLwXMLStream) );
   if ( userTag && !outCompress )
   {
     snprintf( fname, sizeof(fname), "P1-TMPLTBANK_%s-%d-%d.xml",
@@ -589,57 +581,38 @@ int main ( int argc, char *argv[] )
         gpsStartTime.gpsSeconds,
         gpsEndTime.gpsSeconds - gpsStartTime.gpsSeconds );
   }
-  LAL_CALL( LALOpenLIGOLwXMLFile( &status, &results, fname ), &status );
+  results = XLALOpenLIGOLwXMLFile( fname );
 
   /* write the process table */
-  snprintf( proctable.processTable->ifos, LIGOMETA_IFO_MAX, "P1" );
-  XLALGPSTimeNow(&(proctable.processTable->end_time));
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_table ),
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, proctable,
-        process_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  free( proctable.processTable );
+  snprintf( proctable->ifos, LIGOMETA_IFO_MAX, "P1" );
+  XLALGPSTimeNow(&(proctable->end_time));
+  XLALWriteLIGOLwXMLProcessTable( results, proctable );
+  free( proctable );
 
   /* erase the first empty process params entry */
   {
-    ProcessParamsTable *emptyPPtable = procparams.processParamsTable;
-    procparams.processParamsTable = procparams.processParamsTable->next;
+    ProcessParamsTable *emptyPPtable = procparams;
+    procparams = procparams->next;
     free( emptyPPtable );
   }
 
   /* write the process params table */
-  LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, process_params_table ),
-      &status );
-  LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, procparams,
-        process_params_table ), &status );
-  LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  while( procparams.processParamsTable )
-  {
-    this_proc_param = procparams.processParamsTable;
-    procparams.processParamsTable = this_proc_param->next;
-    free( this_proc_param );
-  }
+  XLALWriteLIGOLwXMLProcessParamsTable( results, procparams );
+  XLALDestroyProcessParamsTable( procparams );
 
   /* write the template bank to the file */
-  if ( templateBank.snglInspiralTable )
-  {
-    LAL_CALL( LALBeginLIGOLwXMLTable( &status, &results, sngl_inspiral_table ),
-        &status );
-    LAL_CALL( LALWriteLIGOLwXMLTable( &status, &results, templateBank,
-          sngl_inspiral_table ), &status );
-    LAL_CALL( LALEndLIGOLwXMLTable ( &status, &results ), &status );
-  }
+  if ( templateBank )
+    XLALWriteLIGOLwXMLSnglInspiralTable( results, templateBank );
 
-  while ( templateBank.snglInspiralTable )
+  while ( templateBank )
   {
-    thisTmplt = templateBank.snglInspiralTable;
-    templateBank.snglInspiralTable = templateBank.snglInspiralTable->next;
+    thisTmplt = templateBank;
+    templateBank = templateBank->next;
     LALFree( thisTmplt );
   }
 
   /* close the output xml file */
-  LAL_CALL( LALCloseLIGOLwXMLFile ( &status, &results ), &status );
+  XLALCloseLIGOLwXMLFile( results );
 
   /* free the rest of the memory, check for memory leaks and exit */
 
@@ -696,7 +669,7 @@ this_proc_param = this_proc_param->next = (ProcessParamsTable *) \
 "  --write-compress             write a compressed xml file\n"\
   "\n"
 
-int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
+int arg_parse_check( int argc, char *argv[], ProcessParamsTable *procparams )
 {
   /* LALgetopt arguments */
   struct LALoption long_options[] =
@@ -724,7 +697,7 @@ int arg_parse_check( int argc, char *argv[], MetadataTable procparams )
     {0, 0, 0, 0}
   };
   int c;
-  ProcessParamsTable *this_proc_param = procparams.processParamsTable;
+  ProcessParamsTable *this_proc_param = procparams;
 
 
   /*

@@ -43,17 +43,6 @@ extern "C" {
 
 /* sngl inspiral */
 void
-LALFreeSnglInspiral (
-    LALStatus          *status,
-    SnglInspiralTable **eventHead
-    );
-
-int
-XLALFreeSnglInspiral (
-    SnglInspiralTable **eventHead
-    );
-
-void
 LALSortSnglInspiral (
     LALStatus          *status,
     SnglInspiralTable **eventHead,
@@ -137,18 +126,6 @@ int
 XLALCompareSimInspiralByGeocentEndTime(
 	const SimInspiralTable * const *a,
 	const SimInspiralTable * const *b
-    );
-
-int
-XLALFreeSimInspiral (
-    SimInspiralTable **eventHead
-    );
-
-long
-XLALSimInspiralAssignIDs (
-    SimInspiralTable *head,
-    long process_id,
-    long simulation_id
     );
 
 int

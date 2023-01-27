@@ -33,6 +33,7 @@
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
 #include <lal/LIGOMetadataTables.h>
+#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/Date.h>
 #include <lal/SkyCoordinates.h>
@@ -90,31 +91,6 @@
 static INT8 end_time(const SnglInspiralTable *x)
 {
 	return(XLALGPSToINT8NS(&x->end));
-}
-
-
-void
-LALFreeSnglInspiral (
-    LALStatus          *status,
-    SnglInspiralTable **eventHead
-    )
-
-{
-  INITSTATUS(status);
-  XLALFreeSnglInspiral( eventHead );
-  RETURN( status );
-}
-
-
-int
-XLALFreeSnglInspiral (
-    SnglInspiralTable **eventHead
-    )
-
-{
-  LALFree( *eventHead );
-
-  return (0);
 }
 
 
@@ -260,7 +236,7 @@ XLALTimeCutSingleInspiral(
     else
     {
       /* discard this template */
-      XLALFreeSnglInspiral ( &tmpEvent );
+      XLALDestroySnglInspiralTableRow ( tmpEvent );
     }
   }
   eventHead = inspiralEventList;
@@ -458,7 +434,7 @@ XLALMassCut(
     else
     {
       /* discard this template */
-      XLALFreeSnglInspiral ( &tmpEvent );
+      XLALDestroySnglInspiralTableRow ( tmpEvent );
     }
   }
 
