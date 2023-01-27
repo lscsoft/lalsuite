@@ -21,7 +21,7 @@ lalapps/src/frametools/         @adam-mercer @ed-maros @jolien-creighton
 lalapps/src/inspiral/           @adam-mercer @ian-harry @jolien-creighton
 lalapps/src/lalapps/            @adam-mercer @duncanmmacleod @jolien-creighton
 lalapps/src/power/              @adam-mercer @kipp.cannon @soichiro.kuwahara
-lalapps/src/ring/               @francesco-pannarale @ian-harry
+lalapps/src/ring/               @francesco-pannarale @ian-harry @jolien-creighton
 lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 
 # build / packaging / support files
