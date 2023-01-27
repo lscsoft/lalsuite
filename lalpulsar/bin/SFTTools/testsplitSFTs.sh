@@ -23,6 +23,19 @@ if ! eval "$cmdline"; then
     echo "ERROR: something failed when running '$cmdline'"
     exit 1
 fi
+
+## first quick check with a single very narrow band
+## (just to check it works, output will not be checked in detail)
+mkdir -p narrowband0/
+cmdline="lalpulsar_splitSFTs -fs 10 -fe 10.1 -fb 0.1 -n narrowband0/"
+for sft in broadband1a/*.sft; do
+    cmdline="${cmdline} $sft"
+done
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+
 ## simulate a public SFT
 pubspec='O2RUN+R1+CDCHCLEANSTRAINC02+WTKEY5'
 mv "broadband1d/H-5_H1_${Tsft}SFT_${misc}-${start}-${span}.sft" "broadband1d/H-5_H1_${Tsft}SFT_${pubspec}-${start}-${span}.sft"
