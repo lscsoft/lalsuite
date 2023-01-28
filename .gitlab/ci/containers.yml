@@ -27,6 +27,7 @@
   variables:
     IMAGE_NAME: "$CI_REGISTRY_IMAGE/nightly"
   rules:
+    - !reference [.ci-docker, rules]
     - !reference [.ci-nightly-deploy, rules]
 
 .docker:tags:
@@ -106,8 +107,6 @@ docker:nightly:el7:
   extends:
     - .docker:el
     - .docker:nightly
-  rules:
-    - !reference [.ci-docker, rules]
 
 # build a tagged container from the rpms
 docker:tags:el7:
@@ -120,8 +119,6 @@ docker:nightly:bullseye:
   extends:
     - .docker:debian
     - .docker:nightly
-  rules:
-    - !reference [.ci-docker, rules]
 
 # build a tagged container for Debian bullseye
 docker:tags:bullseye:
