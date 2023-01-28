@@ -157,6 +157,11 @@ repository:koji:
     - lalinference:koji
     - lalapps:koji
   script:
+    - |
+      if [ "X${DEPLOY_DRY_RUN}" = "Xyes" ]; then
+        echo "Skipping rest of job as DEPLOY_DRY_RUN='${DEPLOY_DRY_RUN}'"
+        exit 0
+      fi
     # generate repository
     - koji dist-repo --allow-missing-signatures --arch=x86_64 --non-latest --with-src epel7-lalsuite
   rules:

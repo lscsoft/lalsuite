@@ -1617,6 +1617,11 @@ wheel:pypi:
   script:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - pip install twine
+    - |
+      if [ "X${DEPLOY_DRY_RUN}" = "Xyes" ]; then
+        echo "Skipping rest of job as DEPLOY_DRY_RUN='${DEPLOY_DRY_RUN}'"
+        exit 0
+      fi
     - twine upload wheelhouse/*
   needs:
     - wheel:cp38-cp38-manylinux2014_x86_64
