@@ -123,13 +123,6 @@ default:
 .configure-coredump: &configure-coredump
   ulimit -S -c 0
 
-# manually triggered and scheduled pipelines should use the
-# `--enable-nightly` configure flag
-.configure-nightly: &configure-nightly-build
-  if [ ${CI_PIPELINE_SOURCE} = "schedule" ] || [ ${CI_PIPELINE_SOURCE} = "web" ]; then
-      export ENABLE_NIGHTLY="--enable-nightly";
-  fi
-
 # basic steps for a job that compiles stuff
 # can be included in the before_script/script sections
 # via `*init-build-job`
@@ -137,7 +130,6 @@ default:
   - *print-env
   - *configure-ccache
   - *configure-coredump
-  - *configure-nightly-build
 
 # simple bash command to retry a stage up to 3 times
 # with a 15-second delay (mainly to survive transient
