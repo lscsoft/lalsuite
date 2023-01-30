@@ -50,7 +50,7 @@ requirements:
     - gsl
     - hdf5
     - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
-    - libzlib
+    - zlib
 
 outputs:
   - name: liblal
@@ -69,7 +69,7 @@ outputs:
         - gsl
         - hdf5
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
-        - libzlib
+        - zlib
       run:
         - fftw  # [fft_impl == "fftw"]
         - gsl
