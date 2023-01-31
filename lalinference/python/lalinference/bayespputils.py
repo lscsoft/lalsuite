@@ -605,7 +605,7 @@ def plot_label(param):
         'v1_optimal_snr':r'$\rho^{opt}_{V1}$',
         'matched_filter_snr':r'$\rho^{MF}$',
         'lambdas':r'$\Lambda_S$',
-        'bluni' : r'$BL_{uniform}$',
+        'bluni':r'$BL_{uniform}$',
         'log10lambda_a':r'$\log\lambda_{\mathbb{A}} [\mathrm{m}]$',
         'log10lambda_eff':r'$\log\lambda_{eff} [\mathrm{m}]$',
         'lambda_eff':r'$\lambda_{eff} [\mathrm{m}]$',
