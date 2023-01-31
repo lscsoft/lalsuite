@@ -180,6 +180,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - libzlib
         - openssl
         - numpy
         - python
@@ -198,6 +199,7 @@ outputs:
         - ligo-segments                       # [build_platform == target_platform]
         - numpy                               # [build_platform == target_platform]
         - python
+        - zlib
         # extras to help the solver
         - mkl {{ mkl }}  # [fft_impl == "mkl"]
         - openssl
