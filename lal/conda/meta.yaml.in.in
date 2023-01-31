@@ -109,6 +109,7 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
+        - libzlib
         - mkl
         - numpy
         - openssl
@@ -131,6 +132,7 @@ outputs:
         - numpy
         - pytest  # [build_platform == target_platform]
         - python
+        - zlib
         # provided to assist the solver, but not actually used
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]
         - openssl
