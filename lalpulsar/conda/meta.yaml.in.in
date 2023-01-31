@@ -39,6 +39,7 @@ build:
   script_env:
     - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
+    - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
     - GITLAB_CI
   skip: true  # [win]
 
@@ -155,11 +156,11 @@ outputs:
       ignore_run_exports:
         - cfitsio
         - numpy
-        - openssl
         - python
       script_env:
         - CI_COMMIT_TAG
         - CI_PIPELINE_SOURCE
+        - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
         - GITLAB_CI
     requirements:
       build:
@@ -184,7 +185,6 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         # extras to assist the solver, but not actually used
         - cfitsio
-        - openssl
       run:
         - astropy
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
@@ -229,7 +229,6 @@ outputs:
     script: install-bin.sh
     build:
       ignore_run_exports:
-        - openssl
         - python
         - numpy
     requirements:
@@ -260,8 +259,6 @@ outputs:
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy   # [build_platform == target_platform]
-        # extras to assist the solver, but not actually used
-        - openssl
       run:
         - astropy
         - cfitsio
