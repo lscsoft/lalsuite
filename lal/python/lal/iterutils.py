@@ -33,7 +33,6 @@ import functools
 import math
 import numpy
 import random
-import six
 
 
 from . import git_version
@@ -325,10 +324,9 @@ def inorder(*iterables, **kwargs):
 		select = lambda seq: max(seq, key = lambda elem: elem[0])
 	else:
 		select = lambda seq: min(seq, key = lambda elem: elem[0])
-	values = functools.partial(six.itervalues, nextvals)
 	if len(nextvals) > 1:
 		while 1:
-			_, val, next_ = select(values())
+			_, val, next_ = select(nextvals.values())
 			yield val
 			try:
 				nextval = next_()
@@ -340,7 +338,7 @@ def inorder(*iterables, **kwargs):
 	# exactly one sequence remains, short circuit and drain it.  since
 	# PEP 479 we must trap the StopIteration and terminate the loop
 	# manually
-	(_, val, next_), = values()
+	(_, val, next_), = nextvals.values()
 	yield val
 	try:
 		while 1:
