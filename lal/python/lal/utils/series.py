@@ -20,8 +20,6 @@
 import numpy
 import re
 
-from six import string_types
-
 from .. import lal
 
 __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
@@ -115,7 +113,7 @@ def get_struct_name(series):
         'REAL8TimeSeries'
     """
     # get name of object
-    if isinstance(series, string_types):
+    if isinstance(series, str):
         typestr = series
     else:
         typestr = type(series).__name__

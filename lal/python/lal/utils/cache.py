@@ -23,7 +23,10 @@ import os
 import re
 import tempfile
 from functools import total_ordering
-from six.moves import urllib
+from urllib.parse import (
+    urlparse,
+    urlunparse,
+)
 
 from ligo import segments
 
@@ -283,11 +286,11 @@ class CacheEntry(object):
         URL attribute causes the value to be parsed and the scheme, host
         and path attributes updated.
         """
-        return urllib.parse.urlunparse((self.scheme, self.host, self.path, None, None, None))
+        return urlunparse((self.scheme, self.host, self.path, None, None, None))
 
     @url.setter
     def url(self, url):
-        self.scheme, self.host, self.path = urllib.parse.urlparse(url)[:3]
+        self.scheme, self.host, self.path = urlparse(url)[:3]
 
     @property
     def segmentlistdict(self):
