@@ -21,7 +21,6 @@ Build-Depends:
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-pytest,
  python3-scipy,
- python3-six,
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
  zlib1g-dev,
@@ -98,7 +97,6 @@ Depends:
  python3-ligo-lw,
  python3-ligo-segments,
  python3-scipy,
- python3-six,
 Description: Python 3 bindings for LAL
  The LSC Algorithm Library for gravitational wave analysis.
  This package contains Python 3 bindings for the LAL library.
