@@ -290,7 +290,7 @@ static PyObject *event_sequence_extract(struct event_sequence *event_sequence, I
 	if(lo < 0)
 		return NULL;
 
-	for(hi = lo; event_sequence->events[hi].end_ns < stop_ns && hi < event_sequence->length; hi++);
+	for(hi = lo; hi < event_sequence->length && event_sequence->events[hi].end_ns < stop_ns; hi++);
 
 	result = PyTuple_New(hi - lo);
 	if(!result)
