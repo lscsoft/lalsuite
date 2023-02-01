@@ -30,8 +30,6 @@ including:
 import os
 import re
 
-from six import string_types
-
 from lal import (utils as lalutils, lal)
 
 try:
@@ -120,13 +118,13 @@ def read_timeseries(source, channel, start=None, duration=None,
 
     """
     # parse channels
-    if isinstance(channel, string_types):
+    if isinstance(channel, str):
         channels = [channel]
     else:
         channels = list(channel)
 
     # read cache file
-    if (isinstance(source, string_types) and
+    if (isinstance(source, str) and
           re.search(r'(.lcf|.cache)\Z', source)):
         source = lal.CacheImport(os.path.expanduser(source))
     # convert GLUE cache file
@@ -134,7 +132,7 @@ def read_timeseries(source, channel, start=None, duration=None,
         source = lalutils.lalcache_from_gluecache(source)
 
     # read from single frame
-    if isinstance(source, string_types) and source.endswith('.gwf'):
+    if isinstance(source, str) and source.endswith('.gwf'):
         out = _ts_from_frame_file(source, channels, start=start,
                                   duration=duration, datatype=datatype,
                                   verbose=verbose)
@@ -148,7 +146,7 @@ def read_timeseries(source, channel, start=None, duration=None,
         raise ValueError("Cannot interpret source '%s'." % source)
 
     # return
-    if isinstance(channel, string_types):
+    if isinstance(channel, str):
         return out[0]
     else:
         return out
