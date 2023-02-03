@@ -47,7 +47,6 @@ BuildRequires: python%{python3_pkgversion}-ligo-lw
 BuildRequires: python%{python3_pkgversion}-ligo-segments
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
-BuildRequires: python%{python3_pkgversion}-six
 BuildRequires: python%{python3_pkgversion}-scipy
 
 # octave
@@ -99,7 +98,6 @@ Requires: python%{python3_pkgversion}-ligo-lw
 Requires: python%{python3_pkgversion}-ligo-segments
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-scipy
-Requires: python%{python3_pkgversion}-six
 Obsoletes: python2-%{name} <= 7.1.3-1
 # temporariliy commented out.  if it was said to be a requirement it would
 # create a dependency loop, but it's an optional runtime dependency.

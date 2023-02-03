@@ -45,7 +45,7 @@ prefix_to_name = dict((prefix, name) for name, prefix in name_to_prefix.items())
 #
 
 
-from six.moves import copyreg
+import copyreg
 
 numpy_to_lal_types = {'char': 'CHAR',
                       'int16': 'INT2',

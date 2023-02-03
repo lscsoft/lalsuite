@@ -121,7 +121,6 @@ functions within LAL.
 
 
 import numpy as np
-from six import string_types
 
 
 # import SWIG-wrapped LAL
@@ -312,7 +311,7 @@ class AntennaResponse(object):
         if isinstance(det, Detector):
             self._detector = det.frDetector.prefix
             self.laldetector = det
-        elif isinstance(det, string_types):
+        elif isinstance(det, str):
             if det.upper() not in DETMAP.keys():
                 raise ValueError("Detector is not a valid detector name")
 
@@ -337,7 +336,7 @@ class AntennaResponse(object):
 
         if isinstance(det, Detector):
             self._laldetector = det.response
-        elif isinstance(det, string_types):
+        elif isinstance(det, str):
             try:
                 detector = DETMAP[det.upper()]
             except KeyError:
@@ -364,7 +363,7 @@ class AntennaResponse(object):
             self._ra = np.array([raval], dtype='float64')
         elif isinstance(raval, list) or isinstance(raval, np.ndarray):
             self._ra = np.copy(raval).astype('float64')
-        elif isinstance(raval, string_types):
+        elif isinstance(raval, str):
             try:
                 rarad = TranslateHMStoRAD(raval)
                 self._ra = np.array([rarad], dtype='float64')
@@ -401,7 +400,7 @@ class AntennaResponse(object):
             self._dec = np.array([decval], dtype='float64')
         elif isinstance(decval, list) or isinstance(decval, np.ndarray):
             self._dec = np.copy(decval).astype('float64')
-        elif isinstance(decval, string_types):
+        elif isinstance(decval, str):
             try:
                 decrad = TranslateDMStoRAD(decval)
                 self._dec = np.array([decrad], dtype='float64')
