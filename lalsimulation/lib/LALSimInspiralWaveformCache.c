@@ -1069,6 +1069,20 @@ int XLALSimInspiralChooseFDWaveformSequence(
             phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, nModes, LALpars);
             break;
 
+        case SEOBNRv5_ROM:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+            int nModesv5 = 1;
+            ret = XLALSimIMRSEOBNRv5HMROMFrequencySequence(hptilde, hctilde, frequencies,
+            phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, nModesv5, LALpars);
+            break;
+
         case SEOBNRv4_ROM_NRTidal:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )

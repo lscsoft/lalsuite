@@ -21,6 +21,7 @@ test_scripts += \
 	test_spintaylor_evolveorbit.py \
 	test_prec_avg_evol.py \
 	test_hybrid_evol.py \
+	test_SEOBNRv5HM_ROM.py \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \
