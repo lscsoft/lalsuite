@@ -26,9 +26,6 @@
  *-----------------------------------------------------------------------
  */
 
-#include <stdio.h>
-#include <lal/LALStdlib.h>
-
 /**
  * \author Brown, D. A.
  * \file
@@ -61,19 +58,13 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
-#define PRINT_LIGOLW_XML_HEADER(fp) (( \
-XLALFilePuts( "<?xml version='1.0' encoding='utf-8' ?>\n", fp) == EOF || \
-XLALFilePuts( "<!DOCTYPE LIGO_LW SYSTEM \"http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt\">", fp ) == EOF || \
-XLALFilePuts( "<LIGO_LW>\n", fp ) == EOF ) ? EOF : 0)
+#define LAL_LIGOLW_XML_HEADER \
+"<?xml version='1.0' encoding='utf-8'?>\n" \
+"<!DOCTYPE LIGO_LW SYSTEM \"http://ldas-sw.ligo.caltech.edu/doc/ligolwAPI/html/ligolw_dtd.txt\">\n" \
+"<LIGO_LW>\n"
 
-
-#define PRINT_LIGOLW_XML_FOOTER(fp) \
-XLALFilePuts( "</LIGO_LW>", fp )
-
-#define PRINT_LIGOLW_XML_TABLE_FOOTER(fp) ( \
-XLALFilePuts( "\n", fp ) == EOF || \
-XLALFilePuts( "      </Stream>\n", fp ) == EOF || \
-XLALFilePuts( "   </Table>\n", fp ) )
+#define LAL_LIGOLW_XML_FOOTER \
+"</LIGO_LW>"
 
 #if 0
 { /* so that editors will match succeeding brace */

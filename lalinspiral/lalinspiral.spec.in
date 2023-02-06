@@ -30,7 +30,6 @@ BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: liblalburst-devel >= @MIN_LALBURST_VERSION@
-BuildRequires: libmetaio-devel
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
@@ -97,7 +96,6 @@ Requires: liblalburst-devel >= @MIN_LALBURST_VERSION@
 Requires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
 Requires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-Requires: libmetaio-devel
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 2.0.1-1
 %description -n lib%{name}-devel

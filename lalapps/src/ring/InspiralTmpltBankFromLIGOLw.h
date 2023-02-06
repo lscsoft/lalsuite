@@ -17,12 +17,12 @@
  * 02110-1301  USA
  */
 
-#ifndef _LIGOLWXMLINSPIRALREAD_H
-#define _LIGOLWXMLINSPIRALREAD_H
+#ifndef _INSPIRALTMPLTBANKFROMLIGOLW_H
+#define _INSPIRALTMPLTBANKFROMLIGOLW_H
 
-#include <lal/LIGOLwXMLRead.h>
+#include <lal/LALDatatypes.h>
 #include <lal/LALInspiral.h>
-#include <lal/LALInspiralBank.h>
+#include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
 extern "C" {
@@ -33,14 +33,6 @@ extern "C" {
  */
 
 int
-LALSnglInspiralTableFromLIGOLw (
-    SnglInspiralTable **eventHead,
-    const CHAR         *fileName,
-    INT4                startEvent,
-    INT4                stopEvent
-    );
-
-int
 InspiralTmpltBankFromLIGOLw (
     InspiralTemplate   **bankHead,
     const CHAR         *fileName,
@@ -48,24 +40,8 @@ InspiralTmpltBankFromLIGOLw (
     INT4                stopTmplt
     );
 
-int
-SimInspiralTableFromLIGOLw (
-    SimInspiralTable   **simHead,
-    const CHAR          *fileName,
-    INT4                 startTime,
-    INT4                 endTime
-    );
-
-int
-LALExtTriggerTableFromLIGOLw (
-    ExtTriggerTable   **eventHead,
-    CHAR               *fileName,
-    INT4                startEvent,
-    INT4                stopEvent
-    );
-
 #ifdef  __cplusplus
 }
 #endif
 
-#endif /* _LIGOLWXMLINSPIRALREAD_H */
+#endif /* _INSPIRALTMPLTBANKFROMLIGOLW_H */

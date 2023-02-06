@@ -35,7 +35,6 @@
 #include <lal/LALInferenceReadData.h>
 #include <lal/LALInferenceReadBurstData.h>
 #include <lal/LALInferenceInit.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/GenerateBurst.h>
 #include <lal/LALSimBurst.h>
 #include <lal/LALInferenceCalibrationErrors.h>
@@ -259,7 +258,7 @@ LALInferenceModel * LALInferenceInitBurstModel(LALInferenceRunState *state)
       endtime=atof(ppt->value);
   ppt=LALInferenceGetProcParamVal(commandLine,"--binj");
   if (ppt) {
-    BinjTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value,0,0);
+    BinjTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value);
     if (BinjTable){
       //burst_inj=1;
       ppt=LALInferenceGetProcParamVal(commandLine,"--event");

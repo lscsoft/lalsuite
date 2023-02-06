@@ -94,22 +94,6 @@ static INT8 end_time(const SnglInspiralTable *x)
 }
 
 
-void
-LALSortSnglInspiral (
-    LALStatus          *status,
-    SnglInspiralTable **eventHead,
-    int(*comparfunc)    (const void *, const void *)
-    )
-
-{
-  INITSTATUS(status);
-
-  *eventHead = XLALSortSnglInspiral ( *eventHead, comparfunc );
-
-  RETURN( status );
-}
-
-
 SnglInspiralTable *
 XLALSortSnglInspiral (
     SnglInspiralTable *eventHead,

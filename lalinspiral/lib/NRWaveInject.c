@@ -21,7 +21,6 @@
 #include <lal/FileIO.h>
 #include <lal/NRWaveIO.h>
 #include <lal/LIGOMetadataTables.h>
-#include <lal/LIGOMetadataUtils.h>
 #include <lal/LIGOMetadataInspiralUtils.h>
 #include <lal/Date.h>
 #include <lal/Units.h>
@@ -227,30 +226,17 @@ XLALCalculateNRStrain( REAL4TimeVectorSeries *strain, /**< h+, hx time series da
   double                 tDelay;
   REAL4TimeSeries       *htData = NULL;
   UINT4                  vecLength, k;
-  InterferometerNumber   ifoNumber = LAL_UNKNOWN_IFO;
 
   /* get the detector information */
-  memset( &det, 0, sizeof(LALDetector) );
-  ifoNumber = (InterferometerNumber) XLALIFONumber( ifo );
-  XLALReturnDetector( &det, ifoNumber );
+  memcpy( &det, XLALDetectorPrefixToLALDetector( ifo ), sizeof(LALDetector) );
 
-  if( ifoNumber == LAL_UNKNOWN_IFO )
-  {
-    XLALPrintWarning( "Unknown ifo! Injecting signal overhead!\n" );
-    fplus  = 1.0;
-    fcross = 0.0;
-    tDelay = 0.0;
-  }
-  else
-  {
-    /* compute detector response */
-    XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])det.response, inj->longitude,
-        inj->latitude, inj->polarization, inj->end_time_gmst);
+  /* compute detector response */
+  XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])det.response, inj->longitude,
+      inj->latitude, inj->polarization, inj->end_time_gmst);
 
-    /* calculate the time delay */
-    tDelay = XLALTimeDelayFromEarthCenter( det.location, inj->longitude,
-        inj->latitude, &(inj->geocent_end_time) );
-  }
+  /* calculate the time delay */
+  tDelay = XLALTimeDelayFromEarthCenter( det.location, inj->longitude,
+      inj->latitude, &(inj->geocent_end_time) );
 
   /* create htData */
   htData = LALCalloc(1, sizeof(*htData));
@@ -800,16 +786,13 @@ void LALInjectStrainGWREAL8( LALStatus                 *status,
   REAL8TimeSeries *hcross = NULL;
   UINT4  k, len;
   REAL8 offset;
-  InterferometerNumber  ifoNumber = LAL_UNKNOWN_IFO;
   LALDetector det;
 
   INITSTATUS(status);
   ATTATCHSTATUSPTR (status);
 
   /* get the detector information */
-  memset( &det, 0, sizeof(LALDetector) );
-  ifoNumber = (InterferometerNumber) XLALIFONumber( ifo );
-  XLALReturnDetector( &det, ifoNumber );
+  memcpy( &det, XLALDetectorPrefixToLALDetector( ifo ), sizeof(LALDetector) );
 
   /* Band-passing and tapering not yet implemented for REAL8 data */
   if ( strcmp( thisInj->taper, "TAPER_NONE" ) || thisInj->bandpass )

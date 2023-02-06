@@ -1,5 +1,5 @@
 /*
- * LIGOLwXMLBurstRead.h
+ * LIGOLwXMLInspiralRead.h
  *
  * This program is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
@@ -17,10 +17,10 @@
  * 02110-1301  USA
  */
 
-#ifndef _LIGOLWXMLBURSTREAD_H_
-#define _LIGOLWXMLBURSTREAD_H_
+#ifndef _LALEXTTRIGGERTABLEFROMLIGOLW_H
+#define _LALEXTTRIGGERTABLEFROMLIGOLW_H
 
-#include <lal/Date.h>
+#include <lal/LALDatatypes.h>
 #include <lal/LIGOMetadataTables.h>
 
 #ifdef  __cplusplus
@@ -31,18 +31,16 @@ extern "C" {
  * function prototypes
  */
 
-SnglBurst *XLALSnglBurstTableFromLIGOLw(
-    const char *filename
-);
-
-SimBurst *XLALSimBurstTableFromLIGOLw(
-    const char *filename,
-    const LIGOTimeGPS *start,
-    const LIGOTimeGPS *end
-);
+int
+LALExtTriggerTableFromLIGOLw (
+    ExtTriggerTable   **eventHead,
+    CHAR               *fileName,
+    INT4                startEvent,
+    INT4                stopEvent
+    );
 
 #ifdef  __cplusplus
 }
 #endif
 
-#endif /* _LIGOLWXMLBURSTREAD_H_ */
+#endif /* _LALEXTTRIGGERTABLEFROMLIGOLW_H */

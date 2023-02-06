@@ -70,39 +70,15 @@ extern "C" {
 #define LIGOMETA_PARAM_MAX 33
 #define LIGOMETA_TYPE_MAX 17
 #define LIGOMETA_VALUE_MAX 1025
-#define LIGOMETA_NAME_MAX 257
 #define LIGOMETA_STRING_MAX 257
 #define LIGOMETA_IFO_MAX 8
 #define LIGOMETA_SEARCH_MAX 25
 #define LIGOMETA_CHANNEL_MAX 65
-#define LIGOMETA_FRAMESETG_MAX 49
-#define LIGOMETA_SEGMENTG_MAX 49
-#define LIGOMETA_UNIQUE_MAX 65
-#define LIGOMETA_DBUNIQUE_MAX 13
 #define LIGOMETA_SOURCE_MAX 30
 #define LIGOMETA_WAVEFORM_MAX 50
 #define LIGOMETA_COORDINATES_MAX 16
 #define LIGOMETA_STD 100
 #define LIGOMETA_INSPIRALTAPER_MAX 35
-
-/**
- * The \c MetadataTableType contains an enum type for each of the possible
- * database tables that are provided.
- */
-typedef enum
-tagMetadataTableType
-{
-  no_table,
-  process_table,
-  process_params_table,
-  search_summary_table,
-  sngl_inspiral_table,
-  sngl_ringdown_table,
-  multi_inspiral_table,
-  sim_inspiral_table,
-  sim_ringdown_table
-}
-MetadataTableType;
 
 
 /**
@@ -681,22 +657,6 @@ tagTimeSlide
   REAL8          offset;
 }
 TimeSlide;
-
-typedef union
-tagMetadataTable
-{
-  ProcessTable          *processTable;
-  ProcessParamsTable    *processParamsTable;
-  SearchSummaryTable    *searchSummaryTable;
-  SnglBurst             *snglBurst;
-  SnglInspiralTable     *snglInspiralTable;
-  SnglRingdownTable     *snglRingdownTable;
-  MultiInspiralTable    *multiInspiralTable;
-  SimInspiralTable      *simInspiralTable;
-  SimRingdownTable      *simRingdownTable;
-  ExtTriggerTable       *extTriggerTable;
-}
-MetadataTable;
 
 typedef struct
 tagSegmentTable

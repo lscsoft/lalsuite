@@ -30,30 +30,13 @@
  */
 
 /**
- * \author Brown, D. A. and Fairhurst, S.
+ * \author Cannon, K. C. and Brown, D. A. and Fairhurst, S.
  * \file
  * \ingroup lalmetaio_general
  *
- * \brief Routines to write LIGO metadata database structures to LIGO lightweight XML files.
+ * \brief Routines to read tabular data from LIGO lightweight XML files.
  *
  * ### Description ###
- *
- * The routine \c LALSnglInspiralTableFromLIGOLw reads in a
- * \c sngl_inspiral table from the LIGOLwXML file specified in \c fileName.
- * It returns the number of triggers read in and \c eventHead provides a
- * pointer to the head of a linked list of \c SnglInspiralTables containing the
- * events.  It will return all events between the \c startEvent and
- * \c stopEvent; if these are set to 0 and -1 respectively, all events are
- * returned.
- *
- * The routine \c InspiralTmpltBankFromLIGOLw reads in a \c sngl_inspiral
- * table from the LIGOLwXML file specified in \c fileName. It returns the
- * number of templates read in and \c bankHead provides a pointer to the head
- * of a linked list of \c InspiralTemplates containing the templates read in.
- * It will return all events between the \c startTmplt and \c stopTmplt; if
- * these are set to 0 and -1 respectively, all events are returned.  Although a
- * \c sngl_inspiral table is read in, only those entries relevant for an
- * InspiralTemplate are read in and stored.
  *
  * The routine \c XLALSearchSummaryTableFromLIGOLw reads in a
  * \c search_summary table from the LIGOLwXML file specified in
@@ -65,14 +48,6 @@
  * None.
  *
  * ### Uses ###
- *
- * Functions in the Metaio library:
- * <ul>
- * <li> \c MetaioFindColumn
- * </li><li> \c MetaioGetRow
- * </li><li> \c MetaioOpenTable
- * </li><li> \c MetaioClose
- * </li></ul>
  *
  * ### Notes ###
  *

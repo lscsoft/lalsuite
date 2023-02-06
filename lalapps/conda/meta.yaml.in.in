@@ -74,6 +74,7 @@ requirements:
     - liblalmetaio >={{ lalmetaio_version }}
     - liblalpulsar >={{ lalpulsar_version }}
     - liblalsimulation >={{ lalsimulation_version }}
+    - libmetaio
     - python
     # extras needed for help2man (not when cross compiling)
     - h5py  # [build_platform == target_platform]
@@ -107,6 +108,7 @@ requirements:
     - liblalinspiral >={{ lalinspiral_version }}
     - ligo-segments
     - numpy
+    - libmetaio
     - pillow
     - python
     - python-lal >={{ lal_version }}

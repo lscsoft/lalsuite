@@ -28,7 +28,6 @@ BuildRequires: help2man >= 1.37
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-BuildRequires: libmetaio-devel
 BuildRequires: make
 BuildRequires: pkgconfig >= 0.18.0
 
@@ -97,7 +96,6 @@ Requires: lib%{name} = %{version}-%{release}
 Requires: liblal-devel >= @MIN_LAL_VERSION@
 Requires: liblalmetaio-devel >= @MIN_LALMETAIO_VERSION@
 Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
-Requires: libmetaio-devel
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 1.5.7-1
 %description -n lib%{name}-devel

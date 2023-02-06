@@ -64,19 +64,6 @@ extern "C" {
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LALDetectors.h>
 
-/**
- * The \c LALPlaygroundDataMask contains an enum type for describing the
- * subset of data to be used, \c playground_only, \c exclude_play and \c all_data.
- */
-typedef enum tagLALPlaygroundDataMask
-{
-  unspecified_data_type,
-  playground_only,
-  exclude_play,
-  all_data
-}
-LALPlaygroundDataMask;
-
 
 /*
  *
@@ -149,6 +136,19 @@ void XLALDestroySimRingdownTableRow(SimRingdownTable *row);
 #endif   // SWIG
 void XLALDestroySimRingdownTable(SimRingdownTable *head);
 
+
+SnglBurst *XLALCreateSnglBurst(void);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySnglBurst(SnglBurst *event);
+#endif   // SWIG
+void XLALDestroySnglBurstTable(SnglBurst *head);
+
+SimBurst *XLALCreateSimBurst(void);
+#ifndef SWIG   // exclude from SWIG interface
+void XLALDestroySimBurst(SimBurst *row);
+#endif   // SWIG
+void XLALDestroySimBurstTable(SimBurst *head);
+
 int
 XLALCountProcessTable(
     ProcessTable *head
@@ -164,11 +164,6 @@ XLALSimInspiralAssignIDs (
     SimInspiralTable *head,
     long process_id,
     long simulation_id
-    );
-
-int
-XLALIFONumber(
-    const char *ifo
     );
 
 void

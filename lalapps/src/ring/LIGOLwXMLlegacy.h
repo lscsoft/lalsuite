@@ -55,6 +55,39 @@ extern "C" {
 #endif
 
 
+typedef enum
+tagMetadataTableType
+{
+  no_table,
+  process_table,
+  process_params_table,
+  search_summary_table,
+  sngl_inspiral_table,
+  sngl_ringdown_table,
+  multi_inspiral_table,
+  sim_inspiral_table,
+  sim_ringdown_table
+}
+MetadataTableType;
+
+
+typedef union
+tagMetadataTable
+{
+  ProcessTable          *processTable;
+  ProcessParamsTable    *processParamsTable;
+  SearchSummaryTable    *searchSummaryTable;
+  SnglBurst             *snglBurst;
+  SnglInspiralTable     *snglInspiralTable;
+  SnglRingdownTable     *snglRingdownTable;
+  MultiInspiralTable    *multiInspiralTable;
+  SimInspiralTable      *simInspiralTable;
+  SimRingdownTable      *simRingdownTable;
+  ExtTriggerTable       *extTriggerTable;
+}
+MetadataTable;
+
+
 void
 LALOpenLIGOLwXMLFile (
     LALStatus           *status,

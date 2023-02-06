@@ -54,7 +54,6 @@
 #include <lal/LALStdlib.h>
 #include <lal/LIGOLwXML.h>
 #include <lal/LIGOLwXMLArray.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOLwXMLRead.h>
 #include <lal/LIGOMetadataTables.h>
 #include <lal/LIGOMetadataUtils.h>
@@ -1095,7 +1094,7 @@ static struct injection_document *load_injection_document(const char *filename)
 
 	new->has_sim_burst_table = XLALLIGOLwHasTable(filename, "sim_burst");
 	if(new->has_sim_burst_table) {
-		new->sim_burst_table_head = XLALSimBurstTableFromLIGOLw(filename, NULL, NULL);
+		new->sim_burst_table_head = XLALSimBurstTableFromLIGOLw(filename);
 	} else
 		new->sim_burst_table_head = NULL;
 

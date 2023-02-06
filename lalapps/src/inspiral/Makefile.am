@@ -6,7 +6,7 @@ include $(top_srcdir)/gnuscripts/lalsuite_python.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 
 TMPLTBANKSRC = tmpltbank.c inspiralutils.c inspiral.h
-INSPINJSRC = inspinj.c inspiralutils.c inspiral.h
+INSPINJSRC = inspinj.c inspiralutils.c inspiral.h LALExtTriggerTableFromLIGOLw.h LALExtTriggerTableFromLIGOLw.c
 BLINDINJSRC = blindinj.c
 SPLITBANKSRC = splitbank.c
 INSPFRINJSRC = inspfrinj.c

@@ -63,7 +63,6 @@
 #include <lal/LALInference.h>
 #include <lal/LALInferenceLikelihood.h>
 #include <lal/LALInferenceTemplate.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/GenerateBurst.h>
 #include <lal/LALInferenceBurstRoutines.h>
 #include <lal/LALInferenceReadBurstData.h>
@@ -121,7 +120,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 	else
 		snprintf(SNRpath, sizeof(SNRpath), "snr.txt");
 
-	injTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value,0,0);
+	injTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value);
 	REPORTSTATUS(&status);
   Ninj=-1;
   while(injTable){Ninj++;injTable=injTable->next;}
@@ -129,7 +128,7 @@ void LALInferenceInjectBurstSignal(LALInferenceIFOData *IFOdata, ProcessParamsTa
 	    fprintf(stderr,"Error reading event %d from %s\n",event,LALInferenceGetProcParamVal(commandLine,"--binj")->value);
 	    exit(1);
   }
-	injTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value,0,0);
+	injTable=XLALSimBurstTableFromLIGOLw(LALInferenceGetProcParamVal(commandLine,"--binj")->value);
 	while(si<event) {si++; injTable = injTable->next;} /* Select event */
 	injEvent = injTable;
 	injEvent->next = NULL;

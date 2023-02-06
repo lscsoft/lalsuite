@@ -87,13 +87,9 @@ XLALOpenLIGOLwXMLFile (
     XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
-  /* initialize the table flag */
-
-  new->table = no_table;
-
   /* write the XML header */
 
-  if ( PRINT_LIGOLW_XML_HEADER( new->fp ) < 0 )
+  if ( XLALFilePuts( LAL_LIGOLW_XML_HEADER, new->fp ) < 0 )
   {
     XLALFileClose( new->fp );
     XLALFree( new );
@@ -118,10 +114,7 @@ XLALCloseLIGOLwXMLFile (
 {
   if ( xml )
   {
-    if ( xml->table != no_table)
-      /* trying to close the file in the middle of a table */
-      XLAL_ERROR(XLAL_EFAILED);
-    if ( PRINT_LIGOLW_XML_FOOTER( xml->fp ) < 0 )
+    if ( XLALFilePuts( LAL_LIGOLW_XML_FOOTER, xml->fp ) < 0 )
       /* can't write XML footer */
       XLAL_ERROR( XLAL_EIO );
     if ( XLALFileClose( xml->fp ) )
@@ -146,11 +139,6 @@ int XLALWriteLIGOLwXMLProcessTable(
 )
 {
 	const char *row_head = "\n\t\t\t";
-
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
 
 	/* table header */
 
@@ -223,11 +211,6 @@ int XLALWriteLIGOLwXMLProcessParamsTable(
 {
 	const char *row_head = "\n\t\t\t";
 
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
-
 	/* table header */
 
 	XLALClearErrno();
@@ -278,11 +261,6 @@ int XLALWriteLIGOLwXMLSearchSummaryTable(
 )
 {
 	const char *row_head = "\n\t\t\t";
-
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
 
 	/* table header */
 
@@ -355,11 +333,6 @@ int XLALWriteLIGOLwXMLSnglBurstTable(
 {
 	const char *row_head = "\n\t\t\t";
 
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
-
 	/* table header */
 
 	XLALClearErrno();
@@ -428,11 +401,6 @@ int XLALWriteLIGOLwXMLSnglInspiralTable(
 )
 {
 	const char *row_head = "\n\t\t\t";
-
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
 
 	/* table header */
 
@@ -602,11 +570,6 @@ int XLALWriteLIGOLwXMLSimBurstTable(
 {
 	const char *row_head = "\n\t\t\t";
 
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
-
 	/* table header */
 
 	XLALClearErrno();
@@ -687,11 +650,6 @@ int XLALWriteLIGOLwXMLSimInspiralTable(
 {
 
 	const char *row_head = "\n\t\t\t";
-
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
 
 	/* table header */
 
@@ -955,11 +913,6 @@ int XLALWriteLIGOLwXMLTimeSlideTable(
 {
 	const char *row_head = "\n\t\t\t";
 
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
-
 	/* table header */
 
 	XLALClearErrno();
@@ -1007,11 +960,6 @@ int XLALWriteLIGOLwXMLSegmentTable(
 )
 {
 	const char *row_head = "\n\t\t\t";
-
-	if(xml->table != no_table) {
-		XLALPrintError("a table is still open");
-		XLAL_ERROR(XLAL_EFAILED);
-	}
 
 	/* table header */
 

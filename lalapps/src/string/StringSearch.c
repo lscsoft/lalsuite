@@ -68,7 +68,6 @@
 #include <lal/SnglBurstUtils.h>
 
 #include <lal/LIGOLwXML.h>
-#include <lal/LIGOLwXMLBurstRead.h>
 #include <lal/LIGOLwXMLRead.h>
 
 #include <lal/FrequencySeries.h>
@@ -411,7 +410,7 @@ int AddInjections(struct CommandLineArgsTag CLA, REAL8TimeSeries *ht){
 
   /* Get info from injection file */
   time_slide_table_head = XLALTimeSlideTableFromLIGOLw(CLA.InjectionFile);
-  sim_burst_table_head = XLALSimBurstTableFromLIGOLw(CLA.InjectionFile, NULL, NULL);
+  sim_burst_table_head = XLALSimBurstTableFromLIGOLw(CLA.InjectionFile);
   if(!time_slide_table_head || !sim_burst_table_head)
     return 1;
 

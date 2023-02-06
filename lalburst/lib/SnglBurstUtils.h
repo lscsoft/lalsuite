@@ -30,17 +30,6 @@ extern "C" {
  *
  */
 
-
-void
-XLALDestroySnglBurst(
-	SnglBurst *event
-);
-
-void
-XLALDestroySnglBurstTable(
-	SnglBurst *head
-);
-
 int
 XLALSnglBurstTableLength(
 	SnglBurst *head
@@ -63,26 +52,6 @@ int
 XLALCompareSnglBurstByPeakTimeAndSNR(
 	const SnglBurst * const *a,
 	const SnglBurst * const *b
-);
-
-SnglBurst *
-XLALCreateSnglBurst(
-	void
-);
-
-SimBurst *
-XLALCreateSimBurst(
-	void
-);
-
-void
-XLALDestroySimBurst(
-	SimBurst *row
-);
-
-void
-XLALDestroySimBurstTable(
-	SimBurst *head
 );
 
 long

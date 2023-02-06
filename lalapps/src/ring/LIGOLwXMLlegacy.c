@@ -106,10 +106,10 @@
  */
 
 
-#include <LIGOLwXMLlegacy.h>
-#include <LIGOLwXMLHeaders.h>
-#include <lal/LALVCSInfo.h>
+#include <lal/LIGOLwXMLHeaders.h>
 #include <lal/LIGOMetadataTables.h>
+#include <LALAppsVCSInfo.h>
+#include "LIGOLwXMLlegacy.h"
 
 
 /**\name Error Codes */ /** @{ */
@@ -136,6 +136,10 @@
 #define LIGOLWXMLH_MSGETMSM "Table type mismatch"
 #define LIGOLWXMLH_MSGETNOP "Table not begun for writing"
 /** @} */
+
+#define PRINT_LIGOLW_XML_HEADER(fp) XLALFilePuts( LAL_LIGOLW_XML_HEADER, fp )
+#define PRINT_LIGOLW_XML_FOOTER(fp) XLALFilePuts( LAL_LIGOLW_XML_FOOTER, fp )
+#define PRINT_LIGOLW_XML_TABLE_FOOTER(fp) XLALFilePuts( "\n      </Stream>\n   </Table>\n", fp )
 
 #define PRINT_LIGOLW_XML_PROCESS(fp) ( \
 XLALFilePuts( "   <Table Name=\"process:table\">\n", fp ) == EOF || \
@@ -591,10 +595,6 @@ LALBeginLIGOLwXMLTable (
   INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
-  if ( xml->table != no_table )
-  {
-    ABORT( status, LIGOLWXMLH_EBGNT, LIGOLWXMLH_MSGEBGNT );
-  }
 
   switch( table )
   {
@@ -628,9 +628,6 @@ LALBeginLIGOLwXMLTable (
     default:
       ABORT( status, LIGOLWXMLH_EUTAB, LIGOLWXMLH_MSGEUTAB );
   }
-  xml->first = 1;
-  xml->rowCount = 0;
-  xml->table = table;
   RETURN( status );
 }
 
@@ -646,20 +643,15 @@ LALEndLIGOLwXMLTable (
   INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
-  if ( xml->table == no_table )
-  {
-    ABORT( status, LIGOLWXMLH_EENDT, LIGOLWXMLH_MSGEENDT );
-  }
   (void)PRINT_LIGOLW_XML_TABLE_FOOTER( xml->fp );
-  xml->table = no_table;
   RETURN( status );
 }
 
 /* macro to print a comma on subsequent table rows */
 #define FIRST_TABLE_ROW \
-  if ( xml->first ) \
+  if ( first ) \
 { \
-  xml->first = 0; \
+  first = 0; \
 } else \
 { \
   XLALFilePrintf( xml->fp, ",\n" ); \
@@ -675,18 +667,12 @@ LALWriteLIGOLwXMLTable (
     )
 
 {
+  int first = 1;
+  int rowCount = 0;
   /* print contents of the database struct into the xml table */
   INITSTATUS(status);
   ASSERT( xml, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
   ASSERT( xml->fp, status, LIGOLWXMLH_ENULL, LIGOLWXMLH_MSGENULL );
-  if ( xml->table == no_table )
-  {
-    ABORT( status, LIGOLWXMLH_ETNOP, LIGOLWXMLH_MSGETNOP );
-  }
-  if ( xml->table != table )
-  {
-    ABORT( status, LIGOLWXMLH_ETMSM, LIGOLWXMLH_MSGETMSM );
-  }
   switch( table )
   {
     case no_table:
@@ -713,7 +699,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.processTable->ifos
               );
         tablePtr.processTable = tablePtr.processTable->next;
-        ++(xml->rowCount);
+        ++rowCount;
       }
       break;
     case process_params_table:
@@ -727,7 +713,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.processParamsTable->value
               );
         tablePtr.processParamsTable = tablePtr.processParamsTable->next;
-        ++(xml->rowCount);
+        ++rowCount;
       }
       break;
     case search_summary_table:
@@ -735,7 +721,7 @@ LALWriteLIGOLwXMLTable (
       {
         FIRST_TABLE_ROW
           XLALFilePrintf( xml->fp, SEARCH_SUMMARY_ROW,
-              lalVCSInfo.vcsTag,
+              lalAppsVCSInfo.vcsTag,
               tablePtr.searchSummaryTable->comment,
               tablePtr.searchSummaryTable->ifos,
               tablePtr.searchSummaryTable->in_start_time.gpsSeconds,
@@ -750,7 +736,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.searchSummaryTable->nnodes
               );
         tablePtr.searchSummaryTable = tablePtr.searchSummaryTable->next;
-        ++(xml->rowCount);
+        ++rowCount;
       }
       break;
     case sngl_inspiral_table:
@@ -823,7 +809,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglInspiralTable->spin2z,
               tablePtr.snglInspiralTable->event_id );
         tablePtr.snglInspiralTable = tablePtr.snglInspiralTable->next;
-        ++(xml->rowCount);
+        ++rowCount;
       }
       break;
     case sngl_ringdown_table:
@@ -856,7 +842,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.snglRingdownTable->event_id
               );
         tablePtr.snglRingdownTable = tablePtr.snglRingdownTable->next;
-        ++(xml->rowCount);
+        ++rowCount;
       }
       break;
     case multi_inspiral_table:
@@ -978,7 +964,7 @@ LALWriteLIGOLwXMLTable (
               tablePtr.multiInspiralTable->time_slide_id
               );
         tablePtr.multiInspiralTable = tablePtr.multiInspiralTable->next;
-        ++(xml->rowCount);
+        ++rowCount;
       }
       break;
     case sim_inspiral_table:
@@ -1047,7 +1033,7 @@ LALWriteLIGOLwXMLTable (
 	      tablePtr.simInspiralTable->simulation_id
               );
         tablePtr.simInspiralTable = tablePtr.simInspiralTable->next;
-        ++(xml->rowCount);
+        ++rowCount;
         }
       }
       break;
@@ -1087,10 +1073,10 @@ LALWriteLIGOLwXMLTable (
                 tablePtr.simRingdownTable->hrss_h,
                 tablePtr.simRingdownTable->hrss_l,
                 tablePtr.simRingdownTable->hrss_v,
-                xml->rowCount
+                rowCount
                   );
           tablePtr.simRingdownTable = tablePtr.simRingdownTable->next;
-          ++(xml->rowCount);
+          ++rowCount;
         }
       }
       break;
