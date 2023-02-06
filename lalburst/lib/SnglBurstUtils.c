@@ -26,27 +26,6 @@
 
 
 /**
- * Assign event_id values to the entries in a SnglBurst linked list.  All
- * SnglBurst rows in the list will be blamed on the given process_id, and
- * assigned sequential event_ids starting with the given event_id.  The
- * return value is the next event_id after the last one assigned to a row
- * in the list.
- */
-long XLALSnglBurstAssignIDs(
-	SnglBurst *head,
-	long process_id,
-	long event_id
-)
-{
-	for(; head; head = head->next) {
-		head->process_id = process_id;
-		head->event_id = event_id++;
-	}
-	return event_id;
-}
-
-
-/**
  * Compute the length of a linked list of SnglBurst objects.
  */
 int XLALSnglBurstTableLength(SnglBurst *head)
@@ -130,26 +109,4 @@ int XLALCompareSnglBurstByPeakTimeAndSNR(
 		return -1;
 	/* snra == snrb */
 	return 0;
-}
-
-
-/**
- * Assign simulation_id values to the entries in a sim_burst linked list.
- * All sim_burst rows in the list will be blamed on the given process_id,
- * and assigned simulation_ids in order starting with the given
- * simulation_id.  The return value is the next simulation_id after the
- * last one assigned to a row in the list.
- */
-long XLALSimBurstAssignIDs(
-	SimBurst *sim_burst,
-	long process_id,
-	long time_slide_id,
-	long simulation_id)
-{
-	for(; sim_burst; sim_burst = sim_burst->next) {
-		sim_burst->process_id = process_id;
-		sim_burst->time_slide_id = time_slide_id;
-		sim_burst->simulation_id = simulation_id++;
-	}
-	return simulation_id;
 }

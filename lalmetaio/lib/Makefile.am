@@ -20,9 +20,18 @@ liblalmetaio_la_SOURCES = \
 	LIGOLwXML.c \
 	LIGOLwXMLArray.c \
 	LIGOLwXMLRead.c \
-	LIGOLwXMLReadBurst.c \
 	LIGOMetadataUtils.c \
+	process_params.c \
 	processtable.c \
+	search_summary.c \
+	segment.c \
+	sim_burst.c \
+	sim_inspiral.c \
+	sim_ringdown.c \
+	sngl_burst.c \
+	sngl_inspiral.c \
+	sngl_ringdown.c \
+	time_slide.c \
 	$(END_OF_LIST)
 
 nodist_liblalmetaio_la_SOURCES = \

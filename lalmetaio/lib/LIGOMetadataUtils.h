@@ -73,7 +73,7 @@ extern "C" {
 
 ProcessTable *XLALCreateProcessTableRow(void);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroyProcessTableRow(ProcessTable *);
+ProcessTable *XLALDestroyProcessTableRow(ProcessTable *);
 #endif   // SWIG
 void XLALDestroyProcessTable(ProcessTable *);
 long XLALProcessTableGetNextID(ProcessTable *);
@@ -88,13 +88,13 @@ int XLALPopulateProcessTable(
 
 ProcessParamsTable *XLALCreateProcessParamsTableRow(const ProcessTable *);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroyProcessParamsTableRow(ProcessParamsTable *);
+ProcessParamsTable *XLALDestroyProcessParamsTableRow(ProcessParamsTable *);
 #endif   // SWIG
 void XLALDestroyProcessParamsTable(ProcessParamsTable *);
 
 TimeSlide *XLALCreateTimeSlide(void);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroyTimeSlide(TimeSlide *);
+TimeSlide *XLALDestroyTimeSlide(TimeSlide *);
 #endif   // SWIG
 void XLALDestroyTimeSlideTable(TimeSlide *);
 const TimeSlide *XLALTimeSlideConstGetByIDAndInstrument(const TimeSlide *, long, const char *);
@@ -102,50 +102,50 @@ TimeSlide *XLALTimeSlideGetByIDAndInstrument(TimeSlide *, long, const char *);
 
 SearchSummaryTable *XLALCreateSearchSummaryTableRow(const ProcessTable *);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroySearchSummaryTableRow(SearchSummaryTable *);
+SearchSummaryTable *XLALDestroySearchSummaryTableRow(SearchSummaryTable *);
 #endif   // SWIG
 void XLALDestroySearchSummaryTable(SearchSummaryTable *);
 
 SegmentTable *XLALCreateSegmentTableRow(const ProcessTable *process);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroySegmentTableRow(SegmentTable *row);
+SegmentTable *XLALDestroySegmentTableRow(SegmentTable *row);
 #endif   // SWIG
 void XLALDestroySegmentTable(SegmentTable *head);
 
 SnglInspiralTable *XLALCreateSnglInspiralTableRow(const ProcessTable *process);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroySnglInspiralTableRow(SnglInspiralTable *row);
+SnglInspiralTable *XLALDestroySnglInspiralTableRow(SnglInspiralTable *row);
 #endif   // SWIG
 void XLALDestroySnglInspiralTable(SnglInspiralTable *head);
 
 SimInspiralTable *XLALCreateSimInspiralTableRow(const ProcessTable *process);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroySimInspiralTableRow(SimInspiralTable *row);
+SimInspiralTable *XLALDestroySimInspiralTableRow(SimInspiralTable *row);
 #endif   // SWIG
 void XLALDestroySimInspiralTable(SimInspiralTable *head);
 
 SnglRingdownTable *XLALCreateSnglRingdownTableRow(const ProcessTable *process);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroySnglRingdownTableRow(SnglRingdownTable *row);
+SnglRingdownTable *XLALDestroySnglRingdownTableRow(SnglRingdownTable *row);
 #endif   // SWIG
 void XLALDestroySnglRingdownTable(SnglRingdownTable *head);
 
 SimRingdownTable *XLALCreateSimRingdownTableRow(const ProcessTable *process);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroySimRingdownTableRow(SimRingdownTable *row);
+SimRingdownTable *XLALDestroySimRingdownTableRow(SimRingdownTable *row);
 #endif   // SWIG
 void XLALDestroySimRingdownTable(SimRingdownTable *head);
 
 
 SnglBurst *XLALCreateSnglBurst(void);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroySnglBurst(SnglBurst *event);
+SnglBurst *XLALDestroySnglBurst(SnglBurst *event);
 #endif   // SWIG
 void XLALDestroySnglBurstTable(SnglBurst *head);
 
 SimBurst *XLALCreateSimBurst(void);
 #ifndef SWIG   // exclude from SWIG interface
-void XLALDestroySimBurst(SimBurst *row);
+SimBurst *XLALDestroySimBurst(SimBurst *row);
 #endif   // SWIG
 void XLALDestroySimBurstTable(SimBurst *head);
 
@@ -164,6 +164,21 @@ XLALSimInspiralAssignIDs (
     SimInspiralTable *head,
     long process_id,
     long simulation_id
+    );
+
+long
+XLALSnglBurstAssignIDs(
+    SnglBurst *head,
+    long process_id,
+    long event_id
+    );
+
+long
+XLALSimBurstAssignIDs(
+    SimBurst *head,
+    long process_id,
+    long time_slide_id,
+    long event_id
     );
 
 void
