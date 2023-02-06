@@ -6,7 +6,6 @@
 
 set -e
 
-# load common options
 . ${RECIPE_DIR}/common.sh
 
 # build python in a sub-directory using a copy of the C build
@@ -18,7 +17,6 @@ cd ${_builddir}
 ${SRC_DIR}/configure \
   ${CONFIGURE_ARGS} \
   --disable-swig-iface \
-  --enable-sistr \
   --enable-python \
   --enable-swig-python \
 ;

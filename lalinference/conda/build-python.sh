@@ -4,7 +4,7 @@
 # for a LALSuite subpackage.
 #
 
-set -e
+set -ex
 
 # load common options
 . ${RECIPE_DIR}/common.sh
@@ -18,7 +18,6 @@ cd ${_builddir}
 ${SRC_DIR}/configure \
   ${CONFIGURE_ARGS} \
   --disable-swig-iface \
-  --enable-sistr \
   --enable-python \
   --enable-swig-python \
 ;

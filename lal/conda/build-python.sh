@@ -4,9 +4,8 @@
 # for a LALSuite subpackage.
 #
 
-set -e
+set -ex
 
-# load common options
 . ${RECIPE_DIR}/common.sh
 
 # build python in a sub-directory using a copy of the C build
@@ -18,13 +17,13 @@ cd ${_builddir}
 ${SRC_DIR}/configure \
   ${CONFIGURE_ARGS} \
   --disable-swig-iface \
-  --enable-sistr \
   --enable-python \
   --enable-swig-python \
 ;
 
 # patch out dependency_libs from libtool archive to prevent overlinking
-sed -i.tmp '/^dependency_libs/d' lib/lib${PKG_NAME##*-}.la
+sed -i.tmp '/^dependency_libs/d' lib/liblal.la
+sed -i.tmp '/^dependency_libs/d' lib/support/liblalsupport.la
 
 # build
 ${_make} -C swig LIBS=""
