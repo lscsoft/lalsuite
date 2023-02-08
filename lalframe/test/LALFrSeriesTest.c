@@ -91,7 +91,7 @@ int main( void )
     LALTYPECODE typecode = XLALFrStreamGetTimeSeriesType( CHANNEL, stream );
     if ( typecode != LAL_I4_TYPE_CODE )
     {
-      if ( typecode < 0 )
+      if ( (int)typecode < 0 )
         fprintf( stderr, "failure\n" );
       else
         fprintf( stderr, "Wrong data type!\n" );
