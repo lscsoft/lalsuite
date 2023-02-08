@@ -34,6 +34,11 @@ pages:
     - documentation
     - coverage
   script:
+    - |
+      if [ "X${DEPLOY_DRY_RUN}" = "Xyes" ]; then
+        echo "Skipping rest of job as DEPLOY_DRY_RUN='${DEPLOY_DRY_RUN}'"
+        exit 0
+      fi
     - mv html public
     # don't fail if coverage not present
     - cp coverage.html public/ || true

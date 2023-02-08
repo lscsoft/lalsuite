@@ -123,13 +123,6 @@ default:
 .configure-coredump: &configure-coredump
   ulimit -S -c 0
 
-# manually triggered and scheduled pipelines should use the
-# `--enable-nightly` configure flag
-.configure-nightly: &configure-nightly-build
-  if [ ${CI_PIPELINE_SOURCE} = "schedule" ] || [ ${CI_PIPELINE_SOURCE} = "web" ]; then
-      export ENABLE_NIGHTLY="--enable-nightly";
-  fi
-
 # basic steps for a job that compiles stuff
 # can be included in the before_script/script sections
 # via `*init-build-job`
@@ -137,7 +130,6 @@ default:
   - *print-env
   - *configure-ccache
   - *configure-coredump
-  - *configure-nightly-build
 
 # simple bash command to retry a stage up to 3 times
 # with a 15-second delay (mainly to survive transient
@@ -1628,6 +1620,11 @@ wheel:pypi:
   script:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - pip install twine
+    - |
+      if [ "X${DEPLOY_DRY_RUN}" = "Xyes" ]; then
+        echo "Skipping rest of job as DEPLOY_DRY_RUN='${DEPLOY_DRY_RUN}'"
+        exit 0
+      fi
     - twine upload wheelhouse/*
   needs:
     - wheel:cp38-cp38-manylinux2014_x86_64
