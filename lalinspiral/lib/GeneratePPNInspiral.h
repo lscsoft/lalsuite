@@ -20,7 +20,6 @@
 #ifndef _GENERATEPPNINSPIRAL_H
 #define _GENERATEPPNINSPIRAL_H
 
-#include <lal/GeneratePPNInspiral.h>
 #include <lal/LALAtomicDatatypes.h>
 #include <lal/LALDatatypes.h>
 #include <lal/Random.h>
