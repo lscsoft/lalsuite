@@ -191,7 +191,8 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomTHM),
     INITIALIZE_NAME(IMRPhenomTP),
     INITIALIZE_NAME(IMRPhenomTPHM),
-    INITIALIZE_NAME(SEOBNRv4HM_PA)
+    INITIALIZE_NAME(SEOBNRv4HM_PA),
+    INITIALIZE_NAME(pSEOBNRv4HM_PA)
 };
 #undef INITIALIZE_NAME
 
@@ -916,6 +917,7 @@ int XLALSimInspiralChooseTDWaveform(
                     deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
     case SEOBNRv4HM_PA:
+    case pSEOBNRv4HM_PA:
       if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
 	XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
       if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
@@ -927,10 +929,18 @@ int XLALSimInspiralChooseTDWaveform(
       /* Call the waveform driver routine */
       polariz+=-LAL_PI/2.;
       //R.C. this rotation of -pi/2 is needed to go from the EOB wave frame to the LAL wave frame, see slide 9 of https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/blob/master/tests/conventions/con \ventions.pdf                                                                                                                                                                                                
-      SpinAlignedEOBversion = 4111;
+      if(approximant == SEOBNRv4HM_PA) SpinAlignedEOBversion = 4111;
+      if(approximant == pSEOBNRv4HM_PA) SpinAlignedEOBversion = 4112;
 
-      ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
-					 deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
+      ret = XLALSimIMRSpinAlignedEOBWaveform(
+        hplus, hcross,
+        phiRef, deltaT,
+        m1, m2,
+        f_min,
+        distance, inclination,
+        S1z, S2z,
+        SpinAlignedEOBversion, LALparams
+      );
       break;
 
         case SEOBNRv3_opt_rk4:
@@ -3389,6 +3399,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             break;
 
         case SEOBNRv4HM_PA:
+        case pSEOBNRv4HM_PA:
             /* Waveform-specific sanity checks */
             if (!XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars))
                 XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
@@ -3397,9 +3408,13 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             if (f_ref != 0.)
                 XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
 
+            UINT4 SpinAlignedEOBversion;
+            if (approximant == SEOBNRv4HM_PA) SpinAlignedEOBversion = 4111;
+            if (approximant == pSEOBNRv4HM_PA) SpinAlignedEOBversion = 4112;
+
             REAL8Vector *dynamics = NULL;
             REAL8Vector *dynamicsHi = NULL;
-            UINT4 SpinAlignedEOBversion = 4111;
+
             REAL8 lambda2Tidal1 = 0.0;
             REAL8 lambda2Tidal2 = 0.0;
             REAL8 omega02Tidal1 = 0.0;
@@ -3444,9 +3459,10 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
             dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALpars);
 
             UINT2 TGRflag = 0;
-            if (LALpars && XLALDictContains(LALpars, "TGRflag")) {
-                TGRflag = XLALDictLookupUINT2Value(LALpars, "TGRflag");
-            }
+            if (approximant == pSEOBNRv4HM_PA) TGRflag = 1;
+            // if (LALpars && XLALDictContains(LALpars, "TGRflag")) {
+            //     TGRflag = XLALDictLookupUINT2Value(LALpars, "TGRflag");
+            // }
             
             XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
             XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
@@ -6638,6 +6654,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case IMRPhenomTP:
         case IMRPhenomTPHM:
         case SEOBNRv4HM_PA:
+        case pSEOBNRv4HM_PA:
             return 1;
 
         default:
@@ -7158,6 +7175,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomT:
     case IMRPhenomTHM:
     case SEOBNRv4HM_PA:
+    case pSEOBNRv4HM_PA:
       spin_support=LAL_SIM_INSPIRAL_ALIGNEDSPIN;
       break;
     case TaylorEt:
@@ -7290,6 +7308,7 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case IMRPhenomTHM:
 	case TEOBResumS:
     case SEOBNRv4HM_PA:
+    case pSEOBNRv4HM_PA:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_NONPRECESSING;
       break;
     case NR_hdf5:
@@ -7444,6 +7463,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomHM:
     case IMRPhenomPv3:
     case IMRPhenomPv3HM:
+    case pSEOBNRv4HM_PA:
       testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
       break;
     default:

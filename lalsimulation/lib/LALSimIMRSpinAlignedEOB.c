@@ -65,6 +65,7 @@
 #define debugOutput 0
 #define SEOBNRv4HM 41
 #define SEOBNRv4HM_PA 4111
+#define pSEOBNRv4HM_PA 4112
 
 
 //static int debugPK = 0;
@@ -134,8 +135,8 @@ static INT4 XLALSetup_EOB__std_mode_array_structure(
         XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 4);
         XLALSimInspiralModeArrayActivateMode(ModeArray, 5, 5);
       }
-      else if (SpinAlignedEOBversion == SEOBNRv4HM_PA) {
-        /* Adding all the modes of SEOBNRv4HM_PA
+      else if (SpinAlignedEOBversion == SEOBNRv4HM_PA || SpinAlignedEOBversion == pSEOBNRv4HM_PA) {
+        /* Adding all the modes of SEOBNRv4HM_PA or pSEOBNRv4HM_PA
         * i.e. [(2,2),(2,1),(3,3),(4,4),(5,5)]
         the relative -m modes are added automatically*/
         XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
@@ -173,7 +174,7 @@ static INT4 XLALCheck_EOB_mode_array_structure(
     */
     nModes = 5;
   }
-  else if (SpinAlignedEOBversion == SEOBNRv4HM_PA) {
+  else if (SpinAlignedEOBversion == SEOBNRv4HM_PA || SpinAlignedEOBversion == pSEOBNRv4HM_PA) {
     /*If one select SEOBNRv4HM_PA all the modes above are selected to check
     */
     nModes = 5;
@@ -579,20 +580,36 @@ XLALSimIMRSpinAlignedEOBPeakFrequency (REAL8 m1SI,
 
 
 int
-XLALSimIMRSpinAlignedEOBWaveform (REAL8TimeSeries ** hplus,	     /**<< OUTPUT, +-polarization waveform */
-				  REAL8TimeSeries ** hcross,	     /**<< OUTPUT, x-polarization waveform */
-				  const REAL8 phiC,		     /**<< coalescence orbital phase (rad) */
-				  REAL8 deltaT,			     /**<< sampling time step */
-				  const REAL8 m1SI,		     /**<< mass-1 in SI unit */
-				  const REAL8 m2SI,		     /**<< mass-2 in SI unit */
-				  const REAL8 fMin,		     /**<< starting frequency of the 22 mode (Hz) */
-				  const REAL8 r,		     /**<< distance in SI unit */
-				  const REAL8 inc,		     /**<< inclination angle */
-				  const REAL8 spin1z,		     /**<< z-component of spin-1, dimensionless */
-				  const REAL8 spin2z,		      /**<< z-component of spin-2, dimensionless */
-				  UINT4 SpinAlignedEOBversion,		      /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM, 4111 for SEOBNRv4HM_PA */
-                  LALDict *LALParams /**<< Dictionary of additional wf parameters, including tidal and nonGR */
-  )
+XLALSimIMRSpinAlignedEOBWaveform (
+    REAL8TimeSeries ** hplus,
+    /**<< OUTPUT, +-polarization waveform */
+    REAL8TimeSeries ** hcross,
+    /**<< OUTPUT, x-polarization waveform */
+    const REAL8 phiC,
+    /**<< coalescence orbital phase (rad) */
+    REAL8 deltaT,
+    /**<< sampling time step */
+    const REAL8 m1SI,
+    /**<< mass-1 in SI unit */
+    const REAL8 m2SI,
+    /**<< mass-2 in SI unit */
+    const REAL8 fMin,
+    /**<< starting frequency of the 22 mode (Hz) */
+    const REAL8 r,
+    /**<< distance in SI unit */
+    const REAL8 inc,
+    /**<< inclination angle */
+    const REAL8 spin1z,
+    /**<< z-component of spin-1, dimensionless */
+    const REAL8 spin2z,
+    /**<< z-component of spin-2, dimensionless */
+    UINT4 SpinAlignedEOBversion,
+    /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4,
+    201 for SEOBNRv2T,401 for SEOBNRv4T, 41 for SEOBNRv4HM,
+    4111 for SEOBNRv4HM_PA, 4112 for pSEOBNRv4HM_PA */
+    LALDict *LALParams
+    /**<< Dictionary of additional wf parameters, including tidal and nonGR */
+)
 {
   int ret;
 
@@ -827,7 +844,9 @@ XLALSimIMRSpinAlignedEOBModes (
   const REAL8 spin2z,
   /**<< z-component of spin-2, dimensionless */
   UINT4 SpinAlignedEOBversion,
-  /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4, 201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM, 4111 for SEOBNRv4HM_PA */
+  /**<< 1 for SEOBNRv1, 2 for SEOBNRv2, 4 for SEOBNRv4,
+  201 for SEOBNRv2T, 401 for SEOBNRv4T, 41 for SEOBNRv4HM,
+  4111 for SEOBNRv4HM_PA, 4112 for pSEOBNRv4HM_PA */
   const REAL8 lambda2Tidal1,
   /**<< dimensionless adiabatic quadrupole tidal deformability for body 1 (2/3 k2/C^5) */
   const REAL8 lambda2Tidal2,
@@ -921,8 +940,7 @@ XLALSimIMRSpinAlignedEOBModes (
     UINT4 postAdiabaticFlag = 0;
     UINT2 TGRflag = 0;
 
-    if (SpinAlignedEOBversion == 4111)
-    {
+    if (SpinAlignedEOBversion == 4111 || SpinAlignedEOBversion == 4112) {
         postAdiabaticFlag = 1;
         XLALDictInsertUINT4Value(PAParams, "PAFlag", postAdiabaticFlag);
         XLALDictInsertUINT4Value(PAParams, "PAOrder", 8);
@@ -932,9 +950,12 @@ XLALSimIMRSpinAlignedEOBModes (
       	XLALDictInsertUINT2Value(PAParams, "analyticFlag", 1);
     }
 
+    if (SpinAlignedEOBversion == 4112) {
+        TGRflag = 1;
+    }
+
     /* If we want SEOBNRv4HM, then reset SpinAlignedEOBversion=4 and set use_hm=1 */
-    if (SpinAlignedEOBversion == 41 || SpinAlignedEOBversion == 4111)
-    {
+    if (SpinAlignedEOBversion == 41 || SpinAlignedEOBversion == 4111 || SpinAlignedEOBversion == 4112) {
         SpinAlignedEOBversion = 4;
         use_hm = 1;
         nModes = 5;
