@@ -187,6 +187,9 @@ int main(int argc, char **argv)
 	    memset(new_epoch_avg->data, 0, sizeof(REAL8)*new_epoch_avg->length);
 	    XLAL_CHECK_MAIN( (new_epoch_wt = XLALCreateREAL8Vector(numBins)) != NULL, XLAL_EFUNC );
 	    XLAL_CHECK_MAIN( (epoch_avg = XLALCreateREAL8VectorSequence(epoch_gps_times->length, numBins)) != NULL, XLAL_EFUNC );
+
+            // Check that epoch_avg has been fully allocated. This can be problematic over many SFTs
+            XLAL_CHECK_MAIN( (epoch_avg->length * epoch_avg->vectorLength)/epoch_gps_times->length == numBins, XLAL_ENOMEM, "Persistency calculation failed to allocate epoch_avg. Try using a longer epoch averaging with the -E flag or longer -T" );
 	}
 
 	//Loop over the SFT bins
