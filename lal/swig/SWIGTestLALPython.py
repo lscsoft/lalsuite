@@ -40,7 +40,7 @@ def test_memory_allocation():
     """check memory allocation
     """
 
-    if not lal.MEMORY_FUNCTIONS_DISABLED:
+    if lal.MEMORY_FUNCTIONS_DISABLED:
         pytest.skip("LAL was built with MEMORY_FUNCTIONS_DISABLED")
 
     print("checking memory allocation ...", file=sys.stderr)
