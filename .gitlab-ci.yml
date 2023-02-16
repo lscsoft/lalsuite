@@ -1234,7 +1234,7 @@ wheel:cp311-cp311-macosx-arm64:
       gpgcheck=0
       EOF
     # install required packages
-    - yum -y -q install lal* liblal*-devel python*-lal* --exclude lalsuite* --exclude lalapps
+    - yum -y install "lal*" "liblal*-devel" "python*-lal*" --exclude "lalsuite*" --exclude lalapps --exclude "*lalpulsar*"
 
 lalinference_testjob:
   extends:
