@@ -2255,7 +2255,7 @@ int XLALSimInspiralPrecessingNRSurPolarizations(
             // -1, which is the same as a pi rotation; the even-m modes don't
             // need this fix as they are insensitive to pi rotations about
             // z-axis.
-            if ((m%2 == 1) && (labels_switched)) {
+            if ((m%2 != 0) && (labels_switched)) {
                 prefactor = -1;
             } else {
                 prefactor = 1;
@@ -2529,7 +2529,7 @@ SphHarmTimeSeries *XLALSimInspiralPrecessingNRSurModes(
             // -1, which is the same as a pi rotation; the even-m modes don't
             // need this fix as they are insensitive to pi rotations about
             // z-axis.
-            if ((m%2 == 1) && (labels_switched)) {
+            if ((m%2 != 0) && (labels_switched)) {
                 prefactor = -1;
             } else {
                 prefactor = 1;
