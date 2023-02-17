@@ -717,6 +717,7 @@ print(r"""
  * The following astrophysical constants are defined to have exact values.
  * The dimensions in SI units are as shown.
  * @see http://asa.hmnao.com/SecK/Constants.html
+ * @see https://doi.org/10.3847/0004-6256/152/2/41
  */""")
 
 print('/** @{ */')
@@ -727,6 +728,17 @@ LAL_YRJUL_SI = D('31557600')
 LAL_LYR_SI = LAL_YRJUL_SI * LAL_C_SI
 LAL_AU_SI = D('149597870700')
 LAL_PC_SI = LAL_AU_SI * D('3600') * LAL_180_PI
+LAL_GMEARTH_SI = D('3.986004E14')
+LAL_REEARTH_SI = D('6.3781E6')
+LAL_RPEARTH_SI = D('6.3568E6')
+LAL_GMJUP_SI = D('1.2668653E17')
+LAL_REJUP_SI = D('7.1492E7')
+LAL_RPJUP_SI = D('6.6854E7')
+LAL_GMSUN_SI = D('1.3271244E20')
+LAL_RSUN_SI = D('6.957E8')
+LAL_SSUN_SI = D('1361')
+LAL_LSUN_SI = D('3.828E26')
+LAL_TSUN_SI = D('5772')
 
 print('#define LAL_ROT_DAY', end=' ')
 print(LAL_ROT_DAY, end=' ')
@@ -752,6 +764,50 @@ print('#define LAL_PC_SI', end=' ')
 print(as_str(LAL_PC_SI), end=' ')
 print('/**< Parsec, m */')
 
+print('#define LAL_GMEARTH_SI', end=' ')
+print(str(LAL_GMEARTH_SI), end=' ')
+print('/**< Nominal Earth mass parameter, m^3 s^-2 */')
+
+print('#define LAL_REEARTH_SI', end=' ')
+print(str(LAL_REEARTH_SI), end=' ')
+print('/**< Nominal Earth equatorial radius, m */')
+
+print('#define LAL_RPEARTH_SI', end=' ')
+print(str(LAL_RPEARTH_SI), end=' ')
+print('/**< Nominal Earth polar radius, m */')
+
+print('#define LAL_GMJUP_SI', end=' ')
+print(str(LAL_GMJUP_SI), end=' ')
+print('/**< Nominal Jupiter mass parameter, m^3 s^-2 */')
+
+print('#define LAL_REJUP_SI', end=' ')
+print(str(LAL_REJUP_SI), end=' ')
+print('/**< Nominal Jupiter equatorial radius, m */')
+
+print('#define LAL_RPJUP_SI', end=' ')
+print(str(LAL_RPJUP_SI), end=' ')
+print('/**< Nominal Jupiter polar radius, m */')
+
+print('#define LAL_GMSUN_SI', end=' ')
+print(str(LAL_GMSUN_SI), end=' ')
+print('/**< Nominal solar mass parameter, m^3 s^-2 */')
+
+print('#define LAL_RSUN_SI', end=' ')
+print(str(LAL_RSUN_SI), end=' ')
+print('/**< Nominal solar radius, m */')
+
+print('#define LAL_SSUN_SI', end=' ')
+print(str(LAL_SSUN_SI) + 'e0', end=' ')
+print('/**< Nominal total solar irradiance, W m^-2 */')
+
+print('#define LAL_LSUN_SI', end=' ')
+print(str(LAL_LSUN_SI), end=' ')
+print('/**< Nominal solar luminosity, W */')
+
+print('#define LAL_TSUN_SI', end=' ')
+print(str(LAL_TSUN_SI) + 'e0', end=' ')
+print('/**< Nominal solar effective temperature, K */')
+
 print('/** @} */')
 
 print(r"""
@@ -764,8 +820,6 @@ print(r"""
 
 print('/** @{ */')
 
-LAL_GMSUN_SI = D('1.32712442099E20')
-LAL_GMEARTH_SI = D('3.986004418E14')
 LAL_EPREC_SI = D('4612.156534') / D('36525') / D('15') / D('86400') / LAL_DAYJUL_SI
 LAL_REARTH_SI = D('6378136.6')
 LAL_AWGS84_SI = D('6378137')
@@ -773,8 +827,11 @@ LAL_FWGS84 = D('1') / D('298.257223563')
 LAL_BWGS84_SI = LAL_AWGS84_SI * (D('1') - LAL_FWGS84)
 LAL_IEARTH = D('84381.406') * LAL_PI_180 / D('3600')
 LAL_EEARTH = D('0.0167')
-LAL_RSUN_SI = D('696342E3')
-LAL_LSUN_SI = D('3.846E26')
+LAL_GMEARTH_TCB_SI = D('3.986004418e14')
+LAL_GMEARTH_TDB_SI = D('3.986004356e14')
+LAL_GMEARTH_TT_SI = D('3.986004415e14')
+LAL_GMSUN_TCB_SI = D('1.32712442099e20')
+LAL_GMSUN_TDB_SI = D('1.32712440041e20')
 LAL_YRTROP_SI = D('365.2421896698') * LAL_DAYJUL_SI
 LAL_YRSID_SI = D('365.256363004') * LAL_DAYJUL_SI
 
@@ -851,35 +908,43 @@ print(as_str(LAL_EPREC_SI))
 
 print("""
 /**
- * @brief Geocentric gravitational constant, m^3 s^-2 (TCB)
+ * @brief Earth mass parameter, m^3 s^-2 (TCB)
  * @see http://asa.hmnao.com/SecK/Constants.html
  */""")
-print('#define LAL_GMEARTH_SI', end=' ')
-print(LAL_GMEARTH_SI)
+print('#define LAL_GMEARTH_TCB_SI', end=' ')
+print(LAL_GMEARTH_TCB_SI)
 
 print("""
 /**
- * @brief Solar equatorial radius, m
- * @see http://dx.doi.org/10.1088/0004-637X/750/2/135
+ * @brief Earth mass parameter, m^3 s^-2 (TDB)
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */""")
-print('#define LAL_RSUN_SI', end=' ')
-print(LAL_RSUN_SI)
+print('#define LAL_GMEARTH_TDB_SI', end=' ')
+print(LAL_GMEARTH_TDB_SI)
 
 print("""
 /**
- * @brief Solar luminosity, W
- * @see http://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html
+ * @brief Earth mass parameter, m^3 s^-2 (TT)
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */""")
-print('#define LAL_LSUN_SI', end=' ')
-print(LAL_LSUN_SI)
+print('#define LAL_GMEARTH_TT_SI', end=' ')
+print(LAL_GMEARTH_TT_SI)
 
 print("""
 /**
  * @brief Solar mass parameter, m^3 s^-2 (TCB)
  * @see http://asa.hmnao.com/SecK/Constants.html
  */""")
-print('#define LAL_GMSUN_SI', end=' ')
-print(LAL_GMSUN_SI)
+print('#define LAL_GMSUN_TCB_SI', end=' ')
+print(LAL_GMSUN_TCB_SI)
+
+print("""
+/**
+ * @brief Solar mass parameter, m^3 s^-2 (TDB)
+ * @see http://asa.hmnao.com/SecK/Constants.html
+ */""")
+print('#define LAL_GMSUN_TDB_SI', end=' ')
+print(LAL_GMSUN_TDB_SI)
 
 print("""
 /**
@@ -914,7 +979,13 @@ print('/** @{ */')
 LAL_COSIEARTH = cos(LAL_IEARTH)
 LAL_SINIEARTH = sin(LAL_IEARTH)
 LAL_MEARTH_SI = LAL_GMEARTH_SI / LAL_G_SI
+LAL_MEARTH_TCB_SI = LAL_GMEARTH_TCB_SI / LAL_G_SI
+LAL_MEARTH_TDB_SI = LAL_GMEARTH_TDB_SI / LAL_G_SI
+LAL_MEARTH_TT_SI = LAL_GMEARTH_TT_SI / LAL_G_SI
+LAL_MJUP_SI = LAL_GMJUP_SI / LAL_G_SI
 LAL_MSUN_SI = LAL_GMSUN_SI / LAL_G_SI
+LAL_MSUN_TCB_SI = LAL_GMSUN_TCB_SI / LAL_G_SI
+LAL_MSUN_TDB_SI = LAL_GMSUN_TDB_SI / LAL_G_SI
 LAL_MRSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI)
 LAL_MTSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI * LAL_C_SI)
 LAL_SOL_SID = LAL_ROT_DAY + LAL_DAYJUL_SI * LAL_EPREC_SI
@@ -940,7 +1011,7 @@ print(str(LAL_SINIEARTH.quantize(quantize)))
 
 print("""
 /**
- * @brief Earth mass, kg
+ * @brief Nominal Earth mass, kg
  * @details
  * LAL_MEARTH_SI = LAL_GMEARTH_SI / LAL_G_SI
  */""")
@@ -949,7 +1020,43 @@ print(as_str(LAL_MEARTH_SI))
 
 print("""
 /**
- * @brief Solar mass, kg
+ * @brief Earth mass, kg (TCB)
+ * @details
+ * LAL_MEARTH_TCB_SI = LAL_GMEARTH_TCB_SI / LAL_G_SI
+ */""")
+print('#define LAL_MEARTH_TCB_SI', end=' ')
+print(as_str(LAL_MEARTH_TCB_SI))
+
+print("""
+/**
+ * @brief Earth mass, kg (TDB)
+ * @details
+ * LAL_MEARTH_TDB_SI = LAL_GMEARTH_TDB_SI / LAL_G_SI
+ */""")
+print('#define LAL_MEARTH_TDB_SI', end=' ')
+print(as_str(LAL_MEARTH_TDB_SI))
+
+print("""
+/**
+ * @brief Earth mass, kg (TT)
+ * @details
+ * LAL_MEARTH_TT_SI = LAL_GMEARTH_TT_SI / LAL_G_SI
+ */""")
+print('#define LAL_MEARTH_TT_SI', end=' ')
+print(as_str(LAL_MEARTH_TT_SI))
+
+print("""
+/**
+ * @brief Nominal Jupiter mass, kg
+ * @details
+ * LAL_MJUP_SI = LAL_GMJUP_SI / LAL_G_SI
+ */""")
+print('#define LAL_MJUP_SI', end=' ')
+print(as_str(LAL_MJUP_SI))
+
+print("""
+/**
+ * @brief Nominal solar mass, kg
  * @details
  * LAL_MSUN_SI = LAL_GMSUN_SI / LAL_G_SI
  */""")
@@ -958,7 +1065,7 @@ print(as_str(LAL_MSUN_SI))
 
 print("""
 /**
- * @brief Geometrized solar mass, m
+ * @brief Geometrized nominal solar mass, m
  * @details
  * LAL_MRSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI)
  */""")
@@ -967,12 +1074,30 @@ print(as_str(LAL_MRSUN_SI))
 
 print("""
 /**
- * @brief Geometrized solar mass, s
+ * @brief Geometrized nominal solar mass, s
  * @details
  * LAL_MTSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI * LAL_C_SI)
  */""")
 print('#define LAL_MTSUN_SI', end=' ')
 print(as_str(LAL_MTSUN_SI))
+
+print("""
+/**
+ * @brief Solar mass, kg (TCB)
+ * @details
+ * LAL_MSUN_TCB_SI = LAL_GMSUN_TCB_SI / LAL_G_SI
+ */""")
+print('#define LAL_MSUN_TCB_SI', end=' ')
+print(as_str(LAL_MSUN_TCB_SI))
+
+print("""
+/**
+ * @brief Solar mass, kg (TDB)
+ * @details
+ * LAL_MSUN_TDB_SI = LAL_GMSUN_TDB_SI / LAL_G_SI
+ */""")
+print('#define LAL_MSUN_TDB_SI', end=' ')
+print(as_str(LAL_MSUN_TDB_SI))
 
 print("""
 /**

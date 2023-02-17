@@ -48,7 +48,7 @@ lnhatz = 1.
 e1x    = 1.
 e1y    = 0.
 e1z    = 0.
-approxs=["SpinTaylorT1","spinTaylorT4","SpinTaylorT5"]
+approxs=["SpinTaylorT1","SpinTaylorT4","SpinTaylorT5"]
 
 with open(DEFAULT_FILE, "w") as outfile:
 

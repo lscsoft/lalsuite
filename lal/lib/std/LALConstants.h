@@ -166,26 +166,26 @@ extern "C" {
  * @see http://oeis.org/A053510
  */
 /** @{ */
-#define LAL_E         2.718281828459045235360287471352662498
-#define LAL_LOG2E     1.442695040888963407359924681001892137
-#define LAL_LOG10E    0.434294481903251827651128918916605082
-#define LAL_LN2       0.693147180559945309417232121458176568
-#define LAL_LN10      2.302585092994045684017991454684364208
-#define LAL_SQRT2     1.414213562373095048801688724209698079
-#define LAL_SQRT1_2   0.707106781186547524400844362104849039
-#define LAL_GAMMA     0.577215664901532860606512090082402431
-#define LAL_EXPGAMMA  1.781072417990197985236504103107179549
+#define LAL_E 2.718281828459045235360287471352662498
+#define LAL_LOG2E 1.442695040888963407359924681001892137
+#define LAL_LOG10E 0.434294481903251827651128918916605082
+#define LAL_LN2 0.693147180559945309417232121458176568
+#define LAL_LN10 2.302585092994045684017991454684364208
+#define LAL_SQRT2 1.414213562373095048801688724209698079
+#define LAL_SQRT1_2 0.707106781186547524400844362104849039
+#define LAL_GAMMA 0.577215664901532860606512090082402431
+#define LAL_EXPGAMMA 1.781072417990197985236504103107179549
 /* Assuming we're not near a black hole or in Tennessee... */
-#define LAL_PI        3.141592653589793238462643383279502884
-#define LAL_TWOPI     6.283185307179586476925286766559005768
-#define LAL_PI_2      1.570796326794896619231321691639751442
-#define LAL_PI_4      0.785398163397448309615660845819875721
-#define LAL_1_PI      0.318309886183790671537767526745028724
-#define LAL_2_PI      0.636619772367581343075535053490057448
-#define LAL_2_SQRTPI  1.128379167095512573896158903121545172
-#define LAL_PI_180    1.745329251994329576923690768488612713e-2
-#define LAL_180_PI    57.295779513082320876798154814105170332
-#define LAL_LNPI      1.144729885849400174143427351353058712
+#define LAL_PI 3.141592653589793238462643383279502884
+#define LAL_TWOPI 6.283185307179586476925286766559005768
+#define LAL_PI_2 1.570796326794896619231321691639751442
+#define LAL_PI_4 0.785398163397448309615660845819875721
+#define LAL_1_PI 0.318309886183790671537767526745028724
+#define LAL_2_PI 0.636619772367581343075535053490057448
+#define LAL_2_SQRTPI 1.128379167095512573896158903121545172
+#define LAL_PI_180 1.745329251994329576923690768488612713e-2
+#define LAL_180_PI 57.295779513082320876798154814105170332
+#define LAL_LNPI 1.144729885849400174143427351353058712
 /** @} */
 
 /**
@@ -285,21 +285,21 @@ extern "C" {
 /**
  * @brief Planck mass, kg
  * @details
- * LAL_MPL_SI =	sqrt(LAL_HBAR_SI * LAL_C_SI / LAL_G_SI)
+ * LAL_MPL_SI = sqrt(LAL_HBAR_SI * LAL_C_SI / LAL_G_SI)
  */
 #define LAL_MPL_SI 2.176434342717898213927914919024147041e-8
 
 /**
  * @brief Planck length, m
  * @details
- * LAL_LPL_SI =	(LAL_HBAR_SI / (LAL_MPL_SI * LAL_C_SI))
+ * LAL_LPL_SI = (LAL_HBAR_SI / (LAL_MPL_SI * LAL_C_SI))
  */
 #define LAL_LPL_SI 1.616255024423705286500047697249314157e-35
 
 /**
  * @brief Planck time, s
  * @details
- * LAL_TPL_SI =	(LAL_LPL_SI / LAL_C_SI)
+ * LAL_TPL_SI = (LAL_LPL_SI / LAL_C_SI)
  */
 #define LAL_TPL_SI 5.391246448313603961644851309932934193e-44
 
@@ -369,7 +369,7 @@ extern "C" {
 /**
  * @brief Nuclear magneton, J T^-1
  * @details
- * LAL_MUN_SI =	(LAL_MUB_SI / LAL_MP_ME)
+ * LAL_MUN_SI = (LAL_MUB_SI / LAL_MP_ME)
  */
 #define LAL_MUN_SI 5.050783746114056140501321131006282803e-27
 /** @} */
@@ -379,6 +379,7 @@ extern "C" {
  * The following astrophysical constants are defined to have exact values.
  * The dimensions in SI units are as shown.
  * @see http://asa.hmnao.com/SecK/Constants.html
+ * @see https://doi.org/10.3847/0004-6256/152/2/41
  */
 /** @{ */
 #define LAL_ROT_DAY 1.00273781191135448 /**< Number of Earth rotations in one UT1 day, dimensionless */
@@ -387,6 +388,17 @@ extern "C" {
 #define LAL_LYR_SI 9460730472580800e0 /**< (Julian) Lightyear, m */
 #define LAL_AU_SI 149597870700e0 /**< Astronomical unit, m */
 #define LAL_PC_SI 3.085677581491367278913937957796471611e16 /**< Parsec, m */
+#define LAL_GMEARTH_SI 3.986004e+14 /**< Nominal Earth mass parameter, m^3 s^-2 */
+#define LAL_REEARTH_SI 6.3781e+6 /**< Nominal Earth equatorial radius, m */
+#define LAL_RPEARTH_SI 6.3568e+6 /**< Nominal Earth polar radius, m */
+#define LAL_GMJUP_SI 1.2668653e+17 /**< Nominal Jupiter mass parameter, m^3 s^-2 */
+#define LAL_REJUP_SI 7.1492e+7 /**< Nominal Jupiter equatorial radius, m */
+#define LAL_RPJUP_SI 6.6854e+7 /**< Nominal Jupiter polar radius, m */
+#define LAL_GMSUN_SI 1.3271244e+20 /**< Nominal solar mass parameter, m^3 s^-2 */
+#define LAL_RSUN_SI 6.957e+8 /**< Nominal solar radius, m */
+#define LAL_SSUN_SI 1361e0 /**< Nominal total solar irradiance, W m^-2 */
+#define LAL_LSUN_SI 3.828e+26 /**< Nominal solar luminosity, W */
+#define LAL_TSUN_SI 5772e0 /**< Nominal solar effective temperature, K */
 /** @} */
 
 /**
@@ -445,40 +457,46 @@ extern "C" {
  * 4612.156534 arcseconds per Julian century,
  * converted to cycles per second, at the epoch J2000.0
  * (=2000-01-01T12:00:00Z):
- * 
+ *
  * LAL_EPREC_SI = 4612.156534 / 36525 / 15 / 86400 / LAL_DAYJUL_SI
  *
  * @see Linear (in t) term in Eq. (42) of
  * N. Capitaine, P. T. Wallace and J. Chapront
  * "Expressions for IAU 2000 precession quantities",
  * Astronomy & Astrophysics 412 567 (2003)
- * https://doi.org/10.1051/0004-6361:20031539 
+ * https://doi.org/10.1051/0004-6361:20031539
  */
 #define LAL_EPREC_SI 1.127703867758020059420250393792953007e-12
 
 /**
- * @brief Geocentric gravitational constant, m^3 s^-2 (TCB)
+ * @brief Earth mass parameter, m^3 s^-2 (TCB)
  * @see http://asa.hmnao.com/SecK/Constants.html
  */
-#define LAL_GMEARTH_SI 3.986004418e+14
+#define LAL_GMEARTH_TCB_SI 3.986004418e+14
 
 /**
- * @brief Solar equatorial radius, m
- * @see http://dx.doi.org/10.1088/0004-637X/750/2/135
+ * @brief Earth mass parameter, m^3 s^-2 (TDB)
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */
-#define LAL_RSUN_SI 6.96342e+8
+#define LAL_GMEARTH_TDB_SI 3.986004356e+14
 
 /**
- * @brief Solar luminosity, W
- * @see http://nssdc.gsfc.nasa.gov/planetary/factsheet/sunfact.html
+ * @brief Earth mass parameter, m^3 s^-2 (TT)
+ * @see http://asa.hmnao.com/SecK/Constants.html
  */
-#define LAL_LSUN_SI 3.846e+26
+#define LAL_GMEARTH_TT_SI 3.986004415e+14
 
 /**
  * @brief Solar mass parameter, m^3 s^-2 (TCB)
  * @see http://asa.hmnao.com/SecK/Constants.html
  */
-#define LAL_GMSUN_SI 1.32712442099e+20
+#define LAL_GMSUN_TCB_SI 1.32712442099e+20
+
+/**
+ * @brief Solar mass parameter, m^3 s^-2 (TDB)
+ * @see http://asa.hmnao.com/SecK/Constants.html
+ */
+#define LAL_GMSUN_TDB_SI 1.32712440041e+20
 
 /**
  * @brief Tropical year (2000), s
@@ -518,32 +536,74 @@ extern "C" {
 #define LAL_SINIEARTH 0.397776969112605992551264763661918798
 
 /**
- * @brief Earth mass, kg
+ * @brief Nominal Earth mass, kg
  * @details
  * LAL_MEARTH_SI = LAL_GMEARTH_SI / LAL_G_SI
  */
-#define LAL_MEARTH_SI 5.972168494074284943739418365970963247e24
+#define LAL_MEARTH_SI 5.972167867791378871192484605127129437e24
 
 /**
- * @brief Solar mass, kg
+ * @brief Earth mass, kg (TCB)
+ * @details
+ * LAL_MEARTH_TCB_SI = LAL_GMEARTH_TCB_SI / LAL_G_SI
+ */
+#define LAL_MEARTH_TCB_SI 5.972168494074284943739418365970963247e24
+
+/**
+ * @brief Earth mass, kg (TDB)
+ * @details
+ * LAL_MEARTH_TDB_SI = LAL_GMEARTH_TDB_SI / LAL_G_SI
+ */
+#define LAL_MEARTH_TDB_SI 5.972168401180648157859251157424748663e24
+
+/**
+ * @brief Earth mass, kg (TT)
+ * @details
+ * LAL_MEARTH_TT_SI = LAL_GMEARTH_TT_SI / LAL_G_SI
+ */
+#define LAL_MEARTH_TT_SI 5.972168489579431550874248984912275445e24
+
+/**
+ * @brief Nominal Jupiter mass, kg
+ * @details
+ * LAL_MJUP_SI = LAL_GMJUP_SI / LAL_G_SI
+ */
+#define LAL_MJUP_SI 1.898124597336050222495242946825884362e27
+
+/**
+ * @brief Nominal solar mass, kg
  * @details
  * LAL_MSUN_SI = LAL_GMSUN_SI / LAL_G_SI
  */
-#define LAL_MSUN_SI 1.988409902147041637325262574352366540e30
+#define LAL_MSUN_SI 1.988409870698050731911960804878414216e30
 
 /**
- * @brief Geometrized solar mass, m
+ * @brief Geometrized nominal solar mass, m
  * @details
  * LAL_MRSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI)
  */
-#define LAL_MRSUN_SI 1.476625061404649406193430731479084713e3
+#define LAL_MRSUN_SI 1.476625038050124729627979840144936351e3
 
 /**
- * @brief Geometrized solar mass, s
+ * @brief Geometrized nominal solar mass, s
  * @details
  * LAL_MTSUN_SI = LAL_GMSUN_SI / (LAL_C_SI * LAL_C_SI * LAL_C_SI)
  */
-#define LAL_MTSUN_SI 4.925491025543575903411922162094833998e-6
+#define LAL_MTSUN_SI 4.925490947641266978197229498498379006e-6
+
+/**
+ * @brief Solar mass, kg (TCB)
+ * @details
+ * LAL_MSUN_TCB_SI = LAL_GMSUN_TCB_SI / LAL_G_SI
+ */
+#define LAL_MSUN_TCB_SI 1.988409902147041637325262574352366540e30
+
+/**
+ * @brief Solar mass, kg (TDB)
+ * @details
+ * LAL_MSUN_TDB_SI = LAL_GMSUN_TDB_SI / LAL_G_SI
+ */
+#define LAL_MSUN_TDB_SI 1.988409871312347362270200620289768215e30
 
 /**
  * @brief Ratio of mean solar day to sidereal day, dimensionless
@@ -656,4 +716,4 @@ extern "C" {
 #ifdef  __cplusplus
 }
 #endif
-#endif /* _LALCONSTANTS_H */ 
+#endif /* _LALCONSTANTS_H */

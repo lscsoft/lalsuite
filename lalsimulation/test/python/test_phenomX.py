@@ -129,18 +129,18 @@ def test_IMRPhenomXHM():
 
     """
 
-    expected_result = np.array([1005.1602387413318, 170.00035596090245, 768.1841403827161, 169.12938008572488])
+    expected_result = np.array([1005.16009183, 169.88197475, 768.18401876, 169.12711241])
 
     new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXHM, [[2,2],[2,-2],[2,1],[2,-1],[3,3],[3,-3],[4,4],[4,-4]]))
 
     np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomXHM no 32 mode test failed")
 
-    expected_result = np.array([32.17820078828559, 215.95386544772447, 4.022275098535691, 215.9538654477245])
+    expected_result = np.array([ 32.17818789, 216.01992794,   4.02227349, 215.97103911])
 
     new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomXHM, [[3,2],[3,-2]]))
 
     # rtol with 32 mode needs to b more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=3e-4, err_msg="IMRPhenomXHM 32 mode test failed")
+    np.testing.assert_allclose(new_result, expected_result, rtol=3.1e-4, err_msg="IMRPhenomXHM 32 mode test failed")
 
 
 def test_IMRPhenomXP():
@@ -176,7 +176,7 @@ def test_IMRPhenomXPHM():
 
     """
 
-    expected_result = np.array([1166.0110734324703, 334.37564200163365, 767.8213461946891, 326.0800374360311])
+    expected_result = np.array([1166.01091848, 334.5693217,  767.82099062, 326.09652364])
 
     new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[2,2],[2,1],[3,3],[4,4]]))
 

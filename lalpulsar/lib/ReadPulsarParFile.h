@@ -64,6 +64,10 @@ extern "C" {
 /* the difference between TDT/TT and the GPS epoch */
 #define GPS_TDT (TDT_TAI + XLAL_EPOCH_GPS_TAI_UTC)
 
+/* to do conversions consistent with adopted constants in TEMPO2 */
+/* see: https://bitbucket.org/psrsoft/tempo2/src/fb2279f50513573e1c6cd9dacb582c4b6016fc92/DDSmodel.C#lines-44 */
+#define LALPULSAR_TEMPO2_MTSUN_SI 4.925490947e-6 /* value of GMsun/c^3 used in TEMPO2 */
+#define LALPULSAR_TEMPO2_MSUN_SI (LALPULSAR_TEMPO2_MTSUN_SI * LAL_MPL_SI / LAL_TPL_SI) /* derived value of Msun */
 
 /** An enumerated type for denoting the type of a variable. Several LAL types are supported. */
 typedef enum tagPulsarParamType {
