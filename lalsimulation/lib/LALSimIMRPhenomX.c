@@ -388,6 +388,101 @@ int XLALSimIMRPhenomXASGenerateFD(
    return XLAL_SUCCESS;
  }
 
+ /**
+  * Compute the duration of IMRPhenomXAS using the approximate SPA relation \f$t_f \sim \frac{1}{2 \pi} \frac{d \varphi}{d f} \f$
+  *
+  * All input parameters should be in SI units. Angles should be in radians.
+  *
+  * XLALSimIMRPhenomXASDuration() returns the duration in s of IMRPhenomXAS from the specified starting frequency in Hz up to
+  * the peak ringdown frequency as defined in Eq. 5.14 of https://arxiv.org/abs/2001.11412.
+  */
+ double XLALSimIMRPhenomXASDuration(
+   const REAL8 m1_SI,     /**< mass of companion 1 (kg) */
+   const REAL8 m2_SI,     /**< mass of companion 2 (kg) */
+   const REAL8 chi1L,     /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+   const REAL8 chi2L,     /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+   const REAL8 f_start    /**< Initial frequency (Hz) */
+ )
+ {
+   if(m1_SI       <= 0.0) { XLAL_ERROR(XLAL_EDOM, "m1 must be positive.\n");                                         }
+   if(m2_SI       <= 0.0) { XLAL_ERROR(XLAL_EDOM, "m2 must be positive.\n");                                         }
+   if(f_start     <= 0.0) { XLAL_ERROR(XLAL_EDOM, "f_start must be positive.\n");                                    }
+   if(fabs(chi1L)  > 1.0) { XLAL_ERROR(XLAL_EDOM, "Unphysical chi_1 requested: must obey the Kerr bound [-1,1].\n"); }
+   if(fabs(chi2L)  > 1.0) { XLAL_ERROR(XLAL_EDOM, "Unphysical chi_2 requested: must obey the Kerr bound [-1,1].\n"); }
+
+   /* Set debug status here */
+   int debug = PHENOMXDEBUG;
+
+   /* Initialize useful powers of LAL_PI */
+   int status = IMRPhenomX_Initialize_Powers(&powers_of_lalpi, LAL_PI);
+   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.");
+
+   LALDict *lal_dict;
+   lal_dict   = XLALCreateDict();
+
+   /* Initialize IMR PhenomX Waveform struct and check that it initialized correctly */
+   IMRPhenomXWaveformStruct *pWF;
+   pWF        = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
+   status     = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0, f_start, f_start, 0, 0, 1.0, 0.0, lal_dict, debug);
+   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
+
+   /* Allocate and initialize the PhenomX 22 amplitude coefficients struct */
+   IMRPhenomXAmpCoefficients *pAmp22;
+   pAmp22     = XLALMalloc(sizeof(IMRPhenomXAmpCoefficients));
+   status     = IMRPhenomXGetAmplitudeCoefficients(pWF,pAmp22);
+   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetAmplitudeCoefficients failed.\n");
+
+   /* Allocate and initialize the PhenomX 22 phase coefficients struct */
+   IMRPhenomXPhaseCoefficients *pPhase22;
+   pPhase22 = XLALMalloc(sizeof(IMRPhenomXPhaseCoefficients));
+   status   = IMRPhenomXGetPhaseCoefficients(pWF,pPhase22);
+   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetPhaseCoefficients failed.\n");
+
+   /* Initialize a struct containing useful powers of Mf at fRef */
+   IMRPhenomX_UsefulPowers powers_of_MfRef;
+   status = IMRPhenomX_Initialize_Powers(&powers_of_MfRef,pWF->MfRef);
+   XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for MfRef.\n");
+
+   /* Get phase connection coefficients */
+   IMRPhenomX_Phase_22_ConnectionCoefficients(pWF,pPhase22);
+
+   /* 1/eta is used to re-scale phase */
+   REAL8 inveta      = (1.0 / pWF->eta);
+
+   REAL8 duration    = 0.0;
+   double M_sec      = LAL_MTSUN_SI * (m1_SI + m2_SI) / LAL_MSUN_SI;
+
+   double dphi_start = 0.0;
+   double dphi_end   = 0.0;
+
+   /* Starting frequency in geometric units */
+   double Mf_start   = f_start * M_sec;
+   /* Approximate peak of the ringdown in geometric units, see Eq. 5.14 of https://arxiv.org/abs/2001.11412 */
+   double Mf_end     = pAmp22->fAmpRDMin;
+
+   IMRPhenomX_UsefulPowers powers_of_Mf;
+   status = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf_start);
+   XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for Mf_start.\n");
+   dphi_start        = inveta * IMRPhenomX_dPhase_22(Mf_start, &powers_of_Mf, pPhase22, pWF);
+
+   status = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf_end);
+   XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for Mf_end.\n");
+   dphi_end          = inveta * IMRPhenomX_dPhase_22(Mf_end, &powers_of_Mf, pPhase22, pWF);
+
+   /*
+      - Convert from geometric back to physical units to report the duration in s
+      - Use fabs as we want to report the duration as the time to merger
+   */
+   duration          = fabs(dphi_start - dphi_end) / 2.0 / LAL_PI * M_sec;
+
+   /* Free up arrays */
+   LALFree(pAmp22);
+   LALFree(pPhase22);
+   LALFree(pWF);
+   XLALDestroyDict(lal_dict);
+   return duration;
+ }
+
  /** @} */
  /** @} */
 
@@ -685,87 +780,6 @@ int IMRPhenomXCheckForUniformFrequencies(
 
   return IsUniform;
 };
-
-
-
-double XLALSimIMRPhenomXASDuration(
-  const REAL8 m1_SI,     /**< mass of companion 1 (kg) */
-  const REAL8 m2_SI,     /**< mass of companion 2 (kg) */
-  const REAL8 chi1L,     /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
-  const REAL8 chi2L,     /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
-  const REAL8 f_start    /**< Initial frequency (Hz) */
-)
-{
-  if(m1_SI       <= 0.0) { XLAL_ERROR(XLAL_EDOM, "m1 must be positive.\n");                                         }
-  if(m2_SI       <= 0.0) { XLAL_ERROR(XLAL_EDOM, "m2 must be positive.\n");                                         }
-  if(f_start     <= 0.0) { XLAL_ERROR(XLAL_EDOM, "f_start must be positive.\n");                                    }
-  if(fabs(chi1L)  > 1.0) { XLAL_ERROR(XLAL_EDOM, "Unphysical chi_1 requested: must obey the Kerr bound [-1,1].\n"); }
-  if(fabs(chi2L)  > 1.0) { XLAL_ERROR(XLAL_EDOM, "Unphysical chi_2 requested: must obey the Kerr bound [-1,1].\n"); }
-
-  /* Set debug status here */
-  int debug = PHENOMXDEBUG;
-
-  /* Initialize useful powers of LAL_PI */
-  int status = IMRPhenomX_Initialize_Powers(&powers_of_lalpi, LAL_PI);
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.");
-
-  LALDict *lal_dict;
-  lal_dict   = XLALCreateDict();
-
-  /* Initialize IMR PhenomX Waveform struct and check that it initialized correctly */
-  IMRPhenomXWaveformStruct *pWF;
-  pWF        = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-  status     = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0, f_start, f_start, 0, 0, 1.0, 0.0, lal_dict, debug);
-  XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
-
-  /* Allocate and initialize the PhenomX 22 amplitude coefficients struct */
-  IMRPhenomXAmpCoefficients *pAmp22;
-  pAmp22     = XLALMalloc(sizeof(IMRPhenomXAmpCoefficients));
-  status     = IMRPhenomXGetAmplitudeCoefficients(pWF,pAmp22);
-  XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetAmplitudeCoefficients failed.\n");
-
-  /* Allocate and initialize the PhenomX 22 phase coefficients struct */
-  IMRPhenomXPhaseCoefficients *pPhase22;
-  pPhase22 = XLALMalloc(sizeof(IMRPhenomXPhaseCoefficients));
-  status   = IMRPhenomXGetPhaseCoefficients(pWF,pPhase22);
-  XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXGetPhaseCoefficients failed.\n");
-
-  /* Initialize a struct containing useful powers of Mf at fRef */
-  IMRPhenomX_UsefulPowers powers_of_MfRef;
-  status = IMRPhenomX_Initialize_Powers(&powers_of_MfRef,pWF->MfRef);
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for MfRef.\n");
-
-  /* Get phase connection coefficients */
-  IMRPhenomX_Phase_22_ConnectionCoefficients(pWF,pPhase22);
-
-  /* 1/eta is used to re-scale phase */
-  REAL8 inveta      = (1.0 / pWF->eta);
-
-  REAL8 duration    = 0.0;
-  double M_sec      = LAL_MTSUN_SI * (m1_SI + m2_SI) / LAL_MSUN_SI;
-
-  double dphi_start = 0.0;
-  double dphi_end   = 0.0;
-  double Mf_start   = f_start * M_sec;
-  double Mf_end     = 0.3;
-
-  IMRPhenomX_UsefulPowers powers_of_Mf;
-  status = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf_start);
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for Mf_start.\n");
-  dphi_start        = inveta * IMRPhenomX_dPhase_22(Mf_start, &powers_of_Mf, pPhase22, pWF);
-
-  status = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf_end);
-  XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for Mf_end.\n");
-  dphi_end          = inveta * IMRPhenomX_dPhase_22(Mf_end, &powers_of_Mf, pPhase22, pWF);
-
-  /* fabs as we always want to report the duration as the time taken to go from start to end */
-  duration          = fabs(dphi_start - dphi_end) / 2.0 / LAL_PI * M_sec;
-
-  LALFree(pWF);
-  XLALDestroyDict(lal_dict);
-  return duration;
-}
-
 
 
 /* ******** PRECESSING IMR PHENOMENOLOGICAL WAVEFORM: IMRPhenomXP ********* */
