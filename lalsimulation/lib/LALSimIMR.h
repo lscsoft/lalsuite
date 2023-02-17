@@ -433,6 +433,14 @@ int XLALSimIMRPhenomXASFrequencySequence(
   LALDict *lalParams
 );
 
+double XLALSimIMRPhenomXASDuration(
+  REAL8 m1_SI,     /**< mass of companion 1 (kg) */
+  REAL8 m2_SI,     /**< mass of companion 2 (kg) */
+  REAL8 chi1L,     /**< z-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
+  REAL8 chi2L,     /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
+  REAL8 f_min      /**< Starting frequency for waveform (Hz) */
+);
+
 int XLALSimIMRPhenomXPMSAAngles(
  REAL8Sequence **alpha_of_f,        /**< [out] The azimuthal angle of L around J */
  REAL8Sequence **gamma_of_f,        /**< [out] The third Euler angle describing L with respect to J. Fixed by minmal rotation condition. */
@@ -630,7 +638,7 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
 );
 
 int XLALSimIMRPhenomXHMAmplitude(
-    REAL8Sequence **amplitude,           /**< [out] FD amp */    
+    REAL8Sequence **amplitude,           /**< [out] FD amp */
     const REAL8Sequence *freqs,          /**< Input Frequency Array (Hz) */
     UINT4 ell,                           /**< l index of the mode */
     INT4 emm,                            /**< m index of the mode */
