@@ -64,7 +64,6 @@ MOSTLYCLEANFILES = \
 
 EXTRA_DIST += \
 	ComputeCalibrationFactorsTest.c \
-	ResampleTimeSeriesTest.c \
 	indTestDetResGEO.cfg \
 	indTestDetResLHO.cfg \
 	indTestDetResLLO.cfg \
