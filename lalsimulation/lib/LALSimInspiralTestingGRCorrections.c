@@ -224,11 +224,14 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
 	pfa->v[4] += siqm_2pn_kappaA*XLALSimInspiralWaveformParamsLookupNonGRDChikappaA(LALpars);
     }
 
-    if (XLALDictContains(LALpars,"dchi5"))
+    if (XLALDictContains(LALpars,"dchi5") || XLALDictContains(LALpars,"dchi5NS") || XLALDictContains(LALpars,"dchi5S"))
     {
         pfa->v[5] = 5.L/9.L * (7729.L/84.L - 13.L * eta) * LAL_PI;
         pfa->v[5] += -1.L * pn_gamma;
         pfa->v[5] *= XLALSimInspiralWaveformParamsLookupNonGRDChi5(LALpars);
+
+/* Splitting the deviation parameter into spin and no-spin parts and then adding them here */
+        pfa->v[5] += (5.L/9.L * (7729.L/84.L - 13.L * eta) * LAL_PI)*XLALSimInspiralWaveformParamsLookupNonGRDChi5NS(LALpars) - 1.L*pn_gamma*XLALSimInspiralWaveformParamsLookupNonGRDChi5S(LALpars)
     }
     if (XLALDictContains(LALpars,"dchi5l") || XLALDictContains(LALpars,"dchi5lNS") || XLALDictContains(LALpars,"dchi5lS"))
     {

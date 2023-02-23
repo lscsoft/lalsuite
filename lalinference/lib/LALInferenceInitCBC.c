@@ -2396,6 +2396,8 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
 	if (checkParamInList(ppt->value,"dchi4S")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi4S", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dchi4NS")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi4NS", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dchi5")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi5S")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5S", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
+        if (checkParamInList(ppt->value,"dchi5NS")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5NS", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dchi5l")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5l", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
 	if (checkParamInList(ppt->value,"dchi5lS")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5lS", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);
         if (checkParamInList(ppt->value,"dchi5lNS")) LALInferenceRegisterUniformVariableREAL8(state, model->params, "dchi5lNS", tmpVal, dchi_min, dchi_max, LALINFERENCE_PARAM_LINEAR);

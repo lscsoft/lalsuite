@@ -204,6 +204,8 @@ int XLALSimInspiralWaveformParamsNonGRAreDefault(LALDict *params)
           && XLALSimInspiralWaveformParamsNonGRDChi4SIsDefault(params)
           && XLALSimInspiralWaveformParamsNonGRDChi4NSIsDefault(params)
 	  && XLALSimInspiralWaveformParamsNonGRDChi5IsDefault(params)
+          && XLALSimInspiralWaveformParamsNonGRDChi5SIsDefault(params)
+          && XLALSimInspiralWaveformParamsNonGRDChi5NSIsDefault(params)
 	  && XLALSimInspiralWaveformParamsNonGRDChi5LIsDefault(params)
 	  && XLALSimInspiralWaveformParamsNonGRDChi5LSIsDefault(params)
           && XLALSimInspiralWaveformParamsNonGRDChi5LNSIsDefault(params)
@@ -242,9 +244,9 @@ int XLALSimInspiralWaveformParamsNonGRAreDefault(LALDict *params)
 	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE6IsDefault(params)
 	  && XLALSimInspiralWaveformParamsNonGRAlphaPPE7IsDefault(params)
 	  && XLALSimInspiralWaveformParamsdQuadMon1IsDefault(params)
-	  && XLALSimInspiralWaveformParamsdQuadMon2IsDefault(params))
+	  && XLALSimInspiralWaveformParamsdQuadMon2IsDefault(params)
 	  && XLALSimInspiralWaveformParamsNonGRDChikappaSIsDefault(params)
-	  && XLALSimInspiralWaveformParamsNonGRDChikappaAIsDefault(params);
+	  && XLALSimInspiralWaveformParamsNonGRDChikappaAIsDefault(params));
 }
 
 /** @} */
