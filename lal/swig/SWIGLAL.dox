@@ -1,0 +1,327 @@
+/**
+
+\page swiglal_tutorial SWIG Interface Tutorial
+\author Karl Wette
+\brief A short tutorial on using the Python SWIG interface to LALSuite.
+\ingroup lal_swig
+
+### Installing the interface
+
+-# Install the relevant packages, e.g.:
+   - Conda: `conda install python-lal`
+   - Pip: `pip install lalsuite`
+   - Debian: `apt install python3-lal`
+   - Red Hat, CentOS, etc.: `yum install python3-lal`
+
+   If you instead wish to build LALSuite from source, see the
+   <a href="https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md">LALSuite README</a>
+   for instructions.
+
+-# You should then be able to successfully run
+   \code{.py}
+   >>> import lal
+   \endcode
+   from a Python interpreter.
+
+  - If instead you see an error like this:
+  `ImportError: .../lal/_lal.so: undefined symbol: XLALSomeFunction`,
+  that could indicate that:
+     - you've compiled LALSuite incorrectly, e.g. you might be linking against a system-installed
+       version of LALSuite instead of your local build;
+     - you've added a new function declaration `XLALSomeFunction()` to a LALSuite C header (`.h`) file,
+       but failed to add the corresponding definition
+       of `XLALSomeFunction()` in a LALSuite C source (`.c`) file, or failed to list a new C source file
+       in the appropriate `Makefile.am` file.
+
+-# You can run
+   \code{.py}
+   >>> import lal
+   >>> print(lal.VCSInfoString(lal.VCSInfoList, True, ""))
+   \endcode
+   to check that you've loaded the right LALSuite version, especially if you have both system-installed
+   and built-from-source versions on the same machine.
+
+
+### Using the interface
+
+-# The SWIG interface is intended to closely match the underlying LALSuite C libraries. If you are not familiar
+   with using the LALSuite C libraries, you may first want to consult the documentation or source code for the
+   particular functions you need, to understand how to use them correctly.
+
+-# Calling LALSuite functions from Python through the SWIG interface should generally be similar to calling
+   the underlying C function. For example, the following C code:
+   \code{.c}
+   LIGOTimeGPS epoch = {123456789, 0};
+   REAL4TimeSeries *ts = XLALCreateREAL4TimeSeries("timeseries", &epoch, 0.0, 1.0/100, lalVoltUnit, 10);
+   XLAL_CHECK(ts != NULL, XLAL_EFUNC);
+   XLALDestroyREAL4TimeSeries(ts);
+   \endcode
+   translates to the following Python code:
+   \code{.py}
+   >>> ts = lal.CreateREAL4TimeSeries("timeseries", 123456789.0, 1.0/100, lal.VoltUnit, 10);
+   \endcode
+   Note the following differences:
+
+   - Common prefixes to C library function/constant/etc. names are stripped from the Python interface,
+     e.g. XLALCreateREAL4TimeSeries() becomes `lal.CreateREAL4TimeSeries()`,
+     #lalVoltUnit becomes `lal.VoltUnit`. (As usual in Python, all functions, constants, classes, etc.
+     are under the `lal` namespace unless you specifically `import` them as different names, e.g.
+     `from lal import VoltUnit as Volts`.)
+
+   - Types of variables (i.e. `ts`) do not need to be explicitly declared in Python, unlike in C.
+
+   - Variables of type LIGOTimeGPS can be instantiated directly from a floating-point GPS time
+     (i.e. `123456789.0`) without needing to specifically create a LIGOTimeGPS class instance. If you
+     need greater control, you can also use a specific LIGOTimeGPS constructor, e.g.
+     `LIGOTimeGPS(123456789, 321)` to specify exact nanosecond values.
+
+   - There are no need for explicit error-checking statements equivalent to e.g. `XLAL_CHECK()` in LALSuite
+     C code. If the call to `lal.CreateREAL4TimeSeries()` fails, a Python exception will be raised instead.
+
+   - There is no need to explicitly destroy class instances created by LALSuite functions. The SWIG interface
+     automatically tracks the memory of these objects and frees them when they are no longer needed. In this
+     way LALSuite classes have the same memory behaviour as ordinary Python classes. If you do need to
+     explicitly destroy a LALSuite class instance, use `del`, e.g.:
+     \code{.py}
+     >>> del ts
+     \endcode
+
+-# Most LALSuite C function arguments have obvious translations to Python, e.g. string, integer and
+   floating-point numbers. Some less obvious/exceptional cases are:
+
+   - Pointers to primitive types, e.g. `int/INT*`, `float/REAL*`, are treated as output-only scalar arguments
+     by default. For example:
+     \code{.c}
+     REAL4 input_value = 123.4;
+     REAL4 return_value;
+     XLALSomeFunction(input_value, &return_value);
+     \endcode
+     is equivalent to
+     \code{.py}
+     >>> input_value = 123.4
+     >>> return_value = lal.SomeFunction(input_value)
+     \endcode
+
+   - Double pointers to C structs, e.g. `REAL4TimeSeries**`, are also treated as output-only arguments by
+     default. For examples:
+     \code{.c}
+     REAL4TimeSeries *hplus = NULL;
+     REAL4TimeSeries *hcross = NULL;
+     XLALMyWaveformFunction(&hplus, &hcross, ...);   // hplus and hcross are allocated by this function
+     \endcode
+     is equivalent to
+     \code{.py}
+     >>> hplus, hcross = lal.MyWaveformFunction(...)
+     \endcode
+
+  If the above default rules aren't correct for a particular function, you will need to adjust the behaviour
+  of the interface by adding `SWIGLAL()` directives to the LALSuite C header.
+  For example, the following function:
+  \code{.c}
+  #ifdef SWIG /* SWIG interface directives */
+  SWIGLAL(INOUT_SCALARS(REAL8*, input_output_value));
+  #endif
+  XLALModifyValue(REAL8*, input_output_value);
+  \endcode
+  is wrapped as
+  \code{.py}
+  >>> input_output_value = lal.ModifyValue(input_output_value)
+  # default interface would be: input_output_value = lal.ModifyValue()
+  \endcode
+  See the documentation for \ref SWIGCommon_i for more `SWIGLAL()` directives.
+
+  (In some cases, you may have to refactor the LALSuite C function so that it can be wrapped by the SWIG
+  interface. For example, the SWIG interface does not recognise C array pointers (e.g. `REAL4 *data`) as
+  function arguments; instead use a LALSuite array type such as REAL4Vector to represent such arguments.)
+
+-# Most LALSuite C structs are translated into Python classes which behave in a similar way:
+
+   - Many C structs in LALSuite have an associated function `XLALCreate...()` which is used to create a new
+     instance of that struct, including allocating any memory the struct needs to point to. The equivalent
+     Python classes can also be instantiated used the same `lal.Create...()` constructor functions.
+
+   - Other C structs in LALSuite have no explicit constructor function; in C, these structs would either be
+     created dynamically with XLALMalloc() / XLALCalloc(), or statically as a struct variable. To create a new
+     instance of the equivalent classes in Python, use a Python constructor call as for ordinary Python
+     classes. For example, these declarations of new LALDetector variables:
+     \code{.c}
+     LALDetector *det1 = XLALCalloc(1, sizeof(LALDetector));   // dynamic memory
+     LALDetector det2; memset(det2, 0, sizeof(LALDetector));   // static memory
+     \endcode
+     are equivalent to
+     \code{.py}
+     >>> det = lal.Detector()
+     \endcode
+
+   - A few LALSuite C structs are handled specially: LIGOTimeGPS and LALUnit. These structs act more like
+     primitive types, e.g. a LIGOTimeGPS acts like a number which can be added, subtracted, etc.
+     The equivalent Python classes for LIGOTimeGPS and LALUnit behave more closely to how one would expect
+     a native Python class to behave:
+
+     - new instances e.g. of LIGOTimeGPS are created with the `lal.LIGOTimeGPS()` constructor, which takes
+       either floating-point, integer seconds/nanoseconds, or string arguments;
+     - instances of LIGOTimeGPS may be added, subtracted, multiplied, etc. to create new GPS times;
+     - instances of LALUnit may be multiplied, divided, etc. to create new units.
+
+     Some example usage:
+     \code{.py}
+     >>> from lal import LIGOTimeGPS
+     >>> t = LIGOTimeGPS(1234, 567)
+     >>> print(t)
+     1234.000000567
+     >>> print(t.asutcstr())
+     Sun, 06 Jan 1980 00:20:34.000000567 +0000
+     >>> t == LIGOTimeGPS("1234.000000567")
+     True
+     >>> print(t + 789)
+     2023.000000567
+     >>> print(t * 3)
+     3702.000001701
+     >>> from lal import MeterUnit, KiloGramUnit, SecondUnit, NewtonUnit
+     >>> print(MeterUnit * KiloGramUnit / SecondUnit**2)
+     m kg s^-2
+     >>> MeterUnit * KiloGramUnit / SecondUnit**2 == NewtonUnit
+     True
+     \endcode
+
+     See the documentation for \ref SWIGLALOmega_i for complete documentation of LIGOTimeGPS and LALUnit.
+
+-# <a href="https://numpy.org/">NumPy</a> arrays are used extensively by the Python interface:
+
+   - For input arguments to LALSuite functions, C types which represent pure arrays, e.g.  LALSuite
+     types such as REAL4Vector, or <a href="https://www.gnu.org/software/gsl/">GSL</a> types such as \c gsl_vector
+     or \c gsl_matrix, can be substituted with a NumPy array of the appropriate size and
+     type.  (A REAL4TimeSeries, however, cannot be substituted with a NumPy array, as REAL4TimeSeries
+     includes additional metadata e.g. the starting GPS time and sampling frequency of the time series.)
+
+   - For C structs which contain pointers to arrays, the equivalent Python classes contain NumPy arrays.
+     Examples:
+     - The REAL4Vector C struct
+       \code{.c}
+       typedef struct tagREAL4Vector {
+       #ifdef SWIG      /* SWIG interface directives */
+         SWIGLAL(ARRAY_STRUCT_1D(REAL4Vector, REAL4, data, UINT4, length));
+       #endif
+         UINT4 length;  /**< Number of elements in array. */
+         REAL4 *data;   /**< Pointer to the data array. */
+       } REAL4Vector;
+       \endcode
+       is wrapped as a Python class `lal.REAL4Vector` with a read-only `length` attribute, and a
+       `data` attribute which is a NumPy array of `length` elements with `dtype=float32`.
+     - The LALPulsar C struct \c MultiSFTVector contains an array over detectors of \c SFTVector elements, which
+       are themselves arrays over time of \c SFTtype elements, which represent SFTs (Short Fourier Transforms)
+       of Fourier-domain gravitational wave data. The equivalent Python \c MultiSFTVector class contains a
+       NumPy array of \c SFTVector classes, each of which contains a NumPy array of \c SFTtype classes.
+
+   - Wherever possible, NumPy arrays in C structs serve the underlying data as a \a view, i.e. each element of
+     the NumPy array directly accesses the representation of the element in the C array (as opposed to copying
+     the entire array from LALSuite/C memory into Python memory). This is always possible for NumPy arrays of
+     primitive types (e.g. floating-point numbers in a REAL4Vector) but not for NumPy arrays whose elements
+     are Python classes representing C structs (e.g. a \c SFTVector class which contains an array of \c SFTtype
+     elements).
+
+     To avoid modifying the C struct data, copy the NumPy array using `copy.copy()`:
+     \code{.py}
+     >>> import lal
+     >>> v = lal.CreateREAL4Vector(3)
+     >>> v.data = [1,2,3]
+     >>> from copy import copy
+     >>> v_data_copy = copy(v.data)
+     >>> v_data_copy[0] = 9
+     >>> print(v.data)
+     [1. 2. 3.]
+     >>> print(v_data_copy)
+     [9. 2. 3.]
+     \endcode
+
+-# NumPy's <a href="https://numpy.org/doc/stable/user/basics.types.html">basic types</a> are considered equivalent to
+   the appropriate Python/C types. For example, the Python interface to a function which takes a `REAL4`
+   argument should accept any scalar of type `float`, `np.float`, `np.float32`, etc.
+
+
+### Advanced topics
+
+-# The SWIG interface has a concept of memory \a ownership: which Python class instance owners the underlying C
+   memory in LALSuite, and therefore which Python class instance calls XLALFree() to free the C memory when it is no
+   longer needed.
+
+   Generally speaking, you shouldn't need to worry about memory ownership, as the SWIG interface takes care
+   to ensure that C memory is not freed until it can no longer be accessed. In this sense Python classes
+   wrapping LALSuite C structs should behave like ordinary Python classes. There are some advanced
+   circumstances however where care with memory ownership semantics needs to be taken:
+
+   - The first rule is that a C struct owns any memory it points to through a pointer field. For example,
+     given the following code:
+     \code{.c}
+     typedef struct tagREAL4Vector {
+       ...
+       REAL4 *data;
+     } REAL4Vector;
+     typedef struct tagREAL4TimeSeries {
+       ...
+       REAL4Vector *data;
+     } REAL4TimeSeries;
+     REAL4TimeSeries *ts = XLALCreateREAL4TimeSeries(...)
+     \endcode
+     the `ts` variable in Python will own the C memory of the `REAL4TimeSeries` struct, the C memory of
+     the `REAL4Vector` struct, and the C memory pointed to by the `REAL4 *data` field.
+
+     The SWIG interface tracks the memory ownership when Python class attributes are accessed, and ensures
+     that C memory is freed only once it can no longer be accessed.  Consider the following example:
+     \code{.py}
+     >>> import lal
+     >>> ts = lal.CreateREAL4TimeSeries("timeseries", 1234567890.0, 0, 1./100, lal.VoltUnit, 10)
+     >>> ts.data.data = range(0,10)
+     >>> print(ts.data.data)
+     [0. 1. 2. 3. 4. 5. 6. 7. 8. 9.]
+     >>> ts_data = ts.data              # store a reference to `ts.data` in `ts_data`
+     >>> del ts                         # `ts_data` still points to C memory owned by
+                                        # `ts`, so don't free its C memory just yet
+     >>> print(ts_data.data)
+     [0. 1. 2. 3. 4. 5. 6. 7. 8. 9.]    # array stored in C memory can still be accessed
+     >>> del ts_data                    # with `ts` and `ts_data` deleted, underlying C
+                                        # memory can no longer be accessed, so can now
+                                        # free all C memory owned by `ts`
+     \endcode
+
+   - The second rule is that memory ownership is transferred when a pointer is assigned to a field in another
+     struct, e.g.
+     \code{.c}
+     REAL4Vector *v = XLALCreateREAL4Vector(10);
+     REAL4TimeSeries *ts = XLALCalloc(1, sizeof(REAL4TimeSeries);
+     ts.data = v;                       // `ts` now owns the memory pointed to by `v`
+     \endcode
+
+     The equivalent code should work in Python, provided that the Python class attribute (C struct field)
+     being assigned to is a null pointer, e.g.:
+     \code{.py}
+     >>> import lal
+     >>> v = lal.CreateREAL4Vector(10)  # create a new REAL4Vector
+     >>> ts = lal.REAL4TimeSeries()     # explicitly create a new REAL4TimeSeries; `data` attribute is null
+     >>> ts.data = v                    # `ts.data` assigned to `v`; `ts` takes ownership of memory of `v`
+     >>> ts.data.data = range(0,10)
+     >>> print(ts.data.data)
+     [0. 1. 2. 3. 4. 5. 6. 7. 8. 9.]
+     >>> ts_data = ts.data
+     >>> del ts
+     >>> print(ts_data.data)
+     [0. 1. 2. 3. 4. 5. 6. 7. 8. 9.]
+     >>> del ts_data
+     \endcode
+
+     If, however, `ts.data` was not a null pointer in the above example, this would lead to a memory leak
+     (consistent with the behaviour of the equivalent code in C).
+
+   - For the SWIG interface memory ownership semantics to function correctly, all LALSuite C structs
+     should follow these rules:
+     - Any C struct which contains a field of pointer type should also have a `XLALDestroy...()` function
+       which correctly frees any memory assigned to that pointer field.
+     - C structs should not contain struct variables, only pointers to struct variables, e.g.:
+       \code{.c}
+       typedef struct tagSomeStruct {
+         REAL4Vector *v;                // pointer to struct variable; good
+         REAL4Vector  z;                // struct variable; bad
+       } SomeStruct;
+       \endcode
+
+*/

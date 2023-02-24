@@ -7,3 +7,7 @@ pkginclude_HEADERS += \
 	SWIGOctave.i \
 	SWIGPython.i \
 	$(END_OF_LIST)
+
+EXTRA_DIST += \
+	SWIGLAL.dox \
+	$(END_OF_LIST)
