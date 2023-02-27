@@ -1883,7 +1883,7 @@ static double GetDeltaphilm(int l, int m)
   else if (l==4 && m==4) return LAL_PI;
   else if (l==5 && m==5) return LAL_PI/2;
   else if (l==3 && m==2) return 0;
-  else if (l==4 && m==3) return LAL_PI/2;
+  else if (l==4 && m==3) return -LAL_PI/2;
   else XLAL_ERROR(XLAL_EINVAL, "Mode indices (l,m) not recognized.");
 }
 /*

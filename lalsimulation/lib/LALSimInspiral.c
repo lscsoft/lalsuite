@@ -867,6 +867,10 @@ int XLALSimInspiralChooseTDWaveform(
             ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
          break;
 
+        case SEOBNRv5_ROM:
+            ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant);
+         break;
+
         case PhenSpinTaylorRD:
             /* Waveform-specific sanity checks */
             if( !checkTidesZero(lambda1, lambda2) )
