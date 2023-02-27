@@ -10,11 +10,14 @@
 .koji:authentication:
   image: igwn/koji-client:el7
   before_script:
-    # initialise keytab for communication with koji server
-    - echo "${ROBOT_KEYTAB}" | base64 -d | install -m 0600 /dev/stdin keytab
-    - PRINCIPAL=$(klist -k keytab | head -n 4 | tail -n 1 | sed -E 's/^.* +//')
-    - kinit $PRINCIPAL -k -t keytab
-    - klist
+    # initialise keytab (if present) for communication with koji server
+    - |
+      if [ "X${ROBOT_KEYTAB}" != X ]; then
+        echo "${ROBOT_KEYTAB}" | base64 -d | install -m 0600 /dev/stdin keytab
+        PRINCIPAL=$(klist -k keytab | head -n 4 | tail -n 1 | sed -E 's/^.* +//')
+        kinit $PRINCIPAL -k -t keytab
+        klist
+      fi
 
 # build rpm under koji
 .koji:build:
@@ -31,6 +34,12 @@
     - NVR=`basename ${SRCRPM} .src.rpm`
     # lint src.rpm
     - rpmlint ${SRCRPM}
+    # skip rest of job if no authentication present
+    - |
+      if [ "X${ROBOT_KEYTAB}" = X ]; then
+        echo "Skipping rest of job as no authentication present (ROBOT_KEYTAB is empty)"
+        exit 100
+      fi
     # build with koji
     - koji build --background --wait epel7-lalsuite ${SRCRPM}
     # wait for build to show up in koji
@@ -42,6 +51,8 @@
   rules:
     - !reference [.ci-koji, rules]
     - !reference [.ci-nightly-deploy, rules]
+  allow_failure:
+    exit_codes: 100   # no authentication present (ROBOT_KEYTAB is empty)
 
 # -- builds
 
