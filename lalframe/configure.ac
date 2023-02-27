@@ -159,6 +159,40 @@ AS_IF([test "${framec}" = "true"], [
        LALSUITE_ADD_FLAGS([C],[${FRAMECPPC_CFLAGS}],[${FRAMECPPC_LIBS}])
        AC_CHECK_LIB([framecppc],[FrameCFileOpen],,[FRAMEC_AVAILABLE="no"])
        AC_CHECK_HEADERS([framecppc/FrameC.h],,[FRAMEC_AVAILABLE="no"])
+       if test -n "$PKG_CONFIG" && $PKG_CONFIG --exists framecppc ; then
+             AC_MSG_CHECKING([framecppc version])
+             framec_version="`$PKG_CONFIG --modversion framecppc`"
+             AC_MSG_RESULT([$framec_version])
+             framec_version_major=`echo $framec_version | cut -d. -f1`
+             framec_version_minor=`echo $framec_version | cut -d. -f2`
+             framec_version_micro=`echo $framec_version | cut -d. -f3`
+             AC_DEFINE_UNQUOTED([FRAMEC_VERSION],["$framec_version"],[FrameC Version])
+             AC_DEFINE_UNQUOTED([FRAMEC_VERSION_MAJOR],[$framec_version_major],[FrameC Version Major Number])
+             AC_DEFINE_UNQUOTED([FRAMEC_VERSION_MINOR],[$framec_version_minor],[FrameC Version Minor Number])
+             AC_DEFINE_UNQUOTED([FRAMEC_VERSION_MICRO],[$framec_version_micro],[FrameC Version Micro Number])
+       fi
+])
+
+# check to see if fields removed in v9 of frame library are present in framecppc
+AS_IF([test "${FRAMEC_AVAILABLE}" = "yes"], [
+      AC_MSG_CHECKING([if FrameH has ULeapS in framecppc])
+      AC_COMPILE_IFELSE([
+            AC_LANG_SOURCE([[
+                    #include <stddef.h> /* needed for FrameH.h */
+                    #include <framecppc/FrameH.h>
+                    frame_h_uleaps_t uleaps;
+                    int uleaps_field = FRAME_H_FIELD_ULEAPS;
+            ]])
+      ], [AC_MSG_RESULT([yes]) AC_DEFINE([FRAMEC_FRAME_H_HAS_ULEAPS],[],[FrameC FrameH has ULeapS])], [AC_MSG_RESULT([no])])
+      AC_MSG_CHECKING([if FrDetector has localTime in framecppc])
+      AC_COMPILE_IFELSE([
+            AC_LANG_SOURCE([[
+                    #include <stddef.h> /* needed for FrameH.h */
+                    #include <framecppc/FrameH.h>
+                    fr_detector_localtime_t localTime;
+                    int localTime_field = FR_DETECTOR_FIELD_LOCAL_TIME;
+            ]])
+      ], [AC_MSG_RESULT([yes]) AC_DEFINE([FRAMEC_FR_DETECTOR_HAS_LOCAL_TIME],[],[FrameC FrDetector has localTime])], [AC_MSG_RESULT([no])])
 ])
 
 AS_IF([test "${framel}" = "true"], [
@@ -167,6 +201,37 @@ AS_IF([test "${framel}" = "true"], [
        LALSUITE_ADD_FLAGS([C],[${FRAMEL_CFLAGS}],[${FRAMEL_LIBS}])
        AC_CHECK_LIB([framel],[FrLibIni],,[FRAMEL_AVAILABLE="no"])
        AC_CHECK_HEADERS([FrameL.h],,[FRAMEL_AVAILABLE="no"])
+       AC_MSG_CHECKING([framel version])
+       framel_version=""
+       if test -n "$PKG_CONFIG" && $PKG_CONFIG --exists framel ; then
+             framel_version="`$PKG_CONFIG --modversion framel`"
+       else
+             AC_RUN_IFELSE([
+                     AC_LANG_PROGRAM([[
+                             #include <stdio.h>
+                             #include <FrameL.h>
+                     ]], [[
+                             FILE *fp = fopen("conftest.out", "w");
+                             fprintf(fp, "%g", FrLibVersion(NULL));
+                             fclose(fp);
+                     ]])
+             ], [
+                     framel_version="`cat ./conftest.out`"
+             ])
+       fi
+       if test -n "$framel_version" ; then
+             AC_MSG_RESULT([$framel_version])
+             framel_version_major=`echo $framel_version | cut -d. -f1`
+             framel_version_minor=`echo $framel_version | cut -d. -f2`
+             framel_version_micro=`echo $framel_version | cut -d. -f3`
+             AC_DEFINE_UNQUOTED([FRAMEL_VERSION],["$framel_version"],[FrameL Version])
+             AC_DEFINE_UNQUOTED([FRAMEL_VERSION_MAJOR],[$framel_version_major],[FrameL Version Major Number])
+             AC_DEFINE_UNQUOTED([FRAMEL_VERSION_MINOR],[$framel_version_minor],[FrameL Version Minor Number])
+             AC_DEFINE_UNQUOTED([FRAMEL_VERSION_MICRO],[$framel_version_micro],[FrameL Version Micro Number])
+       else
+             AC_MSG_RESULT([could not determine: disabling framel])
+             FRAMEL_AVAILABLE="no"
+       fi
 ])
 
 # make sure a frame library was found
