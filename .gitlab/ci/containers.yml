@@ -21,10 +21,12 @@
     - |
       if [ "X${DEPLOY_DRY_RUN}" = "Xyes" ]; then
         echo "Skipping rest of job as DEPLOY_DRY_RUN='${DEPLOY_DRY_RUN}'"
-        exit 0
+        exit 100
       fi
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push ${IMAGE_NAME}:${IMAGE_TAG}
+  allow_failure:
+    exit_codes: 100   # DEPLOY_DRY_RUN=yes
 
 .docker:nightly:
   extends:

@@ -1623,7 +1623,7 @@ wheel:pypi:
     - |
       if [ "X${DEPLOY_DRY_RUN}" = "Xyes" ]; then
         echo "Skipping rest of job as DEPLOY_DRY_RUN='${DEPLOY_DRY_RUN}'"
-        exit 0
+        exit 100
       fi
     - twine upload wheelhouse/*
   needs:
@@ -1646,3 +1646,5 @@ wheel:pypi:
   rules:
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
+  allow_failure:
+    exit_codes: 100   # DEPLOY_DRY_RUN=yes
