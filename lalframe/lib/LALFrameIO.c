@@ -351,17 +351,21 @@ static int XLALLocalTime(char site, int gpssec)
     case 'H':
         zone = "PST8PDT";
         break;
-    case 'L':
-        zone = "CST6CDT";
+    case 'I':
+        zone = "Asia/Kolkata";
         break;
+    case 'K':
     case 'T':
         zone = "Japan";
+        break;
+    case 'L':
+        zone = "CST6CDT";
         break;
     case 'V':
         zone = "Europe/Rome";
         break;
-    default:   /* use UTC */
-        return 0;
+    default:   /* invalid value indicates unspecified */
+        return 1; /* "If localTime%1800 != 0 then localTime is undefined." */
     }
     orig = getenv("TZ");
     if (orig)
