@@ -6,6 +6,23 @@
 
 workflow:
   rules:
+    # environment variables for nightly deployment build (keep rules in sync with [.ci-nightly-deploy, rules]):
+    # - if the trigger is a scheduled pipeline AND the branch is the main branch at lscsoft/lalsuite, set ENABLE_NIGHTLY
+    # - if the trigger is a commit push AND the commit message contains the text "[ci nightly]", set ENABLE_NIGHTLY, DEPLOY_DRY_RUN
+    - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
+      when: always
+      variables:
+        ENABLE_NIGHTLY: "--enable-nightly"
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ /\[ci nightly\]/'
+      when: always
+      variables:
+        ENABLE_NIGHTLY: "--enable-nightly"
+        DEPLOY_DRY_RUN: "yes"
+    # environment variables for Koji build (keep rule in sync with [.ci-koji, rules]): set ENABLE_NIGHTLY
+    - if: '$CI_COMMIT_MESSAGE =~ /\[ci koji\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]koji/'
+      when: always
+      variables:
+        ENABLE_NIGHTLY: "--enable-nightly"
     # run all other pipelines
     - when: always
 
@@ -55,12 +72,7 @@ workflow:
 .ci-nightly-deploy:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
-      variables:
-        ENABLE_NIGHTLY: "--enable-nightly"
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ /\[ci nightly\]/'
-      variables:
-        ENABLE_NIGHTLY: "--enable-nightly"
-        DEPLOY_DRY_RUN: "yes"
 
 # -- include CI jobs using commit message or branch name
 

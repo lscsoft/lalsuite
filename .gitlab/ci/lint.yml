@@ -24,7 +24,7 @@
     paths:
       - api-reports
   allow_failure:
-    exit_codes: 100
+    exit_codes: 100   # failed to build LALSuite before changes
 
 lint:api-merge-diff:
   extends:
