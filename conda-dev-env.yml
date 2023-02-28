@@ -19,7 +19,7 @@ dependencies:
   - help2man >=1.37
   - igwn-ligolw >=2.1.0
   - igwn-segments
-  - ldas-tools-framecpp <3.0.0a0
+  - ldas-tools-framecpp
   - libframel <9.0.0a0
   - ligo-gracedb
   - lscsoft-glue >=2.0.0
