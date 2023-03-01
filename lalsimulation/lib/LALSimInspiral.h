@@ -505,6 +505,12 @@ typedef enum tagSpinFreq {
   LAL_SIM_INSPIRAL_NUMSPINFREQ  /**< Number of elements in enum, useful for checking bounds */
 } SpinFreq;
 
+typedef enum tagAllowZeroMinFreq {
+  LAL_SIM_INSPIRAL_ALLOW_ZERO_FMIN,   /** These approximants allow f_min=0, which means the full length of the available waveform is returned. */
+  LAL_SIM_INSPIRAL_DISALLOW_ZERO_FMIN,   /** These approximants do not allow f_min=0. This is set as default. */
+  LAL_SIM_INSPIRAL_NUMZEROFMIN  /**< Number of elements in enum, useful for checking bounds */
+} AllowZeroMinFreq;
+
 typedef enum tagTestGRaccept {
   LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS,   /** These approximants cannot accept testGR params as input params */
   LAL_SIM_INSPIRAL_TESTGR_PARAMS,      /** These approximants accept testGR params as input params */
@@ -566,6 +572,7 @@ int XLALSimInspiralGetTaperFromString(const char *string);
 int XLALSimInspiralGetHigherModesFromString(const char *string);
 int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx);
 int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx);
+int XLALSimInspiralGetAllowZeroMinFreqFromApproximant(Approximant approx);
 int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx);
 const char * XLALSimInspiralGetStringFromApproximant(Approximant approximant);
 const char * XLALSimInspiralGetStringFromPNOrder(LALPNOrder order);
