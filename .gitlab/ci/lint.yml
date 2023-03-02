@@ -131,7 +131,10 @@ lint:authors:
     - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig
     # check .mailmap and lal*/AUTHORS
     - |
-      if ! make update-authors; then cat <<EOF
+      if make update-authors; then
+        exit 0
+      fi
+      cat <<EOF
       ----------------------------------------------------------------
       The LALSuite author files are incomplete; see the above diff. To
       fix this, run this command from the top-level of the Git repo:
@@ -139,7 +142,7 @@ lint:authors:
       and commit any changes to the .mailmap or lal*/AUTHORS files.
       ----------------------------------------------------------------
       EOF
-      fi
+      exit 1
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
