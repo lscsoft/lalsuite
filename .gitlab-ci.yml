@@ -319,6 +319,7 @@ default:
     - !reference [.ci-rhel, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
+    - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-docker, rules]
 
 # -- debian
@@ -402,6 +403,7 @@ default:
     - !reference [.ci-debian, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
+    - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-docker, rules]
 
 # -- conda
