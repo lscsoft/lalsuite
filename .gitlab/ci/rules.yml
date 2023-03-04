@@ -7,17 +7,23 @@
 workflow:
   rules:
     # environment variables for nightly deployment build (keep rules in sync with [.ci-nightly-deploy, rules]):
-    # - if the trigger is a scheduled pipeline AND the branch is the main branch at lscsoft/lalsuite, set ENABLE_NIGHTLY
-    # - if the trigger is a commit push AND the commit message contains the text "[ci nightly]", set ENABLE_NIGHTLY, DEPLOY_DRY_RUN
+    # - if the trigger is a scheduled pipeline AND the branch is the main branch at lscsoft/lalsuite, set ENABLE_NIGHTLY, EXECUTE_DEPLOY_ACTIONS
+    # - if the trigger is a commit push AND the commit message contains the text "[ci nightly]", set ENABLE_NIGHTLY
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
       variables:
         ENABLE_NIGHTLY: "--enable-nightly"
+        EXECUTE_DEPLOY_ACTIONS: "yes"
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ /\[ci nightly\]/'
       when: always
       variables:
         ENABLE_NIGHTLY: "--enable-nightly"
-        DEPLOY_DRY_RUN: "yes"
+    # environment variables for "lalsuite" tag builds (keep rules in sync with [.ci-lalsuite-tag-build, rules])
+    # - if the commit has been tagged AND the tag name begins with "lalsuite-v" AND the repository is lscsoft/lalsuite, set EXECUTE_DEPLOY_ACTIONS
+    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
+      when: always
+      variables:
+        EXECUTE_DEPLOY_ACTIONS: "yes"
     # environment variables for Koji build (keep rule in sync with [.ci-koji, rules]): set ENABLE_NIGHTLY
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci koji\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]koji/'
       when: always
@@ -51,7 +57,7 @@ workflow:
 # CI build for "lalsuite" tags:
 # - runs if EITHER of the following criteria are satisfied:
 #   - the commit has been tagged AND the tag name begins with "lalsuite-v" AND the repository is lscsoft/lalsuite
-#   - the trigger is a commit push AND the commit message contains the text "[ci tags]" (dry run mode)
+#   - the trigger is a commit push AND the commit message contains the text "[ci tags]"
 .ci-lalsuite-tag-build:
   rules:
     - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
@@ -62,7 +68,7 @@ workflow:
 # CI nightly deployment build:
 # - runs if EITHER of the following criteria are satisfied:
 #   - the trigger is a scheduled pipeline AND the branch is the main branch at lscsoft/lalsuite
-#   - the trigger is a commit push AND the commit message contains the text "[ci nightly]" (dry run mode)
+#   - the trigger is a commit push AND the commit message contains the text "[ci nightly]"
 .ci-nightly-deploy:
   rules:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
