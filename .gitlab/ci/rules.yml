@@ -48,14 +48,6 @@ workflow:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event" || $CI_PIPELINE_SOURCE == "web" || $CI_COMMIT_MESSAGE =~ /\[ci full\]/'
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
 
-# CI build for tags:
-# - runs if ALL of the following criteria are satisfied:
-#   - the commit has been tagged
-#   - the repository is lscsoft/lalsuite
-.ci-tag-build:
-  rules:
-    - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG'
-
 # CI build for "lalsuite" tags:
 # - runs if ALL of the following criteria are satisfied:
 #   - the commit has been tagged
