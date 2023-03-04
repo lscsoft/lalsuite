@@ -155,6 +155,7 @@ default:
 
 # basic before_script template for a compiling job
 .build-job:
+  timeout: 3 hours
   before_script:
     - *init-build-job
 
