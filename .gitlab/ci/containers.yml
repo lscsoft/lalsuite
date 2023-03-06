@@ -19,14 +19,14 @@
     - IMAGE_TAG=${CI_JOB_NAME##*:}
     - docker build --pull -t ${IMAGE_NAME}:${IMAGE_TAG} --file ${DOCKER_FILE} .
     - |
-      if [ "X${DEPLOY_DRY_RUN}" = "Xyes" ]; then
-        echo "Skipping rest of job as DEPLOY_DRY_RUN='${DEPLOY_DRY_RUN}'"
+      if [ "X${EXECUTE_DEPLOY_ACTIONS}" != "Xyes" ]; then
+        echo "Skipping rest of job as EXECUTE_DEPLOY_ACTIONS!=yes"
         exit 100
       fi
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push ${IMAGE_NAME}:${IMAGE_TAG}
   allow_failure:
-    exit_codes: 100   # DEPLOY_DRY_RUN=yes
+    exit_codes: 100   # EXECUTE_DEPLOY_ACTIONS!=yes
 
 .docker:nightly:
   extends:
