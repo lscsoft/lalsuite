@@ -319,6 +319,7 @@ default:
     - !reference [.ci-rhel, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
+    - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-docker, rules]
 
 # -- debian
@@ -402,6 +403,7 @@ default:
     - !reference [.ci-debian, rules]
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
+    - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-docker, rules]
 
 # -- conda
@@ -1622,8 +1624,8 @@ wheel:pypi:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
     - pip install twine
     - |
-      if [ "X${DEPLOY_DRY_RUN}" = "Xyes" ]; then
-        echo "Skipping rest of job as DEPLOY_DRY_RUN='${DEPLOY_DRY_RUN}'"
+      if [ "X${EXECUTE_DEPLOY_ACTIONS}" != "Xyes" ]; then
+        echo "Skipping rest of job as EXECUTE_DEPLOY_ACTIONS!=yes"
         exit 100
       fi
     - twine upload wheelhouse/*
@@ -1648,4 +1650,4 @@ wheel:pypi:
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
   allow_failure:
-    exit_codes: 100   # DEPLOY_DRY_RUN=yes
+    exit_codes: 100   # EXECUTE_DEPLOY_ACTIONS!=yes

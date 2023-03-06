@@ -182,10 +182,14 @@ For individual commits, you can request a subset of merge pipeline jobs to run b
 | `[ci integration]`         | `/[-_]ci[-_]integration/` | Longer-running integration tests, different<br/>top-level build configurations, etc. |
 | `[ci koji]`                | `/[-_]ci[-_]koji/`        | Build RPM packages on a Koji server                          |
 | `[ci lint]`                | `/[-_]ci[-_]lint/`        | Perform "lint" checks for code style/formatting/whitespace<br/>errors, build byproduct files missing from `.gitignore`, etc. |
+| `[ci nightly]`             | n/a                       | Run all jobs in the nightly deployment pipeline [^1]         |
 | `[ci pkg]`                 | `/[-_]ci[-_]pkg/`         | Perform a basic package-level build from tarballs            |
 | `[ci platform]`            | `/[-_]ci[-_]platform/`    | Test different platforms (e.g. MacOS, various Linux distributions) |
 | `[ci rhel]`                | `/[-_]ci[-_]rhel/`        | Build RPM packages                                           |
+| `[ci tags]`                | n/a                       | Run all jobs in the pipeline for Git tags, e.g. `lalsuite-v*` [^1] |
 | `[ci wheels]`              | `/[-_]ci[-_]wheels/`      | Build Python wheel packages                                  |
+
+[^1]: The `[ci nightly]` and `[ci tags]` pipelines do not execute any deployment actions with external consequences, e.g. deploying documentation, pushing packages to repositories. These actions can only be executed by the third CI pipeline which runs nightly on the main `lscsoft/lalsuite` fork.
 
 ## More information
 

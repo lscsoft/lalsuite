@@ -35,8 +35,8 @@ pages:
     - coverage
   script:
     - |
-      if [ "X${DEPLOY_DRY_RUN}" = "Xyes" ]; then
-        echo "Skipping rest of job as DEPLOY_DRY_RUN='${DEPLOY_DRY_RUN}'"
+      if [ "X${EXECUTE_DEPLOY_ACTIONS}" != "Xyes" ]; then
+        echo "Skipping rest of job as EXECUTE_DEPLOY_ACTIONS!=yes"
         exit 100
       fi
     - mv html public
@@ -48,4 +48,4 @@ pages:
   rules:
     - !reference [.ci-nightly-deploy, rules]
   allow_failure:
-    exit_codes: 100   # DEPLOY_DRY_RUN=yes
+    exit_codes: 100   # EXECUTE_DEPLOY_ACTIONS!=yes
