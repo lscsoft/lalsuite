@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALMetaIO],[3.0.2.1],[lal-discuss@ligo.org])
+AC_INIT([LALMetaIO],[4.0.0],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALMetaIOConfig.h])
 AC_CONFIG_SRCDIR([lib/LIGOLwXML.c])
 AC_CONFIG_AUX_DIR([gnuscripts])
@@ -19,7 +19,7 @@ AC_CONFIG_MACRO_DIR([gnuscripts])
 #    then increment age.
 # 6. if any interfaces have been removed since the last public release,
 #    then set age to 0.
-AC_SUBST([LIBCURRENT],[10])
+AC_SUBST([LIBCURRENT],[11])
 AC_SUBST([LIBREVISION],[0])
 AC_SUBST([LIBAGE],[0])
 AC_SUBST([LIBVERSION],[${LIBCURRENT}:${LIBREVISION}:${LIBAGE}])
@@ -68,7 +68,7 @@ AM_INIT_AUTOMAKE([ \
 ])
 
 # version requirements
-MIN_LAL_VERSION="7.2.2"
+MIN_LAL_VERSION="7.3.0"
 AC_SUBST([MIN_LAL_VERSION])
 
 AC_CANONICAL_HOST
