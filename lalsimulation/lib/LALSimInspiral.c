@@ -3629,19 +3629,19 @@ SphHarmFrequencySeries *XLALSimInspiralChooseFDModes(
 		  XLALSimIMRPhenomXPHMModes(&hlms, m1, m2, S1x, S1y, S1z,	S2x, S2y, S2z, deltaF, f_min, f_max, f_ref, phiRef, distance, inclination, LALparams);
 			break;
 
-		case SEOBNRv4HM_ROM:
-			/* Waveform-specific sanity checks */
-			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
-					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
-			if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-			if( !checkTidesZero(lambda1, lambda2) )
-					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+        case SEOBNRv4HM_ROM:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                    XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                    XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                    XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
-			/* First we define the mode array of the output SphHarmFrequencySeries.
-			   Although the user can choose this array, the model computes internally all the modes
-			   and then we just pick those specified by the user.
-			   The only exception is when only the 2,-2 mode is required, in such case SEOBNRv4_ROM is called. */
+            /* First we define the mode array of the output SphHarmFrequencySeries.
+               Although the user can choose this array, the model computes internally all the modes
+               and then we just pick those specified by the user.
+               The only exception is when only the 2,-2 mode is required, in such case SEOBNRv4_ROM is called. */
             if(LALparams == NULL){
                 LALparams_aux = XLALCreateDict();
             }
@@ -3765,14 +3765,14 @@ SphHarmFrequencySeries *XLALSimInspiralChooseFDModes(
  			XLALSphHarmFrequencySeriesSetFData(hlms, freqsSphH);
 			break;
 
-		case SEOBNRv5_ROM:
-			/* Waveform-specific sanity checks */
-			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
-					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
-			if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-			if( !checkTidesZero(lambda1, lambda2) )
-					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+        case SEOBNRv5_ROM:
+            /* Waveform-specific sanity checks */
+            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+                    XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                    XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+            if( !checkTidesZero(lambda1, lambda2) )
+                    XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
 
             if(LALparams == NULL){
                 LALparams_aux = XLALCreateDict();
