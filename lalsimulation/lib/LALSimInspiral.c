@@ -3641,8 +3641,7 @@ SphHarmFrequencySeries *XLALSimInspiralChooseFDModes(
 			/* First we define the mode array of the output SphHarmFrequencySeries.
 			   Although the user can choose this array, the model computes internally all the modes
 			   and then we just pick those specified by the user.
-			   The only exception is when only the 2,-2 mode is required, in such case SEOBNRv4_ROM is called.
-            */
+			   The only exception is when only the 2,-2 mode is required, in such case SEOBNRv4_ROM is called. */
             if(LALparams == NULL){
                 LALparams_aux = XLALCreateDict();
             }
