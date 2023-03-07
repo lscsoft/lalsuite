@@ -1,6 +1,12 @@
+lalframe (3.0.0-1) unstable; urgency=low
+
+  * Update for 3.0.0
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 06 Feb 2023 15:39:08 -0500
+
 lalframe (2.0.3-1) unstable; urgency=low
 
-  * Update got 2.0.3
+  * Update for 2.0.3
 
  -- Adam Mercer <adam.mercer@ligo.org>  Mon, 05 Sep 2022 11:53:35 +0100
 
