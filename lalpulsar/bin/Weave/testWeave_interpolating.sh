@@ -6,6 +6,10 @@ if test "${HOST_OS_DARWIN}" = true; then
     echo "Skipping test; results computed on MacOSX are too different to reference results (computed on Ubuntu Linux)"
     exit 77
 fi
+if test "`uname -m`" != "x86_64"; then
+    echo "Skipping test; results computed on non-x86-64 architectures are too different to reference results (computed on Ubuntu Linux)"
+    exit 77
+fi
 case "${CC}" in
     icc*)
         echo "Skipping test; results computed with '${CC}' compiler are too different to reference results (computed with GCC compiler)"
