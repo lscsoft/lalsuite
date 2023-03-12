@@ -1675,10 +1675,10 @@ class LALInferencePipelineDAG(pipeline.CondorDAG):
             srate = np.power(2., np.ceil(np.log2(original_srate)))
         else:
             srate = original_srate
-        if srate is not 0:
+        if srate != 0:
             node.set_srate(int(np.ceil(srate)))
             prenode.set_srate(int(np.ceil(srate)))
-        if original_srate is not 0:
+        if original_srate != 0:
             for ifo in ifos:
                 node.fhighs[ifo]=str(original_srate/2.-1./seglen)
                 prenode.fhighs[ifo]=str(original_srate/2.-1./seglen)

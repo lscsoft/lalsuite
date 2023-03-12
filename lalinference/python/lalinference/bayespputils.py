@@ -1396,7 +1396,7 @@ class Posterior(object):
                 nan_idxs = np.append(nan_idxs, idxs)
         total_samps = len(self)
         nan_samps   = len(nan_idxs)
-        if nan_samps is not 0:
+        if nan_samps != 0:
             print("WARNING: removing %i of %i total samples due to NaNs:"% (nan_samps,total_samps))
             for param in nan_dict.keys():
                 print("\t%i NaNs in %s."%(nan_dict[param],param))
@@ -1663,7 +1663,7 @@ class Posterior(object):
 
             samps = func(old_post.samples)
             new_post = PosteriorOneDPDF(new_param_names, samps, injected_value=new_inj, trigger_values=new_trigs)
-            if new_post.samples.ndim is 0:
+            if new_post.samples.ndim == 0:
                 print("WARNING: No posterior calculated for %s ..." % new_post.name)
             else:
                 self.append(new_post)
@@ -1706,7 +1706,7 @@ class Posterior(object):
                 if not samps: return() # Something went wrong
                 new_posts = [PosteriorOneDPDF(new_param_name,samp,injected_value=inj,trigger_values=new_trigs) for (new_param_name,samp,inj,new_trigs) in zip(new_param_names,samps,injs,new_trigs)]
                 for post in new_posts:
-                    if post.samples.ndim is 0:
+                    if post.samples.ndim == 0:
                         print("WARNING: No posterior calculated for %s ..." % post.name)
                     else:
                         self.append(post)
@@ -5281,15 +5281,15 @@ class PEOutputParser(object):
     inherited by each method .
     """
     def __init__(self,inputtype):
-        if inputtype is 'ns':
+        if inputtype == 'ns':
             self._parser=self._ns_to_pos
-        elif inputtype is 'common':
+        elif inputtype == 'common':
             self._parser=self._common_to_pos
-        elif inputtype is 'fm':
+        elif inputtype == 'fm':
             self._parser=self._followupmcmc_to_pos
-        elif inputtype is "inf_mcmc":
+        elif inputtype == "inf_mcmc":
             self._parser=self._infmcmc_to_pos
-        elif inputtype is "xml":
+        elif inputtype == "xml":
             self._parser=self._xml_to_pos
         elif inputtype == 'hdf5':
             self._parser = self._hdf5_to_pos
@@ -5936,7 +5936,7 @@ class PEOutputParser(object):
                 if dec.search(s) is None:
                     print('Warning! Ignoring non-numeric data after the header: %s. Row = %i,Element=%i'%(s,line_number,elemn))
                     proceed=False
-                elif s is '\n':
+                elif s == '\n':
                     proceed=False
 
             if proceed:
