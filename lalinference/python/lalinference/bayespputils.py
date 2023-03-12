@@ -85,7 +85,7 @@ except:
 if hostname_short=='ligo.caltech.edu' or hostname_short=='cluster.ldas.cit': #The CIT cluster has troubles with the default 'cm' font. 'custom' has the least troubles, but does not include \odot
     matplotlib.rcParams.update(
                                {'mathtext.fontset' : "custom",
-                               'mathtext.fallback_to_cm' : True
+                               'mathtext.fallback' : 'cm'
                                })
 
 from xml.etree.cElementTree import Element, SubElement, tostring, XMLParser
