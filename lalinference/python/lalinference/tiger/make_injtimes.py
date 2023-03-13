@@ -97,14 +97,14 @@ class IFO:
       l = interval
     for seg in self._unvetoed._seglist:
       t = int(seg[1])
-      if whereInj is 'often':
+      if whereInj == 'often':
         '''Inject every l seconds until you reach rmargin seconds from end of segment.'''
         t += lmargin
         while t + rmargin <= seg[2]:
           if t >= seg[1] + lmargin:
             trigtimes.append(t)
           t += l
-      elif whereInj is 'middle':
+      elif whereInj == 'middle':
         '''Inject in the middle of minlen-long intervals.'''
         while t + self._minlen <= seg[2]:
           if (t + self._minlen//2 >= seg[1] + lmargin) and (t + self._minlen//2 + rmargin <= seg[2]):
@@ -188,7 +188,7 @@ class segment:
       self._len = max(gpsend-gpsstart, 0)
     elif gpsstart is None and gpsend is None:
       '''Overloading to generate segment from an array (id, start, end, length)'''
-      if len(data) is not 4:
+      if len(data) != 4:
         print("Segment data doesn't have the correct length!")
         return -1
       self._id = data[0]
