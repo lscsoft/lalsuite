@@ -646,9 +646,7 @@ XLALSimIMRSpinAlignedEOBWaveform (
   domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALParams);
   dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALParams);
   
-  if (LALParams && XLALDictContains(LALParams, "TGRflag")) {
-    TGRflag = XLALDictLookupUINT2Value(LALParams, "TGRflag");
-  }
+  if (SpinAlignedEOBversion == 4112) TGRflag = 1;
 
   LALDict *TGRParams = XLALCreateDict();
 
