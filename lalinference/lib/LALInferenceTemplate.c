@@ -1092,47 +1092,50 @@ void LALInferenceTemplateXLALSimInspiralChooseWaveform(LALInferenceModel *model)
           /* generate modes with non-GR parameters set to default (zero) */
           SphHarmFrequencySeries *hlms = NULL;
           XLAL_TRY(hlms=XLALSimInspiralChooseFDModes(m1*LAL_MSUN_SI, m2*LAL_MSUN_SI, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, deltaF, f_start, f_max, f_ref, phi0, corrected_distance, 0., grParams, approximant), errnum);
-          if(ret!=XLAL_SUCCESS)
-            goto ftahmfail;
 
-          /* apply FTA corrections */
-          COMPLEX16FrequencySeries *hlm_mode = NULL;
-          SphHarmFrequencySeries *hlms_temp = hlms;
-          INT4 length;
-          while(hlms_temp){
-            /* Extract the mode from the SphericalHarmFrequencySeries */
-            hlm_mode = XLALSphHarmFrequencySeriesGetMode(hlms_temp, hlms_temp->l,hlms_temp->m);
+	  if(hlms==NULL)
+            ret=XLAL_FAILURE;
+	  else{
+            ret=XLAL_SUCCESS;
 
-            /* Resize the modes to keep only positive frequencies. ChooseFDModes returns both positive and negative frequencies */
-            length = hlm_mode->data->length -1;
-            hlm_mode = XLALResizeCOMPLEX16FrequencySeries(hlm_mode, (INT4) length/2 + 1, length);
+            /* apply FTA corrections */
+            COMPLEX16FrequencySeries *hlm_mode = NULL;
+            SphHarmFrequencySeries *hlms_temp = hlms;
+            INT4 length;
+            while(hlms_temp){
+              /* Extract the mode from the SphericalHarmFrequencySeries */
+              hlm_mode = XLALSphHarmFrequencySeriesGetMode(hlms_temp, hlms_temp->l,hlms_temp->m);
 
+              /* Resize the modes to keep only positive frequencies. ChooseFDModes returns both positive and negative frequencies */
+              length = hlm_mode->data->length -1;
+              hlm_mode = XLALResizeCOMPLEX16FrequencySeries(hlm_mode, (INT4) length/2 + 1, length);
 
-            /* Apply FTA correction */
-            XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hlm_mode,hlms_temp->l,abs(hlms_temp->m),m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
-            hlms_temp = hlms_temp->next;
-          }
+              /* Apply FTA correction */
+              XLAL_TRY(ret = XLALSimInspiralTestingGRCorrections(hlm_mode,hlms_temp->l,abs(hlms_temp->m),m1*LAL_MSUN_SI,m2*LAL_MSUN_SI, spin1z, spin2z, f_start, f_ref, correction_window, correction_ncycles_taper, model->LALpars), errnum);
+              hlms_temp = hlms_temp->next;
+            }
   
-          /* Construct hp and hc from hlms */
-          size_t npts_wave = hlm_mode->data->length;
-          
-          hptilde = XLALCreateCOMPLEX16FrequencySeries("FD hplus",
-                    &(hlm_mode->epoch), 0.0, deltaF,
-                    &(hlm_mode->sampleUnits), npts_wave);
-          hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
-                    &(hlm_mode->epoch), 0.0, deltaF,
-                    &(hlm_mode->sampleUnits), npts_wave);
-          memset(hptilde->data->data, 0, npts_wave * sizeof(COMPLEX16));
-          memset(hctilde->data->data, 0, npts_wave * sizeof(COMPLEX16));  
+            /* Construct hp and hc from hlms */
+            size_t npts_wave = hlm_mode->data->length;
 
-          hlms_temp = hlms;
-          while(hlms_temp){
-            /* Add the modes to hptilde and hctilde */
-            XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, hlms_temp->mode, inclination, LAL_PI/2. - phi0, hlms_temp->l, hlms_temp->m, 1), errnum);
-            hlms_temp = hlms_temp->next;
+            hptilde = XLALCreateCOMPLEX16FrequencySeries("FD hplus",
+                      &(hlm_mode->epoch), 0.0, deltaF,
+                      &(hlm_mode->sampleUnits), npts_wave);
+            hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
+                      &(hlm_mode->epoch), 0.0, deltaF,
+                      &(hlm_mode->sampleUnits), npts_wave);
+            memset(hptilde->data->data, 0, npts_wave * sizeof(COMPLEX16));
+            memset(hctilde->data->data, 0, npts_wave * sizeof(COMPLEX16));  
+
+            hlms_temp = hlms;
+            while(hlms_temp){
+              /* Add the modes to hptilde and hctilde */
+              XLAL_TRY(ret=XLALSimAddModeFD(hptilde, hctilde, hlms_temp->mode, inclination, LAL_PI/2. - phi0, hlms_temp->l, hlms_temp->m, 1), errnum);
+              hlms_temp = hlms_temp->next;
+            }
+
+            XLALDestroySphHarmFrequencySeries(hlms);
           }
-ftahmfail:
-          XLALDestroySphHarmFrequencySeries(hlms);
         }
         
 
