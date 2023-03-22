@@ -38,9 +38,9 @@
  * ### Description ###
  *
  * This program computes metric components using a metric function of the
- * user's specification.  The ordering of the components is \f$(f_0,
- * \alpha, \delta, f_1\ldots)\f$ for the unprojected metric, and \f$(\alpha,
- * \delta, f_1\ldots)\f$ for the metric with \f$f_0\f$ projected out.
+ * user's specification.  The ordering of the components is \f$ (f_0,
+ * \alpha, \delta, f_1\ldots) \f$ for the unprojected metric, and \f$ (\alpha,
+ * \delta, f_1\ldots) \f$ for the metric with \f$ f_0 \f$ projected out.
  *
  * With no options, this program displays metric components for a single point
  * in parameter space for the default parameter values.
@@ -57,10 +57,10 @@
  * declination of the rectangular region over which the mismatch contours
  * are computed.  The argument should be given in degrees as
  * %RA(min):%RA(max):dec(min):dec(max).  (The default is the octant of the
- * sky defined by \f$0 < \textrm{RA} < 90\f$ and \f$0< \textrm{dec} < 85\f$; this avoids the
+ * sky defined by \f$ 0 < \textrm{RA} < 90 \f$ and \f$ 0< \textrm{dec} < 85 \f$ ; this avoids the
  * coordinate singularity at the poles.)
  *
- * The <b>-m</b> option sets the mismatch (default is \f$0.02\f$).
+ * The <b>-m</b> option sets the mismatch (default is \f$ 0.02 \f$ ).
  *
  * The <b>-n</b> option sets the number of spindown parameters (default 0).
  *
@@ -73,7 +73,7 @@
  * favorite graphics package.
  *
  * The <b>-t</b> option sets the duration of integration in seconds. (The
- * default is \f$39600\f$ seconds \f$= 11\f$ hours, which is chosen because it is of
+ * default is \f$ 39600 \f$ seconds \f$ = 11 \f$ hours, which is chosen because it is of
  * the right size for S2 analyses).
  *
  * The <b>-x</b> option produces a graph of the 2\% power mismatch

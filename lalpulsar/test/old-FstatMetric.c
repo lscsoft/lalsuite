@@ -895,7 +895,7 @@ InitCode ( ConfigVariables *cfg,
 
 
 /**
- * calculate the phase-derivatives \f$\partial_i \phi \f$ for the
+ * calculate the phase-derivatives \f$ \partial_i \phi \f$ for the
  * time-series detStates and the given doppler-point.
  * Has the option of using only the orbital part of the phase (PHASE_ORBITAL)
  * or the full-phase (PHASE_FULL).

@@ -102,8 +102,8 @@ extern "C" {
  *
  * <b>Note 2:</b> irrespective of the underlying SFT file-format, the returned SFTs (SFTVector) will
  * <em>ALWAYS</em> be normalized according the the LAL-specification for frequency-series
- * (<tt>LIGO-T010095-00</tt>), that is the pure DFT of the time-series \f$x_j\f$ is <em>multiplied</em>
- * by the time-step \f$\Delta t\f$:
+ * (<tt>LIGO-T010095-00</tt>), that is the pure DFT of the time-series \f$ x_j \f$ is <em>multiplied</em>
+ * by the time-step \f$ \Delta t \f$ :
  * \f[
  * \mathrm{data}[k] = X^\mathrm{d}_k = \Delta t \,\sum_{j=0}^{N-1} x_j \,e^{-i2\pi \,k \,j / N}
  * \f]

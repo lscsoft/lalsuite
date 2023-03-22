@@ -195,10 +195,10 @@ typedef struct tagDopplerMetricParams
 
 
 /**
- * Struct to hold the 'atoms', ie weighted phase-derivative averages like \f$\langle a^2 \partial_i \phi \partial_j \phi\rangle>\f$
+ * Struct to hold the 'atoms', ie weighted phase-derivative averages like \f$ \langle a^2 \partial_i \phi \partial_j \phi\rangle> \f$ 
  * from which the F-metric is computed, but also the full Fisher-matrix. The noise-weighted average is defined as
- * \f$\langle Q\rangle \equiv \frac{1}{T} \, \sum_X w^X\, \int_0^T Q\, dt \f$, where \f$w^X\f$ is the noise-weight for detector X,
- * and \f$T\f$ is the observation time, see \cite Prix07 for details.
+ * \f$ \langle Q\rangle \equiv \frac{1}{T} \, \sum_X w^X\, \int_0^T Q\, dt \f$ , where \f$ w^X \f$ is the noise-weight for detector X,
+ * and \f$ T \f$ is the observation time, see \cite Prix07 for details.
  */
 typedef struct tagFmetricAtoms_t
 {

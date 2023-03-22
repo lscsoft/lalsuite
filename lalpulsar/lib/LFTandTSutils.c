@@ -352,14 +352,14 @@ XLALReorderSFTtoFFTW (COMPLEX8Vector *X)
 /**
  * Time-shift the given SFT by an amount of 'shift' seconds,
  * using the frequency-domain expression
- * \f$\widetilde{y}(f) = \widetilde{x}(f) \, e^{i 2\pi\,f\,\tau}\f$,
- * which shifts \f$x(t)\f$ into \f$y(t) = x(t + \tau)\f$
+ * \f$ \widetilde{y}(f) = \widetilde{x}(f) \, e^{i 2\pi\,f\,\tau} \f$ ,
+ * which shifts \f$ x(t) \f$ into \f$ y(t) = x(t + \tau) \f$ 
  *
  * NOTE: this <b>modifies</b> the SFT in place
  */
 int
 XLALTimeShiftSFT ( SFTtype *sft,	/**< [in/out] SFT to time-shift */
-		   REAL8 shift		/**< time-shift \f$\tau\f$ in seconds */
+		   REAL8 shift		/**< time-shift \f$ \tau \f$ in seconds */
                    )
 {
   XLAL_CHECK ( (sft != NULL) && (sft->data != NULL), XLAL_EINVAL );
@@ -876,10 +876,10 @@ XLALCheckVectorComparisonTolerances ( const VectorComparison *result,	///< [in] 
  * x(t) = \sum_{j = j^* - \Dterms}^{j^* + \Dterms} x_j \, w_j \, \frac{\sin(\pi\delta_j)}{\pi\delta_j}\,,\quad\text{with}\quad
  * \delta_j \equiv \frac{t - t_j}{\Delta t}\,,
  * \f}
- * where \f$j^* \equiv \mathrm{round}(t / \Delta t)\f$, and
- * where \f$w_j\f$ is the window used (here: Hamming)
+ * where \f$ j^* \equiv \mathrm{round}(t / \Delta t) \f$ , and
+ * where \f$ w_j \f$ is the window used (here: Hamming)
  *
- * In order to implement this more efficiently, we observe that \f$\sin(\pi\delta_j) = (-1)^{(j-j0)}\sin(\pi\delta_{j0})\f$ for integer \f$j\f$,
+ * In order to implement this more efficiently, we observe that \f$ \sin(\pi\delta_j) = (-1)^{(j-j0)}\sin(\pi\delta_{j0}) \f$ for integer \f$ j \f$ ,
  * and therefore
  *
  * \f{equation}{
@@ -976,9 +976,9 @@ XLALSincInterpolateCOMPLEX8TimeSeries ( COMPLEX8Vector *y_out,		///< [out] outpu
  * \f{equation}{
  * \widetilde{x}(f) = \sum_{k = k^* - \Delta k}^{k^* + \Delta k} \widetilde{x}_k \, \frac{ 1 - e^{-i 2\pi\,\delta_k} }{ i 2\pi\,\delta_k}\,,
  * \f}
- * where \f$k^* \equiv \mathrm{round}(f / \Delta f)\f$, and \f$\delta_k \equiv \frac{f - f_k}{\Delta f}\f$.
+ * where \f$ k^* \equiv \mathrm{round}(f / \Delta f) \f$ , and \f$ \delta_k \equiv \frac{f - f_k}{\Delta f} \f$ .
  *
- * In order to implement this more efficiently, we observe that \f$e^{-i 2\pi\,\delta_k} = e^{-i 2\pi\,\delta_{k*}}\f$ for integer \f$k\f$, and therefore
+ * In order to implement this more efficiently, we observe that \f$ e^{-i 2\pi\,\delta_k} = e^{-i 2\pi\,\delta_{k*}} \f$ for integer \f$ k \f$ , and therefore
  * \f{equation}{
  * \widetilde{x}(f) = \frac{\sin(2\pi\delta_{k*}) + i(\cos(2\pi\delta_{k*}) - 1)}{2\pi} \sum_{k = k^* - \Delta k}^{k^* + \Delta k} \frac{\widetilde{x}_k}{\delta_k}\,,
  * \f}

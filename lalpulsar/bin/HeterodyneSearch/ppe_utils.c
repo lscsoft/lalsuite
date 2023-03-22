@@ -317,7 +317,7 @@ COMPLEX16Vector *subtract_running_median( COMPLEX16Vector *data ){
  * \f[
  * T = 4.07 + 1.33\log{}_{10}{N},
  * \f]
- * where \f$N\f$ is the length in samples of the dataset. This is based on Monte Carlo simulations of
+ * where \f$ N \f$ is the length in samples of the dataset. This is based on Monte Carlo simulations of
  * many realisations of Gaussian noise for data of different lengths. The threshold comes from a linear
  * fit to the log odds ratios required to give a 1% chance of splitting Gaussian data (drawn from a single
  * distribution) for data of various lengths.  Note, however, that this relation is not good for stretches of data
@@ -385,7 +385,7 @@ UINT4Vector *chop_data( gsl_vector_complex *data, UINT4 chunkMin ){
  * points at which the statistics of the data change. It is based on calculating evidence, or odds, ratios. The
  * function first computes the marginal likelihood (or evidence) that the whole of the data is described by a single
  * Gaussian (with mean of zero). This comes from taking a Gaussian likelihood function and analytically marginalising
- * over the standard deviation (using a prior on the standard deviation of \f$1/\sigma\f$), giving (see
+ * over the standard deviation (using a prior on the standard deviation of \f$ 1/\sigma \f$ ), giving (see
  * [\cite DupuisWoan2005]) a Students-t distribution (see
  * <a href="https://wiki.ligo.org/foswiki/pub/CW/PulsarParameterEstimationNestedSampling/studentst.pdf">here</a>).
  * Following this the data is split into two segments (with lengths greater than, or equal to the minimum chunk length)

@@ -66,11 +66,11 @@ LALInference tools */
  * \f[
  * Z = \int^X L(X) \mathrm{d}X \approx \sum_i L(X_i) \Delta{}X_i,
  * \f]
- * where \f$ L(X) \f$ is the likelihood, and \f$ X \f$ is the prior mass. The algorithm will draw a number (\f$ N \f$) of
+ * where \f$ L(X) \f$ is the likelihood, and \f$ X \f$ is the prior mass. The algorithm will draw a number ( \f$ N \f$ ) of
  * samples (live points) from the parameter priors, calculate the likelihood for each point and find the lowest likelihood
  * value. The lowest likelihood value will be added to the summation in the above equation, with \f$ \log{\Delta{}X_i}
  * \approx 1/N \f$ coming from the fact that the prior would be normalised to unity and therefore each point should occupy
- * an equal fraction and at each iteration the prior volume will decrease geometrically (for \f$\log{\Delta{}X_0} = 0\f$).
+ * an equal fraction and at each iteration the prior volume will decrease geometrically (for \f$ \log{\Delta{}X_0} = 0 \f$ ).
  * A new point is then drawn from the prior with the criterion that it has a higher likelihood than the previous lowest
  * point and substitutes that point. To draw the new point a Markov Chain Monte Carlo (MCMC) procedure is used. The procedure
  * is continued until a stopping criterion is reached, which in this case is that the remaining prior volume is less than the
@@ -83,8 +83,8 @@ LALInference tools */
  * lalpulsar_parameter_estimation_nested --help
  * \endcode
  *
- * An example of running the code to search over the four unknown parameters \f$ h_0 \f$, \f$ \phi_0 \f$, \f$ \psi \f$
- * and \f$ \cos{\iota} \f$, for pulsar J0534-2200, given heterodyned time domain data from the H1 detector in the file
+ * An example of running the code to search over the four unknown parameters \f$ h_0 \f$ , \f$ \phi_0 \f$ , \f$ \psi \f$ 
+ * and \f$ \cos{\iota} \f$ , for pulsar J0534-2200, given heterodyned time domain data from the H1 detector in the file
  * \c finehet_J0534-2200_H1, is:
  * \code
  * lalpulsar_parameter_estimation_nested --detectors H1 --par-file J0534-2200.par --input-files finehet_J0534-2200_H1 --outfile ns_J0534-2200.hdf --prior-file prior_J0534-2200.txt --ephem-earth lscsoft/share/lalpulsar/earth05-09.dat --ephem-sun lscsoft/share/lalpulsar/sun05-09.dat --Nlive 1000 --Nmcmcinitial 0 --tolerance 0.25

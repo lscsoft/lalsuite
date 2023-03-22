@@ -62,7 +62,7 @@
  *
  * \par LALTwoDMesh():
  * This routine starts placing mesh
- * points at the left side of the parameter region, \f$x=x_\mathrm{min}\f$.
+ * points at the left side of the parameter region, \f$ x=x_\mathrm{min} \f$ .
  * It calls <tt>params->getRange()</tt> to get the bottom and top of the
  * left edge of the first column.  It also calls <tt>params->getMetric</tt>
  * at these two corners, estimates the optimum width for the first
@@ -76,7 +76,7 @@
  * reduced by the factor <tt>params->widthRetryFac</tt>.  This continues
  * until the estimated number of columns exceeds
  * <tt>params->maxColumns</tt>; i.e.\ until the current column width is
- * less than \f$(x_\mathrm{max}-x_\mathrm{min})/\f$<tt>params->maxColumns</tt>.
+ * less than \f$ (x_\mathrm{max}-x_\mathrm{min})/ \f$ <tt>params->maxColumns</tt>.
  * If this occurs, the linked list is destroyed using
  * LALDestroyTwoDMesh(), and an error is returned.
  *
@@ -84,8 +84,8 @@
  * complain about the column width), LALCreateTwoDMesh() gets the
  * width and heights of the next column, and calls LALTwoDColumn()
  * again.  This continues until eventually the right edge of a column
- * lies beyond \f$x_\mathrm{max}\f$.  This last column is squeezed so that
- * its right edge lies exactly at \f$x_\mathrm{max}\f$; once it is filled,
+ * lies beyond \f$ x_\mathrm{max} \f$ .  This last column is squeezed so that
+ * its right edge lies exactly at \f$ x_\mathrm{max} \f$ ; once it is filled,
  * the mesh is deemed complete, and no further columns are generated.
  *
  * \par LALTwoDColumn():
@@ -147,15 +147,15 @@
  *
  * \par Computing tile sizes:
  * Given a positive-definite
- * 2-dimensional metric \f$\mathsf{g}_{ab}\f$, the elliptical contour
- * corresponding to a maximum mismatch \f$m_\mathrm{thresh}\f$ is given by
- * the set of points offset from the centre point by amounts \f$(\Delta
- * x,\Delta y)\f$, where:
+ * 2-dimensional metric \f$ \mathsf{g}_{ab} \f$ , the elliptical contour
+ * corresponding to a maximum mismatch \f$ m_\mathrm{thresh} \f$ is given by
+ * the set of points offset from the centre point by amounts \f$ (\Delta
+ * x,\Delta y) \f$ , where:
  * \f[
  * m_\mathrm{thresh} = g_{xx}(\Delta x)^2 + g_{yy}(\Delta y)^2
  * + 2g_{xy}\Delta x\Delta y \; .
  * \f]
- * Thus for a tile of some half-width \f$\Delta x\f$, the heights of the two
+ * Thus for a tile of some half-width \f$ \Delta x \f$ , the heights of the two
  * right-hand corners of the tile relative to its centre are:
  * \f[
  * \Delta y = \frac{-g_{xy}\Delta x \pm\sqrt{g_{yy}m_\mathrm{thresh} -
@@ -166,20 +166,20 @@
  * \Delta x_\mathrm{max} = \sqrt{\frac{g_{yy}m_\mathrm{thresh}}
  * {g_{xx}g_{yy} - g_{xy}^2}} \; .
  * \f]
- * The positive-definiteness of the metric ensures that \f$g_{xx}>0\f$,
- * \f$g_{yy}>0\f$, and \f$g_{xx}g_{yy}>g_{xy}^2\f$.  Furthermore, if one
- * maximizes the proper area of a tile with respect to \f$\Delta x\f$, one
+ * The positive-definiteness of the metric ensures that \f$ g_{xx}>0 \f$ ,
+ * \f$ g_{yy}>0 \f$ , and \f$ g_{xx}g_{yy}>g_{xy}^2 \f$ .  Furthermore, if one
+ * maximizes the proper area of a tile with respect to \f$ \Delta x \f$ , one
  * finds that the \e optimal tile half-width is:
  * \f[
  * \Delta x_\mathrm{opt} = \frac{\Delta x_\mathrm{max}}{\sqrt{2}} \; .
  * \f]
  *
  * When estimating the width for the next column, LALTwoDMesh()
- * computes \f$\Delta x_\mathrm{opt}\f$ at both the bottom and the top of the
+ * computes \f$ \Delta x_\mathrm{opt} \f$ at both the bottom and the top of the
  * column and uses the smaller value (it is almost always better to
- * underestimate \f$\Delta x\f$ than to overestimate it).  In
+ * underestimate \f$ \Delta x \f$ than to overestimate it).  In
  * LALTwoDColumn(), tile heights are computed using the column
- * half-width \f$\Delta x\f$ and the value of the metric components at its
+ * half-width \f$ \Delta x \f$ and the value of the metric components at its
  * particular location.
  *
  * We also note that the width of a column is computed using the metric

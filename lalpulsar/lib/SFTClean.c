@@ -48,8 +48,8 @@
  * \endverbatim
  *
  * The file consists of rows with 6 columns each.  Each row has information about
- * a set of spectral lines of the form \f$ f_n = f_0 + n\Delta f \f$.  The first column
- * is the start frequency \f$ f_0 \f$, the second column is the spacing \f$ \Delta f \f$,
+ * a set of spectral lines of the form \f$ f_n = f_0 + n\Delta f \f$ .  The first column
+ * is the start frequency \f$ f_0 \f$ , the second column is the spacing \f$ \Delta f \f$ ,
  * the third column is the total number of lines, the fourth column is the
  * left-width of each line (in Hz), the fifth column is the width on the right, and
  * the last column is a brief comment string (no spaces).  If this file is meant to

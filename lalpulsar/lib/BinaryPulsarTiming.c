@@ -41,9 +41,9 @@
  * \Delta{}t = t_\textrm{Roemer} + t_\textrm{Shapiro} + t_\textrm{Einstein} + t_\textrm{
  * Abberation},
  * \f}
- * where \f$t_\textrm{Roemer}\f$ is the light travel time, \f$t_\textrm{Shapiro}\f$ is the
- * General relativistic time delay, \f$t_\textrm{Einstein}\f$ is the special
- * relativistic time delay, and \f$t_\textrm{Abberation}\f$ is the delay caused by the
+ * where \f$ t_\textrm{Roemer} \f$ is the light travel time, \f$ t_\textrm{Shapiro} \f$ is the
+ * General relativistic time delay, \f$ t_\textrm{Einstein} \f$ is the special
+ * relativistic time delay, and \f$ t_\textrm{Abberation} \f$ is the delay caused by the
  * pulsars' rotation. There are several models of the binary systems, described
  * in \cite TaylorWeisberg1989 , of which the four most common are so far
  * implemented. The four models are the Blandford-Teukolsky model (BT)
@@ -51,9 +51,9 @@
  * \cite ChLangeetal2001 , Damour-Deruelle model (DD) \cite DamourDeruelle1985 ,
  * and the main sequence system model (MSS) \cite Wex1998 .
  * These four models all use the five main binary parameters: the longitude of
- * periastron \f$\omega_0\f$, the eccentricity of the orbit \f$e\f$, the orbital period
- * \f$P\f$, the time of periastron/or the time of ascension of the first node
- * \f$T_0\f$/\f$T_{\textrm{asc}}\f$, and the projected semi-major axis \f$a\sin{}i\f$. The are
+ * periastron \f$ \omega_0 \f$ , the eccentricity of the orbit \f$ e \f$ , the orbital period
+ * \f$ P \f$ , the time of periastron/or the time of ascension of the first node
+ * \f$ T_0 \f$ / \f$ T_{\textrm{asc}} \f$ , and the projected semi-major axis \f$ a\sin{}i \f$ . The are
  * also many other model dependent parameters. These routines closely follow
  * those used in the radio astronomy package TEMPO. A further model from TEMPO2
  * called T2 is also implemented in a basic form. The model is generally based

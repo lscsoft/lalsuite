@@ -61,8 +61,8 @@ typedef struct tagLatticeTilingLocator LatticeTilingLocator;
 /// Type of lattice to generate tiling with.
 ///
 typedef enum tagTilingLattice {
-  TILING_LATTICE_CUBIC,                 ///< Cubic (\f$Z_n\f$) lattice
-  TILING_LATTICE_ANSTAR,                ///< An-star (\f$A_n^*\f$) lattice
+  TILING_LATTICE_CUBIC,                 ///< Cubic ( \f$ Z_n \f$ ) lattice
+  TILING_LATTICE_ANSTAR,                ///< An-star ( \f$ A_n^* \f$ ) lattice
   TILING_LATTICE_MAX
 } TilingLattice;
 

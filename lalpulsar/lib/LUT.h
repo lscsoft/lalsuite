@@ -47,14 +47,14 @@ extern "C" {
  * In principle, the subroutines provided are valid for
  * any Hough master equation of the form:
  * \f[ \nu-F_0  =\vec\xi (t) \cdot (\hat n -\hat N )\, ,\f]
- * where \f$\nu\f$ is the measured frequency of the signal at time \f$t\f$,
- * \f$F_0\f$ intrinsic frequency of the signal at that time, \f$\hat n\f$ location of the
- * souce in the sky, \f$\hat N\f$ the center of the sky patch used in the
+ * where \f$ \nu \f$ is the measured frequency of the signal at time \f$ t \f$ ,
+ * \f$ F_0 \f$ intrinsic frequency of the signal at that time, \f$ \hat n \f$ location of the
+ * souce in the sky, \f$ \hat N \f$ the center of the sky patch used in the
  * demodulation procedure,
  * and
- * \f$\vec\xi (t)\f$ any vector.
+ * \f$ \vec\xi (t) \f$ any vector.
  *
- * The  form of this vector \f$\vec\xi (t)\f$
+ * The  form of this vector \f$ \vec\xi (t) \f$ 
  * depends on the demodulation procedure
  * used in the previous  step.  In our case this corresponds to
  * \f[\vec\xi (t) = \left( F_0+
@@ -65,25 +65,25 @@ extern "C" {
  * \f[F_0 \equiv  f_0 + \sum_k \Delta f_k
  * \left[ \Delta T \right]^k \, , \f]
  * where
- * \f$\vec v(t)\f$ is the velocity of the detector, \f$\vec x(t)\f$ is the detector
+ * \f$ \vec v(t) \f$ is the velocity of the detector, \f$ \vec x(t) \f$ is the detector
  * position,
- * \f$ T_{\hat N}(t)\f$ is the  time  at
+ * \f$ T_{\hat N}(t) \f$ is the  time  at
  * the solar system barycenter (for a given sky
- * location \f$\hat N\f$),
- * \f$\Delta T \equiv T_{\hat N}(t)-T_{\hat N}(\hat t_0)\f$,
- * \f$\Delta f_k = f_k-F_k\f$ the  residual spin-down parameter,
- * \f$F_k\f$ the  spin-down parameter used in the demodulation, and \f$f_0\f$, \f$f_k\f$ the
- * intrinsic  frequency and spin-down parameters of the source at time \f$\hat t_0\f$.
+ * location \f$ \hat N \f$ ),
+ * \f$ \Delta T \equiv T_{\hat N}(t)-T_{\hat N}(\hat t_0) \f$ ,
+ * \f$ \Delta f_k = f_k-F_k \f$ the  residual spin-down parameter,
+ * \f$ F_k \f$ the  spin-down parameter used in the demodulation, and \f$ f_0 \f$ , \f$ f_k \f$ the
+ * intrinsic  frequency and spin-down parameters of the source at time \f$ \hat t_0 \f$ .
  *
  * Looking at the generic Hough master equation, one realizes that
- * for a fixed  time, a given value of \f$F_0\f$, and a measured frequency \f$\nu\f$
+ * for a fixed  time, a given value of \f$ F_0 \f$ , and a measured frequency \f$ \nu \f$ 
  * p(from a selected peak), the source could be located anywhere on a circle (whose
- * center points in the same direction of \f$\vec\xi (t)\f$ and is characterized by
- * \f$\phi\f$, the angle between \f$\hat n\f$ and \f$\vec\xi\f$).  Since the Hough transform is performed on a
+ * center points in the same direction of \f$ \vec\xi (t) \f$ and is characterized by
+ * \f$ \phi \f$ , the angle between \f$ \hat n \f$ and \f$ \vec\xi \f$ ).  Since the Hough transform is performed on a
  * set of spectra with discrete frequencies, a peak on the spectrum appearing at
- * \f$\nu\f$  could correspond to any source with a demodulated
+ * \f$ \nu \f$ could correspond to any source with a demodulated
  * frequency in a certain interval. As a consequence, the location of the sources
- * compatible with \f$F_0\f$ and \f$\nu\f$ is not a circle but an annulus with a certain
+ * compatible with \f$ F_0 \f$ and \f$ \nu \f$ is not a circle but an annulus with a certain
  * width.
  *
  * Our purpose is to map these annuli on a discrete space. An estimation of the
@@ -101,15 +101,15 @@ extern "C" {
  *
  * In order to simplify  (reduce the computational cost of) this task we
  * construct look up tables (<tt>lut</tt>) where the  borders of these annuli are
- * marked for any possible \f$\nu -F_0\f$ value. Since we work on a discrete space these <tt>lut</tt> are
- * valid for many \f$F_0\f$ values.
+ * marked for any possible \f$ \nu -F_0 \f$ value. Since we work on a discrete space these <tt>lut</tt> are
+ * valid for many \f$ F_0 \f$ values.
  *
  * \anchor LUTstereo
  * \image html LUTstereo.png "Stereographic projection. [Credit to: D.Hilbert\, S.Cohn-Vossen\, P. Nemenyi\, ``Geometry and Imagination''\, Chelsea Publishing Company\, New York 1952.]"
  *
  * At this point we have already chosen a sky tiling to produce the Hough map  efficiently.
  * It consists of changing coordinates so that the center of the   patch is located at
- * \f$(0,-\pi/2)\f$ in (\f$\alpha-\delta\f$) (or in any other coordinate system), then we make use
+ * \f$ (0,-\pi/2) \f$ in ( \f$ \alpha-\delta \f$ ) (or in any other coordinate system), then we make use
  * of the stereographic projection (see \ref LUTstereo "this figure") and we take horizontal and vertical lines on
  * the projected plane at constant space separation.
  * This projection is advantageous because it avoids distortions, i.e. the
@@ -232,14 +232,14 @@ typedef struct tagHOUGHBorder{
  * bin plus the corrections to be added to the first column of the patch.
  */
 typedef struct tagHOUGHBin2Border{
-  INT2   leftB1;     	/**< Border index to be used (<em>start-border</em> `\f$+1\f$') */
-  INT2   rightB1;    	/**< Border index to be used (<em>stop-border</em> `\f$-1\f$') */
-  INT2   leftB2;     	/**< Border index  to be used (<em>start-border</em> `\f$+1\f$') */
-  INT2   rightB2;	/**< Border index  to be used (<em>stop-border</em> `\f$-1\f$') */
+  INT2   leftB1;     	/**< Border index to be used (<em>start-border</em> ` \f$ +1 \f$ ') */
+  INT2   rightB1;    	/**< Border index to be used (<em>stop-border</em> ` \f$ -1 \f$ ') */
+  INT2   leftB2;     	/**< Border index  to be used (<em>start-border</em> ` \f$ +1 \f$ ') */
+  INT2   rightB2;	/**< Border index  to be used (<em>stop-border</em> ` \f$ -1 \f$ ') */
   INT2   piece1max;  	/**< Interval limits of the (first piece) correction to the first column. */
-  INT2   piece1min;	/**< If <tt>piece1min \f$>\f$ piece1max</tt> no corrections should be added */
+  INT2   piece1min;	/**< If <tt>piece1min \f$ > \f$ piece1max</tt> no corrections should be added */
   INT2   piece2max;	/**< Interval limits of the (second piece)  correction to the first column */
-  INT2   piece2min;	/**< If <tt>piece2min \f$>\f$ piece2max</tt> no corrections should be added */
+  INT2   piece2min;	/**< If <tt>piece2min \f$ > \f$ piece2max</tt> no corrections should be added */
 } HOUGHBin2Border;
 
 /** This structure stores the patch-time-frequency <em>look up table</em>. */
@@ -326,7 +326,7 @@ typedef struct tagREAL8Polar2Coor{
 /** Polar coordinates of a unitary vector on the sphere */
 typedef struct tagREAL8UnitPolarCoor{
   REAL8  alpha;  	/**< any value */
-  REAL8  delta;  	/**< In the interval [\f$-\pi/2, \,  \pi/2\f$] */
+  REAL8  delta;  	/**< In the interval [ \f$ -\pi/2, \,  \pi/2 \f$ ] */
 } REAL8UnitPolarCoor;
 
 /** Parameters needed to construct the partial look up table */
@@ -334,13 +334,13 @@ typedef struct tagHOUGHParamPLUT{
   INT8             f0Bin;   	/**< freq. bin for which it has been constructed */
   REAL8            deltaF;  	/**< Frequency resolution: <tt>df=1/TCOH</tt> */
   REAL8UnitPolarCoor xi;  	/**< Center of the circle on the celestial sphere,
-                                 * \f$\xi\f$(alpha,delta) in the rotated coordinates
+                                 * \f$ \xi \f$ (alpha,delta) in the rotated coordinates
                                  */
-  REAL8            cosDelta;    /**< \f$\Delta \cos(\phi)\f$ corresponding to one annulus. */
+  REAL8            cosDelta;    /**< \f$ \Delta \cos(\phi) \f$ corresponding to one annulus. */
   INT4             offset;	/**< Frequency bin corresponding to center of patch; measured w.r.t. \c f0Bin */
   INT8             nFreqValid;	/**< Number of frequency bins for which the LUT is valid */
-  REAL8            cosPhiMax0;	/**< \f$\max(\cos(\phi))\f$ of the \c f0Bin */
-  REAL8            cosPhiMin0;	/**< \f$\min(\cos(\phi))\f$ of the \c f0Bin */
+  REAL8            cosPhiMax0;	/**< \f$ \max(\cos(\phi)) \f$ of the \c f0Bin */
+  REAL8            cosPhiMin0;	/**< \f$ \min(\cos(\phi)) \f$ of the \c f0Bin */
   REAL8            epsilon; 	/**< maximum angle (distance in radians) from the pole
                                  * to consider  a circle as a line in the projected plane
                                  */
@@ -352,13 +352,13 @@ typedef struct tagHOUGHParamPLUT{
  */
 typedef struct tagHOUGHDemodPar{
   REAL8               deltaF;   /**< Frequency resolution: <tt>df=1/TCOH</tt> */
-  REAL8UnitPolarCoor  skyPatch; /**< \f$N_{center}\f$ (alpha, delta): position of the center of the patch */
-  REAL8Cart3Coor      veloC;    /**< \f$v(t)/c\f$ (x,y,z): Relative detector velocity */
-  REAL8Cart3Coor      positC;   /**< \f$(x(t)-x(t0))/c\f$ (x,y,z): Position of the detector */
-  REAL8               timeDiff; /**< \f$T_{\hat N} (t)-T_{\hat N} (\hat t_0)\f$: time difference */
+  REAL8UnitPolarCoor  skyPatch; /**< \f$ N_{center} \f$ (alpha, delta): position of the center of the patch */
+  REAL8Cart3Coor      veloC;    /**< \f$ v(t)/c \f$ (x,y,z): Relative detector velocity */
+  REAL8Cart3Coor      positC;   /**< \f$ (x(t)-x(t0))/c \f$ (x,y,z): Position of the detector */
+  REAL8               timeDiff; /**< \f$ T_{\hat N} (t)-T_{\hat N} (\hat t_0) \f$ : time difference */
   REAL8Vector         spin; 	/**< Spin down information. It includes the fields:
                                  * \c length: maximum order of spin-down parameter, and
-                                 * <tt>*data</tt>: pointer to spin-down parameter set \f$F_k\f$
+                                 * <tt>*data</tt>: pointer to spin-down parameter set \f$ F_k \f$ 
                                  */
 } HOUGHDemodPar;
 

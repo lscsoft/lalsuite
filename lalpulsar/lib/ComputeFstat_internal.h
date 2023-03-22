@@ -52,7 +52,7 @@
 // Common input data for F-statistic methods
 typedef struct {
   LIGOTimeGPS midTime;                                  // Mid-time of SFT data
-  REAL8 dFreq;						// Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins.
+  REAL8 dFreq;						// Requested spacing of \f$ \mathcal{F} \f$ -statistic frequency bins.
   MultiLALDetector detectors;				// List of detectors
   MultiLIGOTimeGPSVector *multiTimestamps;		// Multi-detector list of SFT timestamps
   MultiNoiseWeights *multiNoiseWeights;                 // Multi-detector noise weights: stored unnormalized (divide by Sinv_Tsft to get normalized version)

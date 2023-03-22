@@ -41,16 +41,16 @@
  * The likelihood is the joint likelihood of chunks of data over which the noise is assumed stationary and Gaussian. For
  * each chunk a Gaussian likelihood for the noise and data has been marginalised over the unknown noise standard
  * deviation using a Jeffreys prior on the standard deviation. Given the data consisting of independent real and
- * imaginary parts this gives a Students-t distribution for each chunk (of length \f$m\f$) with \f$m/2\f$ degrees of
+ * imaginary parts this gives a Students-t distribution for each chunk (of length \f$ m \f$ ) with \f$ m/2 \f$ degrees of
  * freedom:
  * \f[
  * p(\mathbf{\theta}|\mathbf{B}) = \prod_{j=1}^M \frac{(m_j-1)!}{2\pi^{m_j}}
  * \left( \sum_{k=k_0}^{k_0+(m_j-1)} |B_k - y(\mathbf{\theta})_k|^2
  * \right)^{-m_j},
  * \f]
- * where \f$\mathbf{B}\f$ is a vector of the complex data, \f$y(\mathbf{\theta})\f$ is the model for a set of parameters
- * \f$\mathbf{\theta}\f$, \f$M\f$ is the total number of independent data chunks with lengths \f$m_j\f$ and \f$k_0 =
- * \sum_{i=1}^j 1 + m_{i-1}\f$ (with \f$m_0 = 0\f$) is the index of the first data point in each chunk. The product of
+ * where \f$ \mathbf{B} \f$ is a vector of the complex data, \f$ y(\mathbf{\theta}) \f$ is the model for a set of parameters
+ * \f$ \mathbf{\theta} \f$ , \f$ M \f$ is the total number of independent data chunks with lengths \f$ m_j \f$ and \f$ k_0 =
+ * \sum_{i=1}^j 1 + m_{i-1} \f$ (with \f$ m_0 = 0 \f$ ) is the index of the first data point in each chunk. The product of
  * this for each detector will give the full joint likelihood. See \cite DupuisWoan2005 for a
  * more detailed description.
  *
@@ -317,7 +317,7 @@ REAL8 pulsar_log_likelihood( LALInferenceVariables *vars, LALInferenceIFOData *d
  * The function will calculate the natural logarithm of the evidence that the data (from one or more detectors) consists
  * of stationary segments/chunks described by a Gaussian with zero mean and unknown variance.
  *
- * The evidence is obtained from the joint likelihood given in \c pulsar_log_likelihood with the model term \f$y\f$ set
+ * The evidence is obtained from the joint likelihood given in \c pulsar_log_likelihood with the model term \f$ y \f$ set
  * to zero.
  *
  * \param runState [in] The algorithm run state
@@ -423,7 +423,7 @@ REAL8 noise_only_likelihood( LALInferenceRunState *runState ){
  * \brief The prior function
  *
  * This function calculates the natural logarithm of the prior for a set of parameters. If the prior on a particular
- * parameter is uniform over a given range then \f$p(\theta) = 1/(\theta_{\rm max} - \theta_{\rm min})\f$. If the
+ * parameter is uniform over a given range then \f$ p(\theta) = 1/(\theta_{\rm max} - \theta_{\rm min}) \f$ . If the
  * prior is Gaussian then the probability of that value given the mean and standard deviation of the Gaussian is
  * calculated.
  *
@@ -571,7 +571,7 @@ REAL8 priorFunction( LALInferenceRunState *runState, LALInferenceVariables *para
  * If you have two angles that define spherical polar coordinates and you want these to have a prior
  * that is uniform over the sphere then you can instead work with the cosine of the latitude-like angle
  * and have this to be uniform between -1 and 1. However, if you want to work in the actual angle then
- * you need to set the correct prior which will be \f$p(\theta) \propto \sin{\theta)\f$.
+ * you need to set the correct prior which will be \f$ p(\theta) \propto \sin{\theta) \f$ .
  *
  * \param theta [in] The angle in radians
  *

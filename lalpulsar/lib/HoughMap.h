@@ -134,7 +134,7 @@ typedef struct tagHOUGHMapTotal{
   UINT4              nPG;        /**< number of peakgrams used  <tt><= mObsCoh</tt>; there could be gaps during the observation time */
   REAL8              patchSizeX; /**< x size of patch */
   REAL8              patchSizeY; /**< y size of patch */
-  REAL8UnitPolarCoor skyPatch;   /**< Coordinates of the versor \f$\hat N_{center}\f$ (alpha, delta) pointing to the center of the sky patch */
+  REAL8UnitPolarCoor skyPatch;   /**< Coordinates of the versor \f$ \hat N_{center} \f$ (alpha, delta) pointing to the center of the sky patch */
   REAL8Vector        spinDem;    /**< Spin parameters used in the demodulation stage */
   REAL8Vector        spinRes;    /**< Refined spin parameters used in the Hough transform */
   REAL8Vector        dFdot;      /**< resolution in spindown parameters */

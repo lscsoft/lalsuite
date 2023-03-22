@@ -34,14 +34,14 @@ extern "C" {
  * \defgroup ExtrapolatePulsarSpins_h Header ExtrapolatePulsarSpins.h
  * \ingroup lalpulsar_general
  * \brief  Extrapolate the Pulsar spin-paramters
- * \f$\{f^{(k)}\}\equiv\{f, \dot{f},\ddot{f},...\}\f$, and "spin-ranges"
- * \f$\{ f^{(k)}, \Delta f^{(k)} \}\f$ from one SSB epoch to another.
+ * \f$ \{f^{(k)}\}\equiv\{f, \dot{f},\ddot{f},...\} \f$ , and "spin-ranges"
+ * \f$ \{ f^{(k)}, \Delta f^{(k)} \} \f$ from one SSB epoch to another.
  * \author Reinhard Prix
  *
  * The central function of this module is XLALExtrapolatePulsarSpinRange(), which extrapolates
  * a complete "spin range" (defined as PulsarSpinRange) from one epoch to another.
- * A "spin-range" contains an epoch, and \em two vectors, \f$f^{(k)}\f$ and \f$\Delta f^{(k)}\f$
- * (where "canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
+ * A "spin-range" contains an epoch, and \em two vectors, \f$ f^{(k)} \f$ and \f$ \Delta f^{(k)} \f$ 
+ * (where "canonical" ordering refers to \f$ \Delta f^{(k)} >= 0 \f$ for all k.
  *
  * The extrapolation is defined by the pulsar spindown-model:
  * \f[ f(\tau_1) = f(\tau_0) + \frac{\dot{f}(\tau_0)}{1!} \,\Delta\tau
@@ -55,7 +55,7 @@ extern "C" {
  * f^{(l)}(\tau_1) = \sum_{k=0}^{s - l} \frac{ f^{(k+l)}(\tau_0)}{k! }\, \Delta\tau^k\,.
  * \f]
  *
- * This expression is used to extrapolate a whole "spin-range", namely at each spindown-order \f$(l)\f$
+ * This expression is used to extrapolate a whole "spin-range", namely at each spindown-order \f$ (l) \f$ 
  * the extrapolated range is given by
  * \f[
  * \min\left[ f^{(l)}(\tau_1) \right] = \sum_{k=0}^{s - l} \frac{1}{k!} \min\left[ f^{(k+l)}(\tau_0) \, \Delta\tau^k \right]\,.
@@ -65,10 +65,10 @@ extern "C" {
  * \max\left[ f^{(l)}(\tau_1) \right] = \sum_{k=0}^{s - l} \frac{1}{k!} \max\left[ f^{(k+l)}(\tau_0) \, \Delta\tau^k \right]\,.
  * \f]
  *
- * This ensures that the range will be correctly extrapolated even if \f$\tau_1 < \tau_0\f$, i.e. \f$\Delta\tau < 0\f$.
+ * This ensures that the range will be correctly extrapolated even if \f$ \tau_1 < \tau_0 \f$ , i.e. \f$ \Delta\tau < 0 \f$ .
  *
  * The initial-phase extrapolation in XLALExtrapolatePulsarPhase() proceeds in the other direction, extrapolating
- * \f$\phi(\tau_0)\f$ to \f$\phi(\tau_1)\f$, where the spins are given at \f$\tau_1\f$, i.e. \f$f^{(k)}(\tau_1)\f$.
+ * \f$ \phi(\tau_0) \f$ to \f$ \phi(\tau_1) \f$ , where the spins are given at \f$ \tau_1 \f$ , i.e. \f$ f^{(k)}(\tau_1) \f$ .
  * By using the above equations, one can arrive at the following expression:
  * \f[
  * \phi(\tau_1) = \phi(\tau_0) - \sum_{k=0}^s \frac{f^{(k)}(\tau_1)}{(k+1)!} \, (-\Delta\tau)^{k+1} \,.

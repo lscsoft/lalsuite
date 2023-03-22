@@ -99,7 +99,7 @@ typedef struct {
   COMPLEX16 Fa;				/**< complex amplitude Fa */
   COMPLEX16 Fb;				/**< complex amplitude Fb */
   AntennaPatternMatrix Mmunu;		/**< antenna-pattern matrix Mmunu = (h_mu|h_nu) */
-  REAL4 log10BSGL;			/**< Line-robust statistic \f$\log_{10}B_{\mathrm{SGL}}\f$ */
+  REAL4 log10BSGL;			/**< Line-robust statistic \f$ \log_{10}B_{\mathrm{SGL}} \f$ */
 } FstatCandidate;
 
 /**

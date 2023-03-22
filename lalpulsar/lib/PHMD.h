@@ -43,8 +43,8 @@ extern "C" {
  *
  * A  \c phmd can be represented by a set of borders, here called <em>left</em> and \e right.
  * They indicate the beginning and the end of the annuli.
- * The position of the so-called left borders should be marked with \f$+1\f$, and
- * the position of the right borders should be marked with \f$-1\f$ in the \c phmd.
+ * The position of the so-called left borders should be marked with \f$ +1 \f$ , and
+ * the position of the right borders should be marked with \f$ -1 \f$ in the \c phmd.
  * To obtain a partial Hough map, one needs to integrate each row of the \c phmd
  * from left to right.
  *

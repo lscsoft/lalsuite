@@ -35,8 +35,8 @@
 #define RELERROR(x, y) fabs( 2.0 * ((x) - (y)) / ( (x) + (y) ) )
 
 /**
- * Very simple test: given spin-params at \f$\tau_0\f$, extrapolate them to
- * \f$\tau_1\f$ and compare to reference-result...
+ * Very simple test: given spin-params at \f$ \tau_0 \f$ , extrapolate them to
+ * \f$ \tau_1 \f$ and compare to reference-result...
  */
 int main(void)
 {

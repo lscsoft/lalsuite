@@ -390,8 +390,8 @@ void add_variable_parameter( PulsarParameters *params, LALInferenceVariables *va
  *
  * Firstly the time varying amplitude of the signal will be calculated based on the antenna pattern and amplitude
  * parameters. Then, if searching over phase parameters, the phase evolution of the signal will be calculated. The
- * difference between the new phase model, \f$\phi(t)_n\f$, and that used to heterodyne the data, \f$\phi(t)_h\f$,
- * will be calculated and the complex signal model, \f$M\f$, modified accordingly:
+ * difference between the new phase model, \f$ \phi(t)_n \f$ , and that used to heterodyne the data, \f$ \phi(t)_h \f$ ,
+ * will be calculated and the complex signal model, \f$ M \f$ , modified accordingly:
  * \f[
  * M'(t) = M(t)\exp{i((\phi(t)_n - \phi(t)_h))}.
  * \f]
@@ -460,19 +460,19 @@ void pulsar_model( PulsarParameters *params, LALInferenceIFOModel *ifo ){
  * \f[
  * \phi(T) = \sum_{k=1}^n \frac{f^{(k-1)}}{k!} T^k,
  * \f]
- * where \f$f^(x)\f$ is the xth time derivative of the gravitational wave frequency, and \f$T\f$ is the pulsar proper
+ * where \f$ f^(x) \f$ is the xth time derivative of the gravitational wave frequency, and \f$ T \f$ is the pulsar proper
  * time, then the phase difference is given by
  * \f[
  * \Delta\phi(t) = \sum_{k=1}^n \left( \frac{\Delta f^{(k-1)}}{k!}(t+\delta t_1)^k + \frac{f^{(k-1)}_2}{k!} \sum_{i=0}^{i<k} \left(\begin{array}{c}k \\ i\end{array}\right) (\Delta t)^{k-i} (t+\delta t_1)^i \right),
  * \f]
- * where \f$t\f$ is the signal arrival time at the detector minus the given pulsar period epoch, \f$\delta t_1\f$ is the barycentring time delay
- * (from both solar system and binary orbital effects) calculated at the heterodyned values, \f$\Delta f^{(x)} = f_2^{(x)}-f1^{(x)}\f$
- * is the diffence in frequency (derivative) between the current value (\f$f_2^{(x)}\f$) and the heterodyne value (\f$\f_1^{(x)}\f$),
- * and \f$\Delta t = \delta t_2 - \delta t_1\f$ is the difference between the barycentring time delay calculated at the
- * current values (\f$\delta t_1\f$) and the heterodyned values.
+ * where \f$ t \f$ is the signal arrival time at the detector minus the given pulsar period epoch, \f$ \delta t_1 \f$ is the barycentring time delay
+ * (from both solar system and binary orbital effects) calculated at the heterodyned values, \f$ \Delta f^{(x)} = f_2^{(x)}-f1^{(x)} \f$ 
+ * is the diffence in frequency (derivative) between the current value ( \f$ f_2^{(x)} \f$ ) and the heterodyne value ( \f$ \f_1^{(x)} \f$ ),
+ * and \f$ \Delta t = \delta t_2 - \delta t_1 \f$ is the difference between the barycentring time delay calculated at the
+ * current values ( \f$ \delta t_1 \f$ ) and the heterodyned values.
  * Frequency time derivatives are currently allowed up to the tenth derivative. The pulsar proper time is
- * calculated by correcting the time of arrival at Earth, \f$t\f$ to the solar system barycentre and if necessary the
- * binary system barycenter, so \f$T = t + \delta{}t_{\rm SSB} + \delta{}t_{\rm BSB}\f$.
+ * calculated by correcting the time of arrival at Earth, \f$ t \f$ to the solar system barycentre and if necessary the
+ * binary system barycenter, so \f$ T = t + \delta{}t_{\rm SSB} + \delta{}t_{\rm BSB} \f$ .
  *
  * In this function the time delay needed to correct to the solar system barycenter is only calculated if
  * required, i.e., if an update is required due to a change in the sky position.
@@ -620,8 +620,8 @@ REAL8Vector *get_phase_model( PulsarParameters *params, LALInferenceIFOModel *if
  *
  * This function calculate the time delay between a GPS time at a specific location (e.g. a gravitational wave detector)
  * on Earth and the solar system barycentre. The delay consists of three components: the geometric time delay (Roemer
- * delay) \f$t_R = \mathbf{r}(t)\hat{n}/c\f$ (where \f$\mathbf{r}(t)\f$ is the detector's position vector at time
- * \f$t\f$), the special relativistic Einstein delay \f$t_E\f$, and the general relativistic Shapiro delay \f$t_S\f$.
+ * delay) \f$ t_R = \mathbf{r}(t)\hat{n}/c \f$ (where \f$ \mathbf{r}(t) \f$ is the detector's position vector at time
+ * \f$ t \f$ ), the special relativistic Einstein delay \f$ t_E \f$ , and the general relativistic Shapiro delay \f$ t_S \f$ .
  *
  * Rather than computing the time delay at every time stamp passed to the function it is instead (if requested) able to
  * perform linear interpolation to a point within a range given by \c interptime.
@@ -866,12 +866,12 @@ REAL8Vector *get_glitch_phase( PulsarParameters *pars, LIGOTimeGPSVector *datati
 
 
 /**
- * \brief The amplitude model of a complex heterodyned signal from the \f$l=2, m=1,2\f$ harmonics of a rotating neutron
+ * \brief The amplitude model of a complex heterodyned signal from the \f$ l=2, m=1,2 \f$ harmonics of a rotating neutron
  * star.
  *
  * This function calculates the complex heterodyned time series model for a rotating neutron star. It will currently
- * calculate the model for emission from the \f$l=m=2\f$ harmonic (which gives emission at twice the rotation frequency)
- * and/or the \f$l=2\f$ and \f$m=1\f$ harmonic (which gives emission at the rotation frequency). See LIGO T1200265-v3.
+ * calculate the model for emission from the \f$ l=m=2 \f$ harmonic (which gives emission at twice the rotation frequency)
+ * and/or the \f$ l=2 \f$ and \f$ m=1 \f$ harmonic (which gives emission at the rotation frequency). See LIGO T1200265-v3.
  * Further harmonics can be added and are defined by the \c freqFactor value, which is the multiple of the
  * spin-frequency at which emission is produced.
  *
@@ -1213,9 +1213,9 @@ edat->nentriesE * edat->dtEtable );
  *
  * This function creates a lookup table of the tensor, vector and scalar antenna patterns for a given
  * detector orientation and source sky position. For the tensor modes these are the functions given by
- * equations 10-13 in \cite JKS98 , whilst for the vector and scalar modes they are the \f$\psi\f$
- * independent parts of e.g. equations 5-8 of \cite Nishizawa2009 . We remove the \f$\psi\f$ dependent
- * by setting \f$\psi=0\f$.
+ * equations 10-13 in \cite JKS98 , whilst for the vector and scalar modes they are the \f$ \psi \f$ 
+ * independent parts of e.g. equations 5-8 of \cite Nishizawa2009 . We remove the \f$ \psi \f$ dependent
+ * by setting \f$ \psi=0 \f$ .
  *
  * If \c avedt is a value over 60 seconds then the antenna pattern will actually be the mean value from
  * 60 second intervals within that timespan. This accounts for the fact that each data point is actually an
@@ -1307,7 +1307,7 @@ void response_lookup_table( REAL8 t0, LALDetAndSource detNSource, INT4 timeSteps
  * Convert the physical source parameters into the amplitude and phase notation given in Eqns
  * 62-65 of \cite Jones:2015 .
  *
- * Note that \c phi0 is essentially the rotational phase of the pulsar. Also, note that if using \f$h_0\f$,
+ * Note that \c phi0 is essentially the rotational phase of the pulsar. Also, note that if using \f$ h_0 \f$ ,
  * and therefore the convention for a signal as defined in \cite JKS98 , the sign of the waveform model is
  * the opposite of that in \cite Jones:2015 , and therefore a sign flip is required in the amplitudes.
  */

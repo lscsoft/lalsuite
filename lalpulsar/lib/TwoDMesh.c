@@ -38,7 +38,7 @@
  * by <tt>*mesh</tt>, including all sub-meshes, and sets
  * <tt>*mesh</tt>=\c NULL.  If <tt>*mesh</tt> is already \c NULL,
  * nothing is done (this is \e not an erroneous usage).  If
- * \c nFree\f$\neq\f$\c NULL, then <tt>*nFree</tt> is set to the number
+ * \c nFree \f$ \neq \f$ \c NULL, then <tt>*nFree</tt> is set to the number
  * of nodes freed.
  *
  * The routine <tt>LALRefineTwoDMesh()</tt> creates a heirarchical search
@@ -73,7 +73,7 @@
  * avoid any possible memory leaks: destroying the coarse mesh list will
  * leave the fine mesh list intact, and vice-versa.
  *
- * To create a \f$>2\f$~level hierarchical search mesh, build it from the
+ * To create a \f$ >2 \f$ ~level hierarchical search mesh, build it from the
  * bottom up: call <tt>LALRefineTwoDMesh()</tt> to add the finest mesh to
  * the next finest, add that to the next finest, and so on up to the
  * coarsest mesh.

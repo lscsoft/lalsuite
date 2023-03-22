@@ -61,7 +61,7 @@
  * the size of the patch depends on the grid used in the
  * demodulation stage. Neighbour sky-patches should not be separated
  * nor overlapping too much.
- * Here for setting the patch size, we  consider only \f$v_{epicycle}\f$,
+ * Here for setting the patch size, we  consider only \f$ v_{epicycle} \f$ ,
  * the frequency \c f0 and  \c deltaF so that the ` longitudinal'  size
  * of the patch is given by <tt>side == deltaF/f0 * c/v_epi</tt>.
  * By taking \c f0 to be the maximun frequency considered in that step,

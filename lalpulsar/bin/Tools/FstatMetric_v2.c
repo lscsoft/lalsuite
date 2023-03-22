@@ -128,7 +128,7 @@ typedef struct
 typedef struct
 {
   LALStringVector *IFOs;	/**< list of detector-names "H1,H2,L1,.." or single detector*/
-  LALStringVector *sqrtSX; 	/**< (string-) list of per-IFO sqrt{Sn} values, \f$\sqrt{S_X}\f$ */
+  LALStringVector *sqrtSX; 	/**< (string-) list of per-IFO sqrt{Sn} values, \f$ \sqrt{S_X} \f$ */
 
   REAL8 Freq;		/**< target-frequency */
   REAL8 Alpha;		/**< skyposition Alpha: radians, equatorial coords. */

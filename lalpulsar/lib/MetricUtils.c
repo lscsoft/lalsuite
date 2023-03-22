@@ -39,16 +39,16 @@
 #define POW5(a)  ( (a) * (a) * (a) * (a) * (a) )
 
 ///
-/// Flexible comparison function between two metrics \f$ g^1_{ij} \f$ and \f$ g^2_{ij} \f$.
+/// Flexible comparison function between two metrics \f$ g^1_{ij} \f$ and \f$ g^2_{ij} \f$ .
 ///
-/// Returns maximal relative deviation \f$ \max_{i,j} \delta g_{ij} \f$, measured in terms of
-/// diagonal entries, i.e. \f$ \delta g_{ij} = ( g^1_{ij} - g^2_{ij} ) / \sqrt{ g^1_{ii} g^1_{jj} } \f$.
+/// Returns maximal relative deviation \f$ \max_{i,j} \delta g_{ij} \f$ , measured in terms of
+/// diagonal entries, i.e. \f$ \delta g_{ij} = ( g^1_{ij} - g^2_{ij} ) / \sqrt{ g^1_{ii} g^1_{jj} } \f$ .
 /// This should always be well-defined, as we deal with positive-definite square matrices.
 ///
 REAL8
 XLALCompareMetrics(
-  const gsl_matrix *g1_ij,			///< [in] Metric to compare \f$ g^1_{ij} \f$.
-  const gsl_matrix *g2_ij			///< [in] Metric to compare \f$ g^2_{ij} \f$.
+  const gsl_matrix *g1_ij,			///< [in] Metric to compare \f$ g^1_{ij} \f$ .
+  const gsl_matrix *g2_ij			///< [in] Metric to compare \f$ g^2_{ij} \f$ .
   )
 {
 
@@ -91,10 +91,10 @@ XLALCompareMetrics(
 } // XLALCompareMetrics()
 
 ///
-/// Compute the determinant of a metric \f$ g_{ij} \f$.
+/// Compute the determinant of a metric \f$ g_{ij} \f$ .
 ///
 double XLALMetricDeterminant(
-  const gsl_matrix *g_ij		///< [in] Parameter-space metric \f$ g_{ij} \f$
+  const gsl_matrix *g_ij		///< [in] Parameter-space metric \f$ g_{ij} \f$ 
   )
 {
 
@@ -124,10 +124,10 @@ double XLALMetricDeterminant(
 }
 
 ///
-/// Compute the extent of the bounding box of the mismatch ellipse of a metric \f$ g_{ij} \f$.
+/// Compute the extent of the bounding box of the mismatch ellipse of a metric \f$ g_{ij} \f$ .
 ///
 gsl_vector *XLALMetricEllipseBoundingBox(
-  const gsl_matrix *g_ij,		///< [in] Parameter-space metric \f$ g_{ij} \f$
+  const gsl_matrix *g_ij,		///< [in] Parameter-space metric \f$ g_{ij} \f$ 
   const double max_mismatch		///< [in] Maximum prescribed mismatch
   )
 {
@@ -170,7 +170,7 @@ gsl_vector *XLALMetricEllipseBoundingBox(
 
 ///
 /// Calculate the projected metric onto the subspace orthogonal to coordinate-axis \c c, namely
-/// \f$ g^{\prime}_{ij} = g_{ij} - ( g_{ic} g_{jc} / g_{cc} ) \f$, where \f$c\f$ is the index of
+/// \f$ g^{\prime}_{ij} = g_{ij} - ( g_{ic} g_{jc} / g_{cc} ) \f$ , where \f$ c \f$ is the index of
 /// the projected coordinate.
 ///
 /// \note \c *p_gpr_ij will be allocated if \c NULL. \c *p_gpr_ij and \c g_ij may point to the same
@@ -178,8 +178,8 @@ gsl_vector *XLALMetricEllipseBoundingBox(
 ///
 int
 XLALProjectMetric(
-  gsl_matrix **p_gpr_ij,			///< [in,out] Pointer to projected matrix \f$g^{\prime}_{ij}\f$
-  const gsl_matrix *g_ij,			///< [in] Matrix to project \f$g_{ij}\f$
+  gsl_matrix **p_gpr_ij,			///< [in,out] Pointer to projected matrix \f$ g^{\prime}_{ij} \f$ 
+  const gsl_matrix *g_ij,			///< [in] Matrix to project \f$ g_{ij} \f$ 
   const UINT4 c					///< [in] Index of projected coordinate
   )
 {
@@ -226,14 +226,14 @@ XLALProjectMetric(
 } // XLALProjectMetric()
 
 ///
-/// Decompose a metric \f$\mathbf{G}\f$ as \f$ \mathbf{G} = \mathbf{L} \mathbf{D}
-/// \mathbf{L}^{\mathrm{T}} \f$, where \f$\mathbf{L}\f$ is a lower-triangular matrix
-/// with unit diagonal, and \f$\mathbf{D}\f$ is a diagonal matrix. This decomposition
+/// Decompose a metric \f$ \mathbf{G} \f$ as \f$ \mathbf{G} = \mathbf{L} \mathbf{D}
+/// \mathbf{L}^{\mathrm{T}} \f$ , where \f$ \mathbf{L} \f$ is a lower-triangular matrix
+/// with unit diagonal, and \f$ \mathbf{D} \f$ is a diagonal matrix. This decomposition
 /// may be useful if the metric cannot yet be guaranteed to be positive definite.
 ///
 int XLALCholeskyLDLTDecompMetric(
-  gsl_matrix **p_cholesky,			///< [in,out] Pointer to decomposition; stores \f$\mathbf{L}\f$ in lower triangular part \f$\mathbf{D}\f$ on diagonal
-  const gsl_matrix *g_ij			///< [in] Matrix to decompose \f$\mathbf{G}\f$
+  gsl_matrix **p_cholesky,			///< [in,out] Pointer to decomposition; stores \f$ \mathbf{L} \f$ in lower triangular part \f$ \mathbf{D} \f$ on diagonal
+  const gsl_matrix *g_ij			///< [in] Matrix to decompose \f$ \mathbf{G} \f$ 
   )
 {
 
@@ -279,17 +279,17 @@ int XLALCholeskyLDLTDecompMetric(
 }
 
 ///
-/// Apply a transform \f$\mathbf{A} = (a_{ij})\f$ to a metric \f$\mathbf{G} = (g_{ij})\f$ such that
+/// Apply a transform \f$ \mathbf{A} = (a_{ij}) \f$ to a metric \f$ \mathbf{G} = (g_{ij}) \f$ such that
 /// \f$ \mathbf{G} \rightarrow \mathbf{G}^{\prime} = \mathbf{A}^{\mathrm{T}} \mathbf{G} \mathbf{A}
-/// \f$, or equivalently \f$ g_{ij} \rightarrow g^{\prime}_{kl} = g_{ij} a_{ik} a_{jl} \f$.
+/// \f$ , or equivalently \f$ g_{ij} \rightarrow g^{\prime}_{kl} = g_{ij} a_{ik} a_{jl} \f$ .
 ///
 /// \note \c *p_gpr_ij will be allocated if \c NULL. \c *p_gpr_ij and \c g_ij may point to the same
 /// matrix.
 ///
 int XLALTransformMetric(
-  gsl_matrix **p_gpr_ij,			///< [in,out] Pointer to transformed matrix \f$\mathbf{G}^{\prime}\f$
-  const gsl_matrix *transform,			///< [in] Transform to apply \f$\mathbf{A}\f$
-  const gsl_matrix *g_ij			///< [in] Matrix to transform \f$\mathbf{G}\f$
+  gsl_matrix **p_gpr_ij,			///< [in,out] Pointer to transformed matrix \f$ \mathbf{G}^{\prime} \f$ 
+  const gsl_matrix *transform,			///< [in] Transform to apply \f$ \mathbf{A} \f$ 
+  const gsl_matrix *g_ij			///< [in] Matrix to transform \f$ \mathbf{G} \f$ 
   )
 {
 
@@ -333,18 +333,18 @@ int XLALTransformMetric(
 } // XLALTransformMetric()
 
 ///
-/// Apply the inverse of a transform \f$\mathbf{A}^{-1} = \mathbf{B} = (b_{ij})\f$ to a metric
-/// \f$\mathbf{G} = (g_{ij})\f$ such that \f$ \mathbf{G} \rightarrow \mathbf{G}^{\prime} =
-/// \mathbf{B}^{\mathrm{T}} \mathbf{G} \mathbf{B} \f$, or equivalently \f$ g_{ij} \rightarrow
-/// g^{\prime}_{kl} = g_{ij} b_{ik} b_{jl} \f$.
+/// Apply the inverse of a transform \f$ \mathbf{A}^{-1} = \mathbf{B} = (b_{ij}) \f$ to a metric
+/// \f$ \mathbf{G} = (g_{ij}) \f$ such that \f$ \mathbf{G} \rightarrow \mathbf{G}^{\prime} =
+/// \mathbf{B}^{\mathrm{T}} \mathbf{G} \mathbf{B} \f$ , or equivalently \f$ g_{ij} \rightarrow
+/// g^{\prime}_{kl} = g_{ij} b_{ik} b_{jl} \f$ .
 ///
 /// \note \c *p_gpr_ij will be allocated if \c NULL. \c *p_gpr_ij and \c g_ij may point to the same
 /// matrix.
 ///
 int XLALInverseTransformMetric(
-  gsl_matrix **p_gpr_ij,			///< [in,out] Pointer to transformed matrix \f$\mathbf{G}^{\prime}\f$
-  const gsl_matrix *transform,			///< [in] Transform \f$\mathbf{A}\f$, the inverse of which to apply
-  const gsl_matrix *g_ij			///< [in] Matrix to transform \f$\mathbf{G}\f$
+  gsl_matrix **p_gpr_ij,			///< [in,out] Pointer to transformed matrix \f$ \mathbf{G}^{\prime} \f$ 
+  const gsl_matrix *transform,			///< [in] Transform \f$ \mathbf{A} \f$ , the inverse of which to apply
+  const gsl_matrix *g_ij			///< [in] Matrix to transform \f$ \mathbf{G} \f$ 
   )
 {
 
@@ -379,9 +379,9 @@ int XLALInverseTransformMetric(
 } // XLALInverseTransformMetric()
 
 ///
-/// Diagonally-normalize a metric \f$ g_{ij} \f$.  <i>Diagonally-normalize</i> means normalize
+/// Diagonally-normalize a metric \f$ g_{ij} \f$ .  <i>Diagonally-normalize</i> means normalize
 /// metric by its diagonal, namely apply the transformation \f$ g_{ij} \rightarrow g^{\prime}_{ij} =
-/// g_{ij} / \sqrt{g_{ii} g_{jj}} \f$, resulting in a lower condition number and unit diagonal
+/// g_{ij} / \sqrt{g_{ii} g_{jj}} \f$ , resulting in a lower condition number and unit diagonal
 /// elements.
 ///
 /// If \c p_transform is non-NULL, return the diagonal-normalization transform in \c *p_transform.
@@ -392,9 +392,9 @@ int XLALInverseTransformMetric(
 ///
 int
 XLALDiagNormalizeMetric(
-  gsl_matrix **p_gpr_ij,			///< [in,out,optional] Pointer to transformed matrix \f$g^{\prime}_{ij}\f$
+  gsl_matrix **p_gpr_ij,			///< [in,out,optional] Pointer to transformed matrix \f$ g^{\prime}_{ij} \f$ 
   gsl_matrix **p_transform,			///< [in,out,optional] Pointer to diagonal-normalization transform
-  const gsl_matrix *g_ij			///< [in] Matrix to transform \f$g_{ij}\f$
+  const gsl_matrix *g_ij			///< [in] Matrix to transform \f$ g_{ij} \f$ 
   )
 {
 
@@ -438,16 +438,16 @@ XLALDiagNormalizeMetric(
 
 ///
 /// Return a metric in <i>naturalized</i> coordinates.
-/// Frequency coordinates of spindown order \f$s\f$ are scaled by
+/// Frequency coordinates of spindown order \f$ s \f$ are scaled by
 /// \f[ \frac{2\pi}{(s+1)!} \left(\frac{\overline{\Delta T}}{2}\right)^{s+1} \f]
-/// where \f$\overline{\Delta T}\equiv\sum_{k}^{N} \Delta T_k\f$ is the average segment-length
-/// over all \f$N\f$ segments.
+/// where \f$ \overline{\Delta T}\equiv\sum_{k}^{N} \Delta T_k \f$ is the average segment-length
+/// over all \f$ N \f$ segments.
 ///
 /// Sky coordinates are scaled by Holgers' units, see Eq.(44) in PRD82,042002(2010),
 /// without the equatorial rotation in alpha:
 /// \f[ \frac{2\pi f R_{E}  \cos(\delta_{D})}{c} \f]
-/// where \f$f\f$ is the frequency and
-/// \f$R_{E}\f$ the Earth radius, and \f$\delta_{D}\f$ is the detectors latitude.
+/// where \f$ f \f$ is the frequency and
+/// \f$ R_{E} \f$ the Earth radius, and \f$ \delta_{D} \f$ is the detectors latitude.
 ///
 /// If \c p_transform is non-NULL, return the naturalization transform in \c *p_transform.
 /// If \c p_gpr_ij is non-NULL, apply the transform to the metric \c *p_gpr_ij.
@@ -457,9 +457,9 @@ XLALDiagNormalizeMetric(
 ///
 int
 XLALNaturalizeMetric(
-  gsl_matrix **p_gpr_ij,			///< [in,out,optional] Pointer to transformed matrix \f$g^{\prime}_{ij}\f$
+  gsl_matrix **p_gpr_ij,			///< [in,out,optional] Pointer to transformed matrix \f$ g^{\prime}_{ij} \f$ 
   gsl_matrix **p_transform,			///< [in,out,optional] Pointer to naturalization transform
-  const gsl_matrix *g_ij,			///< [in] Matrix to transform \f$g_{ij}\f$
+  const gsl_matrix *g_ij,			///< [in] Matrix to transform \f$ g_{ij} \f$ 
   const DopplerMetricParams *metricParams	///< [in] Input parameters used to calculate naturalization transform
   )
 {
@@ -571,7 +571,7 @@ XLALNaturalizeMetric(
 
 ///
 /// Compute the transform which changes the metric reference time \f$ \tau_0 \rightarrow \tau_1 =
-/// \tau_0 + \Delta\tau \f$.
+/// \tau_0 + \Delta\tau \f$ .
 ///
 /// If \c p_transform is non-NULL, return the reference-time transform in \c *p_transform.
 /// If \c p_gpr_ij is non-NULL, apply the transform to the metric \c *p_gpr_ij.
@@ -581,11 +581,11 @@ XLALNaturalizeMetric(
 ///
 int
 XLALChangeMetricReferenceTime(
-  gsl_matrix **p_gpr_ij,			///< [in,out,optional] Pointer to transformed matrix \f$g^{\prime}_{ij}\f$
+  gsl_matrix **p_gpr_ij,			///< [in,out,optional] Pointer to transformed matrix \f$ g^{\prime}_{ij} \f$ 
   gsl_matrix **p_transform,			///< [in,out,optional] Pointer to reference time transform
-  const gsl_matrix *g_ij,			///< [in] Matrix to transform \f$g_{ij}\f$
+  const gsl_matrix *g_ij,			///< [in] Matrix to transform \f$ g_{ij} \f$ 
   const DopplerCoordinateSystem *coordSys,	///< [in] Coordinate system of metric
-  const double Dtau				///< [in] Difference between new and old reference times \f$\Delta\tau\f$
+  const double Dtau				///< [in] Difference between new and old reference times \f$ \Delta\tau \f$ 
   )
 {
 

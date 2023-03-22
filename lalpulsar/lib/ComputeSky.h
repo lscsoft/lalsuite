@@ -38,29 +38,29 @@
  * \hat{x}_b({\vec{\lambda}})=
  * \sum_{\alpha =0}^{M-1}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
  * \f}
- * The index \f$b\f$ defines the DeFT frequency bin, the index \f$\alpha\f$ loops through
- * the SFTs that build the DeFT, \f$k\f$ runs on all the SFT frequency bins, and \f$j\f$
+ * The index \f$ b \f$ defines the DeFT frequency bin, the index \f$ \alpha \f$ loops through
+ * the SFTs that build the DeFT, \f$ k \f$ runs on all the SFT frequency bins, and \f$ j \f$ 
  * is a time index that runs on each SFT.  The next step in the development of the demodulation
  * technique involves Taylor expanding the phase model about the temporal
  * midpoint of each short segment of data, while retaining only first order
- * terms.  The Taylor expansion of \f$\Phi (t)\f$ about the temporal midpoint
- * \f$t_{\alpha,1/2}\f$ is
+ * terms.  The Taylor expansion of \f$ \Phi (t) \f$ about the temporal midpoint
+ * \f$ t_{\alpha,1/2} \f$ is
  * \f{equation}{
  * \label{eq_taylor2}
  * \Phi_{\alpha}(t) = \Phi(t_{\alpha,1/2})+\left[t-t_{\alpha,1/2}\right]\frac{d\Phi}{dt}(t_{\alpha,1/2}) \\
  * \f}
- * For each value of \f$\alpha\f$, this expression consist of either constant or linear terms in time.  With the particular time discretization chosen in this code, \f$t=t_{0}+(N\alpha+j)\ T_{obs}/NM\f$, we have
+ * For each value of \f$ \alpha \f$ , this expression consist of either constant or linear terms in time.  With the particular time discretization chosen in this code, \f$ t=t_{0}+(N\alpha+j)\ T_{obs}/NM \f$ , we have
  * \f{equation}{
  * \label{eq_time}
  * \left[t-t_{\alpha,1/2}\right]=\frac{\ T_{obs}}{M}\left(\frac{j}{N}-\frac{1}{2}\right)=\mathcal{T}_{s}\left(\frac{j}{N}-\frac{1}{2}\right),
  * \f}
- * where \f$\mathcal{T}_{s}\f$ is the short time baseline of the \f$M\f$ short FTs.  On
- * the other hand, the phase can also be expressed as a function of SSB time \f$T\f$
+ * where \f$ \mathcal{T}_{s} \f$ is the short time baseline of the \f$ M \f$ short FTs.  On
+ * the other hand, the phase can also be expressed as a function of SSB time \f$ T \f$ 
  * (i.e. the time at the solar system barycenter).  We will assume the source to
- * be at rest in this reference frame.  Now, if one adopts the notation \f$\Delta
+ * be at rest in this reference frame.  Now, if one adopts the notation \f$ \Delta
  * T_{\alpha}\equiv\left[T(t_{\alpha,1/2})-
- * T(t_{0})\right]\f$ and \f$\dot{T}_{\alpha}\equiv
- * dT/dt(t_{\alpha,1/2})\f$
+ * T(t_{0})\right] \f$ and \f$ \dot{T}_{\alpha}\equiv
+ * dT/dt(t_{\alpha,1/2}) \f$ 
  * the phase terms in the above equation are (neglecting constants)
  * \f{eqnarray}{
  * \label{eq_phi}
@@ -73,22 +73,22 @@
  * +f_{2}\Delta T_{\alpha}^{2}+f_{3}\Delta T_{\alpha}^{3}
  * +f_{4}\Delta T_{\alpha}^{4}+f_{5}\Delta T_{\alpha}^{5}\right).
  * \f}
- * These constants, for each value of \f$\alpha\f$, require \f$\dot{T}_{\alpha}\f$ and
- * \f$\Delta T_{\alpha}\f$, which are calculated by a suitable timing routine.  For
+ * These constants, for each value of \f$ \alpha \f$ , require \f$ \dot{T}_{\alpha} \f$ and
+ * \f$ \Delta T_{\alpha} \f$ , which are calculated by a suitable timing routine.  For
  * this demodulation package, this timing routine is provided by <tt>tdb()</tt>.
  * Thus, for a given sky position, the timing routine will be called once for
- * each short time chunk, each call returning a specific  \f$\dot{T}_{\alpha}\f$ and
- * \f$\Delta T_{\alpha}\f$.  By substituting \eqref{eq_time}, \eqref{eq_phi} and
- * \eqref{eq_dphi} in \eqref{eq_taylor2} and grouping together the terms in \f$j\f$ (linear
- * in \f$t\f$) in order to save computations, we have
+ * each short time chunk, each call returning a specific \f$ \dot{T}_{\alpha} \f$ and
+ * \f$ \Delta T_{\alpha} \f$ .  By substituting \eqref{eq_time}, \eqref{eq_phi} and
+ * \eqref{eq_dphi} in \eqref{eq_taylor2} and grouping together the terms in \f$ j \f$ (linear
+ * in \f$ t \f$ ) in order to save computations, we have
  * \f{equation}{
  * \label{eq_phasecalc}
  * \Phi_{\alpha}(t)=\sum_{s=0}^{n_{spin}}f_{s}A_{s\alpha}+\frac{j}{N}\sum_{s=0}^{n_{spin}}f_{s}B_{s\alpha},
  * \f}
- * where \f$n_{spin}\f$ is the maximum order of spindown parameter.  Rather than
- * store the values of \f$\dot{T}_{\alpha}\f$ and \f$\Delta T_{\alpha}\f$ for each value
- * of \f$\alpha\f$, it is more efficient to calculate the constants \f$A_{s\alpha}\f$ and
- * \f$B_{s\alpha}\f$ only once, and then use these values for every spindown
+ * where \f$ n_{spin} \f$ is the maximum order of spindown parameter.  Rather than
+ * store the values of \f$ \dot{T}_{\alpha} \f$ and \f$ \Delta T_{\alpha} \f$ for each value
+ * of \f$ \alpha \f$ , it is more efficient to calculate the constants \f$ A_{s\alpha} \f$ and
+ * \f$ B_{s\alpha} \f$ only once, and then use these values for every spindown
  * parameter set used when searching in a given sky position.  Analytical
  * formulae for these constants are easily derived:
  * \f{equation}{

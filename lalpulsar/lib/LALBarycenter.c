@@ -63,7 +63,7 @@ static void observatoryEarth( REAL8 obsearth[3], const LALDetector det, const LI
 /**
  * \author Curt Cutler
  * \brief Computes the position and orientation of the Earth, at some arrival time
- * \f$t_a\f$, specified <tt>LIGOTimeGPS</tt> input structure.
+ * \f$ t_a \f$ , specified <tt>LIGOTimeGPS</tt> input structure.
  *
  * The Einstein delay is also calculated. The results are stored in the
  * <tt>EarthState</tt> output structure, which can then be fed as input to
@@ -810,18 +810,18 @@ XLALBarycenterEarthNew ( EarthState *earth,                /**< [out] the earth'
 
 /**
  * \author Curt Cutler
- * \brief Transforms from detector arrival time \f$t_a\f$ in GPS (as specified in the
- * LIGOTimeGPS structure) to pulse emission time \f$t_e\f$, in TDB.
+ * \brief Transforms from detector arrival time \f$ t_a \f$ in GPS (as specified in the
+ * LIGOTimeGPS structure) to pulse emission time \f$ t_e \f$ , in TDB.
  *
- * Actually, the returned \f$t_e\f$ is
+ * Actually, the returned \f$ t_e \f$ is
  * the emission time plus the constant light-travel-time from
  * source to SSB.) The inputs to XLALBarycenter(), through
  * the BarycenterInput structure, are the source location,
  * detector site identifier, and GPS arrival time.
- * The function returns the  emission time \f$t_e(t_a)\f$, the
- * derivative \f$d t_e/d t_a\f$, and the difference
- * \f$t_e(t_a) - t_a \f$ through the EmissionTime structure.
- * The emission time \f$t_e(t_a)\f$ is returned in the LIGOTimeGPS format,
+ * The function returns the  emission time \f$ t_e(t_a) \f$ , the
+ * derivative \f$ d t_e/d t_a \f$ , and the difference
+ * \f$ t_e(t_a) - t_a \f$ through the EmissionTime structure.
+ * The emission time \f$ t_e(t_a) \f$ is returned in the LIGOTimeGPS format,
  * while the other two quantities are REAL8's.
  */
 int

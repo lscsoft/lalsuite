@@ -237,7 +237,7 @@ to give, on average, the same arrival time as the GPS clock on Earth'' */
  */
 typedef struct tagEmissionTime
 {
-  REAL8 deltaT;         /**< \f$t_e\f$(TDB) - \f$t_a\f$(GPS)
+  REAL8 deltaT;         /**< \f$ t_e \f$ (TDB) - \f$ t_a \f$ (GPS)
                          * + (light-travel-time from source to SSB) */
 
   LIGOTimeGPS te;       /**< pulse emission time (TDB); also sometimes called
@@ -248,7 +248,7 @@ typedef struct tagEmissionTime
                          * at $t_a$ (GPS), in ICRS J2000 coords. Units = sec. */
 
   REAL8 vDetector[3];   /* Cartesian coords (0=x,1=y,2=z) of detector velocity
-                         * at \f$t_a\f$ (GPS), in ICRS J2000 coords. Dimensionless. */
+                         * at \f$ t_a \f$ (GPS), in ICRS J2000 coords. Dimensionless. */
 
   REAL8 roemer;         /**<  the Roemer delay */
   REAL8 droemer;        /**<  d(Roemer)/d(tgps) */
