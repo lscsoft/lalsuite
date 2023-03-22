@@ -41,6 +41,9 @@ static BOOLEAN timestamp_in_list( LIGOTimeGPS timestamp, LIGOTimeGPSVector *list
 
 /*========== function definitions ==========*/
 
+/// \addtogroup SFTfileIO_h
+/// @{
+
 /**
  * Find the list of SFTs matching the \a file_pattern and satisfying the given \a constraints,
  * return an \c SFTCatalog of the matching SFTs.
@@ -918,3 +921,5 @@ timestamp_in_list( LIGOTimeGPS timestamp, LIGOTimeGPSVector *list )
   return FALSE;
 
 } /* timestamp_in_list() */
+
+/// @}

@@ -63,6 +63,8 @@ XLALComputeFaFb_CrossCorrResamp(
 );
 // ==================== function definitions ====================
 
+/// \addtogroup PulsarCrossCorr_v2_h
+/// @{
 
 
 /** Calculate the Doppler-shifted frequency associated with each SFT in a list */
@@ -3610,3 +3612,5 @@ XLALComputeFaFb_CrossCorrResamp
 
         return XLAL_SUCCESS;
 } // XLALComputeFaFb_CrossCorrResamp()
+
+/// @}

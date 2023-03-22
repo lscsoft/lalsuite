@@ -122,6 +122,9 @@ static const char FstatTimingGenericHelp[] =
 
 // ==================== Function definitions =================== //
 
+/// \addtogroup ComputeFstat_h
+/// @{
+
 ///
 /// Compute the maximum SFT length that can safely be used as input to XLALComputeFstat(), given
 /// the desired range limits in search parameters.
@@ -1482,3 +1485,5 @@ XLALDestroyFstatInputTimeslice_common ( FstatCommon *common )
   return;
 
 } // XLALDestroyFstatInputTimeslice_common()
+
+/// @}

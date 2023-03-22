@@ -60,6 +60,9 @@ struct tagBarycenterBuffer
 static void precessionMatrix( REAL8 prn[3][3], REAL8 mjd, REAL8 dpsi, REAL8 deps );
 static void observatoryEarth( REAL8 obsearth[3], const LALDetector det, const LIGOTimeGPS *tgps, REAL8 gmst, REAL8 dpsi, REAL8 deps );
 
+/// \addtogroup LALBarycenter_h
+/// @{
+
 /**
  * \author Curt Cutler
  * \brief Computes the position and orientation of the Earth, at some arrival time
@@ -1585,3 +1588,5 @@ void observatoryEarth( REAL8 obsEarth[3],     /**< [out] The x, y, z coordinates
   for ( j = 0; j < 3 ; j++ )
     obsEarth[j] = prn[j][0]*eeq[0] + prn[j][1]*eeq[1] + prn[j][2]*eeq[2];
 }
+
+/// @}

@@ -60,6 +60,9 @@ int XLALCheckEphemerisRanges ( const EphemerisVector *ephemEarth, REAL8 avg[3], 
 
 /* ========== exported API ========== */
 
+/// \addtogroup LALBarycenter_h
+/// @{
+
 /**
  * An XLAL interface for reading a time correction file containing a table
  * of values for converting between Terrestrial Time TT (or TDT) to either
@@ -654,3 +657,5 @@ XLALCheckEphemerisRanges ( const EphemerisVector *ephemV, REAL8 avg[3], REAL8 ra
   return XLAL_SUCCESS;
 
 } /* XLALCheckEphemerisRanges() */
+
+/// @}

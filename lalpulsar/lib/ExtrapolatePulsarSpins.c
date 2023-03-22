@@ -61,6 +61,9 @@
 
 /*---------- main functions ---------- */
 
+/// \addtogroup ExtrapolatePulsarSpins_h
+/// @{
+
 /**
  * Initialise a \c PulsarSpinRange struct from two ::PulsarSpins structs
  */
@@ -423,3 +426,5 @@ XLALPrepareCWSignalBand ( SkyPosition *skypos_maxdoppler, /**< [out] [optional] 
   return detStates;
 
 } // XLALPrepareCWSignalBand()
+
+/// @}

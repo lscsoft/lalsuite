@@ -61,6 +61,9 @@ static LALDetector SpecialDetectorRegistry[30];
 
 /*========== function definitions ==========*/
 
+/// \addtogroup SFTfileIO_h
+/// @{
+
 /**
  * Register a special detector for use with CW codes.
  *
@@ -819,3 +822,5 @@ int parse_sft_windowspec_str ( const CHAR *windowspec_str, CHAR (*window_type)[3
   XLAL_ERROR ( XLAL_EINVAL, "Illegal SFT windowspec_str='%s'", windowspec_str );
 
 }
+
+/// @}

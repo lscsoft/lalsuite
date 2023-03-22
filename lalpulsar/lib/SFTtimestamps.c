@@ -39,6 +39,9 @@ int XLALReadSegmentsFromFile_support_4column_format = 0;
 
 /*========== function definitions ==========*/
 
+/// \addtogroup SFTfileIO_h
+/// @{
+
 /** Allocate a LIGOTimeGPSVector */
 LIGOTimeGPSVector *
 XLALCreateTimestampVector ( UINT4 length )
@@ -867,3 +870,5 @@ XLALTimestampsFromSegmentFile ( const char *filename,    //!< filename: Input fi
   return ret;
 
 } // XLALTimestampsFromSegmentFile()
+
+/// @}

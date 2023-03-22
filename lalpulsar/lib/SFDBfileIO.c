@@ -84,6 +84,9 @@ static BOOLEAN CheckIfSFDBInScienceMode(SFDBHeader *SFDBHeader, LALStringVector 
 
 /*========== function definitions ==========*/
 
+/// \addtogroup SFTfileIO_h
+/// @{
+
 /**
  * Return a MultiSFTVector struct from an input set of SFDBs, possibly from more than one detector.
  *
@@ -443,3 +446,5 @@ CheckIfSFDBInScienceMode(
 
     return SFDBWithinScienceMode;
 }
+
+/// @}

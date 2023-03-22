@@ -54,6 +54,9 @@ static LALUnit emptyLALUnit;
 
 /* ---------- function definitions ---------- */
 
+/// \addtogroup LFTandTSutils_h
+/// @{
+
 /**
  * Turn the given multi-IFO SFTvectors into one long Fourier transform (LFT) over the total observation time
  */
@@ -1170,3 +1173,5 @@ XLALrefineCOMPLEX8Vector ( const COMPLEX8Vector *in,
   return ret;
 
 } /* XLALrefineCOMPLEX8Vector() */
+
+/// @}

@@ -64,6 +64,9 @@ const UserChoices MathOpTypeChoices = {
 
 /*========== function definitions ==========*/
 
+/// \addtogroup PSDutils_h
+/// @{
+
 /**
  * Destroy a PSD-vector
  */
@@ -1103,3 +1106,5 @@ XLALWritePSDtoFilePointer ( FILE *fpOut,              /**< output file pointer *
     return XLAL_SUCCESS;
 
 } /* XLALWritePSDtoFile() */
+
+/// @}

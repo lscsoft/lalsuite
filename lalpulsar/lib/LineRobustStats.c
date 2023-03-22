@@ -54,6 +54,9 @@ XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/// \addtogroup LineRobustStats_h
+/// @{
+
 /**
  * \f[
  * \newcommand{\coh}[1]{\widetilde{#1}}
@@ -521,3 +524,5 @@ XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],		//!< [out] array of par
   return XLAL_SUCCESS;
 
 } // XLALParseLinePriors()
+
+/// @}

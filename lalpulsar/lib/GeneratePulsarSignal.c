@@ -52,6 +52,9 @@ static LALUnit emptyLALUnit;
 
 /*---------- Global variables ----------*/
 
+/// \addtogroup GeneratePulsarSignal_h
+/// @{
+
 /**
  * Generate a time-series at the detector for a given pulsar.
  */
@@ -1215,3 +1218,5 @@ XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne )
   return XLAL_SUCCESS;
 
 } /* XLALcorrect_phase() */
+
+/// @}

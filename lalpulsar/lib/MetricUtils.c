@@ -38,6 +38,9 @@
 #define POW4(a)  ( (a) * (a) * (a) * (a) )
 #define POW5(a)  ( (a) * (a) * (a) * (a) * (a) )
 
+/// \addtogroup MetricUtils_h
+/// @{
+
 ///
 /// Flexible comparison function between two metrics \f$ g^1_{ij} \f$ and \f$ g^2_{ij} \f$ .
 ///
@@ -657,3 +660,5 @@ XLALChangeMetricReferenceTime(
   return XLAL_SUCCESS;
 
 } // XLALPhaseMetricRefTimeTransform()
+
+/// @}

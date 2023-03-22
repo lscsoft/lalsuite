@@ -55,6 +55,9 @@ struct E_solver_params {
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/// \addtogroup SSBtimes_h
+/// @{
+
 /** Compute extra time-delays for a CW source in a (Keplerian) binary orbital system.
  *
  *
@@ -877,3 +880,5 @@ XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
   return;
 
 } /* XLALDestroyMultiSSBtimes() */
+
+/// @}

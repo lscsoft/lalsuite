@@ -34,6 +34,9 @@
 
 /*========== function definitions ==========*/
 
+/// \addtogroup SFTfileIO_h
+/// @{
+
 /**
  * Defines the official CW convention for whether a GPS time is 'within' a given range, defined
  * as the half-open interval [minGPS, maxGPS)
@@ -1254,3 +1257,5 @@ int compareSFTepoch(const void *ptr1, const void *ptr2)
    else
      return 0;
 } /* compareSFTepoch() */
+
+/// @}

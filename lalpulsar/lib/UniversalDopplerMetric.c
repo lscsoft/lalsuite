@@ -272,6 +272,8 @@ static UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/// \addtogroup UniversalDopplerMetric_h
+/// @{
 
 /**
  * Integrate a general quadruple product CW_am1_am2_Phi_i_Phi_j() from 0 to 1.
@@ -2568,3 +2570,5 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
 
   return maxorder;
 } /*  findHighestSpinOrder() */
+
+/// @}

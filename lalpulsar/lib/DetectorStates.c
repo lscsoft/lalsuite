@@ -47,6 +47,9 @@ int XLALFillDetectorTensor (DetectorState *detState, const LALDetector *detector
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/// \addtogroup DetectorStates_h
+/// @{
+
 /**
  * Function to compute the LWL detector-tensor for the given \a detector in
  * SSB-fixed cartesian coordinates at time tgps.
@@ -736,3 +739,5 @@ XLALMultiLALDetectorFromMultiSFTs ( MultiLALDetector *multiIFO,	//!< [out] list 
   return XLAL_SUCCESS;
 
 } /* XLALMultiLALDetectorFromMultiSFTVector() */
+
+/// @}

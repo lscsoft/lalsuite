@@ -40,6 +40,9 @@
 
 // ==================== function definitions ====================
 
+/// \addtogroup FstatisticTools_h
+/// @{
+
 ///
 /// Estimate the amplitude parameters of a pulsar CW signal, given its phase parameters,
 /// constituent parts of the \f$ \mathcal{F} \f$ -statistic, and antenna pattern matrix.
@@ -414,3 +417,5 @@ XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, /**< [in] Pul
   return rho2;
 
 } // XLALComputeOptimalSNR2FromMmunu()
+
+/// @}

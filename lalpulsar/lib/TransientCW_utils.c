@@ -66,6 +66,10 @@ static const char *transientWindowNames[TRANSIENT_LAST] =
   };
 
 /* ==================== function definitions ==================== */
+
+/// \addtogroup TransientCW_utils_h
+/// @{
+
 /// Parse a transient window name string into the corresponding transientWindowType
 int
 XLALParseTransientWindowName ( const char *windowName )
@@ -1275,3 +1279,5 @@ XLALFastNegExp ( REAL8 mx )
   return gsl_vector_get ( expLUT, i0 );
 
 } /* XLALFastNegExp() */
+
+/// @}
