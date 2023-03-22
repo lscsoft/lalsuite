@@ -615,7 +615,7 @@ XLALEquipCrossCorrPairsWithScienceFlags(
      MultiREAL8TimeSeries             * scienceFlagVect
 );
 
-///* (possible future function) */
+//(possible future function)
 //MultiSFTVector
 //*XLALModifyCrossCorrTimestampsIntoSFTVector(
 //    const MultiLIGOTimeGPSVector *multiTimes
