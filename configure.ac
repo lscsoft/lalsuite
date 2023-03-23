@@ -7,7 +7,6 @@ AC_PREFIX_DEFAULT(["`pwd`/_inst"])
 AC_CONFIG_FILES([ \
   Makefile \
   doxygen/Makefile \
-  doxygen/doxygen.cfg \
   wheel/Makefile \
   wheel/setup.py \
 ])

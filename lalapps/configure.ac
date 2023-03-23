@@ -12,7 +12,6 @@ AC_CONFIG_FILES([\
   debian/Makefile \
   debian/control \
   doxygen/Makefile \
-  doxygen/doxygen.cfg \
   lalapps.spec \
   man/Makefile \
   src/Makefile \

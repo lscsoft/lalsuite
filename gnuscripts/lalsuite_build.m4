@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 172
+# serial 173
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1135,7 +1135,8 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
 
   AS_IF([test "x${doxygen}" = xtrue],[
 
-    # configure Doxygen filter script
+    # configure Doxygen files
+    AC_CONFIG_FILES([doxygen/doxygen.cfg])
     AC_CONFIG_FILES([doxygen/filter],[chmod +x doxygen/filter])
 
     # Python is required to run some scripts
