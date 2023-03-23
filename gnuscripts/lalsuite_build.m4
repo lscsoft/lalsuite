@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 171
+# serial 172
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1189,6 +1189,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
     AC_SUBST([DOXYGEN_ENABLED_SECTIONS])
     AC_SUBST([DOXYGEN_TAGFILES],[])
     AC_SUBST([DOXYGEN_INSTALL_DIRMAP],[])
+    AC_SUBST([DOXYGEN_NAVIGATION_TABS])
     for arg in ${lalsuite_libs}; do
       AS_CASE([${arg}],
         [lalsupport],[:],[
@@ -1206,6 +1207,9 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
         ]
       )
     done
+    AS_IF([test "$LALSUITE_BUILD" = "true"],[
+      DOXYGEN_NAVIGATION_TABS="${LALSUITE_PACKAGES}"
+    ])
 
     # configure MathJax
     AC_SUBST([DOXYGEN_MATHJAXDIR])

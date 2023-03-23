@@ -4,9 +4,11 @@ MOSTLYCLEANFILES =
 EXTRA_DIST =
 include $(top_srcdir)/gnuscripts/lalsuite_top.am
 
+EXTRA_DIST += CONTRIBUTING.md
+
 ACLOCAL_AMFLAGS = -I gnuscripts
 
-SUBDIRS = @subdirs@ wheel
+SUBDIRS = @subdirs@ doxygen wheel
 
 .PHONY: wheel
 wheel:
@@ -45,20 +47,12 @@ $(PACKAGE)rc: Makefile
 
 if DOXYGEN
 
-html-local: Makefile $(CONFIG_CLEAN_FILES)
-	$(AM_V_at)set -e; \
-	echo "$(subdir)/Makefile: Doxygen documentation was built successfully!"; \
-	echo "$(subdir)/Makefile: $(PACKAGE_NAME) main page is at file://$(abs_builddir)/index.html"
+html-local:
+	@echo "$(subdir)/Makefile: Doxygen documentation was built successfully!"; \
+	echo "$(subdir)/Makefile: $(PACKAGE_NAME) main page is at file://$(abs_builddir)/doxygen/out/index.html"
 
-install-html-local: html-local
-	$(AM_V_at)set -e; \
-	echo " $(MKDIR_P) '$(DESTDIR)$(htmldir)'"; \
-	$(MKDIR_P) "$(DESTDIR)$(htmldir)"; \
-	echo " $(INSTALL_DATA) index.html '$(DESTDIR)$(htmldir)/index.html'"; \
-	$(SED) -e 's|\(lal[a-z]*\)/doxygen/out|../\1|g' index.html > $@.tmp; \
-	$(INSTALL_DATA) $@.tmp "$(DESTDIR)$(htmldir)/index.html"; \
-	rm -f $@.tmp; \
-	echo "$(subdir)/Makefile: Doxygen documentation was installed successfully!"; \
+install-html-local:
+	@echo "$(subdir)/Makefile: Doxygen documentation was installed successfully!"; \
 	echo "$(subdir)/Makefile: installed $(PACKAGE_NAME) main page is at file://$(DESTDIR)$(htmldir)/index.html"
 
 uninstall-local:

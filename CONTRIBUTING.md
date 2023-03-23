@@ -18,7 +18,7 @@ If you wish to contribute new code, or changes to existing code, please follow t
 
 ### Make a fork (copy) of LALSuite
 
-*You only need to do this once*.
+You only need to do this *once*.
 
 1. Go to the [LALSuite repository home page](https://git.ligo.org/lscsoft/lalsuite)
 2. Click on the *Fork* button, that should lead you [here](https://git.ligo.org/lscsoft/lalsuite/-/forks/new)
@@ -30,9 +30,9 @@ If you can't see the *Fork* button, make sure that you are logged in by checking
 
 Make sure that you have installed and configured [Git-LFS](https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client):
 
- ```bash
- git lfs install
- ```
+```bash
+git lfs install
+```
 
 for the management of large files. This is required to successfully build and install your development fork.
 
@@ -53,7 +53,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and 
     git remote add upstream git@git.ligo.org:lscsoft/lalsuite.git
     ```
 
-   *You only need to do this once*.
+   You only need to do this *once*.
 
 2. Update your `master` branch to track changes from upstream:
 
@@ -64,7 +64,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and 
     git pull
     ```
 
-   *You only need to do this once*.
+   You only need to do this *once*.
 
 3. Fetch new changes from the `upstream` repository, merge them with your master branch, and push them to your fork on `git.ligo.org`:
 

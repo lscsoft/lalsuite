@@ -14,8 +14,13 @@ documentation:
     - make -j${CPU_COUNT} install-html
     - mv _inst/share/doc html
     - cd html
-    - cp lalsuite/index.html index.html
-    - sed -i 's/..\/lal/lal/g' index.html
+    - |
+      cat > index.html <<EOF
+      <!DOCTYPE html>
+      <html>
+      <head><meta http-equiv="refresh" content="0; url='lalsuite/index.html'"/></head>
+      </html>
+      EOF
   artifacts:
     expose_as: html
     paths:

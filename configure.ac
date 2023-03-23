@@ -4,7 +4,13 @@ AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR([gnuscripts])
 AC_CONFIG_MACRO_DIR([gnuscripts])
 AC_PREFIX_DEFAULT(["`pwd`/_inst"])
-AC_CONFIG_FILES([Makefile wheel/Makefile wheel/setup.py])
+AC_CONFIG_FILES([ \
+  Makefile \
+  doxygen/Makefile \
+  doxygen/doxygen.cfg \
+  wheel/Makefile \
+  wheel/setup.py \
+])
 AM_INIT_AUTOMAKE([ \
   1.11 \
   foreign \
@@ -27,6 +33,7 @@ AC_PROG_SED
 
 LALSUITE_ENABLE_NIGHTLY
 LALSUITE_CHECK_PYTHON([3.5])
+LALSUITE_CHECK_GIT_REPO
 
 # provide LAL library enable/disable options
 LALSUITE_ENABLE_ALL_LAL
@@ -40,34 +47,23 @@ LALSUITE_ENABLE_LALINFERENCE
 LALSUITE_ENABLE_LALPULSAR
 LALSUITE_ENABLE_LALAPPS
 
-# configure Doxygen top-level page
+# enable Doxygen top-level documentation
 LALSUITE_ENABLE_DOXYGEN
-LALSUITE_ENABLE_MODULE([DOXYGEN])
-AS_IF([test "x${doxygen}" = xtrue],[
-  AC_CONFIG_FILES([index.html:common/doxygen/lalsuite_index.html.in])
-  AC_SUBST([DOXYGEN_PACKAGE_LINKS],[])
-  AM_SUBST_NOTMAKE([DOXYGEN_PACKAGE_LINKS])
-  AC_SUBST([DOXYGEN_LAST_PACKAGE],[])
-  AM_SUBST_NOTMAKE([DOXYGEN_LAST_PACKAGE])
-])
-AC_DEFUN([lalsuite_config_doxygen],[
-  m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
-  AS_IF([test "x${doxygen}" = xtrue],[
-    DOXYGEN_PACKAGE_LINKS="${DOXYGEN_PACKAGE_LINKS}"' <a target="docframe" href="lowercase/doxygen/out/index.html">$1</a>'
-    DOXYGEN_LAST_PACKAGE="lowercase/doxygen/out/index.html"
-  ])
-  m4_popdef([lowercase])
-])
 
 # directories of top-level build and source
 lalsuite_abs_top_builddir="`pwd`"
 lalsuite_abs_top_srcdir='$(abs_top_srcdir)/..'
 
+# indicate to configure.ac in subdirectories that this is a top-level build
+LALSUITE_BUILD="true"
+export LALSUITE_BUILD
+
 # list of LALSuite packages being built
-LALSUITE_PACKAGES=""
+LALSUITE_PACKAGES=
 export LALSUITE_PACKAGES
 
 # configure a lalsuite package
+lalsuite_libs=
 lalsuite_package_configure_deps=
 AC_DEFUN([lalsuite_config_subdir],[
   m4_pushdef([lowercase],m4_translit([[$1]], [A-Z], [a-z]))
@@ -95,6 +91,9 @@ AC_DEFUN([lalsuite_config_subdir],[
     lalsuite_package_configure_deps="${lalsuite_package_configure_deps} "'$(top_srcdir)/lowercase/configure.ac'
 
     m4_if($1,[LALApps],[],[
+
+      # add to list of libraries being built
+      lalsuite_libs="${lalsuite_libs} lowercase"
 
       # export precious environment variables
       uppercase[]_LIBS="${lalsuite_abs_top_builddir}/lowercase/lib/lib[]lowercase.la"
@@ -131,9 +130,6 @@ AC_DEFUN([lalsuite_config_subdir],[
       export uppercase[]_BIN_PATH uppercase[]_DATA_PATH uppercase[]_OCTAVE_PATH uppercase[]_PYTHON_PATH
 
     ])
-
-    # configure Doxygen top-level page
-    lalsuite_config_doxygen([$1])
 
     # configure $1
     AC_CONFIG_SUBDIRS(lowercase)
@@ -174,9 +170,11 @@ lalsuite_config_subdir([LALInference],[LAL LALFrame LALMetaIO LALSimulation LALB
 lalsuite_config_subdir([LALPulsar],[LAL LALFrame LALSimulation LALInference])
 lalsuite_config_subdir([LALApps],[LAL LALFrame LALMetaIO LALSimulation LALBurst LALInspiral LALInference LALPulsar])
 
-# indicate to configure.ac in subdirectories that this is a top-level build
-LALSUITE_BUILD="true"
-export LALSUITE_BUILD
+# configure Doxygen top-level documentation
+# - needs to come after all LALSuite libraries have been configured
+LALSUITE_USE_DOXYGEN
+DOXYGEN_TAGFILES=`echo "${DOXYGEN_TAGFILES}" | ${SED} 's|\$(abs_top_builddir)/\.\./|$(abs_top_builddir)/|g'`
+DOXYGEN_INSTALL_DIRMAP=`echo "${DOXYGEN_INSTALL_DIRMAP}" | ${SED} 's|\$(abs_top_builddir)/\.\./|$(abs_top_builddir)/|g'`
 
 AC_SUBST([LALSUITE_PACKAGES])
 AC_SUBST([ac_configure_args])

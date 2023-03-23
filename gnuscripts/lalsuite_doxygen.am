@@ -17,13 +17,45 @@ doxygen_redir_  = $(doxygen_redir_$(AM_DEFAULT_VERBOSITY))
 doxygen_redir_0 = >/dev/null
 doxygen_redir_1 =
 
-html-local: Makefile $(CONFIG_CLEAN_FILES)
+doxygen_header.html: Makefile $(DOXYGEN)
+	$(AM_V_GEN)rm -f $@.tmp; \
+	$(DOXYGEN) -w html $@.tmp /dev/null /dev/null >/dev/null 2>&1; \
+	if test "x$(DOXYGEN_NAVIGATION_TABS)" != x; then \
+		if test "x$(PACKAGE)" = xlalsuite; then \
+			pkg_reldir="../.."; \
+		else \
+			pkg_reldir="../../.."; \
+		fi; \
+		echo "<div id=\"lalsuite_navigation_tabs\"><ul class=\"sm sm-dox\">" >> $@.tmp; \
+		if test "x$(PACKAGE)" = xlalsuite; then \
+			echo "<li class=\"sm sm-dox\"><a href=\"index.html\"><span>LALSuite</span></a></li>" >> $@.tmp; \
+		else \
+			echo "<li class=\"sm sm-dox\"><a href=\"../../../doxygen/out/index.html\"><span>LALSuite</span></a></li>" >> $@.tmp; \
+		fi; \
+		for pkg in $(DOXYGEN_NAVIGATION_TABS); do \
+			pkg_lcase=`echo $${pkg} | tr '[A-Z]' '[a-z]'`; \
+			if test "x$${pkg_lcase}" = "x$(PACKAGE_NAME_LCASE)"; then \
+				echo "<li class=\"sm sm-dox\"><a href=\"index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
+			else \
+				echo "<li class=\"sm sm-dox\"><a href=\"$${pkg_reldir}/$${pkg_lcase}/doxygen/out/index.html\"><span>$${pkg}</span></a></li>" >> $@.tmp; \
+			fi; \
+		done; \
+		echo "</ul></div>" >> $@.tmp; \
+	fi; \
+	mv -f $@.tmp $@
+
+html-local: Makefile doxygen_header.html $(CONFIG_CLEAN_FILES)
 	$(AM_V_at)set -e; \
 	echo "$(subdir)/Makefile: getting input sources ..."; \
-	( cd $(top_builddir) && $(MAKE) V=$(V) distdir $(doxygen_redir) ); \
 	rm -rf in/; \
-	mv "$(top_builddir)/$(PACKAGE)-$(VERSION)/" in/; \
-	rm -rf in/doxygen/; \
+	if test "x$(PACKAGE)" = xlalsuite; then \
+		$(MKDIR_P) in/; \
+		cp $(top_srcdir)/README.md $(top_srcdir)/CONTRIBUTING.md in/; \
+	else \
+		( cd $(top_builddir) && $(MAKE) V=$(V) distdir $(doxygen_redir) ); \
+		mv "$(top_builddir)/$(PACKAGE)-$(VERSION)/" in/; \
+		rm -rf in/doxygen/; \
+	fi; \
 	echo "$(subdir)/Makefile: configuring Doxygen build ..."; \
 	export doxygen_version="$(VERSION)"; \
 	if test "x$(doxygen_include_gitid)" = xtrue; then \
@@ -48,9 +80,16 @@ html-local: Makefile $(CONFIG_CLEAN_FILES)
 	echo '/** \mainpage' >> autogen.dox; \
 	cat in/README.md >> autogen.dox; \
 	echo '*/' >> autogen.dox; \
-	echo '/** \page $(PACKAGE)_authors Author List' >> autogen.dox; \
-	$(SED) -e 's/^/- /' in/AUTHORS >> autogen.dox; \
-	echo '*/' >> autogen.dox; \
+	if test -f in/AUTHORS; then \
+		echo '/** \page $(PACKAGE)_authors Author List' >> autogen.dox; \
+		$(SED) -e 's/^/- /' in/AUTHORS >> autogen.dox; \
+		echo '*/' >> autogen.dox; \
+	fi; \
+	if test -f in/CONTRIBUTING.md; then \
+		echo '/** \page $(PACKAGE)_contributing Contributing Guide' >> autogen.dox; \
+		$(SED) -e '/^# /d;s/^#//;s/```bash/\\code{.sh}/g;s/```/\\endcode/g' in/CONTRIBUTING.md >> autogen.dox; \
+		echo '*/' >> autogen.dox; \
+	fi; \
 	echo "$(subdir)/Makefile: building Doxygen documentation ..."; \
 	$(MKDIR_P) out/; \
 	$(DOXYGEN) doxygen.cfg $(doxygen_redir) 2>&1; \
@@ -95,7 +134,7 @@ uninstall-local:
 
 clean-local:
 	-rm -rf in/ out/
-	-rm -f autogen.dox doxygen_objdb_*.tmp doxygen_sqlite3.db sed-output.tmp errors.log warnings.log warnings-tmp.log test_doxygen.sh
+	-rm -f autogen.dox doxygen_header.html doxygen_objdb_*.tmp doxygen_sqlite3.db sed-output.tmp errors.log warnings.log warnings-tmp.log test_doxygen.sh
 
 EXTRA_DIST = \
 	check_tags.py \
