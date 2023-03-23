@@ -63,6 +63,10 @@ AC_DEFUN([lalsuite_config_doxygen],[
 lalsuite_abs_top_builddir="`pwd`"
 lalsuite_abs_top_srcdir='$(abs_top_srcdir)/..'
 
+# list of LALSuite packages being built
+LALSUITE_PACKAGES=""
+export LALSUITE_PACKAGES
+
 # configure a lalsuite package
 lalsuite_package_configure_deps=
 AC_DEFUN([lalsuite_config_subdir],[
@@ -71,6 +75,9 @@ AC_DEFUN([lalsuite_config_subdir],[
 
   # if $1 is enabled
   AS_IF([test "x${lowercase}" = xtrue],[
+
+    # add to list of packages being built
+    LALSUITE_PACKAGES="${LALSUITE_PACKAGES} $1"
 
     # check that environment for enabled dependent pacakges has been set
     m4_foreach_w([dep],$2,[
@@ -171,6 +178,7 @@ lalsuite_config_subdir([LALApps],[LAL LALFrame LALMetaIO LALSimulation LALBurst 
 LALSUITE_BUILD="true"
 export LALSUITE_BUILD
 
+AC_SUBST([LALSUITE_PACKAGES])
 AC_SUBST([ac_configure_args])
 AC_SUBST([lalsuite_package_configure_deps])
 AC_OUTPUT

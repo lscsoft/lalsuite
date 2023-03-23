@@ -1,12 +1,12 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 170
+# serial 171
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
 m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
-m4_pattern_allow([^LALSUITE_(BUILD)$])
+m4_pattern_allow([^LALSUITE_(BUILD|PACKAGES)$])
 
 # list of user variables; see section 4.8.1 of the Autoconf manual
 m4_define([uvar_list],[CPPFLAGS CFLAGS CXXFLAGS FCFLAGS FFLAGS LDFLAGS])
@@ -19,7 +19,8 @@ AC_DEFUN([LALSUITE_ARG_VAR],[
   AC_ARG_VAR(LAL_DATA_PATH,[Location of LAL data files])
   AC_ARG_VAR(LAL_OCTAVE_PATH,[Location of LAL octave files])
   AC_ARG_VAR(LAL_PYTHON_PATH,[Location of LAL python files])
-  AC_ARG_VAR(LALSUITE_BUILD,[Set if part of lalsuite build])
+  AC_ARG_VAR(LALSUITE_BUILD,[Set if part of LALSuite build])
+  AC_ARG_VAR(LALSUITE_PACKAGES,[List of LALSuite packages being built])
 ])
 
 m4_append([AC_INIT],[
