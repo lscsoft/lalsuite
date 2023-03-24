@@ -179,7 +179,7 @@ Please visit the [LALSuite project page][project].
 [doi]:          https://doi.org/10.7935/GT1W-FZ16
 [swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lalsuite/swiglal_tutorial.html
 [gitlfs]:       https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
-[contributing]: https://git.ligo.org/lscsoft/lalsuite/blob/master/CONTRIBUTING.md
+[contributing]: https://lscsoft.docs.ligo.org/lalsuite/lalsuite/lalsuite_contributing.html
 [nightlydocs]:  https://lscsoft.docs.ligo.org/lalsuite
 [oldlalsuite]:  https://git.ligo.org/lscsoft/lalsuite-archive
 [oldredmine]:   https://bugs.ligo.org/redmine/projects/lalsuite
