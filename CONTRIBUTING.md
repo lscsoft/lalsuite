@@ -12,7 +12,7 @@ Note that when an issue is marked as *Confidential*, currently this means that m
 
 ## Contributing code
 
-All contributions to LALSuite code must be made using the fork and [merge request](https://git.ligo.org/help/user/project/merge_requests/index.md) [workflow](https://git.ligo.org/help/user/project/repository/forking_workflow.md), which must then be reviewed by one of the project maintainers.
+All contributions to LALSuite code must be made using the fork and [merge request](https://git.ligo.org/help/user/project/merge_requests/index.html) [workflow](https://git.ligo.org/help/user/project/repository/forking_workflow.html), which must then be reviewed by one of the project maintainers.
 
 If you wish to contribute new code, or changes to existing code, please follow this development workflow:
 
