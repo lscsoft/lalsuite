@@ -464,10 +464,10 @@ void inject_signal( LALInferenceRunState *runState ){
  * \f[
  * \rho = \sqrt{\sum_{i=1}^N \frac{d_i^2}{\sigma^2}},
  * \f]
- * where \f$\{d\}\f$ is a time series of data, and \f$\sigma^2\f$ is its variance. As the data and model used here are
+ * where \f$ \{d\} \f$ is a time series of data, and \f$ \sigma^2 \f$ is its variance. As the data and model used here are
  * complex the real and imaginary SNRs are added in quadrature to give the total SNR.
  *
- * The data variance \f$\sigma^2\f$ is calculated on data that has had the running median subtracted in order to remove
+ * The data variance \f$ \sigma^2 \f$ is calculated on data that has had the running median subtracted in order to remove
  * any underlying trends (e.g. caused by a string signal). The variance is assumed constant over segments given in the
  * \c chunkLength vector and the SNR from each segment is added in quadrature.
  *

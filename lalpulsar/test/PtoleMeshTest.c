@@ -35,7 +35,7 @@
  * ### Description ###
  *
  * The <tt>-b</tt> option sets the beginning time of integration to the option
- * argument. (Default is \f$0\f$ seconds)
+ * argument. (Default is \f$ 0 \f$ seconds)
  *
  * The <tt>-c</tt> option determins the center of the patch. (Default is the
  * center of the globular cluster 47 Tuc.) This option is hardcoded to use
@@ -54,7 +54,7 @@
  * argument. (Default is 0.02.)
  *
  * The <tt>-n</tt> option sets the maximum number of nodes in the mesh to the
- * option argument. (Default is \f$10^6\f$.)
+ * option argument. (Default is \f$ 10^6 \f$ .)
  *
  * The texttt{-p} option causes the coordinates of the nodes to be written to
  * a file <tt>mesh.dat</tt>, for the benifit of users who don't have
@@ -68,7 +68,7 @@
  * whose limits in RA and dec are specified in the code.
  *
  * The <tt>-t</tt> option sets the duration of integration, in seconds. (The
- * default is \f$10^5\f$ seconds, which is of order one day but is not an integer
+ * default is \f$ 10^5 \f$ seconds, which is of order one day but is not an integer
  * multiple of anything astronomically important.)
  *
  * ### Algorithm ###

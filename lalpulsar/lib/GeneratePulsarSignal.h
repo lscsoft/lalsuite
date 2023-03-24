@@ -117,62 +117,62 @@ extern "C" {
  * \f[
  * h(t) = F_+(t) A_+ {\rm cos}\Phi(t) + F_\times(t) A_\times {\rm sin}\Phi(t),
  * \f]
- * where \f$F_+\f$ and \f$F_\times\f$ are the usual beam pattern response functions,
- * \f$A_+\f$ and \f$A_\times\f$ are the amplitudes of the gravitational wave for the
- * plus and cross polarizations, and \f$\Phi\f$ is the phase.  The phase contains modulations
+ * where \f$ F_+ \f$ and \f$ F_\times \f$ are the usual beam pattern response functions,
+ * \f$ A_+ \f$ and \f$ A_\times \f$ are the amplitudes of the gravitational wave for the
+ * plus and cross polarizations, and \f$ \Phi \f$ is the phase.  The phase contains modulations
  * from doppler shifts due to the relative motion between the source and the
  * detector and the spin evolution of the source.  (The functions discussed here
  * support both isolated sources and those in binary systems. The binary case
  * has not been tested.)
  *
  * If we Taylor expand the phase out to first order about the time at the midpoint of
- * an SFT and approximate \f$F_+\f$ and \f$F_\times\f$ as constants, for one SFT we can write
+ * an SFT and approximate \f$ F_+ \f$ and \f$ F_\times \f$ as constants, for one SFT we can write
  * \f[
  * \Phi(t) \approx \Phi_{1/2} + 2\pi f_{1/2}(t - t_{1/2}).
  * \f]
- * The strain at discrete time \f$t_j\f$, measured from the start of the SFT, can
+ * The strain at discrete time \f$ t_j \f$ , measured from the start of the SFT, can
  * thus be approximated as
  * \f[
  * h_j \approx F_{+ 1/2} A_+ {\rm cos} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})]
  * + F_{\times 1/2} A_\times {\rm sin} [\Phi_{1/2} + 2\pi f_{1/2}(t_0 + t_j - t_{1/2})],
  * \f]
- * where \f$t_0\f$ is the time as the start of the SFT, and \f$t_{1/2} - t_0 = T_{\rm sft}/2\f$,
- * where \f$T_{\rm sft}\f$ is the duration of one SFT.  This simplifies to
+ * where \f$ t_0 \f$ is the time as the start of the SFT, and \f$ t_{1/2} - t_0 = T_{\rm sft}/2 \f$ ,
+ * where \f$ T_{\rm sft} \f$ is the duration of one SFT.  This simplifies to
  * \f[
  * h_j \approx F_{+ 1/2} A_+ {\rm cos} (\Phi_0 + 2\pi f_{1/2}t_j)
  * + F_{\times 1/2} A_\times {\rm sin} (\Phi_0 + 2\pi f_{1/2}t_j),
  * \f]
- * where \f$\Phi_0\f$ is the phase at the start of the SFT
+ * where \f$ \Phi_0 \f$ is the phase at the start of the SFT
  * (not the initial phase at the start of the observation), i.e.,
  * \f[
  * \Phi_0 = \Phi_{1/2} - 2 \pi f_{1/2} (T_{\rm sft} / 2).
  * \f]
  * Note that these are the same approximations used by LALDemod().
  *
- * One can show that the Discrete Fourier Transform (DFT) of \f$h_j\f$ above is:
+ * One can show that the Discrete Fourier Transform (DFT) of \f$ h_j \f$ above is:
  * \f[
  * \tilde{h}_k = e^{i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
  * \frac{ 1 - e^{2\pi i (\kappa - k)}}{1 - e^{2\pi i (\kappa - k)/N} } \\
  * + e^{-i\Phi_0}  \frac{1}{2} ( F_{+ 1/2} A_+ + i F_{\times 1/2} A_\times)
  * \frac{ 1 - e^{-2\pi i (\kappa + k)}}{ 1 - e^{-2\pi i (\kappa + k)/N} }
  * \f]
- * where \f$N\f$ is the number of time samples used to find the
- * DFT (i.e., the sample rate times \f$T_{\rm sft}\f$), and
+ * where \f$ N \f$ is the number of time samples used to find the
+ * DFT (i.e., the sample rate times \f$ T_{\rm sft} \f$ ), and
  * \f[
  * \kappa \equiv f_{1/2} T_{\rm sft},
  * \f]
  * is usually not an integer.
  *
- * Note that the factor \f$e^{\pm 2\pi i k}\f$ in the numerators of the equation for \f$\tilde{h}_k\f$
- * equals 1.  Furthermore, for \f$0 < \kappa < N/2\f$ and \f$|\kappa - k| << N\f$ the first term
+ * Note that the factor \f$ e^{\pm 2\pi i k} \f$ in the numerators of the equation for \f$ \tilde{h}_k \f$ 
+ * equals 1.  Furthermore, for \f$ 0 < \kappa < N/2 \f$ and \f$ |\kappa - k| << N \f$ the first term
  * dominates and can be Taylor expanded to give:
  * \f[
  * \tilde{h}_k = N e^{i\Phi_0} \frac{1}{2} ( F_{+ 1/2} A_+ - i F_{\times 1/2} A_\times)
  * \left [ \, \frac{ {\rm sin} (2\pi\kappa)}{2 \pi (\kappa - k) } \,
  * + \, i \frac{ 1 - {\rm cos} (2\pi\kappa)}{2 \pi (\kappa - k) } \, \right ]
  * \f]
- * Note that the last factor in square brackets is \f$P_{\alpha k}^*\f$ and
- * \f$e^{i\Phi_0} = Q_{\alpha}^*\f$ used by LALDemod.
+ * Note that the last factor in square brackets is \f$ P_{\alpha k}^* \f$ and
+ * \f$ e^{i\Phi_0} = Q_{\alpha}^* \f$ used by LALDemod.
  *
  * ### Example pseudocode ###
  *
@@ -328,7 +328,7 @@ typedef struct tagSFTParams {
 /**
  * Parameters defining the pulsar signal and SFTs used by LALFastGeneratePulsarSFTs().  Lookup tables (LUTs) are
  * used for trig functions if \code resTrig > 0 \endcode the user must then initialize \c trigArg, \c sinVal, and
- * \c cosVal on the domain \f$[-2\pi, 2\pi]\f$ inclusive.  See GeneratePulsarSignalTest.c for an example.
+ * \c cosVal on the domain \f$ [-2\pi, 2\pi] \f$ inclusive.  See GeneratePulsarSignalTest.c for an example.
  */
 typedef struct tagSFTandSignalParams {
    PulsarSignalParams *pSigParams;

@@ -79,6 +79,8 @@ int XLALCheckConfigFileWasFullyParsed ( const char *fname, const LALParsedDataFi
 
 // ==================== FUNCTION DEFINITIONS ====================
 
+/// \addtogroup CWMakeFakeData_h
+/// @{
 
 /**
  * Generate fake 'CW' data, returned either as SFTVector or REAL4Timeseries or both,
@@ -1223,3 +1225,5 @@ XLALDestroyCWMFDataParams ( CWMFDataParams *params )
     XLALFree ( params );
   }
 } // XLALDestroyCWMFDataParams()
+
+/// @}

@@ -34,17 +34,20 @@
 
 /*========== function definitions ==========*/
 
+/// \addtogroup SFTfileIO_h
+/// @{
+
 /**
  * Defines the official CW convention for whether a GPS time is 'within' a given range, defined
  * as the half-open interval [minGPS, maxGPS)
  *
  * This function should be used when dealing with SFTs, segment lists, etc. It returns:
  *
- * - -1 if \f$\mathtt{gps} < \mathtt{minGPS}\f$, i.e. GPS time is 'below' the range;
- * -  0 if \f$\mathtt{minGPS} \le \mathtt{gps} < \mathtt{maxGPS}\f$, i.e. GPS time is 'within' the range;
- * -  1 if \f$\mathtt{maxGPS} \le \mathtt{gos}\f$, i.e. GPS time is 'above' the range;
+ * - -1 if \f$ \mathtt{gps} < \mathtt{minGPS} \f$ , i.e. GPS time is 'below' the range;
+ * -  0 if \f$ \mathtt{minGPS} \le \mathtt{gps} < \mathtt{maxGPS} \f$ , i.e. GPS time is 'within' the range;
+ * -  1 if \f$ \mathtt{maxGPS} \le \mathtt{gos} \f$ , i.e. GPS time is 'above' the range;
  *
- * If either \c minGPS or \c maxGPS are \c NULL, there are treated as \f$-\infty\f$ or \f$+\infty\f$ respectively.
+ * If either \c minGPS or \c maxGPS are \c NULL, there are treated as \f$ -\infty \f$ or \f$ +\infty \f$ respectively.
  */
 int XLALCWGPSinRange( const LIGOTimeGPS gps, const LIGOTimeGPS* minGPS, const LIGOTimeGPS* maxGPS )
 {
@@ -1254,3 +1257,5 @@ int compareSFTepoch(const void *ptr1, const void *ptr2)
    else
      return 0;
 } /* compareSFTepoch() */
+
+/// @}

@@ -56,13 +56,13 @@
  * taken to be a unit square.</li>
  * <li><b>-e</b> Sets the parameters of the mismatch ellipse at the
  * origin: its principal axis lengths are \c a and \c b units,
- * and the angle from the \f$x\f$-axis to the first principal axis is
+ * and the angle from the \f$ x \f$ -axis to the first principal axis is
  * \c c radians.  If absent, <b>-e 0.1 0.05 1</b> is assumed.</li>
- * <li><b>-x</b> Sets the rates of change in the \f$x\f$-direction of
+ * <li><b>-x</b> Sets the rates of change in the \f$ x \f$ -direction of
  * \c a, \c b, and \c c (above) to \c dadx, \c dbdx,
  * and \c dcdx, respectively.  If absent, the rates are taken to be
  * zero.</li>
- * <li><b>-y</b> Sets the rates of change in the \f$y\f$-direction of
+ * <li><b>-y</b> Sets the rates of change in the \f$ y \f$ -direction of
  * \c a, \c b, and \c c (above) to \c dady, \c dbdy,
  * and \c dcdy, respectively.  If absent, the rates are taken to be
  * zero.</li>
@@ -73,38 +73,38 @@
  * The test program reads the input arguments and creates a parameter
  * structure <tt>*params</tt> to be passed to LALCreateTwoDMesh().
  * In particular, it computes the domain of the parameter space, and
- * defines functions and parameter lists to compute the range in \f$y\f$ at
- * any \f$x\f$, and the metric at any point \f$(x,y)\f$.  If PostScript output is
+ * defines functions and parameter lists to compute the range in \f$ y \f$ at
+ * any \f$ x \f$ , and the metric at any point \f$ (x,y) \f$ .  If PostScript output is
  * requested, it is generated using LALPlotTwoDMesh(), using the
  * value of the command-line number \c flags to set the plotting
  * parameters.  Each of these functions is discussed below.
  *
  * \par Parameter ranges:
  * The parameter space boundary can be
- * specified by input parameters \c x1\f$=x_1\f$, \c x2\f$=x_2\f$,
- * \c y1\f$=y_1\f$, and \c y2\f$=y_2\f$.  The parameter space is then
+ * specified by input parameters \c x1 \f$ =x_1 \f$ , \c x2 \f$ =x_2 \f$ ,
+ * \c y1 \f$ =y_1 \f$ , and \c y2 \f$ =y_2 \f$ .  The parameter space is then
  * defined to be a parallelogram with one corner on the origin, and two
- * sides defined by vectors \f$(x_1,y_1)\f$ and \f$(x_2,y_2)\f$.  Without loss of
- * generality we assume that \f$x_1<x_2\f$.  The functions defining the
- * boundaries are denoted \f$y_{a,b}(x)\f$, and we make no assumption about
+ * sides defined by vectors \f$ (x_1,y_1) \f$ and \f$ (x_2,y_2) \f$ .  Without loss of
+ * generality we assume that \f$ x_1<x_2 \f$ .  The functions defining the
+ * boundaries are denoted \f$ y_{a,b}(x) \f$ , and we make no assumption about
  * their signs or relative order.  The algorithm used then depends on the
- * signs of \f$x_1\f$ and \f$x_2\f$.
+ * signs of \f$ x_1 \f$ and \f$ x_2 \f$ .
  *
- * If \f$x_1=x_2=0\f$, then the parameter space is singular, and no mesh need
+ * If \f$ x_1=x_2=0 \f$ , then the parameter space is singular, and no mesh need
  * be generated.
  *
- * If \f$x_1=0\f$ and \f$x_2\neq0\f$, then the domain is \f$[0,x_2]\f$, and the
+ * If \f$ x_1=0 \f$ and \f$ x_2\neq0 \f$ , then the domain is \f$ [0,x_2] \f$ , and the
  * boundary functions are:
  * \f{eqnarray}{
  * y_a(x) & = & y_2x/x_2\\
  * y_b(x) & = & y_1 + y_2x/x_2
  * \f}
  *
- * If \f$x_2=0\f$ and \f$x_1\neq0\f$, then the domain is \f$[x_1,0]\f$, and the above
- * equations for \f$y_{a,b}(x)\f$ simply have 1 and 2 reversed.
+ * If \f$ x_2=0 \f$ and \f$ x_1\neq0 \f$ , then the domain is \f$ [x_1,0] \f$ , and the above
+ * equations for \f$ y_{a,b}(x) \f$ simply have 1 and 2 reversed.
  *
- * If \f$x_1\f$ and \f$x_2\f$ have the same sign, then the domain is
- * \f$[0,x_1+x_2]\f$ if \f$x_1\f$ and \f$x_2\f$ are positive, and \f$[x_1+x_2,0]\f$
+ * If \f$ x_1 \f$ and \f$ x_2 \f$ have the same sign, then the domain is
+ * \f$ [0,x_1+x_2] \f$ if \f$ x_1 \f$ and \f$ x_2 \f$ are positive, and \f$ [x_1+x_2,0] \f$ 
  * otherwise.  The boundary functions are:
  * \f{eqnarray}{
  * y_a(x) & = & \left\{\begin{array}{c@{\qquad}c}
@@ -117,8 +117,8 @@
  * \end{array}\right.
  * \f}
  *
- * If \f$x_1\f$ and \f$x_2\f$ have opposite sign, the domain is \f$[x_1,x_2]\f$ if
- * \f$x_1<0\f$, and \f$[x_2,x_1]\f$ otherwise.  The boundary functions are:
+ * If \f$ x_1 \f$ and \f$ x_2 \f$ have opposite sign, the domain is \f$ [x_1,x_2] \f$ if
+ * \f$ x_1<0 \f$ , and \f$ [x_2,x_1] \f$ otherwise.  The boundary functions are:
  * \f{eqnarray}{
  * y_a(x) & = & \left\{\begin{array}{c@{\qquad}c}
  * y_1x/x_1 & x\mathrm{~between~}0\mathrm{~and~}x_1 \\
@@ -130,11 +130,11 @@
  * \end{array}\right.
  * \f}
  *
- * The main program sorts the input parameters so that \f$x_1\leq x_2\f$,
+ * The main program sorts the input parameters so that \f$ x_1\leq x_2 \f$ ,
  * stores them in a 4-dimensional array, and assigns a \c void
  * pointer to that array.  It also computes the domain.  The routine
- * LALTwoDRangeTest() takes a value of \f$x\f$ and the \c void
- * pointer, computes the values of \f$y_a(x)\f$ and \f$y_b(x)\f$ according to the
+ * LALTwoDRangeTest() takes a value of \f$ x \f$ and the \c void
+ * pointer, computes the values of \f$ y_a(x) \f$ and \f$ y_b(x) \f$ according to the
  * algorithm above, sorts them, and returns them ordered from lower to
  * higher.
  *
@@ -143,22 +143,22 @@
  * \c a, \c b, \c c, \c dadx, \c dbdx, and
  * \c dcdx, stores them in a 9-dimensional array, and assigns a
  * \c void pointer to it.  The routine LALTwoDMetricTest()
- * takes a position \f$(x,y)\f$ and the \c void pointer, and computes the
+ * takes a position \f$ (x,y) \f$ and the \c void pointer, and computes the
  * ``local'' value of the principal axis
- * \f$a=\f$\c a\f$+x\times\f$\c dadx\f$+y\times\f$\c dady, and similarly
- * for \f$b\f$ and \f$c\f$.  If that ellipse corresponds to the
- * \f$m_\mathrm{thresh}\f$ mismatch level contour, then the eigenvalues of
- * the corresponding metric are \f$\lambda_1=m_\mathrm{thresh}/a^2\f$ and
- * \f$\lambda_2=m_\mathrm{thresh}/b^2\f$.  The metric components are thus:
+ * \f$ a= \f$ \c a \f$ +x\times \f$ \c dadx \f$ +y\times \f$ \c dady, and similarly
+ * for \f$ b \f$ and \f$ c \f$ .  If that ellipse corresponds to the
+ * \f$ m_\mathrm{thresh} \f$ mismatch level contour, then the eigenvalues of
+ * the corresponding metric are \f$ \lambda_1=m_\mathrm{thresh}/a^2 \f$ and
+ * \f$ \lambda_2=m_\mathrm{thresh}/b^2 \f$ .  The metric components are thus:
  * \f{eqnarray}{
  * g_{xx} & = & \lambda_1\cos^2(c) + \lambda_2\sin^2(c) \;,\\
  * g_{yy} & = & \lambda_1\sin^2(c) + \lambda_2\cos^2(c) \;,\\
  * g_{xy} \quad = \quad g_{yx} & = & (\lambda_1-\lambda_2)\cos(c)\sin(c)
  * \;.
  * \f}
- * The routine assumes that the values of \f$a\f$, \f$b\f$, and \f$c\f$ refer to an
- * \f$m_\mathrm{thresh}=1\f$ mismatch ellipse.  It computes and returns
- * \f$g_{xx}\f$, \f$g_{yy}\f$, and \f$g_{xy}\f$ in a 3-dimensional array.
+ * The routine assumes that the values of \f$ a \f$ , \f$ b \f$ , and \f$ c \f$ refer to an
+ * \f$ m_\mathrm{thresh}=1 \f$ mismatch ellipse.  It computes and returns
+ * \f$ g_{xx} \f$ , \f$ g_{yy} \f$ , and \f$ g_{xy} \f$ in a 3-dimensional array.
  *
  * \par PostScript flags:
  * The parameter \c flags is an
@@ -174,16 +174,16 @@
  * plot the mesh points and the boundary.  A value of zero suppresses the
  * plot.
  *
- * If mesh points are to be plotted, they will be filled circles \f$1/72''\f$
+ * If mesh points are to be plotted, they will be filled circles \f$ 1/72'' \f$ 
  * (1~point) in diameter.  The parameter space will be rotated so that
  * the longer of the diagonals of the parallelogram will be vertical, and
- * scaled to fit on one \f$8.5''\times11''\f$ page.  That is, if
- * \f$||(x_1+x_2,y_1+y_2)||\geq||(x_1-x_2,y_1-y_2)||\f$, the rotation angle
+ * scaled to fit on one \f$ 8.5''\times11'' \f$ page.  That is, if
+ * \f$ ||(x_1+x_2,y_1+y_2)||\geq||(x_1-x_2,y_1-y_2)|| \f$ , the rotation angle
  * of the coordinate axes will be
- * \f$\theta=\pi/2-\arctan\!2(y_1+y_2,x_1+x_2)\f$, or
- * \f$\theta=\pi/2-\arctan\!2(y_2-y_1,x_2-x_1)\f$ otherwise.  We note that
- * the function \f$\arctan\!2(y,x)\f$ returns the argument of the complex
- * number \f$x+iy\f$ in the range \f$[-\pi,\pi]\f$.
+ * \f$ \theta=\pi/2-\arctan\!2(y_1+y_2,x_1+x_2) \f$ , or
+ * \f$ \theta=\pi/2-\arctan\!2(y_2-y_1,x_2-x_1) \f$ otherwise.  We note that
+ * the function \f$ \arctan\!2(y,x) \f$ returns the argument of the complex
+ * number \f$ x+iy \f$ in the range \f$ [-\pi,\pi] \f$ .
  *
  * ### Uses ###
  *

@@ -48,7 +48,7 @@ static void LALComputeAM (LALStatus *, AMCoeffs *coe, LIGOTimeGPS *ts, AMCoeffsP
  * <tt>phmdVS->nfSize</tt>. At this moment the \c fBinMin line corresponds to the
  * first row of the cylinder and <tt>phmdVS->breakLine</tt> is set to zero.
  * <tt>phmdVS->breakLine</tt>
- * \f$\in\, [0,\f$\c nfSize) is <em>the pointer</em> which
+ * \f$ \in\, [0, \f$ \c nfSize) is <em>the pointer</em> which
  * identifies the position of the  \c fBinMin row in the circular-cylinder buffer.
  */
 void LALHOUGHConstructSpacePHMD  (LALStatus            *status,	/**< pointer to LALStatus structure */

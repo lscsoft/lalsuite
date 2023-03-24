@@ -60,6 +60,9 @@ int XLALCheckEphemerisRanges ( const EphemerisVector *ephemEarth, REAL8 avg[3], 
 
 /* ========== exported API ========== */
 
+/// \addtogroup LALBarycenter_h
+/// @{
+
 /**
  * An XLAL interface for reading a time correction file containing a table
  * of values for converting between Terrestrial Time TT (or TDT) to either
@@ -193,8 +196,8 @@ XLALDestroyTimeCorrectionData ( TimeCorrectionData *tcd )
  * (actually, a little more than one year, to deal
  * with overlaps).  The first line of each table summarizes
  * what is in it. Subsequent lines give the time (GPS) and the
- * Earth's position \f$(x,y,z)\f$,
- * velocity \f$(v_x, v_y, v_z)\f$, and acceleration \f$(a_x, a_y, a_z)\f$
+ * Earth's position \f$ (x,y,z) \f$ ,
+ * velocity \f$ (v_x, v_y, v_z) \f$ , and acceleration \f$ (a_x, a_y, a_z) \f$ 
  * at that instant.  All in units of seconds; e.g. positions have
  * units of seconds, and accelerations have units 1/sec.
  *
@@ -654,3 +657,5 @@ XLALCheckEphemerisRanges ( const EphemerisVector *ephemV, REAL8 avg[3], REAL8 ra
   return XLAL_SUCCESS;
 
 } /* XLALCheckEphemerisRanges() */
+
+/// @}

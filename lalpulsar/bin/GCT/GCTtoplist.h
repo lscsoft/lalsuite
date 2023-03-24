@@ -46,21 +46,21 @@ typedef struct {
   REAL8 F3dot;/**< spindown value f2dot = d2f/dt2 */
   REAL8 Alpha; /**< skyposition: longitude in equatorial coords, radians */
   REAL8 Delta;/**< skyposition: latitude */
-  REAL4 avTwoF;  /**< average of F-statistic values \f$2\F\f$ over segments */
+  REAL4 avTwoF;  /**< average of F-statistic values \f$ 2\F \f$ over segments */
   UINT4 nc;       /**< number count */
-  REAL4 log10BSGL;    /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ */
-  REAL4 log10BSGLtL;  /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGLtL}}\f$ */
-  REAL4 log10BtSGLtL;    /**< Line-robust transient-CW statistic \f$\log_{10} B_{\mathrm{tSGLtL}}\f$ */
+  REAL4 log10BSGL;    /**< Line-robust statistic \f$ \log_{10} B_{\mathrm{SGL}} \f$ */
+  REAL4 log10BSGLtL;  /**< Line-robust statistic \f$ \log_{10} B_{\mathrm{SGLtL}} \f$ */
+  REAL4 log10BtSGLtL;    /**< Line-robust transient-CW statistic \f$ \log_{10} B_{\mathrm{tSGLtL}} \f$ */
   UINT4 numDetectors; /**< number of detectors for optional avTwoFX arrays */
-  REAL4 avTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector average \f$2\F^X\f$-values */
-  REAL4 maxTwoFl; /**< multi-detector maximum 2F over segments \f$\max2\F^\ell\f$ */
+  REAL4 avTwoFX[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector average \f$ 2\F^X \f$ -values */
+  REAL4 maxTwoFl; /**< multi-detector maximum 2F over segments \f$ \max2\F^\ell \f$ */
   INT4  maxTwoFlSeg; /**< index of segment with maximum multi-detector 2F */
-  REAL4 maxTwoFXl[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector maximum 2F over segments \f$\max2\F^{X\ell}\f$ */
+  REAL4 maxTwoFXl[PULSAR_MAX_DETECTORS]; /**< fixed-size array of single-detector maximum 2F over segments \f$ \max2\F^{X\ell} \f$ */
   INT4  maxTwoFXlSeg[PULSAR_MAX_DETECTORS]; /**< fixed-size array of index of segment with maximum single-detector 2F */
-  REAL4 avTwoFrecalc;  /**< average of \f$2\F\f$-values as recomputed by recalcToplistStats */
-  REAL4 avTwoFXrecalc[PULSAR_MAX_DETECTORS];  /**< fixed-size array of single-detector \f$2\F^X\f$-values as recomputed by recalcToplistStats */
-  REAL4 log10BSGLrecalc; /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ recomputed by recalcToplistStats */
-  REAL4 log10BSGLtLrecalc; /**< Line-robust statistic \f$\log_{10} B_{\mathrm{SGL}}\f$ recomputed by recalcToplistStats */
+  REAL4 avTwoFrecalc;  /**< average of \f$ 2\F \f$ -values as recomputed by recalcToplistStats */
+  REAL4 avTwoFXrecalc[PULSAR_MAX_DETECTORS];  /**< fixed-size array of single-detector \f$ 2\F^X \f$ -values as recomputed by recalcToplistStats */
+  REAL4 log10BSGLrecalc; /**< Line-robust statistic \f$ \log_{10} B_{\mathrm{SGL}} \f$ recomputed by recalcToplistStats */
+  REAL4 log10BSGLtLrecalc; /**< Line-robust statistic \f$ \log_{10} B_{\mathrm{SGL}} \f$ recomputed by recalcToplistStats */
   BOOLEAN have_f3dot; /**< output F3dot value */
   INT4 loudestSeg; /**< index of the loudest segment in multi-F */
   REAL4 twoFloudestSeg; /**< loudest single-segment multi-IFO F-stat value */

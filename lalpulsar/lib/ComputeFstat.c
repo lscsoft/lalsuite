@@ -122,11 +122,14 @@ static const char FstatTimingGenericHelp[] =
 
 // ==================== Function definitions =================== //
 
+/// \addtogroup ComputeFstat_h
+/// @{
+
 ///
 /// Compute the maximum SFT length that can safely be used as input to XLALComputeFstat(), given
 /// the desired range limits in search parameters.
 ///
-/// The \f$\mathcal{F}\f$-statistic algorithms implemented in this module assume that the input
+/// The \f$ \mathcal{F} \f$ -statistic algorithms implemented in this module assume that the input
 /// SFTs supplied to XLALCreateFstatInput() are of such a length that, within the time span of
 /// each SFT, the spectrum of any CW signal being searched for will be mostly contained within
 /// one SFT bin:
@@ -151,11 +154,11 @@ static const char FstatTimingGenericHelp[] =
 ///   } } \,,
 /// \f]
 /// This function computes this expression with a user-given acceptable
-/// maximum mismatch \f$\mu_{\textrm{SFT}}\f$, and
-/// \f$(a \sin\iota / c)_{\textrm{max}}\f$ and \f$\Omega_{\textrm{max}}\f$ set to either the binary
+/// maximum mismatch \f$ \mu_{\textrm{SFT}} \f$ , and
+/// \f$ (a \sin\iota / c)_{\textrm{max}} \f$ and \f$ \Omega_{\textrm{max}} \f$ set to either the binary
 /// motion of the source, as specified by \p binaryMaxAsini and \p binaryMinPeriod, or the sidereal
-/// motion of the Earth, i.e. with \f$(a \sin\iota / c) \sim 0.02~\textrm{s}\f$ and
-/// \f$\Omega \sim 2\pi / 1~\textrm{day}\f$.
+/// motion of the Earth, i.e. with \f$ (a \sin\iota / c) \sim 0.02~\textrm{s} \f$ and
+/// \f$ \Omega \sim 2\pi / 1~\textrm{day} \f$ .
 ///
 REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq,          /**< [in] Maximum signal frequency */
                                   const REAL8 binaryMaxAsini,   /**< [in] Maximum projected semi-major axis a*sini/c (= 0 for isolated sources) */
@@ -190,7 +193,7 @@ REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq,          /**< [in] Maximu
 } // XLALFstatMaximumSFTLength()
 
 ///
-/// Check that the SFT length \f$T_{\textrm{SFT}}\f$ does not exceed the result
+/// Check that the SFT length \f$ T_{\textrm{SFT}} \f$ does not exceed the result
 /// of XLALFstatMaximumSFTLength(), in which case a large unexpected mismatch
 /// would be produced.
 /// See documentation of that function for parameter dependence.
@@ -351,14 +354,14 @@ XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *multiAtoms  ///< [in] \c
 } // XLALDestroyMultiFstatAtomVector()
 
 ///
-/// Create a fully-setup \c FstatInput structure for computing the \f$\mathcal{F}\f$-statistic using XLALComputeFstat().
+/// Create a fully-setup \c FstatInput structure for computing the \f$ \mathcal{F} \f$ -statistic using XLALComputeFstat().
 ///
 FstatInput *
 XLALCreateFstatInput ( const SFTCatalog *SFTcatalog,              ///< [in] Catalog of SFTs to either load from files, or generate in memory.
                                                                   ///< The \c locator field of each \c SFTDescriptor must be \c !=NULL for SFT loading, and \c ==NULL for SFT generation.
                        const REAL8 minCoverFreq,                  ///< [in] Minimum instantaneous frequency which will be covered over the SFT time span.
                        const REAL8 maxCoverFreq,                  ///< [in] Maximum instantaneous frequency which will be covered over the SFT time span.
-                       const REAL8 dFreq,                         ///< [in] Requested spacing of \f$\mathcal{F}\f$-statistic frequency bins. May be zero \e only for single-frequency searches.
+                       const REAL8 dFreq,                         ///< [in] Requested spacing of \f$ \mathcal{F} \f$ -statistic frequency bins. May be zero \e only for single-frequency searches.
                        const EphemerisData *ephemerides,          ///< [in] Ephemerides for the time-span of the SFTs.
                        const FstatOptionalArgs *optionalArgs      ///< [in] Optional 'advanced-level' and method-specific extra arguments; NULL: use defaults from FstatOptionalArgsDefaults.
                        )
@@ -669,7 +672,7 @@ int XLALGetFstatInputSFTBand ( const FstatInput *input,  ///< [in] \c FstatInput
 }
 
 ///
-/// Returns the human-readable name of the \f$\mathcal{F}\f$-statistic method being used by a \c FstatInput structure.
+/// Returns the human-readable name of the \f$ \mathcal{F} \f$ -statistic method being used by a \c FstatInput structure.
 ///
 const CHAR *
 XLALGetFstatInputMethodName ( const FstatInput* input    ///< [in] \c FstatInput structure.
@@ -758,14 +761,14 @@ XLALGetFstatInputDetectorStates ( const FstatInput* input       ///< [in] \c Fst
 } // XLALGetFstatInputDetectorStates()
 
 ///
-/// Compute the \f$\mathcal{F}\f$-statistic over a band of frequencies.
+/// Compute the \f$ \mathcal{F} \f$ -statistic over a band of frequencies.
 ///
 int
 XLALComputeFstat ( FstatResults **Fstats,               ///< [in/out] Address of a pointer to a \c FstatResults results structure; if \c NULL, allocate here.
                    FstatInput *input,                   ///< [in] Input data structure created by one of the setup functions.
-                   const PulsarDopplerParams *doppler,  ///< [in] Doppler parameters, including starting frequency, at which to compute \f$2\mathcal{F}\f$
-                   const UINT4 numFreqBins,             ///< [in] Number of frequencies at which the \f$2\mathcal{F}\f$ are to be computed. Must be 1 if XLALCreateFstatInput() was passed zero \c dFreq.
-                   const FstatQuantities whatToCompute  ///< [in] Bit-field of which \f$\mathcal{F}\f$-statistic quantities to compute.
+                   const PulsarDopplerParams *doppler,  ///< [in] Doppler parameters, including starting frequency, at which to compute \f$ 2\mathcal{F} \f$ 
+                   const UINT4 numFreqBins,             ///< [in] Number of frequencies at which the \f$ 2\mathcal{F} \f$ are to be computed. Must be 1 if XLALCreateFstatInput() was passed zero \c dFreq.
+                   const FstatQuantities whatToCompute  ///< [in] Bit-field of which \f$ \mathcal{F} \f$ -statistic quantities to compute.
                    )
 {
   // Check input
@@ -980,7 +983,7 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] \c FstatResults struct
 } // XLALDestroyFstatResults()
 
 
-/// Compute the \f$\mathcal{F}\f$-statistic from the complex \f$F_a\f$ and \f$F_b\f$ components
+/// Compute the \f$ \mathcal{F} \f$ -statistic from the complex \f$ F_a \f$ and \f$ F_b \f$ components
 /// and the antenna pattern matrix.
 ///
 /// Note for developers:
@@ -990,8 +993,8 @@ XLALDestroyFstatResults ( FstatResults* Fstats  ///< [in] \c FstatResults struct
 /// Inside this module, better use that function directly!
 ///
 REAL4
-XLALComputeFstatFromFaFb ( COMPLEX8 Fa, ///< [in] F-stat component \f$F_a\f$
-                           COMPLEX8 Fb, ///< [in] F-stat component \f$F_b\f$
+XLALComputeFstatFromFaFb ( COMPLEX8 Fa, ///< [in] F-stat component \f$ F_a \f$ 
+                           COMPLEX8 Fb, ///< [in] F-stat component \f$ F_b \f$ 
                            REAL4 A, ///< [in] antenna pattern matrix component
                            REAL4 B, ///< [in] antenna pattern matrix component
                            REAL4 C, ///< [in] antenna pattern matrix component
@@ -1482,3 +1485,5 @@ XLALDestroyFstatInputTimeslice_common ( FstatCommon *common )
   return;
 
 } // XLALDestroyFstatInputTimeslice_common()
+
+/// @}

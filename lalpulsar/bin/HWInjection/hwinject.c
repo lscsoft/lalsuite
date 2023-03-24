@@ -67,7 +67,7 @@
  *
  * Note: Each pulsar's parameters are defined at a particular fiducial
  * Solar System Barycenter (SSB) time.  In this document, I call this
- * time \f$t_S\f$.  The actual choice of this time is not important,
+ * time \f$ t_S \f$ .  The actual choice of this time is not important,
  * but it should be fixed and invariant.  The team defining pulsar
  * parameters may wish to change the value to something that they find
  * convenient.
@@ -166,8 +166,8 @@
  * viewed from the centre of the Earth, where the Sun appears to cross
  * the equator moving north in spring. This is called the vernal equinox,
  * and is shown in Fig. 16.6. In this coordinate system, the latitude
- * coordinate is called the declination \f$\delta\f$ and the longitude
- * coordinate is called the right ascension \f$\alpha\f$.
+ * coordinate is called the declination \f$ \delta \f$ and the longitude
+ * coordinate is called the right ascension \f$ \alpha \f$ .
  * (See also \ref SkyCoordinates_h.)
  *
  * \c aPlus and \c aCross set the amplitude of the two polarizations.  This is

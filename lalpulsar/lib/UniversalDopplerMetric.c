@@ -272,10 +272,12 @@ static UINT4 findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/// \addtogroup UniversalDopplerMetric_h
+/// @{
 
 /**
  * Integrate a general quadruple product CW_am1_am2_Phi_i_Phi_j() from 0 to 1.
- * This implements the expression \f$\langle<q_1 q_2 \phi_i \phi_j\rangle\f$
+ * This implements the expression \f$ \langle<q_1 q_2 \phi_i \phi_j\rangle \f$ 
  * for single-IFO average over the observation time.
  *
  * The input parameters correspond to CW_am1_am2_Phi_i_Phi_j()
@@ -348,12 +350,12 @@ XLALAverage_am1_am2_Phi_i_Phi_j ( const intparams_t *params, double *relerr_max 
  * For gsl-integration: general quadruple product between two antenna-pattern functions
  * am1, am2 in {a(t),b(t)} and two phase-derivatives phi_i * phi_j,
  * i.e. compute an expression of the form
- * \f$q_1(t) q_2(t) \phi_i(t) \phi_j(t)\f$, where \f$q_i = \{a(t), b(t)\}\f$.
+ * \f$ q_1(t) q_2(t) \phi_i(t) \phi_j(t) \f$ , where \f$ q_i = \{a(t), b(t)\} \f$ .
  *
  * NOTE: this can be 'truncated' to any sub-expression by using
  * AMCOMP_NONE for antenna-pattern component and DOPPLERCOORD_NONE for DopplerCoordinate,
- * eg in this way this function can be used to compute \f$a^2(t), b^2(t), a(t) b(t)\f$,
- * or \f$phi_i(t) phi_j(t)\f$.
+ * eg in this way this function can be used to compute \f$ a^2(t), b^2(t), a(t) b(t) \f$ ,
+ * or \f$ phi_i(t) phi_j(t) \f$ .
  */
 static double
 CW_am1_am2_Phi_i_Phi_j ( double tt, void *params )
@@ -921,7 +923,7 @@ XLALPtolemaicPosVel ( PosVel3D_t *posvel,		/**< [out] instantaneous position and
 
 
 /**
- * Compute a pure phase-deriv covariance \f$[\phi_i, \phi_j] = \langle phi_i phi_j\rangle - \langle phi_i\rangle\langle phi_j\rangle\f$
+ * Compute a pure phase-deriv covariance \f$ [\phi_i, \phi_j] = \langle phi_i phi_j\rangle - \langle phi_i\rangle\langle phi_j\rangle \f$ 
  * which gives a component of the "phase metric".
  *
  * NOTE: for passing unit noise-weights, set MultiNoiseFloor->length=0 (but multiNoiseFloor==NULL is invalid)
@@ -1445,11 +1447,11 @@ XLALDestroyDopplerPhaseMetric ( DopplerPhaseMetric *metric )
  * Calculate the general (single-segment coherent, or multi-segment semi-coherent)
  * *full* (multi-IFO) Fstat-metrix and the Fisher-matrix derived in \cite Prix07 .
  *
- * The semi-coherent metrics \f$g_{ij}\f$ over \f$N\f$ segments are computed according to
+ * The semi-coherent metrics \f$ g_{ij} \f$ over \f$ N \f$ segments are computed according to
  *
  * \f[ \overline{g}_{ij} \equiv \frac{1}{N} \sum_{k=1}^{N} g_{ij,k} \f]
  *
- * where \f$g_{ij,k}\f$ is the coherent single-segment metric of segment k
+ * where \f$ g_{ij,k} \f$ is the coherent single-segment metric of segment k
  *
  * Note: The returned DopplerFstatMetric struct contains the matrices
  * g_ij (the phase metric), gF_ij (the F-metric), gFav_ij (the average F-metric),
@@ -2415,11 +2417,11 @@ XLALmatrix33_in_vect3 ( vect3D_t out, mat33_t mat, const vect3D_t in )
 
 /**
  * Compute time-derivatives up to 'maxorder' of the Earths' orbital position vector
- * \f$r_{\mathrm{orb}}(t)\f$.
+ * \f$ r_{\mathrm{orb}}(t) \f$ .
  *
  * Algorithm: using 5-point differentiation expressions on r_orb(t) returned from XLALBarycenterEarth().
  *
- * Returns a vector of derivatives \f$\frac{d^n\,r_{\mathrm{orb}}}{d\,t^n}\f$ at the given
+ * Returns a vector of derivatives \f$ \frac{d^n\,r_{\mathrm{orb}}}{d\,t^n} \f$ at the given
  * GPS time. Note, the return vector includes the zeroth-order derivative, so we return
  * (maxorder + 1) derivatives: n = 0 ... maxorder
  *
@@ -2568,3 +2570,5 @@ findHighestGCSpinOrder ( const DopplerCoordinateSystem *coordSys )
 
   return maxorder;
 } /*  findHighestSpinOrder() */
+
+/// @}

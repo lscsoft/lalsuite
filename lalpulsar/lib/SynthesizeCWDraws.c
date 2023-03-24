@@ -40,6 +40,9 @@
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/// \addtogroup SynthesizeCWDraws_h
+/// @{
+
 /**
  * Generate 4 random-noise draws n_mu = {n_1, n_2, n_3, n_4} with correlations according to
  * the matrix M = L L^T, which is passed in as input.
@@ -796,3 +799,4 @@ write_InjParams_to_fp ( FILE * fp,			/**< [in] file-pointer to output file */
 
 } /* write_InjParams_to_fp() */
 
+/// @}

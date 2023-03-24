@@ -560,7 +560,7 @@ static int LT_FindNearestPoints(
       // Find the nearest point to 'nearest_points[:,j]', the tiled dimensions of which are generating integers
       switch ( loc->tiling->lattice ) {
 
-      case TILING_LATTICE_CUBIC:    // Cubic (\f$Z_n\f$) lattice
+      case TILING_LATTICE_CUBIC:    // Cubic ( \f$ Z_n \f$ ) lattice
 
       {
 
@@ -583,7 +583,7 @@ static int LT_FindNearestPoints(
       }
       break;
 
-      case TILING_LATTICE_ANSTAR:   // An-star (\f$A_n^*\f$) lattice
+      case TILING_LATTICE_ANSTAR:   // An-star ( \f$ A_n^* \f$ ) lattice
 
       {
 
@@ -1225,7 +1225,7 @@ int XLALSetTilingLatticeAndMetric(
     double norm_thickness = 0.0;
     switch ( tiling->lattice ) {
 
-    case TILING_LATTICE_CUBIC:      // Cubic (\f$Z_n\f$) lattice
+    case TILING_LATTICE_CUBIC:      // Cubic ( \f$ Z_n \f$ ) lattice
 
     {
 
@@ -1238,7 +1238,7 @@ int XLALSetTilingLatticeAndMetric(
     }
     break;
 
-    case TILING_LATTICE_ANSTAR:     // An-star (\f$A_n^*\f$) lattice
+    case TILING_LATTICE_ANSTAR:     // An-star ( \f$ A_n^* \f$ ) lattice
 
     {
 

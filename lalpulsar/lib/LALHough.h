@@ -40,22 +40,22 @@ extern "C" {
  *
  * As we mention before,
  * the issue is to build histograms, the Hough map (HM), in the
- * parameter space: for each intrinsic frequency  \f$ f_0 \f$, each residual
+ * parameter space: for each intrinsic frequency \f$ f_0 \f$ , each residual
  * spin-down parameter, and each refined sky location inside the patch.
  * Notice, from the master equation, that the effect of the residual
- * spin-down parameter is just a change in \f$ F_0\f$ , and, at any given
- * time, \f$  F_0 \f$ can be considered constant.
+ * spin-down parameter is just a change in \f$ F_0 \f$ , and, at any given
+ * time, \f$ F_0 \f$ can be considered constant.
  * Also, the Hough map is a histogram, thus additive. It can be seen as
  * the sum of several partial Hough maps constructed using just one periodogram.
  *
- * Therefore, we can construct  the HM for any  \f$ f_0\f$  and spin-down
+ * Therefore, we can construct  the HM for any \f$ f_0 \f$ and spin-down
  * value by adding together, at different times, partial Hough maps (PHM)
- * corresponding to different \f$ F_0\f$  values (or equivalently, adding their
+ * corresponding to different \f$ F_0 \f$ values (or equivalently, adding their
  * derivatives and then integrating the result).
  *
  * In practice this means that in order to obtain the HM for a given
  * frequency and all possible residual spin-down parameters, we  have to construct
- * a CYLINDER of around the frequency \f$ f_0\f$ .   All of the \e phmd coming
+ * a CYLINDER of around the frequency \f$ f_0 \f$ .   All of the \e phmd coming
  * from data demodulated with the same parameters.
  * The coordinates of the \e phmd locate the position of the source in
  * the sky, and by summing along different directions inside the cylinder we refine
@@ -191,14 +191,14 @@ typedef struct tagPHMDVectorSequence{
   UINT4       length;    /**< number of elements for each frequency */
   UINT8       fBinMin;   /**< frequency index of smallest intrinsic frequency in circular buffer */
   REAL8       deltaF;    /**< frequency resolution */
-  UINT4       breakLine; /**< Mark \f$\in\f$[0, \c nfSize) (of the circular buffer) pointing to the starting of the \c fBinMin line */
+  UINT4       breakLine; /**< Mark \f$ \in \f$ [0, \c nfSize) (of the circular buffer) pointing to the starting of the \c fBinMin line */
   HOUGHphmd   *phmd;     /**< the partial Hough map derivatives */
 } PHMDVectorSequence;
 
 /** This structure stores the residual spin-down parameters at a given time */
 typedef struct tagHOUGHResidualSpinPar{
   REAL8          deltaF;   	/**< Frequency resolution;  df=1/TCOH */
-  REAL8          timeDiff; 	/**< \f$T_{\hat N}(t)-T_{\hat N}(\hat t_0)\f$: time difference */
+  REAL8          timeDiff; 	/**< \f$ T_{\hat N}(t)-T_{\hat N}(\hat t_0) \f$ : time difference */
   REAL8Vector    spinRes; 	/**< length: Maximum order of spdwn parameter *data: pointer to residual Spin parameter set fk */
 } HOUGHResidualSpinPar;
 

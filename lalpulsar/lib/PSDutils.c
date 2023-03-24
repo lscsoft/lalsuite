@@ -64,6 +64,9 @@ const UserChoices MathOpTypeChoices = {
 
 /*========== function definitions ==========*/
 
+/// \addtogroup PSDutils_h
+/// @{
+
 /**
  * Destroy a PSD-vector
  */
@@ -363,11 +366,11 @@ XLALComputeMultiNoiseWeights ( const MultiPSDVector  *rngmed,
 
 
 /**
- * Compute the "data-quality factor" \f$\mathcal{Q}(f) = \sum_X \frac{\epsilon_X}{\mathcal{S}_X(f)}\f$ over the given SFTs.
- * The input \a multiPSD is a pre-computed PSD map \f$\mathcal{S}_{X,i}(f)\f$, over IFOs \f$X\f$, SFTs \f$i\f$
- * and frequency \f$f\f$.
+ * Compute the "data-quality factor" \f$ \mathcal{Q}(f) = \sum_X \frac{\epsilon_X}{\mathcal{S}_X(f)} \f$ over the given SFTs.
+ * The input \a multiPSD is a pre-computed PSD map \f$ \mathcal{S}_{X,i}(f) \f$ , over IFOs \f$ X \f$ , SFTs \f$ i \f$ 
+ * and frequency \f$ f \f$ .
  *
- * \return the output is a vector \f$\mathcal{Q}(f)\f$.
+ * \return the output is a vector \f$ \mathcal{Q}(f) \f$ .
  *
  */
 REAL8FrequencySeries *
@@ -649,7 +652,7 @@ REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs (
 
 
 /**
- * Compute the PSD (power spectral density) and the "normalized power" \f$P_\mathrm{SFT}\f$ over a MultiSFTVector.
+ * Compute the PSD (power spectral density) and the "normalized power" \f$ P_\mathrm{SFT} \f$ over a MultiSFTVector.
  *
  * \return: a REAL8Vector of the final normalized and averaged/summed PSD;
  * plus the full multiPSDVector array,
@@ -1103,3 +1106,5 @@ XLALWritePSDtoFilePointer ( FILE *fpOut,              /**< output file pointer *
     return XLAL_SUCCESS;
 
 } /* XLALWritePSDtoFile() */
+
+/// @}

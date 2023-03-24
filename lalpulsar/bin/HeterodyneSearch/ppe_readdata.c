@@ -52,11 +52,11 @@
  * type, which is specified by the number of frequency harmonics given by the \c harmonics command line argument. This
  * should be a list of comma separated values giving the frequency of the signal harmonics to be included. E.g.
  * <ol>
- * <li>For a model with \f$l=m=2\f$ (i.e. a triaxial star with a signal defined in e.g. \cite DupuisWoan2005), which
+ * <li>For a model with \f$ l=m=2 \f$ (i.e. a triaxial star with a signal defined in e.g. \cite DupuisWoan2005), which
  * purely emits at twice the rotation frequency, the \c harmonics input would just be \c 2. This requires that for each
  * specified detector there is <b>one</b> input file containing data heterodyned at twice the rotation frequency of the
  * pulsar.</li>
- * <li>For a model including the two harmonics \f$l=2\f$, \f$m=1,2\f$ (see e.g. \cite Jones2010), which produces
+ * <li>For a model including the two harmonics \f$ l=2 \f$ , \f$ m=1,2 \f$ (see e.g. \cite Jones2010), which produces
  * emission at both the rotation frequency <i>and</i> twice the rotation frequency, the \c harmonics input would be \c
  * 1,2. This requires that for each specified detector there are two input files containing data heterodyned and the
  * rotation frequency <i>and</i> twice the rotation frequency (these must be in the same order as the harmonics
@@ -993,7 +993,7 @@ detectors specified (no. dets =%d)\n", ml, ml, numDets);
  * contains 4 items. If a parameter has a \c 1 as the third entry then it means that this was a parameter that was fit
  * by TEMPO with the entry after the \c 1 being the 1 standard deviation error on that parameter. For parameters where
  * an error is present the code will attempt to search over that parameter using a Gaussian prior defined by the
- * 1\f$\sigma\f$ error value. Other parameters will be set as fixed by default. These can be overridden by the prior
+ * 1 \f$ \sigma \f$ error value. Other parameters will be set as fixed by default. These can be overridden by the prior
  * file values described in \c initialise_prior().
  *
  * Based on the defined sky position defined in the par file a lookup table of the detector antenna response over time

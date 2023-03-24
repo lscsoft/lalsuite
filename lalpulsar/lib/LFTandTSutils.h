@@ -61,9 +61,9 @@ typedef struct tagMultiCOMPLEX8TimeSeries
  */
 typedef struct tagVectorComparison
 {
-  REAL4 relErr_L1;		///< relative error between vectors using L1 norm \f$r_1(x,y) \equiv \frac{|x - y|_1}{0.5(|x|_1 + |y|_1)}\f$
-  REAL4 relErr_L2;		///< relative error between vectors using L2 norm \f$r_2(x,y) \equiv \frac{|x - y|_2}{0.5(|x|_2 + |y|_2)}\f$
-  REAL4 angleV;			///< angle between the two vectors, according to \f$\cos\theta = \frac{\Re(x\cdot y^*)}{|x|_2 \, |y|_2}\f$
+  REAL4 relErr_L1;		///< relative error between vectors using L1 norm \f$ r_1(x,y) \equiv \frac{|x - y|_1}{0.5(|x|_1 + |y|_1)} \f$ 
+  REAL4 relErr_L2;		///< relative error between vectors using L2 norm \f$ r_2(x,y) \equiv \frac{|x - y|_2}{0.5(|x|_2 + |y|_2)} \f$ 
+  REAL4 angleV;			///< angle between the two vectors, according to \f$ \cos\theta = \frac{\Re(x\cdot y^*)}{|x|_2 \, |y|_2} \f$ 
   REAL4 relErr_atMaxAbsx;	///< single-sample relative error *at* maximum |sample-value| of first vector 'x'
   REAL4 relErr_atMaxAbsy;	///< single-sample relative error *at* maximum |sample-value| of second vector 'x'
 } VectorComparison;

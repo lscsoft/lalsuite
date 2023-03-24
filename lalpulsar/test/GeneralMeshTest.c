@@ -37,7 +37,7 @@
  * ### Description ###
  *
  * The <b>-b</b> option sets the beginning GPS time of integration to
- * the option argument. (Default is \f$731265908\f$ seconds, chosen to lie
+ * the option argument. (Default is \f$ 731265908 \f$ seconds, chosen to lie
  * within the S2 run).
  *
  * The <b>-c</b> option determins the center of the patch.  This option
@@ -51,8 +51,8 @@
  * The <b>-l</b> option determines, for a rectangular search region, the
  * limits in right ascension and declination of the grid.  The argument should
  * be given in degrees as RA(min):RA(max):dec(min):dec(max).  (The default is
- * the octant of the sky defined by \f$0 < \textrm{RA} < 90\f$ and \f$0< \textrm{dec} <
- * 85\f$; this avoids the coordinate singularity at the poles.) This option
+ * the octant of the sky defined by \f$ 0 < \textrm{RA} < 90 \f$ and \f$ 0< \textrm{dec} <
+ * 85 \f$ ; this avoids the coordinate singularity at the poles.) This option
  * automatically overrides whatever is specified by the <b>-r</b> option.
  *
  * The <b>-m</b> option sets the maximum mismatch of the mesh to the option
@@ -70,7 +70,7 @@
  * cluster 47 Tuc).
  *
  * The <b>-t</b> option sets the duration of integration in seconds. (The
- * default is \f$39600\f$ seconds \f$= 11\f$ hours, which is chosen because it is of
+ * default is \f$ 39600 \f$ seconds \f$ = 11 \f$ hours, which is chosen because it is of
  * the right size for S2 analyses).
  *
  * ### Algorithm ###

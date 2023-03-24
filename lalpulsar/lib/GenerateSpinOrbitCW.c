@@ -110,9 +110,9 @@ choose( UINT4 a, UINT4 b )
  * \c TaylorCWParamStruc from the values in <tt>*params</tt>, adjusting
  * the values of <tt>params-\>phi0</tt>, <tt>params-\>f0</tt>, and
  * <tt>params-\>f</tt> from the reference time <tt>params-\>spinEpoch</tt> to
- * the time <tt>params-\>epoch</tt>, as follows: Let \f$\Delta
- * t=t^{(2)}-t^{(1)}\f$ be the time between the old epoch \f$t^{(1)}\f$ and the
- * new one \f$t^{(2)}\f$.  Then the phase, base frequency, and spindown
+ * the time <tt>params-\>epoch</tt>, as follows: Let \f$ \Delta
+ * t=t^{(2)}-t^{(1)} \f$ be the time between the old epoch \f$ t^{(1)} \f$ and the
+ * new one \f$ t^{(2)} \f$ .  Then the phase, base frequency, and spindown
  * parameters for the new epoch are:
  * \f{eqnarray}{
  * \phi_0^{(2)} & = & \phi_0^{(1)} + 2\pi f_0^{(1)}t \left( 1 +
@@ -122,10 +122,10 @@ choose( UINT4 a, UINT4 b )
  * f_k^{(2)} & = & \frac{f_0^{(1)}}{f_0^{(2)}} \left( f_k^{(1)} +
  * \sum_{j=k+1}{N} \binom{j}{k} f_j^{(1)}\Delta t^{j-k} \right)
  * \f}
- * The phase function \f$\phi(t)=\phi_0^{(i)}+2\pi
+ * The phase function \f$ \phi(t)=\phi_0^{(i)}+2\pi
  * f_0^{(i)}\left[t-t^{(i)}+\sum_{k=1}^N
- * \frac{f_k^{(i)}}{k+1}\left(t-t^{(i)}\right)^{k+1}\right]\f$ then has the
- * same functional dependence on \f$t\f$ for either \f$i=1\f$ or~2.
+ * \frac{f_k^{(i)}}{k+1}\left(t-t^{(i)}\right)^{k+1}\right] \f$ then has the
+ * same functional dependence on \f$ t \f$ for either \f$ i=1 \f$ or~2.
  */
 void
 LALGenerateSpinOrbitCW( LALStatus             *stat,

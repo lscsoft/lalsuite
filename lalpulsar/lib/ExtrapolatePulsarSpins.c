@@ -36,7 +36,7 @@
  * \author Reinhard Prix
  *
  * \brief Defines functions to extrapolate the pulsar spin-paramters
- * \f$\{f, \dot{f},\ddot{f},...\}\f$ from one SSB epoch to another.
+ * \f$ \{f, \dot{f},\ddot{f},...\} \f$ from one SSB epoch to another.
  *
  */
 
@@ -61,6 +61,9 @@
 
 /*---------- main functions ---------- */
 
+/// \addtogroup ExtrapolatePulsarSpins_h
+/// @{
+
 /**
  * Initialise a \c PulsarSpinRange struct from two ::PulsarSpins structs
  */
@@ -83,19 +86,19 @@ int XLALInitPulsarSpinRangeFromSpins ( PulsarSpinRange *range,		/**< [out] outpu
 
 /**
  * General pulsar-spin extrapolation function: given a "spin-range" (ie spins + spin-bands) \c range0
- * at time \f$\tau_0\f$, propagate the whole spin-range to time \f$\tau_1\f$.
+ * at time \f$ \tau_0 \f$ , propagate the whole spin-range to time \f$ \tau_1 \f$ .
  *
  * \note \c *range1 is allowed to point to the same spin-range as \c *range0: the input will be overwritten
  * with the output.
  *
- * \note The output-range is in the 'canonical' order of \f$[ f^{(k)}, f^{(k)} + \Delta f^{(k)}]\f$,
- * where \f$\Delta f^{(k)} \ge 0\f$.
+ * \note The output-range is in the 'canonical' order of \f$ [ f^{(k)}, f^{(k)} + \Delta f^{(k)}] \f$ ,
+ * where \f$ \Delta f^{(k)} \ge 0 \f$ .
  *
  */
 int
 XLALExtrapolatePulsarSpinRange ( PulsarSpinRange *range1,		/**< [out] output spin range */
                                  const PulsarSpinRange *range0,		/**< [in] input spin range */
-                                 const REAL8 dtau 			/**< [in] time difference \f$\tau_1 - \tau_0\f$ to extrapolate \c range0 to */
+                                 const REAL8 dtau 			/**< [in] time difference \f$ \tau_1 - \tau_0 \f$ to extrapolate \c range0 to */
                                  )
 {
   UINT4 k, l;
@@ -144,9 +147,9 @@ XLALExtrapolatePulsarSpinRange ( PulsarSpinRange *range1,		/**< [out] output spi
 
 
 /**
- * Extrapolate the Pulsar spin-parameters \f$\{f, \dot{f},\ddot{f},...\}\f$
- * (\c fkdot0) from the initial reference-epoch \f$\tau_0\f$
- * to the new reference-epoch \f$\tau_1\f$.
+ * Extrapolate the Pulsar spin-parameters \f$ \{f, \dot{f},\ddot{f},...\} \f$ 
+ * (\c fkdot0) from the initial reference-epoch \f$ \tau_0 \f$ 
+ * to the new reference-epoch \f$ \tau_1 \f$ .
  *
  * This is equivalent to XLALExtrapolatePulsarSpins(), but uses the fixed-size array-type
  * ::PulsarSpins instead, which is easier to handle and avoids any dynamic-memory hassles.
@@ -157,7 +160,7 @@ XLALExtrapolatePulsarSpinRange ( PulsarSpinRange *range1,		/**< [out] output spi
 int
 XLALExtrapolatePulsarSpins ( PulsarSpins fkdot1,		/**< [out] output spin-parameter array */
 			     const PulsarSpins fkdot0,		/**< [in] input spin-parameter array */
-			     REAL8 dtau 			/**< [in] time difference \f$\tau_1 - \tau_0\f$ to extrapolate \c fkdot0 to */
+			     REAL8 dtau 			/**< [in] time difference \f$ \tau_1 - \tau_0 \f$ to extrapolate \c fkdot0 to */
 			     )
 {
   UINT4 numSpins = sizeof(PulsarSpins) / sizeof(fkdot0[0]); 	/* fixed size array */
@@ -196,14 +199,14 @@ XLALExtrapolatePulsarSpins ( PulsarSpins fkdot1,		/**< [out] output spin-paramet
 
 
 /**
- * Extrapolate phase \f$\phi_0\f$ from \f$\tau_0\f$ to \f$\tau_1\f$, given the spins \c fkdot1 at \f$\tau_1\f$.
- * Returns \f$\phi_1\f$ in the range \f$[0, 2\pi]\f$.
+ * Extrapolate phase \f$ \phi_0 \f$ from \f$ \tau_0 \f$ to \f$ \tau_1 \f$ , given the spins \c fkdot1 at \f$ \tau_1 \f$ .
+ * Returns \f$ \phi_1 \f$ in the range \f$ [0, 2\pi] \f$ .
  */
 int
-XLALExtrapolatePulsarPhase ( REAL8 *phi1,			/**< [out] output phase at \f$\tau_1\f$ */
-                             const PulsarSpins fkdot1,		/**< [in] spin-params at reference \f$\tau_1\f$ */
-                             const REAL8 phi0,			/**< [in] input phase at \f$\tau_0\f$ */
-                             const REAL8 dtau			/**< [in] time difference \f$\tau_1 - \tau_0\f$ to extrapolate \c phi0 to */
+XLALExtrapolatePulsarPhase ( REAL8 *phi1,			/**< [out] output phase at \f$ \tau_1 \f$ */
+                             const PulsarSpins fkdot1,		/**< [in] spin-params at reference \f$ \tau_1 \f$ */
+                             const REAL8 phi0,			/**< [in] input phase at \f$ \tau_0 \f$ */
+                             const REAL8 dtau			/**< [in] time difference \f$ \tau_1 - \tau_0 \f$ to extrapolate \c phi0 to */
                              )
 {
   UINT4 numSpins = PULSAR_MAX_SPINS;
@@ -423,3 +426,5 @@ XLALPrepareCWSignalBand ( SkyPosition *skypos_maxdoppler, /**< [out] [optional] 
   return detStates;
 
 } // XLALPrepareCWSignalBand()
+
+/// @}

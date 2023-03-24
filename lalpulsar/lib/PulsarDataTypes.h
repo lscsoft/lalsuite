@@ -127,15 +127,15 @@ typedef REAL8 PulsarAmplitudeVect[4];
 typedef REAL8 PulsarSpins[PULSAR_MAX_SPINS];
 
 /**
- * Contains a "spin-range", ie spins \f$f^{(k)}\f$ and corresponding bands \f$\Delta f^{(k)}\f$
- * at a given (SSB) reference GPS-time \f$\tau\f$.
- * "Canonical" ordering refers to \f$\Delta f^{(k)} >= 0\f$ for all k.
+ * Contains a "spin-range", ie spins \f$ f^{(k)} \f$ and corresponding bands \f$ \Delta f^{(k)} \f$ 
+ * at a given (SSB) reference GPS-time \f$ \tau \f$ .
+ * "Canonical" ordering refers to \f$ \Delta f^{(k)} >= 0 \f$ for all k.
  */
 typedef struct tagPulsarSpinRange
 {
   LIGOTimeGPS refTime;		/**< SSB reference GPS-time at which spin-range is defined */
-  PulsarSpins fkdot;		/**< Vector of spin-values \f$f^{(k)}\f$ */
-  PulsarSpins fkdotBand;	/**< Vector of spin-bands \f$\Delta f^{(k)}\f$, MUST be same length as fkdot */
+  PulsarSpins fkdot;		/**< Vector of spin-values \f$ f^{(k)} \f$ */
+  PulsarSpins fkdotBand;	/**< Vector of spin-bands \f$ \Delta f^{(k)} \f$ , MUST be same length as fkdot */
 } PulsarSpinRange;
 
 /** Type containing the 'Doppler-parameters' affecting the time-evolution of the phase */

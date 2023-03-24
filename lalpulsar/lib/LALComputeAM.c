@@ -24,11 +24,11 @@
  * \addtogroup LALComputeAM_h
  * \brief Computes quantities for amplitude demodulation.
  *
- * This routine computes the quantities \f$a(t)\f$ and \f$b(t)\f$ as defined in
+ * This routine computes the quantities \f$ a(t) \f$ and \f$ b(t) \f$ as defined in
  * Jaranowski, Krolak, and Schutz \cite JKS98 , hereafter JKS.  These
  * functions quantify the dependence of the detector output on the
- * beam-pattern functions \f$F_{+}\f$ and \f$F_{\times}\f$; in fact, \f$a(t)\f$ and
- * \f$b(t)\f$ <i>are</i> the beam-pattern functions, without the dependence
+ * beam-pattern functions \f$ F_{+} \f$ and \f$ F_{\times} \f$ ; in fact, \f$ a(t) \f$ and
+ * \f$ b(t) \f$ <i>are</i> the beam-pattern functions, without the dependence
  * on polarization angle and detector arm angle.  Since the
  * LALDemod() suite is an attempt to compute an optimal statistic,
  * it is necessary to include these quantities in the computation.
@@ -44,8 +44,8 @@
  * F_{\times} &=& \sin\zeta [ b(t) \cos 2 \psi - a(t) \sin 2 \psi ]
  * \f}
  * We use the routine LALComputeDetAMResponse() to calculate
- * \f$F_{+}\f$ and \f$F_{\times}\f$ for a given polarization angle, and then
- * extract \f$a(t)\f$ and \f$b(t)\f$, once for each timestamp \f$t\f$.  Additionally,
+ * \f$ F_{+} \f$ and \f$ F_{\times} \f$ for a given polarization angle, and then
+ * extract \f$ a(t) \f$ and \f$ b(t) \f$ , once for each timestamp \f$ t \f$ .  Additionally,
  * computation of the optimal statistic requires that we compute inner
  * products of these two quantities for later use.
  *
@@ -165,19 +165,19 @@ XLALComputeAntennaPatternCoeffs ( REAL8 *ai,   			/**< [out] antenna-pattern fun
 
 /**
  * <b>Replace</b> AM-coeffs by weighted AM-coeffs, i.e.
- * \f$a_{X\alpha} \rightarrow \widehat{a}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}}\f$, and
- * \f$b_{X\alpha} \rightarrow \widehat{b}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}}\f$,
- * where \f$w_{X\alpha}\f$ are the \a multiWeights for SFT \f$\alpha\f$ and detector \f$X\f$.
+ * \f$ a_{X\alpha} \rightarrow \widehat{a}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}} \f$ , and
+ * \f$ b_{X\alpha} \rightarrow \widehat{b}_{X\alpha} \equiv a_{X\alpha} \sqrt{w_{X\alpha}} \f$ ,
+ * where \f$ w_{X\alpha} \f$ are the \a multiWeights for SFT \f$ \alpha \f$ and detector \f$ X \f$ .
  *
- * Also compute the resulting per-detector \f$X\f$ antenna-pattern matrix coefficients
- * \f$\widehat{A}_X \equiv \sum_{\alpha} \widehat{a}^2_{X\alpha}\f$,
- * \f$\widehat{B}_X \equiv \sum_{\alpha} \widehat{b}^2_{X\alpha}\f$,
- * \f$\widehat{C}_X \equiv \sum_{\alpha} \widehat{a}_{X\alpha}\widehat{b}_{X\alpha}\f$,
+ * Also compute the resulting per-detector \f$ X \f$ antenna-pattern matrix coefficients
+ * \f$ \widehat{A}_X \equiv \sum_{\alpha} \widehat{a}^2_{X\alpha} \f$ ,
+ * \f$ \widehat{B}_X \equiv \sum_{\alpha} \widehat{b}^2_{X\alpha} \f$ ,
+ * \f$ \widehat{C}_X \equiv \sum_{\alpha} \widehat{a}_{X\alpha}\widehat{b}_{X\alpha} \f$ ,
  *
  * and corresponding multi-detector antenna-pattern matrix coefficients
- * \f$\widehat{A} \equiv \sum_{X} \widehat{A}_X\f$,
- * \f$\widehat{B} \equiv \sum_{X} \widehat{B}_X\f$,
- * \f$\widehat{C} \equiv \sum_{X} \widehat{C}_X\f$.
+ * \f$ \widehat{A} \equiv \sum_{X} \widehat{A}_X \f$ ,
+ * \f$ \widehat{B} \equiv \sum_{X} \widehat{B}_X \f$ ,
+ * \f$ \widehat{C} \equiv \sum_{X} \widehat{C}_X \f$ .
  *
  * See Sec.4.1 in CFSv2.pdf notes https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=T0900149&version=4
  *
@@ -279,15 +279,15 @@ XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *
 
 
 /**
- * Compute the 'amplitude coefficients' \f$a(t)\sin\zeta\f$,
- * \f$b(t)\sin\zeta\f$ as defined in \cite JKS98 for a series of
+ * Compute the 'amplitude coefficients' \f$ a(t)\sin\zeta \f$ ,
+ * \f$ b(t)\sin\zeta \f$ as defined in \cite JKS98 for a series of
  * timestamps.
  *
  * The input consists of the DetectorState-timeseries, which contains
  * the detector-info and the LMST's corresponding to the different times.
  *
  * \note This implementation is based on the geometrical definition of
- * \f$a\sin\zeta\f$ and \f$b\sin\zeta\f$ as detector response
+ * \f$ a\sin\zeta \f$ and \f$ b\sin\zeta \f$ as detector response
  * coefficients in a preferred polarization basis.  (It is thereby
  * more general than the JKS expressions and could be used e.g., with
  * the response tensor of a bar detector with no further modification

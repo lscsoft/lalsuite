@@ -92,7 +92,7 @@ extern "C" {
 /** Macro to round a value to the nearest integer. */
 #define ROUND(x) (floor(x+0.5))
 
-/** Macro to perform addition of two values within logarithm space \f$ \log{(e^x + e^y)}\f$. */
+/** Macro to perform addition of two values within logarithm space \f$ \log{(e^x + e^y)} \f$ . */
 #define LOGPLUS(x,y) ( x>y ? x+log(1.+exp(y-x)) : y+log(1.+exp(x-y)) )
 
 /** Macro that gives the integer number of times that \c x goes in to \c y. */
@@ -126,10 +126,10 @@ extern "C" {
 
 /**
  * The total number of 'amplitude' parameters that can define a signal e.g. gravitational wave amplitude from a
- * triaxial star emitting from the \f$l=m=2\f$ mode we have \f$ h_0 \f$, initial phase of the signal \f$ \phi_0 \f$,
- * polarisation angle \f$ psi \f$, and cosine of the inclination angle \f$ \cos{\iota} \f$. Or, more generally for
- * emission from \f$l=2\f$ and \f$m=1,2\f$ instead of \f$ h_0 \f$ and \f$ \phi_0 \f$ there can be complex amplitude and
- * phase parameters \f$C_{22}\f$, \f$C_{21}\f$, \f$\phi_{22}\f$ and \f$\phi_{21}\f$.
+ * triaxial star emitting from the \f$ l=m=2 \f$ mode we have \f$ h_0 \f$ , initial phase of the signal \f$ \phi_0 \f$ ,
+ * polarisation angle \f$ psi \f$ , and cosine of the inclination angle \f$ \cos{\iota} \f$ . Or, more generally for
+ * emission from \f$ l=2 \f$ and \f$ m=1,2 \f$ instead of \f$ h_0 \f$ and \f$ \phi_0 \f$ there can be complex amplitude and
+ * phase parameters \f$ C_{22} \f$ , \f$ C_{21} \f$ , \f$ \phi_{22} \f$ and \f$ \phi_{21} \f$ .
  *
  * Note: These should be increased if additional model parameters are added.
  */

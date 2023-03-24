@@ -66,7 +66,7 @@
  *
  * On output, the \a metric->data is arranged with the same indexing
  * scheme as in LALCoherentMetric(). The order of the parameters is
- * \f$(f_0, \alpha, \delta)\f$.
+ * \f$ (f_0, \alpha, \delta) \f$ .
  *
  * ### Notes ###
  *
@@ -677,30 +677,30 @@ void LALPulsarMetric ( LALStatus *stat,
  *
  * ### Description ###
  *
- * This function takes a metric \f$g_{\alpha\beta}\f$, where
- * \f$\alpha,\beta=0,1,\ldots,n\f$, and computes the projected metric
- * \f$\gamma_{ij}\f$ on the subspace \f$i,j=1,\ldots,n\f$, as described in the
+ * This function takes a metric \f$ g_{\alpha\beta} \f$ , where
+ * \f$ \alpha,\beta=0,1,\ldots,n \f$ , and computes the projected metric
+ * \f$ \gamma_{ij} \f$ on the subspace \f$ i,j=1,\ldots,n \f$ , as described in the
  * header StackMetric.h.
  *
  * The argument \a *metric stores the metric components in the manner
  * used by the functions LALCoherentMetric() and
  * LALStackMetric(), and \a errors indicates whether error
  * estimates are included in \a *metric.  Thus \a *metric is a
- * vector of length \f$(n+1)(n+2)/2\f$ if \a errors is zero, or of length
- * \f$(n+1)(n+2)\f$ if \a errors is nonzero; see LALCoherentMetric()
+ * vector of length \f$ (n+1)(n+2)/2 \f$ if \a errors is zero, or of length
+ * \f$ (n+1)(n+2) \f$ if \a errors is nonzero; see LALCoherentMetric()
  * for the indexing scheme.
  *
- * Upon return, \a *metric stores the components of \f$\gamma_{ij}\f$ in
+ * Upon return, \a *metric stores the components of \f$ \gamma_{ij} \f$ in
  * the same manner as above, with the physically meaningless components
- * \f$\gamma_{\alpha0} = \gamma_{0\alpha}\f$ (and their uncertainties) set
+ * \f$ \gamma_{\alpha0} = \gamma_{0\alpha} \f$ (and their uncertainties) set
  * identically to zero.
  *
  * ### Algorithm ###
  *
  * The function simply implements \eqref{eq_gij_gab} in
  * StackMetric.h.  The formula used to convert uncertainties
- * \f$s_{\alpha\beta}\f$ in the metric components \f$g_{\alpha\beta}\f$ into
- * uncertainties \f$\sigma_{ij}\f$ in \f$\gamma_{ij}\f$ is:
+ * \f$ s_{\alpha\beta} \f$ in the metric components \f$ g_{\alpha\beta} \f$ into
+ * uncertainties \f$ \sigma_{ij} \f$ in \f$ \gamma_{ij} \f$ is:
  * \f[
  * \sigma_{ij} = s_{ij}
  * + s_{0i}\left|\frac{g_{0j}}{g_{00}}\right|
@@ -718,15 +718,15 @@ void LALPulsarMetric ( LALStatus *stat,
  * effectively set to zero.
  *
  * Technically, starting from a full metric
- * \f$g_{\alpha\beta}(\mathbf{\lambda})\f$, the projection
- * \f$\gamma_{ij}(\vec\lambda)\f$ is the metric of a subspace
- * \f$\{\vec\lambda\}\f$ passing through the point \f$\mathbf{\lambda}\f$ on a plane
- * orthogonal to the \f$\lambda^0\f$ axis.  In order for \f$\gamma_{ij}\f$ to
- * measure the \em maximum distance between points \f$\vec\lambda\f$, it
- * is important to evaluate \f$g_{\alpha\beta}\f$ at the value of \f$\lambda^0\f$
+ * \f$ g_{\alpha\beta}(\mathbf{\lambda}) \f$ , the projection
+ * \f$ \gamma_{ij}(\vec\lambda) \f$ is the metric of a subspace
+ * \f$ \{\vec\lambda\} \f$ passing through the point \f$ \mathbf{\lambda} \f$ on a plane
+ * orthogonal to the \f$ \lambda^0 \f$ axis.  In order for \f$ \gamma_{ij} \f$ to
+ * measure the \em maximum distance between points \f$ \vec\lambda \f$ , it
+ * is important to evaluate \f$ g_{\alpha\beta} \f$ at the value of \f$ \lambda^0 \f$ 
  * that gives the largest possible separations.  For the pulsar search
  * formalism discussed in StackMetric.h, this is always
- * achieved by choosing the largest value of \f$\lambda^0=f_\mathrm{max}\f$
+ * achieved by choosing the largest value of \f$ \lambda^0=f_\mathrm{max} \f$ 
  * that is to be covered in the search.
  */
 void

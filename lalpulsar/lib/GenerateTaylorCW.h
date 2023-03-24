@@ -64,10 +64,10 @@ extern "C" {
  * \phi(t) & = & \phi_0 + 2\pi f_0 \left[ (t-t_0) +
  * \sum_{k=1}^n \frac{f_k}{k+1}(t-t_0)^{k+1} \right] \;,
  * \f}
- * where \f$f_k\f$ are the spin-normalized Taylor coefficients.  If the
- * source's spin is varying over some timescale \f$\tau\f$, one typically
- * expects that \f$f_k\sim\tau^{-k}\f$.  Note that in this and later
- * discussions, \f$f\f$ and \f$\phi\f$ refer to the frequency and phase of the
+ * where \f$ f_k \f$ are the spin-normalized Taylor coefficients.  If the
+ * source's spin is varying over some timescale \f$ \tau \f$ , one typically
+ * expects that \f$ f_k\sim\tau^{-k} \f$ .  Note that in this and later
+ * discussions, \f$ f \f$ and \f$ \phi \f$ refer to the frequency and phase of the
  * gravitational wave, which are typically some constant multiple of
  * (often twice) the frequency and phase of the rotating source.
  *
@@ -77,7 +77,7 @@ extern "C" {
  * \ref PulsarSimulateCoherentGW_h.  However, in this simplest model of
  * quasiperiodic waveforms, we neglect such phenomena as precession that
  * would produce these effects.  Thus for any given source one can choose
- * a polarization basis (described by some polarization angle \f$\psi\f$) in
+ * a polarization basis (described by some polarization angle \f$ \psi \f$ ) in
  * which the wave has a constant elliptical polarization of the form:
  * \f{eqnarray}{
  * \label{eq_taylorcw-hplus}
@@ -115,22 +115,22 @@ typedef struct tagTaylorCWParamStruc {
   /** @{ */
   SkyPosition position; /**< The location of the source on the sky, normally in equatorial coordinates */
   REAL4 psi;            /**< The polarization angle of the source, in radians */
-  LIGOTimeGPS epoch;    /**< The start time \f$t_0\f$ of the output series */
+  LIGOTimeGPS epoch;    /**< The start time \f$ t_0 \f$ of the output series */
   /** @} */
 
   /** \name Input parameters. */
   /** @{ */
   REAL8 deltaT;         /**< The requested sampling interval of the waveform, in s */
   UINT4 length;         /**< The number of samples in the generated waveform */
-  REAL4 aPlus, aCross;  /**<  The polarization amplitudes \f$A_+\f$, \f$A_\times\f$, in dimensionless strain units */
-  REAL8 phi0;           /**< The wave phase at time \f$t_0\f$, in radians */
-  REAL8 f0;             /**< The wave frequency at time \f$t_0\f$, in Hz */
-  REAL8Vector *f;       /**< The spin-normalized Taylor parameters \f$f_k\f$, as defined in \eqref{eq_taylorcw-freq}; If \c f=\c NULL, a monochromatic wave is generated */
+  REAL4 aPlus, aCross;  /**<  The polarization amplitudes \f$ A_+ \f$ , \f$ A_\times \f$ , in dimensionless strain units */
+  REAL8 phi0;           /**< The wave phase at time \f$ t_0 \f$ , in radians */
+  REAL8 f0;             /**< The wave frequency at time \f$ t_0 \f$ , in Hz */
+  REAL8Vector *f;       /**< The spin-normalized Taylor parameters \f$ f_k \f$ , as defined in \eqref{eq_taylorcw-freq}; If \c f=\c NULL, a monochromatic wave is generated */
   /** @} */
 
   /** \name Output parameters. */
   /** @{ */
-  REAL4 dfdt;           /**< The maximum value of \f$\Delta f\Delta t\f$ encountered over any timestep \f$\Delta t\f$ used in generating the waveform */
+  REAL4 dfdt;           /**< The maximum value of \f$ \Delta f\Delta t \f$ encountered over any timestep \f$ \Delta t \f$ used in generating the waveform */
   /** @} */
 } TaylorCWParamStruc;
 

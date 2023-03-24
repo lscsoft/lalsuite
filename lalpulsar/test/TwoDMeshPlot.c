@@ -81,7 +81,7 @@ AdjustBBox( REAL4 x, REAL4 y, TwoDMeshPlotStruc *params );
  * the bounding box surrounding all plotted objects.  This is used either
  * to set a bounding box for the overall plot, or to adjust the scale of
  * the plot, depending on <tt>params->autoscale</tt>.  If the resulting
- * bounding box is larger than a single \f$8.5''\times11''\f$ page,
+ * bounding box is larger than a single \f$ 8.5''\times11'' \f$ page,
  * LALPlotTwoDMesh() will divide the plot area up into pages of
  * this side, calling the plotting macros on each page.
  *

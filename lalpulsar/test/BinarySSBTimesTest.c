@@ -303,8 +303,8 @@ XLALCompareSSBtimes ( REAL8 *err_DeltaT, REAL8 *err_Tdot, const SSBtimes *t1, co
 
 /**
  * For a given OrbitalParams, calculate the time-differences
- * \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
- * derivatives \f$Tdot_\alpha \equiv d T / d t (t_\alpha)\f$.
+ * \f$ \Delta T_\alpha\equiv T(t_\alpha) - T_0 \f$ , and their
+ * derivatives \f$ Tdot_\alpha \equiv d T / d t (t_\alpha) \f$ .
  *
  * \note The return-vectors \a DeltaT and \a Tdot must be allocated already
  * and have the same length as the input time-series \a DetStates.

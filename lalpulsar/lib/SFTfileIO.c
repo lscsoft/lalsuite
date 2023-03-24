@@ -63,6 +63,9 @@ static int read_header_from_fp ( FILE *fp, SFTtype *header, UINT4 *nsamples, UIN
 
 /*========== function definitions ==========*/
 
+/// \addtogroup SFTfileIO_h
+/// @{
+
 /**
  * Load the given frequency-band <tt>[fMin, fMax)</tt> (half-open) from the SFT-files listed in the
  * SFT-'catalogue' ( returned by XLALSFTdataFind() ).
@@ -1488,3 +1491,5 @@ has_valid_crc64 ( FILE *fp )
   return ( computed_crc == ref_crc );
 
 } /* has_valid_crc64 */
+
+/// @}

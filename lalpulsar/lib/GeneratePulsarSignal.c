@@ -52,6 +52,9 @@ static LALUnit emptyLALUnit;
 
 /*---------- Global variables ----------*/
 
+/// \addtogroup GeneratePulsarSignal_h
+/// @{
+
 /**
  * Generate a time-series at the detector for a given pulsar.
  */
@@ -484,13 +487,13 @@ LALSignalToSFTs (LALStatus *status,		/**< pointer to LALStatus structure */
 /* 07/14/04 gam */
 /** /deprecated Move to attic?
  * Wrapper for LALComputeSky() and  LALComputeDetAMResponse() that finds the sky
- * constants and \f$F_+\f$ and \f$F_\times\f$ for use with LALFastGeneratePulsarSFTs().
+ * constants and \f$ F_+ \f$ and \f$ F_\times \f$ for use with LALFastGeneratePulsarSFTs().
  * Uses the output of LALComputeSkyAndZeroPsiAMResponse() and the same inputs as
  * LALGeneratePulsarSignal() and LALSignalToSFTs().
  * This function used LALComputeSkyBinary() if params->pSigParams->orbit is not
  * NULL, else it uses LALComputeSky() to find the skyConsts.
- * NOTE THAT THIS FUNCTION COMPUTES \f$F_+\f$ and \f$F_x\f$ for ZERO Psi!!!
- * LALFastGeneratePulsarSFTs() used these to find \f$F_+\f$ and \f$F_x\f$ for NONZERO Psi.
+ * NOTE THAT THIS FUNCTION COMPUTES \f$ F_+ \f$ and \f$ F_x \f$ for ZERO Psi!!!
+ * LALFastGeneratePulsarSFTs() used these to find \f$ F_+ \f$ and \f$ F_x \f$ for NONZERO Psi.
  */
 void
 LALComputeSkyAndZeroPsiAMResponse (LALStatus *status,		/**< pointer to LALStatus structure */
@@ -1215,3 +1218,5 @@ XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne )
   return XLAL_SUCCESS;
 
 } /* XLALcorrect_phase() */
+
+/// @}

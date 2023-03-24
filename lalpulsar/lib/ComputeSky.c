@@ -35,7 +35,7 @@ static void FloatToTime(LIGOTimeGPS *tgps, REAL8 *f);
 
 /**
  * Given an input index which refers to the sky patch under consideration, this
- * routine returns the phase model coefficients \f$A_{s\alpha}\f$ and \f$B_{s\alpha}\f$
+ * routine returns the phase model coefficients \f$ A_{s\alpha} \f$ and \f$ B_{s\alpha} \f$ 
  * which are needed to correctly account for the phase variance of a signal over
  * time.  The \c CSParams parameter structure contains relevant information
  * for this routine to properly run.  In particular, it contains an array of

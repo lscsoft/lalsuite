@@ -47,6 +47,9 @@ int XLALFillDetectorTensor (DetectorState *detState, const LALDetector *detector
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/// \addtogroup DetectorStates_h
+/// @{
+
 /**
  * Function to compute the LWL detector-tensor for the given \a detector in
  * SSB-fixed cartesian coordinates at time tgps.
@@ -556,9 +559,9 @@ XLALGetMultiDetectorStatesFromMultiSFTs(
 } /* XLALGetMultiDetectorStatesFromMultiSFTs() */
 
 /**
- * Parse string-vectors (typically input by user) of N detector noise-floors \f$\sqrt{S_X}\f$
- * for detectors \f$X=1\ldots N\f$, where here we assume equal number of SFTs per detector
- * such that \f$S^{-1} = \frac{1}{N}\sum_{X=0}^{N-1} S_X^{-1}\f$.
+ * Parse string-vectors (typically input by user) of N detector noise-floors \f$ \sqrt{S_X} \f$ 
+ * for detectors \f$ X=1\ldots N \f$ , where here we assume equal number of SFTs per detector
+ * such that \f$ S^{-1} = \frac{1}{N}\sum_{X=0}^{N-1} S_X^{-1} \f$ .
  *
  * \note input of length(sqrtSX)=1 < numDetectors is valid: use that single number for all detectors,
  *  otherwise we enforce length(sqrtSX) == numDetectors.
@@ -567,7 +570,7 @@ XLALGetMultiDetectorStatesFromMultiSFTs(
  */
 int
 XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed multi-IFO noise floor info */
-                           const LALStringVector *sqrtSX,	/**< [in] string-list of \f$\sqrt{S_X}\f$ for detectors \f$X\f$ */
+                           const LALStringVector *sqrtSX,	/**< [in] string-list of \f$ \sqrt{S_X} \f$ for detectors \f$ X \f$ */
                            UINT4 numDetectors			/**< [in] number of detectors. NOTE: length[sqrtSX] must be EITHER =numDetectors OR =1 */
                            )
 {
@@ -597,9 +600,9 @@ XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed m
 
 
 /**
- * Parse string-vectors (typically input by user) of N detector noise-floors \f$\sqrt{S_X}\f$
- * for detectors \f$X=1\ldots N\f$, where here we assume equal number of SFTs per detector
- * such that \f$S^{-1} = \frac{1}{N}\sum_{X=0}^{N-1} S_X^{-1}\f$.
+ * Parse string-vectors (typically input by user) of N detector noise-floors \f$ \sqrt{S_X} \f$ 
+ * for detectors \f$ X=1\ldots N \f$ , where here we assume equal number of SFTs per detector
+ * such that \f$ S^{-1} = \frac{1}{N}\sum_{X=0}^{N-1} S_X^{-1} \f$ .
  *
  * The detectors corresponding to each noise-floor may be a subset of the input string-vectors,
  * e.g. if parsing noise-floors for a segment where SFTs from some detectors are missing.
@@ -608,7 +611,7 @@ XLALParseMultiNoiseFloor ( MultiNoiseFloor *multiNoiseFloor,	/**< [out] parsed m
 int
 XLALParseMultiNoiseFloorMapped ( MultiNoiseFloor *multiNoiseFloor,			/**< [out] parsed multi-IFO noise floor info */
                                  const LALStringVector *multiNoiseFloorDetNames,	/**< [in] detector names for entries in \p multiNoiseFloor */
-                                 const LALStringVector *sqrtSX,				/**< [in] string-list of \f$\sqrt{S_X}\f$ for detectors \f$X\f$ */
+                                 const LALStringVector *sqrtSX,				/**< [in] string-list of \f$ \sqrt{S_X} \f$ for detectors \f$ X \f$ */
                                  const LALStringVector *sqrtSXDetNames			/**< [in] detector names for entries in \p sqrtSX */
   )
 {
@@ -651,7 +654,7 @@ XLALParseMultiNoiseFloorMapped ( MultiNoiseFloor *multiNoiseFloor,			/**< [out] 
 
 /**
  * Parse string-vectors (typically input by user) of N detector-names
- * for detectors \f$X=1\ldots N\f$, returns a MultiLALDetector struct
+ * for detectors \f$ X=1\ldots N \f$ , returns a MultiLALDetector struct
  *
  */
 int
@@ -736,3 +739,5 @@ XLALMultiLALDetectorFromMultiSFTs ( MultiLALDetector *multiIFO,	//!< [out] list 
   return XLAL_SUCCESS;
 
 } /* XLALMultiLALDetectorFromMultiSFTVector() */
+
+/// @}

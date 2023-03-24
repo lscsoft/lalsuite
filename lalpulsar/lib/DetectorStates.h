@@ -104,7 +104,7 @@ typedef DetectorArm Detector3Arms[3];	/**< used to allow functions some type/siz
  */
 typedef struct tagMultiLALDetector
 {
-  UINT4 length;                         	//!< number of detectors \f$N\f$
+  UINT4 length;                         	//!< number of detectors \f$ N \f$ 
   LALDetector sites[PULSAR_MAX_DETECTORS];  	//!< array of site information
 } MultiLALDetector;
 
@@ -112,10 +112,10 @@ typedef struct tagMultiLALDetector
 //! over the frequency-band of interest
 typedef struct tagMultiNoiseFloor
 {
-  UINT4 length;					//!< number of detectors \f$N_{\mathrm{det}}\f$
-  REAL8 sqrtSn[PULSAR_MAX_DETECTORS];       	//!< per-IFO sqrt(PSD) values \f$\sqrt{S_X}\f$, where
-                                                //!< \f$S_X^{-1}\equiv\frac{1}{N_{\mathrm{sft}}^X} \sum_{\alpha=0}^{N_{\mathrm{sft}}^X-1} S_{X\alpha}^{-1}\f$
-                                                //!< with \f$N_{\mathrm{sft}}^X\f$ the number of SFTs (labeled by \f$\alpha\f$) from detector \f$X\f$
+  UINT4 length;					//!< number of detectors \f$ N_{\mathrm{det}} \f$ 
+  REAL8 sqrtSn[PULSAR_MAX_DETECTORS];       	//!< per-IFO sqrt(PSD) values \f$ \sqrt{S_X} \f$ , where
+                                                //!< \f$ S_X^{-1}\equiv\frac{1}{N_{\mathrm{sft}}^X} \sum_{\alpha=0}^{N_{\mathrm{sft}}^X-1} S_{X\alpha}^{-1} \f$ 
+                                                //!< with \f$ N_{\mathrm{sft}}^X \f$ the number of SFTs (labeled by \f$ \alpha \f$ ) from detector \f$ X \f$ 
 } MultiNoiseFloor;
 
 /* ----- Output types for XLALGetDetectorStates() */

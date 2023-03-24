@@ -35,21 +35,21 @@
  * ### Description ###
  *
  * This program computes metric components using LALPtoleMetric(). The
- * ordering of the components is \f$(f_0, \alpha, \delta, f_1, \ldots)\f$ for the
- * unprojected metric, and \f$(\alpha, \delta, f_1, \ldots)\f$ for the metric with
- * \f$f_0\f$ projected out.
+ * ordering of the components is \f$ (f_0, \alpha, \delta, f_1, \ldots) \f$ for the
+ * unprojected metric, and \f$ (\alpha, \delta, f_1, \ldots) \f$ for the metric with
+ * \f$ f_0 \f$ projected out.
  *
  * With no options, this program displays metric components for a single point
  * in parameter space for the default integration time (see the <tt>-t</tt>
  * option).
  *
  * The <tt>-b</tt> option sets the beginning time of integration to the option
- * argument. (Default is \f$0\f$ seconds)
+ * argument. (Default is \f$ 0 \f$ seconds)
  *
  * The <tt>-e</tt> option causes the program to showcase error messages when
  * given bad parameter values, etc.
  *
- * The <tt>-m</tt> option sets the mismatch (default is \f$0.02\f$).
+ * The <tt>-m</tt> option sets the mismatch (default is \f$ 0.02 \f$ ).
  *
  * The <tt>-p</tt> option is provided for users who wish to view the
  * power mismatch contours provided by the <tt>-x</tt> option (see below)
@@ -60,7 +60,7 @@
  * favorite graphics package.
  *
  * The <tt>-t</tt> option sets the duration of integration in seconds. The default
- * is \f$10^5\f$ seconds, which is chosen because it is about one day but not an
+ * is \f$ 10^5 \f$ seconds, which is chosen because it is about one day but not an
  * integer multiple of any astronomically important timescale.
  *
  * The <tt>-x</tt> option produces a graph of the 2\% power mismatch

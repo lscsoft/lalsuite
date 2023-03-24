@@ -40,7 +40,7 @@
 /// \defgroup ComputeFstat_Resamp_Generic_c Module ComputeFstat_Resamp_Generic.c
 /// \ingroup ComputeFstat_h
 /// \brief Implements a generic version \cite Prix2022 of the \a Resamp FFT-based resampling algorithm for
-/// computing the \f$\mathcal{F}\f$-statistic \cite JKS98 .
+/// computing the \f$ \mathcal{F} \f$ -statistic \cite JKS98 .
 ///
 
 /// @{

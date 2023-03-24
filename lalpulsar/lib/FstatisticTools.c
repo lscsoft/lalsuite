@@ -40,19 +40,22 @@
 
 // ==================== function definitions ====================
 
+/// \addtogroup FstatisticTools_h
+/// @{
+
 ///
 /// Estimate the amplitude parameters of a pulsar CW signal, given its phase parameters,
-/// constituent parts of the \f$\mathcal{F}\f$-statistic, and antenna pattern matrix.
+/// constituent parts of the \f$ \mathcal{F} \f$ -statistic, and antenna pattern matrix.
 ///
 /// \note Parameter-estimation based on large parts on Yousuke's notes and implemention (in CFSv1),
 /// extended for error-estimation.
 ///
 int
 XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out] Pulsar candidate parameters.
-                                    const LIGOTimeGPS* FaFb_refTime,	///< [in] Reference time of \f$F_a\f$ and \f$F_b\f$, may differ from pulsar candidate reference time.
-                                    const COMPLEX8 Fa,			///< [in] Complex \f$\mathcal{F}\f$-statistic amplitude \f$F_a\f$.
-                                    const COMPLEX8 Fb,			///< [in] Complex \f$\mathcal{F}\f$-statistic amplitude \f$F_b\f$.
-                                    const AntennaPatternMatrix *Mmunu	///< [in] Antenna pattern matrix \f$M_{\mu\nu}\f$.
+                                    const LIGOTimeGPS* FaFb_refTime,	///< [in] Reference time of \f$ F_a \f$ and \f$ F_b \f$ , may differ from pulsar candidate reference time.
+                                    const COMPLEX8 Fa,			///< [in] Complex \f$ \mathcal{F} \f$ -statistic amplitude \f$ F_a \f$ .
+                                    const COMPLEX8 Fb,			///< [in] Complex \f$ \mathcal{F} \f$ -statistic amplitude \f$ F_b \f$ .
+                                    const AntennaPatternMatrix *Mmunu	///< [in] Antenna pattern matrix \f$ M_{\mu\nu} \f$ .
                                     )
 {
 
@@ -276,13 +279,13 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
 } // XLALEstimatePulsarAmplitudeParams()
 
 ///
-/// Convert amplitude params from 'physical' coordinates \f$(h_0, \cos\iota, \psi, \phi_0)\f$ into
-/// 'canonical' coordinates \f$A^\mu = (A_1, A_2, A_3, A_4)\f$. The equations can be found in
+/// Convert amplitude params from 'physical' coordinates \f$ (h_0, \cos\iota, \psi, \phi_0) \f$ into
+/// 'canonical' coordinates \f$ A^\mu = (A_1, A_2, A_3, A_4) \f$ . The equations can be found in
 /// \cite JKS98 or \cite Prix07 Eq.(2).
 ///
 int
-XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu,		///< [out] Canonical amplitude coordinates \f$A^\mu = (A_1, A_2, A_3, A_4)\f$.
-                           const PulsarAmplitudeParams Amp	///< [in] Physical amplitude params \f$(h_0, \cos\iota, \psi, \phi_0)\f$.
+XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu,		///< [out] Canonical amplitude coordinates \f$ A^\mu = (A_1, A_2, A_3, A_4) \f$ .
+                           const PulsarAmplitudeParams Amp	///< [in] Physical amplitude params \f$ (h_0, \cos\iota, \psi, \phi_0) \f$ .
                            )
 {
 
@@ -305,12 +308,12 @@ XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu,		///< [out] Canonical ampli
 } // XLALAmplitudeParams2Vect()
 
 ///
-/// Compute amplitude params \f$(h_0, \cos\iota, \psi, \phi_0)\f$ from amplitude-vector \f$A^\mu = (A_1, A_2, A_3, A_4)\f$.
+/// Compute amplitude params \f$ (h_0, \cos\iota, \psi, \phi_0) \f$ from amplitude-vector \f$ A^\mu = (A_1, A_2, A_3, A_4) \f$ .
 /// Adapted from algorithm in XLALEstimatePulsarAmplitudeParams().
 ///
 int
-XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical amplitude params \f$(h_0, \cos\iota, \psi, \phi_0)\f$.
-                           const PulsarAmplitudeVect A_Mu	///< [in] Canonical amplitude coordinates \f$A^\mu = (A_1, A_2, A_3, A_4)\f$.
+XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical amplitude params \f$ (h_0, \cos\iota, \psi, \phi_0) \f$ .
+                           const PulsarAmplitudeVect A_Mu	///< [in] Canonical amplitude coordinates \f$ A^\mu = (A_1, A_2, A_3, A_4) \f$ .
                            )
 {
 
@@ -414,3 +417,5 @@ XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, /**< [in] Pul
   return rho2;
 
 } // XLALComputeOptimalSNR2FromMmunu()
+
+/// @}

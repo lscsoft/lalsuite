@@ -50,7 +50,7 @@
  * ### Description ###
  *
  * The function LALRotatePolarU() rotates the celestial sphere so that
- * a given point, in the rotated coordinates, corresponds to (\f$\alpha = 0\f$, \f$\delta = -\pi/2\f$).
+ * a given point, in the rotated coordinates, corresponds to ( \f$ \alpha = 0 \f$ , \f$ \delta = -\pi/2 \f$ ).
  * The inputs are:
  * <tt>*par</tt> the reference point (e.g., the center of the sky-patch) of type
  * \c REAL8UnitPolarCoor and
@@ -70,13 +70,13 @@
  * returns <tt>*out</tt>,
  * of type \c REAL8Polar2Coor, the stereographic projection of that point
  * in polar coordinates, with the particularity  that <tt>out->radius</tt>  can be positive
- * or negative. <tt>in->delta</tt>=\f$\pi/2\f$ is an invalid argument  and an error will
+ * or negative. <tt>in->delta</tt>= \f$ \pi/2 \f$ is an invalid argument  and an error will
  * output.
  *
  * Given a point on the celestial sphere <tt>*in</tt> of type
  * \c REAL8UnitPolarCoor, the function LALStereoProjectCart()
  * returns <tt>*out</tt>, of type \c REAL8Cart2Coor, the stereographic projection of that point
- * in Cartesian coordinates. <tt>in->delta</tt>=\f$\pi/2\f$ is an invalid argument  and an error will
+ * in Cartesian coordinates. <tt>in->delta</tt>= \f$ \pi/2 \f$ is an invalid argument  and an error will
  * output.
  *
  * Given a point on the projected plane <tt>*in</tt> , the functions

@@ -214,10 +214,10 @@ SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 #endif // SWIG
 
 ///
-/// Set parameter-space bounds on the physical sky position \f$(\alpha, \delta)\f$ for a lattice
+/// Set parameter-space bounds on the physical sky position \f$ (\alpha, \delta) \f$ for a lattice
 /// tiling using the reduced supersky metric. The metric and coordinate transform data must be supplied,
 /// since they will be transformed such that the physical sky region maps to a region in the reduced
-/// supersky coordinates \f$(n_a,n_b)\f$ which may be covered by the lattice tiling.
+/// supersky coordinates \f$ (n_a,n_b) \f$ which may be covered by the lattice tiling.
 ///
 int XLALSetSuperskyPhysicalSkyBounds(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
@@ -231,7 +231,7 @@ int XLALSetSuperskyPhysicalSkyBounds(
 
 ///
 /// Divide the reduced supersky parameter space into \p patch_count equal-area patches, and
-/// set parameter-space bounds on the reduced supersky coordinates \f$(n_a,n_b)\f$ for the
+/// set parameter-space bounds on the reduced supersky coordinates \f$ (n_a,n_b) \f$ for the
 /// patch indexed by \p patch_index.
 ///
 int XLALSetSuperskyEqualAreaSkyBounds(
@@ -247,7 +247,7 @@ SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
 #endif // SWIG
 
 ///
-/// Set parameter-space bounds on the physical frequency/spindowns \f$f^{(s)}\f$ for a lattice
+/// Set parameter-space bounds on the physical frequency/spindowns \f$ f^{(s)} \f$ for a lattice
 /// tiling using the reduced supersky metric.
 ///
 int XLALSetSuperskyPhysicalSpinBound(
@@ -259,7 +259,7 @@ int XLALSetSuperskyPhysicalSpinBound(
   );
 
 ///
-/// Set parameter-space bound padding on the physical frequency/spindowns \f$f^{(s)}\f$ for a lattice
+/// Set parameter-space bound padding on the physical frequency/spindowns \f$ f^{(s)} \f$ for a lattice
 /// tiling using the reduced supersky metric.
 ///
 int XLALSetSuperskyPhysicalSpinBoundPadding(

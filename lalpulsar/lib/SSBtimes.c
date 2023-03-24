@@ -55,6 +55,9 @@ struct E_solver_params {
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
+/// \addtogroup SSBtimes_h
+/// @{
+
 /** Compute extra time-delays for a CW source in a (Keplerian) binary orbital system.
  *
  *
@@ -71,9 +74,9 @@ struct E_solver_params {
   \newcommand{\fdot}{\dot{f}}
   \f]
 
- * For given binary-orbital parameters in \a Doppler, compute the source-frame emission times \f$\tEM(\tDet)\f$
- * of CW wavefronts arriving at the detector frame at times \f$\tDet\f$.
- * The input to this function should contain the wavefront arrival times \f$\tSSB(\tDet)\f$ in the solar-system barycenter (SSB) frame,
+ * For given binary-orbital parameters in \a Doppler, compute the source-frame emission times \f$ \tEM(\tDet) \f$ 
+ * of CW wavefronts arriving at the detector frame at times \f$ \tDet \f$ .
+ * The input to this function should contain the wavefront arrival times \f$ \tSSB(\tDet) \f$ in the solar-system barycenter (SSB) frame,
  * the additional time differences due to the binary orbital motion are then added by this function.
  *
  * NOTE: the output vector \a tSSBOut can be passed either as
@@ -109,12 +112,12 @@ The intrinsic CW phase in the source frame can be written as
 \end{split}
 \f}
 
-In order to relate this to the CW phase \f$\Phi_\Det\f$ arriving at the detector, we need the timing relation \f$\tEM(\tDet)\f$,
-such that \f$\Phi_\Det(\tDet) = \Phi\left(\tEM(\tDet)\right)\f$.
-We also compute the explicit values of the time-derivative, i.e. \f$\frac{d\tEM}{d \tDet}(\tDet)\f$, which are required
+In order to relate this to the CW phase \f$ \Phi_\Det \f$ arriving at the detector, we need the timing relation \f$ \tEM(\tDet) \f$ ,
+such that \f$ \Phi_\Det(\tDet) = \Phi\left(\tEM(\tDet)\right) \f$ .
+We also compute the explicit values of the time-derivative, i.e. \f$ \frac{d\tEM}{d \tDet}(\tDet) \f$ , which are required
 by XLALComputeFaFb(), for example.
 
-XLALGetSSBtimes() computes the timing relation between detector time \f$\tDet\f$ and SSB time \f$\tSSB\f$, namely
+XLALGetSSBtimes() computes the timing relation between detector time \f$ \tDet \f$ and SSB time \f$ \tSSB \f$ , namely
 \f{align}{
 \Delta\tau_0(\tDet) &\equiv \tSSB(\tDet) - \tRef\,,\\
 \dot{\tau}_0(\tDet) &\equiv \frac{d\tSSB}{d \tDet}(\tDet)\,
@@ -127,12 +130,12 @@ which is passed to this function as an input in \a tSSBIn. We therefore need to 
                   &= \left[ \frac{d\tEM}{d\tSSB}\left(\tSSB(\tDet)\right) \right]\,\dot{\tau}_0(\tDet)\,, \label{eq:7b}
 \f}
 
-The relation between \f$\tEM\f$ and \f$\tSSB\f$ contains an unknown offset due to the distance of the binary system from the
+The relation between \f$ \tEM \f$ and \f$ \tSSB \f$ contains an unknown offset due to the distance of the binary system from the
 SSB, which can be either constant, or changing at a constant or variable rate (eg due to accelerations in globular
 clusters). However, we can absorb this unknown effect into the definition of the pulsar parameters
-\f$\{\phi_0,f,\fdot,\ldots\}\f$, which are either unknown anyway, or affected by the exact same re-definitions if they are
+ \f$ \{\phi_0,f,\fdot,\ldots\} \f$ , which are either unknown anyway, or affected by the exact same re-definitions if they are
 known from photon astronomy. We therefore ignore this effect and pretend that there is no time delay between the SSB and
-the binary-system barycenter (BSB), ie effectively \f$\tSSB = t_{\mathrm{BSB}}\f$.
+the binary-system barycenter (BSB), ie effectively \f$ \tSSB = t_{\mathrm{BSB}} \f$ .
 
 ### (Newtonian) Binary NS Timing equations ###
 
@@ -141,28 +144,28 @@ The extra time-delay from the binary orbital motion can be written as
   \label{eq:1}
   \tSSB(\tEM) = \tEM + R(\tEM)\,,
 \f}
-where \f$R\f$ is the radial distance from the BSB to the emitting NS along the line of sight, and here and in the following we are using
-units where \f$c=1\f$. The sign convention is such that \f$R>0\f$ means that the NS is further away than the BSB, when \f$R<0\f$ it is closer.
+where \f$ R \f$ is the radial distance from the BSB to the emitting NS along the line of sight, and here and in the following we are using
+units where \f$ c=1 \f$ . The sign convention is such that \f$ R>0 \f$ means that the NS is further away than the BSB, when \f$ R<0 \f$ it is closer.
 
-In terms of orbital parameters, the radial distance \f$R\f$ can be expressed as (see \ref inject_binary "this figure").
+In terms of orbital parameters, the radial distance \f$ R \f$ can be expressed as (see \ref inject_binary "this figure").
 \f{equation}{
   \label{eq:2}
   R = r\,\sini\,\sin(\argp + \upsilon)\,,
 \f}
-where \f$r\f$ is the distance of the NS from the BSB (ie the focus of the ellips), \f$i\f$ is the inclination angle
-between the orbital plane and the sky, \f$\argp\f$ is the argument of periapse, and \f$\upsilon\f$ is the <em>true anomaly</em> (ie
+where \f$ r \f$ is the distance of the NS from the BSB (ie the focus of the ellips), \f$ i \f$ is the inclination angle
+between the orbital plane and the sky, \f$ \argp \f$ is the argument of periapse, and \f$ \upsilon \f$ is the <em>true anomaly</em> (ie
 the angle from the periapse to the current NS location around the BSB.
 
 \anchor Eccentric_and_true_anomaly
 \image html Eccentric_and_true_anomaly.png "Definition of true anomaly 'v' and eccentric anomaly 'E' to describe an ellipse [Wikipedia]"
 
 Using elementary trigonometry (cf. \ref Eccentric_and_true_anomaly "this figure" and https://en.wikipedia.org/wiki/Eccentric_anomaly), one can see that the elliptical
-orbit can be described in terms of the true anomaly \f$\upsilon\f$ as
+orbit can be described in terms of the true anomaly \f$ \upsilon \f$ as
 \f{equation}{
   \label{eq:3}
   r(\upsilon) = \frac{a\,(1- e^2)}{1 +  e\cos\upsilon}\,,
 \f}
-and in terms of the <em>eccentric anomaly</em> \f$E\f$ as
+and in terms of the <em>eccentric anomaly</em> \f$ E \f$ as
 \f{equation}{
   \label{eq:4}
   r(E) = a \, \left( 1 -  e\,\cos E\right)\,.
@@ -175,7 +178,7 @@ From \eqref{eq:3} and \eqref{eq:4} we easily obtain the relations
   \end{split}
     \label{eq:9}
 \f}
-where in the second equation we have used the fact that \f$\sin E\f$ and \f$\sin\upsilon\f$ always have the same sign, as can be
+where in the second equation we have used the fact that \f$ \sin E \f$ and \f$ \sin\upsilon \f$ always have the same sign, as can be
 seen from \ref Eccentric_and_true_anomaly "this figure".
 
 The (Keplerian) motion of the NS on this elliptical orbit is described by Kepler's equation:
@@ -183,13 +186,13 @@ The (Keplerian) motion of the NS on this elliptical orbit is described by Kepler
   \label{eq:6}
   \tEM - \tPeri = \frac{P}{2\pi}\left( E -  e\,\sin E\right)\,,
 \f}
-where we fixed the (discrete) gauge as \f$E=0\f$ at \f$\tEM=\tPeri\f$.
+where we fixed the (discrete) gauge as \f$ E=0 \f$ at \f$ \tEM=\tPeri \f$ .
 
-#### Algorithm to solve for \f$\tEM(\tSSB)\f$ ####
+#### Algorithm to solve for \f$ \tEM(\tSSB) \f$ ####
 
-Following Teviet's strategy explained in LALGenerateEllipticSpinOrbitCW() we proceed by first expressing \f$\tSSB(E)\f$,
-solving it numerically for \f$E(\tSSB)\f$, from which we obtain by substitution \f$\tEM(\tSSB)\f$ and
-\f$d\tEM/d\tSSB\f$ required for \eqref{eq:7a},\eqref{eq:7b}.
+Following Teviet's strategy explained in LALGenerateEllipticSpinOrbitCW() we proceed by first expressing \f$ \tSSB(E) \f$ ,
+solving it numerically for \f$ E(\tSSB) \f$ , from which we obtain by substitution \f$ \tEM(\tSSB) \f$ and
+ \f$ d\tEM/d\tSSB \f$ required for \eqref{eq:7a},\eqref{eq:7b}.
 
 We start by writing \eqref{eq:1} using \eqref{eq:6} as
 \f{equation}{
@@ -201,20 +204,20 @@ and using \eqref{eq:2}, \eqref{eq:3} with \eqref{eq:9}, we obtain
   \label{eq:R_E}
   R(E) = a\sini\left[ \sin\argp ( \cos E - e) + \cos\argp\,\sin E \sqrt{1 -  e^2} \right]\,,
 \f}
-Before solving \eqref{eq:8} for \f$E(\tSSB)\f$, it is useful to rewrite it a bit further:
-First we note that at periapse (i.e. \f$E=0\f$),
+Before solving \eqref{eq:8} for \f$ E(\tSSB) \f$ , it is useful to rewrite it a bit further:
+First we note that at periapse (i.e. \f$ E=0 \f$ ),
 \f{equation}{
 \TPeri \equiv \tSSB(E=0) = \tPeri + a\sini \,\sin\argp\,(1-e)\,, \label{eq:defTPeri}
 \f}
 which corresponds to the <em>observed</em> (SSB) time of periapse passage.
 
 Furthermore, as pointed out in LALGenerateEllipticSpinOrbitCW(), the (Newtonian) binary NS timing is periodic, namely
-\f$\tSSB(E + m\,2\pi) = \tSSB(E) + m\,P\f$ for integer \f$m\f$, and we can therefore simplify the numerical solution of \eqref{eq:8} for \f$E(\tSSB)\f$ by
-restricting the solution to the interval \f$E\in[0,2\pi)\f$ by mapping \f$\tSSB\f$ into \f$[\TPeri,\,\TPeri + P)\f$, via
+ \f$ \tSSB(E + m\,2\pi) = \tSSB(E) + m\,P \f$ for integer \f$ m \f$ , and we can therefore simplify the numerical solution of \eqref{eq:8} for \f$ E(\tSSB) \f$ by
+restricting the solution to the interval \f$ E\in[0,2\pi) \f$ by mapping \f$ \tSSB \f$ into \f$ [\TPeri,\,\TPeri + P) \f$ , via
 \f{equation}{
 x_0 \equiv \frac{2\pi}{P} (\tSSB - \TPeri) \mod 2\pi\,,
 \f}
-where we add \f$2\pi\f$ if \f$x_0 < 0\f$ to ensure that \f$x_0 \in [0,\,2\pi)\f$.
+where we add \f$ 2\pi \f$ if \f$ x_0 < 0 \f$ to ensure that \f$ x_0 \in [0,\,2\pi) \f$ .
 We can therefore rewrite \eqref{eq:8} as
 \f{align}{
 x_0 &= E + A\,\sin E + B \,( \cos E -1 )\,, \label{eq:E_tSSB}\\
@@ -223,10 +226,10 @@ B &\equiv \frac{2\pi}{P}\, a\sini \,\sin\argp\,, \label{eq:defB}
 \f}
 which (after some substitutions) can be seen to agree with Teviet's equation found in LALGenerateEllipticSpinOrbitCW().
 
-This is solved numerically for \f$E(\tSSB) \in [0,\,2\pi)\f$, and plugging this back into \eqref{eq:R_E} and \eqref{eq:1}
-we obtain \f$\tEM(E)\f$, and from this the required timing relation \eqref{eq:7a}.
+This is solved numerically for \f$ E(\tSSB) \in [0,\,2\pi) \f$ , and plugging this back into \eqref{eq:R_E} and \eqref{eq:1}
+we obtain \f$ \tEM(E) \f$ , and from this the required timing relation \eqref{eq:7a}.
 
-#### Computing the derivate \f$d\tEM/d\tSSB\f$ ####
+#### Computing the derivate \f$ d\tEM/d\tSSB \f$ ####
 
 We start from \eqref{eq:1} and write,
 \f{equation}{
@@ -253,8 +256,8 @@ which results in the derivative of \eqref{eq:12} to be expressible as
 \f}
 */
 int
-XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in emission frame: \f$\tEM(\tDet)-\tRef\f$ and \f$d\tEM/d\tDet\f$
-                     const SSBtimes *tSSBIn,			//!< [in] reference-time offsets in SSB frame: \f$\tSSB(\tDet)-\tRef\f$ and \f$d\tSSB/d\tDet\f$
+XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in emission frame: \f$ \tEM(\tDet)-\tRef \f$ and \f$ d\tEM/d\tDet \f$ 
+                     const SSBtimes *tSSBIn,			//!< [in] reference-time offsets in SSB frame: \f$ \tSSB(\tDet)-\tRef \f$ and \f$ d\tSSB/d\tDet \f$ 
                      const PulsarDopplerParams *Doppler		//!< [in] pulsar Doppler parameters, includes binary orbit parameters */
                      )
 {
@@ -375,7 +378,7 @@ XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in 
 
 } /* XLALAddBinaryTimes() */
 
-/** Function implementing \eqref{eq:E_tSSB} to be solved via numerical root-finder for \f$E(\tSSB)\f$
+/** Function implementing \eqref{eq:E_tSSB} to be solved via numerical root-finder for \f$ E(\tSSB) \f$ 
  */
 static double
 gsl_E_solver ( REAL8 E, void *par )
@@ -394,9 +397,9 @@ gsl_E_solver ( REAL8 E, void *par )
 /**
  * Multi-IFO version of XLALAddBinaryTimes().
 
- * For given binary-orbital parameters in \a Doppler, compute the source-frame emission times \f$\tEM(\tDet)\f$
- * of CW wavefronts arriving at the detector frame at times \f$\tDet\f$.
- * The input to this function should contain the wavefront arrival times \f$\tSSB(\tDet)\f$ in the solar-system barycenter (SSB) frame,
+ * For given binary-orbital parameters in \a Doppler, compute the source-frame emission times \f$ \tEM(\tDet) \f$ 
+ * of CW wavefronts arriving at the detector frame at times \f$ \tDet \f$ .
+ * The input to this function should contain the wavefront arrival times \f$ \tSSB(\tDet) \f$ in the solar-system barycenter (SSB) frame,
  * the additional time differences due to the binary orbital motion are then added by this function.
  *
  * NOTE: the output vector \a multiSSBOut can be passed either as
@@ -518,8 +521,8 @@ XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB )
 } /* XLALDuplicateMultiSSBtimes() */
 
 /** For a given DetectorStateSeries, calculate the time-differences
- *  \f$\Delta T_\alpha\equiv T(t_\alpha) - T_0\f$, and their
- *  derivatives \f$\dot{T}_\alpha \equiv d T / d t (t_\alpha)\f$.
+ * \f$ \Delta T_\alpha\equiv T(t_\alpha) - T_0 \f$ , and their
+ *  derivatives \f$ \dot{T}_\alpha \equiv d T / d t (t_\alpha) \f$ .
  *
  *  \note The return-vector is allocated here
  *
@@ -877,3 +880,5 @@ XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
   return;
 
 } /* XLALDestroyMultiSSBtimes() */
+
+/// @}

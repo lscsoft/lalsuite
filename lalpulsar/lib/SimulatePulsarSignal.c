@@ -50,28 +50,28 @@ static LALUnit emptyUnit;
  * functions agains, in order to be able to gauge the quality of a given
  * signal-generation routine.
  *
- * We want to calculate \f$h(t)\f$, given by
+ * We want to calculate \f$ h(t) \f$ , given by
  * \f[
  * h(t) = F_+(t)\, h_+(t) + F_\times(t) \,h_\times(t)\,,
  * \f]
- * where \f$F_+\f$ and \f$F_x\f$ are called the <em>beam-pattern</em> functions,
- * which depend of the wave polarization \f$\psi\f$,
- * the source position \f$\alpha\f$, \f$\delta\f$ and the detector position and
- * orientation (\f$\gamma\f$, \f$\lambda\f$, \f$L\f$ and \f$\xi\f$). The expressions for
+ * where \f$ F_+ \f$ and \f$ F_x \f$ are called the <em>beam-pattern</em> functions,
+ * which depend of the wave polarization \f$ \psi \f$ ,
+ * the source position \f$ \alpha \f$ , \f$ \delta \f$ and the detector position and
+ * orientation ( \f$ \gamma \f$ , \f$ \lambda \f$ , \f$ L \f$ and \f$ \xi \f$ ). The expressions for
  * the beam-pattern functions are given in \cite JKS98 , which we write as
  * \f{eqnarray}{
  * F_+(t) = \sin \zeta \cos 2\psi \, a(t)  + \sin \zeta \sin 2\psi \, b(t)\,,\\
  * F_\times(t) = \sin\zeta  \cos 2\psi \,b(t) - \sin\zeta \sin 2\psi \, a(t) \,,
  * \f}
- * where \f$\zeta\f$ is the angle between the interferometer arms, and
+ * where \f$ \zeta \f$ is the angle between the interferometer arms, and
  * \f{eqnarray}{
  * a(t) &=& a_1 \cos[ 2 (\alpha - T)) ] + a_2 \sin[ 2(\alpha - T)]
  * + a_3 \cos[ \alpha - T ] + a_4 \sin [ \alpha - T ] + a_5\,,\\
  * b(t) &=& b_1 \cos[ 2(\alpha - T)] + b_2 \sin[ 2(\alpha - T) ]
  * + b_3 \cos[ \alpha - T ] + b_4 \sin[ \alpha - T]\,,
  * \f}
- * where \f$T\f$ is the local (mean) sidereal time of the detector, and the
- * time-independent coefficients \f$a_i\f$ and \f$b_i\f$ are given by
+ * where \f$ T \f$ is the local (mean) sidereal time of the detector, and the
+ * time-independent coefficients \f$ a_i \f$ and \f$ b_i \f$ are given by
  * \f{eqnarray}{
  * a_1 &=& \frac{1}{16} \sin 2\gamma \,(3- \cos 2\lambda)\,(3 - \cos 2\delta)\,,\\
  * a_2 &=& -\frac{1}{4}\cos 2\gamma \,\sin \lambda \,(3 - \cos 2\delta) \,,\\
@@ -92,28 +92,28 @@ static LALUnit emptyUnit;
  * h_+(t) &=& A_+\, \cos \Psi(t)\,,\\
  * h_\times(t) &=& A_\times \, \sin \Psi(t)\,,
  * \f}
- * where the wave-phase is \f$\Psi(t) = \Phi_0 + \Phi(t)\f$, and for an
+ * where the wave-phase is \f$ \Psi(t) = \Phi_0 + \Phi(t) \f$ , and for an
  * isolated pulsar we have
  * \f{equation}{
  * \Phi(t) = 2\pi \left[\sum_{s=0} \frac{f^{(s)}(\tau_\mathrm{ref})}{
  * (s+1)!} \left( \tau(t) - \tau_\mathrm{ref} \right)^{s+1} \right]\,,
  * \f}
- * where \f$\tau_\mathrm{ref}\f$ is the "reference time" for the definition
- * of the pulsar-parameters \f$f^{(s)}\f$ in the solar-system barycenter
- * (SSB), and \f$\tau(t)\f$ is the SSB-time of the phase arriving at the
- * detector at UTC-time \f$t\f$, which depends on the source-position
- * (\f$\alpha\f$, \f$\delta\f$) and the detector-position, namely
+ * where \f$ \tau_\mathrm{ref} \f$ is the "reference time" for the definition
+ * of the pulsar-parameters \f$ f^{(s)} \f$ in the solar-system barycenter
+ * (SSB), and \f$ \tau(t) \f$ is the SSB-time of the phase arriving at the
+ * detector at UTC-time \f$ t \f$ , which depends on the source-position
+ * ( \f$ \alpha \f$ , \f$ \delta \f$ ) and the detector-position, namely
  * \f{equation}{
  * \tau (t) = t + \frac{ \vec{r}(t)\cdot\vec{n}}{c}\,,
  * \f}
- * where \f$\vec{r}(t)\f$ is the vector from SSB to the detector, and \f$\vec{n}\f$
+ * where \f$ \vec{r}(t) \f$ is the vector from SSB to the detector, and \f$ \vec{n} \f$ 
  * is the unit-vector pointing <em>to</em> the source.
  *
  * This is a standalone "clean-room" implementation using no other
  * outside-functions <em>except</em> for LALGPStoLMST1() to calculate
  * the local (mean) sidereal time at the detector for given GPS-time,
  * (which I double-checked with an independent Mathematica script),
- * and and XLALBarycenter() to calculate \f$\tau(t)\f$.
+ * and and XLALBarycenter() to calculate \f$ \tau(t) \f$ .
  *
  * NOTE: currently only isolated pulsars are supported
  *

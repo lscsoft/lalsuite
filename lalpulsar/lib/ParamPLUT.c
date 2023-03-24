@@ -52,10 +52,10 @@
  * This routine calculates the parameters needed for generating the look-up-table.
  * It is valid for all cases in which the Hough transform
  * master equation is of the form:
- * \f$f(t)\f$-\c f0 = \f$\vec\xi \cdot (\hat n-\hat N)\f$, or
+ * \f$ f(t) \f$ -\c f0 = \f$ \vec\xi \cdot (\hat n-\hat N) \f$ , or
  * equivalently,
- * \f$\cos(\phi)\f$ = (\f$f(t)-\f$\c f0 + \f$\vec\xi \cdot\hat N\f$)/\f$\vert\vec\xi\vert\f$.
- * \f$\vec\xi\f$, hereafter \c xi, is calculated according to the demodulation procedure used in a
+ * \f$ \cos(\phi) \f$ = ( \f$ f(t)- \f$ \c f0 + \f$ \vec\xi \cdot\hat N \f$ )/ \f$ \vert\vec\xi\vert \f$ .
+ * \f$ \vec\xi \f$ , hereafter \c xi, is calculated according to the demodulation procedure used in a
  * first stage.\\
  *
  * ### Uses ###

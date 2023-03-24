@@ -52,21 +52,21 @@
  * This function is a fairly straightforward calculation of
  * \eqref{eq_taylorcw-freq} and \eqref{eq_taylorcw-phi} in
  * \ref GenerateTaylorCW_h.  There are no real tricks involved, except
- * to note that the phase \f$\phi\f$ and the time elapsed \f$t-t_0\f$ are
+ * to note that the phase \f$ \phi \f$ and the time elapsed \f$ t-t_0 \f$ are
  * computed and stored as \c REAL8s in order to provide waveforms
  * that are accurate to small fractions of a cycle over many years.
  *
  * Since the waveform does not include any effects such as precession,
- * the amplitudes \f$A_+\f$, \f$A_\times\f$ and the shift angle \f$\Phi\f$, as
+ * the amplitudes \f$ A_+ \f$ , \f$ A_\times \f$ and the shift angle \f$ \Phi \f$ , as
  * defined in \ref PulsarSimulateCoherentGW_h, are constant.  This is dealt
  * with by setting <tt>output->a</tt> to be a
  * \c REAL4TimeVectorSequence of two identical vectors
- * \f$(A_+,A_\times)\f$ spanning the requested time of the waveform, under
+ * \f$ (A_+,A_\times) \f$ spanning the requested time of the waveform, under
  * the assumption that any routine using this output data (such as the
  * routines in \ref PulsarSimulateCoherentGW_h) will interpolate these two
- * endpoints to get the instantaneous values of \f$A_+\f$, \f$A_\times\f$.  The
+ * endpoints to get the instantaneous values of \f$ A_+ \f$ , \f$ A_\times \f$ .  The
  * field <tt>output->shift</tt> is left as \c NULL, so the constant
- * value of \f$\Phi\f$ must be subsumed into the polarization angle \f$\psi\f$.
+ * value of \f$ \Phi \f$ must be subsumed into the polarization angle \f$ \psi \f$ .
  *
  * The fields <tt>output->f</tt> and <tt>output->phi</tt> are created and
  * filled at the requested sampling interval <tt>params->deltaT</tt>; it is
@@ -74,19 +74,19 @@
  * reasonable.  As a guideline, we want to be able to determine the
  * instantaneous wave phase accurately to within a fraction of a cycle.
  * For functions that compute the phase by linear interpolation of
- * <tt>output->phi</tt>, this means sampling on timescales \f$\Delta
- * t\lesssim\dot{f}^{-1/2}\sim\max\{\sqrt{kf_0f_kT^{k-1}}\}\f$, where \f$T\f$ is
+ * <tt>output->phi</tt>, this means sampling on timescales \f$ \Delta
+ * t\lesssim\dot{f}^{-1/2}\sim\max\{\sqrt{kf_0f_kT^{k-1}}\} \f$ , where \f$ T \f$ is
  * the duration of the waveform.  More precisely, the largest deviation
  * from linear phase evolution will typically be on the order of
- * \f$\Delta\phi\approx(1/2)\ddot{\phi}(\Delta t/2)^2\approx(\pi/4)\Delta
- * f\Delta t\f$, where \f$\Delta f\f$ is the frequency shift over the timestep.
+ * \f$ \Delta\phi\approx(1/2)\ddot{\phi}(\Delta t/2)^2\approx(\pi/4)\Delta
+ * f\Delta t \f$ , where \f$ \Delta f \f$ is the frequency shift over the timestep.
  * So if we want our interpolated phase to agree with the true phase to
- * within, say, \f$\pi/2\f$ radians, then we would like to have
+ * within, say, \f$ \pi/2 \f$ radians, then we would like to have
  * \f[
  * \Delta f \Delta t \lesssim 2 \;.
  * \f]
  * This routine provides a check by setting the output parameter field
- * <tt>params->dfdt</tt> equal to the maximum value of \f$\Delta f\Delta t\f$
+ * <tt>params->dfdt</tt> equal to the maximum value of \f$ \Delta f\Delta t \f$ 
  * encountered during the integration.
  *
  */
