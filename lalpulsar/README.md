@@ -57,7 +57,7 @@ helpdesk][helpdesk].
 Please visit the [LALSuite project page][project].
 
 [doi]:          https://doi.org/10.7935/GT1W-FZ16
-[swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lal/group__lal__swig.html#swiglal_tutorial
+[swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lalsuite/swiglal_tutorial.html
 [helpdesk]:     mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
 [install]:      https://wiki.ligo.org/Computing/LALSuiteInstall
 [bugs]:         https://git.ligo.org/lscsoft/lalsuite/issues/
