@@ -35,6 +35,10 @@ bin_PROGRAMS += \
 	lalpulsar_MakeSFTs \
 	$(END_OF_LIST)
 
+noinst_PROGRAMS += \
+	makeMultiChFrame \
+	$(END_OF_LIST)
+
 lalpulsar_MakeSFTs_SOURCES = \
 	MakeSFTs.c \
 	$(END_OF_LIST)
@@ -60,6 +64,7 @@ endif
 
 # Add shell test scripts to this variable
 test_scripts += testMakeSFTs.sh
+test_scripts += testMakeSFTsMultiChFrame.sh
 test_scripts += testMakefakedata_v4.sh
 test_scripts += testMakefakedata_v4_hwinjection.sh
 test_scripts += testMakefakedata_v5.sh
@@ -72,6 +77,9 @@ endif
 # Add any helper programs required by tests to this variable
 test_helpers += compareTS
 test_helpers += genSFTWindows
+if LALFRAME
+test_helpers += makeMultiChFrame
+endif
 
 # Add any extra files required by tests (e.g. helper scripts) to this variable
 test_extra_files +=
