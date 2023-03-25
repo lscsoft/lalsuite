@@ -31,6 +31,7 @@
 int main(int argc, char **argv)
 {
     FILE *COHOUT = NULL;
+    int fopenerr = 0;
 
     SFTCatalog *catalog_a = NULL, *catalog_b = NULL;
     SFTVector *sft_vect_a = NULL, *sft_vect_b = NULL;
@@ -91,6 +92,8 @@ int main(int argc, char **argv)
     snprintf(outfile0, sizeof(outfile0), "%s.txt", outbase);
 
     COHOUT = fopen(outfile0, "w");
+    fopenerr = errno;
+    XLAL_CHECK_MAIN( COHOUT != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile0, strerror(fopenerr) );
 
     UINT4 nAve = 0;
     

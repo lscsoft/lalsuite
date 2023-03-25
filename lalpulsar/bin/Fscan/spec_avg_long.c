@@ -54,6 +54,7 @@ int select_mean_std_from_vect(REAL8 *mean, REAL8 *std, const REAL8Vector *means,
 int main(int argc, char **argv)
 {
     FILE *SPECOUT = NULL, *WTOUT = NULL, *LINEOUT = NULL;
+    int fopenerr = 0;
 
     SFTCatalog *catalog = NULL;
     SFTConstraints XLAL_INIT_DECL(constraints);
@@ -351,7 +352,11 @@ int main(int argc, char **argv)
 
     /* Print to files */
     SPECOUT = fopen(outfile0, "w");
+    fopenerr = errno;
+    XLAL_CHECK_MAIN( SPECOUT != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile0, strerror(fopenerr) );
     WTOUT = fopen(outfile1, "w");
+    fopenerr = errno;
+    XLAL_CHECK_MAIN( WTOUT != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile1, strerror(fopenerr) );
     for (UINT4 i = 0; i < timeavg->length; i++)
     {
         REAL8 f = f0 + ((REAL4)i)*deltaF;
@@ -373,6 +378,8 @@ int main(int argc, char **argv)
     if (freq_vect != NULL) {
         // open the line tracking output file for writing
         LINEOUT = fopen(outfile2, "w");
+        fopenerr = errno;
+        XLAL_CHECK_MAIN( LINEOUT != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile2, strerror(fopenerr) );
 	if (!XLALUserVarWasSet(&persistAvgOpt)) {
 	    fprintf(LINEOUT, "# GPS Epoch (len = %d s)", persistAvgSeconds);
 	} else {
