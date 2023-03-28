@@ -32,7 +32,7 @@ int main( int argc, char *argv[] )
 		outfile = XLALFileOpen( argv[2], "w" );
 		arg += 2;
 	}
-	cache = XLALCacheGlob( NULL, argc == 1 ? NULL : argv[arg] );
+	cache = XLALCacheGlob( NULL, argc == 1 ? NULL : argv[arg++] );
 	for ( ; arg < argc; ++arg ) {
 		LALCache *tmp = cache;
 		LALCache *add;
