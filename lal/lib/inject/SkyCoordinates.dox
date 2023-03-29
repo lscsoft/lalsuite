@@ -1,11 +1,6 @@
 /**
 \defgroup SkyCoordinates_h Header SkyCoordinates.h
 \ingroup lal_inject
-@{
-\defgroup CelestialCoordinates_c        Module CelestialCoordinates.c
-\defgroup TerrestrialCoordinates_c      Module TerrestrialCoordinates.c
-\defgroup SkyCoordinates_c              Module SkyCoordinates.c
-@}
 
 \author Creighton, T. D.
 \date 2002
@@ -175,4 +170,9 @@ along the intersection of the Galactic and equatorial planes, such
 that right-handed rotation about the Galactic \f$z\f$-axis moves you from
 south to north through the equator.
 
+@{
+\defgroup CelestialCoordinates_c        Module CelestialCoordinates.c
+\defgroup TerrestrialCoordinates_c      Module TerrestrialCoordinates.c
+\defgroup SkyCoordinates_c              Module SkyCoordinates.c
+@}
 */

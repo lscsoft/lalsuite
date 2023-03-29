@@ -167,7 +167,7 @@ the [Git LFS][gitlfs] conversion. Please note:
    etc.
 
 1. Commits before December 2017 may also include references to issues
-   (`#number`). These refer to the corresponding [Redmine
+   (`# number`). These refer to the corresponding [Redmine
    issue][oldredmine] (LVC-authorized access only), and any clickable
    link the internal GitLab web interface produces for those old commits
    will therefore be spurious.
@@ -177,9 +177,9 @@ the [Git LFS][gitlfs] conversion. Please note:
 Please visit the [LALSuite project page][project].
 
 [doi]:          https://doi.org/10.7935/GT1W-FZ16
-[swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lal/group__lal__swig.html#swiglal_tutorial
+[swiglal]:      https://lscsoft.docs.ligo.org/lalsuite/lalsuite/swiglal_tutorial.html
 [gitlfs]:       https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
-[contributing]: https://git.ligo.org/lscsoft/lalsuite/blob/master/CONTRIBUTING.md
+[contributing]: https://lscsoft.docs.ligo.org/lalsuite/lalsuite/lalsuite_contributing.html
 [nightlydocs]:  https://lscsoft.docs.ligo.org/lalsuite
 [oldlalsuite]:  https://git.ligo.org/lscsoft/lalsuite-archive
 [oldredmine]:   https://bugs.ligo.org/redmine/projects/lalsuite

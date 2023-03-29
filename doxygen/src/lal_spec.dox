@@ -1,6 +1,5 @@
 /**
-\addtogroup lal_spec
-
+\page lal_spec LAL Specification and Style Guide
 \authors Bruce Allen, Kent Blackburn, Duncan Brown, Jolien Creighton, Teviet Creighton, Sam Finn, Albert Lazzarini, Adam Mercer, and Alan Wiseman
 
 \section lal_spec_introduction Introduction
@@ -118,7 +117,7 @@ to type \c double, e.g., \c modf, can receive a pointer to type
 \c REAL8 instead.  That is, the type \c REAL8 can be assumed to be
 equivalent to the type \c double.
 
-\subsection lal_spec_names_of_functions,_variables,_etc. Names of functions, variables, etc.
+\subsection lal_spec_names_of_functions_variables_etc Names of functions, variables, etc.
 
 These rules are to define a standard namespace scheme.  They apply to all
 functions with external linkage (i.e., those functions not preceded by the
@@ -334,7 +333,7 @@ the user calls...</li>
 the storage in \c foo.</li>
 </ul>
 
-\subsection lal_spec_functions_must_be_reentrant_and_thread-safe Functions must be reentrant and thread-safe
+\subsection lal_spec_functions_must_be_reentrant_and_thread_safe Functions must be reentrant and thread-safe
 
 This rule essentially requires a functions behavior to depend only on its
 arguments.  There should be no state saved in static storage within the
@@ -777,7 +776,7 @@ the specification outlined in this document as much as is practical, but there
 are occasions when violations must be allowed.  In such cases, the violations
 are under strict control of the LAL Librarian.
 
-\section lal_spec_beyond_lal..._lalsupport,_lalmetaio,_lalframe Beyond LAL... LALSupport, LALMetaIo, LALFrame
+\section lal_spec_beyond_lal_lalsupport_lalmetaio_lalframe Beyond LAL: LALSupport, LALMetaIo, LALFrame
 
 Of the LAL requirements, the most \e functionally limiting is the
 requirement that no I/O is allowed.  This requirement is in place to
@@ -808,20 +807,20 @@ binary "Interferometric Gravitational Wave Detector Data Frame Format"
 or "Frame" format.  Libraries with routines that are specialized for I/O
 with these formats are also available.
 
-\subsection lal_spec_lalsupport_library The \c LALSupport library
+\subsection lal_spec_lalsupport_library The LALSupport library
 
 This library provides the basic file I/O routines that are used in conjunction
 with the LAL library.  It is always built and installed along with the LAL
 library.
 
-\subsection lal_spec_lalmetaio_library The \c LALMetaIo library
+\subsection lal_spec_lalmetaio_library The LALMetaIo library
 
 This library provides I/O routines that are used to read/write the LIGO
 lightweight data format.  These routines use the \c metaio library
 routines as their engine.  This library is conditionally built and installed
 by LAL if the \c metaio library is available.
 
-\subsection lal_spec_lalframe_library The \c LALFrame library
+\subsection lal_spec_lalframe_library The LALFrame library
 
 This library provides I/O routines that are used to read/write the Frame
 data format.  These routines use the \c Frame library
@@ -1325,7 +1324,7 @@ the poles \f$p_k\f$ of the filter.</dd>
 <dt> datatype gain</dt><dd> The gain \f$g\f$ of the filter.</dd>
 </dl>
 
-\subsection lal_spec_lal_universal_status_structure_lalstatus The LAL universal status structure \c LALStatus
+\subsection lal_spec_lal_universal_status_structure_lalstatus The LAL universal status structure LALStatus
 
 This structure is the means by which LAL functions report their
 success or failure; it provides a useful mechanism for tracking
@@ -1361,7 +1360,7 @@ error.</dd>
 sequence.</dd>
 </dl>
 
-\section lal_spec_lalstatus_structure The \c LALStatus structure
+\section lal_spec_lalstatus_structure The LALStatus structure
 
 LAL routines store their current execution status in a linked list of
 structures of type \c LALStatus, with each node in the list
@@ -1427,7 +1426,7 @@ subroutine calls; one of the subroutines must have lost it or set it
 to \c NULL.</td></tr>
 </table>
 
-\section lal_spec_laldebuglevel The \c lalDebugLevel
+\section lal_spec_laldebuglevel The lalDebugLevel global variable
 
 The \c lalDebugLevel is a global variable, set at runtime, that
 determines how much and what kind of debugging information will be

@@ -1,8 +1,6 @@
 /* Top-level module organisation for LAL */
 /**
 
-\defgroup lal_spec			LAL Specification and Style Guide
-
 \defgroup lal_general			General Packages
 @{
 

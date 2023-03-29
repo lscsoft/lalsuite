@@ -37,7 +37,6 @@ AC_CONFIG_FILES([ \
   debian/control \
   debian/liblalinference${LIBMAJOR}.install:debian/liblalinference.install.in \
   doxygen/Makefile \
-  doxygen/doxygen.cfg \
   include/Makefile \
   include/lal/Makefile \
   lalinference.pc \

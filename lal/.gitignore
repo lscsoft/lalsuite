@@ -20,6 +20,7 @@ config.lt
 debian/control
 debian/liblal*.install
 doxygen/autogen.dox
+doxygen/doxygen_header.html
 doxygen/doxygen_objdb_*.tmp
 doxygen/doxygen_sqlite3.db
 doxygen/doxygen.cfg

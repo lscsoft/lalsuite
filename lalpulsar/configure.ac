@@ -37,7 +37,6 @@ AC_CONFIG_FILES([ \
   debian/control \
   debian/liblalpulsar${LIBMAJOR}.install:debian/liblalpulsar.install.in \
   doxygen/Makefile \
-  doxygen/doxygen.cfg \
   include/Makefile \
   include/lal/Makefile \
   lalpulsar.pc \

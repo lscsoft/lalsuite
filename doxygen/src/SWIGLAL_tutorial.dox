@@ -1,11 +1,9 @@
 /**
-
 \page swiglal_tutorial SWIG Interface Tutorial
 \author Karl Wette
 \brief A short tutorial on using the Python SWIG interface to LALSuite.
-\ingroup lal_swig
 
-### Installing the interface
+# Installing the interface
 
 -# Install the relevant packages, e.g.:
    - Conda: `conda install python-lal`
@@ -13,8 +11,7 @@
    - Debian: `apt install python3-lal`
    - Red Hat, CentOS, etc.: `yum install python3-lal`
 
-   If you instead wish to build LALSuite from source, see the
-   <a href="https://git.ligo.org/lscsoft/lalsuite/-/blob/master/README.md">LALSuite README</a>
+   If you instead wish to build LALSuite from source, see the \ref index "LALSuite README"
    for instructions.
 
 -# You should then be able to successfully run
@@ -42,7 +39,7 @@
    and built-from-source versions on the same machine.
 
 
-### Using the interface
+# Using the interface
 
 -# The SWIG interface is intended to closely match the underlying LALSuite C libraries. If you are not familiar
    with using the LALSuite C libraries, you may first want to consult the documentation or source code for the
@@ -239,7 +236,7 @@
    argument should accept any scalar of type `float`, `np.float`, `np.float32`, etc.
 
 
-### Advanced topics
+# Advanced topics
 
 -# The SWIG interface has a concept of memory \a ownership: which Python class instance owners the underlying C
    memory in LALSuite, and therefore which Python class instance calls XLALFree() to free the C memory when it is no
@@ -323,5 +320,7 @@
          REAL4Vector  z;                // struct variable; bad
        } SomeStruct;
        \endcode
+
+-# Further technical discussion may also be found in the SWIGLAL implementation paper \cite Wette2020_SWIGLAL .
 
 */

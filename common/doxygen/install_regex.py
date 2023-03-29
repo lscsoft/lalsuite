@@ -16,7 +16,7 @@ def fail(msg):
 # get input arguments
 install_dir, install_dirmap = sys.argv[1:]
 
-# print install regex, built from install directory map
+# install regex built from install directory map
 # - make 'to_dir' relative to install_dir to ensure
 #   Doxygen documentation does not contain absolute paths
 #   and hence is relocatable
@@ -27,4 +27,11 @@ for elem in install_dirmap.split():
     if len(to_dir) == 0:
         fail('to-directory in install directory map is empty')
     print('s|%s|%s|g' % (from_dir, os.path.relpath(to_dir, install_dir)))
+
+# install regex for top-level navigation tabs
+print(r's|\.\./\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|../\1/index.html|g')
+print(r's|\.\./\.\./\.\./doxygen/out/index\.html|../lalsuite/index.html|g')
+print(r's|\.\./\.\./\(lal[a-z]*\)/doxygen/out/index\.html|../\1/index.html|g')
+
+# output
 print("p")

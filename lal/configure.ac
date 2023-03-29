@@ -65,7 +65,6 @@ AC_CONFIG_FILES([ \
   debian/liblal${LIBMAJOR}.install:debian/liblal.install.in \
   debian/liblalsupport${LIBMAJOR_SUPPORT}.install:debian/liblalsupport.install.in \
   doxygen/Makefile \
-  doxygen/doxygen.cfg \
   include/Makefile \
   include/lal/Makefile \
   lal.pc \
