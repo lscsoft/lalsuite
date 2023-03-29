@@ -699,55 +699,64 @@ int IMRPhenomXASGenerateFD(
     double Mf    = Msec * freqs->data[idx];   // Mf is declared locally inside the loop
     UINT4 jdx    = idx  + offset;             // jdx is declared locally inside the loop
 
-    /* Initialize a struct containing useful powers of Mf */
-    IMRPhenomX_UsefulPowers powers_of_Mf;
-    initial_status     = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf);
-    if(initial_status != XLAL_SUCCESS)
+    /* We do not want to generate the waveform at frequencies > f_max (default = 0.3 Mf) */
+    if(Mf <= (pWF->f_max_prime * pWF->M_sec))
     {
-      status = initial_status;
-      XLALPrintError("IMRPhenomX_Initialize_Powers failed for Mf, initial_status=%d",initial_status);
-    }
-    else
-    {
-      /* Generate amplitude and phase at MfRef */
-      REAL8 amp = 0.0;
-      REAL8 phi = 0.0;
-
-      /* The functions in this routine are inlined to help performance. */
-      /* Construct phase */
-      if(Mf < fPhaseIN)
+      /* Initialize a struct containing useful powers of Mf */
+      IMRPhenomX_UsefulPowers powers_of_Mf;
+      initial_status     = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf);
+      if(initial_status != XLAL_SUCCESS)
       {
-        phi = IMRPhenomX_Inspiral_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pPhase22);
-      }
-      else if(Mf > fPhaseIM)
-      {
-        phi = IMRPhenomX_Ringdown_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pWF, pPhase22) + C1RD + (C2RD * Mf);
+        status = initial_status;
+        XLALPrintError("IMRPhenomX_Initialize_Powers failed for Mf, initial_status=%d",initial_status);
       }
       else
       {
-        phi = IMRPhenomX_Intermediate_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pWF, pPhase22) + C1IM + (C2IM * Mf);
+        /* Generate amplitude and phase at MfRef */
+        REAL8 amp = 0.0;
+        REAL8 phi = 0.0;
+
+        /* The functions in this routine are inlined to help performance. */
+        /* Construct phase */
+        if(Mf < fPhaseIN)
+        {
+          phi = IMRPhenomX_Inspiral_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pPhase22);
+        }
+        else if(Mf > fPhaseIM)
+        {
+          phi = IMRPhenomX_Ringdown_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pWF, pPhase22) + C1RD + (C2RD * Mf);
+        }
+        else
+        {
+          phi = IMRPhenomX_Intermediate_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pWF, pPhase22) + C1IM + (C2IM * Mf);
+        }
+
+        /* Scale phase by 1/eta */
+        phi  *= inveta;
+        phi  += linb*Mf + lina + pWF->phifRef;
+
+        /* Construct amplitude */
+        if(Mf < fAmpIN)
+        {
+            amp = IMRPhenomX_Inspiral_Amp_22_Ansatz(Mf, &powers_of_Mf, pWF, pAmp22);
+        }
+        else if(Mf > fAmpIM)
+        {
+            amp = IMRPhenomX_Ringdown_Amp_22_Ansatz(Mf, pWF, pAmp22);
+        }
+        else
+        {
+          amp = IMRPhenomX_Intermediate_Amp_22_Ansatz(Mf, &powers_of_Mf, pWF, pAmp22);
+        }
+
+        /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
+        ((*htilde22)->data->data)[jdx] = Amp0 * powers_of_Mf.m_seven_sixths * amp * cexp(I * phi);
       }
-
-	  /* Scale phase by 1/eta */
-	  phi  *= inveta;
-      phi  += linb*Mf + lina + pWF->phifRef;
-
-	  /* Construct amplitude */
-	  if(Mf < fAmpIN)
-	  {
-		  amp = IMRPhenomX_Inspiral_Amp_22_Ansatz(Mf, &powers_of_Mf, pWF, pAmp22);
-	  }
-	  else if(Mf > fAmpIM)
-	  {
-		  amp = IMRPhenomX_Ringdown_Amp_22_Ansatz(Mf, pWF, pAmp22);
-	  }
-	  else
-	  {
-        amp = IMRPhenomX_Intermediate_Amp_22_Ansatz(Mf, &powers_of_Mf, pWF, pAmp22);
-      }
-
-	  /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
-      ((*htilde22)->data->data)[jdx] = Amp0 * powers_of_Mf.m_seven_sixths * amp * cexp(I * phi);
+    }
+    else
+    {
+        /* Mf > Mf_max, so return 0 */
+        ((*htilde22)->data->data)[jdx] = 0.0 + I*0.0;
     }
   }
 
@@ -1825,65 +1834,75 @@ int IMRPhenomXPGenerateFD(
     COMPLEX16 hplus       = 0.0;  /* h_+ */
     COMPLEX16 hcross      = 0.0;  /* h_x */
 
-    /* Initialize a struct containing useful powers of Mf */
-    IMRPhenomX_UsefulPowers powers_of_Mf;
-    initial_status     = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf);
-    if(initial_status != XLAL_SUCCESS)
+    /* We do not want to generate the waveform at frequencies > f_max (default = 0.3 Mf) */
+    if(Mf <= (pWF->f_max_prime * pWF->M_sec))
     {
-      status = initial_status;
-      XLALPrintError("IMRPhenomX_Initialize_Powers failed for Mf, initial_status=%d\n",initial_status);
+      /* Initialize a struct containing useful powers of Mf */
+      IMRPhenomX_UsefulPowers powers_of_Mf;
+      initial_status     = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf);
+      if(initial_status != XLAL_SUCCESS)
+      {
+        status = initial_status;
+        XLALPrintError("IMRPhenomX_Initialize_Powers failed for Mf, initial_status=%d\n",initial_status);
+      }
+      else
+      {
+        /* Generate amplitude and phase at Mf */
+
+        // initialize amplitude and phase
+        REAL8 amp = 0.0;
+        REAL8 phi = 0.0;
+
+        /* Here we explicitly call the functions which treat the non-overlapping */
+        /* inspiral, intermediate and ringdown frequency regions for the non-precessing waveform. */
+
+        /* Get phase */
+        if(Mf < fPhaseIN)
+        {
+          phi = IMRPhenomX_Inspiral_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pPhase22);
+        }
+        else if(Mf > fPhaseIM)
+        {
+          phi = IMRPhenomX_Ringdown_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pWF, pPhase22) + C1RD + (C2RD * Mf);
+        }
+        else
+        {
+          phi = IMRPhenomX_Intermediate_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pWF, pPhase22) + C1IM + (C2IM * Mf);
+        }
+        /* Scale phase by 1/eta and apply phase and time shifts */
+        phi  *= inveta;
+        phi  += linb*Mf + lina + pWF->phifRef;
+
+        /* Get amplitude */
+        if(Mf < fAmpIN)
+        {
+          amp = IMRPhenomX_Inspiral_Amp_22_Ansatz(Mf, &powers_of_Mf, pWF, pAmp22);
+        }
+        else if(Mf > fAmpIM)
+        {
+          amp = IMRPhenomX_Ringdown_Amp_22_Ansatz(Mf, pWF, pAmp22);
+        }
+        else
+        {
+          amp = IMRPhenomX_Intermediate_Amp_22_Ansatz(Mf, &powers_of_Mf, pWF, pAmp22);
+        }
+
+        /* Waveform in co-precessing frame: h(f) = A(f) * Exp[I phi(f)] */
+        hcoprec = Amp0 * powers_of_Mf.m_seven_sixths * amp * cexp(I * phi);
+
+        /* Transform modes from co-precessing frame to inertial frame */
+        IMRPhenomXPTwistUp22(Mf,hcoprec,pWF,pPrec,&hplus,&hcross);
+
+        /* Populate h_+ and h_x */
+        ((*hptilde)->data->data)[jdx] = hplus;
+        ((*hctilde)->data->data)[jdx] = hcross;
+      }
     }
     else
     {
-      /* Generate amplitude and phase at Mf */
-
-      // initialize amplitude and phase
-      REAL8 amp = 0.0;
-      REAL8 phi = 0.0;
-
-      /* Here we explicitly call the functions which treat the non-overlapping */
-      /* inspiral, intermediate and ringdown frequency regions for the non-precessing waveform. */
-
-      /* Get phase */
-      if(Mf < fPhaseIN)
-      {
-        phi = IMRPhenomX_Inspiral_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pPhase22);
-      }
-      else if(Mf > fPhaseIM)
-      {
-        phi = IMRPhenomX_Ringdown_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pWF, pPhase22) + C1RD + (C2RD * Mf);
-      }
-      else
-      {
-        phi = IMRPhenomX_Intermediate_Phase_22_AnsatzInt(Mf, &powers_of_Mf, pWF, pPhase22) + C1IM + (C2IM * Mf);
-      }
-      /* Scale phase by 1/eta and apply phase and time shifts */
-      phi  *= inveta;
-      phi  += linb*Mf + lina + pWF->phifRef;
-
-      /* Get amplitude */
-      if(Mf < fAmpIN)
-      {
-        amp = IMRPhenomX_Inspiral_Amp_22_Ansatz(Mf, &powers_of_Mf, pWF, pAmp22);
-      }
-      else if(Mf > fAmpIM)
-      {
-        amp = IMRPhenomX_Ringdown_Amp_22_Ansatz(Mf, pWF, pAmp22);
-      }
-      else
-      {
-        amp = IMRPhenomX_Intermediate_Amp_22_Ansatz(Mf, &powers_of_Mf, pWF, pAmp22);
-      }
-
-      /* Waveform in co-precessing frame: h(f) = A(f) * Exp[I phi(f)] */
-      hcoprec = Amp0 * powers_of_Mf.m_seven_sixths * amp * cexp(I * phi);
-
-      /* Transform modes from co-precessing frame to inertial frame */
-      IMRPhenomXPTwistUp22(Mf,hcoprec,pWF,pPrec,&hplus,&hcross);
-
-      /* Populate h_+ and h_x */
-      ((*hptilde)->data->data)[jdx] = hplus;
-      ((*hctilde)->data->data)[jdx] = hcross;
+      /* Mf > Mf_max, so return 0 */
+      ((*hptilde)->data->data)[jdx] = 0.0 + I*0.0;
+      ((*hctilde)->data->data)[jdx] = 0.0 + I*0.0;
     }
   }
 

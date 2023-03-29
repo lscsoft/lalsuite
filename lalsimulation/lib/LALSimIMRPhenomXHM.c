@@ -603,48 +603,69 @@ int IMRPhenomXHMGenerateFDOneMode(
 
     /* Loop over frequencies to generate waveform */
     /* Modes with mixing */
-    if(pWFHM->MixingOn==1){
-
+    if(pWFHM->MixingOn==1)
+    {
       REAL8 Mf;
       for (UINT4 idx = 0; idx < freqs->length; idx++)
       {
         Mf    = Msec * freqs->data[idx];
-        initial_status     = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf);
-        if(initial_status != XLAL_SUCCESS)
+
+        /* We do not want to generate the waveform at frequencies > Mf_max (default Mf = 0.3) */
+        if(Mf <= (pWF->f_max_prime * pWF->M_sec))
         {
-          XLALPrintError("IMRPhenomX_Initialize_Powers failed for Mf, initial_status=%d",initial_status);
+
+          initial_status     = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf);
+          if(initial_status != XLAL_SUCCESS)
+          {
+            XLALPrintError("IMRPhenomX_Initialize_Powers failed for Mf, initial_status=%d",initial_status);
+          }
+          else
+          {
+            amp = IMRPhenomXHM_Amplitude_ModeMixing(Mf, &powers_of_Mf, pAmp, pPhase, pWFHM, pAmp22, pPhase22, pWF);
+            phi = IMRPhenomXHM_Phase_ModeMixing(Mf, &powers_of_Mf, pAmp, pPhase, pWFHM, pAmp22, pPhase22, pWF);
+            /* Reconstruct waveform: h_l-m(f) = A(f) * Exp[I phi(f)] */
+            ((*htildelm)->data->data)[idx+offset] = Amp0 * amp * cexp(I * phi);
+
+            #if DEBUG == 1
+            fprintf(file, "%.16f  %.16e %.16f\n",  freqs->data[idx], Amp0*amp, phi);
+            #endif
+          }
         }
         else
         {
-          amp = IMRPhenomXHM_Amplitude_ModeMixing(Mf, &powers_of_Mf, pAmp, pPhase, pWFHM, pAmp22, pPhase22, pWF);
-          phi = IMRPhenomXHM_Phase_ModeMixing(Mf, &powers_of_Mf, pAmp, pPhase, pWFHM, pAmp22, pPhase22, pWF);
-          /* Reconstruct waveform: h_l-m(f) = A(f) * Exp[I phi(f)] */
-          ((*htildelm)->data->data)[idx+offset] = Amp0 * amp * cexp(I * phi);
-
-          #if DEBUG == 1
-          fprintf(file, "%.16f  %.16e %.16f\n",  freqs->data[idx], Amp0*amp, phi);
-          #endif
+          ((*htildelm)->data->data)[idx+offset] = 0.0 + I*0.0;
         }
       }
-    }  /* Modes without mixing */
-    else{
+    }
+    /* Modes without mixing */
+    else
+    {
       for (UINT4 idx = 0; idx < freqs->length; idx++)
       {
         REAL8 Mf    = Msec * freqs->data[idx];
-        initial_status     = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf);
-        if(initial_status != XLAL_SUCCESS)
+
+        /* We do not want to generate the waveform at frequencies > Mf_max (default Mf = 0.3) */
+        if(Mf <= (pWF->f_max_prime * pWF->M_sec))
         {
-          XLALPrintError("IMRPhenomX_Initialize_Powers failed for Mf, initial_status=%d",initial_status);
+          initial_status     = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf);
+          if(initial_status != XLAL_SUCCESS)
+          {
+            XLALPrintError("IMRPhenomX_Initialize_Powers failed for Mf, initial_status=%d",initial_status);
+          }
+          else
+          {
+            amp = IMRPhenomXHM_Amplitude_noModeMixing(Mf, &powers_of_Mf, pAmp, pWFHM);
+            phi = IMRPhenomXHM_Phase_noModeMixing(Mf, &powers_of_Mf, pPhase, pWFHM, pWF);
+            /* Reconstruct waveform: h_l-m(f) = A(f) * Exp[I phi(f)] */
+            ((*htildelm)->data->data)[idx+offset] = Amp0 * amp * cexp(I * phi);
+            #if DEBUG == 1
+            fprintf(file, "%.16f  %.16e %.16f\n",  freqs->data[idx], Amp0*amp, phi);
+            #endif
+          }
         }
         else
         {
-          amp = IMRPhenomXHM_Amplitude_noModeMixing(Mf, &powers_of_Mf, pAmp, pWFHM);
-          phi = IMRPhenomXHM_Phase_noModeMixing(Mf, &powers_of_Mf, pPhase, pWFHM, pWF);
-          /* Reconstruct waveform: h_l-m(f) = A(f) * Exp[I phi(f)] */
-          ((*htildelm)->data->data)[idx+offset] = Amp0 * amp * cexp(I * phi);
-          #if DEBUG == 1
-          fprintf(file, "%.16f  %.16e %.16f\n",  freqs->data[idx], Amp0*amp, phi);
-          #endif
+          ((*htildelm)->data->data)[idx+offset] = 0.0 + I*0.0;
         }
       }
     }
