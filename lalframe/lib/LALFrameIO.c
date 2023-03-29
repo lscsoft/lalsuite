@@ -607,7 +607,9 @@ int XLALFrameWrite(LALFrameH * frame, const char *fname)
     char tmpfname[FILENAME_MAX];
 
     /* open temporary file */
-    snprintf(tmpfname, sizeof(tmpfname), "%s.tmp", fname);
+    int n = snprintf(tmpfname, sizeof(tmpfname), "%s.tmp", fname);
+    if (n < 0 || n >= (int)sizeof(tmpfname))
+        goto failure;
     frfile = XLALFrameUFrFileOpen(tmpfname, "w");
     if (!frfile)
         goto failure;
