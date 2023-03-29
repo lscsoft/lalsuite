@@ -167,6 +167,8 @@ default:
   variables:
     # default configure flags (can be overridden from dependents)
     CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python"
+    # default C flags (can be overridden from dependents)
+    CFLAGS: "-O3"
     # target to actually run (distcheck is the most thorough)
     MAKE_TARGET: "distcheck"
     # set default python as python3
@@ -178,8 +180,12 @@ default:
     - ./00boot
     # we use xargs here in case CONFIGURE_FLAGS contains
     # variables with spaces, etc etc
-    - DEFAULT_CONFIGURE_FLAGS="--enable-strict-defs ${ENABLE_NIGHTLY}"
-    - xargs ./configure ${DEFAULT_CONFIGURE_FLAGS} <<< ${CONFIGURE_FLAGS}
+    - xargs ./configure
+          --enable-strict-defs
+          ${ENABLE_NIGHTLY}
+          CFLAGS="${CFLAGS}"
+          LALSUITE_LIBTOOL_NO_SUPPRESS=1
+          <<< ${CONFIGURE_FLAGS}
     - make -j${CPU_COUNT} VERBOSE=1 ${MAKE_TARGET:-distcheck}
   artifacts:
     # upload some files to debug failures
@@ -187,6 +193,7 @@ default:
       - config.log
       - Makefile
       - lal*/config.log
+      - lal*/libtool
       - lal*/Makefile
     when: on_failure
 
