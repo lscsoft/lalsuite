@@ -667,7 +667,7 @@ UNUSED static INT4 XLALSimIMRNRWaveformGetModes(
   INT4 model, modem;
   size_t array_length;
   REAL8 nrEta;
-  REAL8 S1x, S1y, S1z, S2x, S2y, S2z;
+  REAL8 S1x = 0, S1y = 0, S1z = 0, S2x = 0, S2y = 0, S2z = 0;
   REAL8 Mflower, time_start_M, time_start_s, time_end_M, time_end_s;
   REAL8 est_start_time;
   REAL8 distance_scale_fac;
@@ -700,6 +700,7 @@ UNUSED static INT4 XLALSimIMRNRWaveformGetModes(
   XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer(&S1x, &S1y, &S1z,
                                                        &S2x, &S2y, &S2z,
                                                        fRef, m1+m2, file);
+  XLAL_CHECK(xlalErrno == 0, XLAL_EFUNC, "XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer() failed");
 
   if (fabs(S1x - s1x) > 1E-3)
   {
