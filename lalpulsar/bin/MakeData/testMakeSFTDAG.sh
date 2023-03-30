@@ -100,6 +100,40 @@ if ! [[ $testsftsubcontent == $sftsubfilecontent ]]; then
    exit 1
 fi
 
+## run lalpulsar_MakeSFTDAG to create a fake output using a frame cache file
+cmdline="lalpulsar_MakeSFTDAG ${SFT_name_opts} -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . -N H1:GDS-CALIB_STRAIN_CLEAN -F ${fmin} -B ${Band} -w 3 -P 0.5 -m 1 -A ligo.sim.o4.cw.explore.test -U albert.einstein -g segs -J /tmp/path/to -e /tmp/path/to.cache"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+dagfile="test.dag"
+sftsub="MakeSFTs.sub"
+for file in $dagfile $sftsub; do
+    if ! test -f $file; then
+        echo "ERROR: could not find file '$file'"
+        exit 1
+    fi
+done
+
+testdagcontent=$(<$dagfile)
+dagfilecontent="JOB MakeSFTs_1 MakeSFTs.sub
+RETRY MakeSFTs_1 5
+VARS MakeSFTs_1 argList=\"${SFT_name_opts} -f 7 -t 1800 -p . -C /tmp/path/to.cache -s 1257741529 -e 1257743329 -N H1:GDS-CALIB_STRAIN_CLEAN -F 10 -B 1990 -w 3 -P 0.5\" tagstring=\"TEST_1\"
+JOB MakeSFTs_2 MakeSFTs.sub
+RETRY MakeSFTs_2 5
+VARS MakeSFTs_2 argList=\"${SFT_name_opts} -f 7 -t 1800 -p . -C /tmp/path/to.cache -s 1257743330 -e 1257745130 -N H1:GDS-CALIB_STRAIN_CLEAN -F 10 -B 1990 -w 3 -P 0.5\" tagstring=\"TEST_2\""
+if ! [[ $testdagcontent == $dagfilecontent ]]; then
+   echo "ERROR: dagfile content did not match expected content"
+   echo "test content:"
+   echo $testdagcontent
+   echo "Expected content:"
+   echo $dagfilecontent
+   exit 1
+fi
+
 rm MakeSFTs.sub datafind.sub test.dag
+rmdir logs cache
 
 done
+
+rm segs
