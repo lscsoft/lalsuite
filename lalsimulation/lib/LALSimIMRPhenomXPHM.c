@@ -703,8 +703,10 @@ int XLALSimIMRPhenomXPHMFromModes(
  )
  {
 
-   if (pWF->f_max_prime <= pWF->fMin)
+   if(pWF->f_max_prime <= pWF->fMin)
+   {
      XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);     
+   }
      
    /* Set LIGOTimeGPS */
    LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
@@ -926,15 +928,25 @@ int XLALSimIMRPhenomXPHMFromModes(
 
          for (UINT4 idx = 0; idx < freqs->length; idx++)
          {
-           double Mf             = pWF->M_sec * freqs->data[idx];
-           hlmcoprec             = htildelm->data->data[idx + offset];  /* Co-precessing waveform for one freq point */
-           COMPLEX16 hplus       = 0.0;  /* h_+ */
-           COMPLEX16 hcross      = 0.0;  /* h_x */
+           double Mf               = pWF->M_sec * freqs->data[idx];
 
-           IMRPhenomXPHMTwistUp(Mf, hlmcoprec, pWF, pPrec, ell, emmprime, &hplus, &hcross);
+           /* Do not generate waveform above Mf_max (default Mf = 0.3) */
+           if(Mf <= (pWF->f_max_prime * pWF->M_sec))
+           {
+             hlmcoprec             = htildelm->data->data[idx + offset];  /* Co-precessing waveform for one freq point */
+             COMPLEX16 hplus       = 0.0;  /* h_+ */
+             COMPLEX16 hcross      = 0.0;  /* h_x */
 
-           (*hptilde)->data->data[idx + offset] += hplus;
-           (*hctilde)->data->data[idx + offset] += hcross;
+             IMRPhenomXPHMTwistUp(Mf, hlmcoprec, pWF, pPrec, ell, emmprime, &hplus, &hcross);
+
+             (*hptilde)->data->data[idx + offset] += hplus;
+             (*hctilde)->data->data[idx + offset] += hcross;
+           }
+           else
+           {
+             (*hptilde)->data->data[idx + offset] += (0.0 * I*0.0);
+             (*hctilde)->data->data[idx + offset] += (0.0 * I*0.0);
+           }
          }
        }
        else
