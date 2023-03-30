@@ -78,7 +78,10 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
     startTimeDatafind = startTimeThisNode - args.extra_datafind_time
     endTimeDatafind = endTimeThisNode + args.extra_datafind_time
     tagStringOut = f'{args.tag_string}_{nodeCount}'
-    cacheFile = f'{args.cache_path}/{site}-{startTimeDatafind}-{endTimeDatafind}.cache'
+    if args.cache_file:
+        cacheFile = args.cache_file
+    else:
+        cacheFile = f'{args.cache_path}/{site}-{startTimeDatafind}-{endTimeDatafind}.cache'
 
     argList = []
     argList.append(f'-O {args.observing_run}')
@@ -108,13 +111,18 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
         argList.append(f'-P {args.overlap_fraction}')
     argStr = ' '.join(argList)
 
-    dagFID.write(f'JOB {datafind} datafind.sub\n')
-    dagFID.write(f'RETRY {datafind} 10\n')
-    dagFID.write(f'VARS {datafind} gpsstarttime="{startTimeDatafind}" gpsendtime="{endTimeDatafind}" observatory="{site}" inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n')
+    # gw_data_find job
+    if not args.cache_file:
+        dagFID.write(f'JOB {datafind} datafind.sub\n')
+        dagFID.write(f'RETRY {datafind} 10\n')
+        dagFID.write(f'VARS {datafind} gpsstarttime="{startTimeDatafind}" gpsendtime="{endTimeDatafind}" observatory="{site}" inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n')
+
+    # MakeSFT job
     dagFID.write(f'JOB {MakeSFTs} MakeSFTs.sub\n')
     dagFID.write(f'RETRY {MakeSFTs} 5\n')
     dagFID.write(f'VARS {MakeSFTs} argList="{argStr}" tagstring="{tagStringOut}"\n')
-    dagFID.write(f'PARENT {datafind} CHILD {MakeSFTs}\n')
+    if not args.cache_file:
+        dagFID.write(f'PARENT {datafind} CHILD {MakeSFTs}\n')
 
 
 #
@@ -178,6 +186,9 @@ parser.add_argument('-C', '--cache-path', type=str, default='cache',
                     gw_data_find (default is $PWD/cache; this directory is \
                     created if it does not exist and must agree with that \
                     given in .sub files)')
+parser.add_argument('-e', '--cache-file', type=str,
+                    help='path and filename to frame cache file to use instead \
+                    of gw_data_find')
 parser.add_argument('-o', '--log-path', type=str, default='logs',
                     help='path to log, output, and error files (default \
                     is $PWD/logs; this directory is created if it does not \
@@ -338,8 +349,9 @@ else:
 # try and make a directory to store the cache files and job logs
 try: os.mkdir(args.log_path)
 except: pass
-try: os.mkdir(args.cache_path)
-except: pass
+if not args.cache_file:
+    try: os.mkdir(args.cache_path)
+    except: pass
 
 # Check if list of nodes is given, on which to output SFTs.
 nodeList = []
@@ -433,33 +445,34 @@ datafind_sub = os.path.join(path_to_dag_file, 'datafind.sub')
 makesfts_sub = os.path.join(path_to_dag_file, 'MakeSFTs.sub')
 
 # create datafind.sub
-with open(datafind_sub, 'w') as datafindFID:
-    datafindLogFile = '{}/datafind_{}.log'.format(args.log_path,
-                                                  dag_filename)
-    datafindFID.write('universe = vanilla\n')
-    datafindFID.write('executable = {}\n'.format(dataFindExe))
-    if not args.datafind_match:
-        dataFindMatchString = ''
-    else:
-        dataFindMatchString = '--match {}'.format(args.datafind_match)
-    datafindFID.write('arguments = -r $ENV(LIGO_DATAFIND_SERVER) ')
-    datafindFID.write('--observatory $(observatory) --url-type file ')
-    datafindFID.write('--gps-start-time $(gpsstarttime) ')
-    datafindFID.write('--gps-end-time $(gpsendtime) --lal-cache ')
-    datafindFID.write('--type $(inputdatatype) {}\n'.format(
-        dataFindMatchString))
-    datafindFID.write('getenv = True\n')
-    datafindFID.write('request_disk = 5MB\n')
-    datafindFID.write('accounting_group = {}\n'.format(args.accounting_group))
-    datafindFID.write('accounting_group_user = {}\n'.format(
-        args.accounting_group_user))
-    datafindFID.write('log = {}\n'.format(datafindLogFile))
-    datafindFID.write('error = {}/datafind_$(tagstring).err\n'.format(
-        args.log_path))
-    datafindFID.write('output = {}/'.format(args.cache_path))
-    datafindFID.write('$(observatory)-$(gpsstarttime)-$(gpsendtime).cache\n')
-    datafindFID.write('notification = never\n')
-    datafindFID.write('queue 1\n')
+if not args.cache_file:
+    with open(datafind_sub, 'w') as datafindFID:
+        datafindLogFile = '{}/datafind_{}.log'.format(args.log_path,
+                                                          dag_filename)
+        datafindFID.write('universe = vanilla\n')
+        datafindFID.write('executable = {}\n'.format(dataFindExe))
+        if not args.datafind_match:
+            dataFindMatchString = ''
+        else:
+            dataFindMatchString = '--match {}'.format(args.datafind_match)
+        datafindFID.write('arguments = -r $ENV(LIGO_DATAFIND_SERVER) ')
+        datafindFID.write('--observatory $(observatory) --url-type file ')
+        datafindFID.write('--gps-start-time $(gpsstarttime) ')
+        datafindFID.write('--gps-end-time $(gpsendtime) --lal-cache ')
+        datafindFID.write('--type $(inputdatatype) {}\n'.format(
+            dataFindMatchString))
+        datafindFID.write('getenv = True\n')
+        datafindFID.write('request_disk = 5MB\n')
+        datafindFID.write('accounting_group = {}\n'.format(args.accounting_group))
+        datafindFID.write('accounting_group_user = {}\n'.format(
+            args.accounting_group_user))
+        datafindFID.write('log = {}\n'.format(datafindLogFile))
+        datafindFID.write('error = {}/datafind_$(tagstring).err\n'.format(
+            args.log_path))
+        datafindFID.write('output = {}/'.format(args.cache_path))
+        datafindFID.write('$(observatory)-$(gpsstarttime)-$(gpsendtime).cache\n')
+        datafindFID.write('notification = never\n')
+        datafindFID.write('queue 1\n')
 
 # create MakeSFTs.sub
 with open(makesfts_sub, 'w') as MakeSFTsFID:
