@@ -439,14 +439,16 @@ LALUnit * XLALParseUnitString( LALUnit *output, const char *string )
     /* string now points to one after end of unit name */
 
     /* find which unit name this matches */
-    for (i=0; strcmp(temp,lalUnitName[i]); ++i)
+    for (i=0; i<LALNumUnits; ++i)
     {
-      if (i>=LALNumUnits) /* didn't find it */
-      {
-        if ( outputAllocated )
-          LALFree( output );
-        XLAL_ERROR_NULL( XLAL_EFAILED );
-      }
+      if (strcmp(temp,lalUnitName[i])==0)
+        break;
+    }
+    if (i>=LALNumUnits) /* didn't find it */
+    {
+      if ( outputAllocated )
+        LALFree( output );
+      XLAL_ERROR_NULL( XLAL_EFAILED );
     }
 
     /* Make sure we haven't already read in this unit */
