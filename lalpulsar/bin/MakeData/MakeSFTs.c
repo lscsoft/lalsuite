@@ -314,6 +314,7 @@ int main( int argc, char *argv[] )
   LALFrStream *framestream = XLALFrStreamCacheOpen( framecache );
   XLAL_CHECK_MAIN( framestream != NULL, XLAL_EFUNC,
                    "Failed to open frame stream from cache '%s'", uvar->frame_cache );
+  LogPrintf( LOG_NORMAL, "Opened frame stream from cache '%s'\n", uvar->frame_cache );
 
   // Set frame stream mode
   {
