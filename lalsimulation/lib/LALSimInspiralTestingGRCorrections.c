@@ -48,16 +48,16 @@ static inline REAL8 Get22PeakAngFreq(REAL8 UNUSED eta,
 }
 
 int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
-                                        const UINT4 l,
-                                        const UINT4 m,
-                                        const REAL8 m1_SI,
-                                        const REAL8 m2_SI,
-                                        const REAL8 chi1z,
-                                        const REAL8 chi2z,
-                                        const REAL8 f_low,
-                                        const REAL8 f_ref,
-                                        const REAL8 f_window_div_f_Peak,     /** Frequency at which to attach non-GR and GR waveforms, inputted as a fraction of f_Peak (should be between 0 and 1) */
-                                        const REAL8 NCyclesStep,                /** Number of GW cycles over which to taper the non-GR phase correction */
+                                        const UINT4 l, /**< degree l of the GW mode */
+                                        const UINT4 m, /**< order m of the GW mode */
+                                        const REAL8 m1_SI, /**< mass of companion 1 (kg) */
+                                        const REAL8 m2_SI, /**< mass of companion 2 (kg) */
+                                        const REAL8 chi1z, /**< z-component of the dimensionless spin of object 1 */
+                                        const REAL8 chi2z, /**< z-component of the dimensionless spin of object 2 */
+                                        const REAL8 f_low, /**< lower GW frequency bound (Hz) */
+                                        const REAL8 f_ref, /**< reference GW frequency (Hz) */
+                                        const REAL8 f_window_div_f_Peak,     /**< Frequency at which to attach non-GR and GR waveforms, inputted as a fraction of f_Peak (should be between 0 and 1) */
+                                        const REAL8 NCyclesStep,                /**< Number of GW cycles over which to taper the non-GR phase correction */
                                         LALDict *LALpars    /**< dictionary of additional parameters */
 					)
 {
@@ -143,7 +143,7 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
  * correction instead of the TaylorF2 value + correction.
  */
 
-void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
+void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa, /**< PN phasing coefficients */
                                              const REAL8 m1, /**< Mass of body 1, in Msol */
                                              const REAL8 m2, /**< Mass of body 2, in Msol */
                                              const REAL8 chi1L, /**< Component of dimensionless spin 1 along Lhat */
@@ -153,7 +153,8 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
                                              const REAL8 chi1dotchi2, /**< Dot product of dimensionles spin 1 and spin 2 */
                                              const REAL8 qm_def1, /**< Quadrupole deformation parameter of body 1 (dimensionless) */
                                              const REAL8 qm_def2, /**< Quadrupole deformation parameter of body 2 (dimensionless) */
-                                             LALDict *LALpars)
+                                             LALDict *LALpars /**< dictionary of additional parameters */
+					     )
 {
     const REAL8 mtot = m1 + m2;
     const REAL8 eta = m1*m2/mtot/mtot;
@@ -293,17 +294,18 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa,
  */
 
 int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
-                                           const REAL8Sequence *freqs,
-                                           const UINT4 m,
-                                           const UINT4 iStart,
-                                           const UINT4 iRef,
-                                           const UINT4 iPeak,
-                                           PNPhasingSeries pfa,
-                                           const REAL8 mtot,
-                                           const REAL8 eta,
-                                           const REAL8 f_window_div_f_Peak,
-                                           const REAL8 iStartFinal,
-                                           const REAL8 NCyclesStep)  /** Choose number of GW cycles over which to taper the non-GR phase correction */
+                                           const REAL8Sequence *freqs, /**< frequency series */
+                                           const UINT4 m, /**< order m of GW mode */
+                                           const UINT4 iStart, /**< index of starting frequency */
+                                           const UINT4 iRef, /**< index of reference frequency */
+                                           const UINT4 iPeak, /**< index of peak frequency */
+                                           PNPhasingSeries pfa, /**< PN phasing coefficients */
+                                           const REAL8 mtot, /**< total mass */
+                                           const REAL8 eta, /**< dimensionless symmetric mass ratio */
+                                           const REAL8 f_window_div_f_Peak, /**< Frequency at which to attach non-GR and GR waveforms, inputted as a fraction of f_Peak (should be between 0 and 1) */
+                                           const REAL8 iStartFinal, /**< index of starting frequency for TGR modification */
+                                           const REAL8 NCyclesStep  /**< Choose number of GW cycles over which to taper the non-GR phase correction */
+		                           )
 {
     
   UINT4 i;
