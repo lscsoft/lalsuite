@@ -458,6 +458,7 @@ typedef enum tagFrequencyFunction {
     fSEOBNRv4Peak, /**< Frequency of the peak amplitude in SEOBNRv4 */
     fSEOBNRv4RD, /**< Dominant ringdown frequency in SEOBNRv4 */
     fTEOBResumSFinal, /**< Dominant ringdown frequency in TEOBResumS */
+    fSEOBNRv5RD, /**< Dominant ringdown frequency in SEOBNRv5_ROM */
     NumFreqFunctions /**< Number of elements in the enum */
  } FrequencyFunction;
 

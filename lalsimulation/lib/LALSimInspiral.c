@@ -7575,6 +7575,22 @@ double XLALSimInspiralGetFrequency(
             freq = creal(modeFreq) / (2 * LAL_PI);
             break;
 
+        case fSEOBNRv5RD:
+            modeL = 2;
+            modeM = 2;
+            approximant = SEOBNRv5_ROM;
+            spin1[0] = S1x; spin1[1] = S1y; spin1[2] = S1z;
+            spin2[0] = S2x; spin2[1] = S2y; spin2[2] = S2z;
+            modefreqVec.length = 1;
+            modefreqVec.data   = &modeFreq;
+            if ( XLALSimIMREOBGenerateQNMFreqV5( &modefreqVec, m1Msun, m2Msun, spin1, spin2, modeL, modeM, 1, approximant) != XLAL_SUCCESS )
+            {
+                XLAL_ERROR( XLAL_EFUNC );
+            }
+
+            freq = creal(modeFreq) / (2 * LAL_PI);
+            break;
+
         case fSEOBNRv1Peak:
         case fSEOBNRv2Peak:
         case fSEOBNRv4Peak:
@@ -7695,6 +7711,10 @@ double XLALSimInspiralGetFinalFreq(
         case SEOBNRv4:
         case SEOBNRv4_opt:
             freqFunc = fSEOBNRv4RD;
+            break;
+
+        case SEOBNRv5_ROM:
+            freqFunc = fSEOBNRv5RD;
             break;
 
         case IMRPhenomA:

@@ -423,6 +423,18 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
   UNUSED SEOBNRROMdataDS *romdataset        /**<  Dataset for the 22 or HM ROM */
 );
 
+UNUSED static int SEOBNRv5ROMTimeFrequencySetup(
+  gsl_spline **spline_phi,                      // phase spline
+  gsl_interp_accel **acc_phi,                   // phase spline accelerator
+  REAL8 *Mf_final,                              // ringdown frequency in Mf
+  REAL8 *Mtot_sec,                              // total mass in seconds
+  REAL8 m1SI,                                   // Mass of companion 1 (kg)
+  REAL8 m2SI,                                   // Mass of companion 2 (kg)
+  REAL8 chi1,                                   // Aligned spin of companion 1
+  REAL8 chi2,                                   // Aligned spin of companion 2
+  REAL8 *Mf_ROM_min,                            // Lowest geometric frequency for ROM
+  REAL8 *Mf_ROM_max                             // Highest geometric frequency for ROM
+);
 
 UNUSED static int spline_to_gsl_vectors(gsl_spline *s, gsl_vector **x, gsl_vector **y);
 
@@ -3001,4 +3013,146 @@ int XLALSimIMRSEOBNRv5HMROMFrequencySequence_Modes(
 
   return(retcode);
 }
+
+// Auxiliary function to perform setup of phase spline for t(f) and f(t) functions
+static int SEOBNRv5ROMTimeFrequencySetup(
+  gsl_spline **spline_phi,                      // phase spline
+  gsl_interp_accel **acc_phi,                   // phase spline accelerator
+  REAL8 *Mf_final,                              // ringdown frequency in Mf
+  REAL8 *Mtot_sec,                              // total mass in seconds
+  REAL8 m1SI,                                   // Mass of companion 1 (kg)
+  REAL8 m2SI,                                   // Mass of companion 2 (kg)
+  REAL8 chi1,                                   // Aligned spin of companion 1
+  REAL8 chi2,                                   // Aligned spin of companion 2
+  REAL8 *Mf_ROM_min,                            // Lowest geometric frequency for ROM
+  REAL8 *Mf_ROM_max                             // Highest geometric frequency for ROM
+)
+{
+  /* Get masses in terms of solar mass */
+  double mass1 = m1SI / LAL_MSUN_SI;
+  double mass2 = m2SI / LAL_MSUN_SI;
+  double Mtot = mass1 + mass2;
+  double q = mass1 / mass2;
+  double eta = mass1 * mass2 / (Mtot*Mtot);    /* Symmetric mass-ratio */
+  *Mtot_sec = Mtot * LAL_MTSUN_SI; /* Total mass in seconds */
+
+  /* 'Nudge' parameter values to allowed boundary values if close by */
+  if (q < 1.0)     nudge(&q, 1.0, 1e-6);
+  if (q > 100.0)     nudge(&q, 100.0, 1e-6);
+
+  if ( chi1 < -0.998 || chi2 < -0.998 || chi1 > 0.998 || chi2 > 0.998) {
+    XLALPrintError("XLAL Error - %s: chi1 or chi2 smaller than -0.998 or larger than 0.998!\n"
+                   "SEOBNRv5HMROM is only available for spins in the range -0.998 <= a/M <= 0.998.\n",
+                   __func__);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  if (q<1.0 || q > 100.0) {
+    XLALPrintError("XLAL Error - %s: q (%f) bigger than 100.0 or unphysical!\n"
+                   "SEOBNRv5HMROM is only available for q in the range 1 <= q <= 100.\n",
+                   __func__, q);
+    XLAL_ERROR( XLAL_EDOM );
+  }
+
+  SEOBNRROMdataDS *romdataset;
+
+  /* Load ROM data if not loaded already */
+#ifdef LAL_PTHREAD_LOCK
+  romdataset=__lalsim_SEOBNRv5ROMDS_data;
+  (void) pthread_once(&SEOBNRv5ROM_is_initialized, SEOBNRv5ROM_Init_LALDATA);
+#else
+  SEOBNRv5ROM_Init_LALDATA();
+#endif
+
+  int nModes = 1; /* 22 mode only */
+  int nk_max = -1; /* Default value */
+  // Get the splines for the amplitude and phase of the modes
+  AmpPhaseSplineData **ampPhaseSplineData = NULL;
+  AmpPhaseSplineData_Init(&ampPhaseSplineData, nModes);
+  UNUSED int retcode = SEOBNRv5HMROMCoreModeAmpPhaseSplines(
+    ampPhaseSplineData, q, chi1, chi2, nk_max, nModes,romdataset);
+  if(retcode != XLAL_SUCCESS) XLAL_ERROR(retcode);
+
+  *spline_phi = ampPhaseSplineData[0]->spline_phi;
+  *acc_phi = ampPhaseSplineData[0]->acc_phi;
+
+  // lowest allowed geometric frequency for ROM
+  *Mf_ROM_min = Mf_low_22;
+  // highest allowed geometric frequency for ROM is the one associated with the 55 mode
+  *Mf_ROM_max = const_fmax_lm_v5hm[4] * Get_omegaQNM_SEOBNRv5(q, chi1, chi2, 5, 5) / (2.*LAL_PI);
+
+  // Get SEOBNRv5_ROM ringdown frequency for 22 mode
+  *Mf_final = SEOBNRROM_Ringdown_Mf_From_Mtot_Eta(*Mtot_sec, eta, chi1, chi2,
+                                                  SEOBNRv5_ROM);
+
+  return(XLAL_SUCCESS);
+}
+
+/**
+ * Compute the 'time' elapsed in the ROM waveform from a given starting frequency until the ringdown.
+ * Analogous of XLALSimIMRSEOBNRv4ROMTimeOfFrequency from LALSimIMRSEOBNRv4ROM.c
+ *
+ * The notion of elapsed 'time' (in seconds) is defined here as the difference of the
+ * frequency derivative of the frequency domain phase between the ringdown frequency
+ * and the starting frequency ('frequency' argument). This notion of time is similar to the
+ * chirp time, but it includes both the inspiral and the merger ringdown part of SEOBNRv5_ROM.
+ *
+ * The SEOBNRv5_ROM ringdown frequency can be obtained by calling XLALSimInspiralGetFinalFreq().
+ *
+ * See XLALSimIMRSEOBNRv5ROMFrequencyOfTime() for the inverse function.
+ */
+int XLALSimIMRSEOBNRv5ROMTimeOfFrequency(
+  REAL8 *t,         /**< Output: time (s) elapsed from starting frequency to ringdown */
+  REAL8 frequency,  /**< Starting frequency (Hz) */
+  REAL8 m1SI,       /**< Mass of companion 1 (kg) */
+  REAL8 m2SI,       /**< Mass of companion 2 (kg) */
+  REAL8 chi1,       /**< Dimensionless aligned component spin 1 */
+  REAL8 chi2        /**< Dimensionless aligned component spin 2 */
+)
+{
+  /* Internally we need m1 > m2, so change around if this is not the case */
+  if (m1SI < m2SI) {
+    // Swap m1 and m2
+    double m1temp = m1SI;
+    double chi1temp = chi1;
+    m1SI = m2SI;
+    chi1 = chi2;
+    m2SI = m1temp;
+    chi2 = chi1temp;
+  }
+
+  // Set up phase spline
+  gsl_spline *spline_phi;
+  gsl_interp_accel *acc_phi;
+  double Mf_final, Mtot_sec;
+  double Mf_ROM_min, Mf_ROM_max;
+  int ret = SEOBNRv5ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final,
+                                          &Mtot_sec, m1SI, m2SI, chi1, chi2,
+                                          &Mf_ROM_min, &Mf_ROM_max);
+  if(ret != 0)
+    XLAL_ERROR(ret);
+
+  // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
+  double t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI); // t_corr / M
+  //XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
+
+  double Mf = frequency * Mtot_sec;
+  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max || Mf > Mf_final) {
+    gsl_spline_free(spline_phi);
+    gsl_interp_accel_free(acc_phi);
+    XLAL_ERROR(XLAL_EDOM, "Frequency %g Hz (Mf=%g) is outside allowed range.\n"
+               "Min / max / final Mf values are %g, %g, %g\n", frequency, Mf, Mf_ROM_min, Mf_ROM_max, Mf_final);
+   }
+
+  // Compute time relative to origin at merger
+  double time_M = gsl_spline_eval_deriv(spline_phi, frequency * Mtot_sec, acc_phi) / (2*LAL_PI) - t_corr;
+  // Add a minus factor to match SEOBNRv4_ROM conventions
+  *t = -1. * time_M * Mtot_sec;
+
+  gsl_spline_free(spline_phi);
+  gsl_interp_accel_free(acc_phi);
+
+  return(XLAL_SUCCESS);
+}
+
 /** @} */
