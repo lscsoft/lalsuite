@@ -116,10 +116,12 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     overlap_fraction, REAL8, 'P', OPTIONAL,
     "Fraction of SFT duration to overlap SFTs by. "
-    "Example: use " UVAR_STR( overlap_fraction ) "=0.5 with " UVAR_STR( window_type ) "=hann windows. " );
+    "Example: use " UVAR_STR( overlap_fraction ) "=0.5 with " UVAR_STR( window_type ) "=hann windows. "
+    );
   XLALRegisterUvarMember(
     high_pass_freq, REAL8, 'f', REQUIRED,
-    "High pass filtering frequency in Hertz. " );
+    "High pass filtering frequency in Hertz. "
+    );
   XLALRegisterUvarMember(
     window_type, STRING, 'w', OPTIONAL,
     "Window to apply to SFTs. "
