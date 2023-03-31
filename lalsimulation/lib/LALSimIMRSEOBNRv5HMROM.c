@@ -3099,7 +3099,6 @@ static int SEOBNRv5ROMTimeFrequencySetup(
  *
  * The SEOBNRv5_ROM ringdown frequency can be obtained by calling XLALSimInspiralGetFinalFreq().
  *
- * See XLALSimIMRSEOBNRv5ROMFrequencyOfTime() for the inverse function.
  */
 int XLALSimIMRSEOBNRv5ROMTimeOfFrequency(
   REAL8 *t,         /**< Output: time (s) elapsed from starting frequency to ringdown */
