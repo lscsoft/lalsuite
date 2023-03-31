@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -56,6 +57,7 @@ int main( int argc, char *argv[] )
   // Initialise user input variables
   struct uvar_type {
     char *frame_cache;
+    BOOLEAN frame_checksums;
     char *channel_name;
     INT4 gps_start_time;
     INT4 gps_end_time;
@@ -92,6 +94,10 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     frame_cache, STRING, 'C', REQUIRED,
     "Path to frame cache file to read frames from. "
+    );
+  XLALRegisterUvarMember(
+    frame_checksums, BOOLEAN, 'k', OPTIONAL,
+    "Validate frame checksums. Default is to only validate checksums for " UVAR_STR( observing_kind ) "=RUN SFTs. "
     );
   XLALRegisterUvarMember(
     channel_name, STRING, 'N', REQUIRED,
@@ -289,6 +295,29 @@ int main( int argc, char *argv[] )
   }
   LogPrintf( LOG_NORMAL, "Parsed user input successfully\n" );
 
+  // Decide whether to validate frame checksums
+  bool frame_checksums = false;
+  if ( XLALUserVarWasSet( &uvar->frame_checksums ) ) {
+    if ( uvar->frame_checksums ) {
+      frame_checksums = true;
+      LogPrintf( LOG_NORMAL, "Validating frame checksums as " UVAR_STR( frame_checksums ) "=true\n" );
+    } else {
+      frame_checksums = false;
+      LogPrintf( LOG_NORMAL, "Not validating frame checksums as " UVAR_STR( frame_checksums ) "=false\n" );
+    }
+  } else if ( XLALUserVarWasSet( &uvar->observing_kind ) ) {
+    if ( strcmp( uvar->observing_kind, "RUN" ) == 0 ) {
+      frame_checksums = true;
+      LogPrintf( LOG_NORMAL, "Validating frame checksums as " UVAR_STR( observing_kind ) "=%s\n", uvar->observing_kind );
+    } else {
+      frame_checksums = false;
+      LogPrintf( LOG_NORMAL, "Not validating frame checksums as " UVAR_STR( observing_kind ) "=%s!=RUN\n", uvar->observing_kind );
+    }
+  } else {
+    frame_checksums = false;
+    LogPrintf( LOG_NORMAL, "Not validating frame checksums as neither " UVAR_STR( frame_checksums ) " nor " UVAR_STR( observing_kind ) " were given\n" );
+  }
+
   ////////// Set up SFT generation //////////
 
   // Build comment string from program name, VCS information, and full command line option log
@@ -318,10 +347,11 @@ int main( int argc, char *argv[] )
 
   // Set frame stream mode
   {
-    const LALFrStreamMode mode = 0
-      | LAL_FR_STREAM_VERBOSE_MODE      /* Display warnings and info */
-      | LAL_FR_STREAM_CHECKSUM_MODE     /* Ensure that file checksums are OK */
-      ;
+    LALFrStreamMode mode = 0;
+    mode |= LAL_FR_STREAM_VERBOSE_MODE;           /* Display warnings and info */
+    if ( frame_checksums ) {
+      mode |= LAL_FR_STREAM_CHECKSUM_MODE;        /* Ensure that file checksums are OK */
+    }
     XLAL_CHECK_MAIN( XLALFrStreamSetMode( framestream, mode ) == XLAL_SUCCESS, XLAL_EFUNC,
                      "Failed to set frame stream mode to %i", mode );
   }
