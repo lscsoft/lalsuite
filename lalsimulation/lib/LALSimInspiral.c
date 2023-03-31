@@ -7594,9 +7594,11 @@ double XLALSimInspiralGetFrequency(
         case fSEOBNRv1Peak:
         case fSEOBNRv2Peak:
         case fSEOBNRv4Peak:
+        case fSEOBNRv5Peak:
             if ( freqFunc == fSEOBNRv1Peak ) SpinAlignedEOBVersion = 1;
             if ( freqFunc == fSEOBNRv2Peak ) SpinAlignedEOBVersion = 2;
             if ( freqFunc == fSEOBNRv4Peak ) SpinAlignedEOBVersion = 4;
+            if ( freqFunc == fSEOBNRv5Peak ) SpinAlignedEOBVersion = 5;
             freq = XLALSimIMRSpinAlignedEOBPeakFrequency(m1, m2, S1z, S2z,
                     SpinAlignedEOBVersion);
             break;

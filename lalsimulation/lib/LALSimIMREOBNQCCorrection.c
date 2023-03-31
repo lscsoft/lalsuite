@@ -1417,6 +1417,47 @@ XLALSimIMREOBGetNRSpinPeakOmegaV4 (INT4 modeL, INT4 modeM, REAL8 UNUSED eta, REA
 }
 
 /**
+ * Peak frequency predicted by fitting NR results used in SEOBNRv5
+ * The coefficients are in Eq.(C29) of https://dcc.ligo.org/LIGO-P2300070
+ */
+UNUSED static inline REAL8
+XLALSimIMREOBGetNRSpinPeakOmegaV5 (INT4 modeL, INT4 modeM, REAL8 UNUSED eta, REAL8 a)
+{
+  REAL8 chi = a, chi2=chi*chi, chi3=chi2*chi, chi4=chi2*chi2; 
+  REAL8 eta2 = eta*eta, eta3 = eta2*eta, eta4 = eta2*eta2;
+  REAL8 res;
+  switch (modeL) {
+      case 2:
+          switch (modeM) {
+              case 2:
+                  res = -1. * (5.89352329617707670906 * eta4
+                  + 3.75145580491965446868 * eta3 * chi
+                  - 3.34930536209472551334 * eta3
+                  - 0.97140932625194231775 * eta2 * chi2
+                  - 1.69734302394369973577 * eta2 * chi
+                  + 0.28539204856044564362 * eta2
+                  + 0.2419483723662931296 * eta * chi3
+                  + 0.51801427018052081941 * eta * chi2
+                  + 0.25096450064948544467 * eta * chi
+                  - 0.31709602351033533418 * eta
+                  - 0.01525897668158244028 * chi4
+                  - 0.06692658483513916345 * chi3
+                  - 0.08715176045684569495 * chi2
+                  - 0.09133931944098934441 * chi
+                  - 0.2685414392185025978);
+                  break;
+              default:
+                    XLALPrintError("XLAL Error - %s: At present only fits for the (2,2) mode are available.\n", __func__);
+                    XLAL_ERROR (XLAL_EINVAL);
+                    break;
+            }
+            break;
+    }
+//    printf("w %.16e\n", res);
+  return res;
+}
+
+/**
  * Peak frequency slope predicted by fitting NR results (currently only 2,2 available).
  * Unpublished. Used in building SEOBNRv2 tables.
  */

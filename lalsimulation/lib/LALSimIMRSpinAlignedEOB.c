@@ -499,6 +499,9 @@ XLALSimIMRSpinAlignedEOBPeakFrequency (REAL8 m1SI,
     case 4:
       nrOmega = XLALSimIMREOBGetNRSpinPeakOmegaV4 (ll, mm, eta, aa/(1. - 2.*eta));
       break;
+    case 5:
+      nrOmega = XLALSimIMREOBGetNRSpinPeakOmegaV5 (ll, mm, eta, aa/(1. - 2.*eta));
+      break;
     default:
       XLALPrintError
 	("XLAL Error - %s: Unknown SEOBNR version!\nAt present only v1, v2 and v4 are available.\n",
