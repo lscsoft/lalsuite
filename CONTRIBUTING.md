@@ -18,17 +18,17 @@ If you wish to contribute new code, or changes to existing code, please follow t
 
 ### Make a fork (copy) of LALSuite
 
-You only need to do this *once*.
+You only need to do this **once**.
 
-1. Go to the [LALSuite repository home page][lalsuiterepo]
-2. Click on the *Fork* button, that should lead you [here][lalsuiteforks]
-3. Select the namespace that you want to create the fork in, this will usually be your personal namespace
+1. Go to the [LALSuite repository home page][lalsuiterepo].
+2. Click on the *Fork* button, that should lead you [here][lalsuiteforks].
+3. Select the namespace that you want to create the fork in, this will usually be your personal namespace.
 
 If you can't see the *Fork* button, make sure that you are logged in by checking for your account profile photo in the top right-hand corner of the screen.
 
 ### Clone your fork
 
-Make sure that you have installed and configured [Git-LFS][gitlfs]
+Make sure that you have installed and configured [Git-LFS][gitlfs]:
 
 ```bash
 git lfs install
@@ -53,7 +53,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and 
     git remote add upstream git@git.ligo.org:lscsoft/lalsuite.git
     ```
 
-   You only need to do this *once*.
+   You only need to do this **once**.
 
 2. Update your `master` branch to track changes from upstream:
 
@@ -64,7 +64,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and 
     git pull
     ```
 
-   You only need to do this *once*.
+   You only need to do this **once**.
 
 3. Fetch new changes from the `upstream` repository, merge them with your master branch, and push them to your fork on `git.ligo.org`:
 
@@ -80,7 +80,7 @@ Link your clone to the main (`upstream`) repository so that you can `fetch` and 
    git remote -v
    ```
 
-   If you have followed the instructions thus far, you should see four lines. Lines one and two begin with `origin` and reference your fork on git.ligo.org with both `fetch` and `push` methods. Lines three and four begin with `upstream` and refer to the main repository on `git.ligo.org` with both `fetch` and `push` methods.
+   If you have followed the instructions thus far, you should see four lines. Lines one and two begin with `origin` and reference your fork on `git.ligo.org` with both `fetch` and `push` methods. Lines three and four begin with `upstream` and refer to the main repository on `git.ligo.org` with both `fetch` and `push` methods.
 
 ### Making changes
 
@@ -100,7 +100,7 @@ All changes should be developed on a feature branch in order to keep them separa
 
    Commit messages should be clear, identifying which code was changed, and why. Common practice is to use a short summary line (<50 characters), followed by a blank line, then more information in longer lines.
 
-2. Push your changes to the remote copy of your fork on [GitLab][gitligo]. The first `push` of any new feature branch will require the `-u/--set-upstream` option to `push` to create a link between your new branch and the `origin` remote:
+2. Push your changes to the remote copy of your fork on `git.ligo.org`. The first `push` of any new feature branch will require the `-u/--set-upstream` option to `push` to create a link between your new branch and the `origin` remote:
 
     ```bash
     git push --set-upstream origin my-new-feature
@@ -200,7 +200,6 @@ More information regarding the usage of GitLab can be found in the main GitLab [
 [forkworkflow]:  https://git.ligo.org/help/user/project/repository/forking_workflow.html
 [githelp]:       https://git.ligo.org/help
 [gitlfs]:        https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
-[gitligo]:       https://git.ligo.org
 [helpdesk]:      mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
 [lalsuiteforks]: https://git.ligo.org/lscsoft/lalsuite/-/forks/new
 [lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
