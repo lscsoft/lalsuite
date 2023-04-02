@@ -141,6 +141,7 @@ EXTRA_DIST = \
 	exclude.list \
 	filter_py.py \
 	filter_swig.sed \
+	gitlab-CODEOWNERS \
 	install_regex.py \
 	layout.xml \
 	mathjax.js \
