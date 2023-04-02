@@ -23,6 +23,7 @@ __pycache__/
 /doxygen/doxygen_sqlite3.db
 /doxygen/filter
 /doxygen/in/
+/doxygen/make_autogen_dox
 /doxygen/out/
 /doxygen/test_doxygen.*
 /lalsuite-*/
