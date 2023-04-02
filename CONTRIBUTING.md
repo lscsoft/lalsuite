@@ -1,10 +1,10 @@
 # Contributing to LALSuite
 
-This page outlines the recommended procedure for contributing changes to the LALSuite repository. Please read the introduction to [GitLab on git.ligo.org](https://wiki.ligo.org/Computing/GitLigoOrg) before you start.
+This page outlines the recommended procedure for contributing changes to the LALSuite repository. Please read the [IGWN Computing Guide to GitLab][compguidegit] before you start.
 
 ## Reporting issues
 
-If you have `ligo.org` authentication, please report issues directly through GitLab. Otherwise, you can use the [service desk address](mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org) to send bug reports by e-mail.
+If you have `ligo.org` authentication, please report issues directly through GitLab. Otherwise, you can use the [service desk address][helpdesk] to send bug reports by e-mail.
 
 In either case, please include as much detail as possible to reproduce the error, including information about your operating system and the version of each (relevant) component of LALSuite. If possible, please include a brief, self-contained code example that demonstrates the problem.
 
@@ -12,7 +12,7 @@ Note that when an issue is marked as *Confidential*, currently this means that m
 
 ## Contributing code
 
-All contributions to LALSuite code must be made using the fork and [merge request](https://git.ligo.org/help/user/project/merge_requests/index.html) [workflow](https://git.ligo.org/help/user/project/repository/forking_workflow.html), which must then be reviewed by one of the project maintainers.
+All contributions to LALSuite code must be made using the fork and [merge request][mergerequests] [workflow][forkworkflow], which must then be reviewed by one of the project maintainers.
 
 If you wish to contribute new code, or changes to existing code, please follow this development workflow:
 
@@ -20,15 +20,15 @@ If you wish to contribute new code, or changes to existing code, please follow t
 
 You only need to do this *once*.
 
-1. Go to the [LALSuite repository home page](https://git.ligo.org/lscsoft/lalsuite)
-2. Click on the *Fork* button, that should lead you [here](https://git.ligo.org/lscsoft/lalsuite/-/forks/new)
+1. Go to the [LALSuite repository home page][lalsuiterepo]
+2. Click on the *Fork* button, that should lead you [here][lalsuiteforks]
 3. Select the namespace that you want to create the fork in, this will usually be your personal namespace
 
 If you can't see the *Fork* button, make sure that you are logged in by checking for your account profile photo in the top right-hand corner of the screen.
 
 ### Clone your fork
 
-Make sure that you have installed and configured [Git-LFS](https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client):
+Make sure that you have installed and configured [Git-LFS][gitlfs]
 
 ```bash
 git lfs install
@@ -100,7 +100,7 @@ All changes should be developed on a feature branch in order to keep them separa
 
    Commit messages should be clear, identifying which code was changed, and why. Common practice is to use a short summary line (<50 characters), followed by a blank line, then more information in longer lines.
 
-2. Push your changes to the remote copy of your fork on https://git.ligo.org. The first `push` of any new feature branch will require the `-u/--set-upstream` option to `push` to create a link between your new branch and the `origin` remote:
+2. Push your changes to the remote copy of your fork on [GitLab][gitligo]. The first `push` of any new feature branch will require the `-u/--set-upstream` option to `push` to create a link between your new branch and the `origin` remote:
 
     ```bash
     git push --set-upstream origin my-new-feature
@@ -138,7 +138,7 @@ from the top level of the repository. You can further edit the `.mailmap` file t
 
 When you feel that your work is finished, you should create a merge request to propose that your changes be merged into the main (`upstream`) repository.
 
-After you have pushed your new feature branch to `origin`, you should find a new button on the [LALSuite repository home page](https://git.ligo.org/lscsoft/lalsuite/) inviting you to create a merge request out of your newly pushed branch. (If the button does not exist, you can initiate a merge request by going to the `Merge Requests` tab on your fork website on `git.ligo.org` and clicking `New merge request`)
+After you have pushed your new feature branch to `origin`, you should find a new button on the [LALSuite repository home page][lalsuiterepo] inviting you to create a merge request out of your newly pushed branch. (If the button does not exist, you can initiate a merge request by going to the `Merge Requests` tab on your fork website on `git.ligo.org` and clicking `New merge request`)
 
 You should click the button, and proceed to fill in the title and description boxes on the merge request page. It is recommended that you check the box to *Remove source branch when merge request is accepted*; this will result in the branch being automatically removed from your fork when the merge request is accepted.
 
@@ -159,12 +159,12 @@ GitLab runs continuous integration (CI) pipelines on LALSuite to ensure that it 
 1. The push CI pipeline runs whenever you push commit(s) to your LALSuite fork. This pipeline performs some basic checks that LALSuite still builds and passes its tests with your changes:
    - each component LALSuite package can be build and installed in sequence (the so-called *package-level build*);
    - LALSuite can build all component packages at once (the so-called *top-level build*);
-   - the LALSuite [Doxygen](https://doxygen.nl/) documentation can be built;
+   - the LALSuite [Doxygen][doxygen] documentation can be built;
    - some basic checks for code style/formatting/whitespace errors, build byproduct files missing from `.gitignore`, etc.
 
 2. The merge CI pipeline runs when you are ready to submit your changes to the upstream LALSuite fork via a merge request. This pipeline runs a much more comprehensive series of checks that LALSuite still builds and passes its tests with a wide variety of platforms (e.g. MacOS, various Linux distributions) and compilers (e.g. `clang`, `icc`, `gcc`). It also checks that LALSuite packages for a number of package management systems (e.g. RPM, Debian, Conda, Python wheels) are built correctly.
 
-3. (A third CI pipeline runs nightly on the main [`lscsoft/lalsuite`](https://git.ligo.org/lscsoft/lalsuite) fork for deployment tasks, e.g. updating the [online documentation](https://lscsoft.docs.ligo.org/lalsuite/)).
+3. (A third CI pipeline runs nightly on the [main LALSuite repository][lalsuiterepo] fork for deployment tasks, e.g. updating the [online documentation][nightlydocs]).
 
 You can request a subset of the jobs which normally run as part of the merge pipeline to also be run as part of the push pipeline. This is useful if you are making changes to LALSuite which could potentially cause problems with different platforms/compilers, or which could affect the packaging, and you want to test the effect of your changes before submitting a merge request.
 
@@ -193,4 +193,16 @@ For individual commits, you can request a subset of merge pipeline jobs to run b
 
 ## More information
 
-More information regarding the usage of GitLab can be found in the main GitLab [documentation](https://git.ligo.org/help/).
+More information regarding the usage of GitLab can be found in the main GitLab [documentation][githelp].
+
+[compguidegit]:  https://computing.docs.ligo.org/guide/gitlab/
+[doxygen]:       https://doxygen.nl
+[forkworkflow]:  https://git.ligo.org/help/user/project/repository/forking_workflow.html
+[githelp]:       https://git.ligo.org/help
+[gitlfs]:        https://wiki.ligo.org/Computing/GitLFS#Install_the_git_LFS_client
+[gitligo]:       https://git.ligo.org
+[helpdesk]:      mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
+[lalsuiteforks]: https://git.ligo.org/lscsoft/lalsuite/-/forks/new
+[lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
+[mergerequests]: https://git.ligo.org/help/user/project/merge_requests/index.html
+[nightlydocs]:   https://lscsoft.docs.ligo.org/lalsuite
