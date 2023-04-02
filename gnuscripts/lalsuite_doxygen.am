@@ -53,6 +53,12 @@ doxygen-input-sources: Makefile
 	if test "x$(PACKAGE)" = xlalsuite; then \
 		$(MKDIR_P) in/; \
 		cp $(top_srcdir)/README.md $(top_srcdir)/COPYING $(top_srcdir)/CONTRIBUTING.md in/; \
+		if test -f $(top_srcdir)/AUTHORS; then \
+			cp $(top_srcdir)/AUTHORS in/; \
+		else \
+			( cd $(top_builddir) && $(MAKE) V=$(V) AUTHORS ); \
+			cp  $(top_builddir)/AUTHORS in/; \
+		fi; \
 	else \
 		( cd $(top_builddir) && $(MAKE) V=$(V) distdir $(doxygen_redir) ); \
 		mv "$(top_builddir)/$(PACKAGE)-$(VERSION)/" in/; \

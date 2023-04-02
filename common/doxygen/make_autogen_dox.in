@@ -49,20 +49,18 @@ EOF
 }
 
 ## generate authors page
-if (-f "in/AUTHORS") {
-  print <<EOF;
+print <<EOF;
 
 /** \\page ${package}_authors Author List
 
 EOF
-  open AUTHORS, "in/AUTHORS" or die "$0: could not open in/AUTHORS: $!";
-  while (<AUTHORS>) {
-    s/^/- /;
-    print;
-  }
-  close AUTHORS;
-  print <<EOF;
+open AUTHORS, "in/AUTHORS" or die "$0: could not open in/AUTHORS: $!";
+while (<AUTHORS>) {
+  s/^/- /;
+  print;
+}
+close AUTHORS;
+print <<EOF;
 
 */
 EOF
-}
