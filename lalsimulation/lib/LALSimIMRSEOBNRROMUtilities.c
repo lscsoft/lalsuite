@@ -57,6 +57,7 @@ UNUSED static UINT4 blend(gsl_vector * freqs, gsl_vector * out_fun, REAL8 freq_1
 UNUSED static UINT4 blend_functions(gsl_vector * freqs_out, gsl_vector * out_fun, gsl_vector * freq_in_1, gsl_vector * fun_in_1, gsl_vector * freq_in_2, gsl_vector * fun_in_2, REAL8 freq_1, REAL8 freq_2);
 UNUSED static UINT4 compute_i_max_LF_i_min_HF(INT8 * i_max_LF, INT8 * i_min_LF,gsl_vector * freqs_in_1,gsl_vector * freqs_in_2,REAL8 freq_1);
 UNUSED static REAL8 Get_omegaQNM_SEOBNRv4(REAL8 q, REAL8 chi1z, REAL8 chi2z, UINT4 l, UINT4 m);
+UNUSED static REAL8 Get_omegaQNM_SEOBNRv5(REAL8 q, REAL8 chi1z, REAL8 chi2z, UINT4 l, UINT4 m);
 UNUSED static UINT4 unwrap_phase(gsl_vector* phaseout,gsl_vector* phasein);
 UNUSED static UINT8 compute_i_at_f(gsl_vector * freq_array, REAL8 freq);
 UNUSED static UINT4 align_wfs_window(gsl_vector* f_array_1, gsl_vector* f_array_2, gsl_vector* phase_1, gsl_vector* phase_2, REAL8* Deltat, REAL8* Deltaphi, REAL8 f_align_start, REAL8 f_align_end);
@@ -897,6 +898,25 @@ REAL8 Get_omegaQNM_SEOBNRv4(REAL8 q, REAL8 chi1z, REAL8 chi2z, UINT4 l, UINT4 m)
     REAL8 spin2[3] = {0., 0., chi2z};
     // XLALSimIMREOBGenerateQNMFreqV2 is returning QNM frequencies in SI units, we multiply by Ms to convert it in geometric units
     UNUSED UINT4 ret = XLALSimIMREOBGenerateQNMFreqV2(&modefreqVec, m1, m2, spin1, spin2, l, m, 1, SpinAlignedEOBapproximant);
+    return Ms * creal(modefreqVec.data[0]);
+}
+
+// Function to compute the SEOBNRv5 QNM frequency
+REAL8 Get_omegaQNM_SEOBNRv5(REAL8 q, REAL8 chi1z, REAL8 chi2z, UINT4 l, UINT4 m){
+    // Total mass M is not important here, we return the QNM frequencies in geometric units
+    REAL8 M = 100.;
+    REAL8 Ms = M * LAL_MTSUN_SI;
+    REAL8 m1 = M * q/(1+q);
+    REAL8 m2 = M * 1/(1+q);
+    Approximant SpinAlignedEOBapproximant = SEOBNRv5_ROM; // SEOBNRv5 uses different final state fits compared to SEOBNRv4
+    COMPLEX16Vector modefreqVec;
+    COMPLEX16 modeFreq;
+    modefreqVec.length = 1;
+    modefreqVec.data = &modeFreq;
+    REAL8 spin1[3] = {0., 0., chi1z};
+    REAL8 spin2[3] = {0., 0., chi2z};
+    // XLALSimIMREOBGenerateQNMFreqV5 is returning QNM frequencies in SI units, we multiply by Ms to convert it in geometric units
+    UNUSED UINT4 ret = XLALSimIMREOBGenerateQNMFreqV5(&modefreqVec, m1, m2, spin1, spin2, l, m, 1, SpinAlignedEOBapproximant);
     return Ms * creal(modefreqVec.data[0]);
 }
 

@@ -285,6 +285,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv2ChirpTime.c \
 	LALSimIMRSEOBNRv4ROM.c \
 	LALSimIMRSEOBNRv4HMROM.c \
+	LALSimIMRSEOBNRv5HMROM.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.c \
 	LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c \
 	LALSimBHNSRemnantFits.c \

@@ -49,6 +49,7 @@ extern "C" {
  * @defgroup LALSimIMRSpinPrecEOBv4P_c           LALSimIMRSpinPrecEOBv4P.c
  * @defgroup LALSimIMRSEOBNRROM_c                LALSimIMRSEOBNRvxROMXXX.c
  * @defgroup LALSimIMRSEOBNRHMROM_c              LALSimIMRSEOBNRv4HMROM.c
+ * @defgroup LALSimIMRSEOBNRv5HMROM_c            LALSimIMRSEOBNRv5HMROM.c
  * @defgroup LALSimIMRSEOBNRv2ChirpTime_c        LALSimIMRSEOBNRv2ChirpTime.c
  * @defgroup LALSimIMRPSpinInspiralRD_c          LALSimIMRPSpinInspiralRD.c
  * @defgroup LALSimIMRTidal_c                    LALSimIMRLackeyTidal2013.c
@@ -370,6 +371,12 @@ int XLALSimIMRSEOBNRv4HMROMFrequencySequence(struct tagCOMPLEX16FrequencySeries 
 int XLALSimIMRSEOBNRv4HMROM_Modes(SphHarmFrequencySeries **hlm, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, UINT4 nModes, bool use_hybridization);
 int XLALSimIMRSEOBNRv4HMROMFrequencySequence_Modes(SphHarmFrequencySeries **hlm, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, UINT4 nModes, LALDict *LALParams);
 
+/* in module LALSimIMRSEOBNRv5HMROM.c */
+int XLALSimIMRSEOBNRv5HMROM(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, UINT4 nModes, bool use_hybridization, LALDict *LALParams);
+int XLALSimIMRSEOBNRv5HMROMFrequencySequence(struct tagCOMPLEX16FrequencySeries **hptilde, struct tagCOMPLEX16FrequencySeries **hctilde, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, UINT4 nModes, LALDict *LALParams);
+int XLALSimIMRSEOBNRv5HMROM_Modes(SphHarmFrequencySeries **hlm, REAL8 phiRef, REAL8 deltaF, REAL8 fLow, REAL8 fHigh, REAL8 fRef, REAL8 distance, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, UINT4 nModes, bool use_hybridization);
+int XLALSimIMRSEOBNRv5HMROMFrequencySequence_Modes(SphHarmFrequencySeries **hlm, const REAL8Sequence *freqs, REAL8 phiRef, REAL8 fRef, REAL8 distance, REAL8 inclination, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2, INT4 nk_max, UINT4 nModes, LALDict *LALParams);
+int XLALSimIMRSEOBNRv5ROMTimeOfFrequency(REAL8 *t, REAL8 frequency, REAL8 m1SI, REAL8 m2SI, REAL8 chi1, REAL8 chi2);
 
 /* in module LALSimIMRSEOBNRv4ROM_NRTidal.c */
 

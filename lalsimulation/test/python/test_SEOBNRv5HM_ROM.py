@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# Copyright (C) 2020 Michael Pürrer
+# Copyright (C) 2022 Lorenzo Pompili
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-"""Simple test to see if SEOBNRv4HM_ROM has changed
-
-Some functions copied from test_phenomPv3HM.py.
+"""
+Simple test to see if SEOBNRv5_ROM and SEOBNRv5HM_ROM have changed
+Adapted from test_SEOBNRv4HM_ROM.py.
 """
 
 import sys, os
@@ -44,7 +44,7 @@ def get_amp_phase(h):
 def sum_sqr_diff(x, y):
     return np.sqrt( np.sum( (x-y)**2 )  )
 
-def gen_test_data():
+def gen_test_data(approximant):
     """
     compute the difference between two waveforms
     and compare to expected value
@@ -70,7 +70,7 @@ def gen_test_data():
     f_max=512.,
     f_ref=30.,
     LALpars=None,
-    approximant=lalsimulation.SEOBNRv4HM_ROM
+    approximant=approximant
     )
 
     pars1 = common_pars.copy()
@@ -104,32 +104,31 @@ def gen_test_data():
     "LAL_DATA_PATH" not in os.environ,
     reason="LAL_DATA_PATH not found",
 )
-def test_SEOBNRv4HM_ROM():
+def test_SEOBNRv5_ROM():
     """
-    This test checks that SEOBNRv4HM_ROM hasn't changed.
-    It does this by generating two SEOBNRv4HM_ROM waveforms and computing
+    This test checks that SEOBNRv5_ROM hasn't changed.
+    It does this by generating two SEOBNRv5_ROM waveforms and computing
     their difference (according to their amplitude and phases)
     and compares them to pre-computed values.
 
     these pre-computed values were computed using the following line:
 
-    `expected_result  =  np.array(gen_test_data())`
+    `expected_result  =  np.array(gen_test_data(lalsimulation.SEOBNRv5_ROM))`
     """
     LAL_DATA_PATH = os.environ['LAL_DATA_PATH']
     for D in LAL_DATA_PATH.split(':'):
-        path = Path(D) / "SEOBNRv4HMROM.hdf5"
+        path = Path(D) / "SEOBNRv5ROM.hdf5"
         if path.is_file():
             have_ROM_data_file = True
             break
     else:
         pytest.skip(
-            "SEOBNRv4HMROM.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
+            "SEOBNRv5ROM.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
         )
 
-    expected_result = np.array([1443.7534142,   59.1517559, 1443.7534142,  231.6504798])
-    new_result  =  np.array(gen_test_data())
-    np.testing.assert_almost_equal(new_result, expected_result, 7, "SEOBNRv4HM_ROM test failed")
-
+    expected_result = np.array([1.458884641298907354e+03,2.318524388155811948e+02,1.458884641298907354e+03,2.301300986048764798e+02])
+    new_result  =  np.array(gen_test_data(lalsimulation.SEOBNRv5_ROM))
+    np.testing.assert_almost_equal(new_result, expected_result, 7, "SEOBNRv5ROM test failed")
 
 
 # -- run the tests ------------------------------
@@ -138,5 +137,5 @@ if __name__ == '__main__':
     if "LAL_DATA_PATH" not in os.environ:
         warnings.warn("LAL_DATA_PATH not found, cannot execute tests")
         sys.exit(77)
-    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-SEOBNRv4HM_ROM.xml"]
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-SEOBNRv5HM_ROM.xml"]
     sys.exit(pytest.main(args=[__file__] + args))

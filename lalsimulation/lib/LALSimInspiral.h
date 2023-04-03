@@ -437,6 +437,8 @@ typedef enum tagApproximant {
    IMRPhenomTHM,      /** Time domain, non-precessing phenomenological IMR waveform model with subdominant modes ([arXiv: 20XY.ZZZZZ]). */
    IMRPhenomTP,      /** Time domain, precessing phenomenological IMR waveform model for L=2 sector ([arXiv: 20XY.ZZZZZ]). */
    IMRPhenomTPHM,      /** Time domain, precessing phenomenological IMR waveform model with subdominant modes ([arXiv: 20XY.ZZZZZ]). */
+   SEOBNRv5_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5
+		    * @remarks Implemented in lalsimulation (frequency domain). */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -456,6 +458,8 @@ typedef enum tagFrequencyFunction {
     fSEOBNRv4Peak, /**< Frequency of the peak amplitude in SEOBNRv4 */
     fSEOBNRv4RD, /**< Dominant ringdown frequency in SEOBNRv4 */
     fTEOBResumSFinal, /**< Dominant ringdown frequency in TEOBResumS */
+    fSEOBNRv5Peak, /**< Frequency of the peak amplitude in SEOBNRv5_ROM */
+    fSEOBNRv5RD, /**< Dominant ringdown frequency in SEOBNRv5_ROM */
     NumFreqFunctions /**< Number of elements in the enum */
  } FrequencyFunction;
 
