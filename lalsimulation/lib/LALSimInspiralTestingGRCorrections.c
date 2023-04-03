@@ -143,7 +143,7 @@ int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       
  * correction instead of the TaylorF2 value + correction.
  */
 
-void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa, /**< PN phasing coefficients */
+void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa, /**< PN phasing coefficients, to be modified in place */
                                              const REAL8 m1, /**< Mass of body 1, in Msol */
                                              const REAL8 m2, /**< Mass of body 2, in Msol */
                                              const REAL8 chi1L, /**< Component of dimensionless spin 1 along Lhat */
