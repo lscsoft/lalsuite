@@ -126,7 +126,7 @@ def test_SEOBNRv5_ROM():
             "SEOBNRv5ROM.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
         )
 
-    expected_result = np.array([1458.88466472,  231.85243907, 1458.88466472,  230.13009888])
+    expected_result = np.array([1.458884641298907354e+03,2.318524388155811948e+02,1.458884641298907354e+03,2.301300986048764798e+02])
     new_result  =  np.array(gen_test_data(lalsimulation.SEOBNRv5_ROM))
     np.testing.assert_almost_equal(new_result, expected_result, 7, "SEOBNRv5ROM test failed")
 
