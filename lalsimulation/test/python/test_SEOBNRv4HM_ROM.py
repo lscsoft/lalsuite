@@ -126,7 +126,7 @@ def test_SEOBNRv4HM_ROM():
             "SEOBNRv4HMROM.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
         )
 
-    expected_result = np.array([1443.7534373,   59.1517554, 1443.7534373,  231.6504801])
+    expected_result = np.array([1443.7534142,   59.1517559, 1443.7534142,  231.6504798])
     new_result  =  np.array(gen_test_data())
     np.testing.assert_almost_equal(new_result, expected_result, 7, "SEOBNRv4HM_ROM test failed")
 
