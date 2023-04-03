@@ -47,6 +47,16 @@ clang:15:
     # weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
 
+clang:16:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-clang:16
+  variables:
+    CC: clang-16
+    CXX: clang++-16
+    # weird bugs when compiling with CFLAGS=-O3
+    CFLAGS: "-O2"
+
 clang:dev:
   extends:
     - .compiler-test
