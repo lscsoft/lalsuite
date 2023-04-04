@@ -2733,6 +2733,10 @@ static int XLALSimInspiralTDFromFD(
  * is the starting frequency, or if calling with NR_hdf5 approximant, the starting
  * frequency is not altered. Uses XLALSimInspiralGetSpinFreqFromApproximant to determine
  * appropriate behaviour.
+ * Similarly, if calling time-domain models for which a starting frequency of
+ * zero is allowed (as set in
+ * XLALSimInspiralGetAllowZeroMinFreqFromApproximant), the starting frequency
+ * is never altered, independent of f_min.
  *
  * This routine used to have one additional parameter relative to XLALSimInspiralChooseTDWaveform:
  * the redshift, z, of the waveform, which is now stuffed into the LALDict structure.
@@ -2778,11 +2782,20 @@ int XLALSimInspiralTD(
         * as is done in XLALSimInspiralTDFromTD.
         * This is because XLALSimInspiralTDFromTD modifies the start frequency
         * which is not always possible with NR_hdf5 waveforms.
+        * Do the same (ChooseTDWaveform+LALTaper) if using approximants for
+        * which a starting frequency of zero is allowed, as determined from
+        * XLALSimInspiralGetAllowZeroMinFreqFromApproximant. This is because
+        * XLALSimInspiralTDFromTD does not properly handle f_min=0. For models
+        * that allow f_min=0, this (ChooseTDWaveform+LALTaper) is the behaviour
+        * independent of what f_min is passed.
         */
 
       // Check whether for the given approximant reference frequency is the starting frequency
       SpinFreq spin_freq_flag = XLALSimInspiralGetSpinFreqFromApproximant(approximant);
-      if (spin_freq_flag == LAL_SIM_INSPIRAL_SPINS_CASEBYCASE || spin_freq_flag == LAL_SIM_INSPIRAL_SPINS_FLOW)
+      // Check whether for the given approximant, f_min=0 is allowed.
+      AllowZeroMinFreq allow_zero_fmin_flag = XLALSimInspiralGetAllowZeroMinFreqFromApproximant(approximant);
+
+      if (spin_freq_flag == LAL_SIM_INSPIRAL_SPINS_CASEBYCASE || spin_freq_flag == LAL_SIM_INSPIRAL_SPINS_FLOW || allow_zero_fmin_flag == LAL_SIM_INSPIRAL_ALLOW_ZERO_FMIN)
        {
             if (XLALSimInspiralChooseTDWaveform(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, LALparams, approximant) <0)
                 XLAL_ERROR(XLAL_EFUNC);
@@ -7104,6 +7117,30 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     }
 
     return spin_freq;
+
+}
+
+int XLALSimInspiralGetAllowZeroMinFreqFromApproximant(Approximant approx){
+
+  // Models for which LAL_SIM_INSPIRAL_ALLOW_ZERO_FMIN is set allow f_min=0,
+  // which means that the full length of the waveform is returned. This means
+  // that in XLALSimInspiralTD, XLALSimInspiralChooseTDWaveform is called
+  // instead of XLALSimInspiralTDFromTD for these models. This also means that
+  // the starting frequency is not altered (as done in XLALSimInspiralTDFromTD)
+  // for these models, independent of what f_min is passed.
+
+  AllowZeroMinFreq allow_zero_fmin = LAL_SIM_INSPIRAL_NUMZEROFMIN;
+  switch (approx)
+  {
+    case NRSur7dq2:
+    case NRSur7dq4:
+      allow_zero_fmin=LAL_SIM_INSPIRAL_ALLOW_ZERO_FMIN;
+      break;
+    default:
+      allow_zero_fmin=LAL_SIM_INSPIRAL_DISALLOW_ZERO_FMIN;
+    }
+
+    return allow_zero_fmin;
 
 }
 
