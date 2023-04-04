@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <stdbool.h>
 
 #include <lal/LALStdlib.h>
 #include <lal/LALStdio.h>
@@ -56,6 +57,7 @@ int main( int argc, char *argv[] )
   // Initialise user input variables
   struct uvar_type {
     char *frame_cache;
+    BOOLEAN frame_checksums;
     char *channel_name;
     INT4 gps_start_time;
     INT4 gps_end_time;
@@ -94,6 +96,10 @@ int main( int argc, char *argv[] )
     "Path to frame cache file to read frames from. "
     );
   XLALRegisterUvarMember(
+    frame_checksums, BOOLEAN, 'k', OPTIONAL,
+    "Validate frame checksums. Default is to only validate checksums for " UVAR_STR( observing_kind ) "=RUN SFTs. "
+    );
+  XLALRegisterUvarMember(
     channel_name, STRING, 'N', REQUIRED,
     "Name of channel to read within a frame. "
     );
@@ -116,10 +122,12 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     overlap_fraction, REAL8, 'P', OPTIONAL,
     "Fraction of SFT duration to overlap SFTs by. "
-    "Example: use " UVAR_STR( overlap_fraction ) "=0.5 with " UVAR_STR( window_type ) "=hann windows. " );
+    "Example: use " UVAR_STR( overlap_fraction ) "=0.5 with " UVAR_STR( window_type ) "=hann windows. "
+    );
   XLALRegisterUvarMember(
     high_pass_freq, REAL8, 'f', REQUIRED,
-    "High pass filtering frequency in Hertz. " );
+    "High pass filtering frequency in Hertz. "
+    );
   XLALRegisterUvarMember(
     window_type, STRING, 'w', OPTIONAL,
     "Window to apply to SFTs. "
@@ -287,6 +295,29 @@ int main( int argc, char *argv[] )
   }
   LogPrintf( LOG_NORMAL, "Parsed user input successfully\n" );
 
+  // Decide whether to validate frame checksums
+  bool frame_checksums = false;
+  if ( XLALUserVarWasSet( &uvar->frame_checksums ) ) {
+    if ( uvar->frame_checksums ) {
+      frame_checksums = true;
+      LogPrintf( LOG_NORMAL, "Validating frame checksums as " UVAR_STR( frame_checksums ) "=true\n" );
+    } else {
+      frame_checksums = false;
+      LogPrintf( LOG_NORMAL, "Not validating frame checksums as " UVAR_STR( frame_checksums ) "=false\n" );
+    }
+  } else if ( XLALUserVarWasSet( &uvar->observing_kind ) ) {
+    if ( strcmp( uvar->observing_kind, "RUN" ) == 0 ) {
+      frame_checksums = true;
+      LogPrintf( LOG_NORMAL, "Validating frame checksums as " UVAR_STR( observing_kind ) "=%s\n", uvar->observing_kind );
+    } else {
+      frame_checksums = false;
+      LogPrintf( LOG_NORMAL, "Not validating frame checksums as " UVAR_STR( observing_kind ) "=%s!=RUN\n", uvar->observing_kind );
+    }
+  } else {
+    frame_checksums = false;
+    LogPrintf( LOG_NORMAL, "Not validating frame checksums as neither " UVAR_STR( frame_checksums ) " nor " UVAR_STR( observing_kind ) " were given\n" );
+  }
+
   ////////// Set up SFT generation //////////
 
   // Build comment string from program name, VCS information, and full command line option log
@@ -312,51 +343,18 @@ int main( int argc, char *argv[] )
   LALFrStream *framestream = XLALFrStreamCacheOpen( framecache );
   XLAL_CHECK_MAIN( framestream != NULL, XLAL_EFUNC,
                    "Failed to open frame stream from cache '%s'", uvar->frame_cache );
+  LogPrintf( LOG_NORMAL, "Opened frame stream from cache '%s'\n", uvar->frame_cache );
 
   // Set frame stream mode
   {
-    const LALFrStreamMode mode = 0
-      | LAL_FR_STREAM_VERBOSE_MODE      /* Display warnings and info */
-      | LAL_FR_STREAM_IGNOREGAP_MODE    /* Ignore gaps in data */
-      | LAL_FR_STREAM_IGNORETIME_MODE   /* Ignore invalid times requested */
-      | LAL_FR_STREAM_CHECKSUM_MODE     /* Ensure that file checksums are OK */
-      ;
+    LALFrStreamMode mode = 0;
+    mode |= LAL_FR_STREAM_VERBOSE_MODE;           /* Display warnings and info */
+    if ( frame_checksums ) {
+      mode |= LAL_FR_STREAM_CHECKSUM_MODE;        /* Ensure that file checksums are OK */
+    }
     XLAL_CHECK_MAIN( XLALFrStreamSetMode( framestream, mode ) == XLAL_SUCCESS, XLAL_EFUNC,
                      "Failed to set frame stream mode to %i", mode );
   }
-
-  // Seek frame stream to starting GPS time
-  const LIGOTimeGPS gps_start = { .gpsSeconds = uvar->gps_start_time, .gpsNanoSeconds = 0 };
-  XLAL_CHECK_MAIN( XLALFrStreamSeek( framestream, &gps_start ) == XLAL_SUCCESS, XLAL_EFUNC,
-                   "Failed to seek frame stream to GPS start time %d", gps_start.gpsSeconds );
-  LogPrintf( LOG_NORMAL, "Starting SFT generation at GPS time %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT( gps_start ) );
-
-  // Allocate (empty) time series for SFT data
-  REAL8TimeSeries *SFT_time_series = XLALCreateREAL8TimeSeries( uvar->channel_name, &gps_start, 0.0, 0.0, &lalDimensionlessUnit, 0 );
-  XLAL_CHECK_MAIN( SFT_time_series != NULL, XLAL_EFUNC,
-                   "Failed to allocate SFT time series" );
-
-  // Update time series metadata from frames
-  XLAL_CHECK_MAIN( XLALFrStreamGetREAL8TimeSeriesMetadata( SFT_time_series, framestream ) == XLAL_SUCCESS, XLAL_EFUNC );
-
-  // Resize SFT time series to required size
-  SFT_time_series = XLALResizeREAL8TimeSeries( SFT_time_series, 0, uvar->sft_duration / SFT_time_series->deltaT );
-  XLAL_CHECK_MAIN( SFT_time_series != NULL, XLAL_EFUNC,
-                   "Failed to allocate SFT time series to %g elements", uvar->sft_duration / SFT_time_series->deltaT );
-
-  // Create SFT time series window
-  const REAL8 window_param = XLALUserVarWasSet( &uvar->window_param ) ? uvar->window_param : 0;
-  REAL8Window *SFT_window = XLALCreateNamedREAL8Window( uvar->window_type, window_param, SFT_time_series->data->length );
-  XLAL_CHECK_MAIN( SFT_window != NULL, XLAL_EFUNC,
-                   "Failed to allocate SFT time series window of %u elements", SFT_time_series->data->length );
-
-  // Create SFT FFT data vector and plan
-  COMPLEX16Vector *SFT_fft_data = XLALCreateCOMPLEX16Vector( SFT_time_series->data->length / 2 + 1 );
-  XLAL_CHECK_MAIN( SFT_fft_data != NULL, XLAL_EFUNC,
-                   "Failed to allocate SFT FFT data vector of %u elements", SFT_time_series->data->length / 2 + 1 );
-  REAL8FFTPlan *SFT_fft_plan = XLALCreateForwardREAL8FFTPlan( SFT_time_series->data->length, 0 );
-  XLAL_CHECK_MAIN( SFT_fft_plan != NULL, XLAL_EFUNC,
-                   "Failed to allocate SFT FFT plan" );
 
   // Create SFT type for writing output
   const UINT4 SFT_first_bin = lrint( uvar->start_freq * uvar->sft_duration );
@@ -367,43 +365,43 @@ int main( int argc, char *argv[] )
 
   ////////// Generate SFTs //////////
 
-  // Read data from frame stream
+  // SFT time series window, allocated once first time series data is read
+  const REAL8 window_param = XLALUserVarWasSet( &uvar->window_param ) ? uvar->window_param : 0;
+  REAL8Window *SFT_window = NULL;
+
+  // SFT FFT data vector and plan, allocated once first time series data is read
+  COMPLEX16Vector *SFT_fft_data = NULL;
+  REAL8FFTPlan *SFT_fft_plan = NULL;
+
+  // Read data from frame stream until SFT end time is reached
+  INT4 SFT_epoch_sec = uvar->gps_start_time;
+  INT4 num_SFTs_made = 0;
   while ( 1 ) {
 
-    // Get current GPS time
-    LIGOTimeGPS gps_tell;
-    XLALFrStreamTell( &gps_tell, framestream );
-
     // Try to read in time series data for the next SFT
+    REAL8TimeSeries *SFT_time_series = NULL;
     {
-      int errnum = 0;
-      XLAL_TRY_SILENT( XLALFrStreamGetREAL8TimeSeries( SFT_time_series, framestream ), errnum );
-      if ( errnum != XLAL_SUCCESS ) {
-        if ( XLALFrStreamEnd( framestream) ) {    // Break if not enough data remaining
-          LogPrintf( LOG_NORMAL, "Reached end of frame stream at GPS time %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT( gps_tell ) );
-          break;
-        } else {                                  // Otherwise re-raise error
-          XLAL_ERROR( errnum | XLAL_EFUNC, "XLALFrStreamGetREAL8TimeSeries() failed at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
-        }
-      }
+      const LIGOTimeGPS SFT_epoch = { .gpsSeconds = SFT_epoch_sec, .gpsNanoSeconds = 0 };
+      SFT_time_series = XLALFrStreamInputREAL8TimeSeries( framestream, uvar->channel_name, &SFT_epoch, uvar->sft_duration, 0 );
+      XLAL_CHECK_MAIN( SFT_time_series != NULL, XLAL_EFUNC,
+                       "XLALFrStreamInputREAL8TimeSeries() failed at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
     }
 
-    // Break if time series data for next SFT is after GPS end time
-    {
-      const LIGOTimeGPS gps_end = { .gpsSeconds = SFT_time_series->epoch.gpsSeconds + uvar->sft_duration, .gpsNanoSeconds = 0 };
-      if ( gps_end.gpsSeconds > uvar->gps_end_time ) {
-        LogPrintf( LOG_NORMAL, "Ending SFT generation at GPS time %" LAL_GPS_FORMAT "\n", LAL_GPS_PRINT( gps_end ) );
-        break;
-      }
+    // Create SFT time series window
+    if ( SFT_window == NULL ) {
+      SFT_window = XLALCreateNamedREAL8Window( uvar->window_type, window_param, SFT_time_series->data->length );
+      XLAL_CHECK_MAIN( SFT_window != NULL, XLAL_EFUNC,
+                       "Failed to allocate SFT time series window of %u elements at GPS time %" LAL_INT4_FORMAT, SFT_time_series->data->length, SFT_epoch_sec );
     }
 
-    // Align SFTs on integer GPS seconds
-    if ( SFT_time_series->epoch.gpsNanoSeconds > 0 ) {
-      SFT_time_series->epoch.gpsNanoSeconds = 0;
-      SFT_time_series->epoch.gpsSeconds += 1;
-      XLAL_CHECK_MAIN( XLALFrStreamSeek( framestream, &SFT_time_series->epoch ) == XLAL_SUCCESS, XLAL_EFUNC,
-                       "Failed to seek frame stream to aligned GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( SFT_time_series->epoch ) );
-      continue;
+    // Create SFT FFT data vector and plan
+    if ( SFT_fft_data == NULL ) {
+      SFT_fft_data = XLALCreateCOMPLEX16Vector( SFT_time_series->data->length / 2 + 1 );
+      XLAL_CHECK_MAIN( SFT_fft_data != NULL, XLAL_EFUNC,
+                       "Failed to allocate SFT FFT data vector of %u elements at GPS time %" LAL_INT4_FORMAT, SFT_time_series->data->length / 2 + 1, SFT_epoch_sec );
+      SFT_fft_plan = XLALCreateForwardREAL8FFTPlan( SFT_time_series->data->length, 0 );
+      XLAL_CHECK_MAIN( SFT_fft_plan != NULL, XLAL_EFUNC,
+                       "Failed to allocate SFT FFT plan at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
     }
 
     // High-pass SFT time series data with Butterworth High Pass filter
@@ -418,16 +416,16 @@ int main( int argc, char *argv[] )
         .a1   = -1.0,
       };
       XLAL_CHECK_MAIN( XLALButterworthREAL8TimeSeries( SFT_time_series, &filterpar ) == XLAL_SUCCESS, XLAL_EFUNC,
-                       "Failed to apply %s filter to SFT time series data at GPS time %" LAL_GPS_FORMAT, filterpar.name, LAL_GPS_PRINT( gps_tell ) );
+                       "Failed to apply %s filter to SFT time series data at GPS time %" LAL_INT4_FORMAT, filterpar.name, SFT_epoch_sec );
     }
 
     // Window SFT time series data
     XLAL_CHECK_MAIN( XLALUnitaryWindowREAL8Sequence( SFT_time_series->data, SFT_window ) != NULL, XLAL_EFUNC,
-                     "Failed to apply window to SFT time series data at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
+                     "Failed to apply window to SFT time series data at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
 
     // Fourier transform SFT time series data
     XLAL_CHECK_MAIN( XLALREAL8ForwardFFT( SFT_fft_data, SFT_time_series->data, SFT_fft_plan ) == XLAL_SUCCESS, XLAL_EFUNC,
-                     "Failed to Fourier transform SFT time series data at GPS time %" LAL_GPS_FORMAT, LAL_GPS_PRINT( gps_tell ) );
+                     "Failed to Fourier transform SFT time series data at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
 
     // Initialise SFT type
     SFT->name[0] = uvar->channel_name[0];
@@ -458,13 +456,13 @@ int main( int argc, char *argv[] )
       int retn = XLALWriteSFT2StandardFile( SFT, &spec, SFT_comment );
       temp_SFT_filename = XLALBuildSFTFilenameFromSpec( &spec );
       XLAL_CHECK_MAIN( retn == XLAL_SUCCESS, XLAL_EFUNC,
-                       "Failed to write SFT '%s' at GPS time %" LAL_GPS_FORMAT, temp_SFT_filename ? temp_SFT_filename : "<unknown>", LAL_GPS_PRINT( gps_tell ) );
+                       "Failed to write SFT '%s' at GPS time %" LAL_INT4_FORMAT, temp_SFT_filename ? temp_SFT_filename : "<unknown>", SFT_epoch_sec );
       XLAL_CHECK_MAIN( temp_SFT_filename != NULL, XLAL_EFUNC );
     }
 
     // Validate SFT
     XLAL_CHECK_MAIN( XLALCheckSFTFileIsValid( temp_SFT_filename ) == XLAL_SUCCESS, XLAL_EFUNC,
-                     "Failed to validate SFT '%s' at GPS time %" LAL_GPS_FORMAT, temp_SFT_filename, LAL_GPS_PRINT( gps_tell ) );
+                     "Failed to validate SFT '%s' at GPS time %" LAL_INT4_FORMAT, temp_SFT_filename, SFT_epoch_sec );
 
     // Move SFT to final filename
     char *final_SFT_filename = XLALStringDuplicate( temp_SFT_filename );
@@ -476,19 +474,28 @@ int main( int argc, char *argv[] )
                      "Failed to rename '%s' to '%s': %s", temp_SFT_filename, final_SFT_filename, strerror(errno) );
     LogPrintf( LOG_DEBUG, "Wrote SFT '%s'\n", final_SFT_filename );
 
-    // Overlap SFTs if requested
-    if ( uvar->overlap_fraction > 0 ) {
-      const REAL8 dt = uvar->overlap_fraction * uvar->sft_duration;
-      XLAL_CHECK_MAIN( XLALFrStreamSeekO( framestream, -dt, SEEK_CUR ) == XLAL_SUCCESS, XLAL_EFUNC,
-                       "Failed to rewind frame stream by %g seconds at GPS time %" LAL_GPS_FORMAT, dt, LAL_GPS_PRINT( gps_tell ) );
+    // Increment number of SFTs made
+    if ( ++num_SFTs_made == 1 ) {
+      LogPrintf( LOG_NORMAL, "Generated first SFT at GPS time %" LAL_INT4_FORMAT "\n", SFT_epoch_sec );
     }
 
     // Free memory
+    XLALDestroyREAL8TimeSeries( SFT_time_series );
     XLALFree( temp_SFT_filename );
     XLALFree( final_SFT_filename );
 
-  }
+    // Advance to next SFT, overlapping if requested
+    {
+      const INT4 last_SFT_epoch_sec = SFT_epoch_sec;
+      SFT_epoch_sec += ( 1.0 - uvar->overlap_fraction ) * ( (REAL8) uvar->sft_duration );
+      if ( SFT_epoch_sec + uvar->sft_duration > uvar->gps_end_time ) {
+        LogPrintf( LOG_NORMAL, "Generated last SFT at GPS time %" LAL_INT4_FORMAT "\n", last_SFT_epoch_sec );
+        LogPrintf( LOG_NORMAL, "Generated %" LAL_INT4_FORMAT " SFTs\n", num_SFTs_made );
+        break;
+      }
+    }
 
+  }
 
   ////////// Free memory //////////
 
@@ -497,7 +504,6 @@ int main( int argc, char *argv[] )
   XLALDestroyCache( framecache );
   XLALFrStreamClose( framestream );
 
-  XLALDestroyREAL8TimeSeries( SFT_time_series );
   XLALDestroyREAL8Window( SFT_window );
   XLALDestroyCOMPLEX16Vector( SFT_fft_data );
   XLALDestroyREAL8FFTPlan( SFT_fft_plan );

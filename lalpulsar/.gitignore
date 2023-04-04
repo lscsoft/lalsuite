@@ -106,6 +106,7 @@ bin/MakeData/lalpulsar_MakeSFTDAG
 bin/MakeData/lalpulsar_MakeSFTs
 bin/MakeData/lalpulsar_Makefakedata_v4
 bin/MakeData/lalpulsar_Makefakedata_v5
+bin/MakeData/makeMultiChFrame
 bin/SFTTools/SFTwrite
 bin/SFTTools/lalpulsar_ComputePSD
 bin/SFTTools/lalpulsar_SFTclean

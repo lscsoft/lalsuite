@@ -32,6 +32,7 @@
 int main(int argc, char **argv)
 {
     FILE *fp  = NULL, *fp2 = NULL, *fp3 = NULL, *fp4 = NULL;
+    int fopenerr = 0;
     
     SFTCatalog *catalog = NULL;
     SFTVector *sft_vect = NULL;
@@ -108,9 +109,17 @@ int main(int argc, char **argv)
 
     // Open the files for writing using the "w" mode, which overwrites files if they exist
     fp = fopen(outfile, "w");
+    fopenerr = errno;
+    XLAL_CHECK_MAIN( fp != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile, strerror(fopenerr) );
     fp2 = fopen(outfile2, "w");
+    fopenerr = errno;
+    XLAL_CHECK_MAIN( fp2 != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile2, strerror(fopenerr) );
     fp3 = fopen(outfile3, "w");
+    fopenerr = errno;
+    XLAL_CHECK_MAIN( fp3 != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile3, strerror(fopenerr) );
     fp4 = fopen(outfile4, "w");
+    fopenerr = errno;
+    XLAL_CHECK_MAIN( fp4 != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s", outfile4, strerror(fopenerr) );
 
 /*----------------------------------------------------------------------------------------------------------------*/
 
