@@ -28,15 +28,39 @@ while (<IN>) {
 
 }
 
-open OUT, ">$subdir/.historical_authors" or die $!;
-binmode OUT, ":encoding(UTF-8)";
-print OUT <<EOF;
+if (defined($ENV{"UPDATE_AUTHORS_WITH_GIT_BLAME"})) {
+
+  my @files;
+  open IN, "git ls-files -- $subdir/ |" or die $!;
+  binmode IN, ":encoding(UTF-8)";
+  while (<IN>) {
+    chomp;
+    push @files, $_;
+  }
+  my $nfiles = @files;
+  for (my $i = 0; $i < @files; ++$i) {
+    print STDERR "$0: updating authors of $subdir: file $i of $nfiles: $files[$i]\n";
+    open IN2, "git blame --line-porcelain -- $files[$i] |" or die $!;
+    binmode IN2, ":encoding(UTF-8)";
+    while (<IN2>) {
+      chomp;
+      next unless s/^author //;
+      next if defined($authors{$_});
+      $authors{$_} = "git blame";
+    }
+  }
+
+  open OUT, ">$subdir/.historical_authors" or die $!;
+  binmode OUT, ":encoding(UTF-8)";
+  print OUT <<EOF;
 # This file contains historical authors collected from the pre-Git version
-# history, copyright notices, documentation, and other sources. It should
-# not be modified; all authors should now be deduced from the Git history.
+# history, copyright notices, documentation, git blame, and other sources.
+# It should not be modified except by the 'update_authors' script.
 EOF
-foreach my $author (sort { $a cmp $b } keys(%authors)) {
-  print OUT "$author\n" if $authors{$author} eq "historical";
+  foreach my $author (sort { $a cmp $b } keys(%authors)) {
+    print OUT "$author\n" if $authors{$author} ne "git history";
+  }
+
 }
 
 open OUT, ">$subdir/AUTHORS" or die $!;

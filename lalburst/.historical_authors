@@ -1,7 +1,8 @@
 # This file contains historical authors collected from the pre-Git version
-# history, copyright notices, documentation, and other sources. It should
-# not be modified; all authors should now be deduced from the Git history.
+# history, copyright notices, documentation, git blame, and other sources.
+# It should not be modified except by the 'update_authors' script.
 Andrew Mergl
+Bernd Machenschalk
 E. E. Flanagan
 Mark Stephen Williamsen
 Patrick Brady
