@@ -28,7 +28,6 @@ lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 *.md                            @adam-mercer @duncanmmacleod @karl-wette
 *.pc.in                         @adam-mercer @duncanmmacleod @karl-wette
 *.spec.in                       @adam-mercer @duncanmmacleod @karl-wette
-.AUTHORS                        @adam-mercer @duncanmmacleod @karl-wette
 .coafile                        @adam-mercer @duncanmmacleod @karl-wette
 .gitignore                      @adam-mercer @duncanmmacleod @karl-wette
 .gitlab-*.Dockerfile            @adam-mercer @duncanmmacleod @karl-wette

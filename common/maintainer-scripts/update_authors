@@ -7,7 +7,7 @@ my $subdir = shift @ARGV;
 
 my %authors;
 
-open IN, "$subdir/.AUTHORS" or die $!;
+open IN, "$subdir/.historical_authors" or die $!;
 binmode IN, ":encoding(UTF-8)";
 while (<IN>) {
   chomp;
@@ -28,7 +28,7 @@ while (<IN>) {
 
 }
 
-open OUT, ">$subdir/.AUTHORS" or die $!;
+open OUT, ">$subdir/.historical_authors" or die $!;
 binmode OUT, ":encoding(UTF-8)";
 print OUT <<EOF;
 # This file contains historical authors collected from the pre-Git version
