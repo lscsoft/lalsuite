@@ -17,7 +17,7 @@ while (<IN>) {
 
 }
 
-open IN, "git log --full-history HEAD -- $subdir/ | git shortlog --summary |" or die $!;
+open IN, "git log --full-history --no-merges HEAD -- $subdir/ | git shortlog --summary |" or die $!;
 binmode IN, ":encoding(UTF-8)";
 while (<IN>) {
   chomp;
