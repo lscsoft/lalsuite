@@ -44,6 +44,8 @@ clang:15:
   variables:
     CC: clang-15
     CXX: clang++-15
+    # weird bugs when compiling with CFLAGS=-O3
+    CFLAGS: "-O2"
 
 clang:dev:
   extends:
@@ -52,6 +54,8 @@ clang:dev:
   variables:
     CC: clang
     CXX: clang++
+    # weird bugs when compiling with CFLAGS=-O3
+    CFLAGS: "-O2"
 
 .compiler-test:gcc:
   extends:

@@ -747,8 +747,10 @@ ValidateSFTFile ( const char *fname )
 
   /* and read successive SFTs blocks from the file and validate CRC
      checksums */
+  struct headertag2 lastinfo;
+  memset(&lastinfo, 0, sizeof(lastinfo));
   for (int count=0; 1; count++) {
-    struct headertag2 info,lastinfo;
+    struct headertag2 info;
     int swapendian, move, j;
 
     err=ReadSFTHeader(fp, &info, NULL, &swapendian, 1);

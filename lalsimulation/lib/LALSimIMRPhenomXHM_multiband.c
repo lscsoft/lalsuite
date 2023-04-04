@@ -94,7 +94,7 @@ INT4 XLALSimIMRPhenomXMultibandingGrid(
   coarseGrid.xMax = fstartIn;
 
   REAL8 df0, FrequencyFactor=1, nextfSTART, origLogFreqFact;
-  REAL8 fSTART, mydf = evaldMf, fEND, fEndGrid0,fStartInspDerefinement, fEndInsp;
+  REAL8 fSTART, mydf = evaldMf, fEND, fEndGrid0 = 0, fStartInspDerefinement, fEndInsp;
 
   /* Number of fine freq points between two coarse freq points */
   /* The numerator of this quantity corresponds to eqs. 2.8, 2.9 in arXiv:2001.10897. */

@@ -1,12 +1,13 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 173
+# serial 174
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
 m4_pattern_forbid([^_?LALSUITE_[A-Z_]+$])
 m4_pattern_allow([^LALSUITE_(BUILD|PACKAGES)$])
+m4_pattern_allow([^LALSUITE_LIBTOOL_NO_SUPPRESS])
 
 # list of user variables; see section 4.8.1 of the Autoconf manual
 m4_define([uvar_list],[CPPFLAGS CFLAGS CXXFLAGS FCFLAGS FFLAGS LDFLAGS])
@@ -546,6 +547,7 @@ AC_DEFUN([LALSUITE_USE_LIBTOOL],[
   # $0: Generate a libtool script for use in configure tests. Arguments
   # are added to link command in variable ${lalsuite_libtool_flags}
   AC_REQUIRE([LT_INIT])
+  AC_REQUIRE([AC_PROG_SED])
   LT_OUTPUT
   m4_append([AC_LANG(C)],[
     ac_link="./libtool --mode=link --tag=CC ${ac_link} ${lalsuite_libtool_flags}"
@@ -557,6 +559,28 @@ AC_DEFUN([LALSUITE_USE_LIBTOOL],[
   ])
   AC_LANG(_AC_LANG)
   LALSUITE_ADD_FLAGS([],[],[${lalsuite_libtool_flags}])
+  # Libtool compiles library code twice for dynamic/static linking.
+  # Errors from the 2nd compile are usually suppressed, but passing
+  # -no-suppress to libtool --mode=compile will print them. See
+  #   https://git.ligo.org/computing/helpdesk/-/issues/2851#note_658717
+  # for an example where errors appear only with static linking.
+  # Automake however provides no mechanism of passing this flag, see
+  #   https://debbugs.gnu.org/cgi/bugreport.cgi?bug=54020
+  # so the easiest alternative is to hack libtool itself as follows.
+  AS_IF([test "x${LALSUITE_LIBTOOL_NO_SUPPRESS}" != x],[
+    AC_CONFIG_COMMANDS([libtool-no-suppress-hack],[
+      AS_IF([test -f ./libtool],[
+        AS_IF([${SED} -i.before_no_suppress_hack 's/suppress_opt=yes/suppress_opt=no/' ./libtool],[
+          rm -f libtool.before_no_suppress_hack
+          AC_MSG_NOTICE([hacked ./libtool to set -no-suppress])
+        ],[
+          AC_MSG_ERROR([failed to set -no-suppress option in ./libtool])
+        ])
+      ],[
+        AC_MSG_ERROR([./libtool does not exist])
+      ])
+    ])
+  ])
   # end $0
 ])
 

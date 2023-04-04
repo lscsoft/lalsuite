@@ -2694,6 +2694,10 @@ eccentricityPhasing_F2(REAL8 v, REAL8 v0, REAL8 ecc, REAL8 eta, INT4 ecc_order)
   if(ecc_order == -1) {
     ecc_order = LAL_MAX_ECC_PN_ORDER;
   }
+  if(ecc_order > LAL_MAX_ECC_PN_ORDER) {
+    return XLAL_REAL8_FAIL_NAN;
+  }
+
   REAL8 phaseOrder = 0;
   for(int i=0; i<=ecc_order; i++)
   {
