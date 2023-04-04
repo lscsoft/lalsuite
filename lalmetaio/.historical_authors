@@ -1,22 +1,30 @@
 # This file contains historical authors collected from the pre-Git version
-# history, copyright notices, documentation, and other sources. It should
-# not be modified; all authors should now be deduced from the Git history.
+# history, copyright notices, documentation, git blame, and other sources.
+# It should not be modified except by the 'update_authors' script.
 Alexander Dietz
 Anand S. Sengupta
 Andres C. Rodriguez
+Badri Krishnan
+Bernd Machenschalk
+Chad Hanna
 Craig Robinson
 David McKechan
+Diego Fazi
 Drew Keppel
+Duncan Brown
 Eirini Messaritaki
 Gareth Jones
 George Birthisel
+John T. Whelan
 Lisa Goggin
 Lisa M. Goggin
 Patrick Brady
 Paul T. Baker
 Peter Shawhan
 Saikat Ray-Majumder
+Salvatore Vitale
 Sean Seader
 Stephen Fairhurst
+Stephen Privitera
 Thomas Cokelaer
 Xavier Siemens

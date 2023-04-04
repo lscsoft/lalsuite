@@ -1,20 +1,24 @@
 # This file contains historical authors collected from the pre-Git version
-# history, copyright notices, documentation, and other sources. It should
-# not be modified; all authors should now be deduced from the Git history.
+# history, copyright notices, documentation, git blame, and other sources.
+# It should not be modified except by the 'update_authors' script.
 Anand S. Sengupta
 Andres C. Rodriguez
 B. S. Sathyaprakash
+Badri Krishnan
 Bala R. Iyer
 Benjamin Owen
+Bernd Machenschalk
 Chris Van Den Broeck
 Darren Woods
 David Chin
 David Churches
+David McKechan
 Devanka Pathak
 Eirini Messaritaki
 Gareth Jones
 George Birthisel
 Jessica Clayton
+John T. Whelan
 Lisa M. Goggin
 Lucia Santamaria
 M. C. Diaz
