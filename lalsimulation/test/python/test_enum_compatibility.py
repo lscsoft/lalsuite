@@ -113,9 +113,10 @@ known_approximants = {
     'IMRPhenomT': 103,
     'IMRPhenomTHM': 104,
     'IMRPhenomTP': 105,
-    'IMRPhenomTPHM':106,
-    'SEOBNRv4HM_PA': 107,
-    'pSEOBNRv4HM_PA': 108,
+    'IMRPhenomTPHM': 106,
+    'SEOBNRv5_ROM': 107,
+    'SEOBNRv4HM_PA': 108,
+    'pSEOBNRv4HM_PA': 109,
 }
 
 @pytest.mark.parametrize("name, i", known_approximants.items())
