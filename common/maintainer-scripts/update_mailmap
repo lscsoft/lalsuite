@@ -38,7 +38,7 @@ my @mailmap;
 
 foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
 
-  if ($pname =~ /[^ [:upper:][:lower:].'-]/ || $pname =~ /^[[:upper:].'-]+$/ || $pname =~ /^[[:lower:].'-]/) {
+  if ($pname =~ /[^[:upper:][:lower:] .'-]/ || $pname =~ /^[[:upper:] .'-]+$/ || $pname =~ /^[[:lower:] .'-]/) {
     print STDERR "$0: '$pname' should be a human name, not a username\n";
     exit(1);
   }
