@@ -143,7 +143,7 @@ spinParams=spinParamsPrec+spinParamsEff+spinParamsAli
 cosmoParam=['m1_source','m2_source','mtotal_source','mc_source','redshift','mf_source','mf_source_evol','mf_source_nonevol','m1_source_maxldist','m2_source_maxldist','mtotal_source_maxldist','mc_source_maxldist','redshift_maxldist','mf_source_maxldist','mf_source_maxldist_evol','mf_source_maxldist_nonevol']
 #Strong Field
 ppEParams=['ppEalpha','ppElowera','ppEupperA','ppEbeta','ppElowerb','ppEupperB','alphaPPE','aPPE','betaPPE','bPPE']
-tigerParams=['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)]
+tigerParams=['dchi%i'%(i) for i in range(8)] + ['dchi%il'%(i) for i in [5,6] ] + ['dxi%d'%(i+1) for i in range(6)] + ['dalpha%i'%(i+1) for i in range(5)] + ['dbeta%i'%(i+1) for i in range(3)] + ['dsigma%i'%(i+1) for i in range(4)] + ['dipolecoeff']+['dchiminus%i'%(i) for i in [1,2]]
 bransDickeParams=['omegaBD','ScalarCharge1','ScalarCharge2']
 massiveGravitonParams=['lambdaG']
 lorentzInvarianceViolationParams=['log10lambda_a','lambda_a','log10lambda_eff','lambda_eff','log10livamp','liv_amp']
@@ -430,7 +430,7 @@ def plot_label(param):
     ra_names = ['rightascension','ra']
     dec_names = ['declination','dec']
     phase_names = ['phi_orb', 'phi', 'phase', 'phi0']
-    gr_test_names = ['dchi%d'%i for i in range(8)]+['dchil%d'%i for i in [5,6]]+['dxi%d'%(i+1) for i in range(6)]+['dalpha%d'%(i+1) for i in range(5)]+['dbeta%d'%(i+1) for i in range(3)]+['dsigma%d'%(i+1) for i in range(4)]
+    gr_test_names = ['dchi%d'%i for i in range(8)]+['dchil%d'%i for i in [5,6]]+['dxi%d'%(i+1) for i in range(6)]+['dalpha%d'%(i+1) for i in range(5)]+['dbeta%d'%(i+1) for i in range(3)]+['dsigma%d'%(i+1) for i in range(4)] + ['dipolecoeff']
 
     labels={
         'm1':r'$m_1\,(\mathrm{M}_\odot)$',
@@ -538,16 +538,30 @@ def plot_label(param):
         'polar_eccentricity':r'$\epsilon_{polar}$',
         'polar_angle':r'$\alpha_{polar}$',
         'alpha':r'$\alpha_{polar}$',
+	'dchiminus1':r'$d\chi_{-1}$',
+        'dchiminus2':r'$d\chi_{-2}$',
         'dchi0':r'$d\chi_0$',
         'dchi1':r'$d\chi_1$',
         'dchi2':r'$d\chi_2$',
         'dchi3':r'$d\chi_3$',
+	'dchi3S':r'$d\chi_{3S}$',
+	'dchi3NS':r'$d\chi_{3NS}$',
         'dchi4':r'$d\chi_4$',
+	'dchi4S':r'$d\chi_{4S}$',
+        'dchi4NS':r'$d\chi_{4NS}$',
         'dchi5':r'$d\chi_5$',
-        'dchi5l':r'$d\chi_{5}^{(l)}$',
+        'dchi5S':r'$d\chi_{5S}$',
+        'dchi5NS':r'$d\chi_{5NS}$',
+        'dchi5l':r'$d\chi_{5l}$',
+	'dchi5lS':r'$d\chi_{5lS}$',
+        'dchi5lNS':r'$d\chi_{5lNS}$',
         'dchi6':r'$d\chi_6$',
-        'dchi6l':r'$d\chi_{6}^{(l)}$',
+	'dchi6S':r'$d\chi_{6S}$',
+        'dchi6NS':r'$d\chi_{6NS}$',
+        'dchi6l':r'$d\chi_{6l}$',
         'dchi7':r'$d\chi_7$',
+	'dchi7S':r'$d\chi_{7S}$',
+        'dchi7NS':r'$d\chi_{7NS}$',
         'dxi1':r'$d\xi_1$',
         'dxi2':r'$d\xi_2$',
         'dxi3':r'$d\xi_3$',
@@ -582,7 +596,9 @@ def plot_label(param):
         'lambda_eff':r'$\lambda_{eff} [\mathrm{m}]$',
         'lambda_a':r'$\lambda_{\mathbb{A}} [\mathrm{m}]$',
         'liv_amp':r'$\mathbb{A} [\mathrm{{eV}^{2-\alpha}}]$' ,
-        'log10livamp':r'$\log \mathbb{A}[\mathrm{{eV}^{2-\alpha}}]$'
+        'log10livamp':r'$\log \mathbb{A}[\mathrm{{eV}^{2-\alpha}}]$',
+	'dchikappaS':r'$d\chi_{\kappa_{S}}$',
+	'dchikappaA':r'$d\chi_{\kappa_{A}}$'
       }
 
     # Handle cases where multiple names have been used
