@@ -386,7 +386,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralEOBPANumericalFuncs.c \
 	LALSimInspiralEOBPAAuxiliaryFuncs.c \
 	LALSimIMRSpinEOBFactorizedWaveform_PA.c \
-    $(END_OF_LIST)
+	$(END_OF_LIST)
 
 nodist_liblalsimulation_la_SOURCES = \
 	LALSimulationBuildInfoHeader.h \
