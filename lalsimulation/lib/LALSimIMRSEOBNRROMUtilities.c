@@ -71,6 +71,7 @@ UNUSED static int ReadHDF5LongVectorDataset(LALH5File *file, const char *name, g
 UNUSED static int ReadHDF5LongMatrixDataset(LALH5File *file, const char *name, gsl_matrix_long **data);
 UNUSED static void PrintInfoStringAttribute(LALH5File *file, const char attribute[]);
 UNUSED static int ROM_check_version_number(LALH5File *file, INT4 version_major_in, INT4 version_minor_in, INT4 version_micro_in);
+UNUSED static int ROM_check_canonical_file_basename(LALH5File *file, const char file_name[], const char attribute[]);
 #endif
 
 UNUSED static REAL8 Interpolate_Coefficent_Tensor(
@@ -402,6 +403,23 @@ static int ROM_check_version_number(LALH5File *file, 	INT4 version_major_in, INT
   }
   else {
     XLALPrintInfo("Reading ROM data version %d.%d.%d.\n", version_major, version_minor, version_micro);
+    return XLAL_SUCCESS;
+  }
+}
+
+static int ROM_check_canonical_file_basename(LALH5File *file, const char file_name[], const char attribute[]) {
+
+  LALH5Generic gfile = {.file = file};
+  int len = XLALH5AttributeQueryStringValue(NULL, 0, gfile, attribute) + 1;
+  char *canonical_file_basename = XLALMalloc(len);
+  XLALH5FileQueryStringAttributeValue(canonical_file_basename, len, file, attribute); 
+  
+  if (strcmp(canonical_file_basename, file_name) != 0) {
+    XLAL_ERROR(XLAL_EIO, "Expected CANONICAL_FILE_BASENAME %s, but got %s.",
+    canonical_file_basename, file_name);
+  }
+  else {
+    XLALPrintInfo("ROM canonical_file_basename %s\n", canonical_file_basename);
     return XLAL_SUCCESS;
   }
 }
