@@ -27,6 +27,11 @@ $(ACLOCAL_M4): $(am__aclocal_m4_deps) $(lalsuite_package_configure_deps)
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) $(top_srcdir)/configure $(ac_configure_args)
 
+BUILT_SOURCES += AUTHORS
+MOSTLYCLEANFILES += AUTHORS
+AUTHORS: $(lalsuite_package_AUTHORS_deps)
+	$(AM_V_GEN)cat $(lalsuite_package_AUTHORS_deps) | LC_ALL=C sort | uniq > $@.tmp && mv -f $@.tmp $@
+
 .PHONY: cscopelist-subdirs
 cscopelist-am: cscopelist-subdirs
 cscopelist-subdirs:

@@ -89,6 +89,9 @@ AC_DEFUN([lalsuite_config_subdir],[
     # - this is needed to pick up e.g. any new inter-package dependencies
     lalsuite_package_configure_deps="${lalsuite_package_configure_deps} "'$(top_srcdir)/lowercase/configure.ac'
 
+    # re-build AUTHORS if any package-level AUTHORS have changed
+    lalsuite_package_AUTHORS_deps="${lalsuite_package_AUTHORS_deps} "'$(top_srcdir)/lowercase/AUTHORS'
+
     m4_if($1,[LALApps],[],[
 
       # add to list of libraries being built
@@ -178,6 +181,7 @@ DOXYGEN_INSTALL_DIRMAP=`echo "${DOXYGEN_INSTALL_DIRMAP}" | ${SED} 's|\$(abs_top_
 AC_SUBST([LALSUITE_PACKAGES])
 AC_SUBST([ac_configure_args])
 AC_SUBST([lalsuite_package_configure_deps])
+AC_SUBST([lalsuite_package_AUTHORS_deps])
 AC_OUTPUT
 AC_MSG_NOTICE([
 ==================================================

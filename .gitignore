@@ -13,6 +13,7 @@ __pycache__/
 /.config/
 /_build/
 /_inst/
+/AUTHORS
 /doxygen/*.log
 /doxygen/Makefile
 /doxygen/Makefile.in
@@ -23,6 +24,7 @@ __pycache__/
 /doxygen/doxygen_sqlite3.db
 /doxygen/filter
 /doxygen/in/
+/doxygen/make_autogen_dox
 /doxygen/out/
 /doxygen/test_doxygen.*
 /lalsuite-*/

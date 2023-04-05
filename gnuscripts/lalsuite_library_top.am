@@ -7,5 +7,3 @@ if HAVE_GIT_REPO
 $(ACLOCAL_M4): $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(SHELL) ./00boot
 endif # HAVE_GIT_REPO
-
-EXTRA_DIST += AUTHORS

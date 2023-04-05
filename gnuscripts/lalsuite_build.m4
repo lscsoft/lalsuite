@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 174
+# serial 176
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1162,6 +1162,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
     # configure Doxygen files
     AC_CONFIG_FILES([doxygen/doxygen.cfg])
     AC_CONFIG_FILES([doxygen/filter],[chmod +x doxygen/filter])
+    AC_CONFIG_FILES([doxygen/make_autogen_dox],[chmod +x doxygen/make_autogen_dox])
 
     # Python is required to run some scripts
     LALSUITE_REQUIRE_PYTHON([3.5])
@@ -1257,6 +1258,16 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
         DOXYGEN_MATHJAXDIR='https://cdn.mathjax.org/mathjax/latest'
         AC_MSG_NOTICE([using MathJax CDN at ${DOXYGEN_MATHJAXDIR}])
       ])
+    ])
+
+    # check for a program to convert Markdown to HTML
+    # - assumed usage: ${MARKDOWN2HTML} in.md > out.html
+    AC_MSG_NOTICE([checking for a program to convert Markdown to HTML])
+    AC_CHECK_PROGS([MARKDOWN2HTML],[pandoc markdown],[cat])
+    AS_IF([test "X${MARKDOWN2HTML}" = Xcat],[
+      AC_MSG_WARN([no Markdown to HTML converter found; Markdown in Doxygen will be rendered verbatim])
+    ],[
+      AC_MSG_NOTICE([Markdown in Doxygen will be converted to HTML using ${MARKDOWN2HTML}])
     ])
 
   ])

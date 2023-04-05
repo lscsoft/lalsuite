@@ -1,6 +1,37 @@
 # NOTE: when adding any new names here, the corresponding users must also be
 # added as members of https://git.ligo.org/lscsoft/lalsuite (with at least
-# Developer level permissions) in order to be able to approve merge requests
+# Developer level permissions) in order to be able to approve merge requests.
+# The following list of GitLab handles to real names should also be updated;
+# this is used to automatically generate the Authors/Maintainers Doxygen docs.
+
+# @aaron.zimmerman     = Aaron Zimmerman
+# @adam-mercer         = Adam Mercer
+# @bfarr               = Ben Farr
+# @cjhaster            = Carl-Johan Haster
+# @daichi.tsuna        = Daichi Tsuna
+# @david-keitel        = David Keitel
+# @duncanmmacleod      = Duncan Macleod
+# @ed-maros            = Ed Maros
+# @evan-goetz          = Evan Goetz
+# @florent-robinet     = Florent Robinet
+# @francesco-pannarale = Francesco Pannarale
+# @gabriele-vedovato   = Gabriele Vedovato
+# @geraint.pratten     = Geraint Pratten
+# @gregory.ashton      = Gregory Ashton
+# @ian-harry           = Ian Harry
+# @john-veitch         = John Veitch
+# @john-whelan         = John T. Whelan
+# @jolien-creighton    = Jolien Creighton
+# @karl-wette          = Karl Wette
+# @kipp.cannon         = Kipp Cannon
+# @marco-drago         = Marco Drago
+# @maria.haney         = Maria Haney
+# @matthew-pitkin      = Matthew Pitkin
+# @patricia-schmidt    = Patricia Schmidt
+# @salvatore-vitale    = Salvatore Vitale
+# @soichiro.kuwahara   = Soichiro Kuwahara
+# @vijay.varma         = Vijay Varma
+# @vivien              = Vivien Raymond
 
 # overall
 *                               @adam-mercer @duncanmmacleod @karl-wette

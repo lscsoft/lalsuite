@@ -167,7 +167,7 @@ the [Git LFS][gitlfs] conversion. Please note:
    etc.
 
 1. Commits before December 2017 may also include references to issues
-   (`# number`). These refer to the corresponding [Redmine
+   (`#number`). These refer to the corresponding [Redmine
    issue][oldredmine] (LVC-authorized access only), and any clickable
    link the internal GitLab web interface produces for those old commits
    will therefore be spurious.
