@@ -270,7 +270,7 @@ noinst_HEADERS = \
 	LALSimInspiralEOBPAAuxiliaryFuncs.c \
 	LALSimIMRSpinEOBFactorizedFlux_PA.c \
 	LALSimIMRSpinEOBFactorizedWaveform_PA.c \
-	LALSimInspiralEOBPostAdiabatic.h
+	LALSimInspiralEOBPostAdiabatic.h \
 		$(END_OF_LIST)
 
 lib_LTLIBRARIES = liblalsimulation.la
