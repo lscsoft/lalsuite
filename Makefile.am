@@ -74,4 +74,19 @@ update-authors:
 		echo "Updating authors of $${subdir}"; \
 		./common/maintainer-scripts/update_authors $${subdir} || exit 1; \
 	done; \
-	git diff --exit-code -- .mailmap lal*/AUTHORS
+	if git diff --exit-code -- .mailmap lal*/AUTHORS; then \
+		echo "------------------------------------------------------------------------"; \
+		echo "The LALSuite author lists are up to date."; \
+		echo "------------------------------------------------------------------------"; \
+		exit 0; \
+	fi; \
+	filestocommit=`git diff --name-only -- .mailmap lal*/AUTHORS | xargs echo`; \
+	echo "------------------------------------------------------------------------"; \
+	echo "The LALSuite author files are incomplete; see the above diff."; \
+	echo ""; \
+	echo "To fix this, run these commands from the top-level of the Git repo:"; \
+	echo ""; \
+	echo "\$$ git commit -m 'Update authors' $$filestocommit"; \
+	echo "\$$ make update-authors"; \
+	echo "------------------------------------------------------------------------"; \
+	exit 1
