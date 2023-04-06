@@ -37,26 +37,29 @@ extern "C" {
 #define UNUSED
 #endif
 
+
+#include "LALSimIMRPhenomX_internals.h"
 #include "LALSimIMRPhenomXUtilities.h"
 #include "LALSimIMRPhenomXHM_structs.h"
-#include "LALSimIMRPhenomX_internals.h"
 
 
 /********** AMPLITUDE ***************/
 
 //Collocations Points Fits
-static double IMRPhenomXHM_Insp_Amp_21_iv1(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_21_iv2(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_21_iv3(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_33_iv1(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_33_iv2(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_33_iv3(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_32_iv1(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_32_iv2(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_32_iv3(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_44_iv1(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_44_iv2(double eta, double S, double chi1, double chi2, int InspAmpFlag);
-static double IMRPhenomXHM_Insp_Amp_44_iv3(double eta, double S, double chi1, double chi2, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_21_iv1(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_21_iv2(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_21_iv3(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_33_iv1(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_33_iv2(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_33_iv3(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_32_iv1(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_32_iv2(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_32_iv3(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_44_iv1(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_44_iv2(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+static double IMRPhenomXHM_Insp_Amp_44_iv3(IMRPhenomXWaveformStruct *pWF, int InspAmpFlag);
+
+/* End of Parameter Space Fits */
 
 /******************* Pseudo PN Amplitude coefficients ***************************/
 static double IMRPhenomXHM_Inspiral_Amp_rho1(double v1, double v2, double v3, IMRPhenomX_UsefulPowers *powers_of_fcut3, IMRPhenomX_UsefulPowers *powers_of_f1, IMRPhenomX_UsefulPowers *powers_of_f2, IMRPhenomX_UsefulPowers *powers_of_f3, IMRPhenomXHMWaveformStruct *pWFHM);
@@ -80,14 +83,17 @@ void IMRPhenomXHM_Inspiral_Amplitude_Veto(
 );
 static int WavyPoints(double p1, double p2, double p3);
 
+void IMRPhenomXHM_Get_Inspiral_Amp_Coefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXWaveformStruct *pWF22);
+static void IMRPhenomXHM_Inspiral_Amp_CollocationPoints(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXWaveformStruct *pWF22);
+static void IMRPhenomXHM_Inspiral_Amp_Coefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomX_UsefulPowers* powers_of_Mf_inspcollpoints, IMRPhenomXHMWaveformStruct *pWFHM);
 
 /*********** PHASE ***************/
 
 //Fits across parameter space
-static double IMRPhenomXHM_Insp_Phase_21_lambda(double eta, double S, double chi1, double chi2, int InspPhaseFlag);
-static double IMRPhenomXHM_Insp_Phase_32_lambda(double eta, double S, double chi1, double chi2, int InspPhaseFlag);
-static double IMRPhenomXHM_Insp_Phase_33_lambda(double eta, double S, double chi1, double chi2, int InspPhaseFlag);
-static double IMRPhenomXHM_Insp_Phase_44_lambda(double eta, double S, double chi1, double chi2, int InspPhaseFlag);
+static double IMRPhenomXHM_Insp_Phase_21_lambda(IMRPhenomXWaveformStruct *pWF, int InspPhaseFlag);
+static double IMRPhenomXHM_Insp_Phase_32_lambda(IMRPhenomXWaveformStruct *pWF, int InspPhaseFlag);
+static double IMRPhenomXHM_Insp_Phase_33_lambda(IMRPhenomXWaveformStruct *pWF, int InspPhaseFlag);
+static double IMRPhenomXHM_Insp_Phase_44_lambda(IMRPhenomXWaveformStruct *pWF, int InspPhaseFlag);
 static double IMRPhenomXHM_Insp_Phase_LambdaPN(double eta, int modeInt);
 
 //Ansatzs

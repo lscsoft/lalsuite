@@ -31,17 +31,18 @@ extern "C" {
 
 
 #include <lal/LALAtomicDatatypes.h>
+#include "LALSimIMRPhenomX_internals.h"
 
 #define N_HIGHERMODES_IMPLEMENTED 4 // lm = (21, 33, 32, 44)
 
 #define N_MAX_COEFFICIENTS_PHASE_INS 13       //Maximun number of coefficients of the inspiral ansatz
 #define N_MAX_COEFFICIENTS_PHASE_INTER 6      //Maximun number of coefficients of the intermediate ansatz
-#define N_MAX_COEFFICIENTS_PHASE_RING 4       //Maximun number of coefficients of the ringdown ansatz
+#define N_MAX_COEFFICIENTS_PHASE_RING 8       //Maximun number of coefficients of the ringdown ansatz. 5 + 3 optional for flattened phi'
 
 #define N_MAX_COEFFICIENTS_AMPLITUDE_INS 3    //Maximun number of collocation points in the inspiral
-#define N_MAX_COEFFICIENTS_AMPLITUDE_INTER 4  //Maximun number of collocation points in the intermediate. The fourth is for the EMR
-#define N_MAX_COEFFICIENTS_AMPLITUDE_RING 3   //Maximun number of coefficients in the ringdown. Only 21 has 3, the rest 2.
-
+#define N_MAX_COEFFICIENTS_AMPLITUDE_INTER 8  //Maximun number of collocation points in the intermediate. New release 4 coll points + 2x2 boundaries
+#define N_MAX_COEFFICIENTS_AMPLITUDE_RING 6   //Maximun number of coefficients in the ringdown. We only use 3 degrees of freedom, but we have the double to store fits of 3 coefficients or 3 collocation points 
+#define N_MAX_COEFFICIENTS_AMPLITUDE_RDAUX 4  //Maximun number of coefficients in the ringdown auxiliar region for mode-mixing. Default 2 collocation points + point & derivative right boundary
 
 // Data structure to hold QNM frequencies
 typedef double (*fitQNM_fring) (double finalDimlessSpin);
@@ -54,12 +55,16 @@ typedef struct tagQNMFits {
 
 
 // General fit function. This is a type for defining the functions for the parameter space fits.
-typedef double (*ParameterSpaceFit) (double eta, double S, double chi1, double chi2, int flag);
+typedef double (*ParameterSpaceFit) (IMRPhenomXWaveformStruct *pWF, int flag);
 
 // Waveform struct.  Store useful variable specific of the higher modes that are not in 22 IMRPhenomXWaveformStruct or that need to be updated mode-by-mode. */
 typedef struct tagIMRPhenomXHMWaveformStruct
 {
         /* Model Version Parameters */
+        INT4  IMRPhenomXHMInspiralAmpVersion;
+        INT4  IMRPhenomXHMIntermediateAmpVersion;
+        INT4  IMRPhenomXHMRingdownAmpVersion;
+        
         INT4  IMRPhenomXHMInspiralPhaseVersion;
         INT4  IMRPhenomXHMIntermediatePhaseVersion;
         INT4  IMRPhenomXHMRingdownPhaseVersion;
@@ -68,16 +73,28 @@ typedef struct tagIMRPhenomXHMWaveformStruct
         INT4  IMRPhenomXHMIntermediateAmpFitsVersion;
         INT4  IMRPhenomXHMRingdownAmpFitsVersion;
 
-        INT4  IMRPhenomXHMInspiralAmpVersion;
-        INT4  IMRPhenomXHMIntermediateAmpVersion;
-        INT4  IMRPhenomXHMRingdownAmpVersion;
+        INT4  IMRPhenomXHMInspiralPhaseFitsVersion;
+        INT4  IMRPhenomXHMIntermediatePhaseFitsVersion;
+        INT4  IMRPhenomXHMRingdownPhaseFitsVersion;
+
+        INT4  IMRPhenomXHMInspiralAmpFreqsVersion;
+        INT4  IMRPhenomXHMIntermediateAmpFreqsVersion;
+        INT4  IMRPhenomXHMRingdownAmpFreqsVersion;
+        
+        INT4  IMRPhenomXHMInspiralPhaseFreqsVersion;
+        INT4  IMRPhenomXHMIntermediatePhaseFreqsVersion;
+        INT4  IMRPhenomXHMRingdownPhaseFreqsVersion;
+
+        
+
+        INT4 IMRPhenomXHMReleaseVersion;
 
 
         /* Spin Parameters */
         REAL8 chi_s, chi_a;  // (chi1 +/- chi2)/2
 
         /* MECO, Ringdown and Damping Frequencies */
-				REAL8 fMECOlm;  // = wf22->fMECO*m/2
+		    REAL8 fMECOlm;  // = wf22->fMECO*m/2
         REAL8 fRING;
         REAL8 fDAMP;
 
@@ -126,9 +143,12 @@ typedef struct tagIMRPhenomXHMWaveformStruct
 
         // Variable to control the use of FAmpPN function for 21 instead of the power series
         INT4 useFAmpPN;
-    
+
         /* time-shift of the peak of the hybrids' 22 wrt end of the waveform*/
         REAL8 DeltaT;
+
+        REAL8 fPhaseRDflat;      // Ringdown -> Flattened region
+        REAL8 fAmpRDfalloff;     // Ringdown -> Falloff region
 
     } IMRPhenomXHMWaveformStruct;
 
@@ -142,11 +162,17 @@ typedef struct tagIMRPhenomXHMWaveformStruct
             REAL8 fAmpMatchIN;    // Inspiral -> Intermediate
             REAL8 fAmpMatchInt12; // Intermediate1 -> Intermediate2. Only for EMR cases
             REAL8 fAmpMatchIM;    // Intermediate -> Ringdown
+            REAL8 fRDAux;  // Auxiliar Ringdown region for mode-mixing
 
             /* PN Amplitude Prefactors */
             COMPLEX16 pnInitial, pnOneThird, pnTwoThirds, pnThreeThirds, pnFourThirds, pnFiveThirds, pnSixThirds, pnSevenThirds, pnEightThirds,pnNineThirds;
 
-            /* PN Amplitude global prefactor */
+            /* PN Amplitude dominant factor = Pi * Sqrt(2 eta/3) (2Pi /m)^(-7/6) */
+            REAL8 PNdominant, PNdominantlm, ampNorm;
+
+            UINT2 PNdominantlmpower;
+
+            /* PN Amplitude global prefactor = leading lm order after substracting PNdominant*/
             REAL8 PNglobalfactor;
 
             /* Coefficients of the pseudo-PN terms */
@@ -158,21 +184,31 @@ typedef struct tagIMRPhenomXHMWaveformStruct
             /* Coefficients of the polynomial in the first intermediate region (for EMR only). 4th order.*/
             REAL8 alpha0, alpha1, alpha2, alpha3, alpha4;
 
-            /* Coefficients of the Ringdown ansatz */
-            REAL8 alambda, lambda, sigma, lc;
-
             // fits of coefficients/collocation points
             ParameterSpaceFit InspiralAmpFits[N_HIGHERMODES_IMPLEMENTED*N_MAX_COEFFICIENTS_AMPLITUDE_INS];
             ParameterSpaceFit IntermediateAmpFits[N_HIGHERMODES_IMPLEMENTED*N_MAX_COEFFICIENTS_AMPLITUDE_INTER];
-            ParameterSpaceFit RingdownAmpFits[N_HIGHERMODES_IMPLEMENTED*N_MAX_COEFFICIENTS_AMPLITUDE_RING];
+            ParameterSpaceFit RingdownAmpFits[N_HIGHERMODES_IMPLEMENTED*N_MAX_COEFFICIENTS_AMPLITUDE_RING + N_MAX_COEFFICIENTS_AMPLITUDE_RDAUX];
 
             /* Flag to set how many collocation points the inspiral region uses  */
             REAL8 CollocationPointsValuesAmplitudeInsp[N_MAX_COEFFICIENTS_AMPLITUDE_INS];
             REAL8 CollocationPointsFreqsAmplitudeInsp[N_MAX_COEFFICIENTS_AMPLITUDE_INS];
+            REAL8 InspiralCoefficient[N_MAX_COEFFICIENTS_AMPLITUDE_INS];
 
             /* Flag to set how many collocation points the intermediate region uses */
             REAL8 CollocationPointsFreqsAmplitudeInter[N_MAX_COEFFICIENTS_AMPLITUDE_INTER];
             REAL8 CollocationPointsValuesAmplitudeInter[N_MAX_COEFFICIENTS_AMPLITUDE_INTER];
+            REAL8 InterCoefficient[N_MAX_COEFFICIENTS_AMPLITUDE_INTER];
+            UINT2 nCoefficientsInter;
+            UINT2 VersionCollocPtsInter[N_MAX_COEFFICIENTS_AMPLITUDE_INTER];
+
+            /* Flag to set how many collocation points the intermediate region uses */
+            REAL8 CollocationPointsFreqsAmplitudeRD[N_MAX_COEFFICIENTS_AMPLITUDE_RING];
+            REAL8 CollocationPointsValuesAmplitudeRD[N_MAX_COEFFICIENTS_AMPLITUDE_RING];
+            REAL8 RDCoefficient[N_MAX_COEFFICIENTS_AMPLITUDE_RING];
+            REAL8 CollocationPointsFreqsAmplitudeRDAux[N_MAX_COEFFICIENTS_AMPLITUDE_RDAUX];
+            REAL8 CollocationPointsValuesAmplitudeRDAux[N_MAX_COEFFICIENTS_AMPLITUDE_RDAUX];
+            REAL8 RDAuxCoefficient[N_MAX_COEFFICIENTS_AMPLITUDE_RDAUX];
+            UINT2 nCollocPtsRDAux, nCoefficientsRDAux;
 
             // Frequencies, values and derivatives for the intermediate reconstruction
             // The frequencies are the same than in CollocationPointsFreqsAmplitudeInsp for the corresponding mode,
@@ -182,8 +218,8 @@ typedef struct tagIMRPhenomXHMWaveformStruct
             // Order of the polynomial in the intermediate region. 5th->105, for the first EMR region is 1042
             INT4 InterAmpPolOrder;
 
-    				// Store the PN amplitude at the frequencies of the collocation points in the inspiral
-    				REAL8 PNAmplitudeInsp[N_MAX_COEFFICIENTS_AMPLITUDE_INS];
+        		// Store the PN amplitude at the frequencies of the collocation points in the inspiral
+        		REAL8 PNAmplitudeInsp[N_MAX_COEFFICIENTS_AMPLITUDE_INS];
 
             // For the pseudo part of Inspiral Amplitude ansatz. Used in LALSimIMRPhenomXHM_inspiral.c
             REAL8 fcutInsp_seven_thirds;
@@ -201,8 +237,10 @@ typedef struct tagIMRPhenomXHMWaveformStruct
             // Variables to control if we have to check that the collocation points are wavy
             INT4 WavyInsp, WavyInt;
 
-            // Amp0 = wf22->ampNorm * wf22->amp0. Multiplying by this gives the amp factor of the 22 and transform to "physical" units
+            // Amp0 = wf22->ampNorm * wf22->amp0. Multiplying by this gives the amp factor of the 22 and transforms to "physical" units
             REAL8 Amp0;
+
+            UINT2 InspRescaleFactor, InterRescaleFactor, RDRescaleFactor;
 
     } IMRPhenomXHMAmpCoefficients;
 
@@ -215,9 +253,9 @@ typedef struct tagIMRPhenomXHMPhaseCoefficients
         /* Phase Transition Frequencies */
         REAL8 fPhaseMatchIN;
         REAL8 fPhaseMatchIM;
-    
+
         REAL8 deltaphiLM;
-         
+
         /* These are the RD phenomenological coefficients, with mode-mixing off */
         REAL8 alpha0, alpha2, alphaL;
         REAL8 phi0RD, dphi0RD;
@@ -243,6 +281,7 @@ typedef struct tagIMRPhenomXHMPhaseCoefficients
         INT4  NCollocationPointsRD;
         REAL8 CollocationPointsValuesPhaseRD[N_MAX_COEFFICIENTS_PHASE_RING];
         REAL8 CollocationPointsFreqsPhaseRD[N_MAX_COEFFICIENTS_PHASE_RING];
+        REAL8 RDCoefficient[N_MAX_COEFFICIENTS_PHASE_RING + 3]; // Add the three coefficient for rational decay
 
         /* Flag to set how many collocation points the intermediate region uses */
         INT4  NCollocationPointsInt;

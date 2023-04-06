@@ -2951,8 +2951,7 @@ INT4 XLALSimIMRPhenomXPHMMultibandingGrid(
    printf("fDAMP = %e\n",pWFHM->fDAMP);
    printf("alphaL = %.16e", pPhase->alphaL);
    #endif
-   dfmerger = deltaF_mergerBin(pWFHM->fDAMP, pPhase->alphaL, thresholdMB);
-   dfringdown = deltaF_ringdownBin(pWFHM->fDAMP, pPhase->alphaL, pAmp->lambda/(pAmp->sigma*pWFHM->fDAMP), thresholdMB);
+   deltaF_MergerRingdown(&dfmerger, &dfringdown, thresholdMB, pWFHM, pAmp, pPhase);
  }
  LALFree(pWFHM);
  LALFree(pAmp);
