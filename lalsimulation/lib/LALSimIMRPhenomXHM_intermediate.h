@@ -48,24 +48,35 @@ extern "C" {
 /*********** AMPLITUDE *****************/
 
 //Fits int1, int2. 2 collocation points
-static double IMRPhenomXHM_Inter_Amp_21_int1(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_21_int2(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_33_int1(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_33_int2(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_32_int1(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_32_int2(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_44_int1(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_44_int2(double eta, double S, double chi1, double chi2, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_21_int1(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_21_int2(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_33_int1(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_33_int2(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_32_int1(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_32_int2(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_44_int1(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_44_int2(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_21_int3(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_21_int4(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_33_int3(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_33_int4(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_32_int3(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_32_int4(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_44_int3(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_44_int4(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+
+/* End of Parameter Space Fits */
 
 //Fits int0, dint0. Extra collocation point for EMR cases
-static double IMRPhenomXHM_Inter_Amp_21_int0(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_21_dint0(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_33_int0(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_33_dint0(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_32_int0(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_32_dint0(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_44_int0(double eta, double S, double chi1, double chi2, int InterAmpFlag);
-static double IMRPhenomXHM_Inter_Amp_44_dint0(double eta, double S, double chi1, double chi2, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_21_int0(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_21_dint0(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_33_int0(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_33_dint0(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_32_int0(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_32_dint0(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_44_int0(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+static double IMRPhenomXHM_Inter_Amp_44_dint0(IMRPhenomXWaveformStruct *pWF, int InterAmpFlag);
+
 
 //Coefficients of polynomial. They are feed with the some collocation points.
 static double IMRPhenomXHM_Intermediate_Amp_delta0(double d1, double d4, double v1, double v2, double v3, double v4, double f1, double f2, double f3, double f4, int IntAmpFlag);
@@ -76,7 +87,7 @@ static double IMRPhenomXHM_Intermediate_Amp_delta4(double d1, double d4, double 
 static double IMRPhenomXHM_Intermediate_Amp_delta5(double d1, double d4, double v1, double v2, double v3, double v4, double f1, double f2, double f3, double f4, int IntAmpFlag);
 
 //Ansatz. Inverse of a polynomial
-static double IMRPhenomXHM_Intermediate_Amp_Ansatz(IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXHMAmpCoefficients *pAmp);
+static double IMRPhenomXHM_Intermediate_Amp_Ansatz(IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXHMAmpCoefficients *pAmp);
 
 //Veto Functions
 static void IMRPhenomXHM_Intermediate_Amplitude_Veto(double *int1, double *int2, IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXWaveformStruct *pWF22);
@@ -102,39 +113,41 @@ static void Update_Intermediate_Amplitude_Coefficients(IMRPhenomXHMAmpCoefficien
 //Check if the polynomials cross zero and lower the order if needed in an iterative way
 static void ChoosePolOrder(IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXHMAmpCoefficients *pAmp);
 
+static void IMRPhenomXHM_Intermediate_Amp_CollocationPoints(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXWaveformStruct *pWF22, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22);
+void IMRPhenomXHM_Intermediate_Amp_Coefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXWaveformStruct *pWF22, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22);
 
 /************** PHASE ******************/
 
 //Fits of the collocation points across paramter space
-static double IMRPhenomXHM_Inter_Phase_21_p1(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_21_p2(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_21_p3(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_21_p4(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_21_p5(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_21_p6(double eta, double S, double chi1, double chi2, int);
+static double IMRPhenomXHM_Inter_Phase_21_p1(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_21_p2(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_21_p3(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_21_p4(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_21_p5(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_21_p6(IMRPhenomXWaveformStruct *pWF, int);
 
 
-static double IMRPhenomXHM_Inter_Phase_33_p1(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_33_p2(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_33_p3(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_33_p4(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_33_p5(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_33_p6(double eta, double S, double chi1, double chi2, int);
+static double IMRPhenomXHM_Inter_Phase_33_p1(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_33_p2(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_33_p3(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_33_p4(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_33_p5(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_33_p6(IMRPhenomXWaveformStruct *pWF, int);
 
-static double IMRPhenomXHM_Inter_Phase_32_p1(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_32_p2(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_32_p3(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_32_p4(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_32_p5(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_32_p6(double eta, double S, double chi1, double chi2, int);
+static double IMRPhenomXHM_Inter_Phase_32_p1(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_32_p2(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_32_p3(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_32_p4(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_32_p5(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_32_p6(IMRPhenomXWaveformStruct *pWF, int);
 
 
-static double IMRPhenomXHM_Inter_Phase_44_p1(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_44_p2(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_44_p3(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_44_p4(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_44_p5(double eta, double S, double chi1, double chi2, int);
-static double IMRPhenomXHM_Inter_Phase_44_p6(double eta, double S, double chi1, double chi2, int);
+static double IMRPhenomXHM_Inter_Phase_44_p1(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_44_p2(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_44_p3(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_44_p4(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_44_p5(IMRPhenomXWaveformStruct *pWF, int);
+static double IMRPhenomXHM_Inter_Phase_44_p6(IMRPhenomXWaveformStruct *pWF, int);
 
 //Ansatz
 static double IMRPhenomXHM_Inter_Phase_Ansatz(double ff, IMRPhenomX_UsefulPowers *powers_of_f,IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXHMPhaseCoefficients *pPhase);

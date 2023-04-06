@@ -89,6 +89,7 @@ int IMRPhenomX_Initialize_Powers(IMRPhenomX_UsefulPowers *p, REAL8 number)
 	p->m_two          = 1.0 / p->two;
 	p->m_three        = 1.0 / p->three;
 	p->m_four         = 1.0 / p->four;
+	p->m_five         = 1.0 / p->five;
 
 	p->seven_sixths   = p->one_sixth   * p->itself;
 	p->m_seven_sixths = p->m_one_sixth * p->m_one;
@@ -418,6 +419,7 @@ int IMRPhenomXSetWaveformVariables(
 	wf->chiPNHat  = XLALSimIMRPhenomXchiPNHat(eta,chi1L,chi2L);
 	wf->STotR     = XLALSimIMRPhenomXSTotR(eta,chi1L,chi2L);
 	wf->dchi      = XLALSimIMRPhenomXdchi(chi1L,chi2L);
+	wf->dchi_half = wf->dchi*0.5;
 
 	wf->SigmaL    = (wf->chi2L * wf->m2) - (wf->chi1L * wf->m1); 										// SigmaL = (M/m2)*(S2.L) - (M/m2)*(S1.L)
 	wf->SL        = wf->chi1L * (wf->m1 * wf->m1) + wf->chi2L * (wf->m2 * wf->m2);  // SL = S1.L + S2.L

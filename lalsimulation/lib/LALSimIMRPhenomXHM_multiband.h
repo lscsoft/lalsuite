@@ -54,7 +54,7 @@ int IMRPhenomXHMMultiBandOneModeMixing(
 static int SetupWFArraysReal(
   REAL8Sequence **freqs,           /**<[out] Frequency array to evaluate model **/
   REAL8FrequencySeries **amphase,  /**<[out] Initialize amplitude or phase with the length of freqs **/
-  REAL8Sequence *freqs_In,         /**< Input frequency array or fmin, fmax **/
+  const REAL8Sequence *freqs_In,         /**< Input frequency array or fmin, fmax **/
   IMRPhenomXWaveformStruct *pWF,   /**< Structure of the 22 mode **/
   LIGOTimeGPS ligotimegps_zero     /**< Needed to initialize amphase **/
 );
@@ -63,7 +63,7 @@ static int SetupWFArraysReal(
 
 static int IMRPhenomXHM_Amplitude(
   REAL8FrequencySeries **amplm,           /**<[out] amplitude of hlm mode **/
-  REAL8Sequence *freqs_In,                /**< Frequency array to evaluate model or fmin, fmax  **/
+  const REAL8Sequence *freqs_In,                /**< Frequency array to evaluate model or fmin, fmax  **/
   IMRPhenomXWaveformStruct *pWF,          /**< Structure of the 22 mode **/
   IMRPhenomXAmpCoefficients *pAmp22,      /**< Amplitude coefficients 22 */
   IMRPhenomXPhaseCoefficients *pPhase22,  /**< Phase coefficients 22 */
@@ -74,7 +74,7 @@ static int IMRPhenomXHM_Amplitude(
 
 static int IMRPhenomXHM_AmplitudeMixing(
   REAL8FrequencySeries **amplm,           /**<[out] amplitude of hlm mode **/
-  REAL8Sequence *freqs_In,                /**< Frequency array to evaluate model or fmin, fmax  **/
+  const REAL8Sequence *freqs_In,                /**< Frequency array to evaluate model or fmin, fmax  **/
   IMRPhenomXWaveformStruct *pWF,          /**< Structure of the 22 mode **/
   IMRPhenomXHMWaveformStruct *pWFHM,      /**< waveform parameters lm mode */
   IMRPhenomXHMAmpCoefficients *pAmp,      /**< Amplitude coefficients lm */
@@ -83,7 +83,7 @@ static int IMRPhenomXHM_AmplitudeMixing(
 
 static int IMRPhenomXHM_Phase(
   REAL8FrequencySeries **phaselm,         /**<[out] phase of hlm mode **/
-  REAL8Sequence *freqs_In,                /**< Frequency array to evaluate model or fmin, fmax  **/
+  const REAL8Sequence *freqs_In,                /**< Frequency array to evaluate model or fmin, fmax  **/
   IMRPhenomXWaveformStruct *pWF,          /**< Structure of the 22 mode **/
   IMRPhenomXAmpCoefficients *pAmp22,      /**< Amplitude coefficients 22 */
   IMRPhenomXPhaseCoefficients *pPhase22,  /**< Phase coefficients 22 */
@@ -94,7 +94,7 @@ static int IMRPhenomXHM_Phase(
 
 static int IMRPhenomXHM_PhaseMixing(
   REAL8FrequencySeries **phaselm,         /**<[out] phase of hlm mode **/
-  REAL8Sequence *freqs_In,                /**< Frequency array to evaluate model or fmin, fmax  **/
+  const REAL8Sequence *freqs_In,                /**< Frequency array to evaluate model or fmin, fmax  **/
   IMRPhenomXWaveformStruct *pWF,          /**< Structure of the 22 mode **/
   IMRPhenomXHMWaveformStruct *pWFHM,      /**< waveform parameters lm mode */
   IMRPhenomXHMPhaseCoefficients *pPhase   /**< Phase coefficients 22 */
@@ -174,6 +174,8 @@ static int interpolateAmplitudeMixing(
 
 static double deltaF_mergerBin(REAL8 fdamp, REAL8 alpha4, REAL8 abserror);
 static double deltaF_ringdownBin(REAL8 fdamp, REAL8 alpha4, REAL8 LAMBDA, REAL8 abserror);
+
+INT4 deltaF_MergerRingdown(REAL8 *dfmerger, REAL8 *dfringdown, REAL8 resTest, IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase);
 
   #ifdef __cplusplus
 }

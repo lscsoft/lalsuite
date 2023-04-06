@@ -98,6 +98,7 @@ typedef struct tagIMRPhenomXWaveformStruct
 	REAL8 chiPNHat;
 	REAL8 STotR;
 	REAL8 dchi;
+	REAL8 dchi_half;
 	REAL8 SL;
 	REAL8 SigmaL;
 

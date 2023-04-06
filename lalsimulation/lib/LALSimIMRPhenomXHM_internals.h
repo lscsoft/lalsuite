@@ -56,6 +56,8 @@ extern "C" {
 
   #define NMAX_INSPIRAL_COEFFICIENTS 13
 
+  #define FALSE_ZERO 1.0e-15
+
   //  You should not declare static functions here, since this file is included in other files apart form the source one.
 
   /*********** Useful Powers of pi **************/
@@ -78,6 +80,8 @@ extern "C" {
   double IMRPhenomXHM_Amplitude_fcutInsp(IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXWaveformStruct *pWF22);
   double IMRPhenomXHM_Amplitude_fcutRD(IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXWaveformStruct *pWF22);
 
+  double RescaleFactor(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXHMAmpCoefficients *pAmp, UINT2 rescalefactor);
+
   /***************** Amplitude coefficients ****************/
   void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22, IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXWaveformStruct *pWF22);
   void IMRPhenomXHM_GetPNAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMWaveformStruct *pWFHM,  IMRPhenomXWaveformStruct *pWF22);
@@ -85,9 +89,9 @@ extern "C" {
 
   /**************** Amplitude reconstruction ******************/
   // Functions that return suitable ansatz at a given frequency
-  double IMRPhenomXHM_Amplitude_noModeMixing(double f, IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMWaveformStruct *pWF);
-  double IMRPhenomXHM_Amplitude_ModeMixing(double f, IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF,  IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22, IMRPhenomXWaveformStruct *pWF22);
-  double IMRPhenomXHM_Amplitude_ModeMixingRecycle(double f, IMRPhenomX_UsefulPowers *powers_of_f, COMPLEX16 wf22, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF);
+  REAL8 IMRPhenomXHM_Amplitude_noModeMixing(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMWaveformStruct *pWF);
+  REAL8 IMRPhenomXHM_Amplitude_ModeMixing(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF,  IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22, IMRPhenomXWaveformStruct *pWF22);
+  REAL8 IMRPhenomXHM_Amplitude_ModeMixingRecycle(IMRPhenomX_UsefulPowers *powers_of_Mf, COMPLEX16 wf22, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF);
 
 
 
@@ -102,8 +106,8 @@ extern "C" {
   double GetfcutInsp(IMRPhenomXWaveformStruct *pWF22, IMRPhenomXHMWaveformStruct *pWFHM);
 
   /***************** spheroidal->spherical harmonic conversion  *******************/
-  double complex SpheroidalToSpherical(double ff, IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22, IMRPhenomXHMAmpCoefficients *pAmplm, IMRPhenomXHMPhaseCoefficients *pPhaselm, IMRPhenomXHMWaveformStruct *pWFlm, IMRPhenomXWaveformStruct *pWF22);
-  double complex SpheroidalToSphericalRecycle(double ff, IMRPhenomX_UsefulPowers *powers_of_f, COMPLEX16 wf22, IMRPhenomXHMAmpCoefficients *pAmplm, IMRPhenomXHMPhaseCoefficients *pPhaselm, IMRPhenomXHMWaveformStruct *pWFlm);
+  COMPLEX16 SpheroidalToSpherical(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22, IMRPhenomXHMAmpCoefficients *pAmplm, IMRPhenomXHMPhaseCoefficients *pPhaselm, IMRPhenomXHMWaveformStruct *pWFlm, IMRPhenomXWaveformStruct *pWF22);
+  COMPLEX16 SpheroidalToSphericalRecycle(IMRPhenomX_UsefulPowers *powers_of_Mf, COMPLEX16 wf22, IMRPhenomXHMAmpCoefficients *pAmplm, IMRPhenomXHMPhaseCoefficients *pPhaselm, IMRPhenomXHMWaveformStruct *pWFlm);
 
   /***************** spheroidal-harmonic ringdown reconstruction ********************/
   void IMRPhenomXHM_Ringdown_CollocPtsFreqs(IMRPhenomXHMPhaseCoefficients *pPhase,IMRPhenomXHMWaveformStruct *pWFHM, IMRPhenomXWaveformStruct *pWF22);
@@ -115,9 +119,9 @@ extern "C" {
 
   /**************** Phase reconstruction ******************/
   // functions that return suitable ansatz at a given frequency
-  double IMRPhenomXHM_Phase_noModeMixing(double f, IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF,IMRPhenomXWaveformStruct *pWF22);
-  double IMRPhenomXHM_Phase_ModeMixing(double f, IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF,IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22, IMRPhenomXWaveformStruct *pWF22);
-  double IMRPhenomXHM_Phase_ModeMixingRecycle(double f, IMRPhenomX_UsefulPowers *powers_of_f, COMPLEX16 wf22, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF);
+  REAL8 IMRPhenomXHM_Phase_noModeMixing(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF,IMRPhenomXWaveformStruct *pWF22);
+  REAL8 IMRPhenomXHM_Phase_ModeMixing(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF,IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22, IMRPhenomXWaveformStruct *pWF22);
+  REAL8 IMRPhenomXHM_Phase_ModeMixingRecycle(IMRPhenomX_UsefulPowers *powers_of_Mf, COMPLEX16 wf22, IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF);
 
 
   // Debugging function
