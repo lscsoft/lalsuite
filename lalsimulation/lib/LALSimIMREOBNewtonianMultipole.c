@@ -78,7 +78,7 @@ CalculateThisMultipolePrefix(
  * all uses of the mass within the function are normalized by the total mass.
  * The prefixes of all (l,m) modes are pre-computed and stored in a structure
  */
-static int XLALSimIMREOBComputeNewtonMultipolePrefixes(
+UNUSED static int XLALSimIMREOBComputeNewtonMultipolePrefixes(
                 NewtonMultipolePrefixes *prefix, /**<< OUTPUT Structure containing the coeffs */
                 const REAL8             m1,      /**<< Mass of first component */
                 const REAL8             m2       /**<< Nass of second component */

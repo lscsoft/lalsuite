@@ -34,6 +34,22 @@ def get_SEOBNRv4HM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
     m1SI = lal.MSUN_SI * q * M / (1.0 + q)
     m2SI = lal.MSUN_SI * M / (1.0 + q)
     nqcCoeffsInput = lal.CreateREAL8Vector(10)
+
+    PAparams = lal.CreateDict()
+    lal.DictInsertUINT4Value(PAparams, "PAFlag", 0)
+
+    TGRparams = lal.CreateDict()
+    lal.DictInsertREAL8Value(TGRparams, "domega220", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "dtau220", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "domega210", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "dtau210", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "domega330", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "dtau330", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "domega440", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "dtau440", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "domega550", 0.)
+    lal.DictInsertREAL8Value(TGRparams, "dtau550", 0.)
+
     sphtseries, dyn, dynHI = ls.SimIMRSpinAlignedEOBModes(
         deltaT,
         m1SI,
@@ -54,7 +70,9 @@ def get_SEOBNRv4HM_modes(q, M, chi1, chi2, f_start, distance, deltaT):
         1.0,
         1.0,
         nqcCoeffsInput,
-        0,
+        0, # nqcFlag
+        PAparams,
+        TGRparams,
     )
 
     # The minus sign in front of the modes takes into account the fact that the polarization basis in EOB

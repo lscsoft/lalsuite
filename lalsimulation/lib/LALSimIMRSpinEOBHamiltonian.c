@@ -1257,7 +1257,7 @@ XLALSimIMRSpinEOBHamiltonian (const REAL8 eta,	    /**<< Symmetric mass ratio */
  *
  * If all goes well, the function will return XLAL_SUCCESS. Otherwise, XLAL_FAILURE is returned.
  */
-static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
+UNUSED static int XLALSimIMRCalculateSpinEOBHCoeffs (SpinEOBHCoeffs * coeffs,
 				/**<< OUTPUT, EOB parameters including pre-computed coefficients */
 					      const REAL8 eta,
 				/**<< symmetric mass ratio */
@@ -1481,7 +1481,7 @@ XLALSimIMRSpinEOBHamiltonianDeltaT (SpinEOBHCoeffs * coeffs,
  * This function calculates the function \f$\Delta_r(r)\f$ which appears in the spinning EOB
  * potential function. Eqs. 10a and 10b
  */
-static REAL8
+UNUSED static REAL8
 XLALSimIMRSpinEOBHamiltonianDeltaR (SpinEOBHCoeffs * coeffs,
 				/**<< Pre-computed coefficients which appear in the function */
 				    const REAL8 r,
@@ -1575,7 +1575,7 @@ XLALSimIMRSpinAlignedEOBCalcOmega (const REAL8 values[],/**<< Dynamical variable
  * radius \f$r\f$ times the cuberoot of the returned number is \f$r_\Omega\f$ defined in Eq. A2.
  * i.e. the function returns \f$(r_{\Omega} / r)^3\f$.
  */
-static REAL8
+UNUSED static REAL8
 XLALSimIMRSpinAlignedEOBNonKeplerCoeff (const REAL8 values[],
 							/**<< Dynamical variables */
 					SpinEOBParams * funcParams

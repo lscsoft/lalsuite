@@ -42,6 +42,7 @@
 #include <lal/LALSimBlackHoleRingdown.h>
 #include <lal/LALSimInspiralPrecess.h>
 #include <lal/LALSimInspiralWaveformParams.h>
+#include <lal/AVFactories.h>
 
 #include "LALSimInspiralPNCoefficients.c"
 #include "check_series_macros.h"
@@ -185,11 +186,13 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomXHM),
     INITIALIZE_NAME(IMRPhenomXP),
     INITIALIZE_NAME(IMRPhenomXPHM),
-        INITIALIZE_NAME(TEOBResumS),
+	INITIALIZE_NAME(TEOBResumS),
     INITIALIZE_NAME(IMRPhenomT),
     INITIALIZE_NAME(IMRPhenomTHM),
     INITIALIZE_NAME(IMRPhenomTP),
-    INITIALIZE_NAME(IMRPhenomTPHM)
+    INITIALIZE_NAME(IMRPhenomTPHM),
+    INITIALIZE_NAME(SEOBNRv4HM_PA),
+    INITIALIZE_NAME(pSEOBNRv4HM_PA)
 };
 #undef INITIALIZE_NAME
 
@@ -384,6 +387,7 @@ int XLALSimInspiralChooseTDWaveform(
     REAL8 quadparam2 = 1.+XLALSimInspiralWaveformParamsLookupdQuadMon2(LALparams);
     REAL8 lambda1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALparams);
     REAL8 lambda2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALparams);
+
     int amplitudeO = XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALparams);
     int phaseO =XLALSimInspiralWaveformParamsLookupPNPhaseOrder(LALparams);
         /* Tidal parameters to be computed, if required, by universal relations */
@@ -912,7 +916,32 @@ int XLALSimInspiralChooseTDWaveform(
             ret = XLALSimIMRSpinAlignedEOBWaveform(hplus, hcross, phiRef,
                     deltaT, m1, m2, f_min, distance, inclination, S1z, S2z, SpinAlignedEOBversion, LALparams);
             break;
+    case SEOBNRv4HM_PA:
+    case pSEOBNRv4HM_PA:
+      if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALparams) )
+	XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+      if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+	XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+      if( !checkTidesZero(lambda1, lambda2) )
+	XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant does not have tidal corrections.");
+      if( f_ref != 0.)
+	XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+      /* Call the waveform driver routine */
+      polariz+=-LAL_PI/2.;
+      //R.C. this rotation of -pi/2 is needed to go from the EOB wave frame to the LAL wave frame, see slide 9 of https://git.ligo.org/waveforms/reviews/SEOBNRv4HM/blob/master/tests/conventions/con \ventions.pdf                                                                                                                                                                                                
+      if(approximant == SEOBNRv4HM_PA) SpinAlignedEOBversion = 4111;
+      if(approximant == pSEOBNRv4HM_PA) SpinAlignedEOBversion = 4112;
 
+      ret = XLALSimIMRSpinAlignedEOBWaveform(
+        hplus, hcross,
+        phiRef, deltaT,
+        m1, m2,
+        f_min,
+        distance, inclination,
+        S1z, S2z,
+        SpinAlignedEOBversion, LALparams
+      );
+      break;
 
         case SEOBNRv3_opt_rk4:
         case SEOBNRv3_opt:
@@ -2891,7 +2920,7 @@ int XLALSimInspiralFD(
     Approximant approximant                 /**< post-Newtonian approximant to use for waveform production */
     )
 {
-      XLAL_CHECK(f_max > 0, XLAL_EDOM, "Maximum frequency must be > 0\n");
+    XLAL_CHECK(f_max > 0, XLAL_EDOM, "Maximum frequency must be > 0\n");
 
     const double extra_time_fraction = 0.1; /* fraction of waveform duration to add as extra time for tapering */
     const double extra_cycles = 3.0; /* more extra time measured in cycles at the starting frequency */
@@ -3367,6 +3396,171 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
                 XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
             /* Call the waveform driver routine. */
             hlm = XLALSimIMRPhenomTPHM_ChooseTDModes(m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, r, deltaT, f_min, f_ref, LALpars);
+            break;
+
+        case SEOBNRv4HM_PA:
+        case pSEOBNRv4HM_PA:
+            /* Waveform-specific sanity checks */
+            if (!XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars))
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+            if (!checkTidesZero(lambda1, lambda2))
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+            if (f_ref != 0.)
+                XLALPrintWarning("XLAL Warning - %s: This approximant does not use f_ref. The reference phase will be defined at coalescence.\n", __func__);
+
+            UINT4 SpinAlignedEOBversion;
+            if (approximant == SEOBNRv4HM_PA) SpinAlignedEOBversion = 4111;
+            if (approximant == pSEOBNRv4HM_PA) SpinAlignedEOBversion = 4112;
+
+            REAL8Vector *dynamics = NULL;
+            REAL8Vector *dynamicsHi = NULL;
+
+            REAL8 lambda2Tidal1 = 0.0;
+            REAL8 lambda2Tidal2 = 0.0;
+            REAL8 omega02Tidal1 = 0.0;
+            REAL8 omega02Tidal2 = 0.0;
+            REAL8 lambda3Tidal1 = 0.0;
+            REAL8 lambda3Tidal2 = 0.0;
+            REAL8 omega03Tidal1 = 0.0;
+            REAL8 omega03Tidal2 = 0.0;
+            REAL8 quadparam1 = 1.0;
+            REAL8 quadparam2 = 1.0;
+            REAL8Vector *nqcCoeffsInput = NULL;
+            INT4 nqcFlag = 0;
+
+            LALDict *PAParams = XLALCreateDict();
+            XLALDictInsertUINT4Value(PAParams, "PAFlag", 1);
+            XLALDictInsertUINT4Value(PAParams, "PAOrder", 8);
+            XLALDictInsertREAL8Value(PAParams, "rFinal", 1.8);
+            XLALDictInsertREAL8Value(PAParams, "rSwitch", 1.8);
+            XLALDictInsertUINT2Value(PAParams, "analyticFlag", 1);
+
+            LALDict *TGRParams = XLALCreateDict();
+            REAL8 domega220 = 0.0;
+            REAL8 dtau220 = 0.0;
+            REAL8 domega210 = 0.0;
+            REAL8 dtau210 = 0.0;
+            REAL8 domega330 = 0.0;
+            REAL8 dtau330 = 0.0;
+            REAL8 domega440 = 0.0;
+            REAL8 dtau440 = 0.0;
+            REAL8 domega550 = 0.0;
+            REAL8 dtau550 = 0.0;
+
+            domega220 = XLALSimInspiralWaveformParamsLookupDOmega220(LALpars);
+            dtau220 = XLALSimInspiralWaveformParamsLookupDTau220(LALpars);
+            domega210 = XLALSimInspiralWaveformParamsLookupDOmega210(LALpars);
+            dtau210 = XLALSimInspiralWaveformParamsLookupDTau210(LALpars);
+            domega330 = XLALSimInspiralWaveformParamsLookupDOmega330(LALpars);
+            dtau330 = XLALSimInspiralWaveformParamsLookupDTau330(LALpars);
+            domega440 = XLALSimInspiralWaveformParamsLookupDOmega440(LALpars);
+            dtau440 = XLALSimInspiralWaveformParamsLookupDTau440(LALpars);
+            domega550 = XLALSimInspiralWaveformParamsLookupDOmega550(LALpars);
+            dtau550 = XLALSimInspiralWaveformParamsLookupDTau550(LALpars);
+
+            UINT2 TGRflag = 0;
+            if (approximant == pSEOBNRv4HM_PA) TGRflag = 1;
+            
+            XLALSimInspiralWaveformParamsInsertDOmega220(TGRParams, domega220);
+            XLALSimInspiralWaveformParamsInsertDTau220(TGRParams, dtau220);
+            XLALSimInspiralWaveformParamsInsertDOmega210(TGRParams, domega210);
+            XLALSimInspiralWaveformParamsInsertDTau210(TGRParams, dtau210);
+            XLALSimInspiralWaveformParamsInsertDOmega330(TGRParams, domega330);
+            XLALSimInspiralWaveformParamsInsertDTau330(TGRParams, dtau330);
+            XLALSimInspiralWaveformParamsInsertDOmega440(TGRParams, domega440);
+            XLALSimInspiralWaveformParamsInsertDTau440(TGRParams, dtau440);
+            XLALSimInspiralWaveformParamsInsertDOmega550(TGRParams, domega550);
+            XLALSimInspiralWaveformParamsInsertDTau550(TGRParams, dtau550);
+
+            XLALDictInsertUINT2Value(TGRParams, "TGRflag", TGRflag);
+
+            if(XLALSimIMRSpinAlignedEOBModes (
+                &hlm,
+                &dynamics, &dynamicsHi,
+                deltaT,
+                m1, m2,
+                f_min,
+                r,
+                S1z, S2z,
+                SpinAlignedEOBversion,
+                lambda2Tidal1, lambda2Tidal2,
+                omega02Tidal1, omega02Tidal2,
+                lambda3Tidal1, lambda3Tidal2,
+                omega03Tidal1, omega03Tidal2,
+                quadparam1, quadparam2,
+                nqcCoeffsInput, nqcFlag,
+                PAParams,
+                TGRParams) == XLAL_FAILURE
+            ){
+                XLAL_ERROR_NULL (XLAL_EFUNC);
+            };
+
+            if(dynamics) XLALDestroyREAL8Vector(dynamics);
+            if(dynamicsHi) XLALDestroyREAL8Vector(dynamicsHi);
+            XLALDestroyDict(PAParams);
+            XLALDestroyDict(TGRParams);
+            
+            UINT4 i;
+            UINT4 modeArrayCreated = 0;
+
+            LALValue *modeArray = XLALSimInspiralWaveformParamsLookupModeArray(
+                LALpars
+            );
+            
+                if (modeArray == NULL) {
+                    modeArray = XLALSimInspiralCreateModeArray();
+                    modeArrayCreated = 1;
+
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 2, 2);
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 2, 1);
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 3, 3);
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 4, 4);
+                    XLALSimInspiralModeArrayActivateMode(modeArray, 5, 5);
+            }
+
+            SphHarmTimeSeries *modes = hlm;
+            COMPLEX16TimeSeries *tmpMode = NULL;
+            char modeName[40];
+
+            while (modes) {
+                if (XLALSimInspiralModeArrayIsModeActive(
+                    modeArray, modes->l, -modes->m
+                ) == 1) {
+                    sprintf(modeName, "h%dm%d", modes->l, modes->m);
+
+                    tmpMode = XLALCreateCOMPLEX16TimeSeries(
+                        modeName,
+                        &modes->mode->epoch,
+                        0,
+                        deltaT,
+                        &lalStrainUnit,
+                        modes->mode->data->length
+                    );
+
+                    for (i = 0; i < modes->mode->data->length; i++) {
+                        tmpMode->data->data[i] = pow(-1, modes->l) * conj(- modes->mode->data->data[i]);
+                    }
+
+                    hlm = XLALSphHarmTimeSeriesAddMode(hlm, tmpMode, modes->l, -(modes->m));
+                }
+
+                if (XLALSimInspiralModeArrayIsModeActive(
+                    modeArray, modes->l, modes->m
+                ) == 1) {
+                    
+                    for (i = 0; i < modes->mode->data->length; i++)
+                        modes->mode->data->data[i] *= -1;
+                }
+                
+                modes = modes->next;
+            }
+
+            if (modeArrayCreated) {
+                XLALDestroyValue(modeArray);
+            }
+            
+            XLALDestroyCOMPLEX16TimeSeries(tmpMode);
+
             break;
 
         case SEOBNRv4P:
@@ -6404,7 +6598,7 @@ int XLALSimInspiralImplementedTDApproximants(
         case TaylorT2:
         case TaylorT3:
         case TaylorT4:
-    case EccentricTD:
+	    case EccentricTD:
         case EOBNRv2:
         case HGimri:
         case IMRPhenomA:
@@ -6456,6 +6650,8 @@ int XLALSimInspiralImplementedTDApproximants(
         case IMRPhenomTHM:
         case IMRPhenomTP:
         case IMRPhenomTPHM:
+        case SEOBNRv4HM_PA:
+        case pSEOBNRv4HM_PA:
             return 1;
 
         default:
@@ -6975,6 +7171,8 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case NRHybSur3dq8:
     case IMRPhenomT:
     case IMRPhenomTHM:
+    case SEOBNRv4HM_PA:
+    case pSEOBNRv4HM_PA:
       spin_support=LAL_SIM_INSPIRAL_ALIGNEDSPIN;
       break;
     case TaylorEt:
@@ -7105,7 +7303,9 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case TEOBResum_ROM:
     case IMRPhenomT:
     case IMRPhenomTHM:
-        case TEOBResumS:
+	case TEOBResumS:
+    case SEOBNRv4HM_PA:
+    case pSEOBNRv4HM_PA:
       spin_freq=LAL_SIM_INSPIRAL_SPINS_NONPRECESSING;
       break;
     case NR_hdf5:
@@ -7230,6 +7430,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomTP:
     case IMRPhenomTPHM:
     case NumApproximants:
+    case SEOBNRv4HM_PA:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case TaylorF2:
@@ -7259,6 +7460,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomHM:
     case IMRPhenomPv3:
     case IMRPhenomPv3HM:
+    case pSEOBNRv4HM_PA:
       testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
       break;
     default:

@@ -14,7 +14,7 @@
 *  You should have received a copy of the GNU General Public License
 *  along with with program; see the file COPYING. If not, write to the
 *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-*  MA  02110-1301  USA
+*  MA 02110-1301 USA
 */
 
 
@@ -52,7 +52,7 @@ UNUSED static int UsePrec = 0;
  *------------------------------------------------------------------------------------------
  */
 
-static REAL8 XLALInspiralSpinFactorizedFlux (REAL8Vector * values,
+static REAL8 XLALInspiralSpinFactorizedFlux_PA (REAL8Vector * values,
 					     EOBNonQCCoeffs * nqcCoeffs,
 					     const REAL8 omega,
 					     SpinEOBParams * ak,
@@ -74,7 +74,7 @@ static REAL8 XLALInspiralSpinFactorizedFlux (REAL8Vector * values,
  */
 
 static REAL8
-XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables */
+XLALInspiralSpinFactorizedFlux_PA (REAL8Vector * values,	/**< dynamical variables */
 				EOBNonQCCoeffs * nqcCoeffs,
 							/**< pre-computed NQC coefficients */
 				const REAL8 omega,	/**< orbital frequency */
@@ -95,10 +95,12 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
 
   //EOBNonQCCoeffs nqcCoeffs;
 
+#ifndef LAL_NDEBUG
   if (!values || !ak)
     {
       XLAL_ERROR_REAL8 (XLAL_EFAULT);
     }
+#endif
 
   if (lMax < 2)
     {
@@ -109,14 +111,14 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
   omegaSq = omega * omega;
 
   v = cbrt (omega);
-
+  REAL8 vPhi = XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized (values->data, ak);
     COMPLEX16 hT= 0.;
 //  printf( "v = %.16e\n", v );
   for (l = 2; l <= (INT4) lMax; l++)
     {
       for (m = 1; m <= l; m++)
 	{
-	  INT4 use_optimized_v2 = 0;
+	  INT4 use_optimized_v2 = 1;
         if ( (ak->seobCoeffs->tidal1->lambda2Tidal != 0. && ak->seobCoeffs->tidal1->omega02Tidal != 0.) || (ak->seobCoeffs->tidal2->lambda2Tidal != 0. && ak->seobCoeffs->tidal2->omega02Tidal != 0.) ) {
             if (XLALSimIMRSpinEOBGetSpinFactorizedWaveform
                 (&hLM, values, v, H, l, m, ak, use_optimized_v2
@@ -134,7 +136,7 @@ XLALInspiralSpinFactorizedFlux (REAL8Vector * values,	/**< dynamical variables *
         else {
             if (XLALSimIMRSpinEOBFluxGetSpinFactorizedWaveform
                 (&hLM, values, v, H, l, m, ak, use_optimized_v2,
-                 NULL) == XLAL_FAILURE)
+                 &vPhi) == XLAL_FAILURE)
             {
                 XLAL_ERROR_REAL8 (XLAL_EFUNC);
             }

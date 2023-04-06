@@ -135,7 +135,18 @@ int XLALSimInspiralChooseTDWaveformFromCache(
     CacheVariableDiffersBitmask changedParams;
 
     // If nonGRparams are not NULL, don't even try to cache.
-    if ( !XLALSimInspiralWaveformParamsNonGRAreDefault(LALpars) || (!cache) )
+    if ( !XLALSimInspiralWaveformParamsNonGRAreDefault(LALpars) || (!cache) ||
+	!XLALSimInspiralWaveformParamsDOmega220IsDefault(LALpars) ||
+	!XLALSimInspiralWaveformParamsDTau220IsDefault(LALpars) ||
+        !XLALSimInspiralWaveformParamsDOmega210IsDefault(LALpars) ||
+        !XLALSimInspiralWaveformParamsDTau210IsDefault(LALpars) ||
+        !XLALSimInspiralWaveformParamsDOmega330IsDefault(LALpars) ||
+        !XLALSimInspiralWaveformParamsDTau330IsDefault(LALpars) ||
+        !XLALSimInspiralWaveformParamsDOmega440IsDefault(LALpars) ||
+        !XLALSimInspiralWaveformParamsDTau440IsDefault(LALpars) ||
+        !XLALSimInspiralWaveformParamsDOmega550IsDefault(LALpars) ||
+        !XLALSimInspiralWaveformParamsDTau550IsDefault(LALpars))
+
 
       return XLALSimInspiralChooseTDWaveform(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z,
 					     r, i, phiRef, 0., 0., 0., deltaT, f_min, f_ref, LALpars,

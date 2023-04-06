@@ -98,7 +98,7 @@ static REAL8 XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized(
  * The function returns a REAL8, which will be the value of the Hamiltonian if all goes well;
  * otherwise, it will return the XLAL REAL8 failure NaN.
  */
-REAL8 XLALSimIMRSpinEOBHamiltonianOptimized(
+UNUSED REAL8 XLALSimIMRSpinEOBHamiltonianOptimized(
 				   const REAL8    eta,                  /**<< Symmetric mass ratio */
 				   REAL8Vector    * restrict x,         /**<< Position vector */
 				   REAL8Vector    * restrict p,	    /**<< Momentum vector (tortoise radial component pr*) */
@@ -176,7 +176,7 @@ XLALSimIMRSpinAlignedEOBCalcOmegaOptimized(
  * radius \f$r\f$ times the cuberoot of the returned number is \f$r_\Omega\f$ defined in Eq. A2.
  * i.e. the function returns \f$(r_{\Omega} / r)^3\f$.
  */
-static REAL8 XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized(
+UNUSED static REAL8 XLALSimIMRSpinAlignedEOBNonKeplerCoeffOptimized(
                       const REAL8           values[],   /**<< Dynamical variables */
                       SpinEOBParams         *funcParams /**<< EOB parameters */
                       )

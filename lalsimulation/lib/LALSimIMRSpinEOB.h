@@ -138,6 +138,7 @@ tagSpinEOBParams
   REAL8                   tPeakOmega;
   REAL8                   cal21;
   REAL8                   cal55;
+  int                     postAdiabaticFlag;
 }
 SpinEOBParams;
 

@@ -439,6 +439,8 @@ typedef enum tagApproximant {
    IMRPhenomTPHM,      /** Time domain, precessing phenomenological IMR waveform model with subdominant modes ([arXiv: 20XY.ZZZZZ]). */
    SEOBNRv5_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5
 		    * @remarks Implemented in lalsimulation (frequency domain). */
+   SEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain), PhysRevD.104.124087 [arXiv:2105.06983] */
+   pSEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain) and TGR ringdown effects, PhysRevD.104.124087 [arXiv:2105.06983] */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 

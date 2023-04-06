@@ -994,6 +994,17 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     const REAL8 spin2x,    /**<<The spin of the second object; */
     const REAL8 spin2y,    /**<<The spin of the second object; */
     const REAL8 spin2z,    /**<<The spin of the second object; */
+    const REAL8 domega220,  /**<<Fractional deviation in the frequency of the 220 mode; */
+    const REAL8 dtau220,           /**<<Fractional deviation in the damping time of the  220 mode; */
+    const REAL8 domega210,  /**<<Fractional deviation in the frequency of the 210 mode; */
+    const REAL8 dtau210,    /**<<Fractional deviation in the damping time of the  210 mode; */
+    const REAL8 domega330,  /**<<Fractional deviation in the frequency of the 330 mode; */
+    const REAL8 dtau330,    /**<<Fractional deviation in the damping time of the  330 mode; */
+    const REAL8 domega440,  /**<<Fractional deviation in the frequency of the 440 mode; */
+    const REAL8 dtau440,    /**<<Fractional deviation in the damping time of the  440 mode; */
+    const REAL8 domega550,  /**<<Fractional deviation in the frequency of the 550 mode; */
+    const REAL8 dtau550,    /**<<Fractional deviation in the damping time of the  550 mode; */
+    const UINT2 TGRflag,    /**<< Flag for using the TGR ringdown waveform length */
     REAL8Vector * timeVec, /**<< Vector containing the time values */
     REAL8Vector * matchrange,
                            /**<< Time values chosen as points for performing comb matching */
@@ -1055,6 +1066,22 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     if (XLALSimIMREOBGenerateQNMFreqV2(modefreqs, mass1, mass2, spin1, spin2, l, m, 1, appr) == XLAL_FAILURE) {
         XLALDestroyCOMPLEX16Vector(modefreqs);
         XLAL_ERROR(XLAL_EFUNC);
+    }
+
+    if (( l == 2 ) && (m == 2)){
+       modefreqs->data[0] = creal(modefreqs->data[0])*(1. + domega220) + I*cimag(modefreqs->data[0])/(1. + dtau220);
+    }
+    if (( l == 2 ) && ( m == 1)) {
+       modefreqs->data[0] = creal(modefreqs->data[0])*(1. + domega210) + I*cimag(modefreqs->data[0])/(1. + dtau210);
+    }
+    if (( l == 3 ) && ( m == 3)) {
+       modefreqs->data[0] = creal(modefreqs->data[0])*(1. + domega330) + I*cimag(modefreqs->data[0])/(1. + dtau330);
+    }
+    if (( l == 4 ) && ( m == 4)) {
+       modefreqs->data[0] = creal(modefreqs->data[0])*(1. + domega440) + I*cimag(modefreqs->data[0])/(1. + dtau440);
+    }
+    if (( l == 5 ) && ( m == 5)) {
+       modefreqs->data[0] = creal(modefreqs->data[0])*(1. + domega550) + I*cimag(modefreqs->data[0])/(1. + dtau550);
     }
 
     //RC: we use this variable to compute the damping time of the 22 mode which will be used to set the lenght of the ringdown for all the modes
@@ -1231,7 +1258,13 @@ static UNUSED INT4 XLALSimIMREOBAttachFitRingdown(
     /*                                            RD fitting formulas                                           */
     /*********************************************************************************************/
     /* Ringdown signal length: 10 times the decay time of the n=0 mode */
-    UINT4 Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs22->data[0]) / dt);
+    UINT4 Nrdwave;
+
+    if (TGRflag == 0) {
+        Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs22->data[0]) / dt);
+    } else {
+        Nrdwave = (INT4) (EOB_RD_EFOLDS / cimag(modefreqs->data[0]) / dt);
+    }
     //printf("Stas Nrdwave %d,  dt = %f", Nrdwave, dt);
     REAL8 dtM = dt / (mtot * LAL_MTSUN_SI);     // go to geometric units
     rdtime = XLALCreateREAL8Vector(Nrdwave);
