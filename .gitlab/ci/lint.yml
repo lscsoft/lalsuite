@@ -131,9 +131,6 @@ lint:authors:
     - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig
     # check .mailmap and lal*/AUTHORS
     - make update-authors
-  rules:
-    - !reference [.ci-lint, rules]
-    - !reference [.ci-merge-build, rules]
 
 lint:depends:
   extends:
