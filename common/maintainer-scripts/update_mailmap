@@ -35,13 +35,9 @@ while (<IN>) {
 close IN;
 
 my @mailmap;
+my %usernames2mails;
 
 foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
-
-  if ($pname =~ /[^[:upper:][:lower:] .'-]/ || $pname =~ /^[[:upper:] .'-]+$/ || $pname =~ /^[[:lower:] .'-]/) {
-    print STDERR "$0: '$pname' should be a human name, not a username\n";
-    exit(1);
-  }
 
   my $pname2mail = lc($pname);
   $pname2mail =~ s/\s+/./g;
@@ -57,6 +53,11 @@ foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
   my $pmail = shift @pmails;
   die "Could not determine email address for $pname" unless defined($pmail);
 
+  if ($pname =~ /[^[:upper:][:lower:] .'-]/ || $pname =~ /^[[:upper:] .'-]+$/ || $pname =~ /^[[:lower:] .'-]/ || $pname =~ /human name for/i) {
+    $usernames2mails{$pname} = $pmail;
+    next;
+  }
+
   push @mailmap, "$pname <$pmail>";
   foreach my $mail (sort { $a cmp $b } keys(%{$name2mails{$pname}})) {
     next if $mail eq $pmail;
@@ -67,6 +68,43 @@ foreach my $pname (sort { $a cmp $b } keys(%name2mails)) {
     }
   }
 
+}
+
+if (scalar(%usernames2mails) > 0) {
+  print STDERR <<EOF;
+------------------------------------------------------------------------
+It looks like commits were made by the following authors:
+
+EOF
+  foreach my $pname (sort { $a cmp $b } keys(%usernames2mails)) {
+    print STDERR "$pname <$usernames2mails{$pname}>\n";
+  }
+  print STDERR <<EOF;
+
+Based on being all lower/upper case, it looks like these authors
+used usernames for their commits, rather than human names.
+
+To fix this, please add the following lines to the .mailmap file,
+which is located at the top level of the LALSuite Git repo:
+
+EOF
+  foreach my $pname (sort { $a cmp $b } keys(%usernames2mails)) {
+    print STDERR "(human name for $pname) <$usernames2mails{$pname}>\n";
+  }
+  print STDERR <<EOF;
+
+replacing usernames with human names as indicated. Accented characters
+are fully supported in author names; please use if appropriate. If any
+author already has an entry in the .mailmap file (under a different
+email address), please check that the author's name is spelled exactly
+the same for all email addresses.
+
+Finally, run this command from the top level of the LALSuite Git repo:
+
+\$ make update-authors
+------------------------------------------------------------------------
+EOF
+  exit(1);
 }
 
 open OUT, ">.mailmap" or die $!;
