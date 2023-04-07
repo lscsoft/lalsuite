@@ -102,6 +102,15 @@ typedef struct tagIMRPhenomXWaveformStruct
 	REAL8 SL;
 	REAL8 SigmaL;
 
+    /* Matter parameters */
+    REAL8 lambda1;
+    REAL8 lambda2;
+    REAL8 quadparam1;
+    REAL8 quadparam2;
+    REAL8 kappa2T;
+    REAL8 fmerger;
+        
+    
 	/* Useful Powers (?) */
 	REAL8 eta2;
 	REAL8 eta3;
@@ -143,8 +152,10 @@ typedef struct tagIMRPhenomXWaveformStruct
 
 	REAL8 fMin;
 	REAL8 fMax;
+    REAL8 MfMax;
 	REAL8 f_max_prime;
 	REAL8 deltaF;
+    REAL8 deltaMF;
 	REAL8 fCut;
 
 	// Dimensionless frequency (Mf) defining the end of the waveform
@@ -237,6 +248,9 @@ typedef struct tagIMRPhenomXPhaseCoefficients
 
   /* These are the inspiral phenomenological coefficients 		*/
   REAL8 a0, a1, a2, a3, a4;
+    
+  /* Coefficients enterting tidal phase */
+    REAL8 c2PN_tidal, c3PN_tidal, c3p5PN_tidal;
 
 	/* Pre-cached variables */
 	REAL8 c4ov3, cLovfda;
@@ -374,6 +388,12 @@ void IMRPhenomX_Phase_22_ConnectionCoefficients(IMRPhenomXWaveformStruct *pWF, I
 
 /* Function to check if the input mode array contains supported modes */
 INT4 check_input_mode_array(LALDict *lalParams);
+
+NRTidal_version_type IMRPhenomX_SetTidalVersion(LALDict *LALParams);
+
+void IMRPhenomXGetTidalPhaseCoefficients(IMRPhenomXWaveformStruct *pWF,IMRPhenomXPhaseCoefficients *pPhase,NRTidal_version_type NRTidal_version);
+REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWaveformStruct *pWF, IMRPhenomXPhaseCoefficients *pPhase, NRTidal_version_type NRTidal_version);
+REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWaveformStruct *pWF, IMRPhenomXPhaseCoefficients *pPhase, NRTidal_version_type NRTidal_version);
 
 #ifdef __cplusplus
 }

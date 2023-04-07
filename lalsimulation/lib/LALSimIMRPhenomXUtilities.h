@@ -123,6 +123,9 @@ REAL8 XLALSimIMRPhenomXAmp22Prefactor(REAL8 eta);
 REAL8 XLALSimIMRPhenomXfring22(const REAL8 af);
 REAL8 XLALSimIMRPhenomXfdamp22(const REAL8 af);
 
+// unwrapping utility
+void XLALSimIMRPhenomXUnwrapArray(double *in, double *out, int len);
+
 
 
 

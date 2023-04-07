@@ -647,6 +647,15 @@ int IMRPhenomXHMMultiBandOneMode(
   IMRPhenomXAmpCoefficients   *pAmp22   = (IMRPhenomXAmpCoefficients *) XLALMalloc(sizeof(IMRPhenomXAmpCoefficients));
   IMRPhenomXPhaseCoefficients *pPhase22 = (IMRPhenomXPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomXPhaseCoefficients));
   IMRPhenomXGetPhaseCoefficients(pWF, pPhase22);
+    
+    
+  /* Setup for NRTidal testing */
+  NRTidal_version_type NRTidal_version;
+  /* Set tidal version */
+  NRTidal_version=IMRPhenomX_SetTidalVersion(lalParams);
+  /* initialise tidal corrections to phasing*/
+    if(NRTidal_version!=NoNRT_V){ IMRPhenomXGetTidalPhaseCoefficients(pWF,pPhase22,NRTidal_version);
+    }
 
   /* Allocate and initialize the PhenomXHM lm amplitude coefficients struct */
   IMRPhenomXHMAmpCoefficients *pAmp = (IMRPhenomXHMAmpCoefficients*)XLALMalloc(sizeof(IMRPhenomXHMAmpCoefficients));
@@ -669,7 +678,7 @@ int IMRPhenomXHMMultiBandOneMode(
     QNMFits *qnms = (QNMFits *) XLALMalloc(sizeof(QNMFits));
     IMRPhenomXHM_Initialize_QNMs(qnms);
     // Populate pWFHM
-    IMRPhenomXHM_SetHMWaveformVariables(ell, emm, pWFHM, pWF,qnms, lalParams);
+    IMRPhenomXHM_SetHMWaveformVariables(ell, emm, pWFHM, pWF,qnms,lalParams);
     LALFree(qnms);
 
     /* Allocate and initialize the PhenomXHM lm phase and amp coefficients struct */
@@ -833,21 +842,104 @@ int IMRPhenomXHMMultiBandOneMode(
 
     /* Linear time and phase shifts so that model peaks near t ~ 0 */
     REAL8 lina = 0;
-
     IMRPhenomX_Phase_22_ConnectionCoefficients(pWF,pPhase22);
     double linb=IMRPhenomX_TimeShift_22(pPhase22, pWF);
+      
+    REAL8Sequence *phi_tidal = NULL;
+    REAL8Sequence *amp_tidal = NULL;
+    REAL8Sequence *planck_taper = NULL;
+    
+    /* Set matter parameters (set to zero in pWF if NRTidal additions are not turned on) */
+    REAL8 lambda1 = pWF->lambda1;
+    REAL8 lambda2 = pWF->lambda2;
+  
+    REAL8 f_final=Mfmax/pWF->M_sec;
+    
+    REAL8 f_merger = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+    if(f_merger<f_final)
+          f_final = f_merger;
+    double phiTfRef = 0.;
+        
+    // correct for time and phase shifts due to tidal phase
+    if(NRTidal_version!=NoNRT_V){
+        
+        IMRPhenomX_UsefulPowers powers_of_ffinal;
+        REAL8 Mf_final = f_final*pWF->M_sec;
+        status = IMRPhenomX_Initialize_Powers(&powers_of_ffinal,Mf_final);
+        XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for f_final.\n");
+        REAL8 dphi_fmerger=1/pWF->eta*IMRPhenomX_dPhase_22(Mf_final, &powers_of_ffinal, pPhase22, pWF)+linb-IMRPhenomX_TidalPhaseDerivative(&powers_of_ffinal, pWF, pPhase22, NRTidal_version);
+        REAL8 tshift = -dphi_fmerger;
+        linb+=tshift;
+        phiTfRef = -IMRPhenomX_TidalPhase(&powers_of_MfRef, pWF, pPhase22, NRTidal_version);
+        
+    }
+
 
     // Calculate IMRPhenomX phase at reference frequency
-
-    REAL8  phiref22 = -1./pWF->eta*IMRPhenomX_Phase_22(pWF->MfRef, &powers_of_MfRef, pPhase22, pWF) - linb*pWF->MfRef - lina + 2.0*pWF->phi0 + LAL_PI_4;
-
-    for(UINT4 kk = 0; kk < (coarseFreqs)->length; kk++){
-      REAL8 Mff = coarseFreqs->data[kk]*pWF->M_sec;
+    REAL8 phiref22 = -1./pWF->eta*IMRPhenomX_Phase_22(pWF->MfRef, &powers_of_MfRef, pPhase22, pWF)- phiTfRef - linb*pWF->MfRef - lina + 2.0*pWF->phi0 + LAL_PI_4;
+      
+    if (NRTidal_version!=NoNRT_V) {
+        int ret = 0;
+        UINT4 L_fCut = coarseFreqs->length;
+        phi_tidal = XLALCreateREAL8Sequence(L_fCut);
+        amp_tidal = XLALCreateREAL8Sequence(L_fCut);
+        planck_taper = XLALCreateREAL8Sequence(L_fCut);
+        /* Get FD tidal phase correction and amplitude factor */
+        ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, coarseFreqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, NRTidal_version);
+        XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
+      }
+      if (NRTidal_version==NoNRT_V) {
+          
+     for(UINT4 kk = 0; kk < (coarseFreqs)->length; kk++)
+     {
+      
+     REAL8 Mff = coarseFreqs->data[kk]*pWF->M_sec;
       IMRPhenomX_UsefulPowers powers_of_f;
       IMRPhenomX_Initialize_Powers(&powers_of_f,Mff);
       amplitude->data->data[kk] = IMRPhenomX_Amplitude_22(Mff, &powers_of_f, pAmp22, pWF) * pWF->amp0;
       phase->data->data[kk] = 1./pWF->eta*IMRPhenomX_Phase_22(Mff, &powers_of_f, pPhase22, pWF) + linb*Mff + lina + phiref22;
-    }
+     }
+                                    }
+      else{
+          
+          REAL8 pfaN = 3./(128.*pWF->m1*pWF->m2);
+          
+          for(UINT4 kk = 0; kk < (coarseFreqs)->length; kk++)
+          {
+          
+          REAL8 phaseTidal = phi_tidal->data[kk];
+          double ampTidal = amp_tidal->data[kk];
+          double window = planck_taper->data[kk];
+          
+          REAL8 Mff = coarseFreqs->data[kk]*pWF->M_sec;
+          IMRPhenomX_UsefulPowers powers_of_f;
+          IMRPhenomX_Initialize_Powers(&powers_of_f,Mff);
+          /* Add spin-induced quadrupole moment terms to tidal phasing */
+          /* 2PN terms */
+          phaseTidal += pfaN * pPhase22->c2PN_tidal* powers_of_lalpi.m_one_third * powers_of_f.m_one_third;
+          /* 3PN terms */
+          phaseTidal += pfaN * pPhase22->c3PN_tidal* powers_of_lalpi.one_third * powers_of_f.one_third;
+          /* 3.5PN terms are only in NRTidalv2 */
+          if (NRTidal_version == NRTidalv2_V) {
+              phaseTidal += pfaN * pPhase22->c3p5PN_tidal * powers_of_lalpi.two_thirds * powers_of_f.two_thirds;
+          }
+            /* Reconstruct waveform with NRTidal terms included: h(f) = [A(f) + A_tidal(f)] * Exp{I [phi(f) - phi_tidal(f)]} * window(f) */
+          REAL8 amp=IMRPhenomX_Amplitude_22(Mff, &powers_of_f, pAmp22, pWF);
+          amplitude->data->data[kk] = (amp + 2*sqrt(1./5.)*powers_of_lalpi.sqrt * ampTidal) * window * pWF->amp0;
+          
+          phase->data->data[kk] =1./pWF->eta*IMRPhenomX_Phase_22(Mff, &powers_of_f, pPhase22, pWF) + linb*Mff + lina + phiref22 - phaseTidal;
+        
+          }
+          //end of loop
+      
+        }
+      
+     
+          XLALDestroyREAL8Sequence(phi_tidal);
+          XLALDestroyREAL8Sequence(amp_tidal);
+          XLALDestroyREAL8Sequence(planck_taper);
+          
+      
   }
   /** Higher modes **/
   else{
@@ -1052,18 +1144,18 @@ int IMRPhenomXHMMultiBandOneMode(
   else{
     minus1l = +1;
   }
-
+    
   for(UINT4 idx = 0; idx < count; idx++){
-    /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
-    ((*htildelm)->data->data)[idx + offset] = minus1l * fineAmp[idx] * expphi[idx];
-  }
+        /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
+        ((*htildelm)->data->data)[idx + offset] = minus1l * fineAmp[idx] * expphi[idx];
+      }
 
-  /* Sometimes rounding error can make that count+offset < iStop, meaning that we have computed less points than those we are gonna output,
-    here we make sure that all the elements of htildelm are initialized and we put the extra point(s) to 0. */
+      /* Sometimes rounding error can make that count+offset < iStop, meaning that we have computed less points than those we are gonna output,
+        here we make sure that all the elements of htildelm are initialized and we put the extra point(s) to 0. */
   for(UINT4 idx = count-1; idx < iStop-offset; idx++){
-    /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
-    ((*htildelm)->data->data)[idx + offset] = 0.;
-  }
+        /* Reconstruct waveform: h(f) = A(f) * Exp[I phi(f)] */
+        ((*htildelm)->data->data)[idx + offset] = 0.;
+      }
 
   /* Free allocated memory */
   LALFree(pAmp);
@@ -1130,7 +1222,7 @@ int IMRPhenomXHMMultiBandOneMode(
 *
 * This is a technique to make the evaluation of waveform models faster by evaluating the model
 * in a coarser non-uniform grid and interpolate this to the final fine uniform grid.
-* We apply this technique to the fourier domain model IMRPhenomXHM as describe in this paper: https://arxiv.org/abs/2001.10897
+* We apply this technique to the fourier domain model IMRPhenomXHM as described in this paper: https://arxiv.org/abs/2001.10897
 *
 * Multibanding flags:
 *   ThresholdMband: Determines the strength of the Multibanding algorithm.

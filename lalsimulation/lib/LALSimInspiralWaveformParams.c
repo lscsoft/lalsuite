@@ -202,6 +202,11 @@ DEFINE_INSERT_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
 DEFINE_INSERT_FUNC(PhenomXPConvention, INT4, "Convention", 1)
 DEFINE_INSERT_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 4)
 DEFINE_INSERT_FUNC(PhenomXPTransPrecessionMethod, INT4, "TransPrecessionMethod", 1)
+DEFINE_INSERT_FUNC(PhenomXPSpinTaylorVersion, String, "SpinTaylorVersion", NULL)
+DEFINE_INSERT_FUNC(PhenomXPSpinTaylorCoarseFactor, INT4, "SpinTaylorCoarseFactor",10);
+
+/* IMRPhenomXAS_NRTidalvX */
+DEFINE_INSERT_FUNC(PhenomXTidalFlag, INT4, "PhenXTidal", 0)
 
 /* IMRPhenomXHM Parameters */
 DEFINE_INSERT_FUNC(PhenomXHMReleaseVersion, INT4, "PhenomXHMReleaseVersion", 122022)
@@ -387,6 +392,11 @@ DEFINE_LOOKUP_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
 DEFINE_LOOKUP_FUNC(PhenomXPConvention, INT4, "Convention", 1)
 DEFINE_LOOKUP_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 4)
 DEFINE_LOOKUP_FUNC(PhenomXPTransPrecessionMethod, INT4, "TransPrecessionMethod", 1)
+DEFINE_LOOKUP_FUNC(PhenomXPSpinTaylorVersion, String, "SpinTaylorVersion", NULL)
+DEFINE_LOOKUP_FUNC(PhenomXPSpinTaylorCoarseFactor, INT4, "SpinTaylorCoarseFactor",10);
+
+/* IMRPhenomX_NRTidalvX Parameters */
+DEFINE_LOOKUP_FUNC(PhenomXTidalFlag, INT4, "PhenXTidal", 0)
 
 /* IMRPhenomXHM Parameters */
 DEFINE_LOOKUP_FUNC(PhenomXHMReleaseVersion, INT4, "PhenomXHMReleaseVersion", 122022)
@@ -556,6 +566,11 @@ DEFINE_ISDEFAULT_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
 DEFINE_ISDEFAULT_FUNC(PhenomXPConvention, INT4, "Convention", 1)
 DEFINE_ISDEFAULT_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 4)
 DEFINE_ISDEFAULT_FUNC(PhenomXPTransPrecessionMethod, INT4, "TransPrecessionMethod", 1)
+DEFINE_ISDEFAULT_FUNC(PhenomXPSpinTaylorVersion, String, "SpinTaylorVersion", NULL)
+DEFINE_ISDEFAULT_FUNC(PhenomXPSpinTaylorCoarseFactor, INT4, "SpinTaylorCoarseFactor",10);
+
+/* IMRPhenomX_NRTidal Parameters */
+DEFINE_ISDEFAULT_FUNC(PhenomXTidalFlag, INT4, "PhenXTidal", 0)
 
 /* IMRPhenomXHM Parameters */
 DEFINE_ISDEFAULT_FUNC(PhenomXHMReleaseVersion, INT4, "PhenomXHMReleaseVersion", 122022)
