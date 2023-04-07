@@ -2320,8 +2320,8 @@ static int IMRPhenomXHMFDAddMode(
 *
 * @brief C code for IMRPhenomXHM phenomenological waveform model.
 *
-* This is an aligned-spin frequency domain model wit subdomimant modes: 2|2|, 2|1|, 3|3|, 3|2|, 4|4| .
-* See C.García-Quirós et al for details. Any studies that use this waveform model should include
+* This is an aligned-spin frequency domain model with subdomimant modes: 2|2|, 2|1|, 3|3|, 3|2|, 4|4| .
+* See C.García-Quirós et al arXiv:2001.10914 for details. Any studies that use this waveform model should include
 * a reference to this paper.
 *
 * @note The model was calibrated to mass-ratios from 1 to 1000.

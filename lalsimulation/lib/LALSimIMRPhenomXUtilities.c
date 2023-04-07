@@ -36,7 +36,7 @@
 
 /* ******************** MECO, ISCO, etc ******************** */
 
-/*
+/**
  * Phenomenological fit to hybrid minimum energy circular orbit (MECO) function.
  * Uses 3.5PN hybridised with test-particle limit.
  * Reference: M Cabero et al, PRD, 95, 064016, (2017), arXiv:1602.03134
@@ -69,7 +69,7 @@ REAL8 XLALSimIMRPhenomXfMECO(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
   return (noSpin + eqSpin + uneqSpin);
 }
 
-/*
+/**
  * Fitting function for hybrid minimum energy circular orbit (MECO) function
  */
 REAL8 XLALSimIMRPhenomXfISCO(REAL8 chif) {
@@ -98,8 +98,8 @@ REAL8 XLALSimIMRPhenomXfISCO(REAL8 chif) {
     the XLAL wrappers.
 */
 
-/*
- * Energy Radiated: X. Jimenez-Forteza et al, PRD, 95, 064024, (2017), arXiv:1611.00332
+/**
+ * Energy Radiated: X Jimenez-Forteza et al, PRD, 95, 064024, (2017), arXiv:1611.00332
  */
 REAL8 XLALSimIMRPhenomXErad2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
 
@@ -138,8 +138,8 @@ REAL8 XLALSimIMRPhenomXErad2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
 
 }
 
-/*
- * Final Mass = 1 - Energy Radiated,  X. Jimenez-Forteza et al, PRD, 95, 064024, (2017), arXiv:1611.00332
+/**
+ * Final Mass = 1 - Energy Radiated,  X Jimenez-Forteza et al, PRD, 95, 064024, (2017), arXiv:1611.00332
  */
 REAL8 XLALSimIMRPhenomXFinalMass2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
 
@@ -179,8 +179,8 @@ REAL8 XLALSimIMRPhenomXFinalMass2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
 
 }
 
-/*
- * Final Dimensionless Spin,  X. Jimenez-Forteza et al, PRD, 95, 064024, (2017), arXiv:1611.00332
+/**
+ * Final Dimensionless Spin,  X Jimenez-Forteza et al, PRD, 95, 064024, (2017), arXiv:1611.00332
  */
 REAL8 XLALSimIMRPhenomXFinalSpin2017(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
 
@@ -251,7 +251,7 @@ REAL8 XLALSimIMRPhenomXPrecessingFinalSpin2017(
 }
 
 /* ******************** SPIN PARAMETERIZATIONS ******************** */
-/*
+/**
  * PN reduced spin parameter
  */
 REAL8 XLALSimIMRPhenomXchiPN(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
@@ -264,7 +264,7 @@ REAL8 XLALSimIMRPhenomXchiPN(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
 	return chi_eff - (38.0/113.0)*eta*(chi1L + chi2L);
 }
 
-/*
+/**
  * Normalised PN reduced spin parameter
  */
 REAL8 XLALSimIMRPhenomXchiPNHat(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
@@ -277,7 +277,7 @@ REAL8 XLALSimIMRPhenomXchiPNHat(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
 	return (chi_eff - (38.0/113.0)*eta*(chi1L + chi2L) ) / (1.0 - (76.0*eta/113.0));
 }
 
-/*
+/**
  * Effective aligned spin parameter
  */
 REAL8 XLALSimIMRPhenomXchiEff(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
@@ -289,7 +289,7 @@ REAL8 XLALSimIMRPhenomXchiEff(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
   return (mm1*chi1L + mm2*chi2L);
 }
 
-/*
+/**
  * Total spin normalised to [-1,1]
  */
 REAL8 XLALSimIMRPhenomXSTotR(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
@@ -303,7 +303,7 @@ REAL8 XLALSimIMRPhenomXSTotR(REAL8 eta, REAL8 chi1L, REAL8 chi2L) {
 	return ((m1s * chi1L + m2s * chi2L) / (m1s + m2s));
 }
 
-/*
+/**
  * Spin difference
  */
 REAL8 XLALSimIMRPhenomXdchi(REAL8 chi1L, REAL8 chi2L) {
@@ -312,7 +312,7 @@ REAL8 XLALSimIMRPhenomXdchi(REAL8 chi1L, REAL8 chi2L) {
 }
 
 /* ******************** FREQUENCY CONVERSIONS ******************** */
-/*
+/**
  * Convert from geometric frequency to Hz
  */
 REAL8 XLALSimIMRPhenomXUtilsMftoHz(
@@ -323,7 +323,7 @@ REAL8 XLALSimIMRPhenomXUtilsMftoHz(
     return Mf / (LAL_MTSUN_SI * Mtot_Msun);
 }
 
-/*
+/**
  * Convert from frequency in Hz to geometric frequency
  */
 REAL8 XLALSimIMRPhenomXUtilsHztoMf(
@@ -334,9 +334,9 @@ REAL8 XLALSimIMRPhenomXUtilsHztoMf(
     return fHz * (LAL_MTSUN_SI * Mtot_Msun);
 }
 
-/*
+/**
  * We apply a linear time and phase shift to ~ align peak
- * LinShift = (PNLina[\[Eta],\[Chi]1,\[Chi]2] + \[Pi] + f PNLinb[\[Eta],\[Chi]1,\[Chi]2]);
+ * LinShift = (PNLina[\f$\eta,\chi_1,\chi_2\f$] + \f$\pi\f$ + f PNLinb[\f$\eta,\chi_1,\chi_2\f$]);
  * Linear time and phase shift: a + b*f
  */
 REAL8 XLALSimIMRPhenomXLina(
@@ -372,9 +372,10 @@ REAL8 XLALSimIMRPhenomXLina(
 
 }
 
-// this is a fit of the time-difference between t_peak of strain and t_peak of psi4
-// needed to align in time our waveforms, which are calibrated to psi4
-
+/**
+ * This is a fit of the time-difference between t_peak of strain and t_peak of psi4
+ * needed to align in time our waveforms, which are calibrated to psi4
+ */
 REAL8 XLALSimIMRPhenomXPsi4ToStrain(double eta, double S, double dchi) {
     double eta2,eta3,eta4,S2,S3,S4;
     eta2 = pow(eta,2);
@@ -415,15 +416,18 @@ REAL8 XLALSimIMRPhenomXLinb(
 
 
 /* ******************** NUMERICAL ROUTINES ******************** */
-// This function determines whether x and y are approximately equal to a relative accuracy epsilon.
-// Note that x and y are compared to relative accuracy, so this function is not suitable for testing whether a value is approximately zero.
+/**
+ * This function determines whether x and y are approximately equal to a relative accuracy epsilon.
+ * Note that x and y are compared to relative accuracy, so this function is not suitable for testing whether a value is approximately zero.
+ */
 bool IMRPhenomX_ApproxEqual(REAL8 x, REAL8 y, REAL8 epsilon) {
   return !gsl_fcmp(x, y, epsilon);
 }
 
-// If x and X are approximately equal to relative accuracy epsilon then set x = X.
-// If X = 0 then use an absolute comparison.
-
+/**
+ * If x and X are approximately equal to relative accuracy epsilon then set x = X.
+ * If X = 0 then use an absolute comparison.
+ */
 void IMRPhenomX_InternalNudge(REAL8 x, REAL8 X, REAL8 epsilon) {
   if (X != 0.0) {
     if (IMRPhenomX_ApproxEqual(x, X, epsilon)) {
@@ -465,7 +469,7 @@ REAL8 XLALSimIMRPhenomXsign(REAL8 x)
 
 
 /* Useful powers to avoid pow(.,.) function */
-/*
+/**
  * calc square of number without floating point 'pow'
  */
 double pow_2_of(double number)
@@ -537,7 +541,7 @@ double pow_9_of(double number)
  return pow4 * pow4 * number;
 }
 
-/*
+/**
  * Check if m1 > m2. If not, swap the masses and spin vectors such that body is the heavier compact object.
  */
 INT4 XLALIMRPhenomXPCheckMassesAndSpins(
@@ -608,7 +612,7 @@ INT4 XLALIMRPhenomXPCheckMassesAndSpins(
 
 
 /* ******************** ANALYTICAL MODEL WRAPPERS ******************** */
-/*
+/**
     "Analytical" phenomenological ringdown ansatz for phase. This is used by the higher mode functions and
     can be used to prototype or test model. Convenient wrapper exposed via XLAL.
 */
@@ -628,7 +632,7 @@ REAL8 XLALSimIMRPhenomXRingdownPhase22AnsatzAnalytical(REAL8 ff, REAL8 fRD, REAL
   return phaseOut;
 }
 
-/*
+/**
     "Analytical" phenomenological ringdown ansatz for phase derivative. This is used by the higher mode functions and
     can be used to prototype or test model. Convenient wrapper exposed via XLAL.
 
@@ -653,7 +657,7 @@ REAL8 XLALSimIMRPhenomXRingdownPhaseDeriv22AnsatzAnalytical(REAL8 ff, REAL8 fRD,
   return phaseOut;
 }
 
-/*
+/**
     "Analytical" phenomenological ringdown ansatz for amplitude. This is used by the higher mode functions but
     can also be used to prototype or test model. Convenient wrapper exposed via XLAL.
 */
@@ -723,7 +727,7 @@ REAL8 XLALSimIMRPhenomXAmp22Prefactor(REAL8 eta)
   IMRPhenomX model: https://arxiv.org/abs/2001.11412.
 */
 
-/*
+/**
    Ringdown frequency for 22 mode, given final dimensionless spin
 
    https://arxiv.org/src/2001.10914v1/anc/QNMs/CoefficientStatsfring22.m
@@ -757,7 +761,7 @@ REAL8 XLALSimIMRPhenomXfring22(
 }
 
 
-/*
+/**
    Damping frequency for 22 mode, given final dimensionless spin.
 
    https://arxiv.org/src/2001.10914v1/anc/QNMs/CoefficientStatsfdamp22.m
@@ -786,4 +790,14 @@ REAL8 XLALSimIMRPhenomXfdamp22(
   2.5900842798681376*af + 1.8952576220623967*x2 - \
   0.31416610693042507*x4 + 0.009002719412204133*x6);
   return return_val;
+}
+
+/** Function to unwrap a time series that contains an angle, to obtain a continuous time series. */
+void XLALSimIMRPhenomXUnwrapArray(double *in, double *out, int len) {
+    out[0] = in[0];
+    for (int i = 1; i < len; i++) {
+        double d = in[i] - in[i-1];
+        d = d > M_PI ? d - 2 * M_PI : (d < -M_PI ? d + 2 * M_PI : d);
+        out[i] = out[i-1] + d;
+    }
 }

@@ -536,6 +536,26 @@ int XLALSimIMRPhenomXPPNAngles(
  LALDict *lalParams                        /**< LAL Dictionary struct */
 );
 
+int XLALSimIMRPhenomXPSpinTaylorAngles(
+  REAL8Sequence **alphaFS,              /**< [out] Alpha angle frequency series  */
+  REAL8Sequence **cosbetaFS,            /**< [out]  cos(Beta) angle frequency series */
+  REAL8Sequence **gammaFS,              /**< [out] Gamma angle frequency series */
+  REAL8 m1_SI,                /**< Mass of companion 1 (kg) */
+  REAL8 m2_SI,                /**< Mass of companion 2 (kg) */
+  REAL8 s1x,                /**< x component of primary spin*/
+  REAL8 s1y,                /**< y component of primary spin*/
+  REAL8 s1z,                /**< z component of primary spin */
+  REAL8 s2x,                /**< x component of secondary spin*/
+  REAL8 s2y,                /**< y component of secondary spin*/
+  REAL8 s2z,                /**< z component of secondary spin */
+  REAL8 fmin,               /**< starting GW frequency (Hz) */
+  REAL8 fmax,               /**< maximum GW frequency (Hz) */
+  REAL8 deltaF,             /**< starting GW frequency (Hz) */
+  REAL8 fRef,               /**< reference GW frequency (Hz) */
+  REAL8 phiRef,               /**< reference orbital phase (rad) */
+  LALDict *LALparams        /**< LAL Dictionary struct */
+);
+
 int XLALSimIMRPhenomXPGenerateFD(
   COMPLEX16FrequencySeries **hptilde,         /**< [out] Frequency-domain waveform h+ */
   COMPLEX16FrequencySeries **hctilde,         /**< [out] Frequency-domain waveform hx */
@@ -933,6 +953,7 @@ int XLALSimIMRPhenomXPCalculateModelParametersFromSourceFrame(
     LALDict *lalParams                /**< LAL Dictionary */
 );
 
+
 /* IMRPhenomT/HM Routines */
 /* in module LALSimIMRPhenomTHM.c */
 
@@ -1137,6 +1158,7 @@ int XLALSimIMRPhenomTPHM_CoprecModes(
   UINT4 only22              /**< Flag for calling only IMRPhenomTP (dominant 22 coprec mode only) */
   );
 
+
 /* in module LALSimIMRTEOBResumS.c */
 
 int XLALSimIMRTEOBResumS(
@@ -1330,6 +1352,8 @@ double XLALSimNRTunedTidesMergerFrequency(
     const REAL8 kappa2T,   /**< tidal coupling constant. Eq. 2 in arXiv:1706.02969 */
     const REAL8 q          /**< mass-ratio q >= 1 */
 );
+
+int XLALSimNRTunedTidesSetFDTidalPhase_v2_Coeffs(REAL8 *NRTidalv2_coeffs);
 
 int XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(
     const REAL8Sequence *amp_tidal, /**< [out] tidal amplitude frequency series */

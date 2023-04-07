@@ -38,7 +38,9 @@
 #define UNUSED
 #endif
 
-// Plack taper window
+/**
+ * Planck taper window
+ */
 static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2) {
   REAL8 taper;
   if (t <= t1)
@@ -52,7 +54,7 @@ static REAL8 PlanckTaper(const REAL8 t, const REAL8 t1, const REAL8 t2) {
 }
 
 /**
- * function to swap masses and lambda to enforece m1 >= m2
+ * function to swap masses and lambda to enforce m1 >= m2
  */
 static int EnforcePrimaryMassIsm1(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *lambda2){
   if ((*m1 == *m2) && (*lambda1 != *lambda2))
@@ -85,7 +87,7 @@ static int EnforcePrimaryMassIsm1(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *l
 
 
 /**
- * convienient function to compute tidal coupling constant. Eq. 2 in arXiv:1706.02969
+ * convenient function to compute tidal coupling constant. Eq. 2 in arXiv:1706.02969
  * given masses and lambda numbers
  */
 double XLALSimNRTunedTidesComputeKappa2T(
@@ -107,7 +109,7 @@ double XLALSimNRTunedTidesComputeKappa2T(
   const REAL8 Xa = m1 / mtot;
   const REAL8 Xb = m2 / mtot;
 
-  /**< tidal coupling constant. This is the
+  /* tidal coupling constant. This is the
     kappa^T_eff = 2/13 [  (1 + 12 X_B/X_A) (X_A/C_A)^5 k^A_2 +  [A <- -> B]  ]
     from Tim Dietrich */
 
@@ -160,8 +162,8 @@ double XLALSimNRTunedTidesMergerFrequency(
 }
 
 /**
- * Internal function only
- * Function to call the frequency domain tidal correction
+ * Internal function only.
+ * Function to call the frequency domain tidal correction.
  * Equation (7) in arXiv:1706.02969
  */
 static double SimNRTunedTidesFDTidalPhase(
@@ -173,7 +175,7 @@ static double SimNRTunedTidesFDTidalPhase(
 					  )
 {
   /* NRTunedTidesFDTidalPhase is Eq 7 in arXiv:1706.02969
-   * and is a function of x = angular_orb_freq^(2./3.)
+   * and is a function of x = angular_orb_freq^(2/3)
    */
   REAL8 M_omega = LAL_PI * fHz * (mtot * LAL_MTSUN_SI); //dimensionless angular GW frequency
 
@@ -207,7 +209,7 @@ static double SimNRTunedTidesFDTidalPhase(
 
 /** 
  * Tidal amplitude corrections; only available for NRTidalv2;
- * Eq. 24 of arxiv: 1905.06011
+ * Eq 24 of arxiv:1905.06011
  */
 static REAL8 SimNRTunedTidesFDTidalAmplitude(
 					     const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
@@ -233,9 +235,27 @@ static REAL8 SimNRTunedTidesFDTidalAmplitude(
   return ampT;
 }
 
+/**
+ * Set the NRTidalv2 phase coefficients in an array for use here and in the IMRPhenomX*_NRTidalv2 implementation
+ */
+int XLALSimNRTunedTidesSetFDTidalPhase_v2_Coeffs(REAL8 *NRTidalv2_coeffs)
+{
+  NRTidalv2_coeffs[0] =   2.4375; // c_Newt
+  NRTidalv2_coeffs[1] = -12.615214237993088; // n_1
+  NRTidalv2_coeffs[2] =  19.0537346970349; // n_3over2
+  NRTidalv2_coeffs[3] = -21.166863146081035; // n_2
+  NRTidalv2_coeffs[4] =  90.55082156324926; // n_5over2
+  NRTidalv2_coeffs[5] = -60.25357801943598; // n_3
+  NRTidalv2_coeffs[6] = -15.111207827736678; // d_1
+  NRTidalv2_coeffs[7] =  22.195327350624694; // d_3over2
+  NRTidalv2_coeffs[8] =   8.064109635305156; // d_2
+
+  return XLAL_SUCCESS;
+}
+
 /** 
  * NRTunedTidesFDTidalPhase is Eq 22 of https://arxiv.org/abs/1905.06011 
- * and is a function of x = angular_orb_freq^(2./3.)
+ * and is a function of x = angular_orb_freq^(2/3)
  */
 static double SimNRTunedTidesFDTidalPhase_v2(
 					     const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
@@ -253,15 +273,21 @@ static double SimNRTunedTidesFDTidalPhase_v2(
   REAL8 PN_x_3over2 = pow(PN_x, 3.0/2.0);
   REAL8 PN_x_5over2 = pow(PN_x, 5.0/2.0);
   /* model parameters */
-  const REAL8 c_Newt   = 2.4375;
-  const REAL8 n_1      = -12.615214237993088;
-  const REAL8 n_3over2 =  19.0537346970349;
-  const REAL8 n_2      = -21.166863146081035;
-  const REAL8 n_5over2 =  90.55082156324926;
-  const REAL8 n_3      = -60.25357801943598;
-  const REAL8 d_1      = -15.111207827736678;
-  const REAL8 d_3over2 =  22.195327350624694;
-  const REAL8 d_2      =   8.064109635305156;
+  REAL8 NRTidalv2_coeffs[9];
+
+  int errcode;
+  errcode = XLALSimNRTunedTidesSetFDTidalPhase_v2_Coeffs(NRTidalv2_coeffs);
+  XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting NRTidalv2 coefficients failed.\n");
+
+  const REAL8 c_Newt   = NRTidalv2_coeffs[0];
+  const REAL8 n_1      = NRTidalv2_coeffs[1];
+  const REAL8 n_3over2 = NRTidalv2_coeffs[2];
+  const REAL8 n_2      = NRTidalv2_coeffs[3];
+  const REAL8 n_5over2 = NRTidalv2_coeffs[4];
+  const REAL8 n_3      = NRTidalv2_coeffs[5];
+  const REAL8 d_1      = NRTidalv2_coeffs[6];
+  const REAL8 d_3over2 = NRTidalv2_coeffs[7];
+  const REAL8 d_2      = NRTidalv2_coeffs[8];
   REAL8 tidal_phase = - kappa2T * c_Newt / (Xa * Xb) * PN_x_5over2;
   REAL8 num = 1.0 + (n_1 * PN_x) + (n_3over2 * PN_x_3over2) + (n_2 * PN_x_2) + (n_5over2 * PN_x_5over2) + (n_3 * PN_x_3);
   REAL8 den = 1.0 + (d_1 * PN_x) + (d_3over2 * PN_x_3over2) + (d_2 * PN_x_2) ;
@@ -289,12 +315,15 @@ int XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(
   REAL8 f_dim_to_Hz;
   int errcode = EnforcePrimaryMassIsm1(&m1_SI, &m2_SI, &lambda1, &lambda2);
   XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "EnforcePrimaryMassIsm1 failed");
+  
+  if( lambda1 < 0 || lambda2 < 0 )
+  XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for NRTidal models", lambda1, lambda2);
 
 
   const REAL8 mtot = m1 + m2;
-  /** SEOBNRv4ROM_NRTidalv2 and IMRPhenomD_NRTidalv2 deal with dimensionless freqs and freq in Hz;
-   *  If the value corresponding to the last index is above 1, we are safe to assume a frequency given in Hz, 
-   *  otherwise a dimensionless frequency
+  /* SEOBNRv4ROM_NRTidalv2 and IMRPhenomD_NRTidalv2 deal with dimensionless freqs and freq in Hz;
+   * If the value corresponding to the last index is above 1, we are safe to assume a frequency given in Hz,
+   * otherwise a dimensionless frequency
    */
 
   if ((*fHz).data[(*fHz).length - 1] > 1.)
@@ -302,7 +331,7 @@ int XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(
   else 
     f_dim_to_Hz = mtot*LAL_MTSUN_SI;
 
-  /**< tidal coupling constant.*/
+  /* tidal coupling constant.*/
   const REAL8 kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
 
   for(UINT4 i = 0; i < (*fHz).length; i++)
@@ -350,6 +379,9 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
    */
   int errcode = EnforcePrimaryMassIsm1(&m1_SI, &m2_SI, &lambda1, &lambda2);
   XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "EnforcePrimaryMassIsm1 failed");
+  
+  if( lambda1 < 0 || lambda2 < 0 )
+  XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for NRTidal models", lambda1, lambda2);
 
   const REAL8 m1 = m1_SI / LAL_MSUN_SI;
   const REAL8 m2 = m2_SI / LAL_MSUN_SI;
@@ -360,7 +392,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
   const REAL8 Xa = m1 / mtot;
   const REAL8 Xb = m2 / mtot;
 
-  /**< tidal coupling constant.*/
+  /* tidal coupling constant.*/
   const REAL8 kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
 
   /* Prepare tapering of amplitude beyond merger frequency */
@@ -405,7 +437,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
  * The spin-squared terms occur with the spin-induced quadrupole moment terms
  * while the spin-cubed terms occur with both spin-induced quadrupole as well as 
  * octupole moments. The terms are computed in arXiv:1806.01772 and are 
- * explicitly written out in Eqn.27 of arXiv:1905.06011. The following terms 
+ * explicitly written out in Eq 27 of arXiv:1905.06011. The following terms
  * are specifically meant for BNS systems, and are added to the NRTidalv2
  * extensions of the approximants IMRPhenomPv2, IMRPhenomD and SEOBNRv4_ROM. 
  */

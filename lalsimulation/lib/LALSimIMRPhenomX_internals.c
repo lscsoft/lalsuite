@@ -35,8 +35,6 @@
 #include "LALSimIMRPhenomX_intermediate.c"
 #include "LALSimIMRPhenomX_ringdown.c"
 #include "LALSimIMRPhenomX_qnm.c"
-//#include "LALSimIMRPhenomX_tidal.c"
-//#include "LALSimIMRPhenomX_precessing.c"
 
 /* LAL Header Files */
 #include <lal/LALSimIMR.h>
@@ -47,6 +45,9 @@
 
 /* GSL Header Files */
 #include <gsl/gsl_linalg.h>
+
+/* Link PN coefficients (needed for NRTidal spin-induced quadrupole terms) */
+#include "LALSimInspiralPNCoefficients.c"
 
 /* This struct is used to pre-cache useful powers of frequency, avoiding numerous expensive operations */
 int IMRPhenomX_Initialize_Powers(IMRPhenomX_UsefulPowers *p, REAL8 number)
@@ -301,23 +302,51 @@ int IMRPhenomXSetWaveformVariables(
 	REAL8 m1_In      = m1_SI / LAL_MSUN_SI; // Mass 1 in solar masses
 	REAL8 m2_In      = m2_SI / LAL_MSUN_SI; // Mass 2 in solar masses
 
-	REAL8 m1, m2, chi1L, chi2L;
+	/* Set matter parameters */
+	REAL8 lambda1_In = 0, lambda2_In = 0, quadparam1_In = 1, quadparam2_In = 1; // Tidal deformabilities and quadrupole spin-induced deformation parameters
+    
+	if(XLALSimInspiralWaveformParamsLookupPhenomXTidalFlag(LALParams)!=0)
+	{
+	  
+      lambda1_In = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
+      lambda2_In = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
+      if( lambda1_In < 0 || lambda2_In < 0 )
+                XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for NRTidalv2", lambda1_In, lambda2_In);
+      
+      int retcode;
+      
+      retcode = XLALSimInspiralSetQuadMonParamsFromLambdas(LALParams);
+	  XLAL_CHECK(retcode == XLAL_SUCCESS, XLAL_EFUNC, "Failed to set quadparams from Universal relation.\n");
+   
+	  quadparam1_In = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon1(LALParams);
+	  quadparam2_In = 1. + XLALSimInspiralWaveformParamsLookupdQuadMon2(LALParams);
+	}
 
-	/* Check if m1 >= m2, if not then swap masses/spins */
+	REAL8 m1, m2, chi1L, chi2L, lambda1, lambda2, quadparam1, quadparam2;
+
+	/* Check if m1 >= m2, if not then swap masses/spins/lambdas/quadparams */
 	if(m1_In >= m2_In)
 	{
-		chi1L = chi1L_In;
-		chi2L = chi2L_In;
-		m1    = m1_In;
-		m2    = m2_In;
+		chi1L      = chi1L_In;
+		chi2L      = chi2L_In;
+		m1         = m1_In;
+		m2         = m2_In;
+		lambda1    = lambda1_In;
+		lambda2    = lambda2_In;
+		quadparam1 = quadparam1_In;
+		quadparam2 = quadparam2_In;
 	}
 	else
 	{
-		XLAL_PRINT_WARNING("Warning: m1 < m2, swapping the masses and spins.\n");
-		chi1L = chi2L_In;
-		chi2L = chi1L_In;
-		m1    = m2_In;
-		m2    = m1_In;
+		XLAL_PRINT_WARNING("Warning: m1 < m2, swapping the masses, spins, tidal deformabilities, and spin-induced quadrupole parameters.\n");
+		chi1L      = chi2L_In;
+		chi2L      = chi1L_In;
+		m1         = m2_In;
+		m2         = m1_In;
+		lambda1    = lambda2_In;
+		lambda2    = lambda1_In;
+		quadparam1 = quadparam2_In;
+		quadparam2 = quadparam1_In;
 	}
 
 	/* Check that physical spins have been called. Perform internal nudge to check for numerical round-off issues. */
@@ -435,6 +464,14 @@ int IMRPhenomXSetWaveformVariables(
 		printf("STotR   : %.16e\n",wf->STotR);
 	}
 
+	/* Matter parameters */
+	wf->lambda1    = lambda1;
+	wf->lambda2    = lambda2;
+	wf->quadparam1 = quadparam1;
+	wf->quadparam2 = quadparam2;
+    wf->kappa2T=XLALSimNRTunedTidesComputeKappa2T(wf->m1_SI, wf->m2_SI, wf->lambda1, wf->lambda2);
+    wf->fmerger    = XLALSimNRTunedTidesMergerFrequency(wf->Mtot, wf->kappa2T, wf->q);
+
 	/* If no reference frequency is passed, set it to the starting GW frequency */
 	wf->fRef      = (fRef == 0.0) ? f_min : fRef;
 	wf->phiRef_In = phi0;
@@ -448,6 +485,7 @@ int IMRPhenomXSetWaveformVariables(
 	wf->v_ref     = cbrt(wf->piM * wf->fRef);
 
 	wf->deltaF    = deltaF;
+    wf->deltaMF   = XLALSimIMRPhenomXUtilsHztoMf(wf->deltaF,wf->Mtot);
 
 	/* Define the default end of the waveform as: 0.3 Mf. This value is chosen such that the 44 mode also shows the ringdown part. */
 	wf->fCutDef   = 0.3;
@@ -457,6 +495,7 @@ int IMRPhenomXSetWaveformVariables(
 	/* Minimum and maximum frequency */
 	wf->fMin      = f_min;
 	wf->fMax      = f_max;
+    wf->MfMax     = XLALSimIMRPhenomXUtilsHztoMf(wf->fMax,wf->Mtot);
 
 	/* Convert fCut to physical cut-off frequency */
 	wf->fCut      = wf->fCutDef / wf->M_sec;
@@ -977,6 +1016,10 @@ int IMRPhenomXGetPhaseCoefficients(
 	pPhase->c3 = 0.0;
 	pPhase->c4 = 0.0;
 	pPhase->cL = 0.0;
+    
+    pPhase->c2PN_tidal=0.;
+    pPhase->c3PN_tidal=0.;
+    pPhase->c3p5PN_tidal=0.;
 
 	pPhase->sigma0 = 0.0;
 	pPhase->sigma1 = 0.0;
@@ -984,6 +1027,7 @@ int IMRPhenomXGetPhaseCoefficients(
 	pPhase->sigma3 = 0.0;
 	pPhase->sigma4 = 0.0;
 	pPhase->sigma5 = 0.0;
+    
 
 	/*
 		The general strategy is to initialize a linear system of equations:
@@ -2273,7 +2317,7 @@ void IMRPhenomX_Phase_22_ConnectionCoefficients(IMRPhenomXWaveformStruct *pWF, I
   IMRPhenomX_Initialize_Powers(&powers_of_fInt,fInt);
 
   double phiIMC         = IMRPhenomX_Intermediate_Phase_22_AnsatzInt(fInt,&powers_of_fInt,pWF,pPhase) + pPhase->C1Int + pPhase->C2Int*fInt;
-	double phiRD          = IMRPhenomX_Ringdown_Phase_22_AnsatzInt(fInt,&powers_of_fInt,pWF,pPhase);
+  double phiRD          = IMRPhenomX_Ringdown_Phase_22_AnsatzInt(fInt,&powers_of_fInt,pWF,pPhase);
   double DPhiIntC       = IMRPhenomX_Intermediate_Phase_22_Ansatz(fInt,&powers_of_fInt,pWF,pPhase) + pPhase->C2Int;
   double DPhiRD         = IMRPhenomX_Ringdown_Phase_22_Ansatz(fInt,&powers_of_fInt,pWF,pPhase);
 
@@ -2455,4 +2499,175 @@ INT4 check_input_mode_array(LALDict *lalParams)
   XLALDestroyValue(ModeArray);
 	
   return XLAL_SUCCESS;
+}
+
+
+
+NRTidal_version_type IMRPhenomX_SetTidalVersion(LALDict *lalParams){
+    
+    int tidal_version=XLALSimInspiralWaveformParamsLookupPhenomXTidalFlag(lalParams);
+    
+    NRTidal_version_type version;
+    
+    switch(tidal_version){
+          case 0:
+              version=NoNRT_V;
+              break;
+          case 1:
+              version=NRTidal_V;
+              break;
+          case 2:
+              version=NRTidalv2_V;
+              break;
+          default:
+              {
+                  XLAL_ERROR(XLAL_EINVAL, "Error: Tidal version not recognized. Only NRTidal, NRTidalv2, and NoNRT are allowed, and NRTidal is not implemented completely in IMRPhenomX*.\n");
+              }
+    }
+    return(version);
+}
+
+
+void IMRPhenomXGetTidalPhaseCoefficients(
+    IMRPhenomXWaveformStruct *pWF,
+    IMRPhenomXPhaseCoefficients *pPhase,
+    NRTidal_version_type NRTidal_version){
+    
+
+    REAL8 quadparam1 = pWF->quadparam1;
+    REAL8 quadparam2 = pWF->quadparam2;
+    /* declare HO 3.5PN spin-spin and spin-cubed terms added separately in Pv2_NRTidalv2 */
+    REAL8 SS_3p5PN = 0., SSS_3p5PN = 0.;
+    
+    /* New variables needed for the NRTidalv2 model */
+    REAL8 X_A = pWF->m1; // Already scaled by Mtot
+    REAL8 X_B = pWF->m2; // Ibid.
+        
+    REAL8 chi1L_sq = pWF->chi1L2;
+    REAL8 chi2L_sq = pWF->chi2L2;
+      
+     pPhase->c2PN_tidal=((XLALSimInspiralTaylorF2Phasing_4PNQM2SOCoeff(X_A) + XLALSimInspiralTaylorF2Phasing_4PNQM2SCoeff(X_A)) * (quadparam1 - 1.) * chi1L_sq
+       + (XLALSimInspiralTaylorF2Phasing_4PNQM2SOCoeff(X_B) + XLALSimInspiralTaylorF2Phasing_4PNQM2SCoeff(X_B)) * (quadparam2 - 1.) * chi2L_sq);
+     pPhase->c3PN_tidal=(XLALSimInspiralTaylorF2Phasing_6PNQM2SCoeff(X_A) * (quadparam1 - 1.) * chi1L_sq
+     + XLALSimInspiralTaylorF2Phasing_6PNQM2SCoeff(X_B) * (quadparam2 - 1.) * chi2L_sq);
+      
+      if (NRTidal_version == NRTidalv2_V) {
+     /* Get the PN SS-tail and SSS terms */
+       XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, pWF->chi1L, pWF->chi2L, quadparam1, quadparam2);
+       pPhase->c3p5PN_tidal=(SS_3p5PN + SSS_3p5PN);
+      }
+    
+}
+
+REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWaveformStruct *pWF, IMRPhenomXPhaseCoefficients *pPhase, NRTidal_version_type NRTidal_version){
+
+    REAL8 X_A = pWF->m1; // Already scaled by Mtot
+    REAL8 X_B = pWF->m2;
+    
+    REAL8 Mf=powers_of_Mf->itself;
+    
+    REAL8 phaseTidal=0.;
+    
+    REAL8 pfaN=3./(128.*X_A*X_B);
+    
+    REAL8 c2pn=pPhase->c2PN_tidal, c3pn=pPhase->c3PN_tidal, c3p5pn=pPhase->c3p5PN_tidal;
+    
+    /* 2PN terms */
+    phaseTidal += pfaN * c2pn* powers_of_lalpi.m_one_third * powers_of_Mf->m_one_third;
+    
+    /* 3PN terms */
+    phaseTidal += pfaN * c3pn* powers_of_lalpi.one_third * powers_of_Mf->one_third;
+    
+    if (NRTidal_version == NRTidalv2_V)
+    {
+        REAL8 NRTidalv2_coeffs[9];
+
+        int errcode;
+        errcode = XLALSimNRTunedTidesSetFDTidalPhase_v2_Coeffs(NRTidalv2_coeffs);
+        XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting NRTidalv2 coefficients failed.\n");
+
+        const REAL8 cNewt   = NRTidalv2_coeffs[0];
+        const REAL8 n1      = NRTidalv2_coeffs[1];
+        const REAL8 n3over2 = NRTidalv2_coeffs[2];
+        const REAL8 n2      = NRTidalv2_coeffs[3];
+        const REAL8 n5over2 = NRTidalv2_coeffs[4];
+        const REAL8 n3      = NRTidalv2_coeffs[5];
+        const REAL8 d1      = NRTidalv2_coeffs[6];
+        const REAL8 d3over2 = NRTidalv2_coeffs[7];
+        const REAL8 d2      = NRTidalv2_coeffs[8];
+
+        REAL8 kappa2T = pWF->kappa2T;
+        
+        REAL8 NRphase=-((cNewt*kappa2T*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n1*powers_of_lalpi.two_thirds + Mf*n3over2*LAL_PI + powers_of_Mf->four_thirds*n2*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n5over2*powers_of_lalpi.five_thirds + pow(Mf,2)*n3*powers_of_lalpi.two))/((1 + d1*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d3over2*Mf*LAL_PI + d2*powers_of_Mf->four_thirds*powers_of_lalpi.four_thirds)*X_A*X_B));
+        
+        phaseTidal+=NRphase;
+        
+        /* Get the PN SS-tail and SSS terms */
+        phaseTidal += pfaN * c3p5pn * powers_of_lalpi.two_thirds * powers_of_Mf->two_thirds;
+    
+    }
+    else
+    {
+      XLAL_ERROR( XLAL_EINVAL, "Error in IMRPhenomX_TidalPhase: Unsupported NRTidal_version. This function currently only supports NRTidalv2.\n");
+    }
+
+    return(phaseTidal);
+
+
+}
+
+REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWaveformStruct *pWF, IMRPhenomXPhaseCoefficients *pPhase, NRTidal_version_type NRTidal_version){
+    
+    REAL8 X_A = pWF->m1; // Already scaled by Mtot
+    REAL8 X_B = pWF->m2;
+    
+    REAL8 Mf_ten_thirds=powers_of_Mf->eight_thirds*powers_of_Mf->two_thirds;
+    REAL8 pi_ten_thirds=powers_of_lalpi.eight_thirds*powers_of_lalpi.two_thirds;
+    REAL8 Mf=powers_of_Mf->itself;
+    
+    REAL8 c2pn=pPhase->c2PN_tidal, c3pn=pPhase->c3PN_tidal, c3p5pn=pPhase->c3p5PN_tidal;
+    
+    REAL8 NRTuned_dphase=0.;
+    
+    REAL8 pfaN=3./(128.*X_A*X_B);
+    
+    REAL8 threePN_dphase=(pfaN*(-c2pn + c3pn*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds))/(3.*powers_of_Mf->four_thirds*powers_of_lalpi.one_third);
+    
+    REAL8 dphase=threePN_dphase;
+    
+    
+    if(NRTidal_version==NRTidalv2_V){
+        
+        dphase+=(2.*c3p5pn*pfaN*powers_of_lalpi.two_thirds)/(3.*powers_of_Mf->one_third);
+        
+        REAL8 NRTidalv2_coeffs[9];
+
+        int errcode;
+        errcode = XLALSimNRTunedTidesSetFDTidalPhase_v2_Coeffs(NRTidalv2_coeffs);
+        XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting NRTidalv2 coefficients failed.\n");
+
+        const REAL8 cNewt   = NRTidalv2_coeffs[0];
+        const REAL8 n1      = NRTidalv2_coeffs[1];
+        const REAL8 n3over2 = NRTidalv2_coeffs[2];
+        const REAL8 n2      = NRTidalv2_coeffs[3];
+        const REAL8 n5over2 = NRTidalv2_coeffs[4];
+        const REAL8 n3      = NRTidalv2_coeffs[5];
+        const REAL8 d1      = NRTidalv2_coeffs[6];
+        const REAL8 d3over2 = NRTidalv2_coeffs[7];
+        const REAL8 d2      = NRTidalv2_coeffs[8];
+
+        REAL8 kappa2T = pWF->kappa2T;
+    
+        NRTuned_dphase=((cNewt*kappa2T*powers_of_Mf->two_thirds*powers_of_lalpi.five_thirds*(-5 - powers_of_Mf->two_thirds*(3*d1 + 7*n1)*powers_of_lalpi.two_thirds - 2*Mf*(d3over2 + 4*n3over2)*LAL_PI - powers_of_Mf->four_thirds*(d2 + 5*d1*n1 + 9*n2)*powers_of_lalpi.four_thirds - 2*powers_of_Mf->five_thirds*(2*d3over2*n1 + 3*d1*n3over2 + 5*n5over2)*powers_of_lalpi.five_thirds - pow(Mf,2)*(3*d2*n1 + 7*d1*n2 + 11*n3 + 5*d3over2*n3over2)*powers_of_lalpi.two - 2*powers_of_Mf->seven_thirds*(3*d3over2*n2 + 2*d2*n3over2 + 4*d1*n5over2)*powers_of_lalpi.seven_thirds - powers_of_Mf->eight_thirds*(5*d2*n2 + 9*d1*n3 + 7*d3over2*n5over2)*powers_of_lalpi.eight_thirds - 2*pow(Mf,3)*(4*d3over2*n3 + 3*d2*n5over2)*powers_of_lalpi.three - 7*d2*Mf_ten_thirds*n3*pi_ten_thirds))/(3.*pow(1 + d1*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d3over2*Mf*LAL_PI + d2*powers_of_Mf->four_thirds*powers_of_lalpi.four_thirds,2)*X_A*X_B));
+        
+    }
+    else
+    {
+      XLAL_ERROR( XLAL_EINVAL, "Error in IMRPhenomX_TidalPhaseDerivative: Unsupported NRTidal_version. This function currently only supports NRTidalv2.\n");
+    }
+    
+      dphase+=NRTuned_dphase;
+    
+    return(dphase);
+    
 }

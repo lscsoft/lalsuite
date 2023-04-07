@@ -117,6 +117,8 @@ known_approximants = {
     'SEOBNRv5_ROM': 107,
     'SEOBNRv4HM_PA': 108,
     'pSEOBNRv4HM_PA': 109,
+    'IMRPhenomXAS_NRTidalv2': 110,
+    'IMRPhenomXP_NRTidalv2': 111
 }
 
 @pytest.mark.parametrize("name, i", known_approximants.items())
