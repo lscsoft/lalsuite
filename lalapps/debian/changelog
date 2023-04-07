@@ -1,3 +1,9 @@
+lalapps (9.2.1-1) unstable; urgency=low
+
+  * Update for 9.2.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 06 Apr 2023 16:04:56 -0700
+
 lalapps (9.2.0-1) unstable; urgency=low
 
   * Update for 9.2.0

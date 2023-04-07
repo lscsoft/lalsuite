@@ -1,3 +1,9 @@
+lalmetaio (4.0.1-1) unstable; urgency=low
+
+  * Update for 4.0.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Thu, 06 Apr 2023 09:59:16 -0700
+
 lalmetaio (4.0.0-1) unstable; urgency=low
 
   * Update for 4.0.0
