@@ -47,6 +47,8 @@
 #endif
 
 #include "LALSimIMRPhenomXPHM.h"
+#include "LALSimIMRPhenomX_PNR.h"
+#include "LALSimIMRPhenomX_AntisymmetricWaveform.h"
 
 #define MIN(a,b) (((a)<(b))?(a):(b))
 #define MAX(a,b) (((a)>(b))?(a):(b))
@@ -72,6 +74,7 @@ static int IMRPhenomXPHMTwistUp(
 static int IMRPhenomXPHMTwistUpOneMode(
   const REAL8 Mf,                          /**< Frequency (Mf geometric units) */
   const COMPLEX16 hlmprime,                /**< Underlying aligned-spin IMRPhenomXHM waveform. The loop is with mprime positive, but the mode has to be the negative one for positive frequencies.*/
+  const COMPLEX16 hlmprime_antisym,         /**< antisymmetric waveform in the co-precessing frame */
   IMRPhenomXWaveformStruct *pWF,           /**< IMRPhenomX Waveform Struct */
   IMRPhenomXPrecessionStruct *pPrec,       /**< IMRPhenomXP Precession Struct */
   UINT4  l,                                /**< l index of the (l,m) (non-)precessing mode */
@@ -79,7 +82,6 @@ static int IMRPhenomXPHMTwistUpOneMode(
   INT4   m,                                /**< second index of the (l,m) precessing mode */
   COMPLEX16Sequence *hlminertial           /**< [out] hlm for one frequency in the inertial frame (precessing mode)  */
 );
-
 
 //This is a wrapper function for adding higher modes to the ModeArray
 LALDict *IMRPhenomXPHM_setup_mode_array(LALDict *lalParams);
@@ -273,6 +275,13 @@ int XLALSimIMRPhenomXPHM(
   freqs->data[0] = pWF->fMin;
   freqs->data[1] = pWF->f_max_prime;
 
+  if(XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedAngles(lalParams)){
+    XLAL_CHECK(
+      (fRef >=  pWF->fMin)&&(fRef <= pWF->f_max_prime),
+      XLAL_EFUNC,
+      "Error: f_min = %.2f <= fRef = %.2f < f_max = %.2f required when using tuned angles.\n",pWF->fMin,fRef,pWF->f_max_prime);
+  }
+
   #if DEBUG == 1
   printf("\n\n **** Initializing precession struct... **** \n\n");
   #endif
@@ -307,6 +316,8 @@ int XLALSimIMRPhenomXPHM(
   /* We now call the core IMRPhenomXPHM waveform generator */
   status = IMRPhenomXPHM_hplushcross(hptilde, hctilde, freqs, pWF, pPrec, lalParams_aux);
   XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXPHM_hplushcross failed to generate IMRPhenomXHM waveform.\n");
+
+
 
   #if DEBUG == 1
   printf("\n\n **** Call to IMRPhenomXPHM_hplus_hcross complete. **** \n\n");
@@ -469,6 +480,13 @@ int XLALSimIMRPhenomXPHMFromModes(
   freqs->data[0] = pWF->fMin;
   freqs->data[1] = pWF->f_max_prime;
 
+  if(XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedAngles(lalParams)){
+    XLAL_CHECK(
+      (fRef >=  pWF->fMin)&&(fRef <= pWF->f_max_prime),
+      XLAL_EFUNC,
+      "Error: f_min = %.2f <= fRef = %.2f < f_max = %.2f required when using tuned angles.\n",pWF->fMin,fRef,pWF->f_max_prime);
+  }
+
   #if DEBUG == 1
   printf("\n\n **** Initializing precession struct... **** \n\n");
   #endif
@@ -618,6 +636,13 @@ int XLALSimIMRPhenomXPHMFromModes(
   REAL8 f_min_In  = freqs->data[0];
   REAL8 f_max_In  = freqs->data[freqs->length - 1];
 
+  if(XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedAngles(lalParams)){
+    XLAL_CHECK(
+      (fRef >=  f_min_In)&&(fRef <= f_max_In),
+      XLAL_EFUNC,
+      "Error: f_min = %.2f <= fRef = %.2f < f_max = %.2f required when using tuned angles.\n",f_min_In,fRef,f_max_In);
+  }
+
   /*
     Passing deltaF = 0 implies that freqs is a frequency grid with non-uniform spacing.
     The function waveform then start at lowest given frequency.
@@ -695,32 +720,32 @@ int XLALSimIMRPhenomXPHMFromModes(
  * @} **/
 
 
- /**
+/**
   Core function of XLALSimIMRPhenomXPHM and XLALSimIMRPhenomXPHMFrequencySequence.
   Returns hptilde, hctilde for positive frequencies.
   The default non-precessing modes are 2|2|, 2|1|, 3|3|, 3|2| and 4|4|.
   It returns also the contribution of the corresponding negatives modes.
   It can be evaulated in a non-uniform frequency grid. Assumes positive frequencies.
- */
- static int IMRPhenomXPHM_hplushcross(
+*/
+static int IMRPhenomXPHM_hplushcross(
    COMPLEX16FrequencySeries **hptilde,  /**< [out] Frequency domain h+ GW strain */
    COMPLEX16FrequencySeries **hctilde,  /**< [out] Frequency domain hx GW strain */
    const REAL8Sequence *freqs_In,       /**< Frequency array to evaluate the model. (fmin, fmax) for equally spaced grids. */
    IMRPhenomXWaveformStruct *pWF,       /**< IMRPhenomX Waveform Struct  */
    IMRPhenomXPrecessionStruct *pPrec,   /**< IMRPhenomXP Precession Struct  */
    LALDict *lalParams                   /**< LAL Dictionary Structure    */
- )
- {
+)
+{
 
-   if(pWF->f_max_prime <= pWF->fMin)
-   {
-     XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);     
-   }
-     
-   /* Set LIGOTimeGPS */
-   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
+  if (pWF->f_max_prime <= pWF->fMin)
+  {
+    XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);
+  }
 
-   REAL8 deltaF = pWF->deltaF;
+  /* Set LIGOTimeGPS */
+  LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
+
+  REAL8 deltaF = pWF->deltaF;
 
    LALValue *ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(lalParams);
 
@@ -745,151 +770,227 @@ int XLALSimIMRPhenomXPHMFromModes(
       }
      
 
-   /* Build the frequency array and initialize hptilde to the length of freqs. */
-   REAL8Sequence *freqs;
-   UINT4 offset = SetupWFArrays(&freqs, hptilde, freqs_In, pWF, ligotimegps_zero);
+  /* Build the frequency array and initialize hptilde to the length of freqs. */
+  REAL8Sequence *freqs;
+  UINT4 offset = SetupWFArrays(&freqs, hptilde, freqs_In, pWF, ligotimegps_zero);
 
-   /* Initialize hctilde according to hptilde. */
-   size_t npts = (*hptilde)->data->length;
-   *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &(*hptilde)->epoch, (*hptilde)->f0, pWF->deltaF, &lalStrainUnit, npts);
-   XLAL_CHECK (*hctilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu.", npts);
-   memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
-   XLALUnitMultiply(&((*hctilde)->sampleUnits), &((*hctilde)->sampleUnits), &lalSecondUnit);
+  /* Initialize hctilde according to hptilde. */
+  size_t npts = (*hptilde)->data->length;
+  *hctilde = XLALCreateCOMPLEX16FrequencySeries("hctilde: FD waveform", &(*hptilde)->epoch, (*hptilde)->f0, pWF->deltaF, &lalStrainUnit, npts);
+  XLAL_CHECK (*hctilde, XLAL_ENOMEM, "Failed to allocated waveform COMPLEX16FrequencySeries of length %zu.", npts);
+  memset((*hctilde)->data->data, 0, npts * sizeof(COMPLEX16));
+  XLALUnitMultiply(&((*hctilde)->sampleUnits), &((*hctilde)->sampleUnits), &lalSecondUnit);
 
-   /* Object to store the non-precessing 22 mode waveform and to be recycled when calling the 32 mode in multibanding. */
-   COMPLEX16FrequencySeries *htilde22 = NULL;
+  /* Object to store the non-precessing 22 mode waveform and to be recycled when calling the 32 mode in multibanding. */
+  COMPLEX16FrequencySeries *htilde22 = NULL;
 
    
 
-   /* Initialize the power of pi for the HM internal functions. */
-   status = IMRPhenomX_Initialize_Powers(&powers_of_lalpiHM, LAL_PI);
-   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Failed to initialize useful powers of LAL_PI.");
+  /* Initialize the power of pi for the HM internal functions. */
+  status = IMRPhenomX_Initialize_Powers(&powers_of_lalpiHM, LAL_PI);
+  XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Failed to initialize useful powers of LAL_PI.");
 
 
-   SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
-   *hlms = NULL;
-   if (XLALSimInspiralWaveformParamsLookupPhenomXPHMTwistPhenomHM(lalParams)==1)
-   {
-     /* evaluate all hlm modes */
-      status = XLALSimIMRPhenomHMGethlmModes(
-         hlms,
-         freqs,
-         pWF->m1_SI,
-         pWF->m2_SI,
-         pPrec->chi1x,
-         pPrec->chi1y,
-         pWF->chi1L,
-         pPrec->chi2x,
-         pPrec->chi2y,
-         pWF->chi2L,
-         pWF->phi0,
-         //pWF->deltaF,
-         0,
-         pWF->fRef,
-         lalParams);
-     XLAL_CHECK(XLAL_SUCCESS == status,
-                XLAL_EFUNC, "XLALSimIMRPhenomHMGethlmModes failed");
-   }
-     
+  SphHarmFrequencySeries **hlms = XLALMalloc(sizeof(SphHarmFrequencySeries));
+  *hlms = NULL;
+  if (XLALSimInspiralWaveformParamsLookupPhenomXPHMTwistPhenomHM(lalParams)==1)
+  {
+    /* evaluate all hlm modes */
+    status = XLALSimIMRPhenomHMGethlmModes(
+        hlms,
+        freqs,
+        pWF->m1_SI,
+        pWF->m2_SI,
+        pPrec->chi1x,
+        pPrec->chi1y,
+        pWF->chi1L,
+        pPrec->chi2x,
+        pPrec->chi2y,
+        pWF->chi2L,
+        pWF->phi0,
+        //pWF->deltaF,
+        0,
+        pWF->fRef,
+        lalParams);
+    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "XLALSimIMRPhenomHMGethlmModes failed");
+  }
 
-   /***** Loop over non-precessing modes ******/
-   for (UINT4 ell = 2; ell <= L_MAX; ell++)
-   {
-     for (UINT4 emmprime = 1; emmprime <= ell; emmprime++)
-     {
-       /* Loop over only positive mprime is intentional.
-          The single mode function returns the negative mode h_l-mprime, and the positive
-          is added automatically in during the twisting up in IMRPhenomXPHMTwistUp.
-          First check if (l,m) mode is 'activated' in the ModeArray.
-          If activated then generate the mode, else skip this mode.
-       */
-       if (XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, emmprime) != 1)
-       { /* skip mode */
-         continue;
-       } /* else: generate mode */
+  /* Set up code for using PNR tuned angles */
+  int IMRPhenomXPNRUseTunedAngles = pPrec->IMRPhenomXPNRUseTunedAngles;
+  int AntisymmetricWaveform = pPrec->IMRPhenomXAntisymmetricWaveform;
 
-       #if DEBUG == 1
-       printf("\n\n*********************************\n*Non-precessing Mode %i%i \n******************************\n",ell, emmprime);
-       // Save the hlm mode into a file
-       FILE *fileangle;
-       char fileSpec[40];
+  IMRPhenomX_PNR_angle_spline *hm_angle_spline = NULL;
+  REAL8 Mf_RD_22 = pWF->fRING;
+  REAL8 Mf_RD_lm = 0.0;
 
-       if(pPrec->MBandPrecVersion == 0)
-       {
-           sprintf(fileSpec, "angles_hphc_%i%i.dat", ell, emmprime);
-       }
-       else
-       {
-           sprintf(fileSpec, "angles_hphc_MB_%i%i.dat", ell, emmprime);
-       }
-       printf("\nOutput angle file: %s\r\n", fileSpec);
-       fileangle = fopen(fileSpec,"w");
+  if (IMRPhenomXPNRUseTunedAngles)
+  {
+    /* We're using tuned angles! */
+    /* Allocate the spline interpolant struct */
 
-       fprintf(fileangle,"# q = %.16e m1 = %.16e m2 = %.16e chi1 = %.16e chi2 = %.16e lm = %i%i Mtot = %.16e distance = %.16e\n", pWF->q, pWF->m1, pWF->m2, pWF->chi1L, pWF->chi2L, ell, emmprime, pWF->Mtot, pWF->distance/LAL_PC_SI/1e6);
-       fprintf(fileangle,"#fHz   cexp_i_alpha(re im)   cexp_i_epsilon(re im)    cexp_i_betah(re im)\n");
+    hm_angle_spline = (IMRPhenomX_PNR_angle_spline *) XLALMalloc(sizeof(IMRPhenomX_PNR_angle_spline));
+    if (!hm_angle_spline)
+    {
+      XLAL_ERROR(XLAL_EFUNC, "hm_angle_spline struct allocation failed in LALSimIMRPhenomXPHM.c.");
+    }
 
-       fclose(fileangle);
-       #endif
+    /* Generate interpolant structs for the (2,2) angles */
+    status = IMRPhenomX_PNR_GeneratePNRAngleInterpolants(hm_angle_spline, pWF, pPrec, lalParams);
+    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_GeneratePNRAngleInterpolants failed.\n");
 
-       /* Variable to store the strain of only one (negative) mode: h_l-mprime */
-       COMPLEX16FrequencySeries *htildelm = NULL;
+    /* Here we assign the reference values of alpha and gamma to their values in the precession struct */
+    /* NOTE: the contribution from pPrec->alpha0 is assigned in IMRPhenomX_PNR_RemapThetaJSF */
+    pPrec->alpha_offset = gsl_spline_eval(hm_angle_spline->alpha_spline, pWF->fRef, hm_angle_spline->alpha_acc);
+    /* NOTE: the sign is flipped between gamma and epsilon */
+    pPrec->epsilon_offset = -gsl_spline_eval(hm_angle_spline->gamma_spline, pWF->fRef, hm_angle_spline->gamma_acc) - pPrec->epsilon0;  // note the sign difference between gamma and epsilon
 
-       if (XLALSimInspiralWaveformParamsLookupPhenomXPHMTwistPhenomHM(lalParams)==1)
-       {
-          INT4 minus1l = 1;
-          if(ell % 2 !=0) minus1l = -1;
-          COMPLEX16FrequencySeries *htildelmPhenomHM = NULL;
-          /* Initialize the htilde frequency series */
-          htildelm = XLALCreateCOMPLEX16FrequencySeries("htildelm: FD waveform", &ligotimegps_zero, 0, pWF->deltaF, &lalStrainUnit, npts);
-          /* Check that frequency series generated okay */
-          XLAL_CHECK(htildelm,XLAL_ENOMEM,"Failed to allocate COMPLEX16FrequencySeries of length %zu for f_max = %f, deltaF = %g.\n", npts, freqs_In->data[freqs_In->length - 1], pWF->deltaF);
-          memset((htildelm)->data->data, 0, npts * sizeof(COMPLEX16));
-          XLALUnitMultiply(&((htildelm)->sampleUnits), &((htildelm)->sampleUnits), &lalSecondUnit);
+    /* Remap the J-frame sky location to use beta instead of ThetaJN */
+    REAL8 betaPNR_ref = gsl_spline_eval(hm_angle_spline->beta_spline, pWF->fRef, hm_angle_spline->beta_acc);
+    status = IMRPhenomX_PNR_RemapThetaJSF(betaPNR_ref, pWF, pPrec, lalParams);
+    XLAL_CHECK(
+        XLAL_SUCCESS == status,
+        XLAL_EFUNC,
+        "Error: IMRPhenomX_PNR_RemapThetaJSF failed in IMRPhenomX_PNR_GeneratePNRAngles.");
+  }
 
-          htildelmPhenomHM = XLALSphHarmFrequencySeriesGetMode(*hlms, ell, emmprime);
-          for(UINT4 idx = 0; idx < freqs->length; idx++)
+  /******************************************************/ 
+  /******** Antisymmetric waveform generated here ********/
+  /******************************************************/ 
+  REAL8Sequence *antiSym_amp = NULL;
+  REAL8Sequence *antiSym_phi = NULL;
+
+  if (AntisymmetricWaveform && IMRPhenomXPNRUseTunedAngles)
+  {
+    antiSym_amp = XLALCreateREAL8Sequence(freqs->length);
+    antiSym_phi = XLALCreateREAL8Sequence(freqs->length);
+  }
+
+
+
+  /***** Loop over non-precessing modes ******/
+  for (UINT4 ell = 2; ell <= L_MAX; ell++)
+  {
+    for (UINT4 emmprime = 1; emmprime <= ell; emmprime++)
+    {
+      /* Loop over only positive mprime is intentional.
+        The single mode function returns the negative mode h_l-mprime, and the positive
+        is added automatically in during the twisting up in IMRPhenomXPHMTwistUp.
+        First check if (l,m) mode is 'activated' in the ModeArray.
+        If activated then generate the mode, else skip this mode.
+      */
+      if (XLALSimInspiralModeArrayIsModeActive(ModeArray, ell, emmprime) != 1)
+      { /* skip mode */
+        continue;
+      } /* else: generate mode */
+
+      /* Skip twisting-up if the non-precessing mode is zero. */
+      if((pWF->q == 1) && (pWF->chi1L == pWF->chi2L) && (emmprime % 2 != 0))
+      {
+        continue;
+      }
+
+      /* Compute and store phase alignment quantities for each
+      non-precessing (ell,emm) multipole moment. Note that the
+      (2,2) moment is handled separately within XAS routines. */
+      if (
+            pWF->APPLY_PNR_DEVIATIONS && pWF->IMRPhenomXPNRForceXHMAlignment && (ell != 2) && (emmprime != 2)
+          )
+      {
+        /* Compute and store phase alignment quantities for each
+        non-precessing (ell,emm) multipole moment */
+        IMRPhenomXHM_PNR_SetPhaseAlignmentParams(ell,emmprime,pWF,pPrec,lalParams);
+      }
+
+      #if DEBUG == 1
+      printf("\n\n*********************************\n*Non-precessing Mode %i%i \n******************************\n",ell, emmprime);
+      // Save the hlm mode into a file
+      FILE *fileangle;
+      char fileSpec[40];
+
+      if(pPrec->MBandPrecVersion == 0)
+      {
+          sprintf(fileSpec, "angles_hphc_%i%i.dat", ell, emmprime);
+      }
+      else
+      {
+          sprintf(fileSpec, "angles_hphc_MB_%i%i.dat", ell, emmprime);
+      }
+      printf("\nOutput angle file: %s\r\n", fileSpec);
+      fileangle = fopen(fileSpec,"w");
+
+      fprintf(fileangle,"# q = %.16e m1 = %.16e m2 = %.16e chi1 = %.16e chi2 = %.16e lm = %i%i Mtot = %.16e distance = %.16e\n", pWF->q, pWF->m1, pWF->m2, pWF->chi1L, pWF->chi2L, ell, emmprime, pWF->Mtot, pWF->distance/LAL_PC_SI/1e6);
+      fprintf(fileangle,"#fHz   cexp_i_alpha(re im)   cexp_i_epsilon(re im)    cexp_i_betah(re im)\n");
+
+      fclose(fileangle);
+      #endif
+
+      /* Variable to store the strain of only one (negative) mode: h_l-mprime */
+      COMPLEX16FrequencySeries *htildelm = NULL;
+
+      if (XLALSimInspiralWaveformParamsLookupPhenomXPHMTwistPhenomHM(lalParams)==1)
+      {
+        INT4 minus1l = 1;
+        if(ell % 2 !=0) minus1l = -1;
+        COMPLEX16FrequencySeries *htildelmPhenomHM = NULL;
+        /* Initialize the htilde frequency series */
+        htildelm = XLALCreateCOMPLEX16FrequencySeries("htildelm: FD waveform", &ligotimegps_zero, 0, pWF->deltaF, &lalStrainUnit, npts);
+        /* Check that frequency series generated okay */
+        XLAL_CHECK(htildelm,XLAL_ENOMEM,"Failed to allocate COMPLEX16FrequencySeries of length %zu for f_max = %f, deltaF = %g.\n", npts, freqs_In->data[freqs_In->length - 1], pWF->deltaF);
+        memset((htildelm)->data->data, 0, npts * sizeof(COMPLEX16));
+        XLALUnitMultiply(&((htildelm)->sampleUnits), &((htildelm)->sampleUnits), &lalSecondUnit);
+
+        htildelmPhenomHM = XLALSphHarmFrequencySeriesGetMode(*hlms, ell, emmprime);
+        for(UINT4 idx = 0; idx < freqs->length; idx++)
+        {
+          htildelm->data->data[idx+offset] = minus1l * htildelmPhenomHM->data->data[idx] * pWF->amp0;
+        }
+        //XLALDestroyCOMPLEX16FrequencySeries(htildelmPhenomHM);
+      }
+      else
+      {
+        /* Compute non-precessing mode */
+        if (thresholdMB == 0){  // No multibanding
+          if(ell == 2 && emmprime == 2)
           {
-            htildelm->data->data[idx+offset] = minus1l * htildelmPhenomHM->data->data[idx] * pWF->amp0;
+            status = IMRPhenomXASGenerateFD(&htildelm, freqs, pWF, lalParams);
+            XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXASGenerateFD failed to generate IMRPhenomXHM waveform.");
           }
-          //XLALDestroyCOMPLEX16FrequencySeries(htildelmPhenomHM);
-       }
-       else
-       {
-         /* Compute non-precessing mode */
-         if (thresholdMB == 0){  // No multibanding
-           if(ell == 2 && emmprime == 2)
-           {
-              status = IMRPhenomXASGenerateFD(&htildelm, freqs, pWF, lalParams);
-              XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXASGenerateFD failed to generate IMRPhenomXHM waveform.");
-           }
-           else
-           {
-             status = IMRPhenomXHMGenerateFDOneMode(&htildelm, freqs, pWF, ell, emmprime, lalParams);
-             XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMGenerateFDOneMode failed to generate IMRPhenomXHM waveform.");
-           }
-         }
-         else{               // With multibanding
-           if(ell==3 && emmprime==2){  // mode with mode-mixing
-              status = IMRPhenomXHMMultiBandOneModeMixing(&htildelm, htilde22, pWF, ell, emmprime, lalParams);
-              XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneModeMixing failed to generate IMRPhenomXHM waveform.");
-           }
-           else{                  // modes without mode-mixing including 22 mode
-              status = IMRPhenomXHMMultiBandOneMode(&htildelm, pWF, ell, emmprime, lalParams);
-              XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneMode failed to generate IMRPhenomXHM waveform.");
-           }
+          else
+          {
+            status = IMRPhenomXHMGenerateFDOneMode(&htildelm, freqs, pWF, ell, emmprime, lalParams);
+            XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMGenerateFDOneMode failed to generate IMRPhenomXHM waveform.");
+          }
+        }
+        else{               // With multibanding
+          if(ell==3 && emmprime==2){  // mode with mode-mixing
+            status = IMRPhenomXHMMultiBandOneModeMixing(&htildelm, htilde22, pWF, ell, emmprime, lalParams);
+            XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneModeMixing failed to generate IMRPhenomXHM waveform.");
+          }
+          else{                  // modes without mode-mixing including 22 mode
+            status = IMRPhenomXHMMultiBandOneMode(&htildelm, pWF, ell, emmprime, lalParams);
+            XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "IMRPhenomXHMMultiBandOneMode failed to generate IMRPhenomXHM waveform.");
+          }
 
-           /* IMRPhenomXHMMultiBandOneMode* functions set pWF->deltaF=0 internally, we put it back here. */
-           pWF->deltaF = deltaF;
+          /* IMRPhenomXHMMultiBandOneMode* functions set pWF->deltaF=0 internally, we put it back here. */
+          pWF->deltaF = deltaF;
 
-           /* If the 22 and 32 modes are active, we recycle the 22 mode for the mixing in the 32 and it is passed to IMRPhenomXHMMultiBandOneModeMixing.
-              The 22 mode is always computed first than the 32, we store the 22 mode in the variable htilde22. */
-           if(ell==2 && emmprime==2 && XLALSimInspiralModeArrayIsModeActive(ModeArray, 3, 2)==1){
-             htilde22 = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &(ligotimegps_zero), 0.0, pWF->deltaF, &lalStrainUnit, htildelm->data->length);
-             for(UINT4 idx = 0; idx < htildelm->data->length; idx++){
-               htilde22->data->data[idx] = htildelm->data->data[idx];
-             }
-           }
-         }
+          /* If the 22 and 32 modes are active, we recycle the 22 mode for the mixing in the 32 and it is passed to IMRPhenomXHMMultiBandOneModeMixing.
+            The 22 mode is always computed first than the 32, we store the 22 mode in the variable htilde22. */
+          if(ell==2 && emmprime==2 && XLALSimInspiralModeArrayIsModeActive(ModeArray, 3, 2)==1){
+            htilde22 = XLALCreateCOMPLEX16FrequencySeries("hptilde: FD waveform", &(ligotimegps_zero), 0.0, pWF->deltaF, &lalStrainUnit, htildelm->data->length);
+            for(UINT4 idx = 0; idx < htildelm->data->length; idx++){
+              htilde22->data->data[idx] = htildelm->data->data[idx];
+            }
+          }
+        }
+      }
+
+      if(ell==2 && emmprime==2)
+      {
+        if (AntisymmetricWaveform && IMRPhenomXPNRUseTunedAngles)
+        {
+          IMRPhenomX_PNR_GenerateAntisymmetricWaveform(antiSym_amp,antiSym_phi,freqs,pWF,pPrec,lalParams);
+        }
       }
 
       if (!(htildelm)){ XLAL_ERROR(XLAL_EFUNC); }
@@ -906,160 +1007,315 @@ int XLALSimIMRPhenomXPHMFromModes(
         XLAL_CHECK (htildelm, XLAL_ENOMEM, "Failed to resize hlm COMPLEX16FrequencySeries" );
       }
 
-       /* htildelm is recomputed every time in the loop. Check that it always comes out with the same length */
-       XLAL_CHECK (    ((*hptilde)->data->length==htildelm->data->length)
-                    && ((*hctilde)->data->length==htildelm->data->length),
-                    XLAL_EBADLEN,
-                    "Inconsistent lengths between frequency series htildelm (%d), hptilde (%d) and hctilde (%d).",
-                    htildelm->data->length, (*hptilde)->data->length, (*hctilde)->data->length
-                  );
+      /* htildelm is recomputed every time in the loop. Check that it always comes out with the same length */
+      XLAL_CHECK (    ((*hptilde)->data->length==htildelm->data->length)
+                  && ((*hctilde)->data->length==htildelm->data->length),
+                  XLAL_EBADLEN,
+                  "Inconsistent lengths between frequency series htildelm (%d), hptilde (%d) and hctilde (%d).",
+                  htildelm->data->length, (*hptilde)->data->length, (*hctilde)->data->length
+                );
 
-        /* Skip twisting-up if the non-precessing mode is zero. */
-        if((pWF->q == 1) && (pWF->chi1L == pWF->chi2L) && (emmprime % 2 != 0))
+      /*
+                              TWISTING UP
+          Transform modes from the precessing L-frame to inertial J-frame.
+      */
+
+
+      /* Variable to store the non-precessing waveform in one frequency point. */
+      COMPLEX16 hlmcoprec=0.0;
+      COMPLEX16 hlmcoprec_antiSym=0.0;
+
+      /* No Multibanding for the angles. */
+      if(pPrec->MBandPrecVersion == 0)
+      {
+        #if DEBUG == 1
+        printf("\n****************************************************************\n");
+        printf("\n*              NOT USING MBAND FOR ANGLES %i                *\n", offset);
+        printf("\n****************************************************************\n");
+        #endif
+
+        // Let the people know if twisting up will not take place
+        if( pWF->IMRPhenomXReturnCoPrec == 1 )
         {
-           XLALDestroyCOMPLEX16FrequencySeries(htildelm);
-          continue;
+          #if DEBUG == 1
+            printf("\n** We will not twist up the HM waveforms **\n");
+          #endif
         }
 
-       /*
-                                TWISTING UP
-            Transform modes from the precessing L-frame to inertial J-frame.
-       */
+        /* set variables for PNR angles if needed */
+        REAL8 Mf_high = 0.0;
+        REAL8 Mf_low = 0.0;
+        UINT4 PNRtoggleInspiralScaling = pPrec->PNRInspiralScaling;
 
+        // set PNR transition frequencies if needed
+        if (IMRPhenomXPNRUseTunedAngles)
+        {
 
-       /* Variable to store the non-precessing waveform in one frequency point. */
-       COMPLEX16 hlmcoprec;
+          if((ell==2)&&(emmprime==2))
+          {
+            /* the frequency parameters don't matter in this case */
+            Mf_RD_lm = 0.0;
+          }
+          else
+          {
+            /* Get the (l,m) RD frequency */
 
-       /* No Multibanding for the angles. */
-       if(pPrec->MBandPrecVersion == 0)
-       {
-         #if DEBUG == 1
-         printf("\n****************************************************************\n");
-         printf("\n*              NOT USING MBAND FOR ANGLES %i                *\n", offset);
-         printf("\n****************************************************************\n");
-         #endif
+            Mf_RD_lm = IMRPhenomXHM_GenerateRingdownFrequency(ell, emmprime, pWF);
 
-         if(pPrec->precessing_tag==3)
+            status = IMRPhenomX_PNR_LinearFrequencyMapTransitionFrequencies(&Mf_low, &Mf_high, emmprime, Mf_RD_22, Mf_RD_lm, pPrec);
+            XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_LinearFrequencyMapTransitionFrequencies failed.\n");
+          }
+        }
+
+        if(pPrec->precessing_tag==3)
          pPrec->gamma_in = 0.;
        
-         for (UINT4 idx = 0; idx < freqs->length; idx++)
-         {
-           double Mf               = pWF->M_sec * freqs->data[idx];
+        for (UINT4 idx = 0; idx < freqs->length; idx++)
+        {
+          double Mf             = pWF->M_sec * freqs->data[idx];
+          
+          /* Do not generate waveform above Mf_max (default Mf = 0.3) */
+          if(Mf <= (pWF->f_max_prime * pWF->M_sec))
+          {
+            hlmcoprec             = htildelm->data->data[idx + offset];  /* Co-precessing waveform for one freq point */
+            COMPLEX16 hplus       = 0.0;  /* h_+ */
+            COMPLEX16 hcross      = 0.0;  /* h_x */
 
-           /* Do not generate waveform above Mf_max (default Mf = 0.3) */
-           if(Mf <= (pWF->f_max_prime * pWF->M_sec))
-           {
-             hlmcoprec             = htildelm->data->data[idx + offset];  /* Co-precessing waveform for one freq point */
-             COMPLEX16 hplus       = 0.0;  /* h_+ */
-             COMPLEX16 hcross      = 0.0;  /* h_x */
+            if( pWF->IMRPhenomXReturnCoPrec == 1 )
+            {
+              // Do not twist up
+              hplus  =  0.5 * hlmcoprec;
+              hcross = -0.5 * I * hlmcoprec;
 
-            status = IMRPhenomXPHMTwistUp(Mf, hlmcoprec, pWF, pPrec, ell, emmprime, &hplus, &hcross);
-            // not on master
-            XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXPHMTwistUp failed.");
+              //
+              if( pWF->PhenomXOnlyReturnPhase ){
+                // Set hplus to phase (as will be stored in hlmcoprec) and hcross to zero
+                hplus  = hlmcoprec; // NOTE that here hlmcoprec = waveform_phase (assuming one multipole moment)
+                hcross = 0;
+              }
 
-             (*hptilde)->data->data[idx + offset] += hplus;
-             (*hctilde)->data->data[idx + offset] += hcross;
-           }
-           else
-           {
-             (*hptilde)->data->data[idx + offset] += (0.0 * I*0.0);
-             (*hctilde)->data->data[idx + offset] += (0.0 * I*0.0);
-           }
-         }
-       }
-       else
-       {
-         /*
-            Multibanding for the angles.
+            }
+            else
+            {
+              if(IMRPhenomXPNRUseTunedAngles)
+              {
+                REAL8 Mf_mapped = IMRPhenomX_PNR_LinearFrequencyMap(Mf, ell, emmprime, Mf_low, Mf_high, Mf_RD_22, Mf_RD_lm, PNRtoggleInspiralScaling);
+                REAL8 f_mapped = XLALSimIMRPhenomXUtilsMftoHz(Mf_mapped, pWF->Mtot);
 
-            - In this first release we use the same coarse grid that is used for computing the non-precessing modes.
-            - This grid is discussed in section II-A of arXiv:2001.10897. See also section D of Precessing paper.
-            - This grid is computed with the function XLALSimIMRPhenomXMultibandingVersion defined in LALSimIMRPhenomXHM_multiband.c.
-            - The version of the coarse grid will be changed with the option 'MBandPrecVersion' defined in LALSimInspiralWaveformParams.c.
-            - Currently there is only one version available and the option value for that is 0, which is the default value.
-         */
+                pPrec->alphaPNR = gsl_spline_eval(hm_angle_spline->alpha_spline, f_mapped, hm_angle_spline->alpha_acc);
+                pPrec->betaPNR = gsl_spline_eval(hm_angle_spline->beta_spline, f_mapped, hm_angle_spline->beta_acc);
+                pPrec->gammaPNR = gsl_spline_eval(hm_angle_spline->gamma_spline, f_mapped, hm_angle_spline->gamma_acc);
+              }
 
-         #if DEBUG == 1
-         printf("\n****************************************************************\n");
-         printf("\n*                 USING MBAND FOR ANGLES                       *\n");
-         printf("\n****************************************************************\n");
-         #endif
+              // Twist up symmetric strain
+             status = IMRPhenomXPHMTwistUp(Mf, hlmcoprec, pWF, pPrec, ell, emmprime, &hplus, &hcross);
+              XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXPHMTwistUp failed.");
+
+              if(ell == 2 && emmprime == 2 && AntisymmetricWaveform && IMRPhenomXPNRUseTunedAngles)
+              {
+                COMPLEX16 hplus_antiSym       = 0.0;
+                COMPLEX16 hcross_antiSym      = 0.0;
+                hlmcoprec_antiSym = antiSym_amp->data[idx]*cexp(I*antiSym_phi->data[idx]);
+                pPrec->PolarizationSymmetry = -1.0;
+                IMRPhenomXPHMTwistUp(Mf, hlmcoprec_antiSym, pWF, pPrec, ell, emmprime, &hplus_antiSym, &hcross_antiSym);
+                pPrec->PolarizationSymmetry = 1.0;
+                hplus += hplus_antiSym;
+                hcross += hcross_antiSym;
+              }
+            }
+
+            (*hptilde)->data->data[idx + offset] += hplus;
+            (*hctilde)->data->data[idx + offset] += hcross;
+          }
+          else
+          {
+            /* Mf > Mf_max, so return 0 */
+            (*hptilde)->data->data[idx + offset] += 0.0 + I*0.0;
+            (*hctilde)->data->data[idx + offset] += 0.0 + I*0.0;
+          }
+        }
+
+        if(IMRPhenomXPNRUseTunedAngles)
+        {
+          gsl_interp_accel_reset(hm_angle_spline->alpha_acc);
+          gsl_interp_accel_reset(hm_angle_spline->beta_acc);
+          gsl_interp_accel_reset(hm_angle_spline->gamma_acc);
+        }
+
+        // If we only want the coprecessing waveform, then exit
+        // if( pWF->IMRPhenomXReturnCoPrec == 1 ) return XLAL_SUCCESS;
+        if( pWF->IMRPhenomXReturnCoPrec == 1 ) {
+          return XLAL_SUCCESS;
+        }
+        
+      }
+      else
+      {
+        /*
+          Multibanding for the angles.
+
+          - In this first release we use the same coarse grid that is used for computing the non-precessing modes.
+          - This grid is discussed in section II-A of arXiv:2001.10897. See also section D of Precessing paper.
+          - This grid is computed with the function XLALSimIMRPhenomXMultibandingVersion defined in LALSimIMRPhenomXHM_multiband.c.
+          - The version of the coarse grid will be changed with the option 'MBandPrecVersion' defined in LALSimInspiralWaveformParams.c.
+          - Currently there is only one version available and the option value for that is 0, which is the default value.
+        */
+
+        #if DEBUG == 1
+        printf("\n****************************************************************\n");
+        printf("\n*                 USING MBAND FOR ANGLES                       *\n");
+        printf("\n****************************************************************\n");
+        #endif
 
 
 
-         /* Compute non-uniform coarse frequency grid as 1D array */
-         REAL8Sequence *coarseFreqs;
-         XLALSimIMRPhenomXPHMMultibandingGrid(&coarseFreqs, ell, emmprime, pWF, lalParams);
+        /* Compute non-uniform coarse frequency grid as 1D array */
+        REAL8Sequence *coarseFreqs;
+        XLALSimIMRPhenomXPHMMultibandingGrid(&coarseFreqs, ell, emmprime, pWF, lalParams);
 
-         UINT4 lenCoarseArray = coarseFreqs->length;
+        UINT4 lenCoarseArray = coarseFreqs->length;
         
 
-         /* Euler angles */
-         REAL8 alpha        = 0.0;
-         REAL8 epsilon      = 0.0;
+        /* Euler angles */
+        REAL8 alpha        = 0.0;
+        REAL8 epsilon      = 0.0;
 
-         REAL8 cBetah       = 0.0;
-         REAL8 sBetah       = 0.0;
+        REAL8 cBetah       = 0.0;
+        REAL8 sBetah       = 0.0;
 
-         /* Variables to store the Euler angles in the coarse frequency grid. */
-         REAL8 *valpha      = (REAL8*)XLALMalloc(lenCoarseArray * sizeof(REAL8));
-         REAL8 *vepsilon    = (REAL8*)XLALMalloc(lenCoarseArray * sizeof(REAL8));
-         REAL8 *vbetah      = (REAL8*)XLALMalloc(lenCoarseArray * sizeof(REAL8));
+        /* Variables to store the Euler angles in the coarse frequency grid. */
+        REAL8 *valpha      = (REAL8*)XLALMalloc(lenCoarseArray * sizeof(REAL8));
+        REAL8 *vepsilon    = (REAL8*)XLALMalloc(lenCoarseArray * sizeof(REAL8));
+        REAL8 *vbetah      = (REAL8*)XLALMalloc(lenCoarseArray * sizeof(REAL8));
 
-         switch(pPrec->IMRPhenomXPrecVersion)
-         {
-           case 101:
-           case 102:
-           case 103:
-           case 104:
-           {
-             /* Use NNLO PN Euler angles */
-             /* Evaluate angles in coarse freq grid */
-             for(UINT4 j=0; j<lenCoarseArray; j++)
-             {
-               REAL8 Mf = coarseFreqs->data[j];
+        if(IMRPhenomXPNRUseTunedAngles)
+        {
+          REAL8 Mf_high = 0.0;
+          REAL8 Mf_low = 0.0;
+          REAL8 fCut = pWF->fCut;
 
-               /* This function already add the offsets to the angles. */
-               Get_alpha_beta_epsilon(&alpha, &cBetah, &sBetah, &epsilon, emmprime, Mf, pPrec, pWF);
+          if ((ell==2)&&(emmprime==2))
+          {
+            /* the frequency parameters don't matter here */
+            Mf_RD_lm = 0.0;
+          }
+          else
+          {
+            /* Get the (l,m) RD frequency */
 
-               valpha[j]   = alpha;
-               vepsilon[j] = epsilon;
-               vbetah[j]   = acos(cBetah);
-             }
-             break;
-           }
-           case 220:
-           case 221:
-           case 222:
-           case 223:
-           case 224:
-           {
-             /* Use MSA Euler angles. */
-             /* Evaluate angles in coarse freq grid */
-             for(UINT4 j=0; j<lenCoarseArray; j++)
-             {
-               /* Get Euler angles. */
-               REAL8 Mf = coarseFreqs->data[j];
-               const REAL8 v        = cbrt (LAL_PI * Mf * (2.0 / emmprime) );
-               const vector vangles = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(v,pWF,pPrec);
-               REAL8 cos_beta  = 0.0;
+            Mf_RD_lm = IMRPhenomXHM_GenerateRingdownFrequency(ell, emmprime, pWF);
 
-               /* Get the offset for the Euler angles alpha and epsilon. */
-               REAL8 alpha_offset_mprime = 0, epsilon_offset_mprime = 0;
-               Get_alpha_epsilon_offset(&alpha_offset_mprime, &epsilon_offset_mprime, emmprime, pPrec);
+            status = IMRPhenomX_PNR_LinearFrequencyMapTransitionFrequencies(&Mf_low, &Mf_high, emmprime, Mf_RD_22, Mf_RD_lm, pPrec);
+            XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_LinearFrequencyMapTransitionFrequencies failed.\n");
+          }
 
-               valpha[j]   = vangles.x - alpha_offset_mprime;
-               vepsilon[j] = vangles.y - epsilon_offset_mprime;
-               cos_beta    = vangles.z;
+          UINT4 PNRtoggleInspiralScaling = pPrec->PNRInspiralScaling;
+          #if DEBUG == 1
+            // Save the hlm mode into a file
+            FILE *fileangle0101;
+            char fileSpec0101[40];
 
-               status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
-               XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
+            sprintf(fileSpec0101, "angles_pnr_MB_%i%i.dat", ell, emmprime);
 
-               vbetah[j]   = acos(cBetah);
-             }
-             break;
-           }
-           
+            fileangle0101 = fopen(fileSpec0101,"w");
+
+            fprintf(fileangle0101,"#Mf  fHz   alpha   beta    gamma\n");
+
+            fprintf(fileangle0101,"#Mf_low = %.16e\n",Mf_low);
+            fprintf(fileangle0101,"#Mf_high = %.16e\n",Mf_high);
+            fprintf(fileangle0101,"#Mf_RD_22 = %.16e\n",Mf_RD_22);
+            fprintf(fileangle0101,"#Mf_RD_lm = %.16e\n",Mf_RD_lm);
+
+          #endif
+
+          for(UINT4 j=0; j<lenCoarseArray; j++)
+          {
+            REAL8 Mf = coarseFreqs->data[j];
+            REAL8 Mf_mapped = IMRPhenomX_PNR_LinearFrequencyMap(Mf, ell, emmprime, Mf_low, Mf_high, Mf_RD_22, Mf_RD_lm, PNRtoggleInspiralScaling);
+            REAL8 f_mapped = XLALSimIMRPhenomXUtilsMftoHz(Mf_mapped, pWF->Mtot);
+
+            /* add in security to avoid frequency extrapolation */
+            f_mapped = (f_mapped > fCut) ? fCut : f_mapped;
+
+            double beta = gsl_spline_eval(hm_angle_spline->beta_spline, f_mapped, hm_angle_spline->beta_acc);
+
+            valpha[j]   = gsl_spline_eval(hm_angle_spline->alpha_spline, f_mapped, hm_angle_spline->alpha_acc) - pPrec->alpha_offset;
+            vepsilon[j] = -1.0 * gsl_spline_eval(hm_angle_spline->gamma_spline, f_mapped, hm_angle_spline->gamma_acc) - pPrec->epsilon_offset;
+            vbetah[j]   = beta / 2.0;
+
+            #if DEBUG == 1
+
+              fprintf(fileangle0101,"%.16e\t%.16e\t%.16e\t%.16e\t%.16e\n",Mf,f_mapped,valpha[j],beta,vepsilon[j]);
+
+            #endif
+          }
+
+
+          #if DEBUG == 1
+            fclose(fileangle0101);
+          #endif
+
+          gsl_interp_accel_reset(hm_angle_spline->alpha_acc);
+          gsl_interp_accel_reset(hm_angle_spline->beta_acc);
+          gsl_interp_accel_reset(hm_angle_spline->gamma_acc);
+
+        }
+        else
+        {
+          switch(pPrec->IMRPhenomXPrecVersion)
+          {
+            case 101:
+            case 102:
+            case 103:
+            case 104:
+            {
+              /* Use NNLO PN Euler angles */
+              /* Evaluate angles in coarse freq grid */
+              for(UINT4 j=0; j<lenCoarseArray; j++)
+              {
+                REAL8 Mf = coarseFreqs->data[j];
+
+                /* This function already add the offsets to the angles. */
+                Get_alpha_beta_epsilon(&alpha, &cBetah, &sBetah, &epsilon, emmprime, Mf, pPrec, pWF);
+
+                valpha[j]   = alpha;
+                vepsilon[j] = epsilon;
+                vbetah[j]   = acos(cBetah);
+              }
+              break;
+            }
+            case 220:
+            case 221:
+            case 222:
+            case 223:
+            case 224:
+            {
+              /* Use MSA Euler angles. */
+              /* Evaluate angles in coarse freq grid */
+              for(UINT4 j=0; j<lenCoarseArray; j++)
+              {
+                /* Get Euler angles. */
+                REAL8 Mf = coarseFreqs->data[j];
+                const REAL8 v        = cbrt (LAL_PI * Mf * (2.0 / emmprime) );
+                const vector vangles = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(v,pWF,pPrec);
+                REAL8 cos_beta  = 0.0;
+
+                /* Get the offset for the Euler angles alpha and epsilon. */
+                REAL8 alpha_offset_mprime = 0, epsilon_offset_mprime = 0;
+                Get_alpha_epsilon_offset(&alpha_offset_mprime, &epsilon_offset_mprime, emmprime, pPrec);
+
+                valpha[j]   = vangles.x - alpha_offset_mprime;
+                vepsilon[j] = vangles.y - epsilon_offset_mprime;
+                cos_beta    = vangles.z;
+
+                status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
+                XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
+
+                vbetah[j]   = acos(cBetah);
+              }
+              break;
+            }
+            
              case 310:
              case 311:
              case 320:
@@ -1152,140 +1408,177 @@ int XLALSimIMRPhenomXPHMFromModes(
                  
                  
            default:
-           {
-             XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPrecVersion not recognized. Recommended default is 223.\n");
-             break;
-           }
-         }
+            {
+              XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPrecVersion not recognized. Recommended default is 223.\n");
+              break;
+            }
+          }
+        }
 
-         /*
+        /*
             We have the three Euler angles evaluated in the coarse frequency grid.
             Now we have to carry out the iterative linear interpolation for the complex exponential of each Euler angle. This follows the procedure of eq. 2.32 in arXiv:2001.10897..
             The result will be three arrays of complex exponential evaluated in the finefreqs.
-         */
-         UINT4 fine_count = 0, ratio;
-         REAL8 Omega_alpha, Omega_epsilon, Omega_betah, Qalpha, Qepsilon, Qbetah;
-         REAL8 Mfhere, Mfnext, evaldMf;
-         Mfnext = coarseFreqs->data[0];
-         evaldMf = XLALSimIMRPhenomXUtilsHztoMf(pWF->deltaF, pWF->Mtot);
+        */
+        UINT4 fine_count = 0, ratio;
+        REAL8 Omega_alpha, Omega_epsilon, Omega_betah, Qalpha, Qepsilon, Qbetah;
+        REAL8 Mfhere, Mfnext, evaldMf;
+        Mfnext = coarseFreqs->data[0];
+        evaldMf = XLALSimIMRPhenomXUtilsHztoMf(pWF->deltaF, pWF->Mtot);
 
-         /*
+        /*
             Number of points where the waveform will be computed.
             It is the same for all the modes and could be computed outside the loop, it is here for clarity since it is not used anywhere else.
-         */
-         size_t iStop  = (size_t) (pWF->f_max_prime / pWF->deltaF) + 1 - offset;
+        */
+        size_t iStop  = (size_t) (pWF->f_max_prime / pWF->deltaF) + 1 - offset;
 
-        
-         UINT4 length_fine_grid = iStop + 3; // This is just to reserve memory, add 3 points of buffer.
+        UINT4 length_fine_grid = iStop + 3; // This is just to reserve memory, add 3 points of buffer.
 
-         COMPLEX16 *cexp_i_alpha   = (COMPLEX16*)XLALMalloc(length_fine_grid * sizeof(COMPLEX16));
-         COMPLEX16 *cexp_i_epsilon = (COMPLEX16*)XLALMalloc(length_fine_grid * sizeof(COMPLEX16));
-         COMPLEX16 *cexp_i_betah   = (COMPLEX16*)XLALMalloc(length_fine_grid * sizeof(COMPLEX16));
+        COMPLEX16 *cexp_i_alpha   = (COMPLEX16*)XLALMalloc(length_fine_grid * sizeof(COMPLEX16));
+        COMPLEX16 *cexp_i_epsilon = (COMPLEX16*)XLALMalloc(length_fine_grid * sizeof(COMPLEX16));
+        COMPLEX16 *cexp_i_betah   = (COMPLEX16*)XLALMalloc(length_fine_grid * sizeof(COMPLEX16));
 
-         #if DEBUG == 1
-         printf("\n\nLENGTHS fine grid estimate, coarseFreqs->length = %i %i\n", length_fine_grid, lenCoarseArray);
-         printf("fine_count, htildelm->length, offset = %i %i %i\n", fine_count, htildelm->data->length, offset);
-         #endif
 
-         /* Loop over the coarse freq points */
-         for(UINT4 j = 0; j<lenCoarseArray-1 && fine_count < iStop; j++)
-         {
-           Mfhere = Mfnext;
-           Mfnext = coarseFreqs->data[j+1];
+        #if DEBUG == 1
+        printf("\n\nLENGTHS fine grid estimate, coarseFreqs->length = %i %i\n", length_fine_grid, lenCoarseArray);
+        printf("fine_count, htildelm->length, offset = %i %i %i\n", fine_count, htildelm->data->length, offset);
+        #endif
 
-           Omega_alpha   = (valpha[j + 1]   - valpha[j])  /(Mfnext - Mfhere);
-           Omega_epsilon = (vepsilon[j + 1] - vepsilon[j])/(Mfnext - Mfhere);
-           Omega_betah   = (vbetah[j + 1]   - vbetah[j])  /(Mfnext - Mfhere);
+        /* Loop over the coarse freq points */
+        for(UINT4 j = 0; j<lenCoarseArray-1 && fine_count < iStop; j++)
+        {
+          Mfhere = Mfnext;
+          Mfnext = coarseFreqs->data[j+1];
 
-           cexp_i_alpha[fine_count]   = cexp(I*valpha[j]);
-           cexp_i_epsilon[fine_count] = cexp(I*vepsilon[j]);
-           cexp_i_betah[fine_count]   = cexp(I*vbetah[j]);
+          Omega_alpha   = (valpha[j + 1]   - valpha[j])  /(Mfnext - Mfhere);
+          Omega_epsilon = (vepsilon[j + 1] - vepsilon[j])/(Mfnext - Mfhere);
+          Omega_betah   = (vbetah[j + 1]   - vbetah[j])  /(Mfnext - Mfhere);
 
-           Qalpha   = cexp(I*evaldMf*Omega_alpha);
-           Qepsilon = cexp(I*evaldMf*Omega_epsilon);
-           Qbetah   = cexp(I*evaldMf*Omega_betah);
+          cexp_i_alpha[fine_count]   = cexp(I*valpha[j]);
+          cexp_i_epsilon[fine_count] = cexp(I*vepsilon[j]);
+          cexp_i_betah[fine_count]   = cexp(I*vbetah[j]);
 
-           fine_count++;
+          Qalpha   = cexp(I*evaldMf*Omega_alpha);
+          Qepsilon = cexp(I*evaldMf*Omega_epsilon);
+          Qbetah   = cexp(I*evaldMf*Omega_betah);
 
-           REAL8 dratio = (Mfnext-Mfhere)/evaldMf;
-           UINT4 ceil_ratio  = ceil(dratio);
-           UINT4 floor_ratio = floor(dratio);
+          fine_count++;
 
-           /* Make sure the rounding is done correctly. */
-           if(fabs(dratio-ceil_ratio) < fabs(dratio-floor_ratio))
-           {
-             ratio = ceil_ratio;
-           }
-           else
-           {
-             ratio = floor_ratio;
-           }
+          REAL8 dratio = (Mfnext-Mfhere)/evaldMf;
+          UINT4 ceil_ratio  = ceil(dratio);
+          UINT4 floor_ratio = floor(dratio);
+
+          /* Make sure the rounding is done correctly. */
+          if(fabs(dratio-ceil_ratio) < fabs(dratio-floor_ratio))
+          {
+            ratio = ceil_ratio;
+          }
+          else
+          {
+            ratio = floor_ratio;
+          }
 
           /* Compute complex exponential in fine points between two coarse points */
           /* This loop carry out the eq. 2.32 in arXiv:2001.10897 */
-           for(UINT4 kk = 1; kk < ratio && fine_count < iStop; kk++){
-             cexp_i_alpha[fine_count]   = Qalpha*cexp_i_alpha[fine_count-1];
-             cexp_i_epsilon[fine_count] = Qepsilon*cexp_i_epsilon[fine_count-1];
-             cexp_i_betah[fine_count]   = Qbetah*cexp_i_betah[fine_count-1];
-             fine_count++;
-           }
-         }// Loop over coarse grid
+          for(UINT4 kk = 1; kk < ratio && fine_count < iStop; kk++){
+            cexp_i_alpha[fine_count]   = Qalpha*cexp_i_alpha[fine_count-1];
+            cexp_i_epsilon[fine_count] = Qepsilon*cexp_i_epsilon[fine_count-1];
+            cexp_i_betah[fine_count]   = Qbetah*cexp_i_betah[fine_count-1];
+            fine_count++;
+          }
+        }// Loop over coarse grid
 
-         /*
+        /*
           Now we have the complex exponentials of the three Euler angles alpha, beta, epsilon evaluated in the fine frequency grid.
           Next step is do the twisting up with these.
-         */
+        */
 
         #if DEBUG == 1
         printf("fine_count, htildelm->length, offset = %i %i %i\n", fine_count, htildelm->data->length, offset);
         #endif
            
 
-         /************** TWISTING UP in the fine grid *****************/
-         for (UINT4 idx = 0; idx < fine_count; idx++)
-         {
-           double Mf   = pWF->M_sec * (idx + offset)*pWF->deltaF;
+        /************** TWISTING UP in the fine grid *****************/
+        for (UINT4 idx = 0; idx < fine_count; idx++)
+        {
+          double Mf   = pWF->M_sec * (idx + offset)*pWF->deltaF;
 
-           hlmcoprec   = htildelm->data->data[idx + offset];  /* Co-precessing waveform */
+          hlmcoprec   = htildelm->data->data[idx + offset];  /* Co-precessing waveform */
 
-           COMPLEX16 hplus       = 0.0;  /* h_+ */
-           COMPLEX16 hcross      = 0.0;  /* h_x */
+          COMPLEX16 hplus       = 0.0;  /* h_+ */
+          COMPLEX16 hcross      = 0.0;  /* h_x */
 
-           pPrec->cexp_i_alpha   = cexp_i_alpha[idx];
-           pPrec->cexp_i_epsilon = cexp_i_epsilon[idx];
-           pPrec->cexp_i_betah   = cexp_i_betah[idx];
+          pPrec->cexp_i_alpha   = cexp_i_alpha[idx];
+          pPrec->cexp_i_epsilon = cexp_i_epsilon[idx];
+          pPrec->cexp_i_betah   = cexp_i_betah[idx];
            
            if(pPrec->precessing_tag==3) pPrec->gamma_in = 0.;
 
-           status = IMRPhenomXPHMTwistUp(Mf, hlmcoprec, pWF, pPrec, ell, emmprime, &hplus, &hcross);
+          status = IMRPhenomXPHMTwistUp(Mf, hlmcoprec, pWF, pPrec, ell, emmprime, &hplus, &hcross);
            XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXPHMTwistUp failed.");
 
-           (*hptilde)->data->data[idx + offset] += hplus;
-           (*hctilde)->data->data[idx + offset] += hcross;
-         }
+          if(ell == 2 && emmprime == 2 && AntisymmetricWaveform && IMRPhenomXPNRUseTunedAngles)
+          {
+            COMPLEX16 hplus_antiSym       = 0.0;
+            COMPLEX16 hcross_antiSym      = 0.0;
+            hlmcoprec_antiSym = antiSym_amp->data[idx] * cexp(I*antiSym_phi->data[idx]);
+            pPrec->PolarizationSymmetry = -1.0;
+            IMRPhenomXPHMTwistUp(Mf, hlmcoprec_antiSym, pWF, pPrec, ell, emmprime, &hplus_antiSym, &hcross_antiSym);
+            pPrec->PolarizationSymmetry = 1.0;
+            hplus += hplus_antiSym;
+            hcross += hcross_antiSym;
+          }
 
-         XLALDestroyREAL8Sequence(coarseFreqs);
-         LALFree(valpha);
-         LALFree(vepsilon);
-         LALFree(vbetah);
-         LALFree(cexp_i_alpha);
-         LALFree(cexp_i_epsilon);
-         LALFree(cexp_i_betah);
-       }// End of Multibanding-specific.
+          (*hptilde)->data->data[idx + offset] += hplus ;
+          (*hctilde)->data->data[idx + offset] += hcross ;
 
-     XLALDestroyCOMPLEX16FrequencySeries(htildelm);
+        }
 
-   }//Loop over emmprime
- }//Loop over ell
+        XLALDestroyREAL8Sequence(coarseFreqs);
+        LALFree(valpha);
+        LALFree(vepsilon);
+        LALFree(vbetah);
+        LALFree(cexp_i_alpha);
+        LALFree(cexp_i_epsilon);
+        LALFree(cexp_i_betah);
+      }// End of Multibanding-specific.
 
-    XLALDestroySphHarmFrequencySeries(*hlms);
-    XLALFree(hlms);
- /*
+      XLALDestroyCOMPLEX16FrequencySeries(htildelm);
+    }//Loop over emmprime
+  }//Loop over ell
+
+  if (AntisymmetricWaveform && IMRPhenomXPNRUseTunedAngles)
+  {
+    XLALDestroyREAL8Sequence(antiSym_amp);
+    XLALDestroyREAL8Sequence(antiSym_phi);
+  }
+
+  if (IMRPhenomXPNRUseTunedAngles){
+    gsl_spline_free(hm_angle_spline->alpha_spline);
+    gsl_spline_free(hm_angle_spline->beta_spline);
+    gsl_spline_free(hm_angle_spline->gamma_spline);
+
+    gsl_interp_accel_free(hm_angle_spline->alpha_acc);
+    gsl_interp_accel_free(hm_angle_spline->beta_acc);
+    gsl_interp_accel_free(hm_angle_spline->gamma_acc);
+
+    LALFree(hm_angle_spline);
+  }
+    
+  // Free memory used to hold non-precesing XHM struct
+  if (pWF->APPLY_PNR_DEVIATIONS && pWF->IMRPhenomXPNRForceXHMAlignment) {
+    // Cleaning up
+    LALFree(pPrec->pWF22AS);
+  }
+  
+  XLALDestroySphHarmFrequencySeries(*hlms);
+  XLALFree(hlms);
+  /*
       Loop over h+ and hx to rotate waveform by 2 \zeta.
       See discussion in Appendix C: Frame Transformation and Polarization Basis.
       The formula for \zeta is given by eq. C26.
-*/
-  if(fabs(pPrec->zeta_polarization) > 0)
+  */
+  if(fabs(pPrec->zeta_polarization) > 0.0)
   {
     COMPLEX16 PhPpolp, PhPpolc;
     REAL8 cosPolFac, sinPolFac;
@@ -1295,11 +1588,11 @@ int XLALSimIMRPhenomXPHMFromModes(
 
     for (UINT4 i = offset; i < (*hptilde)->data->length; i++)
     {
-        PhPpolp = (*hptilde)->data->data[i];
-        PhPpolc = (*hctilde)->data->data[i];
+      PhPpolp = (*hptilde)->data->data[i];
+      PhPpolc = (*hctilde)->data->data[i];
 
-        (*hptilde)->data->data[i] = cosPolFac * PhPpolp + sinPolFac * PhPpolc;
-        (*hctilde)->data->data[i] = cosPolFac * PhPpolc - sinPolFac * PhPpolp;
+      (*hptilde)->data->data[i] = cosPolFac * PhPpolp + sinPolFac * PhPpolc;
+      (*hctilde)->data->data[i] = cosPolFac * PhPpolc - sinPolFac * PhPpolp;
     }
   }
 
@@ -1352,9 +1645,9 @@ static int IMRPhenomXPHM_hplushcross_from_modes(
   LALDict *lalParams                   /**< LAL Dictionary Structure    */
 )
 {
-    
+
   if (pWF->f_max_prime <= pWF->fMin)
-    XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);     
+    XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);
 
   /* Set LIGOTimeGPS */
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
@@ -1525,38 +1818,50 @@ static int IMRPhenomXPHMTwistUp(
 
   if(pPrec->MBandPrecVersion == 0) /* No multibanding for angles */
   {
-    switch(pPrec->IMRPhenomXPrecVersion)
+    if(pPrec->IMRPhenomXPNRUseTunedAngles)
     {
-      case 101:    /* Post-Newtonian Euler angles. Single spin approximantion. See sections IV-B and IV-C in Precessing paper. */
-      case 102:    /* The different number 10i means different PN order. */
-      case 103:
-      case 104:
+      alpha = pPrec->alphaPNR - pPrec->alpha_offset;
+      epsilon = -1.0 * pPrec->gammaPNR - pPrec->epsilon_offset;
+      REAL8 cos_beta = cos(pPrec->betaPNR);
+
+      INT4 status = 0;
+      status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
+      XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
+    }
+    else
+    {
+      switch(pPrec->IMRPhenomXPrecVersion)
       {
-        Get_alpha_beta_epsilon(&alpha, &cBetah, &sBetah, &epsilon, mprime, Mf, pPrec, pWF);
-        break;
-      }
-      case 220:    /* Use MSA angles. See section IV-D in Precessing paper. */
-      case 221:
-      case 222:
-      case 223:
-      case 224:
-      {
-        /* Get Euler angles. */
-        const double v        = cbrt (LAL_PI * Mf * (2.0 / mprime) );
-        const vector vangles  = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(v,pWF,pPrec);
-        double cos_beta       = 0.0;
+        case 101:    /* Post-Newtonian Euler angles. Single spin approximantion. See sections IV-B and IV-C in Precessing paper. */
+        case 102:    /* The different number 10i means different PN order. */
+        case 103:
+        case 104:
+        {
+          Get_alpha_beta_epsilon(&alpha, &cBetah, &sBetah, &epsilon, mprime, Mf, pPrec, pWF);
+          break;
+        }
+        case 220:    /* Use MSA angles. See section IV-D in Precessing paper. */
+        case 221:
+        case 222:
+        case 223:
+        case 224:
+        {
+          /* Get Euler angles. */
+          const double v        = cbrt (LAL_PI * Mf * (2.0 / mprime) );
+          const vector vangles  = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(v,pWF,pPrec);
+          double cos_beta       = 0.0;
 
-        /* Get the offset for the Euler angles alpha and epsilon. */
-        REAL8 alpha_offset_mprime = 0, epsilon_offset_mprime = 0;
-        Get_alpha_epsilon_offset(&alpha_offset_mprime, &epsilon_offset_mprime, mprime, pPrec);
+          /* Get the offset for the Euler angles alpha and epsilon. */
+          REAL8 alpha_offset_mprime = 0, epsilon_offset_mprime = 0;
+          Get_alpha_epsilon_offset(&alpha_offset_mprime, &epsilon_offset_mprime, mprime, pPrec);
+          
+          alpha       = vangles.x - alpha_offset_mprime;
+          epsilon     = vangles.y - epsilon_offset_mprime;
+          cos_beta    = vangles.z;
 
-        alpha       = vangles.x - alpha_offset_mprime;
-        epsilon     = vangles.y - epsilon_offset_mprime;
-        cos_beta    = vangles.z;
-
-        INT4 status = 0;
-        status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
-        XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
+          INT4 status = 0;
+          status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
+          XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
 
         break;
       }
@@ -1639,7 +1944,7 @@ static int IMRPhenomXPHMTwistUp(
         break;
       }
     }
-
+    }
     cexp_i_alpha   = cexp(+I*alpha);
 
     #if DEBUG == 1
@@ -1647,7 +1952,7 @@ static int IMRPhenomXPHMTwistUp(
     cexp_i_epsilon = cexp(+I*epsilon);
     pPrec->cexp_i_betah = cBetah + I*sBetah;
     #endif
-
+    
    } // End of no multibanding
    else{ /*  For Multibanding  */
      cexp_i_alpha   = pPrec->cexp_i_alpha;
@@ -1699,13 +2004,16 @@ static int IMRPhenomXPHMTwistUp(
     //                  d^2_{-2,-2}  d^2_{-1,-2}  d^2_{0,-2}  d^2_{1,-2}  d^2_{2,-2}
     COMPLEX16 d2m2[5]  = {d22[4],    -d22[3],      d22[2],     -d22[1],     d22[0]}; /* Exploit symmetry d^2_{-m,-2} = (-1)^m d^2_{-m,2}. See eq. A2 of Precessing paper */
 
+    REAL8 polarizationSymmetry = pPrec->PolarizationSymmetry;
+
     for(int m=-2; m<=2; m++)
     {
       /* Transfer functions, see eqs. 3.5-3.7 in Precessing paper */
       COMPLEX16 A2m2emm  = cexp_im_alpha_l2[-m+2] * d2m2[m+2]  * Y2mA[m+2];
       COMPLEX16 A22emmstar = cexp_im_alpha_l2[m+2] * d22[m+2] *  conj(Y2mA[m+2]);
-      hp_sum +=    A2m2emm + A22emmstar;
-      hc_sum += I*(A2m2emm - A22emmstar);
+
+      hp_sum +=    A2m2emm + polarizationSymmetry * A22emmstar;
+      hc_sum += I*(A2m2emm - polarizationSymmetry * A22emmstar);  
     }
   }
 
@@ -1965,8 +2273,8 @@ static int IMRPhenomXPHMTwistUp(
 /**
     Function to compute one hlm precessing mode in an uniform frequency grid.
     By default the mode is given in the inertial J-frame. It can be transformed to the L0-frame with the option "PhenomXPHMModesL0Frame" which
-    currently only works for cases near AS limit. 
-    It can return the co-precessing mode with the option "PhenomXPHMPrecModes": this corresponds to the XHM mode with the modified 
+    currently only works for cases near AS limit.
+    It can return the co-precessing mode with the option "PhenomXPHMPrecModes": this corresponds to the XHM mode with the modified
     ringdown/damping frequencies of the precessing final spin. In this case only m<0 are supported, so hlmneg will be filled with zeros.
     Returns two frequency series, one for the positive frequencies and other for the negative frequencies since, as opposite to the
     aligned spin case, in the precessing case all the modes have support in the whole frequency regime.
@@ -2488,7 +2796,7 @@ static int IMRPhenomXPHM_OneMode(
 )
 {
   if (pWF->f_max_prime <= pWF->fMin)
-    XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);     
+    XLAL_ERROR(XLAL_EDOM, "(fCut = %g Hz) <= f_min = %g\n", pWF->f_max_prime, pWF->fMin);
 
   /* Set LIGOTimeGPS */
   LIGOTimeGPS ligotimegps_zero = LIGOTIMEGPSZERO; // = {0,0}
@@ -2546,6 +2854,53 @@ static int IMRPhenomXPHM_OneMode(
   XLAL_CHECK(XLAL_SUCCESS == status, status, "Failed to initialize useful powers of LAL_PI.");
 
   UINT4 n_coprec_modes = 0;
+
+  /* Set up code for using PNR tuned angles */
+  int IMRPhenomXPNRUseTunedAngles = pPrec->IMRPhenomXPNRUseTunedAngles;
+  int AntisymmetricWaveform = pPrec->IMRPhenomXAntisymmetricWaveform;
+
+  IMRPhenomX_PNR_angle_spline *hm_angle_spline = NULL;
+  REAL8 Mf_RD_22 = pWF->fRING;
+  REAL8 Mf_RD_lm = 0.0;
+
+  if (IMRPhenomXPNRUseTunedAngles){
+
+    /* Allocate the spline interpolant struct */
+    hm_angle_spline = (IMRPhenomX_PNR_angle_spline *) XLALMalloc(sizeof(IMRPhenomX_PNR_angle_spline));
+    if (!hm_angle_spline)
+    {
+      XLAL_ERROR(XLAL_EFUNC, "hm_angle_spline struct allocation failed in LALSimIMRPhenomXPHM.c.");
+    }
+
+    /* Populate interpolant structs for the (2,2) angles */
+    status = IMRPhenomX_PNR_GeneratePNRAngleInterpolants(hm_angle_spline, pWF, pPrec, lalParams);
+    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_GeneratePNRAngleInterpolants failed.\n");
+
+    /* Here we assign the reference values of alpha and gamma to their values in the precession struct */
+    /* NOTE: the contribution from pPrec->alpha0 is assigned in IMRPhenomX_PNR_RemapThetaJSF */
+    pPrec->alpha_offset = gsl_spline_eval(hm_angle_spline->alpha_spline, pWF->fRef, hm_angle_spline->alpha_acc);
+    /* NOTE: the sign is flipped between gamma and epsilon */
+    pPrec->epsilon_offset = -gsl_spline_eval(hm_angle_spline->gamma_spline, pWF->fRef, hm_angle_spline->gamma_acc) - pPrec->epsilon0;
+
+    /* Remap the J-frame sky location to use beta instead of ThetaJN */
+    REAL8 betaPNR_ref = gsl_spline_eval(hm_angle_spline->beta_spline, pWF->fRef, hm_angle_spline->beta_acc);
+    status = IMRPhenomX_PNR_RemapThetaJSF(betaPNR_ref, pWF, pPrec, lalParams);
+    XLAL_CHECK(
+        XLAL_SUCCESS == status,
+        XLAL_EFUNC,
+        "Error: IMRPhenomX_PNR_RemapThetaJSF failed in IMRPhenomX_PNR_GeneratePNRAngles.");
+
+  }
+
+  REAL8Sequence *antiSym_amp = NULL;
+  REAL8Sequence *antiSym_phi = NULL;
+
+  if (AntisymmetricWaveform && IMRPhenomXPNRUseTunedAngles)
+  {
+    antiSym_amp = XLALCreateREAL8Sequence(freqs->length);
+    antiSym_phi = XLALCreateREAL8Sequence(freqs->length);
+  }
+
 
   /***** Loop over non-precessing modes ******/
   for (UINT4 emmprime = 1; emmprime <= ell; emmprime++)
@@ -2611,6 +2966,15 @@ static int IMRPhenomXPHM_OneMode(
       }
     }
 
+    if(ell==2 && emmprime==2)
+      {
+        if (AntisymmetricWaveform && IMRPhenomXPNRUseTunedAngles)
+        {
+          IMRPhenomX_PNR_GenerateAntisymmetricWaveform(antiSym_amp,antiSym_phi,freqs,pWF,pPrec,lalParams);
+        }
+      }
+
+
     if (!(htildelm)){ XLAL_ERROR(XLAL_EFUNC);}
 
 
@@ -2635,6 +2999,7 @@ static int IMRPhenomXPHM_OneMode(
 
      /* Variable to store the non-precessing waveform in one frequency point. */
      COMPLEX16 hlmcoprec;
+     COMPLEX16 hlmcoprec_antiSym =0.0;
 
      if(XLALSimInspiralWaveformParamsLookupPhenomXPHMPrecModes(lalParams) == 1)
      {
@@ -2646,23 +3011,90 @@ static int IMRPhenomXPHM_OneMode(
        }
      }
      else{
-       /* Loop over frequencies. Only where waveform is non zero. */
-       for (UINT4 idx = 0; idx < freqs->length; idx++)
-       {
-          REAL8 Mf = pWF->M_sec*freqs->data[idx];
-          hlmcoprec  = htildelm->data->data[idx + offset];  /* Co-precessing waveform */
-          COMPLEX16Sequence *hlm;
-          hlm = XLALCreateCOMPLEX16Sequence(2);
-          IMRPhenomXPHMTwistUpOneMode(Mf, hlmcoprec, pWF, pPrec, ell, emmprime, m, hlm);
-          (*hlmpos)->data->data[idx + offset] += hlm->data[0];     // Positive frequencies. Freqs do 0, df, 2df, ...., fmax
-          (*hlmneg)->data->data[idx + offset] += hlm->data[1];     // Negative frequencies. Freqs do 0, -df, -2df, ...., -fmax
-          XLALDestroyCOMPLEX16Sequence(hlm);
+
+      /* set PNR variables if needed */
+      REAL8 Mf_high = 0.0;
+      REAL8 Mf_low = 0.0;
+      UINT4 PNRtoggleInspiralScaling = pPrec->PNRInspiralScaling;
+
+      // Precompute PNR transition frequencies if needed
+      if (IMRPhenomXPNRUseTunedAngles){
+
+        if((ell==2)&&(emmprime==2))
+        {
+          /* the frequency parameters don't matter here */
+          Mf_RD_lm = 0.0;
         }
-     }
+        else
+        {
+          /* Get the (l,m) RD frequency */
+
+          Mf_RD_lm = IMRPhenomXHM_GenerateRingdownFrequency(ell, emmprime, pWF);
+
+          /* Set the frequency interpolation transitions */
+          status = IMRPhenomX_PNR_LinearFrequencyMapTransitionFrequencies(&Mf_low, &Mf_high, emmprime, Mf_RD_22, Mf_RD_lm, pPrec);
+          XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_LinearFrequencyMapTransitionFrequencies failed.\n");
+        }
+      }
+      
+      for (UINT4 idx = 0; idx < freqs->length; idx++)
+      {
+          REAL8 Mf = pWF->M_sec * freqs->data[idx];
+          hlmcoprec  = htildelm->data->data[idx + offset];  /* Co-precessing waveform */
+
+          /***** construct h(2,2) or h(2,-2) in co-precessing frame with antisymmetric contribution *****/
+        if(ell == 2 && emmprime == 2 && AntisymmetricWaveform && IMRPhenomXPNRUseTunedAngles)
+        {
+          hlmcoprec_antiSym = antiSym_amp->data[idx]*cexp(I*antiSym_phi->data[idx]);
+        }
+
+        COMPLEX16Sequence *hlm;
+        hlm = XLALCreateCOMPLEX16Sequence(2);
+
+        if(IMRPhenomXPNRUseTunedAngles)
+        {
+          REAL8 Mf_mapped = IMRPhenomX_PNR_LinearFrequencyMap(Mf, ell, emmprime, Mf_low, Mf_high, Mf_RD_22, Mf_RD_lm, PNRtoggleInspiralScaling);
+          REAL8 f_mapped = XLALSimIMRPhenomXUtilsMftoHz(Mf_mapped, pWF->Mtot);
+
+          pPrec->alphaPNR = gsl_spline_eval(hm_angle_spline->alpha_spline, f_mapped, hm_angle_spline->alpha_acc);
+          pPrec->betaPNR = gsl_spline_eval(hm_angle_spline->beta_spline, f_mapped, hm_angle_spline->beta_acc);
+          pPrec->gammaPNR = gsl_spline_eval(hm_angle_spline->gamma_spline, f_mapped, hm_angle_spline->gamma_acc);
+        }
+
+
+        
+        // Twist up
+        IMRPhenomXPHMTwistUpOneMode(Mf, hlmcoprec, hlmcoprec_antiSym, pWF, pPrec, ell, emmprime, m, hlm);
+        
+
+        (*hlmpos)->data->data[idx + offset] += hlm->data[0];     // Positive frequencies. Freqs do 0, df, 2df, ...., fmax
+        (*hlmneg)->data->data[idx + offset] += hlm->data[1];     // Negative frequencies. Freqs do 0, -df, -2df, ...., -fmax
+        XLALDestroyCOMPLEX16Sequence(hlm);
+      }
+
+      if(IMRPhenomXPNRUseTunedAngles)
+      {
+        gsl_interp_accel_reset(hm_angle_spline->alpha_acc);
+        gsl_interp_accel_reset(hm_angle_spline->beta_acc);
+        gsl_interp_accel_reset(hm_angle_spline->gamma_acc);
+      }
+    }
 
      XLALDestroyCOMPLEX16FrequencySeries(htildelm);
 
   }// End Loop over emmprime
+  if (IMRPhenomXPNRUseTunedAngles){
+    gsl_spline_free(hm_angle_spline->alpha_spline);
+    gsl_spline_free(hm_angle_spline->beta_spline);
+    gsl_spline_free(hm_angle_spline->gamma_spline);
+
+    gsl_interp_accel_free(hm_angle_spline->alpha_acc);
+    gsl_interp_accel_free(hm_angle_spline->beta_acc);
+    gsl_interp_accel_free(hm_angle_spline->gamma_acc);
+
+    LALFree(hm_angle_spline);
+  }
+
 
   if(n_coprec_modes == 0)
   {
@@ -2675,6 +3107,12 @@ static int IMRPhenomXPHM_OneMode(
 XLALDestroyREAL8Sequence(freqs);
 XLALDestroyCOMPLEX16FrequencySeries(htilde22);
 XLALDestroyValue(ModeArray);
+
+if (AntisymmetricWaveform && IMRPhenomXPNRUseTunedAngles)
+{
+  XLALDestroyREAL8Sequence(antiSym_amp);
+  XLALDestroyREAL8Sequence(antiSym_phi);
+}
 
 
 #if DEBUG == 1
@@ -2694,6 +3132,7 @@ return XLAL_SUCCESS;
 static int IMRPhenomXPHMTwistUpOneMode(
   const REAL8 Mf,                          /**< Frequency (Mf geometric units) */
   const COMPLEX16 hlmprime,                /**< Underlying aligned-spin IMRPhenomXHM waveform. The loop is with mprime positive, but the mode has to be the negative one for positive frequencies.*/
+  const COMPLEX16 hlmprime_antisym,        /**< antisymmetric waveform in the co-precessing frame */
   IMRPhenomXWaveformStruct *pWF,           /**< IMRPhenomX Waveform Struct */
   IMRPhenomXPrecessionStruct *pPrec,       /**< IMRPhenomXP Precession Struct */
   UINT4  l,                                /**< l index of the (l,m) (non-)precessing mode */
@@ -2711,39 +3150,50 @@ static int IMRPhenomXPHMTwistUpOneMode(
   double cBetah      = 0.0;
   double sBetah      = 0.0;
 
-
-  switch(pPrec->IMRPhenomXPrecVersion)
+  if(pPrec->IMRPhenomXPNRUseTunedAngles)
   {
-    case 101:        /* Post-Newtonian Euler angles. Single spin approximantion. See sections IV-B and IV-C in Precessing paper. */
-    case 102:        /* The different number 10i means different PN order. */
-    case 103:
-    case 104:
+    alpha = pPrec->alphaPNR - pPrec->alpha_offset;
+    epsilon = -1.0 * pPrec->gammaPNR - pPrec->epsilon_offset;
+    REAL8 cos_beta = cos(pPrec->betaPNR);
+
+    INT4 status = 0;
+    status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
+    XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
+  }
+  else
+  {
+    switch(pPrec->IMRPhenomXPrecVersion)
     {
-      /* NNLO PN Euler Angles */
-      Get_alpha_beta_epsilon(&alpha, &cBetah, &sBetah, &epsilon, mprime, Mf, pPrec, pWF);
-      break;
-    }
-    case 220:
-    case 221:
-    case 222:
-    case 223:
-    case 224:
-    {
-      /* ~~~~~ Euler Angles from Chatziioannou et al, PRD 95, 104004, (2017)  ~~~~~ */
-      const double v            = cbrt(LAL_PI * Mf * (2.0/mprime) );
-      const vector vangles      = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(v,pWF,pPrec);
-      double cos_beta           = 0.0;
+      case 101:        /* Post-Newtonian Euler angles. Single spin approximantion. See sections IV-B and IV-C in Precessing paper. */
+      case 102:        /* The different number 10i means different PN order. */
+      case 103:
+      case 104:
+      {
+        /* NNLO PN Euler Angles */
+        Get_alpha_beta_epsilon(&alpha, &cBetah, &sBetah, &epsilon, mprime, Mf, pPrec, pWF);
+        break;
+      }
+      case 220:
+      case 221:
+      case 222:
+      case 223:
+      case 224:
+      {
+        /* ~~~~~ Euler Angles from Chatziioannou et al, PRD 95, 104004, (2017)  ~~~~~ */
+        const double v            = cbrt(LAL_PI * Mf * (2.0/mprime) );
+        const vector vangles      = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(v,pWF,pPrec);
+        double cos_beta           = 0.0;
 
-      REAL8 alpha_offset_mprime = 0, epsilon_offset_mprime = 0;
-      Get_alpha_epsilon_offset(&alpha_offset_mprime, &epsilon_offset_mprime, mprime, pPrec);
+        REAL8 alpha_offset_mprime = 0, epsilon_offset_mprime = 0;
+        Get_alpha_epsilon_offset(&alpha_offset_mprime, &epsilon_offset_mprime, mprime, pPrec);
 
-      alpha    = vangles.x - alpha_offset_mprime;
-      epsilon  = vangles.y - epsilon_offset_mprime;
-      cos_beta = vangles.z;
+        alpha    = vangles.x - alpha_offset_mprime;
+        epsilon  = vangles.y - epsilon_offset_mprime;
+        cos_beta = vangles.z;
 
-      INT4 status = 0;
-      status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
-      XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
+        INT4 status = 0;
+        status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
+        XLAL_CHECK(status == XLAL_SUCCESS, XLAL_EFUNC, "Call to IMRPhenomXWignerdCoefficients_cosbeta failed.");
 
       break;
     }
@@ -2817,6 +3267,7 @@ static int IMRPhenomXPHMTwistUpOneMode(
       XLAL_ERROR(XLAL_EINVAL,"Error. IMRPhenomXPrecVersion not recognized. Recommended default is 223.\n");
       break;
     }
+  }
   }
 
 
@@ -2912,11 +3363,15 @@ static int IMRPhenomXPHMTwistUpOneMode(
     hlmneg += cexp_im_alpha * d44[m+4];
   }
 
-  /* See eqs. E3-E4 in Precessing paper. */
-  COMPLEX16 exp_imprime_epsilon = cexp(mprime*I*epsilon);
-  COMPLEX16 eps_phase_hP_lmprime = 1./exp_imprime_epsilon * hlmprime;
-  COMPLEX16 eps_phase_hP_lmprime_neg = exp_imprime_epsilon * minus1l * conj(hlmprime);
+  COMPLEX16 eps_phase_hP_lmprime;
+  COMPLEX16 eps_phase_hP_lmprime_neg;
 
+  /* See eqs. E3-E4 in Precessing paper. */
+  COMPLEX16 exp_imprime_epsilon = cexp(mprime*I*epsilon);   
+
+  eps_phase_hP_lmprime = 1./exp_imprime_epsilon * (hlmprime + hlmprime_antisym);
+  eps_phase_hP_lmprime_neg = exp_imprime_epsilon * minus1l * conj(hlmprime - hlmprime_antisym);
+ 
  /* Return h_lminertail */
  (hlminertial)->data[0] = eps_phase_hP_lmprime * hlm;
  (hlminertial)->data[1] = eps_phase_hP_lmprime_neg * hlmneg;
@@ -2924,7 +3379,6 @@ static int IMRPhenomXPHMTwistUpOneMode(
 
   return XLAL_SUCCESS;
 }
-
 
 /** Function to obtain a SphHarmFrequencySeries with the individual modes h_lm.
     By default it returns all the modes available in the model, positive and negatives.

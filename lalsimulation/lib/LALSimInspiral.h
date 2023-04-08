@@ -442,6 +442,7 @@ typedef enum tagApproximant {
    pSEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain) and TGR ringdown effects, PhysRevD.104.124087 [arXiv:2105.06983] */
    IMRPhenomXAS_NRTidalv2,         /**< Tidal extension of IMRPhenomXAS based on [arXiv:1905.06011]. */
    IMRPhenomXP_NRTidalv2,         /**< Tidal extension of IMRPhenomXP based on [arXiv:1905.06011]. */
+   IMRPhenomXO4a,    /**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model with NR-tuned precession angles. */
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -805,7 +806,7 @@ typedef struct tagXLALSimInspiralSpinTaylorTxCoeffs
   REAL8 S2dot6S1Avg,S2dot6S1OAvg,S2dot6S2OAvg,S2dot6QMS2OAvg; // 6PN S2dot avged-coefficients
   REAL8 S1dot7S2;// Coefficient of S1 x S2 in S1dot
   REAL8 S2dot7S1;// Coefficient of S1 x S2 in S2dot
-  REAL8 omegashiftS1,omegashiftS2;// non-dynamical coefficients of \omega shift wrt \dot\phi, see eq. (34) of https://dcc.ligo.org/LIGO-T1500554 
+  REAL8 omegashiftS1,omegashiftS2;// non-dynamical coefficients of \omega shift wrt \dot\phi, see eq. (34) of https://dcc.ligo.org/LIGO-T1500554
   REAL8 fStart; ///< starting GW frequency of integration
   REAL8 fEnd; ///< ending GW frequency of integration
   INT4 phaseO; ///< Twice PN order of GW-phase

@@ -88,6 +88,19 @@ typedef struct tagIMRPhenomXHMWaveformStruct
         
 
         INT4 IMRPhenomXHMReleaseVersion;
+        
+        /* Parameters that define deviation of the tuned coprecessing mode PhenomXCP from PhenomX (500) */
+        REAL8 MU1;   // MR Amplitude
+        REAL8 MU2;   // MR Amplitude: modifies gamma2 
+        REAL8 MU3;   // MR Amplitude: modifies gamma3 
+        REAL8 MU4;   // MR Amplitude: would modify appearance of fRing in MR amplitude
+        REAL8 NU0;   // MR Phase
+        REAL8 NU4;   // MR Phase
+        REAL8 NU5;   // MR Phase
+        REAL8 NU6;   // MR Phase
+        REAL8 ZETA1; // INT Phase
+        REAL8 ZETA2; // INT Phase
+        REAL8 PNR_DEV_PARAMETER; // Is zero when no precession, and non-zero otherwise
 
 
         /* Spin Parameters */
@@ -105,6 +118,9 @@ typedef struct tagIMRPhenomXHMWaveformStruct
           We need this linear part for the multimode waveform. timeshift * f + phaseshift */
         REAL8 timeshift;
         REAL8 phaseshift;
+        /* NOTE that we wish to destinguish between the global timshihft for 22, and that for each higher moment */
+        REAL8 timeshiftLM;
+        REAL8 phaseshiftLM;
         REAL8 phiref22;  //Correction to apply to PhX phase for returning phiRef at reference frequency
 
         /* mode labels ad tags*/

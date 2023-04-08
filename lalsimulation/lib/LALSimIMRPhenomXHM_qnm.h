@@ -26,24 +26,24 @@ extern "C" {
 #endif
 
 // Declaration of the functions for the ringdown and damping frequency fits for each mode.
-static double evaluate_QNMfit_fring21(double finalDimlessSpin);
-static double evaluate_QNMfit_fdamp21(double finalDimlessSpin);
-static double evaluate_QNMfit_fring33(double finalDimlessSpin);
-static double evaluate_QNMfit_fdamp33(double finalDimlessSpin);
-static double evaluate_QNMfit_fring32(double finalDimlessSpin);
-static double evaluate_QNMfit_fdamp32(double finalDimlessSpin);
-static double evaluate_QNMfit_fring44(double finalDimlessSpin);
-static double evaluate_QNMfit_fdamp44(double finalDimlessSpin);
+double evaluate_QNMfit_fring21(double finalDimlessSpin);
+double evaluate_QNMfit_fdamp21(double finalDimlessSpin);
+double evaluate_QNMfit_fring33(double finalDimlessSpin);
+double evaluate_QNMfit_fdamp33(double finalDimlessSpin);
+double evaluate_QNMfit_fring32(double finalDimlessSpin);
+double evaluate_QNMfit_fdamp32(double finalDimlessSpin);
+double evaluate_QNMfit_fring44(double finalDimlessSpin);
+double evaluate_QNMfit_fdamp44(double finalDimlessSpin);
 
 // Declaration of the functions for the mixing coefficients (only 32 mode)
-static double evaluate_QNMfit_re_l2m2lp2(double finalDimlessSpin);
-static double evaluate_QNMfit_im_l2m2lp2(double finalDimlessSpin);
-static double evaluate_QNMfit_re_l3m2lp2(double finalDimlessSpin);
-static double evaluate_QNMfit_im_l3m2lp2(double finalDimlessSpin);
-static double evaluate_QNMfit_re_l2m2lp3(double finalDimlessSpin);
-static double evaluate_QNMfit_im_l2m2lp3(double finalDimlessSpin);
-static double evaluate_QNMfit_re_l3m2lp3(double finalDimlessSpin);
-static double evaluate_QNMfit_im_l3m2lp3(double finalDimlessSpin);
+double evaluate_QNMfit_re_l2m2lp2(double finalDimlessSpin);
+double evaluate_QNMfit_im_l2m2lp2(double finalDimlessSpin);
+double evaluate_QNMfit_re_l3m2lp2(double finalDimlessSpin);
+double evaluate_QNMfit_im_l3m2lp2(double finalDimlessSpin);
+double evaluate_QNMfit_re_l2m2lp3(double finalDimlessSpin);
+double evaluate_QNMfit_im_l2m2lp3(double finalDimlessSpin);
+double evaluate_QNMfit_re_l3m2lp3(double finalDimlessSpin);
+double evaluate_QNMfit_im_l3m2lp3(double finalDimlessSpin);
 
 #ifdef __cplusplus
 }

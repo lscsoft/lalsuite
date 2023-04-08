@@ -33,11 +33,12 @@
 #include "LALSimIMRPhenomXUtilities.h"
 
 
-#include "LALSimIMRPhenomXHM_inspiral.c"//Change2
+#include "LALSimIMRPhenomXHM_inspiral.c"
 
 #include "LALSimIMRPhenomXHM_ringdown.c"
 #include "LALSimIMRPhenomXHM_intermediate.c"
-// Change 2#include "LALSimIMRPhenomXHM_inspiral.c"
+#include "LALSimIMRPhenomX_PNR_deviations.h"
+
 
 /*Equations referenced in this file come from arXiv:2001.10914 [gr-qc], see also dcc:LIGO-P2000011 */
 
@@ -156,6 +157,92 @@ void IMRPhenomXHM_SetHMWaveformVariables(
   wf->IMRPhenomXHMInspiralAmpVersion         = XLALSimInspiralWaveformParamsLookupPhenomXHMInspiralAmpVersion(LALParams); //3  (3 collocation points)
   wf->IMRPhenomXHMIntermediateAmpVersion     = XLALSimInspiralWaveformParamsLookupPhenomXHMIntermediateAmpVersion(LALParams); //2   (2 collocation points)
   wf->IMRPhenomXHMRingdownAmpVersion         = XLALSimInspiralWaveformParamsLookupPhenomXHMRingdownAmpVersion(LALParams); //0  (0 collocation points)
+
+  /* HM tuning is currently only setup for he l=m=3 moment. NOTE that default values for the parameters below are zero (IMRPhenomXPNRUseTunedCoprec) */
+  // NOTE that default values are all ZERO. We manually impose this here FOR ALL MODES
+  wf->MU1            = 0;
+  wf->MU2            = 0;
+  wf->MU3            = 0;
+  wf->MU4            = 0;
+  wf->NU0            = 0;
+  wf->NU4            = 0;
+  wf->NU5            = 0;
+  wf->NU6            = 0;
+  wf->ZETA1          = 0;
+  wf->ZETA2          = 0;
+  if(wf->modeTag==33){
+
+    /* Set parameters for coprecessing frame deviations. NOTE that we add a factor of delta so that all 33 deviations turn off at equal mass ratio -- i.e. there is NO calibration for equal mass ratio cases */
+    wf->PNR_DEV_PARAMETER =  wf22->delta * (wf22->PNR_DEV_PARAMETER);
+  
+    // IF PNR's coprecessing model is wanted, use its fits for the deviation parameters ELSE use the input values with defaults of zeros
+    if( wf22->IMRPhenomXPNRUseTunedCoprec33 ) 
+    {
+      
+      /* ------------------------------------------------------ >>
+      Get them from the stored model fits that define PhenomXCP 
+      within PhenomXPNR
+      << ------------------------------------------------------ */
+      
+      /* MU1 modifies pAmp->lambda */
+      wf->MU1     = IMRPhenomXCP_MU1_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      // NOTE that the function for MU2 is not defined in the model 
+      /* MU2 would modify pAmp->gamma2 */
+      
+      /* MU2 */
+      wf->MU2     = IMRPhenomXCP_MU2_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      /* MU3 modifies pAmp->gamma3 */
+      wf->MU3     = IMRPhenomXCP_MU3_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      /* MU4 modifies V2 or V3 for the intermediate amplitude
+      for the DEFAULT value of IMRPhenomXIntermediateAmpVersion
+      use in IMRPhenomXPHM */
+      wf->MU4     = IMRPhenomXCP_MU4_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      // NOTE that we choose to disable time-shift tuning
+      // /* NU0 modifies pPhase->c0 */ 
+      // wf->NU0     = IMRPhenomXCP_NU0_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      /* NU4 modifies pPhase->cL */
+      wf->NU4     = IMRPhenomXCP_NU4_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      /* NU5 modifies wf->fRING [EXTRAP-PASS-TRUE] */ 
+      wf->NU5     = IMRPhenomXCP_NU5_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      /* NU6 modifies wf->fDAMP [EXTRAP-PASS-TRUE] */
+      wf->NU6     = IMRPhenomXCP_NU6_l3m3(   wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      /* ZETA1 modifies pPhase->b4 */
+      wf->ZETA1   = IMRPhenomXCP_ZETA1_l3m3( wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      /* ZETA2 modifies pPhase->b1  */
+      wf->ZETA2   = IMRPhenomXCP_ZETA2_l3m3( wf22->theta_LS, wf22->eta, wf22->a1 );
+      
+      /* DEBUGGING: Turn off select deviations */
+      // wf->MU1 = 0;
+      // wf->MU2 = 0;
+      // wf->MU3 = 0;
+      // wf->MU4 = 0;
+      
+    } else {
+    
+      // NOTE that all default values are all ZERO
+      wf->MU1            = XLALSimInspiralWaveformParamsLookupPhenomXCPMU1l3m3(LALParams);
+      wf->MU2            = XLALSimInspiralWaveformParamsLookupPhenomXCPMU2l3m3(LALParams);
+      wf->MU3            = XLALSimInspiralWaveformParamsLookupPhenomXCPMU3l3m3(LALParams);
+      wf->MU4            = XLALSimInspiralWaveformParamsLookupPhenomXCPMU4l3m3(LALParams);
+      wf->NU0            = XLALSimInspiralWaveformParamsLookupPhenomXCPNU0l3m3(LALParams);
+      wf->NU4            = XLALSimInspiralWaveformParamsLookupPhenomXCPNU4l3m3(LALParams);
+      wf->NU5            = XLALSimInspiralWaveformParamsLookupPhenomXCPNU5l3m3(LALParams);
+      wf->NU6            = XLALSimInspiralWaveformParamsLookupPhenomXCPNU6l3m3(LALParams);
+      wf->ZETA1          = XLALSimInspiralWaveformParamsLookupPhenomXCPZETA1l3m3(LALParams);
+      wf->ZETA2          = XLALSimInspiralWaveformParamsLookupPhenomXCPZETA2l3m3(LALParams);
+    
+    }
+    
+  }
 
 
   wf->IMRPhenomXHMInspiralPhaseFitsVersion = wf->IMRPhenomXHMInspiralPhaseVersion;
@@ -305,6 +392,64 @@ void IMRPhenomXHM_SetHMWaveformVariables(
   /* Ringdown and damping frequencies*/
   wf->fRING = (qnms->fring_lm[wf->modeInt](wf22->afinal))/wf22->Mfinal;
   wf->fDAMP = (qnms->fdamp_lm[wf->modeInt](wf22->afinal))/wf22->Mfinal;
+  
+  /* Ringdown and damping frequencies*/
+  /* (IMRPhenomXPNRUseTunedCoprec) The EZH effective ringdown perscription uses the precessing final spin while the calibrated XPNR uses the non-precessing final spin to calculate its base waveform to which precession effect are added.  */
+  #if DEBUG == 1
+    printf("\n>>> wf22->IMRPhenomXPNRUseTunedCoprec=%i ***\n",wf22->IMRPhenomXPNRUseTunedCoprec);
+    printf("*** PNR Co-precessing model in use for (l,m)=(%i,%i) ***\n\n",wf->ell,wf->emm);
+    printf("wf22->afinal      : %e\n",wf22->afinal);
+    printf("wf22->afinal_prec  : %e\n",wf22->afinal_prec);
+  #endif
+  
+  /* We wish to use the EZH formula for the non-tuned HMs. This formula requires the precessing final spin, 
+   * while tuning was performed relative to the non-precessing model and its non-precessing final spin 
+   * (as would be conferred through wf22->afinal -- see IMRPhenomX_precession.c around about line 566).
+   * 
+   * Just a note: when IMRPhenomXPNRUseTunedCoprec is false, afinal = afinal_prec and the code just above
+   * assigns the appropriate ringdown frequency and damping time. See LALSimIMRPhenomX_precession.c for 
+   * the definition of afinal. */
+  if( wf22->IMRPhenomXPNRUseTunedCoprec )
+  {
+    wf->fRING = (qnms->fring_lm[wf->modeInt](wf22->afinal_prec))/wf22->Mfinal;
+    wf->fDAMP = (qnms->fdamp_lm[wf->modeInt](wf22->afinal_prec))/wf22->Mfinal;
+  #if DEBUG == 1
+    printf("\n** ell, emm **     : %i,%i\n",wf->ell,wf->emm);
+    printf("fring              : %e\n",wf->fRING);
+  #endif      
+    wf->fRING = wf->fRING - emm * wf22->fRINGEffShiftDividedByEmm;
+  #if DEBUG == 1
+    printf("fring shift        : %e\n",- emm * wf22->fRINGEffShiftDividedByEmm);
+    printf("fring (coprec)     : %e\n",wf->fRING);
+    printf(">> Note that fring has now been set to fringEff <<\n");
+  #endif
+  }
+
+  if ( wf22->IMRPhenomXPNRUseTunedCoprec33 ) {
+  if (wf->modeTag==33) {
+    
+    #if DEBUG == 1
+      printf("fring           : %e\n",wf->fRING);
+    #endif
+    
+    // Apply PNR CoPrec deviations. NOTE that the are OFF when wf22->IMRPhenomXPNRUseTunedCoprec33 is false (see code above)
+    wf->fRING = wf->fRING - (wf->PNR_DEV_PARAMETER * wf->NU5);
+    wf->fDAMP = wf->fDAMP + (wf->PNR_DEV_PARAMETER * wf->NU6);
+    
+    #if DEBUG == 1
+      printf("fring shift     : %e\n",- (wf->PNR_DEV_PARAMETER * wf->NU5));
+      printf("fring (coprec)  : %e\n",wf->fRING);
+      printf("fring prec      : %e\n",(qnms->fring_lm[wf->modeInt](wf22->afinal_prec))/wf22->Mfinal);
+      printf("fring eff shift : %e\n",- emm * wf22->fRINGEffShiftDividedByEmm);
+    #endif
+    
+    if( wf22->IMRPhenomXPNRUseTunedCoprec ){
+      // Note that we transition to the EZH effective ringdown frequency outside of the coprecessing calibration region, ie where PNR_DEV_PARAMETER and pnr_window become zero
+      wf->fRING = wf->fRING - (1.0-wf22->pnr_window) * emm * wf22->fRINGEffShiftDividedByEmm;
+    } 
+    
+  }
+  }
 
   /* If (l,m)=(3,2), load the mixing coeffs to transform the spheroidal-harmonic ringdown ansatz back to spherical-harmonic */
   if(wf->modeTag==32)
@@ -322,6 +467,58 @@ void IMRPhenomXHM_SetHMWaveformVariables(
   wf->fPhaseRDflat = 0.0;
   wf->fAmpRDfalloff = 0.0;
 
+}
+
+/* Wrapper function to return ringdown frequency */
+REAL8 IMRPhenomXHM_GenerateRingdownFrequency(
+  UINT4 ell,
+  UINT4 emm,
+  IMRPhenomXWaveformStruct *wf22
+  )
+{
+  /* emm is guaranteed to be positive */
+  UINT4 modeTag = ell * 10 + emm;
+
+  REAL8 fRING = 0.0;
+
+  /* if the tuned coprecessing tuning is activated, use the precessing final spin
+   * (the final spin is still precessing in the other case when called through XPHM,
+   * but the value is assigned to wf22->afinal instead) */
+  REAL8 afinal = (wf22->IMRPhenomXPNRUseTunedCoprec) ? wf22->afinal_prec : wf22->afinal;
+
+  switch(modeTag)
+  {
+    case 21:{
+      fRING = (evaluate_QNMfit_fring21(afinal))/wf22->Mfinal;
+      break;
+    }
+    case 22:{
+      fRING = wf22->fRING;
+      break;
+    }
+    case 33:{
+      fRING = (evaluate_QNMfit_fring33(afinal))/wf22->Mfinal;
+      break;
+    }
+    case 32:{
+      fRING = (evaluate_QNMfit_fring32(afinal))/wf22->Mfinal;
+      break;
+    }
+    case 44:{
+      fRING = (evaluate_QNMfit_fring44(afinal))/wf22->Mfinal;
+      break;
+    }
+    default:
+    {XLAL_ERROR_REAL8(XLAL_EDOM, "Error in IMRPhenomXHM_GenerateRingdownFrequency: mode (%i,%i) selected is not currently available. Modes available are ((2,|2|),(2,|1|),(3,|2|),(3,|3|),(4,|4|)).\n", ell, emm);}
+  }
+
+  /* if the coprecessing tuning is activated, return Effective RD frequency */
+  if( wf22->IMRPhenomXPNRUseTunedCoprec && ((ell!=2)||(emm!=2)) )
+  {
+    fRING -= emm * wf22->fRINGEffShiftDividedByEmm;
+  }
+
+  return fRING;
 }
 
 /* Store function names containing phase coefficient/collocation point fits in pPhase->[Inspiral|Intermediate|Ringdown]PhaseFits */
@@ -1328,6 +1525,13 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         pAmp->RDCoefficient[1] = pAmp->RingdownAmpFits[modeint*3+1](pWF22,pWFHM->IMRPhenomXHMRingdownAmpFitsVersion);
         pAmp->RDCoefficient[2] = pAmp->RingdownAmpFits[modeint*3+2](pWF22,pWFHM->IMRPhenomXHMRingdownAmpFitsVersion);
         pAmp->RDCoefficient[3] = 1./12.;
+        
+        /* (IMRPhenomXPNRUseTunedCoprec) Amplitude deviations e.g. for PNR's copreessing model*/
+        if(pWFHM->modeTag==33){
+          // pAmp->lambda  = pAmp->lambda   +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->MU1 );
+          pAmp->RDCoefficient[0] = pAmp->RDCoefficient[0]  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->MU3 );
+          pAmp->RDCoefficient[2] = pAmp->RDCoefficient[2]  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->MU4 );
+        }
 
         #if DEBUG == 1
         printf("\nuseInspAnsatzRigndown = %i\n",pAmp->useInspAnsatzRingdown);
@@ -1435,7 +1639,7 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         V2 = pAmp->CollocationPointsValuesAmplitudeInter[0];
         V3 = pAmp->CollocationPointsValuesAmplitudeInter[1];
         V4 = powers_of_F4.m_seven_sixths * rdF4;
-
+        
         #if DEBUG == 1
         printf("Before intermediate veto \n");
         printf("V1 = %.16f\n",V1);
@@ -1466,6 +1670,13 @@ void IMRPhenomXHM_GetAmplitudeCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IM
         V2  = 1.0 / V2;
         V3  = 1.0 / V3;
         V4  = 1.0 / V4;
+        
+        /* Apply NR tuning for precessing cases (IMRPhenomXPNRUseTunedCoprec) */
+        if(pWFHM->modeTag==33){
+          V2 = V2 + ( pWFHM->PNR_DEV_PARAMETER * pWFHM->MU1 );
+          V3 = V3 + ( pWFHM->PNR_DEV_PARAMETER * pWFHM->MU2 );
+        }
+
 
         #if DEBUG == 1
         printf("\nAfter Veto and inverse \n");
@@ -2074,6 +2285,15 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
     pPhase->c1 = gsl_vector_get(x,2); // x[2]; // c1
     pPhase->c2 = gsl_vector_get(x,3); // x[3]; // c2
     pPhase->c4 = gsl_vector_get(x,4); // x[4]; // c4
+    
+    /* (IMRPhenomXPNRUseTunedCoprec) Add PNR or input deviations (e.g. tuning for coprecessing frame model) to cL, c1 and c4 in the same manner as is done for the l=m=2 moment */
+    if ( pWFHM->modeTag == 33){
+	    pPhase->c0 = pPhase->c0  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->NU0 );
+	    pPhase->cL = pPhase->cL  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->NU4 );
+      pPhase->c1 = pPhase->c1  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->ZETA2 );
+      pPhase->c4 = pPhase->c4  +  ( pWFHM->PNR_DEV_PARAMETER * pWFHM->ZETA1 );
+    }
+    
 
     // currently the 32 mode is calibrated using one extra point
     if ((pWFHM->modeTag)== 32)
@@ -2120,6 +2340,17 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
     falign=0.6*m_over_2*pWF22->fMECO;
     else
     falign=m_over_2*pWF22->fMECO;
+    // printf("0>> falign = %f\n",falign);
+    
+    // // (ltl) 0.6 is found to be too large a factor, so let's try a smaller one
+    // if (pWF22->IMRPhenomXPNRUseTunedCoprec && (pWFHM->modeTag==33)) {
+    //     if(pWF22->eta>pWFHM->etaEMR){
+    //       falign = 0.06*m_over_2*pWF22->fMECO;
+    //       printf("&>> falign = %f\n",falign);
+    //     } else {
+    //       falign = m_over_2*pWF22->fMECO;
+    //     }
+    // }
 
     IMRPhenomX_UsefulPowers powers_of_falign;
     IMRPhenomX_Initialize_Powers(&powers_of_falign,falign);
@@ -2137,6 +2368,28 @@ void IMRPhenomXHM_GetPhaseCoefficients(IMRPhenomXHMAmpCoefficients *pAmp, IMRPhe
     // we determine the phase normalization of each mode by imposing Eq. (4.13), i.e. phi_lm(fref)-m/2 phi_22(2/m fref)~3.*LAL_PI_4*(1-m_over_2)
     double deltaphiLM = m_over_2*(1./pWF22->eta*IMRPhenomX_Phase_22(two_over_m*falign, &powers_of_f,pPhase22,pWF22)+pWFHM->phaseshift + pWFHM->phiref22)+pWFHM->timeshift*falign-3.*LAL_PI_4*(1-m_over_2)-(IMRPhenomXHM_Inspiral_Phase_AnsatzInt(falign, &powers_of_falign,pPhase)+pPhase->C1INSP*falign+pPhase->CINSP);
     pPhase->deltaphiLM=fmod(deltaphiLM,2.*LAL_PI);
+
+    // /* (ll) We have commented out the code above in order to rewrite the same code in a more carefully formatted way */
+    
+    // // (ll) Define the relative phase parameter used in Eq. (4.13)
+    // double relative_phase_at_zero_freq = 3.*LAL_PI_4*(1-m_over_2);
+    
+    // // (ll) Define the (2,2) inspiral phase evaluated at (2/m)*falign, and then rescaled by m/2
+    // double rescaled_phi22_at_falign = m_over_2*(1./pWF22->eta*IMRPhenomX_Phase_22(two_over_m*falign, &powers_of_f,pPhase22,pWF22)+pWFHM->phaseshift + pWFHM->phiref22)+pWFHM->timeshift*falign;
+    
+    // //
+    // printf("*>> falign = %f\n",falign);
+    // printf("*>> relative_phase_at_zero_freq = %f\n",relative_phase_at_zero_freq);
+    // printf("*>> m_over_2 = %f\n\n",m_over_2);
+    
+    // // (ll) Define XHM inspiral phase at align frequency 
+    // double phiLM_inspiral_at_falign = (IMRPhenomXHM_Inspiral_Phase_AnsatzInt(falign, &powers_of_falign,pPhase)+pPhase->C1INSP*falign+pPhase->CINSP);
+
+    // // (ll) 
+    // double deltaphiLM = rescaled_phi22_at_falign - ( relative_phase_at_zero_freq + phiLM_inspiral_at_falign );
+    
+    // // (ll) Get the representation closest to 2*pi
+    // pPhase->deltaphiLM=fmod(deltaphiLM,2.*LAL_PI);
 
     #if DEBUG == 1
     printf("\n****** Connection coefficients of 22 in %i******\n", pWFHM->modeTag);
@@ -2615,6 +2868,48 @@ REAL8 IMRPhenomXHM_Phase_ModeMixingRecycle(IMRPhenomX_UsefulPowers *powers_of_Mf
   return PhiInt + pPhase->deltaphiLM;
 }
 
+
+  // WITHOUT mode mixing.
+  double IMRPhenomXHM_dPhase_noModeMixing(double f, IMRPhenomX_UsefulPowers *powers_of_f, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF, UNUSED IMRPhenomXWaveformStruct *pWF22)
+  {
+    // Inspiral range, f < fPhaseInsMax
+    if (!IMRPhenomX_StepFuncBool(f, pPhase->fPhaseMatchIN))
+    {
+      double dPhiIns = IMRPhenomXHM_Inspiral_Phase_Ansatz(f, powers_of_f, pPhase);
+      return dPhiIns + pPhase->C1INSP;
+    }
+    // MRD range, f > fPhaseIntMax
+    if (IMRPhenomX_StepFuncBool(f, pPhase->fPhaseMatchIM))
+    {
+      double dPhiMRD = IMRPhenomXHM_RD_Phase_Ansatz(f, powers_of_f, pWF, pPhase);
+      return dPhiMRD + pPhase->C1RD;
+    }
+    //Intermediate range, fPhaseInsMax < f < fPhaseIntMax
+    double dPhiInt = IMRPhenomXHM_Inter_Phase_Ansatz(f, powers_of_f, pWF, pPhase);
+    return dPhiInt;
+  }
+
+  // WITH mode mixing.
+  double IMRPhenomXHM_dPhase_ModeMixing(double f, IMRPhenomX_UsefulPowers *powers_of_f,IMRPhenomXHMAmpCoefficients *pAmp, IMRPhenomXHMPhaseCoefficients *pPhase, IMRPhenomXHMWaveformStruct *pWF,  IMRPhenomXAmpCoefficients *pAmp22, IMRPhenomXPhaseCoefficients *pPhase22, IMRPhenomXWaveformStruct *pWF22)
+  {
+    // Inspiral range, f < fPhaseInsMax
+    if (!IMRPhenomX_StepFuncBool(f, pPhase->fPhaseMatchIN))
+    {
+      double dPhiIns = IMRPhenomXHM_Inspiral_Phase_Ansatz(f, powers_of_f, pPhase);
+      return dPhiIns + pPhase->C1INSP;
+    }
+    // MRD range, f > fPhaseIntMax
+    if (IMRPhenomX_StepFuncBool(f, pPhase->fPhaseMatchIM))
+    {
+      double dPhiMRD = carg(SpheroidalToSpherical(powers_of_f, pAmp22, pPhase22, pAmp, pPhase, pWF, pWF22));
+      return dPhiMRD + pPhase->C1RD;
+    }
+    //Intermediate range, fPhaseInsMax < f < fPhaseIntMax
+    double dPhiInt = IMRPhenomXHM_Inter_Phase_Ansatz(f, powers_of_f, pWF, pPhase);
+    return dPhiInt;
+  }
+
+  
 
   /*****************/
   /*   DEBUGGING   */

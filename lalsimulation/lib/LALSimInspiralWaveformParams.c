@@ -198,6 +198,7 @@ DEFINE_INSERT_FUNC(PhenomXIntermediateAmpVersion, INT4, "IntAmpVersion", 104)
 DEFINE_INSERT_FUNC(PhenomXRingdownPhaseVersion, INT4, "RDPhaseVersion", 105)
 DEFINE_INSERT_FUNC(PhenomXRingdownAmpVersion, INT4, "RDAmpVersion", 103)
 DEFINE_INSERT_FUNC(PhenomXPrecVersion, INT4, "PrecVersion", 300)
+DEFINE_INSERT_FUNC(PhenomXReturnCoPrec, INT4, "ReturnCoPrec", 0)
 DEFINE_INSERT_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
 DEFINE_INSERT_FUNC(PhenomXPConvention, INT4, "Convention", 1)
 DEFINE_INSERT_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 4)
@@ -237,6 +238,45 @@ DEFINE_INSERT_FUNC(PhenomXPHMTwistPhenomHM, INT4, "TwistPhenomHM", 0)
 /* IMRPhenomTHM Parameters */
 DEFINE_INSERT_FUNC(PhenomTHMInspiralVersion, INT4, "InspiralVersion", 0)
 DEFINE_INSERT_FUNC(PhenomTPHMMergerVersion, INT4, "MergerVersion", 1)
+
+/* IMRPhenomX_PNR Parameters */
+DEFINE_INSERT_FUNC(PhenomXPNRUseTunedAngles, INT4, "PNRUseTunedAngles", 0)
+DEFINE_INSERT_FUNC(PhenomXPNRUseTunedCoprec, INT4, "PNRUseTunedCoprec", 0)
+DEFINE_INSERT_FUNC(PhenomXPNRUseTunedCoprec33, INT4, "PNRUseTunedCoprec33", 0)
+// Option to only be used when actively tuning PNR Coprec relative to XHM wherein the non-precessing final spin is used
+DEFINE_INSERT_FUNC(PhenomXPNRUseInputCoprecDeviations, INT4, "PNRUseInputCoprecDeviations", 0)
+// Dev option for forcing 22 phase derivative inspiral values to align with XHM at a low ref frequency
+DEFINE_INSERT_FUNC(PhenomXPNRForceXHMAlignment, INT4, "PNRForceXHMAlignment", 0)
+/* Toggle output of XAS phase for debugging purposes */
+DEFINE_INSERT_FUNC(PhenomXOnlyReturnPhase, INT4, "PhenomXOnlyReturnPhase", 0)
+DEFINE_INSERT_FUNC(PhenomXPNRInterpTolerance, REAL8, "PNRInterpTolerance", 0.01)
+
+/* IMRPhenomX_PNR_Asymmetry Parameters */
+DEFINE_INSERT_FUNC(PhenomXAntisymmetricWaveform, INT4, "AntisymmetricWaveform", 0)
+
+
+/* IMRPhenomXCP Parameters */
+DEFINE_INSERT_FUNC(PhenomXCPMU1, REAL8, "MU1", 0)
+DEFINE_INSERT_FUNC(PhenomXCPMU2, REAL8, "MU2", 0)
+DEFINE_INSERT_FUNC(PhenomXCPMU3, REAL8, "MU3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPMU4, REAL8, "MU4", 0)
+DEFINE_INSERT_FUNC(PhenomXCPNU0, REAL8, "NU0", 0)
+DEFINE_INSERT_FUNC(PhenomXCPNU4, REAL8, "NU4", 0)
+DEFINE_INSERT_FUNC(PhenomXCPNU5, REAL8, "NU5", 0)
+DEFINE_INSERT_FUNC(PhenomXCPNU6, REAL8, "NU6", 0)
+DEFINE_INSERT_FUNC(PhenomXCPZETA1, REAL8, "ZETA1", 0)
+DEFINE_INSERT_FUNC(PhenomXCPZETA2, REAL8, "ZETA2", 0)
+/* l=3, m=3 */
+DEFINE_INSERT_FUNC(PhenomXCPMU1l3m3, REAL8, "MU1l3m3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPMU2l3m3, REAL8, "MU2l3m3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPMU3l3m3, REAL8, "MU3l3m3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPMU4l3m3, REAL8, "MU4l3m3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPNU0l3m3, REAL8, "NU0l3m3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPNU4l3m3, REAL8, "NU4l3m3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPNU5l3m3, REAL8, "NU5l3m3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPNU6l3m3, REAL8, "NU6l3m3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPZETA1l3m3, REAL8, "ZETA1l3m3", 0)
+DEFINE_INSERT_FUNC(PhenomXCPZETA2l3m3, REAL8, "ZETA2l3m3", 0)
 
 /* LOOKUP FUNCTIONS */
 
@@ -388,6 +428,7 @@ DEFINE_LOOKUP_FUNC(PhenomXIntermediateAmpVersion, INT4, "IntAmpVersion", 104)
 DEFINE_LOOKUP_FUNC(PhenomXRingdownPhaseVersion, INT4, "RDPhaseVersion", 105)
 DEFINE_LOOKUP_FUNC(PhenomXRingdownAmpVersion, INT4, "RDAmpVersion", 103)
 DEFINE_LOOKUP_FUNC(PhenomXPrecVersion, INT4, "PrecVersion", 300)
+DEFINE_LOOKUP_FUNC(PhenomXReturnCoPrec, INT4, "ReturnCoPrec", 0)
 DEFINE_LOOKUP_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
 DEFINE_LOOKUP_FUNC(PhenomXPConvention, INT4, "Convention", 1)
 DEFINE_LOOKUP_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 4)
@@ -437,6 +478,44 @@ DEFINE_LOOKUP_FUNC(PhenomXPHMTwistPhenomHM, INT4, "TwistPhenomHM", 0)
 /* IMRPhenomTHM Parameters */
 DEFINE_LOOKUP_FUNC(PhenomTHMInspiralVersion, INT4, "InspiralVersion", 0)
 DEFINE_LOOKUP_FUNC(PhenomTPHMMergerVersion, INT4, "MergerVersion", 1)
+
+/* IMRPhenomX_PNR Parameters */
+DEFINE_LOOKUP_FUNC(PhenomXPNRUseTunedAngles, INT4, "PNRUseTunedAngles", 0)
+DEFINE_LOOKUP_FUNC(PhenomXPNRUseTunedCoprec, INT4, "PNRUseTunedCoprec", 0)
+DEFINE_LOOKUP_FUNC(PhenomXPNRUseTunedCoprec33, INT4, "PNRUseTunedCoprec33", 0)
+// Option to only be used when actively tuning PNR Coprec relative to XHM wherein the non-precessing final spin is used
+DEFINE_LOOKUP_FUNC(PhenomXPNRUseInputCoprecDeviations, INT4, "PNRUseInputCoprecDeviations", 0)
+// Dev option for forcing 22 phase derivative inspiral values to align with XHM at a low ref frequency
+DEFINE_LOOKUP_FUNC(PhenomXPNRForceXHMAlignment, INT4, "PNRForceXHMAlignment", 0)
+/* Toggle output of XAS phase for debugging purposes */
+DEFINE_LOOKUP_FUNC(PhenomXOnlyReturnPhase, INT4, "PhenomXOnlyReturnPhase", 0)
+DEFINE_LOOKUP_FUNC(PhenomXPNRInterpTolerance, REAL8, "PNRInterpTolerance", 0.01)
+
+/* IMRPhenomX_PNR_Asymmetry Parameters */
+DEFINE_LOOKUP_FUNC(PhenomXAntisymmetricWaveform, INT4, "AntisymmetricWaveform", 0)
+
+/* IMRPhenomXCP Parameters */
+DEFINE_LOOKUP_FUNC(PhenomXCPMU1, REAL8, "MU1", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPMU2, REAL8, "MU2", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPMU3, REAL8, "MU3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPMU4, REAL8, "MU4", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPNU0, REAL8, "NU0", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPNU4, REAL8, "NU4", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPNU5, REAL8, "NU5", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPNU6, REAL8, "NU6", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPZETA1, REAL8, "ZETA1", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPZETA2, REAL8, "ZETA2", 0)
+/* l=3, m=3 */
+DEFINE_LOOKUP_FUNC(PhenomXCPMU1l3m3, REAL8, "MU1l3m3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPMU2l3m3, REAL8, "MU2l3m3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPMU3l3m3, REAL8, "MU3l3m3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPMU4l3m3, REAL8, "MU4l3m3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPNU0l3m3, REAL8, "NU0l3m3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPNU4l3m3, REAL8, "NU4l3m3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPNU5l3m3, REAL8, "NU5l3m3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPNU6l3m3, REAL8, "NU6l3m3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPZETA1l3m3, REAL8, "ZETA1l3m3", 0)
+DEFINE_LOOKUP_FUNC(PhenomXCPZETA2l3m3, REAL8, "ZETA2l3m3", 0)
 
 /* ISDEFAULT FUNCTIONS */
 
@@ -562,6 +641,7 @@ DEFINE_ISDEFAULT_FUNC(PhenomXIntermediateAmpVersion, INT4, "IntAmpVersion", 104)
 DEFINE_ISDEFAULT_FUNC(PhenomXRingdownPhaseVersion, INT4, "RDPhaseVersion", 105)
 DEFINE_ISDEFAULT_FUNC(PhenomXRingdownAmpVersion, INT4, "RDAmpVersion", 103)
 DEFINE_ISDEFAULT_FUNC(PhenomXPrecVersion, INT4, "PrecVersion", 300)
+DEFINE_ISDEFAULT_FUNC(PhenomXReturnCoPrec, INT4, "ReturnCoPrec", 0)
 DEFINE_ISDEFAULT_FUNC(PhenomXPExpansionOrder, INT4, "ExpansionOrder", 5)
 DEFINE_ISDEFAULT_FUNC(PhenomXPConvention, INT4, "Convention", 1)
 DEFINE_ISDEFAULT_FUNC(PhenomXPFinalSpinMod, INT4, "FinalSpinMod", 4)
@@ -611,5 +691,43 @@ DEFINE_ISDEFAULT_FUNC(PhenomXPHMTwistPhenomHM, INT4, "TwistPhenomHM", 0)
 /* IMRPhenomTHM Parameters */
 DEFINE_ISDEFAULT_FUNC(PhenomTHMInspiralVersion, INT4, "InspiralVersion", 0)
 DEFINE_ISDEFAULT_FUNC(PhenomTPHMMergerVersion, INT4, "MergerVersion", 1)
+
+/* IMRPhenomX_PNR Parameters */
+DEFINE_ISDEFAULT_FUNC(PhenomXPNRUseTunedAngles, INT4, "PNRUseTunedAngles", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXPNRUseTunedCoprec, INT4, "PNRUseTunedCoprec", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXPNRUseTunedCoprec33, INT4, "PNRUseTunedCoprec33", 0)
+// Option to only be used when actively tuning PNR Coprec relative to XHM wherein the non-precessing final spin is used
+DEFINE_ISDEFAULT_FUNC(PhenomXPNRUseInputCoprecDeviations, INT4, "PNRUseInputCoprecDeviations", 0)
+// Dev option for forcing 22 phase derivative inspiral values to align with XHM at a low ref frequency
+DEFINE_ISDEFAULT_FUNC(PhenomXPNRForceXHMAlignment, INT4, "PNRForceXHMAlignment", 0)
+/* Toggle output of XAS phase for debugging purposes */
+DEFINE_ISDEFAULT_FUNC(PhenomXOnlyReturnPhase, INT4, "PhenomXOnlyReturnPhase", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXPNRInterpTolerance, REAL8, "PNRInterpTolerance", 0.01)
+
+/* IMRPhenomX_PNR_Asymmetry Parameters */
+DEFINE_ISDEFAULT_FUNC(PhenomXAntisymmetricWaveform, INT4, "AntisymmetricWaveform", 0)
+
+/* IMRPhenomXCP Parameters */
+DEFINE_ISDEFAULT_FUNC(PhenomXCPMU1, REAL8, "MU1", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPMU2, REAL8, "MU2", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPMU3, REAL8, "MU3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPMU4, REAL8, "MU4", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPNU0, REAL8, "NU0", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPNU4, REAL8, "NU4", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPNU5, REAL8, "NU5", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPNU6, REAL8, "NU6", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPZETA1, REAL8, "ZETA1", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPZETA2, REAL8, "ZETA2", 0)
+/* l=3, m=3 */
+DEFINE_ISDEFAULT_FUNC(PhenomXCPMU1l3m3, REAL8, "MU1l3m3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPMU2l3m3, REAL8, "MU2l3m3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPMU3l3m3, REAL8, "MU3l3m3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPMU4l3m3, REAL8, "MU4l3m3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPNU0l3m3, REAL8, "NU0l3m3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPNU4l3m3, REAL8, "NU4l3m3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPNU5l3m3, REAL8, "NU5l3m3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPNU6l3m3, REAL8, "NU6l3m3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPZETA1l3m3, REAL8, "ZETA1l3m3", 0)
+DEFINE_ISDEFAULT_FUNC(PhenomXCPZETA2l3m3, REAL8, "ZETA2l3m3", 0)
 
 #undef String

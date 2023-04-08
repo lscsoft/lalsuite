@@ -699,7 +699,7 @@ static CacheVariableDiffersBitmask CacheArgsDifferenceBitmask(
     if ( XLALSimInspiralWaveformParamsLookupTidalHexadecapolarLambda2(LALpars) != XLALSimInspiralWaveformParamsLookupTidalHexadecapolarLambda1(cache->LALpars)) return INTRINSIC;
     if ( XLALSimInspiralWaveformParamsLookupdQuadMon1(LALpars) != XLALSimInspiralWaveformParamsLookupdQuadMon1(cache->LALpars)) return INTRINSIC;
     if ( XLALSimInspiralWaveformParamsLookupdQuadMon2(LALpars) != XLALSimInspiralWaveformParamsLookupdQuadMon2(cache->LALpars)) return INTRINSIC;
-    
+
     if ( XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALpars) != XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(cache->LALpars)) return INTRINSIC;
     if ( XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(LALpars) != XLALSimInspiralWaveformParamsLookupPNAmplitudeOrder(cache->LALpars)) return INTRINSIC;
 
@@ -912,6 +912,8 @@ int XLALSimInspiralChooseFDWaveformSequence(
     /* Variables for IMRPhenomP and IMRPhenomPv2 */
     REAL8 chi1_l, chi2_l, chip, thetaJN, alpha0, phi_aligned, zeta_polariz, cos_2zeta, sin_2zeta;
     COMPLEX16 PhPpolp, PhPpolc;
+
+	LALDict *LALparams_aux;
 
     /* General sanity checks that will abort
      *
@@ -1584,6 +1586,76 @@ int XLALSimInspiralChooseFDWaveformSequence(
 					{
 						XLAL_ERROR(XLAL_EFUNC);
 					}
+					break;
+
+      case IMRPhenomXO4a:
+
+                    if (LALpars == NULL){
+                        LALparams_aux = XLALCreateDict();
+                    }
+                    else{
+                        LALparams_aux = XLALDictDuplicate(LALpars);
+                    }
+					/* Waveform-specific sanity checks */
+					if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(LALparams_aux) )
+					{
+						/* Default is LAL_SIM_INSPIRAL_FRAME_AXIS_ORBITAL_L : z-axis along direction of orbital angular momentum. */
+						XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralFrameAxis provided, but this approximant does not use that flag.");
+					}
+					if(!XLALSimInspiralWaveformParamsModesChoiceIsDefault(LALparams_aux))
+					{
+						/* Default is (2,2) or l=2 modes. */
+						XLAL_ERROR(XLAL_EINVAL, "Non-default LALSimInspiralModesChoice provided, but this approximant does not use that flag.");
+					}
+					if( !checkTidesZero(lambda1, lambda2) )
+					{
+						XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+					}
+					// if(f_ref==0.0)
+					// {
+					// 	/* Default reference frequency is minimum frequency */
+					// 	f_ref = f_min;
+					// }
+
+
+                    /* XO4 uses previous version of XHM */
+                    XLALSimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(LALparams_aux, 122019);
+
+                    /* Toggle on PNR angles */
+                    if(!XLALDictContains(LALparams_aux, "PNRUseTunedAngles")){
+                        XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedAngles(LALparams_aux, 1);
+                    }
+
+                    /* Toggle on tuned coprecessing strain */
+                    if(!XLALDictContains(LALparams_aux, "PNRUseTunedCoprec")){
+                        XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedCoprec(LALparams_aux, 1);
+                    }
+                    if(!XLALDictContains(LALparams_aux, "PNRForceXHMAlignment")){
+                        XLALSimInspiralWaveformParamsInsertPhenomXPNRForceXHMAlignment(LALparams_aux, 0);
+                    }
+
+                    /* Toggle on antisymmetric contributions */
+                    if(!XLALDictContains(LALparams_aux, "AntisymmetricWaveform")){
+                        XLALSimInspiralWaveformParamsInsertPhenomXAntisymmetricWaveform(LALparams_aux, 1);
+                    }
+
+				ret = XLALSimIMRPhenomXPHMFrequencySequence(
+						hptilde, hctilde,
+            frequencies,
+						m1, m2,
+						S1x, S1y, S1z,
+						S2x, S2y, S2z,
+						distance, inclination,
+						phiRef, f_ref, LALparams_aux
+					);
+
+                    XLALDestroyDict(LALparams_aux);
+
+					if (ret == XLAL_FAILURE)
+					{
+						XLAL_ERROR(XLAL_EFUNC);
+					}
+
 					break;
 
         case IMRPhenomNSBH:

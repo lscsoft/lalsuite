@@ -551,6 +551,7 @@ int IMRPhenomXHMGenerateFDOneMode(
   IMRPhenomXHMWaveformStruct *pWFHM = (IMRPhenomXHMWaveformStruct *) XLALMalloc(sizeof(IMRPhenomXHMWaveformStruct));
   IMRPhenomXHM_SetHMWaveformVariables(ell, emm, pWFHM, pWF, qnms, lalParams);
   LALFree(qnms);
+  
 
   /* Fill only the modes that are not zero. Odd modes for equal mass, equal spins are zero. */
   /* Since hlmtilde is initialized with zeros, for zero modes we just go to the return line. */
@@ -577,6 +578,19 @@ int IMRPhenomXHMGenerateFDOneMode(
     }
     IMRPhenomXHM_GetAmplitudeCoefficients(pAmp, pPhase, pAmp22, pPhase22, pWFHM, pWF);
     IMRPhenomXHM_GetPhaseCoefficients(pAmp, pPhase, pAmp22, pPhase22, pWFHM, pWF,lalParams);
+  
+  
+    /* Find phase and phase derivative shift, lina and linb respectively that
+    align the PNR coprecessing model with XHM at a defined alignment frequency
+    during inspiral */
+    double lina = 0;
+    double linb = 0;
+    if ( 
+          pWF->APPLY_PNR_DEVIATIONS && pWF->IMRPhenomXPNRForceXHMAlignment && (ell != 2) && (emm != 2)
+        )
+    {
+      IMRPhenomXHM_PNR_EnforceXHMPhaseAlignment( &lina,&linb,ell,emm,pWF,lalParams);
+    }
 
 
     IMRPhenomX_UsefulPowers powers_of_Mf;
@@ -623,6 +637,9 @@ int IMRPhenomXHMGenerateFDOneMode(
           {
             amp = IMRPhenomXHM_Amplitude_ModeMixing(&powers_of_Mf, pAmp, pPhase, pWFHM, pAmp22, pPhase22, pWF);
             phi = IMRPhenomXHM_Phase_ModeMixing(&powers_of_Mf, pAmp, pPhase, pWFHM, pAmp22, pPhase22, pWF);
+            // Add potential correction s.t. PNR CoPrec aligns with XHM during inspiral. See IMRPhenomXHM_PNR_EnforceXHMPhaseAlignment.
+            phi += lina + Mf*linb;
+
             /* Reconstruct waveform: h_l-m(f) = A(f) * Exp[I phi(f)] */
             ((*htildelm)->data->data)[idx+offset] = Amp0 * amp * cexp(I * phi);
 
@@ -656,8 +673,32 @@ int IMRPhenomXHMGenerateFDOneMode(
           {
             amp = IMRPhenomXHM_Amplitude_noModeMixing(&powers_of_Mf, pAmp, pWFHM);
             phi = IMRPhenomXHM_Phase_noModeMixing(&powers_of_Mf, pPhase, pWFHM, pWF);
-            /* Reconstruct waveform: h_l-m(f) = A(f) * Exp[I phi(f)] */
-            ((*htildelm)->data->data)[idx+offset] = Amp0 * amp * cexp(I * phi);
+
+            // Add potential correction s.t. PNR CoPrec aligns with XHM during inspiral. See IMRPhenomXHM_PNR_EnforceXHMPhaseAlignment.
+            phi += lina + Mf*linb;
+
+            // /* Reconstruct waveform: h_l-m(f) = A(f) * Exp[I phi(f)] */
+            // ((*htildelm)->data->data)[idx+offset] = Amp0 * amp * cexp(I * phi);
+
+            /* NOTE that the above lines are commented out to clarify legacy code structure.
+            HERE, we allow the user to toggle output of ONLY the model's phase using lalParams.
+            The intended use of this option is to enable exact output of the phase, without unwanted numerical effects that result from unwrapping the complete waveform. In particular, at low frequencies, the phase may vary so quickly that adjacent frequency points correctly differ by more than 2*pi, thus limiting unwrap routines which assume that this is not the case.  
+            */
+            if ( pWF->PhenomXOnlyReturnPhase ) {
+              //
+              
+              /* Here we mimic the line above (just above "#if DEBUG == 1") that negates the amplitude if ell is odd: Multiply by (-1)^l to get the true h_l-m(f) */
+              if(ell%2 != 0){
+                // Amp0 = -Amp0;
+                phi = phi + LAL_PI;
+              }
+      
+              ((*htildelm)->data->data)[idx+offset] = phi;
+            } else {
+              /* Reconstruct waveform: h_l-m(f) = A(f) * Exp[I phi(f)] */
+              ((*htildelm)->data->data)[idx+offset] = Amp0 * amp * cexp(I * phi);
+            }
+
             #if DEBUG == 1
             fprintf(file, "%.16f  %.16e %.16f\n",  freqs->data[idx], Amp0*amp, phi);
             #endif
@@ -2765,5 +2806,99 @@ int XLALSimIMRPhenomXHMPhase(
     
     return XLAL_SUCCESS;
 }
+
+
+  
+/* Compute XHM phase and phase derivative for a given Mf using the inputs as shown below. This function has been created to reduce code duplication in the PNR Coprecessing model. See IMRPhenomX_FullPhase_22 for the analagous XAS function. Both functions are designed to be used in in initialization routines, and not for evaluating the phase at many frequencies. We name this function "IMRPhenomXHM_Phase_for_initialization" becuase "IMRPhenomXHM_Phase" is already used in the multibanding code. */  
+INT4 IMRPhenomXHM_Phase_for_Initialization(
+  double *phase,
+  double *dphase,
+  double Mf,
+  INT4 ell,
+  INT4 emm,
+  IMRPhenomXWaveformStruct *pWF,
+  LALDict *lalParams 
+){
+
+  // Define an int to hold status values
+  UINT4 status;
+  
+  // allocate qnm struct
+  QNMFits *qnms = (QNMFits *) XLALMalloc(sizeof(QNMFits));
+  IMRPhenomXHM_Initialize_QNMs(qnms);
+  
+  // Populate, pWFHM, the waveform struct for the non-prec HM moment
+  IMRPhenomXHMWaveformStruct *pWFHM = (IMRPhenomXHMWaveformStruct *) XLALMalloc(sizeof(IMRPhenomXHMWaveformStruct));
+  IMRPhenomXHM_SetHMWaveformVariables(ell, emm, pWFHM, pWF, qnms, lalParams);
+  LALFree(qnms);
+
+  /* Allocate coefficients of 22 mode */
+  IMRPhenomXAmpCoefficients *pAmp22 = (IMRPhenomXAmpCoefficients *) XLALMalloc(sizeof(IMRPhenomXAmpCoefficients));
+  IMRPhenomXPhaseCoefficients *pPhase22 = (IMRPhenomXPhaseCoefficients *) XLALMalloc(sizeof(IMRPhenomXPhaseCoefficients));
+  //
+  IMRPhenomXGetPhaseCoefficients(pWF, pPhase22);
+
+  /* Allocate and initialize the PhenomXHM lm amplitude and phae coefficients struct */
+  IMRPhenomXHMAmpCoefficients *pAmp = (IMRPhenomXHMAmpCoefficients*) XLALMalloc(sizeof(IMRPhenomXHMAmpCoefficients));
+  IMRPhenomXHMPhaseCoefficients *pPhase = (IMRPhenomXHMPhaseCoefficients*) XLALMalloc(sizeof(IMRPhenomXHMPhaseCoefficients));
+
+  /* Allocate and initialize the PhenomXHM lm phase and amp coefficients struct */
+  IMRPhenomXHM_FillAmpFitsArray(pAmp);
+  IMRPhenomXHM_FillPhaseFitsArray(pPhase);
+  
+  /* Get coefficients for Amplitude and phase */
+  if (pWFHM->MixingOn == 1) {
+    // For mode with mixing we need the spheroidal coeffs of the 32 phase and the 22 amplitude coeffs.
+    GetSpheroidalCoefficients(pPhase, pPhase22, pWFHM, pWF);
+    IMRPhenomXGetAmplitudeCoefficients(pWF, pAmp22);
+  }
+  IMRPhenomXHM_GetAmplitudeCoefficients(pAmp, pPhase, pAmp22, pPhase22, pWFHM, pWF);
+  IMRPhenomXHM_GetPhaseCoefficients(pAmp, pPhase, pAmp22, pPhase22, pWFHM, pWF,lalParams);
+  
+  // Compute XHM phase at Mf
+  
+  //
+  IMRPhenomX_UsefulPowers powers_of_Mf;
+  status = IMRPhenomX_Initialize_Powers(&powers_of_Mf,Mf);
+  
+  //
+  if(pWFHM->MixingOn==1){
+    //
+    *phase = IMRPhenomXHM_Phase_ModeMixing(&powers_of_Mf, pAmp, pPhase, pWFHM, pAmp22, pPhase22, pWF);
+    //
+    *dphase = IMRPhenomXHM_dPhase_ModeMixing(Mf, &powers_of_Mf, pAmp, pPhase, pWFHM, pAmp22, pPhase22, pWF);
+  } 
+  else 
+  {
+    //
+    *phase = IMRPhenomXHM_Phase_noModeMixing(&powers_of_Mf, pPhase, pWFHM, pWF);
+    //
+    *dphase = IMRPhenomXHM_dPhase_noModeMixing(Mf, &powers_of_Mf, pPhase, pWFHM, pWF);
+  }
+  
+  //
+  if(ell%2 != 0){
+    *phase += LAL_PI;
+  }
+  
+  //
+  *phase = fmod(*phase,2*LAL_PI);
+  if ( *phase < 0 ){
+    *phase += 2*LAL_PI;
+  }
+  
+  //
+  LALFree(pWFHM);
+  LALFree(pAmp);
+  LALFree(pPhase);
+  LALFree(pAmp22);
+  LALFree(pPhase22);
+  
+  //
+  return status;
+    
+}
+
+
 /** @}
 * @} **/
