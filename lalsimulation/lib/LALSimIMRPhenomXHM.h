@@ -63,6 +63,17 @@ int SetupWFArrays(
   LIGOTimeGPS ligotimegps_zero          /**< = {0,0} */
 );
 
+/* Compute XHM phase and phase derivative for a given Mf using the inputs as shown below. This function has been created to reduce code duplication in the PNR Coprecessing model. See IMRPhenomX_FullPhase_22 for the analagous XAS function. Both functions are designed to be used in in initialization routines, and not for evaluating the phase at many frequencies. */  
+INT4 IMRPhenomXHM_Phase_for_Initialization(
+  double *phase,
+  double *dphase,
+  REAL8 Mf,
+  INT4 ell,
+  INT4 emm,
+  IMRPhenomXWaveformStruct *pWF,
+  LALDict *lalParams 
+);
+
 #ifdef __cplusplus
 }
 #endif

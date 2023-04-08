@@ -197,6 +197,20 @@ noinst_HEADERS = \
 	LALSimIMRPhenomX_ringdown.h \
 	LALSimIMRPhenomX_precession.c \
 	LALSimIMRPhenomX_precession.h \
+	LALSimIMRPhenomX_PNR.c \
+	LALSimIMRPhenomX_PNR.h \
+	LALSimIMRPhenomX_PNR_internals.c \
+	LALSimIMRPhenomX_PNR_internals.h \
+	LALSimIMRPhenomX_PNR_deviations.c \
+	LALSimIMRPhenomX_PNR_deviations.h \
+	LALSimIMRPhenomX_PNR_alpha.c \
+	LALSimIMRPhenomX_PNR_alpha.h \
+	LALSimIMRPhenomX_PNR_beta.c \
+	LALSimIMRPhenomX_PNR_beta.h \
+	LALSimIMRPhenomX_PNR_coefficients.c \
+	LALSimIMRPhenomX_PNR_coefficients.h \
+	LALSimIMRPhenomX_AntisymmetricWaveform.c \
+	LALSimIMRPhenomX_AntisymmetricWaveform.h \
 	LALSimIMRPhenomXHM.h \
 	LALSimIMRPhenomXHM_internals.c \
 	LALSimIMRPhenomXHM_internals.h \

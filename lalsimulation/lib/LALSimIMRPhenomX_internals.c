@@ -35,6 +35,7 @@
 #include "LALSimIMRPhenomX_intermediate.c"
 #include "LALSimIMRPhenomX_ringdown.c"
 #include "LALSimIMRPhenomX_qnm.c"
+#include "LALSimIMRPhenomX_PNR_deviations.c"
 
 /* LAL Header Files */
 #include <lal/LALSimIMR.h>
@@ -157,6 +158,16 @@ int IMRPhenomXSetWaveformVariables(
 	wf->IMRPhenomXInspiralAmpVersion        = XLALSimInspiralWaveformParamsLookupPhenomXInspiralAmpVersion(LALParams);
 	wf->IMRPhenomXIntermediateAmpVersion    = XLALSimInspiralWaveformParamsLookupPhenomXIntermediateAmpVersion(LALParams);
 	wf->IMRPhenomXRingdownAmpVersion        = XLALSimInspiralWaveformParamsLookupPhenomXRingdownAmpVersion(LALParams);
+
+	wf->IMRPhenomXPNRUseTunedCoprec = XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedCoprec(LALParams);
+	// NOTE that the line below means that 33 tuning can only be on IFF 22 tuning is on
+	wf->IMRPhenomXPNRUseTunedCoprec33 = XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedCoprec(LALParams) * (wf->IMRPhenomXPNRUseTunedCoprec);
+
+    wf->PhenomXOnlyReturnPhase = XLALSimInspiralWaveformParamsLookupPhenomXOnlyReturnPhase(LALParams);
+	
+	// Get toggle for forcing inspiral phase and phase derivative alignment with XHM/AS
+	INT4 PNRForceXHMAlignment = XLALSimInspiralWaveformParamsLookupPhenomXPNRForceXHMAlignment(LALParams);
+	wf->IMRPhenomXPNRForceXHMAlignment = PNRForceXHMAlignment;
 
 	wf->debug = PHENOMXDEBUG;
 
@@ -349,7 +360,6 @@ int IMRPhenomXSetWaveformVariables(
 		quadparam2 = quadparam1_In;
 	}
 
-	/* Check that physical spins have been called. Perform internal nudge to check for numerical round-off issues. */
 	if(chi1L > 1.0)
 	{
 		IMRPhenomX_InternalNudge(chi1L,1.0,1e-6);
@@ -372,7 +382,7 @@ int IMRPhenomXSetWaveformVariables(
 		//XLALPrintError("Unphyiscal spins: must be in the range [-1,1].\n");
 		XLAL_ERROR(XLAL_EDOM, "Unphysical spins requested: must obey the Kerr bound [-1,1].\n");
 	}
-
+	
 	// Symmetric mass ratio
 	REAL8 delta = fabs((m1 - m2) / (m1+m2));
 	REAL8 eta   = fabs(0.25 * (1.0 - delta*delta) ); // use fabs to prevent negative sign due to roundoff
@@ -533,8 +543,13 @@ int IMRPhenomXSetWaveformVariables(
 	}
 
 	/* Final Mass and Spin */
+	// NOTE: These are only default values
 	wf->Mfinal    = XLALSimIMRPhenomXFinalMass2017(wf->eta,wf->chi1L,wf->chi2L);
 	wf->afinal    = XLALSimIMRPhenomXFinalSpin2017(wf->eta,wf->chi1L,wf->chi2L);
+	
+	/* (500) Set default values of physically specific final spin parameters for use with PNR/XCP */
+	wf->afinal_nonprec = wf->afinal;     // NOTE: This is only a default value; see LALSimIMRPhenomX_precession.c
+	wf->afinal_prec    = wf->afinal;     // NOTE: This is only a default value; see LALSimIMRPhenomX_precession.c
 
 	/* Ringdown and damping frequency of final BH */
 #if QNMfits == 1
@@ -603,6 +618,38 @@ int IMRPhenomXSetWaveformVariables(
 	{
 		printf("\n\n **** Sanity checks complete. Waveform struct has been initialized. **** \n\n");
 	}
+	
+	/* Set nonprecessing value of select precession quantities (PNRUseTunedCoprec)*/
+	wf->chiTot_perp = 0.0;
+	wf->chi_p = 0.0;
+	wf->theta_LS = 0.0;
+	wf->a1 = 0.0;
+	wf->PNR_DEV_PARAMETER = 0.0;
+	wf->PNR_SINGLE_SPIN = 0;
+	wf->MU1 = 0;
+	wf->MU2 = 0;
+	wf->MU3 = 0;
+	wf->MU4 = 0;
+	wf->NU0 = 0;
+	wf->NU4 = 0;
+	wf->NU5 = 0;
+	wf->NU6 = 0;
+	wf->ZETA1 = 0;
+	wf->ZETA2 = 0;
+	wf->fRINGEffShiftDividedByEmm = 0;
+
+	wf->f_inspiral_align = 0.0;
+	wf->XAS_dphase_at_f_inspiral_align = 0.0;
+	wf->XAS_phase_at_f_inspiral_align = 0.0;
+	wf->XHM_dphase_at_f_inspiral_align = 0.0;
+	wf->XHM_phase_at_f_inspiral_align = 0.0;
+
+	wf->betaRD = 0.0;
+	wf->fRING22_prec = 0.0;
+	wf->fRINGCP = 0.0;
+	wf->pnr_window = 0.0;
+
+	wf->APPLY_PNR_DEVIATIONS = 0;
 
 	return XLAL_SUCCESS;
 }
@@ -647,6 +694,10 @@ int IMRPhenomXGetAmplitudeCoefficients(
 	// Phenomenological ringdown coefficients: note that \gamma2 = \lambda in arXiv:2001.11412 and \gamma3 = \sigma in arXiv:2001.11412
 	pAmp->gamma2        = IMRPhenomX_Ringdown_Amp_22_gamma2(pWF->eta,pWF->STotR,pWF->dchi,pWF->delta,pWF->IMRPhenomXRingdownAmpVersion);
 	pAmp->gamma3        = IMRPhenomX_Ringdown_Amp_22_gamma3(pWF->eta,pWF->STotR,pWF->dchi,pWF->delta,pWF->IMRPhenomXRingdownAmpVersion);
+	
+	/* Apply modifications in the style of PhenomDCP: https://arxiv.org/pdf/2107.08876.pdf (500)*/
+	// pAmp->gamma2 = pAmp->gamma2  +  ( pWF->PNR_DEV_PARAMETER * pWF->MU2 );
+	pAmp->gamma3 = pAmp->gamma3  +  ( pWF->PNR_DEV_PARAMETER * pWF->MU2 );
 
 	/* Get peak ringdown frequency, Eq. 5.14 in arXiv:2001.11412: Abs[fring + fdamp * gamma3 * (Sqrt[1 - gamma2^2] - 1)/gamma2 ] */
 	pAmp->fAmpRDMin     = IMRPhenomX_Ringdown_Amp_22_PeakFrequency(pAmp->gamma2,pAmp->gamma3,pWF->fRING,pWF->fDAMP,pWF->IMRPhenomXRingdownAmpVersion);
@@ -654,6 +705,9 @@ int IMRPhenomXGetAmplitudeCoefficients(
 	// Value of v1RD at fAmpRDMin is used to calcualte gamma1 \propto the amplitude of the deformed Lorentzian
 	pAmp->v1RD          = IMRPhenomX_Ringdown_Amp_22_v1(pWF->eta,pWF->STotR,pWF->dchi,pWF->delta,pWF->IMRPhenomXRingdownAmpVersion);
 	F1                  = pAmp->fAmpRDMin;
+	
+	/* Apply modifications in the style of PhenomDCP: https://arxiv.org/pdf/2107.08876.pdf -- here we modify the ringdown amplitude (500)*/
+	pAmp->v1RD = pAmp->v1RD  +  ( pWF->PNR_DEV_PARAMETER * pWF->MU1 );
 
 	// Solving linear equation: ansatzRD(F1) == v1
 	pAmp->gamma1 = ( pAmp->v1RD / (pWF->fDAMP * pAmp->gamma3) ) * (F1*F1 - 2.0*F1*pWF->fRING + pWF->fRING*pWF->fRING + pWF->fDAMP*pWF->fDAMP*pAmp->gamma3*pAmp->gamma3)
@@ -877,6 +931,10 @@ int IMRPhenomXGetAmplitudeCoefficients(
 			XLAL_ERROR(XLAL_EINVAL, "Error: IMRPhenomXIntermediateAmpVersion is not valid.\n");
 		}
 	}
+
+	/* Let's try directly modifying the (inverse) amplitude values used in the linear system with collocation points (500). See table I of https://arxiv.org/pdf/2001.11412.pdf. NOTE that the 4th order polynomial fit is used by default (500)*/
+	V2 = V2 + ( pWF->PNR_DEV_PARAMETER * pWF->MU3 );
+	// V3 = V3 + ( pWF->PNR_DEV_PARAMETER * pWF->MU4 ); // NOTE that V3 is not used by default in PhenomX, therefore V3 and its deviations have no effect
 
 	if(debug)
 	{
@@ -1256,7 +1314,11 @@ int IMRPhenomXGetPhaseCoefficients(
 	pPhase->c4  = gsl_vector_get(x,3); // x[3]; 	// a4
 	pPhase->cRD = gsl_vector_get(x,4);
 	pPhase->cL  = -(pWF->dphase0 * pPhase->cRD); // ~ x[4] // cL = - a_{RD} * dphase0
-
+	
+	/* Apply NR tuning for precessing cases (500) */
+	pPhase->cL = pPhase->cL + ( pWF->PNR_DEV_PARAMETER * pWF->NU4 );
+	// pPhase->c0 = pPhase->c0 + ( pWF->PNR_DEV_PARAMETER * pWF->NU0 );
+	
 	if(debug)
 	{
 		printf("\n");
@@ -2238,6 +2300,10 @@ int IMRPhenomXGetPhaseCoefficients(
 	/* Set pre-cached variables */
 	pPhase->c4ov3   = pPhase->c4 / 3.0;
 	pPhase->cLovfda = pPhase->cL / pWF->fDAMP;
+	
+	/* Apply NR tuning for precessing cases (500) */
+	pPhase->b1 = pPhase->b1  +  ( pWF->PNR_DEV_PARAMETER * pWF->ZETA2 );
+	pPhase->b4 = pPhase->b4  +  ( pWF->PNR_DEV_PARAMETER * pWF->ZETA1 );
 
 	/* Initialize connection coefficients */
 	pPhase->C1Int = 0;
@@ -2361,6 +2427,9 @@ double IMRPhenomX_TimeShift_22(IMRPhenomXPhaseCoefficients *pPhase, IMRPhenomXWa
     // here we correct the time-alignment of the waveform by first aligning the peak of psi4, and then adding a correction to align the peak of strain instead
     REAL8 psi4tostrain=XLALSimIMRPhenomXPsi4ToStrain(pWF->eta, pWF->STotR, pWF->dchi);
     tshift=linb-dphi22Ref -2.*LAL_PI*(500+psi4tostrain);
+	
+	// Apply PNR deviation (500)
+	tshift = tshift + ( pWF->PNR_DEV_PARAMETER * pWF->NU0 );
 
     //phX phase will read phi22=1/eta*IMRPhenomX_Phase_22+tshift f, modulo a residual phase-shift
     return(tshift);
@@ -2501,6 +2570,85 @@ INT4 check_input_mode_array(LALDict *lalParams)
   return XLAL_SUCCESS;
 }
 
+/* Function to compute full model phase. This function is designed to be used in in initialization routines, and not for evaluating the phase at many frequencies. */
+INT4 IMRPhenomX_FullPhase_22(double *phase, double *dphase, double Mf, IMRPhenomXPhaseCoefficients *pPhase, IMRPhenomXWaveformStruct *pWF){
+	
+	
+    /* 
+    Function to compute full XAS phase at a single frequency point.
+	See IMRPhenomXASGenerateFD for reference.
+    */
+	
+	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
+	/*            Define useful powers               */
+	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
+	
+	// Status indicator
+	INT4 status;
+
+	// Get useful powers of Mf
+	IMRPhenomX_UsefulPowers powers_of_Mf;
+    status = IMRPhenomX_Initialize_Powers(&powers_of_Mf, Mf);
+	XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for Mf.\n");
+	
+	/* Initialize a struct containing useful powers of Mf at fRef */
+	IMRPhenomX_UsefulPowers powers_of_MfRef;
+	status = IMRPhenomX_Initialize_Powers(&powers_of_MfRef,pWF->MfRef);
+	XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for MfRef.\n");
+	
+	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
+	/*           Define needed constants             */
+	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
+	
+	/* 1/eta is used to re-scale the pre-phase quantity */
+	REAL8 inveta    = (1.0 / pWF->eta);
+
+	/* We keep this phase shift to ease comparison with 
+	original phase routines */
+	REAL8 lina = 0;
+
+	/* Get phase connection coefficients
+	and store them to pWF. This step is to make
+	sure that teh coefficients are up-to-date */
+	IMRPhenomX_Phase_22_ConnectionCoefficients(pWF,pPhase);
+	
+	/* Compute the timeshift that PhenomXAS uses to align waveforms
+	with the hybrids used to make their model */
+	double linb=IMRPhenomX_TimeShift_22(pPhase, pWF);
+	
+	/* Calculate phase at reference frequency: phifRef = 2.0*phi0 + LAL_PI_4 + PhenomXPhase(fRef) */
+	double phifRef = -(inveta * IMRPhenomX_Phase_22(pWF->MfRef, &powers_of_MfRef, pPhase, pWF) + linb*pWF->MfRef + lina) + 2.0*pWF->phi0 + LAL_PI_4;
+	
+	/* ~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+ 
+	Note that we do not store the value of phifRef to pWF as is done in
+	IMRPhenomXASGenerateFD. We choose to not do so in order to avoid
+	potential confusion (e.g. if this function is called within a
+	workflow that assumes the value defined in IMRPhenomXASGenerateFD).
+	Note that this concern may not be valid.
+	~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+~~+ */
+	
+	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
+	/*        Compute the full model phase           */
+	/*--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--(*)--*/
+	
+	/* Use previously made function to compute what we call 
+	here the pre-phase, becuase it's not actually a phase! */
+	double pre_phase = IMRPhenomX_Phase_22(Mf,&powers_of_Mf,pPhase,pWF);
+	
+	/* Given the pre-phase, we need to scale and shift according to the 
+	XAS construction */
+	*phase  = pre_phase * inveta;
+	*phase  += linb*Mf + lina + phifRef;
+	
+	/* Repeat the excercise above for the phase derivative:
+	"dphase" is (d/df)phase at Mf */
+	double pre_dphase = IMRPhenomX_dPhase_22(Mf,&powers_of_Mf,pPhase,pWF);
+    *dphase = pre_dphase * inveta;
+    *dphase += linb;
+	
+	//
+	return status;
+}
 
 
 NRTidal_version_type IMRPhenomX_SetTidalVersion(LALDict *lalParams){
