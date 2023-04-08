@@ -112,6 +112,18 @@ typedef struct tagIMRPhenomXPrecessionStruct
         /* Flag to define the version of IMRPhenomXP called */
         INT4 IMRPhenomXPrecVersion; /**< Flag to set version of Euler angles used. */
 
+        /* Toggle to return coprecessing model without any twisting up */
+        INT4 IMRPhenomXReturnCoPrec;
+
+        // /* Parameters that define deviation of the tuned coprecessing mode PhenomXCP from PhenomX */
+        // REAL8 MU2;   // MR Amplitude
+        // REAL8 MU3;   // MR Amplitude
+        // REAL8 MU4;   // MR Amplitude
+        // REAL8 NU4;   // MR Phase
+        // REAL8 NU5;   // MR Phase
+        // REAL8 NU6;   // MR Phase
+        // REAL8 ZETA2; // INT Phase
+
         /* Debug flag */
         INT4 debug_prec; /**< Set debugging level. */
 
@@ -440,6 +452,45 @@ typedef struct tagIMRPhenomXPrecessionStruct
    
         INT4 MSA_ERROR; /**< Flag to track errors in initialization of MSA system. */
 
+        /* PNR-specific additions for single-spin mapping */
+        REAL8 chi_singleSpin; /**< Magnitude of effective single spin used for tapering two-spin angles, Eq. 18 of arXiv:2107.08876 */
+        REAL8 costheta_singleSpin; /**< Polar angle of effective single spin, Eq. 19 or arXiv:2107.08876 */
+        REAL8 costheta_final_singleSpin; /**< Polar angle of approximate final spin, see technical document FIXME: add reference */
+
+        REAL8 chi_singleSpin_antisymmetric; /**< magnitude of effective single spin of a two spin system for the antisymmetric waveform */
+        REAL8 theta_antisymmetric; /**< Polar angle effective single spin for antisymmetric waveform */
+
+        REAL8 PNR_HM_Mflow; /**< Mf_alpha_lower stored from alphaParams struct, 2 A4 / 7 from arXiv:2107.08876 */
+        REAL8 PNR_HM_Mfhigh; /**< Mf_beta_lower stored from betaParams struct, Eq. 58 from arXiv:2107.08876 */
+        REAL8 PNR_q_window_lower; /**< Boundary values for PNR angle transition window */
+        REAL8 PNR_q_window_upper;
+        REAL8 PNR_chi_window_lower;
+        REAL8 PNR_chi_window_upper;
+        UINT4 PNRInspiralScaling; /**< Enforce inpsiral scaling for HM angles outside of calibration window */
+
+        /* Store PNR-specific waveform flags for turning on and off tuning */
+        INT4 IMRPhenomXPNRUseTunedAngles;
+        INT4 IMRPhenomXPNRUseTunedCoprec;
+        INT4 IMRPhenomXPNRUseTunedCoprec33;
+        INT4 IMRPhenomXPNRUseInputCoprecDeviations;
+        INT4 IMRPhenomXPNRForceXHMAlignment;
+        INT4 APPLY_PNR_DEVIATIONS;
+
+        /* A copy of the XAS 22 object */
+        IMRPhenomXWaveformStruct *pWF22AS;
+        REAL8 IMRPhenomXPNRInterpTolerance;
+
+        /* Store anti-symmetric waveform flag for turning on and off */
+        INT4 IMRPhenomXAntisymmetricWaveform;
+
+       /* polarization symmetry property, refer to XXXX.YYYYY for details */
+        REAL8 PolarizationSymmetry;
+
+        /* variables to store PNR angles for use in existing XP and XPHM twist-up functions */
+        REAL8 alphaPNR;
+        REAL8 betaPNR;
+        REAL8 gammaPNR;
+
 } IMRPhenomXPrecessionStruct;
 
 double IMRPhenomX_L_norm_3PN_of_v(const double v, const double v2, const double L_norm, IMRPhenomXPrecessionStruct *pPrec);
@@ -495,7 +546,6 @@ int IMRPhenomXPTwistUp22(
   COMPLEX16 *hp,                             /**< [out] h_+ polarization \f$\tilde h_+\f$ */
   COMPLEX16 *hc                              /**< [out] h_x polarization \f$\tilde h_x\f$ */
 );
-
 
 /* ~~~~~~~~~~ NNLO post-Newtonian Euler Angles ~~~~~~~~~~ */
 REAL8 XLALSimIMRPhenomXPNEuleralphaNNLO(
@@ -607,6 +657,13 @@ REAL8 IMRPhenomX_Cartesian_to_SphericalPolar_phi(const double x, const double y,
 void IMRPhenomX_CartesianToPolar(REAL8 *polar,REAL8 *azimuthal,REAL8 *magnitude,REAL8 x,REAL8 y,REAL8 z);
 vector IMRPhenomXCreateSphere(const double r, const double th, const double ph);
 
+/* Function to set remnant quantities related to final
+spin within IMRPhenomXGetAndSetPrecessionVariables */
+INT4 IMRPhenomX_SetPrecessingRemnantParams(
+  IMRPhenomXWaveformStruct *pWF,
+  IMRPhenomXPrecessionStruct *pPrec,
+  LALDict *lalParams
+);
 /* twisting-up functions via precomputed angles*/
 int IMRPhenomXPTwistUp22_NumericalAngles(const COMPLEX16 hAS, REAL8 alpha, REAL8 cos_beta,REAL8 gamma,IMRPhenomXPrecessionStruct *pPrec,COMPLEX16 *hp,COMPLEX16 *hc);
 int IMRPhenomXPSpinTaylorAnglesIMR(REAL8Sequence **alphaFS,REAL8Sequence **cosbetaFS,REAL8Sequence **gammaFS,REAL8Sequence *freqsIN,IMRPhenomXWaveformStruct *pWF,IMRPhenomXPrecessionStruct *pPrec,LALDict *LALparams);

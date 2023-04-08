@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
-"""Simple test to see if the PhenomX family models have changed: IMRPhenomXAS, IMRPhenomXHM, IMRPhenomXP, IMRPhenomXPHM, IMRPhenomXAS_NRTidalv2, and IMRPhenomXP_NRTidalv2.
+"""Simple test to see if the PhenomX family models have changed: IMRPhenomXAS, IMRPhenomXHM, IMRPhenomXP, IMRPhenomXPHM, IMRPhenomXAS_NRTidalv2, IMRPhenomXP_NRTidalv2, and IMRPhenomXO4a.
 """
 
 import sys
@@ -198,8 +198,6 @@ def test_IMRPhenomXHM():
     # rtol with 32 mode needs to b more lenient
     np.testing.assert_allclose(new_result, expected_result, rtol=3.1e-4, err_msg="IMRPhenomXHM 32 mode test failed")
 
-
-
 def test_IMRPhenomXP():
     """
     This test checks that IMRPhenomXP hasn't changed.
@@ -348,6 +346,29 @@ def test_IMRPhenomXPHM():
     # rtol with 32 mode needs to b more lenient
     np.testing.assert_allclose(new_result, expected_result, rtol=3e-4, err_msg="IMRPhenomXPHM 32 mode test failed")
 
+def test_IMRPhenomXO4a():
+    """
+    This test checks that IMRPhenomXO4a hasn't changed.
+    It does this by generating two IMRPhenomXO4a waveforms and computing
+
+    `expected_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXO4a))`
+
+    """
+
+    expected_result = np.array([1246.1862077565675,  206.07973428907488,  932.2395300573276,  325.2333580418694])
+
+    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXO4a, [[2,2],[2,1],[3,3],[4,4]]))
+
+    # rtol here needs to be more lenient to pass on builds with arm64 or MKL
+    np.testing.assert_allclose(new_result, expected_result, rtol=1e-5, err_msg="IMRPhenomXO4a no 32 mode test failed")
+
+
+    expected_result = np.array([ 48.56333067501462, 236.2424809925183,  21.61677264763599, 232.45649243965286 ])
+
+    new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXO4a, [[3,2]]))
+
+    # rtol with 32 mode needs to be more lenient
+    np.testing.assert_allclose(new_result, expected_result, rtol=3e-3, err_msg="IMRPhenomXO4a 32 mode test failed")
 
 def test_IMRPhenomXPHM_SpinTaylor():
     """

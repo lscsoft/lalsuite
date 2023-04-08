@@ -37,6 +37,8 @@
 #include "LALSimIMRPhenomX_internals.h"
 #include "LALSimIMRPhenomXUtilities.h"
 #include "LALSimIMRPhenomX_precession.h"
+#include "LALSimIMRPhenomX_PNR.h"
+#include "LALSimIMRPhenomXHM_qnm.h"
      
 #include <lal/LALAdaptiveRungeKuttaIntegrator.h>
      
@@ -138,6 +140,21 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   // Get expansion order for MSA system of equations. Default is taken to be 5.
   pPrec->ExpansionOrder        = XLALSimInspiralWaveformParamsLookupPhenomXPExpansionOrder(lalParams);
 
+  // Get toggle for PNR angles
+  INT4 PNRUseTunedAngles = XLALSimInspiralWaveformParamsLookupPhenomXPNRUseTunedAngles(lalParams);
+  pPrec->IMRPhenomXPNRUseTunedAngles = PNRUseTunedAngles;
+
+  // Get PNR angle interpolation tolerance
+  pPrec->IMRPhenomXPNRInterpTolerance = XLALSimInspiralWaveformParamsLookupPhenomXPNRInterpTolerance(lalParams);
+
+  // Get toggle for symmetric waveform
+  INT4 AntisymmetricWaveform = XLALSimInspiralWaveformParamsLookupPhenomXAntisymmetricWaveform(lalParams);
+  pPrec->IMRPhenomXAntisymmetricWaveform = AntisymmetricWaveform;
+
+  // Set toggle for polarization calculation: +1 for symmetric waveform (default), -1 for antisymmetric waveform; refer to XXXX.YYYYY for details
+  pPrec->PolarizationSymmetry = 1.0;
+
+  //
   int pflag = pPrec->IMRPhenomXPrecVersion;
   if(pflag != 101 && pflag != 102 && pflag != 103 && pflag != 104 && pflag != 220 && pflag != 221 && pflag != 222 && pflag != 223 && pflag != 224 && pflag!=310 && pflag!=311 && pflag!=320 && pflag!=321)
   {
@@ -212,6 +229,10 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 
   const REAL8 m2_2      = m2 * m2;
 
+  pWF->M = M;
+  pWF->m1_2 = m1_2;
+  pWF->m2_2 = m2_2;
+
   const REAL8 q         = m1/m2; // q = m1 / m2 > 1.0
 
   // Powers of eta
@@ -256,8 +277,10 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   pPrec->chi2_norm      = sqrt(chi2x*chi2x + chi2y*chi2y + chi2z*chi2z);
 
   /* Check that spins obey Kerr bound */
-  XLAL_CHECK(fabs(pPrec->chi1_norm) <= 1.0, XLAL_EDOM, "Error in IMRPhenomXSetPrecessionVariables: |S1/m1^2| must be <= 1.\n");
-  XLAL_CHECK(fabs(pPrec->chi2_norm) <= 1.0, XLAL_EDOM, "Error in IMRPhenomXSetPrecessionVariables: |S2/m2^2| must be <= 1.\n");
+  if((!PNRUseTunedAngles)||(pWF->PNR_SINGLE_SPIN != 1)){ /*Allow the single-spin mapping for PNR to break the Kerr limit*/
+    XLAL_CHECK(fabs(pPrec->chi1_norm) <= 1.0, XLAL_EDOM, "Error in IMRPhenomXSetPrecessionVariables: |S1/m1^2| must be <= 1.\n");
+    XLAL_CHECK(fabs(pPrec->chi2_norm) <= 1.0, XLAL_EDOM, "Error in IMRPhenomXSetPrecessionVariables: |S2/m2^2| must be <= 1.\n");
+  }
 
   /* Calculate dimensionful spins */
   pPrec->S1x        = chi1x * m1_2;
@@ -286,6 +309,19 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 
   /* This is called chiTot_perp to distinguish from Sperp used in contrusction of chi_p. For normalization, see Sec. IV D of arXiv:2004.06503 */
   pPrec->chiTot_perp   = pPrec->STot_perp * (M*M) / m1_2;
+  /* Store pPrec->chiTot_perp to pWF so that it can be used in XCP modifications (PNRUseTunedCoprec) */
+  pWF->chiTot_perp = pPrec->chiTot_perp;
+
+  /* disable tuned angles and mode asymmetries in aligned-spin limit */
+  if((pPrec->chi1_perp < 0.001 )&&(pPrec->chi2_perp < 0.001)&&(pPrec->IMRPhenomXPNRUseTunedAngles == 1)&&(pWF->PNR_SINGLE_SPIN != 1)){
+    XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedAngles(lalParams, 0);
+    PNRUseTunedAngles = 0;
+    pPrec->IMRPhenomXPNRUseTunedAngles = 0;
+    pPrec->IMRPhenomXAntisymmetricWaveform = 0;
+    AntisymmetricWaveform = 0;
+    XLALSimInspiralWaveformParamsInsertPhenomXAntisymmetricWaveform(lalParams, 0);
+    XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedCoprec(lalParams, 0);
+  }
 
   /*
     Calculate the effective precessing spin parameter (Schmidt et al, PRD 91, 024043, 2015):
@@ -307,6 +343,8 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 
 
   pPrec->chi_p          = chip;
+  // (PNRUseTunedCoprec)
+  pWF->chi_p             = pPrec->chi_p;
   pPrec->phi0_aligned   = pWF->phi0;
 
   /* Effective (dimensionful) aligned spin */
@@ -317,6 +355,45 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 
   pPrec->MSA_ERROR      = 0;
 
+  pPrec->pWF22AS = NULL;
+
+  /* Calculate parameter for two-spin to single-spin map used in PNR and XCP */
+  /* Initialize PNR variables */
+  pPrec->chi_singleSpin = 0.0;
+  pPrec->costheta_singleSpin = 0.0;
+  pPrec->costheta_final_singleSpin = 0.0;
+  pPrec->chi_singleSpin_antisymmetric = 0.0;
+  pPrec->theta_antisymmetric = 0.0;
+  pPrec->PNR_HM_Mflow = 0.0;
+  pPrec->PNR_HM_Mfhigh = 0.0;
+
+  pPrec->PNR_q_window_lower = 0.0;
+  pPrec->PNR_q_window_upper = 0.0;
+  pPrec->PNR_chi_window_lower = 0.0;
+  pPrec->PNR_chi_window_upper = 0.0;
+  pPrec->PNRInspiralScaling = 0;
+
+  UINT4 status = IMRPhenomX_PNR_GetAndSetPNRVariables(pWF, pPrec);
+  XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_GetAndSetPNRVariables failed in IMRPhenomXGetAndSetPrecessionVariables.\n");
+
+  pPrec->alphaPNR = 0.0;
+  pPrec->betaPNR = 0.0;
+  pPrec->gammaPNR = 0.0;
+
+  /*...#...#...#...#...#...#...#...#...#...#...#...#...#...#.../
+  /      Get and/or store CoPrec params into pWF and pPrec     /
+  /...#...#...#...#...#...#...#...#...#...#...#...#...#...#...*/
+
+  status = IMRPhenomX_PNR_GetAndSetCoPrecParams(pWF,pPrec,lalParams);
+  XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC,
+  "Error: IMRPhenomX_PNR_GetAndSetCoPrecParams failed \
+  in IMRPhenomXGetAndSetPrecessionVariables.\n");
+  
+  /*..#...#...#...#...#...#...#...#...#...#...#...#...#...#...*/
+
+
+
+  //
   if( pflag == 220 || pflag == 221 || pflag == 222 || pflag == 223 || pflag == 224 )
     {
       #if DEBUG == 1
@@ -348,85 +425,13 @@ int IMRPhenomXGetAndSetPrecessionVariables(
     printf("phic    : %e\n",pPrec->phi0_aligned);
     printf("SL      : %e\n",pPrec->SL);
     printf("Sperp   : %e\n\n",pPrec->Sperp);
-    printf("afinal (non-prec)  : %e\n",pWF->afinal);
-    printf("fring  (non-prec)  : %e\n",pWF->fRING);
-    printf("fdamp  (non-prec)  : %e\n\n",pWF->fDAMP);
   #endif
 
-  /*
-      Update the final spin in pWF to account for precessing spin effects:
-
-      XLALSimIMRPhenomXPrecessingFinalSpin2017(eta,chi1L,chi2L,chi_perp);
-
-      Note that chi_perp gets weighted by an appropriate mass factor
-
-        q_factor      = m1/M (when m1 > m2)
-        REAL8 Sperp   = chip * q_factor * q_factor;
-        REAL8 af      = copysign(1.0, af_parallel) * sqrt(Sperp*Sperp + af_parallel*af_parallel);
-  */
-  REAL8 af_parallel = XLALSimIMRPhenomXFinalSpin2017(eta,pPrec->chi1z,pPrec->chi2z);
-  double Lfinal     = M*M*af_parallel - m1_2*pPrec->chi1z - m2_2*pPrec->chi2z;
-
-  int fsflag = XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod(lalParams);
-  if (fsflag == 4 && pPrec->precessing_tag!=3) fsflag = 3;
-
-  switch(fsflag)
-  {
-    case 0:
-      pWF->afinal    = XLALSimIMRPhenomXPrecessingFinalSpin2017(eta,chi1L,chi2L,chip);
-      break;
-    case 1:
-      pWF->afinal    = XLALSimIMRPhenomXPrecessingFinalSpin2017(eta,chi1L,chi2L,chi1x);
-      break;
-    case 2:
-    case 4:
-      pWF->afinal    = XLALSimIMRPhenomXPrecessingFinalSpin2017(eta,chi1L,chi2L,pPrec->chiTot_perp);
-      break;
-    case 3:
-      if( pflag == 220 || pflag == 221 || pflag == 222 || pflag == 223 || pflag == 224 )
-      {
-        if(pPrec->MSA_ERROR == 1 )
-        {
-          XLAL_PRINT_WARNING("Initialization of MSA system failed. Defaulting to final spin version 0.\n");
-          pWF->afinal    = XLALSimIMRPhenomXPrecessingFinalSpin2017(eta,chi1L,chi2L,chip);
-        }
-        else
-        {
-          INT2 sign = 1;
-          if (XLALSimInspiralWaveformParamsLookupPhenomXPTransPrecessionMethod(lalParams) == 1 ){
-            sign = copysign(1, af_parallel);
-          }
-          pWF->afinal    = sign * sqrt( pPrec->SAv2 + Lfinal*Lfinal + 2.0*Lfinal*(pPrec->S1L_pav + pPrec->S2L_pav) ) / (M*M);
-        }
-      }
-      else
-      {
-        XLAL_PRINT_WARNING("Error: XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod version 3 requires PrecVersion 220, 221, 222, 223 or 224. Defaulting to version 0.\n");
-        pWF->afinal    = XLALSimIMRPhenomXPrecessingFinalSpin2017(eta,chi1L,chi2L,chip);
-      }
-      break;
-    default:
-    {
-      XLAL_ERROR(XLAL_EDOM,"Error: XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod version not recognized. Requires PhenomXPFinalSpinMod of 0, 1, 2, 3 or 4.\n");
-    }
-  }
-
-  if( fabs(pWF->afinal) > 1.0 )
-  {
-        XLAL_PRINT_WARNING("Warning: Final spin magnitude %g > 1. Setting final spin magnitude = 1.", pWF->afinal);
-        pWF->afinal = copysign(1.0, pWF->afinal);
-  }
-
-  /* Update ringdown and damping frequency */
-  pWF->fRING     = evaluate_QNMfit_fring22(pWF->afinal) / (pWF->Mfinal);
-  pWF->fDAMP     = evaluate_QNMfit_fdamp22(pWF->afinal) / (pWF->Mfinal);
-  //pWF->fISCO     = XLALSimIMRPhenomXfISCO(pWF->afinal);
-
-  #if DEBUG == 1
-    printf("afinal (prec)  : %e\n",pWF->afinal);
-    printf("fring  (prec)  : %e\n",pWF->fRING);
-    printf("fdamp  (prec)  : %e\n\n",pWF->fDAMP);
-  #endif
+  /*...#...#...#...#...#...#...#...#...#...#...#...#...#...#.../
+  /      Compute and set final spin and RD frequency           /
+  /...#...#...#...#...#...#...#...#...#...#...#...#...#...#...*/
+  IMRPhenomX_SetPrecessingRemnantParams(pWF,pPrec,lalParams);
+  /*..#...#...#...#...#...#...#...#...#...#...#...#...#...#...*/
 
   /* Useful powers of \chi_p */
   const REAL8 chip2    = chip * chip;
@@ -1090,7 +1095,253 @@ int IMRPhenomXGetAndSetPrecessionVariables(
 
   return XLAL_SUCCESS;
 }
+/* Function to set remnant quantities related to final
+spin within IMRPhenomXGetAndSetPrecessionVariables */
+INT4 IMRPhenomX_SetPrecessingRemnantParams(
+  IMRPhenomXWaveformStruct *pWF,
+  IMRPhenomXPrecessionStruct *pPrec,
+  LALDict *lalParams
+){
 
+  /*
+
+  The strategy for setting the precessing remnant spin in PhenomX
+  is multifaceted becuase there are not only the various options
+  implemented for the original PhenomXP, but there are also the
+  options needed for PNR's construction, and its turning off of
+  its CoPrecessing model outside of the PNR calibration region.
+  In that latter case, the final spin transitions from the
+  non-precessing final spin, where PNR's CoPrecessing model is
+  tuned, to the precessing final spin, as is needed for the EZH
+  effective ringdown result.
+
+  A layer on top of this, is the need for the l=m=2 fundamental
+  QNM frequency to be computed, in some way, amid all of these
+  scenarios.
+
+  This function exists to draw a conceptual circle around all of
+  this mess.
+
+  Most comments below are cogent, but some have been left for
+  historical record?
+
+  */
+
+  /* Define shorthand variables for PNR CoPrec options */
+  INT4 status = 0;
+
+  // Toggle for PNR coprecessing tuning
+  INT4 PNRUseInputCoprecDeviations = pPrec->IMRPhenomXPNRUseInputCoprecDeviations;
+
+  // Toggle for enforced use of non-precessing spin as is required during tuning of PNR's coprecessing model
+  INT4 PNRUseTunedCoprec = pPrec->IMRPhenomXPNRUseTunedCoprec;
+
+  // High-level toggle for whether to apply deviations
+  INT4 APPLY_PNR_DEVIATIONS = pWF->APPLY_PNR_DEVIATIONS;
+
+  /*
+  HISTOICAL COMMENT
+      Update the final spin in pWF to account for precessing spin effects:
+
+      XLALSimIMRPhenomXPrecessingFinalSpin2017(eta,chi1L,chi2L,chi_perp);
+
+      Note that chi_perp gets weighted by an appropriate mass factor
+
+        q_factor      = m1/M (when m1 > m2)
+        REAL8 Sperp   = chip * q_factor * q_factor;
+        REAL8 af      = copysign(1.0, af_parallel) * sqrt(Sperp*Sperp + af_parallel*af_parallel);
+  */
+  REAL8 M = pWF->M;
+  REAL8 af_parallel = XLALSimIMRPhenomXFinalSpin2017(pWF->eta,pPrec->chi1z,pPrec->chi2z);
+  double Lfinal     = M*M*af_parallel - pWF->m1_2*pPrec->chi1z - pWF->m2_2*pPrec->chi2z;
+
+  int fsflag = XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod(lalParams);
+  if (fsflag == 4 && pPrec->precessing_tag!=3) fsflag = 3;
+
+  /* For PhenomPNR, we wil use the PhenomPv2 final spin function's result, modified such that its sign is given by sign( cos(betaRD) ). See the related fsflag case below. */
+  if (PNRUseTunedCoprec) fsflag = 5;
+
+  /* When tuning the coprecessing model, we wish to enforce use of the non-precessing final spin. See the related fsflag case below. */
+  if (PNRUseInputCoprecDeviations) fsflag = 6;
+
+  /* Generate and store ringdown value of precession angle beta. This is to be used for e.g. setting the sign of the final spin, and calculating the effective ringdown frequency */
+  if( PNRUseTunedCoprec ){
+    pWF->betaRD = IMRPhenomX_PNR_GenerateRingdownPNRBeta( pWF, pPrec);
+  }
+
+  //
+  double chi1L = pPrec->chi1z;
+  double chi2L = pPrec->chi2z;
+
+  //
+  int pflag = pPrec->IMRPhenomXPrecVersion;
+
+  //
+  switch(fsflag)
+  {
+    case 0:
+      pWF->afinal_prec    = XLALSimIMRPhenomXPrecessingFinalSpin2017(pWF->eta,chi1L,chi2L,pPrec->chi_p);
+      break;
+    case 1:
+      pWF->afinal_prec    = XLALSimIMRPhenomXPrecessingFinalSpin2017(pWF->eta,chi1L,chi2L,pPrec->chi1x);
+      break;
+    case 2:
+    case 4:
+      pWF->afinal_prec    = XLALSimIMRPhenomXPrecessingFinalSpin2017(pWF->eta,chi1L,chi2L,pPrec->chiTot_perp);
+      break;
+    case 3:
+      if( pflag == 220 || pflag == 221 || pflag == 222 || pflag == 223 || pflag == 224 )
+      {
+        if(pPrec->MSA_ERROR == 1 )
+        {
+          XLAL_PRINT_WARNING("Initialization of MSA system failed. Defaulting to final spin version 0.\n");
+          pWF->afinal_prec    = XLALSimIMRPhenomXPrecessingFinalSpin2017(pWF->eta,chi1L,chi2L,pPrec->chi_p);
+        }
+        else
+        {
+
+          INT2 sign = 1;
+          if (XLALSimInspiralWaveformParamsLookupPhenomXPTransPrecessionMethod(lalParams) == 1 ){
+            sign = copysign(1, af_parallel);
+          }
+          pWF->afinal_prec    = sign * sqrt( pPrec->SAv2 + Lfinal*Lfinal + 2.0*Lfinal*(pPrec->S1L_pav + pPrec->S2L_pav) ) / (M*M);
+
+        }
+      }
+      else
+      {
+        XLAL_PRINT_WARNING("Error: XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod version 3 requires PrecVersion 220, 221, 222, 223 or 224. Defaulting to version 0.\n");
+        pWF->afinal_prec    = XLALSimIMRPhenomXPrecessingFinalSpin2017(pWF->eta,chi1L,chi2L,pPrec->chi_p);
+      }
+      break;
+
+    case 5:
+      {
+      /*-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~*
+      Implement Pv2 final spin but with sign derived from EZH's model for ringdown beta.
+      *-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~*/
+
+      // Use these as input into method for effective RD frequency
+      // * get the value of ringdown beta
+      INT2 sign = 1;
+      sign = copysign(1, cos(pWF->betaRD) );
+
+      /* Calculate Pv2 final spin without alteration. Below we alter it. NOTE that XLALSimIMRPhenomXPrecessingFinalSpin2017 appears to be an explicit copy of the actual Pv2 final spin function, FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH. The original PhenomX have not referenced this code duplication.  */
+      double afinal_prec_Pv2 = XLALSimIMRPhenomXPrecessingFinalSpin2017(pWF->eta,chi1L,chi2L,pPrec->chi_p);
+
+      // The eqiuvalent PhenomPv2 code reference would look like the commented line below.
+      // double afinal_prec_Pv2 = FinalSpinIMRPhenomD_all_in_plane_spin_on_larger_BH( m1, m2, chi1L, chi2L, chi_p );
+
+      // Define the PNR final spin to be the Pv2 final spin magnitude, with direction given by sign of cos betaRD
+      pWF->afinal_prec = sign * fabs(afinal_prec_Pv2);
+
+      // // Experimental version of final spin
+      // pWF->afinal_prec = cos(pWF->betaRD) * fabs(afinal_prec_Pv2);
+      }
+      break;
+
+    case 6:
+      {
+        /*-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~*
+         During PNR tuning, we wish to evaluate the coprecessing model with the same final spin that would be used in PhenomXHM. We implement this here.
+         *-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~*/
+        pWF->afinal_prec = pWF->afinal_nonprec;
+      }
+      break;
+    default:
+    {
+      XLAL_ERROR(XLAL_EDOM,"Error: XLALSimInspiralWaveformParamsLookupPhenomXPFinalSpinMod version not recognized. Requires PhenomXPFinalSpinMod of 0, 1, 2, 3, or 5.\n");
+    }
+  }
+
+  /* (PNRUseTunedCoprec) When not generating PNR make NO destinction between afinal and afinal_prec */
+  if( !PNRUseTunedCoprec ){
+    pWF->afinal = pWF->afinal_prec;
+  } else {
+    /*  ELSE, use the non-precessing final spin defined in IMRPhenomXSetWaveformVariables. XCP uses the non-precessing parameters as a base upon which to add precessing deviations. The line below is added only for clarity: pWF->afinal is already equal to pWF->afinal_nonprec as is set in IMRPhenomXSetWaveformVariables */
+
+    /* pWF->afinal = pWF->afinal_nonprec */
+    // ABOVE but commented out, we see what the final spin assignment WOULD BE if NO WINDOWING of coprec tuning were used
+
+    pWF->afinal = (pWF->pnr_window)*pWF->afinal_nonprec + (1.0-pWF->pnr_window)*pWF->afinal_prec;
+    // Above: NOTE that as PNR is turned off outside of its calibration window, we want to turn on use of the precessing final spin as defined in the code section above
+
+    #if DEBUG == 1
+      printf("*** PNR Co-precessing model in use (l=m=2) ***\n\n");
+      printf("PNR window   : %e\n", pWF->pnr_window);
+      printf("pWF->afinal      : %e\n",pWF->afinal);
+      printf("pWF->afinal_prec  : %e\n",pWF->afinal_prec);
+      printf("pWF->afinal_nonprec  : %e\n",pWF->afinal_nonprec);
+    #endif
+  }
+
+
+  if( fabs(pWF->afinal) > 1.0 )
+  {
+        XLAL_PRINT_WARNING("Warning: Final spin magnitude %g > 1. Setting final spin magnitude = 1.", pWF->afinal);
+        pWF->afinal = copysign(1.0, pWF->afinal);
+  }
+
+  /* Update ringdown and damping frequency: no precession; to be used for PNR tuned deviations */
+  pWF->fRING     = evaluate_QNMfit_fring22(pWF->afinal) / (pWF->Mfinal);
+  pWF->fDAMP     = evaluate_QNMfit_fdamp22(pWF->afinal) / (pWF->Mfinal);
+  //pWF->fISCO     = XLALSimIMRPhenomXfISCO(pWF->afinal);
+
+  #if DEBUG == 1
+    printf("afinal (prec)  : %e\n",pWF->afinal);
+    printf("fring  (prec)  : %e\n",pWF->fRING);
+    printf("fdamp  (prec)  : %e\n\n",pWF->fDAMP);
+  #endif
+
+  // Copy IMRPhenomXReturnCoPrec to pWF
+  pWF->IMRPhenomXReturnCoPrec = pPrec->IMRPhenomXReturnCoPrec;
+  #if DEBUG == 1
+    printf("pPrec->IMRPhenomXReturnCoPrec : %i\n",pPrec->IMRPhenomXReturnCoPrec);
+    printf("pWF->IMRPhenomXReturnCoPrec   : %i\n",pWF->IMRPhenomXReturnCoPrec);
+  #endif
+
+  //
+  if( APPLY_PNR_DEVIATIONS )
+  {
+    /* Add an overall deviation to the high-level ringdown frequency (PNRUseTunedCoprec) */
+    pWF->fRING = pWF->fRING - (pWF->PNR_DEV_PARAMETER * pWF->NU5);
+    pWF->fDAMP = pWF->fDAMP + (pWF->PNR_DEV_PARAMETER * pWF->NU6);
+  }
+
+  // we want to define the quantities below if PNR is used (PNRUseTunedCoprec). In particular,  pWF->fRINGEffShiftDividedByEmm is used by the HMs
+  // Define identifiers for perturbation theory frequencies
+  if( PNRUseTunedCoprec && (pWF->PNR_SINGLE_SPIN != 1))
+  {
+    const REAL8 fRING22_prec = evaluate_QNMfit_fring22(pWF->afinal_prec) / (pWF->Mfinal);
+    const REAL8 fRING21_prec = evaluate_QNMfit_fring21(pWF->afinal_prec) / (pWF->Mfinal);
+    pWF->fRING22_prec = fRING22_prec;
+
+    // * Calculate and store single quantity needed to determine effective ringdown frequencies for all QNMs
+    pWF->fRINGEffShiftDividedByEmm = (1.0-fabs(cos(pWF->betaRD))) * ( fRING22_prec  -  fRING21_prec );
+
+
+    // As we turn off PNR tuning, we want to turn on use of the effective ringdown frequency
+    // NOTE that when pWF->pnr_window=0, this should reduce to the def of pWF->fRINGCP below
+
+    const INT4 emm = 2;
+    // NOTE that we use pWF->fRING and not fRING22_prec below because of how pWF->afinal is defined using (1-pWF->pnr_window)
+    pWF->fRING = pWF->fRING  -  (1.0-pWF->pnr_window) * emm * pWF->fRINGEffShiftDividedByEmm;
+    // pWF->fRING = (pWF->pnr_window)*pWF->fRING  -  (1-pWF->pnr_window) * emm * pWF->fRINGEffShiftDividedByEmm;
+
+    #if DEBUG == 1
+      printf("pflag                         : %i\n",pflag);
+      printf("pWF->betaRD                   : %e\n",pWF->betaRD);
+      printf("pWF->fRINGEffShiftDividedByEm : %e\n", pWF->fRINGEffShiftDividedByEmm);
+      printf("fring22 (prec)                : %e\n",fRING22_prec);
+      printf("fRING                         : %e\n",pWF->fRING);
+    #endif
+
+  }
+
+  //
+  return status;
+
+};
 
 /** Get alpha and epsilon offset depending of the mprime (second index of the non-precessing mode) */
 void Get_alphaepsilon_atfref(REAL8 *alpha_offset, REAL8 *epsilon_offset, UINT4 mprime, IMRPhenomXPrecessionStruct *pPrec, IMRPhenomXWaveformStruct *pWF)
@@ -1484,53 +1735,62 @@ int IMRPhenomXPTwistUp22(
 
   double s, s2, cos_beta;
 
-  switch(pPrec->IMRPhenomXPrecVersion)
+  if(pPrec->IMRPhenomXPNRUseTunedAngles)
   {
-    /* ~~~~~ Use NNLO PN Euler Angles - Appendix G of arXiv:2004.06503 and https://dcc.ligo.org/LIGO-T1500602 ~~~~~ */
-    case 101:
-    case 102:
-    case 103:
-    case 104:
+    alpha       = pPrec->alphaPNR - pPrec->alpha_offset;
+    epsilon     = -1.0 * pPrec->gammaPNR - pPrec->epsilon_offset;
+    cos_beta    = cos(pPrec->betaPNR);
+  }
+  else
+  {
+    switch(pPrec->IMRPhenomXPrecVersion)
     {
-     alpha         = IMRPhenomX_PN_Euler_alpha_NNLO(pPrec,omega,omega_cbrt2,omega_cbrt,logomega);
-     epsilon       = IMRPhenomX_PN_Euler_epsilon_NNLO(pPrec,omega,omega_cbrt2,omega_cbrt,logomega);
+      /* ~~~~~ Use NNLO PN Euler Angles - Appendix G of arXiv:2004.06503 and https://dcc.ligo.org/LIGO-T1500602 ~~~~~ */
+      case 101:
+      case 102:
+      case 103:
+      case 104:
+      {
+      alpha         = IMRPhenomX_PN_Euler_alpha_NNLO(pPrec,omega,omega_cbrt2,omega_cbrt,logomega);
+      epsilon       = IMRPhenomX_PN_Euler_epsilon_NNLO(pPrec,omega,omega_cbrt2,omega_cbrt,logomega);
 
-     const REAL8 L = XLALSimIMRPhenomXLPNAnsatz(v, pWF->eta/v, pPrec->L0, pPrec->L1, pPrec->L2, pPrec->L3, pPrec->L4, pPrec->L5, pPrec->L6, pPrec->L7, pPrec->L8, pPrec->L8L);
+      const REAL8 L = XLALSimIMRPhenomXLPNAnsatz(v, pWF->eta/v, pPrec->L0, pPrec->L1, pPrec->L2, pPrec->L3, pPrec->L4, pPrec->L5, pPrec->L6, pPrec->L7, pPrec->L8, pPrec->L8L);
 
-     /*
-         We ignore the sign of L + SL below:
-           s := Sp / (L + SL)
-     */
-     s        = pPrec->Sperp / (L + pPrec->SL);
-     s2       = s*s;
-     cos_beta = copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2);
+      /*
+          We ignore the sign of L + SL below:
+            s := Sp / (L + SL)
+      */
+      s        = pPrec->Sperp / (L + pPrec->SL);
+      s2       = s*s;
+      cos_beta = copysign(1.0, L + pPrec->SL) / sqrt(1.0 + s2);
 
-     break;
-    }
-    case 220:
-    case 221:
-    case 222:
-    case 223:
-    case 224:
-    {
-     vector vangles = {0.,0.,0.};
-
-     /* ~~~~~ Euler Angles from Chatziioannou et al, PRD 95, 104004, (2017), arXiv:1703.03967 ~~~~~ */
-     vangles  = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(v,pWF,pPrec);
-
-     alpha    = vangles.x - pPrec->alpha_offset;
-     epsilon  = vangles.y - pPrec->epsilon_offset;
-     cos_beta = vangles.z;
-
-     break;
-    }
-          
-    default:
-    {
-      XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPrecessionVersion not recognized. Recommended default is 223.\n");
       break;
+      }
+      case 220:
+      case 221:
+      case 222:
+      case 223:
+      case 224:
+      {
+      vector vangles = {0.,0.,0.};
+
+      /* ~~~~~ Euler Angles from Chatziioannou et al, PRD 95, 104004, (2017), arXiv:1703.03967 ~~~~~ */
+      vangles  = IMRPhenomX_Return_phi_zeta_costhetaL_MSA(v,pWF,pPrec);
+
+      alpha    = vangles.x - pPrec->alpha_offset;
+      epsilon  = vangles.y - pPrec->epsilon_offset;
+      cos_beta = vangles.z;
+
+      break;
+      }
+      default:
+      {
+        XLAL_ERROR(XLAL_EINVAL,"Error: IMRPhenomXPrecessionVersion not recognized. Recommended default is 223.\n");
+        break;
+      }
     }
   }
+
 
   INT4 status = 0;
   status = IMRPhenomXWignerdCoefficients_cosbeta(&cBetah, &sBetah, cos_beta);
@@ -1568,14 +1828,16 @@ int IMRPhenomXPTwistUp22(
   COMPLEX16 hp_sum               = 0;
   COMPLEX16 hc_sum               = 0;
 
+  REAL8 polarizationSymmetry = pPrec->PolarizationSymmetry;
+
   /* Loop over m' modes and perform the actual twisting up */
   for(int m=-2; m<=2; m++)
   {
     /* Transfer functions, see Eq. 3.5 and 3.6 of arXiv:2004.06503 */
     COMPLEX16 A2m2emm    = cexp_im_alpha_l2[-m+2] * d2m2[m+2]  * Y2mA[m+2];        /*  = cexp(I*m*alpha) * d22[m+2]   * Y2mA[m+2] */
     COMPLEX16 A22emmstar = cexp_im_alpha_l2[m+2]  * d22[m+2]   * conj(Y2mA[m+2]);  /*  = cexp(-I*m*alpha) * d2m2[m+2] * conj(Y2mA[m+2])  */
-    hp_sum +=    A2m2emm + A22emmstar;
-    hc_sum += I*(A2m2emm - A22emmstar);
+    hp_sum +=    A2m2emm + polarizationSymmetry * A22emmstar;
+    hc_sum += I*(A2m2emm - polarizationSymmetry * A22emmstar);
   }
 
   /* Note that \gamma = - \epsilon */
@@ -1594,15 +1856,15 @@ int IMRPhenomXPTwistUp22(
 
       fileangle = fopen(fileSpec,"a");
 
-      COMPLEX16 cexp_i_epsilon = cexp(I*epsilon);
-      COMPLEX16 cexp_i_betah = cBetah + I*sBetah;
-      fprintf(fileangle, "%.16e  %.16e  %.16e  %.16e  %.16e  %.16e  %.16e\n",  XLALSimIMRPhenomXUtilsMftoHz(Mf, pWF->Mtot), creal(cexp_i_alpha), cimag(cexp_i_alpha), creal(cexp_i_epsilon), cimag(cexp_i_epsilon), creal(cexp_i_betah), cimag(cexp_i_betah));
+      // COMPLEX16 cexp_i_epsilon = cexp(I*epsilon);
+      // COMPLEX16 cexp_i_betah = cBetah + I*sBetah;
+      //fprintf(fileangle, "%.16e  %.16e  %.16e  %.16e  %.16e  %.16e  %.16e\n",  XLALSimIMRPhenomXUtilsMftoHz(Mf, pWF->Mtot), creal(cexp_i_alpha), cimag(cexp_i_alpha), creal(cexp_i_epsilon), cimag(cexp_i_epsilon), creal(cexp_i_betah), cimag(cexp_i_betah));
+      fprintf(fileangle, "%.16e  %.16e  %.16e  %.16e\n", XLALSimIMRPhenomXUtilsMftoHz(Mf, pWF->Mtot), alpha, epsilon, cos_beta);
       fclose(fileangle);
   #endif
 
   return XLAL_SUCCESS;
 }
-
 
 int IMRPhenomXWignerdCoefficients_cosbeta(
   REAL8 *cos_beta_half, /**< [out] cos(beta/2) */

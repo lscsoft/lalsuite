@@ -79,6 +79,30 @@ typedef struct tagIMRPhenomXWaveformStruct
 	INT4  IMRPhenomXIntermediateAmpVersion;
 	INT4  IMRPhenomXRingdownAmpVersion;
 
+	/* Implemented for PhenomPNR coprecessing model. When used, this value will be determined by the corresponding value in precStruct */
+	INT4  IMRPhenomXPNRUseTunedCoprec;
+	INT4  IMRPhenomXPNRUseTunedCoprec33;
+
+	/* Toggle to return coprecessing model without any twisting up */
+	INT4 IMRPhenomXReturnCoPrec;
+	/* Toggle for only returning waveform (i.e. mode) phase */
+	INT4 PhenomXOnlyReturnPhase;
+
+	/* Parameters that define deviation of the tuned coprecessing mode PhenomXCP from PhenomX (500) */
+	REAL8 MU1;   // MR Amplitude
+	REAL8 MU2;   // MR Amplitude: modifies gamma2
+	REAL8 MU3;   // MR Amplitude: modifies gamma3
+	REAL8 MU4;   // MR Amplitude: would modify appearance of fRing in MR amplitude
+	REAL8 NU0;   // MR Phase
+	REAL8 NU4;   // MR Phase
+	REAL8 NU5;   // MR Phase
+	REAL8 NU6;   // MR Phase
+	REAL8 ZETA1; // INT Phase
+	REAL8 ZETA2; // INT Phase
+	REAL8 PNR_DEV_PARAMETER; // Is zero when no precession, and non-zero otherwise
+	REAL8 pnr_window;
+	INT4 APPLY_PNR_DEVIATIONS;
+
 	/* Mass Parameters */
 	REAL8 m1_SI; 		// Mass in SI units
 	REAL8 m2_SI;	 	// Mass in SI units
@@ -101,7 +125,15 @@ typedef struct tagIMRPhenomXWaveformStruct
 	REAL8 dchi_half;
 	REAL8 SL;
 	REAL8 SigmaL;
+	REAL8 chiTot_perp;
+	REAL8 chi_p;
+	REAL8 theta_LS; // PNR Specific
+	REAL8 a1;       // PNR Specific
 
+	REAL8 M;
+	REAL8 m1_2;
+	REAL8 m2_2;
+	
     /* Matter parameters */
     REAL8 lambda1;
     REAL8 lambda2;
@@ -129,6 +161,14 @@ typedef struct tagIMRPhenomXWaveformStruct
 	/* Frequencies */
 	REAL8 fMECO;
 	REAL8 fISCO;
+
+	/* Ringdown value of precession angle beta */
+	REAL8 betaRD;
+	REAL8 fRING22_prec;
+	/* Quantity needed to calculate effective RD frequencies (500) */
+	REAL8 fRINGEffShiftDividedByEmm;
+	/* Coprecessing frame ringdown frequencies for 22 Mode  (500) */
+	REAL8 fRINGCP;
 
 	/* Ringdown and Damping Frequencies for 22 Mode */
 	REAL8 fRING;
@@ -175,9 +215,29 @@ typedef struct tagIMRPhenomXWaveformStruct
 	REAL8 afinal;
 	REAL8 Mfinal;
 
+	/* (500) Final mass and spin: It will at times be useful to use both separately. */
+	REAL8 afinal_prec;
+	REAL8 afinal_nonprec;
+
 	REAL8 distance;
 	REAL8 inclination;
 	REAL8 beta;
+
+	UINT4 PNR_SINGLE_SPIN;
+
+	/* Frequency at which to force XAS/XHM phase and phase derivative value */
+	REAL8 f_inspiral_align;
+	REAL8 XAS_dphase_at_f_inspiral_align;
+	REAL8 XAS_phase_at_f_inspiral_align;
+	/* Strategy: valies e.g. XHM_dphase_at_f_inspiral_align are updated within
+	loop over ell and emm within IMRPhenomXPHM_hplushcross. Within same loop,
+	e.g. IMRPhenomXHMGenerateFDOneMode is called to generate a coprecessing
+	moment. At that time, the values of e.g. XHM_dphase_at_f_inspiral_align
+	defined in IMRPhenomXHM_PNR_SetPhaseAlignmentParams.*/
+	REAL8 XHM_dphase_at_f_inspiral_align;
+	REAL8 XHM_phase_at_f_inspiral_align;
+
+	INT4 IMRPhenomXPNRForceXHMAlignment;
 
 } IMRPhenomXWaveformStruct;
 
@@ -383,11 +443,14 @@ int IMRPhenomXGetAmplitudeCoefficients(IMRPhenomXWaveformStruct *pWF, IMRPhenomX
 int IMRPhenomXGetPhaseCoefficients(IMRPhenomXWaveformStruct *pWF, IMRPhenomXPhaseCoefficients *pPhase);
 
 double IMRPhenomX_TimeShift_22(IMRPhenomXPhaseCoefficients *pPhase, IMRPhenomXWaveformStruct *pWF);
-    
+
 void IMRPhenomX_Phase_22_ConnectionCoefficients(IMRPhenomXWaveformStruct *pWF, IMRPhenomXPhaseCoefficients *pPhase);
 
 /* Function to check if the input mode array contains supported modes */
 INT4 check_input_mode_array(LALDict *lalParams);
+
+/* Function to compute full model phase */
+INT4 IMRPhenomX_FullPhase_22(double *phase, double *dphase, double Mf, IMRPhenomXPhaseCoefficients *pPhase, IMRPhenomXWaveformStruct *pWF);
 
 NRTidal_version_type IMRPhenomX_SetTidalVersion(LALDict *LALParams);
 
