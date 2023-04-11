@@ -64,7 +64,6 @@ lalapps/src/string/             @daichi.tsuna @florent-robinet @kipp.cannon
 .gitlab-*.Dockerfile            @adam-mercer @duncanmmacleod @karl-wette
 .gitlab-ci.yml                  @adam-mercer @duncanmmacleod @karl-wette
 .gitlab/                        @adam-mercer @duncanmmacleod @karl-wette
-.historical_authors             @adam-mercer @duncanmmacleod @karl-wette
 .mailmap                        @adam-mercer @duncanmmacleod @karl-wette
 00boot                          @adam-mercer @duncanmmacleod @karl-wette
 AUTHORS                         @adam-mercer @duncanmmacleod @karl-wette
