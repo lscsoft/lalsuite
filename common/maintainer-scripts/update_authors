@@ -2,36 +2,31 @@
 # Author: Karl Wette, 2022
 
 use strict;
+use File::Copy;
 
 my $subdir = shift @ARGV;
 
 my %authors;
 
-open IN, "$subdir/.historical_authors" or die $!;
+open IN, "$subdir/AUTHORS" or die "$0: could not open $subdir/AUTHORS: $!";
 binmode IN, ":encoding(UTF-8)";
 while (<IN>) {
   chomp;
   next if /^\s*#/;
-
-  $authors{$_} = "historical";
-
+  $authors{$_} = 1;
 }
 
-open IN, "git log --full-history --no-merges HEAD -- $subdir/ | git shortlog --summary |" or die $!;
+open IN, "git log --full-history --no-merges HEAD -- $subdir/ | git shortlog --summary |" or die "$0: git log failed: $!";
 binmode IN, ":encoding(UTF-8)";
 while (<IN>) {
   chomp;
-
-  my ($n, $author) = m/^\s*(\d+)\s+(.+)$/ or die;
-
-  $authors{$author} = "git history";
-
+  my ($n, $author) = m/^\s*(\d+)\s+(.+)$/ or die "$0: could not match line from git log: $_";
+  $authors{$author} = 1;
 }
 
 if (defined($ENV{"UPDATE_AUTHORS_WITH_GIT_BLAME"})) {
-
   my @files;
-  open IN, "git ls-files -- $subdir/ |" or die $!;
+  open IN, "git ls-files -- $subdir/ |" or die "$0: git ls-files failed: $!";
   binmode IN, ":encoding(UTF-8)";
   while (<IN>) {
     chomp;
@@ -40,31 +35,20 @@ if (defined($ENV{"UPDATE_AUTHORS_WITH_GIT_BLAME"})) {
   my $nfiles = @files;
   for (my $i = 0; $i < @files; ++$i) {
     print STDERR "$0: updating authors of $subdir: file $i of $nfiles: $files[$i]\n";
-    open IN2, "git blame --line-porcelain -- $files[$i] |" or die $!;
+    open IN2, "git blame --line-porcelain -- $files[$i] |" or die "$0: git blame failed: $!";
     binmode IN2, ":encoding(UTF-8)";
     while (<IN2>) {
       chomp;
       next unless s/^author //;
       next if defined($authors{$_});
-      $authors{$_} = "git blame";
+      $authors{$_} = 1;
     }
   }
-
-  open OUT, ">$subdir/.historical_authors" or die $!;
-  binmode OUT, ":encoding(UTF-8)";
-  print OUT <<EOF;
-# This file contains historical authors collected from the pre-Git version
-# history, copyright notices, documentation, git blame, and other sources.
-# It should not be modified except by the 'update_authors' script.
-EOF
-  foreach my $author (sort { $a cmp $b } keys(%authors)) {
-    print OUT "$author\n" if $authors{$author} ne "git history";
-  }
-
 }
 
-open OUT, ">$subdir/AUTHORS" or die $!;
+open OUT, ">$subdir/AUTHORS.tmp" or die "$0: could not open $subdir/AUTHORS.tmp: $!";
 binmode OUT, ":encoding(UTF-8)";
 foreach my $author (sort { $a cmp $b } keys(%authors)) {
   print OUT "$author\n";
 }
+move("$subdir/AUTHORS.tmp", "$subdir/AUTHORS") or die "$0: could not move $subdir/AUTHORS.tmp to $subdir/AUTHORS: $!";
