@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 176
+# serial 177
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1090,13 +1090,12 @@ AS_IF([test "x${osx_version_check}" = "xtrue"],[
   AS_IF([test "x$build_vendor" = "xapple"],[
     AC_CHECK_PROGS([SW_VERS],[sw_vers])
     AS_IF([test "x$SW_VERS" != "x"],[
-      AC_MSG_CHECKING([Mac OS X version])
+      AC_MSG_CHECKING([macOS version])
       MACOSX_VERSION=`$SW_VERS -productVersion`
       AC_MSG_RESULT([$MACOSX_VERSION])])
-    AS_CASE(["$MACOSX_VERSION"],
-      [10.0*|10.1|10.1.*|10.2*|10.3*],AC_MSG_ERROR([This version of Mac OS X is not supported]),
-      [10.4*|10.5*|10.6*|10.7*|10.8*|10.9*|10.10*|10.11*|10.12*|10.13*|10.14*],,
-      AC_MSG_WARN([Unknown Mac OS X version]))
+      AX_COMPARE_VERSION([${MACOSX_VERSION}],[lt],[11],[
+        AC_MSG_WARN([This version of macOS is not supported by Apple])
+    ])
 ])])])
 
 AC_DEFUN([LALSUITE_CHECK_CUDA],
