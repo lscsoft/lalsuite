@@ -60,6 +60,13 @@ typedef struct GSParams {
     LALDict *params;          /**<Container for all accessory parameters */
     int ampPhase;
     int verbose;
+    // New interface specific
+    int newinterface;         /**< 0 or 1: Old or New interface respectively */
+    int condition;            /**< Conditioning waveform  for (Inverse)Fourier Transform */
+    char module[256];         /**< Name of the External python module */
+    char object[256];         /**< Name of the python class defined in python-module which includes the methods generate_fd/td_waveform **/
+    int m1_newinterface;      /**< Check if mass1 is an input argument */
+    int m2_newinterface;      /**< Check if mass2 is an input argument */
 } GSParams;
 
 
@@ -213,6 +220,10 @@ const char * usage =
 "                           Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html.\n"
 "--phenomXPFinalSpinMod int Choose final spin prescription.\n"
 "                           Options and default values can be found in https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/group___l_a_l_sim_i_m_r_phenom_x__c.html.\n"
+"--newinterface             If included, it will use XLALSimInspiralGenerateT(F)DWaveform instead of XLALSimInspiralChooseT(F)DWaveform\n"
+"                           Can use flexible parameters: --total_mass --chirp_mass --mass_ratio ... --spin1_norm --spin1_tilt --spin1_phi ...\n"
+"--python-module char       Name of the External python module\n"
+"--python-object char       Name of the python class defined in python-module which includes the methods generate_fd/td_waveform\n"
 ;
 
 /* Parse command line, sanity check arguments, and return a newly
@@ -247,6 +258,10 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
     params->longAscNodes = 0.;
     params->ecc = 0.;
     params->meanPerAno = 0.;
+    params->m1_newinterface = 0;
+    params->m2_newinterface = 0;
+    strcpy(params->module, "");
+    strcpy(params->object, "");
     XLALSimInspiralWaveformParamsInsertTidalLambda1(params->params, 0.);
     XLALSimInspiralWaveformParamsInsertTidalLambda2(params->params, 0.);
     /* Note: given a LALDict, SEOBNRv2T/v4T will check wether other parameters ( TidalOctupolarLambda, TidalQuadrupolarFMode, TidalOctupolarFMode, dQuadMon) are present in the LALDict */
@@ -270,6 +285,8 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             exit(0);
         } else if (strcmp(argv[i], "--verbose") == 0) {
             params->verbose = 1;
+        } else if (strcmp(argv[i], "--newinterface") == 0) {
+            params->newinterface = 1;
         } else if (strcmp(argv[i], "--amp-phase") == 0) {
 	    params->ampPhase = 1;
         } else if ( ( i == argc ) || ( !argv[i+1] ) ) {
@@ -304,8 +321,10 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             params->deltaF = atof(argv[++i]);
         } else if (strcmp(argv[i], "--m1") == 0) {
             params->m1 = atof(argv[++i]) * LAL_MSUN_SI;
+            params->m1_newinterface = 1;
         } else if (strcmp(argv[i], "--m2") == 0) {
             params->m2 = atof(argv[++i]) * LAL_MSUN_SI;
+            params->m2_newinterface = 1;
         } else if (strcmp(argv[i], "--spin1x") == 0) {
             params->s1x = atof(argv[++i]);
         } else if (strcmp(argv[i], "--spin1y") == 0) {
@@ -410,6 +429,33 @@ static GSParams *parse_args(ssize_t argc, char **argv) {
             XLALSimInspiralWaveformParamsInsertPhenomXPFinalSpinMod(params->params, atoi(argv[++i]));
         }else if(strcmp(argv[i], "--phenomXHMRelease") == 0){
             XLALSimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(params->params, atoi(argv[++i]));
+        /* New interface specific */
+        } else if (strcmp(argv[i], "--total_mass") == 0) {
+            XLALSimInspiralWaveformParamsInsertTotalMass(params->params, atof(argv[++i]) * LAL_MSUN_SI);
+        } else if (strcmp(argv[i], "--chirp_mass") == 0) {
+            XLALSimInspiralWaveformParamsInsertChirpMass(params->params, atof(argv[++i]) * LAL_MSUN_SI);
+        } else if (strcmp(argv[i], "--mass_difference") == 0) {
+            XLALSimInspiralWaveformParamsInsertMassDifference(params->params, atof(argv[++i]) * LAL_MSUN_SI);
+        } else if (strcmp(argv[i], "--reduced_mass") == 0) {
+            XLALSimInspiralWaveformParamsInsertReducedMass(params->params, atof(argv[++i]) * LAL_MSUN_SI);
+        } else if (strcmp(argv[i], "--spin1_norm") == 0) {
+            XLALSimInspiralWaveformParamsInsertSpin1norm(params->params, atof(argv[++i]));
+        } else if (strcmp(argv[i], "--spin1_tilt") == 0) {
+            XLALSimInspiralWaveformParamsInsertSpin1tilt(params->params, atof(argv[++i]));
+        } else if (strcmp(argv[i], "--spin1_phi") == 0) {
+            XLALSimInspiralWaveformParamsInsertSpin1phi(params->params, atof(argv[++i]));
+        } else if (strcmp(argv[i], "--spin2_norm") == 0) {
+            XLALSimInspiralWaveformParamsInsertSpin2norm(params->params, atof(argv[++i]));
+        } else if (strcmp(argv[i], "--spin2_tilt") == 0) {
+            XLALSimInspiralWaveformParamsInsertSpin2tilt(params->params, atof(argv[++i]));
+        } else if (strcmp(argv[i], "--spin2_phi") == 0) {
+            XLALSimInspiralWaveformParamsInsertSpin2phi(params->params, atof(argv[++i]));
+        } else if (strcmp(argv[i], "--condition") == 0) {
+            params->condition = atoi(argv[++i]);
+        } else if (strcmp(argv[i], "--python-module") == 0) {
+            snprintf(params->module, sizeof(params->module), "%s", argv[++i]);
+        } else if (strcmp(argv[i], "--python-object") == 0) {
+            snprintf(params->object, sizeof(params->object), "%s", argv[++i]);
         }else {
             XLALPrintError("Error: invalid option: %s\n", argv[i]);
             goto fail;
@@ -565,28 +611,105 @@ int main (int argc , char **argv) {
 
     /* generate waveform */
     start_time = time(NULL);
-    switch (params->domain) {
-        case LAL_SIM_DOMAIN_FREQUENCY:
-            XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde,
-                    params->m1, params->m2, params->s1x,
-                    params->s1y, params->s1z, params->s2x, params->s2y,
-                    params->s2z, params->distance, params->inclination,
-                    params->phiRef, params->longAscNodes, params->ecc, params->meanPerAno,
-                    params->deltaF, params->f_min, params->f_max, params->fRef,
-                    params->params, params->approximant);
+    if (params->newinterface == 0) // Use old interface
+    {
+        switch (params->domain) {
+            case LAL_SIM_DOMAIN_FREQUENCY:
+                XLALSimInspiralChooseFDWaveform(&hptilde, &hctilde,
+                        params->m1, params->m2, params->s1x,
+                        params->s1y, params->s1z, params->s2x, params->s2y,
+                        params->s2z, params->distance, params->inclination,
+                        params->phiRef, params->longAscNodes, params->ecc, params->meanPerAno,
+                        params->deltaF, params->f_min, params->f_max, params->fRef,
+                        params->params, params->approximant);
+                break;
+            case LAL_SIM_DOMAIN_TIME:
+                XLALSimInspiralChooseTDWaveform(&hplus, &hcross,
+                        params->m1, params->m2, params->s1x,
+                        params->s1y, params->s1z, params->s2x, params->s2y,
+                        params->s2z, params->distance, params->inclination,
+                        params->phiRef, params->longAscNodes, params->ecc, params->meanPerAno,
+                        params->deltaT, params->f_min, params->fRef,
+                        params->params,
+                        params->approximant);
+                break;
+            default:
+                XLALPrintError("Error: domain must be either TD or FD\n");
+        }
+    }
+    else // Use new interface
+    {
+        /* Generator */
+        LALDict *generator_params = XLALCreateDict();
+        if (params->condition){
+          XLALDictInsertINT4Value(generator_params, "condition", params->condition);
+        }
+        if (strcmp(params->module, "") != 0){
+            XLALDictInsertStringValue(generator_params, "module", params->module);
+        }
+        if (strcmp(params->object, "") != 0){
+          XLALDictInsertStringValue(generator_params, "object", params->object);
+          XLALDictInsertINT4Value(generator_params, "approximant", IMRPhenomXPHM);
+        }
+        LALSimInspiralGenerator *generator = XLALSimInspiralChooseGenerator(params->approximant, generator_params);
+        XLAL_CHECK(generator, XLAL_EFUNC);
+
+        /* Parse waveform params into laldictionary */
+        /* If none of the optional mass arguments are used, we use the component masses which are stored in the params object */
+        const char *mass_keys[6] = {"total_mass", "chirp_mass", "mass_difference", "reduced_mass", "mass_ratio", "sym_mass_ratio"};
+        UINT2 key_exists = 0;
+        for (size_t j = 0; j < sizeof(mass_keys)/sizeof(*mass_keys); ++j){
+          if (XLALDictContains(params->params, mass_keys[j]) == 1) {
+            key_exists = 1;
             break;
-        case LAL_SIM_DOMAIN_TIME:
-            XLALSimInspiralChooseTDWaveform(&hplus, &hcross,
-                    params->m1, params->m2, params->s1x,
-                    params->s1y, params->s1z, params->s2x, params->s2y,
-                    params->s2z, params->distance, params->inclination,
-		    params->phiRef, params->longAscNodes, params->ecc, params->meanPerAno,
-                    params->deltaT, params->f_min, params->fRef,
-                    params->params,
-                    params->approximant);
-            break;
-        default:
-            XLALPrintError("Error: domain must be either TD or FD\n");
+          }
+        }
+        if (key_exists == 0){
+          XLALSimInspiralWaveformParamsInsertMass1(params->params, params->m1);
+          XLALSimInspiralWaveformParamsInsertMass2(params->params, params->m2);
+        }
+        else{
+          /* Insert component masses if they are in the command line */
+          if (params->m1_newinterface == 1) XLALSimInspiralWaveformParamsInsertMass1(params->params, params->m1);
+          if (params->m2_newinterface == 1) XLALSimInspiralWaveformParamsInsertMass2(params->params, params->m2);
+        }
+        /* If any of the optional spin arguments are used, we use the cartesian spins which are stored in the params object */
+        if (XLALDictContains(params->params, "spin1_norm") == 0 && XLALDictContains(params->params, "spin1_tilt") == 0 && XLALDictContains(params->params, "spin1_phi") == 0){
+            XLALSimInspiralWaveformParamsInsertSpin1x(params->params, params->s1x);
+            XLALSimInspiralWaveformParamsInsertSpin1y(params->params, params->s1y);
+            XLALSimInspiralWaveformParamsInsertSpin1z(params->params, params->s1z);
+        }
+        if (XLALDictContains(params->params, "spin2_norm") == 0 && XLALDictContains(params->params, "spin2_tilt") == 0 && XLALDictContains(params->params, "spin2_phi") == 0){
+            XLALSimInspiralWaveformParamsInsertSpin2x(params->params, params->s2x);
+            XLALSimInspiralWaveformParamsInsertSpin2y(params->params, params->s2y);
+            XLALSimInspiralWaveformParamsInsertSpin2z(params->params, params->s2z);
+        }
+        /* Insert the rest of waveform params */
+        XLALSimInspiralWaveformParamsInsertDeltaF(params->params, params->deltaF);
+        XLALSimInspiralWaveformParamsInsertDeltaT(params->params, params->deltaT);
+        XLALSimInspiralWaveformParamsInsertF22Ref(params->params, params->fRef);
+        XLALSimInspiralWaveformParamsInsertF22Start(params->params, params->f_min);
+        XLALSimInspiralWaveformParamsInsertFMax(params->params, params->f_max);
+        XLALSimInspiralWaveformParamsInsertRefPhase(params->params, params->phiRef);
+        XLALSimInspiralWaveformParamsInsertDistance(params->params, params->distance);
+        XLALSimInspiralWaveformParamsInsertInclination(params->params, params->inclination);
+        XLALSimInspiralWaveformParamsInsertLongAscNodes(params->params, params->longAscNodes);
+        XLALSimInspiralWaveformParamsInsertEccentricity(params->params, params->ecc);
+        XLALSimInspiralWaveformParamsInsertMeanPerAno(params->params, params->meanPerAno);
+
+        /* generate waveform */
+        switch (params->domain) {
+          case LAL_SIM_DOMAIN_FREQUENCY:
+              XLALSimInspiralGenerateFDWaveform(&hptilde, &hctilde, params->params, generator);
+              break;
+          case LAL_SIM_DOMAIN_TIME:
+              XLALSimInspiralGenerateTDWaveform(&hplus, &hcross, params->params, generator);
+              break;
+          default:
+              XLALPrintError("Error: domain must be either TD or FD\n");
+        }
+        XLALDestroyDict(generator_params);
+        XLALDestroySimInspiralGenerator(generator);
     }
     if (params->verbose)
         XLALPrintInfo("Generation took %.0f seconds\n",

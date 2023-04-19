@@ -1,3 +1,15 @@
 # Add paths, relative to the `python/` directory to this file
 # to ignore them from the `test_python_imports.py` test script,
 # see /test/README.md in the upstream repo for more details
+
+lalsimulation/gwsignal
+lalsimulation/gwsignal/core
+lalsimulation/gwsignal/core/conditioning_subroutines
+lalsimulation/gwsignal/core/errors
+lalsimulation/gwsignal/core/gw
+lalsimulation/gwsignal/core/parameter_conventions
+lalsimulation/gwsignal/core/utils
+lalsimulation/gwsignal/core/waveform
+lalsimulation/gwsignal/core/waveform_conditioning
+lalsimulation/gwsignal/models
+lalsimulation/gwsignal/models/pyseobnr_model

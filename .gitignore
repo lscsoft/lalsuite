@@ -2,6 +2,7 @@
 .DS_Store
 .idea
 .hypothesis/
+.ipynb_checkpoints/
 .vscode
 *.dSYM
 *.egg-info
@@ -60,3 +61,5 @@ TAGS
 .pytest_cache
 test_python_imports.py
 test_python_scripts.py
+lalsimulation/python/lalsimulation/gwsignal/docs/build/
+lalsimulation/python/lalsimulation/gwsignal/docs/source/api/

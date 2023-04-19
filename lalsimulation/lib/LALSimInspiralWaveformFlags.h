@@ -185,6 +185,9 @@ LALValue * XLALSimInspiralModeArrayActivateAllModesAtL(LALValue *modes, unsigned
 LALValue * XLALSimInspiralModeArrayDeactivateAllModesAtL(LALValue *modes, unsigned l);
 int XLALSimInspiralModeArrayPrintModes(LALValue *modes);
 INT2Sequence *XLALSimInspiralModeArrayReadModes(LALValue *modes);
+char * XLALSimInspiralModeArrayToModeString(LALValue *modes);
+LALValue * XLALSimInspiralModeArrayFromModeString(const char *modestr);
+
 
 #if 0
 { /* so that editors will match succeeding brace */

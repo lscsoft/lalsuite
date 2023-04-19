@@ -1,1 +1,0 @@
-../../common/conda/install-bin.sh

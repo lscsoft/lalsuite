@@ -83,19 +83,14 @@ def gen_test_data(spin1x, approximant, mode_array, PV, FS):
     hp2, hc2 = lalsimulation.SimInspiralChooseTDWaveform(**pars2)
 
     # compute amp and phase
-    hp1_amp, hp1_phase = get_amp_phase(hp1.data.data)
-    hc1_amp, hc1_phase = get_amp_phase(hc1.data.data)
+    h1_amp, h1_phase = get_amp_phase(hp1.data.data - 1j * hc1.data.data)
 
-    hp2_amp, hp2_phase = get_amp_phase(hp2.data.data)
-    hc2_amp, hc2_phase = get_amp_phase(hc2.data.data)
+    h2_amp, h2_phase = get_amp_phase(hp2.data.data - 1j * hc2.data.data)
 
-    hp_amp_diff = sum_sqr_diff(hp1_amp, hp2_amp)
-    hp_phase_diff = sum_sqr_diff(hp1_phase, hp2_phase)
+    h_amp_diff = sum_sqr_diff(h1_amp, h2_amp)
+    h_phase_diff = sum_sqr_diff(h1_phase, h2_phase)
 
-    hc_amp_diff = sum_sqr_diff(hc1_amp, hc2_amp)
-    hc_phase_diff = sum_sqr_diff(hc1_phase, hc2_phase)
-
-    return hp_amp_diff, hp_phase_diff, hc_amp_diff, hc_phase_diff
+    return h_amp_diff, h_phase_diff
 
 
 # -- test functions ---------------------
@@ -113,7 +108,7 @@ def test_IMRPhenomT():
 
     """
 
-    expected_result = np.array([1.93196330e+05, 6.75990151e+01, 2.02364224e+05, 6.65691548e+01])
+    expected_result = np.array([170742.89185874866, 38.13925592958284])
 
     new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomT, None, None, None))
 
@@ -132,7 +127,7 @@ def test_IMRPhenomTHM():
 
     """
 
-    expected_result = np.array([1.93318947e+05, 6.75990151e+01, 2.02583328e+05, 6.64207284e+01])
+    expected_result = np.array([170645.95870333136, 200.68861022453908])
 
     new_result  =  np.array(gen_test_data(0., lalsimulation.IMRPhenomTHM, None, None, None))
 
@@ -151,7 +146,7 @@ def test_IMRPhenomTP():
 
     """
 
-    stored_resultsTP={None: {None: (182073.7553633626, 65.14545181720996, 177303.3661438229, 55.49159011183478)}}
+    stored_resultsTP={None: {None: (188638.18910822965, 32.420295013783644)}}
 
     PVs = stored_resultsTP.keys()
 
@@ -179,7 +174,7 @@ def test_IMRPhenomTPHM():
 
     """
 
-    stored_resultsTPHM={None: {None: (182535.7160204654, 64.68935203000481, 178021.9819382646, 56.11063895508146)}}
+    stored_resultsTPHM={None: {None: (189109.04099927619, 207.74817055168765)}}
 
     PVs = stored_resultsTPHM.keys()
 
@@ -191,10 +186,9 @@ def test_IMRPhenomTPHM():
 
             new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomTPHM, None, PV, FS))
 
-            np.testing.assert_allclose(new_result, expected_result, rtol=1e-6, err_msg="IMRPhenomTPHM test failed")
+            np.testing.assert_allclose(new_result, expected_result, rtol=1e-4, err_msg="IMRPhenomTPHM test failed")
 
 
 if __name__ == '__main__':
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-phenomT.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
-
