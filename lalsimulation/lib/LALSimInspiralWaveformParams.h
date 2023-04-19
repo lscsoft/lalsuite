@@ -11,6 +11,44 @@ extern "C" {
 } /* so that editors will match preceding brace */
 #endif
 
+/* Parameters of the New Waveforms Interface */
+int XLALSimInspiralCheckKnownREAL8Key(const char* key);
+int XLALSimInspiralCheckDeterminationOfMasses(LALDict *params);
+
+int XLALSimInspiralWaveformParamsInsertMass1(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertMass2(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertTotalMass(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertMassRatio(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSymMassRatio(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertChirpMass(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertMassDifference(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertReducedMass(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin1x(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin2x(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin1y(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin2y(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin1z(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin2z(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin1norm(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin2norm(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin1tilt(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin2tilt(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin1phi(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertSpin2phi(LALDict *params, REAL8 value);
+
+int XLALSimInspiralWaveformParamsInsertDeltaF(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDeltaT(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertF22Ref(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertRefPhase(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertF22Start(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertFMax(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertDistance(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertInclination(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertLongAscNodes(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertEccentricity(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertMeanPerAno(LALDict *params, REAL8 value);
+
+int XLALSimInspiralWaveformParamsInsertLmax(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertModesChoice(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertFrameAxis(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertSideband(LALDict *params, INT4 value);
@@ -18,6 +56,8 @@ int XLALSimInspiralWaveformParamsInsertNumRelData(LALDict *params, const char * 
 
 int XLALSimInspiralWaveformParamsInsertModeArray(LALDict *params,  LALValue *value);
 int XLALSimInspiralWaveformParamsInsertModeArrayJframe(LALDict *params,  LALValue *value);
+int XLALSimInspiralWaveformParamsInsertModeArrayFromModeString(LALDict *params, const char *modestr);
+int XLALSimInspiralWaveformParamsInsertModeArrayJframeFromModeString(LALDict *params, const char *modestr);
 
 int XLALSimInspiralWaveformParamsInsertPNPhaseOrder(LALDict *params, INT4 value);
 int XLALSimInspiralWaveformParamsInsertPNAmplitudeOrder(LALDict *params, INT4 value);
@@ -212,6 +252,58 @@ int XLALSimInspiralWaveformParamsInsertNLTidesF2(LALDict *params, REAL8 value);
 /* SEOBNRv4P */
 INT4 XLALSimInspiralWaveformParamsInsertEOBChooseNumOrAnalHamDer(LALDict *params, INT4 value);
 INT4 XLALSimInspiralWaveformParamsInsertEOBEllMaxForNyquistCheck(LALDict *params, INT4 value);
+
+
+/* new interface */
+REAL8 XLALSimInspiralWaveformParamsLookupMass1(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupMass2(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupTotalMass(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupMassRatio(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSymMassRatio(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupChirpMass(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupMassDifference(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupReducedMass(LALDict *params);
+
+REAL8 XLALSimInspiralGetMassRatioFromSymMassRatio(REAL8 sym_mass_ratio);
+REAL8 XLALSimInspiralGetMassRatioFromChirpMassComponentMass1(REAL8 chirp_mass, REAL8 component_mass);
+REAL8 XLALSimInspiralGetMassRatioFromChirpMassComponentMass2(REAL8 chirp_mass, REAL8 component_mass);
+
+REAL8 XLALSimInspiralGetCartesianSpinXFromPolar(REAL8 spin_norm, REAL8 spin_tilt, REAL8 spin_phi);
+REAL8 XLALSimInspiralGetCartesianSpinYFromPolar(REAL8 spin_norm, REAL8 spin_tilt, REAL8 spin_phi);
+REAL8 XLALSimInspiralGetCartesianSpinZFromPolar(REAL8 spin_norm, REAL8 spin_tilt);
+
+REAL8 XLALSimInspiralGetPolarSpin_normFromCartesian(REAL8 spinx, REAL8 spiny, REAL8 spinz);
+REAL8 XLALSimInspiralGetPolarSpin_tiltFromCartesian(REAL8 spinx, REAL8 spiny, REAL8 spinz);
+REAL8 XLALSimInspiralGetPolarSpin_phiFromCartesian(REAL8 spiny, REAL8 spinz);
+
+
+REAL8 XLALSimInspiralWaveformParamsLookupSpin1x(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin1y(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin1z(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin2x(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin2y(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin2z(LALDict *params);
+
+REAL8 XLALSimInspiralWaveformParamsLookupSpin1norm(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin1tilt(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin1phi(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin2norm(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin2tilt(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupSpin2phi(LALDict *params);
+
+REAL8 XLALSimInspiralWaveformParamsLookupDeltaF(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDeltaT(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupF22Ref(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupRefPhase(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupF22Start(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupFMax(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupDistance(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupInclination(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupLongAscNodes(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupEccentricity(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupMeanPerAno(LALDict *params);
+
+INT4 XLALSimInspiralWaveformParamsLookupLmax(LALDict *params);
 
 int XLALSimInspiralWaveformParamsInsertDOmega220(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertDTau220(LALDict *params, REAL8 value);
@@ -427,6 +519,8 @@ REAL8 XLALSimInspiralWaveformParamsLookupNLTidesF2(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupEOBChooseNumOrAnalHamDer(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsLookupEOBEllMaxForNyquistCheck(LALDict *params);
 
+int XLALSimInspiralWaveformParamsLmaxIsDefault(LALDict *params);
+
 REAL8 XLALSimInspiralWaveformParamsLookupDOmega220(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupDTau220(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupDOmega210(LALDict *params);
@@ -628,6 +722,8 @@ int XLALSimInspiralWaveformParamsNonGRDChikappaAIsDefault(LALDict *params);
 /* SEOBNRv4P */
 INT4 XLALSimInspiralWaveformParamsEOBChooseNumOrAnalHamDerIsDefault(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsEOBEllMaxForNyquistCheckIsDefault(LALDict *params);
+
+LALDict* XLALSimInspiralParamsDict(const REAL8 m1, const REAL8 m2, const REAL8 S1x, const REAL8 S1y, const REAL8 S1z, const REAL8 S2x, const REAL8 S2y, const REAL8 S2z, const REAL8 distance, const REAL8 inclination, const REAL8 phiRef, const REAL8 longAscNodes, const REAL8 eccentricity, const REAL8 f_ref, LALDict *LALparams);
 
 int XLALSimInspiralWaveformParamsDOmega220IsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsDTau220IsDefault(LALDict *params);

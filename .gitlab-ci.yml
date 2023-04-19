@@ -734,6 +734,8 @@ lalsimulation:conda:
   needs:
     - tarballs
     - lal:conda:fftw
+  variables:
+    CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.____cpython"
 
 # -- lalburst -----------------------------------
 #

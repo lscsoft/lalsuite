@@ -46,23 +46,39 @@ requirements:
     - llvm-openmp  # [osx]
     - make
     - pkg-config >=0.18.0
+    - python
     - swig >={{ swig_version }}
+    # extras for cross-compilation:
+    - cross-python_{{ target_platform }}  # [build_platform != target_platform]
+    - numpy                               # [build_platform != target_platform]
+    - python                              # [build_platform != target_platform]
+    # extras for help2man / make check
+    - astropy  # [build_platform != target_platform]
+    - gwpy  # [build_platform != target_platform]
   host:
     - gsl
     - liblal >={{ lal_version }}
     - libgomp  # [linux]
     - llvm-openmp  # [osx]
+    - numpy
+    - pytest
+    - python
+    - python-lal >={{ lal_version }}
+    # extras for help2man / make check
+    - astropy
+    - gwpy
+
 
 outputs:
   - name: lalsimulation-data
-    script: install-data.sh
     build:
-      script_env: {}
+      noarch: generic
     requirements:
-      build:
-        - make
       run_constrained:
         - liblalsimulation >=3.1.2
+    files:
+      - etc/conda/*activate.d/*activate-lalsimulation.*
+      - share/lalsimulation/
     test:
       commands:
         - test -f ${LALSIMULATION_DATADIR}/LIGO-P1200087-v18-AdV_DESIGN.txt  # [unix]
@@ -80,32 +96,39 @@ outputs:
         and routines that use the LAL Simulation library.
 
   - name: liblalsimulation
-    script: install-lib.sh
     build:
-      error_overdepending: true
-      error_overlinking: true
       run_exports:
         - {{ pin_subpackage("liblalsimulation", max_pin="x") }}
     requirements:
       build:
         - {{ compiler('c') }}
         - llvm-openmp  # [osx]
-        - make
-        - swig >={{ swig_version }}
       host:
         - gsl
         - {{ pin_subpackage('lalsimulation-data', exact=True) }}
         - liblal >={{ lal_version }}
         - libgomp  # [linux]
         - llvm-openmp  # [osx]
+        - python
       run:
         - gsl
         - {{ pin_subpackage('lalsimulation-data', exact=True) }}
         - liblal >={{ lal_version }}
         - llvm-openmp  # [osx]
+        - python
       run_constrained:
         - lalsimulation >=2.5.0
         - python-lalsimulation >=2.5.0
+    files:
+      # headers
+      - include/lal/*LALSim*.h
+      # SWIG interface files
+      - include/lal/swiglalsimulation.i
+      - include/lal/SWIGLALSim*.i
+      # libraries
+      - lib/lib{{ name }}.*
+      # pkg-config
+      - lib/pkgconfig/lalsimulation.pc
     test:
       requires:
         - pkg-config
@@ -129,41 +152,37 @@ outputs:
         applications that use the LAL Simulation library.
 
   - name: python-lalsimulation
-    script: build-python.sh
     build:
-      error_overdepending: true
-      error_overlinking: true
       ignore_run_exports:
+        - liblalsimulation
         - numpy
         - python
-      script_env:
-        - CI_COMMIT_TAG
-        - CI_PIPELINE_SOURCE
-        - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
-        - GITLAB_CI
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37  # [build_platform == target_platform]
-        - make
-        - pkg-config >=0.18.0
-        - swig >={{ swig_version }}
-        # extras for cross-compilation:
-        - cross-python_{{ target_platform }}  # [build_platform != target_platform]
-        - numpy                               # [build_platform != target_platform]
-        - python                              # [build_platform != target_platform]
-      host:
-        - {{ pin_subpackage('liblalsimulation', exact=True) }}
-        - numpy
-        - pytest  # [build_platform == target_platform]
         - python
-        - python-lal >={{ lal_version }}
+      host:
+        - gsl
+        - libgomp  # [linux]
+        - liblal >={{ lal_version }}
+        - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - python
       run:
+        - astropy
+        - gwpy
+        - gsl
+        - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - mpmath >=1.0.0
         - {{ pin_compatible('numpy') }}
         - python
         - python-lal >={{ lal_version }}
+        - scipy
+    files:
+      # library modules
+      - {{ SP_DIR }}/lalsimulation/
+      # package metadata (.dist-info/.egg-info)
+      - {{ SP_DIR }}/lalsimulation-*/
     test:
       requires:
         - pytest >=4.0.0a0
@@ -175,6 +194,7 @@ outputs:
         - lalsimulation
         - lalsimulation.nrfits
         - lalsimulation.tilts_at_infinity
+        - lalsimulation.gwsignal
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lalsimulation/
@@ -189,22 +209,16 @@ outputs:
         This package contains the python bindings.
 
   - name: lalsimulation
-    script: install-bin.sh
     build:
-      error_overdepending: true
-      error_overlinking: true
       ignore_run_exports:
         - python
     requirements:
       build:
         - {{ compiler('c') }}
-        - help2man >=1.37  # [build_platform == target_platform]
-        - make
       host:
         - gsl
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
-        - python
       run:
         - gsl
         - liblal >={{ lal_version }}
@@ -212,6 +226,14 @@ outputs:
         - mpmath >=1.0.0
         - python
         - {{ pin_subpackage('python-lalsimulation', exact=True) }}
+    files:
+      # executables
+      - bin/lalsim*
+      # user env scripts
+      - etc/lalsimulation-user-env.*
+      # manuals
+      - man/man*/lalsim*
+      - share/man/man*/lalsim*
     test:
       commands:
         - lalsimulation_version --verbose
