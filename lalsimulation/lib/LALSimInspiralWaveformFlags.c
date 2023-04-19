@@ -22,6 +22,7 @@
 #include <lal/LALStdlib.h>
 #include <limits.h>
 #include <string.h>
+#include <ctype.h>
 #include <lal/LALSimInspiralWaveformFlags.h>
 #include <lal/LALSimInspiralWaveformParams.h>
 
@@ -522,6 +523,97 @@ INT2Sequence *XLALSimInspiralModeArrayReadModes(LALValue *modes)
 	}
 	seqmodes = XLALShrinkINT2Sequence(seqmodes, 0, 2*nmodes);
 	return seqmodes;
+}
+
+char * XLALSimInspiralModeArrayToModeString(LALValue *modes)
+{
+    char *s = NULL;
+    int n = 0;
+    if ((s = XLALStringAppend(s, "[")) == NULL)
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+    for (int l = 0; l <= LAL_SIM_L_MAX_MODE_ARRAY; ++l)
+        for (int m = -l; m <= l; ++m)
+            if (XLALSimInspiralModeArrayIsModeActive(modes, l, m))
+                if ((s = XLALStringAppendFmt(s, "%s(%u,%+d)", n++ ? "," : "", l, m)) == NULL)
+                    XLAL_ERROR_NULL(XLAL_EFUNC);
+    if ((s = XLALStringAppend(s, "]")) == NULL)
+        XLAL_ERROR_NULL(XLAL_EFUNC);
+    return s;
+}
+
+LALValue * XLALSimInspiralModeArrayFromModeString(const char *modestr)
+{
+    LALValue *modes = NULL;
+    const char *s = modestr;
+    int inlist = 0;
+    int intup = 0;
+    int done = 0;
+    unsigned l = UINT_MAX; // invalid value
+    int m = INT_MAX; // invalid value
+    char c;
+
+    XLAL_CHECK_NULL(modestr, XLAL_EFAULT);
+
+    modes = XLALSimInspiralCreateModeArray();
+    XLAL_CHECK_NULL(modes, XLAL_ENOMEM);
+
+    while ((c = *s++)) {
+        char *endp;
+
+        if (isspace(c))
+            continue;
+
+        XLAL_CHECK_FAIL(!done, XLAL_EINVAL, "Malformed mode string \"%s\": trailing characters found", modestr); 
+
+        switch (c) {
+
+        case '[':
+            XLAL_CHECK_FAIL(!inlist, XLAL_EINVAL, "Malformed mode string \"%s\": cannot have a list inside a list", modestr); 
+            inlist = 1;
+            break;
+
+        case ']':
+            XLAL_CHECK_FAIL(inlist, XLAL_EINVAL, "Malformed mode string \"%s\": end of list when not in list", modestr); 
+            inlist = 0;
+            done = 1;
+            break;
+
+        case '(':
+            XLAL_CHECK_FAIL(inlist, XLAL_EINVAL, "Malformed mode string \"%s\": tuple found outside of list", modestr); 
+            XLAL_CHECK_FAIL(!intup, XLAL_EINVAL, "Malformed mode string \"%s\": tuple found within tuple", modestr); 
+            intup = 1;
+            l = strtoul(s, &endp, 0);
+            XLAL_CHECK_FAIL(s != endp, XLAL_EINVAL, "Malformed mode string \"%s\": could not convert unsigned integer", modestr); 
+            s = endp;
+            break;
+
+        case ')':
+            XLAL_CHECK_FAIL(intup, XLAL_EINVAL, "Malformed mode string \"%s\": end of tuple when not in tuple", modestr); 
+            XLAL_CHECK_FAIL(inlist, XLAL_EINVAL, "Malformed mode string \"%s\": tuple found outside of list", modestr); 
+            intup = 0;
+            break;
+
+        case ',':
+            XLAL_CHECK_FAIL(inlist, XLAL_EINVAL, "Malformed mode string \"%s\": separater found when not in list", modestr); 
+            if (intup) {
+                m = strtol(s, &endp, 0);
+                XLAL_CHECK_FAIL(s != endp, XLAL_EINVAL, "Malformed mode string \"%s\": could not convert signed integer", modestr); 
+                XLAL_CHECK_FAIL(XLALSimInspiralModeArrayActivateMode(modes, l, m), XLAL_EFUNC);
+                s = endp;
+            }
+            break;
+
+        default:
+            XLAL_ERROR_FAIL(XLAL_EINVAL, "Invalid character '%c' in mode string \"%s\"", c, modestr);
+        }
+    }
+
+    if (done)
+        return modes;
+
+XLAL_FAIL:
+    XLALDestroyValue(modes);
+    return NULL;
 }
 
 /** @} */

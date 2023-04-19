@@ -21,6 +21,7 @@ test_scripts += \
 	test_spintaylor_evolveorbit.py \
 	test_prec_avg_evol.py \
 	test_hybrid_evol.py \
+	test_gwsignal.py \
 	test_SEOBNRv5HM_ROM.py \
 	test_SEOBNRv4HM_PA.py \
 	$(END_OF_LIST)

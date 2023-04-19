@@ -443,6 +443,7 @@ typedef enum tagApproximant {
    IMRPhenomXAS_NRTidalv2,         /**< Tidal extension of IMRPhenomXAS based on [arXiv:1905.06011]. */
    IMRPhenomXP_NRTidalv2,         /**< Tidal extension of IMRPhenomXP based on [arXiv:1905.06011]. */
    IMRPhenomXO4a,    /**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model with NR-tuned precession angles. */
+   ExternalPython, /** External Python model **/
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -502,6 +503,7 @@ typedef enum tagSpinSupport {
    LAL_SIM_INSPIRAL_SINGLESPIN, /** These approximants support a signle spin (by default that is the object 1)*/
    LAL_SIM_INSPIRAL_ALIGNEDSPIN, /** These approximants can include spins aligned with L_N */
    LAL_SIM_INSPIRAL_PRECESSINGSPIN, /** These approximant support fully precessing spins */
+   LAL_SIM_INSPIRAL_CASEBYCASE_SPINSUPPORT, /** This approximant (ExternalPython) has spin support determined by the external python module on a case-by-case basis **/
    LAL_SIM_INSPIRAL_NUMSPINSUPPORT	/**< Number of elements in enum, useful for checking bounds */
  } SpinSupport;
 
@@ -522,6 +524,7 @@ typedef enum tagAllowZeroMinFreq {
 typedef enum tagTestGRaccept {
   LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS,   /** These approximants cannot accept testGR params as input params */
   LAL_SIM_INSPIRAL_TESTGR_PARAMS,      /** These approximants accept testGR params as input params */
+  LAL_SIM_INSPIRAL_CASEBYCASE_TESTGR_PARAMS, /** This approximant (ExternalPython) accept testGR parameters depending on the external python module loaded **/
   LAL_SIM_INSPIRAL_NUM_TESTGR_ACCEPT  /**< Number of elements in enum, useful for checking bounds */
  } TestGRaccept;
 
@@ -937,6 +940,230 @@ SphHarmTimeSeries *XLALSimIMRNRHybSur3dq8Modes(
 
 /* routine for checking Lorentz violation */
 int XLALSimLorentzInvarianceViolationTerm(COMPLEX16FrequencySeries **hptilde, COMPLEX16FrequencySeries **hctilde, REAL8 m1, REAL8 m2, REAL8 r, LALDict *LALparams);
+
+/** Incoplete type for waveform generator */
+struct tagLALSimInspiralGenerator;
+typedef struct tagLALSimInspiralGenerator LALSimInspiralGenerator;
+
+
+/* legacy generator templates */
+extern const LALSimInspiralGenerator lalEOBNRv2HMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalEOBNRv2HM_ROMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalEOBNRv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalEOBNRv2_ROMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalEccentricFDGeneratorTemplate;
+extern const LALSimInspiralGenerator lalEccentricTDGeneratorTemplate;
+extern const LALSimInspiralGenerator lalHGimriGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomAGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomBGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomCGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomDGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomD_NRTidalGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomD_NRTidalv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomHMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomNSBHGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomPGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomPv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomPv2_NRTidalGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomPv2_NRTidalv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomPv3HMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomPv3GeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomTHMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomTPHMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomTPGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomTGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXASGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXHMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXPHMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXO4aGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXPGeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXAS_NRTidalv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalIMRPhenomXP_NRTidalv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalLackey_Tidal_2013_SEOBNRv2_ROMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalNRHybSur3dq8GeneratorTemplate;
+extern const LALSimInspiralGenerator lalNRSur4d2sGeneratorTemplate;
+extern const LALSimInspiralGenerator lalNRSur7dq2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalNRSur7dq4GeneratorTemplate;
+extern const LALSimInspiralGenerator lalNR_hdf5GeneratorTemplate;
+extern const LALSimInspiralGenerator lalPhenSpinTaylorRDGeneratorTemplate;
+extern const LALSimInspiralGenerator lalPhenSpinTaylorGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv1GeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv1_ROM_DoubleSpinGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv1_ROM_EffectiveSpinGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv2TGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv2_ROM_DoubleSpinGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv2_ROM_DoubleSpin_HIGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv2_ROM_EffectiveSpinGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv2_optGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv3GeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv3_optGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv3_opt_rk4GeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv3_pertGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4HMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4HM_ROMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4PHMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4PGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4TGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4T_surrogateGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4GeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4_ROMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4_ROM_NRTidalGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4_ROM_NRTidalv2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4_ROM_NRTidalv2_NSBHGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4_optGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv4HM_PAGeneratorTemplate;
+extern const LALSimInspiralGenerator lalpSEOBNRv4HM_PAGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv5_ROMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSpinDominatedWfGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSpinTaylorF2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalSpinTaylorT1GeneratorTemplate;
+extern const LALSimInspiralGenerator lalSpinTaylorT4FourierGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSpinTaylorT4GeneratorTemplate;
+extern const LALSimInspiralGenerator lalSpinTaylorT5FourierGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSpinTaylorT5GeneratorTemplate;
+extern const LALSimInspiralGenerator lalTEOBResumSGeneratorTemplate;
+extern const LALSimInspiralGenerator lalTEOBResum_ROMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorEtGeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorF2EccGeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorF2NLTidesGeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorF2RedSpinTidalGeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorF2RedSpinGeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorF2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorR2F4GeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorT1GeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorT2GeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorT3GeneratorTemplate;
+extern const LALSimInspiralGenerator lalTaylorT4GeneratorTemplate;
+
+/* new generator templates */
+extern const LALSimInspiralGenerator lalPythonGeneratorTemplate;
+
+extern const LALSimInspiralGenerator *lalSimInspiralGeneratorTemplates[NumApproximants];
+
+LALSimInspiralGenerator *XLALCreateSimInspiralGenerator(const LALSimInspiralGenerator *generator, LALDict *params);
+void XLALDestroySimInspiralGenerator(LALSimInspiralGenerator *generator);
+
+LALSimInspiralGenerator *XLALSimInspiralChooseGenerator(Approximant approx, LALDict *params);
+
+int XLALSimInspiralGeneratorAddConditioningForApproximant(LALSimInspiralGenerator *generator, int approximant);
+int XLALSimInspiralGeneratorAddStandardConditioning(LALSimInspiralGenerator *generator);
+
+/* warning: returns a shallow pointer */
+const char *XLALSimInspiralGeneratorName(LALSimInspiralGenerator *generator);
+
+int XLALSimInspiralGenerateTDWaveform(
+    REAL8TimeSeries **hplus,
+    REAL8TimeSeries **hcross,
+    LALDict *params,
+    LALSimInspiralGenerator *generator
+);
+
+int XLALSimInspiralGenerateTDModes(
+    SphHarmTimeSeries **hlm,
+    LALDict *params,
+    LALSimInspiralGenerator *generator
+);
+
+int XLALSimInspiralGenerateFDWaveform(
+    COMPLEX16FrequencySeries **hplus,
+    COMPLEX16FrequencySeries **hcross,
+    LALDict *params,
+    LALSimInspiralGenerator *generator
+);
+
+int XLALSimInspiralGenerateFDModes(
+    SphHarmFrequencySeries **hlm,
+    LALDict *params,
+    LALSimInspiralGenerator *generator
+);
+
+void XLALSimInspiralParseDictionaryToChooseTDWaveform(
+    REAL8 *m1,                             /**< [out] mass of companion 1 (kg) */
+    REAL8 *m2,                             /**< [out] mass of companion 2 (kg) */
+    REAL8 *S1x,                            /**< [out] x-component of the dimensionless spin of object 1 */
+    REAL8 *S1y,                            /**< [out] y-component of the dimensionless spin of object 1 */
+    REAL8 *S1z,                            /**< [out] z-component of the dimensionless spin of object 1 */
+    REAL8 *S2x,                            /**< [out] x-component of the dimensionless spin of object 2 */
+    REAL8 *S2y,                            /**< [out] y-component of the dimensionless spin of object 2 */
+    REAL8 *S2z,                            /**< [out] z-component of the dimensionless spin of object 2 */
+    REAL8 *distance,                       /**< [out] distance of source (m) */
+    REAL8 *inclination,                    /**< [out] inclination of source (rad) */
+    REAL8 *phiRef,                         /**< [out] reference orbital phase (rad) */
+    REAL8 *longAscNodes,                   /**< [out] longitude of ascending nodes, degenerate with the polarization angle, Omega in documentation */
+    REAL8 *eccentricity,                   /**< [out] eccentrocity at reference epoch */
+    REAL8 *meanPerAno,                     /**< [out] mean anomaly of periastron */
+    REAL8 *deltaT,                         /**< [out] sampling interval (s) */
+    REAL8 *f_min,                          /**< [out] starting GW frequency (Hz) */
+    REAL8 *f_ref,                          /**< [out] reference frequency (Hz) */
+    LALDict *params                        /**< Input lal dictionary with ChooseTDwaveform parameters */    
+);
+
+void XLALSimInspiralParseDictionaryToChooseTDModes(
+    REAL8 *phiRef,
+    REAL8 *deltaT,
+    REAL8 *m1,
+    REAL8 *m2,
+    REAL8 *S1x,
+    REAL8 *S1y,
+    REAL8 *S1z,
+    REAL8 *S2x,
+    REAL8 *S2y,
+    REAL8 *S2z,
+    REAL8 *f_min,
+    REAL8 *f_ref,
+    REAL8 *distance,
+    INT4 *lmax,
+    LALDict *params
+);
+
+void XLALSimInspiralParseDictionaryToChooseFDWaveform(
+    REAL8 *m1,                             /**< [out] mass of companion 1 (kg) */
+    REAL8 *m2,                             /**< [out] mass of companion 2 (kg) */
+    REAL8 *S1x,                            /**< [out] x-component of the dimensionless spin of object 1 */
+    REAL8 *S1y,                            /**< [out] y-component of the dimensionless spin of object 1 */
+    REAL8 *S1z,                            /**< [out] z-component of the dimensionless spin of object 1 */
+    REAL8 *S2x,                            /**< [out] x-component of the dimensionless spin of object 2 */
+    REAL8 *S2y,                            /**< [out] y-component of the dimensionless spin of object 2 */
+    REAL8 *S2z,                            /**< [out] z-component of the dimensionless spin of object 2 */
+    REAL8 *distance,                       /**< [out] distance of source (m) */
+    REAL8 *inclination,                    /**< [out] inclination of source (rad) */
+    REAL8 *phiRef,                         /**< [out] reference orbital phase (rad) */
+    REAL8 *longAscNodes,                   /**< [out] longitude of ascending nodes, degenerate with the polarization angle, Omega in documentation */
+    REAL8 *eccentricity,                   /**< [out] eccentrocity at reference epoch */
+    REAL8 *meanPerAno,                     /**< [out] mean anomaly of periastron */
+    REAL8 *deltaF,                         /**< [out] frequency interval (Hz) */
+    REAL8 *f_min,                          /**< [out] starting GW frequency (Hz) */
+    REAL8 *f_max,                          /**< [out] ending GW frequency (Hz) */
+    REAL8 *f_ref,                          /**< [out] reference frequency (Hz) */
+    LALDict *params                        /**< Input lal dictionary with ChooseTDwaveform parameters **/    
+);
+
+void XLALSimInspiralParseDictionaryToChooseFDModes(
+    REAL8 *m1,
+    REAL8 *m2,
+    REAL8 *S1x,
+    REAL8 *S1y,
+    REAL8 *S1z,
+    REAL8 *S2x,
+    REAL8 *S2y,
+    REAL8 *S2z,
+    REAL8 *deltaF,
+    REAL8 *f_min,
+    REAL8 *f_max,
+    REAL8 *f_ref,
+    REAL8 *phiRef,
+    REAL8 *distance,
+    REAL8 *inclination,
+    LALDict *params
+);
+
+/*
+ * some helper routines for XLALSimInspiralTD
+ */
+int XLALSimInspiralTDFromTD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 distance, REAL8 inclination, REAL8 phiRef, REAL8 longAscNodes, REAL8 eccentricity, REAL8 meanPerAno, REAL8 deltaT, REAL8 f_min, REAL8 f_ref, LALDict *LALparams, Approximant approximant);
+int XLALSimInspiralTDFromFD(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, REAL8 m1, REAL8 m2, REAL8 S1x, REAL8 S1y, REAL8 S1z, REAL8 S2x, REAL8 S2y, REAL8 S2z, REAL8 distance, REAL8 inclination, REAL8 phiRef, REAL8 longAscNodes, REAL8 eccentricity, REAL8 meanPerAno, REAL8 deltaT, REAL8 f_min, REAL8 f_ref, LALDict *LALparams, Approximant approximant);
+
 
 #if 0
 { /* so that editors will match succeeding brace */

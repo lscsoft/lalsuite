@@ -260,9 +260,11 @@ noinst_HEADERS = \
 	LALSimIMRSpinEOBInitialConditions.c \
 	LALSimIMRSpinEOBInitialConditionsPrec.c \
 	LALSimTEOBResumS.h \
+	LALSimInspiralGenerator_private.h \
 	LALSimInspiralPNCoefficients.c \
 	LALSimInspiralTaylorF2Ecc.c \
 	LALSimInspiraldEnergyFlux.c \
+	LALSimInspiralWaveformParams_common.c \
 	LALSimNeutronStarEOSPiecewisePolytrope.c \
 	LALSimNeutronStarEOSTabular.c \
 	LALSimNeutronStarEOSSpectralDecomposition.c \
@@ -288,6 +290,9 @@ noinst_HEADERS = \
 	$(END_OF_LIST)
 
 lib_LTLIBRARIES = liblalsimulation.la
+if SWIG_BUILD_PYTHON
+noinst_LTLIBRARIES = liblalsimulation-swig.la
+endif
 
 liblalsimulation_la_SOURCES = \
 	LALSimBlackHoleRingdownPrec.c \
@@ -380,6 +385,8 @@ liblalsimulation_la_SOURCES = \
 	LALSimUtils.c \
 	check_series_macros.h \
 	check_waveform_macros.h \
+	rotation_macros.h \
+	fix_reference_frequency_macro.h \
 	unicorn.xpm \
 	LALSimInspiralHGimri.c \
 	LALSimFindAttachTime.c \
@@ -396,6 +403,9 @@ liblalsimulation_la_SOURCES = \
 	LALSimNRSurRemnantUtils.c \
 	LALSimNRSur7dq4Remnant.c \
 	LALSimNRSur3dq8Remnant.c \
+	LALSimInspiralGeneratorConditioning.c \
+	LALSimInspiralGeneratorLegacy.c \
+	LALSimInspiralGeneratorPython.c \
 	LALSimInspiralEOBPostAdiabatic.c \
 	LALSimInspiralEOBPANumericalFuncs.c \
 	LALSimInspiralEOBPAAuxiliaryFuncs.c \
@@ -408,6 +418,12 @@ nodist_liblalsimulation_la_SOURCES = \
 	$(END_OF_LIST)
 
 liblalsimulation_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
+liblalsimulation_la_LIBADD = $(AM_LIBADD) $(PYTHON3_EMBED_LIBADD)
+if SWIG_BUILD_PYTHON
+nodist_liblalsimulation_swig_la_SOURCES = $(nodist_liblalsimulation_la_SOURCES)
+liblalsimulation_swig_la_SOURCES = $(liblalsimulation_la_SOURCES)
+liblalsimulation_swig_la_LDFLAGS = $(AM_LDFLAGS) -version-info $(LIBVERSION)
+endif
 
 pkgdata_DATA = \
 	$(NOISEPSDFILES) \
