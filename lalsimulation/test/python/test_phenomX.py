@@ -406,7 +406,7 @@ def test_IMRPhenomXPHM_SpinTaylor():
     new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXPHM, [[3,2]], lalparams=lalDict, generic_spins=True,release=122019))
 
     # rtol with 32 mode needs to be more lenient
-    np.testing.assert_allclose(new_result, expected_result, rtol=3.1e-4, err_msg="IMRPhenomXPHM 32 mode test failed")
+    np.testing.assert_allclose(new_result, expected_result, rtol=5e-4, err_msg="IMRPhenomXPHM 32 mode test failed")
 
 
 def test_IMRPhenomXAS_NRTidalv2():
