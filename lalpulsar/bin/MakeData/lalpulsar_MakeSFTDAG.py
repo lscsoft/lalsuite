@@ -205,7 +205,8 @@ parser.add_argument('-B', '--band', type=int, default=1990,
 parser.add_argument('-w', '--window-type', type=str,
                     help='type of windowing of time-domain to do \
                     before generating SFTs, e.g. "rectangular", \
-                    "hann", "tukey:<parameter>"')
+                    "hann", "tukey:<beta in [0,1], required>"; \
+                    if unspecified use lalpulsar_MakeSFTs defaults')
 parser.add_argument('-P', '--overlap-fraction', type=float, default=0,
                     help='overlap fraction (for use with windows; e.g., use \
                     --overlap-fraction 0.5 with --window-type hann windows)')
