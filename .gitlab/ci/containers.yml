@@ -4,6 +4,23 @@
 # Build and deploy the LALSuite containers
 # ----------------------------------------------------------------------
 
+# snippets to simplify job creation
+.container_snippets:
+  nightly_image:
+    - IMAGE_TAG="nightly-${CI_JOB_NAME##*:}"
+  tag_image:
+    - IMAGE_TAG="${CI_COMMIT_TAG##*v}-${CI_JOB_NAME##*:}"
+  rhel:
+    - set -x
+    # add RPMs to directory to pass to docker
+    - mkdir rpms && mv rpmbuild/RPMS/*/*.rpm rpms
+    - rm -rf rpmbuild*
+  debian:
+    - set -x
+    # add deb packages to directory to pass to docker
+    - mkdir debs && mv *.deb debs
+    - rm *.changes *.dsc *.orig.*
+
 #
 # Build container images that include the latest build outputs
 #
@@ -13,10 +30,10 @@
   image: docker:latest
   variables:
     DOCKER_DRIVER: overlay
+    IMAGE_NAME: "${CI_REGISTRY_IMAGE}"
   stage: docker
   script:
     # build container and push to registry
-    - IMAGE_TAG=${CI_JOB_NAME##*:}
     - docker build --pull -t ${IMAGE_NAME}:${IMAGE_TAG} --file ${DOCKER_FILE} .
     - |
       if [ "X${EXECUTE_DEPLOY_ACTIONS}" != "Xyes" ]; then
@@ -31,8 +48,6 @@
 .docker:nightly:
   extends:
     - .docker
-  variables:
-    IMAGE_NAME: "$CI_REGISTRY_IMAGE/nightly"
   rules:
     - !reference [.ci-docker, rules]
     - !reference [.ci-nightly-deploy, rules]
@@ -40,8 +55,6 @@
 .docker:tags:
   extends:
     - .docker
-  variables:
-    IMAGE_NAME: "$CI_REGISTRY_IMAGE/$CI_COMMIT_TAG"
   rules:
     - !reference [.ci-lalsuite-tag-build, rules]
 
@@ -51,11 +64,6 @@
     - .docker
   variables:
     DOCKER_FILE: ".gitlab-ci-el7.Dockerfile"
-  before_script:
-    - set -x
-    # add RPMs to directory to pass to docker
-    - mkdir rpms && mv rpmbuild/RPMS/*/*.rpm rpms
-    - rm -rf rpmbuild*
   needs:
     - lal:rpm
     - lalframe:rpm
@@ -73,11 +81,6 @@
     - .docker
   variables:
     DOCKER_FILE: ".gitlab-ci-bullseye.Dockerfile"
-  before_script:
-    - set -x
-    # add deb packages to directory to pass to docker
-    - mkdir debs && mv *.deb debs
-    - rm *.changes *.dsc *.orig.*
   needs:
     - lal:deb
     - lalframe:deb
@@ -111,30 +114,45 @@
 
 # build a nightly container from the RPMs
 docker:nightly:el7:
+  before_script:
+    - !reference [.container_snippets, nightly_image]
+    - !reference [.container_snippets, rhel]
   extends:
     - .docker:el
     - .docker:nightly
 
 # build a tagged container from the rpms
 docker:tags:el7:
+  before_script:
+    - !reference [.container_snippets, tag_image]
+    - !reference [.container_snippets, rhel]
   extends:
     - .docker:el
     - .docker:tags
 
 # build a nightly container for Debian bullseye
 docker:nightly:bullseye:
+  before_script:
+    - !reference [.container_snippets, nightly_image]
+    - !reference [.container_snippets, debian]
   extends:
     - .docker:debian
     - .docker:nightly
 
 # build a tagged container for Debian bullseye
 docker:tags:bullseye:
+  before_script:
+    - !reference [.container_snippets, tag_image]
+    - !reference [.container_snippets, debian]
   extends:
     - .docker:debian
     - .docker:tags
 
 # build a nightly containers from the koji rpms
 docker:nightly:el7-koji:
+  before_script:
+    - !reference [.container_snippets, nightly_image]
+    - !reference [.container_snippets, rhel]
   extends:
     - .docker:koji
     - .docker:nightly
