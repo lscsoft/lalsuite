@@ -2360,7 +2360,7 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
         check_qnmtest_params = 1;
     }
     
-    if (check_grtest_params + check_ppe_params + check_ppe_params >= 2) {
+    if (check_grtest_params + check_ppe_params + check_qnmtest_params >= 2) {
         fprintf(stderr,"--grtest-parameters, --ppe-parameters and --qnmtest-parameters are not simultaneously supported. Please choose one. Aborting\n");
         exit(-1);
     }
