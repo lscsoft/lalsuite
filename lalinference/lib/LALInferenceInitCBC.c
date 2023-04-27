@@ -2344,9 +2344,24 @@ static void LALInferenceInitNonGRParams(LALInferenceRunState *state, LALInferenc
     REAL8 correction_ncycles_taper = 1.0;
 
     /* check that the user does not request both a TaylorF2Test and a PPE waveform model */
-    if (LALInferenceGetProcParamVal(commandLine,"--grtest-parameters") && LALInferenceGetProcParamVal(commandLine,"--ppe-parameters") && LALInferenceGetProcParamVal(commandLine,"--qnmtest-parameters"))
-    {
-        fprintf(stderr,"--grtest-parameters and --ppe-parameters and --qnmtest-parameters are not simultaneously supported. Please choose one. Aborting\n");
+    UINT2 check_grtest_params = 0;
+    UINT2 check_ppe_params = 0;
+    UINT2 check_qnmtest_params = 0;
+
+    if (LALInferenceGetProcParamVal(commandLine, "--grtest-parameters")) {
+        check_grtest_params = 1;
+    }
+
+    if (LALInferenceGetProcParamVal(commandLine, "--ppe-parameters")) {
+        check_ppe_params = 1;
+    }
+
+    if (LALInferenceGetProcParamVal(commandLine,"--qnmtest-parameters")) {
+        check_qnmtest_params = 1;
+    }
+    
+    if (check_grtest_params + check_ppe_params + check_ppe_params >= 2) {
+        fprintf(stderr,"--grtest-parameters, --ppe-parameters and --qnmtest-parameters are not simultaneously supported. Please choose one. Aborting\n");
         exit(-1);
     }
 
