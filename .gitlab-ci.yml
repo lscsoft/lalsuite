@@ -268,7 +268,7 @@ default:
     - rpmbuild -ts --define "_topdir ${RPM_BUILD_TOPDIR}" ${TARBALL}
     - SRPM=${RPM_BUILD_TOPDIR}/SRPMS/${PACKAGE}-*.src.rpm
     # install build dependencies
-    - yum-builddep -y -q ${SRPM}
+    - yum-builddep -y ${SRPM}
     # print installed packages
     - yum list installed --quiet
     # build binary rpms and print details of what we got
