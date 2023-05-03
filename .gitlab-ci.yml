@@ -330,6 +330,11 @@ default:
     - .rpmbuild
   image: igwn/base:el7-testing
 
+.rpmbuild:el8:
+  extends:
+    - .rpmbuild
+  image: igwn/base:el8-testing
+
 # -- debian
 
 # template for debian packaging jobs
@@ -640,6 +645,11 @@ lal:rpm-el7:
      - .rpmbuild:el7
      - .lal
 
+lal:rpm-el8:
+  extends:
+     - .rpmbuild:el8
+     - .lal
+
 lal:deb:
   extends:
     - .debuild
@@ -677,6 +687,14 @@ lalframe:rpm-el7:
     - tarballs
     - lal:rpm-el7
 
+lalframe:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalframe
+  needs:
+    - tarballs
+    - lal:rpm-el8
+
 lalframe:deb:
   extends:
     - .debuild
@@ -709,6 +727,14 @@ lalmetaio:rpm-el7:
     - tarballs
     - lal:rpm-el7
 
+lalmetaio:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalmetaio
+  needs:
+    - tarballs
+    - lal:rpm-el8
+
 lalmetaio:deb:
   extends:
     - .debuild
@@ -740,6 +766,14 @@ lalsimulation:rpm-el7:
   needs:
     - tarballs
     - lal:rpm-el7
+
+lalsimulation:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalsimulation
+  needs:
+    - tarballs
+    - lal:rpm-el8
 
 lalsimulation:deb:
   extends:
@@ -776,6 +810,16 @@ lalburst:rpm-el7:
     - lal:rpm-el7
     - lalmetaio:rpm-el7
     - lalsimulation:rpm-el7
+
+lalburst:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalburst
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
 
 lalburst:deb:
   extends:
@@ -816,6 +860,18 @@ lalinspiral:rpm-el7:
     - lalmetaio:rpm-el7
     - lalsimulation:rpm-el7
     - lalburst:rpm-el7
+
+lalinspiral:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalinspiral
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
 
 lalinspiral:deb:
   extends:
@@ -861,6 +917,19 @@ lalinference:rpm-el7:
     - lalsimulation:rpm-el7
     - lalburst:rpm-el7
     - lalinspiral:rpm-el7
+
+lalinference:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalinference
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
 
 lalinference:deb:
   extends:
@@ -909,6 +978,20 @@ lalpulsar:rpm-el7:
     - lalburst:rpm-el7
     - lalinspiral:rpm-el7
     - lalinference:rpm-el7
+
+lalpulsar:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalpulsar
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
 
 lalpulsar:deb:
   extends:
@@ -960,6 +1043,21 @@ lalapps:rpm-el7:
     - lalinspiral:rpm-el7
     - lalinference:rpm-el7
     - lalpulsar:rpm-el7
+
+lalapps:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalapps
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
+    - lalpulsar:rpm-el8
 
 lalapps:deb:
   extends:
@@ -1245,7 +1343,7 @@ wheel:cp311-cp311-macos-arm64:
 .long-test-job:
   image: igwn/lalsuite-dev:el7-testing
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .integration-tests
   before_script:
     # init yum stuff from the template
@@ -1362,7 +1460,6 @@ top-level:pulsar:
 
 .upgrade:rpm:
   extends:
-    - .rpmbuild:el7
     - .upgrade-test
   script:
     # install latest release
@@ -1397,6 +1494,21 @@ upgrade:rpm-el7:
     - lalinference:rpm-el7
     - lalpulsar:rpm-el7
     - lalapps:rpm-el7
+
+upgrade:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .upgrade:rpm
+  needs:
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
+    - lalpulsar:rpm-el8
+    - lalapps:rpm-el8
 
 upgrade:debian:bullseye:
   extends:
