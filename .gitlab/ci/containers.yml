@@ -62,18 +62,22 @@
 .docker:el:
   extends:
     - .docker
+
+.docker:el7:
   variables:
     DOCKER_FILE: ".gitlab-ci-el7.Dockerfile"
+  extends:
+    - .docker:el
   needs:
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalinspiral:rpm
-    - lalinference:rpm
-    - lalpulsar:rpm
-    - lalapps:rpm
+    - lal:rpm-el7
+    - lalframe:rpm-el7
+    - lalmetaio:rpm-el7
+    - lalsimulation:rpm-el7
+    - lalburst:rpm-el7
+    - lalinspiral:rpm-el7
+    - lalinference:rpm-el7
+    - lalpulsar:rpm-el7
+    - lalapps:rpm-el7
 
 # template for Debian docker builds
 .docker:debian:
@@ -118,7 +122,7 @@ docker:nightly:el7:
     - !reference [.container_snippets, nightly_image]
     - !reference [.container_snippets, rhel]
   extends:
-    - .docker:el
+    - .docker:el7
     - .docker:nightly
 
 # build a tagged container from the rpms
@@ -127,7 +131,7 @@ docker:tags:el7:
     - !reference [.container_snippets, tag_image]
     - !reference [.container_snippets, rhel]
   extends:
-    - .docker:el
+    - .docker:el7
     - .docker:tags
 
 # build a nightly container for Debian bullseye
