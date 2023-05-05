@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 117
+# serial 118
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -519,8 +519,10 @@ EOF
         )
       done
     done
+    AC_ARG_VAR([EXTRA_SWIG_OCTAVE_LDFLAGS],[Extra linker flags for SWIG Octave bindings])
     LALSUITE_CHECK_LINK_FLAGS([
       ${swig_octave_ldflags}
+      ${EXTRA_SWIG_OCTAVE_LDFLAGS}
       ],[SWIG_OCTAVE_LDFLAGS="${SWIG_OCTAVE_LDFLAGS} ${flag}"]
     )
 
@@ -661,20 +663,19 @@ EOD`]
         [swig_python_ldflags="${swig_python_ldflags}${flag} "]
       )
     done
+    AC_ARG_VAR([EXTRA_SWIG_PYTHON_LDFLAGS],[Extra linker flags for SWIG Python bindings])
     LALSUITE_CHECK_LINK_FLAGS([
       ${swig_python_ldflags}
+      ${EXTRA_SWIG_PYTHON_LDFLAGS}
       ],[SWIG_PYTHON_LDFLAGS="${SWIG_PYTHON_LDFLAGS} ${flag}"]
     )
 
-    # allow addition of extra Python linker flags
-    AC_ARG_VAR([EXTRA_SWIG_PYTHON_LDFLAGS],[Extra linker flags for SWIG Python bindings])
-
-    extra_swig_python_ldflags="-Wl,-flat_namespace"
-    AC_SUBST([extra_swig_python_ldflags])
-
+    # link Python SWIG wrappings with a flat namespace on macOS
+    # - https://git.ligo.org/waveforms/reviews/newwfinterface/-/wikis/Fixing-CI-failures-due-to-segmentation-faults-on-macOS
+    AC_SUBST([SWIG_PYTHON_FLAT_NAMESPACE_LDFLAG])
     LALSUITE_CHECK_LINK_FLAGS([
-      ${extra_swig_python_ldflags}
-      ],[EXTRA_SWIG_PYTHON_LDFLAGS="${EXTRA_SWIG_PYTHON_LDFLAGS} ${flag}"]
+      [-Wl,-flat_namespace]
+      ],[SWIG_PYTHON_FLAT_NAMESPACE_LDFLAG="${SWIG_PYTHON_FLAT_NAMESPACE_LDFLAG} ${flag}"]
     )
 
     # check for Python and NumPy headers
