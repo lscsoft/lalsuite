@@ -28,21 +28,27 @@
 
 int usage(const char *program);
 int parseargs(int argc, char *argv[]);
-int output(const char *fmt, double c, double m, double r, double k2);
+int output(const char *fmt, double c, double m, double r, double w, double z, double k2); 
 
 /* global variables  */
 
 LALSimNeutronStarEOS *global_eos = NULL;
 
 const char *const default_fmt = "%r\\t%m\\n";
+const char *const default_fmt_U = "%r\\t%m\\t%w\\t%z\\n";
 const char *global_fmt;
+
+double global_epsrel = 0;
+
+int global_virial = 0;
+double global_rho_c, global_e_c = 0;
 
 const long default_npts = 100;
 long global_npts;
 
 int main(int argc, char *argv[])
 {
-    const double logpmin = 75.5;
+    double logpmin = 75.5;
     double logpmax;
     double dlogp;
     long i;
@@ -53,18 +59,59 @@ int main(int argc, char *argv[])
     global_fmt = default_fmt;
     parseargs(argc, argv);
 
+    if (global_rho_c == 0 && global_e_c != 0)
+    {
+        logpmin = log(XLALSimNeutronStarEOSPressureOfEnergyDensity(global_e_c, global_eos));
+    }
+
+    if (global_rho_c != 0 && global_e_c == 0)
+    {
+        logpmin = log(XLALSimNeutronStarEOSPressureOfRestMassDensity(global_rho_c, global_eos));
+    }
+
     logpmax = log(XLALSimNeutronStarEOSMaxPressure(global_eos));
     dlogp = (logpmax - logpmin) / global_npts;
 
     for (i = 0; i < global_npts; ++i) {
         double pc = exp(logpmin + (0.5 + i) * dlogp);
-        double c, m, r, k2;
-        XLALSimNeutronStarTOVODEIntegrate(&r, &m, &k2, pc, global_eos);
-        /* convert units */
-        m /= LAL_MSUN_SI;       /* mass in solar masses */
-        c = m * LAL_MRSUN_SI / r;       /* compactness (dimensionless) */
-        r /= 1000.0;    /* radius in km */
-        output(global_fmt, c, m, r, k2);
+        double c, m, r, k2, I1, I2, I3, J1, J2, J3, w, z;
+        if (global_virial == 0)
+        {
+            if (global_epsrel == 0)
+            {
+                XLALSimNeutronStarTOVODEIntegrate(&r, &m, &k2, pc, global_eos);
+            }
+            else
+            {
+                XLALSimNeutronStarTOVODEIntegrateWithTolerance(&r, &m, &k2, pc, global_eos, global_epsrel);
+            }
+            /* convert units */
+            m /= LAL_MSUN_SI;       /* mass in solar masses */
+            c = m * LAL_MRSUN_SI / r;       /* compactness (dimensionless) */
+            r /= 1000.0;    /* radius in km */
+            w = z = 0.0 / 0.0; /* GRV2 and GRV3 (dimesionless) NaN since -U is not used */
+
+            output(global_fmt, c, m, r, w, z, k2);
+        }
+        else if (global_virial == 1)
+        {
+            if (global_epsrel == 0)
+            {
+                XLALSimNeutronStarVirialODEIntegrate(&r, &m, &I1, &I2, &I3, &J1, &J2, &J3, &k2, pc, global_eos);
+            }
+            else
+            {
+                XLALSimNeutronStarVirialODEIntegrateWithTolerance(&r, &m, &I1, &I2, &I3, &J1, &J2, &J3, &k2, pc, global_eos, global_epsrel);
+            }
+            /* convert units */
+            m /= LAL_MSUN_SI;       /* mass in solar masses */
+            c = m * LAL_MRSUN_SI / r;       /* compactness (dimensionless) */
+            r /= 1000.0;    /* radius in km */
+            w = fabs(I1/(I2 + I3) - 1.0); /* GRV2 (dimesionless) */
+            z = fabs(J1/(J2 + J3) - 1.0); /* GRV2 (dimesionless) */
+
+            output(global_fmt, c, m, r, w, z, k2);
+        }   
     }
 
     XLALDestroySimNeutronStarEOS(global_eos);
@@ -72,7 +119,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int output(const char *fmt, double c, double m, double r, double k2)
+int output(const char *fmt, double c, double m, double r, double w, double z, double k2)
 {
     int i;
     for (i = 0; fmt[i]; ++i) {
@@ -96,6 +143,12 @@ int output(const char *fmt, double c, double m, double r, double k2)
                 break;
             case 'r':
                 fprintf(stdout, "%.18e", r);
+                break;
+            case 'w':
+                fprintf(stdout, "%.5e", w);
+                break;
+            case 'z':
+                fprintf(stdout, "%.5e", z);
                 break;
             default:
                 fprintf(stderr,
@@ -154,8 +207,12 @@ int parseargs(int argc, char **argv)
 {
     struct LALoption long_options[] = {
         {"help", no_argument, 0, 'h'},
+        {"mass-radius-virial", no_argument, 0, 'U'},
+        {"epsilon_relative", required_argument, 0, 'E'},
         {"eos-file", required_argument, 0, 'f'},
         {"eos-name", required_argument, 0, 'n'},
+        {"central-rest-mass-density", required_argument, 0, 'd'},
+        {"central-energy-density", required_argument, 0, 'e'},
         {"format", required_argument, 0, 'F'},
         {"npts", required_argument, 0, 'N'},
         {"polytrope", no_argument, 0, 'P'},
@@ -174,7 +231,7 @@ int parseargs(int argc, char **argv)
         {"SDgamma3", required_argument, 0, 'z'},
         {0, 0, 0, 0}
     };
-    char args[] = "hf:n:F:N:PG:p:r:Qq:1:2:3:Sw:x:y:z:";
+    char args[] = "hUE:f:n:d:e:F:N:PG:p:r:Qq:1:2:3:Sw:x:y:z:";
 
     /* quantities for 1-piece polytrope: */
     int polytropeFlag = 0;
@@ -208,11 +265,37 @@ int parseargs(int argc, char **argv)
         case 'h':      /* help */
             usage(argv[0]);
             exit(0);
+        case 'U':
+            if (global_fmt == default_fmt)
+                global_fmt = default_fmt_U;
+            global_virial = 1;
+            break;
+        case 'E':
+            global_epsrel = atof(LALoptarg);
+            if (global_epsrel < 0 || global_epsrel == 0 || global_epsrel > 1) {
+                fprintf(stderr, "invalid value of TOV solver routine relative error\n");
+                exit(1);
+            }
+            break;
         case 'f':      /* eos-file */
             global_eos = XLALSimNeutronStarEOSFromFile(LALoptarg);
             break;
         case 'n':      /* eos-name */
             global_eos = XLALSimNeutronStarEOSByName(LALoptarg);
+            break;
+         case 'd':
+            global_rho_c = atof(LALoptarg);
+            if (global_rho_c < 0) {
+                fprintf(stderr, "invalid value of central rest-mass density\n");
+                exit(1);
+            }
+            break;
+        case 'e':
+            global_e_c = atof(LALoptarg);
+            if (global_e_c < 0) {
+                fprintf(stderr, "invalid value of central energy density\n");
+                exit(1);
+            }
             break;
         case 'F':      /* format */
             global_fmt = LALoptarg;
@@ -323,6 +406,21 @@ int usage(const char *program)
         "\t-f FILE, --eos-file=FILE     \tuse EOS with from data filename FILE\n");
     fprintf(stderr,
         "\t-n NAME, --eos-name=NAME     \tuse EOS with name NAME\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr,
+        "\t-U, --calculate-virial-theorem      \tcalculate and print Virial theorem besides M, R\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr,
+        "\t-E, --choose-relative-error      \tchoose a value for the TOV solver routine relative error (default epsrel=1e-6)\n");
+    fprintf(stderr, "\n");
+    fprintf(stderr,
+        "\tYou may choose a central value for the rest-mass density (in kg/m^3) or the energy density (in J/m^3) as follows\n");
+    fprintf(stderr,
+        "\t-d, --central-rest-mass-density          \tcentral rest-mass density\n");
+    fprintf(stderr,
+        "\t-e, --central-energy-density             \tcentral energy density\n");
+    fprintf(stderr,
+        "\tIf none are chosen the the program will use a standard fixed value\n");
     fprintf(stderr, "\n");
     fprintf(stderr,
         "\t-P, --polytrope                  \tuse single polytrope\n");

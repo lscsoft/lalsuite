@@ -289,7 +289,16 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSSpectralDecomposition(double gamma[],
     }
 
     /* Updating eos structure */
-    eos = eos_alloc_tabular(pdat,edat,ndat);
+    double *nbdat = NULL;
+    double *mubdat = NULL;
+    double *muedat = NULL;
+    double *yedat = NULL;
+    double *cs2dat = NULL;
+    double *hdat = NULL;
+    size_t ncol = 2;
+    /* Updating eos structure */
+    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
+
 
     if(snprintf(eos->name, sizeof(eos->name), "4-Param Spec Decomp (g0=%.4g, g1=%.4g, g2=%.4g, g3=%.4g)",
     gamma[0], gamma[1], gamma[2], gamma[3]) >= (int) sizeof(eos->name))
