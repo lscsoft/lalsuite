@@ -199,13 +199,10 @@ default:
 
 # helper template for jobs running on macOS
 .macos-job:
-  # if the build fails during the distcheck phase then subsequent builds will
-  # fail with permissions errors, reset the permissions
-  after_script:
-    - chmod -R +w $CI_PROJECT_DIR
-  # do not cancel macOS job when a newer pipeline starts, to avoid issues
-  # with permission errors (see above)
-  interruptible: false
+  # use the clone strategy so permissions are correctly reset on any failed jobs
+  # see: https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/3726
+  variables:
+    GIT_STRATEGY: clone
 
 .macos:
   extends:
