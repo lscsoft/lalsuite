@@ -3,6 +3,7 @@
  *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *  Copyright (C) 2016, 2017 Grant David Meadors
  *  Copyright (C) 2020, 2021 Jared Wofford, John Whelan
+ *  Copyright (C) 2023 John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -412,7 +413,7 @@ int main(int argc, char *argv[]){
   if ( (uvar.resamp == TRUE) && ( uvar.testResampNoTShort == FALSE )  ){
     /* Edit the timestamps to accurately reflect tShort */
     if ((resampMultiTimes = XLALModifyMultiTimestampsFromSFTs ( &scienceFlagVect, multiTimes, resampTshort , numShortPerDet )) == NULL){
-      LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
+      LogPrintf ( LOG_CRITICAL, "%s: XLALModifyMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
     if (( XLALModifyMultiAMCoeffsWeights ( &multiWeights, resampTshort, Tsft, numShortPerDet, multiTimes  )) != XLAL_SUCCESS ){
@@ -1437,8 +1438,8 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
       }
       config->useTPEllipse = TRUE;
     }
-    if ( uvar->resamp == TRUE ) {
-      printf("Error!  Elliptical boundary and sheared coordinates not yet implemented with resampling\n");
+    if ( uvar->resamp == TRUE && config->useTPEllipse == TRUE) {
+      printf("Error!  Elliptical boundary not yet implemented with resampling\n");
       XLAL_ERROR( XLAL_EFUNC );
     }
     /* End consistency checks */
