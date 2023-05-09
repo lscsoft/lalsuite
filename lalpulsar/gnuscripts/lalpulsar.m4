@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalpulsar.m4 - LALPulsar specific macros
 #
-# serial 6
+# serial 7
 
 AC_DEFUN([LALPULSAR_ENABLE_SISTR],
 [AC_ARG_ENABLE(
@@ -46,17 +46,23 @@ AC_DEFUN([LALPULSAR_CHECK_ALTIVEC],[
   # end $0
 ])
 
-AC_DEFUN([LALPULSAR_INSTALL_MINIMAL_EPHEM],[
-  # $0: install only a minimal set of ephemeris files
-  AC_ARG_ENABLE(
-    [minimal_ephem],
+AC_DEFUN([LALPULSAR_WITH_EPHEM],[
+  # $0: choose which ephemeris files to install
+  AC_ARG_WITH(
+    [ephem],
     AS_HELP_STRING(
-      [--enable-minimal-ephem],
-      [install only a minimal set of ephemeris files [default=no; install all ephemeris files]]
+      [--with-ephem],
+      [choose which ephemeris files to install: no [none], minimal, yes [all; default]]
     ),
-    [],
-    [enable_minimal_ephem=no]
+    [
+      AS_CASE(["${withval}"],
+        [no|minimal|yes],[:],
+        [AC_MSG_ERROR([bad value ${withval} for --with-ephem])]
+      )
+    ],
+    [with_ephem=yes]
   )
-  AM_CONDITIONAL([INSTALL_MINIMAL_EPHEM],[test x"${enable_minimal_ephem}" = xyes])
+  AM_CONDITIONAL([INSTALL_MINIMAL_EPHEM],[test "X${with_ephem}" != Xno])
+  AM_CONDITIONAL([INSTALL_ALL_EPHEM],[test "X${with_ephem}" = Xyes])
   # end $0
 ])

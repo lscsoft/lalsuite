@@ -1,5 +1,6 @@
 BUILT_SOURCES =
 MOSTLYCLEANFILES =
+pkgdata_DATA =
 include $(top_srcdir)/gnuscripts/lalsuite_header_links.am
 include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 include $(top_srcdir)/gnuscripts/lalsuite_cuda.am
@@ -192,14 +193,17 @@ vcs_info_sources = LALPulsarVCSInfoHeader.h
 build_info_source = LALPulsarBuildInfoHeader.h
 build_info_dependencies = $(liblalpulsar_la_DEPENDENCIES)
 
-minimal_ephemerides = \
+if INSTALL_MINIMAL_EPHEM
+pkgdata_DATA += \
 	earth00-40-DE405.dat.gz \
 	sun00-40-DE405.dat.gz \
 	tdb_2000-2040.dat.gz \
 	te405_2000-2040.dat.gz \
 	$(END_OF_LIST)
+endif
 
-all_ephemerides = \
+if INSTALL_ALL_EPHEM
+pkgdata_DATA += \
 	earth00-19-DE200.dat.gz \
 	earth00-19-DE405.dat.gz \
 	earth00-19-DE414.dat.gz \
@@ -217,13 +221,6 @@ all_ephemerides = \
 	tdb_2000-2019.dat.gz \
 	te405_2000-2019.dat.gz \
 	$(END_OF_LIST)
-
-pkgdata_DATA = \
-	$(minimal_ephemerides) \
-	$(END_OF_LIST)
-
-if !INSTALL_MINIMAL_EPHEM
-pkgdata_DATA += $(all_ephemerides)
 endif
 
 EXTRA_DIST = \
