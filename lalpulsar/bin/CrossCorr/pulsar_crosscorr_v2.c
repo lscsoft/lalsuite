@@ -461,6 +461,10 @@ int main(int argc, char *argv[]){
   FILE *fp = NULL;
 
   if (XLALUserVarWasSet(&uvar.pairListInputFilename)) { /* If the user provided a list for reading, use it */
+    if ( uvar.resamp == TRUE ) {
+      LogPrintf( LOG_CRITICAL, "Error! Reading pair list from input file not supported with resampling.\n" );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
     if((sftPairs = XLALCalloc(1, sizeof(sftPairs))) == NULL){
       XLAL_ERROR(XLAL_ENOMEM);
     }
