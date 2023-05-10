@@ -22,7 +22,7 @@ while (<IN>) {
 }
 close IN;
 
-open IN, "git log HEAD | git shortlog --summary --email --numbered |" or die $!;
+open IN, "git log --full-history --no-merges HEAD | git shortlog --summary --email --numbered |" or die $!;
 binmode IN, ":encoding(UTF-8)";
 while (<IN>) {
   chomp;
