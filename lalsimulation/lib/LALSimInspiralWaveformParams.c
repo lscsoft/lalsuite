@@ -294,6 +294,18 @@ DEFINE_INSERT_FUNC(NonGRLIVAlpha, REAL8, "nonGR_alpha", 0)
 DEFINE_INSERT_FUNC(NonGRDChikappaS, REAL8, "dchikappaS", 0)
 DEFINE_INSERT_FUNC(NonGRDChikappaA, REAL8, "dchikappaA", 0)
 
+/* PhenomXPHM TGR Coefficients */
+DEFINE_INSERT_FUNC(NonGRDC1, REAL8, "nongr_dc1", 0)
+DEFINE_INSERT_FUNC(NonGRDC2, REAL8, "nongr_dc2", 0)
+DEFINE_INSERT_FUNC(NonGRDC4, REAL8, "nongr_dc4", 0)
+DEFINE_INSERT_FUNC(NonGRDCL, REAL8, "nongr_dcl", 0)
+DEFINE_INSERT_FUNC(NonGRDB1, REAL8, "nongr_db1", 0)
+DEFINE_INSERT_FUNC(NonGRDB2, REAL8, "nongr_db2", 0)
+DEFINE_INSERT_FUNC(NonGRDB3, REAL8, "nongr_db3", 0)
+DEFINE_INSERT_FUNC(NonGRDB4, REAL8, "nongr_db4", 0)
+DEFINE_INSERT_FUNC(NonGRParameterization, INT4, "tgr_parameterization", 0)
+
+
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
 DEFINE_INSERT_FUNC(NLTidesA1, REAL8, "nlTidesA1", 0)
@@ -1376,6 +1388,18 @@ DEFINE_LOOKUP_FUNC(NonGRLIVAlpha, REAL8, "nonGR_alpha", 0)
 DEFINE_LOOKUP_FUNC(NonGRDChikappaS, REAL8, "dchikappaS", 0)
 DEFINE_LOOKUP_FUNC(NonGRDChikappaA, REAL8, "dchikappaA", 0)
 
+/* PhenomXPHM TGR Coefficients */
+DEFINE_LOOKUP_FUNC(NonGRDC1, REAL8, "nongr_dc1", 0)
+DEFINE_LOOKUP_FUNC(NonGRDC2, REAL8, "nongr_dc2", 0)
+DEFINE_LOOKUP_FUNC(NonGRDC4, REAL8, "nongr_dc4", 0)
+DEFINE_LOOKUP_FUNC(NonGRDCL, REAL8, "nongr_dcl", 0)
+DEFINE_LOOKUP_FUNC(NonGRDB1, REAL8, "nongr_db1", 0)
+DEFINE_LOOKUP_FUNC(NonGRDB2, REAL8, "nongr_db2", 0)
+DEFINE_LOOKUP_FUNC(NonGRDB3, REAL8, "nongr_db3", 0)
+DEFINE_LOOKUP_FUNC(NonGRDB4, REAL8, "nongr_db4", 0)
+DEFINE_LOOKUP_FUNC(NonGRParameterization, INT4, "tgr_parameterization", 0)
+
+
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
 DEFINE_LOOKUP_FUNC(NLTidesA1, REAL8, "nlTidesA1", 0)
@@ -1598,6 +1622,18 @@ DEFINE_ISDEFAULT_FUNC(NonGRLIVASign, REAL8, "LIV_A_sign", 1)
 DEFINE_ISDEFAULT_FUNC(NonGRLIVAlpha, REAL8, "nonGR_alpha", 0)
 DEFINE_ISDEFAULT_FUNC(NonGRDChikappaS, REAL8, "dchikappaS", 0)
 DEFINE_ISDEFAULT_FUNC(NonGRDChikappaA, REAL8, "dchikappaA", 0)
+
+/* PhenomX TGR Coefficients */
+DEFINE_ISDEFAULT_FUNC(NonGRDC1, REAL8, "nongr_dc1", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRDC2, REAL8, "nongr_dc2", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRDC4, REAL8, "nongr_dc4", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRDCL, REAL8, "nongr_dcl", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRDB1, REAL8, "nongr_db1", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRDB2, REAL8, "nongr_db2", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRDB3, REAL8, "nongr_db3", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRDB4, REAL8, "nongr_db4", 0)
+DEFINE_ISDEFAULT_FUNC(NonGRParameterization, INT4, "tgr_parameterization", 0)
+
 /* SEOBNRv4P */
 DEFINE_ISDEFAULT_FUNC(EOBChooseNumOrAnalHamDer, INT4, "EOBChooseNumOrAnalHamDer", 1)
 DEFINE_ISDEFAULT_FUNC(EOBEllMaxForNyquistCheck, INT4, "EOBEllMaxForNyquistCheck", 5)

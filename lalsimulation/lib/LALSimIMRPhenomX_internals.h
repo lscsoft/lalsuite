@@ -223,6 +223,9 @@ typedef struct tagIMRPhenomXWaveformStruct
 	REAL8 inclination;
 	REAL8 beta;
 
+	LALDict *LALparams;
+
+	/* PhenomXO4 variables */
 	UINT4 PNR_SINGLE_SPIN;
 
 	/* Frequency at which to force XAS/XHM phase and phase derivative value */
@@ -300,37 +303,37 @@ typedef struct tagIMRPhenomXPhaseCoefficients
 	REAL8 C1Int, C2Int;
 	REAL8 C1MRD, C2MRD;
 
-  /* These are the RD phenomenological coefficients 					*/
-  REAL8 c0, c1, c2, c3, c4, cL, cRD;
+	/* These are the RD phenomenological coefficients 					*/
+	REAL8 c0, c1, c2, c3, c4, cL, cRD, cLGR;
 
-  /* These are the intermediate phenomenological coefficients */
-  REAL8 b0, b1, b2, b3, b4;
+	/* These are the intermediate phenomenological coefficients */
+	REAL8 b0, b1, b2, b3, b4;
 
-  /* These are the inspiral phenomenological coefficients 		*/
-  REAL8 a0, a1, a2, a3, a4;
+	/* These are the inspiral phenomenological coefficients 		*/
+	REAL8 a0, a1, a2, a3, a4;
     
-  /* Coefficients enterting tidal phase */
+	/* Coefficients enterting tidal phase */
     REAL8 c2PN_tidal, c3PN_tidal, c3p5PN_tidal;
 
 	/* Pre-cached variables */
-	REAL8 c4ov3, cLovfda;
+	REAL8 c4ov3, cLovfda, nonGR_dcl;
 
 	/* TaylorF2 PN Coefficients */
-	REAL8 phi0, phi1, phi2, phi3, phi4, phi5, phi6, phi7, phi8, phi9, phi10, phi11, phi12, phi13, phi5L, phi6L, phi8L, phi9L;
+	REAL8 phi_minus2, phi_minus1, phi0, phi1, phi2, phi3, phi4, phi5, phi6, phi7, phi8, phi9, phi10, phi11, phi12, phi13, phi5L, phi6L, phi8L, phi9L;
 	REAL8 phi_initial, phiNorm;
-	REAL8 dphi0, dphi1, dphi2, dphi3, dphi4, dphi5, dphi6, dphi7, dphi8, dphi9, dphi10, dphi11, dphi12, dphi13, dphi5L, dphi6L, dphi8L, dphi9L;
+	REAL8 dphi_minus2, dphi_minus1, dphi0, dphi1, dphi2, dphi3, dphi4, dphi5, dphi6, dphi7, dphi8, dphi9, dphi10, dphi11, dphi12, dphi13, dphi5L, dphi6L, dphi8L, dphi9L;
 
 	/* Pseudo-PN Coefficients */
 	REAL8 sigma0, sigma1, sigma2, sigma3, sigma4, sigma5;
 
-  /* Flag to set how many collocation points the RD region uses 	*/
-  INT4  NCollocationPointsRD;
+	/* Flag to set how many collocation points the RD region uses 	*/
+	INT4  NCollocationPointsRD;
 
-  /* Flag to set how many collocation points the INT region uses 	*/
-  INT4  NCollocationPointsInt;
+	/* Flag to set how many collocation points the INT region uses 	*/
+	INT4  NCollocationPointsInt;
 
-  /* Integer to tell us how many pseudo PN terms are used 											*/
-  INT4	NPseudoPN;
+	/* Integer to tell us how many pseudo PN terms are used 											*/
+	INT4	NPseudoPN;
 	INT4  NCollocationPointsPhaseIns;
 
 	/* The canonical ringdown phase is constructed from 5 collocation points 			*/
@@ -367,14 +370,14 @@ typedef struct tagIMRPhenomXAmpCoefficients
 	REAL8 fAmpMatchIN;
 	REAL8 fAmpMatchIM;
 
-  /* These are the RD phenomenological coefficients 					*/
-  REAL8 c0, c1, c2, c3, c4, cL;
+	/* These are the RD phenomenological coefficients 					*/
+	REAL8 c0, c1, c2, c3, c4, cL;
 
-  /* These are the intermediate phenomenological coefficients */
-  REAL8 b0, b1, b2, b3, b4, b5;
+	/* These are the intermediate phenomenological coefficients */
+	REAL8 b0, b1, b2, b3, b4, b5;
 
-  /* These are the inspiral phenomenological coefficients 		*/
-  REAL8 a0, a1, a2, a3, a4, a5;
+	/* These are the inspiral phenomenological coefficients 		*/
+	REAL8 a0, a1, a2, a3, a4, a5;
 
 	REAL8 v1RD, sigmaRD;
 
@@ -386,7 +389,7 @@ typedef struct tagIMRPhenomXAmpCoefficients
 	/* PN Amplitude Prefactors */
 	REAL8 pnInitial, pnOneThird, pnTwoThirds, pnThreeThirds, pnFourThirds, pnFiveThirds, pnSixThirds, pnSevenThirds, pnEightThirds, pnNineThirds;
 
-  /* Flags to set the ringdown amplitude version			*/
+	/* Flags to set the ringdown amplitude version			*/
 	INT4  NCollocationPointsRD;
 	INT4  IMRPhenomXRingdownAmpVersion;
 
@@ -394,8 +397,8 @@ typedef struct tagIMRPhenomXAmpCoefficients
 	INT4  NCollocationPointsInt;
 	INT4  IMRPhenomXIntermediateAmpVersion;
 
-  /* Flags to set the inspiral amplitude version 			*/
-	INT4	NPseudoPN;
+	/* Flags to set the inspiral amplitude version 			*/
+	INT4  NPseudoPN;
 	INT4  IMRPhenomXInspiralAmpVersion;
 
 	/* The ringdown is constructed from 5 collocation points 						*/

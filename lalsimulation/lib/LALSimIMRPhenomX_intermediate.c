@@ -1332,6 +1332,8 @@ static double IMRPhenomX_Intermediate_Phase_22_Ansatz(double ff, IMRPhenomX_Usef
 
   double fda    = pWF->fDAMP;
   double frd    = pWF->fRING;
+  /* We pass the GR Lorentzian term to make sure that variations to the GR coefficients in the ringdown decouple from the intermediate regime */
+  double cL     = pPhase->cLGR;
 
   double LorentzianTerm;
   double phaseOut = 0;
@@ -1344,7 +1346,7 @@ static double IMRPhenomX_Intermediate_Phase_22_Ansatz(double ff, IMRPhenomX_Usef
     {
 
       /* This is the Lorentzian term where cL = - a_{RD} dphase0 */
-      LorentzianTerm = (4.0 * pPhase->cL) / ( (4.0*fda*fda) + (ff - frd)*(ff - frd) );
+      LorentzianTerm = (4.0 * cL) / ( (4.0*fda*fda) + (ff - frd)*(ff - frd) );
 
       /* Return a polynomial embedded in the background from the merger */
       phaseOut       = pPhase->b0 + pPhase->b1*invff1 + pPhase->b2*invff2 + pPhase->b4*invff4 + LorentzianTerm;
@@ -1355,7 +1357,7 @@ static double IMRPhenomX_Intermediate_Phase_22_Ansatz(double ff, IMRPhenomX_Usef
     {
 
       /* This is the Lorentzian term where cL = - a_{RD} dphase0 */
-      LorentzianTerm = (4.0 * pPhase->cL) / ( (4.0*fda*fda) + (ff - frd)*(ff - frd) );
+      LorentzianTerm = (4.0 * cL) / ( (4.0*fda*fda) + (ff - frd)*(ff - frd) );
 
       /* Return a polynomial embedded in the background from the merger */
       phaseOut       = (pPhase->b0) + (pPhase->b1)*invff1 + (pPhase->b2)*invff2 + (pPhase->b3)*invff3 + (pPhase->b4)*invff4 + LorentzianTerm;
@@ -1393,7 +1395,8 @@ static double IMRPhenomX_Intermediate_Phase_22_AnsatzInt(double f, IMRPhenomX_Us
   double b2  = pPhase->b2;
   double b3  = pPhase->b3;
   double b4  = pPhase->b4;
-  double cL  = pPhase->cL;
+  /* We pass the GR Lorentzian term to make sure that variations to the GR coefficients in the ringdown decouple from the intermediate regime */
+  double cL  = pPhase->cLGR;
 
   double phaseOut;
 
