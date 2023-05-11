@@ -509,15 +509,36 @@ default:
     - export CI_COMMIT_TAG=${CI_COMMIT_TAG:-}
     # build packages
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
-    - xargs -t conda ${CONDA_BUILD_CMD:-build}
-          recipe/
-          --dirty
-          --error-overlinking
-          --error-overdepending
-          --keep-old-work
-          --no-anaconda-upload
-          --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
-          <<< ${CONDA_BUILD_ARGS}
+    # NOTE: retry if conda build fails due to corrupted $CONDA_PKGS_DIRS
+    - |
+      for n in 1 2; do
+        echo "===== conda ${CONDA_BUILD_CMD:-build}: attempt $n of 2 ====="
+        if ( \
+          set -o pipefail; \
+          xargs -t conda ${CONDA_BUILD_CMD:-build} \
+            recipe/ \
+            --dirty \
+            --error-overlinking \
+            --error-overdepending \
+            --keep-old-work \
+            --no-anaconda-upload \
+            --variant-config-files .ci_support/${CONDA_CONFIG}.yaml \
+            <<< ${CONDA_BUILD_ARGS} \
+          2>&1 | awk '{print} /appears to be corrupted/ {exit 1}' \
+        ); then
+          echo "----- conda ${CONDA_BUILD_CMD:-build}: success -----"
+          break
+        else
+          echo "... output from conda ${CONDA_BUILD_CMD:-build} truncated"
+          if [ $n -eq 1 ] && [ "X${CONDA_PKGS_DIRS}" != X ]; then
+            echo "----- conda ${CONDA_BUILD_CMD:-build}: possibly ${CONDA_PKGS_DIRS} is corrupted, deleting and retrying -----"
+            rm -rf ${CONDA_PKGS_DIRS}
+          else
+            echo "----- conda ${CONDA_BUILD_CMD:-build}: something else is corrupted, failing -----"
+            exit 1
+          fi
+        fi
+      done
   after_script:
     # clean cache of old files
     - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
