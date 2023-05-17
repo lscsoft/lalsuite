@@ -57,7 +57,7 @@ fi
 testdatafindcontent=$(<$datafindsub)
 datafindfilecontent="universe = vanilla
 executable = /usr/bin/gw_data_find
-arguments = -r \$ENV(LIGO_DATAFIND_SERVER) --observatory \$(observatory) --url-type file --gps-start-time \$(gpsstarttime) --gps-end-time \$(gpsendtime) --lal-cache --type \$(inputdatatype) 
+arguments = -r \$ENV(LIGO_DATAFIND_SERVER) --observatory \$(observatory) --url-type file --gps-start-time \$(gpsstarttime) --gps-end-time \$(gpsendtime) --lal-cache --gaps --type \$(inputdatatype) 
 getenv = True
 request_disk = 5MB
 accounting_group = ligo.sim.o4.cw.explore.test

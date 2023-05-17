@@ -448,29 +448,25 @@ makesfts_sub = os.path.join(path_to_dag_file, 'MakeSFTs.sub')
 # create datafind.sub
 if not args.cache_file:
     with open(datafind_sub, 'w') as datafindFID:
-        datafindLogFile = '{}/datafind_{}.log'.format(args.log_path,
-                                                          dag_filename)
+        datafindLogFile = f'{args.log_path}/datafind_{dag_filename}.log'
         datafindFID.write('universe = vanilla\n')
-        datafindFID.write('executable = {}\n'.format(dataFindExe))
+        datafindFID.write(f'executable = {dataFindExe}\n')
         if not args.datafind_match:
             dataFindMatchString = ''
         else:
-            dataFindMatchString = '--match {}'.format(args.datafind_match)
+            dataFindMatchString = f'--match {args.datafind_match}'
         datafindFID.write('arguments = -r $ENV(LIGO_DATAFIND_SERVER) ')
         datafindFID.write('--observatory $(observatory) --url-type file ')
         datafindFID.write('--gps-start-time $(gpsstarttime) ')
-        datafindFID.write('--gps-end-time $(gpsendtime) --lal-cache ')
-        datafindFID.write('--type $(inputdatatype) {}\n'.format(
-            dataFindMatchString))
+        datafindFID.write('--gps-end-time $(gpsendtime) --lal-cache --gaps ')
+        datafindFID.write(f'--type $(inputdatatype) {dataFindMatchString}\n')
         datafindFID.write('getenv = True\n')
         datafindFID.write('request_disk = 5MB\n')
-        datafindFID.write('accounting_group = {}\n'.format(args.accounting_group))
-        datafindFID.write('accounting_group_user = {}\n'.format(
-            args.accounting_group_user))
-        datafindFID.write('log = {}\n'.format(datafindLogFile))
-        datafindFID.write('error = {}/datafind_$(tagstring).err\n'.format(
-            args.log_path))
-        datafindFID.write('output = {}/'.format(args.cache_path))
+        datafindFID.write(f'accounting_group = {args.accounting_group}\n')
+        datafindFID.write(f'accounting_group_user = {args.accounting_group_user}\n')
+        datafindFID.write(f'log = {datafindLogFile}\n')
+        datafindFID.write(f'error = {args.log_path}/datafind_$(tagstring).err\n')
+        datafindFID.write(f'output = {args.cache_path}/')
         datafindFID.write('$(observatory)-$(gpsstarttime)-$(gpsendtime).cache\n')
         datafindFID.write('notification = never\n')
         datafindFID.write('queue 1\n')
