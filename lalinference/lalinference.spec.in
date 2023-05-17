@@ -1,7 +1,7 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
-%define configure_opts --enable-openmp --enable-mpi MPICC=/usr/lib64/openmpi/bin/mpicc
+%define configure_opts %{nil}
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
@@ -32,7 +32,6 @@ BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: liblalburst-devel >= @MIN_LALBURST_VERSION@
 BuildRequires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 BuildRequires: make
-BuildRequires: openmpi-devel
 BuildRequires: pkgconfig >= 0.18.0
 
 # swig
