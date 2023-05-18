@@ -89,7 +89,7 @@ LALFILE *lalstderr( void )
  * ii) pure filename: try
  *     1) local dir, then
  *     2) search LAL_DATA_PATH, then
- *     3) try LAL_RELATIVE_DATA_PATH relative to location of to liblalsupport.so (if enabled), then
+ *     3) search LAL_RELATIVE_DATA_PATH relative to location of liblalsupport.so (if enabled), then
  *     4) try fallbackdir (if enabled/given)
  *     return first successful hit
  *
@@ -128,7 +128,7 @@ XLALFileResolvePathLong ( const char *fname,                //!< [in] filename o
       } // if not found
 
     } // end: if path given
-  else	// if pure filename given: try 1) local directory, then 2) scan LAL_DATA_PATH, then 3) LAL_RELATIVE_DATA_PATH (if enabled), then 4) try fallbackdir (if enabled/given)
+  else	// if pure filename given: try 1) local directory, then 2) scan LAL_DATA_PATH, then 3) scan LAL_RELATIVE_DATA_PATH (if enabled), then 4) try fallbackdir (if enabled/given)
     {
       FILE *tmp;
       char *resolveFname = NULL;
@@ -174,7 +174,7 @@ XLALFileResolvePathLong ( const char *fname,                //!< [in] filename o
 
         } // if LAL_DATA_PATH given
 
-      // ----- Strategy 3: try LAL_RELATIVE_DATA_PATH relative to location of to liblalsupport.so, if enabled
+      // ----- Strategy 3: scan LAL_RELATIVE_DATA_PATH relative to location of to liblalsupport.so, if enabled
 #ifndef LAL_RELATIVE_DATA_PATH
       XLALPrintInfo ( "%s(): skip strategy LAL_RELATIVE_DATA_PATH: disabled\n", __func__ );
 #else
@@ -193,20 +193,28 @@ XLALFileResolvePathLong ( const char *fname,                //!< [in] filename o
           module_path[module_path_length] = '\0';
           XLAL_CHECK_NULL ( module_dirname_length >= 0, XLAL_EERR );
           XLAL_CHECK_NULL ( module_dirname_length < module_path_length, XLAL_EERR );
-
-          // try path starting in directory containing liblalsupport.so, plus LAL_RELATIVE_DATA_PATH
-          XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, module_dirname_length + 1 + strlen(LAL_RELATIVE_DATA_PATH) + 1 + fname_len + 1 )) != NULL, XLAL_ENOMEM );
           module_path[module_dirname_length] = '\0';
-          sprintf ( resolveFname, "%s/%s/%s", module_path, LAL_RELATIVE_DATA_PATH, fname );
-          XLALPrintInfo ( "%s(): trying '%s' -> '%s' ...\n", __func__, fname, resolveFname );
-          if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
-            LALFclose ( tmp );
-            XLALFree ( module_path );
-            XLALPrintInfo ( "%s(): success '%s' -> '%s'\n", __func__, fname, resolveFname );
-            return resolveFname;
-          } // if found
+
+          // try path starting in directory containing liblalsupport.so, plus path tokens from LAL_RELATIVE_DATA_PATH
+          TokenList *subPaths = NULL;
+          XLAL_CHECK_NULL ( XLALCreateTokenList ( &subPaths, LAL_RELATIVE_DATA_PATH, ":" ) == XLAL_SUCCESS, XLAL_EFUNC );
+          for ( UINT4 i = 0; i < subPaths->nTokens; i ++ )
+            {
+              const char *subPath_i = subPaths->tokens[i];
+              XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, module_dirname_length + 1 + strlen(subPath_i) + 1 + fname_len + 1 )) != NULL, XLAL_ENOMEM );
+              sprintf ( resolveFname, "%s/%s/%s", module_path, subPath_i, fname );
+              XLALPrintInfo ( "%s(): trying '%s' -> '%s' ...\n", __func__, fname, resolveFname );
+              if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
+                LALFclose ( tmp );
+                XLALFree ( module_path );
+                XLALDestroyTokenList ( subPaths );
+                XLALPrintInfo ( "%s(): success '%s' -> '%s'\n", __func__, fname, resolveFname );
+                return resolveFname;
+              } // if found
+            }
 
           XLALFree ( module_path );
+          XLALDestroyTokenList ( subPaths );
 
         }
       }
