@@ -53,7 +53,7 @@ Requires: lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: less
 Requires: libframel >= @MIN_FRAMEL_VERSION@
 Requires: libmetaio >= @MIN_METAIO_VERSION@
-Requires: python
+Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-h5py
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@

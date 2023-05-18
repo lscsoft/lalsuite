@@ -1,7 +1,7 @@
 %define nightly @NIGHTLY_VERSION@%{nil}
 %define _sysconfdir %{_prefix}/etc
 %define release 1
-%define configure_opts --enable-cfitsio CFITSIO_LIBS="-lcfitsio"
+%define configure_opts --enable-cfitsio CFITSIO_LIBS="-lcfitsio" --disable-sistr
 
 %if "%{?nightly:%{nightly}}%{!?nightly:0}" == "%{nil}"
 %undefine nightly
@@ -22,7 +22,6 @@ Prefix: %{_prefix}
 
 # C
 BuildRequires: bc
-BuildRequires: cds-crtools-devel
 BuildRequires: cfitsio-devel
 BuildRequires: fftw-devel
 BuildRequires: gcc
@@ -64,7 +63,6 @@ BuildRequires: lalinference-octave >= @MIN_LALINFERENCE_VERSION@
 
 # lalpulsar
 Summary: LSC Algorithm Pulsar Library - runtime tools
-Requires: cds-crtools
 Requires: gwdatafind
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
@@ -150,7 +148,7 @@ This package provides the Octave bindings for LALPulsar.
 %setup -q -n %{name}-%{version}%{?nightly:-%{nightly}}
 
 %build
-%configure %{configure_opts} --disable-gcc-flags --enable-sistr --enable-swig PYTHON=%{__python3}
+%configure %{configure_opts} --disable-gcc-flags --enable-swig PYTHON=%{__python3}
 %{__make} %{?_smp_mflags} V=1
 
 %check
