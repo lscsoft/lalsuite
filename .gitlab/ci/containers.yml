@@ -79,6 +79,22 @@
     - lalpulsar:rpm-el7
     - lalapps:rpm-el7
 
+.docker:el8:
+  variables:
+    DOCKER_FILE: ".gitlab-ci-el8.Dockerfile"
+  extends:
+    - .docker:el
+  needs:
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
+    - lalpulsar:rpm-el8
+    - lalapps:rpm-el8
+
 # template for Debian docker builds
 .docker:debian:
   extends:
@@ -116,7 +132,7 @@
     - !reference [.ci-koji, rules]
     - !reference [.ci-nightly-deploy, rules]
 
-# build a nightly container from the RPMs
+# build nightly containers from the RPMs
 docker:nightly:el7:
   before_script:
     - !reference [.container_snippets, nightly_image]
@@ -125,13 +141,29 @@ docker:nightly:el7:
     - .docker:el7
     - .docker:nightly
 
-# build a tagged container from the rpms
+docker:nightly:el8:
+  before_script:
+    - !reference [.container_snippets, nightly_image]
+    - !reference [.container_snippets, rhel]
+  extends:
+    - .docker:el8
+    - .docker:nightly
+
+# build tagged containers from the rpms
 docker:tags:el7:
   before_script:
     - !reference [.container_snippets, tag_image]
     - !reference [.container_snippets, rhel]
   extends:
     - .docker:el7
+    - .docker:tags
+
+docker:tags:el8:
+  before_script:
+    - !reference [.container_snippets, tag_image]
+    - !reference [.container_snippets, rhel]
+  extends:
+    - .docker:el8
     - .docker:tags
 
 # build a nightly container for Debian bullseye
