@@ -193,6 +193,9 @@ setup(
             'gwdatafind',
             'gwpy',
         ],
+        'lalpulsar': [
+            'solar_system_ephemerides',
+        ],
         'test': [
             'pytest',
         ],

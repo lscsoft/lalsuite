@@ -1141,6 +1141,7 @@ lalapps:conda:py39:
   - ${PYTHON} -m venv test
   - source test/bin/activate
   - python -m pip install --upgrade pip
+  - python -m pip install solar_system_ephemerides
   - python -m pip install wheelhouse/*
   # check metadata
   - python -m pip show lalsuite
@@ -1170,16 +1171,17 @@ lalapps:conda:py39:
     - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
     # Build wheel
     - ./00boot
+    - SSE="solar_system_ephemerides/ephemerides"
     - ./configure
           ${ENABLE_NIGHTLY}
-          --with-relative-data-path="../lalapps/data"
+          --with-relative-data-path="../lalapps/data:../${SSE}/earth:../${SSE}/sun:../${SSE}/time"
           --without-fallback-data-path
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
           --enable-python
           --enable-swig-python
-          --enable-minimal-ephem
+          --without-ephem
           PYTHON=${PYTHON}
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
@@ -1209,16 +1211,17 @@ lalapps:conda:py39:
     - python -m pip list installed
     # Build wheel
     - ./00boot
+    - SSE="solar_system_ephemerides/ephemerides"
     - ./configure
           ${ENABLE_NIGHTLY}
-          --with-relative-data-path="../../lalapps/data"
+          --with-relative-data-path="../../lalapps/data:../../${SSE}/earth:../../${SSE}/sun:../../${SSE}/time"
           --without-fallback-data-path
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
           --enable-python
           --enable-swig-python
-          --enable-minimal-ephem
+          --without-ephem
           PYTHON=$(which python)
           LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j${CPU_COUNT} wheel

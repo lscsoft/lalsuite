@@ -150,8 +150,8 @@ LALSUITE_PROG_COMPILERS
 LALSUITE_CHECK_SIMD
 LALPULSAR_CHECK_ALTIVEC
 
-# install only a minimal set of ephemeris files
-LALPULSAR_INSTALL_MINIMAL_EPHEM
+# choose which ephemeris files to install
+LALPULSAR_WITH_EPHEM
 
 # checks for programs
 AC_PROG_INSTALL
