@@ -78,11 +78,6 @@ gcc:7:
     - .compiler-test:gcc
   image: igwn/lalsuite-dev-gcc:7
 
-gcc:8:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:8
-
 gcc:9:
   extends:
     - .compiler-test:gcc

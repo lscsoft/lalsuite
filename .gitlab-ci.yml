@@ -1601,13 +1601,10 @@ upgrade:conda:linux:
     - !reference [.ci-platform, rules]
     - !reference [.ci-merge-build, rules]
 
-platform:debian:bullseye:
+platform:debian:buster:
   extends:
     - .platform-test
-  variables:
-    # disable the octave bindings as the version of SWIG on bullseye doesn't support the version of Octave
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig-python --enable-python"
-  image: igwn/lalsuite-dev:bullseye
+  image: igwn/lalsuite-dev:buster
 
 .platform-test:conda:
   extends:
