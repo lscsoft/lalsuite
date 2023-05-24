@@ -197,7 +197,7 @@ def check_gitlab_depends(lib, depends):
                 gitlab_ci.update(safe_load_ignore_unknown(f))
     error = 0
 
-    for pkg in ('pkg', 'conda', 'deb', 'rpm-el7', 'rpm-el8', 'koji'):
+    for pkg in ('pkg', 'conda', 'deb', 'rpm-el7', 'rpm-el8'):
         found = set()
         ci_job_name = f'{lib}:{pkg}'
         for needs in gitlab_ci[ci_job_name]['needs']:

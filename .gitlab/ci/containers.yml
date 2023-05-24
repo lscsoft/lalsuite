@@ -112,26 +112,6 @@
     - lalpulsar:deb
     - lalapps:deb
 
-# template for Koji docker builds
-.docker:koji:
-  extends:
-    - .docker
-  variables:
-    DOCKER_FILE: ".gitlab-ci-koji.Dockerfile"
-  needs:
-    - lal:koji
-    - lalframe:koji
-    - lalmetaio:koji
-    - lalsimulation:koji
-    - lalburst:koji
-    - lalinspiral:koji
-    - lalpulsar:koji
-    - lalinference:koji
-    - lalapps:koji
-  rules:
-    - !reference [.ci-koji, rules]
-    - !reference [.ci-nightly-deploy, rules]
-
 # build nightly containers from the RPMs
 docker:nightly:el7:
   before_script:
@@ -183,12 +163,3 @@ docker:tags:bullseye:
   extends:
     - .docker:debian
     - .docker:tags
-
-# build a nightly containers from the koji rpms
-docker:nightly:el7-koji:
-  before_script:
-    - !reference [.container_snippets, nightly_image]
-    - !reference [.container_snippets, rhel]
-  extends:
-    - .docker:koji
-    - .docker:nightly
