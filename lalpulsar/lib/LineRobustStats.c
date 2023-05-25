@@ -237,7 +237,12 @@ XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector F-stat \f$ 2\F \
 
 } // XLALComputeBSGL()
 
-// module-internal function
+/**
+ * \f[
+ * \newcommand{\cohF}{\coh{\F}}
+ * \f]
+ * Helper function to compute the denominator for XLALVectorComputeBSGLtL() and XLALVectorComputeBtSGLtL() - see their documentation for details.
+ */
 int
 XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,					//!< [out] pre-allocated output array of denominator values
                                    const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],	//!< [in] input vector of semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
