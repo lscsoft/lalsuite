@@ -26,6 +26,7 @@ extern "C" {
 
 #include <stdio.h>
 #include <stdarg.h>
+#include <lal/LALStddef.h>
 #include <lal/LALStdio.h>
 
 /**
@@ -81,8 +82,38 @@ int XLALFileIsRegularAndGetSize ( const char *path, size_t *fileLen );
 int XLALFileIsRegular ( const char *path );
 size_t XLALFileSize ( const char *path );
 
-char *XLALFileResolvePathLong ( const char *fname, const char *fallbackdir );
-char *XLALFileResolvePath( const char *fname );
+/** \cond DONT_DOXYGEN */
+char *XLALFileResolvePathLong ( const char *fname, const char *fallbackpath );
+char *XLALFileResolvePath ( const char *fname );
+/** \endcond */ // DONT_DOXYGEN
+
+/** 'Resolve' a given filename 'fname', returning a file path where the
+ *  file can successfully be opened by fopen() using mode='rb'.
+ *
+ * Return: successful file-path or NULL if failed.
+ *
+ * Resolving uses the following algorithm: if 'fname' contains a
+ * i) (relative or absolute) path: only tries to open that path directly
+ * ii) pure filename: try
+ *     1) local dir, then
+ *     2) search $LAL_DATA_PATH, then
+ *     3) search 'fallbackpath'; relative paths are considered relative to location of liblalsupport.so (if known)
+ *     return first successful hit
+ *
+ * Note: it is not an error if the given 'fname' cannot be resolved,
+ * this will simply return NULL but xlalErrno will not be set in that case.
+ *
+ * Note2: successfully resolving an 'fname' doesn't guarantee that the path points
+ * to a file, as directories can also be opened in 'rb'.
+ *
+ * Note3: the returned string is allocated here and must be XLALFree'ed by the caller.
+ *
+ * Note4: this function should only be used from within LALSuite, as it relies
+ * on macros defined by the LALSuite build system. For the public API, functions
+ * should be defined for specific types of data files, which then call
+ * XLAL_FILE_RESOLVE_PATH() internally.
+ */
+#define XLAL_FILE_RESOLVE_PATH( fname ) XLALFileResolvePathLong ( fname, LAL_FALLBACK_DATA_PATH )
 
 char *XLALFileLoad ( const char *path );
 

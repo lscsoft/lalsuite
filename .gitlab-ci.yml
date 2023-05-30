@@ -1174,8 +1174,7 @@ lalapps:conda:py39:
     - SSE="solar_system_ephemerides/ephemerides"
     - ./configure
           ${ENABLE_NIGHTLY}
-          --with-relative-data-path="../lalapps/data:../${SSE}/earth:../${SSE}/sun:../${SSE}/time"
-          --without-fallback-data-path
+          --with-fallback-data-path="../lalapps/data:../${SSE}/earth:../${SSE}/sun:../${SSE}/time"
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
@@ -1214,8 +1213,7 @@ lalapps:conda:py39:
     - SSE="solar_system_ephemerides/ephemerides"
     - ./configure
           ${ENABLE_NIGHTLY}
-          --with-relative-data-path="../../lalapps/data:../../${SSE}/earth:../../${SSE}/sun:../../${SSE}/time"
-          --without-fallback-data-path
+          --with-fallback-data-path="../../lalapps/data:../../${SSE}/earth:../../${SSE}/sun:../../${SSE}/time"
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
@@ -1411,6 +1409,9 @@ lalpulsar_longtests:
           --enable-python
           --enable-swig-python
     - make -j${CPU_COUNT}
+    # test finding data files
+    - make install
+    - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
     # run long-running tests under bin/longtests/
     - make -j${CPU_COUNT} check -C bin/longtests/ LONGTESTS=1
   needs:

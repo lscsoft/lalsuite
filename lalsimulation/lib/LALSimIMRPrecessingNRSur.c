@@ -150,7 +150,7 @@ static PrecessingNRSurData __lalsim_NRSur7dq4_data;
 static void NRSur7dq2_Init_LALDATA(void) {
     if (NRSur7dq2_IsSetup()) return;
 
-    char *path = XLALFileResolvePathLong(NRSUR7DQ2_DATAFILE, PKG_DATA_DIR);
+    char *path = XLAL_FILE_RESOLVE_PATH(NRSUR7DQ2_DATAFILE);
     if (path==NULL)
         XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", NRSUR7DQ2_DATAFILE);
     char *dir = dirname(path);
@@ -178,7 +178,7 @@ static void NRSur7dq4_Init_LALDATA(void) {
 
     if (NRSur7dq4_IsSetup()) return;
 
-    char *path = XLALFileResolvePathLong(NRSUR7DQ4_DATAFILE, PKG_DATA_DIR);
+    char *path = XLAL_FILE_RESOLVE_PATH(NRSUR7DQ4_DATAFILE);
     if (path==NULL)
         XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", NRSUR7DQ4_DATAFILE);
     char *dir = dirname(path);

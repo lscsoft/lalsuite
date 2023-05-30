@@ -468,7 +468,7 @@ UNUSED static void SEOBNRv5HMROM_Init_LALDATA(void)
   // Expect ROM datafile in a directory listed in LAL_DATA_PATH,
 #ifdef LAL_HDF5_ENABLED
 #define datafile ROMDataHDF5
-  char *path = XLALFileResolvePathLong(datafile, PKG_DATA_DIR);
+  char *path = XLAL_FILE_RESOLVE_PATH(datafile);
   if (path==NULL){
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
   }
@@ -500,7 +500,7 @@ UNUSED static void SEOBNRv5ROM_Init_LALDATA(void)
   // Expect ROM datafile in a directory listed in LAL_DATA_PATH,
 #ifdef LAL_HDF5_ENABLED
 #define datafile22 ROM22DataHDF5
-  char *path = XLALFileResolvePathLong(datafile22, PKG_DATA_DIR);
+  char *path = XLAL_FILE_RESOLVE_PATH(datafile22);
   if (path==NULL){
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile22);
   }
