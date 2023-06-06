@@ -112,7 +112,7 @@ static void NRHybSur3dq8_Init_LALDATA(void) {
 
     if (NRHybSur3dq8_IsSetup()) return;
 
-    char *path = XLALFileResolvePathLong(NRHybSur3dq8_DATAFILE, PKG_DATA_DIR);
+    char *path = XLAL_FILE_RESOLVE_PATH(NRHybSur3dq8_DATAFILE);
     if (path==NULL) {
         XLAL_ERROR_VOID(XLAL_ENOENT,
             "Unable to find data file %s in $LAL_DATA_PATH\n",

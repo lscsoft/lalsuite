@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 177
+# serial 178
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -962,6 +962,33 @@ AC_DEFUN([LALSUITE_ENABLE_LALAPPS],[
       lalapps=${all_lal:-true}
     ]
   )
+])
+
+AC_DEFUN([LALSUITE_WITH_FALLBACK_DATA_PATH],[
+  AC_ARG_WITH(
+    [fallback_data_path],
+    AS_HELP_STRING([--with-fallback-data-path],[use hard-coded fallback location for LAL data path [default: $(pkgdatadir)]]),
+    [
+      AS_CASE(["${with_fallback_data_path}"],
+        [yes],[fallback_data_path='"$(pkgdatadir)"'],
+        [no],[fallback_data_path=NULL],
+        [
+          for n in `echo ${with_fallback_data_path} | sed 's|:| |g'`; do
+            AS_CASE(["${n}"],
+              ['./'*],[:],
+              ['../'*],[:],
+              ['$('*],[:],
+              [AC_MSG_ERROR([bad fallback LAL data path value '${n}' for --with-fallback-data-path])]
+            )
+          done
+          fallback_data_path="\"${with_fallback_data_path}\""
+        ]
+      )
+    ],[
+      fallback_data_path='"$(pkgdatadir)"'
+    ]
+  )
+  AM_CPPFLAGS="-DLAL_FALLBACK_DATA_PATH='${fallback_data_path}' ${AM_CPPFLAGS}"
 ])
 
 AC_DEFUN([LALSUITE_WITH_CUDA],[

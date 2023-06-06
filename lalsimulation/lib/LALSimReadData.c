@@ -59,7 +59,7 @@
 LALFILE *XLALSimReadDataFileOpen(const char *fname)
 {
     LALFILE *fp = NULL;
-    char *path = XLALFileResolvePathLong(fname, PKG_DATA_DIR);
+    char *path = XLAL_FILE_RESOLVE_PATH(fname);
     if (!path)  /* could not find file */
         XLAL_ERROR_FAIL(XLAL_EIO, "Could not find data file %s\n", fname);
     fp = XLALFileOpenRead(path);

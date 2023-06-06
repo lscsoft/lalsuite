@@ -1291,7 +1291,7 @@ UNUSED static void Surrogate_Init_LALDATA(void)
   // Expect ROM datafile in a directory listed in LAL_DATA_PATH,
 #ifdef LAL_HDF5_ENABLED
 #define datafile SurDataHDF5
-  char *path = XLALFileResolvePathLong(datafile, PKG_DATA_DIR);
+  char *path = XLAL_FILE_RESOLVE_PATH(datafile);
   if (path==NULL)
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
   char *dir = dirname(path);
