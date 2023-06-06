@@ -21,13 +21,13 @@ To install, simply run::
     $ pip install lalsuite
 
 Optional dependencies, which can be installed as ``pip install lalsuite[option]``:
-  * lalinference (pulls in
+  * ``lalinference`` (pulls in
     `gwdatafind <https://pypi.org/project/gwdatafind/>`
      and `gwpy <https://pypi.org/project/gwpy/>`)
-  * lalpulsar (pulls in
+  * ``lalpulsar`` (pulls in
     `solar_system_ephemerides <https://pypi.org/project/solar-system-ephemerides/>`
-    which, until LALSuite 7.15, were still included in the main package)
-  * test (pulls in
+    to provide ephemeris files which, until LALSuite 7.15, were still included in the main package)
+  * ``test`` (pulls in
     `pytest <https://pypi.org/project/pytest/>`)
 """
 
