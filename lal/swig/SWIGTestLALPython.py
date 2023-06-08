@@ -2,13 +2,14 @@
 # Author: Karl Wette, 2011--2014
 
 import contextlib
+import datetime
 import os
+import pickle
 import sys
+import warnings
+
 import pytest
 
-import warnings
-import datetime
-import pickle
 import numpy
 from numpy.testing import assert_array_equal
 
@@ -79,10 +80,10 @@ def test_memory_allocation():
     lal.CheckMemoryLeaks()
     print("PASSED memory allocation", file=sys.stderr)
 
+
 def test_object_parent_tracking():
     """check object parent tracking
     """
-
     print("checking object parent tracking ...", file=sys.stderr)
     a = lal.gsl_vector(3)
     a.data = [1.1, 2.2, 3.3]
@@ -103,10 +104,10 @@ def test_object_parent_tracking():
     lal.CheckMemoryLeaks()
     print("PASSED object parent tracking", file=sys.stderr)
 
+
 def test_equal_return_first_argument_type_handling():
     """check equal return/first argument type handling
     """
-
     print("checking equal return/first argument type handling", file=sys.stderr)
     sv = lal.CreateStringVector("1")
     assert sv.length == 1
@@ -138,10 +139,10 @@ def test_equal_return_first_argument_type_handling():
     lal.CheckMemoryLeaks()
     print("PASSED equal return/first argument type handling", file=sys.stderr)
 
+
 def test_string_conversions():
     """check string conversions
     """
-
     print("checking string conversions ...", file=sys.stderr)
     strs = ["a", "bc", "def"]
     sv = lal.CreateStringVector(*strs)
@@ -159,10 +160,10 @@ def test_string_conversions():
     lal.CheckMemoryLeaks()
     print("PASSED string conversions", file=sys.stderr)
 
+
 def test_static_vector_matrix_conversions():
     """check static vector/matrix conversions
     """
-
     print("checking static vector/matrix conversions ...", file=sys.stderr)
     lalglobalvar.swig_lal_test_struct_vector[0] = lalglobalvar.swig_lal_test_struct_const
     assert lalglobalvar.swig_lal_test_struct_vector[0].n == lalglobalvar.swig_lal_test_struct_const.n
@@ -230,10 +231,10 @@ def test_static_vector_matrix_conversions():
     assert lalglobalvar.swig_lal_test_COMPLEX8_matrix[0, 0] == complex(5.5, 6.25)
     print("PASSED static vector/matrix conversions", file=sys.stderr)
 
+
 def test_dynamic_vector_matrix_conversions():
     """check dynamic vector/matrix conversions
     """
-
     print("checking dynamic vector/matrix conversions ...", file=sys.stderr)
     def check_dynamic_vector_matrix(iv, ivl, rv, rvl, cm, cms1, cms2):
         iv.data = numpy.zeros(ivl, dtype=iv.data.dtype)
@@ -303,10 +304,10 @@ def test_dynamic_vector_matrix_conversions():
     del rv1
     print("PASSED dynamic vector/matrix conversions (GSL)", file=sys.stderr)
 
+
 def test_fixed_and_dynamic_arrays_typemaps():
     """check fixed and dynamic arrays typemaps
     """
-
     print("checking fixed and dynamic arrays typemaps ...", file=sys.stderr)
     a1in = numpy.array([1.2, 3.5, 7.9], dtype=numpy.double)
     a1out = a1in * 2.5
@@ -327,10 +328,10 @@ def test_fixed_and_dynamic_arrays_typemaps():
     lal.CheckMemoryLeaks()
     print("PASSED fixed and dynamic arrays typemaps", file=sys.stderr)
 
+
 def test_input_views_of_string_array_structs():
     """check input views of string array structs
     """
-
     print("checking input views of string array structs ...", file=sys.stderr)
     svdat = ["a", "bc", "def"]
     sv = lal.CreateEmptyStringVector(len(svdat))
@@ -360,10 +361,10 @@ def test_input_views_of_string_array_structs():
     lal.CheckMemoryLeaks()
     print("PASSED input views of string array structs", file=sys.stderr)
 
+
 def test_input_views_of_numeric_array_structs():
     """check input views of numeric array structs
     """
-
     print("checking input views of numeric array structs ...", file=sys.stderr)
     r4dat = numpy.array([1.2, 2.3, 3.4, 4.5, 5.6], dtype=numpy.float32)
     r8dat = numpy.array([3.4, 4.5, 5.6, 6.7, 7.8, 8.9], dtype=numpy.float64)
@@ -932,10 +933,10 @@ def test_input_views_of_numeric_array_structs():
     lal.CheckMemoryLeaks()
     print("PASSED input views of numeric array structs (type safety)", file=sys.stderr)
 
+
 def test_FFT_functions_with_input_views():
     """check FFT functions with input views
     """
-
     print("check FFT functions with input views ...", file=sys.stderr)
     r4in = numpy.array(list(range(0, 32)), dtype=numpy.float32)
     r8in = numpy.array(list(range(0, 64)), dtype=numpy.float64)
@@ -1073,10 +1074,10 @@ def test_FFT_functions_with_input_views():
     lal.CheckMemoryLeaks()
     print("PASSED FFT functions with input views ...", file=sys.stderr)
 
+
 def test_dynamic_array_of_pointers_access():
     """check dynamic array of pointers access
     """
-
     print("checking dynamic array of pointers access ...", file=sys.stderr)
     ap = lal.swig_lal_test_Create_arrayofptrs(3)
     assert ap.length == 3
@@ -1089,10 +1090,10 @@ def test_dynamic_array_of_pointers_access():
     lal.CheckMemoryLeaks()
     print("PASSED dynamic array of pointers access", file=sys.stderr)
 
+
 def test_typemaps_for_strings_and_double_pointers():
     """check typemaps for strings and double pointers
     """
-
     print("checking typemaps for strings and double pointers ...", file=sys.stderr)
     sts = lal.swig_lal_test_struct()
     ptr_ptr, ptr_null_ptr, null_ptr_ptr = lal.swig_lal_test_typemaps_string_ptrptr("abcde", "", None, sts, 0, None)
@@ -1127,10 +1128,10 @@ def test_typemaps_for_strings_and_double_pointers():
     lal.CheckMemoryLeaks()
     print("PASSED typemaps for strings and double pointers", file=sys.stderr)
 
+
 def test_tm_struct_conversions():
     """check 'tm' struct conversions
     """
-
     print("checking 'tm' struct conversions ...", file=sys.stderr)
     gps0 = 989168284
     utc0 = [2011, 5, 11, 16, 57, 49, 2, 131, 0]
@@ -1152,10 +1153,10 @@ def test_tm_struct_conversions():
     lal.CheckMemoryLeaks()
     print("PASSED 'tm' struct conversions", file=sys.stderr)
 
+
 def test_LIGOTimeGPS_operations():
     """check LIGOTimeGPS operations
     """
-
     print("checking LIGOTimeGPS operations ...", file=sys.stderr)
     from lal import LIGOTimeGPS
     t0 = LIGOTimeGPS()
@@ -1255,10 +1256,10 @@ def test_LIGOTimeGPS_operations():
     lal.CheckMemoryLeaks()
     print("PASSED LIGOTimeGPS operations (Python specific)", file=sys.stderr)
 
+
 def test_LALUnit_operations():
     """check LALUnit operations
     """
-
     print("checking LALUnit operations ...", file=sys.stderr)
     u1 = lal.Unit("kg m s^-2")
     assert type(lal.Unit(u1)) is lal.Unit
@@ -1294,10 +1295,10 @@ def test_LALUnit_operations():
     lal.CheckMemoryLeaks()
     print("PASSED LALUnit operations", file=sys.stderr)
 
+
 def test_Python_non_dynamic_structs():
     """check Python non-dynamic structs
     """
-
     print("checking Python non-dynamic structs", file=sys.stderr)
     sts = lal.swig_lal_test_struct()
     sts.n = 1
@@ -1315,10 +1316,10 @@ def test_Python_non_dynamic_structs():
     lal.CheckMemoryLeaks()
     print("PASSED Python non-dynamic structs", file=sys.stderr)
 
+
 def test_Python_pickling():
     """check Python pickling
     """
-
     print("checking Python pickling ...", file=sys.stderr)
     for datatype in ['INT2', 'INT4', 'INT8', 'UINT2', 'UINT4', 'UINT8',
                      'REAL4', 'REAL8', 'COMPLEX8', 'COMPLEX16']:
@@ -1352,10 +1353,10 @@ def test_Python_pickling():
         assert_array_equal(a.data.data, b.data.data)
     print("PASSED Python pickling", file=sys.stderr)
 
+
 def test_Python_dict_to_LALDict_typemap():
     """check Python dict to LALDict typemap
     """
-
     print("checking Python Python dict to LALDict typemap ...", file=sys.stderr)
     pydict = {
         "str": "A string value",
@@ -1386,10 +1387,10 @@ def test_Python_dict_to_LALDict_typemap():
     lal.swig_lal_test_pydict_to_laldict(pydict)
     print("PASSED Python dict to LALDict typemap", file=sys.stderr)
 
+
 def test_Python_conversion_of_NumPy_fixed_width_integer_float_types():
     """check Python conversion of NumPy fixed-width integer/float types
     """
-
     print("checking Python conversion of NumPy fixed-width integer/float types", file=sys.stderr)
     assert lal.swig_lal_test_numpy_int_types(10, numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
     assert lal.swig_lal_test_numpy_int_types(numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)) == 20
