@@ -93,6 +93,52 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformCheckFRef(
   return fRef;
 }
 
+UNUSED static bool IsStrictlyMonotonicallyIncreasing(
+  gsl_vector *v
+)
+{
+  for(size_t i=0; i < v->size - 1; i++)
+    if (gsl_vector_get(v, i+1) <= gsl_vector_get(v, i))
+      return false;
+  return true;
+}
+
+UNUSED static REAL8 NearestNeighborInterpolation(
+  gsl_vector *x,
+  gsl_vector *y,
+  REAL8 xx
+)
+{
+  XLAL_CHECK(x->size == y->size, XLAL_EFAULT);
+  size_t n = x->size;
+
+  // Find index such that x[i] >= xx
+  size_t i = 0;
+  while (i < n) {
+    if (gsl_vector_get(x, i) < xx) {
+      i++;
+      continue;
+    }
+    else
+      break;
+  }
+  if (i > n-1)
+    i = n-1;
+
+  REAL8 yy = gsl_vector_get(y, i);
+
+  // Print error estimates
+  REAL8 abs_err_x = fabs(xx - gsl_vector_get(x, i));
+  XLALPrintInfo("%s : abs_err_x = %g\n", __func__, abs_err_x);
+  REAL8 abs_err_y;
+  if ((i>0) && (i < n)) {
+    abs_err_y = 0.5 * (fabs(yy - gsl_vector_get(y, i-1)) + fabs(yy - gsl_vector_get(y, i+1)));
+    XLALPrintInfo("%s : abs_err_y ~ %g\n", __func__, abs_err_y);
+  }
+
+  return yy;
+}
+
 UNUSED static REAL8 XLALSimInspiralNRWaveformGetRefTimeFromRefFreq(
   UNUSED LALH5File* file,
   UNUSED REAL8 fRef
@@ -113,19 +159,23 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformGetRefTimeFromRefFreq(
   ReadHDF5RealVectorDataset(curr_group, "X", &omega_t_vec);
   ReadHDF5RealVectorDataset(curr_group, "Y", &omega_w_vec);
   XLALH5FileClose(curr_group);
-  acc = gsl_interp_accel_alloc();
-  spline = gsl_spline_alloc(gsl_interp_cspline, omega_w_vec->size);
-  INT4 status = gsl_spline_init(spline, omega_w_vec->data, omega_t_vec->data,
-                  omega_t_vec->size);
-  XLAL_CHECK(status == GSL_SUCCESS, XLAL_FAILURE, "Failed gsl_spline_init evaluation. Probably omega_w is not monotonically increasing.\n");
-  ref_time = gsl_spline_eval(spline, fRef * (LAL_MTSUN_SI * LAL_PI), acc);
-  if ( isnan(ref_time) ){
-    XLAL_ERROR(XLAL_FAILURE, "Interpolation error: gsl_spline_eval returning nan\n");
+  
+  REAL8 omega_eval = fRef * (LAL_MTSUN_SI * LAL_PI);
+  if (IsStrictlyMonotonicallyIncreasing(omega_w_vec)) {
+    acc = gsl_interp_accel_alloc();
+    spline = gsl_spline_alloc(gsl_interp_cspline, omega_w_vec->size);
+    gsl_spline_init(spline, omega_w_vec->data, omega_t_vec->data,
+                    omega_t_vec->size);
+    ref_time = gsl_spline_eval(spline, omega_eval, acc);
+    gsl_vector_free(omega_t_vec);
+    gsl_vector_free(omega_w_vec);
+    gsl_spline_free(spline);
+    gsl_interp_accel_free(acc);
+  } else {
+    XLALPrintWarning("%s : omega_w_vec is non-monotonic! Falling back to nearest-neighbor interpolation", __func__);
+    ref_time = NearestNeighborInterpolation(omega_w_vec, omega_t_vec, omega_eval);
   }
-  gsl_vector_free(omega_t_vec);
-  gsl_vector_free(omega_w_vec);
-  gsl_spline_free(spline);
-  gsl_interp_accel_free(acc);
+
   return ref_time;
   #endif
 }
@@ -149,19 +199,21 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformGetInterpValueFromGroupAtPoint(
   ReadHDF5RealVectorDataset(curr_group, "X", &curr_t_vec);
   ReadHDF5RealVectorDataset(curr_group, "Y", &curr_y_vec);
   XLALH5FileClose(curr_group);
-  acc = gsl_interp_accel_alloc();
-  spline = gsl_spline_alloc(gsl_interp_cspline, curr_t_vec->size);
-  INT4 status = gsl_spline_init(spline, curr_t_vec->data, curr_y_vec->data,
-                  curr_t_vec->size);
-  XLAL_CHECK(status == GSL_SUCCESS, XLAL_FAILURE, "Failed gsl_spline_init evaluation. Probably omega_w is not monotonically increasing.\n");
-  ret_val = gsl_spline_eval(spline, ref_point, acc);
-  if ( isnan(ret_val) ){
-    XLAL_ERROR(XLAL_FAILURE, "Interpolation error: gsl_spline_eval returning nan. Group name %s\n", groupName);
+  if (IsStrictlyMonotonicallyIncreasing(curr_t_vec)) {
+    acc = gsl_interp_accel_alloc();
+    spline = gsl_spline_alloc(gsl_interp_cspline, curr_t_vec->size);
+    gsl_spline_init(spline, curr_t_vec->data, curr_y_vec->data,
+                    curr_t_vec->size);
+    ret_val = gsl_spline_eval(spline, ref_point, acc);
+    gsl_vector_free(curr_t_vec);
+    gsl_vector_free(curr_y_vec);
+    gsl_spline_free (spline);
+    gsl_interp_accel_free (acc);
+  } else {
+    XLALPrintWarning("%s : curr_t_vec is non-monotonic! Falling back to nearest-neighbor interpolation", __func__);
+    ret_val = NearestNeighborInterpolation(curr_t_vec, curr_y_vec, ref_point);
   }
-  gsl_vector_free(curr_t_vec);
-  gsl_vector_free(curr_y_vec);
-  gsl_spline_free (spline);
-  gsl_interp_accel_free (acc);
+
   return ret_val;
   #endif
 }
@@ -334,10 +386,18 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetDataFromHDF5File(
      * interpolation range is done elsewhere.
      */
     if ((idx == 0) && (massTime < knotsVector->data[0]))
-    {
+  {
       massTime = knotsVector->data[0];
     }
-    (*output)->data[idx] = gsl_spline_eval(spline, massTime, acc);
+    REAL8 t_start = gsl_vector_get(knotsVector, 0);
+     if ((idx == 0) && (massTime < t_start))
+      massTime = t_start;
+     /* Make sure we don't evaluate the spline beyond the end point */
+     REAL8 t_end = gsl_vector_get(knotsVector, knotsVector->size - 1);
+     if (massTime > t_end)
+       massTime = t_end;
+
+     (*output)->data[idx] = gsl_spline_eval(spline, massTime, acc);
   }
 
   gsl_vector_free(knotsVector);
@@ -363,6 +423,8 @@ UNUSED static UINT4 XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(
   #ifndef LAL_HDF5_ENABLED
   XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
   #else
+
+  fprintf(stderr, "XLALSimInspiralNRWaveformGetRotationAnglesFromH5File(): iota = %g phi_ref = %g fRef = %g", inclination, phi_ref, fRef);
 
   /* Compute the angles necessary to rotate from the intrinsic NR source frame
    * into the LAL frame. See DCC-T1600045 for details.
@@ -701,6 +763,9 @@ UNUSED static INT4 XLALSimIMRNRWaveformGetModes(
                                                        &S2x, &S2y, &S2z,
                                                        fRef, m1+m2, file);
   XLAL_CHECK(xlalErrno == 0, XLAL_EFUNC, "XLALSimInspiralNRWaveformGetSpinsFromHDF5FilePointer() failed");
+
+  fprintf(stderr, "NRhdf5 got spins from user\n%.16g,%.16g,%.16g\t%.16g,%.16g,%.16g\n", s1x, s1y, s1z, s2x, s2y, s2z);
+  fprintf(stderr, "NRhdf5 spins at fRef %g Hz should be\n%.16g,%.16g,%.16g\t%.16g,%.16g,%.16g\n", fRef, S1x, S1y, S1z, S2x, S2y, S2z);
 
   if (fabs(S1x - s1x) > 1E-3)
   {
