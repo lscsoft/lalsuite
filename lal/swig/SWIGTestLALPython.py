@@ -1286,7 +1286,10 @@ def test_LALUnit_operations():
     assert int(u1) == 1000
     u1 /= 10000
     assert u1 == 100 * lal.MilliUnit * lal.WattUnit
-    with pytest.raises(TypeError):
+    with pytest.raises((
+        ValueError,  # swig < 4.0.0
+        TypeError,  # swig >= 4.0.0
+    )):
         u1 *= 1.234
     assert u1.norm() == u1
     del u1
