@@ -38,11 +38,11 @@ BuildRequires: swig >= @MIN_SWIG_VERSION@
 BuildRequires: epel-rpm-macros
 BuildRequires: python-srpm-macros
 BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-glue
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-ligo-lw >= @MIN_PYTHON_LIGO_LW_VERSION@
+BuildRequires: python%{python3_pkgversion}-lscsoft-glue
 BuildRequires: python%{python3_pkgversion}-matplotlib
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pillow
@@ -108,12 +108,12 @@ library.
 Summary: Python %{python3_version} Bindings for LALBurst
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-glue
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-ligo-lw
 Requires: python%{python3_pkgversion}-ligo-segments
+Requires: python%{python3_pkgversion}-lscsoft-glue
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-scipy
 Requires: python%{python3_pkgversion}-tqdm
