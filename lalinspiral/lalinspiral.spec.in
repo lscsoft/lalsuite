@@ -42,13 +42,13 @@ BuildRequires: python3-rpm-macros
 BuildRequires: epel-rpm-macros
 BuildRequires: python%{python3_pkgversion}
 BuildRequires: python%{python3_pkgversion}-devel
-BuildRequires: python%{python3_pkgversion}-glue
 BuildRequires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 BuildRequires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 BuildRequires: python%{python3_pkgversion}-ligo-lw
+BuildRequires: python%{python3_pkgversion}-lscsoft-glue
 BuildRequires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 BuildRequires: python%{python3_pkgversion}-pytest
 
@@ -108,7 +108,6 @@ library.
 Summary: Python %{python3_version} bindings for LALInspiral
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
-Requires: python%{python3_pkgversion}-glue
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
 Requires: python%{python3_pkgversion}-lalburst
 Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
@@ -116,6 +115,7 @@ Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
 Requires: python%{python3_pkgversion}-lalburst >= @MIN_LALBURST_VERSION@
 Requires: python%{python3_pkgversion}-ligo-lw
+Requires: python%{python3_pkgversion}-lscsoft-glue
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-tqdm
 Obsoletes: python2-%{name} < 2.0.3-1
