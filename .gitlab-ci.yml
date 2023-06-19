@@ -519,6 +519,9 @@ default:
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
     # NOTE: retry if conda build fails due to corrupted $CONDA_PKGS_DIRS
     - |
+      # loop over chosen configurations
+      for _CONDA_CONFIG in ${CONDA_CONFIG}; do
+      # loop over retry
       for n in 1 2; do
         echo "===== conda ${CONDA_BUILD_CMD:-build}: attempt $n of 2 ====="
         if ( \
@@ -530,7 +533,7 @@ default:
             --error-overdepending \
             --keep-old-work \
             --no-anaconda-upload \
-            --variant-config-files .ci_support/${CONDA_CONFIG}.yaml \
+            --variant-config-files .ci_support/${_CONDA_CONFIG}.yaml \
             <<< ${CONDA_BUILD_ARGS} \
           2>&1 | awk '{print} /appears to be corrupted/ {exit 1}' \
         ); then
@@ -546,7 +549,8 @@ default:
             exit 1
           fi
         fi
-      done
+      done  # retry
+      done  # configs
   after_script:
     # clean cache of old files
     - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
