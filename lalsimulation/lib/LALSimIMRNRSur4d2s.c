@@ -1114,7 +1114,7 @@ static void NRSurrogate_Init_LALDATA(void)
 {
   if (NRSurrogate_IsSetup()) return;
 
-  char *path = XLALFileResolvePathLong(NRSUR4D2S_DATAFILE, PKG_DATA_DIR);
+  char *path = XLAL_FILE_RESOLVE_PATH(NRSUR4D2S_DATAFILE);
 
   if (path==NULL)
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", NRSUR4D2S_DATAFILE);

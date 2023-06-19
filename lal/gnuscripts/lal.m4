@@ -1,6 +1,6 @@
 # lal.m4 - lal specific macros
 #
-# serial 23
+# serial 25
 
 AC_DEFUN([LAL_WITH_DEFAULT_DEBUG_LEVEL],[
   AC_ARG_WITH(
@@ -12,35 +12,6 @@ AC_DEFUN([LAL_WITH_DEFAULT_DEBUG_LEVEL],[
     [with_default_debug_level=1]
   )
   AC_DEFINE_UNQUOTED([LAL_DEFAULT_DEBUG_LEVEL],[${with_default_debug_level}],[Set default value of lalDebugLevel])
-])
-
-AC_DEFUN([LAL_WITH_DATA_PATH],[
-  AC_ARG_WITH(
-    [relative_data_path],
-    AS_HELP_STRING([--with-relative-data-path],[set location relative to liblalsupport.so for LAL data path [default: none]]),
-    [
-      AS_IF([test "x`expr "X${withval}" : ["^\(X\./.*$\)"]`" != "xX${withval}" && test "x`expr "X${withval}" : ["^\(X\.\./.*$\)"]`" != "xX${withval}"],[
-        AC_MSG_ERROR([bad relative path value '${withval}' for --with-relative-data-path])
-      ])
-      AC_DEFINE_UNQUOTED([LAL_RELATIVE_DATA_PATH],["${with_relative_data_path}"],[Set location relative to liblal.so for LAL data path])
-    ]
-  )
-  AC_ARG_WITH(
-    [fallback_data_path],
-    AS_HELP_STRING([--with-fallback-data-path],[use hard-coded fallback location for LAL data path [default: yes]]),
-    [
-      AS_CASE(["${withval}"],
-        [yes],[:],
-        [no],[:],
-        AC_MSG_ERROR([bad value '${withval}' for --with-fallback-data-path])
-      )
-    ],[
-      withval=yes
-    ]
-  )
-  AS_IF([test "X${withval}" = Xyes],[
-    AC_DEFINE_UNQUOTED([LAL_FALLBACK_DATA_PATH],[1],[Use hard-coded fallback location for LAL data path])
-  ])
 ])
 
 AC_DEFUN([LAL_ENABLE_FFTW3_MEMALIGN],

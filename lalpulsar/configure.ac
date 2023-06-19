@@ -101,6 +101,7 @@ LALSUITE_ARG_VAR
 LALSUITE_CHECK_PLATFORM
 LALSUITE_CHECK_GIT_REPO
 LALSUITE_DISTCHECK_CONFIGURE_FLAGS
+LALSUITE_WITH_FALLBACK_DATA_PATH
 
 # nightly build
 LALSUITE_ENABLE_NIGHTLY
@@ -150,8 +151,8 @@ LALSUITE_PROG_COMPILERS
 LALSUITE_CHECK_SIMD
 LALPULSAR_CHECK_ALTIVEC
 
-# install only a minimal set of ephemeris files
-LALPULSAR_INSTALL_MINIMAL_EPHEM
+# choose which ephemeris files to install
+LALPULSAR_WITH_EPHEM
 
 # checks for programs
 AC_PROG_INSTALL
@@ -236,7 +237,6 @@ LALSUITE_ADD_GCC_FLAGS
 AC_SUBST([LDADD], ["\$(top_builddir)/lib/liblalpulsar.la"])
 
 # add extra preprocessor flags
-AM_CPPFLAGS="-DPKG_DATA_DIR='\"\$(pkgdatadir)/\"' ${AM_CPPFLAGS}"
 AM_CPPFLAGS="-I\$(top_builddir)/include ${AM_CPPFLAGS}"
 
 # force headers to be installed in ${includedir}/lal, ignoring library name

@@ -432,6 +432,7 @@ UNUSED static int SEOBNRv5ROMTimeFrequencySetup(
   REAL8 m2SI,                                   // Mass of companion 2 (kg)
   REAL8 chi1,                                   // Aligned spin of companion 1
   REAL8 chi2,                                   // Aligned spin of companion 2
+  REAL8 Mf_start,                               // Starting geometric frequency
   REAL8 *Mf_ROM_min,                            // Lowest geometric frequency for ROM
   REAL8 *Mf_ROM_max                             // Highest geometric frequency for ROM
 );
@@ -468,7 +469,7 @@ UNUSED static void SEOBNRv5HMROM_Init_LALDATA(void)
   // Expect ROM datafile in a directory listed in LAL_DATA_PATH,
 #ifdef LAL_HDF5_ENABLED
 #define datafile ROMDataHDF5
-  char *path = XLALFileResolvePathLong(datafile, PKG_DATA_DIR);
+  char *path = XLAL_FILE_RESOLVE_PATH(datafile);
   if (path==NULL){
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile);
   }
@@ -500,7 +501,7 @@ UNUSED static void SEOBNRv5ROM_Init_LALDATA(void)
   // Expect ROM datafile in a directory listed in LAL_DATA_PATH,
 #ifdef LAL_HDF5_ENABLED
 #define datafile22 ROM22DataHDF5
-  char *path = XLALFileResolvePathLong(datafile22, PKG_DATA_DIR);
+  char *path = XLAL_FILE_RESOLVE_PATH(datafile22);
   if (path==NULL){
     XLAL_ERROR_VOID(XLAL_EIO, "Unable to resolve data file %s in $LAL_DATA_PATH\n", datafile22);
   }
@@ -3026,6 +3027,7 @@ static int SEOBNRv5ROMTimeFrequencySetup(
   REAL8 m2SI,                                   // Mass of companion 2 (kg)
   REAL8 chi1,                                   // Aligned spin of companion 1
   REAL8 chi2,                                   // Aligned spin of companion 2
+  REAL8 Mf_start,                               // Starting geometric frequency
   REAL8 *Mf_ROM_min,                            // Lowest geometric frequency for ROM
   REAL8 *Mf_ROM_max                             // Highest geometric frequency for ROM
 )
@@ -3066,8 +3068,8 @@ static int SEOBNRv5ROMTimeFrequencySetup(
   SEOBNRv5ROM_Init_LALDATA();
 #endif
 
-  int nModes = 1; /* 22 mode only */
-  int nk_max = -1; /* Default value */
+  UINT4 nModes = 1; /* 22 mode only */
+  UINT4 nk_max = -1; /* Default value */
   // Get the splines for the amplitude and phase of the modes
   AmpPhaseSplineData **ampPhaseSplineData = NULL;
   AmpPhaseSplineData_Init(&ampPhaseSplineData, nModes);
@@ -3075,7 +3077,69 @@ static int SEOBNRv5ROMTimeFrequencySetup(
     ampPhaseSplineData, q, chi1, chi2, nk_max, nModes,romdataset);
   if(retcode != XLAL_SUCCESS) XLAL_ERROR(retcode);
 
-  *spline_phi = ampPhaseSplineData[0]->spline_phi;
+  // Setup hybridized phase splines as in SEOBNRv5HMROMCoreModesHybridized
+
+  // Safety factors for defining the hybridization window
+  const double f_hyb_win_lo_fac = 1.01;
+  const double f_hyb_win_hi_fac = 2.0;
+
+  /* Generate PN phases */
+  double PN_Mf_low = fmin(Mf_start / 2.0, Mf_low_21); // Start at half of the starting frequency to avoid gsl interpolation errors in the (2,1) mode; at least starting frequency of the 22 mode.
+  double PN_Mf_high = 1.1 * f_hyb_win_hi_fac * Mf_low_55; // to have some overlap with the shortest ROM mode
+
+  gsl_vector *Mfs = NULL;
+  const double acc = 1e-4; // Hardcoded spline interpolation accuracy target
+  retcode = BuildInspiralGeomFrequencyGrid(&Mfs, PN_Mf_low, PN_Mf_high, q, acc);
+  if(retcode != XLAL_SUCCESS) XLAL_ERROR(retcode);
+
+  // Arrays for storing phase spline for each mode
+  gsl_spline *hybrid_spline_phi[nModes];
+  for (UINT4 i=0; i < nModes; i++) {
+    hybrid_spline_phi[i] = NULL;
+  }
+
+  // Alignment constants, time and phase shift
+  // Computed once for (2,-2), then propagated to other modes (with possible pi)
+  REAL8 Deltat_22_align = 0.;
+  REAL8 Deltaphi_22_align = 0.;
+
+  // Loop over all modes and hybridize
+  for (UINT4 k=0; k < nModes; k++) {
+    double f_hyb_win_lo = Mf_low_lm_v5hm[k] * f_hyb_win_lo_fac;
+    double f_hyb_win_hi = Mf_low_lm_v5hm[k] * f_hyb_win_hi_fac;
+    if (k==0)
+      XLALPrintInfo("%s : SEOBNRv5HM_ROM hybridization window for (2,2) mode: Mf in [%g, %g]\n",
+      __func__, f_hyb_win_lo, f_hyb_win_hi);
+    int modeL = lmModes_v5hm[k][0];
+    int modeM = lmModes_v5hm[k][1];
+
+    gsl_vector *PNphase = NULL;
+
+    // We get q >= 1 which is consistent with the TF2 wrapper functions
+    retcode |= TaylorF2Phasing(Mtot, q, chi1, chi2, modeL, modeM, Mfs, &PNphase);
+    if(retcode != 0) {
+       gsl_vector_free(PNphase);
+       gsl_vector_free(Mfs);
+       XLAL_ERROR(retcode);
+    }
+
+    // Hybridize phase
+    if (!(modeL==2 && modeM==2)) {
+      XLALPrintError ("Only the (2,2) mode is used.\n");
+      XLAL_ERROR(XLAL_EFUNC);
+    }
+    // Hybridize (2,-2) and output time and phase shift
+    hybridize_ROM_with_PN_phase_output_align(
+      &hybrid_spline_phi[k],
+      &Deltat_22_align,
+      &Deltaphi_22_align,
+      ampPhaseSplineData[k],
+      Mfs, PNphase,
+      f_hyb_win_lo, f_hyb_win_hi
+    );
+  }
+
+  *spline_phi = hybrid_spline_phi[0];
   *acc_phi = ampPhaseSplineData[0]->acc_phi;
 
   // lowest allowed geometric frequency for ROM
@@ -3127,8 +3191,10 @@ int XLALSimIMRSEOBNRv5ROMTimeOfFrequency(
   gsl_interp_accel *acc_phi;
   double Mf_final, Mtot_sec;
   double Mf_ROM_min, Mf_ROM_max;
+  double Mf = frequency * (m1SI + m2SI) * LAL_MTSUN_SI / LAL_MSUN_SI;
+
   int ret = SEOBNRv5ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final,
-                                          &Mtot_sec, m1SI, m2SI, chi1, chi2,
+                                          &Mtot_sec, m1SI, m2SI, chi1, chi2, Mf, 
                                           &Mf_ROM_min, &Mf_ROM_max);
   if(ret != 0)
     XLAL_ERROR(ret);
@@ -3137,8 +3203,7 @@ int XLALSimIMRSEOBNRv5ROMTimeOfFrequency(
   double t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI); // t_corr / M
   //XLAL_PRINT_INFO("t_corr[s] = %g\n", t_corr * Mtot_sec);
 
-  double Mf = frequency * Mtot_sec;
-  if (Mf < Mf_ROM_min || Mf > Mf_ROM_max || Mf > Mf_final) {
+  if (Mf > Mf_ROM_max || Mf > Mf_final) {
     gsl_spline_free(spline_phi);
     gsl_interp_accel_free(acc_phi);
     XLAL_ERROR(XLAL_EDOM, "Frequency %g Hz (Mf=%g) is outside allowed range.\n"

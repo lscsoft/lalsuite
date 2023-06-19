@@ -234,7 +234,6 @@ default:
   extends:
     - .rhel:rpm
     - .build-from-tarball
-  image: igwn/base:el7-testing
   variables:
     # disable repos we don't use
     DISABLE_REPOS: "htcondor osg"
@@ -269,7 +268,7 @@ default:
     - rpmbuild -ts --define "_topdir ${RPM_BUILD_TOPDIR}" ${TARBALL}
     - SRPM=${RPM_BUILD_TOPDIR}/SRPMS/${PACKAGE}-*.src.rpm
     # install build dependencies
-    - yum-builddep -y -q ${SRPM}
+    - yum-builddep -y ${SRPM}
     # print installed packages
     - yum list installed --quiet
     # build binary rpms and print details of what we got
@@ -325,6 +324,16 @@ default:
     - !reference [.ci-nightly-deploy, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-docker, rules]
+
+.rpmbuild:el7:
+  extends:
+    - .rpmbuild
+  image: igwn/base:el7-testing
+
+.rpmbuild:el8:
+  extends:
+    - .rpmbuild
+  image: igwn/base:el8-testing
 
 # -- debian
 
@@ -509,15 +518,36 @@ default:
     - export CI_COMMIT_TAG=${CI_COMMIT_TAG:-}
     # build packages
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
-    - xargs -t conda ${CONDA_BUILD_CMD:-build}
-          recipe/
-          --dirty
-          --error-overlinking
-          --error-overdepending
-          --keep-old-work
-          --no-anaconda-upload
-          --variant-config-files .ci_support/${CONDA_CONFIG}.yaml
-          <<< ${CONDA_BUILD_ARGS}
+    # NOTE: retry if conda build fails due to corrupted $CONDA_PKGS_DIRS
+    - |
+      for n in 1 2; do
+        echo "===== conda ${CONDA_BUILD_CMD:-build}: attempt $n of 2 ====="
+        if ( \
+          set -o pipefail; \
+          xargs -t conda ${CONDA_BUILD_CMD:-build} \
+            recipe/ \
+            --dirty \
+            --error-overlinking \
+            --error-overdepending \
+            --keep-old-work \
+            --no-anaconda-upload \
+            --variant-config-files .ci_support/${CONDA_CONFIG}.yaml \
+            <<< ${CONDA_BUILD_ARGS} \
+          2>&1 | awk '{print} /appears to be corrupted/ {exit 1}' \
+        ); then
+          echo "----- conda ${CONDA_BUILD_CMD:-build}: success -----"
+          break
+        else
+          echo "... output from conda ${CONDA_BUILD_CMD:-build} truncated"
+          if [ $n -eq 1 ] && [ "X${CONDA_PKGS_DIRS}" != X ]; then
+            echo "----- conda ${CONDA_BUILD_CMD:-build}: possibly ${CONDA_PKGS_DIRS} is corrupted, deleting and retrying -----"
+            rm -rf ${CONDA_PKGS_DIRS}
+          else
+            echo "----- conda ${CONDA_BUILD_CMD:-build}: something else is corrupted, failing -----"
+            exit 1
+          fi
+        fi
+      done
   after_script:
     # clean cache of old files
     - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
@@ -610,9 +640,14 @@ tarball:lal:
   needs:
     - tarball:lal
 
-lal:rpm:
+lal:rpm-el7:
   extends:
-     - .rpmbuild
+     - .rpmbuild:el7
+     - .lal
+
+lal:rpm-el8:
+  extends:
+     - .rpmbuild:el8
      - .lal
 
 lal:deb:
@@ -644,13 +679,21 @@ lal:conda:mkl:
 .lalframe:
   stage: LALFrame
 
-lalframe:rpm:
+lalframe:rpm-el7:
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .lalframe
   needs:
     - tarballs
-    - lal:rpm
+    - lal:rpm-el7
+
+lalframe:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalframe
+  needs:
+    - tarballs
+    - lal:rpm-el8
 
 lalframe:deb:
   extends:
@@ -676,13 +719,21 @@ lalframe:conda:
 .lalmetaio:
   stage: LALMetaIO
 
-lalmetaio:rpm:
+lalmetaio:rpm-el7:
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .lalmetaio
   needs:
     - tarballs
-    - lal:rpm
+    - lal:rpm-el7
+
+lalmetaio:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalmetaio
+  needs:
+    - tarballs
+    - lal:rpm-el8
 
 lalmetaio:deb:
   extends:
@@ -708,13 +759,21 @@ lalmetaio:conda:
 .lalsimulation:
   stage: LALSimulation
 
-lalsimulation:rpm:
+lalsimulation:rpm-el7:
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .lalsimulation
   needs:
     - tarballs
-    - lal:rpm
+    - lal:rpm-el7
+
+lalsimulation:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalsimulation
+  needs:
+    - tarballs
+    - lal:rpm-el8
 
 lalsimulation:deb:
   extends:
@@ -742,15 +801,25 @@ lalsimulation:conda:
 .lalburst:
   stage: LALBurst
 
-lalburst:rpm:
+lalburst:rpm-el7:
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .lalburst
   needs:
     - tarballs
-    - lal:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
+    - lal:rpm-el7
+    - lalmetaio:rpm-el7
+    - lalsimulation:rpm-el7
+
+lalburst:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalburst
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
 
 lalburst:deb:
   extends:
@@ -780,17 +849,29 @@ lalburst:conda:
 .lalinspiral:
   stage: LALInspiral
 
-lalinspiral:rpm:
+lalinspiral:rpm-el7:
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .lalinspiral
   needs:
     - tarballs
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
+    - lal:rpm-el7
+    - lalframe:rpm-el7
+    - lalmetaio:rpm-el7
+    - lalsimulation:rpm-el7
+    - lalburst:rpm-el7
+
+lalinspiral:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalinspiral
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
 
 lalinspiral:deb:
   extends:
@@ -824,18 +905,31 @@ lalinspiral:conda:
 .lalinference:
   stage: LALInference
 
-lalinference:rpm:
+lalinference:rpm-el7:
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .lalinference
   needs:
     - tarballs
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalinspiral:rpm
+    - lal:rpm-el7
+    - lalframe:rpm-el7
+    - lalmetaio:rpm-el7
+    - lalsimulation:rpm-el7
+    - lalburst:rpm-el7
+    - lalinspiral:rpm-el7
+
+lalinference:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalinference
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
 
 lalinference:deb:
   extends:
@@ -871,19 +965,33 @@ lalinference:conda:
 .lalpulsar:
   stage: LALPulsar
 
-lalpulsar:rpm:
+lalpulsar:rpm-el7:
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .lalpulsar
   needs:
     - tarballs
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalinspiral:rpm
-    - lalinference:rpm
+    - lal:rpm-el7
+    - lalframe:rpm-el7
+    - lalmetaio:rpm-el7
+    - lalsimulation:rpm-el7
+    - lalburst:rpm-el7
+    - lalinspiral:rpm-el7
+    - lalinference:rpm-el7
+
+lalpulsar:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalpulsar
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
 
 lalpulsar:deb:
   extends:
@@ -921,20 +1029,35 @@ lalpulsar:conda:
 .lalapps:
   stage: LALApps
 
-lalapps:rpm:
+lalapps:rpm-el7:
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .lalapps
   needs:
     - tarballs
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalinspiral:rpm
-    - lalinference:rpm
-    - lalpulsar:rpm
+    - lal:rpm-el7
+    - lalframe:rpm-el7
+    - lalmetaio:rpm-el7
+    - lalsimulation:rpm-el7
+    - lalburst:rpm-el7
+    - lalinspiral:rpm-el7
+    - lalinference:rpm-el7
+    - lalpulsar:rpm-el7
+
+lalapps:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .lalapps
+  needs:
+    - tarballs
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
+    - lalpulsar:rpm-el8
 
 lalapps:deb:
   extends:
@@ -1018,6 +1141,7 @@ lalapps:conda:py39:
   - ${PYTHON} -m venv test
   - source test/bin/activate
   - python -m pip install --upgrade pip
+  - python -m pip install solar_system_ephemerides
   - python -m pip install wheelhouse/*
   # check metadata
   - python -m pip show lalsuite
@@ -1047,16 +1171,16 @@ lalapps:conda:py39:
     - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
     # Build wheel
     - ./00boot
+    - SSE="solar_system_ephemerides/ephemerides"
     - ./configure
           ${ENABLE_NIGHTLY}
-          --with-relative-data-path="../lalapps/data"
-          --without-fallback-data-path
+          --with-fallback-data-path="../lalapps/data:../${SSE}/earth:../${SSE}/sun:../${SSE}/time"
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
           --enable-python
           --enable-swig-python
-          --enable-minimal-ephem
+          --without-ephem
           PYTHON=${PYTHON}
     - make -j${CPU_COUNT} wheel
     # Bundle and fix up dependent shared libraries
@@ -1086,16 +1210,16 @@ lalapps:conda:py39:
     - python -m pip list installed
     # Build wheel
     - ./00boot
+    - SSE="solar_system_ephemerides/ephemerides"
     - ./configure
           ${ENABLE_NIGHTLY}
-          --with-relative-data-path="../../lalapps/data"
-          --without-fallback-data-path
+          --with-fallback-data-path="../../lalapps/data:../../${SSE}/earth:../../${SSE}/sun:../../${SSE}/time"
           --disable-doxygen
           --disable-swig-octave
           --enable-mpi
           --enable-python
           --enable-swig-python
-          --enable-minimal-ephem
+          --without-ephem
           PYTHON=$(which python)
           LDFLAGS=-Wl,-headerpad_max_install_names
     - make -j${CPU_COUNT} wheel
@@ -1220,7 +1344,7 @@ wheel:cp311-cp311-macos-arm64:
 .long-test-job:
   image: igwn/lalsuite-dev:el7-testing
   extends:
-    - .rpmbuild
+    - .rpmbuild:el7
     - .integration-tests
   before_script:
     # init yum stuff from the template
@@ -1255,13 +1379,13 @@ lalinference_testjob:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
   needs:
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalinspiral:rpm
-    - lalinference:rpm
+    - lal:rpm-el7
+    - lalframe:rpm-el7
+    - lalmetaio:rpm-el7
+    - lalsimulation:rpm-el7
+    - lalburst:rpm-el7
+    - lalinspiral:rpm-el7
+    - lalinference:rpm-el7
   artifacts:
     expire_in: 18h
     paths:
@@ -1285,17 +1409,20 @@ lalpulsar_longtests:
           --enable-python
           --enable-swig-python
     - make -j${CPU_COUNT}
+    # test finding data files
+    - make install
+    - env LAL_DEBUG_LEVEL=info lalpulsar_PrintDetectorState --detector H1 --Alpha 4.65 --Delta -0.51 --timeGPS 1100000000 >/dev/null
     # run long-running tests under bin/longtests/
     - make -j${CPU_COUNT} check -C bin/longtests/ LONGTESTS=1
   needs:
     - tarballs
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalinspiral:rpm
-    - lalinference:rpm
+    - lal:rpm-el7
+    - lalframe:rpm-el7
+    - lalmetaio:rpm-el7
+    - lalsimulation:rpm-el7
+    - lalburst:rpm-el7
+    - lalinspiral:rpm-el7
+    - lalinference:rpm-el7
   artifacts:
     # upload some files to debug failures
     paths:
@@ -1335,20 +1462,9 @@ top-level:pulsar:
   stage: upgrade tests
   artifacts: {}
 
-upgrade:rpm:el7:
+.upgrade:rpm:
   extends:
-    - .rpmbuild
     - .upgrade-test
-  needs:
-    - lal:rpm
-    - lalframe:rpm
-    - lalmetaio:rpm
-    - lalsimulation:rpm
-    - lalburst:rpm
-    - lalinspiral:rpm
-    - lalinference:rpm
-    - lalpulsar:rpm
-    - lalapps:rpm
   script:
     # install latest release
     - yum -y -q install lal* python*-lal* --exclude lalsuite*
@@ -1367,6 +1483,36 @@ upgrade:rpm:el7:
       EOF
     # install new packages
     - yum -y upgrade
+
+upgrade:rpm-el7:
+  extends:
+    - .rpmbuild:el7
+    - .upgrade:rpm
+  needs:
+    - lal:rpm-el7
+    - lalframe:rpm-el7
+    - lalmetaio:rpm-el7
+    - lalsimulation:rpm-el7
+    - lalburst:rpm-el7
+    - lalinspiral:rpm-el7
+    - lalinference:rpm-el7
+    - lalpulsar:rpm-el7
+    - lalapps:rpm-el7
+
+upgrade:rpm-el8:
+  extends:
+    - .rpmbuild:el8
+    - .upgrade:rpm
+  needs:
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
+    - lalpulsar:rpm-el8
+    - lalapps:rpm-el8
 
 upgrade:debian:bullseye:
   extends:
@@ -1456,13 +1602,10 @@ upgrade:conda:linux:
     - !reference [.ci-platform, rules]
     - !reference [.ci-merge-build, rules]
 
-platform:debian:bullseye:
+platform:debian:buster:
   extends:
     - .platform-test
-  variables:
-    # disable the octave bindings as the version of SWIG on bullseye doesn't support the version of Octave
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig-python --enable-python"
-  image: igwn/lalsuite-dev:bullseye
+  image: igwn/lalsuite-dev:buster
 
 .platform-test:conda:
   extends:
