@@ -1,18 +1,21 @@
 #include <stddef.h>
 #include <lal/LALDatatypes.h>
+#include <lal/LALDetectors.h>
 #include <lal/LALDict.h>
 
-typedef struct tagLALSimInspiralInjectionSequence {
-    size_t length;
-    LALDict **data;
-} LALSimInspiralInjectionSequence;
+struct tagLALSimInspiralInjectionSequence;
+typedef struct tagLALSimInspiralInjectionSequence LALSimInspiralInjectionSequence;
 
 void XLALSimInspiralDestroyInjectionSequence(LALSimInspiralInjectionSequence *sequence);
 LALSimInspiralInjectionSequence * XLALSimInspiralCreateInjectionSequence(size_t length);
 LALSimInspiralInjectionSequence * XLALSimInspiralCutInjectionSequence(const LALSimInspiralInjectionSequence *sequence, size_t first, size_t length);
 LALSimInspiralInjectionSequence * XLALSimInspiralCopyInjectionSequence(const LALSimInspiralInjectionSequence *sequence);
-void XLALSimInspiralShiftInjectionSequence(LALSimInspiralInjectionSequence *sequence, ssize_t count);
-LALSimInspiralInjectionSequence * XLALSimInspiralResizeInjectionSequence(LALSimInspiralInjectionSequence *sequence, ssize_t first, size_t length);
+void XLALSimInspiralShiftInjectionSequence(LALSimInspiralInjectionSequence *sequence, int count);
+LALSimInspiralInjectionSequence * XLALSimInspiralResizeInjectionSequence(LALSimInspiralInjectionSequence *sequence, int first, size_t length);
+
+size_t LALSimInspiralInjectionSequenceLength(LALSimInspiralInjectionSequence *sequence);
+LALDict * LALSimInspiralInjectionSequenceGet(LALSimInspiralInjectionSequence *sequence, int pos);
+int LALSimInspiralInjectionSequenceSet(LALSimInspiralInjectionSequence *sequence, LALDict *inparmas, int pos);
 
 LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceFromH5File(const char *fname);
 int XLALSimInspiralInjectionSequenceToH5File(const LALSimInspiralInjectionSequence *sequence, const char *fname);

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
 #include <math.h>
 #include <lal/LALStdlib.h>
 #include <lal/LALConstants.h>
@@ -21,6 +22,10 @@
 #define UNUSED
 #endif
 
+struct tagLALSimInspiralInjectionSequence {
+    size_t length;
+    LALDict **data;
+};
 
 void XLALSimInspiralDestroyInjectionSequence(LALSimInspiralInjectionSequence *sequence)
 {
@@ -79,7 +84,7 @@ LALSimInspiralInjectionSequence * XLALSimInspiralCopyInjectionSequence(const LAL
     return XLALSimInspiralCutInjectionSequence(sequence, 0, sequence->length);
 }
 
-void XLALSimInspiralShiftInjectionSequence(LALSimInspiralInjectionSequence *sequence, ssize_t count)
+void XLALSimInspiralShiftInjectionSequence(LALSimInspiralInjectionSequence *sequence, int count)
 {
     size_t abscount = count > 0 ? count : -count;
 
@@ -111,7 +116,7 @@ void XLALSimInspiralShiftInjectionSequence(LALSimInspiralInjectionSequence *sequ
     return;
 }
 
-LALSimInspiralInjectionSequence * XLALSimInspiralResizeInjectionSequence(LALSimInspiralInjectionSequence *sequence, ssize_t first, size_t length)
+LALSimInspiralInjectionSequence * XLALSimInspiralResizeInjectionSequence(LALSimInspiralInjectionSequence *sequence, int first, size_t length)
 {
     LALDict **data;
     XLAL_CHECK_NULL(sequence, XLAL_EFAULT);
@@ -120,7 +125,7 @@ LALSimInspiralInjectionSequence * XLALSimInspiralResizeInjectionSequence(LALSimI
     if (length > sequence->length) { /* need to increase memory */
         data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
         XLAL_CHECK_NULL(data, XLAL_EFUNC);
-        for (size_t i = sequence->length; i < length - sequence->length; ++i)
+        for (size_t i = sequence->length; i < length; ++i)
             data[i] = XLALCreateDict();
         sequence->data = data;
         sequence->length = length;
@@ -142,6 +147,34 @@ LALSimInspiralInjectionSequence * XLALSimInspiralResizeInjectionSequence(LALSimI
     }
 
     return sequence;
+}
+
+size_t LALSimInspiralInjectionSequenceLength(LALSimInspiralInjectionSequence *sequence)
+{
+    XLAL_CHECK(sequence, XLAL_EFAULT);
+    return sequence->length;
+}
+
+LALDict * LALSimInspiralInjectionSequenceGet(LALSimInspiralInjectionSequence *sequence, int pos)
+{
+    XLAL_CHECK_NULL(sequence, XLAL_EFAULT);
+    XLAL_CHECK_NULL(sequence->data || sequence->length == 0, XLAL_EINVAL);
+    if (pos < 0) /* negative positions are from end */
+        pos += sequence->length;
+    XLAL_CHECK_NULL(pos >= 0 && (unsigned)pos < sequence->length, XLAL_EBADLEN);
+    return XLALDictDuplicate(sequence->data[pos]);
+}
+
+int LALSimInspiralInjectionSequenceSet(LALSimInspiralInjectionSequence *sequence, LALDict *injparams, int pos)
+{
+    XLAL_CHECK(sequence, XLAL_EFAULT);
+    XLAL_CHECK(sequence->data || sequence->length == 0, XLAL_EINVAL);
+    if (pos < 0) /* negative positions are from end */
+        pos += sequence->length;
+    XLAL_CHECK(pos >= 0 && (unsigned)pos < sequence->length, XLAL_EBADLEN);
+    XLALDestroyDict(sequence->data[pos]);
+    sequence->data[pos] = XLALDictDuplicate(injparams);
+    return 0;
 }
 
 /* translates from the injection file parameter names
