@@ -18,12 +18,22 @@ Error tracebacks, and screenshots (if applicable) are very helpful.
 <details>
 <summary>System information</summary>
 <!-- please run run the following command in your terminal and include the output below:
-python -c "import platform, socket, sys; system = platform.system(); print('\nPython:           {}'.format(sys.version.splitlines()[0])); print('Operating system: {}'.format(' '.join(platform.linux_distribution()) if system == 'Linux' else 'macOS {}'.format(platform.mac_ver()[0]))); print('Hostname:         {}'.format(socket.getfqdn()))"
+python3 -c "
+import platform, socket, sys
+system = platform.system()
+print(f'Hostname          {socket.getfqdn()}');
+try:
+    OS = platform.freedesktop_os_release()['PRETTY_NAME']
+except Exception:
+    OS = ''
+print(f'Platform:         {platform.platform()} ({OS})')
+print(f'Python:           {sys.version.splitlines()[0]}');
+"
 -->
 
 ```
 Hostname:
-Operating system:
+Platform:
 Python version:
 ```
 
