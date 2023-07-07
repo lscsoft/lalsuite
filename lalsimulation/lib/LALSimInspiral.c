@@ -939,7 +939,7 @@ SphHarmTimeSeries* XLALSimInspiralTDModesFromPolarizations(
       XLAL_ERROR_NULL(XLAL_EINVAL);
     }
 
-    REAL8TimeSeries *hplus, *hcross;
+    REAL8TimeSeries *hplus = NULL, *hcross = NULL;
     COMPLEX16TimeSeries *h22,*h2m2;
     SphHarmTimeSeries *hlm;
     UINT4 j;
