@@ -24,7 +24,7 @@ Optional dependencies, which can be installed as ``pip install lalsuite[option]`
 
 * ``lalinference`` (pulls in
   `gwdatafind <https://pypi.org/project/gwdatafind/>`_
-   and `gwpy <https://pypi.org/project/gwpy/>`_)
+  and `gwpy <https://pypi.org/project/gwpy/>`_)
 * ``lalpulsar`` (pulls in
   `solar_system_ephemerides <https://pypi.org/project/solar-system-ephemerides/>`_
   to provide ephemeris files which, until LALSuite 7.15, were still included in
