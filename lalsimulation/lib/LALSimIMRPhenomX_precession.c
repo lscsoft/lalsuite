@@ -312,8 +312,8 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   /* Store pPrec->chiTot_perp to pWF so that it can be used in XCP modifications (PNRUseTunedCoprec) */
   pWF->chiTot_perp = pPrec->chiTot_perp;
 
-  /* disable tuned angles and mode asymmetries in aligned-spin limit */
-  if((pPrec->chi1_perp < 0.001 )&&(pPrec->chi2_perp < 0.001)&&(pPrec->IMRPhenomXPNRUseTunedAngles == 1)&&(pWF->PNR_SINGLE_SPIN != 1)){
+  /* disable tuned PNR angles, tuned coprec and mode asymmetries in low in-plane spin limit */
+  if((chi_in_plane < 1e-7)&&(pPrec->IMRPhenomXPNRUseTunedAngles == 1)&&(pWF->PNR_SINGLE_SPIN != 1)){
     XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedAngles(lalParams, 0);
     PNRUseTunedAngles = 0;
     pPrec->IMRPhenomXPNRUseTunedAngles = 0;
@@ -371,11 +371,11 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   pPrec->PNR_q_window_upper = 0.0;
   pPrec->PNR_chi_window_lower = 0.0;
   pPrec->PNR_chi_window_upper = 0.0;
-  pPrec->PNRInspiralScaling = 0;
+  // pPrec->PNRInspiralScaling = 0;
 
   UINT4 status = IMRPhenomX_PNR_GetAndSetPNRVariables(pWF, pPrec);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_GetAndSetPNRVariables failed in IMRPhenomXGetAndSetPrecessionVariables.\n");
-
+  
   pPrec->alphaPNR = 0.0;
   pPrec->betaPNR = 0.0;
   pPrec->gammaPNR = 0.0;

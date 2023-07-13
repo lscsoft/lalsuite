@@ -103,13 +103,20 @@ extern "C"
     if (chi_mag >= 1.0e-6)
     {
       costheta = chipar / chi_mag;
-      theta_antisymmetric = acos(chipar / chi_mag_antisymmetric);
     }
     else
     {
       costheta = 0.;
-      theta_antisymmetric = 0;
     }
+    if (chi_mag_antisymmetric >= 1.0e-6)
+    {
+      theta_antisymmetric = acos(chipar / chi_mag_antisymmetric);
+    }
+    else
+    {
+      theta_antisymmetric = 0.0;
+    }
+
     pPrec->costheta_singleSpin = costheta;
     pPrec->theta_antisymmetric = theta_antisymmetric; 
 
@@ -739,6 +746,12 @@ extern "C"
     /* first check to see if nothing needs doing */
     if ((pPrec->J0 < 1e-10))
     {
+      return XLAL_SUCCESS;
+    }
+    REAL8 chi_in_plane = sqrt(pPrec->chi1x*pPrec->chi1x+pPrec->chi1y*pPrec->chi1y+pPrec->chi2x*pPrec->chi2x+pPrec->chi2y*pPrec->chi2y);
+    if (chi_in_plane < 1e-3)
+    {
+      pPrec->alpha_offset -= pPrec->alpha0;
       return XLAL_SUCCESS;
     }
 

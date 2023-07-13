@@ -355,7 +355,7 @@ def test_IMRPhenomXO4a():
 
     """
 
-    expected_result = np.array([1246.1862077565675,  206.07973428907488,  932.2395300573276,  325.2333580418694])
+    expected_result = np.array([1335.4548650055917,  327.35598432690784,  958.1145964826108,  327.67901031324624])
 
     new_result  =  np.array(gen_test_data(0.5, lalsimulation.IMRPhenomXO4a, [[2,2],[2,1],[3,3],[4,4]]))
 
