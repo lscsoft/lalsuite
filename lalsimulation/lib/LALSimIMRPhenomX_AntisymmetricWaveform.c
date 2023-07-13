@@ -332,6 +332,11 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
        lalParams);
      XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomX_PNR_GeneratePNRAngles failed.\n");
 
+      IMRPhenomX_UsefulPowers powers_of_MfRef;
+      IMRPhenomX_Initialize_Powers(&powers_of_MfRef,pWF->MfRef);
+
+     REAL8 phiref22 = -inveta*IMRPhenomX_Phase_22(pWF->MfRef, &powers_of_MfRef, pPhase22, pWF) - linb*pWF->MfRef - lina + 2.0*pWF->phi0 + LAL_PI_4;
+
     for (UINT4 idx = 0; idx <freqs->length; idx++)
     {
       double Mf    = pWF->M_sec * freqs->data[idx];
@@ -358,7 +363,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
       }
       /* Scale phase by 1/eta and apply phase and time shifts */
       phi  *= inveta;
-      phi  += linb*Mf + lina + pWF->phifRef;
+      phi  += linb*Mf + lina + phiref22;
 
       /* Get smmetric amplitude */
       if(Mf < fAmpIN)
@@ -572,18 +577,24 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
     }
     else if(MfT > fPhaseIM)
     {
-      phi_der_MfT = IMRPhenomX_Ringdown_Phase_22_Ansatz(MfT, &powers_of_MfT, pWF, pPhase22);
+      phi_der_MfT = IMRPhenomX_Ringdown_Phase_22_Ansatz(MfT, &powers_of_MfT, pWF, pPhase22) + C2RD;
       phi_MfT = IMRPhenomX_Ringdown_Phase_22_AnsatzInt(MfT, &powers_of_MfT, pWF, pPhase22) + C1RD + (C2RD * MfT);
     }
     else
     {
-      phi_der_MfT = IMRPhenomX_Intermediate_Phase_22_Ansatz(MfT, &powers_of_MfT, pWF, pPhase22);
+      phi_der_MfT = IMRPhenomX_Intermediate_Phase_22_Ansatz(MfT, &powers_of_MfT, pWF, pPhase22) + C2IM;
       phi_MfT = IMRPhenomX_Intermediate_Phase_22_AnsatzInt(MfT, &powers_of_MfT, pWF, pPhase22) + C1IM + (C2IM * MfT);
     }
 
     /* Scale phase by 1/eta and apply phase and time shifts */
+      IMRPhenomX_UsefulPowers powers_of_MfRef;
+      IMRPhenomX_Initialize_Powers(&powers_of_MfRef,pWF->MfRef);
+     REAL8 phiref22 = -inveta*IMRPhenomX_Phase_22(pWF->MfRef, &powers_of_MfRef, pPhase22, pWF) - linb*pWF->MfRef - lina + 2.0*pWF->phi0 + LAL_PI_4;
+
+    phi_der_MfT *= inveta;
+    phi_der_MfT += linb;
     phi_MfT  *= inveta;
-    phi_MfT  += linb*MfT + lina + pWF->phifRef;    
+    phi_MfT  += linb*MfT + lina + phiref22;    
 
     *A0 = phi_der_MfT/2 - alpha_der_MfT;
     *phi_A0 = pPrec-> alpha_offset;

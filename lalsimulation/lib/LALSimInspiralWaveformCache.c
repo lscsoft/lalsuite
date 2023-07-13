@@ -1621,6 +1621,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
                     /* XO4 uses previous version of XHM */
                     XLALSimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(LALparams_aux, 122019);
 
+		    
                     /* Toggle on PNR angles */
                     if(!XLALDictContains(LALparams_aux, "PNRUseTunedAngles")){
                         XLALSimInspiralWaveformParamsInsertPhenomXPNRUseTunedAngles(LALparams_aux, 1);
@@ -1638,6 +1639,11 @@ int XLALSimInspiralChooseFDWaveformSequence(
                     if(!XLALDictContains(LALparams_aux, "AntisymmetricWaveform")){
                         XLALSimInspiralWaveformParamsInsertPhenomXAntisymmetricWaveform(LALparams_aux, 1);
                     }
+
+                /* Toggle on reviewed PrecVersion */
+                if(!XLALDictContains(LALparams_aux, "PrecVersion")){
+                    XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(LALparams_aux, 300);
+                }
 
 				ret = XLALSimIMRPhenomXPHMFrequencySequence(
 						hptilde, hctilde,

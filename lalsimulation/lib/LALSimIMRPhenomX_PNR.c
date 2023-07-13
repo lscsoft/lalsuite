@@ -1071,11 +1071,6 @@ extern "C"
     REAL8 f_min_22 = pWF->fMin;
     REAL8 f_max_22 = pWF->f_max_prime;
 
-    if(pWF->deltaF == 0){
-      /* for frequency sequence, may need to go above fCut */
-      f_max_22 = pWF->fMax;
-    }
-
     if(pWF->deltaF != 0){
       /* need to account for finite frequency spacing in fMin */
       size_t iStart = (size_t) (f_min_22 / pWF->deltaF);
