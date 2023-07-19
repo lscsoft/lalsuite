@@ -289,6 +289,37 @@ int main(int argc, char *argv[]){
   if (XLALUserVarWasSet(&uvar.spacingP) && XLALUserVarWasSet(&uvar.mismatchP))
     LogPrintf (LOG_CRITICAL, "spacingP and mismatchP are both set, use spacingP %.9g by default\n\n", uvar.spacingP);
 
+  if ( uvar.useLattice == FALSE ) {
+    if (!XLALUserVarWasSet(&uvar.spacingF) && !XLALUserVarWasSet(&uvar.mismatchF)){
+      LogPrintf (LOG_CRITICAL, "neither spacingF nor mismatchF was set, using mismatchF %.9g by default\n\n", uvar.mismatchF);
+      if ( uvar.treatWarningsAsErrors ) {
+	printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+  }
+    if (!XLALUserVarWasSet(&uvar.spacingA) && !XLALUserVarWasSet(&uvar.mismatchA)){
+      LogPrintf (LOG_CRITICAL, "neither spacingA nor mismatchA was set, using mismatchA %.9g by default\n\n", uvar.mismatchA);
+      if ( uvar.treatWarningsAsErrors ) {
+	printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+    if (!XLALUserVarWasSet(&uvar.spacingT) && !XLALUserVarWasSet(&uvar.mismatchT)){
+      LogPrintf (LOG_CRITICAL, "neither spacingT nor mismatchT was set, using mismatchT %.9g by default\n\n", uvar.mismatchT);
+      if ( uvar.treatWarningsAsErrors ) {
+	printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+    if (!XLALUserVarWasSet(&uvar.spacingP) && !XLALUserVarWasSet(&uvar.mismatchP)){
+      LogPrintf (LOG_CRITICAL, "neither spacingP nor mismatchP was set, using mismatchP %.9g by default\n\n", uvar.mismatchP);
+      if ( uvar.treatWarningsAsErrors ) {
+	printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+  }
+
   if ( uvar.resamp == TRUE && uvar.useLattice == TRUE ) {
       printf("Error!  LatticeTiling placement not yet implemented with resampling\n");
       XLAL_ERROR( XLAL_EFUNC );
