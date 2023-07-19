@@ -37,6 +37,10 @@ pcc_orbitPSec=68023.7136
 pcc_orbitTimeAsc=1245967374
 pcc_orbitTimeAscBand=20
 pcc_numBins=1
+pcc_mismatchF=0.1
+pcc_mismatchA=0.1
+pcc_mismatchT=0.1
+pcc_mismatchP=0.1
 
 mkdir -p sfts/
 
@@ -44,7 +48,7 @@ mfd_CL="--fmin=$mfd_fmin --Band=$mfd_Band --Freq=$mfd_Freq --outSFTbname=./sfts 
 mfd_CL1="${mfd_CL} --IFO=$mfd_ifo1 --randSeed=$mfd_seed1"
 mfd_CL2="${mfd_CL} --IFO=$mfd_ifo2 --randSeed=$mfd_seed2"
 
-pcc_CL="--startTime=$startTime --endTime=$endTime --sftLocation='./sfts/*.sft' --fStart=$pcc_fStart --fBand=$pcc_fBand --alphaRad=$alphaRad --deltaRad=$deltaRad --maxLag=$pcc_maxLag --orbitAsiniSec=$pcc_orbitAsiniSec --orbitAsiniSecBand=$pcc_orbitAsiniSecBand --orbitPSec=$pcc_orbitPSec --orbitTimeAsc=$pcc_orbitTimeAsc --orbitTimeAscBand=$pcc_orbitTimeAscBand --numBins=$pcc_numBins"
+pcc_CL="--startTime=$startTime --endTime=$endTime --sftLocation='./sfts/*.sft' --fStart=$pcc_fStart --fBand=$pcc_fBand --alphaRad=$alphaRad --deltaRad=$deltaRad --maxLag=$pcc_maxLag --orbitAsiniSec=$pcc_orbitAsiniSec --orbitAsiniSecBand=$pcc_orbitAsiniSecBand --orbitPSec=$pcc_orbitPSec --orbitTimeAsc=$pcc_orbitTimeAsc --orbitTimeAscBand=$pcc_orbitTimeAscBand --numBins=$pcc_numBins --mismatchF=$pcc_mismatchF --mismatchA=$pcc_mismatchA --mismatchT=$pcc_mismatchT --mismatchP=$pcc_mismatchP"
 
 ## ---------- Run MFDv4 ----------
 cmdline="$mfd_code $mfd_CL1";
