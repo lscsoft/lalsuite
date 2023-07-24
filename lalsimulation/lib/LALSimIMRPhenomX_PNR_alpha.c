@@ -203,10 +203,20 @@ extern "C"
     {
       A2 = 0.0;
     }
+    REAL8 A3 = fabs(IMRPhenomX_PNR_alpha_A3_coefficient(eta, chi, costheta));
+    if (A3 < 0.00001)
+    {
+      A3 = 0.00001;
+    }
+    REAL8 maxA2 = LAL_PI*LAL_PI*sqrt(A3);
+    if (A2 < -maxA2)
+      {
+        A2 = -maxA2;
+      }
 
     alphaParams->A1 = fabs(IMRPhenomX_PNR_alpha_A1_coefficient(eta, chi, costheta));
     alphaParams->A2 = A2;
-    alphaParams->A3 = fabs(IMRPhenomX_PNR_alpha_A3_coefficient(eta, chi, costheta));
+    alphaParams->A3 = A3;
     alphaParams->A4 = IMRPhenomX_PNR_alpha_A4_coefficient(eta, chi, costheta);
 
     return XLAL_SUCCESS;

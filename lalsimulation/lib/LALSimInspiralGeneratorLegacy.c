@@ -2415,7 +2415,7 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
 
         /* XO4 uses previous version of XHM */
         XLALSimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(params_aux, 122019);
-
+	
     		/* Waveform-specific sanity checks */
     		if( !XLALSimInspiralWaveformParamsFrameAxisIsDefault(params_aux) )
     		{
@@ -2466,6 +2466,11 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
             {
                 XLAL_ERROR(XLAL_EFUNC,"Error: Antisymmetric waveform generation not supported without PNR angles, please turn on PNR angles to produce waveform with asymmetries in the (2,2) and (2,-2) modes \n");
             }
+        }
+
+        /* Toggle on reviewed PrecVersion and FinalSpinMod */
+        if(!XLALDictContains(params_aux, "PrecVersion")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(params_aux, 300);
         }
 
     		usemodes = XLALSimInspiralWaveformParamsLookupPhenomXPHMUseModes(params_aux);
@@ -3128,7 +3133,7 @@ static SphHarmFrequencySeries *XLALSimInspiralChooseFDModes_legacy(
 
         /* XO4 uses previous version of XHM */
         XLALSimInspiralWaveformParamsInsertPhenomXHMReleaseVersion(params_aux, 122019);
-
+	
   			/* Waveform-specific sanity checks */
   			if( !XLALSimInspiralWaveformParamsFlagsAreDefault(params_aux) )
   					XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
@@ -3164,6 +3169,11 @@ static SphHarmFrequencySeries *XLALSimInspiralChooseFDModes_legacy(
             {
                 XLAL_ERROR_NULL(XLAL_EFUNC,"Error: Antisymmetric waveform generation not supported without PNR angles, please turn on PNR angles to produce waveform with asymmetries in the (2,2) and (2,-2) modes \n");
             }
+        }
+
+        /* Toggle on reviewed PrecVersion and FinalSpinMod */
+        if(!XLALDictContains(params_aux, "PrecVersion")){
+            XLALSimInspiralWaveformParamsInsertPhenomXPrecVersion(params_aux, 300);
         }
 
 	      /* Compute individual modes in the J-frame from IMRPhenomXPHM */
