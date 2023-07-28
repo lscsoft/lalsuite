@@ -338,7 +338,6 @@
 #endif
 #endif
 
-#include <lal/LALMalloc.h>
 #include <lal/XLALError.h>
 #include <lal/LALConstants.h>
 #include <lal/LALgetopt.h>
@@ -1194,9 +1193,6 @@ int main(int argc, char *argv[]){
   XLALDestroyREAL4TimeSeries(framesim);
 #endif
 
-  LALCheckMemoryLeaks();
-
   /* and exit cleanly */
-  syserror(0, "Shutdown complete, exiting cleanly\n");
   exit(0);
 }
