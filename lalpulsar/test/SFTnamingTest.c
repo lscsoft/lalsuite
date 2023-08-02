@@ -58,6 +58,9 @@ int main(void) {
     "H-5_H1_1800SFT_O2RUN+R1+CDCHCLEANSTRAINC02+WTKEY5_NBF0074Hz0W0008Hz0-1257800000-9000.sft",
     "H-5_H1_1800SFT_O2RUN+R1+CDCHCLEANSTRAINC02+WTKEY5_NBF0082Hz0W0008Hz0-1257800000-9000.sft",
     "H-5_H1_1800SFT_O2RUN+R1+CDCHCLEANSTRAINC02+WTKEY5_NBF0090Hz0W0005Hz900-1257800000-9000.sft",
+    // Old style SFT names from before the naming convention in the v3 SFT specification
+    "L-1_L1_1800SFT_old_style_SFT_name-1238239230-1800.sft",
+    "L-1_L1_1800SFT_NBF0010Hz0W0008Hz0_old_style_SFT_name-1238239230-1800.sft",
   };
 
   const SFTFilenameSpec SFT_spec[] = {
@@ -114,13 +117,19 @@ int main(void) {
     { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
       .nbFirstBinFreq = 90, .nbFirstBinRem = 0, .nbBinWidthFreq = 5, .nbBinWidthRem = 900 },
+    // Old style SFT names from before the naming convention in the v3 SFT specification
+    { .numSFTs = 1, .detector = "L1", .SFTtimebase = 1800, .privMisc = "oldstyleSFTname", .gpsStart = 1238239230, .SFTspan = 1800 },
+    { .numSFTs = 1, .detector = "L1", .SFTtimebase = 1800, .privMisc = "oldstyleSFTname", .gpsStart = 1238239230, .SFTspan = 1800,
+      .nbFirstBinFreq = 10, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
   };
 
   for (size_t i = 0; i < XLAL_NUM_ELEM(SFT_spec); ++i) {
-    char *fname = XLALBuildSFTFilenameFromSpec(&SFT_spec[i]);
-    XLAL_CHECK_MAIN( fname != NULL, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( strcmp( fname, SFT_filenames[i] ) == 0, XLAL_EFAILED, "SFT filename '%s' should be '%s'", fname, SFT_filenames[i] );
-    XLALFree( fname );
+    if (strcmp(SFT_spec[i].privMisc, "oldstyleSFTname") != 0) {
+      char *fname = XLALBuildSFTFilenameFromSpec(&SFT_spec[i]);
+      XLAL_CHECK_MAIN( fname != NULL, XLAL_EFUNC );
+      XLAL_CHECK_MAIN( strcmp( fname, SFT_filenames[i] ) == 0, XLAL_EFAILED, "SFT filename '%s' should be '%s'", fname, SFT_filenames[i] );
+      XLALFree( fname );
+    }
   }
 
   for (size_t i = 0; i < XLAL_NUM_ELEM(SFT_spec); ++i) {

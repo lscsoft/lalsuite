@@ -532,8 +532,33 @@ int XLALParseSFTFilenameIntoSpec(
     D3 = XLALStringToken(&p, "_", 1);
     XLAL_CHECK( D3 != NULL, XLAL_EINVAL,
                 "SFT file path '%s' contains no <D3> field", SFTpath );
-    D4 = XLALStringToken(&p, "_", 1);
-    D5 = XLALStringToken(&p, "_", 1);
+    if (p == NULL) { // no <D4>, <D5> fields
+      D4 = NULL;
+      D5 = NULL;
+    } else if (strncmp(p, "NBF", 3) == 0) { // old style SFT name: <D5> appears before <D4>
+      D5 = XLALStringToken(&p, "_", 1);
+      D4 = p;
+      // ensure <D4> is a valid description field
+      XLAL_CHECK( XLALStringKeepChars(D4, isascii) != NULL, XLAL_EFUNC );
+      XLAL_CHECK( XLALStringKeepChars(D4, isalnum) != NULL, XLAL_EFUNC );
+    } else {
+      int underscores = 0;
+      for (char *q = p; *q != '\0'; ++q) {
+        if (*q == '_') {
+          ++underscores;
+        }
+      }
+      if (underscores > 1) { // old style SFT name: <D4> includes underscores
+        D5 = NULL;
+        D4 = p;
+        // ensure <D4> is a valid description field
+        XLAL_CHECK( XLALStringKeepChars(D4, isascii) != NULL, XLAL_EFUNC );
+        XLAL_CHECK( XLALStringKeepChars(D4, isalnum) != NULL, XLAL_EFUNC );
+      } else { // compliant SFT name
+        D4 = XLALStringToken(&p, "_", 1);
+        D5 = XLALStringToken(&p, "_", 1);
+      }
+    }
     XLALPrintInfo("%s(): D1='%s' D2='%s' D3='%s' D4='%s' D5='%s' p='%s'\n",
                   __func__, D1, D2, D3, D4, D5, p);
   }
