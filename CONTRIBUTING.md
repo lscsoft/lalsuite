@@ -180,7 +180,6 @@ For individual commits, you can request a subset of merge pipeline jobs to run b
 | `[ci docs]`                | `/[-_]ci[-_]docs/`        | Build the documentation                                      |
 | `[ci full]`                | n/a                       | Run all jobs in the merge pipeline                           |
 | `[ci integration]`         | `/[-_]ci[-_]integration/` | Longer-running integration tests, different<br/>top-level build configurations, etc. |
-| `[ci koji]`                | `/[-_]ci[-_]koji/`        | Build RPM packages on a Koji server                          |
 | `[ci lint]`                | `/[-_]ci[-_]lint/`        | Perform "lint" checks for code style/formatting/whitespace<br/>errors, build byproduct files missing from `.gitignore`, etc. |
 | `[ci nightly]`             | n/a                       | Run all jobs in the nightly deployment pipeline [^1]         |
 | `[ci pkg]`                 | `/[-_]ci[-_]pkg/`         | Perform a basic package-level build from tarballs            |

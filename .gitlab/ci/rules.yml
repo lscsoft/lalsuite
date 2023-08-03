@@ -24,11 +24,6 @@ workflow:
       when: always
       variables:
         EXECUTE_DEPLOY_ACTIONS: "yes"
-    # environment variables for Koji build (keep rule in sync with [.ci-koji, rules]): set ENABLE_NIGHTLY
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci koji\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]koji/'
-      when: always
-      variables:
-        ENABLE_NIGHTLY: "--enable-nightly"
     # run all other pipelines
     - when: always
 
@@ -109,11 +104,6 @@ workflow:
 .ci-integration:
   rules:
     - if: '$CI_COMMIT_MESSAGE =~ /\[ci integration\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]integration/'
-      when: always
-
-.ci-koji:
-  rules:
-    - if: '$CI_COMMIT_MESSAGE =~ /\[ci koji\]/ || $CI_COMMIT_REF_NAME =~ /[-_]ci[-_]koji/'
       when: always
 
 .ci-lint:

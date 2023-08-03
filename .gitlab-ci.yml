@@ -55,7 +55,6 @@ include:
 
   # build packages for each subpackage
   - local: '/.gitlab/ci/pkg.yml'
-  - local: '/.gitlab/ci/koji.yml'
 
   # end-to-end tests
   - local: '/.gitlab/ci/compilers.yml'
