@@ -311,14 +311,12 @@ static int tov_virial_ode(double h, const double *y, double *dy, void *params)
  * Masses and Radii", Astrophys. J. 398 569.
  * @param[out] radius The radius of the star in m.
  * @param[out] mass The mass of the star in kg.
- * @param[out] lambda2 Lambda_2 parameter.
  * @param[out] int1 Virial parameter.
  * @param[out] int2 Virial parameter.
  * @param[out] int3 Virial parameter.
  * @param[out] int4 Virial parameter.
  * @param[out] int5 Virial parameter.
  * @param[out] int6 Virial parameter.
- * @param[out] lambda3 Lambda_3 parameter.
  * @param[out] love_number_k2 The k_2 tidal love number of the star.
  * @param[in] central_pressure_si The central pressure of the star in Pa.
  * @param eos Pointer to the Equation of State structure.

@@ -103,7 +103,7 @@ const char * const lalSimNeutronStarEOSNames[111] = {
         /* This EOS was added by request from
          * http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
          */
-        "HQC18"
+        "HQC18",
         /* These EOS files are part of the new EOS framework via Micaela Oertel's group and the LUTH group */
         "GMSR_BSK14_BSK24", "GMSR_DHSL59_BSK24", "GMSR_DHSL69_BSK24", "GMSR_F0_BSK24", "GMSR_H1_BSK24", "GMSR_H2_BSK24", 
         "GMSR_H3_BSK24", "GMSR_H4_BSK24", "GMSR_H5_BSK24", "GMSR_LN55_BSK24", "GMSR_SLY5_BSK24", "GPPVA_DD2_BSK24", 

@@ -94,7 +94,6 @@ static double eos_p_of_rho_tabular(double rho, LALSimNeutronStarEOS * eos)
         eos->data.tabular->log_p_of_log_rho_acc);
     return exp(log_p);
 }
-/* A_N_ISSUE_1 code for using user chosen central energy density and rest-mass density */
 
 static double eos_e_of_p_tabular(double p, LALSimNeutronStarEOS * eos)
 {
