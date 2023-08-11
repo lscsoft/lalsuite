@@ -187,6 +187,16 @@ int XLALSimIMRPhenomXPHM(
 {
   /* Variable to check correct calls to functions. */
   UINT4 status;
+  
+  /*
+  Set initial values of masses and z-components of spins to pass to IMRPhenomXSetWaveformVariables() so it can swap the
+  matter parameters (and masses and spins) appropriately if m1 < m2, since the masses and spin vectors will also be
+  swapped by XLALIMRPhenomXPCheckMassesAndSpins() below.
+  */
+  const REAL8 m1_SI_init = m1_SI;
+  const REAL8 m2_SI_init = m2_SI;
+  const REAL8 chi1z_init = chi1z;
+  const REAL8 chi2z_init = chi2z;
 
   /* Check if m1 > m2, swap the bodies otherwise. */
   status = XLALIMRPhenomXPCheckMassesAndSpins(&m1_SI,&m2_SI,&chi1x,&chi1y,&chi1z,&chi2x,&chi2y,&chi2z);
@@ -264,7 +274,7 @@ int XLALSimIMRPhenomXPHM(
   /* Initialize IMRPhenomX Waveform struct and check that it initialized correctly */
   IMRPhenomXWaveformStruct *pWF;
   pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1z, chi2z, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, PHENOMXDEBUG);
+  status = IMRPhenomXSetWaveformVariables(pWF, m1_SI_init, m2_SI_init, chi1z_init, chi2z_init, deltaF, fRef, phiRef, f_min, f_max, distance, inclination, lalParams_aux, PHENOMXDEBUG);
   XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
   /*
