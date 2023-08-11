@@ -2137,71 +2137,36 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
 
     case IMRPhenomXAS_NRTidalv2:
         {
-            /* Waveform-specific sanity checks */
-            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(params) )
-                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-            
-            LALDict *LALparams_aux;
-                    if (params == NULL)
-                                LALparams_aux = XLALCreateDict();
-                    else
-                                LALparams_aux = XLALDictDuplicate(params);
-                            
-                       
-            XLALSimInspiralWaveformParamsInsertPhenomXTidalFlag(LALparams_aux,2);
-                        
-            
-            REAL8 multiband_thres=XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(LALparams_aux);
-            
-            
-            if(multiband_thres==0.){
-                        /* This is the factor that comes from Y_22star + (-1)^l * Y_2-2 without the dependence in inclination, that is included in pfac and cfac */
-                        /* Ylm(inclination, beta), with beta = PI/2 - phiRef. phiRef is included in the individual mode */
-                        COMPLEX16 Ylmfactor = 2.0*sqrt(5.0 / (64.0 * LAL_PI)) * cexp(-I*2*(LAL_PI_2));
-                        /* The factor for hc is the same but opposite sign */
-
-                        /* Call the waveform driver routine. */
-                        /* It returns h_2-2(f) for positive frequencies. h_2-2 is zero for negative frequencies. */
-                        /* h_22(f) is zero for positive frequencies. For negatives frequencies h_22(f) = Conjugate[h_2-2(-f)] */
-                        /* We returns h2_-2 because it is the mode with the positive frequencies,
-                         and we need this mode because XLALSimInspiralTDFromFD assumes that the input array is in the positive frequencies regime. */
-                        ret = XLALSimIMRPhenomXASGenerateFD(hptilde, m1, m2,S1z, S2z, distance, f_min, f_max, deltaF, phiRef, f_ref, LALparams_aux);
-
-            /* Produce both polarizations for positive frequencies */
-                      *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",&((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,&((*hptilde)->sampleUnits), (*hptilde)->data->length);
-                        for(j = 0; j < (*hptilde)->data->length; j++) {
-                                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j] * Ylmfactor;
-                                (*hptilde)->data->data[j] *= pfac * Ylmfactor;
-                                                                        }
-            }
-            
-            else{
-                
-                
-                LALValue *ModeArray = XLALSimInspiralCreateModeArray();
-                XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
-                XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
-                XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
-                                        
-                                    
-                                
-                ret = XLALSimIMRPhenomXHM(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALparams_aux);
-                                
-                XLALDestroyValue(ModeArray);
-                
-                
-            }
-            
-            if (ret == XLAL_FAILURE)
-                            XLAL_ERROR(XLAL_EFUNC);
-                        
-            XLALDestroyDict(LALparams_aux);
-                
-                
-                
+        /* Waveform-specific sanity checks */
+        if( !XLALSimInspiralWaveformParamsFlagsAreDefault(params) )
+            XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+        if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
         
+        LALDict *LALparams_aux;
+                if (params == NULL)
+                            LALparams_aux = XLALCreateDict();
+                else
+                            LALparams_aux = XLALDictDuplicate(params);
+                        
+        /* PhenomXTidalFlag maps to the NRTidalv* version used: 2-> NRTidalv2 */
+        XLALSimInspiralWaveformParamsInsertPhenomXTidalFlag(LALparams_aux,2);
+        
+        /* to employ multibanding, we need to call XHM: hence, we activate a reduced mode array */
+        LALValue *ModeArray = XLALSimInspiralCreateModeArray();
+        XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
+        XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
+        XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
+                                    
+        ret = XLALSimIMRPhenomXHM(hptilde, hctilde, m1, m2, S1z, S2z, f_min, f_max, deltaF, distance, inclination, phiRef, f_ref, LALparams_aux);
+                            
+        XLALDestroyValue(ModeArray);
+        
+        if (ret == XLAL_FAILURE)
+                        XLAL_ERROR(XLAL_EFUNC);
+                    
+        XLALDestroyDict(LALparams_aux);
+                
             break;
 	}
     case IMRPhenomXHM:
@@ -2294,75 +2259,35 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
         }
             
         LALDict *LALparams_aux;
-        if (params == NULL)
-                LALparams_aux = XLALCreateDict();
-        else
-                LALparams_aux = XLALDictDuplicate(params);
+        if (params == NULL) LALparams_aux = XLALCreateDict();
+        else LALparams_aux = XLALDictDuplicate(params);
                             
-        // insert tidal version: NRTidal_v2 by default
+        /* PhenomXTidalFlag maps to the NRTidalv* version used: 2-> NRTidalv2 */
         XLALSimInspiralWaveformParamsInsertPhenomXTidalFlag(LALparams_aux,2);
+        
+        /* to employ multibanding, we need to call XPHM: hence, we activate a reduced mode array */
+        LALValue *ModeArray = XLALSimInspiralCreateModeArray();
+        XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
+        XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
+        XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
         
 	    // Insert quadrupole parameters for use in twisting up
         ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALparams_aux);
         XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set quadrupole parameters from lambdas for IMRPhenomXP_NRTidalv2");
             
-
         if(f_ref==0.0)
         {
             /* Default reference frequency is minimum frequency */
             f_ref = f_min;
         }
             
-        REAL8 multiband_thres_as=XLALSimInspiralWaveformParamsLookupPhenomXHMThresholdMband(LALparams_aux);
-        REAL8 multiband_thres_prec=XLALSimInspiralWaveformParamsLookupPhenomXPHMThresholdMband(LALparams_aux);
-            
-        if(multiband_thres_as>0. || multiband_thres_prec >0.)
-            {
-                
-                LALValue *ModeArray = XLALSimInspiralCreateModeArray();
-                XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
-                XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
-                XLALSimInspiralWaveformParamsInsertModeArray(LALparams_aux, ModeArray);
-                
-                ret = XLALSimIMRPhenomXPHM(
-                    hptilde, hctilde,
-                    m1, m2,
-                    S1x, S1y, S1z,
-                    S2x, S2y, S2z,
-                    distance, inclination,
-                    phiRef, f_min, f_max, deltaF, f_ref, LALparams_aux);
+        ret = XLALSimIMRPhenomXPHM(hptilde, hctilde, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination,phiRef, f_min, f_max, deltaF, f_ref, LALparams_aux);
         
-                XLALDestroyValue(ModeArray);
+        XLALDestroyValue(ModeArray);
     
-                REAL8 polariz=longAscNodes;
-                if (polariz) {
-                  COMPLEX16 tmpP,tmpC;
-                  for (UINT4 idx=0;idx<(*hptilde)->data->length;idx++)
-                    {
-                        tmpP=(*hptilde)->data->data[idx];
-                        tmpC=(*hctilde)->data->data[idx];
-                        (*hptilde)->data->data[idx] =cos(2.*polariz)*tmpP+sin(2.*polariz)*tmpC;
-                        (*hctilde)->data->data[idx]=cos(2.*polariz)*tmpC-sin(2.*polariz)*tmpP;
-                    }
-                            }
-            
-            }
-            
-        else{
-            ret = XLALSimIMRPhenomXPGenerateFD(
-                hptilde, hctilde,
-                m1, m2,
-                S1x, S1y, S1z,
-                S2x, S2y, S2z,
-                distance, inclination,
-                phiRef, f_min, f_max, deltaF, f_ref, LALparams_aux);
-        }
-           
-
-                
-            if (ret == XLAL_FAILURE)    XLAL_ERROR(XLAL_EFUNC);
+        if (ret == XLAL_FAILURE)    XLAL_ERROR(XLAL_EFUNC);
                         
-            XLALDestroyDict(LALparams_aux);
+        XLALDestroyDict(LALparams_aux);
             
         }
         break;
