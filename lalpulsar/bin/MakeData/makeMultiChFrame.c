@@ -30,6 +30,7 @@
 #include <lal/Units.h>
 #include <lal/TimeSeries.h>
 #include <lal/LALFrStream.h>
+#include <lal/VectorMath.h>
 
 int main( int argc, char *argv[] )
 {
@@ -63,23 +64,33 @@ int main( int argc, char *argv[] )
     LALFrameH *outframe = XLALFrameNew( &time_series_REAL8->epoch, 1800.0, "MultiChFrame", 1, 0, 0 );
     XLAL_CHECK_MAIN( outframe != NULL, XLAL_EFUNC );
 
-    /* Add REAL8 channels */
-    snprintf( time_series_REAL8->name, sizeof( time_series_REAL8->name ), "%c%c:AdcREAL8", argv[2][0], argv[2][1] );
-    XLAL_CHECK_MAIN( XLALFrameAddREAL8TimeSeriesAdcData( outframe, time_series_REAL8 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    snprintf( time_series_REAL8->name, sizeof( time_series_REAL8->name ), "%c%c:ProcREAL8", argv[2][0], argv[2][1] );
-    XLAL_CHECK_MAIN( XLALFrameAddREAL8TimeSeriesProcData( outframe, time_series_REAL8 ) == XLAL_SUCCESS, XLAL_EFUNC );
-    snprintf( time_series_REAL8->name, sizeof( time_series_REAL8->name ), "%c%c:SimREAL8", argv[2][0], argv[2][1] );
-    XLAL_CHECK_MAIN( XLALFrameAddREAL8TimeSeriesSimData( outframe, time_series_REAL8 ) == XLAL_SUCCESS, XLAL_EFUNC );
-
     /* Make REAL4 copy of REAL8 time series */
     REAL4TimeSeries *time_series_REAL4 = XLALConvertREAL8TimeSeriesToREAL4 ( time_series_REAL8 );
     XLAL_CHECK_MAIN( time_series_REAL4 != NULL, XLAL_EFUNC );
 
-    /* Add REAL4 channels */
+    /* Add Adc channels */
+    snprintf( time_series_REAL8->name, sizeof( time_series_REAL8->name ), "%c%c:AdcREAL8", argv[2][0], argv[2][1] );
+    XLAL_CHECK_MAIN( XLALFrameAddREAL8TimeSeriesAdcData( outframe, time_series_REAL8 ) == XLAL_SUCCESS, XLAL_EFUNC );
     snprintf( time_series_REAL4->name, sizeof( time_series_REAL4->name ), "%c%c:AdcREAL4", argv[2][0], argv[2][1] );
     XLAL_CHECK_MAIN( XLALFrameAddREAL4TimeSeriesAdcData( outframe, time_series_REAL4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    /* Scale time series */
+    XLAL_CHECK_MAIN( XLALVectorScaleREAL8( time_series_REAL8->data->data, 1.234, time_series_REAL8->data->data, time_series_REAL8->data->length ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALVectorScaleREAL4( time_series_REAL4->data->data, 1.234, time_series_REAL4->data->data, time_series_REAL4->data->length ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    /* Add Proc channels */
+    snprintf( time_series_REAL8->name, sizeof( time_series_REAL8->name ), "%c%c:ProcREAL8", argv[2][0], argv[2][1] );
+    XLAL_CHECK_MAIN( XLALFrameAddREAL8TimeSeriesProcData( outframe, time_series_REAL8 ) == XLAL_SUCCESS, XLAL_EFUNC );
     snprintf( time_series_REAL4->name, sizeof( time_series_REAL4->name ), "%c%c:ProcREAL4", argv[2][0], argv[2][1] );
     XLAL_CHECK_MAIN( XLALFrameAddREAL4TimeSeriesProcData( outframe, time_series_REAL4 ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    /* Scale time series */
+    XLAL_CHECK_MAIN( XLALVectorScaleREAL8( time_series_REAL8->data->data, 2.345, time_series_REAL8->data->data, time_series_REAL8->data->length ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALVectorScaleREAL4( time_series_REAL4->data->data, 2.345, time_series_REAL4->data->data, time_series_REAL4->data->length ) == XLAL_SUCCESS, XLAL_EFUNC );
+
+    /* Add Sim channels */
+    snprintf( time_series_REAL8->name, sizeof( time_series_REAL8->name ), "%c%c:SimREAL8", argv[2][0], argv[2][1] );
+    XLAL_CHECK_MAIN( XLALFrameAddREAL8TimeSeriesSimData( outframe, time_series_REAL8 ) == XLAL_SUCCESS, XLAL_EFUNC );
     snprintf( time_series_REAL4->name, sizeof( time_series_REAL4->name ), "%c%c:SimREAL4", argv[2][0], argv[2][1] );
     XLAL_CHECK_MAIN( XLALFrameAddREAL4TimeSeriesSimData( outframe, time_series_REAL4 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
