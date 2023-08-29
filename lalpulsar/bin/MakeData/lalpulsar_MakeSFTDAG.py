@@ -92,11 +92,11 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
         argList.append(f'-X {args.misc_desc}')
     argList.append(f'-f {args.filter_knee_freq}')
     argList.append(f'-t {args.time_baseline}')
-    argList.append(f'-p {args.output_sft_path}')
+    argList.append(f"-p {','.join(args.output_sft_path)}")
     argList.append(f'-C {cacheFile}')
     argList.append(f'-s {startTimeThisNode}')
     argList.append(f'-e {endTimeThisNode}')
-    argList.append(f'-N {args.channel_name}')
+    argList.append(f"-N {','.join(args.channel_name)}")
     argList.append(f'-F {args.start_freq}')
     argList.append(f'-B {args.band}')
     if args.comment_field:
@@ -113,13 +113,13 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
 
     # gw_data_find job
     if not args.cache_file:
-        dagFID.write(f'JOB {datafind} datafind.sub\n')
-        dagFID.write(f'RETRY {datafind} 10\n')
+        dagFID.write(f"JOB {datafind} {os.path.join(os.path.dirname(dagFID.name), 'datafind.sub')}\n")
+        dagFID.write(f'RETRY {datafind} 1\n')
         dagFID.write(f'VARS {datafind} gpsstarttime="{startTimeDatafind}" gpsendtime="{endTimeDatafind}" observatory="{site}" inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n')
 
     # MakeSFT job
-    dagFID.write(f'JOB {MakeSFTs} MakeSFTs.sub\n')
-    dagFID.write(f'RETRY {MakeSFTs} 5\n')
+    dagFID.write(f"JOB {MakeSFTs} {os.path.join(os.path.dirname(dagFID.name), 'MakeSFTs.sub')}\n")
+    dagFID.write(f'RETRY {MakeSFTs} 1\n')
     dagFID.write(f'VARS {MakeSFTs} argList="{argStr}" tagstring="{tagStringOut}"\n')
     if not args.cache_file:
         dagFID.write(f'PARENT {datafind} CHILD {MakeSFTs}\n')
@@ -179,7 +179,7 @@ parser.add_argument('-k', '--filter-knee-freq', required=True, type=int,
                     data before generating SFTs')
 parser.add_argument('-T', '--time-baseline', required=True, type=int,
                     help='time baseline of SFTs  (e.g., 60 or 1800 seconds)')
-parser.add_argument('-p', '--output-sft-path', required=True, type=str,
+parser.add_argument('-p', '--output-sft-path', nargs='+', type=str,
                     help='path to output SFTs')
 parser.add_argument('-C', '--cache-path', type=str, default='cache',
                     help='path to cache files that will be produced by \
@@ -193,7 +193,7 @@ parser.add_argument('-o', '--log-path', type=str, default='logs',
                     help='path to log, output, and error files (default \
                     is $PWD/logs; this directory is created if it does not \
                     exist and usually should be under a local file system)')
-parser.add_argument('-N', '--channel-name', required=True, type=str,
+parser.add_argument('-N', '--channel-name', nargs='+', type=str,
                     help='name of input time-domain channel to read from \
                     frames')
 parser.add_argument('-c', '--comment-field', type=str,
@@ -324,6 +324,10 @@ if args.start_freq + args.band >= 8192.0:
 if args.max_num_per_node <= 0:
     raise argparse.error('--max-num-per-node must be > 0')
 
+if len(args.channel_name) != len(args.output_sft_path) and len(args.output_sft_path) != 1:
+    raise argparse.error('--channel-name and --output-sft-path must be the '
+                         'same length or --output-sft-path must be length of 1')
+
 # Set the data find executable and lalpulsar_MakeSFTs executable
 dataFindExe = 'gw_data_find'
 if args.datafind_path:
@@ -434,7 +438,7 @@ else:
 # END if (args.segment_file != None)
 
 # Get the IFO site, which is the first letter of the channel name.
-site = args.channel_name[0]
+site = args.channel_name[0][0]
 
 # initialize count of nodes
 nodeCount = 0
@@ -460,7 +464,7 @@ if not args.cache_file:
         datafindFID.write('--gps-start-time $(gpsstarttime) ')
         datafindFID.write('--gps-end-time $(gpsendtime) --lal-cache --gaps ')
         datafindFID.write(f'--type $(inputdatatype) {dataFindMatchString}\n')
-        datafindFID.write('getenv = True\n')
+        datafindFID.write('getenv = LIGO_DATAFIND_SERVER\n')
         datafindFID.write('request_disk = 5MB\n')
         datafindFID.write(f'accounting_group = {args.accounting_group}\n')
         datafindFID.write(f'accounting_group_user = {args.accounting_group_user}\n')
