@@ -95,3 +95,34 @@ for MCFchtype in Adc Proc Sim; do
         exit 1
     fi
 done
+
+## run MakeSFTs to create multiple SFTs from different channels in the same frame
+pubObsRun=4
+pubObsKind="AUX"
+pubRevision=1
+cmdline="lalpulsar_MakeSFTs --frame-cache $MCFframecache --channel-name H1:AdcREAL4,H1:AdcREAL8,H1:ProcREAL4,H1:ProcREAL8,H1:SimREAL4,H1:SimREAL8 --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment' --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-revision ${pubRevision} --sft-write-path MSFTs/,MSFTs/,MSFTs/,MSFTs/,MSFTs/,MSFTs/ --gps-start-time ${tstart} --gps-end-time ${tend} --window-type rectangular"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+
+for MCFch in AdcREAL4 AdcREAL8 ProcREAL4 ProcREAL8 SimREAL4 SimREAL8; do
+
+    echo "=== frame channel: ${MCFch} ==="
+    pubFieldMulti="O${pubObsRun}${pubObsKind}+R${pubRevision}+C${MCFch}+WRECT"
+    MSFTsftMulti="./MSFTs/H-1_H1_${Tsft}SFT_${pubFieldMulti}-${tstart}-${Tsft}.sft"
+    if ! test -f $MSFTsftMulti; then
+	echo "ERROR: could not find file '$MSFTsftMulti'"
+	exit 1
+    fi
+
+    pubField="O${pubObsRun}DEV+R${pubRevision}+C${MCFch}+WRECT"
+    MSFTsft="./MSFTs/H-1_H1_${Tsft}SFT_${pubField}-${tstart}-${Tsft}.sft"
+    cmdline="lalpulsar_compareSFTs -V -e $tol -1 $MSFTsft -2 $MSFTsftMulti"
+    echo "Comparing SFTs produced by MakeSFTs from single vs multiple channels, allowed tolerance=$tol:"
+    if ! eval "$cmdline"; then
+        echo "ERROR: something failed when running '$cmdline'"
+        exit 1
+    fi
+
+done
