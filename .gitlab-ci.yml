@@ -1230,7 +1230,7 @@ lalapps:conda:py39:
 .wheel:macos:x86_64:
   tags:
     # explicitly use the oldest macOS tag we have
-    - macos_catalina_x86_64
+    - macos_bigsur_x86_64
 
 .wheel:macos:arm64:
   tags:
