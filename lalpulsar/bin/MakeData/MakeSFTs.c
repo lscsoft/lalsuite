@@ -424,6 +424,13 @@ int main( int argc, char *argv[] )
         SFT_fft_plan = XLALCreateForwardREAL8FFTPlan( SFT_time_series->data->length, 0 );
         XLAL_CHECK_MAIN( SFT_fft_plan != NULL, XLAL_EFUNC,
                          "Failed to allocate SFT FFT plan at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
+
+        // If the sampling rate is too low for the requested band, skip this channel
+        if ( SFT_fft_data->length < SFT_bins ) {
+          LogPrintf( LOG_CRITICAL, "Sampling rate is too low for band requested, skipping %s\n", uvar->channel_name->data[n] );
+          XLALDestroyREAL8TimeSeries( SFT_time_series );
+          continue;
+        }
       }
 
       // High-pass SFT time series data with Butterworth High Pass filter
