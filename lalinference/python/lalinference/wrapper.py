@@ -93,13 +93,18 @@ class LIVariablesWrap(collections.abc.MutableMapping):
 class _variterator(object):
       def __init__(self, var):
           self.varitem = var.head
+
+      def __iter__(self):
+          return self
+
       def __next__(self):
           if not self.varitem:
-              return
+              raise StopIteration
           else:
               this = self.varitem
               self.varitem=self.varitem.next
               return(this.name)
+
       def next(self):
           return self.__next__()
 
