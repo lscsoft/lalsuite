@@ -4650,7 +4650,10 @@ int IMRPhenomX_InspiralAngles_SpinTaylor(
               XLALDestroyREAL8TimeSeries( E1y );
               XLALDestroyREAL8TimeSeries( E1z );
               
-              
+              // check that the first frequency node returned is indeed below the fmin requested, to avoid interpolation errors. If not return an error which will trigger the fallback to MSA
+              REAL8 fminPN=pow(arrays->V_PN->data->data[0],3.)/piGM;
+              if(fminPN<0.||fminPN>fmin) return(XLAL_FAILURE);
+
               return status;
 
           }

@@ -54,11 +54,15 @@ int main( int argc, char *argv[] )
 
   ////////// Parse user input //////////
 
+  // default output
+  LALStringVector *default_sft_write_path = NULL;
+  XLAL_CHECK_MAIN( (default_sft_write_path = XLALCreateStringVector(".", NULL)) != NULL, XLAL_EFUNC );
+
   // Initialise user input variables
   struct uvar_type {
     char *frame_cache;
     BOOLEAN frame_checksums;
-    char *channel_name;
+    LALStringVector *channel_name;
     INT4 gps_start_time;
     INT4 gps_end_time;
     INT4 sft_duration;
@@ -68,7 +72,7 @@ int main( int argc, char *argv[] )
     REAL8 window_param;
     REAL8 start_freq;
     REAL8 band;
-    char *sft_write_path;
+    LALStringVector *sft_write_path;
     UINT4 observing_run;
     char *observing_kind;
     UINT4 observing_revision;
@@ -82,7 +86,7 @@ int main( int argc, char *argv[] )
     .window_param = 0.001,
     .start_freq = 48,
     .band = 2000,
-    .sft_write_path = XLALStringDuplicate("."),
+    .sft_write_path = default_sft_write_path,
   };
   struct uvar_type *const uvar = &uvar_struct;
 
@@ -100,8 +104,8 @@ int main( int argc, char *argv[] )
     "Validate frame checksums. Default is to only validate checksums for " UVAR_STR( observing_kind ) "=RUN SFTs. "
     );
   XLALRegisterUvarMember(
-    channel_name, STRING, 'N', REQUIRED,
-    "Name of channel to read within a frame. "
+    channel_name, STRINGVector, 'N', REQUIRED,
+    "Name(s) of channel(s) to read within a frame. "
     );
   XLALRegisterUvarMember(
     gps_start_time, INT4, 's', REQUIRED,
@@ -149,8 +153,8 @@ int main( int argc, char *argv[] )
   //
   lalUserVarHelpOptionSubsection = "SFT output";
   XLALRegisterUvarMember(
-    sft_write_path, STRING, 'p', OPTIONAL,
-    "Path to write SFTs to. "
+    sft_write_path, STRINGVector, 'p', OPTIONAL,
+    "Path to write SFTs to, same order as channel names. "
     );
   XLALRegisterUvarMember(
     observing_run, UINT4, 'O', REQUIRED,
@@ -288,6 +292,10 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     uvar->observing_run == 0 || !XLALUserVarWasSet( &uvar->misc_desc ),
                     UVAR_STR( observing_revision ) "=0 is mutually exclusive with " UVAR_STR( misc_desc ) );
+  XLALUserVarCheck( &should_exit,
+                    uvar->channel_name->length == uvar->sft_write_path->length
+                    || uvar->sft_write_path->length == 1,
+                    "Number of channels in " UVAR_STR( channel_name ) " must be the same as the number of output paths in " UVAR_STR(sft_write_path) "or a single path");
 
   // Exit if required
   if ( should_exit ) {
@@ -378,111 +386,143 @@ int main( int argc, char *argv[] )
   INT4 num_SFTs_made = 0;
   while ( 1 ) {
 
-    // Try to read in time series data for the next SFT
-    REAL8TimeSeries *SFT_time_series = NULL;
+    const LIGOTimeGPS SFT_epoch = { .gpsSeconds = SFT_epoch_sec, .gpsNanoSeconds = 0 };
+
+    // Loop over channels for this SFT interval
+    for (UINT4 n=0; n<uvar->channel_name->length; n++)
     {
-      const LIGOTimeGPS SFT_epoch = { .gpsSeconds = SFT_epoch_sec, .gpsNanoSeconds = 0 };
-      SFT_time_series = XLALFrStreamInputREAL8TimeSeries( framestream, uvar->channel_name, &SFT_epoch, uvar->sft_duration, 0 );
-      XLAL_CHECK_MAIN( SFT_time_series != NULL, XLAL_EFUNC,
-                       "XLALFrStreamInputREAL8TimeSeries() failed at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
+      // Try to read in time series data for the next SFT
+      REAL8TimeSeries *SFT_time_series = NULL;
+      {
+        SFT_time_series = XLALFrStreamInputREAL8TimeSeries( framestream, uvar->channel_name->data[n], &SFT_epoch, uvar->sft_duration, 0 );
+        XLAL_CHECK_MAIN( SFT_time_series != NULL, XLAL_EFUNC,
+                         "XLALFrStreamInputREAL8TimeSeries() failed at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
+      }
+
+      // Create SFT time series window
+      if ( SFT_window != NULL && SFT_window->data->length != SFT_time_series->data->length ) {
+        XLALDestroyREAL8Window( SFT_window );
+        SFT_window = NULL;
+      }
+      if ( SFT_window == NULL ) {
+        SFT_window = XLALCreateNamedREAL8Window( uvar->window_type, window_param, SFT_time_series->data->length );
+        XLAL_CHECK_MAIN( SFT_window != NULL, XLAL_EFUNC,
+                         "Failed to allocate SFT time series window of %u elements at GPS time %" LAL_INT4_FORMAT, SFT_time_series->data->length, SFT_epoch_sec );
+      }
+
+      // Create SFT FFT data vector and plan
+      if ( SFT_fft_data != NULL && SFT_fft_data->length != SFT_time_series->data->length / 2 + 1 ) {
+        XLALDestroyCOMPLEX16Vector( SFT_fft_data );
+        XLALDestroyREAL8FFTPlan( SFT_fft_plan );
+        SFT_fft_data = NULL;
+        SFT_fft_plan = NULL;
+      }
+      if ( SFT_fft_data == NULL ) {
+        SFT_fft_data = XLALCreateCOMPLEX16Vector( SFT_time_series->data->length / 2 + 1 );
+        XLAL_CHECK_MAIN( SFT_fft_data != NULL, XLAL_EFUNC,
+                         "Failed to allocate SFT FFT data vector of %u elements at GPS time %" LAL_INT4_FORMAT, SFT_time_series->data->length / 2 + 1, SFT_epoch_sec );
+        SFT_fft_plan = XLALCreateForwardREAL8FFTPlan( SFT_time_series->data->length, 0 );
+        XLAL_CHECK_MAIN( SFT_fft_plan != NULL, XLAL_EFUNC,
+                         "Failed to allocate SFT FFT plan at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
+
+        // If the sampling rate is too low for the requested band, skip this channel
+        if ( SFT_fft_data->length < SFT_bins ) {
+          LogPrintf( LOG_CRITICAL, "Sampling rate is too low for band requested, skipping %s\n", uvar->channel_name->data[n] );
+          XLALDestroyREAL8TimeSeries( SFT_time_series );
+          continue;
+        }
+      }
+
+      // High-pass SFT time series data with Butterworth High Pass filter
+      if ( uvar->high_pass_freq > 0.0 ) {
+        char filtername[] = "Butterworth High Pass";
+        PassBandParamStruc filterpar = {
+          .name = filtername,
+          .nMax = 10,
+          .f2   = uvar->high_pass_freq,
+          .a2   = 0.5,
+          .f1   = -1.0,
+          .a1   = -1.0,
+        };
+        XLAL_CHECK_MAIN( XLALButterworthREAL8TimeSeries( SFT_time_series, &filterpar ) == XLAL_SUCCESS, XLAL_EFUNC,
+                         "Failed to apply %s filter to SFT time series data at GPS time %" LAL_INT4_FORMAT, filterpar.name, SFT_epoch_sec );
+      }
+
+      // Window SFT time series data
+      XLAL_CHECK_MAIN( XLALUnitaryWindowREAL8Sequence( SFT_time_series->data, SFT_window ) != NULL, XLAL_EFUNC,
+                       "Failed to apply window to SFT time series data at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
+
+      // Fourier transform SFT time series data
+      XLAL_CHECK_MAIN( XLALREAL8ForwardFFT( SFT_fft_data, SFT_time_series->data, SFT_fft_plan ) == XLAL_SUCCESS, XLAL_EFUNC,
+                       "Failed to Fourier transform SFT time series data at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
+
+      // Initialise SFT type
+      SFT->name[0] = uvar->channel_name->data[n][0];
+      SFT->name[1] = uvar->channel_name->data[n][1] == '0' ? '1' : uvar->channel_name->data[n][1];
+      SFT->name[2] = 0;
+      SFT->epoch = SFT_time_series->epoch;
+      SFT->f0 = uvar->start_freq;
+      SFT->deltaF = 1.0 / ((REAL8) uvar->sft_duration);
+
+      // Copy and normalise SFT frequency series data into SFT
+      const REAL8 SFT_normalisation = SFT_time_series->deltaT;
+      for ( UINT4 k = 0; k < SFT_bins; ++k ) {
+        const REAL8 SFT_fft_re = creal( SFT_fft_data->data[k + SFT_first_bin] );
+        const REAL8 SFT_fft_im = cimag( SFT_fft_data->data[k + SFT_first_bin] );
+        SFT->data->data[k] = crectf( SFT_normalisation * SFT_fft_re, SFT_normalisation * SFT_fft_im );
+      }
+
+      // Build SFT filename spec
+      SFTFilenameSpec XLAL_INIT_DECL(spec);
+      if (uvar->sft_write_path->length > 1) {
+          XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path->data[n], "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      } else {
+          XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path->data[0], "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      }
+      spec.window_param = window_param;
+      spec.pubObsRun = uvar->observing_run;
+      spec.pubRevision = uvar->observing_revision;
+
+      // Write out SFT and retrieve filename
+      char *temp_SFT_filename = NULL;
+      {
+        int retn = XLALWriteSFT2StandardFile( SFT, &spec, SFT_comment );
+        temp_SFT_filename = XLALBuildSFTFilenameFromSpec( &spec );
+        XLAL_CHECK_MAIN( retn == XLAL_SUCCESS, XLAL_EFUNC,
+                         "Failed to write SFT '%s' at GPS time %" LAL_INT4_FORMAT, temp_SFT_filename ? temp_SFT_filename : "<unknown>", SFT_epoch_sec );
+        XLAL_CHECK_MAIN( temp_SFT_filename != NULL, XLAL_EFUNC );
+      }
+
+      // Validate SFT
+      XLAL_CHECK_MAIN( XLALCheckSFTFileIsValid( temp_SFT_filename ) == XLAL_SUCCESS, XLAL_EFUNC,
+                       "Failed to validate SFT '%s' at GPS time %" LAL_INT4_FORMAT, temp_SFT_filename, SFT_epoch_sec );
+
+      // Move SFT to final filename
+      char *final_SFT_filename = XLALStringDuplicate( temp_SFT_filename );
+      char *const extn = strrchr( final_SFT_filename, '.' );
+      XLAL_CHECK_MAIN( extn != NULL, XLAL_ESYS );
+      XLAL_CHECK_MAIN( strlen( extn ) >= 4, XLAL_EFAILED );
+      strcpy( extn, ".sft" );
+      XLAL_CHECK_MAIN( rename( temp_SFT_filename, final_SFT_filename ) == 0, XLAL_ESYS,
+                       "Failed to rename '%s' to '%s': %s", temp_SFT_filename, final_SFT_filename, strerror(errno) );
+      LogPrintf( LOG_DEBUG, "Wrote SFT '%s'\n", final_SFT_filename );
+
+      // Increment number of SFTs made
+      if ( ++num_SFTs_made == 1 ) {
+        LogPrintf( LOG_NORMAL, "Generated first SFT at GPS time %" LAL_INT4_FORMAT "\n", SFT_epoch_sec );
+      }
+
+      // Free memory
+      XLALDestroyREAL8TimeSeries( SFT_time_series );
+      XLALFree( temp_SFT_filename );
+      XLALFree( final_SFT_filename );
+
+      // Set LALFrStream to correct location, if needed
+      if ( n < uvar->channel_name->length - 1 ) {
+	XLAL_CHECK_MAIN( XLALFrStreamSeek( framestream, &SFT_epoch ) == 0, XLAL_EFUNC );
+      }
+
     }
-
-    // Create SFT time series window
-    if ( SFT_window == NULL ) {
-      SFT_window = XLALCreateNamedREAL8Window( uvar->window_type, window_param, SFT_time_series->data->length );
-      XLAL_CHECK_MAIN( SFT_window != NULL, XLAL_EFUNC,
-                       "Failed to allocate SFT time series window of %u elements at GPS time %" LAL_INT4_FORMAT, SFT_time_series->data->length, SFT_epoch_sec );
-    }
-
-    // Create SFT FFT data vector and plan
-    if ( SFT_fft_data == NULL ) {
-      SFT_fft_data = XLALCreateCOMPLEX16Vector( SFT_time_series->data->length / 2 + 1 );
-      XLAL_CHECK_MAIN( SFT_fft_data != NULL, XLAL_EFUNC,
-                       "Failed to allocate SFT FFT data vector of %u elements at GPS time %" LAL_INT4_FORMAT, SFT_time_series->data->length / 2 + 1, SFT_epoch_sec );
-      SFT_fft_plan = XLALCreateForwardREAL8FFTPlan( SFT_time_series->data->length, 0 );
-      XLAL_CHECK_MAIN( SFT_fft_plan != NULL, XLAL_EFUNC,
-                       "Failed to allocate SFT FFT plan at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
-    }
-
-    // High-pass SFT time series data with Butterworth High Pass filter
-    if ( uvar->high_pass_freq > 0.0 ) {
-      char filtername[] = "Butterworth High Pass";
-      PassBandParamStruc filterpar = {
-        .name = filtername,
-        .nMax = 10,
-        .f2   = uvar->high_pass_freq,
-        .a2   = 0.5,
-        .f1   = -1.0,
-        .a1   = -1.0,
-      };
-      XLAL_CHECK_MAIN( XLALButterworthREAL8TimeSeries( SFT_time_series, &filterpar ) == XLAL_SUCCESS, XLAL_EFUNC,
-                       "Failed to apply %s filter to SFT time series data at GPS time %" LAL_INT4_FORMAT, filterpar.name, SFT_epoch_sec );
-    }
-
-    // Window SFT time series data
-    XLAL_CHECK_MAIN( XLALUnitaryWindowREAL8Sequence( SFT_time_series->data, SFT_window ) != NULL, XLAL_EFUNC,
-                     "Failed to apply window to SFT time series data at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
-
-    // Fourier transform SFT time series data
-    XLAL_CHECK_MAIN( XLALREAL8ForwardFFT( SFT_fft_data, SFT_time_series->data, SFT_fft_plan ) == XLAL_SUCCESS, XLAL_EFUNC,
-                     "Failed to Fourier transform SFT time series data at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
-
-    // Initialise SFT type
-    SFT->name[0] = uvar->channel_name[0];
-    SFT->name[1] = uvar->channel_name[1] == '0' ? '1' : uvar->channel_name[1];
-    SFT->name[2] = 0;
-    SFT->epoch = SFT_time_series->epoch;
-    SFT->f0 = uvar->start_freq;
-    SFT->deltaF = 1.0 / ((REAL8) uvar->sft_duration);
-
-    // Copy and normalise SFT frequency series data into SFT
-    const REAL8 SFT_normalisation = SFT_time_series->deltaT;
-    for ( UINT4 k = 0; k < SFT_bins; ++k ) {
-      const REAL8 SFT_fft_re = creal( SFT_fft_data->data[k + SFT_first_bin] );
-      const REAL8 SFT_fft_im = cimag( SFT_fft_data->data[k + SFT_first_bin] );
-      SFT->data->data[k] = crectf( SFT_normalisation * SFT_fft_re, SFT_normalisation * SFT_fft_im );
-    }
-
-    // Build SFT filename spec
-    SFTFilenameSpec XLAL_INIT_DECL(spec);
-    XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path, "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name ) == XLAL_SUCCESS, XLAL_EFUNC );
-    spec.window_param = window_param;
-    spec.pubObsRun = uvar->observing_run;
-    spec.pubRevision = uvar->observing_revision;
-
-    // Write out SFT and retrieve filename
-    char *temp_SFT_filename = NULL;
-    {
-      int retn = XLALWriteSFT2StandardFile( SFT, &spec, SFT_comment );
-      temp_SFT_filename = XLALBuildSFTFilenameFromSpec( &spec );
-      XLAL_CHECK_MAIN( retn == XLAL_SUCCESS, XLAL_EFUNC,
-                       "Failed to write SFT '%s' at GPS time %" LAL_INT4_FORMAT, temp_SFT_filename ? temp_SFT_filename : "<unknown>", SFT_epoch_sec );
-      XLAL_CHECK_MAIN( temp_SFT_filename != NULL, XLAL_EFUNC );
-    }
-
-    // Validate SFT
-    XLAL_CHECK_MAIN( XLALCheckSFTFileIsValid( temp_SFT_filename ) == XLAL_SUCCESS, XLAL_EFUNC,
-                     "Failed to validate SFT '%s' at GPS time %" LAL_INT4_FORMAT, temp_SFT_filename, SFT_epoch_sec );
-
-    // Move SFT to final filename
-    char *final_SFT_filename = XLALStringDuplicate( temp_SFT_filename );
-    char *const extn = strrchr( final_SFT_filename, '.' );
-    XLAL_CHECK_MAIN( extn != NULL, XLAL_ESYS );
-    XLAL_CHECK_MAIN( strlen( extn ) >= 4, XLAL_EFAILED );
-    strcpy( extn, ".sft" );
-    XLAL_CHECK_MAIN( rename( temp_SFT_filename, final_SFT_filename ) == 0, XLAL_ESYS,
-                     "Failed to rename '%s' to '%s': %s", temp_SFT_filename, final_SFT_filename, strerror(errno) );
-    LogPrintf( LOG_DEBUG, "Wrote SFT '%s'\n", final_SFT_filename );
-
-    // Increment number of SFTs made
-    if ( ++num_SFTs_made == 1 ) {
-      LogPrintf( LOG_NORMAL, "Generated first SFT at GPS time %" LAL_INT4_FORMAT "\n", SFT_epoch_sec );
-    }
-
-    // Free memory
-    XLALDestroyREAL8TimeSeries( SFT_time_series );
-    XLALFree( temp_SFT_filename );
-    XLALFree( final_SFT_filename );
 
     // Advance to next SFT, overlapping if requested
     {
@@ -494,7 +534,6 @@ int main( int argc, char *argv[] )
         break;
       }
     }
-
   }
 
   ////////// Free memory //////////

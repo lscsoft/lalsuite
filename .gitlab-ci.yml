@@ -55,7 +55,6 @@ include:
 
   # build packages for each subpackage
   - local: '/.gitlab/ci/pkg.yml'
-  - local: '/.gitlab/ci/koji.yml'
 
   # end-to-end tests
   - local: '/.gitlab/ci/compilers.yml'
@@ -1231,7 +1230,7 @@ lalapps:conda:py39:
 .wheel:macos:x86_64:
   tags:
     # explicitly use the oldest macOS tag we have
-    - macos_catalina_x86_64
+    - macos_bigsur_x86_64
 
 .wheel:macos:arm64:
   tags:

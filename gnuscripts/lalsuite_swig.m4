@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 118
+# serial 119
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -12,14 +12,15 @@ AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
 ])
 
 AC_DEFUN([_LALSUITE_CHECK_SWIG_VERSION],[
-  # $0: check the version of $1, and store it in ${swig_version}
-  swig_version=
+  # $0: check the version of $1, and store it in ${SWIG_VERSION}
+  AC_SUBST([SWIG_VERSION])
+  SWIG_VERSION=
   swig_version_output=[`$1 -version 2>/dev/null`]
   AS_IF([test $? -eq 0],[
     swig_version_regex=['s|^ *SWIG [Vv]ersion \([0-9.][0-9.]*\)|\1|p;d']
-    swig_version=[`echo "${swig_version_output}" | ${SED} -e "${swig_version_regex}"`]
+    SWIG_VERSION=[`echo "${swig_version_output}" | ${SED} -e "${swig_version_regex}"`]
   ])
-  AS_IF([test "x${swig_version}" = x],[
+  AS_IF([test "x${SWIG_VERSION}" = x],[
     AC_MSG_ERROR([could not determine version of $1])
   ])
   # end $0
@@ -156,23 +157,23 @@ AC_DEFUN([LALSUITE_USE_SWIG],[
     AS_IF([test "x${SWIG}" != x],[
       AC_MSG_CHECKING([if ${SWIG} version is at least ${MIN_SWIG_VERSION}])
       _LALSUITE_CHECK_SWIG_VERSION([${SWIG}])
-      LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${MIN_SWIG_VERSION}],[
-        AC_MSG_RESULT([no (${swig_version})])
+      LALSUITE_VERSION_COMPARE([${SWIG_VERSION}],[<],[${MIN_SWIG_VERSION}],[
+        AC_MSG_RESULT([no (${SWIG_VERSION})])
         AC_MSG_ERROR([[SWIG version ${MIN_SWIG_VERSION} or later is required ${min_swig_version_info}
 SWIG support can be disabled by using the --disable-swig configure option]])
       ])
-      AC_MSG_RESULT([yes (${swig_version})])
+      AC_MSG_RESULT([yes (${SWIG_VERSION})])
     ],[
       AC_PATH_PROGS_FEATURE_CHECK([SWIG],[swig swig3.0],[
         AC_MSG_CHECKING([if ${ac_path_SWIG} version is at least ${MIN_SWIG_VERSION}])
         _LALSUITE_CHECK_SWIG_VERSION([${ac_path_SWIG}])
-        LALSUITE_VERSION_COMPARE([${swig_version}],[>=],[${MIN_SWIG_VERSION}],[
+        LALSUITE_VERSION_COMPARE([${SWIG_VERSION}],[>=],[${MIN_SWIG_VERSION}],[
           ac_path_SWIG_found=true
-          AC_MSG_RESULT([yes (${swig_version})])
+          AC_MSG_RESULT([yes (${SWIG_VERSION})])
           ac_cv_path_SWIG="${ac_path_SWIG}"
         ],[
           ac_path_SWIG_found=false
-          AC_MSG_RESULT([no (${swig_version})])
+          AC_MSG_RESULT([no (${SWIG_VERSION})])
         ])
       ],[
         AC_MSG_ERROR([[SWIG version ${MIN_SWIG_VERSION} or later is required ${min_swig_version_info}
@@ -181,7 +182,7 @@ SWIG support can be disabled by using the --disable-swig configure option]])
       SWIG="${ac_cv_path_SWIG}"
     ])
     AS_IF([test "x${min_swig_recommend_version}" != x],[
-      LALSUITE_VERSION_COMPARE([${swig_version}],[<],[${min_swig_recommend_version}],[
+      LALSUITE_VERSION_COMPARE([${SWIG_VERSION}],[<],[${min_swig_recommend_version}],[
         AC_MSG_WARN([SWIG version ${min_swig_recommend_version} or later is recommended ${min_swig_version_info}])
       ])
     ])
@@ -703,7 +704,7 @@ EOD`]
     # determine SWIG Python flags
     AC_SUBST([SWIG_PYTHON_FLAGS],["-relativeimport -O -builtin -globals globalvar"])
     # for older SWIG versions, pass '-py3' to enable Python 3 features (default in SWIG >=4.1.0)
-    LALSUITE_VERSION_COMPARE([${swig_version}],[<],[4.1.0],[
+    LALSUITE_VERSION_COMPARE([${SWIG_VERSION}],[<],[4.1.0],[
       SWIG_PYTHON_FLAGS="-py3 ${SWIG_PYTHON_FLAGS}"
     ])
 

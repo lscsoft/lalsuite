@@ -1272,6 +1272,17 @@ int XLALSimIMRPhenomXPGenerateFD(
 )
  {
    UINT4 status = 0;
+   
+   const REAL8 m1_SI_init = m1_SI;
+   const REAL8 m2_SI_init = m2_SI;
+   const REAL8 chi1z_init = chi1z;
+   const REAL8 chi2z_init = chi2z;
+   
+   /*
+  Set initial values of masses and z-components of spins to pass to IMRPhenomXSetWaveformVariables() so it can swap the
+  matter parameters (and masses and spins) appropriately if m1 < m2, since the masses and spin vectors will also be
+  swapped by XLALIMRPhenomXPCheckMassesAndSpins() below.
+  */
 
    status = XLALIMRPhenomXPCheckMassesAndSpins(&m1_SI,&m2_SI,&chi1x,&chi1y,&chi1z,&chi2x,&chi2y,&chi2z);
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: XLALIMRPhenomXPCheckMassesAndSpins failed.\n");
@@ -1307,10 +1318,6 @@ int XLALSimIMRPhenomXPGenerateFD(
    if(mass_ratio > 1000. && fabs(mass_ratio - 1000) > 1e-12) { XLAL_ERROR(XLAL_EDOM, "ERROR: Model not valid at mass ratios beyond 1000.\n"); } // The 1e-12 is to avoid rounding errors
    if(sqrt(chi1x*chi1x + chi1y*chi1y + chi1z*chi1z) > 0.99 || sqrt(chi2x*chi2x + chi2y*chi2y + chi2z*chi2z) > 0.99) { XLAL_PRINT_WARNING("Warning: Extrapolating to extremal spins, model is not trusted.\n"); }
 
-   REAL8 chi1L, chi2L;
-   chi1L = chi1z;
-   chi2L = chi2z;
-
    /* If fRef is not provided, then set fRef to be the starting GW Frequency */
    const REAL8 fRef = (fRef_In == 0.0) ? freqs->data[0] : fRef_In;
 
@@ -1345,7 +1352,7 @@ int XLALSimIMRPhenomXPGenerateFD(
    /* Initialize IMRPhenomX waveform struct and perform sanity check. */
    IMRPhenomXWaveformStruct *pWF;
    pWF    = XLALMalloc(sizeof(IMRPhenomXWaveformStruct));
-   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI, m2_SI, chi1L, chi2L, 0.0, fRef, phiRef, f_min_In, f_max_In, distance, inclination, lalParams_aux, 0);
+   status = IMRPhenomXSetWaveformVariables(pWF, m1_SI_init, m2_SI_init, chi1z_init, chi2z_init, 0.0, fRef, phiRef, f_min_In, f_max_In, distance, inclination, lalParams_aux, 0);
    XLAL_CHECK(XLAL_SUCCESS == status, XLAL_EFUNC, "Error: IMRPhenomXSetWaveformVariables failed.\n");
 
    /* Initialize IMR PhenomX Precession struct and check that it generated successfully */
@@ -2463,6 +2470,11 @@ XLALDestroyREAL8Sequence(gamma);
   LALFree(pAmp22);
   LALFree(pPhase22);
   XLALDestroyREAL8Sequence(freqs);
+  
+  // Free allocated memory for tidal extension
+  XLALDestroyREAL8Sequence(phi_tidal);
+  XLALDestroyREAL8Sequence(amp_tidal);
+  XLALDestroyREAL8Sequence(planck_taper);
 
   if(PNRUseTunedAngles){
     XLALDestroyREAL8Sequence(alphaPNR);
