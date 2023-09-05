@@ -117,7 +117,53 @@ EOSDATAFILES = \
 	LALSimNeutronStarEOS_SLY2.dat \
 	LALSimNeutronStarEOS_SLY230A.dat \
 	LALSimNeutronStarEOS_SLY9.dat \
-	LALSimNeutronStarEOS_HQC18.dat
+	LALSimNeutronStarEOS_HQC18.dat \
+	LALSimNeutronStarEOS_GMSR_BSK14_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_DHSL59_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_DHSL69_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_F0_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_H1_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_H2_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_H3_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_H4_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_H5_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_LN55_BSK24.dat \
+	LALSimNeutronStarEOS_GMSR_SLY5_BSK24.dat \
+	LALSimNeutronStarEOS_GPPVA_DD2_BSK24.dat \
+	LALSimNeutronStarEOS_GPPVA_DDME2_BSK24.dat \
+	LALSimNeutronStarEOS_GPPVA_FSU2_BSK24.dat \
+	LALSimNeutronStarEOS_GPPVA_FSU2H_BSK24.dat \
+	LALSimNeutronStarEOS_GPPVA_NL3WRL55_BSK24.dat \
+	LALSimNeutronStarEOS_KDE0V_BSK24.dat \
+	LALSimNeutronStarEOS_KDE0V1_BSK24.dat \
+	LALSimNeutronStarEOS_PCP_BSK24_BSK24.dat \
+	LALSimNeutronStarEOS_RG_SLY4_BSK24.dat \
+	LALSimNeutronStarEOS_RS_BSK24.dat \
+	LALSimNeutronStarEOS_SK255_BSK24.dat \
+	LALSimNeutronStarEOS_SKA_BSK24.dat \
+	LALSimNeutronStarEOS_SKB_BSK24.dat \
+	LALSimNeutronStarEOS_SKI2_BSK24.dat \
+	LALSimNeutronStarEOS_SKI3_BSK24.dat \
+	LALSimNeutronStarEOS_SKI4_BSK24.dat \
+	LALSimNeutronStarEOS_SKI6_BSK24.dat \
+	LALSimNeutronStarEOS_SKOP_BSK24.dat \
+	LALSimNeutronStarEOS_SLY2_BSK24.dat \
+	LALSimNeutronStarEOS_SLY9_BSK24.dat \
+	LALSimNeutronStarEOS_SLY230A_BSK24.dat \
+	LALSimNeutronStarEOS_XMLSLZ_DDLZ1_BSK24.dat \
+	LALSimNeutronStarEOS_XMLSLZ_DDME2_BSK24.dat \
+	LALSimNeutronStarEOS_XMLSLZ_DDMEX_BSK24.dat \
+	LALSimNeutronStarEOS_XMLSLZ_GM1_BSK24.dat \
+	LALSimNeutronStarEOS_XMLSLZ_MTVTC_BSK24.dat \
+	LALSimNeutronStarEOS_XMLSLZ_NL3_BSK24.dat \
+	LALSimNeutronStarEOS_XMLSLZ_PKDD_BSK24.dat \
+	LALSimNeutronStarEOS_XMLSLZ_TM1_BSK24.dat \
+	LALSimNeutronStarEOS_XMLSLZ_TW99_BSK24.dat \
+	LALSimNeutronStarEOS_ABHT_QMC_RMF1_META.dat \
+	LALSimNeutronStarEOS_ABHT_QMC_RMF2_META.dat \
+	LALSimNeutronStarEOS_ABHT_QMC_RMF3_META.dat \
+	LALSimNeutronStarEOS_ABHT_QMC_RMF4_META.dat \
+	LALSimNeutronStarEOS_BL_CHIRAL_META.dat
 
 pkginclude_HEADERS = \
 	LALSimBlackHoleRingdown.h \

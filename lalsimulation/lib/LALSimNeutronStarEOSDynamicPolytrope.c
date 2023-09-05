@@ -264,7 +264,16 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSDynamicAnalytic(double parameters[], 
 
     // Updating eos structure
     LALSimNeutronStarEOS * eos;
-    eos = eos_alloc_tabular(pdat,edat,ndat);
+    double *nbdat = NULL;
+    double *mubdat = NULL;
+    double *muedat = NULL;
+    double *yedat = NULL;
+    double *cs2dat = NULL;
+    double *hdat = NULL;
+    size_t ncol = 2;
+    /* Updating eos structure */
+    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
+
 
     XLALFree(edat);
     XLALFree(pdat);

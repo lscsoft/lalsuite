@@ -68,6 +68,8 @@ struct tagLALSimNeutronStarEOS {
     double (*p_of_h) (double h, LALSimNeutronStarEOS * myself);
     double (*e_of_h) (double h, LALSimNeutronStarEOS * myself);
     double (*rho_of_h) (double h, LALSimNeutronStarEOS * myself);
+    double (*p_of_e) (double e, LALSimNeutronStarEOS * myself);
+    double (*p_of_rho) (double rho, LALSimNeutronStarEOS * myself);
     double (*dedp_of_p) (double p, LALSimNeutronStarEOS * myself);
     double (*v_of_h) (double h, LALSimNeutronStarEOS * myself);
     void (*free) (LALSimNeutronStarEOS * myself);
@@ -78,7 +80,7 @@ struct tagLALSimNeutronStarEOS {
 /** @endcond */
 
 /** Recognised equations of state names */
-const char * const lalSimNeutronStarEOSNames[65] = {
+const char * const lalSimNeutronStarEOSNames[111] = {
         "ALF1", "ALF2", "ALF3", "ALF4",
         "AP1", "AP2", "AP3", "AP4", "APR4_EPP",
         "BBB2", "BGN1H1", "BPAL12", 
@@ -101,7 +103,17 @@ const char * const lalSimNeutronStarEOSNames[65] = {
         /* This EOS was added by request from
          * http://user.numazu-ct.ac.jp/~sumi/eos/HQC18_submit
          */
-        "HQC18"
+        "HQC18",
+        /* These EOS files are part of the new EOS framework via Micaela Oertel's group and the LUTH group */
+        "GMSR_BSK14_BSK24", "GMSR_DHSL59_BSK24", "GMSR_DHSL69_BSK24", "GMSR_F0_BSK24", "GMSR_H1_BSK24", "GMSR_H2_BSK24", 
+        "GMSR_H3_BSK24", "GMSR_H4_BSK24", "GMSR_H5_BSK24", "GMSR_LN55_BSK24", "GMSR_SLY5_BSK24", "GPPVA_DD2_BSK24", 
+        "GPPVA_DDME2_BSK24", "GPPVA_FSU2_BSK24", "GPPVA_FSU2H_BSK24", "GPPVA_NL3WRL55_BSK24", 
+        "KDE0V_BSK24", "KDE0V1_BSK24", "PCP_BSK24_BSK24", "RG_SLY4_BSK24", "RS_BSK24", 
+        "SK255_BSK24", "SKA_BSK24", "SKB_BSK24", "SKI2_BSK24", "SKI3_BSK24", "SKI4_BSK24", "SKI6_BSK24", 
+        "SKOP_BSK24", "SLY2_BSK24", "SLY9_BSK24", "SLY230A_BSK24", 
+        "XMLSLZ_DDLZ1_BSK24", "XMLSLZ_DDME2_BSK24", "XMLSLZ_DDMEX_BSK24", "XMLSLZ_GM1_BSK24", "XMLSLZ_MTVTC_BSK24", 
+        "XMLSLZ_NL3_BSK24", "XMLSLZ_PKDD_BSK24", "XMLSLZ_TM1_BSK24", "XMLSLZ_TW99_BSK24", "ABHT_QMC_RMF1_META", 
+        "ABHT_QMC_RMF2_META", "ABHT_QMC_RMF3_META", "ABHT_QMC_RMF4_META", "BL_CHIRAL_META"
     };
 
 /**
@@ -422,6 +434,40 @@ double XLALSimNeutronStarEOSSpeedOfSound(double h, LALSimNeutronStarEOS * eos)
     v = XLALSimNeutronStarEOSSpeedOfSoundGeometerized(h, eos);
     v *= LAL_C_SI;
     return v;
+}
+
+/**
+ * @brief Returns the pressure in Pa at a given
+ * energy density in J/m^3.
+ * @param e energy density in J/m^3
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure in Pa.
+ */
+double XLALSimNeutronStarEOSPressureOfEnergyDensity(double e,
+    LALSimNeutronStarEOS * eos)
+{
+    double p;
+    e *= LAL_G_C4_SI;
+    p = eos->p_of_e(e, eos);
+    p /= LAL_G_C4_SI;
+    return p;
+}
+
+/**
+ * @brief Returns the pressure in Pa at a given
+ * rest-mass density in kg/m^3.
+ * @param rho rest-mass density in kg/m^3
+ * @param eos Pointer to the EOS structure.
+ * @return The pressure in Pa.
+ */
+double XLALSimNeutronStarEOSPressureOfRestMassDensity(double rho,
+    LALSimNeutronStarEOS * eos)
+{
+    double p;
+    rho *= LAL_G_C2_SI;
+    p = eos->p_of_rho(rho, eos);
+    p /= LAL_G_C4_SI;
+    return p;
 }
 
 

@@ -56,7 +56,7 @@
 typedef struct tagLALSimNeutronStarEOS LALSimNeutronStarEOS;
 
 /** Recognised names of equations of state */
-extern const char * const lalSimNeutronStarEOSNames[65];
+extern const char * const lalSimNeutronStarEOSNames[111];
 
 /** Incomplete type for a neutron star family having a particular EOS. */
 typedef struct tagLALSimNeutronStarFamily LALSimNeutronStarFamily;
@@ -105,6 +105,10 @@ double XLALSimNeutronStarEOSEnergyDensityDerivOfPressure(double p,
     LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSSpeedOfSound(double h,
     LALSimNeutronStarEOS * eos);
+double XLALSimNeutronStarEOSPressureOfEnergyDensity(double e,
+    LALSimNeutronStarEOS * eos);
+double XLALSimNeutronStarEOSPressureOfRestMassDensity(double rho,
+    LALSimNeutronStarEOS * eos);
 
 double XLALSimNeutronStarEOSEnergyDensityOfPressureGeometerized(double p,
     LALSimNeutronStarEOS * eos);
@@ -126,6 +130,20 @@ double XLALSimNeutronStarEOSSpeedOfSoundGeometerized(double h,
 int XLALSimNeutronStarTOVODEIntegrate(double *radius, double *mass,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos);
+
+int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos, double epsrel);
+
+int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6, 
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos);
+
+int XLALSimNeutronStarVirialODEIntegrateWithTolerance(double *radius, double *mass,
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6, 
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos, double epsrel);
 
 /* MASS-RADIUS TYPE RELATIONSHIP ROUTINES */
 
