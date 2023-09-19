@@ -455,17 +455,18 @@ if not args.cache_file:
         datafindLogFile = f'{args.log_path}/datafind_{dag_filename}.log'
         datafindFID.write('universe = vanilla\n')
         datafindFID.write(f'executable = {dataFindExe}\n')
-        if not args.datafind_match:
-            dataFindMatchString = ''
-        else:
-            dataFindMatchString = f'--match {args.datafind_match}'
-        datafindFID.write('arguments = -r $ENV(LIGO_DATAFIND_SERVER) ')
+        datafindFID.write('arguments = ')
         datafindFID.write('--observatory $(observatory) --url-type file ')
         datafindFID.write('--gps-start-time $(gpsstarttime) ')
         datafindFID.write('--gps-end-time $(gpsendtime) --lal-cache --gaps ')
-        datafindFID.write(f'--type $(inputdatatype) {dataFindMatchString}\n')
-        datafindFID.write('getenv = LIGO_DATAFIND_SERVER\n')
+        datafindFID.write(f'--type $(inputdatatype)')
+        if args.datafind_match:
+            datafindFID.write(f' --match {args.datafind_match}\n')
+        else:
+            datafindFID.write('\n')
+        datafindFID.write('getenv = *DATAFIND*, KRB5*, X509*, BEARER_TOKEN*, SCITOKEN*\n')
         datafindFID.write('request_disk = 5MB\n')
+        datafindFID.write('request_memory = 2000MB\n')
         datafindFID.write(f'accounting_group = {args.accounting_group}\n')
         datafindFID.write(f'accounting_group_user = {args.accounting_group_user}\n')
         datafindFID.write(f'log = {datafindLogFile}\n')
@@ -482,7 +483,6 @@ with open(makesfts_sub, 'w') as MakeSFTsFID:
     MakeSFTsFID.write('universe = vanilla\n')
     MakeSFTsFID.write('executable = {}\n'.format(makeSFTsExe))
     MakeSFTsFID.write('arguments = $(argList)\n')
-    MakeSFTsFID.write('getenv = True\n')
     MakeSFTsFID.write('accounting_group = {}\n'.format(args.accounting_group))
     MakeSFTsFID.write('accounting_group_user = {}\n'.format(
         args.accounting_group_user))

@@ -59,9 +59,10 @@ fi
 testdatafindcontent=$(<$datafindsub)
 datafindfilecontent="universe = vanilla
 executable = /usr/bin/gw_data_find
-arguments = -r \$ENV(LIGO_DATAFIND_SERVER) --observatory \$(observatory) --url-type file --gps-start-time \$(gpsstarttime) --gps-end-time \$(gpsendtime) --lal-cache --gaps --type \$(inputdatatype) 
-getenv = LIGO_DATAFIND_SERVER
+arguments = --observatory \$(observatory) --url-type file --gps-start-time \$(gpsstarttime) --gps-end-time \$(gpsendtime) --lal-cache --gaps --type \$(inputdatatype)
+getenv = *DATAFIND*, KRB5*, X509*, BEARER_TOKEN*, SCITOKEN*
 request_disk = 5MB
+request_memory = 2000MB
 accounting_group = ligo.sim.o4.cw.explore.test
 accounting_group_user = albert.einstein
 log = logs/datafind_test.dag.log
@@ -82,7 +83,6 @@ testsftsubcontent=$(<$sftsub)
 sftsubfilecontent="universe = vanilla
 executable = /tmp/path/to/lalpulsar_MakeSFTs
 arguments = \$(argList)
-getenv = True
 accounting_group = ligo.sim.o4.cw.explore.test
 accounting_group_user = albert.einstein
 log = logs/MakeSFTs_test.dag.log
