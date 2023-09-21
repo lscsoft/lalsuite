@@ -33,6 +33,8 @@
 #include <lal/Units.h>
 #include <lal/LALSimSGWB.h>
 
+#include <lal/LALSimReadData.h>
+
 /* 
  * This routine generates a single segment of data.  Note that this segment is
  * generated in the frequency domain and is inverse Fourier transformed into
@@ -552,6 +554,87 @@ int XLALSimSGWBPowerLawSpectrum(
 	XLALDestroyREAL8FrequencySeries(OmegaGW);
 	return 0;
 }
+
+
+REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrum(
+        double Omega[],		/**< [in] sgwb numerical power spectrum */
+        double flow,		/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
+        double deltaF,		/**< [in] frequency bin width (Hz) */
+        size_t length,          /**< [in] length of output REAL8FrequencySeries */
+        size_t N                /**< [in] length of input array Omega */
+)
+{
+        REAL8FrequencySeries *OmegaGW;
+        LIGOTimeGPS epoch = {0, 0};
+        size_t klow = flow / deltaF;
+        size_t k;
+
+        OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
+        /* zero DC component */
+        OmegaGW->data->data[0] = 0.0;
+        /* zero up to low frequency cutoff */
+        for (k = 1; k < klow; ++k)
+                OmegaGW->data->data[k] = 0.0;
+        for (; k < N; ++k)
+                OmegaGW->data->data[k] = Omega[k];
+        /* set remaining components */
+        for (; k < length - 1; ++k)
+                OmegaGW->data->data[k] = 0;//Omega[k];
+        /* zero Nyquist component */
+        OmegaGW->data->data[length - 1] = 0.0;
+
+        return OmegaGW;
+}
+
+
+REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrumFromFile(
+        const char *fname,
+        size_t length
+)
+{
+        double *f;
+        double *Omega;	/**< [in] sgwb numerical power spectrum */
+        double flow;
+        double deltaF;
+        size_t N;
+        size_t klow;
+        size_t k;
+        REAL8FrequencySeries *OmegaGW;
+        LIGOTimeGPS epoch = {0, 0};
+        LALFILE *fp;
+
+        /* read the file into Omega and f */
+        fp = XLALSimReadDataFileOpen(fname);
+        if (!fp)
+                XLAL_ERROR_NULL(XLAL_EFUNC);
+
+        N = XLALSimReadDataFile2Col(&f, &Omega, fp);
+        XLALFileClose(fp);
+        if (N == (size_t)(-1))
+                XLAL_ERROR_NULL(XLAL_EFUNC);
+
+        flow = f[0];					/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
+        deltaF = (f[N-1] - f[0])/(N-1);	/**< [in] frequency bin width (Hz) */
+
+        klow = flow / deltaF;
+        OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
+
+        /* zero DC component */
+        OmegaGW->data->data[0] = 0.0;
+        /* zero up to low frequency cutoff */
+        for (k = 1; k < klow; ++k)
+                OmegaGW->data->data[k] = 0.0;
+        for (; k < N; ++k)
+                OmegaGW->data->data[k] = Omega[k];
+        /* set remaining components */
+        for (; k < length - 1; ++k)
+                OmegaGW->data->data[k] = 0;
+        /* zero Nyquist component */
+        OmegaGW->data->data[length - 1] = 0.0;
+
+        return OmegaGW;
+}
+
 
 /** @} */
 

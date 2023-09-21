@@ -58,7 +58,8 @@ double XLALSimSGWBOverlapReductionFunction(double f, const LALDetector *detector
 
 REAL8FrequencySeries *XLALSimSGWBOmegaGWFlatSpectrum(double Omega0, double flow, double deltaF, size_t length);
 REAL8FrequencySeries *XLALSimSGWBOmegaGWPowerLawSpectrum(double Omegaref, double alpha, double fref, double flow, double deltaF, size_t length);
-
+REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrum(double Omega[], double flow, double deltaF, size_t length, size_t N);
+REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrumFromFile(const char *fname, size_t length);
 
 /*
  * SGWB GENERATION ROUTINES
