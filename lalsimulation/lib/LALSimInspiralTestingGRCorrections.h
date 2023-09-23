@@ -40,16 +40,16 @@ extern "C" {
  * PhaseCorrectionsPhasing to smoothly taper the correction to the baseline GR waveform.
  */
 int XLALSimInspiralTestingGRCorrections(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
-                                        const UINT4 l,
-                                        const UINT4 m,                                   
-                                        const REAL8 m1_SI,
-                                        const REAL8 m2_SI,
-                                        const REAL8 chi1z,
-                                        const REAL8 chi2z,
-                                        const REAL8 f_low,
-                                        const REAL8 f_ref,
-					const REAL8 f_window_div_f_Peak,     /** Frequency at which to attach non-GR and GR waveforms, inputted as a fraction of f_Peak (should be between 0 and 1) */
-					const REAL8 NCyclesStep,                /** Number of GW cycles over which to taper the non-GR phase correction */
+                                        const UINT4 l, /**< UNDOCUMENTED */
+                                        const UINT4 m,  /**< UNDOCUMENTED */
+                                        const REAL8 m1_SI, /**< UNDOCUMENTED */
+                                        const REAL8 m2_SI, /**< UNDOCUMENTED */
+                                        const REAL8 chi1z, /**< UNDOCUMENTED */
+                                        const REAL8 chi2z, /**< UNDOCUMENTED */
+                                        const REAL8 f_low, /**< UNDOCUMENTED */
+                                        const REAL8 f_ref, /**< UNDOCUMENTED */
+					const REAL8 f_window_div_f_Peak,     /**< Frequency at which to attach non-GR and GR waveforms, inputted as a fraction of f_Peak (should be between 0 and 1) */
+					const REAL8 NCyclesStep,                /**< Number of GW cycles over which to taper the non-GR phase correction */
                                         LALDict *LALpars    /**< input linked list of testing gr parameters */
 );
 
@@ -61,17 +61,18 @@ void XLALSimInspiralPNCorrections(PNPhasingSeries *pfa, const REAL8 m1, const RE
  * and then integrating back to recover the phase. Finally, adds the phaes correction to the waveform and stores in htilde.
  */
 int XLALSimInspiralPhaseCorrectionsPhasing(COMPLEX16FrequencySeries *htilde,       /**< input htilde, will be modified in place */
-                                           const REAL8Sequence *freqs,
-                                           const UINT4 m,
-                                           const UINT4 iStart,
-                                           const UINT4 iRef,
-                                           const UINT4 iPeak,
-                                           PNPhasingSeries pfa,
-                                           const REAL8 mtot,
-                                           const REAL8 eta,
-                                           const REAL8 f_window_div_f_Peak,
-                                           const REAL8 iStartFinal,
-					   const REAL8 NCyclesStep);  /** Choose number of GW cycles over which to taper the non-GR phase correction */
+                                           const REAL8Sequence *freqs, /**< UNDOCUMENTED */
+                                           const UINT4 m, /**< UNDOCUMENTED */
+                                           const UINT4 iStart, /**< UNDOCUMENTED */
+                                           const UINT4 iRef, /**< UNDOCUMENTED */
+                                           const UINT4 iPeak, /**< UNDOCUMENTED */
+                                           PNPhasingSeries pfa, /**< UNDOCUMENTED */
+                                           const REAL8 mtot, /**< UNDOCUMENTED */
+                                           const REAL8 eta, /**< UNDOCUMENTED */
+                                           const REAL8 f_window_div_f_Peak, /**< UNDOCUMENTED */
+                                           const REAL8 iStartFinal, /**< UNDOCUMENTED */
+					   const REAL8 NCyclesStep  /**< Choose number of GW cycles over which to taper the non-GR phase correction */
+                                           );
 
 /* Main function for waveform generation for signals with dynamical scalarization. Accepts a GR waveform htilde, binary parameters,
  * testing-GR parameters, and paremeters that determine how the corrections will be tapered. Calls PNCorrections to compute 

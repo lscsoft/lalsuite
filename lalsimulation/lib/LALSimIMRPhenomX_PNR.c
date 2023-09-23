@@ -1487,9 +1487,9 @@ extern "C"
 
   /* Function for testing deltaF spacing for interpolation */
   int XLALSimIMRPhenomX_PNR_InterpolationDeltaF(
-      INT4 *twospin,
-      INT4 *precversion,
-      REAL8 *deltaF,
+      INT4 *twospin, /**< UNDOCUMENTED */
+      INT4 *precversion, /**< UNDOCUMENTED */
+      REAL8 *deltaF, /**< UNDOCUMENTED */
       REAL8 m1_SI, /**< mass of companion 1 (kg) */
       REAL8 m2_SI, /**< mass of companion 2 (kg) */
       REAL8 chi1x, /**< x-component of the dimensionless spin of object 1 w.r.t. Lhat = (0,0,1) */
