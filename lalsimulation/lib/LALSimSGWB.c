@@ -555,38 +555,6 @@ int XLALSimSGWBPowerLawSpectrum(
 	return 0;
 }
 
-
-REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrum(
-        double Omega[],		/**< [in] sgwb numerical power spectrum */
-        double flow,		/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
-        double deltaF,		/**< [in] frequency bin width (Hz) */
-        size_t length,          /**< [in] length of output REAL8FrequencySeries */
-        size_t N                /**< [in] length of input array Omega */
-)
-{
-        REAL8FrequencySeries *OmegaGW;
-        LIGOTimeGPS epoch = {0, 0};
-        size_t klow = flow / deltaF;
-        size_t k;
-
-        OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
-        /* zero DC component */
-        OmegaGW->data->data[0] = 0.0;
-        /* zero up to low frequency cutoff */
-        for (k = 1; k < klow; ++k)
-                OmegaGW->data->data[k] = 0.0;
-        for (; k < N; ++k)
-                OmegaGW->data->data[k] = Omega[k];
-        /* set remaining components */
-        for (; k < length - 1; ++k)
-                OmegaGW->data->data[k] = 0;//Omega[k];
-        /* zero Nyquist component */
-        OmegaGW->data->data[length - 1] = 0.0;
-
-        return OmegaGW;
-}
-
-
 REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrumFromFile(
         const char *fname,
         size_t length
@@ -595,10 +563,14 @@ REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrumFromFile(
         double *f;
         double *Omega;	/**< [in] sgwb numerical power spectrum */
         double flow;
+		double fk;
+		double Omegak;
+		double x;
         double deltaF;
         size_t N;
         size_t klow;
         size_t k;
+		size_t i;
         REAL8FrequencySeries *OmegaGW;
         LIGOTimeGPS epoch = {0, 0};
         LALFILE *fp;
@@ -614,9 +586,15 @@ REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrumFromFile(
                 XLAL_ERROR_NULL(XLAL_EFUNC);
 
         flow = f[0];					/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
-        deltaF = (f[N-1] - f[0])/(N-1);	/**< [in] frequency bin width (Hz) */
+        deltaF = (f[N-1] - f[0])/length;	/**< [in] frequency bin width (Hz) */
+
+		for (i = 0; i < N; ++i)
+				Omega[i] = log(Omega[i]);
 
         klow = flow / deltaF;
+		if (length < N + klow) 
+			XLAL_ERROR_NULL(XLAL_EDATA, "Input data too long or length too short.");
+		
         OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
 
         /* zero DC component */
@@ -624,11 +602,16 @@ REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrumFromFile(
         /* zero up to low frequency cutoff */
         for (k = 1; k < klow; ++k)
                 OmegaGW->data->data[k] = 0.0;
-        for (; k < N; ++k)
-                OmegaGW->data->data[k] = Omega[k];
-        /* set remaining components */
-        for (; k < length - 1; ++k)
-                OmegaGW->data->data[k] = 0;
+
+		i = 1;
+        for (; k < length - 1; ++k) {
+				fk = flow + k * deltaF;
+				while (f[i] < fk && i < N - 1)
+						++i;
+				x = (f[i] - fk) / (f[i] - f[i-1]);
+				Omegak = x * Omega[i-1] + (1.0 - x) * Omega[i];
+				OmegaGW->data->data[k] = exp(Omegak);
+		}
         /* zero Nyquist component */
         OmegaGW->data->data[length - 1] = 0.0;
 
