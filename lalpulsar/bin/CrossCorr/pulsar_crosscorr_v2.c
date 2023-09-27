@@ -3,6 +3,7 @@
  *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *  Copyright (C) 2016, 2017 Grant David Meadors
  *  Copyright (C) 2020, 2021 Jared Wofford, John Whelan
+ *  Copyright (C) 2023 John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -159,10 +160,10 @@ int XLALInitUserVars ( UserInput_t *uvar );
 int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar);
 int XLALDestroyConfigVars (ConfigVariables *config);
 int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, ConfigVariables *config);
-int GetNextCrossCorrTemplateResamp(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum);
-int GetNextCrossCorrTemplateForResamp(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount);
+/* int GetNextCrossCorrTemplateResamp(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum); */
+int GetNextCrossCorrTemplateForResamp(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, ConfigVariables *config);
 int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, int DEMODndim, int DEMODdimf, int DEMODdima, int DEMODdimT, int DEMODdimP, gsl_matrix *metric_ij, int* DEMODnumpoints, int* DEMODnumorb, ConfigVariables *config);
-int resampLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist );
+/* int resampLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist ); */
 int resampForLoopCrossCorr(PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftGlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, UserInput_t uvar, MultiNoiseWeights *multiWeights, REAL8Vector *ccStatVector, REAL8Vector *evSquaredVector, REAL8Vector *numeEquivAve, REAL8Vector *numeEquivCirc, REAL8 estSens, REAL8Vector *resampGammaAve, MultiResampSFTPairMultiIndexList *resampMultiPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, REAL8 tShort, ConfigVariables *config);
 int testShortFunctionsBlock ( UserInput_t uvar, MultiSFTVector *inputSFTs, REAL8 Tsft, REAL8 resampTshort, SFTIndexList **sftIndices, SFTPairIndexList **sftPairs, REAL8Vector** GammaAve, REAL8Vector** GammaCirc, MultiResampSFTPairMultiIndexList **resampMultiPairs, MultiLALDetector* multiDetectors, MultiDetectorStateSeries **multiStates, MultiDetectorStateSeries **resampMultiStates, MultiNoiseWeights **multiWeights,  MultiLIGOTimeGPSVector **multiTimes, MultiLIGOTimeGPSVector **resampMultiTimes, MultiSSBtimes **multiSSBTimes, REAL8VectorSequence **phaseDerivs, gsl_matrix **g_ij, gsl_vector **eps_i, REAL8 estSens, SkyPosition *skypos, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *thisBinaryTemplate, ConfigVariables config, const DopplerCoordinateSystem coordSys );
 UINT4 pcc_count_csv( CHAR *csvline );
@@ -288,6 +289,37 @@ int main(int argc, char *argv[]){
   if (XLALUserVarWasSet(&uvar.spacingP) && XLALUserVarWasSet(&uvar.mismatchP))
     LogPrintf (LOG_CRITICAL, "spacingP and mismatchP are both set, use spacingP %.9g by default\n\n", uvar.spacingP);
 
+  if ( uvar.useLattice == FALSE ) {
+    if (!XLALUserVarWasSet(&uvar.spacingF) && !XLALUserVarWasSet(&uvar.mismatchF)){
+      LogPrintf (LOG_CRITICAL, "neither spacingF nor mismatchF was set, using mismatchF %.9g by default\n\n", uvar.mismatchF);
+      if ( uvar.treatWarningsAsErrors ) {
+	printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+  }
+    if (!XLALUserVarWasSet(&uvar.spacingA) && !XLALUserVarWasSet(&uvar.mismatchA)){
+      LogPrintf (LOG_CRITICAL, "neither spacingA nor mismatchA was set, using mismatchA %.9g by default\n\n", uvar.mismatchA);
+      if ( uvar.treatWarningsAsErrors ) {
+	printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+    if (!XLALUserVarWasSet(&uvar.spacingT) && !XLALUserVarWasSet(&uvar.mismatchT)){
+      LogPrintf (LOG_CRITICAL, "neither spacingT nor mismatchT was set, using mismatchT %.9g by default\n\n", uvar.mismatchT);
+      if ( uvar.treatWarningsAsErrors ) {
+	printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+    if (!XLALUserVarWasSet(&uvar.spacingP) && !XLALUserVarWasSet(&uvar.mismatchP)){
+      LogPrintf (LOG_CRITICAL, "neither spacingP nor mismatchP was set, using mismatchP %.9g by default\n\n", uvar.mismatchP);
+      if ( uvar.treatWarningsAsErrors ) {
+	printf("Error! (--treatWarningsAsErrors flag is true).\n");
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+  }
+
   if ( uvar.resamp == TRUE && uvar.useLattice == TRUE ) {
       printf("Error!  LatticeTiling placement not yet implemented with resampling\n");
       XLAL_ERROR( XLAL_EFUNC );
@@ -412,7 +444,7 @@ int main(int argc, char *argv[]){
   if ( (uvar.resamp == TRUE) && ( uvar.testResampNoTShort == FALSE )  ){
     /* Edit the timestamps to accurately reflect tShort */
     if ((resampMultiTimes = XLALModifyMultiTimestampsFromSFTs ( &scienceFlagVect, multiTimes, resampTshort , numShortPerDet )) == NULL){
-      LogPrintf ( LOG_CRITICAL, "%s: XLALExtractMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
+      LogPrintf ( LOG_CRITICAL, "%s: XLALModifyMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
     if (( XLALModifyMultiAMCoeffsWeights ( &multiWeights, resampTshort, Tsft, numShortPerDet, multiTimes  )) != XLAL_SUCCESS ){
@@ -460,6 +492,10 @@ int main(int argc, char *argv[]){
   FILE *fp = NULL;
 
   if (XLALUserVarWasSet(&uvar.pairListInputFilename)) { /* If the user provided a list for reading, use it */
+    if ( uvar.resamp == TRUE ) {
+      LogPrintf( LOG_CRITICAL, "Error! Reading pair list from input file not supported with resampling.\n" );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
     if((sftPairs = XLALCalloc(1, sizeof(sftPairs))) == NULL){
       XLAL_ERROR(XLAL_ENOMEM);
     }
@@ -1437,8 +1473,8 @@ int XLALInitializeConfigVars (ConfigVariables *config, const UserInput_t *uvar)
       }
       config->useTPEllipse = TRUE;
     }
-    if ( uvar->resamp == TRUE ) {
-      printf("Error!  Elliptical boundary and sheared coordinates not yet implemented with resampling\n");
+    if ( uvar->resamp == TRUE && config->useTPEllipse == TRUE) {
+      printf("Error!  Elliptical boundary not yet implemented with resampling\n");
       XLAL_ERROR( XLAL_EFUNC );
     }
     /* End consistency checks */
@@ -1590,92 +1626,92 @@ int GetNextCrossCorrTemplate(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, Pul
 
 /* Reorder the loop to prepare for resampling */
 
-int GetNextCrossCorrTemplateResamp(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum)
-{
+/* int GetNextCrossCorrTemplateResamp(BOOLEAN *binaryParamsFlag, BOOLEAN *firstPoint, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum) */
+/* { */
 
-  /* basic sanity checks */
-  if (binaryTemplateSpacings == NULL)
-    return -1;
+/*   /\* basic sanity checks *\/ */
+/*   if (binaryTemplateSpacings == NULL) */
+/*     return -1; */
 
-  if (minBinaryTemplate == NULL)
-    return -1;
+/*   if (minBinaryTemplate == NULL) */
+/*     return -1; */
 
-  if (maxBinaryTemplate == NULL)
-    return -1;
+/*   if (maxBinaryTemplate == NULL) */
+/*     return -1; */
 
-  /* check spacings not negative */
+/*   /\* check spacings not negative *\/ */
 
-  if ( *tCount < tSpacingNum)    /*loop over T at first*/
-    {
-      REAL8 nextGPSTime = XLALGPSGetREAL8(&minBinaryTemplate->tp) + (*tCount + 1) *  XLALGPSGetREAL8(&binaryTemplateSpacings->tp);
-      XLALGPSSetREAL8( &dopplerpos->tp, nextGPSTime);
-      *binaryParamsFlag = TRUE; //Not very sure about this being True
-      *tCount += 1;
-      return 0;
-    }
-  else
-    {
-      if ( *aCount < aSpacingNum )  /*after looping all T, initialize T and loop over a_p*/
-	{
-          dopplerpos->asini = minBinaryTemplate->asini + (*aCount + 1) * binaryTemplateSpacings->asini;
-          dopplerpos->tp = minBinaryTemplate->tp;
-          *tCount = 0;
-          *binaryParamsFlag = TRUE;
-	  *aCount += 1;
-	  return 0;
-	}
-      else
-	{
-	  if ( *pCount < pSpacingNum )  /*after looping the plane of T and a_p, initialize T, a_p and loop over P*/
-	    {
-              dopplerpos->period = minBinaryTemplate->period + (*pCount + 1) * binaryTemplateSpacings->period;
-              dopplerpos->tp = minBinaryTemplate->tp;
-              *tCount = 0;
-              dopplerpos->asini = minBinaryTemplate->asini;
-              *aCount = 0;
-              *binaryParamsFlag = TRUE;
-              *pCount += 1;
-	      return 0;
-	    }
+/*   if ( *tCount < tSpacingNum)    /\*loop over T at first*\/ */
+/*     { */
+/*       REAL8 nextGPSTime = XLALGPSGetREAL8(&minBinaryTemplate->tp) + (*tCount + 1) *  XLALGPSGetREAL8(&binaryTemplateSpacings->tp); */
+/*       XLALGPSSetREAL8( &dopplerpos->tp, nextGPSTime); */
+/*       *binaryParamsFlag = TRUE; //Not very sure about this being True */
+/*       *tCount += 1; */
+/*       return 0; */
+/*     } */
+/*   else */
+/*     { */
+/*       if ( *aCount < aSpacingNum )  /\*after looping all T, initialize T and loop over a_p*\/ */
+/* 	{ */
+/*           dopplerpos->asini = minBinaryTemplate->asini + (*aCount + 1) * binaryTemplateSpacings->asini; */
+/*           dopplerpos->tp = minBinaryTemplate->tp; */
+/*           *tCount = 0; */
+/*           *binaryParamsFlag = TRUE; */
+/* 	  *aCount += 1; */
+/* 	  return 0; */
+/* 	} */
+/*       else */
+/* 	{ */
+/* 	  if ( *pCount < pSpacingNum )  /\*after looping the plane of T and a_p, initialize T, a_p and loop over P*\/ */
+/* 	    { */
+/*               dopplerpos->period = minBinaryTemplate->period + (*pCount + 1) * binaryTemplateSpacings->period; */
+/*               dopplerpos->tp = minBinaryTemplate->tp; */
+/*               *tCount = 0; */
+/*               dopplerpos->asini = minBinaryTemplate->asini; */
+/*               *aCount = 0; */
+/*               *binaryParamsFlag = TRUE; */
+/*               *pCount += 1; */
+/* 	      return 0; */
+/* 	    } */
 
-	  else
-	    {
-	      if ( *fCount < fSpacingNum ) /*after looping T, a_p and P, initialize T, a_p and P, then loop over f*/
-		{
-                  dopplerpos->fkdot[0] = minBinaryTemplate->fkdot[0] + (*fCount + 1) * binaryTemplateSpacings->fkdot[0];
-                  dopplerpos->tp = minBinaryTemplate->tp; 
-                  *tCount = 0;
-                  dopplerpos->asini = minBinaryTemplate->asini;
-                  *aCount = 0;
-                  dopplerpos->period = minBinaryTemplate->period;
-                  *pCount = 0;
-                  *binaryParamsFlag = FALSE; //Not very sure about this being False
-                  *fCount += 1;            
-		  return 0;
-		}
+/* 	  else */
+/* 	    { */
+/* 	      if ( *fCount < fSpacingNum ) /\*after looping T, a_p and P, initialize T, a_p and P, then loop over f*\/ */
+/* 		{ */
+/*                   dopplerpos->fkdot[0] = minBinaryTemplate->fkdot[0] + (*fCount + 1) * binaryTemplateSpacings->fkdot[0]; */
+/*                   dopplerpos->tp = minBinaryTemplate->tp;  */
+/*                   *tCount = 0; */
+/*                   dopplerpos->asini = minBinaryTemplate->asini; */
+/*                   *aCount = 0; */
+/*                   dopplerpos->period = minBinaryTemplate->period; */
+/*                   *pCount = 0; */
+/*                   *binaryParamsFlag = FALSE; //Not very sure about this being False */
+/*                   *fCount += 1;             */
+/* 		  return 0; */
+/* 		} */
 
-	      else
-		{
-		  if (*firstPoint == TRUE) /*go back to search at the beginning point in parameter space*/
-		    {
-		      dopplerpos->fkdot[0] = minBinaryTemplate->fkdot[0];
-		      dopplerpos->asini = minBinaryTemplate->asini;
-		      dopplerpos->period = minBinaryTemplate->period;
-		      dopplerpos->tp = minBinaryTemplate->tp;
-		      *firstPoint = FALSE;
-		      *binaryParamsFlag = TRUE;
-		      return 0;
-		    }
-		  else
-		    return 1;
-		}
-	    }
-	}
-    }
-}
+/* 	      else */
+/* 		{ */
+/* 		  if (*firstPoint == TRUE) /\*go back to search at the beginning point in parameter space*\/ */
+/* 		    { */
+/* 		      dopplerpos->fkdot[0] = minBinaryTemplate->fkdot[0]; */
+/* 		      dopplerpos->asini = minBinaryTemplate->asini; */
+/* 		      dopplerpos->period = minBinaryTemplate->period; */
+/* 		      dopplerpos->tp = minBinaryTemplate->tp; */
+/* 		      *firstPoint = FALSE; */
+/* 		      *binaryParamsFlag = TRUE; */
+/* 		      return 0; */
+/* 		    } */
+/* 		  else */
+/* 		    return 1; */
+/* 		} */
+/* 	    } */
+/* 	} */
+/*     } */
+/* } */
 
 
-int GetNextCrossCorrTemplateForResamp(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount)
+int GetNextCrossCorrTemplateForResamp(BOOLEAN *binaryParamsFlag, PulsarDopplerParams *dopplerpos, PulsarDopplerParams *binaryTemplateSpacings, PulsarDopplerParams *minBinaryTemplate, PulsarDopplerParams *maxBinaryTemplate, UINT8 *fCount, UINT8 *aCount, UINT8 *tCount, UINT8 *pCount, ConfigVariables *config)
 {
   /* In the future, this could be replaced with a more efficient lattice
    * than this simple cubic */
@@ -1707,6 +1743,13 @@ int GetNextCrossCorrTemplateForResamp(BOOLEAN *binaryParamsFlag, PulsarDopplerPa
               REAL8 nextGPSTime = XLALGPSGetREAL8(&minBinaryTemplate->tp) + (*tCount) *  XLALGPSGetREAL8(&binaryTemplateSpacings->tp);
               XLALGPSSetREAL8( &dopplerpos->tp, nextGPSTime);
             }
+	  if (config->dPorbdTascShear != 0)
+	    {
+	      dopplerpos->period +=
+		( XLALGPSGetREAL8(&dopplerpos->tp)
+		  - config->orbitTimeAscCenterShifted )
+		* config->dPorbdTascShear;
+	    }
         }
     }
   return 0;
@@ -2043,59 +2086,60 @@ int demodLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBT
   return 0;
 } /* end demodLoopCrossCorr */
 
-/** Function to isolate the loop for resampling */
-int resampLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist ){
-  /* args should be : spacings, min and max doppler params */
-  BOOLEAN firstPoint = TRUE; /* a boolean to help to search at the beginning point in parameter space, after the search it is set to be FALSE to end the loop*/
-  if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
-    LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  } /*Need to apply additional doppler shifting before the loop, or the first point in parameter space will be lost and return a wrong SNR when fBand!=0*/
+/* Function to isolate the loop for resampling */
+/* No longer used anywhere */
+/* int resampLoopCrossCorr(MultiSSBtimes *multiBinaryTimes, MultiSSBtimes *multiSSBTimes, PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, REAL8Vector *shiftedFreqs, UINT4Vector *lowestBins, COMPLEX8Vector *expSignalPhases, REAL8VectorSequence *sincList, UserInput_t uvar, SFTIndexList *sftIndices, MultiSFTVector *inputSFTs, MultiUINT4Vector *badBins, REAL8 Tsft, MultiNoiseWeights *multiWeights, REAL8 ccStat, REAL8 evSquared, REAL8 estSens, REAL8Vector *GammaAve, SFTPairIndexList *sftPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist ){ */
+/*   /\* args should be : spacings, min and max doppler params *\/ */
+/*   BOOLEAN firstPoint = TRUE; /\* a boolean to help to search at the beginning point in parameter space, after the search it is set to be FALSE to end the loop*\/ */
+/*   if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) { */
+/*     LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno ); */
+/*     XLAL_ERROR( XLAL_EFUNC ); */
+/*   } /\*Need to apply additional doppler shifting before the loop, or the first point in parameter space will be lost and return a wrong SNR when fBand!=0*\/ */
 
-  //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false");
+/*   //fprintf(stdout, "Resampling? %s \n", uvar.resamp ? "true" : "false"); */
 
-  while ( GetNextCrossCorrTemplateResamp(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0)
-    {
-      /* do useful stuff here*/
+/*   while ( GetNextCrossCorrTemplateResamp(&dopplerShiftFlag, &firstPoint, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum) == 0) */
+/*     { */
+/*       /\* do useful stuff here*\/ */
 
-      /* Apply additional Doppler shifting using current binary orbital parameters */
-      /* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency */
-      if (dopplerShiftFlag == TRUE)
-	{
-	  if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) {
-	    LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno );
-	    XLAL_ERROR( XLAL_EFUNC );
-	  }
-	}
+/*       /\* Apply additional Doppler shifting using current binary orbital parameters *\/ */
+/*       /\* Might want to be clever about checking whether we've changed the orbital parameters or only the frequency *\/ */
+/*       if (dopplerShiftFlag == TRUE) */
+/* 	{ */
+/* 	  if ( (XLALAddMultiBinaryTimes( &multiBinaryTimes, multiSSBTimes, &dopplerpos )  != XLAL_SUCCESS ) ) { */
+/* 	    LogPrintf ( LOG_CRITICAL, "%s: XLALAddMultiBinaryTimes() failed with errno=%d\n", __func__, xlalErrno ); */
+/* 	    XLAL_ERROR( XLAL_EFUNC ); */
+/* 	  } */
+/* 	} */
 
-      if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, badBins, Tsft )  != XLAL_SUCCESS ) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
-      }
+/*       if ( (XLALGetDopplerShiftedFrequencyInfo( shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar.numBins, &dopplerpos, sftIndices, inputSFTs, multiBinaryTimes, badBins, Tsft )  != XLAL_SUCCESS ) ) { */
+/* 	LogPrintf ( LOG_CRITICAL, "%s: XLALGetDopplerShiftedFrequencyInfo() failed with errno=%d\n", __func__, xlalErrno ); */
+/* 	XLAL_ERROR( XLAL_EFUNC ); */
+/*       } */
 
-      if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, GammaAve, expSignalPhases, lowestBins, sincList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) {
-	LogPrintf ( LOG_CRITICAL, "%s: XLALCalculatePulsarCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
-      }
+/*       if ( (XLALCalculatePulsarCrossCorrStatistic( &ccStat, &evSquared, GammaAve, expSignalPhases, lowestBins, sincList, sftPairs, sftIndices, inputSFTs, multiWeights, uvar.numBins)  != XLAL_SUCCESS ) ) { */
+/* 	LogPrintf ( LOG_CRITICAL, "%s: XLALCalculatePulsarCrossCorrStatistic() failed with errno=%d\n", __func__, xlalErrno ); */
+/* 	XLAL_ERROR( XLAL_EFUNC ); */
+/*       } */
 
-      /* fill candidate struct and insert into toplist if necessary */
-      thisCandidate.freq = dopplerpos.fkdot[0];
-      thisCandidate.tp = XLALGPSGetREAL8( &dopplerpos.tp );
-      thisCandidate.argp = dopplerpos.argp;
-      thisCandidate.asini = dopplerpos.asini;
-      thisCandidate.ecc = dopplerpos.ecc;
-      thisCandidate.period = dopplerpos.period;
-      thisCandidate.rho = ccStat;
-      thisCandidate.evSquared = evSquared;
-      thisCandidate.estSens = estSens;
+/*       /\* fill candidate struct and insert into toplist if necessary *\/ */
+/*       thisCandidate.freq = dopplerpos.fkdot[0]; */
+/*       thisCandidate.tp = XLALGPSGetREAL8( &dopplerpos.tp ); */
+/*       thisCandidate.argp = dopplerpos.argp; */
+/*       thisCandidate.asini = dopplerpos.asini; */
+/*       thisCandidate.ecc = dopplerpos.ecc; */
+/*       thisCandidate.period = dopplerpos.period; */
+/*       thisCandidate.rho = ccStat; */
+/*       thisCandidate.evSquared = evSquared; */
+/*       thisCandidate.estSens = estSens; */
 
-      insert_into_crossCorrBinary_toplist(ccToplist, thisCandidate);
+/*       insert_into_crossCorrBinary_toplist(ccToplist, thisCandidate); */
 
-      fprintf(stdout,"Inner loop: freq %f , tp %f , asini %f \n", thisCandidate.freq, thisCandidate.tp, thisCandidate.asini);
+/*       fprintf(stdout,"Inner loop: freq %f , tp %f , asini %f \n", thisCandidate.freq, thisCandidate.tp, thisCandidate.asini); */
 
-    } /* end while loop over templates */
-    return 0;
-} /* end resampLoopCrossCorr */
+/*     } /\* end while loop over templates *\/ */
+/*     return 0; */
+/* } /\* end resampLoopCrossCorr *\/ */
 
 /** For-loop function for resampling */
 int resampForLoopCrossCorr(PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftFlag, PulsarDopplerParams binaryTemplateSpacings, PulsarDopplerParams minBinaryTemplate, PulsarDopplerParams maxBinaryTemplate, UINT8 fCount, UINT8 aCount, UINT8 tCount, UINT8 pCount, UINT8 fSpacingNum, UINT8 aSpacingNum, UINT8 tSpacingNum, UINT8 pSpacingNum, UserInput_t uvar, MultiNoiseWeights *multiWeights, REAL8Vector *ccStatVector, REAL8Vector *evSquaredVector, REAL8Vector *numeEquivAve, REAL8Vector *numeEquivCirc, REAL8 estSens, REAL8Vector *resampGammaAve, MultiResampSFTPairMultiIndexList *resampMultiPairs, CrossCorrBinaryOutputEntry thisCandidate, toplist_t *ccToplist, REAL8 tShort, ConfigVariables *config){
@@ -2226,7 +2270,7 @@ int resampForLoopCrossCorr(PulsarDopplerParams dopplerpos, BOOLEAN dopplerShiftF
 
               fCount = 0; /* over orb params, reset to zero b/c output loop increments */
       
-              if ( (GetNextCrossCorrTemplateForResamp(&dopplerShiftFlag, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount) )  != 0 ) {
+              if ( (GetNextCrossCorrTemplateForResamp(&dopplerShiftFlag, &dopplerpos, &binaryTemplateSpacings, &minBinaryTemplate, &maxBinaryTemplate, &fCount, &aCount, &tCount, &pCount, config) )  != 0 ) {
                 LogPrintf ( LOG_CRITICAL, "%s: XLALGetNextCrossCorrTemplateForResamp() failed with errno=%d\n", __func__, xlalErrno );
                 XLAL_ERROR( XLAL_EFUNC );
               }
