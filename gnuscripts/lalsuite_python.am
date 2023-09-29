@@ -24,7 +24,7 @@ uninstalled_runner = gnuscripts/lalsuite_run_uninstalled
 uninstalled_compiler = $(abs_top_srcdir)/$(uninstalled_runner) '$(abs_top_builddir)' '$(abs_builddir)' '$(LDADD)'
 EXTRA_DIST += $(top_srcdir)/$(uninstalled_runner)
 
-pymodule-all-local:
+pymodule-all-local: $(pymodule_PYTHON)
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pymodule_PYTHON); do \
 			if test -r "$(srcdir)/$${file}"; then \
@@ -33,7 +33,7 @@ pymodule-all-local:
 			fi; \
 		done; \
 	fi
-pyscripts-all-local:
+pyscripts-all-local: $(pybin_scripts) $(noinst_pybin_scripts)
 	$(AM_V_at)if test "x$(builddir)" != "x$(srcdir)"; then \
 		for file in $(pybin_scripts) $(noinst_pybin_scripts); do \
 			if test -r "$(srcdir)/$${file}.py"; then \
@@ -138,7 +138,7 @@ pybin-uninstall-local:
 		fi; \
 	done
 
-pybin-dist-hook:
+pybin-dist-hook: $(pybin_scripts) $(noinst_pybin_scripts)
 	for file in $(pybin_scripts) $(noinst_pybin_scripts); do \
 		cp "$(srcdir)/$${file}.py" "$(distdir)/$${file}.py"; \
 	done
