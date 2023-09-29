@@ -2,12 +2,43 @@
 @SWIG_BUILD_PYTHON_TRUE@from .lal import *
 
 # Redirect standard output/error when running under IPython
+@SWIG_BUILD_PYTHON_TRUE@from contextlib import contextmanager
 @SWIG_BUILD_PYTHON_TRUE@try:
 @SWIG_BUILD_PYTHON_TRUE@    get_ipython()
 @SWIG_BUILD_PYTHON_TRUE@except:
-@SWIG_BUILD_PYTHON_TRUE@    pass
+@SWIG_BUILD_PYTHON_TRUE@    @contextmanager
+@SWIG_BUILD_PYTHON_TRUE@    def no_swig_redirect_standard_output_error():
+@SWIG_BUILD_PYTHON_TRUE@        yield
 @SWIG_BUILD_PYTHON_TRUE@else:
 @SWIG_BUILD_PYTHON_TRUE@    lal.swig_redirect_standard_output_error(True)
+@SWIG_BUILD_PYTHON_TRUE@    @contextmanager
+@SWIG_BUILD_PYTHON_TRUE@    def no_swig_redirect_standard_output_error():
+@SWIG_BUILD_PYTHON_TRUE@        state = lal.swig_redirect_standard_output_error(False)
+@SWIG_BUILD_PYTHON_TRUE@        yield
+@SWIG_BUILD_PYTHON_TRUE@        lal.swig_redirect_standard_output_error(state)
+@SWIG_BUILD_PYTHON_TRUE@    import warnings
+@SWIG_BUILD_PYTHON_TRUE@    warnings.warn("""Wswiglal-redir-stdio:
+@SWIG_BUILD_PYTHON_TRUE@
+@SWIG_BUILD_PYTHON_TRUE@SWIGLAL standard output/error redirection is enabled in IPython.
+@SWIG_BUILD_PYTHON_TRUE@This may lead to performance penalties. To disable locally, use:
+@SWIG_BUILD_PYTHON_TRUE@
+@SWIG_BUILD_PYTHON_TRUE@with lal.no_swig_redirect_standard_output_error():
+@SWIG_BUILD_PYTHON_TRUE@    ...
+@SWIG_BUILD_PYTHON_TRUE@
+@SWIG_BUILD_PYTHON_TRUE@To disable globally, use:
+@SWIG_BUILD_PYTHON_TRUE@
+@SWIG_BUILD_PYTHON_TRUE@lal.swig_redirect_standard_output_error(True)
+@SWIG_BUILD_PYTHON_TRUE@
+@SWIG_BUILD_PYTHON_TRUE@Note however that this will likely lead to error messages from
+@SWIG_BUILD_PYTHON_TRUE@LAL functions being either misdirected or lost when called from
+@SWIG_BUILD_PYTHON_TRUE@Jupyter notebooks.
+@SWIG_BUILD_PYTHON_TRUE@
+@SWIG_BUILD_PYTHON_TRUE@To suppress this warning, use:
+@SWIG_BUILD_PYTHON_TRUE@
+@SWIG_BUILD_PYTHON_TRUE@import warnings
+@SWIG_BUILD_PYTHON_TRUE@warnings.filterwarnings("ignore", "Wswiglal-redir-stdio")
+@SWIG_BUILD_PYTHON_TRUE@import lal
+@SWIG_BUILD_PYTHON_TRUE@""", stacklevel=2)
 
 __version__ = "@PACKAGE_VERSION@"
 
