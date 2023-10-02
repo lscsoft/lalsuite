@@ -420,8 +420,9 @@ static int ROM_check_canonical_file_basename(LALH5File *file, const char file_na
   }
   else {
     XLALPrintInfo("ROM canonical_file_basename %s\n", canonical_file_basename);
-    return XLAL_SUCCESS;
   }
+  XLALFree(canonical_file_basename);
+  return XLAL_SUCCESS;
 }
 #endif
 
