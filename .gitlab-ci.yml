@@ -508,10 +508,18 @@ default:
     # regenerate the feedstock
     - retry conda smithy regenerate --no-check-uptodate
     - git ls-files
-    # if not a single-python-per-build recipe and not a nightly
-    # or manual-triggered pipeline, just build one python version
-    - if [[ "${CONDA_CONFIG}" != *"python"* ]] && [ -z "${ENABLE_NIGHTLY}" ]; then
-         CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
+    # configure CONDA_CONFIG
+    - _CONDA_CONFIG_PYTHON_REGEX="(.*python)${LALSUITE_PYTHON_VERSION}(.*)"
+    - |
+      # if this is a nightly build and CONDA_CONFIG refers to a single python
+      # version, expand it to include all Python versions in the feedstock
+      if [ ! -z "${ENABLE_NIGHTLY}" ] && [[ "${CONDA_CONFIG}" =~ ${_CONDA_CONFIG_PYTHON_REGEX} ]]; then
+        CONDA_CONFIG=$(basename -s .yaml .ci_support/${BASH_REMATCH[1]}*${BASH_REMATCH[2]}.yaml);
+      # otherwise if this is NOT a nightly build and CONDA_CONFIG doesn't
+      # refer to a single python version, specify `--python` to build only
+      # the reference Python version
+      elif [ -z "${ENABLE_NIGHTLY}" ] && [[ ! "${CONDA_CONFIG}" =~ ${_CONDA_CONFIG_PYTHON_REGEX} ]]; then
+        CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
       fi
     # ensure $CI_COMMIT_TAG is set for script_env
     - export CI_COMMIT_TAG=${CI_COMMIT_TAG:-}
@@ -519,6 +527,9 @@ default:
     # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
     # NOTE: retry if conda build fails due to corrupted $CONDA_PKGS_DIRS
     - |
+      # loop over chosen configurations
+      for _CONDA_CONFIG in ${CONDA_CONFIG}; do
+      # loop over retry
       for n in 1 2; do
         echo "===== conda ${CONDA_BUILD_CMD:-build}: attempt $n of 2 ====="
         if ( \
@@ -530,7 +541,7 @@ default:
             --error-overdepending \
             --keep-old-work \
             --no-anaconda-upload \
-            --variant-config-files .ci_support/${CONDA_CONFIG}.yaml \
+            --variant-config-files .ci_support/${_CONDA_CONFIG}.yaml \
             <<< ${CONDA_BUILD_ARGS} \
           2>&1 | awk '{print} /appears to be corrupted/ {exit 1}' \
         ); then
@@ -546,7 +557,8 @@ default:
             exit 1
           fi
         fi
-      done
+      done  # retry
+      done  # configs
   after_script:
     # clean cache of old files
     - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
@@ -790,7 +802,7 @@ lalsimulation:conda:
     - tarballs
     - lal:conda:fftw
   variables:
-    CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.____cpython"
+    CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.*cpython"
 
 # -- lalburst -----------------------------------
 #
@@ -1088,27 +1100,7 @@ lalapps:conda:
     - lalinference:conda
     - lalpulsar:conda
   variables:
-    CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.____cpython"
-
-# template to run extra conda lalapps jobs only when the upstream
-# conda jobs will have run over all python versions
-.lalapps:conda:extra:
-  rules:
-    - !reference [.ci-nightly-deploy, rules]
-
-lalapps:conda:py38:
-  extends:
-    - lalapps:conda
-    - .lalapps:conda:extra
-  variables:
-    LALSUITE_PYTHON_VERSION: "3.8"
-
-lalapps:conda:py39:
-  extends:
-    - lalapps:conda
-    - .lalapps:conda:extra
-  variables:
-    LALSUITE_PYTHON_VERSION: "3.9"
+    CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.*cpython"
 
 # -- wheels -------------------------------------
 #

@@ -219,6 +219,7 @@ outputs:
         - gsl
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
+        - python
       run:
         - gsl
         - liblal >={{ lal_version }}
