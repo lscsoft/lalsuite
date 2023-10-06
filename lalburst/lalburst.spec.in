@@ -201,6 +201,9 @@ rm -Rf ${RPM_BUILD_DIR}/%{name}-%{version}%{?nightly:-%{nightly}}
 
 # dates should be formatted using: 'date +"%a %b %d %Y"'
 %changelog
+* Fri Oct 06 2023 Adam Mercer <adam.mercer@ligo.org> 2.0.2-1
+- Update for 2.0.2
+
 * Thu Apr 06 2023 Adam Mercer <adam.mercer@ligo.org> 2.0.1-1
 - Update for 2.0.1
 
