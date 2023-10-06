@@ -194,6 +194,7 @@ default:
       - lal*/config.log
       - lal*/libtool
       - lal*/Makefile
+      - lal*/**/test-suite.log
     when: on_failure
 
 # helper template for jobs running on macOS
