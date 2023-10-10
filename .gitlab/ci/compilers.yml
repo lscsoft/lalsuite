@@ -80,6 +80,8 @@ clang:dev:
     CXX: clang++
     # weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
+    # disable octave bindings
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave"
 
 .compiler-test:gcc:
   extends:
