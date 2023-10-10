@@ -56,6 +56,8 @@ clang:16:
     CXX: clang++-16
     # weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
+    # disable octave bindings
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave"
 
 clang:17:
   extends:
