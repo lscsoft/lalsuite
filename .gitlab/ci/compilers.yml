@@ -57,6 +57,18 @@ clang:16:
     # weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
 
+clang:17:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-clang:17
+  variables:
+    CC: clang-17
+    CXX: clang++-17
+    # weird bugs when compiling with CFLAGS=-O3
+    CFLAGS: "-O2"
+    # disable octave bindings
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave"
+
 clang:dev:
   extends:
     - .compiler-test
