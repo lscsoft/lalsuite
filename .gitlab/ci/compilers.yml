@@ -12,6 +12,7 @@
   rules:
     - !reference [.ci-compiler, rules]
     - !reference [.ci-merge-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
 
 clang:12:
   extends:
