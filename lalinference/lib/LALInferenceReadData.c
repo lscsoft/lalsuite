@@ -2095,7 +2095,7 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
     XLALSimInspiralWaveformParamsInsertNonGRDChi4(LALpars, dchi4);}
 
   if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi5")){
-    REAL8 dchi5 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi5l")->value);
+    REAL8 dchi5 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi5")->value);
     XLALSimInspiralWaveformParamsInsertNonGRDChi5(LALpars, dchi5);}
 
   if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi5l")){
