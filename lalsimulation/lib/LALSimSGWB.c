@@ -586,14 +586,12 @@ REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrumFromFile(
                 XLAL_ERROR_NULL(XLAL_EFUNC);
 
         flow = f[0];					/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
-        deltaF = (f[N-1] - f[0])/length;	/**< [in] frequency bin width (Hz) */
+		deltaF = f[N-1]/length;	/**< [in] frequency bin width (Hz) */
 
 		for (i = 0; i < N; ++i)
 				Omega[i] = log(Omega[i]);
 
         klow = flow / deltaF;
-		if (length < N + klow) 
-			XLAL_ERROR_NULL(XLAL_EDATA, "Input data too long or length too short.");
 		
         OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
 
