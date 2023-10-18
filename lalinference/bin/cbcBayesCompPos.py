@@ -67,11 +67,12 @@ paramNameLatexMap = {'m1': 'm_1', 'm2' : 'm_2', 'mtotal' : r'M_{\rm tot}', 'mchi
                      'domega210': r'$d\omega_{210}$', 'dtau210': r'$d\tau_{210}$',
                      'domega330': r'$d\omega_{330}$','dtau330': r'$d\tau_{330}$',
                      'domega440': r'$d\omega_{440}$', 'dtau440': r'$d\tau_{440}$',
-                     'domega550': r'$d\omega_{550}$', 'dtau550': r'$d\tau_{550}$'
+                     'domega550': r'$d\omega_{550}$', 'dtau550': r'$d\tau_{550}$',
+                     'dc1':r'$\delta c_1$', 'dc2':r'$\delta c_2$', 'dc4':r'$\delta c_4$', 'dcl':r'$\delta c_l$', 'db1':r'$\delta b_1$', 'db2':r'$\delta b_2$', 'db3':r'$\delta b_3$', 'db4':r'$\delta b_4$'
 }
 
 # Only these parameters, in this order appear in confidence level table.
-clTableParams = ['mchirp', 'mc', 'chirpmass', 'eta', 'q', 'm1', 'm2', 'distance', 'distMPC', 'dist', 'cos(iota)', 'iota', 'theta_jn', 'psi', 'ra', 'dec', 'time', 'phase', 'a1', 'a2', 'costilt1', 'costilt2','dchiMinus2','dchiMinus1','dchi0','dchi1','dchi2','dchi3','dchi3S','dchi3NS','dchi4','dchi4S','dchi4NS','dchi5','dchi5S','dchi5NS','dchi5l','dchi5lS','dchi5lNS','dchi6','dchi6S','dchi6NS','dchi6l','dchi7','dchi7S','dchi7NS','dbeta2','dbeta3','dsigma2','dsigma3','dsigma4','dbeta2','dbeta3', 'log10lambda_eff','log10lambda_a','log10livamp','lambda_eff','lambda_a','liv_amp','dquadmons','dchikappaS','dchikappaA','domega220', 'dtau220', 'domega210', 'dtau210', 'domega330', 'dtau330', 'domega440', 'dtau440', 'domega550', 'dtau550']
+clTableParams = ['mchirp', 'mc', 'chirpmass', 'eta', 'q', 'm1', 'm2', 'distance', 'distMPC', 'dist', 'cos(iota)', 'iota', 'theta_jn', 'psi', 'ra', 'dec', 'time', 'phase', 'a1', 'a2', 'costilt1', 'costilt2','dchiMinus2','dchiMinus1','dchi0','dchi1','dchi2','dchi3','dchi3S','dchi3NS','dchi4','dchi4S','dchi4NS','dchi5','dchi5S','dchi5NS','dchi5l','dchi5lS','dchi5lNS','dchi6','dchi6S','dchi6NS','dchi6l','dchi7','dchi7S','dchi7NS','dbeta2','dbeta3','dsigma2','dsigma3','dsigma4','dbeta2','dbeta3', 'log10lambda_eff','log10lambda_a','log10livamp','lambda_eff','lambda_a','liv_amp','dquadmons','dchikappaS','dchikappaA','domega220', 'dtau220', 'domega210', 'dtau210', 'domega330', 'dtau330', 'domega440', 'dtau440', 'domega550', 'dtau550', 'db1', 'db2', 'db3', 'db4', 'dc1', 'dc2', 'dc4', 'dcl']
 
 
 

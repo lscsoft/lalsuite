@@ -82,6 +82,7 @@ int IMRPhenomXGetAndSetPrecessionVariables(
   /*
       Here we assume m1 > m2, q > 1, dm = m1 - m2 = delta = sqrt(1-4eta) > 0
   */
+  pWF->LALparams = lalParams;
 
   /* Pre-cache useful powers here */
   pPrec->sqrt2   = 1.4142135623730951;

@@ -240,6 +240,18 @@ int XLALSimInspiralWaveformParamsInsertNonGRLIVAlpha(LALDict *params, REAL8 valu
 int XLALSimInspiralWaveformParamsInsertNonGRDChikappaS(LALDict *params, REAL8 value);
 int XLALSimInspiralWaveformParamsInsertNonGRDChikappaA(LALDict *params, REAL8 value);
 
+/* PhenomX TGR Coefficients */
+int XLALSimInspiralWaveformParamsInsertNonGRDC1(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNonGRDC2(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNonGRDC4(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNonGRDCL(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNonGRDB1(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNonGRDB2(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNonGRDB3(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNonGRDB4(LALDict *params, REAL8 value);
+int XLALSimInspiralWaveformParamsInsertNonGRParameterization(LALDict *params, INT4 value);
+
+
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
 int XLALSimInspiralWaveformParamsInsertNLTidesA1(LALDict *params, REAL8 value);
@@ -506,6 +518,18 @@ REAL8 XLALSimInspiralWaveformParamsLookupNonGRLIVAlpha(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupNonGRDChikappaS(LALDict *params);
 REAL8 XLALSimInspiralWaveformParamsLookupNonGRDChikappaA(LALDict *params);
 
+/* PhenomX TGR Coefficients */
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRDC1(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRDC2(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRDC4(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRDCL(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRDB1(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRDB2(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRDB3(LALDict *params);
+REAL8 XLALSimInspiralWaveformParamsLookupNonGRDB4(LALDict *params);
+INT4 XLALSimInspiralWaveformParamsLookupNonGRParameterization(LALDict *params);
+
+
 /* NLTides parameters */
 /* used within LALSimInspiralTaylorF2NLTides.c */
 REAL8 XLALSimInspiralWaveformParamsLookupNLTidesA1(LALDict *params);
@@ -719,6 +743,19 @@ int XLALSimInspiralWaveformParamsNonGRLIVASignIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRLIVAlphaIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRDChikappaSIsDefault(LALDict *params);
 int XLALSimInspiralWaveformParamsNonGRDChikappaAIsDefault(LALDict *params);
+
+/* PhenomX TGR Coefficients */
+int XLALSimInspiralWaveformParamsNonGRDC1IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsNonGRDC2IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsNonGRDC4IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsNonGRDCLIsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsNonGRDB1IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsNonGRDB2IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsNonGRDB3IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsNonGRDB4IsDefault(LALDict *params);
+int XLALSimInspiralWaveformParamsNonGRParameterizationIsDefault(LALDict *params);
+
+
 /* SEOBNRv4P */
 INT4 XLALSimInspiralWaveformParamsEOBChooseNumOrAnalHamDerIsDefault(LALDict *params);
 INT4 XLALSimInspiralWaveformParamsEOBEllMaxForNyquistCheckIsDefault(LALDict *params);

@@ -1666,6 +1666,98 @@ void LALInferenceInjectInspiralSignal(LALInferenceIFOData *IFOdata, ProcessParam
 
       LALDict *LALpars=XLALCreateDict();
 
+      /* Inject deviation from GR */
+      /* Inspiral Coefficients */
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchiMinus2")){
+        REAL8 dchi_minus2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchiMinus2")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChiMinus2(LALpars, dchi_minus2);}
+
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchiMinus1")){
+        REAL8 dchi_minus1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchiMinus1")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChiMinus1(LALpars, dchi_minus1);}
+
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi0")){
+        REAL8 dchi0 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi0")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi0(LALpars, dchi0);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi1")){
+        REAL8 dchi1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi1")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi1(LALpars, dchi1);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi2")){
+        REAL8 dchi2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi2")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi2(LALpars, dchi2);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi3")){
+        REAL8 dchi3 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi3")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi3(LALpars, dchi3);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi4")){
+        REAL8 dchi4 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi4")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi4(LALpars, dchi4);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi5")){
+        REAL8 dchi5 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi5l")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi5(LALpars, dchi5);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi5l")){
+        REAL8 dchi5l = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi5l")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi5L(LALpars, dchi5l);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi6")){
+        REAL8 dchi6 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi6")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi6(LALpars, dchi6);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi6l")){
+        REAL8 dchi6l = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi6l")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi6L(LALpars, dchi6l);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi7")){
+        REAL8 dchi7 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi7")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDChi7(LALpars, dchi7);}
+
+      /* PhenomD Intermediate */
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dbeta1")){
+        REAL8 nongr_dbeta1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dbeta1")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDBeta1(LALpars, nongr_dbeta1);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dbeta2")){
+        REAL8 nongr_dbeta2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dbeta2")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDBeta2(LALpars, nongr_dbeta2);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dbeta3")){
+        REAL8 nongr_dbeta3 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dbeta3")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDBeta3(LALpars, nongr_dbeta3);}
+
+      /* PhenomX Intermediate */
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-db1")){
+        REAL8 nongr_db1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-db1")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDB1(LALpars, nongr_db1);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-db2")){
+        REAL8 nongr_db2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-db2")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDB2(LALpars, nongr_db2);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-db3")){
+        REAL8 nongr_db3 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-db3")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDB3(LALpars, nongr_db3);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-db4")){
+        REAL8 nongr_db4 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-db4")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDB4(LALpars, nongr_db4);}
+
+      /* PhenomD Merger-Ringdown */
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dalpha1")){
+        REAL8 nongr_dalpha1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dalpha1")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDAlpha1(LALpars, nongr_dalpha1);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dalpha2")){
+        REAL8 nongr_dalpha2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dalpha2")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDAlpha2(LALpars, nongr_dalpha2);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dalpha3")){
+        REAL8 nongr_dalpha3 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dalpha3")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDAlpha3(LALpars, nongr_dalpha3);}
+
+      /* PhenomX Merger-Ringdown */
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dc1")){
+        REAL8 nongr_dc1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dc1")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDC1(LALpars, nongr_dc1);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dc2")){
+        REAL8 nongr_dc2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dc2")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDC2(LALpars, nongr_dc2);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dc4")){
+        REAL8 nongr_dc4 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dc4")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDC4(LALpars, nongr_dc4);}
+      if (LALInferenceGetProcParamVal(commandLine,"--inj-dcl")){
+        REAL8 nongr_dcl = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dcl")->value);
+        XLALSimInspiralWaveformParamsInsertNonGRDCL(LALpars, nongr_dcl);}
+
+
       /* Set the spin-frame convention */
 
       LALSimInspiralSpinOrder spinO = -1;
@@ -1972,6 +2064,88 @@ void InjectFD(LALInferenceIFOData *IFOdata, SimInspiralTable *inj_table, Process
 
   /* Set up LAL dictionary */
   LALDict* LALpars=XLALCreateDict();
+
+  // Inject deviation from GR
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchiMinus2")){
+    REAL8 dchi_minus2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchiMinus2")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChiMinus2(LALpars, dchi_minus2);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchiMinus1")){
+    REAL8 dchi_minus1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchiMinus1")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChiMinus1(LALpars, dchi_minus1);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi0")){
+    REAL8 dchi0 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi0")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi0(LALpars, dchi0);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi1")){
+    REAL8 dchi1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi1")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi1(LALpars, dchi1);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi2")){
+    REAL8 dchi2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi2")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi2(LALpars, dchi2);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi3")){
+    REAL8 dchi3 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi3")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi3(LALpars, dchi3);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi4")){
+    REAL8 dchi4 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi4")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi4(LALpars, dchi4);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi5")){
+    REAL8 dchi5 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi5")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi5(LALpars, dchi5);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi5l")){
+    REAL8 dchi5l = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi5l")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi5L(LALpars, dchi5l);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi6")){
+    REAL8 dchi6 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi6")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi6(LALpars, dchi6);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi6l")){
+    REAL8 dchi6l = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi6l")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi6L(LALpars, dchi6l);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dchi7")){
+    REAL8 dchi7 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dchi7")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDChi7(LALpars, dchi7);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-db1")){
+    REAL8 nongr_db1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-db1")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDB1(LALpars, nongr_db1);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-db2")){
+    REAL8 nongr_db2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-db2")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDB2(LALpars, nongr_db2);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-db3")){
+    REAL8 nongr_db3 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-db3")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDB3(LALpars, nongr_db3);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-db4")){
+    REAL8 nongr_db4 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-db4")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDB4(LALpars, nongr_db4);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dc1")){
+    REAL8 nongr_dc1 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dc1")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDC1(LALpars, nongr_dc1);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dc2")){
+    REAL8 nongr_dc2 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dc2")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDC2(LALpars, nongr_dc2);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dc4")){
+    REAL8 nongr_dc4 = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dc4")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDC4(LALpars, nongr_dc4);}
+
+  if (LALInferenceGetProcParamVal(commandLine,"--inj-dcl")){
+    REAL8 nongr_dcl = atof(LALInferenceGetProcParamVal(commandLine,"--inj-dcl")->value);
+    XLALSimInspiralWaveformParamsInsertNonGRDCL(LALpars, nongr_dcl);}
+
 
   /* Set the spin-frame convention */
   ppt = LALInferenceGetProcParamVal(commandLine,"--inj-spin-frame");

@@ -733,22 +733,24 @@ static double IMRPhenomX_Inspiral_Phase_22_d53(double eta, double S, double dchi
 */
 static double IMRPhenomX_Inspiral_Phase_22_Ansatz(double Mf, IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXPhaseCoefficients *pPhase)
 {
-    double phaseIN;
+    double phaseIN = 0.0;
 
     // Assemble PN phase derivative series
-  	phaseIN  = pPhase->dphi0; 																						    // f^{0/3}
-  	phaseIN += pPhase->dphi1 	* powers_of_Mf->one_third; 								      // f^{1/3}
-  	phaseIN += pPhase->dphi2 	* powers_of_Mf->two_thirds; 									    // f^{2/3}
-  	phaseIN += pPhase->dphi3 	* Mf; 									        // f^{3/3}
-  	phaseIN += pPhase->dphi4 	* powers_of_Mf->four_thirds; 							      // f^{4/3}
-  	phaseIN += pPhase->dphi5 	* powers_of_Mf->five_thirds; 							      // f^{5/3}
-  	phaseIN += pPhase->dphi6  * powers_of_Mf->two;													    // f^{6/3}
-  	phaseIN += pPhase->dphi6L * powers_of_Mf->two * powers_of_Mf->log;			    // f^{6/3}, Log[f]
-  	phaseIN += pPhase->dphi7  * powers_of_Mf->seven_thirds;									  // f^{7/3}
-  	phaseIN += pPhase->dphi8  * powers_of_Mf->eight_thirds;									  // f^{8/3}
-  	phaseIN += pPhase->dphi8L * powers_of_Mf->eight_thirds * powers_of_Mf->log;	// f^{8/3}
-  	phaseIN += pPhase->dphi9  * powers_of_Mf->three;														// f^{9/3}
-  	phaseIN += pPhase->dphi9L * powers_of_Mf->three * powers_of_Mf->log;				// f^{9/3}
+    phaseIN += pPhase->dphi_minus2 / powers_of_Mf->two_thirds;                   // f^{-2/3}, v =-2;  -1PN
+    phaseIN += pPhase->dphi_minus1 / powers_of_Mf->one_third;                    // f^{-1/3}, v =-1;  -0.5PN
+  	phaseIN += pPhase->dphi0;                                                    // f^{0/3}
+  	phaseIN += pPhase->dphi1   * powers_of_Mf->one_third;                        // f^{1/3}
+  	phaseIN += pPhase->dphi2   * powers_of_Mf->two_thirds;                       // f^{2/3}
+  	phaseIN += pPhase->dphi3   * Mf;                                             // f^{3/3}
+  	phaseIN += pPhase->dphi4   * powers_of_Mf->four_thirds;                      // f^{4/3}
+  	phaseIN += pPhase->dphi5   * powers_of_Mf->five_thirds;                      // f^{5/3}
+  	phaseIN += pPhase->dphi6   * powers_of_Mf->two;                              // f^{6/3}
+  	phaseIN += pPhase->dphi6L  * powers_of_Mf->two * powers_of_Mf->log;          // f^{6/3}, Log[f]
+  	phaseIN += pPhase->dphi7   * powers_of_Mf->seven_thirds;                     // f^{7/3}
+  	phaseIN += pPhase->dphi8   * powers_of_Mf->eight_thirds;                     // f^{8/3}
+  	phaseIN += pPhase->dphi8L  * powers_of_Mf->eight_thirds * powers_of_Mf->log; // f^{8/3}
+  	phaseIN += pPhase->dphi9   * powers_of_Mf->three;                            // f^{9/3}
+  	phaseIN += pPhase->dphi9L  * powers_of_Mf->three * powers_of_Mf->log;        // f^{9/3}
 
   	// Add pseudo-PN Coefficient
   	phaseIN += ( 		pPhase->a0 * powers_of_Mf->eight_thirds
@@ -771,13 +773,12 @@ static double IMRPhenomX_Inspiral_Phase_22_AnsatzInt(double Mf, IMRPhenomX_Usefu
 {
 
   // Assemble PN phasing series
-  //const double v    = powers_of_Mf->one_third * powers_of_lalpi.one_third; // v = (\pi M f)^{1/3}
-  //const double logv = log(v);
-
   // Sum up phasing contributions
   double phasing    = 0.0;
 
   /* The PN Phasing series is normalised by: 3 / (128 * eta * pi^{5/3} ) */
+  /* -2 */ phasing += pPhase->phi_minus2 / powers_of_Mf->two_thirds;                  // f^{-7/3}, v = -2; -1PN
+  /* -1 */ phasing += pPhase->phi_minus1 / powers_of_Mf->one_third;                   // f^{-6/3}, v = -1; -0.5PN
   /* 0  */ phasing += pPhase->phi0;                                                   // f^{-5/3}, v = 0;  Newt.
   /* 1  */ phasing += pPhase->phi1  * powers_of_Mf->one_third;                        // f^{-4/3}, v = 1;  0.5PN
   /* 2  */ phasing += pPhase->phi2  * powers_of_Mf->two_thirds;                       // f^{-3/3}, v = 2;  1.0PN

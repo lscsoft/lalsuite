@@ -4797,19 +4797,13 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case NRSur7dq2:
     case NRSur7dq4:
     case NRHybSur3dq8:
-    case IMRPhenomXAS:
-    case IMRPhenomXAS_NRTidalv2:
-    case IMRPhenomXHM:
-	case IMRPhenomXP:
-    case IMRPhenomXP_NRTidalv2:
-	case IMRPhenomXPHM:
     case IMRPhenomT:
     case IMRPhenomTHM:
     case IMRPhenomTP:
     case IMRPhenomTPHM:
     case NumApproximants:
-    case IMRPhenomXO4a:
     case SEOBNRv4HM_PA:
+    case IMRPhenomXO4a:
       testGR_accept=LAL_SIM_INSPIRAL_NO_TESTGR_PARAMS;
       break;
     case TaylorF2:
@@ -4840,6 +4834,12 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomPv3:
     case IMRPhenomPv3HM:
     case pSEOBNRv4HM_PA:
+    case IMRPhenomXAS:
+    case IMRPhenomXHM:
+    case IMRPhenomXP:
+    case IMRPhenomXPHM:
+    case IMRPhenomXAS_NRTidalv2:
+    case IMRPhenomXP_NRTidalv2:
       testGR_accept=LAL_SIM_INSPIRAL_TESTGR_PARAMS;
       break;
     case ExternalPython:
