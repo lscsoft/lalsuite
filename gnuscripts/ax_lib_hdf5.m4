@@ -88,7 +88,7 @@
 #   and this notice are preserved. This file is offered as-is, without any
 #   warranty.
 
-#serial 18
+#serial 20
 
 AC_DEFUN([AX_LIB_HDF5], [
 
@@ -188,9 +188,9 @@ HDF5 support is being disabled (equivalent to --with-hdf5=no).
         HDF5_SHOW=$(eval $H5CC -show)
 
         dnl Get the actual compiler used
-        HDF5_CC=$(eval $H5CC -show | $AWK '{print $[]1}')
+        HDF5_CC=$(eval $H5CC -show | head -n 1 | $AWK '{print $[]1}')
         if test "$HDF5_CC" = "ccache"; then
-            HDF5_CC=$(eval $H5CC -show | $AWK '{print $[]2}')
+            HDF5_CC=$(eval $H5CC -show | head -n 1 | $AWK '{print $[]2}')
         fi
 
         dnl h5cc provides both AM_ and non-AM_ options
@@ -226,18 +226,18 @@ HDF5 support is being disabled (equivalent to --with-hdf5=no).
         for arg in $HDF5_SHOW $HDF5_tmp_flags ; do
           case "$arg" in
             -I*) echo $HDF5_CPPFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || HDF5_CPPFLAGS="$arg $HDF5_CPPFLAGS"
+                  || HDF5_CPPFLAGS="$HDF5_CPPFLAGS $arg"
               ;;
             -L*) echo $HDF5_LDFLAGS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || HDF5_LDFLAGS="$arg $HDF5_LDFLAGS"
+                  || HDF5_LDFLAGS="$HDF5_LDFLAGS $arg"
               ;;
             -l*) echo $HDF5_LIBS | $GREP -e "$arg" 2>&1 >/dev/null \
-                  || HDF5_LIBS="$arg $HDF5_LIBS"
+                  || HDF5_LIBS="$HDF5_LIBS $arg"
               ;;
           esac
         done
 
-        HDF5_LIBS="$HDF5_LIBS -lhdf5"
+        HDF5_LIBS="-lhdf5 $HDF5_LIBS"
         AC_MSG_RESULT([yes (version $[HDF5_VERSION])])
 
         dnl See if we can compile
@@ -257,7 +257,7 @@ HDF5 support is being disabled (equivalent to --with-hdf5=no).
           AC_MSG_WARN([Unable to compile HDF5 test program])
         fi
         dnl Look for HDF5's high level library
-        AC_CHECK_LIB([hdf5_hl], [H5TBread_table], [HDF5_LIBS="$HDF5_LIBS -lhdf5_hl"], [], [])
+        AC_CHECK_LIB([hdf5_hl], [main], [HDF5_LIBS="-lhdf5_hl $HDF5_LIBS"], [], [])
 
         CC=$ax_lib_hdf5_save_CC
         CPPFLAGS=$ax_lib_hdf5_save_CPPFLAGS
@@ -278,14 +278,14 @@ HDF5 support is being disabled (equivalent to --with-hdf5=no).
             do
               case "$arg" in #(
                 -I*) echo $HDF5_FFLAGS | $GREP -e "$arg" >/dev/null \
-                      || HDF5_FFLAGS="$arg $HDF5_FFLAGS"
+                      || HDF5_FFLAGS="$HDF5_FFLAGS $arg"
                   ;;#(
                 -L*) echo $HDF5_FFLAGS | $GREP -e "$arg" >/dev/null \
-                      || HDF5_FFLAGS="$arg $HDF5_FFLAGS"
+                      || HDF5_FFLAGS="$HDF5_FFLAGS $arg"
                      dnl HDF5 installs .mod files in with libraries,
                      dnl but some compilers need to find them with -I
                      echo $HDF5_FFLAGS | $GREP -e "-I${arg#-L}" >/dev/null \
-                      || HDF5_FFLAGS="-I${arg#-L} $HDF5_FFLAGS"
+                      || HDF5_FFLAGS="$HDF5_FFLAGS -I${arg#-L}"
                   ;;
               esac
             done
