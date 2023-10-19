@@ -69,7 +69,7 @@ py-mostlyclean-local:
 	-rm -rf __pycache__ .pytest_cache junit*.xml
 	-for file in $(pybin_scripts) $(noinst_pybin_scripts); do rm -f .libs/$${file}.bin .libs/$${file}.py; done
 
-$(pybin_scripts) $(noinst_pybin_scripts): Makefile pyscripts-all-local
+$(pybin_scripts) $(noinst_pybin_scripts): Makefile
 .py:
 	$(AM_V_GEN)shebang='#!'; dummy_shebang='##(in place of shebang, for consistent line numbers)'; \
 	$(MKDIR_P) .libs || exit 1; \
