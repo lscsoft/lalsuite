@@ -257,3 +257,27 @@ lint:combine-reports:
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]
+
+lint:pretty:
+  extends:
+    - .build-job
+    - .lint
+  image: igwn/lalsuite-dev:el8
+  variables:
+    # TODO: this can be removed when all packages require python>=3
+    #       on their own
+    PYTHON: "python3"
+  needs: []
+  script:
+    # install required packages
+    - yum -y install astyle
+    - python3 -m pip install --upgrade pip
+    - python3 -m pip install black
+    # configure LALSuite
+    - ./00boot
+    - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig --enable-python
+    # run pretty formatters and check for changes
+    - make pretty
+  rules:
+    - !reference [.ci-lint, rules]
+    - !reference [.ci-merge-build, rules]

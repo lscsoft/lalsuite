@@ -90,3 +90,21 @@ update-authors:
 	echo "\$$ make update-authors"; \
 	echo "------------------------------------------------------------------------"; \
 	exit 1
+
+.PHONY: pretty
+pretty:
+	$(AM_V_at)cd $(top_srcdir); \
+	for subdir in @subdirs@; do \
+		( cd $${subdir} && make pretty ) || exit 1; \
+	done; \
+	if git diff --quiet -- '*.[ch]' '*.py'; then \
+		exit 0; \
+	fi; \
+	echo "------------------------------------------------------------------------"; \
+	echo "The following files have now been pretty-formatted:"; \
+	echo ""; \
+	git --no-pager diff --name-only -- '*.[ch]' '*.py'; \
+	echo ""; \
+	echo "Please commit these changes."; \
+	echo "------------------------------------------------------------------------"; \
+	exit 1

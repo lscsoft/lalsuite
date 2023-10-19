@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 178
+# serial 179
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -511,6 +511,7 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
       python=
     ]
   )
+  lalsuite_minimum_pyvers="$1"
   lalsuite_pyvers="$1"
   AS_IF([test "x${lalsuite_require_pyvers}" != x],[
     LALSUITE_VERSION_COMPARE([${lalsuite_require_pyvers}],[>],[${lalsuite_pyvers}],[
@@ -1296,6 +1297,25 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
       AC_MSG_NOTICE([Markdown in Doxygen will be converted to HTML using ${MARKDOWN2HTML}])
     ])
 
+  ])
+  # end $0
+])
+
+AC_DEFUN([LALSUITE_PROG_PRETTY_CODE],[
+  # $0: check for pretty code formatters
+  # - for C code
+  AC_CHECK_PROGS([ASTYLE],[astyle],[false])
+  # - for Python code
+  AC_REQUIRE([LALSUITE_CHECK_PYTHON])
+  AC_SUBST([PYTHON_BLACK],["${PYTHON} -m black"])
+  AC_MSG_CHECKING([if ${PYTHON_BLACK} works])
+  AS_IF([${PYTHON_BLACK} --version >/dev/null 2>&1],[
+    AC_MSG_RESULT([yes])
+    python_black_target_version=`echo "${lalsuite_minimum_pyvers}" | tr -d '.'`
+    PYTHON_BLACK="${PYTHON_BLACK} --target-version py${python_black_target_version}"
+  ],[
+    AC_MSG_RESULT([no])
+    PYTHON_BLACK="false"
   ])
   # end $0
 ])
