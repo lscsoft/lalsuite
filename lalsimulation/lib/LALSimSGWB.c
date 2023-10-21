@@ -586,7 +586,7 @@ REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrumFromFile(
                 XLAL_ERROR_NULL(XLAL_EFUNC);
 
         flow = f[0];					/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
-		deltaF = f[N-1]/length;	/**< [in] frequency bin width (Hz) */
+	deltaF = f[N-1]/(length - 2);	/**< [in] frequency bin width (Hz) */
 
 		for (i = 0; i < N; ++i)
 				Omega[i] = log(Omega[i]);
