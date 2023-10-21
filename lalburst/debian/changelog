@@ -1,3 +1,9 @@
+lalburst (2.0.3-1) unstable; urgency=low
+
+  * Update for 2.0.3
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 20 Oct 2023 14:53:00 -0700
+
 lalburst (2.0.2-1) unstable; urgency=low
 
   * Update for 2.0.2

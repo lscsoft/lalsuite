@@ -1,3 +1,9 @@
+lalinference (4.1.5-1) unstable; urgency=low
+
+  * Update for 4.1.5
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Fri, 20 Oct 2023 15:06:28 -0700
+
 lalinference (4.1.4-1) unstable; urgency=low
 
   * Update for 4.1.4
