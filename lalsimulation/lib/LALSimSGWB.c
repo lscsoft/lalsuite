@@ -556,64 +556,64 @@ int XLALSimSGWBPowerLawSpectrum(
 }
 
 REAL8FrequencySeries *XLALSimSGWBOmegaGWNumericalSpectrumFromFile(
-        const char *fname,
-        size_t length
+	const char *fname,
+	size_t length
 )
 {
-        double *f;
-        double *Omega;	/**< [in] sgwb numerical power spectrum */
-        double flow;
-		double fk;
-		double Omegak;
-		double x;
-        double deltaF;
-        size_t N;
-        size_t klow;
-        size_t k;
-		size_t i;
-        REAL8FrequencySeries *OmegaGW;
-        LIGOTimeGPS epoch = {0, 0};
-        LALFILE *fp;
+	double *f;
+	double *Omega;	/**< [in] sgwb numerical power spectrum */
+	double flow;
+	double fk;
+	double Omegak;
+	double x;
+	double deltaF;
+	size_t N;
+	size_t klow;
+	size_t k;
+	size_t i;
+	REAL8FrequencySeries *OmegaGW;
+	LIGOTimeGPS epoch = {0, 0};
+	LALFILE *fp;
 
-        /* read the file into Omega and f */
-        fp = XLALSimReadDataFileOpen(fname);
-        if (!fp)
-                XLAL_ERROR_NULL(XLAL_EFUNC);
+	/* read the file into Omega and f */
+	fp = XLALSimReadDataFileOpen(fname);
+	if (!fp)
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
-        N = XLALSimReadDataFile2Col(&f, &Omega, fp);
-        XLALFileClose(fp);
-        if (N == (size_t)(-1))
-                XLAL_ERROR_NULL(XLAL_EFUNC);
+	N = XLALSimReadDataFile2Col(&f, &Omega, fp);
+	XLALFileClose(fp);
+	if (N == (size_t)(-1))
+		XLAL_ERROR_NULL(XLAL_EFUNC);
 
-        flow = f[0];					/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
+	flow = f[0];					/**< [in] low frequncy cutoff of SGWB spectrum (Hz) */
 	deltaF = f[N-1]/(length - 2);	/**< [in] frequency bin width (Hz) */
 
-		for (i = 0; i < N; ++i)
-				Omega[i] = log(Omega[i]);
+	for (i = 0; i < N; ++i)
+		Omega[i] = log(Omega[i]);
 
-        klow = flow / deltaF;
-		
-        OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
+	klow = flow / deltaF;
 
-        /* zero DC component */
-        OmegaGW->data->data[0] = 0.0;
-        /* zero up to low frequency cutoff */
-        for (k = 1; k < klow; ++k)
-                OmegaGW->data->data[k] = 0.0;
+	OmegaGW = XLALCreateREAL8FrequencySeries("OmegaGW", &epoch, 0.0, deltaF, &lalDimensionlessUnit, length);
 
-		i = 1;
-        for (; k < length - 1; ++k) {
-				fk = flow + k * deltaF;
-				while (f[i] < fk && i < N - 1)
-						++i;
-				x = (f[i] - fk) / (f[i] - f[i-1]);
-				Omegak = x * Omega[i-1] + (1.0 - x) * Omega[i];
-				OmegaGW->data->data[k] = exp(Omegak);
-		}
-        /* zero Nyquist component */
-        OmegaGW->data->data[length - 1] = 0.0;
+	/* zero DC component */
+	OmegaGW->data->data[0] = 0.0;
+	/* zero up to low frequency cutoff */
+	for (k = 1; k < klow; ++k)
+		OmegaGW->data->data[k] = 0.0;
 
-        return OmegaGW;
+	i = 1;
+	for (; k < length - 1; ++k) {
+		fk = flow + k * deltaF;
+		while (f[i] < fk && i < N - 1)
+			++i;
+		x = (f[i] - fk) / (f[i] - f[i-1]);
+		Omegak = x * Omega[i-1] + (1.0 - x) * Omega[i];
+		OmegaGW->data->data[k] = exp(Omegak);
+	}
+	/* zero Nyquist component */
+	OmegaGW->data->data[length - 1] = 0.0;
+
+	return OmegaGW;
 }
 
 
