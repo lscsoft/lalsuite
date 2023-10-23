@@ -49,7 +49,7 @@ int IMRPhenomX_PNR_GenerateAntisymmetricAmpRatio(
     REAL8Sequence *kappa,
     const REAL8Sequence *freqs,        /**< input frequency array (Hz) */
     IMRPhenomXWaveformStruct *pWF,     /**< waveform struct */
-    IMRPhenomXPrecessionStruct *pPrec /** precession struct **/
+    IMRPhenomXPrecessionStruct *pPrec /**< precession struct **/
 );
 
 double GetKappa_at_frequency(REAL8 v,REAL8 delta,REAL8 Chi,REAL8 theta,REAL8 eta,double b);
@@ -57,16 +57,16 @@ double GetKappa_at_frequency(REAL8 v,REAL8 delta,REAL8 Chi,REAL8 theta,REAL8 eta
 
 
 int IMRPhenomX_PNR_GenerateAntisymmetricPhaseCoefficients(
-    REAL8 *A0,
-    REAL8 *phi_A0,
-    REAL8 *phi_B0,
-    const double MfT,
-    double lina,
-    double linb,
-    double inveta,
+    REAL8 *A0, /**< UNDOCUMENTED */
+    REAL8 *phi_A0, /**< UNDOCUMENTED */
+    REAL8 *phi_B0, /**< UNDOCUMENTED */
+    const double MfT, /**< UNDOCUMENTED */
+    double lina, /**< UNDOCUMENTED */
+    double linb, /**< UNDOCUMENTED */
+    double inveta, /**< UNDOCUMENTED */
     IMRPhenomXWaveformStruct *pWF,     /**< waveform struct */
-    IMRPhenomXPrecessionStruct *pPrec, /** precession struct **/
-    IMRPhenomXPhaseCoefficients *pPhase22 /** symmetric phase coefficients struct */
+    IMRPhenomXPrecessionStruct *pPrec, /**< precession struct **/
+    IMRPhenomXPhaseCoefficients *pPhase22 /**< symmetric phase coefficients struct */
 );
 
 int IMRPhenomX_PNR_GenerateAntisymmetricWaveform(
@@ -74,8 +74,8 @@ int IMRPhenomX_PNR_GenerateAntisymmetricWaveform(
     REAL8Sequence *antisymphase, /**< [out] Phase of antisymmetric (2,2) waveform */
     const REAL8Sequence *freqs,        /**< input frequency array (Hz) */
     IMRPhenomXWaveformStruct *pWF,     /**< waveform struct */
-    IMRPhenomXPrecessionStruct *pPrec, /** precession struct **/
-    LALDict *lalparams
+    IMRPhenomXPrecessionStruct *pPrec, /**< precession struct **/
+    LALDict *lalparams /**< UNDOCUMENTED */
 );
 
 #ifdef __cplusplus

@@ -78,7 +78,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
       REAL8 chi2x,              /**< x-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
       REAL8 chi2y,              /**< y-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
       REAL8 chi2z,              /**< z-component of the dimensionless spin of object 2 w.r.t. Lhat = (0,0,1) */
-      REAL8 distance,            /** distance to source **/
+      REAL8 distance,            /**< distance to source **/
       REAL8 inclination,        /**< Angle between orbital angular momentum and line-of-sight vector at reference frequency (rad) */
       REAL8 deltaF,             /**< Frequency spacing (Hz) */
       REAL8 f_min,              /**< Starting GW frequency (Hz) */

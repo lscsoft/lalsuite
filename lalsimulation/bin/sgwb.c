@@ -50,6 +50,9 @@
  * <DT>`-r`, `--sample-rate` SRATE</DT>            	<DD>sample rate (Hz) [16384]</DD>
  * <DT>`-W`, `--Omega0`     OMEGA0</DT>      	<DD>(required) flat spectral energy density</DD>
  * <DT>`-f`, `--low-frequency` FLOW</DT>     	<DD>low frequency cutoff (Hz) (default = 10 Hz)</DD>
+ * <DT>`-a`, `--alpha`</DT>                  	<DD>sgwb spectrum power law power</DD>
+ * <DT>`-F`, `--reference-frequency` FREF</DT>  <DD>reference frequency (Hz) for a powerlaw spectrum</DD>
+ * <DT>`-p`, `--path-to-file`</DT>           	<DD>path to a file including data for Omega (overrides other options)</DD>
  * </DL>
  *
  * ### Environment
@@ -93,11 +96,19 @@
 #include <lal/TimeSeries.h>
 #include <lal/LALSimSGWB.h>
 
+#include <lal/LALSimReadData.h>
+
 double srate = 16384.0; // sampling rate in Hertz
 double tstart;
 double duration;
 double flow = 10.0;
 double Omega0;
+double alpha;
+double fref;
+int flag_power = 0;
+int flag_input_file = 0;
+const char *file_name;
+
 LALDetector detectors[LAL_NUM_DETECTORS];
 size_t numDetectors;
 
@@ -123,10 +134,25 @@ int main(int argc, char *argv[])
 	XLALGPSSetREAL8(&epoch, tstart);
 	gsl_rng_env_setup();
 	rng = gsl_rng_alloc(gsl_rng_default);
-	OmegaGW = XLALSimSGWBOmegaGWFlatSpectrum(Omega0, flow, srate/length, length/2 + 1);
+
+	if (flag_input_file == 0) {
+		if (flag_power == 0) {
+			OmegaGW = XLALSimSGWBOmegaGWFlatSpectrum(Omega0, flow, srate/length, length/2 + 1);
+		}
+		else {
+			OmegaGW = XLALSimSGWBOmegaGWPowerLawSpectrum(Omega0, alpha, fref, flow, srate/length, length/2 + 1);
+		}
+	}
+	else {
+		OmegaGW = XLALSimSGWBOmegaGWNumericalSpectrumFromFile(file_name, length/2 + 1);
+		srate = OmegaGW->deltaF * length;
+	}
 
 	n = duration * srate;
 	seg = LALCalloc(numDetectors, sizeof(*seg));
+
+	printf("# parameters:\tsrate=%g\tstart=%g\tduration=%g\tOmega=%g\talpha=%g\tfref=%g\n", srate, tstart, duration, Omega0, alpha, fref);
+
 	printf("# time (s)");
 	for (i = 0; i < numDetectors; ++i) {
 		char name[LALNameLength];
@@ -172,12 +198,15 @@ int parseargs( int argc, char **argv )
 			{ "virgo", no_argument, 0, 'V' },
 			{ "start-time", required_argument, 0, 's' },
 			{ "duration", required_argument, 0, 't' },
-			{ "sample-rate", required_argument, 0, 'r' },
-			{ "Omega0", required_argument, 0, 'W' },
-			{ "low-frequency", required_argument, 0, 'f' },
+			{ "sample-rate", no_argument, 0, 'r' },
+			{ "Omega0", no_argument, 0, 'W' },
+			{ "alpha", no_argument, 0, 'a'},
+			{ "reference-frequency", no_argument, 0, 'F'},
+			{ "low-frequency", no_argument, 0, 'f' },
+			{ "path-to-file", no_argument, 0 , 'p'},
 			{ 0, 0, 0, 0 }
 		};
-	char args[] = "hGHLVs:t:r:W:f:";
+	char args[] = "hGHLVs:t:r:W:a:F:f:p:";
 	while (1) {
 		int option_index = 0;
 		int c;
@@ -221,8 +250,20 @@ int parseargs( int argc, char **argv )
 			case 'W': /* Omega0 */
 				Omega0 = atof(LALoptarg);
 				break;
+			case 'a': /* alpha */
+				alpha = atof(LALoptarg);
+				flag_power = 1;
+				break;
+			case 'F': /* reference-frequency */
+				fref = atof(LALoptarg);
+				flag_power = 1;
+				break;
 			case 'f': /* low-frequency */
 				flow = atof(LALoptarg);
+				break;
+			case 'p': /* path-to-file */
+				file_name = LALoptarg;
+				flag_input_file = 1;
 				break;
 			case '?':
 			default:
@@ -238,12 +279,28 @@ int parseargs( int argc, char **argv )
 		exit(1);
 	}
 
-	if (duration == 0.0 || Omega0 == 0.0) {
-		fprintf(stderr, "must select a duration and a value of Omega0\n");
-		usage(argv[0]);
-		exit(1);
+	if (flag_input_file == 1) {
+		fprintf(stderr, "Using a custom spectrum\n");
 	}
-	
+	else if (flag_power == 1) {
+		fprintf(stderr, "Using a powerlaw spectrum\n");
+
+		if (duration == 0.0 || Omega0 == 0.0) {
+			fprintf(stderr, "must select a duration and a value of Omega0\n");
+			usage(argv[0]);
+			exit(1);
+		}
+	}
+	else {
+		fprintf(stderr, "Using a flat spectrum\n");
+
+		if (duration == 0.0 || Omega0 == 0.0) {
+			fprintf(stderr, "must select a duration and a value of Omega0\n");
+			usage(argv[0]);
+			exit(1);
+		}
+	}
+
 	return 0;
 }
 	
@@ -261,5 +318,8 @@ int usage( const char *program )
 	fprintf(stderr, "\t-r, --sample-rate   SRATE    \tsample rate (Hz) [16384]\n");
 	fprintf(stderr, "\t-W, --Omega0        OMEGA0   \t(required) flat spectral energy density\n");
 	fprintf(stderr, "\t-f, --low-frequency FLOW     \tlow frequency cutoff (Hz) (default = 10 Hz)\n");
+	fprintf(stderr, "\t-a, --alpha                  \tsgwb spectrum power law power\n");
+	fprintf(stderr, "\t-F, --reference-frequency FREF\treference frequency (Hz) for a powerlaw spectrum\n");
+	fprintf(stderr, "\t-p, --path-to-file           \tpath to a file including data for Omega (overrides other options)\n");
 	return 0;
 }
