@@ -429,6 +429,12 @@ int main( int argc, char *argv[] )
         if ( SFT_fft_data->length < SFT_bins ) {
           LogPrintf( LOG_CRITICAL, "Sampling rate is too low for band requested, skipping %s\n", uvar->channel_name->data[n] );
           XLALDestroyREAL8TimeSeries( SFT_time_series );
+          XLALDestroyREAL8Window( SFT_window );
+          XLALDestroyCOMPLEX16Vector( SFT_fft_data );
+          XLALDestroyREAL8FFTPlan( SFT_fft_plan );
+          SFT_window = NULL;
+          SFT_fft_data = NULL;
+          SFT_fft_plan = NULL;
           continue;
         }
       }
