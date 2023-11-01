@@ -129,9 +129,6 @@ LALSUITE_USE_LIBTOOL
 # check for required libraries
 AC_CHECK_LIB([m],[main],,[AC_MSG_ERROR([could not find the math library])])
 
-# check for Python
-LALSUITE_CHECK_PYTHON([3.5])
-
 # check for gsl
 PKG_CHECK_MODULES([GSL],[gsl],[true],[false])
 LALSUITE_ADD_FLAGS([C],[${GSL_CFLAGS}],[${GSL_LIBS}])
