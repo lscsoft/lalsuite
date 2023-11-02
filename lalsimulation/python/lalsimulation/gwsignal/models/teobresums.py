@@ -1,7 +1,7 @@
-"""Notes on TEOBResumS installation:
+"""Notes on TEOBResumS installation (TEMPORARY):
+
 - clone it from https://bitbucket.org/eob_ihes/teobresums
-- ideally, move to the branch `dev/DALI-4PNrho22`
-    - but that seems to be broken - use commit `fe741b0` instead
+- checkout the branch `dev/DALI-4PNrho22`
 - within the `Python` folder, run `make`
 - export the `PYTHONPATH` environment variable to the `Python` folder
     inside the TEOBResumS repo
