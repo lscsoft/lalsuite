@@ -1,3 +1,5 @@
 fft_impl:
   - fftw
   - mkl
+mkl:
+  - 2022
