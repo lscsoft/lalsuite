@@ -71,26 +71,26 @@ BuildRequires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
 # -- packages ---------------
 
 # lalinference
-Summary: LSC Algorithm Inference Library - runtime tools
+Summary: LVK Algorithm Inference Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Requires: %{name}-data
 Obsoletes: python2-%{name} <= 2.0.7-1
 %description
-The LSC Algorithm Inference Library for gravitational wave data analysis.
+The LVK Algorithm Inference Library for gravitational wave data analysis.
 
 # lalinference-data
 %package data
 BuildArch: noarch
 Summary: Data files for LALInference
 %description data
-The LSC Algorithm Inference Library for gravitational wave data analysis.
+The LVK Algorithm Inference Library for gravitational wave data analysis.
 This package contains the data files needed to run various applications
 and rountines that use the LAL Inference library.
 
 # liblalinference
 %package -n lib%{name}
-Summary: LSC Algorithm Inference Library - library package
+Summary: LVK Algorithm Inference Library - library package
 Requires: gsl >= 1.15
 Requires: openssh-clients
 Requires: liblal >= @MIN_LAL_VERSION@
@@ -102,7 +102,7 @@ Requires: liblalinspiral >= @MIN_LALINSPIRAL_VERSION@
 Requires: %{name}-data
 Conflicts: %{name} <= 2.0.5-1
 %description -n lib%{name}
-The LSC Algorithm Inference Library for gravitational wave data analysis.
+The LVK Algorithm Inference Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL Inference library.
 
@@ -120,7 +120,7 @@ Requires: liblalinspiral-devel >= @MIN_LALINSPIRAL_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 2.0.6-1
 %description -n lib%{name}-devel
-The LSC Algorithm Inference Library for gravitational wave data analysis. This
+The LVK Algorithm Inference Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Inference
 library.
 
@@ -150,7 +150,7 @@ Requires: python%{python3_pkgversion}-six
 Obsoletes: python2-%{name} < 3.1.0-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
-The LSC Algorithm Library for gravitational wave data analysis.
+The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings for LALInference.
 
 # lalinference-octave
@@ -165,7 +165,7 @@ Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 Requires: lalburst-octave >= @MIN_LALBURST_VERSION@
 Requires: lalinspiral-octave >= @MIN_LALINSPIRAL_VERSION@
 %description octave
-The LSC Algorithm Library for gravitational wave data analysis.
+The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALInference.
 
 # -- build stages -----------
