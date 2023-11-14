@@ -13,9 +13,9 @@ The whole LALSuite software suite can be cited with the DOI
 [10.7935/GT1W-FZ16][doi]. An example BibTeX entry could look like this:
 
      @misc{lalsuite,
-           author         = "{LIGO Scientific Collaboration}",
-           title          = "{LIGO} {A}lgorithm {L}ibrary - {LALS}uite",
-           howpublished   = "free software (GPL)",
+           author         = "{LIGO Scientific Collaboration} and {Virgo Collaboration} and {KAGRA Collaboration}",
+           title          = "{LVK} {A}lgorithm {L}ibrary - {LALS}uite",
+           howpublished   = "Free software (GPL)",
            doi            = "10.7935/GT1W-FZ16",
            year           = "2018"
      }
