@@ -27,7 +27,7 @@
 @SWIG_BUILD_PYTHON_TRUE@
 @SWIG_BUILD_PYTHON_TRUE@To disable globally, use:
 @SWIG_BUILD_PYTHON_TRUE@
-@SWIG_BUILD_PYTHON_TRUE@lal.swig_redirect_standard_output_error(True)
+@SWIG_BUILD_PYTHON_TRUE@lal.swig_redirect_standard_output_error(False)
 @SWIG_BUILD_PYTHON_TRUE@
 @SWIG_BUILD_PYTHON_TRUE@Note however that this will likely lead to error messages from
 @SWIG_BUILD_PYTHON_TRUE@LAL functions being either misdirected or lost when called from
