@@ -27,8 +27,8 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
-Description: LSC Algorithm Library Frame
- The LSC Algorithm Frame Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Frame
+ The LVK Algorithm Frame Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL Frame library.
 Replaces: lalframe (<< 1.5.2-2~)
@@ -44,8 +44,8 @@ Depends:
  libframel-dev (>= @MIN_FRAMEL_VERSION@),
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalframe@LIBMAJOR@ (= ${binary:Version}),
-Description: LSC Algorithm Library Frame Developers
- The LSC Algorithm Frame Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Frame Developers
+ The LVK Algorithm Frame Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  Frame library.
 Provides: lalframe-dev (= ${binary:Version})
@@ -75,7 +75,7 @@ Depends:
  lalframe (= ${binary:Version}),
  python3-lal (>= @MIN_LAL_VERSION@~),
 Description: Python 3 bindings for LALFrame
- The LSC Algorithm Frame Library for gravitational wave data analysis.
+ The LVK Algorithm Frame Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Frame library.
 
 Package: lalframe
@@ -85,6 +85,6 @@ Depends:
  ${shlibs:Depends},
  liblalframe@LIBMAJOR@ (= ${binary:Version}),
  python3-lalframe (= ${binary:Version}),
-Description: LSC Algorithm Library Frame
- The LSC Algorithm Frame Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Frame
+ The LVK Algorithm Frame Library for gravitational wave data analysis.
  This package provides the runtime tools.
