@@ -1770,6 +1770,7 @@ static int UNUSED XLALFITSArrayWrite( FITSFile UNUSED *file, const size_t UNUSED
     // Create a new FITS image to store array
     CALL_FITS( fits_create_img, file->ff, bitpix, file->array.naxis, file->array.naxes );
     CALL_FITS( fits_write_key_str, file->ff, "HDUNAME", file->hduname, file->hducomment );
+    CALL_FITS( fits_write_key_str, file->ff, "EXTNAME", file->hduname, file->hducomment );   /* synonym of HDUNAME */
 
   } else {
     XLAL_CHECK_FAIL( file->array.bitpix == bitpix && file->array.datatype == datatype, XLAL_EINVAL, "Inconsistent use of %s...() functions", __func__ );
@@ -2572,6 +2573,7 @@ int XLALFITSTableWriteRow( FITSFile UNUSED *file, const void UNUSED *record )
     }
     CALL_FITS( fits_create_tbl, file->ff, file->hdutype, 0, file->table.tfields, ttype_ptr, tform_ptr, tunit_ptr, NULL );
     CALL_FITS( fits_write_key_str, file->ff, "HDUNAME", file->hduname, file->hducomment );
+    CALL_FITS( fits_write_key_str, file->ff, "EXTNAME", file->hduname, file->hducomment );   /* synonym of HDUNAME */
   }
 
   // Advance to next row
