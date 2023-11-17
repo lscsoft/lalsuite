@@ -38,18 +38,18 @@ WeaveSearchIterator *XLALWeaveMainLoopSearchIteratorCreate(
   const LatticeTiling *semi_tiling,
   const UINT4 freq_partitions,
   const UINT4 f1dot_partitions
-  );
+);
 void XLALWeaveSearchIteratorDestroy(
   WeaveSearchIterator *itr
-  );
+);
 int XLALWeaveSearchIteratorSave(
   const WeaveSearchIterator *itr,
   FITSFile *file
-  );
+);
 int XLALWeaveSearchIteratorRestore(
   WeaveSearchIterator *itr,
   FITSFile *file
-  );
+);
 int XLALWeaveSearchIteratorNext(
   WeaveSearchIterator *itr,
   BOOLEAN *iteration_complete,
@@ -59,14 +59,14 @@ int XLALWeaveSearchIteratorNext(
   INT4 *semi_left,
   INT4 *semi_right,
   UINT4 *repetition_index
-  );
+);
 REAL8 XLALWeaveSearchIteratorProgress(
   const WeaveSearchIterator *itr
-  );
+);
 REAL8 XLALWeaveSearchIteratorRemainingTime(
   const WeaveSearchIterator *itr,
   const REAL8 elapsed_time
-  );
+);
 
 #ifdef __cplusplus
 }

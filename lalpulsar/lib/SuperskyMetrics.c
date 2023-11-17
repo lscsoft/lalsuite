@@ -113,7 +113,7 @@ static gsl_matrix *SM_ComputePhaseMetric(
   const MultiNoiseFloor *detector_weights,      ///< [in] Weights used to combine single-detector metrics (default: unit weights)
   const DetectorMotionType detector_motion,     ///< [in] Which detector motion to use
   const EphemerisData *ephemerides              ///< [in] Earth/Sun ephemerides
-  )
+)
 {
 
   // Check input
@@ -197,7 +197,7 @@ static int SM_ComputeFittedSuperskyMetric(
   const DopplerCoordinateSystem *ocoords,       ///< [in] Coordinate system of orbital metric
   const LIGOTimeGPS *start_time,                ///< [in] Start time of the metrics
   const LIGOTimeGPS *end_time                   ///< [in] End time of the metrics
-  )
+)
 {
 
   // Check input
@@ -347,7 +347,7 @@ static int SM_ComputeDecoupledSuperskyMetric(
   gsl_matrix *decoupled_ssky_metric,            ///< [out] Decoupled supersky metric
   SuperskyTransformData *rssky_transf,          ///< [in,out] Reduced supersky metric coordinate transform data
   const gsl_matrix *fitted_ssky_metric          ///< [in] Fitted supersky metric
-  )
+)
 {
 
   // Check input
@@ -414,7 +414,7 @@ static int SM_ComputeAlignedSuperskyMetric(
   gsl_matrix *aligned_ssky_metric,              ///< [out] Aligned supersky metric
   SuperskyTransformData *rssky_transf,          ///< [in,out] Reduced supersky metric coordinate transform data
   const gsl_matrix *decoupled_ssky_metric       ///< [in] Decoupled supersky metric
-  )
+)
 {
 
   // Check input
@@ -496,7 +496,7 @@ static int SM_ComputeReducedSuperskyMetric(
   const LIGOTimeGPS *ref_time,                  ///< [in] Reference time of the metrics
   const LIGOTimeGPS *start_time,                ///< [in] Start time of the metrics
   const LIGOTimeGPS *end_time                   ///< [in] End time of the metrics
-  )
+)
 {
 
   // Check input
@@ -541,7 +541,7 @@ static int SM_ComputeReducedSuperskyMetric(
 
     // Move the row of the coordinate transform data corresponding to the frequency to the last row
     const int isky_offset_freq = ifreq - 3;   // 'ucoords' has 3 sky positions
-    gsl_matrix_view sky_offsets = gsl_matrix_view_array(&( *rssky_transf )->sky_offsets[0][0], ( *rssky_transf )->nsky_offsets, 3);
+    gsl_matrix_view sky_offsets = gsl_matrix_view_array( &( *rssky_transf )->sky_offsets[0][0], ( *rssky_transf )->nsky_offsets, 3 );
     for ( size_t i = isky_offset_freq; i + 1 < sky_offsets.matrix.size1; ++i ) {
       gsl_matrix_swap_rows( &sky_offsets.matrix, i, i + 1 );
     }
@@ -594,7 +594,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   const MultiNoiseFloor *detector_weights,
   const DetectorMotionType detector_motion,
   const EphemerisData *ephemerides
-  )
+)
 {
 
   // Check input
@@ -702,7 +702,7 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
 
 SuperskyMetrics *XLALCopySuperskyMetrics(
   const SuperskyMetrics *metrics
-  )
+)
 {
 
   // Check input
@@ -741,7 +741,7 @@ SuperskyMetrics *XLALCopySuperskyMetrics(
 
 void XLALDestroySuperskyMetrics(
   SuperskyMetrics *metrics
-  )
+)
 {
   if ( metrics != NULL ) {
     for ( size_t n = 0; n < metrics->num_segments; ++n ) {
@@ -761,7 +761,7 @@ void XLALDestroySuperskyMetrics(
 ///
 static int fits_table_init_SuperskyTransformData(
   FITSFile *file
-  )
+)
 {
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
   XLAL_FITS_TABLE_COLUMN_BEGIN( SuperskyTransformData );
@@ -778,7 +778,7 @@ static int fits_table_init_SuperskyTransformData(
 int XLALFITSWriteSuperskyMetrics(
   FITSFile *file,
   const SuperskyMetrics *metrics
-  )
+)
 {
 
   // Check input
@@ -828,7 +828,7 @@ int XLALFITSWriteSuperskyMetrics(
 int XLALFITSReadSuperskyMetrics(
   FITSFile *file,
   SuperskyMetrics **metrics
-  )
+)
 {
 
   // Check input
@@ -892,7 +892,7 @@ int XLALFITSReadSuperskyMetrics(
 int XLALSuperskyMetricsDimensions(
   const SuperskyMetrics *metrics,
   size_t *spindowns
-  )
+)
 {
 
   // Check input
@@ -919,7 +919,7 @@ static int SM_ScaleSuperskyMetricFiducialFreq(
   gsl_matrix *rssky_metric,                     ///< [in] Reduced supersky metric
   SuperskyTransformData *rssky_transf,          ///< [in] Reduced supersky metric coordinate transform data
   const double new_fiducial_freq                ///< [in] New fiducial frequency
-  )
+)
 {
 
   // Check input
@@ -943,7 +943,7 @@ static int SM_ScaleSuperskyMetricFiducialFreq(
 int XLALScaleSuperskyMetricsFiducialFreq(
   SuperskyMetrics *metrics,
   const double new_fiducial_freq
-  )
+)
 {
 
   // Check input
@@ -969,7 +969,7 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   SuperskyMetrics *metrics,
   const double coh_max_mismatch,
   const double semi_max_mismatch
-  )
+)
 {
 
   // Check input
@@ -1029,7 +1029,7 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
 int XLALSetPhysicalPointSuperskyRefTime(
   PulsarDopplerParams *out_phys,
   const SuperskyTransformData *rssky_transf
-  )
+)
 {
 
   // Check input
@@ -1076,7 +1076,7 @@ static void SM_ReducedToAligned(
   double as[3],                                 ///< [out] 3-dimensional aligned sky coordinates
   const gsl_vector *rss,                        ///< [in] 2-dimensional reduced supersky coordinates
   const double hemi                             ///< [in] Supersky coordinate hemisphere; only sign is used
-  )
+)
 {
   const double A = GSL_SIGN( hemi ) * gsl_vector_get( rss, 0 ) - 1;
   const double B = gsl_vector_get( rss, 1 );
@@ -1094,7 +1094,7 @@ static void SM_ReducedToAligned(
 static void SM_AlignedToReduced(
   gsl_vector *rss,                              ///< [out] 2-dimensional reduced supersky coordinates
   const double as[3]                            ///< [in] 3-dimensional aligned sky coordinates
-  )
+)
 {
   const double r = sqrt( DOT3( as, as ) );
   const double A = GSL_SIGN( as[2] ) * ( ( as[0] / r ) + 1.0 );
@@ -1107,7 +1107,7 @@ int XLALConvertPhysicalToSuperskyPoint(
   gsl_vector *out_rssky,
   const PulsarDopplerParams *in_phys,
   const SuperskyTransformData *rssky_transf
-  )
+)
 {
 
   // Check input
@@ -1176,7 +1176,7 @@ int XLALConvertSuperskyToPhysicalPoint(
   const gsl_vector *in_rssky,
   const gsl_vector *ref_rssky,
   const SuperskyTransformData *rssky_transf
-  )
+)
 {
 
   // Check input
@@ -1241,7 +1241,7 @@ int XLALConvertSuperskyToSuperskyPoint(
   const gsl_vector *in_rssky,
   const gsl_vector *ref_rssky,
   const SuperskyTransformData *in_rssky_transf
-  )
+)
 {
 
   // Check input
@@ -1265,7 +1265,7 @@ int XLALConvertPhysicalToSuperskyPoints(
   gsl_matrix **out_rssky,
   const gsl_matrix *in_phys,
   const SuperskyTransformData *rssky_transf
-  )
+)
 {
 
   // Check input
@@ -1311,7 +1311,7 @@ int XLALConvertSuperskyToPhysicalPoints(
   gsl_matrix **out_phys,
   const gsl_matrix *in_rssky,
   const SuperskyTransformData *rssky_transf
-  )
+)
 {
 
   // Check input
@@ -1355,8 +1355,8 @@ int XLALConvertSuperskyToPhysicalPoints(
 static void SkyBoundCache(
   const size_t dim UNUSED,
   const gsl_vector *point,
-  gsl_vector* cache
-  )
+  gsl_vector *cache
+)
 {
 
   // Convert from 2-dimensional reduced supersky coordinates to 3-dimensional aligned sky coordinates
@@ -1395,7 +1395,7 @@ static double PhysicalSkyBound(
   const size_t dim UNUSED,
   const gsl_matrix *cache UNUSED,
   const gsl_vector *point
-  )
+)
 {
 
   // Get bounds data
@@ -1441,7 +1441,7 @@ static double PhysicalSkyBound(
             angle = LAL_PI - angle;
           }
           angle -= p.angle0;
-          bound = p.C*cos( angle ) + p.S*sin( angle ) + p.Z;
+          bound = p.C * cos( angle ) + p.S * sin( angle ) + p.Z;
 
         }
 
@@ -1464,7 +1464,7 @@ int XLALSetSuperskyPhysicalSkyBounds(
   const double alpha2,
   const double delta1,
   const double delta2
-  )
+)
 {
 
   // Check input
@@ -1582,10 +1582,10 @@ int XLALSetSuperskyPhysicalSkyBounds(
     const double Q_na_1 = gsl_matrix_get( &align_sky.matrix, 0, 1 );
     const double Q_nb_0 = gsl_matrix_get( &align_sky.matrix, 1, 0 );
     const double Q_nb_1 = gsl_matrix_get( &align_sky.matrix, 1, 1 );
-    const double na = Q_na_0*cos_alpha + Q_na_1*sin_alpha;
-    const double nb = Q_nb_0*cos_alpha + Q_nb_1*sin_alpha;
+    const double na = Q_na_0 * cos_alpha + Q_na_1 * sin_alpha;
+    const double nb = Q_nb_0 * cos_alpha + Q_nb_1 * sin_alpha;
     phi = atan2( -nb, na );
-    const double na_rot = na*cos( phi ) + nb*sin( phi );
+    const double na_rot = na * cos( phi ) + nb * sin( phi );
     if ( na_rot < 0 ) {
       phi -= LAL_PI;
     } else if ( na_rot > 0 ) {
@@ -1605,16 +1605,16 @@ int XLALSetSuperskyPhysicalSkyBounds(
   for ( size_t j = 0; j < 3; ++j ) {
     const double Q_na_j = gsl_matrix_get( &align_sky.matrix, 0, j );
     const double Q_nb_j = gsl_matrix_get( &align_sky.matrix, 1, j );
-    const double Q_na_j_rot = Q_na_j*cos_phi - Q_nb_j*sin_phi;
-    const double Q_nb_j_rot = Q_nb_j*cos_phi + Q_na_j*sin_phi;
+    const double Q_na_j_rot = Q_na_j * cos_phi - Q_nb_j * sin_phi;
+    const double Q_nb_j_rot = Q_nb_j * cos_phi + Q_na_j * sin_phi;
     gsl_matrix_set( &align_sky.matrix, 0, j, Q_na_j_rot );
     gsl_matrix_set( &align_sky.matrix, 1, j, Q_nb_j_rot );
   }
   for ( size_t i = 0; i < sky_offsets.matrix.size1; ++i ) {
     const double Delta_0 = gsl_matrix_get( &sky_offsets.matrix, i, 0 );
     const double Delta_1 = gsl_matrix_get( &sky_offsets.matrix, i, 1 );
-    const double Delta_0_rot = Delta_0*cos_phi - Delta_1*sin_phi;
-    const double Delta_1_rot = Delta_1*cos_phi + Delta_0*sin_phi;
+    const double Delta_0_rot = Delta_0 * cos_phi - Delta_1 * sin_phi;
+    const double Delta_1_rot = Delta_1 * cos_phi + Delta_0 * sin_phi;
     gsl_matrix_set( &sky_offsets.matrix, i, 0, Delta_0_rot );
     gsl_matrix_set( &sky_offsets.matrix, i, 1, Delta_1_rot );
   }
@@ -1631,9 +1631,9 @@ int XLALSetSuperskyPhysicalSkyBounds(
   {
     const double g_na_na = gsl_matrix_get( rssky_metric, 0, 0 );
     const double g_nb_nb = gsl_matrix_get( rssky_metric, 1, 1 );
-    const double g_na_na_rot = g_na_na*SQR( cos_phi ) + g_nb_nb*SQR( sin_phi );
-    const double g_na_nb_rot = ( g_na_na - g_nb_nb )*cos_phi*sin_phi;
-    const double g_nb_nb_rot = g_na_na*SQR( sin_phi ) + g_nb_nb*SQR( cos_phi );
+    const double g_na_na_rot = g_na_na * SQR( cos_phi ) + g_nb_nb * SQR( sin_phi );
+    const double g_na_nb_rot = ( g_na_na - g_nb_nb ) * cos_phi * sin_phi;
+    const double g_nb_nb_rot = g_na_na * SQR( sin_phi ) + g_nb_nb * SQR( cos_phi );
     gsl_matrix_set( rssky_metric, 0, 0, g_na_na_rot );
     gsl_matrix_set( rssky_metric, 0, 1, g_na_nb_rot );
     gsl_matrix_set( rssky_metric, 1, 0, g_na_nb_rot );
@@ -1663,11 +1663,11 @@ int XLALSetSuperskyPhysicalSkyBounds(
     const double cos_alpha = cos( alphas[i] );
     const double sin_alpha = sin( alphas[i] );
     const double x = Q_na[2];
-    const double y = Q_na[0]*cos_alpha + Q_na[1]*sin_alpha;
+    const double y = Q_na[0] * cos_alpha + Q_na[1] * sin_alpha;
     const_alpha[i].na0 = 0;
     const_alpha[i].r = sqrt( SQR( x ) + SQR( y ) );
     const_alpha[i].angle0 = atan2( y, x );
-    const_alpha[i].C = Q_nb[0]*cos_alpha + Q_nb[1]*sin_alpha;
+    const_alpha[i].C = Q_nb[0] * cos_alpha + Q_nb[1] * sin_alpha;
     const_alpha[i].S = Q_nb[2];
     const_alpha[i].Z = 0;
   }
@@ -1685,14 +1685,14 @@ int XLALSetSuperskyPhysicalSkyBounds(
     const_delta[j].type = 0;
     const double cos_delta = cos( deltas[j] );
     const double sin_delta = sin( deltas[j] );
-    const double x = Q_na[1]*cos_delta;
-    const double y = Q_na[0]*cos_delta;
-    const_delta[j].na0 = Q_na[2]*sin_delta;
+    const double x = Q_na[1] * cos_delta;
+    const double y = Q_na[0] * cos_delta;
+    const_delta[j].na0 = Q_na[2] * sin_delta;
     const_delta[j].r = sqrt( SQR( x ) + SQR( y ) );
     const_delta[j].angle0 = atan2( y, x );
-    const_delta[j].C = Q_nb[0]*cos_delta;
-    const_delta[j].S = Q_nb[1]*cos_delta;
-    const_delta[j].Z = Q_nb[2]*sin_delta;
+    const_delta[j].C = Q_nb[0] * cos_delta;
+    const_delta[j].S = Q_nb[1] * cos_delta;
+    const_delta[j].Z = Q_nb[2] * sin_delta;
   }
 
   // Determine corner points in reduced supersky coordinate A of the region
@@ -1851,8 +1851,8 @@ int XLALSetSuperskyPhysicalSkyBounds(
     //   na = ( Q_na[0]*cos(alpha) + Q_na[1]*sin(alpha) )*cos(delta) + Q_na[2]*sin(delta)
     const double cos_alpha_split = cos( alphas[1] );
     const double sin_alpha_split = sin( alphas[1] );
-    const double delta_split = -1 * atan2( Q_nc[0]*cos_alpha_split + Q_nc[1]*sin_alpha_split, Q_nc[2] );
-    const double na_split = ( Q_na[0]*cos_alpha_split + Q_na[1]*sin_alpha_split )*cos( delta_split ) + Q_na[2]*sin( delta_split );
+    const double delta_split = -1 * atan2( Q_nc[0] * cos_alpha_split + Q_nc[1] * sin_alpha_split, Q_nc[2] );
+    const double na_split = ( Q_na[0] * cos_alpha_split + Q_na[1] * sin_alpha_split ) * cos( delta_split ) + Q_na[2] * sin( delta_split );
     const double split_A[2] = { -1 - na_split, 1 + na_split };
     const double split_B = -1 * RE_SQRT( 1 - SQR( na_split ) );
 
@@ -2031,7 +2031,7 @@ static double ConstantBoundB(
   const size_t dim UNUSED,
   const gsl_matrix *cache UNUSED,
   const gsl_vector *point
-  )
+)
 {
 
   // Get bounds data
@@ -2056,14 +2056,14 @@ static double ConstantBoundB(
 static double EqualAreaSkyBoundSolverA(
   double A1,
   void *params
-  )
+)
 {
 
   // Get parameters
-  const double target_area = ( ( double* ) params )[0];
+  const double target_area = ( ( double * ) params )[0];
 
   // Compute area of unit disk to the left of 'A1'
-  const double area = LAL_PI_2 + A1*RE_SQRT( 1 - SQR( A1 ) ) + asin( A1 );
+  const double area = LAL_PI_2 + A1 * RE_SQRT( 1 - SQR( A1 ) ) + asin( A1 );
 
   return area - target_area;
 
@@ -2072,16 +2072,16 @@ static double EqualAreaSkyBoundSolverA(
 static double EqualAreaSkyBoundSolverB(
   double B1,
   void *params
-  )
+)
 {
 
   // Get parameters
-  const double target_area = ( ( double* ) params )[0];
-  double A0 = ( ( double* ) params )[1];
-  double A1 = ( ( double* ) params )[2];
+  const double target_area = ( ( double * ) params )[0];
+  double A0 = ( ( double * ) params )[1];
+  double A1 = ( ( double * ) params )[2];
 
   // Compute area of unit disk between 'A0' and 'A1'
-  const double max_area = A1*RE_SQRT( 1 - SQR( A1 ) ) - A0*RE_SQRT( 1 - SQR( A0 ) ) + asin( A1 ) - asin( A0 );
+  const double max_area = A1 * RE_SQRT( 1 - SQR( A1 ) ) - A0 * RE_SQRT( 1 - SQR( A0 ) ) + asin( A1 ) - asin( A0 );
 
   // Work out where '-|B1| = const' line intersects unit disk boundary
   const double Ai = RE_SQRT( 1 - SQR( B1 ) );
@@ -2095,7 +2095,7 @@ static double EqualAreaSkyBoundSolverB(
   }
 
   // Compute area of unit disk between 'A0' and 'A1' and below '-|B1|'
-  double area = -fabs( B1 )*( A1 - A0 ) + 0.5*( A1*RE_SQRT( 1 - SQR( A1 ) ) - A0*RE_SQRT( 1 - SQR( A0 ) ) + asin( A1 ) - asin( A0 ) );
+  double area = -fabs( B1 ) * ( A1 - A0 ) + 0.5 * ( A1 * RE_SQRT( 1 - SQR( A1 ) ) - A0 * RE_SQRT( 1 - SQR( A0 ) ) + asin( A1 ) - asin( A0 ) );
 
   // For positive B, substract 'area' from 'max_area'
   if ( B1 > 0 ) {
@@ -2112,7 +2112,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
   const double max_mismatch,
   const UINT4 patch_count,
   const UINT4 patch_index
-  )
+)
 {
 
   // Check input
@@ -2246,7 +2246,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
           A_lower = gsl_root_fsolver_x_lower( fs );
           A_upper = gsl_root_fsolver_x_upper( fs );
           status = gsl_root_test_interval( A_lower, A_upper, 1e-5, 1e-5 );
-        } while (status == GSL_CONTINUE && ++iter < 1000);
+        } while ( status == GSL_CONTINUE && ++iter < 1000 );
         XLAL_CHECK( status == GSL_SUCCESS, XLAL_EMAXITER, "Could not find bound for A_index[%zu]=%i; best guess [%g, %g]", i, A_index_i, A_lower, A_upper );
 
         // Store bound
@@ -2274,12 +2274,12 @@ int XLALSetSuperskyEqualAreaSkyBounds(
         // Calculate the target area of unit disk
         const double A0 = A_bound[0];
         const double A1 = A_bound[1];
-        const double target_area = ( A1*RE_SQRT( 1 - SQR( A1 ) ) - A0*RE_SQRT( 1 - SQR( A0 ) ) + asin( A1 ) - asin( A0 ) ) * ( ( double ) B_index_i ) / ( ( double ) B_count );
+        const double target_area = ( A1 * RE_SQRT( 1 - SQR( A1 ) ) - A0 * RE_SQRT( 1 - SQR( A0 ) ) + asin( A1 ) - asin( A0 ) ) * ( ( double ) B_index_i ) / ( ( double ) B_count );
 
         // Set up GSL root solver
         double params[] = { target_area, A0, A1 };
         gsl_function F = { .function = EqualAreaSkyBoundSolverB, .params = params };
-        if ( EqualAreaSkyBoundSolverB(-B_max, params) * EqualAreaSkyBoundSolverB(B_max, params) > 0 ) {
+        if ( EqualAreaSkyBoundSolverB( -B_max, params ) * EqualAreaSkyBoundSolverB( B_max, params ) > 0 ) {
           // [-B_max, B_max] does not bracket root, so use B_max = 1
           B_max = 1;
         }
@@ -2293,7 +2293,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
           B_lower = gsl_root_fsolver_x_lower( fs );
           B_upper = gsl_root_fsolver_x_upper( fs );
           status = gsl_root_test_interval( B_lower, B_upper, 1e-5, 1e-5 );
-        } while (status == GSL_CONTINUE && ++iter < 1000);
+        } while ( status == GSL_CONTINUE && ++iter < 1000 );
         XLAL_CHECK( status == GSL_SUCCESS, XLAL_EMAXITER, "Could not find bound for B_index[%zu]=%i; best guess [%g, %g]", i, B_index_i, B_lower, B_upper );
 
         // Store bound
@@ -2306,7 +2306,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
     // Restrict range 'A' if 'B = const' bounds intersect unit disk boundary within it
     // - Only start to do this when there are 3 patches in 'B' direction
     // - Do not do this for the middle 'B' patch which straddles 'B = 0'
-    if ( B_count >= 3 && B_index != (B_count-1)/2 ) {
+    if ( B_count >= 3 && B_index != ( B_count - 1 ) / 2 ) {
       const double Ai = RE_SQRT( 1 - GSL_MIN( SQR( B_bound[0] ), SQR( B_bound[1] ) ) );
       if ( A_bound[0] < -Ai ) {
         A_bound[0] = -Ai;
@@ -2352,7 +2352,7 @@ static double PhysicalSpinBound(
   const size_t dim UNUSED,
   const gsl_matrix *cache,
   const gsl_vector *point UNUSED
-  )
+)
 {
 
   // Get bounds data
@@ -2375,7 +2375,7 @@ int XLALSetSuperskyPhysicalSpinBound(
   const size_t s,
   const double bound1,
   const double bound2
-  )
+)
 {
 
   // Check input
@@ -2420,7 +2420,7 @@ int XLALSetSuperskyPhysicalSpinBoundPadding(
   const SuperskyTransformData *rssky_transf,
   const size_t s,
   const bool padding
-  )
+)
 {
 
   // Check input
@@ -2444,7 +2444,7 @@ static int SM_LatticePhysicalRangeCallback(
   const size_t changed_i,
   const void *param,
   void *out
-  )
+)
 {
 
   // Only care about changes in sky position
@@ -2493,8 +2493,8 @@ static int SM_LatticePhysicalRangeCallback(
 
     // Store minimum/maximum values of physical frequency and spindowns
     if ( XLALIsTiledLatticeTilingDimension( tiling, RSSKY_FKDOT_DIM( cparam->rssky_transf, s ) ) ) {
-      cout->min_phys.fkdot[s] = GSL_MIN( cout->min_phys.fkdot[s], phys.fkdot[s] + step*(left - 1) );
-      cout->max_phys.fkdot[s] = GSL_MAX( cout->max_phys.fkdot[s], phys.fkdot[s] + step*(right + 1) );
+      cout->min_phys.fkdot[s] = GSL_MIN( cout->min_phys.fkdot[s], phys.fkdot[s] + step * ( left - 1 ) );
+      cout->max_phys.fkdot[s] = GSL_MAX( cout->max_phys.fkdot[s], phys.fkdot[s] + step * ( right + 1 ) );
     } else {
       cout->min_phys.fkdot[s] = cout->max_phys.fkdot[s] = phys.fkdot[s];
     }
@@ -2510,7 +2510,7 @@ int XLALRegisterSuperskyLatticePhysicalRangeCallback(
   const SuperskyTransformData *rssky_transf,
   const PulsarDopplerParams **min_phys,
   const PulsarDopplerParams **max_phys
-  )
+)
 {
 
   // Check input
@@ -2542,7 +2542,7 @@ static int SM_LatticeSuperskyRangeCallback(
   const size_t changed_i,
   const void *param,
   void *out
-  )
+)
 {
 
   // Only care about changes in sky position
@@ -2584,8 +2584,8 @@ static int SM_LatticeSuperskyRangeCallback(
 
     // Store minimum/maximum values of other reduced supersky frequency and spindown coordinates
     if ( XLALIsTiledLatticeTilingDimension( tiling, i ) ) {
-      cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] + step*(left - 1) );
-      cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] + step*(right + 1) );
+      cout->min_rssky2_array[i] = GSL_MIN( cout->min_rssky2_array[i], rssky2_array[i] + step * ( left - 1 ) );
+      cout->max_rssky2_array[i] = GSL_MAX( cout->max_rssky2_array[i], rssky2_array[i] + step * ( right + 1 ) );
     } else {
       cout->min_rssky2_array[i] = cout->max_rssky2_array[i] = rssky2_array[i];
     }
@@ -2602,7 +2602,7 @@ int XLALRegisterSuperskyLatticeSuperskyRangeCallback(
   const SuperskyTransformData *rssky2_transf,
   const gsl_vector **min_rssky2,
   const gsl_vector **max_rssky2
-  )
+)
 {
 
   // Check input
@@ -2634,7 +2634,7 @@ int XLALSetSuperskyRangeBounds(
   LatticeTiling *tiling,
   const gsl_vector *min_rssky,
   const gsl_vector *max_rssky
-  )
+)
 {
 
   // Check input

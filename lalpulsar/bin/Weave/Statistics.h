@@ -184,18 +184,18 @@ struct tagWeaveStatisticsValues {
 int XLALWeaveStatisticsSetDirectDependencies(
   WeaveStatisticType *deps,
   const WeaveStatisticType stats
-  );
+);
 
 int XLALWeaveStatisticsParamsSetDependencyMap(
   WeaveStatisticsParams *statistics_params,
   const WeaveStatisticType toplist_stats,
   const WeaveStatisticType extra_output_stats,
   const WeaveStatisticType recalc_stats
-  );
+);
 
 void XLALWeaveStatisticsParamsDestroy(
   WeaveStatisticsParams *statistics_params
-  );
+);
 
 #ifdef __cplusplus
 }

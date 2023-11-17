@@ -62,38 +62,38 @@ enum tagWeaveSearchTimingSection {
 WeaveSearchTiming *XLALWeaveSearchTimingCreate(
   const BOOLEAN detailed_timing,
   const WeaveStatisticsParams *statistics_params
-  );
+);
 void XLALWeaveSearchTimingDestroy(
   WeaveSearchTiming *tim
-  );
+);
 int XLALWeaveSearchTimingStart(
   WeaveSearchTiming *tim
-  );
+);
 int XLALWeaveSearchTimingElapsed(
   WeaveSearchTiming *tim,
   double *wall_elapsed,
   double *cpu_elapsed
-  );
+);
 int XLALWeaveSearchTimingStop(
   WeaveSearchTiming *tim,
   double *wall_total,
   double *cpu_total
-  );
+);
 int XLALWeaveSearchTimingSection(
   WeaveSearchTiming *tim,
   const WeaveSearchTimingSection prev_section,
   const WeaveSearchTimingSection next_section
-  );
+);
 int XLALWeaveSearchTimingStatistic(
   WeaveSearchTiming *tim,
   const WeaveStatisticType prev_statistic,
   const WeaveStatisticType next_statistic
-  );
+);
 int XLALWeaveSearchTimingWriteInfo(
   FITSFile *file,
   const WeaveSearchTiming *tim,
   const WeaveCacheQueries *queries
-  );
+);
 
 #ifdef __cplusplus
 }

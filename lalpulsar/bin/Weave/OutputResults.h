@@ -50,27 +50,27 @@ WeaveOutputResults *XLALWeaveOutputResultsCreate(
   WeaveStatisticsParams *statistics_params,
   const UINT4 toplist_limit,
   const BOOLEAN mean2F_hgrm
-  );
+);
 void XLALWeaveOutputResultsDestroy(
   WeaveOutputResults *out
-  );
+);
 int XLALWeaveOutputResultsAdd(
   WeaveOutputResults *out,
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
-  );
+);
 int XLALWeaveOutputResultsCompletionLoop(
   WeaveOutputResults *out
-  );
+);
 int XLALWeaveOutputResultsWrite(
   FITSFile *file,
   const WeaveOutputResults *out
-  );
+);
 int XLALWeaveOutputResultsReadAppend(
   FITSFile *file,
   WeaveOutputResults **out,
   UINT4 toplist_limit
-  );
+);
 int XLALWeaveOutputResultsCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
@@ -83,7 +83,7 @@ int XLALWeaveOutputResultsCompare(
   const UINT4 toplist_compare_limit,
   const WeaveOutputResults *out_1,
   const WeaveOutputResults *out_2
-  );
+);
 
 #ifdef __cplusplus
 }
