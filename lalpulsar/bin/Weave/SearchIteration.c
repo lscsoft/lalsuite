@@ -61,7 +61,7 @@ WeaveSearchIterator *XLALWeaveMainLoopSearchIteratorCreate(
   const LatticeTiling *semi_tiling,
   const UINT4 freq_partitions,
   const UINT4 f1dot_partitions
-  )
+)
 {
 
   // Check input
@@ -116,7 +116,7 @@ WeaveSearchIterator *XLALWeaveMainLoopSearchIteratorCreate(
 ///
 void XLALWeaveSearchIteratorDestroy(
   WeaveSearchIterator *itr
-  )
+)
 {
   if ( itr != NULL ) {
     XLALDestroyLatticeTilingIterator( itr->semi_itr );
@@ -131,7 +131,7 @@ void XLALWeaveSearchIteratorDestroy(
 int XLALWeaveSearchIteratorSave(
   const WeaveSearchIterator *itr,
   FITSFile *file
-  )
+)
 {
 
   // Check input
@@ -160,7 +160,7 @@ int XLALWeaveSearchIteratorSave(
 int XLALWeaveSearchIteratorRestore(
   WeaveSearchIterator *itr,
   FITSFile *file
-  )
+)
 {
 
   // Check input
@@ -198,7 +198,7 @@ int XLALWeaveSearchIteratorNext(
   INT4 *semi_left,
   INT4 *semi_right,
   UINT4 *repetition_index
-  )
+)
 {
 
   // Check input
@@ -280,7 +280,7 @@ int XLALWeaveSearchIteratorNext(
 ///
 REAL8 XLALWeaveSearchIteratorProgress(
   const WeaveSearchIterator *itr
-  )
+)
 {
 
   // Check input
@@ -298,7 +298,7 @@ REAL8 XLALWeaveSearchIteratorProgress(
 REAL8 XLALWeaveSearchIteratorRemainingTime(
   const WeaveSearchIterator *itr,
   const REAL8 elapsed_time
-  )
+)
 {
 
   // Check input

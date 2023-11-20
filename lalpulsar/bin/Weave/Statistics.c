@@ -165,21 +165,21 @@ const UserChoices WeaveStatisticChoices = {
   { SUPPORTED_STATISTICS, "all" }
 };
 const char *const WeaveStatisticHelpString = \
-  ENTRY_2_HELPSTR( ENTRY_COH2F ) \
-  ENTRY_2_HELPSTR( ENTRY_COH2F_DET ) \
-  ENTRY_2_HELPSTR( ENTRY_MAX2F ) \
-  ENTRY_2_HELPSTR( ENTRY_MAX2F_DET ) \
-  ENTRY_2_HELPSTR( ENTRY_SUM2F ) \
-  ENTRY_2_HELPSTR( ENTRY_SUM2F_DET ) \
-  ENTRY_2_HELPSTR( ENTRY_MEAN2F ) \
-  ENTRY_2_HELPSTR( ENTRY_MEAN2F_DET ) \
-  ENTRY_2_HELPSTR( ENTRY_BSGL ) \
-  ENTRY_2_HELPSTR( ENTRY_BSGLtL ) \
-  ENTRY_2_HELPSTR( ENTRY_BtSGLtL ) \
-  ENTRY_2_HELPSTR( ENTRY_NCOUNT ) \
-  ENTRY_2_HELPSTR( ENTRY_NCOUNT_DET ) \
-  ;
-  
+    ENTRY_2_HELPSTR( ENTRY_COH2F ) \
+    ENTRY_2_HELPSTR( ENTRY_COH2F_DET ) \
+    ENTRY_2_HELPSTR( ENTRY_MAX2F ) \
+    ENTRY_2_HELPSTR( ENTRY_MAX2F_DET ) \
+    ENTRY_2_HELPSTR( ENTRY_SUM2F ) \
+    ENTRY_2_HELPSTR( ENTRY_SUM2F_DET ) \
+    ENTRY_2_HELPSTR( ENTRY_MEAN2F ) \
+    ENTRY_2_HELPSTR( ENTRY_MEAN2F_DET ) \
+    ENTRY_2_HELPSTR( ENTRY_BSGL ) \
+    ENTRY_2_HELPSTR( ENTRY_BSGLtL ) \
+    ENTRY_2_HELPSTR( ENTRY_BtSGLtL ) \
+    ENTRY_2_HELPSTR( ENTRY_NCOUNT ) \
+    ENTRY_2_HELPSTR( ENTRY_NCOUNT_DET ) \
+    ;
+
 // Subset of statistics that are supported as toplist ranking statistics
 #define SUPPORTED_TOPLISTS ( \
     0 \
@@ -198,25 +198,25 @@ const UserChoices WeaveToplistChoices = {
   {SUPPORTED_TOPLISTS, "all" }
 };
 const char *const WeaveToplistHelpString = \
-  ENTRY_2_HELPSTR( ENTRY_MEAN2F ) \
-  ENTRY_2_HELPSTR( ENTRY_SUM2F ) \
-  ENTRY_2_HELPSTR( ENTRY_BSGL ) \
-  ENTRY_2_HELPSTR( ENTRY_BSGLtL ) \
-  ENTRY_2_HELPSTR( ENTRY_BtSGLtL ) \
-  ;
+    ENTRY_2_HELPSTR( ENTRY_MEAN2F ) \
+    ENTRY_2_HELPSTR( ENTRY_SUM2F ) \
+    ENTRY_2_HELPSTR( ENTRY_BSGL ) \
+    ENTRY_2_HELPSTR( ENTRY_BSGLtL ) \
+    ENTRY_2_HELPSTR( ENTRY_BtSGLtL ) \
+    ;
 
 ///
 /// Set all bits in 'deps' corresponding to *direct* dependencies of the set of input statistics 'stat'
 ///
-  int XLALWeaveStatisticsSetDirectDependencies(
-    WeaveStatisticType *deps,
-    const WeaveStatisticType stats
-    )
+int XLALWeaveStatisticsSetDirectDependencies(
+  WeaveStatisticType *deps,
+  const WeaveStatisticType stats
+)
 {
   XLAL_CHECK( ( stats & ~SUPPORTED_STATISTICS ) == 0, XLAL_EINVAL );
 
   WeaveStatisticType tmp = 0;
-  for ( size_t i=0; i < XLAL_NUM_ELEM( statistic_map ); ++i ) {
+  for ( size_t i = 0; i < XLAL_NUM_ELEM( statistic_map ); ++i ) {
     if ( stats & statistic_map[i].val ) {
       tmp |= statistic_map[i].dependencies;
     }
@@ -237,7 +237,7 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
   const WeaveStatisticType toplist_stats,	///< [in] requested toplist statistics
   const WeaveStatisticType extra_output_stats,	///< [in] requested 'extra' (stage0) output statistics
   const WeaveStatisticType recalc_stats		///< [in] requested 'recalc' (stage1) statistics
-  )
+)
 {
   XLAL_CHECK( statistics_params != NULL, XLAL_EFAULT );
   XLAL_CHECK( ( toplist_stats & ( ~SUPPORTED_TOPLISTS ) ) == 0, XLAL_EINVAL );
@@ -324,7 +324,7 @@ int XLALWeaveStatisticsParamsSetDependencyMap(
 ///
 void XLALWeaveStatisticsParamsDestroy(
   WeaveStatisticsParams *statistics_params
-  )
+)
 {
   if ( statistics_params == NULL ) {
     return;

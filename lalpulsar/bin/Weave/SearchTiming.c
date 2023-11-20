@@ -120,7 +120,7 @@ static inline double cpu_time( void );
 ///
 double wall_time(
   void
-  )
+)
 {
   return XLALGetTimeOfDay();
 }
@@ -129,7 +129,7 @@ double wall_time(
 /// Return CPU time in seconds
 double cpu_time(
   void
-  )
+)
 {
   return XLALGetCPUTime();
 }
@@ -140,7 +140,7 @@ double cpu_time(
 WeaveSearchTiming *XLALWeaveSearchTimingCreate(
   const BOOLEAN detailed_timing,
   const WeaveStatisticsParams *statistics_params
-  )
+)
 {
 
   // Allocate memory
@@ -162,7 +162,7 @@ WeaveSearchTiming *XLALWeaveSearchTimingCreate(
 ///
 void XLALWeaveSearchTimingDestroy(
   WeaveSearchTiming *tim
-  )
+)
 {
   if ( tim ) {
     XLALFree( tim );
@@ -174,7 +174,7 @@ void XLALWeaveSearchTimingDestroy(
 ///
 int XLALWeaveSearchTimingStart(
   WeaveSearchTiming *tim
-  )
+)
 {
 
   // Check input
@@ -213,7 +213,7 @@ int XLALWeaveSearchTimingElapsed(
   WeaveSearchTiming *tim,
   double *wall_elapsed,
   double *cpu_elapsed
-  )
+)
 {
 
   // Check input
@@ -243,7 +243,7 @@ int XLALWeaveSearchTimingStop(
   WeaveSearchTiming *tim,
   double *wall_total,
   double *cpu_total
-  )
+)
 {
 
   // Check input
@@ -287,7 +287,7 @@ int XLALWeaveSearchTimingSection(
   WeaveSearchTiming *tim,
   const WeaveSearchTimingSection prev_section,
   const WeaveSearchTimingSection next_section
-  )
+)
 {
 
   // Check input
@@ -323,7 +323,7 @@ int XLALWeaveSearchTimingStatistic(
   WeaveSearchTiming *tim,
   const WeaveStatisticType prev_statistic,
   const WeaveStatisticType next_statistic
-  )
+)
 {
 
   // Check input
@@ -361,7 +361,7 @@ int XLALWeaveSearchTimingWriteInfo(
   FITSFile *file,
   const WeaveSearchTiming *tim,
   const WeaveCacheQueries *queries
-  )
+)
 {
 
   // Check input
