@@ -23,8 +23,8 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
-Description: LSC Algorithm Library MetaIO
- The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+Description: LVK Algorithm Library MetaIO
+ The LVK Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL MetaIO library.
 Replaces: lalmetaio (<< 2.0.0-2~)
@@ -39,8 +39,8 @@ Depends:
  liblal-dev (>= @MIN_LAL_VERSION@~),
  liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
  libmetaio-dev (>= @MIN_METAIO_VERSION@),
-Description: LSC Algorithm Library MetaIO Developers
- The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+Description: LVK Algorithm Library MetaIO Developers
+ The LVK Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  MetaIO library.
 Provides: lalmetaio-dev (= ${binary:Version})
@@ -68,7 +68,7 @@ Depends:
  liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
  python3-lal (>= @MIN_LAL_VERSION@~),
 Description: Python 3 bindings for LALMetaIO
- The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+ The LVK Algorithm MetaIO Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL MetaIO library.
 
 Package: lalmetaio
@@ -78,6 +78,6 @@ Depends:
  ${shlibs:Depends},
  liblalmetaio@LIBMAJOR@ (= ${binary:Version}),
  python3-lalmetaio (= ${binary:Version}),
-Description: LSC Algorithm Library MetaIO
- The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+Description: LVK Algorithm Library MetaIO
+ The LVK Algorithm MetaIO Library for gravitational wave data analysis.
  This package provides the runtime tools.

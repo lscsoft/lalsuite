@@ -63,18 +63,18 @@ BuildRequires: lalburst-octave >= @MIN_LALBURST_VERSION@
 # -- packages ---------------
 
 # lalinspiral
-Summary: LSC Algorithm Inspiral Library
+Summary: LVK Algorithm Inspiral Library
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-ligo-segments
 Obsoletes: python2-%{name} <= 2.0.2-1
 %description
-The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+The LVK Algorithm Inspiral Library for gravitational wave data analysis.
 This package provides the runtime tools.
 
 # liblalinspiral
 %package -n lib%{name}
-Summary: LSC Algorithm Inspiral Library - library package
+Summary: LVK Algorithm Inspiral Library - library package
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalburst >= @MIN_LALBURST_VERSION@
 Requires: liblalframe >= @MIN_LALFRAME_VERSION@
@@ -82,7 +82,7 @@ Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
 Conflicts: %{name} <= 2.0.0-1
 %description -n lib%{name}
-The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+The LVK Algorithm Inspiral Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL Inspiral library.
 
@@ -99,7 +99,7 @@ Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 2.0.1-1
 %description -n lib%{name}-devel
-The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+The LVK Algorithm Inspiral Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL Inspiral
 library.
 

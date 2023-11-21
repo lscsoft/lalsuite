@@ -45,8 +45,8 @@ Depends:
  lalinference-data,
 Breaks: lalinference (<< 2.0.5-2~)
 Replaces: lalinference (<< 2.0.5-2~)
-Description: LSC Algorithm Library Inference
- The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Inference
+ The LVK Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL Inference library.
 
@@ -64,8 +64,8 @@ Depends:
  liblalinspiral-dev (>= @MIN_LALINSPIRAL_VERSION@~),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
-Description: LSC Algorithm Library Inference Developers
- The LSC Algorithm Inference Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Inference Developers
+ The LVK Algorithm Inference Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  Inference library.
 Provides: lalinference-dev (= ${binary:Version})
@@ -100,7 +100,7 @@ Depends:
 Replaces: lalapps (<< 6.21.0.1-1), lalinference-python (<< 1.9.4.1-1~), lalinference (<< 1.11.1)
 Breaks: lalapps (<< 6.21.0.1-1), lalinference-python (<< 1.9.4.1-1~), lalinference (<< 1.11.1)
 Description: Python 3 bindings for LALInference
- The LSC Algorithm Inference Library for gravitational wave data analysis.
+ The LVK Algorithm Inference Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Inference library.
 
 Package: lalinference
@@ -114,8 +114,8 @@ Depends:
  python3:any,
  python3-lalinference (= ${binary:Version}),
  lalinference-data,
-Description: LSC Algorithm Library Inference
- The LSC Algorithm Inference Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Inference
+ The LVK Algorithm Inference Library for gravitational wave data analysis.
  This package provides the runtime tools.
 Breaks: lalapps (<< 6.25)
 Replaces: lalapps (<< 6.25)
@@ -123,8 +123,8 @@ Replaces: lalapps (<< 6.25)
 Package: lalinference-data
 Architecture: all
 Depends: ${misc:Depends}
-Description: LSC Algorithm Library Inference
- The LSC Algorithm Inference Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Inference
+ The LVK Algorithm Inference Library for gravitational wave data analysis.
  This package provides the data files.
 Replaces: liblalinference22 (<< 3.0.2.1-1~)
 Breaks: liblalinference22 (<< 3.0.2.1-1~)

@@ -33,8 +33,8 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
-Description: LSC Algorithm Library Inspiral
- The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Inspiral
+ The LVK Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL Inspiral library.
 Replaces: lalinspiral (<< 2.0.0-2~)
@@ -53,8 +53,8 @@ Depends:
  liblalinspiral@LIBMAJOR@ (= ${binary:Version}),
  liblalmetaio-dev (>= @MIN_LALMETAIO_VERSION@~),
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
-Description: LSC Algorithm Library Inspiral Developers
- The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Inspiral Developers
+ The LVK Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  Inspiral library.
 Provides: lalinspiral-dev (= ${binary:Version})
@@ -90,7 +90,7 @@ Depends:
  python3-ligo-segments,
  python3-tqdm,
 Description: Python 3 bindings for LALInspiral
- The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+ The LVK Algorithm Inspiral Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Inspiral library.
 
 Package: lalinspiral
@@ -101,6 +101,6 @@ Depends:
  liblalinspiral@LIBMAJOR@ (= ${binary:Version}),
  python3-lalinspiral (= ${binary:Version}),
  python3-ligo-segments,
-Description: LSC Algorithm Library Inspiral
- The LSC Algorithm Inspiral Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Inspiral
+ The LVK Algorithm Inspiral Library for gravitational wave data analysis.
  This package provides the runtime tools.

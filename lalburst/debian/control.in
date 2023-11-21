@@ -36,8 +36,8 @@ Architecture: any
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
-Description: LSC Algorithm Library Burst
- The LSC Algorithm Burst Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Burst
+ The LVK Algorithm Burst Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL Burst library.
 Replaces: lalburst (<< 1.5.6-2~)
@@ -54,8 +54,8 @@ Depends:
  liblalsimulation-dev (>= @MIN_LALSIMULATION_VERSION@~),
  libgsl-dev | libgsl0-dev (>= 1.9),
  liblalburst@LIBMAJOR@ (= ${binary:Version}),
-Description: LSC Algorithm Library Burst Developers
- The LSC Algorithm Burst Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Burst Developers
+ The LVK Algorithm Burst Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  Burst library.
 Provides: lalburst-dev (= ${binary:Version})
@@ -91,7 +91,7 @@ Depends:
  python3-scipy,
  python3-tqdm,
 Description: Python 3 bindings foar LALBurst
- The LSC Algorithm Burst Library for gravitational wave data analysis.
+ The LVK Algorithm Burst Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Burst library.
 
 Package: lalburst
@@ -110,6 +110,6 @@ Depends:
  python3-pil,
  python3-scipy,
  python3-tqdm,
-Description: LSC Algorithm Library Burst
- The LSC Algorithm Burst Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Burst
+ The LVK Algorithm Burst Library for gravitational wave data analysis.
  This package provides the runtime tools.

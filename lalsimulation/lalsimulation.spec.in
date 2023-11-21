@@ -48,13 +48,13 @@ BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 # -- packages ---------------
 
 # lalsimulation
-Summary: LSC Algorithm Simulation Library - runtime tools
+Summary: LVK Algorithm Simulation Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
 Requires: %{name}-data
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Obsoletes: python2-%{name} <= 2.5.1-1
 %description
-The LSC Algorithm Simulation Library for gravitational wave data analysis.
+The LVK Algorithm Simulation Library for gravitational wave data analysis.
 This package provides the runtime tools.
 
 # lalsimulation-data
@@ -62,18 +62,18 @@ This package provides the runtime tools.
 BuildArch: noarch
 Summary: Data files for LALSimulation
 %description data
-The LSC Algorithm Simulation Library for gravitational wave data analysis.
+The LVK Algorithm Simulation Library for gravitational wave data analysis.
 This package contains the data files needed to run various applications and
 rountines that use the LAL Simulation Library.
 
 # liblalsimulation
 %package -n lib%{name}
-Summary: LSC Algorithm Simulation Library - library package
+Summary: LVK Algorithm Simulation Library - library package
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: %{name}-data
 Conflicts: %{name} <= 2.3.0-1
 %description -n lib%{name}
-The LSC Algorithm Simulation Library for gravitational wave data analysis.
+The LVK Algorithm Simulation Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL Simulation library.
 
@@ -86,7 +86,7 @@ Requires: lib%{name} = %{version}-%{release}
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 2.5.0-1
 %description -n lib%{name}-devel
-The LSC Algorithm Simulation Library for gravitational wave data analysis.
+The LVK Algorithm Simulation Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
 Simulation library.
 

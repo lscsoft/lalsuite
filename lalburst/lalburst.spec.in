@@ -59,7 +59,7 @@ BuildRequires: octave-devel
 # -- packages ---------------
 
 # lalburst
-Summary: LSC Algorithm Burst Libary - runtime tools
+Summary: LVK Algorithm Burst Libary - runtime tools
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-lal
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
@@ -74,17 +74,17 @@ Requires: python%{python3_pkgversion}-scipy
 Requires: python%{python3_pkgversion}-tqdm
 Obsoletes: python2-%{name} <= 1.5.8-1
 %description
-The LSC Algorithm Burst Library for gravitational wave data analysis.
+The LVK Algorithm Burst Library for gravitational wave data analysis.
 This package provides the runtime tools.
 
 %package -n lib%{name}
-Summary: LSC Algorithm Burst Library - library package
+Summary: LVK Algorithm Burst Library - library package
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
 Conflicts: %{name} <= 1.5.6-1
 %description -n lib%{name}
-The LSC Algorithm Burst Library for gravitational wave data analysis.
+The LVK Algorithm Burst Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL Burst library.
 
@@ -99,7 +99,7 @@ Requires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 1.5.7-1
 %description -n lib%{name}-devel
-The LSC Algorithm Burst Library for gravitational wave data analysis.
+The LVK Algorithm Burst Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL Burst
 library.
 
@@ -120,7 +120,7 @@ Requires: python%{python3_pkgversion}-tqdm
 Obsoletes: python2-%{name} < 1.5.9-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
-The LSC Algorithm Library for gravitational wave data analysis.
+The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings for LALBurst.
 
 # lalburst-octave
@@ -132,7 +132,7 @@ Requires: lal-octave >= @MIN_LAL_VERSION@
 Requires: lalmetaio-octave >= @MIN_LALMETAIO_VERSION@
 Requires: lalsimulation-octave >= @MIN_LALSIMULATION_VERSION@
 %description octave
-The LSC Algorithm Library for gravitational wave data analysis.
+The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALBurst.
 
 # -- build-stages -----------
