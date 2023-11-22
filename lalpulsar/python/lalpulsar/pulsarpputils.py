@@ -39,6 +39,7 @@ import h5py
 
 from scipy.integrate import cumtrapz
 from scipy.interpolate import interp1d
+
 try:
     from scipy.special import logsumexp
 except ImportError:  # scipy < 0.19.0
@@ -47,32 +48,33 @@ except ImportError:  # scipy < 0.19.0
 from six import string_types
 
 # some common constants taken from psr_constants.py in PRESTO
-ARCSECTORAD = float('4.8481368110953599358991410235794797595635330237270e-6')
-RADTOARCSEC = float('206264.80624709635515647335733077861319665970087963')
-SECTORAD    = float('7.2722052166430399038487115353692196393452995355905e-5')
-RADTOSEC    = float('13750.987083139757010431557155385240879777313391975')
-RADTODEG    = float('57.295779513082320876798154814105170332405472466564')
-DEGTORAD    = float('1.7453292519943295769236907684886127134428718885417e-2')
-RADTOHRS    = float('3.8197186342054880584532103209403446888270314977710')
-HRSTORAD    = float('2.6179938779914943653855361527329190701643078328126e-1')
-PI          = float('3.1415926535897932384626433832795028841971693993751')
-TWOPI       = float('6.2831853071795864769252867665590057683943387987502')
-PIBYTWO     = float('1.5707963267948966192313216916397514420985846996876')
-SECPERDAY   = float('86400.0')
-SECPERJULYR = float('31557600.0')
-KMPERPC     = float('3.0856776e13')
-KMPERKPC    = float('3.0856776e16')
-Tsun        = float('4.925490947e-6') # sec
-Msun        = float('1.9891e30')      # kg
-Mjup        = float('1.8987e27')      # kg
-Rsun        = float('6.9551e8')       # m
-Rearth      = float('6.378e6')        # m
-SOL         = float('299792458.0')    # m/s
-MSUN        = float('1.989e+30')      # kg
-G           = float('6.673e-11')      # m^3/s^2/kg
-C           = SOL
-KPC         = float('3.0856776e19')   # kiloparsec in metres
-I38         = float('1e38')           # moment of inertia kg m^2
+ARCSECTORAD = float("4.8481368110953599358991410235794797595635330237270e-6")
+RADTOARCSEC = float("206264.80624709635515647335733077861319665970087963")
+SECTORAD = float("7.2722052166430399038487115353692196393452995355905e-5")
+RADTOSEC = float("13750.987083139757010431557155385240879777313391975")
+RADTODEG = float("57.295779513082320876798154814105170332405472466564")
+DEGTORAD = float("1.7453292519943295769236907684886127134428718885417e-2")
+RADTOHRS = float("3.8197186342054880584532103209403446888270314977710")
+HRSTORAD = float("2.6179938779914943653855361527329190701643078328126e-1")
+PI = float("3.1415926535897932384626433832795028841971693993751")
+TWOPI = float("6.2831853071795864769252867665590057683943387987502")
+PIBYTWO = float("1.5707963267948966192313216916397514420985846996876")
+SECPERDAY = float("86400.0")
+SECPERJULYR = float("31557600.0")
+KMPERPC = float("3.0856776e13")
+KMPERKPC = float("3.0856776e16")
+Tsun = float("4.925490947e-6")  # sec
+Msun = float("1.9891e30")  # kg
+Mjup = float("1.8987e27")  # kg
+Rsun = float("6.9551e8")  # m
+Rearth = float("6.378e6")  # m
+SOL = float("299792458.0")  # m/s
+MSUN = float("1.989e+30")  # kg
+G = float("6.673e-11")  # m^3/s^2/kg
+C = SOL
+KPC = float("3.0856776e19")  # kiloparsec in metres
+I38 = float("1e38")  # moment of inertia kg m^2
+
 
 # some angle conversion functions taken from psr_utils.py in PRESTO
 def rad_to_dms(rad):
@@ -80,31 +82,38 @@ def rad_to_dms(rad):
     rad_to_dms(rad):
        Convert radians to degrees, minutes, and seconds of arc.
     """
-    if (rad < 0.0): sign = -1
-    else: sign = 1
+    if rad < 0.0:
+        sign = -1
+    else:
+        sign = 1
     arc = RADTODEG * np.fmod(np.fabs(rad), math.pi)
     d = int(arc)
     arc = (arc - d) * 60.0
     m = int(arc)
     s = (arc - m) * 60.0
-    if sign==-1 and d==0:
+    if sign == -1 and d == 0:
         return (sign * d, sign * m, sign * s)
     else:
         return (sign * d, m, s)
+
 
 def dms_to_rad(deg, mins, sec):
     """
     dms_to_rad(deg, min, sec):
        Convert degrees, minutes, and seconds of arc to radians.
     """
-    if (deg < 0.0):
+    if deg < 0.0:
         sign = -1
-    elif (deg==0.0 and (mins < 0.0 or sec < 0.0)):
+    elif deg == 0.0 and (mins < 0.0 or sec < 0.0):
         sign = -1
     else:
         sign = 1
-    return sign * ARCSECTORAD * \
-      (60.0 * (60.0 * np.fabs(deg) + np.fabs(mins)) + np.fabs(sec))
+    return (
+        sign
+        * ARCSECTORAD
+        * (60.0 * (60.0 * np.fabs(deg) + np.fabs(mins)) + np.fabs(sec))
+    )
+
 
 def dms_to_deg(deg, mins, sec):
     """
@@ -113,13 +122,15 @@ def dms_to_deg(deg, mins, sec):
     """
     return RADTODEG * dms_to_rad(deg, mins, sec)
 
+
 def rad_to_hms(rad):
     """
     rad_to_hms(rad):
        Convert radians to hours, minutes, and seconds of arc.
     """
-    rad = np.fmod(rad, 2.*math.pi)
-    if (rad < 0.0): rad = rad + 2.*math.pi
+    rad = np.fmod(rad, 2.0 * math.pi)
+    if rad < 0.0:
+        rad = rad + 2.0 * math.pi
     arc = RADTOHRS * rad
     h = int(arc)
     arc = (arc - h) * 60.0
@@ -127,15 +138,20 @@ def rad_to_hms(rad):
     s = (arc - m) * 60.0
     return (h, m, s)
 
+
 def hms_to_rad(hour, mins, sec):
     """
     hms_to_rad(hour, min, sec):
        Convert hours, minutes, and seconds of arc to radians
     """
-    if (hour < 0.0): sign = -1
-    else: sign = 1
-    return sign * SECTORAD * \
-           (60.0 * (60.0 * np.fabs(hour) + np.fabs(mins)) + np.fabs(sec))
+    if hour < 0.0:
+        sign = -1
+    else:
+        sign = 1
+    return (
+        sign * SECTORAD * (60.0 * (60.0 * np.fabs(hour) + np.fabs(mins)) + np.fabs(sec))
+    )
+
 
 def coord_to_string(h_or_d, m, s):
     """
@@ -146,15 +162,16 @@ def coord_to_string(h_or_d, m, s):
     retstr = ""
     if h_or_d < 0:
         retstr = "-"
-    elif abs(h_or_d)==0:
+    elif abs(h_or_d) == 0:
         if (m < 0.0) or (s < 0.0):
             retstr = "-"
 
     h_or_d, m, s = abs(h_or_d), abs(m), abs(s)
-    if (s >= 9.9995):
-        return retstr+"%.2d:%.2d:%.4f" % (h_or_d, m, s)
+    if s >= 9.9995:
+        return retstr + "%.2d:%.2d:%.4f" % (h_or_d, m, s)
     else:
-        return retstr+"%.2d:%.2d:0%.4f" % (h_or_d, m, s)
+        return retstr + "%.2d:%.2d:0%.4f" % (h_or_d, m, s)
+
 
 def rad_to_string(rad, ra_or_dec):
     """
@@ -163,14 +180,17 @@ def rad_to_string(rad, ra_or_dec):
        it as a string in the format 'hh:mm:ss.ssss' if RA, or 'dd:mm:ss.ssss' if DEC.
        Whether to use hours or degrees is set by whether ra_or_dec is 'RA' or 'DEC'
     """
-    if ra_or_dec.upper() == 'RA':
+    if ra_or_dec.upper() == "RA":
         v, m, s = rad_to_hms(rad)
-    elif ra_or_dec.upper() == 'DEC':
+    elif ra_or_dec.upper() == "DEC":
         v, m, s = rad_to_dms(rad)
     else:
-        raise ValueError("Unrecognised option: Expected 'ra_or_dec' to be 'RA' or 'DEC'")
+        raise ValueError(
+            "Unrecognised option: Expected 'ra_or_dec' to be 'RA' or 'DEC'"
+        )
 
     return coord_to_string(v, m, s)
+
 
 def ra_to_rad(ra_string):
     """
@@ -191,6 +211,7 @@ def ra_to_rad(ra_string):
         print("Problem parsing RA string %s" % ra_string, file=sys.stderr)
         sys.exit(1)
 
+
 def dec_to_rad(dec_string):
     """
     dec_to_rad(dec_string):
@@ -201,19 +222,20 @@ def dec_to_rad(dec_string):
     """
     dms = dec_string.split(":")
     if "-" in dms[0] and float(dms[0]) == 0.0:
-        m = '-'
+        m = "-"
     else:
-        m = ''
+        m = ""
 
     if len(dms) == 3:
-        return dms_to_rad(int(dms[0]), int(m+dms[1]), float(m+dms[2]))
+        return dms_to_rad(int(dms[0]), int(m + dms[1]), float(m + dms[2]))
     elif len(dms) == 2:
-        return dms_to_rad(int(dms[0]), int(m+dms[1]), 0.0)
+        return dms_to_rad(int(dms[0]), int(m + dms[1]), 0.0)
     elif len(dms) == 1:
         return dms_to_rad(float(dms[0]), 0.0, 0.0)
     else:
         print("Problem parsing DEC string %s" % dec_string, file=sys.stderr)
         sys.exit(1)
+
 
 def p_to_f(p, pd, pdd=None):
     """
@@ -224,15 +246,16 @@ def p_to_f(p, pd, pdd=None):
     """
     f = 1.0 / p
     fd = -pd / (p * p)
-    if (pdd==None):
+    if pdd == None:
         return [f, fd]
     else:
-        if (pdd==0.0):
+        if pdd == 0.0:
             fdd = 0.0
         else:
             fdd = 2.0 * pd * pd / (p**3.0) - pdd / (p * p)
 
         return [f, fd, fdd]
+
 
 def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
     """
@@ -240,33 +263,128 @@ def pferrs(porf, porferr, pdorfd=None, pdorfderr=None):
        Calculate the period or frequency errors and
        the pdot or fdot errors from the opposite one.
     """
-    if (pdorfd==None):
+    if pdorfd == None:
         return [1.0 / porf, porferr / porf**2.0]
     else:
         forperr = porferr / porf**2.0
-        fdorpderr = np.sqrt((4.0 * pdorfd**2.0 * porferr**2.0) / porf**6.0 +
-                              pdorfderr**2.0 / porf**4.0)
+        fdorpderr = np.sqrt(
+            (4.0 * pdorfd**2.0 * porferr**2.0) / porf**6.0
+            + pdorfderr**2.0 / porf**4.0
+        )
         [forp, fdorpd] = p_to_f(porf, pdorfd)
 
         return [forp, forperr, fdorpd, fdorpderr]
 
+
 # class to read in a pulsar par file - this is heavily based on the function
 # in parfile.py in PRESTO
-float_keys = ["F", "F0", "F1", "F2", "F3", "F4", "F5", "F6", "F7", "F8", "F9",
-              "F10", "F11", "F12", "PEPOCH", "POSEPOCH", "DM", "START",
-              "FINISH", "NTOA", "TRES", "TZRMJD", "TZRFRQ", "TZRSITE", "NITS",
-              "A1", "XDOT", "E", "ECC", "EDOT", "T0", "PB", "PBDOT", "OM",
-              "OMDOT", "EPS1", "EPS2", "EPS1DOT", "EPS2DOT", "TASC", "LAMBDA",
-              "BETA", "RA_RAD", "DEC_RAD", "GAMMA", "SINI", "M2", "MTOT",
-              "FB0", "FB1", "FB2", "ELAT", "ELONG", "PMRA", "PMDEC", "DIST",
-              "PB_2", "PB_3", "T0_2", "T0_3", "A1_2", "A1_3", "OM_2", "OM_3",
-              "ECC_2", "ECC_3", "PX", "KIN", "KOM", "A0", "B0", "D_AOP",
-              # GW PARAMETERS
-              "H0", "COSIOTA", "PSI", "PHI0", "THETA", "I21", "I31", "C22",
-              "HPLUS", "HCROSS", "C21", "PHI22", "PHI21", "SNR", "COSTHETA",
-              "IOTA", "Q22"]
-str_keys = ["FILE", "PSR", "PSRJ", "NAME", "RAJ", "DECJ", "RA", "DEC", "EPHEM",
-            "CLK", "BINARY", "UNITS"]
+float_keys = [
+    "F",
+    "F0",
+    "F1",
+    "F2",
+    "F3",
+    "F4",
+    "F5",
+    "F6",
+    "F7",
+    "F8",
+    "F9",
+    "F10",
+    "F11",
+    "F12",
+    "PEPOCH",
+    "POSEPOCH",
+    "DM",
+    "START",
+    "FINISH",
+    "NTOA",
+    "TRES",
+    "TZRMJD",
+    "TZRFRQ",
+    "TZRSITE",
+    "NITS",
+    "A1",
+    "XDOT",
+    "E",
+    "ECC",
+    "EDOT",
+    "T0",
+    "PB",
+    "PBDOT",
+    "OM",
+    "OMDOT",
+    "EPS1",
+    "EPS2",
+    "EPS1DOT",
+    "EPS2DOT",
+    "TASC",
+    "LAMBDA",
+    "BETA",
+    "RA_RAD",
+    "DEC_RAD",
+    "GAMMA",
+    "SINI",
+    "M2",
+    "MTOT",
+    "FB0",
+    "FB1",
+    "FB2",
+    "ELAT",
+    "ELONG",
+    "PMRA",
+    "PMDEC",
+    "DIST",
+    "PB_2",
+    "PB_3",
+    "T0_2",
+    "T0_3",
+    "A1_2",
+    "A1_3",
+    "OM_2",
+    "OM_3",
+    "ECC_2",
+    "ECC_3",
+    "PX",
+    "KIN",
+    "KOM",
+    "A0",
+    "B0",
+    "D_AOP",
+    # GW PARAMETERS
+    "H0",
+    "COSIOTA",
+    "PSI",
+    "PHI0",
+    "THETA",
+    "I21",
+    "I31",
+    "C22",
+    "HPLUS",
+    "HCROSS",
+    "C21",
+    "PHI22",
+    "PHI21",
+    "SNR",
+    "COSTHETA",
+    "IOTA",
+    "Q22",
+]
+str_keys = [
+    "FILE",
+    "PSR",
+    "PSRJ",
+    "NAME",
+    "RAJ",
+    "DECJ",
+    "RA",
+    "DEC",
+    "EPHEM",
+    "CLK",
+    "BINARY",
+    "UNITS",
+]
+
 
 class psr_par:
     def __init__(self, parfilenm):
@@ -301,173 +419,226 @@ class psr_par:
                 except:
                     continue
 
-            if len(splitline)==3: # Some parfiles don't have flags, but do have errors
-                if splitline[2] not in ['0', '1']:
-                    setattr(self, key+'_ERR', float(splitline[2]))
-                    setattr(self, key+'_FIT', 0) # parameter was not fit
+            if (
+                len(splitline) == 3
+            ):  # Some parfiles don't have flags, but do have errors
+                if splitline[2] not in ["0", "1"]:
+                    setattr(self, key + "_ERR", float(splitline[2]))
+                    setattr(self, key + "_FIT", 0)  # parameter was not fit
 
-            if len(splitline)==4:
-                if splitline[2] == '1': # parameter was fit
-                    setattr(self, key+'_FIT', 1)
+            if len(splitline) == 4:
+                if splitline[2] == "1":  # parameter was fit
+                    setattr(self, key + "_FIT", 1)
                 else:
-                    setattr(self, key+'_FIT', 0)
-                setattr(self, key+'_ERR', float(splitline[3]))
+                    setattr(self, key + "_FIT", 0)
+                setattr(self, key + "_ERR", float(splitline[3]))
 
         # sky position
-        if hasattr(self, 'RAJ'):
-            setattr(self, 'RA_RAD', ra_to_rad(self.RAJ))
+        if hasattr(self, "RAJ"):
+            setattr(self, "RA_RAD", ra_to_rad(self.RAJ))
 
             # set RA error in rads (rather than secs)
-            if hasattr(self, 'RAJ_ERR'):
-                setattr(self, 'RA_RAD_ERR', hms_to_rad(0, 0, self.RAJ_ERR))
+            if hasattr(self, "RAJ_ERR"):
+                setattr(self, "RA_RAD_ERR", hms_to_rad(0, 0, self.RAJ_ERR))
 
-                if hasattr(self, 'RAJ_FIT'):
-                    setattr(self, 'RA_RAD_FIT', self['RAJ_FIT'])
-        if hasattr(self, 'DECJ'):
-            setattr(self, 'DEC_RAD', dec_to_rad(self.DECJ))
+                if hasattr(self, "RAJ_FIT"):
+                    setattr(self, "RA_RAD_FIT", self["RAJ_FIT"])
+        if hasattr(self, "DECJ"):
+            setattr(self, "DEC_RAD", dec_to_rad(self.DECJ))
 
             # set DEC error in rads (rather than arcsecs)
-            if hasattr(self, 'DECJ_ERR'):
-                setattr(self, 'DEC_RAD_ERR', dms_to_rad(0, 0, self.DECJ_ERR))
+            if hasattr(self, "DECJ_ERR"):
+                setattr(self, "DEC_RAD_ERR", dms_to_rad(0, 0, self.DECJ_ERR))
 
-                if hasattr(self, 'DECJ_FIT'):
-                    setattr(self, 'DEC_RAD_FIT', self['DECJ_FIT'])
+                if hasattr(self, "DECJ_FIT"):
+                    setattr(self, "DEC_RAD_FIT", self["DECJ_FIT"])
 
         # convert proper motions to rads/sec from mas/year
-        for pv in ['RA', 'DEC']:
-            if hasattr(self, 'PM'+pv):
-                pmv = self['PM'+pv]
-                setattr(self, 'PM'+pv+'_ORIGINAL', pmv) # save original value
-                setattr(self, 'PM'+pv , pmv*np.pi/(180.*3600.e3*365.25*86400.))
+        for pv in ["RA", "DEC"]:
+            if hasattr(self, "PM" + pv):
+                pmv = self["PM" + pv]
+                setattr(self, "PM" + pv + "_ORIGINAL", pmv)  # save original value
+                setattr(
+                    self, "PM" + pv, pmv * np.pi / (180.0 * 3600.0e3 * 365.25 * 86400.0)
+                )
 
-                if hasattr(self, 'PM'+pv+'_ERR'):
-                    pmve = self['PM'+pv+'_ERR']
-                    setattr(self, 'PM'+pv+'_ERR_ORIGINAL', pmv) # save original value
-                    setattr(self, 'PM'+pv+'_ERR' , pmve*np.pi/(180.*3600.e3*365.25*86400.))
+                if hasattr(self, "PM" + pv + "_ERR"):
+                    pmve = self["PM" + pv + "_ERR"]
+                    setattr(
+                        self, "PM" + pv + "_ERR_ORIGINAL", pmv
+                    )  # save original value
+                    setattr(
+                        self,
+                        "PM" + pv + "_ERR",
+                        pmve * np.pi / (180.0 * 3600.0e3 * 365.25 * 86400.0),
+                    )
 
         # periods and frequencies
-        if hasattr(self, 'P'):
-            setattr(self, 'P0', self.P)
-        if hasattr(self, 'P0'):
-            setattr(self, 'F0', 1.0/self.P0)
-        if hasattr(self, 'F0'):
-            setattr(self, 'P0', 1.0/self.F0)
-        if hasattr(self, 'FB0'):
-            setattr(self, 'PB', (1.0/self.FB0)/86400.0)
-        if hasattr(self, 'P0_ERR'):
-            if hasattr(self, 'P1_ERR'):
-                f, ferr, fd, fderr = pferrs(self.P0, self.P0_ERR,
-                                               self.P1, self.P1_ERR)
-                setattr(self, 'F0_ERR', ferr)
-                setattr(self, 'F1', fd)
-                setattr(self, 'F1_ERR', fderr)
+        if hasattr(self, "P"):
+            setattr(self, "P0", self.P)
+        if hasattr(self, "P0"):
+            setattr(self, "F0", 1.0 / self.P0)
+        if hasattr(self, "F0"):
+            setattr(self, "P0", 1.0 / self.F0)
+        if hasattr(self, "FB0"):
+            setattr(self, "PB", (1.0 / self.FB0) / 86400.0)
+        if hasattr(self, "P0_ERR"):
+            if hasattr(self, "P1_ERR"):
+                f, ferr, fd, fderr = pferrs(self.P0, self.P0_ERR, self.P1, self.P1_ERR)
+                setattr(self, "F0_ERR", ferr)
+                setattr(self, "F1", fd)
+                setattr(self, "F1_ERR", fderr)
             else:
-                if hasattr(self, 'P1'):
-                    f, fd, = p_to_f(self.P0, self.P1)
-                    setattr(self, 'F0_ERR', self.P0_ERR/(self.P0*self.P0))
-                    setattr(self, 'F1', fd)
-        if hasattr(self, 'F0_ERR'):
-            if hasattr(self, 'F1_ERR'):
-                p, perr, pd, pderr = pferrs(self.F0, self.F0_ERR,
-                                            self.F1, self.F1_ERR)
-                setattr(self, 'P0_ERR', perr)
-                setattr(self, 'P1', pd)
-                setattr(self, 'P1_ERR', pderr)
+                if hasattr(self, "P1"):
+                    (
+                        f,
+                        fd,
+                    ) = p_to_f(self.P0, self.P1)
+                    setattr(self, "F0_ERR", self.P0_ERR / (self.P0 * self.P0))
+                    setattr(self, "F1", fd)
+        if hasattr(self, "F0_ERR"):
+            if hasattr(self, "F1_ERR"):
+                p, perr, pd, pderr = pferrs(self.F0, self.F0_ERR, self.F1, self.F1_ERR)
+                setattr(self, "P0_ERR", perr)
+                setattr(self, "P1", pd)
+                setattr(self, "P1_ERR", pderr)
             else:
-                if hasattr(self, 'F1'):
-                    p, pd, = p_to_f(self.F0, self.F1)
-                    setattr(self, 'P0_ERR', self.F0_ERR/(self.F0*self.F0))
-                    setattr(self, 'P1', pd)
+                if hasattr(self, "F1"):
+                    (
+                        p,
+                        pd,
+                    ) = p_to_f(self.F0, self.F1)
+                    setattr(self, "P0_ERR", self.F0_ERR / (self.F0 * self.F0))
+                    setattr(self, "P1", pd)
 
         # convert epochs (including binary epochs) to GPS if possible
         try:
             from lalpulsar import TTMJDtoGPS
-            for epoch in ['PEPOCH', 'POSEPOCH', 'DMEPOCH', 'T0', 'TASC', 'T0_2', 'T0_3']:
+
+            for epoch in [
+                "PEPOCH",
+                "POSEPOCH",
+                "DMEPOCH",
+                "T0",
+                "TASC",
+                "T0_2",
+                "T0_3",
+            ]:
                 if hasattr(self, epoch):
-                    setattr(self, epoch+'_ORIGINAL', self[epoch]) # save original value
+                    setattr(
+                        self, epoch + "_ORIGINAL", self[epoch]
+                    )  # save original value
                     setattr(self, epoch, TTMJDtoGPS(self[epoch]))
 
-                    if hasattr(self, epoch+'_ERR'): # convert errors from days to seconds
-                        setattr(self, epoch+'_ERR_ORIGINAL', self[epoch+'_ERR']) # save original value
-                        setattr(self, epoch+'_ERR', self[epoch+'_ERR'] * SECPERDAY)
+                    if hasattr(
+                        self, epoch + "_ERR"
+                    ):  # convert errors from days to seconds
+                        setattr(
+                            self, epoch + "_ERR_ORIGINAL", self[epoch + "_ERR"]
+                        )  # save original value
+                        setattr(self, epoch + "_ERR", self[epoch + "_ERR"] * SECPERDAY)
         except:
-            print("Could not convert epochs to GPS times. They are all still MJD values.", file=sys.stderr)
+            print(
+                "Could not convert epochs to GPS times. They are all still MJD values.",
+                file=sys.stderr,
+            )
 
         # distance and parallax (distance: kpc -> metres, parallax: mas -> rads)
-        convfacs = {'DIST': KPC, 'PX': 1e-3*ARCSECTORAD}
+        convfacs = {"DIST": KPC, "PX": 1e-3 * ARCSECTORAD}
         for item in convfacs:
-            if hasattr(self, item): # convert kpc to metres
-                setattr(self, item+'_ORIGINAL', self[item]) # save original value
+            if hasattr(self, item):  # convert kpc to metres
+                setattr(self, item + "_ORIGINAL", self[item])  # save original value
                 setattr(self, item, self[item] * convfacs[item])
 
-                if hasattr(self, item+'_ERR'):
-                    setattr(self, item+'_ERR_ORIGINAL', self[item+'_ERR']) # save original value
-                    setattr(self, item+'_ERR', self[item+'_ERR'] * convfacs[item])
+                if hasattr(self, item + "_ERR"):
+                    setattr(
+                        self, item + "_ERR_ORIGINAL", self[item + "_ERR"]
+                    )  # save original value
+                    setattr(self, item + "_ERR", self[item + "_ERR"] * convfacs[item])
 
         # binary parameters
         # omega (angle of periastron) parameters (or others requiring conversion from degs to rads)
-        for om in ['OM', 'OM_2', 'OM_3', 'KIN', 'KOM']:
-            if hasattr(self, om): # convert OM from degs to rads
-                setattr(self, om, self[om] / RADTODEG )
+        for om in ["OM", "OM_2", "OM_3", "KIN", "KOM"]:
+            if hasattr(self, om):  # convert OM from degs to rads
+                setattr(self, om, self[om] / RADTODEG)
 
-                if hasattr(self, om+'_ERR'):
-                    setattr(self, om+'_ERR', self[om+'_ERR'] / RADTODEG )
+                if hasattr(self, om + "_ERR"):
+                    setattr(self, om + "_ERR", self[om + "_ERR"] / RADTODEG)
 
         # period
-        for pb in ['PB', 'PB_2', 'PB_3']:
-            if hasattr(self, pb): # convert PB from days to seconds
-                setattr(self, pb+'_ORIGINAL', self[pb]) # save original value
+        for pb in ["PB", "PB_2", "PB_3"]:
+            if hasattr(self, pb):  # convert PB from days to seconds
+                setattr(self, pb + "_ORIGINAL", self[pb])  # save original value
                 setattr(self, pb, self[pb] * SECPERDAY)
 
-                if hasattr(self, pb+'_ERR'):
-                    setattr(self, pb+'_ERR_ORIGINAL', self[pb+'_ERR']) # save original value
-                    setattr(self, pb+'_ERR', self[pb+'_ERR'] * SECPERDAY)
+                if hasattr(self, pb + "_ERR"):
+                    setattr(
+                        self, pb + "_ERR_ORIGINAL", self[pb + "_ERR"]
+                    )  # save original value
+                    setattr(self, pb + "_ERR", self[pb + "_ERR"] * SECPERDAY)
 
         # OMDOT
-        if hasattr(self, 'OMDOT'): # convert from deg/year to rad/sec
-            setattr(self, 'OMDOT_ORIGINAL', self['OMDOT']) # save original value
-            setattr(self, 'OMDOT', self['OMDOT'] / (RADTODEG * 365.25 * SECPERDAY))
+        if hasattr(self, "OMDOT"):  # convert from deg/year to rad/sec
+            setattr(self, "OMDOT_ORIGINAL", self["OMDOT"])  # save original value
+            setattr(self, "OMDOT", self["OMDOT"] / (RADTODEG * 365.25 * SECPERDAY))
 
-            if hasattr(self, 'OMDOT_ERR'):
-                setattr(self, 'OMDOT_ERR_ORIGINAL', self['OMDOT_ERR']) # save original value
-                setattr(self, 'OMDOT_ERR', self['OMDOT_ERR'] / (RADTODEG * 365.25 * SECPERDAY))
+            if hasattr(self, "OMDOT_ERR"):
+                setattr(
+                    self, "OMDOT_ERR_ORIGINAL", self["OMDOT_ERR"]
+                )  # save original value
+                setattr(
+                    self,
+                    "OMDOT_ERR",
+                    self["OMDOT_ERR"] / (RADTODEG * 365.25 * SECPERDAY),
+                )
 
-        if hasattr(self, 'EPS1') and hasattr(self, 'EPS2'):
+        if hasattr(self, "EPS1") and hasattr(self, "EPS2"):
             ecc = math.sqrt(self.EPS1 * self.EPS1 + self.EPS2 * self.EPS2)
             omega = math.atan2(self.EPS1, self.EPS2)
-            setattr(self, 'E', ecc)
-            setattr(self, 'OM', omega) # omega in rads
-            setattr(self, 'T0', self.TASC + self.PB * omega/TWOPI)
-        if hasattr(self, 'PB') and hasattr(self, 'A1') and not (hasattr(self, 'E') or hasattr(self, 'ECC')):
-            setattr(self, 'E', 0.0)
-        if hasattr(self, 'T0') and not hasattr(self, 'TASC') and hasattr(self, 'OM') and hasattr(self, 'PB'):
-            setattr(self, 'TASC', self.T0 - self.PB * self.OM/TWOPI)
+            setattr(self, "E", ecc)
+            setattr(self, "OM", omega)  # omega in rads
+            setattr(self, "T0", self.TASC + self.PB * omega / TWOPI)
+        if (
+            hasattr(self, "PB")
+            and hasattr(self, "A1")
+            and not (hasattr(self, "E") or hasattr(self, "ECC"))
+        ):
+            setattr(self, "E", 0.0)
+        if (
+            hasattr(self, "T0")
+            and not hasattr(self, "TASC")
+            and hasattr(self, "OM")
+            and hasattr(self, "PB")
+        ):
+            setattr(self, "TASC", self.T0 - self.PB * self.OM / TWOPI)
 
         # binary unit conversion for small numbers (TEMPO2 checks if these are > 1e-7 and if so then the units are in 1e-12) - errors are not converted
-        for binu in ['XDOT', 'PBDOT', 'EDOT', 'EPS1DOT', 'EPS2DOT', 'XPBDOT']:
+        for binu in ["XDOT", "PBDOT", "EDOT", "EPS1DOT", "EPS2DOT", "XPBDOT"]:
             if hasattr(self, binu):
-                setattr(self, binu+'_ORIGINAL', self[binu]) # save original value
+                setattr(self, binu + "_ORIGINAL", self[binu])  # save original value
                 if np.abs(self[binu]) > 1e-7:
                     setattr(self, binu, self[binu] * 1.0e-12)
 
                     # check value is not extremely large due to ATNF catalogue error
-                    if self[binu] > 10000.: # set to zero
+                    if self[binu] > 10000.0:  # set to zero
                         setattr(self, binu, 0.0)
 
         # masses
-        for mass in ['M2', 'MTOT']:
-            if hasattr(self, mass): # convert solar masses to kg
-                setattr(self, mass+'_ORIGINAL', self[mass]) # save original value
-                setattr(self, mass, self[mass]*MSUN)
+        for mass in ["M2", "MTOT"]:
+            if hasattr(self, mass):  # convert solar masses to kg
+                setattr(self, mass + "_ORIGINAL", self[mass])  # save original value
+                setattr(self, mass, self[mass] * MSUN)
 
-                if hasattr(self, mass+'_ERR'):
-                    setattr(self, mass+'_ERR_ORIGINAL', self[mass+'_ERR']) # save original value
-                    setattr(self, mass+'_ERR', self[mass+'_ERR'] * MSUN)
+                if hasattr(self, mass + "_ERR"):
+                    setattr(
+                        self, mass + "_ERR_ORIGINAL", self[mass + "_ERR"]
+                    )  # save original value
+                    setattr(self, mass + "_ERR", self[mass + "_ERR"] * MSUN)
 
         # D_AOP
-        if hasattr(self, 'D_AOP'): # convert from inverse arcsec to inverse radians
-            setattr(self, 'D_AOP_ORIGINAL', self['D_AOP']) # save original value
-            setattr(self, 'D_AOP', self['D_AOP'] * RADTODEG * 3600. )
+        if hasattr(self, "D_AOP"):  # convert from inverse arcsec to inverse radians
+            setattr(self, "D_AOP_ORIGINAL", self["D_AOP"])  # save original value
+            setattr(self, "D_AOP", self["D_AOP"] * RADTODEG * 3600.0)
 
         pf.close()
 
@@ -482,13 +653,14 @@ class psr_par:
     def __str__(self):
         out = ""
         for k, v in self.__dict__.items():
-            if k[:2]!="__":
+            if k[:2] != "__":
                 if isinstance(self.__dict__[k], string_type):
                     out += "%10s = '%s'\n" % (k, v)
                 else:
                     out += "%10s = %-20.15g\n" % (k, v)
 
         return out
+
 
 # class to read in a nested sampling prior file
 class psr_prior:
@@ -508,19 +680,19 @@ class psr_prior:
                 setattr(self, key, [float(splitline[2]), float(splitline[3])])
 
         # get sky positions in rads as strings 'dd/hh:mm:ss.s'
-        if hasattr(self, 'RA'):
+        if hasattr(self, "RA"):
             hl, ml, sl = rad_to_hms(self.RA[0])
             rastrl = coord_to_string(hl, ml, sl)
             hu, mu, su = rad_to_hms(self.RA[1])
             rastru = coord_to_string(hu, mu, su)
-            setattr(self, 'RA_STR', [rastrl, rastru])
+            setattr(self, "RA_STR", [rastrl, rastru])
 
-        if hasattr(self, 'DEC'):
+        if hasattr(self, "DEC"):
             dl, ml, sl = rad_to_dms(self.DEC[0])
             decstrl = coord_to_string(dl, ml, sl)
             du, mu, su = rad_to_dms(self.DEC[1])
             decstru = coord_to_string(du, mu, su)
-            setattr(self, 'DEC_STR', [decstrl, decstru])
+            setattr(self, "DEC_STR", [decstrl, decstru])
 
         pf.close()
 
@@ -535,17 +707,19 @@ class psr_prior:
     def __str__(self):
         out = ""
         for k, v in self.__dict__.items():
-            if k[:2]!="__":
+            if k[:2] != "__":
                 out += "%10s = %-20.15g, %-20.15g\n" % (k, float(v[0]), float(v[1]))
 
         return out
 
 
 # Function to return a pulsar's strain spin-down limit given its spin frequency
-#(Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
+# (Hz), spin-down (Hz/s) and distance (kpc). The canonical value of moment of
 # inertia of 1e38 kg m^2 is used
 def spin_down_limit(freq, fdot, dist):
-    hsd = np.sqrt((5./2.)*(G/C**3)*I38*np.fabs(fdot)/freq)/(dist*KPC)
+    hsd = np.sqrt((5.0 / 2.0) * (G / C**3) * I38 * np.fabs(fdot) / freq) / (
+        dist * KPC
+    )
 
     return hsd
 
@@ -553,21 +727,36 @@ def spin_down_limit(freq, fdot, dist):
 # Function to convert a pulsar stain into ellipticity assuming the canonical
 # moment of inertia
 def h0_to_ellipticity(h0, freq, dist):
-    ell = h0*C**4.*dist*KPC/(16.*np.pi**2*G*I38*freq**2)
+    ell = h0 * C**4.0 * dist * KPC / (16.0 * np.pi**2 * G * I38 * freq**2)
 
     return ell
 
 
 # Function to convert a pulsar strain into a mass quadrupole moment
 def h0_to_quadrupole(h0, freq, dist):
-    q22 = np.sqrt(15./(8.*np.pi))*h0*C**4.*dist*KPC/(16.*np.pi**2*G*freq**2)
+    q22 = (
+        np.sqrt(15.0 / (8.0 * np.pi))
+        * h0
+        * C**4.0
+        * dist
+        * KPC
+        / (16.0 * np.pi**2 * G * freq**2)
+    )
 
     return q22
 
 
 # Function to conver quadrupole moment to strain
 def quadrupole_to_h0(q22, freq, dist):
-    h0 = q22*np.sqrt((8.*np.pi)/15.)*16.*np.pi**2*G*freq**2/(C**4.*dist*KPC)
+    h0 = (
+        q22
+        * np.sqrt((8.0 * np.pi) / 15.0)
+        * 16.0
+        * np.pi**2
+        * G
+        * freq**2
+        / (C**4.0 * dist * KPC)
+    )
 
     return h0
 
@@ -575,35 +764,35 @@ def quadrupole_to_h0(q22, freq, dist):
 # function to convert the psi' and phi0' coordinates used in nested sampling
 # into the standard psi and phi0 coordinates (using vectors of those parameters
 def phipsiconvert(phipchain, psipchain):
-    chainlen=len(phipchain)
+    chainlen = len(phipchain)
 
     phichain = []
     psichain = []
 
-    theta = math.atan2(1,2);
-    ct = math.cos(theta);
-    st = math.sin(theta);
+    theta = math.atan2(1, 2)
+    ct = math.cos(theta)
+    st = math.sin(theta)
 
-    for i in range(0,chainlen):
-        phi0 = (1/(2*st))*phipchain[i] - (1/(2*st))*psipchain[i];
-        psi = (1/(2*ct))*phipchain[i] + (1/(2*ct))*psipchain[i];
+    for i in range(0, chainlen):
+        phi0 = (1 / (2 * st)) * phipchain[i] - (1 / (2 * st)) * psipchain[i]
+        psi = (1 / (2 * ct)) * phipchain[i] + (1 / (2 * ct)) * psipchain[i]
 
         # put psi between +/-pi/4
-        if math.fabs(psi) > math.pi/4.:
+        if math.fabs(psi) > math.pi / 4.0:
             # shift phi0 by pi
-            phi0 = phi0 + math.pi;
+            phi0 = phi0 + math.pi
 
             # wrap around psi
-            if psi > math.pi/4.:
-                psi = -(math.pi/4.) + math.fmod(psi+(math.pi/4.), math.pi/2.);
+            if psi > math.pi / 4.0:
+                psi = -(math.pi / 4.0) + math.fmod(psi + (math.pi / 4.0), math.pi / 2.0)
             else:
-                psi = (math.pi/4.) - math.fmod((math.pi/4.)-psi, math.pi/2.);
+                psi = (math.pi / 4.0) - math.fmod((math.pi / 4.0) - psi, math.pi / 2.0)
 
         # get phi0 into 0 -> 2pi range
-        if phi0 > 2.*math.pi:
-            phi0 = math.fmod(phi0, 2.*math.pi);
+        if phi0 > 2.0 * math.pi:
+            phi0 = math.fmod(phi0, 2.0 * math.pi)
         else:
-            phi0 = 2.*math.pi - math.fmod(2.*math.pi-phi0, 2.*math.pi);
+            phi0 = 2.0 * math.pi - math.fmod(2.0 * math.pi - phi0, 2.0 * math.pi)
 
         phichain.append(phi0)
         psichain.append(psi)
@@ -614,10 +803,17 @@ def phipsiconvert(phipchain, psipchain):
 # function to create histogram plot of the 1D posterior (potentially for
 # multiple IFOs) for a parameter (param). If an upper limit is given then
 # that will be output
-def plot_posterior_hist(poslist, param, ifos,
-                        parambounds=[float("-inf"), float("inf")],
-                        nbins=50, upperlimit=0, overplot=False,
-                        parfile=None, mplparams=False):
+def plot_posterior_hist(
+    poslist,
+    param,
+    ifos,
+    parambounds=[float("-inf"), float("inf")],
+    nbins=50,
+    upperlimit=0,
+    overplot=False,
+    parfile=None,
+    mplparams=False,
+):
     import matplotlib
     from matplotlib import pyplot as plt
     from lalpulsar.pulsarhtmlutils import paramlatexdict
@@ -630,19 +826,20 @@ def plot_posterior_hist(poslist, param, ifos,
 
     # set some matplotlib defaults for hist
     if not mplparams:
-        mplparams = { \
-          'backend': 'Agg',
-          'text.usetex': True, # use LaTeX for all text
-          'axes.linewidth': 0.5, # set axes linewidths to 0.5
-          'axes.grid': True, # add a grid
-          'grid.linewidth': 0.5,
-          'font.family': 'serif',
-          'font.size': 12 }
+        mplparams = {
+            "backend": "Agg",
+            "text.usetex": True,  # use LaTeX for all text
+            "axes.linewidth": 0.5,  # set axes linewidths to 0.5
+            "axes.grid": True,  # add a grid
+            "grid.linewidth": 0.5,
+            "font.family": "serif",
+            "font.size": 12,
+        }
 
     matplotlib.rcParams.update(mplparams)
 
     # ifos line colour specs
-    coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint':'k'}
+    coldict = {"H1": "r", "H2": "c", "L1": "g", "V1": "b", "G1": "m", "Joint": "k"}
 
     # param name for axis label
     try:
@@ -660,44 +857,45 @@ def plot_posterior_hist(poslist, param, ifos,
 
     if ifos == None:
         # default to just output colour for H1
-        ifos = ['H1']
+        ifos = ["H1"]
 
     # loop over ifos
     for idx, ifo in enumerate(ifos):
         # check whether to plot all figures on top of each other
         if overplot and idx == 0:
-            myfig = plt.figure(figsize=(4,4),dpi=200)
+            myfig = plt.figure(figsize=(4, 4), dpi=200)
             plt.hold(True)
         elif not overplot:
-            myfig = plt.figure(figsize=(4,4),dpi=200)
+            myfig = plt.figure(figsize=(4, 4), dpi=200)
 
         pos = poslist[idx]
 
         pos_samps = pos[param].samples
 
         # get a normalised histogram for each
-        n, bins = hist_norm_bounds( pos_samps, int(nbins), parambounds[0], \
-                                    parambounds[1] )
+        n, bins = hist_norm_bounds(
+            pos_samps, int(nbins), parambounds[0], parambounds[1]
+        )
 
         # plot histogram
         plt.step(bins, n, color=coldict[ifo])
 
-        if 'h0' not in param:
+        if "h0" not in param:
             plt.xlim(parambounds[0], parambounds[1])
 
-        plt.xlabel(r''+paraxis, fontsize=14, fontweight=100)
-        plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
-        myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+        plt.xlabel(r"" + paraxis, fontsize=14, fontweight=100)
+        plt.ylabel(r"Probability Density", fontsize=14, fontweight=100)
+        myfig.subplots_adjust(left=0.18, bottom=0.15)  # adjust size
 
         if not overplot:
-            plt.ylim(0, n.max()+0.1*n.max())
-            #plt.legend(ifo)
+            plt.ylim(0, n.max() + 0.1 * n.max())
+            # plt.legend(ifo)
             # set background colour of axes
             ax = plt.gca()
             ax.set_axis_bgcolor("#F2F1F0")
             myfigs.append(myfig)
         else:
-            ymax.append(n.max()+0.1*n.max())
+            ymax.append(n.max() + 0.1 * n.max())
 
         # if upper limit is needed then integrate posterior using trapezium rule
         if upperlimit != 0:
@@ -708,20 +906,20 @@ def plot_posterior_hist(poslist, param, ifos,
 
             # use linear interpolation to find the value at 'upper limit'
             ctu, ui = np.unique(ct, return_index=True)
-            intf = interp1d(ctu, bins[ui], kind='linear')
+            intf = interp1d(ctu, bins[ui], kind="linear")
             ulvals.append(intf(float(upperlimit)))
 
     # plot parameter values
     if parval:
         if not overplot:
             plt.hold(True)
-            plt.axvline(parval, color='k', ls='--', linewidth=1.5)
+            plt.axvline(parval, color="k", ls="--", linewidth=1.5)
         else:
-            plt.axvline(parval, color='k', ls='--', linewidth=1.5)
+            plt.axvline(parval, color="k", ls="--", linewidth=1.5)
 
     if overplot:
         plt.ylim(0, max(ymax))
-        #plt.legend(ifos)
+        # plt.legend(ifos)
         ax = plt.gca()
         ax.set_axis_bgcolor("#F2F1F0")
         plt.hold(False)
@@ -732,11 +930,13 @@ def plot_posterior_hist(poslist, param, ifos,
 
 # function to return an upper limit from a posteriors: pos is an array of posteriors samples for a
 # particular parameter
-def upper_limit(pos, upperlimit=0.95, parambounds=[float("-inf"), float("inf")], nbins=50):
+def upper_limit(
+    pos, upperlimit=0.95, parambounds=[float("-inf"), float("inf")], nbins=50
+):
     ulval = 0
 
     # get a normalised histogram of posterior samples
-    n, bins = hist_norm_bounds( pos, int(nbins), parambounds[0], parambounds[1] )
+    n, bins = hist_norm_bounds(pos, int(nbins), parambounds[0], parambounds[1])
 
     # if upper limit is needed then integrate posterior using trapezium rule
     if upperlimit != 0:
@@ -747,7 +947,7 @@ def upper_limit(pos, upperlimit=0.95, parambounds=[float("-inf"), float("inf")],
 
         # use linear interpolation to find the value at 'upper limit'
         ctu, ui = np.unique(ct, return_index=True)
-        intf = interp1d(ctu, bins[ui], kind='linear')
+        intf = interp1d(ctu, bins[ui], kind="linear")
         ulval = intf(float(upperlimit))
 
     return ulval
@@ -755,19 +955,19 @@ def upper_limit(pos, upperlimit=0.95, parambounds=[float("-inf"), float("inf")],
 
 def upper_limit_greedy(pos, upperlimit=0.95, nbins=100):
     n, binedges = np.histogram(pos, bins=nbins)
-    dbins = binedges[1]-binedges[0] # width of a histogram bin
+    dbins = binedges[1] - binedges[0]  # width of a histogram bin
 
     frac = 0.0
     j = 0
     for nv in n:
         prevfrac = frac
-        frac += float(nv)/len(pos)
+        frac += float(nv) / len(pos)
         j += 1
         if frac > upperlimit:
             break
 
     # linearly interpolate to get upper limit
-    ul = binedges[j-1] + (upperlimit-prevfrac)*(dbins/(frac-prevfrac))
+    ul = binedges[j - 1] + (upperlimit - prevfrac) * (dbins / (frac - prevfrac))
 
     return ul
 
@@ -789,24 +989,25 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=F
         return None
 
     if not mplparams:
-        mplparams = { \
-          'backend': 'Agg',
-          'text.usetex': True, # use LaTeX for all text
-          'axes.linewidth': 0.5, # set axes linewidths to 0.5
-          'axes.grid': True, # add a grid
-          'grid.linewidth': 0.5,
-          'font.family': 'sans-serif',
-          'font.sans-serif': 'Avant Garde, Helvetica, Computer Modern Sans serif',
-          'font.size': 15 }
+        mplparams = {
+            "backend": "Agg",
+            "text.usetex": True,  # use LaTeX for all text
+            "axes.linewidth": 0.5,  # set axes linewidths to 0.5
+            "axes.grid": True,  # add a grid
+            "grid.linewidth": 0.5,
+            "font.family": "sans-serif",
+            "font.sans-serif": "Avant Garde, Helvetica, Computer Modern Sans serif",
+            "font.size": 15,
+        }
 
     matplotlib.rcParams.update(mplparams)
 
-    coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint': 'k'}
+    coldict = {"H1": "r", "H2": "c", "L1": "g", "V1": "b", "G1": "m", "Joint": "k"}
 
     # param name for axis label
     try:
-        if param == 'iota':
-            p = 'cosiota'
+        if param == "iota":
+            p = "cosiota"
         else:
             p = param
 
@@ -819,24 +1020,24 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=F
 
     maxiter = 0
     maxn = 0
-    minsamp = float('inf')
-    maxsamp = -float('inf')
+    minsamp = float("inf")
+    maxsamp = -float("inf")
 
     for idx, ifo in enumerate(ifos):
         if idx == 0:
-            myfig = plt.figure(figsize=(12,4),dpi=200)
+            myfig = plt.figure(figsize=(12, 4), dpi=200)
             myfig.subplots_adjust(bottom=0.15)
 
             if withhist:
-                gs = gridspec.GridSpec(1,4, wspace=0)
+                gs = gridspec.GridSpec(1, 4, wspace=0)
                 ax1 = plt.subplot(gs[:-1])
                 ax2 = plt.subplot(gs[-1])
 
         pos = list(poslist)[idx]
 
         # check for cosiota
-        if 'iota' == param:
-            pos_samps = np.cos(pos['iota'].samples)
+        if "iota" == param:
+            pos_samps = np.cos(pos["iota"].samples)
         else:
             pos_samps = pos[param].samples
 
@@ -846,20 +1047,20 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=F
             maxsamp = np.max(pos_samps)
 
         if withhist:
-            ax1.plot(pos_samps, '.', color=coldict[ifo], markersize=1)
+            ax1.plot(pos_samps, ".", color=coldict[ifo], markersize=1)
 
-            n, binedges = np.histogram( pos_samps, withhist, density=True )
+            n, binedges = np.histogram(pos_samps, withhist, density=True)
             n = np.append(n, 0)
             ax2.step(n, binedges, color=coldict[ifo])
 
             if np.max(n) > maxn:
                 maxn = np.max(n)
         else:
-            plt.plot(pos_samps, '.', color=coldict[ifo], markersize=1)
+            plt.plot(pos_samps, ".", color=coldict[ifo], markersize=1)
 
         if grr:
             try:
-                legendvals.append(r'$R = %.2f$' % grr[idx][param])
+                legendvals.append(r"$R = %.2f$" % grr[idx][param])
             except:
                 legendvals = []
         else:
@@ -873,21 +1074,21 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=F
 
     bounds = [minsamp, maxsamp]
 
-    ax1.set_ylabel(r''+paryaxis, fontsize=16, fontweight=100)
-    ax1.set_xlabel(r'Iterations', fontsize=16, fontweight=100)
+    ax1.set_ylabel(r"" + paryaxis, fontsize=16, fontweight=100)
+    ax1.set_xlabel(r"Iterations", fontsize=16, fontweight=100)
 
     ax1.set_xlim(0, maxiter)
     ax1.set_ylim(bounds[0], bounds[1])
 
     if withhist:
         ax2.set_ylim(bounds[0], bounds[1])
-        ax2.set_xlim(0, maxn+0.1*maxn)
+        ax2.set_xlim(0, maxn + 0.1 * maxn)
         ax2.set_yticklabels([])
         ax2.set_axis_bgcolor("#F2F1F0")
 
     # add gelman-rubins stat data
     if legendvals:
-        ax1.legend(legendvals, title='Gelman-Rubins test')
+        ax1.legend(legendvals, title="Gelman-Rubins test")
 
     return myfig
 
@@ -907,13 +1108,13 @@ def plot_posterior_chain(poslist, param, ifos, grr=None, withhist=0, mplparams=F
 def read_hist_from_file(histfile):
     # read in 2D binary file
     try:
-        fp = open(histfile, 'rb')
+        fp = open(histfile, "rb")
     except:
         print("Could not open prior file %s" % histfile, file=sys.stderr)
         return None, None, None
 
     try:
-        pd = fp.read() # read in all the data
+        pd = fp.read()  # read in all the data
     except:
         print("Could not read in data from prior file %s" % histfile, file=sys.stderr)
         return None, None, None
@@ -921,29 +1122,35 @@ def read_hist_from_file(histfile):
     fp.close()
 
     # read in the header (6 doubles)
-    #try:
-    header = struct.unpack("d"*6, pd[:6*8])
+    # try:
+    header = struct.unpack("d" * 6, pd[: 6 * 8])
     # except:
     #  print >> sys.stderr, "Could not read in header data from prior file %s" % histfile
     #  return None, None, None
 
     # read in histogram grid (NxM doubles)
-    #try:
-    grid = struct.unpack("d"*int(header[2])*int(header[5]), pd[6*8:])
-    #except:
+    # try:
+    grid = struct.unpack("d" * int(header[2]) * int(header[5]), pd[6 * 8 :])
+    # except:
     #  print >> sys.stderr, "Could not read in header data from prior file %s" % histfile
     #  return None, None, None
 
     header = list(header)
 
     # convert grid into numpy array
-    g = list(grid) # convert to list
-    histarr = np.array([g[:int(header[5])]], ndmin=2)
-    for i in range(int(header[2])-1):
-        histarr = np.append(histarr, [g[(i+1)*int(header[5]):(i+2)*int(header[5])]], axis=0)
+    g = list(grid)  # convert to list
+    histarr = np.array([g[: int(header[5])]], ndmin=2)
+    for i in range(int(header[2]) - 1):
+        histarr = np.append(
+            histarr, [g[(i + 1) * int(header[5]) : (i + 2) * int(header[5])]], axis=0
+        )
 
-    xbins = np.linspace(header[0], header[0]+header[1]*(header[2]-1), int(header[2]))
-    ybins = np.linspace(header[3], header[3]+header[4]*(header[5]-1), int(header[5]))
+    xbins = np.linspace(
+        header[0], header[0] + header[1] * (header[2] - 1), int(header[2])
+    )
+    ybins = np.linspace(
+        header[3], header[3] + header[4] * (header[5] - 1), int(header[5])
+    )
 
     return xbins, ybins, histarr
 
@@ -952,8 +1159,9 @@ def read_hist_from_file(histfile):
 # Also supply the label names for the n-dimension (x-axis) and m-dimension
 # (y-axis). If margpars is true marginalised plots of both dimensions will
 # also be returned.
-def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
-                          mplparams=False):
+def plot_2Dhist_from_file(
+    histfile, ndimlabel, mdimlabel, margpars=True, mplparams=False
+):
     import matplotlib
     from matplotlib import pyplot as plt
     from lalpulsar.pulsarhtmlutils import paramlatexdict
@@ -969,18 +1177,19 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
 
     # set some matplotlib defaults for amplitude spectral density
     if not mplparams:
-        mplparams = { \
-          'backend': 'Agg',
-          'text.usetex': True, # use LaTeX for all text
-          'axes.linewidth': 0.5, # set axes linewidths to 0.5
-          'axes.grid': True, # add a grid
-          'grid.linewidth': 0.5,
-          'font.family': 'serif',
-          'font.size': 12 }
+        mplparams = {
+            "backend": "Agg",
+            "text.usetex": True,  # use LaTeX for all text
+            "axes.linewidth": 0.5,  # set axes linewidths to 0.5
+            "axes.grid": True,  # add a grid
+            "grid.linewidth": 0.5,
+            "font.family": "serif",
+            "font.size": 12,
+        }
 
     matplotlib.rcParams.update(mplparams)
 
-    fig = plt.figure(figsize=(4,4),dpi=200)
+    fig = plt.figure(figsize=(4, 4), dpi=200)
 
     # param name for axis label
     try:
@@ -993,18 +1202,28 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
     except:
         paryaxis = mdimlabel
 
-    plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
-    plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100, rotation=270)
+    plt.xlabel(r"" + parxaxis, fontsize=14, fontweight=100)
+    plt.ylabel(r"" + paryaxis, fontsize=14, fontweight=100, rotation=270)
 
-    dx = xbins[1]-xbins[0]
-    dy = ybins[1]-ybins[0]
+    dx = xbins[1] - xbins[0]
+    dy = ybins[1] - ybins[0]
 
-    extent = [xbins[0]-dx/2., xbins[-1]+dx/2., ybins[-1]+dy/2., ybins[0]-dy/2.]
+    extent = [
+        xbins[0] - dx / 2.0,
+        xbins[-1] + dx / 2.0,
+        ybins[-1] + dy / 2.0,
+        ybins[0] - dy / 2.0,
+    ]
 
-    plt.imshow(np.transpose(histarr), aspect='auto', extent=extent, \
-               interpolation='bicubic', cmap='gray_r')
+    plt.imshow(
+        np.transpose(histarr),
+        aspect="auto",
+        extent=extent,
+        interpolation="bicubic",
+        cmap="gray_r",
+    )
 
-    fig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+    fig.subplots_adjust(left=0.18, bottom=0.15)  # adjust size
     fax = (fig.get_axes())[0].axis()
 
     figs.append(fig)
@@ -1017,7 +1236,7 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
 
         # normalise
         xarea = np.trapz(xmarg, x=xbins)
-        xmarg = map(lambda x: x/xarea, xmarg)
+        xmarg = map(lambda x: x / xarea, xmarg)
 
         ymarg = []
         for i in range(len(ybins)):
@@ -1025,27 +1244,27 @@ def plot_2Dhist_from_file(histfile, ndimlabel, mdimlabel, margpars=True, \
 
         # normalise
         yarea = np.trapz(ymarg, x=ybins)
-        ymarg = map(lambda x: x/yarea, ymarg)
+        ymarg = map(lambda x: x / yarea, ymarg)
 
         # plot x histogram
-        figx = plt.figure(figsize=(4,4),dpi=200)
-        plt.step(xbins, xmarg, color='k')
-        plt.ylim(0, max(xmarg)+0.1*max(xmarg))
+        figx = plt.figure(figsize=(4, 4), dpi=200)
+        plt.step(xbins, xmarg, color="k")
+        plt.ylim(0, max(xmarg) + 0.1 * max(xmarg))
         plt.xlim(fax[0], fax[1])
-        plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
-        plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
-        figx.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+        plt.xlabel(r"" + parxaxis, fontsize=14, fontweight=100)
+        plt.ylabel(r"Probability Density", fontsize=14, fontweight=100)
+        figx.subplots_adjust(left=0.18, bottom=0.15)  # adjust size
         ax = plt.gca()
         ax.set_axis_bgcolor("#F2F1F0")
 
         # plot y histogram
-        figy = plt.figure(figsize=(4,4),dpi=200)
-        plt.step(ybins, ymarg, color='k')
-        plt.ylim(0, max(ymarg)+0.1*max(ymarg))
+        figy = plt.figure(figsize=(4, 4), dpi=200)
+        plt.step(ybins, ymarg, color="k")
+        plt.ylim(0, max(ymarg) + 0.1 * max(ymarg))
         plt.xlim(fax[3], fax[2])
-        plt.xlabel(r''+paryaxis, fontsize=14, fontweight=100)
-        plt.ylabel(r'Probability Density', fontsize=14, fontweight=100)
-        figy.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+        plt.xlabel(r"" + paryaxis, fontsize=14, fontweight=100)
+        plt.ylabel(r"Probability Density", fontsize=14, fontweight=100)
+        figy.subplots_adjust(left=0.18, bottom=0.15)  # adjust size
         ax = plt.gca()
         ax.set_axis_bgcolor("#F2F1F0")
 
@@ -1071,9 +1290,9 @@ def h0ul_from_prior_file(priorfile, ulval=0.95):
         h0marg.append(np.trapz(histarr[:][i], x=cibins))
 
     # normalise h0 posterior
-    h0bins = h0bins-(h0bins[1]-h0bins[0])/2
+    h0bins = h0bins - (h0bins[1] - h0bins[0]) / 2
     h0area = np.trapz(h0marg, x=h0bins)
-    h0margnorm = map(lambda x: x/h0area, h0marg)
+    h0margnorm = map(lambda x: x / h0area, h0marg)
 
     # get cumulative probability
     ct = cumtrapz(h0margnorm, h0bins)
@@ -1083,13 +1302,21 @@ def h0ul_from_prior_file(priorfile, ulval=0.95):
 
     # use spline interpolation to find the value at 'upper limit'
     ctu, ui = np.unique(ct, return_index=True)
-    intf = interp1d(ctu, h0bins[ui], kind='linear')
+    intf = interp1d(ctu, h0bins[ui], kind="linear")
     return intf(float(ulval))
 
 
 # function to create a histogram plot of the 2D posterior
-def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
-                          parfile=None, overplot=False, mplparams=False):
+def plot_posterior_hist2D(
+    poslist,
+    params,
+    ifos,
+    bounds=None,
+    nbins=[50, 50],
+    parfile=None,
+    overplot=False,
+    mplparams=False,
+):
     import matplotlib
     from matplotlib import pyplot as plt
     from lalpulsar.pulsarhtmlutils import paramlatexdict
@@ -1100,20 +1327,27 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
 
     # set some matplotlib defaults for amplitude spectral density
     if not mplparams:
-        mplparams = { \
-          'backend': 'Agg',
-          'text.usetex': True, # use LaTeX for all text
-          'axes.linewidth': 0.5, # set axes linewidths to 0.5
-          'axes.grid': True, # add a grid
-          'grid.linewidth': 0.5,
-          'font.family': 'serif',
-          'font.size': 12 }
+        mplparams = {
+            "backend": "Agg",
+            "text.usetex": True,  # use LaTeX for all text
+            "axes.linewidth": 0.5,  # set axes linewidths to 0.5
+            "axes.grid": True,  # add a grid
+            "grid.linewidth": 0.5,
+            "font.family": "serif",
+            "font.size": 12,
+        }
 
     matplotlib.rcParams.update(mplparams)
 
     if overplot:
-        coldict = {'H1': 'Reds', 'H2': 'GnBu', 'L1': 'Greens', 'V1': 'Blues', 'G1': 'BuPu', \
-                   'Joint': 'Greys'}
+        coldict = {
+            "H1": "Reds",
+            "H2": "GnBu",
+            "L1": "Greens",
+            "V1": "Blues",
+            "G1": "BuPu",
+            "Joint": "Greys",
+        }
 
     myfigs = []
 
@@ -1136,25 +1370,25 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
         parval2 = parfile[params[1].upper()]
 
     if ifos == None:
-        ifos = ['H1']
+        ifos = ["H1"]
 
     for idx, ifo in enumerate(ifos):
         if overplot:
             if idx == 0:
                 # if overplotting just have one figure
-                myfig = plt.figure(figsize=(4,4),dpi=200)
+                myfig = plt.figure(figsize=(4, 4), dpi=200)
 
             if len(ifos) == 1:
-                alpha=1.0
-                cmap=plt.cm.get_cmap('Greys')
+                alpha = 1.0
+                cmap = plt.cm.get_cmap("Greys")
             else:
-                alpha=0.5 # set transparency
-                cmap=plt.cm.get_cmap(coldict[ifo]) # set colormap
-                #cmap.set_bad(alpha=0.) # set 'bad' masked values to be transparent
+                alpha = 0.5  # set transparency
+                cmap = plt.cm.get_cmap(coldict[ifo])  # set colormap
+                # cmap.set_bad(alpha=0.) # set 'bad' masked values to be transparent
         else:
-            myfig = plt.figure(figsize=(4,4),dpi=200)
-            alpha=1.0 # no transparency
-            cmap=plt.cm.get_cmap('Greys')
+            myfig = plt.figure(figsize=(4, 4), dpi=200)
+            alpha = 1.0  # no transparency
+            cmap = plt.cm.get_cmap("Greys")
 
         posterior = poslist[idx]
 
@@ -1168,22 +1402,28 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
         par1pos_max = a.max()
         par2pos_max = b.max()
 
-        plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
-        plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100, rotation=270)
+        plt.xlabel(r"" + parxaxis, fontsize=14, fontweight=100)
+        plt.ylabel(r"" + paryaxis, fontsize=14, fontweight=100, rotation=270)
 
         H, xedges, yedges = np.histogram2d(a, b, nbins, normed=True)
 
-        #if overplot and len(ifos) > 1:
+        # if overplot and len(ifos) > 1:
         #  # mask values that are zero, so that they are
         #  Hm = np.ma.masked_where(np.transpose(H) == 0, np.transpose(H))
-        #else:
+        # else:
         #  Hm = np.transpose(H)
         Hm = np.transpose(H)
 
         extent = [xedges[0], xedges[-1], yedges[-1], yedges[0]]
-        plt.imshow(Hm, aspect='auto', extent=extent, \
-    interpolation='bilinear', cmap=cmap, alpha=alpha)
-        #plt.colorbar()
+        plt.imshow(
+            Hm,
+            aspect="auto",
+            extent=extent,
+            interpolation="bilinear",
+            cmap=cmap,
+            alpha=alpha,
+        )
+        # plt.colorbar()
 
         if bounds:
             plt.xlim(bounds[0][0], bounds[0][1])
@@ -1191,22 +1431,22 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
 
         # plot injection values if given
         if parval1 and parval2:
-            if overplot and idx == len(ifos)-1:
+            if overplot and idx == len(ifos) - 1:
                 # only plot after final posterior has been plotted
                 plt.hold(True)
-                plt.plot(parval1, parval2, 'rx', markersize=8, mew=2)
+                plt.plot(parval1, parval2, "rx", markersize=8, mew=2)
             else:
                 plt.hold(True)
-                plt.plot(parval1, parval2, 'rx', markersize=8, mew=2)
+                plt.plot(parval1, parval2, "rx", markersize=8, mew=2)
 
         if overplot:
             plt.hold(True)
         if not overplot:
-            myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+            myfig.subplots_adjust(left=0.18, bottom=0.15)  # adjust size
             myfigs.append(myfig)
 
     if overplot:
-        myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+        myfig.subplots_adjust(left=0.18, bottom=0.15)  # adjust size
         myfigs.append(myfig)
 
     return myfigs
@@ -1217,21 +1457,21 @@ def plot_posterior_hist2D(poslist, params, ifos, bounds=None, nbins=[50,50], \
 # bin points (with length nbins+2) will be returned as numpy arrays
 def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
     # get histogram
-    n, binedges = np.histogram( samples, nbins )
+    n, binedges = np.histogram(samples, nbins)
 
     # get bin width
     binwidth = binedges[1] - binedges[0]
 
     # create bin centres
     bincentres = np.array([])
-    for i in range(0, len(binedges)-1):
-        bincentres = np.append(bincentres, binedges[i]+binwidth/2)
+    for i in range(0, len(binedges) - 1):
+        bincentres = np.append(bincentres, binedges[i] + binwidth / 2)
 
     # if histogram points are not close to boundaries (i.e. within a bin of the
     # boundaries) then add zeros to histrogram edges
     if bincentres[0] - binwidth > low:
         # prepend a zero to n
-        n = np.insert(n, 0, 0);
+        n = np.insert(n, 0, 0)
 
         # prepend a new bin centre at bincentres[0] - binwidth
         bincentres = np.insert(bincentres, 0, bincentres[0] - binwidth)
@@ -1239,16 +1479,16 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
         # we're  closer to the boundary edge than the bin width then, so set a new
         # bin on the boundary with a value linearly extrapolated from the
         # gradiant of the adjacent points
-        dx = bincentres[0] - low;
+        dx = bincentres[0] - low
 
         # prepend low value to bins
         bincentres = np.insert(bincentres, 0, low)
 
-        dn = n[1]-n[0]
+        dn = n[1] - n[0]
 
-        nbound = n[0] - (dn/binwidth)*dx
+        nbound = n[0] - (dn / binwidth) * dx
 
-        n = n.astype(float) # convert to floats
+        n = n.astype(float)  # convert to floats
 
         # prepend to n
         n = np.insert(n, 0, nbound)
@@ -1261,16 +1501,16 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
         # append a new bin centre at bincentres[end] + binwidth
         bincentres = np.append(bincentres, bincentres[-1] + binwidth)
     else:
-        dx = high - bincentres[-1];
+        dx = high - bincentres[-1]
 
         # prepend low value to bins
         bincentres = np.append(bincentres, high)
 
-        dn = n[-1]-n[-2]
+        dn = n[-1] - n[-2]
 
-        nbound = n[-1] + (dn/binwidth)*dx
+        nbound = n[-1] + (dn / binwidth) * dx
 
-        n = n.astype(float) # convert to floats
+        n = n.astype(float)  # convert to floats
 
         # prepend to n
         n = np.append(n, nbound)
@@ -1280,7 +1520,7 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
 
     ns = np.array([])
     for i in range(0, len(bincentres)):
-        ns = np.append(ns, float(n[i])/area)
+        ns = np.append(ns, float(n[i]) / area)
 
     return ns, bincentres
 
@@ -1298,12 +1538,12 @@ def tukey_window(N, alpha=0.5):
     win = np.ones(x.shape)
 
     # get the left-hand side of the window  0 <= x < alpha/2
-    lhs = x<alpha/2
-    win[lhs] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[lhs] - alpha/2) ))
+    lhs = x < alpha / 2
+    win[lhs] = 0.5 * (1 + np.cos(2 * np.pi / alpha * (x[lhs] - alpha / 2)))
 
     # get right hand side condition 1 - alpha / 2 <= x <= 1
-    rhs = x>=(1 - alpha/2)
-    win[rhs] = 0.5 * (1 + np.cos(2*np.pi/alpha * (x[rhs] - 1 + alpha/2)))
+    rhs = x >= (1 - alpha / 2)
+    win[rhs] = 0.5 * (1 + np.cos(2 * np.pi / alpha * (x[rhs] - 1 + alpha / 2)))
 
     return win
 
@@ -1312,7 +1552,14 @@ def tukey_window(N, alpha=0.5):
 # data files) and an averaged 1 day "two-sided" amplitude spectral density
 # spectrogram for each IFO. Bkdata should be a dictionary contains the files
 # keyed to the IFO
-def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeoutlier=None, mplparams=False ):
+def plot_Bks_ASDs(
+    Bkdata,
+    delt=86400,
+    plotpsds=True,
+    plotfscan=False,
+    removeoutlier=None,
+    mplparams=False,
+):
     import matplotlib
     from matplotlib.mlab import specgram
     from matplotlib import colors
@@ -1327,38 +1574,45 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
 
     # set some matplotlib defaults for amplitude spectral density
     if not mplparams:
-        mplparams = { \
-          'backend': 'Agg',
-          'text.usetex': True, # use LaTeX for all text
-          'axes.linewidth': 0.5, # set axes linewidths to 0.5
-          'axes.grid': True, # add a grid
-          'grid.linewidth': 0.5,
-          'font.family': 'sans-serif',
-          'font.sans-serif': 'Avant Garde, Helvetica, Computer Modern Sans serif',
-          'font.size': 15 }
+        mplparams = {
+            "backend": "Agg",
+            "text.usetex": True,  # use LaTeX for all text
+            "axes.linewidth": 0.5,  # set axes linewidths to 0.5
+            "axes.grid": True,  # add a grid
+            "grid.linewidth": 0.5,
+            "font.family": "sans-serif",
+            "font.sans-serif": "Avant Garde, Helvetica, Computer Modern Sans serif",
+            "font.size": 15,
+        }
 
     matplotlib.rcParams.update(mplparams)
-    matplotlib.rcParams['text.latex.preamble']=r'\usepackage{xfrac}'
+    matplotlib.rcParams["text.latex.preamble"] = r"\usepackage{xfrac}"
 
     # ifos line colour specs
-    coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm'}
-    colmapdic = {'H1': 'Reds', 'H2': 'PuBu', 'L1': 'Greens', 'V1': 'Blues', 'G1': 'PuRd'}
+    coldict = {"H1": "r", "H2": "c", "L1": "g", "V1": "b", "G1": "m"}
+    colmapdic = {
+        "H1": "Reds",
+        "H2": "PuBu",
+        "L1": "Greens",
+        "V1": "Blues",
+        "G1": "PuRd",
+    }
 
     # there should be data for each ifo
     for ifo in Bkdata:
         # get data for given ifo
         try:
-            Bk = np.loadtxt(Bkdata[ifo], comments=['#', '%'])
+            Bk = np.loadtxt(Bkdata[ifo], comments=["#", "%"])
         except:
             print("Could not open file %s" % Bkdata[ifo], file=sys.stderr)
             sys.exit(-1)
 
         # sort the array in time
-        Bk = Bk[Bk[:,0].argsort()]
+        Bk = Bk[Bk[:, 0].argsort()]
 
         # make sure times are unique
-        uargs = np.unique(Bk[:,0], return_index=True)[1]
-        Bk = Bk[uargs,:]
+        uargs = np.unique(Bk[:, 0], return_index=True)[1]
+        Bk = Bk[uargs, :]
 
         # should be three lines in file
         gpstime = []
@@ -1366,38 +1620,40 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
         # remove outliers at Xsigma by working out sigma from the peak of the
         # distribution of the log absolute value
         if removeoutlier:
-            n, binedges = np.histogram(np.log(np.fabs(np.concatenate((Bk[:,1], Bk[:,2])))), 50)
+            n, binedges = np.histogram(
+                np.log(np.fabs(np.concatenate((Bk[:, 1], Bk[:, 2])))), 50
+            )
             j = n.argmax(0)
 
             # standard devaition estimate
-            stdest = math.exp((binedges[j]+binedges[j+1])/2)
+            stdest = math.exp((binedges[j] + binedges[j + 1]) / 2)
 
             # get values within +/-8 sigma
             # test real parts
-            vals = np.where(np.fabs(Bk[:,1]) < removeoutlier*stdest)
-            Bknew = Bk[vals,:][-1]
+            vals = np.where(np.fabs(Bk[:, 1]) < removeoutlier * stdest)
+            Bknew = Bk[vals, :][-1]
             # test imag parts
-            vals = np.where(np.fabs(Bknew[:,2]) < removeoutlier*stdest)
-            Bk = Bknew[vals,:][-1]
+            vals = np.where(np.fabs(Bknew[:, 2]) < removeoutlier * stdest)
+            Bk = Bknew[vals, :][-1]
 
-        gpstime = Bk[:,0]
+        gpstime = Bk[:, 0]
 
         # minimum time step between points (should generally be 60 seconds)
         mindt = min(np.diff(gpstime))
         sampledt.append(mindt)
 
-        Bkabs = np.sqrt(Bk[:,1]**2 + Bk[:,2]**2)
+        Bkabs = np.sqrt(Bk[:, 1] ** 2 + Bk[:, 2] ** 2)
 
         # plot the time series of the data
-        Bkfig = plt.figure(figsize=(11,3.5), dpi=200)
+        Bkfig = plt.figure(figsize=(11, 3.5), dpi=200)
         Bkfig.subplots_adjust(bottom=0.15, left=0.09, right=0.94)
 
-        tms = list(map(lambda x: x-gpstime[0], gpstime))
+        tms = list(map(lambda x: x - gpstime[0], gpstime))
 
-        plt.plot(tms, Bkabs, '.', color=coldict[ifo], markersize=1)
-        plt.xlabel(r'GPS - %d' % int(gpstime[0]), fontsize=14, fontweight=100)
-        plt.ylabel(r'$|B_k|$', fontsize=14, fontweight=100)
-        #plt.title(r'$B_k$s for ' + ifo.upper(), fontsize=14)
+        plt.plot(tms, Bkabs, ".", color=coldict[ifo], markersize=1)
+        plt.xlabel(r"GPS - %d" % int(gpstime[0]), fontsize=14, fontweight=100)
+        plt.ylabel(r"$|B_k|$", fontsize=14, fontweight=100)
+        # plt.title(r'$B_k$s for ' + ifo.upper(), fontsize=14)
         plt.xlim(tms[0], tms[-1])
 
         Bkfigs.append(Bkfig)
@@ -1405,27 +1661,36 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
         if plotpsds or plotfscan:
             # create PSD by splitting data into days, padding with zeros to give a
             # sample a second, getting the PSD for each day and combining them
-            totlen = gpstime[-1] - gpstime[0] # total data length
+            totlen = gpstime[-1] - gpstime[0]  # total data length
 
             # check mindt is an integer and greater than 1
-            if math.fmod(mindt, 1) != 0. or mindt < 1:
-                print("Error... time steps between data points must be integers", file=sys.stderr)
+            if math.fmod(mindt, 1) != 0.0 or mindt < 1:
+                print(
+                    "Error... time steps between data points must be integers",
+                    file=sys.stderr,
+                )
                 sys.exit(-1)
 
             count = 0
 
             # zero pad the data and bin each point in the nearest bin
-            datazeropad = np.zeros(int(math.ceil(totlen/mindt))+1, dtype=complex)
+            datazeropad = np.zeros(int(math.ceil(totlen / mindt)) + 1, dtype=complex)
 
-            idx = list(map(lambda x: int(math.floor((x/mindt)+0.5)), tms))
+            idx = list(map(lambda x: int(math.floor((x / mindt) + 0.5)), tms))
             for i in range(0, len(idx)):
-                datazeropad[idx[i]] = complex(Bk[i,1], Bk[i,2])
+                datazeropad[idx[i]] = complex(Bk[i, 1], Bk[i, 2])
 
-            win = tukey_window(math.floor(delt/mindt), alpha=0.1)
+            win = tukey_window(math.floor(delt / mindt), alpha=0.1)
 
-            Fs = 1./mindt # sample rate in Hz
+            Fs = 1.0 / mindt  # sample rate in Hz
 
-            fscan, freqs, t = specgram(datazeropad, NFFT=int(math.floor(delt/mindt)), Fs=Fs, window=win, noverlap=int(math.floor(delt/(2.*mindt))))
+            fscan, freqs, t = specgram(
+                datazeropad,
+                NFFT=int(math.floor(delt / mindt)),
+                Fs=Fs,
+                window=win,
+                noverlap=int(math.floor(delt / (2.0 * mindt))),
+            )
 
             if plotpsds:
                 fshape = fscan.shape
@@ -1433,70 +1698,76 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
                 totalasd = np.zeros(fshape[0])
 
                 for i in range(0, fshape[0]):
-                    scanasd = np.sqrt(fscan[i,:])
+                    scanasd = np.sqrt(fscan[i, :])
                     nonzasd = np.nonzero(scanasd)
                     scanasd = scanasd[nonzasd]
 
                     # median amplitude spectral density
-                    #totalasd[i] = hmean(scanasd)
+                    # totalasd[i] = hmean(scanasd)
                     totalasd[i] = np.median(scanasd)
 
                 # average amplitude spectral density
                 asdlist.append(totalasd)
 
                 # plot PSD
-                psdfig = plt.figure(figsize=(4,3.5), dpi=200)
+                psdfig = plt.figure(figsize=(4, 3.5), dpi=200)
                 psdfig.subplots_adjust(left=0.18, bottom=0.15)
 
                 plt.plot(freqs, totalasd, color=coldict[ifo])
                 plt.xlim(freqs[0], freqs[-1])
-                plt.xlabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
-                plt.ylabel(r'$h/\sqrt{\rm Hz}$', fontsize=14, fontweight=100)
+                plt.xlabel(r"Frequency (Hz)", fontsize=14, fontweight=100)
+                plt.ylabel(r"$h/\sqrt{\rm Hz}$", fontsize=14, fontweight=100)
 
                 # convert frequency labels to fractions
                 ax = plt.gca()
-                xt = [-Fs/2., -Fs/4., 0., Fs/2., Fs/4.]
+                xt = [-Fs / 2.0, -Fs / 4.0, 0.0, Fs / 2.0, Fs / 4.0]
                 ax.set_xticks(xt)
                 xl = []
                 for item in xt:
                     if item == 0:
-                        xl.append('0')
+                        xl.append("0")
                     else:
                         if item < 0:
-                            xl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
+                            xl.append(r"$-\sfrac{1}{%d}$" % (-1.0 / item))
                         else:
-                            xl.append(r'$\sfrac{1}{%d}$' % (1./item))
+                            xl.append(r"$\sfrac{1}{%d}$" % (1.0 / item))
                 ax.set_xticklabels(xl)
-                #plt.setp(ax.get_xticklabels(), fontsize=16)  # increase font size
-                plt.tick_params(axis='x', which='major', labelsize=14)
+                # plt.setp(ax.get_xticklabels(), fontsize=16)  # increase font size
+                plt.tick_params(axis="x", which="major", labelsize=14)
 
                 psdfigs.append(psdfig)
 
             if plotfscan:
-                fscanfig = plt.figure(figsize=(11,3.5), dpi=200)
+                fscanfig = plt.figure(figsize=(11, 3.5), dpi=200)
                 fscanfig.subplots_adjust(bottom=0.15, left=0.09, right=0.94)
 
                 extent = [tms[0], tms[-1], freqs[0], freqs[-1]]
-                plt.imshow(np.sqrt(np.flipud(fscan)), aspect='auto', extent=extent,
-                  interpolation=None, cmap=colmapdic[ifo], norm=colors.Normalize())
-                plt.ylabel(r'Frequency (Hz)', fontsize=14, fontweight=100)
-                plt.xlabel(r'GPS - %d' % int(gpstime[0]), fontsize=14, fontweight=100)
+                plt.imshow(
+                    np.sqrt(np.flipud(fscan)),
+                    aspect="auto",
+                    extent=extent,
+                    interpolation=None,
+                    cmap=colmapdic[ifo],
+                    norm=colors.Normalize(),
+                )
+                plt.ylabel(r"Frequency (Hz)", fontsize=14, fontweight=100)
+                plt.xlabel(r"GPS - %d" % int(gpstime[0]), fontsize=14, fontweight=100)
 
                 # convert frequency labels to fractions
                 ax = plt.gca()
-                yt = [-Fs/2., -Fs/4., 0., Fs/2., Fs/4.]
+                yt = [-Fs / 2.0, -Fs / 4.0, 0.0, Fs / 2.0, Fs / 4.0]
                 ax.set_yticks(yt)
                 yl = []
                 for item in yt:
                     if item == 0:
-                        yl.append('0')
+                        yl.append("0")
                     else:
                         if item < 0:
-                            yl.append(r'$-\sfrac{1}{%d}$' % (-1./item))
+                            yl.append(r"$-\sfrac{1}{%d}$" % (-1.0 / item))
                         else:
-                            yl.append(r'$\sfrac{1}{%d}$' % (1./item))
+                            yl.append(r"$\sfrac{1}{%d}$" % (1.0 / item))
                 ax.set_yticklabels(yl)
-                plt.tick_params(axis='y', which='major', labelsize=14)
+                plt.tick_params(axis="y", which="major", labelsize=14)
 
                 fscanfigs.append(fscanfig)
 
@@ -1506,34 +1777,37 @@ def plot_Bks_ASDs( Bkdata, delt=86400, plotpsds=True, plotfscan=False, removeout
 # a function to create a histogram of log10(results) for a list of a given parameter
 # (if a list with previous value is given they will be plotted as well)
 #  - lims is a dictionary of lists for each IFO
-def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, mplparams=False):
+def plot_limits_hist(
+    lims, param, ifos, prevlims=None, bins=20, overplot=False, mplparams=False
+):
     import matplotlib
     from matplotlib import pyplot as plt
     from lalpulsar.pulsarhtmlutils import paramlatexdict
 
     if not mplparams:
-        mplparams = { \
-          'backend': 'Agg',
-          'text.usetex': True, # use LaTeX for all text
-          'axes.linewidth': 0.5, # set axes linewidths to 0.5
-          'axes.grid': True, # add a grid
-          'grid.linewidth': 0.5,
-          'font.family': 'serif',
-          'font.size': 12 }
+        mplparams = {
+            "backend": "Agg",
+            "text.usetex": True,  # use LaTeX for all text
+            "axes.linewidth": 0.5,  # set axes linewidths to 0.5
+            "axes.grid": True,  # add a grid
+            "grid.linewidth": 0.5,
+            "font.family": "serif",
+            "font.size": 12,
+        }
 
     matplotlib.rcParams.update(mplparams)
 
     myfigs = []
 
     # ifos line colour specs
-    coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint':'k'}
+    coldict = {"H1": "r", "H2": "c", "L1": "g", "V1": "b", "G1": "m", "Joint": "k"}
 
     try:
         parxaxis = paramlatexdict[param.upper()]
     except:
         parxaxis = param
 
-    paryaxis = 'Number of Pulsars'
+    paryaxis = "Number of Pulsars"
 
     # get log10 of previous results
     logprevlims = None
@@ -1586,8 +1860,8 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, 
         if not overplot:
             stackdata = loglims
 
-        #if not overplot or (overplot and j == 0):
-        myfig = plt.figure(figsize=(4,4),dpi=200)
+        # if not overplot or (overplot and j == 0):
+        myfig = plt.figure(figsize=(4, 4), dpi=200)
         maxlims = []
         minlims = []
 
@@ -1601,10 +1875,19 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, 
             edgecolor = [coldict[ifo]]
             facecolor = [coldict[ifo]]
 
-        #plt.hist(loglims, bins, range=hrange, histtype='step', fill=True, edgecolor=coldict[ifo], facecolor=coldict[ifo], alpha=0.6)
-        n, bins, patches = plt.hist(stackdata, bins, range=hrange, histtype='step', stacked=stacked, fill=True, color=edgecolor, alpha=0.6)
+        # plt.hist(loglims, bins, range=hrange, histtype='step', fill=True, edgecolor=coldict[ifo], facecolor=coldict[ifo], alpha=0.6)
+        n, bins, patches = plt.hist(
+            stackdata,
+            bins,
+            range=hrange,
+            histtype="step",
+            stacked=stacked,
+            fill=True,
+            color=edgecolor,
+            alpha=0.6,
+        )
         for i, patch in enumerate(patches):
-            plt.setp(patch, 'facecolor', facecolor[i])
+            plt.setp(patch, "facecolor", facecolor[i])
 
         if not overplot:
             maxlims.append(np.max(loglims))
@@ -1622,7 +1905,15 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, 
                 minlim = hrange[0]
 
             plt.hold(True)
-            plt.hist(logprevlims, bins, range=hrange, edgecolor='k', lw=2, histtype='step', fill=False)
+            plt.hist(
+                logprevlims,
+                bins,
+                range=hrange,
+                edgecolor="k",
+                lw=2,
+                histtype="step",
+                fill=False,
+            )
             plt.hold(False)
         else:
             if not overplot:
@@ -1639,13 +1930,13 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, 
         tickvals = range(int(math.ceil(maxlim) - math.floor(minlim)))
         tickvals = map(lambda x: x + int(math.floor(minlim)), tickvals)
         ax.set_xticks(tickvals)
-        tls = map(lambda x: '$10^{%d}$' % x, tickvals)
+        tls = map(lambda x: "$10^{%d}$" % x, tickvals)
         ax.set_xticklabels(tls)
 
-        plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
-        plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+        plt.ylabel(r"" + paryaxis, fontsize=14, fontweight=100)
+        plt.xlabel(r"" + parxaxis, fontsize=14, fontweight=100)
 
-        myfig.subplots_adjust(left=0.18, bottom=0.15) # adjust size
+        myfig.subplots_adjust(left=0.18, bottom=0.15)  # adjust size
 
         myfigs.append(myfig)
 
@@ -1665,30 +1956,41 @@ def plot_limits_hist(lims, param, ifos, prevlims=None, bins=20, overplot=False, 
 # prevlim is a list of previous upper limits at the frequencies prevlimf0gw
 # xlims is the frequency range for the plot
 # overplot - set to true to plot different IFOs on same plot
-def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
-                 ulestbot=None, prevlim=None, prevlimf0gw=None, overplot=False, mplparams=False):
+def plot_h0_lims(
+    h0lims,
+    f0gw,
+    ifos,
+    xlims=[10, 1500],
+    ulesttop=None,
+    ulestbot=None,
+    prevlim=None,
+    prevlimf0gw=None,
+    overplot=False,
+    mplparams=False,
+):
     import matplotlib
     from matplotlib import pyplot as plt
 
     if not mplparams:
-        mplparams = { \
-          'backend': 'Agg',
-          'text.usetex': True, # use LaTeX for all text
-          'axes.linewidth': 0.5, # set axes linewidths to 0.5
-          'axes.grid': True, # add a grid
-          'grid.linewidth': 0.5,
-          'font.family': 'serif',
-          'font.size': 12 }
+        mplparams = {
+            "backend": "Agg",
+            "text.usetex": True,  # use LaTeX for all text
+            "axes.linewidth": 0.5,  # set axes linewidths to 0.5
+            "axes.grid": True,  # add a grid
+            "grid.linewidth": 0.5,
+            "font.family": "serif",
+            "font.size": 12,
+        }
 
     matplotlib.rcParams.update(mplparams)
 
     myfigs = []
 
     # ifos line colour specs
-    coldict = {'H1': 'r', 'H2': 'c', 'L1': 'g', 'V1': 'b', 'G1': 'm', 'Joint':'k'}
+    coldict = {"H1": "r", "H2": "c", "L1": "g", "V1": "b", "G1": "m", "Joint": "k"}
 
-    parxaxis = 'Frequency (Hz)'
-    paryaxis = '$h_0$'
+    parxaxis = "Frequency (Hz)"
+    paryaxis = "$h_0$"
 
     for j, ifo in enumerate(ifos):
         h0lim = h0lims[ifo]
@@ -1699,10 +2001,10 @@ def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
             f0s = f0gw
 
         if len(h0lim) != len(f0s):
-            return None # exit if lengths aren't correct
+            return None  # exit if lengths aren't correct
 
         if not overplot or (overplot and j == 0):
-            myfig = plt.figure(figsize=(7,5.5),dpi=200)
+            myfig = plt.figure(figsize=(7, 5.5), dpi=200)
 
         plt.hold(True)
         if ulesttop is not None and ulestbot is not None:
@@ -1711,23 +2013,40 @@ def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
 
             if len(ult) == len(ulb) and len(ult) == len(f0s):
                 for i in range(len(ult)):
-                    plt.loglog([f0s[i], f0s[i]], [ulb[i], ult[i]], ls='-', lw=3, c='lightgrey')
+                    plt.loglog(
+                        [f0s[i], f0s[i]], [ulb[i], ult[i]], ls="-", lw=3, c="lightgrey"
+                    )
 
-        if prevlim is not None and prevlimf0gw is not None and len(prevlim) == len(prevlimf0gw):
-            if not overplot or (overplot and j == len(ifos)-1):
-                plt.loglog(prevlimf0gw, prevlim, marker='*', ms=10, alpha=0.7, mfc='None', mec='k', ls='None')
+        if (
+            prevlim is not None
+            and prevlimf0gw is not None
+            and len(prevlim) == len(prevlimf0gw)
+        ):
+            if not overplot or (overplot and j == len(ifos) - 1):
+                plt.loglog(
+                    prevlimf0gw,
+                    prevlim,
+                    marker="*",
+                    ms=10,
+                    alpha=0.7,
+                    mfc="None",
+                    mec="k",
+                    ls="None",
+                )
 
         # plot current limits
-        plt.loglog(f0s, h0lim, marker='*', ms=10, mfc=coldict[ifo], mec=coldict[ifo], ls='None')
+        plt.loglog(
+            f0s, h0lim, marker="*", ms=10, mfc=coldict[ifo], mec=coldict[ifo], ls="None"
+        )
 
-        plt.ylabel(r''+paryaxis, fontsize=14, fontweight=100)
-        plt.xlabel(r''+parxaxis, fontsize=14, fontweight=100)
+        plt.ylabel(r"" + paryaxis, fontsize=14, fontweight=100)
+        plt.xlabel(r"" + parxaxis, fontsize=14, fontweight=100)
 
         plt.xlim(xlims[0], xlims[1])
 
-        if not overplot or (overplot and j == len(ifos)-1):
+        if not overplot or (overplot and j == len(ifos) - 1):
             plt.hold(False)
-            myfig.subplots_adjust(left=0.12, bottom=0.10) # adjust size
+            myfig.subplots_adjust(left=0.12, bottom=0.10)  # adjust size
             myfigs.append(myfig)
 
     return myfigs
@@ -1740,7 +2059,6 @@ def plot_h0_lims(h0lims, f0gw, ifos, xlims=[10, 1500], ulesttop=None,
 # dictionary. The list of time stamps, and the real and imaginary parts of the
 # signal are returned
 def heterodyned_triaxial_pulsar(starttime, duration, dt, detector, pardict):
-
     # create a list of times stamps
     ts = []
     tmpts = starttime
@@ -1748,29 +2066,33 @@ def heterodyned_triaxial_pulsar(starttime, duration, dt, detector, pardict):
     # create real and imaginary parts of the signal
     s = np.array([], dtype=complex)
 
-    sphi = np.sin(pardict['phi0'])
-    cphi = np.cos(pardict['phi0'])
+    sphi = np.sin(pardict["phi0"])
+    cphi = np.cos(pardict["phi0"])
 
-    Xplus = 0.25*(1.+pardict['cosiota']*pardict['cosiota'])*pardict['h0']
-    Xcross = 0.5*pardict['cosiota']*pardict['h0']
-    Xpsinphi = Xplus*sphi
-    Xcsinphi = Xcross*sphi
-    Xpcosphi = Xplus*cphi
-    Xccosphi = Xcross*cphi
+    Xplus = 0.25 * (1.0 + pardict["cosiota"] * pardict["cosiota"]) * pardict["h0"]
+    Xcross = 0.5 * pardict["cosiota"] * pardict["h0"]
+    Xpsinphi = Xplus * sphi
+    Xcsinphi = Xcross * sphi
+    Xpcosphi = Xplus * cphi
+    Xccosphi = Xcross * cphi
 
     i = 0
     while tmpts < starttime + duration:
-        ts.append(starttime+(dt*i))
+        ts.append(starttime + (dt * i))
 
         # get the antenna response
-        fp, fc = antenna_response(ts[i], pardict['ra'], pardict['dec'], pardict['psi'], detector)
+        fp, fc = antenna_response(
+            ts[i], pardict["ra"], pardict["dec"], pardict["psi"], detector
+        )
 
         # create real part of signal
-        s = np.append(s, (fp*Xpcosphi + fc*Xcsinphi) + 1j*(fp*Xpsinphi - fc*Xccosphi) )
+        s = np.append(
+            s, (fp * Xpcosphi + fc * Xcsinphi) + 1j * (fp * Xpsinphi - fc * Xccosphi)
+        )
 
-        tmpts = ts[i]+dt
+        tmpts = ts[i] + dt
 
-        i = i+1;
+        i = i + 1
 
     return ts, s
 
@@ -1786,69 +2108,79 @@ def heterodyned_triaxial_pulsar(starttime, duration, dt, detector, pardict):
 # injections). Hence, when converting h0, from the conventional model, to C22 a minus sign needs to be
 # introduced. Also, phi0 here is defined as the rotational phase of the source, so when converting to phi22
 # a factor of 2 is needed.
-def heterodyned_pulsar_signal(pardict, detector, starttime=900000000., duration=86400., dt=60., datatimes=None):
-    if 'cosiota' in pardict:
-        cosiota = pardict['cosiota']
+def heterodyned_pulsar_signal(
+    pardict, detector, starttime=900000000.0, duration=86400.0, dt=60.0, datatimes=None
+):
+    if "cosiota" in pardict:
+        cosiota = pardict["cosiota"]
         iota = math.acos(cosiota)
         siniota = math.sin(iota)
     else:
         raise KeyError("cos(iota) not defined!")
 
-    if 'psi' in pardict:
-        psi = pardict['psi']
+    if "psi" in pardict:
+        psi = pardict["psi"]
     else:
         raise KeyError("psi not defined!")
 
-    if 'C22' in pardict:
-        C22 = pardict['C22']
+    if "C22" in pardict:
+        C22 = pardict["C22"]
     else:
-        if 'h0' in pardict:
-            C22 = -pardict['h0']/2.
+        if "h0" in pardict:
+            C22 = -pardict["h0"] / 2.0
         else:
-            C22 = 0.
+            C22 = 0.0
 
-    if 'phi22' in pardict:
-        phi22 = pardict['phi22']
+    if "phi22" in pardict:
+        phi22 = pardict["phi22"]
     else:
-        if 'phi0' in pardict:
-            phi22 = 2.*pardict['phi0']
+        if "phi0" in pardict:
+            phi22 = 2.0 * pardict["phi0"]
         else:
-            phi22 = 0.
+            phi22 = 0.0
 
-    ePhi22 = cmath.exp(phi22*1j)
+    ePhi22 = cmath.exp(phi22 * 1j)
 
-    if 'C21' in pardict:
-        C21 = pardict['C21']
+    if "C21" in pardict:
+        C21 = pardict["C21"]
     else:
-        C21 = 0.
+        C21 = 0.0
 
-    if 'phi21' in pardict:
-        phi21 = pardict['phi21']
+    if "phi21" in pardict:
+        phi21 = pardict["phi21"]
     else:
-        phi21 = 0.
+        phi21 = 0.0
 
-    ePhi21 = cmath.exp(phi21*1j)
+    ePhi21 = cmath.exp(phi21 * 1j)
 
-    s = [] # signal
-    ts = [] # times
+    s = []  # signal
+    ts = []  # times
 
-    if 'C21' in pardict and 'C22' in pardict and 'h0' not in pardict:
-        freqs = [1., 2.]
+    if "C21" in pardict and "C22" in pardict and "h0" not in pardict:
+        freqs = [1.0, 2.0]
     else:
-        freqs = [2.]
+        freqs = [2.0]
 
     for f in freqs:
         i = 0
         if datatimes is None:
-            datatimes = np.arange(starttime, starttime+duration, dt)
+            datatimes = np.arange(starttime, starttime + duration, dt)
 
         # get the antenna response
-        fp, fc = antenna_response(datatimes, pardict['ra'], pardict['dec'], pardict['psi'], detector)
+        fp, fc = antenna_response(
+            datatimes, pardict["ra"], pardict["dec"], pardict["psi"], detector
+        )
 
-        if f == 1.:
-            sf = -(C21/4.)*ePhi21*siniota*cosiota*fp + 1j*(C21/4.)*ePhi21*siniota*fc
-        elif f == 2.:
-            sf = -(C22/2.)*ePhi22*(1.+cosiota**2.)*fp + 1j*(C22)*ePhi22*cosiota*fc
+        if f == 1.0:
+            sf = (
+                -(C21 / 4.0) * ePhi21 * siniota * cosiota * fp
+                + 1j * (C21 / 4.0) * ePhi21 * siniota * fc
+            )
+        elif f == 2.0:
+            sf = (
+                -(C22 / 2.0) * ePhi22 * (1.0 + cosiota**2.0) * fp
+                + 1j * (C22) * ePhi22 * cosiota * fc
+            )
 
         ts.append(datatimes)
         s.append(sf)
@@ -1859,33 +2191,33 @@ def heterodyned_pulsar_signal(pardict, detector, starttime=900000000., duration=
 # a function to convert the pinned superfluid model parameters to the complex
 # amplitude parameters using the Eqns 76-79 defined in Jones 2012 LIGO DCC T1200265-v3
 def convert_model_parameters(pardict):
-    costheta = pardict['costheta']
+    costheta = pardict["costheta"]
     theta = np.arccos(costheta)
     sintheta = math.sin(theta)
-    sin2theta = math.sin( 2.0*theta )
-    sinlambda = math.sin(pardict['lambda'])
-    coslambda = math.cos(pardict['lambda'])
-    sin2lambda = math.sin( 2.0*pardict['lambda'] )
+    sin2theta = math.sin(2.0 * theta)
+    sinlambda = math.sin(pardict["lambda"])
+    coslambda = math.cos(pardict["lambda"])
+    sin2lambda = math.sin(2.0 * pardict["lambda"])
 
-    phi0 = pardict['phi0']
+    phi0 = pardict["phi0"]
 
-    I21 = pardict['I21']
-    I31 = pardict['I31']
+    I21 = pardict["I21"]
+    I31 = pardict["I31"]
 
-    A22 = ( I21 * ( sinlambda**2 - ( coslambda * costheta )**2 ) - I31 * sintheta**2 )
+    A22 = I21 * (sinlambda**2 - (coslambda * costheta) ** 2) - I31 * sintheta**2
     B22 = I21 * sin2lambda * costheta
 
-    C22 = 2.*math.sqrt( A22**2 + B22**2 )
+    C22 = 2.0 * math.sqrt(A22**2 + B22**2)
 
     A21 = I21 * sin2lambda * sintheta
-    B21 = ( I21 * coslambda**2 - I31 ) * sin2theta
+    B21 = (I21 * coslambda**2 - I31) * sin2theta
 
-    C21 = 2.*math.sqrt( A21**2 + B21**2 )
+    C21 = 2.0 * math.sqrt(A21**2 + B21**2)
 
-    phi22 = np.fmod(2.*phi0 - math.atan2( B22, A22 ), 2.*np.pi)
-    phi21 = np.fmod(phi0 - math.atan2( B21, A21 ), 2.*np.pi)
+    phi22 = np.fmod(2.0 * phi0 - math.atan2(B22, A22), 2.0 * np.pi)
+    phi21 = np.fmod(phi0 - math.atan2(B21, A21), 2.0 * np.pi)
 
-    outvals = {'C22': C22, 'C21': C21, 'phi22': phi22, 'phi21': phi21}
+    outvals = {"C22": C22, "C21": C21, "phi22": phi22, "phi21": phi21}
 
     return outvals
 
@@ -1898,19 +2230,19 @@ def convert_model_parameters(pardict):
 # dictionary. The list of time stamps, and the real and imaginary parts of the
 # 1f and 2f signals are returned in an array
 def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
-    iota = np.arccos(pardict['cosiota'])
-    theta = np.arccos(pardict['costheta'])
+    iota = np.arccos(pardict["cosiota"])
+    theta = np.arccos(pardict["costheta"])
     siniota = math.sin(iota)
     sintheta = math.sin(theta)
-    sin2theta = math.sin( 2.0*theta )
-    sinlambda = math.sin(pardict['lambda'])
-    coslambda = math.cos(pardict['lambda'])
-    sin2lambda = math.sin( 2.0*pardict['lambda'] )
+    sin2theta = math.sin(2.0 * theta)
+    sinlambda = math.sin(pardict["lambda"])
+    coslambda = math.cos(pardict["lambda"])
+    sin2lambda = math.sin(2.0 * pardict["lambda"])
 
-    ePhi = cmath.exp( 0.5 * pardict['phi0'] * 1j )
-    e2Phi = cmath.exp( pardict['phi0'] * 1j )
+    ePhi = cmath.exp(0.5 * pardict["phi0"] * 1j)
+    e2Phi = cmath.exp(pardict["phi0"] * 1j)
 
-    f2_r = pardict['f0']**2 / pardict['dist']
+    f2_r = pardict["f0"] ** 2 / pardict["dist"]
 
     """
       This model is a complex heterodyned time series for a pinned superfluid
@@ -1918,18 +2250,20 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
       frequency (as defined in Eqns 35-38 of Jones 2012 LIGO DCC T1200265-v3)
     """
 
-    Xplusf = -( f2_r / 2.0 ) * siniota * pardict['cosiota']
-    Xcrossf = ( f2_r / 2.0 ) * siniota
+    Xplusf = -(f2_r / 2.0) * siniota * pardict["cosiota"]
+    Xcrossf = (f2_r / 2.0) * siniota
 
-    Xplus2f = -f2_r * ( 1.0 + pardict['cosiota']**2 )
-    Xcross2f = 2. * f2_r * pardict['cosiota']
+    Xplus2f = -f2_r * (1.0 + pardict["cosiota"] ** 2)
+    Xcross2f = 2.0 * f2_r * pardict["cosiota"]
 
-    A21 = pardict['I21'] * sin2lambda * sintheta
-    B21 = ( pardict['I21'] * coslambda**2 - pardict['I31'] ) * sin2theta
+    A21 = pardict["I21"] * sin2lambda * sintheta
+    B21 = (pardict["I21"] * coslambda**2 - pardict["I31"]) * sin2theta
 
-    A22 = pardict['I21'] * ( sinlambda**2 - coslambda**2 * pardict['costheta']**2 ) - \
-      pardict['I31'] * sintheta**2
-    B22 = pardict['I21'] * sin2lambda * pardict['costheta']
+    A22 = (
+        pardict["I21"] * (sinlambda**2 - coslambda**2 * pardict["costheta"] ** 2)
+        - pardict["I31"] * sintheta**2
+    )
+    B22 = pardict["I21"] * sin2lambda * pardict["costheta"]
 
     # create a list of times stamps
     ts1 = []
@@ -1942,23 +2276,31 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
 
     i = 0
     while tmpts < starttime + duration:
-        ts1.append(starttime+(dt*i))
-        ts2.append(starttime+(dt*i))
+        ts1.append(starttime + (dt * i))
+        ts2.append(starttime + (dt * i))
 
         # get the antenna response
-        fp, fc = antenna_response(ts1[i], pardict['ra'], pardict['dec'], pardict['psi'], detector)
+        fp, fc = antenna_response(
+            ts1[i], pardict["ra"], pardict["dec"], pardict["psi"], detector
+        )
 
         # create the complex signal amplitude model at 1f
-        s1 = np.append(s1, ( fp * Xplusf * ePhi * ( A21 - 1j * B21 ) ) + \
-                           ( fc * Xcrossf * ePhi * ( B21 + 1j * A21 ) ) )
+        s1 = np.append(
+            s1,
+            (fp * Xplusf * ePhi * (A21 - 1j * B21))
+            + (fc * Xcrossf * ePhi * (B21 + 1j * A21)),
+        )
 
         # create the complex signal amplitude model at 2f
-        s2 = np.append(s2, ( fp * Xplus2f * e2Phi * ( A22 - 1j * B22 ) ) + \
-                           ( fc * Xcross2f * e2Phi * ( B22 + 1j * A22 ) ) )
+        s2 = np.append(
+            s2,
+            (fp * Xplus2f * e2Phi * (A22 - 1j * B22))
+            + (fc * Xcross2f * e2Phi * (B22 + 1j * A22)),
+        )
 
-        tmpts = ts1[i]+dt
+        tmpts = ts1[i] + dt
 
-        i = i+1;
+        i = i + 1
 
     # combine data into 1 array
     ts = np.vstack([ts1, ts2])
@@ -1970,25 +2312,27 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
 # function to get the antenna response for a given detector. It takes in a GPS time or list (or numpy array)
 # of GPS times, right  ascension (rads), declination (rads), polarisation angle (rads) and a detector name
 # e.g. H1, L1, V1. The plus and cross polarisations are returned.
-def antenna_response( gpsTime, ra, dec, psi, det ):
+def antenna_response(gpsTime, ra, dec, psi, det):
     import lal
 
     # create detector-name map
-    detMap = {'H1': lal.LALDetectorIndexLHODIFF, \
-              'H2': lal.LALDetectorIndexLHODIFF, \
-              'L1': lal.LALDetectorIndexLLODIFF, \
-              'G1': lal.LALDetectorIndexGEO600DIFF, \
-              'V1': lal.LALDetectorIndexVIRGODIFF, \
-              'T1': lal.LALDetectorIndexTAMA300DIFF, \
-              'AL1': lal.LALDetectorIndexLLODIFF, \
-              'AH1': lal.LALDetectorIndexLHODIFF, \
-              'AV1': lal.LALDetectorIndexVIRGODIFF, \
-              'E1': lal.LALDetectorIndexE1DIFF, \
-              'E2': lal.LALDetectorIndexE2DIFF, \
-              'E3': lal.LALDetectorIndexE3DIFF}
+    detMap = {
+        "H1": lal.LALDetectorIndexLHODIFF,
+        "H2": lal.LALDetectorIndexLHODIFF,
+        "L1": lal.LALDetectorIndexLLODIFF,
+        "G1": lal.LALDetectorIndexGEO600DIFF,
+        "V1": lal.LALDetectorIndexVIRGODIFF,
+        "T1": lal.LALDetectorIndexTAMA300DIFF,
+        "AL1": lal.LALDetectorIndexLLODIFF,
+        "AH1": lal.LALDetectorIndexLHODIFF,
+        "AV1": lal.LALDetectorIndexVIRGODIFF,
+        "E1": lal.LALDetectorIndexE1DIFF,
+        "E2": lal.LALDetectorIndexE2DIFF,
+        "E3": lal.LALDetectorIndexE3DIFF,
+    }
 
     try:
-        detector=detMap[det]
+        detector = detMap[det]
     except KeyError:
         raise KeyError("ERROR. Key {} is not a valid detector name.".format(det))
 
@@ -2002,44 +2346,54 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
             try:
                 ra = ra_to_rad(ra)
             except:
-                raise ValueError("Right ascension string '{}' not formatted properly".format(ra))
+                raise ValueError(
+                    "Right ascension string '{}' not formatted properly".format(ra)
+                )
         else:
-            raise ValueError("Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'")
+            raise ValueError(
+                "Right ascension must be a 'float' in radians or a string of the format 'hh:mm:ss.s'"
+            )
 
     if not isinstance(dec, float):
         if isinstance(dec, string_types):
             try:
                 dec = dec_to_rad(dec)
             except:
-                raise ValueError("Declination string '{}' not formatted properly".format(ra))
+                raise ValueError(
+                    "Declination string '{}' not formatted properly".format(ra)
+                )
         else:
-            raise ValueError("Declination must be a 'float' in radians or a string of the format 'dd:mm:ss.s'")
+            raise ValueError(
+                "Declination must be a 'float' in radians or a string of the format 'dd:mm:ss.s'"
+            )
 
     # check if gpsTime is just a float or int, and if so convert into an array
     if isinstance(gpsTime, float) or isinstance(gpsTime, int):
         gpsTime = np.array([gpsTime])
-    else: # make sure it's a numpy array
+    else:  # make sure it's a numpy array
         gpsTime = np.copy(gpsTime)
 
     # make sure times are floats
-    gpsTime = gpsTime.astype('float64')
+    gpsTime = gpsTime.astype("float64")
 
     # if gpsTime is a list of regularly spaced values then use ComputeDetAMResponseSeries
     if len(gpsTime) == 1 or np.unique(np.diff(gpsTime)).size == 1:
-        gpsStart = lal.LIGOTimeGPS( gpsTime[0] )
-        dt = 0.
+        gpsStart = lal.LIGOTimeGPS(gpsTime[0])
+        dt = 0.0
         if len(gpsTime) > 1:
-            dt = gpsTime[1]-gpsTime[0]
-        fp, fc = lal.ComputeDetAMResponseSeries(response, ra, dec, psi, gpsStart, dt, len(gpsTime))
+            dt = gpsTime[1] - gpsTime[0]
+        fp, fc = lal.ComputeDetAMResponseSeries(
+            response, ra, dec, psi, gpsStart, dt, len(gpsTime)
+        )
 
         # return elements from Time Series
         return fp.data.data, fc.data.data
-    else: # we'll have to work out the value at each point in the time series
+    else:  # we'll have to work out the value at each point in the time series
         fp = np.zeros(len(gpsTime))
         fc = np.zeros(len(gpsTime))
 
         for i in range(len(gpsTime)):
-            gps = lal.LIGOTimeGPS( gpsTime[i] )
+            gps = lal.LIGOTimeGPS(gpsTime[i])
             gmst_rad = lal.GreenwichMeanSiderealTime(gps)
 
             # actual computation of antenna factors
@@ -2052,8 +2406,16 @@ def antenna_response( gpsTime, ra, dec, psi, det ):
 # given level for detectors. it will return the signal + noise and the optimal
 # SNR. If an snrscale value is passed to the function the signal will be scaled
 # to that SNR. nsigs
-def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
-                         freqfac=[2.0], npsds=None, snrscale=None):
+def inject_pulsar_signal(
+    starttime,
+    duration,
+    dt,
+    detectors,
+    pardict,
+    freqfac=[2.0],
+    npsds=None,
+    snrscale=None,
+):
     # if detectors is just a string (i.e. one detector) then make it a list
     if isinstance(detectors, string_types):
         detectors = [detectors]
@@ -2065,11 +2427,11 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 
         for det in detectors:
             for frf in freqfac:
-                psd = detector_noise( det, frf*pardict['f0'] )
+                psd = detector_noise(det, frf * pardict["f0"])
 
                 # convert to time domain standard devaition shared between real and
                 # imaginary signal
-                ns = np.sqrt( (psd/2.0)/(2.0*dt) )
+                ns = np.sqrt((psd / 2.0) / (2.0 * dt))
 
                 npsds.append(ns)
     else:
@@ -2080,19 +2442,27 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
         for j, det in enumerate(detectors):
             for frf in freqfac:
                 if len(npsds) == 1:
-                    tmpnpsds.append( np.sqrt( (npsds[0]/2.0)/(2.0*dt) ) )
+                    tmpnpsds.append(np.sqrt((npsds[0] / 2.0) / (2.0 * dt)))
                 else:
-                    tmpnpsds.append( np.sqrt( (npsds[count]/2.0)/(2.0*dt) ) )
+                    tmpnpsds.append(np.sqrt((npsds[count] / 2.0) / (2.0 * dt)))
 
-                count = count+1
+                count = count + 1
 
         npsds = tmpnpsds
 
     if len(freqfac) == 1 and len(detectors) != len(npsds):
-        raise ValueError("Number of detectors {} not the same as number of noises {}".format(len(detectors), len(npsds)))
+        raise ValueError(
+            "Number of detectors {} not the same as number of noises {}".format(
+                len(detectors), len(npsds)
+            )
+        )
 
-    if len(freqfac) == 2 and 2*len(detectors) != len(npsds):
-        raise ValueError("Number of detectors {} not half the number of noises {}".format(len(detectors), len(npsds)))
+    if len(freqfac) == 2 and 2 * len(detectors) != len(npsds):
+        raise ValueError(
+            "Number of detectors {} not half the number of noises {}".format(
+                len(detectors), len(npsds)
+            )
+        )
 
     tss = np.array([])
     ss = np.array([])
@@ -2111,7 +2481,7 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
                 ss = np.vstack([ss, s])
 
             # get SNR
-            snrtmp = get_optimal_snr( s[0], npsds[j] )
+            snrtmp = get_optimal_snr(s[0], npsds[j])
         elif len(freqfac) == 2:
             ts, s = heterodyned_pulsar_signal(pardict, det, starttime, duration, dt)
 
@@ -2124,12 +2494,12 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
                     tss = np.vstack([tss, ts[k][:]])
                     ss = np.vstack([ss, s[k][:]])
 
-                snrtmp2 = get_optimal_snr( s[k][:], npsds[2*j+k] )
-                snrtmp = snrtmp + snrtmp2*snrtmp2
+                snrtmp2 = get_optimal_snr(s[k][:], npsds[2 * j + k])
+                snrtmp = snrtmp + snrtmp2 * snrtmp2
 
             snrtmp = np.sqrt(snrtmp)
 
-        snrtot = snrtot + snrtmp*snrtmp
+        snrtot = snrtot + snrtmp * snrtmp
 
     # total multidetector/data stream snr
     snrtot = np.sqrt(snrtot)
@@ -2153,30 +2523,45 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 
             for j, t in enumerate(ts[0]):
                 if len(tss.shape) == 1:
-                    signalonly[j] = (snrscale*ss[j].real) + 1j*(snrscale*ss[j].imag)
-                    ss[j] = (snrscale*ss[j].real + npsds[i]*rs[j][0]) + 1j*(snrscale*ss[j].imag + npsds[i]*rs[j][1])
+                    signalonly[j] = (snrscale * ss[j].real) + 1j * (
+                        snrscale * ss[j].imag
+                    )
+                    ss[j] = (snrscale * ss[j].real + npsds[i] * rs[j][0]) + 1j * (
+                        snrscale * ss[j].imag + npsds[i] * rs[j][1]
+                    )
                 else:
-                    signalonly[i][j] = (snrscale*ss[i][j].real) + 1j*(snrscale*ss[i][j].imag)
-                    ss[i][j] = (snrscale*ss[i][j].real + npsds[i]*rs[j][0]) + 1j*(snrscale*ss[i][j].imag + npsds[i]*rs[j][1])
+                    signalonly[i][j] = (snrscale * ss[i][j].real) + 1j * (
+                        snrscale * ss[i][j].imag
+                    )
+                    ss[i][j] = (snrscale * ss[i][j].real + npsds[i] * rs[j][0]) + 1j * (
+                        snrscale * ss[i][j].imag + npsds[i] * rs[j][1]
+                    )
 
-            i = i+1
+            i = i + 1
         elif len(freqfac) == 2:
             # generate random numbers
             rs = np.random.randn(len(ts[0][:]), 4)
 
             for j, t in enumerate(ts[0][:]):
-                signalonly[i][j] = (snrscale*ss[i][j].real) + 1j*(snrscale*ss[i][j].imag)
-                ss[i][j] = (snrscale*ss[i][j].real + npsds[i]*rs[j][0]) + 1j*(snrscale*ss[i][j].imag + npsds[i]*rs[j][1])
-                signalonly[i+1][j] = (snrscale*ss[i+1][j].real) + 1j*(snrscale*ss[i+1][j].imag)
-                ss[i+1][j] = (snrscale*ss[i+1][j].real + npsds[i+1]*rs[j][2]) + \
-                  1j*(snrscale*ss[i+1][j].imag + npsds[i+1]*rs[j][3])
+                signalonly[i][j] = (snrscale * ss[i][j].real) + 1j * (
+                    snrscale * ss[i][j].imag
+                )
+                ss[i][j] = (snrscale * ss[i][j].real + npsds[i] * rs[j][0]) + 1j * (
+                    snrscale * ss[i][j].imag + npsds[i] * rs[j][1]
+                )
+                signalonly[i + 1][j] = (snrscale * ss[i + 1][j].real) + 1j * (
+                    snrscale * ss[i + 1][j].imag
+                )
+                ss[i + 1][j] = (
+                    snrscale * ss[i + 1][j].real + npsds[i + 1] * rs[j][2]
+                ) + 1j * (snrscale * ss[i + 1][j].imag + npsds[i + 1] * rs[j][3])
 
-            i = i+2
+            i = i + 2
         else:
             print("Something wrong with injection", file=sys.stderr)
             sys.exit(1)
 
-    snrtot = snrtot*snrscale
+    snrtot = snrtot * snrscale
 
     return tss, ss, signalonly, snrtot, snrscale, npsds
 
@@ -2186,37 +2571,38 @@ def inject_pulsar_signal(starttime, duration, dt, detectors, pardict, \
 # which to generate the noise.
 #
 # The noise models are taken from those in lalsimulation/lib/LALSimNoisePSD.c
-def detector_noise( det, f ):
+def detector_noise(det, f):
     import lalsimulation
 
-    if det == 'AV1': # Advanced Virgo
-        return lalsimulation.SimNoisePSDAdvVirgo( f )
-    elif det == 'H1' or det == 'L1': # iLIGO SRD
-        return lalsimulation.SimNoisePSDiLIGOSRD( f )
-    elif det == 'H2':
-        return lalsimulation.SimNoisePSDiLIGOSRD( f )*2.
-    elif det == 'G1': # GEO_600
-        return lalsimulation.SimNoisePSDGEO( f )
-    elif det == 'V1': # initial Virgo
-        return lalsimulation.SimNoisePSDVirgo( f )
-    elif det == 'T1': # TAMA
-        return lalsimulation.SimNoisePSDTAMA( f )
-    elif det == 'K1': # KAGRA
-        return lalsimulation.SimNoisePSDKAGRA( f )
-    elif det == 'AL1' or det == 'AH1':
-        return lalsimulation.SimNoisePSDaLIGOZeroDetHighPower( f )
+    if det == "AV1":  # Advanced Virgo
+        return lalsimulation.SimNoisePSDAdvVirgo(f)
+    elif det == "H1" or det == "L1":  # iLIGO SRD
+        return lalsimulation.SimNoisePSDiLIGOSRD(f)
+    elif det == "H2":
+        return lalsimulation.SimNoisePSDiLIGOSRD(f) * 2.0
+    elif det == "G1":  # GEO_600
+        return lalsimulation.SimNoisePSDGEO(f)
+    elif det == "V1":  # initial Virgo
+        return lalsimulation.SimNoisePSDVirgo(f)
+    elif det == "T1":  # TAMA
+        return lalsimulation.SimNoisePSDTAMA(f)
+    elif det == "K1":  # KAGRA
+        return lalsimulation.SimNoisePSDKAGRA(f)
+    elif det == "AL1" or det == "AH1":
+        return lalsimulation.SimNoisePSDaLIGOZeroDetHighPower(f)
     else:
         raise ValueError("{} is not a recognised detector".format(det))
 
+
 # function to calculate the optimal SNR of a heterodyned pulsar signal - it
 # takes in a complex signal model and noise standard deviation
-def get_optimal_snr( s, sig ):
+def get_optimal_snr(s, sig):
     ss = 0
     # sum square of signal
     for val in s:
         ss = ss + val.real**2 + val.imag**2
 
-    return np.sqrt( ss / sig**2 )
+    return np.sqrt(ss / sig**2)
 
 
 # use the Gelman-Rubins convergence test for MCMC chains, where chains is a list
@@ -2233,9 +2619,9 @@ def gelman_rubins(chains):
 
     m = len(chains)
 
-    VHat=sigmaHat2 + BoverN/m
+    VHat = sigmaHat2 + BoverN / m
 
-    R = VHat/W
+    R = VHat / W
 
     return R
 
@@ -2267,19 +2653,19 @@ def pulsar_mcmc_to_posterior(chainfiles):
             # find number of effective samples for the chain
             neffstmp = []
             for j in range(1, mcmcChain.shape[1]):
-                neff, acl, acf = bppu.effectiveSampleSize(mcmcChain[:,j])
+                neff, acl, acf = bppu.effectiveSampleSize(mcmcChain[:, j])
                 neffstmp.append(neff)
 
             # get the minimum effective sample size
-            #neffs.append(min(neffstmp))
+            # neffs.append(min(neffstmp))
             # get the mean effective sample size
             neffs.append(math.floor(np.mean(neffstmp)))
 
-            #nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
-            nskip = int(math.ceil(mcmcChain.shape[0]/np.mean(neffstmp)))
+            # nskip = math.ceil(mcmcChain.shape[0]/min(neffstmp))
+            nskip = int(math.ceil(mcmcChain.shape[0] / np.mean(neffstmp)))
 
             # output every nskip (independent) value
-            mcmc.append(mcmcChain[::nskip,:])
+            mcmc.append(mcmcChain[::nskip, :])
             cl.append(mcmcChain.shape[0])
         else:
             print("File %s does not exist!" % cfile, file=sys.stderr)
@@ -2287,35 +2673,35 @@ def pulsar_mcmc_to_posterior(chainfiles):
 
     # output data to common results format
     # get first line of MCMC chain file for header names
-    cf = open(chainfiles[0], 'r')
+    cf = open(chainfiles[0], "r")
     headers = cf.readline()
-    headers = cf.readline() # column names are on the second line
+    headers = cf.readline()  # column names are on the second line
     # remove % from start
-    headers = re.sub('%', '', headers)
+    headers = re.sub("%", "", headers)
     # remove rads
-    headers = re.sub('rads', '', headers)
+    headers = re.sub("rads", "", headers)
     # remove other brackets e.g. around (iota)
-    headers = re.sub('[()]', '', headers)
+    headers = re.sub("[()]", "", headers)
     cf.close()
 
     # get Gelman-Rubins stat for each parameter
     for idx, parv in enumerate(headers.split()):
         lgr = []
-        if parv != 'logL':
+        if parv != "logL":
             for j in range(0, len(mcmc)):
                 achain = mcmc[j]
-                singlechain = achain[:,idx]
+                singlechain = achain[:, idx]
                 lgr.append(singlechain)
             grr[parv.lower()] = gelman_rubins(lgr)
 
     # logL in chain is actually log posterior, so also output the posterior
     # values (can be used to estimate the evidence)
-    headers = headers.replace('\n', '\tpost\n')
+    headers = headers.replace("\n", "\tpost\n")
 
     # output full data to common format
-    comfile = chainfiles[0] + '_common_tmp.dat'
+    comfile = chainfiles[0] + "_common_tmp.dat"
     try:
-        cf = open(comfile, 'w')
+        cf = open(comfile, "w")
     except:
         print("Can't open common posterior file!", file=sys.stderr)
         sys.exit(0)
@@ -2323,17 +2709,17 @@ def pulsar_mcmc_to_posterior(chainfiles):
     cf.write(headers)
     for narr in mcmc:
         for j in range(0, narr.shape[0]):
-            mline = narr[j,:]
+            mline = narr[j, :]
             # add on posterior
             mline = np.append(mline, np.exp(mline[0]))
 
-            strmline = " ".join(str(x) for x in mline) + '\n'
+            strmline = " ".join(str(x) for x in mline) + "\n"
             cf.write(strmline)
     cf.close()
 
     # read in as common object
-    peparser = bppu.PEOutputParser('common')
-    cf = open(comfile, 'r')
+    peparser = bppu.PEOutputParser("common")
+    cf = open(comfile, "r")
     commonResultsObj = peparser.parse(cf)
     cf.close()
 
@@ -2341,19 +2727,18 @@ def pulsar_mcmc_to_posterior(chainfiles):
     os.remove(comfile)
 
     # create posterior class
-    pos = bppu.Posterior( commonResultsObj, SimInspiralTableEntry=None, \
-                          votfile=None )
+    pos = bppu.Posterior(commonResultsObj, SimInspiralTableEntry=None, votfile=None)
 
     # convert iota back to cos(iota)
     # create 1D posterior class of cos(iota) values
     cipos = None
-    cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(pos['iota'].samples))
+    cipos = bppu.PosteriorOneDPDF("cosiota", np.cos(pos["iota"].samples))
 
     # add it back to posterior
     pos.append(cipos)
 
     # remove iota samples
-    pos.pop('iota')
+    pos.pop("iota")
 
     return pos, neffs, grr, cl
 
@@ -2367,21 +2752,21 @@ def read_pulsar_mcmc_file(cf):
 
     # first try reading in with loadtxt (skipping lines starting with %)
     try:
-        cfdata = np.loadtxt(cf, comments='%')
+        cfdata = np.loadtxt(cf, comments="%")
     except:
         try:
-            fc = open(cf, 'r')
+            fc = open(cf, "r")
 
             # read in header lines and count how many values each line should have
             headers = fc.readline()
-            headers = fc.readline() # column names are on the second line
+            headers = fc.readline()  # column names are on the second line
             fc.close()
             # remove % from start
-            headers = re.sub('%', '', headers)
+            headers = re.sub("%", "", headers)
             # remove rads
-            headers = re.sub('rads', '', headers)
+            headers = re.sub("rads", "", headers)
             # remove other brackets e.g. around (iota)
-            headers = re.sub('[()]', '', headers)
+            headers = re.sub("[()]", "", headers)
 
             lh = len(headers.split())
 
@@ -2390,7 +2775,7 @@ def read_pulsar_mcmc_file(cf):
             lines = cf.readlines()
 
             for i, line in enumerate(lines):
-                if '%' in line: # skip lines containing %
+                if "%" in line:  # skip lines containing %
                     continue
 
                 lvals = line.split()
@@ -2406,7 +2791,7 @@ def read_pulsar_mcmc_file(cf):
                     continue
 
                 # add values to array
-                if i==0:
+                if i == 0:
                     cfdata = np.array(lvalsf)
                 else:
                     cfdata = np.vstack((cfdata, lvalsf))
@@ -2444,38 +2829,44 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
     from lalinference import bayespputils as bppu
     from lalinference.bayespputils import replace_column
 
-    fe = os.path.splitext(postfile)[-1].lower() # file extension
+    fe = os.path.splitext(postfile)[-1].lower()  # file extension
 
     # combine multiple nested sample files for an IFO into a single posterior (copied from lalapps_nest2pos)
-    if fe == '.h5' or fe == '.hdf': # HDF5 file
+    if fe == ".h5" or fe == ".hdf":  # HDF5 file
         if nestedsamples:
             # use functions from lalapps_nest2pos to read values from nested sample files i.e. not a posterior file created by lalapps_nest2pos
             try:
                 from lalinference.io import read_samples
                 from lalinference import LALInferenceHDF5NestedSamplesDatasetName
 
-                samples = read_samples(postfile, tablename=LALInferenceHDF5NestedSamplesDatasetName)
+                samples = read_samples(
+                    postfile, tablename=LALInferenceHDF5NestedSamplesDatasetName
+                )
                 params = samples.colnames
 
                 # make everything a float, since that's what's excected of a CommonResultsObj
                 for param in params:
                     replace_column(samples, param, samples[param].astype(float))
 
-                nsResultsObject = (samples.colnames, samples.as_array().view(float).reshape(-1, len(params)))
+                nsResultsObject = (
+                    samples.colnames,
+                    samples.as_array().view(float).reshape(-1, len(params)),
+                )
             except:
                 raise IOError("Could not import nested samples")
-        else: # assume posterior file has been created with lalapps_nest2pos
-            peparser = bppu.PEOutputParser('hdf5')
+        else:  # assume posterior file has been created with lalapps_nest2pos
+            peparser = bppu.PEOutputParser("hdf5")
             nsResultsObject = peparser.parse(postfile)
-    elif fe == '.gz': # gzipped file
+    elif fe == ".gz":  # gzipped file
         import gzip
-        peparser = bppu.PEOutputParser('common')
-        nsResultsObject = peparser.parse(gzip.open(postfile, 'r'))
-    else: # assume an ascii text file
-        peparser = bppu.PEOutputParser('common')
-        nsResultsObject = peparser.parse(open(postfile, 'r'))
 
-    pos = bppu.Posterior( nsResultsObject, SimInspiralTableEntry=None )
+        peparser = bppu.PEOutputParser("common")
+        nsResultsObject = peparser.parse(gzip.open(postfile, "r"))
+    else:  # assume an ascii text file
+        peparser = bppu.PEOutputParser("common")
+        nsResultsObject = peparser.parse(open(postfile, "r"))
+
+    pos = bppu.Posterior(nsResultsObject, SimInspiralTableEntry=None)
 
     # remove any unchanging variables and randomly shuffle the rest
     pnames = pos.names
@@ -2486,13 +2877,15 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
     posfreqs = None
     for pname in pnames:
         # check if all samples are the same
-        if pos[pname].samples.tolist().count(pos[pname].samples[0]) == len(pos[pname].samples):
-            if pname == 'f0_fixed':
+        if pos[pname].samples.tolist().count(pos[pname].samples[0]) == len(
+            pos[pname].samples
+        ):
+            if pname == "f0_fixed":
                 # try getting a fixed f0 value (for calculating h0 from Q22)
                 posfreqs = pos[pname].samples[0]
-            elif pname == 'dist':
+            elif pname == "dist":
                 # try getting a fixed distance value (for calculating h0 from Q22 if required)
-                posdist = pos[pname].samples[0]/KPC
+                posdist = pos[pname].samples[0] / KPC
 
             pos.pop(pname)
         else:
@@ -2504,89 +2897,93 @@ def pulsar_nest_to_posterior(postfile, nestedsamples=False, removeuntrig=True):
 
     # check whether iota has been used
     posIota = None
-    if 'iota' in pos.names:
-        posIota = pos['iota'].samples
+    if "iota" in pos.names:
+        posIota = pos["iota"].samples
 
     if posIota is not None:
         cipos = None
-        cipos = bppu.PosteriorOneDPDF('cosiota', np.cos(posIota))
+        cipos = bppu.PosteriorOneDPDF("cosiota", np.cos(posIota))
         pos.append(cipos)
         if removeuntrig:
-            pos.pop('iota')
+            pos.pop("iota")
 
     # check whether sin(i) binary parameter has been used
     posI = None
-    if 'i' in pos.names:
-        posI = pos['i'].samples
+    if "i" in pos.names:
+        posI = pos["i"].samples
 
     if posI is not None:
         sinipos = None
-        sinipos = bppu.PosteriorOneDPDF('sini', np.sin(posI))
+        sinipos = bppu.PosteriorOneDPDF("sini", np.sin(posI))
         pos.append(sinipos)
         if removeuntrig:
-            pos.pop('i')
+            pos.pop("i")
 
     # convert C22 back into h0, and phi22 back into phi0 if required
     posC21 = None
-    if 'c21' in pos.names:
-        posC21 = pos['c21'].samples
+    if "c21" in pos.names:
+        posC21 = pos["c21"].samples
 
     posC22 = None
-    if 'c22' in pos.names:
-        posC22 = pos['c22'].samples
+    if "c22" in pos.names:
+        posC22 = pos["c22"].samples
 
     posphi22 = None
-    if 'phi22' in pos.names:
-        posphi22 = pos['phi22'].samples
+    if "phi22" in pos.names:
+        posphi22 = pos["phi22"].samples
 
     # convert C22 back into h0, and phi22 back into phi0 if required
     if posC22 is not None and posC21 is None:
         h0pos = None
-        h0pos = bppu.PosteriorOneDPDF('h0', 2.*pos['c22'].samples)
+        h0pos = bppu.PosteriorOneDPDF("h0", 2.0 * pos["c22"].samples)
 
         pos.append(h0pos)
-        pos.pop('c22')
+        pos.pop("c22")
 
         if posphi22 is not None:
             phi0pos = None
-            phi0pos = bppu.PosteriorOneDPDF('phi0', np.fmod(pos['phi22'].samples + math.pi, 2.*math.pi))
+            phi0pos = bppu.PosteriorOneDPDF(
+                "phi0", np.fmod(pos["phi22"].samples + math.pi, 2.0 * math.pi)
+            )
 
             pos.append(phi0pos)
-            pos.pop('phi22')
+            pos.pop("phi22")
 
     # convert Q22 to h0 is required
     posQ22 = None
-    if 'q22' in pos.names:
-        posQ22 = pos['q22'].samples
+    if "q22" in pos.names:
+        posQ22 = pos["q22"].samples
 
-    if 'dist' in pos.names:
-        posdist = pos['dist'].samples/KPC # distance in kpc (for use in converting Q22 to h0)
+    if "dist" in pos.names:
+        posdist = (
+            pos["dist"].samples / KPC
+        )  # distance in kpc (for use in converting Q22 to h0)
 
         # convert distance samples to kpc
-        pos.pop('dist')
-        distpos = bppu.PosteriorOneDPDF('dist', posdist)
+        pos.pop("dist")
+        distpos = bppu.PosteriorOneDPDF("dist", posdist)
         pos.append(distpos)
 
-    if 'f0' in pos.names:
-        posfreqs = pos['f0'].samples
+    if "f0" in pos.names:
+        posfreqs = pos["f0"].samples
         # if not found this will have been set from the f0_fixed value above
 
-    if posQ22 is not None and posdist is not None and 'h0' not in pos.names:
+    if posQ22 is not None and posdist is not None and "h0" not in pos.names:
         h0pos = None
-        h0pos = bppu.PosteriorOneDPDF('h0', quadrupole_to_h0(posQ22, posfreqs, posdist))
+        h0pos = bppu.PosteriorOneDPDF("h0", quadrupole_to_h0(posQ22, posfreqs, posdist))
 
         pos.append(h0pos)
 
     # get evidence (as in lalapps_nest2pos)
-    if fe == '.h5' or fe == '.hdf':
+    if fe == ".h5" or fe == ".hdf":
         # read evidence from HDF5 file
-        hdf = h5py.File(postfile, 'r')
-        a = hdf['lalinference']['lalinference_nest']
-        sigev = a.attrs['log_evidence']
-        noiseev = a.attrs['log_noise_evidence']
+        hdf = h5py.File(postfile, "r")
+        a = hdf["lalinference"]["lalinference_nest"]
+        sigev = a.attrs["log_evidence"]
+        noiseev = a.attrs["log_noise_evidence"]
         hdf.close()
     else:
-        B = np.loadtxt(postfile.replace('.gz', '')+'_B.txt')
+        B = np.loadtxt(postfile.replace(".gz", "") + "_B.txt")
         sigev = B[1]
         noiseev = B[2]
 
@@ -2613,7 +3010,7 @@ def logtrapz(lnf, dx):
     The natural logarithm of the area under the function.
     """
 
-    return np.log(dx/2.) + logsumexp([logsumexp(lnf[:-1]), logsumexp(lnf[1:])])
+    return np.log(dx / 2.0) + logsumexp([logsumexp(lnf[:-1]), logsumexp(lnf[1:])])
 
 
 # function to marginalise over a parameter
@@ -2628,11 +3025,11 @@ def marginalise(like, pname, pnames, ranges):
 
     # perform marginalisation
     if len(places) > 1:
-        x = np.apply_along_axis(logtrapz, axis, like, places[1]-places[0])
+        x = np.apply_along_axis(logtrapz, axis, like, places[1] - places[0])
     elif len(places) == 1:
         # no marginalisation required just remove the specific singleton dimension via reshaping
         z = like.shape
-        q = np.arange(0,len(z)).astype(int) != axis
+        q = np.arange(0, len(z)).astype(int) != axis
         newshape = tuple((np.array(list(z)))[q])
         x = np.reshape(like, newshape)
 
@@ -2654,8 +3051,14 @@ def marginal(lnlike, pname, pnames, ranges, multflatprior=False):
 
     for name in pnames:
         if name != pname:
-            if multflatprior: # multiply by flat prior range
-                lnliketmp = marginalise(lnliketmp + np.log(1./(rangestmp[name][-1]-rangestmp[name][0])), name, pnamestmp, rangestmp)
+            if multflatprior:  # multiply by flat prior range
+                lnliketmp = marginalise(
+                    lnliketmp
+                    + np.log(1.0 / (rangestmp[name][-1] - rangestmp[name][0])),
+                    name,
+                    pnamestmp,
+                    rangestmp,
+                )
             else:
                 lnliketmp = marginalise(lnliketmp, name, pnamestmp, rangestmp)
 
@@ -2663,18 +3066,18 @@ def marginal(lnlike, pname, pnames, ranges, multflatprior=False):
 
 
 # a function to chop the data time series, ts, up into contigous segments with a maximum length, chunkMax
-def get_chunk_lengths( ts, chunkMax ):
+def get_chunk_lengths(ts, chunkMax):
     i = j = count = 0
 
     length = len(ts)
 
     chunkLengths = []
 
-    dt = np.min(np.diff(ts)) # the time steps in the data
+    dt = np.min(np.diff(ts))  # the time steps in the data
 
     # create vector of data segment length
     while True:
-        count += 1 # counter
+        count += 1  # counter
 
         # break clause
         if i > length - 2:
@@ -2684,13 +3087,13 @@ def get_chunk_lengths( ts, chunkMax ):
 
         i += 1
 
-        t1 = ts[i-1]
+        t1 = ts[i - 1]
         t2 = ts[i]
 
         # if consecutive points are within two sample times of each other count as in the same chunk
-        if t2 - t1 > 2.*dt or count == chunkMax:
+        if t2 - t1 > 2.0 * dt or count == chunkMax:
             chunkLengths.append(count)
-            count = 0 # reset counter
+            count = 0  # reset counter
 
             j += 1
 
@@ -2718,9 +3121,9 @@ def pulsar_estimate_snr(source, det, tstart, duration, Sn, dt=1800):
     """
 
     # if duration is greater than a sidereal day then just calculate the antenna pattern for 1 sidereal day plus the remainder
-    sidday = 86164.0905 # one sidereal day in seconds
-    Ndays = duration/sidday
-    Nsamps = np.floor(sidday/dt) # number of time samples in 1 sidereal day
+    sidday = 86164.0905  # one sidereal day in seconds
+    Ndays = duration / sidday
+    Nsamps = np.floor(sidday / dt)  # number of time samples in 1 sidereal day
     tend = tstart + duration
 
     sFp = 0
@@ -2728,25 +3131,32 @@ def pulsar_estimate_snr(source, det, tstart, duration, Sn, dt=1800):
 
     # get antenna pattern and sum over the square of it
     if Ndays > 1:
-        tts = np.arange(tstart, tstart+sidday, dt)
+        tts = np.arange(tstart, tstart + sidday, dt)
 
         # get antenna pattern over one sidereal day
-        Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det )
+        Fp, Fc = antenna_response(tts, source["ra"], source["dec"], source["psi"], det)
 
-        sFp = np.floor(Ndays)*np.sum(Fp**2)
-        sFc = np.floor(Ndays)*np.sum(Fc**2)
+        sFp = np.floor(Ndays) * np.sum(Fp**2)
+        sFc = np.floor(Ndays) * np.sum(Fc**2)
 
     # add on extra fractional part of a day
-    if np.floor(Ndays)*sidday > dt:
-        tts = np.arange(tstart+sidday*np.floor(Ndays), tend, dt)
+    if np.floor(Ndays) * sidday > dt:
+        tts = np.arange(tstart + sidday * np.floor(Ndays), tend, dt)
 
-        Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det)
+        Fp, Fc = antenna_response(tts, source["ra"], source["dec"], source["psi"], det)
 
         sFp += np.sum(Fp**2)
         sFc += np.sum(Fc**2)
 
     # get snr squared
-    snr2 = (source['h0']**2/Sn)*dt*(sFp*(0.5*(1+source['cosiota']**2))**2 + sFc*source['cosiota']**2)
+    snr2 = (
+        (source["h0"] ** 2 / Sn)
+        * dt
+        * (
+            sFp * (0.5 * (1 + source["cosiota"] ** 2)) ** 2
+            + sFc * source["cosiota"] ** 2
+        )
+    )
 
     return np.sqrt(snr2)
 
@@ -2773,9 +3183,9 @@ def pulsar_estimate_h0_from_snr(snr, source, det, tstart, duration, Sn, dt=600):
     """
 
     # if duration is greater than a sidereal day then just calculate the antenna pattern for 1 sidereal day plus the remainder
-    sidday = 86164.0905 # one sidereal day in seconds
-    Ndays = duration/sidday
-    Nsamps = np.floor(sidday/dt) # number of time samples in 1 sidereal day
+    sidday = 86164.0905  # one sidereal day in seconds
+    Ndays = duration / sidday
+    Nsamps = np.floor(sidday / dt)  # number of time samples in 1 sidereal day
     tend = tstart + duration
 
     sFp = 0
@@ -2783,31 +3193,48 @@ def pulsar_estimate_h0_from_snr(snr, source, det, tstart, duration, Sn, dt=600):
 
     # get antenna pattern and sum over the square of it
     if Ndays > 1:
-        tts = np.arange(tstart, tstart+sidday, dt)
+        tts = np.arange(tstart, tstart + sidday, dt)
 
         # get antenna pattern over one sidereal day
-        Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det )
+        Fp, Fc = antenna_response(tts, source["ra"], source["dec"], source["psi"], det)
 
-        sFp = np.floor(Ndays)*np.sum(Fp**2)
-        sFc = np.floor(Ndays)*np.sum(Fc**2)
+        sFp = np.floor(Ndays) * np.sum(Fp**2)
+        sFc = np.floor(Ndays) * np.sum(Fc**2)
 
     # add on extra fractional part of a day
-    if np.floor(Ndays)*sidday > dt:
-        tts = np.arange(tstart+sidday*np.floor(Ndays), tend, dt)
+    if np.floor(Ndays) * sidday > dt:
+        tts = np.arange(tstart + sidday * np.floor(Ndays), tend, dt)
 
-        Fp, Fc = antenna_response(tts, source['ra'], source['dec'], source['psi'], det)
+        Fp, Fc = antenna_response(tts, source["ra"], source["dec"], source["psi"], det)
 
         sFp += np.sum(Fp**2)
         sFc += np.sum(Fc**2)
 
     # get h0 squared
-    h02 = (snr**2*Sn)/(dt*(sFp*(0.5*(1+source['cosiota']**2))**2 + sFc*source['cosiota']**2))
+    h02 = (snr**2 * Sn) / (
+        dt
+        * (
+            sFp * (0.5 * (1 + source["cosiota"] ** 2)) ** 2
+            + sFc * source["cosiota"] ** 2
+        )
+    )
 
     return np.sqrt(h02)
 
 
-def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, datachunks=30, chunkmin=5,
-                          ngrid=50, outputlike=False):
+def pulsar_posterior_grid(
+    dets,
+    ts,
+    data,
+    ra,
+    dec,
+    sigmas=None,
+    paramranges={},
+    datachunks=30,
+    chunkmin=5,
+    ngrid=50,
+    outputlike=False,
+):
     """
     A function to calculate the 4-parameter posterior probability density for a continuous wave signal
     given a set of processed data from a set of detectors.
@@ -2875,100 +3302,133 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
     # set the likelihood to either Student's or Gaussian
     if sigmas == None:
-        liketype = 'studentst'
+        liketype = "studentst"
     else:
-        liketype = 'gaussian'
+        liketype = "gaussian"
 
     # if dets is just a single string
     if not isinstance(dets, list):
         if isinstance(dets, string_types):
-            dets = [dets] # make into list
+            dets = [dets]  # make into list
         else:
-            print('Detector not, or incorrectly, set', file=sys.stderr)
+            print("Detector not, or incorrectly, set", file=sys.stderr)
             return
 
     # allowed list of detectors
-    alloweddets = ['H1', 'L1', 'V1', 'G1', 'T1', 'H2']
+    alloweddets = ["H1", "L1", "V1", "G1", "T1", "H2"]
 
     # check consistency of arguments
     for det in dets:
         if det not in alloweddets:
-            print('Detector not in list of allowed detectors (' + ','.join(alloweddets) + ')', file=sys.stderr)
+            print(
+                "Detector not in list of allowed detectors ("
+                + ",".join(alloweddets)
+                + ")",
+                file=sys.stderr,
+            )
             return
 
         # checks on time stamps
         if det not in ts:
-            print('No time stamps given for detector %s' % det, file=sys.stderr)
+            print("No time stamps given for detector %s" % det, file=sys.stderr)
             return
 
         # checks on data
         if det not in data:
-            print('No data time series given for detector %s' % det, file=sys.stderr)
+            print("No data time series given for detector %s" % det, file=sys.stderr)
             return
 
         # checks on sigmas
         if sigmas != None:
             if det not in sigmas:
-                print('No sigma time series given for detector %s' % det, file=sys.stderr)
+                print(
+                    "No sigma time series given for detector %s" % det, file=sys.stderr
+                )
                 return
 
         # check length consistency
         if len(ts[det]) != len(data[det]):
-            print('Length of times stamps array and data array are inconsistent for %s' % det, file=sys.stderr)
+            print(
+                "Length of times stamps array and data array are inconsistent for %s"
+                % det,
+                file=sys.stderr,
+            )
 
         if sigmas != None:
             if len(ts[det]) != len(sigmas[det]):
-                print('Length of times stamps array and sigma array are inconsistent for %s' % det, file=sys.stderr)
+                print(
+                    "Length of times stamps array and sigma array are inconsistent for %s"
+                    % det,
+                    file=sys.stderr,
+                )
 
     # setup grid on parameter space
-    params = ['h0', 'phi0', 'psi', 'cosiota']
-    defaultranges = {} # default ranges for use if not specified
-    defaultranges['phi0'] = (0., np.pi, ngrid) # 0 to pi for phi0
-    defaultranges['psi'] = (0., np.pi/2., ngrid) # 0 to pi/2 for psi
-    defaultranges['cosiota'] = (-1., 1., ngrid) # -1 to 1 for cos(iota)
+    params = ["h0", "phi0", "psi", "cosiota"]
+    defaultranges = {}  # default ranges for use if not specified
+    defaultranges["phi0"] = (0.0, np.pi, ngrid)  # 0 to pi for phi0
+    defaultranges["psi"] = (0.0, np.pi / 2.0, ngrid)  # 0 to pi/2 for psi
+    defaultranges["cosiota"] = (-1.0, 1.0, ngrid)  # -1 to 1 for cos(iota)
     # 0 to 2 times the max standard deviation of the data (scaled to the data length)
-    defaultranges['h0'] = (0., 2.*np.max([np.std(data[dv]) for dv in data])* \
-      np.sqrt(1440./np.max([len(ts[dtx]) for dtx in ts])), ngrid)
+    defaultranges["h0"] = (
+        0.0,
+        2.0
+        * np.max([np.std(data[dv]) for dv in data])
+        * np.sqrt(1440.0 / np.max([len(ts[dtx]) for dtx in ts])),
+        ngrid,
+    )
     lingrids = {}
     shapetuple = ()
     for param in params:
         if param in paramranges:
             if len(paramranges[param]) != 3:
-                paramranges[param] = defaultranges[param] # set to default range
+                paramranges[param] = defaultranges[param]  # set to default range
             else:
-                if paramranges[param][1] < paramranges[param][0] or paramranges[param][2] < 1:
-                    print("Parameter ranges wrong for %s, reverting to defaults" % param, file=sys.stderr)
+                if (
+                    paramranges[param][1] < paramranges[param][0]
+                    or paramranges[param][2] < 1
+                ):
+                    print(
+                        "Parameter ranges wrong for %s, reverting to defaults" % param,
+                        file=sys.stderr,
+                    )
                     paramranges[param] = defaultranges[param]
-        else: # use defaults
+        else:  # use defaults
             paramranges[param] = defaultranges[param]
 
-        lingrids[param] = np.linspace(paramranges[param][0], paramranges[param][1], paramranges[param][2])
+        lingrids[param] = np.linspace(
+            paramranges[param][0], paramranges[param][1], paramranges[param][2]
+        )
         shapetuple += (paramranges[param][2],)
 
     # set up meshgrid on parameter space
-    [H0S, PHI0S, PSIS, COSIS] = np.meshgrid(lingrids['h0'], lingrids['phi0'], lingrids['psi'],
-                                            lingrids['cosiota'], indexing='ij')
+    [H0S, PHI0S, PSIS, COSIS] = np.meshgrid(
+        lingrids["h0"],
+        lingrids["phi0"],
+        lingrids["psi"],
+        lingrids["cosiota"],
+        indexing="ij",
+    )
 
-    APLUS = 0.5*(1.+COSIS**2)
+    APLUS = 0.5 * (1.0 + COSIS**2)
     ACROSS = COSIS
-    SINPHI = np.sin(2.*PHI0S) # multiply phi0 by two to get GW frequency
-    COSPHI = np.cos(2.*PHI0S)
-    SIN2PSI = np.sin(2.*PSIS)
-    COS2PSI = np.cos(2.*PSIS)
+    SINPHI = np.sin(2.0 * PHI0S)  # multiply phi0 by two to get GW frequency
+    COSPHI = np.cos(2.0 * PHI0S)
+    SIN2PSI = np.sin(2.0 * PSIS)
+    COS2PSI = np.cos(2.0 * PSIS)
 
-    Apsinphi_2 = 0.5*APLUS*SINPHI
-    Acsinphi_2 = 0.5*ACROSS*SINPHI
-    Apcosphi_2 = 0.5*APLUS*COSPHI
-    Accosphi_2 = 0.5*ACROSS*COSPHI
-    Acpsphicphi_2 = 0.5*APLUS*ACROSS*COSPHI*SINPHI
+    Apsinphi_2 = 0.5 * APLUS * SINPHI
+    Acsinphi_2 = 0.5 * ACROSS * SINPHI
+    Apcosphi_2 = 0.5 * APLUS * COSPHI
+    Accosphi_2 = 0.5 * ACROSS * COSPHI
+    Acpsphicphi_2 = 0.5 * APLUS * ACROSS * COSPHI * SINPHI
 
     AP2 = APLUS**2
     AC2 = ACROSS**2
-    TWOAPACSPCP = 2.*APLUS*ACROSS*SINPHI*COSPHI
+    TWOAPACSPCP = 2.0 * APLUS * ACROSS * SINPHI * COSPHI
     SP2 = SINPHI**2
     CP2 = COSPHI**2
 
-    C2PS2P = COS2PSI*SIN2PSI
+    C2PS2P = COS2PSI * SIN2PSI
     C2P2 = COS2PSI**2
     S2P2 = SIN2PSI**2
 
@@ -2976,22 +3436,22 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
 
     # initialise loglikelihood
     like = np.zeros(shapetuple)
-    noiselike = 0.
+    noiselike = 0.0
 
     # get flat prior
-    logprior = 0.
+    logprior = 0.0
     for p in params:
-        logprior -= np.log(paramranges[p][1]-paramranges[p][0])
+        logprior -= np.log(paramranges[p][1] - paramranges[p][0])
 
     # loop over detectors and calculate the log likelihood
     for det in dets:
-        if liketype == 'gaussian':
+        if liketype == "gaussian":
             nstd = sigmas[det]
         else:
             nstd = np.ones(len(ts[det]))
 
         # get the antenna pattern
-        [As, Bs] = antenna_response( ts[det], ra, dec, 0.0, det )
+        [As, Bs] = antenna_response(ts[det], ra, dec, 0.0, det)
 
         # split the data into chunks if required
         if np.isfinite(datachunks) and datachunks > 0:
@@ -3007,9 +3467,9 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
             if cl < chunkmin:
                 continue
 
-            thisdata = data[det][startidx:endidx]/nstd[startidx:endidx]
-            ast = As[startidx:endidx]/nstd[startidx:endidx]
-            bst = Bs[startidx:endidx]/nstd[startidx:endidx]
+            thisdata = data[det][startidx:endidx] / nstd[startidx:endidx]
+            ast = As[startidx:endidx] / nstd[startidx:endidx]
+            bst = Bs[startidx:endidx] / nstd[startidx:endidx]
 
             A = np.sum(ast**2)
             B = np.sum(bst**2)
@@ -3024,42 +3484,50 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
             dd1real = np.sum(thisdata.real**2)
             dd1imag = np.sum(thisdata.imag**2)
 
-            P1 = A*C2P2 + B*S2P2 + 2.*AB*C2PS2P
-            P2 = B*C2P2 + A*S2P2 - 2.*AB*C2PS2P
-            P3 = AB*(C2P2 - S2P2) - A*C2PS2P + B*C2PS2P
+            P1 = A * C2P2 + B * S2P2 + 2.0 * AB * C2PS2P
+            P2 = B * C2P2 + A * S2P2 - 2.0 * AB * C2PS2P
+            P3 = AB * (C2P2 - S2P2) - A * C2PS2P + B * C2PS2P
 
-            hr2 = (Apcosphi_2**2)*P1 + (Acsinphi_2**2)*P2 + Acpsphicphi_2*P3
-            hi2 = (Apsinphi_2**2)*P1 + (Accosphi_2**2)*P2 - Acpsphicphi_2*P3
+            hr2 = (Apcosphi_2**2) * P1 + (Acsinphi_2**2) * P2 + Acpsphicphi_2 * P3
+            hi2 = (Apsinphi_2**2) * P1 + (Accosphi_2**2) * P2 - Acpsphicphi_2 * P3
 
-            d1hr = Apcosphi_2*(dA1real*COS2PSI + dB1real*SIN2PSI) + Acsinphi_2*(dB1real*COS2PSI - dA1real*SIN2PSI)
-            d1hi = Apsinphi_2*(dA1imag*COS2PSI + dB1imag*SIN2PSI) - Accosphi_2*(dB1imag*COS2PSI - dA1imag*SIN2PSI)
+            d1hr = Apcosphi_2 * (dA1real * COS2PSI + dB1real * SIN2PSI) + Acsinphi_2 * (
+                dB1real * COS2PSI - dA1real * SIN2PSI
+            )
+            d1hi = Apsinphi_2 * (dA1imag * COS2PSI + dB1imag * SIN2PSI) - Accosphi_2 * (
+                dB1imag * COS2PSI - dA1imag * SIN2PSI
+            )
 
-            chiSq = dd1real + dd1imag + H02*(hr2 + hi2) - 2.*H0S*(d1hr + d1hi)
+            chiSq = dd1real + dd1imag + H02 * (hr2 + hi2) - 2.0 * H0S * (d1hr + d1hi)
 
-            if liketype == 'gaussian':
-                like -= 0.5*(chiSq)
-                like -= (cl*np.log(2.*np.pi)) + 2.*np.sum(np.log(nstd[startidx:endidx]))
-                noiselike -= 0.5*(dd1real + dd1imag)
-                noiselike -= (cl*np.log(2.*np.pi)) + 2.*np.sum(np.log(nstd[startidx:endidx]))
+            if liketype == "gaussian":
+                like -= 0.5 * (chiSq)
+                like -= (cl * np.log(2.0 * np.pi)) + 2.0 * np.sum(
+                    np.log(nstd[startidx:endidx])
+                )
+                noiselike -= 0.5 * (dd1real + dd1imag)
+                noiselike -= (cl * np.log(2.0 * np.pi)) + 2.0 * np.sum(
+                    np.log(nstd[startidx:endidx])
+                )
             else:
-                like -= float(cl)*np.log(chiSq)
-                like += (gammaln(cl) - np.log(2.) - cl*np.log(np.pi))
-                noiselike -= float(cl)*np.log(dd1real + dd1imag)
-                noiselike += (gammaln(cl) - np.log(2.) - cl*np.log(np.pi))
+                like -= float(cl) * np.log(chiSq)
+                like += gammaln(cl) - np.log(2.0) - cl * np.log(np.pi)
+                noiselike -= float(cl) * np.log(dd1real + dd1imag)
+                noiselike += gammaln(cl) - np.log(2.0) - cl * np.log(np.pi)
 
-            startidx += cl # updated start index
+            startidx += cl  # updated start index
 
     # convert to posterior
     like += logprior
 
     # get signal evidence
-    sigev = marginal(like, 'all', params, lingrids)
+    sigev = marginal(like, "all", params, lingrids)
 
     # normalise posterior
     if not outputlike:
         like -= sigev
     else:
-        like -= logprior # remove prior if outputting likelihood
+        like -= logprior  # remove prior if outputting likelihood
 
     # get marginal posteriors for each parameter
     posts = {}
@@ -3067,16 +3535,28 @@ def pulsar_posterior_grid(dets, ts, data, ra, dec, sigmas=None, paramranges={}, 
         if not outputlike:
             posts[p] = np.exp(marginal(like, p, params, lingrids))
         else:
-            posts[p] = marginal(like, p, params, lingrids, multflatprior=True) # output individual log likelihoods
+            posts[p] = marginal(
+                like, p, params, lingrids, multflatprior=True
+            )  # output individual log likelihoods
 
     # odds ratio for signal versus noise
     evrat = sigev - noiselike
 
-    return like, posts['h0'], posts['phi0'], posts['psi'], posts['cosiota'], lingrids, sigev, noiselike
+    return (
+        like,
+        posts["h0"],
+        posts["phi0"],
+        posts["psi"],
+        posts["cosiota"],
+        lingrids,
+        sigev,
+        noiselike,
+    )
 
 
 # current version of the ATNF pulsar catalogue
-ATNF_VERSION = '1.58'
+ATNF_VERSION = "1.58"
+
 
 def get_atnf_info(psr):
     """
@@ -3086,20 +3566,33 @@ def get_atnf_info(psr):
 
     import requests
 
-    psrname = re.sub('\+', '%2B', psr) # switch '+' for unicode character
+    psrname = re.sub("\+", "%2B", psr)  # switch '+' for unicode character
 
-    atnfurl = 'http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version=' + ATNF_VERSION
-    atnfurl += '&Dist=Dist&Assoc=Assoc&P1_i=P1_i' # set parameters to get
-    atnfurl += '&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names=' + psrname
-    atnfurl += '&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2='
-    atnfurl += '&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query'
+    atnfurl = (
+        "http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version="
+        + ATNF_VERSION
+    )
+    atnfurl += "&Dist=Dist&Assoc=Assoc&P1_i=P1_i"  # set parameters to get
+    atnfurl += (
+        "&startUserDefined=true&c1_val=&c2_val=&c3_val=&c4_val=&sort_attr=jname&sort_order=asc&condition=&pulsar_names="
+        + psrname
+    )
+    atnfurl += "&ephemeris=selected&submit_ephemeris=Get+Ephemeris&coords_unit=raj%2Fdecj&radius=&coords_1=&coords_2="
+    atnfurl += "&style=Long+with+last+digit+error&no_value=*&fsize=3&x_axis=&x_scale=linear&y_axis=&y_scale=linear&state=query"
 
     try:
-        urldat = requests.get(atnfurl) # read ATNF url
-        predat = re.search(r'<pre[^>]*>([^<]+)</pre>', str(urldat.content)) # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
-        pdat = predat.group(1).strip().split(r'\n') # remove preceeding and trailing new lines and split lines
+        urldat = requests.get(atnfurl)  # read ATNF url
+        predat = re.search(
+            r"<pre[^>]*>([^<]+)</pre>", str(urldat.content)
+        )  # to extract data within pre environment (without using BeautifulSoup) see e.g. http://stackoverflow.com/a/3369000/1862861 and http://stackoverflow.com/a/20046030/1862861
+        pdat = (
+            predat.group(1).strip().split(r"\n")
+        )  # remove preceeding and trailing new lines and split lines
     except:
-        print("Warning... could not get information from ATNF pulsar catalogue.", file=sys.stderr)
+        print(
+            "Warning... could not get information from ATNF pulsar catalogue.",
+            file=sys.stderr,
+        )
         return None
 
     # check whether information could be found and get distance, age and association from data
@@ -3107,14 +3600,14 @@ def get_atnf_info(psr):
     p1_I = None
     assoc = None
     for line in [p for p in pdat if len(p) != 0]:
-        if 'WARNING' in line or 'not in catalogue' in line:
+        if "WARNING" in line or "not in catalogue" in line:
             return None
         vals = line.split()
-        if 'DIST' in vals[0]:
+        if "DIST" in vals[0]:
             dist = float(vals[1])
-        if 'P1_I' in vals[0]:
+        if "P1_I" in vals[0]:
             age = float(vals[1])
-        if 'ASSOC' in vals[0]:
+        if "ASSOC" in vals[0]:
             assoc = vals[1]
 
     return (dist, p1_I, assoc, atnfurl)
@@ -3131,7 +3624,7 @@ def cov_to_cor(cov):
     sigmas = np.sqrt(np.diag(cov))
 
     # convert these into a diagonal matrix
-    D = sigmas*np.identity(cov.shape[0])
+    D = sigmas * np.identity(cov.shape[0])
 
     # invert D
     Dinv = np.linalg.inv(D)

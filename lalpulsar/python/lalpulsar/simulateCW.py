@@ -163,7 +163,6 @@ class CWSimulator(object):
         self.__ephemerides = lalpulsar.InitBarycenter(earth_ephem_file, sun_ephem_file)
 
         if tref_at_det:
-
             # calculate barycentric delay at reference time
             bary_state = lalpulsar.EarthState()
             bary_input = lalpulsar.BarycenterInput()
@@ -228,7 +227,6 @@ class CWSimulator(object):
         self.__detector.ephemerides = self.__ephemerides
 
     def _simulate_coherent_gw(self, h, noise_sqrt_Sh, noise_seed):
-
         # generate strain time series
         lalpulsar.PulsarSimulateCoherentGW(h, self.__wf, self.__detector)
 
@@ -380,7 +378,6 @@ class CWSimulator(object):
         for t, h, i, N in self.get_strain_blocks(
             fs, Tframe, noise_sqrt_Sh=noise_sqrt_Sh, noise_seed=noise_seed
         ):
-
             # create and initialise REAL8TimeSeries to write to frame files
             if frame_h is None:
                 frame_h_channel = "%s:SIMCW-STRAIN" % self.__site.frDetector.prefix
@@ -468,7 +465,6 @@ class CWSimulator(object):
         for t, h, i, N in self.get_strain_blocks(
             sft_fs, Tsft, noise_sqrt_Sh=noise_sqrt_Sh, noise_seed=noise_seed
         ):
-
             # create and initialise REAL8TimeSeries to write to SFT files
             if sft_h is None:
                 sft_name = self.__site.frDetector.prefix
@@ -552,7 +548,6 @@ class CWSimulator(object):
             window=window,
             window_param=window_param,
         ):
-
             # write SFT
             lalpulsar.WriteSFT2StandardFile(sft, spec, self.__origin_str)
 

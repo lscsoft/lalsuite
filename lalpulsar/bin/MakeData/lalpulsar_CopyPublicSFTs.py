@@ -42,7 +42,9 @@ __date__ = git_version.date
 @contextmanager
 def silence_xlal_error_messages():
     saveDebugLevel = GetDebugLevel()
-    silentDebugLevel = saveDebugLevel & ~(LALERRORBIT | LALWARNINGBIT | LALINFOBIT | LALTRACEBIT)
+    silentDebugLevel = saveDebugLevel & ~(
+        LALERRORBIT | LALWARNINGBIT | LALINFOBIT | LALTRACEBIT
+    )
     ClobberDebugLevel(silentDebugLevel)
     try:
         yield None
@@ -51,28 +53,34 @@ def silence_xlal_error_messages():
 
 
 def parse_command_line():
-
     # parse command line
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('-p', '--processes', type=int, default=1, help='number of copying processes')
-    parser.add_argument('-n', '--no-validate', dest='validate', action='store_false', help='do not validate destination SFTs')
-    parser.add_argument('source_directory', type=str, help='SFT source directory')
-    parser.add_argument('dest_directory', type=str, help='SFT destination directory')
+    parser.add_argument(
+        "-p", "--processes", type=int, default=1, help="number of copying processes"
+    )
+    parser.add_argument(
+        "-n",
+        "--no-validate",
+        dest="validate",
+        action="store_false",
+        help="do not validate destination SFTs",
+    )
+    parser.add_argument("source_directory", type=str, help="SFT source directory")
+    parser.add_argument("dest_directory", type=str, help="SFT destination directory")
     args = parser.parse_args()
 
     # check arguments
     if args.processes <= 0:
-        parser.error('--processes must be strictly positive')
+        parser.error("--processes must be strictly positive")
     if not os.path.isdir(args.source_directory):
-        parser.error('source_directory is not a directory')
+        parser.error("source_directory is not a directory")
     if not os.path.isdir(args.dest_directory):
-        parser.error('dest_directory is not a directory')
+        parser.error("dest_directory is not a directory")
 
     return args
 
 
 def find_SFT_files(source_directory, dest_directory):
-
     dest_dirs = set()
     src_dest_paths = []
 
@@ -84,7 +92,7 @@ def find_SFT_files(source_directory, dest_directory):
     print_progress_max = 1000
     for src_root, _, src_files in os.walk(source_directory):
         for src_file in src_files:
-            if src_file.endswith('.sft'):
+            if src_file.endswith(".sft"):
                 src_path = os.path.join(src_root, src_file)
                 _, src_name = os.path.split(src_path)
 
@@ -100,31 +108,32 @@ def find_SFT_files(source_directory, dest_directory):
                 num_SFTs += 1
                 if num_SFTs % print_progress == 0:
                     dt = time.time() - t0
-                    print(f'{__file__}: found {num_SFTs} SFTs in {dt:0.1f} seconds', flush=True)
+                    print(
+                        f"{__file__}: found {num_SFTs} SFTs in {dt:0.1f} seconds",
+                        flush=True,
+                    )
                     print_progress += print_progress_step
                     if print_progress == print_progress_max:
                         print_progress_step *= 10
                         print_progress_max *= 10
 
-    print(f'{__file__}: found {num_SFTs} SFTs\n', flush=True)
+    print(f"{__file__}: found {num_SFTs} SFTs\n", flush=True)
 
     return dest_dirs, src_dest_paths
 
 
 def make_dest_dirs(dest_dirs):
-
     # make destination SFT directories
-    print(f'{__file__}: making {len(dest_dirs)} directories ...', flush=True)
+    print(f"{__file__}: making {len(dest_dirs)} directories ...", flush=True)
     for dest_dir in dest_dirs:
         if not os.path.isdir(dest_dir):
             os.makedirs(dest_dir)
-    print(f'{__file__}: making {len(dest_dirs)} directories ... done\n', flush=True)
+    print(f"{__file__}: making {len(dest_dirs)} directories ... done\n", flush=True)
 
 
 def copy_SFT_file(src_path, dest_path, validate):
-
     # copy SFT with a temporary extension
-    tmp_dest_path = dest_path + '_TO_BE_VALIDATED'
+    tmp_dest_path = dest_path + "_TO_BE_VALIDATED"
     shutil.copyfile(src_path, tmp_dest_path)
 
     # validate SFT if requested
@@ -142,15 +151,16 @@ def copy_SFT_file(src_path, dest_path, validate):
 
 
 def copy_all_SFT_files(src_dest_paths, validate, processes):
-
     validate_errors = []
 
     # create executor
-    print(f'{__file__}: copying {len(src_dest_paths)} SFTs ...', flush=True)
+    print(f"{__file__}: copying {len(src_dest_paths)} SFTs ...", flush=True)
     with ProcessPoolExecutor(max_workers=args.processes) as executor:
-
         # submit tasks
-        pool = [executor.submit(copy_SFT_file, src_path, dest_path, validate) for src_path, dest_path in src_dest_paths]
+        pool = [
+            executor.submit(copy_SFT_file, src_path, dest_path, validate)
+            for src_path, dest_path in src_dest_paths
+        ]
 
         # collect tasks
         for task in tqdm(as_completed(pool), total=len(pool)):
@@ -158,25 +168,30 @@ def copy_all_SFT_files(src_dest_paths, validate, processes):
             if validate_error is not None:
                 validate_errors.append(validate_error)
 
-    print('')
+    print("")
 
     # show any validation errors
     if validate_errors:
-        print(f'{__file__}: failed to validate {len(validate_errors)} SFTs after copying:', flush=True)
+        print(
+            f"{__file__}: failed to validate {len(validate_errors)} SFTs after copying:",
+            flush=True,
+        )
         for tmp_dest_path, validate_errorstr in validate_errors:
-            print(f'  {tmp_dest_path}\n    {validate_errorstr}', flush=True)
+            print(f"  {tmp_dest_path}\n    {validate_errorstr}", flush=True)
         sys.exit(1)
 
-    print(f'{__file__}: copying {len(src_dest_paths)} SFTs ... done\n', flush=True)
+    print(f"{__file__}: copying {len(src_dest_paths)} SFTs ... done\n", flush=True)
 
 
 if __name__ == "__main__":
     args = parse_command_line()
 
-    dest_dirs, src_dest_paths = find_SFT_files(args.source_directory, args.dest_directory)
+    dest_dirs, src_dest_paths = find_SFT_files(
+        args.source_directory, args.dest_directory
+    )
 
     make_dest_dirs(dest_dirs)
 
     copy_all_SFT_files(src_dest_paths, args.validate, args.processes)
 
-    print(f'{__file__}: DONE', flush=True)
+    print(f"{__file__}: DONE", flush=True)

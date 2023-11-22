@@ -32,7 +32,7 @@ sun_ephem_file = os.path.join(
 ephemerides = lalpulsar.InitBarycenter(earth_ephem_file, sun_ephem_file)
 
 # parameters to make fake data
-IFOs = ["H1","L1"]
+IFOs = ["H1", "L1"]
 numDet = len(IFOs)
 sqrtSX = ["1e-23"]
 f_min = 20
@@ -50,7 +50,9 @@ multiTS = lalpulsar.MakeMultiTimestamps(T0, Tspan, Tsft, Toverlap, numDet)
 dataParams.multiTimestamps = multiTS
 dataParams.randSeed = 42
 dataParams.inputMultiTS = None
-injectionSources = lalpulsar.PulsarParamsVector() # empty struct, don't actually inject a signal
+injectionSources = (
+    lalpulsar.PulsarParamsVector()
+)  # empty struct, don't actually inject a signal
 
 # make fake data directly in memory
 multiSFTs = 0
@@ -76,13 +78,13 @@ print("numBins per SFT:", numBins)
 # to test PSD computation with/without normalizing in place
 print("Copying SFTs...")
 multiSFTs_copy = lalpulsar.CreateEmptyMultiSFTVector(numSFTs)
-for X,sftvec in enumerate(multiSFTs.data):
-    for k,sft in enumerate(sftvec.data):
-        lalpulsar.CopySFT(multiSFTs_copy.data[X].data[k],sft)
+for X, sftvec in enumerate(multiSFTs.data):
+    for k, sft in enumerate(sftvec.data):
+        lalpulsar.CopySFT(multiSFTs_copy.data[X].data[k], sft)
+
 
 def test_ComputePSDandNormSFTPower():
-
-    rtol = 1e-15 # float comparison tolerance
+    rtol = 1e-15  # float comparison tolerance
 
     print("Calling ComputePSDandNormSFTPower() with normalizeSFTsInPlace=False...")
     psd, multiPSDVector, normSFT = lalpulsar.ComputePSDandNormSFTPower(
@@ -99,7 +101,10 @@ def test_ComputePSDandNormSFTPower():
         FreqBand=f_max - f_min,
         normalizeSFTsInPlace=False,
     )
-    print("PSD from ComputePSDandNormSFTPower() with normalizeSFTsInPlace=False:", psd.data)
+    print(
+        "PSD from ComputePSDandNormSFTPower() with normalizeSFTsInPlace=False:",
+        psd.data,
+    )
     assert psd.length == numBins
     print("normSFT:", normSFT.data)
     assert normSFT.length == numBins
@@ -113,22 +118,25 @@ def test_ComputePSDandNormSFTPower():
         average_IFO_PSD_vector = np.array(
             [
                 np.mean(
-                    [multiPSDVector.data[X].data[n].data.data[k] for n in range(numSFTs.data[X])]
+                    [
+                        multiPSDVector.data[X].data[n].data.data[k]
+                        for n in range(numSFTs.data[X])
+                    ]
                 )
                 for k in range(numBins)
             ]
         )
         print("multiPSDVector[{:d}] averaged: {}".format(X, average_IFO_PSD_vector))
         summed_average_IFO_PSD_vector += average_IFO_PSD_vector
-    print("sum of per-IFO averaged multiPSDVector entries:", summed_average_IFO_PSD_vector)
-    assert_allclose(
-        summed_average_IFO_PSD_vector,
-        psd.data,
-        rtol=rtol,
+    print(
+        "sum of per-IFO averaged multiPSDVector entries:", summed_average_IFO_PSD_vector
     )
+    assert_allclose(summed_average_IFO_PSD_vector, psd.data, rtol=rtol)
     print("Relative agreement to within {:e}.".format(rtol))
 
-    print("Calling ComputePSDandNormSFTPower() again, with normalizeSFTsInPlace=True...")
+    print(
+        "Calling ComputePSDandNormSFTPower() again, with normalizeSFTsInPlace=True..."
+    )
     psd2, multiPSDVector, normSFT2 = lalpulsar.ComputePSDandNormSFTPower(
         inputSFTs=multiSFTs,
         returnMultiPSDVector=True,
@@ -143,21 +151,16 @@ def test_ComputePSDandNormSFTPower():
         FreqBand=f_max - f_min,
         normalizeSFTsInPlace=True,
     )
-    print("PSD from ComputePSDandNormSFTPower() with normalizeSFTsInPlace=True:", psd2.data)
-    assert psd2.length == numBins
-    assert_allclose(
+    print(
+        "PSD from ComputePSDandNormSFTPower() with normalizeSFTsInPlace=True:",
         psd2.data,
-        psd.data,
-        rtol=rtol,
     )
+    assert psd2.length == numBins
+    assert_allclose(psd2.data, psd.data, rtol=rtol)
     print("Relative PSD agreement to within {:e}.".format(rtol))
     print("normSFT:", normSFT2.data)
     assert normSFT2.length == numBins
-    assert_allclose(
-        normSFT2.data,
-        normSFT.data,
-        rtol=rtol,
-    )
+    assert_allclose(normSFT2.data, normSFT.data, rtol=rtol)
     print("Relative normSFT agreement to within {:e}.".format(rtol))
 
     print("Calling ComputePSDfromSFTs() on original (now normalized) SFTs...")
@@ -186,12 +189,9 @@ def test_ComputePSDandNormSFTPower():
     )
     print("PSD from ComputePSDfromSFTs() on copied SFTs:", psd4.data)
     assert psd4.length == numBins
-    assert_allclose(
-        psd4.data,
-        psd.data,
-        rtol=rtol,
-    )
+    assert_allclose(psd4.data, psd.data, rtol=rtol)
     print("Relative agreement to within {:e}.".format(rtol))
+
 
 if __name__ == "__main__":
     args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-computePSD.xml"]

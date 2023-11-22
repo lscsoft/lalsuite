@@ -35,12 +35,32 @@ description = """Setup a Condor DAG file to run the known pulsar search pipeline
 The user must specify the configuration file for the script to run.
 """
 
-parser = argparse.ArgumentParser( description = description )
+parser = argparse.ArgumentParser(description=description)
 
-parser.add_argument("inifile", help="The configuation (.ini) file") # the positional argument for the configuration file
-parser.add_argument("--condor-submit", action="store_true", default=False, help="Automatically submit the Condor DAG")
-parser.add_argument("-r", "--run-path", dest="runpath", default=None, help="Set the directory to run the pipeline in (overwrites any value in the config.ini file)")
-parser.add_argument("-p", "--pulsar", dest="pulsarlist", action='append', default=None, help="A pulsar name to search for rather than all pulsars given in a parameter file directory (this can be specified multiple times to search for more than one pulsar).")
+parser.add_argument(
+    "inifile", help="The configuation (.ini) file"
+)  # the positional argument for the configuration file
+parser.add_argument(
+    "--condor-submit",
+    action="store_true",
+    default=False,
+    help="Automatically submit the Condor DAG",
+)
+parser.add_argument(
+    "-r",
+    "--run-path",
+    dest="runpath",
+    default=None,
+    help="Set the directory to run the pipeline in (overwrites any value in the config.ini file)",
+)
+parser.add_argument(
+    "-p",
+    "--pulsar",
+    dest="pulsarlist",
+    action="append",
+    default=None,
+    help="A pulsar name to search for rather than all pulsars given in a parameter file directory (this can be specified multiple times to search for more than one pulsar).",
+)
 
 opts = parser.parse_args()
 
@@ -57,11 +77,11 @@ except:
     sys.exit(1)
 
 if opts.runpath is not None:
-    cp.set('analysis', 'run_dir', opts.runpath)
+    cp.set("analysis", "run_dir", opts.runpath)
 
 # Check if we're running in automated mode or not
 try:
-    automated = cp.getboolean('analysis', 'autonomous')
+    automated = cp.getboolean("analysis", "autonomous")
 except:
     automated = False
 
@@ -69,13 +89,13 @@ except:
 submitdag = opts.condor_submit
 if not submitdag:
     try:
-        submitdag = cp.getboolean('analysis', 'submit_dag')
+        submitdag = cp.getboolean("analysis", "submit_dag")
     except:
         submitdag = False
 
 # Create DAG from ConfigParser object
 dag = knope.knopeDAG(cp, inifile, pulsarlist=opts.pulsarlist)
-if dag.error_code != 0: # check for any errors that occurred
+if dag.error_code != 0:  # check for any errors that occurred
     if dag.error_code in knope.KNOPE_ERROR.keys():
         print(knope.KNOPE_ERROR[dag.error_code], file=sys.stderr)
     else:
@@ -94,7 +114,8 @@ if not automated or dag.error_code != knope.KNOPE_ERROR_NO_SEGMENTS:
 
     if submitdag:
         from subprocess import Popen
-        x = Popen(['condor_submit_dag', dag.get_dag_file()])
+
+        x = Popen(["condor_submit_dag", dag.get_dag_file()])
         x.wait()
         if x.returncode == 0:
             print("Submitted DAG file")
@@ -104,10 +125,10 @@ if not automated or dag.error_code != knope.KNOPE_ERROR_NO_SEGMENTS:
         print("Run 'condor_submit_dag %s' to submit DAG file" % dag.get_dag_file())
 
     # output DAG class to pickle file if given
-    if cp.has_option('analysis', 'pickle_file'):
+    if cp.has_option("analysis", "pickle_file"):
         try:
-            pfile = cp.get('analysis', 'pickle_file')
-            fp = open(pfile, 'wb')
+            pfile = cp.get("analysis", "pickle_file")
+            fp = open(pfile, "wb")
             pickle.dump(dag, fp)
             fp.close()
         except:

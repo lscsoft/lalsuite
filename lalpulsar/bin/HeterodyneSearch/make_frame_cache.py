@@ -13,6 +13,7 @@ import getopt
 
 # program usage
 
+
 def usage():
     msg = """\
 Usage: make_frame_cache [options]
@@ -25,22 +26,16 @@ Usage: make_frame_cache [options]
 """
     print(msg, file=sys.stderr)
 
+
 # parse command line
 shortop = "hd:s:e:o:"
-longop = [
-  "help",
-  "frame-dir=",
-  "gps-start-time=",
-  "gps-end-time=",
-  "output-file="
-  ]
+longop = ["help", "frame-dir=", "gps-start-time=", "gps-end-time=", "output-file="]
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], shortop, longop)
 except getopt.GetoptError:
     usage()
     sys.exit(1)
-
 
 
 # process options
@@ -71,7 +66,7 @@ except Exception as e:
 
 # open output file
 try:
-    f = open(output, 'w')
+    f = open(output, "w")
 except Exception as e:
     print("Can't open file {}".format(output), file=sys.stderr)
     sys.exit(1)
@@ -86,21 +81,34 @@ while i < len(files):
     if ".gwf" in files[i]:
         # get frame channel, time and duration
         ifo = files[i][0]
-        frinfo = files[i].split('-')
-        channel = frinfo[1] # channel should be first field
-        time = int(frinfo[2]) # time should be the second field
+        frinfo = files[i].split("-")
+        channel = frinfo[1]  # channel should be first field
+        time = int(frinfo[2])  # time should be the second field
 
         # find the - before the duration (last value)
-        index1 = files[i].rfind('-')
+        index1 = files[i].rfind("-")
         # find the . before gwf
-        index2 = files[i].rfind('.')
+        index2 = files[i].rfind(".")
 
-        duration = int(files[i][index1+1:index2])
+        duration = int(files[i][index1 + 1 : index2])
 
         # check if file is within time range and output
         if time + duration > start and time <= end:
-            cache = ifo + ' ' + channel + ' ' + str(time) + ' ' + str(duration) + ' ' + 'file\
-://localhost' + frame_dir + '/' + files[i] + '\n'
+            cache = (
+                ifo
+                + " "
+                + channel
+                + " "
+                + str(time)
+                + " "
+                + str(duration)
+                + " "
+                + "file://localhost"
+                + frame_dir
+                + "/"
+                + files[i]
+                + "\n"
+            )
             f.write(cache)
             j += 1
 
