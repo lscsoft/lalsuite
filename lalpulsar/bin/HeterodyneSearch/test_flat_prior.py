@@ -12,8 +12,8 @@ import scipy.stats as ss
 import h5py
 
 if os.environ['LALINFERENCE_ENABLED'] == 'false':
-  print('Skipping test: requires LALInference')
-  sys.exit(77)
+    print('Skipping test: requires LALInference')
+    sys.exit(77)
 
 exit_code = 0
 
@@ -60,68 +60,68 @@ outfile_Znoise='test_Znoise'
 priorsamples=Nlive
 
 for h, h0ul in enumerate(h0uls):
-  print("--- h0=%i/%i ---" % (h+1, len(h0uls)), flush=True)
+    print("--- h0=%i/%i ---" % (h+1, len(h0uls)), flush=True)
 
-  # prior file
-  priorfile="\
+    # prior file
+    priorfile="\
 H0 uniform 0 %e\n\
 PHI0 uniform 0 %f\n\
 COSIOTA uniform -1 1\n\
 PSI uniform 0 %f" % (h0ul, np.pi, np.pi/2.)
 
-  priorf = 'test.prior'
-  f = open(priorf, 'w')
-  f.write(priorfile)
-  f.close()
+    priorf = 'test.prior'
+    f = open(priorf, 'w')
+    f.write(priorfile)
+    f.close()
 
-  # run code
-  commandline="\
+    # run code
+    commandline="\
 %s --detectors %s --par-file %s --input-files %s --outfile %s --prior-file %s --Nlive %s --Nmcmcinitial %s --sampleprior %s" \
 % (execu, dets, parf, datafile, outfile, priorf, Nlive, Nmcmcinitial, priorsamples)
 
-  sp.check_call(commandline, shell=True)
+    sp.check_call(commandline, shell=True)
 
-  # read in prior samples
-  f = h5py.File(outfile, 'r')
-  a = f['lalinference']
-  h0samps = a['lalinference_nest']['nested_samples']['H0'][:]
+    # read in prior samples
+    f = h5py.File(outfile, 'r')
+    a = f['lalinference']
+    h0samps = a['lalinference_nest']['nested_samples']['H0'][:]
 
-  # get normed histogram of samples
-  [n, nedges] = np.histogram(h0samps, bins=20, range=(0., h0ul), density=True)
-  nc = np.cumsum(n)*(nedges[1]-nedges[0])
+    # get normed histogram of samples
+    [n, nedges] = np.histogram(h0samps, bins=20, range=(0., h0ul), density=True)
+    nc = np.cumsum(n)*(nedges[1]-nedges[0])
 
-  stat, p = ss.kstest(nc, 'uniform')
+    stat, p = ss.kstest(nc, 'uniform')
 
-  print("K-S test p-value for upper range of %e = %f" % (h0ul, p))
+    print("K-S test p-value for upper range of %e = %f" % (h0ul, p))
 
-  if p < 0.005:
-    print("There might be a problem for this prior distribution")
-    try:
-      import matplotlib as mpl
-      mpl.use('Agg')
-      import matplotlib.pyplot as pl
-    except ModuleNotFoundError:
-      print("matplotlib unavailable; skipping plot")
-      exit_code = 1
-      break
-    fig, ax = pl.subplots(1, 1)
-    ax.hist(h0samps, bins=20, density=True, cumulative=True, histtype='stepfilled', alpha=0.2)
-    ax.plot([0., h0ul], [0., 1], 'k--')
-    ax.set_xlim((0., h0ul))
-    ax.set_ylim((0., 1.))
-    ax.set_xlabel('h_0')
-    ax.set_ylabel('Cumulative probability')
-    fig.savefig('h0samps.png')
-    print("Saved plot to 'h0samps.png'")
-    exit_code = 1
-    break
+    if p < 0.005:
+        print("There might be a problem for this prior distribution")
+        try:
+            import matplotlib as mpl
+            mpl.use('Agg')
+            import matplotlib.pyplot as pl
+        except ModuleNotFoundError:
+            print("matplotlib unavailable; skipping plot")
+            exit_code = 1
+            break
+        fig, ax = pl.subplots(1, 1)
+        ax.hist(h0samps, bins=20, density=True, cumulative=True, histtype='stepfilled', alpha=0.2)
+        ax.plot([0., h0ul], [0., 1], 'k--')
+        ax.set_xlim((0., h0ul))
+        ax.set_ylim((0., 1.))
+        ax.set_xlabel('h_0')
+        ax.set_ylabel('Cumulative probability')
+        fig.savefig('h0samps.png')
+        print("Saved plot to 'h0samps.png'")
+        exit_code = 1
+        break
 
-  # clean up per-run temporary files
-  for fs in (outfile, outfile_SNR, outfile_Znoise):
-    os.remove(fs)
+    # clean up per-run temporary files
+    for fs in (outfile, outfile_SNR, outfile_Znoise):
+        os.remove(fs)
 
 # clean up temporary files
 for fs in (priorf, parf, datafile):
-  os.remove(fs)
+    os.remove(fs)
 
 sys.exit(exit_code)

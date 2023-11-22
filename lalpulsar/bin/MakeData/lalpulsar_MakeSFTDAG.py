@@ -677,11 +677,11 @@ with open(args.dag_file, 'w') as dagFID:
 endTimeAllNodes = endTimeThisNode
 
 if startTimeAllNodes is None:
-  raise Exception('The startTimeAllNodes == none; \
-  the DAG file contains no jobs!')
+    raise Exception('The startTimeAllNodes == none; \
+    the DAG file contains no jobs!')
 
 if (endTimeAllNodes <= startTimeAllNodes):
-  raise Exception('The endTimeAllNodes <= startTimeAllNodes; \
-  the DAG file contains no jobs!')
+    raise Exception('The endTimeAllNodes <= startTimeAllNodes; \
+    the DAG file contains no jobs!')
 
 print(startTimeAllNodes, endTimeAllNodes)
