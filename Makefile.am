@@ -97,13 +97,13 @@ pretty:
 	for subdir in @subdirs@; do \
 		( cd $${subdir} && make pretty ) || exit 1; \
 	done; \
-	if git diff --quiet -- '*.[ch]' '*.py'; then \
+	if git diff --quiet -- $(PRETTY_PATTERN); then \
 		exit 0; \
 	fi; \
 	echo "------------------------------------------------------------------------"; \
 	echo "The following files have now been pretty-formatted:"; \
 	echo ""; \
-	git --no-pager diff --name-only -- '*.[ch]' '*.py'; \
+	git --no-pager diff --name-only -- $(PRETTY_PATTERN); \
 	echo ""; \
 	echo "Please commit these changes."; \
 	echo "------------------------------------------------------------------------"; \
