@@ -24,7 +24,7 @@
  * MA  02110-1301  USA
  */
 
-#ifndef _SFTFILEIO_H  	/* Double-include protection. */
+#ifndef _SFTFILEIO_H    /* Double-include protection. */
 #define _SFTFILEIO_H
 
 #ifdef  __cplusplus   /* C++ protection. */
@@ -129,7 +129,7 @@ extern "C" {
  *
  * The returned SFTCatalog is a vector of SFTDescriptor describing one SFT, with the fields
  * - \c locator:  an opaque data-type describing where to read this SFT from.
- * - \c header:	the SFts header
+ * - \c header: the SFts header
  * - \c comment: the comment-string found in the SFT, if any
  * - \c numBins: the number of frequency-bins in the SFT
  * - \c version: version-number of SFT file-format
@@ -170,37 +170,37 @@ extern "C" {
 /*---------- exported types ----------*/
 
 /** A so-called 'SFT' (short-Fourier-transform) will be stored in a COMPLEX8FrequencySeries */
-typedef COMPLEX8FrequencySeries 	SFTtype;
+typedef COMPLEX8FrequencySeries         SFTtype;
 
 /** The corresponding vector-type to hold a vector of 'SFTs' */
-typedef COMPLEX8FrequencySeriesVector 	SFTVector;
+typedef COMPLEX8FrequencySeriesVector   SFTVector;
 
 /** A collection of SFT vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiSFTVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiSFTVector, SFTVector*, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( MultiSFTVector, SFTVector *, data, UINT4, length ) );
 #endif /* SWIG */
-  UINT4      length;  	/**< number of ifos */
-  SFTVector  **data; 	/**< sftvector for each ifo */
+  UINT4      length;    /**< number of ifos */
+  SFTVector  **data;    /**< sftvector for each ifo */
 } MultiSFTVector;
 
 /** A vector of 'timestamps' of type LIGOTimeGPS */
 typedef struct tagLIGOTimeGPSVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(LIGOTimeGPSVector, LIGOTimeGPS, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( LIGOTimeGPSVector, LIGOTimeGPS, data, UINT4, length ) );
 #endif /* SWIG */
-  UINT4 	length;		/**< number of timestamps */
-  LIGOTimeGPS 	*data;		/**< array of timestamps */
-  REAL8		deltaT;		/**< 'length' of each timestamp (e.g. typically Tsft) */
+  UINT4         length;         /**< number of timestamps */
+  LIGOTimeGPS   *data;          /**< array of timestamps */
+  REAL8         deltaT;         /**< 'length' of each timestamp (e.g. typically Tsft) */
 } LIGOTimeGPSVector;
 
 /** A collection of (multi-IFO) LIGOTimeGPSVector time-stamps vectors */
 typedef struct tagMultiLIGOTimeGPSVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiLIGOTimeGPSVector, LIGOTimeGPSVector*, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( MultiLIGOTimeGPSVector, LIGOTimeGPSVector *, data, UINT4, length ) );
 #endif /* SWIG */
-  UINT4 	        length;	   /**< number of timestamps vectors or ifos */
-  LIGOTimeGPSVector 	**data;    /**< timestamps vector for each ifo */
+  UINT4                 length;    /**< number of timestamps vectors or ifos */
+  LIGOTimeGPSVector     **data;    /**< timestamps vector for each ifo */
 } MultiLIGOTimeGPSVector;
 
 /**
@@ -209,12 +209,11 @@ typedef struct tagMultiLIGOTimeGPSVector {
  * Any of the entries is optional, and they will be combined by logical AND.
  * Note however, that *ALL* timestamps within [minStartTime, maxStartTime) MUST be found if specified.
  */
-typedef struct tagSFTConstraints
-{
-  CHAR *detector;			/**< 2-char channel-prefix describing the detector (eg 'H1', 'H2', 'L1', 'G1' etc) */
-  LIGOTimeGPS *minStartTime;		/**< only include SFTs whose epoch is >= minStartTime */
-  LIGOTimeGPS *maxStartTime;		/**< only include SFTs whose epoch is <  maxStartTime */
-  LIGOTimeGPSVector *timestamps;	/**< list of timestamps  */
+typedef struct tagSFTConstraints {
+  CHAR *detector;                       /**< 2-char channel-prefix describing the detector (eg 'H1', 'H2', 'L1', 'G1' etc) */
+  LIGOTimeGPS *minStartTime;            /**< only include SFTs whose epoch is >= minStartTime */
+  LIGOTimeGPS *maxStartTime;            /**< only include SFTs whose epoch is <  maxStartTime */
+  LIGOTimeGPSVector *timestamps;        /**< list of timestamps  */
 } SFTConstraints;
 
 /**
@@ -222,28 +221,26 @@ typedef struct tagSFTConstraints
  * of where exactly to load this SFT from.
  */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagSFTDescriptor, window_type));
+SWIGLAL( IMMUTABLE_MEMBERS( tagSFTDescriptor, window_type ) );
 #endif /* SWIG */
-typedef struct tagSFTDescriptor
-{
-  struct tagSFTLocator *locator; 	/**< *internal* description of where to find this SFT [opaque!] */
-  SFTtype header;			/**< SFT-header info */
+typedef struct tagSFTDescriptor {
+  struct tagSFTLocator *locator;        /**< *internal* description of where to find this SFT [opaque!] */
+  SFTtype header;                       /**< SFT-header info */
   const char *window_type;              /**< window function applied to SFT */
   REAL8 window_param;                   /**< parameter of window function, if required */
-  CHAR *comment;			/**< comment-entry in SFT-header */
-  UINT4 numBins;			/**< number of frequency-bins in this SFT */
-  UINT4 version;			/**< SFT-specification version */
-  UINT8 crc64;				/**< crc64 checksum */
+  CHAR *comment;                        /**< comment-entry in SFT-header */
+  UINT4 numBins;                        /**< number of frequency-bins in this SFT */
+  UINT4 version;                        /**< SFT-specification version */
+  UINT8 crc64;                          /**< crc64 checksum */
 } SFTDescriptor;
 
 /** An "SFT-catalogue": a vector of SFTdescriptors, as returned by XLALSFTdataFind() */
-typedef struct tagSFTCatalog
-{
+typedef struct tagSFTCatalog {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(SFTCatalog, SFTDescriptor, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( SFTCatalog, SFTDescriptor, data, UINT4, length ) );
 #endif /* SWIG */
-  UINT4 length;			/**< number of SFTs in catalog */
-  SFTDescriptor *data;		/**< array of data-entries describing matched SFTs */
+  UINT4 length;                 /**< number of SFTs in catalog */
+  SFTDescriptor *data;          /**< array of data-entries describing matched SFTs */
 } SFTCatalog;
 
 /**
@@ -255,13 +252,12 @@ typedef struct tagSFTCatalog
  * This means one must not free the original catalog
  * while this multi-view is still in use!
  */
-typedef struct tagMultiSFTCatalogView
-{
+typedef struct tagMultiSFTCatalogView {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiSFTCatalogView, SFTCatalog, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( MultiSFTCatalogView, SFTCatalog, data, UINT4, length ) );
 #endif /* SWIG */
-  UINT4 length;			/**< number of detectors */
-  SFTCatalog *data;		/**< array of SFT-catalog pointers */
+  UINT4 length;                 /**< number of detectors */
+  SFTCatalog *data;             /**< array of SFT-catalog pointers */
 } MultiSFTCatalogView;
 
 /**
@@ -298,12 +294,12 @@ typedef struct tagSFTFilenameSpec {
 
 // These functions are defined in SFTtypes.c
 
-int XLALCWGPSinRange( const LIGOTimeGPS gps, const LIGOTimeGPS* minGPS, const LIGOTimeGPS* maxGPS );
+int XLALCWGPSinRange( const LIGOTimeGPS gps, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
 
 UINT4 XLALRoundFrequencyDownToSFTBin( const REAL8 freq, const REAL8 df );
 UINT4 XLALRoundFrequencyUpToSFTBin( const REAL8 freq, const REAL8 df );
 
-int XLALFindCoveringSFTBins ( UINT4 *firstBin, UINT4 *numBins, REAL8 fMinIn, REAL8 BandIn, REAL8 Tsft );
+int XLALFindCoveringSFTBins( UINT4 *firstBin, UINT4 *numBins, REAL8 fMinIn, REAL8 BandIn, REAL8 Tsft );
 
 /** @} */
 
@@ -315,26 +311,26 @@ int XLALFindCoveringSFTBins ( UINT4 *firstBin, UINT4 *numBins, REAL8 fMinIn, REA
 
 // These functions are defined in SFTtypes.c
 
-SFTtype* XLALCreateSFT ( UINT4 numBins );
-void XLALDestroySFT (SFTtype *sft);
-int XLALCopySFT ( SFTtype *dest, const SFTtype *src );
+SFTtype *XLALCreateSFT( UINT4 numBins );
+void XLALDestroySFT( SFTtype *sft );
+int XLALCopySFT( SFTtype *dest, const SFTtype *src );
 
-SFTVector* XLALCreateSFTVector (UINT4 numSFTs, UINT4 numBins );
-SFTVector* XLALCreateEmptySFTVector (UINT4 numSFTs );
-void XLALDestroySFTVector (SFTVector *vect);
-SFTVector *XLALDuplicateSFTVector ( const SFTVector *sftsIn );
+SFTVector *XLALCreateSFTVector( UINT4 numSFTs, UINT4 numBins );
+SFTVector *XLALCreateEmptySFTVector( UINT4 numSFTs );
+void XLALDestroySFTVector( SFTVector *vect );
+SFTVector *XLALDuplicateSFTVector( const SFTVector *sftsIn );
 
-MultiSFTVector *XLALCreateMultiSFTVector ( UINT4 length, UINT4Vector *numsft );
-MultiSFTVector *XLALCreateEmptyMultiSFTVector ( UINT4Vector *numsft );
-void XLALDestroyMultiSFTVector ( MultiSFTVector *multvect );
+MultiSFTVector *XLALCreateMultiSFTVector( UINT4 length, UINT4Vector *numsft );
+MultiSFTVector *XLALCreateEmptyMultiSFTVector( UINT4Vector *numsft );
+void XLALDestroyMultiSFTVector( MultiSFTVector *multvect );
 
-int XLALExtractBandFromSFT ( SFTtype **outSFT, const SFTtype *inSFT, REAL8 fMin, REAL8 Band );
-SFTVector *XLALExtractBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band );
-MultiSFTVector *XLALExtractBandFromMultiSFTVector ( const MultiSFTVector *inSFTs, REAL8 fMin, REAL8 Band );
+int XLALExtractBandFromSFT( SFTtype **outSFT, const SFTtype *inSFT, REAL8 fMin, REAL8 Band );
+SFTVector *XLALExtractBandFromSFTVector( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band );
+MultiSFTVector *XLALExtractBandFromMultiSFTVector( const MultiSFTVector *inSFTs, REAL8 fMin, REAL8 Band );
 
-int XLALExtractStrictBandFromSFT ( SFTtype **outSFT, const SFTtype *inSFT, REAL8 fMin, REAL8 Band );
-SFTVector *XLALExtractStrictBandFromSFTVector ( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band );
-MultiSFTVector *XLALExtractStrictBandFromMultiSFTVector ( const MultiSFTVector *inSFTs, REAL8 fMin, REAL8 Band );
+int XLALExtractStrictBandFromSFT( SFTtype **outSFT, const SFTtype *inSFT, REAL8 fMin, REAL8 Band );
+SFTVector *XLALExtractStrictBandFromSFTVector( const SFTVector *inSFTs, REAL8 fMin, REAL8 Band );
+MultiSFTVector *XLALExtractStrictBandFromMultiSFTVector( const MultiSFTVector *inSFTs, REAL8 fMin, REAL8 Band );
 
 /** @} */
 
@@ -346,17 +342,17 @@ MultiSFTVector *XLALExtractStrictBandFromMultiSFTVector ( const MultiSFTVector *
 
 // These functions are defined in SFTtypes.c
 
-int XLALAppendSFT2Vector (SFTVector *vect, const SFTtype *sft );
+int XLALAppendSFT2Vector( SFTVector *vect, const SFTtype *sft );
 
-int XLALReorderMultiSFTVector( MultiSFTVector *multiSFTs, const LALStringVector *IFOs);
+int XLALReorderMultiSFTVector( MultiSFTVector *multiSFTs, const LALStringVector *IFOs );
 
-int XLALSFTAdd ( SFTtype *a, const SFTtype *b );
-int XLALSFTVectorAdd ( SFTVector *a, const SFTVector *b );
-int XLALMultiSFTVectorAdd ( MultiSFTVector *a, const MultiSFTVector *b );
+int XLALSFTAdd( SFTtype *a, const SFTtype *b );
+int XLALSFTVectorAdd( SFTVector *a, const SFTVector *b );
+int XLALMultiSFTVectorAdd( MultiSFTVector *a, const MultiSFTVector *b );
 
-int XLALSFTResizeBand ( SFTtype *SFT, REAL8 f0, REAL8 Band );
-int XLALSFTVectorResizeBand ( SFTVector *SFTs, REAL8 f0, REAL8 Band );
-int XLALMultiSFTVectorResizeBand ( MultiSFTVector *multiSFTs, REAL8 f0, REAL8 Band );
+int XLALSFTResizeBand( SFTtype *SFT, REAL8 f0, REAL8 Band );
+int XLALSFTVectorResizeBand( SFTVector *SFTs, REAL8 f0, REAL8 Band );
+int XLALMultiSFTVectorResizeBand( MultiSFTVector *multiSFTs, REAL8 f0, REAL8 Band );
 
 /** @} */
 
@@ -368,11 +364,11 @@ int XLALMultiSFTVectorResizeBand ( MultiSFTVector *multiSFTs, REAL8 f0, REAL8 Ba
 
 // These functions are defined in SFTtypes.c
 
-int XLALEarliestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
-int XLALLatestMultiSFTsample ( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
+int XLALEarliestMultiSFTsample( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
+int XLALLatestMultiSFTsample( LIGOTimeGPS *out, const MultiSFTVector *multisfts );
 
-SFTVector *XLALExtractSFTVectorWithTimestamps ( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
-MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
+SFTVector *XLALExtractSFTVectorWithTimestamps( const SFTVector *sfts, const LIGOTimeGPSVector *timestamps );
+MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps( const MultiSFTVector *multiSFTs, const MultiLIGOTimeGPSVector *multiTimestamps );
 
 /** @} */
 
@@ -384,12 +380,12 @@ MultiSFTVector *XLALExtractMultiSFTVectorWithMultiTimestamps ( const MultiSFTVec
 
 // These functions are defined in SFTtimestamps.c
 
-LIGOTimeGPSVector *XLALCreateTimestampVector (UINT4 len);
-void XLALDestroyTimestampVector (LIGOTimeGPSVector *vect);
-LIGOTimeGPSVector *XLALResizeTimestampVector ( LIGOTimeGPSVector *vector, UINT4 length );
+LIGOTimeGPSVector *XLALCreateTimestampVector( UINT4 len );
+void XLALDestroyTimestampVector( LIGOTimeGPSVector *vect );
+LIGOTimeGPSVector *XLALResizeTimestampVector( LIGOTimeGPSVector *vector, UINT4 length );
 
-MultiLIGOTimeGPSVector *XLALCreateMultiLIGOTimeGPSVector ( UINT4 numDetectors );
-void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
+MultiLIGOTimeGPSVector *XLALCreateMultiLIGOTimeGPSVector( UINT4 numDetectors );
+void XLALDestroyMultiTimestamps( MultiLIGOTimeGPSVector *multiTS );
 
 /** @} */
 
@@ -401,7 +397,7 @@ void XLALDestroyMultiTimestamps ( MultiLIGOTimeGPSVector *multiTS );
 
 // These functions are defined in SFTtimestamps.c
 
-int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVector *timestamps, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
+int XLALFindTimesliceBounds( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVector *timestamps, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
 
 /** @} */
 
@@ -413,22 +409,22 @@ int XLALFindTimesliceBounds ( UINT4 *iStart, UINT4 *iEnd, const LIGOTimeGPSVecto
 
 // These functions are defined in SFTtimestamps.c
 
-LIGOTimeGPSVector *XLALMakeTimestamps ( LIGOTimeGPS tStart, REAL8 Tspan, REAL8 Tsft, REAL8 Toverlap );
-MultiLIGOTimeGPSVector *XLALMakeMultiTimestamps ( LIGOTimeGPS tStart, REAL8 Tspan, REAL8 Tsft, REAL8 Toverlap, UINT4 numDet );
+LIGOTimeGPSVector *XLALMakeTimestamps( LIGOTimeGPS tStart, REAL8 Tspan, REAL8 Tsft, REAL8 Toverlap );
+MultiLIGOTimeGPSVector *XLALMakeMultiTimestamps( LIGOTimeGPS tStart, REAL8 Tspan, REAL8 Tsft, REAL8 Toverlap, UINT4 numDet );
 
-LIGOTimeGPSVector *XLALReadTimestampsFile ( const CHAR *fname );
-MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFiles ( const LALStringVector *fnames );
+LIGOTimeGPSVector *XLALReadTimestampsFile( const CHAR *fname );
+MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFiles( const LALStringVector *fnames );
 
-LIGOTimeGPSVector *XLALReadTimestampsFileConstrained ( const CHAR *fname, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
-MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFilesConstrained ( const LALStringVector *fnames, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
+LIGOTimeGPSVector *XLALReadTimestampsFileConstrained( const CHAR *fname, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
+MultiLIGOTimeGPSVector *XLALReadMultiTimestampsFilesConstrained( const LALStringVector *fnames, const LIGOTimeGPS *minGPS, const LIGOTimeGPS *maxGPS );
 
-LIGOTimeGPSVector *XLALExtractTimestampsFromSFTs ( const SFTVector *sfts );
-MultiLIGOTimeGPSVector *XLALExtractMultiTimestampsFromSFTs ( const MultiSFTVector *multiSFTs );
+LIGOTimeGPSVector *XLALExtractTimestampsFromSFTs( const SFTVector *sfts );
+MultiLIGOTimeGPSVector *XLALExtractMultiTimestampsFromSFTs( const MultiSFTVector *multiSFTs );
 
-LIGOTimeGPSVector *XLALTimestampsFromSFTCatalog ( const SFTCatalog *catalog );
-MultiLIGOTimeGPSVector *XLALTimestampsFromMultiSFTCatalogView ( const MultiSFTCatalogView *multiView );
+LIGOTimeGPSVector *XLALTimestampsFromSFTCatalog( const SFTCatalog *catalog );
+MultiLIGOTimeGPSVector *XLALTimestampsFromMultiSFTCatalogView( const MultiSFTCatalogView *multiView );
 
-LALSegList *XLALReadSegmentsFromFile ( const char *fname );
+LALSegList *XLALReadSegmentsFromFile( const char *fname );
 
 LIGOTimeGPSVector *XLALTimestampsFromSegmentFile( const char *filename, REAL8 Tsft, REAL8 Toverlap, BOOLEAN adjustSegExtraTime, BOOLEAN synchronize );
 
@@ -442,11 +438,11 @@ LIGOTimeGPSVector *XLALTimestampsFromSegmentFile( const char *filename, REAL8 Ts
 
 // These functions are defined in SFTcatalog.c
 
-SFTCatalog *XLALSFTdataFind ( const CHAR *file_pattern, const SFTConstraints *constraints );
-void XLALDestroySFTCatalog ( SFTCatalog *catalog );
+SFTCatalog *XLALSFTdataFind( const CHAR *file_pattern, const SFTConstraints *constraints );
+void XLALDestroySFTCatalog( SFTCatalog *catalog );
 
-MultiSFTCatalogView *XLALGetMultiSFTCatalogView ( const SFTCatalog *catalog );
-void XLALDestroyMultiSFTCatalogView ( MultiSFTCatalogView *multiView );
+MultiSFTCatalogView *XLALGetMultiSFTCatalogView( const SFTCatalog *catalog );
+void XLALDestroyMultiSFTCatalogView( MultiSFTCatalogView *multiView );
 
 /** @} */
 
@@ -463,15 +459,15 @@ int XLALCheckCRCSFTCatalog( BOOLEAN *crc_check, SFTCatalog *catalog );
 LALStringVector *XLALListIFOsInCatalog( const SFTCatalog *catalog );
 INT4 XLALCountIFOsInCatalog( const SFTCatalog *catalog );
 
-const CHAR * XLALshowSFTLocator ( const struct tagSFTLocator *locator );
+const CHAR *XLALshowSFTLocator( const struct tagSFTLocator *locator );
 
 #ifndef SWIG // exclude from SWIG interface
 int XLALSFTCatalogTimeslice( SFTCatalog *slice, const SFTCatalog *catalog, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
 #endif
 #ifdef SWIG // SWIG interface directives
-SWIGLAL( RETURN_OWNED_BY_1ST_ARG( SFTCatalog*, XLALReturnSFTCatalogTimeslice) );
+SWIGLAL( RETURN_OWNED_BY_1ST_ARG( SFTCatalog *, XLALReturnSFTCatalogTimeslice ) );
 #endif
-SFTCatalog *XLALReturnSFTCatalogTimeslice(const SFTCatalog *catalog, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
+SFTCatalog *XLALReturnSFTCatalogTimeslice( const SFTCatalog *catalog, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
 
 /** @} */
 
@@ -496,17 +492,17 @@ SFTCatalog *XLALMultiAddToFakeSFTCatalog( SFTCatalog *catalog, const LALStringVe
 
 // These functions are defined in SFTnaming.c
 
-int XLALRegisterSpecialCWDetector( const LALDetector* specialDetector );
-int XLALFindCWDetector ( CHAR** prefix, INT4 *lalCachedIndex, const CHAR *name, const BOOLEAN exactMatch );
-BOOLEAN XLALIsValidCWDetector ( const CHAR *name );
-CHAR *XLALGetChannelPrefix ( const CHAR *name );
-const LALDetector *XLALGetSiteInfo ( const CHAR *name );
+int XLALRegisterSpecialCWDetector( const LALDetector *specialDetector );
+int XLALFindCWDetector( CHAR **prefix, INT4 *lalCachedIndex, const CHAR *name, const BOOLEAN exactMatch );
+BOOLEAN XLALIsValidCWDetector( const CHAR *name );
+CHAR *XLALGetChannelPrefix( const CHAR *name );
+const LALDetector *XLALGetSiteInfo( const CHAR *name );
 
-int XLALFillSFTFilenameSpecStrings( SFTFilenameSpec *spec, const CHAR* path, const CHAR *extn, const CHAR* detector, const CHAR* window_type, const CHAR* privMisc, const CHAR* pubObsKind, const CHAR* pubChannel );
+int XLALFillSFTFilenameSpecStrings( SFTFilenameSpec *spec, const CHAR *path, const CHAR *extn, const CHAR *detector, const CHAR *window_type, const CHAR *privMisc, const CHAR *pubObsKind, const CHAR *pubChannel );
 char *XLALBuildSFTFilenameFromSpec( const SFTFilenameSpec *spec );
 int XLALParseSFTFilenameIntoSpec( SFTFilenameSpec *spec, const char *SFTpath );
-int XLALCheckValidDescriptionField ( const char *desc );
-int XLALCompareSFTWindows ( const CHAR *type1, const REAL8 param1, const CHAR *type2, const REAL8 param2 );
+int XLALCheckValidDescriptionField( const char *desc );
+int XLALCompareSFTWindows( const CHAR *type1, const REAL8 param1, const CHAR *type2, const REAL8 param2 );
 
 /** @} */
 
@@ -518,18 +514,18 @@ int XLALCompareSFTWindows ( const CHAR *type1, const REAL8 param1, const CHAR *t
 
 // These functions are defined in FindFiles.c
 
-LALStringVector *XLALFindFiles (const CHAR *globstring);
+LALStringVector *XLALFindFiles( const CHAR *globstring );
 
 // These functions are defined in SFTfileIO.c
 
-SFTVector* XLALLoadSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
+SFTVector *XLALLoadSFTs( const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax );
 
-MultiSFTVector* XLALLoadMultiSFTs (const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax);
-MultiSFTVector *XLALLoadMultiSFTsFromView ( const MultiSFTCatalogView *multiCatalogView, REAL8 fMin, REAL8 fMax );
+MultiSFTVector *XLALLoadMultiSFTs( const SFTCatalog *catalog, REAL8 fMin, REAL8 fMax );
+MultiSFTVector *XLALLoadMultiSFTsFromView( const MultiSFTCatalogView *multiCatalogView, REAL8 fMin, REAL8 fMax );
 
 // These functions are defined in SFDBfileIO.c
 
-MultiSFTVector* XLALReadSFDB(REAL8 f_min, REAL8 f_max, const CHAR *file_pattern, const CHAR *timeStampsStarting, const CHAR *timeStampsFinishing);
+MultiSFTVector *XLALReadSFDB( REAL8 f_min, REAL8 f_max, const CHAR *file_pattern, const CHAR *timeStampsStarting, const CHAR *timeStampsFinishing );
 
 /** @} */
 
@@ -541,14 +537,14 @@ MultiSFTVector* XLALReadSFDB(REAL8 f_min, REAL8 f_max, const CHAR *file_pattern,
 
 // These functions are defined in SFTfileIO.c
 
-int XLALWriteSFT2FilePointer  ( const SFTtype *sft, FILE *fp, const CHAR* SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
-int XLALWriteSFT2NamedFile    ( const SFTtype *sft, const CHAR *SFTfilename, const CHAR* SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
-int XLALWriteSFT2StandardFile ( const SFTtype *sft, SFTFilenameSpec *SFTfnspec, const CHAR *SFTcomment );
+int XLALWriteSFT2FilePointer( const SFTtype *sft, FILE *fp, const CHAR *SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
+int XLALWriteSFT2NamedFile( const SFTtype *sft, const CHAR *SFTfilename, const CHAR *SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
+int XLALWriteSFT2StandardFile( const SFTtype *sft, SFTFilenameSpec *SFTfnspec, const CHAR *SFTcomment );
 
-int XLALWriteSFTVector2NamedFile    ( const SFTVector *sftVect, const CHAR *SFTfilename, const CHAR* SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
-int XLALWriteSFTVector2StandardFile ( const SFTVector *sftVect, SFTFilenameSpec *SFTfnspec, const CHAR *SFTcomment, const BOOLEAN merged );
+int XLALWriteSFTVector2NamedFile( const SFTVector *sftVect, const CHAR *SFTfilename, const CHAR *SFTwindowtype, const REAL8 SFTwindowparam, const CHAR *SFTcomment );
+int XLALWriteSFTVector2StandardFile( const SFTVector *sftVect, SFTFilenameSpec *SFTfnspec, const CHAR *SFTcomment, const BOOLEAN merged );
 
-int XLALCheckSFTFileIsValid ( const char *fname );
+int XLALCheckSFTFileIsValid( const char *fname );
 
 /** @} */
 
