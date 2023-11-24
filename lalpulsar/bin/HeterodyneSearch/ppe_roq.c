@@ -43,18 +43,21 @@
  *
  * @return An array with the node freqeuncy values
  */
-REAL8 *chebyshev_gauss_lobatto_nodes( REAL8 freqmin, REAL8 freqmax, UINT4 nnodes ){
+REAL8 *chebyshev_gauss_lobatto_nodes( REAL8 freqmin, REAL8 freqmax, UINT4 nnodes )
+{
   UINT4 i = 0;
   REAL8 *fnodes = NULL;
   REAL8 df, fplus, n;
 
-  XLAL_CHECK_NULL( fnodes = XLALMalloc(nnodes*sizeof(REAL8)), XLAL_EFUNC, "Couldn't allocate memory for frequency nodes." );
+  XLAL_CHECK_NULL( fnodes = XLALMalloc( nnodes * sizeof( REAL8 ) ), XLAL_EFUNC, "Couldn't allocate memory for frequency nodes." );
 
-  df = (freqmax-freqmin)/2.;
-  fplus = (freqmax+freqmin)/2.;
-  n = (REAL8)nnodes - 1.;
+  df = ( freqmax - freqmin ) / 2.;
+  fplus = ( freqmax + freqmin ) / 2.;
+  n = ( REAL8 )nnodes - 1.;
 
-  for ( i=0; i<nnodes; i++ ){ fnodes[i] = -cos(LAL_PI*(REAL8)i/n)*df + fplus; }
+  for ( i = 0; i < nnodes; i++ ) {
+    fnodes[i] = -cos( LAL_PI * ( REAL8 )i / n ) * df + fplus;
+  }
 
   return fnodes;
 }
@@ -76,7 +79,8 @@ REAL8 *chebyshev_gauss_lobatto_nodes( REAL8 freqmin, REAL8 freqmax, UINT4 nnodes
  *
  * @param[in] runState The algorithm run state
  */
-void generate_interpolant( LALInferenceRunState *runState ){
+void generate_interpolant( LALInferenceRunState *runState )
+{
   REAL8 tolerance = ROQTOLERANCE;
   UINT4 ntraining = 0, nenrichmax = 100, verbose = 0, outputroq = 0, inputroq = 0, nconsec = 3;
   UINT4 counter = 0, i = 0, j = 0, conseccount = 0;
@@ -95,72 +99,86 @@ void generate_interpolant( LALInferenceRunState *runState ){
   REAL8 tottime;
   UINT4 nquadtot = 0, nlineartot = 0, ndatatot = 0;
 
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){ gettimeofday(&time1, NULL); }
+  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ) {
+    gettimeofday( &time1, NULL );
+  }
 
   /* check whether to use ROQ */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--roq" );
-  if ( !ppt ){ return; }
+  if ( !ppt ) {
+    return;
+  }
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--input-weights" );
-  if ( !ppt ){
+  if ( !ppt ) {
     /* get tolerance stopping criterion */
     ppt = LALInferenceGetProcParamVal( runState->commandLine, "--roq-tolerance" );
-    if ( ppt ){ tolerance = atof( ppt->value ); }
+    if ( ppt ) {
+      tolerance = atof( ppt->value );
+    }
     XLAL_CHECK_VOID( tolerance < 1. && tolerance > 0., XLAL_EFUNC, "ROQ tolerence (%le) is not within allowed range.", tolerance );
 
     /* get number of training sets */
     ppt = LALInferenceGetProcParamVal( runState->commandLine, "--ntraining" );
-    if ( ppt ){ ntraining = atoi( ppt->value ); }
-    else { XLAL_ERROR_VOID( XLAL_EFUNC, "Number of training sets must be specifed if running with --roq" ); }
+    if ( ppt ) {
+      ntraining = atoi( ppt->value );
+    } else {
+      XLAL_ERROR_VOID( XLAL_EFUNC, "Number of training sets must be specifed if running with --roq" );
+    }
     XLAL_CHECK_VOID( ntraining > 1, XLAL_EFUNC, "Number of training sets (%d) is too small!", ntraining );
 
     /* check whether to output weights */
     ppt = LALInferenceGetProcParamVal( runState->commandLine, "--output-weights" );
-    if ( ppt ){
+    if ( ppt ) {
       CHAR *outputweights = ppt->value;
-      XLAL_CHECK_VOID( (fpout = fopen(outputweights, "wb")) != NULL, XLAL_EIO, "Could not open weights file for output." );
+      XLAL_CHECK_VOID( ( fpout = fopen( outputweights, "wb" ) ) != NULL, XLAL_EIO, "Could not open weights file for output." );
       outputroq = 1;
 
       /* write out the number of data streams */
-      nstreams = *(UINT4*)LALInferenceGetVariable( runState->algorithmParams, "numstreams" );
-      XLAL_CHECK_VOID( fwrite(&nstreams, sizeof(UINT4), 1, fpout) == 1, XLAL_EIO, "Could not write the number of data steams to file!" );
+      nstreams = *( UINT4 * )LALInferenceGetVariable( runState->algorithmParams, "numstreams" );
+      XLAL_CHECK_VOID( fwrite( &nstreams, sizeof( UINT4 ), 1, fpout ) == 1, XLAL_EIO, "Could not write the number of data steams to file!" );
     }
 
     /* check if a maximum number of enrichment steps is set */
     ppt = LALInferenceGetProcParamVal( runState->commandLine, "--enrich-max" );
-    if ( ppt ){ nenrichmax = atoi(ppt->value); }
-  }
-  else{
+    if ( ppt ) {
+      nenrichmax = atoi( ppt->value );
+    }
+  } else {
     /* read in weights from a file */
     CHAR *inputweights = ppt->value;
-    UINT4 nstreamcheck = *(UINT4*)LALInferenceGetVariable( runState->algorithmParams, "numstreams" );
+    UINT4 nstreamcheck = *( UINT4 * )LALInferenceGetVariable( runState->algorithmParams, "numstreams" );
 
-    XLAL_CHECK_VOID( (fpin = fopen(inputweights, "rb")) != NULL, XLAL_EIO, "Could not open weights file for reading.");
+    XLAL_CHECK_VOID( ( fpin = fopen( inputweights, "rb" ) ) != NULL, XLAL_EIO, "Could not open weights file for reading." );
 
     /* read in the first bit of information, which is the number of datastreams as an UINT4 */
-    XLAL_CHECK_VOID( fread((void*)&nstreams, sizeof(UINT4), 1, fpin) == 1, XLAL_EIO, "Could not read in first value from weights file\n");
+    XLAL_CHECK_VOID( fread( ( void * )&nstreams, sizeof( UINT4 ), 1, fpin ) == 1, XLAL_EIO, "Could not read in first value from weights file\n" );
     XLAL_CHECK_VOID( nstreams == nstreamcheck, XLAL_EFUNC, "Number of data streams inconsistent with ROQ weights file" );
 
     inputroq = 1;
   }
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--verbose" );
-  if ( ppt ){ verbose = 1; }
+  if ( ppt ) {
+    verbose = 1;
+  }
 
   /* check if using a Gaussian likelihoodm and therefore need variance weighted ROQ values */
-  if ( LALInferenceGetProcParamVal( runState->commandLine, "--gaussian-like" ) ){ gaussianLike = 1; }
+  if ( LALInferenceGetProcParamVal( runState->commandLine, "--gaussian-like" ) ) {
+    gaussianLike = 1;
+  }
 
   ifo = runState->threads[0].model->ifo;
 
   /* we need to get the frequency factors */
-  REAL8Vector *freqFactors = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "freqfactors" );
+  REAL8Vector *freqFactors = *( REAL8Vector ** )LALInferenceGetVariable( ifo->params, "freqfactors" );
   UINT4 nfreqs = freqFactors->length;
   REAL8Vector *freqsCopy = XLALCreateREAL8Vector( nfreqs );
-  memcpy(freqsCopy->data, freqFactors->data, sizeof(REAL8)*nfreqs);
+  memcpy( freqsCopy->data, freqFactors->data, sizeof( REAL8 )*nfreqs );
 
-  while ( ifo ){
-    UINT4Vector *chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifo->params, "chunkLength" );
-    REAL8 dt = *(REAL8*)LALInferenceGetVariable( ifo->params, "dt" );
+  while ( ifo ) {
+    UINT4Vector *chunkLengths = *( UINT4Vector ** )LALInferenceGetVariable( ifo->params, "chunkLength" );
+    REAL8 dt = *( REAL8 * )LALInferenceGetVariable( ifo->params, "dt" );
     INT4 startidx = 0;
 
     UINT4 dlen = 0;
@@ -174,61 +192,61 @@ void generate_interpolant( LALInferenceRunState *runState ){
 
     /* create a copy of the model vector */
     LIGOTimeGPS gpstime = {0, 0};
-    REAL8Vector *sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "siderealDay" );
+    REAL8Vector *sidDayFrac = *( REAL8Vector ** )LALInferenceGetVariable( ifo->params, "siderealDay" );
     REAL8Vector *ssbdelays = NULL, *bsbdelays = NULL, *glitchphase = NULL;
 
     LIGOTimeGPSVector *timenodes = NULL;
     REAL8Vector *sidtimenodes = NULL;
     REAL8Vector *ssbnodes = NULL, *bsbnodes = NULL, *gpnodes = NULL;
 
-    data->roq = XLALMalloc(sizeof(LALInferenceROQData));
+    data->roq = XLALMalloc( sizeof( LALInferenceROQData ) );
 
-    ssbdelays = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "ssb_delays" );
-    if ( LALInferenceCheckVariable( ifo->params, "bsb_delays") ){
-      bsbdelays = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "bsb_delays" );
+    ssbdelays = *( REAL8Vector ** )LALInferenceGetVariable( ifo->params, "ssb_delays" );
+    if ( LALInferenceCheckVariable( ifo->params, "bsb_delays" ) ) {
+      bsbdelays = *( REAL8Vector ** )LALInferenceGetVariable( ifo->params, "bsb_delays" );
     }
-    if ( LALInferenceCheckVariable( ifo->params, "glitch_phase" ) ){
-      glitchphase = *(REAL8Vector**)LALInferenceGetVariable( ifo->params, "glitch_phase" );
+    if ( LALInferenceCheckVariable( ifo->params, "glitch_phase" ) ) {
+      glitchphase = *( REAL8Vector ** )LALInferenceGetVariable( ifo->params, "glitch_phase" );
     }
 
     if ( inputroq ) {
       /* we assume that the data has been split into the same number and length chunks as in that
        * used to calculate the weights, but the second value(s) will be the number of chunks,
        * for the given stream, which can be checked */
-      XLAL_CHECK_VOID( fread((void*)&nchunks, sizeof(UINT4), 1, fpin) == 1, XLAL_EIO, "Could not read chunk numbers from weights file\n");
-      XLAL_CHECK_VOID( nchunks == chunkLengths->length, XLAL_EFUNC, "Number of chunks is not consistent!");
+      XLAL_CHECK_VOID( fread( ( void * )&nchunks, sizeof( UINT4 ), 1, fpin ) == 1, XLAL_EIO, "Could not read chunk numbers from weights file\n" );
+      XLAL_CHECK_VOID( nchunks == chunkLengths->length, XLAL_EFUNC, "Number of chunks is not consistent!" );
     }
 
-    if ( outputroq ){
-      XLAL_CHECK_VOID( fwrite(&chunkLengths->length, sizeof(UINT4), 1, fpout) == 1, XLAL_EIO, "Could not write number of chunks!" );
+    if ( outputroq ) {
+      XLAL_CHECK_VOID( fwrite( &chunkLengths->length, sizeof( UINT4 ), 1, fpout ) == 1, XLAL_EIO, "Could not write number of chunks!" );
     }
 
     /* as we only use one datastream at a time (e.g. one frequency time series) we need to set the
      * freqFactor to just contain that one frequency */
     REAL8Vector *freqsTemp = XLALCreateREAL8Vector( 1 );
-    freqsTemp->data[0] = freqsCopy->data[counter%nfreqs];
+    freqsTemp->data[0] = freqsCopy->data[counter % nfreqs];
     check_and_add_fixed_variable( ifo->params, "freqfactors", &freqsTemp, LALINFERENCE_REAL8Vector_t );
 
     /* get chunk */
-    for ( i=0; i<chunkLengths->length; i++ ){
+    for ( i = 0; i < chunkLengths->length; i++ ) {
       UINT4 tlen = chunkLengths->data[i], enrichcounts = 0, nbases0 = 0, nbases0quad = 0;
       LALInferenceCOMPLEXROQInterpolant *interp = NULL;
       LALInferenceREALROQInterpolant *interpquad = NULL;
 
-      if ( !inputroq ){
+      if ( !inputroq ) {
         COMPLEX16Array *ts = NULL; /* training set for linear part of interpolant */
         REAL8Array *tsquad = NULL; /* training set for quadratic part of interpolant */
         REAL8 maxprojerr = 0.;
 
         /* a temporary run state containing just the required data for a single detector */
-        LALInferenceRunState *tmpRS = XLALMalloc(sizeof(LALInferenceRunState));
-        LALInferenceIFOModel *ifotmp = XLALMalloc(sizeof(LALInferenceIFOModel));
-        ifotmp->extraData = XLALCalloc(1, sizeof(IFOModelExtraData));
+        LALInferenceRunState *tmpRS = XLALMalloc( sizeof( LALInferenceRunState ) );
+        LALInferenceIFOModel *ifotmp = XLALMalloc( sizeof( LALInferenceIFOModel ) );
+        ifotmp->extraData = XLALCalloc( 1, sizeof( IFOModelExtraData ) );
         ifotmp->next = NULL;
-        tmpRS->threads = LALInferenceInitThreads(1);
-        tmpRS->threads[0].model = XLALMalloc(sizeof(LALInferenceModel));
+        tmpRS->threads = LALInferenceInitThreads( 1 );
+        tmpRS->threads[0].model = XLALMalloc( sizeof( LALInferenceModel ) );
         tmpRS->threads[0].model->templt = runState->threads[0].model->templt;
-        LALInferenceClearVariables(tmpRS->threads[0].currentParams); /* free memory as LALInferenceInitThreads already has allocated memory */
+        LALInferenceClearVariables( tmpRS->threads[0].currentParams ); /* free memory as LALInferenceInitThreads already has allocated memory */
         tmpRS->threads[0].currentParams = runState->threads[0].currentParams;
         tmpRS->threads[0].model->ifo = ifotmp;
         tmpRS->GSLrandom = runState->GSLrandom;
@@ -240,8 +258,8 @@ void generate_interpolant( LALInferenceRunState *runState ){
         /* create a new model vector */
         ifotmp->compTimeSignal = XLALCreateCOMPLEX16TimeSeries( "", &gpstime, 0., 1., &lalSecondUnit, tlen );
 
-        ifotmp->params = XLALCalloc(1, sizeof(LALInferenceVariables));
-        LALInferenceCopyVariables(ifo->params, ifotmp->params); /* copy parameters */
+        ifotmp->params = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
+        LALInferenceCopyVariables( ifo->params, ifotmp->params ); /* copy parameters */
         IFO_XTRA_DATA( ifotmp )->ephem = IFO_XTRA_DATA( ifo )->ephem;
         ifotmp->detector = ifo->detector;
         IFO_XTRA_DATA( ifotmp )->tdat = IFO_XTRA_DATA( ifo )->tdat;
@@ -256,42 +274,52 @@ void generate_interpolant( LALInferenceRunState *runState ){
         LALInferenceRemoveVariable( ifotmp->params, "ssb_delays" );
 
         REAL8Vector *thisbsbdelay = NULL;
-        if ( bsbdelays != NULL ){
+        if ( bsbdelays != NULL ) {
           thisbsbdelay = XLALCreateREAL8Vector( tlen );
           LALInferenceRemoveVariable( ifotmp->params, "bsb_delays" );
         }
 
         REAL8Vector *thisglitchphase = NULL;
-        if ( glitchphase != NULL ){
+        if ( glitchphase != NULL ) {
           thisglitchphase = XLALCreateREAL8Vector( tlen );
           LALInferenceRemoveVariable( ifotmp->params, "glitch_phase" );
         }
 
         /* get chunk times */
-        for ( j=0; j<tlen; j++ ){
-          IFO_XTRA_DATA( ifotmp )->times->data[j] = IFO_XTRA_DATA( ifo )->times->data[startidx+j];
-          thissiddayfrac->data[j] = sidDayFrac->data[startidx+j];
-          thisssbdelay->data[j] = ssbdelays->data[startidx+j];
-          if ( bsbdelays != NULL ){ thisbsbdelay->data[j] = bsbdelays->data[startidx+j]; }
-          if ( glitchphase != NULL ){ thisglitchphase->data[j] = glitchphase->data[startidx+j]; }
+        for ( j = 0; j < tlen; j++ ) {
+          IFO_XTRA_DATA( ifotmp )->times->data[j] = IFO_XTRA_DATA( ifo )->times->data[startidx + j];
+          thissiddayfrac->data[j] = sidDayFrac->data[startidx + j];
+          thisssbdelay->data[j] = ssbdelays->data[startidx + j];
+          if ( bsbdelays != NULL ) {
+            thisbsbdelay->data[j] = bsbdelays->data[startidx + j];
+          }
+          if ( glitchphase != NULL ) {
+            thisglitchphase->data[j] = glitchphase->data[startidx + j];
+          }
         }
 
         LALInferenceAddVariable( ifotmp->params, "siderealDay", &thissiddayfrac, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
         LALInferenceAddVariable( ifotmp->params, "ssb_delays", &thisssbdelay, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
-        if ( bsbdelays != NULL ){ LALInferenceAddVariable( ifotmp->params, "bsb_delays", &thisbsbdelay, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED ); }
-        if ( glitchphase != NULL ){ LALInferenceAddVariable( ifotmp->params, "glitch_phase", &thisglitchphase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED ); }
+        if ( bsbdelays != NULL ) {
+          LALInferenceAddVariable( ifotmp->params, "bsb_delays", &thisbsbdelay, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+        }
+        if ( glitchphase != NULL ) {
+          LALInferenceAddVariable( ifotmp->params, "glitch_phase", &thisglitchphase, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
+        }
 
         REAL8Vector *deltas = XLALCreateREAL8Vector( 1 );
         deltas->data[0] = dt;
 
-        if ( verbose ){ fprintf(stderr, "Data chunk no. %d of %d (length: %d)\n", i+1, chunkLengths->length, tlen); }
+        if ( verbose ) {
+          fprintf( stderr, "Data chunk no. %d of %d (length: %d)\n", i + 1, chunkLengths->length, tlen );
+        }
 
         /* GENERATE TRAINING SET FOR PART OF ROQ THAT IS LINEAR WRT THE MODEL <d|h> */
         ts = generate_training_set( tmpRS, ntraining ); /* generate the training set */
 
         COMPLEX16Array *RB = NULL; /* the reduced basis */
         UINT4Vector *greedypts = NULL; /* the points in the training set used to produce the reduced basis */
-        maxprojerr = LALInferenceGenerateCOMPLEX16OrthonormalBasis(&RB, deltas, tolerance, &ts, &greedypts); /* generate reduced basis */
+        maxprojerr = LALInferenceGenerateCOMPLEX16OrthonormalBasis( &RB, deltas, tolerance, &ts, &greedypts ); /* generate reduced basis */
         XLAL_CHECK_VOID( RB != NULL, XLAL_EFUNC, "Could not produce linear basis set" );
         nbases->data[i] = RB->dimLength->data[0];
 
@@ -299,7 +327,9 @@ void generate_interpolant( LALInferenceRunState *runState ){
         if ( nenrichmax > 0 && nbases->data[i] < tlen ) {
           enrichcounts = 0;
           conseccount = 0; /* counter for number of consecutive enrichments that add no new bases */
-          if( verbose ){ fprintf(stderr, "Enriching linear basis (no. bases): %d", nbases->data[i]); }
+          if ( verbose ) {
+            fprintf( stderr, "Enriching linear basis (no. bases): %d", nbases->data[i] );
+          }
 
           do {
             /* create a new training set to try and "enrich" the original one */
@@ -307,64 +337,78 @@ void generate_interpolant( LALInferenceRunState *runState ){
             REAL8 newmaxprojerr = maxprojerr;
             tsenrich = generate_training_set( tmpRS, ntraining );
 
-            newmaxprojerr = LALInferenceEnrichCOMPLEX16Basis(deltas, tolerance, &RB, &greedypts, ts, &tsenrich); /* regenerate reduced basis */
-            if ( newmaxprojerr != 0. ) { maxprojerr = newmaxprojerr; } // update only if a new reduced basis has been generated
+            newmaxprojerr = LALInferenceEnrichCOMPLEX16Basis( deltas, tolerance, &RB, &greedypts, ts, &tsenrich ); /* regenerate reduced basis */
+            if ( newmaxprojerr != 0. ) {
+              maxprojerr = newmaxprojerr;  // update only if a new reduced basis has been generated
+            }
 
             /* check if no new bases have been added */
-            if ( nbases->data[i] == RB->dimLength->data[0] ){
+            if ( nbases->data[i] == RB->dimLength->data[0] ) {
               /* check if LALInferenceGenerateCOMPLEX16OrthonormalBasis exited before reaching the required tolerance */
-              if ( maxprojerr < tolerance ){ conseccount++; }
+              if ( maxprojerr < tolerance ) {
+                conseccount++;
+              }
+            } else {
+              conseccount = 0;
             }
-            else{ conseccount = 0; }
 
             nbases->data[i] = RB->dimLength->data[0];
 
             /* check if there are more bases than actual data points */
-            if ( nbases->data[i] >= tlen ){
+            if ( nbases->data[i] >= tlen ) {
               XLALDestroyCOMPLEX16Array( tsenrich );
               nbases->data[i] = tlen;
               break;
             }
 
-            if ( verbose ){ fprintf(stderr, "...%d", nbases->data[i]); }
+            if ( verbose ) {
+              fprintf( stderr, "...%d", nbases->data[i] );
+            }
 
             // copy tsenrich into ts (as this is the new enriched training set from which the reduced basis was calculated)
-            if ( nbases->data[i] != RB->dimLength->data[0] ){
+            if ( nbases->data[i] != RB->dimLength->data[0] ) {
               XLALDestroyCOMPLEX16Array( ts );
               UINT4Vector *dimstmp = NULL;
               dimstmp = XLALCreateUINT4Vector( 2 );
               dimstmp->data[0] = tsenrich->dimLength->data[0];
               dimstmp->data[1] = tsenrich->dimLength->data[1];
               ts = XLALCreateCOMPLEX16Array( dimstmp );
-              for ( UINT4 didx = 0; didx < (dimstmp->data[0]*dimstmp->data[1]); didx++ ){ ts->data[didx] = tsenrich->data[didx]; }
+              for ( UINT4 didx = 0; didx < ( dimstmp->data[0]*dimstmp->data[1] ); didx++ ) {
+                ts->data[didx] = tsenrich->data[didx];
+              }
               XLALDestroyUINT4Vector( dimstmp );
             }
 
             XLALDestroyCOMPLEX16Array( tsenrich );
             enrichcounts++;
-          } while( enrichcounts < nenrichmax && conseccount < nconsec );
-          if ( verbose ){ fprintf(stderr, "\n"); }
+          } while ( enrichcounts < nenrichmax && conseccount < nconsec );
+          if ( verbose ) {
+            fprintf( stderr, "\n" );
+          }
         }
 
-        XLALDestroyUINT4Vector( greedypts );           
+        XLALDestroyUINT4Vector( greedypts );
         XLALDestroyCOMPLEX16Array( ts );
 
-        if ( verbose ){
-          fprintf(stderr, "Number of linear reduced bases for ROQ generation is %d, with a maximum projection error of %le\n", nbases->data[i], maxprojerr);
+        if ( verbose ) {
+          fprintf( stderr, "Number of linear reduced bases for ROQ generation is %d, with a maximum projection error of %le\n", nbases->data[i], maxprojerr );
         }
 
         nbases0 = nbases->data[i];
         nlineartot += nbases0;
 
         /* generate the interpolants (pass the data noise variances for weighting the interpolants in the case of using a Gaussian likelihood) */
-        if ( nbases0 <= tlen-1 ){ interp = LALInferenceGenerateCOMPLEXROQInterpolant(RB); }
-        else{
+        if ( nbases0 <= tlen - 1 ) {
+          interp = LALInferenceGenerateCOMPLEXROQInterpolant( RB );
+        } else {
           /* if the number of bases is greater than the length just use all the data points in a chunk */
-          interp = XLALMalloc(sizeof(LALInferenceCOMPLEXROQInterpolant));
+          interp = XLALMalloc( sizeof( LALInferenceCOMPLEXROQInterpolant ) );
           interp->B = NULL;
-          interp->nodes = XLALMalloc(sizeof(UINT4)*tlen);
+          interp->nodes = XLALMalloc( sizeof( UINT4 ) * tlen );
 
-          for ( j=0; j<tlen; j++ ){ interp->nodes[j] = (UINT4)j; }
+          for ( j = 0; j < tlen; j++ ) {
+            interp->nodes[j] = ( UINT4 )j;
+          }
         }
 
         /* free the reduced basis set and training set */
@@ -375,7 +419,7 @@ void generate_interpolant( LALInferenceRunState *runState ){
 
         REAL8Array *RBquad = NULL; /* the reduced basis */
         greedypts = NULL;
-        maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis(&RBquad, deltas, tolerance, &tsquad, &greedypts); /* generate reduced basis */
+        maxprojerr = LALInferenceGenerateREAL8OrthonormalBasis( &RBquad, deltas, tolerance, &tsquad, &greedypts ); /* generate reduced basis */
         XLAL_CHECK_VOID( RBquad != NULL, XLAL_EFUNC, "Could not produce quadratic basis set" );
         nbasesquad->data[i] = RBquad->dimLength->data[0];
 
@@ -384,70 +428,86 @@ void generate_interpolant( LALInferenceRunState *runState ){
           enrichcounts = 0;
           conseccount = 0; /* counter for number of consecutive enrichments that add no new bases */
 
-          if( verbose ){ fprintf(stderr, "Enriching quadratic basis (no. bases): %d", nbasesquad->data[i]); }
+          if ( verbose ) {
+            fprintf( stderr, "Enriching quadratic basis (no. bases): %d", nbasesquad->data[i] );
+          }
           do {
             /* create a new training set to try and "enrich" the original one */
             REAL8Array *tsenrich = NULL;
             REAL8 newmaxprojerr = maxprojerr;
             tsenrich = generate_training_set_quad( tmpRS, ntraining );
 
-            newmaxprojerr = LALInferenceEnrichREAL8Basis(deltas, tolerance, &RBquad, &greedypts, tsquad, &tsenrich); /* regenerate reduced basis */
-            if ( newmaxprojerr != 0. ) { maxprojerr = newmaxprojerr; } // update only if a new reduced basis has been generated
+            newmaxprojerr = LALInferenceEnrichREAL8Basis( deltas, tolerance, &RBquad, &greedypts, tsquad, &tsenrich ); /* regenerate reduced basis */
+            if ( newmaxprojerr != 0. ) {
+              maxprojerr = newmaxprojerr;  // update only if a new reduced basis has been generated
+            }
 
             /* check if no new bases have been added */
-            if ( nbasesquad->data[i] == RBquad->dimLength->data[0] ){
+            if ( nbasesquad->data[i] == RBquad->dimLength->data[0] ) {
               /* check if LALInferenceGenerateREAL8OrthonormalBasis exited before reaching the required tolerance */
-              if ( maxprojerr < tolerance ){ conseccount++; }
+              if ( maxprojerr < tolerance ) {
+                conseccount++;
+              }
+            } else {
+              conseccount = 0;
             }
-            else{ conseccount = 0; }
 
             nbasesquad->data[i] = RBquad->dimLength->data[0];
 
             /* check if there are more bases than actual data points */
-            if ( nbasesquad->data[i] >= tlen ){
+            if ( nbasesquad->data[i] >= tlen ) {
               XLALDestroyREAL8Array( tsenrich );
               nbasesquad->data[i] = tlen;
               break;
             }
 
             // copy tsenrich into tsquad (as this is the new enriched training set from which the reduced basis was calculated)
-            if ( nbasesquad->data[i] != RBquad->dimLength->data[0] ){
+            if ( nbasesquad->data[i] != RBquad->dimLength->data[0] ) {
               XLALDestroyREAL8Array( tsquad );
               UINT4Vector *dimstmp = NULL;
               dimstmp = XLALCreateUINT4Vector( 2 );
               dimstmp->data[0] = tsenrich->dimLength->data[0];
               dimstmp->data[1] = tsenrich->dimLength->data[1];
               tsquad = XLALCreateREAL8Array( dimstmp );
-              for ( UINT4 didx = 0; didx < (dimstmp->data[0]*dimstmp->data[1]); didx++ ){ tsquad->data[didx] = tsenrich->data[didx]; }
+              for ( UINT4 didx = 0; didx < ( dimstmp->data[0]*dimstmp->data[1] ); didx++ ) {
+                tsquad->data[didx] = tsenrich->data[didx];
+              }
               XLALDestroyUINT4Vector( dimstmp );
             }
 
-            if ( verbose ){ fprintf(stderr, "...%d", nbasesquad->data[i]); }
+            if ( verbose ) {
+              fprintf( stderr, "...%d", nbasesquad->data[i] );
+            }
             XLALDestroyREAL8Array( tsenrich );
             enrichcounts++;
-          } while( enrichcounts < nenrichmax && conseccount < nconsec );
-          if ( verbose ){ fprintf(stderr, "\n"); }
+          } while ( enrichcounts < nenrichmax && conseccount < nconsec );
+          if ( verbose ) {
+            fprintf( stderr, "\n" );
+          }
         }
 
-        XLALDestroyUINT4Vector(greedypts);
-        XLALDestroyREAL8Array(tsquad);
+        XLALDestroyUINT4Vector( greedypts );
+        XLALDestroyREAL8Array( tsquad );
 
-        if ( verbose ){ fprintf(stderr, "Number of quadratic reduced bases for ROQ generation is %d, with a maximum projection error of %le\n", nbasesquad->data[i], maxprojerr);}
+        if ( verbose ) {
+          fprintf( stderr, "Number of quadratic reduced bases for ROQ generation is %d, with a maximum projection error of %le\n", nbasesquad->data[i], maxprojerr );
+        }
 
         nbases0quad = nbasesquad->data[i];
         nquadtot += nbases0quad;
 
         /* generate the interpolants (pass the data noise variances for weighting the interpolants in the case of using a Gaussian likelihood) */
-        if ( nbases0quad <= tlen-1 ){
-          interpquad = LALInferenceGenerateREALROQInterpolant(RBquad);
-        }
-        else{
+        if ( nbases0quad <= tlen - 1 ) {
+          interpquad = LALInferenceGenerateREALROQInterpolant( RBquad );
+        } else {
           /* if the number of bases is greater than the length just use all the data points in a chunk */
-          interpquad = XLALMalloc(sizeof(LALInferenceREALROQInterpolant));
+          interpquad = XLALMalloc( sizeof( LALInferenceREALROQInterpolant ) );
           interpquad->B = NULL;
-          interpquad->nodes = XLALMalloc(sizeof(UINT4)*tlen);
+          interpquad->nodes = XLALMalloc( sizeof( UINT4 ) * tlen );
 
-          for ( j=0; j<tlen; j++ ){ interpquad->nodes[j] = (UINT4)j; }
+          for ( j = 0; j < tlen; j++ ) {
+            interpquad->nodes[j] = ( UINT4 )j;
+          }
         }
 
         /* free the reduced basis set and training set */
@@ -469,12 +529,11 @@ void generate_interpolant( LALInferenceRunState *runState ){
         datasub.data = &data->compTimeData->data->data[startidx];
         datasub.length = tlen;
 
-        if ( gaussianLike ){
+        if ( gaussianLike ) {
           /* point to section of variance required */
           vari.data = &data->varTimeData->data->data[startidx];
           vari.length = tlen;
-        }
-        else{
+        } else {
           varist = XLALCreateREAL8Vector( 1 );
           varist->data[0] = 1.; /* using Students-t likelihood, so just set to 1 */
         }
@@ -482,92 +541,99 @@ void generate_interpolant( LALInferenceRunState *runState ){
         /* create the data/model and model/model inner product weights */
         COMPLEX16Vector *dmw = NULL;
         REAL8Vector *mmw = NULL;
-        if ( nbases0 <= tlen-1 ){
+        if ( nbases0 <= tlen - 1 ) {
           if ( gaussianLike ) {
-            dmw = LALInferenceGenerateCOMPLEX16LinearWeights(interp->B, &datasub, &vari);
+            dmw = LALInferenceGenerateCOMPLEX16LinearWeights( interp->B, &datasub, &vari );
+          } else {
+            dmw = LALInferenceGenerateCOMPLEX16LinearWeights( interp->B, &datasub, varist );
           }
-          else{
-            dmw = LALInferenceGenerateCOMPLEX16LinearWeights(interp->B, &datasub, varist);
-          }
-        }
-        else{
+        } else {
           /* if the number of bases is longer than the data then fill in the data-model weights with just the data */
           dmw = XLALCreateCOMPLEX16Vector( tlen );
 
-          for ( j=0; j<tlen; j++ ){
-            if ( gaussianLike ){ dmw->data[j] = datasub.data[j]/vari.data[j]; }
-            else{ dmw->data[j] = datasub.data[j]/varist->data[0]; }
+          for ( j = 0; j < tlen; j++ ) {
+            if ( gaussianLike ) {
+              dmw->data[j] = datasub.data[j] / vari.data[j];
+            } else {
+              dmw->data[j] = datasub.data[j] / varist->data[0];
+            }
           }
         }
 
-        if ( nbases0quad <= tlen-1 ){
+        if ( nbases0quad <= tlen - 1 ) {
           if ( gaussianLike ) {
-            mmw = LALInferenceGenerateQuadraticWeights(interpquad->B, &vari);
+            mmw = LALInferenceGenerateQuadraticWeights( interpquad->B, &vari );
+          } else {
+            mmw = LALInferenceGenerateQuadraticWeights( interpquad->B, varist );
           }
-          else{
-            mmw = LALInferenceGenerateQuadraticWeights(interpquad->B, varist);
-          }
-        }
-        else{
+        } else {
           /* if the number of bases is longer than the data then fill the model-model weights filled with one over the variances */
           mmw = XLALCreateREAL8Vector( tlen );
 
-          for ( j=0; j<tlen; j++ ){
-            if ( gaussianLike ){ mmw->data[j] = 1./vari.data[j]; }
-            else{ mmw->data[j] = 1./varist->data[0]; }
+          for ( j = 0; j < tlen; j++ ) {
+            if ( gaussianLike ) {
+              mmw->data[j] = 1. / vari.data[j];
+            } else {
+              mmw->data[j] = 1. / varist->data[0];
+            }
           }
         }
 
-        if ( !gaussianLike ) { XLALDestroyREAL8Vector( varist ); }
+        if ( !gaussianLike ) {
+          XLALDestroyREAL8Vector( varist );
+        }
 
         /* put weights into a vector */
         mmlength += nbases0quad;
         dmlength += nbases0;
 
-        dmweights = XLALRealloc( dmweights, sizeof(COMPLEX16)*dmlength );
-        mmweights = XLALRealloc( mmweights, sizeof(REAL8)*mmlength );
+        dmweights = XLALRealloc( dmweights, sizeof( COMPLEX16 ) * dmlength );
+        mmweights = XLALRealloc( mmweights, sizeof( REAL8 ) * mmlength );
 
-        memcpy(&dmweights[dmlength-nbases0], dmw->data, sizeof(COMPLEX16)*nbases0);
-        memcpy(&mmweights[mmlength-nbases0quad], mmw->data, sizeof(REAL8)*nbases0quad);
+        memcpy( &dmweights[dmlength - nbases0], dmw->data, sizeof( COMPLEX16 )*nbases0 );
+        memcpy( &mmweights[mmlength - nbases0quad], mmw->data, sizeof( REAL8 )*nbases0quad );
 
         /* output the node indices */
-        if ( outputroq ){
-          XLAL_CHECK_VOID( fwrite(&nbases0, sizeof(UINT4), 1, fpout) == 1, XLAL_EIO, "Could not output number of linear nodes to file." );
-          XLAL_CHECK_VOID( fwrite(&interp->nodes[0], sizeof(UINT4), nbases0, fpout) == nbases0, XLAL_EIO, "Could not output linear interpolation node indices." );
-          XLAL_CHECK_VOID( fwrite(&nbases0quad, sizeof(UINT4), 1, fpout) == 1, XLAL_EIO, "Could not output number of quadratic nodes to file." );
-          XLAL_CHECK_VOID( fwrite(&interpquad->nodes[0], sizeof(UINT4), nbases0quad, fpout) == nbases0quad, XLAL_EIO, "Could not output quadratic interpolation node indices." );
+        if ( outputroq ) {
+          XLAL_CHECK_VOID( fwrite( &nbases0, sizeof( UINT4 ), 1, fpout ) == 1, XLAL_EIO, "Could not output number of linear nodes to file." );
+          XLAL_CHECK_VOID( fwrite( &interp->nodes[0], sizeof( UINT4 ), nbases0, fpout ) == nbases0, XLAL_EIO, "Could not output linear interpolation node indices." );
+          XLAL_CHECK_VOID( fwrite( &nbases0quad, sizeof( UINT4 ), 1, fpout ) == 1, XLAL_EIO, "Could not output number of quadratic nodes to file." );
+          XLAL_CHECK_VOID( fwrite( &interpquad->nodes[0], sizeof( UINT4 ), nbases0quad, fpout ) == nbases0quad, XLAL_EIO, "Could not output quadratic interpolation node indices." );
         }
 
         XLALDestroyCOMPLEX16Vector( dmw );
         XLALDestroyREAL8Vector( mmw );
-      }
-      else{ /* reading in previously computed interpolant nodes */
-        interp = XLALMalloc(sizeof(LALInferenceCOMPLEXROQInterpolant));
+      } else { /* reading in previously computed interpolant nodes */
+        interp = XLALMalloc( sizeof( LALInferenceCOMPLEXROQInterpolant ) );
         interp->B = NULL;
 
         /* read in the number of linear interpolant nodes for the current chunk and then the node indices */
-        XLAL_CHECK_VOID( fread((void*)&nbases0, sizeof(UINT4), 1, fpin) == 1, XLAL_EIO, "Could not read number of linear nodes" );
+        XLAL_CHECK_VOID( fread( ( void * )&nbases0, sizeof( UINT4 ), 1, fpin ) == 1, XLAL_EIO, "Could not read number of linear nodes" );
 
-        if ( verbose ){ fprintf(stderr, "Number of linear reduced bases for ROQ generation is %d\n", nbases0); }
+        if ( verbose ) {
+          fprintf( stderr, "Number of linear reduced bases for ROQ generation is %d\n", nbases0 );
+        }
 
         /* read in the number of nodes for this chunk */
-        interp->nodes = XLALMalloc(nbases0*sizeof(UINT4));
-        XLAL_CHECK_VOID( fread((void*)interp->nodes, sizeof(UINT4), nbases0, fpin) == nbases0, XLAL_EIO, "Could not read in linear interpolation indices" );
+        interp->nodes = XLALMalloc( nbases0 * sizeof( UINT4 ) );
+        XLAL_CHECK_VOID( fread( ( void * )interp->nodes, sizeof( UINT4 ), nbases0, fpin ) == nbases0, XLAL_EIO, "Could not read in linear interpolation indices" );
         nbases->data[i] = nbases0;
         dmlength += nbases0;
         nlineartot += nbases0;
 
-        interpquad = XLALMalloc(sizeof(LALInferenceREALROQInterpolant));
+        interpquad = XLALMalloc( sizeof( LALInferenceREALROQInterpolant ) );
         interpquad->B = NULL;
 
         /* read in the number of quadratic interpolant nodes for the current chunk and then the node indices */
-        XLAL_CHECK_VOID( fread((void*)&nbases0quad, sizeof(UINT4), 1, fpin) == 1, XLAL_EIO, "Could not read number of linear nodes" );
+        XLAL_CHECK_VOID( fread( ( void * )&nbases0quad, sizeof( UINT4 ), 1, fpin ) == 1, XLAL_EIO, "Could not read number of linear nodes" );
 
-        if ( verbose ){ fprintf(stderr, "Number of quadratic reduced bases for ROQ generation is %d\n", nbases0quad); }
+        if ( verbose ) {
+          fprintf( stderr, "Number of quadratic reduced bases for ROQ generation is %d\n", nbases0quad );
+        }
 
         /* read in the number of nodes for this chunk */
-        interpquad->nodes = XLALMalloc(nbases0quad*sizeof(UINT4));
-        XLAL_CHECK_VOID( fread((void*)interpquad->nodes, sizeof(UINT4), nbases0quad, fpin) == nbases0quad, XLAL_EIO, "Could not read in quadratic interpolation indices" );
+        interpquad->nodes = XLALMalloc( nbases0quad * sizeof( UINT4 ) );
+        XLAL_CHECK_VOID( fread( ( void * )interpquad->nodes, sizeof( UINT4 ), nbases0quad, fpin ) == nbases0quad, XLAL_EIO, "Could not read in quadratic interpolation indices" );
         nbasesquad->data[i] = nbases0quad;
         mmlength += nbases0quad;
         nquadtot += nbases0quad;
@@ -576,21 +642,32 @@ void generate_interpolant( LALInferenceRunState *runState ){
       /* create vectors of time stamps at the nodes, the vector holds a "linear" set of nodes and then a "quadratic" set of nodes */
       /* add times at the linear interpolation nodes */
       UINT4 tnlength = 0;
-      if ( !timenodes ){ tnlength = nbases0; }
-      else { tnlength = timenodes->length + nbases0; }
+      if ( !timenodes ) {
+        tnlength = nbases0;
+      } else {
+        tnlength = timenodes->length + nbases0;
+      }
 
       timenodes = XLALResizeTimestampVector( timenodes, tnlength );
       sidtimenodes = XLALResizeREAL8Vector( sidtimenodes, tnlength );
       ssbnodes = XLALResizeREAL8Vector( ssbnodes, tnlength );
-      if ( bsbdelays != NULL ){ bsbnodes = XLALResizeREAL8Vector( bsbnodes, tnlength ); }
-      if ( glitchphase != NULL ){ gpnodes = XLALResizeREAL8Vector( gpnodes, tnlength ); }
+      if ( bsbdelays != NULL ) {
+        bsbnodes = XLALResizeREAL8Vector( bsbnodes, tnlength );
+      }
+      if ( glitchphase != NULL ) {
+        gpnodes = XLALResizeREAL8Vector( gpnodes, tnlength );
+      }
 
-      for ( j=0; j<nbases0; j++ ){
-        timenodes->data[dlen+j] = IFO_XTRA_DATA( ifo )->times->data[startidx+interp->nodes[j]];
-        sidtimenodes->data[dlen+j] = sidDayFrac->data[startidx+interp->nodes[j]];
-        ssbnodes->data[dlen+j] = ssbdelays->data[startidx+interp->nodes[j]];
-        if ( bsbdelays != NULL ){ bsbnodes->data[dlen+j] = bsbdelays->data[startidx+interp->nodes[j]]; }
-        if ( glitchphase != NULL ){ gpnodes->data[dlen+j] = glitchphase->data[startidx+interp->nodes[j]]; }
+      for ( j = 0; j < nbases0; j++ ) {
+        timenodes->data[dlen + j] = IFO_XTRA_DATA( ifo )->times->data[startidx + interp->nodes[j]];
+        sidtimenodes->data[dlen + j] = sidDayFrac->data[startidx + interp->nodes[j]];
+        ssbnodes->data[dlen + j] = ssbdelays->data[startidx + interp->nodes[j]];
+        if ( bsbdelays != NULL ) {
+          bsbnodes->data[dlen + j] = bsbdelays->data[startidx + interp->nodes[j]];
+        }
+        if ( glitchphase != NULL ) {
+          gpnodes->data[dlen + j] = glitchphase->data[startidx + interp->nodes[j]];
+        }
       }
 
       dlen += nbases0;
@@ -601,15 +678,23 @@ void generate_interpolant( LALInferenceRunState *runState ){
       sidtimenodes = XLALResizeREAL8Vector( sidtimenodes, tnlength );
 
       ssbnodes = XLALResizeREAL8Vector( ssbnodes, tnlength );
-      if ( bsbdelays != NULL ){ bsbnodes = XLALResizeREAL8Vector( bsbnodes, tnlength ); }
-      if ( glitchphase != NULL ){ gpnodes = XLALResizeREAL8Vector( gpnodes, tnlength ); }
+      if ( bsbdelays != NULL ) {
+        bsbnodes = XLALResizeREAL8Vector( bsbnodes, tnlength );
+      }
+      if ( glitchphase != NULL ) {
+        gpnodes = XLALResizeREAL8Vector( gpnodes, tnlength );
+      }
 
-      for ( j=0; j<nbases0quad; j++ ){
-        timenodes->data[dlen+j] = IFO_XTRA_DATA( ifo )->times->data[startidx+interpquad->nodes[j]];
-        sidtimenodes->data[dlen+j] = sidDayFrac->data[startidx+interpquad->nodes[j]];
-        ssbnodes->data[dlen+j] = ssbdelays->data[startidx+interpquad->nodes[j]];
-        if ( bsbdelays != NULL ){ bsbnodes->data[dlen+j] = bsbdelays->data[startidx+interpquad->nodes[j]]; }
-        if ( glitchphase != NULL ){ gpnodes->data[dlen+j] = glitchphase->data[startidx+interpquad->nodes[j]]; }
+      for ( j = 0; j < nbases0quad; j++ ) {
+        timenodes->data[dlen + j] = IFO_XTRA_DATA( ifo )->times->data[startidx + interpquad->nodes[j]];
+        sidtimenodes->data[dlen + j] = sidDayFrac->data[startidx + interpquad->nodes[j]];
+        ssbnodes->data[dlen + j] = ssbdelays->data[startidx + interpquad->nodes[j]];
+        if ( bsbdelays != NULL ) {
+          bsbnodes->data[dlen + j] = bsbdelays->data[startidx + interpquad->nodes[j]];
+        }
+        if ( glitchphase != NULL ) {
+          gpnodes->data[dlen + j] = glitchphase->data[startidx + interpquad->nodes[j]];
+        }
       }
 
       LALInferenceRemoveCOMPLEXROQInterpolant( interp );
@@ -623,63 +708,63 @@ void generate_interpolant( LALInferenceRunState *runState ){
 
     /* resize time vectors and model vectors, so they just contain values at the interpolation nodes */
     LIGOTimeGPSVector *timescopy = XLALCreateTimestampVector( IFO_XTRA_DATA( ifo )->times->length );
-    memcpy(timescopy->data, IFO_XTRA_DATA( ifo )->times->data, sizeof(LIGOTimeGPS)*IFO_XTRA_DATA( ifo )->times->length);
+    memcpy( timescopy->data, IFO_XTRA_DATA( ifo )->times->data, sizeof( LIGOTimeGPS )*IFO_XTRA_DATA( ifo )->times->length );
     LALInferenceAddVariable( ifo->params, "timeStampVectorFull", &timescopy, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
-    XLALDestroyTimestampVector(IFO_XTRA_DATA( ifo )->times);
+    XLALDestroyTimestampVector( IFO_XTRA_DATA( ifo )->times );
     IFO_XTRA_DATA( ifo )->times = timenodes;
 
     /* make a copy of the original sidereal time vectors and time stamp vectors - this is needed when calculating the SNR of the maximum likelihood point */
     REAL8Vector *siddaycopy = XLALCreateREAL8Vector( sidDayFrac->length );
-    memcpy(siddaycopy->data, sidDayFrac->data, sizeof(REAL8)*sidDayFrac->length);
+    memcpy( siddaycopy->data, sidDayFrac->data, sizeof( REAL8 )*sidDayFrac->length );
     LALInferenceRemoveVariable( ifo->params, "siderealDay" );
     LALInferenceAddVariable( ifo->params, "siderealDay", &sidtimenodes, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     LALInferenceAddVariable( ifo->params, "siderealDayFull", &siddaycopy, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
 
     REAL8Vector *ssbcopy = XLALCreateREAL8Vector( ssbdelays->length );
-    memcpy(ssbcopy->data, ssbdelays->data, sizeof(REAL8)*ssbdelays->length);
+    memcpy( ssbcopy->data, ssbdelays->data, sizeof( REAL8 )*ssbdelays->length );
     LALInferenceRemoveVariable( ifo->params, "ssb_delays" );
     LALInferenceAddVariable( ifo->params, "ssb_delays", &ssbnodes, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     LALInferenceAddVariable( ifo->params, "ssb_delays_full", &ssbcopy, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
 
-    if ( bsbdelays != NULL ){
+    if ( bsbdelays != NULL ) {
       REAL8Vector *bsbcopy = XLALCreateREAL8Vector( bsbdelays->length );
-      memcpy(bsbcopy->data, bsbdelays->data, sizeof(REAL8)*bsbdelays->length);
+      memcpy( bsbcopy->data, bsbdelays->data, sizeof( REAL8 )*bsbdelays->length );
       LALInferenceRemoveVariable( ifo->params, "bsb_delays" );
       LALInferenceAddVariable( ifo->params, "bsb_delays", &bsbnodes, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       LALInferenceAddVariable( ifo->params, "bsb_delays_full", &bsbcopy, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     }
 
-    if ( glitchphase != NULL ){
+    if ( glitchphase != NULL ) {
       REAL8Vector *glitchphasecopy = XLALCreateREAL8Vector( glitchphase->length );
-      memcpy(glitchphasecopy->data, glitchphase->data, sizeof(REAL8)*glitchphase->length);
+      memcpy( glitchphasecopy->data, glitchphase->data, sizeof( REAL8 )*glitchphase->length );
       LALInferenceRemoveVariable( ifo->params, "glitch_phase" );
       LALInferenceAddVariable( ifo->params, "glitch_phase", &gpnodes, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       LALInferenceAddVariable( ifo->params, "glitch_phase_full", &glitchphasecopy, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     }
 
-    ifo->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo->compTimeSignal, 0, dmlength+mmlength );
+    ifo->compTimeSignal = XLALResizeCOMPLEX16TimeSeries( ifo->compTimeSignal, 0, dmlength + mmlength );
 
-    if ( inputroq ){
+    if ( inputroq ) {
       /* now read in all the weights */
-      dmweights = XLALMalloc( sizeof(COMPLEX16)*dmlength );
-      XLAL_CHECK_VOID( fread((void*)dmweights, sizeof(COMPLEX16), dmlength, fpin) == dmlength, XLAL_EIO, "Could not read in data-model product weights" );
+      dmweights = XLALMalloc( sizeof( COMPLEX16 ) * dmlength );
+      XLAL_CHECK_VOID( fread( ( void * )dmweights, sizeof( COMPLEX16 ), dmlength, fpin ) == dmlength, XLAL_EIO, "Could not read in data-model product weights" );
 
-      mmweights = XLALMalloc( sizeof(REAL8)*mmlength );
-      XLAL_CHECK_VOID( fread((void*)mmweights, sizeof(REAL8), mmlength, fpin) == mmlength, XLAL_EIO, "Could not read in model-model product weights" );
+      mmweights = XLALMalloc( sizeof( REAL8 ) * mmlength );
+      XLAL_CHECK_VOID( fread( ( void * )mmweights, sizeof( REAL8 ), mmlength, fpin ) == mmlength, XLAL_EIO, "Could not read in model-model product weights" );
     }
 
-    if ( outputroq ){
-      XLAL_CHECK_VOID( fwrite(dmweights, sizeof(COMPLEX16), dmlength, fpout) == dmlength, XLAL_EIO, "Could not output data-model product weights" );
-      XLAL_CHECK_VOID( fwrite(mmweights, sizeof(REAL8), mmlength, fpout) == mmlength, XLAL_EIO, "Could not output model-model product weights" );
+    if ( outputroq ) {
+      XLAL_CHECK_VOID( fwrite( dmweights, sizeof( COMPLEX16 ), dmlength, fpout ) == dmlength, XLAL_EIO, "Could not output data-model product weights" );
+      XLAL_CHECK_VOID( fwrite( mmweights, sizeof( REAL8 ), mmlength, fpout ) == mmlength, XLAL_EIO, "Could not output model-model product weights" );
     }
 
     /* fill in data/model weights into roq->weights complex matrix */
-    data->roq->weightsLinear = XLALMalloc( dmlength*sizeof(COMPLEX16) );
-    memcpy(data->roq->weightsLinear, dmweights, dmlength*sizeof(COMPLEX16));
+    data->roq->weightsLinear = XLALMalloc( dmlength * sizeof( COMPLEX16 ) );
+    memcpy( data->roq->weightsLinear, dmweights, dmlength * sizeof( COMPLEX16 ) );
     XLALFree( dmweights );
 
-    data->roq->weightsQuadratic = XLALMalloc( mmlength*sizeof(REAL8) );
-    memcpy(data->roq->weightsQuadratic, mmweights, mmlength*sizeof(REAL8));
+    data->roq->weightsQuadratic = XLALMalloc( mmlength * sizeof( REAL8 ) );
+    memcpy( data->roq->weightsQuadratic, mmweights, mmlength * sizeof( REAL8 ) );
     XLALFree( mmweights );
 
     /* add interpolation nodes to a variable in runState->threads[0].model->ifo->params */
@@ -691,35 +776,41 @@ void generate_interpolant( LALInferenceRunState *runState ){
     counter++;
   }
 
-  if( verbose ){ fprintf(stderr, "Total number of linear bases = %d, total number of quadratic bases = %d, total number of data points = %d\n", nlineartot, nquadtot, ndatatot); }
+  if ( verbose ) {
+    fprintf( stderr, "Total number of linear bases = %d, total number of quadratic bases = %d, total number of data points = %d\n", nlineartot, nquadtot, ndatatot );
+  }
 
   /* reset freqfactors to the correct value */
   ifo = runState->threads[0].model->ifo;
-  while ( ifo ){
+  while ( ifo ) {
     check_and_add_fixed_variable( ifo->params, "freqfactors", &freqsCopy, LALINFERENCE_REAL8Vector_t );
     ifo = ifo->next;
   }
 
-  if ( inputroq ){ fclose(fpin); }
+  if ( inputroq ) {
+    fclose( fpin );
+  }
 
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
-    gettimeofday(&time2, NULL);
+  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ) {
+    gettimeofday( &time2, NULL );
 
-    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" );
-    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "timenum" );
-    tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
-    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
+    FILE *timefile = *( FILE ** )LALInferenceGetVariable( runState->algorithmParams, "timefile" );
+    UINT4 timenum = *( UINT4 * )LALInferenceGetVariable( runState->algorithmParams, "timenum" );
+    tottime = ( REAL8 )( ( time2.tv_sec + time2.tv_usec * 1.e-6 ) - ( time1.tv_sec + time1.tv_usec * 1.e-6 ) );
+    fprintf( timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime );
     timenum++;
     check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
   }
 
-  if ( outputroq ){
-    if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
-      fclose(*(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" ));
+  if ( outputroq ) {
+    if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ) {
+      fclose( *( FILE ** )LALInferenceGetVariable( runState->algorithmParams, "timefile" ) );
     }
-    fclose(fpout);
-    if ( verbose ){ fprintf(stdout, "ROQ weights have been written to file.\nExiting program.\n"); }
-    exit(0); /* exit the programme succussfully */
+    fclose( fpout );
+    if ( verbose ) {
+      fprintf( stdout, "ROQ weights have been written to file.\nExiting program.\n" );
+    }
+    exit( 0 ); /* exit the programme succussfully */
   }
 }
 
@@ -735,76 +826,81 @@ void generate_interpolant( LALInferenceRunState *runState ){
  *
  * @return A complex matrix containing an array of training waveforms
  */
-COMPLEX16Array *generate_training_set( LALInferenceRunState *rs, UINT4 n ){
+COMPLEX16Array *generate_training_set( LALInferenceRunState *rs, UINT4 n )
+{
   UINT4 j = 0;
   UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
   dims->data[0] = n;
   dims->data[1] = IFO_XTRA_DATA( rs->threads[0].model->ifo )->times->length;
   COMPLEX16Array *ts = XLALCreateCOMPLEX16Array( dims );
-  gsl_matrix_complex_view tsview = gsl_matrix_complex_view_array( (double *)ts->data, dims->data[0], dims->data[1] );
+  gsl_matrix_complex_view tsview = gsl_matrix_complex_view_array( ( double * )ts->data, dims->data[0], dims->data[1] );
   XLALDestroyUINT4Vector( dims );
   REAL8 logprior = 0.;
 
-  rs->threads[0].model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+  rs->threads[0].model->params = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
 
   /* for parameters with Gaussian priors reset them to be flat, with ranges over +/-5 sigma for training set generation if required */
   LALInferenceVariables *priorcopy = NULL;
 
-  if( LALInferenceGetProcParamVal( rs->commandLine, "--roq-uniform" ) ){
-    priorcopy = XLALCalloc(1, sizeof(LALInferenceVariables));
+  if ( LALInferenceGetProcParamVal( rs->commandLine, "--roq-uniform" ) ) {
+    priorcopy = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
     LALInferenceCopyVariables( rs->priorArgs, priorcopy );
     LALInferenceVariableItem *item = rs->threads[0].currentParams->head;
     UINT4 hascorrelated = 0; /* set if there is a correlated prior */
-    for( ; item; item = item->next ){
+    for ( ; item; item = item->next ) {
       REAL8 mu = 0., sigma = 0., minval = 0., maxval = 0.;
-      if ( LALInferenceCheckGaussianPrior( rs->priorArgs, item->name ) ){
+      if ( LALInferenceCheckGaussianPrior( rs->priorArgs, item->name ) ) {
         LALInferenceGetGaussianPrior( rs->priorArgs, item->name, &mu, &sigma );
         minval = mu - 5.*sigma;
         maxval = mu + 5.*sigma;
         LALInferenceRemoveGaussianPrior( rs->priorArgs, item->name ); /* remove prior */
-      }
-      else if( LALInferenceCheckCorrelatedPrior( rs->priorArgs, item->name ) ){
+      } else if ( LALInferenceCheckCorrelatedPrior( rs->priorArgs, item->name ) ) {
         gsl_matrix *cor = NULL, *invcor = NULL;
         UINT4 idx = 0;
         LALInferenceGetCorrelatedPrior( rs->priorArgs, item->name, &cor, &invcor, &mu, &sigma, &idx );
         minval = mu - 5.*sigma;
         maxval = mu + 5.*sigma;
         hascorrelated = 1;
+      } else {
+        continue;
       }
-      else{ continue; }
 
       /* re-add prior as a uniform prior */
       LALInferenceAddMinMaxPrior( rs->priorArgs, item->name, &minval, &maxval, LALINFERENCE_REAL8_t );
     }
-    if ( hascorrelated ) { LALInferenceRemoveCorrelatedPrior( rs->priorArgs ); } /* remove correlated prior */
+    if ( hascorrelated ) {
+      LALInferenceRemoveCorrelatedPrior( rs->priorArgs );  /* remove correlated prior */
+    }
   }
 
   /* choose random variables values and fill in runState->threads[0].model->params */
-  while ( j < n ){
+  while ( j < n ) {
     /* copy values to model parameters */
-    LALInferenceCopyVariables(rs->threads[0].currentParams, rs->threads[0].model->params);
+    LALInferenceCopyVariables( rs->threads[0].currentParams, rs->threads[0].model->params );
 
     /* draw from the prior distributions */
     LALInferenceDrawFromPrior( rs->threads[0].model->params, rs->priorArgs, rs->GSLrandom );
 
     /* check prior is non-zero */
-    logprior = rs->prior(rs, rs->threads[0].model->params, rs->threads[0].model);
-    if ( logprior == -DBL_MAX || logprior == -INFINITY || isnan(logprior) ){ continue; }
+    logprior = rs->prior( rs, rs->threads[0].model->params, rs->threads[0].model );
+    if ( logprior == -DBL_MAX || logprior == -INFINITY || isnan( logprior ) ) {
+      continue;
+    }
 
     /* generate model */
     rs->threads[0].model->templt( rs->threads[0].model );
 
     /* place model into an array */
     gsl_vector_complex_view cview;
-    cview = gsl_vector_complex_view_array((double*)rs->threads[0].model->ifo->compTimeSignal->data->data, IFO_XTRA_DATA( rs->threads[0].model->ifo )->times->length);
-    gsl_matrix_complex_set_row(&tsview.matrix, j, &cview.vector);
+    cview = gsl_vector_complex_view_array( ( double * )rs->threads[0].model->ifo->compTimeSignal->data->data, IFO_XTRA_DATA( rs->threads[0].model->ifo )->times->length );
+    gsl_matrix_complex_set_row( &tsview.matrix, j, &cview.vector );
     j++;
   }
 
-  LALInferenceClearVariables(rs->threads[0].model->params);
+  LALInferenceClearVariables( rs->threads[0].model->params );
 
   /* reset priors if required */
-  if( LALInferenceGetProcParamVal( rs->commandLine, "--roq-uniform" ) ){
+  if ( LALInferenceGetProcParamVal( rs->commandLine, "--roq-uniform" ) ) {
     LALInferenceClearVariables( rs->priorArgs );
     LALInferenceCopyVariables( priorcopy, rs->priorArgs );
     LALInferenceClearVariables( priorcopy );
@@ -826,7 +922,8 @@ COMPLEX16Array *generate_training_set( LALInferenceRunState *rs, UINT4 n ){
  *
  * @return A real matrix containing an array of training waveforms
  */
-REAL8Array *generate_training_set_quad( LALInferenceRunState *rs, UINT4 n ){
+REAL8Array *generate_training_set_quad( LALInferenceRunState *rs, UINT4 n )
+{
   UINT4 j = 0, k = 0;
   UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
   dims->data[0] = n;
@@ -836,66 +933,70 @@ REAL8Array *generate_training_set_quad( LALInferenceRunState *rs, UINT4 n ){
   XLALDestroyUINT4Vector( dims );
   REAL8 logprior = 0.;
 
-  rs->threads[0].model->params = XLALCalloc(1, sizeof(LALInferenceVariables));
+  rs->threads[0].model->params = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
 
   /* for parameters with Gaussian priors reset them to be flat, with ranges over +/-5 sigma for training set generation if required */
   LALInferenceVariables *priorcopy = NULL;
-  if( LALInferenceGetProcParamVal( rs->commandLine, "--roq-uniform" ) ){
-    priorcopy = XLALCalloc(1, sizeof(LALInferenceVariables));
+  if ( LALInferenceGetProcParamVal( rs->commandLine, "--roq-uniform" ) ) {
+    priorcopy = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
     LALInferenceCopyVariables( rs->priorArgs, priorcopy );
     LALInferenceVariableItem *item = rs->threads[0].currentParams->head;
     UINT4 hascorrelated = 0; /* set if there is a correlated prior */
-    for( ; item; item = item->next ){
+    for ( ; item; item = item->next ) {
       REAL8 mu = 0., sigma = 0., minval = 0., maxval = 0.;
-      if ( LALInferenceCheckGaussianPrior( rs->priorArgs, item->name ) ){
+      if ( LALInferenceCheckGaussianPrior( rs->priorArgs, item->name ) ) {
         LALInferenceGetGaussianPrior( rs->priorArgs, item->name, &mu, &sigma );
         minval = mu - 5.*sigma;
         maxval = mu + 5.*sigma;
         LALInferenceRemoveGaussianPrior( rs->priorArgs, item->name ); /* remove prior */
-      }
-      else if( LALInferenceCheckCorrelatedPrior( rs->priorArgs, item->name ) ){
+      } else if ( LALInferenceCheckCorrelatedPrior( rs->priorArgs, item->name ) ) {
         gsl_matrix *cor = NULL, *invcor = NULL;
         UINT4 idx = 0;
         LALInferenceGetCorrelatedPrior( rs->priorArgs, item->name, &cor, &invcor, &mu, &sigma, &idx );
         minval = mu - 5.*sigma;
         maxval = mu + 5.*sigma;
         hascorrelated = 1;
+      } else {
+        continue;
       }
-      else{ continue; }
 
       /* re-add prior as a uniform prior */
       LALInferenceAddMinMaxPrior( rs->priorArgs, item->name, &minval, &maxval, LALINFERENCE_REAL8_t );
     }
-    if ( hascorrelated ) { LALInferenceRemoveCorrelatedPrior( rs->priorArgs ); } /* remove correlated prior */
+    if ( hascorrelated ) {
+      LALInferenceRemoveCorrelatedPrior( rs->priorArgs );  /* remove correlated prior */
+    }
   }
 
   /* choose random variables values and fill in runState->threads[0].model->params */
-  while ( j < n ){
+  while ( j < n ) {
     /* copy values to model parameters */
-    LALInferenceCopyVariables(rs->threads[0].currentParams, rs->threads[0].model->params);
+    LALInferenceCopyVariables( rs->threads[0].currentParams, rs->threads[0].model->params );
 
     /* draw from the prior distributions */
     LALInferenceDrawFromPrior( rs->threads[0].model->params, rs->priorArgs, rs->GSLrandom );
 
     /* check prior is non-zero */
-    logprior = rs->prior(rs, rs->threads[0].model->params, rs->threads[0].model);
-    if ( logprior == -DBL_MAX || logprior == -INFINITY || isnan(logprior) ){ continue; }
+    logprior = rs->prior( rs, rs->threads[0].model->params, rs->threads[0].model );
+    if ( logprior == -DBL_MAX || logprior == -INFINITY || isnan( logprior ) ) {
+      continue;
+    }
 
     /* generate model */
     rs->threads[0].model->templt( rs->threads[0].model );
 
     /* place model*model^* into an array */
-    for ( k = 0; k < IFO_XTRA_DATA( rs->threads[0].model->ifo )->times->length; k++ ){
+    for ( k = 0; k < IFO_XTRA_DATA( rs->threads[0].model->ifo )->times->length; k++ ) {
       COMPLEX16 cval = rs->threads[0].model->ifo->compTimeSignal->data->data[k];
-      gsl_matrix_set(&tsview.matrix, j, k, creal(cval*conj(cval)));
+      gsl_matrix_set( &tsview.matrix, j, k, creal( cval * conj( cval ) ) );
     }
     j++;
   }
 
-  LALInferenceClearVariables(rs->threads[0].model->params);
+  LALInferenceClearVariables( rs->threads[0].model->params );
 
   /* reset priors if required */
-  if( LALInferenceGetProcParamVal( rs->commandLine, "--roq-uniform" ) ){
+  if ( LALInferenceGetProcParamVal( rs->commandLine, "--roq-uniform" ) ) {
     LALInferenceClearVariables( rs->priorArgs );
     LALInferenceCopyVariables( priorcopy, rs->priorArgs );
     LALInferenceClearVariables( priorcopy );

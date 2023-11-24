@@ -95,9 +95,9 @@
 "\n"
 
 /*function to read ephemeris files*/
-EphemerisData * InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir );
+EphemerisData *InitEphemeris( const CHAR *ephemType, const CHAR *ephemDir );
 
-typedef struct tagInputParams{
+typedef struct tagInputParams {
   CHAR *ephemDir; /* ephemeris directory */
   CHAR *ephemType; /* ephemeric year */
 
@@ -116,70 +116,70 @@ typedef struct tagInputParams{
   UINT4 geocentre; /* a flag to set the detector to the geocentre */
 } InputParams;
 
-void ReadInput(InputParams *inputParams, int argc, char *argv[]);
+void ReadInput( InputParams *inputParams, int argc, char *argv[] );
 
 /*--------------main function---------------*/
-int main(int argc, char **argv){
+int main( int argc, char **argv )
+{
   const CHAR *fn = __func__;
 
-  InputParams XLAL_INIT_DECL(inputs);
+  InputParams XLAL_INIT_DECL( inputs );
 
   REAL8 srate = 16384.0; /*sample rate defaulted to 16384 */
 
   /* read in command line input args */
   ReadInput( &inputs, argc, argv );
 
-  LALStatus XLAL_INIT_DECL(status);
+  LALStatus XLAL_INIT_DECL( status );
 
   EphemerisData *edat;
-  if ( (edat = InitEphemeris ( inputs.ephemType, inputs.ephemDir)) == NULL ){
-    XLALPrintError ( "%s: Failed to init ephemeris data\n", fn );
-    XLAL_ERROR ( XLAL_EFUNC );
+  if ( ( edat = InitEphemeris( inputs.ephemType, inputs.ephemDir ) ) == NULL ) {
+    XLALPrintError( "%s: Failed to init ephemeris data\n", fn );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   /*init detector info */
   const LALDetector *p_site;
-  if ( ( p_site = XLALGetSiteInfo ( inputs.det )) == NULL ){
-    XLALPrintError("%s: Failed to get site-info for detector '%s'\n", fn,
-                   inputs.det );
-    XLAL_ERROR ( XLAL_EFUNC );
+  if ( ( p_site = XLALGetSiteInfo( inputs.det ) ) == NULL ) {
+    XLALPrintError( "%s: Failed to get site-info for detector '%s'\n", fn,
+                    inputs.det );
+    XLAL_ERROR( XLAL_EFUNC );
   }
 
   LALDetector site = *p_site;
-  if( inputs.geocentre ){ /* set site to the geocentre */
+  if ( inputs.geocentre ) { /* set site to the geocentre */
     site.location[0] = 0.0;
     site.location[1] = 0.0;
     site.location[2] = 0.0;
   }
 
   struct dirent **pulsars;
-  INT4 n=scandir(inputs.pulsarDir, &pulsars, 0, alphasort);
-  if ( n < 0){
-    XLALPrintError("scandir failed\n");
-    XLAL_ERROR(XLAL_EIO);
+  INT4 n = scandir( inputs.pulsarDir, &pulsars, 0, alphasort );
+  if ( n < 0 ) {
+    XLALPrintError( "scandir failed\n" );
+    XLAL_ERROR( XLAL_EIO );
   }
 
-  UINT4 numpulsars = (UINT4)n;
-  UINT4 h=0;
+  UINT4 numpulsars = ( UINT4 )n;
+  UINT4 h = 0;
 
   CHAR parname[256];
   PulsarParameters *pulparams[numpulsars];
 
-  for(h=2; h<numpulsars; h++){
-    if(strstr(pulsars[h]->d_name,".par") == NULL){
-      free(pulsars[h]);
+  for ( h = 2; h < numpulsars; h++ ) {
+    if ( strstr( pulsars[h]->d_name, ".par" ) == NULL ) {
+      free( pulsars[h] );
       continue;
-    }
-    else{
-      if ( (int)sizeof(parname) <= snprintf(parname,sizeof(parname),"%s/%s", inputs.pulsarDir, pulsars[h]->d_name) ){
-        XLAL_ERROR(XLAL_FAILURE, "String truncated");
+    } else {
+      if ( ( int )sizeof( parname ) <= snprintf( parname, sizeof( parname ), "%s/%s", inputs.pulsarDir, pulsars[h]->d_name ) ) {
+        XLAL_ERROR( XLAL_FAILURE, "String truncated" );
       }
-      fprintf(stderr, "%s\n", parname);
+      fprintf( stderr, "%s\n", parname );
       FILE *inject;
 
-      if (( inject = fopen ( parname, "r" )) == NULL ){
-        fprintf(stderr,"Error opening file: %s\n", parname);
-        XLAL_ERROR ( XLAL_EIO );
+      if ( ( inject = fopen( parname, "r" ) ) == NULL ) {
+        fprintf( stderr, "Error opening file: %s\n", parname );
+        XLAL_ERROR( XLAL_EIO );
       }
 
       pulparams[h] = XLALReadTEMPOParFile( parname );
@@ -196,95 +196,93 @@ int main(int argc, char **argv){
 
   ndata = inputs.frDur;
 
-  REAL8TimeSeries *series=NULL;
+  REAL8TimeSeries *series = NULL;
 
   CHAR out_file[256];
-  sprintf(out_file, "%s-%s-%d-%d.gwf", inputs.det, inputs.outStr,
-          epoch.gpsSeconds, ndata );
+  sprintf( out_file, "%s-%s-%d-%d.gwf", inputs.det, inputs.outStr,
+           epoch.gpsSeconds, ndata );
 
   LALFrameH *outFrame = NULL;
 
-  if ((outFrame = XLALFrameNew( &epoch, (REAL8)ndata, inputs.channel, 1, 0,
-       0 )) == NULL) {
-    LogPrintf(LOG_CRITICAL, "%s : XLALFrameNew() filed with error = %d.\n", fn, xlalErrno);
-    XLAL_ERROR( XLAL_EFAILED);
+  if ( ( outFrame = XLALFrameNew( &epoch, ( REAL8 )ndata, inputs.channel, 1, 0,
+                                  0 ) ) == NULL ) {
+    LogPrintf( LOG_CRITICAL, "%s : XLALFrameNew() filed with error = %d.\n", fn, xlalErrno );
+    XLAL_ERROR( XLAL_EFAILED );
   }
 
-  if ((series = XLALCreateREAL8TimeSeries( inputs.channel, &epoch, 0.,
-    1./srate,&lalSecondUnit, (int)(ndata*srate) )) == NULL) {
+  if ( ( series = XLALCreateREAL8TimeSeries( inputs.channel, &epoch, 0.,
+                  1. / srate, &lalSecondUnit, ( int )( ndata * srate ) ) ) == NULL ) {
     XLAL_ERROR( XLAL_EFUNC );
   }
 
-  UINT4 counter=0;
-  for (counter = 0; counter < series->data->length; counter++)
+  UINT4 counter = 0;
+  for ( counter = 0; counter < series->data->length; counter++ ) {
     series->data->data[counter] = 0;
+  }
 
   /*** Read Pulsar Data ***/
-  for (h=0; h < numpulsars; h++){
-    if(strstr(pulsars[h]->d_name,".par")==NULL){
-      free(pulsars[h]);
+  for ( h = 0; h < numpulsars; h++ ) {
+    if ( strstr( pulsars[h]->d_name, ".par" ) == NULL ) {
+      free( pulsars[h] );
       continue;
-    }
-    else{
-      PulsarSignalParams XLAL_INIT_DECL(params);
+    } else {
+      PulsarSignalParams XLAL_INIT_DECL( params );
 
       /* set signal generation barycenter delay look-up table step size */
       params.dtDelayBy2 = 10.; /* generate table every 10 seconds */
 
-      if (( params.pulsar.spindown = XLALCreateREAL8Vector(1)) == NULL ){
-        XLALPrintError("Out of memory");
-        XLAL_ERROR ( XLAL_EFUNC );
+      if ( ( params.pulsar.spindown = XLALCreateREAL8Vector( 1 ) ) == NULL ) {
+        XLALPrintError( "Out of memory" );
+        XLAL_ERROR( XLAL_EFUNC );
       }
 
       INT4 dtpos = 0;
-      if ( PulsarCheckParam(pulparams[h], "POSEPOCH") )
-        dtpos = epoch.gpsSeconds - (INT4)PulsarGetREAL8Param(pulparams[h], "POSEPOCH");
-      else
-        dtpos = epoch.gpsSeconds - (INT4)PulsarGetREAL8Param(pulparams[h], "PEPOCH");
+      if ( PulsarCheckParam( pulparams[h], "POSEPOCH" ) ) {
+        dtpos = epoch.gpsSeconds - ( INT4 )PulsarGetREAL8Param( pulparams[h], "POSEPOCH" );
+      } else {
+        dtpos = epoch.gpsSeconds - ( INT4 )PulsarGetREAL8Param( pulparams[h], "PEPOCH" );
+      }
 
       REAL8 ra = 0., dec = 0.;
       if ( PulsarCheckParam( pulparams[h], "RAJ" ) ) {
         ra = PulsarGetREAL8Param( pulparams[h], "RAJ" );
-      }
-      else if ( PulsarCheckParam( pulparams[h], "RA" ) ){
+      } else if ( PulsarCheckParam( pulparams[h], "RA" ) ) {
         ra = PulsarGetREAL8Param( pulparams[h], "RA" );
-      }
-      else{
-        XLALPrintError("No right ascension found");
-        XLAL_ERROR ( XLAL_EFUNC );
+      } else {
+        XLALPrintError( "No right ascension found" );
+        XLAL_ERROR( XLAL_EFUNC );
       }
       if ( PulsarCheckParam( pulparams[h], "DECJ" ) ) {
         dec = PulsarGetREAL8Param( pulparams[h], "DECJ" );
-      }
-      else if ( PulsarCheckParam( pulparams[h], "DEC" ) ){
+      } else if ( PulsarCheckParam( pulparams[h], "DEC" ) ) {
         dec = PulsarGetREAL8Param( pulparams[h], "DEC" );
-      }
-      else{
-        XLALPrintError("No declination found");
-        XLAL_ERROR ( XLAL_EFUNC );
+      } else {
+        XLALPrintError( "No declination found" );
+        XLAL_ERROR( XLAL_EFUNC );
       }
 
-      params.pulsar.position.latitude = dec + (REAL8)dtpos * PulsarGetREAL8ParamOrZero(pulparams[h], "PMDEC");
-      params.pulsar.position.longitude = ra + (REAL8)dtpos * PulsarGetREAL8ParamOrZero(pulparams[h], "PMRA") / cos(params.pulsar.position.latitude);
+      params.pulsar.position.latitude = dec + ( REAL8 )dtpos * PulsarGetREAL8ParamOrZero( pulparams[h], "PMDEC" );
+      params.pulsar.position.longitude = ra + ( REAL8 )dtpos * PulsarGetREAL8ParamOrZero( pulparams[h], "PMRA" ) / cos( params.pulsar.position.latitude );
       params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
-      const REAL8Vector *fs = PulsarGetREAL8VectorParam(pulparams[h], "F");
-      if ( fs->length == 0 ){
-        XLALPrintError("No frequencies found");
-        XLAL_ERROR ( XLAL_EFUNC );
+      const REAL8Vector *fs = PulsarGetREAL8VectorParam( pulparams[h], "F" );
+      if ( fs->length == 0 ) {
+        XLALPrintError( "No frequencies found" );
+        XLAL_ERROR( XLAL_EFUNC );
       }
 
       params.pulsar.f0 = 2.*fs->data[0];
-      if ( fs->length > 1 ){
+      if ( fs->length > 1 ) {
         params.pulsar.spindown->data[0] = 2.*fs->data[1];
       }
-      if (( XLALGPSSetREAL8(&(params.pulsar.refTime), PulsarGetREAL8Param(pulparams[h], "PEPOCH")) ) == NULL )
-        XLAL_ERROR ( XLAL_EFUNC );
-      params.pulsar.psi = PulsarGetREAL8ParamOrZero(pulparams[h], "PSI");
-      params.pulsar.phi0 = PulsarGetREAL8ParamOrZero(pulparams[h], "PHI0");
-      REAL8 cosiota = PulsarGetREAL8ParamOrZero(pulparams[h], "COSIOTA");
-      REAL8 h0 = PulsarGetREAL8ParamOrZero(pulparams[h], "H0");
-      params.pulsar.aPlus = 0.5 * h0 * (1. + cosiota * cosiota );
+      if ( ( XLALGPSSetREAL8( &( params.pulsar.refTime ), PulsarGetREAL8Param( pulparams[h], "PEPOCH" ) ) ) == NULL ) {
+        XLAL_ERROR( XLAL_EFUNC );
+      }
+      params.pulsar.psi = PulsarGetREAL8ParamOrZero( pulparams[h], "PSI" );
+      params.pulsar.phi0 = PulsarGetREAL8ParamOrZero( pulparams[h], "PHI0" );
+      REAL8 cosiota = PulsarGetREAL8ParamOrZero( pulparams[h], "COSIOTA" );
+      REAL8 h0 = PulsarGetREAL8ParamOrZero( pulparams[h], "H0" );
+      params.pulsar.aPlus = 0.5 * h0 * ( 1. + cosiota * cosiota );
       params.pulsar.aCross = h0 * cosiota;
 
       /*Add binary later if needed!*/
@@ -300,39 +298,41 @@ int main(int argc, char **argv){
 
       LALGeneratePulsarSignal( &status, &TSeries, &params );
 
-      if (status.statusCode){
-        fprintf(stderr, "LAL Routine failed!\n");
-        XLAL_ERROR (XLAL_EFAILED);
+      if ( status.statusCode ) {
+        fprintf( stderr, "LAL Routine failed!\n" );
+        XLAL_ERROR( XLAL_EFAILED );
       }
       UINT4 i;
-      for (i=0; i < TSeries->data->length; i++)
+      for ( i = 0; i < TSeries->data->length; i++ ) {
         series->data->data[i] += TSeries->data->data[i];
+      }
 
-      XLALDestroyREAL4TimeSeries(TSeries);
-      XLALDestroyREAL8Vector(params.pulsar.spindown);
+      XLALDestroyREAL4TimeSeries( TSeries );
+      XLALDestroyREAL8Vector( params.pulsar.spindown );
     }
   }
 
-  if (XLALFrameAddREAL8TimeSeriesProcData(outFrame,series)){
-      LogPrintf(LOG_CRITICAL, "%s : XLALFrameAddREAL8TimeSeries() failed with error = %d.\n",fn,xlalErrno);
-      XLAL_ERROR(XLAL_EFAILED);
-  }
-
-  CHAR OUTFILE[512];
-  snprintf(OUTFILE, sizeof(OUTFILE), "%s/%s", inputs.outDir, out_file);
-
-  if (  XLALFrameWrite(outFrame, OUTFILE)){
-    LogPrintf(LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n", fn, xlalErrno);
+  if ( XLALFrameAddREAL8TimeSeriesProcData( outFrame, series ) ) {
+    LogPrintf( LOG_CRITICAL, "%s : XLALFrameAddREAL8TimeSeries() failed with error = %d.\n", fn, xlalErrno );
     XLAL_ERROR( XLAL_EFAILED );
   }
 
-  XLALFrameFree(outFrame);
+  CHAR OUTFILE[512];
+  snprintf( OUTFILE, sizeof( OUTFILE ), "%s/%s", inputs.outDir, out_file );
+
+  if ( XLALFrameWrite( outFrame, OUTFILE ) ) {
+    LogPrintf( LOG_CRITICAL, "%s : XLALFrameWrite() failed with error = %d.\n", fn, xlalErrno );
+    XLAL_ERROR( XLAL_EFAILED );
+  }
+
+  XLALFrameFree( outFrame );
   XLALDestroyREAL8TimeSeries( series );
 
   return 0;
 }
 
-EphemerisData *InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir){
+EphemerisData *InitEphemeris( const CHAR *ephemType, const CHAR *ephemDir )
+{
   const CHAR *fn = __func__;
 #define FNAME_LENGTH 1024
   CHAR EphemEarth[FNAME_LENGTH];  /* filename of earth-ephemeris data */
@@ -340,29 +340,29 @@ EphemerisData *InitEphemeris (const CHAR *ephemType, const CHAR *ephemDir){
 
   /* check input consistency */
   if ( !ephemType ) {
-    XLALPrintError ("%s: invalid NULL input for 'ephemType'\n", fn );
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+    XLALPrintError( "%s: invalid NULL input for 'ephemType'\n", fn );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
   }
 
-  snprintf(EphemEarth, FNAME_LENGTH, "%s/earth00-40-%s.dat.gz", ephemDir, ephemType);
-  snprintf(EphemSun, FNAME_LENGTH, "%s/sun00-40-%s.dat.gz", ephemDir, ephemType);
+  snprintf( EphemEarth, FNAME_LENGTH, "%s/earth00-40-%s.dat.gz", ephemDir, ephemType );
+  snprintf( EphemSun, FNAME_LENGTH, "%s/sun00-40-%s.dat.gz", ephemDir, ephemType );
 
-  EphemEarth[FNAME_LENGTH-1]=0;
-  EphemSun[FNAME_LENGTH-1]=0;
+  EphemEarth[FNAME_LENGTH - 1] = 0;
+  EphemSun[FNAME_LENGTH - 1] = 0;
 
   EphemerisData *edat;
-  if ( (edat = XLALInitBarycenter ( EphemEarth, EphemSun)) == NULL ) {
-    XLALPrintError ("%s: XLALInitBarycenter() failed.\n", fn );
-    XLAL_ERROR_NULL ( XLAL_EFUNC );
+  if ( ( edat = XLALInitBarycenter( EphemEarth, EphemSun ) ) == NULL ) {
+    XLALPrintError( "%s: XLALInitBarycenter() failed.\n", fn );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
   }
 
   /* return ephemeris */
   return edat;
 } /* InitEphemeris() */
 
-void ReadInput(InputParams *inputParams, int argc, char *argv[]){
-  struct LALoption long_options[] =
-  {
+void ReadInput( InputParams *inputParams, int argc, char *argv[] )
+{
+  struct LALoption long_options[] = {
     { "help",                     no_argument,        0, 'h' },
     { "detector",                 required_argument,  0, 'i' },
     { "channel",                  required_argument,  0, 'c' },
@@ -391,68 +391,69 @@ void ReadInput(InputParams *inputParams, int argc, char *argv[]){
   inputParams->ephemType = XLALStringDuplicate( "DE405" );
 
   /* get input arguments */
-  while(1){
+  while ( 1 ) {
     INT4 option_index = 0;
     INT4 c;
 
     c = LALgetopt_long( argc, argv, args, long_options, &option_index );
-    if ( c == -1 ) /* end of options */
+    if ( c == -1 ) { /* end of options */
       break;
+    }
 
-    switch(c){
-      case 0: /* if option set a flag, nothing else to do */
-        if ( long_options[option_index].flag )
-          break;
-        else
-          fprintf(stderr, "Error parsing option %s with argument %s\n",
-            long_options[option_index].name, LALoptarg );
-		break;
-      case 'h': /* help message */
-        fprintf(stderr, USAGE, program);
-        exit(0);
-      case 'l': /* debug level */
+    switch ( c ) {
+    case 0: /* if option set a flag, nothing else to do */
+      if ( long_options[option_index].flag ) {
         break;
-      case 'i': /* interferometer/detector */
-        inputParams->det = XLALStringDuplicate( LALoptarg );
-        break;
-      case 'c': /* channel name */
-        inputParams->channel = XLALStringDuplicate( LALoptarg );
-        break;
-      case 'e': /* frame epoch */
-        inputParams->epoch = atoi(LALoptarg);
-        break;
-      case 'g': /* geocentre flag */
-        inputParams->geocentre = 1;
-        break;
-      case 'd': /* frame duration */
-        inputParams->frDur = atoi(LALoptarg);
-        break;
-      case 'p': /* pulsar par file directory */
-        inputParams->pulsarDir = XLALStringDuplicate( LALoptarg );
-        break;
-      case 'o': /* output directory */
-        inputParams->outDir = XLALStringDuplicate( LALoptarg );
-        break;
-      case 's': /* output name string */
-        inputParams->outStr = XLALStringDuplicate( LALoptarg );
-        break;
-      case 'm': /* ephemeris file directory */
-        inputParams->ephemDir = XLALStringDuplicate( LALoptarg );
-        break;
-      case 'y': /* ephemeris file year */
-        inputParams->ephemType = XLALStringDuplicate( LALoptarg );
-        break;
-      case '?':
-        fprintf(stderr, "unknown error while parsing options\n" );
-		break;
-      default:
-        fprintf(stderr, "unknown error while parsing options\n" );
-		break;
+      } else
+        fprintf( stderr, "Error parsing option %s with argument %s\n",
+                 long_options[option_index].name, LALoptarg );
+      break;
+    case 'h': /* help message */
+      fprintf( stderr, USAGE, program );
+      exit( 0 );
+    case 'l': /* debug level */
+      break;
+    case 'i': /* interferometer/detector */
+      inputParams->det = XLALStringDuplicate( LALoptarg );
+      break;
+    case 'c': /* channel name */
+      inputParams->channel = XLALStringDuplicate( LALoptarg );
+      break;
+    case 'e': /* frame epoch */
+      inputParams->epoch = atoi( LALoptarg );
+      break;
+    case 'g': /* geocentre flag */
+      inputParams->geocentre = 1;
+      break;
+    case 'd': /* frame duration */
+      inputParams->frDur = atoi( LALoptarg );
+      break;
+    case 'p': /* pulsar par file directory */
+      inputParams->pulsarDir = XLALStringDuplicate( LALoptarg );
+      break;
+    case 'o': /* output directory */
+      inputParams->outDir = XLALStringDuplicate( LALoptarg );
+      break;
+    case 's': /* output name string */
+      inputParams->outStr = XLALStringDuplicate( LALoptarg );
+      break;
+    case 'm': /* ephemeris file directory */
+      inputParams->ephemDir = XLALStringDuplicate( LALoptarg );
+      break;
+    case 'y': /* ephemeris file year */
+      inputParams->ephemType = XLALStringDuplicate( LALoptarg );
+      break;
+    case '?':
+      fprintf( stderr, "unknown error while parsing options\n" );
+      break;
+    default:
+      fprintf( stderr, "unknown error while parsing options\n" );
+      break;
     }
   }
 
-  if( inputParams->epoch == 0 || inputParams->frDur == 0 ){
-    XLALPrintError ("%s: Frame epoch or duration are 0!\n", fn );
-    XLAL_ERROR_VOID ( XLAL_EFUNC );
+  if ( inputParams->epoch == 0 || inputParams->frDur == 0 ) {
+    XLALPrintError( "%s: Frame epoch or duration are 0!\n", fn );
+    XLAL_ERROR_VOID( XLAL_EFUNC );
   }
 }

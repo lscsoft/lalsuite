@@ -50,9 +50,9 @@ INT4 count_csv( CHAR *csvline );
 void check_and_add_fixed_variable( LALInferenceVariables *vars, const char *name, void *value, LALInferenceVariableType type );
 
 TimeCorrectionType XLALAutoSetEphemerisFiles( CHAR **efile, CHAR **sfile,
-                                              CHAR **tfile,
-                                              PulsarParameters *pulsar,
-                                              INT4 gpsstart, INT4 gpsend );
+    CHAR **tfile,
+    PulsarParameters *pulsar,
+    INT4 gpsstart, INT4 gpsend );
 
 #ifdef __cplusplus
 }

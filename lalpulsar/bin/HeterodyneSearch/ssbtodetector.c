@@ -52,7 +52,7 @@
 #include <lal/TranslateAngles.h>
 
 /* define the radio telescope positions */
-typedef enum{
+typedef enum {
   GBT = 0, /* Robert C. Byrd GBT */
   PKS,     /* Parkes */
   JBO,     /* JBO Lovell telescope */
@@ -68,15 +68,16 @@ typedef enum{
 
 /* create some detector locations for radio telescopes - positions taken from TEMPO2 observatories.dat file */
 REAL8 scopelocations[NUMSCOPES][3] = { { 882589.65, -4924872.32, 3943729.348 },     /* GBT */
-                                       { -4554231.5, 2816759.1, -3454036.3 },       /* Parkes */
-                                       { 3822626.04, -154105.65, 5086486.04 },      /* JBO */
-                                       { 2390490.0, -5564764.0, 1994727.0 },        /* Arecibo Telescope */
-                                       { 4033949.5, 486989.4, 4900430.8 },          /* Effelsberg */
-                                       { 4324165.81, 165927.11, 4670132.83},        /* Nancay */
-                                       { -3950077.96, 2522377.31, -4311667.52 },    /* Hobart */
-                                       { 5085442.780, 2668263.483, -2768697.034 },  /* Hartebeesthoek */
-                                       { -1601192.0, -5041981.4, 3554871.4 },       /* Very Large Array */
-                                       { 3828445.659, 445223.600, 5064921.5677 } }; /* Westerbork */
+  { -4554231.5, 2816759.1, -3454036.3 },       /* Parkes */
+  { 3822626.04, -154105.65, 5086486.04 },      /* JBO */
+  { 2390490.0, -5564764.0, 1994727.0 },        /* Arecibo Telescope */
+  { 4033949.5, 486989.4, 4900430.8 },          /* Effelsberg */
+  { 4324165.81, 165927.11, 4670132.83},        /* Nancay */
+  { -3950077.96, 2522377.31, -4311667.52 },    /* Hobart */
+  { 5085442.780, 2668263.483, -2768697.034 },  /* Hartebeesthoek */
+  { -1601192.0, -5041981.4, 3554871.4 },       /* Very Large Array */
+  { 3828445.659, 445223.600, 5064921.5677 }
+}; /* Westerbork */
 #define USAGE \
 "Usage: %s [options]\n\n"\
 " --help (-h)              display this message\n"\
@@ -104,7 +105,8 @@ REAL8 scopelocations[NUMSCOPES][3] = { { 882589.65, -4924872.32, 3943729.348 }, 
                               WSRT - the Westerbork Synthesis Radio Telescope.\n"\
 "\n"
 
-int main( int argc, char *argv[] ){
+int main( int argc, char *argv[] )
+{
   double mjdtime = 0.;
   char *det = NULL, *ra = NULL, *dec = NULL;
   LIGOTimeGPS gpsin;
@@ -115,8 +117,7 @@ int main( int argc, char *argv[] ){
   EphemerisData *edat;
   Scopes sn = NUMSCOPES;
 
-  struct LALoption long_options[] =
-  {
+  struct LALoption long_options[] = {
     { "help",      no_argument,       0, 'h' },
     { "telescope", required_argument, 0, 't' },
     { "ra",        required_argument, 0, 'r' },
@@ -130,117 +131,131 @@ int main( int argc, char *argv[] ){
   CHAR *program = argv[0];
 
   /* get input arguments */
-  while(1){
+  while ( 1 ) {
     int option_index = 0;
     int c;
 
     c = LALgetopt_long( argc, argv, args, long_options, &option_index );
-    if ( c == -1 ) /* end of options */
+    if ( c == -1 ) { /* end of options */
       break;
+    }
 
-    switch(c){
-      case 0: /* if option set a flag, nothing else to do */
-        if ( long_options[option_index].flag )
-          break;
-        else
-          fprintf(stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg );
+    switch ( c ) {
+    case 0: /* if option set a flag, nothing else to do */
+      if ( long_options[option_index].flag ) {
+        break;
+      } else {
+        fprintf( stderr, "Error parsing option %s with argument %s\n", long_options[option_index].name, LALoptarg );
+      }
       break;
-      case 'h': /* help message */
-        fprintf(stderr, USAGE, program);
-        exit(0);
-      case 't': /* the detector */
-        det = XLALStringDuplicate( LALoptarg );
-        break;
-      case 'r': /* the right ascension */
-        ra = XLALStringDuplicate( LALoptarg );
-        break;
-      case 'd': /* the declination */
-        dec = XLALStringDuplicate( LALoptarg );
-        break;
-      case 'm': /* the mjd time */
-        mjdtime = atof(LALoptarg);
-        break;
-      case 'g': /* the gps time */
-        gpstime = atof(LALoptarg);
-		break;
-      case '?':
-        fprintf(stderr, "Unknown error while parsing options\n" );
-        exit(0);
-		break;
-      default:
-        fprintf(stderr, "Unknown error while parsing options\n" );
-        exit(0);
-		break;
+    case 'h': /* help message */
+      fprintf( stderr, USAGE, program );
+      exit( 0 );
+    case 't': /* the detector */
+      det = XLALStringDuplicate( LALoptarg );
+      break;
+    case 'r': /* the right ascension */
+      ra = XLALStringDuplicate( LALoptarg );
+      break;
+    case 'd': /* the declination */
+      dec = XLALStringDuplicate( LALoptarg );
+      break;
+    case 'm': /* the mjd time */
+      mjdtime = atof( LALoptarg );
+      break;
+    case 'g': /* the gps time */
+      gpstime = atof( LALoptarg );
+      break;
+    case '?':
+      fprintf( stderr, "Unknown error while parsing options\n" );
+      exit( 0 );
+      break;
+    default:
+      fprintf( stderr, "Unknown error while parsing options\n" );
+      exit( 0 );
+      break;
     }
   }
 
-  if ( mjdtime <= 0. && gpstime <= 0. ){
-    fprintf(stderr, "Error... input MJD or GPS time is not sensible!\n");
-    exit(1);
+  if ( mjdtime <= 0. && gpstime <= 0. ) {
+    fprintf( stderr, "Error... input MJD or GPS time is not sensible!\n" );
+    exit( 1 );
   }
 
-  if (  mjdtime > 0. && gpstime > 0. ){
-    fprintf(stderr, "Error... required either an input MJD to or an input GPS time!\n");
-    exit(1);
+  if ( mjdtime > 0. && gpstime > 0. ) {
+    fprintf( stderr, "Error... required either an input MJD to or an input GPS time!\n" );
+    exit( 1 );
   }
 
-  if ( ra == NULL ){
-    fprintf(stderr, "Error... no right ascension given!\n");
-    exit(1);
+  if ( ra == NULL ) {
+    fprintf( stderr, "Error... no right ascension given!\n" );
+    exit( 1 );
   }
 
-  if ( dec == NULL ){
-    fprintf(stderr, "Error... no declination given!\n");
-    exit(1);
+  if ( dec == NULL ) {
+    fprintf( stderr, "Error... no declination given!\n" );
+    exit( 1 );
   }
 
-  if ( det == NULL ){
-    fprintf(stderr, "Error... no telescope has been given!\n");
-    exit(1);
+  if ( det == NULL ) {
+    fprintf( stderr, "Error... no telescope has been given!\n" );
+    exit( 1 );
   }
 
   /* set detector/telescope */
-  if( !strcmp( det, "GBT" ) )      { sn = GBT; }
-  else if( !strcmp( det, "PKS" ) ) { sn = PKS; }
-  else if( !strcmp( det, "JBO" ) ) { sn = JBO; }
-  else if( !strcmp( det, "AO" ) )  { sn = AO; }
-  else if( !strcmp( det, "EFF" ) ) { sn = EFF; }
-  else if( !strcmp( det, "NRT" ) ) { sn = NRT; }
-  else if( !strcmp( det, "HOB" ) ) { sn = HOB; }
-  else if( !strcmp( det, "HART" ) ){ sn = HART; }
-  else if( !strcmp( det, "VLA" ) ) { sn = VLA; }
-  else if( !strcmp( det, "WSRT" ) ){ sn = WSRT; }
+  if ( !strcmp( det, "GBT" ) )      {
+    sn = GBT;
+  } else if ( !strcmp( det, "PKS" ) ) {
+    sn = PKS;
+  } else if ( !strcmp( det, "JBO" ) ) {
+    sn = JBO;
+  } else if ( !strcmp( det, "AO" ) )  {
+    sn = AO;
+  } else if ( !strcmp( det, "EFF" ) ) {
+    sn = EFF;
+  } else if ( !strcmp( det, "NRT" ) ) {
+    sn = NRT;
+  } else if ( !strcmp( det, "HOB" ) ) {
+    sn = HOB;
+  } else if ( !strcmp( det, "HART" ) ) {
+    sn = HART;
+  } else if ( !strcmp( det, "VLA" ) ) {
+    sn = VLA;
+  } else if ( !strcmp( det, "WSRT" ) ) {
+    sn = WSRT;
+  }
 
-  if( sn != NUMSCOPES ){
+  if ( sn != NUMSCOPES ) {
     LALDetector *site = NULL;
-    site = (LALDetector *)XLALMalloc( sizeof(LALDetector) );
+    site = ( LALDetector * )XLALMalloc( sizeof( LALDetector ) );
     //memcpy(site->location, scopelocations[sn], 3*sizeof(REAL8));
     site->location[0] = scopelocations[sn][0];
     site->location[1] = scopelocations[sn][1];
     site->location[2] = scopelocations[sn][2];
     params.site = site;
+  } else {
+    params.site = XLALGetSiteInfo( det );  /* try a GW detector */
   }
-  else{ params.site = XLALGetSiteInfo( det ); } /* try a GW detector */
 
-  XLAL_CHECK_MAIN ( XLALTranslateDMStoRAD( &params.pulsar.position.latitude, dec ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK_MAIN ( XLALTranslateHMStoRAD( &params.pulsar.position.longitude, ra ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALTranslateDMStoRAD( &params.pulsar.position.latitude, dec ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALTranslateHMStoRAD( &params.pulsar.position.longitude, ra ) == XLAL_SUCCESS, XLAL_EFUNC );
   params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
 
   /* get the Earth and Sun ephemeris files - note yo may have to change this for different systems */
-  char *lalpulsar_datadir = getenv("LALPULSAR_DATADIR");
-  if( lalpulsar_datadir != NULL ) {
-    sprintf(earth, "%s/earth00-40-DE405.dat.gz", lalpulsar_datadir);
-    sprintf(sun, "%s/sun00-40-DE405.dat.gz", lalpulsar_datadir);
+  char *lalpulsar_datadir = getenv( "LALPULSAR_DATADIR" );
+  if ( lalpulsar_datadir != NULL ) {
+    sprintf( earth, "%s/earth00-40-DE405.dat.gz", lalpulsar_datadir );
+    sprintf( sun, "%s/sun00-40-DE405.dat.gz", lalpulsar_datadir );
 
     /* double check that the files exist */
-    if( fopen(sun, "r") == NULL || fopen(earth, "r") == NULL ){
-      fprintf(stderr, "Error... ephemeris files not, or incorrectly, defined!\n");
-      exit(1);
+    if ( fopen( sun, "r" ) == NULL || fopen( earth, "r" ) == NULL ) {
+      fprintf( stderr, "Error... ephemeris files not, or incorrectly, defined!\n" );
+      exit( 1 );
     }
   } else {
     /* let LALPulsar find the ephemeris files */
-    sprintf(earth, "earth00-40-DE405.dat.gz");
-    sprintf(sun, "sun00-40-DE405.dat.gz");
+    sprintf( earth, "earth00-40-DE405.dat.gz" );
+    sprintf( sun, "sun00-40-DE405.dat.gz" );
   }
 
   /* set up ephemeris files */
@@ -248,27 +263,29 @@ int main( int argc, char *argv[] ){
   params.ephemerides = edat;
 
   /* convert MJD time to GPS format (remaining at the SSB) */
-  if ( mjdtime > 0. ) { gpstime = XLALTTMJDtoGPS( mjdtime ); }
+  if ( mjdtime > 0. ) {
+    gpstime = XLALTTMJDtoGPS( mjdtime );
+  }
 
   int ephemstart = 630720013; /* GPS time of Jan 1, 2000, 00:00:00 UTC */
   int ephemend = 1261872015;  /* GPS time of Jan 1, 2020, 00:00:00 UTC */
 
-  if( gpstime < ephemstart || gpstime > ephemend ){
-    fprintf(stderr, "Time (GPS %.9lf) is outside the ephemeris file ranges!\n", gpstime);
-    exit(1);
+  if ( gpstime < ephemstart || gpstime > ephemend ) {
+    fprintf( stderr, "Time (GPS %.9lf) is outside the ephemeris file ranges!\n", gpstime );
+    exit( 1 );
   }
 
   /* put into LIGOTimeGPS format */
   XLALGPSSetREAL8( &gpsin, gpstime );
 
   /* convert time at SSB to GPS time at detector */
-  if ( XLALConvertSSB2GPS( &gpsout, gpsin, &params ) != XLAL_SUCCESS ){
-    fprintf(stderr, "Problem converting time!\n");
-    exit(1);
+  if ( XLALConvertSSB2GPS( &gpsout, gpsin, &params ) != XLAL_SUCCESS ) {
+    fprintf( stderr, "Problem converting time!\n" );
+    exit( 1 );
   }
 
   //fprintf(stdout, "%.9lf\n", XLALGPSGetREAL8( &gpsout ) );
-  fprintf(stdout, "%d.%09d\n", gpsout.gpsSeconds, gpsout.gpsNanoSeconds );
+  fprintf( stdout, "%d.%09d\n", gpsout.gpsSeconds, gpsout.gpsNanoSeconds );
 
   return 0;
 }
