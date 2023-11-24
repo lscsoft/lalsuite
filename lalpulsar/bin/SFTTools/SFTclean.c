@@ -62,9 +62,10 @@
 #define CMT_OLD  1
 #define CMT_FULL 2
 
-int main(int argc, char *argv[]){ 
+int main( int argc, char *argv[] )
+{
 
-  static LALStatus       status;  /* LALStatus pointer */ 
+  static LALStatus       status;  /* LALStatus pointer */
 
   static MultiSFTVector  *inputSFTs = NULL;
   static SFTCatalog *catalog = NULL;
@@ -73,12 +74,12 @@ int main(int argc, char *argv[]){
   const char *misc = "cleaned"; /* used for setting output filenames */
 
   /* 09/09/05 gam; randPar now a parameter for LALCleanCOMPLEX8SFT */
-  FILE *fp=NULL;   
+  FILE *fp = NULL;
   INT4 seed, ranCount;
-  RandomParams *randPar=NULL; 
+  RandomParams *randPar = NULL;
 
   /* user input variables */
-  LALStringVector *uvar_linefiles=NULL; /* files with harmonics info */
+  LALStringVector *uvar_linefiles = NULL; /* files with harmonics info */
   CHAR *uvar_sftDir;    /* directory for unclean sfts */
   CHAR *uvar_outDir;   /* directory for cleaned sfts */
   REAL8 uvar_fMin, uvar_fMax;
@@ -97,21 +98,22 @@ int main(int argc, char *argv[]){
 
   /* register user input variables */
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,    "sftDir",    STRING,       'i', REQUIRED,  "Input SFT file pattern. Possibilities are:\n"
-                                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outDir,    "outDir",    STRING,       'o', REQUIRED,  "Output SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMin,      "fMin",      REAL8,        0,   OPTIONAL, "start Frequency (default: full input SFTs width)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMax,      "fMax",      REAL8,        0,   OPTIONAL, "Max Frequency  (default: full input SFTs width)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_window,    "window",    INT4,         'w',OPTIONAL,  "Window size for noise floor estimation in vicinity of a line. WARNING: estimation will be compromised if SFTs are narrower than this, or if it is not much wider than any line wings.") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBins,   "maxBins",   INT4,         'm',OPTIONAL,  "Max. bins to clean. WARNING: If your linefiles contain very wide lines, make sure this is large enough to accommodate them.") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles, "linefiles", STRINGVector, 0,   OPTIONAL, "List of per-detector files with list of lines (each full path must start with a canonical IFO name). NOTE: The modern Advanced LIGO linefiles format is not supported. Files should first be converted into the legacy format as described in the lalpulsar SFTClean module.") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_addComment, "addComment", INT4,       'c', OPTIONAL, "How to deal with comments - 0 means no comment is written at all, 1 means that the comment is taken unmodified from the input SFTs, 2 (default) means that the program appends its RCS id and command-line to the comment.") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar ( &uvar_outSingleSFT, "outSingleSFT", BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT file per IFO, instead of individual files") == XLAL_SUCCESS, XLAL_EFUNC );
+                                          " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outDir,    "outDir",    STRING,       'o', REQUIRED,  "Output SFT Directory" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMin,      "fMin",      REAL8,        0,   OPTIONAL, "start Frequency (default: full input SFTs width)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fMax,      "fMax",      REAL8,        0,   OPTIONAL, "Max Frequency  (default: full input SFTs width)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_window,    "window",    INT4,         'w', OPTIONAL,  "Window size for noise floor estimation in vicinity of a line. WARNING: estimation will be compromised if SFTs are narrower than this, or if it is not much wider than any line wings." ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_maxBins,   "maxBins",   INT4,         'm', OPTIONAL,  "Max. bins to clean. WARNING: If your linefiles contain very wide lines, make sure this is large enough to accommodate them." ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_linefiles, "linefiles", STRINGVector, 0,   OPTIONAL, "List of per-detector files with list of lines (each full path must start with a canonical IFO name). NOTE: The modern Advanced LIGO linefiles format is not supported. Files should first be converted into the legacy format as described in the lalpulsar SFTClean module." ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_addComment, "addComment", INT4,       'c', OPTIONAL, "How to deal with comments - 0 means no comment is written at all, 1 means that the comment is taken unmodified from the input SFTs, 2 (default) means that the program appends its RCS id and command-line to the comment." ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_outSingleSFT, "outSingleSFT", BOOLEAN, 's', OPTIONAL, "Write a single concatenated SFT file per IFO, instead of individual files" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
-  if (should_exit)
-    exit(1);
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit( 1 );
+  }
 
   /* record VCS ID and command-line for the comment */
   char *cmdline = NULL;
@@ -121,13 +123,13 @@ int main(int argc, char *argv[]){
     strcat( cmdline, lalPulsarVCSIdentInfo.vcsStatus );
     strcat( cmdline, "\n" );
     for ( int arg = 0; arg < argc; arg++ ) {
-        XLAL_CHECK_MAIN( ( cmdline = ( char * )XLALRealloc( ( void * )cmdline, strlen( cmdline ) + strlen( argv[arg] ) + 2 ) ) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
-        strcat( cmdline, argv[arg] );
-        if ( arg == argc - 1 ) {
+      XLAL_CHECK_MAIN( ( cmdline = ( char * )XLALRealloc( ( void * )cmdline, strlen( cmdline ) + strlen( argv[arg] ) + 2 ) ) != NULL, XLAL_ENOMEM, "out of memory allocating cmdline" );
+      strcat( cmdline, argv[arg] );
+      if ( arg == argc - 1 ) {
         strcat( cmdline, "\n" );
-        } else {
+      } else {
         strcat( cmdline, " " );
-        }
+      }
     }
   }
 
@@ -135,34 +137,32 @@ int main(int argc, char *argv[]){
   constraints.detector = NULL;
 
   /* get SFT catalog - this can be for multiple detectors */
-  XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftDir, &constraints) ) != NULL, XLAL_EFUNC);
-  if ( (catalog == NULL) || (catalog->length == 0) ) {
-    fprintf (stderr,"Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
-    exit(1);
+  XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( uvar_sftDir, &constraints ) ) != NULL, XLAL_EFUNC );
+  if ( ( catalog == NULL ) || ( catalog->length == 0 ) ) {
+    fprintf( stderr, "Unable to match any SFTs with pattern '%s'\n", uvar_sftDir );
+    exit( 1 );
   }
-  fprintf(stdout, "Created catalog with %d SFTs.\n", catalog->length);
+  fprintf( stdout, "Created catalog with %d SFTs.\n", catalog->length );
 
   /* get a new seed value, and use it to create a new random parameter structure */
-  fp=fopen("/dev/urandom", "r");
-  if (!fp) 
-    { 
-      fprintf(stderr,"Error in opening /dev/urandom \n"); 
-      exit(1); 
-    } 
-  ranCount = fread(&seed, sizeof(seed), 1, fp);
-  fclose(fp);
-  if (!(ranCount==1)) 
-    { 
-      fprintf(stderr,"Error in reading random seed \n"); 
-      exit(1); 
-    } 
-  LAL_CALL ( LALCreateRandomParams (&status, &randPar, seed), &status );
+  fp = fopen( "/dev/urandom", "r" );
+  if ( !fp ) {
+    fprintf( stderr, "Error in opening /dev/urandom \n" );
+    exit( 1 );
+  }
+  ranCount = fread( &seed, sizeof( seed ), 1, fp );
+  fclose( fp );
+  if ( !( ranCount == 1 ) ) {
+    fprintf( stderr, "Error in reading random seed \n" );
+    exit( 1 );
+  }
+  LAL_CALL( LALCreateRandomParams( &status, &randPar, seed ), &status );
 
   /* loop over all SFTs in the full catalog, but sorted by detector */
-  MultiSFTCatalogView* multiCatalogView = NULL;
-  XLAL_CHECK ( (multiCatalogView = XLALGetMultiSFTCatalogView ( catalog )) != NULL, XLAL_EFUNC );
-  for (UINT4 X = 0; X < multiCatalogView->length; X++) {
-  
+  MultiSFTCatalogView *multiCatalogView = NULL;
+  XLAL_CHECK( ( multiCatalogView = XLALGetMultiSFTCatalogView( catalog ) ) != NULL, XLAL_EFUNC );
+  for ( UINT4 X = 0; X < multiCatalogView->length; X++ ) {
+
     /* optionally prepare merged-file output:
      * if uvar_outSingleSFT, a file pointer will be opened and all SFTs for X
      * will be appended to it
@@ -170,63 +170,63 @@ int main(int argc, char *argv[]){
     char *outpath = NULL;
     FILE *fpout = NULL;
     UINT4 numSFTs = multiCatalogView->data[X].length;
-    const char* window_type = multiCatalogView->data[X].data[0].window_type;
+    const char *window_type = multiCatalogView->data[X].data[0].window_type;
     const REAL8 window_param = multiCatalogView->data[X].data[0].window_param;
     if ( uvar_outSingleSFT ) {
       /* grab the first and last entry from the single-IFO catalog,
        * relying here on XLALSFTdataFind returning a catalogue with SFTs sorted by increasing GPS-epochs
        */
-      SFTtype *sftStart = &(multiCatalogView->data[X].data[0].header);
-      SFTtype *sftEnd = &(multiCatalogView->data[X].data[numSFTs-1].header);
-      LIGOTimeGPS *epochStart = &(sftStart->epoch);
-      LIGOTimeGPS *epochEnd   = &(sftEnd->epoch);
+      SFTtype *sftStart = &( multiCatalogView->data[X].data[0].header );
+      SFTtype *sftEnd = &( multiCatalogView->data[X].data[numSFTs - 1].header );
+      LIGOTimeGPS *epochStart = &( sftStart->epoch );
+      LIGOTimeGPS *epochEnd   = &( sftEnd->epoch );
       const char *name = sftStart->name;
-      UINT4 Tsft = (UINT4) round ( 1.0 / sftStart->deltaF );
+      UINT4 Tsft = ( UINT4 ) round( 1.0 / sftStart->deltaF );
       /* calculate time interval covered -- may be different from timebase if nanosecond of sft-epochs are non-zero */
       UINT4 Tspan = epochEnd->gpsSeconds - epochStart->gpsSeconds + Tsft;
-      if ( epochStart->gpsNanoSeconds > 0) {
+      if ( epochStart->gpsNanoSeconds > 0 ) {
         Tspan += 1;
       }
-      if ( epochEnd->gpsNanoSeconds > 0) {
+      if ( epochEnd->gpsNanoSeconds > 0 ) {
         Tspan += 1;
       }
       /* get the official-format filename for the merged output file for this detector */
-      SFTFilenameSpec XLAL_INIT_DECL(spec);
+      SFTFilenameSpec XLAL_INIT_DECL( spec );
       XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar_outDir, NULL, name, window_type, misc, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
       spec.numSFTs = numSFTs;
       spec.SFTtimebase = Tsft;
       spec.window_param = window_param;
       spec.gpsStart = epochStart->gpsSeconds;
       spec.SFTspan = Tspan;
-      XLAL_CHECK_MAIN ( (outpath = XLALBuildSFTFilenameFromSpec(&spec)) != NULL, XLAL_EFUNC );
-      printf ( "Writing %d cleaned SFTs for %s to merged output file %s ...\n", numSFTs, name, outpath );
-      XLAL_CHECK_MAIN ( (fpout = fopen ( outpath, "wb" )) != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s\n\n", outpath, strerror(errno));
+      XLAL_CHECK_MAIN( ( outpath = XLALBuildSFTFilenameFromSpec( &spec ) ) != NULL, XLAL_EFUNC );
+      printf( "Writing %d cleaned SFTs for %s to merged output file %s ...\n", numSFTs, name, outpath );
+      XLAL_CHECK_MAIN( ( fpout = fopen( outpath, "wb" ) ) != NULL, XLAL_EIO, "Failed to open '%s' for writing: %s\n\n", outpath, strerror( errno ) );
     } else {
-      printf ( "Writing %d cleaned SFTs for %s to individual output files in %s ...\n", numSFTs, multiCatalogView->data[X].data[0].header.name, uvar_outDir );
+      printf( "Writing %d cleaned SFTs for %s to individual output files in %s ...\n", numSFTs, multiCatalogView->data[X].data[0].header.name, uvar_outDir );
     }
 
     /* loop over SFTs for this IFO and clean them -- load one SFT at a time */
     thisCatalog.length = 1;
-    for (UINT4 j=0; j<numSFTs; j++) {
+    for ( UINT4 j = 0; j < numSFTs; j++ ) {
 
       thisCatalog.data = multiCatalogView->data[X].data + j;
 
       /* read a multi-SFT vector, but it will only cover a single IFO and a single SFT */
-      XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadMultiSFTs ( &thisCatalog, uvar_fMin, uvar_fMax) ) != NULL, XLAL_EFUNC);
+      XLAL_CHECK_MAIN( ( inputSFTs = XLALLoadMultiSFTs( &thisCatalog, uvar_fMin, uvar_fMax ) ) != NULL, XLAL_EFUNC );
       XLAL_CHECK_MAIN( inputSFTs->length == 1, XLAL_EIO, "We should have data from a single IFO here, but have inputSFTs->length==%d", inputSFTs->length );
 
       /* construct comment for output SFTs */
       char *comment = NULL;
       char *oldcomment = thisCatalog.data[0].comment;
-      int comment_length = strlen(oldcomment) + 1;
+      int comment_length = strlen( oldcomment ) + 1;
       if ( uvar_addComment > CMT_OLD ) {
         /* allocate space for new comment */
         XLAL_CHECK_MAIN( ( comment = ( char * )XLALMalloc( comment_length + strlen( cmdline ) + 1 ) ) != NULL, XLAL_ENOMEM, "out of memory allocating comment" );
         /* append the commandline of this program to the old comment */
         if ( oldcomment ) {
-            strcpy( comment, oldcomment );
+          strcpy( comment, oldcomment );
         } else {
-            *comment = '\0';
+          *comment = '\0';
         }
         strcat( comment, cmdline );
       } else if ( uvar_addComment == CMT_OLD ) {
@@ -240,53 +240,53 @@ int main(int argc, char *argv[]){
        * only those files with canonic IFO names matching the single-IFO inputSFTs.
        */
       if ( XLALUserVarWasSet( &uvar_linefiles ) ) {
-        LAL_CALL( LALRemoveKnownLinesInMultiSFTVector ( &status, inputSFTs, uvar_maxBins,
-                      uvar_window, uvar_linefiles, randPar), &status);
+        LAL_CALL( LALRemoveKnownLinesInMultiSFTVector( &status, inputSFTs, uvar_maxBins,
+                  uvar_window, uvar_linefiles, randPar ), &status );
       }
-  
+
       /* write output - technically looping over all SFTs for a single detector here,
        * but actually the current implementation has it always be a single SFT too
        */
       if ( uvar_outSingleSFT ) {
         for ( UINT4 k = 0; k < inputSFTs->data[0]->length; k++ ) {
           SFTtype *this_sft = &( inputSFTs->data[0]->data[k] );
-          XLAL_CHECK ( XLALWriteSFT2FilePointer ( this_sft, fpout, window_type, window_param, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
+          XLAL_CHECK( XLALWriteSFT2FilePointer( this_sft, fpout, window_type, window_param, comment ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
       } else {
-        SFTFilenameSpec XLAL_INIT_DECL(spec);
+        SFTFilenameSpec XLAL_INIT_DECL( spec );
         XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar_outDir, NULL, NULL, window_type, misc, NULL, NULL ) == XLAL_SUCCESS, XLAL_EFUNC );
-        XLAL_CHECK_MAIN( XLALWriteSFTVector2StandardFile( inputSFTs->data[0], &spec, comment, 0 ) == XLAL_SUCCESS, XLAL_EFUNC);
+        XLAL_CHECK_MAIN( XLALWriteSFTVector2StandardFile( inputSFTs->data[0], &spec, comment, 0 ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
 
-      XLALDestroyMultiSFTVector( inputSFTs);
+      XLALDestroyMultiSFTVector( inputSFTs );
       if ( uvar_addComment > CMT_OLD ) {
         XLALFree( comment );
       }
 
     } /* end loop over sfts */
 
-    if (uvar_outSingleSFT ) {
+    if ( uvar_outSingleSFT ) {
       fclose( fpout );
       /* validate the merged output file now that we're finished with it:
        * in principle we have made sure all SFT timestamps are ascending etc,
        * but best to make sure
        */
-      XLAL_CHECK_MAIN ( ValidateSFTFile(outpath) == 0, XLAL_EFUNC, "Output file %s failed validation.", outpath );
+      XLAL_CHECK_MAIN( ValidateSFTFile( outpath ) == 0, XLAL_EFUNC, "Output file %s failed validation.", outpath );
       XLALFree( outpath );
     }
 
   } /* for (UINT4 X = 0; X < multiCatalogView->length; X++) */
 
   /* Free memory */
-  XLALDestroySFTCatalog(catalog );
-  XLALDestroyMultiSFTCatalogView ( multiCatalogView );
+  XLALDestroySFTCatalog( catalog );
+  XLALDestroyMultiSFTCatalogView( multiCatalogView );
   XLALDestroyUserVars();
-  LAL_CALL( LALDestroyRandomParams (&status, &randPar), &status);
+  LAL_CALL( LALDestroyRandomParams( &status, &randPar ), &status );
   if ( uvar_addComment > CMT_OLD ) {
     XLALFree( cmdline );
   }
 
-  LALCheckMemoryLeaks(); 
+  LALCheckMemoryLeaks();
 
   return 0;
 }

@@ -134,12 +134,12 @@ static UINT8 hash_SFTFilenameSpec( const void *x )
 {
   const SFTFilenameSpec *rec = ( const SFTFilenameSpec * ) x;
   UINT4 hval = 0;
-  XLALPearsonHash( &hval, sizeof( hval ), &rec->detector,       sizeof( rec->detector    ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->detector,       sizeof( rec->detector ) );
   XLALPearsonHash( &hval, sizeof( hval ), &rec->SFTtimebase,    sizeof( rec->SFTtimebase ) );
-  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbFirstBinFreq, sizeof( rec->nbFirstBinFreq   ) );
-  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbFirstBinRem,  sizeof( rec->nbFirstBinRem    ) );
-  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbBinWidthFreq, sizeof( rec->nbBinWidthFreq   ) );
-  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbBinWidthRem,  sizeof( rec->nbBinWidthRem    ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbFirstBinFreq, sizeof( rec->nbFirstBinFreq ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbFirstBinRem,  sizeof( rec->nbFirstBinRem ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbBinWidthFreq, sizeof( rec->nbBinWidthFreq ) );
+  XLALPearsonHash( &hval, sizeof( hval ), &rec->nbBinWidthRem,  sizeof( rec->nbBinWidthRem ) );
   return hval;
 }
 
@@ -148,17 +148,17 @@ static int compare_SFTFilenameSpec( const void *x, const void *y )
 {
   const SFTFilenameSpec *recx = ( const SFTFilenameSpec * ) x;
   const SFTFilenameSpec *recy = ( const SFTFilenameSpec * ) y;
-  COMPARE_BY( recx->detector[0],    recy->detector[0]    );
-  COMPARE_BY( recx->detector[1],    recy->detector[1]    );
-  COMPARE_BY( recx->SFTtimebase,    recy->SFTtimebase    );
+  COMPARE_BY( recx->detector[0],    recy->detector[0] );
+  COMPARE_BY( recx->detector[1],    recy->detector[1] );
+  COMPARE_BY( recx->SFTtimebase,    recy->SFTtimebase );
   COMPARE_BY( recx->nbFirstBinFreq, recy->nbFirstBinFreq );
-  COMPARE_BY( recx->nbFirstBinRem,  recy->nbFirstBinRem  );
+  COMPARE_BY( recx->nbFirstBinRem,  recy->nbFirstBinRem );
   COMPARE_BY( recx->nbBinWidthFreq, recy->nbBinWidthFreq );
-  COMPARE_BY( recx->nbBinWidthRem,  recy->nbBinWidthRem  );
+  COMPARE_BY( recx->nbBinWidthRem,  recy->nbBinWidthRem );
   return 0;
 }
 
-static int move_to_next_SFT ( FILE *fpin, int nsamples, int comment_length )
+static int move_to_next_SFT( FILE *fpin, int nsamples, int comment_length )
 {
   int move;
   move = sizeof( struct headertag2 ) + nsamples * 2 * sizeof( float ) + comment_length;
@@ -193,8 +193,8 @@ int main( int argc, char **argv )
   int validate = TRUE;                 /* validate the checksum of each input SFT before using it? */
   LIGOTimeGPS *minStartTime = NULL;    /* pointer for optional constraint */
   LIGOTimeGPS *maxStartTime = NULL;    /* pointer for optional constraint */
-  LIGOTimeGPS XLAL_INIT_DECL(userMinStartTime); /* user-given constraint: earliest SFT timestamp to start using */
-  LIGOTimeGPS XLAL_INIT_DECL(userMaxStartTime); /* user-given constraint: earliest SFT timestamp to no longer use */
+  LIGOTimeGPS XLAL_INIT_DECL( userMinStartTime ); /* user-given constraint: earliest SFT timestamp to start using */
+  LIGOTimeGPS XLAL_INIT_DECL( userMaxStartTime ); /* user-given constraint: earliest SFT timestamp to no longer use */
   int assumeSorted = 0;                /* Are SFT input files chronologically sorted? */
   int sfterrno = 0;                    /* SFT error number return from reference library */
   LALHashTbl *nbsfts = NULL;           /* hash table of existing narrow-band SFTs */
@@ -228,7 +228,7 @@ int main( int argc, char **argv )
              "  [-fx|--frequency-overlap <frequencyoverlap>]\n"
              "  [-ts|--minStartTime <minStartTime>]\n"
              "  [-te|--maxStartTime <maxStartTime (exclusively)>]\n"
-	     "  [-as|--assumeSorted 1|0]\n"
+             "  [-as|--assumeSorted 1|0]\n"
              "  [-m|--factor <factor>]\n"
              "  [-n|--output-directory <outputdirectory>]\n"
              "  [--] <inputfile> ...\n"
@@ -280,15 +280,15 @@ int main( int argc, char **argv )
              "\n"
              "  The options 'minStartTime' and 'maxStartTime' constrain input SFTs to be read\n"
              "  according to their time stamps. Following the XLALCWGPSinRange() convention,\n"
-             "  these are interpreted as half-open intervals:\n"  
+             "  these are interpreted as half-open intervals:\n"
              "  \tminStartTime <= time stamp < maxStartTime.\n"
              "  After encountering a time stamp outside of the given range, the program jumps to\n"
              "  the next input file as specified in the input argument; i.e. time stamp constraints\n"
-             "  are imposed file-wise. For a multi-SFT file, headers are checked to ensure proper\n" 
-             "  sorting. Mind that all timestamps refer to SFT **start** times.\n" 
+             "  are imposed file-wise. For a multi-SFT file, headers are checked to ensure proper\n"
+             "  sorting. Mind that all timestamps refer to SFT **start** times.\n"
              "\n"
              "  If 'assumeSorted' is set to 1, SFT input files will be assumed to be chronologically\n"
-             "  sorted, which means the program will stop as soon as an SFT located after the\n" 
+             "  sorted, which means the program will stop as soon as an SFT located after the\n"
              "  specified range is encountered.\n"
              "\n"
              "  After all options (and an optional '--' separator), the input files are given, as many\n"
@@ -326,7 +326,7 @@ int main( int argc, char **argv )
   /* get parameters from command-line */
   for ( arg = 1; arg < argc; arg++ ) {
     if ( ( strcmp( argv[arg], "-c" ) == 0 ) ||
-                ( strcmp( argv[arg], "--add-comment" ) == 0 ) ) {
+         ( strcmp( argv[arg], "--add-comment" ) == 0 ) ) {
       add_comment = atoi( argv[++arg] );
     } else if ( ( strcmp( argv[arg], "-a" ) == 0 ) ||
                 ( strcmp( argv[arg], "--all-comments" ) == 0 ) ) {
@@ -357,11 +357,11 @@ int main( int argc, char **argv )
       fOverlap = atof( argv[++arg] );
     } else if ( ( strcmp( argv[arg], "-ts" ) == 0 ) ||
                 ( strcmp( argv[arg], "--minStartTime" ) == 0 ) ) {
-      XLAL_CHECK_MAIN ( XLALGPSSetREAL8 ( &userMinStartTime, (REAL8)atof( argv[++arg] )) != NULL, XLAL_EDOM );
+      XLAL_CHECK_MAIN( XLALGPSSetREAL8( &userMinStartTime, ( REAL8 )atof( argv[++arg] ) ) != NULL, XLAL_EDOM );
       minStartTime = &userMinStartTime;
     } else if ( ( strcmp( argv[arg], "-te" ) == 0 ) ||
                 ( strcmp( argv[arg], "--maxStartTime" ) == 0 ) ) {
-      XLAL_CHECK_MAIN ( XLALGPSSetREAL8 ( &userMaxStartTime, (REAL8)atof( argv[++arg] )) != NULL, XLAL_EDOM );
+      XLAL_CHECK_MAIN( XLALGPSSetREAL8( &userMaxStartTime, ( REAL8 )atof( argv[++arg] ) ) != NULL, XLAL_EDOM );
       maxStartTime = &userMaxStartTime;
     } else if ( ( strcmp( argv[arg], "-as" ) == 0 ) ||
                 ( strcmp( argv[arg], "--assumeSorted" ) == 0 ) ) {
@@ -404,16 +404,15 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( ( constraint_str = ( char * )XLALMalloc( constraint_str_len ) ) != NULL,
                    XLAL_ENOMEM, "out of memory allocating constraint_str" );
   if ( minStartTime ) {
-    XLAL_CHECK_MAIN ( snprintf( constraint_str, constraint_str_len, "%d,", minStartTime->gpsSeconds ) < ( int )constraint_str_len,
-                      XLAL_ESYS, "output of snprintf() was truncated" );
-  }
-  else {
-    XLAL_CHECK_MAIN ( snprintf( constraint_str, constraint_str_len, ",") < ( int )constraint_str_len,
-                      XLAL_ESYS, "output of snprintf() was truncated" );
+    XLAL_CHECK_MAIN( snprintf( constraint_str, constraint_str_len, "%d,", minStartTime->gpsSeconds ) < ( int )constraint_str_len,
+                     XLAL_ESYS, "output of snprintf() was truncated" );
+  } else {
+    XLAL_CHECK_MAIN( snprintf( constraint_str, constraint_str_len, "," ) < ( int )constraint_str_len,
+                     XLAL_ESYS, "output of snprintf() was truncated" );
   }
   if ( maxStartTime ) {
-    XLAL_CHECK_MAIN ( snprintf( constraint_str + strlen(constraint_str), constraint_str_len - strlen(constraint_str), "%d", maxStartTime->gpsSeconds ) < ( int )(constraint_str_len - strlen(constraint_str)),
-                      XLAL_ESYS, "output of snprintf() was truncated" );
+    XLAL_CHECK_MAIN( snprintf( constraint_str + strlen( constraint_str ), constraint_str_len - strlen( constraint_str ), "%d", maxStartTime->gpsSeconds ) < ( int )( constraint_str_len - strlen( constraint_str ) ),
+                     XLAL_ESYS, "output of snprintf() was truncated" );
   }
 
   /* check if there was an input-file option given at all */
@@ -437,7 +436,7 @@ int main( int argc, char **argv )
       XLAL_CHECK_MAIN( XLALParseSFTFilenameIntoSpec( &nbSFTspec, globbuf.gl_pathv[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
 
       /* filter the narrow-band SFTs */
-      if (nbSFTspec.nbFirstBinFreq == 0) {
+      if ( nbSFTspec.nbFirstBinFreq == 0 ) {
         continue;
       }
 
@@ -458,9 +457,9 @@ int main( int argc, char **argv )
     XLALFree( pattern );
   }
 
-  int stopInputCauseSorted=0;
+  int stopInputCauseSorted = 0;
   /* loop over all input SFT files */
-  for ( ; (arg < argc) && !stopInputCauseSorted; arg++ ) {
+  for ( ; ( arg < argc ) && !stopInputCauseSorted; arg++ ) {
 
     /* parse SFT filename */
     SFTFilenameSpec inputSFTspec;
@@ -489,16 +488,16 @@ int main( int argc, char **argv )
       /* Check that various bits of header information are consistent.
        * This includes a check for monotonic increasing timestamps.
        */
-      XLAL_CHECK_MAIN( firstread || !(sfterrno=CheckSFTHeaderConsistency(&lasthd, &hd)), XLAL_EIO, "Inconsistent SFT headers: %s", SFTErrorMessage(sfterrno));
+      XLAL_CHECK_MAIN( firstread || !( sfterrno = CheckSFTHeaderConsistency( &lasthd, &hd ) ), XLAL_EIO, "Inconsistent SFT headers: %s", SFTErrorMessage( sfterrno ) );
       lasthd = hd; /* keep copy of header for comparison the next time */
 
       /* only use SFTs within specified ranges */
-      LIGOTimeGPS startTimeGPS = {hd.gps_sec,0};
-      int inRange = XLALCWGPSinRange(startTimeGPS, minStartTime, maxStartTime);
-      XLAL_CHECK_MAIN ( !( firstread && ( inRange == 1 ) ), XLAL_EIO, "First timestamp %d in file was after user constraint [%s)!", hd.gps_sec, constraint_str );
+      LIGOTimeGPS startTimeGPS = {hd.gps_sec, 0};
+      int inRange = XLALCWGPSinRange( startTimeGPS, minStartTime, maxStartTime );
+      XLAL_CHECK_MAIN( !( firstread && ( inRange == 1 ) ), XLAL_EIO, "First timestamp %d in file was after user constraint [%s)!", hd.gps_sec, constraint_str );
       firstread = FALSE;
       if ( inRange == -1 ) { /* input timestamp too early, skip */
-        XLAL_CHECK_MAIN ( move_to_next_SFT ( fpin, hd.nsamples, hd.comment_length ) == XLAL_SUCCESS, XLAL_EIO );
+        XLAL_CHECK_MAIN( move_to_next_SFT( fpin, hd.nsamples, hd.comment_length ) == XLAL_SUCCESS, XLAL_EIO );
         continue;
       }
       if ( inRange == 1 ) { /* input timestamp too late, stop with this file */
@@ -654,7 +653,7 @@ int main( int argc, char **argv )
         } else {
 
           /* reconstruct filename of existing SFT */
-          existingSFTfilename = XLALBuildSFTFilenameFromSpec(rec);
+          existingSFTfilename = XLALBuildSFTFilenameFromSpec( rec );
           XLAL_CHECK( existingSFTfilename != NULL, XLAL_EFUNC );
 
           /* check if added record would break increasing timestamps */
@@ -673,7 +672,7 @@ int main( int argc, char **argv )
         }
 
         /* construct filename for this output SFT */
-        char *newSFTfilename = XLALBuildSFTFilenameFromSpec(rec);
+        char *newSFTfilename = XLALBuildSFTFilenameFromSpec( rec );
         XLAL_CHECK( newSFTfilename != NULL, XLAL_EFUNC );
 
         /* update SFT filename */
@@ -717,11 +716,11 @@ int main( int argc, char **argv )
       firstfile = FALSE;
 
       /* Move forward to next SFT in merged file */
-      XLAL_CHECK_MAIN ( move_to_next_SFT ( fpin, hd.nsamples, hd.comment_length ) == XLAL_SUCCESS, XLAL_EIO );
+      XLAL_CHECK_MAIN( move_to_next_SFT( fpin, hd.nsamples, hd.comment_length ) == XLAL_SUCCESS, XLAL_EIO );
 
     } /* end loop over SFTs in this file */
 
-    XLAL_CHECK_MAIN ( nSFT_this_file > 0, XLAL_EIO, "Found no matching SFTs in file." );
+    XLAL_CHECK_MAIN( nSFT_this_file > 0, XLAL_EIO, "Found no matching SFTs in file." );
 
     /* close the input SFT file */
     fclose( fpin );
