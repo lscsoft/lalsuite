@@ -1,9 +1,15 @@
+# brace style options
 style=otbs
+
+# tab options
 indent=spaces=2
-convert-tabs
+
+# padding options
 unpad-paren
 pad-paren-in
 pad-header
 pad-oper
 align-pointer=name
-add-brackets
+
+# formatting options
+convert-tabs
