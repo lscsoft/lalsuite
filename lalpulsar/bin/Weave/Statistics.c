@@ -32,8 +32,8 @@
 /// of the supported statistics
 ///
 typedef struct {
-  WeaveStatisticType val;		///< bitflag value for this statistic
-  const char *const name;		///< internal name of this statistics
+  WeaveStatisticType val;               ///< bitflag value for this statistic
+  const char *const name;               ///< internal name of this statistics
   WeaveStatisticType dependencies;      ///< set of *direct* input dependencies of this statistic
   const char *const help;               ///< help string explaining this statistic
 } WeaveStatisticMap;
@@ -233,10 +233,10 @@ int XLALWeaveStatisticsSetDirectDependencies(
 /// Fill StatisticsParams logic for given toplist and extra-output stats
 ///
 int XLALWeaveStatisticsParamsSetDependencyMap(
-  WeaveStatisticsParams *statistics_params,	///< [out] statstics dependency map
-  const WeaveStatisticType toplist_stats,	///< [in] requested toplist statistics
-  const WeaveStatisticType extra_output_stats,	///< [in] requested 'extra' (stage0) output statistics
-  const WeaveStatisticType recalc_stats		///< [in] requested 'recalc' (stage1) statistics
+  WeaveStatisticsParams *statistics_params,     ///< [out] statstics dependency map
+  const WeaveStatisticType toplist_stats,       ///< [in] requested toplist statistics
+  const WeaveStatisticType extra_output_stats,  ///< [in] requested 'extra' (stage0) output statistics
+  const WeaveStatisticType recalc_stats         ///< [in] requested 'recalc' (stage1) statistics
 )
 {
   XLAL_CHECK( statistics_params != NULL, XLAL_EFAULT );

@@ -1,5 +1,6 @@
 style=otbs
 indent=spaces=2
+convert-tabs
 unpad-paren
 pad-paren-in
 pad-header
