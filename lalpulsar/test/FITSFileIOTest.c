@@ -45,11 +45,11 @@ int main( void )
 #else // defined(HAVE_LIBCFITSIO)
 
 const CHAR *longstring_ref = \
-  "This is a long string #1. This is a long string #2. " \
-  "This is a long string #3. This is a long string #4. " \
-  "This is a long string #5. This is a long string #6. " \
-  "This is a long string #7. This is a long string #8. " \
-  "This is a long string #9. This is a long string #10." ;
+                             "This is a long string #1. This is a long string #2. " \
+                             "This is a long string #3. This is a long string #4. " \
+                             "This is a long string #5. This is a long string #6. " \
+                             "This is a long string #7. This is a long string #8. " \
+                             "This is a long string #9. This is a long string #10." ;
 
 typedef struct {
   INT4 n;
@@ -78,23 +78,23 @@ typedef struct {
 REAL4 testarray[3][1824] = { { 0 }, { 0 }, { 0 } };
 
 const TestSubRecord testsub[3][2] = {
-  { { .n=0, .v=1.23, .desc="A1", .idx =  3 }, { .n=1, .v=2.34, .desc="X9", .idx = LAL_UINT8_MAX >> 0 } },
-  { { .n=0, .v=3.45, .desc="B3", .idx =  7 }, { .n=1, .v=4.56, .desc="Y7", .idx = LAL_UINT8_MAX >> 1 } },
-  { { .n=0, .v=5.67, .desc="C5", .idx = 11 }, { .n=1, .v=6.78, .desc="Z5", .idx = LAL_UINT8_MAX >> 5 } },
+  { { .n = 0, .v = 1.23, .desc = "A1", .idx =  3 }, { .n = 1, .v = 2.34, .desc = "X9", .idx = LAL_UINT8_MAX >> 0 } },
+  { { .n = 0, .v = 3.45, .desc = "B3", .idx =  7 }, { .n = 1, .v = 4.56, .desc = "Y7", .idx = LAL_UINT8_MAX >> 1 } },
+  { { .n = 0, .v = 5.67, .desc = "C5", .idx = 11 }, { .n = 1, .v = 6.78, .desc = "Z5", .idx = LAL_UINT8_MAX >> 5 } },
 };
 
 const TestRecord testtable[3] = {
   {
-    .index=3, .flag=1, .name="CasA", .epoch={123456789, 5}, .pos={.sky=5.4321, .freq=100.999, .fkdot={1e-9, 5e-20}}, .values={13.24, 43.234},
-    .phasef=crectf( 1.2, 3.4 ), .phase=crect( 4.5, 0.2 ), .array=testarray[0], .sub=testsub[0]
+    .index = 3, .flag = 1, .name = "CasA", .epoch = {123456789, 5}, .pos = {.sky = 5.4321, .freq = 100.999, .fkdot = {1e-9, 5e-20}}, .values = {13.24, 43.234},
+    .phasef = crectf( 1.2, 3.4 ), .phase = crect( 4.5, 0.2 ), .array = testarray[0], .sub = testsub[0]
   },
   {
-    .index=2, .flag=0, .name="Vela", .epoch={452456245, 9}, .pos={.sky=34.454, .freq=1345.34, .fkdot={2e-8, 6e-21}}, .values={14.35, 94.128},
-    .phasef=crectf( 3.6, 9.3 ), .phase=crect( 8.3, 4.0 ), .array=testarray[1], .sub=testsub[1]
+    .index = 2, .flag = 0, .name = "Vela", .epoch = {452456245, 9}, .pos = {.sky = 34.454, .freq = 1345.34, .fkdot = {2e-8, 6e-21}}, .values = {14.35, 94.128},
+    .phasef = crectf( 3.6, 9.3 ), .phase = crect( 8.3, 4.0 ), .array = testarray[1], .sub = testsub[1]
   },
   {
-    .index=1, .flag=1, .name="Crab", .epoch={467846774, 4}, .pos={.sky=64.244, .freq=15.6463, .fkdot={4e-6,     0}}, .values={153.4, 3.0900},
-    .phasef=crectf( 6.7, 4.4 ), .phase=crect( 5.6, 6.3 ), .array=testarray[2], .sub=testsub[2]
+    .index = 1, .flag = 1, .name = "Crab", .epoch = {467846774, 4}, .pos = {.sky = 64.244, .freq = 15.6463, .fkdot = {4e-6,     0}}, .values = {153.4, 3.0900},
+    .phasef = crectf( 6.7, 4.4 ), .phase = crect( 5.6, 6.3 ), .array = testarray[2], .sub = testsub[2]
   },
 };
 
@@ -104,12 +104,14 @@ int main( int argc, char *argv[] )
   // Initialise test array data
   for ( size_t i = 0; i < XLAL_NUM_ELEM( testarray ); ++i ) {
     for ( size_t j = 0; j < XLAL_NUM_ELEM( testarray[0] ); ++j ) {
-      testarray[i][j] = LAL_PI*i - LAL_E*j;
+      testarray[i][j] = LAL_PI * i - LAL_E * j;
     }
   }
 
   // Create a dummy user enviroment and command line, for testing XLALFITSFileWriteUVarCmdLine()
-  struct uvar_type { INT4 dummy; } uvar_struct = { .dummy = 0 };
+  struct uvar_type {
+    INT4 dummy;
+  } uvar_struct = { .dummy = 0 };
   struct uvar_type *const uvar = &uvar_struct;
   XLAL_CHECK_MAIN( XLALRegisterUvarMember( dummy, INT4, 0, OPTIONAL, "Dummy option" ) == XLAL_SUCCESS, XLAL_EFUNC );
   BOOLEAN should_exit = 0;
@@ -185,7 +187,7 @@ int main( int argc, char *argv[] )
         for ( idx[1] = 0; idx[1] < dims[1]; ++idx[1] ) {
           for ( idx[2] = 0; idx[2] < dims[2]; ++idx[2] ) {
             for ( idx[3] = 0; idx[3] < dims[3]; ++idx[3] ) {
-              const INT4 value = idx[0] + 2*idx[1] + 3*idx[2] + 4*idx[3];
+              const INT4 value = idx[0] + 2 * idx[1] + 3 * idx[2] + 4 * idx[3];
               XLAL_CHECK_MAIN( XLALFITSArrayWriteINT4( file, idx, value ) == XLAL_SUCCESS, XLAL_EFUNC );
             }
           }
@@ -207,7 +209,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( XLALFITSArrayOpenWrite1( file, "array3", 14, "This is a test REAL4 array" ) == XLAL_SUCCESS, XLAL_EFUNC );
     for ( size_t i = 0; i < 14; ++i ) {
       const size_t idx[] = { i };
-      const REAL4 value = 21 + 0.5*i;
+      const REAL4 value = 21 + 0.5 * i;
       XLAL_CHECK_MAIN( XLALFITSArrayWriteREAL4( file, idx, value ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
     fprintf( stderr, "PASSED: wrote a REAL4 array\n" );
@@ -217,7 +219,7 @@ int main( int argc, char *argv[] )
       gsl_matrix *GAMAT( elems, m, n );
       for ( size_t i = 0; i < m; ++i ) {
         for ( size_t j = 0; j < n; ++j ) {
-          const double value = 7.0 + 2.5*i + 3.0*j;
+          const double value = 7.0 + 2.5 * i + 3.0 * j;
           gsl_matrix_set( elems, i, j, value );
         }
       }
@@ -377,7 +379,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( XLALFITSArrayReadGSLMatrix( file, NULL, &elems ) == XLAL_SUCCESS, XLAL_EFUNC );
       for ( size_t i = 0; i < m; ++i ) {
         for ( size_t j = 0; j < n; ++j ) {
-          const double value_ref = 7.0 + 2.5*i + 3.0*j;
+          const double value_ref = 7.0 + 2.5 * i + 3.0 * j;
           double value = gsl_matrix_get( elems, i, j );
           XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu] = %g != %g", i, j, value, value_ref );
         }
@@ -392,7 +394,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( dim == 14, XLAL_EFAILED );
       for ( size_t i = 0; i < dim; ++i ) {
         const size_t idx[] = { i };
-        const REAL4 value_ref = 21 + 0.5*i;
+        const REAL4 value_ref = 21 + 0.5 * i;
         REAL4 value = 0;
         XLAL_CHECK_MAIN( XLALFITSArrayReadREAL4( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
         XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu] = %g != %g", i, value, value_ref );
@@ -426,7 +428,7 @@ int main( int argc, char *argv[] )
         for ( idx[1] = 0; idx[1] < dims[1]; ++idx[1] ) {
           for ( idx[2] = 0; idx[2] < dims[2]; ++idx[2] ) {
             for ( idx[3] = 0; idx[3] < dims[3]; ++idx[3] ) {
-              const INT4 value_ref = idx[0] + 2*idx[1] + 3*idx[2] + 4*idx[3];
+              const INT4 value_ref = idx[0] + 2 * idx[1] + 3 * idx[2] + 4 * idx[3];
               INT4 value = 0;
               XLAL_CHECK_MAIN( XLALFITSArrayReadINT4( file, idx, &value ) == XLAL_SUCCESS, XLAL_EFUNC );
               XLAL_CHECK_MAIN( value == value_ref, XLAL_EFAILED, "value[%zu,%zu,%zu,%zu] = %i != %i", idx[0], idx[1], idx[2], idx[3], value, value_ref );
@@ -510,7 +512,7 @@ int main( int argc, char *argv[] )
       const REAL4 testflt_ref = LAL_PI;
       REAL4 testflt;
       XLAL_CHECK_MAIN( XLALFITSHeaderReadREAL4( file, "testflt", &testflt ) == XLAL_SUCCESS, XLAL_EFUNC );
-      const REAL4 err = fabsf( testflt - testflt_ref ), err_tol = 5*FLT_EPSILON;
+      const REAL4 err = fabsf( testflt - testflt_ref ), err_tol = 5 * FLT_EPSILON;
       XLAL_CHECK_MAIN( err < err_tol, XLAL_EFAILED, "|testflt - testflt_ref| = |%0.*g - %0.*g| = %0.*g >= %0.*g",
                        FLT_DIG, testflt, FLT_DIG, testflt_ref, FLT_DIG, err, FLT_DIG, err_tol );
     }
@@ -520,7 +522,7 @@ int main( int argc, char *argv[] )
       const REAL8 testdbl_ref = LAL_E;
       REAL8 testdbl;
       XLAL_CHECK_MAIN( XLALFITSHeaderReadREAL8( file, "testdbl", &testdbl ) == XLAL_SUCCESS, XLAL_EFUNC );
-      const REAL8 err = fabs( testdbl - testdbl_ref ), err_tol = 5*DBL_EPSILON;
+      const REAL8 err = fabs( testdbl - testdbl_ref ), err_tol = 5 * DBL_EPSILON;
       XLAL_CHECK_MAIN( err < err_tol, XLAL_EFAILED, "|testdbl - testdbl_ref| = |%0.*g - %0.*g| = %0.*g >= %0.*g",
                        DBL_DIG, testdbl, DBL_DIG, testdbl_ref, DBL_DIG, err, DBL_DIG, err_tol );
     }
@@ -530,7 +532,7 @@ int main( int argc, char *argv[] )
       const COMPLEX8 testcmp_ref = crectf( LAL_PI_2, LAL_PI_4 );
       COMPLEX8 testcmp;
       XLAL_CHECK_MAIN( XLALFITSHeaderReadCOMPLEX8( file, "testcmp", &testcmp ) == XLAL_SUCCESS, XLAL_EFUNC );
-      const REAL4 err = cabsf( testcmp - testcmp_ref ), err_tol = 5*FLT_EPSILON;
+      const REAL4 err = cabsf( testcmp - testcmp_ref ), err_tol = 5 * FLT_EPSILON;
       XLAL_CHECK_MAIN( err < err_tol, XLAL_EFAILED, "|testcmp - testcmp_ref| = |(%0.*g,%0.*g) - (%0.*g,%0.*g)| = %0.*g >= %0.*g",
                        FLT_DIG, crealf( testcmp ), FLT_DIG, cimagf( testcmp ), FLT_DIG, crealf( testcmp_ref ), FLT_DIG, cimagf( testcmp_ref ), FLT_DIG, err, FLT_DIG, err_tol );
     }
@@ -540,11 +542,11 @@ int main( int argc, char *argv[] )
       const COMPLEX16 testdblcmp_ref = crect( LAL_LOG2E, LAL_LOG10E );
       COMPLEX16 testdblcmp;
       XLAL_CHECK_MAIN( XLALFITSHeaderReadCOMPLEX16( file, "testdblcmp", &testdblcmp ) == XLAL_SUCCESS, XLAL_EFUNC );
-      const REAL8 err = cabs( testdblcmp - testdblcmp_ref ), err_tol = 5*DBL_EPSILON;
+      const REAL8 err = cabs( testdblcmp - testdblcmp_ref ), err_tol = 5 * DBL_EPSILON;
       XLAL_CHECK_MAIN( err < err_tol, XLAL_EFAILED, "|testdblcmp - testdblcmp_ref| = |(%0.*g,%0.*g) - (%0.*g,%0.*g)| = %0.*g >= %0.*g",
                        DBL_DIG, creal( testdblcmp ), DBL_DIG, cimag( testdblcmp ), DBL_DIG, creal( testdblcmp_ref ), DBL_DIG, cimag( testdblcmp_ref ), DBL_DIG, err, DBL_DIG, err_tol );
     }
-   fprintf( stderr, "PASSED: read and verified a COMPLEX16\n" );
+    fprintf( stderr, "PASSED: read and verified a COMPLEX16\n" );
 
     {
       const CHAR *teststr_ref = "This is a short string";
@@ -583,7 +585,10 @@ int main( int argc, char *argv[] )
     fprintf( stderr, "PASSED: read and verified a GPS time\n" );
 
     {
-      const struct { BOOLEAN exists; const CHAR *key; } keys[] = { { 1, "date-obs" }, { 1, "testdbl" }, { 0, "banana" }, { 1, "longstring" } };
+      const struct {
+        BOOLEAN exists;
+        const CHAR *key;
+      } keys[] = { { 1, "date-obs" }, { 1, "testdbl" }, { 0, "banana" }, { 1, "longstring" } };
       for ( size_t i = 0; i < XLAL_NUM_ELEM( keys ); ++i ) {
         BOOLEAN exists = 0;
         XLAL_CHECK_MAIN( XLALFITSHeaderQueryKeyExists( file, keys[i].key, &exists ) == XLAL_SUCCESS, XLAL_EFUNC );
