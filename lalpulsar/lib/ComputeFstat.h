@@ -81,7 +81,7 @@ typedef struct tagFstatInput FstatInput;
 ///
 typedef struct tagFstatInputVector {
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(FstatInputVector, FstatInput*, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( FstatInputVector, FstatInput *, data, UINT4, length ) );
 #endif // SWIG
   UINT4 length;                     ///< Number of elements in array.
   FstatInput **data;                ///< Pointer to the data array.
@@ -113,15 +113,15 @@ typedef enum tagFstatMethodType {
   FMETHOD_START = 1,
   /// \endcond
 
-  FMETHOD_DEMOD_GENERIC,	///< \a Demod: generic C hotloop, works for any number of Dirichlet kernel terms \f$ \text{Dterms} \f$ 
-  FMETHOD_DEMOD_OPTC,		///< \a Demod: gptimized C hotloop using Akos' algorithm, only works for \f$ \text{Dterms} \lesssim 20 \f$ 
-  FMETHOD_DEMOD_ALTIVEC,	///< \a Demod: Altivec hotloop variant, uses fixed \f$ \text{Dterms} = 8 \f$ 
-  FMETHOD_DEMOD_SSE,		///< \a Demod: SSE hotloop with precalc divisors, uses fixed \f$ \text{Dterms} = 8 \f$ 
-  FMETHOD_DEMOD_BEST,		///< \a Demod: best guess of the fastest available hotloop
+  FMETHOD_DEMOD_GENERIC,        ///< \a Demod: generic C hotloop, works for any number of Dirichlet kernel terms \f$ \text{Dterms} \f$
+  FMETHOD_DEMOD_OPTC,           ///< \a Demod: gptimized C hotloop using Akos' algorithm, only works for \f$ \text{Dterms} \lesssim 20 \f$
+  FMETHOD_DEMOD_ALTIVEC,        ///< \a Demod: Altivec hotloop variant, uses fixed \f$ \text{Dterms} = 8 \f$
+  FMETHOD_DEMOD_SSE,            ///< \a Demod: SSE hotloop with precalc divisors, uses fixed \f$ \text{Dterms} = 8 \f$
+  FMETHOD_DEMOD_BEST,           ///< \a Demod: best guess of the fastest available hotloop
 
-  FMETHOD_RESAMP_GENERIC,	///< \a Resamp: generic implementation \cite Prix2022
-  FMETHOD_RESAMP_CUDA,		///< \a Resamp: CUDA resampling \cite DunnEtAl2022
-  FMETHOD_RESAMP_BEST,		///< \a Resamp: best guess of the fastest available implementation
+  FMETHOD_RESAMP_GENERIC,       ///< \a Resamp: generic implementation \cite Prix2022
+  FMETHOD_RESAMP_CUDA,          ///< \a Resamp: CUDA resampling \cite DunnEtAl2022
+  FMETHOD_RESAMP_BEST,          ///< \a Resamp: best guess of the fastest available implementation
 
   /// \cond DONT_DOXYGEN
   FMETHOD_END
@@ -134,19 +134,19 @@ typedef enum tagFstatMethodType {
 /// \f$ \mathcal{F} \f$ -statistic setup function XLALCreateFstatInput().
 ///
 typedef struct tagFstatOptionalArgs {
-  UINT4 randSeed;			///< Random-number seed value used in case of fake Gaussian noise generation (\c injectSqrtSX)
-  SSBprecision SSBprec;			///< Barycentric transformation precision.
-  UINT4 Dterms;                  	///< Number of Dirichlet kernel terms, used by some \a Demod methods; see \c FstatMethodType.
-  UINT4 runningMedianWindow;	  	///< If SFT noise weights are calculated from the SFTs, the running median window length to use.
-  FstatMethodType FstatMethod;	  	///< Method to use for computing the \f$ \mathcal{F} \f$ -statistic.
-  PulsarParamsVector *injectSources;	///< Vector of parameters of CW signals to simulate and inject.
-  MultiNoiseFloor *injectSqrtSX;  	///< Single-sided PSD values for fake Gaussian noise to be added to SFT data.
-  MultiNoiseFloor *assumeSqrtSX;  	///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
-  FstatInput *prevInput;		///< An \c FstatInput structure from a previous call to XLALCreateFstatInput(); may contain common workspace data than can be re-used to save memory.
-  BOOLEAN collectTiming;		///< a flag to turn on/off the collection of F-stat-method-specific timing-data
-  BOOLEAN resampFFTPowerOf2;		///< \a Resamp: round up FFT lengths to next power of 2; see \c FstatMethodType.
-  REAL8 allowedMismatchFromSFTLength;      ///<  Optional override for XLALFstatCheckSFTLengthMismatch().
-  REAL8 sourceDeltaT;			///< Optional source-frame sampling period for XLALCWMakeFakeData(); if zero, use the previous internal defaults.
+  UINT4 randSeed;                       ///< Random-number seed value used in case of fake Gaussian noise generation (\c injectSqrtSX)
+  SSBprecision SSBprec;                 ///< Barycentric transformation precision.
+  UINT4 Dterms;                         ///< Number of Dirichlet kernel terms, used by some \a Demod methods; see \c FstatMethodType.
+  UINT4 runningMedianWindow;            ///< If SFT noise weights are calculated from the SFTs, the running median window length to use.
+  FstatMethodType FstatMethod;          ///< Method to use for computing the \f$ \mathcal{F} \f$ -statistic.
+  PulsarParamsVector *injectSources;    ///< Vector of parameters of CW signals to simulate and inject.
+  MultiNoiseFloor *injectSqrtSX;        ///< Single-sided PSD values for fake Gaussian noise to be added to SFT data.
+  MultiNoiseFloor *assumeSqrtSX;        ///< Single-sided PSD values to be used for computing SFT noise weights instead of from a running median of the SFTs themselves.
+  FstatInput *prevInput;                ///< An \c FstatInput structure from a previous call to XLALCreateFstatInput(); may contain common workspace data than can be re-used to save memory.
+  BOOLEAN collectTiming;                ///< a flag to turn on/off the collection of F-stat-method-specific timing-data
+  BOOLEAN resampFFTPowerOf2;            ///< \a Resamp: round up FFT lengths to next power of 2; see \c FstatMethodType.
+  REAL8 allowedMismatchFromSFTLength;   ///< Optional override for XLALFstatCheckSFTLengthMismatch().
+  REAL8 sourceDeltaT;                   ///< Optional source-frame sampling period for XLALCWMakeFakeData(); if zero, use the previous internal defaults.
 } FstatOptionalArgs;
 
 ///
@@ -173,7 +173,7 @@ typedef struct tagFstatAtom {
 ///
 typedef struct tagFstatAtomVector {
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(FstatAtomVector, FstatAtom, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( FstatAtomVector, FstatAtom, data, UINT4, length ) );
 #endif // SWIG
   UINT4 length;                         ///< Number of per-SFT 'atoms'.
   FstatAtom *data;                      ///< Array of \c FstatAtom pointers of given length.
@@ -185,7 +185,7 @@ typedef struct tagFstatAtomVector {
 ///
 typedef struct tagMultiFstatAtomVector {
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(MultiFstatAtomVector, FstatAtomVector*, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( MultiFstatAtomVector, FstatAtomVector *, data, UINT4, length ) );
 #endif // SWIG
   UINT4 length;                         ///< Number of detectors.
   FstatAtomVector **data;               ///< Array of \c FstatAtomVector pointers, one for each detector X.
@@ -195,8 +195,8 @@ typedef struct tagMultiFstatAtomVector {
 /// XLALComputeFstat() computed results structure.
 ///
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(IGNORE_MEMBERS(tagFstatResults, internalalloclen));
-SWIGLAL(ARRAY_MULTIPLE_LENGTHS(tagFstatResults, numFreqBins, numDetectors));
+SWIGLAL( IGNORE_MEMBERS( tagFstatResults, internalalloclen ) );
+SWIGLAL( ARRAY_MULTIPLE_LENGTHS( tagFstatResults, numFreqBins, numDetectors ) );
 #endif // SWIG
 typedef struct tagFstatResults {
 
@@ -236,7 +236,7 @@ typedef struct tagFstatResults {
   /// at #numFreqBins frequencies spaced #dFreq apart.  This array should not be accessed if
   /// #whatWasComputed & FSTATQ_2F is false.
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(FstatResults, REAL4, twoF, UINT4, numFreqBins));
+  SWIGLAL( ARRAY_1D( FstatResults, REAL4, twoF, UINT4, numFreqBins ) );
 #endif // SWIG
   REAL4 *twoF;
 
@@ -247,13 +247,13 @@ typedef struct tagFstatResults {
   REAL4 *twoF_CUDA;
 #endif
 
-  /// If #whatWasComputed & FSTATQ_PARTS is true, the multi-detector \f$ F_a \f$ and \f$ F_b \f$ 
+  /// If #whatWasComputed & FSTATQ_PARTS is true, the multi-detector \f$ F_a \f$ and \f$ F_b \f$
   /// computed at #numFreqBins frequencies spaced #dFreq apart.  This array should not be accessed
   /// if #whatWasComputed & FSTATQ_PARTS is false.
   /// \note global phase refers to #refTimePhase, not (#doppler).refTime
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(FstatResults, COMPLEX8, Fa, UINT4, numFreqBins));
-  SWIGLAL(ARRAY_1D(FstatResults, COMPLEX8, Fb, UINT4, numFreqBins));
+  SWIGLAL( ARRAY_1D( FstatResults, COMPLEX8, Fa, UINT4, numFreqBins ) );
+  SWIGLAL( ARRAY_1D( FstatResults, COMPLEX8, Fb, UINT4, numFreqBins ) );
 #endif // SWIG
   COMPLEX8 *Fa;
   COMPLEX8 *Fb;
@@ -263,7 +263,7 @@ typedef struct tagFstatResults {
   /// #numDetectors entries will be valid.  This array should not be accessed if #whatWasComputed &
   /// FSTATQ_2F_PER_DET is false.
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, REAL4, twoFPerDet, UINT4, numDetectors, numFreqBins));
+  SWIGLAL( ARRAY_1D_PTR_1D( FstatResults, REAL4, twoFPerDet, UINT4, numDetectors, numFreqBins ) );
 #endif // SWIG
   REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS];
 
@@ -272,8 +272,8 @@ typedef struct tagFstatResults {
   /// This array should not be accessed if #whatWasComputed & FSTATQ_PARTS_PER_DET is false.
   /// \note global phase refers to #refTimePhase, not (#doppler).refTime
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FaPerDet, UINT4, numDetectors, numFreqBins));
-  SWIGLAL(ARRAY_1D_PTR_1D(FstatResults, COMPLEX8, FbPerDet, UINT4, numDetectors, numFreqBins));
+  SWIGLAL( ARRAY_1D_PTR_1D( FstatResults, COMPLEX8, FaPerDet, UINT4, numDetectors, numFreqBins ) );
+  SWIGLAL( ARRAY_1D_PTR_1D( FstatResults, COMPLEX8, FbPerDet, UINT4, numDetectors, numFreqBins ) );
 #endif // SWIG
   COMPLEX8 *FaPerDet[PULSAR_MAX_DETECTORS];
   COMPLEX8 *FbPerDet[PULSAR_MAX_DETECTORS];
@@ -283,9 +283,9 @@ typedef struct tagFstatResults {
   /// be accessed if #whatWasComputed & FSTATQ_ATOMS_PER_DET is false.
   /// \note global phase of atoms refers to #refTimePhase, not (#doppler).refTime
 #ifdef SWIG // SWIG interface directives
-  SWIGLAL(ARRAY_1D(FstatResults, MultiFstatAtomVector*, multiFatoms, UINT4, numFreqBins));
+  SWIGLAL( ARRAY_1D( FstatResults, MultiFstatAtomVector *, multiFatoms, UINT4, numFreqBins ) );
 #endif // SWIG
-  MultiFstatAtomVector** multiFatoms;
+  MultiFstatAtomVector **multiFatoms;
 
   /// \cond DONT_DOXYGEN
   UINT4 internalalloclen;
@@ -302,18 +302,17 @@ typedef struct tagFstatResults {
 /// Note: All timing numbers are averaged over repeated calls to XLALComputeFstat(for fixed-setup)
 ///
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagFstatTimingGeneric, help));
+SWIGLAL( IMMUTABLE_MEMBERS( tagFstatTimingGeneric, help ) );
 #endif /* SWIG */
-typedef struct tagFstatTimingGeneric
-{
-  REAL4 tauF_eff;	//< effective total time per F-stat call to XLALComputeFstat() per detector per output frequency
-  REAL4 tauF_core;	//< core time per output frequency bin per detector, excluding time to compute the buffer
-  REAL4 tauF_buffer;	//< time per detector per frequency bin to re-compute all buffered quantities once
-  UINT4 NFbin;		//< (average over F-stat calls) number of F-stat output frequency bins
-  UINT4 Ndet;		//< number of detectors
-  REAL4 NCalls;		//< number of F-stat calls we average over
-  REAL4 NBufferMisses;	//< number of times the buffer needed to be recomputed
-  const char *help;	//< (static) string documenting the generic F-stat timing values
+typedef struct tagFstatTimingGeneric {
+  REAL4 tauF_eff;       //< effective total time per F-stat call to XLALComputeFstat() per detector per output frequency
+  REAL4 tauF_core;      //< core time per output frequency bin per detector, excluding time to compute the buffer
+  REAL4 tauF_buffer;    //< time per detector per frequency bin to re-compute all buffered quantities once
+  UINT4 NFbin;          //< (average over F-stat calls) number of F-stat output frequency bins
+  UINT4 Ndet;           //< number of detectors
+  REAL4 NCalls;         //< number of F-stat calls we average over
+  REAL4 NBufferMisses;  //< number of times the buffer needed to be recomputed
+  const char *help;     //< (static) string documenting the generic F-stat timing values
 } FstatTimingGeneric;
 
 #define TIMING_MODEL_MAX_VARS 10
@@ -322,59 +321,58 @@ typedef struct tagFstatTimingGeneric
 /// the timing model variables.
 /// See https://dcc.ligo.org/LIGO-T1600531-v4 for a more detailed discussion of the F-stat timing model.
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagFstatTimingModel, help));
+SWIGLAL( IMMUTABLE_MEMBERS( tagFstatTimingModel, help ) );
 #endif /* SWIG */
-typedef struct tagFstatTimingModel
-{
+typedef struct tagFstatTimingModel {
   UINT4 numVariables;                           //< number of (method-specific) timing model variables
-  const char* names[TIMING_MODEL_MAX_VARS];     //< array of (static) timing-model variable names
+  const char *names[TIMING_MODEL_MAX_VARS];     //< array of (static) timing-model variable names
   REAL4 values[TIMING_MODEL_MAX_VARS];          //< array of timing-model variable values
-  const char *help;                            	//< (static) help string documenting the (method-specific) Fstat timing model
+  const char *help;                             //< (static) help string documenting the (method-specific) Fstat timing model
 } FstatTimingModel;
 
 // ---------- API function prototypes ----------
-REAL8 XLALFstatMaximumSFTLength ( const REAL8 maxFreq, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 mu_SFT
-);
-int XLALFstatCheckSFTLengthMismatch ( const REAL8 Tsft, const REAL8 maxFreq, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 allowedMismatch );
+REAL8 XLALFstatMaximumSFTLength( const REAL8 maxFreq, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 mu_SFT
+                               );
+int XLALFstatCheckSFTLengthMismatch( const REAL8 Tsft, const REAL8 maxFreq, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 allowedMismatch );
 
-int XLALFstatMethodIsAvailable ( FstatMethodType method );
-const CHAR *XLALFstatMethodName ( FstatMethodType method );
-const UserChoices *XLALFstatMethodChoices ( void );
+int XLALFstatMethodIsAvailable( FstatMethodType method );
+const CHAR *XLALFstatMethodName( FstatMethodType method );
+const UserChoices *XLALFstatMethodChoices( void );
 
-FstatInputVector* XLALCreateFstatInputVector ( const UINT4 length );
-void XLALDestroyFstatInputVector ( FstatInputVector* input );
-FstatAtomVector* XLALCreateFstatAtomVector ( const UINT4 length );
-void XLALDestroyFstatAtomVector ( FstatAtomVector *atoms );
-MultiFstatAtomVector* XLALCreateMultiFstatAtomVector ( const UINT4 length );
-void XLALDestroyMultiFstatAtomVector ( MultiFstatAtomVector *atoms );
+FstatInputVector *XLALCreateFstatInputVector( const UINT4 length );
+void XLALDestroyFstatInputVector( FstatInputVector *input );
+FstatAtomVector *XLALCreateFstatAtomVector( const UINT4 length );
+void XLALDestroyFstatAtomVector( FstatAtomVector *atoms );
+MultiFstatAtomVector *XLALCreateMultiFstatAtomVector( const UINT4 length );
+void XLALDestroyMultiFstatAtomVector( MultiFstatAtomVector *atoms );
 
 FstatInput *
-XLALCreateFstatInput ( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq, const REAL8 dFreq,
-                       const EphemerisData *ephemerides, const FstatOptionalArgs *optionalArgs );
+XLALCreateFstatInput( const SFTCatalog *SFTcatalog, const REAL8 minCoverFreq, const REAL8 maxCoverFreq, const REAL8 dFreq,
+                      const EphemerisData *ephemerides, const FstatOptionalArgs *optionalArgs );
 
-int XLALGetFstatInputSFTBand ( const FstatInput *input, REAL8 *minFreqFull, REAL8 *maxFreqFull );
-const CHAR *XLALGetFstatInputMethodName ( const FstatInput* input );
-const MultiLALDetector* XLALGetFstatInputDetectors ( const FstatInput* input );
-const MultiLIGOTimeGPSVector* XLALGetFstatInputTimestamps ( const FstatInput* input );
-MultiNoiseWeights* XLALGetFstatInputNoiseWeights ( const FstatInput* input );
-const MultiDetectorStateSeries* XLALGetFstatInputDetectorStates ( const FstatInput* input );
-int  XLALExtractResampledTimeseries ( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, FstatInput *input );
-int XLALGetFstatTiming ( const FstatInput* input, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
-int XLALAppendFstatTiming2File ( const FstatInput* input, FILE *fp, BOOLEAN printHeader );
-int XLALFstatInputTimeslice ( FstatInput** slice, const FstatInput* input, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS);
+int XLALGetFstatInputSFTBand( const FstatInput *input, REAL8 *minFreqFull, REAL8 *maxFreqFull );
+const CHAR *XLALGetFstatInputMethodName( const FstatInput *input );
+const MultiLALDetector *XLALGetFstatInputDetectors( const FstatInput *input );
+const MultiLIGOTimeGPSVector *XLALGetFstatInputTimestamps( const FstatInput *input );
+MultiNoiseWeights *XLALGetFstatInputNoiseWeights( const FstatInput *input );
+const MultiDetectorStateSeries *XLALGetFstatInputDetectorStates( const FstatInput *input );
+int  XLALExtractResampledTimeseries( MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_a, MultiCOMPLEX8TimeSeries **multiTimeSeries_SRC_b, FstatInput *input );
+int XLALGetFstatTiming( const FstatInput *input, FstatTimingGeneric *timingGeneric, FstatTimingModel *timingModel );
+int XLALAppendFstatTiming2File( const FstatInput *input, FILE *fp, BOOLEAN printHeader );
+int XLALFstatInputTimeslice( FstatInput **slice, const FstatInput *input, const LIGOTimeGPS *minStartGPS, const LIGOTimeGPS *maxStartGPS );
 
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(INOUT_STRUCTS(FstatResults**, Fstats));
+SWIGLAL( INOUT_STRUCTS( FstatResults **, Fstats ) );
 #endif
-int XLALComputeFstat ( FstatResults **Fstats, FstatInput *input, const PulsarDopplerParams *doppler,
-                       const UINT4 numFreqBins, const FstatQuantities whatToCompute );
+int XLALComputeFstat( FstatResults **Fstats, FstatInput *input, const PulsarDopplerParams *doppler,
+                      const UINT4 numFreqBins, const FstatQuantities whatToCompute );
 
-void XLALDestroyFstatInput ( FstatInput* input );
-void XLALDestroyFstatResults ( FstatResults* Fstats );
+void XLALDestroyFstatInput( FstatInput *input );
+void XLALDestroyFstatResults( FstatResults *Fstats );
 
-REAL4 XLALComputeFstatFromFaFb ( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv );
+REAL4 XLALComputeFstatFromFaFb( COMPLEX8 Fa, COMPLEX8 Fb, REAL4 A, REAL4 B, REAL4 C, REAL4 E, REAL4 Dinv );
 
-REAL4 XLALComputeFstatFromAtoms ( const MultiFstatAtomVector *multiFstatAtoms, const INT4 X );
+REAL4 XLALComputeFstatFromAtoms( const MultiFstatAtomVector *multiFstatAtoms, const INT4 X );
 
 /// @}
 
