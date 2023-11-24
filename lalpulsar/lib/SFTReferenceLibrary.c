@@ -47,100 +47,109 @@
 #define BLOCKSIZE 65536
 
 /* some local prototypes */
-unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
-static void swap2(char *location);
-static void swap4(char *location);
-static void swap8(char *location);
-static int validate_sizes(void);
-static int validate_version(double version);
+unsigned long long crc64( const unsigned char *data, unsigned int length, unsigned long long crc );
+static void swap2( char *location );
+static void swap4( char *location );
+static void swap8( char *location );
+static int validate_sizes( void );
+static int validate_version( double version );
 
 /* The crc64 checksum of M bytes of data at address data is returned
    by crc64(data, M, ~(0ULL)). Call the function multiple times to
    compute the checksum of data made in contiguous chunks, setting
    final argument to the previously accumulated checksum value. */
-unsigned long long crc64(const unsigned char* data,
-			 unsigned int length,
-			 unsigned long long crc) {
+unsigned long long crc64( const unsigned char *data,
+                          unsigned int length,
+                          unsigned long long crc )
+{
 
   unsigned long long CRCTable[TABLELEN];
   unsigned int i;
 
   /* is there is no data, simply return previous checksum value */
-  if (!length || !data )
+  if ( !length || !data ) {
     return crc;
-  
+  }
+
   /* initialize the CRC table for fast computation.  We could keep
      this table in memory to make the computation faster, but that is
      not re-entrant for multi-threaded code.
   */
-  for (i = 0; i < TABLELEN; i++) {
+  for ( i = 0; i < TABLELEN; i++ ) {
     int j;
     unsigned long long part = i;
-    for (j = 0; j < 8; j++) {
-      if (part & 1)
-        part = (part >> 1) ^ POLY64;
-      else
+    for ( j = 0; j < 8; j++ ) {
+      if ( part & 1 ) {
+        part = ( part >> 1 ) ^ POLY64;
+      } else {
         part >>= 1;
+      }
     }
     CRCTable[i] = part;
   }
-  
+
   /* compute the CRC-64 code */
-  for (i=0; i<length; i++) {
+  for ( i = 0; i < length; i++ ) {
     unsigned long long temp1 = crc >> 8;
-    unsigned long long temp2 = CRCTable[(crc ^ (unsigned long long) data[i]) & 0xff];
+    unsigned long long temp2 = CRCTable[( crc ^ ( unsigned long long ) data[i] ) & 0xff];
     crc = temp1 ^ temp2;
   }
-  
+
   return crc;
 }
 
 /* swap 2, 4 or 8 bytes.  Point to low address */
-static void swap2(char *location){
-  char tmp=*location;
-  *location=*(location+1);
-  *(location+1)=tmp;
+static void swap2( char *location )
+{
+  char tmp = *location;
+  *location = *( location + 1 );
+  *( location + 1 ) = tmp;
   return;
 }
- 
-static void swap4(char *location){
-  char tmp=*location;
-  *location=*(location+3);
-  *(location+3)=tmp;
-  swap2(location+1);
+
+static void swap4( char *location )
+{
+  char tmp = *location;
+  *location = *( location + 3 );
+  *( location + 3 ) = tmp;
+  swap2( location + 1 );
   return;
 }
- 
-static void swap8(char *location){
-  char tmp=*location;
-  *location=*(location+7);
-  *(location+7)=tmp;
-  tmp=*(location+1);
-  *(location+1)=*(location+6);
-  *(location+6)=tmp;
-  swap4(location+2);
+
+static void swap8( char *location )
+{
+  char tmp = *location;
+  *location = *( location + 7 );
+  *( location + 7 ) = tmp;
+  tmp = *( location + 1 );
+  *( location + 1 ) = *( location + 6 );
+  *( location + 6 ) = tmp;
+  swap4( location + 2 );
   return;
 }
 
 /* this routine checks that the assumed sizes and structure packing
    conventions of this code are valid.  These checks could also be
    done at compile time with #error statements */
-static int validate_sizes(void) {
+static int validate_sizes( void )
+{
   if (
-      sizeof(char) != 1      ||
-      sizeof(int) != 4       ||
-      sizeof(long long) != 8 ||
-      sizeof(struct headertag2) != 48
-      )
+    sizeof( char ) != 1      ||
+    sizeof( int ) != 4       ||
+    sizeof( long long ) != 8 ||
+    sizeof( struct headertag2 ) != 48
+  ) {
     return SFTESIZEWRONG;
-  
+  }
+
   return SFTNOERROR;
 }
 
 
-static int validate_version(double version) {
-  for (int v = MIN_SFT_VERSION; v <= MAX_SFT_VERSION; ++v) {
-    if (version == v) {
+static int validate_version( double version )
+{
+  for ( int v = MIN_SFT_VERSION; v <= MAX_SFT_VERSION; ++v ) {
+    if ( version == v ) {
       return 1;
     }
   }
@@ -150,9 +159,10 @@ static int validate_version(double version) {
 
 /* translate return values from SFT routines into human-readable
    character string error messages */
-const char *SFTErrorMessage(int errorcode) {
+const char *SFTErrorMessage( int errorcode )
+{
 
-  switch (errorcode) {
+  switch ( errorcode ) {
   case 0:
     return "Success";
   case SFTENULLFP:
@@ -222,67 +232,76 @@ const char *SFTErrorMessage(int errorcode) {
 /* return values: see header file
    On return, this routine leaves the file pointer at the end of the SFT
 */
-int WriteSFT(FILE *fp,            /* stream to write to */
-	     int gps_sec,         /* GPS sec of first sample */
-	     int gps_nsec,        /* GPS nsec of first sample */
-	     double tbase,        /* time baseline of SFTs */
-	     int firstfreqindex,  /* index of first frequency bin included in data (0=DC)*/
-	     int nsamples,        /* number of frequency bins to include in SFT */
-	     const char *detector,/* channel-prefix defining detector */
-             unsigned short windowspec, /* SFT windowspec */
-	     const char *comment, /* null-terminated comment string to include in SFT */
-	     float *data          /* points to nsamples x 2 x floats (Real/Imag)  */
-	     ) {
+int WriteSFT( FILE *fp,            /* stream to write to */
+              int gps_sec,         /* GPS sec of first sample */
+              int gps_nsec,        /* GPS nsec of first sample */
+              double tbase,        /* time baseline of SFTs */
+              int firstfreqindex,  /* index of first frequency bin included in data (0=DC)*/
+              int nsamples,        /* number of frequency bins to include in SFT */
+              const char *detector,/* channel-prefix defining detector */
+              unsigned short windowspec, /* SFT windowspec */
+              const char *comment, /* null-terminated comment string to include in SFT */
+              float *data          /* points to nsamples x 2 x floats (Real/Imag)  */
+            )
+{
   struct headertag2 header;
   int comment_length, inc, i;
   char pad[7];
-  
+
   /* check that all data types have correct length */
-  if (validate_sizes())
+  if ( validate_sizes() ) {
     return SFTESIZEWRONG;
-  
+  }
+
   /* check that file pointer is valid */
-  if (!fp)
+  if ( !fp ) {
     return SFTENULLFP;
-  
+  }
+
   /* check that nsec times are sensible */
-  if (gps_nsec < 0 || gps_nsec > 999999999)
+  if ( gps_nsec < 0 || gps_nsec > 999999999 ) {
     return SFTEGPSNSEC;
+  }
 
   /* check that tbase is positive */
-  if (tbase<=0.0)
+  if ( tbase <= 0.0 ) {
     return SFTETBASENOTPOS;
+  }
 
   /* check that first frequency index is non-negative */
-  if (firstfreqindex<0)
+  if ( firstfreqindex < 0 ) {
     return SFTEFIRSTINDEXNEG;
+  }
 
   /* check that number of samples is 1 or greater */
-  if (nsamples<=0)
+  if ( nsamples <= 0 ) {
     return SFTENSAMPLESNOTPOS;
+  }
 
   /* check that detector type is defined and data is present */
-  if (!detector || !data)
+  if ( !detector || !data ) {
     return SFTENULLPOINTER;
+  }
 
   /* check that detector type is recognized */
-  if (strlen(detector)>2 || unknownDetector(detector))
+  if ( strlen( detector ) > 2 || unknownDetector( detector ) ) {
     return SFTEINSTRUMENTUNKNOWN;
+  }
 
   /* comment length including null terminator to string must be an
      integer multiple of eight bytes. comment==NULL means 'no
      comment'  */
-  if (comment) {
-    comment_length = strlen(comment) + 1;
-    inc = (8 - (comment_length % 8)) % 8;
-    for (i=0; i<inc; i++)
-      pad[i]=0;
+  if ( comment ) {
+    comment_length = strlen( comment ) + 1;
+    inc = ( 8 - ( comment_length % 8 ) ) % 8;
+    for ( i = 0; i < inc; i++ ) {
+      pad[i] = 0;
+    }
+  } else {
+    comment_length = 0;
+    inc = 0;
   }
-  else {
-    comment_length=0;
-    inc=0;
-  }
-  
+
   /* fill out header */
   header.version        = MAX_SFT_VERSION;
   header.gps_sec        = gps_sec;
@@ -294,297 +313,319 @@ int WriteSFT(FILE *fp,            /* stream to write to */
   header.detector[0]    = detector[0];
   header.detector[1]    = detector[1];
   header.windowspec     = windowspec;
-  header.comment_length = comment_length+inc;
-  
+  header.comment_length = comment_length + inc;
+
   /* compute CRC of header */
-  header.crc64 = crc64((const unsigned char *)&header, sizeof(header), ~(0ULL));
-  
+  header.crc64 = crc64( ( const unsigned char * )&header, sizeof( header ), ~( 0ULL ) );
+
   /* compute CRC of comment */
-  header.crc64 = crc64((const unsigned char *)comment, comment_length, header.crc64);
-  
+  header.crc64 = crc64( ( const unsigned char * )comment, comment_length, header.crc64 );
+
   /* compute CRC of comment padding */
-  header.crc64 = crc64((const unsigned char *)pad, inc, header.crc64);
+  header.crc64 = crc64( ( const unsigned char * )pad, inc, header.crc64 );
 
   /* compute CRC of data */
-  header.crc64 = crc64((const unsigned char *)data, nsamples*2*sizeof(float), header.crc64);
-  
+  header.crc64 = crc64( ( const unsigned char * )data, nsamples * 2 * sizeof( float ), header.crc64 );
+
   /* write the header to file */
-  if (1 != fwrite((const void *)&header, sizeof(header), 1, fp))
+  if ( 1 != fwrite( ( const void * )&header, sizeof( header ), 1, fp ) ) {
     return SFTEWRITE;
-  
+  }
+
   /* write the comment to file */
-  if (comment_length != (int)fwrite((const void *)comment, 1, comment_length, fp))
+  if ( comment_length != ( int )fwrite( ( const void * )comment, 1, comment_length, fp ) ) {
     return SFTEWRITE;
+  }
 
   /* write comment padding to file */
-  if (inc != (int)fwrite((const void *)pad, 1, inc, fp))
+  if ( inc != ( int )fwrite( ( const void * )pad, 1, inc, fp ) ) {
     return SFTEWRITE;
+  }
 
   /* write the data to the file.  Data must be packed
      REAL,IMAG,REAL,IMAG,... */
-  if (nsamples != (int)fwrite((const void *)data, 2*sizeof(float), nsamples, fp))
+  if ( nsamples != ( int )fwrite( ( const void * )data, 2 * sizeof( float ), nsamples, fp ) ) {
     return SFTEWRITE;
-  
+  }
+
   return SFTNOERROR;
 }
 
 /* On return this routine leaves the stream in the same
    place as when the routine was called */
-int ReadSFTHeader(FILE *fp,                  /* stream to read */
-		  struct headertag2 *info,   /* address to return header */
-		  char **comment,            /* if non-NULL, put pointer to comment */
-		  int *swapendian,           /* set nonzero if data in reverse endian order */
-		  int validate)              /* validate checksum of the file */
+int ReadSFTHeader( FILE *fp,                  /* stream to read */
+                   struct headertag2 *info,   /* address to return header */
+                   char **comment,            /* if non-NULL, put pointer to comment */
+                   int *swapendian,           /* set nonzero if data in reverse endian order */
+                   int validate )             /* validate checksum of the file */
 {
-  struct headertag2 header,header_unswapped;
-  int swap=0;
-  int what, retval=0;
+  struct headertag2 header, header_unswapped;
+  int swap = 0;
+  int what, retval = 0;
   fpos_t streamposition;
-  char *mycomment=NULL;
+  char *mycomment = NULL;
 
   /* check that all data types have correct length */
-  if (validate_sizes())
+  if ( validate_sizes() ) {
     return SFTESIZEWRONG;
+  }
 
   /* check that pointers are valid */
-  if (!fp)
+  if ( !fp ) {
     return SFTENULLFP;
+  }
 
-  if (!info || !swapendian)
+  if ( !info || !swapendian ) {
     return SFTENULLPOINTER;
+  }
 
   /* save stream position */
-  if (fgetpos(fp, &streamposition))
+  if ( fgetpos( fp, &streamposition ) ) {
     return SFTEGETSTREAMPOS;
-  
+  }
+
   /* read in header.  Note that the second and third arguments to fread() are reversed
      from conventional practice, so that we can see if the file is zero length */
-  if (sizeof(header) != (what=fread((void *)&header, 1, sizeof(header), fp))) {
-    if (!what && feof(fp))
-      retval=SFTENONE;
-    else
-      retval=SFTEREAD;
+  if ( sizeof( header ) != ( what = fread( ( void * )&header, 1, sizeof( header ), fp ) ) ) {
+    if ( !what && feof( fp ) ) {
+      retval = SFTENONE;
+    } else {
+      retval = SFTEREAD;
+    }
     goto error;
   }
-  
+
   /* save an unswapped copy */
-  header_unswapped=header;
+  header_unswapped = header;
 
   /* check endian ordering, and swap if needed */
-  if (!validate_version(header.version)) {
-    swap8((char *)&header.version);
-    swap4((char *)&header.gps_sec);
-    swap4((char *)&header.gps_nsec);
-    swap8((char *)&header.tbase);
-    swap4((char *)&header.firstfreqindex);
-    swap4((char *)&header.nsamples);
-    swap8((char *)&header.crc64);
-    swap2((char *)&header.windowspec);
-    swap4((char *)&header.comment_length);
+  if ( !validate_version( header.version ) ) {
+    swap8( ( char * )&header.version );
+    swap4( ( char * )&header.gps_sec );
+    swap4( ( char * )&header.gps_nsec );
+    swap8( ( char * )&header.tbase );
+    swap4( ( char * )&header.firstfreqindex );
+    swap4( ( char * )&header.nsamples );
+    swap8( ( char * )&header.crc64 );
+    swap2( ( char * )&header.windowspec );
+    swap4( ( char * )&header.comment_length );
     swap = 1;
   }
-  
+
   /* check if header version is recognized */
-  if (!validate_version(header.version)) {
-    retval=SFTEUNKNOWN;
+  if ( !validate_version( header.version ) ) {
+    retval = SFTEUNKNOWN;
     goto error;
   }
-  
-  if (header.comment_length % 8) {
-    retval=SFTEBADCOMMENT;
+
+  if ( header.comment_length % 8 ) {
+    retval = SFTEBADCOMMENT;
     goto error;
   }
 
   /* check that number of samples is 1 or greater.  We do this check
      before calculating CRC since the number of values to CRC check
      must be known first */
-  if (header.nsamples<=0){
-    retval=SFTENSAMPLESNOTPOS;
+  if ( header.nsamples <= 0 ) {
+    retval = SFTENSAMPLESNOTPOS;
     goto error;
   }
 
   /* validate crc64 checksum ??  Do this BEFORE other checks since if
      a problem occurs it is more likely file corruption than a bad
      SFT */
-  if (validate) {
+  if ( validate ) {
     unsigned long long crc;
-    unsigned long long crc64save=header.crc64;
-    int total_length = header.comment_length + 2*sizeof(float)*header.nsamples;
+    unsigned long long crc64save = header.crc64;
+    int total_length = header.comment_length + 2 * sizeof( float ) * header.nsamples;
     char block[BLOCKSIZE];
     fpos_t streamposition2;
-    int i, tocheck, foundhidden=0, comment_left = header.comment_length, foundnull=!comment_left;
+    int i, tocheck, foundhidden = 0, comment_left = header.comment_length, foundnull = !comment_left;
 
     /* save stream position */
-    if (fgetpos(fp, &streamposition2)) {
-      retval=SFTEGETSTREAMPOS;
+    if ( fgetpos( fp, &streamposition2 ) ) {
+      retval = SFTEGETSTREAMPOS;
       goto error;
     }
 
     /* compute CRC of header */
     header_unswapped.crc64 = 0ULL;;
-    crc = crc64((unsigned char *)&header_unswapped, sizeof(header_unswapped), ~(0ULL));
+    crc = crc64( ( unsigned char * )&header_unswapped, sizeof( header_unswapped ), ~( 0ULL ) );
 
     /* read data in lengths of BLOCKSIZE, computing CRC */
-    while (total_length > 0) {
+    while ( total_length > 0 ) {
       /* read either BLOCKSIZE or amount remaining */
-      int toread = (BLOCKSIZE < total_length) ? BLOCKSIZE : total_length;
-      if (toread != (int)fread(block, 1, toread, fp)) {
-	retval=SFTEREAD;
-	goto error;
-      }      
+      int toread = ( BLOCKSIZE < total_length ) ? BLOCKSIZE : total_length;
+      if ( toread != ( int )fread( block, 1, toread, fp ) ) {
+        retval = SFTEREAD;
+        goto error;
+      }
       total_length -= toread;
-      crc = crc64((unsigned char *)block, toread, crc);
+      crc = crc64( ( unsigned char * )block, toread, crc );
 
       /* check to see if comment contains NULL termination character
-	 and no hidden characters */
-      tocheck = (comment_left < toread) ? comment_left : toread;
-      for (i=0; i<tocheck; i++) {
-	if (!block[i])
-	  foundnull=1;
-	if (foundnull && block[i])
-	  foundhidden=1;
+         and no hidden characters */
+      tocheck = ( comment_left < toread ) ? comment_left : toread;
+      for ( i = 0; i < tocheck; i++ ) {
+        if ( !block[i] ) {
+          foundnull = 1;
+        }
+        if ( foundnull && block[i] ) {
+          foundhidden = 1;
+        }
       }
       comment_left -= tocheck;
     }
-     
+
     /* check that checksum is consistent */
-    if (crc != crc64save) {
-      XLALPrintInfo("%s: CRC64 computes as %llu\n", __func__, crc);
-      XLALPrintInfo("%s: CRC64 in SFT is   %llu\n", __func__, crc64save);
-      retval=SFTEBADCRC64;
+    if ( crc != crc64save ) {
+      XLALPrintInfo( "%s: CRC64 computes as %llu\n", __func__, crc );
+      XLALPrintInfo( "%s: CRC64 in SFT is   %llu\n", __func__, crc64save );
+      retval = SFTEBADCRC64;
       goto error;
     }
 
     /* check that comment has correct NULL termination */
-    if (!foundnull) {
-      retval=SFTENONULLINCOMMENT;
+    if ( !foundnull ) {
+      retval = SFTENONULLINCOMMENT;
       goto error;
     }
 
     /* check that comment has no hidden characters */
-    if (foundhidden) {
-      retval=SFTEHIDDENCOMMENT;
+    if ( foundhidden ) {
+      retval = SFTEHIDDENCOMMENT;
       goto error;
     }
 
     /* return to position just after header to read comment if desired */
-    if (fsetpos(fp, &streamposition2)) {
-      retval=SFTERESTORESTREAMPOS;
+    if ( fsetpos( fp, &streamposition2 ) ) {
+      retval = SFTERESTORESTREAMPOS;
       goto error;
     }
   }
 
   /* check that time stamps are in a valid range */
-  if (header.gps_nsec < 0 || header.gps_nsec > 999999999) {
-    retval=SFTEGPSNSEC;
+  if ( header.gps_nsec < 0 || header.gps_nsec > 999999999 ) {
+    retval = SFTEGPSNSEC;
     goto error;
   }
-  
+
   /* check that tbase is positive */
-  if (header.tbase<=0.0) {
-    retval=SFTETBASENOTPOS;
+  if ( header.tbase <= 0.0 ) {
+    retval = SFTETBASENOTPOS;
     goto error;
   }
 
   /* check that first frequency index is non-negative */
-  if (header.firstfreqindex<0){
-    retval=SFTEFIRSTINDEXNEG;
+  if ( header.firstfreqindex < 0 ) {
+    retval = SFTEFIRSTINDEXNEG;
     goto error;
   }
 
   /* check that detector type is known */
-  if (unknownDetector(header.detector))
+  if ( unknownDetector( header.detector ) ) {
     return SFTEINSTRUMENTUNKNOWN;
+  }
 
   /* if user has asked for comment, store it */
-  if (comment && header.comment_length) {
+  if ( comment && header.comment_length ) {
     int i;
-    
+
     /* first allocate memory for storing the comment */
-    if (!(mycomment=calloc(header.comment_length, 1))) {
-      retval=SFTENOMEM;
+    if ( !( mycomment = calloc( header.comment_length, 1 ) ) ) {
+      retval = SFTENOMEM;
       goto error;
     }
-    
+
     /* now read the comment into memory */
-    if (header.comment_length != (int)fread(mycomment, 1, header.comment_length, fp)) {
-      free(mycomment);
+    if ( header.comment_length != ( int )fread( mycomment, 1, header.comment_length, fp ) ) {
+      free( mycomment );
       mycomment = NULL;
-      retval=SFTEREAD;
+      retval = SFTEREAD;
       goto error;
     }
-    
+
     /* check that the comment is null-terminated and contains no
        messages 'hidden' after a NULL character */
-    retval=SFTENONULLINCOMMENT;
-    for (i=0; i<header.comment_length; i++) {
-      if (!mycomment[i])
-	retval=0;
-      if (!retval && mycomment[i]) {
-	retval=SFTEHIDDENCOMMENT;
-	break;
+    retval = SFTENONULLINCOMMENT;
+    for ( i = 0; i < header.comment_length; i++ ) {
+      if ( !mycomment[i] ) {
+        retval = 0;
       }
-    }  
-    if (retval) {
-      free(mycomment);
+      if ( !retval && mycomment[i] ) {
+        retval = SFTEHIDDENCOMMENT;
+        break;
+      }
+    }
+    if ( retval ) {
+      free( mycomment );
       mycomment = NULL;
       goto error;
     }
   }
-  
- error:
+
+error:
   /* restore stream pointer to the correct position */
-  if (fsetpos(fp, &streamposition))
-    retval=SFTERESTORESTREAMPOS;
-  
-  if (retval)
+  if ( fsetpos( fp, &streamposition ) ) {
+    retval = SFTERESTORESTREAMPOS;
+  }
+
+  if ( retval ) {
     return retval;
+  }
 
   /* no errors found: now set return values and return */
-  *swapendian=swap;
-  
-  if (comment)
+  *swapendian = swap;
+
+  if ( comment )
     /* note: mycomment may be NULL if there is NO comment */
-    *comment=mycomment;
+  {
+    *comment = mycomment;
+  }
 
   /* return header-info */
-  *info=header;
+  *info = header;
 
   return SFTNOERROR;
 }
 
 
 
-int ReadSFTData(FILE *fp,                /* data file.  Position left unchanged on return */
-		float *data,             /* location where data should be written */
-		int firstbin,            /* first frequency bin to read from data set */
-		int nsamples,            /* number of frequency bin samples to retrieve */
-		char **comment,          /* if non-NULL, will contain pointer to comment string */
-		struct headertag2 *info  /* if non-NULL, will contain header information */
-		) {
+int ReadSFTData( FILE *fp,                /* data file.  Position left unchanged on return */
+                 float *data,             /* location where data should be written */
+                 int firstbin,            /* first frequency bin to read from data set */
+                 int nsamples,            /* number of frequency bin samples to retrieve */
+                 char **comment,          /* if non-NULL, will contain pointer to comment string */
+                 struct headertag2 *info  /* if non-NULL, will contain header information */
+               )
+{
   fpos_t streamposition;
-  int retval=0, swapendian;
+  int retval = 0, swapendian;
   int seekforward;
   struct headertag2 myinfo;
-  
-  /* check for null pointers */
-  if (!fp)
-    return SFTENULLFP;
 
-  if (!data && nsamples)
+  /* check for null pointers */
+  if ( !fp ) {
+    return SFTENULLFP;
+  }
+
+  if ( !data && nsamples ) {
     return SFTENULLPOINTER;
+  }
 
   /* save position of stream */
-  if (fgetpos(fp, &streamposition))
+  if ( fgetpos( fp, &streamposition ) ) {
     return SFTEGETSTREAMPOS;
+  }
 
   /* read header of SFT */
-  if ((retval=ReadSFTHeader(fp, &myinfo, comment, &swapendian, 0)))
+  if ( ( retval = ReadSFTHeader( fp, &myinfo, comment, &swapendian, 0 ) ) ) {
     goto error;
+  }
 
   /* sanity checks -- do we ask for data before the first frequency bin */
-  if (firstbin<myinfo.firstfreqindex) {
-    retval=SFTEBEFOREDATA;
+  if ( firstbin < myinfo.firstfreqindex ) {
+    retval = SFTEBEFOREDATA;
     goto error;
   }
 
@@ -593,86 +634,98 @@ int ReadSFTData(FILE *fp,                /* data file.  Position left unchanged 
   firstbin -= myinfo.firstfreqindex;
 
   /* sanity checks -- do we ask for data after the last frequency bin */
-  if ((firstbin+nsamples)> myinfo.nsamples) {
-    retval=SFTEAFTERDATA;
+  if ( ( firstbin + nsamples ) > myinfo.nsamples ) {
+    retval = SFTEAFTERDATA;
     goto error;
   }
 
   /* seek to start of data (skip comment if present) */
-  seekforward=sizeof(struct headertag2)+myinfo.comment_length+firstbin*2*sizeof(float);
-  if (fseek(fp, seekforward, SEEK_CUR)) {
-    retval=SFTESEEK;
+  seekforward = sizeof( struct headertag2 ) + myinfo.comment_length + firstbin * 2 * sizeof( float );
+  if ( fseek( fp, seekforward, SEEK_CUR ) ) {
+    retval = SFTESEEK;
     goto error2;
   }
 
   /* read in the data */
-  if (nsamples != (int)fread((void *)data, 2*sizeof(float), nsamples, fp)) {
-    retval=SFTEREAD;
+  if ( nsamples != ( int )fread( ( void * )data, 2 * sizeof( float ), nsamples, fp ) ) {
+    retval = SFTEREAD;
     goto error2;
   }
 
   /* byte reverse the data if necessary */
-  if (swapendian) {
+  if ( swapendian ) {
     int i;
-    for (i=0; i<2*nsamples; i++)
-      swap4((char *)(data+i));
+    for ( i = 0; i < 2 * nsamples; i++ ) {
+      swap4( ( char * )( data + i ) );
+    }
   }
-  
- error2:
+
+error2:
   /* free storage for the comemnt string */
-  if (retval && comment && *comment) {
-    free(*comment);
-    *comment=NULL;
+  if ( retval && comment && *comment ) {
+    free( *comment );
+    *comment = NULL;
   }
-  
- error:
+
+error:
   /* return to starting position in stream */
-  if (fsetpos(fp, &streamposition))
+  if ( fsetpos( fp, &streamposition ) ) {
     return SFTERESTORESTREAMPOS;
+  }
 
   /* if no errors, return header information */
-  if (info && !retval)
-    *info=myinfo;
-  
+  if ( info && !retval ) {
+    *info = myinfo;
+  }
+
   return retval;
 }
 
 /* This routine returns zero if the two headers contain consistent
    information, else an error code if they are not consistent */
-int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlier header */
-			      struct headertag2 *headertwo  /* pointer to later header */
-			      ) {
+int CheckSFTHeaderConsistency( struct headertag2 *headerone, /* pointer to earlier header */
+                               struct headertag2 *headertwo  /* pointer to later header */
+                             )
+{
   /* check for null pointer */
-  if (!headerone || !headertwo)
+  if ( !headerone || !headertwo ) {
     return SFTENULLPOINTER;
-  
+  }
+
   /* Same version number */
-  if (headerone->version != headertwo->version)
+  if ( headerone->version != headertwo->version ) {
     return SFTEVERSIONCHANGES;
+  }
 
   /* GPS times increasing */
-  if (headerone->gps_sec >headertwo->gps_sec || (headerone->gps_sec==headertwo->gps_sec && headerone->gps_nsec>=headertwo->gps_nsec))
+  if ( headerone->gps_sec > headertwo->gps_sec || ( headerone->gps_sec == headertwo->gps_sec && headerone->gps_nsec >= headertwo->gps_nsec ) ) {
     return SFTEGPSNOTINCREASING;
-  
+  }
+
   /* Time base the same */
-  if (headerone->tbase != headertwo->tbase)
+  if ( headerone->tbase != headertwo->tbase ) {
     return SFTETBASECHANGES;
-  
+  }
+
   /* First frequency index the same */
-  if (headerone->firstfreqindex != headertwo->firstfreqindex)
+  if ( headerone->firstfreqindex != headertwo->firstfreqindex ) {
     return SFTEFIRSTINDEXCHANGES;
-  
+  }
+
   /* Number of samples the same */
-  if (headerone->nsamples != headertwo->nsamples)
+  if ( headerone->nsamples != headertwo->nsamples ) {
     return SFTENSAMPLESCHANGES;
+  }
 
   /* check for identical detectors */
-  if ( (headerone->detector[0] != headertwo->detector[0]) || (headerone->detector[1] != headertwo->detector[1]) )
+  if ( ( headerone->detector[0] != headertwo->detector[0] ) || ( headerone->detector[1] != headertwo->detector[1] ) ) {
     return SFTEINSTRUMENTCHANGES;
+  }
 
   /* Window specification the same */
-  if (headerone->windowspec != headertwo->windowspec)
+  if ( headerone->windowspec != headertwo->windowspec ) {
     return SFTEWINDOWSPECCHANGES;
+  }
 
   return SFTNOERROR;
 }
@@ -682,7 +735,8 @@ int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlie
  * Appendix D of LIGO-T970130-F-E:
  *
  * returns 0 if known, error code otherwise */
-int unknownDetector (const char *detector) {
+int unknownDetector( const char *detector )
+{
   int i;
   const char *knownDetectors[] = {
     "A1",       /* ALLEGRO */
@@ -703,14 +757,16 @@ int unknownDetector (const char *detector) {
     NULL
   };
 
-  if (!detector)
+  if ( !detector ) {
     return SFTENULLPOINTER;
-
-  for (i=0; knownDetectors[i]; i++) {
-    if (knownDetectors[i][0]==detector[0] && knownDetectors[i][1]==detector[1])
-      return 0;
   }
-  
+
+  for ( i = 0; knownDetectors[i]; i++ ) {
+    if ( knownDetectors[i][0] == detector[0] && knownDetectors[i][1] == detector[1] ) {
+      return 0;
+    }
+  }
+
   return SFTEINSTRUMENTUNKNOWN;
 
 } /* unknownDetector() */
@@ -727,7 +783,7 @@ int unknownDetector (const char *detector) {
  * original author: Bruce Allen
  */
 int
-ValidateSFTFile ( const char *fname )
+ValidateSFTFile( const char *fname )
 {
 
   FILE *fp;
@@ -738,82 +794,87 @@ ValidateSFTFile ( const char *fname )
   errno = 0;
 
   /* open the file */
-  if (!(fp=fopen(fname, "r"))) {
-    XLALPrintError("%s: Unable to open %s", __func__, fname);
-    if (errno)
-      XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
+  if ( !( fp = fopen( fname, "r" ) ) ) {
+    XLALPrintError( "%s: Unable to open %s", __func__, fname );
+    if ( errno ) {
+      XLALPrintError( "%s: errno=%i (%s)", __func__, errno, strerror( errno ) );
+    }
     return SFTENULLFP;
   }
 
   /* and read successive SFTs blocks from the file and validate CRC
      checksums */
   struct headertag2 lastinfo;
-  memset(&lastinfo, 0, sizeof(lastinfo));
-  for (int count=0; 1; count++) {
+  memset( &lastinfo, 0, sizeof( lastinfo ) );
+  for ( int count = 0; 1; count++ ) {
     struct headertag2 info;
     int swapendian, move, j;
 
-    err=ReadSFTHeader(fp, &info, NULL, &swapendian, 1);
+    err = ReadSFTHeader( fp, &info, NULL, &swapendian, 1 );
 
     /* at end of SFT file or merged SFT file blocks */
-    if (err==SFTENONE && count) {
-      err=0;
+    if ( err == SFTENONE && count ) {
+      err = 0;
       break;
     }
 
     /* SFT was invalid: say why */
-    if (err) {
-      XLALPrintError("%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
-      if (errno)
-        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
+    if ( err ) {
+      XLALPrintError( "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage( err ) );
+      if ( errno ) {
+        XLALPrintError( "%s: errno=%i (%s)", __func__, errno, strerror( errno ) );
+      }
       break;
     }
 
     /* check that various bits of header information are consistent */
-    if (count && (err=CheckSFTHeaderConsistency(&lastinfo, &info))) {
-      XLALPrintError("%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
-      if (errno)
-        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
+    if ( count && ( err = CheckSFTHeaderConsistency( &lastinfo, &info ) ) ) {
+      XLALPrintError( "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage( err ) );
+      if ( errno ) {
+        XLALPrintError( "%s: errno=%i (%s)", __func__, errno, strerror( errno ) );
+      }
       break;
     }
 
     /* check that data appears valid */
-    data = (float *)realloc((void *)data, info.nsamples*4*2);
-    if (!data) {
-      errno=SFTENULLPOINTER;
-      XLALPrintError("%s: ran out of memory at %s (%s)\n", __func__, fname, SFTErrorMessage(err));
-      if (errno)
-        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
+    data = ( float * )realloc( ( void * )data, info.nsamples * 4 * 2 );
+    if ( !data ) {
+      errno = SFTENULLPOINTER;
+      XLALPrintError( "%s: ran out of memory at %s (%s)\n", __func__, fname, SFTErrorMessage( err ) );
+      if ( errno ) {
+        XLALPrintError( "%s: errno=%i (%s)", __func__, errno, strerror( errno ) );
+      }
       break;
     }
 
-    err=ReadSFTData(fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL);
-    if (err) {
-      XLALPrintError("%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage(err));
-      if (errno)
-        XLALPrintError("%s: errno=%i (%s)", __func__, errno, strerror(errno));
+    err = ReadSFTData( fp, data, info.firstfreqindex, info.nsamples, /*comment*/ NULL, /*headerinfo */ NULL );
+    if ( err ) {
+      XLALPrintError( "%s: %s is not a valid SFT (%s)\n", __func__, fname, SFTErrorMessage( err ) );
+      if ( errno ) {
+        XLALPrintError( "%s: errno=%i (%s)", __func__, errno, strerror( errno ) );
+      }
       break;
     }
 
-    for (j=0; j<info.nsamples; j++) {
-      if (!isfinite(data[2*j]) || !isfinite(data[2*j+1])) {
-        XLALPrintError("%s: %s is not a valid SFT (data infinite at freq bin %d)\n", __func__, fname, j+info.firstfreqindex);
-        err=SFTNOTFINITE;
+    for ( j = 0; j < info.nsamples; j++ ) {
+      if ( !isfinite( data[2 * j] ) || !isfinite( data[2 * j + 1] ) ) {
+        XLALPrintError( "%s: %s is not a valid SFT (data infinite at freq bin %d)\n", __func__, fname, j + info.firstfreqindex );
+        err = SFTNOTFINITE;
         break;
       }
     }
 
     /* keep copy of header for comparison the next time */
-    lastinfo=info;
+    lastinfo = info;
 
     /* Move forward to next SFT in merged file */
-    move=sizeof(struct headertag2)+info.nsamples*2*sizeof(float)+info.comment_length;
-    fseek(fp, move, SEEK_CUR);
+    move = sizeof( struct headertag2 ) + info.nsamples * 2 * sizeof( float ) + info.comment_length;
+    fseek( fp, move, SEEK_CUR );
   }
 
   /* cleanup */
-  fclose(fp);
-  free(data);
+  fclose( fp );
+  free( data );
 
   return err;
 
