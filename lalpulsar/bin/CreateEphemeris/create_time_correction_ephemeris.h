@@ -72,7 +72,7 @@ typedef enum {
   TT2TCB
 } etype;
 
-typedef struct taginputParams_t{
+typedef struct taginputParams_t {
   char *ephemtype; /* type of ephemeris */
   char ephemfile[MAXFNAME]; /* path and name of binary ephemeris file */
   char *outputpath; /* path to output ephemeris file */
@@ -84,26 +84,26 @@ typedef struct taginputParams_t{
   etype et;
 } inputParams_t;
 
-void get_input_args(inputParams_t *inputParams, int argc, char *argv[]);
+void get_input_args( inputParams_t *inputParams, int argc, char *argv[] );
 
 /*** FUNCTIONS TAKEN FROM TEMPO2 *****/
 
 /* Fortran-equivalent functions */
-double fortran_mod(double a, double p);
-int open_file(char fname[MAXFNAME]);
-double read_double(void);
-int read_int(void);
-void close_file(void);
+double fortran_mod( double a, double p );
+int open_file( char fname[MAXFNAME] );
+double read_double( void );
+int read_int( void );
+void close_file( void );
 
-double FB_deltaT(long double mjd_tt, char fname[MAXFNAME]);
+double FB_deltaT( long double mjd_tt, char fname[MAXFNAME] );
 
-double IF_deltaT(long double mjd_tt);
+double IF_deltaT( long double mjd_tt );
 
 /* functions and structures for reading in Irwin and Fukushima ephemeris file */
 
 struct IFTE_interpolation_info {
-   double pc[18],vc[18], twot;
-   int np, nv;
+  double pc[18], vc[18], twot;
+  int np, nv;
 };
 
 typedef struct {
@@ -122,24 +122,24 @@ typedef struct {
 
 static IFTEphemeris ifte;
 
-void IFTE_init(const char fname[MAXFNAME]);
-void IFTE_close_file(void);
+void IFTE_init( const char fname[MAXFNAME] );
+void IFTE_close_file( void );
 static void IFTEinterp( struct IFTE_interpolation_info *iinfo,
                         const double coef[], const double t[2], const int ncf,
                         const int ncm, const int na, const int ifl,
                         double posvel[] );
 
-void IFTE_get_Vals(double JDeph0, double JDeph1, int kind,
-                   double *res);
-void IFTE_get_DeltaT_DeltaTDot(double Teph0, double Teph1,
-                               double *DeltaT, double *DeltaTDot);
-double IFTE_DeltaT(double Teph0, double Teph1);
+void IFTE_get_Vals( double JDeph0, double JDeph1, int kind,
+                    double *res );
+void IFTE_get_DeltaT_DeltaTDot( double Teph0, double Teph1,
+                                double *DeltaT, double *DeltaTDot );
+double IFTE_DeltaT( double Teph0, double Teph1 );
 
 /* functions to perform endian swapping */
-void IFTswap8(char *dword);
-void IFTswapDouble(double *dbl);
-void IFTswapInts(int *word, int n);
-void IFTswapInt(int *word);
-void IFTswap4(char *word);
-void IFTswap8N(char *dwords, int n);
-void IFTswapDoubles(double *dbl, int N);
+void IFTswap8( char *dword );
+void IFTswapDouble( double *dbl );
+void IFTswapInts( int *word, int n );
+void IFTswapInt( int *word );
+void IFTswap4( char *word );
+void IFTswap8N( char *dwords, int n );
+void IFTswapDoubles( double *dbl, int N );
