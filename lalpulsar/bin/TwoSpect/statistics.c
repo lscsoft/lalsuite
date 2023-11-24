@@ -37,19 +37,21 @@
  * \param [in] ptrToGenerator Pointer to a gsl_rng generator
  * \return A random value drawn from the exponential distribution
  */
-REAL8 expRandNum(const REAL8 mu, const gsl_rng *ptrToGenerator)
+REAL8 expRandNum( const REAL8 mu, const gsl_rng *ptrToGenerator )
 {
-   XLAL_CHECK_REAL8( mu > 0.0 && ptrToGenerator != NULL, XLAL_EINVAL );
-   return gsl_ran_exponential(ptrToGenerator, mu);
+  XLAL_CHECK_REAL8( mu > 0.0 && ptrToGenerator != NULL, XLAL_EINVAL );
+  return gsl_ran_exponential( ptrToGenerator, mu );
 } /* expRandNum() */
 
-REAL4VectorAligned * expRandNumVector(const UINT4 length, const REAL8 mu, const gsl_rng *ptrToGenerator)
+REAL4VectorAligned *expRandNumVector( const UINT4 length, const REAL8 mu, const gsl_rng *ptrToGenerator )
 {
-   XLAL_CHECK_NULL( mu>0.0 && ptrToGenerator!=NULL, XLAL_EINVAL );
-   REAL4VectorAligned *output = NULL;
-   XLAL_CHECK_NULL( (output = XLALCreateREAL4VectorAligned(length, 32)) != NULL, XLAL_EFUNC );
-   for (UINT4 ii=0; ii<length; ii++) output->data[ii] = (REAL4)expRandNum(mu, ptrToGenerator);
-   return output;
+  XLAL_CHECK_NULL( mu > 0.0 && ptrToGenerator != NULL, XLAL_EINVAL );
+  REAL4VectorAligned *output = NULL;
+  XLAL_CHECK_NULL( ( output = XLALCreateREAL4VectorAligned( length, 32 ) ) != NULL, XLAL_EFUNC );
+  for ( UINT4 ii = 0; ii < length; ii++ ) {
+    output->data[ii] = ( REAL4 )expRandNum( mu, ptrToGenerator );
+  }
+  return output;
 }
 
 /* Critical values of KS test (from Bickel and Doksum). Does not apply directly (mean determined from distribution)
@@ -68,37 +70,42 @@ REAL4VectorAligned * expRandNumVector(const UINT4 length, const REAL8 mu, const 
  * \param [in]  vector  Pointer to the REAL4VectorAligned to compare against an exponential distribution
  * \return Status value
  */
-INT4 ks_test_exp(REAL8 *ksvalue, const REAL4VectorAligned *vector)
+INT4 ks_test_exp( REAL8 *ksvalue, const REAL4VectorAligned *vector )
 {
 
-   INT4 ii;
+  INT4 ii;
 
-   //First the mean value needs to be calculated from the median value
-   REAL4VectorAligned *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(vector->length, 32)) != NULL, XLAL_EFUNC );
-   memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
-   sort_float_ascend(tempvect);  //tempvect becomes sorted
-   REAL4 vector_median = 0.0;
-   if (tempvect->length % 2 != 1) vector_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
-   else vector_median = tempvect->data[(INT4)(0.5*tempvect->length)];
-   REAL4 vector_mean = (REAL4)(vector_median/LAL_LN2);
+  //First the mean value needs to be calculated from the median value
+  REAL4VectorAligned *tempvect = NULL;
+  XLAL_CHECK( ( tempvect = XLALCreateREAL4VectorAligned( vector->length, 32 ) ) != NULL, XLAL_EFUNC );
+  memcpy( tempvect->data, vector->data, sizeof( REAL4 )*vector->length );
+  sort_float_ascend( tempvect ); //tempvect becomes sorted
+  REAL4 vector_median = 0.0;
+  if ( tempvect->length % 2 != 1 ) {
+    vector_median = 0.5 * ( tempvect->data[( INT4 )( 0.5 * tempvect->length ) - 1] + tempvect->data[( INT4 )( 0.5 * tempvect->length )] );
+  } else {
+    vector_median = tempvect->data[( INT4 )( 0.5 * tempvect->length )];
+  }
+  REAL4 vector_mean = ( REAL4 )( vector_median / LAL_LN2 );
 
-   //Now start doing the K-S testing
-   *ksvalue = 0.0;
-   REAL8 testval1, testval2, testval;
-   REAL8 oneoverlength = 1.0/tempvect->length;
-   for (ii=0; ii<(INT4)tempvect->length; ii++) {
-      REAL8 pval = gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
-      testval1 = fabs((1.0+ii)*oneoverlength - pval);
-      testval2 = fabs(ii*oneoverlength - pval);
-      testval = fmax(testval1, testval2);
-      if (testval>(*ksvalue)) *ksvalue = testval;
-   }
+  //Now start doing the K-S testing
+  *ksvalue = 0.0;
+  REAL8 testval1, testval2, testval;
+  REAL8 oneoverlength = 1.0 / tempvect->length;
+  for ( ii = 0; ii < ( INT4 )tempvect->length; ii++ ) {
+    REAL8 pval = gsl_cdf_exponential_P( tempvect->data[ii], vector_mean );
+    testval1 = fabs( ( 1.0 + ii ) * oneoverlength - pval );
+    testval2 = fabs( ii * oneoverlength - pval );
+    testval = fmax( testval1, testval2 );
+    if ( testval > ( *ksvalue ) ) {
+      *ksvalue = testval;
+    }
+  }
 
-   //Destroy stuff
-   XLALDestroyREAL4VectorAligned(tempvect);
+  //Destroy stuff
+  XLALDestroyREAL4VectorAligned( tempvect );
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* ks_test_exp() */
 
@@ -118,42 +125,53 @@ n                                                               n>80
  * \param [in]  vector      Pointer to the REAL4VectorAligned to compare against an exponential distribution
  * \return Status value
  */
-INT4 kuipers_test_exp(REAL8 *kuipervalue, const REAL4VectorAligned *vector)
+INT4 kuipers_test_exp( REAL8 *kuipervalue, const REAL4VectorAligned *vector )
 {
 
-   INT4 ii;
+  INT4 ii;
 
-   REAL4VectorAligned *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(vector->length, 32)) != NULL, XLAL_EFUNC );
+  REAL4VectorAligned *tempvect = NULL;
+  XLAL_CHECK( ( tempvect = XLALCreateREAL4VectorAligned( vector->length, 32 ) ) != NULL, XLAL_EFUNC );
 
-   memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
+  memcpy( tempvect->data, vector->data, sizeof( REAL4 )*vector->length );
 
-   sort_float_ascend(tempvect);
+  sort_float_ascend( tempvect );
 
-   REAL4 vector_median = 0.0;
-   if (tempvect->length % 2 != 1) vector_median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
-   else vector_median = tempvect->data[(INT4)(0.5*tempvect->length)];
+  REAL4 vector_median = 0.0;
+  if ( tempvect->length % 2 != 1 ) {
+    vector_median = 0.5 * ( tempvect->data[( INT4 )( 0.5 * tempvect->length ) - 1] + tempvect->data[( INT4 )( 0.5 * tempvect->length )] );
+  } else {
+    vector_median = tempvect->data[( INT4 )( 0.5 * tempvect->length )];
+  }
 
-   REAL4 vector_mean = (REAL4)(vector_median/LAL_LN2);
+  REAL4 vector_mean = ( REAL4 )( vector_median / LAL_LN2 );
 
-   //Now the Kuiper's test calculation is made
-   REAL8 loval = 0.0, hival = 0.0;
-   REAL8 oneoverlength = 1.0/tempvect->length;
-   loval = -1.0, hival = -1.0;
-   for (ii=0; ii<(INT4)tempvect->length; ii++) {
-      REAL8 pval = gsl_cdf_exponential_P(tempvect->data[ii], vector_mean);
-      REAL8 testval1 = (1.0+ii)*oneoverlength - pval;
-      REAL8 testval2 = ii*oneoverlength - pval;
-      if (hival<testval1) hival = testval1;
-      if (hival<testval2) hival = testval2;
-      if (loval<-testval1) loval = -testval1;
-      if (loval<-testval2) loval = -testval2;
-   }
-   *kuipervalue = hival + loval;
+  //Now the Kuiper's test calculation is made
+  REAL8 loval = 0.0, hival = 0.0;
+  REAL8 oneoverlength = 1.0 / tempvect->length;
+  loval = -1.0, hival = -1.0;
+  for ( ii = 0; ii < ( INT4 )tempvect->length; ii++ ) {
+    REAL8 pval = gsl_cdf_exponential_P( tempvect->data[ii], vector_mean );
+    REAL8 testval1 = ( 1.0 + ii ) * oneoverlength - pval;
+    REAL8 testval2 = ii * oneoverlength - pval;
+    if ( hival < testval1 ) {
+      hival = testval1;
+    }
+    if ( hival < testval2 ) {
+      hival = testval2;
+    }
+    if ( loval < -testval1 ) {
+      loval = -testval1;
+    }
+    if ( loval < -testval2 ) {
+      loval = -testval2;
+    }
+  }
+  *kuipervalue = hival + loval;
 
-   XLALDestroyREAL4VectorAligned(tempvect);
+  XLALDestroyREAL4VectorAligned( tempvect );
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* kuipers_test_exp() */
 
@@ -164,21 +182,21 @@ INT4 kuipers_test_exp(REAL8 *kuipervalue, const REAL4VectorAligned *vector)
  * \param [in]  input  Pointer to the REAL4VectorAligned from which to find the smallest values
  * \return Status value
  */
-INT4 sort_float_smallest(REAL4VectorAligned *output, const REAL4VectorAligned *input)
+INT4 sort_float_smallest( REAL4VectorAligned *output, const REAL4VectorAligned *input )
 {
-   //Copy of the input vector
-   REAL4VectorAligned *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(input->length, 32)) != NULL, XLAL_EFUNC );
-   memcpy(tempvect->data, input->data, sizeof(REAL4)*input->length);
+  //Copy of the input vector
+  REAL4VectorAligned *tempvect = NULL;
+  XLAL_CHECK( ( tempvect = XLALCreateREAL4VectorAligned( input->length, 32 ) ) != NULL, XLAL_EFUNC );
+  memcpy( tempvect->data, input->data, sizeof( REAL4 )*input->length );
 
-   //qsort rearranges original vector, so sort the copy of the input vector
-   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
+  //qsort rearranges original vector, so sort the copy of the input vector
+  qsort( tempvect->data, tempvect->length, sizeof( REAL4 ), qsort_REAL4_compar );
 
-   memcpy(output->data, tempvect->data, sizeof(REAL4)*output->length);
+  memcpy( output->data, tempvect->data, sizeof( REAL4 )*output->length );
 
-   XLALDestroyREAL4VectorAligned(tempvect);
+  XLALDestroyREAL4VectorAligned( tempvect );
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* sort_float_smallest() */
 
@@ -187,9 +205,9 @@ INT4 sort_float_smallest(REAL4VectorAligned *output, const REAL4VectorAligned *i
  * Sort a REAL8Vector in ascending order, modifying the input vector
  * \param [in,out] vector Pointer to a REAL8Vector to be sorted
  */
-void sort_double_ascend(REAL8Vector *vector)
+void sort_double_ascend( REAL8Vector *vector )
 {
-   qsort(vector->data, vector->length, sizeof(REAL8), qsort_REAL8_compar);
+  qsort( vector->data, vector->length, sizeof( REAL8 ), qsort_REAL8_compar );
 } /* sort_double_ascend() */
 
 
@@ -197,9 +215,9 @@ void sort_double_ascend(REAL8Vector *vector)
  * Sort a REAL4VectorAligned in ascending order, modifying the input vector
  * \param [in,out] vector Pointer to a REAL4VectorAligned to be sorted
  */
-void sort_float_ascend(REAL4VectorAligned *vector)
+void sort_float_ascend( REAL4VectorAligned *vector )
 {
-   qsort(vector->data, vector->length, sizeof(REAL4), qsort_REAL4_compar);
+  qsort( vector->data, vector->length, sizeof( REAL4 ), qsort_REAL4_compar );
 } /* sort_float_ascend() */
 
 
@@ -210,11 +228,13 @@ void sort_float_ascend(REAL4VectorAligned *vector)
  * \param [in]  rng        Pointer to a gsl_rng generator
  * \return Newly allocated REAL4VectorAligned of sampled values from the input vector
  */
-INT4 sampleREAL4VectorAligned(REAL4VectorAligned *output, const REAL4VectorAligned *input, const gsl_rng *rng)
+INT4 sampleREAL4VectorAligned( REAL4VectorAligned *output, const REAL4VectorAligned *input, const gsl_rng *rng )
 {
-   XLAL_CHECK( output!=NULL && input!=NULL && output->length<input->length, XLAL_EINVAL );
-   for (UINT4 ii=0; ii<output->length; ii++) output->data[ii] = input->data[gsl_rng_uniform_int(rng, input->length)];
-   return XLAL_SUCCESS;
+  XLAL_CHECK( output != NULL && input != NULL && output->length < input->length, XLAL_EINVAL );
+  for ( UINT4 ii = 0; ii < output->length; ii++ ) {
+    output->data[ii] = input->data[gsl_rng_uniform_int( rng, input->length )];
+  }
+  return XLAL_SUCCESS;
 } /* sampleREAL4VectorAligned() */
 
 /**
@@ -226,19 +246,21 @@ INT4 sampleREAL4VectorAligned(REAL4VectorAligned *output, const REAL4VectorAlign
  * \param [in] rng             Pointer to a gsl_rng generator
  * \return Newly allocated REAL4VectorAligned of sampled values from the input vector
  */
-REAL4VectorAligned * sampleREAL4VectorAlignedArray_nozerosaccepted(const REAL4VectorAlignedArray *input, const UINT4 numberofvectors, const UINT4 sampleSize, const gsl_rng *rng)
+REAL4VectorAligned *sampleREAL4VectorAlignedArray_nozerosaccepted( const REAL4VectorAlignedArray *input, const UINT4 numberofvectors, const UINT4 sampleSize, const gsl_rng *rng )
 {
-   XLAL_CHECK_NULL( input != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL( input != NULL, XLAL_EINVAL );
 
-   REAL4VectorAligned *output = NULL;
-   XLAL_CHECK_NULL( (output = XLALCreateREAL4VectorAligned(sampleSize, 32)) != NULL, XLAL_EFUNC );
+  REAL4VectorAligned *output = NULL;
+  XLAL_CHECK_NULL( ( output = XLALCreateREAL4VectorAligned( sampleSize, 32 ) ) != NULL, XLAL_EFUNC );
 
-   for (UINT4 ii=0; ii<sampleSize; ii++) {
-      output->data[ii] = input->data[(UINT4)floor(gsl_rng_uniform(rng)*numberofvectors)]->data[(UINT4)floor(gsl_rng_uniform(rng)*input->data[0]->length)];
-      while (output->data[ii]==0.0) output->data[ii] = input->data[(UINT4)floor(gsl_rng_uniform(rng)*numberofvectors)]->data[(UINT4)floor(gsl_rng_uniform(rng)*input->data[0]->length)];
-   }
+  for ( UINT4 ii = 0; ii < sampleSize; ii++ ) {
+    output->data[ii] = input->data[( UINT4 )floor( gsl_rng_uniform( rng ) * numberofvectors )]->data[( UINT4 )floor( gsl_rng_uniform( rng ) * input->data[0]->length )];
+    while ( output->data[ii] == 0.0 ) {
+      output->data[ii] = input->data[( UINT4 )floor( gsl_rng_uniform( rng ) * numberofvectors )]->data[( UINT4 )floor( gsl_rng_uniform( rng ) * input->data[0]->length )];
+    }
+  }
 
-   return output;
+  return output;
 
 } /* sampleREAL4VectorAlignedArray_nozerosaccepted() */
 
@@ -247,14 +269,16 @@ REAL4VectorAligned * sampleREAL4VectorAlignedArray_nozerosaccepted(const REAL4Ve
  * \param [in] vector Pointer to a REAL4VectorAligned of values
  * \return The mean value
  */
-REAL4 calcMean(const REAL4VectorAligned *vector)
+REAL4 calcMean( const REAL4VectorAligned *vector )
 {
 
-   //Calculate mean from recurrance relation. Same as GSL
-   REAL8 meanval = 0.0;
-   for (INT4 ii=0; ii<(INT4)vector->length; ii++) meanval += (vector->data[ii] - meanval)/(ii+1);
+  //Calculate mean from recurrance relation. Same as GSL
+  REAL8 meanval = 0.0;
+  for ( INT4 ii = 0; ii < ( INT4 )vector->length; ii++ ) {
+    meanval += ( vector->data[ii] - meanval ) / ( ii + 1 );
+  }
 
-   return (REAL4)meanval;
+  return ( REAL4 )meanval;
 
 } /* calcMean() */
 
@@ -264,20 +288,23 @@ REAL4 calcMean(const REAL4VectorAligned *vector)
  * \param [in] vector Pointer to a REAL4VectorAligned of values
  * \return The mean value
  */
-REAL4 calcMean_ignoreZeros(const REAL4VectorAligned *vector)
+REAL4 calcMean_ignoreZeros( const REAL4VectorAligned *vector )
 {
 
-   INT4 values = 0;
-   REAL8 meanval = 0.0;
-   for (INT4 ii=0; ii<(INT4)vector->length; ii++) {
-      if (vector->data[ii]!=0.0) {
-         meanval += vector->data[ii];
-         values++;
-      }
-   }
+  INT4 values = 0;
+  REAL8 meanval = 0.0;
+  for ( INT4 ii = 0; ii < ( INT4 )vector->length; ii++ ) {
+    if ( vector->data[ii] != 0.0 ) {
+      meanval += vector->data[ii];
+      values++;
+    }
+  }
 
-   if (values>0) return (REAL4)(meanval/values);
-   else return 0.0;
+  if ( values > 0 ) {
+    return ( REAL4 )( meanval / values );
+  } else {
+    return 0.0;
+  }
 
 } /* calcMean_ignoreZeros() */
 
@@ -292,26 +319,29 @@ REAL4 calcMean_ignoreZeros(const REAL4VectorAligned *vector)
  * \param [in]  numffts      Number of SFTs during the observation time
  * \return Status value
  */
-INT4 calcHarmonicMean(REAL4 *harmonicMean, const REAL4VectorAligned *vector, const UINT4 numfbins, const UINT4 numffts)
+INT4 calcHarmonicMean( REAL4 *harmonicMean, const REAL4VectorAligned *vector, const UINT4 numfbins, const UINT4 numffts )
 {
 
-   UINT4 values = 0;
-   REAL4VectorAligned *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(numfbins, 32)) != NULL, XLAL_EFUNC );
+  UINT4 values = 0;
+  REAL4VectorAligned *tempvect = NULL;
+  XLAL_CHECK( ( tempvect = XLALCreateREAL4VectorAligned( numfbins, 32 ) ) != NULL, XLAL_EFUNC );
 
-   for (UINT4 ii=0; ii<numffts; ii++) {
-      if (vector->data[ii*numfbins]!=0.0) {
-         memcpy(tempvect->data, &(vector->data[ii*numfbins]), sizeof(REAL4)*numfbins);
-         *harmonicMean += 1.0/calcMean(tempvect);
-         values++;
-      }
-   }
-   if (values>0) *harmonicMean = (REAL4)values/(*harmonicMean);
-   else *harmonicMean = 0.0;
+  for ( UINT4 ii = 0; ii < numffts; ii++ ) {
+    if ( vector->data[ii * numfbins] != 0.0 ) {
+      memcpy( tempvect->data, &( vector->data[ii * numfbins] ), sizeof( REAL4 )*numfbins );
+      *harmonicMean += 1.0 / calcMean( tempvect );
+      values++;
+    }
+  }
+  if ( values > 0 ) {
+    *harmonicMean = ( REAL4 )values / ( *harmonicMean );
+  } else {
+    *harmonicMean = 0.0;
+  }
 
-   XLALDestroyREAL4VectorAligned(tempvect);
+  XLALDestroyREAL4VectorAligned( tempvect );
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* calcHarmonicMean() */
 
@@ -322,17 +352,19 @@ INT4 calcHarmonicMean(REAL4 *harmonicMean, const REAL4VectorAligned *vector, con
  * \param [in]  vector Pointer to a REAL4VectorAligned of values
  * \return Status value
  */
-INT4 calcStddev(REAL4 *sigma, const REAL4VectorAligned *vector)
+INT4 calcStddev( REAL4 *sigma, const REAL4VectorAligned *vector )
 {
 
-   double *gslarray = NULL;
-   XLAL_CHECK( (gslarray = XLALMalloc(sizeof(double)*vector->length)) != NULL, XLAL_ENOMEM );
-   for (INT4 ii=0; ii<(INT4)vector->length; ii++) gslarray[ii] = (double)vector->data[ii];
-   *sigma = (REAL4)gsl_stats_sd(gslarray, 1, vector->length);
+  double *gslarray = NULL;
+  XLAL_CHECK( ( gslarray = XLALMalloc( sizeof( double ) * vector->length ) ) != NULL, XLAL_ENOMEM );
+  for ( INT4 ii = 0; ii < ( INT4 )vector->length; ii++ ) {
+    gslarray[ii] = ( double )vector->data[ii];
+  }
+  *sigma = ( REAL4 )gsl_stats_sd( gslarray, 1, vector->length );
 
-   XLALFree((double*)gslarray);
+  XLALFree( ( double * )gslarray );
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* calcStddev() */
 
@@ -343,30 +375,32 @@ INT4 calcStddev(REAL4 *sigma, const REAL4VectorAligned *vector)
  * \param [in]  vector Pointer to a REAL4VectorAligned of values
  * \return Status value
  */
-INT4 calcStddev_ignoreZeros(REAL4 *sigma, const REAL4VectorAligned *vector)
+INT4 calcStddev_ignoreZeros( REAL4 *sigma, const REAL4VectorAligned *vector )
 {
 
-   REAL4 meanval = calcMean_ignoreZeros(vector);
-   if (meanval==0.0) {
-      *sigma = 0.0;
-      return XLAL_SUCCESS;
-   }
+  REAL4 meanval = calcMean_ignoreZeros( vector );
+  if ( meanval == 0.0 ) {
+    *sigma = 0.0;
+    return XLAL_SUCCESS;
+  }
 
-   INT4 values = 0;
-   REAL8 sumtotal = 0.0;
-   for (INT4 ii=0; ii<(INT4)vector->length; ii++) {
-      if (vector->data[ii]!=0.0) {
-         sumtotal += (vector->data[ii] - meanval)*(vector->data[ii] - meanval);
-         values++;
-      }
-   }
+  INT4 values = 0;
+  REAL8 sumtotal = 0.0;
+  for ( INT4 ii = 0; ii < ( INT4 )vector->length; ii++ ) {
+    if ( vector->data[ii] != 0.0 ) {
+      sumtotal += ( vector->data[ii] - meanval ) * ( vector->data[ii] - meanval );
+      values++;
+    }
+  }
 
-   if (values>1) {
-      *sigma = sqrtf((REAL4)(sumtotal/(values-1)));
-      return XLAL_SUCCESS;
-   }
-   else if (values==1) XLAL_ERROR( XLAL_EFPDIV0 );
-   else XLAL_ERROR( XLAL_EFPINVAL );
+  if ( values > 1 ) {
+    *sigma = sqrtf( ( REAL4 )( sumtotal / ( values - 1 ) ) );
+    return XLAL_SUCCESS;
+  } else if ( values == 1 ) {
+    XLAL_ERROR( XLAL_EFPDIV0 );
+  } else {
+    XLAL_ERROR( XLAL_EFPINVAL );
+  }
 
 } /* calcStddev_ignoreZeros() */
 
@@ -377,17 +411,17 @@ INT4 calcStddev_ignoreZeros(REAL4 *sigma, const REAL4VectorAligned *vector)
  * \param [in]  vector Pointer to a REAL4VectorAligned of values
  * \return Status value
  */
-INT4 calcRms(REAL4 *rms, const REAL4VectorAligned *vector)
+INT4 calcRms( REAL4 *rms, const REAL4VectorAligned *vector )
 {
 
-   REAL4VectorAligned *sqvector = NULL;
-   XLAL_CHECK( (sqvector = XLALCreateREAL4VectorAligned(vector->length, 32)) != NULL, XLAL_EFUNC );
-   XLAL_CHECK( XLALVectorMultiplyREAL4(sqvector->data, vector->data, vector->data, vector->length) == XLAL_SUCCESS, XLAL_EFUNC );
-   *rms = sqrtf(calcMean(sqvector));
+  REAL4VectorAligned *sqvector = NULL;
+  XLAL_CHECK( ( sqvector = XLALCreateREAL4VectorAligned( vector->length, 32 ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK( XLALVectorMultiplyREAL4( sqvector->data, vector->data, vector->data, vector->length ) == XLAL_SUCCESS, XLAL_EFUNC );
+  *rms = sqrtf( calcMean( sqvector ) );
 
-   XLALDestroyREAL4VectorAligned(sqvector);
+  XLALDestroyREAL4VectorAligned( sqvector );
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* calcRms() */
 
@@ -397,10 +431,10 @@ INT4 calcRms(REAL4 *rms, const REAL4VectorAligned *vector)
  * \param [in] vector Pointer to a REAL8Vector of values
  * \return Mean value
  */
-REAL8 calcMeanD(const REAL8Vector *vector)
+REAL8 calcMeanD( const REAL8Vector *vector )
 {
-   REAL8 meanval = gsl_stats_mean((double*)vector->data, 1, vector->length);
-   return meanval;
+  REAL8 meanval = gsl_stats_mean( ( double * )vector->data, 1, vector->length );
+  return meanval;
 } /* calcMeanD() */
 
 
@@ -409,10 +443,10 @@ REAL8 calcMeanD(const REAL8Vector *vector)
  * \param [in] vector Pointer to a REAL8Vector of values
  * \return Standard deviation value
  */
-REAL8 calcStddevD(const REAL8Vector *vector)
+REAL8 calcStddevD( const REAL8Vector *vector )
 {
-   REAL8 stddev = gsl_stats_sd((double*)vector->data, 1, vector->length);
-   return stddev;
+  REAL8 stddev = gsl_stats_sd( ( double * )vector->data, 1, vector->length );
+  return stddev;
 } /* calcStddevD() */
 
 
@@ -421,20 +455,20 @@ REAL8 calcStddevD(const REAL8Vector *vector)
  * \param [in] vector Pointer to REAL4VectorAligned of values
  * \return Index value of the largest element
  */
-UINT4 max_index(const REAL4VectorAligned *vector)
+UINT4 max_index( const REAL4VectorAligned *vector )
 {
 
-   UINT4 indexval = 0;
-   REAL4 maxval = vector->data[0];
+  UINT4 indexval = 0;
+  REAL4 maxval = vector->data[0];
 
-   for (INT4 ii=1; ii<(INT4)vector->length; ii++) {
-      if (vector->data[ii]>maxval) {
-         maxval = vector->data[ii];
-         indexval = ii;
-      }
-   }
+  for ( INT4 ii = 1; ii < ( INT4 )vector->length; ii++ ) {
+    if ( vector->data[ii] > maxval ) {
+      maxval = vector->data[ii];
+      indexval = ii;
+    }
+  }
 
-   return indexval;
+  return indexval;
 
 } /* max_index() */
 
@@ -443,10 +477,10 @@ UINT4 max_index(const REAL4VectorAligned *vector)
  * \param [in] vector Pointer to REAL8Vector of values
  * \return Index value of the largest element
  */
-UINT4 max_index_double(const REAL8Vector *vector)
+UINT4 max_index_double( const REAL8Vector *vector )
 {
-   UINT4 indexval = (UINT4)gsl_stats_max_index(vector->data, 1, vector->length);
-   return indexval;
+  UINT4 indexval = ( UINT4 )gsl_stats_max_index( vector->data, 1, vector->length );
+  return indexval;
 } /* max_index_double() */
 
 
@@ -457,22 +491,24 @@ UINT4 max_index_double(const REAL8Vector *vector)
  * \param [in] lastlocation  Index value to end at in the REAL4VectorAligned
  * \return Index value of the largest element
  */
-UINT4 max_index_in_range(const REAL4VectorAligned *vector, const UINT4 startlocation, const UINT4 lastlocation)
+UINT4 max_index_in_range( const REAL4VectorAligned *vector, const UINT4 startlocation, const UINT4 lastlocation )
 {
-   UINT4 last = lastlocation;
-   if (last>=vector->length) last = vector->length-1;
+  UINT4 last = lastlocation;
+  if ( last >= vector->length ) {
+    last = vector->length - 1;
+  }
 
-   UINT4 indexval = startlocation;
-   REAL4 maxval = vector->data[startlocation];
+  UINT4 indexval = startlocation;
+  REAL4 maxval = vector->data[startlocation];
 
-   for (UINT4 ii=startlocation+1; ii<=last; ii++) {
-      if (vector->data[ii]>maxval) {
-         maxval = vector->data[ii];
-         indexval = ii;
-      }
-   }
+  for ( UINT4 ii = startlocation + 1; ii <= last; ii++ ) {
+    if ( vector->data[ii] > maxval ) {
+      maxval = vector->data[ii];
+      indexval = ii;
+    }
+  }
 
-   return indexval;
+  return indexval;
 
 } /* max_index_in_range() */
 
@@ -483,25 +519,25 @@ UINT4 max_index_in_range(const REAL4VectorAligned *vector, const UINT4 startloca
  * \param [out] max_index_out Pointer to index value of largest element
  * \return Status value
  */
-INT4 min_max_index_INT4Vector(const INT4Vector *inputvector, UINT4 *min_index_out, UINT4 *max_index_out)
+INT4 min_max_index_INT4Vector( const INT4Vector *inputvector, UINT4 *min_index_out, UINT4 *max_index_out )
 {
 
-   *min_index_out = 0, *max_index_out = 0;
-   INT4 minval = inputvector->data[0];
-   INT4 maxval = inputvector->data[0];
+  *min_index_out = 0, *max_index_out = 0;
+  INT4 minval = inputvector->data[0];
+  INT4 maxval = inputvector->data[0];
 
-   for (INT4 ii=1; ii<(INT4)inputvector->length; ii++) {
-      if (inputvector->data[ii]<minval) {
-         minval = inputvector->data[ii];
-         *min_index_out = ii;
-      }
-      if (inputvector->data[ii]>maxval) {
-         maxval = inputvector->data[ii];
-         *max_index_out = ii;
-      }
-   }
+  for ( INT4 ii = 1; ii < ( INT4 )inputvector->length; ii++ ) {
+    if ( inputvector->data[ii] < minval ) {
+      minval = inputvector->data[ii];
+      *min_index_out = ii;
+    }
+    if ( inputvector->data[ii] > maxval ) {
+      maxval = inputvector->data[ii];
+      *max_index_out = ii;
+    }
+  }
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* min_max_index_INT4Vector() */
 
@@ -512,42 +548,53 @@ INT4 min_max_index_INT4Vector(const INT4Vector *inputvector, UINT4 *min_index_ou
  * \param [in]  vector Pointer to a REAL4VectorAligned
  * \return Status value
  */
-INT4 calcMedian(REAL4 *median, const REAL4VectorAligned *vector)
+INT4 calcMedian( REAL4 *median, const REAL4VectorAligned *vector )
 {
-   //Make a copy of the original vector
-   REAL4VectorAligned *tempvect = NULL;
-   XLAL_CHECK( (tempvect = XLALCreateREAL4VectorAligned(vector->length, 32)) != NULL, XLAL_EFUNC );
-   memcpy(tempvect->data, vector->data, sizeof(REAL4)*vector->length);
+  //Make a copy of the original vector
+  REAL4VectorAligned *tempvect = NULL;
+  XLAL_CHECK( ( tempvect = XLALCreateREAL4VectorAligned( vector->length, 32 ) ) != NULL, XLAL_EFUNC );
+  memcpy( tempvect->data, vector->data, sizeof( REAL4 )*vector->length );
 
-   //qsort() on the copied data
-   qsort(tempvect->data, tempvect->length, sizeof(REAL4), qsort_REAL4_compar);
+  //qsort() on the copied data
+  qsort( tempvect->data, tempvect->length, sizeof( REAL4 ), qsort_REAL4_compar );
 
-   if (tempvect->length % 2 != 1) *median = 0.5*(tempvect->data[(INT4)(0.5*tempvect->length)-1] + tempvect->data[(INT4)(0.5*tempvect->length)]);
-   else *median = tempvect->data[(INT4)(0.5*tempvect->length)];
+  if ( tempvect->length % 2 != 1 ) {
+    *median = 0.5 * ( tempvect->data[( INT4 )( 0.5 * tempvect->length ) - 1] + tempvect->data[( INT4 )( 0.5 * tempvect->length )] );
+  } else {
+    *median = tempvect->data[( INT4 )( 0.5 * tempvect->length )];
+  }
 
-   XLALDestroyREAL4VectorAligned(tempvect);
+  XLALDestroyREAL4VectorAligned( tempvect );
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* calcMedian() */
 
 
 //Comparison functions for qsort
-INT4 qsort_REAL4_compar(const void *a, const void *b)
+INT4 qsort_REAL4_compar( const void *a, const void *b )
 {
-   const REAL4 *y = a;
-   const REAL4 *z = b;
+  const REAL4 *y = a;
+  const REAL4 *z = b;
 
-   if ( *y < *z ) return -1;
-   if ( *y > *z ) return 1;
-   return 0;
+  if ( *y < *z ) {
+    return -1;
+  }
+  if ( *y > *z ) {
+    return 1;
+  }
+  return 0;
 } /* qsort_REAL4_compar() */
-INT4 qsort_REAL8_compar(const void *a, const void *b)
+INT4 qsort_REAL8_compar( const void *a, const void *b )
 {
-   const REAL8 *y = a;
-   const REAL8 *z = b;
+  const REAL8 *y = a;
+  const REAL8 *z = b;
 
-   if ( *y < *z ) return -1;
-   if ( *y > *z ) return 1;
-   return 0;
+  if ( *y < *z ) {
+    return -1;
+  }
+  if ( *y > *z ) {
+    return 1;
+  }
+  return 0;
 } /* qsort_REAL8_compar() */

@@ -23,22 +23,22 @@
 #include "TwoSpectTypes.h"
 
 struct gsl_probR_pars {
-   const TwoSpectTemplate *template;
-   const REAL4VectorAligned *ffplanenoise;
-   const REAL4VectorAligned *fbinaveratios;
-   const REAL4 threshold;
-   const UserInput_t *inputParams;
-   const gsl_rng *rng;
-   INT4 errcode;
+  const TwoSpectTemplate *template;
+  const REAL4VectorAligned *ffplanenoise;
+  const REAL4VectorAligned *fbinaveratios;
+  const REAL4 threshold;
+  const UserInput_t *inputParams;
+  const gsl_rng *rng;
+  INT4 errcode;
 };
 
-farStruct * createfarStruct(void);
-void destroyfarStruct(farStruct *farstruct);
-INT4 estimateFAR(farStruct *output, const TwoSpectTemplate *template, const UINT4 trials, const REAL8 thresh, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios);
-INT4 numericFAR(farStruct *output, const TwoSpectTemplate *template, const REAL8 thresh, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const UserInput_t *inputParams, const gsl_rng *rng, const INT4 method);
-REAL8 probR(const TwoSpectTemplate *template, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const REAL8 R, const UserInput_t *params, const gsl_rng *rng, INT4 *errcode);
-REAL8 gsl_probR(const REAL8 R, void *pars);
-REAL8 gsl_dprobRdR(const REAL8 R, void *pars);
-void gsl_probRandDprobRdR(const REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR);
+farStruct *createfarStruct( void );
+void destroyfarStruct( farStruct *farstruct );
+INT4 estimateFAR( farStruct *output, const TwoSpectTemplate *template, const UINT4 trials, const REAL8 thresh, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios );
+INT4 numericFAR( farStruct *output, const TwoSpectTemplate *template, const REAL8 thresh, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const UserInput_t *inputParams, const gsl_rng *rng, const INT4 method );
+REAL8 probR( const TwoSpectTemplate *template, const REAL4VectorAligned *ffplanenoise, const REAL4VectorAligned *fbinaveratios, const REAL8 R, const UserInput_t *params, const gsl_rng *rng, INT4 *errcode );
+REAL8 gsl_probR( const REAL8 R, void *pars );
+REAL8 gsl_dprobRdR( const REAL8 R, void *pars );
+void gsl_probRandDprobRdR( const REAL8 R, void *pars, REAL8 *probabilityR, REAL8 *dprobRdR );
 
 #endif
