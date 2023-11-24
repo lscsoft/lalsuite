@@ -12,8 +12,8 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA  02110-1301  USA
  */
 
@@ -30,7 +30,7 @@
  * \brief Header for CW cross-correlation search
  *
  */
- 
+
 /*
  *   Protection against double inclusion (include-loop protection)
  *     Note the naming convention!
@@ -50,7 +50,7 @@
 #include <math.h>
 #include <glob.h>
 #include <time.h>
-#include <errno.h> 
+#include <errno.h>
 
 #include <gsl/gsl_cdf.h>
 
@@ -87,7 +87,7 @@ extern "C" {
 /******************************************************
  *  Error codes and messages.
  */
- 
+
 #define PULSAR_CROSSCORR_ENORM 0
 #define PULSAR_CROSSCORR_ESUB  1
 #define PULSAR_CROSSCORR_EARG  2
@@ -110,7 +110,7 @@ extern "C" {
 #define PULSAR_CROSSCORR_MSGEVAL "Invalid value"
 #define PULSAR_CROSSCORR_MSGEMEM "Out of memory"
 
-#define PIXELFACTOR  2 
+#define PIXELFACTOR  2
 
 
 /* ******************************************************************
@@ -121,79 +121,79 @@ extern "C" {
  *  Functions Declarations (i.e., prototypes).
  */
 
-void SetUpRadiometerSkyPatches(LALStatus *status,
-			       SkyPatchesInfo *out,
-			       CHAR *skyFileName,
-			       CHAR *skyRegion,
-			       REAL8 dAlpha,
-			       REAL8 dDelta);
+void SetUpRadiometerSkyPatches( LALStatus *status,
+                                SkyPatchesInfo *out,
+                                CHAR *skyFileName,
+                                CHAR *skyRegion,
+                                REAL8 dAlpha,
+                                REAL8 dDelta );
 
-void InitDoppParams(LALStatus *status,
- 		    REAL8Vector *fdots,
-		    PulsarDopplerParams *thisPoint,
-		    LIGOTimeGPS refTime,
-  		    REAL8 f_current,
- 		    REAL8 q1_current,
-		    REAL8 q2_current,
-	 	    REAL8 n_current,
-		    REAL8 fdot_current,
-		    REAL8 fddot_current);
+void InitDoppParams( LALStatus *status,
+                     REAL8Vector *fdots,
+                     PulsarDopplerParams *thisPoint,
+                     LIGOTimeGPS refTime,
+                     REAL8 f_current,
+                     REAL8 q1_current,
+                     REAL8 q2_current,
+                     REAL8 n_current,
+                     REAL8 fdot_current,
+                     REAL8 fddot_current );
 
 
-void GetBeamInfo(LALStatus *status, 
-		 CrossCorrBeamFnListElement *beamHead, 
-		 SFTListElement *sftHead, 
-		 REAL8ListElement *freqHead,
-		 REAL8ListElement *phaseHead, 
-		 SkyPosition skypos, 
-		 EphemerisData *edat, 
-		 PulsarDopplerParams *thisPoint);
+void GetBeamInfo( LALStatus *status,
+                  CrossCorrBeamFnListElement *beamHead,
+                  SFTListElement *sftHead,
+                  REAL8ListElement *freqHead,
+                  REAL8ListElement *phaseHead,
+                  SkyPosition skypos,
+                  EphemerisData *edat,
+                  PulsarDopplerParams *thisPoint );
 
-void CalculateFdots (LALStatus *status,
-		     REAL8Vector *fdots,
-		     REAL8 f0,
-		     REAL8 q1,
-		     REAL8 q2,
-		     REAL8 n);
+void CalculateFdots( LALStatus *status,
+                     REAL8Vector *fdots,
+                     REAL8 f0,
+                     REAL8 q1,
+                     REAL8 q2,
+                     REAL8 n );
 
-void CopySFTFromCatalog(LALStatus *status,
-		   	SFTCatalog *catalog,
-			SFTVector **sft,
-			REAL8 fMin,
-			REAL8 fMax,
-			INT4 sftindex);
+void CopySFTFromCatalog( LALStatus *status,
+                         SFTCatalog *catalog,
+                         SFTVector **sft,
+                         REAL8 fMin,
+                         REAL8 fMax,
+                         INT4 sftindex );
 
-void AddSFTtoList(LALStatus *status,
-		  SFTListElement **sftHead,
-		  SFTListElement **sftTail,
-		  SFTtype *sft);
+void AddSFTtoList( LALStatus *status,
+                   SFTListElement **sftHead,
+                   SFTListElement **sftTail,
+                   SFTtype *sft );
 
-void AddPSDtoList(LALStatus *status,
-		  PSDListElement **psdHead,
-		  PSDListElement **psdTail,
-		  INT4 length);
+void AddPSDtoList( LALStatus *status,
+                   PSDListElement **psdHead,
+                   PSDListElement **psdTail,
+                   INT4 length );
 
-void AddREAL8toList(LALStatus *status,
-		    REAL8ListElement **head,
-		    REAL8ListElement **tail);
+void AddREAL8toList( LALStatus *status,
+                     REAL8ListElement **head,
+                     REAL8ListElement **tail );
 
-void AddBeamFntoList(LALStatus *status,
-		     CrossCorrBeamFnListElement **beamHead,
-		     CrossCorrBeamFnListElement **beamTail);
+void AddBeamFntoList( LALStatus *status,
+                      CrossCorrBeamFnListElement **beamHead,
+                      CrossCorrBeamFnListElement **beamTail );
 
-void DeleteSFTHead (LALStatus *status, 
-		    SFTListElement **sftHead);
+void DeleteSFTHead( LALStatus *status,
+                    SFTListElement **sftHead );
 
-void DeletePSDHead (LALStatus *status, 
-		    PSDListElement **psdHead);
+void DeletePSDHead( LALStatus *status,
+                    PSDListElement **psdHead );
 
-void DeleteREAL8Head (LALStatus *status,
-		      REAL8ListElement **head);
+void DeleteREAL8Head( LALStatus *status,
+                      REAL8ListElement **head );
 
-void DeleteBeamFnHead (LALStatus *status,
-		       CrossCorrBeamFnListElement **beamHead);
+void DeleteBeamFnHead( LALStatus *status,
+                       CrossCorrBeamFnListElement **beamHead );
 
-		     
+
 /* ****************************************************** */
 
 #ifdef  __cplusplus
