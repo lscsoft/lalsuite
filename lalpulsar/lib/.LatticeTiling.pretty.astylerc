@@ -1,8 +1,1 @@
-style=otbs
-indent=spaces=2
-unpad-paren
-pad-paren-in
-pad-header
-pad-oper
-align-pointer=name
-add-brackets
+../.common-astylerc
