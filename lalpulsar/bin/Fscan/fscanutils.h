@@ -21,6 +21,6 @@
 #ifndef __FSCANUTILS_H__
 #define __FSCANUTILS_H__
 
-SFTVector * extract_one_sft(const SFTCatalog *full_catalog, const LIGOTimeGPS starttime, const REAL8 f_min, const REAL8 f_max);
+SFTVector *extract_one_sft( const SFTCatalog *full_catalog, const LIGOTimeGPS starttime, const REAL8 f_min, const REAL8 f_max );
 
 #endif

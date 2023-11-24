@@ -28,25 +28,25 @@
 #include "fscanutils.h"
 
 /* Extract a single SFT from an SFTCatalog: the SFT indicated by GPS start time with band f_min to f_max*/
-SFTVector * extract_one_sft(const SFTCatalog *full_catalog, const LIGOTimeGPS starttime, const REAL8 f_min, const REAL8 f_max)
+SFTVector *extract_one_sft( const SFTCatalog *full_catalog, const LIGOTimeGPS starttime, const REAL8 f_min, const REAL8 f_max )
 {
-    // Initialize an SFTCatalog
-    SFTCatalog XLAL_INIT_DECL(catalogSlice);
+  // Initialize an SFTCatalog
+  SFTCatalog XLAL_INIT_DECL( catalogSlice );
 
-    //Set start time
-    //Set end time just 0.01 seconds after the start time. This is sufficiently small to get just one SFT
-    LIGOTimeGPS thisSFTendtime = starttime;
-    XLAL_CHECK_NULL( XLALGPSAdd(&thisSFTendtime, 0.01) != NULL, XLAL_EFUNC );
+  //Set start time
+  //Set end time just 0.01 seconds after the start time. This is sufficiently small to get just one SFT
+  LIGOTimeGPS thisSFTendtime = starttime;
+  XLAL_CHECK_NULL( XLALGPSAdd( &thisSFTendtime, 0.01 ) != NULL, XLAL_EFUNC );
 
-    // Get the catalog of the single SFT from the full catalog
-    XLAL_CHECK_NULL( XLALSFTCatalogTimeslice(&catalogSlice, full_catalog, &starttime, &thisSFTendtime) == XLAL_SUCCESS, XLAL_EFUNC );
+  // Get the catalog of the single SFT from the full catalog
+  XLAL_CHECK_NULL( XLALSFTCatalogTimeslice( &catalogSlice, full_catalog, &starttime, &thisSFTendtime ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-    //Extract the SFT
-    SFTVector *sft_vect = NULL;
-    XLAL_CHECK_NULL( (sft_vect = XLALLoadSFTs(&catalogSlice, f_min, f_max)) != NULL, XLAL_EFUNC );
+  //Extract the SFT
+  SFTVector *sft_vect = NULL;
+  XLAL_CHECK_NULL( ( sft_vect = XLALLoadSFTs( &catalogSlice, f_min, f_max ) ) != NULL, XLAL_EFUNC );
 
-    //Check we got only zero or one SFT; no more
-    XLAL_CHECK_NULL( sft_vect->length <= 1, XLAL_EBADLEN, "Oops, got %d SFTs instead of zero or one", sft_vect->length );
+  //Check we got only zero or one SFT; no more
+  XLAL_CHECK_NULL( sft_vect->length <= 1, XLAL_EBADLEN, "Oops, got %d SFTs instead of zero or one", sft_vect->length );
 
-    return sft_vect;
+  return sft_vect;
 }
