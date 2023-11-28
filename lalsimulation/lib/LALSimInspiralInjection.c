@@ -1,3 +1,22 @@
+/*
+*  Copyright (C) 2023 Jolien Creighton
+*
+*  This program is free software; you can redistribute it and/or modify
+*  it under the terms of the GNU General Public License as published by
+*  the Free Software Foundation; either version 2 of the License, or
+*  (at your option) any later version.
+*
+*  This program is distributed in the hope that it will be useful,
+*  but WITHOUT ANY WARRANTY; without even the implied warranty of
+*  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*  GNU General Public License for more details.
+*
+*  You should have received a copy of the GNU General Public License
+*  along with with program; see the file COPYING. If not, write to the
+*  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+*  MA  02110-1301  USA
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
@@ -7,6 +26,7 @@
 #include <lal/LALDetectors.h>
 #include <lal/LALString.h>
 #include <lal/LALDict.h>
+#include <lal/LALDictSequence.h>
 #include <lal/Date.h>
 #include <lal/Sort.h>
 #include <lal/AVFactories.h>
@@ -22,168 +42,13 @@
 #define UNUSED
 #endif
 
-struct tagLALSimInspiralInjectionSequence {
-    size_t length;
-    LALDict **data;
-};
-
-void XLALSimInspiralDestroyInjectionSequence(LALSimInspiralInjectionSequence *sequence)
-{
-    if (sequence) {
-        if (sequence->data) {
-            for (size_t i = 0; i < sequence->length; ++i)
-                XLALDestroyDict(sequence->data[i]);
-            LALFree(sequence->data);
-        }
-        LALFree(sequence);
-    }
-    return;
-}
-
-LALSimInspiralInjectionSequence * XLALSimInspiralCreateInjectionSequence(size_t length)
-{
-    LALSimInspiralInjectionSequence *sequence;
-    sequence = LALMalloc(sizeof(*sequence));
-    XLAL_CHECK_NULL(sequence, XLAL_ENOMEM);
-    sequence->length = length;
-    sequence->data = LALCalloc(length, sizeof(*sequence->data));
-    if (sequence->data == NULL) {
-        LALFree(sequence);
-        XLAL_ERROR_NULL(XLAL_ENOMEM);
-    }
-    for (size_t i = 0; i < length; ++i) {
-        sequence->data[i] = XLALCreateDict();
-        if (sequence->data[i] == NULL) {
-            XLALSimInspiralDestroyInjectionSequence(sequence);
-            XLAL_ERROR_NULL(XLAL_EFUNC);
-        }
-    }
-    return sequence;
-}
-
-LALSimInspiralInjectionSequence * XLALSimInspiralCutInjectionSequence(const LALSimInspiralInjectionSequence *sequence, size_t first, size_t length)
-{
-    LALSimInspiralInjectionSequence *new;
-    XLAL_CHECK_NULL(sequence, XLAL_EFAULT);
-    XLAL_CHECK_NULL(first + length <= sequence->length, XLAL_EBADLEN);
-    new = XLALSimInspiralCreateInjectionSequence(length);
-    XLAL_CHECK_NULL(new, XLAL_EFUNC);
-    for (size_t i = 0; i < length; ++i) {
-        int retval = XLALDictUpdate(new->data[i], sequence->data[i + first]);
-        if (retval < 0) {
-            XLALSimInspiralDestroyInjectionSequence(new);
-            XLAL_ERROR_NULL(XLAL_EFUNC);
-        }
-    }
-    return new;
-}
-
-LALSimInspiralInjectionSequence * XLALSimInspiralCopyInjectionSequence(const LALSimInspiralInjectionSequence *sequence)
-{
-    XLAL_CHECK_NULL(sequence, XLAL_EFAULT);
-    return XLALSimInspiralCutInjectionSequence(sequence, 0, sequence->length);
-}
-
-void XLALSimInspiralShiftInjectionSequence(LALSimInspiralInjectionSequence *sequence, int count)
-{
-    size_t abscount = count > 0 ? count : -count;
-
-    XLAL_CHECK_VOID(sequence, XLAL_EFAULT);
-    XLAL_CHECK_VOID(sequence->data || sequence->length == 0, XLAL_EINVAL);
-
-    if (!count)
-        return;
-
-    /* shift memory if abs(count) < sequence->length */
-    if (sequence->length > abscount) {
-        char *a = (char *)sequence->data + (count < 0 ? 0 : count);
-        char *b = (char *)sequence->data - (count < 0 ? count : 0);
-        memmove(a, b, (sequence->length - abscount) * sizeof(*sequence->data));
-    }
-
-    /* clear unshifted memory */
-    if (abscount >= sequence->length) {
-        for (size_t i = 0; i < sequence->length; ++i)
-            XLALClearDict(sequence->data[i]);
-    } else if (count > 0) {
-        for (size_t i = 0; i < abscount; ++i)
-            XLALClearDict(sequence->data[i]);
-    } else {
-        for (size_t i = sequence->length - abscount; i < abscount; ++i)
-            XLALClearDict(sequence->data[i]);
-    }
-
-    return;
-}
-
-LALSimInspiralInjectionSequence * XLALSimInspiralResizeInjectionSequence(LALSimInspiralInjectionSequence *sequence, int first, size_t length)
-{
-    LALDict **data;
-    XLAL_CHECK_NULL(sequence, XLAL_EFAULT);
-    XLAL_CHECK_NULL(sequence->data || sequence->length == 0, XLAL_EINVAL);
-
-    if (length > sequence->length) { /* need to increase memory */
-        data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
-        XLAL_CHECK_NULL(data, XLAL_EFUNC);
-        for (size_t i = sequence->length; i < length; ++i)
-            data[i] = XLALCreateDict();
-        sequence->data = data;
-        sequence->length = length;
-        XLALSimInspiralShiftInjectionSequence(sequence, -first);
-    } else if (length > 0) { /* need to decrease memory */
-        XLALSimInspiralShiftInjectionSequence(sequence, -first);
-        for (size_t i = length; i < sequence->length; ++i)
-            XLALDestroyDict(sequence->data[i]);
-        data = XLALRealloc(sequence->data, length * sizeof(*sequence->data));
-        XLAL_CHECK_NULL(data, XLAL_EFUNC);
-        sequence->data = data;
-        sequence->length = length;
-    } else { /* length == 0: need to release all memory */
-        for (size_t i = 0; i < sequence->length; ++i)
-            XLALDestroyDict(sequence->data[i]);
-        XLALFree(sequence->data);
-        sequence->data = NULL;
-        sequence->length = 0;
-    }
-
-    return sequence;
-}
-
-size_t LALSimInspiralInjectionSequenceLength(LALSimInspiralInjectionSequence *sequence)
-{
-    XLAL_CHECK(sequence, XLAL_EFAULT);
-    return sequence->length;
-}
-
-LALDict * LALSimInspiralInjectionSequenceGet(LALSimInspiralInjectionSequence *sequence, int pos)
-{
-    XLAL_CHECK_NULL(sequence, XLAL_EFAULT);
-    XLAL_CHECK_NULL(sequence->data || sequence->length == 0, XLAL_EINVAL);
-    if (pos < 0) /* negative positions are from end */
-        pos += sequence->length;
-    XLAL_CHECK_NULL(pos >= 0 && (unsigned)pos < sequence->length, XLAL_EBADLEN);
-    return XLALDictDuplicate(sequence->data[pos]);
-}
-
-int LALSimInspiralInjectionSequenceSet(LALSimInspiralInjectionSequence *sequence, LALDict *injparams, int pos)
-{
-    XLAL_CHECK(sequence, XLAL_EFAULT);
-    XLAL_CHECK(sequence->data || sequence->length == 0, XLAL_EINVAL);
-    if (pos < 0) /* negative positions are from end */
-        pos += sequence->length;
-    XLAL_CHECK(pos >= 0 && (unsigned)pos < sequence->length, XLAL_EBADLEN);
-    XLALDestroyDict(sequence->data[pos]);
-    sequence->data[pos] = XLALDictDuplicate(injparams);
-    return 0;
-}
-
 /* translates from the injection file parameter names
  * https://git.ligo.org/waveforms/o4-injection-file/-/blob/main/ESSENTIAL_SPEC.md * to the waveform interface parameter names
  * https://git.ligo.org/waveforms/new-waveforms-interface/-/blob/master/parameter-names.md
  */
 static const char * translate_key(const char *key, int inverse)
 {
-    const char *map[][2] = {
+    static const char *map[][2] = {
         { "mass1_det", "mass1" },
         { "mass2_det", "mass2" },
         { "d_lum", "distance" },
@@ -210,9 +75,9 @@ static double si_scale_factor(const char *key)
     return 1.0;
 }
 
-LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceFromH5File(const char *fname)
+LALDictSequence * XLALSimInspiralInjectionSequenceFromH5File(const char *fname)
 {
-    LALSimInspiralInjectionSequence *sequence = NULL;
+    LALDictSequence *injseq = NULL;
     LALStringVector *strvec = NULL;
     INT4Vector *intvec = NULL;
     REAL8Vector *dblvec = NULL;
@@ -252,10 +117,10 @@ LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceFromH5File(con
         XLAL_CHECK_FAIL((int)type >= 0, XLAL_EFUNC);
         ninj = XLALH5DatasetQueryNPoints(dset);
         XLAL_CHECK_FAIL((ssize_t)ninj >= 0, XLAL_EFUNC);
-        if (sequence == NULL) {
-            sequence = XLALSimInspiralCreateInjectionSequence(ninj);
-            XLAL_CHECK_FAIL(sequence, XLAL_EFUNC);
-        } else if (ninj != sequence->length)
+        if (injseq == NULL) {
+            injseq = XLALCreateDictSequence(ninj);
+            XLAL_CHECK_FAIL(injseq, XLAL_EFUNC);
+        } else if (ninj != injseq->length)
             XLAL_ERROR_FAIL(XLAL_EBADLEN, "Datasets have different number of points");
 
         key = strrchr(name, '/');
@@ -274,7 +139,7 @@ LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceFromH5File(con
                //if (strcmp(key, "ModeArray") == 0) {
                //   retval = 0; /* handle mode array as a special case */
                //} else {
-                   retval = XLALDictInsertStringValue(sequence->data[i], key, strvec->data[i]);
+                   retval = XLALDictInsertStringValue(injseq->data[i], key, strvec->data[i]);
                //}
                XLAL_CHECK_FAIL(retval == 0, XLAL_EFUNC);
            }
@@ -286,7 +151,7 @@ LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceFromH5File(con
            XLAL_CHECK_FAIL(intvec, XLAL_EFUNC);
            for (size_t i = 0; i < intvec->length; ++i) {
                int retval;
-               retval = XLALDictInsertINT4Value(sequence->data[i], key, intvec->data[i]);
+               retval = XLALDictInsertINT4Value(injseq->data[i], key, intvec->data[i]);
                XLAL_CHECK_FAIL(retval == 0, XLAL_EFUNC);
            }
            XLALDestroyINT4Vector(intvec);
@@ -300,7 +165,7 @@ LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceFromH5File(con
                int retval;
                if (!isfinite(dblvec->data[i]))
                    continue;
-               retval = XLALDictInsertREAL8Value(sequence->data[i], key, scale * dblvec->data[i]);
+               retval = XLALDictInsertREAL8Value(injseq->data[i], key, scale * dblvec->data[i]);
                XLAL_CHECK_FAIL(retval == 0, XLAL_EFUNC);
            }
            XLALDestroyREAL8Vector(dblvec);
@@ -320,7 +185,7 @@ LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceFromH5File(con
     XLALH5FileClose(group);
     XLALH5FileClose(file);
 
-    return sequence;
+    return injseq;
 
 XLAL_FAIL:
 
@@ -331,7 +196,7 @@ XLAL_FAIL:
     XLALDestroyREAL8Vector(dblvec);
     XLALDestroyINT4Vector(intvec);
     XLALDestroyStringVector(strvec);
-    XLALSimInspiralDestroyInjectionSequence(sequence);
+    XLALDestroyDictSequence(injseq);
     return NULL;
 }
 
@@ -343,7 +208,7 @@ static void XLALSimInspiralDictInsertParameterType(char *key, LALValue *value, v
     return;
 }
 
-int XLALSimInspiralInjectionSequenceToH5File(const LALSimInspiralInjectionSequence *sequence, const char *fname)
+int XLALSimInspiralInjectionSequenceToH5File(const LALDictSequence *injseq, const char *fname)
 {
     LALH5File *file = NULL;
     LALH5File *group = NULL;
@@ -361,8 +226,8 @@ int XLALSimInspiralInjectionSequenceToH5File(const LALSimInspiralInjectionSequen
 
     /* get the types of all parameter keys */
     types = XLALCreateDict();
-    for (size_t i = 0; i < sequence->length; ++i)
-        XLALDictForeach(sequence->data[i], XLALSimInspiralDictInsertParameterType, types);
+    for (size_t i = 0; i < injseq->length; ++i)
+        XLALDictForeach(injseq->data[i], XLALSimInspiralDictInsertParameterType, types);
 
     /* loop over parameters */
     XLALDictIterInit(&iter, types);
@@ -375,28 +240,28 @@ int XLALSimInspiralInjectionSequenceToH5File(const LALSimInspiralInjectionSequen
         double scale;
         switch (type) {
         case LAL_CHAR_TYPE_CODE:
-            strvec = XLALCreateEmptyStringVector(sequence->length);
-            for (size_t i = 0; i < sequence->length; ++i)
-                strvec->data[i] = XLALStringDuplicate(XLALDictContains(sequence->data[i], key) ? XLALDictLookupStringValue(sequence->data[i], key) : "");
+            strvec = XLALCreateEmptyStringVector(injseq->length);
+            for (size_t i = 0; i < injseq->length; ++i)
+                strvec->data[i] = XLALStringDuplicate(XLALDictContains(injseq->data[i], key) ? XLALDictLookupStringValue(injseq->data[i], key) : "");
             dset = XLALH5DatasetAllocStringVector(group, new, strvec);
             XLAL_CHECK_FAIL(dset, XLAL_EFUNC);
             XLALDestroyStringVector(strvec);
             strvec = NULL;
             break;
         case LAL_I4_TYPE_CODE:
-            intvec = XLALCreateINT4Vector(sequence->length);
-            for (size_t i = 0; i < sequence->length; ++i)
-                intvec->data[i] = XLALDictLookupINT4Value(sequence->data[i], key);
+            intvec = XLALCreateINT4Vector(injseq->length);
+            for (size_t i = 0; i < injseq->length; ++i)
+                intvec->data[i] = XLALDictLookupINT4Value(injseq->data[i], key);
             dset = XLALH5DatasetAllocINT4Vector(group, new, intvec);
             XLAL_CHECK_FAIL(dset, XLAL_EFUNC);
             XLALDestroyINT4Vector(intvec);
             intvec = NULL;
             break;
         case LAL_D_TYPE_CODE:
-            dblvec = XLALCreateREAL8Vector(sequence->length);
+            dblvec = XLALCreateREAL8Vector(injseq->length);
             scale = si_scale_factor(key);
-            for (size_t i = 0; i < sequence->length; ++i)
-                dblvec->data[i] = XLALDictContains(sequence->data[i], key) ? XLALDictLookupREAL8Value(sequence->data[i], key) / scale : NAN;
+            for (size_t i = 0; i < injseq->length; ++i)
+                dblvec->data[i] = XLALDictContains(injseq->data[i], key) ? XLALDictLookupREAL8Value(injseq->data[i], key) / scale : NAN;
             dset = XLALH5DatasetAllocREAL8Vector(group, new, dblvec);
             XLAL_CHECK_FAIL(dset, XLAL_EFUNC);
             XLALDestroyREAL8Vector(dblvec);
@@ -552,42 +417,42 @@ static int XLALSimInspiralParamsCompareStartTimeToGPSTime(void *thunk UNUSED, co
     return XLALGPSCmp(&t1, t2);
 }
 
-int XLALSimInspiralInjectionSequenceIsEndTimeOrdered(LALSimInspiralInjectionSequence *sequence)
+int XLALSimInspiralInjectionSequenceIsEndTimeOrdered(LALDictSequence *injseq)
 {
     int errnum;
     int retval;
-    XLAL_CHECK(sequence, XLAL_EFAULT);
+    XLAL_CHECK(injseq, XLAL_EFAULT);
     errnum = XLALClearErrno(); /* clear xlalErrno and preserve value */
-    retval = XLALIsSorted(sequence->data, sequence->length, sizeof(*sequence->data), NULL, XLALSimInspiralParamsCompareEndTime);
+    retval = XLALIsSorted(injseq->data, injseq->length, sizeof(*injseq->data), NULL, XLALSimInspiralParamsCompareEndTime);
     if (retval < 0 || XLALGetBaseErrno()) /* something failed */
         XLAL_ERROR(XLAL_EFUNC);
     XLALSetErrno(errnum); /* restore previous value of xlalErrno */
     return retval;
 }
 
-int XLALSimInspiralInjectionSequenceIsStartTimeOrdered(LALSimInspiralInjectionSequence *sequence)
+int XLALSimInspiralInjectionSequenceIsStartTimeOrdered(LALDictSequence *injseq)
 {
     int errnum;
     int retval;
-    XLAL_CHECK(sequence, XLAL_EFAULT);
+    XLAL_CHECK(injseq, XLAL_EFAULT);
     errnum = XLALClearErrno(); /* clear xlalErrno and preserve value */
-    retval = XLALIsSorted(sequence->data, sequence->length, sizeof(*sequence->data), NULL, XLALSimInspiralParamsCompareStartTime);
+    retval = XLALIsSorted(injseq->data, injseq->length, sizeof(*injseq->data), NULL, XLALSimInspiralParamsCompareStartTime);
     if (retval < 0 || XLALGetBaseErrno()) /* something failed */
         XLAL_ERROR(XLAL_EFUNC);
     XLALSetErrno(errnum); /* restore previous value of xlalErrno */
     return retval;
 }
 
-int XLALSimInspiralInjectionSequenceOrderByEndTime(LALSimInspiralInjectionSequence *sequence)
+int XLALSimInspiralInjectionSequenceOrderByEndTime(LALDictSequence *injseq)
 {
     int retval;
     /* it is likely that it is already time ordered, so check first */
-    retval = XLALSimInspiralInjectionSequenceIsEndTimeOrdered(sequence);
+    retval = XLALSimInspiralInjectionSequenceIsEndTimeOrdered(injseq);
     XLAL_CHECK(retval >= 0, XLAL_EFUNC);
     if (!retval) { /* sort it */
         int errnum;
         errnum = XLALClearErrno(); /* clear xlalErrno and preserve value */
-        retval = XLALMergeSort(sequence->data, sequence->length, sizeof(*sequence->data), NULL, XLALSimInspiralParamsCompareEndTime);
+        retval = XLALMergeSort(injseq->data, injseq->length, sizeof(*injseq->data), NULL, XLALSimInspiralParamsCompareEndTime);
         if (retval < 0 || XLALGetBaseErrno()) /* something failed */
             XLAL_ERROR(XLAL_EFUNC);
         XLALSetErrno(errnum); /* restore previous value of xlalErrno */
@@ -595,16 +460,16 @@ int XLALSimInspiralInjectionSequenceOrderByEndTime(LALSimInspiralInjectionSequen
     return 0;
 }
 
-int XLALSimInspiralInjectionSequenceOrderByStartTime(LALSimInspiralInjectionSequence *sequence)
+int XLALSimInspiralInjectionSequenceOrderByStartTime(LALDictSequence *injseq)
 {
     int retval;
     /* it is likely that it is already time ordered, so check first */
-    retval = XLALSimInspiralInjectionSequenceIsStartTimeOrdered(sequence);
+    retval = XLALSimInspiralInjectionSequenceIsStartTimeOrdered(injseq);
     XLAL_CHECK(retval >= 0, XLAL_EFUNC);
     if (!retval) { /* sort it */
         int errnum;
         errnum = XLALClearErrno(); /* clear xlalErrno and preserve value */
-        retval = XLALMergeSort(sequence->data, sequence->length, sizeof(*sequence->data), NULL, XLALSimInspiralParamsCompareStartTime);
+        retval = XLALMergeSort(injseq->data, injseq->length, sizeof(*injseq->data), NULL, XLALSimInspiralParamsCompareStartTime);
         if (retval < 0 || XLALGetBaseErrno()) /* something failed */
             XLAL_ERROR(XLAL_EFUNC);
         XLALSetErrno(errnum); /* restore previous value of xlalErrno */
@@ -612,17 +477,17 @@ int XLALSimInspiralInjectionSequenceOrderByStartTime(LALSimInspiralInjectionSequ
     return 0;
 }
 
-LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceInInterval(const LALSimInspiralInjectionSequence *sequence, const LIGOTimeGPS *start, const LIGOTimeGPS *end)
+LALDictSequence * XLALSimInspiralInjectionSequenceInInterval(const LALDictSequence *injseq, const LIGOTimeGPS *start, const LIGOTimeGPS *end)
 {
-    LALSimInspiralInjectionSequence *new = NULL;
-    LALSimInspiralInjectionSequence *tmp;
+    LALDictSequence *new = NULL;
+    LALDictSequence *tmp;
     ssize_t i;
     int retval;
 
-    XLAL_CHECK_NULL(sequence, XLAL_EFAULT);
+    XLAL_CHECK_NULL(injseq, XLAL_EFAULT);
 
     /* copy sequence */
-    new = XLALSimInspiralCopyInjectionSequence(sequence);
+    new = XLALCopyDictSequence(injseq);
     XLAL_CHECK_NULL(new, XLAL_EFUNC);
 
     /* keep only injections where injection end time > start time */
@@ -634,7 +499,7 @@ LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceInInterval(con
     /* find index of first injection ending after start of interval */
     i = XLALSearchSorted(start, new->data, new->length, sizeof(*new->data), NULL, XLALSimInspiralParamsCompareEndTimeToGPSTime, +1);
     XLAL_CHECK_FAIL(i >= 0, XLAL_EFUNC);
-    tmp = XLALSimInspiralResizeInjectionSequence(new, i, new->length - i);
+    tmp = XLALResizeDictSequence(new, i, new->length - i);
     XLAL_CHECK_FAIL(tmp, XLAL_EFUNC);
     new = tmp;
 
@@ -645,7 +510,7 @@ LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceInInterval(con
     /* find index of last injection starting before end of interval */
     i = XLALSearchSorted(end, new->data, new->length, sizeof(*new->data), NULL, XLALSimInspiralParamsCompareStartTimeToGPSTime, -1);
     XLAL_CHECK_FAIL(i >= 0, XLAL_EFUNC);
-    tmp = XLALSimInspiralResizeInjectionSequence(new, 0, i);
+    tmp = XLALResizeDictSequence(new, 0, i);
     XLAL_CHECK_FAIL(tmp, XLAL_EFUNC);
     new = tmp;
 
@@ -653,32 +518,15 @@ LALSimInspiralInjectionSequence * XLALSimInspiralInjectionSequenceInInterval(con
     return new;
 
 XLAL_FAIL:
-    XLALSimInspiralDestroyInjectionSequence(new);
+    XLALDestroyDictSequence(new);
     return NULL;
 }
 
 int XLALSimInspiralInjectionTDWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries **hcross, LALDict *injparams, REAL8 deltaT)
 {
-    /* TODO: change to new waveform interface */
-
+    LALSimInspiralGenerator *generator = NULL;
     LALDict *wfmparams;
     Approximant approx;
-    REAL8 mass1;
-    REAL8 mass2;
-    REAL8 spin1x;
-    REAL8 spin1y;
-    REAL8 spin1z;
-    REAL8 spin2x;
-    REAL8 spin2y;
-    REAL8 spin2z;
-    REAL8 inclination;
-    REAL8 phi_ref;
-    REAL8 distance;
-    REAL8 f22_ref;
-    REAL8 f22_start;
-    REAL8 longAscNodes;
-    REAL8 eccentricity;
-    REAL8 meanPerAno;
     char *approximant;
     int err;
     int ret = XLAL_FAILURE;
@@ -704,53 +552,32 @@ int XLALSimInspiralInjectionTDWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries 
     err = XLALDictContains(wfmparams, "t_co_gps_add") ? XLALDictRemove(wfmparams, "t_co_gps_add"): 0;
     XLAL_CHECK(err == 0, XLAL_EFUNC);
 
-    /* pop required parameters */
-    mass1 = XLALDictPopREAL8Value(wfmparams, "mass1");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(mass1), XLAL_EFUNC);
-    mass2 = XLALDictPopREAL8Value(wfmparams, "mass2");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(mass2), XLAL_EFUNC);
-    spin1x = XLALDictPopREAL8Value(wfmparams, "spin1x");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(spin1x), XLAL_EFUNC);
-    spin1y = XLALDictPopREAL8Value(wfmparams, "spin1y");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(spin1y), XLAL_EFUNC);
-    spin1z = XLALDictPopREAL8Value(wfmparams, "spin1z");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(spin1z), XLAL_EFUNC);
-    spin2x = XLALDictPopREAL8Value(wfmparams, "spin2x");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(spin2x), XLAL_EFUNC);
-    spin2y = XLALDictPopREAL8Value(wfmparams, "spin2y");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(spin2y), XLAL_EFUNC);
-    spin2z = XLALDictPopREAL8Value(wfmparams, "spin2z");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(spin2z), XLAL_EFUNC);
-    distance = XLALDictPopREAL8Value(wfmparams, "distance");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(distance), XLAL_EFUNC);
-    inclination = XLALDictPopREAL8Value(wfmparams, "inclination");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(inclination), XLAL_EFUNC);
-    phi_ref = XLALDictPopREAL8Value(wfmparams, "phi_ref");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(phi_ref), XLAL_EFUNC);
-    f22_ref = XLALDictPopREAL8Value(wfmparams, "f22_ref");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(f22_ref), XLAL_EFUNC);
-    f22_start = XLALDictPopREAL8Value(wfmparams, "f22_start");
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(f22_start), XLAL_EFUNC);
+    /* pop approximant string and convert to Approximant */
     approximant = XLALDictPopStringValue(wfmparams, "approximant");
     XLAL_CHECK_FAIL(approximant, XLAL_EFUNC);
     approx = XLALSimInspiralGetApproximantFromString(approximant);
     LALFree(approximant);
 
-    /* pop optional parameters */
-    longAscNodes = XLALDictContains(wfmparams, "longAscNodes") ? XLALDictPopREAL8Value(wfmparams, "longAscNodes"): 0.0;
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(longAscNodes), XLAL_EFUNC);
-    eccentricity = XLALDictContains(wfmparams, "eccentricity") ? XLALDictPopREAL8Value(wfmparams, "eccentricity"): 0.0;
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(eccentricity), XLAL_EFUNC);
-    meanPerAno = XLALDictContains(wfmparams, "meanPerAno") ? XLALDictPopREAL8Value(wfmparams, "meanPerAno"): 0.0;
-    XLAL_CHECK_FAIL(!XLAL_IS_REAL8_FAIL_NAN(meanPerAno), XLAL_EFUNC);
-  
+    /* insert deltaT */
+    ret = XLALSimInspiralWaveformParamsInsertDeltaT(wfmparams, deltaT);
+    XLAL_CHECK_FAIL(!(ret < 0), XLAL_EFUNC);
+
+    /* create generator FIXME? allow parameters to be added here? */
+    generator = XLALSimInspiralChooseGenerator(approx, NULL);
+    XLAL_CHECK_FAIL(generator, XLAL_EFUNC);
+
+    /* add conditioning for approximant */
+    ret = XLALSimInspiralGeneratorAddConditioningForApproximant(generator, approx);
+    XLAL_CHECK_FAIL(!(ret < 0), XLAL_EFUNC);
+
     /* TODO translate ModeString into ModeArray */
 
     /* generate the waveform */
-    ret = XLALSimInspiralTD(hplus, hcross, mass1, mass2, spin1x, spin1y, spin1z, spin2x, spin2y, spin2z, distance, inclination, phi_ref, longAscNodes, eccentricity, meanPerAno, deltaT, f22_start, f22_ref, wfmparams, approx);
+    ret = XLALSimInspiralGenerateTDWaveform(hplus, hcross, wfmparams, generator);
     XLAL_CHECK_FAIL(!(ret < 0), XLAL_EFUNC);
 
 XLAL_FAIL:
+    XLALDestroySimInspiralGenerator(generator);
     XLALDestroyDict(wfmparams);
     return ret;
 }
