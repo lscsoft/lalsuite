@@ -27,6 +27,8 @@
 #include <lal/UserInput.h>
 #include <lal/LALPulsarVCSInfo.h>
 
+#include "fscanutils.h"
+
 
 int main(int argc, char **argv)
 {
@@ -100,29 +102,18 @@ int main(int argc, char **argv)
     printf("Looping over SFTs to compute coherence\n");
     for (UINT4 j = 0; j<catalog_a->length; j++)
     {
-        /* Extract one SFT at a time from the catalog
-	   we do this by using a catalog timeslice to get just the current SFT */
-	SFTCatalog XLAL_INIT_DECL(catalogSlice_a);
-	LIGOTimeGPS thisSFTstarttime = catalog_a->data[j].header.epoch;
-	LIGOTimeGPS thisSFTendtime = thisSFTstarttime;
-	XLAL_CHECK_MAIN( XLALGPSAdd(&thisSFTendtime, 0.01) != NULL, XLAL_EFUNC );
-	XLAL_CHECK_MAIN( XLALSFTCatalogTimeslice(&catalogSlice_a, catalog_a, &thisSFTstarttime, &thisSFTendtime) == XLAL_SUCCESS, XLAL_EFUNC );
-
-	SFTCatalog XLAL_INIT_DECL(catalogSlice_b);
-	XLAL_CHECK_MAIN( XLALSFTCatalogTimeslice(&catalogSlice_b, catalog_b, &thisSFTstarttime, &thisSFTendtime) == XLAL_SUCCESS, XLAL_EFUNC );
+        /* Extract one SFT at a time from the catalog */
+        fprintf(stderr,"Extracting SFT %d...\n", j);
+        XLAL_CHECK_MAIN( (sft_vect_a = extract_one_sft(catalog_a, catalog_a->data[j].header.epoch, f_min, f_max)) != NULL, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( sft_vect_a->length == 1, XLAL_EINVAL, "Extracted zero SFTs but should have extracted one" );
+        XLAL_CHECK_MAIN( (sft_vect_b = extract_one_sft(catalog_b, catalog_a->data[j].header.epoch, f_min, f_max)) != NULL, XLAL_EFUNC );
 
 	/* If no SFT from the B list was found, then just continue with the next SFT in the A list */
-	if (catalogSlice_b.length == 0) {
+	if (sft_vect_b->length == 0) {
 	    continue;
 	}
-	
-	fprintf(stderr,"Extracting SFT %d...\n", j);
-	XLAL_CHECK_MAIN( (sft_vect_a = XLALLoadSFTs(&catalogSlice_a, f_min, f_max)) != NULL, XLAL_EFUNC );
-	XLAL_CHECK_MAIN( sft_vect_a->length == 1, XLAL_EBADLEN, "Oops, got %d SFTs instead of one", sft_vect_a->length );
 
-	XLAL_CHECK_MAIN( (sft_vect_b = XLALLoadSFTs(&catalogSlice_b, f_min, f_max)) != NULL, XLAL_EFUNC );
-	XLAL_CHECK_MAIN( sft_vect_b->length == 1, XLAL_EBADLEN, "Oops, got %d SFTs instead of one", sft_vect_b->length );
-
+        /* Check time baseline of the SFTs to confirm they match */
 	XLAL_CHECK_MAIN( sft_vect_a->data[0].deltaF * timebaseline == 1.0, XLAL_EINVAL, "Time baseline of SFTs and the request do not match" );
 	XLAL_CHECK_MAIN( sft_vect_b->data[0].deltaF * timebaseline == 1.0, XLAL_EINVAL, "Time baseline of SFTs and the request do not match" );
 

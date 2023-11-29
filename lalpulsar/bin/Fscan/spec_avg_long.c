@@ -32,6 +32,8 @@
 #include <lal/UserInput.h>
 #include <lal/LALPulsarVCSInfo.h>
 
+#include "fscanutils.h"
+
 /*---------- DEFINES ----------*/
 #define POWER(x) (((REAL8)crealf(x)*(REAL8)crealf(x)) + ((REAL8)cimagf(x)*(REAL8)cimagf(x)))
 
@@ -42,7 +44,6 @@
 
 ///////////EXTRA FXN DEFS//////////////
 LIGOTimeGPSVector * setup_epochs(const SFTCatalog *catalog, const INT4 persistAvgOpt, const BOOLEAN persistAvgOptWasSet, const INT4 persistAvgSeconds);
-SFTVector * extract_one_sft(const SFTCatalog *full_catalog, const UINT4 sft_index, const REAL8 f_min, const REAL8 f_max);
 int set_sft_avg_epoch(struct tm *utc, LIGOTimeGPS *epoch_start, const LIGOTimeGPS first_sft_epoch, const INT4 persistAvgOpt, const BOOLEAN persistAvgOptWasSet);
 int validate_line_freq(LALStringVector **line_freq, const REAL8 f0, const REAL8 deltaF, const UINT4 numBins);
 REAL8Vector * line_freq_str2dbl(const LALStringVector *line_freq);
@@ -157,7 +158,8 @@ int main(int argc, char **argv)
 	//Extract one SFT at a time from the catalog
 	//we do this by using a catalog timeslice to get just the current SFT
 	SFTVector *sft_vect = NULL;
-	XLAL_CHECK_MAIN( (sft_vect = extract_one_sft(catalog, j, f_min, f_max)) != NULL, XLAL_EFUNC );
+	XLAL_CHECK_MAIN( (sft_vect = extract_one_sft(catalog, catalog->data[j].header.epoch, f_min, f_max)) != NULL, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( sft_vect->length == 1, XLAL_EINVAL, "Extracted zero SFTs but should have extracted one" );
 
 	//Make sure the SFTs are the same length as what we're expecting from user input
 	XLAL_CHECK_MAIN( fabs(timebaseline*sft_vect->data->deltaF - 1.0) <= 10.*LAL_REAL8_EPS, XLAL_EINVAL, "Expected SFTs with length %f but got %f", timebaseline, 1/sft_vect->data->deltaF );
@@ -504,32 +506,6 @@ int set_sft_avg_epoch(struct tm *utc, LIGOTimeGPS *epoch_start, const LIGOTimeGP
     XLAL_CHECK( (XLALGPSToUTC(utc, epoch_start->gpsSeconds)) != NULL, XLAL_EFUNC );
 
     return XLAL_SUCCESS;
-}
-
-
-/* Extract a single SFT from an SFTCatalog: the SFT indicated by sft_index with band f_min to f_max*/
-SFTVector * extract_one_sft(const SFTCatalog *full_catalog, const UINT4 sft_index, const REAL8 f_min, const REAL8 f_max)
-{
-    // Initialize an SFTCatalog
-    SFTCatalog XLAL_INIT_DECL(catalogSlice);
-
-    //Set start time
-    //Set end time just 0.01 seconds after the start time. This is sufficiently small to get just one SFT
-    LIGOTimeGPS thisSFTstarttime = full_catalog->data[sft_index].header.epoch;
-    LIGOTimeGPS thisSFTendtime = thisSFTstarttime;
-    XLAL_CHECK_NULL( XLALGPSAdd(&thisSFTendtime, 0.01) != NULL, XLAL_EFUNC );
-
-    // Get the catalog of the single SFT from the full catalog
-    XLAL_CHECK_NULL( XLALSFTCatalogTimeslice(&catalogSlice, full_catalog, &thisSFTstarttime, &thisSFTendtime) == XLAL_SUCCESS, XLAL_EFUNC );
-
-    //Extract the SFT
-    SFTVector *sft_vect = NULL;
-    XLAL_CHECK_NULL( (sft_vect = XLALLoadSFTs(&catalogSlice, f_min, f_max)) != NULL, XLAL_EFUNC );
-
-    //Check we got only one SFT; no more, no less
-    XLAL_CHECK_NULL( sft_vect->length == 1, XLAL_EBADLEN, "Oops, got %d SFTs instead of one", sft_vect->length );
-
-    return sft_vect;
 }
 
 
