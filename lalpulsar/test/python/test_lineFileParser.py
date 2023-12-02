@@ -207,21 +207,11 @@ def test_concatenation(
     )
 
     assert_allclose(
-        np.hstack(
-            [
-                identified_lines["left_side"],
-                unidentified_lines["left_side"],
-            ]
-        ),
+        np.hstack([identified_lines["left_side"], unidentified_lines["left_side"]]),
         line_parser.lines_left_side,
     )
     assert_allclose(
-        np.hstack(
-            [
-                identified_lines["right_side"],
-                unidentified_lines["right_side"],
-            ]
-        ),
+        np.hstack([identified_lines["right_side"], unidentified_lines["right_side"]]),
         line_parser.lines_right_side,
     )
 

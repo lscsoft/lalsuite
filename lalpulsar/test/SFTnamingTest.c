@@ -27,9 +27,10 @@
 
 #include <lal/SFTfileIO.h>
 
-int main(void) {
+int main( void )
+{
 
-  const char* SFT_filenames[] = {
+  const char *SFT_filenames[] = {
     // A 30-minute private H2 SFT
     "/path/to/H-1_H2_1800SFT-735627918-1800.sft",
     // A 30-minute private L1 SFT with the description "S2"
@@ -73,68 +74,102 @@ int main(void) {
     // A 60-second private GEO SFT with the description "S3hot"
     { .numSFTs = 1, .detector = "G1", .SFTtimebase = 60, .privMisc = "S3hot", .gpsStart = 732465218, .SFTspan = 60 },
     // 5 public broad-band H1 SFTs from the O2 observing run; revision 1 of the public SFTs were created from the H1:DCH-CLEAN_STRAIN_C02 channel, Tukey-windowed with parameter = 0.001
-    { .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 1800,
-      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02" },
-    { .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257801800, .SFTspan = 1800,
-      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02" },
-    { .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257803600, .SFTspan = 1800,
-      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02" },
-    { .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257805400, .SFTspan = 1800,
-      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02" },
-    { .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257807200, .SFTspan = 1800,
-      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02" },
+    {
+      .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 1800,
+      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02"
+    },
+    {
+      .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257801800, .SFTspan = 1800,
+      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02"
+    },
+    {
+      .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257803600, .SFTspan = 1800,
+      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02"
+    },
+    {
+      .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257805400, .SFTspan = 1800,
+      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02"
+    },
+    {
+      .numSFTs = 1, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257807200, .SFTspan = 1800,
+      .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02"
+    },
     // The equivalent narrow-band SFTs over the frequency range 10–95 Hz, each SFT containing 8 Hz of data except the last SFT which contains 5 Hz of data
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 10, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 10, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 18, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 18, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 26, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 26, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 34, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 34, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 42, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 42, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 50, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 50, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 58, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 58, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 66, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 66, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 74, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 74, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 82, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
-    { .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
+      .nbFirstBinFreq = 82, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
+    {
+      .numSFTs = 5, .detector = "H1", .SFTtimebase = 1800, .window_type = "tukey", .window_param = 0.001, .gpsStart = 1257800000, .SFTspan = 9000,
       .pubObsRun = 2, .pubObsKind = "RUN", .pubRevision = 1, .pubChannel = "H1:DCH-CLEAN_STRAIN_C02",
-      .nbFirstBinFreq = 90, .nbFirstBinRem = 0, .nbBinWidthFreq = 5, .nbBinWidthRem = 900 },
+      .nbFirstBinFreq = 90, .nbFirstBinRem = 0, .nbBinWidthFreq = 5, .nbBinWidthRem = 900
+    },
     // Old style SFT names from before the naming convention in the v3 SFT specification
     { .numSFTs = 1, .detector = "L1", .SFTtimebase = 1800, .privMisc = "oldstyleSFTname", .gpsStart = 1238239230, .SFTspan = 1800 },
-    { .numSFTs = 1, .detector = "L1", .SFTtimebase = 1800, .privMisc = "oldstyleSFTname", .gpsStart = 1238239230, .SFTspan = 1800,
-      .nbFirstBinFreq = 10, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0 },
+    {
+      .numSFTs = 1, .detector = "L1", .SFTtimebase = 1800, .privMisc = "oldstyleSFTname", .gpsStart = 1238239230, .SFTspan = 1800,
+      .nbFirstBinFreq = 10, .nbFirstBinRem = 0, .nbBinWidthFreq = 8, .nbBinWidthRem = 0
+    },
   };
 
-  for (size_t i = 0; i < XLAL_NUM_ELEM(SFT_spec); ++i) {
-    if (strcmp(SFT_spec[i].privMisc, "oldstyleSFTname") != 0) {
-      char *fname = XLALBuildSFTFilenameFromSpec(&SFT_spec[i]);
+  for ( size_t i = 0; i < XLAL_NUM_ELEM( SFT_spec ); ++i ) {
+    if ( strcmp( SFT_spec[i].privMisc, "oldstyleSFTname" ) != 0 ) {
+      char *fname = XLALBuildSFTFilenameFromSpec( &SFT_spec[i] );
       XLAL_CHECK_MAIN( fname != NULL, XLAL_EFUNC );
       XLAL_CHECK_MAIN( strcmp( fname, SFT_filenames[i] ) == 0, XLAL_EFAILED, "SFT filename '%s' should be '%s'", fname, SFT_filenames[i] );
       XLALFree( fname );
     }
   }
 
-  for (size_t i = 0; i < XLAL_NUM_ELEM(SFT_spec); ++i) {
+  for ( size_t i = 0; i < XLAL_NUM_ELEM( SFT_spec ); ++i ) {
     SFTFilenameSpec spec;
-    XLAL_CHECK_MAIN( XLALParseSFTFilenameIntoSpec(&spec, SFT_filenames[i]) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALParseSFTFilenameIntoSpec( &spec, SFT_filenames[i] ) == XLAL_SUCCESS, XLAL_EFUNC );
     XLAL_CHECK_MAIN( strcmp( spec.path, SFT_spec[i].path ) == 0, XLAL_EFAILED, "path '%s' should be '%s'", spec.path, SFT_spec[i].path );
     XLAL_CHECK_MAIN( spec.numSFTs == SFT_spec[i].numSFTs, XLAL_EFAILED, "numSFTs '%d' should be '%d'", spec.numSFTs, SFT_spec[i].numSFTs );
     XLAL_CHECK_MAIN( strcmp( spec.detector, SFT_spec[i].detector ) == 0, XLAL_EFAILED, "detector '%s' should be '%s'", spec.detector, SFT_spec[i].detector );
@@ -147,7 +182,7 @@ int main(void) {
     XLAL_CHECK_MAIN( spec.pubObsRun == SFT_spec[i].pubObsRun, XLAL_EFAILED, "pubObsRun '%d' should be '%d'", spec.pubObsRun, SFT_spec[i].pubObsRun );
     XLAL_CHECK_MAIN( strcmp( spec.pubObsKind, SFT_spec[i].pubObsKind ) == 0, XLAL_EFAILED, "pubObsKind '%s' should be '%s'", spec.pubObsKind, SFT_spec[i].pubObsKind );
     XLAL_CHECK_MAIN( spec.pubRevision == SFT_spec[i].pubRevision, XLAL_EFAILED, "pubRevision '%d' should be '%d'", spec.pubRevision, SFT_spec[i].pubRevision );
-    if (strlen(spec.pubChannel) > 0) {
+    if ( strlen( spec.pubChannel ) > 0 ) {
       const char *SFT_spec_pubChannel_stripped = "DCHCLEANSTRAINC02";
       XLAL_CHECK_MAIN( strcmp( spec.pubChannel, SFT_spec_pubChannel_stripped ) == 0, XLAL_EFAILED, "pubChannel '%s' should be '%s'", spec.pubChannel, SFT_spec_pubChannel_stripped );
     }

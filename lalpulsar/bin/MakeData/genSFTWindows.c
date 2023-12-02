@@ -41,7 +41,8 @@ int WindowData( REAL8 r );
 int WindowDataTukey2( void );
 int WindowDataHann( void );
 
-int main(void) {
+int main( void )
+{
 
   const size_t NWINDOWS = 4;
   const size_t WINDOWLENGTH = 256 * 1800;
@@ -51,12 +52,12 @@ int main(void) {
 
   // allocate memory
   char windownames[NWINDOWS][1024];
-  REAL8Vector* windows[NWINDOWS];
+  REAL8Vector *windows[NWINDOWS];
   REAL8 winrms[NWINDOWS];
-  for (size_t i = 0; i < NWINDOWS; ++i) {
-    windows[i] = XLALCreateREAL8Vector(WINDOWLENGTH);
-    XLAL_CHECK_MAIN(windows[i] != NULL, XLAL_ENOMEM);
-    for (size_t j = 0; j < WINDOWLENGTH; ++j) {
+  for ( size_t i = 0; i < NWINDOWS; ++i ) {
+    windows[i] = XLALCreateREAL8Vector( WINDOWLENGTH );
+    XLAL_CHECK_MAIN( windows[i] != NULL, XLAL_ENOMEM );
+    for ( size_t j = 0; j < WINDOWLENGTH; ++j ) {
       windows[i]->data[j] = 1.0;
     }
   }
@@ -64,16 +65,16 @@ int main(void) {
   size_t w = 0;
 
   {
-    snprintf(windownames[w], sizeof(windownames[w]), "lalpulsar_MakeSFTs Matlab style Tukey window [windowR=%g]", windowR);
+    snprintf( windownames[w], sizeof( windownames[w] ), "lalpulsar_MakeSFTs Matlab style Tukey window [windowR=%g]", windowR );
     dataDouble.data = windows[w];
-    WindowData(windowR);
+    WindowData( windowR );
     winrms[w] = winFncRMS;
   }
 
   ++w;
 
   {
-    snprintf(windownames[w], sizeof(windownames[w]), "lalpulsar_MakeSFTs Hann window");
+    snprintf( windownames[w], sizeof( windownames[w] ), "lalpulsar_MakeSFTs Hann window" );
     dataDouble.data = windows[w];
     WindowDataHann();
     winrms[w] = winFncRMS;
@@ -83,47 +84,47 @@ int main(void) {
 
   {
     REAL8 param = windowR;
-    REAL8Window *win = XLALCreateTukeyREAL8Window(WINDOWLENGTH, param);
-    XLAL_CHECK_MAIN(win != NULL, XLAL_EFUNC);
-    snprintf(windownames[w], sizeof(windownames[w]), "XLALCreateTukeyREAL8Window(param=%g)", param);
-    for (size_t j = 0; j < WINDOWLENGTH; ++j) {
+    REAL8Window *win = XLALCreateTukeyREAL8Window( WINDOWLENGTH, param );
+    XLAL_CHECK_MAIN( win != NULL, XLAL_EFUNC );
+    snprintf( windownames[w], sizeof( windownames[w] ), "XLALCreateTukeyREAL8Window(param=%g)", param );
+    for ( size_t j = 0; j < WINDOWLENGTH; ++j ) {
       windows[w]->data[j] *= win->data->data[j];
     }
-    winrms[w] = sqrt(win->sumofsquares / win->data->length);
-    XLALDestroyREAL8Window(win);
+    winrms[w] = sqrt( win->sumofsquares / win->data->length );
+    XLALDestroyREAL8Window( win );
   }
 
   ++w;
 
   {
-    REAL8Window *win = XLALCreateHannREAL8Window(WINDOWLENGTH);
-    XLAL_CHECK_MAIN(win != NULL, XLAL_EFUNC);
-    snprintf(windownames[w], sizeof(windownames[w]), "XLALCreateHannREAL8Window()");
-    for (size_t j = 0; j < WINDOWLENGTH; ++j) {
+    REAL8Window *win = XLALCreateHannREAL8Window( WINDOWLENGTH );
+    XLAL_CHECK_MAIN( win != NULL, XLAL_EFUNC );
+    snprintf( windownames[w], sizeof( windownames[w] ), "XLALCreateHannREAL8Window()" );
+    for ( size_t j = 0; j < WINDOWLENGTH; ++j ) {
       windows[w]->data[j] *= win->data->data[j];
     }
-    winrms[w] = sqrt(win->sumofsquares / win->data->length);
-    XLALDestroyREAL8Window(win);
+    winrms[w] = sqrt( win->sumofsquares / win->data->length );
+    XLALDestroyREAL8Window( win );
   }
 
-  XLAL_CHECK_MAIN(w + 1 == NWINDOWS, XLAL_EFAILED);
+  XLAL_CHECK_MAIN( w + 1 == NWINDOWS, XLAL_EFAILED );
 
   // output windows
-  for (size_t i = 0; i < NWINDOWS; ++i) {
-    printf("%s%c", windownames[i], i + 1 < NWINDOWS ? ',' : '\n');
+  for ( size_t i = 0; i < NWINDOWS; ++i ) {
+    printf( "%s%c", windownames[i], i + 1 < NWINDOWS ? ',' : '\n' );
   }
-  for (size_t i = 0; i < NWINDOWS; ++i) {
-    printf("%0.8f%c", winrms[i], i + 1 < NWINDOWS ? ',' : '\n');
+  for ( size_t i = 0; i < NWINDOWS; ++i ) {
+    printf( "%0.8f%c", winrms[i], i + 1 < NWINDOWS ? ',' : '\n' );
   }
-  for (size_t j = 0; j < WINDOWLENGTH; ++j) {
-    for (size_t i = 0; i < NWINDOWS; ++i) {
-      printf("%0.8f%c", windows[i]->data[j], i + 1 < NWINDOWS ? ',' : '\n');
+  for ( size_t j = 0; j < WINDOWLENGTH; ++j ) {
+    for ( size_t i = 0; i < NWINDOWS; ++i ) {
+      printf( "%0.8f%c", windows[i]->data[j], i + 1 < NWINDOWS ? ',' : '\n' );
     }
   }
 
   // cleanup
-  for (size_t i = 0; i < NWINDOWS; ++i) {
-    XLALDestroyREAL8Vector(windows[i]);
+  for ( size_t i = 0; i < NWINDOWS; ++i ) {
+    XLALDestroyREAL8Vector( windows[i] );
   }
   LALCheckMemoryLeaks();
 

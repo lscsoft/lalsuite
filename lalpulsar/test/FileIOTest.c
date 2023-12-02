@@ -28,57 +28,57 @@
 // some basic consistency checks of the (XLAL) FileIO and Configfile module
 
 int
-main(int argc, char *argv[])
+main( int argc, char *argv[] )
 {
-  XLAL_CHECK ( argc == 1, XLAL_EINVAL, "No input arguments allowed.\n" );
-  XLAL_CHECK ( argv != NULL, XLAL_EINVAL );
+  XLAL_CHECK( argc == 1, XLAL_EINVAL, "No input arguments allowed.\n" );
+  XLAL_CHECK( argv != NULL, XLAL_EINVAL );
 
   char testFilePath[] = TEST_PKG_DATA_DIR "earth00-40-DE405.dat.gz";
 
- // read gzipped ephemeris file once with XLALCHARReadSequence() and once with XLALFileLoad()
+// read gzipped ephemeris file once with XLALCHARReadSequence() and once with XLALFileLoad()
   CHARSequence *sequence = NULL;
   char *data = NULL;
   REAL8 tic;
   // ----- 1. XLALCHARReadSequence() -----
   FILE *fp0;
   tic = XLALGetTimeOfDay();
-  XLAL_CHECK ( (fp0 = fopen ( testFilePath, "rb" )) != NULL, XLAL_EIO, "Failed to fopen('%s', 'rb')\n", testFilePath );
-  XLAL_CHECK ( XLALCHARReadSequence( &sequence, fp0 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  fclose ( fp0 );
+  XLAL_CHECK( ( fp0 = fopen( testFilePath, "rb" ) ) != NULL, XLAL_EIO, "Failed to fopen('%s', 'rb')\n", testFilePath );
+  XLAL_CHECK( XLALCHARReadSequence( &sequence, fp0 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  fclose( fp0 );
   REAL8 time_CHARReadSequence = XLALGetTimeOfDay() - tic;
 
   // ----- 2. XLALFileLoad() -----
   tic = XLALGetTimeOfDay();
-  XLAL_CHECK ( (data = XLALFileLoad ( testFilePath )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK( ( data = XLALFileLoad( testFilePath ) ) != NULL, XLAL_EFUNC );
   REAL8 time_FileLoad = XLALGetTimeOfDay() - tic;
 
   // and compare them against each other
-  XLAL_CHECK ( strcmp ( data, sequence->data ) == 0, XLAL_EFAILED, "Strings read by XLALCHARReadSequence() and XLALFileLoadData() differ!\n" );
+  XLAL_CHECK( strcmp( data, sequence->data ) == 0, XLAL_EFAILED, "Strings read by XLALCHARReadSequence() and XLALFileLoadData() differ!\n" );
 
   // time XLALCreateTokenList()
   TokenList *tokens = NULL;
   tic = XLALGetTimeOfDay();
-  XLAL_CHECK ( XLALCreateTokenList ( &tokens, data, "\n") == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALCreateTokenList( &tokens, data, "\n" ) == XLAL_SUCCESS, XLAL_EFUNC );
   REAL8 time_CreateTokenList = XLALGetTimeOfDay() - tic;
 
   // time ParseDatafileContent() [ = 'cleanConfig()' + 'XLALCreateTokenList()' ]
   LALParsedDataFile *content = NULL;
   tic = XLALGetTimeOfDay();
-  XLAL_CHECK ( XLALParseDataFileContent ( &content, data ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseDataFileContent( &content, data ) == XLAL_SUCCESS, XLAL_EFUNC );
   REAL8 time_ParseDataFileContent = XLALGetTimeOfDay() - tic;
 
   // output results
-  XLALPrintInfo ( "'earth00-40-DE405.dat.gz' read and uncompressed by XLALCHARReadSequence() and XLALFileLoadData() is identical!\n" );
-  XLALPrintInfo ( "time XLALCHARReadSequence():     %f s\n", time_CHARReadSequence );
-  XLALPrintInfo ( "time XLALFileLoad():             %f s\n", time_FileLoad );
-  XLALPrintInfo ( "time XLALCreateTokenList():      %f s\n", time_CreateTokenList );
-  XLALPrintInfo ( "time XLALParseDataFileContent(): %f s\n", time_ParseDataFileContent );
+  XLALPrintInfo( "'earth00-40-DE405.dat.gz' read and uncompressed by XLALCHARReadSequence() and XLALFileLoadData() is identical!\n" );
+  XLALPrintInfo( "time XLALCHARReadSequence():     %f s\n", time_CHARReadSequence );
+  XLALPrintInfo( "time XLALFileLoad():             %f s\n", time_FileLoad );
+  XLALPrintInfo( "time XLALCreateTokenList():      %f s\n", time_CreateTokenList );
+  XLALPrintInfo( "time XLALParseDataFileContent(): %f s\n", time_ParseDataFileContent );
 
   // free remaining memory
-  XLALFree ( data );
-  XLALDestroyCHARVector ( sequence );
-  XLALDestroyTokenList ( tokens );
-  XLALDestroyParsedDataFile ( content );
+  XLALFree( data );
+  XLALDestroyCHARVector( sequence );
+  XLALDestroyTokenList( tokens );
+  XLALDestroyParsedDataFile( content );
 
   LALCheckMemoryLeaks();
 

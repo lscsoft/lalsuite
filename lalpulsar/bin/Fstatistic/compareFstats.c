@@ -48,59 +48,58 @@ typedef struct {
 } FstatLine_t;
 
 /* User variables */
-typedef struct
-{
+typedef struct {
   CHAR *Fname1;
   CHAR *Fname2;
 
-  REAL8 tol_param;	// tolerance on relative error between parameter values
-  REAL8 tol_L1;		// tolerance on relative error between vectors using L1 norm
-  REAL8 tol_L2;		// tolerance on relative error between vectors using L2 norm
-  REAL8 tol_angle;	// tolerance on angle between the two vectors, in radians
-  REAL8 tol_atMax;	// tolerance on single-sample relative error *at* respective maximum
+  REAL8 tol_param;      // tolerance on relative error between parameter values
+  REAL8 tol_L1;         // tolerance on relative error between vectors using L1 norm
+  REAL8 tol_L2;         // tolerance on relative error between vectors using L2 norm
+  REAL8 tol_angle;      // tolerance on angle between the two vectors, in radians
+  REAL8 tol_atMax;      // tolerance on single-sample relative error *at* respective maximum
 
 } UserVariables_t;
 
 /* ---------- local prototypes ---------- */
-int XLALinitUserVars ( UserVariables_t *uvar );
-int XLALcompareFstatFiles ( const LALParsedDataFile *f1, const LALParsedDataFile *f2, REAL8 tol_param, VectorComparison tol );
-int XLALParseFstatLine ( FstatLine_t *FstatLine, const CHAR *line );
-REAL8 relError ( REAL8 x, REAL8 y );
+int XLALinitUserVars( UserVariables_t *uvar );
+int XLALcompareFstatFiles( const LALParsedDataFile *f1, const LALParsedDataFile *f2, REAL8 tol_param, VectorComparison tol );
+int XLALParseFstatLine( FstatLine_t *FstatLine, const CHAR *line );
+REAL8 relError( REAL8 x, REAL8 y );
 
 /*----------------------------------------------------------------------
  * main function
  *----------------------------------------------------------------------*/
 int
-main (int argc, char *argv[] )
+main( int argc, char *argv[] )
 {
   /* register all user-variables */
-  UserVariables_t XLAL_INIT_DECL(uvar);
-  XLAL_CHECK ( XLALinitUserVars ( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
+  UserVariables_t XLAL_INIT_DECL( uvar );
+  XLAL_CHECK( XLALinitUserVars( &uvar ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read cmdline & cfgfile  */
   BOOLEAN should_exit = 0;
   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
   if ( should_exit ) {
-    exit (1);
+    exit( 1 );
   }
 
   /* read in the two Fstats-files (we use XLALParseDataFile() for that purpose) */
   LALParsedDataFile *Fstats1 = NULL, *Fstats2 = NULL;
-  XLAL_CHECK ( XLALParseDataFile ( &Fstats1, uvar.Fname1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALParseDataFile ( &Fstats2, uvar.Fname2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseDataFile( &Fstats1, uvar.Fname1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseDataFile( &Fstats2, uvar.Fname2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  VectorComparison XLAL_INIT_DECL(tol);
-  tol.relErr_L1 	= uvar.tol_L1;
-  tol.relErr_L2		= uvar.tol_L2;
-  tol.angleV 		= uvar.tol_angle;
-  tol.relErr_atMaxAbsx 	= uvar.tol_atMax;
+  VectorComparison XLAL_INIT_DECL( tol );
+  tol.relErr_L1         = uvar.tol_L1;
+  tol.relErr_L2         = uvar.tol_L2;
+  tol.angleV            = uvar.tol_angle;
+  tol.relErr_atMaxAbsx  = uvar.tol_atMax;
   tol.relErr_atMaxAbsy  = uvar.tol_atMax;
 
-  XLAL_CHECK ( XLALcompareFstatFiles ( Fstats1, Fstats2, uvar.tol_param, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALcompareFstatFiles( Fstats1, Fstats2, uvar.tol_param, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLALDestroyParsedDataFile ( Fstats1 );
-  XLALDestroyParsedDataFile ( Fstats2 );
-  XLALDestroyUserVars ();
+  XLALDestroyParsedDataFile( Fstats1 );
+  XLALDestroyParsedDataFile( Fstats2 );
+  XLALDestroyUserVars();
 
   LALCheckMemoryLeaks();
 
@@ -111,24 +110,24 @@ main (int argc, char *argv[] )
 
 /* register all our "user-variables" */
 int
-XLALinitUserVars ( UserVariables_t *uvar )
+XLALinitUserVars( UserVariables_t *uvar )
 {
-  XLAL_CHECK ( uvar != NULL, XLAL_EINVAL );
+  XLAL_CHECK( uvar != NULL, XLAL_EINVAL );
 
-  uvar->tol_param	= 100.0 * LAL_REAL4_EPS;
-  uvar->tol_L1 		= 5.5e-2;
-  uvar->tol_L2 		= 4.5e-2;
-  uvar->tol_angle	= 0.04;  // rad
-  uvar->tol_atMax 	= 5e-2;
+  uvar->tol_param       = 100.0 * LAL_REAL4_EPS;
+  uvar->tol_L1          = 5.5e-2;
+  uvar->tol_L2          = 4.5e-2;
+  uvar->tol_angle       = 0.04;  // rad
+  uvar->tol_atMax       = 5e-2;
 
   /* now register all user-variables */
-  XLALRegisterUvarMember( Fname1,	STRING, '1', REQUIRED, "Path and basefilename for first Fstats file");
-  XLALRegisterUvarMember( Fname2,	STRING, '2', REQUIRED, "Path and basefilename for second Fstats file");
-  XLALRegisterUvarMember(   tol_param,	REAL8, 0, OPTIONAL, "tolerance on relative error between parameter values");
-  XLALRegisterUvarMember(   tol_L1,   	REAL8, 0, OPTIONAL, "tolerance on relative error between vectors using L1 norm, between [0,2]");
-  XLALRegisterUvarMember(   tol_L2,   	REAL8, 0, OPTIONAL, "tolerance on relative error between vectors using L2 norm, between [0,2]");
-  XLALRegisterUvarMember(   tol_angle, 	REAL8, 0, OPTIONAL, "tolerance on angle between the two vectors in radians, between [0,pi]");
-  XLALRegisterUvarMember(   tol_atMax, 	REAL8, 0, OPTIONAL, "tolerance on single-sample relative error *at* respective maximum, between [0,2]");
+  XLALRegisterUvarMember( Fname1,       STRING, '1', REQUIRED, "Path and basefilename for first Fstats file" );
+  XLALRegisterUvarMember( Fname2,       STRING, '2', REQUIRED, "Path and basefilename for second Fstats file" );
+  XLALRegisterUvarMember( tol_param,  REAL8, 0, OPTIONAL, "tolerance on relative error between parameter values" );
+  XLALRegisterUvarMember( tol_L1,     REAL8, 0, OPTIONAL, "tolerance on relative error between vectors using L1 norm, between [0,2]" );
+  XLALRegisterUvarMember( tol_L2,     REAL8, 0, OPTIONAL, "tolerance on relative error between vectors using L2 norm, between [0,2]" );
+  XLALRegisterUvarMember( tol_angle,  REAL8, 0, OPTIONAL, "tolerance on angle between the two vectors in radians, between [0,pi]" );
+  XLALRegisterUvarMember( tol_atMax,  REAL8, 0, OPTIONAL, "tolerance on single-sample relative error *at* respective maximum, between [0,2]" );
 
   return XLAL_SUCCESS;
 
@@ -138,62 +137,61 @@ XLALinitUserVars ( UserVariables_t *uvar )
  * comparison specific to pure Fstat-output files (5 entries )
  */
 int
-XLALcompareFstatFiles ( const LALParsedDataFile *f1, const LALParsedDataFile *f2, REAL8 tol_param, VectorComparison tol )
+XLALcompareFstatFiles( const LALParsedDataFile *f1, const LALParsedDataFile *f2, REAL8 tol_param, VectorComparison tol )
 {
-  XLAL_CHECK ( (f1 != NULL) && ( f2 != NULL ), XLAL_EINVAL );
+  XLAL_CHECK( ( f1 != NULL ) && ( f2 != NULL ), XLAL_EINVAL );
 
-  FstatLine_t XLAL_INIT_DECL(parsed1);
-  FstatLine_t XLAL_INIT_DECL(parsed2);
+  FstatLine_t XLAL_INIT_DECL( parsed1 );
+  FstatLine_t XLAL_INIT_DECL( parsed2 );
 
-  XLAL_CHECK ( f1->lines->nTokens == f2->lines->nTokens, XLAL_ETOL, "Different number of lines: %d != %d\n", f1->lines->nTokens, f2->lines->nTokens );
+  XLAL_CHECK( f1->lines->nTokens == f2->lines->nTokens, XLAL_ETOL, "Different number of lines: %d != %d\n", f1->lines->nTokens, f2->lines->nTokens );
   UINT4 nlines = f1->lines->nTokens;
 
   REAL4Vector *twoF1, *twoF2;
-  XLAL_CHECK ( (twoF1 = XLALCreateREAL4Vector ( nlines )) != NULL, XLAL_EFUNC );
-  XLAL_CHECK ( (twoF2 = XLALCreateREAL4Vector ( nlines )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK( ( twoF1 = XLALCreateREAL4Vector( nlines ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK( ( twoF2 = XLALCreateREAL4Vector( nlines ) ) != NULL, XLAL_EFUNC );
 
-  for (UINT4 i=0; i < nlines ; i++)
-    {
-      const char *line1 = f1->lines->tokens[i];
-      const char *line2 = f2->lines->tokens[i];
+  for ( UINT4 i = 0; i < nlines ; i++ ) {
+    const char *line1 = f1->lines->tokens[i];
+    const char *line2 = f2->lines->tokens[i];
 
-      /* read pure Fstats files */
-      XLAL_CHECK ( XLALParseFstatLine ( &parsed1, line1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-      XLAL_CHECK ( XLALParseFstatLine ( &parsed2, line2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    /* read pure Fstats files */
+    XLAL_CHECK( XLALParseFstatLine( &parsed1, line1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK( XLALParseFstatLine( &parsed2, line2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-      /* compare all template parameters */
-      REAL8 relErr;
-      if ( (relErr = relError( parsed1.Freq, parsed2.Freq)) > tol_param ) {
-	  XLAL_ERROR (XLAL_ETOL, "Relative frequency-error %g exceeds %g in line %d\n", relErr, tol_param, i+1);
-      }
-      if ( (relErr = relError( parsed1.Alpha, parsed2.Alpha)) > tol_param ) {
-        XLAL_ERROR (XLAL_ETOL, "Relative error %g in alpha exceeds %g in line %d\n", relErr, tol_param, i+1);
-      }
-      if ( (relErr = relError( parsed1.Delta, parsed2.Delta)) > tol_param ) {
-        XLAL_ERROR (XLAL_ETOL, "Relative error %g in delta exceeds %g in line %d\n", relErr, tol_param, i+1);
-      }
-      if ( (relErr = relError( parsed1.f1dot, parsed2.f1dot)) > tol_param ) {
-        XLAL_ERROR (XLAL_ETOL, "Relative error %g in f1dot exceeds %g in line %d\n", relErr, tol_param, i+1);
-      }
-      if ( (relErr = relError( parsed1.f2dot, parsed2.f2dot)) > tol_param ) {
-        XLAL_ERROR (XLAL_ETOL, "Relative error %g in f2dot exceeds %g in line %d\n", relErr, tol_param, i+1);
-      }
-      if ( (relErr = relError( parsed1.f3dot, parsed2.f3dot)) > tol_param ) {
-        XLAL_ERROR (XLAL_ETOL, "Relative error %g in f3dot exceeds %g in line %d\n", relErr, tol_param, i+1);
-      }
+    /* compare all template parameters */
+    REAL8 relErr;
+    if ( ( relErr = relError( parsed1.Freq, parsed2.Freq ) ) > tol_param ) {
+      XLAL_ERROR( XLAL_ETOL, "Relative frequency-error %g exceeds %g in line %d\n", relErr, tol_param, i + 1 );
+    }
+    if ( ( relErr = relError( parsed1.Alpha, parsed2.Alpha ) ) > tol_param ) {
+      XLAL_ERROR( XLAL_ETOL, "Relative error %g in alpha exceeds %g in line %d\n", relErr, tol_param, i + 1 );
+    }
+    if ( ( relErr = relError( parsed1.Delta, parsed2.Delta ) ) > tol_param ) {
+      XLAL_ERROR( XLAL_ETOL, "Relative error %g in delta exceeds %g in line %d\n", relErr, tol_param, i + 1 );
+    }
+    if ( ( relErr = relError( parsed1.f1dot, parsed2.f1dot ) ) > tol_param ) {
+      XLAL_ERROR( XLAL_ETOL, "Relative error %g in f1dot exceeds %g in line %d\n", relErr, tol_param, i + 1 );
+    }
+    if ( ( relErr = relError( parsed1.f2dot, parsed2.f2dot ) ) > tol_param ) {
+      XLAL_ERROR( XLAL_ETOL, "Relative error %g in f2dot exceeds %g in line %d\n", relErr, tol_param, i + 1 );
+    }
+    if ( ( relErr = relError( parsed1.f3dot, parsed2.f3dot ) ) > tol_param ) {
+      XLAL_ERROR( XLAL_ETOL, "Relative error %g in f3dot exceeds %g in line %d\n", relErr, tol_param, i + 1 );
+    }
 
-      // and store respective 2F values in vectors for comparison
-      twoF1->data[i] = (REAL4)parsed1.TwoF;
-      twoF2->data[i] = (REAL4)parsed2.TwoF;
+    // and store respective 2F values in vectors for comparison
+    twoF1->data[i] = ( REAL4 )parsed1.TwoF;
+    twoF2->data[i] = ( REAL4 )parsed2.TwoF;
 
-    } /* for i < nlines */
+  } /* for i < nlines */
 
   // ----- finally vector-compare 2F values against given tolerances ----------
-  VectorComparison XLAL_INIT_DECL(cmp);
-  XLAL_CHECK ( XLALCompareREAL4Vectors ( &cmp, twoF1, twoF2, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+  VectorComparison XLAL_INIT_DECL( cmp );
+  XLAL_CHECK( XLALCompareREAL4Vectors( &cmp, twoF1, twoF2, &tol ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLALDestroyREAL4Vector ( twoF1 );
-  XLALDestroyREAL4Vector ( twoF2 );
+  XLALDestroyREAL4Vector( twoF1 );
+  XLALDestroyREAL4Vector( twoF2 );
 
   return XLAL_SUCCESS;
 
@@ -207,16 +205,16 @@ XLALcompareFstatFiles ( const LALParsedDataFile *f1, const LALParsedDataFile *f2
  *
  */
 int
-XLALParseFstatLine ( FstatLine_t *FstatLine, const CHAR *line )
+XLALParseFstatLine( FstatLine_t *FstatLine, const CHAR *line )
 {
-  XLAL_CHECK ( (line != NULL) && (FstatLine != NULL), XLAL_EINVAL );
+  XLAL_CHECK( ( line != NULL ) && ( FstatLine != NULL ), XLAL_EINVAL );
 
 
   REAL8 e[7];
-  int ret = sscanf ( line, "%lf %lf %lf %lf %lf %lf %lf",
-                     &e[0], &e[1], &e[2], &e[3], &e[4], &e[5], &e[6] );
+  int ret = sscanf( line, "%lf %lf %lf %lf %lf %lf %lf",
+                    &e[0], &e[1], &e[2], &e[3], &e[4], &e[5], &e[6] );
 
-  XLAL_CHECK ( ret >= 5, XLAL_EDATA, "Failed to parse Fstat-line (less than 5 entries):\n'%s'\n", line );
+  XLAL_CHECK( ret >= 5, XLAL_EDATA, "Failed to parse Fstat-line (less than 5 entries):\n'%s'\n", line );
 
   FstatLine->Freq  = e[0];
   FstatLine->Alpha = e[1];
@@ -224,38 +222,37 @@ XLALParseFstatLine ( FstatLine_t *FstatLine, const CHAR *line )
   FstatLine->f1dot = e[3];
 
 
-  switch ( ret )
-    {
-    case 5:
-      FstatLine->TwoF = e[4];
-      FstatLine->f2dot = 0;
-      FstatLine->f3dot = 0;
-      break;
-    case 6:
-      FstatLine->f2dot = e[4];
-      FstatLine->TwoF  = e[5];
-      FstatLine->f3dot = 0;
-      break;
-    case 7:
-      FstatLine->f2dot = e[4];
-      FstatLine->f3dot = e[5];
-      FstatLine->TwoF  = e[6];
-      break;
+  switch ( ret ) {
+  case 5:
+    FstatLine->TwoF = e[4];
+    FstatLine->f2dot = 0;
+    FstatLine->f3dot = 0;
+    break;
+  case 6:
+    FstatLine->f2dot = e[4];
+    FstatLine->TwoF  = e[5];
+    FstatLine->f3dot = 0;
+    break;
+  case 7:
+    FstatLine->f2dot = e[4];
+    FstatLine->f3dot = e[5];
+    FstatLine->TwoF  = e[6];
+    break;
 
-    } /* switch(ret) */
+  } /* switch(ret) */
 
   return XLAL_SUCCESS;
 
 } /* XLALParseFstatLine() */
 
 REAL8
-relError(REAL8 x, REAL8 y)
+relError( REAL8 x, REAL8 y )
 {
   if ( x == y ) {
     return 0;
   }
 
-  REAL8 denom = fmax ( 4, 0.5*(x+y) );
-  return fabs ( (x - y ) / denom );
+  REAL8 denom = fmax( 4, 0.5 * ( x + y ) );
+  return fabs( ( x - y ) / denom );
 
 } /* relError() */

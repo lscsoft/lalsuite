@@ -56,7 +56,7 @@ int fffree( void *, int * );
 
 #endif // defined(HAVE_LIBCFITSIO)
 
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
   fitsfile *fptr = 0;         /* FITS file pointer, defined in fitsio.h */
   char card[FLEN_CARD];
@@ -64,41 +64,41 @@ int main(int argc, char *argv[])
   char *longvalue = 0;
   int status = 0;   /*  CFITSIO status value MUST be initialized to zero!  */
 
-  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+  int printhelp = ( argc == 2 && ( strcmp( argv[1], "-h" ) == 0 || strcmp( argv[1], "--help" ) == 0 ) );
 
-  if (printhelp || argc != 3) {
-    fprintf(stderr, "Usage:  %s filename[ext] keyword\n", argv[0]);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Print the current value of a header keyword.\n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Examples: \n");
-    fprintf(stderr, "  %s file.fits dec      - list the DEC keyword \n", argv[0]);
-    return (0);
+  if ( printhelp || argc != 3 ) {
+    fprintf( stderr, "Usage:  %s filename[ext] keyword\n", argv[0] );
+    fprintf( stderr, "\n" );
+    fprintf( stderr, "Print the current value of a header keyword.\n" );
+    fprintf( stderr, "\n" );
+    fprintf( stderr, "Examples: \n" );
+    fprintf( stderr, "  %s file.fits dec      - list the DEC keyword \n", argv[0] );
+    return ( 0 );
   }
 
-  if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
-    if (fits_read_card(fptr,argv[2], card, &status)) {
-      fprintf(stderr, "Keyword does not exist\n");
-      return (1);
+  if ( !fits_open_file( &fptr, argv[1], READONLY, &status ) ) {
+    if ( fits_read_card( fptr, argv[2], card, &status ) ) {
+      fprintf( stderr, "Keyword does not exist\n" );
+      return ( 1 );
     }
 
-    fits_parse_value(card, value, comment, &status);
-    if (value[0] != '\'') {
-      printf("%s\n", value);
+    fits_parse_value( card, value, comment, &status );
+    if ( value[0] != '\'' ) {
+      printf( "%s\n", value );
     } else {
-      fits_read_key_longstr(fptr, argv[2], &longvalue, comment, &status);
-      if (longvalue) {
-        printf("%s\n", longvalue);
-        fits_free_memory(longvalue, &status);
+      fits_read_key_longstr( fptr, argv[2], &longvalue, comment, &status );
+      if ( longvalue ) {
+        printf( "%s\n", longvalue );
+        fits_free_memory( longvalue, &status );
       }
     }
 
-    fits_close_file(fptr, &status);
+    fits_close_file( fptr, &status );
   }    /* open_file */
 
   /* if error occured, print out error message */
-  if (status) {
-    fits_report_error(stderr, status);
+  if ( status ) {
+    fits_report_error( stderr, status );
   }
-  return (status);
+  return ( status );
 }

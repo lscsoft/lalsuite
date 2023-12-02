@@ -53,7 +53,7 @@ mismatch from  1 - { (1/T) \int cos( phi1 - phi2 ) dt }^2. */
 " --sun               Sun ephemeris\n"\
 "\n"
 
-typedef struct tagInputParams{
+typedef struct tagInputParams {
   CHAR det[10];
   CHAR pulsar[15];
   CHAR parfile[256];
@@ -69,23 +69,23 @@ typedef struct tagInputParams{
   CHAR outputdir[256];
   CHAR earth[256];
   CHAR sun[256];
-}InputParams;
+} InputParams;
 
-typedef struct tagParamData{
+typedef struct tagParamData {
   CHAR *name;  /* parameter name as given by the conventions in the .mat file
 (see param variable in TEMPOs mxprt.f file */
   REAL8 val;   /* parameter value */
   REAL8 sigma; /* standard deviation on the parameter as read from the .par
 file */
   INT4 matPos;  /* row position in the covariance matrix */
-}ParamData;
+} ParamData;
 
-void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]);
+void get_input_args( InputParams *inputParams, INT4 argc, CHAR *argv[] );
 
-REAL8Array *CholeskyDecomp( REAL8Array *M, CHAR* uOrl );
+REAL8Array *CholeskyDecomp( REAL8Array *M, CHAR *uOrl );
 
 REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile,
-  BinaryPulsarParams params, ParamData *data );
+                                   BinaryPulsarParams params, ParamData *data );
 
 REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat );
 
@@ -94,55 +94,57 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix );
 REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef );
 
 ParamData *MultivariateNormalDeviates( REAL8Array *covmat, ParamData *means,
-  RandomParams *randomParams );
+                                       RandomParams *randomParams );
 
 void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data );
 
 REAL8Vector *get_phi( double start, double deltaT, int npoints,
- BinaryPulsarParams params, BarycenterInput bary, EphemerisData *edat );
+                      BinaryPulsarParams params, BarycenterInput bary, EphemerisData *edat );
 
-int main(int argc, char *argv[]){
+int main( int argc, char *argv[] )
+{
   InputParams inputs;
 
-  FILE *fp=NULL;
+  FILE *fp = NULL;
 
   BinaryPulsarParams params, params2;
 
   BinaryPulsarParams deltaparams;
 
-  int i=0, count=0, countBin=0, j=1, k=0, N=0;
+  int i = 0, count = 0, countBin = 0, j = 1, k = 0, N = 0;
 
-  int npoints=0; /* number of 10 minutes stretches */
+  int npoints = 0; /* number of 10 minutes stretches */
 
-  EphemerisData *edat=NULL;
+  EphemerisData *edat = NULL;
   LALDetector det;
   BarycenterInput baryinput;
 
-  REAL8Vector *phiMean=NULL;
-  REAL8 intre=0.;
+  REAL8Vector *phiMean = NULL;
+  REAL8 intre = 0.;
 
   REAL8 maxampmismatch = 1e-100, maxpowmismatch = 1e-100;
   REAL8 meanampmismatch = 0., meanpowmismatch = 0.;
 
-  INT4Vector *matPos=NULL; /* position of parameters in ParamData */
-  UINT4 seed=0;              /* set to get seed from clock time */
-  RandomParams *randomParams=NULL;
-  ParamData *paramData=NULL, *randVals=NULL;
+  INT4Vector *matPos = NULL; /* position of parameters in ParamData */
+  UINT4 seed = 0;            /* set to get seed from clock time */
+  RandomParams *randomParams = NULL;
+  ParamData *paramData = NULL, *randVals = NULL;
 
-  REAL8Array *cormat=NULL, *covmat=NULL, *posdef=NULL;
-  REAL8Array *chol=NULL;
+  REAL8Array *cormat = NULL, *covmat = NULL, *posdef = NULL;
+  REAL8Array *chol = NULL;
 
   CHAR outputfile[256];
 
-  get_input_args(&inputs, argc, argv);
+  get_input_args( &inputs, argc, argv );
 
-  npoints = inputs.timespan/inputs.deltat;
+  npoints = inputs.timespan / inputs.deltat;
 
   XLALReadTEMPOParFileOrig( &params, inputs.parfile );
   XLALReadTEMPOParFileOrig( &deltaparams, inputs.parfile );
 
-  if( strstr(inputs.parfile2, ".par") != NULL )
+  if ( strstr( inputs.parfile2, ".par" ) != NULL ) {
     XLALReadTEMPOParFileOrig( &params2, inputs.parfile2 );
+  }
 
   /* set up ephemerises */
   det = *XLALGetSiteInfo( inputs.det ); /* just set site as LHO */
@@ -151,109 +153,155 @@ int main(int argc, char *argv[]){
   baryinput.site.location[1] /= LAL_C_SI;
   baryinput.site.location[2] /= LAL_C_SI;
 
-  XLAL_CHECK( (edat = XLALInitBarycenter( inputs.earth, inputs.sun )) != NULL,
+  XLAL_CHECK( ( edat = XLALInitBarycenter( inputs.earth, inputs.sun ) ) != NULL,
               XLAL_EFUNC );
 
   /* set the position and frequency epochs if not already set */
-  if(params.pepoch == 0. && params.posepoch != 0.)
+  if ( params.pepoch == 0. && params.posepoch != 0. ) {
     params.pepoch = params.posepoch;
-  else if(params.posepoch == 0. && params.pepoch != 0.)
+  } else if ( params.posepoch == 0. && params.pepoch != 0. ) {
     params.posepoch = params.pepoch;
+  }
 
-  if( strstr(inputs.parfile2, ".par") != NULL ){
-    if(params2.pepoch == 0. && params2.posepoch != 0.)
-    params2.pepoch = params2.posepoch;
-  else if(params2.posepoch == 0. && params2.pepoch != 0.)
-    params2.posepoch = params2.pepoch;
+  if ( strstr( inputs.parfile2, ".par" ) != NULL ) {
+    if ( params2.pepoch == 0. && params2.posepoch != 0. ) {
+      params2.pepoch = params2.posepoch;
+    } else if ( params2.posepoch == 0. && params2.pepoch != 0. ) {
+      params2.posepoch = params2.pepoch;
+    }
   }
 
   /* set the position and frequency epochs if not already set */
-  if(deltaparams.pepoch == 0. && deltaparams.posepoch != 0.)
+  if ( deltaparams.pepoch == 0. && deltaparams.posepoch != 0. ) {
     deltaparams.pepoch = deltaparams.posepoch;
-  else if(deltaparams.posepoch == 0. && deltaparams.pepoch != 0.)
+  } else if ( deltaparams.posepoch == 0. && deltaparams.pepoch != 0. ) {
     deltaparams.posepoch = deltaparams.pepoch;
+  }
 
   /* calculate the phase every deltat for the mean values */
-  phiMean = get_phi( inputs.start, (double)inputs.deltat, npoints, params,
-    baryinput, edat);
+  phiMean = get_phi( inputs.start, ( double )inputs.deltat, npoints, params,
+                     baryinput, edat );
 
   /* see which parameters have an associated error */
-  if( params.f0Err != 0. ) count++;
-  if( params.f1Err != 0. ) count++;
-  if( params.f2Err != 0. ) count++;
-  if( params.raErr != 0. ) count++;
-  if( params.decErr != 0. ) count++;
-  if( params.pmraErr != 0. ) count++;
-  if( params.pmdecErr != 0. ) count++;
+  if ( params.f0Err != 0. ) {
+    count++;
+  }
+  if ( params.f1Err != 0. ) {
+    count++;
+  }
+  if ( params.f2Err != 0. ) {
+    count++;
+  }
+  if ( params.raErr != 0. ) {
+    count++;
+  }
+  if ( params.decErr != 0. ) {
+    count++;
+  }
+  if ( params.pmraErr != 0. ) {
+    count++;
+  }
+  if ( params.pmdecErr != 0. ) {
+    count++;
+  }
 
   /* see if binary model */
-  if( params.model != NULL ){
-    if( params.xErr != 0. ) countBin++;
-    if( params.w0Err != 0. ) countBin++;
-    if( params.eErr != 0. ) countBin++;
-    if( params.PbErr != 0. ) countBin++;
-    if( params.T0Err != 0. ) countBin++;
-    if( params.TascErr != 0. ) countBin++;
-    if( params.eps1Err != 0. ) countBin++;
-    if( params.eps2Err != 0. ) countBin++;
-    if( params.gammaErr != 0. ) countBin++;
-    if( params.wdotErr != 0. ) countBin++;
-    if( params.PbdotErr != 0. ) countBin++;
-    if( params.xdotErr != 0. ) countBin++;
-    if( params.edotErr != 0. ) countBin++;
-    if( params.sErr != 0. ) countBin++;
+  if ( params.model != NULL ) {
+    if ( params.xErr != 0. ) {
+      countBin++;
+    }
+    if ( params.w0Err != 0. ) {
+      countBin++;
+    }
+    if ( params.eErr != 0. ) {
+      countBin++;
+    }
+    if ( params.PbErr != 0. ) {
+      countBin++;
+    }
+    if ( params.T0Err != 0. ) {
+      countBin++;
+    }
+    if ( params.TascErr != 0. ) {
+      countBin++;
+    }
+    if ( params.eps1Err != 0. ) {
+      countBin++;
+    }
+    if ( params.eps2Err != 0. ) {
+      countBin++;
+    }
+    if ( params.gammaErr != 0. ) {
+      countBin++;
+    }
+    if ( params.wdotErr != 0. ) {
+      countBin++;
+    }
+    if ( params.PbdotErr != 0. ) {
+      countBin++;
+    }
+    if ( params.xdotErr != 0. ) {
+      countBin++;
+    }
+    if ( params.edotErr != 0. ) {
+      countBin++;
+    }
+    if ( params.sErr != 0. ) {
+      countBin++;
+    }
   }
 
   /* set up random parameters */
-  if ( strstr(inputs.parfile2, ".par") == NULL ){
+  if ( strstr( inputs.parfile2, ".par" ) == NULL ) {
     randomParams = XLALCreateRandomParams( seed );
 
-    paramData = XLALMalloc( MAXPARAMS*sizeof(ParamData) );
+    paramData = XLALMalloc( MAXPARAMS * sizeof( ParamData ) );
 
     /* get correlation matrix */
     cormat = ReadCorrelationMatrix( inputs.covfile, params, paramData );
 
-    if( (posdef = XLALCheckPositiveDefinite( cormat )) == NULL ){
+    if ( ( posdef = XLALCheckPositiveDefinite( cormat ) ) == NULL ) {
       /* set covariance matrix */
       covmat = CreateCovarianceMatrix( paramData, cormat );
 
-      chol = CholeskyDecomp(covmat, "lower");
-    }
-    else{
+      chol = CholeskyDecomp( covmat, "lower" );
+    } else {
       covmat = CreateCovarianceMatrix( paramData, posdef );
 
-      chol = CholeskyDecomp(covmat, "lower");
+      chol = CholeskyDecomp( covmat, "lower" );
 
-      XLALDestroyREAL8Array(posdef);
+      XLALDestroyREAL8Array( posdef );
     }
 
     /* get the posistions of the parameters within paramData */
-    i=0;
-    j=0;
+    i = 0;
+    j = 0;
     matPos = XLALCreateINT4Vector( MAXPARAMS );
-    while(i < MAXPARAMS){
-      if( paramData[i].matPos != 0 ){
+    while ( i < MAXPARAMS ) {
+      if ( paramData[i].matPos != 0 ) {
         matPos->data[j] = i;
         j++;
       }
       i++;
     }
-    matPos = XLALResizeINT4Vector(matPos, j);
+    matPos = XLALResizeINT4Vector( matPos, j );
   }
 
   N = inputs.iterations;
 
-  if( strstr(inputs.parfile2, ".par") != NULL ) N = 1;
+  if ( strstr( inputs.parfile2, ".par" ) != NULL ) {
+    N = 1;
+  }
 
   /* calculate the max mismatch between the mean value and the mean plus the
      standard deviation */
-  for( i=0; i < N; i++ ){
-    REAL8Vector *phiOffset=NULL;
+  for ( i = 0; i < N; i++ ) {
+    REAL8Vector *phiOffset = NULL;
     REAL8 prevamp = meanampmismatch;
     REAL8 prevpow = meanpowmismatch;
 
     /* generate new pulsars parameters from the pulsar parameter covariance */
-    if( strstr(inputs.parfile2, ".par") == NULL ){
+    if ( strstr( inputs.parfile2, ".par" ) == NULL ) {
       randVals = MultivariateNormalDeviates( chol, paramData, randomParams );
       SetMCMCPulsarParams( &deltaparams, randVals );
     }
@@ -290,69 +338,69 @@ int main(int argc, char *argv[]){
     */
 
     /* get new phase */
-    if( strstr(inputs.parfile2, ".par") == NULL ){
-      phiOffset = get_phi( inputs.start, (double)inputs.deltat, npoints,
-        deltaparams, baryinput, edat );
-    }
-    else{
-      phiOffset = get_phi( inputs.start, (double)inputs.deltat, npoints,
-        params2, baryinput, edat );
+    if ( strstr( inputs.parfile2, ".par" ) == NULL ) {
+      phiOffset = get_phi( inputs.start, ( double )inputs.deltat, npoints,
+                           deltaparams, baryinput, edat );
+    } else {
+      phiOffset = get_phi( inputs.start, ( double )inputs.deltat, npoints,
+                           params2, baryinput, edat );
     }
 
     /* calculate the mismatch */
     intre = 0.;
 
     /* perform the integral (trapezium rule) */
-    for( k=0; k<npoints-1; k++ ){
-      REAL8 phi1=0., phi2=0.;
-      phi1 = LAL_TWOPI*fmod(phiOffset->data[k]-phiMean->data[k], 1.);
-      phi2 = LAL_TWOPI*fmod(phiOffset->data[k+1]-phiMean->data[k+1], 1.);
-      intre += (cos(phi2) + cos(phi1));
+    for ( k = 0; k < npoints - 1; k++ ) {
+      REAL8 phi1 = 0., phi2 = 0.;
+      phi1 = LAL_TWOPI * fmod( phiOffset->data[k] - phiMean->data[k], 1. );
+      phi2 = LAL_TWOPI * fmod( phiOffset->data[k + 1] - phiMean->data[k + 1], 1. );
+      intre += ( cos( phi2 ) + cos( phi1 ) );
     }
 
-    intre *= inputs.deltat/2.;
+    intre *= inputs.deltat / 2.;
 
     /* get the mean mismatch in amplitude and power */
-    meanampmismatch += fabs(1. - intre/inputs.timespan);
-    meanpowmismatch += fabs(1. - (intre/inputs.timespan)
-      * (intre/inputs.timespan) );
+    meanampmismatch += fabs( 1. - intre / inputs.timespan );
+    meanpowmismatch += fabs( 1. - ( intre / inputs.timespan )
+                             * ( intre / inputs.timespan ) );
 
     /* set maximum mismatch value */
-    if( (meanampmismatch - prevamp) > fabs(maxampmismatch) )
-      maxampmismatch = (meanampmismatch - prevamp);
+    if ( ( meanampmismatch - prevamp ) > fabs( maxampmismatch ) ) {
+      maxampmismatch = ( meanampmismatch - prevamp );
+    }
 
-    if( (meanpowmismatch - prevpow) > fabs(maxpowmismatch) )
-      maxpowmismatch = (meanpowmismatch - prevpow);
+    if ( ( meanpowmismatch - prevpow ) > fabs( maxpowmismatch ) ) {
+      maxpowmismatch = ( meanpowmismatch - prevpow );
+    }
 
     XLALDestroyREAL8Vector( phiOffset );
   }
 
-  meanpowmismatch /= (REAL8)N;
-  meanampmismatch /= (REAL8)N;
+  meanpowmismatch /= ( REAL8 )N;
+  meanampmismatch /= ( REAL8 )N;
 
-  if( strstr(inputs.parfile2, ".par") == NULL ){
-    sprintf(outputfile, "%s/mismatch_%s", inputs.outputdir, inputs.pulsar);
-    fp = fopen(outputfile, "w");
+  if ( strstr( inputs.parfile2, ".par" ) == NULL ) {
+    sprintf( outputfile, "%s/mismatch_%s", inputs.outputdir, inputs.pulsar );
+    fp = fopen( outputfile, "w" );
 
     /* output values to screen */
-    fprintf(stderr, "Maximum amplitude and power mismatch for %d templates\
+    fprintf( stderr, "Maximum amplitude and power mismatch for %d templates\
  drawn randomly from the given parameter and pulsar %s\n%le\t%le\n", N,
-inputs.pulsar, maxampmismatch, maxpowmismatch);
+             inputs.pulsar, maxampmismatch, maxpowmismatch );
 
-    fprintf(stderr, "Mean amplitude and powoer mismatch is\n%le\t%le\n",
-meanampmismatch, meanpowmismatch);
+    fprintf( stderr, "Mean amplitude and powoer mismatch is\n%le\t%le\n",
+             meanampmismatch, meanpowmismatch );
 
     /* print mismatch in signal power to file */
-    fprintf(fp, "%% Maximum and mean power mismatch for %d templates drawn\
+    fprintf( fp, "%% Maximum and mean power mismatch for %d templates drawn\
  randomly from the given parameter and pulsar %s\n%lf\t%lf\n", N, inputs.pulsar,
-maxpowmismatch, meanpowmismatch);
+             maxpowmismatch, meanpowmismatch );
 
-    fclose(fp);
-  }
-  else{
-    fprintf(stderr, "The amplitude and power mismatch between the two par files\
+    fclose( fp );
+  } else {
+    fprintf( stderr, "The amplitude and power mismatch between the two par files\
  for pulsar %s is %le and %le\n", inputs.pulsar, maxampmismatch,
-      maxpowmismatch);
+             maxpowmismatch );
   }
 
   XLALFree( paramData );
@@ -368,9 +416,9 @@ maxpowmismatch, meanpowmismatch);
   return 0;
 }
 
-void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
-  struct LALoption long_options[] =
-  {
+void get_input_args( InputParams *inputParams, INT4 argc, CHAR *argv[] )
+{
+  struct LALoption long_options[] = {
     { "help",           no_argument,       0, 'h' },
     { "detector",      required_argument, 0, 'D' },
     { "pulsar",         required_argument, 0, 'p' },
@@ -390,109 +438,112 @@ void get_input_args(InputParams *inputParams, INT4 argc, CHAR *argv[]){
   CHAR args[] = "hd:p:P:b:c:s:t:d:i:o:e:S:" ;
   CHAR *program = argv[0];
 
-  while( 1 ){
+  while ( 1 ) {
     INT4 option_index = 0;
     INT4 c;
 
     c = LALgetopt_long_only( argc, argv, args, long_options, &option_index );
-    if( c == -1 ) /* end of options */
+    if ( c == -1 ) { /* end of options */
       break;
+    }
 
-    switch( c ){
-      case 0:
-        if( long_options[option_index].flag )
-          break;
-        else
-          fprintf(stderr, "Error passing option %s with argument %s\n",
-            long_options[option_index].name, LALoptarg);
-      case 'h': /* help message */
-        fprintf(stderr, USAGE, program);
-        exit(0);
-      case 'D':
-        sprintf(inputParams->det, "%s", LALoptarg);
+    switch ( c ) {
+    case 0:
+      if ( long_options[option_index].flag ) {
         break;
-      case 'p':
-        sprintf(inputParams->pulsar, "%s", LALoptarg);
-        break;
-      case 'P':
-        sprintf(inputParams->parfile, "%s", LALoptarg);
-        break;
-      case 'b':
-        sprintf(inputParams->parfile2, "%s", LALoptarg);
-        break;
-      case 'c':
-        sprintf(inputParams->covfile, "%s", LALoptarg);
-        break;
-      case 's':
-        inputParams->start = atoi(LALoptarg);
-        break;
-      case 't':
-        inputParams->timespan = atoi(LALoptarg);
-        break;
-      case 'd':
-        inputParams->deltat = atoi(LALoptarg);
-        break;
-      case 'i':
-        inputParams->iterations = atoi(LALoptarg);
-        break;
-      case 'o':
-        sprintf(inputParams->outputdir, "%s", LALoptarg);
-        break;
-      case 'e':
-        sprintf(inputParams->earth, "%s", LALoptarg);
-        break;
-      case 'S':
-        sprintf(inputParams->sun, "%s", LALoptarg);
-        break;
-      case '?':
-        fprintf(stderr, "Unknown error while parsing options\n");
-      default:
-        fprintf(stderr, "Unknown error while parsing options\n");
+      } else
+        fprintf( stderr, "Error passing option %s with argument %s\n",
+                 long_options[option_index].name, LALoptarg );
+    case 'h': /* help message */
+      fprintf( stderr, USAGE, program );
+      exit( 0 );
+    case 'D':
+      sprintf( inputParams->det, "%s", LALoptarg );
+      break;
+    case 'p':
+      sprintf( inputParams->pulsar, "%s", LALoptarg );
+      break;
+    case 'P':
+      sprintf( inputParams->parfile, "%s", LALoptarg );
+      break;
+    case 'b':
+      sprintf( inputParams->parfile2, "%s", LALoptarg );
+      break;
+    case 'c':
+      sprintf( inputParams->covfile, "%s", LALoptarg );
+      break;
+    case 's':
+      inputParams->start = atoi( LALoptarg );
+      break;
+    case 't':
+      inputParams->timespan = atoi( LALoptarg );
+      break;
+    case 'd':
+      inputParams->deltat = atoi( LALoptarg );
+      break;
+    case 'i':
+      inputParams->iterations = atoi( LALoptarg );
+      break;
+    case 'o':
+      sprintf( inputParams->outputdir, "%s", LALoptarg );
+      break;
+    case 'e':
+      sprintf( inputParams->earth, "%s", LALoptarg );
+      break;
+    case 'S':
+      sprintf( inputParams->sun, "%s", LALoptarg );
+      break;
+    case '?':
+      fprintf( stderr, "Unknown error while parsing options\n" );
+    default:
+      fprintf( stderr, "Unknown error while parsing options\n" );
     }
   }
 }
 
 /* function to return a vector of the pulsar phase for each data point */
 REAL8Vector *get_phi( double start, double deltaT, int npoints,
- BinaryPulsarParams params, BarycenterInput bary, EphemerisData *edat ){
-  INT4 i=0;
+                      BinaryPulsarParams params, BarycenterInput bary, EphemerisData *edat )
+{
+  INT4 i = 0;
 
-  REAL8 T0=0., DT=0., DTplus=0., deltat=0., deltat2=0.;
+  REAL8 T0 = 0., DT = 0., DTplus = 0., deltat = 0., deltat2 = 0.;
   REAL8 interptime = 1800.; /* calulate every 30 mins (1800 secs) */
-  REAL8 time=0.;
+  REAL8 time = 0.;
 
   EarthState earth, earth2;
   EmissionTime emit, emit2;
-  REAL8 emitdt=0.;
+  REAL8 emitdt = 0.;
 
   BinaryPulsarInput binput;
   BinaryPulsarOutput boutput;
 
-  REAL8Vector *phis=NULL;
+  REAL8Vector *phis = NULL;
 
   /* if edat is NULL then return a NULL poniter */
-  if( edat == NULL)
+  if ( edat == NULL ) {
     return NULL;
+  }
 
   /* allocate memory for phases */
   phis = XLALCreateREAL8Vector( npoints );
 
   bary.dInv = 0.;
 
-  for( i=0; i<npoints; i++){
+  for ( i = 0; i < npoints; i++ ) {
     T0 = params.pepoch;
-    time = start + deltaT*(double)i;
+    time = start + deltaT * ( double )i;
 
     DT = time - T0;
 
     /* only call the barycentring routines every 30 minutes, otherwise just
        linearly interpolate between them */
-    if( i==0 || DT > DTplus ){
-      bary.tgps.gpsSeconds = (UINT8)floor(time);
-      bary.tgps.gpsNanoSeconds = (UINT8)floor((fmod(time,1.)*1e9));
+    if ( i == 0 || DT > DTplus ) {
+      bary.tgps.gpsSeconds = ( UINT8 )floor( time );
+      bary.tgps.gpsNanoSeconds = ( UINT8 )floor( ( fmod( time, 1. ) * 1e9 ) );
 
-      bary.delta = params.dec + DT*params.pmdec;
-      bary.alpha = params.ra + DT*params.pmra/cos(bary.delta);
+      bary.delta = params.dec + DT * params.pmdec;
+      bary.alpha = params.ra + DT * params.pmra / cos( bary.delta );
 
       /* call barycentring routines */
       XLAL_CHECK_NULL( XLALBarycenterEarth( &earth, &bary.tgps, edat ) ==
@@ -502,8 +553,8 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
 
       /* add 30 minutes (1800secs) to the time */
       DTplus = DT + interptime;
-      bary.tgps.gpsSeconds = (UINT8)floor(time+interptime);
-      bary.tgps.gpsNanoSeconds = (UINT8)floor((fmod(time+interptime,1.)*1e9));
+      bary.tgps.gpsSeconds = ( UINT8 )floor( time + interptime );
+      bary.tgps.gpsNanoSeconds = ( UINT8 )floor( ( fmod( time + interptime, 1. ) * 1e9 ) );
 
       /* No point in updating the positions as difference will be tiny */
       XLAL_CHECK_NULL( XLALBarycenterEarth( &earth2, &bary.tgps, edat ) ==
@@ -513,33 +564,34 @@ REAL8Vector *get_phi( double start, double deltaT, int npoints,
     }
 
     /* linearly interpolate to get emitdt */
-    emitdt = emit.deltaT + (DT - (DTplus - interptime)) *
-      (emit2.deltaT - emit.deltaT)/interptime;
+    emitdt = emit.deltaT + ( DT - ( DTplus - interptime ) ) *
+             ( emit2.deltaT - emit.deltaT ) / interptime;
 
     /* check if need to perform binary barycentring */
-    if( params.model != NULL ){
+    if ( params.model != NULL ) {
       binput.tb = time + emitdt;
 
       XLALBinaryPulsarDeltaT( &boutput, &binput, &params );
 
       deltat = DT + emitdt + boutput.deltaT;
-    }
-    else
+    } else {
       deltat = DT + emitdt;
+    }
 
     /* work out phase */
-    deltat2 = deltat*deltat;
-    phis->data[i] = 2.*(params.f0*deltat + 0.5*params.f1*deltat2
-      + SIXTH*params.f2*deltat*deltat2
-      + TWENTYFOURTH*params.f3*deltat2*deltat2
-      + (1./120.)*params.f4*deltat2*deltat2
-      + (1./720.)*params.f5*deltat2*deltat2*deltat);
+    deltat2 = deltat * deltat;
+    phis->data[i] = 2.*( params.f0 * deltat + 0.5 * params.f1 * deltat2
+                         + SIXTH * params.f2 * deltat * deltat2
+                         + TWENTYFOURTH * params.f3 * deltat2 * deltat2
+                         + ( 1. / 120. ) * params.f4 * deltat2 * deltat2
+                         + ( 1. / 720. ) * params.f5 * deltat2 * deltat2 * deltat );
   }
 
   return phis;
 }
 
-void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data ){
+void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data )
+{
   /* go through params and set the next step in the MCMC */
   pulsarParams->f0 = data[0].val;
   pulsarParams->f1 = data[1].val;
@@ -577,7 +629,7 @@ void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data ){
   pulsarParams->f4 = data[33].val;
   pulsarParams->f5 = data[34].val;
 
-  if( pulsarParams->model != NULL && !strcmp(pulsarParams->model, "ELL1") ){
+  if ( pulsarParams->model != NULL && !strcmp( pulsarParams->model, "ELL1" ) ) {
     pulsarParams->eps1 = data[8].val;
     pulsarParams->eps2 = data[11].val;
     pulsarParams->e = 0.;
@@ -593,21 +645,22 @@ void SetMCMCPulsarParams( BinaryPulsarParams *pulsarParams, ParamData *data ){
    This is pretty much copied from the GSL function gsl_linalg_cholesky_decomp
    although this works with floats rather than doubles
 */
-REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
-  INT4 i=0, j=0, k=0;
+REAL8Array *CholeskyDecomp( REAL8Array *M, CHAR *uOrl )
+{
+  INT4 i = 0, j = 0, k = 0;
 
-  REAL8 A_00=0., L_00=0.;
+  REAL8 A_00 = 0., L_00 = 0.;
 
-  REAL8Array *A=NULL;
+  REAL8Array *A = NULL;
 
-  INT4 length=0;
+  INT4 length = 0;
 
   /* fprintf(stderr, "Performing Cholesky decomposition of matrix\n"); */
 
   /* check dimensions are equal */
-  if( M->dimLength->data[0] != M->dimLength->data[1] ){
-    fprintf(stderr, "Error... input matrix has unequal dimensions!\n");
-    exit(0);
+  if ( M->dimLength->data[0] != M->dimLength->data[1] ) {
+    fprintf( stderr, "Error... input matrix has unequal dimensions!\n" );
+    exit( 0 );
   }
 
   length = M->dimLength->data[0];
@@ -615,73 +668,76 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
   /* allocate memory */
   A = XLALCreateREAL8Array( M->dimLength );
 
-  if(M == NULL || A == NULL){
-    fprintf(stderr, "Error... input or output matrix is NULL!\n");
-    exit(0);
+  if ( M == NULL || A == NULL ) {
+    fprintf( stderr, "Error... input or output matrix is NULL!\n" );
+    exit( 0 );
   }
 
   /* initialise L be same as input matrix M */
-  for(i=0; i < length; i++)
-    for(j=0; j < length; j++)
-      A->data[i*length + j] = M->data[i*length + j];
+  for ( i = 0; i < length; i++ )
+    for ( j = 0; j < length; j++ ) {
+      A->data[i * length + j] = M->data[i * length + j];
+    }
 
   A_00 = A->data[0];
-  L_00 = sqrt(A_00);
+  L_00 = sqrt( A_00 );
 
-  if( A_00 <= 0 )
-    fprintf(stderr, "Error... matrix must be positive definite!\n");
+  if ( A_00 <= 0 ) {
+    fprintf( stderr, "Error... matrix must be positive definite!\n" );
+  }
 
   A->data[0] = L_00;
 
-  if( length > 1 ){
-    REAL8 A_10 = A->data[1*length + 0];
-    REAL8 A_11 = A->data[1*length + 1];
+  if ( length > 1 ) {
+    REAL8 A_10 = A->data[1 * length + 0];
+    REAL8 A_11 = A->data[1 * length + 1];
 
-    REAL8 L_10 = A_10/L_00;
-    REAL8 diag = A_11 - L_10*L_10;
-    REAL8 L_11 = sqrt(diag);
+    REAL8 L_10 = A_10 / L_00;
+    REAL8 diag = A_11 - L_10 * L_10;
+    REAL8 L_11 = sqrt( diag );
 
-    if( diag <= 0 ){
-      fprintf(stderr, "Error... input matrix is not pos def!\n");
-      exit(0);
+    if ( diag <= 0 ) {
+      fprintf( stderr, "Error... input matrix is not pos def!\n" );
+      exit( 0 );
     }
 
-    A->data[1*length + 0] = L_10;
-    A->data[1*length + 1] = L_11;
+    A->data[1 * length + 0] = L_10;
+    A->data[1 * length + 1] = L_11;
   }
 
-  for( k=2; k<length; k++ ){
-    REAL8 A_kk = A->data[k*length + k];
+  for ( k = 2; k < length; k++ ) {
+    REAL8 A_kk = A->data[k * length + k];
 
-    for( i=0; i<k; i++ ){
+    for ( i = 0; i < k; i++ ) {
       REAL8 sum = 0.;
 
-      REAL8 A_ki = A->data[k*length + i];
-      REAL8 A_ii = A->data[i*length + i];
+      REAL8 A_ki = A->data[k * length + i];
+      REAL8 A_ii = A->data[i * length + i];
 
       REAL8 ci[length];
       REAL8 ck[length];
 
-      for( j=0; j<length; j++ ){
-        ci[j] = A->data[i*length + j];
-        ck[j] = A->data[k*length + j];
+      for ( j = 0; j < length; j++ ) {
+        ci[j] = A->data[i * length + j];
+        ck[j] = A->data[k * length + j];
       }
 
-      if( i>0 ){
-        for( j=0; j<i; j++ )
-          sum += ci[j]*ck[j];
+      if ( i > 0 ) {
+        for ( j = 0; j < i; j++ ) {
+          sum += ci[j] * ck[j];
+        }
       }
 
-      A_ki = (A_ki - sum) / A_ii;
-      A->data[k*length + i] = A_ki;
+      A_ki = ( A_ki - sum ) / A_ii;
+      A->data[k * length + i] = A_ki;
     }
 
     {
       REAL8 sum = 0.;
       REAL8 diag = 0.;
 
-      for( j=0; j<k; j++ ){
-        sum += A->data[k*length + j] * A->data[k*length + j];
+      for ( j = 0; j < k; j++ ) {
+        sum += A->data[k * length + j] * A->data[k * length + j];
       }
 
       diag = A_kk - sum;
@@ -695,42 +751,41 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
          values/vectors to determine if the matrix is positive definite the
          process uses iterative methods to check on the convergence of values
          and these will only be good down to the precision of REAL8s */
-      if( diag <= 0. && fabs(diag) >= LAL_REAL8_EPS && k != length-1 ){
-        fprintf(stderr, "Error... input matrix is not pos def!\n");
-        exit(0);
-      }
-      else if( diag <= 0. && fabs(diag) <= LAL_REAL8_EPS ){
-        diag = fabs(diag);
+      if ( diag <= 0. && fabs( diag ) >= LAL_REAL8_EPS && k != length - 1 ) {
+        fprintf( stderr, "Error... input matrix is not pos def!\n" );
+        exit( 0 );
+      } else if ( diag <= 0. && fabs( diag ) <= LAL_REAL8_EPS ) {
+        diag = fabs( diag );
         /* diag = LAL_REAL8_EPS; */
         /* diag = 0.; */
-      }
-      else if( diag <= 0. && fabs(diag) >= LAL_REAL8_EPS && k == length-1 ){
+      } else if ( diag <= 0. && fabs( diag ) >= LAL_REAL8_EPS && k == length - 1 ) {
         /* this is a kludge as a lot of the matricies seem to have entries
            there m(length, length) diagonal value as small but less than zero,
            so I'll just set it to zero manually */
         diag = 0.;
       }
 
-      A->data[k*length + k] = sqrt(diag);
+      A->data[k * length + k] = sqrt( diag );
 
     }
   }
 
   /* set upper triangular matrix to zeros - for lower value */
-  for(i=0; i<length; i++)
-    for(j=i+1; j<length; j++)
-      A->data[i*length + j] = 0.;
+  for ( i = 0; i < length; i++ )
+    for ( j = i + 1; j < length; j++ ) {
+      A->data[i * length + j] = 0.;
+    }
 
   /* check if the upper triangle is wanted - if so perform transpose */
-  if(strstr(uOrl, "upper")!=NULL){
+  if ( strstr( uOrl, "upper" ) != NULL ) {
     REAL8 tempdata = 0.;
 
     /* perform transpose */
-    for(j=0; j<length-1; j++){
-      for(i=j; i<length; i++){
-        tempdata = A->data[j*length + i];
-        A->data[j*length + i] = A->data[i*length + j];
-        A->data[i*length + j] = tempdata;
+    for ( j = 0; j < length - 1; j++ ) {
+      for ( i = j; i < length; i++ ) {
+        tempdata = A->data[j * length + i];
+        A->data[j * length + i] = A->data[i * length + j];
+        A->data[i * length + j] = tempdata;
       }
     }
   }
@@ -749,23 +804,24 @@ REAL8Array *CholeskyDecomp(REAL8Array *M, CHAR* uOrl){
 distribution, with a cholesky decomposed covariance matrix given by cholmat and
 parameter mean values */
 ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
-  RandomParams *randomParams ){
-  REAL4Vector *randNum=NULL;
+                                       RandomParams *randomParams )
+{
+  REAL4Vector *randNum = NULL;
 
-  ParamData *deviates=NULL;
+  ParamData *deviates = NULL;
 
-  INT4 dim=cholmat->dimLength->data[0]; /* covariance matrix dimensions */
+  INT4 dim = cholmat->dimLength->data[0]; /* covariance matrix dimensions */
 
-  INT4 i=0, j=0;
-  REAL8Vector *Z=NULL;
+  INT4 i = 0, j = 0;
+  REAL8Vector *Z = NULL;
 
   /* check dimensions of covariance matrix and mean vector length are equal */
-  if( cholmat->dimLength->data[0] != cholmat->dimLength->data[1] ){
-    fprintf(stderr, "Error... wrong number of dimensions in input matrix!\n");
-    exit(0);
+  if ( cholmat->dimLength->data[0] != cholmat->dimLength->data[1] ) {
+    fprintf( stderr, "Error... wrong number of dimensions in input matrix!\n" );
+    exit( 0 );
   }
 
-  deviates = XLALMalloc(MAXPARAMS*sizeof(ParamData));
+  deviates = XLALMalloc( MAXPARAMS * sizeof( ParamData ) );
 
   /* create a vector of random Gaussian numbers */
   randNum = XLALCreateREAL4Vector( dim );
@@ -774,23 +830,26 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
 
   /* multiply L by randNum */
   Z = XLALCreateREAL8Vector( dim );
-  for(i=0;i<dim;i++)
+  for ( i = 0; i < dim; i++ ) {
     Z->data[i] = 0.;
+  }
 
-  for(i=0;i<dim;i++)
-    for(j=0;j<dim;j++)
-      Z->data[i] += cholmat->data[i*dim +j]*randNum->data[j];
+  for ( i = 0; i < dim; i++ )
+    for ( j = 0; j < dim; j++ ) {
+      Z->data[i] += cholmat->data[i * dim + j] * randNum->data[j];
+    }
 
   /* get the output random deviates by doing the mean plus Z */
-  j=0;
-  for(i=0;i<MAXPARAMS;i++){
+  j = 0;
+  for ( i = 0; i < MAXPARAMS; i++ ) {
     deviates[i].name = data[i].name;
     deviates[i].sigma = data[i].sigma;
     deviates[i].matPos = data[i].matPos;
-    if( data[i].matPos != 0 )
-      deviates[i].val = data[i].val + Z->data[data[i].matPos-1];
-    else
+    if ( data[i].matPos != 0 ) {
+      deviates[i].val = data[i].val + Z->data[data[i].matPos - 1];
+    } else {
       deviates[i].val = data[i].val;
+    }
   }
 
   XLALDestroyREAL4Vector( randNum );
@@ -806,82 +865,117 @@ ParamData *MultivariateNormalDeviates( REAL8Array *cholmat, ParamData *data,
 */
 /* read in the correlation matrix */
 REAL8Array *ReadCorrelationMatrix( CHAR *matrixFile,
-  BinaryPulsarParams params, ParamData *data ){
-  FILE *fp=NULL;
+                                   BinaryPulsarParams params, ParamData *data )
+{
+  FILE *fp = NULL;
 
   CHAR matrixParams[MAXPARAMS][6]; /* parameters in the correlation matrix */
   CHAR paramTmp[256];
 
-  INT4 numParams=0, i=0, j=0, k=0, n=0;
+  INT4 numParams = 0, i = 0, j = 0, k = 0, n = 0;
 
   CHAR tmpStr[256], tmpStr2[256];
 
-  INT4 arraySize=0;
+  INT4 arraySize = 0;
 
-  REAL8Array *corMat=NULL;
-  UINT4Vector *matdims=NULL;
+  REAL8Array *corMat = NULL;
+  UINT4Vector *matdims = NULL;
 
-  INT4 DMpos=0, DM1pos=0; /* position of dispersion measure in matrix */
-  INT4 numDM=0;
-  REAL8 corTemp=0., junk=0.;
+  INT4 DMpos = 0, DM1pos = 0; /* position of dispersion measure in matrix */
+  INT4 numDM = 0;
+  REAL8 corTemp = 0., junk = 0.;
 
-  ParamData paramData[]=
-  {
-    { "f0",  0., 0., 0 },{ "f1",  0., 0., 0 },{ "f2",  0., 0., 0 },
-    { "Dec", 0., 0., 0 },{ "RA",  0., 0., 0 },{ "pmdc",0., 0., 0 },
-    { "pmra",0., 0., 0 },{ "x",   0., 0., 0 },{ "e",   0., 0., 0 },
-    { "T0",  0., 0., 0 },{ "Pb",  0., 0., 0 },{ "Om",  0., 0., 0 },
-    { "Omdt",0., 0., 0 },{ "gamma",0., 0., 0 },{ "Pbdt",0.,0., 0 },
-    { "s",   0., 0., 0 },{ "M",   0., 0., 0 },{ "m2",  0., 0., 0 },
-    { "dth", 0., 0., 0 },{ "xdot",0., 0., 0 },{ "edot",0., 0., 0 },
-    { "x2",  0., 0., 0 },{ "e2",  0., 0., 0 },{ "T02", 0., 0., 0 },
-    { "Pb2", 0., 0., 0 },{ "Om2", 0., 0., 0 },{ "x3",  0., 0., 0 },
-    { "e3",  0., 0., 0 },{ "T03", 0., 0., 0 },{ "Pb3", 0., 0., 0 },
-    { "Om3", 0., 0., 0 },{ "Xpbd",0., 0., 0 },{ "f3",  0., 0., 0 },
-    { "f4",  0., 0., 0 },{ "f5",  0., 0., 0 }
+  ParamData paramData[] = {
+    { "f0",  0., 0., 0 }, { "f1",  0., 0., 0 }, { "f2",  0., 0., 0 },
+    { "Dec", 0., 0., 0 }, { "RA",  0., 0., 0 }, { "pmdc", 0., 0., 0 },
+    { "pmra", 0., 0., 0 }, { "x",   0., 0., 0 }, { "e",   0., 0., 0 },
+    { "T0",  0., 0., 0 }, { "Pb",  0., 0., 0 }, { "Om",  0., 0., 0 },
+    { "Omdt", 0., 0., 0 }, { "gamma", 0., 0., 0 }, { "Pbdt", 0., 0., 0 },
+    { "s",   0., 0., 0 }, { "M",   0., 0., 0 }, { "m2",  0., 0., 0 },
+    { "dth", 0., 0., 0 }, { "xdot", 0., 0., 0 }, { "edot", 0., 0., 0 },
+    { "x2",  0., 0., 0 }, { "e2",  0., 0., 0 }, { "T02", 0., 0., 0 },
+    { "Pb2", 0., 0., 0 }, { "Om2", 0., 0., 0 }, { "x3",  0., 0., 0 },
+    { "e3",  0., 0., 0 }, { "T03", 0., 0., 0 }, { "Pb3", 0., 0., 0 },
+    { "Om3", 0., 0., 0 }, { "Xpbd", 0., 0., 0 }, { "f3",  0., 0., 0 },
+    { "f4",  0., 0., 0 }, { "f5",  0., 0., 0 }
   };
 
   /* set the values - put the parameter errors at twice those given in the .par
-files */
-  paramData[0].val = params.f0;      paramData[0].sigma = params.f0Err;
-  paramData[1].val = params.f1;      paramData[1].sigma = params.f1Err;
-  paramData[2].val = params.f2;      paramData[2].sigma = params.f2Err;
-  paramData[3].val = params.dec;     paramData[3].sigma = params.decErr;
-  paramData[4].val = params.ra;      paramData[4].sigma = params.raErr;
-  paramData[5].val = params.pmdec;   paramData[5].sigma = params.pmdecErr;
-  paramData[6].val = params.pmra;    paramData[6].sigma = params.pmraErr;
-  paramData[7].val = params.x;       paramData[7].sigma = params.xErr;
-  paramData[8].val = params.e;       paramData[8].sigma = params.eErr;
-  paramData[9].val = params.T0;      paramData[9].sigma = params.T0Err;
-  paramData[10].val = params.Pb;     paramData[10].sigma = params.PbErr;
-  paramData[11].val = params.w0;     paramData[11].sigma = params.w0Err;
-  paramData[12].val = params.wdot;   paramData[12].sigma = params.wdotErr;
-  paramData[13].val = params.gamma;  paramData[13].sigma = params.gammaErr;
-  paramData[14].val = params.Pbdot;  paramData[14].sigma = params.PbdotErr;
-  paramData[15].val = params.s;      paramData[15].sigma = params.sErr;
-  paramData[16].val = params.M;      paramData[16].sigma = params.MErr;
-  paramData[17].val = params.m2;     paramData[17].sigma = params.m2Err;
-  paramData[18].val = params.dth;    paramData[18].sigma = params.dthErr;
-  paramData[19].val = params.xdot;   paramData[19].sigma = params.xdotErr;
-  paramData[20].val = params.edot;   paramData[20].sigma = params.edotErr;
-  paramData[21].val = params.x2;     paramData[21].sigma = params.x2Err;
-  paramData[22].val = params.e2;     paramData[22].sigma = params.e2Err;
-  paramData[23].val = params.T02;    paramData[23].sigma = params.T02Err;
-  paramData[24].val = params.Pb2;    paramData[24].sigma = params.Pb2Err;
-  paramData[25].val = params.w02;    paramData[25].sigma = params.w02Err;
-  paramData[26].val = params.x3;     paramData[26].sigma = params.x3Err;
-  paramData[27].val = params.e3;     paramData[27].sigma = params.e3Err;
-  paramData[28].val = params.T03;    paramData[28].sigma = params.T03Err;
-  paramData[29].val = params.Pb3;    paramData[29].sigma = params.Pb3Err;
-  paramData[30].val = params.w03;    paramData[30].sigma = params.w03Err;
-  paramData[31].val = params.xpbdot; paramData[31].sigma = params.xpbdotErr;
-  paramData[32].val = params.f3;     paramData[32].sigma = params.f3Err;
-  paramData[33].val = params.f4;     paramData[33].sigma = params.f4Err;
-  paramData[34].val = params.f5;     paramData[34].sigma = params.f5Err;
+  files */
+  paramData[0].val = params.f0;
+  paramData[0].sigma = params.f0Err;
+  paramData[1].val = params.f1;
+  paramData[1].sigma = params.f1Err;
+  paramData[2].val = params.f2;
+  paramData[2].sigma = params.f2Err;
+  paramData[3].val = params.dec;
+  paramData[3].sigma = params.decErr;
+  paramData[4].val = params.ra;
+  paramData[4].sigma = params.raErr;
+  paramData[5].val = params.pmdec;
+  paramData[5].sigma = params.pmdecErr;
+  paramData[6].val = params.pmra;
+  paramData[6].sigma = params.pmraErr;
+  paramData[7].val = params.x;
+  paramData[7].sigma = params.xErr;
+  paramData[8].val = params.e;
+  paramData[8].sigma = params.eErr;
+  paramData[9].val = params.T0;
+  paramData[9].sigma = params.T0Err;
+  paramData[10].val = params.Pb;
+  paramData[10].sigma = params.PbErr;
+  paramData[11].val = params.w0;
+  paramData[11].sigma = params.w0Err;
+  paramData[12].val = params.wdot;
+  paramData[12].sigma = params.wdotErr;
+  paramData[13].val = params.gamma;
+  paramData[13].sigma = params.gammaErr;
+  paramData[14].val = params.Pbdot;
+  paramData[14].sigma = params.PbdotErr;
+  paramData[15].val = params.s;
+  paramData[15].sigma = params.sErr;
+  paramData[16].val = params.M;
+  paramData[16].sigma = params.MErr;
+  paramData[17].val = params.m2;
+  paramData[17].sigma = params.m2Err;
+  paramData[18].val = params.dth;
+  paramData[18].sigma = params.dthErr;
+  paramData[19].val = params.xdot;
+  paramData[19].sigma = params.xdotErr;
+  paramData[20].val = params.edot;
+  paramData[20].sigma = params.edotErr;
+  paramData[21].val = params.x2;
+  paramData[21].sigma = params.x2Err;
+  paramData[22].val = params.e2;
+  paramData[22].sigma = params.e2Err;
+  paramData[23].val = params.T02;
+  paramData[23].sigma = params.T02Err;
+  paramData[24].val = params.Pb2;
+  paramData[24].sigma = params.Pb2Err;
+  paramData[25].val = params.w02;
+  paramData[25].sigma = params.w02Err;
+  paramData[26].val = params.x3;
+  paramData[26].sigma = params.x3Err;
+  paramData[27].val = params.e3;
+  paramData[27].sigma = params.e3Err;
+  paramData[28].val = params.T03;
+  paramData[28].sigma = params.T03Err;
+  paramData[29].val = params.Pb3;
+  paramData[29].sigma = params.Pb3Err;
+  paramData[30].val = params.w03;
+  paramData[30].sigma = params.w03Err;
+  paramData[31].val = params.xpbdot;
+  paramData[31].sigma = params.xpbdotErr;
+  paramData[32].val = params.f3;
+  paramData[32].sigma = params.f3Err;
+  paramData[33].val = params.f4;
+  paramData[33].sigma = params.f4Err;
+  paramData[34].val = params.f5;
+  paramData[34].sigma = params.f5Err;
 
   arraySize = MAXPARAMS;
 
-  if( params.model != NULL && !strcmp(params.model, "ELL1") ){
+  if ( params.model != NULL && !strcmp( params.model, "ELL1" ) ) {
     paramData[8].name = "eps1";
     paramData[8].val = params.eps1;
     paramData[8].sigma = params.eps1Err;
@@ -904,33 +998,34 @@ files */
   }
 
   /* read in data from correlation matrix file */
-  if((fp = fopen(matrixFile, "r")) == NULL){
-    fprintf(stderr, "No correlation matrix file" );
+  if ( ( fp = fopen( matrixFile, "r" ) ) == NULL ) {
+    fprintf( stderr, "No correlation matrix file" );
     return NULL;
   }
 
   /* read in the first line of the matrix file */
-  while(fscanf(fp, "%s", paramTmp)){
-    if(strchr(paramTmp, '-') != NULL)
+  while ( fscanf( fp, "%s", paramTmp ) ) {
+    if ( strchr( paramTmp, '-' ) != NULL ) {
       break;
-
-    if(feof(fp)){
-      fprintf(stderr, "Error... I've reached the end of the file without \
-reading any correlation data!");
-      fclose(fp);
-      exit(0);
     }
 
-    sprintf(matrixParams[numParams], "%s", paramTmp);
+    if ( feof( fp ) ) {
+      fprintf( stderr, "Error... I've reached the end of the file without \
+reading any correlation data!" );
+      fclose( fp );
+      exit( 0 );
+    }
+
+    sprintf( matrixParams[numParams], "%s", paramTmp );
     numParams++;
 
     /* check if parameter is actually for a dispersion measure (ignore if so) */
-    if(!strcmp(paramTmp, "DM")){
+    if ( !strcmp( paramTmp, "DM" ) ) {
       numParams--;
       DMpos = i;
       numDM++;
     }
-    if(!strcmp(paramTmp, "DM1")){
+    if ( !strcmp( paramTmp, "DM1" ) ) {
       numParams--;
       DM1pos = i;
       numDM++;
@@ -939,9 +1034,9 @@ reading any correlation data!");
     i++;
   };
 
-  if(numParams > arraySize){
-    fprintf(stderr, "More parameters in matrix file than there should be!\n");
-    exit(0);
+  if ( numParams > arraySize ) {
+    fprintf( stderr, "More parameters in matrix file than there should be!\n" );
+    exit( 0 );
   }
 
   matdims = XLALCreateUINT4Vector( 2 );
@@ -954,55 +1049,57 @@ reading any correlation data!");
   /* the strings that represent parameters in a matrix are given in the paraem
      variable in the tempo code mxprt.f */
   /* read in matrix */
-  k=0;
-  for(i=0;i<numParams+numDM;i++){
-    n=0;
-    fscanf(fp, "%s%s", tmpStr, tmpStr2);
+  k = 0;
+  for ( i = 0; i < numParams + numDM; i++ ) {
+    n = 0;
+    fscanf( fp, "%s%s", tmpStr, tmpStr2 );
 
     /* if its a dispersion measure then just skip the line */
-    if( (DMpos != 0 && i == DMpos) || (DM1pos != 0 && i == DM1pos) ){
-      fscanf(fp, "%*[^\n]");
+    if ( ( DMpos != 0 && i == DMpos ) || ( DM1pos != 0 && i == DM1pos ) ) {
+      fscanf( fp, "%*[^\n]" );
       k--;
       continue;
     }
 
-    for(j=0;j<i+1;j++){
-      if( (DMpos != 0 && j == DMpos) || (DM1pos != 0 && j == DM1pos) ){
-        fscanf(fp, "%lf", &junk);
+    for ( j = 0; j < i + 1; j++ ) {
+      if ( ( DMpos != 0 && j == DMpos ) || ( DM1pos != 0 && j == DM1pos ) ) {
+        fscanf( fp, "%lf", &junk );
         n--;
         continue;
       }
 
-      fscanf(fp, "%lf", &corTemp);
+      fscanf( fp, "%lf", &corTemp );
 
       /* if covariance equals 1 set as 0.9999999, because values of 1
          can cause problems of giving singular matrices */
-      if( (n != k) && (corTemp == 1.) )
+      if ( ( n != k ) && ( corTemp == 1. ) ) {
         corTemp = 0.9999999;
-      else if( (n != k) && (corTemp == -1.) )
+      } else if ( ( n != k ) && ( corTemp == -1. ) ) {
         corTemp = -0.9999999;
+      }
 
-      corMat->data[k*corMat->dimLength->data[0] + n] = corTemp;
-      if(n != k)
-        corMat->data[n*corMat->dimLength->data[0] + k] = corTemp;
+      corMat->data[k * corMat->dimLength->data[0] + n] = corTemp;
+      if ( n != k ) {
+        corMat->data[n * corMat->dimLength->data[0] + k] = corTemp;
+      }
       n++;
     }
 
     /* send an error if we hit the end of the file */
-    if(feof(fp)){
-      fprintf(stderr, "Error reading in matrix - hit end of file!\n");
-      exit(0);
+    if ( feof( fp ) ) {
+      fprintf( stderr, "Error reading in matrix - hit end of file!\n" );
+      exit( 0 );
     }
 
     k++;
   }
 
-  fclose(fp);
+  fclose( fp );
 
   /* give the correlation matrix positions of the parameters */
-  for(i=1;i<numParams+1;i++){
-    for(j=0;j<arraySize;j++){
-      if(!strcmp(matrixParams[i-1], paramData[j].name)){
+  for ( i = 1; i < numParams + 1; i++ ) {
+    for ( j = 0; j < arraySize; j++ ) {
+      if ( !strcmp( matrixParams[i - 1], paramData[j].name ) ) {
         paramData[j].matPos = i;
 
         break;
@@ -1011,7 +1108,7 @@ reading any correlation data!");
   }
 
   /* pass the parameter data to be output */
-  memcpy(data, paramData, sizeof(paramData));
+  memcpy( data, paramData, sizeof( paramData ) );
 
   XLALDestroyUINT4Vector( matdims );
 
@@ -1019,21 +1116,22 @@ reading any correlation data!");
 }
 
 /* turn the input correlation matrix into a covariance matrix */
-REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat ){
-  REAL8Array *covMat=NULL;
-  INT4 i=0, j=0;
+REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat )
+{
+  REAL8Array *covMat = NULL;
+  INT4 i = 0, j = 0;
 
   covMat = XLALCreateREAL8Array( corMat->dimLength );
 
   /* convert correlation matrix into a covariance matrix */
-  for(i=0;i<MAXPARAMS;i++){
-    if( data[i].matPos != 0 ){
-      for(j=0;j<MAXPARAMS;j++){
-        if( data[j].matPos != 0 ){
-          covMat->data[(data[i].matPos-1)*covMat->dimLength->data[0] +
-            data[j].matPos-1] =
-          corMat->data[(data[i].matPos-1)*corMat->dimLength->data[0] +
-             data[j].matPos-1] * data[i].sigma * data[j].sigma;
+  for ( i = 0; i < MAXPARAMS; i++ ) {
+    if ( data[i].matPos != 0 ) {
+      for ( j = 0; j < MAXPARAMS; j++ ) {
+        if ( data[j].matPos != 0 ) {
+          covMat->data[( data[i].matPos - 1 )*covMat->dimLength->data[0] +
+                                                                         data[j].matPos - 1] =
+                         corMat->data[( data[i].matPos - 1 ) * corMat->dimLength->data[0] +
+                                      data[j].matPos - 1] * data[i].sigma * data[j].sigma;
         }
       }
     }
@@ -1042,23 +1140,24 @@ REAL8Array *CreateCovarianceMatrix( ParamData *data, REAL8Array *corMat ){
   return covMat;
 }
 
-REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
+REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix )
+{
   static LALStatus status;
 
-  REAL8Vector *eigenval=NULL;
-  REAL8Array *eigenvec=NULL;
+  REAL8Vector *eigenval = NULL;
+  REAL8Array *eigenvec = NULL;
 
-  REAL8Array *posdef=NULL;
+  REAL8Array *posdef = NULL;
 
-  INT4 i=0, j=0;
+  INT4 i = 0, j = 0;
 
   /* copy input array into eigenvec as this gets converted by function */
   eigenvec = XLALCreateREAL8Array( matrix->dimLength );
 
-  for( i=0; i<(INT4)eigenvec->dimLength->data[0]; i++ ){
-    for( j=0; j<(INT4)eigenvec->dimLength->data[1]; j++ ){
-      eigenvec->data[i*eigenvec->dimLength->data[0] + j] =
-        matrix->data[i*matrix->dimLength->data[0] + j];
+  for ( i = 0; i < ( INT4 )eigenvec->dimLength->data[0]; i++ ) {
+    for ( j = 0; j < ( INT4 )eigenvec->dimLength->data[1]; j++ ) {
+      eigenvec->data[i * eigenvec->dimLength->data[0] + j] =
+        matrix->data[i * matrix->dimLength->data[0] + j];
     }
   }
 
@@ -1067,18 +1166,18 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
   /* calculate the eigen values and vectors */
   LALDSymmetricEigenVectors( &status, eigenval, eigenvec );
 
-  for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
+  for ( i = 0; i < ( INT4 )matrix->dimLength->data[0]; i++ ) {
     /* first check if any eigen values are zero and if so convert to positive
        definite matrix */
-    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 10.*LAL_REAL8_EPS ){
-      fprintf(stderr, "Eigenvalue is negative. Non-postive definite matrix!\n");
+    if ( eigenval->data[i] < 0. && fabs( eigenval->data[i] ) > 10.*LAL_REAL8_EPS ) {
+      fprintf( stderr, "Eigenvalue is negative. Non-postive definite matrix!\n" );
       posdef = XLALConvertToPositiveDefinite( matrix );
       break;
     }
   }
 
   /* if matrix is positive definite return it i.e. posdef hasn't been set */
-  if( posdef == NULL ){
+  if ( posdef == NULL ) {
     XLALDestroyREAL8Array( eigenvec );
     XLALDestroyREAL8Vector( eigenval );
     return NULL;
@@ -1086,21 +1185,21 @@ REAL8Array *XLALCheckPositiveDefinite( REAL8Array *matrix ){
 
   /* re-check new matrix for positive definiteness, but be aware of values
      close to the precision of REAL8 numbers */
-  for( i=0; i<(INT4)eigenvec->dimLength->data[0]; i++ ){
-    for( j=0; j<(INT4)eigenvec->dimLength->data[1]; j++ ){
-      eigenvec->data[i*eigenvec->dimLength->data[0] + j] =
-        posdef->data[i*posdef->dimLength->data[0] + j];
+  for ( i = 0; i < ( INT4 )eigenvec->dimLength->data[0]; i++ ) {
+    for ( j = 0; j < ( INT4 )eigenvec->dimLength->data[1]; j++ ) {
+      eigenvec->data[i * eigenvec->dimLength->data[0] + j] =
+        posdef->data[i * posdef->dimLength->data[0] + j];
     }
     eigenval->data[i] = 0.;
   }
 
   LALDSymmetricEigenVectors( &status, eigenval, eigenvec );
 
-  for( i=0; i<(INT4)matrix->dimLength->data[0]; i++ ){
-    if( eigenval->data[i] < 0. && fabs(eigenval->data[i]) > 10.*LAL_REAL8_EPS){
-      fprintf(stderr, "ABORT! Eigenvalue is negative. Non-postive definite \
-matrix!\n");
-      exit(0);
+  for ( i = 0; i < ( INT4 )matrix->dimLength->data[0]; i++ ) {
+    if ( eigenval->data[i] < 0. && fabs( eigenval->data[i] ) > 10.*LAL_REAL8_EPS ) {
+      fprintf( stderr, "ABORT! Eigenvalue is negative. Non-postive definite \
+matrix!\n" );
+      exit( 0 );
     }
   }
 
@@ -1114,31 +1213,32 @@ matrix!\n");
 into a postive definite matrix using the method (number 2) of Rebonato and
 Jackel (see their paper at
 http://www.riccardorebonato.co.uk/papers/ValCorMat.pdf */
-REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
+REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef )
+{
   static LALStatus status;
 
-  REAL8Vector *eigenval=NULL;
-  REAL8Array *eigenvec=NULL;
+  REAL8Vector *eigenval = NULL;
+  REAL8Array *eigenvec = NULL;
 
   REAL8Array *posdef = NULL; /* output positive definite matrix */
 
-  REAL8Array *Lprime=NULL;
-  REAL8Array *B=NULL, *Bprime=NULL, *Btrans=NULL;
-  REAL8Array *T=NULL;
+  REAL8Array *Lprime = NULL;
+  REAL8Array *B = NULL, *Bprime = NULL, *Btrans = NULL;
+  REAL8Array *T = NULL;
 
-  REAL8 Tval=0.;
+  REAL8 Tval = 0.;
 
-  INT4 i=0, j=0, length=0;
+  INT4 i = 0, j = 0, length = 0;
 
-  fprintf(stderr, "Converting to positive definite matrix\n");
+  fprintf( stderr, "Converting to positive definite matrix\n" );
 
   /* check that matrix is square */
-  if( nonposdef->dimLength->data[0] != nonposdef->dimLength->data[1] ){
-    fprintf(stderr, "Error... matrix must be square!\n");
-    exit(0);
-  }
-  else
+  if ( nonposdef->dimLength->data[0] != nonposdef->dimLength->data[1] ) {
+    fprintf( stderr, "Error... matrix must be square!\n" );
+    exit( 0 );
+  } else {
     length = nonposdef->dimLength->data[0];
+  }
 
   Lprime = XLALCreateREAL8Array( nonposdef->dimLength );
   T = XLALCreateREAL8Array( nonposdef->dimLength );
@@ -1146,13 +1246,13 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
   /* copy input array into eigenvec as this gets converted by function */
   eigenvec = XLALCreateREAL8Array( nonposdef->dimLength );
 
-  for( i=0; i<length; i++ ){
-    for( j=0; j<length; j++ ){
-      eigenvec->data[i*length + j] = nonposdef->data[i*length + j];
+  for ( i = 0; i < length; i++ ) {
+    for ( j = 0; j < length; j++ ) {
+      eigenvec->data[i * length + j] = nonposdef->data[i * length + j];
 
       /* initialise Lprime and T to zeros */
-      Lprime->data[i*length + j] = 0.;
-      T->data[i*length + j] = 0.;
+      Lprime->data[i * length + j] = 0.;
+      T->data[i * length + j] = 0.;
     }
   }
 
@@ -1163,29 +1263,30 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
 
   /* if eigen value is > 0 set Lprime to that value i.e. have eigen values of
      zero if eigen value is negative */
-  for( i=0; i<length; i++ )
-    if( eigenval->data[i] > 0. )
-      Lprime->data[i*length + i] = eigenval->data[i];
-
-  /* compute scaling matrix T */
-  for( i=0; i<length; i++ ){
-    Tval = 0.;
-    for( j=0; j<length; j++ ){
-      Tval += eigenvec->data[i*length + j] * eigenvec->data[i*length + j] *
-        Lprime->data[j*length + j];
+  for ( i = 0; i < length; i++ )
+    if ( eigenval->data[i] > 0. ) {
+      Lprime->data[i * length + i] = eigenval->data[i];
     }
 
-    Tval = 1./Tval;
+  /* compute scaling matrix T */
+  for ( i = 0; i < length; i++ ) {
+    Tval = 0.;
+    for ( j = 0; j < length; j++ ) {
+      Tval += eigenvec->data[i * length + j] * eigenvec->data[i * length + j] *
+              Lprime->data[j * length + j];
+    }
+
+    Tval = 1. / Tval;
 
     /* really we just want the sqrt of T */
-    T->data[i*length + i] = sqrt(Tval);
+    T->data[i * length + i] = sqrt( Tval );
   }
 
   /* convert Lprime to sqrt(lambdaprime) */
-  for( i=0; i<length; i++ ){
-    REAL8 tempL = Lprime->data[i*length + i];
+  for ( i = 0; i < length; i++ ) {
+    REAL8 tempL = Lprime->data[i * length + i];
 
-    Lprime->data[i*length + i] = sqrt(tempL);
+    Lprime->data[i * length + i] = sqrt( tempL );
   }
 
   /* Bprime = S*sqrt(lambdaprime); */
@@ -1215,11 +1316,11 @@ REAL8Array *XLALConvertToPositiveDefinite( REAL8Array *nonposdef ){
   /* check that the difference between new and old values are greater than the
      maximum precision between REAL8 values (LAL_REAL8_EPS) - if not use
      original value */
-  for( i=0; i<length; i++ ){
-    for( j=0; j<length; j++ ){
-      if( fabs(posdef->data[i*length + j] -
-            nonposdef->data[i*length + j]) <= LAL_REAL8_EPS ){
-        posdef->data[i*length + j] = nonposdef->data[i*length + j];
+  for ( i = 0; i < length; i++ ) {
+    for ( j = 0; j < length; j++ ) {
+      if ( fabs( posdef->data[i * length + j] -
+                 nonposdef->data[i * length + j] ) <= LAL_REAL8_EPS ) {
+        posdef->data[i * length + j] = nonposdef->data[i * length + j];
       }
     }
   }

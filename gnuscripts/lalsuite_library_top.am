@@ -20,7 +20,7 @@ pretty-c:
 		exit 1; \
 	fi; \
 	echo "Pretty-formatting C code in $(PACKAGE_NAME)..." >&2; \
-	for file in `cd $(srcdir) && $(GIT) ls-files -- '*.[ch]'`; do \
+	for file in `cd $(srcdir) && $(GIT) ls-files -- $(PRETTY_C_PATTERN)`; do \
 		if test -h "$${file}"; then \
 			continue; \
 		fi; \
@@ -48,7 +48,7 @@ pretty-python:
 	fi; \
 	echo "Pretty-formatting Python code in $(PACKAGE_NAME)..." >&2; \
 	files=; \
-	for file in `cd $(srcdir) && $(GIT) ls-files -- '*.py'`; do \
+	for file in `cd $(srcdir) && $(GIT) ls-files -- $(PRETTY_PY_PATTERN)`; do \
 		if test -h "$${file}"; then \
 			continue; \
 		fi; \

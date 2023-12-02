@@ -39,9 +39,10 @@
 ///
 /// CUDA kernel to find the maximum of \a nvec vectors
 ///
-__global__ void VectorsMaxREAL4CUDA( REAL4 *max, const REAL4 **vec, const size_t nvec, const size_t nbin ) {
-  int k = threadIdx.x + blockDim.x*blockIdx.x;
-  if (k >= nbin) {
+__global__ void VectorsMaxREAL4CUDA( REAL4 *max, const REAL4 **vec, const size_t nvec, const size_t nbin )
+{
+  int k = threadIdx.x + blockDim.x * blockIdx.x;
+  if ( k >= nbin ) {
     return;
   }
   max[k] = vec[0][k];
@@ -55,16 +56,17 @@ __global__ void VectorsMaxREAL4CUDA( REAL4 *max, const REAL4 **vec, const size_t
 ///
 /// Find the maximum of \a nvec vectors in \a vec[], of length \a nbin, and return the result in \a max
 ///
-extern "C" int XLALVectorsMaxREAL4CUDA( REAL4 *max, const REAL4 **vec, const size_t nvec, const size_t nbin ) {
+extern "C" int XLALVectorsMaxREAL4CUDA( REAL4 *max, const REAL4 **vec, const size_t nvec, const size_t nbin )
+{
   XLAL_CHECK( max != NULL, XLAL_EFAULT );
   XLAL_CHECK( vec != NULL, XLAL_EFAULT );
   XLAL_CHECK( vec[0] != NULL, XLAL_EFAULT );
   XLAL_CHECK( nvec > 0, XLAL_EINVAL );
   XLAL_CHECK( nbin > 0, XLAL_EINVAL );
 
-  VectorsMaxREAL4CUDA<<<(nbin + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>( max, vec, nvec, nbin );
-  XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
-  XLAL_CHECK_CUDA_CALL ( cudaDeviceSynchronize() );
+  VectorsMaxREAL4CUDA <<< ( nbin + CUDA_BLOCK_SIZE - 1 ) / CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE >>> ( max, vec, nvec, nbin );
+  XLAL_CHECK_CUDA_CALL( cudaGetLastError() );
+  XLAL_CHECK_CUDA_CALL( cudaDeviceSynchronize() );
 
   return XLAL_SUCCESS;
 }
@@ -72,9 +74,10 @@ extern "C" int XLALVectorsMaxREAL4CUDA( REAL4 *max, const REAL4 **vec, const siz
 ///
 /// CUDA kernel to add \a nvec vectors
 ///
-__global__ void VectorsAddREAL4CUDA( REAL4 *sum, const REAL4 **vec, const size_t nvec, const size_t nbin ) {
-  int k = threadIdx.x + blockDim.x*blockIdx.x;
-  if (k >= nbin) {
+__global__ void VectorsAddREAL4CUDA( REAL4 *sum, const REAL4 **vec, const size_t nvec, const size_t nbin )
+{
+  int k = threadIdx.x + blockDim.x * blockIdx.x;
+  if ( k >= nbin ) {
     return;
   }
   sum[k] = vec[0][k];
@@ -86,16 +89,17 @@ __global__ void VectorsAddREAL4CUDA( REAL4 *sum, const REAL4 **vec, const size_t
 ///
 /// Add \a nvec vectors in \a vec[], of length \a nbin, and return the result in \a sum
 ///
-extern "C" int XLALVectorsAddREAL4CUDA( REAL4 *sum, const REAL4 **vec, const size_t nvec, const size_t nbin ) {
+extern "C" int XLALVectorsAddREAL4CUDA( REAL4 *sum, const REAL4 **vec, const size_t nvec, const size_t nbin )
+{
   XLAL_CHECK( sum != NULL, XLAL_EFAULT );
   XLAL_CHECK( vec != NULL, XLAL_EFAULT );
   XLAL_CHECK( vec[0] != NULL, XLAL_EFAULT );
   XLAL_CHECK( nvec > 0, XLAL_EINVAL );
   XLAL_CHECK( nbin > 0, XLAL_EINVAL );
 
-  VectorsAddREAL4CUDA<<<(nbin + CUDA_BLOCK_SIZE - 1)/CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE>>>( sum, vec, nvec, nbin );
-  XLAL_CHECK_CUDA_CALL ( cudaGetLastError() );
-  XLAL_CHECK_CUDA_CALL ( cudaDeviceSynchronize() );
+  VectorsAddREAL4CUDA <<< ( nbin + CUDA_BLOCK_SIZE - 1 ) / CUDA_BLOCK_SIZE, CUDA_BLOCK_SIZE >>> ( sum, vec, nvec, nbin );
+  XLAL_CHECK_CUDA_CALL( cudaGetLastError() );
+  XLAL_CHECK_CUDA_CALL( cudaDeviceSynchronize() );
 
   return XLAL_SUCCESS;
 }

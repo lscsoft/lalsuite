@@ -167,9 +167,9 @@ int main( int argc, char **argv )
   mismatch = .02;
   /* This is (roughly) the center of globular cluster 47 Tuc. */
   center.system = COORDINATESYSTEM_EQUATORIAL;
-  center.longitude = (24.1/60)*LAL_PI_180;
-  center.latitude = -(72+5./60)*LAL_PI_180;
-  radius = 24.0/60*LAL_PI_180;
+  center.longitude = ( 24.1 / 60 ) * LAL_PI_180;
+  center.latitude = -( 72 + 5. / 60 ) * LAL_PI_180;
+  radius = 24.0 / 60 * LAL_PI_180;
   ra_min = 0.0;
   ra_max = LAL_PI_2;
   dec_min = 0.0;
@@ -177,34 +177,30 @@ int main( int argc, char **argv )
   rectangular = 0;
 
   /* Parse and sanity-check the command-line options. */
-  while( (opt = LALgetopt( argc, argv, "a:b:c:d:ef:l:m:pr:t:x" )) != -1 )
-  {
-    switch( opt )
-    {
+  while ( ( opt = LALgetopt( argc, argv, "a:b:c:d:ef:l:m:pr:t:x" ) ) != -1 ) {
+    switch ( opt ) {
     case '?':
       return GENERALMESHTESTC_EOPT;
     case 'b':
       begin = atoi( LALoptarg );
       break;
     case 'c':
-      if( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
-      {
+      if ( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6 ) {
         fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
         return GENERALMESHTESTC_EOPT;
       }
-      center.longitude = (15*a+b/4+c/240)*LAL_PI_180;
-      center.latitude = (d+e/60+f/3600)*LAL_PI_180;
+      center.longitude = ( 15 * a + b / 4 + c / 240 ) * LAL_PI_180;
+      center.latitude = ( d + e / 60 + f / 3600 ) * LAL_PI_180;
       break;
     case 'f':
       fMax = atof( LALoptarg );
       break;
     case 'l':
-      if( sscanf( LALoptarg, "%f:%f:%f:%f",
-		  &ra_min, &ra_max, &dec_min, &dec_max) != 4)
-	{
-	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max, all in degrees\n" );
-          return GENERALMESHTESTC_EOPT;
-	}
+      if ( sscanf( LALoptarg, "%f:%f:%f:%f",
+                   &ra_min, &ra_max, &dec_min, &dec_max ) != 4 ) {
+        fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max, all in degrees\n" );
+        return GENERALMESHTESTC_EOPT;
+      }
       ra_min  *= LAL_PI_180;
       ra_max  *= LAL_PI_180;
       dec_min *= LAL_PI_180;
@@ -219,10 +215,11 @@ int main( int argc, char **argv )
       nonGrace = 1;
       break;
     case 'r':
-      if( rectangular == 1 )
+      if ( rectangular == 1 ) {
         break;
-      radius = LAL_PI_180/60*atof( LALoptarg );
-      if( radius < 0 ) {
+      }
+      radius = LAL_PI_180 / 60 * atof( LALoptarg );
+      if ( radius < 0 ) {
         fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  GENERALMESHTESTC_MSGERNG );
         return GENERALMESHTESTC_ERNG;
@@ -230,8 +227,8 @@ int main( int argc, char **argv )
       break;
     case 't':
       duration = atof( LALoptarg );
-      if( duration < MIN_DURATION || duration > MAX_DURATION ) {
-	fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
+      if ( duration < MIN_DURATION || duration > MAX_DURATION ) {
+        fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  GENERALMESHTESTC_MSGERNG );
         return GENERALMESHTESTC_ERNG;
       }
@@ -245,20 +242,17 @@ int main( int argc, char **argv )
   mesh.nIn = MAX_NODES;
   mesh.getRange = getRange;
   mesh.getMetric = getMetric;
-  mesh.metricParams = (void *) &search;
-  if( radius == 0 )
-    {
-      mesh.domain[0] = dec_min;
-      mesh.domain[1] = dec_max;
-      /* I don't understand this line*/
-      mesh.rangeParams = (void *) &search;
-    }
-  else
-    {
-      mesh.domain[0] = center.latitude - radius;
-      mesh.domain[1] = center.latitude + radius;
-      mesh.rangeParams = NULL;
-    }
+  mesh.metricParams = ( void * ) &search;
+  if ( radius == 0 ) {
+    mesh.domain[0] = dec_min;
+    mesh.domain[1] = dec_max;
+    /* I don't understand this line*/
+    mesh.rangeParams = ( void * ) &search;
+  } else {
+    mesh.domain[0] = center.latitude - radius;
+    mesh.domain[1] = center.latitude + radius;
+    mesh.rangeParams = NULL;
+  }
 
 
   /* Set detector location */
@@ -275,32 +269,35 @@ int main( int argc, char **argv )
   /* Create mesh */
   firstNode = NULL;
   LALCreateTwoDMesh( &stat, &firstNode, &mesh );
-  if( stat.statusCode )
+  if ( stat.statusCode ) {
     return stat.statusCode;
+  }
   printf( "created %d nodes\n", mesh.nOut );
-  if( mesh.nOut == MAX_NODES )
+  if ( mesh.nOut == MAX_NODES ) {
     printf( "This overflowed your limit. Try a smaller search.\n" );
+  }
 
 
   /* Write what we've got to file mesh.dat, if required */
-  if( nonGrace )
-  {
+  if ( nonGrace ) {
     TwoDMeshNode *node;
     fp = fopen( "mesh.dat", "w" );
-    if( !fp )
+    if ( !fp ) {
       return GENERALMESHTESTC_EFIO;
+    }
 
-    for( node = firstNode; node; node = node->next )
+    for ( node = firstNode; node; node = node->next )
       fprintf( fp, "%e %e\n",
-	       (double)((node->y)*180/LAL_PI), (double)((node->x)*180/LAL_PI));
+               ( double )( ( node->y ) * 180 / LAL_PI ), ( double )( ( node->x ) * 180 / LAL_PI ) );
     fclose( fp );
   }
 
   /* Clean up and leave. */
   LALDestroyTwoDMesh( &stat, &firstNode, &mesh.nOut );
   printf( "destroyed %d nodes\n", mesh.nOut );
-  if( stat.statusCode )
+  if ( stat.statusCode ) {
     return GENERALMESHTESTC_EMEM;
+  }
 
   LALCheckMemoryLeaks();
   return 0;
@@ -312,24 +309,23 @@ int main( int argc, char **argv )
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
 {
   /* Set up shop. */
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Search a circle. BEN: The 1.001 is a kludge. */
-  y[0] = center.longitude - sqrt( pow( radius*1.001, 2 )
-				  - pow( x-center.latitude, 2 ) );
-  y[1] = center.longitude + sqrt( pow( radius*1.001, 2 )
-				  - pow( x-center.latitude, 2 ) );
+  y[0] = center.longitude - sqrt( pow( radius * 1.001, 2 )
+                                  - pow( x - center.latitude, 2 ) );
+  y[1] = center.longitude + sqrt( pow( radius * 1.001, 2 )
+                                  - pow( x - center.latitude, 2 ) );
 
-  if( unused )
-    {
-      y[0] = ra_min;
-      y[1] = ra_max;
-    }
+  if ( unused ) {
+    y[0] = ra_min;
+    y[1] = ra_max;
+  }
 
   /*
   printf("x = %le,  y[0] = %le,  y[1] = %le\n", (double)x, (double)y[0],
-	 (double)y[1]);
+   (double)y[1]);
   */
 
   /* Clean up and leave. */
@@ -354,7 +350,7 @@ void getMetric( LALStatus *stat,
   Ppatch = params;
 
   /* Set up shop. */
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
   TRY( LALDCreateVector( stat->statusPtr, &metric, 6 ), stat );
 
@@ -366,20 +362,19 @@ void getMetric( LALStatus *stat,
   LALPtoleMetric( stat->statusPtr, metric, Ppatch );
 
   BEGINFAIL( stat )
-    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+  TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   ENDFAIL( stat );
   LALProjectMetric( stat->statusPtr, metric, 0 );
   BEGINFAIL( stat )
-    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+  TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   ENDFAIL( stat );
 
-  determinant = metric->data[5]*metric->data[2]-pow(metric->data[4],2.0);
-  if(determinant < 0.0)
-    {
-      printf( "%s line %d: %s\n", __FILE__, __LINE__,
-	      GENERALMESHTESTC_MSGEMET );
-      return;
-    }
+  determinant = metric->data[5] * metric->data[2] - pow( metric->data[4], 2.0 );
+  if ( determinant < 0.0 ) {
+    printf( "%s line %d: %s\n", __FILE__, __LINE__,
+            GENERALMESHTESTC_MSGEMET );
+    return;
+  }
 
 
 

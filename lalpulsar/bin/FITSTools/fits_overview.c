@@ -37,7 +37,7 @@
 #error CFITSIO library is not available
 #endif
 
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
   fitsfile *fptr = 0;         /* FITS file pointer, defined in fitsio.h */
   char keyname[FLEN_KEYWORD], colname[FLEN_VALUE], coltype[FLEN_VALUE];
@@ -45,90 +45,90 @@ int main(int argc, char *argv[])
   int single = 0, hdupos = 0, hdutype = 0, bitpix = 0, naxis = 0, ncols = 0, ii = 0;
   long naxes[10], nrows = 0;
 
-  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+  int printhelp = ( argc == 2 && ( strcmp( argv[1], "-h" ) == 0 || strcmp( argv[1], "--help" ) == 0 ) );
 
-  if (printhelp || argc != 2) {
-    fprintf(stderr, "Usage:  %s filename[ext] \n", argv[0]);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "List the structure of a single extension, or, if ext is \n");
-    fprintf(stderr, "not given, list the structure of the entire FITS file.  \n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Note that it may be necessary to enclose the input file\n");
-    fprintf(stderr, "name in single quote characters on the Unix command line.\n");
-    return (0);
+  if ( printhelp || argc != 2 ) {
+    fprintf( stderr, "Usage:  %s filename[ext] \n", argv[0] );
+    fprintf( stderr, "\n" );
+    fprintf( stderr, "List the structure of a single extension, or, if ext is \n" );
+    fprintf( stderr, "not given, list the structure of the entire FITS file.  \n" );
+    fprintf( stderr, "\n" );
+    fprintf( stderr, "Note that it may be necessary to enclose the input file\n" );
+    fprintf( stderr, "name in single quote characters on the Unix command line.\n" );
+    return ( 0 );
   }
 
 #if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
-  FILE *fout = popen(PAGER, "w");
-  if (fout == NULL) {
-    fprintf(stderr, "Could not execute '%s'\n", PAGER);
-    return (1);
+  FILE *fout = popen( PAGER, "w" );
+  if ( fout == NULL ) {
+    fprintf( stderr, "Could not execute '%s'\n", PAGER );
+    return ( 1 );
   }
 #else
   FILE *fout = stdout;
 #endif
 
-  if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
-    fits_get_hdu_num(fptr, &hdupos);  /* Get the current HDU position */
+  if ( !fits_open_file( &fptr, argv[1], READONLY, &status ) ) {
+    fits_get_hdu_num( fptr, &hdupos ); /* Get the current HDU position */
 
     /* List only a single structure if a specific extension was given */
-    if (strchr(argv[1], '[') || strchr(argv[1], '+')) {
+    if ( strchr( argv[1], '[' ) || strchr( argv[1], '+' ) ) {
       single++;
     }
 
-    for (; !status; hdupos++) { /* Main loop for each HDU */
-      fits_get_hdu_type(fptr, &hdutype, &status);  /* Get the HDU type */
+    for ( ; !status; hdupos++ ) { /* Main loop for each HDU */
+      fits_get_hdu_type( fptr, &hdutype, &status ); /* Get the HDU type */
 
-      fprintf(fout, "\nHDU #%d  ", hdupos);
-      if (hdutype == IMAGE_HDU) { /* primary array or image HDU */
-        fits_get_img_param(fptr, 10, &bitpix, &naxis, naxes, &status);
+      fprintf( fout, "\nHDU #%d  ", hdupos );
+      if ( hdutype == IMAGE_HDU ) { /* primary array or image HDU */
+        fits_get_img_param( fptr, 10, &bitpix, &naxis, naxes, &status );
 
-        fprintf(fout, "Array:  NAXIS = %d,  BITPIX = %d\n", naxis, bitpix);
-        for (ii = 0; ii < naxis; ii++) {
-          fprintf(fout, "   NAXIS%d = %ld\n",ii+1, naxes[ii]);
+        fprintf( fout, "Array:  NAXIS = %d,  BITPIX = %d\n", naxis, bitpix );
+        for ( ii = 0; ii < naxis; ii++ ) {
+          fprintf( fout, "   NAXIS%d = %ld\n", ii + 1, naxes[ii] );
         }
       } else { /* a table HDU */
-        fits_get_num_rows(fptr, &nrows, &status);
-        fits_get_num_cols(fptr, &ncols, &status);
+        fits_get_num_rows( fptr, &nrows, &status );
+        fits_get_num_cols( fptr, &ncols, &status );
 
-        if (hdutype == ASCII_TBL) {
-          fprintf(fout, "ASCII Table:  ");
+        if ( hdutype == ASCII_TBL ) {
+          fprintf( fout, "ASCII Table:  " );
         } else {
-          fprintf(fout, "Binary Table:  ");
+          fprintf( fout, "Binary Table:  " );
         }
 
-        fprintf(fout, "%d columns x %ld rows\n", ncols, nrows);
-        fprintf(fout, " COL NAME             FORMAT\n");
+        fprintf( fout, "%d columns x %ld rows\n", ncols, nrows );
+        fprintf( fout, " COL NAME             FORMAT\n" );
 
-        for (ii = 1; ii <= ncols; ii++) {
-          fits_make_keyn("TTYPE", ii, keyname, &status); /* make keyword */
-          fits_read_key(fptr, TSTRING, keyname, colname, NULL, &status);
-          fits_make_keyn("TFORM", ii, keyname, &status); /* make keyword */
-          fits_read_key(fptr, TSTRING, keyname, coltype, NULL, &status);
+        for ( ii = 1; ii <= ncols; ii++ ) {
+          fits_make_keyn( "TTYPE", ii, keyname, &status ); /* make keyword */
+          fits_read_key( fptr, TSTRING, keyname, colname, NULL, &status );
+          fits_make_keyn( "TFORM", ii, keyname, &status ); /* make keyword */
+          fits_read_key( fptr, TSTRING, keyname, coltype, NULL, &status );
 
-          fprintf(fout, " %3d %-16s %-16s\n", ii, colname, coltype);
+          fprintf( fout, " %3d %-16s %-16s\n", ii, colname, coltype );
         }
       }
 
-      if (single) {
+      if ( single ) {
         break;  /* quit if only listing a single HDU */
       }
 
-      fits_movrel_hdu(fptr, 1, NULL, &status);  /* try move to next ext */
+      fits_movrel_hdu( fptr, 1, NULL, &status ); /* try move to next ext */
     }
 
-    if (status == END_OF_FILE) {
+    if ( status == END_OF_FILE ) {
       status = 0;  /* Reset normal error */
     }
-    fits_close_file(fptr, &status);
+    fits_close_file( fptr, &status );
   }
 
 #if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
-  pclose(fout);
+  pclose( fout );
 #endif
 
-  if (status) {
-    fits_report_error(stderr, status);  /* print any error message */
+  if ( status ) {
+    fits_report_error( stderr, status ); /* print any error message */
   }
-  return (status);
+  return ( status );
 }

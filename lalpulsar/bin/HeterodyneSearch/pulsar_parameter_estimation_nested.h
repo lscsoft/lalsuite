@@ -338,26 +338,29 @@ extern "C" {
  * recognised within the code.
  */
 static const CHAR amppars[NUMAMPPARS][VARNAME_MAX] = { "H0", "PHI0", "PSI",
-"COSIOTA", "C22", "C21", "PHI22", "PHI21", "HPLUS", "HCROSS", "HSCALARB",
-"HSCALARL", "HVECTORX", "HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PSISCALAR",
-"PHI0SCALAR", "PSITENSOR", "PHI0TENSOR", "I21", "I31", "LAMBDA", "COSTHETA",
-"IOTA", "THETA", "Q22", "DIST", "H0_F" };
+                                                       "COSIOTA", "C22", "C21", "PHI22", "PHI21", "HPLUS", "HCROSS", "HSCALARB",
+                                                       "HSCALARL", "HVECTORX", "HVECTORY", "PSIVECTOR", "PHI0VECTOR", "PSISCALAR",
+                                                       "PHI0SCALAR", "PSITENSOR", "PHI0TENSOR", "I21", "I31", "LAMBDA", "COSTHETA",
+                                                       "IOTA", "THETA", "Q22", "DIST", "H0_F"
+                                                     };
 
 /**
  * A list of the sky position parameters. The names given here are those that
  * are recognised within the code.
  */
 static const CHAR skypars[NUMSKYPARS][VARNAME_MAX] = { "RA", "PMRA", "DEC",
-"PMDEC", "POSEPOCH", "PX" };
+                                                       "PMDEC", "POSEPOCH", "PX"
+                                                     };
 
 /**
  * A list of the binary system parameters. The names given here are those that
  * are recognised within the code.
  */
 static const CHAR binpars[NUMBINPARS][VARNAME_MAX] = { "PB", "ECC", "EPS1",
-"EPS2", "T0", "TASC", "A1", "OM", "PB_2", "ECC_2", "T0_2", "A1_2", "OM_2", "PB_3", "ECC_3",
-"T0_3", "A1_3", "OM_3", "XPBDOT", "EPS1DOT", "EPS2DOT", "OMDOT", "GAMMA", "PBDOT",
-"XDOT", "EDOT", "SINI", "DR", "DTHETA", "A0", "B0", "MTOT", "M2", "FB" };
+                                                       "EPS2", "T0", "TASC", "A1", "OM", "PB_2", "ECC_2", "T0_2", "A1_2", "OM_2", "PB_3", "ECC_3",
+                                                       "T0_3", "A1_3", "OM_3", "XPBDOT", "EPS1DOT", "EPS2DOT", "OMDOT", "GAMMA", "PBDOT",
+                                                       "XDOT", "EDOT", "SINI", "DR", "DTHETA", "A0", "B0", "MTOT", "M2", "FB"
+                                                     };
 
 /** A list of the glitch parameters. */
 static const CHAR glitchpars[NUMGLITCHPARS][VARNAME_MAX] = {"GLEP", "GLPH", "GLF0", "GLF1", "GLF2", "GLF0D", "GLTD"};

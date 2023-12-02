@@ -83,7 +83,7 @@ LALInference tools */
  * lalpulsar_parameter_estimation_nested --help
  * \endcode
  *
- * An example of running the code to search over the four unknown parameters \f$ h_0 \f$ , \f$ \phi_0 \f$ , \f$ \psi \f$ 
+ * An example of running the code to search over the four unknown parameters \f$ h_0 \f$ , \f$ \phi_0 \f$ , \f$ \psi \f$
  * and \f$ \cos{\iota} \f$ , for pulsar J0534-2200, given heterodyned time domain data from the H1 detector in the file
  * \c finehet_J0534-2200_H1, is:
  * \code
@@ -143,12 +143,13 @@ LALInference tools */
 /* global variables */
 LALStringVector *corlist = NULL;
 
-INT4 main( INT4 argc, CHAR *argv[] ){
+INT4 main( INT4 argc, CHAR *argv[] )
+{
   ProcessParamsTable *param_table, *testgausslike;
   LALInferenceRunState runState;
   REAL8 logZnoise = 0.;
   struct timeval time1, time2;
-  gettimeofday(&time1, NULL); /* time program */
+  gettimeofday( &time1, NULL ); /* time program */
 
   /* set error handler to abort in main function */
   XLALSetErrorHandler( XLALExitErrorHandler );
@@ -162,35 +163,36 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   initialise_algorithm( &runState );
 
   /* check if testing with hardcoded Gaussian likelihood */
-  testgausslike = LALInferenceGetProcParamVal(param_table, "--test-gaussian-likelihood");
+  testgausslike = LALInferenceGetProcParamVal( param_table, "--test-gaussian-likelihood" );
 
   /* read in data */
-  if( !testgausslike ){ read_pulsar_data( &runState ); }
-  else{
+  if ( !testgausslike ) {
+    read_pulsar_data( &runState );
+  } else {
     /* initialise some required values if running on test Gaussian likelihood */
     REAL8 h0val = 0., h0sigma = 2.5e-24, h0mean = 0.;
     runState.data = NULL;
-    runState.threads[0].model = XLALCalloc(1, sizeof(LALInferenceModel));
-    runState.data = XLALCalloc( 1, sizeof(LALInferenceIFOData) );
+    runState.threads[0].model = XLALCalloc( 1, sizeof( LALInferenceModel ) );
+    runState.data = XLALCalloc( 1, sizeof( LALInferenceIFOData ) );
     runState.data->likeli_counter = 0;
     runState.data->templa_counter = 0;
     runState.data->next = NULL;
-    runState.threads[0].model->ifo = XLALMalloc(sizeof(LALInferenceIFOModel));
-    runState.threads[0].model->ifo->extraData = XLALCalloc(1, sizeof(IFOModelExtraData) );
-    runState.threads[0].model->ifo->params = XLALCalloc(1, sizeof(LALInferenceVariables) );
+    runState.threads[0].model->ifo = XLALMalloc( sizeof( LALInferenceIFOModel ) );
+    runState.threads[0].model->ifo->extraData = XLALCalloc( 1, sizeof( IFOModelExtraData ) );
+    runState.threads[0].model->ifo->params = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
     runState.threads[0].model->ifo->next = NULL;
-    runState.threads[0].model->ifo_loglikelihoods = XLALMalloc( sizeof(REAL8) );
-    runState.threads[0].model->ifo_SNRs = XLALMalloc( sizeof(REAL8) );
-    runState.threads[0].currentParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+    runState.threads[0].model->ifo_loglikelihoods = XLALMalloc( sizeof( REAL8 ) );
+    runState.threads[0].model->ifo_SNRs = XLALMalloc( sizeof( REAL8 ) );
+    runState.threads[0].currentParams = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
 
     /* add parameters of the Gaussian */
     LALInferenceAddVariable( runState.threads[0].currentParams, "H0", &h0val, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add H0 parameter */
-    if ( LALInferenceGetProcParamVal(param_table, "--test-gaussian-sigma") ){
-      h0sigma = atof(LALInferenceGetProcParamVal(param_table, "--test-gaussian-sigma")->value);
+    if ( LALInferenceGetProcParamVal( param_table, "--test-gaussian-sigma" ) ) {
+      h0sigma = atof( LALInferenceGetProcParamVal( param_table, "--test-gaussian-sigma" )->value );
     }
     LALInferenceAddVariable( runState.threads[0].currentParams, "H0SIGMA", &h0sigma, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
-    if ( LALInferenceGetProcParamVal(param_table, "--test-gaussian-mean") ){
-      h0mean = atof(LALInferenceGetProcParamVal(param_table, "--test-gaussian-mean")->value);
+    if ( LALInferenceGetProcParamVal( param_table, "--test-gaussian-mean" ) ) {
+      h0mean = atof( LALInferenceGetProcParamVal( param_table, "--test-gaussian-mean" )->value );
     }
     LALInferenceAddVariable( runState.threads[0].currentParams, "H0MEAN", &h0mean, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add standard deviation */
   }
@@ -200,24 +202,27 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   runState.evolve = &LALInferenceNestedSamplingOneStep;
 
   /* set likelihood function */
-  if( testgausslike ){
+  if ( testgausslike ) {
     runState.likelihood = &test_gaussian_log_likelihood; /* run on a simple test Gaussian likelihood */
+  } else {
+    runState.likelihood = &pulsar_log_likelihood;
   }
-  else{ runState.likelihood = &pulsar_log_likelihood; }
 
   /* set prior function */
   runState.prior = &priorFunction;
 
   /* Generate the lookup tables and read parameters from par file */
-  if ( !testgausslike ){ setup_from_par_file( &runState ); }
+  if ( !testgausslike ) {
+    setup_from_par_file( &runState );
+  }
 
   /* set signal model/template */
-  if ( !testgausslike ){
+  if ( !testgausslike ) {
     runState.threads[0].model->templt = &get_pulsar_model;
   }
 
   /* add injections if requested */
-  if( !testgausslike ){
+  if ( !testgausslike ) {
     inject_signal( &runState );
   }
 
@@ -225,28 +230,29 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   initialise_prior( &runState );
 
   /* create sum square of the data to speed up the likelihood calculation */
-  if( !testgausslike ){
+  if ( !testgausslike ) {
     sum_data( &runState );
   }
 
   /* check whether using reduced order quadrature */
-  if( !testgausslike ){
+  if ( !testgausslike ) {
     generate_interpolant( &runState );
   }
 
-  if( !testgausslike ){
+  if ( !testgausslike ) {
     gridOutput( &runState );
   }
 
   /* get noise likelihood and add as variable to runState */
-  if( !testgausslike ){
+  if ( !testgausslike ) {
     logZnoise = noise_only_likelihood( &runState );
+  } else {
+    logZnoise = 0.;
   }
-  else{ logZnoise = 0.; }
   LALInferenceAddVariable( runState.algorithmParams, "logZnoise", &logZnoise, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
 
   /* Create live points array and fill initial parameters */
-  if( !LALInferenceGetProcParamVal(param_table, "--compare-likelihoods") ){
+  if ( !LALInferenceGetProcParamVal( param_table, "--compare-likelihoods" ) ) {
     setup_live_points_array_wrapper( &runState );
   }
 
@@ -259,30 +265,33 @@ INT4 main( INT4 argc, CHAR *argv[] ){
   /* Set up threads */
   initialise_threads( &runState, 1 );
 
-  if( !LALInferenceGetProcParamVal(param_table, "--compare-likelihoods") ){
+  if ( !LALInferenceGetProcParamVal( param_table, "--compare-likelihoods" ) ) {
     /* Call the nested sampling algorithm */
     runState.algorithm( &runState );
-  }
-  else{
+  } else {
     /* compare likelihoods from previous run */
     compare_likelihoods( &runState );
     return 0;
   }
 
   /* get SNR of highest likelihood point */
-  if( !testgausslike ){ get_loudest_snr( &runState ); }
+  if ( !testgausslike ) {
+    get_loudest_snr( &runState );
+  }
 
   /* output log evidence and 95% upper limit of test Gaussian likelihood */
-  if ( testgausslike ){ test_gaussian_output( &runState ); }
+  if ( testgausslike ) {
+    test_gaussian_output( &runState );
+  }
 
   /* close timing file */
-  if ( LALInferenceCheckVariable( runState.algorithmParams, "timefile" ) ){
-    gettimeofday(&time2, NULL);
-    REAL8 tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
-    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState.algorithmParams, "timefile" );
-    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState.algorithmParams, "timenum" );
-    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
-    fclose(timefile);
+  if ( LALInferenceCheckVariable( runState.algorithmParams, "timefile" ) ) {
+    gettimeofday( &time2, NULL );
+    REAL8 tottime = ( REAL8 )( ( time2.tv_sec + time2.tv_usec * 1.e-6 ) - ( time1.tv_sec + time1.tv_usec * 1.e-6 ) );
+    FILE *timefile = *( FILE ** )LALInferenceGetVariable( runState.algorithmParams, "timefile" );
+    UINT4 timenum = *( UINT4 * )LALInferenceGetVariable( runState.algorithmParams, "timenum" );
+    fprintf( timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime );
+    fclose( timefile );
   }
 
   return 0;

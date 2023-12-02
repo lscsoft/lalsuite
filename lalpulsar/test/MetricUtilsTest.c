@@ -95,9 +95,9 @@ int main( void )
     gsl_matrix *GAMAT_MAIN( gpr_ij, g_ij->size1, g_ij->size2 );
 
     // Create some transform
-    for( size_t i = 0; i < transform->size1; ++i ) {
-      for( size_t j = 0; j < transform->size2; ++j ) {
-        gsl_matrix_set( transform, i, j, (j >= i) ? pow(2, j - i) : 0.0 );
+    for ( size_t i = 0; i < transform->size1; ++i ) {
+      for ( size_t j = 0; j < transform->size2; ++j ) {
+        gsl_matrix_set( transform, i, j, ( j >= i ) ? pow( 2, j - i ) : 0.0 );
       }
     }
 
@@ -118,8 +118,8 @@ int main( void )
 
     // Diagonally normalize metric
     XLAL_CHECK_MAIN( XLALDiagNormalizeMetric( &gpr_ij, &transform, g_ij ) == XLAL_SUCCESS, XLAL_EFUNC );
-    for( size_t i = 0; i < gpr_ij->size1; ++i ) {
-      XLAL_CHECK_MAIN( fabs( gsl_matrix_get( gpr_ij, i, i ) - 1.0) <= 1e-5, XLAL_ETOL, "gsl_matrix_get( gpr_ij, %zu, %zu ) = %0.6g != 1.0", i, i, gsl_matrix_get( gpr_ij, i, i ) );
+    for ( size_t i = 0; i < gpr_ij->size1; ++i ) {
+      XLAL_CHECK_MAIN( fabs( gsl_matrix_get( gpr_ij, i, i ) - 1.0 ) <= 1e-5, XLAL_ETOL, "gsl_matrix_get( gpr_ij, %zu, %zu ) = %0.6g != 1.0", i, i, gsl_matrix_get( gpr_ij, i, i ) );
     }
 
     // Invert transform, should give back same metric

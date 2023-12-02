@@ -53,7 +53,7 @@ typedef struct {
 enum { SPINDOWN, EYE } MetricType;
 const UserChoices MetricTypeChoices = { { SPINDOWN, "spindown" }, { EYE, "eye" } };
 
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
 
   // Initialise user variables
@@ -64,19 +64,19 @@ int main(int argc, char *argv[])
   UserVariables *const uvar = &uvar_struct;
 
   // Register user variables
-  XLAL_CHECK_MAIN(XLALRegisterUvarMember(time_span, REAL8, 'T', REQUIRED, "Time-span of the data set (in seconds)") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(XLALRegisterUvarMember(square, REAL8Vector, 0, OPTIONAL, "Square parameter space: start,width,...") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(XLALRegisterUvarMember(age_braking, REAL8Vector, 0, OPTIONAL, "Age/braking index parameter space: alpha,delta,freq,freqband,age,minbrake,maxbrake") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(XLALRegisterUvarMember(max_mismatch, REAL8, 'X', REQUIRED, "Maximum allowed mismatch between the templates") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(XLALRegisterUvarAuxDataMember(lattice, UserEnum, &TilingLatticeChoices, 'L', REQUIRED, "Type of lattice to use") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN(XLALRegisterUvarAuxDataMember(metric, UserEnum, &MetricTypeChoices, 'M', OPTIONAL, "Type of metric to use") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterUvarMember( time_span, REAL8, 'T', REQUIRED, "Time-span of the data set (in seconds)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterUvarMember( square, REAL8Vector, 0, OPTIONAL, "Square parameter space: start,width,..." ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterUvarMember( age_braking, REAL8Vector, 0, OPTIONAL, "Age/braking index parameter space: alpha,delta,freq,freqband,age,minbrake,maxbrake" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterUvarMember( max_mismatch, REAL8, 'X', REQUIRED, "Maximum allowed mismatch between the templates" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterUvarAuxDataMember( lattice, UserEnum, &TilingLatticeChoices, 'L', REQUIRED, "Type of lattice to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterUvarAuxDataMember( metric, UserEnum, &MetricTypeChoices, 'M', OPTIONAL, "Type of metric to use" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Parse user input
   BOOLEAN should_exit = 0;
   XLAL_CHECK( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check user input
-  XLALUserVarCheck( &should_exit, UVAR_SET2(square, age_braking) == 1, "Exactly one of " UVAR_STR2AND(square, age_braking) " must be specified" );
+  XLALUserVarCheck( &should_exit, UVAR_SET2( square, age_braking ) == 1, "Exactly one of " UVAR_STR2AND( square, age_braking ) " must be specified" );
 
   // Exit if required
   if ( should_exit ) {
@@ -84,21 +84,21 @@ int main(int argc, char *argv[])
   }
 
   LatticeTiling *tiling = NULL;
-  if (UVAR_SET(square)) {
+  if ( UVAR_SET( square ) ) {
 
     // Create square parameter space
-    XLAL_CHECK_MAIN(GSL_IS_EVEN(uvar->square->length), XLAL_EINVAL, "'square' must have an even number of arguments");
-    const size_t n = uvar->square->length/2;
-    tiling = XLALCreateLatticeTiling(n);
-    XLAL_CHECK_MAIN(tiling != NULL, XLAL_EFUNC);
-    for (size_t i = 0; i < n; ++i) {
-      XLAL_CHECK_MAIN(XLALSetLatticeTilingConstantBound(tiling, i, uvar->square->data[2*i], uvar->square->data[2*i] + uvar->square->data[2*i + 1]) == XLAL_SUCCESS, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( GSL_IS_EVEN( uvar->square->length ), XLAL_EINVAL, "'square' must have an even number of arguments" );
+    const size_t n = uvar->square->length / 2;
+    tiling = XLALCreateLatticeTiling( n );
+    XLAL_CHECK_MAIN( tiling != NULL, XLAL_EFUNC );
+    for ( size_t i = 0; i < n; ++i ) {
+      XLAL_CHECK_MAIN( XLALSetLatticeTilingConstantBound( tiling, i, uvar->square->data[2 * i], uvar->square->data[2 * i] + uvar->square->data[2 * i + 1] ) == XLAL_SUCCESS, XLAL_EFUNC );
     }
 
   } else {
 
     // Create age--braking index parameter space
-    XLAL_CHECK_MAIN(uvar->age_braking->length == 7, XLAL_EINVAL, "'age-braking' must have exactly 7 arguments");
+    XLAL_CHECK_MAIN( uvar->age_braking->length == 7, XLAL_EINVAL, "'age-braking' must have exactly 7 arguments" );
     const double alpha       = uvar->age_braking->data[0];
     const double delta       = uvar->age_braking->data[1];
     const double freq        = uvar->age_braking->data[2];
@@ -106,43 +106,43 @@ int main(int argc, char *argv[])
     const double age         = uvar->age_braking->data[4];
     const double min_braking = uvar->age_braking->data[5];
     const double max_braking = uvar->age_braking->data[6];
-    tiling = XLALCreateLatticeTiling(5);
-    XLAL_CHECK_MAIN(tiling != NULL, XLAL_EFUNC);
-    XLAL_CHECK_MAIN(XLALSetLatticeTilingConstantBound(tiling, 0, alpha, alpha) == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK_MAIN(XLALSetLatticeTilingConstantBound(tiling, 1, delta, delta) == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK_MAIN(XLALSetLatticeTilingConstantBound(tiling, 2, freq, freq + freq_band) == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK_MAIN(XLALSetLatticeTilingF1DotAgeBrakingBound(tiling, 2, 3, age, min_braking, max_braking) == XLAL_SUCCESS, XLAL_EFUNC);
-    XLAL_CHECK_MAIN(XLALSetLatticeTilingF2DotBrakingBound(tiling, 2, 3, 4, min_braking, max_braking) == XLAL_SUCCESS, XLAL_EFUNC);
+    tiling = XLALCreateLatticeTiling( 5 );
+    XLAL_CHECK_MAIN( tiling != NULL, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALSetLatticeTilingConstantBound( tiling, 0, alpha, alpha ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALSetLatticeTilingConstantBound( tiling, 1, delta, delta ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALSetLatticeTilingConstantBound( tiling, 2, freq, freq + freq_band ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALSetLatticeTilingF1DotAgeBrakingBound( tiling, 2, 3, age, min_braking, max_braking ) == XLAL_SUCCESS, XLAL_EFUNC );
+    XLAL_CHECK_MAIN( XLALSetLatticeTilingF2DotBrakingBound( tiling, 2, 3, 4, min_braking, max_braking ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   }
-  const size_t n = XLALTotalLatticeTilingDimensions(tiling);
+  const size_t n = XLALTotalLatticeTilingDimensions( tiling );
 
   // Set lattice and metric
   gsl_matrix *metric = NULL;
-  if (uvar->metric == SPINDOWN) {
-    GAMAT(metric, n, n);
-    gsl_matrix_set_identity(metric);
-    gsl_matrix_view spin_metric = gsl_matrix_submatrix(metric, 2, 2, n - 2, n - 2);
-    XLAL_CHECK_MAIN(XLALSpindownMetric(&spin_metric.matrix, uvar->time_span) == XLAL_SUCCESS, XLAL_EFUNC);
+  if ( uvar->metric == SPINDOWN ) {
+    GAMAT( metric, n, n );
+    gsl_matrix_set_identity( metric );
+    gsl_matrix_view spin_metric = gsl_matrix_submatrix( metric, 2, 2, n - 2, n - 2 );
+    XLAL_CHECK_MAIN( XLALSpindownMetric( &spin_metric.matrix, uvar->time_span ) == XLAL_SUCCESS, XLAL_EFUNC );
   } else {
-    GAMAT(metric, n, n);
-    gsl_matrix_set_identity(metric);
+    GAMAT( metric, n, n );
+    gsl_matrix_set_identity( metric );
   }
-  XLAL_CHECK_MAIN(XLALSetTilingLatticeAndMetric(tiling, uvar->lattice, metric, uvar->max_mismatch)  == XLAL_SUCCESS, XLAL_EFUNC);
-  gsl_matrix_free(metric);
+  XLAL_CHECK_MAIN( XLALSetTilingLatticeAndMetric( tiling, uvar->lattice, metric, uvar->max_mismatch )  == XLAL_SUCCESS, XLAL_EFUNC );
+  gsl_matrix_free( metric );
 
   // Create a lattice iterator
-  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator(tiling, n);
-  XLAL_CHECK_MAIN(itr != NULL, XLAL_EFUNC);
+  LatticeTilingIterator *itr = XLALCreateLatticeTilingIterator( tiling, n );
+  XLAL_CHECK_MAIN( itr != NULL, XLAL_EFUNC );
 
   // Print number of templates
-  UINT8 ntemplates = XLALTotalLatticeTilingPoints(itr);
-  XLAL_CHECK_MAIN(ntemplates > 0, XLAL_EFUNC);
-  printf("%" LAL_UINT8_FORMAT "\n", ntemplates);
+  UINT8 ntemplates = XLALTotalLatticeTilingPoints( itr );
+  XLAL_CHECK_MAIN( ntemplates > 0, XLAL_EFUNC );
+  printf( "%" LAL_UINT8_FORMAT "\n", ntemplates );
 
   // Cleanup
-  XLALDestroyLatticeTilingIterator(itr);
-  XLALDestroyLatticeTiling(tiling);
+  XLALDestroyLatticeTilingIterator( itr );
+  XLALDestroyLatticeTiling( tiling );
   XLALDestroyUserVars();
 
   LALCheckMemoryLeaks();

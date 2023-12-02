@@ -60,8 +60,8 @@
 #define TRUE    1
 #define FALSE   0
 
-static const REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS;	// about ~1 + 2e-15
-static const REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
+static const REAL8 fudge_up   = 1 + 10 * LAL_REAL8_EPS; // about ~1 + 2e-15
+static const REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS; // about ~1 - 2e-15
 
 /** size of blocks allocated for SFT data. For Einstein\@home SFTs this should be set to 8000 (externally) */
 #ifndef SFTFILEIO_REALLOC_BLOCKSIZE
@@ -86,10 +86,9 @@ static const REAL8 fudge_down = 1 - 10 * LAL_REAL8_EPS;	// about ~1 - 2e-15
  * of the actual physical storage of SFTs and to ease future extensions of the interface.
  * DO NOT TRY TO USE THIS TYPE OUTSIDE OF THIS MODULE!!
  */
-struct tagSFTLocator
-{
-  CHAR *fname;		/* name of file containing this SFT */
-  long offset;		/* SFT-offset with respect to a merged-SFT */
+struct tagSFTLocator {
+  CHAR *fname;          /* name of file containing this SFT */
+  long offset;          /* SFT-offset with respect to a merged-SFT */
   UINT4 isft;           /* index of SFT this locator belongs to, used only in XLALLoadSFTs() */
 };
 
@@ -97,31 +96,31 @@ struct tagSFTLocator
 
 // These functions are defined in SFTtypes.c
 
-REAL8 TSFTfromDFreq ( REAL8 dFreq );
+REAL8 TSFTfromDFreq( REAL8 dFreq );
 
-int compareSFTdesc(const void *ptr1, const void *ptr2);
-int compareSFTloc(const void *ptr1, const void *ptr2);
-int compareDetNameCatalogs ( const void *ptr1, const void *ptr2 );
-int compareSFTepoch(const void *ptr1, const void *ptr2);
+int compareSFTdesc( const void *ptr1, const void *ptr2 );
+int compareSFTloc( const void *ptr1, const void *ptr2 );
+int compareDetNameCatalogs( const void *ptr1, const void *ptr2 );
+int compareSFTepoch( const void *ptr1, const void *ptr2 );
 
 // These functions are defined in SFTnaming.c
 
-int build_sft_windowspec ( UINT2 *windowspec, CHAR (*windowspec_str)[9], const char *window_type, REAL8 window_param );
-int parse_sft_windowspec ( const UINT2 windowspec, const char **window_type, REAL8 *window_param );
-int parse_sft_windowspec_str ( const CHAR *windowspec_str, CHAR (*window_type)[32], REAL8 *window_param );
+int build_sft_windowspec( UINT2 *windowspec, CHAR( *windowspec_str )[9], const char *window_type, REAL8 window_param );
+int parse_sft_windowspec( const UINT2 windowspec, const char **window_type, REAL8 *window_param );
+int parse_sft_windowspec_str( const CHAR *windowspec_str, CHAR( *window_type )[32], REAL8 *window_param );
 
 // These functions are defined in SFTfileIO.c
 
-void endian_swap(CHAR * pdata, size_t dsize, size_t nelements);
+void endian_swap( CHAR *pdata, size_t dsize, size_t nelements );
 
-FILE * fopen_SFTLocator ( const struct tagSFTLocator *locator );
+FILE *fopen_SFTLocator( const struct tagSFTLocator *locator );
 
-int read_SFTversion_from_fp ( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
-int read_sft_header_from_fp (FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, UINT2 *SFTwindowspec, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins );
-UINT4 read_sft_bins_from_fp ( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read , FILE *fp );
+int read_SFTversion_from_fp( UINT4 *version, BOOLEAN *need_swap, FILE *fp );
+int read_sft_header_from_fp( FILE *fp, SFTtype *header, UINT4 *version, UINT8 *crc64, UINT2 *SFTwindowspec, BOOLEAN *swapEndian, CHAR **SFTcomment, UINT4 *numBins );
+UINT4 read_sft_bins_from_fp( SFTtype *ret, UINT4 *firstBinRead, UINT4 firstBin2read, UINT4 lastBin2read, FILE *fp );
 
-BOOLEAN has_valid_crc64 (FILE *fp );
+BOOLEAN has_valid_crc64( FILE *fp );
 
 // These functions are defined in SFTReferenceLibrary.c
 
-unsigned long long crc64(const unsigned char* data, unsigned int length, unsigned long long crc);
+unsigned long long crc64( const unsigned char *data, unsigned int length, unsigned long long crc );

@@ -104,7 +104,7 @@
  * equations for \f$ y_{a,b}(x) \f$ simply have 1 and 2 reversed.
  *
  * If \f$ x_1 \f$ and \f$ x_2 \f$ have the same sign, then the domain is
- * \f$ [0,x_1+x_2] \f$ if \f$ x_1 \f$ and \f$ x_2 \f$ are positive, and \f$ [x_1+x_2,0] \f$ 
+ * \f$ [0,x_1+x_2] \f$ if \f$ x_1 \f$ and \f$ x_2 \f$ are positive, and \f$ [x_1+x_2,0] \f$
  * otherwise.  The boundary functions are:
  * \f{eqnarray}{
  * y_a(x) & = & \left\{\begin{array}{c@{\qquad}c}
@@ -174,7 +174,7 @@
  * plot the mesh points and the boundary.  A value of zero suppresses the
  * plot.
  *
- * If mesh points are to be plotted, they will be filled circles \f$ 1/72'' \f$ 
+ * If mesh points are to be plotted, they will be filled circles \f$ 1/72'' \f$
  * (1~point) in diameter.  The parameter space will be rotated so that
  * the longer of the diagonals of the parallelogram will be vertical, and
  * scaled to fit on one \f$ 8.5''\times11'' \f$ page.  That is, if
@@ -254,8 +254,8 @@
 if ( lalDebugLevel & LALERROR )                                      \
 {                                                                    \
   XLALPrintError( "Error[0] %d: program %s, file %s, line %d, %s\n"   \
-		 "        %s %s\n", (code), *argv, __FILE__,         \
-		 __LINE__, "$Id$", statement ? statement :    \
+     "        %s %s\n", (code), *argv, __FILE__,         \
+     __LINE__, "$Id$", statement ? statement :    \
                  "", (msg) );                                        \
 }                                                                    \
 else (void)(0)
@@ -264,8 +264,8 @@ else (void)(0)
 if ( lalDebugLevel & LALINFO )                                       \
 {                                                                    \
   XLALPrintError( "Info[0]: program %s, file %s, line %d, %s\n"       \
-		 "        %s\n", *argv, __FILE__, __LINE__,          \
-		 "$Id$", (statement) );                       \
+     "        %s\n", *argv, __FILE__, __LINE__,          \
+     "$Id$", (statement) );                       \
 }                                                                    \
 else (void)(0)
 
@@ -284,12 +284,12 @@ LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params );
 
 void
 LALMetricTest( LALStatus *stat,
-	       REAL4 metric[3],
-	       REAL4 position[2],
-	       void *params );
+               REAL4 metric[3],
+               REAL4 position[2],
+               void *params );
 
 int
-main(int argc, char **argv)
+main( int argc, char **argv )
 {
   INT4 arg;                     /* argument counter */
   static LALStatus stat;        /* top-level status structure */
@@ -320,10 +320,10 @@ main(int argc, char **argv)
     /* Parse output file option. */
     if ( !strcmp( argv[arg], "-o" ) ) {
       if ( argc > arg + 1 ) {
-	arg++;
-	outfile = argv[arg++];
+        arg++;
+        outfile = argv[arg++];
       } else {
-	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
@@ -331,11 +331,11 @@ main(int argc, char **argv)
     /* Parse PostScript file option. */
     else if ( !strcmp( argv[arg], "-p" ) ) {
       if ( argc > arg + 2 ) {
-	arg++;
-	psfile = argv[arg++];
-	flags = atoi( argv[arg++] );
+        arg++;
+        psfile = argv[arg++];
+        flags = atoi( argv[arg++] );
       } else {
-	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
@@ -343,9 +343,9 @@ main(int argc, char **argv)
     /* Parse debug level option. */
     else if ( !strcmp( argv[arg], "-d" ) ) {
       if ( argc > arg + 1 ) {
-	arg++;
+        arg++;
       } else {
-	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
@@ -353,12 +353,12 @@ main(int argc, char **argv)
     /* Parse maximum numbers option. */
     else if ( !strcmp( argv[arg], "-m" ) ) {
       if ( argc > arg + 2 ) {
-	arg++;
-	nmax = atoi( argv[arg++] );
-	cmax = atoi( argv[arg++] );
-	mismatch = atof( argv[arg++] );
+        arg++;
+        nmax = atoi( argv[arg++] );
+        cmax = atoi( argv[arg++] );
+        mismatch = atof( argv[arg++] );
       } else {
-	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
@@ -366,13 +366,13 @@ main(int argc, char **argv)
     /* Parse boundary parameters option. */
     else if ( !strcmp( argv[arg], "-b" ) ) {
       if ( argc > arg + 4 ) {
-	arg++;
-	x_1 = atof( argv[arg++] );
-	y_1 = atof( argv[arg++] );
-	x_2 = atof( argv[arg++] );
-	y_2 = atof( argv[arg++] );
+        arg++;
+        x_1 = atof( argv[arg++] );
+        y_1 = atof( argv[arg++] );
+        x_2 = atof( argv[arg++] );
+        y_2 = atof( argv[arg++] );
       } else {
-	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
@@ -380,12 +380,12 @@ main(int argc, char **argv)
     /* Parse ellipse parameters option. */
     else if ( !strcmp( argv[arg], "-e" ) ) {
       if ( argc > arg + 3 ) {
-	arg++;
-	a = atof( argv[arg++] );
-	b = atof( argv[arg++] );
-	c = atof( argv[arg++] );
+        arg++;
+        a = atof( argv[arg++] );
+        b = atof( argv[arg++] );
+        c = atof( argv[arg++] );
       } else {
-	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
@@ -393,12 +393,12 @@ main(int argc, char **argv)
     /* Parse ellipse variation in x option. */
     else if ( !strcmp( argv[arg], "-x" ) ) {
       if ( argc > arg + 3 ) {
-	arg++;
-	dadx = atof( argv[arg++] );
-	dbdx = atof( argv[arg++] );
-	dcdx = atof( argv[arg++] );
+        arg++;
+        dadx = atof( argv[arg++] );
+        dbdx = atof( argv[arg++] );
+        dcdx = atof( argv[arg++] );
       } else {
-	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
@@ -406,12 +406,12 @@ main(int argc, char **argv)
     /* Parse ellipse variation in y option. */
     else if ( !strcmp( argv[arg], "-y" ) ) {
       if ( argc > arg + 3 ) {
-	arg++;
-	dady = atof( argv[arg++] );
-	dbdy = atof( argv[arg++] );
-	dcdy = atof( argv[arg++] );
+        arg++;
+        dady = atof( argv[arg++] );
+        dbdy = atof( argv[arg++] );
+        dcdy = atof( argv[arg++] );
       } else {
-	ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
+        ERROR( TWODMESHTESTC_EARG, TWODMESHTESTC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
         return TWODMESHTESTC_EARG;
       }
@@ -434,7 +434,7 @@ main(int argc, char **argv)
     /* Set up range function and parameters. */
     if ( ( x_1 == 0.0 ) && ( x_2 == 0.0 ) ) {
       ERROR( TWODMESHTESTC_EBAD, TWODMESHTESTC_MSGEBAD,
-	     "x_1 = x_2 = 0:" );
+             "x_1 = x_2 = 0:" );
       return TWODMESHTESTC_EBAD;
     }
     if ( x_1 < x_2 ) {
@@ -449,49 +449,63 @@ main(int argc, char **argv)
       rangeParams[3] = y_1;
     }
     params.getRange = LALRangeTest;
-    params.rangeParams = (void *)( rangeParams );
-    if ( x_1*x_2 <= 0.0 ) {
+    params.rangeParams = ( void * )( rangeParams );
+    if ( x_1 * x_2 <= 0.0 ) {
       if ( x_1 < x_2 ) {
-	params.domain[0] = x_1;
-	params.domain[1] = x_2;
+        params.domain[0] = x_1;
+        params.domain[1] = x_2;
       } else {
-	params.domain[0] = x_2;
-	params.domain[1] = x_1;
+        params.domain[0] = x_2;
+        params.domain[1] = x_1;
       }
     } else {
       if ( x_1 < 0.0 ) {
-	params.domain[0] = x_1 + x_2;
-	params.domain[1] = 0.0;
+        params.domain[0] = x_1 + x_2;
+        params.domain[1] = 0.0;
       } else {
-	params.domain[0] = 0.0;
-	params.domain[1] = x_1 + x_2;
+        params.domain[0] = 0.0;
+        params.domain[1] = x_1 + x_2;
       }
     }
 
     /* Check that metric will be positive everywhere in the region. */
     axisMin = a;
-    axisTemp = a + dadx*x_1 + dady*y_1;
-    if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = a + dadx*x_2 + dady*y_2;
-    if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = a + dadx*( x_1 + x_2 ) + dady*( y_1 + y_2 );
-    if ( axisTemp < axisMin ) axisMin = axisTemp;
+    axisTemp = a + dadx * x_1 + dady * y_1;
+    if ( axisTemp < axisMin ) {
+      axisMin = axisTemp;
+    }
+    axisTemp = a + dadx * x_2 + dady * y_2;
+    if ( axisTemp < axisMin ) {
+      axisMin = axisTemp;
+    }
+    axisTemp = a + dadx * ( x_1 + x_2 ) + dady * ( y_1 + y_2 );
+    if ( axisTemp < axisMin ) {
+      axisMin = axisTemp;
+    }
     if ( axisMin <= 0.0 ) {
       ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
-	     "axis a:" );
+             "axis a:" );
       return TWODMESHTESTC_EBAD;
     }
     axisTemp = b;
-    if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = b + dbdx*x_1 + dbdy*y_1;
-    if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = b + dbdx*x_2 + dbdy*y_2;
-    if ( axisTemp < axisMin ) axisMin = axisTemp;
-    axisTemp = b + dbdx*( x_1 + x_2 ) + dbdy*( y_1 + y_2 );
-    if ( axisTemp < axisMin ) axisMin = axisTemp;
+    if ( axisTemp < axisMin ) {
+      axisMin = axisTemp;
+    }
+    axisTemp = b + dbdx * x_1 + dbdy * y_1;
+    if ( axisTemp < axisMin ) {
+      axisMin = axisTemp;
+    }
+    axisTemp = b + dbdx * x_2 + dbdy * y_2;
+    if ( axisTemp < axisMin ) {
+      axisMin = axisTemp;
+    }
+    axisTemp = b + dbdx * ( x_1 + x_2 ) + dbdy * ( y_1 + y_2 );
+    if ( axisTemp < axisMin ) {
+      axisMin = axisTemp;
+    }
     if ( axisMin <= 0.0 ) {
       ERROR( TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC,
-	     "axis b:" );
+             "axis b:" );
       return TWODMESHTESTC_EBAD;
     }
 
@@ -506,7 +520,7 @@ main(int argc, char **argv)
     metricParams[7] = dbdy;
     metricParams[8] = dcdy;
     params.getMetric = LALMetricTest;
-    params.metricParams = (void *)( metricParams );
+    params.metricParams = ( void * )( metricParams );
   }
 
   /******************************************************************
@@ -530,12 +544,12 @@ main(int argc, char **argv)
 
     if ( !fp ) {
       ERROR( TWODMESHTESTC_EFILE, "- " TWODMESHTESTC_MSGEFILE,
-	     outfile );
+             outfile );
       return TWODMESHTESTC_EFILE;
     }
     for ( here = mesh; here; here = here->next )
       fprintf( fp, "%f %f %f %f %f\n", here->x, here->y, here->dx,
-	       here->dy[0], here->dy[1] );
+               here->dy[0], here->dy[1] );
     fclose( fp );
   }
 
@@ -549,7 +563,7 @@ main(int argc, char **argv)
 
     if ( !fp ) {
       ERROR( TWODMESHTESTC_EFILE, "- " TWODMESHTESTC_MSGEFILE,
-	     psfile );
+             psfile );
       return TWODMESHTESTC_EFILE;
     }
 
@@ -560,26 +574,37 @@ main(int argc, char **argv)
       REAL4 theta1, theta2;
       REAL4 xSum = x_1 + x_2, xDiff = x_2 - x_1;
       REAL4 ySum = y_1 + y_2, yDiff = y_2 - y_1;
-      theta1 = LAL_180_PI*atan2( (REAL4)( TWODMESHPLOTH_YSIZE ),
-				 (REAL4)( TWODMESHPLOTH_XSIZE ) );
-      if ( xSum*xSum + ySum*ySum >= xDiff*xDiff + yDiff*yDiff )
-	theta1 -= LAL_180_PI*atan2( ySum, xSum );
-      else
-	theta1 -= LAL_180_PI*atan2( yDiff, xDiff );
-      theta2 = theta1 + LAL_180_PI*atan2( y_1, x_1 );
-      while ( theta2 < -180.0 ) theta2 += 360.0;
-      while ( theta2 > 180.0 ) theta2 -= 360.0;
-      if ( theta2 > 90.0 )
-	theta1 -= theta2 - 90.0;
-      else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
-	theta1 -= theta2 + 90.0;
-      theta2 = theta1 + LAL_180_PI*atan2( y_2, x_2 );
-      while ( theta2 < -180.0 ) theta2 += 360.0;
-      while ( theta2 > 180.0 ) theta2 -= 360.0;
-      if ( theta2 > 90.0 )
-	theta1 -= theta2 - 90.0;
-      else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) )
-	theta1 -= theta2 + 90.0;
+      theta1 = LAL_180_PI * atan2( ( REAL4 )( TWODMESHPLOTH_YSIZE ),
+                                   ( REAL4 )( TWODMESHPLOTH_XSIZE ) );
+      if ( xSum * xSum + ySum * ySum >= xDiff * xDiff + yDiff * yDiff ) {
+        theta1 -= LAL_180_PI * atan2( ySum, xSum );
+      } else {
+        theta1 -= LAL_180_PI * atan2( yDiff, xDiff );
+      }
+      theta2 = theta1 + LAL_180_PI * atan2( y_1, x_1 );
+      while ( theta2 < -180.0 ) {
+        theta2 += 360.0;
+      }
+      while ( theta2 > 180.0 ) {
+        theta2 -= 360.0;
+      }
+      if ( theta2 > 90.0 ) {
+        theta1 -= theta2 - 90.0;
+      } else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) ) {
+        theta1 -= theta2 + 90.0;
+      }
+      theta2 = theta1 + LAL_180_PI * atan2( y_2, x_2 );
+      while ( theta2 < -180.0 ) {
+        theta2 += 360.0;
+      }
+      while ( theta2 > 180.0 ) {
+        theta2 -= 360.0;
+      }
+      if ( theta2 > 90.0 ) {
+        theta1 -= theta2 - 90.0;
+      } else if ( ( -90.0 < theta2 ) && ( theta2 < 0.0 ) ) {
+        theta1 -= theta2 + 90.0;
+      }
       plotParams.theta = theta1;
     }
 
@@ -590,13 +615,14 @@ main(int argc, char **argv)
     plotParams.bBox[2] = 576.0;
     plotParams.bBox[3] = 756.0;
     plotParams.autoscale = 1;
-    memset( plotParams.clipBox, 0, 4*sizeof(REAL4) );
+    memset( plotParams.clipBox, 0, 4 * sizeof( REAL4 ) );
     plotParams.nLevels = 1;
     if ( flags & 8 )
       plotParams.nBoundary = 2 +
-	(UINT4)( ( params.domain[1] - params.domain[0] )/a );
-    else
+                             ( UINT4 )( ( params.domain[1] - params.domain[0] ) / a );
+    else {
       plotParams.nBoundary = 0;
+    }
     plotParams.plotPoints = &plotPoints;
     plotParams.plotTiles = &plotTiles;
     plotParams.plotEllipses = &plotEllipses;
@@ -616,49 +642,52 @@ main(int argc, char **argv)
 void
 LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
 {
-  REAL4 *xy = (REAL4 *)( params ); /* params recast to its proper type */
+  REAL4 *xy = ( REAL4 * )( params ); /* params recast to its proper type */
   REAL4 ya, yb;                    /* unsorted range values */
 
   /* NOTE: It is assumed and required that xy[0] <= xy[2]. */
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ASSERT( range, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( params, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
 
   /* Case 1: one of the side vectors is vertical. */
   if ( xy[0] == 0.0 ) {
-    ya = xy[3]*( x/xy[2] );
+    ya = xy[3] * ( x / xy[2] );
     yb = ya + xy[1];
-  }
-  else if ( xy[2] == 0.0 ) {
-    ya = xy[1]*( x/xy[0] );
+  } else if ( xy[2] == 0.0 ) {
+    ya = xy[1] * ( x / xy[0] );
     yb = ya + xy[3];
   }
 
   /* Case 2: Both side vectors point in the same direction (either
      left or right). */
   else if ( ( xy[0] > 0.0 ) || ( xy[2] < 0.0 ) ) {
-    if ( fabs( x ) < fabs( xy[0] ) )
-      ya = xy[1]*( x/xy[0] );
-    else
-      ya = xy[1] + xy[3]*( ( x - xy[0] )/xy[2] );
-    if ( fabs( x ) < fabs( xy[2] ) )
-      yb = xy[3]*( x/xy[2] );
-    else
-      yb = xy[3] + xy[1]*( ( x - xy[2] )/xy[0] );
+    if ( fabs( x ) < fabs( xy[0] ) ) {
+      ya = xy[1] * ( x / xy[0] );
+    } else {
+      ya = xy[1] + xy[3] * ( ( x - xy[0] ) / xy[2] );
+    }
+    if ( fabs( x ) < fabs( xy[2] ) ) {
+      yb = xy[3] * ( x / xy[2] );
+    } else {
+      yb = xy[3] + xy[1] * ( ( x - xy[2] ) / xy[0] );
+    }
   }
 
   /* Case 3: The first side vector points left and the second points
      right.  (The reverse is impossible, given our assumed ordering.)  */
   else {
-    if ( x < 0.0 )
-      ya = xy[1]*( x/xy[0] );
-    else
-      ya = xy[3]*( x/xy[2] );
-    if ( x - xy[0] - xy[2] < 0.0 )
-      yb = xy[1] + xy[3]*( ( x - xy[0] )/xy[2] );
-    else
-      yb = xy[3] + xy[1]*( ( x - xy[2] )/xy[0] );
+    if ( x < 0.0 ) {
+      ya = xy[1] * ( x / xy[0] );
+    } else {
+      ya = xy[3] * ( x / xy[2] );
+    }
+    if ( x - xy[0] - xy[2] < 0.0 ) {
+      yb = xy[1] + xy[3] * ( ( x - xy[0] ) / xy[2] );
+    } else {
+      yb = xy[3] + xy[1] * ( ( x - xy[2] ) / xy[0] );
+    }
   }
 
   /* Sort and return the range values. */
@@ -675,38 +704,38 @@ LALRangeTest( LALStatus *stat, REAL4 range[2], REAL4 x, void *params )
 
 void
 LALMetricTest( LALStatus *stat,
-	       REAL4 metric[3],
-	       REAL4 position[2],
-	       void *params )
+               REAL4 metric[3],
+               REAL4 position[2],
+               void *params )
 {
-  REAL4 *abc = (REAL4 *)( params ); /* params recast to proper type */
+  REAL4 *abc = ( REAL4 * )( params ); /* params recast to proper type */
   REAL4 a, b, c;                    /* axis lengths and angle */
   REAL4 lambda1, lambda2;           /* metric eigenvalues */
   REAL4 cosc, sinc;                 /* cosine and sine of c */
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ASSERT( metric, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( position, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( params, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
 
   /* Compute axis lengths and angle at current position. */
-  a = abc[0] + position[0]*abc[3] + position[1]*abc[6];
-  b = abc[1] + position[0]*abc[4] + position[1]*abc[7];
-  c = abc[2] + position[0]*abc[5] + position[1]*abc[8];
-  if ( a*b == 0.0 ) {
+  a = abc[0] + position[0] * abc[3] + position[1] * abc[6];
+  b = abc[1] + position[0] * abc[4] + position[1] * abc[7];
+  c = abc[2] + position[0] * abc[5] + position[1] * abc[8];
+  if ( a * b == 0.0 ) {
     ABORT( stat, TWODMESHTESTC_EMETRIC, TWODMESHTESTC_MSGEMETRIC );
   }
 
   /* Compute eigenvalues and trigonometric functions. */
-  lambda1 = MISMATCH/( a*a );
-  lambda2 = MISMATCH/( b*b );
+  lambda1 = MISMATCH / ( a * a );
+  lambda2 = MISMATCH / ( b * b );
   cosc = cos( c );
   sinc = sin( c );
 
   /* Return metric components. */
-  metric[0] = lambda1*cosc*cosc + lambda2*sinc*sinc;
-  metric[1] = lambda1*sinc*sinc + lambda2*cosc*cosc;
-  metric[2] = ( lambda1 - lambda2 )*cosc*sinc;
+  metric[0] = lambda1 * cosc * cosc + lambda2 * sinc * sinc;
+  metric[1] = lambda1 * sinc * sinc + lambda2 * cosc * cosc;
+  metric[2] = ( lambda1 - lambda2 ) * cosc * sinc;
   RETURN( stat );
 }
 

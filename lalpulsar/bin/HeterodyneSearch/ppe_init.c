@@ -29,15 +29,19 @@ static const CHAR a2A[256] = {
   ['a'] = 'A', ['b'] = 'B', ['c'] = 'C', ['d'] = 'D', ['e'] = 'E', ['f'] = 'F', ['g'] = 'G', ['h'] = 'H',
   ['i'] = 'I', ['j'] = 'J', ['k'] = 'K', ['l'] = 'L', ['m'] = 'M', ['n'] = 'N', ['o'] = 'O', ['p'] = 'P',
   ['q'] = 'Q', ['r'] = 'R', ['s'] = 'S', ['t'] = 'T', ['u'] = 'U', ['v'] = 'V', ['w'] = 'W', ['x'] = 'X',
-  ['y'] = 'Y', ['z'] = 'Z' };
+  ['y'] = 'Y', ['z'] = 'Z'
+};
 
 
 /** \brief Convert string to uppercase */
-static void strtoupper(CHAR *s) {
+static void strtoupper( CHAR *s )
+{
   /* convert everything to uppercase */
   CHAR c;
   for ( ; *s; ++s ) {
-    if ( (c = a2A[(int)(*s)]) ) { *s = c; }
+    if ( ( c = a2A[( int )( *s )] ) ) {
+      *s = c;
+    }
   }
 }
 
@@ -50,32 +54,35 @@ static void strtoupper(CHAR *s) {
  *
  * \param runState [] A pointer to the \c LALInferenceRunState
  */
-void nested_sampling_algorithm_wrapper( LALInferenceRunState *runState ){
+void nested_sampling_algorithm_wrapper( LALInferenceRunState *runState )
+{
   /* timing values */
   struct timeval time1, time2;
   REAL8 tottime;
 
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){ gettimeofday(&time1, NULL); }
+  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ) {
+    gettimeofday( &time1, NULL );
+  }
 
-  LALInferenceNestedSamplingAlgorithm(runState);
+  LALInferenceNestedSamplingAlgorithm( runState );
 
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
-    gettimeofday(&time2, NULL);
+  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ) {
+    gettimeofday( &time2, NULL );
 
-    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" );
-    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "timenum" );
-    tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
-    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
+    FILE *timefile = *( FILE ** )LALInferenceGetVariable( runState->algorithmParams, "timefile" );
+    UINT4 timenum = *( UINT4 * )LALInferenceGetVariable( runState->algorithmParams, "timenum" );
+    tottime = ( REAL8 )( ( time2.tv_sec + time2.tv_usec * 1.e-6 ) - ( time1.tv_sec + time1.tv_usec * 1.e-6 ) );
+    fprintf( timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime );
     timenum++;
     /* get number of likelihood evaluations */
     UINT4 nlike = 0, ndata = 0;
     LALInferenceIFOData *tmpdata = runState->data;
-    while ( tmpdata ){
+    while ( tmpdata ) {
       nlike += tmpdata->likeli_counter;
       ndata++;
       tmpdata = tmpdata->next;
     }
-    fprintf(timefile, "[%d] Number of likelihood evaluations: %d\n", timenum, nlike/ndata);
+    fprintf( timefile, "[%d] Number of likelihood evaluations: %d\n", timenum, nlike / ndata );
     timenum++;
     check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
   }
@@ -90,23 +97,26 @@ void nested_sampling_algorithm_wrapper( LALInferenceRunState *runState ){
  *
  * \param runState [] A pointer to the \c LALInferenceRunState
  */
-void setup_live_points_array_wrapper( LALInferenceRunState *runState ){
+void setup_live_points_array_wrapper( LALInferenceRunState *runState )
+{
   /* timing values */
   struct timeval time1, time2;
   REAL8 tottime;
 
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){ gettimeofday(&time1, NULL); }
+  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ) {
+    gettimeofday( &time1, NULL );
+  }
 
   LALInferenceSetupLivePointsArray( runState );
 
   /* note that this time divided by the number of live points will give the approximate time per likelihood evaluation */
-  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ){
-    gettimeofday(&time2, NULL);
+  if ( LALInferenceCheckVariable( runState->algorithmParams, "timefile" ) ) {
+    gettimeofday( &time2, NULL );
 
-    FILE *timefile = *(FILE **)LALInferenceGetVariable( runState->algorithmParams, "timefile" );
-    UINT4 timenum = *(UINT4 *)LALInferenceGetVariable( runState->algorithmParams, "timenum" );
-    tottime = (REAL8)((time2.tv_sec + time2.tv_usec*1.e-6) - (time1.tv_sec + time1.tv_usec*1.e-6));
-    fprintf(timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime);
+    FILE *timefile = *( FILE ** )LALInferenceGetVariable( runState->algorithmParams, "timefile" );
+    UINT4 timenum = *( UINT4 * )LALInferenceGetVariable( runState->algorithmParams, "timenum" );
+    tottime = ( REAL8 )( ( time2.tv_sec + time2.tv_usec * 1.e-6 ) - ( time1.tv_sec + time1.tv_usec * 1.e-6 ) );
+    fprintf( timefile, "[%d] %s: %.9le secs\n", timenum, __func__, tottime );
     timenum++;
     check_and_add_fixed_variable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t );
   }
@@ -139,59 +149,61 @@ void initialise_algorithm( LALInferenceRunState *runState )
 
   /* print out help message */
   ppt = LALInferenceGetProcParamVal( commandLine, "--help" );
-  if(ppt){
-    fprintf(stderr, USAGE, commandLine->program);
-    exit(0);
+  if ( ppt ) {
+    fprintf( stderr, USAGE, commandLine->program );
+    exit( 0 );
   }
 
   /* Initialise parameters structure */
-  runState->algorithmParams = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-  runState->priorArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
-  runState->proposalArgs = XLALCalloc( 1, sizeof(LALInferenceVariables) );
+  runState->algorithmParams = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
+  runState->priorArgs = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
+  runState->proposalArgs = XLALCalloc( 1, sizeof( LALInferenceVariables ) );
   /* Initialise threads - single thread */
-  runState->threads = LALInferenceInitThreads(1);
+  runState->threads = LALInferenceInitThreads( 1 );
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--verbose" );
-  if( ppt ) {
-    LALInferenceAddVariable( runState->algorithmParams, "verbose", &verbose , LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
+  if ( ppt ) {
+    LALInferenceAddVariable( runState->algorithmParams, "verbose", &verbose, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
   }
 
   /* Number of live points */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nlive" );
-  if( ppt ){
-    tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nlive")->value );
-    LALInferenceAddVariable( runState->algorithmParams,"Nlive", &tmpi, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
-  }
-  else{
-    if ( !LALInferenceGetProcParamVal( commandLine, "--inject-only" ) ){
-      XLAL_ERROR_VOID(XLAL_EIO, "Error... Number of live point must be specified.");
+  if ( ppt ) {
+    tmpi = atoi( LALInferenceGetProcParamVal( commandLine, "--Nlive" )->value );
+    LALInferenceAddVariable( runState->algorithmParams, "Nlive", &tmpi, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+  } else {
+    if ( !LALInferenceGetProcParamVal( commandLine, "--inject-only" ) ) {
+      XLAL_ERROR_VOID( XLAL_EIO, "Error... Number of live point must be specified." );
     }
   }
 
   /* Number of points in MCMC chain */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nmcmc" );
-  if( ppt ){
-    tmpi = atoi( LALInferenceGetProcParamVal(commandLine, "--Nmcmc")->value );
+  if ( ppt ) {
+    tmpi = atoi( LALInferenceGetProcParamVal( commandLine, "--Nmcmc" )->value );
     LALInferenceAddVariable( runState->algorithmParams, "Nmcmc", &tmpi, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
 
   /* set sloppiness! */
-  ppt = LALInferenceGetProcParamVal(commandLine,"--sloppyfraction");
-  if( ppt ) { tmp = atof(ppt->value); }
-  else { tmp = 0.0; }
+  ppt = LALInferenceGetProcParamVal( commandLine, "--sloppyfraction" );
+  if ( ppt ) {
+    tmp = atof( ppt->value );
+  } else {
+    tmp = 0.0;
+  }
   LALInferenceAddVariable( runState->algorithmParams, "sloppyfraction", &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_OUTPUT );
 
   /* Optionally specify number of parallel runs */
   ppt = LALInferenceGetProcParamVal( commandLine, "--Nruns" );
-  if( ppt ) {
+  if ( ppt ) {
     tmpi = atoi( ppt->value );
     LALInferenceAddVariable( runState->algorithmParams, "Nruns", &tmpi, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
   }
 
   /* Tolerance of the Nested sampling integrator */
   ppt = LALInferenceGetProcParamVal( commandLine, "--tolerance" );
-  if( ppt ){
-    tmp = strtod( ppt->value, (char **)NULL );
+  if ( ppt ) {
+    tmp = strtod( ppt->value, ( char ** )NULL );
     LALInferenceAddVariable( runState->algorithmParams, "tolerance", &tmp, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
   }
 
@@ -205,20 +217,20 @@ void initialise_algorithm( LALInferenceRunState *runState )
 
   /* (try to) get random seed from command line: */
   ppt = LALInferenceGetProcParamVal( commandLine, "--randomseed" );
-  if ( ppt != NULL ) { randomseed = atoi( ppt->value ); }
-  else { /* otherwise generate "random" random seed: */
+  if ( ppt != NULL ) {
+    randomseed = atoi( ppt->value );
+  } else { /* otherwise generate "random" random seed: */
     /*
      * Note: /dev/random can be slow after the first few accesses, which is why we're using urandom instead.
      * [Cryptographic safety isn't a concern here at all]
      */
-    if ( (devrandom = fopen("/dev/urandom","r")) == NULL ) {
+    if ( ( devrandom = fopen( "/dev/urandom", "r" ) ) == NULL ) {
       gettimeofday( &tv, 0 );
       randomseed = tv.tv_sec + tv.tv_usec;
-    }
-    else {
-      if( fread(&randomseed, sizeof(randomseed), 1, devrandom) != 1 ){
-        fprintf(stderr, "Error... could not read random seed\n");
-        exit(3);
+    } else {
+      if ( fread( &randomseed, sizeof( randomseed ), 1, devrandom ) != 1 ) {
+        fprintf( stderr, "Error... could not read random seed\n" );
+        exit( 3 );
       }
       fclose( devrandom );
     }
@@ -228,32 +240,34 @@ void initialise_algorithm( LALInferenceRunState *runState )
 
   /* check if we want to time the program */
   ppt = LALInferenceGetProcParamVal( commandLine, "--time-it" );
-  if ( ppt != NULL ){
+  if ( ppt != NULL ) {
     FILE *timefile = NULL;
     UINT4 timenum = 1;
 
     ppt = LALInferenceGetProcParamVal( commandLine, "--outfile" );
-    if ( !ppt ){
-      XLAL_ERROR_VOID(XLAL_EFUNC, "Error... no output file is specified!");
+    if ( !ppt ) {
+      XLAL_ERROR_VOID( XLAL_EFUNC, "Error... no output file is specified!" );
     }
 
     CHAR *outtimefile = NULL;
     outtimefile = XLALStringDuplicate( ppt->value );
     /* strip the file extension */
-    CHAR *dotloc = strrchr(outtimefile, '.');
-    CHAR *slashloc = strrchr(outtimefile, '/');
-    if ( dotloc != NULL ){
-      if ( slashloc != NULL ){ /* check dot is after any filename seperator */
-        if( slashloc < dotloc ){ *dotloc = '\0'; }
+    CHAR *dotloc = strrchr( outtimefile, '.' );
+    CHAR *slashloc = strrchr( outtimefile, '/' );
+    if ( dotloc != NULL ) {
+      if ( slashloc != NULL ) { /* check dot is after any filename seperator */
+        if ( slashloc < dotloc ) {
+          *dotloc = '\0';
+        }
+      } else {
+        *dotloc = '\0';
       }
-      else{ *dotloc = '\0'; }
     }
     outtimefile = XLALStringAppend( outtimefile, "_timings" );
 
-    if ( ( timefile = fopen(outtimefile, "w") ) == NULL ){
-      fprintf(stderr, "Warning... cannot create a timing file, so proceeding without timings\n");
-    }
-    else{
+    if ( ( timefile = fopen( outtimefile, "w" ) ) == NULL ) {
+      fprintf( stderr, "Warning... cannot create a timing file, so proceeding without timings\n" );
+    } else {
       LALInferenceAddVariable( runState->algorithmParams, "timefile", &timefile, LALINFERENCE_void_ptr_t, LALINFERENCE_PARAM_FIXED );
       LALInferenceAddVariable( runState->algorithmParams, "timenum", &timenum, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
@@ -279,7 +293,8 @@ void initialise_algorithm( LALInferenceRunState *runState )
  * \param runState [in] A pointer to the LALInferenceRunState
  * \param source [in] A pointer to a LALSource variable containing the source location
  */
-void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
+void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source )
+{
   /* Set up lookup tables */
   /* Using psi bins, time bins */
   ProcessParamsTable *ppt;
@@ -295,10 +310,13 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--time-bins" );
   INT4 timeBins;
-  if( ppt ) { timeBins = atoi( ppt->value ); }
-  else { timeBins = TIMEBINS; } /* default time bins */
+  if ( ppt ) {
+    timeBins = atoi( ppt->value );
+  } else {
+    timeBins = TIMEBINS;  /* default time bins */
+  }
 
-  while( ifo_model ){
+  while ( ifo_model ) {
     REAL8Vector *arespT = NULL, *brespT = NULL;
     REAL8Vector *arespV = NULL, *brespV = NULL;
     REAL8Vector *arespS = NULL, *brespS = NULL;
@@ -314,7 +332,7 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
     sidDayFrac = XLALCreateREAL8Vector( IFO_XTRA_DATA( ifo_model )->times->length );
 
     /* set the time in sidereal days since the first data point (mod 1 sidereal day) */
-    for( i = 0; i < IFO_XTRA_DATA( ifo_model )->times->length; i++ ){
+    for ( i = 0; i < IFO_XTRA_DATA( ifo_model )->times->length; i++ ) {
       sidDayFrac->data[i] = fmod( XLALGPSGetREAL8( &IFO_XTRA_DATA( ifo_model )->times->data[i] ) - t0, LAL_DAYSID_SI );
     }
 
@@ -337,13 +355,12 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
     LALInferenceAddVariable( ifo_model->params, "a_response_tensor", &arespT, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
     LALInferenceAddVariable( ifo_model->params, "b_response_tensor", &brespT, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
 
-    if ( LALInferenceCheckVariable( ifo_model->params, "nonGR" ) ){
+    if ( LALInferenceCheckVariable( ifo_model->params, "nonGR" ) ) {
       LALInferenceAddVariable( ifo_model->params, "a_response_vector", &arespV, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       LALInferenceAddVariable( ifo_model->params, "b_response_vector", &brespV, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       LALInferenceAddVariable( ifo_model->params, "a_response_scalar", &arespS, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
       LALInferenceAddVariable( ifo_model->params, "b_response_scalar", &brespS, LALINFERENCE_REAL8Vector_t, LALINFERENCE_PARAM_FIXED );
-    }
-    else{
+    } else {
       XLALDestroyREAL8Vector( arespV );
       XLALDestroyREAL8Vector( brespV );
       XLALDestroyREAL8Vector( arespS );
@@ -366,7 +383,8 @@ void setup_lookup_tables( LALInferenceRunState *runState, LALSource *source ){
  * \param ini [in] A pointer to a \c LALInferenceVariables type that will be filled in with pulsar parameters
  * \param pars [in] A \c PulsarParameters type containing pulsar parameters read in from a TEMPO-style .par file
  */
-void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars ){
+void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
+{
   /* amplitude model parameters for l=m=2 harmonic emission */
   add_variable_parameter( pars, ini, "H0", LALINFERENCE_PARAM_FIXED );
   add_variable_parameter( pars, ini, "PHI0", LALINFERENCE_PARAM_FIXED ); /* note that this is rotational phase */
@@ -389,16 +407,16 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   add_variable_parameter( pars, ini, "PHI21", LALINFERENCE_PARAM_FIXED );
 
   /***** phase model parameters ******/
-  if ( PulsarCheckParam(pars, "F") ){ /* frequency and frequency derivative parameters */
+  if ( PulsarCheckParam( pars, "F" ) ) { /* frequency and frequency derivative parameters */
     UINT4 i = 0;
     const REAL8Vector *freqs = PulsarGetREAL8VectorParam( pars, "F" );
     /* add each frequency and derivative value as a seperate parameter (also set a value that is the FIXED value to be used for calculating phase differences) */
-    for ( i = 0; i < freqs->length; i++ ){
+    for ( i = 0; i < freqs->length; i++ ) {
       CHAR varname[256];
-      snprintf(varname, sizeof(varname), "F%u", i);
+      snprintf( varname, sizeof( varname ), "F%u", i );
       REAL8 fval = PulsarGetREAL8VectorParamIndividual( pars, varname );
       LALInferenceAddVariable( ini, varname, &fval, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
-      snprintf(varname, sizeof(varname), "F%u_FIXED", i);
+      snprintf( varname, sizeof( varname ), "F%u_FIXED", i );
       LALInferenceAddVariable( ini, varname, &fval, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED ); /* add FIXED value */
     }
     /* add value with the number of FB parameters given */
@@ -436,15 +454,19 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
 
   /* sky position */
   REAL8 ra = 0.;
-  if ( PulsarCheckParam( pars, "RA" ) ) { ra = PulsarGetREAL8Param( pars, "RA" ); }
-  else if ( PulsarCheckParam( pars, "RAJ" ) ) { ra = PulsarGetREAL8Param( pars, "RAJ" ); }
-  else {
+  if ( PulsarCheckParam( pars, "RA" ) ) {
+    ra = PulsarGetREAL8Param( pars, "RA" );
+  } else if ( PulsarCheckParam( pars, "RAJ" ) ) {
+    ra = PulsarGetREAL8Param( pars, "RAJ" );
+  } else {
     XLAL_ERROR_VOID( XLAL_EINVAL, "No source right ascension specified!" );
   }
   REAL8 dec = 0.;
-  if ( PulsarCheckParam( pars, "DEC" ) ) { dec = PulsarGetREAL8Param( pars, "DEC" ); }
-  else if ( PulsarCheckParam( pars, "DECJ" ) ) { dec = PulsarGetREAL8Param( pars, "DECJ" ); }
-  else {
+  if ( PulsarCheckParam( pars, "DEC" ) ) {
+    dec = PulsarGetREAL8Param( pars, "DEC" );
+  } else if ( PulsarCheckParam( pars, "DECJ" ) ) {
+    dec = PulsarGetREAL8Param( pars, "DECJ" );
+  } else {
     XLAL_ERROR_VOID( XLAL_EINVAL, "No source declination specified!" );
   }
   LALInferenceAddVariable( ini, "RA", &ra, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
@@ -459,8 +481,8 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   add_variable_parameter( pars, ini, "PX", LALINFERENCE_PARAM_FIXED );
 
   /* only add binary system parameters if required */
-  if ( PulsarCheckParam( pars, "BINARY" ) ){
-    CHAR *binary = XLALStringDuplicate(PulsarGetStringParam(pars, "BINARY"));
+  if ( PulsarCheckParam( pars, "BINARY" ) ) {
+    CHAR *binary = XLALStringDuplicate( PulsarGetStringParam( pars, "BINARY" ) );
     LALInferenceAddVariable( ini, "BINARY", &binary, LALINFERENCE_string_t, LALINFERENCE_PARAM_FIXED );
 
     add_variable_parameter( pars, ini, "PB", LALINFERENCE_PARAM_FIXED );
@@ -501,13 +523,13 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
     add_variable_parameter( pars, ini, "MTOT", LALINFERENCE_PARAM_FIXED );
     add_variable_parameter( pars, ini, "M2", LALINFERENCE_PARAM_FIXED );
 
-    if ( PulsarCheckParam(pars, "FB") ){
+    if ( PulsarCheckParam( pars, "FB" ) ) {
       UINT4 i = 0;
       const REAL8Vector *fb = PulsarGetREAL8VectorParam( pars, "FB" );
       /* add each FB value as a seperate parameter */
-      for ( i = 0; i < fb->length; i++ ){
+      for ( i = 0; i < fb->length; i++ ) {
         CHAR varname[256];
-        snprintf(varname, sizeof(varname), "FB%u", i);
+        snprintf( varname, sizeof( varname ), "FB%u", i );
         REAL8 fbval = PulsarGetREAL8VectorParamIndividual( pars, varname );
         LALInferenceAddVariable( ini, varname, &fbval, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
       }
@@ -517,18 +539,20 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
   }
 
   /* check for glitches (searching on glitch epochs GLEP) */
-  if ( PulsarCheckParam(pars, "GLEP") ){
+  if ( PulsarCheckParam( pars, "GLEP" ) ) {
     UINT4 i = 0, j = 0, glnum = 0;
-    for ( i = 0; i < NUMGLITCHPARS; i++ ){
-      if ( PulsarCheckParam( pars, glitchpars[i] ) ){
+    for ( i = 0; i < NUMGLITCHPARS; i++ ) {
+      if ( PulsarCheckParam( pars, glitchpars[i] ) ) {
         const REAL8Vector *glv = PulsarGetREAL8VectorParam( pars, glitchpars[i] );
-        for ( j = 0; j < glv->length; j++ ){
+        for ( j = 0; j < glv->length; j++ ) {
           CHAR varname[300];
-          snprintf(varname, sizeof(varname), "%s_%u", glitchpars[i], j+1);
+          snprintf( varname, sizeof( varname ), "%s_%u", glitchpars[i], j + 1 );
           REAL8 glval = PulsarGetREAL8VectorParamIndividual( pars, varname );
           LALInferenceAddVariable( ini, varname, &glval, LALINFERENCE_REAL8_t, LALINFERENCE_PARAM_FIXED );
         }
-        if ( glv->length > glnum ) { glnum = glv->length; } /* find max number of glitch parameters */
+        if ( glv->length > glnum ) {
+          glnum = glv->length;  /* find max number of glitch parameters */
+        }
       }
     }
     /* add value with the number of glitch parameters given */
@@ -559,7 +583,7 @@ void add_initial_variables( LALInferenceVariables *ini, PulsarParameters *pars )
  * for each parameter). The fifth column is a list of covariance matrices for each mode. The sixth
  * column is a list of weights for each mode (weights can be relative weights as they will be
  * normalised when parsed by the code). Finally, there can be additional lists containing pairs
- * of values for each parameter giving lower and upper limits of the distribution (note that the 
+ * of values for each parameter giving lower and upper limits of the distribution (note that the
  * weights given are weights assuming that there are no bounds on the distributions).
  *
  * Some examples of files are:
@@ -605,7 +629,7 @@ void initialise_prior( LALInferenceRunState *runState )
   REAL8 low, high;
 
   LALInferenceIFOModel *ifo = NULL;
-  if ( !LALInferenceGetProcParamVal(commandLine, "--test-gaussian-likelihood" ) ){
+  if ( !LALInferenceGetProcParamVal( commandLine, "--test-gaussian-likelihood" ) ) {
     ifo = threadState->model->ifo;
   }
 
@@ -620,26 +644,29 @@ void initialise_prior( LALInferenceRunState *runState )
   INT4 varyphase = 0, varyskypos = 0, varybinary = 0, varyglitch = 0;
 
   ppt = LALInferenceGetProcParamVal( commandLine, "--prior-file" );
-  if( ppt ) { propfile = XLALStringDuplicate( LALInferenceGetProcParamVal(commandLine,"--prior-file")->value ); }
-  else{
-    fprintf(stderr, "Error... --prior-file is required.\n");
-    fprintf(stderr, USAGE, commandLine->program);
-    exit(0);
+  if ( ppt ) {
+    propfile = XLALStringDuplicate( LALInferenceGetProcParamVal( commandLine, "--prior-file" )->value );
+  } else {
+    fprintf( stderr, "Error... --prior-file is required.\n" );
+    fprintf( stderr, USAGE, commandLine->program );
+    exit( 0 );
   }
 
   /* read in prior file and separate lines */
   filebuf = XLALFileLoad( propfile );
-  if ( XLALCreateTokenList( &tlist, filebuf, "\n" ) != XLAL_SUCCESS ){
-    XLAL_ERROR_VOID(XLAL_EINVAL, "Error... could not convert data into separate lines.\n");
+  if ( XLALCreateTokenList( &tlist, filebuf, "\n" ) != XLAL_SUCCESS ) {
+    XLAL_ERROR_VOID( XLAL_EINVAL, "Error... could not convert data into separate lines.\n" );
   }
 
   /* parse through priors */
-  for ( k = 0; k < tlist->nTokens; k++ ){
+  for ( k = 0; k < tlist->nTokens; k++ ) {
     UINT4 isthere = 0, i = 0;
     LALInferenceParamVaryType varyType;
 
     /* check for comment line starting with '#' or '%' */
-    if ( tlist->tokens[k][0] == '#' || tlist->tokens[k][0] == '%' ){ continue; }
+    if ( tlist->tokens[k][0] == '#' || tlist->tokens[k][0] == '%' ) {
+      continue;
+    }
 
     /* check the number of values in the line by counting the whitespace separated values */
     nvals = 0;
@@ -647,8 +674,8 @@ void initialise_prior( LALInferenceRunState *runState )
     XLALCreateTokenList( &tline, tlist->tokens[k], " \t" );
     nvals = tline->nTokens;
 
-    if ( nvals < 2 ){
-      fprintf(stderr, "Warning... number of values ('%d') on line '%d' in prior file is different than expected:\n\t'%s'", nvals, k+1, tlist->tokens[k]);
+    if ( nvals < 2 ) {
+      fprintf( stderr, "Warning... number of values ('%d') on line '%d' in prior file is different than expected:\n\t'%s'", nvals, k + 1, tlist->tokens[k] );
       XLALDestroyTokenList( tline );
       continue;
     }
@@ -663,69 +690,65 @@ void initialise_prior( LALInferenceRunState *runState )
     UINT4 npars = parnames->nTokens;
 
     /* gaussian, uniform, loguniform and fermi-dirac priors should all have four values to a line */
-    if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "loguniform") || !strcmp(tempPrior, "gaussian") || !strcmp(tempPrior, "fermidirac") ){
-      if ( npars > 1 ){
+    if ( !strcmp( tempPrior, "uniform" ) || !strcmp( tempPrior, "loguniform" ) || !strcmp( tempPrior, "gaussian" ) || !strcmp( tempPrior, "fermidirac" ) ) {
+      if ( npars > 1 ) {
         XLAL_ERROR_VOID( XLAL_EINVAL, "Error... 'uniform', 'loguniform', 'gaussian', or 'fermidirac' priors must only be given for single parameters." );
       }
 
-      if ( nvals != 4 ){
+      if ( nvals != 4 ) {
         XLAL_ERROR_VOID( XLAL_EINVAL, "Error... 'uniform', 'loguniform', 'gaussian', or 'fermidirac' priors must specify four values." );
       }
 
-      low = atof(tline->tokens[2]);
-      high = atof(tline->tokens[3]);
+      low = atof( tline->tokens[2] );
+      high = atof( tline->tokens[3] );
 
-      if ( !strcmp(tempPrior, "uniform") || !strcmp(tempPrior, "loguniform") ){
-        if( high < low ){
+      if ( !strcmp( tempPrior, "uniform" ) || !strcmp( tempPrior, "loguniform" ) ) {
+        if ( high < low ) {
           XLAL_ERROR_VOID( XLAL_EINVAL, "Error... In %s the %s parameters ranges are wrongly set.", propfile, tempPar );
         }
       }
 
-      if ( strcmp(tempPrior, "uniform") && strcmp(tempPrior, "loguniform") && strcmp(tempPrior, "gaussian") && strcmp(tempPrior, "fermidirac") ){
+      if ( strcmp( tempPrior, "uniform" ) && strcmp( tempPrior, "loguniform" ) && strcmp( tempPrior, "gaussian" ) && strcmp( tempPrior, "fermidirac" ) ) {
         XLAL_ERROR_VOID( XLAL_EINVAL, "Error... prior type '%s' not recognised", tempPrior );
       }
 
       /* Add the prior variables */
-      if ( !strcmp(tempPrior, "uniform") ){
+      if ( !strcmp( tempPrior, "uniform" ) ) {
         LALInferenceAddMinMaxPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
-      }
-      else if ( !strcmp(tempPrior, "loguniform") ){
+      } else if ( !strcmp( tempPrior, "loguniform" ) ) {
         LALInferenceAddLogUniformPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
-      }
-      else if( !strcmp(tempPrior, "gaussian") ){
+      } else if ( !strcmp( tempPrior, "gaussian" ) ) {
         LALInferenceAddGaussianPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
-      }
-      else if( !strcmp(tempPrior, "fermidirac") ){
+      } else if ( !strcmp( tempPrior, "fermidirac" ) ) {
         LALInferenceAddFermiDiracPrior( runState->priorArgs, tempPar, &low, &high, LALINFERENCE_REAL8_t );
       }
-    }
-    else if ( !strcmp(tempPrior, "gmm") ){
+    } else if ( !strcmp( tempPrior, "gmm" ) ) {
       /* check if using a 1D/multi-dimensional Gaussian Mixture Model prior e.g.:
        * H0:COSIOTA gmm 2 [[1e-23,0.3],[2e-23,0.4]] [[[1e-45,2e-25],[2e-25,0.02]],[[4e-46,2e-24],[2e-24,0.1]]] [0.2,0.4] [0.,1e-22] [-1.,1.]
        * where the third value is the number of modes followed by: a list of means for each parameter for each mode; the covariance
        * matrices for each mode; the weights for each mode; and if required sets of pairs of minimum and maximum prior ranges for each
        * parameter.
        */
-      if ( nvals < 6 ){
-        fprintf(stderr, "Warning... number of values ('%d') on line '%d' in prior file is different than expected:\n\t'%s'", nvals, k+1, tlist->tokens[k]);
+      if ( nvals < 6 ) {
+        fprintf( stderr, "Warning... number of values ('%d') on line '%d' in prior file is different than expected:\n\t'%s'", nvals, k + 1, tlist->tokens[k] );
         XLALDestroyTokenList( tline );
         continue;
       }
 
-      UINT4 nmodes = (UINT4)atoi( tline->tokens[2] ); /* get the number of modes */
+      UINT4 nmodes = ( UINT4 )atoi( tline->tokens[2] ); /* get the number of modes */
 
       /* get means of modes for each parameter */
       REAL8Vector **gmmmus;
-      gmmmus = parse_gmm_means(tline->tokens[3], npars, nmodes);
-      if ( !gmmmus ){
-        XLAL_ERROR_VOID(XLAL_EINVAL, "Error... problem parsing GMM prior mean values for '%s'.", tempPar);
+      gmmmus = parse_gmm_means( tline->tokens[3], npars, nmodes );
+      if ( !gmmmus ) {
+        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... problem parsing GMM prior mean values for '%s'.", tempPar );
       }
 
       /* get the covariance matrices for the modes */
       gsl_matrix **gmmcovs;
-      gmmcovs = parse_gmm_covs(tline->tokens[4], npars, nmodes);
-      if ( !gmmcovs ){
-        XLAL_ERROR_VOID(XLAL_EINVAL, "Error... problem parsing GMM prior covariance matrix values for '%s'.", tempPar);
+      gmmcovs = parse_gmm_covs( tline->tokens[4], npars, nmodes );
+      if ( !gmmcovs ) {
+        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... problem parsing GMM prior covariance matrix values for '%s'.", tempPar );
       }
 
       /* get weights for the modes */
@@ -734,18 +757,20 @@ void initialise_prior( LALInferenceRunState *runState )
 
       CHAR strpart[8192];
       CHAR UNUSED *nextpart;
-      nextpart = get_bracketed_string(strpart, tline->tokens[5], '[', ']');
-      if ( !strpart[0] ){
-        XLAL_ERROR_VOID(XLAL_EINVAL, "Error... problem parsing GMM prior weights values for '%s'.", tempPar);
+      nextpart = get_bracketed_string( strpart, tline->tokens[5], '[', ']' );
+      if ( !strpart[0] ) {
+        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... problem parsing GMM prior weights values for '%s'.", tempPar );
       }
 
       /* parse comma separated weights */
       TokenList *weightvals = NULL;
       XLALCreateTokenList( &weightvals, strpart, "," );
-      if ( weightvals->nTokens != nmodes ){
-        XLAL_ERROR_VOID(XLAL_EINVAL, "Error... problem parsing GMM prior weights values for '%s'.", tempPar);
+      if ( weightvals->nTokens != nmodes ) {
+        XLAL_ERROR_VOID( XLAL_EINVAL, "Error... problem parsing GMM prior weights values for '%s'.", tempPar );
       }
-      for ( UINT4 j=0; j < nmodes; j++ ){ gmmweights->data[j] = atof(weightvals->tokens[j]); }
+      for ( UINT4 j = 0; j < nmodes; j++ ) {
+        gmmweights->data[j] = atof( weightvals->tokens[j] );
+      }
       XLALDestroyTokenList( weightvals );
 
       REAL8 minval = -INFINITY, maxval = INFINITY;
@@ -753,22 +778,22 @@ void initialise_prior( LALInferenceRunState *runState )
 
       /* check if minimum and maximum bounds are specified (otherwise set to +/- infinity) */
       /* there are minimum and maximum values, e.g. [h0min,h0max] [cosiotamin,cosiotamax] */
-      for ( UINT4 j=0; j < npars; j++ ){
+      for ( UINT4 j = 0; j < npars; j++ ) {
         REAL8 thismin = minval, thismax = maxval;
-        if ( tline->nTokens > 6+j ){
-          nextpart = get_bracketed_string(strpart, tline->tokens[6+j], '[', ']');
-          if ( !strpart[0] ){
-            XLAL_ERROR_VOID(XLAL_EINVAL, "Error... problem parsing GMM prior limit values for '%s'.", tempPar);
+        if ( tline->nTokens > 6 + j ) {
+          nextpart = get_bracketed_string( strpart, tline->tokens[6 + j], '[', ']' );
+          if ( !strpart[0] ) {
+            XLAL_ERROR_VOID( XLAL_EINVAL, "Error... problem parsing GMM prior limit values for '%s'.", tempPar );
           }
           TokenList *minmaxvals = NULL;
           XLALCreateTokenList( &minmaxvals, strpart, "," );
-          if ( minmaxvals->nTokens == 2 ){
-            if ( isfinite(atof(minmaxvals->tokens[0])) ){
-              thismin = atof(minmaxvals->tokens[0]);
+          if ( minmaxvals->nTokens == 2 ) {
+            if ( isfinite( atof( minmaxvals->tokens[0] ) ) ) {
+              thismin = atof( minmaxvals->tokens[0] );
             }
-            if ( isfinite(atof(minmaxvals->tokens[1])) ){
-	      thismax = atof(minmaxvals->tokens[1]);
-	    }
+            if ( isfinite( atof( minmaxvals->tokens[1] ) ) ) {
+              thismax = atof( minmaxvals->tokens[1] );
+            }
           }
           XLALDestroyTokenList( minmaxvals );
         }
@@ -777,40 +802,41 @@ void initialise_prior( LALInferenceRunState *runState )
       }
 
       LALInferenceAddGMMPrior( runState->priorArgs, tempPar, &gmmmus, &gmmcovs, &gmmweights, &minvals, &maxvals );
-    }
-    else{
+    } else {
       XLAL_ERROR_VOID( XLAL_EINVAL, "Error... prior type '%s' not recognised", tempPrior );
     }
 
     /* if there is a phase parameter defined in the proposal then set varyphase to 1 */
-    for ( UINT4 j = 0; j < npars; j++ ){
-      for ( i = 0; i < NUMAMPPARS; i++ ){
-        if ( !strcmp(parnames->tokens[j], amppars[i]) ){
+    for ( UINT4 j = 0; j < npars; j++ ) {
+      for ( i = 0; i < NUMAMPPARS; i++ ) {
+        if ( !strcmp( parnames->tokens[j], amppars[i] ) ) {
           isthere = 1;
           break;
         }
       }
-      if ( !isthere ) { varyphase = 1; }
+      if ( !isthere ) {
+        varyphase = 1;
+      }
 
       /* check if there are sky position parameters that will be searched over */
-      for ( i = 0; i < NUMSKYPARS; i++ ){
-        if ( !strcmp(parnames->tokens[j], skypars[i]) ){
+      for ( i = 0; i < NUMSKYPARS; i++ ) {
+        if ( !strcmp( parnames->tokens[j], skypars[i] ) ) {
           varyskypos = 1;
           break;
         }
       }
 
       /* check if there are any binary parameters that will be searched over */
-      for ( i = 0; i < NUMBINPARS; i++ ){
-        if ( !strcmp(parnames->tokens[j], binpars[i]) ){
+      for ( i = 0; i < NUMBINPARS; i++ ) {
+        if ( !strcmp( parnames->tokens[j], binpars[i] ) ) {
           varybinary = 1;
           break;
         }
       }
 
       /* check is there are any glitch parameters that will be searched over */
-      for ( i = 0; i < NUMGLITCHPARS; i++ ){
-        if ( !strncmp(parnames->tokens[j], glitchpars[i], strlen(glitchpars[i]) * sizeof(CHAR)) ){
+      for ( i = 0; i < NUMGLITCHPARS; i++ ) {
+        if ( !strncmp( parnames->tokens[j], glitchpars[i], strlen( glitchpars[i] ) * sizeof( CHAR ) ) ) {
           varyglitch = 1;
           break;
         }
@@ -829,19 +855,27 @@ void initialise_prior( LALInferenceRunState *runState )
   XLALFree( filebuf );
 
   LALInferenceIFOModel *ifotemp = ifo;
-  while( ifotemp ){
+  while ( ifotemp ) {
     /* add in variables to say whether phase, sky position and binary parameter are varying */
-    if( varyphase ) { LALInferenceAddVariable( ifotemp->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED ); }
-    if( varyskypos ) { LALInferenceAddVariable( ifotemp->params, "varyskypos", &varyskypos, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED ); }
-    if( varybinary ) { LALInferenceAddVariable( ifotemp->params, "varybinary", &varybinary, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED ); }
-    if( varyglitch ) { LALInferenceAddVariable( ifotemp->params, "varyglitch", &varyglitch, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED ); }
+    if ( varyphase ) {
+      LALInferenceAddVariable( ifotemp->params, "varyphase", &varyphase, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    }
+    if ( varyskypos ) {
+      LALInferenceAddVariable( ifotemp->params, "varyskypos", &varyskypos, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    }
+    if ( varybinary ) {
+      LALInferenceAddVariable( ifotemp->params, "varybinary", &varybinary, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    }
+    if ( varyglitch ) {
+      LALInferenceAddVariable( ifotemp->params, "varyglitch", &varyglitch, LALINFERENCE_INT4_t, LALINFERENCE_PARAM_FIXED );
+    }
 
     ifotemp = ifotemp->next;
   }
 
   /* now check for a parameter correlation coefficient matrix file */
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--cor-file" );
-  if( ppt ){
+  if ( ppt ) {
     CHAR *corFile = XLALStringDuplicate( ppt->value );
     UINT4Vector *dims = XLALCreateUINT4Vector( 2 );
     dims->data[0] = 1;
@@ -881,74 +915,89 @@ void initialise_prior( LALInferenceRunState *runState )
  *
  * \param runState [in] A pointer to the run state
  */
-void initialise_proposal( LALInferenceRunState *runState ){
+void initialise_proposal( LALInferenceRunState *runState )
+{
   ProcessParamsTable *ppt = NULL;
   UINT4 defrac = 0, freqfrac = 0, esfrac = 0, ewfrac = 0, flatfrac = 0;
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--diffev" );
-  if( ppt ) { defrac = atoi( ppt->value ); }
-  else { defrac = 0; } /* default value */
+  if ( ppt ) {
+    defrac = atoi( ppt->value );
+  } else {
+    defrac = 0;  /* default value */
+  }
 
   ppt = LALInferenceGetProcParamVal( runState->commandLine, "--freqBinJump" );
-  if( ppt ) { freqfrac = atoi( ppt->value ); }
+  if ( ppt ) {
+    freqfrac = atoi( ppt->value );
+  }
 
-  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--ensembleStretch" );
-  if ( ppt ) { esfrac = atoi( ppt->value ); }
-  else { esfrac = 0; }
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--ensembleStretch" );
+  if ( ppt ) {
+    esfrac = atoi( ppt->value );
+  } else {
+    esfrac = 0;
+  }
 
-  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--ensembleWalk" );
-  if ( ppt ) { ewfrac = atoi( ppt->value ); }
-  else { ewfrac = 3; }
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--ensembleWalk" );
+  if ( ppt ) {
+    ewfrac = atoi( ppt->value );
+  } else {
+    ewfrac = 3;
+  }
 
-  ppt = LALInferenceGetProcParamVal(runState->commandLine, "--uniformprop" );
-  if ( ppt ) { flatfrac = atoi( ppt->value ); }
-  else { flatfrac = 1; }
+  ppt = LALInferenceGetProcParamVal( runState->commandLine, "--uniformprop" );
+  if ( ppt ) {
+    flatfrac = atoi( ppt->value );
+  } else {
+    flatfrac = 1;
+  }
 
-  if( !defrac && !freqfrac && !ewfrac && !esfrac ){
-    XLAL_ERROR_VOID(XLAL_EFAILED, "All proposal weights are zero!");
+  if ( !defrac && !freqfrac && !ewfrac && !esfrac ) {
+    XLAL_ERROR_VOID( XLAL_EFAILED, "All proposal weights are zero!" );
   }
 
   /* Single thread here */
   LALInferenceThreadState *threadState = &runState->threads[0];
   threadState->cycle = LALInferenceInitProposalCycle();
-  LALInferenceProposalCycle *cycle=threadState->cycle;
+  LALInferenceProposalCycle *cycle = threadState->cycle;
   /* add proposals */
-  if( defrac ){
-    LALInferenceAddProposalToCycle(cycle,
-                                   LALInferenceInitProposal(&LALInferenceDifferentialEvolutionFull,differentialEvolutionFullName),
-                                   defrac);
+  if ( defrac ) {
+    LALInferenceAddProposalToCycle( cycle,
+                                    LALInferenceInitProposal( &LALInferenceDifferentialEvolutionFull, differentialEvolutionFullName ),
+                                    defrac );
   }
 
-  if ( freqfrac ){
-    LALInferenceAddProposalToCycle(cycle,
-                                   LALInferenceInitProposal(&LALInferenceFrequencyBinJump,frequencyBinJumpName),
-                                   freqfrac);
+  if ( freqfrac ) {
+    LALInferenceAddProposalToCycle( cycle,
+                                    LALInferenceInitProposal( &LALInferenceFrequencyBinJump, frequencyBinJumpName ),
+                                    freqfrac );
   }
 
   /* Use ensemble moves */
-  if ( esfrac ){
-    LALInferenceAddProposalToCycle(cycle,
-                                   LALInferenceInitProposal(&LALInferenceEnsembleStretchFull,ensembleStretchFullName),
-                                   esfrac);
+  if ( esfrac ) {
+    LALInferenceAddProposalToCycle( cycle,
+                                    LALInferenceInitProposal( &LALInferenceEnsembleStretchFull, ensembleStretchFullName ),
+                                    esfrac );
   }
 
-  if ( ewfrac ){
-    LALInferenceAddProposalToCycle(cycle,
-                                   LALInferenceInitProposal(&LALInferenceEnsembleWalkFull,ensembleWalkFullName),
-                                   ewfrac);
+  if ( ewfrac ) {
+    LALInferenceAddProposalToCycle( cycle,
+                                    LALInferenceInitProposal( &LALInferenceEnsembleWalkFull, ensembleWalkFullName ),
+                                    ewfrac );
   }
 
-  if ( flatfrac ){
-    LALInferenceAddProposalToCycle(cycle,
-                                   LALInferenceInitProposal(&LALInferenceDrawFlatPrior,drawFlatPriorName),
-                                   flatfrac);
+  if ( flatfrac ) {
+    LALInferenceAddProposalToCycle( cycle,
+                                    LALInferenceInitProposal( &LALInferenceDrawFlatPrior, drawFlatPriorName ),
+                                    flatfrac );
   }
 
   LALInferenceRandomizeProposalCycle( cycle, runState->GSLrandom );
 
   /* set proposal */
   threadState->proposal = LALInferenceCyclicProposal;
-  LALInferenceZeroProposalStats(threadState->cycle);
+  LALInferenceZeroProposalStats( threadState->cycle );
 }
 
 
@@ -961,7 +1010,8 @@ void initialise_proposal( LALInferenceRunState *runState ){
  * parameters they will be ignored.
  */
 void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *priors, REAL8Array *corMat,
-                             LALStringVector *parMat ){
+                             LALStringVector *parMat )
+{
   UINT4 i = 0, j = 0, k = 0;
   LALStringVector *newPars = NULL;
   gsl_matrix *corMatg = NULL;
@@ -970,14 +1020,14 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
 
   /* loop through parameters and find ones that have Gaussian priors set - these should match with parameters in the
    * correlation coefficient matrix */
-  for ( i = 0; i < parMat->length; i++ ){
+  for ( i = 0; i < parMat->length; i++ ) {
     UINT4 incor = 0;
     LALInferenceVariableItem *checkPrior = ini->head;
 
-    for( ; checkPrior ; checkPrior = checkPrior->next ){
-      if( LALInferenceCheckGaussianPrior(priors, checkPrior->name) ){
+    for ( ; checkPrior ; checkPrior = checkPrior->next ) {
+      if ( LALInferenceCheckGaussianPrior( priors, checkPrior->name ) ) {
         /* ignore parameter name case */
-        if( !XLALStringCaseCompare(parMat->data[i], checkPrior->name) ){
+        if ( !XLALStringCaseCompare( parMat->data[i], checkPrior->name ) ) {
           incor = 1;
 
           /* add parameter to new parameter string vector */
@@ -988,17 +1038,19 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
     }
 
     /* if parameter in the corMat did not match one with a Gaussian defined prior, then remove it from the matrix */
-    if ( incor == 0 ){
+    if ( incor == 0 ) {
       /* remove the ith row and column from corMat, and the ith name from parMat */
       /* shift rows up */
-      for ( j = i+1; j < corsize; j++ )
-        for ( k = 0; k < corsize; k++ )
-          corMat->data[(j-1)*corsize + k] = corMat->data[j*corsize + k];
+      for ( j = i + 1; j < corsize; j++ )
+        for ( k = 0; k < corsize; k++ ) {
+          corMat->data[( j - 1 )*corsize + k] = corMat->data[j * corsize + k];
+        }
 
       /* shift columns left */
-      for ( k = i+1; k < corsize; k++ )
-        for ( j = 0; j < corsize; j++ )
-          corMat->data[j*corsize + k-1] = corMat->data[j*corsize + k];
+      for ( k = i + 1; k < corsize; k++ )
+        for ( j = 0; j < corsize; j++ ) {
+          corMat->data[j * corsize + k - 1] = corMat->data[j * corsize + k];
+        }
     }
   }
 
@@ -1011,19 +1063,20 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
   /* copy the corMat into a gsl_matrix */
   corMatg = gsl_matrix_alloc( parMat->length, parMat->length );
   for ( i = 0; i < parMat->length; i++ )
-    for ( j = 0; j < parMat->length; j++ )
-      gsl_matrix_set( corMatg, i, j, corMat->data[i*corsize + j] );
+    for ( j = 0; j < parMat->length; j++ ) {
+      gsl_matrix_set( corMatg, i, j, corMat->data[i * corsize + j] );
+    }
 
   /* re-loop over parameters removing Gaussian priors on those in the parMat and replacing with a correlation matrix */
-  for ( i = 0; i < parMat->length; i++ ){
+  for ( i = 0; i < parMat->length; i++ ) {
     LALInferenceVariableItem *checkPrior = ini->head;
 
     /* allocate global variable giving the list of the correlation matrix parameters */
     corlist = XLALAppendString2Vector( corlist, parMat->data[i] );
 
-    for( ; checkPrior ; checkPrior = checkPrior->next ){
-      if( LALInferenceCheckGaussianPrior(priors, checkPrior->name) ){
-        if( !XLALStringCaseCompare(parMat->data[i], checkPrior->name) ){
+    for ( ; checkPrior ; checkPrior = checkPrior->next ) {
+      if ( LALInferenceCheckGaussianPrior( priors, checkPrior->name ) ) {
+        if ( !XLALStringCaseCompare( parMat->data[i], checkPrior->name ) ) {
           /* get the mean and standard deviation from the Gaussian prior */
           REAL8 mu, sigma;
           LALInferenceGetGaussianPrior( priors, checkPrior->name, &mu, &sigma );
@@ -1054,17 +1107,24 @@ void add_correlation_matrix( LALInferenceVariables *ini, LALInferenceVariables *
  *
  * \param runState [in] The analysis information structure
  */
-void sum_data( LALInferenceRunState *runState ){
+void sum_data( LALInferenceRunState *runState )
+{
   LALInferenceIFOData *data = runState->data;
   LALInferenceIFOModel *ifomodel = runState->threads[0].model->ifo;
 
   UINT4 gaussianLike = 0, roq = 0, nonGR = 0;
 
-  if ( LALInferenceGetProcParamVal( runState->commandLine, "--gaussian-like" ) ){ gaussianLike = 1; }
-  if ( LALInferenceGetProcParamVal( runState->commandLine, "--roq" ) ){ roq = 1; }
-  if ( LALInferenceGetProcParamVal( runState->commandLine, "--nonGR" ) ){ nonGR = 1; }
+  if ( LALInferenceGetProcParamVal( runState->commandLine, "--gaussian-like" ) ) {
+    gaussianLike = 1;
+  }
+  if ( LALInferenceGetProcParamVal( runState->commandLine, "--roq" ) ) {
+    roq = 1;
+  }
+  if ( LALInferenceGetProcParamVal( runState->commandLine, "--nonGR" ) ) {
+    nonGR = 1;
+  }
 
-  while( data ){
+  while ( data ) {
     REAL8Vector *sumdat = NULL;
 
     /* sums of the antenna pattern functions with themeselves and the data.
@@ -1112,18 +1172,18 @@ void sum_data( LALInferenceRunState *runState ){
     REAL8Vector *sumBLWhite = NULL;
 
     /* get antenna patterns */
-    REAL8Vector *arespT = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_tensor" );
-    REAL8Vector *brespT = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_tensor" );
+    REAL8Vector *arespT = *( REAL8Vector ** )LALInferenceGetVariable( ifomodel->params, "a_response_tensor" );
+    REAL8Vector *brespT = *( REAL8Vector ** )LALInferenceGetVariable( ifomodel->params, "b_response_tensor" );
     REAL8Vector *arespV = NULL, *brespV = NULL, *arespS = NULL, *brespS = NULL;
 
-    if ( nonGR ){
-      arespV = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_vector" );
-      brespV = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_vector" );
-      arespS = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "a_response_scalar" );
-      brespS = *(REAL8Vector **)LALInferenceGetVariable( ifomodel->params, "b_response_scalar" );
+    if ( nonGR ) {
+      arespV = *( REAL8Vector ** )LALInferenceGetVariable( ifomodel->params, "a_response_vector" );
+      brespV = *( REAL8Vector ** )LALInferenceGetVariable( ifomodel->params, "b_response_vector" );
+      arespS = *( REAL8Vector ** )LALInferenceGetVariable( ifomodel->params, "a_response_scalar" );
+      brespS = *( REAL8Vector ** )LALInferenceGetVariable( ifomodel->params, "b_response_scalar" );
     }
 
-    INT4 tsteps = *(INT4 *)LALInferenceGetVariable( ifomodel->params, "timeSteps" );
+    INT4 tsteps = *( INT4 * )LALInferenceGetVariable( ifomodel->params, "timeSteps" );
 
     INT4 chunkLength = 0, length = 0, i = 0, j = 0, count = 0;
     COMPLEX16 B;
@@ -1131,15 +1191,15 @@ void sum_data( LALInferenceRunState *runState ){
 
     UINT4Vector *chunkLengths;
 
-    REAL8Vector *sidDayFrac = *(REAL8Vector**)LALInferenceGetVariable( ifomodel->params, "siderealDay" );
+    REAL8Vector *sidDayFrac = *( REAL8Vector ** )LALInferenceGetVariable( ifomodel->params, "siderealDay" );
 
-    chunkLengths = *(UINT4Vector **)LALInferenceGetVariable( ifomodel->params, "chunkLength" );
+    chunkLengths = *( UINT4Vector ** )LALInferenceGetVariable( ifomodel->params, "chunkLength" );
 
     length = IFO_XTRA_DATA( ifomodel )->times->length + 1 - chunkLengths->data[chunkLengths->length - 1];
 
     sumdat = XLALCreateREAL8Vector( chunkLengths->length );
 
-    if ( !roq ){
+    if ( !roq ) {
       /* allocate memory */
       sumP = XLALCreateREAL8Vector( chunkLengths->length );
       sumC = XLALCreateREAL8Vector( chunkLengths->length );
@@ -1151,7 +1211,7 @@ void sum_data( LALInferenceRunState *runState ){
       sumCWhite = XLALCreateREAL8Vector( chunkLengths->length );
       sumPCWhite = XLALCreateREAL8Vector( chunkLengths->length );
 
-      if ( nonGR ){
+      if ( nonGR ) {
         sumX = XLALCreateREAL8Vector( chunkLengths->length );
         sumY = XLALCreateREAL8Vector( chunkLengths->length );
         sumB = XLALCreateREAL8Vector( chunkLengths->length );
@@ -1202,12 +1262,12 @@ void sum_data( LALInferenceRunState *runState ){
     REAL8 tsv = LAL_DAYSID_SI / tsteps, T = 0., timeMin = 0., timeMax = 0.;
     REAL8 logGaussianNorm = 0.; /* normalisation constant for Gaussian distribution */
 
-    for( i = 0, count = 0 ; i < length ; i+= chunkLength, count++ ){
+    for ( i = 0, count = 0 ; i < length ; i += chunkLength, count++ ) {
       chunkLength = chunkLengths->data[count];
 
       sumdat->data[count] = 0.;
 
-      if ( !roq ){
+      if ( !roq ) {
         sumP->data[count] = 0.;
         sumC->data[count] = 0.;
         sumPC->data[count] = 0.;
@@ -1218,7 +1278,7 @@ void sum_data( LALInferenceRunState *runState ){
         sumCWhite->data[count] = 0.;
         sumPCWhite->data[count] = 0.;
 
-        if ( nonGR ){
+        if ( nonGR ) {
           sumX->data[count] = 0.;
           sumY->data[count] = 0.;
           sumB->data[count] = 0.;
@@ -1266,7 +1326,7 @@ void sum_data( LALInferenceRunState *runState ){
         }
       }
 
-      for( j = i ; j < i + chunkLength ; j++){
+      for ( j = i ; j < i + chunkLength ; j++ ) {
         REAL8 vari = 1., a0 = 0., a1 = 0., b0 = 0., b1 = 0., timeScaled = 0.;
         INT4 timebinMin = 0, timebinMax = 0;
 
@@ -1275,18 +1335,18 @@ void sum_data( LALInferenceRunState *runState ){
         /* if using a Gaussian likelihood divide all these values by the variance */
         if ( gaussianLike ) {
           vari = data->varTimeData->data->data[j];
-          logGaussianNorm -= log(LAL_TWOPI*vari);
+          logGaussianNorm -= log( LAL_TWOPI * vari );
         }
 
         /* sum up the data */
-        sumdat->data[count] += (creal(B)*creal(B) + cimag(B)*cimag(B))/vari;
+        sumdat->data[count] += ( creal( B ) * creal( B ) + cimag( B ) * cimag( B ) ) / vari;
 
-        if ( !roq ){
+        if ( !roq ) {
           /* set the time bin for the lookup table and interpolate between bins */
           T = sidDayFrac->data[j];
-          timebinMin = (INT4)fmod( floor(T / tsv), tsteps );
-          timeMin = timebinMin*tsv;
-          timebinMax = (INT4)fmod( timebinMin + 1, tsteps );
+          timebinMin = ( INT4 )fmod( floor( T / tsv ), tsteps );
+          timeMin = timebinMin * tsv;
+          timebinMax = ( INT4 )fmod( timebinMin + 1, tsteps );
           timeMax = timeMin + tsv;
 
           /* get values of vector for linear interpolation */
@@ -1296,90 +1356,90 @@ void sum_data( LALInferenceRunState *runState ){
           b1 = brespT->data[timebinMax];
 
           /* rescale time for linear interpolation on a unit square */
-          timeScaled = (T - timeMin)/(timeMax - timeMin);
+          timeScaled = ( T - timeMin ) / ( timeMax - timeMin );
 
-          aT = a0 + (a1-a0)*timeScaled;
-          bT = b0 + (b1-b0)*timeScaled;
+          aT = a0 + ( a1 - a0 ) * timeScaled;
+          bT = b0 + ( b1 - b0 ) * timeScaled;
 
           /* sum up the other terms */
-          sumP->data[count] += aT*aT/vari;
-          sumC->data[count] += bT*bT/vari;
-          sumPC->data[count] += aT*bT/vari;
-          sumDataP->data[count] += B*aT/vari;
-          sumDataC->data[count] += B*bT/vari;
+          sumP->data[count] += aT * aT / vari;
+          sumC->data[count] += bT * bT / vari;
+          sumPC->data[count] += aT * bT / vari;
+          sumDataP->data[count] += B * aT / vari;
+          sumDataC->data[count] += B * bT / vari;
 
           /* non-GR values */
-          if ( nonGR ){
+          if ( nonGR ) {
             a0 = arespV->data[timebinMin];
             a1 = arespV->data[timebinMax];
             b0 = brespV->data[timebinMin];
             b1 = brespV->data[timebinMax];
 
-            aV = a0 + (a1-a0)*timeScaled;
-            bV = b0 + (b1-b0)*timeScaled;
+            aV = a0 + ( a1 - a0 ) * timeScaled;
+            bV = b0 + ( b1 - b0 ) * timeScaled;
 
             a0 = arespS->data[timebinMin];
             a1 = arespS->data[timebinMax];
             b0 = brespS->data[timebinMin];
             b1 = brespS->data[timebinMax];
 
-            aS = a0 + (a1-a0)*timeScaled;
-            bS = b0 + (b1-b0)*timeScaled;
+            aS = a0 + ( a1 - a0 ) * timeScaled;
+            bS = b0 + ( b1 - b0 ) * timeScaled;
 
-            sumX->data[count] += aV*aV/vari;
-            sumY->data[count] += bV*bV/vari;
-            sumB->data[count] += aS*aS/vari;
-            sumL->data[count] += bS*bS/vari;
+            sumX->data[count] += aV * aV / vari;
+            sumY->data[count] += bV * bV / vari;
+            sumB->data[count] += aS * aS / vari;
+            sumL->data[count] += bS * bS / vari;
 
-            sumPX->data[count] += aT*aV/vari;
-            sumPY->data[count] += aT*bV/vari;
-            sumPB->data[count] += aT*aS/vari;
-            sumPL->data[count] += aT*bS/vari;
-            sumCX->data[count] += bT*aV/vari;
-            sumCY->data[count] += bT*bV/vari;
-            sumCB->data[count] += bT*aS/vari;
-            sumCL->data[count] += bT*bS/vari;
-            sumXY->data[count] += aV*bV/vari;
-            sumXB->data[count] += aV*aS/vari;
-            sumXL->data[count] += aV*bS/vari;
-            sumYB->data[count] += bV*aS/vari;
-            sumYL->data[count] += bV*bS/vari;
-            sumBL->data[count] += aS*bS/vari;
+            sumPX->data[count] += aT * aV / vari;
+            sumPY->data[count] += aT * bV / vari;
+            sumPB->data[count] += aT * aS / vari;
+            sumPL->data[count] += aT * bS / vari;
+            sumCX->data[count] += bT * aV / vari;
+            sumCY->data[count] += bT * bV / vari;
+            sumCB->data[count] += bT * aS / vari;
+            sumCL->data[count] += bT * bS / vari;
+            sumXY->data[count] += aV * bV / vari;
+            sumXB->data[count] += aV * aS / vari;
+            sumXL->data[count] += aV * bS / vari;
+            sumYB->data[count] += bV * aS / vari;
+            sumYL->data[count] += bV * bS / vari;
+            sumBL->data[count] += aS * bS / vari;
 
-            sumDataX->data[count] += B*aV/vari;
-            sumDataY->data[count] += B*bV/vari;
-            sumDataB->data[count] += B*aS/vari;
-            sumDataL->data[count] += B*bS/vari;
+            sumDataX->data[count] += B * aV / vari;
+            sumDataY->data[count] += B * bV / vari;
+            sumDataB->data[count] += B * aS / vari;
+            sumDataL->data[count] += B * bS / vari;
           }
 
           /* get "explicitly whitened" versions, i.e. for use in signal-to-noise ratio
            * calculations even when not using a Gaussian likelihood */
           vari = data->varTimeData->data->data[j];
-          sumPWhite->data[count] += aT*aT/vari;
-          sumCWhite->data[count] += bT*bT/vari;
-          sumPCWhite->data[count] += aT*bT/vari;
+          sumPWhite->data[count] += aT * aT / vari;
+          sumCWhite->data[count] += bT * bT / vari;
+          sumPCWhite->data[count] += aT * bT / vari;
 
           /* non-GR values */
-          if ( nonGR ){
-            sumXWhite->data[count] += aV*aV/vari;
-            sumYWhite->data[count] += bV*bV/vari;
-            sumBWhite->data[count] += aS*aS/vari;
-            sumLWhite->data[count] += bS*bS/vari;
+          if ( nonGR ) {
+            sumXWhite->data[count] += aV * aV / vari;
+            sumYWhite->data[count] += bV * bV / vari;
+            sumBWhite->data[count] += aS * aS / vari;
+            sumLWhite->data[count] += bS * bS / vari;
 
-            sumPXWhite->data[count] += aT*aV/vari;
-            sumPYWhite->data[count] += aT*bV/vari;
-            sumPBWhite->data[count] += aT*aS/vari;
-            sumPLWhite->data[count] += aT*bS/vari;
-            sumCXWhite->data[count] += bT*aV/vari;
-            sumCYWhite->data[count] += bT*bV/vari;
-            sumCBWhite->data[count] += bT*aS/vari;
-            sumCLWhite->data[count] += bT*bS/vari;
-            sumXYWhite->data[count] += aV*bV/vari;
-            sumXBWhite->data[count] += aV*aS/vari;
-            sumXLWhite->data[count] += aV*bS/vari;
-            sumYBWhite->data[count] += bV*aS/vari;
-            sumYLWhite->data[count] += bV*bS/vari;
-            sumBLWhite->data[count] += aS*bS/vari;
+            sumPXWhite->data[count] += aT * aV / vari;
+            sumPYWhite->data[count] += aT * bV / vari;
+            sumPBWhite->data[count] += aT * aS / vari;
+            sumPLWhite->data[count] += aT * bS / vari;
+            sumCXWhite->data[count] += bT * aV / vari;
+            sumCYWhite->data[count] += bT * bV / vari;
+            sumCBWhite->data[count] += bT * aS / vari;
+            sumCLWhite->data[count] += bT * bS / vari;
+            sumXYWhite->data[count] += aV * bV / vari;
+            sumXBWhite->data[count] += aV * aS / vari;
+            sumXLWhite->data[count] += aV * bS / vari;
+            sumYBWhite->data[count] += bV * aS / vari;
+            sumYLWhite->data[count] += bV * bS / vari;
+            sumBLWhite->data[count] += aS * bS / vari;
           }
         }
       }
@@ -1390,7 +1450,7 @@ void sum_data( LALInferenceRunState *runState ){
 
     check_and_add_fixed_variable( ifomodel->params, "sumData", &sumdat, LALINFERENCE_REAL8Vector_t );
 
-    if ( !roq ){
+    if ( !roq ) {
       check_and_add_fixed_variable( ifomodel->params, "sumP", &sumP, LALINFERENCE_REAL8Vector_t );
       check_and_add_fixed_variable( ifomodel->params, "sumC", &sumC, LALINFERENCE_REAL8Vector_t );
       check_and_add_fixed_variable( ifomodel->params, "sumPC", &sumPC, LALINFERENCE_REAL8Vector_t );
@@ -1400,7 +1460,7 @@ void sum_data( LALInferenceRunState *runState ){
       check_and_add_fixed_variable( ifomodel->params, "sumCWhite", &sumCWhite, LALINFERENCE_REAL8Vector_t );
       check_and_add_fixed_variable( ifomodel->params, "sumPCWhite", &sumPCWhite, LALINFERENCE_REAL8Vector_t );
 
-      if ( nonGR ){
+      if ( nonGR ) {
         check_and_add_fixed_variable( ifomodel->params, "sumX", &sumX, LALINFERENCE_REAL8Vector_t );
         check_and_add_fixed_variable( ifomodel->params, "sumY", &sumY, LALINFERENCE_REAL8Vector_t );
         check_and_add_fixed_variable( ifomodel->params, "sumB", &sumB, LALINFERENCE_REAL8Vector_t );
@@ -1446,8 +1506,7 @@ void sum_data( LALInferenceRunState *runState ){
         check_and_add_fixed_variable( ifomodel->params, "sumYLWhite", &sumYLWhite, LALINFERENCE_REAL8Vector_t );
         check_and_add_fixed_variable( ifomodel->params, "sumBLWhite", &sumBLWhite, LALINFERENCE_REAL8Vector_t );
       }
-    }
-    else{ /* add parameter defining the usage of RQO here (as this is after any injection generation, which would fail if this was set */
+    } else { /* add parameter defining the usage of RQO here (as this is after any injection generation, which would fail if this was set */
       LALInferenceAddVariable( ifomodel->params, "roq", &roq, LALINFERENCE_UINT4_t, LALINFERENCE_PARAM_FIXED );
     }
 
@@ -1475,44 +1534,55 @@ void sum_data( LALInferenceRunState *runState ){
  * \param npars [in] The number of parameters
  * \param nmodes [in] The number of modes
  */
-REAL8Vector** parse_gmm_means(CHAR *meanstr, UINT4 npars, UINT4 nmodes){
+REAL8Vector **parse_gmm_means( CHAR *meanstr, UINT4 npars, UINT4 nmodes )
+{
   UINT4 modecount = 0;
 
   /* parse mean string */
-  CHAR *startloc = strchr(meanstr, '['); /* find location of first '[' */
-  if ( !startloc ){ return NULL; }
+  CHAR *startloc = strchr( meanstr, '[' ); /* find location of first '[' */
+  if ( !startloc ) {
+    return NULL;
+  }
 
   CHAR strpart[16384]; /* string to hold elements */
 
   /* allocate memory for returned value */
   REAL8Vector **meanmat;
-  meanmat =  XLALCalloc(nmodes, sizeof(REAL8Vector *));
+  meanmat =  XLALCalloc( nmodes, sizeof( REAL8Vector * ) );
 
-  while( 1 ){
-    CHAR *closeloc = get_bracketed_string(strpart, startloc+1, '[', ']');
-    if ( !strpart[0] ){ break; } /* break when no more bracketed items are found */
+  while ( 1 ) {
+    CHAR *closeloc = get_bracketed_string( strpart, startloc + 1, '[', ']' );
+    if ( !strpart[0] ) {
+      break;  /* break when no more bracketed items are found */
+    }
 
     /* get mean values (separated by commas) */
     TokenList *meantoc = NULL;
     XLALCreateTokenList( &meantoc, strpart, "," );
-    if ( meantoc->nTokens != npars ){
-      XLAL_PRINT_WARNING("Warning... number of means parameters specified for GMM is not consistent with number of parameters.\n");
-      for ( INT4 k=modecount-1; k > -1; k-- ){ XLALDestroyREAL8Vector(meanmat[k]); }
-      XLALFree(meanmat);
+    if ( meantoc->nTokens != npars ) {
+      XLAL_PRINT_WARNING( "Warning... number of means parameters specified for GMM is not consistent with number of parameters.\n" );
+      for ( INT4 k = modecount - 1; k > -1; k-- ) {
+        XLALDestroyREAL8Vector( meanmat[k] );
+      }
+      XLALFree( meanmat );
       return NULL;
     }
     meanmat[modecount] = XLALCreateREAL8Vector( npars );
-    for( UINT4 j = 0; j < meantoc->nTokens; j++ ){ meanmat[modecount]->data[j] = atof(meantoc->tokens[j]); }
+    for ( UINT4 j = 0; j < meantoc->nTokens; j++ ) {
+      meanmat[modecount]->data[j] = atof( meantoc->tokens[j] );
+    }
 
     startloc = closeloc;
     modecount++;
     XLALDestroyTokenList( meantoc );
   }
 
-  if ( modecount != nmodes ){
-    XLAL_PRINT_WARNING("Warning... number of means values specified for GMM is not consistent with number of modes.\n");
-    for ( INT4 k=modecount-1; k > -1; k-- ){ XLALDestroyREAL8Vector(meanmat[k]); }
-    XLALFree(meanmat);
+  if ( modecount != nmodes ) {
+    XLAL_PRINT_WARNING( "Warning... number of means values specified for GMM is not consistent with number of modes.\n" );
+    for ( INT4 k = modecount - 1; k > -1; k-- ) {
+      XLALDestroyREAL8Vector( meanmat[k] );
+    }
+    XLALFree( meanmat );
     meanmat = NULL;
   }
 
@@ -1535,46 +1605,57 @@ REAL8Vector** parse_gmm_means(CHAR *meanstr, UINT4 npars, UINT4 nmodes){
  * \param npars [in] The number of parameters
  * \param nmodes [in] The number of modes
  */
-gsl_matrix** parse_gmm_covs(CHAR *covstr, UINT4 npars, UINT4 nmodes){
+gsl_matrix **parse_gmm_covs( CHAR *covstr, UINT4 npars, UINT4 nmodes )
+{
   UINT4 modecount = 0;
 
   /* parse covariance string */
-  CHAR *startloc = strchr(covstr, '['); /* find location of first '[' */
-  if ( !startloc ){ return NULL; }
+  CHAR *startloc = strchr( covstr, '[' ); /* find location of first '[' */
+  if ( !startloc ) {
+    return NULL;
+  }
 
   CHAR strpart[16384]; /* string to hold elements */
 
   /* allocate memory for returned value */
   gsl_matrix **covmat;
-  covmat = XLALCalloc(nmodes, sizeof(gsl_matrix *));
+  covmat = XLALCalloc( nmodes, sizeof( gsl_matrix * ) );
 
-  while( 1 ){
-    CHAR *openloc = strstr(startloc+1, "[["); /* find next "[[" */
+  while ( 1 ) {
+    CHAR *openloc = strstr( startloc + 1, "[[" ); /* find next "[[" */
     /* break if there are no more opening brackets */
-    if ( !openloc ){ break; }
+    if ( !openloc ) {
+      break;
+    }
 
-    CHAR *closeloc = strstr(openloc+1, "]]"); /* find next "]]" */
-    if ( !closeloc ){ break; }
+    CHAR *closeloc = strstr( openloc + 1, "]]" ); /* find next "]]" */
+    if ( !closeloc ) {
+      break;
+    }
 
-    strncpy(strpart, openloc+1, (closeloc-openloc)); /* copy string */
-    strpart[(closeloc-openloc)] = '\0'; /* add null terminating character */
+    strncpy( strpart, openloc + 1, ( closeloc - openloc ) ); /* copy string */
+    strpart[( closeloc - openloc )] = '\0'; /* add null terminating character */
 
     CHAR *newstartloc = strpart;
 
     UINT4 parcount = 0;
 
-    covmat[modecount] = gsl_matrix_alloc(npars, npars);
+    covmat[modecount] = gsl_matrix_alloc( npars, npars );
 
-    while ( 1 ){
+    while ( 1 ) {
       CHAR newstrpart[8192];
-      CHAR *newcloseloc = get_bracketed_string(newstrpart, newstartloc, '[', ']');
+      CHAR *newcloseloc = get_bracketed_string( newstrpart, newstartloc, '[', ']' );
 
-      if ( !newstrpart[0] ){ break; } /* read all of covariance matrix for this mode */
+      if ( !newstrpart[0] ) {
+        break;  /* read all of covariance matrix for this mode */
+      }
 
-      if ( parcount > npars ){
-        XLAL_PRINT_WARNING("Warning... number of covariance parameters specified for GMM is not consistent with number of parameters.\n");
-        for ( INT4 k=modecount; k > -1; k-- ){ gsl_matrix_free(covmat[k]); }
-        XLALFree(covmat);
+      if ( parcount > npars ) {
+        XLAL_PRINT_WARNING( "Warning... number of covariance parameters specified for GMM is not consistent with number of parameters.\n" );
+        for ( INT4 k = modecount; k > -1; k-- ) {
+          gsl_matrix_free( covmat[k] );
+        }
+        XLALFree( covmat );
         return NULL;
       }
 
@@ -1583,14 +1664,18 @@ gsl_matrix** parse_gmm_covs(CHAR *covstr, UINT4 npars, UINT4 nmodes){
       /* get covariance values (separated by commas) */
       TokenList *covtoc = NULL;
       XLALCreateTokenList( &covtoc, newstrpart, "," );
-      if ( covtoc->nTokens != npars ){
-        XLAL_PRINT_WARNING("Warning... number of means parameters specified for GMM is not consistent with number of parameters.\n");
-        for ( INT4 k=modecount; k > -1; k-- ){ gsl_matrix_free(covmat[k]); }
-        XLALFree(covmat);
+      if ( covtoc->nTokens != npars ) {
+        XLAL_PRINT_WARNING( "Warning... number of means parameters specified for GMM is not consistent with number of parameters.\n" );
+        for ( INT4 k = modecount; k > -1; k-- ) {
+          gsl_matrix_free( covmat[k] );
+        }
+        XLALFree( covmat );
         return NULL;
       }
 
-      for( UINT4 j = 0; j < covtoc->nTokens; j++ ){ gsl_matrix_set(covmat[modecount], parcount, j, atof(covtoc->tokens[j])); }
+      for ( UINT4 j = 0; j < covtoc->nTokens; j++ ) {
+        gsl_matrix_set( covmat[modecount], parcount, j, atof( covtoc->tokens[j] ) );
+      }
       XLALDestroyTokenList( covtoc );
 
       parcount++;
@@ -1599,10 +1684,12 @@ gsl_matrix** parse_gmm_covs(CHAR *covstr, UINT4 npars, UINT4 nmodes){
     modecount++;
   }
 
-  if ( modecount != nmodes ){
-    XLAL_PRINT_WARNING("Warning... number of means values specified for GMM is not consistent with number of modes.\n");
-    for ( INT4 k=modecount; k > -1; k-- ){ gsl_matrix_free(covmat[k]); }
-    XLALFree(covmat);
+  if ( modecount != nmodes ) {
+    XLAL_PRINT_WARNING( "Warning... number of means values specified for GMM is not consistent with number of modes.\n" );
+    for ( INT4 k = modecount; k > -1; k-- ) {
+      gsl_matrix_free( covmat[k] );
+    }
+    XLALFree( covmat );
     covmat = NULL;
   }
 
@@ -1610,35 +1697,37 @@ gsl_matrix** parse_gmm_covs(CHAR *covstr, UINT4 npars, UINT4 nmodes){
 }
 
 
-CHAR* get_bracketed_string(CHAR *dest, const CHAR *bstr, int openbracket, int closebracket){
+CHAR *get_bracketed_string( CHAR *dest, const CHAR *bstr, int openbracket, int closebracket )
+{
   /* get positions of opening and closing brackets */
-  CHAR *openpar = strchr(bstr, openbracket);
-  CHAR *closepar = strchr(bstr+1, closebracket);
+  CHAR *openpar = strchr( bstr, openbracket );
+  CHAR *closepar = strchr( bstr + 1, closebracket );
 
-  if ( !openpar || !closepar ){
+  if ( !openpar || !closepar ) {
     dest[0] = 0;
     return NULL;
   }
 
-  strncpy(dest, openpar+1, (closepar-openpar)-1);
-  dest[(closepar-openpar)-1] = '\0';
+  strncpy( dest, openpar + 1, ( closepar - openpar ) - 1 );
+  dest[( closepar - openpar ) - 1] = '\0';
 
   /* return pointer the the location after the closing brackets */
-  return closepar+1;
+  return closepar + 1;
 }
 
 
-void initialise_threads(LALInferenceRunState *state, INT4 nthreads){
-  INT4 i,randomseed;
+void initialise_threads( LALInferenceRunState *state, INT4 nthreads )
+{
+  INT4 i, randomseed;
   LALInferenceThreadState *thread;
-  for (i=0; i<nthreads; i++){
-    thread=&state->threads[i];
+  for ( i = 0; i < nthreads; i++ ) {
+    thread = &state->threads[i];
     //LALInferenceCopyVariables(thread->model->params, thread->currentParams);
-    LALInferenceCopyVariables(state->priorArgs, thread->priorArgs);
-    LALInferenceCopyVariables(state->proposalArgs, thread->proposalArgs);
-    thread->GSLrandom = gsl_rng_alloc(gsl_rng_mt19937);
-    randomseed = gsl_rng_get(state->GSLrandom);
-    gsl_rng_set(thread->GSLrandom, randomseed);
+    LALInferenceCopyVariables( state->priorArgs, thread->priorArgs );
+    LALInferenceCopyVariables( state->proposalArgs, thread->proposalArgs );
+    thread->GSLrandom = gsl_rng_alloc( gsl_rng_mt19937 );
+    randomseed = gsl_rng_get( state->GSLrandom );
+    gsl_rng_set( thread->GSLrandom, randomseed );
 
     /* Explicitly zero out DE, in case it's not used later */
     thread->differentialPoints = NULL;

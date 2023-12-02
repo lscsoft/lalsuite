@@ -98,7 +98,7 @@ model = het.model(parupdate, usephase=True, updateSSB=True)
 """
 ## @{
 
-from __future__ import (division, print_function)
+from __future__ import division, print_function
 
 import numpy as np
 from six import string_types
@@ -126,13 +126,23 @@ __version__ = git_version.id
 __date__ = git_version.date
 
 
-DOWNLOAD_URL = 'https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/{}'
+DOWNLOAD_URL = "https://git.ligo.org/lscsoft/lalsuite/raw/master/lalpulsar/lib/{}"
+
 
 class HeterodynedCWSimulator(object):
-
-    def __init__(self, par, det, times=None, earth_ephem=None,
-                 sun_ephem=None, time_corr=None, ephem='DE405', units='TCB',
-                 t0=None, dt=None):
+    def __init__(
+        self,
+        par,
+        det,
+        times=None,
+        earth_ephem=None,
+        sun_ephem=None,
+        time_corr=None,
+        ephem="DE405",
+        units="TCB",
+        t0=None,
+        dt=None,
+    ):
         """
         A class to simulate strain data for a continuous gravitational-wave
         signal after the data has been heterodyned, i.e., after multiplying
@@ -181,65 +191,80 @@ class HeterodynedCWSimulator(object):
         self.__timecorrstr = "{}_2000-2040.dat.gz"
 
         # mapping between time units and time correction file prefix
-        self.__units_map = {"TCB": "te405",
-                            "TDB": "tdb"}
+        self.__units_map = {"TCB": "te405", "TDB": "tdb"}
 
         self.ephem = ephem
         self.units = units
 
         # initialise the solar system ephemeris files
-        self.__edat, self.__tdat = self._initialise_ephemeris(earth_ephem,
-                                                              sun_ephem,
-                                                              time_corr)
+        self.__edat, self.__tdat = self._initialise_ephemeris(
+            earth_ephem, sun_ephem, time_corr
+        )
 
         # set the "heterodyne" SSB time delay
         if self.times is not None:
-            self.__hetSSBdelay = lalpulsar.HeterodynedPulsarGetSSBDelay(self.hetpar.PulsarParameters(),
-                                                                        self.gpstimes,
-                                                                        self.detector,
-                                                                        self.__edat,
-                                                                        self.__tdat,
-                                                                        self.__units_type)
+            self.__hetSSBdelay = lalpulsar.HeterodynedPulsarGetSSBDelay(
+                self.hetpar.PulsarParameters(),
+                self.gpstimes,
+                self.detector,
+                self.__edat,
+                self.__tdat,
+                self.__units_type,
+            )
         else:
             self.__hetSSBdelay = None
 
         # set the "heterodyne" BSB time delay
         if self.times is not None and self.hetpar["BINARY"] is not None:
-            self.__hetBSBdelay = lalpulsar.HeterodynedPulsarGetBSBDelay(self.hetpar.PulsarParameters(),
-                                                                        self.gpstimes,
-                                                                        self.__hetSSBdelay,
-                                                                        self.__edat)
+            self.__hetBSBdelay = lalpulsar.HeterodynedPulsarGetBSBDelay(
+                self.hetpar.PulsarParameters(),
+                self.gpstimes,
+                self.__hetSSBdelay,
+                self.__edat,
+            )
         else:
             self.__hetBSBdelay = None
 
         # set the "heterodyne" glitch phase
         if self.times is not None and self.hetpar["GLEP"] is not None:
-            self.__hetglitchphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(self.hetpar.PulsarParameters(),
-                                                                              self.gpstimes,
-                                                                              self.__hetSSBdelay,
-                                                                              self.__hetBSBdelay)
+            self.__hetglitchphase = lalpulsar.HeterodynedPulsarGetGlitchPhase(
+                self.hetpar.PulsarParameters(),
+                self.gpstimes,
+                self.__hetSSBdelay,
+                self.__hetBSBdelay,
+            )
         else:
             self.__hetglitchphase = None
 
         # set the "heterodyne" FITWAVES phase
-        if self.times is not None and self.hetpar["WAVESIN"] is not None and self.hetpar["WAVECOS"] is not None:
-            self.__hetfitwavesphase = lalpulsar.HeterodynedPulsarGetFITWAVESPhase(self.hetpar.PulsarParameters(),
-                                                                                  self.gpstimes,
-                                                                                  self.__hetSSBdelay,
-                                                                                  self.hetpar["F0"])
+        if (
+            self.times is not None
+            and self.hetpar["WAVESIN"] is not None
+            and self.hetpar["WAVECOS"] is not None
+        ):
+            self.__hetfitwavesphase = lalpulsar.HeterodynedPulsarGetFITWAVESPhase(
+                self.hetpar.PulsarParameters(),
+                self.gpstimes,
+                self.__hetSSBdelay,
+                self.hetpar["F0"],
+            )
         else:
             self.__hetfitwavesphase = None
 
         # set the response function
         if self.times is None and t0 is None:
-            raise ValueError("Must supply either 'times' or 't0' to calculate "
-                             "the response function")
+            raise ValueError(
+                "Must supply either 'times' or 't0' to calculate "
+                "the response function"
+            )
         else:
             self.__t0 = t0 if t0 is not None else self.times[0]
 
         if dt is None and self.times is None:
-            raise ValueError("Must supply either 'times' or 'dt' to calculate "
-                             "the response function")
+            raise ValueError(
+                "Must supply either 'times' or 'dt' to calculate "
+                "the response function"
+            )
         else:
             if self.times is not None and dt is None:
                 if len(self.times) == 1:
@@ -252,15 +277,11 @@ class HeterodynedCWSimulator(object):
         ra = self.hetpar["RA"] if self.hetpar["RAJ"] is None else self.hetpar["RAJ"]
         dec = self.hetpar["DEC"] if self.hetpar["DECJ"] is None else self.hetpar["DECJ"]
         if ra is None or dec is None:
-            raise ValueError("Right ascension and/or declination have not "
-                             "been set!")
+            raise ValueError("Right ascension and/or declination have not " "been set!")
 
-        self.__resp = lalpulsar.DetResponseLookupTable(self.__t0,
-                                                       self.detector,
-                                                       ra,
-                                                       dec,
-                                                       2880,
-                                                       self.__dt)
+        self.__resp = lalpulsar.DetResponseLookupTable(
+            self.__t0, self.detector, ra, dec, 2880, self.__dt
+        )
 
     @property
     def hetpar(self):
@@ -277,13 +298,14 @@ class HeterodynedCWSimulator(object):
             self.__detector = det
         else:
             if not isinstance(det, string_types):
-                raise TypeError('Detector name must be a string')
+                raise TypeError("Detector name must be a string")
             else:
                 try:
                     self.__detector = lalpulsar.GetSiteInfo(det)
                 except RuntimeError:
-                    raise ValueError("Detector '{}' was not a valid detector "
-                                     "name.".format(det))
+                    raise ValueError(
+                        "Detector '{}' was not a valid detector " "name.".format(det)
+                    )
 
         self.__detector_name = self.__detector.frDetector.name
 
@@ -315,20 +337,24 @@ class HeterodynedCWSimulator(object):
             self.__gpstimes = None
             return
         elif isinstance(times, lal.LIGOTimeGPS):
-            self.__times = np.array([times.gpsSeconds + 1e-9*times.gpsNanoSeconds], dtype='float64')
+            self.__times = np.array(
+                [times.gpsSeconds + 1e-9 * times.gpsNanoSeconds], dtype="float64"
+            )
             self.__gpstimes = lalpulsar.CreateTimestampVector(1)
             self.__gpstimes.data[0] = times
             return
         elif isinstance(times, lalpulsar.LIGOTimeGPSVector):
             self.__gpstimes = times
-            self.__times = np.zeros(len(times.data), dtype='float64')
+            self.__times = np.zeros(len(times.data), dtype="float64")
             for i, gpstime in enumerate(times.data):
-                self.__times[i] = times.data[i].gpsSeconds + 1e-9*times.data[i].gpsNanoSeconds
+                self.__times[i] = (
+                    times.data[i].gpsSeconds + 1e-9 * times.data[i].gpsNanoSeconds
+                )
             return
         elif isinstance(times, (int, float)):
-            self.__times = np.array([times], dtype='float64')
+            self.__times = np.array([times], dtype="float64")
         elif isinstance(times, (list, np.ndarray)):
-            self.__times = np.array(times, dtype='float64')
+            self.__times = np.array(times, dtype="float64")
         else:
             raise TypeError("Unknown data type for times")
 
@@ -348,10 +374,10 @@ class HeterodynedCWSimulator(object):
         defaults to DE405.
         """
 
-        if self.hetpar['EPHEM'] is not None:
-            self.__ephem = self.hetpar['EPHEM']
+        if self.hetpar["EPHEM"] is not None:
+            self.__ephem = self.hetpar["EPHEM"]
         else:
-            self.__ephem = 'DE405' if ephem is None else ephem
+            self.__ephem = "DE405" if ephem is None else ephem
 
     @property
     def units(self):
@@ -365,23 +391,32 @@ class HeterodynedCWSimulator(object):
         otherwise defaults to 'TCB'.
         """
 
-        if self.hetpar['UNITS'] is not None:
-            self.__units = self.hetpar['UNITS']
+        if self.hetpar["UNITS"] is not None:
+            self.__units = self.hetpar["UNITS"]
         else:
-            self.__units = 'TCB' if units is None else units
+            self.__units = "TCB" if units is None else units
 
-        if self.__units not in ['TCB', 'TDB']:
-            raise ValueError("Unknown time system '{}' has been "
-                             "given.".format(self.__units))
+        if self.__units not in ["TCB", "TDB"]:
+            raise ValueError(
+                "Unknown time system '{}' has been " "given.".format(self.__units)
+            )
 
-        if self.__units == 'TCB':
+        if self.__units == "TCB":
             self.__units_type = lalpulsar.lalpulsar.TIMECORRECTION_TCB
         else:
             self.__units_type = lalpulsar.lalpulsar.TIMECORRECTION_TDB
 
-    def model(self, newpar=None, updateSSB=False, updateBSB=False,
-              updateglphase=False, updatefitwaves=False, freqfactor=2.,
-              usephase=False, roq=False):
+    def model(
+        self,
+        newpar=None,
+        updateSSB=False,
+        updateBSB=False,
+        updateglphase=False,
+        updatefitwaves=False,
+        freqfactor=2.0,
+        usephase=False,
+        roq=False,
+    ):
         """
         Compute the heterodyned strain model using
         XLALHeterodynedPulsarGetModel().
@@ -422,25 +457,27 @@ class HeterodynedCWSimulator(object):
         origpar = self.hetpar
 
         self.__nonGR = self._check_nonGR(parupdate)
-        compstrain = lalpulsar.HeterodynedPulsarGetModel(parupdate.PulsarParameters(),
-                                                         origpar.PulsarParameters(),
-                                                         freqfactor,
-                                                         int(usephase),  # phase is varying between par files
-                                                         int(roq),       # using ROQ?
-                                                         self.__nonGR,   # using non-tensorial modes?
-                                                         self.gpstimes,
-                                                         self.ssbdelay,
-                                                         int(updateSSB),  # the SSB delay should be updated compared to hetSSBdelay
-                                                         self.bsbdelay,
-                                                         int(updateBSB),  # the BSB delay should be updated compared to hetBSBdelay
-                                                         self.glitchphase,
-                                                         int(updateglphase),
-                                                         self.fitwavesphase,
-                                                         int(updatefitwaves),
-                                                         self.resp,
-                                                         self.__edat,
-                                                         self.__tdat,
-                                                         self.__units_type)
+        compstrain = lalpulsar.HeterodynedPulsarGetModel(
+            parupdate.PulsarParameters(),
+            origpar.PulsarParameters(),
+            freqfactor,
+            int(usephase),  # phase is varying between par files
+            int(roq),  # using ROQ?
+            self.__nonGR,  # using non-tensorial modes?
+            self.gpstimes,
+            self.ssbdelay,
+            int(updateSSB),  # the SSB delay should be updated compared to hetSSBdelay
+            self.bsbdelay,
+            int(updateBSB),  # the BSB delay should be updated compared to hetBSBdelay
+            self.glitchphase,
+            int(updateglphase),
+            self.fitwavesphase,
+            int(updatefitwaves),
+            self.resp,
+            self.__edat,
+            self.__tdat,
+            self.__units_type,
+        )
 
         return compstrain.data.data
 
@@ -483,18 +520,20 @@ class HeterodynedCWSimulator(object):
         """
 
         # non-GR amplitude parameters
-        nonGRparams = ['HPLUS',
-                       'HCROSS',
-                       'HVECTORX',
-                       'HVECTORY',
-                       'HSCALARB',
-                       'HSCALARL',
-                       'HPLUS_F',
-                       'HCROSS_F',
-                       'HVECTORX_F',
-                       'HVECTORY_F',
-                       'HSCALARB_F',
-                       'HSCALARL_F']
+        nonGRparams = [
+            "HPLUS",
+            "HCROSS",
+            "HVECTORX",
+            "HVECTORY",
+            "HSCALARB",
+            "HSCALARL",
+            "HPLUS_F",
+            "HCROSS_F",
+            "HVECTORX_F",
+            "HVECTORY_F",
+            "HSCALARB_F",
+            "HSCALARL_F",
+        ]
 
         for param in nonGRparams:
             if param in par.keys():
@@ -548,5 +587,6 @@ class HeterodynedCWSimulator(object):
                 raise IOError("Could not read in time correction file: {}".format(e))
 
         return edat, tdat
+
 
 ## @}

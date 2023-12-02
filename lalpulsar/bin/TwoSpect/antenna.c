@@ -35,10 +35,12 @@
  * \param [in]  dopplerMultiplier Multiplicative factor to increase or decrease the bin shifts (standard physics = 1.0)
  * \return Status value
  */
-INT4 CompBinShifts(INT4Vector *output, const SSBtimes *ssbTimes, const REAL8 freq, const REAL8 Tsft, const REAL4 dopplerMultiplier)
+INT4 CompBinShifts( INT4Vector *output, const SSBtimes *ssbTimes, const REAL8 freq, const REAL8 Tsft, const REAL4 dopplerMultiplier )
 {
-   for (UINT4 ii=0; ii<output->length; ii++) output->data[ii] = (INT4)round(dopplerMultiplier*(ssbTimes->Tdot->data[ii]-1.0)*freq*Tsft);
-   return XLAL_SUCCESS;
+  for ( UINT4 ii = 0; ii < output->length; ii++ ) {
+    output->data[ii] = ( INT4 )round( dopplerMultiplier * ( ssbTimes->Tdot->data[ii] - 1.0 ) * freq * Tsft );
+  }
+  return XLAL_SUCCESS;
 }
 
 /**
@@ -57,66 +59,69 @@ INT4 CompBinShifts(INT4Vector *output, const SSBtimes *ssbTimes, const REAL8 fre
  * \param [in]  det        A LALDetector struct
  * \return Status value
  */
-INT4 CompAntennaPatternWeights(REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const BOOLEAN linPolOn, const REAL8 polAngle, const LALDetector det)
+INT4 CompAntennaPatternWeights( REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const BOOLEAN linPolOn, const REAL8 polAngle, const LALDetector det )
 {
 
-   XLAL_CHECK( output != NULL, XLAL_EINVAL );
+  XLAL_CHECK( output != NULL, XLAL_EINVAL );
 
-   INT4 numffts = (INT4)floor(Tobs/(Tsft-SFToverlap)-1);    //Number of FFTs
-   REAL8 fplus, fcross;
+  INT4 numffts = ( INT4 )floor( Tobs / ( Tsft - SFToverlap ) - 1 ); //Number of FFTs
+  REAL8 fplus, fcross;
 
-   for (INT4 ii=0; ii<numffts; ii++) {
+  for ( INT4 ii = 0; ii < numffts; ii++ ) {
 
-      LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
-      gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tsft-SFToverlap) + 0.5*Tsft);
-      gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tsft-SFToverlap)+0.5*Tsft - floor(t0+ii*(Tsft-SFToverlap)+0.5*Tsft))*1e9);
-      REAL8 gmst = XLALGreenwichMeanSiderealTime(&gpstime);
-      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
+    gpstime.gpsSeconds = ( INT4 )floor( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft );
+    gpstime.gpsNanoSeconds = ( INT4 )floor( ( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft - floor( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft ) ) * 1e9 );
+    REAL8 gmst = XLALGreenwichMeanSiderealTime( &gpstime );
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
 
-      XLALComputeDetAMResponse(&fplus, &fcross, (const REAL4(*)[3])det.response, skypos.longitude, skypos.latitude, polAngle, gmst);
-      XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+    XLALComputeDetAMResponse( &fplus, &fcross, ( const REAL4( * )[3] )det.response, skypos.longitude, skypos.latitude, polAngle, gmst );
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
 
-      if (!linPolOn) output->data[ii] = (REAL4)(fplus*fplus + fcross*fcross);
-      else output->data[ii] = (REAL4)(fplus*fplus);
+    if ( !linPolOn ) {
+      output->data[ii] = ( REAL4 )( fplus * fplus + fcross * fcross );
+    } else {
+      output->data[ii] = ( REAL4 )( fplus * fplus );
+    }
 
-   } /* for ii < numffts */
+  } /* for ii < numffts */
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* CompAntennaPatternWeights() */
 
-INT4 CompAntennaPatternWeights2(REAL4VectorAligned *output, const SkyPosition skypos, const LIGOTimeGPSVector *timestamps, const LALDetector det, const REAL8 *cosi, const REAL8 *psi)
+INT4 CompAntennaPatternWeights2( REAL4VectorAligned *output, const SkyPosition skypos, const LIGOTimeGPSVector *timestamps, const LALDetector det, const REAL8 *cosi, const REAL8 *psi )
 {
 
-   XLAL_CHECK( output != NULL, XLAL_EINVAL );
+  XLAL_CHECK( output != NULL, XLAL_EINVAL );
 
-   REAL8 onePlusCosiSqOver2Sq = 1.0, cosiSq = 1.0;
-   if (cosi!=NULL) {
-      onePlusCosiSqOver2Sq = 0.25*(1.0 + (*cosi)*(*cosi))*(1.0 + (*cosi)*(*cosi));
-      cosiSq = (*cosi)*(*cosi);
-   }
+  REAL8 onePlusCosiSqOver2Sq = 1.0, cosiSq = 1.0;
+  if ( cosi != NULL ) {
+    onePlusCosiSqOver2Sq = 0.25 * ( 1.0 + ( *cosi ) * ( *cosi ) ) * ( 1.0 + ( *cosi ) * ( *cosi ) );
+    cosiSq = ( *cosi ) * ( *cosi );
+  }
 
-   REAL8 fplus, fcross;
-   for (UINT4 ii=0; ii<timestamps->length; ii++) {
-      REAL8 gmst = XLALGreenwichMeanSiderealTime(&(timestamps->data[ii]));
+  REAL8 fplus, fcross;
+  for ( UINT4 ii = 0; ii < timestamps->length; ii++ ) {
+    REAL8 gmst = XLALGreenwichMeanSiderealTime( &( timestamps->data[ii] ) );
+    XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+
+    if ( psi != NULL ) {
+      XLALComputeDetAMResponse( &fplus, &fcross, det.response, skypos.longitude, skypos.latitude, *psi, gmst );
       XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-
-      if (psi!=NULL) {
-         XLALComputeDetAMResponse(&fplus, &fcross, det.response, skypos.longitude, skypos.latitude, *psi, gmst);
-         XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-         output->data[ii] = fplus*fplus*onePlusCosiSqOver2Sq + fcross*fcross*cosiSq;
-      } else {
-         output->data[ii] = 0.0;
-         for (UINT4 jj=0; jj<16; jj++) {
-            XLALComputeDetAMResponse(&fplus, &fcross, det.response, skypos.longitude, skypos.latitude, 0.0625*LAL_PI*jj, gmst);
-            XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
-            output->data[ii] += fplus*fplus*onePlusCosiSqOver2Sq + fcross*fcross*cosiSq;
-         }
-         output->data[ii] *= 0.0625;
+      output->data[ii] = fplus * fplus * onePlusCosiSqOver2Sq + fcross * fcross * cosiSq;
+    } else {
+      output->data[ii] = 0.0;
+      for ( UINT4 jj = 0; jj < 16; jj++ ) {
+        XLALComputeDetAMResponse( &fplus, &fcross, det.response, skypos.longitude, skypos.latitude, 0.0625 * LAL_PI * jj, gmst );
+        XLAL_CHECK( xlalErrno == 0, XLAL_EFUNC );
+        output->data[ii] += fplus * fplus * onePlusCosiSqOver2Sq + fcross * fcross * cosiSq;
       }
-   }
+      output->data[ii] *= 0.0625;
+    }
+  }
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } // CompAntennaPatternWeights()
 
@@ -132,29 +137,29 @@ INT4 CompAntennaPatternWeights2(REAL4VectorAligned *output, const SkyPosition sk
  * \param [in]  edat       Pointer to EphemerisData
  * \return Status value
  */
-INT4 CompAntennaVelocity(REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat)
+INT4 CompAntennaVelocity( REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat )
 {
 
-   XLAL_CHECK( output != NULL && edat != NULL, XLAL_EINVAL );
+  XLAL_CHECK( output != NULL && edat != NULL, XLAL_EINVAL );
 
-   INT4 numffts = (INT4)floor(Tobs/(Tsft-SFToverlap)-1);    //Number of FFTs
-   LALStatus XLAL_INIT_DECL(status);
+  INT4 numffts = ( INT4 )floor( Tobs / ( Tsft - SFToverlap ) - 1 ); //Number of FFTs
+  LALStatus XLAL_INIT_DECL( status );
 
-   REAL8 detvel[3];
-   for (INT4 ii=0; ii<numffts; ii++) {
+  REAL8 detvel[3];
+  for ( INT4 ii = 0; ii < numffts; ii++ ) {
 
-      LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
-      gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tsft-SFToverlap) + 0.5*Tsft);
-      gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tsft-SFToverlap)+0.5*Tsft - floor(t0+ii*(Tsft-SFToverlap)+0.5*Tsft))*1e9);
+    LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
+    gpstime.gpsSeconds = ( INT4 )floor( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft );
+    gpstime.gpsNanoSeconds = ( INT4 )floor( ( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft - floor( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft ) ) * 1e9 );
 
-      LALDetectorVel(&status, detvel, &gpstime, det, edat);
-      XLAL_CHECK( status.statusCode == 0, XLAL_EFUNC );
+    LALDetectorVel( &status, detvel, &gpstime, det, edat );
+    XLAL_CHECK( status.statusCode == 0, XLAL_EFUNC );
 
-      output->data[ii] = (REAL4)(detvel[0]*cos(skypos.longitude)*cos(skypos.latitude) + detvel[1]*sin(skypos.longitude)*cos(skypos.latitude) + detvel[2]*sin(skypos.latitude));
+    output->data[ii] = ( REAL4 )( detvel[0] * cos( skypos.longitude ) * cos( skypos.latitude ) + detvel[1] * sin( skypos.longitude ) * cos( skypos.latitude ) + detvel[2] * sin( skypos.latitude ) );
 
-   } /* for ii < numffts */
+  } /* for ii < numffts */
 
-   return XLAL_SUCCESS;
+  return XLAL_SUCCESS;
 
 } /* CompAntennaVelocity() */
 
@@ -169,37 +174,39 @@ INT4 CompAntennaVelocity(REAL4VectorAligned *output, const SkyPosition skypos, c
  * \param [in]  edat       Pointer to EphemerisData
  * \return Maximum change in antenna velocity
  */
-REAL4 CompDetectorDeltaVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat)
+REAL4 CompDetectorDeltaVmax( const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat )
 {
 
-   XLAL_CHECK( edat != NULL, XLAL_EINVAL );
+  XLAL_CHECK( edat != NULL, XLAL_EINVAL );
 
-   INT4 numffts = (INT4)floor(Tobs/(Tsft-SFToverlap)-1);    //Number of FFTs
-   LALStatus XLAL_INIT_DECL(status);
+  INT4 numffts = ( INT4 )floor( Tobs / ( Tsft - SFToverlap ) - 1 ); //Number of FFTs
+  LALStatus XLAL_INIT_DECL( status );
 
-   REAL8 detvel[3], detvel0[3], dv[3];
-   REAL4 deltaVmax = 0.0;
-   for (INT4 ii=0; ii<numffts; ii++) {
-      LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
-      gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tsft-SFToverlap) + 0.5*Tsft);
-      gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tsft-SFToverlap)+0.5*Tsft - floor(t0+ii*(Tsft-SFToverlap)+0.5*Tsft))*1e9);
+  REAL8 detvel[3], detvel0[3], dv[3];
+  REAL4 deltaVmax = 0.0;
+  for ( INT4 ii = 0; ii < numffts; ii++ ) {
+    LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
+    gpstime.gpsSeconds = ( INT4 )floor( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft );
+    gpstime.gpsNanoSeconds = ( INT4 )floor( ( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft - floor( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft ) ) * 1e9 );
 
-      if (ii==0) {
-         LALDetectorVel(&status, detvel0, &gpstime, det, edat);
-         XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
-      } else {
-         LALDetectorVel(&status, detvel, &gpstime, det, edat);
-         XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
+    if ( ii == 0 ) {
+      LALDetectorVel( &status, detvel0, &gpstime, det, edat );
+      XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
+    } else {
+      LALDetectorVel( &status, detvel, &gpstime, det, edat );
+      XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
 
-         dv[0] = detvel[0] - detvel0[0];
-         dv[1] = detvel[1] - detvel0[1];
-         dv[2] = detvel[2] - detvel0[2];
-         REAL4 deltaV = (REAL4)sqrt(dv[0]*dv[0] + dv[1]*dv[1] + dv[2]*dv[2]);
-         if (deltaV > deltaVmax) deltaVmax = deltaV;
-      } /* if ii==0 else ... */
-   } /* for ii < numffts */
+      dv[0] = detvel[0] - detvel0[0];
+      dv[1] = detvel[1] - detvel0[1];
+      dv[2] = detvel[2] - detvel0[2];
+      REAL4 deltaV = ( REAL4 )sqrt( dv[0] * dv[0] + dv[1] * dv[1] + dv[2] * dv[2] );
+      if ( deltaV > deltaVmax ) {
+        deltaVmax = deltaV;
+      }
+    } /* if ii==0 else ... */
+  } /* for ii < numffts */
 
-   return deltaVmax;
+  return deltaVmax;
 
 } /* CompDetectorDeltaVmax() */
 
@@ -214,57 +221,61 @@ REAL4 CompDetectorDeltaVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFTove
  * \param [in]  edat       Pointer to EphemerisData
  * \return Maximum magnitude of antenna velocity
  */
-REAL4 CompDetectorVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat)
+REAL4 CompDetectorVmax( const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat )
 {
 
-   XLAL_CHECK( edat != NULL, XLAL_EINVAL );
+  XLAL_CHECK( edat != NULL, XLAL_EINVAL );
 
-   INT4 numffts = (INT4)floor(Tobs/(Tsft-SFToverlap)-1);    //Number of FFTs
-   LALStatus XLAL_INIT_DECL(status);
+  INT4 numffts = ( INT4 )floor( Tobs / ( Tsft - SFToverlap ) - 1 ); //Number of FFTs
+  LALStatus XLAL_INIT_DECL( status );
 
-   LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
-   gpstime.gpsSeconds = (INT4)floor(t0 + 0.5*Tsft);
-   gpstime.gpsNanoSeconds = (INT4)floor((t0+0.5*Tsft - floor(t0+0.5*Tsft))*1e9);
+  LIGOTimeGPS gpstime = LIGOTIMEGPSZERO;
+  gpstime.gpsSeconds = ( INT4 )floor( t0 + 0.5 * Tsft );
+  gpstime.gpsNanoSeconds = ( INT4 )floor( ( t0 + 0.5 * Tsft - floor( t0 + 0.5 * Tsft ) ) * 1e9 );
 
-   REAL8 detvel[3];
-   LALDetectorVel(&status, detvel, &gpstime, det, edat);
-   XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
-   REAL4 Vmax = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
+  REAL8 detvel[3];
+  LALDetectorVel( &status, detvel, &gpstime, det, edat );
+  XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
+  REAL4 Vmax = ( REAL4 )sqrt( detvel[0] * detvel[0] + detvel[1] * detvel[1] + detvel[2] * detvel[2] );
 
-   for (INT4 ii=1; ii<numffts; ii++) {
-      gpstime.gpsSeconds = (INT4)floor(t0 + ii*(Tsft-SFToverlap) + 0.5*Tsft);
-      gpstime.gpsNanoSeconds = (INT4)floor((t0+ii*(Tsft-SFToverlap)+0.5*Tsft - floor(t0+ii*(Tsft-SFToverlap)+0.5*Tsft))*1e9);
+  for ( INT4 ii = 1; ii < numffts; ii++ ) {
+    gpstime.gpsSeconds = ( INT4 )floor( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft );
+    gpstime.gpsNanoSeconds = ( INT4 )floor( ( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft - floor( t0 + ii * ( Tsft - SFToverlap ) + 0.5 * Tsft ) ) * 1e9 );
 
-      LALDetectorVel(&status, detvel, &gpstime, det, edat);
-      XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
-      REAL4 V = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
-      if (V > Vmax) Vmax = V;
-   } /* for ii < numffts */
+    LALDetectorVel( &status, detvel, &gpstime, det, edat );
+    XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
+    REAL4 V = ( REAL4 )sqrt( detvel[0] * detvel[0] + detvel[1] * detvel[1] + detvel[2] * detvel[2] );
+    if ( V > Vmax ) {
+      Vmax = V;
+    }
+  } /* for ii < numffts */
 
-   return Vmax;
+  return Vmax;
 
 } /* CompDetectorVmax() */
-REAL4 CompDetectorVmax2(const LIGOTimeGPSVector *timestamps, const LALDetector det, EphemerisData *edat)
+REAL4 CompDetectorVmax2( const LIGOTimeGPSVector *timestamps, const LALDetector det, EphemerisData *edat )
 {
-   XLAL_CHECK( timestamps!=NULL && edat != NULL, XLAL_EINVAL );
+  XLAL_CHECK( timestamps != NULL && edat != NULL, XLAL_EINVAL );
 
-   LALStatus XLAL_INIT_DECL(status);
+  LALStatus XLAL_INIT_DECL( status );
 
-   LIGOTimeGPS gpstime = timestamps->data[0];
+  LIGOTimeGPS gpstime = timestamps->data[0];
 
-   REAL8 detvel[3];
-   LALDetectorVel(&status, detvel, &gpstime, det, edat);
-   XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
-   REAL4 Vmax = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
+  REAL8 detvel[3];
+  LALDetectorVel( &status, detvel, &gpstime, det, edat );
+  XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
+  REAL4 Vmax = ( REAL4 )sqrt( detvel[0] * detvel[0] + detvel[1] * detvel[1] + detvel[2] * detvel[2] );
 
-   for (UINT4 ii=1; ii<timestamps->length; ii++) {
-      gpstime = timestamps->data[ii];
+  for ( UINT4 ii = 1; ii < timestamps->length; ii++ ) {
+    gpstime = timestamps->data[ii];
 
-      LALDetectorVel(&status, detvel, &gpstime, det, edat);
-      XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
-      REAL4 V = (REAL4)sqrt(detvel[0]*detvel[0] + detvel[1]*detvel[1] + detvel[2]*detvel[2]);
-      if (V > Vmax) Vmax = V;
-   } /* for ii < numffts */
+    LALDetectorVel( &status, detvel, &gpstime, det, edat );
+    XLAL_CHECK_REAL4( status.statusCode == 0, XLAL_EFUNC );
+    REAL4 V = ( REAL4 )sqrt( detvel[0] * detvel[0] + detvel[1] * detvel[1] + detvel[2] * detvel[2] );
+    if ( V > Vmax ) {
+      Vmax = V;
+    }
+  } /* for ii < numffts */
 
-   return Vmax;
+  return Vmax;
 }
