@@ -64,7 +64,7 @@ int main( int argc, char **argv )
   REAL8 f0 = 0, deltaF = 0;
   CHAR outbase[256], outfile0[512], outfile1[512], outfile2[512];
 
-  CHAR *SFTpatt = NULL, *IFO = NULL, *outputBname = NULL;
+  CHAR *SFTpatt = NULL, *IFO = NULL, *outputDir = NULL, *outputBname = NULL;
   INT4 startGPS = 0, endGPS = 0, blocksRngMean = 21;
   REAL8 f_min = 0.0, f_max = 0.0, timebaseline = 0, persistSNRthresh = 3.0, auto_track;
 
@@ -76,6 +76,9 @@ int main( int argc, char **argv )
   LIGOTimeGPSVector *epoch_gps_times = NULL;
   REAL8VectorSequence *epoch_avg = NULL;
 
+  /* Default for output directory */
+  XLAL_CHECK_MAIN( ( outputDir = XLALStringDuplicate( "." ) ) != NULL, XLAL_EFUNC );
+
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &SFTpatt,       "SFTs",          STRING, 'p', REQUIRED, "SFT location/pattern. Possibilities are:\n"
                                           " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &IFO,           "IFO",           STRING, 'I', REQUIRED, "Detector (e.g., H1)" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -84,6 +87,7 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &f_min,         "fMin",          REAL8,  'f', REQUIRED, "Minimum frequency" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &f_max,         "fMax",          REAL8,  'F', REQUIRED, "Maximum frequency" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &blocksRngMean, "blocksRngMean", INT4,   'w', OPTIONAL, "Running Median window size" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputDir,     "outputDir",     STRING, 'd', OPTIONAL, "Output directory for data files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputBname,   "outputBname",   STRING, 'o', OPTIONAL, "Base name of output files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &timebaseline,  "timeBaseline",  REAL8,  't', REQUIRED, "The time baseline of sfts" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &persistAvgSeconds, "persistAvgSeconds", INT4, 'T', OPTIONAL, "Time baseline in seconds for averaging SFTs to measure the persistency, must be >= timeBaseline (cannot also specify --persistAveOption)" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -141,9 +145,9 @@ int main( int argc, char **argv )
 
   /* Output files */
   if ( XLALUserVarWasSet( &outputBname ) ) {
-    strcpy( outbase, outputBname );
+    snprintf( outbase, sizeof( outbase ), "%s/%s", outputDir, outputBname );
   } else {
-    snprintf( outbase, sizeof( outbase ), "spec_%.2f_%.2f_%s_%d_%d", f_min, f_max, constraints.detector, startTime.gpsSeconds, endTime.gpsSeconds );
+    snprintf( outbase, sizeof( outbase ), "%s/spec_%.2f_%.2f_%s_%d_%d", outputDir, f_min, f_max, constraints.detector, startTime.gpsSeconds, endTime.gpsSeconds );
   }
 
   snprintf( outfile0, sizeof( outfile0 ), "%s.txt", outbase );
