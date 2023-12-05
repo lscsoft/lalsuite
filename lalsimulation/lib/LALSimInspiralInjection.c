@@ -75,6 +75,10 @@ static double si_scale_factor(const char *key)
     return 1.0;
 }
 
+static const char file_format_attr_key[] = "file_format";
+static const char file_format_attr_val[] = "lvk_o4_injection";
+static const char cbc_waveform_params_group[] = "cbc_waveform_params";
+
 LALDictSequence * XLALSimInspiralInjectionSequenceFromH5File(const char *fname)
 {
     LALDictSequence *injseq = NULL;
@@ -92,7 +96,27 @@ LALDictSequence * XLALSimInspiralInjectionSequenceFromH5File(const char *fname)
 
     file = XLALH5FileOpen(fname, "r");
     XLAL_CHECK_FAIL(file, XLAL_EFUNC);
-    group = XLALH5GroupOpen(file, "cbc_waveform_params");
+
+    /* check file format attribute -- only produces warnings */
+    if (XLALH5AttributeCheckExists((LALH5Generic)file, file_format_attr_key) == 1) {
+        int len = XLALH5AttributeQueryStringValue(NULL, 0, (LALH5Generic)file, file_format_attr_key);
+        char *val;
+        if (len < 0)
+            XLAL_ERROR_FAIL(XLAL_EFUNC);
+        val = XLALMalloc(len + 1);
+        XLAL_CHECK_FAIL(val, XLAL_ENOMEM);
+        len = XLALH5AttributeQueryStringValue(val, len + 1, (LALH5Generic)file, file_format_attr_key);
+        if (len < 0) {
+            XLALFree(val);
+            XLAL_ERROR_FAIL(XLAL_EFUNC);
+        }
+        if (strcmp(val, file_format_attr_val) != 0)
+            XLAL_PRINT_WARNING("File %s has incorrect value for attribute `%s' (expected: `%s', got: `%s')", fname, file_format_attr_key, file_format_attr_val, val);
+        XLALFree(val);
+    } else
+        XLAL_PRINT_WARNING("File %s has missing attribute `%s'", fname, file_format_attr_key);
+
+    group = XLALH5GroupOpen(file, cbc_waveform_params_group);
     XLAL_CHECK_FAIL(group, XLAL_EFUNC);
     npar = XLALH5FileQueryNDatasets(group);
     XLAL_CHECK_FAIL((ssize_t)npar >= 0, XLAL_EFUNC);
@@ -221,7 +245,9 @@ int XLALSimInspiralInjectionSequenceToH5File(const LALDictSequence *injseq, cons
 
     file = XLALH5FileOpen(fname, "w");
     XLAL_CHECK_FAIL(file, XLAL_EFUNC);
-    group = XLALH5GroupOpen(file, "cbc_waveform_params");
+    if (XLALH5AttributeAddString((LALH5Generic)file, file_format_attr_key, file_format_attr_val) != 0)
+        XLAL_ERROR_FAIL(XLAL_EFUNC);
+    group = XLALH5GroupOpen(file, cbc_waveform_params_group);
     XLAL_CHECK_FAIL(group, XLAL_EFUNC);
 
     /* get the types of all parameter keys */
