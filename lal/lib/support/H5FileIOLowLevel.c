@@ -2101,17 +2101,10 @@ int XLALH5AttributeQueryStringValue(char UNUSED *value, size_t UNUSED size, cons
 		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
-	
-	H5T_cset_t dtype_cset = H5Tget_cset(dtype_id); /* threadsafe not needed as dtype_id local to this function */
 	threadsafe_H5Tclose(dtype_id);
-	if (dtype_cset == H5T_CSET_ERROR) {
-		threadsafe_H5Sclose(space_id);
-		threadsafe_H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read caracter set type of attribute `%s'", key);
-	}
 
 	memtype_id = threadsafe_H5Tcopy(H5T_C_S1);
-	if (memtype_id < 0 || threadsafe_H5Tset_size(memtype_id, H5T_VARIABLE) || H5Tset_cset(memtype_id, dtype_cset)) {
+	if (memtype_id < 0 || threadsafe_H5Tset_size(memtype_id, H5T_VARIABLE)) {
 		threadsafe_H5Sclose(space_id);
 		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO);
