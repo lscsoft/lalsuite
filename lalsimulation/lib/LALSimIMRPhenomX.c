@@ -714,7 +714,16 @@ int IMRPhenomXASGenerateFD(
   // correct for time and phase shifts due to tidal phase
   if(NRTidal_version!=NoNRT_V){
       
-        REAL8 f_merger = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+      REAL8 f_merger; 
+      REAL8 f_merger_tmp;
+      if (NRTidal_version == NRTidalv3_V){
+          f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
+      }
+      else{
+          f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+      }
+      f_merger = f_merger_tmp;
+
         if(f_merger<f_final)
             f_final = f_merger;
         
@@ -729,7 +738,6 @@ int IMRPhenomXASGenerateFD(
         
     }
     
-
   /* 1/eta is used to re-scale phase */
   REAL8 inveta    = (1.0 / pWF->eta);
 
@@ -780,7 +788,7 @@ int IMRPhenomXASGenerateFD(
     amp_tidal = XLALCreateREAL8Sequence(L_fCut);
     planck_taper = XLALCreateREAL8Sequence(L_fCut);
     /* Get FD tidal phase correction and amplitude factor */
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, NRTidal_version);
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, pWF->chi1L, pWF->chi2L, NRTidal_version);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
   }
 
@@ -870,7 +878,7 @@ int IMRPhenomXASGenerateFD(
           phaseTidal += pfaN * pPhase22->c3PN_tidal* powers_of_lalpi.one_third * powers_of_Mf.one_third;
 
           /* 3.5PN terms are only in NRTidalv2 */
-          if (NRTidal_version == NRTidalv2_V) {
+          if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
               phaseTidal += pfaN * pPhase22->c3p5PN_tidal * powers_of_lalpi.two_thirds * powers_of_Mf.two_thirds;
           }
             /* Reconstruct waveform with NRTidal terms included: h(f) = [A(f) + A_tidal(f)] * Exp{I [phi(f) - phi_tidal(f)]} * window(f) */
@@ -2073,7 +2081,16 @@ int IMRPhenomXPGenerateFD(
   REAL8 f_final=freqs->data[freqs->length-1];
     
   if(NRTidal_version!=NoNRT_V){
-      REAL8 f_merger = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+      REAL8 f_merger; 
+      REAL8 f_merger_tmp;
+      if (NRTidal_version == NRTidalv3_V){
+          f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
+      }
+      else{
+          f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+      }
+      f_merger = f_merger_tmp;
+      printf("%c, %f\n", '#', f_merger);
       if(f_merger<f_final)
           f_final = f_merger;
       
@@ -2208,14 +2225,14 @@ int IMRPhenomXPGenerateFD(
   fclose(fileangle);
   #endif
 
-  if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V) {
+  if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
     int ret = 0;
     UINT4 L_fCut = freqs->length;
     phi_tidal = XLALCreateREAL8Sequence(L_fCut);
     amp_tidal = XLALCreateREAL8Sequence(L_fCut);
     planck_taper = XLALCreateREAL8Sequence(L_fCut);
     /* Get FD tidal phase correction and amplitude factor */
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, NRTidal_version);
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, pWF->chi1L, pWF->chi2L, NRTidal_version);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
   }
 
@@ -2321,7 +2338,7 @@ int IMRPhenomXPGenerateFD(
 
       /* Add NRTidal phase, if selected, code adapted from LALSimIMRPhenomP.c */
 
-      if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V) {
+      if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
           
           REAL8 phaseTidal = phi_tidal->data[idx];
           double ampTidal = amp_tidal->data[idx];

@@ -855,14 +855,22 @@ int IMRPhenomXHMMultiBandOneMode(
   
     REAL8 f_final=Mfmax/pWF->M_sec;
     
-    REAL8 f_merger = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
-    if(f_merger<f_final)
-          f_final = f_merger;
     double phiTfRef = 0.;
         
     // correct for time and phase shifts due to tidal phase
     if(NRTidal_version!=NoNRT_V){
-        
+      REAL8 f_merger; 
+      REAL8 f_merger_tmp;
+      if (NRTidal_version == NRTidalv3_V){
+          f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
+      }
+      else{
+          f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+      }
+      f_merger = f_merger_tmp;
+        if(f_merger<f_final)
+            f_final = f_merger;
+
         IMRPhenomX_UsefulPowers powers_of_ffinal;
         REAL8 Mf_final = f_final*pWF->M_sec;
         status = IMRPhenomX_Initialize_Powers(&powers_of_ffinal,Mf_final);
@@ -871,11 +879,8 @@ int IMRPhenomXHMMultiBandOneMode(
         REAL8 tshift = -dphi_fmerger;
         linb+=tshift;
         phiTfRef = -IMRPhenomX_TidalPhase(&powers_of_MfRef, pWF, pPhase22, NRTidal_version);
-        
     }
-
-
-    // Calculate IMRPhenomX phase at reference frequency
+     // Calculate IMRPhenomX phase at reference frequency
     REAL8 phiref22 = -1./pWF->eta*IMRPhenomX_Phase_22(pWF->MfRef, &powers_of_MfRef, pPhase22, pWF)- phiTfRef - linb*pWF->MfRef - lina + 2.0*pWF->phi0 + LAL_PI_4;
       
     if (NRTidal_version!=NoNRT_V) {
@@ -885,7 +890,7 @@ int IMRPhenomXHMMultiBandOneMode(
         amp_tidal = XLALCreateREAL8Sequence(L_fCut);
         planck_taper = XLALCreateREAL8Sequence(L_fCut);
         /* Get FD tidal phase correction and amplitude factor */
-        ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, coarseFreqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, NRTidal_version);
+        ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, coarseFreqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, pWF->chi1L, pWF->chi2L, NRTidal_version);
         XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
       }
       if (NRTidal_version==NoNRT_V) {
@@ -920,7 +925,7 @@ int IMRPhenomXHMMultiBandOneMode(
           /* 3PN terms */
           phaseTidal += pfaN * pPhase22->c3PN_tidal* powers_of_lalpi.one_third * powers_of_f.one_third;
           /* 3.5PN terms are only in NRTidalv2 */
-          if (NRTidal_version == NRTidalv2_V) {
+          if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
               phaseTidal += pfaN * pPhase22->c3p5PN_tidal * powers_of_lalpi.two_thirds * powers_of_f.two_thirds;
           }
             /* Reconstruct waveform with NRTidal terms included: h(f) = [A(f) + A_tidal(f)] * Exp{I [phi(f) - phi_tidal(f)]} * window(f) */

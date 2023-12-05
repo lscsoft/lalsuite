@@ -281,6 +281,7 @@ noinst_HEADERS = \
 	LALSimIMRPhenomInternalUtils.h \
 	LALSimIMRSEOBNRROMUtilities.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.h \
+	LALSimIMRSEOBNRv5ROM_NRTidal.h \
 	LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.h \
 	LALSimBHNSRemnantFits.h \
 	LALSimIMRSpinAlignedEOBGSLOptimizedInterpolation.c \
@@ -359,6 +360,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimIMRSEOBNRv4HMROM.c \
 	LALSimIMRSEOBNRv5HMROM.c \
 	LALSimIMRSEOBNRv4ROM_NRTidal.c \
+	LALSimIMRSEOBNRv5ROM_NRTidal.c \
 	LALSimIMRSEOBNRv4ROM_NSBHAmplitudeCorrection.c \
 	LALSimBHNSRemnantFits.c \
 	LALSimIMRSEOBNRv4TSurrogate.c \

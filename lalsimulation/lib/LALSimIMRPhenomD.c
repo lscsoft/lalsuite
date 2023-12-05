@@ -276,7 +276,7 @@ static int IMRPhenomDGenerateFD(
   LALDict *extraParams_in = extraParams;
   REAL8Sequence *amp_tidal = NULL; /* Tidal amplitude series; required only for IMRPhenomD_NRTidalv2 */
   REAL8 dquadmon1_in = 0., dquadmon2_in = 0., lambda1_in = 0, lambda2_in = 0.;
-  if (NRTidal_version == NRTidalv2_V) {
+  if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
     dquadmon1_in = XLALSimInspiralWaveformParamsLookupdQuadMon1(extraParams);
     dquadmon2_in = XLALSimInspiralWaveformParamsLookupdQuadMon2(extraParams);
     lambda1_in = XLALSimInspiralWaveformParamsLookupTidalLambda1(extraParams);
@@ -302,7 +302,7 @@ static int IMRPhenomDGenerateFD(
      dquadmon2 = dquadmon1_in;
      lambda1 = lambda2_in;
      lambda2 = lambda1_in;
-     if (NRTidal_version == NRTidalv2_V) {
+     if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
        XLALSimInspiralWaveformParamsInsertdQuadMon1(extraParams, dquadmon1);
        XLALSimInspiralWaveformParamsInsertdQuadMon2(extraParams, dquadmon2);
      }
@@ -425,8 +425,8 @@ static int IMRPhenomDGenerateFD(
   int status_in_for = XLAL_SUCCESS;
   int ret = XLAL_SUCCESS;
   /* Now generate the waveform */
-  if (NRTidal_version == NRTidalv2_V) {
-    /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for IMRPhenomD_NRTidalv2 */
+  if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
+    /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for IMRPhenomD_NRTidalv2 and IMRPhenomD_NRTidalv3*/
     amp_tidal = XLALCreateREAL8Sequence(freqs->length);
     ret = XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(amp_tidal, freqs, m1, m2, lambda1, lambda2);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate tidal amplitude series to construct IMRPhenomD_NRTidalv2 waveform.");
