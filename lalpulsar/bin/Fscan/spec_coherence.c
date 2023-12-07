@@ -44,9 +44,12 @@ int main( int argc, char **argv )
   REAL8 f0 = 0, deltaF = 0;
   CHAR outbase[256], outfile0[512];
 
-  CHAR *SFTpattA = NULL, *SFTpattB = NULL, *outputBname = NULL;
+  CHAR *SFTpattA = NULL, *SFTpattB = NULL, *outputDir = NULL, *outputBname = NULL;
   INT4 startGPS = 0, endGPS = 0;
   REAL8 f_min = 0.0, f_max = 0.0, timebaseline = 0;
+
+  /* Default for output directory */
+  XLAL_CHECK_MAIN( ( outputDir = XLALStringDuplicate( "." ) ) != NULL, XLAL_EFUNC );
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &SFTpattA,      "ChASFTs",         STRING, 'p', REQUIRED, "SFT location/pattern. Possibilities are:\n"
                                           " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -56,6 +59,7 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &endGPS,       "endGPS",       INT4,   'e', REQUIRED, "Ending GPS time (SFT timestamps must be < this)" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &f_min,        "fMin",         REAL8,  'f', REQUIRED, "Minimum frequency" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &f_max,        "fMax",         REAL8,  'F', REQUIRED, "Maximum frequency" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputDir,    "outputDir",    STRING, 'd', OPTIONAL, "Output directory for data files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputBname,  "outputBname",  STRING, 'o', OPTIONAL, "Base name of output files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &timebaseline, "timeBaseline", REAL8,  't', REQUIRED, "The time baseline of sfts" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
@@ -88,9 +92,9 @@ int main( int argc, char **argv )
   printf( "Now have Ch B SFT catalog with %d catalog files\n", catalog_b->length );
 
   if ( XLALUserVarWasSet( &outputBname ) ) {
-    strcpy( outbase, outputBname );
+    snprintf( outbase, sizeof( outbase ), "%s/%s", outputDir, outputBname );
   } else {
-    snprintf( outbase, sizeof( outbase ), "spec_%.2f_%.2f_%d_%d_coh", f_min, f_max, startTime.gpsSeconds, endTime.gpsSeconds );
+    snprintf( outbase, sizeof( outbase ), "%s/spec_%.2f_%.2f_%d_%d_coh", outputDir, f_min, f_max, startTime.gpsSeconds, endTime.gpsSeconds );
   }
 
   snprintf( outfile0, sizeof( outfile0 ), "%s.txt", outbase );
