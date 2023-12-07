@@ -193,14 +193,22 @@ For individual commits, you can request a subset of merge pipeline jobs to run b
 ### Pretty code formatting
 
 You may optionally specify that certain C or Python sources should be _pretty formatted_ in a consistent style, which will be enforced by the CI pipelines.
-* C code is pretty-formatted using [Artistic Style](https://astyle.sourceforge.net/), which supports a number of C coding styles and options. It is enabled by creating files with a `.pretty.astylerc` extension; the contents of these files are read for the C coding style options to pass to Artistic Style. Three types of files are supported:
+* C code is pretty-formatted using [Artistic Style][prettyastyle], which supports a number of C coding styles and options. It is enabled by creating files with a `.pretty.astylerc` extension; the contents of these files are read for the C coding style options to pass to Artistic Style. Three types of files are supported:
   * A C source level file, e.g. `lallib/path/to/.MyModule.pretty.astylerc`, will pretty-format the C source file(s) `lallib/path/to/MyModule.[ch]`;
   * A directory level file, e.g. `lallib/path/to/.pretty.astylerc` will pretty-format all C source files in `lallib/path/to/`;
-  * A LALSuite library level file, e.g. `lallib/.pretty.astylerc`, will pretty-format all C source files in LALLib.
-* Python code is pretty-formatted using [Black](https://black.readthedocs.io/en/stable/). It is enabled by creating files with a `.pretty.black` extension; since Black does not take any coding style options, the contents of these files are not examined. Three types of files are supported:
+  * A LALSuite library level file, e.g. `lallib/.pretty.astylerc`, will pretty-format all C source files in `lallib/`.
+* Python code is pretty-formatted using [Black][prettyblack]. It is enabled by creating files with a `.pretty.black` extension; since Black does not take any coding style options, the contents of these files are not examined. Three types of files are supported:
   * A Python source level file, e.g. `lallib/path/to/.MyModule.pretty.black`, will pretty-format the Python source file `lallib/path/to/MyModule.py`;
   * A directory level file, e.g. `lallib/path/to/.pretty.black` will pretty-format all Python source files in `lallib/path/to/`;
-  * A LALSuite library level file, e.g. `lallib/.pretty.black`, will pretty-format all Python source files in LALLib.
+  * A LALSuite library level file, e.g. `lallib/.pretty.black`, will pretty-format all Python source files in `lallib/`.
+
+To check that your local changes are pretty-formatted correctly and will pass the CI pipelines:
+* Make sure [Artistic Style][prettyastyle] and [Black][prettyblack] are installed.
+  * Artistic Style is widely available for RPMs, Debian, Ubuntu, Homebrew, MacPorts, etc.
+  * Black is best installed by running `pip install 'black~=22.0'`; this will install the same version as used in the CI pipelines.
+* Make sure you have committed your local changes, just in case the pretty-formatting does something weird and you need to back out.
+* At the top level of the repository, run `make pretty`. This will show a list of files that have been pretty-formatted (if any).
+* Commit any changes, e.g. `git add ...` to stage the changed files, `git commit` to commit.
 
 ## More information
 
@@ -216,3 +224,5 @@ More information regarding the usage of GitLab can be found in the main GitLab [
 [lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
 [mergerequests]: https://git.ligo.org/help/user/project/merge_requests/index.html
 [nightlydocs]:   https://lscsoft.docs.ligo.org/lalsuite
+[prettyastyle]:  https://astyle.sourceforge.net/
+[prettyblack]:   https://black.readthedocs.io/en/stable/
