@@ -50,23 +50,23 @@ BuildRequires: lal-octave >= @MIN_LAL_VERSION@
 # -- packages ---------------
 
 #%%package -n lalframe
-Summary: LSC Algorithm Frame Library - runtime tools
+Summary: LVK Algorithm Frame Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Obsoletes: python2-%{name} <= 1.5.4-1
 %description
-The LSC Algorithm Frame Library for gravitational wave data analysis.
+The LVK Algorithm Frame Library for gravitational wave data analysis.
 This package provides the runtime tools.
 
 # liblalframe
 %package -n lib%{name}
-Summary: LSC Algorithm Frame Library - library package
+Summary: LVK Algorithm Frame Library - library package
 Requires: ldas-tools-framecpp-c >= @MIN_FRAMECPPC_VERSION@
 Requires: libframel >= @MIN_FRAMEL_VERSION@
 Requires: liblal >= @MIN_LAL_VERSION@
 Conflicts: lalframe <= 1.5.2-1
 %description -n lib%{name}
-The LSC Algorithm Frame Library for gravitational wave data analysis.
+The LVK Algorithm Frame Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL Frame library.
 
@@ -80,7 +80,7 @@ Requires: liblal-devel >= @MIN_LAL_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 1.5.3-1
 %description -n lib%{name}-devel
-The LSC Algorithm Frame Library for gravitational wave data analysis. This
+The LVK Algorithm Frame Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL Frame
 library.
 
@@ -94,7 +94,7 @@ Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Obsoletes: python2-%{name} < 1.5.5-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
-The LSC Algorithm Library for gravitational wave data analysis.
+The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings for LALFrame.
 
 # lalframe-octave
@@ -104,7 +104,7 @@ Requires: %{name} = %{version}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
 %description octave
-The LSC Algorithm Library for gravitational wave data analysis.
+The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALFrame.
 
 # -- build stages -----------

@@ -86,26 +86,26 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   WeaveResultsToplistRankingStats toplist_rank_stats_fcn,
   WeaveResultsToplistItemGetRankStat toplist_item_get_rank_stat_fcn,
   WeaveResultsToplistItemSetRankStat toplist_item_set_rank_stat_fcn
-  );
+);
 void XLALWeaveResultsToplistDestroy(
   WeaveResultsToplist *toplist
-  );
+);
 int XLALWeaveResultsToplistAdd(
   WeaveResultsToplist *toplist,
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
-  );
+);
 int XLALWeaveResultsToplistCompletionLoop(
   WeaveResultsToplist *toplist
-  );
+);
 int XLALWeaveResultsToplistWrite(
   FITSFile *file,
   const WeaveResultsToplist *toplist
-  );
+);
 int XLALWeaveResultsToplistReadAppend(
   FITSFile *file,
   WeaveResultsToplist *toplist
-  );
+);
 int XLALWeaveResultsToplistCompare(
   BOOLEAN *equal,
   const WeaveSetupData *setup,
@@ -118,7 +118,7 @@ int XLALWeaveResultsToplistCompare(
   const UINT4 toplist_compare_limit,
   const WeaveResultsToplist *toplist_1,
   const WeaveResultsToplist *toplist_2
-  );
+);
 
 #ifdef __cplusplus
 }

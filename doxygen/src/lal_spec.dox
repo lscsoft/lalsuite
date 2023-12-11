@@ -4,9 +4,9 @@
 
 \section lal_spec_introduction Introduction
 
-\subsection lal_spec_lsc_algorithm_library The LSC Algorithm Library
+\subsection lal_spec_lvk_algorithm_library The LVK Algorithm Library
 
-The LSC Algorithm Library, hereafter LAL, is a library of routines for use in
+The LVK Algorithm Library, hereafter LAL, is a library of routines for use in
 gravitational wave data analysis.
 
 \subsection lal_spec_goal_of_lal_software_specification The goal of the LAL software specification
@@ -47,7 +47,7 @@ Here is the first rigid rule:
 The rules in this specification may need to be periodically reexamined.
 Therefore, this is a living document.  The librarian will amend this
 document as needed.  Significant changes to the document will be made in
-consultation with the LSC Software Change Control Board.
+consultation with the Software Change Control Board.
 </b></p>
 
 \subsection lal_spec_elements_of_library_specification The elements of the library specification
@@ -802,7 +802,7 @@ libraries.
 </b></p>
 
 Note that there are currently two official exchange data formats within
-the LSC: the XML-based "LIGO Lightweight" \c LIGOlw format, and the
+the LVK: the XML-based "LIGO Lightweight" \c LIGOlw format, and the
 binary "Interferometric Gravitational Wave Detector Data Frame Format"
 or "Frame" format.  Libraries with routines that are specialized for I/O
 with these formats are also available.

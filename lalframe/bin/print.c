@@ -56,10 +56,10 @@
  * there are more than one channel present in that file, they can be split into
  * separate files, each containing a single channel's data, with the command:
  *
- *     lalfr-print file.gwf | split -p '#'
+ *     lalfr-print file.gwf | awk '/^#/ { fn = $4 ".txt"; print > fn; next } { print >> fn }'
  *
- * and the resulting files `xaa`, `xab`, etc., contain the data from each of
- * the channels in `file.gwf`.
+ * and the resulting files are named after each of the channels in `file.gwf`
+ * with a `.txt` extension.
  *
  * @sa @ref lalfr_dump, @ref lalfr_fmt
  */

@@ -234,7 +234,7 @@ static int CheckSuperskyMetrics(
   const SuperskyTransformData *rssky_transf_ref,
   const double phys_mismatch[NUM_POINTS][NUM_POINTS],
   const double phys_mismatch_tol
-  )
+)
 {
 
   // Check supersky metrics
@@ -316,7 +316,7 @@ int main( void )
 
   // Load ephemeris data
   EphemerisData *edat = XLALInitBarycenter( TEST_PKG_DATA_DIR "earth00-40-DE405.dat.gz",
-                                            TEST_PKG_DATA_DIR "sun00-40-DE405.dat.gz" );
+                        TEST_PKG_DATA_DIR "sun00-40-DE405.dat.gz" );
   XLAL_CHECK_MAIN( edat != NULL, XLAL_EFUNC );
 
   // Create segment list
@@ -348,13 +348,13 @@ int main( void )
                        metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
                        metrics->coh_rssky_transf[n], &coh_rssky_transf_refs[n],
                        coh_phys_mismatches[n], 1e-2
-                       ) == XLAL_SUCCESS, XLAL_EFUNC );
+                     ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                      metrics->semi_rssky_metric, semi_rssky_metric_ref,
                      metrics->semi_rssky_transf, &semi_rssky_transf_ref,
                      semi_phys_mismatch, 3e-2
-                     ) == XLAL_SUCCESS, XLAL_EFUNC );
+                   ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check semicoherent metric after round-trip frequency rescaling
   XLAL_CHECK_MAIN( XLALScaleSuperskyMetricsFiducialFreq( metrics, 257.52 ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -372,7 +372,7 @@ int main( void )
                      metrics->semi_rssky_metric, semi_rssky_metric_ref,
                      metrics->semi_rssky_transf, &semi_rssky_transf_ref,
                      semi_phys_mismatch, 3e-2
-                     ) == XLAL_SUCCESS, XLAL_EFUNC );
+                   ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check that XLALEqualizeReducedSuperskyMetricsFreqSpacing() with equal mismatches does nothing
   XLAL_CHECK_MAIN( XLALEqualizeReducedSuperskyMetricsFreqSpacing( metrics, 0.1, 0.1 ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -381,13 +381,13 @@ int main( void )
                        metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
                        metrics->coh_rssky_transf[n], &coh_rssky_transf_refs[n],
                        coh_phys_mismatches[n], 1e-2
-                       ) == XLAL_SUCCESS, XLAL_EFUNC );
+                     ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                      metrics->semi_rssky_metric, semi_rssky_metric_ref,
                      metrics->semi_rssky_transf, &semi_rssky_transf_ref,
                      semi_phys_mismatch, 3e-2
-                     ) == XLAL_SUCCESS, XLAL_EFUNC );
+                   ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   // Check coherent and semicoherent metrics
   SuperskyMetrics *copy_metrics = XLALCopySuperskyMetrics( metrics );
@@ -397,13 +397,13 @@ int main( void )
                        copy_metrics->coh_rssky_metric[n], coh_rssky_metric_refs[n],
                        copy_metrics->coh_rssky_transf[n], &coh_rssky_transf_refs[n],
                        coh_phys_mismatches[n], 1e-2
-                       ) == XLAL_SUCCESS, XLAL_EFUNC );
+                     ) == XLAL_SUCCESS, XLAL_EFUNC );
   }
   XLAL_CHECK_MAIN( CheckSuperskyMetrics(
                      copy_metrics->semi_rssky_metric, semi_rssky_metric_ref,
                      copy_metrics->semi_rssky_transf, &semi_rssky_transf_ref,
                      semi_phys_mismatch, 3e-2
-                     ) == XLAL_SUCCESS, XLAL_EFUNC );
+                   ) == XLAL_SUCCESS, XLAL_EFUNC );
 
 
   // Check writing/reading SuperskyMetrics to a FITS file

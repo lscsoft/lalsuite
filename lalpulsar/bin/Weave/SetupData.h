@@ -54,15 +54,15 @@ struct tagWeaveSetupData {
 
 void XLALWeaveSetupDataClear(
   WeaveSetupData *setup
-  );
+);
 int XLALWeaveSetupDataWrite(
   FITSFile *file,
   const WeaveSetupData *setup
-  );
+);
 int XLALWeaveSetupDataRead(
   FITSFile *file,
   WeaveSetupData *setup
-  );
+);
 
 #ifdef __cplusplus
 }

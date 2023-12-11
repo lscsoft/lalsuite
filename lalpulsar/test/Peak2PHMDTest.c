@@ -157,7 +157,8 @@ do {                                                                 \
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){
+int main( int argc, char *argv[] )
+{
 
   static LALStatus       status;  /* LALStatus pointer */
   static HOUGHptfLUT     lut;     /* the Look Up Table */
@@ -183,10 +184,10 @@ int main(int argc, char *argv[]){
   HoughDT *pointer;
 
   CHAR *fname = NULL;               /* The output filename */
-  FILE *fp=NULL;                    /* Output file */
+  FILE *fp = NULL;                  /* Output file */
 
   INT4 arg;                         /* Argument counter */
-  INT4 i,j,k;                       /* Index counter, etc */
+  INT4 i, j, k;                     /* Index counter, etc */
 
   REAL8 f0, alpha, delta, veloMod;
   REAL8 patchSizeX, patchSizeY;
@@ -196,12 +197,12 @@ int main(int argc, char *argv[]){
   /************************************************************/
 
   f0 =  F0;
-  f0Bin = F0*TCOH;
+  f0Bin = F0 * TCOH;
 
   parRes.f0Bin =  f0Bin;
   parRes.deltaF = DF;
-  parRes.patchSkySizeX  = patchSizeX = 1.0/(TCOH*F0*VEPI);
-  parRes.patchSkySizeY  = patchSizeY = 1.0/(TCOH*F0*VEPI);
+  parRes.patchSkySizeX  = patchSizeX = 1.0 / ( TCOH * F0 * VEPI );
+  parRes.patchSkySizeY  = patchSizeY = 1.0 / ( TCOH * F0 * VEPI );
   parRes.pixelFactor = PIXELFACTOR;
   parRes.pixErr = PIXERR;
   parRes.linErr = LINERR;
@@ -247,9 +248,9 @@ int main(int argc, char *argv[]){
     else if ( !strcmp( argv[arg], "-f" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-	f0 = atof(argv[arg++]);
-	f0Bin = f0*TCOH;
-	parRes.f0Bin =  f0Bin;
+        f0 = atof( argv[arg++] );
+        f0Bin = f0 * TCOH;
+        parRes.f0Bin =  f0Bin;
       } else {
         ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
@@ -260,20 +261,20 @@ int main(int argc, char *argv[]){
     else if ( !strcmp( argv[arg], "-p" ) ) {
       if ( argc > arg + 2 ) {
         arg++;
-	alpha = atof(argv[arg++]);
-	delta = atof(argv[arg++]);
+        alpha = atof( argv[arg++] );
+        delta = atof( argv[arg++] );
       } else {
         ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
         return TESTPEAK2PHMDC_EARG;
       }
     }
-     /* Parse patch size option. */
+    /* Parse patch size option. */
     else if ( !strcmp( argv[arg], "-s" ) ) {
       if ( argc > arg + 2 ) {
         arg++;
-	parRes.patchSkySizeX = patchSizeX = atof(argv[arg++]);
-        parRes.patchSkySizeY = patchSizeY = atof(argv[arg++]);
+        parRes.patchSkySizeX = patchSizeX = atof( argv[arg++] );
+        parRes.patchSkySizeY = patchSizeY = atof( argv[arg++] );
       } else {
         ERROR( TESTPEAK2PHMDC_EARG, TESTPEAK2PHMDC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
@@ -291,7 +292,7 @@ int main(int argc, char *argv[]){
 
   if ( f0 < 0 ) {
     ERROR( TESTPEAK2PHMDC_EBAD, TESTPEAK2PHMDC_MSGEBAD, "freq<0:" );
-    XLALPrintError( USAGE, *argv  );
+    XLALPrintError( USAGE, *argv );
     return TESTPEAK2PHMDC_EBAD;
   }
 
@@ -312,8 +313,8 @@ int main(int argc, char *argv[]){
 
   patch.xCoor = NULL;
   patch.yCoor = NULL;
-  patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
-  patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
+  patch.xCoor = ( REAL8 * )LALMalloc( xSide * sizeof( REAL8 ) );
+  patch.yCoor = ( REAL8 * )LALMalloc( ySide * sizeof( REAL8 ) );
 
   SUB( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
 
@@ -324,34 +325,34 @@ int main(int argc, char *argv[]){
   lut.maxNBins = maxNBins;
   lut.maxNBorders = maxNBorders;
   lut.border =
-         (HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
+    ( HOUGHBorder * )LALMalloc( maxNBorders * sizeof( HOUGHBorder ) );
   lut.bin =
-         (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
+    ( HOUGHBin2Border * )LALMalloc( maxNBins * sizeof( HOUGHBin2Border ) );
 
   phmd.maxNBorders = maxNBorders;
   phmd.leftBorderP =
-       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+    ( HOUGHBorder ** )LALMalloc( maxNBorders * sizeof( HOUGHBorder * ) );
   phmd.rightBorderP =
-       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+    ( HOUGHBorder ** )LALMalloc( maxNBorders * sizeof( HOUGHBorder * ) );
 
   phmd.ySide = ySide;
   phmd.firstColumn = NULL;
-  phmd.firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
+  phmd.firstColumn = ( UCHAR * )LALMalloc( ySide * sizeof( UCHAR ) );
 
-  PHMD = (HoughDT *)LALMalloc((xSide+1)*ySide*sizeof(HoughDT));
+  PHMD = ( HoughDT * )LALMalloc( ( xSide + 1 ) * ySide * sizeof( HoughDT ) );
 
-  for (i=0; i<maxNBorders; ++i){
+  for ( i = 0; i < maxNBorders; ++i ) {
     lut.border[i].ySide = ySide;
-    lut.border[i].xPixel = (COORType *)LALMalloc(ySide*sizeof(COORType));
+    lut.border[i].xPixel = ( COORType * )LALMalloc( ySide * sizeof( COORType ) );
   }
 
   /******************************************************************/
   /* Case: no spins, patch at south pole */
   /******************************************************************/
 
-  parDem.veloC.x = veloMod*cos(delta)*cos(alpha);
-  parDem.veloC.y = veloMod*cos(delta)*sin(alpha);
-  parDem.veloC.z = veloMod*sin(delta);
+  parDem.veloC.x = veloMod * cos( delta ) * cos( alpha );
+  parDem.veloC.y = veloMod * cos( delta ) * sin( alpha );
+  parDem.veloC.z = veloMod * sin( delta );
 
   parDem.positC.x = 0.0;
   parDem.positC.y = 0.0;
@@ -370,11 +371,11 @@ int main(int argc, char *argv[]){
   /* A Peakgram for testing                                         */
   /******************************************************************/
   pg.deltaF = DF;
-  pg.fBinIni = (phmd.fBin) - maxNBins ;
-  pg.fBinFin = (phmd.fBin) + 5*maxNBins;
+  pg.fBinIni = ( phmd.fBin ) - maxNBins ;
+  pg.fBinFin = ( phmd.fBin ) + 5 * maxNBins;
   pg.length = 1; /* could be much smaller */
   pg.peak = NULL;
-  pg.peak = (INT4 *)LALMalloc( (pg.length) * sizeof(INT4));
+  pg.peak = ( INT4 * )LALMalloc( ( pg.length ) * sizeof( INT4 ) );
 
   /* for (ii=0; ii< pg.length; ++ii){  pg.peak[ii] = 8*ii;  } */
   /* this peakgram is for testing */
@@ -402,44 +403,44 @@ int main(int argc, char *argv[]){
   /*******************************************************/
 
   /* initializing output  space */
-  pointer = &( PHMD[0]);
-  for ( k=0; k< (xSide+1)*ySide; ++k ){
+  pointer = &( PHMD[0] );
+  for ( k = 0; k < ( xSide + 1 )*ySide; ++k ) {
     *pointer = 0;
     ++pointer;
   }
 
   /* first column correction */
-  for ( k=0; k< ySide; ++k ){
-    PHMD[k*(xSide+1) +0] = phmd.firstColumn[k];
+  for ( k = 0; k < ySide; ++k ) {
+    PHMD[k * ( xSide + 1 ) + 0] = phmd.firstColumn[k];
   }
 
   /* left borders =>  +1 */
-  for (k=0; k< phmd.lengthLeft; ++k){
-    INT2 xindex, yLower,yUpper;
+  for ( k = 0; k < phmd.lengthLeft; ++k ) {
+    INT2 xindex, yLower, yUpper;
     COORType    *xPixel;
 
-    yLower = (*(phmd.leftBorderP[k])).yLower;
-    yUpper = (*(phmd.leftBorderP[k])).yUpper;
-    xPixel =  &( (*(phmd.leftBorderP[k])).xPixel[0] );
+    yLower = ( *( phmd.leftBorderP[k] ) ).yLower;
+    yUpper = ( *( phmd.leftBorderP[k] ) ).yUpper;
+    xPixel =  &( ( *( phmd.leftBorderP[k] ) ).xPixel[0] );
 
-    for(j=yLower; j<=yUpper;++j){
+    for ( j = yLower; j <= yUpper; ++j ) {
       xindex = xPixel[j];
-      PHMD[j*(xSide+1) + xindex] += 1;
+      PHMD[j * ( xSide + 1 ) + xindex] += 1;
     }
   }
 
   /* right borders =>  -1 */
-  for (k=0; k< phmd.lengthRight; ++k){
-    INT2 xindex, yLower,yUpper;
+  for ( k = 0; k < phmd.lengthRight; ++k ) {
+    INT2 xindex, yLower, yUpper;
     COORType    *xPixel;
 
-    yLower = (*(phmd.rightBorderP[k])).yLower;
-    yUpper = (*(phmd.rightBorderP[k])).yUpper;
-    xPixel =  &( (*(phmd.rightBorderP[k])).xPixel[0] );
+    yLower = ( *( phmd.rightBorderP[k] ) ).yLower;
+    yUpper = ( *( phmd.rightBorderP[k] ) ).yUpper;
+    xPixel =  &( ( *( phmd.rightBorderP[k] ) ).xPixel[0] );
 
-    for(j=yLower; j<=yUpper;++j){
+    for ( j = yLower; j <= yUpper; ++j ) {
       xindex = xPixel[j];
-      PHMD[j*(xSide+1) + xindex] -= 1;
+      PHMD[j * ( xSide + 1 ) + xindex] -= 1;
     }
   }
 
@@ -452,21 +453,21 @@ int main(int argc, char *argv[]){
   if ( fname ) {
     fp = fopen( fname, "w" );
   } else {
-    fp = fopen( FILEOUT , "w" );
+    fp = fopen( FILEOUT, "w" );
   }
 
-  if ( !fp ){
+  if ( !fp ) {
     ERROR( TESTPEAK2PHMDC_EFILE, TESTPEAK2PHMDC_MSGEFILE, 0 );
     return TESTPEAK2PHMDC_EFILE;
   }
 
 
-  for(j=ySide-1; j>=0; --j){
-    for(i=0;i<xSide;++i){
-      fprintf( fp ," %f",  PHMD[j*(xSide+1) + i]);
+  for ( j = ySide - 1; j >= 0; --j ) {
+    for ( i = 0; i < xSide; ++i ) {
+      fprintf( fp, " %f",  PHMD[j * ( xSide + 1 ) + i] );
       fflush( fp );
     }
-    fprintf( fp ," \n");
+    fprintf( fp, " \n" );
     fflush( fp );
   }
 
@@ -477,22 +478,22 @@ int main(int argc, char *argv[]){
   /* Free memory and exit */
   /******************************************************************/
 
-  LALFree(pg.peak);
+  LALFree( pg.peak );
 
-  for (i=0; i<maxNBorders; ++i){
-    LALFree( lut.border[i].xPixel);
+  for ( i = 0; i < maxNBorders; ++i ) {
+    LALFree( lut.border[i].xPixel );
   }
 
-  LALFree( lut.border);
-  LALFree( lut.bin);
+  LALFree( lut.border );
+  LALFree( lut.bin );
 
-  LALFree( phmd.leftBorderP);
-  LALFree( phmd.rightBorderP);
-  LALFree( phmd.firstColumn);
-  LALFree( PHMD);
+  LALFree( phmd.leftBorderP );
+  LALFree( phmd.rightBorderP );
+  LALFree( phmd.firstColumn );
+  LALFree( PHMD );
 
-  LALFree( patch.xCoor);
-  LALFree( patch.yCoor);
+  LALFree( patch.xCoor );
+  LALFree( patch.yCoor );
 
   LALCheckMemoryLeaks();
 

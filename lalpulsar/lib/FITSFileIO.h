@@ -69,7 +69,7 @@ FITSFile *XLALFITSFileOpenWrite( const CHAR *file_name );
 FITSFile *XLALFITSFileOpenRead( const CHAR *file_name );
 int XLALFITSFileSeekPrimaryHDU( FITSFile *file );
 int XLALFITSFileSeekNamedHDU( FITSFile *file, const CHAR *name );
-int XLALFITSFileWriteHistory( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
+int XLALFITSFileWriteHistory( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_( 2, 3 );
 int XLALFITSFileWriteVCSInfo( FITSFile *file, const LALVCSInfoList vcs_list );
 int XLALFITSFileWriteUVarCmdLine( FITSFile *file );
 /// @}
@@ -106,7 +106,7 @@ int XLALFITSHeaderQueryKeyExists( FITSFile *file, const CHAR *key, BOOLEAN *exis
 ///   used after the array or table is opened for reading.
 ///
 /// @{
-int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_(2,3);
+int XLALFITSHeaderWriteComment( FITSFile *file, const CHAR *format, ... ) _LAL_GCC_PRINTF_FORMAT_( 2, 3 );
 int XLALFITSHeaderWriteBOOLEAN( FITSFile *file, const CHAR *key, const BOOLEAN value, const CHAR *comment );
 int XLALFITSHeaderReadBOOLEAN( FITSFile *file, const CHAR *key, BOOLEAN *value );
 int XLALFITSHeaderWriteUINT2( FITSFile *file, const CHAR *key, const UINT2 value, const CHAR *comment );

@@ -24,24 +24,24 @@
 
 #include "TwoSpectTypes.h"
 
-ffdataStruct * createffdata(const UserInput_t *params);
-void destroyffdata(ffdataStruct *data);
+ffdataStruct *createffdata( const UserInput_t *params );
+void destroyffdata( ffdataStruct *data );
 
-INT4Vector * detectLines_simple(const REAL4VectorAligned *TFdata, const ffdataStruct *ffdata, const UserInput_t *params);
-REAL4VectorSequence * trackLines(const INT4Vector *lines, const INT4Vector *binshifts, const REAL4 minfbin, const REAL4 df);
-INT4 cleanLines(REAL4VectorAligned *TFdata, const REAL4VectorAligned *background, const INT4Vector *lines, const UserInput_t *params, const gsl_rng *rng);
-INT4 makeSecondFFT(ffdataStruct *ffdata, REAL4VectorAligned *tfdata, const REAL4FFTPlan *plan);
-INT4 ffPlaneNoise(REAL4VectorAligned *aveNoise, const UserInput_t *params, const INT4Vector *sftexist, const REAL4VectorAligned *aveNoiseInTime, const REAL4VectorAligned *antweights, const REAL4VectorAligned *backgroundScaling, const REAL4FFTPlan *plan, const REAL4VectorAligned *expDistVals, const gsl_rng *rng, REAL8 *normalization);
+INT4Vector *detectLines_simple( const REAL4VectorAligned *TFdata, const ffdataStruct *ffdata, const UserInput_t *params );
+REAL4VectorSequence *trackLines( const INT4Vector *lines, const INT4Vector *binshifts, const REAL4 minfbin, const REAL4 df );
+INT4 cleanLines( REAL4VectorAligned *TFdata, const REAL4VectorAligned *background, const INT4Vector *lines, const UserInput_t *params, const gsl_rng *rng );
+INT4 makeSecondFFT( ffdataStruct *ffdata, REAL4VectorAligned *tfdata, const REAL4FFTPlan *plan );
+INT4 ffPlaneNoise( REAL4VectorAligned *aveNoise, const UserInput_t *params, const INT4Vector *sftexist, const REAL4VectorAligned *aveNoiseInTime, const REAL4VectorAligned *antweights, const REAL4VectorAligned *backgroundScaling, const REAL4FFTPlan *plan, const REAL4VectorAligned *expDistVals, const gsl_rng *rng, REAL8 *normalization );
 
-REAL4 avgTFdataBand(const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 numffts, UINT4 binmin, UINT4 binmax);
-REAL4 rmsTFdataBand(const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 numffts, UINT4 binmin, UINT4 binmax);
-REAL4VectorAligned * calcAveTFnoisePerFbinRatio(const REAL4VectorAligned *background, const REAL4VectorAligned *backgroundScaling, const UINT4 numffts);
-INT4 medianBackgroundBandInTime(REAL4VectorAligned *aveNoiseInTime, const REAL4VectorAligned *backgrnd, const INT4Vector *sftexist);
+REAL4 avgTFdataBand( const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 numffts, UINT4 binmin, UINT4 binmax );
+REAL4 rmsTFdataBand( const REAL4VectorAligned *backgrnd, UINT4 numfbins, UINT4 numffts, UINT4 binmin, UINT4 binmax );
+REAL4VectorAligned *calcAveTFnoisePerFbinRatio( const REAL4VectorAligned *background, const REAL4VectorAligned *backgroundScaling, const UINT4 numffts );
+INT4 medianBackgroundBandInTime( REAL4VectorAligned *aveNoiseInTime, const REAL4VectorAligned *backgrnd, const INT4Vector *sftexist );
 
-MultiLALDetector * setupMultiLALDetector(LALStringVector *IFO);
+MultiLALDetector *setupMultiLALDetector( LALStringVector *IFO );
 
-INT4 readTwoSpectInputParams(UserInput_t *uvar, int argc, char *argv[]);
-INT4 printREAL4Vector2File(const REAL4Vector *vector, const CHAR *directory, const CHAR *filename);
+INT4 readTwoSpectInputParams( UserInput_t *uvar, int argc, char *argv[] );
+INT4 printREAL4Vector2File( const REAL4Vector *vector, const CHAR *directory, const CHAR *filename );
 
 #endif
 

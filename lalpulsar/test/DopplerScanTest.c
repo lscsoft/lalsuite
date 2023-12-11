@@ -36,8 +36,8 @@
 // ---------- global variables --------------------
 
 // ---------- local prototypes
-static int test_XLALParseSkyRegionString ( void );
-static int compareSkyPosition ( SkyPosition *pos1, SkyPosition *pos2, REAL8 tol );
+static int test_XLALParseSkyRegionString( void );
+static int compareSkyPosition( SkyPosition *pos1, SkyPosition *pos2, REAL8 tol );
 // ---------- function definitions --------------------
 
 /**
@@ -46,7 +46,7 @@ static int compareSkyPosition ( SkyPosition *pos1, SkyPosition *pos2, REAL8 tol 
 int main( void )
 {
 
-  XLAL_CHECK ( test_XLALParseSkyRegionString() == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( test_XLALParseSkyRegionString() == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* check for memory leaks */
   LALCheckMemoryLeaks();
@@ -61,46 +61,45 @@ int main( void )
  * Unit test for XLALParseSkyRegionString()
  */
 static int
-test_XLALParseSkyRegionString ( void )
+test_XLALParseSkyRegionString( void )
 {
 
   const char *skyRegionString1 = "(10:25:1.1, -5:30:44.123), (1:2:3.45, 2:33:15), (5:0:0, 0:0:0 )";
   const char *skyRegionString2 = "(2.72715695049852,-0.0962070232002041),(0.270776925139095,0.0445786179780218),(1.30899693899575,0)";
 
-  SkyRegion XLAL_INIT_DECL(skyRegion1);
-  SkyRegion XLAL_INIT_DECL(skyRegion2);
+  SkyRegion XLAL_INIT_DECL( skyRegion1 );
+  SkyRegion XLAL_INIT_DECL( skyRegion2 );
 
-  XLAL_CHECK ( XLALParseSkyRegionString ( &skyRegion1, skyRegionString1 ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( XLALParseSkyRegionString ( &skyRegion2, skyRegionString2 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseSkyRegionString( &skyRegion1, skyRegionString1 ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALParseSkyRegionString( &skyRegion2, skyRegionString2 ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  XLAL_CHECK ( skyRegion1.numVertices == skyRegion2.numVertices, XLAL_EFAILED );
+  XLAL_CHECK( skyRegion1.numVertices == skyRegion2.numVertices, XLAL_EFAILED );
 
   REAL8 tol = 5e-15;
-  XLAL_CHECK ( compareSkyPosition ( &skyRegion1.lowerLeft,  &skyRegion2.lowerLeft, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK ( compareSkyPosition ( &skyRegion1.upperRight, &skyRegion2.upperRight, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
-  for ( UINT4 i = 0; i < skyRegion1.numVertices; i ++ )
-    {
-      XLAL_CHECK ( compareSkyPosition ( &skyRegion1.vertices[i], &skyRegion2.vertices[i], tol ) == XLAL_SUCCESS, XLAL_EFUNC );
-    }
+  XLAL_CHECK( compareSkyPosition( &skyRegion1.lowerLeft,  &skyRegion2.lowerLeft, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( compareSkyPosition( &skyRegion1.upperRight, &skyRegion2.upperRight, tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+  for ( UINT4 i = 0; i < skyRegion1.numVertices; i ++ ) {
+    XLAL_CHECK( compareSkyPosition( &skyRegion1.vertices[i], &skyRegion2.vertices[i], tol ) == XLAL_SUCCESS, XLAL_EFUNC );
+  }
 
-  XLALFree ( skyRegion1.vertices );
-  XLALFree ( skyRegion2.vertices );
+  XLALFree( skyRegion1.vertices );
+  XLALFree( skyRegion2.vertices );
 
   return XLAL_SUCCESS;
 
 } // test_XLALParseSkyRegionString()
 
 static int
-compareSkyPosition ( SkyPosition *pos1, SkyPosition *pos2, REAL8 tol )
+compareSkyPosition( SkyPosition *pos1, SkyPosition *pos2, REAL8 tol )
 {
-  XLAL_CHECK ( (pos1 != NULL) && (pos2 != NULL), XLAL_EINVAL );
+  XLAL_CHECK( ( pos1 != NULL ) && ( pos2 != NULL ), XLAL_EINVAL );
 
   REAL8 diff;
-  XLAL_CHECK ( pos1->system == pos2->system, XLAL_EINVAL );
-  XLAL_CHECK ( (diff=fabs ( pos1->longitude - pos2->longitude )) < tol, XLAL_ETOL, "Longitude %.16g differs from %.16g by %.2g exceeding tolerance %.2g\n",
-               pos1->longitude, pos2->longitude, diff, tol );
-  XLAL_CHECK ( (diff=fabs ( pos1->latitude  - pos2->latitude )) < tol, XLAL_ETOL,  "Latitude %.16g differs from %.16g by %.2g exceeding tolerance %.2g\n",
-               pos1->latitude, pos2->latitude, diff, tol );
+  XLAL_CHECK( pos1->system == pos2->system, XLAL_EINVAL );
+  XLAL_CHECK( ( diff = fabs( pos1->longitude - pos2->longitude ) ) < tol, XLAL_ETOL, "Longitude %.16g differs from %.16g by %.2g exceeding tolerance %.2g\n",
+              pos1->longitude, pos2->longitude, diff, tol );
+  XLAL_CHECK( ( diff = fabs( pos1->latitude  - pos2->latitude ) ) < tol, XLAL_ETOL,  "Latitude %.16g differs from %.16g by %.2g exceeding tolerance %.2g\n",
+              pos1->latitude, pos2->latitude, diff, tol );
 
   return XLAL_SUCCESS;
 } // compareSkyPosition()

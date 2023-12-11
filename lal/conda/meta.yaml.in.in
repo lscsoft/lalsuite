@@ -98,9 +98,9 @@ outputs:
       license: GPL-2.0-or-later
       license_family: GPL
       license_file: COPYING
-      summary: LSC Algorithm Library shared object libraries
+      summary: LVK Algorithm Library shared object libraries
       description: |
-        The LSC Algorithm Library for gravitational wave data analysis.
+        The LVK Algorithm Library for gravitational wave data analysis.
         This package contains the shared object libraries need to build
         applications that use LAL.
 
@@ -172,9 +172,9 @@ outputs:
       license: GPL-2.0-or-later
       license_family: GPL
       license_file: COPYING
-      summary: LSC Algorithm Library Python bindings
+      summary: LVK Algorithm Library Python bindings
       description: |
-        The LSC Algorithm Library for gravitational wave data analysis.
+        The LVK Algorithm Library for gravitational wave data analysis.
         This package contains the Python bindings.
 
   - name: lal
@@ -216,9 +216,9 @@ outputs:
       license: GPL-2.0-or-later
       license_family: GPL
       license_file: COPYING
-      summary: LSC Algorithm Library runtime tools
+      summary: LVK Algorithm Library runtime tools
       description: |
-        The LSC Algorithm Library for gravitational wave data analysis.
+        The LVK Algorithm Library for gravitational wave data analysis.
         This package contains the runtime tools.
     test:
       commands:
@@ -234,9 +234,9 @@ about:
   license: GPL-2.0-or-later
   license_family: GPL
   license_file: COPYING
-  summary: LSC Algorithm Library
+  summary: LVK Algorithm Library
   description: |
-    The LSC Algorithm Library for gravitational wave data analysis.
+    The LVK Algorithm Library for gravitational wave data analysis.
     This package contains the shared-object libraries needed to run
     applications that use the LAL library.  If you want to install
     the Python bindings, please install the associated python-lal

@@ -142,7 +142,8 @@
 #define MAGNIFY 1.0            /* Magnification factor of ellipses */
 
 
-int main( int argc, char *argv[] ) {
+int main( int argc, char *argv[] )
+{
   static LALStatus status;          /* Status structure */
   PtoleMetricIn    in;              /* PtoleMetric() input structure */
   REAL8            mismatch;        /* mismatch threshold of mesh */
@@ -156,7 +157,7 @@ int main( int argc, char *argv[] ) {
   FILE            *fnongrace = NULL;/* File contaning ellipse coordinates */
   REAL8           ra_point;         /* RA at which metric is evaluated */
   REAL8           dec_point;        /* dec at which metric is evaluated */
-  float           a,b,c,d,e,f;      /* To input point in standard format */
+  float           a, b, c, d, e, f; /* To input point in standard format */
   int             ra_min, ra_max;   /* Min and max RA for ellipse plot */
   int             dec_min, dec_max; /* Min and max dec for ellipse plot */
   float           c_ellipse;        /* Centers of ellipses */
@@ -172,8 +173,8 @@ int main( int argc, char *argv[] ) {
   nongrace = 0;
   in.duration = DEFAULT_DURATION;
   grace = 0;
-  ra_point  = (24.1/60)*LAL_PI_180;     /* 47 Tuc */
-  dec_point = -(72+5./60)*LAL_PI_180;
+  ra_point  = ( 24.1 / 60 ) * LAL_PI_180; /* 47 Tuc */
+  dec_point = -( 72 + 5. / 60 ) * LAL_PI_180;
   ra_min = 0;
   ra_max = 90;
   dec_min = 0;
@@ -182,28 +183,26 @@ int main( int argc, char *argv[] ) {
   numSpindown = 0;
 
   /* Parse options. */
-  while ((opt = LALgetopt( argc, argv, "a:b:c:d:ef:l:m:n:pt:s:x" )) != -1) {
-    switch (opt) {
+  while ( ( opt = LALgetopt( argc, argv, "a:b:c:d:ef:l:m:n:pt:s:x" ) ) != -1 ) {
+    switch ( opt ) {
     case 'b':
       in.epoch.gpsSeconds = atoi( LALoptarg );
       break;
     case 'c':
-      if( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
-	{
-	  fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
-	}
-      ra_point = (15*a+b/4+c/240)*LAL_PI_180;
-      dec_point = (d+e/60+f/3600)*LAL_PI_180;
+      if ( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6 ) {
+        fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
+      }
+      ra_point = ( 15 * a + b / 4 + c / 240 ) * LAL_PI_180;
+      dec_point = ( d + e / 60 + f / 3600 ) * LAL_PI_180;
       break;
     case 'f':
       f0 = atof( LALoptarg );
       break;
     case 'l':
-      if( sscanf( LALoptarg, "%d:%d:%d:%d",
-		  &ra_min, &ra_max, &dec_min, &dec_max) != 4)
-	{
-	  fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max all in degrees" );
-	}
+      if ( sscanf( LALoptarg, "%d:%d:%d:%d",
+                   &ra_min, &ra_max, &dec_min, &dec_max ) != 4 ) {
+        fprintf( stderr, "coordinates should be ra_min, ra_max, dec_min, dec_max all in degrees" );
+      }
       break;
     case 'm':
       mismatch = atof( LALoptarg );
@@ -224,13 +223,12 @@ int main( int argc, char *argv[] ) {
 
   /* Allocate storage. */
   metric = NULL;
-  LALDCreateVector( &status, &metric, (3+numSpindown)*(4+numSpindown)/2 );
-  if( status.statusCode )
-    {
-      printf( "%s line %d: %s\n", __FILE__, __LINE__,
-              GENERALMETRICTESTC_MSGEMEM );
-      return GENERALMETRICTESTC_EMEM;
-    }
+  LALDCreateVector( &status, &metric, ( 3 + numSpindown ) * ( 4 + numSpindown ) / 2 );
+  if ( status.statusCode ) {
+    printf( "%s line %d: %s\n", __FILE__, __LINE__,
+            GENERALMETRICTESTC_MSGEMEM );
+    return GENERALMETRICTESTC_EMEM;
+  }
 
   /* Position in parameter space (sky, frequency, spindowns) */
   in.position.system = COORDINATESYSTEM_EQUATORIAL;
@@ -238,14 +236,14 @@ int main( int argc, char *argv[] ) {
   in.position.latitude = dec_point;
   in.maxFreq = f0;
   in.spindown = NULL;
-  if( numSpindown > 0 ) {
-    LALCreateVector( &status, &(in.spindown), numSpindown );
-    if( status.statusCode ) {
+  if ( numSpindown > 0 ) {
+    LALCreateVector( &status, &( in.spindown ), numSpindown );
+    if ( status.statusCode ) {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
               GENERALMETRICTESTC_MSGEMEM );
       return GENERALMETRICTESTC_EMEM;
     }
-    for( i=0; i<numSpindown; i++ ) {
+    for ( i = 0; i < numSpindown; i++ ) {
       in.spindown->data[i] = 0;
     }
   }
@@ -253,128 +251,121 @@ int main( int argc, char *argv[] ) {
   /* Detector site */
   in.site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
 
-   /* Evaluate metric components. */
-   LALPtoleMetric( &status, metric, &in );
-   if( status.statusCode )
-     {
-       printf( "%s line %d: %s\n", __FILE__, __LINE__,
-               GENERALMETRICTESTC_MSGESUB );
-       return GENERALMETRICTESTC_ESUB;
-     }
+  /* Evaluate metric components. */
+  LALPtoleMetric( &status, metric, &in );
+  if ( status.statusCode ) {
+    printf( "%s line %d: %s\n", __FILE__, __LINE__,
+            GENERALMETRICTESTC_MSGESUB );
+    return GENERALMETRICTESTC_ESUB;
+  }
 
-   /* Print metric. */
-   printf("\nmetric (f0, alpha, delta, ...) at the requested point\n");
-   for (j=0; j<=2+numSpindown; j++) {
-     for (k=0; k<=j; k++)
-       printf( "  %+.4e", metric->data[k+j*(j+1)/2] );
-     printf("\n");
-   }
+  /* Print metric. */
+  printf( "\nmetric (f0, alpha, delta, ...) at the requested point\n" );
+  for ( j = 0; j <= 2 + numSpindown; j++ ) {
+    for ( k = 0; k <= j; k++ ) {
+      printf( "  %+.4e", metric->data[k + j * ( j + 1 ) / 2] );
+    }
+    printf( "\n" );
+  }
 
-   /* Print determinants. */
-   determinant = metric->data[5]*metric->data[2] - pow(metric->data[4],2);
-   printf( "\nSky-determinant %e\n", determinant );
-   if( numSpindown == 1 ) {
-     determinant = metric->data[2] * metric->data[5] * metric->data[9]
-                 - metric->data[2] * metric->data[8] * metric->data[8]
-                 + metric->data[4] * metric->data[8] * metric->data[7]
-                 - metric->data[4] * metric->data[4] * metric->data[9]
-                 + metric->data[7] * metric->data[4] * metric->data[8]
-                 - metric->data[7] * metric->data[7] * metric->data[5];
-     printf( "S&S determinant %e\n", determinant );
-   }
+  /* Print determinants. */
+  determinant = metric->data[5] * metric->data[2] - pow( metric->data[4], 2 );
+  printf( "\nSky-determinant %e\n", determinant );
+  if ( numSpindown == 1 ) {
+    determinant = metric->data[2] * metric->data[5] * metric->data[9]
+                  - metric->data[2] * metric->data[8] * metric->data[8]
+                  + metric->data[4] * metric->data[8] * metric->data[7]
+                  - metric->data[4] * metric->data[4] * metric->data[9]
+                  + metric->data[7] * metric->data[4] * metric->data[8]
+                  - metric->data[7] * metric->data[7] * metric->data[5];
+    printf( "S&S determinant %e\n", determinant );
+  }
 
-   /* Project carrier frequency out of metric. */
-   LALProjectMetric( &status, metric, 0 );
-   if( status.statusCode )
-     {
-       printf( "%s line %d: %s\n", __FILE__, __LINE__,
-	       GENERALMETRICTESTC_MSGESUB );
-       return GENERALMETRICTESTC_ESUB;
-     }
+  /* Project carrier frequency out of metric. */
+  LALProjectMetric( &status, metric, 0 );
+  if ( status.statusCode ) {
+    printf( "%s line %d: %s\n", __FILE__, __LINE__,
+            GENERALMETRICTESTC_MSGESUB );
+    return GENERALMETRICTESTC_ESUB;
+  }
 
-   /* Print projected metric. */
-   printf("\nf-projected metric (alpha, delta, ...) at the requested point\n");
-   for (j=1; j<=2+numSpindown; j++) {
-     for (k=1; k<=j; k++)
-       printf( "  %+.4e", metric->data[k+j*(j+1)/2] );
-     printf( "\n" );
-      }
+  /* Print projected metric. */
+  printf( "\nf-projected metric (alpha, delta, ...) at the requested point\n" );
+  for ( j = 1; j <= 2 + numSpindown; j++ ) {
+    for ( k = 1; k <= j; k++ ) {
+      printf( "  %+.4e", metric->data[k + j * ( j + 1 ) / 2] );
+    }
+    printf( "\n" );
+  }
 
-   /* Print determinants. */
-   determinant = metric->data[5]*metric->data[2] - pow(metric->data[4],2);
-   printf( "\nSky-determinant %e\n", determinant );
-   if( numSpindown == 1 ) {
-     determinant = metric->data[2] * metric->data[5] * metric->data[9]
-                 - metric->data[2] * metric->data[8] * metric->data[8]
-                 + metric->data[4] * metric->data[8] * metric->data[7]
-                 - metric->data[4] * metric->data[4] * metric->data[9]
-                 + metric->data[7] * metric->data[4] * metric->data[8]
-                 - metric->data[7] * metric->data[7] * metric->data[5];
-     printf( "S&S determinant %e\n", determinant );
-   }
+  /* Print determinants. */
+  determinant = metric->data[5] * metric->data[2] - pow( metric->data[4], 2 );
+  printf( "\nSky-determinant %e\n", determinant );
+  if ( numSpindown == 1 ) {
+    determinant = metric->data[2] * metric->data[5] * metric->data[9]
+                  - metric->data[2] * metric->data[8] * metric->data[8]
+                  + metric->data[4] * metric->data[8] * metric->data[7]
+                  - metric->data[4] * metric->data[4] * metric->data[9]
+                  + metric->data[7] * metric->data[4] * metric->data[8]
+                  - metric->data[7] * metric->data[7] * metric->data[5];
+    printf( "S&S determinant %e\n", determinant );
+  }
 
   /* Here is the code that uses xmgrace with the -x option, */
   /* and outputs data to a file with the -t option. */
-  if (grace || nongrace) {
+  if ( grace || nongrace ) {
 
     /* Take care of preliminaries. */
-    if(grace)
-      {
-	pvc = popen( "xmgrace -pipe", "w" );
-	if( !pvc )
-	  {
-	    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-		    GENERALMETRICTESTC_MSGESYS );
-	    return GENERALMETRICTESTC_ESYS;
-	  }
-	fprintf( pvc, "@xaxis label \"Right ascension (degrees)\"\n" );
-	fprintf( pvc, "@yaxis label \"Declination (degrees)\"\n" );
+    if ( grace ) {
+      pvc = popen( "xmgrace -pipe", "w" );
+      if ( !pvc ) {
+        printf( "%s line %d: %s\n", __FILE__, __LINE__,
+                GENERALMETRICTESTC_MSGESYS );
+        return GENERALMETRICTESTC_ESYS;
       }
-    if(nongrace)
-      {
-	fnongrace = fopen( "nongrace.data", "w" );
-	if( !fnongrace )
-	  {
-	    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-		    GENERALMETRICTESTC_MSGESYS );
-	    return GENERALMETRICTESTC_ESYS;
-	  }
+      fprintf( pvc, "@xaxis label \"Right ascension (degrees)\"\n" );
+      fprintf( pvc, "@yaxis label \"Declination (degrees)\"\n" );
+    }
+    if ( nongrace ) {
+      fnongrace = fopen( "nongrace.data", "w" );
+      if ( !fnongrace ) {
+        printf( "%s line %d: %s\n", __FILE__, __LINE__,
+                GENERALMETRICTESTC_MSGESYS );
+        return GENERALMETRICTESTC_ESYS;
       }
+    }
 
     /* Step around the sky: a grid in ra and dec. */
     j = 0;
-    for (dec=dec_max; dec>=dec_min; dec-=10) {
-      for (ra=ra_min; ra<=ra_max; ra+=15) {
+    for ( dec = dec_max; dec >= dec_min; dec -= 10 ) {
+      for ( ra = ra_min; ra <= ra_max; ra += 15 ) {
         REAL8 gaa, gad, gdd, angle, smaj, smin;
 
         /* Get the metric at this ra, dec. */
-        in.position.longitude = ra*LAL_PI_180;
-        in.position.latitude  = dec*LAL_PI_180;
+        in.position.longitude = ra * LAL_PI_180;
+        in.position.latitude  = dec * LAL_PI_180;
 
-	/* Evaluate metric: */
+        /* Evaluate metric: */
         LALPtoleMetric( &status, metric, &in );
-        if( status.statusCode )
-          {
-            printf( "%s line %d: %s\n", __FILE__, __LINE__,
-                    GENERALMETRICTESTC_MSGESUB );
-            return GENERALMETRICTESTC_ESUB;
-          }
-
-	/*  Project metric: */
-	LALProjectMetric( &status, metric, 0 );
-	if( status.statusCode )
-	  {
+        if ( status.statusCode ) {
           printf( "%s line %d: %s\n", __FILE__, __LINE__,
                   GENERALMETRICTESTC_MSGESUB );
           return GENERALMETRICTESTC_ESUB;
-	  }
-	determinant = metric->data[5]*metric->data[2]-pow(metric->data[4],2.0);
-	if(determinant < 0.0)
-	  {
-	    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-		    GENERALMETRICTESTC_MSGEMET );
-	    return GENERALMETRICTESTC_EMET;
-	  }
+        }
+
+        /*  Project metric: */
+        LALProjectMetric( &status, metric, 0 );
+        if ( status.statusCode ) {
+          printf( "%s line %d: %s\n", __FILE__, __LINE__,
+                  GENERALMETRICTESTC_MSGESUB );
+          return GENERALMETRICTESTC_ESUB;
+        }
+        determinant = metric->data[5] * metric->data[2] - pow( metric->data[4], 2.0 );
+        if ( determinant < 0.0 ) {
+          printf( "%s line %d: %s\n", __FILE__, __LINE__,
+                  GENERALMETRICTESTC_MSGEMET );
+          return GENERALMETRICTESTC_EMET;
+        }
 
 
 
@@ -385,64 +376,70 @@ int main( int argc, char *argv[] ) {
         /* Rename \gamma_{\delta\delta}. */
         gdd = metric->data[5];
         /* Semiminor axis from larger eigenvalue of metric. */
-        smin = gaa+gdd + sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-        smin = sqrt(2*mismatch/smin);
+        smin = gaa + gdd + sqrt( pow( gaa - gdd, 2 ) + pow( 2 * gad, 2 ) );
+        smin = sqrt( 2 * mismatch / smin );
         /* Semiminor axis from smaller eigenvalue of metric. */
-        smaj = gaa+gdd - sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-	/*printf("ra = %d, dec = %d, temp = %g\n", ra, dec, smaj);*/
-        smaj = sqrt(2*mismatch/smaj);
+        smaj = gaa + gdd - sqrt( pow( gaa - gdd, 2 ) + pow( 2 * gad, 2 ) );
+        /*printf("ra = %d, dec = %d, temp = %g\n", ra, dec, smaj);*/
+        smaj = sqrt( 2 * mismatch / smaj );
         /* Angle of semimajor axis with "horizontal" (equator). */
-        angle = atan2( gad, mismatch/smaj/smaj-gdd );
-        if (angle <= -LAL_PI_2) angle += LAL_PI;
-        if (angle > LAL_PI_2) angle -= LAL_PI;
+        angle = atan2( gad, mismatch / smaj / smaj - gdd );
+        if ( angle <= -LAL_PI_2 ) {
+          angle += LAL_PI;
+        }
+        if ( angle > LAL_PI_2 ) {
+          angle -= LAL_PI;
+        }
 
-        if(grace)
-	  {
-	    /* Print set header. */
-	    fprintf( pvc, "@s%d color (0,0,0)\n", j );
-	    fprintf( pvc, "@target G0.S%d\n@type xy\n", j++ );
-	    /* Print center of patch. */
-	    fprintf( pvc, "%16.8g %16.8g\n", (float)ra, (float)dec );
-	  }
-	if(nongrace)
-	  /* Print center of patch. */
-	  fprintf( fnongrace, "%16.8g %16.8g\n", (float)ra, (float)dec );
-	/* Loop around patch ellipse. */
-        for (i=0; i<=SPOKES; i++) {
-          c_ellipse = LAL_TWOPI*i/SPOKES;
-          r_ellipse = MAGNIFY*LAL_180_PI*smaj*smin /
-	    sqrt( pow(smaj*sin(c_ellipse),2) + pow(smin*cos(c_ellipse),2) );
-	  if(grace)
-	    fprintf( pvc, "%e %e\n", ra+r_ellipse*cos(angle-c_ellipse),
-		     dec+r_ellipse*sin(angle-c_ellipse) );
-	  if(nongrace)
-	    fprintf( fnongrace, "%e %e\n", ra+r_ellipse*cos(angle-c_ellipse),
-		     dec+r_ellipse*sin(angle-c_ellipse) );
+        if ( grace ) {
+          /* Print set header. */
+          fprintf( pvc, "@s%d color (0,0,0)\n", j );
+          fprintf( pvc, "@target G0.S%d\n@type xy\n", j++ );
+          /* Print center of patch. */
+          fprintf( pvc, "%16.8g %16.8g\n", ( float )ra, ( float )dec );
+        }
+        if ( nongrace )
+          /* Print center of patch. */
+        {
+          fprintf( fnongrace, "%16.8g %16.8g\n", ( float )ra, ( float )dec );
+        }
+        /* Loop around patch ellipse. */
+        for ( i = 0; i <= SPOKES; i++ ) {
+          c_ellipse = LAL_TWOPI * i / SPOKES;
+          r_ellipse = MAGNIFY * LAL_180_PI * smaj * smin /
+                      sqrt( pow( smaj * sin( c_ellipse ), 2 ) + pow( smin * cos( c_ellipse ), 2 ) );
+          if ( grace )
+            fprintf( pvc, "%e %e\n", ra + r_ellipse * cos( angle - c_ellipse ),
+                     dec + r_ellipse * sin( angle - c_ellipse ) );
+          if ( nongrace )
+            fprintf( fnongrace, "%e %e\n", ra + r_ellipse * cos( angle - c_ellipse ),
+                     dec + r_ellipse * sin( angle - c_ellipse ) );
 
         } /* for (a...) */
 
       } /* for (ra...) */
     } /* for (dec...) */
-    if(grace)
+    if ( grace ) {
       fclose( pvc );
-    if(nongrace)
+    }
+    if ( nongrace ) {
       fclose( fnongrace );
+    }
   } /* if (grace || nongrace) */
 
-  printf("\nCleaning up and leaving...\n");
+  printf( "\nCleaning up and leaving...\n" );
 
   LALDDestroyVector( &status, &metric );
-  if( status.statusCode )
-  {
+  if ( status.statusCode ) {
     printf( "%s line %d: %s\n", __FILE__, __LINE__,
             GENERALMETRICTESTC_MSGEMEM );
     return GENERALMETRICTESTC_EMEM;
   }
-  if( in.spindown )
-    LALDestroyVector( &status, &(in.spindown) );
+  if ( in.spindown ) {
+    LALDestroyVector( &status, &( in.spindown ) );
+  }
 
-  if( status.statusCode )
-  {
+  if ( status.statusCode ) {
     printf( "%s line %d: %s\n", __FILE__, __LINE__,
             GENERALMETRICTESTC_MSGEMEM );
     return GENERALMETRICTESTC_EMEM;

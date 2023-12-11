@@ -156,7 +156,7 @@ static void cache_item_destroy( void *x );
 ///
 void cache_item_destroy(
   void *x
-  )
+)
 {
   if ( x != NULL ) {
     cache_item *ix = ( cache_item * ) x;
@@ -171,7 +171,7 @@ void cache_item_destroy(
 int cache_item_compare_by_relevance(
   const void *x,
   const void *y
-  )
+)
 {
   const cache_item *ix = ( const cache_item * ) x;
   const cache_item *iy = ( const cache_item * ) y;
@@ -186,7 +186,7 @@ int cache_item_compare_by_relevance(
 int cache_item_compare_by_coh_index(
   const void *x,
   const void *y
-  )
+)
 {
   const cache_item *ix = ( const cache_item * ) x;
   const cache_item *iy = ( const cache_item * ) y;
@@ -200,7 +200,7 @@ int cache_item_compare_by_coh_index(
 ///
 UINT8 cache_item_hash(
   const void *x
-  )
+)
 {
   const cache_item *ix = ( const cache_item * ) x;
   UINT4 hval = 0;
@@ -220,7 +220,7 @@ int cache_max_semi_bbox_sample_dim0(
   gsl_vector *coh_bbox_sample,
   gsl_vector *semi_bbox_sample,
   double *max_semi_bbox_sample_dim0
-  )
+)
 {
 
   if ( i < cache->ndim ) {
@@ -264,7 +264,7 @@ int cache_left_right_offsets(
   const UINT4 freq_partition_index,
   INT4 *left_offset,
   INT4 *right_offset
-  )
+)
 {
 
   // Minimum number of points in the current frequency partition
@@ -308,7 +308,7 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   const double dfreq,
   const UINT4 nqueries,
   const UINT4 nfreq_partitions
-  )
+)
 {
 
   // Check input
@@ -382,7 +382,7 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
 ///
 void XLALWeaveCacheQueriesDestroy(
   WeaveCacheQueries *queries
-  )
+)
 {
   if ( queries != NULL ) {
     XLALFree( queries->coh_part_left_offset );
@@ -408,7 +408,7 @@ int XLALWeaveCacheQueriesInit(
   const INT4 semi_left,
   const INT4 semi_right,
   const UINT4 freq_partition_index
-  )
+)
 {
 
   // Check input
@@ -450,7 +450,7 @@ int XLALWeaveCacheQuery(
   const WeaveCache *cache,
   WeaveCacheQueries *queries,
   const UINT4 query_index
-  )
+)
 {
 
   // Check input
@@ -516,7 +516,7 @@ int XLALWeaveCacheQueriesFinal(
   WeaveCacheQueries *queries,
   PulsarDopplerParams *semi_phys,
   UINT4 *semi_nfreqs
-  )
+)
 {
 
   // Check input
@@ -582,7 +582,7 @@ int XLALWeaveCacheQueriesGetCounts(
   UINT8 *coh_nres,
   UINT8 *coh_ntmpl,
   UINT8 *semi_ntmpl
-  )
+)
 {
 
   // Check input
@@ -621,7 +621,7 @@ WeaveCache *XLALWeaveCacheCreate(
   WeaveCohInput *coh_input,
   const UINT4 max_size,
   const BOOLEAN all_gc
-  )
+)
 {
 
   // Check input
@@ -765,7 +765,7 @@ WeaveCache *XLALWeaveCacheCreate(
 ///
 void XLALWeaveCacheDestroy(
   WeaveCache *cache
-  )
+)
 {
   if ( cache != NULL ) {
     XLALDestroyLatticeTilingLocator( cache->coh_locator );
@@ -784,7 +784,7 @@ int XLALWeaveGetCacheMeanMaxSize(
   REAL4 *cache_mean_max_size,
   const size_t ncache,
   WeaveCache *const *cache
-  )
+)
 {
 
   // Check input
@@ -810,7 +810,7 @@ int XLALWeaveCacheWriteInfo(
   FITSFile *file,
   const size_t ncache,
   WeaveCache *const *cache
-  )
+)
 {
 
   // Check input
@@ -832,7 +832,7 @@ int XLALWeaveCacheWriteInfo(
 ///
 int XLALWeaveCacheExpire(
   WeaveCache *cache
-  )
+)
 {
 
   // Check input
@@ -851,7 +851,7 @@ int XLALWeaveCacheExpire(
 ///
 int XLALWeaveCacheClear(
   WeaveCache *cache
-  )
+)
 {
 
   // Check input
@@ -879,7 +879,7 @@ int XLALWeaveCacheRetrieve(
   UINT8 *coh_index,
   UINT4 *coh_offset,
   WeaveSearchTiming *tim
-  )
+)
 {
 
   // Check input

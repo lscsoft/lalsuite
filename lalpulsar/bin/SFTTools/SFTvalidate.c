@@ -39,36 +39,37 @@
 #include <lal/SFTReferenceLibrary.h>
 #include <lal/LALPulsarVCSInfo.h>
 
-int main(int argc, char** argv) {
-  
-  if (argc == 2 && (strcmp(argv[1], "-v") == 0 || strcmp(argv[1], "--version") == 0)) {
-    fprintf(stdout, "%s: %s %s\n", argv[0], lalPulsarVCSInfo.vcsId, lalPulsarVCSInfo.vcsStatus);
+int main( int argc, char **argv )
+{
+
+  if ( argc == 2 && ( strcmp( argv[1], "-v" ) == 0 || strcmp( argv[1], "--version" ) == 0 ) ) {
+    fprintf( stdout, "%s: %s %s\n", argv[0], lalPulsarVCSInfo.vcsId, lalPulsarVCSInfo.vcsStatus );
     return EXIT_SUCCESS;
   }
 
-  if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
-    fprintf(stdout, "usage:\n");
-    fprintf(stdout, "   %s *.sft\n", argv[0]);
-    fprintf(stdout, "   ls *.sft | %s\n", argv[0]);
-    fprintf(stdout, "   find -name '*.sft' | %s >valid-sfts.txt 2>errors.log\n", argv[0]);
+  if ( argc == 2 && ( strcmp( argv[1], "-h" ) == 0 || strcmp( argv[1], "--help" ) == 0 ) ) {
+    fprintf( stdout, "usage:\n" );
+    fprintf( stdout, "   %s *.sft\n", argv[0] );
+    fprintf( stdout, "   ls *.sft | %s\n", argv[0] );
+    fprintf( stdout, "   find -name '*.sft' | %s >valid-sfts.txt 2>errors.log\n", argv[0] );
     return EXIT_SUCCESS;
   }
 
   int errcode = EXIT_SUCCESS;
 
-  if (argc > 1) {
+  if ( argc > 1 ) {
 
     /* loop over all file names on command line */
-    for (int i = 1; i < argc; ++i) {
+    for ( int i = 1; i < argc; ++i ) {
       /* we on purpose do not call the XLAL version here,
        * so as to have the same stdout printing
        * and return code handling as older versions of this executable.
        */
-      if (ValidateSFTFile(argv[i]) != 0) {
+      if ( ValidateSFTFile( argv[i] ) != 0 ) {
         errcode = EXIT_FAILURE;
       } else {
-        fprintf(stdout, "%s\n", argv[i]);
-        fflush(stdout);
+        fprintf( stdout, "%s\n", argv[i] );
+        fflush( stdout );
       }
     }
 
@@ -77,19 +78,19 @@ int main(int argc, char** argv) {
     char line[2048];
 
     /* loop over all file names from standard input */
-    while (fgets(line, sizeof(line) - 1, stdin) != NULL) {
-      size_t len = strlen(line);
-      if (len > 1) {
+    while ( fgets( line, sizeof( line ) - 1, stdin ) != NULL ) {
+      size_t len = strlen( line );
+      if ( len > 1 ) {
         line[len - 1] = '\0';
         /* we on purpose do not call the XLAL version here,
          * so as to have the same stdout printing
          * and return code handling as older versions of this executable.
          */
-        if (ValidateSFTFile(line) != 0) {
+        if ( ValidateSFTFile( line ) != 0 ) {
           errcode = EXIT_FAILURE;
         } else {
-          fprintf(stdout, "%s\n", line);
-          fflush(stdout);
+          fprintf( stdout, "%s\n", line );
+          fflush( stdout );
         }
       }
     }

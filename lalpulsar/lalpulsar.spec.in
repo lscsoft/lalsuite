@@ -62,14 +62,14 @@ BuildRequires: lalinference-octave >= @MIN_LALINFERENCE_VERSION@
 # -- packages ---------------
 
 # lalpulsar
-Summary: LSC Algorithm Pulsar Library - runtime tools
+Summary: LVK Algorithm Pulsar Library - runtime tools
 Requires: gwdatafind
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Requires: %{name}-data
 Obsoletes: python2-%{name} <= 3.0.1-1
 %description
-The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+The LVK Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL Pulsar library.
 
@@ -78,13 +78,13 @@ that use the LAL Pulsar library.
 BuildArch: noarch
 Summary: Data files for LALPulsar
 %description data
-The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+The LVK Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains the data files needed to run various applications and
 rountines that use the LAL Pulsar Library.
 
 # liblalpulsar
 %package -n lib%{name}
-Summary: LSC Algorithm Simulation Library - library package
+Summary: LVK Algorithm Simulation Library - library package
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalframe >= @MIN_LALFRAME_VERSION@
 Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
@@ -92,7 +92,7 @@ Requires: liblalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: %{name}-data
 Conflicts: %{name} <= 2.1.0-1
 %description -n lib%{name}
-The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+The LVK Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL Pulsar library.
 
@@ -110,7 +110,7 @@ Requires: liblalinference-devel >= @MIN_LALINFERENCE_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 3.0.0-1
 %description -n lib%{name}-devel
-The LSC Algorithm Pulsar Library for gravitational wave data analysis.
+The LVK Algorithm Pulsar Library for gravitational wave data analysis.
 This package contains files needed build applications that use the LAL
 Pulsar library.
 

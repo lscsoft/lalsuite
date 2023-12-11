@@ -26,8 +26,8 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  lalsimulation-data,
-Description: LSC Algorithm Library Simulation
- The LSC Algorithm Simulation Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Simulation
+ The LVK Algorithm Simulation Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications
  that use the LAL Simulation library.
 Replaces: lalsimulation (<< 2.4.0-2~), liblalsimulation23 (<< 2.5.1-2~)
@@ -42,8 +42,8 @@ Depends:
  liblal-dev (>= @MIN_LAL_VERSION@~),
  libgsl-dev | libgsl0-dev (>= 1.9),
  liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
-Description: LSC Algorithm Library Simulation Developers
- The LSC Algorithm Simulation Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Simulation Developers
+ The LVK Algorithm Simulation Library for gravitational wave data analysis.
  This package contains files needed build applications that use the LAL
  Simulation library.
 Provides: lalsimulation-dev (= ${binary:Version})
@@ -71,7 +71,7 @@ Depends:
  liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
  python3-lal (>= @MIN_LAL_VERSION@~),
 Description: Python 3 bindings for LALSimulation
- The LSC Algorithm Simulation Library for gravitational wave data analysis.
+ The LVK Algorithm Simulation Library for gravitational wave data analysis.
  This package contains Python 3 bindings for the LAL Simulation library.
 
 Package: lalsimulation
@@ -82,15 +82,15 @@ Depends:
  liblalsimulation@LIBMAJOR@ (= ${binary:Version}),
  lalsimulation-data,
  python3-lalsimulation (= ${binary:Version}),
-Description: LSC Algorithm Library Simulation
- The LSC Algorithm Simulation Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Simulation
+ The LVK Algorithm Simulation Library for gravitational wave data analysis.
  This package provides the runtime tools.
 
 Package: lalsimulation-data
 Architecture: all
 Depends: ${misc:Depends}
-Description: LSC Algorithm Library Simulation
- The LSC Algorithm Simulation Library for gravitational wave data analysis.
+Description: LVK Algorithm Library Simulation
+ The LVK Algorithm Simulation Library for gravitational wave data analysis.
  This package provides the data files.
 Replaces: liblalsimulation29 (<< 3.1.1.1-1~)
 Breaks: liblalsimulation29 (<< 3.1.1.1-1~)

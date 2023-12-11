@@ -37,85 +37,85 @@
 #error CFITSIO library is not available
 #endif
 
-int main(int argc, char *argv[])
+int main( int argc, char *argv[] )
 {
   fitsfile *fptr;         /* FITS file pointer, defined in fitsio.h */
   char card[FLEN_CARD];   /* Standard string lengths defined in fitsio.h */
   int status = 0;   /* CFITSIO status value MUST be initialized to zero! */
   int single = 0, hdupos = 0, nkeys = 0, ii = 0;
 
-  int printhelp = (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0));
+  int printhelp = ( argc == 2 && ( strcmp( argv[1], "-h" ) == 0 || strcmp( argv[1], "--help" ) == 0 ) );
 
-  if (printhelp || argc != 2) {
-    fprintf(stderr, "Usage:  %s filename[ext] \n", argv[0]);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "List the FITS header keywords in a single extension, or, if \n");
-    fprintf(stderr, "ext is not given, list the keywords in all the extensions. \n");
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Examples: \n");
-    fprintf(stderr, "   %s file.fits      - list every header in the file \n", argv[0]);
-    fprintf(stderr, "   %s file.fits[0]   - list primary array header \n", argv[0]);
-    fprintf(stderr, "   %s file.fits[2]   - list header of 2nd extension \n", argv[0]);
-    fprintf(stderr, "   %s file.fits+2    - same as above \n", argv[0]);
-    fprintf(stderr, "   %s file.fits[GTI] - list header of GTI extension\n", argv[0]);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Note that it may be necessary to enclose the input file\n");
-    fprintf(stderr, "name in single quote characters on the Unix command line.\n");
-    return (0);
+  if ( printhelp || argc != 2 ) {
+    fprintf( stderr, "Usage:  %s filename[ext] \n", argv[0] );
+    fprintf( stderr, "\n" );
+    fprintf( stderr, "List the FITS header keywords in a single extension, or, if \n" );
+    fprintf( stderr, "ext is not given, list the keywords in all the extensions. \n" );
+    fprintf( stderr, "\n" );
+    fprintf( stderr, "Examples: \n" );
+    fprintf( stderr, "   %s file.fits      - list every header in the file \n", argv[0] );
+    fprintf( stderr, "   %s file.fits[0]   - list primary array header \n", argv[0] );
+    fprintf( stderr, "   %s file.fits[2]   - list header of 2nd extension \n", argv[0] );
+    fprintf( stderr, "   %s file.fits+2    - same as above \n", argv[0] );
+    fprintf( stderr, "   %s file.fits[GTI] - list header of GTI extension\n", argv[0] );
+    fprintf( stderr, "\n" );
+    fprintf( stderr, "Note that it may be necessary to enclose the input file\n" );
+    fprintf( stderr, "name in single quote characters on the Unix command line.\n" );
+    return ( 0 );
   }
 
 #if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
-  FILE *fout = popen(PAGER, "w");
-  if (fout == NULL) {
-    fprintf(stderr, "Could not execute '%s'\n", PAGER);
-    return (1);
+  FILE *fout = popen( PAGER, "w" );
+  if ( fout == NULL ) {
+    fprintf( stderr, "Could not execute '%s'\n", PAGER );
+    return ( 1 );
   }
 #else
   FILE *fout = stdout;
 #endif
 
-  if (!fits_open_file(&fptr, argv[1], READONLY, &status)) {
-    fits_get_hdu_num(fptr, &hdupos);  /* Get the current HDU position */
+  if ( !fits_open_file( &fptr, argv[1], READONLY, &status ) ) {
+    fits_get_hdu_num( fptr, &hdupos ); /* Get the current HDU position */
 
     /* List only a single header if a specific extension was given */
-    if (hdupos != 1 || strchr(argv[1], '[')) {
+    if ( hdupos != 1 || strchr( argv[1], '[' ) ) {
       single = 1;
     }
 
-    for (; !status; hdupos++) { /* Main loop through each extension */
-      fits_get_hdrspace(fptr, &nkeys, NULL, &status); /* get # of keywords */
+    for ( ; !status; hdupos++ ) { /* Main loop through each extension */
+      fits_get_hdrspace( fptr, &nkeys, NULL, &status ); /* get # of keywords */
 
-      fprintf(fout, "Header listing for HDU #%d:\n", hdupos);
+      fprintf( fout, "Header listing for HDU #%d:\n", hdupos );
 
-      for (ii = 1; ii <= nkeys; ii++) { /* Read and print each keywords */
+      for ( ii = 1; ii <= nkeys; ii++ ) { /* Read and print each keywords */
 
-        if (fits_read_record(fptr, ii, card, &status)) {
+        if ( fits_read_record( fptr, ii, card, &status ) ) {
           break;
         }
-        fprintf(fout, "%s\n", card);
+        fprintf( fout, "%s\n", card );
       }
-      fprintf(fout, "END\n\n");  /* terminate listing with END */
+      fprintf( fout, "END\n\n" ); /* terminate listing with END */
 
-      if (single) {
+      if ( single ) {
         break;  /* quit if only listing a single header */
       }
 
-      fits_movrel_hdu(fptr, 1, NULL, &status);  /* try to move to next HDU */
+      fits_movrel_hdu( fptr, 1, NULL, &status ); /* try to move to next HDU */
     }
 
-    if (status == END_OF_FILE) {
+    if ( status == END_OF_FILE ) {
       status = 0;  /* Reset after normal error */
     }
 
-    fits_close_file(fptr, &status);
+    fits_close_file( fptr, &status );
   }
 
 #if defined(PAGER) && defined(HAVE_POPEN) && defined(HAVE_PCLOSE)
-  pclose(fout);
+  pclose( fout );
 #endif
 
-  if (status) {
-    fits_report_error(stderr, status);  /* print any error message */
+  if ( status ) {
+    fits_report_error( stderr, status ); /* print any error message */
   }
-  return (status);
+  return ( status );
 }

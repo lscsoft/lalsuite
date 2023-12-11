@@ -19,16 +19,17 @@ import pytest
 import lalpulsar
 import numpy as np
 import os
+
 try:
     from pathlib import Path
 except ImportError as exc:  # probably macports
     import warnings
+
     warnings.warn(str(exc))
     sys.exit(77)
 
 
 def test_ReadSFDB():
-
     # reference parameters of the test data file
     testfilename = "V1_mfdv5_20191114_043831.SFDB09"
     Tsft = 1024
@@ -40,10 +41,7 @@ def test_ReadSFDB():
     signal_freq = 50
 
     # find reference SFDB file in a portable way
-    TEST_PATH = Path(os.getenv(
-        "LAL_TEST_SRCDIR",
-        Path(__file__).parent,
-    )).absolute()
+    TEST_PATH = Path(os.getenv("LAL_TEST_SRCDIR", Path(__file__).parent)).absolute()
     sfdb_file = str(TEST_PATH / testfilename)
 
     # read SFTs from SFDB
@@ -58,10 +56,12 @@ def test_ReadSFDB():
     assert multi_sfts_from_sfdb.length == len(IFOs)
     sfts_from_sfdb = multi_sfts_from_sfdb.data[0]
     nSFTs = sfts_from_sfdb.length
-    print("Got {:d} SFTs for {:s} from SFDBs.".format(nSFTs, sfts_from_sfdb.data[0].name))
+    print(
+        "Got {:d} SFTs for {:s} from SFDBs.".format(nSFTs, sfts_from_sfdb.data[0].name)
+    )
     assert nSFTs == 3
-    for k,sft in enumerate(sfts_from_sfdb.data):
-        print("SFT {:d}/{:d}: epoch={:d}".format(k,nSFTs,sft.epoch.gpsSeconds))
+    for k, sft in enumerate(sfts_from_sfdb.data):
+        print("SFT {:d}/{:d}: epoch={:d}".format(k, nSFTs, sft.epoch.gpsSeconds))
         f0 = sft.f0
         deltaF = sft.deltaF
         nBins = sft.data.length
@@ -74,16 +74,20 @@ def test_ReadSFDB():
         print("f0 SFDB: {}".format(f0))  # Starting frequency
         print("df SFDB: {}".format(deltaF))  # Frequency spacing between bins
         print("nBins SFDB: {}".format(nBins))  # Number of frequency bins in one SFT
-        print("max abs value {:.4e} at freq[{:d}]={:.6f} (expected signal frequency: {:.6f})".format(maxabs,maxbin,maxfreq,signal_freq))
-        if k==0:
+        print(
+            "max abs value {:.4e} at freq[{:d}]={:.6f} (expected signal frequency: {:.6f})".format(
+                maxabs, maxbin, maxfreq, signal_freq
+            )
+        )
+        if k == 0:
             maxbin0 = maxbin
             maxabs0 = maxabs
         assert sft.name == IFOs[0]
         assert f0 == fmin
-        assert abs(deltaF-1./Tsft) < 1e-16
-        assert nBins == 2*Tsft+1
+        assert abs(deltaF - 1.0 / Tsft) < 1e-16
+        assert nBins == 2 * Tsft + 1
         assert maxbin == maxbin0
-        assert abs(maxfreq-signal_freq) < 4*deltaF
+        assert abs(maxfreq - signal_freq) < 4 * deltaF
 
 
 if __name__ == "__main__":

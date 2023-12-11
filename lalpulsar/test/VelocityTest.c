@@ -146,7 +146,8 @@ do {                                                                 \
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){
+int main( int argc, char *argv[] )
+{
 
   static LALStatus       status;
   static VelocityPar     velPar;
@@ -155,7 +156,7 @@ int main(int argc, char *argv[]){
   static EphemerisData  *edat = NULL;
   LIGOTimeGPS   tGPS;
   INT4   arg;                         /* Argument counter */
-  REAL8  vTol=0.01 ;
+  REAL8  vTol = 0.01 ;
   /* INT4   c, errflg=0;*/
   /*  LALoptarg = NULL; */
   /* ------------------------------------------------------- */
@@ -168,7 +169,7 @@ int main(int argc, char *argv[]){
   velPar.tBase = TBASE;
   velPar.vTol = ACCURACY;
 
- /********************************************************/
+  /********************************************************/
   /* Parse argument list.  i stores the current position. */
   /********************************************************/
   arg = 1;
@@ -187,8 +188,8 @@ int main(int argc, char *argv[]){
     else if ( !strcmp( argv[arg], "-a" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-	vTol= atof( argv[arg++]);
-        velPar.vTol= vTol;
+        vTol = atof( argv[arg++] );
+        velPar.vTol = vTol;
       } else {
         ERROR( TESTVELOCITYC_EARG, TESTVELOCITYC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
@@ -205,7 +206,7 @@ int main(int argc, char *argv[]){
   /******************************************************************/
 
   /* read in ephemeris data */
-  XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( EARTHDATA, SUNDATA ) ) != NULL, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( EARTHDATA, SUNDATA ) ) != NULL, XLAL_EFUNC );
 
   /* fill in ephemeris data in velPar */
   velPar.edat = edat;
@@ -215,23 +216,23 @@ int main(int argc, char *argv[]){
   tGPS.gpsNanoSeconds = T0NSEC;
 
 
-  SUB( LALDetectorVel( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status);
+  SUB( LALDetectorVel( &status,  vel,  &tGPS, velPar.detector, velPar.edat ), &status );
 
-  printf("Detector velocity at %d = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
+  printf( "Detector velocity at %d = %g, %g, %g \n", T0SEC, vel[0], vel[1], vel[2] );
 
-  SUB( LALDetectorPos( &status,  vel,  &tGPS, velPar.detector, velPar.edat), &status);
+  SUB( LALDetectorPos( &status,  vel,  &tGPS, velPar.detector, velPar.edat ), &status );
 
-  printf("Detector position at %d = %g, %g, %g \n", T0SEC, vel[0],vel[1],vel[2]);
+  printf( "Detector position at %d = %g, %g, %g \n", T0SEC, vel[0], vel[1], vel[2] );
 
-  SUB( LALAvgDetectorVel ( &status, vel, &velPar), &status );
+  SUB( LALAvgDetectorVel( &status, vel, &velPar ), &status );
 
-  printf("Avg. detector velocity in a interval of %g from %d = %g, %g, %g \n", TBASE, T0SEC, vel[0],vel[1],vel[2]);
+  printf( "Avg. detector velocity in a interval of %g from %d = %g, %g, %g \n", TBASE, T0SEC, vel[0], vel[1], vel[2] );
 
-  SUB( LALAvgDetectorPos ( &status, pos, &velPar), &status );
+  SUB( LALAvgDetectorPos( &status, pos, &velPar ), &status );
 
-  printf("Avg. detector position in a interval of %g from %d = %g, %g, %g \n", TBASE, T0SEC, pos[0],pos[1],pos[2]);
+  printf( "Avg. detector position in a interval of %g from %d = %g, %g, %g \n", TBASE, T0SEC, pos[0], pos[1], pos[2] );
 
-  XLALDestroyEphemerisData(edat);
+  XLALDestroyEphemerisData( edat );
   LALCheckMemoryLeaks();
 
   //INFO(TESTVELOCITYC_MSGENORM);

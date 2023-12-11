@@ -27,7 +27,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-extern char**global_argv;
+extern char **global_argv;
 extern int global_argc;
 #ifdef __cplusplus
 }
@@ -68,18 +68,17 @@ typedef struct {
 } GCTtopOutputEntry;
 
 /// enumerate all toplist-sorting options: by F (0), number-count (1), BSGL (2), "dual" toplists F + BSGL (3)
-typedef enum
-  {
-    SORTBY_F 		= 0,	//< sort by multi-IFO F-stat (averaged over segments)
-    SORTBY_NC 		= 1,	//< sort by number-count 'nc'
-    SORTBY_BSGL 	= 2,	//< sort by line-robust statistic B_S/GL
-    SORTBY_DUAL_F_BSGL 	= 3,	//< dual toplists: one sorted by F, one by B_S/GL
-    SORTBY_BSGLtL 	= 4,	//< sort by transient-line robust statistic B_S/GLtL
-    SORTBY_BtSGLtL 	= 5,	//< sort by transient-CW line robust statistic B_tS/GLtL
-    SORTBY_TRIPLE_BStSGLtL = 6,	//< triple toplists: one sorted by B_S/GL, one by B_S/GLtL, one by B_tS/GLtL
-    SORTBY_F_BSGLtL_BtSGLtL = 7,//< triple toplists: one sorted by 2F, one by B_S/GLtL, one by B_tS/GLtL
-    SORTBY_LAST			//< end-marker
-  } SortBy_t;
+typedef enum {
+  SORTBY_F            = 0,    //< sort by multi-IFO F-stat (averaged over segments)
+  SORTBY_NC           = 1,    //< sort by number-count 'nc'
+  SORTBY_BSGL         = 2,    //< sort by line-robust statistic B_S/GL
+  SORTBY_DUAL_F_BSGL  = 3,    //< dual toplists: one sorted by F, one by B_S/GL
+  SORTBY_BSGLtL       = 4,    //< sort by transient-line robust statistic B_S/GLtL
+  SORTBY_BtSGLtL      = 5,    //< sort by transient-CW line robust statistic B_tS/GLtL
+  SORTBY_TRIPLE_BStSGLtL = 6, //< triple toplists: one sorted by B_S/GL, one by B_S/GLtL, one by B_tS/GLtL
+  SORTBY_F_BSGLtL_BtSGLtL = 7,//< triple toplists: one sorted by 2F, one by B_S/GLtL, one by B_tS/GLtL
+  SORTBY_LAST                 //< end-marker
+} SortBy_t;
 
 /* This has by now been reduced to an interface to the HeapToplist functions */
 
@@ -87,10 +86,10 @@ typedef enum
  * creates a toplist with length elements,
  * returns -1 on error (usually out of memory), else 0
  */
-extern int create_gctFstat_toplist(toplist_t**list, UINT8 length, SortBy_t whatToSortBy);
+extern int create_gctFstat_toplist( toplist_t **list, UINT8 length, SortBy_t whatToSortBy );
 
 /** frees the space occupied by the toplist */
-extern void free_gctFstat_toplist(toplist_t**list);
+extern void free_gctFstat_toplist( toplist_t **list );
 
 /**
  * Inserts an element in to the toplist either if there is space left
@@ -98,7 +97,7 @@ extern void free_gctFstat_toplist(toplist_t**list);
  * In the latter case, remove the smallest element from the toplist
  * Returns 1 if the element was actually inserted, 0 if not.
  */
-extern int insert_into_gctFstat_toplist(toplist_t*list, GCTtopOutputEntry * line);
+extern int insert_into_gctFstat_toplist( toplist_t *list, GCTtopOutputEntry *line );
 
 
 /**
@@ -107,21 +106,21 @@ extern int insert_into_gctFstat_toplist(toplist_t*list, GCTtopOutputEntry * line
  * sets the checksum if non-NULL
  * Returns something <0 on error
  */
-extern int write_gctFstat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
+extern int write_gctFstat_toplist_to_fp( toplist_t *list, FILE *fp, UINT4 *checksum );
 
 
 /**
  * sorts the toplist with an internal sorting function,
  * used before finally writing it
  */
-extern void sort_gctFstat_toplist(toplist_t*list);
+extern void sort_gctFstat_toplist( toplist_t *list );
 
 
 /**
  * sorts the toplist with an internal sorting function,
  * used before doing the follow-up analysis
  */
-extern void sort_gctFstat_toplist_strongest(toplist_t*list);
+extern void sort_gctFstat_toplist_strongest( toplist_t *list );
 
 
 
@@ -140,7 +139,7 @@ extern void sort_gctFstat_toplist_strongest(toplist_t*list);
  * -2 if out of memory,
  * 0 otherwise (successful)
  */
-extern int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist_t*t3,UINT4 counter, BOOLEAN do_sync);
+extern int write_gct_checkpoint( const char *filename, toplist_t *tl, toplist_t *t2, toplist_t *t3, UINT4 counter, BOOLEAN do_sync );
 
 /**
  * tries to read a checkpoint
@@ -154,13 +153,13 @@ extern int write_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2,
  * -1 in case of an I/O error
  * -2 if the checksum was wrong or elems was unreasonable
  */
-extern int read_gct_checkpoint(const char*filename, toplist_t*tl, toplist_t*t2, toplist_t*t3,UINT4*counter);
+extern int read_gct_checkpoint( const char *filename, toplist_t *tl, toplist_t *t2, toplist_t *t3, UINT4 *counter );
 
 /**
  * removes a checkpoint
  * returns 0 on success, errno on failure
  */
-extern int clear_gct_checkpoint(const char*filename);
+extern int clear_gct_checkpoint( const char *filename );
 
 /**
  * write the final output file:
@@ -168,6 +167,6 @@ extern int clear_gct_checkpoint(const char*filename);
  * - write out the toplist in ASCII format with end marker to a temporary file
  * - rename the file to the final name
  */
-extern int write_hfs_oputput(const char*filename, toplist_t*tl);
+extern int write_hfs_oputput( const char *filename, toplist_t *tl );
 
 #endif /* GCTFSTATTOPLIST_H - double inclusion protection */

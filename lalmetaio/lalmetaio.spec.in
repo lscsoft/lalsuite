@@ -48,22 +48,22 @@ BuildRequires: octave-devel
 # -- packages ---------------
 
 #%%package -n lalmetaio
-Summary: LSC Algorithm MetaIO Library - runtime tools
+Summary: LVK Algorithm MetaIO Library - runtime tools
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}-%{name} = %{version}-%{release}
 Obsoletes: python2-%{name} <= 2.0.2-1
 %description
-The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+The LVK Algorithm MetaIO Library for gravitational wave data analysis.
 This package provides the runtime tools.
 
 # liblalmetaio
 %package -n lib%{name}
-Summary: LSC Algorithm MetaIO Library - library package
+Summary: LVK Algorithm MetaIO Library - library package
 Requires: libmetaio >= @MIN_METAIO_VERSION@
 Requires: liblal >= @MIN_LAL_VERSION@
 Conflicts: lalmetaio <= 2.0.0-1
 %description -n lib%{name}
-The LSC Algorithm MetaIO Library for gravitational wave data analysis.
+The LVK Algorithm MetaIO Library for gravitational wave data analysis.
 This package contains the shared-object libraries needed to run applications
 that use the LAL MetaIO library.
 
@@ -76,7 +76,7 @@ Requires: liblal-devel >= @MIN_LAL_VERSION@
 Provides: %{name}-devel = %{version}-%{release}
 Obsoletes: %{name}-devel < 2.0.1-1
 %description -n lib%{name}-devel
-The LSC Algorithm MetaIO Library for gravitational wave data analysis. This
+The LVK Algorithm MetaIO Library for gravitational wave data analysis. This
 package contains files needed build applications that use the LAL MetaIO
 library.
 
@@ -90,7 +90,7 @@ Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Obsoletes: python2-%{name} < 2.0.3-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}
-The LSC Algorithm Library for gravitational wave data analysis.
+The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Python %{python3_version} bindings for LALMetaIO.
 
 # lalmetaio-octave
@@ -100,7 +100,7 @@ Requires: lib%{name} = %{version}-%{release}
 Requires: octave
 Requires: lal-octave >= @MIN_LAL_VERSION@
 %description octave
-The LSC Algorithm Library for gravitational wave data analysis.
+The LVK Algorithm Library for gravitational wave data analysis.
 This package provides the Octave bindings for LALMetaIO.
 
 # -- build stages -----------

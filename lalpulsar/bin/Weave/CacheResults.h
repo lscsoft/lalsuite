@@ -43,10 +43,10 @@ WeaveCacheQueries *XLALWeaveCacheQueriesCreate(
   const double dfreq,
   const UINT4 nqueries,
   const UINT4 nfreq_partitions
-  );
+);
 void XLALWeaveCacheQueriesDestroy(
   WeaveCacheQueries *queries
-  );
+);
 int XLALWeaveCacheQueriesInit(
   WeaveCacheQueries *queries,
   const UINT8 semi_index,
@@ -54,23 +54,23 @@ int XLALWeaveCacheQueriesInit(
   const INT4 semi_left,
   const INT4 semi_right,
   const UINT4 freq_partition_index
-  );
+);
 int XLALWeaveCacheQuery(
   const WeaveCache *cache,
   WeaveCacheQueries *queries,
   const UINT4 query_index
-  );
+);
 int XLALWeaveCacheQueriesFinal(
   WeaveCacheQueries *queries,
   PulsarDopplerParams *semi_phys,
   UINT4 *semi_nfreqs
-  );
+);
 int XLALWeaveCacheQueriesGetCounts(
   const WeaveCacheQueries *queries,
   UINT8 *coh_nres,
   UINT8 *coh_ntmpl,
   UINT8 *semi_ntmpl
-  );
+);
 WeaveCache *XLALWeaveCacheCreate(
   const LatticeTiling *coh_tiling,
   const BOOLEAN interpolation,
@@ -79,26 +79,26 @@ WeaveCache *XLALWeaveCacheCreate(
   WeaveCohInput *coh_input,
   const UINT4 max_size,
   const BOOLEAN all_gc
-  );
+);
 void XLALWeaveCacheDestroy(
   WeaveCache *cache
-  );
+);
 int XLALWeaveGetCacheMeanMaxSize(
   REAL4 *cache_mean_max_size,
   const size_t ncache,
   WeaveCache *const *cache
-  );
+);
 int XLALWeaveCacheWriteInfo(
   FITSFile *file,
   const size_t ncache,
   WeaveCache *const *cache
-  );
+);
 int XLALWeaveCacheExpire(
   WeaveCache *cache
-  );
+);
 int XLALWeaveCacheClear(
   WeaveCache *cache
-  );
+);
 int XLALWeaveCacheRetrieve(
   WeaveCache *cache,
   const WeaveCacheQueries *queries,
@@ -107,7 +107,7 @@ int XLALWeaveCacheRetrieve(
   UINT8 *coh_index,
   UINT4 *coh_offset,
   WeaveSearchTiming *tim
-  );
+);
 
 #ifdef __cplusplus
 }

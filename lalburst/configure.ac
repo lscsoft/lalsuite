@@ -159,6 +159,9 @@ LALSUITE_USE_SWIG
 # configure Doxygen documentation
 LALSUITE_USE_DOXYGEN
 
+# check for pretty code formatters
+LALSUITE_PROG_PRETTY_CODE
+
 # add gcc specific flags
 LALSUITE_ADD_GCC_FLAGS
 

@@ -61,7 +61,7 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     output_file, STRING, 'o', REQUIRED,
     "Output file while stores the segment list, parameter-space metrics, and other data required by lalpulsar_Weave, e.g. ephemerides. "
-    );
+  );
   //
   // - Segment list input/generation
   //
@@ -71,26 +71,26 @@ int main( int argc, char *argv[] )
     "Loads the start and end times of each segment from this file. "
     "Format is:\n"
     "  # comment\n  <segment-start-time-GPS> <segment-end-time-GPS> [number-of-SFTs-in-segment]\n  ..."
-    );
+  );
   XLALRegisterUvarMember(
     first_segment, EPOCHRange, 't', OPTIONAL,
     "Generate segments; the range of the first segment is specified by this option. "
-    );
+  );
   XLALRegisterUvarMember(
     segment_count, UINT4, 'n', OPTIONAL,
     "Generate this many segments by translating the first segment in time by its span, i.e. so that segments are contiguous and non-overlapping. "
     "Must be at least 1. "
-    );
+  );
   XLALRegisterUvarMember(
     segment_gap, REAL8, 'g', DEVELOPER,
     "When generating segments, increase the translation of the first segment by this amount (in seconds). "
     "A positive value gives non-contiguous segments; a negative value gives overlapping segments. "
-    );
+  );
   XLALRegisterUvarMember(
     sft_files, STRING, 'I', NODEFAULT,
     "Pattern matching the SFT files to be analysed; used to discard empty segments. Possibilities are:\n"
     " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'"
-    );
+  );
   //
   // - Parameter-space metric computation
   //
@@ -99,33 +99,33 @@ int main( int argc, char *argv[] )
     ref_time, EPOCH, 'r', NODEFAULT,
     "Reference time for the search, including the parameter-space metrics computed here, and the parameter space and output of lalpulsar_Weave. "
     "If omitted, the mid-point between the start of the first segment and the end of the last segment is used. "
-    );
+  );
   XLALRegisterUvarMember(
     detectors, STRINGVector, 'd', REQUIRED,
     "Comma-separated list of 2-character detector names (e.g. H1,L1,...) for which the parameter-space metrics are computed. "
     "Note that the detector names are always sorted, since their order impacts the interpretation of some options to lalpulsar_Weave. "
-    );
+  );
   XLALRegisterUvarMember(
     detector_motion, STRING, 'm', DEVELOPER,
     "Specify what detector motion to assume when computing the parameter-space metrics. "
     "The only interesting options are:\n"
     " - 'spin+orbit'       use the full ephemeris of the Earth's orbit;\n"
     " - 'spin+ptoleorbit': use a Ptolemaic approximation of the Earth's orbit."
-    );
+  );
   XLALRegisterUvarMember(
     ephem_earth, STRING, 'E', DEVELOPER,
     "Earth ephemeris file, used to compute the parameter-space metrics and by lalpulsar_Weave. "
-    );
+  );
   XLALRegisterUvarMember(
     ephem_sun, STRING, 'S', DEVELOPER,
     "Sun ephemeris file, used to compute the parameter-space metrics and by lalpulsar_Weave. "
-    );
+  );
   XLALRegisterUvarMember(
     spindowns, UINT4, 's', OPTIONAL,
     "Maximum number of spindowns for which the parameter-space metrics are computed. "
     "Must be at least 1. "
     "This option limits the size of the spindown parameter space given to lalpulsar_Weave. "
-    );
+  );
 
   // Parse user input
   XLAL_CHECK_MAIN( xlalErrno == 0, XLAL_EFUNC, "A call to XLALRegisterUvarMember() failed" );

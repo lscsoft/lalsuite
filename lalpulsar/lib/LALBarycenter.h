@@ -106,13 +106,12 @@ typedef enum tagEphemerisType {
 #define IFTE_K (((long double)1.0) + ((long double)IFTE_KM1)) /**< Factor relating ephemeris units for time and distance to corresponding SI units, from Eq. 2 of Irwin and Fukushima. */
 /** @} */
 
-#define JPL_AU_DE405 149597870.6910000 	/**< Definition of 1 AU from the JPL DE405 ephemeris in km */
-#define JPL_AU_DE200 149597870.6600000 	/**< Definition of 1 AU from the JPL DE200 ephemeris in km */
-#define CURT_AU 149597870.6600 		/**< 1 AU from create_solar_system_barycenter.c as used in Curt's original routines */
+#define JPL_AU_DE405 149597870.6910000  /**< Definition of 1 AU from the JPL DE405 ephemeris in km */
+#define JPL_AU_DE200 149597870.6600000  /**< Definition of 1 AU from the JPL DE200 ephemeris in km */
+#define CURT_AU 149597870.6600          /**< 1 AU from create_solar_system_barycenter.c as used in Curt's original routines */
 
 /** Structure holding a REAL8 time, and a position, velocity and acceleration vector. */
-typedef struct tagPosVelAcc
-{
+typedef struct tagPosVelAcc {
   REAL8 gps;            /**< REAL8 timestamp */
   REAL8 pos[3];         /**< position-vector */
   REAL8 vel[3];         /**< velocity-vector */
@@ -125,14 +124,13 @@ PosVelAcc;
  * center-of-mass positions of the Earth and Sun, listed at regular
  * time intervals.
  */
-typedef struct tagEphemerisData
-{
+typedef struct tagEphemerisData {
   CHAR *filenameE;      /**< File containing Earth's position.  */
   CHAR *filenameS;      /**< File containing Sun's position. */
 
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(EphemerisData, PosVelAcc, ephemE, INT4, nentriesE));
-  SWIGLAL(ARRAY_1D(EphemerisData, PosVelAcc, ephemS, INT4, nentriesS));
+  SWIGLAL( ARRAY_1D( EphemerisData, PosVelAcc, ephemE, INT4, nentriesE ) );
+  SWIGLAL( ARRAY_1D( EphemerisData, PosVelAcc, ephemS, INT4, nentriesS ) );
 #endif /* SWIG */
   INT4  nentriesE;      /**< The number of entries in Earth ephemeris table. */
   INT4  nentriesS;      /**< The number of entries in Sun ephemeris table. */
@@ -153,7 +151,7 @@ EphemerisData;
  * This structure will contain a vector of time corrections
  * used during conversion from TT to TDB/TCB/Teph
  */
-typedef struct tagTimeCorrectionData{
+typedef struct tagTimeCorrectionData {
   CHAR *timeEphemeris;   /**< File containing the time ephemeris */
 
   UINT4  nentriesT;      /**< The number of entries in Time ephemeris table. */
@@ -166,8 +164,7 @@ typedef struct tagTimeCorrectionData{
 /**
  * Basic output structure of LALBarycenterEarth.c.
  */
-typedef struct tagEarthState
-{
+typedef struct tagEarthState {
   REAL8  einstein;      /**<  the einstein delay equiv TDB - TDT or TCB - TDT */
   REAL8 deinstein;      /**< d(einstein)/d(tgps) */
 
@@ -201,8 +198,7 @@ EarthState;
 /**
  * Basic input structure to LALBarycenter.c.
  */
-typedef struct tagBarycenterInput
-{
+typedef struct tagBarycenterInput {
   LIGOTimeGPS  tgps;    /**< input GPS arrival time. I use tgps (lower case)
                          * to remind that here the LAL structure is a
                          * field in the larger structure BarycenterInput.
@@ -235,8 +231,7 @@ to give, on average, the same arrival time as the GPS clock on Earth'' */
 /**
  * Basic output structure produced by LALBarycenter.c.
  */
-typedef struct tagEmissionTime
-{
+typedef struct tagEmissionTime {
   REAL8 deltaT;         /**< \f$ t_e \f$ (TDB) - \f$ t_a \f$ (GPS)
                          * + (light-travel-time from source to SSB) */
 
@@ -266,16 +261,16 @@ EmissionTime;
 typedef struct tagBarycenterBuffer BarycenterBuffer;
 
 /* Function prototypes. */
-int XLALBarycenterEarth ( EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat);
-int XLALBarycenter ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth);
-int XLALBarycenterOpt ( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth, BarycenterBuffer **buffer);
+int XLALBarycenterEarth( EarthState *earth, const LIGOTimeGPS *tGPS, const EphemerisData *edat );
+int XLALBarycenter( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth );
+int XLALBarycenterOpt( EmissionTime *emit, const BarycenterInput *baryinput, const EarthState *earth, BarycenterBuffer **buffer );
 
 /* Function that uses time delay look-up tables to calculate time delays */
-int XLALBarycenterEarthNew ( EarthState *earth,
-                             const LIGOTimeGPS *tGPS,
-                             const EphemerisData *edat,
-                             const TimeCorrectionData *tdat,
-                             TimeCorrectionType ttype );
+int XLALBarycenterEarthNew( EarthState *earth,
+                            const LIGOTimeGPS *tGPS,
+                            const EphemerisData *edat,
+                            const TimeCorrectionData *tdat,
+                            TimeCorrectionType ttype );
 
 /** @} */
 

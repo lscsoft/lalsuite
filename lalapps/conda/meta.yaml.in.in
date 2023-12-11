@@ -199,11 +199,11 @@ about:
   license: GPL-2.0-or-later
   license_family: GPL
   license_file: COPYING
-  summary: LSC Algorithm Library Applications
+  summary: LVK Algorithm Library Applications
   description: |
-    The LSC Algorithm Library Applications for gravitational wave data
+    The LVK Algorithm Library Applications for gravitational wave data
     analysis.  This package contains applications that are built on tools
-    in the LSC Algorithm Library.
+    in the LVK Algorithm Library.
 
 extra:
   recipe-maintainers:

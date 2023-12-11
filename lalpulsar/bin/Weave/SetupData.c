@@ -39,7 +39,7 @@
 ///
 void XLALWeaveSetupDataClear(
   WeaveSetupData *setup
-  )
+)
 {
   if ( setup != NULL ) {
     XLALDestroyStringVector( setup->detectors );
@@ -55,7 +55,7 @@ void XLALWeaveSetupDataClear(
 int XLALWeaveSetupDataWrite(
   FITSFile *file,
   const WeaveSetupData *setup
-  )
+)
 {
 
   // Check input
@@ -91,7 +91,7 @@ int XLALWeaveSetupDataWrite(
 int XLALWeaveSetupDataRead(
   FITSFile *file,
   WeaveSetupData *setup
-  )
+)
 {
 
   // Check input

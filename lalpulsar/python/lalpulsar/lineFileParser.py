@@ -115,11 +115,7 @@ class LineFileParser:
         return columns
 
     def parse_identified_lines_csv(
-        self,
-        lines_file,
-        columns=None,
-        extra_wing_Hz=0.0,
-        genfromtxt_kwargs=None,
+        self, lines_file, columns=None, extra_wing_Hz=0.0, genfromtxt_kwargs=None
     ):
         """
         Parse a csv file containing lines of known origin (Advanced LIGO format).
@@ -136,24 +132,17 @@ class LineFileParser:
         columns = self._check_columns(columns, self.identified_lines_keys)
 
         expanded_lines_and_wings = self._get_identified_lines_center_left_right(
-            lines_file,
-            columns,
-            genfromtxt_kwargs,
+            lines_file, columns, genfromtxt_kwargs
         )
 
         lines_left_side, lines_right_side = self._add_frequency_wings(
-            *expanded_lines_and_wings,
-            extra_wing_Hz,
+            *expanded_lines_and_wings, extra_wing_Hz
         )
 
         self._set_lines(lines_left_side, lines_right_side)
 
     def parse_unidentified_lines_csv(
-        self,
-        lines_file,
-        columns=None,
-        extra_wing_Hz=0.0,
-        genfromtxt_kwargs=None,
+        self, lines_file, columns=None, extra_wing_Hz=0.0, genfromtxt_kwargs=None
     ):
         """
         Parse a csv file containing unidentified lines (Advanced LIGO format).
@@ -180,10 +169,7 @@ class LineFileParser:
         self._set_lines(lines_left_side, lines_right_side)
 
     def _get_identified_lines_center_left_right(
-        self,
-        lines_file,
-        columns,
-        genfromtxt_kwargs=None,
+        self, lines_file, columns, genfromtxt_kwargs=None
     ):
         lines_with_wings = np.genfromtxt(
             lines_file,
@@ -243,7 +229,6 @@ class LineFileParser:
 
         line_pointer = 0
         for line in range(len(central_frequency)):
-
             harmonic_index = np.arange(first_harmonic[line], last_harmonic[line] + 1)
             wing_scaling = (
                 np.ones(harmonics_per_line[line])

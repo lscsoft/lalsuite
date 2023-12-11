@@ -126,7 +126,8 @@ do {                                                                 \
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){
+int main( int argc, char *argv[] )
+{
 
   static LALStatus       status;
   static HOUGHMapTotal   ht;
@@ -136,10 +137,10 @@ int main(int argc, char *argv[]){
   const CHAR   *fname = NULL;               /* The output filename */
   INT4   arg;                         /* Argument counter */
   INT4   i;
-  FILE   *fp=NULL;                    /* Output file */
+  FILE   *fp = NULL;                  /* Output file */
 
   fname = FILEOUT;
- /********************************************************/
+  /********************************************************/
   /* Parse argument list.  i stores the current position. */
   /********************************************************/
   arg = 1;
@@ -181,46 +182,50 @@ int main(int argc, char *argv[]){
   ht.xSide = 100;
   ht.ySide = 100;
   /* allocate memory for hough map */
-  ht.map = (HoughTT *)LALMalloc(ht.xSide * ht.ySide * sizeof(HoughTT));
+  ht.map = ( HoughTT * )LALMalloc( ht.xSide * ht.ySide * sizeof( HoughTT ) );
   /* make up a hough map */
-  for (i = 0; i < floor(ht.xSide * ht.ySide / 2.0); i++) ht.map[i] = 500;
-  for (i = ceil(ht.xSide * ht.ySide / 2.0); i < ht.xSide * ht.ySide; i++) ht.map[i] = 900;
-  SUB( LALHoughStatistics ( &status, &stats, &ht), &status );
+  for ( i = 0; i < floor( ht.xSide * ht.ySide / 2.0 ); i++ ) {
+    ht.map[i] = 500;
+  }
+  for ( i = ceil( ht.xSide * ht.ySide / 2.0 ); i < ht.xSide * ht.ySide; i++ ) {
+    ht.map[i] = 900;
+  }
+  SUB( LALHoughStatistics( &status, &stats, &ht ), &status );
 
-  printf(" Maximum number count: %d\n", (int)stats.maxCount);
-  printf(" Location: %d  %d\n", stats.maxIndex[0], stats.maxIndex[1]);
-  printf(" Minimum number count: %d\n", (int)stats.minCount);
-  printf(" Location: %d  %d\n", stats.minIndex[0], stats.minIndex[1]);
-  printf(" Average number count: %f\n", stats.avgCount);
-  printf(" Standard deviation of number count: %f\n", stats.stdDev);
+  printf( " Maximum number count: %d\n", ( int )stats.maxCount );
+  printf( " Location: %d  %d\n", stats.maxIndex[0], stats.maxIndex[1] );
+  printf( " Minimum number count: %d\n", ( int )stats.minCount );
+  printf( " Location: %d  %d\n", stats.minIndex[0], stats.minIndex[1] );
+  printf( " Average number count: %f\n", stats.avgCount );
+  printf( " Standard deviation of number count: %f\n", stats.stdDev );
 
   /* allocate memory for histogram */
 
-  hist.length = ht.mObsCoh +1;
-  hist.data= NULL;
-  hist.data = (UINT8 *)LALMalloc((hist.length)*sizeof(UINT8));
+  hist.length = ht.mObsCoh + 1;
+  hist.data = NULL;
+  hist.data = ( UINT8 * )LALMalloc( ( hist.length ) * sizeof( UINT8 ) );
 
-  SUB( LALHoughHistogram ( &status, &hist, &ht), &status);
+  SUB( LALHoughHistogram( &status, &hist, &ht ), &status );
 
   /* write histogram to a file */
-  fp = fopen(fname, "w");
+  fp = fopen( fname, "w" );
 
-  if ( !fp ){
+  if ( !fp ) {
     ERROR( TESTSTATISTICSC_EFILE, TESTSTATISTICSC_MSGEFILE, 0 );
     return TESTSTATISTICSC_EFILE;
   }
 
-  for (i=0; i < (INT4)hist.length; i++){
-    fprintf(fp,"%d  %" LAL_UINT8_FORMAT "\n", i, hist.data[i]);
+  for ( i = 0; i < ( INT4 )hist.length; i++ ) {
+    fprintf( fp, "%d  %" LAL_UINT8_FORMAT "\n", i, hist.data[i] );
   }
 
 
-  fclose(fp);
-  LALFree(ht.map);
-  LALFree(hist.data);
+  fclose( fp );
+  LALFree( ht.map );
+  LALFree( hist.data );
   LALCheckMemoryLeaks();
 
-  INFO(TESTSTATISTICSC_MSGENORM);
+  INFO( TESTSTATISTICSC_MSGENORM );
   return TESTSTATISTICSC_ENORM;
 }
 

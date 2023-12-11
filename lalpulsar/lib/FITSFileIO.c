@@ -123,7 +123,7 @@ struct tagFITSFile {
 ///
 /// Write a formatted string to a FITS file using the given function
 ///
-static int WriteFormattedString( FITSFile *file, const CHAR *format, va_list ap, int (*fcn)( fitsfile *, const char*, int* ) )
+static int WriteFormattedString( FITSFile *file, const CHAR *format, va_list ap, int ( *fcn )( fitsfile *, const char *, int * ) )
 {
 
   int UNUSED status = 0;
@@ -135,7 +135,7 @@ static int WriteFormattedString( FITSFile *file, const CHAR *format, va_list ap,
 
   // Format the string
   CHAR buf[4096];
-  XLAL_CHECK_FAIL( vsnprintf( buf, sizeof( buf ), format, ap ) < (int)sizeof( buf ), XLAL_EERR, "Formatted string is too long" );
+  XLAL_CHECK_FAIL( vsnprintf( buf, sizeof( buf ), format, ap ) < ( int )sizeof( buf ), XLAL_EERR, "Formatted string is too long" );
 
   // Split the string by newlines, removing any empty lines
   CHAR *p = buf;
@@ -577,8 +577,11 @@ int XLALFITSHeaderQueryKeyExists( FITSFile UNUSED *file, const CHAR UNUSED *key,
   // Checks if the given key exists in the current HDU
   CHAR card[FLEN_CARD];
   CALL_FITS( fits_read_record, file->ff, 0, card );
-  union { const CHAR *cc; CHAR *c; } bad_cast = { .cc = key };
-  CHAR* inclist[] = { bad_cast.c };
+  union {
+    const CHAR *cc;
+    CHAR *c;
+  } bad_cast = { .cc = key };
+  CHAR *inclist[] = { bad_cast.c };
   fits_find_nextkey( file->ff, inclist, XLAL_NUM_ELEM( inclist ), NULL, 0, card, &status );
   if ( status == KEY_NO_EXIST ) {
     *exists = 0;
@@ -745,7 +748,7 @@ int XLALFITSHeaderReadUINT2( FITSFile UNUSED *file, const CHAR UNUSED *key, UINT
   LONGLONG val = 0;
   CHAR comment[FLEN_COMMENT];
   CALL_FITS( fits_read_key_lnglng, file->ff, keyword, &val, comment );
-  XLAL_CHECK_FAIL( 0 <= val && ( (UINT8) val ) <= UINT16_MAX, XLAL_ERANGE );
+  XLAL_CHECK_FAIL( 0 <= val && ( ( UINT8 ) val ) <= UINT16_MAX, XLAL_ERANGE );
   *value = val;
 
   return XLAL_SUCCESS;
@@ -810,7 +813,7 @@ int XLALFITSHeaderReadUINT4( FITSFile UNUSED *file, const CHAR UNUSED *key, UINT
   LONGLONG val = 0;
   CHAR comment[FLEN_COMMENT];
   CALL_FITS( fits_read_key_lnglng, file->ff, keyword, &val, comment );
-  XLAL_CHECK_FAIL( 0 <= val && ( (UINT8) val ) <= UINT32_MAX, XLAL_ERANGE );
+  XLAL_CHECK_FAIL( 0 <= val && ( ( UINT8 ) val ) <= UINT32_MAX, XLAL_ERANGE );
   *value = val;
 
   return XLAL_SUCCESS;
@@ -876,7 +879,7 @@ int XLALFITSHeaderReadUINT8( FITSFile UNUSED *file, const CHAR UNUSED *key, UINT
   LONGLONG val = 0;
   CHAR comment[FLEN_COMMENT];
   CALL_FITS( fits_read_key_lnglng, file->ff, keyword, &val, comment );
-  XLAL_CHECK_FAIL( 0 <= val && ( (UINT8) val ) <= UINT64_MAX, XLAL_ERANGE );
+  XLAL_CHECK_FAIL( 0 <= val && ( ( UINT8 ) val ) <= UINT64_MAX, XLAL_ERANGE );
   *value = val;
 
   return XLAL_SUCCESS;
@@ -1350,7 +1353,10 @@ int XLALFITSHeaderWriteString( FITSFile UNUSED *file, const CHAR UNUSED *key, co
   XLAL_CHECK_FAIL( comment != NULL, XLAL_EFAULT );
 
   // Write string value to current header
-  union { const CHAR *cc; CHAR *c; } bad_cast = { .cc = value };
+  union {
+    const CHAR *cc;
+    CHAR *c;
+  } bad_cast = { .cc = value };
   CALL_FITS( fits_write_key_longstr, file->ff, keyword, bad_cast.c, comment );
 
   return XLAL_SUCCESS;
@@ -1422,7 +1428,10 @@ int XLALFITSHeaderWriteStringVector( FITSFile UNUSED *file, const CHAR UNUSED *k
 
   // Write string values to current header
   {
-    union { const CHAR *cc; CHAR *c; } bad_casts[values->length];
+    union {
+      const CHAR *cc;
+      CHAR *c;
+    } bad_casts[values->length];
     for ( size_t i = 0; i < values->length; ++i ) {
       bad_casts[i].cc = comment;
     }
@@ -1771,7 +1780,10 @@ static int UNUSED XLALFITSArrayWrite( FITSFile UNUSED *file, const size_t UNUSED
   for ( int i = 0; i < file->array.naxis; ++i ) {
     fpixel[i] = 1 + idx[i];
   }
-  union { const void *cv; CHAR *c; } bad_cast = { .cv = elem };
+  union {
+    const void *cv;
+    CHAR *c;
+  } bad_cast = { .cv = elem };
   CALL_FITS( fits_write_pix, file->ff, file->array.datatype, fpixel, 1, bad_cast.c );
 
   return XLAL_SUCCESS;
@@ -1912,7 +1924,7 @@ int XLALFITSArrayReadUINT8( FITSFile UNUSED *file, const size_t UNUSED idx[], UI
 
   LONGLONG e = 0, ne = 0;
   XLAL_CHECK( XLALFITSArrayRead( file, idx, LONGLONG_IMG, TLONGLONG, &e, &ne ) == XLAL_SUCCESS, XLAL_EFUNC );
-  XLAL_CHECK( 0 <= e && ( (UINT8) e ) <= UINT64_MAX, XLAL_ERANGE );
+  XLAL_CHECK( 0 <= e && ( ( UINT8 ) e ) <= UINT64_MAX, XLAL_ERANGE );
   *elem = e;
   return XLAL_SUCCESS;
 
@@ -2569,7 +2581,10 @@ int XLALFITSTableWriteRow( FITSFile UNUSED *file, const void UNUSED *record )
   for ( int i = 0; i < file->table.tfields; ++i ) {
 
     // Work out pointer to correct place in record
-    union { const void *cv; void *v; } bad_cast = { .cv = record };
+    union {
+      const void *cv;
+      void *v;
+    } bad_cast = { .cv = record };
     void *value = bad_cast.v;
     for ( size_t n = 0; n < file->table.noffsets[i]; ++n ) {
       if ( n > 0 ) {

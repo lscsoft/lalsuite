@@ -49,26 +49,24 @@
 // ---------- Shared struct definitions ---------- //
 
 // ---------- BEGIN: Resamp-specific timing model data ----------
-typedef struct tagTimings_t
-{
-  REAL4 Total;		// total time spent in XLALComputeFstatResamp()
-  REAL4 Bary;		// time spent (in this call) in barycentric resampling
-  REAL4 Spin;		// time spent in spindown+frequency correction
-  REAL4 FFT;		// time spent in FFT
-  REAL4 Copy;		// time spent copying results from FFT to FabX
-  REAL4 Norm;		// time spent normalizing the final Fa,Fb
-  REAL4 Fab2F;		// time to compute Fstat from {Fa,Fb}
-  REAL4 Mem;		// time to realloc and Memset-0 arrays
-  REAL4 SumFabX;	// time to sum_X Fab^X
+typedef struct tagTimings_t {
+  REAL4 Total;          // total time spent in XLALComputeFstatResamp()
+  REAL4 Bary;           // time spent (in this call) in barycentric resampling
+  REAL4 Spin;           // time spent in spindown+frequency correction
+  REAL4 FFT;            // time spent in FFT
+  REAL4 Copy;           // time spent copying results from FFT to FabX
+  REAL4 Norm;           // time spent normalizing the final Fa,Fb
+  REAL4 Fab2F;          // time to compute Fstat from {Fa,Fb}
+  REAL4 Mem;            // time to realloc and Memset-0 arrays
+  REAL4 SumFabX;        // time to sum_X Fab^X
   BOOLEAN BufferRecomputed; // did we need to recompute the buffer this time?
 } Timings_t;
 
 // Resamp-specific timing model data
-typedef struct tagFstatTimingResamp
-{
-  UINT4 NsampFFT0;		// original number of FFT samples (not rounded to power-of-two)
-  UINT4 NsampFFT;		// actual number of FFT samples (rounded up to power-of-two if optArgs->resampFFTPowerOf2 == true)
-  REAL4 Resolution;	// (internal) frequency resolution 'R' in natural units: df_internal = R / T_FFT\n
+typedef struct tagFstatTimingResamp {
+  UINT4 NsampFFT0;      // original number of FFT samples (not rounded to power-of-two)
+  UINT4 NsampFFT;       // actual number of FFT samples (rounded up to power-of-two if optArgs->resampFFTPowerOf2 == true)
+  REAL4 Resolution;     // (internal) frequency resolution 'R' in natural units: df_internal = R / T_FFT\n
 
   REAL4 tau0_Fbin;      // timing coefficient for all contributions scaling with output frequency-bins
   REAL4 tau0_spin;      // timing coefficient for spindown-correction
@@ -100,13 +98,13 @@ static const char FstatTimingResampHelp[] =
 // ---------- Shared internal functions ---------- //
 
 static int
-XLALGetFstatTiming_Resamp_intern ( const FstatTimingResamp *tiRS, FstatTimingModel *timingModel )
+XLALGetFstatTiming_Resamp_intern( const FstatTimingResamp *tiRS, FstatTimingModel *timingModel )
 {
-  XLAL_CHECK ( tiRS != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( timingModel != NULL, XLAL_EINVAL );
+  XLAL_CHECK( tiRS != NULL, XLAL_EINVAL );
+  XLAL_CHECK( timingModel != NULL, XLAL_EINVAL );
 
   // return method-specific timing model values
-  XLAL_INIT_MEM( (*timingModel) );
+  XLAL_INIT_MEM( ( *timingModel ) );
 
   UINT4 i = 0;
   timingModel->names[i]  = "NsampFFT0";
@@ -136,7 +134,7 @@ XLALGetFstatTiming_Resamp_intern ( const FstatTimingResamp *tiRS, FstatTimingMod
   timingModel->names[i]  = "tau0_bary";
   timingModel->values[i] = tiRS->tau0_bary;
 
-  timingModel->numVariables = i+1;
+  timingModel->numVariables = i + 1;
   timingModel->help      = FstatTimingResampHelp;
 
   return XLAL_SUCCESS;

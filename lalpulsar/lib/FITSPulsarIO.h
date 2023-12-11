@@ -48,7 +48,7 @@ int XLALFITSWriteSegmentList(
   const CHAR *name,                     ///< [in] Name of FITS table to write segment list to
   const LALSegList *segments,           ///< [in] Segment list
   const CHAR *comment                   ///< [in] Comment for FITS table
-  );
+);
 
 ///
 /// Read a segment list from a FITS file
@@ -60,7 +60,7 @@ int XLALFITSReadSegmentList(
   FITSFile *file,                       ///< [in] FITS file pointer
   const CHAR *name,                     ///< [in] Name of FITS table to read segment list from
   LALSegList **segments                 ///< [out] Segment list
-  );
+);
 
 ///
 /// Write ephemeris data to a FITS file
@@ -68,7 +68,7 @@ int XLALFITSReadSegmentList(
 int XLALFITSWriteEphemerisData(
   FITSFile *file,                       ///< [in] FITS file pointer
   const EphemerisData *ephemerides      ///< [in] Ephemeris data
-  );
+);
 
 ///
 /// Read ephemeris data from a FITS file
@@ -79,7 +79,7 @@ SWIGLAL( INOUT_STRUCTS( EphemerisData **, ephemerides ) );
 int XLALFITSReadEphemerisData(
   FITSFile *file,                       ///< [in] FITS file pointer
   EphemerisData **ephemerides           ///< [out] Ephemeris data
-  );
+);
 
 /// @}
 

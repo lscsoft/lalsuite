@@ -146,22 +146,22 @@ extern "C" {
 
 /* define structures */
 
-typedef struct tagCalibrationFiles{
+typedef struct tagCalibrationFiles {
   CHAR *responsefunctionfile;
   CHAR *calibcoefficientfile;
   CHAR *sensingfunctionfile;
   CHAR *openloopgainfile;
-}CalibrationFiles;
+} CalibrationFiles;
 
 /* structure to store data from a lal frame cache as output from LSCdataFind */
-typedef struct tagFrameCache{
+typedef struct tagFrameCache {
   CHAR **framelist; /* list of file names in frame cache file */
   INT4 *duration; /* duration of each frame file */
   INT4 *starttime; /* start time of each frame file */
   UINT4 length;    /* length of cache */
-}FrameCache;
+} FrameCache;
 
-typedef struct tagInputParams{
+typedef struct tagInputParams {
   CHAR ifo[3];
   CHAR *pulsar;
 
@@ -202,9 +202,9 @@ typedef struct tagInputParams{
   INT4 gzipoutput;
   INT4 legacyinput;
   INT4 outputPhase;
-}InputParams;
+} InputParams;
 
-typedef struct tagHeterodyneParams{
+typedef struct tagHeterodyneParams {
   PulsarParameters *het;
   PulsarParameters *hetUpdate;
 
@@ -221,63 +221,63 @@ typedef struct tagHeterodyneParams{
   CHAR *timeCorrFile;
   TimeCorrectionType ttype;
   INT4 outputPhase;
-}HeterodyneParams;
+} HeterodyneParams;
 
-typedef struct tagFilters{
+typedef struct tagFilters {
   REAL8IIRFilter *filter1Re; /* filters for real and imaginary parts of heterodyed data */
   REAL8IIRFilter *filter1Im;
   REAL8IIRFilter *filter2Re;
   REAL8IIRFilter *filter2Im;
   REAL8IIRFilter *filter3Re;
   REAL8IIRFilter *filter3Im;
-}Filters;
+} Filters;
 
-typedef struct tagFilterResponse{
+typedef struct tagFilterResponse {
   REAL8Vector *freqResp;
   REAL8Vector *phaseResp;
 
   REAL8 srate; /* sample rate */
   REAL8 deltaf; /* frequency step between successive points */
-}FilterResponse;
+} FilterResponse;
 
 /* define functions */
-void get_input_args(InputParams *inputParams, int argc, char *argv[]);
+void get_input_args( InputParams *inputParams, int argc, char *argv[] );
 
-void heterodyne_data(COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams,
-REAL8 freqfactor, FilterResponse *filtResp);
+void heterodyne_data( COMPLEX16TimeSeries *data, REAL8Vector *times, HeterodyneParams hetParams,
+                      REAL8 freqfactor, FilterResponse *filtResp );
 
-void set_filters(Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate);
+void set_filters( Filters *iirFilters, REAL8 filterKnee, REAL8 samplerate );
 
-void filter_data(COMPLEX16TimeSeries *data, Filters *iirFilters);
+void filter_data( COMPLEX16TimeSeries *data, Filters *iirFilters );
 
-COMPLEX16TimeSeries *resample_data(COMPLEX16TimeSeries *data, REAL8Vector *times, INT4Vector
-*starts, INT4Vector *stops, REAL8 sampleRate, REAL8 resampleRate, INT4 heterodyneflag);
+COMPLEX16TimeSeries *resample_data( COMPLEX16TimeSeries *data, REAL8Vector *times, INT4Vector
+                                    *starts, INT4Vector *stops, REAL8 sampleRate, REAL8 resampleRate, INT4 heterodyneflag );
 
 /* function to extract the frame time and duration from the file name */
-void get_frame_times(CHAR *framefile, REAL8 *gpstime, INT4 *duration);
+void get_frame_times( CHAR *framefile, REAL8 *gpstime, INT4 *duration );
 
 /* reads in a time series from frames */
-REAL8TimeSeries *get_frame_data(LALCache *framecache, CHAR *channel, REAL8 gpstime,
-  REAL8 length, INT4 duration, REAL8 samplerate, REAL8 scalefac,
-  REAL8 highpass);
+REAL8TimeSeries *get_frame_data( LALCache *framecache, CHAR *channel, REAL8 gpstime,
+                                 REAL8 length, INT4 duration, REAL8 samplerate, REAL8 scalefac,
+                                 REAL8 highpass );
 
 /* read in science segment list file - returns the number of segments */
-INT4 get_segment_list(INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile, INT4 heterodyneflag);
+INT4 get_segment_list( INT4Vector *starts, INT4Vector *stops, CHAR *seglistfile, INT4 heterodyneflag );
 
 /* get frame data for partcular science segment */
-LALCache *set_frame_files(INT4 *starts, INT4 *stops, LALCache *cache, INT4 *position, INT4 maxchunklength);
+LALCache *set_frame_files( INT4 *starts, INT4 *stops, LALCache *cache, INT4 *position, INT4 maxchunklength );
 
 /* calibrate data */
-void calibrate(COMPLEX16TimeSeries *series, REAL8Vector *datatimes, CalibrationFiles calfiles,
-REAL8 frequency, CHAR *channel);
+void calibrate( COMPLEX16TimeSeries *series, REAL8Vector *datatimes, CalibrationFiles calfiles,
+                REAL8 frequency, CHAR *channel );
 
 /* function to extract the correct calibration values from the files */
-void get_calibration_values(REAL8 *magnitude, REAL8 *phase, CHAR *calibfilename, REAL8
-frequency);
+void get_calibration_values( REAL8 *magnitude, REAL8 *phase, CHAR *calibfilename, REAL8
+                             frequency );
 
 /* function to remove outliers above a certain standard deviation threshold - returns the number
 of outliers removed */
-INT4 remove_outliers(COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh);
+INT4 remove_outliers( COMPLEX16TimeSeries *data, REAL8Vector *times, REAL8 stddevthresh );
 
 FilterResponse *create_filter_response( REAL8 filterKnee );
 

@@ -87,16 +87,16 @@ static double round_to_dp_sf(
   double x,
   const UINT4 dp,
   const UINT4 sf
-  )
+)
 {
   char buf[32];
   if ( dp > 0 ) {
     snprintf( buf, sizeof( buf ), "%0.*f", dp, x );
-    x = atof(buf);
+    x = atof( buf );
   }
   if ( sf > 0 ) {
     snprintf( buf, sizeof( buf ), "%0.*e", sf - 1, x );
-    x = atof(buf);
+    x = atof( buf );
   }
   return x;
 }
@@ -106,7 +106,7 @@ static double round_to_dp_sf(
 ///
 WeaveResultsToplistItem *toplist_item_create(
   const WeaveResultsToplist *toplist
-  )
+)
 {
 
   // Check input
@@ -160,7 +160,7 @@ WeaveResultsToplistItem *toplist_item_create(
 ///
 void toplist_item_destroy(
   WeaveResultsToplistItem *item
-  )
+)
 {
   if ( item != NULL ) {
     XLALFree( item->coh_alpha );
@@ -185,7 +185,7 @@ int toplist_item_compare(
   void *param,
   const void *x,
   const void *y
-  )
+)
 {
   WeaveResultsToplistItemGetRankStat item_get_rank_stat_fcn = ( WeaveResultsToplistItemGetRankStat ) param;
   const WeaveResultsToplistItem *ix = ( const WeaveResultsToplistItem * ) x;
@@ -200,7 +200,7 @@ int toplist_item_compare(
 int toplist_fits_table_init(
   FITSFile *file,
   const WeaveResultsToplist *toplist
-  )
+)
 {
 
   // Check input
@@ -348,7 +348,7 @@ int toplist_fits_table_init(
 int toplist_fill_completionloop_stats(
   void *param,
   void *x
-  )
+)
 {
   XLAL_CHECK( param != NULL, XLAL_EFAULT );
   XLAL_CHECK( x != NULL, XLAL_EFAULT );
@@ -362,7 +362,7 @@ int toplist_fill_completionloop_stats(
     WeaveStatisticType stage_stats = stats_params->completionloop_statistics[istage];
 
     // Re-calculate per-sement coherent 2F|2F_det statistics in semi-coherent template point
-    if ( stage_stats & ( WEAVE_STATISTIC_COH2F|WEAVE_STATISTIC_COH2F_DET ) ) {
+    if ( stage_stats & ( WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET ) ) {
       XLAL_CHECK( istage > 0, XLAL_EERR, "BUG: requested 'coh2F' or 'coh2F_det' in stage0 completion loop ==> should never happen!\n" );
       PulsarDopplerParams XLAL_INIT_DECL( semi_phys );
       semi_phys.refTime = stats_params->ref_time;
@@ -478,7 +478,7 @@ int toplist_fill_completionloop_stats(
 int toplist_fits_table_write_visitor(
   void *param,
   const void *x
-  )
+)
 {
   FITSFile *file = ( FITSFile * ) param;
   XLAL_CHECK( XLALFITSTableWriteRow( file, x ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -494,10 +494,10 @@ int toplist_fits_table_write_visitor(
 int toplist_item_sort_by_semi_phys(
   const void *x,
   const void *y
-  )
+)
 {
-  const WeaveResultsToplistItem *ix = *( const WeaveResultsToplistItem *const * ) x;
-  const WeaveResultsToplistItem *iy = *( const WeaveResultsToplistItem *const * ) y;
+  const WeaveResultsToplistItem *ix = *( const WeaveResultsToplistItem * const * ) x;
+  const WeaveResultsToplistItem *iy = *( const WeaveResultsToplistItem * const * ) y;
   COMPARE_BY( ix->semi_alpha, iy->semi_alpha );   // Compare in ascending order
   COMPARE_BY( ix->semi_delta, iy->semi_delta );   // Compare in ascending order
   for ( size_t s = 1; s < XLAL_NUM_ELEM( ix->semi_fkdot ); ++s ) {
@@ -513,10 +513,10 @@ int toplist_item_sort_by_semi_phys(
 int toplist_item_sort_by_serial(
   const void *x,
   const void *y
-  )
+)
 {
-  const WeaveResultsToplistItem *ix = *( const WeaveResultsToplistItem *const * ) x;
-  const WeaveResultsToplistItem *iy = *( const WeaveResultsToplistItem *const * ) y;
+  const WeaveResultsToplistItem *ix = *( const WeaveResultsToplistItem * const * ) x;
+  const WeaveResultsToplistItem *iy = *( const WeaveResultsToplistItem * const * ) y;
   COMPARE_BY( ix->serial, iy->serial );   // Compare in ascending order
   return 0;
 }
@@ -537,7 +537,7 @@ int compare_templates(
   const UINT8 serial_2,
   const PulsarDopplerParams *phys_1,
   const PulsarDopplerParams *phys_2
-  )
+)
 {
 
   // Check input
@@ -595,16 +595,16 @@ int compare_templates(
     XLALPrintInfo( "%s:     serial 1 = %"LAL_UINT8_FORMAT"\n", __func__, serial_1 );
     XLALPrintInfo( "%s:     serial 2 = %"LAL_UINT8_FORMAT"\n", __func__, serial_2 );
     for ( size_t i = 0; i < 2; ++i ) {
-      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i+1,
+      XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g}\n", __func__, i + 1,
                      phys_orig[i].Alpha, phys_orig[i].Delta, phys_orig[i].fkdot[0], phys_orig[i].fkdot[1] );
       if ( round_param_to_dp > 0 ) {
-        XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g} rounded to %u d.p., %u s.f.\n", __func__, i+1,
+        XLALPrintInfo( "%s:     physical %zu = {%.15g,%.15g,%.15g,%.15g} rounded to %u d.p., %u s.f.\n", __func__, i + 1,
                        phys[i].Alpha, phys[i].Delta, phys[i].fkdot[0], phys[i].fkdot[1],
                        round_param_to_dp, round_param_to_sf );
       }
     }
     for ( size_t i = 0; i < 2; ++i ) {
-      XLALPrintInfo( "%s:     reduced supersky %zu = ", __func__, i+1 );
+      XLALPrintInfo( "%s:     reduced supersky %zu = ", __func__, i + 1 );
       for ( size_t j = 0; j < rssky[i]->size; ++j ) {
         XLALPrintInfo( "%c%.15g", j == 0 ? '{' : ',', gsl_vector_get( rssky[i], j ) );
       }
@@ -636,7 +636,7 @@ int compare_vectors(
   const REAL4Vector *res_2,
   const UINT4 r1,
   const UINT4 r2
-  )
+)
 {
   XLAL_CHECK( r1 <= res_1->length, XLAL_EINVAL );
   XLAL_CHECK( r2 <= res_2->length, XLAL_EINVAL );
@@ -665,7 +665,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
   WeaveResultsToplistRankingStats toplist_rank_stats_fcn,
   WeaveResultsToplistItemGetRankStat toplist_item_get_rank_stat_fcn,
   WeaveResultsToplistItemSetRankStat toplist_item_set_rank_stat_fcn
-  )
+)
 {
 
   // Check input
@@ -699,7 +699,7 @@ WeaveResultsToplist *XLALWeaveResultsToplistCreate(
 ///
 void XLALWeaveResultsToplistDestroy(
   WeaveResultsToplist *toplist
-  )
+)
 {
   if ( toplist != NULL ) {
     XLALDestroyUINT4Vector( toplist->maybe_add_freq_idxs );
@@ -716,7 +716,7 @@ int XLALWeaveResultsToplistAdd(
   WeaveResultsToplist *toplist,
   const WeaveSemiResults *semi_res,
   const UINT4 semi_nfreqs
-  )
+)
 {
   // Check input
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
@@ -862,7 +862,7 @@ int XLALWeaveResultsToplistAdd(
 ///
 int XLALWeaveResultsToplistCompletionLoop(
   WeaveResultsToplist *toplist
-  )
+)
 {
   // Check input
   XLAL_CHECK( toplist != NULL, XLAL_EFAULT );
@@ -880,7 +880,7 @@ int XLALWeaveResultsToplistCompletionLoop(
 int XLALWeaveResultsToplistWrite(
   FITSFile *file,
   const WeaveResultsToplist *toplist
-  )
+)
 {
 
   // Check input
@@ -913,7 +913,7 @@ int XLALWeaveResultsToplistWrite(
 int XLALWeaveResultsToplistReadAppend(
   FITSFile *file,
   WeaveResultsToplist *toplist
-  )
+)
 {
 
   // Check input
@@ -942,7 +942,7 @@ int XLALWeaveResultsToplistReadAppend(
     XLAL_CHECK( XLALFITSTableReadRow( file, toplist->saved_item, &nrows ) == XLAL_SUCCESS, XLAL_EFUNC );
 
     // Save highest serial in toplist
-    if (toplist->serial < toplist->saved_item->serial) {
+    if ( toplist->serial < toplist->saved_item->serial ) {
       toplist->serial = toplist->saved_item->serial;
     }
 
@@ -973,7 +973,7 @@ int XLALWeaveResultsToplistCompare(
   const UINT4 toplist_compare_limit,
   const WeaveResultsToplist *toplist_1,
   const WeaveResultsToplist *toplist_2
-  )
+)
 {
 
   // Check input
@@ -1035,10 +1035,10 @@ int XLALWeaveResultsToplistCompare(
 
     // Match up items by serial number
     size_t n_1 = 0, n_2 = 0;
-    while (n_1 < n && n_2 < n) {
-      if (items_1[n_1]->serial < items_2[n_2]->serial) {
+    while ( n_1 < n && n_2 < n ) {
+      if ( items_1[n_1]->serial < items_2[n_2]->serial ) {
         ++n_1;
-      } else if (items_2[n_2]->serial < items_1[n_1]->serial) {
+      } else if ( items_2[n_2]->serial < items_1[n_1]->serial ) {
         ++n_2;
       } else {
         matched_1[matched_n] = items_1[n_1++];
@@ -1077,7 +1077,7 @@ int XLALWeaveResultsToplistCompare(
 
     // Compare semicoherent template parameters
     if ( ( *equal ) && ( param_tol_mism > 0 ) ) {
-      for (size_t i = 0; i < matched_n; ++i) {
+      for ( size_t i = 0; i < matched_n; ++i ) {
         char loc_str[256];
         snprintf( loc_str, sizeof( loc_str ), "toplist item %zu", i );
         const UINT8 serial_1 = matched_1[i]->serial;
@@ -1098,7 +1098,7 @@ int XLALWeaveResultsToplistCompare(
                                        setup->metrics->semi_rssky_metric, setup->metrics->semi_rssky_transf,
                                        serial_1, serial_2,
                                        &semi_phys_1, &semi_phys_2
-                      ) == XLAL_SUCCESS, XLAL_EFUNC );
+                                     ) == XLAL_SUCCESS, XLAL_EFUNC );
         if ( !*equal ) {
           break;
         }
@@ -1110,7 +1110,7 @@ int XLALWeaveResultsToplistCompare(
 
     // Compare coherent template parameters
     if ( ( *equal ) && ( param_tol_mism > 0 ) && ( params->statistics_to_output[0] & ( WEAVE_STATISTIC_COH2F | WEAVE_STATISTIC_COH2F_DET ) ) ) {
-      for (size_t i = 0; i < matched_n; ++i) {
+      for ( size_t i = 0; i < matched_n; ++i ) {
         for ( size_t j = 0; j < params->nsegments; ++j ) {
           char loc_str[256];
           snprintf( loc_str, sizeof( loc_str ), "toplist item %zu, segment %zu", i, j );
@@ -1132,7 +1132,7 @@ int XLALWeaveResultsToplistCompare(
                                          setup->metrics->coh_rssky_metric[j], setup->metrics->coh_rssky_transf[j],
                                          serial_1, serial_2,
                                          &coh_phys_1, &coh_phys_2
-                        ) == XLAL_SUCCESS, XLAL_EFUNC );
+                                       ) == XLAL_SUCCESS, XLAL_EFUNC );
         }
         if ( !*equal ) {
           break;

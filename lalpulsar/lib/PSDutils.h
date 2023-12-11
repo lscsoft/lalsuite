@@ -41,7 +41,7 @@ extern "C" {
  * \defgroup PSDutils_h Header PSDutils.h
  * \ingroup lalpulsar_sft
  *
- * \brief Module for computing PSD (Power Spectral Density) estimates and handling related structures 
+ * \brief Module for computing PSD (Power Spectral Density) estimates and handling related structures
  *
  * Overview:
  * \ref PSD-type-cdtor-func "create/destroy functions",
@@ -61,7 +61,7 @@ typedef REAL8FrequencySeriesVector PSDVector;
 /** A collection of PSD vectors -- one for each IFO in a multi-IFO search */
 typedef struct tagMultiPSDVector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiPSDVector, PSDVector*, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( MultiPSDVector, PSDVector *, data, UINT4, length ) );
 #endif /* SWIG */
   UINT4      length;    /**< number of ifos */
   PSDVector  **data;    /**< sftvector for each ifo */
@@ -70,11 +70,11 @@ typedef struct tagMultiPSDVector {
 /** One noise-weight (number) per SFT (therefore indexed over IFOs and SFTs */
 typedef struct tagMultiNoiseWeights {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiNoiseWeights, REAL8Vector*, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( MultiNoiseWeights, REAL8Vector *, data, UINT4, length ) );
 #endif /* SWIG */
-  UINT4 length;		/**< number of detectors */
-  REAL8Vector **data;	/**< weights-vector for each detector */
-  REAL8 Sinv_Tsft;	/**< normalization factor used: \f$ \mathcal{S}^{-1}\,T_\mathrm{SFT} \f$ (using single-sided PSD!) */
+  UINT4 length;         /**< number of detectors */
+  REAL8Vector **data;   /**< weights-vector for each detector */
+  REAL8 Sinv_Tsft;      /**< normalization factor used: \f$ \mathcal{S}^{-1}\,T_\mathrm{SFT} \f$ (using single-sided PSD!) */
   BOOLEAN isNotNormalized;  /**< if true: weights are saved unnormalized (divide by Sinv_Tsft to get normalized version). */
 } MultiNoiseWeights;
 
@@ -104,12 +104,12 @@ extern const UserChoices MathOpTypeChoices;
  */
 /** @{ */
 
-void XLALDestroyPSDVector ( PSDVector *vect );
-void XLALDestroyMultiPSDVector ( MultiPSDVector *multvect );
+void XLALDestroyPSDVector( PSDVector *vect );
+void XLALDestroyMultiPSDVector( MultiPSDVector *multvect );
 
-MultiNoiseWeights* XLALCreateMultiNoiseWeights ( const UINT4 length );
-MultiNoiseWeights *XLALCopyMultiNoiseWeights ( const MultiNoiseWeights *multiWeights );
-void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
+MultiNoiseWeights *XLALCreateMultiNoiseWeights( const UINT4 length );
+MultiNoiseWeights *XLALCopyMultiNoiseWeights( const MultiNoiseWeights *multiWeights );
+void XLALDestroyMultiNoiseWeights( MultiNoiseWeights *weights );
 
 /** @} */
 
@@ -119,7 +119,7 @@ void XLALDestroyMultiNoiseWeights ( MultiNoiseWeights *weights );
  */
 /** @{ */
 
-int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
+int XLALCropMultiPSDandSFTVectors( MultiPSDVector *multiPSDVect, MultiSFTVector *multiSFTVect, UINT4 firstBin, UINT4 lastBin );
 
 /** @} */
 
@@ -129,7 +129,7 @@ int XLALCropMultiPSDandSFTVectors ( MultiPSDVector *multiPSDVect, MultiSFTVector
  */
 /** @{ */
 
-MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile);
+MultiNoiseWeights *XLALComputeMultiNoiseWeights( const MultiPSDVector *rngmed, UINT4 blocksRngMed, UINT4 excludePercentile );
 
 /** @} */
 
@@ -139,15 +139,15 @@ MultiNoiseWeights *XLALComputeMultiNoiseWeights ( const MultiPSDVector *rngmed, 
  */
 /** @{ */
 
-REAL8FrequencySeries *XLALComputeSegmentDataQ ( const MultiPSDVector *multiPSDVect, LALSeg segment );
-REAL8 XLALMathOpOverArray(const REAL8* data, const size_t length, const MathOpType optype);
-REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs (  const UINT4 totalNumSFTs, const MathOpType optypeSFTs );
+REAL8FrequencySeries *XLALComputeSegmentDataQ( const MultiPSDVector *multiPSDVect, LALSeg segment );
+REAL8 XLALMathOpOverArray( const REAL8 *data, const size_t length, const MathOpType optype );
+REAL8 XLALGetMathOpNormalizationFactorFromTotalNumberOfSFTs( const UINT4 totalNumSFTs, const MathOpType optypeSFTs );
 
-int XLALComputePSDandNormSFTPower ( REAL8Vector **finalPSD, MultiPSDVector **multiPSDVector, REAL8Vector **normSFT, MultiSFTVector *inputSFTs, const BOOLEAN returnMultiPSDVector, const BOOLEAN returnNormSFT,
-                                    const UINT4 blocksRngMed, const MathOpType PSDmthopSFTs, const MathOpType PSDmthopIFOs, const MathOpType nSFTmthopSFTs, const MathOpType nSFTmthopIFOs,
-                                    const BOOLEAN normalizeByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand, const BOOLEAN normalizeSFTsInPlace );
-int XLALComputePSDfromSFTs ( REAL8Vector **finalPSD, MultiSFTVector *inputSFTs, const UINT4 blocksRngMed, const MathOpType PSDmthopSFTs, const MathOpType PSDmthopIFOs,
-                             const BOOLEAN normalizeByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand );
+int XLALComputePSDandNormSFTPower( REAL8Vector **finalPSD, MultiPSDVector **multiPSDVector, REAL8Vector **normSFT, MultiSFTVector *inputSFTs, const BOOLEAN returnMultiPSDVector, const BOOLEAN returnNormSFT,
+                                   const UINT4 blocksRngMed, const MathOpType PSDmthopSFTs, const MathOpType PSDmthopIFOs, const MathOpType nSFTmthopSFTs, const MathOpType nSFTmthopIFOs,
+                                   const BOOLEAN normalizeByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand, const BOOLEAN normalizeSFTsInPlace );
+int XLALComputePSDfromSFTs( REAL8Vector **finalPSD, MultiSFTVector *inputSFTs, const UINT4 blocksRngMed, const MathOpType PSDmthopSFTs, const MathOpType PSDmthopIFOs,
+                            const BOOLEAN normalizeByTotalNumSFTs, const REAL8 FreqMin, const REAL8 FreqBand );
 
 /** @} */
 
@@ -157,10 +157,10 @@ int XLALComputePSDfromSFTs ( REAL8Vector **finalPSD, MultiSFTVector *inputSFTs, 
  */
 /** @{ */
 
-int XLALDumpMultiPSDVector ( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
+int XLALDumpMultiPSDVector( const CHAR *outbname, const MultiPSDVector *multiPSDVect );
 
-int XLALWritePSDtoFilePointer ( FILE *fpOut, REAL8Vector *PSDVect, REAL8Vector *normSFTVect, BOOLEAN outputNormSFT, BOOLEAN outFreqBinEnd, INT4 PSDmthopBins, INT4 nSFTmthopBins,
-                                INT4 binSize, INT4 binStep, REAL8 Freq0, REAL8 dFreq );
+int XLALWritePSDtoFilePointer( FILE *fpOut, REAL8Vector *PSDVect, REAL8Vector *normSFTVect, BOOLEAN outputNormSFT, BOOLEAN outFreqBinEnd, INT4 PSDmthopBins, INT4 nSFTmthopBins,
+                               INT4 binSize, INT4 binStep, REAL8 Freq0, REAL8 dFreq );
 
 /** @} */
 

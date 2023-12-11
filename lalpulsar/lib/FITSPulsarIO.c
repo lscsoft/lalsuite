@@ -24,7 +24,7 @@
 ///
 static int fits_table_init_LALSeg(
   FITSFile *file
-  )
+)
 {
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
   XLAL_FITS_TABLE_COLUMN_BEGIN( LALSeg );
@@ -39,7 +39,7 @@ int XLALFITSWriteSegmentList(
   const CHAR *name,
   const LALSegList *segments,
   const CHAR *comment
-  )
+)
 {
 
   // Check input
@@ -63,7 +63,7 @@ int XLALFITSReadSegmentList(
   FITSFile *file,
   const CHAR *name,
   LALSegList **segments
-  )
+)
 {
 
   // Check input
@@ -92,7 +92,7 @@ int XLALFITSReadSegmentList(
 ///
 static int fits_table_init_PosVelAcc(
   FITSFile *file
-  )
+)
 {
   XLAL_CHECK( file != NULL, XLAL_EFAULT );
   XLAL_FITS_TABLE_COLUMN_BEGIN( PosVelAcc );
@@ -106,7 +106,7 @@ static int fits_table_init_PosVelAcc(
 int XLALFITSWriteEphemerisData(
   FITSFile *file,
   const EphemerisData *ephemerides
-  )
+)
 {
 
   // Check input
@@ -144,7 +144,7 @@ int XLALFITSWriteEphemerisData(
 int XLALFITSReadEphemerisData(
   FITSFile *file,
   EphemerisData **ephemerides
-  )
+)
 {
 
   // Check input

@@ -31,10 +31,12 @@ estSens_col = 6
 evSquared_col = 7
 rho_col = 8
 
-def read_and_sort_toplist(filename,min_snr=float("inf"),
-                          min_cands=-1,dropped_rho=float("-inf")):
+
+def read_and_sort_toplist(
+    filename, min_snr=float("inf"), min_cands=-1, dropped_rho=float("-inf")
+):
     data = np.loadtxt(filename)
-    rho = data[:,rho_col]
+    rho = data[:, rho_col]
     sorted_inds = rho.argsort()[::-1]
     # If the toplist is longer than the maximum number of candidates,
     # truncate it and record the highest SNR value we discarded
@@ -51,41 +53,60 @@ def read_and_sort_toplist(filename,min_snr=float("inf"),
                 dropped_rho = rho[sorted_inds[keep_cands]]
         sorted_inds = sorted_inds[:keep_cands]
 
-    return data[sorted_inds,:], dropped_rho
+    return data[sorted_inds, :], dropped_rho
+
 
 parser = ArgumentParser()
-parser.add_argument("--input-toplist-files", action="store", nargs="+",
-                    required=True,
-                    help='A space-separated list of toplist files to combine')
-parser.add_argument("--output-toplist-file", action="store", required=True,
-                    help='Filename for output toplist')
-parser.add_argument("--min-cands-per-toplist", action="store", type=int,
-                    default=-1,
-                    help='Keep at least his many candidates from each toplist')
-parser.add_argument("--min-snr-to-keep", action="store", type=float,
-                    default=float("inf"),
-                    help='Keep all candidates with at least this SNR')
+parser.add_argument(
+    "--input-toplist-files",
+    action="store",
+    nargs="+",
+    required=True,
+    help="A space-separated list of toplist files to combine",
+)
+parser.add_argument(
+    "--output-toplist-file",
+    action="store",
+    required=True,
+    help="Filename for output toplist",
+)
+parser.add_argument(
+    "--min-cands-per-toplist",
+    action="store",
+    type=int,
+    default=-1,
+    help="Keep at least his many candidates from each toplist",
+)
+parser.add_argument(
+    "--min-snr-to-keep",
+    action="store",
+    type=float,
+    default=float("inf"),
+    help="Keep all candidates with at least this SNR",
+)
 
 args = parser.parse_args()
 
 dropped_rho = float("-inf")
 
-outfile = open(args.output_toplist_file,'w')
+outfile = open(args.output_toplist_file, "w")
 datatuple = tuple()
 for filename in args.input_toplist_files:
-    (newdata, dropped_rho) = \
-        read_and_sort_toplist(filename=filename,
-                              min_snr=args.min_snr_to_keep,
-                              min_cands=args.min_cands_per_toplist,
-                              dropped_rho=dropped_rho)
+    (newdata, dropped_rho) = read_and_sort_toplist(
+        filename=filename,
+        min_snr=args.min_snr_to_keep,
+        min_cands=args.min_cands_per_toplist,
+        dropped_rho=dropped_rho,
+    )
     datatuple += (newdata,)
 
 data = np.concatenate(datatuple)
-sorted_inds = data[:,rho_col].argsort()[::-1]
+sorted_inds = data[:, rho_col].argsort()[::-1]
 data = data[sorted_inds]
 
 for line in data:
-        outfile.write("%.10f %.10f %.10g %.10f %.10g %.5f %.10g %.10g %.10g\n"
-                      % tuple(line))
+    outfile.write(
+        "%.10f %.10f %.10g %.10f %.10g %.5f %.10g %.10g %.10g\n" % tuple(line)
+    )
 print("Highest discarded candidate SNR was %f" % dropped_rho)
 outfile.close()

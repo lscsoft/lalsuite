@@ -160,15 +160,13 @@ int main( int argc, char **argv )
   maxNodes = 1e6;
   /* This is (roughly) the center of globular cluster 47 Tuc. */
   center.system = COORDINATESYSTEM_EQUATORIAL;
-  center.longitude = (24.1/60)*LAL_PI_180;
-  center.latitude = -(72+5./60)*LAL_PI_180;
-  radius = 24.0/60*LAL_PI_180;
+  center.longitude = ( 24.1 / 60 ) * LAL_PI_180;
+  center.latitude = -( 72 + 5. / 60 ) * LAL_PI_180;
+  radius = 24.0 / 60 * LAL_PI_180;
 
   /* Parse and sanity-check the command-line options. */
-  while( (opt = LALgetopt( argc, argv, "b:c:e:f:im:n:pr:t:x" )) != -1 )
-  {
-    switch( opt )
-    {
+  while ( ( opt = LALgetopt( argc, argv, "b:c:e:f:im:n:pr:t:x" ) ) != -1 ) {
+    switch ( opt ) {
       float a, b, c, d, e, f;
     case '?':
       return PTOLEMESHTESTC_EOPT;
@@ -176,13 +174,12 @@ int main( int argc, char **argv )
       begin = atof( LALoptarg );
       break;
     case 'c':
-      if( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6)
-      {
+      if ( sscanf( LALoptarg, "%f:%f:%f:%f:%f:%f", &a, &b, &c, &d, &e, &f ) != 6 ) {
         fprintf( stderr, "coordinates should be hh:mm:ss:dd:mm:ss\n" );
         return PTOLEMESHTESTC_EOPT;
       }
-      center.longitude = (15*a+b/4+c/240)*LAL_PI_180;
-      center.latitude = (d+e/60+f/3600)*LAL_PI_180;
+      center.longitude = ( 15 * a + b / 4 + c / 240 ) * LAL_PI_180;
+      center.latitude = ( d + e / 60 + f / 3600 ) * LAL_PI_180;
       break;
     case 'e':
       break;
@@ -201,8 +198,8 @@ int main( int argc, char **argv )
       nonGrace = 1;
       break;
     case 'r':
-      radius = LAL_PI_180/60*atof( LALoptarg );
-      if( radius < 0 ) {
+      radius = LAL_PI_180 / 60 * atof( LALoptarg );
+      if ( radius < 0 ) {
         fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  PTOLEMESHTESTC_MSGERNG );
         return PTOLEMESHTESTC_ERNG;
@@ -210,8 +207,8 @@ int main( int argc, char **argv )
       break;
     case 't':
       duration = atof( LALoptarg );
-      if( duration < MIN_DURATION || duration > MAX_DURATION ) {
-	fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
+      if ( duration < MIN_DURATION || duration > MAX_DURATION ) {
+        fprintf( stderr, "%s line %d: %s\n", __FILE__, __LINE__,
                  PTOLEMESHTESTC_MSGERNG );
         return PTOLEMESHTESTC_ERNG;
       }
@@ -224,20 +221,17 @@ int main( int argc, char **argv )
   mesh.nIn = maxNodes;
   mesh.getRange = getRange;
   mesh.getMetric = getMetric;
-  mesh.metricParams = (void *) &search;
-  if( radius == 0 )
-    {
-      mesh.domain[0] = dec_min;
-      mesh.domain[1] = dec_max;
-      mesh.rangeParams = (void *) &search;
-    }
-  else
-    {
-      mesh.domain[0] = center.latitude - radius;
-      mesh.domain[1] = center.latitude + radius;
-      mesh.rangeParams = NULL;
+  mesh.metricParams = ( void * ) &search;
+  if ( radius == 0 ) {
+    mesh.domain[0] = dec_min;
+    mesh.domain[1] = dec_max;
+    mesh.rangeParams = ( void * ) &search;
+  } else {
+    mesh.domain[0] = center.latitude - radius;
+    mesh.domain[1] = center.latitude + radius;
+    mesh.rangeParams = NULL;
 
-    }
+  }
   search.position.system = COORDINATESYSTEM_EQUATORIAL;
   search.spindown = NULL;
   search.epoch.gpsSeconds = begin;
@@ -248,28 +242,31 @@ int main( int argc, char **argv )
   search.site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
   firstNode = NULL;
   LALCreateTwoDMesh( &stat, &firstNode, &mesh );
-  if( stat.statusCode )
+  if ( stat.statusCode ) {
     return stat.statusCode;
+  }
   printf( "created %d nodes\n", mesh.nOut );
 
   /* Write what we've got to file mesh.dat */
-  if( nonGrace )
-  {
+  if ( nonGrace ) {
     TwoDMeshNode *node;
     fp = fopen( "mesh.dat", "w" );
-    if( !fp )
+    if ( !fp ) {
       return PTOLEMESHTESTC_EFIO;
+    }
 
-    for( node = firstNode; node; node = node->next )
-      fprintf( fp, "%e %e\n", node->y, node->x);
+    for ( node = firstNode; node; node = node->next ) {
+      fprintf( fp, "%e %e\n", node->y, node->x );
+    }
     fclose( fp );
   }
 
   /* Clean up and leave. */
   LALDestroyTwoDMesh( &stat, &firstNode, &mesh.nOut );
   printf( "destroyed %d nodes\n", mesh.nOut );
-  if( stat.statusCode )
+  if ( stat.statusCode ) {
     return PTOLEMESHTESTC_EMEM;
+  }
   LALCheckMemoryLeaks();
   return 0;
 } /* main() */
@@ -280,20 +277,19 @@ int main( int argc, char **argv )
 void getRange( LALStatus *stat, REAL4 y[2], REAL4 x, void *unused )
 {
   /* Set up shop. */
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Search a circle. BEN: The 1.001 is a kludge. */
-  y[0] = center.longitude - sqrt( pow( radius*1.001, 2 )
-				  - pow( x-center.latitude, 2 ) );
-  y[1] = center.longitude + sqrt( pow( radius*1.001, 2 )
-				  - pow( x-center.latitude, 2 ) );
+  y[0] = center.longitude - sqrt( pow( radius * 1.001, 2 )
+                                  - pow( x - center.latitude, 2 ) );
+  y[1] = center.longitude + sqrt( pow( radius * 1.001, 2 )
+                                  - pow( x - center.latitude, 2 ) );
 
-  if( unused )
-    {
-      y[0] = RA_min;
-      y[1] = RA_max;
-    }
+  if ( unused ) {
+    y[0] = RA_min;
+    y[1] = RA_max;
+  }
 
   /* Clean up and leave. */
   DETATCHSTATUSPTR( stat );
@@ -312,7 +308,7 @@ void getMetric( LALStatus *stat,
   REAL8Vector   *metric = NULL;  /* for output of metric */
 
   /* Set up shop. */
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
   TRY( LALDCreateVector( stat->statusPtr, &metric, 6 ), stat );
 
@@ -324,17 +320,17 @@ void getMetric( LALStatus *stat,
   /* Call the real metric function. */
   LALPtoleMetric( stat->statusPtr, metric, patch );
   BEGINFAIL( stat )
-    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+  TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   ENDFAIL( stat );
   LALProjectMetric( stat->statusPtr, metric, 0 );
   BEGINFAIL( stat )
-    TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
+  TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );
   ENDFAIL( stat );
 
   /* Translate output. */
-      g[1] = metric->data[2];
-      g[0] = metric->data[5];
-      g[2] = metric->data[4];
+  g[1] = metric->data[2];
+  g[0] = metric->data[5];
+  g[2] = metric->data[4];
 
   /* Clean up and leave. */
   TRY( LALDDestroyVector( stat->statusPtr, &metric ), stat );

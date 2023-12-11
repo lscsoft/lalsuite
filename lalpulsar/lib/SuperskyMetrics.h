@@ -89,21 +89,21 @@ SuperskyMetrics *XLALComputeSuperskyMetrics(
   const MultiNoiseFloor *detector_weights,      ///< [in] Weights used to combine single-detector metrics (default: unit weights)
   const DetectorMotionType detector_motion,     ///< [in] Which detector motion to use
   const EphemerisData *ephemerides              ///< [in] Earth/Sun ephemerides
-  );
+);
 
 ///
 /// Copy a \c SuperskyMetrics struct.
 ///
 SuperskyMetrics *XLALCopySuperskyMetrics(
   const SuperskyMetrics *metrics                ///< [in] Supersky metrics struct
-  );
+);
 
 ///
 /// Destroy a \c SuperskyMetrics struct.
 ///
 void XLALDestroySuperskyMetrics(
   SuperskyMetrics *metrics                      ///< [in] Supersky metrics struct
-  );
+);
 
 ///
 /// Write a \c SuperskyMetrics struct to a FITS file.
@@ -111,7 +111,7 @@ void XLALDestroySuperskyMetrics(
 int XLALFITSWriteSuperskyMetrics(
   FITSFile *file,                               ///< [in] FITS file pointer
   const SuperskyMetrics *metrics                ///< [in] Supersky metrics struct
-  );
+);
 
 ///
 /// Read a \c SuperskyMetrics struct from a FITS file.
@@ -119,7 +119,7 @@ int XLALFITSWriteSuperskyMetrics(
 int XLALFITSReadSuperskyMetrics(
   FITSFile *file,                               ///< [in] FITS file pointer
   SuperskyMetrics **metrics                     ///< [out] Supersky metrics struct
-  );
+);
 
 ///
 /// Return dimensions of the supersky metrics.
@@ -127,7 +127,7 @@ int XLALFITSReadSuperskyMetrics(
 int XLALSuperskyMetricsDimensions(
   const SuperskyMetrics *metrics,               ///< [in] Supersky metrics struct
   size_t *spindowns                             ///< [out] Number of spindown dimensions
-  );
+);
 
 ///
 /// Scale all supersky metrics and their coordinate transform data to a new fiducial frequency.
@@ -135,7 +135,7 @@ int XLALSuperskyMetricsDimensions(
 int XLALScaleSuperskyMetricsFiducialFreq(
   SuperskyMetrics *metrics,                     ///< [in] Supersky metrics struct
   const double new_fiducial_freq                ///< [in] New fiducial frequency
-  );
+);
 
 ///
 /// Project and rescale the reduced supersky metrics in the frequency dimension, such that all
@@ -145,7 +145,7 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
   SuperskyMetrics *metrics,                     ///< [in] Supersky metrics struct
   const double coh_max_mismatch,                ///< [in] Maximum coherent mismatch
   const double semi_max_mismatch                ///< [in] Maximum semicoherent mismatch
-  );
+);
 
 ///
 /// Set the reference time of a physical point to that of the reduced supersky coordinates.
@@ -153,7 +153,7 @@ int XLALEqualizeReducedSuperskyMetricsFreqSpacing(
 int XLALSetPhysicalPointSuperskyRefTime(
   PulsarDopplerParams *out_phys,                ///< [out] Output point in physical coordinates
   const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
-  );
+);
 
 ///
 /// Convert a point from physical to supersky coordinates.
@@ -162,7 +162,7 @@ int XLALConvertPhysicalToSuperskyPoint(
   gsl_vector *out_rssky,                        ///< [out] Output point in supersky coordinates
   const PulsarDopplerParams *in_phys,           ///< [in] Input point in physical coordinates
   const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
-  );
+);
 
 ///
 /// Convert a point from supersky to physical coordinates.
@@ -172,7 +172,7 @@ int XLALConvertSuperskyToPhysicalPoint(
   const gsl_vector *in_rssky,                   ///< [in] Input point in supersky coordinates
   const gsl_vector *ref_rssky,                  ///< [in,optional] Reference point in supersky coordinates
   const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
-  );
+);
 
 ///
 /// Convert a point between supersky coordinates. The vectors \c out_rssky and \c in_rssky may be the same.
@@ -183,7 +183,7 @@ int XLALConvertSuperskyToSuperskyPoint(
   const gsl_vector *in_rssky,                   ///< [in] Input point in supersky coordinates
   const gsl_vector *ref_rssky,                  ///< [in,optional] Reference point in supersky coordinates
   const SuperskyTransformData *in_rssky_transf  ///< [in] Input reduced supersky coordinate transform data
-  );
+);
 
 ///
 /// Convert a set of points from physical to supersky coordinates.
@@ -195,7 +195,7 @@ int XLALConvertPhysicalToSuperskyPoints(
   gsl_matrix **out_rssky,                       ///< [out] Columns are output point in supersky coordinates
   const gsl_matrix *in_phys,                    ///< [in] Columns are input point in physical coordinates
   const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
-  );
+);
 
 ///
 /// Convert a set of points from supersky to physical coordinates.
@@ -207,7 +207,7 @@ int XLALConvertSuperskyToPhysicalPoints(
   gsl_matrix **out_phys,                        ///< [out] Columns are output point in physical coordinates
   const gsl_matrix *in_rssky,                   ///< [in] Columns are input point in supersky coordinates
   const SuperskyTransformData *rssky_transf     ///< [in] Reduced supersky coordinate transform data
-  );
+);
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
@@ -227,7 +227,7 @@ int XLALSetSuperskyPhysicalSkyBounds(
   const double alpha2,                          ///< [in] Second bound on sky position right ascension
   const double delta1,                          ///< [in] First bound on sky position declination
   const double delta2                           ///< [in] Second bound on sky position declination
-  );
+);
 
 ///
 /// Divide the reduced supersky parameter space into \p patch_count equal-area patches, and
@@ -240,7 +240,7 @@ int XLALSetSuperskyEqualAreaSkyBounds(
   const double max_mismatch,                    ///< [in] Maximum prescribed mismatch
   const UINT4 patch_count,                      ///< [in] Number of equal-area patches to divide sky into
   const UINT4 patch_index                       ///< [in] Index of the patch for which to compute bounds
-  );
+);
 
 #ifdef SWIG // SWIG interface directives
 SWIGLAL_CLEAR( COPYINOUT_ARRAYS( gsl_matrix, rssky_metric, rssky_transf ) );
@@ -256,7 +256,7 @@ int XLALSetSuperskyPhysicalSpinBound(
   const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const double bound1,                          ///< [in] First bound on frequency/spindown
   const double bound2                           ///< [in] Second bound on frequency/spindown
-  );
+);
 
 ///
 /// Set parameter-space bound padding on the physical frequency/spindowns \f$ f^{(s)} \f$ for a lattice
@@ -267,7 +267,7 @@ int XLALSetSuperskyPhysicalSpinBoundPadding(
   const SuperskyTransformData *rssky_transf,    ///< [in] Reduced supersky coordinate transform data
   const size_t s,                               ///< [in] Spindown order; 0=frequency, 1=first spindown, etc.
   const bool padding                            ///< [in] Whether bounds are padded
-  );
+);
 
 ///
 /// Register a lattice tiling callback function which computes the physical range covered
@@ -282,7 +282,7 @@ int XLALRegisterSuperskyLatticePhysicalRangeCallback(
   const SuperskyTransformData *rssky_transf,    ///< [in] Reduced supersky coordinate transform data
   const PulsarDopplerParams **min_phys,         ///< [out] Minimum physical range
   const PulsarDopplerParams **max_phys          ///< [out] Maximum physical range
-  );
+);
 
 ///
 /// Register a lattice tiling callback function which computes the range covered by a
@@ -298,7 +298,7 @@ int XLALRegisterSuperskyLatticeSuperskyRangeCallback(
   const SuperskyTransformData *rssky2_transf,   ///< [in] Other reduced supersky coordinate transform data
   const gsl_vector **min_rssky2,                ///< [out] Minimum range of other reduced supersky coordinates
   const gsl_vector **max_rssky2                 ///< [out] Maximum range of other reduced supersky coordinates
-  );
+);
 
 ///
 /// Set parameter-space bounds on an entire lattice tiling given minimum and maximum
@@ -308,7 +308,7 @@ int XLALSetSuperskyRangeBounds(
   LatticeTiling *tiling,                        ///< [in] Lattice tiling
   const gsl_vector *min_rssky,                  ///< [in] Minimum range of reduced supersky coordinates
   const gsl_vector *max_rssky                   ///< [in] Maximum range of reduced supersky coordinates
-  );
+);
 
 /// @}
 

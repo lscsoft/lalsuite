@@ -116,7 +116,7 @@ for completeness (defaults for all are not to set the flag) \n"\
 
 #define FILENAME_MAXLEN 1024
 
-typedef struct tagInputParams{
+typedef struct tagInputParams {
   CHAR ifo[3];
 
   CHAR pulsarDir[FILENAME_MAXLEN];
@@ -157,23 +157,23 @@ typedef struct tagInputParams{
   REAL8 startTime;
   REAL8 endTime;
 
-}InputParams;
+} InputParams;
 
-typedef struct tagSplInterParams{
+typedef struct tagSplInterParams {
   LALDetector detector;
 
   CHAR timefile[FILENAME_MAXLEN];
   CHAR earthfile[FILENAME_MAXLEN];
   CHAR sunfile[FILENAME_MAXLEN];
-}SplInterParams;
+} SplInterParams;
 
-void get_input_args(InputParams *inputParam, int argc, char *argv[]);
+void get_input_args( InputParams *inputParam, int argc, char *argv[] );
 
-INT4 remove_outliers_using_running_median_data(REAL8Vector *redata, REAL8Vector *imdata,  REAL8Vector *rermdata,
-  REAL8Vector *imrmdata, REAL8Vector *times, REAL8 stddevthresh);
+INT4 remove_outliers_using_running_median_data( REAL8Vector *redata, REAL8Vector *imdata,  REAL8Vector *rermdata,
+    REAL8Vector *imrmdata, REAL8Vector *times, REAL8 stddevthresh );
 
-REAL8Vector *subtract_running_median( REAL8Vector *data, REAL8Vector *timeStamp , UINT4 npoints);
+REAL8Vector *subtract_running_median( REAL8Vector *data, REAL8Vector *timeStamp, UINT4 npoints );
 
-INT4 XLALFresnel(REAL8 *C, REAL8 *S, REAL8 x);
+INT4 XLALFresnel( REAL8 *C, REAL8 *S, REAL8 x );
 
 #endif /* _SPLINTER_PULSAR_H */

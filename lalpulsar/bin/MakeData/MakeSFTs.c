@@ -56,7 +56,7 @@ int main( int argc, char *argv[] )
 
   // default output
   LALStringVector *default_sft_write_path = NULL;
-  XLAL_CHECK_MAIN( (default_sft_write_path = XLALCreateStringVector(".", NULL)) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( ( default_sft_write_path = XLALCreateStringVector( ".", NULL ) ) != NULL, XLAL_EFUNC );
 
   // Initialise user input variables
   struct uvar_type {
@@ -82,7 +82,7 @@ int main( int argc, char *argv[] )
     .sft_duration = 1800,
     .overlap_fraction = 0,
     .high_pass_freq = 0,
-    .window_type = XLALStringDuplicate("tukey"),
+    .window_type = XLALStringDuplicate( "tukey" ),
     .window_param = 0.001,
     .start_freq = 48,
     .band = 2000,
@@ -98,23 +98,23 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     frame_cache, STRING, 'C', REQUIRED,
     "Path to frame cache file to read frames from. "
-    );
+  );
   XLALRegisterUvarMember(
     frame_checksums, BOOLEAN, 'k', OPTIONAL,
     "Validate frame checksums. Default is to only validate checksums for " UVAR_STR( observing_kind ) "=RUN SFTs. "
-    );
+  );
   XLALRegisterUvarMember(
     channel_name, STRINGVector, 'N', REQUIRED,
     "Name(s) of channel(s) to read within a frame. "
-    );
+  );
   XLALRegisterUvarMember(
     gps_start_time, INT4, 's', REQUIRED,
     "GPS time to start generating SFTs. "
-    );
+  );
   XLALRegisterUvarMember(
     gps_end_time, INT4, 'e', REQUIRED,
     "GPS time to end generating SFTs. "
-    );
+  );
   //
   // - SFT generation
   //
@@ -122,32 +122,32 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     sft_duration, INT4, 't', OPTIONAL,
     "SFT duration in seconds. "
-    );
+  );
   XLALRegisterUvarMember(
     overlap_fraction, REAL8, 'P', OPTIONAL,
     "Fraction of SFT duration to overlap SFTs by. "
     "Example: use " UVAR_STR( overlap_fraction ) "=0.5 with " UVAR_STR( window_type ) "=hann windows. "
-    );
+  );
   XLALRegisterUvarMember(
     high_pass_freq, REAL8, 'f', REQUIRED,
     "High pass filtering frequency in Hertz. "
-    );
+  );
   XLALRegisterUvarMember(
     window_type, STRING, 'w', OPTIONAL,
     "Window to apply to SFTs. "
-    );
+  );
   XLALRegisterUvarMember(
     window_param, REAL8, 'r', OPTIONAL,
     "Parameter (if required) of window to apply to SFTs. "
-    );
+  );
   XLALRegisterUvarMember(
     start_freq, REAL8, 'F', OPTIONAL,
     "Start frequency of the SFTs, in Hertz. "
-    );
+  );
   XLALRegisterUvarMember(
     band, REAL8, 'B', OPTIONAL,
     "Frequency band of the SFTs, in Hertz. "
-    );
+  );
   //
   // - SFT output
   //
@@ -155,62 +155,62 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     sft_write_path, STRINGVector, 'p', OPTIONAL,
     "Path to write SFTs to, same order as channel names. "
-    );
+  );
   XLALRegisterUvarMember(
     observing_run, UINT4, 'O', REQUIRED,
     "For public SFTs, observing run SFTs are generated from. "
-    );
+  );
   XLALRegisterUvarMember(
     observing_kind, STRING, 'K', OPTIONAL,
     "For public SFTs, kind of SFTs being generated: 'RUN', 'AUX', 'SIM', or 'DEV'. "
-    );
+  );
   XLALRegisterUvarMember(
     observing_revision, UINT4, 'R', OPTIONAL,
     "For public SFTs, revision number of the SFT production. "
-    );
+  );
   XLALRegisterUvarMember(
     misc_desc, STRING, 'X', OPTIONAL,
     "For private SFTs, miscellaneous description field. "
-    );
+  );
   XLALRegisterUvarMember(
     comment_field, STRING, 'c', OPTIONAL,
     "Comment for SFT header. "
-    );
+  );
   //
   // - Defunct options
   //
   XLALRegisterNamedUvar(
     NULL, "frame_struct_type", STRING, 'u', DEFUNCT,
     "No longer required; the frame channel type is determined automatically. "
-    );
+  );
   XLALRegisterNamedUvar(
     NULL, "ht_data", BOOLEAN, 'H', DEFUNCT,
     "No longer required; the frame channel type is determined automatically. "
-    );
+  );
   XLALRegisterNamedUvar(
     NULL, "ifo", STRING, 'i', DEFUNCT,
     "No longer required; the detector prefix is deduced from the channel name. "
-    );
+  );
   XLALRegisterNamedUvar(
     NULL, "make_gps_dirs", BOOLEAN, 'D', DEFUNCT,
     "No longer supported. "
-    );
+  );
   XLALRegisterNamedUvar(
     NULL, "make_tmp_file", BOOLEAN, 'Z', DEFUNCT,
     "Default behaviour. "
-    );
+  );
   XLALRegisterNamedUvar(
     NULL, "sft_version", INT4, 'V', DEFUNCT,
     "No longer supported. "
-    );
+  );
   XLALRegisterNamedUvar(
     NULL, "use_single", BOOLEAN, 'S', DEFUNCT,
     "No longer supported. "
-    );
+  );
   XLALRegisterNamedUvar(
     NULL, "window_radius", REAL8, 0, DEFUNCT,
     "Use " UVAR_STR( window_param ) " instead. "
-    );
+  );
 
   // Parse user input
   XLAL_CHECK_MAIN( xlalErrno == 0, XLAL_EFUNC, "A call to XLALRegisterUvarMember() failed" );
@@ -295,7 +295,7 @@ int main( int argc, char *argv[] )
   XLALUserVarCheck( &should_exit,
                     uvar->channel_name->length == uvar->sft_write_path->length
                     || uvar->sft_write_path->length == 1,
-                    "Number of channels in " UVAR_STR( channel_name ) " must be the same as the number of output paths in " UVAR_STR(sft_write_path) "or a single path");
+                    "Number of channels in " UVAR_STR( channel_name ) " must be the same as the number of output paths in " UVAR_STR( sft_write_path ) "or a single path" );
 
   // Exit if required
   if ( should_exit ) {
@@ -389,8 +389,7 @@ int main( int argc, char *argv[] )
     const LIGOTimeGPS SFT_epoch = { .gpsSeconds = SFT_epoch_sec, .gpsNanoSeconds = 0 };
 
     // Loop over channels for this SFT interval
-    for (UINT4 n=0; n<uvar->channel_name->length; n++)
-    {
+    for ( UINT4 n = 0; n < uvar->channel_name->length; n++ ) {
       // Try to read in time series data for the next SFT
       REAL8TimeSeries *SFT_time_series = NULL;
       {
@@ -468,7 +467,7 @@ int main( int argc, char *argv[] )
       SFT->name[2] = 0;
       SFT->epoch = SFT_time_series->epoch;
       SFT->f0 = uvar->start_freq;
-      SFT->deltaF = 1.0 / ((REAL8) uvar->sft_duration);
+      SFT->deltaF = 1.0 / ( ( REAL8 ) uvar->sft_duration );
 
       // Copy and normalise SFT frequency series data into SFT
       const REAL8 SFT_normalisation = SFT_time_series->deltaT;
@@ -479,11 +478,11 @@ int main( int argc, char *argv[] )
       }
 
       // Build SFT filename spec
-      SFTFilenameSpec XLAL_INIT_DECL(spec);
-      if (uvar->sft_write_path->length > 1) {
-          XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path->data[n], "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
+      SFTFilenameSpec XLAL_INIT_DECL( spec );
+      if ( uvar->sft_write_path->length > 1 ) {
+        XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path->data[n], "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
       } else {
-          XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path->data[0], "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFillSFTFilenameSpecStrings( &spec, uvar->sft_write_path->data[0], "sft_TO_BE_VALIDATED", NULL, uvar->window_type, uvar->misc_desc, uvar->observing_kind, uvar->channel_name->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
       }
       spec.window_param = window_param;
       spec.pubObsRun = uvar->observing_run;
@@ -510,7 +509,7 @@ int main( int argc, char *argv[] )
       XLAL_CHECK_MAIN( strlen( extn ) >= 4, XLAL_EFAILED );
       strcpy( extn, ".sft" );
       XLAL_CHECK_MAIN( rename( temp_SFT_filename, final_SFT_filename ) == 0, XLAL_ESYS,
-                       "Failed to rename '%s' to '%s': %s", temp_SFT_filename, final_SFT_filename, strerror(errno) );
+                       "Failed to rename '%s' to '%s': %s", temp_SFT_filename, final_SFT_filename, strerror( errno ) );
       LogPrintf( LOG_DEBUG, "Wrote SFT '%s'\n", final_SFT_filename );
 
       // Increment number of SFTs made
@@ -525,7 +524,7 @@ int main( int argc, char *argv[] )
 
       // Set LALFrStream to correct location, if needed
       if ( n < uvar->channel_name->length - 1 ) {
-	XLAL_CHECK_MAIN( XLALFrStreamSeek( framestream, &SFT_epoch ) == 0, XLAL_EFUNC );
+        XLAL_CHECK_MAIN( XLALFrStreamSeek( framestream, &SFT_epoch ) == 0, XLAL_EFUNC );
       }
 
     }
@@ -533,7 +532,7 @@ int main( int argc, char *argv[] )
     // Advance to next SFT, overlapping if requested
     {
       const INT4 last_SFT_epoch_sec = SFT_epoch_sec;
-      SFT_epoch_sec += ( 1.0 - uvar->overlap_fraction ) * ( (REAL8) uvar->sft_duration );
+      SFT_epoch_sec += ( 1.0 - uvar->overlap_fraction ) * ( ( REAL8 ) uvar->sft_duration );
       if ( SFT_epoch_sec + uvar->sft_duration > uvar->gps_end_time ) {
         LogPrintf( LOG_NORMAL, "Generated last SFT at GPS time %" LAL_INT4_FORMAT "\n", last_SFT_epoch_sec );
         LogPrintf( LOG_NORMAL, "Generated %" LAL_INT4_FORMAT " SFTs\n", num_SFTs_made );

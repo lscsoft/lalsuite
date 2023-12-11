@@ -13,14 +13,20 @@ bin_PROGRAMS = \
 
 lalpulsar_spec_avg_SOURCES = \
 	spec_avg.c \
+	fscanutils.c \
+	fscanutils.h \
 	$(END_OF_LIST)
 
 lalpulsar_spec_avg_long_SOURCES = \
 	spec_avg_long.c \
+	fscanutils.c \
+	fscanutils.h \
 	$(END_OF_LIST)
 
 lalpulsar_spec_coherence_SOURCES = \
 	spec_coherence.c \
+	fscanutils.c \
+	fscanutils.h \
 	$(END_OF_LIST)
 
 # Add shell test scripts to this variable

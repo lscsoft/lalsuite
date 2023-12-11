@@ -1,0 +1,15 @@
+# brace style options
+style=otbs
+
+# tab options
+indent=spaces=2
+
+# padding options
+unpad-paren
+pad-paren-in
+pad-header
+pad-oper
+align-pointer=name
+
+# formatting options
+convert-tabs

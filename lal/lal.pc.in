@@ -4,7 +4,7 @@ libdir=@libdir@
 includedir=@includedir@
 
 Name: LAL
-Description: LSC Algorithm Library
+Description: LVK Algorithm Library
 Version: @VERSION@
 @INTELFFT_FALSE@Requires.private: gsl, fftw3, fftw3f
 @INTELFFT_FALSE@Libs.private: -L${libdir} -llal @CUDA_LIBS@ @PTHREAD_LIBS@

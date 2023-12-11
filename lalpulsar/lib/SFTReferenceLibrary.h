@@ -48,39 +48,39 @@ struct headertag2 {
   int                 comment_length;
 };
 
-int WriteSFT(FILE   *fp,            /* stream to write to.  On return, is at the end of SFT */
-	     int    gps_sec,        /* GPS sec of first sample */
-	     int    gps_nsec,       /* GPS nsec of first sample */
-	     double tbase,          /* time baseline of SFTs */
-	     int    firstfreqindex, /* index of first frequency bin included in data (0=DC)*/
-	     int    nsamples,       /* number of frequency bins to include in SFT */
-	     const char *detector,  /* channel-prefix defining detector */
-             unsigned short windowspec, /* SFT windowspec */
-	     const char *comment,       /* null-terminated comment string to include in SFT */
-	     float  *data           /* points to nsamples x 2 x floats (Real/Imag)  */
-	     );
+int WriteSFT( FILE   *fp,            /* stream to write to.  On return, is at the end of SFT */
+              int    gps_sec,        /* GPS sec of first sample */
+              int    gps_nsec,       /* GPS nsec of first sample */
+              double tbase,          /* time baseline of SFTs */
+              int    firstfreqindex, /* index of first frequency bin included in data (0=DC)*/
+              int    nsamples,       /* number of frequency bins to include in SFT */
+              const char *detector,  /* channel-prefix defining detector */
+              unsigned short windowspec, /* SFT windowspec */
+              const char *comment,       /* null-terminated comment string to include in SFT */
+              float  *data           /* points to nsamples x 2 x floats (Real/Imag)  */
+            );
 
-int ReadSFTHeader(FILE              *fp,          /* stream to read. Position unchanged on return */
-		  struct headertag2 *info,        /* address to return header */
-		  char              **comment,    /* if non-NULL, put pointer to comment */
-		  int               *swapendian,  /* set nonzero if data in reverse endian order */
-		  int                validate);   /* validate checksum of the file */
+int ReadSFTHeader( FILE              *fp,          /* stream to read. Position unchanged on return */
+                   struct headertag2 *info,        /* address to return header */
+                   char              **comment,    /* if non-NULL, put pointer to comment */
+                   int               *swapendian,  /* set nonzero if data in reverse endian order */
+                   int                validate );  /* validate checksum of the file */
 
-int ReadSFTData(FILE              *fp,       /* data file.  Position unchanged on return */
-		float             *data,     /* location where data should be written */
-		int               firstbin,  /* first frequency bin to read from data set */
-		int               nsamples,  /* number of frequency bin samples to retrieve */
-		char              **comment, /* if non-NULL, will contain pointer to comment string */
-		struct headertag2 *info      /* if non-NULL, will contain header information */
-		);
+int ReadSFTData( FILE              *fp,       /* data file.  Position unchanged on return */
+                 float             *data,     /* location where data should be written */
+                 int               firstbin,  /* first frequency bin to read from data set */
+                 int               nsamples,  /* number of frequency bin samples to retrieve */
+                 char              **comment, /* if non-NULL, will contain pointer to comment string */
+                 struct headertag2 *info      /* if non-NULL, will contain header information */
+               );
 
 /* This routine returns zero if the two headers contain consistent
    information, else an error code if they are not consistent */
-int CheckSFTHeaderConsistency(struct headertag2 *headerone, /* pointer to earlier header */
-			      struct headertag2 *headertwo  /* pointer to later header */
-			      );
+int CheckSFTHeaderConsistency( struct headertag2 *headerone, /* pointer to earlier header */
+                               struct headertag2 *headertwo  /* pointer to later header */
+                             );
 
-int ValidateSFTFile ( const char *fname );
+int ValidateSFTFile( const char *fname );
 
 /* various possible error codes.  See SFTErrorMessage() for decodings */
 #define SFTNOERROR              0  /* MUST BE ZERO, MEANS NO ERROR */
@@ -117,10 +117,10 @@ int ValidateSFTFile ( const char *fname );
 
 /* takes error code from above list and returns static human-readable
    description as null-terminated string */
-const char *SFTErrorMessage(int errorcode);
+const char *SFTErrorMessage( int errorcode );
 
 /* internal functions for checking validity of detector-entry */
-int unknownDetector (const char *detector);	/* returns zero if detector is known */
+int unknownDetector( const char *detector );    /* returns zero if detector is known */
 
 /** @} */
 

@@ -54,15 +54,15 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     input_result_files, STRINGVector, 'i', REQUIRED,
     "Input result files produced by lalpulsar_Weave for concatenation. "
-    );
+  );
   XLALRegisterUvarMember(
     output_result_file, STRING, 'o', REQUIRED,
     "Output concatenated result file. "
-    );
+  );
   XLALRegisterUvarMember(
     toplist_limit, UINT4, 'n', OPTIONAL,
     "Maximum number of candidates to return in an output toplist; if 0, all candidates are returned. "
-    );
+  );
 
   // Parse user input
   XLAL_CHECK_MAIN( xlalErrno == 0, XLAL_EFUNC, "A call to XLALRegisterUvarMember() failed" );

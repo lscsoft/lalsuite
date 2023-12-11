@@ -126,7 +126,8 @@
 #define MAGNIFY 1.0           /* Magnification factor of ellipses */
 
 
-int main( int argc, char *argv[] ) {
+int main( int argc, char *argv[] )
+{
   static LALStatus status;          /* Status structure */
   PtoleMetricIn    in;              /* PtoleMetric() input structure */
   REAL4            mismatch;        /* mismatch threshold of mesh */
@@ -138,8 +139,8 @@ int main( int argc, char *argv[] ) {
   BOOLEAN          grace = 0;       /* Whether or not we use xmgrace */
   BOOLEAN          nongrace = 0;    /* Whether or not to output data to file*/
   int              ra, dec, i;      /* Loop variables for xmgrace option */
-  FILE            *pvc=NULL;        /* Temporary file for xmgrace option */
-  FILE            *fnongrace=NULL;  /* File contaning ellipse coordinates */
+  FILE            *pvc = NULL;      /* Temporary file for xmgrace option */
+  FILE            *fnongrace = NULL; /* File contaning ellipse coordinates */
 
 
   /* Default values. */
@@ -150,8 +151,8 @@ int main( int argc, char *argv[] ) {
 
 
   /* Parse options. */
-  while ((opt = LALgetopt( argc, argv, "b:em:pt:x" )) != -1) {
-    switch (opt) {
+  while ( ( opt = LALgetopt( argc, argv, "b:em:pt:x" ) ) != -1 ) {
+    switch ( opt ) {
     case 'b':
       in.epoch.gpsSeconds = atof( LALoptarg );
       break;
@@ -173,51 +174,50 @@ int main( int argc, char *argv[] ) {
     }
   }
 
-  if (test) {
-    printf("\nTesting bad I/O structures...\n");
+  if ( test ) {
+    printf( "\nTesting bad I/O structures...\n" );
     LALPtoleMetric( &status, metric, NULL );
-    printf("\nTesting bad sky position...\n");
+    printf( "\nTesting bad sky position...\n" );
     in.position.longitude = 1e10;
     LALPtoleMetric( &status, metric, &in );
   }
   /* Good sky position: ra=19h13m, dec=+16deg, sound familiar? */
   in.position.system = COORDINATESYSTEM_EQUATORIAL;
-  in.position.longitude = 288.25*LAL_PI_180;
-  in.position.latitude = 16*LAL_PI_180;
+  in.position.longitude = 288.25 * LAL_PI_180;
+  in.position.latitude = 16 * LAL_PI_180;
 
-  if (test){
-    printf("\nTesting bad spindown parameters...\n");
+  if ( test ) {
+    printf( "\nTesting bad spindown parameters...\n" );
     LALPtoleMetric( &status, metric, &in );
   }
   /* Good spindown parameters: all zero (if we have any) */
-  if( NUM_SPINDOWN > 0 )
-  {
+  if ( NUM_SPINDOWN > 0 ) {
     LALCreateVector( &status, &spindown, NUM_SPINDOWN );
-    if( status.statusCode )
-    {
+    if ( status.statusCode ) {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
               PTOLEMETRICTESTC_MSGEMEM );
       return PTOLEMETRICTESTC_EMEM;
     }
-    for (j=0; (UINT4)j<spindown->length; j++)
+    for ( j = 0; ( UINT4 )j < spindown->length; j++ ) {
       spindown->data[j] = 0;
+    }
     in.spindown = spindown;
-  }
-  else
+  } else {
     in.spindown = NULL;
+  }
 
 
 
-  if (test) {
+  if ( test ) {
     REAL4 old_duration = in.duration;
-    printf("\nTesting bad duration...\n");
+    printf( "\nTesting bad duration...\n" );
     in.duration = -1;
     LALPtoleMetric( &status, metric, &in );
     in.duration = old_duration;
   }
 
-  if (test) {
-    printf("\nTesting bad maximum frequency...\n");
+  if ( test ) {
+    printf( "\nTesting bad maximum frequency...\n" );
     in.maxFreq = 0;
     LALPtoleMetric( &status, metric, &in );
   }
@@ -234,45 +234,44 @@ int main( int argc, char *argv[] ) {
   /* Use GEO600 site. */
   in.site = &lalCachedDetectors[LALDetectorIndexGEO600DIFF];
 
-  if (test) {
-    printf("\nTesting bad output contents...\n");
+  if ( test ) {
+    printf( "\nTesting bad output contents...\n" );
     LALPtoleMetric( &status, metric, &in );
   }
   /* Allocate storage for output metric. */
-  LALDCreateVector( &status, &metric, (3+NUM_SPINDOWN)*(4+NUM_SPINDOWN)/2 );
-  if( status.statusCode )
-  {
+  LALDCreateVector( &status, &metric, ( 3 + NUM_SPINDOWN ) * ( 4 + NUM_SPINDOWN ) / 2 );
+  if ( status.statusCode ) {
     printf( "%s line %d: %s\n", __FILE__, __LINE__, PTOLEMETRICTESTC_MSGEMEM );
     return PTOLEMETRICTESTC_EMEM;
   }
 
   /* Print results if no options. */
-  if (argc == 1) {
+  if ( argc == 1 ) {
 
     printf( "\nValid results for duration %e seconds:\n", in.duration );
     LALPtoleMetric( &status, metric, &in );
-    if( status.statusCode )
-    {
+    if ( status.statusCode ) {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
               PTOLEMETRICTESTC_MSGESUB );
       return PTOLEMETRICTESTC_ESUB;
     }
-    for (j=0; j<=2+NUM_SPINDOWN; j++) {
-      for (k=0; k<=j; k++)
-        printf( "  %+.3e", metric->data[k+j*(j+1)/2] );
-      printf("\n");
+    for ( j = 0; j <= 2 + NUM_SPINDOWN; j++ ) {
+      for ( k = 0; k <= j; k++ ) {
+        printf( "  %+.3e", metric->data[k + j * ( j + 1 ) / 2] );
+      }
+      printf( "\n" );
     }
     LALProjectMetric( &status, metric, 0 );
-    if( status.statusCode )
-    {
+    if ( status.statusCode ) {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
               PTOLEMETRICTESTC_MSGESUB );
       return PTOLEMETRICTESTC_ESUB;
     }
     printf( "With f0 projected out:\n" );
-    for (j=1; j<=2+NUM_SPINDOWN; j++) {
-      for (k=1; k<=j; k++)
-        printf( "  %+.3e", metric->data[k+j*(j+1)/2] );
+    for ( j = 1; j <= 2 + NUM_SPINDOWN; j++ ) {
+      for ( k = 1; k <= j; k++ ) {
+        printf( "  %+.3e", metric->data[k + j * ( j + 1 ) / 2] );
+      }
       printf( "\n" );
     }
 
@@ -280,28 +279,28 @@ int main( int argc, char *argv[] ) {
     printf( "\nValid results for duration 1e7 seconds:\n" );
     in.duration = 1e7;
     LALPtoleMetric( &status, metric, &in );
-    if( status.statusCode )
-    {
+    if ( status.statusCode ) {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
               PTOLEMETRICTESTC_MSGESUB );
       return PTOLEMETRICTESTC_ESUB;
     }
-    for (j=0; j<=2+NUM_SPINDOWN; j++) {
-      for (k=0; k<=j; k++)
-        printf( "  %+.3e", metric->data[k+j*(j+1)/2] );
-      printf("\n");
+    for ( j = 0; j <= 2 + NUM_SPINDOWN; j++ ) {
+      for ( k = 0; k <= j; k++ ) {
+        printf( "  %+.3e", metric->data[k + j * ( j + 1 ) / 2] );
+      }
+      printf( "\n" );
     }
     LALProjectMetric( &status, metric, 0 );
-    if( status.statusCode )
-    {
+    if ( status.statusCode ) {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
               PTOLEMETRICTESTC_MSGESUB );
       return PTOLEMETRICTESTC_ESUB;
     }
     printf( "With f0 projected out:\n" );
-    for (j=1; j<=2+NUM_SPINDOWN; j++) {
-      for (k=1; k<=j; k++)
-        printf( "  %+.3e", metric->data[k+j*(j+1)/2] );
+    for ( j = 1; j <= 2 + NUM_SPINDOWN; j++ ) {
+      for ( k = 1; k <= j; k++ ) {
+        printf( "  %+.3e", metric->data[k + j * ( j + 1 ) / 2] );
+      }
       printf( "\n" );
     }
 #endif
@@ -309,57 +308,51 @@ int main( int argc, char *argv[] ) {
 
   /* Here is the code that uses xmgrace with the -x option, */
   /* and outputs data to a file with the -t option. */
-  if (grace || nongrace) {
+  if ( grace || nongrace ) {
 
     /* Take care of preliminaries. */
-    if(grace)
-      {
-	pvc = popen( "xmgrace -pipe", "w" );
-	if( !pvc )
-	  {
-	    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-		    PTOLEMETRICTESTC_MSGESYS );
-	    return PTOLEMETRICTESTC_ESYS;
-	  }
-	fprintf( pvc, "@xaxis label \"Right ascension (degrees)\"\n" );
-	fprintf( pvc, "@yaxis label \"Declination (degrees)\"\n" );
+    if ( grace ) {
+      pvc = popen( "xmgrace -pipe", "w" );
+      if ( !pvc ) {
+        printf( "%s line %d: %s\n", __FILE__, __LINE__,
+                PTOLEMETRICTESTC_MSGESYS );
+        return PTOLEMETRICTESTC_ESYS;
       }
-    if(nongrace)
-      {
-	fnongrace = fopen( "nongrace.data", "w" );
-	if( !fnongrace )
-	  {
-	    printf( "%s line %d: %s\n", __FILE__, __LINE__,
-		    PTOLEMETRICTESTC_MSGESYS );
-	    return PTOLEMETRICTESTC_ESYS;
-	  }
+      fprintf( pvc, "@xaxis label \"Right ascension (degrees)\"\n" );
+      fprintf( pvc, "@yaxis label \"Declination (degrees)\"\n" );
+    }
+    if ( nongrace ) {
+      fnongrace = fopen( "nongrace.data", "w" );
+      if ( !fnongrace ) {
+        printf( "%s line %d: %s\n", __FILE__, __LINE__,
+                PTOLEMETRICTESTC_MSGESYS );
+        return PTOLEMETRICTESTC_ESYS;
       }
+    }
 
     /* Step around the sky: a grid in ra and dec. */
     j = 0;
-    for (dec=80; dec>0; dec-=10) {
-      for (ra=0; ra<=90; ra+=15) {
+    for ( dec = 80; dec > 0; dec -= 10 ) {
+      for ( ra = 0; ra <= 90; ra += 15 ) {
         float gaa, gad, gdd, angle, smaj, smin;
 
         /* Get the metric at this ra, dec. */
-        in.position.longitude = ra*LAL_PI_180;
-        in.position.latitude = dec*LAL_PI_180;
+        in.position.longitude = ra * LAL_PI_180;
+        in.position.latitude = dec * LAL_PI_180;
         LALPtoleMetric( &status, metric, &in );
-        if( status.statusCode )
-        {
+        if ( status.statusCode ) {
           printf( "%s line %d: %s\n", __FILE__, __LINE__,
                   PTOLEMETRICTESTC_MSGESUB );
           return PTOLEMETRICTESTC_ESUB;
         }
 
-	/*  Project metric: */
-	LALProjectMetric( &status, metric, 0 );
-	if( status.statusCode )
-	  {
+        /*  Project metric: */
+        LALProjectMetric( &status, metric, 0 );
+        if ( status.statusCode ) {
           printf( "%s line %d: %s\n", __FILE__, __LINE__,
                   PTOLEMETRICTESTC_MSGESUB );
           return PTOLEMETRICTESTC_ESUB;
-	  }
+        }
 
         /* Rename \gamma_{\alpha\alpha}. */
         gaa = metric->data[2];
@@ -368,63 +361,68 @@ int main( int argc, char *argv[] ) {
         /* Rename \gamma_{\delta\delta}. */
         gdd = metric->data[5];
         /* Semiminor axis from larger eigenvalue of metric. */
-        smin = gaa+gdd + sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-        smin = sqrt(2*mismatch/smin);
+        smin = gaa + gdd + sqrt( pow( gaa - gdd, 2 ) + pow( 2 * gad, 2 ) );
+        smin = sqrt( 2 * mismatch / smin );
         /* Semiminor axis from smaller eigenvalue of metric. */
-        smaj = gaa+gdd - sqrt( pow(gaa-gdd,2) + pow(2*gad,2) );
-        smaj = sqrt(2*mismatch/smaj);
+        smaj = gaa + gdd - sqrt( pow( gaa - gdd, 2 ) + pow( 2 * gad, 2 ) );
+        smaj = sqrt( 2 * mismatch / smaj );
         /* Angle of semimajor axis with "horizontal" (equator). */
-        angle = atan2( gad, mismatch/smaj/smaj-gdd );
-        if (angle <= -LAL_PI_2) angle += LAL_PI;
-        if (angle > LAL_PI_2) angle -= LAL_PI;
+        angle = atan2( gad, mismatch / smaj / smaj - gdd );
+        if ( angle <= -LAL_PI_2 ) {
+          angle += LAL_PI;
+        }
+        if ( angle > LAL_PI_2 ) {
+          angle -= LAL_PI;
+        }
 
-        if(grace)
-	  {
-	    /* Print set header. */
-	    fprintf( pvc, "@s%d color (0,0,0)\n", j );
-	    fprintf( pvc, "@target G0.S%d\n@type xy\n", j++ );
-	    /* Print center of patch. */
-	    fprintf( pvc, "%16.8g %16.8g\n", (float)ra, (float)dec );
-	  }
-	if(nongrace)
-	  /* Print center of patch. */
-	  fprintf( fnongrace, "%16.8g %16.8g\n", (float)ra, (float)dec );
-	/* Loop around patch ellipse. */
-        for (i=0; i<=SPOKES; i++) {
+        if ( grace ) {
+          /* Print set header. */
+          fprintf( pvc, "@s%d color (0,0,0)\n", j );
+          fprintf( pvc, "@target G0.S%d\n@type xy\n", j++ );
+          /* Print center of patch. */
+          fprintf( pvc, "%16.8g %16.8g\n", ( float )ra, ( float )dec );
+        }
+        if ( nongrace )
+          /* Print center of patch. */
+        {
+          fprintf( fnongrace, "%16.8g %16.8g\n", ( float )ra, ( float )dec );
+        }
+        /* Loop around patch ellipse. */
+        for ( i = 0; i <= SPOKES; i++ ) {
           float c, r;
-          c = LAL_TWOPI*i/SPOKES;
-          r = MAGNIFY*LAL_180_PI*smaj*smin/sqrt( pow(smaj*sin(c),2)
-              + pow(smin*cos(c),2) );
-	  if(grace)
-	    fprintf( pvc, "%e %e\n", ra+r*cos(angle-c), dec+r*sin(angle-c) );
-	  if(nongrace)
-	    fprintf( fnongrace, "%e %e\n", ra+r*cos(angle-c),
-		     dec+r*sin(angle-c) );
+          c = LAL_TWOPI * i / SPOKES;
+          r = MAGNIFY * LAL_180_PI * smaj * smin / sqrt( pow( smaj * sin( c ), 2 )
+              + pow( smin * cos( c ), 2 ) );
+          if ( grace ) {
+            fprintf( pvc, "%e %e\n", ra + r * cos( angle - c ), dec + r * sin( angle - c ) );
+          }
+          if ( nongrace )
+            fprintf( fnongrace, "%e %e\n", ra + r * cos( angle - c ),
+                     dec + r * sin( angle - c ) );
 
         } /* for (a...) */
 
       } /* for (ra...) */
     } /* for (dec...) */
-    if(grace)
+    if ( grace ) {
       fclose( pvc );
-    if(nongrace)
+    }
+    if ( nongrace ) {
       fclose( fnongrace );
+    }
   } /* if (grace || nongrace) */
 
-  printf("\nCleaning up and leaving...\n");
-  if( spindown )
-  {
+  printf( "\nCleaning up and leaving...\n" );
+  if ( spindown ) {
     LALDestroyVector( &status, &spindown );
-    if( status.statusCode )
-    {
+    if ( status.statusCode ) {
       printf( "%s line %d: %s\n", __FILE__, __LINE__,
               PTOLEMETRICTESTC_MSGEMEM );
       return PTOLEMETRICTESTC_EMEM;
     }
   }
   LALDDestroyVector( &status, &metric );
-  if( status.statusCode )
-  {
+  if ( status.statusCode ) {
     printf( "%s line %d: %s\n", __FILE__, __LINE__,
             PTOLEMETRICTESTC_MSGEMEM );
     return PTOLEMETRICTESTC_EMEM;

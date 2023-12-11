@@ -164,7 +164,8 @@ do {                                                                 \
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 /* vvvvvvvvvvvvvvvvvvvvvvvvvvvvvv------------------------------------ */
-int main(int argc, char *argv[]){
+int main( int argc, char *argv[] )
+{
 
   static LALStatus           status;  /* LALStatus pointer */
   static HOUGHptfLUTVector   lutV; /* the Look Up Table vector*/
@@ -189,10 +190,10 @@ int main(int argc, char *argv[]){
   UINT2 xSide, ySide;
 
   CHAR *fname = NULL;               /* The output filename */
-  FILE *fp=NULL;                    /* Output file */
+  FILE *fp = NULL;                  /* Output file */
 
   INT4 arg;                         /* Argument counter */
-  UINT4 i,j;                       /* Index counter, etc */
+  UINT4 i, j;                      /* Index counter, etc */
   INT4 k;
   REAL8 f0, alpha, delta, veloMod;
   REAL8 patchSizeX, patchSizeY;
@@ -218,12 +219,12 @@ int main(int argc, char *argv[]){
   ht.map = NULL;
 
   f0 =  F0;
-  f0Bin = F0*TCOH;
+  f0Bin = F0 * TCOH;
 
   parRes.f0Bin =  f0Bin;
   parRes.deltaF = DF;
-  parRes.patchSkySizeX  = patchSizeX = 1.0/(TCOH*F0*VEPI);
-  parRes.patchSkySizeY  = patchSizeY = 1.0/(TCOH*F0*VEPI);
+  parRes.patchSkySizeX  = patchSizeX = 1.0 / ( TCOH * F0 * VEPI );
+  parRes.patchSkySizeY  = patchSizeY = 1.0 / ( TCOH * F0 * VEPI );
   parRes.pixelFactor = PIXELFACTOR;
   parRes.pixErr = PIXERR;
   parRes.linErr = LINERR;
@@ -265,9 +266,9 @@ int main(int argc, char *argv[]){
     else if ( !strcmp( argv[arg], "-f" ) ) {
       if ( argc > arg + 1 ) {
         arg++;
-	f0 = atof(argv[arg++]);
-	f0Bin = f0*TCOH;
-	parRes.f0Bin =  f0Bin;
+        f0 = atof( argv[arg++] );
+        f0Bin = f0 * TCOH;
+        parRes.f0Bin =  f0Bin;
       } else {
         ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
@@ -278,8 +279,8 @@ int main(int argc, char *argv[]){
     else if ( !strcmp( argv[arg], "-p" ) ) {
       if ( argc > arg + 2 ) {
         arg++;
-	alpha = atof(argv[arg++]);
-	delta = atof(argv[arg++]);
+        alpha = atof( argv[arg++] );
+        delta = atof( argv[arg++] );
       } else {
         ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
@@ -290,8 +291,8 @@ int main(int argc, char *argv[]){
     else if ( !strcmp( argv[arg], "-s" ) ) {
       if ( argc > arg + 2 ) {
         arg++;
-	parRes.patchSkySizeX = patchSizeX = atof(argv[arg++]);
-        parRes.patchSkySizeY = patchSizeY = atof(argv[arg++]);
+        parRes.patchSkySizeX = patchSizeX = atof( argv[arg++] );
+        parRes.patchSkySizeY = patchSizeY = atof( argv[arg++] );
       } else {
         ERROR( TESTDRIVEHOUGHC_EARG, TESTDRIVEHOUGHC_MSGEARG, 0 );
         XLALPrintError( USAGE, *argv );
@@ -309,7 +310,7 @@ int main(int argc, char *argv[]){
 
   if ( f0 < 0 ) {
     ERROR( TESTDRIVEHOUGHC_EBAD, TESTDRIVEHOUGHC_MSGEBAD, "freq<0:" );
-    XLALPrintError( USAGE, *argv  );
+    XLALPrintError( USAGE, *argv );
     return TESTDRIVEHOUGHC_EBAD;
   }
 
@@ -331,8 +332,8 @@ int main(int argc, char *argv[]){
 
   patch.xCoor = NULL;
   patch.yCoor = NULL;
-  patch.xCoor = (REAL8 *)LALMalloc(xSide*sizeof(REAL8));
-  patch.yCoor = (REAL8 *)LALMalloc(ySide*sizeof(REAL8));
+  patch.xCoor = ( REAL8 * )LALMalloc( xSide * sizeof( REAL8 ) );
+  patch.yCoor = ( REAL8 * )LALMalloc( ySide * sizeof( REAL8 ) );
 
   SUB( LALHOUGHFillPatchGrid( &status, &patch, &parSize ), &status );
 
@@ -340,45 +341,45 @@ int main(int argc, char *argv[]){
   /* memory allocation and settings */
   /******************************************************************/
 
-  lutV.lut = (HOUGHptfLUT *)LALMalloc(MOBSCOH*sizeof(HOUGHptfLUT));
-  pgV.pg = (HOUGHPeakGram *)LALMalloc(MOBSCOH*sizeof(HOUGHPeakGram));
-  phmdVS.phmd =(HOUGHphmd *)LALMalloc(MOBSCOH*NFSIZE*sizeof(HOUGHphmd));
-  freqInd.data =  ( UINT8 *)LALMalloc(MOBSCOH*sizeof(UINT8));
+  lutV.lut = ( HOUGHptfLUT * )LALMalloc( MOBSCOH * sizeof( HOUGHptfLUT ) );
+  pgV.pg = ( HOUGHPeakGram * )LALMalloc( MOBSCOH * sizeof( HOUGHPeakGram ) );
+  phmdVS.phmd = ( HOUGHphmd * )LALMalloc( MOBSCOH * NFSIZE * sizeof( HOUGHphmd ) );
+  freqInd.data = ( UINT8 * )LALMalloc( MOBSCOH * sizeof( UINT8 ) );
 
-  for(j=0; j<lutV.length; ++j){
+  for ( j = 0; j < lutV.length; ++j ) {
     lutV.lut[j].maxNBins = maxNBins;
     lutV.lut[j].maxNBorders = maxNBorders;
     lutV.lut[j].border =
-         (HOUGHBorder *)LALMalloc(maxNBorders*sizeof(HOUGHBorder));
+      ( HOUGHBorder * )LALMalloc( maxNBorders * sizeof( HOUGHBorder ) );
     lutV.lut[j].bin =
-         (HOUGHBin2Border *)LALMalloc(maxNBins*sizeof(HOUGHBin2Border));
+      ( HOUGHBin2Border * )LALMalloc( maxNBins * sizeof( HOUGHBin2Border ) );
   }
 
-  for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
+  for ( j = 0; j < phmdVS.length * phmdVS.nfSize; ++j ) {
     phmdVS.phmd[j].maxNBorders = maxNBorders;
     phmdVS.phmd[j].leftBorderP =
-       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+      ( HOUGHBorder ** )LALMalloc( maxNBorders * sizeof( HOUGHBorder * ) );
     phmdVS.phmd[j].rightBorderP =
-       (HOUGHBorder **)LALMalloc(maxNBorders*sizeof(HOUGHBorder *));
+      ( HOUGHBorder ** )LALMalloc( maxNBorders * sizeof( HOUGHBorder * ) );
   }
 
 
   ht.xSide = xSide;
   ht.ySide = ySide;
   ht.map   = NULL;
-  ht.map   = (HoughTT *)LALMalloc(xSide*ySide*sizeof(HoughTT));
+  ht.map   = ( HoughTT * )LALMalloc( xSide * ySide * sizeof( HoughTT ) );
 
-  for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
+  for ( j = 0; j < phmdVS.length * phmdVS.nfSize; ++j ) {
     phmdVS.phmd[j].ySide = ySide;
     phmdVS.phmd[j].firstColumn = NULL;
-    phmdVS.phmd[j].firstColumn = (UCHAR *)LALMalloc(ySide*sizeof(UCHAR));
+    phmdVS.phmd[j].firstColumn = ( UCHAR * )LALMalloc( ySide * sizeof( UCHAR ) );
   }
 
-  for (j=0; j<lutV.length ; ++j){
-    for (i=0; i<maxNBorders; ++i){
+  for ( j = 0; j < lutV.length ; ++j ) {
+    for ( i = 0; i < maxNBorders; ++i ) {
       lutV.lut[j].border[i].ySide = ySide;
       lutV.lut[j].border[i].xPixel =
-                            (COORType *)LALMalloc(ySide*sizeof(COORType));
+        ( COORType * )LALMalloc( ySide * sizeof( COORType ) );
     }
   }
 
@@ -398,11 +399,11 @@ int main(int argc, char *argv[]){
   parDem.spin.length = 0;
   parDem.spin.data = NULL;
 
-           /*************************************************/
-  for (j=0;j< MOBSCOH;++j){  /* create all the LUTs */
-    parDem.veloC.x = veloMod*cos(delta)*cos(alpha);
-    parDem.veloC.y = veloMod*cos(delta)*sin(alpha);
-    parDem.veloC.z = veloMod*sin(delta);
+  /*************************************************/
+  for ( j = 0; j < MOBSCOH; ++j ) { /* create all the LUTs */
+    parDem.veloC.x = veloMod * cos( delta ) * cos( alpha );
+    parDem.veloC.y = veloMod * cos( delta ) * sin( alpha );
+    parDem.veloC.z = veloMod * sin( delta );
 
     alpha +=  STEPALPHA; /* shift alpha several degrees */
 
@@ -410,8 +411,8 @@ int main(int argc, char *argv[]){
     SUB( LALHOUGHCalcParamPLUT( &status, &parLut, &parSize, &parDem ),  &status );
 
     /* build the LUT */
-    SUB( LALHOUGHConstructPLUT( &status, &(lutV.lut[j]), &patch, &parLut ),
-	 &status );
+    SUB( LALHOUGHConstructPLUT( &status, &( lutV.lut[j] ), &patch, &parLut ),
+         &status );
   }
 
 
@@ -421,15 +422,17 @@ int main(int argc, char *argv[]){
 
   fBin = f0Bin + 21;  /* a Frequency-bin  shifted from the LUT */
 
-  for (j=0;j< MOBSCOH;++j){  /* create all the peakgrams */
-   pgV.pg[j].deltaF = DF;
-   pgV.pg[j].fBinIni = (fBin) - maxNBins;
-   pgV.pg[j].fBinFin = (fBin)+ 5*maxNBins;
-   pgV.pg[j].length = maxNBins; /* could be much smaller */
-   pgV.pg[j].peak = NULL;
-   pgV.pg[j].peak = (INT4 *)LALMalloc( ( pgV.pg[j].length) * sizeof(INT4));
+  for ( j = 0; j < MOBSCOH; ++j ) { /* create all the peakgrams */
+    pgV.pg[j].deltaF = DF;
+    pgV.pg[j].fBinIni = ( fBin ) - maxNBins;
+    pgV.pg[j].fBinFin = ( fBin ) + 5 * maxNBins;
+    pgV.pg[j].length = maxNBins; /* could be much smaller */
+    pgV.pg[j].peak = NULL;
+    pgV.pg[j].peak = ( INT4 * )LALMalloc( ( pgV.pg[j].length ) * sizeof( INT4 ) );
 
-   for (i=0; i< pgV.pg[j].length; ++i){ pgV.pg[j].peak[i] = 3*i; } /* test */
+    for ( i = 0; i < pgV.pg[j].length; ++i ) {
+      pgV.pg[j].peak[i] = 3 * i;  /* test */
+    }
   }
 
 
@@ -438,10 +441,10 @@ int main(int argc, char *argv[]){
   /******************************************************************/
 
   phmdVS.fBinMin = fBin;
-  SUB( LALHOUGHConstructSpacePHMD(&status, &phmdVS, &pgV, &lutV), &status );
+  SUB( LALHOUGHConstructSpacePHMD( &status, &phmdVS, &pgV, &lutV ), &status );
 
   /* shift the structure one frequency bin */
-  SUB( LALHOUGHupdateSpacePHMDup(&status, &phmdVS, &pgV, &lutV), &status );
+  SUB( LALHOUGHupdateSpacePHMDup( &status, &phmdVS, &pgV, &lutV ), &status );
 
 
   /******************************************************************/
@@ -455,8 +458,8 @@ int main(int argc, char *argv[]){
   /* construction of a total Hough map  */
   /******************************************************************/
 
-  for (j=0;j< MOBSCOH;++j){
-    freqInd.data[j]= fBin+2;
+  for ( j = 0; j < MOBSCOH; ++j ) {
+    freqInd.data[j] = fBin + 2;
   }
 
   SUB( LALHOUGHConstructHMT( &status, &ht, &freqInd, &phmdVS ), &status );
@@ -469,21 +472,21 @@ int main(int argc, char *argv[]){
   if ( fname ) {
     fp = fopen( fname, "w" );
   } else {
-    fp = fopen( FILEOUT , "w" );
+    fp = fopen( FILEOUT, "w" );
   }
 
-  if ( !fp ){
+  if ( !fp ) {
     ERROR( TESTDRIVEHOUGHC_EFILE, TESTDRIVEHOUGHC_MSGEFILE, 0 );
     return TESTDRIVEHOUGHC_EFILE;
   }
 
 
-  for(k=ySide-1; k>=0; --k){
-    for(i=0;i<xSide;++i){
-      fprintf( fp ," %f", ht.map[k*xSide +i]);
+  for ( k = ySide - 1; k >= 0; --k ) {
+    for ( i = 0; i < xSide; ++i ) {
+      fprintf( fp, " %f", ht.map[k * xSide + i] );
       fflush( fp );
     }
-    fprintf( fp ," \n");
+    fprintf( fp, " \n" );
     fflush( fp );
   }
 
@@ -493,34 +496,34 @@ int main(int argc, char *argv[]){
   /******************************************************************/
   /* Free memory and exit */
   /******************************************************************/
-  for (j=0;j< MOBSCOH;++j){
-    LALFree( pgV.pg[j].peak);  /* All of them */
+  for ( j = 0; j < MOBSCOH; ++j ) {
+    LALFree( pgV.pg[j].peak ); /* All of them */
   }
 
 
-  for (j=0; j<lutV.length ; ++j){
-    for (i=0; i<maxNBorders; ++i){
-      LALFree( lutV.lut[j].border[i].xPixel);
+  for ( j = 0; j < lutV.length ; ++j ) {
+    for ( i = 0; i < maxNBorders; ++i ) {
+      LALFree( lutV.lut[j].border[i].xPixel );
     }
-    LALFree( lutV.lut[j].border);
-    LALFree( lutV.lut[j].bin);
+    LALFree( lutV.lut[j].border );
+    LALFree( lutV.lut[j].bin );
   }
 
-  for(j=0; j<phmdVS.length * phmdVS.nfSize; ++j){
-    LALFree( phmdVS.phmd[j].leftBorderP);
-    LALFree( phmdVS.phmd[j].rightBorderP);
-    LALFree( phmdVS.phmd[j].firstColumn);
+  for ( j = 0; j < phmdVS.length * phmdVS.nfSize; ++j ) {
+    LALFree( phmdVS.phmd[j].leftBorderP );
+    LALFree( phmdVS.phmd[j].rightBorderP );
+    LALFree( phmdVS.phmd[j].firstColumn );
   }
 
-  LALFree(lutV.lut);
-  LALFree(pgV.pg);
-  LALFree(phmdVS.phmd);
-  LALFree(freqInd.data);
+  LALFree( lutV.lut );
+  LALFree( pgV.pg );
+  LALFree( phmdVS.phmd );
+  LALFree( freqInd.data );
 
-  LALFree(ht.map);
+  LALFree( ht.map );
 
-  LALFree(patch.xCoor);
-  LALFree(patch.yCoor);
+  LALFree( patch.xCoor );
+  LALFree( patch.yCoor );
 
   LALCheckMemoryLeaks();
 

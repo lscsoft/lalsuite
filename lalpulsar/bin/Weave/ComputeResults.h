@@ -102,30 +102,30 @@ WeaveCohInput *XLALWeaveCohInputCreate(
   FstatOptionalArgs *Fstat_opt_args,
   WeaveStatisticsParams *statistics_params,
   BOOLEAN recalc_stage
-  );
+);
 void XLALWeaveCohInputDestroy(
   WeaveCohInput *coh_input
-  );
+);
 int XLALWeaveCohInputWriteInfo(
   FITSFile *file,
   const size_t ncoh_input,
   WeaveCohInput *const *coh_input
-  );
+);
 int XLALWeaveCohInputWriteSegInfo(
   FITSFile *file,
   const size_t ncoh_input,
   WeaveCohInput *const *coh_input
-  );
+);
 int XLALWeaveCohResultsCompute(
   WeaveCohResults **coh_res,
   WeaveCohInput *coh_input,
   const PulsarDopplerParams *coh_phys,
   const UINT4 coh_nfreqs,
   WeaveSearchTiming *tim
-  );
+);
 void XLALWeaveCohResultsDestroy(
   WeaveCohResults *coh_res
-  );
+);
 int XLALWeaveSemiResultsInit(
   WeaveSemiResults **semi_res,
   const WeaveSimulationLevel simulation_level,
@@ -136,7 +136,7 @@ int XLALWeaveSemiResultsInit(
   const double dfreq,
   const UINT4 semi_nfreqs,
   const WeaveStatisticsParams *statistics_params
-  );
+);
 int XLALWeaveSemiResultsComputeSegs(
   WeaveSemiResults *semi_res,
   const UINT4 nsegments,
@@ -144,14 +144,14 @@ int XLALWeaveSemiResultsComputeSegs(
   const UINT8 *coh_index,
   const UINT4 *coh_offset,
   WeaveSearchTiming *tim
-  );
+);
 int XLALWeaveSemiResultsComputeMain(
   WeaveSemiResults *semi_res,
   WeaveSearchTiming *tim
-  );
+);
 void XLALWeaveSemiResultsDestroy(
   WeaveSemiResults *semi_res
-  );
+);
 
 int XLALWeaveCohResultsExtract(
   REAL4Vector **coh2F,
@@ -159,12 +159,12 @@ int XLALWeaveCohResultsExtract(
   BOOLEAN *have_coh2F_det,
   WeaveCohResults *coh_res,
   const WeaveCohInput *coh_input
-  );
+);
 int XLALWeaveSemiCoh2FExtract(
   REAL4 *coh2F,
   const WeaveSemiResults *semi_res,
   const UINT4 freq_idx
-  );
+);
 
 #ifdef __cplusplus
 }

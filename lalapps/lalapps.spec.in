@@ -9,7 +9,7 @@
 Name: @PACKAGE@
 Version: @BASE_VERSION@
 Release: %{?nightly:0.%{nightly}}%{!?nightly:%{release}}%{?dist}
-Summary: LSC Algorithm Library Applications
+Summary: LVK Algorithm Library Applications
 License: GPLv2+
 Source0: https://software.igwn.org/lscsoft/source/lalsuite/%{name}-%{version}%{?nightly:-%{nightly}}.tar.xz
 URL: https://wiki.ligo.org/Computing/LALSuite
@@ -108,8 +108,8 @@ Provides: lalstochastic-octave = 1.1.21-1
 Prefix: %{_prefix}
 
 %description
-The LSC Algorithm Library Applications for gravitational wave data analysis.
-This package contains applications that are built on tools in the LSC
+The LVK Algorithm Library Applications for gravitational wave data analysis.
+This package contains applications that are built on tools in the LVK
 Algorithm Library.
 
 %prep

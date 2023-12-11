@@ -66,7 +66,7 @@ Depends:
  python3-six,
  python3-tqdm,
 Breaks: lalinference-python (<< 1.9.4.1-1~)
-Description: LSC Algorithm Library Applications
- The LSC Algorithm Library Applications for gravitational wave data analysis.
+Description: LVK Algorithm Library Applications
+ The LVK Algorithm Library Applications for gravitational wave data analysis.
  This package contains applications that are built on tools in the
- LSC Algorithm Library.
+ LVK Algorithm Library.

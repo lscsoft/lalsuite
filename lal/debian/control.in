@@ -33,8 +33,8 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  less,
-Description: LSC Algorithm Library
- The LSC Algorithm Library for gravitational wave analysis.
+Description: LVK Algorithm Library
+ The LVK Algorithm Library for gravitational wave analysis.
  This package contains the liblal.so shared-object library needed
  to run applications that use the LAL library.
 Replaces: lal (<< 7.1.0-2~)
@@ -46,8 +46,8 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  less,
-Description: LSC Algorithm Library
- The LSC Algorithm Library for gravitational wave analysis.
+Description: LVK Algorithm Library
+ The LVK Algorithm Library for gravitational wave analysis.
  This package contains the liblalsupport.so shared-object library needed
  to run applications that use the LAL library.
 Replaces: lal (<< 7.1.0-2~)
@@ -64,7 +64,7 @@ Depends:
  libhdf5-dev,
  zlib1g-dev,
 Description: Files and documentation needed for compiling programs that use LAL
- The LSC Algorithm Library for gravitational wave analysis.
+ The LVK Algorithm Library for gravitational wave analysis.
  This package contains files needed to build applications that use the LAL
  library as well as the documentation for the library.
 Provides: lal-dev (= ${binary:Version})
@@ -98,7 +98,7 @@ Depends:
  python3-ligo-segments,
  python3-scipy,
 Description: Python 3 bindings for LAL
- The LSC Algorithm Library for gravitational wave analysis.
+ The LVK Algorithm Library for gravitational wave analysis.
  This package contains Python 3 bindings for the LAL library.
 
 Package: lal
@@ -109,6 +109,6 @@ Depends:
  liblal@LIBMAJOR@ (= ${binary:Version}),
  liblalsupport@LIBMAJOR_SUPPORT@ (= ${binary:Version}),
  python3-lal (= ${binary:Version}),
-Description: LSC Algorithm Library - runtime tools
- The LSC Algorithm Library for gravitational wave analysis.
+Description: LVK Algorithm Library - runtime tools
+ The LVK Algorithm Library for gravitational wave analysis.
  This package provides the runtime tools.

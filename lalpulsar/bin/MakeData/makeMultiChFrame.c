@@ -65,7 +65,7 @@ int main( int argc, char *argv[] )
     XLAL_CHECK_MAIN( outframe != NULL, XLAL_EFUNC );
 
     /* Make REAL4 copy of REAL8 time series */
-    REAL4TimeSeries *time_series_REAL4 = XLALConvertREAL8TimeSeriesToREAL4 ( time_series_REAL8 );
+    REAL4TimeSeries *time_series_REAL4 = XLALConvertREAL8TimeSeriesToREAL4( time_series_REAL8 );
     XLAL_CHECK_MAIN( time_series_REAL4 != NULL, XLAL_EFUNC );
 
     /* Add Adc channels */

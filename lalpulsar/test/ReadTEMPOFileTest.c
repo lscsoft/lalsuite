@@ -14,7 +14,7 @@
 
 #define PARFILE "test.par" /* define par file name */
 
-typedef struct tagParamData{
+typedef struct tagParamData {
   const CHAR *name;  /* parameter name as given by the conventions (see param variable in TEMPOs mxprt.f file */
   const CHAR *val;   /* parameter value for output to par file */
   const CHAR *valcheck; /* if parameter will be converted to SI units, this is the conversion (other wise
@@ -22,13 +22,12 @@ typedef struct tagParamData{
   const CHAR *sigma; /* standard deviation on the parameter as read from the .par file */
   const CHAR *sigmacheck; /* check of read in sigma converted to SI units */
   const CHAR *fitFlag; /* add a TEMPO-style fitting flag to some parameters */
-}ParamData;
+} ParamData;
 
 #define NUMPARS 89
 
 /* setup a collection of allowed .par file parameters */
-ParamData p[NUMPARS] =
-{
+ParamData p[NUMPARS] = {
   /* frequency parameters */
   { "F0",       "123.00000",    "123.00000",        "1.00000e-08",  "1.00000e-08",  "1" },
   { "F1",       "-1.23000e-10", "-1.23000e-10",     "1.00000e-12",  "1.00000e-12",  "1" },
@@ -52,9 +51,9 @@ ParamData p[NUMPARS] =
   { "ra",       "12:34:56.7",   "3.29407",          "1.23",         "8.94481e-05",  " " }, /* use lower case input name*/
   { "DECJ",     "-12:34:56.7",  "-0.21960",         "1.23",         "5.96321e-06",  " " },
   { "DEC",      "-12:34:56.7",  "-0.21960",         "1.23",         "5.96321e-06",  " " },
-  { "POSEPOCH", "54321.0",      "870652748.81600",  NULL,           NULL         ,  " " },
+  { "POSEPOCH", "54321.0",      "870652748.81600",  NULL,           NULL,  " " },
   { "PMRA",     "12.345",       "1.89654e-15",      "1.23",         "1.88963e-16",  " " },
-  { "EPHEM",    "DE405",        "DE405",            NULL,           NULL         ,  " " },
+  { "EPHEM",    "DE405",        "DE405",            NULL,           NULL,  " " },
   { "PMDEC",    "-12.345",      "-1.89654e-15",     "1.23",         "1.88963e-16",  "1" },
   { "DIST",     "123.00000",    "3.79538e+21",      "12.30000",     "3.79538e+20",  " " },
   /* glitch parameters */
@@ -69,13 +68,13 @@ ParamData p[NUMPARS] =
   { "GLTD_1",   "234.500000",   "20260800.00000",   "2.00000",      "172800.00000", " " },
   { "GLTD_2",   "23.450000",    "2026080.00000",    "1.00000",      "86400.00000",  " " },
   /* binary parameters */
-  { "BINARY",   "BT",           "BT",               NULL,           NULL         ,  " " },
-  { "OM",       "123.45",       "2.15461",          "1.23",         "0.02147"    ,  " " },
+  { "BINARY",   "BT",           "BT",               NULL,           NULL,  " " },
+  { "OM",       "123.45",       "2.15461",          "1.23",         "0.02147",  " " },
   { "A1",       "12.34500",     "12.34500",         "1.23000e-04",  "1.23000e-04",  "1" },
   { "ECC",      "1.23400e-05",  "1.23400e-05",      "1.23400e-08",  "1.23400e-08",  " " },
-  { "PB",       "1.23",         "106272.00000",     "0.00123",      "106.27200"  ,  " " },
-  { "T0",       "54321.0",      "870652748.81600",  "0.00123",      "106.27200"  ,  " " },
-  { "TASC",     "54321.0",      "870652748.81600",  "0.00123",      "106.27200"  ,  " " },
+  { "PB",       "1.23",         "106272.00000",     "0.00123",      "106.27200",  " " },
+  { "T0",       "54321.0",      "870652748.81600",  "0.00123",      "106.27200",  " " },
+  { "TASC",     "54321.0",      "870652748.81600",  "0.00123",      "106.27200",  " " },
   { "EPS1",     "1.23400e-05",  "1.23400e-05",      "1.23400e-08",  "1.23400e-08",  "1" },
   { "EPS2",     "1.23400e-05",  "1.23400e-05",      "1.23400e-08",  "1.23400e-08",  "1" },
   { "FB0",      "1.23400e-05",  "1.23400e-05",      "1.23400e-14",  "1.23400e-14",  "1" },
@@ -89,9 +88,9 @@ ParamData p[NUMPARS] =
   { "WAVE2",     "0.01000",     "0.01000",          "-0.02000",     "-0.02000",     " " },
   /* GW parameters */
   { "H0",       "1.23000e-22",  "1.23000e-22",      "1.23000E-23",  "1.23000e-23",  " " }, /* input exponent as E */
-  { "COSIOTA",  "-0.12300",     "-0.12300",         "0.00123",      "0.00123"    ,  " " },
-  { "PHI0",     "1.23000",      "1.23000",          "0.12300",      "0.12300"    ,  " " },
-  { "PSI",      "-0.12300",     "-0.12300",         "0.01230",      "0.01230"    ,  " " },
+  { "COSIOTA",  "-0.12300",     "-0.12300",         "0.00123",      "0.00123",  " " },
+  { "PHI0",     "1.23000",      "1.23000",          "0.12300",      "0.12300",  " " },
+  { "PSI",      "-0.12300",     "-0.12300",         "0.01230",      "0.01230",  " " },
   { "APLUS",    "1.23000e-22",  "1.23000e-22",      "1.23000D-23",  "1.23000e-23",  " " }, /* input exponent as D */
   { "ACROSS",   "1.23000e-22",  "1.23000e-22",      "1.23000D-23",  "1.23000e-23",  " " }, /* input exponent as D */
   /* waveform parameters */
@@ -131,32 +130,32 @@ ParamData p[NUMPARS] =
 };
 
 
-int main( void ){
+int main( void )
+{
   INT4 i = 0;
   PulsarParameters *pars = NULL;
 
   /* output par file */
   FILE *fp = NULL;
-  if ( (fp = fopen(PARFILE, "w")) == NULL ){
+  if ( ( fp = fopen( PARFILE, "w" ) ) == NULL ) {
     XLAL_ERROR( XLAL_EIO, "Error... problem writing parfile!\n" );
   }
 
-  for( i=0; i<NUMPARS; i++ ){
-    if ( p[i].sigma != NULL ){ /* write out value and error */
-      fprintf(fp, "%s\t%s\t%s\t%s\n", p[i].name, p[i].val, p[i].fitFlag, p[i].sigma);
-    }
-    else{ /* just write out value */
-      fprintf(fp, "%s\t%s\n", p[i].name, p[i].val);
+  for ( i = 0; i < NUMPARS; i++ ) {
+    if ( p[i].sigma != NULL ) { /* write out value and error */
+      fprintf( fp, "%s\t%s\t%s\t%s\n", p[i].name, p[i].val, p[i].fitFlag, p[i].sigma );
+    } else { /* just write out value */
+      fprintf( fp, "%s\t%s\n", p[i].name, p[i].val );
     }
   }
 
-  fclose(fp);
+  fclose( fp );
 
   /* read in par file */
   pars = XLALReadTEMPOParFile( PARFILE );
 
   /* check read-in parameters against originals */
-  for ( i=0; i<NUMPARS; i++ ){
+  for ( i = 0; i < NUMPARS; i++ ) {
     CHAR outval[256];
     CHAR outsigma[256];
     CHAR outfitflag[256];
@@ -167,117 +166,116 @@ int main( void ){
     namecopy = XLALStringDuplicate( p[i].name );
     /* get part of the name before the numerical/underscore delimiter */
     if ( strchr( p[i].name, '_' ) && strncmp( p[i].name, "WAVE", 4 ) ) { /* delimiter by underscores and not a FITWAVES parameter */
-      token = strtok(namecopy, "_");
+      token = strtok( namecopy, "_" );
+    } else {
+      token = strtok( namecopy, "0123456789" );
     }
-    else{ token = strtok(namecopy, "0123456789"); }
 
     /* value is a FITWAVES vector */
-    if ( !strncmp( p[i].name, "WAVE", 4 ) && strlen( p[i].name ) < 7 && PulsarCheckParam( pars, "WAVESIN" ) &&  PulsarCheckParam( pars, "WAVECOS" ) ){
+    if ( !strncmp( p[i].name, "WAVE", 4 ) && strlen( p[i].name ) < 7 && PulsarCheckParam( pars, "WAVESIN" ) &&  PulsarCheckParam( pars, "WAVECOS" ) ) {
       /* in the ParamDict array the "val" item contains WAVESIN and the "sigma" entry contains "WAVECOS" */
       UINT4 num = 0;
       CHAR sinname[256], cosname[256];
 
-      if ( sscanf( p[i].name+strlen( "WAVE" ), "%d",  &num ) != 1 ){
-        XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", p[i].name);
+      if ( sscanf( p[i].name + strlen( "WAVE" ), "%d",  &num ) != 1 ) {
+        XLAL_ERROR( XLAL_EINVAL, "Error...problem reading %s number from par file.\n", p[i].name );
       }
 
-      sprintf(sinname, "WAVESIN%d", (INT4)num);
-      sprintf(cosname, "WAVECOS%d", (INT4)num);
+      sprintf( sinname, "WAVESIN%d", ( INT4 )num );
+      sprintf( cosname, "WAVECOS%d", ( INT4 )num );
 
       /* get WAVESIN value and convert to string */
-      if ( !strchr( p[i].valcheck, 'e' ) ){ /* number doesn't contain an exponent */
-        sprintf(outval, "%.5lf", PulsarGetREAL8VectorParamIndividual(pars, sinname));
-      }
-      else{ /* number does contain an exponent */
-        sprintf(outval, "%.5le", PulsarGetREAL8VectorParamIndividual(pars, sinname));
+      if ( !strchr( p[i].valcheck, 'e' ) ) { /* number doesn't contain an exponent */
+        sprintf( outval, "%.5lf", PulsarGetREAL8VectorParamIndividual( pars, sinname ) );
+      } else { /* number does contain an exponent */
+        sprintf( outval, "%.5le", PulsarGetREAL8VectorParamIndividual( pars, sinname ) );
       }
 
       /* get WAVECOS value and convert to string */
-      if ( !strchr( p[i].valcheck, 'e' ) ){ /* number doesn't contain an exponent */
-        sprintf(outsigma, "%.5lf", PulsarGetREAL8VectorParamIndividual(pars, cosname));
-      }
-      else{ /* number does contain an exponent */
-        sprintf(outsigma, "%.5le", PulsarGetREAL8VectorParamIndividual(pars, cosname));
+      if ( !strchr( p[i].valcheck, 'e' ) ) { /* number doesn't contain an exponent */
+        sprintf( outsigma, "%.5lf", PulsarGetREAL8VectorParamIndividual( pars, cosname ) );
+      } else { /* number does contain an exponent */
+        sprintf( outsigma, "%.5le", PulsarGetREAL8VectorParamIndividual( pars, cosname ) );
       }
 
-      sprintf(outfitflag, " ");
+      sprintf( outfitflag, " " );
     }
     /* value is a vector */
-    else if ( PulsarCheckParam( pars, token ) && PulsarGetParamType( pars, token ) == PULSARTYPE_REAL8Vector_t ){
+    else if ( PulsarCheckParam( pars, token ) && PulsarGetParamType( pars, token ) == PULSARTYPE_REAL8Vector_t ) {
       /* get value and convert to string */
-      if ( !strchr( p[i].valcheck, 'e' ) ){ /* number doesn't contain an exponent */
-        sprintf(outval, "%.5lf", PulsarGetREAL8VectorParamIndividual(pars, p[i].name));
-      }
-      else{ /* number does contain an exponent */
-        sprintf(outval, "%.5le", PulsarGetREAL8VectorParamIndividual(pars, p[i].name));
+      if ( !strchr( p[i].valcheck, 'e' ) ) { /* number doesn't contain an exponent */
+        sprintf( outval, "%.5lf", PulsarGetREAL8VectorParamIndividual( pars, p[i].name ) );
+      } else { /* number does contain an exponent */
+        sprintf( outval, "%.5le", PulsarGetREAL8VectorParamIndividual( pars, p[i].name ) );
       }
 
-      if ( p[i].sigmacheck != NULL ){
+      if ( p[i].sigmacheck != NULL ) {
         /* get error and convert to string */
-        if ( !strchr( p[i].sigmacheck, 'e' ) ){ /* number doesn't contain an exponent */
-          sprintf(outsigma, "%.5lf", PulsarGetREAL8VectorParamErrIndividual(pars, p[i].name));
-        }
-        else{
-          sprintf(outsigma, "%.5le", PulsarGetREAL8VectorParamErrIndividual(pars, p[i].name));
+        if ( !strchr( p[i].sigmacheck, 'e' ) ) { /* number doesn't contain an exponent */
+          sprintf( outsigma, "%.5lf", PulsarGetREAL8VectorParamErrIndividual( pars, p[i].name ) );
+        } else {
+          sprintf( outsigma, "%.5le", PulsarGetREAL8VectorParamErrIndividual( pars, p[i].name ) );
         }
 
-        const UINT4 *fitFlag = PulsarGetParamFitFlag(pars, token);
+        const UINT4 *fitFlag = PulsarGetParamFitFlag( pars, token );
 
-        if ( fitFlag[atoi(p[i].name+strlen(token))] == 1 ){ sprintf(outfitflag, "1"); }
-        else if ( fitFlag[atoi(p[i].name+strlen(token))] == 0 ){ sprintf(outfitflag, " "); }
-        else {
+        if ( fitFlag[atoi( p[i].name + strlen( token ) )] == 1 ) {
+          sprintf( outfitflag, "1" );
+        } else if ( fitFlag[atoi( p[i].name + strlen( token ) )] == 0 ) {
+          sprintf( outfitflag, " " );
+        } else {
           XLAL_ERROR( XLAL_EFAILED, "Error... fit flag incorrect for %s.\n", p[i].name );
         }
       }
     }
     /* value is a double */
-    else if( PulsarGetParamType( pars, p[i].name ) == PULSARTYPE_REAL8_t ){
+    else if ( PulsarGetParamType( pars, p[i].name ) == PULSARTYPE_REAL8_t ) {
       /* get value and convert to string */
-      if ( !strchr( p[i].valcheck, 'e' ) ){ /* number doesn't contain an exponent */
-        sprintf(outval, "%.5lf", PulsarGetREAL8Param(pars, p[i].name));
-      }
-      else{ /* number does contain an exponent */
-        sprintf(outval, "%.5le", PulsarGetREAL8Param(pars, p[i].name));
+      if ( !strchr( p[i].valcheck, 'e' ) ) { /* number doesn't contain an exponent */
+        sprintf( outval, "%.5lf", PulsarGetREAL8Param( pars, p[i].name ) );
+      } else { /* number does contain an exponent */
+        sprintf( outval, "%.5le", PulsarGetREAL8Param( pars, p[i].name ) );
       }
 
-      if ( p[i].sigmacheck != NULL ){
+      if ( p[i].sigmacheck != NULL ) {
         /* get error and convert to string */
-        if ( !strchr( p[i].sigmacheck, 'e' ) ){ /* number doesn't contain an exponent */
-          sprintf(outsigma, "%.5lf", PulsarGetREAL8ParamErr(pars, p[i].name));
-        }
-        else{
-          sprintf(outsigma, "%.5le", PulsarGetREAL8ParamErr(pars, p[i].name));
+        if ( !strchr( p[i].sigmacheck, 'e' ) ) { /* number doesn't contain an exponent */
+          sprintf( outsigma, "%.5lf", PulsarGetREAL8ParamErr( pars, p[i].name ) );
+        } else {
+          sprintf( outsigma, "%.5le", PulsarGetREAL8ParamErr( pars, p[i].name ) );
         }
 
-        const UINT4 *fitFlag = PulsarGetParamFitFlag(pars, p[i].name);
+        const UINT4 *fitFlag = PulsarGetParamFitFlag( pars, p[i].name );
 
-        if ( fitFlag[0] == 1 ){ sprintf(outfitflag, "1"); }
-        else if ( fitFlag[0] == 0 ){ sprintf(outfitflag, " "); }
-        else {
+        if ( fitFlag[0] == 1 ) {
+          sprintf( outfitflag, "1" );
+        } else if ( fitFlag[0] == 0 ) {
+          sprintf( outfitflag, " " );
+        } else {
           XLAL_ERROR( XLAL_EFAILED, "Error... fit flag incorrect for %s.\n", p[i].name );
         }
       }
     }
     /* value is a string */
     else if ( PulsarGetParamType( pars, p[i].name ) == PULSARTYPE_string_t ) {
-      const CHAR *out = PulsarGetStringParam(pars, p[i].name);
-      sprintf(outval, "%s", out);
+      const CHAR *out = PulsarGetStringParam( pars, p[i].name );
+      sprintf( outval, "%s", out );
     }
 
     /* compare returned value with input value */
-    if ( strcmp(outval, p[i].valcheck) != 0 ){
+    if ( strcmp( outval, p[i].valcheck ) != 0 ) {
       XLAL_ERROR( XLAL_EFAILED, "Error... parameter %s does not match input (%s cf. %s)!\n", p[i].name, outval,
                   p[i].valcheck );
     }
 
-    if( p[i].sigma != NULL ){
+    if ( p[i].sigma != NULL ) {
       /* compare returned value with input value */
-      if ( strcmp(outsigma, p[i].sigmacheck) != 0 ){
+      if ( strcmp( outsigma, p[i].sigmacheck ) != 0 ) {
         XLAL_ERROR( XLAL_EFAILED, "Error... parameter sigma %s does not match input (%s cf. %s)!\n", p[i].name,
                     outsigma, p[i].sigmacheck );
       }
 
-      if ( strcmp(outfitflag, p[i].fitFlag) != 0 ){
+      if ( strcmp( outfitflag, p[i].fitFlag ) != 0 ) {
         XLAL_ERROR( XLAL_EFAILED, "Error... parameter %s fit flag does not match input!\n", p[i].name );
       }
     }
@@ -286,11 +284,11 @@ int main( void ){
   }
 
   /* remove par file */
-  if ( remove(PARFILE) != 0 ){
+  if ( remove( PARFILE ) != 0 ) {
     XLAL_ERROR( XLAL_EIO, "Error... problem removing parfile!\n" );
   }
 
-  fprintf(stderr, "Successfully read in .par file values!\n");
+  fprintf( stderr, "Successfully read in .par file values!\n" );
 
   PulsarFreeParams( pars );
 

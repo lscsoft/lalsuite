@@ -23,14 +23,14 @@
 #include <lal/VectorMath.h>
 #include <lal/DetectorStates.h>
 
-INT4 CompBinShifts(INT4Vector *output, const SSBtimes *ssbTimes, const REAL8 freq, const REAL8 Tsft, const REAL4 dopplerMultiplier);
-INT4 CompAntennaPatternWeights(REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const BOOLEAN linPolOn, const REAL8 polAngle, const LALDetector det);
-INT4 CompAntennaPatternWeights2(REAL4VectorAligned *output, const SkyPosition skypos, const LIGOTimeGPSVector *timestamps, const LALDetector det, const REAL8 *cosi, const REAL8 *psi);
-INT4 CompAntennaVelocity(REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat);
+INT4 CompBinShifts( INT4Vector *output, const SSBtimes *ssbTimes, const REAL8 freq, const REAL8 Tsft, const REAL4 dopplerMultiplier );
+INT4 CompAntennaPatternWeights( REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const BOOLEAN linPolOn, const REAL8 polAngle, const LALDetector det );
+INT4 CompAntennaPatternWeights2( REAL4VectorAligned *output, const SkyPosition skypos, const LIGOTimeGPSVector *timestamps, const LALDetector det, const REAL8 *cosi, const REAL8 *psi );
+INT4 CompAntennaVelocity( REAL4VectorAligned *output, const SkyPosition skypos, const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat );
 
-REAL4 CompDetectorDeltaVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat);
-REAL4 CompDetectorVmax(const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat);
-REAL4 CompDetectorVmax2(const LIGOTimeGPSVector *timestamps, const LALDetector det, EphemerisData *edat);
+REAL4 CompDetectorDeltaVmax( const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat );
+REAL4 CompDetectorVmax( const REAL8 t0, const REAL8 Tsft, const REAL8 SFToverlap, const REAL8 Tobs, const LALDetector det, EphemerisData *edat );
+REAL4 CompDetectorVmax2( const LIGOTimeGPSVector *timestamps, const LALDetector det, EphemerisData *edat );
 
 #endif
 
