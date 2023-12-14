@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2017 Tim Dietrich, Sebastiano Bernuzzi, Nathan Johnson-McDaniel,
- * Shasvath J Kapadia, Francesco Pannarale and Sebastian Khan, Michael Puerrer.
+ * Shasvath J Kapadia, Francesco Pannarale and Sebastian Khan, Michael Puerrer, Adrian Abac.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -86,7 +86,9 @@ static int EnforcePrimaryMassIsm1(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *l
 }
 
 /**
- * function to swap masses, spins, and lambda to enforce m1 >= m2
+ * function to swap masses, spins, and lambda to enforce m1 >= m2, This is mainly for NRTidalv3, 
+ * which has a merger frequency fit that is dependent on the aligned spin component. See Eq. (41)
+ * in https://arxiv.org/pdf/2311.07456.pdf.
  */
 static int EnforcePrimaryMassIsm1_v3(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *lambda2, REAL8 *chi1_AS, REAL8 *chi2_AS){
   if ((*m1 == *m2) && (*lambda1 != *lambda2) && (*chi1_AS != *chi2_AS))
@@ -201,7 +203,7 @@ double XLALSimNRTunedTidesMergerFrequency(
 
 
 /**
- * compute the merger frequency of a BNS system for NRTidalv3.
+ * compute the merger frequency of a BNS system for NRTidalv3 (https://arxiv.org/pdf/2311.07456.pdf).
  * This uses a new fit from Gonzalez, et. al (2022); Eq. (23) of https://arxiv.org/abs/2210.16366.
  */
 double XLALSimNRTunedTidesMergerFrequency_v3(
@@ -459,7 +461,7 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs)
 }
 
 /** 
- * Tidal phase correction for NRTidalv3, from Abac, et. al. (2023)
+ * Tidal phase correction for NRTidalv3, Eq. (30), from Abac, et. al. (2023) (https://arxiv.org/pdf/2311.07456.pdf)
  * and is a function of x = angular_orb_freq^(2./3.)
  */
 static double SimNRTunedTidesFDTidalPhase_v3(
@@ -504,7 +506,7 @@ static double SimNRTunedTidesFDTidalPhase_v3(
   REAL8 s2 = 1 + s20 + s21*kappa2T + s22*q*kappa2T; 
   REAL8 s3 = s30 + s31*kappa2T + s32*q*kappa2T; 
 
-  /* expression for the effective love number enhancement factor*/
+  /* expression for the effective love number enhancement factor, see Eq. (27) of https://arxiv.org/pdf/2311.07456.pdf.*/
   REAL8 dynk2bar = 1.0 + ((s1) - 1)*(1.0/(1.0 + exp(-s2*((M_omega*2.0) - (s3))))) - ((s1-1.0)/(1.0 + exp(s2*((s3))))) - 2.0*M_omega*((s1) - 1)*s2*exp(s2*((s3)))/pow(1.0 + exp(s2*((s3))),2.0);
 
   REAL8 PN_x = pow(M_omega, 2.0/3.0);
@@ -596,7 +598,8 @@ static double SimNRTunedTidesFDTidalPhase_v3(
 }
 
 /** 
- * PN tidal phase correction, at 7.5PN, to connect with NRTidalv3 Phase post-merger
+ * PN tidal phase correction, at 7.5PN, to connect with NRTidalv3 Phase post-merger,
+ * see Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf
  * and is a function of x = angular_orb_freq^(2./3.)
  */
 static double SimNRTunedTidesFDTidalPhase_PN(
@@ -728,7 +731,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
 {
   /* NOTE: internally m1 >= m2
    * This is enforced in the code below and we swap the lambda's
-   * accordingly.
+   * accordingly. For NRTidalv3, we also swap the aligned spin components chi1_AS and chi2_AS, on which the new merger frequency fit is dependent.
    */
   
 
@@ -779,7 +782,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
       }
     }
     for(UINT4 i = 0; i < (*fHz).length; i++) {
-      /* We employ here the smooth connection between NRTidal and PN post-merger */
+      /* We employ here the smooth connection between NRTidal and PN post-merger, Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf*/
       (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3)) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
       (*amp_tidal).data[i] = SimNRTunedTidesFDTidalAmplitude((*fHz).data[i], mtot, kappa2T);
       (*planck_taper).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg_v3, fHz_end_taper_v3);
@@ -807,7 +810,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
       }
     }
     for(UINT4 i = 0; i < (*fHz).length; i++) {
-      /* We employ here the smooth connection between NRTidal and PN post-merger */
+      /* We employ here the smooth connection between NRTidal and PN post-merger, Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf */
       (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3)) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
       (*planck_taper).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg_v3, fHz_end_taper_v3);
     }
