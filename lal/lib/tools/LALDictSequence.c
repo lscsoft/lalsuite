@@ -78,6 +78,20 @@ LALDictSequence * XLALCopyDictSequence(const LALDictSequence *sequence)
     return XLALCutDictSequence(sequence, 0, sequence->length);
 }
 
+/* helper routine to reverse elements in sequence in range [start, end) */
+static void reverse(LALDict **a, int start, int end)
+{
+    int left = start;
+    int right = end - 1;
+    while (left < right) {
+        LALDict *tmp = a[left];
+        a[left] = a[right];
+        a[right] = tmp;
+        ++left;
+        --right;
+    }
+}
+
 void XLALShiftDictSequence(LALDictSequence *sequence, int count)
 {
     size_t abscount = count > 0 ? count : -count;
@@ -90,9 +104,10 @@ void XLALShiftDictSequence(LALDictSequence *sequence, int count)
 
     /* shift memory if abs(count) < sequence->length */
     if (sequence->length > abscount) {
-        char *a = (char *)sequence->data + (count < 0 ? 0 : count);
-        char *b = (char *)sequence->data - (count < 0 ? count : 0);
-        memmove(a, b, (sequence->length - abscount) * sizeof(*sequence->data));
+        int shift = count > 0 ? sequence->length - count : -count;
+        reverse(sequence->data, 0, shift);
+        reverse(sequence->data, shift, sequence->length);
+        reverse(sequence->data, 0, sequence->length);
     }
 
     /* clear unshifted memory */
@@ -103,7 +118,7 @@ void XLALShiftDictSequence(LALDictSequence *sequence, int count)
         for (size_t i = 0; i < abscount; ++i)
             XLALClearDict(sequence->data[i]);
     } else {
-        for (size_t i = sequence->length - abscount; i < abscount; ++i)
+        for (size_t i = sequence->length - abscount; i < sequence->length; ++i)
             XLALClearDict(sequence->data[i]);
     }
 
