@@ -79,10 +79,11 @@ LALDictSequence * XLALCopyDictSequence(const LALDictSequence *sequence)
 }
 
 /* helper routine to reverse elements in sequence in range [start, end) */
-static void reverse(LALDict **a, int start, int end)
+/* note: calling routine is responsible for ensuring that end > start */
+static void reverse(LALDict **a, size_t start, size_t end)
 {
-    int left = start;
-    int right = end - 1;
+    size_t left = start;
+    size_t right = end - 1;
     while (left < right) {
         LALDict *tmp = a[left];
         a[left] = a[right];
@@ -92,6 +93,25 @@ static void reverse(LALDict **a, int start, int end)
     }
 }
 
+void XLALRollDictSequence(LALDictSequence *sequence, int count)
+{
+    size_t modabscount;
+    size_t shift;
+
+    XLAL_CHECK_VOID(sequence, XLAL_EFAULT);
+    XLAL_CHECK_VOID(sequence->data || sequence->length == 0, XLAL_EINVAL);
+
+    modabscount = abs(count) % sequence->length;
+    shift = count > 0 ? sequence->length - modabscount: modabscount;
+
+    if (shift != 0) {
+        reverse(sequence->data, 0, shift);
+        reverse(sequence->data, shift, sequence->length);
+        reverse(sequence->data, 0, sequence->length);
+    }
+    return;
+}
+
 void XLALShiftDictSequence(LALDictSequence *sequence, int count)
 {
     size_t abscount = count > 0 ? count : -count;
@@ -99,26 +119,22 @@ void XLALShiftDictSequence(LALDictSequence *sequence, int count)
     XLAL_CHECK_VOID(sequence, XLAL_EFAULT);
     XLAL_CHECK_VOID(sequence->data || sequence->length == 0, XLAL_EINVAL);
 
-    if (!count)
+    if (count == 0) /* no-op */
         return;
 
-    /* shift memory if abs(count) < sequence->length */
-    if (sequence->length > abscount) {
-        int shift = count > 0 ? sequence->length - count : -count;
-        reverse(sequence->data, 0, shift);
-        reverse(sequence->data, shift, sequence->length);
-        reverse(sequence->data, 0, sequence->length);
-    }
-
-    /* clear unshifted memory */
     if (abscount >= sequence->length) {
+        /* shifted beyond bounds: clear the entire sequence */
         for (size_t i = 0; i < sequence->length; ++i)
             XLALClearDict(sequence->data[i]);
-    } else if (count > 0) {
+    } else if (count < 0) {
+        /* clear the first abscount entries and then roll backwards */
         for (size_t i = 0; i < abscount; ++i)
             XLALClearDict(sequence->data[i]);
+        XLALRollDictSequence(sequence, count);
     } else {
-        for (size_t i = sequence->length - abscount; i < sequence->length; ++i)
+        /* roll forwards and then clear the first abscount entries */
+        XLALRollDictSequence(sequence, count);
+        for (size_t i = 0; i < abscount; ++i)
             XLALClearDict(sequence->data[i]);
     }
 

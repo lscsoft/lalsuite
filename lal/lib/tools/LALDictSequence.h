@@ -40,6 +40,7 @@ void XLALDestroyDictSequence(LALDictSequence *sequence);
 LALDictSequence * XLALCreateDictSequence(size_t length);
 LALDictSequence * XLALCutDictSequence(const LALDictSequence *sequence, size_t first, size_t length);
 LALDictSequence * XLALCopyDictSequence(const LALDictSequence *sequence);
+void XLALRollDictSequence(LALDictSequence *sequence, int count);
 void XLALShiftDictSequence(LALDictSequence *sequence, int count);
 LALDictSequence * XLALResizeDictSequence(LALDictSequence *sequence, int first, size_t length);
 
