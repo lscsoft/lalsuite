@@ -22,7 +22,7 @@
 {% set lalframe_version = "@MIN_LALFRAME_VERSION@a0" %}
 {% set lalsimulation_version = "@MIN_LALSIMULATION_VERSION@a0" %}
 {% set lalinference_version = "@MIN_LALINFERENCE_VERSION@a0" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.2.0a0" %}
 
 package:
   name: {{ name }}-split
