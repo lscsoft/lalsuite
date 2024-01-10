@@ -19,7 +19,7 @@
 
 # dependencies
 {% set lal_version = "@MIN_LAL_VERSION@a0" %}
-{% set swig_version = "@MIN_SWIG_VERSION@" %}
+{% set swig_version = "@MIN_SWIG_VERSION@,<4.2.0a0" %}
 
 package:
   name: {{ name }}-split
