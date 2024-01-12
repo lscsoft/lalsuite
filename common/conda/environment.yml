@@ -1,3 +1,10 @@
+# important notes:
+# to get python-ligo-lw into this env (needed for some tests)
+# a workaround is to
+# 1. create the environment from this file
+# 2. then manually install python-ligo-lw
+# 3. then forcibly uninstall any auto-installed LALSuite packages
+
 name: lalsuite-dev
 channels:
   - conda-forge
@@ -35,4 +42,5 @@ dependencies:
   - scipy >=0.9.0
   - six
   - swig >=3.0.10,<4.2.0a0
+  - tqdm
   - zlib
