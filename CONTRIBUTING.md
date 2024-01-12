@@ -230,7 +230,7 @@ Note that some extra steps are needed to be able to run all LALSuite tests in su
 [helpdesk]:      mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
 [lalsuiteforks]: https://git.ligo.org/lscsoft/lalsuite/-/forks/new
 [lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
-[lalsuitewiki]:  https://git.ligo.org/david-keitel/lalsuite/-/wikis/home
+[lalsuitewiki]:  https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
 [mergerequests]: https://git.ligo.org/help/user/project/merge_requests/index.html
 [nightlydocs]:   https://lscsoft.docs.ligo.org/lalsuite
 [prettyastyle]:  https://astyle.sourceforge.net/
