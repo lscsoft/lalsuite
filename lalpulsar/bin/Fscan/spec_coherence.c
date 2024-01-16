@@ -22,13 +22,15 @@
 * \ingroup lalpulsar_bin_fscan
 */
 
+#include <libgen.h>
+#include <unistd.h>
 #include <lal/SFTfileIO.h>
 #include <lal/LALStdio.h>
+#include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
 #include <lal/LALPulsarVCSInfo.h>
 
 #include "fscanutils.h"
-
 
 int main( int argc, char **argv )
 {
@@ -79,17 +81,51 @@ int main( int argc, char **argv )
   endTime.gpsNanoSeconds = 0;
   constraints.maxStartTime = &endTime;
 
+  int errnumA, errnumB;
   printf( "Calling XLALSFTdataFind with SFTpattA=%s\n", SFTpattA );
-  XLAL_CHECK_MAIN( ( catalog_a = XLALSFTdataFind( SFTpattA, &constraints ) ) != NULL, XLAL_EFUNC );
+  XLAL_TRY( catalog_a = XLALSFTdataFind( SFTpattA, &constraints ), errnumA );
   printf( "Calling XLALSFTdataFind with SFTpattB=%s\n", SFTpattB );
-  XLAL_CHECK_MAIN( ( catalog_b = XLALSFTdataFind( SFTpattB, &constraints ) ) != NULL, XLAL_EFUNC );
+  XLAL_TRY( catalog_b = XLALSFTdataFind( SFTpattB, &constraints ), errnumB );
 
-  /* Ensure that some SFTs were found given the start and end time and IFO constraints */
+  /* Ensure that some SFTs were found given the start and end time and IFO constraints unless the file "nosfts" is present */
+  if ( errnumA != 0 || errnumB != 0 ) {
+    CHAR XLAL_INIT_DECL( path_a, [4096] );
+    CHAR XLAL_INIT_DECL( path_b, [4096] );
+    snprintf( path_a, sizeof( path_a ), "%s/nosfts", dirname( SFTpattA ) );
+    if ( errnumA != 0 && access( path_a, F_OK ) == 0 ) {
+      LogPrintf( LOG_CRITICAL, "Channel A %s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpattA );
+      if ( catalog_a != NULL ) {
+        XLALDestroySFTCatalog( catalog_a );
+      }
+      if ( catalog_b != NULL ) {
+        XLALDestroySFTCatalog( catalog_b );
+      }
+      XLALDestroyUserVars();
+      exit( 0 );
+    } else if ( errnumA != 0 ) {
+      XLAL_ERROR_MAIN( errnumA );
+    }
+    snprintf( path_b, sizeof( path_b ), "%s/nosfts", dirname( SFTpattB ) );
+    if ( errnumB != 0 && access( path_b, F_OK ) == 0 ) {
+      LogPrintf( LOG_CRITICAL, "Channel B %s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpattB );
+      if ( catalog_a != NULL ) {
+        XLALDestroySFTCatalog( catalog_a );
+      }
+      if ( catalog_b != NULL ) {
+        XLALDestroySFTCatalog( catalog_b );
+      }
+      XLALDestroyUserVars();
+      exit( 0 );
+    } else if ( errnumB != 0 ) {
+      XLAL_ERROR_MAIN( errnumB );
+    }
+  }
+
   XLAL_CHECK_MAIN( catalog_a->length > 0, XLAL_EFAILED, "No SFTs found for Ch A, please examine start time, end time, frequency range, etc." );
   XLAL_CHECK_MAIN( catalog_b->length > 0, XLAL_EFAILED, "No SFTs found for Ch B, please examine start time, end time, frequency range, etc." );
 
-  printf( "Now have Ch A SFT catalog with %d catalog files\n", catalog_a->length );
-  printf( "Now have Ch B SFT catalog with %d catalog files\n", catalog_b->length );
+  LogPrintf( LOG_NORMAL, "Channel A %s has length of %u SFT files\n", SFTpattA, catalog_a->length );
+  LogPrintf( LOG_NORMAL, "Channel B %s has length of %u SFT files\n", SFTpattB, catalog_b->length );
 
   if ( XLALUserVarWasSet( &outputBname ) ) {
     snprintf( outbase, sizeof( outbase ), "%s/%s", outputDir, outputBname );
@@ -184,5 +220,3 @@ int main( int argc, char **argv )
 
 }
 /* END main */
-
-
