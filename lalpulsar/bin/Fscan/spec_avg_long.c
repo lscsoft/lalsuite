@@ -25,6 +25,9 @@
 
 #include "config.h"
 
+#include <libgen.h>
+#include <unistd.h>
+#include <lal/LogPrintf.h>
 #include <lal/SFTfileIO.h>
 #include <lal/Date.h>
 #include <lal/LALDatatypes.h>
@@ -41,7 +44,6 @@
 
 /*---------- internal types ----------*/
 
-
 ///////////EXTRA FXN DEFS//////////////
 LIGOTimeGPSVector *setup_epochs( const SFTCatalog *catalog, const INT4 persistAvgOpt, const BOOLEAN persistAvgOptWasSet, const INT4 persistAvgSeconds );
 int set_sft_avg_epoch( struct tm *utc, LIGOTimeGPS *epoch_start, const LIGOTimeGPS first_sft_epoch, const INT4 persistAvgOpt, const BOOLEAN persistAvgOptWasSet );
@@ -50,7 +52,6 @@ REAL8Vector *line_freq_str2dbl( const LALStringVector *line_freq );
 int rngmean( const REAL8Vector *input, const REAL8Vector *output, const INT4 blocksRngMean );
 int rngstd( const REAL8Vector *input, const REAL8Vector *means, const REAL8Vector *output, const INT4 blocksRngMean );
 int select_mean_std_from_vect( REAL8 *mean, REAL8 *std, const REAL8Vector *means, const REAL8Vector *stds, const UINT4 idx, const UINT4 nside );
-
 
 int main( int argc, char **argv )
 {
@@ -133,12 +134,30 @@ int main( int argc, char **argv )
   constraints.detector = IFO;
 
   printf( "Calling XLALSFTdataFind with SFTpatt=%s\n", SFTpatt );
-  XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( SFTpatt, &constraints ) ) != NULL, XLAL_EFUNC );
+
+  int errnum;
+  XLAL_TRY( catalog = XLALSFTdataFind( SFTpatt, &constraints ), errnum );
 
   // Ensure that some SFTs were found given the start and end time and IFO constraints
+  // unless the file "nosfts" exists in the path to the SFT files
+  if ( errnum != 0 ) {
+    CHAR XLAL_INIT_DECL( path, [4096] );
+    snprintf( path, sizeof( path ), "%s/nosfts", dirname( SFTpatt ) );
+    if ( access( path, F_OK ) == 0 ) {
+      LogPrintf( LOG_CRITICAL, "%s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpatt );
+      if ( catalog != NULL ) {
+        XLALDestroySFTCatalog( catalog );
+      }
+      XLALDestroyUserVars();
+      exit( 0 );
+    } else {
+      XLAL_ERROR_MAIN( errnum );
+    }
+  }
+
   XLAL_CHECK_MAIN( catalog->length > 0, XLAL_EFAILED, "No SFTs found, please examine start time, end time, frequency range, etc." );
 
-  printf( "Now have SFT catalog with %d catalog files\n", catalog->length );
+  LogPrintf( LOG_NORMAL, "%s has length of %u SFT files\n", SFTpatt, catalog->length );
 
   // Count the number of epochs [either the persistAvgSeconds, or the persistAvgOpt (day, week, or month)]
   XLAL_CHECK_MAIN( ( epoch_gps_times = setup_epochs( catalog, persistAvgOpt, XLALUserVarWasSet( &persistAvgOpt ), persistAvgSeconds ) ) != NULL, XLAL_EFUNC );
@@ -424,7 +443,6 @@ int main( int argc, char **argv )
 }
 /* END main */
 
-
 /* Set up epochs:
    This counts the number of epochs that would be set;
    allocates a LIGOTimeGPSVector for the number of epochs;
@@ -472,7 +490,6 @@ LIGOTimeGPSVector *setup_epochs( const SFTCatalog *catalog, const INT4 persistAv
   return epoch_gps_times;
 }
 
-
 /* Set the GPS time of each epoch, depending on if the --persistAvgOpt was set.
    If it was set (meaning persistAvgOptWasSet is true and persistAvgOpt=[1,3]),
    then the utc and epoch_start values are determined based on the GPS time of
@@ -508,7 +525,6 @@ int set_sft_avg_epoch( struct tm *utc, LIGOTimeGPS *epoch_start, const LIGOTimeG
 
   return XLAL_SUCCESS;
 }
-
 
 /* Validate that the line frequency given is within the range of f_min to f_max.
    If there are any lines outside the range specified, the function will remove those lines from
@@ -547,7 +563,6 @@ int validate_line_freq( LALStringVector **line_freq, const REAL8 f0, const REAL8
   return XLAL_SUCCESS;
 }
 
-
 REAL8Vector *line_freq_str2dbl( const LALStringVector *line_freq )
 {
   REAL8Vector *freq_vect = NULL;
@@ -557,7 +572,6 @@ REAL8Vector *line_freq_str2dbl( const LALStringVector *line_freq )
   }
   return freq_vect;
 }
-
 
 /* Compute the running mean of a REAL8Vector */
 int rngmean( const REAL8Vector *input, const REAL8Vector *output, const INT4 blocksRngMean )
@@ -580,7 +594,6 @@ int rngmean( const REAL8Vector *input, const REAL8Vector *output, const INT4 blo
   return XLAL_SUCCESS;
 }
 
-
 /* Compute the running standard deviation of a REAL8Vector using a vector of
    pre-computed mean values (use rngmean() above) */
 int rngstd( const REAL8Vector *input, const REAL8Vector *means, const REAL8Vector *output, const INT4 blocksRngMean )
@@ -600,7 +613,6 @@ int rngstd( const REAL8Vector *input, const REAL8Vector *means, const REAL8Vecto
   XLALDestroyREAL8Vector( win );
   return XLAL_SUCCESS;
 }
-
 
 /* Select the specific mean and standard deviation from the running means and standard deviations.
    Need to know the size of a "side" of the block size, so that is passed as well as the index. */
