@@ -215,6 +215,15 @@ LALDetectorEnum;
 #define LAL_ET0_DETECTOR_BIT		LAL_DETECTOR_DQ_BIT_FROM_DETECTOR_ENUM(LAL_ET0_DETECTOR)
 /** @} */
 
+#ifdef SWIG /* SWIG interface only; SWIG cannot parse the _DETECTOR_BIT constants */
+%inline %{
+INT8 XLALDetectorDQBitFromDetectorEnum(const LALDetectorEnum d)
+{
+	return LAL_DETECTOR_DQ_BIT_FROM_DETECTOR_ENUM(d);
+}
+%}
+#endif /* SWIG */
+
 
 /**
  * Detector type, which determines how the detector response is determined.
