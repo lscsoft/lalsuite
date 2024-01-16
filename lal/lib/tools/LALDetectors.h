@@ -165,7 +165,7 @@ extern "C" {
 /** \endcond */
 
 /** Enumeration of Detectors: follows order of DQ bit assignments */
-enum {
+typedef enum tagLALDetectorEnum {
 	LAL_TAMA_300_DETECTOR	=	0,
 	LAL_VIRGO_CITF_DETECTOR	=	1,
 	LAL_VIRGO_DETECTOR	=	2,
@@ -187,7 +187,8 @@ enum {
 	LAL_ET3_DETECTOR	=	18,
 	LAL_ET0_DETECTOR	=	19,
 	LAL_NUM_DETECTORS	=	20
-};
+}
+LALDetectorEnum;
 
 /** \name Detector DQ bit assignments (2 bits per detector) */
 /** @{ */
