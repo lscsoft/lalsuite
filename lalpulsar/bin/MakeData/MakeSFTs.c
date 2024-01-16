@@ -46,6 +46,9 @@
 #include <lal/LALVCSInfo.h>
 #include <lal/LALPulsarVCSInfo.h>
 
+/* Prototypes */
+int report_nosfts( CHAR *path );
+
 int main( int argc, char *argv[] )
 {
 
@@ -63,6 +66,7 @@ int main( int argc, char *argv[] )
     char *frame_cache;
     BOOLEAN frame_checksums;
     LALStringVector *channel_name;
+    BOOLEAN allow_skipping;
     INT4 gps_start_time;
     INT4 gps_end_time;
     INT4 sft_duration;
@@ -87,6 +91,7 @@ int main( int argc, char *argv[] )
     .start_freq = 48,
     .band = 2000,
     .sft_write_path = default_sft_write_path,
+    .allow_skipping = false,
   };
   struct uvar_type *const uvar = &uvar_struct;
 
@@ -114,6 +119,10 @@ int main( int argc, char *argv[] )
   XLALRegisterUvarMember(
     gps_end_time, INT4, 'e', REQUIRED,
     "GPS time to end generating SFTs. "
+  );
+  XLALRegisterUvarMember(
+    allow_skipping, BOOLEAN, 'x', OPTIONAL,
+    "Channel is allowed to be skipped if it is not in frames or has too low sampling frequency. "
   );
   //
   // - SFT generation
@@ -390,6 +399,46 @@ int main( int argc, char *argv[] )
 
     // Loop over channels for this SFT interval
     for ( UINT4 n = 0; n < uvar->channel_name->length; n++ ) {
+      // Check the channel in the framestream. It should return a type if it exists.
+      // Need to check both the beginning and end of the time interval.
+      // By default (uvar->require_channel = true), if the channel doesn't return a type, then this program fails
+      // Optionally, a user could specify that the channel is not required to be in the frame in which case no SFT is made
+      {
+        int errnum;
+        LALTYPECODE XLAL_INIT_DECL( laltype );
+
+        // Set the frame stream to the start of the SFT
+        XLAL_CHECK_MAIN( XLALFrStreamSeek( framestream, &SFT_epoch ) == 0, XLAL_EFUNC );
+
+        // First check the beginning
+        XLAL_TRY( laltype = XLALFrStreamGetTimeSeriesType( uvar->channel_name->data[n], framestream ), errnum );
+        if ( errnum != 0 && uvar->allow_skipping ) {
+          LogPrintf( LOG_CRITICAL, "--require-channel=FALSE and %s is not in frames\n", uvar->channel_name->data[n] );
+          LogPrintf( LOG_CRITICAL, "==> No SFTs will be made for channel %s\n", uvar->channel_name->data[n] );
+          XLAL_CHECK_MAIN( report_nosfts( uvar->sft_write_path->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
+          continue;
+        } else if ( errnum != 0 ) {
+          XLAL_ERROR_MAIN( errnum );
+        }
+
+        // Shift the frame stream by SFT length minus one nanosecond so that we don't hit the end of the framestream
+        XLAL_CHECK_MAIN( XLALFrStreamSeekO( framestream, uvar->sft_duration - 1e-9, SEEK_CUR ) == 0, XLAL_EFUNC );
+
+        // Now check the end
+        XLAL_TRY( laltype = XLALFrStreamGetTimeSeriesType( uvar->channel_name->data[n], framestream ), errnum );
+        if ( errnum != 0 && uvar->allow_skipping ) {
+          LogPrintf( LOG_CRITICAL, "--require-channel=FALSE and %s is not in frames\n", uvar->channel_name->data[n] );
+          LogPrintf( LOG_CRITICAL, "==> No SFTs will be made for channel %s\n", uvar->channel_name->data[n] );
+          XLAL_CHECK_MAIN( report_nosfts( uvar->sft_write_path->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
+          continue;
+        } else if ( errnum != 0 ) {
+          XLAL_ERROR_MAIN( errnum );
+        }
+
+        // Return to the original position
+        XLAL_CHECK_MAIN( XLALFrStreamSeek( framestream, &SFT_epoch ) == 0, XLAL_EFUNC );
+      }
+
       // Try to read in time series data for the next SFT
       REAL8TimeSeries *SFT_time_series = NULL;
       {
@@ -424,9 +473,10 @@ int main( int argc, char *argv[] )
         XLAL_CHECK_MAIN( SFT_fft_plan != NULL, XLAL_EFUNC,
                          "Failed to allocate SFT FFT plan at GPS time %" LAL_INT4_FORMAT, SFT_epoch_sec );
 
-        // If the sampling rate is too low for the requested band, skip this channel
-        if ( SFT_fft_data->length < SFT_bins ) {
+        // If the sampling rate is too low for the requested band, skip this channel if allowed
+        if ( SFT_fft_data->length < SFT_bins && uvar->allow_skipping ) {
           LogPrintf( LOG_CRITICAL, "Sampling rate is too low for band requested, skipping %s\n", uvar->channel_name->data[n] );
+          XLAL_CHECK_MAIN( report_nosfts( uvar->sft_write_path->data[n] ) == XLAL_SUCCESS, XLAL_EFUNC );
           XLALDestroyREAL8TimeSeries( SFT_time_series );
           XLALDestroyREAL8Window( SFT_window );
           XLALDestroyCOMPLEX16Vector( SFT_fft_data );
@@ -436,6 +486,9 @@ int main( int argc, char *argv[] )
           SFT_fft_plan = NULL;
           continue;
         }
+
+        // Exit with error if the data length is too short
+        XLAL_CHECK_MAIN( SFT_fft_data->length >= SFT_bins, XLAL_ESIZE );
       }
 
       // High-pass SFT time series data with Butterworth High Pass filter
@@ -558,4 +611,20 @@ int main( int argc, char *argv[] )
   LALCheckMemoryLeaks();
 
   return 0;
+}
+
+// Write to an empty nosfts file if channel is not in frames or sample frequency too low.
+// This is only used when user arguement --allow-skipping = true
+int report_nosfts( CHAR *path )
+{
+
+  CHAR XLAL_INIT_DECL( pathtofile, [4096] );
+  snprintf( pathtofile, sizeof( pathtofile ), "%s/nosfts", path );
+  LALFILE *f = NULL;
+  XLAL_CHECK( ( f = XLALFileOpen( pathtofile, "w" ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK( XLALFileClose( f ) == XLAL_SUCCESS, XLAL_EFUNC );
+  f = NULL;
+
+  return XLAL_SUCCESS;
+
 }
