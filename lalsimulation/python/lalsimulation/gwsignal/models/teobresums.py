@@ -8,6 +8,7 @@
 """
 
 import warnings
+from typing import Optional
 
 try:
     import EOBRun_module
@@ -50,10 +51,13 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
     EOB model TEOBResumS-DALI.
     """
 
-    def __init__(self, modes_to_use: list[tuple[int, int]] = None, **kwargs):
+    def __init__(self, modes_to_use: Optional[list[tuple[int, int]]] = None, **kwargs):
 
         super().__init__()
-        self.available_modes = TEOB_DALI_MODES
+        if modes_to_use is None:
+            self.available_modes = TEOB_DALI_MODES
+        else:
+            self.available_modes = modes_to_use
         self._update_domains()
 
     @property
