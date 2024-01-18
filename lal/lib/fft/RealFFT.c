@@ -34,7 +34,7 @@
 /**
  * \addtogroup RealFFT_h
  *
- * \section sec_RealFFT_LAL LAL-style functions [DEPRECATED]
+ * ## LAL-style functions [DEPRECATED] ##
  *
  * This package also provides a (deprecated!) LAL-style interface with the FFTW fast Fourier
  * transform package \cite fj_1998 .
@@ -81,7 +81,7 @@
  * FFTW routines without any re-packing of the data.  This routine should not
  * be used unless the user understands the packing used in FFTW.
  *
- * \subsection ss_RealFFT_OP Operating Instructions
+ * ### Operating Instructions ###
  *
  * \code
  * const UINT4 n = 32;
