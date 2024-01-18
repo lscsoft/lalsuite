@@ -18,7 +18,7 @@
 {% endif %}
 
 # dependencies
-{% set swig_version = "@MIN_SWIG_VERSION@,<4.2.0a0" %}
+{% set swig_version = "@MIN_SWIG_VERSION@" %}
 
 package:
   name: {{ name }}-split

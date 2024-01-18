@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 119
+# serial 120
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -494,6 +494,7 @@ EOF
       -Wno-format-extra-args
       -Wno-tautological-compare
       -Wno-deprecated-declarations
+      -Wno-stringop-overflow
       -fno-strict-aliasing
       -O0
       -Wp[,]-U_FORTIFY_SOURCE
@@ -629,6 +630,7 @@ EOD`]
       -Wno-unused-but-set-variable
       -Wno-format-extra-args
       -Wno-tautological-compare
+      -Wno-stringop-overflow
       -fno-strict-aliasing
       ],[SWIG_PYTHON_CFLAGS="${SWIG_PYTHON_CFLAGS} ${flag}"]
     )
