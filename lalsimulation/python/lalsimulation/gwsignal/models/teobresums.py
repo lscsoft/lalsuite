@@ -85,16 +85,14 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
         parameters = convert_parameters_to_teob(self.waveform_dict)
 
-        nu = compute_symmetric_mass_ratio(self.waveform_dict)
-
         parameters["use_mode_lm"] = self._available_modes_teob_convention
 
         t, hp, hc, htlm, dyn = EOBRun_module.EOBRunPy(parameters)
 
         hlm_reindexed = self._to_gwpy_series(
             {
-                TEOB_DALI_MODES_FROM_K[int(ind)]: nu
-                * mode_wf[0]
+                TEOB_DALI_MODES_FROM_K[int(ind)]:
+                mode_wf[0]
                 * np.exp(-1j * mode_wf[1])
                 for ind, mode_wf in htlm.items()
             },
@@ -107,10 +105,13 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
         theta, phi = parameters["inclination"], parameters["phi_ref"]
         hlm = self.generate_td_modes(**parameters)
         hp, hc = hlm(theta, phi)
-
+        
+        nu = compute_symmetric_mass_ratio(self.waveform_dict)
+        
         distance_rescaling = (
             (
-                (parameters["mass1"] + parameters["mass2"])
+                nu
+                * (parameters["mass1"] + parameters["mass2"])
                 / parameters["distance"]
                 * ac.G
                 / ac.c ** 2
