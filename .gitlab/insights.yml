@@ -1,0 +1,17 @@
+merge_requests:
+  title: Merge requests
+  charts:
+    - title: API changes (grouped by merged date)
+      type: stacked-bar
+      query:
+        data_source: issuables
+        params:
+          issuable_type: merge_request
+          issuable_state: all
+          collection_labels:
+            - api::none
+            - api::minor
+            - api::major
+          group_by: month
+          period_field: merged_at
+          period_limit: 24

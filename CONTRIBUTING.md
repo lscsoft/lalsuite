@@ -1,3 +1,5 @@
+[[_TOC_]]
+
 # Contributing to LALSuite
 
 This page outlines the recommended procedure for contributing changes to the LALSuite repository. Please read the [IGWN Computing Guide to GitLab][compguidegit] before you start.
@@ -181,14 +183,14 @@ For individual commits, you can request a subset of merge pipeline jobs to run b
 | `[ci full]`                | n/a                       | Run all jobs in the merge pipeline                           |
 | `[ci integration]`         | `/[-_]ci[-_]integration/` | Longer-running integration tests, different<br/>top-level build configurations, etc. |
 | `[ci lint]`                | `/[-_]ci[-_]lint/`        | Perform "lint" checks for code style/formatting/whitespace<br/>errors, build byproduct files missing from `.gitignore`, etc. |
-| `[ci nightly]`             | n/a                       | Run all jobs in the nightly deployment pipeline [^1]         |
+| `[ci nightly]`             | n/a                       | Run all jobs in the nightly deployment pipeline         |
 | `[ci pkg]`                 | `/[-_]ci[-_]pkg/`         | Perform a basic package-level build from tarballs            |
 | `[ci platform]`            | `/[-_]ci[-_]platform/`    | Test different platforms (e.g. MacOS, various Linux distributions) |
 | `[ci rhel]`                | `/[-_]ci[-_]rhel/`        | Build RPM packages                                           |
-| `[ci tags]`                | n/a                       | Run all jobs in the pipeline for Git tags, e.g. `lalsuite-v*` [^1] |
+| `[ci tags]`                | n/a                       | Run all jobs in the pipeline for Git tags, e.g. `lalsuite-v*` |
 | `[ci wheels]`              | `/[-_]ci[-_]wheels/`      | Build Python wheel packages                                  |
 
-[^1]: The `[ci nightly]` and `[ci tags]` pipelines do not execute any deployment actions with external consequences, e.g. deploying documentation, pushing packages to repositories. These actions can only be executed by the third CI pipeline which runs nightly on the main `lscsoft/lalsuite` fork.
+Note: The `[ci nightly]` and `[ci tags]` pipelines do not execute any deployment actions with external consequences, e.g. deploying documentation, pushing packages to repositories. These actions can only be executed by the third CI pipeline which runs nightly on the main `lscsoft/lalsuite` fork.
 
 ### Pretty code formatting
 
@@ -210,11 +212,17 @@ To check that your local changes are pretty-formatted correctly and will pass th
 * At the top level of the repository, run `make pretty`. This will show a list of files that have been pretty-formatted (if any).
 * Commit any changes, e.g. `git add ...` to stage the changed files, `git commit` to commit.
 
+## Conda dev environment
+A recipe for creating a conda developer environment is provided in the repo under `common/conda` or [under this link][condadevyml].
+Note that some extra steps are needed to be able to run all LALSuite tests in such an environment; see the comments in the file.
+
 ## More information
 
-More information regarding the usage of GitLab can be found in the main GitLab [documentation][githelp].
+* More information regarding the usage of GitLab can be found in the main GitLab [documentation][githelp].
+* See also [the LALSuite gitlab wiki pages][lalsuitewiki] for some additional developer FAQs.
 
 [compguidegit]:  https://computing.docs.ligo.org/guide/gitlab/
+[condadevyml]:   https://git.ligo.org/lscsoft/lalsuite/-/blob/master/common/conda/environment.yml
 [doxygen]:       https://doxygen.nl
 [forkworkflow]:  https://git.ligo.org/help/user/project/repository/forking_workflow.html
 [githelp]:       https://git.ligo.org/help
@@ -222,6 +230,7 @@ More information regarding the usage of GitLab can be found in the main GitLab [
 [helpdesk]:      mailto:contact+lscsoft-lalsuite-1438-issue-@support.ligo.org
 [lalsuiteforks]: https://git.ligo.org/lscsoft/lalsuite/-/forks/new
 [lalsuiterepo]:  https://git.ligo.org/lscsoft/lalsuite
+[lalsuitewiki]:  https://git.ligo.org/lscsoft/lalsuite/-/wikis/home
 [mergerequests]: https://git.ligo.org/help/user/project/merge_requests/index.html
 [nightlydocs]:   https://lscsoft.docs.ligo.org/lalsuite
 [prettyastyle]:  https://astyle.sourceforge.net/

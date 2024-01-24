@@ -110,3 +110,28 @@ for i in 0.0 0.5 1.0 1.5 2.0; do
         exit 1
     fi
 done
+
+## run MakeSFTs on an invalid channel - this is supposed to fail
+pubObsRun=4
+pubObsKind="DEV"
+pubRevision=1
+MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:inval --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment'"
+MSFTs_cmdline_public="${MSFTs_cmdline_base} --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-revision ${pubRevision}"
+cmdline="${MSFTs_cmdline_public} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type rectangular"
+if eval "$cmdline"; then
+    echo "ERROR: something should have gone wrong but didn't when running '$cmdline'"
+    exit 1
+fi
+
+## run MakeSFTs on an invalid channel but allow channel to be skipped - this is supposed to succeed
+MSFTs_cmdline_base="lalpulsar_MakeSFTs --frame-cache $framecache --channel-name H1:inval --sft-duration ${Tsft} --high-pass-freq 0 --start-freq 0 --band ${Band} --comment-field 'Test comment' --allow-skipping TRUE"
+MSFTs_cmdline_public="${MSFTs_cmdline_base} --observing-run ${pubObsRun} --observing-kind ${pubObsKind} --observing-revision ${pubRevision}"
+cmdline="${MSFTs_cmdline_public} --sft-write-path MSFTs/ --gps-start-time ${tstart1} --gps-end-time ${tend1} --window-type rectangular"
+if ! eval "$cmdline"; then
+    echo "ERROR: something failed when running '$cmdline'"
+    exit 1
+fi
+if ! test -f "./MSFTs/nosfts"; then
+    echo "ERROR: could not find file './MSFTs/nosfts'"
+    exit 1
+fi

@@ -111,6 +111,8 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
             argList.append(f"-w {args.window_type}")
     if args.overlap_fraction:
         argList.append(f"-P {args.overlap_fraction}")
+    if args.allow_skipping:
+        argList.append("--allow-skipping TRUE")
     argStr = " ".join(argList)
 
     # gw_data_find job
@@ -288,6 +290,12 @@ parser.add_argument(
     type=str,
     help="name of input time-domain channel to read from \
           frames",
+)
+parser.add_argument(
+    "--allow-skipping",
+    action="store_true",
+    help="allow channels to be skipped if not in frames or too low sampling \
+          frequency",
 )
 parser.add_argument("-c", "--comment-field", type=str, help="comment for SFT header")
 parser.add_argument(

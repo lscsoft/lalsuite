@@ -64,7 +64,7 @@ outputs:
       build:
         - {{ compiler('c') }}
         - make  # [not win]
-        - swig >=3.0.9
+        - swig >={{ swig_version }}
       host:
         - fftw * nompi*  # [fft_impl == "fftw"]
         - gsl
