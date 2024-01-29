@@ -73,6 +73,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
             "implementation": "C",
             "condition": False,
             "conditioning_routines": None,
+            "extra_parameters": {"true_anomaly": u.rad},
         }
         return metadata
 
@@ -81,7 +82,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
         return modes_to_k(self.available_modes)
 
     def generate_td_modes(self, **parameters):
-        self.parameter_check(units_sys="Cosmo", **parameters)
+        self.parameter_check(units_sys="Cosmo", extra_parameters=self.metadata['extra_parameters'], **parameters)
         self.waveform_dict = self._strip_units(self.waveform_dict)
 
         parameters = convert_parameters_to_teob(self.waveform_dict)
@@ -158,6 +159,9 @@ def convert_parameters_to_teob(parameter_dict):
     fmin, dt = parameter_dict["f22_start"], parameter_dict["deltaT"]
     m1, m2 = parameter_dict["mass1"], parameter_dict["mass2"]
 
+    if  "true_anomaly" not in parameter_dict:
+        parameter_dict["true_anomaly"] = 0. 
+
     q = m1 / m2
     if q < 1.0:
         q = 1 / q
@@ -177,6 +181,7 @@ def convert_parameters_to_teob(parameter_dict):
         "srate_interp": 1 / dt,
         "initial_frequency": fmin,
         "distance": parameter_dict["distance"],
+        "anomaly": parameter_dict["true_anomaly"],
         "arg_out": "yes",
         "interp_uniform_grid": "yes",
         "use_geometric_units": "no",
