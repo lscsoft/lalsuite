@@ -1805,6 +1805,7 @@ UNUSED static int SEOBNRv5HMROMCoreModes(
     /* Cleanup inside of loop over modes */
     XLALDestroyREAL8Sequence(freqs);
     XLALDestroyCOMPLEX16FrequencySeries(hlmtilde);
+    XLALDestroyREAL8Sequence(amp_tidal);
   }
 
   AmpPhaseSplineData_Destroy(ampPhaseSplineData, nModes);
@@ -2588,6 +2589,7 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
     *hlm_list = XLALSphHarmFrequencySeriesAddMode(*hlm_list, hlmtilde, modeL, -modeM);
 
     // Cleanup
+    XLALDestroyREAL8Sequence(amp_tidal);
     XLALDestroyCOMPLEX16FrequencySeries(hlmtilde);
     gsl_interp_accel_free(acc_amp);
     gsl_interp_accel_free(acc_phase);
