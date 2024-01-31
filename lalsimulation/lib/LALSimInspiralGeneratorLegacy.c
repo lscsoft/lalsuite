@@ -289,7 +289,6 @@ DEFINE_GENERATOR_TEMPLATE(SEOBNRv2_ROM_EffectiveSpin, NULL, generate_fd_waveform
 DEFINE_GENERATOR_TEMPLATE(SEOBNRv4T_surrogate, NULL, generate_fd_waveform, NULL, NULL)
 DEFINE_GENERATOR_TEMPLATE(SEOBNRv4_ROM, NULL, generate_fd_waveform, NULL, NULL)
 DEFINE_GENERATOR_TEMPLATE(SEOBNRv4_ROM_NRTidal, NULL, generate_fd_waveform, NULL, NULL)
-DEFINE_GENERATOR_TEMPLATE(SEOBNRv5_ROM_NRTidal, NULL, generate_fd_waveform, NULL, NULL)
 DEFINE_GENERATOR_TEMPLATE(SpinTaylorF2, NULL, generate_fd_waveform, NULL, NULL)
 DEFINE_GENERATOR_TEMPLATE(SpinTaylorT4Fourier, NULL, generate_fd_waveform, NULL, NULL)
 DEFINE_GENERATOR_TEMPLATE(SpinTaylorT5Fourier, NULL, generate_fd_waveform, NULL, NULL)
@@ -310,7 +309,6 @@ DEFINE_GENERATOR_TEMPLATE(IMRPhenomB, NULL, generate_fd_waveform, NULL, generate
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomC, NULL, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomD, NULL, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomD_NRTidalv2, NULL, generate_fd_waveform, NULL, generate_td_waveform)
-DEFINE_GENERATOR_TEMPLATE(IMRPhenomD_NRTidalv3, NULL, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomNSBH, NULL, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomPv2, NULL, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomPv2_NRTidal, NULL, generate_fd_waveform, NULL, generate_td_waveform)
@@ -325,7 +323,6 @@ DEFINE_GENERATOR_TEMPLATE(IMRPhenomXAS_NRTidalv3, NULL, generate_fd_waveform, NU
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomXP_NRTidalv3, NULL, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(SEOBNRv4_ROM_NRTidalv2, NULL, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(SEOBNRv4_ROM_NRTidalv2_NSBH, NULL, generate_fd_waveform, NULL, generate_td_waveform)
-DEFINE_GENERATOR_TEMPLATE(SEOBNRv5_ROM_NRTidalv2, NULL, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(SEOBNRv5_ROM_NRTidalv3, NULL, generate_fd_waveform, NULL, generate_td_waveform)
 
 /* TD POLARIZATIONS AND FD POLARIZATIONS AND MODES ONLY */
@@ -818,15 +815,7 @@ static int XLALSimInspiralChooseTDWaveform_legacy(
         ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
         break;
 
-    case IMRPhenomD_NRTidalv3:
-        ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
-        break;
-
     case SEOBNRv4_ROM_NRTidalv2:
-        ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
-        break;
-
-    case SEOBNRv5_ROM_NRTidalv2:
         ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
         break;
 
@@ -1681,28 +1670,6 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
         }
         break;
 
-    case IMRPhenomD_NRTidalv3:
-        /* Waveform-specific sanity checks */
-        if (!XLALSimInspiralWaveformParamsFlagsAreDefault(params))
-            XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
-        if (!checkTransverseSpinsZero(S1x, S1y, S2x, S2y))
-            XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-        if (lambda1 < 0 || lambda2 < 0)
-            XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for IMRPhenomD_NRTidalv3", lambda1, lambda2);
-        ret = XLALSimInspiralSetQuadMonParamsFromLambdas(params);
-        XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for IMRPhenomD_NRTidalv3");
-        /* Call the waveform driver routine */
-        ret = XLALSimIMRPhenomDNRTidal(hptilde, phiRef, deltaF, f_min, f_max, f_ref, distance, m1, m2, S1z, S2z, lambda1, lambda2, params, NRTidalv3_V);
-        if (ret == XLAL_FAILURE)
-            XLAL_ERROR(XLAL_EFUNC);
-        /* Produce both polarizations */
-        *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross", &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF, &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-        for (j = 0; j < (*hptilde)->data->length; j++) {
-            (*hctilde)->data->data[j] = -I * cfac * (*hptilde)->data->data[j];
-            (*hptilde)->data->data[j] *= pfac;
-        }
-        break;
-
     case IMRPhenomNSBH:
         /* Waveform-specific sanity checks */
         if (!checkTransverseSpinsZero(S1x, S1y, S2x, S2y))
@@ -1930,34 +1897,6 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
             XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
 
         ret = XLALSimIMRSEOBNRv4TSurrogate(hptilde, hctilde, phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2, SEOBNRv4TSurrogate_CUBIC);
-        break;
-
-    case SEOBNRv5_ROM_NRTidal:
-
-        /* Waveform-specific sanity checks */
-        if (!XLALSimInspiralWaveformParamsFlagsAreDefault(params))
-            XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
-        if (!checkTransverseSpinsZero(S1x, S1y, S2x, S2y))
-            XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-        if (lambda1 < 0 || lambda2 < 0)
-            XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for SEOBNRv5_ROM_NRTidal", lambda1, lambda2);
-        ret = XLALSimInspiralSetQuadMonParamsFromLambdas(params);
-        XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for SEOBNRv5_ROM_NRTidal");
-        ret = XLALSimIMRSEOBNRv5ROMNRTidal(hptilde, hctilde, phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2, params, NRTidal_V);
-        break;
-
-    case SEOBNRv5_ROM_NRTidalv2:
-
-        /* Waveform-specific sanity checks */
-        if (!XLALSimInspiralWaveformParamsFlagsAreDefault(params))
-            XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
-        if (!checkTransverseSpinsZero(S1x, S1y, S2x, S2y))
-            XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-        if (lambda1 < 0 || lambda2 < 0)
-            XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for SEOBNRv5_ROM_NRTidal", lambda1, lambda2);
-        ret = XLALSimInspiralSetQuadMonParamsFromLambdas(params);
-        XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for SEOBNRv5_ROM_NRTidal");
-        ret = XLALSimIMRSEOBNRv5ROMNRTidal(hptilde, hctilde, phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2, params, NRTidalv2_V);
         break;
 
     case SEOBNRv5_ROM_NRTidalv3:

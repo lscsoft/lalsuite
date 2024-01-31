@@ -1,5 +1,6 @@
 /*
  *  This implementation was based on LALSimSEOBNRv4ROM_NRTidal.c
+ *  Copyright (C) 2023 Adrian Abac
  *  Copyright (C) 2017 Michael Puerrer
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -105,7 +106,7 @@ int SEOBNRv5ROM_NRTidal_Core(
   const REAL8Sequence *freqs_in,                /**< Frequency points at which to evaluate the waveform (Hz) */
   REAL8 deltaF,                                 /**< Sampling frequency (Hz) */
   LALDict *LALparams,                          /**< LAL dictionary containing accessory parameters */
-  NRTidal_version_type NRTidal_version         /**< Version of NRTides; can be any one of NRTidal_V (arXiv:1706.02969), NRTidalv2_V (arXiv:1905.06011) or NRTidalv2NoAmpCorr_V (arXiv:1905.06011, without amplitude corrections) */ )
+  NRTidal_version_type NRTidal_version         /**< Version of NRTides; only for NRTidalv3 (arXiv:2311.07456) */ )
 {
   /* Check output arrays */
   if(!hptilde || !hctilde)
@@ -161,14 +162,8 @@ int SEOBNRv5ROM_NRTidal_Core(
     // returned waveform contains frequencies up to the input fHigh but
     // only contains zeros beyond NRTIDAL_FMAX
     double f_max_nr_tidal = fHigh;
-    /**< tidal coupling constant.*/
-    const double kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
     /* Prepare tapering of amplitude beyond merger frequency */
-    double fHz_mrg = XLALSimNRTunedTidesMergerFrequency( (m1_SI+m2_SI)/LAL_MSUN_SI , kappa2T, m1_SI/m2_SI);
-    if (NRTidal_version == NRTidalv3_V){
-      fHz_mrg = XLALSimNRTunedTidesMergerFrequency_v3((m1_SI+m2_SI)/LAL_MSUN_SI , lambda1, lambda2, m1_SI/m2_SI, chi1, chi2);
-      // NRTIDAL_FMAX = 1.5*fHz_mrg; 
-    }
+    const double fHz_mrg = XLALSimNRTunedTidesMergerFrequency_v3((m1_SI+m2_SI)/LAL_MSUN_SI , lambda1, lambda2, m1_SI/m2_SI, chi1, chi2);
     const double NRTIDAL_FMAX = 1.3*fHz_mrg;
 
     if ( (NRTidal_version != NRTidalv2NSBH_V) && (( fHigh > NRTIDAL_FMAX ) || ( fHigh == 0.0 )) )
@@ -251,12 +246,7 @@ int SEOBNRv5ROM_NRTidal_Core(
   // Get FD tidal phase correction and amplitude factor from arXiv:1706.02969
   phi_tidal = XLALCreateREAL8Sequence(freqs->length);
   planck_taper = XLALCreateREAL8Sequence(freqs->length);
-  if (NRTidal_version == NRTidalv2_V) {
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, chi1, chi2, NRTidalv2NoAmpCorr_V);
-    XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
-    XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, chi1, chi2, quad_mon1+1., quad_mon2+1.);
-  }
-  else if (NRTidal_version == NRTidalv3_V) {
+ if (NRTidal_version == NRTidalv3_V) {
     ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, chi1, chi2, NRTidalv3NoAmpCorr_V);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
     XLALSimInspiralGetHOSpinTerms(&SS_3p5PN, &SSS_3p5PN, X_A, X_B, chi1, chi2, quad_mon1+1., quad_mon2+1.);
@@ -265,17 +255,6 @@ int SEOBNRv5ROM_NRTidal_Core(
     ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, m1_SI, m2_SI, lambda1, lambda2, chi1, chi2, NRTidal_version);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
   }
-
-  // // For NSBH, apply NSBH amplitude correction (Note that there is no implementation yet for SEOBNRv5ROM with NRTidalv3 for NSBH)
-  // if (NRTidal_version == NRTidalv2NSBH_V){
-  //      amp_tidal = XLALCreateREAL8Sequence(freqs->length);
-  //      ret = XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries(
-  //       amp_tidal, freqs,
-  //       m1_SI, m2_SI, chi1, lambda2
-  //     );
-  //     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSEOBNRv4ROMNSBHAmplitudeCorrectionFrequencySeries Failed.");
-
-  // }
 
   // // Prepare tapering of amplitude beyond merger frequency
   // double kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
@@ -304,9 +283,7 @@ int SEOBNRv5ROM_NRTidal_Core(
     gsl_vector_set(phi_vec, i, phase_corr);
 
     COMPLEX16 Corr = (planck_taper->data[i]) * cexp(-I*phase_corr -I*v*v*(SS_3p5PN + SSS_3p5PN)*pn_fac);
-    if (NRTidal_version==NRTidalv2NSBH_V){
-        Corr *= amp_tidal->data[i];
-    }
+
     pdata[j] *= Corr;
     cdata[j] *= Corr;
 
@@ -362,9 +339,9 @@ int SEOBNRv5ROM_NRTidal_Core(
  *
  * @name SEOBNRv5_ROM_NRTidal
  *
- * @author Michael Puerrer
+ * @author Adrian Abac
  *
- * @brief C code for SEOBNRv5ROM with added tidal phase correction from NRTidalv3.
+ * @brief C code for SEOBNRv5ROM with added tidal phase correction from NRTidalv3 (arXiv:2311.07456).
  *
  * This is a frequency domain model that adds tidal modifications of the phasing
  * to the SEOBNRv5ROM model.
@@ -415,7 +392,7 @@ int XLALSimIMRSEOBNRv5ROMNRTidalFrequencySequence(
   REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
   REAL8 lambda2,                                /**< Dimensionless tidal deformability of NS 2 */
   LALDict *LALparams,                           /**< linked list containing the extra testing GR parameters */
-  NRTidal_version_type NRTidal_version          /**< Version of NRTides; can be any one of NRTidal_V (arXiv:1706.02969), NRTidalv2_V (arXiv:1905.06011) or NRTidalv2NoAmpCorr_V (arXiv:1905.06011, without amplitude corrections) */ 
+  NRTidal_version_type NRTidal_version          /**< Version of NRTides; only NRTidalv3 (arXiv:2311.07456) */ 
 )
 {
   if (!freqs) XLAL_ERROR(XLAL_EFAULT);
@@ -453,7 +430,7 @@ int XLALSimIMRSEOBNRv5ROMNRTidal(
 				 REAL8 lambda1,                                /**< Dimensionless tidal deformability of NS 1 */
 				 REAL8 lambda2,                                 /**< Dimensionless tidal deformability of NS 2 */
 				 LALDict *LALparams,                            /**< linked list containing the extra testing GR parameters */
-         NRTidal_version_type NRTidal_version           /**< Version of NRTides; can be one of NRTidal or NRTidalv2NoAmpCorr */
+         NRTidal_version_type NRTidal_version           /**< Version of NRTides; only NRTidalv3 */
 				 ) {
   // Use fLow, fHigh, deltaF to compute freqs sequence
   // Instead of building a full sequence we only transfer the boundaries and let

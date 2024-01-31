@@ -283,7 +283,7 @@ UNUSED static int SEOBNRv5HMROMCoreModes(
   REAL8 sign_odd_modes, /**< Sign of the odd-m modes, used when swapping the two bodies */
   SEOBNRROMdataDS *romdataset, /**< Dataset for the 22 or HM ROM */
   LALDict *LALParams, /**< Additional lal parameters including the tidal deformability*/
-  NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NRTidalv3_V or NoNRT_V in case of BBH baseline */
+  NRTidal_version_type NRTidal_version /**< NRTidal version; only NRTidalv3_V or NoNRT_V in case of BBH baseline */
 );
 UNUSED static void SEOBNRROMdataDS_coeff_Init(SEOBNRROMdataDS_coeff **romdatacoeff, int nk_cmode, int nk_phase);
 UNUSED static void SEOBNRROMdataDS_coeff_Cleanup(SEOBNRROMdataDS_coeff *romdatacoeff);
@@ -1622,7 +1622,7 @@ UNUSED static int SEOBNRv5HMROMCoreModes(
   REAL8 sign_odd_modes, /**<  Sign of the odd-m modes, used when swapping the two bodies */
   UNUSED SEOBNRROMdataDS *romdataset,  /**< Dataset for the 22 or HM ROM */
   LALDict *LALParams, /**< Additional lal parameters including the tidal deformability*/
-  NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NRTidalv3_V or NoNRT_V in case of BBH baseline */
+  NRTidal_version_type NRTidal_version /**< only or NRTidalv3_V or NoNRT_V in case of BBH baseline */
   )
 {
   /* Check output structure */
@@ -1686,7 +1686,7 @@ UNUSED static int SEOBNRv5HMROMCoreModes(
     LIGOTimeGPS tC = {0, 0};
     UINT4 offset = 0; // Index shift between freqs and the frequency series
     REAL8Sequence *freqs = NULL;
-    REAL8Sequence *amp_tidal = NULL; /* Tidal amplitude series; required only for SEOBNRv5_ROM_NRTidalv2 and NRTidalv3 */
+    REAL8Sequence *amp_tidal = NULL; /* Tidal amplitude series; required only for SEOBNRv5_ROM_NRTidalv3 */
     // freqs contains uniform frequency grid with spacing deltaF; we start at frequency 0
     // I removed the if statement for the time being
     /* Set up output array with size closest power of 2 */
@@ -1739,20 +1739,20 @@ UNUSED static int SEOBNRv5HMROMCoreModes(
 
     int ret = XLAL_SUCCESS;
     // Assemble modes from amplitude and phase
-    if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
+    if (NRTidal_version == NRTidalv3_V) {
       /* get component masses (in solar masses) from mtotal and eta! */
       const REAL8 eta = q/((1.+q)*(1.+q));
       const REAL8 factor = sqrt(1. - 4.*eta);
       const REAL8 m1 = 0.5*Mtot*(1.+ factor);
       const REAL8 m2 = 0.5*Mtot*(1.- factor);
     
-      /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for NRTidalv2 and NRTidalv3 */
+      /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for NRTidalv3 */
       amp_tidal = XLALCreateREAL8Sequence(freqs->length);
       const REAL8 l1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
       const REAL8 l2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
 
       ret = XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(amp_tidal, freqs, m1, m2, l1, l2);
-      XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate tidal amplitude series to construct SEOBNRv4_ROM_NRTidalv2 waveform.");
+      XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate tidal amplitude series to construct SEOBNRv5_ROM_NRTidalv3 waveform.");
       /* Generated tidal amplitude corrections */
       for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
         REAL8 f = freqs->data[i];
@@ -2325,7 +2325,7 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
   REAL8 sign_odd_modes,                     /**<  Sign of the odd-m modes, used when swapping the two bodies */
   UNUSED SEOBNRROMdataDS *romdataset,        /**< Dataset for the 22 or HM ROM */
   LALDict *LALParams, /**< Additional lal parameters including the tidal deformability*/
-  NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NRTidalv3_V or NoNRT_V in case of BBH baseline */
+  NRTidal_version_type NRTidal_version /**< only NRTidalv3_V or NoNRT_V in case of BBH baseline */
 )
 {
   /* Find frequency bounds */
@@ -2465,7 +2465,7 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
     LIGOTimeGPS tC = {0, 0};
     UINT4 offset = 0; // Index shift between freqs and the frequency series
     REAL8Sequence *freqs = NULL;
-    REAL8Sequence *amp_tidal = NULL; /* Tidal amplitude series; required only for SEOBNRv5_ROM_NRTidalv2 and NRTidalv3 */
+    REAL8Sequence *amp_tidal = NULL; /* Tidal amplitude series; for SEOBNRv5_ROM_NRTidalv3 */
     COMPLEX16FrequencySeries *hlmtilde = NULL;
 
     if (deltaF > 0) {
@@ -2523,19 +2523,19 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
 
 
     int ret = XLAL_SUCCESS;
-    if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
+    if (NRTidal_version == NRTidalv3_V) {
       /* get component masses (in solar masses) from mtotal and eta! */
       const REAL8 eta = q/((1.+q)*(1.+q));
       const REAL8 factor = sqrt(1. - 4.*eta);
       const REAL8 m1 = 0.5*Mtot*(1.+ factor);
       const REAL8 m2 = 0.5*Mtot*(1.- factor);
-      /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for NRTidalv2 */
+      /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for NRTidalv3 */
       amp_tidal = XLALCreateREAL8Sequence(freqs->length);
       const REAL8 l1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
       const REAL8 l2 = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
 
       ret = XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(amp_tidal, freqs, m1, m2, l1, l2);
-      XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate tidal amplitude series to construct SEOBNRv4_ROM_NRTidalv2 waveform.");
+      XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate tidal amplitude series to construct SEOBNRv5_ROM_NRTidalv3 waveform.");
       /* Generated tidal amplitude corrections */
       for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
         REAL8 f = freqs->data[i];
@@ -2657,7 +2657,7 @@ int XLALSimIMRSEOBNRv5HMROM(
   UNUSED UINT4 nModes,                                 /**< Number of modes to use. This should be 1 for SEOBNRv5_ROM and 7 for SEOBNRv5HM_ROM */
   bool use_hybridization,                              /**< Whether the ROM should be hybridized */
   LALDict *LALParams, /**< Additional lal parameters including the tidal deformability*/
-  NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NRTidalv3_V or NoNRT_V in case of BBH baseline */	
+  NRTidal_version_type NRTidal_version /**< only NRTidalv3_V or NoNRT_V in case of BBH baseline */	
 )
 {
   REAL8 sign_odd_modes = 1.;
@@ -2794,7 +2794,7 @@ int XLALSimIMRSEOBNRv5HMROMFrequencySequence(
   UNUSED INT4 nk_max,                                  /**< Truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1 */
   UNUSED UINT4 nModes,                                 /**< Number of modes to use. This should be 1 for SEOBNRv5_ROM and 7 for SEOBNRv5HM_ROM */
   LALDict *LALParams, /**< Additional lal parameters including the tidal deformability*/
-  NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NRTidalv3_V or NoNRT_V in case of BBH baseline */
+  NRTidal_version_type NRTidal_version /**< only NRTidalv3_V or NoNRT_V in case of BBH baseline */
 )
 {
   REAL8 sign_odd_modes = 1.;
@@ -2925,7 +2925,7 @@ int XLALSimIMRSEOBNRv5HMROM_Modes(
   UNUSED UINT4 nModes,          /**< Number of modes to use. This should be 1 for SEOBNRv5_ROM and 7 for SEOBNRv5HM_ROM */
   bool use_hybridization,        /**< Whether the ROM should be hybridized */
   LALDict *LALParams, /**< Additional lal parameters including the tidal deformability*/
-  NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NRTidalv3_V or NoNRT_V in case of BBH baseline */
+  NRTidal_version_type NRTidal_version /**< only NRTidalv3_V or NoNRT_V in case of BBH baseline */
   )
 {
   REAL8 sign_odd_modes = 1.;
@@ -3034,7 +3034,7 @@ int XLALSimIMRSEOBNRv5HMROMFrequencySequence_Modes(
   UNUSED INT4 nk_max,                                  /**< Truncate interpolants at SVD mode nk_max; don't truncate if nk_max == -1 */
   UNUSED UINT4 nModes,                                 /**< Number of modes to use. This should be 1 for SEOBNRv5_ROM and 7 for SEOBNRv5HM_ROM */
   LALDict *LALParams, /**< Additional lal parameters including the tidal deformability*/
-  NRTidal_version_type NRTidal_version /**< NRTidal version; either NRTidal_V or NRTidalv2_V or NRTidalv3_V or NoNRT_V in case of BBH baseline */
+  NRTidal_version_type NRTidal_version /**< NRTidal version; only NRTidalv3_V or NoNRT_V in case of BBH baseline */
   )
 {
   REAL8 sign_odd_modes = 1.;

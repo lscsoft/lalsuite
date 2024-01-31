@@ -389,8 +389,6 @@ typedef enum tagApproximant {
                          * @remarks Implemented in lalsimulation (frequency domain). */
    IMRPhenomD_NRTidalv2, /**< NRTidalv2; https://arxiv.org/abs/1905.06011
                             * @remarks Implemented in lalsimulation (time domain and frequency domain).*/
-   IMRPhenomD_NRTidalv3, /**< NRTidalv3; 
-                            * @remarks Implemented in lalsimulation (time domain and frequency domain).*/
    IMRPhenomNSBH,   /**< NSBH Tidal model.
                          * @remarks Implemented in lalsimulation (frequency domain). */
    IMRPhenomHM,     /**< Frequency domain with higher modes (non-precessing spins) inspiral-merger-ringdown templates, based on IMRPhenomD.
@@ -440,11 +438,7 @@ typedef enum tagApproximant {
    IMRPhenomTP,      /** Time domain, precessing phenomenological IMR waveform model for L=2 sector ([arXiv: 20XY.ZZZZZ]). */
    IMRPhenomTPHM,      /** Time domain, precessing phenomenological IMR waveform model with subdominant modes ([arXiv: 20XY.ZZZZZ]). */
    SEOBNRv5_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5 remarks Implemented in lalsimulation (frequency domain). */
-   SEOBNRv5_ROM_NRTidal, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv4 [Bohe et al, arXiv:1611.03703] with tidal phase corrections [Dietrich et al, arXiv:1706.02969
-                                * @remarks Implemented in lalsimulation (frequency domain). */   
-   SEOBNRv5_ROM_NRTidalv2, /**< based on NRTidalv2; https://arxiv.org/abs/1905.06011.
-                             * @remarks Implemented in lalsimulation (time domain and frequency domain). */
-   SEOBNRv5_ROM_NRTidalv3, /**< based on NRTidalv3; 
+   SEOBNRv5_ROM_NRTidalv3, /**< based on NRTidalv3 (arXiv:2311.07456); 
                              * @remarks Implemented in lalsimulation (time domain and frequency domain). */
    SEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain), PhysRevD.104.124087 [arXiv:2105.06983] */
    pSEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain) and TGR ringdown effects, PhysRevD.104.124087 [arXiv:2105.06983] */
@@ -970,7 +964,6 @@ extern const LALSimInspiralGenerator lalIMRPhenomCGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomDGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomD_NRTidalGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomD_NRTidalv2GeneratorTemplate;
-extern const LALSimInspiralGenerator lalIMRPhenomD_NRTidalv3GeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomHMGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomNSBHGeneratorTemplate;
 extern const LALSimInspiralGenerator lalIMRPhenomPGeneratorTemplate;
@@ -1028,8 +1021,6 @@ extern const LALSimInspiralGenerator lalSEOBNRv4_optGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSEOBNRv4HM_PAGeneratorTemplate;
 extern const LALSimInspiralGenerator lalpSEOBNRv4HM_PAGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSEOBNRv5_ROMGeneratorTemplate;
-extern const LALSimInspiralGenerator lalSEOBNRv5_ROM_NRTidalGeneratorTemplate;
-extern const LALSimInspiralGenerator lalSEOBNRv5_ROM_NRTidalv2GeneratorTemplate;
 extern const LALSimInspiralGenerator lalSEOBNRv5_ROM_NRTidalv3GeneratorTemplate;
 extern const LALSimInspiralGenerator lalSpinDominatedWfGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSpinTaylorF2GeneratorTemplate;

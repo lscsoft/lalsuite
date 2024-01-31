@@ -144,8 +144,6 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv4_ROM_NRTidalv2_NSBH),
     INITIALIZE_NAME(SEOBNRv4T_surrogate),
     INITIALIZE_NAME(SEOBNRv5_ROM),
-    INITIALIZE_NAME(SEOBNRv5_ROM_NRTidal),
-    INITIALIZE_NAME(SEOBNRv5_ROM_NRTidalv2),
     INITIALIZE_NAME(SEOBNRv5_ROM_NRTidalv3),
     INITIALIZE_NAME(HGimri),
     INITIALIZE_NAME(IMRPhenomA),
@@ -156,7 +154,6 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(IMRPhenomD),
     INITIALIZE_NAME(IMRPhenomD_NRTidal),
     INITIALIZE_NAME(IMRPhenomD_NRTidalv2),
-    INITIALIZE_NAME(IMRPhenomD_NRTidalv3),
     INITIALIZE_NAME(IMRPhenomNSBH),
     INITIALIZE_NAME(IMRPhenomHM),
     INITIALIZE_NAME(IMRPhenomP),
@@ -298,7 +295,6 @@ const LALSimInspiralGenerator *lalSimInspiralGeneratorTemplates[NumApproximants]
     [IMRPhenomD] = &lalIMRPhenomDGeneratorTemplate,
     [IMRPhenomD_NRTidal] = &lalIMRPhenomD_NRTidalGeneratorTemplate,
     [IMRPhenomD_NRTidalv2] = &lalIMRPhenomD_NRTidalv2GeneratorTemplate,
-    [IMRPhenomD_NRTidalv3] = &lalIMRPhenomD_NRTidalv3GeneratorTemplate,
     [IMRPhenomHM] = &lalIMRPhenomHMGeneratorTemplate,
     [IMRPhenomNSBH] = &lalIMRPhenomNSBHGeneratorTemplate,
     [IMRPhenomP] = &lalIMRPhenomPGeneratorTemplate,
@@ -354,8 +350,6 @@ const LALSimInspiralGenerator *lalSimInspiralGeneratorTemplates[NumApproximants]
     [SEOBNRv4_ROM_NRTidalv2_NSBH] = &lalSEOBNRv4_ROM_NRTidalv2_NSBHGeneratorTemplate,
     [SEOBNRv4_opt] = &lalSEOBNRv4_optGeneratorTemplate,
     [SEOBNRv5_ROM] = &lalSEOBNRv5_ROMGeneratorTemplate,
-    [SEOBNRv5_ROM_NRTidal] = &lalSEOBNRv5_ROM_NRTidalGeneratorTemplate,
-    [SEOBNRv5_ROM_NRTidalv2] = &lalSEOBNRv5_ROM_NRTidalv2GeneratorTemplate,
     [SEOBNRv5_ROM_NRTidalv3] = &lalSEOBNRv5_ROM_NRTidalv3GeneratorTemplate,
     [SEOBNRv4HM_PA] = &lalSEOBNRv4HM_PAGeneratorTemplate,
     [pSEOBNRv4HM_PA] = &lalpSEOBNRv4HM_PAGeneratorTemplate,
@@ -3988,7 +3982,6 @@ int XLALSimInspiralImplementedTDApproximants(
         case IMRPhenomPv2_NRTidalv2:
         case IMRPhenomNSBH:
         case IMRPhenomD_NRTidalv2:
-        case IMRPhenomD_NRTidalv3:
 		case IMRPhenomXAS:
         case IMRPhenomXAS_NRTidalv2:
         case IMRPhenomXAS_NRTidalv3:
@@ -4014,8 +4007,6 @@ int XLALSimInspiralImplementedTDApproximants(
         case SEOBNRv4T:
         case SEOBNRv4_ROM_NRTidalv2_NSBH:
         case SEOBNRv4_ROM_NRTidalv2:
-        case SEOBNRv5_ROM_NRTidal:
-        case SEOBNRv5_ROM_NRTidalv2:
         case SEOBNRv5_ROM_NRTidalv3:
         case NR_hdf5:
         case NRSur7dq2:
@@ -4057,7 +4048,6 @@ int XLALSimInspiralImplementedFDApproximants(
         case IMRPhenomD:
         case IMRPhenomD_NRTidal:
         case IMRPhenomD_NRTidalv2:
-        case IMRPhenomD_NRTidalv3:
         case IMRPhenomNSBH:
         case IMRPhenomHM:
         case IMRPhenomP:
@@ -4087,8 +4077,6 @@ int XLALSimInspiralImplementedFDApproximants(
         case SEOBNRv4_ROM_NRTidalv2_NSBH:
         case SEOBNRv4T_surrogate:
         case SEOBNRv5_ROM:
-        case SEOBNRv5_ROM_NRTidal:
-        case SEOBNRv5_ROM_NRTidalv2:
         case SEOBNRv5_ROM_NRTidalv3:
         //case TaylorR2F4:
         case TaylorF2:
@@ -4532,7 +4520,6 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case IMRPhenomD:
     case IMRPhenomD_NRTidal:
     case IMRPhenomD_NRTidalv2:
-    case IMRPhenomD_NRTidalv3:
     case IMRPhenomNSBH:
     case IMRPhenomHM:
     case IMRPhenomXAS:
@@ -4560,8 +4547,6 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv4_ROM_NRTidalv2_NSBH:
     case SEOBNRv4T_surrogate:
     case SEOBNRv5_ROM:
-    case SEOBNRv5_ROM_NRTidal:
-    case SEOBNRv5_ROM_NRTidalv2:
     case SEOBNRv5_ROM_NRTidalv3:
     case TEOBResumS:
     case TaylorR2F4:
@@ -4660,7 +4645,6 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case IMRPhenomD:
     case IMRPhenomD_NRTidal:
     case IMRPhenomD_NRTidalv2:
-    case IMRPhenomD_NRTidalv3:
     case IMRPhenomNSBH:
     case IMRPhenomHM:
     case IMRPhenomXAS:
@@ -4688,8 +4672,6 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case SEOBNRv4T_surrogate:
     case SEOBNRv4HM_ROM:
     case SEOBNRv5_ROM:
-    case SEOBNRv5_ROM_NRTidal:
-    case SEOBNRv5_ROM_NRTidalv2:
     case SEOBNRv5_ROM_NRTidalv3:
     case TaylorR2F4:
     case IMRPhenomFB:
@@ -4858,8 +4840,6 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv4_ROM_NRTidalv2_NSBH:
     case SEOBNRv4T_surrogate:
     case SEOBNRv5_ROM:
-    case SEOBNRv5_ROM_NRTidal:
-    case SEOBNRv5_ROM_NRTidalv2:
     case SEOBNRv5_ROM_NRTidalv3:
     case IMRPhenomC:
     case IMRPhenomD:
@@ -4869,7 +4849,6 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case IMRPhenomPv2_NRTidalv2:
     case IMRPhenomD_NRTidal:
     case IMRPhenomD_NRTidalv2:
-    case IMRPhenomD_NRTidalv3:
     case IMRPhenomHM:
     case IMRPhenomPv3:
     case IMRPhenomPv3HM:

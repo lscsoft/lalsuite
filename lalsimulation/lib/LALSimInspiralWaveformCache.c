@@ -1166,34 +1166,6 @@ int XLALSimInspiralChooseFDWaveformSequence(
                     SEOBNRv4TSurrogate_CUBIC);
             break;
 
-        case SEOBNRv5_ROM_NRTidal:
-            /* Waveform-specific sanity checks */
-            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-
-            ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
-            XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for SEOBNRv4_ROM_NRTidalv2");
-
-            ret = XLALSimIMRSEOBNRv5ROMNRTidalFrequencySequence(hptilde, hctilde, frequencies,
-                    phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2, LALpars, NRTidal_V);
-            break;
-
-        case SEOBNRv5_ROM_NRTidalv2:
-            /* Waveform-specific sanity checks */
-            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-
-            ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
-            XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for SEOBNRv4_ROM_NRTidalv2");
-
-            ret = XLALSimIMRSEOBNRv5ROMNRTidalFrequencySequence(hptilde, hctilde, frequencies,
-                    phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, lambda1, lambda2, LALpars, NRTidalv2_V);
-            break;
-
         case SEOBNRv5_ROM_NRTidalv3:
             /* Waveform-specific sanity checks */
             if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
@@ -1337,29 +1309,6 @@ int XLALSimInspiralChooseFDWaveformSequence(
 
             ret = XLALSimIMRPhenomDNRTidalFrequencySequence(hptilde, frequencies,
                 phiRef, f_ref, distance, m1, m2, S1z, S2z, lambda1, lambda2, LALpars, NRTidalv2_V);
-            if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
-            /* Produce both polarizations */
-            *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
-                    &((*hptilde)->epoch), (*hptilde)->f0, (*hptilde)->deltaF,
-                    &((*hptilde)->sampleUnits), (*hptilde)->data->length);
-            for(j = 0; j < (*hptilde)->data->length; j++) {
-                (*hctilde)->data->data[j] = -I*cfac * (*hptilde)->data->data[j];
-                (*hptilde)->data->data[j] *= pfac;
-            }
-            break;
-
-        case IMRPhenomD_NRTidalv3:
-            /* Waveform-specific sanity checks */
-            if( !XLALSimInspiralWaveformParamsFlagsAreDefault(LALpars) )
-                XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
-            if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
-                XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
-
-            ret = XLALSimInspiralSetQuadMonParamsFromLambdas(LALpars);
-            XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to set QuadMon from Lambdas for IMRPhenomD_NRTidalv3");
-
-            ret = XLALSimIMRPhenomDNRTidalFrequencySequence(hptilde, frequencies,
-                phiRef, f_ref, distance, m1, m2, S1z, S2z, lambda1, lambda2, LALpars, NRTidalv3_V);
             if (ret == XLAL_FAILURE) XLAL_ERROR(XLAL_EFUNC);
             /* Produce both polarizations */
             *hctilde = XLALCreateCOMPLEX16FrequencySeries("FD hcross",
