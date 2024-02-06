@@ -26,6 +26,7 @@ import astropy.constants as ac
 from gwsignal.core.waveform import CompactBinaryCoalescenceGenerator
 import gwsignal.core.gw as gw
 from gwsignal.core.utils import add_params_units
+from gwsignal.core.eccentricity_utils import eccentric_anomaly_from_mean, true_anomaly_from_eccentric
 
 
 def modes_to_k(modes: list[tuple[int, int]]) -> list[int]:
@@ -159,8 +160,16 @@ def convert_parameters_to_teob(parameter_dict):
     fmin, dt = parameter_dict["f22_start"], parameter_dict["deltaT"]
     m1, m2 = parameter_dict["mass1"], parameter_dict["mass2"]
 
-    if  "true_anomaly" not in parameter_dict:
-        parameter_dict["true_anomaly"] = 0. 
+    if "true_anomaly" in parameter_dict:
+        if parameter_dict["meanPerAno"] != 0.:
+            raise ValueError("Please give only one of 'true_anomaly' or 'meanPerAno'")
+        true_anomaly = parameter_dict["true_anomaly"]
+    else:
+        true_anomaly = true_anomaly_from_eccentric(
+            eccentric_anomaly_from_mean(
+                parameter_dict["meanPerAno"], parameter_dict["eccentricity"]
+            ), parameter_dict["eccentricity"]
+        )
 
     q = m1 / m2
     if q < 1.0:
@@ -181,7 +190,7 @@ def convert_parameters_to_teob(parameter_dict):
         "srate_interp": 1 / dt,
         "initial_frequency": fmin,
         "distance": parameter_dict["distance"],
-        "anomaly": parameter_dict["true_anomaly"],
+        "anomaly": true_anomaly,
         "arg_out": "yes",
         "interp_uniform_grid": "yes",
         "use_geometric_units": "no",
