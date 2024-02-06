@@ -1631,7 +1631,7 @@ platform:debian:buster:
     - conda install --yes --quiet --name lalsuite-platform-tests
           python-ligo-lw
     # then forcibly remove lalsuite
-    - conda uninstall --yes --quiet --name lalsuite-platform-tests --force-remove
+    - conda uninstall --yes --quiet --name lalsuite-platform-tests --solver classic --force-remove
           "liblal*"
           "lal*"
           "python-lal*"
