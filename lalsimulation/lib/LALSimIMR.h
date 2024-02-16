@@ -1522,6 +1522,9 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v2_Coeffs(REAL8 *NRTidalv2_coeffs);
 
 int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs);
 
+int XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(REAL8 *PN_coeffs,/**<PN coefficients*/
+    const REAL8 Xa /**< Mass of companion 1 divided by total mass*/);
+
 int XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(
     const REAL8Sequence *amp_tidal, /**< [out] tidal amplitude frequency series */
     const REAL8Sequence *fHz, /**< list of input Gravitational wave Frequency in Hz to evaluate */

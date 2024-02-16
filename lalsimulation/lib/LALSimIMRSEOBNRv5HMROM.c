@@ -72,9 +72,9 @@ static const INT4 ROMDataHDF5_VERSION_MAJOR = 1;
 static const INT4 ROMDataHDF5_VERSION_MINOR = 0;
 static const INT4 ROMDataHDF5_VERSION_MICRO = 0;
 static const char ROM22DataHDF5[] = "SEOBNRv5ROM_v1.0.hdf5";
-static const INT4 ROM22DataHDF5_VERSION_MAJOR = 1;
-static const INT4 ROM22DataHDF5_VERSION_MINOR = 0;
-static const INT4 ROM22DataHDF5_VERSION_MICRO = 0;
+// static const INT4 ROM22DataHDF5_VERSION_MAJOR = 1;
+// static const INT4 ROM22DataHDF5_VERSION_MINOR = 0;
+// static const INT4 ROM22DataHDF5_VERSION_MICRO = 0;
 #endif
 
 #include <lal/LALSimInspiral.h>
@@ -741,9 +741,9 @@ int SEOBNRROMdataDS_Init(
   else{
     PrintInfoStringAttribute(file, "Email");
     PrintInfoStringAttribute(file, "Description");
-    ret = ROM_check_version_number(file, ROM22DataHDF5_VERSION_MAJOR,
-                                  ROM22DataHDF5_VERSION_MINOR,
-                                  ROM22DataHDF5_VERSION_MICRO);
+    // ret = ROM_check_version_number(file, ROM22DataHDF5_VERSION_MAJOR,
+    //                               ROM22DataHDF5_VERSION_MINOR,
+    //                               ROM22DataHDF5_VERSION_MICRO);
     ret = ROM_check_canonical_file_basename(file,ROM22DataHDF5,"CANONICAL_FILE_BASENAME");
   }
 

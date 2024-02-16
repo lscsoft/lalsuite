@@ -164,7 +164,7 @@ int SEOBNRv5ROM_NRTidal_Core(
     double f_max_nr_tidal = fHigh;
     /* Prepare tapering of amplitude beyond merger frequency */
     const double fHz_mrg = XLALSimNRTunedTidesMergerFrequency_v3((m1_SI+m2_SI)/LAL_MSUN_SI , lambda1, lambda2, m1_SI/m2_SI, chi1, chi2);
-    const double NRTIDAL_FMAX = 1.3*fHz_mrg;
+    const double NRTIDAL_FMAX = 1.2*fHz_mrg;
 
     if ( (NRTidal_version != NRTidalv2NSBH_V) && (( fHigh > NRTIDAL_FMAX ) || ( fHigh == 0.0 )) )
       {

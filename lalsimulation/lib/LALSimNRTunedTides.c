@@ -426,11 +426,11 @@ static double SimNRTunedTidesFDTidalPhase_v2(
  */
 int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs)
 {//Coefficients for the effective enhancement factor:
-  NRTidalv3_coeffs[0] =   2.73000423e-01; //s10
+  NRTidalv3_coeffs[0] =   1.273000423; //s10
   NRTidalv3_coeffs[1] =   3.64169971e-03; //s11
   NRTidalv3_coeffs[2] =   1.76144380e-03; //s12
   
-  NRTidalv3_coeffs[3] =   2.68793291e+01; //s20
+  NRTidalv3_coeffs[3] =   2.78793291e+01; //s20
   NRTidalv3_coeffs[4] =   1.18175396e-02; //s21
   NRTidalv3_coeffs[5] =   -5.39996790e-03; //s22 
   
@@ -461,6 +461,44 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs)
 }
 
 /** 
+ * Coefficients or the PN tidal phase correction, at 7.5PN, to connect with NRTidalv3 Phase post-merger,
+ * see Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf
+ */
+int XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(REAL8 *PN_coeffs,/**<PN coefficients*/
+               const REAL8 Xa /**< Mass of companion 1 divided by total mass*/)
+{
+  /* Powers of Xa and Xb */
+  REAL8 Xb = 1.0 - Xa; //secondary mass divided by total mass
+  REAL8 Xa_2 = Xa*Xa;
+  REAL8 Xa_3 = Xa_2*Xa;
+  REAL8 Xa_4 = Xa_3*Xa;
+  REAL8 Xa_5 = Xa_4*Xa;
+
+  REAL8 Xb_2 = Xb*Xb;
+  REAL8 Xb_3 = Xb_2*Xb;
+  REAL8 Xb_4 = Xb_3*Xb;
+  REAL8 Xb_5 = Xb_4*Xb;
+
+  REAL8 den_a = 11.0*Xa-12.0;
+  REAL8 den_b = 11.0*Xb-12.0;
+
+  /* 7.5PN Coefficients */
+  PN_coeffs[0] = -3.0*den_a/(16*Xa*Xb_2);//(3.0)*(12.0 -11.0*Xa)/(16*Xa*Xb_2);
+  PN_coeffs[1] = (-1300.0*Xa_3 + 11430.0*Xa_2 + 4595.0*Xa -15895.0)/(672.0*den_a);//-5.0*(260.0*Xa_3 - 2286.0*Xa_2 - 919.0*Xa + 3179.0)/(672.0*(11.0*Xa-12.0));
+  PN_coeffs[2] = -LAL_PI;
+  PN_coeffs[3] = (22861440.0*Xa_5 - 102135600.0*Xa_4 + 791891100.0*Xa_3 + 874828080.0*Xa_2 + 216234195.0*Xa -1939869350.0)/(27433728.0*den_a);//(5.0*(4572288.0*Xa_5 - 20427120.0*Xa_4 + 158378220.0*Xa_3 +174965616.0*Xa_2 + 43246839.0*Xa -387973870.0))/(27433728.0*(11.0*Xa - 12.0));
+  PN_coeffs[4] = -LAL_PI*(10520.0*Xa_3 -7598.0*Xa_2 +22415.0*Xa - 27719.0)/(672.0*den_a);
+
+  PN_coeffs[5] = -3.0*den_b/(16*Xb*Xa_2);//(3.0)*(12.0 -11.0*Xb)/(16*Xb*Xa_2);
+  PN_coeffs[6] = (-1300.0*Xb_3 + 11430.0*Xb_2 + 4595.0*Xb -15895.0)/(672.0*den_b);//-5.0*(260.0*Xb_3 - 2286.0*Xb_2 - 919.0*Xb + 3179.0)/(672.0*(11.0*Xb-12.0));
+  PN_coeffs[7] = -LAL_PI;
+  PN_coeffs[8] = (22861440.0*Xb_5 - 102135600.0*Xb_4 + 791891100.0*Xb_3 + 874828080.0*Xb_2 + 216234195.0*Xb -1939869350.0)/(27433728.0*den_b);//(5.0*(4572288.0*Xb_5 - 20427120.0*Xb_4 + 158378220.0*Xb_3 +174965616.0*Xb_2 + 43246839.0*Xb -387973870.0))/(27433728.0*(11.0*Xb - 12.0));
+  PN_coeffs[9] = -LAL_PI*(10520.0*Xb_3 -7598.0*Xb_2 +22415.0*Xb - 27719.0)/(672.0*den_b);
+
+  return XLAL_SUCCESS;
+}
+
+/** 
  * Tidal phase correction for NRTidalv3, Eq. (30), from Abac, et. al. (2023) (https://arxiv.org/pdf/2311.07456.pdf)
  * and is a function of x = angular_orb_freq^(2./3.)
  */
@@ -483,10 +521,15 @@ static double SimNRTunedTidesFDTidalPhase_v3(
 
   /* model parameters */
   REAL8 NRTidalv3_coeffs[22];
+  REAL8 PN_coeffs[10];
 
   int errcode;
   errcode = XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs);
   XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting NRTidalv3 coefficients failed.\n");
+
+  int errcode2;
+  errcode2 = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
+  XLAL_CHECK(XLAL_SUCCESS == errcode2, errcode2, "Setting PN coefficients failed.\n");
 
   const REAL8  s10 = NRTidalv3_coeffs[0];
   const REAL8  s11 = NRTidalv3_coeffs[1];
@@ -502,12 +545,12 @@ static double SimNRTunedTidesFDTidalPhase_v3(
 
   REAL8 q = Xa/Xb;
 
-  REAL8 s1 = 1 + s10 + s11*kappa2T + s12*q*kappa2T; 
-  REAL8 s2 = 1 + s20 + s21*kappa2T + s22*q*kappa2T; 
+  REAL8 s1 = s10 + s11*kappa2T + s12*q*kappa2T; 
+  REAL8 s2 = s20 + s21*kappa2T + s22*q*kappa2T; 
   REAL8 s3 = s30 + s31*kappa2T + s32*q*kappa2T; 
 
   /* expression for the effective love number enhancement factor, see Eq. (27) of https://arxiv.org/pdf/2311.07456.pdf.*/
-  REAL8 dynk2bar = 1.0 + ((s1) - 1)*(1.0/(1.0 + exp(-s2*((M_omega*2.0) - (s3))))) - ((s1-1.0)/(1.0 + exp(s2*((s3))))) - 2.0*M_omega*((s1) - 1)*s2*exp(s2*((s3)))/pow(1.0 + exp(s2*((s3))),2.0);
+  REAL8 dynk2bar = 1.0 + ((s1) - 1)*(1.0/(1.0 + exp(-s2*((M_omega*2.0) - (s3))))) - ((s1-1.0)/(1.0 + exp(s2*((s3))))) - 2.0*M_omega*((s1) - 1)*s2*exp(s2*((s3)))/((1.0 + exp(s2*((s3))))*(1.0 + exp(s2*((s3)))));
 
   REAL8 PN_x = pow(M_omega, 2.0/3.0);
   REAL8 PN_x_2 = PN_x * PN_x;
@@ -515,8 +558,8 @@ static double SimNRTunedTidesFDTidalPhase_v3(
   REAL8 PN_x_3over2 = pow(PN_x, 3.0/2.0);
   REAL8 PN_x_5over2 = pow(PN_x, 5.0/2.0);
 
-  REAL8 kappaA = 3.0*Xb*pow(Xa, 4.0)*lambda1;
-  REAL8 kappaB = 3.0*Xa*pow(Xb, 4.0)*lambda2;
+  REAL8 kappaA = 3.0*Xb*Xa*Xa*Xa*Xa*lambda1;
+  REAL8 kappaB = 3.0*Xa*Xb*Xb*Xb*Xb*lambda2;
 
   REAL8 dynkappaA = kappaA*dynk2bar;
   REAL8 dynkappaB = kappaB*dynk2bar;
@@ -554,17 +597,17 @@ static double SimNRTunedTidesFDTidalPhase_v3(
   REAL8 d_1B = d_10 + d_11*Xb + d_12*Xb_beta;
 
   /* 7.5PN Coefficients */
-  REAL8 c_NewtA = (3.0*pow(Xa + Xb, 2.0))*(12.0 -11.0*Xa)/(16*Xa*pow(Xb, 2.0));
-  REAL8 c_1A = -5.0*(260.0*pow(Xa, 3.0) - 2286.0*pow(Xa, 2.0) - 919.0*Xa + 3179.0)/(672.0*(11.0*Xa-12.0));
-  REAL8 c_3over2A = -3.14159265358979323846;
-  REAL8 c_2A = (5.0*(4572288.0*pow(Xa, 5.0) - 20427120.0*pow(Xa, 4.0) + 158378220.0*pow(Xa, 3.0) +174965616.0*pow(Xa, 2.0) + 43246839.0*Xa -387973870.0))/(27433728.0*(11.0*Xa - 12.0));
-  REAL8 c_5over2A = -3.14159265358979323846*(10520.0*pow(Xa, 3.0) -7598.0*pow(Xa, 2.0) +22415.0*Xa - 27719.0)/(672.0*(11.0*Xa - 12.0));
+  REAL8 c_NewtA = PN_coeffs[0];
+  REAL8 c_1A = PN_coeffs[1];
+  REAL8 c_3over2A = PN_coeffs[2];
+  REAL8 c_2A = PN_coeffs[3];
+  REAL8 c_5over2A = PN_coeffs[4];
 
-  REAL8 c_NewtB = (3.0*pow(Xb + Xa, 2.0))*(12.0 -11.0*Xb)/(16*Xb*pow(Xa, 2.0));
-  REAL8 c_1B = -5.0*(260.0*pow(Xb, 3.0) - 2286.0*pow(Xb, 2.0) - 919.0*Xb + 3179.0)/(672.0*(11.0*Xb-12.0));
-  REAL8 c_3over2B = -3.14159265358979323846;
-  REAL8 c_2B = (5.0*(4572288.0*pow(Xb, 5.0) - 20427120.0*pow(Xb, 4.0) + 158378220.0*pow(Xb, 3.0) +174965616.0*pow(Xb, 2.0) + 43246839.0*Xb -387973870.0))/(27433728.0*(11.0*Xb - 12.0));
-  REAL8 c_5over2B = -3.14159265358979323846*(10520.0*pow(Xb, 3.0) -7598.0*pow(Xb, 2.0) +22415.0*Xb - 27719.0)/(672.0*(11.0*Xb - 12.0));
+  REAL8 c_NewtB = PN_coeffs[5];
+  REAL8 c_1B = PN_coeffs[6];
+  REAL8 c_3over2B = PN_coeffs[7];
+  REAL8 c_2B = PN_coeffs[8];
+  REAL8 c_5over2B = PN_coeffs[9];
 
   /* Pade Coefficients constrained with PN */
   REAL8 n_1A = c_1A + d_1A;
@@ -614,25 +657,31 @@ static double SimNRTunedTidesFDTidalPhase_PN(
 
   REAL8 Xb = 1.0 - Xa;
 
+  REAL8 PN_coeffs[10];
+  int errcode;
+  errcode = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
+  XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting PN coefficients failed.\n");
+
   REAL8 PN_x = pow(M_omega, 2.0/3.0);
   REAL8 PN_x_2 = PN_x * PN_x;
   REAL8 PN_x_3over2 = pow(PN_x, 3.0/2.0);
   REAL8 PN_x_5over2 = pow(PN_x, 5.0/2.0);
 
-  REAL8 kappaA = 3.0*Xb*pow(Xa, 4.0)*lambda1;
-  REAL8 kappaB = 3.0*Xa*pow(Xb, 4.0)*lambda2;
+  REAL8 kappaA = 3.0*Xb*Xa*Xa*Xa*Xa*lambda1;
+  REAL8 kappaB = 3.0*Xa*Xb*Xb*Xb*Xb*lambda2;
 
-  REAL8 c_NewtA = (3.0*pow(Xa + Xb, 2.0))*(12.0 -11.0*Xa)/(16*Xa*pow(Xb, 2.0));
-  REAL8 c_1A = -5.0*(260.0*pow(Xa, 3.0) - 2286.0*pow(Xa, 2.0) - 919.0*Xa + 3179.0)/(672.0*(11.0*Xa-12.0));
-  REAL8 c_3over2A = -3.14159265358979323846;
-  REAL8 c_2A = (5.0*(4572288.0*pow(Xa, 5.0) - 20427120.0*pow(Xa, 4.0) + 158378220.0*pow(Xa, 3.0) +174965616.0*pow(Xa, 2.0) + 43246839.0*Xa -387973870.0))/(27433728.0*(11.0*Xa - 12.0));
-  REAL8 c_5over2A = -3.14159265358979323846*(10520.0*pow(Xa, 3.0) -7598.0*pow(Xa, 2.0) +22415.0*Xa - 27719.0)/(672.0*(11.0*Xa - 12.0));
+  /* 7.5PN Coefficients */
+  REAL8 c_NewtA = PN_coeffs[0];
+  REAL8 c_1A = PN_coeffs[1];
+  REAL8 c_3over2A = PN_coeffs[2];
+  REAL8 c_2A = PN_coeffs[3];
+  REAL8 c_5over2A = PN_coeffs[4];
 
-  REAL8 c_NewtB = (3.0*pow(Xb + Xa, 2.0))*(12.0 -11.0*Xb)/(16*Xb*pow(Xa, 2.0));
-  REAL8 c_1B = -5.0*(260.0*pow(Xb, 3.0) - 2286.0*pow(Xb, 2.0) - 919.0*Xb + 3179.0)/(672.0*(11.0*Xb-12.0));
-  REAL8 c_3over2B = -3.14159265358979323846;
-  REAL8 c_2B = (5.0*(4572288.0*pow(Xb, 5.0) - 20427120.0*pow(Xb, 4.0) + 158378220.0*pow(Xb, 3.0) +174965616.0*pow(Xb, 2.0) + 43246839.0*Xb -387973870.0))/(27433728.0*(11.0*Xb - 12.0));
-  REAL8 c_5over2B = -3.14159265358979323846*(10520.0*pow(Xb, 3.0) -7598.0*pow(Xb, 2.0) +22415.0*Xb - 27719.0)/(672.0*(11.0*Xb - 12.0));
+  REAL8 c_NewtB = PN_coeffs[5];
+  REAL8 c_1B = PN_coeffs[6];
+  REAL8 c_3over2B = PN_coeffs[7];
+  REAL8 c_2B = PN_coeffs[8];
+  REAL8 c_5over2B = PN_coeffs[9];
 
   REAL8 factorA = -c_NewtA*PN_x_5over2*kappaA;
   REAL8 factorB = -c_NewtB*PN_x_5over2*kappaB;
@@ -773,17 +822,15 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     }
   }
   else if (NRTidal_version == NRTidalv3_V) {
+    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minima
     for(UINT4 i = 0; i < (*fHz).length; i++) {
       (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, lambda1, lambda2);
-      if ((*fHz).data[i] >= 0.9*fHz_mrg_v3){
-        if ((*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){
+      if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){
           (*phi_tidal).data[i] = (*phi_tidal).data[i-1];
       }
-      }
-    }
-    for(UINT4 i = 0; i < (*fHz).length; i++) {
+      REAL8 planck_func = PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
       /* We employ here the smooth connection between NRTidal and PN post-merger, Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf*/
-      (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3)) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
+      (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - planck_func) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*planck_func;
       (*amp_tidal).data[i] = SimNRTunedTidesFDTidalAmplitude((*fHz).data[i], mtot, kappa2T);
       (*planck_taper).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg_v3, fHz_end_taper_v3);
     }
@@ -801,17 +848,15 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     }
   }
   else if (NRTidal_version == NRTidalv3NoAmpCorr_V) {
+    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minima
     for(UINT4 i = 0; i < (*fHz).length; i++) {
       (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, lambda1, lambda2);
-      if ((*fHz).data[i] >= 0.9*fHz_mrg_v3){
-        if ((*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){
+      if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){
           (*phi_tidal).data[i] = (*phi_tidal).data[i-1];
       }
-      }
-    }
-    for(UINT4 i = 0; i < (*fHz).length; i++) {
-      /* We employ here the smooth connection between NRTidal and PN post-merger, Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf */
-      (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3)) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
+      REAL8 planck_func = PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
+      /* We employ here the smooth connection between NRTidal and PN post-merger, Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf*/
+      (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - planck_func) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*planck_func;
       (*planck_taper).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg_v3, fHz_end_taper_v3);
     }
   }
@@ -819,7 +864,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     XLAL_ERROR( XLAL_EINVAL, "Trying to add NRTides to a BBH waveform!" );
   else
     XLAL_ERROR( XLAL_EINVAL, "Unknown version of NRTidal being used! At present, NRTidal_V, NRTidalv2_V, NRTidalv2NSBH_V, NRTidalv2NoAmpCorr_V and NoNRT_V are the only known ones!" );
-
+  
   return XLAL_SUCCESS;
 }
 
