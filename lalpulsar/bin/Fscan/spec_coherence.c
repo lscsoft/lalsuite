@@ -146,11 +146,11 @@ int main( int argc, char **argv )
     /* Extract one SFT at a time from the catalog */
     fprintf( stderr, "Extracting SFT %d...\n", j );
     XLAL_CHECK_MAIN( ( sft_vect_a = extract_one_sft( catalog_a, catalog_a->data[j].header.epoch, f_min, f_max ) ) != NULL, XLAL_EFUNC );
-    XLAL_CHECK_MAIN( sft_vect_a->length == 1, XLAL_EINVAL, "Extracted zero SFTs but should have extracted one" );
-    XLAL_CHECK_MAIN( ( sft_vect_b = extract_one_sft( catalog_b, catalog_a->data[j].header.epoch, f_min, f_max ) ) != NULL, XLAL_EFUNC );
 
     /* If no SFT from the B list was found, then just continue with the next SFT in the A list */
-    if ( sft_vect_b->length == 0 ) {
+    XLAL_TRY( sft_vect_b = extract_one_sft( catalog_b, catalog_a->data[j].header.epoch, f_min, f_max ), errnumB );
+    if ( errnumB != 0 ) {
+      LogPrintf( LOG_CRITICAL, "Failed to find B channel SFT at time %d, [%.9f, %.9f) Hz\n", catalog_a->data[j].header.epoch.gpsSeconds, f_min, f_max );
       continue;
     }
 

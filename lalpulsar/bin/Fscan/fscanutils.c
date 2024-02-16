@@ -41,12 +41,15 @@ SFTVector *extract_one_sft( const SFTCatalog *full_catalog, const LIGOTimeGPS st
   // Get the catalog of the single SFT from the full catalog
   XLAL_CHECK_NULL( XLALSFTCatalogTimeslice( &catalogSlice, full_catalog, &starttime, &thisSFTendtime ) == XLAL_SUCCESS, XLAL_EFUNC );
 
+  // Check that we got one SFT
+  XLAL_CHECK_NULL( catalogSlice.length == 1, XLAL_EFUNC, "Found no unique SFT starting at %d", starttime.gpsSeconds );
+
   //Extract the SFT
   SFTVector *sft_vect = NULL;
   XLAL_CHECK_NULL( ( sft_vect = XLALLoadSFTs( &catalogSlice, f_min, f_max ) ) != NULL, XLAL_EFUNC );
 
   //Check we got only zero or one SFT; no more
-  XLAL_CHECK_NULL( sft_vect->length <= 1, XLAL_EBADLEN, "Oops, got %d SFTs instead of zero or one", sft_vect->length );
+  XLAL_CHECK_NULL( sft_vect->length == 1, XLAL_EBADLEN, "SFT in catalog could not cover [%.2f, %.2f) Hz", f_min, f_max );
 
   return sft_vect;
 }
