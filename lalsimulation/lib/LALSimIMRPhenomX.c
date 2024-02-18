@@ -879,7 +879,7 @@ int IMRPhenomXASGenerateFD(
           /* 3PN terms */
           phaseTidal += pfaN * pPhase22->c3PN_tidal* powers_of_lalpi.one_third * powers_of_Mf.one_third;
 
-          /* 3.5PN terms are only in NRTidalv2 */
+          /* 3.5PN terms are only in NRTidalv2 and NRTidalv3 */
           if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
               phaseTidal += pfaN * pPhase22->c3p5PN_tidal * powers_of_lalpi.two_thirds * powers_of_Mf.two_thirds;
           }
@@ -892,7 +892,7 @@ int IMRPhenomXASGenerateFD(
   	((*htilde22)->data->data)[jdx] = Amp0 * powers_of_Mf.m_seven_sixths * amp * cexp(I * phi);
         }
         else {
-	XLAL_PRINT_INFO("Warning: Only NRTidal, NRTidalv2, and NoNRT NRTidal_version values allowed and NRTidal is not implemented completely in IMRPhenomX*.");
+	XLAL_PRINT_INFO("Warning: Only NRTidal, NRTidalv2, NRTidalv3, and NoNRT NRTidal_version values allowed and NRTidal is not implemented completely in IMRPhenomX*.");
       }
     }
   }

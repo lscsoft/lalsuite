@@ -222,7 +222,7 @@ double XLALSimNRTunedTidesMergerFrequency_v3(
   }
 
   REAL8 Xa = q/(1.0+q);
-  REAL8 Xb = 1.0/(1.0+q);
+  REAL8 Xb = 1.0 - Xa;
 
   REAL8 m1 = Xa*mtot_MSUN;
   REAL8 m2 = Xb*mtot_MSUN;
@@ -231,8 +231,13 @@ double XLALSimNRTunedTidesMergerFrequency_v3(
   XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "EnforcePrimaryMassIsm1_v3 failed");
 
   REAL8 nu = Xa*Xb;
+
+  REAL8 Xa_2 = Xa*Xa;
+  REAL8 Xa_3 = Xa_2*Xa;
+  REAL8 Xb_2 = Xb*Xb;
+  REAL8 Xb_3 = Xb_2*Xb;
   
-  REAL8 kappa2eff = 3.0*nu*(pow(Xa, 3.0)*lambda1 + pow(Xb, 3.0)*lambda2);
+  REAL8 kappa2eff = 3.0*nu*(Xa_3*lambda1 + Xb_3*lambda2);
   
   const REAL8 a_0 = 0.22;
   
@@ -260,7 +265,7 @@ double XLALSimNRTunedTidesMergerFrequency_v3(
 
   const REAL8 kappa2eff2 = kappa2eff*kappa2eff;
   
-  const REAL8 Sval = pow(Xa, 2.0)*chi1_AS + pow(Xb, 2.0)*chi2_AS;
+  const REAL8 Sval = Xa_2*chi1_AS + Xb_2*chi2_AS;
 
   const REAL8 QM = 1.0 + a_1M*Xval;
   const REAL8 QS = 1.0 + p_1S*Sval;
@@ -549,14 +554,19 @@ static double SimNRTunedTidesFDTidalPhase_v3(
   REAL8 s2 = s20 + s21*kappa2T + s22*q*kappa2T; 
   REAL8 s3 = s30 + s31*kappa2T + s32*q*kappa2T; 
 
-  /* expression for the effective love number enhancement factor, see Eq. (27) of https://arxiv.org/pdf/2311.07456.pdf.*/
-  REAL8 dynk2bar = 1.0 + ((s1) - 1)*(1.0/(1.0 + exp(-s2*((M_omega*2.0) - (s3))))) - ((s1-1.0)/(1.0 + exp(s2*((s3))))) - 2.0*M_omega*((s1) - 1)*s2*exp(s2*((s3)))/((1.0 + exp(s2*((s3))))*(1.0 + exp(s2*((s3)))));
+  REAL8 s2s3 = s2*s3;
+  REAL8 s2Mom = -s2*M_omega*2.0;
+  REAL8 exps2s3 = cosh(s2s3) + sinh(s2s3);
+  REAL8 exps2Mom = cosh(s2Mom) + sinh(s2Mom);
 
-  REAL8 PN_x = pow(M_omega, 2.0/3.0);
-  REAL8 PN_x_2 = PN_x * PN_x;
+  /* expression for the effective love number enhancement factor, see Eq. (27) of https://arxiv.org/pdf/2311.07456.pdf.*/
+  REAL8 dynk2bar = 1.0 + ((s1) - 1)*(1.0/(1.0 + exps2Mom*exps2s3)) - ((s1-1.0)/(1.0 + exps2s3)) - 2.0*M_omega*((s1) - 1)*s2*exps2s3/((1.0 + exps2s3)*(1.0 + exps2s3));
+
+  REAL8 PN_x = M_omega / cbrt(M_omega);               // pow(M_omega, 2.0/3.0)
+  REAL8 PN_x_2 = PN_x * PN_x;                         // pow(PN_x, 2)
   REAL8 PN_x_3 = PN_x * PN_x_2;
-  REAL8 PN_x_3over2 = pow(PN_x, 3.0/2.0);
-  REAL8 PN_x_5over2 = pow(PN_x, 5.0/2.0);
+  REAL8 PN_x_3over2 = PN_x * sqrt(PN_x);              // pow(PN_x, 3.0/2.0)
+  REAL8 PN_x_5over2 = PN_x_3over2 * PN_x;      // pow(PN_x, 5.0/2.0)
 
   REAL8 kappaA = 3.0*Xb*Xa*Xa*Xa*Xa*lambda1;
   REAL8 kappaB = 3.0*Xa*Xb*Xb*Xb*Xb*lambda2;
@@ -610,15 +620,17 @@ static double SimNRTunedTidesFDTidalPhase_v3(
   REAL8 c_5over2B = PN_coeffs[9];
 
   /* Pade Coefficients constrained with PN */
+  REAL8 inv_c1_A = 1.0/c_1A;
   REAL8 n_1A = c_1A + d_1A;
-  REAL8 n_3over2A = ((c_1A*c_3over2A) - c_5over2A - (c_3over2A)*d_1A + n_5over2A)/c_1A;
+  REAL8 n_3over2A = ((c_1A*c_3over2A) - c_5over2A - (c_3over2A)*d_1A + n_5over2A)*inv_c1_A;
   REAL8 n_2A = c_2A + c_1A*d_1A;// + d_2A;
-  REAL8 d_3over2A = -(c_5over2A + c_3over2A*d_1A - n_5over2A)/c_1A;
+  REAL8 d_3over2A = -(c_5over2A + c_3over2A*d_1A - n_5over2A)*inv_c1_A;
 
+  REAL8 inv_c1_B = 1.0/c_1B;
   REAL8 n_1B = c_1B + d_1B;
-  REAL8 n_3over2B = ((c_1B*c_3over2B) - c_5over2B - (c_3over2B)*d_1B + n_5over2B)/c_1B;
+  REAL8 n_3over2B = ((c_1B*c_3over2B) - c_5over2B - (c_3over2B)*d_1B + n_5over2B)*inv_c1_B;
   REAL8 n_2B = c_2B + c_1B*d_1B;// + d_2B;
-  REAL8 d_3over2B = -(c_5over2B + c_3over2B*d_1B - n_5over2B)/c_1B;
+  REAL8 d_3over2B = -(c_5over2B + c_3over2B*d_1B - n_5over2B)*inv_c1_B;
 
   REAL8 factorA = -c_NewtA*PN_x_5over2*dynkappaA;
   REAL8 factorB = -c_NewtB*PN_x_5over2*dynkappaB;
@@ -662,10 +674,10 @@ static double SimNRTunedTidesFDTidalPhase_PN(
   errcode = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
   XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting PN coefficients failed.\n");
 
-  REAL8 PN_x = pow(M_omega, 2.0/3.0);
-  REAL8 PN_x_2 = PN_x * PN_x;
-  REAL8 PN_x_3over2 = pow(PN_x, 3.0/2.0);
-  REAL8 PN_x_5over2 = pow(PN_x, 5.0/2.0);
+  REAL8 PN_x = M_omega / cbrt(M_omega);               // pow(M_omega, 2.0/3.0)
+  REAL8 PN_x_2 = PN_x * PN_x;                         // pow(PN_x, 2)
+  REAL8 PN_x_3over2 = PN_x * sqrt(PN_x);              // pow(PN_x, 3.0/2.0)
+  REAL8 PN_x_5over2 = PN_x_3over2 * PN_x;      // pow(PN_x, 5.0/2.0)
 
   REAL8 kappaA = 3.0*Xb*Xa*Xa*Xa*Xa*lambda1;
   REAL8 kappaB = 3.0*Xa*Xb*Xb*Xb*Xb*lambda2;
