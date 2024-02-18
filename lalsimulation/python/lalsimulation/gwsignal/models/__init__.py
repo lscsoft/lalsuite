@@ -1,8 +1,15 @@
+from . import pyseobnr_model, teobresums
+
 import lalsimulation as lalsim
 
 from ..core.waveform import LALCompactBinaryCoalescenceGenerator
 from . import pyseobnr_model
 
+GWSIGNAL_APPROXIMANTS = {
+    "SEOBNRv5HM": pyseobnr_model.SEOBNRv5HM(),
+    "SEOBNRv5PHM": pyseobnr_model.SEOBNRv5PHM(),
+    "TEOBResumSDALI": teobresums.TEOBResumSDALI(),
+}
 
 def gwsignal_get_waveform_generator(waveform_approximant):
     if waveform_approximant == "SEOBNRv5HM":
