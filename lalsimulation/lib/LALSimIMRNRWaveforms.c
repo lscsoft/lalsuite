@@ -63,6 +63,9 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformCheckFRef(
   UNUSED REAL8 fRef
 )
 {
+  #ifndef LAL_HDF5_ENABLED
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+  #else
   gsl_vector *omega_w_vec = NULL;
   LALH5File *omega_group = NULL;
   REAL8 min_fref, lowest_arr_fref;
@@ -91,6 +94,7 @@ UNUSED static REAL8 XLALSimInspiralNRWaveformCheckFRef(
     }
   }
   return fRef;
+  #endif
 }
 
 UNUSED static REAL8 XLALSimInspiralNRWaveformGetRefTimeFromRefFreq(
@@ -660,7 +664,7 @@ UNUSED static INT4 XLALSimIMRNRWaveformGetModes(
         )
 {
 #ifndef LAL_HDF5_ENABLED
-  XLAL_ERROR_NULL(XLAL_FAILURE, "HDF5 support not enabled");
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
 #else
   /* Declarations */
   UINT4 curr_idx, nr_file_format;
@@ -1039,7 +1043,7 @@ INT4 XLALSimInspiralNRWaveformGetHlms(UNUSED SphHarmTimeSeries **Hlms, /**< OUTP
         )
 {
 #ifndef LAL_HDF5_ENABLED
-  XLAL_ERROR_NULL(XLAL_FAILURE, "HDF5 support not enabled");
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
 #else
   /* Declarations */
   UINT4 curr_idx, array_length, nr_file_format;
