@@ -118,7 +118,10 @@ known_approximants = {
     'SEOBNRv4HM_PA': 108,
     'pSEOBNRv4HM_PA': 109,
     'IMRPhenomXAS_NRTidalv2': 110,
-    'IMRPhenomXP_NRTidalv2': 111
+    'IMRPhenomXP_NRTidalv2': 111,
+    'IMRPhenomXO4a': 112,
+    'ExternalPython': 113,
+    'SEOBNRv5HM_ROM': 114,
 }
 
 @pytest.mark.parametrize("name, i", known_approximants.items())
