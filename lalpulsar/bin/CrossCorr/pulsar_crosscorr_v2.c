@@ -1061,7 +1061,8 @@ int main( int argc, char *argv[] )
   if ( uvar.resamp == TRUE ) {
     // Resampled loop
     XLALDestroyMultiSFTVector( inputSFTs );
-   if ( ( resampForLoopCrossCorr( dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, uvar, multiWeights, ccStatVector, numeEquivAve, numeEquivCirc, evSquaredVector, estSens, GammaAve, resampMultiPairs, thisCandidate, ccToplist, resampTshort, &config )  != XLAL_SUCCESS ) ) {
+//returns error code if exists
+    if ( ( resampForLoopCrossCorr( dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, uvar, multiWeights, ccStatVector, numeEquivAve, numeEquivCirc, evSquaredVector, estSens, GammaAve, resampMultiPairs, thisCandidate, ccToplist, resampTshort, &config )  != XLAL_SUCCESS ) ) {
      LogPrintf( LOG_CRITICAL, "%s: resampForLoopCrossCorr() failed with errno=%d\n", __func__, xlalErrno );
      XLAL_ERROR( XLAL_EFUNC );
    }
