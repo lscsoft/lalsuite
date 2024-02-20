@@ -91,7 +91,7 @@ static int EnforcePrimaryMassIsm1(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *l
  * in https://arxiv.org/pdf/2311.07456.pdf.
  */
 static int EnforcePrimaryMassIsm1_v3(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8 *lambda2, REAL8 *chi1_AS, REAL8 *chi2_AS){
-  if ((*m1 == *m2) && (*lambda1 != *lambda2) && (*chi1_AS != *chi2_AS))
+  if ((*m1 == *m2) && (*lambda1 != *lambda2))
     XLALPrintWarning("m1 == m2 (%g), but lambda1 != lambda2 (%g, %g).\n", *m1, *lambda1, *lambda2);
 
   REAL8 lambda1_tmp, lambda2_tmp, m1_tmp, m2_tmp, chi1_tmp, chi2_tmp;
@@ -102,7 +102,7 @@ static int EnforcePrimaryMassIsm1_v3(REAL8 *m1, REAL8 *m2, REAL8 *lambda1, REAL8
     m2_tmp   = *m2;
     chi1_tmp = *chi1_AS;
     chi2_tmp = *chi2_AS;
-  } else { /* swap spins, tidal deformabilities, and masses */
+  } else { /* swap spins, dimensionless tidal deformabilities, and masses */
     lambda1_tmp = *lambda2;
     lambda2_tmp = *lambda1;
     m1_tmp   = *m2;
@@ -208,8 +208,8 @@ double XLALSimNRTunedTidesMergerFrequency(
  */
 double XLALSimNRTunedTidesMergerFrequency_v3(
             const REAL8 mtot_MSUN,   /**< total mass of system (solar masses) */
-					  REAL8 lambda1, /**<tidal deformability of star 1 */
-            REAL8 lambda2, /**<tidal deformability of star 2 */
+					  REAL8 lambda1, /**<dimensionless tidal deformability of star 1 */
+            REAL8 lambda2, /**<dimensionless tidal deformability of star 2 */
             const REAL8 q, /**<mass ratio q>=1 */
             REAL8 chi1_AS, /**<aligned spin component of star 1 */
             REAL8 chi2_AS /**<aligned spin component of star 2 */
@@ -243,7 +243,7 @@ double XLALSimNRTunedTidesMergerFrequency_v3(
   
   const REAL8 a_1M = 0.80;
   const REAL8 a_1S = 0.25;
-  const REAL8 b_1S = -1.99;
+  const REAL8 b_1S = -1.99; /**< This was not written in 2311.07456, but can be found in Table 2 of 2210.16366.*/
 
   const REAL8 a_1T = 0.0485;
   const REAL8 a_2T = 0.00000586;
@@ -504,15 +504,15 @@ int XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(REAL8 *PN_coeffs,/**<PN coeffic
 }
 
 /** 
- * Tidal phase correction for NRTidalv3, Eq. (30), from Abac, et. al. (2023) (https://arxiv.org/pdf/2311.07456.pdf)
+ * Tidal phase correction for NRTidalv3, Eq. (27,30), from Abac, et. al. (2023) (https://arxiv.org/pdf/2311.07456.pdf)
  * and is a function of x = angular_orb_freq^(2./3.)
  */
 static double SimNRTunedTidesFDTidalPhase_v3(
                const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
                const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
                const REAL8 mtot, /**< total mass (Msun) */
-               const REAL8 lambda1, /**< tidal deformability of companion 1*/
-               const REAL8 lambda2 /**< tidal deformability of companion 2*/
+               const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/
+               const REAL8 lambda2 /**< dimensionless tidal deformability of companion 2*/
                )
 {
   REAL8 M_omega = LAL_PI * fHz * (mtot * LAL_MTSUN_SI); //dimensionless angular GW frequency
@@ -635,6 +635,7 @@ static double SimNRTunedTidesFDTidalPhase_v3(
   REAL8 factorA = -c_NewtA*PN_x_5over2*dynkappaA;
   REAL8 factorB = -c_NewtB*PN_x_5over2*dynkappaB;
 
+  /* Pade approximant, see Eq. (32) of https://arxiv.org/pdf/2311.07456.pdf. */
   REAL8 numA = 1.0 + (n_1A*PN_x) + (n_3over2A*PN_x_3over2) + (n_2A*PN_x_2) + (n_5over2A*PN_x_5over2) + (n_3A*PN_x_3);
   REAL8 denA = 1.0 + (d_1A*PN_x) + (d_3over2A*PN_x_3over2);// + (d_2A*PN_x_2);
   
@@ -661,8 +662,8 @@ static double SimNRTunedTidesFDTidalPhase_PN(
                const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
                const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
                const REAL8 mtot, /**< total mass (Msun) */
-               const REAL8 lambda1, /**< tidal deformability of companion 1*/
-               const REAL8 lambda2 /**< tidal deformability of companion 2*/
+               const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/
+               const REAL8 lambda2 /**< dimensionless tidal deformability of companion 2*/
                )
 {
   REAL8 M_omega = LAL_PI * fHz * (mtot * LAL_MTSUN_SI); //dimensionless angular GW frequency
@@ -834,7 +835,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     }
   }
   else if (NRTidal_version == NRTidalv3_V) {
-    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minima
+    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; if a minimum is found, the tidal phase will be constant at that minimum value
     for(UINT4 i = 0; i < (*fHz).length; i++) {
       (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, lambda1, lambda2);
       if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){
@@ -860,7 +861,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     }
   }
   else if (NRTidal_version == NRTidalv3NoAmpCorr_V) {
-    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minima
+    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; if a minimum is found, the tidal phase will be constant at that minimum value
     for(UINT4 i = 0; i < (*fHz).length; i++) {
       (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, lambda1, lambda2);
       if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){

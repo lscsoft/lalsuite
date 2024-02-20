@@ -347,11 +347,11 @@ int SEOBNRv5ROM_NRTidal_Core(
  * to the SEOBNRv5ROM model.
  *
  * @note Parameter ranges:
- *   * ? <= eta <= 0.25
- *   * 0 <= Lambda_i <= ?
- *   * -1 <= chi_i <= 1
- *   * Mtot >= 2 Msun @ 20 Hz (inherited from the ROM)
- *
+ *   * 0.0204082 <= eta <= 0.25 (corresponding to 1.0 <= q <= 6.0)
+ *   * 0 <= Lambda_i <= 20000
+ *   * -0.5 <= chi_i <= 0.5
+ *   * Mtot >= 1.0 Msun @ 20 Hz (inherited from the ROM)
+ *   * 0.5 <= (m1,m2) <= 3.0
  *  Aligned component spin on neutron stars.
  *  Symmetric mass-ratio eta = m1*m2/(m1+m2)^2.
  *  Total mass Mtot.
@@ -442,7 +442,7 @@ int XLALSimIMRSEOBNRv5ROMNRTidal(
   int retcode = SEOBNRv5ROM_NRTidal_Core(hptilde, hctilde,
 					 phiRef, fRef, distance, inclination, m1_SI, m2_SI, chi1, chi2, lambda1, lambda2, freqs, deltaF, LALparams, NRTidal_version);
 
-  XLALDestroyREAL8Sequence(freqs);
+  XLALDestroyREAL8Sequence(freqs); // in Hz
 
   return(retcode);
 }

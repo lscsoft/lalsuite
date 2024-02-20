@@ -115,13 +115,14 @@ known_approximants = {
     'IMRPhenomTP': 105,
     'IMRPhenomTPHM': 106,
     'SEOBNRv5_ROM': 107,
-    'SEOBNRv5_ROM_NRTidalv3': 108,
-    'SEOBNRv4HM_PA': 109,
-    'pSEOBNRv4HM_PA': 110,
-    'IMRPhenomXAS_NRTidalv2': 111,
-    'IMRPhenomXP_NRTidalv2': 112,
+    'SEOBNRv4HM_PA': 108,
+    'pSEOBNRv4HM_PA': 109,
+    'IMRPhenomXAS_NRTidalv2': 110,
+    'IMRPhenomXP_NRTidalv2': 111,
+    'IMRPhenomXO4a': 112,
     'IMRPhenomXAS_NRTidalv3': 113,
-    'IMRPhenomXP_NRTidalv3': 114
+    'IMRPhenomXP_NRTidalv3': 114,
+    'SEOBNRv5_ROM_NRTidalv3': 115
 }
 
 @pytest.mark.parametrize("name, i", known_approximants.items())

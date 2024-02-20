@@ -91,6 +91,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
  * given in https://arxiv.org/abs/1905.06011 ; DCC link: https://dcc.ligo.org/P1900148
  *  * IMRPhenomXAS_NRTidalv2 model for the 22 mode of non-precessing binary neutron stars
  *  * IMRPhenomXP_NRTidalv2 model for the 22 mode (in the coprecessing frame) of precessing binary neutron stars
+ *  * IMRPhenomXAS_NRTidalv3 and IMRPhenomXP_NRTidalv3 based on https://arxiv.org/abs/2311.07456. 
  *
  * @review IMRPhenomXAS & IMRPhenomXHM reviewed by Maria Haney, Patricia Schmidt,
  * Roberto Cotesta, Anuradha Samajdar, Jonathan Thompson, N.V. Krishnendu.
@@ -103,6 +104,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
  * Sarp Akcay, N.V. Krishnendu, Shubhanshu Tiwari.
  * Review wiki: https://git.ligo.org/waveforms/reviews/imrphenomxp_nrtidalv2/-/wikis/home
  *
+ * Review Wiki for IMRPhenomXAS_NRTidalv3 and IMRPhenomXP_NRTidalv3: https://git.ligo.org/waveforms/reviews/nrtidalv3/-/wikis/home
  */
 
  /**
@@ -2085,12 +2087,15 @@ int IMRPhenomXPGenerateFD(
   if(NRTidal_version!=NoNRT_V){
       REAL8 f_merger; 
       REAL8 f_merger_tmp;
-      if (NRTidal_version == NRTidalv3_V){
-          f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
+      switch (NRTidal_version) {
+          case NRTidalv3_V:
+              f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
+              break;
+          default:
+              f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+              break;
       }
-      else{
-          f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
-      }
+      
       f_merger = f_merger_tmp;
       printf("%c, %f\n", '#', f_merger);
       if(f_merger<f_final)

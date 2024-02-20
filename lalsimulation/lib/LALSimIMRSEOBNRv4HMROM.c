@@ -1651,6 +1651,7 @@ UNUSED static int SEOBNRv4HMROMCoreModes(
   REAL8 fHigh = freqs_in->data[freqs_in->length - 1];
 
   UNUSED REAL8 fLow_geom = fLow * Mtot_sec;
+  printf("%lf\n", Mtot_sec);
   REAL8 fHigh_geom = fHigh * Mtot_sec;
   REAL8 deltaF_geom = deltaF * Mtot_sec;
   // The maximum available frequency is the one associated with the 55 mode

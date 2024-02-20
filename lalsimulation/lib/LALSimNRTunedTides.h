@@ -51,6 +51,6 @@ static double SimNRTunedTidesFDTidalPhase_v3(
     const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
     const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
     const REAL8 mtot, /**< total mass (Msun) */
-    const REAL8 lambda1, /**< tidal deformabililty of companion 1*/
-    const REAL8 lambda2 /**< tidal deformabililty of companion 2*/
+    const REAL8 lambda1, /**< dimensionless tidal deformabililty of companion 1*/
+    const REAL8 lambda2 /**< dimensionless tidal deformabililty of companion 2*/
     );
