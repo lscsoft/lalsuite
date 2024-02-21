@@ -2965,17 +2965,10 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 	else if (NRTidal_version == NRTidalv3_V)
     {
 
-		REAL8 NRTidalv3_coeffs[22];
 		REAL8 PN_coeffs[10];
 
-		int errcode;
-		errcode = XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs);
-		XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting NRTidalv3 coefficients failed.\n");
-
          /* local variable declaration */
-		REAL8 kappa2T = pWF->kappa2T;
 		REAL8 Xa = X_A;
-		REAL8 Xb = X_B;
 
 		int errcode2;
 		errcode2 = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
@@ -2983,24 +2976,16 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 
 		REAL8 lambda1 = pWF->lambda1;
 		REAL8 lambda2 = pWF->lambda2;
-		
-		REAL8 q = pWF->q;
 
-		const REAL8  s10 = NRTidalv3_coeffs[0];
-		const REAL8  s11 = NRTidalv3_coeffs[1];
-		const REAL8  s12 = NRTidalv3_coeffs[2];
-		
-		const REAL8  s20 = NRTidalv3_coeffs[3];
-		const REAL8  s21 = NRTidalv3_coeffs[4];
-		const REAL8  s22 = NRTidalv3_coeffs[5];
-		
-		const REAL8  s30 = NRTidalv3_coeffs[6];
-		const REAL8  s31 = NRTidalv3_coeffs[7];
-		const REAL8  s32 = NRTidalv3_coeffs[8];
+		REAL8 mtot = pWF->Mtot;
+	
+		REAL8 NRTidalv3_coeffs[20];
+    	XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
 
-		REAL8 s1 = s10 + s11*kappa2T + s12*q*kappa2T; 
-		REAL8 s2 = s20 + s21*kappa2T + s22*q*kappa2T; 
-		REAL8 s3 = s30 + s31*kappa2T + s32*q*kappa2T; 
+		REAL8 s1 = NRTidalv3_coeffs[0]; 
+		REAL8 s2 = NRTidalv3_coeffs[1]; 
+		REAL8 s3 = NRTidalv3_coeffs[2]; 
+ 		
  		
 		REAL8 s2s3 = s2*s3;
 		REAL8 s2Mf = -s2*Mf*LAL_PI*2.0;
@@ -3009,42 +2994,20 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 
   		REAL8 dynk2barfunc = 1.0 + ((s1) - 1)*(1.0/(1.0 + exps2Mf*exps2s3)) - ((s1-1.0)/(1.0 + exps2s3)) - 2.0*(Mf*LAL_PI)*((s1) - 1)*s2*exps2s3/((1.0 + exps2s3)*(1.0 + exps2s3));
 
-		REAL8 kappaA = 3.0*Xb*Xa*Xa*Xa*Xa*lambda1;
-  		REAL8 kappaB = 3.0*Xa*Xb*Xb*Xb*Xb*lambda2;
+		REAL8 kappaA = NRTidalv3_coeffs[4];
+		REAL8 kappaB = NRTidalv3_coeffs[5];
 
 		REAL8 dynkappaA = kappaA*dynk2barfunc;
 		REAL8 dynkappaB = kappaB*dynk2barfunc;
 
-		const REAL8  alpha =  NRTidalv3_coeffs[9];
-		const REAL8  beta =  NRTidalv3_coeffs[10];
-
-		REAL8 kappaA_alpha = pow(kappaA + 1, alpha);
-		REAL8 kappaB_alpha = pow(kappaB + 1, alpha);
-
-		REAL8 Xa_beta = pow(Xa, beta);
-		REAL8 Xb_beta = pow(Xb, beta);
-
-		const REAL8  n_5over20 =  NRTidalv3_coeffs[11];
-		const REAL8  n_5over21 = NRTidalv3_coeffs[12];
-		const REAL8  n_5over22 = NRTidalv3_coeffs[13];
-		const REAL8  n_5over23 = NRTidalv3_coeffs[14];
-
-		const REAL8  n_30 = NRTidalv3_coeffs[15];
-		const REAL8  n_31 = NRTidalv3_coeffs[16];
-		const REAL8  n_32 = NRTidalv3_coeffs[17];
-		const REAL8  n_33 = NRTidalv3_coeffs[18];
-
-		const REAL8  d_10 = NRTidalv3_coeffs[19];
-		const REAL8  d_11 = NRTidalv3_coeffs[20];
-		const REAL8  d_12 = NRTidalv3_coeffs[21];
-
-		REAL8 n_5over2A = n_5over20 + n_5over21*Xa + n_5over22*kappaA_alpha + n_5over23*Xa_beta; 
-		REAL8 n_3A = n_30 + n_31*Xa + n_32*kappaA_alpha + n_33*Xa_beta;
-		REAL8 d_1A = d_10 + d_11*Xa + d_12*Xa_beta;
+		/* Pade Coefficients */
+		REAL8 n_5over2A = NRTidalv3_coeffs[6];
+		REAL8 n_3A = NRTidalv3_coeffs[7];
+		REAL8 d_1A = NRTidalv3_coeffs[8];
 		
-		REAL8 n_5over2B = n_5over20 + n_5over21*Xb  + n_5over22*kappaB_alpha + n_5over23*Xb_beta;
-		REAL8 n_3B = n_30 + n_31*Xb + n_32*kappaB_alpha + n_33*Xb_beta;
-		REAL8 d_1B = d_10 + d_11*Xb + d_12*Xb_beta;
+		REAL8 n_5over2B = NRTidalv3_coeffs[9];
+		REAL8 n_3B = NRTidalv3_coeffs[10];
+		REAL8 d_1B = NRTidalv3_coeffs[11];
 
 		/* 7.5PN Coefficients */
 		REAL8 c_NewtA = PN_coeffs[0];
@@ -3059,17 +3022,16 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 c_2B = PN_coeffs[8];
 		REAL8 c_5over2B = PN_coeffs[9];
 
-		REAL8 inv_c1_A = 1.0/c_1A;
-		REAL8 n_1A = c_1A + d_1A;
-		REAL8 n_3over2A = ((c_1A*c_3over2A) - c_5over2A - (c_3over2A)*d_1A + n_5over2A)*inv_c1_A;
-		REAL8 n_2A = c_2A + c_1A*d_1A;// + d_2A;
-		REAL8 d_3over2A = -(c_5over2A + c_3over2A*d_1A - n_5over2A)*inv_c1_A;
+		/* Pade Coefficients constrained with PN */
+		REAL8 n_1A = NRTidalv3_coeffs[12];
+		REAL8 n_3over2A = NRTidalv3_coeffs[13];
+		REAL8 n_2A = NRTidalv3_coeffs[14];
+		REAL8 d_3over2A = NRTidalv3_coeffs[15];
 
-		REAL8 inv_c1_B = 1.0/c_1B;
-		REAL8 n_1B = c_1B + d_1B;
-		REAL8 n_3over2B = ((c_1B*c_3over2B) - c_5over2B - (c_3over2B)*d_1B + n_5over2B)*inv_c1_B;
-		REAL8 n_2B = c_2B + c_1B*d_1B;// + d_2B;
-		REAL8 d_3over2B = -(c_5over2B + c_3over2B*d_1B - n_5over2B)*inv_c1_B;
+		REAL8 n_1B = NRTidalv3_coeffs[16];
+		REAL8 n_3over2B = NRTidalv3_coeffs[17];
+		REAL8 n_2B = NRTidalv3_coeffs[18];
+		REAL8 d_3over2B = NRTidalv3_coeffs[19];
         
         REAL8 NRphasetermA=-((c_NewtA*dynkappaA*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1A*powers_of_lalpi.two_thirds + Mf*n_3over2A*LAL_PI + powers_of_Mf->four_thirds*n_2A*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2A*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3A*powers_of_lalpi.two))/((1 + d_1A*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2A*Mf*LAL_PI)));
         REAL8 NRphasetermB=-((c_NewtB*dynkappaB*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1B*powers_of_lalpi.two_thirds + Mf*n_3over2B*LAL_PI + powers_of_Mf->four_thirds*n_2B*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2B*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3B*powers_of_lalpi.two))/((1 + d_1B*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2B*Mf*LAL_PI)));
@@ -3156,17 +3118,10 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
         
 		 /* local variable declaration */
 
-		REAL8 NRTidalv3_coeffs[22];
 		REAL8 PN_coeffs[10];
 
-        int errcode;
-        errcode = XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs);
-        XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting NRTidalv3 coefficients failed.\n");
-		
-		REAL8 kappa2T = pWF->kappa2T;
+         /* local variable declaration */
 		REAL8 Xa = X_A;
-		REAL8 Xb = X_B;
-		REAL8 q = pWF->q;
 
 		int errcode2;
 		errcode2 = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
@@ -3175,25 +3130,15 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 lambda1 = pWF->lambda1;
 		REAL8 lambda2 = pWF->lambda2;
 
-		REAL8 Mfmerger = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L)*(LAL_TWOPI) * (pWF->Mtot * LAL_MTSUN_SI) ;
+		REAL8 mtot = pWF->Mtot;
+	
+		REAL8 NRTidalv3_coeffs[20];
+    	XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
 
-		const REAL8  s10 = NRTidalv3_coeffs[0];
-		const REAL8  s11 = NRTidalv3_coeffs[1];
-		const REAL8  s12 = NRTidalv3_coeffs[2];
-		
-		const REAL8  s20 = NRTidalv3_coeffs[3];
-		const REAL8  s21 = NRTidalv3_coeffs[4];
-		const REAL8  s22 = NRTidalv3_coeffs[5];
-		
-		const REAL8  s30 = NRTidalv3_coeffs[6];
-		const REAL8  s31 = NRTidalv3_coeffs[7];
-		const REAL8  s32 = NRTidalv3_coeffs[8];
-
-
-		REAL8 s1 = s10 + s11*kappa2T + s12*q*kappa2T; 
-		REAL8 s2 = s20 + s21*kappa2T + s22*q*kappa2T; 
-		REAL8 s3 = s30 + s31*kappa2T + s32*q*kappa2T; 
-
+		REAL8 s1 = NRTidalv3_coeffs[0]; 
+		REAL8 s2 = NRTidalv3_coeffs[1]; 
+		REAL8 s3 = NRTidalv3_coeffs[2]; 
+ 		
 		REAL8 s2s3 = s2*s3;
 		REAL8 s2Mf = -s2*Mf*LAL_PI*2.0;
 		REAL8 exps2s3 = cosh(s2s3) + sinh(s2s3);
@@ -3201,43 +3146,20 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 
   		REAL8 dynk2barfunc = 1.0 + ((s1) - 1)*(1.0/(1.0 + exps2Mf*exps2s3)) - ((s1-1.0)/(1.0 + exps2s3)) - 2.0*(Mf*LAL_PI)*((s1) - 1)*s2*exps2s3/((1.0 + exps2s3)*(1.0 + exps2s3));
 
-		REAL8 kappaA = 3.0*Xb*Xa*Xa*Xa*Xa*lambda1;
-  		REAL8 kappaB = 3.0*Xa*Xb*Xb*Xb*Xb*lambda2;
+		REAL8 kappaA = NRTidalv3_coeffs[4];
+		REAL8 kappaB = NRTidalv3_coeffs[5];
 
 		REAL8 dynkappaA = kappaA*dynk2barfunc;
 		REAL8 dynkappaB = kappaB*dynk2barfunc;
 
-		const REAL8  alpha =  NRTidalv3_coeffs[9];
-		const REAL8  beta =  NRTidalv3_coeffs[10];
-
-		REAL8 kappaA_alpha = pow(kappaA + 1, alpha);
-		REAL8 kappaB_alpha = pow(kappaB + 1, alpha);
-
-		REAL8 Xa_beta = pow(Xa, beta);
-		REAL8 Xb_beta = pow(Xb, beta);
-
-		const REAL8  n_5over20 =  NRTidalv3_coeffs[11];
-		const REAL8  n_5over21 = NRTidalv3_coeffs[12];
-		const REAL8  n_5over22 = NRTidalv3_coeffs[13];
-		const REAL8  n_5over23 = NRTidalv3_coeffs[14];
-
-		const REAL8  n_30 = NRTidalv3_coeffs[15];
-		const REAL8  n_31 = NRTidalv3_coeffs[16];
-		const REAL8  n_32 = NRTidalv3_coeffs[17];
-		const REAL8  n_33 = NRTidalv3_coeffs[18];
-
-		const REAL8  d_10 = NRTidalv3_coeffs[19];
-		const REAL8  d_11 = NRTidalv3_coeffs[20];
-		const REAL8  d_12 = NRTidalv3_coeffs[21];
-
-
-		REAL8 n_5over2A = n_5over20 + n_5over21*Xa + n_5over22*kappaA_alpha + n_5over23*Xa_beta; 
-		REAL8 n_3A = n_30 + n_31*Xa + n_32*kappaA_alpha + n_33*Xa_beta;
-		REAL8 d_1A = d_10 + d_11*Xa + d_12*Xa_beta;
+		/* Pade Coefficients */
+		REAL8 n_5over2A = NRTidalv3_coeffs[6];
+		REAL8 n_3A = NRTidalv3_coeffs[7];
+		REAL8 d_1A = NRTidalv3_coeffs[8];
 		
-		REAL8 n_5over2B = n_5over20  + n_5over21*Xb  + n_5over22*kappaB_alpha + n_5over23*Xb_beta;
-		REAL8 n_3B = n_30 + n_31*Xb + n_32*kappaB_alpha + n_33*Xb_beta;
-		REAL8 d_1B = d_10 + d_11*Xb + d_12*Xb_beta;
+		REAL8 n_5over2B = NRTidalv3_coeffs[9];
+		REAL8 n_3B = NRTidalv3_coeffs[10];
+		REAL8 d_1B = NRTidalv3_coeffs[11];
 
 		/* 7.5PN Coefficients */
 		REAL8 c_NewtA = PN_coeffs[0];
@@ -3252,17 +3174,16 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 c_2B = PN_coeffs[8];
 		REAL8 c_5over2B = PN_coeffs[9];
 
-		REAL8 inv_c1_A = 1.0/c_1A;
-		REAL8 n_1A = c_1A + d_1A;
-		REAL8 n_3over2A = ((c_1A*c_3over2A) - c_5over2A - (c_3over2A)*d_1A + n_5over2A)*inv_c1_A;
-		REAL8 n_2A = c_2A + c_1A*d_1A;// + d_2A;
-		REAL8 d_3over2A = -(c_5over2A + c_3over2A*d_1A - n_5over2A)*inv_c1_A;
+		/* Pade Coefficients constrained with PN */
+		REAL8 n_1A = NRTidalv3_coeffs[12];
+		REAL8 n_3over2A = NRTidalv3_coeffs[13];
+		REAL8 n_2A = NRTidalv3_coeffs[14];
+		REAL8 d_3over2A = NRTidalv3_coeffs[15];
 
-		REAL8 inv_c1_B = 1.0/c_1B;
-		REAL8 n_1B = c_1B + d_1B;
-		REAL8 n_3over2B = ((c_1B*c_3over2B) - c_5over2B - (c_3over2B)*d_1B + n_5over2B)*inv_c1_B;
-		REAL8 n_2B = c_2B + c_1B*d_1B;// + d_2B;
-		REAL8 d_3over2B = -(c_5over2B + c_3over2B*d_1B - n_5over2B)*inv_c1_B;
+		REAL8 n_1B = NRTidalv3_coeffs[16];
+		REAL8 n_3over2B = NRTidalv3_coeffs[17];
+		REAL8 n_2B = NRTidalv3_coeffs[18];
+		REAL8 d_3over2B = NRTidalv3_coeffs[19];
 
 		REAL8 NRphasetermA=-((c_NewtA*dynkappaA*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1A*powers_of_lalpi.two_thirds + Mf*n_3over2A*LAL_PI + powers_of_Mf->four_thirds*n_2A*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2A*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3A*powers_of_lalpi.two))/((1 + d_1A*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2A*Mf*LAL_PI )));
         REAL8 NRphasetermB=-((c_NewtB*dynkappaB*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1B*powers_of_lalpi.two_thirds + Mf*n_3over2B*LAL_PI + powers_of_Mf->four_thirds*n_2B*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2B*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3B*powers_of_lalpi.two))/((1 + d_1B*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2B*Mf*LAL_PI )));
@@ -3305,6 +3226,8 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 PNTuned_dphaseB = factorB*(powers_of_Mf->two_thirds*powers_of_lalpi.five_thirds*PNpolyB + powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*dPNpolyB);
 
 		REAL8 PNTuned_dphase = PNTuned_dphaseA + PNTuned_dphaseB;
+
+		REAL8 Mfmerger = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L)*(LAL_TWOPI) * (pWF->Mtot * LAL_MTSUN_SI) ;
 
 		REAL8 Mftaperstart = 1.15*Mfmerger;
 		REAL8 Mftaperend = 1.35*Mfmerger;

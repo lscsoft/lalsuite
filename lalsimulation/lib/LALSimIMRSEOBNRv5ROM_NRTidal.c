@@ -419,7 +419,7 @@ int XLALSimIMRSEOBNRv5ROMNRTidal(
 				 REAL8 phiRef,                                 /**< Phase at reference time */
 				 REAL8 deltaF,                                 /**< Sampling frequency (Hz) */
 				 REAL8 fLow,                                   /**< Starting GW frequency (Hz) */
-				 REAL8 fHigh,                                  /**< End frequency; 0 defaults to Mf=0.14 */
+				 REAL8 fHigh,                                  /**< End frequency (Hz); 0 defaults to Mf=0.14 */
 				 REAL8 fRef,                                   /**< Reference frequency (Hz); 0 defaults to fLow */
 				 REAL8 distance,                               /**< Distance of source (m) */
 				 REAL8 inclination,                            /**< Inclination of source (rad) */

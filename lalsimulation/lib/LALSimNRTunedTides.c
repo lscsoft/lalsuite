@@ -426,45 +426,6 @@ static double SimNRTunedTidesFDTidalPhase_v2(
   return tidal_phase;
 }
 
-/**
- * Set the NRTidalv3 effective love number and phase coefficients in an array for use here and in the IMRPhenomX*_NRTidalv3 implementation
- */
-int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs)
-{//Coefficients for the effective enhancement factor:
-  NRTidalv3_coeffs[0] =   1.273000423; //s10
-  NRTidalv3_coeffs[1] =   3.64169971e-03; //s11
-  NRTidalv3_coeffs[2] =   1.76144380e-03; //s12
-  
-  NRTidalv3_coeffs[3] =   2.78793291e+01; //s20
-  NRTidalv3_coeffs[4] =   1.18175396e-02; //s21
-  NRTidalv3_coeffs[5] =   -5.39996790e-03; //s22 
-  
-  NRTidalv3_coeffs[6] =   1.42449682e-01; //s30
-  NRTidalv3_coeffs[7] =   -1.70505852e-05; //s31
-  NRTidalv3_coeffs[8] =   3.38040594e-05; //s32 
-
-//Exponent parameters:
-  NRTidalv3_coeffs[9] =   -8.08155404e-03; //alpha
-  NRTidalv3_coeffs[10] =  -1.13695919e+00; //beta
-
-//Pade approximant coefficients:
-  NRTidalv3_coeffs[11] =  -9.40654388e+02; //n_5over2
-  NRTidalv3_coeffs[12] =  6.26517157e+02; //n_5over21
-  NRTidalv3_coeffs[13] =  5.53629706e+02; //n_5over22
-  NRTidalv3_coeffs[14] =  8.84823087e+01; //n_5over23
-  
-  NRTidalv3_coeffs[15] =  4.05483848e+02; //n_30
-  NRTidalv3_coeffs[16] =  -4.25525054e+02; //n_31
-  NRTidalv3_coeffs[17] = -1.92004957e+02; //n_32
-  NRTidalv3_coeffs[18] =  -5.10967553e+01; //n_33
-  
-  NRTidalv3_coeffs[19] =  3.80343306e+00; //d_10
-  NRTidalv3_coeffs[20] =  -2.52026996e+01; //d_11
-  NRTidalv3_coeffs[21] =  -3.08054443e+00; //d_12
-
-  return XLAL_SUCCESS;
-}
-
 /** 
  * Coefficients or the PN tidal phase correction, at 7.5PN, to connect with NRTidalv3 Phase post-merger,
  * see Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf
@@ -503,6 +464,113 @@ int XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(REAL8 *PN_coeffs,/**<PN coeffic
   return XLAL_SUCCESS;
 }
 
+/**
+ * Set the NRTidalv3 effective love number and phase coefficients in an array for use here and in the IMRPhenomX*_NRTidalv3 implementation
+ */
+int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, 
+               const REAL8 Xa, /**< Mass of companion 1 divided by total mass*/
+               const REAL8 mtot, /**< total mass (Msun) */
+               const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/
+               const REAL8 lambda2 /**< dimensionless tidal deformability of companion 2*/
+               )
+{ 
+  REAL8 Xb = 1.0 - Xa; //secondary mass divided by total mass
+  REAL8 q = Xa/Xb;
+
+  //Coefficients for the effective enhancement factor:
+  const REAL8 s10 =   1.273000423; //s10
+  const REAL8 s11 =   3.64169971e-03; //s11
+  const REAL8 s12 =   1.76144380e-03; //s12
+  
+  const REAL8 s20 =   2.78793291e+01; //s20
+  const REAL8 s21 =   1.18175396e-02; //s21
+  const REAL8 s22 =   -5.39996790e-03; //s22 
+  
+  const REAL8 s30 =   1.42449682e-01; //s30
+  const REAL8 s31 =   -1.70505852e-05; //s31
+  const REAL8 s32 =   3.38040594e-05; //s32 
+
+  REAL8 m1_SI = Xa * mtot * LAL_MSUN_SI;
+  REAL8 m2_SI = Xb * mtot * LAL_MSUN_SI;
+
+  REAL8 kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
+  
+  NRTidalv3_coeffs[0] = s10 + s11*kappa2T + s12*q*kappa2T; // s1
+  NRTidalv3_coeffs[1] = s20 + s21*kappa2T + s22*q*kappa2T; // s2
+  NRTidalv3_coeffs[2] = s30 + s31*kappa2T + s32*q*kappa2T; // s3
+
+  REAL8 s2s3 = NRTidalv3_coeffs[1]*NRTidalv3_coeffs[2];
+  NRTidalv3_coeffs[3] = cosh(s2s3) + sinh(s2s3);
+
+  NRTidalv3_coeffs[4] = 3.0*Xb*Xa*Xa*Xa*Xa*lambda1; //kappaA
+  NRTidalv3_coeffs[5] = 3.0*Xa*Xb*Xb*Xb*Xb*lambda2; //kappaB
+
+//Exponent parameters:
+  const REAL8 alpha =   -8.08155404e-03; //alpha
+  const REAL8 beta =  -1.13695919e+00; //beta
+
+  REAL8 kappaA_alpha = pow(NRTidalv3_coeffs[4] + 1, alpha); //kappaA_alpha
+  REAL8 kappaB_alpha = pow(NRTidalv3_coeffs[5] + 1, alpha); //kappaB_alpha
+
+  REAL8 Xa_beta = pow(Xa, beta); //Xa_beta
+  REAL8 Xb_beta = pow(Xb, beta); //Xb_beta
+
+//Pade approximant coefficients:
+  const REAL8 n_5over20 =  -9.40654388e+02; //n_5over20
+  const REAL8 n_5over21 =  6.26517157e+02; //n_5over21
+  const REAL8 n_5over22 =  5.53629706e+02; //n_5over22
+  const REAL8 n_5over23 =  8.84823087e+01; //n_5over23
+  
+  const REAL8 n_30 =  4.05483848e+02; //n_30
+  const REAL8 n_31 =  -4.25525054e+02; //n_31
+  const REAL8 n_32 = -1.92004957e+02; //n_32
+  const REAL8 n_33 =  -5.10967553e+01; //n_33
+  
+  const REAL8 d_10 =  3.80343306e+00; //d_10
+  const REAL8 d_11 =  -2.52026996e+01; //d_11
+  const REAL8 d_12 =  -3.08054443e+00; //d_12
+
+  NRTidalv3_coeffs[6] = n_5over20 + n_5over21*Xa + n_5over22*kappaA_alpha + n_5over23*Xa_beta; //n_5over2A
+  NRTidalv3_coeffs[7] = n_30 + n_31*Xa + n_32*kappaA_alpha + n_33*Xa_beta; //n_3A
+  NRTidalv3_coeffs[8] = d_10 + d_11*Xa + d_12*Xa_beta; //d_1A
+  
+  NRTidalv3_coeffs[9] = n_5over20  + n_5over21*Xb  + n_5over22*kappaB_alpha + n_5over23*Xb_beta; //n_5over2B
+  NRTidalv3_coeffs[10] = n_30 + n_31*Xb + n_32*kappaB_alpha + n_33*Xb_beta; //n_3B
+  NRTidalv3_coeffs[11] = d_10 + d_11*Xb + d_12*Xb_beta; //d_1B
+
+  REAL8 PN_coeffs[10];
+
+  int errcode2;
+  errcode2 = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
+  XLAL_CHECK(XLAL_SUCCESS == errcode2, errcode2, "Setting PN coefficients failed.\n");
+
+  /* 7.5PN Coefficients */
+  REAL8 c_1A = PN_coeffs[1];
+  REAL8 c_3over2A = PN_coeffs[2];
+  REAL8 c_2A = PN_coeffs[3];
+  REAL8 c_5over2A = PN_coeffs[4];
+
+  REAL8 c_1B = PN_coeffs[6];
+  REAL8 c_3over2B = PN_coeffs[7];
+  REAL8 c_2B = PN_coeffs[8];
+  REAL8 c_5over2B = PN_coeffs[9];
+
+  /* Pade Coefficients constrained with PN */
+  REAL8 inv_c1_A = 1.0/c_1A;
+  NRTidalv3_coeffs[12] = c_1A + NRTidalv3_coeffs[8]; //n_1A
+  NRTidalv3_coeffs[13] = ((c_1A*c_3over2A) - c_5over2A - (c_3over2A)*NRTidalv3_coeffs[8] +  NRTidalv3_coeffs[6])*inv_c1_A; //n_3over2A
+  NRTidalv3_coeffs[14] = c_2A + c_1A*NRTidalv3_coeffs[8];// + d_2A; //n_2A
+  NRTidalv3_coeffs[15] = -(c_5over2A + c_3over2A*NRTidalv3_coeffs[8] -  NRTidalv3_coeffs[6])*inv_c1_A; //d_3over2A
+
+  REAL8 inv_c1_B = 1.0/c_1B;
+  NRTidalv3_coeffs[16] = c_1B + NRTidalv3_coeffs[11];//n_1B
+  NRTidalv3_coeffs[17] = ((c_1B*c_3over2B) - c_5over2B - (c_3over2B)*NRTidalv3_coeffs[11] + NRTidalv3_coeffs[9])*inv_c1_B; //n_3over2B
+  NRTidalv3_coeffs[18] = c_2B + c_1B*NRTidalv3_coeffs[11];// + d_2B; //n_2B
+  NRTidalv3_coeffs[19] = -(c_5over2B + c_3over2B*NRTidalv3_coeffs[11] - NRTidalv3_coeffs[9])*inv_c1_B; //d_3over2B
+
+  return XLAL_SUCCESS;
+}
+
 /** 
  * Tidal phase correction for NRTidalv3, Eq. (27,30), from Abac, et. al. (2023) (https://arxiv.org/pdf/2311.07456.pdf)
  * and is a function of x = angular_orb_freq^(2./3.)
@@ -511,52 +579,23 @@ static double SimNRTunedTidesFDTidalPhase_v3(
                const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
                const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
                const REAL8 mtot, /**< total mass (Msun) */
-               const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/
-               const REAL8 lambda2 /**< dimensionless tidal deformability of companion 2*/
+               const REAL8 NRTidalv3_coeffs[20] /**< NRTidalv3 coefficients */
                )
 {
   REAL8 M_omega = LAL_PI * fHz * (mtot * LAL_MTSUN_SI); //dimensionless angular GW frequency
 
-  REAL8 Xb = 1.0 - Xa; //secondary mass divided by total mass
-
-  REAL8 m1_SI = Xa * mtot * LAL_MSUN_SI;
-  REAL8 m2_SI = Xb * mtot * LAL_MSUN_SI;
-
-  REAL8 kappa2T = XLALSimNRTunedTidesComputeKappa2T(m1_SI, m2_SI, lambda1, lambda2);
-
-  /* model parameters */
-  REAL8 NRTidalv3_coeffs[22];
   REAL8 PN_coeffs[10];
-
-  int errcode;
-  errcode = XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs);
-  XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting NRTidalv3 coefficients failed.\n");
 
   int errcode2;
   errcode2 = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
   XLAL_CHECK(XLAL_SUCCESS == errcode2, errcode2, "Setting PN coefficients failed.\n");
 
-  const REAL8  s10 = NRTidalv3_coeffs[0];
-  const REAL8  s11 = NRTidalv3_coeffs[1];
-  const REAL8  s12 = NRTidalv3_coeffs[2];
-  
-  const REAL8  s20 = NRTidalv3_coeffs[3];
-  const REAL8  s21 = NRTidalv3_coeffs[4];
-  const REAL8  s22 = NRTidalv3_coeffs[5];
+  REAL8 s1 = NRTidalv3_coeffs[0]; 
+  REAL8 s2 = NRTidalv3_coeffs[1]; 
 
-  const REAL8  s30 = NRTidalv3_coeffs[6];
-  const REAL8  s31 = NRTidalv3_coeffs[7];
-  const REAL8  s32 = NRTidalv3_coeffs[8];
+  REAL8 exps2s3 = NRTidalv3_coeffs[3];
 
-  REAL8 q = Xa/Xb;
-
-  REAL8 s1 = s10 + s11*kappa2T + s12*q*kappa2T; 
-  REAL8 s2 = s20 + s21*kappa2T + s22*q*kappa2T; 
-  REAL8 s3 = s30 + s31*kappa2T + s32*q*kappa2T; 
-
-  REAL8 s2s3 = s2*s3;
   REAL8 s2Mom = -s2*M_omega*2.0;
-  REAL8 exps2s3 = cosh(s2s3) + sinh(s2s3);
   REAL8 exps2Mom = cosh(s2Mom) + sinh(s2Mom);
 
   /* expression for the effective love number enhancement factor, see Eq. (27) of https://arxiv.org/pdf/2311.07456.pdf.*/
@@ -568,69 +607,36 @@ static double SimNRTunedTidesFDTidalPhase_v3(
   REAL8 PN_x_3over2 = PN_x * sqrt(PN_x);              // pow(PN_x, 3.0/2.0)
   REAL8 PN_x_5over2 = PN_x_3over2 * PN_x;      // pow(PN_x, 5.0/2.0)
 
-  REAL8 kappaA = 3.0*Xb*Xa*Xa*Xa*Xa*lambda1;
-  REAL8 kappaB = 3.0*Xa*Xb*Xb*Xb*Xb*lambda2;
+  REAL8 kappaA = NRTidalv3_coeffs[4];
+  REAL8 kappaB = NRTidalv3_coeffs[5];
 
   REAL8 dynkappaA = kappaA*dynk2bar;
   REAL8 dynkappaB = kappaB*dynk2bar;
 
-  const REAL8  alpha = NRTidalv3_coeffs[9];
-  const REAL8  beta = NRTidalv3_coeffs[10];
-
-  REAL8 kappaA_alpha = pow(kappaA + 1, alpha);
-  REAL8 kappaB_alpha = pow(kappaB + 1, alpha);
-
-  REAL8 Xa_beta = pow(Xa, beta);
-  REAL8 Xb_beta = pow(Xb, beta);
-
-  const REAL8  n_5over20 = NRTidalv3_coeffs[11];
-  const REAL8  n_5over21 = NRTidalv3_coeffs[12];
-  const REAL8  n_5over22 = NRTidalv3_coeffs[13];
-  const REAL8  n_5over23 = NRTidalv3_coeffs[14];
-
-  const REAL8  n_30 = NRTidalv3_coeffs[15];
-  const REAL8  n_31 = NRTidalv3_coeffs[16];
-  const REAL8  n_32 = NRTidalv3_coeffs[17];
-  const REAL8  n_33 = NRTidalv3_coeffs[18];
-
-  const REAL8  d_10 = NRTidalv3_coeffs[19];
-  const REAL8  d_11 = NRTidalv3_coeffs[20];
-  const REAL8  d_12 = NRTidalv3_coeffs[21];
-
   /* Pade Coefficients */
-  REAL8 n_5over2A = n_5over20 + n_5over21*Xa + n_5over22*kappaA_alpha + n_5over23*Xa_beta; 
-  REAL8 n_3A = n_30 + n_31*Xa + n_32*kappaA_alpha + n_33*Xa_beta;
-  REAL8 d_1A = d_10 + d_11*Xa + d_12*Xa_beta;
+  REAL8 n_5over2A = NRTidalv3_coeffs[6];
+  REAL8 n_3A = NRTidalv3_coeffs[7];
+  REAL8 d_1A = NRTidalv3_coeffs[8];
   
-  REAL8 n_5over2B = n_5over20  + n_5over21*Xb  + n_5over22*kappaB_alpha + n_5over23*Xb_beta;
-  REAL8 n_3B = n_30 + n_31*Xb + n_32*kappaB_alpha + n_33*Xb_beta;
-  REAL8 d_1B = d_10 + d_11*Xb + d_12*Xb_beta;
+  REAL8 n_5over2B = NRTidalv3_coeffs[9];
+  REAL8 n_3B = NRTidalv3_coeffs[10];
+  REAL8 d_1B = NRTidalv3_coeffs[11];
 
   /* 7.5PN Coefficients */
   REAL8 c_NewtA = PN_coeffs[0];
-  REAL8 c_1A = PN_coeffs[1];
-  REAL8 c_3over2A = PN_coeffs[2];
-  REAL8 c_2A = PN_coeffs[3];
-  REAL8 c_5over2A = PN_coeffs[4];
 
   REAL8 c_NewtB = PN_coeffs[5];
-  REAL8 c_1B = PN_coeffs[6];
-  REAL8 c_3over2B = PN_coeffs[7];
-  REAL8 c_2B = PN_coeffs[8];
-  REAL8 c_5over2B = PN_coeffs[9];
 
   /* Pade Coefficients constrained with PN */
-  REAL8 inv_c1_A = 1.0/c_1A;
-  REAL8 n_1A = c_1A + d_1A;
-  REAL8 n_3over2A = ((c_1A*c_3over2A) - c_5over2A - (c_3over2A)*d_1A + n_5over2A)*inv_c1_A;
-  REAL8 n_2A = c_2A + c_1A*d_1A;// + d_2A;
-  REAL8 d_3over2A = -(c_5over2A + c_3over2A*d_1A - n_5over2A)*inv_c1_A;
+  REAL8 n_1A = NRTidalv3_coeffs[12];
+  REAL8 n_3over2A = NRTidalv3_coeffs[13];
+  REAL8 n_2A = NRTidalv3_coeffs[14];
+  REAL8 d_3over2A = NRTidalv3_coeffs[15];
 
-  REAL8 inv_c1_B = 1.0/c_1B;
-  REAL8 n_1B = c_1B + d_1B;
-  REAL8 n_3over2B = ((c_1B*c_3over2B) - c_5over2B - (c_3over2B)*d_1B + n_5over2B)*inv_c1_B;
-  REAL8 n_2B = c_2B + c_1B*d_1B;// + d_2B;
-  REAL8 d_3over2B = -(c_5over2B + c_3over2B*d_1B - n_5over2B)*inv_c1_B;
+  REAL8 n_1B = NRTidalv3_coeffs[16];
+  REAL8 n_3over2B = NRTidalv3_coeffs[17];
+  REAL8 n_2B = NRTidalv3_coeffs[18];
+  REAL8 d_3over2B = NRTidalv3_coeffs[19];
 
   REAL8 factorA = -c_NewtA*PN_x_5over2*dynkappaA;
   REAL8 factorB = -c_NewtB*PN_x_5over2*dynkappaB;
@@ -835,9 +841,11 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     }
   }
   else if (NRTidal_version == NRTidalv3_V) {
+    REAL8 NRTidalv3_coeffs[20];
+    XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
     REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; if a minimum is found, the tidal phase will be constant at that minimum value
     for(UINT4 i = 0; i < (*fHz).length; i++) {
-      (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, lambda1, lambda2);
+      (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, NRTidalv3_coeffs);
       if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){
           (*phi_tidal).data[i] = (*phi_tidal).data[i-1];
       }
@@ -861,9 +869,11 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     }
   }
   else if (NRTidal_version == NRTidalv3NoAmpCorr_V) {
+    REAL8 NRTidalv3_coeffs[20];
+    XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
     REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; if a minimum is found, the tidal phase will be constant at that minimum value
     for(UINT4 i = 0; i < (*fHz).length; i++) {
-      (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, lambda1, lambda2);
+      (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, NRTidalv3_coeffs);
       if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){
           (*phi_tidal).data[i] = (*phi_tidal).data[i-1];
       }
