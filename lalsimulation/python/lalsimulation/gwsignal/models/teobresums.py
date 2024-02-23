@@ -37,10 +37,11 @@ def modes_to_k(modes: list[tuple[int, int]]) -> list[int]:
     return [int(x[0] * (x[0] - 1) / 2 + x[1] - 2) for x in modes]
 
 
-TEOB_DALI_MODES = []
-for l in range(2, 6):
-    for m in range(1, l + 1):
-        TEOB_DALI_MODES.append((l, m))
+#TEOB_DALI_MODES = []
+TEOB_DALI_MODES = [(2,2), (2,1), (3,3),(4,4)]
+#for l in range(2, 6):
+#    for m in range(1, l + 1):
+#        TEOB_DALI_MODES.append((l, m))
 
 # reversed dictionary to back-reference the modes
 TEOB_DALI_MODES_FROM_K = {modes_to_k([mode])[0]: mode for mode in TEOB_DALI_MODES}
