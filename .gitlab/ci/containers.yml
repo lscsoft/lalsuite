@@ -28,6 +28,8 @@
 # job template for docker builds
 .docker:
   image: docker:latest
+  tags:
+    - executor-docker
   variables:
     DOCKER_DRIVER: overlay
     IMAGE_NAME: "${CI_REGISTRY_IMAGE}"

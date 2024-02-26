@@ -1200,7 +1200,7 @@ XLALcorrect_phase ( SFTtype *sft, LIGOTimeGPS tHeterodyne )
   /* check if we really need to do anything here? (i.e. is deltaT an integer?) */
   if ( fabs (deltaFT - (INT4) deltaFT ) > eps )
     {
-      XLALPrintWarning ("XLALcorrect_phase(): we DO need to apply heterodyning phase-correction\n");
+      XLALPrintInfo ("XLALcorrect_phase(): we DO need to apply heterodyning phase-correction\n");
 
       REAL8 deltaPhase = deltaFT * LAL_TWOPI;	// 'phase' = freq * time * 2pi
 

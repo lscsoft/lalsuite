@@ -1470,15 +1470,40 @@ int XLALSimIMRSEOBNRv4ROMTimeOfFrequency(
   }
 
   // Set up phase spline
-  gsl_spline *spline_phi;
-  gsl_interp_accel *acc_phi;
-  double Mf_final, Mtot_sec;
-  double Mf_ROM_min, Mf_ROM_max;
+  gsl_spline *spline_phi = NULL;
+  gsl_interp_accel *acc_phi = NULL;
+  double Mf_final = NAN, Mtot_sec;
+  double Mf_ROM_min = NAN, Mf_ROM_max = NAN;
   int ret = SEOBNRv4ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final,
                                           &Mtot_sec, m1SI, m2SI, chi1, chi2,
                                           &Mf_ROM_min, &Mf_ROM_max);
   if(ret != 0)
     XLAL_ERROR(ret);
+
+  if (spline_phi == NULL) {
+    XLALPrintError( "XLAL Error - %s: `spline_phi` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
+
+  if (acc_phi == NULL) {
+    XLALPrintError( "XLAL Error - %s: `acc_phi` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
+
+  if (isnan(Mf_final)) {
+    XLALPrintError( "XLAL Error - %s: `Mf_final` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
+
+  if (isnan(Mf_ROM_min)) {
+    XLALPrintError( "XLAL Error - %s: `Mf_ROM_min` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
+
+  if (isnan(Mf_ROM_max)) {
+    XLALPrintError( "XLAL Error - %s: `Mf_ROM_max` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
 
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   double t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI); // t_corr / M
@@ -1538,15 +1563,40 @@ int XLALSimIMRSEOBNRv4ROMFrequencyOfTime(
   }
 
   // Set up phase spline
-  gsl_spline *spline_phi;
-  gsl_interp_accel *acc_phi;
-  double Mf_final, Mtot_sec;
-  double Mf_ROM_min, Mf_ROM_max;
+  gsl_spline *spline_phi = NULL;
+  gsl_interp_accel *acc_phi = NULL;
+  double Mf_final = NAN, Mtot_sec;
+  double Mf_ROM_min = NAN, Mf_ROM_max = NAN;
   int ret = SEOBNRv4ROMTimeFrequencySetup(&spline_phi, &acc_phi, &Mf_final,
                                           &Mtot_sec, m1SI, m2SI, chi1, chi2,
                                           &Mf_ROM_min, &Mf_ROM_max);
   if(ret != 0)
     XLAL_ERROR(ret);
+
+  if (spline_phi == NULL) {
+    XLALPrintError( "XLAL Error - %s: `spline_phi` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
+
+  if (acc_phi == NULL) {
+    XLALPrintError( "XLAL Error - %s: `acc_phi` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
+
+  if (isnan(Mf_final)) {
+    XLALPrintError( "XLAL Error - %s: `Mf_final` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
+
+  if (isnan(Mf_ROM_min)) {
+    XLALPrintError( "XLAL Error - %s: `Mf_ROM_min` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
+
+  if (isnan(Mf_ROM_max)) {
+    XLALPrintError( "XLAL Error - %s: `Mf_ROM_max` is not initialized\n", __func__);
+    XLAL_ERROR( XLAL_EFAULT );
+  }
 
   // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
   double t_corr = gsl_spline_eval_deriv(spline_phi, Mf_final, acc_phi) / (2*LAL_PI); // t_corr / M
