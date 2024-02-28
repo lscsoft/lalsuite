@@ -18,10 +18,35 @@ import sys
 import pytest
 
 import numpy as np
+from numpy.testing import assert_allclose
 
 
-def test_metric_utils():
-    pass
+def test_mismatch_ellipse():
+    from lalpulsar.metric_utils import mismatch_ellipse
+
+    mu_max = 0.1
+
+    with pytest.raises(AssertionError):
+        g = np.ones((3, 2))
+        xx, yy = mismatch_ellipse(g, mu_max)
+
+    g = np.array([[7, 1], [1, 1]])
+
+    with pytest.raises(AssertionError):
+        xx, yy = mismatch_ellipse(g, 0.0)
+
+    xx, yy = mismatch_ellipse(g, mu_max)
+
+    assert len(xx) == len(yy)
+
+    mu = []
+    for i in range(len(xx)):
+        xy = np.array([xx[i], yy[i]])
+        mu.append(xy @ g @ xy)
+
+    assert len(mu) == len(xx)
+
+    assert_allclose(mu, mu_max, rtol=1e-5)
 
 
 if __name__ == "__main__":
