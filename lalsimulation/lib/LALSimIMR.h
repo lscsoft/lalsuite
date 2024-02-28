@@ -1520,7 +1520,7 @@ double XLALSimNRTunedTidesMergerFrequency_v3(
 
 int XLALSimNRTunedTidesSetFDTidalPhase_v2_Coeffs(REAL8 *NRTidalv2_coeffs);
 
-int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, 
+int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< output; precomputing for the NRTidalv3 parameters*/
                const REAL8 Xa, /**< Mass of companion 1 divided by total mass*/
                const REAL8 mtot, /**< total mass (Msun) */
                const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/

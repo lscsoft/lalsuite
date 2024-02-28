@@ -467,7 +467,7 @@ int XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(REAL8 *PN_coeffs,/**<PN coeffic
 /**
  * Set the NRTidalv3 effective love number and phase coefficients in an array for use here and in the IMRPhenomX*_NRTidalv3 implementation
  */
-int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, 
+int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< output of NRTidalv3 parameters to be used in computing the tidal phase corrections*/
                const REAL8 Xa, /**< Mass of companion 1 divided by total mass*/
                const REAL8 mtot, /**< total mass (Msun) */
                const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/
