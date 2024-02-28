@@ -2475,7 +2475,7 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
 
 
     int ret = XLAL_SUCCESS;
-    if (NRTidal_version == NRTidalv3_V) {
+    if (NRTidal_version == NRTidalv3_V && k == 0) {
       const REAL8 sh = 4.0*sqrt(5.0/64.0/LAL_PI); // polarization factor for Y_{22} spherical harmonic mode
       /* get component masses (in solar masses) from mtotal and eta! */
       const REAL8 m1 = Mtot*q/(1 + q);
