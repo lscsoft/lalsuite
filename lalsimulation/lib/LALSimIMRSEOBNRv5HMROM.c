@@ -2476,11 +2476,10 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
 
     int ret = XLAL_SUCCESS;
     if (NRTidal_version == NRTidalv3_V) {
+      const REAL8 sh = 4.0*sqrt(5.0/64.0/LAL_PI); // polarization factor for Y_{22} spherical harmonic mode
       /* get component masses (in solar masses) from mtotal and eta! */
-      const REAL8 eta = q/((1.+q)*(1.+q));
-      const REAL8 factor = sqrt(1. - 4.*eta);
-      const REAL8 m1 = 0.5*Mtot*(1.+ factor);
-      const REAL8 m2 = 0.5*Mtot*(1.- factor);
+      const REAL8 m1 = Mtot*q/(1 + q);
+      const REAL8 m2 = Mtot/(1 + q);
       /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for NRTidalv3 */
       amp_tidal = XLALCreateREAL8Sequence(freqs->length);
       const REAL8 l1 = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
@@ -2499,7 +2498,7 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
         // Assemble mode from amplitude and phase
         REAL8 A = gsl_spline_eval(hybrid_spline_amp[k], f, acc_amp);
         REAL8 phase = gsl_spline_eval(hybrid_spline_phi[k], f, acc_phase);
-        hlmdata[j] = amp0*(A+ampT) * (cos(phase) + I*sin(phase));
+        hlmdata[j] = amp0*(A+ampT/sh) * (cos(phase) + I*sin(phase));
         REAL8 phase_factor = -2.0*LAL_PI * f * t_corr;
         COMPLEX16 t_factor = cos(phase_factor) + I*sin(phase_factor);
         hlmdata[j] *= t_factor;
