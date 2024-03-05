@@ -2992,6 +2992,7 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 exps2s3 = cosh(s2s3) + sinh(s2s3);
 		REAL8 exps2Mf = cosh(s2Mf) + sinh(s2Mf);
 
+		/* Rewriting Eq. (27) of arXiv:2311.07456 */
   		REAL8 dynk2barfunc = 1.0 + ((s1) - 1)*(1.0/(1.0 + exps2Mf*exps2s3)) - ((s1-1.0)/(1.0 + exps2s3)) - 2.0*(Mf*LAL_PI)*((s1) - 1)*s2*exps2s3/((1.0 + exps2s3)*(1.0 + exps2s3));
 
 		REAL8 kappaA = NRTidalv3_coeffs[4];
@@ -3000,7 +3001,7 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 dynkappaA = kappaA*dynk2barfunc;
 		REAL8 dynkappaB = kappaB*dynk2barfunc;
 
-		/* Pade Coefficients */
+		/* Pade Coefficients, Table II of arXiv:2311.07456 */
 		REAL8 n_5over2A = NRTidalv3_coeffs[6];
 		REAL8 n_3A = NRTidalv3_coeffs[7];
 		REAL8 d_1A = NRTidalv3_coeffs[8];
@@ -3022,7 +3023,7 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 c_2B = PN_coeffs[8];
 		REAL8 c_5over2B = PN_coeffs[9];
 
-		/* Pade Coefficients constrained with PN */
+		/* Pade Coefficients constrained with PN, see Eq. (33) in arXiv:2311.07456 */
 		REAL8 n_1A = NRTidalv3_coeffs[12];
 		REAL8 n_3over2A = NRTidalv3_coeffs[13];
 		REAL8 n_2A = NRTidalv3_coeffs[14];
@@ -3033,6 +3034,7 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 n_2B = NRTidalv3_coeffs[18];
 		REAL8 d_3over2B = NRTidalv3_coeffs[19];
         
+		/* Rewriting Eq. (30) and (32) in arXiv:2311.07456 in terms of Mf instead of x */
         REAL8 NRphasetermA=-((c_NewtA*dynkappaA*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1A*powers_of_lalpi.two_thirds + Mf*n_3over2A*LAL_PI + powers_of_Mf->four_thirds*n_2A*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2A*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3A*powers_of_lalpi.two))/((1 + d_1A*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2A*Mf*LAL_PI)));
         REAL8 NRphasetermB=-((c_NewtB*dynkappaB*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1B*powers_of_lalpi.two_thirds + Mf*n_3over2B*LAL_PI + powers_of_Mf->four_thirds*n_2B*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2B*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3B*powers_of_lalpi.two))/((1 + d_1B*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2B*Mf*LAL_PI)));
 		
@@ -3048,8 +3050,10 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 Mftaperstart = 1.15*Mfmerger;
 		REAL8 Mftaperend = 1.35*Mfmerger;
 
+		/* Eq. (46) in arXiv:2311.07456 */
 		REAL8 plancktaperfn = 1/(exp((Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend)) + 1);
-
+		
+		/* Eq. (45) in arXiv:2311.07456 */
 		REAL8 NRphase = NRphaseNRT*(1-  plancktaperfn) + PNtidalphase*plancktaperfn;
 
 		phaseTidal+=NRphase;
@@ -3144,6 +3148,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 exps2s3 = cosh(s2s3) + sinh(s2s3);
 		REAL8 exps2Mf = cosh(s2Mf) + sinh(s2Mf);
 
+		/* Rewriting Eq. (27) of arXiv:2311.07456 */
   		REAL8 dynk2barfunc = 1.0 + ((s1) - 1)*(1.0/(1.0 + exps2Mf*exps2s3)) - ((s1-1.0)/(1.0 + exps2s3)) - 2.0*(Mf*LAL_PI)*((s1) - 1)*s2*exps2s3/((1.0 + exps2s3)*(1.0 + exps2s3));
 
 		REAL8 kappaA = NRTidalv3_coeffs[4];
@@ -3152,7 +3157,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 dynkappaA = kappaA*dynk2barfunc;
 		REAL8 dynkappaB = kappaB*dynk2barfunc;
 
-		/* Pade Coefficients */
+		/* Pade Coefficients, Table II of arXiv:2311.07456 */
 		REAL8 n_5over2A = NRTidalv3_coeffs[6];
 		REAL8 n_3A = NRTidalv3_coeffs[7];
 		REAL8 d_1A = NRTidalv3_coeffs[8];
@@ -3174,7 +3179,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 c_2B = PN_coeffs[8];
 		REAL8 c_5over2B = PN_coeffs[9];
 
-		/* Pade Coefficients constrained with PN */
+		/* Pade Coefficients constrained with PN, see Eq. (33) in arXiv:2311.07456 */
 		REAL8 n_1A = NRTidalv3_coeffs[12];
 		REAL8 n_3over2A = NRTidalv3_coeffs[13];
 		REAL8 n_2A = NRTidalv3_coeffs[14];
@@ -3185,6 +3190,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 n_2B = NRTidalv3_coeffs[18];
 		REAL8 d_3over2B = NRTidalv3_coeffs[19];
 
+		/* Rewriting Eq. (30) and (32) in arXiv:2311.07456 in terms of Mf instead of x */
 		REAL8 NRphasetermA=-((c_NewtA*dynkappaA*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1A*powers_of_lalpi.two_thirds + Mf*n_3over2A*LAL_PI + powers_of_Mf->four_thirds*n_2A*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2A*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3A*powers_of_lalpi.two))/((1 + d_1A*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2A*Mf*LAL_PI )));
         REAL8 NRphasetermB=-((c_NewtB*dynkappaB*powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*(1 + powers_of_Mf->two_thirds*n_1B*powers_of_lalpi.two_thirds + Mf*n_3over2B*LAL_PI + powers_of_Mf->four_thirds*n_2B*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*n_5over2B*powers_of_lalpi.five_thirds + pow(Mf,2)*n_3B*powers_of_lalpi.two))/((1 + d_1B*powers_of_Mf->two_thirds*powers_of_lalpi.two_thirds + d_3over2B*Mf*LAL_PI )));
 
@@ -3232,6 +3238,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 Mftaperstart = 1.15*Mfmerger;
 		REAL8 Mftaperend = 1.35*Mfmerger;
 
+		/* Eq. (46) in arXiv:2311.07456 */
 		REAL8 plancktaperfn = 1/(exp((Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend)) + 1);
 
 		REAL8 dfactortaper = -(exp((Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend)) + 1.)*(-(Mftaperend - Mftaperstart)/(pow(Mf - Mftaperstart, 2.0)) - (Mftaperend - Mftaperstart)/(pow(Mf - Mftaperend, 2.0)));
