@@ -1107,7 +1107,7 @@ int XLALSimInspiralChooseFDWaveformSequence(
 
             int nModesv5hm = 7;
             ret = XLALSimIMRSEOBNRv5HMROMFrequencySequence(hptilde, hctilde, frequencies,
-            phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, nModesv5hm, LALpars);
+            phiRef, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, nModesv5hm, LALpars, NoNRT_V);
             break;
 
         case SEOBNRv4_ROM_NRTidal:
