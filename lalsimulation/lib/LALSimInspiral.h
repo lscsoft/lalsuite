@@ -437,17 +437,20 @@ typedef enum tagApproximant {
    IMRPhenomTHM,      /** Time domain, non-precessing phenomenological IMR waveform model with subdominant modes ([arXiv: 20XY.ZZZZZ]). */
    IMRPhenomTP,      /** Time domain, precessing phenomenological IMR waveform model for L=2 sector ([arXiv: 20XY.ZZZZZ]). */
    IMRPhenomTPHM,      /** Time domain, precessing phenomenological IMR waveform model with subdominant modes ([arXiv: 20XY.ZZZZZ]). */
-   SEOBNRv5_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5 remarks Implemented in lalsimulation (frequency domain). */
+   SEOBNRv5_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5
+		    * @remarks Implemented in lalsimulation (frequency domain). */   
    SEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain), PhysRevD.104.124087 [arXiv:2105.06983] */
    pSEOBNRv4HM_PA,    /** Spin non-precessing EOBNR model v4 with higher modes post-adiabatic dynamics (time domain) and TGR ringdown effects, PhysRevD.104.124087 [arXiv:2105.06983] */
    IMRPhenomXAS_NRTidalv2,         /**< Tidal extension of IMRPhenomXAS based on [arXiv:1905.06011]. */
    IMRPhenomXP_NRTidalv2,         /**< Tidal extension of IMRPhenomXP based on [arXiv:1905.06011]. */
    IMRPhenomXO4a,    /**< Frequency domain, precessing with subdominant modes phenomenological IMR waveform model with NR-tuned precession angles. */
+   ExternalPython, /** External Python model **/
+   SEOBNRv5HM_ROM, /**< Low-mass double-spin frequency domain reduced order model of spin-aligned EOBNR model SEOBNRv5HM
+		    * @remarks Implemented in lalsimulation (frequency domain). */     
    IMRPhenomXAS_NRTidalv3,         /**< Tidal extension of IMRPhenomXAS based on NRTidalv3. */
    IMRPhenomXP_NRTidalv3,         /**< Tidal extension of IMRPhenomXP based on NRTidalv3. */
    SEOBNRv5_ROM_NRTidalv3, /**< based on NRTidalv3 (arXiv:2311.07456); 
-                             * @remarks Implemented in lalsimulation (time domain and frequency domain). */
-   ExternalPython, /** External Python model **/
+                             * @remarks Implemented in lalsimulation (time domain and frequency domain). */ 
    NumApproximants,	/**< Number of elements in enum, useful for checking bounds */
  } Approximant;
 
@@ -1021,6 +1024,7 @@ extern const LALSimInspiralGenerator lalSEOBNRv4_optGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSEOBNRv4HM_PAGeneratorTemplate;
 extern const LALSimInspiralGenerator lalpSEOBNRv4HM_PAGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSEOBNRv5_ROMGeneratorTemplate;
+extern const LALSimInspiralGenerator lalSEOBNRv5HM_ROMGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSEOBNRv5_ROM_NRTidalv3GeneratorTemplate;
 extern const LALSimInspiralGenerator lalSpinDominatedWfGeneratorTemplate;
 extern const LALSimInspiralGenerator lalSpinTaylorF2GeneratorTemplate;

@@ -330,6 +330,7 @@ DEFINE_GENERATOR_TEMPLATE(IMRPhenomHM, generate_fd_modes, generate_fd_waveform, 
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomXHM, generate_fd_modes, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomXPHM, generate_fd_modes, generate_fd_waveform, NULL, generate_td_waveform)
 DEFINE_GENERATOR_TEMPLATE(IMRPhenomXO4a, generate_fd_modes, generate_fd_waveform, NULL, generate_td_waveform)
+DEFINE_GENERATOR_TEMPLATE(SEOBNRv5HM_ROM, generate_fd_modes, generate_fd_waveform, NULL, generate_td_waveform)
 
 
 /**
@@ -828,6 +829,10 @@ static int XLALSimInspiralChooseTDWaveform_legacy(
         break;
 
     case SEOBNRv4_ROM_NRTidalv2_NSBH:
+        ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
+        break;
+
+    case SEOBNRv5HM_ROM:
         ret = XLALSimInspiralTDFromFD(hplus, hcross, m1, m2, S1x, S1y, S1z, S2x, S2y, S2z, distance, inclination, phiRef, longAscNodes, eccentricity, meanPerAno, deltaT, f_min, f_ref, params, approximant);
         break;
 
@@ -1834,6 +1839,86 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
 
         ret = XLALSimIMRSEOBNRv5HMROM(hptilde, hctilde,
                 phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, 1, true, params, NoNRT_V);
+        break;
+
+    case SEOBNRv5HM_ROM:
+        /* Waveform-specific sanity checks */
+        if( !XLALSimInspiralWaveformParamsFlagsAreDefault(params) )
+            XLAL_ERROR(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+        if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+            XLAL_ERROR(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+        if( !checkTidesZero(lambda1, lambda2) )
+            XLAL_ERROR(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+        LALValue *mode_arr = NULL;
+        LALDict *pars_aux;
+        INT2Sequence *modeseq = NULL;
+        UINT4 nmodes = 7;
+        UINT2 eobmodesv5hm = 7;
+    
+        if(params == NULL){
+            pars_aux = XLALCreateDict();
+        }
+        else{
+            pars_aux = XLALDictDuplicate(params);
+        }
+        mode_arr = XLALSimInspiralWaveformParamsLookupModeArray(pars_aux);
+
+        if(mode_arr != NULL)
+        {
+            modeseq = XLALSimInspiralModeArrayReadModes(mode_arr);
+            nmodes = modeseq->length/2;
+            if (
+                nmodes == 2 &&
+                modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+                modeseq->data[2] == 3 && abs(modeseq->data[3]) == 3)
+            {   
+                eobmodesv5hm = 2;
+            }
+            if (
+                nmodes == 3 &&
+                modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1)
+            {   
+                eobmodesv5hm = 3;
+            }
+            if (
+                nmodes == 4 &&
+                modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
+                modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4)
+            {   
+                eobmodesv5hm = 4;
+            }
+            if (
+                nmodes == 5 &&
+                modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
+                modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4 && 
+                modeseq->data[8] == 5 && abs(modeseq->data[9]) == 5)
+            {
+                eobmodesv5hm = 5;
+            }
+            if (
+                nmodes == 6 &&
+                modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+                modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+                modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
+                modeseq->data[8] == 4 && abs(modeseq->data[9]) == 4 && 
+                modeseq->data[10] == 5 && abs(modeseq->data[11]) == 5 && 
+                modeseq->data[6] == 3 && abs(modeseq->data[7]) == 2)
+            {
+                eobmodesv5hm = 6;
+            }
+        }
+        ret = XLALSimIMRSEOBNRv5HMROM(hptilde, hctilde,
+            phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, eobmodesv5hm, true, params);
+        XLALDestroyINT2Sequence(modeseq);
+        XLALDestroyValue(mode_arr);
+        XLALDestroyDict(pars_aux);
         break;
 
     case SEOBNRv4_ROM_NRTidal:
@@ -3426,6 +3511,193 @@ static SphHarmFrequencySeries *XLALSimInspiralChooseFDModes_legacy(
 
         /* Compute individual modes of SEOBNRv5_ROM */
         retcode = XLALSimIMRSEOBNRv5HMROM_Modes(hlms_tmp, phiRef, deltaF, f_min, f_max, f_ref, distance, m1, m2, S1z, S2z, -1, eobmodesv5, true, params, NoNRT_V);
+        if( retcode != XLAL_SUCCESS){
+            XLALFree(hlms_tmp);
+            XLAL_ERROR_NULL(XLAL_EFUNC);
+        }
+
+
+        /* This is the length of half of the frequency spectrum.
+           Later we will resize series to add the negative frequency regime. */
+        length = (*hlms_tmp)->mode->data->length -1;
+
+
+        /* Loop over modes in the SphHarmFrequencySeries. Resize each mode. */
+        for(UINT4 i=0; i<nmodes; i++)
+        {
+            INT2 l, m;
+            l = modeseq->data[2*i];
+            m = modeseq->data[2*i+1];
+
+            COMPLEX16FrequencySeries *hlm = XLALSphHarmFrequencySeriesGetMode(*hlms_tmp, l, -abs(m));
+
+
+            if(m<0){
+                /* Resize series to add the negative frequency regime */
+                hlm = XLALResizeCOMPLEX16FrequencySeries(hlm, -length, 2*length+1);
+            }
+            else{
+                /* Use equatorial symmetry to transform negative to positive mode. */
+                INT4 minus1l = -1;
+                if (l%2 == 0){
+                    minus1l = 1;
+                }
+                hlm = XLALResizeCOMPLEX16FrequencySeries(hlm, 0, 2*length+1);
+                for(INT4 j=0; j<length; j++)
+                {
+                    hlm->data->data[j] = minus1l * conj(hlm->data->data[hlm->data->length -1 - j]);
+                    hlm->data->data[hlm->data->length -1 - j] = 0.;
+                }
+            }
+
+            hlms = XLALSphHarmFrequencySeriesAddMode(hlms, hlm, l, m);
+        }
+        XLALDestroyINT2Sequence(modeseq);
+        XLALDestroySphHarmFrequencySeries(*hlms_tmp);
+
+        /* Add frequency array to SphHarmFrequencySeries */
+         freqsSphH = XLALCreateREAL8Sequence(2*length+1);
+        for (INT4 i = -length; i<=length; i++)
+         {
+             freqsSphH->data[i+length] = i*deltaF;
+         }
+         XLALSphHarmFrequencySeriesSetFData(hlms, freqsSphH);
+        break;
+
+    case SEOBNRv5HM_ROM:
+        /* Waveform-specific sanity checks */
+        if( !XLALSimInspiralWaveformParamsFlagsAreDefault(params) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-default flags given, but this approximant does not support this case.");
+        if( !checkTransverseSpinsZero(S1x, S1y, S2x, S2y) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero transverse spins were given, but this is a non-precessing approximant.");
+        if( !checkTidesZero(lambda1, lambda2) )
+                XLAL_ERROR_NULL(XLAL_EINVAL, "Non-zero tidal parameters were given, but this is approximant doe not have tidal corrections.");
+
+        if(params == NULL){
+            params_aux = XLALCreateDict();
+        }
+        else{
+            params_aux = XLALDictDuplicate(params);
+        }
+        ModeArray = XLALSimInspiralWaveformParamsLookupModeArray(params_aux);
+        if(ModeArray == NULL)
+        {
+            /* If not specified, fill array with default modes of SEOBNRv5HM_ROM */
+            ModeArray = XLALSimInspiralCreateModeArray();
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -2);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 2, -1);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 3, -3);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 4, -4);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 5, -5);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 3, -2);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 4, -3);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 2);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 2, 1);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 3);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 4);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 5, 5);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 3, 2);
+            XLALSimInspiralModeArrayActivateMode(ModeArray, 4, 3);
+
+
+            modeseq = XLALSimInspiralModeArrayReadModes(ModeArray);
+
+            XLALDestroyValue(ModeArray);
+            nmodes = modeseq->length/2;
+        }
+        else // This is just to avoid killing the kernel when you ask for a mode that is not available.
+        {
+            modeseq = XLALSimInspiralModeArrayReadModes(ModeArray);
+            XLALDestroyValue(ModeArray);
+            nmodes = modeseq->length/2;
+
+            /* Check that there are not unavailable modes. */
+            LALValue *DefaultModeArray = XLALSimInspiralCreateModeArray();
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, -2);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, -1);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, -3);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, -4);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 5, -5);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, -2);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, -3);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, 2);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 2, 1);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, 3);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, 4);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 5, 5);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 3, 2);
+            XLALSimInspiralModeArrayActivateMode(DefaultModeArray, 4, 3);
+
+            for(UINT4 i=0; i<nmodes; i++)
+            {
+                INT2 l, m;
+                l = modeseq->data[2*i];
+                m = modeseq->data[2*i+1];
+                if(XLALSimInspiralModeArrayIsModeActive(DefaultModeArray, l, m) == 0){
+                    XLALDestroyValue(DefaultModeArray);
+                    XLALDestroyINT2Sequence(modeseq);
+                    XLALFree(hlms_tmp);
+                    XLAL_ERROR_NULL(XLAL_EINVAL, "Mode (%i,%i) is not available in SEOBNRv5HM_ROM.\n", l, m);
+                }
+            }
+            XLALDestroyValue(DefaultModeArray);
+        }
+        XLALDestroyDict(params_aux);
+
+        UINT2 eobmodesv5hm = 7;
+        if(nmodes == 1 && modeseq->data[0]==2 && abs(modeseq->data[1])==2)
+        {
+            eobmodesv5hm = 1; // This will  internally call SEOBNRv5_ROM instead of all the modes, therefore saving time.
+        }
+
+        /* If asking for a subset of modes in the proper order only those are computed, and not all 7 */
+        if (
+            nmodes == 2 &&
+            modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+            modeseq->data[2] == 3 && abs(modeseq->data[3]) == 3)
+        {   
+            eobmodesv5hm = 2;
+        }
+        if (
+            nmodes == 3 &&
+            modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1)
+        {   
+            eobmodesv5hm = 3;
+        }
+        if (
+            nmodes == 4 &&
+            modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
+            modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4)
+        {   
+            eobmodesv5hm = 4;
+        }
+        if (
+            nmodes == 5 &&
+            modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
+            modeseq->data[6] == 4 && abs(modeseq->data[7]) == 4 && 
+            modeseq->data[8] == 5 && abs(modeseq->data[9]) == 5)
+        {
+            eobmodesv5hm = 5;
+        }
+        if (
+            nmodes == 6 &&
+            modeseq->data[0] == 2 && abs(modeseq->data[1]) == 2 &&
+            modeseq->data[4] == 3 && abs(modeseq->data[5]) == 3 && 
+            modeseq->data[2] == 2 && abs(modeseq->data[3]) == 1 && 
+            modeseq->data[8] == 4 && abs(modeseq->data[9]) == 4 && 
+            modeseq->data[10] == 5 && abs(modeseq->data[11]) == 5 && 
+            modeseq->data[6] == 3 && abs(modeseq->data[7]) == 2)
+        {
+            eobmodesv5hm = 6;
+        }
+        /* Compute individual modes of SEOBNRv5HM_ROM */
+        retcode = XLALSimIMRSEOBNRv5HMROM_Modes(hlms_tmp, phiRef, deltaF, f_min, f_max, f_ref, distance, m1, m2, S1z, S2z, -1, eobmodesv5hm, true);
         if( retcode != XLAL_SUCCESS){
             XLALFree(hlms_tmp);
             XLAL_ERROR_NULL(XLAL_EFUNC);

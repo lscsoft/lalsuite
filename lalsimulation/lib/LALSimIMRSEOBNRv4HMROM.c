@@ -732,7 +732,7 @@ UNUSED static int SEOBNRROMdataDS_Init_submodel(
   SEOBNRROMdataDS_submodel **submodel,
   UNUSED const char dir[],
   UNUSED const char grp_name[],
-  UINT4 index_mode
+  UNUSED UINT4 index_mode
 ) {
   int ret = XLAL_FAILURE;
   if(!submodel) exit(1);

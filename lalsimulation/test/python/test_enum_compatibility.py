@@ -120,9 +120,11 @@ known_approximants = {
     'IMRPhenomXAS_NRTidalv2': 110,
     'IMRPhenomXP_NRTidalv2': 111,
     'IMRPhenomXO4a': 112,
-    'IMRPhenomXAS_NRTidalv3': 113,
-    'IMRPhenomXP_NRTidalv3': 114,
-    'SEOBNRv5_ROM_NRTidalv3': 115
+    'ExternalPython': 113,
+    'SEOBNRv5HM_ROM': 114,
+    'IMRPhenomXAS_NRTidalv3': 115,
+    'IMRPhenomXP_NRTidalv3': 116,
+    'SEOBNRv5_ROM_NRTidalv3': 117
 }
 
 @pytest.mark.parametrize("name, i", known_approximants.items())
