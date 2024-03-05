@@ -1915,7 +1915,7 @@ static int XLALSimInspiralChooseFDWaveform_legacy(
             }
         }
         ret = XLALSimIMRSEOBNRv5HMROM(hptilde, hctilde,
-            phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, eobmodesv5hm, true, params);
+            phiRef, deltaF, f_min, f_max, f_ref, distance, inclination, m1, m2, S1z, S2z, -1, eobmodesv5hm, true, params, NoNRT_V);
         XLALDestroyINT2Sequence(modeseq);
         XLALDestroyValue(mode_arr);
         XLALDestroyDict(pars_aux);
@@ -3697,7 +3697,7 @@ static SphHarmFrequencySeries *XLALSimInspiralChooseFDModes_legacy(
             eobmodesv5hm = 6;
         }
         /* Compute individual modes of SEOBNRv5HM_ROM */
-        retcode = XLALSimIMRSEOBNRv5HMROM_Modes(hlms_tmp, phiRef, deltaF, f_min, f_max, f_ref, distance, m1, m2, S1z, S2z, -1, eobmodesv5hm, true, NoNRT_V);
+        retcode = XLALSimIMRSEOBNRv5HMROM_Modes(hlms_tmp, phiRef, deltaF, f_min, f_max, f_ref, distance, m1, m2, S1z, S2z, -1, eobmodesv5hm, true, params, NoNRT_V);
         if( retcode != XLAL_SUCCESS){
             XLALFree(hlms_tmp);
             XLAL_ERROR_NULL(XLAL_EFUNC);
