@@ -14,6 +14,9 @@ from lal import globalvar as lalglobalvar
 
 print("PASSED module load", file=sys.stderr)
 
+
+# -- configure error handling
+
 # set error handlers
 def set_nice_error_handlers():
     lal.swig_set_nice_error_handlers()
@@ -27,6 +30,9 @@ def set_default_error_handlers():
 
 
 set_default_error_handlers()
+
+
+# -- tests
 
 
 def test_object_parent_tracking():
