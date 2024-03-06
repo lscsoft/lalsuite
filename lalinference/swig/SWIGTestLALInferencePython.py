@@ -3,6 +3,9 @@
 
 import os
 import sys
+import inspect
+import gc
+
 import pytest
 
 # check module load
@@ -32,6 +35,27 @@ def set_default_error_handlers():
 set_default_error_handlers()
 
 
+# -- check for memory leaks
+
+
+def check_memory_leaks():
+    # pytest's rewrite of assert() can keep references
+    # to SWIGLAL objects around; find and clear them
+    frame = inspect.currentframe()
+    try:
+        for v in frame.f_back.f_locals:
+            if v.startswith("@py_assert"):
+                frame.f_back.f_locals[v] = None
+    finally:
+        del frame
+
+    # garbage collector should free all SWIGLAL objects
+    gc.collect()
+
+    # check that all LAL memory has been freed
+    lal.CheckMemoryLeaks()
+
+
 # -- tests
 
 
@@ -49,8 +73,7 @@ def test_object_parent_tracking():
     del c
     del b
     del a
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED object parent tracking", file=sys.stderr)
 
 

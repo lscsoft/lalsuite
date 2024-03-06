@@ -6,6 +6,8 @@ import datetime
 import os
 import pickle
 import sys
+import inspect
+import gc
 
 import pytest
 
@@ -52,6 +54,27 @@ def catch_errors(*args, **kwargs):
     set_default_error_handlers()
 
 
+# -- check for memory leaks
+
+
+def check_memory_leaks():
+    # pytest's rewrite of assert() can keep references
+    # to SWIGLAL objects around; find and clear them
+    frame = inspect.currentframe()
+    try:
+        for v in frame.f_back.f_locals:
+            if v.startswith("@py_assert"):
+                frame.f_back.f_locals[v] = None
+    finally:
+        del frame
+
+    # garbage collector should free all SWIGLAL objects
+    gc.collect()
+
+    # check that all LAL memory has been freed
+    lal.CheckMemoryLeaks()
+
+
 # -- tests
 
 
@@ -62,7 +85,7 @@ def catch_errors(*args, **kwargs):
 def test_memory_allocation():
     """check memory allocation"""
     print("checking memory allocation ...", file=sys.stderr)
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     mem1 = lal.Detector()
     mem2 = lal.CreateCOMPLEX8Vector(5)
     mem3 = lal.CreateREAL8Vector(3)
@@ -75,7 +98,7 @@ def test_memory_allocation():
     )
 
     with catch_errors(RuntimeError, match="Generic failure"):
-        lal.CheckMemoryLeaks()
+        check_memory_leaks()
     print(
         "*** above should be an error message from CheckMemoryLeaks() ***",
         file=sys.stderr,
@@ -84,8 +107,7 @@ def test_memory_allocation():
     del mem2
     del mem3
     del mem4
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED memory allocation", file=sys.stderr)
 
 
@@ -109,8 +131,7 @@ def test_object_parent_tracking():
     del ts
     assert_array_equal(v.data, list(range(0, 10)))
     del v
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED object parent tracking", file=sys.stderr)
 
 
@@ -129,8 +150,7 @@ def test_equal_return_first_argument_type_handling():
     assert sv == sv2
     del sv
     del sv2
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     ts = lal.CreateREAL8TimeSeries("ts", 800000000, 100, 0.1, lal.HertzUnit, 10)
     assert ts.data.length == 10
     lal.ResizeREAL8TimeSeries(ts, 0, 20)
@@ -143,8 +163,7 @@ def test_equal_return_first_argument_type_handling():
     assert ts == ts2
     del ts
     del ts2
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED equal return/first argument type handling", file=sys.stderr)
 
 
@@ -163,8 +182,7 @@ def test_string_conversions():
     for i in range(0, 4):
         assert sv.data[i] == strs[i]
     del sv
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED string conversions", file=sys.stderr)
 
 
@@ -327,8 +345,7 @@ def test_dynamic_vector_matrix_conversions():
     rv1 = lal.CreateREAL8Vector(1)
     rv1.data[0] = 1
     del rv1
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED dynamic vector/matrix conversions (LAL)", file=sys.stderr)
     # check GSL vectors and matrices
     iv = lal.gsl_vector_int(5)
@@ -366,8 +383,7 @@ def test_fixed_and_dynamic_arrays_typemaps():
         )
     del a3in
     del a3out
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED fixed and dynamic arrays typemaps", file=sys.stderr)
 
 
@@ -398,8 +414,7 @@ def test_input_views_of_string_array_structs():
     del sv
     del svout
     del svdat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED input views of string array structs", file=sys.stderr)
 
 
@@ -443,8 +458,7 @@ def test_input_views_of_numeric_array_structs():
     del r4
     del r4out
     del r4dat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     r8 = lal.CreateREAL8Vector(len(r8dat))
     r8.data = r8dat
     r8out = lal.CreateREAL8Vector(len(r8dat))
@@ -474,8 +488,7 @@ def test_input_views_of_numeric_array_structs():
     del r8
     del r8out
     del r8dat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     c8 = lal.CreateCOMPLEX8Vector(len(c8dat))
     c8.data = c8dat
     c8out = lal.CreateCOMPLEX8Vector(len(c8dat))
@@ -505,8 +518,7 @@ def test_input_views_of_numeric_array_structs():
     del c8
     del c8out
     del c8dat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     c16 = lal.CreateCOMPLEX16Vector(len(c16dat))
     c16.data = c16dat
     c16out = lal.CreateCOMPLEX16Vector(len(c16dat))
@@ -536,8 +548,7 @@ def test_input_views_of_numeric_array_structs():
     del c16
     del c16out
     del c16dat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     r4dat = numpy.array([[1.2, 2.3, 3.4], [4.5, 5.6, 6.7]], dtype=numpy.float32)
     r8dat = numpy.array([[3.4, 4.5], [5.6, 6.7], [7.8, 8.9]], dtype=numpy.float64)
     c8dat = numpy.array(
@@ -575,8 +586,7 @@ def test_input_views_of_numeric_array_structs():
     del r4
     del r4out
     del r4dat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     r8 = lal.CreateREAL8VectorSequence(r8dat.shape[0], r8dat.shape[1])
     r8.data = r8dat
     r8out = lal.CreateREAL8VectorSequence(r8dat.shape[0], r8dat.shape[1])
@@ -606,8 +616,7 @@ def test_input_views_of_numeric_array_structs():
     del r8
     del r8out
     del r8dat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     c8 = lal.CreateCOMPLEX8VectorSequence(c8dat.shape[0], c8dat.shape[1])
     c8.data = c8dat
     c8out = lal.CreateCOMPLEX8VectorSequence(c8dat.shape[0], c8dat.shape[1])
@@ -637,8 +646,7 @@ def test_input_views_of_numeric_array_structs():
     del c8
     del c8out
     del c8dat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     c16 = lal.CreateCOMPLEX16VectorSequence(c16dat.shape[0], c16dat.shape[1])
     c16.data = c16dat
     c16out = lal.CreateCOMPLEX16VectorSequence(c16dat.shape[0], c16dat.shape[1])
@@ -668,8 +676,7 @@ def test_input_views_of_numeric_array_structs():
     del c16
     del c16out
     del c16dat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED input views of numeric array structs (LAL)", file=sys.stderr)
     vfdat = numpy.array([1.2, 2.3, 3.4, 4.5, 5.6], dtype=numpy.float32)
     vddat = numpy.array([3.4, 4.5, 5.6, 6.7, 7.8, 8.9], dtype=numpy.float64)
@@ -708,8 +715,7 @@ def test_input_views_of_numeric_array_structs():
     del vf
     del vfout
     del vfdat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     vd = lal.gsl_vector(len(vddat))
     vd.data = vddat
     vdout = lal.gsl_vector(len(vddat))
@@ -739,8 +745,7 @@ def test_input_views_of_numeric_array_structs():
     del vd
     del vdout
     del vddat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     vcf = lal.gsl_vector_complex_float(len(vcfdat))
     vcf.data = vcfdat
     vcfout = lal.gsl_vector_complex_float(len(vcfdat))
@@ -770,8 +775,7 @@ def test_input_views_of_numeric_array_structs():
     del vcf
     del vcfout
     del vcfdat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     vcd = lal.gsl_vector_complex(len(vcddat))
     vcd.data = vcddat
     vcdout = lal.gsl_vector_complex(len(vcddat))
@@ -801,8 +805,7 @@ def test_input_views_of_numeric_array_structs():
     del vcd
     del vcdout
     del vcddat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     mfdat = numpy.array([[1.2, 2.3, 3.4], [4.5, 5.6, 6.7]], dtype=numpy.float32)
     mddat = numpy.array([[3.4, 4.5], [5.6, 6.7], [7.8, 8.9]], dtype=numpy.float64)
     mcfdat = numpy.array(
@@ -840,8 +843,7 @@ def test_input_views_of_numeric_array_structs():
     del mf
     del mfout
     del mfdat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     md = lal.gsl_matrix(mddat.shape[0], mddat.shape[1])
     md.data = mddat
     mdout = lal.gsl_matrix(mddat.shape[0], mddat.shape[1])
@@ -871,8 +873,7 @@ def test_input_views_of_numeric_array_structs():
     del md
     del mdout
     del mddat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     mcf = lal.gsl_matrix_complex_float(mcfdat.shape[0], mcfdat.shape[1])
     mcf.data = mcfdat
     mcfout = lal.gsl_matrix_complex_float(mcfdat.shape[0], mcfdat.shape[1])
@@ -902,8 +903,7 @@ def test_input_views_of_numeric_array_structs():
     del mcf
     del mcfout
     del mcfdat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     mcd = lal.gsl_matrix_complex(mcddat.shape[0], mcddat.shape[1])
     mcd.data = mcddat
     mcdout = lal.gsl_matrix_complex(mcddat.shape[0], mcddat.shape[1])
@@ -933,8 +933,7 @@ def test_input_views_of_numeric_array_structs():
     del mcd
     del mcdout
     del mcddat
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED input views of numeric array structs (GSL)", file=sys.stderr)
 
     def check_input_view_type_safety(f, a, b, expect_exception):
@@ -1027,8 +1026,7 @@ def test_input_views_of_numeric_array_structs():
     del r8
     del c8
     del c16
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED input views of numeric array structs (type safety)", file=sys.stderr)
 
 
@@ -1052,8 +1050,7 @@ def test_FFT_functions_with_input_views():
     del c8inv
     del c8outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     c16inv = lal.CreateCOMPLEX16Vector(len(c16in))
     c16inv.data = c16in
     c16outv = lal.CreateCOMPLEX16Vector(len(c16in))
@@ -1065,8 +1062,7 @@ def test_FFT_functions_with_input_views():
     del c16inv
     del c16outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     r4inv = lal.CreateREAL4Vector(len(r4in))
     r4inv.data = r4in
     c8outv = lal.CreateCOMPLEX8Vector(len(r4in) // 2 + 1)
@@ -1078,8 +1074,7 @@ def test_FFT_functions_with_input_views():
     del r4inv
     del c8outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     c8inv = lal.CreateCOMPLEX8Vector(len(c8in))
     c8inv.data = c8in
     r4outv = lal.CreateREAL4Vector((len(c8in) - 1) * 2)
@@ -1091,8 +1086,7 @@ def test_FFT_functions_with_input_views():
     del c8inv
     del r4outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     r8inv = lal.CreateREAL8Vector(len(r8in))
     r8inv.data = r8in
     c16outv = lal.CreateCOMPLEX16Vector(len(r8in) // 2 + 1)
@@ -1104,8 +1098,7 @@ def test_FFT_functions_with_input_views():
     del r8inv
     del c16outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     c16inv = lal.CreateCOMPLEX16Vector(len(c16in))
     c16inv.data = c16in
     r8outv = lal.CreateREAL8Vector((len(c16in) - 1) * 2)
@@ -1117,8 +1110,7 @@ def test_FFT_functions_with_input_views():
     del c16inv
     del r8outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     r4inv = lal.CreateREAL4Vector(len(r4in))
     r4inv.data = r4in
     r4outv = lal.CreateREAL4Vector(len(r4in))
@@ -1130,8 +1122,7 @@ def test_FFT_functions_with_input_views():
     del r4inv
     del r4outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     r8inv = lal.CreateREAL8Vector(len(r8in))
     r8inv.data = r8in
     r8outv = lal.CreateREAL8Vector(len(r8in))
@@ -1143,8 +1134,7 @@ def test_FFT_functions_with_input_views():
     del r8inv
     del r8outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     r4inv = lal.CreateREAL4Vector(len(r4in))
     r4inv.data = r4in
     r4outv = lal.CreateREAL4Vector(len(r4in) // 2 + 1)
@@ -1156,8 +1146,7 @@ def test_FFT_functions_with_input_views():
     del r4inv
     del r4outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     r8inv = lal.CreateREAL8Vector(len(r8in))
     r8inv.data = r8in
     r8outv = lal.CreateREAL8Vector(len(r8in) // 2 + 1)
@@ -1169,8 +1158,7 @@ def test_FFT_functions_with_input_views():
     del r8inv
     del r8outv
     del plan
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED FFT functions with input views ...", file=sys.stderr)
 
 
@@ -1184,8 +1172,7 @@ def test_dynamic_array_of_pointers_access():
         for j in range(0, ap.data[i].length):
             assert ap.data[i].data[j] == 42 * ap.length * i + j
     del ap
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED dynamic array of pointers access", file=sys.stderr)
 
 
@@ -1203,16 +1190,14 @@ def test_typemaps_for_strings_and_double_pointers():
     del ptr_ptr
     del ptr_null_ptr
     del null_ptr_ptr
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     ptr_ptr = 0
     for i in range(1, 10):
         ptr_ptr = lal.swig_lal_test_typemaps_ptrptr(ptr_ptr)
         assert ptr_ptr is not None
         assert ptr_ptr.n == i
     del ptr_ptr
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     ptr_ptr_list = [0]
     for i in range(1, 10):
         ptr_ptr_list.append(lal.swig_lal_test_typemaps_ptrptr(ptr_ptr_list[-1]))
@@ -1223,8 +1208,7 @@ def test_typemaps_for_strings_and_double_pointers():
         assert ptr_ptr_list[-1].n == i
         del ptr_ptr_list[0]
     del ptr_ptr_list
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED typemaps for strings and double pointers", file=sys.stderr)
 
 
@@ -1247,8 +1231,7 @@ def test_tm_struct_conversions():
         utc = lal.GPSToUTC(lal.UTCToGPS(utc))
         dt = datetime.datetime(*utc[0:6])
         assert utc[6] == dt.weekday()
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED 'tm' struct conversions", file=sys.stderr)
 
 
@@ -1356,8 +1339,7 @@ def test_LIGOTimeGPS_operations():
     del t3
     del t4struct
     del t5
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED LIGOTimeGPS operations", file=sys.stderr)
     print("checking LIGOTimeGPS operations (Python specific) ...", file=sys.stderr)
 
@@ -1381,8 +1363,7 @@ def test_LIGOTimeGPS_operations():
     assert is_value_and_type(tmy / tsw, tsw / tsw, LIGOTimeGPS)
     assert lal.swig_lal_test_noptrgps(tmy) == lal.swig_lal_test_noptrgps(tsw)
     del tsw
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED LIGOTimeGPS operations (Python specific)", file=sys.stderr)
 
 
@@ -1424,8 +1405,7 @@ def test_LALUnit_operations():
     assert u1.norm() == u1
     del u1
     del u2
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED LALUnit operations", file=sys.stderr)
 
 
@@ -1444,8 +1424,7 @@ def test_Python_non_dynamic_structs():
     t = lal.LIGOTimeGPS(1234)
     t.event = "this happened"
     del t
-    locals()  # update locals() to remove lingering references
-    lal.CheckMemoryLeaks()
+    check_memory_leaks()
     print("PASSED Python non-dynamic structs", file=sys.stderr)
 
 
