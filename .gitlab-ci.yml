@@ -1257,6 +1257,9 @@ wheel:cp310-cp310-manylinux_2_28_x86_64:
 wheel:cp311-cp311-manylinux_2_28_x86_64:
   extends:
     - .wheel:manylinux_2_28_x86_64
+wheel:cp312-cp312-manylinux_2_28_x86_64:
+  extends:
+    - .wheel:manylinux_2_28_x86_64
   rules:  # reference build for this platform
     - !reference [.ci-wheels, rules]
     - !reference [.ci-merge-build, rules]
@@ -1272,6 +1275,9 @@ wheel:cp310-cp310-manylinux_2_28_aarch64:
   extends:
     - .wheel:manylinux_2_28_aarch64
 wheel:cp311-cp311-manylinux_2_28_aarch64:
+  extends:
+    - .wheel:manylinux_2_28_aarch64
+wheel:cp312-cp312-manylinux_2_28_aarch64:
   extends:
     - .wheel:manylinux_2_28_aarch64
   rules:  # reference build for this platform
@@ -1295,6 +1301,10 @@ wheel:cp311-cp311-macos-x86_64:
   extends:
      - .wheel:macos
      - .wheel:macos:x86_64
+wheel:cp312-cp312-macos-x86_64:
+  extends:
+     - .wheel:macos
+     - .wheel:macos:x86_64
   rules:  # reference build for this platform
     - !reference [.ci-wheels, rules]
     - !reference [.ci-merge-build, rules]
@@ -1313,6 +1323,10 @@ wheel:cp310-cp310-macos-arm64:
      - .wheel:macos
      - .wheel:macos:arm64
 wheel:cp311-cp311-macos-arm64:
+  extends:
+     - .wheel:macos
+     - .wheel:macos:arm64
+wheel:cp312-cp312-macos-arm64:
   extends:
      - .wheel:macos
      - .wheel:macos:arm64
@@ -1779,18 +1793,22 @@ wheel:pypi:
     - wheel:cp39-cp39-manylinux_2_28_x86_64
     - wheel:cp310-cp310-manylinux_2_28_x86_64
     - wheel:cp311-cp311-manylinux_2_28_x86_64
+    - wheel:cp312-cp312-manylinux_2_28_x86_64
     - wheel:cp38-cp38-manylinux_2_28_aarch64
     - wheel:cp39-cp39-manylinux_2_28_aarch64
     - wheel:cp310-cp310-manylinux_2_28_aarch64
     - wheel:cp311-cp311-manylinux_2_28_aarch64
+    - wheel:cp312-cp312-manylinux_2_28_aarch64
     - wheel:cp38-cp38-macos-x86_64
     - wheel:cp39-cp39-macos-x86_64
     - wheel:cp310-cp310-macos-x86_64
     - wheel:cp311-cp311-macos-x86_64
+    - wheel:cp312-cp312-macos-x86_64
     - wheel:cp38-cp38-macos-arm64
     - wheel:cp39-cp39-macos-arm64
     - wheel:cp310-cp310-macos-arm64
     - wheel:cp311-cp311-macos-arm64
+    - wheel:cp312-cp312-macos-arm64
   rules:
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
