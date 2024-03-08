@@ -104,13 +104,13 @@
 
 void
 LALCreateTwoDMesh( LALStatus          *stat,
-		   TwoDMeshNode       **mesh,
-		   TwoDMeshParamStruc *params )
+                   TwoDMeshNode       **mesh,
+                   TwoDMeshParamStruc *params )
 {
   TwoDMeshNode head;     /* dummy head node */
   TwoDMeshNode *headPtr; /* pointer to above */
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Check that input parameters exist, but that the mesh handle
@@ -118,26 +118,29 @@ LALCreateTwoDMesh( LALStatus          *stat,
      within the subroutine. */
   ASSERT( mesh, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( params, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
-  ASSERT( !(*mesh), stat, TWODMESHH_EOUT, TWODMESHH_MSGEOUT );
+  ASSERT( !( *mesh ), stat, TWODMESHH_EOUT, TWODMESHH_MSGEOUT );
 
   /* Ben wants a warning if the widthMaxFac or widthRetryFac are
      larger than is reasonable. */
-  if ( lalDebugLevel&LALWARNING ) {
+  if ( lalDebugLevel & LALWARNING ) {
     REAL4 retry = params->widthRetryFac;
-    if ( params->widthMaxFac > LAL_SQRT2 )
+    if ( params->widthMaxFac > LAL_SQRT2 ) {
       LALWarning( stat, "widthMaxFac > sqrt(2)" );
-    if ( retry > 1.0 && retry*retry > params->widthMaxFac )
+    }
+    if ( retry > 1.0 && retry * retry > params->widthMaxFac ) {
       LALWarning( stat, "widthRetryFac > sqrt(widthMaxFac)" );
+    }
   }
 
   /* Create the list using LALTwoDMesh(). */
   params->nOut = 0;
   head.next = NULL;
   headPtr = &head;
-  if ( lalDebugLevel&LALINFO )
+  if ( lalDebugLevel & LALINFO ) {
     LALInfo( stat, "Generating mesh\n" );
+  }
   TRY( LALTwoDMesh( stat->statusPtr, &headPtr, params ), stat );
-  if ( lalDebugLevel&LALINFO )
+  if ( lalDebugLevel & LALINFO )
     if ( ( params->nIn == 0 ) || ( params->nOut < params->nIn ) ) {
       XLALPrintError( "\n" );
       LALInfo( stat, "Mesh complete" );
@@ -154,29 +157,31 @@ LALCreateTwoDMesh( LALStatus          *stat,
 
 void
 LALDestroyTwoDMesh( LALStatus    *stat,
-		    TwoDMeshNode **mesh,
-		    UINT4        *nFree )
+                    TwoDMeshNode **mesh,
+                    UINT4        *nFree )
 {
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Check that all parameters exist. */
   ASSERT( mesh, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
-  if ( nFree )
+  if ( nFree ) {
     *nFree = 0;
+  }
 
   /* Free everything, recursively freeing sub-meshes if necessary. */
   while ( *mesh ) {
     UINT4 nSub = 0;             /* nodes freed from sub-meshes */
     TwoDMeshNode *last = *mesh; /* pointer to previous node */
     if ( last->subMesh ) {
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &(last->subMesh),
-			       &nSub ), stat );
+      TRY( LALDestroyTwoDMesh( stat->statusPtr, &( last->subMesh ),
+                               &nSub ), stat );
     }
     *mesh = last->next;
     LALFree( last );
-    if ( nFree )
+    if ( nFree ) {
       *nFree += nSub + 1;
+    }
   }
 
   /* If we got here without sigsegving, we're done. */
@@ -188,14 +193,14 @@ LALDestroyTwoDMesh( LALStatus    *stat,
 
 void
 LALRefineTwoDMesh( LALStatus    *stat,
-		   TwoDMeshNode *coarseMesh,
-		   TwoDMeshNode *fineMesh )
+                   TwoDMeshNode *coarseMesh,
+                   TwoDMeshNode *fineMesh )
 {
   BOOLEAN UNUSED found;      /* whether a fine point is in any coarse tile */
   UINT4 UNUSED lost = 0;     /* number of fine points not found */
   TwoDMeshNode *here; /* pointer to coarse mesh list */
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   ASSERT( coarseMesh, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
@@ -208,8 +213,8 @@ LALRefineTwoDMesh( LALStatus    *stat,
     REAL4 xFine = fineMesh->x;
     REAL4 yFine = fineMesh->y;
     REAL4 dxFine = fineMesh->dx;
-    REAL4 dyFine = 0.5*( fineMesh->dy[1] - fineMesh->dy[0] );
-    REAL4 mFine = 0.5*( fineMesh->dy[1] + fineMesh->dy[0] )/dxFine;
+    REAL4 dyFine = 0.5 * ( fineMesh->dy[1] - fineMesh->dy[0] );
+    REAL4 mFine = 0.5 * ( fineMesh->dy[1] + fineMesh->dy[0] ) / dxFine;
 
     /* For each fine mesh tile, scan through coarse mesh, and look for
        ones that overlap in their x domains. */
@@ -218,87 +223,93 @@ LALRefineTwoDMesh( LALStatus    *stat,
       REAL4 x = here->x - xFine;
       if ( fabs( x ) <= dxFine + here->dx ) {
 
-	/* Transform the coarse mesh tile into sheared coordinates
+        /* Transform the coarse mesh tile into sheared coordinates
            centred on the fine mesh tile. */
-	REAL4 y = here->y + mFine*x - yFine;
-	REAL4 dy0 = here->dy[0] + mFine*here->dx;
-	REAL4 dy1 = here->dy[1] + mFine*here->dx;
+        REAL4 y = here->y + mFine * x - yFine;
+        REAL4 dy0 = here->dy[0] + mFine * here->dx;
+        REAL4 dy1 = here->dy[1] + mFine * here->dx;
 
-	/* See if there is any possibility of overlap. */
-	if ( ( fabs( y ) <= dyFine + fabs( dy0 ) ) ||
-	     ( fabs( y ) <= dyFine + fabs( dy1 ) ) ) {
+        /* See if there is any possibility of overlap. */
+        if ( ( fabs( y ) <= dyFine + fabs( dy0 ) ) ||
+             ( fabs( y ) <= dyFine + fabs( dy1 ) ) ) {
 
-	  /* We check for overlap on the left and right sides of the
+          /* We check for overlap on the left and right sides of the
              common domain of the two tiles.  On either side, the
              coarse tile can be either completely below the fine tile
              (-1), completely above the fine tile (+1), or overlapping
              it (0).  We store this information in two INT2's,
              below. */
-	  INT2 overlap[2] = { 0, 0 };
+          INT2 overlap[2] = { 0, 0 };
 
-	  /* Compute height and slope of coarse tile in the sheared
+          /* Compute height and slope of coarse tile in the sheared
              coordinates of the fine mesh tile. */
-	  REAL4 dy = 0.5*( dy1 - dy0 );
-	  REAL4 m = 0.5*( dy1 + dy0 );
+          REAL4 dy = 0.5 * ( dy1 - dy0 );
+          REAL4 m = 0.5 * ( dy1 + dy0 );
 
-	  /* Find leftmost point of overlap of the two tiles relative
+          /* Find leftmost point of overlap of the two tiles relative
              to the coarse mesh, and test the range of the coarse-mesh
              tile at that point. */
-	  REAL4 xOver = -here->dx;
-	  if ( xOver < -x - dxFine )
-	    xOver = -x - dxFine;
-	  if ( -dy + m*xOver <= dyFine ) {
-	    if ( dy + m*xOver >= -dyFine )
-	      overlap[0] = 0;
-	    else
-	      overlap[0] = -1;
-	  } else
-	    overlap[0] = 1;
+          REAL4 xOver = -here->dx;
+          if ( xOver < -x - dxFine ) {
+            xOver = -x - dxFine;
+          }
+          if ( -dy + m * xOver <= dyFine ) {
+            if ( dy + m * xOver >= -dyFine ) {
+              overlap[0] = 0;
+            } else {
+              overlap[0] = -1;
+            }
+          } else {
+            overlap[0] = 1;
+          }
 
-	  /* Find rightmost point of overlap of the two tiles relative
+          /* Find rightmost point of overlap of the two tiles relative
              to the coarse mesh, and test the range of the coarse-mesh
              tile at that point. */
-	  if ( overlap[0] ) {
-	    xOver = here->dx;
-	    if ( xOver > -x + dxFine )
-	      xOver = -x + dxFine;
-	    if ( -dy + m*xOver <= dyFine ) {
-	      if ( dy + m*xOver >= -dyFine )
-		overlap[1] = 0;
-	      else
-		overlap[1] = -1;
-	    } else
-	      overlap[1] = 1;
-	  }
+          if ( overlap[0] ) {
+            xOver = here->dx;
+            if ( xOver > -x + dxFine ) {
+              xOver = -x + dxFine;
+            }
+            if ( -dy + m * xOver <= dyFine ) {
+              if ( dy + m * xOver >= -dyFine ) {
+                overlap[1] = 0;
+              } else {
+                overlap[1] = -1;
+              }
+            } else {
+              overlap[1] = 1;
+            }
+          }
 
-	  /* The two tiles overlap if either side has a value of 0 or
+          /* The two tiles overlap if either side has a value of 0 or
              if the two sides have opposite sign. */
-	  overlap[0] *= overlap[1];
-	  if ( !overlap[0] ) {
+          overlap[0] *= overlap[1];
+          if ( !overlap[0] ) {
 
-	    /* This is it!  Copy the fine mesh node and add it into
+            /* This is it!  Copy the fine mesh node and add it into
                the coarse submesh. */
-	    TwoDMeshNode *copy = NULL;
-	    TRY( LALTwoDNodeCopy( stat->statusPtr, &copy, fineMesh ),
-		 stat );
-	    copy->next = coarseMesh->subMesh;
-	    coarseMesh->subMesh = copy;
-	    found = 1;
-	  }
-	}
+            TwoDMeshNode *copy = NULL;
+            TRY( LALTwoDNodeCopy( stat->statusPtr, &copy, fineMesh ),
+                 stat );
+            copy->next = coarseMesh->subMesh;
+            coarseMesh->subMesh = copy;
+            found = 1;
+          }
+        }
       }
     }
     /* If no coarse tile overlapped, make a note of this. */
     if ( !found ) {
       lost++;
-      if ( lalDebugLevel&LALINFO ) {
-	LALInfo( stat, "Fine mesh tile has no overlapping coarse tile" );
-	XLALPrintError( "\tlocation: (%f,%f)\n", xFine, yFine );
+      if ( lalDebugLevel & LALINFO ) {
+        LALInfo( stat, "Fine mesh tile has no overlapping coarse tile" );
+        XLALPrintError( "\tlocation: (%f,%f)\n", xFine, yFine );
       }
     }
   }
   /* If any fine mesh tiles were lost, warn the user. */
-  if ( lalDebugLevel&LALWARNING )
+  if ( lalDebugLevel & LALWARNING )
     if ( lost > 0 ) {
       LALWarning( stat, "Some fine mesh tiles were lost" );
       XLALPrintError( "\tnumber lost = %u\n", lost );

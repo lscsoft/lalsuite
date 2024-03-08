@@ -41,7 +41,7 @@
  * fields specified in \ref GenerateSpinOrbitCW_h, and sets all of the
  * "output" fields.  If <tt>params-\>f</tt>=\c NULL, no spindown
  * modulation is performed.  If <tt>params-\>oneMinusEcc</tt> \f$ \neq0 \f$ , or if
- * <tt>params-\>rPeriNorm</tt> \f$ \times \f$ <tt>params-\>angularSpeed</tt> \f$ \geq1 \f$ 
+ * <tt>params-\>rPeriNorm</tt> \f$ \times \f$ <tt>params-\>angularSpeed</tt> \f$ \geq1 \f$
  * (faster-than-light speed at periapsis), an error is returned.
  *
  * In the <tt>*output</tt> structure, the field <tt>output-\>h</tt> is
@@ -53,7 +53,7 @@
  * ### Algorithm ###
  *
  * For parabolic orbits, we combine \eqref{eq_spinorbit-tr},
- * \eqref{eq_spinorbit-t}, and \eqref{eq_spinorbit-upsilon} to get \f$ t_r \f$ 
+ * \eqref{eq_spinorbit-t}, and \eqref{eq_spinorbit-upsilon} to get \f$ t_r \f$
  * directly as a function of \f$ E \f$ :
  * \f{equation}{
  * \label{eq_cubic-e}
@@ -114,7 +114,7 @@
  * \f}
  * where we have explicitly written \f$ \sinh^{-1} \f$ in terms of functions in
  * \c math.h.  Once \f$ E \f$ is found, we can compute
- * \f$ t=E(12+E^2)/(12\dot{\upsilon}_p) \f$ (where again \f$ 1/12\dot{\upsilon}_p \f$ 
+ * \f$ t=E(12+E^2)/(12\dot{\upsilon}_p) \f$ (where again \f$ 1/12\dot{\upsilon}_p \f$
  * can be precomputed), and hence \f$ f \f$ and \f$ \phi \f$ via
  * \eqref{eq_taylorcw-freq} and \eqref{eq_taylorcw-phi}.  The
  * frequency \f$ f \f$ must then be divided by the Doppler factor:
@@ -137,14 +137,14 @@
  * \f]
  * where \f$ |C| \f$ is the maximum magnitude of the variable \f$ C \f$ over the
  * course of the computation, \f$ f_0T \f$ is the approximate total number of
- * wave cycles over the computation, and \f$ \epsilon\approx2\times10^{-16} \f$ 
+ * wave cycles over the computation, and \f$ \epsilon\approx2\times10^{-16} \f$
  * is the fractional precision of \c REAL8 arithmetic.  If this
  * estimate exceeds 0.01 cycles, a warning is issued.
  */
 void
 LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
-				 PulsarCoherentGW            *output,
-				 SpinOrbitCWParamStruc *params )
+                                 PulsarCoherentGW            *output,
+                                 SpinOrbitCWParamStruc *params )
 {
   UINT4 n, i;              /* number of and index over samples */
   UINT4 nSpin = 0, j;      /* number of and index over spindown terms */
@@ -173,128 +173,132 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter and output structures exist. */
   ASSERT( params, stat, GENERATESPINORBITCWH_ENUL,
-	  GENERATESPINORBITCWH_MSGENUL );
+          GENERATESPINORBITCWH_MSGENUL );
   ASSERT( output, stat, GENERATESPINORBITCWH_ENUL,
-	  GENERATESPINORBITCWH_MSGENUL );
+          GENERATESPINORBITCWH_MSGENUL );
 
   /* Make sure output fields don't exist. */
   ASSERT( !( output->a ), stat, GENERATESPINORBITCWH_EOUT,
-	  GENERATESPINORBITCWH_MSGEOUT );
+          GENERATESPINORBITCWH_MSGEOUT );
   ASSERT( !( output->f ), stat, GENERATESPINORBITCWH_EOUT,
-	  GENERATESPINORBITCWH_MSGEOUT );
+          GENERATESPINORBITCWH_MSGEOUT );
   ASSERT( !( output->phi ), stat, GENERATESPINORBITCWH_EOUT,
-	  GENERATESPINORBITCWH_MSGEOUT );
+          GENERATESPINORBITCWH_MSGEOUT );
   ASSERT( !( output->shift ), stat, GENERATESPINORBITCWH_EOUT,
-	  GENERATESPINORBITCWH_MSGEOUT );
+          GENERATESPINORBITCWH_MSGEOUT );
 
   /* If Taylor coeficients are specified, make sure they exist. */
   if ( params->f ) {
     ASSERT( params->f->data, stat, GENERATESPINORBITCWH_ENUL,
-	    GENERATESPINORBITCWH_MSGENUL );
+            GENERATESPINORBITCWH_MSGENUL );
     nSpin = params->f->length;
     fSpin = params->f->data;
   }
 
   /* Set up some constants (to avoid repeated calculation or
      dereferencing), and make sure they have acceptable values. */
-  vp = params->rPeriNorm*params->angularSpeed;
-  vDot6 = 6.0*params->angularSpeed;
+  vp = params->rPeriNorm * params->angularSpeed;
+  vDot6 = 6.0 * params->angularSpeed;
   n = params->length;
   dt = params->deltaT;
   f0 = fPrev = params->f0;
   if ( params->oneMinusEcc != 0.0 ) {
     ABORT( stat, GENERATESPINORBITCWH_EECC,
-	   GENERATESPINORBITCWH_MSGEECC );
+           GENERATESPINORBITCWH_MSGEECC );
   }
   if ( vp >= 1.0 ) {
     ABORT( stat, GENERATESPINORBITCWH_EFTL,
-	   GENERATESPINORBITCWH_MSGEFTL );
+           GENERATESPINORBITCWH_MSGEFTL );
   }
   if ( vp <= 0.0 || dt <= 0.0 || f0 <= 0.0 || vDot6 <= 0.0 ||
        n == 0 ) {
     ABORT( stat, GENERATESPINORBITCWH_ESGN,
-	   GENERATESPINORBITCWH_MSGESGN );
+           GENERATESPINORBITCWH_MSGESGN );
   }
   if ( lalDebugLevel & LALWARNING ) {
-    if ( f0*n*dt*vp*vp > 0.5 )
+    if ( f0 * n * dt * vp * vp > 0.5 )
       LALWarning( stat, "Orbit may have significant relativistic"
-		  " effects that are not included" );
+                  " effects that are not included" );
   }
 
   /* Compute offset between time series epoch and periapsis, and
      betweem periapsis and spindown reference epoch. */
-  tpOff = (REAL8)( params->orbitEpoch.gpsSeconds -
-		   params->epoch.gpsSeconds );
-  tpOff += 1.0e-9 * (REAL8)( params->orbitEpoch.gpsNanoSeconds -
-			     params->epoch.gpsNanoSeconds );
+  tpOff = ( REAL8 )( params->orbitEpoch.gpsSeconds -
+                     params->epoch.gpsSeconds );
+  tpOff += 1.0e-9 * ( REAL8 )( params->orbitEpoch.gpsNanoSeconds -
+                               params->epoch.gpsNanoSeconds );
   //spinOff = (REAL8)( params->orbitEpoch.gpsSeconds -
   //                   params->spinEpoch.gpsSeconds );
   //spinOff += 1.0e-9 * (REAL8)( params->orbitEpoch.gpsNanoSeconds -
   //                             params->spinEpoch.gpsNanoSeconds );
 
   /* Set up some other constants. */
-  twopif0 = f0*LAL_TWOPI;
+  twopif0 = f0 * LAL_TWOPI;
   phi0 = params->phi0;
   argument = params->omega;
-  oneBy12vDot = 0.5/vDot6;
-  fourCosOmega = 4.0*cos( argument );
-  twoSinOmega = 2.0*sin( argument );
-  vpCosOmega = 0.25*vp*fourCosOmega;
-  vpSinOmega = 0.5*vp*twoSinOmega;
-  vpSinOmega2 = vpSinOmega*vpSinOmega;
-  pBy3 = sqrt( 4.0*( 1.0 + vpCosOmega ) - vpSinOmega2 );
-  p32 = 1.0/( pBy3*pBy3*pBy3 );
-  c0 = p32*( vpSinOmega*( 6.0*vpCosOmega - 12.0 + vpSinOmega2 ) -
-	     tpOff*vDot6 );
-  dc = p32*vDot6*dt;
-  e0 = 3.0*vpSinOmega;
-  de = 2.0*pBy3;
+  oneBy12vDot = 0.5 / vDot6;
+  fourCosOmega = 4.0 * cos( argument );
+  twoSinOmega = 2.0 * sin( argument );
+  vpCosOmega = 0.25 * vp * fourCosOmega;
+  vpSinOmega = 0.5 * vp * twoSinOmega;
+  vpSinOmega2 = vpSinOmega * vpSinOmega;
+  pBy3 = sqrt( 4.0 * ( 1.0 + vpCosOmega ) - vpSinOmega2 );
+  p32 = 1.0 / ( pBy3 * pBy3 * pBy3 );
+  c0 = p32 * ( vpSinOmega * ( 6.0 * vpCosOmega - 12.0 + vpSinOmega2 ) -
+               tpOff * vDot6 );
+  dc = p32 * vDot6 * dt;
+  e0 = 3.0 * vpSinOmega;
+  de = 2.0 * pBy3;
 
   /* Check whether REAL8 precision is good enough. */
   if ( lalDebugLevel & LALWARNING ) {
-    REAL8 x = fabs( c0 + n*dc ); /* a temporary computation variable */
-    if ( x < fabs( c0 ) )
+    REAL8 x = fabs( c0 + n * dc ); /* a temporary computation variable */
+    if ( x < fabs( c0 ) ) {
       x = fabs( c0 );
-    x = 6.0 + log( x + sqrt( x*x + 1.0 ) );
-    if ( LAL_REAL8_EPS*f0*dt*n*x > 0.01 )
+    }
+    x = 6.0 + log( x + sqrt( x * x + 1.0 ) );
+    if ( LAL_REAL8_EPS * f0 * dt * n * x > 0.01 )
       LALWarning( stat, "REAL8 arithmetic may not have sufficient"
-		  " precision for this orbit" );
+                  " precision for this orbit" );
   }
 
   /* Allocate output structures. */
-  if ( ( output->a = (REAL4TimeVectorSeries *)
-	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
+  if ( ( output->a = ( REAL4TimeVectorSeries * )
+                     LALMalloc( sizeof( REAL4TimeVectorSeries ) ) ) == NULL ) {
     ABORT( stat, GENERATESPINORBITCWH_EMEM,
-	   GENERATESPINORBITCWH_MSGEMEM );
+           GENERATESPINORBITCWH_MSGEMEM );
   }
-  memset( output->a, 0, sizeof(REAL4TimeVectorSeries) );
-  if ( ( output->f = (REAL4TimeSeries *)
-	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
-    LALFree( output->a ); output->a = NULL;
+  memset( output->a, 0, sizeof( REAL4TimeVectorSeries ) );
+  if ( ( output->f = ( REAL4TimeSeries * )
+                     LALMalloc( sizeof( REAL4TimeSeries ) ) ) == NULL ) {
+    LALFree( output->a );
+    output->a = NULL;
     ABORT( stat, GENERATESPINORBITCWH_EMEM,
-	   GENERATESPINORBITCWH_MSGEMEM );
+           GENERATESPINORBITCWH_MSGEMEM );
   }
-  memset( output->f, 0, sizeof(REAL4TimeSeries) );
-  if ( ( output->phi = (REAL8TimeSeries *)
-	 LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
-    LALFree( output->a ); output->a = NULL;
-    LALFree( output->f ); output->f = NULL;
+  memset( output->f, 0, sizeof( REAL4TimeSeries ) );
+  if ( ( output->phi = ( REAL8TimeSeries * )
+                       LALMalloc( sizeof( REAL8TimeSeries ) ) ) == NULL ) {
+    LALFree( output->a );
+    output->a = NULL;
+    LALFree( output->f );
+    output->f = NULL;
     ABORT( stat, GENERATESPINORBITCWH_EMEM,
-	   GENERATESPINORBITCWH_MSGEMEM );
+           GENERATESPINORBITCWH_MSGEMEM );
   }
-  memset( output->phi, 0, sizeof(REAL8TimeSeries) );
+  memset( output->phi, 0, sizeof( REAL8TimeSeries ) );
 
   /* Set output structure metadata fields. */
   output->position = params->position;
   output->psi = params->psi;
   output->a->epoch = output->f->epoch = output->phi->epoch
-    = params->epoch;
-  output->a->deltaT = n*params->deltaT;
+                                        = params->epoch;
+  output->a->deltaT = n * params->deltaT;
   output->f->deltaT = output->phi->deltaT = params->deltaT;
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
@@ -306,34 +310,46 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
   /* Allocate phase and frequency arrays. */
   LALSCreateVector( stat->statusPtr, &( output->f->data ), n );
   BEGINFAIL( stat ) {
-    LALFree( output->a );   output->a = NULL;
-    LALFree( output->f );   output->f = NULL;
-    LALFree( output->phi ); output->phi = NULL;
-  } ENDFAIL( stat );
+    LALFree( output->a );
+    output->a = NULL;
+    LALFree( output->f );
+    output->f = NULL;
+    LALFree( output->phi );
+    output->phi = NULL;
+  }
+  ENDFAIL( stat );
   LALDCreateVector( stat->statusPtr, &( output->phi->data ), n );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
-	 stat );
-    LALFree( output->a );   output->a = NULL;
-    LALFree( output->f );   output->f = NULL;
-    LALFree( output->phi ); output->phi = NULL;
-  } ENDFAIL( stat );
+         stat );
+    LALFree( output->a );
+    output->a = NULL;
+    LALFree( output->f );
+    output->f = NULL;
+    LALFree( output->phi );
+    output->phi = NULL;
+  }
+  ENDFAIL( stat );
 
   /* Allocate and fill amplitude array. */
   {
     CreateVectorSequenceIn in; /* input to create output->a */
     in.length = 2;
     in.vectorLength = 2;
-    LALSCreateVectorSequence( stat->statusPtr, &(output->a->data), &in );
+    LALSCreateVectorSequence( stat->statusPtr, &( output->a->data ), &in );
     BEGINFAIL( stat ) {
       TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
-	   stat );
+           stat );
       TRY( LALDDestroyVector( stat->statusPtr, &( output->phi->data ) ),
-	   stat );
-      LALFree( output->a );   output->a = NULL;
-      LALFree( output->f );   output->f = NULL;
-      LALFree( output->phi ); output->phi = NULL;
-    } ENDFAIL( stat );
+           stat );
+      LALFree( output->a );
+      output->a = NULL;
+      LALFree( output->f );
+      output->f = NULL;
+      LALFree( output->phi );
+      output->phi = NULL;
+    }
+    ENDFAIL( stat );
     output->a->data->data[0] = output->a->data->data[2] = params->aPlus;
     output->a->data->data[1] = output->a->data->data[3] = params->aCross;
   }
@@ -344,33 +360,35 @@ LALGenerateParabolicSpinOrbitCW( LALStatus             *stat,
   for ( i = 0; i < n; i++ ) {
 
     /* Compute emission time. */
-    c = c0 + dc*i;
-    if ( c > 0 )
-      e = e0 + de*sinh( log( c + sqrt( c*c + 1.0 ) )/3.0 );
-    else
-      e = e0 + de*sinh( -log( -c + sqrt( c*c + 1.0 ) )/3.0 );
-    e2 = e*e;
-    phi = t = tPow = oneBy12vDot*e*( 12.0 + e2 );
+    c = c0 + dc * i;
+    if ( c > 0 ) {
+      e = e0 + de * sinh( log( c + sqrt( c * c + 1.0 ) ) / 3.0 );
+    } else {
+      e = e0 + de * sinh( -log( -c + sqrt( c * c + 1.0 ) ) / 3.0 );
+    }
+    e2 = e * e;
+    phi = t = tPow = oneBy12vDot * e * ( 12.0 + e2 );
 
     /* Compute source emission phase and frequency. */
     f = 1.0;
     for ( j = 0; j < nSpin; j++ ) {
-      f += fSpin[j]*tPow;
-      phi += fSpin[j]*( tPow*=t )/( j + 2.0 );
+      f += fSpin[j] * tPow;
+      phi += fSpin[j] * ( tPow *= t ) / ( j + 2.0 );
     }
 
     /* Appy frequency Doppler shift. */
-    f *= f0 / ( 1.0 + vp*( fourCosOmega - e*twoSinOmega )
-		/( 4.0 + e2 ) );
+    f *= f0 / ( 1.0 + vp * ( fourCosOmega - e * twoSinOmega )
+                / ( 4.0 + e2 ) );
     phi *= twopif0;
-    if ( fabs( f - fPrev ) > df )
+    if ( fabs( f - fPrev ) > df ) {
       df = fabs( f - fPrev );
-    *(fData++) = fPrev = f;
-    *(phiData++) = phi + phi0;
+    }
+    *( fData++ ) = fPrev = f;
+    *( phiData++ ) = phi + phi0;
   }
 
   /* Set output field and return. */
-  params->dfdt = df*dt;
+  params->dfdt = df * dt;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }

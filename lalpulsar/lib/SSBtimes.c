@@ -39,15 +39,15 @@
 /*---------- Global variables ----------*/
 
 const UserChoices SSBprecisionChoices = {
-  { SSBPREC_NEWTONIAN,		"newtonian" },
-  { SSBPREC_RELATIVISTIC,	"relativistic" },
-  { SSBPREC_RELATIVISTICOPT,  	"relativisticopt" },
+  { SSBPREC_NEWTONIAN,          "newtonian" },
+  { SSBPREC_RELATIVISTIC,       "relativistic" },
+  { SSBPREC_RELATIVISTICOPT,    "relativisticopt" },
   { SSBPREC_DMOFF,              "DMoff"},
 };
 
 /*---------- internal prototypes ----------*/
 
-static double gsl_E_solver ( double E, void *p );
+static double gsl_E_solver( double E, void *p );
 
 struct E_solver_params {
   double A, B, x0;
@@ -74,7 +74,7 @@ struct E_solver_params {
   \newcommand{\fdot}{\dot{f}}
   \f]
 
- * For given binary-orbital parameters in \a Doppler, compute the source-frame emission times \f$ \tEM(\tDet) \f$ 
+ * For given binary-orbital parameters in \a Doppler, compute the source-frame emission times \f$ \tEM(\tDet) \f$
  * of CW wavefronts arriving at the detector frame at times \f$ \tDet \f$ .
  * The input to this function should contain the wavefront arrival times \f$ \tSSB(\tDet) \f$ in the solar-system barycenter (SSB) frame,
  * the additional time differences due to the binary orbital motion are then added by this function.
@@ -256,139 +256,133 @@ which results in the derivative of \eqref{eq:12} to be expressible as
 \f}
 */
 int
-XLALAddBinaryTimes ( SSBtimes **tSSBOut,			//!< [out] reference-time offsets in emission frame: \f$ \tEM(\tDet)-\tRef \f$ and \f$ d\tEM/d\tDet \f$ 
-                     const SSBtimes *tSSBIn,			//!< [in] reference-time offsets in SSB frame: \f$ \tSSB(\tDet)-\tRef \f$ and \f$ d\tSSB/d\tDet \f$ 
-                     const PulsarDopplerParams *Doppler		//!< [in] pulsar Doppler parameters, includes binary orbit parameters */
-                     )
+XLALAddBinaryTimes( SSBtimes **tSSBOut,                         //!< [out] reference-time offsets in emission frame: \f$ \tEM(\tDet)-\tRef \f$ and \f$ d\tEM/d\tDet \f$
+                    const SSBtimes *tSSBIn,                    //!< [in] reference-time offsets in SSB frame: \f$ \tSSB(\tDet)-\tRef \f$ and \f$ d\tSSB/d\tDet \f$
+                    const PulsarDopplerParams *Doppler         //!< [in] pulsar Doppler parameters, includes binary orbit parameters */
+                  )
 {
-  XLAL_CHECK ( tSSBIn != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSB'\n" );
-  XLAL_CHECK ( tSSBIn->DeltaT != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSBIn->DeltaT'\n" );
-  XLAL_CHECK ( tSSBIn->Tdot != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSBIn->Tdot'\n" );
+  XLAL_CHECK( tSSBIn != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSB'\n" );
+  XLAL_CHECK( tSSBIn->DeltaT != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSBIn->DeltaT'\n" );
+  XLAL_CHECK( tSSBIn->Tdot != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSBIn->Tdot'\n" );
 
-  XLAL_CHECK ( Doppler != NULL, XLAL_EINVAL, "Invalid NULL input 'Doppler'\n");
-  XLAL_CHECK ( Doppler->asini >= 0, XLAL_EINVAL );
+  XLAL_CHECK( Doppler != NULL, XLAL_EINVAL, "Invalid NULL input 'Doppler'\n" );
+  XLAL_CHECK( Doppler->asini >= 0, XLAL_EINVAL );
 
-  UINT4 numSteps = tSSBIn->DeltaT->length;		/* number of timesteps */
-  XLAL_CHECK (tSSBIn->Tdot->length == numSteps, XLAL_EINVAL,
-                   "Length tSSBIn->DeltaT = %d, while tSSBIn->Tdot = %d\n", numSteps, tSSBIn->Tdot->length );
+  UINT4 numSteps = tSSBIn->DeltaT->length;              /* number of timesteps */
+  XLAL_CHECK( tSSBIn->Tdot->length == numSteps, XLAL_EINVAL,
+              "Length tSSBIn->DeltaT = %d, while tSSBIn->Tdot = %d\n", numSteps, tSSBIn->Tdot->length );
 
   SSBtimes *binaryTimes;
   // ----- prepare output timeseries: either allocate or re-use existing
-  if ( (*tSSBOut) == NULL )	// creating new output vector
-    {
-      XLAL_CHECK ( (binaryTimes = XLALDuplicateSSBtimes ( tSSBIn )) != NULL, XLAL_EFUNC );
-    }
-  else if ( (*tSSBOut) == tSSBIn )	// input==output vector
-    {
-      binaryTimes = (*tSSBOut);
-    }
-  else // input vector given, but not identical to output vector
-    {
-      binaryTimes = (*tSSBOut);
-      // need to do a few more sanity checks
-      XLAL_CHECK ( binaryTimes->DeltaT->length == numSteps, XLAL_EINVAL,
-                   "Length (*tSSBOut)->DeltaT = %d, while tSSBIn->DeltaT = %d\n", binaryTimes->DeltaT->length, numSteps );
-      XLAL_CHECK ( binaryTimes->Tdot->length == numSteps, XLAL_EINVAL,
-                        "Length tSSBOut->Tdot = %d, while tSSBIn->Tdot = %d\n", binaryTimes->Tdot->length, numSteps );
-      // ... and copy the vector contents from the input SSB vector
-      binaryTimes->refTime = tSSBIn->refTime;
-      memcpy ( binaryTimes->DeltaT->data, tSSBIn->DeltaT->data, numSteps * sizeof(binaryTimes->DeltaT->data[0]) );
-      memcpy ( binaryTimes->Tdot->data,   tSSBIn->Tdot->data,   numSteps * sizeof(binaryTimes->Tdot->data[0]) );
-    } // re-using input vector
+  if ( ( *tSSBOut ) == NULL ) { // creating new output vector
+    XLAL_CHECK( ( binaryTimes = XLALDuplicateSSBtimes( tSSBIn ) ) != NULL, XLAL_EFUNC );
+  } else if ( ( *tSSBOut ) == tSSBIn ) { // input==output vector
+    binaryTimes = ( *tSSBOut );
+  } else { // input vector given, but not identical to output vector
+    binaryTimes = ( *tSSBOut );
+    // need to do a few more sanity checks
+    XLAL_CHECK( binaryTimes->DeltaT->length == numSteps, XLAL_EINVAL,
+                "Length (*tSSBOut)->DeltaT = %d, while tSSBIn->DeltaT = %d\n", binaryTimes->DeltaT->length, numSteps );
+    XLAL_CHECK( binaryTimes->Tdot->length == numSteps, XLAL_EINVAL,
+                "Length tSSBOut->Tdot = %d, while tSSBIn->Tdot = %d\n", binaryTimes->Tdot->length, numSteps );
+    // ... and copy the vector contents from the input SSB vector
+    binaryTimes->refTime = tSSBIn->refTime;
+    memcpy( binaryTimes->DeltaT->data, tSSBIn->DeltaT->data, numSteps * sizeof( binaryTimes->DeltaT->data[0] ) );
+    memcpy( binaryTimes->Tdot->data,   tSSBIn->Tdot->data,   numSteps * sizeof( binaryTimes->Tdot->data[0] ) );
+  } // re-using input vector
 
   /* ----- convenience variables */
-  REAL8 Porb 	= Doppler->period;		/* binary orbital period */
-  REAL8 e 	= Doppler->ecc;			/* the eccentricity */
-  REAL8 sqrtome2= sqrt(1.0 - e*e);
-  REAL8 asini 	= Doppler->asini;		/* the projected orbital semimajor axis */
-  REAL8 argp	= Doppler->argp;
-  REAL8 sinw 	= sin ( argp );		/* the sin and cos of the argument of periapsis */
-  REAL8 cosw 	= cos ( argp );
-  REAL8 n    	= LAL_TWOPI / Porb;
+  REAL8 Porb    = Doppler->period;              /* binary orbital period */
+  REAL8 e       = Doppler->ecc;                 /* the eccentricity */
+  REAL8 sqrtome2 = sqrt( 1.0 - e * e );
+  REAL8 asini   = Doppler->asini;               /* the projected orbital semimajor axis */
+  REAL8 argp    = Doppler->argp;
+  REAL8 sinw    = sin( argp );          /* the sin and cos of the argument of periapsis */
+  REAL8 cosw    = cos( argp );
+  REAL8 n       = LAL_TWOPI / Porb;
   REAL8 Freq    = Doppler->fkdot[0];
 
-  REAL8 refTimeREAL8 = XLALGPSGetREAL8 ( &tSSBIn->refTime );
+  REAL8 refTimeREAL8 = XLALGPSGetREAL8( &tSSBIn->refTime );
 
   // compute time-independent coefficients for tSSB(E) equation
-  REAL8 A = n * asini * cosw * sqrtome2 - e;  	// see Eq.(eq:defA)
-  REAL8 B = n * asini * sinw;			// see Eq.(eq:defB)
-  REAL8 tp = XLALGPSGetREAL8 ( &(Doppler->tp) );
-  REAL8 Tp = tp + asini * sinw * (1 - e);	// see Eq.(eq:defTPeri)
+  REAL8 A = n * asini * cosw * sqrtome2 - e;    // see Eq.(eq:defA)
+  REAL8 B = n * asini * sinw;                   // see Eq.(eq:defB)
+  REAL8 tp = XLALGPSGetREAL8( &( Doppler->tp ) );
+  REAL8 Tp = tp + asini * sinw * ( 1 - e );     // see Eq.(eq:defTPeri)
 
-  REAL8 maxPhaseErr = 1e-3;			// maximal allowed CW phase-error due to error in E
-  REAL8 epsabs = maxPhaseErr / ( Freq * Porb);  // absolute root-finding accuracy required on E
-  REAL8 epsrel = 0;				// no constraint on relative accuracy
+  REAL8 maxPhaseErr = 1e-3;                     // maximal allowed CW phase-error due to error in E
+  REAL8 epsabs = maxPhaseErr / ( Freq * Porb ); // absolute root-finding accuracy required on E
+  REAL8 epsrel = 0;                             // no constraint on relative accuracy
 
   /* loop over the SFTs i */
-  for ( UINT4 i = 0; i < numSteps; i++ )
+  for ( UINT4 i = 0; i < numSteps; i++ ) {
+    REAL8 tSSB_i    = refTimeREAL8 + tSSBIn->DeltaT->data[i]; // SSB time for the current SFT midpoint
+    REAL8 fracOrb_i = fmod( tSSB_i - Tp, Porb ) / Porb;       // fractional orbit
+    if ( fracOrb_i < 0 ) {
+      fracOrb_i += 1; // enforce fracOrb to be within [0, 1)
+    }
+    REAL8 x0 = fracOrb_i * LAL_TWOPI;
+    REAL8 E_i;              // eccentric anomaly at emission of the wavefront arriving in SSB at tSSB
     {
-      REAL8 tSSB_i    = refTimeREAL8 + tSSBIn->DeltaT->data[i];	// SSB time for the current SFT midpoint
-      REAL8 fracOrb_i = fmod ( tSSB_i - Tp, Porb ) / Porb; 	// fractional orbit
-      if ( fracOrb_i < 0 ) {
-        fracOrb_i += 1;	// enforce fracOrb to be within [0, 1)
-      }
-      REAL8 x0 = fracOrb_i * LAL_TWOPI;
-      REAL8 E_i;              // eccentric anomaly at emission of the wavefront arriving in SSB at tSSB
-      { // ---------- use GSL for the root-finding
-        const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
-        gsl_root_fsolver *s = gsl_root_fsolver_alloc(T);
-        REAL8 E_lo = 0, E_hi = LAL_TWOPI;	// gauge-choice mod (2pi)
-        gsl_function F;
-        struct E_solver_params pars = {A, B, x0};
-        F.function = &gsl_E_solver;
-        F.params = &pars;
+      // ---------- use GSL for the root-finding
+      const gsl_root_fsolver_type *T = gsl_root_fsolver_brent;
+      gsl_root_fsolver *s = gsl_root_fsolver_alloc( T );
+      REAL8 E_lo = 0, E_hi = LAL_TWOPI;       // gauge-choice mod (2pi)
+      gsl_function F;
+      struct E_solver_params pars = {A, B, x0};
+      F.function = &gsl_E_solver;
+      F.params = &pars;
 
-        XLAL_CHECK ( gsl_root_fsolver_set(s, &F, E_lo, E_hi) == 0, XLAL_EFAILED );
+      XLAL_CHECK( gsl_root_fsolver_set( s, &F, E_lo, E_hi ) == 0, XLAL_EFAILED );
 
-        int max_iter = 100;
-        int iter = 0;
-        int status;
-        do
-          {
-            iter++;
-            status = gsl_root_fsolver_iterate(s);
-            XLAL_CHECK ( (status == GSL_SUCCESS) || (status == GSL_CONTINUE), XLAL_EFAILED );
-            E_i = gsl_root_fsolver_root(s);
-            E_lo = gsl_root_fsolver_x_lower (s);
-            E_hi = gsl_root_fsolver_x_upper (s);
-            status = gsl_root_test_interval ( E_lo, E_hi, epsabs, epsrel );
+      int max_iter = 100;
+      int iter = 0;
+      int status;
+      do {
+        iter++;
+        status = gsl_root_fsolver_iterate( s );
+        XLAL_CHECK( ( status == GSL_SUCCESS ) || ( status == GSL_CONTINUE ), XLAL_EFAILED );
+        E_i = gsl_root_fsolver_root( s );
+        E_lo = gsl_root_fsolver_x_lower( s );
+        E_hi = gsl_root_fsolver_x_upper( s );
+        status = gsl_root_test_interval( E_lo, E_hi, epsabs, epsrel );
 
-          } while ( (status == GSL_CONTINUE) && (iter < max_iter) );
+      } while ( ( status == GSL_CONTINUE ) && ( iter < max_iter ) );
 
-        XLAL_CHECK ( status == GSL_SUCCESS, XLAL_EMAXITER, "Eccentric anomaly: failed to converge to epsabs=%g within %d iterations\n", epsabs, max_iter );
-        gsl_root_fsolver_free(s);
-      } // gsl-root finding block
+      XLAL_CHECK( status == GSL_SUCCESS, XLAL_EMAXITER, "Eccentric anomaly: failed to converge to epsabs=%g within %d iterations\n", epsabs, max_iter );
+      gsl_root_fsolver_free( s );
+    } // gsl-root finding block
 
-      // use this value of E(tSSB) to compute the additional binary time delay
-      REAL8 sinE = sin(E_i);
-      REAL8 cosE = cos(E_i);
+    // use this value of E(tSSB) to compute the additional binary time delay
+    REAL8 sinE = sin( E_i );
+    REAL8 cosE = cos( E_i );
 
-      REAL8 R 	    	= asini * ( sinw * ( cosE - e ) + cosw * sinE * sqrtome2 );	// see Eq.(eq:R_E)
-      REAL8 dtEM_dtSSB 	= ( 1.0 - e * cosE ) / ( 1.0 + A * cosE - B * sinE );		// see Eq.(eq:dt_EMdtSSB)
+    REAL8 R           = asini * ( sinw * ( cosE - e ) + cosw * sinE * sqrtome2 );     // see Eq.(eq:R_E)
+    REAL8 dtEM_dtSSB  = ( 1.0 - e * cosE ) / ( 1.0 + A * cosE - B * sinE );           // see Eq.(eq:dt_EMdtSSB)
 
-      binaryTimes->DeltaT->data[i] -= R;
-      binaryTimes->Tdot->data[i]   *= dtEM_dtSSB;
+    binaryTimes->DeltaT->data[i] -= R;
+    binaryTimes->Tdot->data[i]   *= dtEM_dtSSB;
 
-    } /* for i < numSteps */
+  } /* for i < numSteps */
 
   // pass back output SSB timings
-  (*tSSBOut) = binaryTimes;
+  ( *tSSBOut ) = binaryTimes;
 
   return XLAL_SUCCESS;
 
 } /* XLALAddBinaryTimes() */
 
-/** Function implementing \eqref{eq:E_tSSB} to be solved via numerical root-finder for \f$ E(\tSSB) \f$ 
+/** Function implementing \eqref{eq:E_tSSB} to be solved via numerical root-finder for \f$ E(\tSSB) \f$
  */
 static double
-gsl_E_solver ( REAL8 E, void *par )
+gsl_E_solver( REAL8 E, void *par )
 {
-  struct E_solver_params *params = (struct E_solver_params*) par;
+  struct E_solver_params *params = ( struct E_solver_params * ) par;
   double A  = params->A;
   double B  = params->B;
   double x0 = params->x0;
 
-  double diff = - x0 + ( E + A * sin(E) + B * ( cos(E) - 1.0 ) );
+  double diff = - x0 + ( E + A * sin( E ) + B * ( cos( E ) - 1.0 ) );
 
   return diff;
 } // gsl_E_solver()
@@ -397,7 +391,7 @@ gsl_E_solver ( REAL8 E, void *par )
 /**
  * Multi-IFO version of XLALAddBinaryTimes().
 
- * For given binary-orbital parameters in \a Doppler, compute the source-frame emission times \f$ \tEM(\tDet) \f$ 
+ * For given binary-orbital parameters in \a Doppler, compute the source-frame emission times \f$ \tEM(\tDet) \f$
  * of CW wavefronts arriving at the detector frame at times \f$ \tDet \f$ .
  * The input to this function should contain the wavefront arrival times \f$ \tSSB(\tDet) \f$ in the solar-system barycenter (SSB) frame,
  * the additional time differences due to the binary orbital motion are then added by this function.
@@ -416,41 +410,37 @@ gsl_E_solver ( REAL8 E, void *par )
  * this is quite confusing right now and the corresponding variable-names and documentation should be fixed ASAP.
  */
 int
-XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut,		/**< [out] output SSB times */
-                          const MultiSSBtimes *multiSSBIn,	/**< [in] SSB-timings for all input detector-state series */
-                          const PulsarDopplerParams *Doppler	/**< [in] pulsar Doppler parameters, includes binary orbit parameters */
-                          )
+XLALAddMultiBinaryTimes( MultiSSBtimes **multiSSBOut,           /**< [out] output SSB times */
+                         const MultiSSBtimes *multiSSBIn,      /**< [in] SSB-timings for all input detector-state series */
+                         const PulsarDopplerParams *Doppler    /**< [in] pulsar Doppler parameters, includes binary orbit parameters */
+                       )
 {
   /* check input */
-  XLAL_CHECK ( multiSSBIn != NULL, XLAL_EINVAL, "Invalid NULL input 'multiSSB'\n");
-  XLAL_CHECK ( Doppler != NULL, XLAL_EINVAL, "Invalid NULL input 'Doppler'\n");
-  XLAL_CHECK ( Doppler->asini >= 0, XLAL_EINVAL );
+  XLAL_CHECK( multiSSBIn != NULL, XLAL_EINVAL, "Invalid NULL input 'multiSSB'\n" );
+  XLAL_CHECK( Doppler != NULL, XLAL_EINVAL, "Invalid NULL input 'Doppler'\n" );
+  XLAL_CHECK( Doppler->asini >= 0, XLAL_EINVAL );
 
   UINT4 numDetectors = multiSSBIn->length;
 
   MultiSSBtimes *multiBinaryTimes;
   // ----- prepare output timeseries: either allocate or re-use existing
-  if ( (*multiSSBOut) == NULL )	// creating new output vector
-    {
-      XLAL_CHECK ( (multiBinaryTimes = XLALDuplicateMultiSSBtimes ( multiSSBIn )) != NULL, XLAL_EFUNC );
-    }
-  else // input vector given
-    {
-      multiBinaryTimes = (*multiSSBOut);
-      XLAL_CHECK ( multiBinaryTimes->length == numDetectors, XLAL_EINVAL,
-                   "Inconsistent length (*multiSSBOut)->length = %d, while multiSSBIn->length = %d\n", (*multiSSBOut)->length, numDetectors );
-      // we'll leave all other sanity-checks to XLALAddBinaryTimes() calls
-    }
+  if ( ( *multiSSBOut ) == NULL ) { // creating new output vector
+    XLAL_CHECK( ( multiBinaryTimes = XLALDuplicateMultiSSBtimes( multiSSBIn ) ) != NULL, XLAL_EFUNC );
+  } else { // input vector given
+    multiBinaryTimes = ( *multiSSBOut );
+    XLAL_CHECK( multiBinaryTimes->length == numDetectors, XLAL_EINVAL,
+                "Inconsistent length (*multiSSBOut)->length = %d, while multiSSBIn->length = %d\n", ( *multiSSBOut )->length, numDetectors );
+    // we'll leave all other sanity-checks to XLALAddBinaryTimes() calls
+  }
 
   // ----- simply loop over detectors for XLALAddBinaryTimes()
-  for ( UINT4 X = 0; X < numDetectors; X ++ )
-    {
-      int ret = XLALAddBinaryTimes ( &(multiBinaryTimes->data[X]), multiSSBIn->data[X], Doppler );
-      XLAL_CHECK( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALAddBinaryTimes() failed for X=%d\n", X );
-    } /* for X < numDet */
+  for ( UINT4 X = 0; X < numDetectors; X ++ ) {
+    int ret = XLALAddBinaryTimes( &( multiBinaryTimes->data[X] ), multiSSBIn->data[X], Doppler );
+    XLAL_CHECK( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALAddBinaryTimes() failed for X=%d\n", X );
+  } /* for X < numDet */
 
   // pass back result-vector
-  (*multiSSBOut) = multiBinaryTimes;
+  ( *multiSSBOut ) = multiBinaryTimes;
 
   return XLAL_SUCCESS;
 
@@ -461,32 +451,30 @@ XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut,		/**< [out] output SSB ti
  * This can be useful for creating a copy before adding binary-orbital corrections in XLALAddBinaryTimes()
  */
 SSBtimes *
-XLALDuplicateSSBtimes ( const SSBtimes *tSSB )
+XLALDuplicateSSBtimes( const SSBtimes *tSSB )
 {
-  XLAL_CHECK_NULL ( tSSB != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSB'\n" );
+  XLAL_CHECK_NULL( tSSB != NULL, XLAL_EINVAL, "Invalid NULL input 'tSSB'\n" );
 
   UINT4 len;
   SSBtimes *ret;
-  ret = XLALCalloc ( 1, len = sizeof (*ret) );
-  XLAL_CHECK_NULL ( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( 1, %d )\n", len );
+  ret = XLALCalloc( 1, len = sizeof( *ret ) );
+  XLAL_CHECK_NULL( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( 1, %d )\n", len );
 
   ret->refTime = tSSB->refTime;
 
-  if ( tSSB->DeltaT )
-    {
-      len = tSSB->DeltaT->length;
-      ret->DeltaT = XLALCreateREAL8Vector ( len );
-      XLAL_CHECK_NULL ( ret->DeltaT != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector(%d) failed\n", len );
-      memcpy ( ret->DeltaT->data, tSSB->DeltaT->data, len * sizeof(ret->DeltaT->data[0]) );
-    }
+  if ( tSSB->DeltaT ) {
+    len = tSSB->DeltaT->length;
+    ret->DeltaT = XLALCreateREAL8Vector( len );
+    XLAL_CHECK_NULL( ret->DeltaT != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector(%d) failed\n", len );
+    memcpy( ret->DeltaT->data, tSSB->DeltaT->data, len * sizeof( ret->DeltaT->data[0] ) );
+  }
 
-  if ( tSSB->Tdot )
-    {
-      len = tSSB->Tdot->length;
-      ret->Tdot = XLALCreateREAL8Vector ( len );
-      XLAL_CHECK_NULL ( ret->Tdot != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector(%d) failed\n", len );
-      memcpy ( ret->Tdot->data, tSSB->Tdot->data, len * sizeof(ret->Tdot->data[0]) );
-    }
+  if ( tSSB->Tdot ) {
+    len = tSSB->Tdot->length;
+    ret->Tdot = XLALCreateREAL8Vector( len );
+    XLAL_CHECK_NULL( ret->Tdot != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector(%d) failed\n", len );
+    memcpy( ret->Tdot->data, tSSB->Tdot->data, len * sizeof( ret->Tdot->data[0] ) );
+  }
 
   return ret;
 
@@ -496,25 +484,24 @@ XLALDuplicateSSBtimes ( const SSBtimes *tSSB )
 /** Duplicate (ie allocate + copy) an input MultiSSBtimes structure.
  */
 MultiSSBtimes *
-XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB )
+XLALDuplicateMultiSSBtimes( const MultiSSBtimes *multiSSB )
 {
-  XLAL_CHECK_NULL ( multiSSB != NULL, XLAL_EINVAL, "Invalid NULL input 'multiSSB'\n");
+  XLAL_CHECK_NULL( multiSSB != NULL, XLAL_EINVAL, "Invalid NULL input 'multiSSB'\n" );
 
   UINT4 len;
   MultiSSBtimes *ret;
-  ret = XLALCalloc ( 1, len=sizeof(*ret) );
-  XLAL_CHECK_NULL ( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( 1, %d )\n", len );
+  ret = XLALCalloc( 1, len = sizeof( *ret ) );
+  XLAL_CHECK_NULL( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( 1, %d )\n", len );
 
   UINT4 numDetectors = multiSSB->length;
   ret->length = numDetectors;
-  ret->data = XLALCalloc ( numDetectors, len = sizeof(ret->data[0]) );
-  XLAL_CHECK_NULL ( ret->data != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %d )\n", numDetectors, len );
+  ret->data = XLALCalloc( numDetectors, len = sizeof( ret->data[0] ) );
+  XLAL_CHECK_NULL( ret->data != NULL, XLAL_ENOMEM, "Failed to XLALCalloc ( %d, %d )\n", numDetectors, len );
 
-  for ( UINT4 X = 0; X < numDetectors; X ++ )
-    {
-      ret->data[X] = XLALDuplicateSSBtimes ( multiSSB->data[X] );
-      XLAL_CHECK_NULL( ret->data[X] != NULL, XLAL_EFUNC, "XLALDuplicateSSBtimes() failed for detector X=%d\n", X );
-    } // for X < numDetectors
+  for ( UINT4 X = 0; X < numDetectors; X ++ ) {
+    ret->data[X] = XLALDuplicateSSBtimes( multiSSB->data[X] );
+    XLAL_CHECK_NULL( ret->data[X] != NULL, XLAL_EFUNC, "XLALDuplicateSSBtimes() failed for detector X=%d\n", X );
+  } // for X < numDetectors
 
   return ret;
 
@@ -528,133 +515,130 @@ XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB )
  *
  */
 SSBtimes *
-XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-states at timestamps t_i */
-                  SkyPosition pos,				/**< source sky-location */
-                  LIGOTimeGPS refTime,				/**< SSB reference-time T_0 of pulsar-parameters */
-                  SSBprecision precision			/**< relativistic or Newtonian SSB transformation? */
-                  )
+XLALGetSSBtimes( const DetectorStateSeries *DetectorStates,     /**< [in] detector-states at timestamps t_i */
+                 SkyPosition pos,                              /**< source sky-location */
+                 LIGOTimeGPS refTime,                          /**< SSB reference-time T_0 of pulsar-parameters */
+                 SSBprecision precision                        /**< relativistic or Newtonian SSB transformation? */
+               )
 {
-  XLAL_CHECK_NULL ( DetectorStates != NULL, XLAL_EINVAL, "Invalid NULL input 'DetectorStates'\n" );
-  XLAL_CHECK_NULL ( precision < SSBPREC_LAST, XLAL_EDOM, "Invalid value precision=%d, allowed are [0, %d]\n", precision, SSBPREC_LAST -1 );
-  XLAL_CHECK_NULL ( pos.system == COORDINATESYSTEM_EQUATORIAL, XLAL_EDOM, "Only equatorial coordinate system (=%d) allowed, got %d\n", COORDINATESYSTEM_EQUATORIAL, pos.system );
+  XLAL_CHECK_NULL( DetectorStates != NULL, XLAL_EINVAL, "Invalid NULL input 'DetectorStates'\n" );
+  XLAL_CHECK_NULL( precision < SSBPREC_LAST, XLAL_EDOM, "Invalid value precision=%d, allowed are [0, %d]\n", precision, SSBPREC_LAST - 1 );
+  XLAL_CHECK_NULL( pos.system == COORDINATESYSTEM_EQUATORIAL, XLAL_EDOM, "Only equatorial coordinate system (=%d) allowed, got %d\n", COORDINATESYSTEM_EQUATORIAL, pos.system );
 
-  UINT4 numSteps = DetectorStates->length;		/* number of timestamps */
+  UINT4 numSteps = DetectorStates->length;              /* number of timestamps */
 
   // prepare output SSBtimes struct
   int len;
-  SSBtimes *ret = XLALCalloc ( 1, len = sizeof(*ret) );
-  XLAL_CHECK_NULL ( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%d)\n", len );
-  ret->DeltaT = XLALCreateREAL8Vector ( numSteps );
-  XLAL_CHECK_NULL ( ret->DeltaT != NULL, XLAL_EFUNC, "ret->DeltaT = XLALCreateREAL8Vector(%d) failed\n", numSteps );
-  ret->Tdot = XLALCreateREAL8Vector ( numSteps );
-  XLAL_CHECK_NULL ( ret->Tdot != NULL, XLAL_EFUNC, "ret->Tdot = XLALCreateREAL8Vector(%d) failed\n", numSteps );
+  SSBtimes *ret = XLALCalloc( 1, len = sizeof( *ret ) );
+  XLAL_CHECK_NULL( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%d)\n", len );
+  ret->DeltaT = XLALCreateREAL8Vector( numSteps );
+  XLAL_CHECK_NULL( ret->DeltaT != NULL, XLAL_EFUNC, "ret->DeltaT = XLALCreateREAL8Vector(%d) failed\n", numSteps );
+  ret->Tdot = XLALCreateREAL8Vector( numSteps );
+  XLAL_CHECK_NULL( ret->Tdot != NULL, XLAL_EFUNC, "ret->Tdot = XLALCreateREAL8Vector(%d) failed\n", numSteps );
 
   /* convenience variables */
   REAL8 alpha = pos.longitude;
   REAL8 delta = pos.latitude;
-  REAL8 refTimeREAL8 = XLALGPSGetREAL8 ( &refTime );
+  REAL8 refTimeREAL8 = XLALGPSGetREAL8( &refTime );
   BarycenterBuffer *bBuffer = NULL;
 
-  BarycenterInput XLAL_INIT_DECL(baryinput);
+  BarycenterInput XLAL_INIT_DECL( baryinput );
 
   /*----- now calculate the SSB transformation in the precision required */
-  switch (precision)
-    {
-      REAL8 vn[3];		/* unit-vector pointing to source in Cart. coord. */
+  switch ( precision ) {
+    REAL8 vn[3];              /* unit-vector pointing to source in Cart. coord. */
 
-    case SSBPREC_NEWTONIAN:	/* use simple vr.vn to calculate time-delay */
+  case SSBPREC_NEWTONIAN:     /* use simple vr.vn to calculate time-delay */
 
-      /*----- get the cartesian source unit-vector */
-      vn[0] = cos(alpha) * cos(delta);
-      vn[1] = sin(alpha) * cos(delta);
-      vn[2] = sin(delta);
+    /*----- get the cartesian source unit-vector */
+    vn[0] = cos( alpha ) * cos( delta );
+    vn[1] = sin( alpha ) * cos( delta );
+    vn[2] = sin( delta );
 
-      for (UINT4 i = 0; i < numSteps; i++ )
-	{
-	  LIGOTimeGPS *ti = &(DetectorStates->data[i].tGPS);
-	  /* DeltaT_alpha */
-	  ret->DeltaT->data[i]  = XLALGPSGetREAL8 ( ti );
-	  ret->DeltaT->data[i] += SCALAR(vn, DetectorStates->data[i].rDetector);
-	  ret->DeltaT->data[i] -= refTimeREAL8;
+    for ( UINT4 i = 0; i < numSteps; i++ ) {
+      LIGOTimeGPS *ti = &( DetectorStates->data[i].tGPS );
+      /* DeltaT_alpha */
+      ret->DeltaT->data[i]  = XLALGPSGetREAL8( ti );
+      ret->DeltaT->data[i] += SCALAR( vn, DetectorStates->data[i].rDetector );
+      ret->DeltaT->data[i] -= refTimeREAL8;
 
-	  /* Tdot_alpha */
-	  ret->Tdot->data[i] = 1.0 + SCALAR(vn, DetectorStates->data[i].vDetector);
+      /* Tdot_alpha */
+      ret->Tdot->data[i] = 1.0 + SCALAR( vn, DetectorStates->data[i].vDetector );
 
-	} /* for i < numSteps */
+    } /* for i < numSteps */
 
-      break;
+    break;
 
-    case SSBPREC_RELATIVISTIC:	/* use XLALBarycenter() to get SSB-times and derivative */
+  case SSBPREC_RELATIVISTIC:  /* use XLALBarycenter() to get SSB-times and derivative */
 
-      baryinput.site = DetectorStates->detector;
-      baryinput.site.location[0] /= LAL_C_SI;
-      baryinput.site.location[1] /= LAL_C_SI;
-      baryinput.site.location[2] /= LAL_C_SI;
+    baryinput.site = DetectorStates->detector;
+    baryinput.site.location[0] /= LAL_C_SI;
+    baryinput.site.location[1] /= LAL_C_SI;
+    baryinput.site.location[2] /= LAL_C_SI;
 
-      baryinput.alpha = alpha;
-      baryinput.delta = delta;
-      baryinput.dInv = 0;
+    baryinput.alpha = alpha;
+    baryinput.delta = delta;
+    baryinput.dInv = 0;
 
-      for (UINT4 i = 0; i < numSteps; i++ )
-	{
-	  EmissionTime emit;
-	  DetectorState *state = &(DetectorStates->data[i]);
+    for ( UINT4 i = 0; i < numSteps; i++ ) {
+      EmissionTime emit;
+      DetectorState *state = &( DetectorStates->data[i] );
 
-	  baryinput.tgps = state->tGPS;
+      baryinput.tgps = state->tGPS;
 
-          if ( XLALBarycenter ( &emit, &baryinput, &(state->earthState) ) != XLAL_SUCCESS )
-            XLAL_ERROR_NULL ( XLAL_EFUNC, "XLALBarycenter() failed with xlalErrno = %d\n", xlalErrno );
+      if ( XLALBarycenter( &emit, &baryinput, &( state->earthState ) ) != XLAL_SUCCESS ) {
+        XLAL_ERROR_NULL( XLAL_EFUNC, "XLALBarycenter() failed with xlalErrno = %d\n", xlalErrno );
+      }
 
-	  ret->DeltaT->data[i] = XLALGPSGetREAL8 ( &emit.te ) - refTimeREAL8;
-	  ret->Tdot->data[i] = emit.tDot;
+      ret->DeltaT->data[i] = XLALGPSGetREAL8( &emit.te ) - refTimeREAL8;
+      ret->Tdot->data[i] = emit.tDot;
 
-	} /* for i < numSteps */
+    } /* for i < numSteps */
 
-      break;
+    break;
 
-    case SSBPREC_RELATIVISTICOPT:	/* use optimized version XLALBarycenterOpt() */
+  case SSBPREC_RELATIVISTICOPT:       /* use optimized version XLALBarycenterOpt() */
 
-      baryinput.site = DetectorStates->detector;
-      baryinput.site.location[0] /= LAL_C_SI;
-      baryinput.site.location[1] /= LAL_C_SI;
-      baryinput.site.location[2] /= LAL_C_SI;
+    baryinput.site = DetectorStates->detector;
+    baryinput.site.location[0] /= LAL_C_SI;
+    baryinput.site.location[1] /= LAL_C_SI;
+    baryinput.site.location[2] /= LAL_C_SI;
 
-      baryinput.alpha = alpha;
-      baryinput.delta = delta;
-      baryinput.dInv = 0;
+    baryinput.alpha = alpha;
+    baryinput.delta = delta;
+    baryinput.dInv = 0;
 
-      for ( UINT4 i = 0; i < numSteps; i++ )
-        {
-          EmissionTime emit;
-          DetectorState *state = &(DetectorStates->data[i]);
-          baryinput.tgps = state->tGPS;
+    for ( UINT4 i = 0; i < numSteps; i++ ) {
+      EmissionTime emit;
+      DetectorState *state = &( DetectorStates->data[i] );
+      baryinput.tgps = state->tGPS;
 
-          if ( XLALBarycenterOpt ( &emit, &baryinput, &(state->earthState), &bBuffer ) != XLAL_SUCCESS )
-            XLAL_ERROR_NULL ( XLAL_EFUNC, "XLALBarycenterOpt() failed with xlalErrno = %d\n", xlalErrno );
+      if ( XLALBarycenterOpt( &emit, &baryinput, &( state->earthState ), &bBuffer ) != XLAL_SUCCESS ) {
+        XLAL_ERROR_NULL( XLAL_EFUNC, "XLALBarycenterOpt() failed with xlalErrno = %d\n", xlalErrno );
+      }
 
-          ret->DeltaT->data[i] = XLALGPSGetREAL8 ( &emit.te ) - refTimeREAL8;
-          ret->Tdot->data[i] = emit.tDot;
+      ret->DeltaT->data[i] = XLALGPSGetREAL8( &emit.te ) - refTimeREAL8;
+      ret->Tdot->data[i] = emit.tDot;
 
-        } /* for i < numSteps */
-      // free buffer memory
-      XLALFree ( bBuffer );
+    } /* for i < numSteps */
+    // free buffer memory
+    XLALFree( bBuffer );
 
-      break;
+    break;
 
-    case SSBPREC_DMOFF:	/* switch off all demodulation terms */
+  case SSBPREC_DMOFF: /* switch off all demodulation terms */
 
-      for ( UINT4 i = 0; i < numSteps; i++ )
-        {
-          DetectorState *state = &(DetectorStates->data[i]);
-          ret->DeltaT->data[i] = XLALGPSGetREAL8 ( &state->tGPS ) - refTimeREAL8;
-          ret->Tdot->data[i]   = 1.0;
-        } /* for i < numSteps */
-      break;
+    for ( UINT4 i = 0; i < numSteps; i++ ) {
+      DetectorState *state = &( DetectorStates->data[i] );
+      ret->DeltaT->data[i] = XLALGPSGetREAL8( &state->tGPS ) - refTimeREAL8;
+      ret->Tdot->data[i]   = 1.0;
+    } /* for i < numSteps */
+    break;
 
-    default:
-      XLAL_ERROR_NULL (XLAL_EFAILED, "\n?? Something went wrong.. this should never be called!\n\n" );
-      break;
-    } /* switch precision */
+  default:
+    XLAL_ERROR_NULL( XLAL_EFAILED, "\n?? Something went wrong.. this should never be called!\n\n" );
+    break;
+  } /* switch precision */
 
   /* finally: store the reference-time used into the output-structure */
   ret->refTime = refTime;
@@ -670,33 +654,32 @@ XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates,	/**< [in] detector-
  * use XLALDestroyMultiSSBtimes() to free this.
  */
 MultiSSBtimes *
-XLALGetMultiSSBtimes ( const MultiDetectorStateSeries *multiDetStates, /**< [in] detector-states at timestamps t_i */
-                       SkyPosition skypos,		/**< source sky-position [in equatorial coords!] */
-                       LIGOTimeGPS refTime,		/**< SSB reference-time T_0 for SSB-timing */
-                       SSBprecision precision		/**< use relativistic or Newtonian SSB timing?  */
-                       )
+XLALGetMultiSSBtimes( const MultiDetectorStateSeries *multiDetStates,  /**< [in] detector-states at timestamps t_i */
+                      SkyPosition skypos,              /**< source sky-position [in equatorial coords!] */
+                      LIGOTimeGPS refTime,             /**< SSB reference-time T_0 for SSB-timing */
+                      SSBprecision precision           /**< use relativistic or Newtonian SSB timing?  */
+                    )
 {
   /* check input */
-  XLAL_CHECK_NULL ( multiDetStates != NULL, XLAL_EINVAL, "Invalid NULL input 'multiDetStates'\n");
-  XLAL_CHECK_NULL ( multiDetStates->length > 0, XLAL_EINVAL, "Invalid zero-length 'multiDetStates'\n");
+  XLAL_CHECK_NULL( multiDetStates != NULL, XLAL_EINVAL, "Invalid NULL input 'multiDetStates'\n" );
+  XLAL_CHECK_NULL( multiDetStates->length > 0, XLAL_EINVAL, "Invalid zero-length 'multiDetStates'\n" );
 
   UINT4 numDetectors = multiDetStates->length;
 
   // prepare return struct
   int len;
-  MultiSSBtimes *ret = XLALCalloc ( 1, len = sizeof( *ret ) );
-  XLAL_CHECK_NULL ( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%d)\n", len );
+  MultiSSBtimes *ret = XLALCalloc( 1, len = sizeof( *ret ) );
+  XLAL_CHECK_NULL( ret != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(1,%d)\n", len );
   ret->length = numDetectors;
-  ret->data = XLALCalloc ( numDetectors, len=sizeof ( *ret->data ) );
-  XLAL_CHECK_NULL ( ret->data != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(%d,%d)\n", numDetectors, len );
+  ret->data = XLALCalloc( numDetectors, len = sizeof( *ret->data ) );
+  XLAL_CHECK_NULL( ret->data != NULL, XLAL_ENOMEM, "Failed to XLALCalloc(%d,%d)\n", numDetectors, len );
 
   // loop over detectors
-  for ( UINT4 X = 0; X < numDetectors; X ++ )
-    {
-      ret->data[X] = XLALGetSSBtimes ( multiDetStates->data[X], skypos, refTime, precision );
-      XLAL_CHECK_NULL ( ret->data[X] != NULL, XLAL_EFUNC, "ret->data[%d] = XLALGetSSBtimes() failed with xlalErrno = %d\n", X, xlalErrno );
+  for ( UINT4 X = 0; X < numDetectors; X ++ ) {
+    ret->data[X] = XLALGetSSBtimes( multiDetStates->data[X], skypos, refTime, precision );
+    XLAL_CHECK_NULL( ret->data[X] != NULL, XLAL_EFUNC, "ret->data[%d] = XLALGetSSBtimes() failed with xlalErrno = %d\n", X, xlalErrno );
 
-    } /* for X < numDet */
+  } /* for X < numDet */
 
   return ret;
 
@@ -705,55 +688,53 @@ XLALGetMultiSSBtimes ( const MultiDetectorStateSeries *multiDetStates, /**< [in]
 /** Find the earliest timestamp in a multi-SSB data structure
  *
 */
-int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out,              /**< output earliest GPS time */
-                               const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
-                               const REAL8 Tsft                    /**< the length of an SFT */
-                               )
+int XLALEarliestMultiSSBtime( LIGOTimeGPS *out,               /**< output earliest GPS time */
+                              const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
+                              const REAL8 Tsft                    /**< the length of an SFT */
+                            )
 {
-  UINT4 i,j;
+  UINT4 i, j;
   LIGOTimeGPS t;
   REAL8 delta;
 
   /* check sanity of input */
-  if ( !multiSSB || (multiSSB->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSSBtimes input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-  if ( !multiSSB->data[0] || (multiSSB->data[0]->DeltaT->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSSBtimes input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
+  if ( !multiSSB || ( multiSSB->length == 0 ) ) {
+    XLALPrintError( "%s: empty multiSSBtimes input!\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+  if ( !multiSSB->data[0] || ( multiSSB->data[0]->DeltaT->length == 0 ) ) {
+    XLALPrintError( "%s: empty multiSSBtimes input!\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
 
 
   /* initialise the earliest and latest sample value */
   out->gpsSeconds = multiSSB->data[0]->refTime.gpsSeconds;
   out->gpsNanoSeconds = multiSSB->data[0]->refTime.gpsNanoSeconds;
-  delta = multiSSB->data[0]->DeltaT->data[0] - 0.5*Tsft*multiSSB->data[0]->Tdot->data[0];
-  if ( (XLALGPSAdd(out,delta)) == NULL) {
-    XLALPrintError ("%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
-    XLAL_ERROR (XLAL_ENOMEM);
+  delta = multiSSB->data[0]->DeltaT->data[0] - 0.5 * Tsft * multiSSB->data[0]->Tdot->data[0];
+  if ( ( XLALGPSAdd( out, delta ) ) == NULL ) {
+    XLALPrintError( "%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
   /* loop over detectors */
-  for (i=0;i<multiSSB->length;i++) {
+  for ( i = 0; i < multiSSB->length; i++ ) {
 
     /* loop over all SSB times and find the earliest SSB SFT start time */
-    for (j=0;j<multiSSB->data[i]->DeltaT->length;j++) {
+    for ( j = 0; j < multiSSB->data[i]->DeltaT->length; j++ ) {
 
       /* reset the reference time */
       t.gpsSeconds = multiSSB->data[i]->refTime.gpsSeconds;
       t.gpsNanoSeconds = multiSSB->data[i]->refTime.gpsNanoSeconds;
 
       /* compute SSB time - we approximate the SFT start time in the SSB as t_mid_SSB - 0.5*Tsft*dt_SSB/dt_det */
-      delta = multiSSB->data[i]->DeltaT->data[j] - 0.5*Tsft*multiSSB->data[i]->Tdot->data[j];
-      if ( (XLALGPSAdd(&t,delta)) == NULL) {
-        XLALPrintError ("%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
-        XLAL_ERROR (XLAL_ENOMEM);
+      delta = multiSSB->data[i]->DeltaT->data[j] - 0.5 * Tsft * multiSSB->data[i]->Tdot->data[j];
+      if ( ( XLALGPSAdd( &t, delta ) ) == NULL ) {
+        XLALPrintError( "%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
+        XLAL_ERROR( XLAL_ENOMEM );
       }
 
       /* compare it to the existing earliest */
-      if ( (XLALGPSCmp(out,&t) == 1 ) ) {
+      if ( ( XLALGPSCmp( out, &t ) == 1 ) ) {
         out->gpsSeconds = t.gpsSeconds;
         out->gpsNanoSeconds = t.gpsNanoSeconds;
       }
@@ -770,55 +751,53 @@ int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out,              /**< output earlie
 /** Find the latest timestamp in a multi-SSB data structure
  *
 */
-int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output latest GPS time */
-                             const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
-                             const REAL8 Tsft                    /**< the length of an SFT */
-                             )
+int XLALLatestMultiSSBtime( LIGOTimeGPS *out,                    /**< output latest GPS time */
+                            const MultiSSBtimes *multiSSB,      /**< input multi SSB SFT-midpoint timestamps */
+                            const REAL8 Tsft                    /**< the length of an SFT */
+                          )
 {
-  UINT4 i,j;
+  UINT4 i, j;
   LIGOTimeGPS t;
   REAL8 delta;
 
   /* check sanity of input */
-  if ( !multiSSB || (multiSSB->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSSBtimes input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
-  if ( !multiSSB->data[0] || (multiSSB->data[0]->DeltaT->length == 0) )
-    {
-      XLALPrintError ("%s: empty multiSSBtimes input!\n", __func__ );
-      XLAL_ERROR (XLAL_EINVAL);
-    }
+  if ( !multiSSB || ( multiSSB->length == 0 ) ) {
+    XLALPrintError( "%s: empty multiSSBtimes input!\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
+  if ( !multiSSB->data[0] || ( multiSSB->data[0]->DeltaT->length == 0 ) ) {
+    XLALPrintError( "%s: empty multiSSBtimes input!\n", __func__ );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
 
 
   /* initialise the earliest and latest sample value */
   out->gpsSeconds = multiSSB->data[0]->refTime.gpsSeconds;
   out->gpsNanoSeconds = multiSSB->data[0]->refTime.gpsNanoSeconds;
-  delta = multiSSB->data[0]->DeltaT->data[0] + 0.5*Tsft*multiSSB->data[0]->Tdot->data[0];
-  if ( (XLALGPSAdd(out,delta)) == NULL) {
-    XLALPrintError ("%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
-    XLAL_ERROR (XLAL_ENOMEM);
+  delta = multiSSB->data[0]->DeltaT->data[0] + 0.5 * Tsft * multiSSB->data[0]->Tdot->data[0];
+  if ( ( XLALGPSAdd( out, delta ) ) == NULL ) {
+    XLALPrintError( "%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_ENOMEM );
   }
   /* loop over detectors */
-  for (i=0;i<multiSSB->length;i++) {
+  for ( i = 0; i < multiSSB->length; i++ ) {
 
     /* loop over all SSB times and find the latest SSB SFT start time */
-    for (j=0;j<multiSSB->data[i]->DeltaT->length;j++) {
+    for ( j = 0; j < multiSSB->data[i]->DeltaT->length; j++ ) {
 
       /* reset the reference time */
       t.gpsSeconds = multiSSB->data[i]->refTime.gpsSeconds;
       t.gpsNanoSeconds = multiSSB->data[i]->refTime.gpsNanoSeconds;
 
       /* compute SSB time - we approximate the SFT end time in the SSB as t_mid_SSB + 0.5*Tsft*dt_SSB/dt_det */
-      delta = multiSSB->data[i]->DeltaT->data[j] + 0.5*Tsft*multiSSB->data[i]->Tdot->data[j];
-      if ( (XLALGPSAdd(&t,delta)) == NULL) {
-        XLALPrintError ("%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
-        XLAL_ERROR (XLAL_ENOMEM);
+      delta = multiSSB->data[i]->DeltaT->data[j] + 0.5 * Tsft * multiSSB->data[i]->Tdot->data[j];
+      if ( ( XLALGPSAdd( &t, delta ) ) == NULL ) {
+        XLALPrintError( "%s: XLALGPSAdd() failed!  errno = %d!\n", __func__, xlalErrno );
+        XLAL_ERROR( XLAL_ENOMEM );
       }
 
       /* compare it to the existing earliest */
-      if ( (XLALGPSCmp(out,&t) == -1 ) ) {
+      if ( ( XLALGPSCmp( out, &t ) == -1 ) ) {
         out->gpsSeconds = t.gpsSeconds;
         out->gpsNanoSeconds = t.gpsNanoSeconds;
       }
@@ -840,16 +819,19 @@ int XLALLatestMultiSSBtime ( LIGOTimeGPS *out,                   /**< output lat
  * for failure-cleanup even on incomplete structs
  */
 void
-XLALDestroySSBtimes ( SSBtimes *tSSB )
+XLALDestroySSBtimes( SSBtimes *tSSB )
 {
 
-  if ( ! tSSB )
+  if ( ! tSSB ) {
     return;
+  }
 
-  if ( tSSB->DeltaT )
+  if ( tSSB->DeltaT ) {
     XLALDestroyREAL8Vector( tSSB->DeltaT );
-  if ( tSSB->Tdot )
+  }
+  if ( tSSB->Tdot ) {
     XLALDestroyREAL8Vector( tSSB->Tdot );
+  }
   XLALFree( tSSB );
 
 }
@@ -860,22 +842,21 @@ XLALDestroySSBtimes ( SSBtimes *tSSB )
  * for failure-cleanup even on incomplete structs
  */
 void
-XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB )
+XLALDestroyMultiSSBtimes( MultiSSBtimes *multiSSB )
 {
   UINT4 X;
 
-  if ( ! multiSSB )
+  if ( ! multiSSB ) {
     return;
+  }
 
-  if ( multiSSB->data )
-    {
-      for ( X=0; X < multiSSB->length; X ++ )
-	{
-	  XLALDestroySSBtimes ( multiSSB->data[X] );
-	} /* for X < numDetectors */
-      LALFree ( multiSSB->data );
-    }
-  LALFree ( multiSSB );
+  if ( multiSSB->data ) {
+    for ( X = 0; X < multiSSB->length; X ++ ) {
+      XLALDestroySSBtimes( multiSSB->data[X] );
+    } /* for X < numDetectors */
+    LALFree( multiSSB->data );
+  }
+  LALFree( multiSSB );
 
   return;
 

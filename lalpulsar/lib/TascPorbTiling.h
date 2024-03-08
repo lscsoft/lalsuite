@@ -37,9 +37,9 @@ extern "C" {
 /// Set an orbital period as a function of time of ascension
 ///
 int XLALSetLatticeTilingPorbEllipticalBound(
-  LatticeTiling* tiling,	///< [in] Lattice tiling
-  const size_t tasc_dimension,	///< [in] Time of ascension dimension
-  const size_t porb_dimension,	///< [in] Orbital period dimension
+  LatticeTiling *tiling,        ///< [in] Lattice tiling
+  const size_t tasc_dimension,  ///< [in] Time of ascension dimension
+  const size_t porb_dimension,  ///< [in] Orbital period dimension
   const double P0,              ///< [in] Most likely orbital period
   const double sigP,            ///< [in] One-sigma uncertainty on orbital period
   const double T0,              ///< [in] Most likely time of ascension (uncorrelated with orbital period
@@ -47,7 +47,7 @@ int XLALSetLatticeTilingPorbEllipticalBound(
   const int norb,            ///< [in] Number of orbits between time of ascention estimate and search region
   const double nsigma,           ///< [in] Radius in sigma of circular search region in parameter space scaled by uncertainties
   const BOOLEAN useShearedPeriod  ///< [in] Whether to use sheared Porb coordinate so the centerline of the search ellipse is horizontal
-  );
+);
 
 #ifdef __cplusplus
 }

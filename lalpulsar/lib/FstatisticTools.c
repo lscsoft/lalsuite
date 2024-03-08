@@ -51,12 +51,12 @@
 /// extended for error-estimation.
 ///
 int
-XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out] Pulsar candidate parameters.
-                                    const LIGOTimeGPS* FaFb_refTime,	///< [in] Reference time of \f$ F_a \f$ and \f$ F_b \f$ , may differ from pulsar candidate reference time.
-                                    const COMPLEX8 Fa,			///< [in] Complex \f$ \mathcal{F} \f$ -statistic amplitude \f$ F_a \f$ .
-                                    const COMPLEX8 Fb,			///< [in] Complex \f$ \mathcal{F} \f$ -statistic amplitude \f$ F_b \f$ .
-                                    const AntennaPatternMatrix *Mmunu	///< [in] Antenna pattern matrix \f$ M_{\mu\nu} \f$ .
-                                    )
+XLALEstimatePulsarAmplitudeParams( PulsarCandidate *pulsarParams,       ///< [in,out] Pulsar candidate parameters.
+                                   const LIGOTimeGPS *FaFb_refTime,    ///< [in] Reference time of \f$ F_a \f$ and \f$ F_b \f$ , may differ from pulsar candidate reference time.
+                                   const COMPLEX8 Fa,                  ///< [in] Complex \f$ \mathcal{F} \f$ -statistic amplitude \f$ F_a \f$ .
+                                   const COMPLEX8 Fb,                  ///< [in] Complex \f$ \mathcal{F} \f$ -statistic amplitude \f$ F_b \f$ .
+                                   const AntennaPatternMatrix *Mmunu   ///< [in] Antenna pattern matrix \f$ M_{\mu\nu} \f$ .
+                                 )
 {
 
   REAL8 A1h, A2h, A3h, A4h;
@@ -82,13 +82,13 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
   gsl_matrix *tmp, *tmp2;
   int signum;
 
-  XLAL_CHECK ( pulsarParams != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( FaFb_refTime != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( isfinite(creal(Fa)) && isfinite(cimag(Fb)), XLAL_EDOM,
-               "Fa = (%g, %g) is not finite", creal(Fa), cimag(Fa) );
-  XLAL_CHECK ( isfinite(creal(Fb)) && isfinite(cimag(Fb)), XLAL_EDOM,
-               "Fb = (%g, %g) is not finite", creal(Fb), cimag(Fb) );
-  XLAL_CHECK ( Mmunu != NULL, XLAL_EINVAL );
+  XLAL_CHECK( pulsarParams != NULL, XLAL_EINVAL );
+  XLAL_CHECK( FaFb_refTime != NULL, XLAL_EINVAL );
+  XLAL_CHECK( isfinite( creal( Fa ) ) && isfinite( cimag( Fb ) ), XLAL_EDOM,
+              "Fa = (%g, %g) is not finite", creal( Fa ), cimag( Fa ) );
+  XLAL_CHECK( isfinite( creal( Fb ) ) && isfinite( cimag( Fb ) ), XLAL_EDOM,
+              "Fb = (%g, %g) is not finite", creal( Fb ), cimag( Fb ) );
+  XLAL_CHECK( Mmunu != NULL, XLAL_EINVAL );
 
   Ad = Mmunu->Ad;
   Bd = Mmunu->Bd;
@@ -96,35 +96,35 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
   Ed = Mmunu->Ed;
   Dd = Ad * Bd - Cd * Cd - Ed * Ed;
 
-  normAmu = 2.0 / sqrt(2.0 * Mmunu->Sinv_Tsft); // generally *very* small!!
+  normAmu = 2.0 / sqrt( 2.0 * Mmunu->Sinv_Tsft ); // generally *very* small!!
 
   // ----- GSL memory allocation -----
-  XLAL_CHECK ( ( x_mu = gsl_vector_calloc (4) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ( A_Mu = gsl_vector_calloc (4) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ( M_Mu_Nu = gsl_matrix_calloc (4, 4) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ( Jh_Mu_nu = gsl_matrix_calloc (4, 4) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK( ( x_mu = gsl_vector_calloc( 4 ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK( ( A_Mu = gsl_vector_calloc( 4 ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK( ( M_Mu_Nu = gsl_matrix_calloc( 4, 4 ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK( ( Jh_Mu_nu = gsl_matrix_calloc( 4, 4 ) ) != NULL, XLAL_ENOMEM );
 
-  XLAL_CHECK ( ( permh = gsl_permutation_calloc ( 4 ) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ( tmp = gsl_matrix_calloc (4, 4) ) != NULL, XLAL_ENOMEM );
-  XLAL_CHECK ( ( tmp2 = gsl_matrix_calloc (4, 4) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK( ( permh = gsl_permutation_calloc( 4 ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK( ( tmp = gsl_matrix_calloc( 4, 4 ) ) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK( ( tmp2 = gsl_matrix_calloc( 4, 4 ) ) != NULL, XLAL_ENOMEM );
 
   // ----- fill vector x_mu
-  gsl_vector_set (x_mu, 0,   creal(Fa) );       // x_1
-  gsl_vector_set (x_mu, 1,   creal(Fb) );       // x_2
-  gsl_vector_set (x_mu, 2, - cimag(Fa) );       // x_3
-  gsl_vector_set (x_mu, 3, - cimag(Fb) );       // x_4
+  gsl_vector_set( x_mu, 0,   creal( Fa ) );     // x_1
+  gsl_vector_set( x_mu, 1,   creal( Fb ) );     // x_2
+  gsl_vector_set( x_mu, 2, - cimag( Fa ) );     // x_3
+  gsl_vector_set( x_mu, 3, - cimag( Fb ) );     // x_4
 
   // ----- fill matrix M^{mu,nu} [symmetric: use UPPER HALF ONLY!!]
-  gsl_matrix_set (M_Mu_Nu, 0, 0,   Bd / Dd );
-  gsl_matrix_set (M_Mu_Nu, 1, 1,   Ad / Dd );
-  gsl_matrix_set (M_Mu_Nu, 0, 1, - Cd / Dd );
+  gsl_matrix_set( M_Mu_Nu, 0, 0,   Bd / Dd );
+  gsl_matrix_set( M_Mu_Nu, 1, 1,   Ad / Dd );
+  gsl_matrix_set( M_Mu_Nu, 0, 1, - Cd / Dd );
 
-  gsl_matrix_set (M_Mu_Nu, 0, 3, - Ed / Dd );
-  gsl_matrix_set (M_Mu_Nu, 1, 2,   Ed / Dd );
+  gsl_matrix_set( M_Mu_Nu, 0, 3, - Ed / Dd );
+  gsl_matrix_set( M_Mu_Nu, 1, 2,   Ed / Dd );
 
-  gsl_matrix_set (M_Mu_Nu, 2, 2,   Bd / Dd );
-  gsl_matrix_set (M_Mu_Nu, 3, 3,   Ad / Dd );
-  gsl_matrix_set (M_Mu_Nu, 2, 3, - Cd / Dd );
+  gsl_matrix_set( M_Mu_Nu, 2, 2,   Bd / Dd );
+  gsl_matrix_set( M_Mu_Nu, 3, 3,   Ad / Dd );
+  gsl_matrix_set( M_Mu_Nu, 2, 3, - Cd / Dd );
 
   // get (un-normalized) MLE's for amplitudes A^mu  = M^{mu,nu} x_nu
 
@@ -137,23 +137,23 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
    * then the upper triangle and diagonal of A are used, and when Uplo
    * is CblasLower then the lower triangle and diagonal of A are used.
    */
-  XLAL_CHECK( gsl_blas_dsymv (CblasUpper, 1.0, M_Mu_Nu, x_mu, 0.0, A_Mu) == 0, XLAL_EERR );
+  XLAL_CHECK( gsl_blas_dsymv( CblasUpper, 1.0, M_Mu_Nu, x_mu, 0.0, A_Mu ) == 0, XLAL_EERR );
 
-  A1h = gsl_vector_get ( A_Mu, 0 );
-  A2h = gsl_vector_get ( A_Mu, 1 );
-  A3h = gsl_vector_get ( A_Mu, 2 );
-  A4h = gsl_vector_get ( A_Mu, 3 );
+  A1h = gsl_vector_get( A_Mu, 0 );
+  A2h = gsl_vector_get( A_Mu, 1 );
+  A3h = gsl_vector_get( A_Mu, 2 );
+  A4h = gsl_vector_get( A_Mu, 3 );
 
-  Asq = SQ(A1h) + SQ(A2h) + SQ(A3h) + SQ(A4h);
+  Asq = SQ( A1h ) + SQ( A2h ) + SQ( A3h ) + SQ( A4h );
   Da = A1h * A4h - A2h * A3h;
-  disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
+  disc = sqrt( SQ( Asq ) - 4.0 * SQ( Da ) );
 
   Ap2  = 0.5 * ( Asq + disc );
-  aPlus = sqrt(Ap2);            // not yet normalized
+  aPlus = sqrt( Ap2 );          // not yet normalized
 
   Ac2 = 0.5 * ( Asq - disc );
   aCross = sqrt( Ac2 );
-  aCross *= MYSIGN ( Da );      // not yet normalized
+  aCross *= MYSIGN( Da );       // not yet normalized
 
   beta = aCross / aPlus;
 
@@ -161,18 +161,19 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
   b2 =   A3h + beta * A2h;
   b3 = - A1h + beta * A4h ;
 
-  psi  = 0.5 * atan ( b1 /  b2 );       // in [-pi/4,pi/4] (gauge used also by TDS)
-  phi0 =       atan ( b2 / b3 );        // in [-pi/2,pi/2]
+  psi  = 0.5 * atan( b1 /  b2 );        // in [-pi/4,pi/4] (gauge used also by TDS)
+  phi0 =       atan( b2 / b3 );         // in [-pi/2,pi/2]
 
   // Fix remaining sign-ambiguity by checking sign of reconstructed A1
-  A1check = aPlus * cos(phi0) * cos(2.0*psi) - aCross * sin(phi0) * sin(2*psi);
-  if ( A1check * A1h <  0 )
+  A1check = aPlus * cos( phi0 ) * cos( 2.0 * psi ) - aCross * sin( phi0 ) * sin( 2 * psi );
+  if ( A1check * A1h <  0 ) {
     phi0 += LAL_PI;
+  }
 
-  cosphi0 = cos(phi0);
-  sinphi0 = sin(phi0);
-  cos2psi = cos(2*psi);
-  sin2psi = sin(2*psi);
+  cosphi0 = cos( phi0 );
+  sinphi0 = sin( phi0 );
+  cos2psi = cos( 2 * psi );
+  sin2psi = sin( 2 * psi );
 
   // check numerical consistency of estimated Amu and reconstructed
   A1check =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi;
@@ -180,14 +181,13 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
   A3check = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi;
   A4check = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi;
 
-  if ( ( fabs( (A1check - A1h)/A1h ) > tolerance ) ||
-       ( fabs( (A2check - A2h)/A2h ) > tolerance ) ||
-       ( fabs( (A3check - A3h)/A3h ) > tolerance ) ||
-       ( fabs( (A4check - A4h)/A4h ) > tolerance ) )
-  {
+  if ( ( fabs( ( A1check - A1h ) / A1h ) > tolerance ) ||
+       ( fabs( ( A2check - A2h ) / A2h ) > tolerance ) ||
+       ( fabs( ( A3check - A3h ) / A3h ) > tolerance ) ||
+       ( fabs( ( A4check - A4h ) / A4h ) > tolerance ) ) {
     if ( lalDebugLevel )
-      XLALPrintError ( "WARNING %s(): Difference between estimated and reconstructed Amu exceeds tolerance of %g\n",
-                       __func__, tolerance );
+      XLALPrintError( "WARNING %s(): Difference between estimated and reconstructed Amu exceeds tolerance of %g\n",
+                      __func__, tolerance );
   }
 
   // ========== Estimate the errors ==========
@@ -195,38 +195,39 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
   // ----- compute derivatives \partial A^\mu / \partial A^\nu, where
   // we consider the output-variables A^\nu = (aPlus, aCross, phi0, psi)
   // where aPlus = 0.5 * h0 * (1 + cosi^2)  and aCross = h0 * cosi
-  { // Eqn (114) in T0900149 v5
+  {
+    // Eqn (114) in T0900149 v5
     // ----- A1 =   aPlus * cosphi0 * cos2psi - aCross * sinphi0 * sin2psi; -----
-    gsl_matrix_set (Jh_Mu_nu, 0, 0,   cosphi0 * cos2psi );       /* dA1/daPlus */
-    gsl_matrix_set (Jh_Mu_nu, 0, 1, - sinphi0 * sin2psi );       /* dA1/daCross */
-    gsl_matrix_set (Jh_Mu_nu, 0, 2,   A3h );            /* dA1/dphi0 */
-    gsl_matrix_set (Jh_Mu_nu, 0, 3, - 2.0 * A2h );      /* dA1/dpsi */
+    gsl_matrix_set( Jh_Mu_nu, 0, 0,   cosphi0 * cos2psi );       /* dA1/daPlus */
+    gsl_matrix_set( Jh_Mu_nu, 0, 1, - sinphi0 * sin2psi );       /* dA1/daCross */
+    gsl_matrix_set( Jh_Mu_nu, 0, 2,   A3h );            /* dA1/dphi0 */
+    gsl_matrix_set( Jh_Mu_nu, 0, 3, - 2.0 * A2h );      /* dA1/dpsi */
 
     // ----- A2 =   aPlus * cosphi0 * sin2psi + aCross * sinphi0 * cos2psi; -----
-    gsl_matrix_set (Jh_Mu_nu, 1, 0,   cosphi0 * sin2psi );       /* dA2/daPlus */
-    gsl_matrix_set (Jh_Mu_nu, 1, 1,   sinphi0 * cos2psi );       /* dA2/daCross */
-    gsl_matrix_set (Jh_Mu_nu, 1, 2,   A4h );            /* dA2/dphi0 */
-    gsl_matrix_set (Jh_Mu_nu, 1, 3,   2.0 * A1h );      /* dA2/dpsi */
+    gsl_matrix_set( Jh_Mu_nu, 1, 0,   cosphi0 * sin2psi );       /* dA2/daPlus */
+    gsl_matrix_set( Jh_Mu_nu, 1, 1,   sinphi0 * cos2psi );       /* dA2/daCross */
+    gsl_matrix_set( Jh_Mu_nu, 1, 2,   A4h );            /* dA2/dphi0 */
+    gsl_matrix_set( Jh_Mu_nu, 1, 3,   2.0 * A1h );      /* dA2/dpsi */
 
     // ----- A3 = - aPlus * sinphi0 * cos2psi - aCross * cosphi0 * sin2psi; -----
-    gsl_matrix_set (Jh_Mu_nu, 2, 0, - sinphi0 * cos2psi );       /* dA3/daPlus */
-    gsl_matrix_set (Jh_Mu_nu, 2, 1, - cosphi0 * sin2psi );       /* dA3/daCross */
-    gsl_matrix_set (Jh_Mu_nu, 2, 2, - A1h );            /* dA3/dphi0 */
-    gsl_matrix_set (Jh_Mu_nu, 2, 3, - 2.0 * A4h );      /* dA3/dpsi */
+    gsl_matrix_set( Jh_Mu_nu, 2, 0, - sinphi0 * cos2psi );       /* dA3/daPlus */
+    gsl_matrix_set( Jh_Mu_nu, 2, 1, - cosphi0 * sin2psi );       /* dA3/daCross */
+    gsl_matrix_set( Jh_Mu_nu, 2, 2, - A1h );            /* dA3/dphi0 */
+    gsl_matrix_set( Jh_Mu_nu, 2, 3, - 2.0 * A4h );      /* dA3/dpsi */
 
     // ----- A4 = - aPlus * sinphi0 * sin2psi + aCross * cosphi0 * cos2psi; -----
-    gsl_matrix_set (Jh_Mu_nu, 3, 0, - sinphi0 * sin2psi );       /* dA4/daPlus */
-    gsl_matrix_set (Jh_Mu_nu, 3, 1,   cosphi0 * cos2psi );       /* dA4/daCross */
-    gsl_matrix_set (Jh_Mu_nu, 3, 2, - A2h );            /* dA4/dphi0 */
-    gsl_matrix_set (Jh_Mu_nu, 3, 3,   2.0 * A3h );      /* dA4/dpsi */
+    gsl_matrix_set( Jh_Mu_nu, 3, 0, - sinphi0 * sin2psi );       /* dA4/daPlus */
+    gsl_matrix_set( Jh_Mu_nu, 3, 1,   cosphi0 * cos2psi );       /* dA4/daCross */
+    gsl_matrix_set( Jh_Mu_nu, 3, 2, - A2h );            /* dA4/dphi0 */
+    gsl_matrix_set( Jh_Mu_nu, 3, 3,   2.0 * A3h );      /* dA4/dpsi */
   }
 
   // ----- compute inverse matrices Jh^{-1} by LU-decomposition -----
-  XLAL_CHECK( gsl_linalg_LU_decomp (Jh_Mu_nu, permh, &signum ) == 0, XLAL_EERR );
+  XLAL_CHECK( gsl_linalg_LU_decomp( Jh_Mu_nu, permh, &signum ) == 0, XLAL_EERR );
 
   // inverse matrix
-  XLAL_CHECK( gsl_linalg_LU_invert (Jh_Mu_nu, permh, tmp ) == 0, XLAL_EERR );
-  gsl_matrix_memcpy ( Jh_Mu_nu, tmp );
+  XLAL_CHECK( gsl_linalg_LU_invert( Jh_Mu_nu, permh, tmp ) == 0, XLAL_EERR );
+  gsl_matrix_memcpy( Jh_Mu_nu, tmp );
 
   // ----- compute Jh^-1 . Minv . (Jh^-1)^T -----
 
@@ -239,10 +240,10 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
    */
 
   // first tmp = Minv . (Jh^-1)^T
-  XLAL_CHECK( gsl_blas_dgemm (CblasNoTrans, CblasTrans, 1.0, M_Mu_Nu, Jh_Mu_nu, 0.0, tmp ) == 0, XLAL_EERR );
+  XLAL_CHECK( gsl_blas_dgemm( CblasNoTrans, CblasTrans, 1.0, M_Mu_Nu, Jh_Mu_nu, 0.0, tmp ) == 0, XLAL_EERR );
   // then J^-1 . tmp , store result in tmp2
-  XLAL_CHECK( gsl_blas_dgemm (CblasNoTrans, CblasNoTrans, 1.0, Jh_Mu_nu, tmp, 0.0, tmp2 ) == 0, XLAL_EERR );
-  gsl_matrix_memcpy ( Jh_Mu_nu, tmp2 );
+  XLAL_CHECK( gsl_blas_dgemm( CblasNoTrans, CblasNoTrans, 1.0, Jh_Mu_nu, tmp, 0.0, tmp2 ) == 0, XLAL_EERR );
+  gsl_matrix_memcpy( Jh_Mu_nu, tmp2 );
 
   // ===== debug-output resulting matrices =====
   // propagate initial-phase from Fstat-reference-time to refTime of Doppler-params
@@ -257,22 +258,22 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
   pulsarParams->Amp.psi    = psi;
 
   // read out principal estimation-errors from diagonal elements of inverse Fisher-matrix
-  pulsarParams->dAmp.aPlus  = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 0, 0 ) );
-  pulsarParams->dAmp.aCross = normAmu * sqrt( gsl_matrix_get (Jh_Mu_nu, 1, 1 ) );
-  pulsarParams->dAmp.phi0   = sqrt( gsl_matrix_get (Jh_Mu_nu, 2, 2 ) );
-  pulsarParams->dAmp.psi    = sqrt( gsl_matrix_get (Jh_Mu_nu, 3, 3 ) );
+  pulsarParams->dAmp.aPlus  = normAmu * sqrt( gsl_matrix_get( Jh_Mu_nu, 0, 0 ) );
+  pulsarParams->dAmp.aCross = normAmu * sqrt( gsl_matrix_get( Jh_Mu_nu, 1, 1 ) );
+  pulsarParams->dAmp.phi0   = sqrt( gsl_matrix_get( Jh_Mu_nu, 2, 2 ) );
+  pulsarParams->dAmp.psi    = sqrt( gsl_matrix_get( Jh_Mu_nu, 3, 3 ) );
   // return also the full Amplitude-Fisher matrix: invert Jh_Mu_nu
-  XLAL_CHECK( gsl_linalg_LU_decomp (Jh_Mu_nu, permh, &signum ) == 0, XLAL_EERR );
-  XLAL_CHECK( gsl_linalg_LU_invert (Jh_Mu_nu, permh, tmp ) == 0, XLAL_EERR );
+  XLAL_CHECK( gsl_linalg_LU_decomp( Jh_Mu_nu, permh, &signum ) == 0, XLAL_EERR );
+  XLAL_CHECK( gsl_linalg_LU_invert( Jh_Mu_nu, permh, tmp ) == 0, XLAL_EERR );
   pulsarParams->AmpFisherMatrix = tmp;
 
   // ----- free GSL memory -----
-  gsl_vector_free ( x_mu );
-  gsl_vector_free ( A_Mu );
-  gsl_matrix_free ( M_Mu_Nu );
-  gsl_matrix_free ( Jh_Mu_nu );
-  gsl_permutation_free ( permh );
-  gsl_matrix_free ( tmp2 );
+  gsl_vector_free( x_mu );
+  gsl_vector_free( A_Mu );
+  gsl_matrix_free( M_Mu_Nu );
+  gsl_matrix_free( Jh_Mu_nu );
+  gsl_permutation_free( permh );
+  gsl_matrix_free( tmp2 );
 
   return XLAL_SUCCESS;
 
@@ -284,17 +285,17 @@ XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams,	///< [in,out]
 /// \cite JKS98 or \cite Prix07 Eq.(2).
 ///
 int
-XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu,		///< [out] Canonical amplitude coordinates \f$ A^\mu = (A_1, A_2, A_3, A_4) \f$ .
-                           const PulsarAmplitudeParams Amp	///< [in] Physical amplitude params \f$ (h_0, \cos\iota, \psi, \phi_0) \f$ .
-                           )
+XLALAmplitudeParams2Vect( PulsarAmplitudeVect A_Mu,             ///< [out] Canonical amplitude coordinates \f$ A^\mu = (A_1, A_2, A_3, A_4) \f$ .
+                          const PulsarAmplitudeParams Amp      ///< [in] Physical amplitude params \f$ (h_0, \cos\iota, \psi, \phi_0) \f$ .
+                        )
 {
 
   REAL8 aPlus = Amp.aPlus;
   REAL8 aCross = Amp.aCross;
-  REAL8 cos2psi = cos ( 2.0 * Amp.psi );
-  REAL8 sin2psi = sin ( 2.0 * Amp.psi );
-  REAL8 cosphi0 = cos ( Amp.phi0 );
-  REAL8 sinphi0 = sin ( Amp.phi0 );
+  REAL8 cos2psi = cos( 2.0 * Amp.psi );
+  REAL8 sin2psi = sin( 2.0 * Amp.psi );
+  REAL8 cosphi0 = cos( Amp.phi0 );
+  REAL8 sinphi0 = sin( Amp.phi0 );
 
   XLAL_CHECK( A_Mu != NULL, XLAL_EINVAL );
 
@@ -312,9 +313,9 @@ XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu,		///< [out] Canonical ampli
 /// Adapted from algorithm in XLALEstimatePulsarAmplitudeParams().
 ///
 int
-XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical amplitude params \f$ (h_0, \cos\iota, \psi, \phi_0) \f$ .
-                           const PulsarAmplitudeVect A_Mu	///< [in] Canonical amplitude coordinates \f$ A^\mu = (A_1, A_2, A_3, A_4) \f$ .
-                           )
+XLALAmplitudeVect2Params( PulsarAmplitudeParams *Amp,           ///< [out] Physical amplitude params \f$ (h_0, \cos\iota, \psi, \phi_0) \f$ .
+                          const PulsarAmplitudeVect A_Mu       ///< [in] Canonical amplitude coordinates \f$ A^\mu = (A_1, A_2, A_3, A_4) \f$ .
+                        )
 {
 
   REAL8 psiRet, phi0Ret;
@@ -331,16 +332,16 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
   A3 = A_Mu[2];
   A4 = A_Mu[3];
 
-  Asq = SQ(A1) + SQ(A2) + SQ(A3) + SQ(A4);
+  Asq = SQ( A1 ) + SQ( A2 ) + SQ( A3 ) + SQ( A4 );
   Da = A1 * A4 - A2 * A3;
 
-  disc = sqrt ( SQ(Asq) - 4.0 * SQ(Da) );
+  disc = sqrt( SQ( Asq ) - 4.0 * SQ( Da ) );
 
   Ap2  = 0.5 * ( Asq + disc );
-  aPlus = sqrt(Ap2);
+  aPlus = sqrt( Ap2 );
 
   Ac2 = 0.5 * ( Asq - disc );
-  aCross = MYSIGN(Da) * sqrt( Ac2 );
+  aCross = MYSIGN( Da ) * sqrt( Ac2 );
 
   beta = aCross / aPlus;
 
@@ -349,11 +350,11 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
   b3 = - A1 + beta * A4 ;
 
   // amplitude params in LIGO conventions
-  psiRet  = 0.5 * atan2 ( b1,  b2 );  /* [-pi/2,pi/2] */
-  phi0Ret =       atan2 ( b2,  b3 );  /* [-pi, pi] */
+  psiRet  = 0.5 * atan2( b1,  b2 );   /* [-pi/2,pi/2] */
+  phi0Ret =       atan2( b2,  b3 );   /* [-pi, pi] */
 
   // Fix remaining sign-ambiguity by checking sign of reconstructed A1
-  REAL8 A1check = aPlus * cos(phi0Ret) * cos(2.0*psiRet) - aCross * sin(phi0Ret) * sin(2*psiRet);
+  REAL8 A1check = aPlus * cos( phi0Ret ) * cos( 2.0 * psiRet ) - aCross * sin( phi0Ret ) * sin( 2 * psiRet );
   if ( A1check * A1 < 0 ) {
     phi0Ret += LAL_PI;
   }
@@ -394,23 +395,23 @@ XLALAmplitudeVect2Params ( PulsarAmplitudeParams *Amp,		///< [out] Physical ampl
  * E[2F] = 4 + SNR^2 for a template perfectly matching the signal, ie SNR^2 = (signal|signal).
  */
 REAL8
-XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, /**< [in] PulsarAmplitudeParameter {aPlus, aCross, psi, phi0} */
-                                  const AntennaPatternMatrix Mmunu /**< [in] Antenna-pattern Matrix */
-                                  )
+XLALComputeOptimalSNR2FromMmunu( const PulsarAmplitudeParams pap,  /**< [in] PulsarAmplitudeParameter {aPlus, aCross, psi, phi0} */
+                                 const AntennaPatternMatrix Mmunu /**< [in] Antenna-pattern Matrix */
+                               )
 {
   // Calculate the SNR using the expressions from the 'CFSv2 notes' T0900149-v5
   // https://dcc.ligo.org/LIGO-T0900149-v5/public, namely Eqs.(77)-(80), keeping in mind
   // that Mmunu.{Ad,Bd,Cd} = Nsft * {A,B,C}, and Tdata = Nsft * Tsft
 
-  REAL8 cos2psi   = cos ( 2.0 * pap.psi );
-  REAL8 sin2psi   = sin ( 2.0 * pap.psi );
+  REAL8 cos2psi   = cos( 2.0 * pap.psi );
+  REAL8 sin2psi   = sin( 2.0 * pap.psi );
   REAL8 cos2psiSq = SQ( cos2psi );
   REAL8 sin2psiSq = SQ( sin2psi );
 
   REAL8 h0sq_al1 = SQ( pap.aPlus ) * cos2psiSq + SQ( pap.aCross ) * sin2psiSq;  // Eq.(78) generalised to (aPlus,aCross)
   REAL8 h0sq_al2 = SQ( pap.aPlus ) * sin2psiSq + SQ( pap.aCross ) * cos2psiSq;  // Eq.(79) generalised to (aPlus,aCross)
   REAL8 h0sq_al3 = ( SQ( pap.aPlus ) - SQ( pap.aCross ) ) * sin2psi * cos2psi;  // Eq.(80) generalised to (aPlus,aCross)
-  
+
   // SNR^2: Eq.(77)
   REAL8 rho2 = ( h0sq_al1 * Mmunu.Ad + h0sq_al2 * Mmunu.Bd + 2.0 * h0sq_al3 * Mmunu.Cd ) * Mmunu.Sinv_Tsft;
 

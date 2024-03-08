@@ -67,20 +67,19 @@ extern "C" {
  * after which we truncate the window for efficiency.
  * 3 e-foldings means we lose only about e^(-2x3) ~1e-8 of signal power!
  */
-#define TRANSIENT_EXP_EFOLDING	3.0
+#define TRANSIENT_EXP_EFOLDING  3.0
 
 /* ---------- exported API types ---------- */
 
 /** Struct defining a range of transient windows */
-typedef struct tagtransientWindowRange_t
-{
-  transientWindowType_t type;	/**< window-type: none, rectangular, exponential, .... */
-  UINT4 t0;			/**< earliest GPS start-time 't0' in seconds */
-  UINT4 t0Band;			/**< range of start-times 't0' to search, in seconds */
-  UINT4 dt0;			/**< stepsize to search t0-range with, in seconds */
-  UINT4 tau;			/**< shortest transient timescale tau in seconds */
-  UINT4 tauBand;		/**< range of transient timescales tau to search, in seconds */
-  UINT4 dtau;			/**< stepsize to search tau-range with, in seconds */
+typedef struct tagtransientWindowRange_t {
+  transientWindowType_t type;   /**< window-type: none, rectangular, exponential, .... */
+  UINT4 t0;                     /**< earliest GPS start-time 't0' in seconds */
+  UINT4 t0Band;                 /**< range of start-times 't0' to search, in seconds */
+  UINT4 dt0;                    /**< stepsize to search t0-range with, in seconds */
+  UINT4 tau;                    /**< shortest transient timescale tau in seconds */
+  UINT4 tauBand;                /**< range of transient timescales tau to search, in seconds */
+  UINT4 dtau;                   /**< stepsize to search tau-range with, in seconds */
 } transientWindowRange_t;
 
 /**
@@ -90,61 +89,61 @@ typedef struct tagtransientWindowRange_t
  *
  */
 typedef struct tagtransientFstatMap_t {
-  gsl_matrix *F_mn;			/**< "payload" F-map: F_mn for t0_m = t0 + m*dt0, and tau_n = tau + n*dtau */
-  REAL8 maxF;				/**< maximal F-value obtained over transientWindowRange */
-  UINT4 t0_ML;				/**< maximum-likelihood estimator for start-time t0 of  max{2F} over transientWindowRange (in GPS seconds) */
-  UINT4 tau_ML;				/**< maximum-likelihood estimator for duration Tcoh of max{2F} over the transientWindowRange (in seconds) */
+  gsl_matrix *F_mn;                     /**< "payload" F-map: F_mn for t0_m = t0 + m*dt0, and tau_n = tau + n*dtau */
+  REAL8 maxF;                           /**< maximal F-value obtained over transientWindowRange */
+  UINT4 t0_ML;                          /**< maximum-likelihood estimator for start-time t0 of  max{2F} over transientWindowRange (in GPS seconds) */
+  UINT4 tau_ML;                         /**< maximum-likelihood estimator for duration Tcoh of max{2F} over the transientWindowRange (in seconds) */
 } transientFstatMap_t;
 
 
 /** Struct holding a transient CW candidate */
 typedef struct tagtransientCandidate_t {
-  PulsarDopplerParams doppler;		/**< Doppler params of this 'candidate' */
-  transientWindowRange_t windowRange;	/**< type and parameters specifying the transient window range in {t0, tau} covered */
-  transientFstatMap_t *FstatMap;	/**< F-statistic over transient-window range {t0, tau} AND ML-estimators { Fmax, t0_Fmax, tau_Fmax } */
-  REAL8 logBstat;			/**< log of Bayes-factor, marginalized over transientWindowRange */
-  REAL8 t0_MP;				/**< maximum-posterior estimate for t0 */
-  REAL8 tau_MP;				/**< maximum-posterior estimate for tau */
+  PulsarDopplerParams doppler;          /**< Doppler params of this 'candidate' */
+  transientWindowRange_t windowRange;   /**< type and parameters specifying the transient window range in {t0, tau} covered */
+  transientFstatMap_t *FstatMap;        /**< F-statistic over transient-window range {t0, tau} AND ML-estimators { Fmax, t0_Fmax, tau_Fmax } */
+  REAL8 logBstat;                       /**< log of Bayes-factor, marginalized over transientWindowRange */
+  REAL8 t0_MP;                          /**< maximum-posterior estimate for t0 */
+  REAL8 tau_MP;                         /**< maximum-posterior estimate for tau */
 } transientCandidate_t;
 
 /* ---------- exported API prototypes ---------- */
-int XLALParseTransientWindowName ( const char *windowName );
+int XLALParseTransientWindowName( const char *windowName );
 
-int XLALGetTransientWindowTimespan ( UINT4 *t0, UINT4 *t1, transientWindow_t transientWindow );
+int XLALGetTransientWindowTimespan( UINT4 *t0, UINT4 *t1, transientWindow_t transientWindow );
 
-int XLALApplyTransientWindow ( REAL4TimeSeries *series, transientWindow_t TransientWindowParams );
+int XLALApplyTransientWindow( REAL4TimeSeries *series, transientWindow_t TransientWindowParams );
 
-int XLALApplyTransientWindow2NoiseWeights ( MultiNoiseWeights *multiNoiseWeights,
-                                            const MultiLIGOTimeGPSVector *multiTS,
-                                            transientWindow_t TransientWindowParams );
+int XLALApplyTransientWindow2NoiseWeights( MultiNoiseWeights *multiNoiseWeights,
+    const MultiLIGOTimeGPSVector *multiTS,
+    transientWindow_t TransientWindowParams );
 
-int write_transientCandidate_to_fp ( LALFILE *fp, const transientCandidate_t *thisTransCand, const char timeUnit );
+int write_transientCandidate_to_fp( LALFILE *fp, const transientCandidate_t *thisTransCand, const char timeUnit );
 
-int write_transientFstatMap_to_fp ( LALFILE *fp, const transientFstatMap_t *FstatMap, const transientWindowRange_t *windowRange, const PulsarDopplerParams *doppler );
+int write_transientFstatMap_to_fp( LALFILE *fp, const transientFstatMap_t *FstatMap, const transientWindowRange_t *windowRange, const PulsarDopplerParams *doppler );
 
-int write_transientCandidateAll_to_fp ( LALFILE *fp, const transientCandidate_t *thisTransCand );
-
-
-transientFstatMap_t *XLALComputeTransientFstatMap ( const MultiFstatAtomVector *multiFstatAtoms,
-                                                    transientWindowRange_t windowRange,
-                                                    BOOLEAN useFReg );
-
-REAL8 XLALComputeTransientBstat ( transientWindowRange_t windowRange, const transientFstatMap_t *FstatMap );
-pdf1D_t *XLALComputeTransientPosterior_t0  ( transientWindowRange_t windowRange, const transientFstatMap_t *FstatMap );
-pdf1D_t *XLALComputeTransientPosterior_tau ( transientWindowRange_t windowRange, const transientFstatMap_t *FstatMap );
+int write_transientCandidateAll_to_fp( LALFILE *fp, const transientCandidate_t *thisTransCand );
 
 
-void XLALDestroyTransientFstatMap ( transientFstatMap_t *FstatMap );
-void XLALDestroyTransientCandidate ( transientCandidate_t *cand );
+transientFstatMap_t *XLALComputeTransientFstatMap( const MultiFstatAtomVector *multiFstatAtoms,
+    transientWindowRange_t windowRange,
+    BOOLEAN useFReg );
 
-REAL8 XLALFastNegExp ( REAL8 mx );
+REAL8 XLALComputeTransientBstat( transientWindowRange_t windowRange, const transientFstatMap_t *FstatMap );
+pdf1D_t *XLALComputeTransientPosterior_t0( transientWindowRange_t windowRange, const transientFstatMap_t *FstatMap );
+pdf1D_t *XLALComputeTransientPosterior_tau( transientWindowRange_t windowRange, const transientFstatMap_t *FstatMap );
+
+
+void XLALDestroyTransientFstatMap( transientFstatMap_t *FstatMap );
+void XLALDestroyTransientCandidate( transientCandidate_t *cand );
+
+REAL8 XLALFastNegExp( REAL8 mx );
 void XLALDestroyExpLUT( void );
 
 /* ---------- Fstat-atoms related functions ----------*/
-int write_MultiFstatAtoms_to_fp ( LALFILE *fp, const MultiFstatAtomVector *multiAtoms );
-CHAR* XLALPulsarDopplerParams2String ( const PulsarDopplerParams *par );
+int write_MultiFstatAtoms_to_fp( LALFILE *fp, const MultiFstatAtomVector *multiAtoms );
+CHAR *XLALPulsarDopplerParams2String( const PulsarDopplerParams *par );
 
-FstatAtomVector *XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT );
+FstatAtomVector *XLALmergeMultiFstatAtomsBinned( const MultiFstatAtomVector *multiAtoms, UINT4 deltaT );
 
 
 /* ---------- INLINE function definitions ---------- */
@@ -154,15 +153,16 @@ FstatAtomVector *XLALmergeMultiFstatAtomsBinned ( const MultiFstatAtomVector *mu
  * This is the central function defining the rectangular window properties.
  */
 static inline REAL8
-XLALGetRectangularTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
-                                         UINT4 t0, 		/**< start-time of rectangular window */
-                                         UINT4 t1		/**< end-time of rectangular window */
-                                         )
+XLALGetRectangularTransientWindowValue( UINT4 timestamp,        /**< timestamp for which to compute window-value */
+                                        UINT4 t0,              /**< start-time of rectangular window */
+                                        UINT4 t1               /**< end-time of rectangular window */
+                                      )
 {
-  if ( timestamp < t0 || timestamp > t1 )
+  if ( timestamp < t0 || timestamp > t1 ) {
     return 0.0;
-  else
+  } else {
     return 1.0;
+  }
 
 } /* XLALGetRectangularTransientWindowValue() */
 
@@ -172,21 +172,20 @@ XLALGetRectangularTransientWindowValue ( UINT4 timestamp,	/**< timestamp for whi
  * This is the central function defining the exponential window properties.
  */
 static inline REAL8
-XLALGetExponentialTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
-                                         UINT4 t0, 		/**< start-time of exponential window */
-                                         UINT4 t1, 		/**< end-time of exponential window */
-                                         UINT4 tau		/**< characteristic time of the exponential window */
-                                         )
+XLALGetExponentialTransientWindowValue( UINT4 timestamp,        /**< timestamp for which to compute window-value */
+                                        UINT4 t0,              /**< start-time of exponential window */
+                                        UINT4 t1,              /**< end-time of exponential window */
+                                        UINT4 tau              /**< characteristic time of the exponential window */
+                                      )
 {
   REAL8 ret;
 
-  if ( timestamp < t0 || timestamp > t1 )
+  if ( timestamp < t0 || timestamp > t1 ) {
     ret = 0.0;
-  else
-    {
-      REAL8 x = 1.0 * ( timestamp - t0 ) / tau;
-      ret = XLALFastNegExp ( x );	// computes e^(-x)
-    }
+  } else {
+    REAL8 x = 1.0 * ( timestamp - t0 ) / tau;
+    ret = XLALFastNegExp( x );        // computes e^(-x)
+  }
 
   return ret;
 
@@ -198,35 +197,34 @@ XLALGetExponentialTransientWindowValue ( UINT4 timestamp,	/**< timestamp for whi
  * This is a simple wrapper to the actual window-defining functions
  */
 static inline REAL8
-XLALGetTransientWindowValue ( UINT4 timestamp,	/**< timestamp for which to compute window-value */
-                              UINT4 t0, 	/**< start-time of window */
-                              UINT4 t1, 	/**< end-time of window */
-                              UINT4 tau,	/**< characteristic time of window */
-                              transientWindowType_t type /**< window type */
-                              )
+XLALGetTransientWindowValue( UINT4 timestamp,   /**< timestamp for which to compute window-value */
+                             UINT4 t0,         /**< start-time of window */
+                             UINT4 t1,         /**< end-time of window */
+                             UINT4 tau,        /**< characteristic time of window */
+                             transientWindowType_t type /**< window type */
+                           )
 {
   REAL8 val;
 
-  switch ( type )
-    {
-    case TRANSIENT_NONE:
-      val = 1.0;
-      break;
+  switch ( type ) {
+  case TRANSIENT_NONE:
+    val = 1.0;
+    break;
 
-    case TRANSIENT_RECTANGULAR:
-      val = XLALGetRectangularTransientWindowValue ( timestamp, t0, t1 );
-      break;
+  case TRANSIENT_RECTANGULAR:
+    val = XLALGetRectangularTransientWindowValue( timestamp, t0, t1 );
+    break;
 
-    case TRANSIENT_EXPONENTIAL:
-      val = XLALGetExponentialTransientWindowValue ( timestamp, t0, t1, tau );
-      break;
+  case TRANSIENT_EXPONENTIAL:
+    val = XLALGetExponentialTransientWindowValue( timestamp, t0, t1, tau );
+    break;
 
-    default:
-      XLALPrintError ("invalid transient window type %d not in [%d, %d].\n",
-                      type, TRANSIENT_NONE, TRANSIENT_LAST -1 );
-      return -1;	/* cop out because we're in an inline function */
+  default:
+    XLALPrintError( "invalid transient window type %d not in [%d, %d].\n",
+                    type, TRANSIENT_NONE, TRANSIENT_LAST - 1 );
+    return -1;        /* cop out because we're in an inline function */
 
-    } /* switch window-type */
+  } /* switch window-type */
 
   /* return result */
   return val;

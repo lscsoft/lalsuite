@@ -86,14 +86,14 @@
  * \Delta f \Delta t \lesssim 2 \;.
  * \f]
  * This routine provides a check by setting the output parameter field
- * <tt>params->dfdt</tt> equal to the maximum value of \f$ \Delta f\Delta t \f$ 
+ * <tt>params->dfdt</tt> equal to the maximum value of \f$ \Delta f\Delta t \f$
  * encountered during the integration.
  *
  */
 void
 LALGenerateTaylorCW( LALStatus          *stat,
-		     PulsarCoherentGW         *output,
-		     TaylorCWParamStruc *params )
+                     PulsarCoherentGW         *output,
+                     TaylorCWParamStruc *params )
 {
   UINT4 n, i;          /* number of and index over samples */
   UINT4 nSpin = 0, j;  /* number of and index over spindown terms */
@@ -107,29 +107,29 @@ LALGenerateTaylorCW( LALStatus          *stat,
   REAL4 *fData;        /* pointer to frequency data */
   REAL8 *phiData;      /* pointer to phase data */
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Make sure parameter and output structures exist. */
   ASSERT( params, stat, GENERATETAYLORCWH_ENUL,
-	  GENERATETAYLORCWH_MSGENUL );
+          GENERATETAYLORCWH_MSGENUL );
   ASSERT( output, stat, GENERATETAYLORCWH_ENUL,
-	  GENERATETAYLORCWH_MSGENUL );
+          GENERATETAYLORCWH_MSGENUL );
 
   /* Make sure output fields don't exist. */
   ASSERT( !( output->a ), stat, GENERATETAYLORCWH_EOUT,
-	  GENERATETAYLORCWH_MSGEOUT );
+          GENERATETAYLORCWH_MSGEOUT );
   ASSERT( !( output->f ), stat, GENERATETAYLORCWH_EOUT,
-	  GENERATETAYLORCWH_MSGEOUT );
+          GENERATETAYLORCWH_MSGEOUT );
   ASSERT( !( output->phi ), stat, GENERATETAYLORCWH_EOUT,
-	  GENERATETAYLORCWH_MSGEOUT );
+          GENERATETAYLORCWH_MSGEOUT );
   ASSERT( !( output->shift ), stat, GENERATETAYLORCWH_EOUT,
-	  GENERATETAYLORCWH_MSGEOUT );
+          GENERATETAYLORCWH_MSGEOUT );
 
   /* If Taylor coeficients are specified, make sure they exist. */
   if ( params->f ) {
     ASSERT( params->f->data, stat, GENERATETAYLORCWH_ENUL,
-	    GENERATETAYLORCWH_MSGENUL );
+            GENERATETAYLORCWH_MSGENUL );
     nSpin = params->f->length;
     fSpin = params->f->data;
   }
@@ -138,35 +138,38 @@ LALGenerateTaylorCW( LALStatus          *stat,
   n = params->length;
   dt = params->deltaT;
   f0 = fPrev = params->f0;
-  twopif0 = f0*LAL_TWOPI;
+  twopif0 = f0 * LAL_TWOPI;
   phi0 = params->phi0;
 
   /* Allocate output structures. */
-  if ( ( output->a = (REAL4TimeVectorSeries *)
-	 LALMalloc( sizeof(REAL4TimeVectorSeries) ) ) == NULL ) {
+  if ( ( output->a = ( REAL4TimeVectorSeries * )
+                     LALMalloc( sizeof( REAL4TimeVectorSeries ) ) ) == NULL ) {
     ABORT( stat, GENERATETAYLORCWH_EMEM, GENERATETAYLORCWH_MSGEMEM );
   }
-  memset( output->a, 0, sizeof(REAL4TimeVectorSeries) );
-  if ( ( output->f = (REAL4TimeSeries *)
-	 LALMalloc( sizeof(REAL4TimeSeries) ) ) == NULL ) {
-    LALFree( output->a ); output->a = NULL;
+  memset( output->a, 0, sizeof( REAL4TimeVectorSeries ) );
+  if ( ( output->f = ( REAL4TimeSeries * )
+                     LALMalloc( sizeof( REAL4TimeSeries ) ) ) == NULL ) {
+    LALFree( output->a );
+    output->a = NULL;
     ABORT( stat, GENERATETAYLORCWH_EMEM, GENERATETAYLORCWH_MSGEMEM );
   }
-  memset( output->f, 0, sizeof(REAL4TimeSeries) );
-  if ( ( output->phi = (REAL8TimeSeries *)
-	 LALMalloc( sizeof(REAL8TimeSeries) ) ) == NULL ) {
-    LALFree( output->a ); output->a = NULL;
-    LALFree( output->f ); output->f = NULL;
+  memset( output->f, 0, sizeof( REAL4TimeSeries ) );
+  if ( ( output->phi = ( REAL8TimeSeries * )
+                       LALMalloc( sizeof( REAL8TimeSeries ) ) ) == NULL ) {
+    LALFree( output->a );
+    output->a = NULL;
+    LALFree( output->f );
+    output->f = NULL;
     ABORT( stat, GENERATETAYLORCWH_EMEM, GENERATETAYLORCWH_MSGEMEM );
   }
-  memset( output->phi, 0, sizeof(REAL8TimeSeries) );
+  memset( output->phi, 0, sizeof( REAL8TimeSeries ) );
 
   /* Set output structure metadata fields. */
   output->position = params->position;
   output->psi = params->psi;
   output->a->epoch = output->f->epoch = output->phi->epoch
-    = params->epoch;
-  output->a->deltaT = n*params->deltaT;
+                                        = params->epoch;
+  output->a->deltaT = n * params->deltaT;
   output->f->deltaT = output->phi->deltaT = params->deltaT;
   output->a->sampleUnits = lalStrainUnit;
   output->f->sampleUnits = lalHertzUnit;
@@ -178,34 +181,46 @@ LALGenerateTaylorCW( LALStatus          *stat,
   /* Allocate phase and frequency arrays. */
   LALSCreateVector( stat->statusPtr, &( output->f->data ), n );
   BEGINFAIL( stat ) {
-    LALFree( output->a );   output->a = NULL;
-    LALFree( output->f );   output->f = NULL;
-    LALFree( output->phi ); output->phi = NULL;
-  } ENDFAIL( stat );
+    LALFree( output->a );
+    output->a = NULL;
+    LALFree( output->f );
+    output->f = NULL;
+    LALFree( output->phi );
+    output->phi = NULL;
+  }
+  ENDFAIL( stat );
   LALDCreateVector( stat->statusPtr, &( output->phi->data ), n );
   BEGINFAIL( stat ) {
     TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
-	 stat );
-    LALFree( output->a );   output->a = NULL;
-    LALFree( output->f );   output->f = NULL;
-    LALFree( output->phi ); output->phi = NULL;
-  } ENDFAIL( stat );
+         stat );
+    LALFree( output->a );
+    output->a = NULL;
+    LALFree( output->f );
+    output->f = NULL;
+    LALFree( output->phi );
+    output->phi = NULL;
+  }
+  ENDFAIL( stat );
 
   /* Allocate and fill amplitude array. */
   {
     CreateVectorSequenceIn in; /* input to create output->a */
     in.length = 2;
     in.vectorLength = 2;
-    LALSCreateVectorSequence( stat->statusPtr, &(output->a->data), &in );
+    LALSCreateVectorSequence( stat->statusPtr, &( output->a->data ), &in );
     BEGINFAIL( stat ) {
       TRY( LALSDestroyVector( stat->statusPtr, &( output->f->data ) ),
-	   stat );
+           stat );
       TRY( LALDDestroyVector( stat->statusPtr, &( output->phi->data ) ),
-	   stat );
-      LALFree( output->a );   output->a = NULL;
-      LALFree( output->f );   output->f = NULL;
-      LALFree( output->phi ); output->phi = NULL;
-    } ENDFAIL( stat );
+           stat );
+      LALFree( output->a );
+      output->a = NULL;
+      LALFree( output->f );
+      output->f = NULL;
+      LALFree( output->phi );
+      output->phi = NULL;
+    }
+    ENDFAIL( stat );
     output->a->data->data[0] = output->a->data->data[2] = params->aPlus;
     output->a->data->data[1] = output->a->data->data[3] = params->aCross;
   }
@@ -215,25 +230,26 @@ LALGenerateTaylorCW( LALStatus          *stat,
   phiData = output->phi->data->data;
 
   for ( i = 0; i < n; i++ ) {
-    t = tPow = i*dt;
+    t = tPow = i * dt;
     f = 1.0;
     phi = t;
     j = 0;
     while ( j < nSpin ) {
-      f += fSpin[j]*tPow;
-      phi += fSpin[j]*( tPow*=t )/( j + 2.0 );
+      f += fSpin[j] * tPow;
+      phi += fSpin[j] * ( tPow *= t ) / ( j + 2.0 );
       j++;
     }
     f *= f0;
     phi *= twopif0;
-    if ( fabs( f - fPrev ) > df )
+    if ( fabs( f - fPrev ) > df ) {
       df = fabs( f - fPrev );
-    *(fData++) = fPrev = f;
-    *(phiData++) = phi + phi0;
+    }
+    *( fData++ ) = fPrev = f;
+    *( phiData++ ) = phi + phi0;
   }
 
   /* Set output field and return. */
-  params->dfdt = df*dt;
+  params->dfdt = df * dt;
   DETATCHSTATUSPTR( stat );
   RETURN( stat );
 }

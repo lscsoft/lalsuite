@@ -35,22 +35,22 @@
 // opaque internal setup structure for XLALComputeBSGL()
 struct tagBSGLSetup {
   UINT4 numDetectors;
-  REAL4 Fstar0sc;					// semi-coherent Fstar0sc = Nseg * Fstar0coh
+  REAL4 Fstar0sc;                                       // semi-coherent Fstar0sc = Nseg * Fstar0coh
   REAL4 oLGX[PULSAR_MAX_DETECTORS];
-  REAL4 C;						// constant term C  = Fstar0sc + ln(1-pL)
-  REAL4 ln_pLtL_X[PULSAR_MAX_DETECTORS];		// per-detector term ln(pX) = ln(oLGX) - ln(1+oLG)
-  REAL4 perSegTerm;					// extra term for per-segment transient contributions, (Nseg - 1)*Fstar0sc/Nseg - ln(Nseg)
+  REAL4 C;                                              // constant term C  = Fstar0sc + ln(1-pL)
+  REAL4 ln_pLtL_X[PULSAR_MAX_DETECTORS];                // per-detector term ln(pX) = ln(oLGX) - ln(1+oLG)
+  REAL4 perSegTerm;                                     // extra term for per-segment transient contributions, (Nseg - 1)*Fstar0sc/Nseg - ln(Nseg)
   BOOLEAN useLogCorrection;
 };
 
 // ---------- module-internal prototypes ----------
 int
-XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,
-                                   const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
-                                   const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],
-                                   const UINT4 len,
-                                   const BSGLSetup *setup
-                                   );
+XLALVectorComputeGLtLDenominator( REAL4 *outDenom,
+                                  const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
+                                  const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],
+                                  const UINT4 len,
+                                  const BSGLSetup *setup
+                                );
 
 /*==================== FUNCTION DEFINITIONS ====================*/
 
@@ -71,47 +71,45 @@ XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,
  * Pre-compute the 'setup' for XLALComputeBSGL() for given prior parameters \f$ \scFtho \f$ and \f$ \{\oLGX\} \f$ .
  */
 BSGLSetup *
-XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors \f$ \Ndet \f$ 
-                      const REAL4 Fstar0sc,			//!< [in] (semi-coherent) prior transition-scale parameter \f$ \scFtho=\Nseg\cohFtho \f$ 
-                      const REAL4 oLGX[PULSAR_MAX_DETECTORS],	//!< [in] prior per-detector line odds \f$ \{\oLGX\} \f$ , if NULL: interpreted as \f$ \oLGX=\frac{1}{\Ndet} \forall X \f$ 
-                      const BOOLEAN useLogCorrection,		//!< [in] include log-term correction [slower] or not [faster, less accurate]
-                      const UINT4 numSegments			//!< [in] number of segments \f$ \Nseg \f$ in a semi-coherent search (=1 for coherent search)
-                      )
+XLALCreateBSGLSetup( const UINT4 numDetectors,                  //!< [in] number of detectors \f$ \Ndet \f$
+                     const REAL4 Fstar0sc,                     //!< [in] (semi-coherent) prior transition-scale parameter \f$ \scFtho=\Nseg\cohFtho \f$
+                     const REAL4 oLGX[PULSAR_MAX_DETECTORS],   //!< [in] prior per-detector line odds \f$ \{\oLGX\} \f$ , if NULL: interpreted as \f$ \oLGX=\frac{1}{\Ndet} \forall X \f$
+                     const BOOLEAN useLogCorrection,           //!< [in] include log-term correction [slower] or not [faster, less accurate]
+                     const UINT4 numSegments                   //!< [in] number of segments \f$ \Nseg \f$ in a semi-coherent search (=1 for coherent search)
+                   )
 {
   // check input
-  XLAL_CHECK_NULL ( (numDetectors >= 2) && (numDetectors <= PULSAR_MAX_DETECTORS), XLAL_EDOM, "numDetectors = %d not within [2,%d]\n", numDetectors, PULSAR_MAX_DETECTORS );
+  XLAL_CHECK_NULL( ( numDetectors >= 2 ) && ( numDetectors <= PULSAR_MAX_DETECTORS ), XLAL_EDOM, "numDetectors = %d not within [2,%d]\n", numDetectors, PULSAR_MAX_DETECTORS );
   for ( UINT4 X = 0; X < numDetectors; X ++ ) {
-    XLAL_CHECK_NULL ( (oLGX == NULL) || (oLGX[X] >= 0), XLAL_EDOM );
+    XLAL_CHECK_NULL( ( oLGX == NULL ) || ( oLGX[X] >= 0 ), XLAL_EDOM );
   }
 
   // create setup struct
   BSGLSetup *setup;
-  XLAL_CHECK_NULL ( (setup = XLALCalloc( 1, sizeof(*setup) )) != NULL, XLAL_ENOMEM );
+  XLAL_CHECK_NULL( ( setup = XLALCalloc( 1, sizeof( *setup ) ) ) != NULL, XLAL_ENOMEM );
   setup->numDetectors = numDetectors;
   setup->Fstar0sc     = Fstar0sc;
 
   // Compute oLG from Eq.(22)
   REAL4 oLG = 0.0;
-  REAL4 oLGX_default = 1.0/numDetectors;  // 'even odds': use oLGX=1/numDetectors for all X ==> oLG=1, pL=0.5
-  for ( UINT4 X = 0; X < numDetectors; X ++ )
-    {
-      setup->oLGX[X] = (oLGX != NULL) ? oLGX[X] : oLGX_default;
-      oLG += setup->oLGX[X];
-    }
+  REAL4 oLGX_default = 1.0 / numDetectors; // 'even odds': use oLGX=1/numDetectors for all X ==> oLG=1, pL=0.5
+  for ( UINT4 X = 0; X < numDetectors; X ++ ) {
+    setup->oLGX[X] = ( oLGX != NULL ) ? oLGX[X] : oLGX_default;
+    oLG += setup->oLGX[X];
+  }
 
   // constant transition scale term
-  REAL4 ln_1_plus_oLG = logf ( 1.0 + oLG ); 	// ln(1+oLG)
-  setup->C = Fstar0sc - ln_1_plus_oLG;		// Fstar0sc + ln(1-pL) = Fstar0sc - ln(1+oLG)
+  REAL4 ln_1_plus_oLG = logf( 1.0 + oLG );      // ln(1+oLG)
+  setup->C = Fstar0sc - ln_1_plus_oLG;          // Fstar0sc + ln(1-pL) = Fstar0sc - ln(1+oLG)
 
-  for (UINT4 X = 0; X < numDetectors; X++)
-    {
-      setup->ln_pLtL_X[X] = -LAL_REAL4_MAX; // fallback if oLGX==0 to avoid raising underflow
-      if ( setup->oLGX[X] > 0 ) {
-        setup->ln_pLtL_X[X] = logf ( setup->oLGX[X] ) - ln_1_plus_oLG; // ln(oLGX) - ln(1+oLG)
-      }
+  for ( UINT4 X = 0; X < numDetectors; X++ ) {
+    setup->ln_pLtL_X[X] = -LAL_REAL4_MAX; // fallback if oLGX==0 to avoid raising underflow
+    if ( setup->oLGX[X] > 0 ) {
+      setup->ln_pLtL_X[X] = logf( setup->oLGX[X] ) - ln_1_plus_oLG;  // ln(oLGX) - ln(1+oLG)
     }
+  }
 
-  setup->perSegTerm = Fstar0sc * ( numSegments - 1 ) / numSegments - logf ( numSegments );
+  setup->perSegTerm = Fstar0sc * ( numSegments - 1 ) / numSegments - logf( numSegments );
 
   setup->useLogCorrection = useLogCorrection;
 
@@ -120,9 +118,9 @@ XLALCreateBSGLSetup ( const UINT4 numDetectors,			//!< [in] number of detectors 
 } // XLALCreateBSGLSetup()
 
 void
-XLALDestroyBSGLSetup ( BSGLSetup * setup )
+XLALDestroyBSGLSetup( BSGLSetup *setup )
 {
-  XLALFree ( setup );
+  XLALFree( setup );
   return;
 } // XLALDestroyBSGLSetup()
 
@@ -169,50 +167,46 @@ XLALDestroyBSGLSetup ( BSGLSetup * setup )
  *
  * Here, \f$ \FpMax \f$ differs from \f$ \F''_{\mathrm{max}} \f$ from [Eq.(41)] by \f$ \ln\Ndet \f$ , due to summation instead of an average over detectors.
  *
- * \return NOTE: return is \f$ \logten B_\SGL = \ln B_\SGL \, \logten e \f$ 
+ * \return NOTE: return is \f$ \logten B_\SGL = \ln B_\SGL \, \logten e \f$
  *
  */
 int
-XLALVectorComputeBSGL ( REAL4 *outBSGL,					//!< [out] pre-allocated output vector for returning BSGL
-                        const REAL4 *twoF,				//!< [in] input vector of multi-IFO 2F values
-                        const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],	//!< [in] input vector of per-IFO 2F[X] values
-                        const UINT4 len,				//!< [in] length of input/output vectors
-                        const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
-                        )
+XLALVectorComputeBSGL( REAL4 *outBSGL,                                  //!< [out] pre-allocated output vector for returning BSGL
+                       const REAL4 *twoF,                              //!< [in] input vector of multi-IFO 2F values
+                       const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],  //!< [in] input vector of per-IFO 2F[X] values
+                       const UINT4 len,                                //!< [in] length of input/output vectors
+                       const BSGLSetup *setup                          //!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                     )
 {
-  XLAL_CHECK ( (outBSGL != NULL) && (twoF != NULL) && (twoFPerDet != NULL) && (setup != NULL) && (len >= 1), XLAL_EINVAL );
+  XLAL_CHECK( ( outBSGL != NULL ) && ( twoF != NULL ) && ( twoFPerDet != NULL ) && ( setup != NULL ) && ( len >= 1 ), XLAL_EINVAL );
 
-  for ( UINT4 i = 0; i < len; i ++ )
-    {
-      // --------------------------------------------------
-      REAL4 FpMax = setup->C; // used to keep track of log of maximal denominator sum-term
+  for ( UINT4 i = 0; i < len; i ++ ) {
+    // --------------------------------------------------
+    REAL4 FpMax = setup->C; // used to keep track of log of maximal denominator sum-term
 
-      // per-detector contributions, including line weights
-      REAL4 Xterm[PULSAR_MAX_DETECTORS];
-      for ( UINT4 X=0; X < setup->numDetectors; X ++ )
-        {
-          Xterm[X] = 0.5f * twoFPerDet[X][i] + setup->ln_pLtL_X[X]; 	// FX + ln(pLtL_X) = FX + ln(pL_X) as ptL=0
-          FpMax = fmaxf ( FpMax, Xterm[X] );
-        }
+    // per-detector contributions, including line weights
+    REAL4 Xterm[PULSAR_MAX_DETECTORS];
+    for ( UINT4 X = 0; X < setup->numDetectors; X ++ ) {
+      Xterm[X] = 0.5f * twoFPerDet[X][i] + setup->ln_pLtL_X[X];     // FX + ln(pLtL_X) = FX + ln(pL_X) as ptL=0
+      FpMax = fmaxf( FpMax, Xterm[X] );
+    }
 
-      outBSGL[i] = 0.5f * twoF[i] - FpMax; // approximate result without log-correction term
+    outBSGL[i] = 0.5f * twoF[i] - FpMax; // approximate result without log-correction term
 
-      if ( setup->useLogCorrection ) 	// FIXME: indicate to gcc that this is the unlikely branch
-        {
-          // if useLogCorrection: extraSum = e^(Fstar0sc +ln(1-pL) - FpMax) + sum_X e^( Xterm[X] - FpMax )
-          REAL4 extraSum = expf ( setup->C  - FpMax );
+    if ( setup->useLogCorrection ) {  // FIXME: indicate to gcc that this is the unlikely branch
+      // if useLogCorrection: extraSum = e^(Fstar0sc +ln(1-pL) - FpMax) + sum_X e^( Xterm[X] - FpMax )
+      REAL4 extraSum = expf( setup->C  - FpMax );
 
-          // ... and add all FX-contributions
-          for ( UINT4 X = 0; X < setup->numDetectors; X++ )
-            {
-              extraSum += expf ( Xterm[X] - FpMax );
-            }
-          outBSGL[i] -= logf ( extraSum ); // F - FpMax - ln( ... )
-        } // if useLogCorrection
+      // ... and add all FX-contributions
+      for ( UINT4 X = 0; X < setup->numDetectors; X++ ) {
+        extraSum += expf( Xterm[X] - FpMax );
+      }
+      outBSGL[i] -= logf( extraSum );  // F - FpMax - ln( ... )
+    } // if useLogCorrection
 
-      outBSGL[i] *= LAL_LOG10E; // return log10(B_SGL)
+    outBSGL[i] *= LAL_LOG10E; // return log10(B_SGL)
 
-    } // for i < len
+  } // for i < len
 
   return XLAL_SUCCESS;
 
@@ -221,17 +215,17 @@ XLALVectorComputeBSGL ( REAL4 *outBSGL,					//!< [out] pre-allocated output vect
 
 /// Single-bin wrapper of XLALVectorComputeBSGL(), provided for backwards compatibility.
 REAL4
-XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector F-stat \f$ 2\F \f$ (coherent or semi-coherent sum(!))
-                  const REAL4 twoFX[PULSAR_MAX_DETECTORS],	//!< [in] per-detector F-stats \f$ \{2\F^X\} \f$ (coherent or semi-coherent sum(!))
-                  const BSGLSetup *setup			//!< [in] pre-computed setup from XLALCreateBSGLSetup()
-                  )
+XLALComputeBSGL( const REAL4 twoF,                              //!< [in] multi-detector F-stat \f$ 2\F \f$ (coherent or semi-coherent sum(!))
+                 const REAL4 twoFX[PULSAR_MAX_DETECTORS],      //!< [in] per-detector F-stats \f$ \{2\F^X\} \f$ (coherent or semi-coherent sum(!))
+                 const BSGLSetup *setup                        //!< [in] pre-computed setup from XLALCreateBSGLSetup()
+               )
 {
   REAL4 outBSGL;
   const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS];
   for ( UINT4 X = 0; X < setup->numDetectors; X ++ ) {
-    twoFPerDet[X] = &(twoFX[X]);
+    twoFPerDet[X] = &( twoFX[X] );
   }
-  XLAL_CHECK_REAL4 ( XLALVectorComputeBSGL ( &outBSGL, &twoF, twoFPerDet, 1, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_REAL4( XLALVectorComputeBSGL( &outBSGL, &twoF, twoFPerDet, 1, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return outBSGL;
 
@@ -244,34 +238,32 @@ XLALComputeBSGL ( const REAL4 twoF,				//!< [in] multi-detector F-stat \f$ 2\F \
  * Helper function to compute the denominator for XLALVectorComputeBSGLtL() and XLALVectorComputeBtSGLtL() - see their documentation for details.
  */
 int
-XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,					//!< [out] pre-allocated output array of denominator values
-                                   const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],	//!< [in] input vector of semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
-                                   const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],//!< [in] input vector of maxima over segments of \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats
-                                   const UINT4 len,					//!< [in] length of input/output vectors
-                                   const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
-                                   )
+XLALVectorComputeGLtLDenominator( REAL4 *outDenom,                                      //!< [out] pre-allocated output array of denominator values
+                                  const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],       //!< [in] input vector of semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
+                                  const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],//!< [in] input vector of maxima over segments of \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats
+                                  const UINT4 len,                                     //!< [in] length of input/output vectors
+                                  const BSGLSetup *setup                               //!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                                )
 {
-  XLAL_CHECK ( (outDenom != NULL) && (twoFPerDet != NULL) && (maxTwoFSegPerDet != NULL) && (setup != NULL), XLAL_EINVAL );
-  XLAL_CHECK_REAL4 ( !setup->useLogCorrection, XLAL_EDOM, "log correction not implemented for GLtL denominator.");
+  XLAL_CHECK( ( outDenom != NULL ) && ( twoFPerDet != NULL ) && ( maxTwoFSegPerDet != NULL ) && ( setup != NULL ), XLAL_EINVAL );
+  XLAL_CHECK_REAL4( !setup->useLogCorrection, XLAL_EDOM, "log correction not implemented for GLtL denominator." );
 
-  for ( UINT4 i = 0; i < len; i ++ )
-    {
-      REAL4 FpMax = setup->C; // used to keep track of log of maximal denominator sum-term
+  for ( UINT4 i = 0; i < len; i ++ ) {
+    REAL4 FpMax = setup->C; // used to keep track of log of maximal denominator sum-term
 
-      // per-detector contributions, including line weights
-      REAL4 Xterm[PULSAR_MAX_DETECTORS];
-      REAL4 Xlterm[PULSAR_MAX_DETECTORS];
-      for ( UINT4 X=0; X < setup->numDetectors; X ++ )
-        {
-          REAL4 ln_pLX = setup->ln_pLtL_X[X] - (REAL4)LAL_LN2; //  ln(pLX) = ln(pLtLX/2), as we assume pLX=ptLX, so pLtLX = 2*pLX
-          Xterm[X] = 0.5f * twoFPerDet[X][i] + ln_pLX; 	// FX + ln(pLX)
-          FpMax = fmaxf ( FpMax, Xterm[X] );
-          Xlterm[X] = 0.5f * maxTwoFSegPerDet[X][i] + setup->perSegTerm + ln_pLX; // assuming equal odds between segments: ptL_X = pL_X/Nseg
-          FpMax = fmaxf ( FpMax, Xlterm[X] );
-        } // for X < numDetectors
+    // per-detector contributions, including line weights
+    REAL4 Xterm[PULSAR_MAX_DETECTORS];
+    REAL4 Xlterm[PULSAR_MAX_DETECTORS];
+    for ( UINT4 X = 0; X < setup->numDetectors; X ++ ) {
+      REAL4 ln_pLX = setup->ln_pLtL_X[X] - ( REAL4 )LAL_LN2; //  ln(pLX) = ln(pLtLX/2), as we assume pLX=ptLX, so pLtLX = 2*pLX
+      Xterm[X] = 0.5f * twoFPerDet[X][i] + ln_pLX;  // FX + ln(pLX)
+      FpMax = fmaxf( FpMax, Xterm[X] );
+      Xlterm[X] = 0.5f * maxTwoFSegPerDet[X][i] + setup->perSegTerm + ln_pLX; // assuming equal odds between segments: ptL_X = pL_X/Nseg
+      FpMax = fmaxf( FpMax, Xlterm[X] );
+    } // for X < numDetectors
 
-      outDenom[i] = FpMax;
-    } // for i < len
+    outDenom[i] = FpMax;
+  } // for i < len
 
   return XLAL_SUCCESS;
 
@@ -294,7 +286,7 @@ XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,					//!< [out] pre-allocated
  * \newcommand{\oSGLtL}{o_\SGLtL}
  * \newcommand{\BSGLtL}{B_{\SGLtL}}
  * \f]
- * Compute the semi-coherent transient-line-robust CW detection statistic \f$ \logten \BSGLtL \f$ 
+ * Compute the semi-coherent transient-line-robust CW detection statistic \f$ \logten \BSGLtL \f$
  * from \cite Keitel2015 .
  *
  * As defined in Eq.(22), \f$ \BSGLtL \f$ is the BayesFactor for CW signals vs.
@@ -324,24 +316,23 @@ XLALVectorComputeGLtLDenominator ( REAL4 *outDenom,					//!< [out] pre-allocated
  *
  */
 int
-XLALVectorComputeBSGLtL ( REAL4 *outBSGLtL,				//!< [out] pre-allocated vector for returning BSLGtL values
-                          const REAL4 *twoF,				//!< [in] vector of semi-coherent sum \f$ 2\scF \f$ of multi-detector F-stats
-                          const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],//!< [in] vector of semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
-                          const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],	//!< [in] vector of maxima over segments of \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats
-                          const UINT4 len,				//!< [in] length of input/output vectors
-                          const BSGLSetup *setup			//!< [in] pre-computed setup from XLALCreateBSGLSetup()
-                          )
+XLALVectorComputeBSGLtL( REAL4 *outBSGLtL,                              //!< [out] pre-allocated vector for returning BSLGtL values
+                         const REAL4 *twoF,                            //!< [in] vector of semi-coherent sum \f$ 2\scF \f$ of multi-detector F-stats
+                         const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],//!< [in] vector of semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
+                         const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],  //!< [in] vector of maxima over segments of \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats
+                         const UINT4 len,                              //!< [in] length of input/output vectors
+                         const BSGLSetup *setup                        //!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                       )
 {
-  XLAL_CHECK ( (outBSGLtL != NULL) && (twoF != NULL) && (twoFPerDet != NULL) && (maxTwoFSegPerDet != NULL) && (setup != NULL), XLAL_EFUNC );
+  XLAL_CHECK( ( outBSGLtL != NULL ) && ( twoF != NULL ) && ( twoFPerDet != NULL ) && ( maxTwoFSegPerDet != NULL ) && ( setup != NULL ), XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALVectorComputeGLtLDenominator ( outBSGLtL, twoFPerDet, maxTwoFSegPerDet, len, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK( XLALVectorComputeGLtLDenominator( outBSGLtL, twoFPerDet, maxTwoFSegPerDet, len, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
   // outBSGLtL now holds 'GLtLDenominator'
 
-  for ( UINT4 i = 0; i < len; i ++ )
-    {
-      outBSGLtL[i] -= 0.5f * twoF[i];	// GLtLDenominator - F;
-      outBSGLtL[i] *= -LAL_LOG10E;	//convert to log10(B_SGLtL), flip sign
-    }
+  for ( UINT4 i = 0; i < len; i ++ ) {
+    outBSGLtL[i] -= 0.5f * twoF[i];   // GLtLDenominator - F;
+    outBSGLtL[i] *= -LAL_LOG10E;      //convert to log10(B_SGLtL), flip sign
+  }
 
   return XLAL_SUCCESS;
 
@@ -349,21 +340,20 @@ XLALVectorComputeBSGLtL ( REAL4 *outBSGLtL,				//!< [out] pre-allocated vector f
 
 /// Single-bin wrapper of XLALVectorComputeBSGLtL(), provided for backwards compatibility.
 REAL4
-XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$ 2\scF \f$ of multi-detector F-stats
-                    const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
-                    const REAL4 maxtwoFlX[PULSAR_MAX_DETECTORS],	//!< [in] maxima \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats over segments
-                    const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
-                    )
+XLALComputeBSGLtL( const REAL4 twoF,                                    //!< [in] semi-coherent sum \f$ 2\scF \f$ of multi-detector F-stats
+                   const REAL4 twoFX[PULSAR_MAX_DETECTORS],            //!< [in] semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
+                   const REAL4 maxtwoFlX[PULSAR_MAX_DETECTORS],        //!< [in] maxima \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats over segments
+                   const BSGLSetup *setup                              //!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                 )
 {
   REAL4 outBSGLtL;
   const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS];
   const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS];
-  for ( UINT4 X = 0; X < setup->numDetectors; X ++ )
-    {
-      twoFPerDet[X] = &(twoFX[X]);
-      maxTwoFSegPerDet[X] = &(maxtwoFlX[X]);
-    }
-  XLAL_CHECK_REAL4 ( XLALVectorComputeBSGLtL ( &outBSGLtL, &twoF, twoFPerDet, maxTwoFSegPerDet, 1, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+  for ( UINT4 X = 0; X < setup->numDetectors; X ++ ) {
+    twoFPerDet[X] = &( twoFX[X] );
+    maxTwoFSegPerDet[X] = &( maxtwoFlX[X] );
+  }
+  XLAL_CHECK_REAL4( XLALVectorComputeBSGLtL( &outBSGLtL, &twoF, twoFPerDet, maxTwoFSegPerDet, 1, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return outBSGLtL;
 
@@ -378,7 +368,7 @@ XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$ 2\scF 
  * \newcommand{\otSGLtL}{o_\tSGLtL}
  * \newcommand{\oTSGk}{\coh{o}_{\Transsig/\Gauss}^{\ell}}
  * \f]
- * Compute a semi-coherent transient-line-robust tCW detection statistic \f$ \logten \BtSGLtL \f$ 
+ * Compute a semi-coherent transient-line-robust tCW detection statistic \f$ \logten \BtSGLtL \f$
  * from \cite Keitel2015 .
  *
  * As defined in Eq.(40), \f$ \BtSGLtL \f$ is the BayesFactor for tCW signals vs.
@@ -397,23 +387,22 @@ XLALComputeBSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$ 2\scF 
  *
  */
 int
-XLALVectorComputeBtSGLtL ( REAL4 *outBtSGLtL,					//!< [out] pre-allocated vector for returning BtSGLtL values
-                           const REAL4 *maxTwoFSeg,				//!< [in] vector of maximum \f$ \max\limits_{\ell}2\cohF^\ell \f$ of multi-detector F-stats over segments
-                           const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],	//!< [in] vector of semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
-                           const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],	//!< [in] vector of maxima \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats over segments
-                           const UINT4 len,					//!< [in] length of input/output vectors
-                           const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
-                           )
+XLALVectorComputeBtSGLtL( REAL4 *outBtSGLtL,                                    //!< [out] pre-allocated vector for returning BtSGLtL values
+                          const REAL4 *maxTwoFSeg,                             //!< [in] vector of maximum \f$ \max\limits_{\ell}2\cohF^\ell \f$ of multi-detector F-stats over segments
+                          const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],       //!< [in] vector of semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
+                          const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS], //!< [in] vector of maxima \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats over segments
+                          const UINT4 len,                                     //!< [in] length of input/output vectors
+                          const BSGLSetup *setup                               //!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                        )
 {
-  XLAL_CHECK ( (outBtSGLtL != NULL) && (maxTwoFSeg != NULL) && (twoFPerDet != NULL) && (maxTwoFSegPerDet != NULL) && (setup != NULL), XLAL_EFUNC );
+  XLAL_CHECK( ( outBtSGLtL != NULL ) && ( maxTwoFSeg != NULL ) && ( twoFPerDet != NULL ) && ( maxTwoFSegPerDet != NULL ) && ( setup != NULL ), XLAL_EFUNC );
 
-  XLAL_CHECK ( XLALVectorComputeGLtLDenominator ( outBtSGLtL, twoFPerDet, maxTwoFSegPerDet, len, setup ) == XLAL_SUCCESS, XLAL_EFUNC );   // outBtSGLtL = GLtLDenominator
+  XLAL_CHECK( XLALVectorComputeGLtLDenominator( outBtSGLtL, twoFPerDet, maxTwoFSegPerDet, len, setup ) == XLAL_SUCCESS, XLAL_EFUNC );     // outBtSGLtL = GLtLDenominator
 
-  for ( UINT4 i = 0; i < len; i ++ )
-    {
-      outBtSGLtL[i] -= 0.5f * maxTwoFSeg[i] + setup->perSegTerm;	// outBtSGLtL = GLtLDenominator - (max_l F_l + perSegTerm)
-      outBtSGLtL[i] *= -LAL_LOG10E;	// convert to log10 and flip sign
-    }
+  for ( UINT4 i = 0; i < len; i ++ ) {
+    outBtSGLtL[i] -= 0.5f * maxTwoFSeg[i] + setup->perSegTerm;        // outBtSGLtL = GLtLDenominator - (max_l F_l + perSegTerm)
+    outBtSGLtL[i] *= -LAL_LOG10E;     // convert to log10 and flip sign
+  }
 
   return XLAL_SUCCESS;
 
@@ -421,21 +410,20 @@ XLALVectorComputeBtSGLtL ( REAL4 *outBtSGLtL,					//!< [out] pre-allocated vecto
 
 /// Single-bin wrapper of XLALVectorComputeBtSGLtL(), provided for backwards compatibility.
 REAL4
-XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$ \max\limits_{\ell}2\cohF^\ell \f$ of multi-detector F-stats over segments
-                     const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
-                     const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] maxima \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats over segments
-                     const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
-                     )
+XLALComputeBtSGLtL( const REAL4 maxtwoFl,                               //!< [in] maximum \f$ \max\limits_{\ell}2\cohF^\ell \f$ of multi-detector F-stats over segments
+                    const REAL4 twoFX[PULSAR_MAX_DETECTORS],           //!< [in] semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
+                    const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],       //!< [in] maxima \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats over segments
+                    const BSGLSetup *setup                             //!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                  )
 {
   REAL4 outBtSGLtL;
   const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS];
   const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS];
-  for ( UINT4 X = 0; X < setup->numDetectors; X ++ )
-    {
-      twoFPerDet[X] = &(twoFX[X]);
-      maxTwoFSegPerDet[X] = &(maxtwoFXl[X]);
-    }
-  XLAL_CHECK_REAL4 ( XLALVectorComputeBtSGLtL ( &outBtSGLtL, &maxtwoFl, twoFPerDet, maxTwoFSegPerDet, 1, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+  for ( UINT4 X = 0; X < setup->numDetectors; X ++ ) {
+    twoFPerDet[X] = &( twoFX[X] );
+    maxTwoFSegPerDet[X] = &( maxtwoFXl[X] );
+  }
+  XLAL_CHECK_REAL4( XLALVectorComputeBtSGLtL( &outBtSGLtL, &maxtwoFl, twoFPerDet, maxTwoFSegPerDet, 1, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   return outBtSGLtL;
 } // XLALComputeBtSGLtL()
@@ -454,7 +442,7 @@ XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$ \max\limits_
  * \newcommand{\cppTS}{\coh{p}_{\Transsig}}
  * \newcommand{\cppTSk}{\coh{p}_{\Transsig}^{\ell}}
  * \f]
- * Compute the semi-coherent transient-line-robust CW+tCW detection statistic \f$ \logten \BStSGLtL \f$ 
+ * Compute the semi-coherent transient-line-robust CW+tCW detection statistic \f$ \logten \BStSGLtL \f$
  * from \cite Keitel2015 .
  *
  * As defined in Eq.(35), \f$ \BStSGLtL \f$ is the BayesFactor for either persistent CW or transient tCW signals vs.
@@ -475,32 +463,31 @@ XLALComputeBtSGLtL ( const REAL4 maxtwoFl,				//!< [in] maximum \f$ \max\limits_
  *
  */
 REAL4
-XLALComputeBStSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$ 2\scF \f$ of multi-detector F-stats
-                      const REAL4 maxtwoFl,				//!< [in] maximum \f$ \max\limits_{\ell}2\cohF^\ell \f$ of multi-detector F-stats over segments
-                      const REAL4 twoFX[PULSAR_MAX_DETECTORS],		//!< [in] semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
-                      const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],	//!< [in] maxima \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats over segments
-                      const BSGLSetup *setup				//!< [in] pre-computed setup from XLALCreateBSGLSetup()
-                      )
+XLALComputeBStSGLtL( const REAL4 twoF,                                  //!< [in] semi-coherent sum \f$ 2\scF \f$ of multi-detector F-stats
+                     const REAL4 maxtwoFl,                             //!< [in] maximum \f$ \max\limits_{\ell}2\cohF^\ell \f$ of multi-detector F-stats over segments
+                     const REAL4 twoFX[PULSAR_MAX_DETECTORS],          //!< [in] semi-coherent sums \f$ \{2\scF^X\} \f$ of per-detector F-stats
+                     const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],      //!< [in] maxima \f$ \{\max\limits_{\ell}2\{\cohF^{X\ell}\}\} \f$ of per-detector F-stats over segments
+                     const BSGLSetup *setup                            //!< [in] pre-computed setup from XLALCreateBSGLSetup()
+                   )
 {
-  XLAL_CHECK_REAL4 ( setup != NULL, XLAL_EINVAL );
+  XLAL_CHECK_REAL4( setup != NULL, XLAL_EINVAL );
 
   REAL4 GLtLDenominator;
   const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS];
   const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS];
-  for ( UINT4 X = 0; X < setup->numDetectors; X ++ )
-    {
-      twoFPerDet[X] = &(twoFX[X]);
-      maxTwoFSegPerDet[X] = &(maxtwoFXl[X]);
-    }
-  XLAL_CHECK_REAL4 ( XLALVectorComputeGLtLDenominator ( &GLtLDenominator, twoFPerDet, maxTwoFSegPerDet, 1, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
+  for ( UINT4 X = 0; X < setup->numDetectors; X ++ ) {
+    twoFPerDet[X] = &( twoFX[X] );
+    maxTwoFSegPerDet[X] = &( maxtwoFXl[X] );
+  }
+  XLAL_CHECK_REAL4( XLALVectorComputeGLtLDenominator( &GLtLDenominator, twoFPerDet, maxTwoFSegPerDet, 1, setup ) == XLAL_SUCCESS, XLAL_EFUNC );
 
-  const REAL4 ln_pS = -(REAL4)LAL_LN2;	// =ln(2) assuming equal odds between S and tS hypotheses: pS = ptS = 1/2, conditional on (S or tS)
+  const REAL4 ln_pS = -( REAL4 )LAL_LN2; // =ln(2) assuming equal odds between S and tS hypotheses: pS = ptS = 1/2, conditional on (S or tS)
   REAL4 multiF = 0.5f * twoF + ln_pS;
-  REAL4 tsTerm = 0.5f * maxtwoFl + setup->perSegTerm + ln_pS;	// ptS_l = ptS/Nseg = pS/Nseg
-  REAL4 maxNumerator = fmaxf ( multiF, tsTerm );
-  REAL4 minNumerator = fminf ( multiF, tsTerm );
+  REAL4 tsTerm = 0.5f * maxtwoFl + setup->perSegTerm + ln_pS;   // ptS_l = ptS/Nseg = pS/Nseg
+  REAL4 maxNumerator = fmaxf( multiF, tsTerm );
+  REAL4 minNumerator = fminf( multiF, tsTerm );
 
-  REAL4 ln_BStSGLtL  = maxNumerator + logf ( 1 + expf ( minNumerator - maxNumerator ) ) - GLtLDenominator;
+  REAL4 ln_BStSGLtL  = maxNumerator + logf( 1 + expf( minNumerator - maxNumerator ) ) - GLtLDenominator;
 
   return ln_BStSGLtL * LAL_LOG10E; // return log10(B_SGL)
 
@@ -511,20 +498,19 @@ XLALComputeBStSGLtL ( const REAL4 twoF,					//!< [in] semi-coherent sum \f$ 2\sc
  * \f$ o_{LG}^X = \frac{P(H_L^X)}{P(H_G^X)} \f$ to a flat array of REAL4s.
  */
 int
-XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],		//!< [out] array of parsed \f$ o_{LG}^X \f$ values
-                      const LALStringVector *oLGX_string	//!< [in] string-list of \f$ o_{LG}^X \f$ values
-                    )
+XLALParseLinePriors( REAL4 oLGX[PULSAR_MAX_DETECTORS],          //!< [out] array of parsed \f$ o_{LG}^X \f$ values
+                     const LALStringVector *oLGX_string        //!< [in] string-list of \f$ o_{LG}^X \f$ values
+                   )
 {
-  XLAL_CHECK ( oLGX != NULL, XLAL_EINVAL );
-  XLAL_CHECK ( oLGX_string != NULL, XLAL_EINVAL );
+  XLAL_CHECK( oLGX != NULL, XLAL_EINVAL );
+  XLAL_CHECK( oLGX_string != NULL, XLAL_EINVAL );
   UINT4 numDetectors = oLGX_string->length;
-  XLAL_CHECK ( (numDetectors > 0) && (numDetectors <= PULSAR_MAX_DETECTORS), XLAL_EINVAL );
+  XLAL_CHECK( ( numDetectors > 0 ) && ( numDetectors <= PULSAR_MAX_DETECTORS ), XLAL_EINVAL );
 
   // parse input string
-  for ( UINT4 X = 0; X < numDetectors; X ++ )
-    {
-      XLAL_CHECK ( XLALParseStringValueAsREAL4 ( &oLGX[X], oLGX_string->data[X] ) == XLAL_SUCCESS, XLAL_EFUNC );
-    } // for X < numDetectors
+  for ( UINT4 X = 0; X < numDetectors; X ++ ) {
+    XLAL_CHECK( XLALParseStringValueAsREAL4( &oLGX[X], oLGX_string->data[X] ) == XLAL_SUCCESS, XLAL_EFUNC );
+  } // for X < numDetectors
 
   return XLAL_SUCCESS;
 
