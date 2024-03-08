@@ -108,8 +108,8 @@ def bbh_final_mass_non_spinning_Panetal(m1, m2):
     ------
     final mass, mf
     """
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
+    m1 = np.array(m1,dtype=np.float64)
+    m2 = np.array(m2,dtype=np.float64)
 
     m = m1 + m2
     eta = m1*m2/(m1+m2)**2.
@@ -127,8 +127,8 @@ def bbh_final_spin_non_spinning_Panetal(m1, m2):
     ------
     final dimensionless spin, chif
     """
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
+    m1 = np.array(m1,dtype=np.float64)
+    m2 = np.array(m2,dtype=np.float64)
 
     eta = m1*m2/(m1+m2)**2.
     return np.sqrt(12.)*eta - 3.871*(eta**2.) + 4.028*(eta**3)
@@ -254,7 +254,9 @@ def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta, version):
 
 def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014"):
     """
-    Calculate the spin of the final BH resulting from the merger of two black holes with non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014) (version == "2014") or the small update from Healy and Lousto arXiv:1610.09713 (version == "2016")
+    Calculate the spin of the final BH resulting from the merger of two black holes with 
+    non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014) (version == "2014") 
+    or the small update from Healy and Lousto arXiv:1610.09713 (version == "2016")
 
     Parameters
     ----------
@@ -265,30 +267,15 @@ def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014"):
     -------
     dimensionless final spin, chif
     """
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
-    chi1 = np.vectorize(float)(np.array(chi1))
-    chi2 = np.vectorize(float)(np.array(chi2))
-
-    # Vectorize the function if arrays are provided as input
-    if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) > 1:
-        return np.vectorize(bbh_final_spin_non_precessing_Healyetal)(m1, m2, chi1, chi2, version)
-
+    m1 = np.array(m1,dtype=np.float64)
+    m2 = np.array(m2,dtype=np.float64)
+    chi1 = np.array(chi1,dtype=np.float64)
+    chi2 = np.array(chi2,dtype=np.float64)
     eta, delta_m, S, Delta = _RIT_setup(m1, m2, chi1, chi2)
-
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-    # compute the final spin
-    # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
-
-    x, cov_x = so.leastsq(_final_spin_diff_Healyetal, 0., args=(eta, delta_m, S, Delta, version))
-
-    # The first element returned by so.leastsq() is a scalar in early versions of scipy (like 0.7.2) while it is a tuple of length 1 in later versions of scipy (like 0.10.1). The following bit ensures that a scalar is returned for a set of scalar inputs in a version-independent way.
-    if hasattr(x, '__len__'):
-      chif = x[0]
-    else:
-      chif = x
-
-    return chif
+    def func(eta, delta_m, S, Delta):
+        return so.leastsq(_final_spin_diff_Healyetal, 0., args=(eta, delta_m, S, Delta, version))[0][0]
+    chif = np.vectorize(func)(eta, delta_m, S, Delta)
+    return chif.item() if np.ndim(chif) == 0 else chif
 
 def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014", chif=None):
     """
@@ -304,10 +291,10 @@ def bbh_final_mass_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014", 
     -------
     final mass, mf
     """
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
-    chi1 = np.vectorize(float)(np.array(chi1))
-    chi2 = np.vectorize(float)(np.array(chi2))
+    m1 = np.array(m1,dtype=np.float64)
+    m2 = np.array(m2,dtype=np.float64)
+    chi1 = np.array(chi1,dtype=np.float64)
+    chi2 = np.array(chi2,dtype=np.float64)
 
     eta, delta_m, S, Delta = _RIT_setup(m1, m2, chi1, chi2)
 
@@ -416,14 +403,14 @@ def bbh_final_mass_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, ch
     final mass, mf
     """
 
-    m1    = np.vectorize(float)(np.array(m1))
-    m2    = np.vectorize(float)(np.array(m2))
-    chi1  = np.vectorize(float)(np.array(chi1))
-    chi2  = np.vectorize(float)(np.array(chi2))
-    tilt1 = np.vectorize(float)(np.array(tilt1))
-    tilt2 = np.vectorize(float)(np.array(tilt2))
+    m1    = np.array(m1,dtype=np.float64)
+    m2    = np.array(m2,dtype=np.float64)
+    chi1  = np.array(chi1,dtype=np.float64)
+    chi2  = np.array(chi2,dtype=np.float64)
+    tilt1 = np.array(tilt1,dtype=np.float64)
+    tilt2 = np.array(tilt2,dtype=np.float64)
     if chif is not None:
-       chif = np.vectorize(float)(np.array(chif))
+       chif = np.array(chif,dtype=np.float64)
 
     _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
 
@@ -475,12 +462,12 @@ def bbh_final_spin_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitname, tr
     (signed) dimensionless final spin parameter, chif
     """
 
-    m1    = np.vectorize(float)(np.array(m1))
-    m2    = np.vectorize(float)(np.array(m2))
-    chi1  = np.vectorize(float)(np.array(chi1))
-    chi2  = np.vectorize(float)(np.array(chi2))
-    tilt1 = np.vectorize(float)(np.array(tilt1))
-    tilt2 = np.vectorize(float)(np.array(tilt2))
+    m1    = np.array(m1,dtype=np.float64)
+    m2    = np.array(m2,dtype=np.float64)
+    chi1  = np.array(chi1,dtype=np.float64)
+    chi2  = np.array(chi2,dtype=np.float64)
+    tilt1 = np.array(tilt1,dtype=np.float64)
+    tilt2 = np.array(tilt2,dtype=np.float64)
 
     _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
 
@@ -533,13 +520,13 @@ def bbh_final_spin_precessing(m1, m2, chi1, chi2, tilt1, tilt2, phi12, fitname, 
     magnitude of the dimensionless final spin parameter, chif
     """
 
-    m1    = np.vectorize(float)(np.array(m1))
-    m2    = np.vectorize(float)(np.array(m2))
-    chi1  = np.vectorize(float)(np.array(chi1))
-    chi2  = np.vectorize(float)(np.array(chi2))
-    tilt1 = np.vectorize(float)(np.array(tilt1))
-    tilt2 = np.vectorize(float)(np.array(tilt2))
-    phi12 = np.vectorize(float)(np.array(phi12))
+    m1    = np.array(m1,dtype=np.float64)
+    m2    = np.array(m2,dtype=np.float64)
+    chi1  = np.array(chi1,dtype=np.float64)
+    chi2  = np.array(chi2,dtype=np.float64)
+    tilt1 = np.array(tilt1,dtype=np.float64)
+    tilt2 = np.array(tilt2,dtype=np.float64)
+    phi12 = np.array(phi12,dtype=np.float64)
 
     _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
 
@@ -578,10 +565,10 @@ def bbh_final_mass_non_precessing_Husaetal(m1, m2, chi1, chi2):
     m1, m2: component masses
     chi1, chi2: dimensionless spins of two BHs
     """
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
-    chi1 = np.vectorize(float)(np.array(chi1))
-    chi2 = np.vectorize(float)(np.array(chi2))
+    m1 = np.array(m1,dtype=np.float64)
+    m2 = np.array(m2,dtype=np.float64)
+    chi1 = np.array(chi1,dtype=np.float64)
+    chi2 = np.array(chi2,dtype=np.float64)
 
     if np.any(abs(chi1)>1):
       raise ValueError("chi1 has to be in [-1, 1]")
@@ -621,10 +608,10 @@ def bbh_final_spin_non_precessing_Husaetal(m1, m2, chi1, chi2):
     chi1, chi2: dimensionless spins of two BHs
     """
     # Vectorize the function if arrays are provided as input
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
-    chi1 = np.vectorize(float)(np.array(chi1))
-    chi2 = np.vectorize(float)(np.array(chi2))
+    m1 = np.array(m1,dtype=np.float64)
+    m2 = np.array(m2,dtype=np.float64)
+    chi1 = np.array(chi1,dtype=np.float64)
+    chi2 = np.array(chi2,dtype=np.float64)
 
     if np.any(abs(chi1)>1):
       raise ValueError("chi1 has to be in [-1, 1]")
@@ -661,10 +648,10 @@ def bbh_UIBfits_setup(m1, m2, chi1, chi2):
     """
 
     # Vectorize the function if arrays are provided as input
-    m1   = np.vectorize(float)(np.array(m1))
-    m2   = np.vectorize(float)(np.array(m2))
-    chi1 = np.vectorize(float)(np.array(chi1))
-    chi2 = np.vectorize(float)(np.array(chi2))
+    m1   = np.array(m1,dtype=np.float64)
+    m2   = np.array(m2,dtype=np.float64)
+    chi1 = np.array(chi1,dtype=np.float64)
+    chi2 = np.array(chi2,dtype=np.float64)
 
     if np.any(m1<0):
       raise ValueError("m1 must not be negative")
@@ -908,10 +895,10 @@ def _bbh_HBR2016_setup(m1, m2, chi1, chi2):
     """
 
     # Vectorize if arrays are provided as input
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
-    chi1 = np.vectorize(float)(np.array(chi1))
-    chi2 = np.vectorize(float)(np.array(chi2))
+    m1 = np.array(m1,dtype=np.float64)
+    m2 = np.array(m2,dtype=np.float64)
+    chi1 = np.array(chi1,dtype=np.float64)
+    chi2 = np.array(chi2,dtype=np.float64)
 
     return m1, m2, chi1, chi2, m2/m1
 
@@ -1020,83 +1007,79 @@ def _bbh_HBR2016_ell(m1, m2, chi1z, chi2z, version):
     return ell
 
 def bbh_final_spin_non_precessing_HBR2016(m1, m2, chi1z, chi2z, version="M3J3"):
-        """
-        Calculate the (signed) dimensionless spin of the final BH resulting from the
-        merger of two black holes with aligned spins using the fit from Hofmann, Barausse, and Rezzolla ApJL 825, L19 (2016), henceforth HBR.
+    """
+    Calculate the (signed) dimensionless spin of the final BH resulting from the
+    merger of two black holes with aligned spins using the fit from Hofmann, Barausse, and Rezzolla ApJL 825, L19 (2016), henceforth HBR.
 
-        The three versions available correspond to the three choices of fit coefficients given in Table 1 of that paper, with 6, 16, and 20 coefficients, respectively.
+    The three versions available correspond to the three choices of fit coefficients given in Table 1 of that paper, with 6, 16, and 20 coefficients, respectively.
 
-        version can thus be "M1J2", "M3J3", or "M3J4"
+    version can thus be "M1J2", "M3J3", or "M3J4"
 
-        m1, m2: component masses
-        chi1z, chi2z: components of the dimensionless spins of the two BHs along the orbital angular momentum
-        """
+    m1, m2: component masses
+    chi1z, chi2z: components of the dimensionless spins of the two BHs along the orbital angular momentum
+    """
 
-        # Calculate q and vectorize the masses and spins if arrays are provided as input
+    # Calculate q and vectorize the masses and spins if arrays are provided as input
 
-        m1, m2, chi1z, chi2z, q = _bbh_HBR2016_setup(m1, m2, chi1z, chi2z)
+    m1, m2, chi1z, chi2z, q = _bbh_HBR2016_setup(m1, m2, chi1z, chi2z)
 
-        # Calculate the final spin
+    # Calculate the final spin
 
-        atot = (chi1z + chi2z*q*q)/((1.+q)*(1.+q)) # Eq. (12) in HBR
+    atot = (chi1z + chi2z*q*q)/((1.+q)*(1.+q)) # Eq. (12) in HBR
 
-        ell = _bbh_HBR2016_ell(m1, m2, chi1z, chi2z, version)
+    ell = _bbh_HBR2016_ell(m1, m2, chi1z, chi2z, version)
 
-        return atot + ell/(1./q + 2. + q) # Eq. (12) in HBR, writing the symmetric mass ratio in terms of q
+    return atot + ell/(1./q + 2. + q) # Eq. (12) in HBR, writing the symmetric mass ratio in terms of q
 
 def bbh_final_spin_precessing_HBR2016(m1, m2, chi1, chi2, tilt1, tilt2, phi12, version="M3J3"):
-        """
-        Calculate the dimensionless spin of the final BH resulting from the
-        merger of two black holes with precessing spins using the fit from Hofmann, Barausse, and Rezzolla ApJL 825, L19 (2016), henceforth HBR.
+    """
+    Calculate the dimensionless spin of the final BH resulting from the
+    merger of two black holes with precessing spins using the fit from Hofmann, Barausse, and Rezzolla ApJL 825, L19 (2016), henceforth HBR.
 
-        The three versions available correspond to the three choices of fit coefficients given in Table 1 of that paper, with 6, 16, and 20 coefficients, respectively.
+    The three versions available correspond to the three choices of fit coefficients given in Table 1 of that paper, with 6, 16, and 20 coefficients, respectively.
 
-        version can thus be "M1J2", "M3J3", or "M3J4"
+    version can thus be "M1J2", "M3J3", or "M3J4"
 
-        m1, m2: component masses
-        chi1, chi2: dimensionless spins of two BHs
-        tilt1, tilt2: tilt angles of the spins from the orbital angular momentum
-        phi12: angle between in-plane spin components
-        """
+    m1, m2: component masses
+    chi1, chi2: dimensionless spins of two BHs
+    tilt1, tilt2: tilt angles of the spins from the orbital angular momentum
+    phi12: angle between in-plane spin components
+    """
 
-        # Vectorize the function if arrays are provided as input
-        if np.size(m1) * np.size(m2) * np.size(chi1) * np.size(chi2) * np.size(tilt1) * np.size(tilt2) * np.size(phi12) > 1:
-            return np.vectorize(bbh_final_spin_precessing_HBR2016)(m1, m2, chi1, chi2, tilt1, tilt2, phi12, version)
+    # Calculate q and vectorize the masses and spins if arrays are provided as input
 
-        # Calculate q and vectorize the masses and spins if arrays are provided as input
+    m1, m2, chi1, chi2, q = _bbh_HBR2016_setup(m1, m2, chi1, chi2)
 
-        m1, m2, chi1, chi2, q = _bbh_HBR2016_setup(m1, m2, chi1, chi2)
+    # Vectorize the spin angles if arrays are provided as input
+    tilt1 = np.array(tilt1,dtype=np.float64)
+    tilt2 = np.array(tilt2,dtype=np.float64)
+    phi12 = np.array(phi12,dtype=np.float64)
 
-        # Vectorize the spin angles if arrays are provided as input
-        tilt1 = np.vectorize(float)(np.array(tilt1))
-        tilt2 = np.vectorize(float)(np.array(tilt2))
-        phi12 = np.vectorize(float)(np.array(phi12))
+    # Set eps (\epsilon_\beta or \epsilon_\gamma) to the value given below Eq. (18) in HBR
 
-        # Set eps (\epsilon_\beta or \epsilon_\gamma) to the value given below Eq. (18) in HBR
+    eps = 0.024
 
-        eps = 0.024
+    # Computing angles defined in Eq. (17) of HBR. The betas and gammas expressions are for the starred quantities computed using the second (approximate) equality in Eq. (18) in HBR
+    cos_beta = np.cos(tilt1)
+    cos_betas = np.cos(tilt1 + eps*np.sin(tilt1))
+    cos_gamma = np.cos(tilt2)
+    cos_gammas = np.cos(tilt2 + eps*np.sin(tilt2))
+    cos_alpha = ((1 - cos_beta*cos_beta)*(1 - cos_gamma*cos_gamma))**0.5*np.cos(phi12) + cos_beta*cos_gamma # This rewrites the inner product definition of cos_alpha in terms of cos_beta, cos_gamma, and phi12
 
-        # Computing angles defined in Eq. (17) of HBR. The betas and gammas expressions are for the starred quantities computed using the second (approximate) equality in Eq. (18) in HBR
-        cos_beta = np.cos(tilt1)
-        cos_betas = np.cos(tilt1 + eps*np.sin(tilt1))
-        cos_gamma = np.cos(tilt2)
-        cos_gammas = np.cos(tilt2 + eps*np.sin(tilt2))
-        cos_alpha = ((1 - cos_beta*cos_beta)*(1 - cos_gamma*cos_gamma))**0.5*np.cos(phi12) + cos_beta*cos_gamma # This rewrites the inner product definition of cos_alpha in terms of cos_beta, cos_gamma, and phi12
+    # Define a shorthand and compute the final spin
 
-        # Define a shorthand and compute the final spin
+    q2 = q*q
 
-        q2 = q*q
+    ell = _bbh_HBR2016_ell(m1, m2, chi1*cos_betas, chi2*cos_gammas, version)
 
-        ell = _bbh_HBR2016_ell(m1, m2, chi1*cos_betas, chi2*cos_gammas, version)
+    # Compute the final spin value [Eq. (16) in HBR], truncating the argument of the square root at zero if it becomes negative
+    sqrt_arg = chi1*chi1 + chi2*chi2*q2*q2 + 2.*chi1*chi2*q2*cos_alpha + 2.*(chi1*cos_betas + chi2*q2*cos_gammas)*ell*q + ell*ell*q2
+    if np.any(sqrt_arg < 0.):
+        print(f"bbh_final_spin_precessing_HBR2016(): The argument of the square root is negative for indexes {np.where(sqrt_arg < 0)[0]}; truncating it to zero.")
+        sqrt_arg = np.clip(sqrt_arg,0.,None)
 
-        # Compute the final spin value [Eq. (16) in HBR], truncating the argument of the square root at zero if it becomes negative
-        sqrt_arg = chi1*chi1 + chi2*chi2*q2*q2 + 2.*chi1*chi2*q2*cos_alpha + 2.*(chi1*cos_betas + chi2*q2*cos_gammas)*ell*q + ell*ell*q2
-        if sqrt_arg < 0.:
-            print("bbh_final_spin_precessing_HBR2016(): The argument of the square root is %f; truncating it to zero."%sqrt_arg)
-            sqrt_arg = 0.
-
-        # Return the final spin value [Eq. (16) in HBR]
-        return sqrt_arg**0.5/((1.+q)*(1.+q))
+    # Return the final spin value [Eq. (16) in HBR]
+    return sqrt_arg**0.5/((1.+q)*(1.+q))
 
 #######################
 # Peak luminosity fits
@@ -1124,7 +1107,7 @@ def bbh_aligned_Lpeak_6mode_SHXJDK(q, chi1, chi2):
     chi2: the component of the dimensionless spin of m2 along the angular momentum (z)
     """
     # Vectorize the function if arrays are provided as input
-    q = np.vectorize(float)(np.array(q))
+    q = np.array(q,dtype=np.float64)
 
     # from bayespputils.py convention is q = m2/m1, where m1>m2.
     if np.any(q<=0.):
@@ -1151,10 +1134,10 @@ def bbh_peak_luminosity_non_precessing_T1600018(m1, m2, chi1, chi2):
     """
 
     # Vectorize the function if arrays are provided as input
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
-    chi1 = np.vectorize(float)(np.array(chi1))
-    chi2 = np.vectorize(float)(np.array(chi2))
+    m1 = np.array(m1,dtype=np.float64)
+    m2 = np.array(m2,dtype=np.float64)
+    chi1 = np.array(chi1,dtype=np.float64)
+    chi2 = np.array(chi2,dtype=np.float64)
 
     # Calculate powers of eta and the effective spin S (not used in this fit)
     m, eta, eta2, eta3, eta4, Stot, Shat, Shat2, Shat3, Shat4, chidiff, chidiff2, sqrt2, sqrt3, sqrt1m4eta = bbh_UIBfits_setup(m1, m2, chi1, chi2)
@@ -1244,10 +1227,10 @@ def bbh_peak_luminosity_non_precessing_Healyetal(m1, m2, chi1z, chi2z):
 
     """
 
-    m1 = np.vectorize(float)(np.array(m1))
-    m2 = np.vectorize(float)(np.array(m2))
-    chi1z = np.vectorize(float)(np.array(chi1z))
-    chi2z = np.vectorize(float)(np.array(chi2z))
+    m1 = np.array(m1,dtype=np.float64)
+    m2 = np.array(m2,dtype=np.float64)
+    chi1z = np.array(chi1z,dtype=np.float64)
+    chi2z = np.array(chi2z,dtype=np.float64)
 
     eta, delta_m, S, Delta = _RIT_setup(m1, m2, chi1z, chi2z)
 
@@ -1277,12 +1260,12 @@ def bbh_peak_luminosity_projected_spins(m1, m2, chi1, chi2, tilt1, tilt2, fitnam
     peak luminosity, Lpeak, in units of 10^56 ergs/s
     """
 
-    m1    = np.vectorize(float)(np.array(m1))
-    m2    = np.vectorize(float)(np.array(m2))
-    chi1  = np.vectorize(float)(np.array(chi1))
-    chi2  = np.vectorize(float)(np.array(chi2))
-    tilt1 = np.vectorize(float)(np.array(tilt1))
-    tilt2 = np.vectorize(float)(np.array(tilt2))
+    m1    = np.array(m1,dtype=np.float64)
+    m2    = np.array(m2,dtype=np.float64)
+    chi1  = np.array(chi1,dtype=np.float64)
+    chi2  = np.array(chi2,dtype=np.float64)
+    tilt1 = np.array(tilt1,dtype=np.float64)
+    tilt2 = np.array(tilt2,dtype=np.float64)
 
     _check_mchi(m1,m2,chi1,chi2) # Check that inputs are physical
 
