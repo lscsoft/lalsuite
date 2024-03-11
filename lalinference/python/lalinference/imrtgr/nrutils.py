@@ -254,8 +254,8 @@ def _final_spin_diff_Healyetal(a_f, eta, delta_m, S, Delta, version):
 
 def bbh_final_spin_non_precessing_Healyetal(m1, m2, chi1, chi2, version="2014"):
     """
-    Calculate the spin of the final BH resulting from the merger of two black holes with 
-    non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014) (version == "2014") 
+    Calculate the spin of the final BH resulting from the merger of two black holes with
+    non-precessing spins using fit from Healy et al Phys Rev D 90, 104004 (2014) (version == "2014")
     or the small update from Healy and Lousto arXiv:1610.09713 (version == "2016")
 
     Parameters
