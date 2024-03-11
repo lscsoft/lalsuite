@@ -1,3 +1,9 @@
+lalsimulation (5.4.0-1) unstable; urgency=low
+
+  * Update for 5.4.0
+
+ -- Duncan Macleod <duncan.macleod@ligo.org>  Mon, 11 Mar 2024 10:19:00 +0000
+
 lalsimulation (5.3.1-1) unstable; urgency=low
 
   * Update for 5.3.1
