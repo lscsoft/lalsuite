@@ -167,13 +167,6 @@ outputs:
               --ignore test/python/test_rate.py
               -k 'not lal.rate and not lal.series'
         {%- endif %}
-      imports:
-        - lal
-        - lal.antenna
-        - lal.gpstime
-        - lal.rate
-        - lal.series
-        - lal.utils
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/
