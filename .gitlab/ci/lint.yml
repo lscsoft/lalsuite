@@ -131,8 +131,7 @@ lint:authors:
     - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig
     # check .mailmap and lal*/AUTHORS
     - |
-      make update-authors
-      status=$?
+      make update-authors && status=0 || status=$?
       ./common/maintainer-scripts/git_diff_to_code_quality_report "Mailmap and author list" > code-quality-authors.json
       exit ${status}
   artifacts:
@@ -285,8 +284,7 @@ lint:pretty:
     - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig --enable-python
     # run pretty formatters and check for changes
     - |
-      make pretty
-      status=$?
+      make pretty && status=0 || status=$?
       ./common/maintainer-scripts/git_diff_to_code_quality_report "Code pretty formatting" > code-quality-pretty.json
       exit ${status}
   artifacts:

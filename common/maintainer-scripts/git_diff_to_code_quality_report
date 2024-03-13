@@ -14,7 +14,7 @@ my ($file, $sha1range, $begin, $end);
 my $first = 1;
 
 open DIFF, "git diff --unified=0 |" or die "$0: git diff failed";
-print "[\n";
+print "[";
 while (<DIFF>) {
 
   if (m|^diff --git a/(.*?) b/(\1)|) {
@@ -31,21 +31,27 @@ while (<DIFF>) {
     if ($first) {
       $first = 0;
     } else {
-      print "  ,\n";
+      print ", ";
     }
 
-    print "  {\n";
-    print "    \"description\": \"${description}.\",\n";
-    print "    \"check_name\": \"${check_name}\",\n";
-    print "    \"fingerprint\": \"git-diff-to-code-quality-report-${check_name}-${file}-${begin}\",\n";
-    print "    \"severity\": \"blocker\",\n";
-    print "    \"location\": {\n";
-    print "      \"path\": \"${file}\",\n";
-    print "      \"lines\": {\n";
-    print "        \"begin\": ${begin}\n";
-    print "      }\n";
-    print "    }\n";
-    print "  }\n";
+    print "{";
+    {
+      print "\"description\": \"${description}.\", ";
+      print "\"check_name\": \"${check_name}\", ";
+      print "\"fingerprint\": \"git-diff-to-code-quality-report-${check_name}-${file}-${begin}\", ";
+      print "\"severity\": \"blocker\", ";
+      print "\"location\": {";
+      {
+        print "\"path\": \"${file}\", ";
+        print "\"lines\": {";
+        {
+          print "\"begin\": ${begin}";
+        }
+        print "}";
+      }
+      print "}";
+    }
+    print "}";
 
   }
 
