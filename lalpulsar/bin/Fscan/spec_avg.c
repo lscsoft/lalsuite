@@ -23,6 +23,9 @@
  * \ingroup lalpulsar_bin_SFTTools
  */
 
+#include <libgen.h>
+#include <unistd.h>
+#include <lal/LogPrintf.h>
 #include <lal/UserInput.h>
 #include <lal/FrequencySeries.h>
 #include <lal/SFTfileIO.h>
@@ -30,7 +33,6 @@
 #include <lal/LALPulsarVCSInfo.h>
 
 #include "fscanutils.h"
-
 
 int main( int argc, char **argv )
 {
@@ -46,7 +48,7 @@ int main( int argc, char **argv )
   REAL4Vector *timeavg = NULL;
   CHAR outbase[256], outfile[512], outfile2[512], outfile3[512], outfile4[512];
 
-  CHAR *SFTpatt = NULL, *IFO = NULL, *outputBname = NULL;
+  CHAR *SFTpatt = NULL, *IFO = NULL, *outputDir = NULL, *outputBname = NULL;
   INT4 startGPS = 0, endGPS = 0;
   REAL8 f_min = 0.0, f_max = 0.0, freqres = 0.1, subband = 100.0, timebaseline = 0;
   INT4 blocksRngMed = 101, cur_epoch = 0;
@@ -55,8 +57,10 @@ int main( int argc, char **argv )
   struct tm date;
   INT4Vector *timestamps = NULL;
 
-  /*========================================================================================================================*/
+  /* Default for output directory */
+  XLAL_CHECK_MAIN( ( outputDir = XLALStringDuplicate( "." ) ) != NULL, XLAL_EFUNC );
 
+  /*========================================================================================================================*/
 
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &SFTpatt,      "SFTs",         STRING, 'p', REQUIRED, "SFT location/pattern. Possibilities are:\n"
                                           " - '<SFT file>;<SFT file>;...', where <SFT file> may contain wildcards\n - 'list:<file containing list of SFT files>'" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -66,6 +70,7 @@ int main( int argc, char **argv )
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &f_min,        "fMin",         REAL8,  'f', REQUIRED, "Minimum frequency in Hz" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &f_max,        "fMax",         REAL8,  'F', REQUIRED, "Maximum frequency in Hz" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &blocksRngMed, "blocksRngMed", INT4,   'w', OPTIONAL, "Running Median window size" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputDir,    "outputDir",    STRING, 'd', OPTIONAL, "Output directory for data files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &outputBname,  "outputBname",  STRING, 'o', OPTIONAL, "Base name of output files" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &freqres,      "freqRes",      REAL8,  'r', OPTIONAL, "Spectrogram freq resolution in Hz" ) == XLAL_SUCCESS, XLAL_EFUNC );
   XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &subband,      "subband",      REAL8,  'b', OPTIONAL, "Subdivide the output normalized average spectra txt files into these subbands" ) == XLAL_SUCCESS, XLAL_EFUNC );
@@ -88,15 +93,36 @@ int main( int argc, char **argv )
   constraints.detector = IFO;
 
   // Load SFT catalog
-  XLAL_CHECK_MAIN( ( catalog = XLALSFTdataFind( SFTpatt, &constraints ) ) != NULL, XLAL_EFUNC );
+  int errnum;
+  XLAL_TRY( catalog = XLALSFTdataFind( SFTpatt, &constraints ), errnum );
 
   // Ensure that some SFTs were found given the start and end time and IFO constraints
+  // unless the file "nosfts" exists in the path to the SFT files
+  if ( errnum != 0 ) {
+    CHAR XLAL_INIT_DECL( path, [4096] );
+    snprintf( path, sizeof( path ), "%s/nosfts", dirname( SFTpatt ) );
+    if ( access( path, F_OK ) == 0 ) {
+      LogPrintf( LOG_CRITICAL, "%s found no SFTs but 'nosfts' file was present. Exiting.\n", SFTpatt );
+      if ( catalog != NULL ) {
+        XLALDestroySFTCatalog( catalog );
+      }
+      XLALDestroyUserVars();
+      exit( 0 );
+    } else {
+      XLAL_ERROR_MAIN( errnum );
+    }
+  }
+
   XLAL_CHECK_MAIN( catalog->length > 0, XLAL_EFAILED, "No SFTs found, please examine start time, end time, frequency range, etc." );
 
+  LogPrintf( LOG_NORMAL, "%s has length of %u SFT files\n", SFTpatt, catalog->length );
+
+  // If output base name was set by user, use that, otherwise use a default pattern:
+  // spec_<f_min>_<f_max>_<detector>_<GPS-start>_<GPS-end> as the basename
   if ( XLALUserVarWasSet( &outputBname ) ) {
-    strcpy( outbase, outputBname );
+    snprintf( outbase, sizeof( outbase ), "%s/%s", outputDir, outputBname );
   } else {
-    snprintf( outbase, sizeof( outbase ), "spec_%.2f_%.2f_%s_%d_%d", f_min, f_max, constraints.detector, startTime.gpsSeconds, endTime.gpsSeconds );
+    snprintf( outbase, sizeof( outbase ), "%s/spec_%.2f_%.2f_%s_%d_%d", outputDir, f_min, f_max, constraints.detector, startTime.gpsSeconds, endTime.gpsSeconds );
   }
 
   // Create filenames from the outbase value
@@ -250,7 +276,6 @@ int main( int argc, char **argv )
   }
   fprintf( stderr, "finished checking for missing sfts, l=%d\n", timestamps->length );
 
-
   /*----------------------------------------------------------------------------------------------------------------*/
 
   // Write the averaged data to files broken up by the user option subband (default: 100 Hz)
@@ -263,9 +288,9 @@ int main( int argc, char **argv )
 
     if ( fp3 == NULL ) {
       if ( XLALUserVarWasSet( &outputBname ) ) {
-        snprintf( outbase, sizeof( outbase ), "%s_%.2f_%.2f", outputBname, f_min_subband, f_max_subband );
+        snprintf( outbase, sizeof( outbase ), "%s/%s_%.2f_%.2f", outputDir, outputBname, f_min_subband, f_max_subband );
       } else {
-        snprintf( outbase, sizeof( outbase ), "spec_%.2f_%.2f_%s_%d_%d", f_min_subband, f_max_subband, constraints.detector, startTime.gpsSeconds, endTime.gpsSeconds );
+        snprintf( outbase, sizeof( outbase ), "%s/spec_%.2f_%.2f_%s_%d_%d", outputDir, f_min_subband, f_max_subband, constraints.detector, startTime.gpsSeconds, endTime.gpsSeconds );
       }
       snprintf( outfile3, sizeof( outfile3 ), "%s_timeaverage.txt", outbase );
       fp3 = fopen( outfile3, "w" );
@@ -301,7 +326,6 @@ int main( int argc, char **argv )
   fprintf( stderr, "end of spec_avg\n" );
 
   return ( 0 );
-
 
 }
 /* END main */

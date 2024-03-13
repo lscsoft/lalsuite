@@ -130,7 +130,13 @@ lint:authors:
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig
     # check .mailmap and lal*/AUTHORS
-    - make update-authors
+    - |
+      make update-authors && status=0 || status=$?
+      ./common/maintainer-scripts/git_diff_to_code_quality_report "Mailmap and author list" > code-quality-authors.json
+      exit ${status}
+  artifacts:
+    reports:
+      codequality: code-quality-authors.json
 
 lint:depends:
   extends:
@@ -272,12 +278,18 @@ lint:pretty:
     # install required packages
     - yum -y install astyle
     - python3 -m pip install --upgrade pip
-    - python3 -m pip install 'black~=22.0'
+    - python3 -m pip install 'black~=22.0'   # keep this version in sync with CONTRIBUTING.md
     # configure LALSuite
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --disable-doxygen --disable-swig --enable-python
     # run pretty formatters and check for changes
-    - make pretty
+    - |
+      make pretty && status=0 || status=$?
+      ./common/maintainer-scripts/git_diff_to_code_quality_report "Code pretty formatting" > code-quality-pretty.json
+      exit ${status}
+  artifacts:
+    reports:
+      codequality: code-quality-pretty.json
   rules:
     - !reference [.ci-lint, rules]
     - !reference [.ci-merge-build, rules]

@@ -4683,7 +4683,7 @@ int IMRPhenomX_Initialize_Euler_Angles(
       if(thresholdPMB>0.)
         pPrec->Mfmax_angles = pWF->fRING+4.*pWF->fDAMP;
       else
-        pPrec->Mfmax_angles = (pWF->MfMax+XLALSimIMRPhenomXUtilsHztoMf(buffer,pWF->Mtot))*2./pPrec->M_MIN;
+        pPrec->Mfmax_angles = (MAX(pWF->MfMax,pWF->fRING+4.*pWF->fDAMP)+XLALSimIMRPhenomXUtilsHztoMf(buffer,pWF->Mtot))*2./pPrec->M_MIN;
       REAL8 fmaxAngles = XLALSimIMRPhenomXUtilsMftoHz(pPrec->Mfmax_angles,pWF->Mtot);
       
       // we add a few bins to fmax to make sure we do not run into interpolation errors

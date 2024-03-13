@@ -17,6 +17,10 @@
 {% set version = base_version %}
 {% endif %}
 
+# avoid circular imports that would break migrations
+{% set migrating = False %}
+{% set migrating = True %}  # [python_impl!='cpython' or py>=312]
+
 # dependencies
 {% set swig_version = "@MIN_SWIG_VERSION@" %}
 
@@ -64,7 +68,7 @@ outputs:
       build:
         - {{ compiler('c') }}
         - make  # [not win]
-        - swig >=3.0.9
+        - swig >={{ swig_version }}
       host:
         - fftw * nompi*  # [fft_impl == "fftw"]
         - gsl
@@ -153,18 +157,16 @@ outputs:
         - freezegun
         - lscsoft-glue
         - pytest >=4.0.0a0
+        {% if not migrating %}
         - python-ligo-lw
+        {% endif %}
       source_files:
         - test/python
       commands:
-        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python
-      imports:
-        - lal
-        - lal.antenna
-        - lal.gpstime
-        - lal.rate
-        - lal.series
-        - lal.utils
+        - python -m pytest -ra -v --junit-xml=${CI_PROJECT_DIR:-.}/junit-python${PY_VER}.xml test/python {% if migrating -%}
+              --ignore test/python/test_rate.py
+              -k 'not lal.rate and not lal.series'
+        {%- endif %}
     about:
       home: https://wiki.ligo.org/Computing/LALSuite
       doc_url: https://lscsoft.docs.ligo.org/lalsuite/lal/

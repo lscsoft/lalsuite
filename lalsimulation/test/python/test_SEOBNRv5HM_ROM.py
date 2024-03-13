@@ -130,6 +130,36 @@ def test_SEOBNRv5_ROM():
     new_result  =  np.array(gen_test_data(lalsimulation.SEOBNRv5_ROM))
     np.testing.assert_almost_equal(new_result, expected_result, 7, "SEOBNRv5ROM test failed")
 
+@pytest.mark.skipif(
+    "LAL_DATA_PATH" not in os.environ,
+    reason="LAL_DATA_PATH not found",
+)
+def test_SEOBNRv5HM_ROM():
+    """
+    This test checks that SEOBNRv5HM_ROM hasn't changed.
+    It does this by generating two SEOBNRv5HM_ROM waveforms and computing
+    their difference (according to their amplitude and phases)
+    and compares them to pre-computed values.
+
+    these pre-computed values were computed using the following line:
+
+    `expected_result  =  np.array(gen_test_data(lalsimulation.SEOBNRv5HM_ROM))`
+    """
+    LAL_DATA_PATH = os.environ['LAL_DATA_PATH']
+    for D in LAL_DATA_PATH.split(':'):
+        path = Path(D) / "SEOBNRv5HMROM_v1.0.hdf5"
+        if path.is_file():
+            have_ROM_data_file = True
+            break
+    else:
+        pytest.skip(
+            "SEOBNRv5HMROM_v1.0.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
+        )
+
+    expected_result = np.array([1.493708530999136428e+03,2.975440686244947415e+02,1.493708530999136428e+03,2.975440686244947415e+02])
+    new_result  =  np.array(gen_test_data(lalsimulation.SEOBNRv5HM_ROM))
+    np.testing.assert_almost_equal(new_result, expected_result, 7, "SEOBNRv5HMROM test failed")
+
 
 # -- run the tests ------------------------------
 

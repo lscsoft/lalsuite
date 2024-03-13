@@ -110,7 +110,8 @@ const UINT4 lmModes_v5hm[NMODES][2] = {{2, 2}, {3, 3}, {2, 1}, {4, 4}, {5, 5}, {
 
 /*************** constant phase shifts ******************/
 
-const REAL8 const_phaseshift_lm_v5hm[NMODES] = {0.,-LAL_PI/2.,LAL_PI/2.,LAL_PI,LAL_PI/2.,0.,-LAL_PI/2.};
+// const REAL8 const_phaseshift_lm_v5hm[NMODES] = {0.,-LAL_PI/2.,LAL_PI/2.,LAL_PI,LAL_PI/2.,0.,-LAL_PI/2.};
+const REAL8 const_phaseshift_lm_v5hm[NMODES] = {0.,0.,0.,0.,0.,0.,0.};
 
 /* This constant phaseshift is coming from the relations between the phase
 * of the lm mode phi_lm and the orbital phase phi. At leading order phi_lm = -m*phi + c_lm
@@ -2515,9 +2516,9 @@ UNUSED static int SEOBNRv5HMROMCoreModesHybridized(
 }
 
 /**
- * @addtogroup LALSimIMRSEOBNRHMROM_c
+ * @addtogroup LALSimIMRSEOBNRv5HMROM_c
  *
- * \author Roberto Cotesta, Sylvain Marsat, Michael Puerrer and Lorenzo Pompili
+ * \author Lorenzo Pompili, Roberto Cotesta, Sylvain Marsat, Michael Puerrer 
  *
  * \brief C code for SEOBNRv5HM reduced order model * 
  *

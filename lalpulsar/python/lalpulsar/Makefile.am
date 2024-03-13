@@ -22,6 +22,7 @@ pymodule_PYTHON = \
 	pulsarhtmlutils.py \
 	pulsarpputils.py \
 	public_sft_directory.py \
+	metric_utils.py \
 	$(END_OF_LIST)
 
 endif

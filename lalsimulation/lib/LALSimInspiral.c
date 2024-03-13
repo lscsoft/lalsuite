@@ -144,6 +144,7 @@ static const char *lalSimulationApproximantNames[] = {
     INITIALIZE_NAME(SEOBNRv4_ROM_NRTidalv2_NSBH),
     INITIALIZE_NAME(SEOBNRv4T_surrogate),
     INITIALIZE_NAME(SEOBNRv5_ROM),
+    INITIALIZE_NAME(SEOBNRv5HM_ROM),
     INITIALIZE_NAME(HGimri),
     INITIALIZE_NAME(IMRPhenomA),
     INITIALIZE_NAME(IMRPhenomB),
@@ -345,6 +346,7 @@ const LALSimInspiralGenerator *lalSimInspiralGeneratorTemplates[NumApproximants]
     [SEOBNRv4_ROM_NRTidalv2_NSBH] = &lalSEOBNRv4_ROM_NRTidalv2_NSBHGeneratorTemplate,
     [SEOBNRv4_opt] = &lalSEOBNRv4_optGeneratorTemplate,
     [SEOBNRv5_ROM] = &lalSEOBNRv5_ROMGeneratorTemplate,
+    [SEOBNRv5HM_ROM] = &lalSEOBNRv5HM_ROMGeneratorTemplate,
     [SEOBNRv4HM_PA] = &lalSEOBNRv4HM_PAGeneratorTemplate,
     [pSEOBNRv4HM_PA] = &lalpSEOBNRv4HM_PAGeneratorTemplate,
     [SpinDominatedWf] = &lalSpinDominatedWfGeneratorTemplate,
@@ -1510,7 +1512,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
 /**
  * @brief Interface to compute a set of -2 spin-weighted spherical harmonic modes
  * for a binary merger for a given waveform approximant in the Fourier domain.
- * Non-precessing models IMRPhenomXHM, SEOBNRv4HM_ROM, SEOBNRv5_ROM and IMRPhenomHM and the
+ * Non-precessing models IMRPhenomXHM, SEOBNRv4HM_ROM, SEOBNRv5(HM)_ROM and IMRPhenomHM and the
  * precessing IMRPhenomXPHM are implemented.
  * By default, all the modes available in the model are returned, although the list
  * can be specified through the ModeArray option in the LAL dictionary.
@@ -1531,7 +1533,7 @@ SphHarmTimeSeries *XLALSimInspiralChooseTDModes(
  * For AS models the argument inclination is irrelevant and will not be use since it only enters in the Ylm. However, for the precessing model,
  * since the modes are returned in the J-frame, we need the inclination argument to carry out the Euler transformation from the co-precessing L-frame
  * to the inertial J-frame. Regarding the argument phiRef, this affects the output of the precessing model due to the same reason as before, while for the AS models 
- * it would not affect the output of SEOBNRv4HM_ROM, SEOBNRv5_ROM but will change the output of IMRPhenomHM and IMRPhenomXHM (this is due to the internals workings of the models).
+ * it would not affect the output of SEOBNRv4HM_ROM, SEOBNRv5(HM)_ROM but will change the output of IMRPhenomHM and IMRPhenomXHM (this is due to the internals workings of the models).
  * If one wants to built the polarizations from the individual modes of ChooseFDModes must be aware of this behaviour. 
  * Ideally, one would call ChooseFDModes with phiRef=0 to obtain the h_lms, then build the Fourier domain polarizations as
  *
@@ -2388,6 +2390,9 @@ int XLALSimInspiralPolarizationsFromChooseFDModes(
 
         break;
         case SEOBNRv5_ROM:
+
+        break;
+        case SEOBNRv5HM_ROM:
 
         break;
         case IMRPhenomHM:
@@ -4066,6 +4071,7 @@ int XLALSimInspiralImplementedFDApproximants(
         case SEOBNRv4_ROM_NRTidalv2_NSBH:
         case SEOBNRv4T_surrogate:
         case SEOBNRv5_ROM:
+        case SEOBNRv5HM_ROM:
         //case TaylorR2F4:
         case TaylorF2:
         case TaylorF2Ecc:
@@ -4533,6 +4539,7 @@ int XLALSimInspiralGetSpinSupportFromApproximant(Approximant approx){
     case SEOBNRv4_ROM_NRTidalv2_NSBH:
     case SEOBNRv4T_surrogate:
     case SEOBNRv5_ROM:
+    case SEOBNRv5HM_ROM:
     case TEOBResumS:
     case TaylorR2F4:
     case IMRPhenomFB:
@@ -4655,6 +4662,7 @@ int XLALSimInspiralGetSpinFreqFromApproximant(Approximant approx){
     case SEOBNRv4T_surrogate:
     case SEOBNRv4HM_ROM:
     case SEOBNRv5_ROM:
+    case SEOBNRv5HM_ROM:
     case TaylorR2F4:
     case IMRPhenomFB:
     case FindChirpSP:
@@ -4822,6 +4830,7 @@ int XLALSimInspiralApproximantAcceptTestGRParams(Approximant approx){
     case SEOBNRv4_ROM_NRTidalv2_NSBH:
     case SEOBNRv4T_surrogate:
     case SEOBNRv5_ROM:
+    case SEOBNRv5HM_ROM:
     case IMRPhenomC:
     case IMRPhenomD:
     case IMRPhenomP:
