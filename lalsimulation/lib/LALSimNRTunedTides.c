@@ -841,14 +841,24 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     }
   }
   else if (NRTidal_version == NRTidalv3_V) {
+    int indexmin = -1; //initiate an invalid index where one first finds a minimum
     REAL8 NRTidalv3_coeffs[20];
     XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
-    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; if a minimum is found, the tidal phase will be constant at that minimum value
+    REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; 
+    for (UINT4 i = 1; i < (*fHz).length; i++) {
+        (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, NRTidalv3_coeffs);
+        if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]) {
+            indexmin = i - 1;
+            break;
+        }
+    }
+    if (indexmin != -1) { //If a minimum is found, the tidal phase will be constant at that minimum value
+        REAL8 tidal_min_value = (*phi_tidal).data[indexmin];
+        for (UINT4 i = indexmin + 1; i < (*fHz).length; i++) {
+            (*phi_tidal).data[i] = tidal_min_value;
+        }
+    }
     for(UINT4 i = 0; i < (*fHz).length; i++) {
-      (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, NRTidalv3_coeffs);
-      if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){
-          (*phi_tidal).data[i] = (*phi_tidal).data[i-1];
-      }
       REAL8 planck_func = PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
       /* We employ here the smooth connection between NRTidal and PN post-merger, Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf*/
       (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - planck_func) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*planck_func;
@@ -869,14 +879,24 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     }
   }
   else if (NRTidal_version == NRTidalv3NoAmpCorr_V) {
+    int indexmin = -1; //initiate an invalid index where one first finds a minimum
     REAL8 NRTidalv3_coeffs[20];
     XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
     REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; if a minimum is found, the tidal phase will be constant at that minimum value
+    for (UINT4 i = 1; i < (*fHz).length; i++) {
+        (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, NRTidalv3_coeffs);
+        if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]) {
+            indexmin = i - 1;
+            break;
+        }
+    }
+    if (indexmin != -1) { //If a minimum is found, the tidal phase will be constant at that minimum value
+        REAL8 tidal_min_value = (*phi_tidal).data[indexmin];
+        for (UINT4 i = indexmin + 1; i < (*fHz).length; i++) {
+            (*phi_tidal).data[i] = tidal_min_value;
+        }
+    }
     for(UINT4 i = 0; i < (*fHz).length; i++) {
-      (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, NRTidalv3_coeffs);
-      if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]){
-          (*phi_tidal).data[i] = (*phi_tidal).data[i-1];
-      }
       REAL8 planck_func = PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
       /* We employ here the smooth connection between NRTidal and PN post-merger, Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf*/
       (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - planck_func) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*planck_func;
