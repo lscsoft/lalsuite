@@ -471,7 +471,8 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< o
                const REAL8 Xa, /**< Mass of companion 1 divided by total mass*/
                const REAL8 mtot, /**< total mass (Msun) */
                const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/
-               const REAL8 lambda2 /**< dimensionless tidal deformability of companion 2*/
+               const REAL8 lambda2, /**< dimensionless tidal deformability of companion 2*/
+               const REAL8 PN_coeffs[10] /**< 7.5 PN coefficients to be used for constraints*/
                )
 { 
   REAL8 Xb = 1.0 - Xa; //secondary mass divided by total mass
@@ -538,12 +539,6 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< o
   NRTidalv3_coeffs[10] = n_30 + n_31*Xb + n_32*kappaB_alpha + n_33*Xb_beta; //n_3B
   NRTidalv3_coeffs[11] = d_10 + d_11*Xb + d_12*Xb_beta; //d_1B
 
-  REAL8 PN_coeffs[10];
-
-  int errcode2;
-  errcode2 = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
-  XLAL_CHECK(XLAL_SUCCESS == errcode2, errcode2, "Setting PN coefficients failed.\n");
-
   /* 7.5PN Coefficients */
   REAL8 c_1A = PN_coeffs[1];
   REAL8 c_3over2A = PN_coeffs[2];
@@ -577,18 +572,12 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< o
  */
 static double SimNRTunedTidesFDTidalPhase_v3(
                const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
-               const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
                const REAL8 mtot, /**< total mass (Msun) */
-               const REAL8 NRTidalv3_coeffs[20] /**< NRTidalv3 coefficients */
+               const REAL8 NRTidalv3_coeffs[20], /**< NRTidalv3 coefficients */
+               const REAL8 PN_coeffs[10] /**< 7.5 PN coefficients to be used as constraints*/
                )
 {
   REAL8 M_omega = LAL_PI * fHz * (mtot * LAL_MTSUN_SI); //dimensionless angular GW frequency
-
-  REAL8 PN_coeffs[10];
-
-  int errcode2;
-  errcode2 = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
-  XLAL_CHECK(XLAL_SUCCESS == errcode2, errcode2, "Setting PN coefficients failed.\n");
 
   REAL8 s1 = NRTidalv3_coeffs[0]; 
   REAL8 s2 = NRTidalv3_coeffs[1]; 
@@ -624,7 +613,6 @@ static double SimNRTunedTidesFDTidalPhase_v3(
 
   /* 7.5PN Coefficients */
   REAL8 c_NewtA = PN_coeffs[0];
-
   REAL8 c_NewtB = PN_coeffs[5];
 
   /* Pade Coefficients constrained with PN */
@@ -661,7 +649,7 @@ static double SimNRTunedTidesFDTidalPhase_v3(
 
 /** 
  * PN tidal phase correction, at 7.5PN, to connect with NRTidalv3 Phase post-merger,
- * see Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf
+ * see Eq. (22) and (45) of https://arxiv.org/pdf/2311.07456.pdf
  * and is a function of x = angular_orb_freq^(2./3.)
  */
 static double SimNRTunedTidesFDTidalPhase_PN(
@@ -669,17 +657,13 @@ static double SimNRTunedTidesFDTidalPhase_PN(
                const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
                const REAL8 mtot, /**< total mass (Msun) */
                const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/
-               const REAL8 lambda2 /**< dimensionless tidal deformability of companion 2*/
+               const REAL8 lambda2, /**< dimensionless tidal deformability of companion 2*/
+               const REAL8 PN_coeffs[10] /**< 7.5 PN coefficients*/
                )
 {
   REAL8 M_omega = LAL_PI * fHz * (mtot * LAL_MTSUN_SI); //dimensionless angular GW frequency
 
   REAL8 Xb = 1.0 - Xa;
-
-  REAL8 PN_coeffs[10];
-  int errcode;
-  errcode = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
-  XLAL_CHECK(XLAL_SUCCESS == errcode, errcode, "Setting PN coefficients failed.\n");
 
   REAL8 PN_x = M_omega / cbrt(M_omega);               // pow(M_omega, 2.0/3.0)
   REAL8 PN_x_2 = PN_x * PN_x;                         // pow(PN_x, 2)
@@ -842,11 +826,13 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
   }
   else if (NRTidal_version == NRTidalv3_V) {
     int indexmin = -1; //initiate an invalid index where one first finds a minimum
+    REAL8 PN_coeffs[10];
+    XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
     REAL8 NRTidalv3_coeffs[20];
-    XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
+    XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2, PN_coeffs);
     REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; 
     for (UINT4 i = 1; i < (*fHz).length; i++) {
-        (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, NRTidalv3_coeffs);
+        (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], mtot, NRTidalv3_coeffs, PN_coeffs);
         if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]) {
             indexmin = i - 1;
             break;
@@ -861,7 +847,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     for(UINT4 i = 0; i < (*fHz).length; i++) {
       REAL8 planck_func = PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
       /* We employ here the smooth connection between NRTidal and PN post-merger, Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf*/
-      (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - planck_func) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*planck_func;
+      (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - planck_func) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2, PN_coeffs)*planck_func;
       (*amp_tidal).data[i] = SimNRTunedTidesFDTidalAmplitude((*fHz).data[i], mtot, kappa2T);
       (*planck_taper).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg_v3, fHz_end_taper_v3);
     }
@@ -880,11 +866,13 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
   }
   else if (NRTidal_version == NRTidalv3NoAmpCorr_V) {
     int indexmin = -1; //initiate an invalid index where one first finds a minimum
+    REAL8 PN_coeffs[10];
+    XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
     REAL8 NRTidalv3_coeffs[20];
-    XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
+    XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2, PN_coeffs);
     REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; if a minimum is found, the tidal phase will be constant at that minimum value
     for (UINT4 i = 1; i < (*fHz).length; i++) {
-        (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], Xa, mtot, NRTidalv3_coeffs);
+        (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], mtot, NRTidalv3_coeffs, PN_coeffs);
         if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]) {
             indexmin = i - 1;
             break;
@@ -899,7 +887,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     for(UINT4 i = 0; i < (*fHz).length; i++) {
       REAL8 planck_func = PlanckTaper((*fHz).data[i], 1.15*fHz_mrg_v3, 1.35*fHz_mrg_v3);
       /* We employ here the smooth connection between NRTidal and PN post-merger, Eq. (45) of https://arxiv.org/pdf/2311.07456.pdf*/
-      (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - planck_func) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2)*planck_func;
+      (*phi_tidal).data[i] = (*phi_tidal).data[i]*(1.0 - planck_func) + SimNRTunedTidesFDTidalPhase_PN((*fHz).data[i], Xa, mtot, lambda1, lambda2, PN_coeffs)*planck_func;
       (*planck_taper).data[i] = 1.0 - PlanckTaper((*fHz).data[i], fHz_mrg_v3, fHz_end_taper_v3);
     }
   }

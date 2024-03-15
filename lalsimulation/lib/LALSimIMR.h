@@ -1524,7 +1524,8 @@ int XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(REAL8 *NRTidalv3_coeffs, /**< o
                const REAL8 Xa, /**< Mass of companion 1 divided by total mass*/
                const REAL8 mtot, /**< total mass (Msun) */
                const REAL8 lambda1, /**< dimensionless tidal deformability of companion 1*/
-               const REAL8 lambda2 /**< dimensionless tidal deformability of companion 2*/
+               const REAL8 lambda2, /**< dimensionless tidal deformability of companion 2*/
+               const REAL8 PN_coeffs[10] /**< 7.5 PN coefficients to be used as constraints*/
                );
 
 int XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(REAL8 *PN_coeffs,/**<PN coefficients*/

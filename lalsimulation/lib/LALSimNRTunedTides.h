@@ -49,7 +49,7 @@ static double SimNRTunedTidesFDTidalPhase_v2(
 
 static double SimNRTunedTidesFDTidalPhase_v3(
     const REAL8 fHz, /**< Gravitational wave frequency (Hz) */
-    const REAL8 Xa, /**< Mass of companion 1 divided by total mass */
     const REAL8 mtot, /**< total mass (Msun) */
-    const REAL8 NRTidalv3_coeffs[20] /**< NRTidalv3 coefficients*/
+    const REAL8 NRTidalv3_coeffs[20], /**< NRTidalv3 coefficients*/
+    const REAL8 PN_coeffs[10] /**< 7.5 PN coefficients to be used as constraints*/
     );

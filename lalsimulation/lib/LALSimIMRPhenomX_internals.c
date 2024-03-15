@@ -2964,15 +2964,11 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
     }
 	else if (NRTidal_version == NRTidalv3_V)
     {
-
-		REAL8 PN_coeffs[10];
-
          /* local variable declaration */
 		REAL8 Xa = X_A;
 
-		int errcode2;
-		errcode2 = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
-		XLAL_CHECK(XLAL_SUCCESS == errcode2, errcode2, "Setting PN coefficients failed.\n");
+		REAL8 PN_coeffs[10];
+		XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
 
 		REAL8 lambda1 = pWF->lambda1;
 		REAL8 lambda2 = pWF->lambda2;
@@ -2980,7 +2976,7 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 mtot = pWF->Mtot;
 	
 		REAL8 NRTidalv3_coeffs[20];
-    	XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
+    	XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2, PN_coeffs);
 
 		REAL8 s1 = NRTidalv3_coeffs[0]; 
 		REAL8 s2 = NRTidalv3_coeffs[1]; 
@@ -3119,17 +3115,12 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 	else if(NRTidal_version==NRTidalv3_V){
         
         dphase+=(2.*c3p5pn*pfaN*powers_of_lalpi.two_thirds)/(3.*powers_of_Mf->one_third);
-        
-		 /* local variable declaration */
-
-		REAL8 PN_coeffs[10];
 
          /* local variable declaration */
 		REAL8 Xa = X_A;
 
-		int errcode2;
-		errcode2 = XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
-		XLAL_CHECK(XLAL_SUCCESS == errcode2, errcode2, "Setting PN coefficients failed.\n");
+		REAL8 PN_coeffs[10];
+		XLALSimNRTunedTidesSetFDTidalPhase_PN_Coeffs(PN_coeffs, Xa);
 
 		REAL8 lambda1 = pWF->lambda1;
 		REAL8 lambda2 = pWF->lambda2;
@@ -3137,7 +3128,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 mtot = pWF->Mtot;
 	
 		REAL8 NRTidalv3_coeffs[20];
-    	XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2);
+    	XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2, PN_coeffs);
 
 		REAL8 s1 = NRTidalv3_coeffs[0]; 
 		REAL8 s2 = NRTidalv3_coeffs[1]; 
