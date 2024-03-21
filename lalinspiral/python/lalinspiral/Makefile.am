@@ -8,10 +8,6 @@ include $(top_srcdir)/gnuscripts/lalsuite_vcs_info.am
 
 all-local: thinca-all-local
 
-SUBDIRS = \
-	sbank \
-	$(END_OF_LIST)
-
 vcs_info_sources = git_version.py
 
 if HAVE_PYTHON

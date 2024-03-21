@@ -491,6 +491,7 @@ EOF
       -Wno-uninitialized
       -Wno-unused-variable
       -Wno-unused-but-set-variable
+      -Wno-unused-result
       -Wno-format-extra-args
       -Wno-tautological-compare
       -Wno-deprecated-declarations
@@ -628,6 +629,7 @@ EOD`]
       -Wno-uninitialized
       -Wno-unused-variable
       -Wno-unused-but-set-variable
+      -Wno-unused-result
       -Wno-format-extra-args
       -Wno-tautological-compare
       -Wno-stringop-overflow

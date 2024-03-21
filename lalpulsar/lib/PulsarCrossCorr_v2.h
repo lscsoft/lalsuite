@@ -2,6 +2,7 @@
  *  Copyright (C) 2012, 2013 John Whelan, Shane Larson and Badri Krishnan
  *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *  Copyright (C) 2016, 2017 Grant David Meadors
+ *  Copyright (C) 2023 John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -552,6 +553,9 @@ XLALModifyAMCoeffsWeights (
     const UINT4                              X
 );
 
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( INOUT_STRUCTS( MultiNoiseWeights **, multiWeights ) );
+#endif
 int
 XLALModifyMultiAMCoeffsWeights(
      MultiNoiseWeights             **        multiWeights,

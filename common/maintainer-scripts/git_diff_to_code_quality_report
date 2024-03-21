@@ -1,0 +1,60 @@
+#!/usr/bin/env perl
+# Author: Karl Wette, 2024
+
+use strict;
+
+my ($description) = @ARGV;
+
+my $check_name = lc($description);
+$check_name =~ s/\W/-/g;
+$check_name =~ s/--+/-/g;
+
+my ($file, $sha1range, $begin, $end);
+
+my $first = 1;
+
+open DIFF, "git diff --unified=0 |" or die "$0: git diff failed";
+print "[";
+while (<DIFF>) {
+
+  if (m|^diff --git a/(.*?) b/(\1)|) {
+    $file = $1;
+  }
+
+  if (m|^index (.*)|) {
+    $sha1range = $1;
+  }
+
+  if (m|^@@ -(\d+)|) {
+    $begin = $1;
+
+    if ($first) {
+      $first = 0;
+    } else {
+      print ", ";
+    }
+
+    print "{";
+    {
+      print "\"description\": \"${description}.\", ";
+      print "\"check_name\": \"${check_name}\", ";
+      print "\"fingerprint\": \"git-diff-to-code-quality-report-${check_name}-${file}-${begin}\", ";
+      print "\"severity\": \"blocker\", ";
+      print "\"location\": {";
+      {
+        print "\"path\": \"${file}\", ";
+        print "\"lines\": {";
+        {
+          print "\"begin\": ${begin}";
+        }
+        print "}";
+      }
+      print "}";
+    }
+    print "}";
+
+  }
+
+}
+print "]\n";
+close DIFF;
