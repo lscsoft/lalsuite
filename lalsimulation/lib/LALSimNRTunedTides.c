@@ -831,7 +831,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     REAL8 NRTidalv3_coeffs[20];
     XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2, PN_coeffs);
     REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; 
-    for (UINT4 i = 1; i < (*fHz).length; i++) {
+    for (UINT4 i = 0; i < (*fHz).length; i++) {
         (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], mtot, NRTidalv3_coeffs, PN_coeffs);
         if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]) {
             indexmin = i - 1;
@@ -871,7 +871,7 @@ int XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(
     REAL8 NRTidalv3_coeffs[20];
     XLALSimNRTunedTidesSetFDTidalPhase_v3_Coeffs(NRTidalv3_coeffs, Xa, mtot, lambda1, lambda2, PN_coeffs);
     REAL8 fHzmrgcheck = 0.9 * fHz_mrg_v3; // start checking of minimum; if a minimum is found, the tidal phase will be constant at that minimum value
-    for (UINT4 i = 1; i < (*fHz).length; i++) {
+    for (UINT4 i = 0; i < (*fHz).length; i++) {
         (*phi_tidal).data[i] = SimNRTunedTidesFDTidalPhase_v3((*fHz).data[i], mtot, NRTidalv3_coeffs, PN_coeffs);
         if ((*fHz).data[i] >= fHzmrgcheck && (*phi_tidal).data[i] >= (*phi_tidal).data[i-1]) {
             indexmin = i - 1;
