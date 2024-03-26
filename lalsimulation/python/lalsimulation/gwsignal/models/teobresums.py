@@ -172,8 +172,6 @@ def convert_parameters_to_teob(parameter_dict):
         )
 
     q = m1 / m2
-    if q < 1.0:
-        q = 1 / q
 
     return {
         "M": (m1 + m2),
