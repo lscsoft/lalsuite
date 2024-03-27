@@ -487,7 +487,7 @@ default:
           LOCAL_CHANNEL="${CI_PROJECT_DIR}/local-builds";
           rm -rf "${LOCAL_CHANNEL}";
           cp -rv "${CONDA_BLD_PATH}" "${LOCAL_CHANNEL}";
-          conda index "${LOCAL_CHANNEL}" --no-progress;
+          conda index "${LOCAL_CHANNEL}";
           conda config --file ${CONDARC} --add channels "${LOCAL_CHANNEL}";
           conda search "*lal*" --channel "${LOCAL_CHANNEL}" --override-channels;
           rm -rf "${CONDA_BLD_PATH}";
