@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALApps],[10.0.0],[lal-discuss@ligo.org])
+AC_INIT([LALApps],[10.0.0.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([src/config.h])
 AC_CONFIG_SRCDIR([src/lalapps/version2.c.in])
 AC_CONFIG_AUX_DIR([gnuscripts])
