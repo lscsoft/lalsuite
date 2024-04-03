@@ -2097,7 +2097,6 @@ int IMRPhenomXPGenerateFD(
       }
       
       f_merger = f_merger_tmp;
-      printf("%c, %f\n", '#', f_merger);
       if(f_merger<f_final)
           f_final = f_merger;
       
