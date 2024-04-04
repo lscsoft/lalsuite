@@ -1193,6 +1193,7 @@ lalapps:conda:
     # Enter virtualenv so that we have a controlled version of Numpy
     - ${PYTHON} -m venv env
     - source env/bin/activate
+    - python -m pip install --upgrade pip
     - python -m pip install
           delocate
           oldest-supported-numpy
@@ -1683,6 +1684,7 @@ coverage:
   before_script:
     - *init-build-job
     - apt-get -y install --no-install-recommends python3-pip
+    - python3 -m pip install --upgrade pip
     - python3 -m pip install
           coverage
           "gcovr!=5.1"
@@ -1781,6 +1783,7 @@ wheel:pypi:
   image: python
   script:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
+    - pip install --upgrade pip
     - pip install twine
     - |
       if [ "X${EXECUTE_DEPLOY_ACTIONS}" != "Xyes" ]; then

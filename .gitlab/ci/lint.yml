@@ -144,6 +144,7 @@ lint:depends:
     - .lint
   image: igwn/lalsuite-dev:el7
   before_script:
+    - python3 -m pip install --upgrade pip
     - python3 -m pip install
           coloredlogs
           pyyaml
