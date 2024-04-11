@@ -50,6 +50,12 @@ PPUNITS = {
     "PMDEC": u.rad / u.s,  # rad/s
     "ELONG": u.rad,  # rad
     "ELAT": u.rad,  # rad
+    "PMELONG": u.rad,  # rad/s
+    "PMELAT": u.rad,  # rad/s
+    "BETA": u.rad,  # rad
+    "LAMBDA": u.rad,  # rad
+    "PMBETA": u.rad,  # rad/s
+    "PMLAMBDA": u.rad,  # rad/s
     "PEPOCH": u.s,  # GPS seconds
     "POSEPOCH": u.s,  # GPS seconds
     "DMEPOCH": u.s,  # GPS seconds
@@ -161,6 +167,12 @@ TEMPOUNITS = {
     "PMDEC": u.mas / u.yr,  # milliarcsecs/year
     "ELONG": u.deg,  # degrees
     "ELAT": u.deg,  # degrees
+    "PMELONG": u.mas / u.yr,  # milliarcsecs/year
+    "PMELAT": u.mas / u.yr,  # milliarcsecs/year
+    "BETA": u.deg,
+    "LAMBDA": u.deg,
+    "PMBETA": u.mas / u.yr,
+    "PMLAMBDA": u.mas / u.yr,
     "PEPOCH": u.d,  # MJD(TT) (day)
     "POSEPOCH": u.d,  # MJD(TT) (day)
     "DMEPOCH": u.d,  # MJD(TT) (day)
