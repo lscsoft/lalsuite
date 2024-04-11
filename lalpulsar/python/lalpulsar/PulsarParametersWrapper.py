@@ -114,7 +114,7 @@ PPUNITS = {
     "PHI22": u.rad,  # radians
     "PHI21": u.rad,  # radians
     "CGW": u.dimensionless_unscaled,
-    "LAMBDA": u.rad,  # radians
+    "LAMBDAPIN": u.rad,  # radians
     "COSTHETA": u.dimensionless_unscaled,
     "THETA": u.rad,
     "I21": u.dimensionless_unscaled,

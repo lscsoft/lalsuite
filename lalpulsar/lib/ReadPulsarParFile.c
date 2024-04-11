@@ -960,7 +960,7 @@ ParConversion pc[NUM_PARS] = {
   { .name = "PHI22", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* initial phase of C22 component (radians) */
   { .name = "PHI21", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* initial phase of C21 component (radians) */
   { .name = "CGW", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* speed of gravitational waves as a fraction of the speed of light */
-  { .name = "LAMBDA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* parameters from http://uk.arxiv.org/abs/0909.4035 */
+  { .name = "LAMBDAPIN", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t }, /* parameters from http://uk.arxiv.org/abs/0909.4035 */
   { .name = "COSTHETA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "THETA", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
   { .name = "I21", .convfunc = ParConvToFloat, .converrfunc = ParConvToFloat, .ptype = PULSARTYPE_REAL8_t },
@@ -1599,7 +1599,7 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
   output->Across=0.;
   output->I21=0.;
   output->I31=0.;
-  output->lambda=0.;
+  output->lambdapin=0.;
   output->costheta=0.;
   output->theta=0.;
   output->C22=0.;
@@ -1630,7 +1630,7 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
   output->AcrossErr=0.;
   output->I21Err=0.;
   output->I31Err=0.;
-  output->lambdaErr=0.;
+  output->lambdapinErr=0.;
   output->costhetaErr=0.;
   output->thetaErr=0.;
   output->C22Err=0.;
@@ -2589,12 +2589,12 @@ XLALReadTEMPOParFileOrig( BinaryPulsarParams *output,
         j+=2;
       }
     }
-    else if( !strcmp(val[i],"lambda") || !strcmp(val[i],"LAMBDA") ) {
-      output->lambda = atof(val[i+1]);
+    else if( !strcmp(val[i],"lambdapin") || !strcmp(val[i],"LAMBDAPIN") ) {
+      output->lambdapin = atof(val[i+1]);
       j++;
 
       if(atoi(val[i+2])==1 && i+2<k){
-        output->lambdaErr = atof(val[i+3]);
+        output->lambdapinErr = atof(val[i+3]);
         j+=2;
       }
     }
