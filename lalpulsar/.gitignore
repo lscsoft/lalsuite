@@ -53,8 +53,6 @@ lib/LALPulsarVCSInfoHeader.h
 lib/stamp-h1
 lib/stamp-h2
 bin/*/*.testdir
-bin/CreateEphemeris/lalpulsar_create_solar_system_ephemeris
-bin/CreateEphemeris/lalpulsar_create_solar_system_ephemeris_python
 bin/CreateEphemeris/lalpulsar_create_time_correction_ephemeris
 bin/CrossCorr/lalpulsar_combine_crosscorr_toplists
 bin/CrossCorr/lalpulsar_crosscorr_v2
