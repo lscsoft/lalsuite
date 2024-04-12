@@ -177,8 +177,6 @@ test:
     - ( set +e; lalapps_ComputePSD --help; test $? -ne 127 )
     - ( set +e; lalapps_Makefakedata_v5 --help; test $? -ne 127 )
     - ( set +e; lalapps_Weave --help; test $? -ne 127 )
-    - ( set +e; lalapps_create_solar_system_ephemeris --help; test $? -ne 127 )
-    - ( set +e; lalapps_create_solar_system_ephemeris_python --help; test $? -ne 127 )
     - ( set +e; lalapps_create_time_correction_ephemeris --help; test $? -ne 127 )
     - ( set +e; lalapps_fits_header_getval --help; test $? -ne 127 )
     - ( set +e; lalapps_fits_header_list --help; test $? -ne 127 )
