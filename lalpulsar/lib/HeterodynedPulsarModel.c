@@ -1292,7 +1292,7 @@ void XLALPulsarSourceToWaveformParams( PulsarParameters *params ){
   REAL8 C22 = PulsarGetREAL8ParamOrZero( params, "C22" );
   REAL8 phi21 = PulsarGetREAL8ParamOrZero( params, "PHI21" );
   REAL8 phi22 = PulsarGetREAL8ParamOrZero( params, "PHI22" );
-  REAL8 lambda = PulsarGetREAL8ParamOrZero( params, "LAMBDA" );
+  REAL8 lambda = PulsarGetREAL8ParamOrZero( params, "LAMBDAPIN" );
   REAL8 costheta = PulsarGetREAL8ParamOrZero( params, "COSTHETA" );
   REAL8 q22 = PulsarGetREAL8ParamOrZero( params, "Q22" );
   

@@ -319,7 +319,7 @@ float_keys = [
     "EPS1DOT",
     "EPS2DOT",
     "TASC",
-    "LAMBDA",
+    "LAMBDAPIN",
     "BETA",
     "RA_RAD",
     "DEC_RAD",
@@ -2195,9 +2195,9 @@ def convert_model_parameters(pardict):
     theta = np.arccos(costheta)
     sintheta = math.sin(theta)
     sin2theta = math.sin(2.0 * theta)
-    sinlambda = math.sin(pardict["lambda"])
-    coslambda = math.cos(pardict["lambda"])
-    sin2lambda = math.sin(2.0 * pardict["lambda"])
+    sinlambda = math.sin(pardict["lambdapin"])
+    coslambda = math.cos(pardict["lambdapin"])
+    sin2lambda = math.sin(2.0 * pardict["lambdapin"])
 
     phi0 = pardict["phi0"]
 
@@ -2235,9 +2235,9 @@ def heterodyned_pinsf_pulsar(starttime, duration, dt, detector, pardict):
     siniota = math.sin(iota)
     sintheta = math.sin(theta)
     sin2theta = math.sin(2.0 * theta)
-    sinlambda = math.sin(pardict["lambda"])
-    coslambda = math.cos(pardict["lambda"])
-    sin2lambda = math.sin(2.0 * pardict["lambda"])
+    sinlambda = math.sin(pardict["lambdapin"])
+    coslambda = math.cos(pardict["lambdapin"])
+    sin2lambda = math.sin(2.0 * pardict["lambdapin"])
 
     ePhi = cmath.exp(0.5 * pardict["phi0"] * 1j)
     e2Phi = cmath.exp(pardict["phi0"] * 1j)

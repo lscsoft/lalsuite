@@ -250,7 +250,7 @@ tagBinaryPulsarParams
   /* pinned superfluid gw parameters*/
   REAL8 I21;    /**< parameter for pinsf model.**/
   REAL8 I31;    /**< parameter for pinsf model.**/
-  REAL8 lambda; /**< this is a longitude like angle between pinning axis and line of sight */
+  REAL8 lambdapin; /**< this is a longitude like angle between pinning axis and line of sight */
   REAL8 costheta;  /**< cosine of angle between rotation axis and pinning axis */
   REAL8 theta;
 
@@ -339,7 +339,7 @@ tagBinaryPulsarParams
   REAL8 AcrossErr;
   REAL8 I21Err;
   REAL8 I31Err;
-  REAL8 lambdaErr;
+  REAL8 lambdapinErr;
   REAL8 costhetaErr;
   REAL8 thetaErr;
   REAL8 C22Err;
