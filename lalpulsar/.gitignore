@@ -41,6 +41,7 @@ python/lalpulsar/__init__.py
 python/lalpulsar/_lalpulsar*
 python/lalpulsar/git_version.py
 python/lalpulsar/lalpulsar.py
+python/lalpulsar/public_sft_directory_README.dox
 lib/config.h
 lib/config.h.in
 lib/git_version

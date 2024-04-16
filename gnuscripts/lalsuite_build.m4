@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 179
+# serial 180
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1293,8 +1293,10 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
     AC_CHECK_PROGS([MARKDOWN2HTML],[pandoc markdown],[cat])
     AS_IF([test "X${MARKDOWN2HTML}" = Xcat],[
       AC_MSG_WARN([no Markdown to HTML converter found; Markdown in Doxygen will be rendered verbatim])
+      AC_SUBST([MARKDOWN2HTML_DOXYBLOCK],[verbatim])
     ],[
       AC_MSG_NOTICE([Markdown in Doxygen will be converted to HTML using ${MARKDOWN2HTML}])
+      AC_SUBST([MARKDOWN2HTML_DOXYBLOCK],[htmlonly])
     ])
 
   ])
