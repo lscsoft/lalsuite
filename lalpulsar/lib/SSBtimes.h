@@ -43,11 +43,11 @@ extern "C" {
 
 /** The precision in calculating the barycentric transformation */
 typedef enum tagSSBprecision {
-  SSBPREC_NEWTONIAN,		/**< simple Newtonian: \f$ \tau = t + \vec{r}\cdot\vec{n}/c \f$ */
-  SSBPREC_RELATIVISTIC,		/**< detailed relativistic: \f$ \tau=\tau(t; \vec{n}, \vec{r}) \f$ */
-  SSBPREC_RELATIVISTICOPT,  	/**< optimized relativistic, numerically equivalent to #SSBPREC_RELATIVISTIC, but faster */
+  SSBPREC_NEWTONIAN,            /**< simple Newtonian: \f$ \tau = t + \vec{r}\cdot\vec{n}/c \f$ */
+  SSBPREC_RELATIVISTIC,         /**< detailed relativistic: \f$ \tau=\tau(t; \vec{n}, \vec{r}) \f$ */
+  SSBPREC_RELATIVISTICOPT,      /**< optimized relativistic, numerically equivalent to #SSBPREC_RELATIVISTIC, but faster */
   SSBPREC_DMOFF,                /**< switch off all demodulatoin terms */
-  SSBPREC_LAST			/**< end marker */
+  SSBPREC_LAST                  /**< end marker */
 } SSBprecision;
 
 /** Static array of all \c SSBprecision choices, for use by the UserInput module parsing routines */
@@ -58,34 +58,34 @@ extern const UserChoices SSBprecisionChoices;
  * We also store the SSB reference-time tau0.
  */
 typedef struct tagSSBtimes {
-  LIGOTimeGPS refTime;		/**< reference-time 'tau0' */
-  REAL8Vector *DeltaT;		/**< Time-difference of SFT-alpha - tau0 in SSB-frame */
-  REAL8Vector *Tdot;		/**< dT/dt : time-derivative of SSB-time wrt local time for SFT-alpha */
+  LIGOTimeGPS refTime;          /**< reference-time 'tau0' */
+  REAL8Vector *DeltaT;          /**< Time-difference of SFT-alpha - tau0 in SSB-frame */
+  REAL8Vector *Tdot;            /**< dT/dt : time-derivative of SSB-time wrt local time for SFT-alpha */
 } SSBtimes;
 
 /** Multi-IFO container for SSB timings */
 typedef struct tagMultiSSBtimes {
-  UINT4 length;		/**< number of IFOs */
-  SSBtimes **data;	/**< array of SSBtimes (pointers) */
+  UINT4 length;         /**< number of IFOs */
+  SSBtimes **data;      /**< array of SSBtimes (pointers) */
 } MultiSSBtimes;
 
 /*---------- exported Global variables ----------*/
 
 /*---------- exported prototypes [API] ----------*/
-int XLALAddBinaryTimes ( SSBtimes **tSSBOut, const SSBtimes *tSSBIn, const PulsarDopplerParams *Doppler );
-int XLALAddMultiBinaryTimes ( MultiSSBtimes **multiSSBOut, const MultiSSBtimes *multiSSBIn, const PulsarDopplerParams *Doppler );
-SSBtimes *XLALDuplicateSSBtimes ( const SSBtimes *tSSB );
-MultiSSBtimes *XLALDuplicateMultiSSBtimes ( const MultiSSBtimes *multiSSB );
+int XLALAddBinaryTimes( SSBtimes **tSSBOut, const SSBtimes *tSSBIn, const PulsarDopplerParams *Doppler );
+int XLALAddMultiBinaryTimes( MultiSSBtimes **multiSSBOut, const MultiSSBtimes *multiSSBIn, const PulsarDopplerParams *Doppler );
+SSBtimes *XLALDuplicateSSBtimes( const SSBtimes *tSSB );
+MultiSSBtimes *XLALDuplicateMultiSSBtimes( const MultiSSBtimes *multiSSB );
 
-SSBtimes *XLALGetSSBtimes ( const DetectorStateSeries *DetectorStates, SkyPosition pos, LIGOTimeGPS refTime, SSBprecision precision );
-MultiSSBtimes *XLALGetMultiSSBtimes ( const MultiDetectorStateSeries *multiDetStates, SkyPosition skypos, LIGOTimeGPS refTime, SSBprecision precision);
+SSBtimes *XLALGetSSBtimes( const DetectorStateSeries *DetectorStates, SkyPosition pos, LIGOTimeGPS refTime, SSBprecision precision );
+MultiSSBtimes *XLALGetMultiSSBtimes( const MultiDetectorStateSeries *multiDetStates, SkyPosition skypos, LIGOTimeGPS refTime, SSBprecision precision );
 
-int XLALEarliestMultiSSBtime ( LIGOTimeGPS *out, const MultiSSBtimes *multiSSB, const REAL8 Tsft );
-int XLALLatestMultiSSBtime ( LIGOTimeGPS *out, const MultiSSBtimes *multiSSB,  const REAL8 Tsft );
+int XLALEarliestMultiSSBtime( LIGOTimeGPS *out, const MultiSSBtimes *multiSSB, const REAL8 Tsft );
+int XLALLatestMultiSSBtime( LIGOTimeGPS *out, const MultiSSBtimes *multiSSB,  const REAL8 Tsft );
 
 /* destructors */
-void XLALDestroySSBtimes ( SSBtimes *multiSSB );
-void XLALDestroyMultiSSBtimes ( MultiSSBtimes *multiSSB );
+void XLALDestroySSBtimes( SSBtimes *multiSSB );
+void XLALDestroyMultiSSBtimes( MultiSSBtimes *multiSSB );
 
 /** @} */
 

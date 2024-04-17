@@ -22,15 +22,16 @@
 #include <lal/LALConstants.h>
 #include <lal/LALString.h>
 
-int main (int argv, char **argc){
+int main( int argv, char **argc )
+{
   FILE *fpout = NULL;
 
   BarycenterInput baryinput;
   EarthState earth;
   EmissionTime emit;
-  EphemerisData *edat=NULL;
-  TimeCorrectionData *tdat=NULL;
-  char *earthFile=NULL, *sunFile=NULL, *tcFile=NULL, *lalpath=NULL;
+  EphemerisData *edat = NULL;
+  TimeCorrectionData *tdat = NULL;
+  char *earthFile = NULL, *sunFile = NULL, *tcFile = NULL, *lalpath = NULL;
 
   TimeCorrectionType ttype = TYPE_TDB;
 
@@ -38,44 +39,43 @@ int main (int argv, char **argc){
   int npoints = 50000, i = 0;
 
   /* location of the Parkes telescope */
-  baryinput.site.location[0] = -4554231.5/LAL_C_SI;
-  baryinput.site.location[1] = 2816759.1/LAL_C_SI;
-  baryinput.site.location[2] = -3454036.3/LAL_C_SI;
+  baryinput.site.location[0] = -4554231.5 / LAL_C_SI;
+  baryinput.site.location[1] = 2816759.1 / LAL_C_SI;
+  baryinput.site.location[2] = -3454036.3 / LAL_C_SI;
 
-  if((lalpath = getenv("LALPULSAR_DATADIR")) == NULL){
-    fprintf(stderr, "LALPULSAR_DATADIR environment variable not set!\n");
-    exit(1);
+  if ( ( lalpath = getenv( "LALPULSAR_DATADIR" ) ) == NULL ) {
+    fprintf( stderr, "LALPULSAR_DATADIR environment variable not set!\n" );
+    exit( 1 );
   }
 
-  earthFile = XLALStringDuplicate(lalpath);
-  sunFile = XLALStringDuplicate(lalpath);
+  earthFile = XLALStringDuplicate( lalpath );
+  sunFile = XLALStringDuplicate( lalpath );
 
-  earthFile = XLALStringAppend(earthFile, "/earth00-40-DE405.dat.gz");
-  sunFile = XLALStringAppend(sunFile, "/sun00-40-DE405.dat.gz");
+  earthFile = XLALStringAppend( earthFile, "/earth00-40-DE405.dat.gz" );
+  sunFile = XLALStringAppend( sunFile, "/sun00-40-DE405.dat.gz" );
 
   edat = XLALInitBarycenter( earthFile, sunFile );
 
-  fpout = fopen("tdot.txt", "w");
+  fpout = fopen( "tdot.txt", "w" );
 
-  tcFile = XLALStringDuplicate(lalpath);
+  tcFile = XLALStringDuplicate( lalpath );
 
   /* read in the time correction file */
-  if( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ){
-    tcFile = XLALStringAppend(tcFile, "/te405_2000-2040.dat.gz" );
-  }
-  else if ( ttype == TYPE_TDB ){
+  if ( ttype == TYPE_TEMPO2 || ttype == TYPE_TCB ) {
+    tcFile = XLALStringAppend( tcFile, "/te405_2000-2040.dat.gz" );
+  } else if ( ttype == TYPE_TDB ) {
     tcFile = XLALStringAppend( tcFile,
                                "/share/lalpulsar/tdb_2000-2040.dat.gz" );
   }
 
   tdat = XLALInitTimeCorrections( tcFile );
 
-  baryinput.delta = LAL_PI*(66-90)/180.; /* declination (on ecliptic) */
-  baryinput.alpha = LAL_TWOPI*18./24.; /* right ascension */
+  baryinput.delta = LAL_PI * ( 66 - 90 ) / 180.; /* declination (on ecliptic) */
+  baryinput.alpha = LAL_TWOPI * 18. / 24.; /* right ascension */
   baryinput.dInv = 0.0;  /* no parallax */
 
-  for( i=0; i<npoints; i++ ){
-    double t = tstart + (double)i*dt;
+  for ( i = 0; i < npoints; i++ ) {
+    double t = tstart + ( double )i * dt;
     double tplus, tminus;
 
     /* get time derivative at time t */
@@ -83,23 +83,23 @@ int main (int argv, char **argc){
     XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, tdat, ttype );
     XLALBarycenter( &emit, &baryinput, &earth );
 
-    fprintf(fpout, "%.5lf\t%.12lf\t", t, emit.tDot);
+    fprintf( fpout, "%.5lf\t%.12lf\t", t, emit.tDot );
 
     /* get time derivative by finding the gradient of the time delay manually */
-    XLALGPSSetREAL8( &baryinput.tgps, t+dstep/2. );
+    XLALGPSSetREAL8( &baryinput.tgps, t + dstep / 2. );
     XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, tdat, ttype );
     XLALBarycenter( &emit, &baryinput, &earth );
     tplus = emit.deltaT;
 
-    XLALGPSSetREAL8( &baryinput.tgps, t-dstep/2. );
+    XLALGPSSetREAL8( &baryinput.tgps, t - dstep / 2. );
     XLALBarycenterEarthNew( &earth, &baryinput.tgps, edat, tdat, ttype );
     XLALBarycenter( &emit, &baryinput, &earth );
     tminus = emit.deltaT;
 
-    fprintf(fpout, "%.12lf\n", 1. + (tplus-tminus)/dstep);
+    fprintf( fpout, "%.12lf\n", 1. + ( tplus - tminus ) / dstep );
   }
 
-  fclose(fpout);
+  fclose( fpout );
 
   return 0;
 }

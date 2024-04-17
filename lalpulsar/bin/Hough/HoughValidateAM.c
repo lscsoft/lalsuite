@@ -52,13 +52,14 @@
 
 /* default file and directory names */
 #define SFTDIRECTORY "/local_data/badkri/fakesfts/"
-#define FILEOUT "./ValidateAMOut"   
+#define FILEOUT "./ValidateAMOut"
 #define TRUE (1==1)
 #define FALSE (1==0)
 
-int main( int argc, char *argv[]){
+int main( int argc, char *argv[] )
+{
 
-  static LALStatus            status;  
+  static LALStatus            status;
   static LALDetector          detector;
   static LIGOTimeGPSVector    timeV;
   static REAL8Cart3CoorVector velV;
@@ -67,13 +68,13 @@ int main( int argc, char *argv[]){
   static PulsarSignalParams  params;
   static SFTParams sftParams;
 
-  static UCHARPeakGram     pg1; 
+  static UCHARPeakGram     pg1;
   /*   static UCHARPeakGram     pg2; */
   static COMPLEX8SFTData1  sft1;
   static REAL8PeriodoPSD   periPSD;
 
   REAL4TimeSeries   *signalTseries = NULL;
-  SFTVector    *inputSFTs  = NULL;  
+  SFTVector    *inputSFTs  = NULL;
   SFTVector    *outputSFTs = NULL;
   /* data about injected signal */
   static PulsarData           pulsarInject;
@@ -83,10 +84,10 @@ int main( int argc, char *argv[]){
 
   /* FILE  *fpOUT = NULL; */ /* output file pointer */
   FILE  *fpLog = NULL; /* log file pointer */
-  CHAR  *logstr=NULL; /* log string containing user input variables */
-  CHAR  *fnamelog=NULL; /* name of log file */
+  CHAR  *logstr = NULL; /* log string containing user input variables */
+  CHAR  *fnamelog = NULL; /* name of log file */
   INT4  nfSizeCylinder;
-  
+
   EphemerisData   *edat = NULL;
 
   INT4   mObsCoh;
@@ -94,10 +95,10 @@ int main( int argc, char *argv[]){
   REAL8  nth1, nth2, erfcInv;
   /*   REAl8  meanAM, sigmaAM, varAM, mean, sigma; */
   REAL8  mean1, mean2, var1, var2, sumsq, peakprob;
-  REAL8  sftBand;  
+  REAL8  sftBand;
   REAL8  timeBase, deltaF, normalizeThr, threshold;
   /*   REAL8  thresholdAM; */
-  UINT4  sftlength; 
+  UINT4  sftlength;
   INT4   sftFminBin;
   REAL8  fHeterodyne;
   REAL8  tSamplingRate;
@@ -113,10 +114,10 @@ int main( int argc, char *argv[]){
   REAL8 uvar_alpha, uvar_delta, uvar_h0, uvar_f0;
   REAL8 uvar_psi, uvar_phi0, uvar_fdot, uvar_cosiota;
   REAL8 uvar_mismatchW;
-  CHAR *uvar_earthEphemeris=NULL;
-  CHAR *uvar_sunEphemeris=NULL;
-  CHAR *uvar_sftDir=NULL;
-  CHAR *uvar_fnameout=NULL;
+  CHAR *uvar_earthEphemeris = NULL;
+  CHAR *uvar_sunEphemeris = NULL;
+  CHAR *uvar_sftDir = NULL;
+  CHAR *uvar_fnameout = NULL;
 
   /* vector of weights */
   REAL8Vector *weight;
@@ -124,7 +125,7 @@ int main( int argc, char *argv[]){
   /*  set up the default parameters  */
 
   nfSizeCylinder = NFSIZE;
-  
+
   /* *********************************************************************** */
   /* set other user input variables */
   uvar_peakThreshold = THRESHOLD;
@@ -142,93 +143,102 @@ int main( int argc, char *argv[]){
   uvar_psi = PSI;
   uvar_cosiota = COSIOTA;
   uvar_phi0 = PHI0;
-  
+
   /* now set the default filenames */
-  uvar_earthEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_earthEphemeris,EARTHEPHEMERIS);
+  uvar_earthEphemeris = ( CHAR * )LALMalloc( 512 * sizeof( CHAR ) );
+  strcpy( uvar_earthEphemeris, EARTHEPHEMERIS );
 
-  uvar_sunEphemeris = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_sunEphemeris,SUNEPHEMERIS);
+  uvar_sunEphemeris = ( CHAR * )LALMalloc( 512 * sizeof( CHAR ) );
+  strcpy( uvar_sunEphemeris, SUNEPHEMERIS );
 
-  uvar_sftDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_sftDir,SFTDIRECTORY);
+  uvar_sftDir = ( CHAR * )LALMalloc( 512 * sizeof( CHAR ) );
+  strcpy( uvar_sftDir, SFTDIRECTORY );
 
-  uvar_fnameout = (CHAR *)LALMalloc(512*sizeof(CHAR));
-  strcpy(uvar_fnameout, FILEOUT);
+  uvar_fnameout = ( CHAR * )LALMalloc( 512 * sizeof( CHAR ) );
+  strcpy( uvar_fnameout, FILEOUT );
 
   /* *********************************************************************** */
   /* register user input variables */
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ifo,             "ifo",             INT4,   'i', OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)" ) == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,    "blocksRngMed",    INT4,   'w', OPTIONAL, "RngMed block size") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_peakThreshold,   "peakThreshold",   REAL8,  't', OPTIONAL, "Peak selection threshold") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_houghFalseAlarm, "houghFalseAlarm", REAL8,  0,   OPTIONAL, "Overall Hough False alarm") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris,  "earthEphemeris",  STRING, 'E', OPTIONAL, "Earth Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,    "sunEphemeris",    STRING, 'S', OPTIONAL, "Sun Ephemeris file") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,          "sftDir",          STRING, 'D', OPTIONAL, "SFT Directory") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameout,        "fnameout",        STRING, 'o', OPTIONAL, "Output file prefix") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_alpha,           "alpha",           REAL8,  'r', OPTIONAL, "Right ascension") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_delta,           "delta",           REAL8,  'l', OPTIONAL, "Declination") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_h0,              "h0",              REAL8,  'm', OPTIONAL, "h0 to inject") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f0,              "f0",              REAL8,  'f', OPTIONAL, "Signal frequency") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_psi,             "psi",             REAL8,  'p', OPTIONAL, "Polarization angle") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_phi0,            "phi0",            REAL8,  'P', OPTIONAL, "Initial phase") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_cosiota,         "cosiota",         REAL8,  'c', OPTIONAL, "Cosine of iota") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fdot,            "fdot",            REAL8,  'd', OPTIONAL, "Spindown parameter") == XLAL_SUCCESS, XLAL_EFUNC);
-  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_mismatchW,       "mismatch",        REAL8,  'M', OPTIONAL, "Mismatch in weight calculation") == XLAL_SUCCESS, XLAL_EFUNC);
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_ifo,             "ifo",             INT4,   'i', OPTIONAL, "Detector GEO(1) LLO(2) LHO(3)" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_blocksRngMed,    "blocksRngMed",    INT4,   'w', OPTIONAL, "RngMed block size" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_peakThreshold,   "peakThreshold",   REAL8,  't', OPTIONAL, "Peak selection threshold" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_houghFalseAlarm, "houghFalseAlarm", REAL8,  0,   OPTIONAL, "Overall Hough False alarm" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_earthEphemeris,  "earthEphemeris",  STRING, 'E', OPTIONAL, "Earth Ephemeris file" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sunEphemeris,    "sunEphemeris",    STRING, 'S', OPTIONAL, "Sun Ephemeris file" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_sftDir,          "sftDir",          STRING, 'D', OPTIONAL, "SFT Directory" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fnameout,        "fnameout",        STRING, 'o', OPTIONAL, "Output file prefix" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_alpha,           "alpha",           REAL8,  'r', OPTIONAL, "Right ascension" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_delta,           "delta",           REAL8,  'l', OPTIONAL, "Declination" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_h0,              "h0",              REAL8,  'm', OPTIONAL, "h0 to inject" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_f0,              "f0",              REAL8,  'f', OPTIONAL, "Signal frequency" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_psi,             "psi",             REAL8,  'p', OPTIONAL, "Polarization angle" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_phi0,            "phi0",            REAL8,  'P', OPTIONAL, "Initial phase" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_cosiota,         "cosiota",         REAL8,  'c', OPTIONAL, "Cosine of iota" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_fdot,            "fdot",            REAL8,  'd', OPTIONAL, "Spindown parameter" ) == XLAL_SUCCESS, XLAL_EFUNC );
+  XLAL_CHECK_MAIN( XLALRegisterNamedUvar( &uvar_mismatchW,       "mismatch",        REAL8,  'M', OPTIONAL, "Mismatch in weight calculation" ) == XLAL_SUCCESS, XLAL_EFUNC );
 
   /* read all command line variables */
   BOOLEAN should_exit = 0;
-  XLAL_CHECK_MAIN( XLALUserVarReadAllInput(&should_exit, argc, argv, lalPulsarVCSInfoList) == XLAL_SUCCESS, XLAL_EFUNC);
-  if (should_exit)
-    exit(1);
-  
+  XLAL_CHECK_MAIN( XLALUserVarReadAllInput( &should_exit, argc, argv, lalPulsarVCSInfoList ) == XLAL_SUCCESS, XLAL_EFUNC );
+  if ( should_exit ) {
+    exit( 1 );
+  }
+
   /* *********************************************************************** */
   /* write the log file */
-  fnamelog = (CHAR *)LALMalloc( 512*sizeof(CHAR));
-  strcpy(fnamelog, uvar_fnameout);
-  strcat(fnamelog, "_log");
+  fnamelog = ( CHAR * )LALMalloc( 512 * sizeof( CHAR ) );
+  strcpy( fnamelog, uvar_fnameout );
+  strcat( fnamelog, "_log" );
   /* open the log file for writing */
-  if ((fpLog = fopen(fnamelog, "w")) == NULL) {
-    fprintf(stderr, "Unable to open file %s for writing\n", fnamelog);
-    LALFree(fnamelog);
-    exit(1);
+  if ( ( fpLog = fopen( fnamelog, "w" ) ) == NULL ) {
+    fprintf( stderr, "Unable to open file %s for writing\n", fnamelog );
+    LALFree( fnamelog );
+    exit( 1 );
   }
 
   /* get the log string */
-  XLAL_CHECK_MAIN( ( logstr = XLALUserVarGetLog(UVAR_LOGFMT_CFGFILE) ) != NULL, XLAL_EFUNC);  
+  XLAL_CHECK_MAIN( ( logstr = XLALUserVarGetLog( UVAR_LOGFMT_CFGFILE ) ) != NULL, XLAL_EFUNC );
 
-  fprintf( fpLog, "## Log file for HoughValidateAM \n\n");
-  fprintf( fpLog, "# User Input:\n");
-  fprintf( fpLog, "#-------------------------------------------\n");
-  fprintf( fpLog, "%s", logstr);
-  LALFree(logstr);
+  fprintf( fpLog, "## Log file for HoughValidateAM \n\n" );
+  fprintf( fpLog, "# User Input:\n" );
+  fprintf( fpLog, "#-------------------------------------------\n" );
+  fprintf( fpLog, "%s", logstr );
+  LALFree( logstr );
 
   /* append an ident-string defining the exact CVS-version of the code used */
   {
     CHAR command[1024] = "";
-    fprintf (fpLog, "\n\n# CVS-versions of executable:\n");
-    fprintf (fpLog, "# -----------------------------------------\n");
-    fclose (fpLog);
-    
-    sprintf (command, "ident %s | sort -u >> %s", argv[0], fnamelog);
+    fprintf( fpLog, "\n\n# CVS-versions of executable:\n" );
+    fprintf( fpLog, "# -----------------------------------------\n" );
+    fclose( fpLog );
+
+    sprintf( command, "ident %s | sort -u >> %s", argv[0], fnamelog );
     /* we don't check this. If it fails, we assume that */
     /* one of the system-commands was not available, and */
     /* therefore the CVS-versions will not be logged */
-    if ( system(command) ) fprintf (stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
+    if ( system( command ) ) {
+      fprintf( stderr, "\nsystem('%s') returned non-zero status!\n\n", command );
+    }
 
-    LALFree(fnamelog); 
+    LALFree( fnamelog );
   }
 
   /* *********************************************************************** */
   /* set peak selection threshold */
-  LAL_CALL( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status ); 
-  threshold = uvar_peakThreshold/normalizeThr; 
+  LAL_CALL( LALRngMedBias( &status, &normalizeThr, uvar_blocksRngMed ), &status );
+  threshold = uvar_peakThreshold / normalizeThr;
 
   /* *********************************************************************** */
   /* set detector */
-  if (uvar_ifo ==1) detector=lalCachedDetectors[LALDetectorIndexGEO600DIFF];
-  if (uvar_ifo ==2) detector=lalCachedDetectors[LALDetectorIndexLLODIFF];
-  if (uvar_ifo ==3) detector=lalCachedDetectors[LALDetectorIndexLHODIFF];
+  if ( uvar_ifo == 1 ) {
+    detector = lalCachedDetectors[LALDetectorIndexGEO600DIFF];
+  }
+  if ( uvar_ifo == 2 ) {
+    detector = lalCachedDetectors[LALDetectorIndexLLODIFF];
+  }
+  if ( uvar_ifo == 3 ) {
+    detector = lalCachedDetectors[LALDetectorIndexLHODIFF];
+  }
 
 
   /* *********************************************************************** */
@@ -242,7 +252,7 @@ int main( int argc, char *argv[]){
   pulsarInject.phi0 = uvar_phi0;
   pulsarInject.spindown.length = 1;
   pulsarInject.spindown.data = NULL;
-  pulsarInject.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
+  pulsarInject.spindown.data = ( REAL8 * )LALMalloc( sizeof( REAL8 ) );
   pulsarInject.spindown.data[0] = uvar_fdot;
 
   /* *********************************************************************** */
@@ -253,23 +263,23 @@ int main( int argc, char *argv[]){
   pulsarTemplate.longitude = uvar_alpha;
   pulsarTemplate.spindown.length = 1;
   pulsarTemplate.spindown.data = NULL;
-  pulsarTemplate.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
+  pulsarTemplate.spindown.data = ( REAL8 * )LALMalloc( sizeof( REAL8 ) );
   pulsarTemplate.spindown.data[0] = uvar_fdot;
 
   /* *********************************************************************** */
   /* allocate memory for mismatched spindown template */
   pulsarTemplate1.spindown.length = 1;
   pulsarTemplate1.spindown.data = NULL;
-  pulsarTemplate1.spindown.data = (REAL8 *)LALMalloc(sizeof(REAL8));
+  pulsarTemplate1.spindown.data = ( REAL8 * )LALMalloc( sizeof( REAL8 ) );
 
   /* *********************************************************************** */
   /* read sfts */
   /* note that sft must be long enough -- at least 1Hz */
   {
     CHAR *tempDir;
-    tempDir = (CHAR *)LALMalloc(512*sizeof(CHAR));
-    strcpy(tempDir, uvar_sftDir);
-    strcat(tempDir, "/*SFT*.*"); 
+    tempDir = ( CHAR * )LALMalloc( 512 * sizeof( CHAR ) );
+    strcpy( tempDir, uvar_sftDir );
+    strcat( tempDir, "/*SFT*.*" );
     sftBand = 0.5;
     SFTCatalog *catalog = XLALSFTdataFind( tempDir, NULL );
     XLAL_CHECK_MAIN( catalog != NULL, XLAL_EFUNC );
@@ -277,7 +287,7 @@ int main( int argc, char *argv[]){
     sftBand += ( nfSizeCylinder + uvar_blocksRngMed ) * catalog_deltaF;
     inputSFTs = XLALLoadSFTs( catalog, uvar_f0 - sftBand, uvar_f0 + sftBand );
     XLAL_CHECK_MAIN( inputSFTs != NULL, XLAL_EFUNC );
-    LALFree(tempDir);
+    LALFree( tempDir );
   }
 
 
@@ -286,66 +296,66 @@ int main( int argc, char *argv[]){
   mObsCoh = inputSFTs->length;
   sftlength = inputSFTs->data->data->length;
   deltaF = inputSFTs->data->deltaF;
-  timeBase = 1.0/deltaF;
-  sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5);
+  timeBase = 1.0 / deltaF;
+  sftFminBin = floor( timeBase * inputSFTs->data->f0 + 0.5 );
 
   /* signal generation parameters */
-  fHeterodyne = sftFminBin*deltaF;
-  tSamplingRate = 2.0*deltaF*(sftlength -1.);
+  fHeterodyne = sftFminBin * deltaF;
+  tSamplingRate = 2.0 * deltaF * ( sftlength - 1. );
 
   /* *********************************************************************** */
   /* create timestamp vector */
   timeV.length = mObsCoh;
-  timeV.data = NULL;  
-  timeV.data = (LIGOTimeGPS *)LALMalloc(mObsCoh*sizeof(LIGOTimeGPS));
+  timeV.data = NULL;
+  timeV.data = ( LIGOTimeGPS * )LALMalloc( mObsCoh * sizeof( LIGOTimeGPS ) );
 
   /* *********************************************************************** */
   /* read timestamps */
-  { 
-    INT4    i; 
-    SFTtype  *sft= NULL; 
-    
+  {
+    INT4    i;
+    SFTtype  *sft = NULL;
+
     sft = inputSFTs->data;
-    for (i=0; i < mObsCoh; i++){
+    for ( i = 0; i < mObsCoh; i++ ) {
       timeV.data[i].gpsSeconds = sft->epoch.gpsSeconds;
       timeV.data[i].gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
       ++sft;
-    }    
+    }
   }
 
   /* *********************************************************************** */
   /* compute the time difference relative to startTime for all SFT */
   timeDiffV.length = mObsCoh;
-  timeDiffV.data = NULL; 
-  timeDiffV.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+  timeDiffV.data = NULL;
+  timeDiffV.data = ( REAL8 * )LALMalloc( mObsCoh * sizeof( REAL8 ) );
 
-  {   
+  {
     REAL8   t0, ts, tn, midTimeBase;
-    INT4   j; 
+    INT4   j;
 
-    midTimeBase=0.5*timeBase;
+    midTimeBase = 0.5 * timeBase;
     ts = timeV.data[0].gpsSeconds;
     tn = timeV.data[0].gpsNanoSeconds * 1.00E-9;
-    t0=ts+tn;
+    t0 = ts + tn;
     timeDiffV.data[0] = midTimeBase;
 
-    for (j=1; j< mObsCoh; ++j){
+    for ( j = 1; j < mObsCoh; ++j ) {
       ts = timeV.data[j].gpsSeconds;
-      tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;  
-      timeDiffV.data[j] = ts+tn -t0+midTimeBase; 
-    }  
+      tn = timeV.data[j].gpsNanoSeconds * 1.00E-9;
+      timeDiffV.data[j] = ts + tn - t0 + midTimeBase;
+    }
   }
 
   /* *********************************************************************** */
-  /* compute detector velocity for those time stamps  */ 
-  velV.length = mObsCoh; 
+  /* compute detector velocity for those time stamps  */
+  velV.length = mObsCoh;
   velV.data = NULL;
-  velV.data = (REAL8Cart3Coor *)LALMalloc(mObsCoh*sizeof(REAL8Cart3Coor));
-  
-  {  
+  velV.data = ( REAL8Cart3Coor * )LALMalloc( mObsCoh * sizeof( REAL8Cart3Coor ) );
+
+  {
     VelocityPar   velPar;
-    REAL8     vel[3]; 
-    UINT4     j; 
+    REAL8     vel[3];
+    UINT4     j;
 
     velPar.detector = detector;
     velPar.tBase = timeBase;
@@ -353,58 +363,58 @@ int main( int argc, char *argv[]){
     velPar.edat = NULL;
 
     /* read in ephemeris data */
-    XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC);
+    XLAL_CHECK_MAIN( ( edat = XLALInitBarycenter( uvar_earthEphemeris, uvar_sunEphemeris ) ) != NULL, XLAL_EFUNC );
     velPar.edat = edat;
 
-    /* calculate detector velocity */    
-    for(j=0; j< velV.length; ++j){
+    /* calculate detector velocity */
+    for ( j = 0; j < velV.length; ++j ) {
       velPar.startTime.gpsSeconds     = timeV.data[j].gpsSeconds;
       velPar.startTime.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
-      
-      LAL_CALL( LALAvgDetectorVel ( &status, vel, &velPar), &status );
-      velV.data[j].x= vel[0];
-      velV.data[j].y= vel[1];
-      velV.data[j].z= vel[2];   
-    }  
+
+      LAL_CALL( LALAvgDetectorVel( &status, vel, &velPar ), &status );
+      velV.data[j].x = vel[0];
+      velV.data[j].y = vel[1];
+      velV.data[j].z = vel[2];
+    }
   }
 
   /* calculate weights based on amplitude modulation functions */
 
   /* allocate memory for weight */
   weight = NULL;
-  LAL_CALL( LALDCreateVector( &status, &weight, mObsCoh), &status);
+  LAL_CALL( LALDCreateVector( &status, &weight, mObsCoh ), &status );
 
   /* calculate amplitude modulation weights */
-  LAL_CALL( LALHOUGHInitializeWeights( &status, weight), &status);
-  LAL_CALL( LALHOUGHComputeAMWeights( &status, weight, &timeV, &detector, edat, 
-				      uvar_alpha + uvar_mismatchW, 
-				      uvar_delta + uvar_mismatchW), &status);
-  LAL_CALL( LALHOUGHNormalizeWeights( &status, weight), &status);
-  
+  LAL_CALL( LALHOUGHInitializeWeights( &status, weight ), &status );
+  LAL_CALL( LALHOUGHComputeAMWeights( &status, weight, &timeV, &detector, edat,
+                                      uvar_alpha + uvar_mismatchW,
+                                      uvar_delta + uvar_mismatchW ), &status );
+  LAL_CALL( LALHOUGHNormalizeWeights( &status, weight ), &status );
+
 
   /* calculate mean and variances */
-  peakprob = exp(-uvar_peakThreshold); /* probability of peak selection */
-  erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2); /* erfcinv(2*uvar_houghFalseAlarm */
+  peakprob = exp( -uvar_peakThreshold ); /* probability of peak selection */
+  erfcInv = gsl_cdf_ugaussian_Qinv( uvar_houghFalseAlarm ) / sqrt( 2 ); /* erfcinv(2*uvar_houghFalseAlarm */
 
   /* usual number count threshold */
-  /* 1 is for the usual hough transform 
-     2 is for weighted hough transform */ 
+  /* 1 is for the usual hough transform
+     2 is for weighted hough transform */
   mean1 = mObsCoh * peakprob;
-  var1 = mObsCoh * peakprob * (1 - peakprob);
-  nth1 = mean1 + sqrt(2.0 * var1) * erfcInv;
+  var1 = mObsCoh * peakprob * ( 1 - peakprob );
+  nth1 = mean1 + sqrt( 2.0 * var1 ) * erfcInv;
 
   /* threshold for weighted hough number count */
   mean2 = mean1; /* this is due to normalization of weights */
   /* find sum of weights squared */
   sumsq = 0.0;
   INT4 j;
-  for (j=0; j<mObsCoh; j++) {
+  for ( j = 0; j < mObsCoh; j++ ) {
     REAL8 tempW;
     tempW = weight->data[j];
     sumsq += tempW * tempW;
   }
-  var2 = sumsq * peakprob * (1 - peakprob);
-  nth2 = mean2 + sqrt( 2.0 * var2) * erfcInv;
+  var2 = sumsq * peakprob * ( 1 - peakprob );
+  nth2 = mean2 + sqrt( 2.0 * var2 ) * erfcInv;
 
   /*   { /\* check sum weight = 1 *\/ */
   /*     REAL8 tempSum=0.0; */
@@ -419,9 +429,9 @@ int main( int argc, char *argv[]){
   /*     INT4 j; */
   /*     REAL8  x; */
   /*     /\* REAL8  y; *\/ */
-  
+
   /*     varAM = 0.0; */
-  
+
   /*     /\* y=0.0; *\/ */
   /*     for(j=0; j<mObsCoh; j++){ */
   /*       a = aVec->data[j]; */
@@ -432,11 +442,11 @@ int main( int argc, char *argv[]){
   /*     } */
   /*     varAM = varAM/mObsCoh; */
   /*     /\* fprintf(stdout, "zero ?= %g\n", y); *\/ */
-  
+
   /*   } */
-  
-  
-  
+
+
+
   /* *********************************************************************** */
   /* set grid spacings */
   {
@@ -448,49 +458,49 @@ int main( int argc, char *argv[]){
   /* allocate memory for f(t) pattern */
   foft.length = mObsCoh;
   foft.data = NULL;
-  foft.data = (REAL8 *)LALMalloc(mObsCoh*sizeof(REAL8));
+  foft.data = ( REAL8 * )LALMalloc( mObsCoh * sizeof( REAL8 ) );
 
   /* allocate memory for Hough peripsd structure */
   periPSD.periodogram.length = sftlength;
   periPSD.periodogram.data = NULL;
-  periPSD.periodogram.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
+  periPSD.periodogram.data = ( REAL8 * )LALMalloc( sftlength * sizeof( REAL8 ) );
   periPSD.psd.length = sftlength;
   periPSD.psd.data = NULL;
-  periPSD.psd.data = (REAL8 *)LALMalloc(sftlength* sizeof(REAL8));
+  periPSD.psd.data = ( REAL8 * )LALMalloc( sftlength * sizeof( REAL8 ) );
 
   /* allocate memory for peakgrams */
   pg1.length = sftlength;
   pg1.data = NULL;
-  pg1.data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR));
+  pg1.data = ( UCHAR * )LALMalloc( sftlength * sizeof( UCHAR ) );
 
   /*   pg2.length = sftlength; */
   /*   pg2.data = NULL; */
   /*   pg2.data = (UCHAR *)LALMalloc(sftlength* sizeof(UCHAR)); */
 
   /* *********************************************************************** */
-  /* generate signal and add to input sfts */  
+  /* generate signal and add to input sfts */
   /* parameters for output sfts */
   sftParams.Tsft = timeBase;
-  sftParams.timestamps = &(timeV);
-  sftParams.noiseSFTs = inputSFTs;  
+  sftParams.timestamps = &( timeV );
+  sftParams.noiseSFTs = inputSFTs;
 
   /* signal generation parameters */
   params.orbit.asini = 0 /* isolated pulsar */;
   /* params.transferFunction = NULL; */
-  params.site = &(detector);
+  params.site = &( detector );
   params.ephemerides = edat;
   params.startTimeGPS.gpsSeconds = timeV.data[0].gpsSeconds;   /* start time of output time series */
   params.startTimeGPS.gpsNanoSeconds = timeV.data[0].gpsNanoSeconds;   /* start time of output time series */
-  params.duration = timeDiffV.data[mObsCoh-1] + 0.5 * timeBase; /* length of time series in seconds */
+  params.duration = timeDiffV.data[mObsCoh - 1] + 0.5 * timeBase; /* length of time series in seconds */
   params.samplingRate = tSamplingRate;
   params.fHeterodyne = fHeterodyne;
   /* reference time for frequency and spindown is first timestamp */
-  params.pulsar.refTime.gpsSeconds = timeV.data[0].gpsSeconds; 
+  params.pulsar.refTime.gpsSeconds = timeV.data[0].gpsSeconds;
   params.pulsar.refTime.gpsNanoSeconds = timeV.data[0].gpsNanoSeconds;
 
   params.pulsar.position.longitude = pulsarInject.longitude;
   params.pulsar.position.latitude = pulsarInject.latitude ;
-  params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL; 
+  params.pulsar.position.system = COORDINATESYSTEM_EQUATORIAL;
   params.pulsar.psi = pulsarInject.psi;
   params.pulsar.aPlus = pulsarInject.aPlus;
   params.pulsar.aCross = pulsarInject.aCross;
@@ -498,9 +508,9 @@ int main( int argc, char *argv[]){
   params.pulsar.f0 = pulsarInject.f0;
   params.pulsar.spindown = &pulsarInject.spindown ;
 
-  LAL_CALL( LALGeneratePulsarSignal(&status, &signalTseries, &params ), &status);
-  LAL_CALL( LALSignalToSFTs(&status, &outputSFTs, signalTseries, &sftParams), &status); 
-  
+  LAL_CALL( LALGeneratePulsarSignal( &status, &signalTseries, &params ), &status );
+  LAL_CALL( LALSignalToSFTs( &status, &outputSFTs, signalTseries, &sftParams ), &status );
+
   /* fill in elements of sft structure sft1 used in peak selection */
   sft1.length = sftlength;
   sft1.fminBinIndex = sftFminBin;
@@ -509,192 +519,190 @@ int main( int argc, char *argv[]){
 
   /* *********************************************************************** */
   /* loop over mismatched templates */
-  for (mmT = 0; mmT <= 0; mmT++)
-    { 
-      for (mmP = 0; mmP <= 0; mmP++)
-	{
-	  INT4 mmFactor;
-	  
-	  /* displace the template */
-	  mmFactor = 0;
-	  pulsarTemplate1.f0 = pulsarTemplate.f0 /*+ mmFactor * mm * deltaF*/; 
-	  pulsarTemplate1.latitude = pulsarTemplate.latitude + mmFactor * mmT * deltaTheta;
-	  pulsarTemplate1.longitude = pulsarTemplate.longitude + mmFactor * mmP * deltaTheta;
-	  pulsarTemplate1.spindown.data[0] = pulsarTemplate.spindown.data[0] /*+ mmFactor * mm * deltaFdot*/;
-	 
-	  /* initialize number counts */ 
-	  numberCount1 = 0.0; /* usual number count */
-	  numberCount2 = 0.0; /* number count with amplitude modulation */
-	  /* meanAM = 0.0; */  /* mean and variance for new distribution */
-	  /* sigmaAM = 0.0; */
-	  /* now calculate the number count for the template */
-	  for (j=0; j < mObsCoh; j++)  
-	    {
-	      INT4 ind;
-	      REAL8 tempW;
-	      /* REAL8 realThrAM; */
-	      
-	      sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
-	      sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
-	      sft1.data = outputSFTs->data[j].data->data;
-	      
-	      LAL_CALL( COMPLEX8SFT2Periodogram1(&status, &periPSD.periodogram, &sft1), &status );	
-	      
-	      LAL_CALL( LALPeriodo2PSDrng( &status, 
-				      &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed), &status );	
-	      
-	   
-	      /* construct peakgram with usual threshold */
-	      LAL_CALL( LALSelectPeakColorNoise(&status,&pg1,&threshold,&periPSD), &status); 	 
-	      /*LAL_CALL( LALSelectPeakColorNoise(&status,&pg2,&thresholdAM,&periPSD), &status); */
+  for ( mmT = 0; mmT <= 0; mmT++ ) {
+    for ( mmP = 0; mmP <= 0; mmP++ ) {
+      INT4 mmFactor;
+
+      /* displace the template */
+      mmFactor = 0;
+      pulsarTemplate1.f0 = pulsarTemplate.f0 /*+ mmFactor * mm * deltaF*/;
+      pulsarTemplate1.latitude = pulsarTemplate.latitude + mmFactor * mmT * deltaTheta;
+      pulsarTemplate1.longitude = pulsarTemplate.longitude + mmFactor * mmP * deltaTheta;
+      pulsarTemplate1.spindown.data[0] = pulsarTemplate.spindown.data[0] /*+ mmFactor * mm * deltaFdot*/;
+
+      /* initialize number counts */
+      numberCount1 = 0.0; /* usual number count */
+      numberCount2 = 0.0; /* number count with amplitude modulation */
+      /* meanAM = 0.0; */  /* mean and variance for new distribution */
+      /* sigmaAM = 0.0; */
+      /* now calculate the number count for the template */
+      for ( j = 0; j < mObsCoh; j++ ) {
+        INT4 ind;
+        REAL8 tempW;
+        /* REAL8 realThrAM; */
+
+        sft1.epoch.gpsSeconds = timeV.data[j].gpsSeconds;
+        sft1.epoch.gpsNanoSeconds = timeV.data[j].gpsNanoSeconds;
+        sft1.data = outputSFTs->data[j].data->data;
+
+        LAL_CALL( COMPLEX8SFT2Periodogram1( &status, &periPSD.periodogram, &sft1 ), &status );
+
+        LAL_CALL( LALPeriodo2PSDrng( &status,
+                                     &periPSD.psd, &periPSD.periodogram, &uvar_blocksRngMed ), &status );
 
 
-	      /*adjust threshold for amplitude modulation */
-	      /* 	      a = aVec->data[j]; */
-	      /* 	      b = bVec->data[j]; */
-	      /* 	      thresholdAM = threshold * 0.5 * (A+B) / ( a*a + b*b); */
+        /* construct peakgram with usual threshold */
+        LAL_CALL( LALSelectPeakColorNoise( &status, &pg1, &threshold, &periPSD ), &status );
+        /*LAL_CALL( LALSelectPeakColorNoise(&status,&pg2,&thresholdAM,&periPSD), &status); */
 
-	   
-	      LAL_CALL( ComputeFoft(&status, &foft, &pulsarTemplate1, &timeDiffV, &velV, timeBase), &status);
-	      
-	      ind = floor( foft.data[j]*timeBase - sftFminBin + 0.5); 
-	      
-	      tempW = weight->data[j];
-	      numberCount1 += pg1.data[ind]; 
-	      numberCount2 += tempW * pg1.data[ind];
-	      
-	      /* 	      realThrAM = thresholdAM * normalizeThr; */
-	      
-	      /* 	      meanAM += exp(-realThrAM);	       */
-	      /* 	      sigmaAM += exp(-realThrAM) * (1.0 - exp(-realThrAM)); */
-	    } /* end loop over sfts */
 
-	  fprintf(stdout, "%g   %g   %g  %g    %g   %g    %g    %g    %g   %g    %g\n", 
-	          uvar_alpha, uvar_delta, uvar_cosiota, mean1, var1, nth1, numberCount1, mean2, var2, nth2, numberCount2);
+        /*adjust threshold for amplitude modulation */
+        /*              a = aVec->data[j]; */
+        /*              b = bVec->data[j]; */
+        /*              thresholdAM = threshold * 0.5 * (A+B) / ( a*a + b*b); */
 
-	  
-	  /* calculate the number count thresholds */
-	  /* 	  mean = mObsCoh * exp(-uvar_peakThreshold); */
-	  /* 	  sigma = mean * ( 1.0 - exp(-uvar_peakThreshold)); */
-	  
-	  /* 	  uvar_houghFalseAlarm = 1.0e-10; */
-	  /* 	  erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);     */
-	  /* 	  nth1 = mean + sqrt( 2 * sigma ) * erfcInv;  */
-	  /* 	  /\* use mean and variance to get approximate threshold in Gaussian approximation *\/ */
-	  /* 	  nth2 = meanAM + sqrt( 2 * sigmaAM ) * erfcInv;  */
-	  /* 	  /\* 	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %d    %g    %g    %g    %g\n",  *\/ */
-	  /* 	  /\* 	          uvar_alpha, uvar_delta, numberCount1, numberCount2,  *\/ */
-	  /* 	  /\* 	          nth1, nth2, mObsCoh, uvar_peakThreshold,  *\/ */
-	  /* 	  /\* 	          meanAM, sqrt(sigmaAM), varAM ); *\/ */
-	  /* 	  fprintf(stdout, "%g    %g    %d    %d    %g    %g    %g    %g \n",  */
-	  /* 	          uvar_alpha, uvar_delta, numberCount1, numberCount2,  */
-	  /* 	          nth1, nth2, (numberCount1 -mean)/sqrt(sigma), (numberCount2 - meanAM)/sqrt(sigmaAM) ); */
 
-	  
+        LAL_CALL( ComputeFoft( &status, &foft, &pulsarTemplate1, &timeDiffV, &velV, timeBase ), &status );
 
-	}/* end loop over mmP */
-    }/* end loop over mmT */
-  
+        ind = floor( foft.data[j] * timeBase - sftFminBin + 0.5 );
+
+        tempW = weight->data[j];
+        numberCount1 += pg1.data[ind];
+        numberCount2 += tempW * pg1.data[ind];
+
+        /*              realThrAM = thresholdAM * normalizeThr; */
+
+        /*              meanAM += exp(-realThrAM);               */
+        /*              sigmaAM += exp(-realThrAM) * (1.0 - exp(-realThrAM)); */
+      } /* end loop over sfts */
+
+      fprintf( stdout, "%g   %g   %g  %g    %g   %g    %g    %g    %g   %g    %g\n",
+               uvar_alpha, uvar_delta, uvar_cosiota, mean1, var1, nth1, numberCount1, mean2, var2, nth2, numberCount2 );
+
+
+      /* calculate the number count thresholds */
+      /*      mean = mObsCoh * exp(-uvar_peakThreshold); */
+      /*      sigma = mean * ( 1.0 - exp(-uvar_peakThreshold)); */
+
+      /*      uvar_houghFalseAlarm = 1.0e-10; */
+      /*      erfcInv = gsl_cdf_ugaussian_Qinv (uvar_houghFalseAlarm)/sqrt(2);     */
+      /*      nth1 = mean + sqrt( 2 * sigma ) * erfcInv;  */
+      /*      /\* use mean and variance to get approximate threshold in Gaussian approximation *\/ */
+      /*      nth2 = meanAM + sqrt( 2 * sigmaAM ) * erfcInv;  */
+      /*      /\*     fprintf(stdout, "%g    %g    %d    %d    %g    %g    %d    %g    %g    %g    %g\n",  *\/ */
+      /*      /\*             uvar_alpha, uvar_delta, numberCount1, numberCount2,  *\/ */
+      /*      /\*             nth1, nth2, mObsCoh, uvar_peakThreshold,  *\/ */
+      /*      /\*             meanAM, sqrt(sigmaAM), varAM ); *\/ */
+      /*      fprintf(stdout, "%g    %g    %d    %d    %g    %g    %g    %g \n",  */
+      /*              uvar_alpha, uvar_delta, numberCount1, numberCount2,  */
+      /*              nth1, nth2, (numberCount1 -mean)/sqrt(sigma), (numberCount2 - meanAM)/sqrt(sigmaAM) ); */
+
+
+
+    }/* end loop over mmP */
+  }/* end loop over mmT */
+
 
 
   /* *********************************************************************** */
   /* free structures created by signal generation routines */
-  LALFree(signalTseries->data->data);
-  LALFree(signalTseries->data);
-  LALFree(signalTseries);
-  signalTseries =NULL;
-  XLALDestroySFTVector( outputSFTs);
+  LALFree( signalTseries->data->data );
+  LALFree( signalTseries->data );
+  LALFree( signalTseries );
+  signalTseries = NULL;
+  XLALDestroySFTVector( outputSFTs );
 
   /* destroy input sfts */
-  XLALDestroySFTVector( inputSFTs);
+  XLALDestroySFTVector( inputSFTs );
 
   /* free other structures */
-  LALFree(foft.data);  
-  LALFree(pulsarInject.spindown.data);
-  LALFree(pulsarTemplate.spindown.data);
-  LALFree(pulsarTemplate1.spindown.data);
-  LALFree(timeV.data);
-  LALFree(timeDiffV.data);
-  LALFree(velV.data);
-  XLALDestroyEphemerisData(edat);
-  LALFree(periPSD.periodogram.data);
-  LALFree(periPSD.psd.data);
+  LALFree( foft.data );
+  LALFree( pulsarInject.spindown.data );
+  LALFree( pulsarTemplate.spindown.data );
+  LALFree( pulsarTemplate1.spindown.data );
+  LALFree( timeV.data );
+  LALFree( timeDiffV.data );
+  LALFree( velV.data );
+  XLALDestroyEphemerisData( edat );
+  LALFree( periPSD.periodogram.data );
+  LALFree( periPSD.psd.data );
 
-  LALFree(pg1.data);
+  LALFree( pg1.data );
   /*   LALFree(pg2.data); */
 
   /* free amParams */
-  LAL_CALL( LALDDestroyVector( &status, &weight), &status);
+  LAL_CALL( LALDDestroyVector( &status, &weight ), &status );
 
   /*   LAL(amc.a->data); */
   /*   LALFree(amc.b->data); */
 
-  XLALDestroyUserVars();  
+  XLALDestroyUserVars();
   LALCheckMemoryLeaks();
-  
+
   INFO( DRIVEHOUGHCOLOR_MSGENORM );
   return DRIVEHOUGHCOLOR_ENORM;
 }
 
 
 /******************************************************************/
-void ComputeFoft(LALStatus   *status,
-		 REAL8Vector          *foft,
-                 HoughTemplate        *pulsarTemplate,
-		 REAL8Vector          *timeDiffV,
-		 REAL8Cart3CoorVector *velV,
-                 REAL8                 timeBase){
-  
+void ComputeFoft( LALStatus   *status,
+                  REAL8Vector          *foft,
+                  HoughTemplate        *pulsarTemplate,
+                  REAL8Vector          *timeDiffV,
+                  REAL8Cart3CoorVector *velV,
+                  REAL8                 timeBase )
+{
+
   INT4   mObsCoh;
   REAL8   f0new, vcProdn, timeDiffN;
   INT4    f0newBin;
   REAL8   sourceDelta, sourceAlpha, cosDelta;
-  INT4    j,i, nspin, factorialN; 
+  INT4    j, i, nspin, factorialN;
   REAL8Cart3Coor  sourceLocation;
-  
+
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status);
-  
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
+
   /*   Make sure the arguments are not NULL: */
-  ASSERT (foft,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (pulsarTemplate,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (timeDiffV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (velV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  
-  ASSERT (foft->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (timeDiffV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  ASSERT (velV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL);
-  
+  ASSERT( foft,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL );
+  ASSERT( pulsarTemplate,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL );
+  ASSERT( timeDiffV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL );
+  ASSERT( velV,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL );
+
+  ASSERT( foft->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL );
+  ASSERT( timeDiffV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL );
+  ASSERT( velV->data,  status, DRIVEHOUGHCOLOR_ENULL, DRIVEHOUGHCOLOR_MSGENULL );
+
   sourceDelta = pulsarTemplate->latitude;
   sourceAlpha = pulsarTemplate->longitude;
-  cosDelta = cos(sourceDelta);
-  
-  sourceLocation.x = cosDelta* cos(sourceAlpha);
-  sourceLocation.y = cosDelta* sin(sourceAlpha);
-  sourceLocation.z = sin(sourceDelta);
-    
-  mObsCoh = foft->length;    
+  cosDelta = cos( sourceDelta );
+
+  sourceLocation.x = cosDelta * cos( sourceAlpha );
+  sourceLocation.y = cosDelta * sin( sourceAlpha );
+  sourceLocation.z = sin( sourceDelta );
+
+  mObsCoh = foft->length;
   nspin = pulsarTemplate->spindown.length;
-  
-  for (j=0; j<mObsCoh; ++j){  /* loop for all different time stamps */
+
+  for ( j = 0; j < mObsCoh; ++j ) { /* loop for all different time stamps */
     vcProdn = velV->data[j].x * sourceLocation.x
-      + velV->data[j].y * sourceLocation.y
-      + velV->data[j].z * sourceLocation.z;
+              + velV->data[j].y * sourceLocation.y
+              + velV->data[j].z * sourceLocation.z;
     f0new = pulsarTemplate->f0;
     factorialN = 1;
     timeDiffN = timeDiffV->data[j];
-    
-    for (i=0; i<nspin;++i){ /* loop for spin-down values */
-      factorialN *=(i+1);
-      f0new += pulsarTemplate->spindown.data[i]* timeDiffN / factorialN;
+
+    for ( i = 0; i < nspin; ++i ) { /* loop for spin-down values */
+      factorialN *= ( i + 1 );
+      f0new += pulsarTemplate->spindown.data[i] * timeDiffN / factorialN;
       timeDiffN *= timeDiffN;
     }
-    f0newBin = floor( f0new * timeBase + 0.5);
-    foft->data[j] = f0newBin * (1.0 +vcProdn) / timeBase;
-  }    
-    
-  DETATCHSTATUSPTR (status);
+    f0newBin = floor( f0new * timeBase + 0.5 );
+    foft->data[j] = f0newBin * ( 1.0 + vcProdn ) / timeBase;
+  }
+
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
-}			
+  RETURN( status );
+}

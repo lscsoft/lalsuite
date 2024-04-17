@@ -252,7 +252,7 @@ do {                                                                 \
     XLALPrintError( "\tnode count %u\n", params->nOut );              \
   }                                                                  \
   TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),        \
-			   &nFree ), stat );                         \
+                           &nFree ), stat );                         \
   params->nOut -= nFree;                                             \
   column->tooWide = 1;                                               \
   DETATCHSTATUSPTR( stat );                                          \
@@ -276,7 +276,7 @@ do {                                                                 \
   if ( ( (metric)[0] <= 0.0 ) || ( (metric)[1] <= 0.0 ) ||           \
        ( det <= 0.0 ) ) {                                            \
     TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next),    \
-			     NULL ), stat );                         \
+                             NULL ), stat );                         \
     ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );          \
   }                                                                  \
   (dx) = sqrt( (metric)[1]*(mismatch)/det );                         \
@@ -305,7 +305,7 @@ do {                                                                 \
   if ( ( metric[0] <= 0.0 ) || ( metric[1] <= 0.0 ) ||               \
        ( det <= 0.0 ) ) {                                            \
     TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*(tail))->next),    \
-			     NULL ), stat );                         \
+                             NULL ), stat );                         \
     ABORT( stat, TWODMESHH_EMETRIC, TWODMESHH_MSGEMETRIC );          \
   }                                                                  \
   if ( widthMaxFac*(dx) > sqrt( (metric)[1]*(mismatch)/det ) )       \
@@ -319,8 +319,8 @@ do {                                                                 \
 
 void
 LALTwoDMesh( LALStatus          *stat,
-	     TwoDMeshNode       **tail,
-	     TwoDMeshParamStruc *params )
+             TwoDMeshNode       **tail,
+             TwoDMeshParamStruc *params )
 {
   TwoDColumnParamStruc column; /* parameters for current column */
   TwoDMeshNode *here;          /* current tail of linked list */
@@ -328,9 +328,9 @@ LALTwoDMesh( LALStatus          *stat,
   /* Default parameter values: */
   REAL4 widthRetryFac = TWODMESHINTERNALC_WRETRYFAC;
   REAL4 maxColumnFac = 0.0;
-  UINT4 nIn = (UINT4)( -1 );
+  UINT4 nIn = ( UINT4 )( -1 );
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Check that all parameters exist. */
@@ -341,31 +341,33 @@ LALTwoDMesh( LALStatus          *stat,
   ASSERT( params->getMetric, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
 
   /* Check that **tail really is the tail. */
-  ASSERT( !( (*tail)->next ), stat, TWODMESHH_EOUT, TWODMESHH_MSGEOUT );
+  ASSERT( !( ( *tail )->next ), stat, TWODMESHH_EOUT, TWODMESHH_MSGEOUT );
 
   /* Reassign default parameter values if necessary. */
-  if ( params->widthRetryFac > 1.0 )
+  if ( params->widthRetryFac > 1.0 ) {
     widthRetryFac = params->widthRetryFac;
-  if ( params->maxColumns > 0 )
+  }
+  if ( params->maxColumns > 0 ) {
     maxColumnFac = 1.0 / params->maxColumns;
-  if ( params->nIn > 0 )
+  }
+  if ( params->nIn > 0 ) {
     nIn = params->nIn;
+  }
 
   /* Set the clipping area to something irrelevant. */
-  column.leftClip[1] = column.rightClip[1] = 0.9*LAL_REAL4_MAX;
+  column.leftClip[1] = column.rightClip[1] = 0.9 * LAL_REAL4_MAX;
   column.leftClip[0] = column.rightClip[0] = -column.leftClip[1];
 
   /* Locate the first column's right-hand edge. */
   column.domain[0] = params->domain[0];
-  TRY( (params->getRange)( stat->statusPtr, column.leftRange,
-			   column.domain[0], params->rangeParams ),
+  TRY( ( params->getRange )( stat->statusPtr, column.leftRange,
+                             column.domain[0], params->rangeParams ),
        stat );
 
-  if (lalDebugLevel >= 3)
-    {
-      columnNo = 0;
-      XLALPrintError( "      Node count    Column count\n" );
-    }
+  if ( lalDebugLevel >= 3 ) {
+    columnNo = 0;
+    XLALPrintError( "      Node count    Column count\n" );
+  }
 
   /* Main loop: add columns until we're past the end of the space. */
   here = *tail;
@@ -377,61 +379,62 @@ LALTwoDMesh( LALStatus          *stat,
     /* Estimate column width. */
     position[0] = column.domain[0];
     position[1] = column.leftRange[0];
-    (params->getMetric)( stat->statusPtr, metric, position,
-			 params->metricParams );
+    ( params->getMetric )( stat->statusPtr, metric, position,
+                           params->metricParams );
     BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-			       NULL ), stat );
+    TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                             NULL ), stat );
     ENDFAIL( stat );
     GETWIDTH( w1, metric, params->mThresh );
     position[1] = column.leftRange[1];
-    (params->getMetric)( stat->statusPtr, metric, position,
-			 params->metricParams );
+    ( params->getMetric )( stat->statusPtr, metric, position,
+                           params->metricParams );
     BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-			       NULL ), stat );
+    TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                             NULL ), stat );
     ENDFAIL( stat );
     GETWIDTH( w2, metric, params->mThresh );
-    if ( w2 < w1 )
+    if ( w2 < w1 ) {
       w1 = w2;
+    }
     w1 *= LAL_SQRT2;
 
     /* Loop to try successively smaller column widths. */
     do {
       /* Make sure width is not too small or too big. */
-      if ( maxColumnFac*( params->domain[1] - params->domain[0] )
-	   > w1 ) {
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-				 NULL ), stat );
-	ABORT( stat, TWODMESHH_EWIDTH, TWODMESHH_MSGEWIDTH );
+      if ( maxColumnFac * ( params->domain[1] - params->domain[0] )
+           > w1 ) {
+        TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                                 NULL ), stat );
+        ABORT( stat, TWODMESHH_EWIDTH, TWODMESHH_MSGEWIDTH );
       }
       column.domain[1] = column.domain[0] + w1;
       if ( column.domain[1] > params->domain[1] ) {
-	column.domain[1] = params->domain[1];
-	w1 = column.domain[1] - column.domain[0];
+        column.domain[1] = params->domain[1];
+        w1 = column.domain[1] - column.domain[0];
       }
 
       /* Set remaining column parameters. */
-      (params->getRange)( stat->statusPtr, column.rightRange,
-			  column.domain[1], params->rangeParams );
+      ( params->getRange )( stat->statusPtr, column.rightRange,
+                            column.domain[1], params->rangeParams );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-				 NULL ), stat );
+      TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                               NULL ), stat );
       ENDFAIL( stat );
       column.tooWide = 0;
 
       /* Call LALTwoDColumn() to place the column. */
       LALTwoDColumn( stat->statusPtr, &here, &column, params );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-				 NULL ), stat );
+      TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                               NULL ), stat );
       ENDFAIL( stat );
 
       /* See if we've reached the maximum number of mesh points. */
       if ( params->nOut >= nIn ) {
-	*tail = here;
-	DETATCHSTATUSPTR( stat );
-	RETURN( stat );
+        *tail = here;
+        DETATCHSTATUSPTR( stat );
+        RETURN( stat );
       }
 
       /* If necessary, repeat with a narrower column. */
@@ -442,17 +445,15 @@ LALTwoDMesh( LALStatus          *stat,
     column.domain[0] = column.domain[1];
     column.leftRange[0] = column.rightRange[0];
     column.leftRange[1] = column.rightRange[1];
-    if (lalDebugLevel >= 3)
-      {
-	XLALPrintError( "\r%16u%16u", params->nOut, columnNo++ );
-      }
+    if ( lalDebugLevel >= 3 ) {
+      XLALPrintError( "\r%16u%16u", params->nOut, columnNo++ );
+    }
   }
 
   /* We're done.  Update the *tail pointer and exit. */
-  if (lalDebugLevel >= 3)
-    {
-      XLALPrintError( "\n" );
-    }
+  if ( lalDebugLevel >= 3 ) {
+    XLALPrintError( "\n" );
+  }
 
   *tail = here;
   DETATCHSTATUSPTR( stat );
@@ -463,9 +464,9 @@ LALTwoDMesh( LALStatus          *stat,
 
 void
 LALTwoDColumn( LALStatus            *stat,
-	       TwoDMeshNode         **tail,
-	       TwoDColumnParamStruc *column,
-	       TwoDMeshParamStruc   *params )
+               TwoDMeshNode         **tail,
+               TwoDColumnParamStruc *column,
+               TwoDMeshParamStruc   *params )
 {
   BOOLEAN tiled = 0;    /* whether tiles were placed on the centreline */
   REAL4 position[2];    /* current top of column */
@@ -480,9 +481,9 @@ LALTwoDColumn( LALStatus            *stat,
 
   /* Default parameter values: */
   REAL4 widthMaxFac = TWODMESHINTERNALC_WMAXFAC;
-  UINT4 nIn = (UINT4)( -1 );
+  UINT4 nIn = ( UINT4 )( -1 );
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Check that all parameters exist. */
@@ -494,50 +495,52 @@ LALTwoDColumn( LALStatus            *stat,
   ASSERT( params->getMetric, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
 
   /* Check that **tail really is the tail. */
-  ASSERT( !( (*tail)->next ), stat, TWODMESHH_EOUT, TWODMESHH_MSGEOUT );
+  ASSERT( !( ( *tail )->next ), stat, TWODMESHH_EOUT, TWODMESHH_MSGEOUT );
   here = *tail;
 
   /* Reassign default parameter values if necessary. */
-  if ( params->widthMaxFac > 1.0 )
+  if ( params->widthMaxFac > 1.0 ) {
     widthMaxFac = params->widthMaxFac;
-  if ( params->nIn > 0 )
+  }
+  if ( params->nIn > 0 ) {
     nIn = params->nIn;
+  }
 
   /* Set the boundaries of the regions that no longer need tiling. */
-  centreClip[0] = 0.5*column->leftClip[0] + 0.5*column->rightClip[0];
-  centreClip[1] = 0.5*column->leftClip[1] + 0.5*column->rightClip[1];
+  centreClip[0] = 0.5 * column->leftClip[0] + 0.5 * column->rightClip[0];
+  centreClip[1] = 0.5 * column->leftClip[1] + 0.5 * column->rightClip[1];
   leftTiled[0] = column->leftClip[1];
   leftTiled[1] = column->leftClip[0];
   rightTiled[0] = column->rightClip[1];
   rightTiled[1] = column->rightClip[0];
 
   /* Get the width and heights of this column. */
-  position[0] = 0.5*( column->domain[1] + column->domain[0] );
-  dx = 0.5*( column->domain[1] - column->domain[0] );
-  TRY( (params->getRange)( stat->statusPtr, centreRange, position[0],
-			   params->rangeParams ), stat );
+  position[0] = 0.5 * ( column->domain[1] + column->domain[0] );
+  dx = 0.5 * ( column->domain[1] - column->domain[0] );
+  TRY( ( params->getRange )( stat->statusPtr, centreRange, position[0],
+                             params->rangeParams ), stat );
 
   /* Add the column of tiles along the centreline, if the parameter
      space intersects the clipping area along the centreline. */
   position[1] = centreClip[0];
-  if ( position[1] < centreRange[0] )
+  if ( position[1] < centreRange[0] ) {
     position[1] = centreRange[0];
+  }
   if ( position[1] <= centreRange[1] ) {
 
     /* Add base tile of column. */
     tiled = 1;
-    TRY( (params->getMetric)( stat->statusPtr, metric, position,
-			      params->metricParams ), stat );
-    here->next = (TwoDMeshNode *)LALMalloc( sizeof(TwoDMeshNode) );
+    TRY( ( params->getMetric )( stat->statusPtr, metric, position,
+                                params->metricParams ), stat );
+    here->next = ( TwoDMeshNode * )LALMalloc( sizeof( TwoDMeshNode ) );
     if ( here == NULL ) {
       ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
     }
-    memset( here->next, 0, sizeof(TwoDMeshNode) );
+    memset( here->next, 0, sizeof( TwoDMeshNode ) );
     params->nOut++;
-    if (lalDebugLevel >= 3)
-      {
-	XLALPrintError( "\r%16u", params->nOut );
-      }
+    if ( lalDebugLevel >= 3 ) {
+      XLALPrintError( "\r%16u", params->nOut );
+    }
     GETSIZE( here->next->dy, dx, metric, params->mThresh );
     here->next->y = position[1];
     here = here->next;
@@ -553,59 +556,63 @@ LALTwoDColumn( LALStatus            *stat,
     /* Determine the region that we've covered. */
     myy0 = here->y + here->dy[0];
     myy1 = here->y - here->dy[1];
-    if ( leftTiled[0] > myy1 )
+    if ( leftTiled[0] > myy1 ) {
       leftTiled[0] = myy1;
-    if ( rightTiled[0] > myy0 )
+    }
+    if ( rightTiled[0] > myy0 ) {
       rightTiled[0] = myy0;
+    }
     leftTiled[1] = here->y - here->dy[0];
     rightTiled[1] = here->y + here->dy[1];
-    position[1] = 0.5*leftTiled[1] + 0.5*rightTiled[1];
+    position[1] = 0.5 * leftTiled[1] + 0.5 * rightTiled[1];
 
     /* Continue stacking tiles until we reach the top. */
     while ( ( position[1] < centreRange[1] ) &&
-	    ( position[1] < centreClip[1] ) ) {
-      (params->getMetric)( stat->statusPtr, metric, position,
-			   params->metricParams );
+            ( position[1] < centreClip[1] ) ) {
+      ( params->getMetric )( stat->statusPtr, metric, position,
+                             params->metricParams );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-				 NULL ), stat );
+      TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                               NULL ), stat );
       ENDFAIL( stat );
-      here->next = (TwoDMeshNode *)LALMalloc( sizeof(TwoDMeshNode) );
+      here->next = ( TwoDMeshNode * )LALMalloc( sizeof( TwoDMeshNode ) );
       if ( here == NULL ) {
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-				 NULL ), stat );
-	ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
+        TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                                 NULL ), stat );
+        ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
       }
-      memset( here->next, 0, sizeof(TwoDMeshNode) );
+      memset( here->next, 0, sizeof( TwoDMeshNode ) );
       params->nOut++;
-      if (lalDebugLevel >= 3)
-	{
-	  XLALPrintError( "\r%16u", params->nOut );
-	}
+      if ( lalDebugLevel >= 3 ) {
+        XLALPrintError( "\r%16u", params->nOut );
+      }
       GETSIZE( here->next->dy, dx, metric, params->mThresh );
       myy0 = here->dy[1] - here->next->dy[0];
       myy1 = here->next->dy[1] - here->dy[0];
-      if ( myy0 > myy1 )
-	myy0 = myy1;
-      if ( myy0 <= 0.0 )
-	TOOWIDERETURN;
+      if ( myy0 > myy1 ) {
+        myy0 = myy1;
+      }
+      if ( myy0 <= 0.0 ) {
+        TOOWIDERETURN;
+      }
       here->next->y = here->y + myy0;
       here = here->next;
-      if ( here->y > centreRange[1] )
-	here->y = centreRange[1];
+      if ( here->y > centreRange[1] ) {
+        here->y = centreRange[1];
+      }
       here->x = position[0];
       here->dx = dx;
       here->next = here->subMesh = NULL;
       if ( params->nOut >= nIn ) {
-	*tail = here;
-	DETATCHSTATUSPTR( stat );
-	RETURN( stat );
+        *tail = here;
+        DETATCHSTATUSPTR( stat );
+        RETURN( stat );
       }
 
       /* Extend the covered region upwards. */
       leftTiled[1] = here->y - here->dy[0];
       rightTiled[1] = here->y + here->dy[1];
-      position[1] = 0.5*leftTiled[1] + 0.5*rightTiled[1];
+      position[1] = 0.5 * leftTiled[1] + 0.5 * rightTiled[1];
     }
   }
 
@@ -613,138 +620,142 @@ LALTwoDColumn( LALStatus            *stat,
      of the parameter space, and call LALTwoDColumn() recursively. */
 
   /* Check bottom corners. */
-  myy0 = 0.5*leftTiled[0] + 0.5*rightTiled[0];
+  myy0 = 0.5 * leftTiled[0] + 0.5 * rightTiled[0];
 
   /* Bottom-left: */
   if ( ( ( column->leftClip[0] < leftTiled[0] ) ||
-	 ( centreClip[0] < myy0 ) ) &&
+         ( centreClip[0] < myy0 ) ) &&
        ( column->leftRange[0] < leftTiled[0] ) &&
        ( ( column->leftRange[1] > column->leftClip[0] ) ||
-	 ( centreRange[1] > centreClip[0] ) ) ) {
+         ( centreRange[1] > centreClip[0] ) ) ) {
     TwoDColumnParamStruc column2;
     column2.domain[0] = column->domain[0];
     column2.domain[1] = position[0];
-    memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL4) );
-    memcpy( column2.leftClip, column->leftClip, 2*sizeof(REAL4) );
-    memcpy( column2.rightRange, centreRange, 2*sizeof(REAL4) );
-    memcpy( column2.rightClip, centreClip, 2*sizeof(REAL4) );
+    memcpy( column2.leftRange, column->leftRange, 2 * sizeof( REAL4 ) );
+    memcpy( column2.leftClip, column->leftClip, 2 * sizeof( REAL4 ) );
+    memcpy( column2.rightRange, centreRange, 2 * sizeof( REAL4 ) );
+    memcpy( column2.rightClip, centreClip, 2 * sizeof( REAL4 ) );
     if ( ( leftTiled[0] < column2.leftClip[1] ) &&
-	 ( myy0 < column2.rightClip[1] ) ) {
+         ( myy0 < column2.rightClip[1] ) ) {
       column2.leftClip[1] = leftTiled[0];
       column2.rightClip[1] = myy0;
     }
     LALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-			       NULL ), stat );
+    TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                             NULL ), stat );
     ENDFAIL( stat );
     if ( params->nOut >= nIn ) {
       *tail = here;
       DETATCHSTATUSPTR( stat );
       RETURN( stat );
     }
-    if ( column2.tooWide )
+    if ( column2.tooWide ) {
       TOOWIDERETURN;
+    }
   }
 
   /* Bottom-right: */
   if ( ( ( column->rightClip[0] < rightTiled[0] ) ||
-	 ( centreClip[0] < myy0 ) ) &&
+         ( centreClip[0] < myy0 ) ) &&
        ( column->rightRange[0] < rightTiled[0] ) &&
        ( ( column->rightRange[1] > column->rightClip[0] ) ||
-	 ( centreRange[1] > centreClip[0] ) ) ) {
+         ( centreRange[1] > centreClip[0] ) ) ) {
     TwoDColumnParamStruc column2;
     column2.domain[1] = column->domain[1];
     column2.domain[0] = position[0];
-    memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL4) );
-    memcpy( column2.rightClip, column->rightClip, 2*sizeof(REAL4) );
-    memcpy( column2.leftRange, centreRange, 2*sizeof(REAL4) );
-    memcpy( column2.leftClip, centreClip, 2*sizeof(REAL4) );
+    memcpy( column2.rightRange, column->rightRange, 2 * sizeof( REAL4 ) );
+    memcpy( column2.rightClip, column->rightClip, 2 * sizeof( REAL4 ) );
+    memcpy( column2.leftRange, centreRange, 2 * sizeof( REAL4 ) );
+    memcpy( column2.leftClip, centreClip, 2 * sizeof( REAL4 ) );
     if ( ( rightTiled[0] < column2.rightClip[1] ) &&
-	 ( myy0 < column2.leftClip[1] ) ) {
+         ( myy0 < column2.leftClip[1] ) ) {
       column2.rightClip[1] = rightTiled[0];
       column2.leftClip[1] = myy0;
     }
     LALTwoDColumn( stat->statusPtr, &here, &column2, params );
     BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-			       NULL ), stat );
+    TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                             NULL ), stat );
     ENDFAIL( stat );
     if ( params->nOut >= nIn ) {
       *tail = here;
       DETATCHSTATUSPTR( stat );
       RETURN( stat );
     }
-    if ( column2.tooWide )
+    if ( column2.tooWide ) {
       TOOWIDERETURN;
+    }
   }
 
   /* Check top corners. */
   if ( tiled ) {
-    myy0 = 0.5*leftTiled[1] + 0.5*rightTiled[1];
+    myy0 = 0.5 * leftTiled[1] + 0.5 * rightTiled[1];
 
     /* Top-left: */
     if ( ( ( column->leftClip[1] > leftTiled[1] ) ||
-	   ( centreClip[1] > myy0 ) ) &&
-	 ( column->leftRange[1] > leftTiled[1] ) &&
-	 ( ( column->leftRange[0] < column->leftClip[1] ) ||
-	   ( centreRange[0] < centreClip[1] ) ) ) {
+           ( centreClip[1] > myy0 ) ) &&
+         ( column->leftRange[1] > leftTiled[1] ) &&
+         ( ( column->leftRange[0] < column->leftClip[1] ) ||
+           ( centreRange[0] < centreClip[1] ) ) ) {
       TwoDColumnParamStruc column2;
       column2.domain[0] = column->domain[0];
       column2.domain[1] = position[0];
-      memcpy( column2.leftRange, column->leftRange, 2*sizeof(REAL4) );
-      memcpy( column2.leftClip, column->leftClip, 2*sizeof(REAL4) );
-      memcpy( column2.rightRange, centreRange, 2*sizeof(REAL4) );
-      memcpy( column2.rightClip, centreClip, 2*sizeof(REAL4) );
+      memcpy( column2.leftRange, column->leftRange, 2 * sizeof( REAL4 ) );
+      memcpy( column2.leftClip, column->leftClip, 2 * sizeof( REAL4 ) );
+      memcpy( column2.rightRange, centreRange, 2 * sizeof( REAL4 ) );
+      memcpy( column2.rightClip, centreClip, 2 * sizeof( REAL4 ) );
       if ( ( leftTiled[1] > column2.leftClip[0] ) &&
-	   ( myy0 > column2.rightClip[0] ) ) {
-	column2.leftClip[0] = leftTiled[1];
-	column2.rightClip[0] = myy0;
+           ( myy0 > column2.rightClip[0] ) ) {
+        column2.leftClip[0] = leftTiled[1];
+        column2.rightClip[0] = myy0;
       }
       LALTwoDColumn( stat->statusPtr, &here, &column2, params );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-				 NULL ), stat );
+      TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                               NULL ), stat );
       ENDFAIL( stat );
       if ( params->nOut >= nIn ) {
-	*tail = here;
-	DETATCHSTATUSPTR( stat );
-	RETURN( stat );
+        *tail = here;
+        DETATCHSTATUSPTR( stat );
+        RETURN( stat );
       }
-      if ( column2.tooWide )
-	TOOWIDERETURN;
+      if ( column2.tooWide ) {
+        TOOWIDERETURN;
+      }
     }
 
     /* Top-right: */
     if ( ( ( column->rightClip[1] > rightTiled[1] ) ||
-	   ( centreClip[1] > myy0 ) ) &&
-	 ( column->rightRange[1] > rightTiled[1] ) &&
-	 ( ( column->rightRange[0] < column->rightClip[1] ) ||
-	   ( centreRange[0] < centreClip[1] ) ) ) {
+           ( centreClip[1] > myy0 ) ) &&
+         ( column->rightRange[1] > rightTiled[1] ) &&
+         ( ( column->rightRange[0] < column->rightClip[1] ) ||
+           ( centreRange[0] < centreClip[1] ) ) ) {
       TwoDColumnParamStruc column2;
       column2.domain[1] = column->domain[1];
       column2.domain[0] = position[0];
-      memcpy( column2.rightRange, column->rightRange, 2*sizeof(REAL4) );
-      memcpy( column2.rightClip, column->rightClip, 2*sizeof(REAL4) );
-      memcpy( column2.leftRange, centreRange, 2*sizeof(REAL4) );
-      memcpy( column2.leftClip, centreClip, 2*sizeof(REAL4) );
+      memcpy( column2.rightRange, column->rightRange, 2 * sizeof( REAL4 ) );
+      memcpy( column2.rightClip, column->rightClip, 2 * sizeof( REAL4 ) );
+      memcpy( column2.leftRange, centreRange, 2 * sizeof( REAL4 ) );
+      memcpy( column2.leftClip, centreClip, 2 * sizeof( REAL4 ) );
       if ( ( rightTiled[1] > column2.rightClip[0] ) &&
-	   ( myy0 > column2.leftClip[0] ) ) {
-	column2.rightClip[0] = rightTiled[1];
-	column2.leftClip[0] = myy0;
+           ( myy0 > column2.leftClip[0] ) ) {
+        column2.rightClip[0] = rightTiled[1];
+        column2.leftClip[0] = myy0;
       }
       LALTwoDColumn( stat->statusPtr, &here, &column2, params );
       BEGINFAIL( stat )
-	TRY( LALDestroyTwoDMesh( stat->statusPtr, &((*tail)->next),
-				 NULL ), stat );
+      TRY( LALDestroyTwoDMesh( stat->statusPtr, &( ( *tail )->next ),
+                               NULL ), stat );
       ENDFAIL( stat );
       if ( params->nOut >= nIn ) {
-	*tail = here;
-	DETATCHSTATUSPTR( stat );
-	RETURN( stat );
+        *tail = here;
+        DETATCHSTATUSPTR( stat );
+        RETURN( stat );
       }
-      if ( column2.tooWide )
-	TOOWIDERETURN;
+      if ( column2.tooWide ) {
+        TOOWIDERETURN;
+      }
     }
   }
 
@@ -759,38 +770,38 @@ LALTwoDColumn( LALStatus            *stat,
 
 void
 LALTwoDNodeCopy( LALStatus    *stat,
-		 TwoDMeshNode **new,
-		 TwoDMeshNode *old )
+                 TwoDMeshNode **new,
+                 TwoDMeshNode *old )
 {
   TwoDMeshNode *tail;      /* current tail of old->subMesh */
   TwoDMeshNode **tailCopy; /* pointer to copy of *tail */
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
   ATTATCHSTATUSPTR( stat );
 
   /* Check parameters. */
   ASSERT( old, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
   ASSERT( new, stat, TWODMESHH_ENUL, TWODMESHH_MSGENUL );
-  ASSERT( !(*new), stat, TWODMESHH_EOUT, TWODMESHH_MSGEOUT );
+  ASSERT( !( *new ), stat, TWODMESHH_EOUT, TWODMESHH_MSGEOUT );
 
   /* Copy top-level node. */
-  *new = (TwoDMeshNode *)LALMalloc( sizeof(TwoDMeshNode) );
+  *new = ( TwoDMeshNode * )LALMalloc( sizeof( TwoDMeshNode ) );
   if ( *new == NULL ) {
     ABORT( stat, TWODMESHH_EMEM, TWODMESHH_MSGEMEM );
   }
   **new = *old;
-  (*new)->next = (*new)->subMesh = NULL;
+  ( *new )->next = ( *new )->subMesh = NULL;
 
   /* Recursively copy submesh. */
   tail = old->next;
-  tailCopy = &((*new)->next);
+  tailCopy = &( ( *new )->next );
   while ( tail != NULL ) {
     LALTwoDNodeCopy( stat->statusPtr, tailCopy, tail );
     BEGINFAIL( stat )
-      TRY( LALDestroyTwoDMesh( stat->statusPtr, new, NULL ), stat );
+    TRY( LALDestroyTwoDMesh( stat->statusPtr, new, NULL ), stat );
     ENDFAIL( stat );
     tail = tail->next;
-    tailCopy = &((*tailCopy)->next);
+    tailCopy = &( ( *tailCopy )->next );
   }
 
   /* Done. */

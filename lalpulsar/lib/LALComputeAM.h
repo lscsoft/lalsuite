@@ -60,8 +60,7 @@ extern "C" {
  *
  * \p See Sec.4.1 in CFSv2 notes (https://dcc.ligo.org/cgi-bin/DocDB/ShowDocument?docid=T0900149&version=4)
  */
-typedef struct tagAMCoeffs
-{
+typedef struct tagAMCoeffs {
   REAL4Vector     *a;          /**< (weighted) per-SFT \f$ X\alpha \f$ antenna-pattern function \f$ \widehat{a}_{X\alpha} \f$ */
   REAL4Vector     *b;          /**< (weighted) per-SFT \f$ X\alpha \f$ antenna-pattern function \f$ \widehat{b}_{X\alpha} \f$ */
   REAL4           A;           /**< summed antenna-pattern matrix coefficient: \f$ \widehat{A}_X = \sum_{\alpha} \widehat{a}^2_{X\alpha} \f$ */
@@ -73,8 +72,7 @@ typedef struct tagAMCoeffs
 /**
  * This structure contains the parameters for the routine.  They include:
  */
-typedef struct tagAMCoeffsParams
-{
+typedef struct tagAMCoeffsParams {
   BarycenterInput      *baryinput;  /**< data from Barycentring routine */
   EarthState           *earth;      /**< from XLALBarycenter()           */
   EphemerisData        *edat;       /**< the ephemerides                */
@@ -127,19 +125,19 @@ This matrix can be shown to be generally expressible as
  * to use that fact.
  */
 typedef struct tagAntennaPatternMatrix {
-  REAL4 Ad; 		//!< \f$ \Ad \f$ 
-  REAL4 Bd; 		//!< \f$ \Bd \f$ 
-  REAL4 Cd; 		//!< \f$ \Cd \f$ 
-  REAL4 Ed; 		//!< \f$ \Ed \f$ 
-  REAL4 Dd; 		//!<  determinant factor \f$ \Dd \equiv \Ad \Bd - \Cd^2 - \Ed^2 \f$ , such that \f$ \det\M = \Dd^2 \f$ 
-  REAL8 Sinv_Tsft;	//!< normalization-factor \f$ \S^{-1}\,\Tsft \f$ (using single-sided PSD!)
+  REAL4 Ad;             //!< \f$ \Ad \f$
+  REAL4 Bd;             //!< \f$ \Bd \f$
+  REAL4 Cd;             //!< \f$ \Cd \f$
+  REAL4 Ed;             //!< \f$ \Ed \f$
+  REAL4 Dd;             //!<  determinant factor \f$ \Dd \equiv \Ad \Bd - \Cd^2 - \Ed^2 \f$ , such that \f$ \det\M = \Dd^2 \f$
+  REAL8 Sinv_Tsft;      //!< normalization-factor \f$ \S^{-1}\,\Tsft \f$ (using single-sided PSD!)
 } AntennaPatternMatrix;
 
 /** Multi-IFO container for antenna-pattern coefficients \f$ a_{X\alpha}, b_{X\alpha} \f$ and atenna-pattern matrix \f$ \mathcal{M}_{\mu\nu} \f$ */
 typedef struct tagMultiAMCoeffs {
-  UINT4 length;			/**< number of IFOs */
-  AMCoeffs **data;		/**< noise-weighted AM-coeffs \f$ \widehat{a}_{X\alpha} \f$ , and \f$ \widehat{b}_{X\alpha} \f$ */
-  AntennaPatternMatrix Mmunu;	/**< antenna-pattern matrix \f$ \mathcal{M}_{\mu\nu} \f$ */
+  UINT4 length;                 /**< number of IFOs */
+  AMCoeffs **data;              /**< noise-weighted AM-coeffs \f$ \widehat{a}_{X\alpha} \f$ , and \f$ \widehat{b}_{X\alpha} \f$ */
+  AntennaPatternMatrix Mmunu;   /**< antenna-pattern matrix \f$ \mathcal{M}_{\mu\nu} \f$ */
 } MultiAMCoeffs;
 
 
@@ -147,19 +145,19 @@ typedef struct tagMultiAMCoeffs {
 
 /*---------- exported prototypes [API] ----------*/
 
-int XLALComputeAntennaPatternCoeffs ( REAL8 *ai, REAL8 *bi, const SkyPosition *skypos, const LIGOTimeGPS *tGPS, const LALDetector *site, const EphemerisData *edat );
+int XLALComputeAntennaPatternCoeffs( REAL8 *ai, REAL8 *bi, const SkyPosition *skypos, const LIGOTimeGPS *tGPS, const LALDetector *site, const EphemerisData *edat );
 
-int XLALWeightMultiAMCoeffs (  MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
+int XLALWeightMultiAMCoeffs( MultiAMCoeffs *multiAMcoef, const MultiNoiseWeights *multiWeights );
 
-AMCoeffs *XLALComputeAMCoeffs ( const DetectorStateSeries *DetectorStates, SkyPosition skypos );
-MultiAMCoeffs *XLALComputeMultiAMCoeffs ( const MultiDetectorStateSeries *multiDetStates, const MultiNoiseWeights *multiWeights, SkyPosition skypos );
+AMCoeffs *XLALComputeAMCoeffs( const DetectorStateSeries *DetectorStates, SkyPosition skypos );
+MultiAMCoeffs *XLALComputeMultiAMCoeffs( const MultiDetectorStateSeries *multiDetStates, const MultiNoiseWeights *multiWeights, SkyPosition skypos );
 
-AMCoeffs *XLALCreateAMCoeffs ( UINT4 numSteps );
-void XLALDestroyMultiAMCoeffs ( MultiAMCoeffs *multiAMcoef );
-void XLALDestroyAMCoeffs ( AMCoeffs *amcoef );
-REAL4 XLALComputeAntennaPatternSqrtDeterminant ( REAL4 A, REAL4 B, REAL4 C, REAL4 E );
-void XLALSetAntennaPatternMaxCond ( REAL4 max_cond );
-void XLALSetAntennaPatternIllCondDeterminant ( REAL4 illCondDeterminant );
+AMCoeffs *XLALCreateAMCoeffs( UINT4 numSteps );
+void XLALDestroyMultiAMCoeffs( MultiAMCoeffs *multiAMcoef );
+void XLALDestroyAMCoeffs( AMCoeffs *amcoef );
+REAL4 XLALComputeAntennaPatternSqrtDeterminant( REAL4 A, REAL4 B, REAL4 C, REAL4 E );
+void XLALSetAntennaPatternMaxCond( REAL4 max_cond );
+void XLALSetAntennaPatternIllCondDeterminant( REAL4 illCondDeterminant );
 
 /** @} */
 

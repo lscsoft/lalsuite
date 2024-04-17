@@ -32,7 +32,8 @@ static const INT4 equinoxes[NEQUINOXES] = {
   779905813, 811462993, 843019393, 874576273, 906133453, 937689493,
   969246553, 1000803853, 1032360553, 1063917853, 1095474553,
   1127031613, 1158589273, 1190145733, 1221702853, 1253260213,
-  1284816613 };
+  1284816613
+};
 
 
 /**
@@ -84,8 +85,8 @@ XLALGetEarthTimes( const LIGOTimeGPS *tepoch, REAL8 *tMidnight, REAL8 *tAutumn )
   epoch = *tepoch;
 
   /* Find the next sidereal midnight. */
-  t = fmod(XLALGreenwichMeanSiderealTime(&epoch), LAL_TWOPI) * 86400.0 / LAL_TWOPI;
-  XLAL_CHECK( !XLAL_IS_REAL8_FAIL_NAN(t), XLAL_ETIME );
+  t = fmod( XLALGreenwichMeanSiderealTime( &epoch ), LAL_TWOPI ) * 86400.0 / LAL_TWOPI;
+  XLAL_CHECK( !XLAL_IS_REAL8_FAIL_NAN( t ), XLAL_ETIME );
   *tMidnight = 86400.0 - t;
 
   /* Find the next autumnal equinox. */
@@ -94,20 +95,21 @@ XLALGetEarthTimes( const LIGOTimeGPS *tepoch, REAL8 *tMidnight, REAL8 *tAutumn )
     epoch.gpsNanoSeconds -= 1000000000;
   }
   if ( equinoxes[0] - epoch.gpsSeconds > LAL_YRSID_SI ) {
-    t = (REAL8)( equinoxes[0] - epoch.gpsSeconds )
-      - (1.0e-9)*epoch.gpsNanoSeconds;
+    t = ( REAL8 )( equinoxes[0] - epoch.gpsSeconds )
+        - ( 1.0e-9 ) * epoch.gpsNanoSeconds;
     *tAutumn = fmod( t, LAL_YRSID_SI );
   } else {
     UINT4 i = 0; /* index over equinox list */
-    while ( i < NEQUINOXES && equinoxes[i] <= epoch.gpsSeconds )
+    while ( i < NEQUINOXES && equinoxes[i] <= epoch.gpsSeconds ) {
       i++;
+    }
     if ( i == NEQUINOXES ) {
-      t = (REAL8)( equinoxes[i-1] - epoch.gpsSeconds )
-	- (1.0e-9)*epoch.gpsNanoSeconds;
+      t = ( REAL8 )( equinoxes[i - 1] - epoch.gpsSeconds )
+          - ( 1.0e-9 ) * epoch.gpsNanoSeconds;
       *tAutumn = fmod( t, LAL_YRSID_SI ) + LAL_YRSID_SI;
     } else
-      *tAutumn = (REAL8)( equinoxes[i] - epoch.gpsSeconds )
-	- (1.0e-9)*epoch.gpsNanoSeconds;
+      *tAutumn = ( REAL8 )( equinoxes[i] - epoch.gpsSeconds )
+                 - ( 1.0e-9 ) * epoch.gpsNanoSeconds;
   }
 
   /* Done. */

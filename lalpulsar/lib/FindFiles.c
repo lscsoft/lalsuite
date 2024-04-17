@@ -40,8 +40,8 @@
 
 /*---------- internal prototypes ----------*/
 
-static BOOLEAN is_pattern(const char*c); /* filename string is a glob-style pattern */
-static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
+static BOOLEAN is_pattern( const char *c ); /* filename string is a glob-style pattern */
+static int amatch( char *str, char *p ); /* glob pattern-matcher (public domain)*/
 
 /*========== function definitions ==========*/
 
@@ -58,7 +58,7 @@ static int amatch(char *str, char *p);	/* glob pattern-matcher (public domain)*/
  * Note: the list of filenames is returned sorted alphabetically.
  */
 LALStringVector *
-XLALFindFiles (const CHAR *globstring)
+XLALFindFiles( const CHAR *globstring )
 {
 #ifndef _MSC_VER
   DIR *dir;
@@ -66,7 +66,7 @@ XLALFindFiles (const CHAR *globstring)
 #else
   intptr_t dir;
   struct _finddata_t entry;
-  CHAR* ptr3;
+  CHAR *ptr3;
 #endif
   CHAR *dname;
   const CHAR *ptr1, *ptr2;
@@ -79,155 +79,161 @@ XLALFindFiles (const CHAR *globstring)
   UINT4 namelen;
   CHAR *thisFname = NULL;
 
-  XLAL_CHECK_NULL ( globstring != NULL, XLAL_EINVAL );
+  XLAL_CHECK_NULL( globstring != NULL, XLAL_EINVAL );
 
 #define FILE_SEPARATOR ';'
-  if ( (ptr2 = strchr (globstring, FILE_SEPARATOR)) )
-    { /* globstring is multi-pattern ("pattern1;pattern2;pattern3") */
-      /* call XLALFindFiles() with every pattern found in globstring */
+  if ( ( ptr2 = strchr( globstring, FILE_SEPARATOR ) ) ) {
+    /* globstring is multi-pattern ("pattern1;pattern2;pattern3") */
+    /* call XLALFindFiles() with every pattern found in globstring */
 
-      ptr1 = (const CHAR*)globstring;
-      while ( (ptr2 = strchr (ptr1, FILE_SEPARATOR)) )
-	{
-	  /* ptr1 points to the beginning of a pattern, ptr2 to the end */
+    ptr1 = ( const CHAR * )globstring;
+    while ( ( ptr2 = strchr( ptr1, FILE_SEPARATOR ) ) ) {
+      /* ptr1 points to the beginning of a pattern, ptr2 to the end */
 
-	  /* copy the current name to thisFname */
-	  namelen = ptr2 - ptr1;
-	  if ((thisFname = LALRealloc(thisFname, (namelen+1)*sizeof(CHAR))) == NULL) {
-	    for (j=0; j < numFiles; j++)
-	      LALFree (filelist[j]);
-	    if(filelist)
-	      LALFree (filelist);
-	    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-	  }
-	  strncpy(thisFname,ptr1,namelen);
-	  thisFname[namelen] = '\0';
+      /* copy the current name to thisFname */
+      namelen = ptr2 - ptr1;
+      if ( ( thisFname = LALRealloc( thisFname, ( namelen + 1 ) * sizeof( CHAR ) ) ) == NULL ) {
+        for ( j = 0; j < numFiles; j++ ) {
+          LALFree( filelist[j] );
+        }
+        if ( filelist ) {
+          LALFree( filelist );
+        }
+        XLAL_ERROR_NULL( XLAL_ENOMEM );
+      }
+      strncpy( thisFname, ptr1, namelen );
+      thisFname[namelen] = '\0';
 
-	  /* call XLALFindFiles(thisFname) */
-	  ret = XLALFindFiles(thisFname);
+      /* call XLALFindFiles(thisFname) */
+      ret = XLALFindFiles( thisFname );
 
-	  /* append the output (if any) to the existing filelist */
-	  if (ret) {
-	    newNumFiles = numFiles + ret->length;
+      /* append the output (if any) to the existing filelist */
+      if ( ret ) {
+        newNumFiles = numFiles + ret->length;
 
-	    if ((filelist = LALRealloc (filelist, (newNumFiles) * sizeof(CHAR*))) == NULL) {
-	      XLALDestroyStringVector(ret);
-	      LALFree(thisFname);
-	      XLAL_ERROR_NULL ( XLAL_ENOMEM );
-	    }
+        if ( ( filelist = LALRealloc( filelist, ( newNumFiles ) * sizeof( CHAR * ) ) ) == NULL ) {
+          XLALDestroyStringVector( ret );
+          LALFree( thisFname );
+          XLAL_ERROR_NULL( XLAL_ENOMEM );
+        }
 
-	    for(j=0; j < ret->length; j++)
-	      filelist[numFiles+j] = ret->data[j];
-	    LALFree(ret->data);
-	    LALFree(ret);
-	    numFiles = newNumFiles;
-	  } else {
-	    for (j=0; j < numFiles; j++)
-	      LALFree (filelist[j]);
-	    if(filelist)
-	      LALFree (filelist);
-	    LALFree(thisFname);
-	    XLAL_ERROR_NULL ( XLAL_EFUNC);
-	  }
-
-	  /* skip the separator */
-	  ptr1 = ptr2 + 1;
-	} /* while */
-
-      LALFree(thisFname);
-
-      ret = XLALFindFiles(ptr1);
-      if (ret) {
-	newNumFiles = numFiles + ret->length;
-
-	if ((filelist = LALRealloc (filelist, (newNumFiles) * sizeof(CHAR*))) == NULL) {
-	  XLALDestroyStringVector(ret);
-	  XLAL_ERROR_NULL ( XLAL_ENOMEM );
-	}
-
-	for(j=0; j < ret->length; j++)
-	  filelist[numFiles+j] = ret->data[j];
-	LALFree(ret->data);
-	LALFree(ret);
-	numFiles = newNumFiles;
+        for ( j = 0; j < ret->length; j++ ) {
+          filelist[numFiles + j] = ret->data[j];
+        }
+        LALFree( ret->data );
+        LALFree( ret );
+        numFiles = newNumFiles;
+      } else {
+        for ( j = 0; j < numFiles; j++ ) {
+          LALFree( filelist[j] );
+        }
+        if ( filelist ) {
+          LALFree( filelist );
+        }
+        LALFree( thisFname );
+        XLAL_ERROR_NULL( XLAL_EFUNC );
       }
 
-    } /* if multi-pattern */
+      /* skip the separator */
+      ptr1 = ptr2 + 1;
+    } /* while */
+
+    LALFree( thisFname );
+
+    ret = XLALFindFiles( ptr1 );
+    if ( ret ) {
+      newNumFiles = numFiles + ret->length;
+
+      if ( ( filelist = LALRealloc( filelist, ( newNumFiles ) * sizeof( CHAR * ) ) ) == NULL ) {
+        XLALDestroyStringVector( ret );
+        XLAL_ERROR_NULL( XLAL_ENOMEM );
+      }
+
+      for ( j = 0; j < ret->length; j++ ) {
+        filelist[numFiles + j] = ret->data[j];
+      }
+      LALFree( ret->data );
+      LALFree( ret );
+      numFiles = newNumFiles;
+    }
+
+  } /* if multi-pattern */
 
   /* read list of file names from a "list file" */
 #define LIST_PREFIX "list:"
-  else if (strncmp(globstring, LIST_PREFIX, strlen(LIST_PREFIX)) == 0) {
+  else if ( strncmp( globstring, LIST_PREFIX, strlen( LIST_PREFIX ) ) == 0 ) {
     LALParsedDataFile *list = NULL;
-    CHAR* listfname = NULL;
+    CHAR *listfname = NULL;
 
     /* extract list file name */
-    if ((listfname = XLALStringDuplicate(globstring + strlen(LIST_PREFIX))) == NULL) {
-      XLAL_ERROR_NULL ( XLAL_ENOMEM ) ;
+    if ( ( listfname = XLALStringDuplicate( globstring + strlen( LIST_PREFIX ) ) ) == NULL ) {
+      XLAL_ERROR_NULL( XLAL_ENOMEM ) ;
     }
 #undef LIST_PREFIX
 
     /* read list of file names from file */
-    if (XLALParseDataFile(&list, listfname) != XLAL_SUCCESS) {
-      XLAL_ERROR_NULL ( XLAL_EFUNC, "Could not parse list file '%s'\n",listfname );
+    if ( XLALParseDataFile( &list, listfname ) != XLAL_SUCCESS ) {
+      XLAL_ERROR_NULL( XLAL_EFUNC, "Could not parse list file '%s'\n", listfname );
     }
 
     /* allocate "filelist" */
     numFiles = list->lines->nTokens;
-    if (numFiles == 0) {
-      XLALPrintWarning("\n%s: List file '%s' contains no file names\n", __func__, listfname);
-      LALFree(listfname);
-      XLALDestroyParsedDataFile(list);
-      XLAL_ERROR_NULL ( XLAL_EINVAL );
+    if ( numFiles == 0 ) {
+      XLALPrintWarning( "\n%s: List file '%s' contains no file names\n", __func__, listfname );
+      LALFree( listfname );
+      XLALDestroyParsedDataFile( list );
+      XLAL_ERROR_NULL( XLAL_EINVAL );
     }
-    if ((filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
-      LALFree(listfname);
-      XLALDestroyParsedDataFile(list);
-      XLAL_ERROR_NULL ( XLAL_ENOMEM );
+    if ( ( filelist = LALRealloc( filelist, numFiles * sizeof( CHAR * ) ) ) == NULL ) {
+      LALFree( listfname );
+      XLALDestroyParsedDataFile( list );
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
     }
 
     /* copy file names from "list" to "filelist" */
-    for (j = 0; j < numFiles; ++j) {
+    for ( j = 0; j < numFiles; ++j ) {
       ptr1 = list->lines->tokens[j];
 
       /* these prefixes are added to file names by e.g. ligo_data_find */
 #define FILE_PREFIX "file://localhost/"
-      if (strncmp(ptr1, FILE_PREFIX, strlen(FILE_PREFIX)) == 0) {
-	ptr1 += strlen(FILE_PREFIX) - 1;
+      if ( strncmp( ptr1, FILE_PREFIX, strlen( FILE_PREFIX ) ) == 0 ) {
+        ptr1 += strlen( FILE_PREFIX ) - 1;
       }
 #undef FILE_PREFIX
       else
 #define FILE_PREFIX "file:///"
-      if (strncmp(ptr1, FILE_PREFIX, strlen(FILE_PREFIX)) == 0) {
-	ptr1 += strlen(FILE_PREFIX) - 1;
-      }
+        if ( strncmp( ptr1, FILE_PREFIX, strlen( FILE_PREFIX ) ) == 0 ) {
+          ptr1 += strlen( FILE_PREFIX ) - 1;
+        }
 #undef FILE_PREFIX
 
       /* allocate "filelist", and cleanup if it fails  */
-      if ((filelist[j] = LALCalloc(1, strlen(ptr1) + 1)) == NULL) {
-	while (j-- > 0)
-	  LALFree(filelist[j]);
-	LALFree(filelist);
-	LALFree(listfname);
-	XLALDestroyParsedDataFile(list);
-	XLAL_ERROR_NULL ( XLAL_ENOMEM );
+      if ( ( filelist[j] = LALCalloc( 1, strlen( ptr1 ) + 1 ) ) == NULL ) {
+        while ( j-- > 0 ) {
+          LALFree( filelist[j] );
+        }
+        LALFree( filelist );
+        LALFree( listfname );
+        XLALDestroyParsedDataFile( list );
+        XLAL_ERROR_NULL( XLAL_ENOMEM );
       }
 
       /* copy string */
-      strcpy(filelist[j], ptr1);
+      strcpy( filelist[j], ptr1 );
 
     }
 
     /* cleanup */
-    LALFree(listfname);
-    XLALDestroyParsedDataFile(list);
+    LALFree( listfname );
+    XLALDestroyParsedDataFile( list );
 
   } /* if list file */
 
-  else if (is_pattern(globstring))
+  else if ( is_pattern( globstring ) )
 
-    { /* globstring is a single glob-style pattern */
+  { /* globstring is a single glob-style pattern */
 
-      /* First we separate the globstring into directory-path and file-pattern */
+    /* First we separate the globstring into directory-path and file-pattern */
 
 #ifndef _WIN32
 #define DIR_SEPARATOR '/'
@@ -235,164 +241,168 @@ XLALFindFiles (const CHAR *globstring)
 #define DIR_SEPARATOR '\\'
 #endif
 
-      /* any path specified or not ? */
-      ptr1 = strrchr (globstring, DIR_SEPARATOR);
-      if (ptr1)
-	{ /* yes, copy directory-path */
-	  dirlen = (size_t)(ptr1 - globstring) + 1;
-	  if ( (dname = LALCalloc (1, dirlen)) == NULL)
-	    XLAL_ERROR_NULL ( XLAL_ENOMEM );
-	  strncpy (dname, globstring, dirlen);
-	  dname[dirlen-1] = '\0';
-
-	  ptr1 ++; /* skip dir-separator */
-	  /* copy the rest as a glob-pattern for matching */
-	  if ( (fpattern = LALCalloc (1, strlen(ptr1) + 1)) == NULL )
-	    {
-	      LALFree (dname);
-	      XLAL_ERROR_NULL ( XLAL_ENOMEM );
-	    }
-	  strcpy (fpattern, ptr1);
-
-	} /* if ptr1 */
-      else /* no pathname given, assume "." */
-	{
-	  if ( (dname = LALCalloc(1, 2)) == NULL)
-            XLAL_ERROR_NULL ( XLAL_ENOMEM );
-	  strcpy (dname, ".");
-
-	  if ( (fpattern = LALCalloc(1, strlen(globstring)+1)) == NULL)
-	    {
-	      LALFree (dname);
-              XLAL_ERROR_NULL ( XLAL_ENOMEM );
-	    }
-	  strcpy (fpattern, globstring);	/* just file-pattern given */
-	} /* if !ptr */
-
-
-#ifndef _MSC_VER
-      /* now go through the file-list in this directory */
-      if ( (dir = opendir(dname)) == NULL) {
-	XLALPrintError ("Can't open data-directory `%s`\n", dname);
-	LALFree (dname);
-        XLAL_ERROR_NULL ( XLAL_EIO );
+    /* any path specified or not ? */
+    ptr1 = strrchr( globstring, DIR_SEPARATOR );
+    if ( ptr1 ) {
+      /* yes, copy directory-path */
+      dirlen = ( size_t )( ptr1 - globstring ) + 1;
+      if ( ( dname = LALCalloc( 1, dirlen ) ) == NULL ) {
+        XLAL_ERROR_NULL( XLAL_ENOMEM );
       }
-#else
-      if ((ptr3 = (CHAR*)LALMalloc(strlen(dname)+3)) == NULL)
-	return(NULL);
-      sprintf(ptr3,"%s\\*",dname);
-      dir = _findfirst(ptr3,&entry);
-      LALFree(ptr3);
-      if (dir == -1) {
-	XLALPrintError ("Can't find file for pattern `%s`\n", ptr3);
-	LALFree (dname);
-        XLAL_ERROR_NULL ( XLAL_EIO );
+      strncpy( dname, globstring, dirlen );
+      dname[dirlen - 1] = '\0';
+
+      ptr1 ++; /* skip dir-separator */
+      /* copy the rest as a glob-pattern for matching */
+      if ( ( fpattern = LALCalloc( 1, strlen( ptr1 ) + 1 ) ) == NULL ) {
+        LALFree( dname );
+        XLAL_ERROR_NULL( XLAL_ENOMEM );
       }
+      strcpy( fpattern, ptr1 );
+
+    } /* if ptr1 */
+    else { /* no pathname given, assume "." */
+      if ( ( dname = LALCalloc( 1, 2 ) ) == NULL ) {
+        XLAL_ERROR_NULL( XLAL_ENOMEM );
+      }
+      strcpy( dname, "." );
+
+      if ( ( fpattern = LALCalloc( 1, strlen( globstring ) + 1 ) ) == NULL ) {
+        LALFree( dname );
+        XLAL_ERROR_NULL( XLAL_ENOMEM );
+      }
+      strcpy( fpattern, globstring );       /* just file-pattern given */
+    } /* if !ptr */
+
+
+#ifndef _MSC_VER
+    /* now go through the file-list in this directory */
+    if ( ( dir = opendir( dname ) ) == NULL ) {
+      XLALPrintError( "Can't open data-directory `%s`\n", dname );
+      LALFree( dname );
+      XLAL_ERROR_NULL( XLAL_EIO );
+    }
+#else
+    if ( ( ptr3 = ( CHAR * )LALMalloc( strlen( dname ) + 3 ) ) == NULL ) {
+      return ( NULL );
+    }
+    sprintf( ptr3, "%s\\*", dname );
+    dir = _findfirst( ptr3, &entry );
+    LALFree( ptr3 );
+    if ( dir == -1 ) {
+      XLALPrintError( "Can't find file for pattern `%s`\n", ptr3 );
+      LALFree( dname );
+      XLAL_ERROR_NULL( XLAL_EIO );
+    }
 #endif
 
 #ifndef _MSC_VER
-      while ( (entry = readdir (dir)) != NULL )
+    while ( ( entry = readdir( dir ) ) != NULL )
 #else
-      do
+    do
 #endif
-	{
+    {
 #ifndef _MSC_VER
-	  thisFname = entry->d_name;
+      thisFname = entry->d_name;
 #else
-	  thisFname = entry.name;
+      thisFname = entry.name;
 #endif
 
-	  /* now check if glob-pattern fpattern matches the current filename */
-	  if ( amatch(thisFname, fpattern)
-	       /* and check if we didnt' match some obvious garbage like "." or ".." : */
-	       && strcmp( thisFname, ".") && strcmp( thisFname, "..") )
-	    {
+      /* now check if glob-pattern fpattern matches the current filename */
+      if ( amatch( thisFname, fpattern )
+           /* and check if we didnt' match some obvious garbage like "." or ".." : */
+           && strcmp( thisFname, "." ) && strcmp( thisFname, ".." ) ) {
 
-	      numFiles ++;
-	      if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
-		LALFree (dname);
-		LALFree (fpattern);
-                XLAL_ERROR_NULL ( XLAL_ENOMEM );
-	      }
+        numFiles ++;
+        if ( ( filelist = LALRealloc( filelist, numFiles * sizeof( CHAR * ) ) ) == NULL ) {
+          LALFree( dname );
+          LALFree( fpattern );
+          XLAL_ERROR_NULL( XLAL_ENOMEM );
+        }
 
-	      namelen = strlen(thisFname) + strlen(dname) + 2 ;
+        namelen = strlen( thisFname ) + strlen( dname ) + 2 ;
 
-	      if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
-		for (j=0; j < numFiles; j++)
-		  LALFree (filelist[j]);
-		LALFree (filelist);
-		LALFree (dname);
-		LALFree (fpattern);
-                XLAL_ERROR_NULL ( XLAL_ENOMEM );
-	      }
+        if ( ( filelist[ numFiles - 1 ] = LALCalloc( 1, namelen ) ) == NULL ) {
+          for ( j = 0; j < numFiles; j++ ) {
+            LALFree( filelist[j] );
+          }
+          LALFree( filelist );
+          LALFree( dname );
+          LALFree( fpattern );
+          XLAL_ERROR_NULL( XLAL_ENOMEM );
+        }
 
-	      sprintf(filelist[numFiles-1], "%s%c%s", dname, DIR_SEPARATOR, thisFname);
+        sprintf( filelist[numFiles - 1], "%s%c%s", dname, DIR_SEPARATOR, thisFname );
 
-	    } /* if filename matched pattern */
+      } /* if filename matched pattern */
 
-	} /* while more directory entries */
+    } /* while more directory entries */
 #ifdef _MSC_VER
-      while ( _findnext (dir,&entry) == 0 );
+    while ( _findnext( dir, &entry ) == 0 );
 #endif
 
 #ifndef _MSC_VER
-      closedir (dir);
+    closedir( dir );
 #else
-      _findclose(dir);
+    _findclose( dir );
 #endif
 
-      LALFree (dname);
-      LALFree (fpattern);
+    LALFree( dname );
+    LALFree( fpattern );
 
-    } /* if is_pattern */
+  } /* if is_pattern */
 
   else
 
-    { /* globstring is a single simple filename */
-      /* add it to the list of filenames as it is */
+  { /* globstring is a single simple filename */
+    /* add it to the list of filenames as it is */
 
-      numFiles++;
-      if ( (filelist = LALRealloc (filelist, numFiles * sizeof(CHAR*))) == NULL) {
-        XLAL_ERROR_NULL ( XLAL_ENOMEM );
-      }
-      namelen = strlen(globstring) + 1;
-      if ( (filelist[ numFiles - 1 ] = LALCalloc (1, namelen)) == NULL) {
-	LALFree (filelist);
-        XLAL_ERROR_NULL ( XLAL_ENOMEM );
-      }
-      strcpy(filelist[numFiles-1], globstring );
+    numFiles++;
+    if ( ( filelist = LALRealloc( filelist, numFiles * sizeof( CHAR * ) ) ) == NULL ) {
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
     }
+    namelen = strlen( globstring ) + 1;
+    if ( ( filelist[ numFiles - 1 ] = LALCalloc( 1, namelen ) ) == NULL ) {
+      LALFree( filelist );
+      XLAL_ERROR_NULL( XLAL_ENOMEM );
+    }
+    strcpy( filelist[numFiles - 1], globstring );
+  }
 
   /* ok, did we find anything? */
-  if (numFiles == 0)
-    XLAL_ERROR_NULL ( XLAL_EINVAL );
+  if ( numFiles == 0 ) {
+    XLAL_ERROR_NULL( XLAL_EINVAL );
+  }
 
 
   /* make a LALStringVector from the list of filenames */
-  if ( (ret = LALCalloc (1, sizeof (LALStringVector) )) == NULL)
-    {
-      for (j=0; j<numFiles; j++)
-	LALFree (filelist[j]);
-      LALFree (filelist);
-      XLAL_ERROR_NULL ( XLAL_ENOMEM );
+  if ( ( ret = LALCalloc( 1, sizeof( LALStringVector ) ) ) == NULL ) {
+    for ( j = 0; j < numFiles; j++ ) {
+      LALFree( filelist[j] );
     }
+    LALFree( filelist );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
   ret->length = numFiles;
   ret->data = filelist;
 
   /* sort this alphabetically (in-place) */
-  if(numFiles>1)
-    XLALSortStringVector (ret);
+  if ( numFiles > 1 ) {
+    XLALSortStringVector( ret );
+  }
 
-  return (ret);
+  return ( ret );
 
 } /* XLALFindFiles() */
 
 
 /* filename string is a glob-style pattern, i.e. it contains '*' or '?' or '[' */
-static BOOLEAN is_pattern(const char*c) {
-  while((*c != '\0') && (*c != '*') && (*c != '?') && (*c != '['))
+static BOOLEAN is_pattern( const char *c )
+{
+  while ( ( *c != '\0' ) && ( *c != '*' ) && ( *c != '?' ) && ( *c != '[' ) ) {
     c++;
-  return(*c != '\0');
+  }
+  return ( *c != '\0' );
 }
 
 
@@ -403,135 +413,150 @@ static BOOLEAN is_pattern(const char*c) {
  * public domain
  *
  * glob patterns:
- *	*	matches zero or more characters
- *	?	matches any single character
- *	[set]	matches any character in the set
- *	[^set]	matches any character NOT in the set
- *		where a set is a group of characters or ranges. a range
- *		is written as two characters seperated with a hyphen: a-z denotes
- *		all characters between a to z inclusive.
- *	[-set]	set matches a literal hypen and any character in the set
- *	[]set]	matches a literal close bracket and any character in the set
+ *      *       matches zero or more characters
+ *      ?       matches any single character
+ *      [set]   matches any character in the set
+ *      [^set]  matches any character NOT in the set
+ *              where a set is a group of characters or ranges. a range
+ *              is written as two characters seperated with a hyphen: a-z denotes
+ *              all characters between a to z inclusive.
+ *      [-set]  set matches a literal hypen and any character in the set
+ *      []set]  matches a literal close bracket and any character in the set
  *
- *	char	matches itself except where char is '*' or '?' or '['
- *	\char	matches char, including any pattern character
+ *      char    matches itself except where char is '*' or '?' or '['
+ *      \char   matches char, including any pattern character
  *
  * examples:
- *	a*c		ac abc abbc ...
- *	a?c		acc abc aXc ...
- *	a[a-z]c		aac abc acc ...
- *	a[-a-z]c	a-c aac abc ...
+ *      a*c             ac abc abbc ...
+ *      a?c             acc abc aXc ...
+ *      a[a-z]c         aac abc acc ...
+ *      a[-a-z]c        a-c aac abc ...
  *
  */
 
 #ifndef NEGATE
-#define NEGATE	'^'			/* std cset negation char */
+#define NEGATE  '^'                     /* std cset negation char */
 #endif
 
 static int
-amatch(char *str, char *p)
+amatch( char *str, char *p )
 {
-	int negate;
-	int match;
-	int c;
+  int negate;
+  int match;
+  int c;
 
-	while (*p) {
-		if (!*str && *p != '*')
-			return FALSE;
+  while ( *p ) {
+    if ( !*str && *p != '*' ) {
+      return FALSE;
+    }
 
-		switch (c = *p++) {
+    switch ( c = *p++ ) {
 
-		case '*':
-			while (*p == '*')
-				p++;
+    case '*':
+      while ( *p == '*' ) {
+        p++;
+      }
 
-			if (!*p)
-				return TRUE;
+      if ( !*p ) {
+        return TRUE;
+      }
 
-			if (*p != '?' && *p != '[' && *p != '\\')
-				while (*str && *p != *str)
-					str++;
+      if ( *p != '?' && *p != '[' && *p != '\\' )
+        while ( *str && *p != *str ) {
+          str++;
+        }
 
-			while (*str) {
-				if (amatch(str, p))
-					return TRUE;
-				str++;
-			}
-			return FALSE;
+      while ( *str ) {
+        if ( amatch( str, p ) ) {
+          return TRUE;
+        }
+        str++;
+      }
+      return FALSE;
 
-		case '?':
-			if (*str)
-				break;
-			return FALSE;
-/*
- * set specification is inclusive, that is [a-z] is a, z and
- * everything in between. this means [z-a] may be interpreted
- * as a set that contains z, a and nothing in between.
- */
-		case '[':
-			if (*p != NEGATE)
-				negate = FALSE;
-			else {
-				negate = TRUE;
-				p++;
-			}
+    case '?':
+      if ( *str ) {
+        break;
+      }
+      return FALSE;
+    /*
+     * set specification is inclusive, that is [a-z] is a, z and
+     * everything in between. this means [z-a] may be interpreted
+     * as a set that contains z, a and nothing in between.
+     */
+    case '[':
+      if ( *p != NEGATE ) {
+        negate = FALSE;
+      } else {
+        negate = TRUE;
+        p++;
+      }
 
-			match = FALSE;
+      match = FALSE;
 
-			while (!match && (c = *p++)) {
-				if (!*p)
-					return FALSE;
-				if (*p == '-') {	/* c-c */
-					if (!*++p)
-						return FALSE;
-					if (*p != ']') {
-						if (*str == c || *str == *p ||
-						    (*str > c && *str < *p))
-							match = TRUE;
-					}
-					else {		/* c-] */
-						if (*str >= c)
-							match = TRUE;
-						break;
-					}
-				}
-				else {			/* cc or c] */
-					if (c == *str)
-						match = TRUE;
-					if (*p != ']') {
-						if (*p == *str)
-							match = TRUE;
-					}
-					else
-						break;
-				}
-			}
+      while ( !match && ( c = *p++ ) ) {
+        if ( !*p ) {
+          return FALSE;
+        }
+        if ( *p == '-' ) {      /* c-c */
+          if ( !*++p ) {
+            return FALSE;
+          }
+          if ( *p != ']' ) {
+            if ( *str == c || *str == *p ||
+                 ( *str > c && *str < *p ) ) {
+              match = TRUE;
+            }
+          } else {        /* c-] */
+            if ( *str >= c ) {
+              match = TRUE;
+            }
+            break;
+          }
+        } else {                /* cc or c] */
+          if ( c == *str ) {
+            match = TRUE;
+          }
+          if ( *p != ']' ) {
+            if ( *p == *str ) {
+              match = TRUE;
+            }
+          } else {
+            break;
+          }
+        }
+      }
 
-			if (negate == match)
-				return FALSE;
-/*
- * if there is a match, skip past the cset and continue on
- */
-			while (*p && *p != ']')
-				p++;
-			if (!*p++)	/* oops! */
-				return FALSE;
-			break;
+      if ( negate == match ) {
+        return FALSE;
+      }
+      /*
+       * if there is a match, skip past the cset and continue on
+       */
+      while ( *p && *p != ']' ) {
+        p++;
+      }
+      if ( !*p++ ) {  /* oops! */
+        return FALSE;
+      }
+      break;
 
-		case '\\':
-			if (*p)
-				c = *p++;
+    case '\\':
+      if ( *p ) {
+        c = *p++;
+      }
 #if __GNUC__ >= 7 && !defined __INTEL_COMPILER
-			__attribute__ ((fallthrough));
+      __attribute__( ( fallthrough ) );
 #endif
-		default:
-			if (c != *str)
-				return FALSE;
-			break;
+    default:
+      if ( c != *str ) {
+        return FALSE;
+      }
+      break;
 
-		}
-		str++;
-	}
+    }
+    str++;
+  }
 
-	return !*str;
+  return !*str;
 }

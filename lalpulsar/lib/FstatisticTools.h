@@ -43,13 +43,13 @@ extern "C" {
 /// @{
 
 // ---------- API function prototypes ----------
-int XLALEstimatePulsarAmplitudeParams ( PulsarCandidate *pulsarParams, const LIGOTimeGPS* FaFb_refTime,
-                                        const COMPLEX8 Fa, const COMPLEX8 Fb, const AntennaPatternMatrix *Mmunu );
+int XLALEstimatePulsarAmplitudeParams( PulsarCandidate *pulsarParams, const LIGOTimeGPS *FaFb_refTime,
+                                       const COMPLEX8 Fa, const COMPLEX8 Fb, const AntennaPatternMatrix *Mmunu );
 
-int XLALAmplitudeParams2Vect ( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
+int XLALAmplitudeParams2Vect( PulsarAmplitudeVect A_Mu, const PulsarAmplitudeParams Amp );
 int XLALAmplitudeVect2Params( PulsarAmplitudeParams *Amp, const PulsarAmplitudeVect A_Mu );
 
-REAL8 XLALComputeOptimalSNR2FromMmunu ( const PulsarAmplitudeParams pap, const AntennaPatternMatrix Mmunu );
+REAL8 XLALComputeOptimalSNR2FromMmunu( const PulsarAmplitudeParams pap, const AntennaPatternMatrix Mmunu );
 
 /// @}
 

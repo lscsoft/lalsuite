@@ -38,26 +38,26 @@ typedef struct {
   size_t size;     /* size of an element */
   char   *data;    /* the actual data array of 'length'*'size' chars */
   char   **heap;   /* array of 'length' pointers into data */
-  int    (*smaller)(const void *, const void *); /* comparison function */
+  int ( *smaller )( const void *, const void * ); /* comparison function */
 } toplist_t;
 
 
 /* creates a toplist with 'length' elements of size 'size', with
    odering based on comparison function 'smaller'.
    returns -1 on error (out of memory), else 0 */
-extern int create_toplist(toplist_t**list, size_t length, size_t size,
-                          int (*smaller)(const void *, const void *));
+extern int create_toplist( toplist_t **list, size_t length, size_t size,
+                           int ( *smaller )( const void *, const void * ) );
 
 
 /* frees the space occupied by the toplist */
-extern void free_toplist(toplist_t**list);
+extern void free_toplist( toplist_t **list );
 
 
 /* Inserts an element in to the toplist either if there is space left
    or the element is larger than the smallest element in the toplist.
    In the latter case, remove the smallest element from the toplist.
    Returns 1 if the element was actually inserted, 0 if not. */
-extern int insert_into_toplist(toplist_t*list, void *element);
+extern int insert_into_toplist( toplist_t *list, void *element );
 
 /* return non-zero value iff the passed element would be inserted into
    the toplist by calling insert_into_toplist, but no actual insertion is done.
@@ -69,12 +69,12 @@ extern int insert_into_toplist(toplist_t*list, void *element);
  ( ( (list)->elems < (list)->length ||( ((list)->smaller)  ((const void *)(element),((list)->heap)[0]) < 0) ) )
 
 /* clears an existing toplist of all elements inserted so far */
-extern void clear_toplist(toplist_t*list);
+extern void clear_toplist( toplist_t *list );
 
 
 /* apply a function to all elements of the list in the current order
    (possibly after calling qsort_toplist(), e.g. for writing out */
-extern void go_through_toplist(toplist_t*list, void (*handle)(void *));
+extern void go_through_toplist( toplist_t *list, void ( *handle )( void * ) );
 
 
 /* sort the toplist with an arbitrary sorting function
@@ -84,23 +84,23 @@ extern void go_through_toplist(toplist_t*list, void (*handle)(void *));
    the same comparison function will give the reverse order than the heap.
    in order to restore a heap with qsort_toplist() (e.g. to add more elements) you must
    qsort_toplist() with the inverse function of the "smaller" function of the heap. */
-extern void qsort_toplist(toplist_t*list, int (*compare)(const void *, const void *));
+extern void qsort_toplist( toplist_t *list, int ( *compare )( const void *, const void * ) );
 
 
 /* therefore we provide a qsort_toplist_r() function that gives the reverse ordering of
    qsort_toplist(), which restores the heap property with the same comparison function */
-extern void qsort_toplist_r(toplist_t*list, int (*compare)(const void *, const void *));
+extern void qsort_toplist_r( toplist_t *list, int ( *compare )( const void *, const void * ) );
 
 
 /* access a certain element of the toplist (shouldn't be done by fiddling in toplist_t)
    returns a NULL pointer on error (i.e. index out of bounds) */
-extern void* toplist_elem(toplist_t*list, size_t idx);
+extern void *toplist_elem( toplist_t *list, size_t idx );
 
 
 /* compare two toplists
    returns -1 if list1 is "smaller", 1 if list2 is "smaller", 0 if they are equal,
    2 if they are uncomparable (different data types or "smaller" functions */
-extern int compare_toplists(toplist_t*list1, toplist_t*list2);
+extern int compare_toplists( toplist_t *list1, toplist_t *list2 );
 
 #endif /* SWIG */
 

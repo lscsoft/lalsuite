@@ -30,11 +30,11 @@
 #define MAXFILENAMELENGTH 256   /* Maximum # of characters of a filename */
 /** Type to hold the fields that will be output in unclustered output file  */
 typedef struct {
-  REAL8 Freq;			/**< Frequency at maximum (?) of the cluster */
-  REAL8 f1dot;			/**< spindown value f1dot = df/dt */
-  REAL8 Alpha; 			/**< Skyposition: longitude in equatorial coords, radians */
-  REAL8 Delta;			/**< skyposition: latitude */
-  REAL8 Fstat;			/**< value of 2F */
+  REAL8 Freq;                   /**< Frequency at maximum (?) of the cluster */
+  REAL8 f1dot;                  /**< spindown value f1dot = df/dt */
+  REAL8 Alpha;                  /**< Skyposition: longitude in equatorial coords, radians */
+  REAL8 Delta;                  /**< skyposition: latitude */
+  REAL8 Fstat;                  /**< value of 2F */
 } FstatOutputEntry;
 
 
@@ -44,10 +44,10 @@ typedef struct {
  * creates a toplist with length elements,
  * returns -1 on error (usually out of memory), else 0
  */
-extern int create_fstat_toplist(toplist_t**list, UINT8 length);
+extern int create_fstat_toplist( toplist_t **list, UINT8 length );
 
 /** frees the space occupied by the toplist */
-extern void free_fstat_toplist(toplist_t**list);
+extern void free_fstat_toplist( toplist_t **list );
 
 /**
  * Inserts an element in to the toplist either if there is space left
@@ -55,7 +55,7 @@ extern void free_fstat_toplist(toplist_t**list);
  * In the latter case, remove the smallest element from the toplist
  * Returns 1 if the element was actually inserted, 0 if not.
  */
-extern int insert_into_fstat_toplist(toplist_t*list, FstatOutputEntry line);
+extern int insert_into_fstat_toplist( toplist_t *list, FstatOutputEntry line );
 
 /**
  * Writes the toplist to an (already open) filepointer
@@ -63,7 +63,7 @@ extern int insert_into_fstat_toplist(toplist_t*list, FstatOutputEntry line);
  * sets the checksum if non-NULL
  * Returns something <0 on error
  */
-extern int write_fstat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
+extern int write_fstat_toplist_to_fp( toplist_t *list, FILE *fp, UINT4 *checksum );
 
 /**
  * reads a (created!) toplist from an open filepointer
@@ -74,13 +74,13 @@ extern int write_fstat_toplist_to_fp(toplist_t*list, FILE*fp, UINT4*checksum);
  * -1 if the file contained a syntax error,
  * -2 if given an improper toplist
  */
-extern int read_fstat_toplist_from_fp(toplist_t*list, FILE*fp, UINT4*checksum, UINT4 maxbytes);
+extern int read_fstat_toplist_from_fp( toplist_t *list, FILE *fp, UINT4 *checksum, UINT4 maxbytes );
 
 /**
  * sorts the toplist with an internal sorting function,
  * used before finally writing it
  */
-extern void sort_fstat_toplist(toplist_t*list);
+extern void sort_fstat_toplist( toplist_t *list );
 
 
 
@@ -92,7 +92,7 @@ extern void sort_fstat_toplist(toplist_t*list);
  * Returns the number of chars written, -1 if in error
  * Updates checksum if given (i.e. not NULL)
  */
-extern int write_fstat_toplist_item_to_fp(FstatOutputEntry line, FILE*fp, UINT4*checksum);
+extern int write_fstat_toplist_item_to_fp( FstatOutputEntry line, FILE *fp, UINT4 *checksum );
 
 /**
  * writes the given toplitst to a temporary file, then renames the
@@ -100,7 +100,7 @@ extern int write_fstat_toplist_item_to_fp(FstatOutputEntry line, FILE*fp, UINT4*
  * derived from the filename by appending ".tmp". Returns the number
  * of chars written or -1 if the temp file could not be opened.
  */
-extern int atomic_write_fstat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
+extern int atomic_write_fstat_toplist_to_file( toplist_t *list, const char *filename, UINT4 *checksum );
 
 /**
  * meant for the final writing of the toplist
@@ -108,7 +108,7 @@ extern int atomic_write_fstat_toplist_to_file(toplist_t*list, const char*filenam
  * - sorts the toplist
  * - finally calls atomic_write_fstat_toplist_to_file()
  */
-extern int final_write_fstat_toplist_to_file(toplist_t*list, const char*filename, UINT4*checksum);
+extern int final_write_fstat_toplist_to_file( toplist_t *list, const char *filename, UINT4 *checksum );
 
 
 
@@ -116,53 +116,53 @@ extern int final_write_fstat_toplist_to_file(toplist_t*list, const char*filename
 /** a toplist as a checkpointed file */
 
 typedef struct {
-  CHAR* filename;    /**< name of the toplist file */
-  CHAR* buffer;      /**< write buffer if needed */
+  CHAR *filename;    /**< name of the toplist file */
+  CHAR *buffer;      /**< write buffer if needed */
   UINT4 bufsize;     /**< buffer size if needed */
   UINT4 bytes;       /**< counts the bytes in the file */
   UINT4 maxsize;     /**< the file must not grow larger than that */
   UINT4 checksum;    /**< keeps the checksum */
-  FILE* fp;          /**< FILE* currently associated */
-  toplist_t*list;    /**< toplist this file reflects */
+  FILE *fp;          /**< FILE* currently associated */
+  toplist_t *list;   /**< toplist this file reflects */
 } FstatCheckpointFile;
 
 /** creates a FstatCheckpointFile */
-extern int fstat_cpt_file_create (FstatCheckpointFile **cptf,
-				  CHAR  *filename,
-				  UINT4 bufsize,
-				  UINT4 maxsize,
-				  toplist_t*tl);
+extern int fstat_cpt_file_create( FstatCheckpointFile **cptf,
+                                  CHAR  *filename,
+                                  UINT4 bufsize,
+                                  UINT4 maxsize,
+                                  toplist_t *tl );
 
 /** destroys a FstatCheckpointFile */
-extern int fstat_cpt_file_destroy (FstatCheckpointFile **cptf);
+extern int fstat_cpt_file_destroy( FstatCheckpointFile **cptf );
 
 /** opens a file for checkpointing the desired toplist */
-extern int fstat_cpt_file_open (FstatCheckpointFile *cptf);
+extern int fstat_cpt_file_open( FstatCheckpointFile *cptf );
 
 /** flushes the checkpoint file (only useful if buffered) */
-extern int fstat_cpt_file_flush (FstatCheckpointFile *cptf);
+extern int fstat_cpt_file_flush( FstatCheckpointFile *cptf );
 
 /** returns information for checkpointing */
-extern int fstat_cpt_file_info (FstatCheckpointFile *cptf, CHAR**filename, UINT4*bytes, UINT4*checksum);
+extern int fstat_cpt_file_info( FstatCheckpointFile *cptf, CHAR **filename, UINT4 *bytes, UINT4 *checksum );
 
 /**
  * adds an item to the toplist and keeps the file consistent, i.e.
  * adds the entry to the file if it was really inserted
  * and compacts the file if necessary
  */
-extern int fstat_cpt_file_add  (FstatCheckpointFile*cptf, FstatOutputEntry line);
+extern int fstat_cpt_file_add( FstatCheckpointFile *cptf, FstatOutputEntry line );
 
 /**
  * closes the file, reduces the precision, sorts the toplist,
  * finally rewrites the file (sorted and compact) with end marker
  */
-extern int fstat_cpt_file_close(FstatCheckpointFile*cptf);
+extern int fstat_cpt_file_close( FstatCheckpointFile *cptf );
 
 /** reads a written checkpointed toplist back into memory */
-extern int fstat_cpt_file_read (FstatCheckpointFile*cptf, UINT4 checksum, UINT4 maxbytes);
+extern int fstat_cpt_file_read( FstatCheckpointFile *cptf, UINT4 checksum, UINT4 maxbytes );
 
 /** compact a toplist file if the length has reached maxbytes */
-extern int fstat_cpt_file_compact(FstatCheckpointFile*cptf);
+extern int fstat_cpt_file_compact( FstatCheckpointFile *cptf );
 
 /** new, simpler checkpointing for HierarchicalSearch */
 
@@ -180,7 +180,7 @@ extern int fstat_cpt_file_compact(FstatCheckpointFile*cptf);
  * -2 if out of memory,
  * 0 otherwise (successful)
  */
-extern int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter, BOOLEAN do_sync);
+extern int write_hs_checkpoint( const char *filename, toplist_t *tl, UINT4 counter, BOOLEAN do_sync );
 
 /**
  * tries to read a checkpoint
@@ -194,7 +194,7 @@ extern int write_hs_checkpoint(const char*filename, toplist_t*tl, UINT4 counter,
  * -1 in case of an I/O error
  * -2 if the checksum was wrong or elems was unreasonable
  */
-extern int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter);
+extern int read_hs_checkpoint( const char *filename, toplist_t *tl, UINT4 *counter );
 
 /**
  * write the final output file:
@@ -202,6 +202,6 @@ extern int read_hs_checkpoint(const char*filename, toplist_t*tl, UINT4*counter);
  * - write out the toplist in ASCII format with end marker to a temporary file
  * - rename the file to the final name
  */
-extern int write_hs_oputput(const char*filename, toplist_t*tl);
+extern int write_hs_oputput( const char *filename, toplist_t *tl );
 
 #endif /* FSTATTOPLIST_H - double inclusion protection */

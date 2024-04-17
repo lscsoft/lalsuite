@@ -101,7 +101,7 @@ extern "C" {
  * barycentre at one of its foci; the wave-emitting source is also shown.
  *
  * The <em>inclination angle</em> \f$ i \f$ is the angle between the sky and
- * orbital planes.  The <em>longitude of the ascending node</em> \f$ \Omega \f$ 
+ * orbital planes.  The <em>longitude of the ascending node</em> \f$ \Omega \f$
  * is the angle in the plane of the sky from the North direction to the
  * ascending node, measured right-handed about
  * \f$ \hat{\mathbf{\mathit{R}}} \f$ .  The <em>argument of the periapsis</em>
@@ -140,7 +140,7 @@ extern "C" {
  * \dot{R} & = & \dot{R}_0 + \frac{\dot{\upsilon}_p r_p\sin i}{1+e}
  * \left[ \cos(\omega+\upsilon) + e\cos\omega \right] \;.
  * \f}
- * Without loss of generality, we will henceforth drop the offsets \f$ R_0 \f$ 
+ * Without loss of generality, we will henceforth drop the offsets \f$ R_0 \f$
  * and (constant) \f$ \dot{R}_0 \f$ from these equations.  This means that we
  * ignore the overall propagation delay between the \f$ R=R_0 \f$ plane and the
  * observer, and incorporate any (constant) Doppler shifts due to net
@@ -222,12 +222,12 @@ extern "C" {
 
 /** \name Error Codes */
 /** @{ */
-#define GENERATESPINORBITCWH_ENUL 1	/**< Unexpected null pointer in arguments */
-#define GENERATESPINORBITCWH_EOUT 2	/**< Output field a, f, phi, or shift already exists */
-#define GENERATESPINORBITCWH_EMEM 3	/**< Out of memory */
-#define GENERATESPINORBITCWH_EECC 4	/**< Eccentricity out of range */
-#define GENERATESPINORBITCWH_EFTL 5	/**< Periapsis motion is faster than light */
-#define GENERATESPINORBITCWH_ESGN 6	/**< Sign error: positive parameter expected */
+#define GENERATESPINORBITCWH_ENUL 1     /**< Unexpected null pointer in arguments */
+#define GENERATESPINORBITCWH_EOUT 2     /**< Output field a, f, phi, or shift already exists */
+#define GENERATESPINORBITCWH_EMEM 3     /**< Out of memory */
+#define GENERATESPINORBITCWH_EECC 4     /**< Eccentricity out of range */
+#define GENERATESPINORBITCWH_EFTL 5     /**< Periapsis motion is faster than light */
+#define GENERATESPINORBITCWH_ESGN 6     /**< Sign error: positive parameter expected */
 /** @} */
 
 /** \cond DONT_DOXYGEN */
@@ -284,32 +284,33 @@ typedef struct tagSpinOrbitCWParamStruc {
 
 
 /* ---------- Function prototypes. ---------- */
-int XLALGenerateSpinOrbitCW ( PulsarCoherentGW *sourceSignal, SpinOrbitCWParamStruc *sourceParams );
+int XLALGenerateSpinOrbitCW( PulsarCoherentGW *sourceSignal, SpinOrbitCWParamStruc *sourceParams );
 
 void
-LALGenerateSpinOrbitCW( LALStatus             *,
-			PulsarCoherentGW            *output,
-			SpinOrbitCWParamStruc *params );
+LALGenerateSpinOrbitCW( LALStatus *,
+                        PulsarCoherentGW            *output,
+                        SpinOrbitCWParamStruc *params );
 
 void
-LALGenerateEllipticSpinOrbitCW( LALStatus             *,
-				PulsarCoherentGW            *output,
-				SpinOrbitCWParamStruc *params );
+LALGenerateEllipticSpinOrbitCW( LALStatus *,
+                                PulsarCoherentGW            *output,
+                                SpinOrbitCWParamStruc *params );
 
 void
-LALGenerateParabolicSpinOrbitCW( LALStatus             *,
-				 PulsarCoherentGW            *output,
-				 SpinOrbitCWParamStruc *params );
+LALGenerateParabolicSpinOrbitCW( LALStatus *,
+                                 PulsarCoherentGW            *output,
+                                 SpinOrbitCWParamStruc *params );
 
 void
-LALGenerateHyperbolicSpinOrbitCW( LALStatus             *,
-				  PulsarCoherentGW            *output,
-				  SpinOrbitCWParamStruc *params );
+LALGenerateHyperbolicSpinOrbitCW( LALStatus *,
+                                  PulsarCoherentGW            *output,
+                                  SpinOrbitCWParamStruc *params );
 
 /** @} */
 
 #if 0
-{ /* so that editors will match succeeding brace */
+{
+  /* so that editors will match succeeding brace */
 #elif defined(__cplusplus)
 }
 #endif

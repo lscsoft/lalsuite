@@ -92,8 +92,7 @@ extern "C" {
 
 
 /** Constants defining different types of pulsar-metrics. */
-typedef enum tagLALPulsarMetricType
-{
+typedef enum tagLALPulsarMetricType {
   LAL_PMETRIC_NONE = 0,
   LAL_PMETRIC_COH_PTOLE_ANALYTIC,
   LAL_PMETRIC_LAST
@@ -106,18 +105,16 @@ typedef enum tagLALPulsarMetricType
  * necessities, not needing function pointers etc.
  */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagPtoleMetricIn, site, ephemeris));
+SWIGLAL( IMMUTABLE_MEMBERS( tagPtoleMetricIn, site, ephemeris ) );
 #endif /* SWIG */
-typedef struct
-tagPtoleMetricIn
-{
-  SkyPosition    position;	/**< The equatorial coordinates at which the metric components are evaluated. */
-  REAL4Vector   *spindown;	/**< The (dimensionless) spindown parameters for which the metric components are evaluated. */
-  LIGOTimeGPS    epoch;		/**< When the coherent integration begins */
-  REAL4          duration;	/**< Duration of integration, in seconds. */
-  REAL4          maxFreq;	/**< The maximum frequency to be searched, in Hz. */
-  const LALDetector    *site;	/**< The detector site, used only for its latitude and longitude. */
-  const EphemerisData  *ephemeris;	/**< Not used for the Ptolemaic approximation, this is for compatibility with other metrics. */
+typedef struct tagPtoleMetricIn {
+  SkyPosition    position;      /**< The equatorial coordinates at which the metric components are evaluated. */
+  REAL4Vector   *spindown;      /**< The (dimensionless) spindown parameters for which the metric components are evaluated. */
+  LIGOTimeGPS    epoch;         /**< When the coherent integration begins */
+  REAL4          duration;      /**< Duration of integration, in seconds. */
+  REAL4          maxFreq;       /**< The maximum frequency to be searched, in Hz. */
+  const LALDetector    *site;   /**< The detector site, used only for its latitude and longitude. */
+  const EphemerisData  *ephemeris;      /**< Not used for the Ptolemaic approximation, this is for compatibility with other metrics. */
   LALPulsarMetricType metricType; /**< The type of metric to use: analytic, Ptolemaic or fully ephemeris-based. */
 } PtoleMetricIn;
 
@@ -135,12 +132,12 @@ LALPulsarMetric( LALStatus      *status,
 void
 LALProjectMetric( LALStatus *, REAL8Vector *metric, BOOLEAN errors );
 
-int XLALFindMetricDim ( const REAL8Vector *metric );
+int XLALFindMetricDim( const REAL8Vector *metric );
 
 int XLALSpindownMetric(
-  gsl_matrix* metric,
+  gsl_matrix *metric,
   double Tspan
-  );
+);
 
 /** @} */
 
