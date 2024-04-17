@@ -45,6 +45,7 @@ for l in range(2, 6):
 # reversed dictionary to back-reference the modes
 TEOB_DALI_MODES_FROM_K = {modes_to_k([mode])[0]: mode for mode in TEOB_DALI_MODES}
 
+DEFAULT_MODES = [(2, 2), (2, 1), (3, 3), (4, 4)]
 
 class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
@@ -57,7 +58,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
         super().__init__()
         if modes_to_use is None:
-            self.available_modes = TEOB_DALI_MODES
+            self.available_modes = DEFAULT_MODES
         else:
             self.available_modes = modes_to_use
         self._update_domains()
