@@ -2506,7 +2506,7 @@ pdf_output = False      # a boolean stating whether to also output pdf versions 
             "http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version="
             + ATNF_VERSION
         )
-        atnfurl += "&startUserDefined=true&pulsar_names=" + re.sub("\+", "%2B", pname)
+        atnfurl += "&startUserDefined=true&pulsar_names=" + re.sub(r"\+", "%2B", pname)
         atnfurl += "&ephemeris=long&submit_ephemeris=Get+Ephemeris&state=query"
 
         # try getting information already parsed from ATNF catalogue by lalpulsar_knope pipeline setup
