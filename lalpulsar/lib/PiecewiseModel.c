@@ -84,11 +84,11 @@ static double F0Bound(
 
   // Frequency at this knot, propagated by dt
   const double f = GTEAndDerivs( f0, info->n, info->k, info->dt, 0 );
-  
-  if (f >= f0 ){
-    printf("f >= f0, %g >= %g", f, f0);
+
+  if ( f >= f0 ) {
+    printf( "f >= f0, %g >= %g", f, f0 );
   }
-  
+
   return f;
 }
 
@@ -150,10 +150,10 @@ int XLALSetLatticeTilingPiecewiseBounds(
   const double kmax,            ///< Maximum k value
   const gsl_vector *knots,      ///< List of knots
   const gsl_vector *bboxpad,    ///< Vector containing fractional bounding box padding
-  const gsl_vector_int* intpad  ///< Vector containing number of integer points to use for padding
+  const gsl_vector_int *intpad  ///< Vector containing number of integer points to use for padding
 )
 {
-  
+
   XLAL_CHECK( tiling != NULL,   XLAL_EINVAL );
   XLAL_CHECK( s == 2 || s == 3, XLAL_EINVAL );
   XLAL_CHECK( fmin <= fmax,     XLAL_EINVAL, "fmin greater than fmax: [%g, %g]", fmin, fmax );
@@ -174,8 +174,8 @@ int XLALSetLatticeTilingPiecewiseBounds(
   // Setting the first knot bounds
   // - dt is not used
   XLAL_CHECK( XLALSetLatticeTilingConstantBound( tiling, 0, fmin, fmax ) == XLAL_SUCCESS, XLAL_EFAILED );
-  XLAL_CHECK( XLALSetLatticeTilingBound(   tiling, 1, F1Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper ) == XLAL_SUCCESS, XLAL_EFAILED );
-  
+  XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 1, F1Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper ) == XLAL_SUCCESS, XLAL_EFAILED );
+
   if ( s == 3 ) {
     XLAL_CHECK( XLALSetLatticeTilingBound( tiling, 2, F2Bound, sizeof( info_knot_lower ), &info_knot_lower, &info_knot_upper ) == XLAL_SUCCESS, XLAL_EFAILED );
   }
@@ -197,10 +197,10 @@ int XLALSetLatticeTilingPiecewiseBounds(
     XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, dim, -1, -1, -1, -1, false ) == XLAL_SUCCESS, XLAL_EFAILED );
   }
   */
-  
+
   for ( size_t dim = 0; dim < s * knots->size; ++dim ) {
-    XLAL_CHECK( XLALSetLatticeTilingPadding(tiling, dim, gsl_vector_get(bboxpad, dim), gsl_vector_get(bboxpad, dim), gsl_vector_int_get(intpad, dim), gsl_vector_int_get(intpad, dim), false) == XLAL_SUCCESS, XLAL_EFAILED);
+    XLAL_CHECK( XLALSetLatticeTilingPadding( tiling, dim, gsl_vector_get( bboxpad, dim ), gsl_vector_get( bboxpad, dim ), gsl_vector_int_get( intpad, dim ), gsl_vector_int_get( intpad, dim ), false ) == XLAL_SUCCESS, XLAL_EFAILED );
   }
-  
+
   return XLAL_SUCCESS;
 }

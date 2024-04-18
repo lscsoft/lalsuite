@@ -42,7 +42,7 @@ int XLALSetLatticeTilingPiecewiseBounds(
   const double kmax,            ///< Maximum k value
   const gsl_vector *knots,      ///< List of knots
   const gsl_vector *bboxpad,    ///< Vector containing fractional bounding box padding
-  const gsl_vector_int* intpad  ///< Vector containing number of integer points to use for padding
+  const gsl_vector_int *intpad  ///< Vector containing number of integer points to use for padding
 );
 
 #ifdef __cplusplus

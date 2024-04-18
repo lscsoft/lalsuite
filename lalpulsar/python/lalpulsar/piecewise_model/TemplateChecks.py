@@ -14,107 +14,110 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import numpy as np
+
 import lalpulsar as lp
 
 from . import BasisFunctions as bf
-from . import GTEandOtherMethods as gom
 from . import EstimatingKnots as ek
+from . import GTEandOtherMethods as gom
 
-import numpy as np
 
 # Converts a template given as a list of parameters into a template made up of a list of knot templates
 def templatetoknottemplates(temp, s):
-        template = []
-        knottemplate = []
+    template = []
+    knottemplate = []
 
-        for i, param in enumerate(temp):
-                if len(knottemplate) == s - 1:
-                        knottemplate.append(param)
-                        template.append(knottemplate)
-                        knottemplate = []
-                else:
-                        knottemplate.append(param)
+    for i, param in enumerate(temp):
+        if len(knottemplate) == s - 1:
+            knottemplate.append(param)
+            template.append(knottemplate)
+            knottemplate = []
+        else:
+            knottemplate.append(param)
 
-        return template
+    return template
+
 
 # Checks to see that every value in values lies within the defined global minimum and maximum range and are within the appropriate tolerance of one another
 def checkrangesandtolerances(values, globalmin, globalmax, tolerance):
 
-        outofrange = 0
-        outoftolerance = 0
+    outofrange = 0
+    outoftolerance = 0
 
-        for i, val in enumerate(values):
-                if not 0.999 * globalmin <= val <= globalmax * 1.001:
-                        print("Failed global ranges: " + str(val))
-                        outofrange += 1
+    for i, val in enumerate(values):
+        if not 0.999 * globalmin <= val <= globalmax * 1.001:
+            print("Failed global ranges: " + str(val))
+            outofrange += 1
 
-                if i == 0:
-                        continue
+        if i == 0:
+            continue
 
-                Dp = bf.knotslist[i] - bf.knotslist[i - 1]
+        Dp = bf.knotslist[i] - bf.knotslist[i - 1]
 
-                lower_bound = values[i - 1] * (1 - Dp * tolerance)
-                upper_bound = values[i - 1]
+        lower_bound = values[i - 1] * (1 - Dp * tolerance)
+        upper_bound = values[i - 1]
 
-                if not 0.999 * lower_bound <= val <= upper_bound * 1.001:
-                        #print(values)
-                        print("Failed tolerance: " + str([lower_bound, val, upper_bound]))
-                        outoftolerance += 1
+        if not 0.999 * lower_bound <= val <= upper_bound * 1.001:
+            # print(values)
+            print("Failed tolerance: " + str([lower_bound, val, upper_bound]))
+            outoftolerance += 1
 
-        return outofrange + outoftolerance
+    return outofrange + outoftolerance
+
 
 # Takes a template (list of parameters) and tbank object and returns a list [nfails, kfails, gtefails] indicating which criteria and how many times this template fails those criteria
 def is_valid_temp(temp, tbank):
 
-        template = templatetoknottemplates(temp, tbank.s)
+    template = templatetoknottemplates(temp, tbank.s)
 
-        fmin     = tbank.fmin
-        fmax     = tbank.fmax
-        nmin     = tbank.nmin
-        nmax     = tbank.nmax
-        nmin    = tbank.nmin
-        nmax    = tbank.nmax
-        kmin   = tbank.kmin
-        kmax   = tbank.kmax
+    fmin = tbank.fmin
+    fmax = tbank.fmax
+    nmin = tbank.nmin
+    nmax = tbank.nmax
+    nmin = tbank.nmin
+    nmax = tbank.nmax
+    kmin = tbank.kmin
+    kmax = tbank.kmax
 
-        ns = []
-        ks = []
+    ns = []
+    ks = []
 
-        for i, knottemp in enumerate(template):
+    for i, knottemp in enumerate(template):
 
-                ngte = -1
+        ngte = -1
 
-                if tbank.s == 3:
-                        ngte = knottemp[2] * knottemp[0] / (knottemp[1] ** 2)
+        if tbank.s == 3:
+            ngte = knottemp[2] * knottemp[0] / (knottemp[1] ** 2)
 
-                elif tbank.s == 2:
+        elif tbank.s == 2:
 
-                        if i == 0:
-                                continue
+            if i == 0:
+                continue
 
-                        f0prev = template[i - 1][0]
-                        f1prev = template[i - 1][1]
+            f0prev = template[i - 1][0]
+            f1prev = template[i - 1][1]
 
-                        f0 = knottemp[0]
-                        f1 = knottemp[1]
+            f0 = knottemp[0]
+            f1 = knottemp[1]
 
-                        segment_length = bf.knotslist[i] - bf.knotslist[i - 1]
+            segment_length = bf.knotslist[i] - bf.knotslist[i - 1]
 
-                        ngte = 1 + (f0prev * f1 - f0 * f1prev) / (f1prev * f1 * segment_length);
+            ngte = 1 + (f0prev * f1 - f0 * f1prev) / (f1prev * f1 * segment_length)
 
-                        if i == 1:
-                                ns.append(ngte)
-
-                try:
-                        kgte = - knottemp[1] / (knottemp[0] ** ngte)
-                except ZeroDivisionError:
-                        kgte = 10 ** 6
-                except OverflowError:
-                        kgte = 0
-
+            if i == 1:
                 ns.append(ngte)
-                ks.append(kgte)
-        """
+
+        try:
+            kgte = -knottemp[1] / (knottemp[0] ** ngte)
+        except ZeroDivisionError:
+            kgte = 10**6
+        except OverflowError:
+            kgte = 0
+
+        ns.append(ngte)
+        ks.append(kgte)
+    """
         print([nmin, nmax])
         print([kmin, kmax])
         print(ns)
@@ -122,135 +125,214 @@ def is_valid_temp(temp, tbank):
         print()
         """
 
-        nfails = 0
-        kfails = 0
-        f0fails = 0
-        f1fails = 0
-        f2fails = 0
+    nfails = 0
+    kfails = 0
+    f0fails = 0
+    f1fails = 0
+    f2fails = 0
 
-        if not 0.9999999 * nmin <= ns[0] <= nmax * 1.0000001:
-                print("First knot braking index fail: " + str(ns[0]))
-                nfails += 1
+    if not 0.9999999 * nmin <= ns[0] <= nmax * 1.0000001:
+        print("First knot braking index fail: " + str(ns[0]))
+        nfails += 1
 
-        # FIXME
-        nfails += checkrangesandtolerances(ns, nmin, nmax, ntol)
-        kfails += checkrangesandtolerances(ks, kmin, kmax, ktol)
+    # FIXME
+    nfails += checkrangesandtolerances(ns, nmin, nmax, ntol)
+    kfails += checkrangesandtolerances(ks, kmin, kmax, ktol)
 
-        for i, knottemp in enumerate(template):
-                if i == 0:
-                        if not fmin <= knottemp[0] <= fmax:
-                                #print("First knot frequency fail: " + str([fmin, knottemp[0], fmax]))
-                                f0fails += 1
-                        continue
+    for i, knottemp in enumerate(template):
+        if i == 0:
+            if not fmin <= knottemp[0] <= fmax:
+                # print("First knot frequency fail: " + str([fmin, knottemp[0], fmax]))
+                f0fails += 1
+            continue
 
-                f0n1 = template[i - 1][0]
-                Dp = bf.knotslist[i] - bf.knotslist[i - 1]
+        f0n1 = template[i - 1][0]
+        Dp = bf.knotslist[i] - bf.knotslist[i - 1]
 
-                ntolmin = ns[i - 1] * (1 - Dp * ntol)
-                ntolmax = ns[i - 1]
-                ktolmin = ks[i - 1] * (1 - Dp * ktol)
-                ktolmax = ks[i - 1]
+        ntolmin = ns[i - 1] * (1 - Dp * ntol)
+        ntolmax = ns[i - 1]
+        ktolmin = ks[i - 1] * (1 - Dp * ktol)
+        ktolmax = ks[i - 1]
 
-                try:
-                        if not 0.999 * gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 0) <= knottemp[0] <= gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 0) * 1.001:
-                                #print("f0 fail")
-                                print("F0 failed by: " + str([knottemp[0], gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 0) - knottemp[0], knottemp[0] - gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 0)]))
-                                f0fails += 1
-                except OverflowError:
-                        f0fails += 1
+        try:
+            if (
+                not 0.999 * gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 0)
+                <= knottemp[0]
+                <= gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 0) * 1.001
+            ):
+                # print("f0 fail")
+                print(
+                    "F0 failed by: "
+                    + str(
+                        [
+                            knottemp[0],
+                            gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 0) - knottemp[0],
+                            knottemp[0] - gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 0),
+                        ]
+                    )
+                )
+                f0fails += 1
+        except OverflowError:
+            f0fails += 1
 
-                try:
-                        if not 1.001 * gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 1) <= knottemp[1] <= gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 1) * 0.999:
-                                #print("f1 fail")
-                                print("F1 failed by: " + str([knottemp[1], gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 1) - knottemp[1], knottemp[1] - gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 1)]))
-                                f1fails += 1
-                except OverflowError:
-                        f1fails += 1
+        try:
+            if (
+                not 1.001 * gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 1)
+                <= knottemp[1]
+                <= gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 1) * 0.999
+            ):
+                # print("f1 fail")
+                print(
+                    "F1 failed by: "
+                    + str(
+                        [
+                            knottemp[1],
+                            gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 1) - knottemp[1],
+                            knottemp[1] - gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 1),
+                        ]
+                    )
+                )
+                f1fails += 1
+        except OverflowError:
+            f1fails += 1
 
-                if tbank.s == 3:
-                        try:
-                                if not 0.999 * gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 2) <= knottemp[2] <= gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 2) * 1.001:
-                                        #print("f2 fail")
-                                        print("F2 failed by: " + str([knottemp[2], gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 2) - knottemp[2], knottemp[2] - gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 2)]))
-                                        f2fails += 1
-                        except OverflowError:
-                                f2fails += 1
+        if tbank.s == 3:
+            try:
+                if (
+                    not 0.999 * gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 2)
+                    <= knottemp[2]
+                    <= gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 2) * 1.001
+                ):
+                    # print("f2 fail")
+                    print(
+                        "F2 failed by: "
+                        + str(
+                            [
+                                knottemp[2],
+                                gom.gtederivs(Dp, f0n1, ntolmax, ktolmax, 2)
+                                - knottemp[2],
+                                knottemp[2]
+                                - gom.gtederivs(Dp, f0n1, ntolmin, ktolmin, 2),
+                            ]
+                        )
+                    )
+                    f2fails += 1
+            except OverflowError:
+                f2fails += 1
 
-        verdict = True
+    verdict = True
 
-        if nfails + kfails + f0fails + f1fails + f2fails != 0:
-                verdict = False
+    if nfails + kfails + f0fails + f1fails + f2fails != 0:
+        verdict = False
 
-        return [verdict, nfails, kfails, f0fails, f1fails, f2fails]
+    return [verdict, nfails, kfails, f0fails, f1fails, f2fails]
+
 
 def checkfstatfile(path, tbank, maxtemps=10):
 
-        templates = []
+    templates = []
 
-        tempsfailed = []
+    tempsfailed = []
 
-        with open(path) as fstatfile:
-                for line in fstatfile:
+    with open(path) as fstatfile:
+        for line in fstatfile:
 
-                        if line.startswith("#"):
-                                continue
+            if line.startswith("#"):
+                continue
 
-                        linestr = line.split()[2:]
+            linestr = line.split()[2:]
 
-                        temp = []
+            temp = []
 
-                        for elem in linestr:
-                                temp.append(float(elem))
+            for elem in linestr:
+                temp.append(float(elem))
 
-                        templates.append(temp)
+            templates.append(temp)
 
-        for i, template in enumerate(templates):
-                if i > maxtemps:
-                        break
-                print()
-                print(i)
-                fails = isvalidtemp(template, tbank)
+    for i, template in enumerate(templates):
+        if i > maxtemps:
+            break
+        print()
+        print(i)
+        fails = isvalidtemp(template, tbank)
 
-                if fails != [0, 0, 0]:
-                        tempsfailed.append([i, fails])
+        if fails != [0, 0, 0]:
+            tempsfailed.append([i, fails])
 
-        return tempsfailed
+    return tempsfailed
+
 
 # Builds a valid template using the lp.PiecewiseParameterBounds method. Builds a template by sequentially calculating the bounds on a dimension using the values
 # of the parameters prior. The value of the parameter for the current dimension is then chosen to be halfway between these bounds. This is repeated until an entire
 # template has been consturcted.
 def auto_valid_template(tbank, build_knots=[], reset=1):
 
-        template = []
+    template = []
 
-        kmin = tbank.kmin
-        kmax = tbank.kmax
+    kmin = tbank.kmin
+    kmax = tbank.kmax
 
-        if build_knots == []:
-                ek.allidealisedknots(tbank.s, tbank.dur, 40, tbank.fmax, tbank.nmax, tbank.kmax, tbank.maxmismatch)
-        else:
-                bf.knotslist = build_knots
+    if build_knots == []:
+        ek.allidealisedknots(
+            tbank.s,
+            tbank.dur,
+            40,
+            tbank.fmax,
+            tbank.nmax,
+            tbank.kmax,
+            tbank.maxmismatch,
+        )
+    else:
+        bf.knotslist = build_knots
 
-        for dim in range(tbank.s * len(bf.knotslist)):
+    for dim in range(tbank.s * len(bf.knotslist)):
 
-                print("At dim: " + str(dim))
-                print(template)
+        print("At dim: " + str(dim))
+        print(template)
 
-                if dim == 0:
-                        template.append(1/2 * (tbank.fmax + tbank.fmin))
-                        continue
+        if dim == 0:
+            template.append(1 / 2 * (tbank.fmax + tbank.fmin))
+            continue
 
-                segment = int(np.floor(dim / tbank.s))
+        segment = int(np.floor(dim / tbank.s))
 
-                seg_length = bf.knotslist[segment] - bf.knotslist[segment - 1]
-                print(segment)
-                print(seg_length)
+        seg_length = bf.knotslist[segment] - bf.knotslist[segment - 1]
+        print(segment)
+        print(seg_length)
 
-                lower = lp.PiecewiseParameterBounds(dim, template, -1, tbank.fmin, tbank.fmax, tbank.nmin, tbank.nmax, tbank.ntol, kmin, kmax, tbank.ktol, seg_length, reset)
-                upper = lp.PiecewiseParameterBounds(dim, template,  1, tbank.fmin, tbank.fmax, tbank.nmin, tbank.nmax, tbank.ntol, kmin, kmax, tbank.ktol, seg_length, reset)
+        lower = lp.PiecewiseParameterBounds(
+            dim,
+            template,
+            -1,
+            tbank.fmin,
+            tbank.fmax,
+            tbank.nmin,
+            tbank.nmax,
+            tbank.ntol,
+            kmin,
+            kmax,
+            tbank.ktol,
+            seg_length,
+            reset,
+        )
+        upper = lp.PiecewiseParameterBounds(
+            dim,
+            template,
+            1,
+            tbank.fmin,
+            tbank.fmax,
+            tbank.nmin,
+            tbank.nmax,
+            tbank.ntol,
+            kmin,
+            kmax,
+            tbank.ktol,
+            seg_length,
+            reset,
+        )
 
-                print([lower, upper])
+        print([lower, upper])
 
-                template.append(1/2 * (upper + lower))
+        template.append(1 / 2 * (upper + lower))
 
-        return template
+    return template

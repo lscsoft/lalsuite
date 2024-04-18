@@ -14,22 +14,22 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import math
 
-from . import BasisFunctions as bf
-from . import SamplingMethods as sm
-from . import GTEandOtherMethods as gom
-from . import MyErrors
-
-
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy import integrate
-import matplotlib.pyplot as plt
 
-import math
+from . import BasisFunctions as bf
+from . import GTEandOtherMethods as gom
+from . import MyErrors
+from . import SamplingMethods as sm
+
 
 # Our b vector for MOLS
 def bvec(points, f0, ngte, kgte):
     return [gom.gte(t - bf.knotslist[0], f0, ngte, kgte) for t in points]
+
 
 # Constructs an individual row of the a matrix for the sample point 'point' and the coefficients of our basis functions
 # 'coeffs'
@@ -51,6 +51,7 @@ def rowofa(point, coeffs, s):
 
     return firstzeros + coeffsb + coeffsc + lastzeros
 
+
 # Builds our a matrix
 def a(points, coeffs, s):
     amat = []
@@ -60,9 +61,11 @@ def a(points, coeffs, s):
 
     return amat
 
+
 # Returns a diagonal matrix containing the diagonal elements of mat to power -1/2
 def pmat(mat):
     return np.diag(bf.listpseudoinv(np.diagonal(mat), 1 / 2))
+
 
 # Conditions mat by multiplying mat by pmat on each of its sides
 def matdash(mat):
@@ -70,9 +73,11 @@ def matdash(mat):
 
     return np.matmul(pm, np.matmul(mat, pm))
 
+
 # Returns mat multiplied by its transpose
 def ata(mat):
     return np.matmul(np.transpose(mat), mat)
+
 
 # Returns the solutions for our LSTSQ problem
 def sols(coeffs, ppint, s, f0, ngte, kgte, conditioning=True):
@@ -97,20 +102,23 @@ def sols(coeffs, ppint, s, f0, ngte, kgte, conditioning=True):
     lhs = np.matmul(pm, np.matmul(atamat, pm))
     rhs = np.matmul(np.matmul(pm, np.transpose(amat)), b)
 
-    #logging.debug("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
-    #logging.debug("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
-    
+    # logging.debug("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
+    # logging.debug("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
+
     print("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
-    print("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs )))
-    
+    print("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
+
     try:
         params = np.matmul(pm, np.linalg.solve(lhs, rhs))
     except np.linalg.LinAlgError as error:
         logging.debug(error)
-        logging.debug("Error in calculating MOLS parameters, using Python LSTSQ method instead")
+        logging.debug(
+            "Error in calculating MOLS parameters, using Python LSTSQ method instead"
+        )
         params = np.matmul(pm, np.linalg.lstsq(lhs, rhs, rcond=-1)[0])
 
     return params
+
 
 # Partitions the 1D list params into a 3D list for our parameters. Extract parameter by [ int ][ B or C ][ k ]
 def solsbyint(params, s):
@@ -119,19 +127,24 @@ def solsbyint(params, s):
     partedsols = np.zeros((ints, 2, s))
 
     for i in range(ints):
-        solsb = np.array(params[i * s: (i + 1) * s])
-        solsc = np.array(params[(i + 1) * s: (i + 2) * s])
+        solsb = np.array(params[i * s : (i + 1) * s])
+        solsc = np.array(params[(i + 1) * s : (i + 2) * s])
 
         partedsols[i][0] = solsb
         partedsols[i][1] = solsc
 
     return partedsols
 
-def solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, ngte, kgte, conditioning=True):
+
+def solsbetweenknots(
+    knotnuma, knotnumb, coeffs, ppint, s, f0, ngte, kgte, conditioning=True
+):
 
     while True:
         try:
-            points = sm.samplepointswithinknots(knotnuma, knotnumb, ppint, f0, ngte, kgte)
+            points = sm.samplepointswithinknots(
+                knotnuma, knotnumb, ppint, f0, ngte, kgte
+            )
             break
         except MyErrors.SegmentContainsNoSamplePoints:
             logging.debug("Reattempting MOLS fitting with greater sampling")
@@ -160,13 +173,16 @@ def solsbetweenknots(knotnuma, knotnumb, coeffs, ppint, s, f0, ngte, kgte, condi
         params = np.matmul(pm, np.linalg.solve(lhs, rhs))
     except np.linalg.LinAlgError as error:
         logging.debug(error)
-        logging.debug("Error in calculating MOLS parameters, using Python LSTSQ method instead")
+        logging.debug(
+            "Error in calculating MOLS parameters, using Python LSTSQ method instead"
+        )
         params = np.matmul(pm, np.linalg.lstsq(lhs, rhs)[0])
 
     zerobuff = [0] * (s * knotnuma)
     paramszerobuff = zerobuff + list(params)
 
     return paramszerobuff
+
 
 # Comparison of the two different 'sols' methods
 """
@@ -198,7 +214,7 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
 
     return f0 + f1 * t + 1/2 * f2 * t ** 2
     """
-    
+
     s = len(params[0][0])
 
     if ignoreintcheck:
@@ -212,27 +228,26 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
                 f0 = params[0][0][0]
                 f1 = params[0][0][1]
                 f2 = 0
-                
+
                 if s > 2:
                     f2 = params[0][0][2]
-                    
 
-                return f0 + f1 * t + 1/2 * f2 * t ** 2
+                return f0 + f1 * t + 1 / 2 * f2 * t**2
             elif t > bf.knotslist[-1] - bf.knotslist[0]:
                 f0 = params[-1][1][0]
                 f1 = params[-1][1][1]
                 f2 = 0
-                
+
                 if s > 2:
                     f2 = params[-1][1][2]
 
-                return f0 + f1 * t + 1/2 * f2 * t ** 2
+                return f0 + f1 * t + 1 / 2 * f2 * t**2
 
             return 0
     else:
         j = sm.thisint(point)
 
-    #if singleseg:
+    # if singleseg:
     #    j = 0
 
     points.append(point)
@@ -254,10 +269,13 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
 
     return val
 
+
 def phase(point, coeffs, params, ignoreintcheck=False):
 
-    model = lambda t: modelvalueatpoint(t, coeffs, params, ignoreintcheck=ignoreintcheck)
-    #logging.debug("Integral bounds: " + str([bf.knotslist[0], point]))
+    model = lambda t: modelvalueatpoint(
+        t, coeffs, params, ignoreintcheck=ignoreintcheck
+    )
+    # logging.debug("Integral bounds: " + str([bf.knotslist[0], point]))
     phasemodel = 2 * np.pi * integrate.quad(model, bf.knotslist[0], point, epsabs=0)[0]
 
     return phasemodel
@@ -271,6 +289,7 @@ def phase(point, coeffs, params, ignoreintcheck=False):
 
     return 2 * np.pi * (freq * dt + f1dot * 0.5 * dt**2 + f2dot * 1/6 * dt**3) #phasemodel
     """
+
 
 # Builds a list of the 'correct' physical parameters as by the general torque equation
 def correctparams(s, f0, ngte, kgte):
@@ -291,6 +310,7 @@ def correctparams(s, f0, ngte, kgte):
 
     return params
 
+
 # Plots our model
 def modelplotter(ppint, s, f0, ngte, kgte, trueparams=False):
     res = 1
@@ -301,7 +321,9 @@ def modelplotter(ppint, s, f0, ngte, kgte, trueparams=False):
 
     correctps = correctparams(s, f0, ngte, kgte)
 
-    xpoints = np.linspace(bf.knotslist[0], bf.knotslist[-1], res * (bf.knotslist[-1] - bf.knotslist[0]))
+    xpoints = np.linspace(
+        bf.knotslist[0], bf.knotslist[-1], res * (bf.knotslist[-1] - bf.knotslist[0])
+    )
 
     gtepoints = []
     correctpoints = []
@@ -326,7 +348,10 @@ def modelplotter(ppint, s, f0, ngte, kgte, trueparams=False):
     plt.legend()
     plt.show()
 
-def modelplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, ngte, kgte, trueparams=False):
+
+def modelplotterknotspecific(
+    knotnuma, knotnumb, ppint, s, f0, ngte, kgte, trueparams=False
+):
     res = 1
 
     coeffs = bf.allcoeffs(s)
@@ -335,7 +360,11 @@ def modelplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, ngte, kgte, truep
 
     correctps = correctparams(s, f0, ngte, kgte)
 
-    xpoints = np.linspace(bf.knotslist[knotnuma], bf.knotslist[knotnumb], res * (bf.knotslist[knotnumb] - bf.knotslist[knotnuma]))
+    xpoints = np.linspace(
+        bf.knotslist[knotnuma],
+        bf.knotslist[knotnumb],
+        res * (bf.knotslist[knotnumb] - bf.knotslist[knotnuma]),
+    )
 
     gtepoints = []
     correctpoints = []
@@ -356,11 +385,13 @@ def modelplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, ngte, kgte, truep
     plt.legend()
     plt.show()
 
+
 # Gives the value of the error bound for a particular point 't' for the interval it lies in
 def errorbounds(t):
     j = sm.thisint(t)
 
     return 1 / (bf.knotslist[j + 1] - bf.knotslist[j])
+
 
 # Plots our error
 def errorplotter(ppint, s, f0, ngte, kgte):
@@ -379,7 +410,11 @@ def errorplotter(ppint, s, f0, ngte, kgte):
     # per piecewise interval. This is not as important when just plotting the piecewise model.
     ints = len(bf.knotslist) - 1
     for i in range(ints):
-        sublist = np.linspace(bf.knotslist[i], bf.knotslist[i + 1], res * (bf.knotslist[i + 1] - bf.knotslist[i]) / ints)
+        sublist = np.linspace(
+            bf.knotslist[i],
+            bf.knotslist[i + 1],
+            res * (bf.knotslist[i + 1] - bf.knotslist[i]) / ints,
+        )
         for elem in sublist:
             xpoints.append(elem)
 
@@ -388,11 +423,26 @@ def errorplotter(ppint, s, f0, ngte, kgte):
     ypoints = []
 
     for i, x in enumerate(xpoints):
-        ypoints.append(np.abs(modelvalueatpoint(x, coeffs, partparams) - gom.gte(x - bf.knotslist[0], f0, ngte, kgte)))
-        correctpoints.append(modelvalueatpoint(x, coeffs, correctps) - gom.gte(x - bf.knotslist[0], f0, ngte, kgte))
+        ypoints.append(
+            np.abs(
+                modelvalueatpoint(x, coeffs, partparams)
+                - gom.gte(x - bf.knotslist[0], f0, ngte, kgte)
+            )
+        )
+        correctpoints.append(
+            modelvalueatpoint(x, coeffs, correctps)
+            - gom.gte(x - bf.knotslist[0], f0, ngte, kgte)
+        )
         errorpoints.append(errorbounds(x))
 
-    title = "f0, ngte, kgte: " + str([f0, ngte, kgte]) + ". S = " + str(s) + ", Ints = " + str(ints)
+    title = (
+        "f0, ngte, kgte: "
+        + str([f0, ngte, kgte])
+        + ". S = "
+        + str(s)
+        + ", Ints = "
+        + str(ints)
+    )
 
     plt.loglog(xpoints, ypoints, label="LSTSQ Model")
     plt.loglog(xpoints, correctpoints, label="Correct Coefficients")
@@ -400,6 +450,7 @@ def errorplotter(ppint, s, f0, ngte, kgte):
     plt.legend()
     plt.title(title)
     plt.show()
+
 
 def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, ngte, kgte):
     res = 1
@@ -418,7 +469,11 @@ def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, ngte, kgte):
     # plot them on a log log plot. This for loop chooses plotting points such that there is the same number of points
     # per piecewise interval. This is not as important when just plotting the piecewise model.
     for i in range(knotnuma, knotnumb):
-        sublist = np.linspace(bf.knotslist[i], bf.knotslist[i + 1], res * (bf.knotslist[i + 1] - bf.knotslist[i]) / ints)
+        sublist = np.linspace(
+            bf.knotslist[i],
+            bf.knotslist[i + 1],
+            res * (bf.knotslist[i + 1] - bf.knotslist[i]) / ints,
+        )
         for elem in sublist:
             xpoints.append(elem)
 
@@ -427,11 +482,26 @@ def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, ngte, kgte):
     ypoints = []
 
     for i, x in enumerate(xpoints):
-        ypoints.append(np.abs(modelvalueatpoint(x, coeffs, partparams) - gom.gte(x - bf.knotslist[0], f0, ngte, kgte)))
-        correctpoints.append(modelvalueatpoint(x, coeffs, correctps) - gom.gte(x - bf.knotslist[0], f0, ngte, kgte))
+        ypoints.append(
+            np.abs(
+                modelvalueatpoint(x, coeffs, partparams)
+                - gom.gte(x - bf.knotslist[0], f0, ngte, kgte)
+            )
+        )
+        correctpoints.append(
+            modelvalueatpoint(x, coeffs, correctps)
+            - gom.gte(x - bf.knotslist[0], f0, ngte, kgte)
+        )
         errorpoints.append(errorbounds(x))
 
-    title = "f0, ngte, kgte: " + str([f0, ngte, kgte]) + ". S = " + str(s) + ", Ints = " + str(ints)
+    title = (
+        "f0, ngte, kgte: "
+        + str([f0, ngte, kgte])
+        + ". S = "
+        + str(s)
+        + ", Ints = "
+        + str(ints)
+    )
 
     plt.loglog(xpoints, ypoints, label="LSTSQ Model")
     plt.loglog(xpoints, correctpoints, label="Correct Coefficients")
@@ -440,11 +510,16 @@ def errorplotterknotspecific(knotnuma, knotnumb, ppint, s, f0, ngte, kgte):
     plt.title(title)
     plt.show()
 
+
 # Returns the value of the error of our model at a given point
 def errorvalueatpoint(point, coeffs, params, f0, ngte, kgte):
-    error = np.abs(modelvalueatpoint(point, coeffs, params) - gom.gte(point - bf.knotslist[0], f0, ngte, kgte))
+    error = np.abs(
+        modelvalueatpoint(point, coeffs, params)
+        - gom.gte(point - bf.knotslist[0], f0, ngte, kgte)
+    )
 
     return error
+
 
 # Plots a template against the gte with the parameters f0, ngte and kgte. Template should be a list of knot templates
 def plotatemplate(template, f0, ngte, kgte):
@@ -467,8 +542,8 @@ def plotatemplate(template, f0, ngte, kgte):
     for x in xpoints:
         modelpoint = modelvalueatpoint(x, basiscoeffs, tempparamsbyint)
 
-        if modelpoint > 2 * 10 ** 3:
-            modelpoint = 2 * 10 ** 3
+        if modelpoint > 2 * 10**3:
+            modelpoint = 2 * 10**3
         elif modelpoint < 0:
             modelpoint = 0
 
@@ -481,7 +556,7 @@ def plotatemplate(template, f0, ngte, kgte):
     plt.show()
 
 
-def plotGTE(f0, ngte, kgte, ts, te, show=True, label=''):
+def plotGTE(f0, ngte, kgte, ts, te, show=True, label=""):
 
     xpoints = np.linspace(ts, te, 50)
 
@@ -493,9 +568,6 @@ def plotGTE(f0, ngte, kgte, ts, te, show=True, label=''):
     plt.plot(xpoints, ypoints, label=label)
     if show:
         plt.show()
-
-
-
 
 
 """

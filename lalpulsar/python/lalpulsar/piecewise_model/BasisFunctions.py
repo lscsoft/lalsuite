@@ -14,9 +14,10 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import matplotlib.pyplot as plt
 import numpy as np
 from sympy import *
-import matplotlib.pyplot as plt
+
 from . import MyErrors
 
 # In this notebook we build the methods required for creating the basis functions of our piecewise model. It is worth
@@ -33,27 +34,34 @@ from . import MyErrors
 wcondnumbers = []
 wdashcondnumbers = []
 
-knotslist = [0.]
+knotslist = [0.0]
 
 # Returns the value of the ith knot. If we are using the methods in the EstimatingKnots notebook, this method should
 # simply extract the ith element from the knotslist variable above.
 def p(i):
-    
+
     return knotslist[i]
 
     if i < 0 or i >= len(knotslist):
-        print("Invalid knot number. Length of knotslist is: " + str(len(knotslist)) + ". Knot number requested: " + str(i))
+        print(
+            "Invalid knot number. Length of knotslist is: "
+            + str(len(knotslist))
+            + ". Knot number requested: "
+            + str(i)
+        )
         raise MyErrors.InvalidKnotNumber
 
     return knotslist[i]
+
 
 # Our basis function
 def u(t, i):
     return (t - p(i)) / (p(i + 1) - p(i))
 
+
 # Builds the W matrix whose inverse is the coefficients of our basis function
 def w(i, s):
-    t = Symbol('t')
+    t = Symbol("t")
 
     ps = p(i)
     pe = p(i + 1)
@@ -73,7 +81,7 @@ def w(i, s):
         thisrowe = []
 
         for elem in thisrowderivs:
-            thiselem = lambdify(t, elem, 'numpy')
+            thiselem = lambdify(t, elem, "numpy")
 
             thisrows.append(thiselem(ps))
             thisrowe.append(thiselem(pe))
@@ -83,31 +91,35 @@ def w(i, s):
 
     return np.array(matrixupper + matrixlower)
 
+
 # Returns the pseudo inverse of a list to the given power
 def listpseudoinv(lst, pwr=1):
     invlist = []
 
     for elem in lst:
         if elem != 0:
-            invlist.append(elem ** -pwr)
+            invlist.append(elem**-pwr)
         else:
             invlist.append(0)
 
     return invlist
 
+
 # Builds a diagonal matrix with elements equal to the inverse of the diagonal elements of the given matrix
 def d(mat):
     return np.diag(listpseudoinv(np.diagonal(mat)))
+
 
 # Returns a conditioned matrix where each row is divided by its diagonal element
 def dcond(mat):
 
     return np.matmul(d(mat), mat)
 
+
 # Returns the coefficients of our basis function in a 3D list. Reference elements by [ B or C ][ k ][ specific coeff ]
 def basiscoeffs(i, s, conditioning=True):
     wmat = w(i, s)
-    #wcondnumbers.append(np.linalg.cond(wmat))
+    # wcondnumbers.append(np.linalg.cond(wmat))
 
     if conditioning:
         dmat = d(wmat)
@@ -117,10 +129,10 @@ def basiscoeffs(i, s, conditioning=True):
         dmat = np.identity(len(wmat))
         dwmat = wmat
 
-    #wmatcondnum = np.linalg.cond(wmat)
-    #dwmatcondnum = np.linalg.cond(np.matmul(d(wmat), wmat))
+    # wmatcondnum = np.linalg.cond(wmat)
+    # dwmatcondnum = np.linalg.cond(np.matmul(d(wmat), wmat))
 
-    #wdashcondnumbers.append(np.linalg.cond(dwmat))
+    # wdashcondnumbers.append(np.linalg.cond(dwmat))
 
     try:
         coeffs = np.transpose(np.linalg.solve(dwmat, dmat))
@@ -130,25 +142,27 @@ def basiscoeffs(i, s, conditioning=True):
         coeffs = np.linalg.lstsq(dwmat, dmat)[0]
 
     blist = coeffs[0:s]
-    clist = coeffs[s: 2 * s]
+    clist = coeffs[s : 2 * s]
 
     return np.array([blist, clist])
+
 
 # Returns the coefficients of all basis functions in a 4D list. Reference elements by [ int ][ B or C][ k ][ specific
 # coeff ]
 def allcoeffs(s):
     coeffs = [basiscoeffs(i, s) for i in range(len(knotslist) - 1)]
 
-    #print("The largest condition number for a W j is: " + "{:.2E}".format(max(wcondnumbers)))
-    #print("The largest condition number for a W'j is: " + "{:.2E}".format(max(wdashcondnumbers)))
+    # print("The largest condition number for a W j is: " + "{:.2E}".format(max(wcondnumbers)))
+    # print("The largest condition number for a W'j is: " + "{:.2E}".format(max(wdashcondnumbers)))
     return np.array(coeffs)
 
-#allcoeffs(3, 10, 10000)
+
+# allcoeffs(3, 10, 10000)
 
 # Returns the value of a specified basis function given the 4D list of coefficients coeffs.
 def basisfunctionvalue(t, i, borc, s, coeffs):
     val = 0
-    
+
     if t < p(i) or p(i + 1) < t:
         return 0
 
@@ -158,6 +172,7 @@ def basisfunctionvalue(t, i, borc, s, coeffs):
         val += coeff * u(t, i) ** m
 
     return val
+
 
 # Plots all basis functions
 def allfunctionplotter(s):
@@ -191,17 +206,16 @@ def allfunctionplotter(s):
         ypointsintervals.append(np.array([ypointsb, ypointsc]))
 
     fig, axs = plt.subplots(ints, s, figsize=(5, 5))
-    
+
     for i in range(ints):
         xpoints = xpointsintervals[i]
         ypointsbck = ypointsintervals[i]
         for thisk in range(s):
-            
+
             if ints == 1:
                 axs[thisk].plot(xpoints, ypointsbck[0][thisk])
                 axs[thisk].plot(xpoints, ypointsbck[1][thisk])
-                
-                
+
             else:
                 axs[i, thisk].plot(xpoints, ypointsbck[0][thisk])
                 axs[i, thisk].plot(xpoints, ypointsbck[1][thisk])
@@ -211,9 +225,9 @@ def allfunctionplotter(s):
 
 # Plots all basis functions one at a time for specified knots
 def individual_basis_function_plotter(s, p0=0, p1=10):
-    global knotslist 
+    global knotslist
     knotslist = [p0, p1]
-    
+
     coeffs = allcoeffs(s)
 
     res = 30
@@ -225,31 +239,29 @@ def individual_basis_function_plotter(s, p0=0, p1=10):
     ypoints_b1 = []
 
     for this_s in range(s):
-            
+
         this_y_b0 = []
         this_y_b1 = []
-        
+
         for t in xpoints:
-            
+
             this_y_b0.append(basisfunctionvalue(t, 0, 0, this_s, coeffs))
             this_y_b1.append(basisfunctionvalue(t, 0, 1, this_s, coeffs))
-        
-        
+
         ypoints_b0.append(this_y_b0)
         ypoints_b1.append(this_y_b1)
 
     for i in range(s):
         fig, ax = plt.subplots(figsize=(5, 5))
-        #ax.set_aspect(1)
-        
+        # ax.set_aspect(1)
+
         ax.plot(xpoints, ypoints_b0[i])
         ax.plot(xpoints, ypoints_b1[i])
-        
-        ax.set_xticks([p0, p0 + 0.5 * (p1 - p0), p1]) #, minor=True)
-        #ax.set_xticklabels([str(p0), str(p0 + 0.5 * (p1 - p0)), str(p1)], minor=True)
-        
-        fig.show()
 
+        ax.set_xticks([p0, p0 + 0.5 * (p1 - p0), p1])  # , minor=True)
+        # ax.set_xticklabels([str(p0), str(p0 + 0.5 * (p1 - p0)), str(p1)], minor=True)
+
+        fig.show()
 
 
 # Plots the basis functions with the given coefficients. Coeffs parameter in the same form as the output of the
@@ -292,10 +304,11 @@ def plotcoeffs(coeffs):
         for thisk in range(s):
             axs[i, thisk].plot(xpoints, ypointsbck[0][thisk])
             axs[i, thisk].plot(xpoints, ypointsbck[1][thisk])
-            axs[i, thisk].set_title('B: ' + str(i) + ', ' + str(thisk))
+            axs[i, thisk].set_title("B: " + str(i) + ", " + str(thisk))
 
     plt.tight_layout()
     plt.show()
+
 
 """
 s = 3
