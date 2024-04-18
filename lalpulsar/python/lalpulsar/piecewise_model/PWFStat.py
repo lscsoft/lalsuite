@@ -15,13 +15,10 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import copy
-import glob
 import heapq as hq
 import logging
-import os
 import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import trange
 
@@ -32,8 +29,6 @@ from . import BasisFunctions as bf
 from . import GTEandOtherMethods as gom
 from . import SemicoherentMetricMethods as scmm
 from . import TBankEstimates as tbe
-
-plt.set_loglevel("ERROR")
 
 # Returns our FstatInput object, currently uses SFTs built in pwsim
 # fmax (and fmin) should be chosen with the same reasoning outlined in the pwsim notbook. fmax = f0 + 10^-4 * f0 + 58/TSFT,

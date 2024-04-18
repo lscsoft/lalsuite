@@ -14,11 +14,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
-import cProfile
-import io
 import logging
-import os
-import pstats
 import time
 
 import numpy as np
@@ -27,7 +23,6 @@ import lal
 import lalpulsar as lp
 
 from . import BasisFunctions as bf
-from . import EstimatingKnots as ek
 from . import SemicoherentMetricMethods as scmm
 
 

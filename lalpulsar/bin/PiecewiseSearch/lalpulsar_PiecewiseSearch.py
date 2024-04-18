@@ -22,10 +22,8 @@ import os
 import pstats
 import random
 import signal
-import sys
 import time
 
-import matplotlib.pyplot as plt
 import numpy as np
 
 import lal

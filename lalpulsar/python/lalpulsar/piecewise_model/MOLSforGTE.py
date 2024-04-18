@@ -15,7 +15,6 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import logging
-import math
 
 import numpy as np
 from scipy import integrate

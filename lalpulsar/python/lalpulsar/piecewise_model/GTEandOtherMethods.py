@@ -16,12 +16,7 @@
 
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
-
-import lalpulsar as lp
-
-from . import BasisFunctions as bf
 
 
 # The general torque equation we have formulated

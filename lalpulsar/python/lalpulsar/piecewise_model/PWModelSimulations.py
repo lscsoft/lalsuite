@@ -24,7 +24,6 @@ import lalpulsar as lp
 from lalpulsar import simulateCW
 
 from . import BasisFunctions as bf
-from . import GTEandOtherMethods as gom
 from . import MOLSforGTE as mols
 from . import SemicoherentMetricMethods as scmm
 from . import TBankEstimates as tbe

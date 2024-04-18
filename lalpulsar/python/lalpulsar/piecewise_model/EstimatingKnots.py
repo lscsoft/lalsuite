@@ -15,14 +15,12 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 import ast
-import copy
 import logging
 import os.path
 
 import numpy as np
 
 from . import BasisFunctions as bf
-from . import GTEandOtherMethods as gom
 from . import MOLSforGTE as mols
 from . import MyErrors
 from . import SemicoherentMetricMethods as scmm

@@ -16,11 +16,8 @@
 
 import logging
 
-import matplotlib.pyplot as plt
 import numpy as np
 from sympy import *
-
-from . import MyErrors
 
 # In this notebook we build the methods required for creating the basis functions of our piecewise model. It is worth
 # noting here that initially conditioning of the matrices used here was undertaken. Initially this was necessary as
