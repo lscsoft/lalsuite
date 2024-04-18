@@ -6,6 +6,7 @@ select =
 	E9,
 	F401,
 	W2,
+        W605,
 exclude =
 	__pycache__,
 	.git/,
