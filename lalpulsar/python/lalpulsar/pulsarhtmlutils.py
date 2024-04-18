@@ -37,15 +37,15 @@ from lalpulsar.pulsarpputils import rad_to_dms, rad_to_hms
 # some parameter names for special LaTeX treatment in figures
 paramlatexdict = {
     "H0": "$h_0$",
-    "COSIOTA": "$\cos{\iota}$",
-    "PSI": "$\psi$ (rad)",
-    "PHI0": "$\phi_0$ (rad)",
+    "COSIOTA": "$\\cos{\\iota}$",
+    "PSI": "$\\psi$ (rad)",
+    "PHI0": "$\\phi_0$ (rad)",
     "RA": "$\\alpha$",
-    "DEC": "$\delta$",
+    "DEC": "$\\delta$",
     "RAJ": "$\\alpha$",
-    "DECJ": "$\delta$",
+    "DECJ": "$\\delta$",
     "F0": "$f_0$ (Hz)",
-    "F1": "$\dot{f}$ (Hz/s)",
+    "F1": "$\\dot{f}$ (Hz/s)",
     "F2": "$\\ddot{f}$ (Hz/s$^2$)",
     "F3": "$f_3$ (Hz/s$^3$)",
     "F4": "$f_4$ (Hz/s$^4$)",
@@ -55,28 +55,28 @@ paramlatexdict = {
     "F8": "$f_8$ (Hz/s$^8$)",
     "F9": "$f_9$ (Hz/s$^9$)",
     "F10": "$f_{10}$ (Hz/s$^{10}$)",
-    "LOGL": "$\log{L}$",
+    "LOGL": "$\\log{L}$",
     "PMRA": "p.m. $\\alpha$ (rad/s)",
-    "PMDEC": "p.m. $\delta$ (rad/s)",
-    "PMDC": "p.m. $\delta$ (rad/s)",
-    "PX": "$\pi$ (rad)",
-    "A1": "$a \sin{i}$ (lt s)",
-    "A1_2": "$(a \sin{i})_{2}$ (lt s)",
-    "A1_3": "$(a \sin{i})_{3}$ (lt s)",
-    "SINI": "$\sin{i}$",
+    "PMDEC": "p.m. $\\delta$ (rad/s)",
+    "PMDC": "p.m. $\\delta$ (rad/s)",
+    "PX": "$\\pi$ (rad)",
+    "A1": "$a \\sin{i}$ (lt s)",
+    "A1_2": "$(a \\sin{i})_{2}$ (lt s)",
+    "A1_3": "$(a \\sin{i})_{3}$ (lt s)",
+    "SINI": "$\\sin{i}$",
     "PB": "$P_b$ (s)",
     "PB_2": "$(P_b)_2$ (s)",
     "PB_3": "$(P_b)_3$ (s)",
     "T0": "$T_0$ (s)",
     "T0_2": "$(T_0)_2$ (s)",
     "T0_3": "$(T_0)_3$ (s)",
-    "TASC": "$T_{\\textrm{asc}}$ (s)",
-    "OM": "$\omega_0$ (rad)",
-    "OM_2": "$(\omega_0)_2$ (rad)",
-    "OM_3": "$(\omega_0)_3$ (rad)",
-    "PBDT": "$\dot{P}$ (s/s)",
-    "PBDOT": "$\dot{P}$ (s/s)",
-    "GAMMA": "$\gamma$",
+    "TASC": "$T_{\\\textrm{asc}}$ (s)",
+    "OM": "$\\omega_0$ (rad)",
+    "OM_2": "$(\\omega_0)_2$ (rad)",
+    "OM_3": "$(\\omega_0)_3$ (rad)",
+    "PBDT": "$\\dot{P}$ (s/s)",
+    "PBDOT": "$\\dot{P}$ (s/s)",
+    "GAMMA": "$\\gamma$",
     "E": "$e$",
     "ECC": "$e$",
     "ECC_2": "$e_2$",
@@ -94,38 +94,38 @@ paramlatexdict = {
     "M2": "$m_2$ (kg)",
     "MTOT": "$M$ (kg)",
     "ELL": "$\\varepsilon$",
-    "H95": "$h_0^{95\%}$",
-    "H0UL": "$h_0^{{{}\%}}$",
-    "Q22": "$Q_{22}$\,(kg\,m$^2$)",
+    "H95": "$h_0^{95\\%}$",
+    "H0UL": "$h_0^{{{}\\%}}$",
+    "Q22": "$Q_{22}$\\,(kg\\,m$^2$)",
     "SDRAT": "spin-down ratio",
-    "SDRAT95": "$h_0^{95\%}$/h_0^{\\rm sd}$",
+    "SDRAT95": "$h_0^{95\\%}$/h_0^{\\rm sd}$",
     "SDLIM": "$h_0^{\\rm sd}$",
     "F0ROT": "$f_{\\rm rot}$ (Hz)",
     "F0GW": "$f_{\\rm gw}$ (Hz)",
-    "F1ROT": "$\dot{f}_{\\rm rot}$ (Hz/s)",
-    "F1GW": "$\dot{f}_{\\rm gw}$ (Hz/s)",
-    "SDPOWRAT": "power ratio (\%)",
-    "OMDOT": "$\dot{\omega}$",
-    "OMDT": "$\dot{\omega}$",
+    "F1ROT": "$\\dot{f}_{\\rm rot}$ (Hz/s)",
+    "F1GW": "$\\dot{f}_{\\rm gw}$ (Hz/s)",
+    "SDPOWRAT": "power ratio (\\%)",
+    "OMDOT": "$\\dot{\\omega}$",
+    "OMDT": "$\\dot{\\omega}$",
     "EPS1": "$\\epsilon_1$",
     "EPS2": "$\\epsilon_2$",
     "C22": "$C_{22}$",
     "C21": "$C_{21}$",
-    "C22UL": "$C_{{22}}^{{{}\%}}$",
-    "C21UL": "$C_{{21}}^{{{}\%}}$",
-    "PHI22": "$\phi_{22}$",
-    "PHI21": "$\phi_{21}$",
+    "C22UL": "$C_{{22}}^{{{}\\%}}$",
+    "C21UL": "$C_{{21}}^{{{}\\%}}$",
+    "PHI22": "$\\phi_{22}$",
+    "PHI21": "$\\phi_{21}$",
     "I31": "$I_{31}$",
     "I21": "$I_{21}$",
-    "I31UL": "$I_{{31}}^{{{}\%}}$",
-    "I21UL": "$I_{{21}}^{{{}\%}}$",
-    "LAMBDA": "$\lambda$ (rad)",
-    "COSTHETA": "$\cos{\\theta}$",
+    "I31UL": "$I_{{31}}^{{{}\\%}}$",
+    "I21UL": "$I_{{21}}^{{{}\\%}}$",
+    "LAMBDA": "$\\lambda$ (rad)",
+    "COSTHETA": "$\\cos{\\\theta}$",
     "DIST": "distance (kpc)",
     "SNR": "$\\rho$",
-    "BSN": "$\log{}_{10}\left(B_{\\textrm{SvN}}\\right)$",
-    "BCI": "$\log{}_{10}\left(B_{\\textrm{CvI}}\\right)$",
-    "BCIN": "$\log{}_{10}\left(B_{\\textrm{CvIN}}\\right)$",
+    "BSN": "$\\log{}_{10}\\left(B_{\\\textrm{SvN}}\\right)$",
+    "BCI": "$\\log{}_{10}\\left(B_{\\\textrm{CvI}}\\right)$",
+    "BCIN": "$\\log{}_{10}\\left(B_{\\\textrm{CvIN}}\\right)$",
 }
 
 
@@ -866,7 +866,7 @@ class latextable:
         self._thisrow = -1  # the index of the current row given row additions
 
         # set the table format
-        self._tableformat = "\\begin{{table}}{{{floatval}}}\n{preamble}\caption{{{caption}\label{{{label}}}}}\n\\begin{{tabular}}{{{columnalign}}}\n{table}\n\\end{{tabular}}\n{postamble}\n\\end{{table}}"
+        self._tableformat = "\\begin{{table}}{{{floatval}}}\n{preamble}\\caption{{{caption}\\label{{{label}}}}}\n\\begin{{tabular}}{{{columnalign}}}\n{table}\n\\end{{tabular}}\n{postamble}\n\\end{{table}}"
         self._tableinfo["data"] = ""
 
     def set_ncolumns(self, ncolumns):
@@ -980,7 +980,7 @@ class latextable:
                 if "multicolumn" in data:
                     ncols += data["multicolumn"]
                     rowtxt.append(
-                        "\multicolumn{%d}{%s}{%s} "
+                        "\\multicolumn{%d}{%s}{%s} "
                         % (data["multicolumn"], data["mcalign"], val)
                     )
                 else:
@@ -991,9 +991,9 @@ class latextable:
             ):
                 raise ValueError("Error... too many or too few inputs in row '%d'." % i)
             if len(rowtxt) != 0:
-                self._tableinfo["table"] += "&".join(rowtxt) + "\\\\\n"
+                self._tableinfo["table"] += "&".join(rowtxt) + "\\\n"
             if row["underline"]:  # add horizontal rule below row
-                self._tableinfo["table"] += "\hline\n"
+                self._tableinfo["table"] += "\\hline\n"
 
         self._tabletext = self._tableformat.format(**self._tableinfo)
         return self._tabletext
@@ -1010,7 +1010,7 @@ def exp_str(f, p=1, otype="html"):
     if otype.lower() == "html":  # output html format
         return "%.*f&times;10<sup>%d</sup>" % (p, float(ssplit[0]), int(ssplit[1]))
     elif otype.lower() == "latex":  # output LaTeX format
-        return "\\ensuremath{%.*f\!\\times\!10^{%d}}" % (
+        return "\\ensuremath{%.*f\\!\\times\\!10^{%d}}" % (
             p,
             float(ssplit[0]),
             int(ssplit[1]),
@@ -1044,7 +1044,7 @@ def ra_str(ra, otype="html"):
             ss[1].zfill(2),
         )
     elif otype.lower() == "latex":  # return LaTeX string
-        return "$%s^{\\rm h}%s^{\\rm m}%s^{\\rm s}\!.%s$" % (
+        return "$%s^{\\rm h}%s^{\\rm m}%s^{\\rm s}\\!.%s$" % (
             hms[0].zfill(2),
             hms[1].zfill(2),
             ss[0].zfill(2),
@@ -1073,14 +1073,14 @@ def dec_str(dec, otype="html"):
 
     if otype.lower() == "html":  # html output
         return "%s&deg;%s'%s\".%s" % (
-            (re.sub("\+", "", dms[0])).zfill(2),
+            (re.sub(r"\+", "", dms[0])).zfill(2),
             dms[1].zfill(2),
             ss[0].zfill(2),
             ss[1].zfill(2),
         )
     elif otype.lower() == "latex":  # LaTeX output
-        return "$%s^{\circ}%s'%s''\!.%s$" % (
-            (re.sub("\+", "", dms[0])).zfill(2),
+        return "$%s^{\\circ}%s'%s''\\!.%s$" % (
+            (re.sub(r"\+", "", dms[0])).zfill(2),
             dms[1].zfill(2),
             ss[0].zfill(2),
             ss[1].zfill(2),
