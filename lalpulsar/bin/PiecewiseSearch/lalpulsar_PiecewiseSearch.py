@@ -963,7 +963,6 @@ logging.info("Done")
 if args.profile:
     pr.disable()
     s = io.StringIO()
-    sortby = pstats.SortKey.CUMULATIVE
     ps = pstats.Stats(pr, stream=s).sort_stats("cumtime")
     ps.print_stats()
     with open(

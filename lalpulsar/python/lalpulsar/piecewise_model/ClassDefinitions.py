@@ -22,7 +22,6 @@ from . import GTEandOtherMethods as gom
 
 HOUR = 3600
 DAY = 24 * HOUR
-YEAR = 365.25 * DAY
 
 
 class TBank:
@@ -63,9 +62,6 @@ class TBank:
 
     pc_psd_path = None
     ozstar_psd_path = None
-
-    temps = 0
-    currenttemplate = 0
 
     def SetTBankParams(self, args):
 
@@ -294,28 +290,6 @@ class TBank:
             self.knotnum = len(self.knots)
 
         bf.knotslist = self.knots
-
-    # Returns a string containing all parameters for this particular TBank, excluding the knots
-    def toStringFull(self):
-        string = "TBank"
-
-        skip_variables = [
-            "knots",
-            "flags_bbox",
-            "flags_intbox",
-            "pc_noise_path",
-            "ozstar_noise_path",
-            "pc_sft_path",
-            "ozstar_noise_path",
-        ]
-
-        for k, v in vars(self).items():
-            if k in skip_variables:
-                continue
-            if v is not None:
-                string += f"_{k}-{v:.3g}"
-
-        return string
 
     # Returns a string containing all parameters for this particular TBank, excluding the knots
     def toString(self):

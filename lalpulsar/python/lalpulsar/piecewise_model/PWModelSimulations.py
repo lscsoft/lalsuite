@@ -92,7 +92,6 @@ def buildSFTs(
     f0 = signalparams.data[0][0]
     f1 = signalparams.data[1][0]
     f2 = signalparams.data[2][0]
-    f3 = signalparams.data[3][0]
 
     logging.info(
         "Randomly generated Signal Params: %s", str(np.transpose(signalparams.data)[0])

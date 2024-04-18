@@ -19,10 +19,7 @@ pymodule_PYTHON = \
 	PWModelSimulations.py \
 	SamplingMethods.py \
 	SemicoherentMetricMethods.py \
-	SFTFileReadingMethods.py \
 	TBankEstimates.py \
-	TemplateChecks.py \
-	TemplatePlottingMethods.py \
 	$(END_OF_LIST)
 
 endif

@@ -173,7 +173,6 @@ def fstatinput(
     inject_params,
     timeint=[-1, -2],
     trefsegfrac=0.0,
-    sig_params=None,
 ):
 
     Tdata = timeint[1] - timeint[0]
@@ -246,7 +245,6 @@ def computefstat(
     dopparams.Alpha = finputdata.Alpha
     dopparams.Delta = finputdata.Delta
 
-    fs = []
     counter = 0
 
     fstat_res_array = []
@@ -286,47 +284,6 @@ def computefstat(
         fstat_res_array.append(fstatresults)
 
     return fstat_res_array
-
-    """
-                fs.append(fstatresults.twoF[0])
-
-        fstat = sum(fs)/len(fs)
-
-        if rtnsum:
-                return sum(fs)
-        else:
-                return fstat
-        """
-
-
-# Will append a single fstatistic and template to a file
-def fstattemptofile(filename, template, vara, varb):
-    with open(filename, "a+") as reader:
-
-        # Note, the addition of each templateline string starting with a space makes that string have a length of 16, not 15
-        templateline = " ".join("{:20.12E}".format(x) for x in template)
-        line = (
-            "{:20.10f}".format(vara)
-            + "     "
-            + "{:20.4f}".format(varb)
-            + "     "
-            + templateline
-            + "\n"
-        )
-
-        reader.write(line)
-
-
-# Will write a python heap to a file name. The heap should have form (Vara, Varb, template). Ascending refers to whether we write the heap elements from the lowest value of Vara (ascending = 1),
-# or the highest value of Vara (ascending = -1). This method assumes that the heap has elements ordered from lowest Vara to highest Vara.
-def writetempheaptofile(tempheap, filename):
-
-    for ft in tempheap:
-        vara = ft[0]
-        varb = ft[1]
-        temp = ft[3]
-
-        fstattemptofile(filename, temp, vara, varb)
 
 
 def fstat_res_heap_to_file(filename, fstat_res_heap, fstats_first=True):
@@ -428,7 +385,6 @@ def semifstatcatalogue(
     rtnsum=False,
     SFTFiles=False,
     tempsperfile=1000,
-    step_size=0.01,
     Fstat_mismatch=False,
     fstat_hist=False,
     mode="search",
@@ -471,8 +427,6 @@ def semifstatcatalogue(
     for i in range(len(nearesttemp)):
         diffvec.append(nearesttemp[i] - signalparams[i])
 
-    nearestmismatch = np.dot(diffvec, np.dot(metric, diffvec))
-
     # The nearest point and its mismatch are calculated. An iterator is now constructed, the Finputs built and 2F is calculated for each template
     # derived from tbank
 
@@ -487,7 +441,6 @@ def semifstatcatalogue(
 
     fstatinputarray = []
     transformmatrices = []
-    condmatrices = []
 
     logging.info("Setting up Fstatistic input and transformation matrices")
 
@@ -548,17 +501,11 @@ def semifstatcatalogue(
     all_sig_twoFs = [elem.twoF[0] for elem in sigfstat]
     sigtwoF = sum(all_sig_twoFs) / (len(all_sig_twoFs))
 
-    # nearestfstat = computefstat(nearestpoint.data, finputdata, fstatinputarray, transformmatrices, trefsegfrac=trefsegfrac, rtnsum=rtnsum)
-
-    # fstattemptofile(directory + "/" + filename, signalparams, sigfstat, 0)
-    # fstattemptofile(directory + "/" + filename, nearestpoint.data, nearestfstat, nearestmismatch)
-
     sig_fstat_heap = [[sigtwoF, -1, -1, signalparams, sigfstat]]
 
     fstat_res_heap_to_file(
         out_directory + "/" + filename, sig_fstat_heap, fstats_first=True
     )
-    # fstat_res_array_to_file(out_directory + "/" + filename, sigfstat, -1, signalparams)
 
     mismatchfilename = "Mismatch_" + filename[:-4] + ".txt"
     # fstattemptofile(directory + "/" + mismatchfilename, signalparams, 0, sigfstat)
@@ -566,7 +513,6 @@ def semifstatcatalogue(
     fstat_res_heap_to_file(
         out_directory + "/" + mismatchfilename, sig_fstat_heap, fstats_first=False
     )
-    # fstat_res_array_to_file(out_directory + "/" + mismatchfilename, sigfstat, 0, signalparams, fstats_first=False)
 
     # fin is iterated through by the NextLatticeTilingPoint, when fin == 0, the parameter space associated with tbank has been completed tiled.
     fin = -1
@@ -718,8 +664,6 @@ def semifstatcatalogue(
         fstats_first=False,
     )
 
-    fstat_closest = mismatch_fstat_res_heap[0][1]
-
     return lowest_mismatch_metric, lowest_mismatch_fstat, fstatmax, tempcount
 
 
@@ -772,7 +716,6 @@ def pw_fstat_search_catalogue(
 
     fstatinputarray = []
     transformmatrices = []
-    condmatrices = []
 
     logging.info("Setting up Fstatistic input and transformation matrices")
 

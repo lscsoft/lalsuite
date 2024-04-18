@@ -73,7 +73,6 @@ def pointsrandom(ppint):
 
 normalpoints = False  # Points chosen to be evenly spaced between knots
 freqpoints = True  # Points chosen in time to correspond with points evenly spaced in frequency by the GTE (runs into problems for long signal durations)
-randomknots = False  # Points chosen randomly in time
 
 # Returns an integer value corresponding to the interval that point lies in
 def thisint(point):
@@ -177,15 +176,3 @@ def samplepointswithinknots(knotnuma, knotnumb, ppint, f0, ngte, kgte):
                 raise MyErrors.SegmentContainsNoSamplePoints
 
     return points
-
-
-"""
-f0 = 1000
-ngte = 5
-kgte = 10 ** -14
-ppint = 5
-bf.knotslist = [50, 100, 200, 300, 400, 500]
-print(bf.knotslist)
-print(samplepoints(ppint, f0, ngte, kgte))
-print(samplepointswithinknots(0, 5, ppint, f0, ngte, kgte))
-"""

@@ -23,14 +23,6 @@ class SegmentContainsNoSamplePoints(Exception):
     pass
 
 
-class KminValueLargerThanKmax(Exception):
-    pass
-
-
-class InvalidKnotNumber(Exception):
-    pass
-
-
 class PointNotWithinKnotBoundaries(Exception):
     pass
 

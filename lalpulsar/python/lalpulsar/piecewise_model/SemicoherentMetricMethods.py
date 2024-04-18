@@ -153,15 +153,6 @@ def metricelementonl(l, i1, i2, borc1, borc2, s1, s2, coeffs):
     return doubleaverage - singleaveragedsquared
 
 
-# Converts the coordinates (i, borc, k) to the coordinates (i, k). These coordinates are explained in the
-# CoherentMetricMethods python file
-def threecoordstotwocoords(i, borc, s):
-    if borc == 0:
-        return [i - 1, s]
-    else:
-        return [i, s]
-
-
 # Converts from the coordinates (i, k) to (i, borc, k)
 def twocoordstothreecoords(i, s):
     if i == -1:
@@ -209,52 +200,6 @@ def metriconl(l, coords, coeffs):
     return np.array(thismet)
 
 
-# Takes in a 1D list (whose length is a square number) and turns it into a square matrix
-def makesquare(elems):
-    side = int(np.sqrt(len(elems)))
-
-    mat = np.zeros((side, side))
-
-    counter = 0
-    for m in range(side):
-        for j in range(side):
-            mat[m][j] = elems[counter]
-            counter += 1
-
-    return mat
-
-
-# As the metriconl method but now returns the metric with the dimensions if considering only the given segment
-def metriconlcorrectdims(l, coords, coeffs):
-    met = metriconl(l, coords, coeffs)
-
-    s = len(coeffs[0][0])
-    met = met[l * s : (l + 2) * s]
-
-    newmet = []
-    for row in met:
-        newmet.append(list(row[l * s : (l + 2) * s]))
-
-    return newmet
-
-
-# Calculates only the diagonal components of the metric for the lth interval
-def diagmetriconl(l, coords, coeffs):
-    thismet = []
-
-    newcoords = []
-
-    for c in coords:
-        newcoords.append(twocoordstothreecoords(c[0], c[1]))
-
-    for nc in newcoords:
-        metelem = metricelementonl(l, nc[0], nc[0], nc[1], nc[1], nc[2], nc[2], coeffs)
-
-        thismet.append(metelem)
-
-    return np.array(thismet)
-
-
 # Calculates the semicoherent metric for the given parameters
 def metric(s):
     coeffs = bf.allcoeffs(s)
@@ -264,24 +209,6 @@ def metric(s):
     ints = len(bf.knotslist) - 1
     for l in range(ints):
         metsonints.append(metriconl(l, coords, coeffs))
-
-    thismet = np.zeros(np.shape(metsonints[0]))
-
-    for met in metsonints:
-        thismet += met
-
-    return 1 / ints * thismet
-
-
-# Calculates only the diagonal components of the semicoherent metric
-def diagmetric(s):
-    coeffs = bf.allcoeffs(s)
-    coords = coordslist(s)
-
-    metsonints = []
-    ints = len(bf.knotslist) - 1
-    for l in range(ints):
-        metsonints.append(diagmetriconl(l, coords, coeffs))
 
     thismet = np.zeros(np.shape(metsonints[0]))
 
@@ -438,14 +365,3 @@ def PreCompMetric(s):
         metric += np.array(submetric)
 
     return 1 / segs * metric
-
-
-"""
-bf.knotslist = [0, 20, 40]
-s = 3
-coeffs = bf.allcoeffs(s)
-coords = coordslist(s)
-
-print(metric(s))
-print(np.linalg.det(metric(s)))
-"""

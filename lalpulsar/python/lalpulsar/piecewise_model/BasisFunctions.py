@@ -28,28 +28,11 @@ from . import MyErrors
 # time, however for now without conditioning the results produced appear to be returned accurately despite the
 # ill-conditionedness of the problem.
 
-# Lists that the condition numbers of the many matrices required to calculate the condition numbers. Condition numbers
-# are added to these lists as the matrices are built. These lists can be used for comparison of the conditioned and
-# unconditioned matrices and whether the problems are ill-conditioned or not.
-wcondnumbers = []
-wdashcondnumbers = []
-
 knotslist = [0.0]
 
 # Returns the value of the ith knot. If we are using the methods in the EstimatingKnots notebook, this method should
 # simply extract the ith element from the knotslist variable above.
 def p(i):
-
-    return knotslist[i]
-
-    if i < 0 or i >= len(knotslist):
-        print(
-            "Invalid knot number. Length of knotslist is: "
-            + str(len(knotslist))
-            + ". Knot number requested: "
-            + str(i)
-        )
-        raise MyErrors.InvalidKnotNumber
 
     return knotslist[i]
 
@@ -110,16 +93,9 @@ def d(mat):
     return np.diag(listpseudoinv(np.diagonal(mat)))
 
 
-# Returns a conditioned matrix where each row is divided by its diagonal element
-def dcond(mat):
-
-    return np.matmul(d(mat), mat)
-
-
 # Returns the coefficients of our basis function in a 3D list. Reference elements by [ B or C ][ k ][ specific coeff ]
 def basiscoeffs(i, s, conditioning=True):
     wmat = w(i, s)
-    # wcondnumbers.append(np.linalg.cond(wmat))
 
     if conditioning:
         dmat = d(wmat)
@@ -128,11 +104,6 @@ def basiscoeffs(i, s, conditioning=True):
     else:
         dmat = np.identity(len(wmat))
         dwmat = wmat
-
-    # wmatcondnum = np.linalg.cond(wmat)
-    # dwmatcondnum = np.linalg.cond(np.matmul(d(wmat), wmat))
-
-    # wdashcondnumbers.append(np.linalg.cond(dwmat))
 
     try:
         coeffs = np.transpose(np.linalg.solve(dwmat, dmat))
@@ -152,8 +123,6 @@ def basiscoeffs(i, s, conditioning=True):
 def allcoeffs(s):
     coeffs = [basiscoeffs(i, s) for i in range(len(knotslist) - 1)]
 
-    # print("The largest condition number for a W j is: " + "{:.2E}".format(max(wcondnumbers)))
-    # print("The largest condition number for a W'j is: " + "{:.2E}".format(max(wdashcondnumbers)))
     return np.array(coeffs)
 
 
@@ -172,151 +141,3 @@ def basisfunctionvalue(t, i, borc, s, coeffs):
         val += coeff * u(t, i) ** m
 
     return val
-
-
-# Plots all basis functions
-def allfunctionplotter(s):
-    coeffs = allcoeffs(s)
-    ints = len(knotslist) - 1
-
-    xpointsintervals = []
-
-    res = 30
-
-    for i in range(ints):
-        xpoints = np.linspace(p(i), p(i + 1), res)
-        xpointsintervals.append(xpoints)
-
-    ypointsintervals = []
-
-    for i, xpoints in enumerate(xpointsintervals):
-        ypointsb = []
-        ypointsc = []
-
-        for thisk in range(s):
-            ypointsbk = []
-            ypointsck = []
-            for t in xpoints:
-                ypointsbk.append(basisfunctionvalue(t, i, 0, thisk, coeffs))
-                ypointsck.append(basisfunctionvalue(t, i, 1, thisk, coeffs))
-
-            ypointsb.append(ypointsbk)
-            ypointsc.append(ypointsck)
-
-        ypointsintervals.append(np.array([ypointsb, ypointsc]))
-
-    fig, axs = plt.subplots(ints, s, figsize=(5, 5))
-
-    for i in range(ints):
-        xpoints = xpointsintervals[i]
-        ypointsbck = ypointsintervals[i]
-        for thisk in range(s):
-
-            if ints == 1:
-                axs[thisk].plot(xpoints, ypointsbck[0][thisk])
-                axs[thisk].plot(xpoints, ypointsbck[1][thisk])
-
-            else:
-                axs[i, thisk].plot(xpoints, ypointsbck[0][thisk])
-                axs[i, thisk].plot(xpoints, ypointsbck[1][thisk])
-
-    plt.show()
-
-
-# Plots all basis functions one at a time for specified knots
-def individual_basis_function_plotter(s, p0=0, p1=10):
-    global knotslist
-    knotslist = [p0, p1]
-
-    coeffs = allcoeffs(s)
-
-    res = 30
-
-    xpoints = np.linspace(p0, p1, res)
-
-    # ypoints have a 2D structure. Each sublist is the y points for each S value. ypoints_b0 is for basis function B^0, ypoints_b1 for B^1
-    ypoints_b0 = []
-    ypoints_b1 = []
-
-    for this_s in range(s):
-
-        this_y_b0 = []
-        this_y_b1 = []
-
-        for t in xpoints:
-
-            this_y_b0.append(basisfunctionvalue(t, 0, 0, this_s, coeffs))
-            this_y_b1.append(basisfunctionvalue(t, 0, 1, this_s, coeffs))
-
-        ypoints_b0.append(this_y_b0)
-        ypoints_b1.append(this_y_b1)
-
-    for i in range(s):
-        fig, ax = plt.subplots(figsize=(5, 5))
-        # ax.set_aspect(1)
-
-        ax.plot(xpoints, ypoints_b0[i])
-        ax.plot(xpoints, ypoints_b1[i])
-
-        ax.set_xticks([p0, p0 + 0.5 * (p1 - p0), p1])  # , minor=True)
-        # ax.set_xticklabels([str(p0), str(p0 + 0.5 * (p1 - p0)), str(p1)], minor=True)
-
-        fig.show()
-
-
-# Plots the basis functions with the given coefficients. Coeffs parameter in the same form as the output of the
-# allcoeffs method
-def plotcoeffs(coeffs):
-
-    ints = len(coeffs)
-    s = len(coeffs[0][0])
-
-    xpointsintervals = []
-
-    res = 30
-
-    for i in range(ints):
-        xpoints = np.linspace(p(i), p(i + 1), res)
-        xpointsintervals.append(xpoints)
-
-    ypointsintervals = []
-
-    for i, xpoints in enumerate(xpointsintervals):
-        ypointsb = []
-        ypointsc = []
-
-        for thisk in range(s):
-            ypointsbk = []
-            ypointsck = []
-            for t in xpoints:
-                ypointsbk.append(basisfunctionvalue(t, i, 0, thisk, coeffs))
-                ypointsck.append(basisfunctionvalue(t, i, 1, thisk, coeffs))
-
-            ypointsb.append(ypointsbk)
-            ypointsc.append(ypointsck)
-
-        ypointsintervals.append(np.array([ypointsb, ypointsc]))
-
-    fig, axs = plt.subplots(ints, s)
-    for i in range(ints):
-        xpoints = xpointsintervals[i]
-        ypointsbck = ypointsintervals[i]
-        for thisk in range(s):
-            axs[i, thisk].plot(xpoints, ypointsbck[0][thisk])
-            axs[i, thisk].plot(xpoints, ypointsbck[1][thisk])
-            axs[i, thisk].set_title("B: " + str(i) + ", " + str(thisk))
-
-    plt.tight_layout()
-    plt.show()
-
-
-"""
-s = 3
-ints = 2
-knotslist = np.array([0, 43200, 86400]) + np.array([20000, 20000, 20000])
-
-coeffseg = allcoeffs(s)
-print(knotslist)
-print(coeffseg)
-plotcoeffs(coeffseg)
-"""
