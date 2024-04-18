@@ -17,7 +17,6 @@
 import logging
 
 import numpy as np
-from sympy import *
 
 # In this notebook we build the methods required for creating the basis functions of our piecewise model. It is worth
 # noting here that initially conditioning of the matrices used here was undertaken. Initially this was necessary as
@@ -43,6 +42,11 @@ def u(t, i):
 
 # Builds the W matrix whose inverse is the coefficients of our basis function
 def w(i, s):
+    try:
+        from sympy import Symbol, diff, lambdify
+    except:
+        raise ImportError("Cannot import sympy")
+
     t = Symbol("t")
 
     ps = p(i)

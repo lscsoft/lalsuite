@@ -42,5 +42,6 @@ dependencies:
   #- python-ligo-lw  <-- depends upon python-lal
   - scipy >=0.9.0
   - swig >=3.0.10
+  - sympy
   - tqdm
   - zlib

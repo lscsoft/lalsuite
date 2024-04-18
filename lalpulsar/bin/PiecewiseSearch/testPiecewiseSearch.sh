@@ -1,3 +1,8 @@
+if ! ${PYTHON} -c 'import sympy' >/dev/null 2>&1; then
+    echo "Skipping test: requires sympy"
+    exit 77
+fi
+
 # --- GW170817 search
 
 # run code
