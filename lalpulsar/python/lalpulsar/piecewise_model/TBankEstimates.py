@@ -42,7 +42,7 @@ def tilingstatistics(tiling, dim, iterator=-1):
         maxvals = []
 
         for i in range(dim):
-            print("Dim :" + str(i))
+            logging.debug("Dim :" + str(i))
             tilingstats = lp.LatticeTilingStatistics(tiling, i)
             totalpoints.append(tilingstats.total_points)
             minpoints.append(tilingstats.min_points)

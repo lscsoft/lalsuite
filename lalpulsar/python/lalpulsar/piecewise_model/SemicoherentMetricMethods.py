@@ -14,6 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
+
 import numpy as np
 from scipy import integrate
 
@@ -308,7 +310,7 @@ def PreCompSingleSegMetric(Tdata, s):
         return [firstrow, secondrow, thirdrow, fourthrow]
 
     else:
-        print(
+        logging.debug(
             "Given value of S has not yet been accounted for. Value of S given: "
             + str(s)
         )
@@ -317,7 +319,7 @@ def PreCompSingleSegMetric(Tdata, s):
 
 def PreCompMetric(s):
     if s != 3 and s != 2:
-        print(
+        logging.debug(
             "Given value of S has not yet been accounted for. Value of S given: "
             + str(s)
         )

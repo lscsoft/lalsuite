@@ -14,9 +14,9 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
 import math
 
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy import integrate
 
@@ -79,7 +79,7 @@ def sols(coeffs, ppint, s, f0, ngte, kgte, conditioning=True):
             points = sm.samplepoints(ppint, f0, ngte, kgte)
             break
         except MyErrors.SegmentContainsNoSamplePoints:
-            print("Reattempting MOLS fitting with greater sampling")
+            logging.debug("Reattempting MOLS fitting with greater sampling")
             ppint *= 2
 
     b = bvec(points, f0, ngte, kgte)
@@ -95,11 +95,12 @@ def sols(coeffs, ppint, s, f0, ngte, kgte, conditioning=True):
     lhs = np.matmul(pm, np.matmul(atamat, pm))
     rhs = np.matmul(np.matmul(pm, np.transpose(amat)), b)
 
-    # logging.debug("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
-    # logging.debug("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
-
-    print("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
-    print("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
+    logging.debug(
+        "Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat))
+    )
+    logging.debug(
+        "Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs))
+    )
 
     try:
         params = np.matmul(pm, np.linalg.solve(lhs, rhs))
@@ -159,8 +160,12 @@ def solsbetweenknots(
     lhs = np.matmul(pm, np.matmul(atamat, pm))
     rhs = np.matmul(np.matmul(pm, np.transpose(amat)), b)
 
-    # logging.debug("Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat)))
-    # logging.debug("Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs)))
+    logging.debug(
+        "Condition number for matrix A  is: " + "{:.2E}".format(np.linalg.cond(amat))
+    )
+    logging.debug(
+        "Condition number for matrix A' is: " + "{:.2E}".format(np.linalg.cond(lhs))
+    )
 
     try:
         params = np.matmul(pm, np.linalg.solve(lhs, rhs))

@@ -179,23 +179,21 @@ if bf.knotslist[0] != tstart:
     for i, knot in enumerate(bf.knotslist):
         bf.knotslist[i] = knot + tstart
 
-print(tbank.toString())
+logging.info(tbank.toString())
 
-print("Knots are: " + str(bf.knotslist))
+logging.info("Knots are: " + str(bf.knotslist))
 logging.info("Knots: %s", str(bf.knotslist))
-print()
-print()
 
 tbank.knots = bf.knotslist
 
-print(bf.knotslist)
+logging.info(bf.knotslist)
 
 if SizeOrTemps == "S":
     temps = tbe.PWTBankSizeWithObject(tbank, stats=stats)
-    print("Number of temps found: " + str(temps))
+    logging.info("Number of temps found: " + str(temps))
 elif SizeOrTemps == "T":
     temps = tbe.PWTBankWithObject(tbank)
-    print("Number of temps found: " + str(len(temps)))
+    logging.info("Number of temps found: " + str(len(temps)))
 
     midway = int(np.ceil(len(temps) / 2))
 
@@ -203,19 +201,19 @@ elif SizeOrTemps == "T":
     midway = temps[midway]
     last = temps[-1]
 
-    print(
+    logging.info(
         "First:  "
         + str(first[0 : (2 * tbank.s)])
         + " ... "
         + str(first[-(2 * tbank.s + 1) : -1])
     )
-    print(
+    logging.info(
         "Midway: "
         + str(midway[0 : (2 * tbank.s)])
         + " ... "
         + str(midway[-(2 * tbank.s + 1) : -1])
     )
-    print(
+    logging.info(
         "Last:   "
         + str(last[0 : (2 * tbank.s)])
         + " ... "

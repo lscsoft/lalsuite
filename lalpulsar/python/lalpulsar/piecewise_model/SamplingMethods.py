@@ -130,7 +130,7 @@ def samplepoints(ppint, f0, ngte, kgte):
     sadints = samplepointcheck(points)
 
     if len(sadints) != 0:
-        print("These intervals contain no sample point: " + str(sadints))
+        logging.error("These intervals contain no sample point: " + str(sadints))
         raise MyErrors.SegmentContainsNoSamplePoints
     return points
 
@@ -172,7 +172,9 @@ def samplepointswithinknots(knotnuma, knotnumb, ppint, f0, ngte, kgte):
     if len(sadints) != 0:
         for thisint in sadints:
             if knotnuma + 1 <= thisint and thisint < knotnumb:
-                print("These intervals contain no sample point: " + str(sadints))
+                logging.error(
+                    "These intervals contain no sample point: " + str(sadints)
+                )
                 raise MyErrors.SegmentContainsNoSamplePoints
 
     return points

@@ -63,11 +63,9 @@ def fstatinputfromSFTFiles(
         if elem != -1:
             all_minus_one = False
             break
-    print()
-    print(inject_params)
-    print(all_minus_one)
-    print()
-    print(not inject_params == [] and not all_minus_one)
+    logging.debug(inject_params)
+    logging.debug(all_minus_one)
+    logging.debug(not inject_params == [] and not all_minus_one)
 
     # This code injects a signal, if inject_params is non-empty and all elements are not -1, then we inject the signal present in inject_params
     if inject_params != [] and not all_minus_one:
@@ -139,9 +137,7 @@ def fstatinputfromSFTFiles(
 
         catalogue = lp.SFTdataFind(sft_path_master, constraints)
 
-    print()
-    print("Heya!")
-    print()
+    logging.debug("Heya!")
 
     logging.info(f"Path to SFT's being used: {sft_path_master}")
 
@@ -481,7 +477,6 @@ def semifstatcatalogue(
                 timeint=[p0, p1],
                 trefsegfrac=trefsegfrac,
             )
-        print()
         fstatinputarray.append(finput)
 
     logging.info("Finputs done")

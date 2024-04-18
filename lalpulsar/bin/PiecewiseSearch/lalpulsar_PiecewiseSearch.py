@@ -41,9 +41,6 @@ import lalpulsar.piecewise_model.TBankEstimates as tbe
 
 start_time = time.time()
 
-job_num = os.getenv("SLURM_ARRAY_TASK_ID")
-print("Job_array_num_is_" + str(job_num))
-
 # Allow liblalpulsar C code to be interrupted with Ctrl+C
 signal.signal(signal.SIGINT, signal.SIG_DFL)
 
@@ -415,6 +412,9 @@ logging.captureWarnings(True)
 if logging.getLogger().isEnabledFor(logging.INFO):
     lp.globalvar.LatticeTilingProgressLogLevel = lal.LOG_NORMAL
 
+job_num = os.getenv("SLURM_ARRAY_TASK_ID")
+logging.info("Job_array_num_is_" + str(job_num))
+
 # For profiling
 if args.profile:
     logging.info("Making the profiler")
@@ -484,7 +484,7 @@ elif tbankcode == "CasA":
     logging.info(f"Starting with default parameter space: {tbankcode}")
     tbank.SetDefaultCasA()
 else:
-    print("No tbank selected! Put an error here!")
+    logging.info("No tbank selected! Put an error here!")
 
 # If using custom frequency bands
 if args.freq_bands:

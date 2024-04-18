@@ -144,7 +144,7 @@ def buildSFTs(
             comment="PWModPhase",
             out_dir=directoryname,
         ):
-            print("Generated SFT file %s (%i of %i)" % (file, i + 1, N))
+            logging.info("Generated SFT file %s (%i of %i)" % (file, i + 1, N))
 
     # Return signal parameters so they can be known outside of this method
 

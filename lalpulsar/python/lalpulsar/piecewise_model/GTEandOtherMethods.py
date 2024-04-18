@@ -14,6 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -179,8 +181,8 @@ def PWParamstoTrefParams(pwparams, p0, p1, tref, s):
 
     matrix = ParamTransformationMatrix(p0, p1, tref, s)
 
-    print(len(matrix))
-    print(len(pwparams))
-    print(pwparams)
+    logging.debug(len(matrix))
+    logging.debug(len(pwparams))
+    logging.debug(pwparams)
     # If no conditioning is required
     return np.matmul(matrix, pwparams)

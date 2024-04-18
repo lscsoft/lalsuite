@@ -14,6 +14,8 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+import logging
+
 import matplotlib.pyplot as plt
 import numpy as np
 from sympy import *
@@ -108,8 +110,10 @@ def basiscoeffs(i, s, conditioning=True):
     try:
         coeffs = np.transpose(np.linalg.solve(dwmat, dmat))
     except np.linalg.LinAlgError as error:
-        print(error)
-        print("Error in calculating basis functions. Using Python LSTSQ method instead")
+        logging.error(error)
+        logging.error(
+            "Error in calculating basis functions. Using Python LSTSQ method instead"
+        )
         coeffs = np.linalg.lstsq(dwmat, dmat)[0]
 
     blist = coeffs[0:s]

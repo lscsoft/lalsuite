@@ -255,12 +255,12 @@ def knotatleff(
 
         maxerrorneg = np.max(errorlistneg)
         maxerrorpos = np.max(errorlistpos)
-        """
+
         logging.debug("Neg and pos durs: " + str([negdur, posdur]))
         logging.debug("Max errors: " + str([maxerrorneg, maxerrorpos]))
         logging.debug("Metric values: " + str([paramspacingneg, paramspacingpos]))
         logging.debug()
-        """
+
         diffvalneg = maxerrorneg - paramspacingneg
         diffvalpos = maxerrorpos - paramspacingpos
 
