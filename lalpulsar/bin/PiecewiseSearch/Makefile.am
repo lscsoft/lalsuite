@@ -19,7 +19,7 @@ endif
 
 # Add shell test scripts to this variable
 if HAVE_PYTHON
-test_scripts +=
+test_scripts += testPiecewiseSearch.sh
 endif
 
 # Add any helper programs required by tests to this variable
