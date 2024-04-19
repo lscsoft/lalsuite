@@ -288,36 +288,6 @@ int SEOBNRv5ROM_NRTidal_Core(
     cdata[j] *= Corr;
 
   }
-
-  /* Correct phasing so we coalesce at t=0 (with the definition of the epoch=-1/deltaF above) */
-  // Appendix A of 1512.02248
-
-  // Get SEOBNRv5 ringdown frequency for 22 mode
-  // Note: IMRPhenomPv2_NRTidal also uses the BBH ringdown frequency and then just sets it
-  // to the last frequency in the grid
-   
-  // double fHz_final = XLALSimInspiralGetFinalFreq(m1_SI, m2_SI, 0, 0, chi1, 0, 0, chi2, SEOBNRv5_ROM);
-
-  // gsl_spline_init(spline_phi, gsl_vector_const_ptr(f_vec, 0), gsl_vector_const_ptr(phi_vec, 0), freqs->length);
-
-  // Time correction is t(f_final) = 1/(2pi) dphi/df (f_final)
-  // From Eqn. (A1) of arXiv:1512.02248
-  // Here we only apply this to phase corrections beyond SEOBNRv5_ROM.
-  // For SEOBNRv5_ROM the phase has already been corrected.
-
-  // if (fHz_final > freqs->data[freqs->length-1])
-  //   fHz_final = freqs->data[freqs->length-1];
-  // REAL8 t_corr_s = gsl_spline_eval_deriv(spline_phi, fHz_final, acc_phi) / (2*LAL_PI);
-
-  // Now correct phase
-  // for (UINT4 i=0; i<freqs->length; i++) { // loop over frequency points in sequence
-  //   double fHz = freqs->data[i] - fRef;
-  //   int j = i + offset; // shift index for frequency series if needed
-  //   double phase_factor = -2*LAL_PI * fHz * t_corr_s;
-  //   COMPLEX16 t_factor = (cos(phase_factor) + I*sin(phase_factor));
-  //   pdata[j] *= t_factor;
-  //   cdata[j] *= t_factor;
-  // }
   
   gsl_vector_free(f_vec);
   gsl_vector_free(phi_vec);
