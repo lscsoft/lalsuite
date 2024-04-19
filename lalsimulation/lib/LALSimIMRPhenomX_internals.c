@@ -3041,7 +3041,7 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 
 		REAL8 PNtidalphase = PNtidalphaseA + PNtidalphaseB;
 
-		REAL8 Mfmerger = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L)*(LAL_TWOPI) * (pWF->Mtot * LAL_MTSUN_SI) ;
+		REAL8 Mfmerger = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L) * (pWF->Mtot * LAL_MTSUN_SI) ;
 
 		REAL8 Mftaperstart = 1.15*Mfmerger;
 		REAL8 Mftaperend = 1.35*Mfmerger;
@@ -3224,7 +3224,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 
 		REAL8 PNTuned_dphase = PNTuned_dphaseA + PNTuned_dphaseB;
 
-		REAL8 Mfmerger = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L)*(LAL_TWOPI) * (pWF->Mtot * LAL_MTSUN_SI) ;
+		REAL8 Mfmerger = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L) * (pWF->Mtot * LAL_MTSUN_SI) ;
 
 		REAL8 Mftaperstart = 1.15*Mfmerger;
 		REAL8 Mftaperend = 1.35*Mfmerger;
