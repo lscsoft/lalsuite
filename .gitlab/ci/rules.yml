@@ -5,6 +5,7 @@
 # ----------------------------------------------------------------------
 
 workflow:
+  name: "$PIPELINE_NAME"
   rules:
     # environment variables for nightly deployment build (keep rules in sync with [.ci-nightly-deploy, rules]):
     # - if the trigger is a scheduled pipeline AND the branch is the main branch at lscsoft/lalsuite, set ENABLE_NIGHTLY, EXECUTE_DEPLOY_ACTIONS
@@ -12,18 +13,25 @@ workflow:
     - if: '$CI_PIPELINE_SOURCE == "schedule" && $CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_REF_NAME == $CI_DEFAULT_BRANCH'
       when: always
       variables:
+        PIPELINE_NAME: "Nightly build"
         ENABLE_NIGHTLY: "--enable-nightly"
         EXECUTE_DEPLOY_ACTIONS: "yes"
     - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_MESSAGE =~ /\[ci nightly\]/'
       when: always
       variables:
+        PIPELINE_NAME: "Push pipeline with nightly config"
         ENABLE_NIGHTLY: "--enable-nightly"
     # environment variables for "lalsuite" tag builds (keep rules in sync with [.ci-lalsuite-tag-build, rules])
     # - if the commit has been tagged AND the tag name begins with "lalsuite-v" AND the repository is lscsoft/lalsuite, set EXECUTE_DEPLOY_ACTIONS
     - if: '$CI_PROJECT_PATH == "lscsoft/lalsuite" && $CI_COMMIT_TAG =~ /^lalsuite-v/'
       when: always
       variables:
+        PIPELINE_NAME: "LALSuite Tag pipeline"
         EXECUTE_DEPLOY_ACTIONS: "yes"
+    # merge request pipeline
+    - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      variables:
+        PIPELINE_NAME: "MR pipeline ($CI_MERGE_REQUEST_IID)"
     # run all other pipelines
     - when: always
 
