@@ -3047,7 +3047,9 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 Mftaperend = 1.35*Mfmerger;
 
 		/* Eq. (46) in arXiv:2311.07456 */
-		REAL8 plancktaperfn = 1/(exp((Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend)) + 1);
+		REAL8 exp_arg = (Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend);
+		REAL8 exp_fn = cosh(exp_arg) + sinh(exp_arg);
+		REAL8 plancktaperfn = 1/(exp_fn + 1);
 		
 		/* Eq. (45) in arXiv:2311.07456 */
 		REAL8 NRphase = NRphaseNRT*(1-  plancktaperfn) + PNtidalphase*plancktaperfn;
@@ -3216,11 +3218,11 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 PNpolyB = (1 + powers_of_Mf->two_thirds*c_1B*powers_of_lalpi.two_thirds + Mf*c_3over2B*LAL_PI + powers_of_Mf->four_thirds*c_2B*powers_of_lalpi.four_thirds + powers_of_Mf->five_thirds*c_5over2B*powers_of_lalpi.five_thirds);
 
 
-		REAL8 dPNpolyA = (2/3)*pow(Mf, -1.0/3.0)*c_1A*powers_of_lalpi.two_thirds + c_3over2A*LAL_PI + (4/3)*pow(Mf, 1.0/3.0)*c_2A*powers_of_lalpi.four_thirds + (5/3)*powers_of_Mf->two_thirds*c_5over2A*powers_of_lalpi.five_thirds;
-		REAL8 dPNpolyB = (2/3)*pow(Mf, -1.0/3.0)*c_1B*powers_of_lalpi.two_thirds + c_3over2B*LAL_PI + (4/3)*pow(Mf, 1.0/3.0)*c_2B*powers_of_lalpi.four_thirds + (5/3)*powers_of_Mf->two_thirds*c_5over2B*powers_of_lalpi.five_thirds;
+		REAL8 dPNpolyA = (2./3.)*pow(Mf, -1.0/3.0)*c_1A*powers_of_lalpi.two_thirds + c_3over2A*LAL_PI + (4/3)*pow(Mf, 1.0/3.0)*c_2A*powers_of_lalpi.four_thirds + (5./3.)*powers_of_Mf->two_thirds*c_5over2A*powers_of_lalpi.five_thirds;
+		REAL8 dPNpolyB = (2./3.)*pow(Mf, -1.0/3.0)*c_1B*powers_of_lalpi.two_thirds + c_3over2B*LAL_PI + (4/3)*pow(Mf, 1.0/3.0)*c_2B*powers_of_lalpi.four_thirds + (5./3.)*powers_of_Mf->two_thirds*c_5over2B*powers_of_lalpi.five_thirds;
 
-		REAL8 PNTuned_dphaseA = factorA*(powers_of_Mf->two_thirds*powers_of_lalpi.five_thirds*PNpolyA + powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*dPNpolyA);
-		REAL8 PNTuned_dphaseB = factorB*(powers_of_Mf->two_thirds*powers_of_lalpi.five_thirds*PNpolyB + powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*dPNpolyB);
+		REAL8 PNTuned_dphaseA = factorA*((5./3.)*powers_of_Mf->two_thirds*powers_of_lalpi.five_thirds*PNpolyA + powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*dPNpolyA);
+		REAL8 PNTuned_dphaseB = factorB*((5./3.)*powers_of_Mf->two_thirds*powers_of_lalpi.five_thirds*PNpolyB + powers_of_Mf->five_thirds*powers_of_lalpi.five_thirds*dPNpolyB);
 
 		REAL8 PNTuned_dphase = PNTuned_dphaseA + PNTuned_dphaseB;
 
@@ -3230,10 +3232,12 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 Mftaperend = 1.35*Mfmerger;
 
 		/* Eq. (46) in arXiv:2311.07456 */
-		REAL8 plancktaperfn = 1/(exp((Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend)) + 1);
+		REAL8 exp_arg = (Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend);
+		REAL8 exp_fn = cosh(exp_arg) + sinh(exp_arg);
+		REAL8 plancktaperfn = 1/(exp_fn + 1.0);
 
-		REAL8 dfactortaper = -(exp((Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend)) + 1.)*(-(Mftaperend - Mftaperstart)/(pow(Mf - Mftaperstart, 2.0)) - (Mftaperend - Mftaperstart)/(pow(Mf - Mftaperend, 2.0)));
-		REAL8 dPlancktaper = dfactortaper*pow(plancktaperfn,2.0);
+		REAL8 dfactortaper = -(exp_fn)*(-(Mftaperend - Mftaperstart)/((Mf - Mftaperstart) * (Mf - Mftaperstart)) - (Mftaperend - Mftaperstart)/((Mf - Mftaperend) * (Mf - Mftaperend)));
+		REAL8 dPlancktaper = dfactortaper*(plancktaperfn * plancktaperfn);
 
 		NRTuned_dphase = NRTuned_dphaseNRT*(1.0 - plancktaperfn) + PNTuned_dphase*plancktaperfn - (NRphaseNRT - PNtidalphase)*dPlancktaper;
     }	
