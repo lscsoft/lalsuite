@@ -3050,6 +3050,13 @@ REAL8 IMRPhenomX_TidalPhase(IMRPhenomX_UsefulPowers *powers_of_Mf, IMRPhenomXWav
 		REAL8 exp_arg = (Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend);
 		REAL8 exp_fn = cosh(exp_arg) + sinh(exp_arg);
 		REAL8 plancktaperfn = 1/(exp_fn + 1);
+
+		if (Mf <= Mftaperstart){
+		plancktaperfn = 0.0;
+		}
+		else if (Mf >= Mftaperend){
+		plancktaperfn = 1.0;
+		}
 		
 		/* Eq. (45) in arXiv:2311.07456 */
 		REAL8 NRphase = NRphaseNRT*(1-  plancktaperfn) + PNtidalphase*plancktaperfn;
@@ -3235,6 +3242,13 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
 		REAL8 exp_arg = (Mftaperend - Mftaperstart)/(Mf - Mftaperstart) + (Mftaperend - Mftaperstart)/(Mf - Mftaperend);
 		REAL8 exp_fn = cosh(exp_arg) + sinh(exp_arg);
 		REAL8 plancktaperfn = 1/(exp_fn + 1.0);
+
+		if (Mf <= Mftaperstart){
+		plancktaperfn = 0.0;
+		}
+		else if (Mf >= Mftaperend){
+		plancktaperfn = 1.0;
+		}
 
 		REAL8 dfactortaper = -(exp_fn)*(-(Mftaperend - Mftaperstart)/((Mf - Mftaperstart) * (Mf - Mftaperstart)) - (Mftaperend - Mftaperstart)/((Mf - Mftaperend) * (Mf - Mftaperend)));
 		REAL8 dPlancktaper = dfactortaper*(plancktaperfn * plancktaperfn);
