@@ -714,14 +714,14 @@ int IMRPhenomXASGenerateFD(
   REAL8 f_final=freqs->data[freqs->length-1];
   
   // correct for time and phase shifts due to tidal phase
-  if(NRTidal_version!=NoNRT_V){
+  if(NRTidal_version!=NoNRT_V && NRTidal_version!=NRTidalv3_V){
       
       REAL8 f_merger; 
       REAL8 f_merger_tmp;
       switch (NRTidal_version) {
-          case NRTidalv3_V:
-              f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
-              break;
+          // case NRTidalv3_V:
+          //     f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
+          //     break;
           default:
               f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
               break;
@@ -2084,13 +2084,13 @@ int IMRPhenomXPGenerateFD(
   // correct for time and phase shifts due to tidal phase
   REAL8 f_final=freqs->data[freqs->length-1];
     
-  if(NRTidal_version!=NoNRT_V){
+  if(NRTidal_version!=NoNRT_V && NRTidal_version!=NRTidalv3_V){
       REAL8 f_merger; 
       REAL8 f_merger_tmp;
       switch (NRTidal_version) {
-          case NRTidalv3_V:
-              f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
-              break;
+          // case NRTidalv3_V:
+          //     f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
+          //     break;
           default:
               f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
               break;
