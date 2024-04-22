@@ -858,7 +858,7 @@ int IMRPhenomXHMMultiBandOneMode(
     double phiTfRef = 0.;
         
     // correct for time and phase shifts due to tidal phase
-    if(NRTidal_version!=NoNRT_V && NRTidal_version!=NRTidalv3_V){
+    if(NRTidal_version==NRTidalv2_V){
       REAL8 f_merger; 
       REAL8 f_merger_tmp;
       switch (NRTidal_version) {
