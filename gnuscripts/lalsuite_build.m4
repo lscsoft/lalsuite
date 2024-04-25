@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 180
+# serial 181
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -1169,6 +1169,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
   AC_REQUIRE([LALSUITE_CHECK_GIT_REPO])
 
   # add configuration option for MathJax installation
+  AC_SUBST([DOXYGEN_MATHJAXDIR])
   AC_ARG_WITH(
     [mathjax],
     AS_HELP_STRING(
@@ -1177,7 +1178,7 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
     ),[
       DOXYGEN_MATHJAXDIR="${withval}"
     ],[
-      DOXYGEN_MATHJAXDIR=
+      DOXYGEN_MATHJAXDIR='https://cdn.mathjax.org/mathjax/latest'
     ]
   )
 
@@ -1262,29 +1263,6 @@ AC_DEFUN([LALSUITE_USE_DOXYGEN],[
     done
     AS_IF([test "$LALSUITE_BUILD" = "true"],[
       DOXYGEN_NAVIGATION_TABS="${LALSUITE_PACKAGES}"
-    ])
-
-    # configure MathJax
-    AC_SUBST([DOXYGEN_MATHJAXDIR])
-    AS_IF([test "x${DOXYGEN_MATHJAXDIR}" != x],[
-      AS_IF([test ! -f "${DOXYGEN_MATHJAXDIR}/MathJax.js"],[
-        AC_MSG_ERROR([no MathJax installation found in ${DOXYGEN_MATHJAXDIR}])
-      ])
-    ],[
-      for dir in /usr/share/javascript/mathjax; do
-        AC_MSG_CHECKING([for MathJax installation in ${dir}])
-        AS_IF([test -f "${dir}/MathJax.js"],[
-          AC_MSG_RESULT([yes])
-          DOXYGEN_MATHJAXDIR="${dir}"
-          break
-        ],[
-          AC_MSG_RESULT([no])
-        ])
-      done
-      AS_IF([test "x${DOXYGEN_MATHJAXDIR}" = x],[
-        DOXYGEN_MATHJAXDIR='https://cdn.mathjax.org/mathjax/latest'
-        AC_MSG_NOTICE([using MathJax CDN at ${DOXYGEN_MATHJAXDIR}])
-      ])
     ])
 
     # check for a program to convert Markdown to HTML
