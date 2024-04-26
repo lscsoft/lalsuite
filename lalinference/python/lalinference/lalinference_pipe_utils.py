@@ -505,7 +505,7 @@ def get_engine_name(cp):
 
 def scan_timefile(timefile):
     import re
-    p=re.compile('[\d.]+')
+    p=re.compile(r'[\d.]+')
     times=[]
     timefilehandle=open(timefile,'r')
     for time in timefilehandle:

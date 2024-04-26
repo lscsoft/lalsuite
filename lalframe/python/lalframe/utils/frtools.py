@@ -25,7 +25,7 @@ __author__ = "Duncan Macleod <duncan.macleod@ligo.org>"
 
 
 def get_channels(framefile):
-    """Return a list of all channels written into the given GWF-format
+    r"""Return a list of all channels written into the given GWF-format
     framefile
 
     @param framefile

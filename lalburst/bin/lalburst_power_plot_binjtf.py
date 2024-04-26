@@ -88,8 +88,8 @@ def time_freq_plot(database, instrument, sim):
 
 	axes = fig.add_subplot(211)
 	axes.grid(True)
-	#axes.set_xlabel("$t - t_{\mathrm{injection}}$ (s)")
-	axes.set_ylabel("$f - f_{\mathrm{injection}}$ (Hz)")
+	#axes.set_xlabel("$t - t_{\\mathrm{injection}}$ (s)")
+	axes.set_ylabel("$f - f_{\\mathrm{injection}}$ (Hz)")
 	axes.set_title("%s Triggers Matching %g Hz Injection at GPS %s" % (instrument, sim.frequency, t_sim))
 
 	xmin = xmax = 0.0
@@ -179,8 +179,8 @@ ORDER BY
 
 	axes = fig.add_subplot(212)
 	axes.grid(True)
-	axes.set_xlabel("$t - t_{\mathrm{injection}}$ (s)")
-	axes.set_ylabel("$f - f_{\mathrm{injection}}$ (Hz)")
+	axes.set_xlabel("$t - t_{\\mathrm{injection}}$ (s)")
+	axes.set_ylabel("$f - f_{\\mathrm{injection}}$ (Hz)")
 
 	xmin = xmax = 0.0
 	ymin = ymax = 0.0

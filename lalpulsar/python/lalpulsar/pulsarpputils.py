@@ -3566,7 +3566,7 @@ def get_atnf_info(psr):
 
     import requests
 
-    psrname = re.sub("\+", "%2B", psr)  # switch '+' for unicode character
+    psrname = re.sub(r"\+", "%2B", psr)  # switch '+' for unicode character
 
     atnfurl = (
         "http://www.atnf.csiro.au/people/pulsar/psrcat/proc_form.php?version="

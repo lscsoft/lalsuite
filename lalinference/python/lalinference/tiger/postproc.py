@@ -987,7 +987,7 @@ def TigerCreateHistogram(list_tigerruns, axis, N=1, xlim=None,bins=50):
 			# PLOT HISTOGRAMS
 			axis.hist(list_tigerruns[i].odds(N), \
 					facecolor="none", \
-					label=list_tigerruns[i].latexlabel+"\n$\mathrm{("+str(size(list_tigerruns[i].odds(N)))+"\; sources)}$", \
+					label=list_tigerruns[i].latexlabel+r"\n$\mathrm{("+str(size(list_tigerruns[i].odds(N)))+r"\; sources)}$", \
 					histtype="stepfilled", \
 					linewidth=1, \
 					range=xlim, \
@@ -1002,7 +1002,7 @@ def TigerCreateHistogram(list_tigerruns, axis, N=1, xlim=None,bins=50):
 			# PLOT HISTOGRAMS
 			axis.hist(list_tigerruns[i].odds(N), \
 					facecolor="none", \
-					label=list_tigerruns[i].latexlabel+"\n$\mathrm{("+str(size(list_tigerruns[i].odds(N)))+"\; catalogs)}$", \
+					label=list_tigerruns[i].latexlabel+r"\n$\mathrm{("+str(size(list_tigerruns[i].odds(N)))+r"\; catalogs)}$", \
 					histtype="stepfilled", \
 					linewidth=1, \
 					range=xlim, \
@@ -1066,14 +1066,14 @@ def TigerCreateSNRvsOdds(list_tigerruns, axis):
 	"""
 	markers = ['x','o']
 	colors = ['blue','red']
-	axis.set_xlabel("$\mathrm{SNR}$")
-	axis.set_ylabel("$\ln{O_{\mathrm{GR}}^{\mathrm{modGR}}}$")
+	axis.set_xlabel(r"$\mathrm{SNR}$")
+	axis.set_ylabel(r"$\ln{O_{\mathrm{GR}}^{\mathrm{modGR}}}$")
 
 	for i in range(len(list_tigerruns)):
 		axis.scatter(list_tigerruns[i].snr, list_tigerruns[i].odds(), \
 				color=colors[i], \
 				marker=markers[i], \
-				label=list_tigerruns[i].latexlabel+"\n$\mathrm{("+str(list_tigerruns[i].nsources)+"\; sources)}$",\
+				label=list_tigerruns[i].latexlabel+r"\n$\mathrm{("+str(list_tigerruns[i].nsources)+r"\; sources)}$",\
 				s=64)
 
 	# SET AXIS LIMITS
@@ -1104,7 +1104,7 @@ def TigerCreateCumFreq(tigerrun, axis):
 
 	# CHECK IF TOTAL ADDS UP TO TOTAL NUMBER OF SOURCES
 	if sum(freqs[-1,:]) != tigerrun.nsources:
-		print("Warning, some sources maybe out of the SNR range and are not plotted: SNR \in [%.1f:%.1f], %i sources missing" %(xlim[0], xlim[1], tigerrun.nsources-sum(freqs[-1,:])))
+		print(r"Warning, some sources maybe out of the SNR range and are not plotted: SNR \in [%.1f:%.1f], %i sources missing" %(xlim[0], xlim[1], tigerrun.nsources-sum(freqs[-1,:])))
 
 	# PLOT CUMULATIVE HIGHEST BAYES SIGNAL VERSUS NOISE
 	rcParams['legend.fontsize']=18 # MANUAL RESET FONTSIZE
@@ -1114,7 +1114,7 @@ def TigerCreateCumFreq(tigerrun, axis):
 
 	for i in range(tigerrun.nsubhyp):
 			if tigerrun.subhyp[i].split("_")[-1] =="GR":
-				axis.plot(snrrange, freqs[:,i], label='$\mathcal{H}_{\mathrm{GR}}$', color="black", linewidth=3.0)
+				axis.plot(snrrange, freqs[:,i], label=r'$\mathcal{H}_{\mathrm{GR}}$', color="black", linewidth=3.0)
 			else:
 				if tigerrun.engine == 'lalnest':
 					curlabel = "$H_{"+''.join(tigerrun.subhyp[i].split("_")[-1].split('dphi'))+"}$"
@@ -1127,7 +1127,7 @@ def TigerCreateCumFreq(tigerrun, axis):
 						linewidth=1.0, \
 						color=colorstyles.next())
 
-	axis.set_xlabel("$\mathrm{SNR}$")
+	axis.set_xlabel(r"$\mathrm{SNR}$")
 	axis.set_ylabel(r"$\mathrm{Cumulative\;frequency\;(lines)}$")
 	axis.set_xlim(xlim)
 
@@ -1159,8 +1159,8 @@ def TigerCreateCumBayes(tigerrun,axis,nthcat,nsourcespercat):
 
 	markerstyles = cycle(['+','*','.','<','d', '^', 'x', 's'])
 
-	axis.set_xlabel("$\mathrm{SNR}$")
-	axis.set_ylabel("$\ln{{}^{(cat)}B^{i_1 i_2 \ldots i_k}_{\mathrm{GR}}}$")
+	axis.set_xlabel(r"$\mathrm{SNR}$")
+	axis.set_ylabel(r"$\ln{{}^{(cat)}B^{i_1 i_2 \ldots i_k}_{\mathrm{GR}}}$")
 
 	# PLOT BAYESFACTORS
 	for i in range(tigerrun.nsubhyp-1):
@@ -1244,7 +1244,7 @@ labels=tt4spin,tt4all
 
 # Latex labels for different runs for plot legends (one for each run type).
 # Currently not working with commas in the latex itself!
-latexlabels=$\mathrm{TaylorT4+spin}$,$\mathrm{TaylorT4+all}$
+latexlabels=$\\mathrm{TaylorT4+spin}$,$\\mathrm{TaylorT4+all}$
 
 # Seed for shuffling the sources. seed=0 means no shuffling
 # NB: NOT WORKING!

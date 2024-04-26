@@ -173,7 +173,7 @@ def check_extra_params_and_set_defaults(extra_params_dict):
 #=============================================================================
 def eval_nrfit(m1, m2, chiA_vec, chiB_vec, model_name, fit_types_list, f_ref=-1,
         extra_params_dict=None):
-    """
+    r"""
     Evaluates Numerical Relativity fits for a given model.
 
     - m1:

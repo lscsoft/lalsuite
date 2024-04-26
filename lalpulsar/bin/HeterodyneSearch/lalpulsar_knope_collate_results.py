@@ -495,7 +495,7 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
             atag(os.path.join(pulsar["path"], pname + ".html"), linktext=pname).text
         )
         ltable.adddata(
-            re.sub("\-", "\\\\textminus", pname)
+            re.sub(r"\-", "\\\\textminus", pname)
         )  # substitute - ('hyphen') for \textminus in names
 
         for prepar in outputvals:
@@ -511,12 +511,12 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
                         pulsar["Pulsar data"]["P1_I"] > 0.0
                     ):  # double check that intrinsic period derivative is positive
                         htmlsdtag = htmltag("sup", tagtext="&dagger;").text
-                        latexsdtag = "$\dagger$"
+                        latexsdtag = r"$\dagger$"
                         dagger = True
                 elif pulsar["Pulsar data"]["ASSOC"] != None:
                     if "GC" in pulsar["Pulsar data"]["ASSOC"]:
                         htmlsdtag = htmltag("sup", tagtext="&Dagger;").text
-                        latexsdtag = "$\ddagger$"
+                        latexsdtag = r"$\ddagger$"
                         ddagger = True
 
             if prepar in convdict:
@@ -616,14 +616,14 @@ parameters = ['f0rot', 'ra', 'dec'] # a list of pulsar parameters to output (def
             htmlfootnotes += " for proper motion effects.\n"
             htmlfootnotes += "<br />\n"
             ltable.set_postamble(
-                "$\dagger$ The pulsar's spin-down is corrected for proper motion effects. \\\\\n"
+                "$\\dagger$ The pulsar's spin-down is corrected for proper motion effects. \\\\\n"
             )
         if ddagger:
             htmlfootnotes += htmltag("sup", tagtext="&ddagger;").text
             htmlfootnotes += " The spin-down limit was calculated using a characteristic spin-down age of 10<sup>9</sup> years.\n"
             ltable.set_postamble(
                 ltable.postamble
-                + "$\ddagger$ The pulsar's spin-down is calculated using a characteristic spin-down age of $10^9$ years.\n"
+                + "$\\ddagger$ The pulsar's spin-down is calculated using a characteristic spin-down age of $10^9$ years.\n"
             )
         htmlinput["footnotes"] = htmlfootnotes.text
     else:
