@@ -74,7 +74,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
             "approximant": "TEOBResumS",
             "implementation": "C",
             "condition": False,
-            "conditioning_routines": None,
+            "conditioning_routines": 'gwsignal',
             "extra_parameters": {"true_anomaly": u.rad},
         }
         return metadata
