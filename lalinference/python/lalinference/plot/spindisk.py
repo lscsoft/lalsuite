@@ -89,8 +89,8 @@ def make_disk_plot(post,outpath=None):
 
   axs[0].set_xlabel(r'$|\mathbf{S_1} \times \mathbf{\hat{L}}|$')
   axs[1].set_xlabel(r'$|\mathbf{S_2} \times \mathbf{\hat{L}}|$')
-  axs[0].set_ylabel('$\mathbf{S_1}\cdot\mathbf{\hat{L}}$')
-  axs[1].set_ylabel('$\mathbf{S_2}\cdot\mathbf{\hat{L}}$')
+  axs[0].set_ylabel(r'$\mathbf{S_1}\cdot\mathbf{\hat{L}}$')
+  axs[1].set_ylabel(r'$\mathbf{S_2}\cdot\mathbf{\hat{L}}$')
 
   fig.subplots_adjust(wspace=0.04)
   cax = fig.add_axes([0.06, -0.075, 0.9, 0.05])

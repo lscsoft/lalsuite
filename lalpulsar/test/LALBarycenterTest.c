@@ -199,7 +199,7 @@ main( void )
   XLAL_CHECK( maxEmitDiffOpt < tolerance, XLAL_EFAILED,
               "Max error (in seconds) between XLALBarycenter() and XLALBarycenterOpt()  = %g s, exceeding tolerance of %g s\n",
               maxEmitDiffOpt, tolerance );
-  printf( "%g	%g %d %d %g	%g %g %g	%g %g %g\n",
+  printf( "%g   %g %d %d %g     %g %g %g        %g %g %g\n",
           maxEmitDiffOpt,
           maxDiffOpt.deltaT, maxDiffOpt.te.gpsSeconds, maxDiffOpt.te.gpsNanoSeconds, maxDiffOpt.tDot,
           maxDiffOpt.rDetector[0], maxDiffOpt.rDetector[1], maxDiffOpt.rDetector[2],
@@ -208,8 +208,8 @@ main( void )
 
   /* ----- output runtimes ---------- */
   XLALPrintError( "Runtimes per function-call, averaged over %g calls\n", 1.0 * NRepeat * counter );
-  XLALPrintError( "XLALBarycenter() 	%g s\n", tau / counter );
-  XLALPrintError( "XLALBarycenterOpt()	%g s (= %.1f %%)\n", tau_opt / counter,  - 100 * ( tau - tau_opt ) / tau );
+  XLALPrintError( "XLALBarycenter()     %g s\n", tau / counter );
+  XLALPrintError( "XLALBarycenterOpt()  %g s (= %.1f %%)\n", tau_opt / counter,  - 100 * ( tau - tau_opt ) / tau );
 
   /* ===== test XLALRestrictEphemerisData() ===== */
   XLALPrintInfo( "\n\nTesting XLALRestrictEphemerisData() ... " );

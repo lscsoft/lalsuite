@@ -24,6 +24,9 @@ pretty-c:
 		if test -h "$${file}"; then \
 			continue; \
 		fi; \
+		if test -f "$(srcdir)/.pretty.exclude" && $(GREP) -qF "$${file}" "$(srcdir)/.pretty.exclude"; then \
+			continue; \
+		fi; \
 		dirpart=`expr "X$${file}" : "^X\(.*\)/[^/]*"`; \
 		basepart=`expr "X$${file}" : "^X.*/\([^/]*\)"`; \
 		namepart=`expr "X$${basepart}" : "^X\([^.]*\)"`; \
@@ -50,6 +53,9 @@ pretty-python:
 	files=; \
 	for file in `cd $(srcdir) && $(GIT) ls-files -- $(PRETTY_PY_PATTERN)`; do \
 		if test -h "$${file}"; then \
+			continue; \
+		fi; \
+		if test -f "$(srcdir)/.pretty.exclude" && $(GREP) -qF "$${file}" "$(srcdir)/.pretty.exclude"; then \
 			continue; \
 		fi; \
 		dirpart=`expr "X$${file}" : "^X\(.*\)/[^/]*"`; \

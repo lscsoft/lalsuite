@@ -42,7 +42,7 @@ extern "C" {
 /*---------- Type definitions ----------*/
 
 /* ---------- Function prototypes ---------- */
-REAL4TimeSeries *XLALSimulateExactPulsarSignal ( const PulsarSignalParams *params );
+REAL4TimeSeries *XLALSimulateExactPulsarSignal( const PulsarSignalParams *params );
 
 /** @} */
 

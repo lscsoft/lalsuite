@@ -21,7 +21,7 @@
  *
  * File Name: MCInjectComputeHough.h
  *
- * Authors: Sintes, A.M., Krishnan, B. 
+ * Authors: Sintes, A.M., Krishnan, B.
  *
 *-----------------------------------------------------------------------
  */
@@ -42,7 +42,7 @@
 #include <lal/PulsarDataTypes.h>
 #include <lal/SFTfileIO.h>
 #include <lal/UserInput.h>
-#include <lal/GeneratePulsarSignal.h> 
+#include <lal/GeneratePulsarSignal.h>
 #include <lal/LALComputeAM.h>
 #include <lal/ComputeSky.h>
 
@@ -85,7 +85,7 @@ extern "C" {
                               the averaged power in the search band */
 #define F0 250.0          /*  frequency to build the LUT and start search */
 #define FBAND 2.0          /* search frequency band  (in Hz) */
-#define ALPHA 0.0		/* center of the sky patch (in radians) */
+#define ALPHA 0.0               /* center of the sky patch (in radians) */
 #define DELTA  (-LAL_PI_2)
 #define PATCHSIZEX (LAL_PI*0.99) /* patch size */
 #define PATCHSIZEY (LAL_PI*0.99)
@@ -110,11 +110,11 @@ extern "C" {
  */
 
 
-typedef struct tagHoughInjectParams{
+typedef struct tagHoughInjectParams {
   REAL8       h0;
   REAL8       fmin;   /* first_search_frequency_in_Hz */
   REAL8       fSearchBand;  /* search_band_in_Hz */
-  REAL8	      deltaF; /* frequency resolution */
+  REAL8       deltaF; /* frequency resolution */
   UCHAR       fullSky; /* full sky 1, little patch 0 */
   REAL8       alpha;  /* patch center in equatorial coordinates (in radians) */
   REAL8       delta;
@@ -127,14 +127,14 @@ typedef struct tagHoughInjectParams{
   REAL8Vector spnFmin;
 } HoughInjectParams;
 
-typedef struct tagHoughPulsarTemplate{
+typedef struct tagHoughPulsarTemplate {
   REAL8        f0;
   REAL8        latitude;   /* of the source in radians */
   REAL8        longitude;  /* of the source in radians */
-  REAL8Vector  spindown;   /* SpinOrder and parameters */ 
+  REAL8Vector  spindown;   /* SpinOrder and parameters */
 } HoughPulsarTemplate;
 
-typedef struct tagPulsarData{
+typedef struct tagPulsarData {
   REAL8        f0;
   REAL8        latitude;   /* of the source in radians */
   REAL8        longitude;  /* of the source in radians */
@@ -148,11 +148,11 @@ typedef struct tagPulsarData{
 
 /*
  *  Functions Declarations (i.e., prototypes). Not declared in DriveHoughColor.h */
-			     
-void GenerateInjectTemplateParams(LALStatus   *status,
-                        PulsarData           *injectPulsar,
-                        HoughPulsarTemplate  *templatePulsar,
-                        HoughInjectParams    *params);
+
+void GenerateInjectTemplateParams( LALStatus   *status,
+                                   PulsarData           *injectPulsar,
+                                   HoughPulsarTemplate  *templatePulsar,
+                                   HoughInjectParams    *params );
 
 /* ****************************************************** */
 

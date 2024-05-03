@@ -142,58 +142,59 @@ void LALPtoleMetric( LALStatus *status,
   INT2 j_max;  /* Number of terms in series */
 
 
-  INITSTATUS(status);
+  INITSTATUS( status );
 
   /* Check for valid input structure. */
   ASSERT( input != NULL, status, PTOLEMETRICH_ENULL,
-	  PTOLEMETRICH_MSGENULL );
+          PTOLEMETRICH_MSGENULL );
 
   /* Check for valid sky position. */
   ASSERT( input->position.system == COORDINATESYSTEM_EQUATORIAL, status,
-	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
+          PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
   ASSERT( input->position.longitude >= 0, status, PTOLEMETRICH_EPARM,
-	  PTOLEMETRICH_MSGEPARM );
+          PTOLEMETRICH_MSGEPARM );
   ASSERT( input->position.longitude <= LAL_TWOPI, status,
           PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-  ASSERT( fabs(input->position.latitude) <= LAL_PI_2, status,
-	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
+  ASSERT( fabs( input->position.latitude ) <= LAL_PI_2, status,
+          PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
   /* Check for valid maximum frequency. */
   ASSERT( input->maxFreq > MIN_MAXFREQ, status, PTOLEMETRICH_EPARM,
           PTOLEMETRICH_MSGEPARM );
 
   /* Check for valid detector location. */
-  ASSERT( fabs(input->site->frDetector.vertexLatitudeRadians) <= LAL_PI_2, status,
-	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
-  ASSERT( fabs(input->site->frDetector.vertexLongitudeRadians) <= LAL_PI, status,
-	  PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
+  ASSERT( fabs( input->site->frDetector.vertexLatitudeRadians ) <= LAL_PI_2, status,
+          PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
+  ASSERT( fabs( input->site->frDetector.vertexLongitudeRadians ) <= LAL_PI, status,
+          PTOLEMETRICH_EPARM, PTOLEMETRICH_MSGEPARM );
 
-  if( input->spindown )
-    dim = 2+input->spindown->length;
-  else
+  if ( input->spindown ) {
+    dim = 2 + input->spindown->length;
+  } else {
     dim = 2;
+  }
   ASSERT( metric != NULL, status, PTOLEMETRICH_ENULL,
-	  PTOLEMETRICH_MSGENULL );
+          PTOLEMETRICH_MSGENULL );
   ASSERT( metric->data != NULL, status, PTOLEMETRICH_ENULL,
           PTOLEMETRICH_MSGENULL );
-  ASSERT( metric->length == (UINT4)(dim+1)*(dim+2)/2, status, PTOLEMETRICH_EDIM,
+  ASSERT( metric->length == ( UINT4 )( dim + 1 ) * ( dim + 2 ) / 2, status, PTOLEMETRICH_EDIM,
           PTOLEMETRICH_MSGEDIM );
 
   /* A bigger metric that includes phase for internal use only:  */
   /* Apart from normalization, this is just the information matrix. */
   big_metric = NULL;
-  LALDCreateVector( status, &big_metric, (dim+2)*(dim+3)/2);
+  LALDCreateVector( status, &big_metric, ( dim + 2 ) * ( dim + 3 ) / 2 );
 
   /* Detector location: */
   lat = input->site->frDetector.vertexLatitudeRadians;
   lon = input->site->frDetector.vertexLongitudeRadians;
-  cos_l = cos(lat);
-  sin_l = sin(lat);
-  sin_2l = sin(2*lat);
+  cos_l = cos( lat );
+  sin_l = sin( lat );
+  sin_2l = sin( 2 * lat );
 
   /* Inclination of Earth's spin-axis to ecliptic */
-  sin_i = sin(LAL_IEARTH);
-  cos_i = cos(LAL_IEARTH);
+  sin_i = sin( LAL_IEARTH );
+  cos_i = cos( LAL_IEARTH );
 
   /* Radii of circular motions in seconds:  */
   R_s = LAL_REARTH_SI / LAL_C_SI;
@@ -216,50 +217,50 @@ void LALPtoleMetric( LALStatus *status,
   f = input->maxFreq;
 
   /* Source RA: */
-  sin_a  = sin(input->position.longitude);
-  cos_a  = cos(input->position.longitude);
-  sin_2a = sin(2*(input->position.longitude));
+  sin_a  = sin( input->position.longitude );
+  cos_a  = cos( input->position.longitude );
+  sin_2a = sin( 2 * ( input->position.longitude ) );
 
   /* Source declination: */
-  sin_d  = sin(input->position.latitude);
-  cos_d  = cos(input->position.latitude);
-  sin_2d = sin(2*(input->position.latitude));
+  sin_d  = sin( input->position.latitude );
+  cos_d  = cos( input->position.latitude );
+  sin_2d = sin( 2 * ( input->position.latitude ) );
 
   /* Calculation of phases of spin and orbit at start: */
-  XLAL_CHECK_LAL( status, XLALGetEarthTimes(&input->epoch, &tMidnight, &tAutumn) == XLAL_SUCCESS, XLAL_EFUNC );
-  phi_o_i = -tAutumn/LAL_YRSID_SI*LAL_TWOPI;
-  phi_s_i = -tMidnight/LAL_DAYSID_SI*LAL_TWOPI + lon;
+  XLAL_CHECK_LAL( status, XLALGetEarthTimes( &input->epoch, &tMidnight, &tAutumn ) == XLAL_SUCCESS, XLAL_EFUNC );
+  phi_o_i = -tAutumn / LAL_YRSID_SI * LAL_TWOPI;
+  phi_s_i = -tMidnight / LAL_DAYSID_SI * LAL_TWOPI + lon;
 
 
   /* Quantities involving the orbital phase: */
-  phi_o_f   = phi_o_i + omega_o*T;
-  D_p_o     = omega_o*T;
-  sin_p_o   = sin(phi_o_f);
-  cos_p_o   = cos(phi_o_f);
-  D_sin_p_o = (sin(phi_o_f) - sin(phi_o_i))/D_p_o;
-  D_cos_p_o = (cos(phi_o_f) - cos(phi_o_i))/D_p_o;
-  D_sin_2p_o = (sin(2*phi_o_f) - sin(2*phi_o_i))/2.0/D_p_o;
-  D_cos_2p_o = (cos(2*phi_o_f) - cos(2*phi_o_i))/2.0/D_p_o;
+  phi_o_f   = phi_o_i + omega_o * T;
+  D_p_o     = omega_o * T;
+  sin_p_o   = sin( phi_o_f );
+  cos_p_o   = cos( phi_o_f );
+  D_sin_p_o = ( sin( phi_o_f ) - sin( phi_o_i ) ) / D_p_o;
+  D_cos_p_o = ( cos( phi_o_f ) - cos( phi_o_i ) ) / D_p_o;
+  D_sin_2p_o = ( sin( 2 * phi_o_f ) - sin( 2 * phi_o_i ) ) / 2.0 / D_p_o;
+  D_cos_2p_o = ( cos( 2 * phi_o_f ) - cos( 2 * phi_o_i ) ) / 2.0 / D_p_o;
 
   /* Quantities involving the spin phase: */
-  phi_s_f    = phi_s_i + omega_s*T;
-  D_p_s      = omega_s*T;
-  sin_p_s    = sin(phi_s_f);
-  cos_p_s    = cos(phi_s_f);
-  D_sin_p_s  = (sin(phi_s_f) - sin(phi_s_i))/D_p_s;
-  D_cos_p_s  = (cos(phi_s_f) - cos(phi_s_i))/D_p_s;
-  D_sin_2p_s = (sin(2*phi_s_f) - sin(2*phi_s_i))/2.0/D_p_s;
-  D_cos_2p_s = (cos(2*phi_s_f) - cos(2*phi_s_i))/2.0/D_p_s;
+  phi_s_f    = phi_s_i + omega_s * T;
+  D_p_s      = omega_s * T;
+  sin_p_s    = sin( phi_s_f );
+  cos_p_s    = cos( phi_s_f );
+  D_sin_p_s  = ( sin( phi_s_f ) - sin( phi_s_i ) ) / D_p_s;
+  D_cos_p_s  = ( cos( phi_s_f ) - cos( phi_s_i ) ) / D_p_s;
+  D_sin_2p_s = ( sin( 2 * phi_s_f ) - sin( 2 * phi_s_i ) ) / 2.0 / D_p_s;
+  D_cos_2p_s = ( cos( 2 * phi_s_f ) - cos( 2 * phi_s_i ) ) / 2.0 / D_p_s;
 
   /* Some mixed quantities: */
   D_sin_p_o_plus_s
-    = (sin(phi_o_f+phi_s_f) - sin(phi_o_i+phi_s_i))/(D_p_o + D_p_s);
+    = ( sin( phi_o_f + phi_s_f ) - sin( phi_o_i + phi_s_i ) ) / ( D_p_o + D_p_s );
   D_sin_p_o_minus_s
-    = (sin(phi_o_f-phi_s_f) - sin(phi_o_i-phi_s_i))/(D_p_o - D_p_s);
+    = ( sin( phi_o_f - phi_s_f ) - sin( phi_o_i - phi_s_i ) ) / ( D_p_o - D_p_s );
   D_cos_p_o_plus_s
-    = (cos(phi_o_f+phi_s_f) - cos(phi_o_i+phi_s_i))/(D_p_o + D_p_s);
+    = ( cos( phi_o_f + phi_s_f ) - cos( phi_o_i + phi_s_i ) ) / ( D_p_o + D_p_s );
   D_cos_p_o_minus_s
-    = (cos(phi_o_f-phi_s_f) - cos(phi_o_i-phi_s_i))/(D_p_o - D_p_s);
+    = ( cos( phi_o_f - phi_s_f ) - cos( phi_o_i - phi_s_i ) ) / ( D_p_o - D_p_s );
 
 
 
@@ -269,148 +270,145 @@ void LALPtoleMetric( LALStatus *status,
   j_max = 7;
   D_p_o_crit = 1.4e-2; /* This corresponds to about 70000 seconds */
 
-  sum1  = next1 = D_p_o/2.0;
-  sum2  = next2 = D_p_o/3.0/2.0;
+  sum1  = next1 = D_p_o / 2.0;
+  sum2  = next2 = D_p_o / 3.0 / 2.0;
   sum3  = next3 = D_p_o;
 
-  for(j=1; j<=j_max; j++)
-    {
-      next1 *= -pow(D_p_o,2.0)/(2.0*j+1.0)/(2.0*j+2.0);
-      sum1  += next1;
-      next2 *= -pow(D_p_o,2.0)/(2.0*j+2.0)/(2.0*j+3.0);
-      sum2  += next2;
-      next3 *= -pow(2.0*D_p_o,2.0)/(2.0*j+1.0)/(2.0*j+2.0);
-      sum3  += next3;
-    }
+  for ( j = 1; j <= j_max; j++ ) {
+    next1 *= -pow( D_p_o, 2.0 ) / ( 2.0 * j + 1.0 ) / ( 2.0 * j + 2.0 );
+    sum1  += next1;
+    next2 *= -pow( D_p_o, 2.0 ) / ( 2.0 * j + 2.0 ) / ( 2.0 * j + 3.0 );
+    sum2  += next2;
+    next3 *= -pow( 2.0 * D_p_o, 2.0 ) / ( 2.0 * j + 1.0 ) / ( 2.0 * j + 2.0 );
+    sum3  += next3;
+  }
 
-  if(D_p_o < D_p_o_crit)
-    {
-      D_sin_p_o = sin(phi_o_f)*sum1 + cos(phi_o_f)*sin(D_p_o)/D_p_o;
-      D_cos_p_o = cos(phi_o_f)*sum1 - sin(phi_o_f)*sin(D_p_o)/D_p_o;
-      D_sin_2p_o
-	= sin(2.0*phi_o_f)*sum3 + cos(2.0*phi_o_f)*sin(2.0*D_p_o)/2.0/D_p_o;
-      D_cos_2p_o
-	= cos(2.0*phi_o_f)*sum3 - sin(2.0*phi_o_f)*sin(2.0*D_p_o)/2.0/D_p_o;
-   }
+  if ( D_p_o < D_p_o_crit ) {
+    D_sin_p_o = sin( phi_o_f ) * sum1 + cos( phi_o_f ) * sin( D_p_o ) / D_p_o;
+    D_cos_p_o = cos( phi_o_f ) * sum1 - sin( phi_o_f ) * sin( D_p_o ) / D_p_o;
+    D_sin_2p_o
+      = sin( 2.0 * phi_o_f ) * sum3 + cos( 2.0 * phi_o_f ) * sin( 2.0 * D_p_o ) / 2.0 / D_p_o;
+    D_cos_2p_o
+      = cos( 2.0 * phi_o_f ) * sum3 - sin( 2.0 * phi_o_f ) * sin( 2.0 * D_p_o ) / 2.0 / D_p_o;
+  }
   /****************************************************************/
 
 
   /* The A[i] quantities: */
   A[1] =
-    R_o*D_sin_p_o + R_s*cos_l*D_sin_p_s;
+    R_o * D_sin_p_o + R_s * cos_l * D_sin_p_s;
 
   A[2] =
-    R_o*cos_i*D_cos_p_o + R_s*cos_l*D_cos_p_s;
+    R_o * cos_i * D_cos_p_o + R_s * cos_l * D_cos_p_s;
 
   A[3] =
-    -R_o*sin_i*D_cos_p_o + R_s*sin_l;
+    -R_o * sin_i * D_cos_p_o + R_s * sin_l;
 
   A[4] =
-    R_o*(sin_p_o/D_p_o + D_cos_p_o/D_p_o);
+    R_o * ( sin_p_o / D_p_o + D_cos_p_o / D_p_o );
 
   A[5] =
-    R_s*(sin_p_s/D_p_s + D_cos_p_s/D_p_s);
+    R_s * ( sin_p_s / D_p_s + D_cos_p_s / D_p_s );
 
   A[6] =
-    R_o*(-cos_p_o/D_p_o + D_sin_p_o/D_p_o);
+    R_o * ( -cos_p_o / D_p_o + D_sin_p_o / D_p_o );
 
   /* Special overwrite for A4 and A6: *********************/
-  if(D_p_o < D_p_o_crit)
-    {
-      A[4] = R_o*(cos(phi_o_f)*sum1/D_p_o + sin(phi_o_f)*sum2);
-      A[6] = R_o*(sin(phi_o_f)*sum1/D_p_o - cos(phi_o_f)*sum2);
-    }
+  if ( D_p_o < D_p_o_crit ) {
+    A[4] = R_o * ( cos( phi_o_f ) * sum1 / D_p_o + sin( phi_o_f ) * sum2 );
+    A[6] = R_o * ( sin( phi_o_f ) * sum1 / D_p_o - cos( phi_o_f ) * sum2 );
+  }
   /***********************************************************/
 
   A[7] =
-    R_s*(-cos_p_s/D_p_s + D_sin_p_s/D_p_s);
+    R_s * ( -cos_p_s / D_p_s + D_sin_p_s / D_p_s );
 
   A[8] =
-    R_o*R_o*(1 + D_sin_2p_o);
+    R_o * R_o * ( 1 + D_sin_2p_o );
 
   A[9] =
-    R_o*R_s*(D_sin_p_o_minus_s + D_sin_p_o_plus_s);
+    R_o * R_s * ( D_sin_p_o_minus_s + D_sin_p_o_plus_s );
 
   A[10] =
-    R_s*R_s*(1 + D_sin_2p_s);
+    R_s * R_s * ( 1 + D_sin_2p_s );
 
   A[11] =
-    R_o*R_o*D_cos_2p_o;
+    R_o * R_o * D_cos_2p_o;
 
   A[12] =
-    R_o*R_s*(-D_cos_p_o_minus_s + D_cos_p_o_plus_s);
+    R_o * R_s * ( -D_cos_p_o_minus_s + D_cos_p_o_plus_s );
 
   A[13] =
-    R_o*R_s*(D_cos_p_o_minus_s + D_cos_p_o_plus_s);
+    R_o * R_s * ( D_cos_p_o_minus_s + D_cos_p_o_plus_s );
 
   A[14] =
-    R_s*R_s*D_cos_2p_s;
+    R_s * R_s * D_cos_2p_s;
 
   A[15] =
-    R_o*R_o*(1 - D_sin_2p_o);
+    R_o * R_o * ( 1 - D_sin_2p_o );
 
   A[16] =
-    R_o*R_s*(D_sin_p_o_minus_s - D_sin_p_o_plus_s);
+    R_o * R_s * ( D_sin_p_o_minus_s - D_sin_p_o_plus_s );
 
   A[17] =
-    R_s*R_s*(1 - D_sin_2p_s);
+    R_s * R_s * ( 1 - D_sin_2p_s );
 
   A[18] =
-    R_o*R_s*D_sin_p_o;
+    R_o * R_s * D_sin_p_o;
 
   A[19] =
-    R_s*R_s*D_sin_p_s;
+    R_s * R_s * D_sin_p_s;
 
   A[20] =
-    R_o*R_s*D_cos_p_o;
+    R_o * R_s * D_cos_p_o;
 
   A[21] =
-    R_s*R_s*D_cos_p_s;
+    R_s * R_s * D_cos_p_s;
 
 
   /* The B[i] quantities: */
   B[1] =
-    A[4] + A[5]*cos_l;
+    A[4] + A[5] * cos_l;
 
   B[2] =
-    A[6]*cos_i + A[7]*cos_l;
+    A[6] * cos_i + A[7] * cos_l;
 
   B[3] =
-    A[6]*sin_i + R_s*sin_l/2;
+    A[6] * sin_i + R_s * sin_l / 2;
 
   B[4] =
-    A[8] + 2*A[9]*cos_l + A[10]*cos_l*cos_l;
+    A[8] + 2 * A[9] * cos_l + A[10] * cos_l * cos_l;
 
   B[5] =
-    A[11]*cos_i + A[12]*cos_l + A[13]*cos_i*cos_l + A[14]*cos_l*cos_l;
+    A[11] * cos_i + A[12] * cos_l + A[13] * cos_i * cos_l + A[14] * cos_l * cos_l;
 
   B[6] =
-    A[15]*cos_i*cos_i +2*A[16]*cos_i*cos_l + A[17]*cos_l*cos_l;
+    A[15] * cos_i * cos_i + 2 * A[16] * cos_i * cos_l + A[17] * cos_l * cos_l;
 
   B[7] =
-    -A[11]*sin_i + 2*A[18]*sin_l - A[13]*sin_i*cos_l + A[19]*sin_2l;
+    -A[11] * sin_i + 2 * A[18] * sin_l - A[13] * sin_i * cos_l + A[19] * sin_2l;
 
   B[8] =
-    A[15]*sin_i*cos_i - 2*A[20]*cos_i*sin_l + A[16]*sin_i*cos_l - A[21]*sin_2l;
+    A[15] * sin_i * cos_i - 2 * A[20] * cos_i * sin_l + A[16] * sin_i * cos_l - A[21] * sin_2l;
 
   B[9] =
-    A[15]*sin_i*sin_i - 4*A[20]*sin_i*sin_l + 2*R_s*R_s*sin_l*sin_l;
+    A[15] * sin_i * sin_i - 4 * A[20] * sin_i * sin_l + 2 * R_s * R_s * sin_l * sin_l;
 
- /* The spindown integrals. */
+  /* The spindown integrals. */
 
   /* orbital t^2 cos */
 
-  Is[1] = (2*sin(phi_o_i) + 2*omega_o*T*cos_p_o + (-2 + pow(omega_o*T,2))*sin_p_o)/pow(omega_o*T,3);
+  Is[1] = ( 2 * sin( phi_o_i ) + 2 * omega_o * T * cos_p_o + ( -2 + pow( omega_o * T, 2 ) ) * sin_p_o ) / pow( omega_o * T, 3 );
 
   /* spin t^2 cos */
-  Is[2] = (2*sin(phi_s_i) + 2*omega_s*T*cos_p_s + (-2 + pow(omega_s*T,2))*sin_p_s)/pow(omega_s*T,3);
+  Is[2] = ( 2 * sin( phi_s_i ) + 2 * omega_s * T * cos_p_s + ( -2 + pow( omega_s * T, 2 ) ) * sin_p_s ) / pow( omega_s * T, 3 );
 
   /* orbital t^2 sin */
-  Is[3] = (-2*cos(phi_o_i) + 2*omega_o*T*sin_p_o - (-2 + pow(omega_o*T,2))*cos_p_o)/pow(omega_o*T,3);
+  Is[3] = ( -2 * cos( phi_o_i ) + 2 * omega_o * T * sin_p_o - ( -2 + pow( omega_o * T, 2 ) ) * cos_p_o ) / pow( omega_o * T, 3 );
 
   /*spin t^2 sin */
 
-  Is[4] = (-2*cos(phi_s_i) + 2*omega_s*T*sin_p_s - (-2 + pow(omega_s*T,2))*cos_p_s)/pow(omega_s*T,3);
+  Is[4] = ( -2 * cos( phi_s_i ) + 2 * omega_s * T * sin_p_s - ( -2 + pow( omega_s * T, 2 ) ) * cos_p_s ) / pow( omega_s * T, 3 );
 
 
 
@@ -421,62 +419,62 @@ void LALPtoleMetric( LALStatus *status,
 
   /* g_pf = */
   big_metric->data[1] =
-    LAL_PI*T;
+    LAL_PI * T;
 
   /* g_pa = */
   big_metric->data[3] =
-    -LAL_TWOPI*f*cos_d*(A[1]*sin_a + A[2]*cos_a);
+    -LAL_TWOPI * f * cos_d * ( A[1] * sin_a + A[2] * cos_a );
 
   /* g_pd = */
   big_metric->data[6] =
-    LAL_TWOPI*f*(-A[1]*sin_d*cos_a + A[2]*sin_d*sin_a + A[3]*cos_d);
+    LAL_TWOPI * f * ( -A[1] * sin_d * cos_a + A[2] * sin_d * sin_a + A[3] * cos_d );
 
   /* g_ff = */
   big_metric->data[2] =
-    pow(LAL_TWOPI*T, 2)/3;
+    pow( LAL_TWOPI * T, 2 ) / 3;
 
   /* g_fa = */
   big_metric->data[4] =
-    pow(LAL_TWOPI,2)*f*cos_d*T*(-B[1]*sin_a + B[2]*cos_a);
+    pow( LAL_TWOPI, 2 ) * f * cos_d * T * ( -B[1] * sin_a + B[2] * cos_a );
 
   /* g_fd = */
   big_metric->data[7] =
-    pow(LAL_TWOPI,2)*f*T*(-B[1]*sin_d*cos_a - B[2]*sin_d*sin_a + B[3]*cos_d);
+    pow( LAL_TWOPI, 2 ) * f * T * ( -B[1] * sin_d * cos_a - B[2] * sin_d * sin_a + B[3] * cos_d );
 
   /* g_aa = */
   big_metric->data[5] =
-    2*pow(LAL_PI*f*cos_d,2) * (B[4]*sin_a*sin_a + B[5]*sin_2a + B[6]*cos_a*cos_a);
+    2 * pow( LAL_PI * f * cos_d, 2 ) * ( B[4] * sin_a * sin_a + B[5] * sin_2a + B[6] * cos_a * cos_a );
 
   /* g_ad =  */
   big_metric->data[8] =
-    2*pow(LAL_PI*f,2)*cos_d*(B[4]*sin_a*cos_a*sin_d - B[5]*sin_a*sin_a*sin_d
-			     -B[7]*sin_a*cos_d + B[5]*cos_a*cos_a*sin_d - B[6]*sin_a*cos_a*sin_d
-			     +B[8]*cos_a*cos_d);
+    2 * pow( LAL_PI * f, 2 ) * cos_d * ( B[4] * sin_a * cos_a * sin_d - B[5] * sin_a * sin_a * sin_d
+                                         - B[7] * sin_a * cos_d + B[5] * cos_a * cos_a * sin_d - B[6] * sin_a * cos_a * sin_d
+                                         + B[8] * cos_a * cos_d );
 
   /* g_dd = */
   big_metric->data[9] =
-    2*pow(LAL_PI*f,2)*(B[4]*pow(cos_a*sin_d,2) + B[6]*pow(sin_a*sin_d,2)
-		       +B[9]*pow(cos_d,2) - B[5]*sin_2a*pow(sin_d,2) - B[8]*sin_a*sin_2d
-		       -B[7]*cos_a*sin_2d);
+    2 * pow( LAL_PI * f, 2 ) * ( B[4] * pow( cos_a * sin_d, 2 ) + B[6] * pow( sin_a * sin_d, 2 )
+                                 + B[9] * pow( cos_d, 2 ) - B[5] * sin_2a * pow( sin_d, 2 ) - B[8] * sin_a * sin_2d
+                                 - B[7] * cos_a * sin_2d );
 
   /*The spindown components*/
-  if(dim==3) {
+  if ( dim == 3 ) {
     /* g_p1 = */
     big_metric->data[10] =
-      T*LAL_PI*f*T/3;
+      T * LAL_PI * f * T / 3;
 
     /* g_f1= */
-    big_metric->data[11]=
-      T*pow(LAL_PI*T,2)*f/2;
+    big_metric->data[11] =
+      T * pow( LAL_PI * T, 2 ) * f / 2;
 
     /* g_a1 = */
-    big_metric->data[12] = T*2*pow(LAL_PI*f,2)*T*(-cos_d*sin_a*(R_o*Is[1] + R_s*cos_l*Is[2])+ cos_d*cos_a*(R_o*cos_i*Is[3] + R_s*cos_l*Is[4]));
+    big_metric->data[12] = T * 2 * pow( LAL_PI * f, 2 ) * T * ( -cos_d * sin_a * ( R_o * Is[1] + R_s * cos_l * Is[2] ) + cos_d * cos_a * ( R_o * cos_i * Is[3] + R_s * cos_l * Is[4] ) );
 
     /* g_d1 = */
-    big_metric->data[13] = T*2*pow(LAL_PI*f,2)*T*(-sin_d*cos_a*(R_o*Is[1] + R_s*cos_l*Is[2])- sin_d*sin_a*(R_o*cos_i*Is[3] + R_s*cos_l*Is[4]) + cos_d*(R_o*sin_i*Is[3] + R_s*sin_l/3));
+    big_metric->data[13] = T * 2 * pow( LAL_PI * f, 2 ) * T * ( -sin_d * cos_a * ( R_o * Is[1] + R_s * cos_l * Is[2] ) - sin_d * sin_a * ( R_o * cos_i * Is[3] + R_s * cos_l * Is[4] ) + cos_d * ( R_o * sin_i * Is[3] + R_s * sin_l / 3 ) );
 
     /* g_11 = */
-    big_metric->data[14] = T*T*pow(LAL_PI*f*T,2)/5;
+    big_metric->data[14] = T * T * pow( LAL_PI * f * T, 2 ) / 5;
   }
 
 
@@ -556,46 +554,46 @@ void LALPtoleMetric( LALStatus *status,
      for (j=1; j<=dim-2; j++)
      metric->data[(j+2)*(j+3)/2] = 2*pow(LAL_PI,2)*input->maxFreq
      *pow(input->duration,2)/(j+2)/(j+3);*/
-/*************************************************************/
+  /*************************************************************/
 
 
-/* Project down to 4-dim metric: */
+  /* Project down to 4-dim metric: */
 
-/*f-f component */
+  /*f-f component */
   metric->data[0] =  big_metric->data[2]
-    - big_metric->data[1]*big_metric->data[1]/big_metric->data[0];
+                     - big_metric->data[1] * big_metric->data[1] / big_metric->data[0];
   /*f-a component */
   metric->data[1] =  big_metric->data[4]
-    - big_metric->data[1]*big_metric->data[3]/big_metric->data[0];
+                     - big_metric->data[1] * big_metric->data[3] / big_metric->data[0];
   /*a-a component */
   metric->data[2] =  big_metric->data[5]
-    - big_metric->data[3]*big_metric->data[3]/big_metric->data[0];
+                     - big_metric->data[3] * big_metric->data[3] / big_metric->data[0];
   /*f-d component */
   metric->data[3] =  big_metric->data[7]
-    - big_metric->data[6]*big_metric->data[1]/big_metric->data[0];
+                     - big_metric->data[6] * big_metric->data[1] / big_metric->data[0];
   /*a-d component */
   metric->data[4] =  big_metric->data[8]
-    - big_metric->data[6]*big_metric->data[3]/big_metric->data[0];
+                     - big_metric->data[6] * big_metric->data[3] / big_metric->data[0];
   /*d-d component */
   metric->data[5] =  big_metric->data[9]
-    - big_metric->data[6]*big_metric->data[6]/big_metric->data[0];
-  if(dim==3) {
+                     - big_metric->data[6] * big_metric->data[6] / big_metric->data[0];
+  if ( dim == 3 ) {
 
     /*f-f1 component */
     metric->data[6] = big_metric->data[11]
-      - big_metric->data[1]*big_metric->data[10]/big_metric->data[0];
+                      - big_metric->data[1] * big_metric->data[10] / big_metric->data[0];
 
     /*a-f1 component */
     metric->data[7] = big_metric->data[12]
-      - big_metric->data[3]*big_metric->data[10]/big_metric->data[0];
+                      - big_metric->data[3] * big_metric->data[10] / big_metric->data[0];
 
     /*d-f1 component */
     metric->data[8] = big_metric->data[13]
-      - big_metric->data[6]*big_metric->data[10]/big_metric->data[0];
+                      - big_metric->data[6] * big_metric->data[10] / big_metric->data[0];
 
     /* f1-f1 component */
     metric->data[9] = big_metric->data[14]
-      - big_metric->data[10]*big_metric->data[10]/big_metric->data[0];
+                      - big_metric->data[10] * big_metric->data[10] / big_metric->data[0];
   }
 
   LALDDestroyVector( status, &big_metric );
@@ -624,48 +622,49 @@ void LALPtoleMetric( LALStatus *status,
  *
  * The parameter structure of LALPtoleMetric() was used, because it's more compact.
  */
-void LALPulsarMetric ( LALStatus *stat,
-		       REAL8Vector **metric,
-		       PtoleMetricIn *input )
+void LALPulsarMetric( LALStatus *stat,
+                      REAL8Vector **metric,
+                      PtoleMetricIn *input )
 {
   UINT4 nSpin, dim;
 
-  INITSTATUS(stat);
-  ATTATCHSTATUSPTR (stat);
+  INITSTATUS( stat );
+  ATTATCHSTATUSPTR( stat );
 
-  ASSERT ( input, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
-  ASSERT ( metric != NULL, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
-  ASSERT ( *metric == NULL, stat, PTOLEMETRICH_ENONULL, PTOLEMETRICH_MSGENONULL );
+  ASSERT( input, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
+  ASSERT( metric != NULL, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
+  ASSERT( *metric == NULL, stat, PTOLEMETRICH_ENONULL, PTOLEMETRICH_MSGENONULL );
 
-  if ( input->spindown )
+  if ( input->spindown ) {
     nSpin = input->spindown->length;
-  else
+  } else {
     nSpin = 0;
+  }
 
 
   /* allocate the output-metric */
-  dim = 3 + nSpin;	/* dimensionality of parameter-space: Alpha,Delta,f + spindowns */
+  dim = 3 + nSpin;      /* dimensionality of parameter-space: Alpha,Delta,f + spindowns */
 
-  TRY ( LALDCreateVector (stat->statusPtr, metric, dim * (dim+1)/2), stat);
+  TRY( LALDCreateVector( stat->statusPtr, metric, dim * ( dim + 1 ) / 2 ), stat );
 
-  switch (input->metricType)
-    {
-    case LAL_PMETRIC_COH_PTOLE_ANALYTIC: /* use Ben&Ian's analytic ptolemaic metric */
-      LALPtoleMetric (stat->statusPtr, *metric, input);
-      BEGINFAIL(stat) {
-	LALDDestroyVector (stat->statusPtr, metric);
-      }ENDFAIL(stat);
-      break;
+  switch ( input->metricType ) {
+  case LAL_PMETRIC_COH_PTOLE_ANALYTIC: /* use Ben&Ian's analytic ptolemaic metric */
+    LALPtoleMetric( stat->statusPtr, *metric, input );
+    BEGINFAIL( stat ) {
+      LALDDestroyVector( stat->statusPtr, metric );
+    }
+    ENDFAIL( stat );
+    break;
 
-    default:
-      XLALPrintError ("Unknown metric type `%d`\n", input->metricType);
-      ABORT (stat, PTOLEMETRICH_EMETRIC,  PTOLEMETRICH_MSGEMETRIC);
-      break;
+  default:
+    XLALPrintError( "Unknown metric type `%d`\n", input->metricType );
+    ABORT( stat, PTOLEMETRICH_EMETRIC,  PTOLEMETRICH_MSGEMETRIC );
+    break;
 
-    } /* switch type */
+  } /* switch type */
 
-  DETATCHSTATUSPTR (stat);
-  RETURN (stat);
+  DETATCHSTATUSPTR( stat );
+  RETURN( stat );
 
 } /* LALPulsarMetric() */
 
@@ -723,10 +722,10 @@ void LALPulsarMetric ( LALStatus *stat,
  * \f$ \{\vec\lambda\} \f$ passing through the point \f$ \mathbf{\lambda} \f$ on a plane
  * orthogonal to the \f$ \lambda^0 \f$ axis.  In order for \f$ \gamma_{ij} \f$ to
  * measure the \em maximum distance between points \f$ \vec\lambda \f$ , it
- * is important to evaluate \f$ g_{\alpha\beta} \f$ at the value of \f$ \lambda^0 \f$ 
+ * is important to evaluate \f$ g_{\alpha\beta} \f$ at the value of \f$ \lambda^0 \f$
  * that gives the largest possible separations.  For the pulsar search
  * formalism discussed in StackMetric.h, this is always
- * achieved by choosing the largest value of \f$ \lambda^0=f_\mathrm{max} \f$ 
+ * achieved by choosing the largest value of \f$ \lambda^0=f_\mathrm{max} \f$
  * that is to be covered in the search.
  */
 void
@@ -736,50 +735,53 @@ LALProjectMetric( LALStatus *stat, REAL8Vector *metric, BOOLEAN errors )
   UINT4 i, j;  /* Indecies. */
   REAL8 *data; /* The metric data array. */
 
-  INITSTATUS(stat);
+  INITSTATUS( stat );
 
   /* Check that data exist. */
-  ASSERT(metric,stat,PTOLEMETRICH_ENULL,PTOLEMETRICH_MSGENULL);
-  ASSERT(metric->data,stat,PTOLEMETRICH_ENULL,PTOLEMETRICH_MSGENULL);
-  data=metric->data;
+  ASSERT( metric, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
+  ASSERT( metric->data, stat, PTOLEMETRICH_ENULL, PTOLEMETRICH_MSGENULL );
+  data = metric->data;
 
   /* Make sure the metric's length is compatible with some
      dimensionality s. */
-  for(s=0,i=1;i<metric->length;s++){
-    i=s*(s+1);
-    if(!errors)
-      i=i>>1;
+  for ( s = 0, i = 1; i < metric->length; s++ ) {
+    i = s * ( s + 1 );
+    if ( !errors ) {
+      i = i >> 1;
+    }
   }
   s--; /* counteract the final s++ */
-  ASSERT(i==metric->length,stat,PTOLEMETRICH_EPARM,
-	 PTOLEMETRICH_MSGEPARM);
+  ASSERT( i == metric->length, stat, PTOLEMETRICH_EPARM,
+          PTOLEMETRICH_MSGEPARM );
 
   /* Now project out the zeroth component of the metric. */
-  for(i=1;i<s;i++)
-    for(j=1;j<=i;j++){
-      INT4 i0 = (i*(i+1))>>1;
-      INT4 myj0 = (j*(j+1))>>1;
-      INT4 ij = i0+j;
-      if(errors){
-	data[2*ij]-=data[2*i0]*data[2*myj0]/data[0];
-	data[2*ij+1]+=data[2*i0+1]*fabs(data[2*myj0]/data[0])
-	  + data[2*myj0+1]*fabs(data[2*i0]/data[0])
-	  + data[1]*fabs(data[2*i0]/data[0])*fabs(data[2*myj0]/data[0]);
-      } else
-	data[ij]-=data[i0]*data[myj0]/data[0];
+  for ( i = 1; i < s; i++ )
+    for ( j = 1; j <= i; j++ ) {
+      INT4 i0 = ( i * ( i + 1 ) ) >> 1;
+      INT4 myj0 = ( j * ( j + 1 ) ) >> 1;
+      INT4 ij = i0 + j;
+      if ( errors ) {
+        data[2 * ij] -= data[2 * i0] * data[2 * myj0] / data[0];
+        data[2 * ij + 1] += data[2 * i0 + 1] * fabs( data[2 * myj0] / data[0] )
+                            + data[2 * myj0 + 1] * fabs( data[2 * i0] / data[0] )
+                            + data[1] * fabs( data[2 * i0] / data[0] ) * fabs( data[2 * myj0] / data[0] );
+      } else {
+        data[ij] -= data[i0] * data[myj0] / data[0];
+      }
     }
 
   /* Set all irrelevant metric coefficients to zero. */
-  for(i=0;i<s;i++){
-    INT4 i0 = i*(i+1)>>1;
-    if(errors)
-      data[2*i0]=data[2*i0+1]=0.0;
-    else
-      data[i0]=0.0;
+  for ( i = 0; i < s; i++ ) {
+    INT4 i0 = i * ( i + 1 ) >> 1;
+    if ( errors ) {
+      data[2 * i0] = data[2 * i0 + 1] = 0.0;
+    } else {
+      data[i0] = 0.0;
+    }
   }
 
   /* And that's it! */
-  RETURN(stat);
+  RETURN( stat );
 }
 
 
@@ -788,34 +790,34 @@ LALProjectMetric( LALStatus *stat, REAL8Vector *metric, BOOLEAN errors )
  * Return error if input-vector is NULL or not consistent with a quadratic matrix.
  */
 int
-XLALFindMetricDim ( const REAL8Vector *metric )
+XLALFindMetricDim( const REAL8Vector *metric )
 {
   UINT4 dim;
   UINT4 length;
   UINT4 trylength;
 
-  if ( !metric )
-    {
-      XLALPrintError ("\nNULL Input received!\n\n");
-      XLAL_ERROR ( XLAL_EINVAL);
-    }
+  if ( !metric ) {
+    XLALPrintError( "\nNULL Input received!\n\n" );
+    XLAL_ERROR( XLAL_EINVAL );
+  }
 
   length = metric->length;
-  if ( length == 0 )
+  if ( length == 0 ) {
     return 0;
+  }
 
-  dim=1;
-  while ( (trylength = dim * (dim + 1)/2 ) <= length )
-    {
-      if ( length == trylength )
-	return dim;
-      else
-	dim ++;
+  dim = 1;
+  while ( ( trylength = dim * ( dim + 1 ) / 2 ) <= length ) {
+    if ( length == trylength ) {
+      return dim;
+    } else {
+      dim ++;
     }
+  }
 
   /* no fitting dimension found ==> error */
-  XLALPrintError ("\nInput vector is inconsisten with symmetric quadratic matrix!\n\n");
-  XLAL_ERROR ( XLAL_EINVAL);
+  XLALPrintError( "\nInput vector is inconsisten with symmetric quadratic matrix!\n\n" );
+  XLAL_ERROR( XLAL_EINVAL );
 
 }/* XLALFindMetricDim() */
 
@@ -824,25 +826,25 @@ XLALFindMetricDim ( const REAL8Vector *metric )
  * search with only one fixed sky position. The units are those expected by ComputeFstat.
  */
 int XLALSpindownMetric(
-  gsl_matrix* metric,	/**< [in] Matrix containing the metric */
-  double Tspan		/**< [in] Time span of the data set */
-  )
+  gsl_matrix *metric,   /**< [in] Matrix containing the metric */
+  double Tspan          /**< [in] Time span of the data set */
+)
 {
 
   // Check input
-  XLAL_CHECK(metric != NULL, XLAL_EFAULT);
-  XLAL_CHECK(metric->size1 == metric->size2, XLAL_ESIZE);
-  XLAL_CHECK(Tspan > 0, XLAL_EINVAL);
+  XLAL_CHECK( metric != NULL, XLAL_EFAULT );
+  XLAL_CHECK( metric->size1 == metric->size2, XLAL_ESIZE );
+  XLAL_CHECK( Tspan > 0, XLAL_EINVAL );
 
   // Calculate metric
-  for (size_t i = 0; i < metric->size1; ++i) {
-    for (size_t j = i; j < metric->size2; ++j) {
-      gsl_matrix_set(metric, i, j, (
-                       4.0 * LAL_PI * LAL_PI * pow(Tspan, i + j + 2) * (i + 1) * (j + 1)
-                       ) / (
-                         LAL_FACT[i + 1] * LAL_FACT[j + 1] * (i + 2) * (j + 2) * (i + j + 3)
-                         ));
-      gsl_matrix_set(metric, j, i, gsl_matrix_get(metric, i, j));
+  for ( size_t i = 0; i < metric->size1; ++i ) {
+    for ( size_t j = i; j < metric->size2; ++j ) {
+      gsl_matrix_set( metric, i, j, (
+                        4.0 * LAL_PI * LAL_PI * pow( Tspan, i + j + 2 ) * ( i + 1 ) * ( j + 1 )
+                      ) / (
+                        LAL_FACT[i + 1] * LAL_FACT[j + 1] * ( i + 2 ) * ( j + 2 ) * ( i + j + 3 )
+                      ) );
+      gsl_matrix_set( metric, j, i, gsl_matrix_get( metric, i, j ) );
     }
   }
 

@@ -40,7 +40,7 @@ extern "C" {
  *
  * The central function of this module is XLALExtrapolatePulsarSpinRange(), which extrapolates
  * a complete "spin range" (defined as PulsarSpinRange) from one epoch to another.
- * A "spin-range" contains an epoch, and \em two vectors, \f$ f^{(k)} \f$ and \f$ \Delta f^{(k)} \f$ 
+ * A "spin-range" contains an epoch, and \em two vectors, \f$ f^{(k)} \f$ and \f$ \Delta f^{(k)} \f$
  * (where "canonical" ordering refers to \f$ \Delta f^{(k)} >= 0 \f$ for all k.
  *
  * The extrapolation is defined by the pulsar spindown-model:
@@ -55,7 +55,7 @@ extern "C" {
  * f^{(l)}(\tau_1) = \sum_{k=0}^{s - l} \frac{ f^{(k+l)}(\tau_0)}{k! }\, \Delta\tau^k\,.
  * \f]
  *
- * This expression is used to extrapolate a whole "spin-range", namely at each spindown-order \f$ (l) \f$ 
+ * This expression is used to extrapolate a whole "spin-range", namely at each spindown-order \f$ (l) \f$
  * the extrapolated range is given by
  * \f[
  * \min\left[ f^{(l)}(\tau_1) \right] = \sum_{k=0}^{s - l} \frac{1}{k!} \min\left[ f^{(k+l)}(\tau_0) \, \Delta\tau^k \right]\,.
@@ -79,25 +79,25 @@ extern "C" {
 /** @{ */
 
 /*---------- exported prototypes [API] ----------*/
-int XLALInitPulsarSpinRangeFromSpins ( PulsarSpinRange *range, const LIGOTimeGPS *refTime, const PulsarSpins fkdot1, const PulsarSpins fkdot2 );
+int XLALInitPulsarSpinRangeFromSpins( PulsarSpinRange *range, const LIGOTimeGPS *refTime, const PulsarSpins fkdot1, const PulsarSpins fkdot2 );
 
-int XLALExtrapolatePulsarSpinRange(  PulsarSpinRange *range1, const PulsarSpinRange *range0, const REAL8 dtau );
+int XLALExtrapolatePulsarSpinRange( PulsarSpinRange *range1, const PulsarSpinRange *range0, const REAL8 dtau );
 
 #ifdef SWIG // SWIG interface directives
-SWIGLAL(OUTPUT_ARRAY_1D(PulsarSpins, fkdot1));
+SWIGLAL( OUTPUT_ARRAY_1D( PulsarSpins, fkdot1 ) );
 #endif // SWIG
-int XLALExtrapolatePulsarSpins ( PulsarSpins fkdot1, const PulsarSpins fkdot0, REAL8 dtau );
+int XLALExtrapolatePulsarSpins( PulsarSpins fkdot1, const PulsarSpins fkdot0, REAL8 dtau );
 #ifdef SWIG // SWIG interface directives
-SWIGLAL_CLEAR(OUTPUT_ARRAY_1D(PulsarSpins, fkdot1));
+SWIGLAL_CLEAR( OUTPUT_ARRAY_1D( PulsarSpins, fkdot1 ) );
 #endif // SWIG
 
-int XLALExtrapolatePulsarPhase ( REAL8 *phi1, const PulsarSpins fkdot1, const REAL8 phi0, const REAL8 dtau );
+int XLALExtrapolatePulsarPhase( REAL8 *phi1, const PulsarSpins fkdot1, const REAL8 phi0, const REAL8 dtau );
 
 int XLALCWSignalCoveringBand( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const LIGOTimeGPS *time1, const LIGOTimeGPS *time2,
                               const PulsarSpinRange *spinRange, const REAL8 binaryMaxAsini, const REAL8 binaryMinPeriod, const REAL8 binaryMaxEcc );
 
-int XLALCWSignalBand ( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const DetectorStateSeries *detStates, const PulsarDopplerParams *doppler );
-DetectorStateSeries *XLALPrepareCWSignalBand ( SkyPosition *skypos_maxdoppler, const LIGOTimeGPS tStart, const REAL8 Tspan, const REAL8 dT, const LALDetector *detector, const EphemerisData *edat );
+int XLALCWSignalBand( REAL8 *minCoverFreq, REAL8 *maxCoverFreq, const DetectorStateSeries *detStates, const PulsarDopplerParams *doppler );
+DetectorStateSeries *XLALPrepareCWSignalBand( SkyPosition *skypos_maxdoppler, const LIGOTimeGPS tStart, const REAL8 Tspan, const REAL8 dT, const LALDetector *detector, const EphemerisData *edat );
 
 /** @} */
 

@@ -54,7 +54,7 @@ extern "C" {
  * and
  * \f$ \vec\xi (t) \f$ any vector.
  *
- * The  form of this vector \f$ \vec\xi (t) \f$ 
+ * The  form of this vector \f$ \vec\xi (t) \f$
  * depends on the demodulation procedure
  * used in the previous  step.  In our case this corresponds to
  * \f[\vec\xi (t) = \left( F_0+
@@ -76,7 +76,7 @@ extern "C" {
  * intrinsic  frequency and spin-down parameters of the source at time \f$ \hat t_0 \f$ .
  *
  * Looking at the generic Hough master equation, one realizes that
- * for a fixed  time, a given value of \f$ F_0 \f$ , and a measured frequency \f$ \nu \f$ 
+ * for a fixed  time, a given value of \f$ F_0 \f$ , and a measured frequency \f$ \nu \f$
  * p(from a selected peak), the source could be located anywhere on a circle (whose
  * center points in the same direction of \f$ \vec\xi (t) \f$ and is characterized by
  * \f$ \phi \f$ , the angle between \f$ \hat n \f$ and \f$ \vec\xi \f$ ).  Since the Hough transform is performed on a
@@ -218,12 +218,12 @@ extern "C" {
 typedef INT2 COORType;  /* typedef INT4 COORType; */ /* typedef  UCHAR COORType; */
 
 /** This structure stores the border of a circle clipped on the projected plane. */
-typedef struct tagHOUGHBorder{
-  INT4  yUpper;		/**< upper y pixel affected by this border */
-  INT4  yLower;    	/**< lower y pixel affected by this border and yUpper<yLower or yUpper<0 are possible */
-  INT4  yCenter;   	/**< y pixel value of the center of the circle */
-  UINT2     ySide; 	/**< length of xPixel */
-  COORType *xPixel; 	/**< x pixel index to be marked */
+typedef struct tagHOUGHBorder {
+  INT4  yUpper;         /**< upper y pixel affected by this border */
+  INT4  yLower;         /**< lower y pixel affected by this border and yUpper<yLower or yUpper<0 are possible */
+  INT4  yCenter;        /**< y pixel value of the center of the circle */
+  UINT2     ySide;      /**< length of xPixel */
+  COORType *xPixel;     /**< x pixel index to be marked */
 } HOUGHBorder;
 
 
@@ -231,28 +231,28 @@ typedef struct tagHOUGHBorder{
  * This structure stores the border indexes corresponding to one frequency
  * bin plus the corrections to be added to the first column of the patch.
  */
-typedef struct tagHOUGHBin2Border{
-  INT2   leftB1;     	/**< Border index to be used (<em>start-border</em> ` \f$ +1 \f$ ') */
-  INT2   rightB1;    	/**< Border index to be used (<em>stop-border</em> ` \f$ -1 \f$ ') */
-  INT2   leftB2;     	/**< Border index  to be used (<em>start-border</em> ` \f$ +1 \f$ ') */
-  INT2   rightB2;	/**< Border index  to be used (<em>stop-border</em> ` \f$ -1 \f$ ') */
-  INT2   piece1max;  	/**< Interval limits of the (first piece) correction to the first column. */
-  INT2   piece1min;	/**< If <tt>piece1min \f$ > \f$ piece1max</tt> no corrections should be added */
-  INT2   piece2max;	/**< Interval limits of the (second piece)  correction to the first column */
-  INT2   piece2min;	/**< If <tt>piece2min \f$ > \f$ piece2max</tt> no corrections should be added */
+typedef struct tagHOUGHBin2Border {
+  INT2   leftB1;        /**< Border index to be used (<em>start-border</em> ` \f$ +1 \f$ ') */
+  INT2   rightB1;       /**< Border index to be used (<em>stop-border</em> ` \f$ -1 \f$ ') */
+  INT2   leftB2;        /**< Border index  to be used (<em>start-border</em> ` \f$ +1 \f$ ') */
+  INT2   rightB2;       /**< Border index  to be used (<em>stop-border</em> ` \f$ -1 \f$ ') */
+  INT2   piece1max;     /**< Interval limits of the (first piece) correction to the first column. */
+  INT2   piece1min;     /**< If <tt>piece1min \f$ > \f$ piece1max</tt> no corrections should be added */
+  INT2   piece2max;     /**< Interval limits of the (second piece)  correction to the first column */
+  INT2   piece2min;     /**< If <tt>piece2min \f$ > \f$ piece2max</tt> no corrections should be added */
 } HOUGHBin2Border;
 
 /** This structure stores the patch-time-frequency <em>look up table</em>. */
-typedef struct tagHOUGHptfLUT{
+typedef struct tagHOUGHptfLUT {
   INT2    timeIndex;  /**< time index of the \c lut */
   INT8    f0Bin;      /**< Frequency bin for which it has been constructed. */
   REAL8   deltaF;     /**< Frequency resolution <tt>df=1/TCOH</tt>, where <tt>1/TCOH</tt>
                        * is the coherent integration time used in teh demodulation procedure.
                        */
-  INT8    nFreqValid; 	/**< Number of frequencies where the \c lut is valid */
-  INT4    iniBin;     	/**< First bin affecting the patch with respect to \c f0 */
-  INT4    nBin;       	/**< Exact number of bins affecting the patch */
-  INT4    offset;	/**< Frequency bin corresponding to center of patch measured with respect to \c f0Bin (zero in modulated case) */
+  INT8    nFreqValid;   /**< Number of frequencies where the \c lut is valid */
+  INT4    iniBin;       /**< First bin affecting the patch with respect to \c f0 */
+  INT4    nBin;         /**< Exact number of bins affecting the patch */
+  INT4    offset;       /**< Frequency bin corresponding to center of patch measured with respect to \c f0Bin (zero in modulated case) */
   UINT2   maxNBins;    /**< Maximum number of bins affecting the patch (for memory allocation purposes) */
   UINT2   maxNBorders; /**< Maximum number of borders affecting the patch (for memory allocation purposes) */
   HOUGHBorder      *border; /**< The annulus borders */
@@ -261,87 +261,87 @@ typedef struct tagHOUGHptfLUT{
 
 
 /** This structure stores patch-frequency \e grid information. */
-typedef struct tagHOUGHPatchGrid{
-  REAL8   f0;         	/**< Frequency to construct grid */
-  REAL8   deltaF;     	/**< Frequency resolution: <tt>df=1/TCOH</tt> */
-  REAL8   deltaX;	/**< Longitudinal space resolution, x-direction */
-  REAL8   xMin;     	/**< Patch limit, as the coordinate of the center of the first pixel */
-  REAL8   xMax;		/**< Patch limit, as the coordinate of the center  of the last pixel. */
-  UINT2   xSide;    	/**< Real number of pixels in the x direction (in the projected plane); it should be less than or equal to \c xSideMax. */
-  REAL8   *xCoor;   	/**< Coordinates of the pixel centers */
-  REAL8   deltaY;	/**< Longitudinal space resolution, y-direction */
-  REAL8   yMin;     	/**< Patch limit, as center of the first pixel */
-  REAL8   yMax;		/**< Patch limit, as center of the last pixel */
-  UINT2   ySide;    	/**< Real number of pixels in the y-direction (in the projected
+typedef struct tagHOUGHPatchGrid {
+  REAL8   f0;           /**< Frequency to construct grid */
+  REAL8   deltaF;       /**< Frequency resolution: <tt>df=1/TCOH</tt> */
+  REAL8   deltaX;       /**< Longitudinal space resolution, x-direction */
+  REAL8   xMin;         /**< Patch limit, as the coordinate of the center of the first pixel */
+  REAL8   xMax;         /**< Patch limit, as the coordinate of the center  of the last pixel. */
+  UINT2   xSide;        /**< Real number of pixels in the x direction (in the projected plane); it should be less than or equal to \c xSideMax. */
+  REAL8   *xCoor;       /**< Coordinates of the pixel centers */
+  REAL8   deltaY;       /**< Longitudinal space resolution, y-direction */
+  REAL8   yMin;         /**< Patch limit, as center of the first pixel */
+  REAL8   yMax;         /**< Patch limit, as center of the last pixel */
+  UINT2   ySide;        /**< Real number of pixels in the y-direction (in the projected
                          * plane). It should be less than or equal to \c ySideMax.
                          */
-  REAL8   *yCoor;   	/**< Coordinates of the pixel centers. */
+  REAL8   *yCoor;       /**< Coordinates of the pixel centers. */
 } HOUGHPatchGrid;
 
 /** parameters needed for gridding the patch */
-typedef struct tagHOUGHResolutionPar{
-  INT8    f0Bin; 	/**< Frequency bin at which construct the grid */
-  REAL8   deltaF;	/**< Frequency resolution: <tt>df=1/TCOH</tt> */
+typedef struct tagHOUGHResolutionPar {
+  INT8    f0Bin;        /**< Frequency bin at which construct the grid */
+  REAL8   deltaF;       /**< Frequency resolution: <tt>df=1/TCOH</tt> */
   REAL8   patchSkySizeX;/**< Patch size in radians along x-axis */
   REAL8   patchSkySizeY;/**< Patch size in radians along y-axis */
   REAL8   pixelFactor; /**< number of pixel that fit in the thinnest annulus*/
-  REAL8   pixErr;   	/**< for validity of LUT as PIXERR */
-  REAL8   linErr;   	/**< as LINERR circle ->line */
-  REAL8   vTotC;    	/**< estimate value of v-total/C as VTOT */
+  REAL8   pixErr;       /**< for validity of LUT as PIXERR */
+  REAL8   linErr;       /**< as LINERR circle ->line */
+  REAL8   vTotC;        /**< estimate value of v-total/C as VTOT */
 } HOUGHResolutionPar;
 
 /** required for constructing patch */
-typedef struct tagHOUGHSizePar{
-  INT8    f0Bin; 	/**< corresponding freq bin  */
+typedef struct tagHOUGHSizePar {
+  INT8    f0Bin;        /**< corresponding freq bin  */
   REAL8   deltaF;       /**< df=1/TCOH */
-  REAL8   deltaX; 	/**< pixel size in the projected plane */
+  REAL8   deltaX;       /**< pixel size in the projected plane */
   REAL8   deltaY;
-  UINT2   xSide;    	/**< number of pixels in the x direction (projected plane)*/
-  UINT2   ySide;    	/**< number of pixels in the y direction */
-  UINT2   maxNBins;    	/**< maximum number of bins affecting the patch; for memory allocation */
-  UINT2   maxNBorders; 	/**< maximum number of borders affecting the patch; for memory allocation */
-  INT8    nFreqValid; 	/**< number of frequencies where the LUT is valid */
-  REAL8   epsilon; 	/**< max. angle (rad.) from the pole to consider a circle as a line in the projected plane */
+  UINT2   xSide;        /**< number of pixels in the x direction (projected plane)*/
+  UINT2   ySide;        /**< number of pixels in the y direction */
+  UINT2   maxNBins;     /**< maximum number of bins affecting the patch; for memory allocation */
+  UINT2   maxNBorders;  /**< maximum number of borders affecting the patch; for memory allocation */
+  INT8    nFreqValid;   /**< number of frequencies where the LUT is valid */
+  REAL8   epsilon;      /**< max. angle (rad.) from the pole to consider a circle as a line in the projected plane */
 } HOUGHSizePar;
 
 /** Three dimensional Cartessian coordinates */
-typedef struct tagREAL8Cart3Coor{
+typedef struct tagREAL8Cart3Coor {
   REAL8  x;
   REAL8  y;
   REAL8  z;
 } REAL8Cart3Coor;
 
 /** Two dimensional Cartessian coordinates */
-typedef struct tagREAL8Cart2Coor{
+typedef struct tagREAL8Cart2Coor {
   REAL8  x;
   REAL8  y;
 } REAL8Cart2Coor;
 
 /** Two dimensional polar coordinates. */
-typedef struct tagREAL8Polar2Coor{
+typedef struct tagREAL8Polar2Coor {
   REAL8  alpha;
   REAL8  radius;
 } REAL8Polar2Coor;
 
 /** Polar coordinates of a unitary vector on the sphere */
-typedef struct tagREAL8UnitPolarCoor{
-  REAL8  alpha;  	/**< any value */
-  REAL8  delta;  	/**< In the interval [ \f$ -\pi/2, \,  \pi/2 \f$ ] */
+typedef struct tagREAL8UnitPolarCoor {
+  REAL8  alpha;         /**< any value */
+  REAL8  delta;         /**< In the interval [ \f$ -\pi/2, \,  \pi/2 \f$ ] */
 } REAL8UnitPolarCoor;
 
 /** Parameters needed to construct the partial look up table */
-typedef struct tagHOUGHParamPLUT{
-  INT8             f0Bin;   	/**< freq. bin for which it has been constructed */
-  REAL8            deltaF;  	/**< Frequency resolution: <tt>df=1/TCOH</tt> */
-  REAL8UnitPolarCoor xi;  	/**< Center of the circle on the celestial sphere,
+typedef struct tagHOUGHParamPLUT {
+  INT8             f0Bin;       /**< freq. bin for which it has been constructed */
+  REAL8            deltaF;      /**< Frequency resolution: <tt>df=1/TCOH</tt> */
+  REAL8UnitPolarCoor xi;        /**< Center of the circle on the celestial sphere,
                                  * \f$ \xi \f$ (alpha,delta) in the rotated coordinates
                                  */
   REAL8            cosDelta;    /**< \f$ \Delta \cos(\phi) \f$ corresponding to one annulus. */
-  INT4             offset;	/**< Frequency bin corresponding to center of patch; measured w.r.t. \c f0Bin */
-  INT8             nFreqValid;	/**< Number of frequency bins for which the LUT is valid */
-  REAL8            cosPhiMax0;	/**< \f$ \max(\cos(\phi)) \f$ of the \c f0Bin */
-  REAL8            cosPhiMin0;	/**< \f$ \min(\cos(\phi)) \f$ of the \c f0Bin */
-  REAL8            epsilon; 	/**< maximum angle (distance in radians) from the pole
+  INT4             offset;      /**< Frequency bin corresponding to center of patch; measured w.r.t. \c f0Bin */
+  INT8             nFreqValid;  /**< Number of frequency bins for which the LUT is valid */
+  REAL8            cosPhiMax0;  /**< \f$ \max(\cos(\phi)) \f$ of the \c f0Bin */
+  REAL8            cosPhiMin0;  /**< \f$ \min(\cos(\phi)) \f$ of the \c f0Bin */
+  REAL8            epsilon;     /**< maximum angle (distance in radians) from the pole
                                  * to consider  a circle as a line in the projected plane
                                  */
 } HOUGHParamPLUT;
@@ -350,15 +350,15 @@ typedef struct tagHOUGHParamPLUT{
  * Demodulation parameters needed for the Hough transform; all
  * coordinates are assumed to be with respect to the same reference system.
  */
-typedef struct tagHOUGHDemodPar{
+typedef struct tagHOUGHDemodPar {
   REAL8               deltaF;   /**< Frequency resolution: <tt>df=1/TCOH</tt> */
   REAL8UnitPolarCoor  skyPatch; /**< \f$ N_{center} \f$ (alpha, delta): position of the center of the patch */
   REAL8Cart3Coor      veloC;    /**< \f$ v(t)/c \f$ (x,y,z): Relative detector velocity */
   REAL8Cart3Coor      positC;   /**< \f$ (x(t)-x(t0))/c \f$ (x,y,z): Position of the detector */
   REAL8               timeDiff; /**< \f$ T_{\hat N} (t)-T_{\hat N} (\hat t_0) \f$ : time difference */
-  REAL8Vector         spin; 	/**< Spin down information. It includes the fields:
+  REAL8Vector         spin;     /**< Spin down information. It includes the fields:
                                  * \c length: maximum order of spin-down parameter, and
-                                 * <tt>*data</tt>: pointer to spin-down parameter set \f$ F_k \f$ 
+                                 * <tt>*data</tt>: pointer to spin-down parameter set \f$ F_k \f$
                                  */
 } HOUGHDemodPar;
 
@@ -370,71 +370,71 @@ typedef struct tagHOUGHDemodPar{
 /*
  * 12. Functions Declarations (i.e., prototypes).
  */
-void LALHOUGHComputeSizePar (LALStatus  *status, /* demod case */
-                   HOUGHSizePar        *out,
-                   HOUGHResolutionPar  *in
-		   );
+void LALHOUGHComputeSizePar( LALStatus  *status, /* demod case */
+                             HOUGHSizePar        *out,
+                             HOUGHResolutionPar  *in
+                           );
 
-void LALHOUGHComputeNDSizePar (LALStatus  *status, /* non -demod case*/
-                   HOUGHSizePar          *out,
-                   HOUGHResolutionPar    *in
-		   );
+void LALHOUGHComputeNDSizePar( LALStatus  *status, /* non -demod case*/
+                               HOUGHSizePar          *out,
+                               HOUGHResolutionPar    *in
+                             );
 
 
-void LALHOUGHFillPatchGrid (LALStatus   *status,
-		   HOUGHPatchGrid      *out,
-                   HOUGHSizePar        *par
-		       );
+void LALHOUGHFillPatchGrid( LALStatus   *status,
+                            HOUGHPatchGrid      *out,
+                            HOUGHSizePar        *par
+                          );
 
-void LALHOUGHCalcParamPLUT (LALStatus   *status, /* Demod. case */
-                   HOUGHParamPLUT   *out,  /* parameters needed build LUT*/
-		   HOUGHSizePar     *sizePar,
-                   HOUGHDemodPar    *par  /* demodulation parameters */
-			);
+void LALHOUGHCalcParamPLUT( LALStatus   *status, /* Demod. case */
+                            HOUGHParamPLUT   *out,  /* parameters needed build LUT*/
+                            HOUGHSizePar     *sizePar,
+                            HOUGHDemodPar    *par  /* demodulation parameters */
+                          );
 
-void LALNDHOUGHParamPLUT (LALStatus   *status, /* non-demod. case */
-                   HOUGHParamPLUT   *out,  /* parameters needed build LUT*/
-		   HOUGHSizePar     *sizePar,
-                   HOUGHDemodPar    *par  /* demodulation parameters */
-			);
+void LALNDHOUGHParamPLUT( LALStatus   *status, /* non-demod. case */
+                          HOUGHParamPLUT   *out,  /* parameters needed build LUT*/
+                          HOUGHSizePar     *sizePar,
+                          HOUGHDemodPar    *par  /* demodulation parameters */
+                        );
 
-void LALRotatePolarU(LALStatus            *status,
-		     REAL8UnitPolarCoor   *out,
-		     REAL8UnitPolarCoor   *in,
-		     REAL8UnitPolarCoor   *par
-		     );
+void LALRotatePolarU( LALStatus            *status,
+                      REAL8UnitPolarCoor   *out,
+                      REAL8UnitPolarCoor   *in,
+                      REAL8UnitPolarCoor   *par
+                    );
 
-void LALInvRotatePolarU(LALStatus            *status,
-			REAL8UnitPolarCoor   *out,
-			REAL8UnitPolarCoor   *in,
-			REAL8UnitPolarCoor   *par
-			);
+void LALInvRotatePolarU( LALStatus            *status,
+                         REAL8UnitPolarCoor   *out,
+                         REAL8UnitPolarCoor   *in,
+                         REAL8UnitPolarCoor   *par
+                       );
 
-void LALStereoProjectPolar(LALStatus           *status,
-			   REAL8Polar2Coor     *out,
-			   REAL8UnitPolarCoor  *in
-			   );
+void LALStereoProjectPolar( LALStatus           *status,
+                            REAL8Polar2Coor     *out,
+                            REAL8UnitPolarCoor  *in
+                          );
 
-void LALStereoProjectCart(LALStatus           *status,
-			  REAL8Cart2Coor      *out,
-			  REAL8UnitPolarCoor  *in
-			  );
+void LALStereoProjectCart( LALStatus           *status,
+                           REAL8Cart2Coor      *out,
+                           REAL8UnitPolarCoor  *in
+                         );
 
-void LALStereoInvProjectPolar(LALStatus           *status,
-			      REAL8UnitPolarCoor  *out,
-			      REAL8Polar2Coor     *in
-			      );
+void LALStereoInvProjectPolar( LALStatus           *status,
+                               REAL8UnitPolarCoor  *out,
+                               REAL8Polar2Coor     *in
+                             );
 
-void LALStereoInvProjectCart(LALStatus           *status,
-			     REAL8UnitPolarCoor  *out,
-			     REAL8Cart2Coor      *in
-			     );
+void LALStereoInvProjectCart( LALStatus           *status,
+                              REAL8UnitPolarCoor  *out,
+                              REAL8Cart2Coor      *in
+                            );
 
-void LALHOUGHConstructPLUT(LALStatus       *status,
-			   HOUGHptfLUT     *lut,
-			   HOUGHPatchGrid  *patch,
-			   HOUGHParamPLUT  *par
-			   );
+void LALHOUGHConstructPLUT( LALStatus       *status,
+                            HOUGHptfLUT     *lut,
+                            HOUGHPatchGrid  *patch,
+                            HOUGHParamPLUT  *par
+                          );
 
 /** @} */
 

@@ -17,6 +17,8 @@ dist-hook: pybin-dist-hook
 
 if HAVE_PYTHON
 
+EXTRA_DIST += $(pymodule_DATA)
+
 BUILT_SOURCES += $(pybin_scripts) $(noinst_pybin_scripts)
 MOSTLYCLEANFILES += $(pybin_scripts) $(noinst_pybin_scripts)
 

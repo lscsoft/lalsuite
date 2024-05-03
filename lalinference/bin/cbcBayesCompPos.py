@@ -55,7 +55,7 @@ twoDGreedyMenu=[['mc','eta'],['mchirp','eta'],['chirpmass','eta'],['mc','q'],['m
 #Convert parameter names to LaTeX; if not mentioned here, just use parameter name.
 paramNameLatexMap = {'m1': 'm_1', 'm2' : 'm_2', 'mtotal' : r'M_{\rm tot}', 'mchirp' : r'\mathcal{M}',
                      'mc': r'\mathcal{M}', 'distance' : 'd', 'distMPC' : 'd', 'dist': 'd',
-                     'iota': r'\iota', 'psi': '\psi', 'eta': '\eta', 'asym_massratio': 'q', 'a1': 'a_1',
+                     'iota': r'\iota', 'psi': r'\psi', 'eta': r'\eta', 'asym_massratio': 'q', 'a1': 'a_1',
                      'a2': 'a_2', 'phi1': r'\phi_1', 'phi2': r'\phi_2', 'theta1': r'\theta_1', 'theta2': r'\theta_2',
                      'cos(tilt1)': r'\cos t_1', 'cos(tilt2)': r'\cos t_2', 'cos(thetas)': r'\cos \theta_s',
                      'cosbeta': r'\cos \beta', 'phi_orb': r'\phi_{\rm orb}', 'cos(beta)': r'\cos \beta',

@@ -346,7 +346,7 @@ FROM
 		for instrument, data in sorted(self.dataA.items()):
 			fig, axes = SnglBurstUtils.make_burst_plot(r"SNR in %s" % instrument, r"$(f_{\mathrm{recovered}} - f_{\mathrm{injected}})/ f_{\mathrm{injected}}$")
 
-			axes.set_title("Cut-off Frequency Residual vs.\ SNR in %s\n(%d Found Injections)" % (instrument, data.found))
+			axes.set_title("Cut-off Frequency Residual vs.\\ SNR in %s\n(%d Found Injections)" % (instrument, data.found))
 			axes.loglog()
 			axes.plot(data.x, data.y, "k+")
 
@@ -432,7 +432,7 @@ FROM
 		for instrument, data in sorted(self.data.items()):
 			fig, axes = SnglBurstUtils.make_burst_plot(r"SNR", r"$\chi^{2} / \mathrm{DOF}$")
 
-			axes.set_title("$\chi^{2} / \mathrm{DOF}$ vs.\ SNR in %s" % instrument)
+			axes.set_title("$\\chi^{2} / \\mathrm{DOF}$ vs.\\ SNR in %s" % instrument)
 			axes.loglog()
 			axes.plot(data.injections_x, data.injections_y, "r+")
 			axes.plot(data.noninjections_x, data.noninjections_y, "k+")

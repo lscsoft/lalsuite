@@ -101,14 +101,15 @@
  * XLAL function to compute the eccentric anomaly iteratively from Kelper's
  * equation.
  */
-void XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u){
+void XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u )
+{
   REAL8 du;
 
-  *u = phase + ecc*sin(phase) / sqrt(1.0 - 2.*ecc*cos(phase) + ecc*ecc);
+  *u = phase + ecc * sin( phase ) / sqrt( 1.0 - 2.*ecc * cos( phase ) + ecc * ecc );
   do {
-    du = (phase - (*u - ecc*sin(*u))) / (1.0 - ecc*cos(*u));
-    (*u) += du;
-  } while ( fabs(du) > 1.e-14 );
+    du = ( phase - ( *u - ecc * sin( *u ) ) ) / ( 1.0 - ecc * cos( *u ) );
+    ( *u ) += du;
+  } while ( fabs( du ) > 1.e-14 );
 }
 
 
@@ -118,7 +119,8 @@ void XLALComputeEccentricAnomaly( REAL8 phase, REAL8 ecc, REAL8 *u){
  */
 void XLALComputeKopeikinTerms( KopeikinTerms *kop,
                                BinaryPulsarParams *params,
-                               BinaryPulsarInput *in ){
+                               BinaryPulsarInput *in )
+{
   REAL8 sini, cosi, tani;
   REAL8 sin_delta, cos_delta, sin_alpha, cos_alpha;
   REAL8 delta_i0, delta_j0;
@@ -130,12 +132,12 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
   REAL8 dpara; /* parallax */
   REAL8 x;
 
-  sini = sin(params->kin);
-  cosi = cos(params->kin);
+  sini = sin( params->kin );
+  cosi = cos( params->kin );
   tani = sini / cosi;
 
-  sin_omega = sin(params->kom);
-  cos_omega = cos(params->kom);
+  sin_omega = sin( params->kom );
+  cos_omega = cos( params->kom );
 
   /* ki_dot is set in tempo2 function, but not used */
   /* ki_dot = -params.pmra * sin_omega + params.pmdec*cos_omega; */
@@ -151,36 +153,38 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
    */
 
   /* get pulsar vector */
-  ca = cos(params->ra);
-  sa = sin(params->ra);
-  cd = cos(params->dec);
-  sd = sin(params->dec);
+  ca = cos( params->ra );
+  sa = sin( params->ra );
+  cd = cos( params->dec );
+  sd = sin( params->dec );
 
-  posPulsar[0] = ca*cd;
-  posPulsar[1] = sa*cd;
+  posPulsar[0] = ca * cd;
+  posPulsar[1] = sa * cd;
   posPulsar[2] = sd;
 
-  velPulsar[0] = -params->pmra/cos(params->dec)*sa*cd - params->pmdec*ca*sd;
-  velPulsar[1] = params->pmra/cos(params->dec)*ca*cd - params->pmdec*sa*sd;
-  velPulsar[2] = params->pmdec*cd;
+  velPulsar[0] = -params->pmra / cos( params->dec ) * sa * cd - params->pmdec * ca * sd;
+  velPulsar[1] = params->pmra / cos( params->dec ) * ca * cd - params->pmdec * sa * sd;
+  velPulsar[2] = params->pmdec * cd;
 
   delt = in->tb - params->posepoch;
   /* add proper motion onto the pulsar position */
-  for( UINT4 i = 0; i < 3; i++ ) psrPos[i] = posPulsar[i] + delt*velPulsar[i];
+  for ( UINT4 i = 0; i < 3; i++ ) {
+    psrPos[i] = posPulsar[i] + delt * velPulsar[i];
+  }
 
   /* Obtain vector pointing at the pulsar */
   sin_delta = psrPos[2];
-  cos_delta = cos(asin(sin_delta));
+  cos_delta = cos( asin( sin_delta ) );
   sin_alpha = psrPos[1] / cos_delta;
   cos_alpha = psrPos[0] / cos_delta;
 
   /* Equation 15 in Kopeikin 1995 */
-  delta_i0 = -in->earth.posNow[0]/AULTSC*sin_alpha +
-    in->earth.posNow[1]/AULTSC*cos_alpha;
+  delta_i0 = -in->earth.posNow[0] / AULTSC * sin_alpha +
+             in->earth.posNow[1] / AULTSC * cos_alpha;
   /* Equation 16 in Kopeikin 1995 */
-  delta_j0 = -in->earth.posNow[0]/AULTSC * sin_delta*cos_alpha -
-    in->earth.posNow[1]/AULTSC * sin_delta*sin_alpha +
-    in->earth.posNow[2]/AULTSC * cos_delta;
+  delta_j0 = -in->earth.posNow[0] / AULTSC * sin_delta * cos_alpha -
+             in->earth.posNow[1] / AULTSC * sin_delta * sin_alpha +
+             in->earth.posNow[2] / AULTSC * cos_delta;
 
   dpara = params->px;
   x = params->x;
@@ -190,53 +194,55 @@ void XLALComputeKopeikinTerms( KopeikinTerms *kop,
   ypr = delta_i0*cos_omega + delta_j0*sin_omega; */
 
   /* Equations 18 and 19 in Kopeikin 1995 */
-  if( params->daopset ){
+  if ( params->daopset ) {
     REAL8 daop = params->daop;
 
-    kop->DK011 = - x / daop / sini*delta_i0*sin_omega;
-    kop->DK012 = - x / daop / sini*delta_j0*cos_omega;
-    kop->DK013 = - x / daop / sini*delta_i0*cos_omega;
-    kop->DK014 = x / daop / sini*delta_j0*sin_omega;
+    kop->DK011 = - x / daop / sini * delta_i0 * sin_omega;
+    kop->DK012 = - x / daop / sini * delta_j0 * cos_omega;
+    kop->DK013 = - x / daop / sini * delta_i0 * cos_omega;
+    kop->DK014 = x / daop / sini * delta_j0 * sin_omega;
 
-    kop->DK021 = x / daop / tani*delta_i0*cos_omega;
-    kop->DK022 = -x / daop / tani*delta_j0*sin_omega;
-    kop->DK023 = x / daop / tani*delta_i0*sin_omega;
-    kop->DK024 = x / daop / tani*delta_j0*cos_omega;
+    kop->DK021 = x / daop / tani * delta_i0 * cos_omega;
+    kop->DK022 = -x / daop / tani * delta_j0 * sin_omega;
+    kop->DK023 = x / daop / tani * delta_i0 * sin_omega;
+    kop->DK024 = x / daop / tani * delta_j0 * cos_omega;
+  } else {
+    kop->DK011 = -x * dpara / sini * delta_i0 * sin_omega;
+    kop->DK012 = -x * dpara / sini * delta_j0 * cos_omega;
+    kop->DK013 = -x * dpara / sini * delta_i0 * cos_omega;
+    kop->DK014 = x * dpara / sini * delta_j0 * sin_omega;
+
+    kop->DK021 = x * dpara / tani * delta_i0 * cos_omega;
+    kop->DK022 = -x * dpara / tani * delta_j0 * sin_omega;
+    kop->DK023 = x * dpara / tani * delta_i0 * sin_omega;
+    kop->DK024 = x * dpara / tani * delta_j0 * cos_omega;
   }
-  else{
-    kop->DK011 = -x * dpara / sini*delta_i0*sin_omega;
-    kop->DK012 = -x * dpara / sini*delta_j0*cos_omega;
-    kop->DK013 = -x * dpara / sini*delta_i0*cos_omega;
-    kop->DK014 = x * dpara / sini*delta_j0*sin_omega;
 
-    kop->DK021 = x * dpara / tani*delta_i0*cos_omega;
-    kop->DK022 = -x * dpara / tani*delta_j0*sin_omega;
-    kop->DK023 = x * dpara / tani*delta_i0*sin_omega;
-    kop->DK024 = x * dpara / tani*delta_j0*cos_omega;
+  if ( params->T0 != 0. ) {
+    tt0 = in->tb - params->T0;
+  } else if ( params->Tasc != 0. ) {
+    tt0 = in->tb - params->Tasc;
+  } else {
+    XLALPrintError( "%s: Neither T0 or Tasc is defined!\n", __func__ );
+    XLAL_ERROR_VOID( XLAL_EINVAL );
   }
 
-    if( params->T0 != 0. ) tt0 = in->tb - params->T0;
-    else if( params->Tasc != 0. ) tt0 = in->tb - params->Tasc;
-    else{
-      XLALPrintError("%s: Neither T0 or Tasc is defined!\n", __func__);
-      XLAL_ERROR_VOID( XLAL_EINVAL );
-    }
+  kop->DK031 = x * tt0 / sini * params->pmra * sin_omega;
+  kop->DK032 = x * tt0 / sini * params->pmdec * cos_omega;
+  kop->DK033 = x * tt0 / sini * params->pmra * cos_omega;
+  kop->DK034 = -x * tt0 / sini * params->pmdec * sin_omega;
 
-    kop->DK031 = x * tt0 / sini*params->pmra*sin_omega;
-    kop->DK032 = x * tt0 / sini*params->pmdec*cos_omega;
-    kop->DK033 = x * tt0 / sini*params->pmra*cos_omega;
-    kop->DK034 = -x * tt0 / sini*params->pmdec*sin_omega;
-
-    kop->DK041 = x * tt0 / tani*params->pmra*cos_omega;
-    kop->DK042 = -x * tt0 / tani*params->pmdec*sin_omega;
-    kop->DK043 = -x * tt0 / tani*params->pmra*sin_omega;
-    kop->DK044 = -x * tt0 / tani*params->pmdec*cos_omega;
+  kop->DK041 = x * tt0 / tani * params->pmra * cos_omega;
+  kop->DK042 = -x * tt0 / tani * params->pmdec * sin_omega;
+  kop->DK043 = -x * tt0 / tani * params->pmra * sin_omega;
+  kop->DK044 = -x * tt0 / tani * params->pmdec * cos_omega;
 }
 
 
 void XLALComputeKopeikinTermsNew( KopeikinTerms *kop,
                                   PulsarParameters *params,
-                                  BinaryPulsarInput *in ){
+                                  BinaryPulsarInput *in )
+{
   REAL8 sini, cosi, tani;
   REAL8 sin_delta, cos_delta, sin_alpha, cos_alpha;
   REAL8 delta_i0, delta_j0;
@@ -248,14 +254,14 @@ void XLALComputeKopeikinTermsNew( KopeikinTerms *kop,
   REAL8 dpara; /* parallax */
   REAL8 x;
 
-  REAL8 kin = PulsarGetREAL8ParamOrZero(params, "KIN");
-  sini = sin(kin);
-  cosi = cos(kin);
+  REAL8 kin = PulsarGetREAL8ParamOrZero( params, "KIN" );
+  sini = sin( kin );
+  cosi = cos( kin );
   tani = sini / cosi;
 
-  REAL8 kom = PulsarGetREAL8ParamOrZero(params, "KOM");
-  sin_omega = sin(kom);
-  cos_omega = cos(kom);
+  REAL8 kom = PulsarGetREAL8ParamOrZero( params, "KOM" );
+  sin_omega = sin( kom );
+  cos_omega = cos( kom );
 
   /* ki_dot is set in tempo2 function, but not used */
   /* ki_dot = -params.pmra * sin_omega + params.pmdec*cos_omega; */
@@ -272,97 +278,106 @@ void XLALComputeKopeikinTermsNew( KopeikinTerms *kop,
 
   REAL8 dec = 0.;
   REAL8 ra = 0.;
-  if ( PulsarCheckParam(params, "RAJ") ){ ra = PulsarGetREAL8Param(params, "RAJ"); }
-  else if ( PulsarCheckParam(params, "RA") ){ ra = PulsarGetREAL8Param(params, "RA"); }
+  if ( PulsarCheckParam( params, "RAJ" ) ) {
+    ra = PulsarGetREAL8Param( params, "RAJ" );
+  } else if ( PulsarCheckParam( params, "RA" ) ) {
+    ra = PulsarGetREAL8Param( params, "RA" );
+  }
 
-  if ( PulsarCheckParam(params, "DECJ") ){ dec = PulsarGetREAL8Param(params, "DECJ"); }
-  else if ( PulsarCheckParam(params, "DEC") ){ dec = PulsarGetREAL8Param(params, "DEC"); }
+  if ( PulsarCheckParam( params, "DECJ" ) ) {
+    dec = PulsarGetREAL8Param( params, "DECJ" );
+  } else if ( PulsarCheckParam( params, "DEC" ) ) {
+    dec = PulsarGetREAL8Param( params, "DEC" );
+  }
 
   /* get pulsar vector */
-  ca = cos(ra);
-  sa = sin(ra);
-  cd = cos(dec);
-  sd = sin(dec);
+  ca = cos( ra );
+  sa = sin( ra );
+  cd = cos( dec );
+  sd = sin( dec );
 
-  posPulsar[0] = ca*cd;
-  posPulsar[1] = sa*cd;
+  posPulsar[0] = ca * cd;
+  posPulsar[1] = sa * cd;
   posPulsar[2] = sd;
 
-  REAL8 pmra = PulsarGetREAL8ParamOrZero(params, "PMRA");
-  REAL8 pmdec = PulsarGetREAL8ParamOrZero(params, "PMDEC");
-  velPulsar[0] = -pmra/cos(dec)*sa*cd - pmdec*ca*sd;
-  velPulsar[1] = pmra/cos(dec)*ca*cd - pmdec*sa*sd;
-  velPulsar[2] = pmdec*cd;
+  REAL8 pmra = PulsarGetREAL8ParamOrZero( params, "PMRA" );
+  REAL8 pmdec = PulsarGetREAL8ParamOrZero( params, "PMDEC" );
+  velPulsar[0] = -pmra / cos( dec ) * sa * cd - pmdec * ca * sd;
+  velPulsar[1] = pmra / cos( dec ) * ca * cd - pmdec * sa * sd;
+  velPulsar[2] = pmdec * cd;
 
-  delt = in->tb - PulsarGetREAL8ParamOrZero(params, "POSEPOCH");
+  delt = in->tb - PulsarGetREAL8ParamOrZero( params, "POSEPOCH" );
   /* add proper motion onto the pulsar position */
-  for( UINT4 i = 0; i < 3; i++ ) psrPos[i] = posPulsar[i] + delt*velPulsar[i];
+  for ( UINT4 i = 0; i < 3; i++ ) {
+    psrPos[i] = posPulsar[i] + delt * velPulsar[i];
+  }
 
   /* Obtain vector pointing at the pulsar */
   sin_delta = psrPos[2];
-  cos_delta = cos(asin(sin_delta));
+  cos_delta = cos( asin( sin_delta ) );
   sin_alpha = psrPos[1] / cos_delta;
   cos_alpha = psrPos[0] / cos_delta;
 
   /* Equation 15 in Kopeikin 1995 */
-  delta_i0 = -in->earth.posNow[0]/AULTSC*sin_alpha +
-    in->earth.posNow[1]/AULTSC*cos_alpha;
+  delta_i0 = -in->earth.posNow[0] / AULTSC * sin_alpha +
+             in->earth.posNow[1] / AULTSC * cos_alpha;
   /* Equation 16 in Kopeikin 1995 */
-  delta_j0 = -in->earth.posNow[0]/AULTSC * sin_delta*cos_alpha -
-    in->earth.posNow[1]/AULTSC * sin_delta*sin_alpha +
-    in->earth.posNow[2]/AULTSC * cos_delta;
+  delta_j0 = -in->earth.posNow[0] / AULTSC * sin_delta * cos_alpha -
+             in->earth.posNow[1] / AULTSC * sin_delta * sin_alpha +
+             in->earth.posNow[2] / AULTSC * cos_delta;
 
-  dpara = PulsarGetREAL8ParamOrZero(params, "PX");
-  x = PulsarGetREAL8ParamOrZero(params, "A1");
+  dpara = PulsarGetREAL8ParamOrZero( params, "PX" );
+  x = PulsarGetREAL8ParamOrZero( params, "A1" );
 
   /* xpr and ypr are set in tempo2 function, but not used */
   /* xpr = delta_i0*sin_omega - delta_j0*cos_omega;
   ypr = delta_i0*cos_omega + delta_j0*sin_omega; */
 
   /* Equations 18 and 19 in Kopeikin 1995 */
-  if( PulsarCheckParam(params, "D_AOP") ){
-    REAL8 daop = PulsarGetREAL8Param(params, "D_AOP");
+  if ( PulsarCheckParam( params, "D_AOP" ) ) {
+    REAL8 daop = PulsarGetREAL8Param( params, "D_AOP" );
 
-    kop->DK011 = - x / daop / sini*delta_i0*sin_omega;
-    kop->DK012 = - x / daop / sini*delta_j0*cos_omega;
-    kop->DK013 = - x / daop / sini*delta_i0*cos_omega;
-    kop->DK014 = x / daop / sini*delta_j0*sin_omega;
+    kop->DK011 = - x / daop / sini * delta_i0 * sin_omega;
+    kop->DK012 = - x / daop / sini * delta_j0 * cos_omega;
+    kop->DK013 = - x / daop / sini * delta_i0 * cos_omega;
+    kop->DK014 = x / daop / sini * delta_j0 * sin_omega;
 
-    kop->DK021 = x / daop / tani*delta_i0*cos_omega;
-    kop->DK022 = -x / daop / tani*delta_j0*sin_omega;
-    kop->DK023 = x / daop / tani*delta_i0*sin_omega;
-    kop->DK024 = x / daop / tani*delta_j0*cos_omega;
+    kop->DK021 = x / daop / tani * delta_i0 * cos_omega;
+    kop->DK022 = -x / daop / tani * delta_j0 * sin_omega;
+    kop->DK023 = x / daop / tani * delta_i0 * sin_omega;
+    kop->DK024 = x / daop / tani * delta_j0 * cos_omega;
+  } else {
+    kop->DK011 = -x * dpara / sini * delta_i0 * sin_omega;
+    kop->DK012 = -x * dpara / sini * delta_j0 * cos_omega;
+    kop->DK013 = -x * dpara / sini * delta_i0 * cos_omega;
+    kop->DK014 = x * dpara / sini * delta_j0 * sin_omega;
+
+    kop->DK021 = x * dpara / tani * delta_i0 * cos_omega;
+    kop->DK022 = -x * dpara / tani * delta_j0 * sin_omega;
+    kop->DK023 = x * dpara / tani * delta_i0 * sin_omega;
+    kop->DK024 = x * dpara / tani * delta_j0 * cos_omega;
   }
-  else{
-    kop->DK011 = -x * dpara / sini*delta_i0*sin_omega;
-    kop->DK012 = -x * dpara / sini*delta_j0*cos_omega;
-    kop->DK013 = -x * dpara / sini*delta_i0*cos_omega;
-    kop->DK014 = x * dpara / sini*delta_j0*sin_omega;
 
-    kop->DK021 = x * dpara / tani*delta_i0*cos_omega;
-    kop->DK022 = -x * dpara / tani*delta_j0*sin_omega;
-    kop->DK023 = x * dpara / tani*delta_i0*sin_omega;
-    kop->DK024 = x * dpara / tani*delta_j0*cos_omega;
-  }
-
-  REAL8 T0 = PulsarGetREAL8ParamOrZero(params, "T0");
-  REAL8 Tasc = PulsarGetREAL8ParamOrZero(params, "TASC");
-  if( T0 != 0. ) tt0 = in->tb - T0;
-  else if( Tasc != 0. ) tt0 = in->tb - Tasc;
-  else{
-    XLALPrintError("%s: Neither T0 or Tasc is defined!\n", __func__);
+  REAL8 T0 = PulsarGetREAL8ParamOrZero( params, "T0" );
+  REAL8 Tasc = PulsarGetREAL8ParamOrZero( params, "TASC" );
+  if ( T0 != 0. ) {
+    tt0 = in->tb - T0;
+  } else if ( Tasc != 0. ) {
+    tt0 = in->tb - Tasc;
+  } else {
+    XLALPrintError( "%s: Neither T0 or Tasc is defined!\n", __func__ );
     XLAL_ERROR_VOID( XLAL_EINVAL );
   }
 
-  kop->DK031 = x * tt0 / sini*pmra*sin_omega;
-  kop->DK032 = x * tt0 / sini*pmdec*cos_omega;
-  kop->DK033 = x * tt0 / sini*pmra*cos_omega;
-  kop->DK034 = -x * tt0 / sini*pmdec*sin_omega;
+  kop->DK031 = x * tt0 / sini * pmra * sin_omega;
+  kop->DK032 = x * tt0 / sini * pmdec * cos_omega;
+  kop->DK033 = x * tt0 / sini * pmra * cos_omega;
+  kop->DK034 = -x * tt0 / sini * pmdec * sin_omega;
 
-  kop->DK041 = x * tt0 / tani*pmra*cos_omega;
-  kop->DK042 = -x * tt0 / tani*pmdec*sin_omega;
-  kop->DK043 = -x * tt0 / tani*pmra*sin_omega;
-  kop->DK044 = -x * tt0 / tani*pmdec*cos_omega;
+  kop->DK041 = x * tt0 / tani * pmra * cos_omega;
+  kop->DK042 = -x * tt0 / tani * pmdec * sin_omega;
+  kop->DK043 = -x * tt0 / tani * pmra * sin_omega;
+  kop->DK044 = -x * tt0 / tani * pmdec * cos_omega;
 }
 
 
@@ -375,36 +390,37 @@ void
 LALBinaryPulsarDeltaT( LALStatus            *status,
                        BinaryPulsarOutput   *output,
                        BinaryPulsarInput    *input,
-                       BinaryPulsarParams   *params ){
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR(status);
+                       BinaryPulsarParams   *params )
+{
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
 
   /* Check input arguments */
-  ASSERT(input != (BinaryPulsarInput *)NULL, status,
-  BINARYPULSARTIMINGH_ENULLINPUT, BINARYPULSARTIMINGH_MSGENULLINPUT);
+  ASSERT( input != ( BinaryPulsarInput * )NULL, status,
+          BINARYPULSARTIMINGH_ENULLINPUT, BINARYPULSARTIMINGH_MSGENULLINPUT );
 
-  ASSERT(output != (BinaryPulsarOutput *)NULL, status,
-  BINARYPULSARTIMINGH_ENULLOUTPUT, BINARYPULSARTIMINGH_MSGENULLOUTPUT);
+  ASSERT( output != ( BinaryPulsarOutput * )NULL, status,
+          BINARYPULSARTIMINGH_ENULLOUTPUT, BINARYPULSARTIMINGH_MSGENULLOUTPUT );
 
-  ASSERT(params != (BinaryPulsarParams *)NULL, status,
-  BINARYPULSARTIMINGH_ENULLPARAMS, BINARYPULSARTIMINGH_MSGENULLPARAMS);
+  ASSERT( params != ( BinaryPulsarParams * )NULL, status,
+          BINARYPULSARTIMINGH_ENULLPARAMS, BINARYPULSARTIMINGH_MSGENULLPARAMS );
 
-  ASSERT((!strcmp(params->model, "BT")) ||
-         (!strcmp(params->model, "BT1P")) ||
-         (!strcmp(params->model, "BT2P")) ||
-         (!strcmp(params->model, "BTX")) ||
-         (!strcmp(params->model, "ELL1")) ||
-         (!strcmp(params->model, "DD")) ||
-         (!strcmp(params->model, "DDS")) ||
-         (!strcmp(params->model, "MSS")) ||
-         (!strcmp(params->model, "T2")), status,
-         BINARYPULSARTIMINGH_ENULLBINARYMODEL,
-         BINARYPULSARTIMINGH_MSGNULLBINARYMODEL);
+  ASSERT( ( !strcmp( params->model, "BT" ) ) ||
+          ( !strcmp( params->model, "BT1P" ) ) ||
+          ( !strcmp( params->model, "BT2P" ) ) ||
+          ( !strcmp( params->model, "BTX" ) ) ||
+          ( !strcmp( params->model, "ELL1" ) ) ||
+          ( !strcmp( params->model, "DD" ) ) ||
+          ( !strcmp( params->model, "DDS" ) ) ||
+          ( !strcmp( params->model, "MSS" ) ) ||
+          ( !strcmp( params->model, "T2" ) ), status,
+          BINARYPULSARTIMINGH_ENULLBINARYMODEL,
+          BINARYPULSARTIMINGH_MSGNULLBINARYMODEL );
 
   XLALBinaryPulsarDeltaT( output, input, params );
 
-  DETATCHSTATUSPTR(status);
-  RETURN(status);
+  DETATCHSTATUSPTR( status );
+  RETURN( status );
 }
 
 
@@ -416,50 +432,50 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
                         BinaryPulsarInput    *input,
                         BinaryPulsarParams   *params )
 {
-  REAL8 dt=0.; /* binary pulsar deltaT */
-  REAL8 x, xdot;	/* x = asini/c */
-  REAL8 w=0;  /* longitude of periastron */
+  REAL8 dt = 0.; /* binary pulsar deltaT */
+  REAL8 x, xdot;        /* x = asini/c */
+  REAL8 w = 0; /* longitude of periastron */
   REAL8 e, edot;  /* eccentricity */
   REAL8 eps1, eps2;
   REAL8 eps1dot, eps2dot;
   REAL8 w0, wdot;
   REAL8 Pb, pbdot;
   REAL8 xpbdot;
-  REAL8 T0, Tasc, tb=0.; /* time parameters */
+  REAL8 T0, Tasc, tb = 0.; /* time parameters */
 
   REAL8 s, r; /* Shapiro shape and range params */
   REAL8 lal_gamma; /* time dilation and grav redshift */
   REAL8 dr, dth;
   REAL8 shapmax; /* Shapiro max parameter for DDS model */
-  REAL8 a0, b0;	/* abberation parameters */
+  REAL8 a0, b0; /* abberation parameters */
 
   REAL8 m2;
-  const REAL8 c3 = (REAL8)LAL_C_SI*(REAL8)LAL_C_SI*(REAL8)LAL_C_SI;
+  const REAL8 c3 = ( REAL8 )LAL_C_SI * ( REAL8 )LAL_C_SI * ( REAL8 )LAL_C_SI;
 
   CHAR *model = params->model;
 
   /* Check input arguments */
-  if( input == (BinaryPulsarInput *)NULL ){
+  if ( input == ( BinaryPulsarInput * )NULL ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLINPUT );
   }
 
-  if( output == (BinaryPulsarOutput *)NULL ){
+  if ( output == ( BinaryPulsarOutput * )NULL ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLOUTPUT );
   }
 
-  if( params == (BinaryPulsarParams *)NULL ){
+  if ( params == ( BinaryPulsarParams * )NULL ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLPARAMS );
   }
 
-  if((!strcmp(params->model, "BT")) &&
-     (!strcmp(params->model, "BT1P")) &&
-     (!strcmp(params->model, "BT2P")) &&
-     (!strcmp(params->model, "BTX")) &&
-     (!strcmp(params->model, "ELL1")) &&
-     (!strcmp(params->model, "DD")) &&
-     (!strcmp(params->model, "DDS")) &&
-     (!strcmp(params->model, "MSS")) &&
-     (!strcmp(params->model, "T2"))){
+  if ( ( !strcmp( params->model, "BT" ) ) &&
+       ( !strcmp( params->model, "BT1P" ) ) &&
+       ( !strcmp( params->model, "BT2P" ) ) &&
+       ( !strcmp( params->model, "BTX" ) ) &&
+       ( !strcmp( params->model, "ELL1" ) ) &&
+       ( !strcmp( params->model, "DD" ) ) &&
+       ( !strcmp( params->model, "DDS" ) ) &&
+       ( !strcmp( params->model, "MSS" ) ) &&
+       ( !strcmp( params->model, "T2" ) ) ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLBINARYMODEL );
   }
 
@@ -496,15 +512,15 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   m2 = params->m2;
 
   /* Shapiro range parameter r defined as Gm2/c^3 (secs) */
-  r = LAL_G_SI*m2/c3;
+  r = LAL_G_SI * m2 / c3;
 
   /* if T0 is not defined, but Tasc is */
-  if(T0 == 0.0 && Tasc != 0.0 && eps1 == 0.0 && eps2 == 0.0){
+  if ( T0 == 0.0 && Tasc != 0.0 && eps1 == 0.0 && eps2 == 0.0 ) {
     REAL8 fe, uasc, Dt; /* see TEMPO tasc2t0.f */
 
-    fe = sqrt((1.0 - e)/(1.0 + e));
-    uasc = 2.0*atan(fe*tan(w0/2.0));
-    Dt = (Pb/LAL_TWOPI)*(uasc-e*sin(uasc));
+    fe = sqrt( ( 1.0 - e ) / ( 1.0 + e ) );
+    uasc = 2.0 * atan( fe * tan( w0 / 2.0 ) );
+    Dt = ( Pb / LAL_TWOPI ) * ( uasc - e * sin( uasc ) );
 
     T0 = Tasc + Dt;
   }
@@ -513,25 +529,29 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   tb = input->tb;
 
   /* for BT, BT1P and BT2P models (and BTX model, but only for one orbit) */
-  if(strstr(model, "BT") != NULL){
+  if ( strstr( model, "BT" ) != NULL ) {
     REAL8 tt0;
-    REAL8 orbits=0.;
-    INT4 norbits=0.;
+    REAL8 orbits = 0.;
+    INT4 norbits = 0.;
     REAL8 phase; /* same as mean anomaly */
     REAL8 u = 0.0; /* eccentric anomaly */
 
-    INT4 nplanets=1; /* number of orbiting bodies in system */
-    INT4 i=1, j=1;
-    REAL8 fac=1.; /* factor in front of fb coefficients */
+    INT4 nplanets = 1; /* number of orbiting bodies in system */
+    INT4 i = 1, j = 1;
+    REAL8 fac = 1.; /* factor in front of fb coefficients */
 
     REAL8 su = 0., cu = 0.;
     REAL8 sw = 0., cw = 0.;
 
     /* work out number of orbits i.e. have we got a BT1P or BT2P model */
-    if( !strcmp(model, "BT1P") ) nplanets = 2;
-    if( !strcmp(model, "BT2P") ) nplanets = 3;
+    if ( !strcmp( model, "BT1P" ) ) {
+      nplanets = 2;
+    }
+    if ( !strcmp( model, "BT2P" ) ) {
+      nplanets = 3;
+    }
 
-    for ( i=1 ; i < nplanets+1 ; i++){
+    for ( i = 1 ; i < nplanets + 1 ; i++ ) {
 
       /* set some vars for bnrybt.f (TEMPO) method */
       /*REAL8 tt;
@@ -543,14 +563,13 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       /*fprintf(stderr, "You are using the Blandford-Teukolsky (BT) binary
         model.\n");*/
 
-      if(i==2){
+      if ( i == 2 ) {
         T0 = params->T02;
         w0 = params->w02;
         x = params->x2;
         e = params->e2;
         Pb = params->Pb2;
-      }
-      else if(i==3){
+      } else if ( i == 3 ) {
         T0 = params->T03;
         w0 = params->w03;
         x = params->x3;
@@ -561,61 +580,60 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
       tt0 = tb - T0;
 
       /* only do relativistic corrections for first orbit */
-      if(i==1){
-        x = x + xdot*tt0;
-        e = e + edot*tt0;
-        w = w0 + wdot*tt0; /* calculate w */
+      if ( i == 1 ) {
+        x = x + xdot * tt0;
+        e = e + edot * tt0;
+        w = w0 + wdot * tt0; /* calculate w */
 
-        if( !strcmp(model, "BTX") ){
+        if ( !strcmp( model, "BTX" ) ) {
           fac = 1.;
-          for ( j=1 ; j < params->nfb + 1; j++){
-            fac /= (REAL8)j;
-            orbits += fac*params->fb[j-1]*pow(tt0,j);
+          for ( j = 1 ; j < params->nfb + 1; j++ ) {
+            fac /= ( REAL8 )j;
+            orbits += fac * params->fb[j - 1] * pow( tt0, j );
           }
+        } else {
+          orbits = tt0 / Pb - 0.5 * ( pbdot + xpbdot ) * ( tt0 / Pb ) * ( tt0 / Pb );
         }
-        else{
-          orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
-        }
-      }
-      else{
-        orbits = tt0/Pb;
+      } else {
+        orbits = tt0 / Pb;
       }
 
-      norbits = (INT4)orbits;
+      norbits = ( INT4 )orbits;
 
-      if(orbits < 0.) norbits--;
+      if ( orbits < 0. ) {
+        norbits--;
+      }
 
-      phase = LAL_TWOPI*(orbits - (REAL8)norbits); /* called phase in TEMPO */
+      phase = LAL_TWOPI * ( orbits - ( REAL8 )norbits ); /* called phase in TEMPO */
 
       /* compute eccentric anomaly */
       XLALComputeEccentricAnomaly( phase, e, &u );
 
-      su = sin(u);
-      cu = cos(u);
+      su = sin( u );
+      cu = cos( u );
 
       /*fprintf(stderr, "Eccentric anomaly = %f, phase = %f.\n", u, phase);*/
-      sw = sin(w);
-      cw = cos(w);
+      sw = sin( w );
+      cw = cos( w );
 
       /* see eq 5 of Taylor and Weisberg (1989) */
       /**********************************************************/
-      if( !strcmp(model, "BTX") ){
+      if ( !strcmp( model, "BTX" ) ) {
         /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
           lal_gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
           e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
-        dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-          lal_gamma)*su)*(1.0 - LAL_TWOPI*params->fb[0]*(x*cw*sqrt(1.0 -
-          e*e)*cu - x*sw*su)/(1.0 - e*cu));
+        dt += ( x * sw * ( cu - e ) + ( x * cw * sqrt( 1.0 - e * e ) +
+                                        lal_gamma ) * su ) * ( 1.0 - LAL_TWOPI * params->fb[0] * ( x * cw * sqrt( 1.0 -
+                                            e * e ) * cu - x * sw * su ) / ( 1.0 - e * cu ) );
+      } else {
+        /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
+          lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
+          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
+        dt += ( x * sw * ( cu - e ) + ( x * cw * sqrt( 1.0 - e * e ) +
+                                        lal_gamma ) * su ) * ( 1.0 - ( LAL_TWOPI / Pb ) * ( x * cw * sqrt( 1.0 -
+                                            e * e ) * cu - x * sw * su ) / ( 1.0 - e * cu ) );
       }
-      else{
-          /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
-            lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
-            e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
-          dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-            lal_gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
-            e*e)*cu - x*sw*su)/(1.0 - e*cu));
-      }
-    /**********************************************************/
+      /**********************************************************/
     }
 
     /* use method from Taylor etal 1976 ApJ Lett and used in bnrybt.f */
@@ -638,7 +656,7 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
   /* for ELL1 model (low eccentricity orbits so use eps1 and eps2) */
   /* see Appendix A, Ch. Lange etal, MNRAS (2001) (also accept T2 model if
    eps values are set - this will include Kopeikin terms if necessary) */
-  if( !strcmp(model, "ELL1") || (!strcmp(model, "T2") && eps1 != 0. ) ){
+  if ( !strcmp( model, "ELL1" ) || ( !strcmp( model, "T2" ) && eps1 != 0. ) ) {
     REAL8 nb;
     REAL8 tt0;
     REAL8 w_int; /* omega internal to this model */
@@ -662,15 +680,15 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     /*********************************************************/
     /* CORRECT CODE (as in TEMPO bnryell1.f) FROM HERE       */
 
-    ecc = sqrt(eps1*eps1 + eps2*eps2);
+    ecc = sqrt( eps1 * eps1 + eps2 * eps2 );
 
     /* if Tasc is not defined convert T0 */
-    if(Tasc == 0.0 && T0 != 0.0){
+    if ( Tasc == 0.0 && T0 != 0.0 ) {
       REAL8 fe, uasc, Dt; /* see TEMPO tasc2t0.f */
 
-      fe = sqrt((1.0 - ecc)/(1.0 + ecc));
-      uasc = 2.0*atan(fe*tan(w0/2.0));
-      Dt = (Pb/LAL_TWOPI)*(uasc-ecc*sin(uasc));
+      fe = sqrt( ( 1.0 - ecc ) / ( 1.0 + ecc ) );
+      uasc = 2.0 * atan( fe * tan( w0 / 2.0 ) );
+      Dt = ( Pb / LAL_TWOPI ) * ( uasc - ecc * sin( uasc ) );
 
       /* rearrange from what's in tasc2t0.f */
       Tasc = T0 - Dt;
@@ -679,83 +697,82 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
     tt0 = tb - Tasc;
 
     /* handle higher orbital frequency derivatives if present */
-    if( params->nfb > 0 ){
+    if ( params->nfb > 0 ) {
       /* set period from first orbital frequency value */
-      Pb = 1./params->fb[0];
-      orbits = tt0/Pb;
+      Pb = 1. / params->fb[0];
+      orbits = tt0 / Pb;
 
       fac = 1.;
-      for ( UINT4 j=1 ; j < (UINT4)params->nfb; j++){
-        fac /= (REAL8)(j+1);
-        orbits += fac*params->fb[j]*pow(tt0,j+1);
+      for ( UINT4 j = 1 ; j < ( UINT4 )params->nfb; j++ ) {
+        fac /= ( REAL8 )( j + 1 );
+        orbits += fac * params->fb[j] * pow( tt0, j + 1 );
       }
+    } else {
+      orbits = tt0 / Pb - 0.5 * ( pbdot + xpbdot ) * ( tt0 / Pb ) * ( tt0 / Pb );
     }
-    else{
-      orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
+
+    nb = LAL_TWOPI / Pb;
+
+    norbits = ( INT4 )orbits;
+    if ( orbits < 0.0 ) {
+      norbits--;
     }
 
-    nb = LAL_TWOPI/Pb;
+    phase = LAL_TWOPI * ( orbits - ( REAL8 )norbits );
 
-    norbits = (INT4)orbits;
-    if(orbits < 0.0) norbits--;
-
-    phase=LAL_TWOPI*(orbits - (REAL8)norbits);
-
-    x = x + xdot*tt0;
+    x = x + xdot * tt0;
 
     /* depending on whether we have eps derivs or w time derivs calculate e1 and e2 accordingly */
-    if(params->nEll == 0){
-      e1 = eps1 + eps1dot*tt0;
-      e2 = eps2 + eps2dot*tt0;
-    }
-    else{
-      ecc = sqrt(eps1*eps1 + eps2*eps2);
-      ecc += edot*tt0;
-      w_int = atan2(eps1, eps2);
-      w_int = w_int + wdot*tt0;
+    if ( params->nEll == 0 ) {
+      e1 = eps1 + eps1dot * tt0;
+      e2 = eps2 + eps2dot * tt0;
+    } else {
+      ecc = sqrt( eps1 * eps1 + eps2 * eps2 );
+      ecc += edot * tt0;
+      w_int = atan2( eps1, eps2 );
+      w_int = w_int + wdot * tt0;
 
-      e1 = ecc*sin(w_int);
-      e2 = ecc*cos(w_int);
+      e1 = ecc * sin( w_int );
+      e2 = ecc * cos( w_int );
     }
 
     //sin_cos_LUT(&sp, &cp, phase);
     //sin_cos_LUT(&s2p, &c2p, 2.*phase);
-    sp = sin(phase);
-    cp = cos(phase);
-    s2p = sin(2.*phase);
-    c2p = cos(2.*phase);
+    sp = sin( phase );
+    cp = cos( phase );
+    s2p = sin( 2.*phase );
+    c2p = cos( 2.*phase );
 
     /* this timing delay (Roemer + Einstein) should be most important in most cases */
     /* DRE = x*(sin(phase)-0.5*(e1*cos(2.0*phase)-e2*sin(2.0*phase)));
     DREp = x*cos(phase);
     DREpp = -x*sin(phase); */
-    DRE = x*(sp-0.5*(e1*c2p-e2*s2p));
-    DREp = x*cp;
-    DREpp = -x*sp;
+    DRE = x * ( sp - 0.5 * ( e1 * c2p - e2 * s2p ) );
+    DREp = x * cp;
+    DREpp = -x * sp;
 
     /* these params will normally be negligable */
-    dlogbr = log(1.0-s*sp);
-    DS = -2.0*r*dlogbr;
-    DA = a0*sp + b0*cp;
+    dlogbr = log( 1.0 - s * sp );
+    DS = -2.0 * r * dlogbr;
+    DA = a0 * sp + b0 * cp;
 
     /* compute Kopeikin terms */
-    if( params->kinset && params->komset && ( params->pmra != 0. ||
-        params->pmdec != 0. ) ){
+    if ( params->kinset && params->komset && ( params->pmra != 0. ||
+         params->pmdec != 0. ) ) {
       XLALComputeKopeikinTerms( &kt, params, input );
 
-      Ck = sp - 0.5*(e1*c2p - e2*s2p);
-      Sk = cp + 0.5*(e2*c2p + e1*s2p);
+      Ck = sp - 0.5 * ( e1 * c2p - e2 * s2p );
+      Sk = cp + 0.5 * ( e2 * c2p + e1 * s2p );
 
-      DAOP = (kt.DK011 + kt.DK012)*Ck - (kt.DK021 + kt.DK022)*Sk;
-      DSR = (kt.DK031 + kt.DK032)*Ck + (kt.DK041 + kt.DK042)*Sk;
-    }
-    else{
+      DAOP = ( kt.DK011 + kt.DK012 ) * Ck - ( kt.DK021 + kt.DK022 ) * Sk;
+      DSR = ( kt.DK031 + kt.DK032 ) * Ck + ( kt.DK041 + kt.DK042 ) * Sk;
+    } else {
       DAOP = 0.;
       DSR = 0.;
     }
 
-    Dbb = DRE*(1.0-nb*DREp+(nb*DREp)*(nb*DREp) + 0.5*nb*nb*DRE*DREpp) + DS + DA
-      + DAOP + DSR;
+    Dbb = DRE * ( 1.0 - nb * DREp + ( nb * DREp ) * ( nb * DREp ) + 0.5 * nb * nb * DRE * DREpp ) + DS + DA
+          + DAOP + DSR;
 
     output->deltaT = -Dbb;
     /********************************************************/
@@ -763,9 +780,9 @@ XLALBinaryPulsarDeltaT( BinaryPulsarOutput   *output,
 
   /* for DD model - code partly adapted from TEMPO bnrydd.f */
   /* also used for MSS model (Wex 1998) - main sequence star orbit - this only has two lines
-different than DD model - TEMPO bnrymss.f */
+  different than DD model - TEMPO bnrymss.f */
   /* also DDS model and (partial) T2 model (if EPS params not set) from TEMPO2 T2model.C */
-  if( !strcmp(model, "DD") || !strcmp(model, "MSS") || !strcmp(model, "DDS") || (!strcmp(model, "T2") && eps1 == 0.) ){
+  if ( !strcmp( model, "DD" ) || !strcmp( model, "MSS" ) || !strcmp( model, "DDS" ) || ( !strcmp( model, "T2" ) && eps1 == 0. ) ) {
     REAL8 u;        /* new eccentric anomaly */
     REAL8 Ae;       /* eccentricity parameter */
     REAL8 DRE;      /* Roemer delay + Einstein delay */
@@ -796,106 +813,109 @@ different than DD model - TEMPO bnrymss.f */
     /* fprintf(stderr, "You are using the Damour-Deruelle (DD) binary model.\n");*/
 
     /* part of code adapted from TEMPO bnrydd.f */
-    an = LAL_TWOPI/Pb;
-    k = wdot/an;
-    xi = xdot/an; /* MSS parameter */
+    an = LAL_TWOPI / Pb;
+    k = wdot / an;
+    xi = xdot / an; /* MSS parameter */
 
     tt0 = tb - T0;
     /* x = x + xdot*tt0; */
 
     /* following DDmodel.C from TEMPO2 just set dth, dr, a0 and b0 to 0 */
-    if ( !strcmp(model, "DD") ){
+    if ( !strcmp( model, "DD" ) ) {
       dr = 0.;
       dth = 0.;
       a0 = 0.;
       b0 = 0.;
     }
 
-    e = e + edot*tt0;
-    er = e*(1.0+dr);
-    eth = e*(1.0+dth);
+    e = e + edot * tt0;
+    er = e * ( 1.0 + dr );
+    eth = e * ( 1.0 + dth );
 
-    orbits = (tt0/Pb) - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
-    norbits = (INT4)orbits;
+    orbits = ( tt0 / Pb ) - 0.5 * ( pbdot + xpbdot ) * ( tt0 / Pb ) * ( tt0 / Pb );
+    norbits = ( INT4 )orbits;
 
-    if(orbits < 0.0) norbits--;
+    if ( orbits < 0.0 ) {
+      norbits--;
+    }
 
-    phase = LAL_TWOPI*(orbits - (REAL8)norbits);
+    phase = LAL_TWOPI * ( orbits - ( REAL8 )norbits );
 
     /* compute eccentric anomaly */
     XLALComputeEccentricAnomaly( phase, e, &u );
 
-    su = sin(u);
-    cu = cos(u);
+    su = sin( u );
+    cu = cos( u );
 
     /* compute Ae as in TEMPO bnrydd.f */
-    onemecu = 1.0 - e*cu;
-    cae = (cu - e)/onemecu;
-    sae = sqrt(1.0 - e*e)*su/onemecu;
+    onemecu = 1.0 - e * cu;
+    cae = ( cu - e ) / onemecu;
+    sae = sqrt( 1.0 - e * e ) * su / onemecu;
 
-    Ae = atan2(sae,cae);
+    Ae = atan2( sae, cae );
 
-    if(Ae < 0.0)
+    if ( Ae < 0.0 ) {
       Ae = Ae + LAL_TWOPI;
+    }
 
-    Ae = LAL_TWOPI*orbits + Ae - phase;
+    Ae = LAL_TWOPI * orbits + Ae - phase;
 
-    w = w0 + k*Ae; /* add corrections to omega */ /* MSS also uses (om2dot, but not defined) */
+    w = w0 + k * Ae; /* add corrections to omega */ /* MSS also uses (om2dot, but not defined) */
 
     /* small difference between MSS and DD */
-    if( !strcmp(model, "MSS") ){
-      x = x + xi*Ae; /* in bnrymss.f they also include a second time derivative of x (x2dot), but
+    if ( !strcmp( model, "MSS" ) ) {
+      x = x + xi * Ae; /* in bnrymss.f they also include a second time derivative of x (x2dot), but
 this isn't defined for either of the two pulsars currently using this model */
+    } else {
+      x = x + xdot * tt0;
     }
-    else
-      x = x + xdot*tt0;
 
     /* now compute time delays as in DD eqs 46 - 52 */
 
     /* calculate Einstein and Roemer delay */
-    sw = sin(w);
-    cw = cos(w);
-    alpha = x*sw;
-    beta = x*sqrt(1.0-eth*eth)*cw;
+    sw = sin( w );
+    cw = cos( w );
+    alpha = x * sw;
+    beta = x * sqrt( 1.0 - eth * eth ) * cw;
     bg = beta + lal_gamma;
-    DRE = alpha*(cu-er)+bg*su;
-    DREp = -alpha*su + bg*cu;
-    DREpp = -alpha*cu - bg*su;
-    anhat = an/onemecu;
+    DRE = alpha * ( cu - er ) + bg * su;
+    DREp = -alpha * su + bg * cu;
+    DREpp = -alpha * cu - bg * su;
+    anhat = an / onemecu;
 
     /* calculate Shapiro and abberation delays DD eqs 26, 27 */
-    sqr1me2 = sqrt(1.0-e*e);
-    cume = cu-e;
-    if( !strcmp(model, "DDS") ){
-      sdds = 1. - exp(-1.*shapmax);
-      brace = onemecu-sdds*(sw*cume + sqr1me2*cw*su);
+    sqr1me2 = sqrt( 1.0 - e * e );
+    cume = cu - e;
+    if ( !strcmp( model, "DDS" ) ) {
+      sdds = 1. - exp( -1.*shapmax );
+      brace = onemecu - sdds * ( sw * cume + sqr1me2 * cw * su );
+    } else {
+      brace = onemecu - s * ( sw * cume + sqr1me2 * cw * su );
     }
-    else brace = onemecu-s*(sw*cume + sqr1me2*cw*su);
-    dlogbr = log(brace);
-    DS = -2.0*r*dlogbr;
+    dlogbr = log( brace );
+    DS = -2.0 * r * dlogbr;
 
     /* this abberation delay is prob fairly small */
-    DA = a0*(sin(w+Ae)+e*sw) + b0*(cos(w+Ae)+e*cw);
+    DA = a0 * ( sin( w + Ae ) + e * sw ) + b0 * ( cos( w + Ae ) + e * cw );
 
     /* compute Kopeikin terms */
-    if( params->kinset && params->komset && ( params->pmra != 0. ||
-        params->pmdec != 0. ) ){
+    if ( params->kinset && params->komset && ( params->pmra != 0. ||
+         params->pmdec != 0. ) ) {
       XLALComputeKopeikinTerms( &kt, params, input );
 
-      Ck = cw*(cu-er) - sqrt(1.-eth*eth)*sw*su;
-      Sk = sw*(cu-er) + sqrt(1.-eth*eth)*cw*su;
+      Ck = cw * ( cu - er ) - sqrt( 1. - eth * eth ) * sw * su;
+      Sk = sw * ( cu - er ) + sqrt( 1. - eth * eth ) * cw * su;
 
-      DAOP = (kt.DK011 + kt.DK012)*Ck - (kt.DK021 + kt.DK022)*Sk;
-      DSR = (kt.DK031 + kt.DK032)*Ck + (kt.DK041 + kt.DK042)*Sk;
-    }
-    else{
+      DAOP = ( kt.DK011 + kt.DK012 ) * Ck - ( kt.DK021 + kt.DK022 ) * Sk;
+      DSR = ( kt.DK031 + kt.DK032 ) * Ck + ( kt.DK041 + kt.DK042 ) * Sk;
+    } else {
       DAOP = 0.;
       DSR = 0.;
     }
 
     /* timing difference */
-    Dbb = DRE*(1.0 - anhat*DREp+anhat*anhat*DREp*DREp + 0.5*anhat*anhat*DRE*DREpp -
-          0.5*e*su*anhat*anhat*DRE*DREp/onemecu) + DS + DA + DAOP + DSR;
+    Dbb = DRE * ( 1.0 - anhat * DREp + anhat * anhat * DREp * DREp + 0.5 * anhat * anhat * DRE * DREpp -
+                  0.5 * e * su * anhat * anhat * DRE * DREp / onemecu ) + DS + DA + DAOP + DSR;
 
     output->deltaT = -Dbb;
   }
@@ -905,7 +925,7 @@ this isn't defined for either of the two pulsars currently using this model */
   /* for Epstein-Haugan (EH) model - see Haugan, ApJ (1985) eqs 69 and 71 */
 
   /* check that the returned value is not a NaN */
-  if( isnan(output->deltaT) ){
+  if ( isnan( output->deltaT ) ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENAN );
   }
 }
@@ -916,16 +936,16 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
                            BinaryPulsarInput    *input,
                            PulsarParameters     *params )
 {
-  REAL8 dt=0.; /* binary pulsar deltaT */
-  REAL8 x, xdot;	/* x = asini/c */
-  REAL8 w=0;  /* longitude of periastron */
+  REAL8 dt = 0.; /* binary pulsar deltaT */
+  REAL8 x, xdot;        /* x = asini/c */
+  REAL8 w = 0; /* longitude of periastron */
   REAL8 e, edot;  /* eccentricity */
   REAL8 eps1, eps2;
   REAL8 eps1dot, eps2dot;
   REAL8 w0, wdot;
   REAL8 Pb, pbdot;
   REAL8 xpbdot;
-  REAL8 T0, Tasc, tb=0.; /* time parameters */
+  REAL8 T0, Tasc, tb = 0.; /* time parameters */
 
   REAL8 s, r; /* Shapiro shape and range params */
   REAL8 lal_gamma; /* time dilation and grav redshift */
@@ -935,80 +955,80 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
   REAL8 pmra, pmdec; /* proper motion parameters */
 
   REAL8 m2;
-  const REAL8 c3 = (REAL8)LAL_C_SI*(REAL8)LAL_C_SI*(REAL8)LAL_C_SI;
+  const REAL8 c3 = ( REAL8 )LAL_C_SI * ( REAL8 )LAL_C_SI * ( REAL8 )LAL_C_SI;
 
-  const CHAR *model = PulsarGetStringParam(params, "BINARY");
+  const CHAR *model = PulsarGetStringParam( params, "BINARY" );
 
   /* Check input arguments */
-  if( input == (BinaryPulsarInput *)NULL ){
+  if ( input == ( BinaryPulsarInput * )NULL ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLINPUT );
   }
 
-  if( output == (BinaryPulsarOutput *)NULL ){
+  if ( output == ( BinaryPulsarOutput * )NULL ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLOUTPUT );
   }
 
-  if( params == (PulsarParameters *)NULL ){
+  if ( params == ( PulsarParameters * )NULL ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLPARAMS );
   }
 
-  if((!strcmp(model, "BT")) &&
-     (!strcmp(model, "BT1P")) &&
-     (!strcmp(model, "BT2P")) &&
-     (!strcmp(model, "BTX")) &&
-     (!strcmp(model, "ELL1")) &&
-     (!strcmp(model, "DD")) &&
-     (!strcmp(model, "DDS")) &&
-     (!strcmp(model, "MSS")) &&
-     (!strcmp(model, "T2"))){
+  if ( ( !strcmp( model, "BT" ) ) &&
+       ( !strcmp( model, "BT1P" ) ) &&
+       ( !strcmp( model, "BT2P" ) ) &&
+       ( !strcmp( model, "BTX" ) ) &&
+       ( !strcmp( model, "ELL1" ) ) &&
+       ( !strcmp( model, "DD" ) ) &&
+       ( !strcmp( model, "DDS" ) ) &&
+       ( !strcmp( model, "MSS" ) ) &&
+       ( !strcmp( model, "T2" ) ) ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENULLBINARYMODEL );
   }
 
   /* convert certain params to SI units */
-  w0 = PulsarGetREAL8ParamOrZero(params, "OM");
-  wdot = PulsarGetREAL8ParamOrZero(params, "OMDOT"); /* wdot in rads/s */
+  w0 = PulsarGetREAL8ParamOrZero( params, "OM" );
+  wdot = PulsarGetREAL8ParamOrZero( params, "OMDOT" ); /* wdot in rads/s */
 
-  Pb = PulsarGetREAL8ParamOrZero(params, "PB"); /* period in secs */
-  pbdot = PulsarGetREAL8ParamOrZero(params, "PBDOT");
+  Pb = PulsarGetREAL8ParamOrZero( params, "PB" ); /* period in secs */
+  pbdot = PulsarGetREAL8ParamOrZero( params, "PBDOT" );
 
-  T0 = PulsarGetREAL8ParamOrZero(params, "T0"); /* these should be in TDB in seconds */
-  Tasc = PulsarGetREAL8ParamOrZero(params, "TASC");
+  T0 = PulsarGetREAL8ParamOrZero( params, "T0" ); /* these should be in TDB in seconds */
+  Tasc = PulsarGetREAL8ParamOrZero( params, "TASC" );
 
-  e = PulsarGetREAL8ParamOrZero(params, "ECC");
-  edot = PulsarGetREAL8ParamOrZero(params, "EDOT");
-  eps1 = PulsarGetREAL8ParamOrZero(params, "EPS1");
-  eps2 = PulsarGetREAL8ParamOrZero(params, "EPS2");
-  eps1dot = PulsarGetREAL8ParamOrZero(params, "EPS1DOT");
-  eps2dot = PulsarGetREAL8ParamOrZero(params, "EPS2DOT");
+  e = PulsarGetREAL8ParamOrZero( params, "ECC" );
+  edot = PulsarGetREAL8ParamOrZero( params, "EDOT" );
+  eps1 = PulsarGetREAL8ParamOrZero( params, "EPS1" );
+  eps2 = PulsarGetREAL8ParamOrZero( params, "EPS2" );
+  eps1dot = PulsarGetREAL8ParamOrZero( params, "EPS1DOT" );
+  eps2dot = PulsarGetREAL8ParamOrZero( params, "EPS2DOT" );
 
-  x = PulsarGetREAL8ParamOrZero(params, "A1");
-  xdot = PulsarGetREAL8ParamOrZero(params, "XDOT");
-  xpbdot = PulsarGetREAL8ParamOrZero(params, "XPBDOT");
+  x = PulsarGetREAL8ParamOrZero( params, "A1" );
+  xdot = PulsarGetREAL8ParamOrZero( params, "XDOT" );
+  xpbdot = PulsarGetREAL8ParamOrZero( params, "XPBDOT" );
 
-  lal_gamma = PulsarGetREAL8ParamOrZero(params, "GAMMA");
-  s = PulsarGetREAL8ParamOrZero(params, "SINI"); /* sin i */
-  dr = PulsarGetREAL8ParamOrZero(params, "DR");
-  dth = PulsarGetREAL8ParamOrZero(params, "DTHETA");
-  shapmax = PulsarGetREAL8ParamOrZero(params, "SHAPMAX");
+  lal_gamma = PulsarGetREAL8ParamOrZero( params, "GAMMA" );
+  s = PulsarGetREAL8ParamOrZero( params, "SINI" ); /* sin i */
+  dr = PulsarGetREAL8ParamOrZero( params, "DR" );
+  dth = PulsarGetREAL8ParamOrZero( params, "DTHETA" );
+  shapmax = PulsarGetREAL8ParamOrZero( params, "SHAPMAX" );
 
-  a0 = PulsarGetREAL8ParamOrZero(params, "A0");
-  b0 = PulsarGetREAL8ParamOrZero(params, "B0");
+  a0 = PulsarGetREAL8ParamOrZero( params, "A0" );
+  b0 = PulsarGetREAL8ParamOrZero( params, "B0" );
 
-  m2 = PulsarGetREAL8ParamOrZero(params, "M2");
+  m2 = PulsarGetREAL8ParamOrZero( params, "M2" );
 
-  pmra = PulsarGetREAL8ParamOrZero(params, "PMRA");
-  pmdec = PulsarGetREAL8ParamOrZero(params, "PMDEC");
+  pmra = PulsarGetREAL8ParamOrZero( params, "PMRA" );
+  pmdec = PulsarGetREAL8ParamOrZero( params, "PMDEC" );
 
   /* Shapiro range parameter r defined as Gm2/c^3 (secs) */
-  r = LAL_G_SI*m2/c3;
+  r = LAL_G_SI * m2 / c3;
 
   /* if T0 is not defined, but Tasc is */
-  if(T0 == 0.0 && Tasc != 0.0 && eps1 == 0.0 && eps2 == 0.0){
+  if ( T0 == 0.0 && Tasc != 0.0 && eps1 == 0.0 && eps2 == 0.0 ) {
     REAL8 fe, uasc, Dt; /* see TEMPO tasc2t0.f */
 
-    fe = sqrt((1.0 - e)/(1.0 + e));
-    uasc = 2.0*atan(fe*tan(w0/2.0));
-    Dt = (Pb/LAL_TWOPI)*(uasc-e*sin(uasc));
+    fe = sqrt( ( 1.0 - e ) / ( 1.0 + e ) );
+    uasc = 2.0 * atan( fe * tan( w0 / 2.0 ) );
+    Dt = ( Pb / LAL_TWOPI ) * ( uasc - e * sin( uasc ) );
 
     T0 = Tasc + Dt;
   }
@@ -1017,25 +1037,29 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
   tb = input->tb;
 
   /* for BT, BT1P and BT2P models (and BTX model, but only for one orbit) */
-  if(strstr(model, "BT") != NULL){
+  if ( strstr( model, "BT" ) != NULL ) {
     REAL8 tt0;
-    REAL8 orbits=0.;
-    INT4 norbits=0;
+    REAL8 orbits = 0.;
+    INT4 norbits = 0;
     REAL8 phase; /* same as mean anomaly */
     REAL8 u = 0.0; /* eccentric anomaly */
 
-    INT4 nplanets=1; /* number of orbiting bodies in system */
-    INT4 i=1, j=1;
-    REAL8 fac=1.; /* factor in front of fb coefficients */
+    INT4 nplanets = 1; /* number of orbiting bodies in system */
+    INT4 i = 1, j = 1;
+    REAL8 fac = 1.; /* factor in front of fb coefficients */
 
     REAL8 su = 0., cu = 0.;
     REAL8 sw = 0., cw = 0.;
 
     /* work out number of orbits i.e. have we got a BT1P or BT2P model */
-    if( !strcmp(model, "BT1P") ) nplanets = 2;
-    if( !strcmp(model, "BT2P") ) nplanets = 3;
+    if ( !strcmp( model, "BT1P" ) ) {
+      nplanets = 2;
+    }
+    if ( !strcmp( model, "BT2P" ) ) {
+      nplanets = 3;
+    }
 
-    for ( i=1 ; i < nplanets+1 ; i++){
+    for ( i = 1 ; i < nplanets + 1 ; i++ ) {
 
       /* set some vars for bnrybt.f (TEMPO) method */
       /*REAL8 tt;
@@ -1046,86 +1070,84 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
 
       /*fprintf(stderr, "You are using the Blandford-Teukolsky (BT) binary model.\n");*/
 
-      if(i==2){
-        T0 = PulsarGetREAL8ParamOrZero(params, "T0_2");
-        w0 = PulsarGetREAL8ParamOrZero(params, "OM_2");
-        x = PulsarGetREAL8ParamOrZero(params, "A1_2");
-        e = PulsarGetREAL8ParamOrZero(params, "ECC_2");
-        Pb = PulsarGetREAL8ParamOrZero(params, "PB_2");
-      }
-      else if(i==3){
-        T0 = PulsarGetREAL8ParamOrZero(params, "T0_3");
-        w0 = PulsarGetREAL8ParamOrZero(params, "OM_3");
-        x = PulsarGetREAL8ParamOrZero(params, "A1_3");
-        e = PulsarGetREAL8ParamOrZero(params, "ECC_3");
-        Pb = PulsarGetREAL8ParamOrZero(params, "PB_3");
+      if ( i == 2 ) {
+        T0 = PulsarGetREAL8ParamOrZero( params, "T0_2" );
+        w0 = PulsarGetREAL8ParamOrZero( params, "OM_2" );
+        x = PulsarGetREAL8ParamOrZero( params, "A1_2" );
+        e = PulsarGetREAL8ParamOrZero( params, "ECC_2" );
+        Pb = PulsarGetREAL8ParamOrZero( params, "PB_2" );
+      } else if ( i == 3 ) {
+        T0 = PulsarGetREAL8ParamOrZero( params, "T0_3" );
+        w0 = PulsarGetREAL8ParamOrZero( params, "OM_3" );
+        x = PulsarGetREAL8ParamOrZero( params, "A1_3" );
+        e = PulsarGetREAL8ParamOrZero( params, "ECC_3" );
+        Pb = PulsarGetREAL8ParamOrZero( params, "PB_3" );
       }
 
       tt0 = tb - T0;
 
       /* only do relativistic corrections for first orbit */
-      if(i==1){
-        x = x + xdot*tt0;
-        e = e + edot*tt0;
-        w = w0 + wdot*tt0; /* calculate w */
+      if ( i == 1 ) {
+        x = x + xdot * tt0;
+        e = e + edot * tt0;
+        w = w0 + wdot * tt0; /* calculate w */
 
-        if( !strcmp(model, "BTX") && PulsarCheckParam(params, "FB") ){
-          const REAL8Vector *fb = PulsarGetREAL8VectorParam(params, "FB");
+        if ( !strcmp( model, "BTX" ) && PulsarCheckParam( params, "FB" ) ) {
+          const REAL8Vector *fb = PulsarGetREAL8VectorParam( params, "FB" );
 
           fac = 1.;
-          for ( j=1 ; j < (INT4)fb->length + 1; j++){
-            fac /= (REAL8)j;
-            orbits += fac*fb->data[j-1]*pow(tt0,j);
+          for ( j = 1 ; j < ( INT4 )fb->length + 1; j++ ) {
+            fac /= ( REAL8 )j;
+            orbits += fac * fb->data[j - 1] * pow( tt0, j );
           }
+        } else {
+          orbits = tt0 / Pb - 0.5 * ( pbdot + xpbdot ) * ( tt0 / Pb ) * ( tt0 / Pb );
         }
-        else{
-          orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
-        }
-      }
-      else{
-        orbits = tt0/Pb;
+      } else {
+        orbits = tt0 / Pb;
       }
 
-      norbits = (INT4)orbits;
+      norbits = ( INT4 )orbits;
 
-      if(orbits < 0.) norbits--;
+      if ( orbits < 0. ) {
+        norbits--;
+      }
 
-      phase = LAL_TWOPI*(orbits - (REAL8)norbits); /* called phase in TEMPO */
+      phase = LAL_TWOPI * ( orbits - ( REAL8 )norbits ); /* called phase in TEMPO */
 
       /* compute eccentric anomaly */
       XLALComputeEccentricAnomaly( phase, e, &u );
 
-      su = sin(u);
-      cu = cos(u);
+      su = sin( u );
+      cu = cos( u );
 
       /*fprintf(stderr, "Eccentric anomaly = %f, phase = %f.\n", u, phase);*/
-      sw = sin(w);
-      cw = cos(w);
+      sw = sin( w );
+      cw = cos( w );
 
       /* see eq 5 of Taylor and Weisberg (1989) */
       /**********************************************************/
-      if( !strcmp(model, "BTX") ){
+      if ( !strcmp( model, "BTX" ) ) {
         REAL8 fb0 = 0.;
-        if ( PulsarCheckParam(params, "FB") ){
-          const REAL8Vector *fb = PulsarGetREAL8VectorParam(params, "FB");
+        if ( PulsarCheckParam( params, "FB" ) ) {
+          const REAL8Vector *fb = PulsarGetREAL8VectorParam( params, "FB" );
           fb0 = fb->data[0];
         }
         /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
           lal_gamma)*sin(u))*(1.0 - params->fb[0]*(x*cos(w)*sqrt(1.0 -
           e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
-        dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-          lal_gamma)*su)*(1.0 - LAL_TWOPI*fb0*(x*cw*sqrt(1.0 -
-          e*e)*cu - x*sw*su)/(1.0 - e*cu));
+        dt += ( x * sw * ( cu - e ) + ( x * cw * sqrt( 1.0 - e * e ) +
+                                        lal_gamma ) * su ) * ( 1.0 - LAL_TWOPI * fb0 * ( x * cw * sqrt( 1.0 -
+                                            e * e ) * cu - x * sw * su ) / ( 1.0 - e * cu ) );
+      } else {
+        /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
+          lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
+          e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
+        dt += ( x * sw * ( cu - e ) + ( x * cw * sqrt( 1.0 - e * e ) +
+                                        lal_gamma ) * su ) * ( 1.0 - ( LAL_TWOPI / Pb ) * ( x * cw * sqrt( 1.0 -
+                                            e * e ) * cu - x * sw * su ) / ( 1.0 - e * cu ) );
       }
-      else{
-          /* dt += (x*sin(w)*(cos(u)-e) + (x*cos(w)*sqrt(1.0-e*e) +
-            lal_gamma)*sin(u))*(1.0 - (LAL_TWOPI/Pb)*(x*cos(w)*sqrt(1.0 -
-            e*e)*cos(u) - x*sin(w)*sin(u))/(1.0 - e*cos(u))); */
-          dt += (x*sw*(cu-e) + (x*cw*sqrt(1.0-e*e) +
-            lal_gamma)*su)*(1.0 - (LAL_TWOPI/Pb)*(x*cw*sqrt(1.0 -
-            e*e)*cu - x*sw*su)/(1.0 - e*cu));
-      }
-    /**********************************************************/
+      /**********************************************************/
     }
 
     /* use method from Taylor etal 1976 ApJ Lett and used in bnrybt.f */
@@ -1148,7 +1170,7 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
   /* for ELL1 model (low eccentricity orbits so use eps1 and eps2) */
   /* see Appendix A, Ch. Lange etal, MNRAS (2001) (also accept T2 model if
    eps values are set - this will include Kopeikin terms if necessary) */
-  if( !strcmp(model, "ELL1") || (!strcmp(model, "T2") && eps1 != 0. ) ){
+  if ( !strcmp( model, "ELL1" ) || ( !strcmp( model, "T2" ) && eps1 != 0. ) ) {
     REAL8 nb;
     REAL8 tt0;
     REAL8 w_int; /* omega internal to this model */
@@ -1172,15 +1194,15 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
     /*********************************************************/
     /* CORRECT CODE (as in TEMPO bnryell1.f) FROM HERE       */
 
-    ecc = sqrt(eps1*eps1 + eps2*eps2);
+    ecc = sqrt( eps1 * eps1 + eps2 * eps2 );
 
     /* if Tasc is not defined convert T0 */
-    if(Tasc == 0.0 && T0 != 0.0){
+    if ( Tasc == 0.0 && T0 != 0.0 ) {
       REAL8 fe, uasc, Dt; /* see TEMPO tasc2t0.f */
 
-      fe = sqrt((1.0 - ecc)/(1.0 + ecc));
-      uasc = 2.0*atan(fe*tan(w0/2.0));
-      Dt = (Pb/LAL_TWOPI)*(uasc-ecc*sin(uasc));
+      fe = sqrt( ( 1.0 - ecc ) / ( 1.0 + ecc ) );
+      uasc = 2.0 * atan( fe * tan( w0 / 2.0 ) );
+      Dt = ( Pb / LAL_TWOPI ) * ( uasc - ecc * sin( uasc ) );
 
       /* rearrange from what's in tasc2t0.f */
       Tasc = T0 - Dt;
@@ -1189,84 +1211,83 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
     tt0 = tb - Tasc;
 
     /* handle higher orbital frequency derivatives if present */
-    if( PulsarCheckParam(params, "FB") ){
-      const REAL8Vector *fb = PulsarGetREAL8VectorParam(params, "FB");
+    if ( PulsarCheckParam( params, "FB" ) ) {
+      const REAL8Vector *fb = PulsarGetREAL8VectorParam( params, "FB" );
 
       /* set period from first orbital frequency value */
-      Pb = 1./fb->data[0];
-      orbits = tt0/Pb;
+      Pb = 1. / fb->data[0];
+      orbits = tt0 / Pb;
 
       fac = 1.;
-      for ( UINT4 j=1 ; j < fb->length; j++){
-        fac /= (REAL8)(j+1);
-        orbits += fac*fb->data[j]*pow(tt0,j+1);
+      for ( UINT4 j = 1 ; j < fb->length; j++ ) {
+        fac /= ( REAL8 )( j + 1 );
+        orbits += fac * fb->data[j] * pow( tt0, j + 1 );
       }
+    } else {
+      orbits = tt0 / Pb - 0.5 * ( pbdot + xpbdot ) * ( tt0 / Pb ) * ( tt0 / Pb );
     }
-    else{
-      orbits = tt0/Pb - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
+
+    nb = LAL_TWOPI / Pb;
+
+    norbits = ( INT4 )orbits;
+    if ( orbits < 0.0 ) {
+      norbits--;
     }
 
-    nb = LAL_TWOPI/Pb;
+    phase = LAL_TWOPI * ( orbits - ( REAL8 )norbits );
 
-    norbits = (INT4)orbits;
-    if(orbits < 0.0) norbits--;
-
-    phase=LAL_TWOPI*(orbits - (REAL8)norbits);
-
-    x = x + xdot*tt0;
+    x = x + xdot * tt0;
 
     /* depending on whether we have eps derivs or w time derivs calculate e1 and e2 accordingly */
-    if( eps1dot != 0. || eps2dot != 0. ){
-      e1 = eps1 + eps1dot*tt0;
-      e2 = eps2 + eps2dot*tt0;
-    }
-    else{
-      ecc = sqrt(eps1*eps1 + eps2*eps2);
-      ecc += edot*tt0;
-      w_int = atan2(eps1, eps2);
-      w_int = w_int + wdot*tt0;
+    if ( eps1dot != 0. || eps2dot != 0. ) {
+      e1 = eps1 + eps1dot * tt0;
+      e2 = eps2 + eps2dot * tt0;
+    } else {
+      ecc = sqrt( eps1 * eps1 + eps2 * eps2 );
+      ecc += edot * tt0;
+      w_int = atan2( eps1, eps2 );
+      w_int = w_int + wdot * tt0;
 
-      e1 = ecc*sin(w_int);
-      e2 = ecc*cos(w_int);
+      e1 = ecc * sin( w_int );
+      e2 = ecc * cos( w_int );
     }
 
     //sin_cos_LUT(&sp, &cp, phase);
     //sin_cos_LUT(&s2p, &c2p, 2.*phase);
-    sp = sin(phase);
-    cp = cos(phase);
-    s2p = sin(2.*phase);
-    c2p = cos(2.*phase);
+    sp = sin( phase );
+    cp = cos( phase );
+    s2p = sin( 2.*phase );
+    c2p = cos( 2.*phase );
 
     /* this timing delay (Roemer + Einstein) should be most important in most cases */
     /* DRE = x*(sin(phase)-0.5*(e1*cos(2.0*phase)-e2*sin(2.0*phase)));
     DREp = x*cos(phase);
     DREpp = -x*sin(phase); */
-    DRE = x*(sp-0.5*(e1*c2p-e2*s2p));
-    DREp = x*cp;
-    DREpp = -x*sp;
+    DRE = x * ( sp - 0.5 * ( e1 * c2p - e2 * s2p ) );
+    DREp = x * cp;
+    DREpp = -x * sp;
 
     /* these params will normally be negligable */
-    dlogbr = log(1.0-s*sp);
-    DS = -2.0*r*dlogbr;
-    DA = a0*sp + b0*cp;
+    dlogbr = log( 1.0 - s * sp );
+    DS = -2.0 * r * dlogbr;
+    DA = a0 * sp + b0 * cp;
 
     /* compute Kopeikin terms */
-    if( PulsarCheckParam(params, "KIN") && PulsarCheckParam(params, "KOM") && ( pmra != 0. || pmdec != 0. ) ){
+    if ( PulsarCheckParam( params, "KIN" ) && PulsarCheckParam( params, "KOM" ) && ( pmra != 0. || pmdec != 0. ) ) {
       XLALComputeKopeikinTermsNew( &kt, params, input );
 
-      Ck = sp - 0.5*(e1*c2p - e2*s2p);
-      Sk = cp + 0.5*(e2*c2p + e1*s2p);
+      Ck = sp - 0.5 * ( e1 * c2p - e2 * s2p );
+      Sk = cp + 0.5 * ( e2 * c2p + e1 * s2p );
 
-      DAOP = (kt.DK011 + kt.DK012)*Ck - (kt.DK021 + kt.DK022)*Sk;
-      DSR = (kt.DK031 + kt.DK032)*Ck + (kt.DK041 + kt.DK042)*Sk;
-    }
-    else{
+      DAOP = ( kt.DK011 + kt.DK012 ) * Ck - ( kt.DK021 + kt.DK022 ) * Sk;
+      DSR = ( kt.DK031 + kt.DK032 ) * Ck + ( kt.DK041 + kt.DK042 ) * Sk;
+    } else {
       DAOP = 0.;
       DSR = 0.;
     }
 
-    Dbb = DRE*(1.0-nb*DREp+(nb*DREp)*(nb*DREp) + 0.5*nb*nb*DRE*DREpp) + DS + DA
-      + DAOP + DSR;
+    Dbb = DRE * ( 1.0 - nb * DREp + ( nb * DREp ) * ( nb * DREp ) + 0.5 * nb * nb * DRE * DREpp ) + DS + DA
+          + DAOP + DSR;
 
     output->deltaT = -Dbb;
     /********************************************************/
@@ -1274,9 +1295,9 @@ XLALBinaryPulsarDeltaTNew( BinaryPulsarOutput   *output,
 
   /* for DD model - code partly adapted from TEMPO bnrydd.f */
   /* also used for MSS model (Wex 1998) - main sequence star orbit - this only has two lines
-different than DD model - TEMPO bnrymss.f */
+  different than DD model - TEMPO bnrymss.f */
   /* also DDS model and (partial) T2 model (if EPS params not set) from TEMPO2 T2model.C */
-  if( !strcmp(model, "DD") || !strcmp(model, "MSS") || !strcmp(model, "DDS") || (!strcmp(model, "T2") && eps1 == 0.) ){
+  if ( !strcmp( model, "DD" ) || !strcmp( model, "MSS" ) || !strcmp( model, "DDS" ) || ( !strcmp( model, "T2" ) && eps1 == 0. ) ) {
     REAL8 u;        /* new eccentric anomaly */
     REAL8 Ae;       /* eccentricity parameter */
     REAL8 DRE;      /* Roemer delay + Einstein delay */
@@ -1307,105 +1328,108 @@ different than DD model - TEMPO bnrymss.f */
     /* fprintf(stderr, "You are using the Damour-Deruelle (DD) binary model.\n");*/
 
     /* part of code adapted from TEMPO bnrydd.f */
-    an = LAL_TWOPI/Pb;
-    k = wdot/an;
-    xi = xdot/an; /* MSS parameter */
+    an = LAL_TWOPI / Pb;
+    k = wdot / an;
+    xi = xdot / an; /* MSS parameter */
 
     tt0 = tb - T0;
     /* x = x + xdot*tt0; */
 
     /* following DDmodel.C from TEMPO2 just set dth, dr, a0 and b0 to 0 */
-    if ( !strcmp(model, "DD") ){
+    if ( !strcmp( model, "DD" ) ) {
       dr = 0.;
       dth = 0.;
       a0 = 0.;
       b0 = 0.;
     }
 
-    e = e + edot*tt0;
-    er = e*(1.0+dr);
-    eth = e*(1.0+dth);
+    e = e + edot * tt0;
+    er = e * ( 1.0 + dr );
+    eth = e * ( 1.0 + dth );
 
-    orbits = (tt0/Pb) - 0.5*(pbdot+xpbdot)*(tt0/Pb)*(tt0/Pb);
-    norbits = (INT4)orbits;
+    orbits = ( tt0 / Pb ) - 0.5 * ( pbdot + xpbdot ) * ( tt0 / Pb ) * ( tt0 / Pb );
+    norbits = ( INT4 )orbits;
 
-    if(orbits < 0.0) norbits--;
+    if ( orbits < 0.0 ) {
+      norbits--;
+    }
 
-    phase = LAL_TWOPI*(orbits - (REAL8)norbits);
+    phase = LAL_TWOPI * ( orbits - ( REAL8 )norbits );
 
     /* compute eccentric anomaly */
     XLALComputeEccentricAnomaly( phase, e, &u );
 
-    su = sin(u);
-    cu = cos(u);
+    su = sin( u );
+    cu = cos( u );
 
     /* compute Ae as in TEMPO bnrydd.f */
-    onemecu = 1.0 - e*cu;
-    cae = (cu - e)/onemecu;
-    sae = sqrt(1.0 - e*e)*su/onemecu;
+    onemecu = 1.0 - e * cu;
+    cae = ( cu - e ) / onemecu;
+    sae = sqrt( 1.0 - e * e ) * su / onemecu;
 
-    Ae = atan2(sae,cae);
+    Ae = atan2( sae, cae );
 
-    if(Ae < 0.0)
+    if ( Ae < 0.0 ) {
       Ae = Ae + LAL_TWOPI;
+    }
 
-    Ae = LAL_TWOPI*orbits + Ae - phase;
+    Ae = LAL_TWOPI * orbits + Ae - phase;
 
-    w = w0 + k*Ae; /* add corrections to omega */ /* MSS also uses (om2dot, but not defined) */
+    w = w0 + k * Ae; /* add corrections to omega */ /* MSS also uses (om2dot, but not defined) */
 
     /* small difference between MSS and DD */
-    if( !strcmp(model, "MSS") ){
-      x = x + xi*Ae; /* in bnrymss.f they also include a second time derivative of x (x2dot), but
+    if ( !strcmp( model, "MSS" ) ) {
+      x = x + xi * Ae; /* in bnrymss.f they also include a second time derivative of x (x2dot), but
 this isn't defined for either of the two pulsars currently using this model */
+    } else {
+      x = x + xdot * tt0;
     }
-    else
-      x = x + xdot*tt0;
 
     /* now compute time delays as in DD eqs 46 - 52 */
 
     /* calculate Einstein and Roemer delay */
-    sw = sin(w);
-    cw = cos(w);
-    alpha = x*sw;
-    beta = x*sqrt(1.0-eth*eth)*cw;
+    sw = sin( w );
+    cw = cos( w );
+    alpha = x * sw;
+    beta = x * sqrt( 1.0 - eth * eth ) * cw;
     bg = beta + lal_gamma;
-    DRE = alpha*(cu-er)+bg*su;
-    DREp = -alpha*su + bg*cu;
-    DREpp = -alpha*cu - bg*su;
-    anhat = an/onemecu;
+    DRE = alpha * ( cu - er ) + bg * su;
+    DREp = -alpha * su + bg * cu;
+    DREpp = -alpha * cu - bg * su;
+    anhat = an / onemecu;
 
     /* calculate Shapiro and abberation delays DD eqs 26, 27 */
-    sqr1me2 = sqrt(1.0-e*e);
-    cume = cu-e;
-    if( !strcmp(model, "DDS") ){
-      sdds = 1. - exp(-1.*shapmax);
-      brace = onemecu-sdds*(sw*cume + sqr1me2*cw*su);
+    sqr1me2 = sqrt( 1.0 - e * e );
+    cume = cu - e;
+    if ( !strcmp( model, "DDS" ) ) {
+      sdds = 1. - exp( -1.*shapmax );
+      brace = onemecu - sdds * ( sw * cume + sqr1me2 * cw * su );
+    } else {
+      brace = onemecu - s * ( sw * cume + sqr1me2 * cw * su );
     }
-    else brace = onemecu-s*(sw*cume + sqr1me2*cw*su);
-    dlogbr = log(brace);
-    DS = -2.0*r*dlogbr;
+    dlogbr = log( brace );
+    DS = -2.0 * r * dlogbr;
 
     /* this abberation delay is prob fairly small */
-    DA = a0*(sin(w+Ae)+e*sw) + b0*(cos(w+Ae)+e*cw);
+    DA = a0 * ( sin( w + Ae ) + e * sw ) + b0 * ( cos( w + Ae ) + e * cw );
 
     /* compute Kopeikin terms */
-    if( PulsarCheckParam(params, "KIN") && PulsarCheckParam(params, "KOM") && ( pmra != 0. || pmdec != 0. ) ){
+    if ( PulsarCheckParam( params, "KIN" ) && PulsarCheckParam( params, "KOM" ) && ( pmra != 0. || pmdec != 0. ) ) {
       XLALComputeKopeikinTermsNew( &kt, params, input );
 
-      Ck = cw*(cu-er) - sqrt(1.-eth*eth)*sw*su;
-      Sk = sw*(cu-er) + sqrt(1.-eth*eth)*cw*su;
+      Ck = cw * ( cu - er ) - sqrt( 1. - eth * eth ) * sw * su;
+      Sk = sw * ( cu - er ) + sqrt( 1. - eth * eth ) * cw * su;
 
-      DAOP = (kt.DK011 + kt.DK012)*Ck - (kt.DK021 + kt.DK022)*Sk;
-      DSR = (kt.DK031 + kt.DK032)*Ck + (kt.DK041 + kt.DK042)*Sk;
-    }
-    else{
+      DAOP = ( kt.DK011 + kt.DK012 ) * Ck - ( kt.DK021 + kt.DK022 ) * Sk;
+      DSR = ( kt.DK031 + kt.DK032 ) * Ck + ( kt.DK041 + kt.DK042 ) * Sk;
+    } else {
       DAOP = 0.;
       DSR = 0.;
     }
 
     /* timing difference */
-    Dbb = DRE*(1.0 - anhat*DREp+anhat*anhat*DREp*DREp + 0.5*anhat*anhat*DRE*DREpp -
-          0.5*e*su*anhat*anhat*DRE*DREp/onemecu) + DS + DA + DAOP + DSR;
+    Dbb = DRE * ( 1.0 - anhat * DREp + anhat * anhat * DREp * DREp + 0.5 * anhat * anhat * DRE * DREpp -
+                  0.5 * e * su * anhat * anhat * DRE * DREp / onemecu ) + DS + DA + DAOP + DSR;
 
     output->deltaT = -Dbb;
   }
@@ -1415,7 +1439,7 @@ this isn't defined for either of the two pulsars currently using this model */
   /* for Epstein-Haugan (EH) model - see Haugan, ApJ (1985) eqs 69 and 71 */
 
   /* check that the returned value is not a NaN */
-  if( isnan(output->deltaT) ){
+  if ( isnan( output->deltaT ) ) {
     XLAL_ERROR_VOID( BINARYPULSARTIMINGH_ENAN );
   }
 

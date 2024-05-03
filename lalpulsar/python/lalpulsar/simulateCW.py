@@ -16,7 +16,7 @@
 
 ## \defgroup lalpulsar_py_simulateCW SimulateCW
 ## \ingroup lalpulsar_python
-"""
+r"""
 Generate strain time series of a continuous-wave signal in the detector frame,
 given a function which computes signal phase and amplitudes as functions of time.
 
