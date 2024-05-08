@@ -82,8 +82,17 @@ def time_array_condition_stage1(hp, hc, dt, t_extra, fmin):
     hc = high_pass_time_series(hc, dt, fmin, 0.99, 8.)
 
     # Remove trailing zeroes from array
-    np.trim_zeros(hp, trim='b')
-    np.trim_zeros(hc, trim='b')
+    hp_values = np.trim_zeros(hp.value, trim='b')
+    hc_values = np.trim_zeros(hc.value, trim='b')
+
+    hp_trimmed = TimeSeries(hp_values)
+    hp_trimmed.t0 = hp.t0
+    hp_trimmed.dt = hp.dt
+    hc_trimmed = TimeSeries(hc_values)
+    hc_trimmed.t0 = hc.t0
+    hc_trimmed.dt = hc.dt
+
+    return hp_trimmed, hc_trimmed
 
     return hp, hc
 
