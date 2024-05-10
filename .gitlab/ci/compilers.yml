@@ -95,11 +95,6 @@ gcc:7:
     - .compiler-test:gcc
   image: igwn/lalsuite-dev-gcc:7
 
-gcc:9:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:9
-
 gcc:10:
   extends:
     - .compiler-test:gcc
