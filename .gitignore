@@ -47,6 +47,7 @@ config.log
 config.status
 configure
 cscope.*
+gmon.out
 junit*.xml
 lalsuite-*.tar.xz
 lalsuite-user-env.csh
