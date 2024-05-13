@@ -89,8 +89,7 @@ nodist_liblalinference_la_SOURCES = \
 
 noinst_HEADERS = \
 	bayestar_cosmology.h \
-	omp_interruptible.h \
-	six.h
+	omp_interruptible.h
 
 liblalinference_la_CFLAGS = $(AM_CFLAGS) $(HDF5_CFLAGS)
 liblalinference_la_CPPFLAGS = $(AM_CPPFLAGS) $(HDF5_CPPFLAGS)
