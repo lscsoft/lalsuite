@@ -168,7 +168,7 @@ lint:gitignore:
   needs: []
   script:
     - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-swig --enable-python
+    - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-python --enable-swig-python
     # build in source directory, including tests
     - make -j${CPU_COUNT} VERBOSE=1 all
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=

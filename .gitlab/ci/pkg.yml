@@ -16,7 +16,7 @@
   image: igwn/lalsuite-dev:el7-testing
   variables:
     # default configure flags (can be overridden from dependents)
-    CONFIGURE_FLAGS: "--enable-swig --enable-python"
+    CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
     # set default python as python3
     # TODO: this can be removed when all packages require python>=3
     #       on their own

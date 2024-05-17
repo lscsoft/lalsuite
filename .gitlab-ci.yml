@@ -165,7 +165,7 @@ default:
     - .build-job
   variables:
     # default configure flags (can be overridden from dependents)
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python"
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
     # default C flags (can be overridden from dependents)
     CFLAGS: "-O3"
     # target to actually run (distcheck is the most thorough)
@@ -1438,7 +1438,7 @@ top-level:pulsar:
   variables:
     # test that LALPulsar builds with optional dependencies disabled
     CONFIGURE_FLAGS: |
-      --enable-doxygen --enable-swig --enable-python
+      --enable-doxygen --enable-python --enable-swig-python
       --disable-all-lal --enable-lalpulsar
   needs: []
   extends:

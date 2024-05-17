@@ -58,7 +58,7 @@ clang:16:
     # weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
     # disable octave bindings
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave"
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
 clang:17:
   extends:
@@ -70,7 +70,7 @@ clang:17:
     # weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
     # disable octave bindings
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave"
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
 clang:dev:
   extends:
@@ -82,13 +82,13 @@ clang:dev:
     # weird bugs when compiling with CFLAGS=-O3
     CFLAGS: "-O2"
     # disable octave bindings
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave"
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
 .compiler-test:gcc:
   extends:
     - .compiler-test
   variables:
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave"
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
 gcc:7:
   extends:
@@ -152,7 +152,7 @@ icc:
     - .compiler-test
   image: igwn/lalsuite-dev-icc:bullseye
   variables:
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python --disable-swig-octave --disable-static --enable-intelfft"
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python --disable-static --enable-intelfft"
   before_script:
     # initialise intel stuff
     - . /opt/intel/oneapi/setvars.sh
