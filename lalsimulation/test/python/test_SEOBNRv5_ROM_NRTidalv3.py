@@ -51,12 +51,10 @@ def gen_test_data(approximant):
     """
 
     LALparams = lal.CreateDict()
-    
     lambda1 = 400.0
     lambda2 = 600.0
     lalsimulation.SimInspiralWaveformParamsInsertTidalLambda1(LALparams, lambda1)
     lalsimulation.SimInspiralWaveformParamsInsertTidalLambda2(LALparams, lambda2)
-    
     common_pars=dict(
     m1=1.4*lal.MSUN_SI,
     m2=1.2*lal.MSUN_SI,
@@ -84,7 +82,6 @@ def gen_test_data(approximant):
 
     pars2 = common_pars.copy()
     pars2.update({"m2":1.0*lal.MSUN_SI})
-    
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(**pars1)
     hp2, hc2 = lalsimulation.SimInspiralChooseFDWaveform(**pars2)
 

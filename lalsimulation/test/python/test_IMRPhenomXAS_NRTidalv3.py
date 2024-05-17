@@ -16,19 +16,11 @@
 # along with this program.  If not, see <http: //www.gnu.org/licenses/>.
 
 """
-Simple test to see if IMRPhenomXAS_NRTidalv3 have changed
+Simple test to see if SEOBNRv5_ROM_NRTidalv3 have changed
 Adapted from test_SEOBNRv5HM_ROM.py.
 """
 
-import sys, os
-import warnings
-try:
-    from pathlib import Path
-except ImportError as exc:
-    import warnings
-    warnings.warn(str(exc))
-    sys.exit(77)
-
+import sys
 import pytest
 import lal
 import lalsimulation
@@ -51,12 +43,10 @@ def gen_test_data(approximant):
     """
 
     LALparams = lal.CreateDict()
-    
     lambda1 = 400.0
     lambda2 = 600.0
     lalsimulation.SimInspiralWaveformParamsInsertTidalLambda1(LALparams, lambda1)
     lalsimulation.SimInspiralWaveformParamsInsertTidalLambda2(LALparams, lambda2)
-    
     common_pars=dict(
     m1=1.4*lal.MSUN_SI,
     m2=1.2*lal.MSUN_SI,
@@ -87,7 +77,6 @@ def gen_test_data(approximant):
     
     hp1, hc1 = lalsimulation.SimInspiralChooseFDWaveform(**pars1)
     hp2, hc2 = lalsimulation.SimInspiralChooseFDWaveform(**pars2)
-
     # compute amp and phase
     hp1_amp, hp1_phase = get_amp_phase(hp1.data.data)
     hc1_amp, hc1_phase = get_amp_phase(hc1.data.data)
@@ -107,25 +96,41 @@ def gen_test_data(approximant):
 
 # -- test functions ---------------------
 
-
-def test_IMRPhenomXAS_NRTidalv3():
+@pytest.mark.skipif(
+    "LAL_DATA_PATH" not in os.environ,
+    reason="LAL_DATA_PATH not found",
+)
+def test_SEOBNRv5_ROM_NRTidalv3():
     """
-    This test checks that IMRPhenomXAS_NRTidalv3 hasn't changed.
-    It does this by generating two IMRPhenomXAS_NRTidalv3 waveforms and computing
+    This test checks that SEOBNRv5_ROM_NRTidalv3 hasn't changed.
+    It does this by generating two SEOBNRv5_ROM_NRTidalv3 waveforms and computing
     their difference (according to their amplitude and phases)
     and compares them to pre-computed values.
 
     these pre-computed values were computed using the following line:
 
-    `expected_result  =  np.array(gen_test_data(lalsimulation.IMRPhenomXAS_NRTidalv3))`
+    `expected_result  =  np.array(gen_test_data(lalsimulation.SEOBNRv5_ROM_NRTidalv3))`
     """
+    LAL_DATA_PATH = os.environ['LAL_DATA_PATH']
+    for D in LAL_DATA_PATH.split(':'):
+        path = Path(D) / "SEOBNRv5ROM_v1.0.hdf5"
+        if path.is_file():
+            have_ROM_data_file = True
+            break
+    else:
+        pytest.skip(
+            "SEOBNRv5ROM_v1.0.hdf5 not found in $LAL_DATA_PATH:{}".format(LAL_DATA_PATH),
+        )
 
-    expected_result = np.array([34.9212815 , 1093.36171606,   34.9212815 , 1093.32677719])
-    new_result  =  np.array(gen_test_data(lalsimulation.IMRPhenomXAS_NRTidalv3))
-    np.testing.assert_almost_equal(new_result, expected_result, 7, "IMRPhenomXAS_NRTidalv3 test failed")
+    expected_result = np.array([35.01601891, 1112.2071495,  35.01601891, 1112.0829081])
+    new_result  =  np.array(gen_test_data(lalsimulation.SEOBNRv5_ROM_NRTidalv3))
+    np.testing.assert_almost_equal(new_result, expected_result, 7, "SEOBNRv5ROM_NRTidalv3 test failed")
 
 #-- run the tests ------------------------------
 
 if __name__ == '__main__':
-    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-IMRPhenomXAS_NRTidalv3.xml"]
+    if "LAL_DATA_PATH" not in os.environ:
+        warnings.warn("LAL_DATA_PATH not found, cannot execute tests")
+        sys.exit(77)
+    args = sys.argv[1:] or ["-v", "-rs", "--junit-xml=junit-SEOBNRv5_ROM_NRTidalv3.xml"]
     sys.exit(pytest.main(args=[__file__] + args))
