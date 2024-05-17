@@ -86,7 +86,10 @@ first_dag=True
 common_path=opts.run_path
 
 for inifile in inits:
-  cp.readfp(open(inifile))
+  try:
+    cp.read_file(open(inifile))
+  except AttributeError:
+    cp.readfp(open(inifile))
   if opts.run_path is not None:
     cp.set('paths','basedir',opts.run_path)
   if opts.daglog_path is not None:
