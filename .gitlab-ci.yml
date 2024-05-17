@@ -103,6 +103,8 @@ variables:
   CONDARC: "${CI_PROJECT_DIR}/.condarc"
   # tell mamba to not display the huge ascii-art banner
   MAMBA_NO_BANNER: 1
+  # tell Debian-based installers to run non-interactively
+  DEBIAN_FRONTEND: noninteractive
 
 # default parameters for jobs
 default:
@@ -1434,16 +1436,23 @@ top-level:
     - !reference [.ci-merge-build, rules]
 
 top-level:pulsar:
-  image: igwn/lalsuite-dev:el7-testing
+  image: containers.ligo.org/karl-wette/lalsuite-dev-ubuntu:latest
   variables:
     # test that LALPulsar builds with optional dependencies disabled
     CONFIGURE_FLAGS: |
-      --enable-doxygen --enable-python --enable-swig-python
+      --disable-doxygen --enable-python --enable-swig
       --disable-all-lal --enable-lalpulsar
   needs: []
   extends:
     - .make-distcheck
     - .integration-tests
+  before_script:
+    # install build dependencies
+    - apt-get -y -q update
+    - cat lal/debian/control.in lalpulsar/debian/control.in
+      | sed -n '/^Build-Depends:/{:top;n;s/^ \([^, ]*\).*/\1/p;t top}'
+      | sed '/lal/d;s/cfitsio3/cfitsio/'
+      | sort | uniq | xargs apt-get -y -q install liboctave-dev
 
 # -- upgrade tests ------------------------------
 #
