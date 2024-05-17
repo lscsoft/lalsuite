@@ -610,7 +610,7 @@ default:
   script:
     - pushd ${CI_JOB_NAME##*:}
     - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --enable-swig
+    - ./configure ${ENABLE_NIGHTLY}
     - make dist
   artifacts:
     expire_in: 18h
@@ -627,7 +627,7 @@ tarballs:
     - .make-dist
   script:
     - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --enable-swig
+    - ./configure ${ENABLE_NIGHTLY}
     - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalinference lalpulsar lalapps; do
         pushd ${subdir};
         make dist;
