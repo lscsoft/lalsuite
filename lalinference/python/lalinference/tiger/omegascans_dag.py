@@ -36,7 +36,7 @@ import sys
 import ast
 from subprocess import Popen,PIPE
 
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 
 ###############################################################################
 #
@@ -655,7 +655,10 @@ def main():
 
   cp=ConfigParser()
   cp.optionxform = str
-  cp.readfp(open(args[0]))
+  try:
+    cp.read_file(open(args[0]))
+  except AttributeError:
+    cp.readfp(open(args[0]))
 
   dag=OmegaScansDAG(cp)
 
