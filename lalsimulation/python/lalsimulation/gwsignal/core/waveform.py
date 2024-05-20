@@ -507,7 +507,15 @@ def conditioning_generator(generator):
     """
 
     if generator._implemented_domain=='time' and generator._generation_domain=='time':
-        generator_func = wave_cond.generate_conditioned_td_waveform_from_td
+        # if using an approximant for which the reference frequency is the initial starting
+        # frequency, use the fallback function. This is because `generate_conditioned_td_waveform_from_td`
+        # modifies the initial frequency, which is not the desired behavior.
+        if 'f_ref_spin' in generator.metadata and generator.metadata['f_ref_spin'] == False:
+            generator_func = wave_cond.generate_conditioned_td_waveform_from_td_fallback
+        elif 'f_ref_ecc' in generator.metadata and generator.metadata['f_ref_ecc'] == False:
+            generator_func = wave_cond.generate_conditioned_td_waveform_from_td_fallback
+        else:
+            generator_func = wave_cond.generate_conditioned_td_waveform_from_td
 
     elif generator._implemented_domain=='time' and generator._generation_domain=='freq':
         generator_func = wave_cond.generate_conditioned_fd_waveform_from_td

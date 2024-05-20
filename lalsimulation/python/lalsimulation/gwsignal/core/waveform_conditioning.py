@@ -34,6 +34,39 @@ def fix_ref_frequency(parameter_dict, generator):
 
 ########################################################################################
 
+def generate_conditioned_td_waveform_from_td_fallback(parameter_dict, generator):
+    """
+    Condition a time domain waveform. This routine is used when reference frequency 
+    is the starting frequency (f_ref_spin = f_ecc_spin = False).
+    Taper only the beginning of the waveform. Mimics the behavior of the LALSimulation
+    function of the same name.
+
+    Parameters
+    ----------
+    parameter_dict : `dictionary`
+        Dictionary of waveform parameters
+    generator : `GravitationalWaveGenerator`
+        Generator object of the GravitationalWaveGenerator class
+
+    Returns
+    -------
+    hp, hc : GWpy Time series
+        Conditioned time domain polarizations
+    """
+
+    # Generate the unconditioned waveform
+    new_parameters = parameter_dict.copy()
+    new_parameters['condition']=0
+    hp, hc = wave.GenerateTDWaveform(new_parameters, generator)
+
+    # Taper the beginning of the time domain waveform
+    hp_tapered = cond.taper_gwpy_timeseries(hp, 'start')
+    hc_tapered = cond.taper_gwpy_timeseries(hc, 'start')
+
+    return hp_tapered, hc_tapered
+
+########################################################################################
+
 def generate_conditioned_td_waveform_from_td(parameter_dict, generator):
     """
     Function to generate conditioned time-domain waveform from time domain waveform model.
@@ -94,7 +127,7 @@ def generate_conditioned_td_waveform_from_td(parameter_dict, generator):
 
     # generate the waveform in the time domain starting at fstart. Add astropy units
     new_parameters = parameter_dict.copy()
-    new_parameters['f22_ref'] = f_ref*parameter_dict['f22_start'].unit
+    new_parameters['f22_ref']   = f_ref*parameter_dict['f22_start'].unit
     new_parameters['f22_start'] = fstart*parameter_dict['f22_start'].unit
 
 
@@ -103,7 +136,7 @@ def generate_conditioned_td_waveform_from_td(parameter_dict, generator):
     hp, hc = wave.GenerateTDWaveform(new_parameters, generator)
 
     times = hp.times
-    dt = hp.dt.value
+    dt    = hp.dt.value
     # Condition the time domain waveform by tapering in the extra time at the beginning
     # And perform the high-pass filtering
     hp, hc = cond.time_array_condition_stage1(hp, hc, dt, extra_time_fraction * tchirp + textra, parameter_dict['f22_start'].value)

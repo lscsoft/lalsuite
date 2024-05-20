@@ -212,9 +212,6 @@ def taper_gwpy_timeseries(h, taper_kind):
     routine from LALSuite. Tapering will not be performed if the waveform
     is shorter than 3 points.
 
-    TODO: assume h is a gwpy TimeSeries object. This should be checked.
-    At the moment, the code works for generic numpy arrays.
-
     Parameters
     ----------
     h: gwpy.TimeSeries
@@ -241,7 +238,7 @@ def taper_gwpy_timeseries(h, taper_kind):
 
     # look for first non-zero sample
     start = -1
-    for idx, val in enumerate(h):
+    for idx, val in enumerate(h.value):
         if val != 0:
             start = idx
             break
@@ -251,7 +248,7 @@ def taper_gwpy_timeseries(h, taper_kind):
     
     # look for last non-zero sample
     end = -1
-    for idx, val in enumerate(h[::-1]):
+    for idx, val in enumerate(h.value[::-1]):
         if val != 0:
             end = len(h) - 1 - idx 
             break

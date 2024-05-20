@@ -72,6 +72,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
         metadata = {
             "type": "eccentric",
             "f_ref_spin": False,
+            "f_ref_ecc": False,
             "modes": True,
             "polarizations": True,
             "implemented_domain": "time",
