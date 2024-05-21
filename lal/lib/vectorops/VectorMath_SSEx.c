@@ -85,6 +85,12 @@ local_mul_pd ( __m128d in1, __m128d in2 )
   return _mm_mul_pd ( in1, in2 );
 }
 
+UNUSED static inline __m128d
+local_max_pd ( __m128d in1, __m128d in2 )
+{
+  return _mm_max_pd ( in1, in2 );
+}
+
 // in1: a0,b0,a1,b1, in2: c0,d0,c1,d1
 UNUSED static inline __m128
 local_cmul_ps ( __m128 in1, __m128 in2 )
@@ -455,6 +461,7 @@ DEFINE_VECTORMATH_dD2D(Shift, local_add_pd)
 DEFINE_VECTORMATH_DD2D(Add, local_add_pd)
 DEFINE_VECTORMATH_DD2D(Sub, local_sub_pd)
 DEFINE_VECTORMATH_DD2D(Multiply, local_mul_pd)
+DEFINE_VECTORMATH_DD2D(Max, local_max_pd)
 
 // ---------- define vector math functions with 2 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (CC2C) ----------
 #define DEFINE_VECTORMATH_CC2C(NAME, SSE_OP)                            \

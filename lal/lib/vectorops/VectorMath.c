@@ -186,7 +186,7 @@ EXPORT_VECTORMATH_dD2D(Shift, AVX2, AVX, SSE2, NONE)
 EXPORT_VECTORMATH_DD2D(Add, AVX2, AVX, SSE2, NONE)
 EXPORT_VECTORMATH_DD2D(Sub, AVX2, AVX, SSE2, NONE)
 EXPORT_VECTORMATH_DD2D(Multiply, AVX2, AVX, SSE2, NONE)
-EXPORT_VECTORMATH_DD2D(Max, AVX2, AVX, NONE, NONE)
+EXPORT_VECTORMATH_DD2D(Max, AVX2, AVX, SSE2, NONE)
 
 // ---------- define exported vector math functions with 2 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (CC2C) ----------
 #define EXPORT_VECTORMATH_CC2C(NAME, ...)                                    \
