@@ -195,8 +195,8 @@ XLALVectorMath_D2D_GEN ( REAL8 *out, const REAL8 *in, const UINT4 len, REAL8 (*o
 // ========== internal vector math functions ==========
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 INT4 vector output (S2I) ----------
-#define DEFINE_VECTORMATH_S2I(NAME, SSE_OP)                             \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2I_GEN, NAME ## REAL4, ( INT4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP ) )
+#define DEFINE_VECTORMATH_S2I(NAME, GEN_OP)                             \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2I_GEN, NAME ## REAL4, ( INT4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, GEN_OP ) )
 
 DEFINE_VECTORMATH_S2I(INT4From, local_cast_to_INT4)
 
