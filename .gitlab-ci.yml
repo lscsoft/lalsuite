@@ -1595,11 +1595,6 @@ upgrade:conda:linux:
     - !reference [.ci-platform, rules]
     - !reference [.ci-merge-build, rules]
 
-platform:debian:buster:
-  extends:
-    - .platform-test
-  image: igwn/lalsuite-dev:buster
-
 .platform-test:conda:
   extends:
     - .platform-test
