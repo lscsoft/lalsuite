@@ -55,6 +55,12 @@
 
 DECLARE_VECTORMATH_S2I(INT4From, SSE2, NONE, NONE, NONE)
 
+/* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 1 REAL4 scalar output (S2s) */
+#define DECLARE_VECTORMATH_S2s(NAME, ...)                                    \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), __VA_ARGS__ )
+
+DECLARE_VECTORMATH_S2s(ScalarMax, AVX2, AVX, SSE2, NONE)
+
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) */
 #define DECLARE_VECTORMATH_S2S(NAME, ...)                                    \
   DECLARE_VECTORMATH_ANY( NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), __VA_ARGS__ )
@@ -100,6 +106,12 @@ DECLARE_VECTORMATH_SS2uU(FindVectorLessEqual, AVX2, SSSE3, NONE, NONE)
 
 DECLARE_VECTORMATH_sS2uU(FindScalarLessEqual, AVX2, SSSE3, NONE, NONE)
 
+
+/* declare internal prototypes of SIMD-specific vector math functions with 1 REAL4 vector input to 1 REAL4 scalar output (D2d) */
+#define DECLARE_VECTORMATH_D2d(NAME, ...)                                    \
+  DECLARE_VECTORMATH_ANY( NAME ## REAL8, ( REAL8 *out, const REAL8 *in, const UINT4 len ), __VA_ARGS__ )
+
+DECLARE_VECTORMATH_D2d(ScalarMax, AVX2, AVX, SSE2, NONE)
 
 /* declare internal prototypes of SIMD-specific vector math functions with 1 REAL8 scalar and 1 REAL8 vector input to 1 REAL8 vector output (dD2D) */
 #define DECLARE_VECTORMATH_dD2D(NAME, ...) \

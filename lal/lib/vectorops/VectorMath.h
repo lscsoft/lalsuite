@@ -138,6 +138,12 @@ void XLALDestroyCOMPLEX16VectorAligned ( COMPLEX16VectorAligned *in );
 /** Cast (i.e. truncate) REAL4 vector \c in to INT4 vector \c out, with \c len elements. */
 int XLALVectorINT4FromREAL4 ( INT4 *out, const REAL4 *in, const UINT4 len );
 
+/** Compute \f$\text{out} = \max(\text{in}_0, \text{in}_1, \cdots)\f$ over REAL4 vector \c in with \c len elements */
+int XLALVectorScalarMaxREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
+
+/** Compute \f$\text{out} = \max(\text{in}_0, \text{in}_1, \cdots)\f$ over REAL8 vector \c in with \c len elements */
+int XLALVectorScalarMaxREAL8 ( REAL8 *out, const REAL8 *in, const UINT4 len );
+
 /** Compute \f$\text{out} = \sin(\text{in})\f$ over REAL4 vectors \c out, \c in with \c len elements */
 int XLALVectorSinREAL4 ( REAL4 *out, const REAL4 *in, const UINT4 len );
 

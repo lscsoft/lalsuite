@@ -154,6 +154,42 @@ XLALVectorMath_S2I_SSEx ( INT4 *out, const REAL4 *in, const UINT4 len, __m128i (
 
 } // XLALVectorMath_S2S_SSEx()
 
+// ---------- generic SSEx operator with 1 REAL4 vector input to 1 REAL4 scalar output (S2s) ----------
+static inline int
+XLALVectorMath_S2s_SSEx ( REAL4 *out, const REAL4 *in, const UINT4 len, __m128 (*f)(__m128, __m128), REAL4 (*op)(REAL4, REAL4) )
+{
+  if ( len == 1 )
+    {
+      *out = in[0];
+    }
+  else if ( len >= 2 )
+    {
+
+      // walk through vector in blocks of 4
+      UINT4 i4Max = len - ( len % 4 );
+      if ( i4Max > 0 )
+        {
+          V4SF out4 = {.f = {0,0,0,0}};
+          out4.v = _mm_loadu_ps(&in[0]);
+          for ( UINT4 i4 = 1; i4 < i4Max; i4 += 4 )
+            {
+              __m128 in4p = _mm_loadu_ps(&in[i4]);
+              out4.v = (*f)( out4.v, in4p );
+            }
+          *out = (*op)( (*op)( out4.f[0], out4.f[1] ), (*op)( out4.f[2], out4.f[3] ) );
+        }
+
+      // deal with the remaining (<=3) terms separately
+      for ( UINT4 i = i4Max, j=0; i < len; i ++, j++ ) {
+        *out = (*op)( *out, in[i] );
+      }
+
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_S2s_SSEx()
+
 // ---------- generic SSEx operator with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 static inline int
 XLALVectorMath_S2S_SSEx ( REAL4 *out, const REAL4 *in, const UINT4 len, __m128 (*f)(__m128) )
@@ -274,6 +310,42 @@ XLALVectorMath_sS2S_SSEx ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT
   return XLAL_SUCCESS;
 
 } // XLALVectorMath_sS2S_SSEx()
+
+// ---------- generic SSEx operator with 1 REAL8 vector input to 1 REAL8 scalar output (D2d) ----------
+static inline int
+XLALVectorMath_D2d_SSEx ( REAL8 *out, const REAL8 *in, const UINT4 len, __m128d (*f)(__m128d, __m128d), REAL8 (*op)(REAL8, REAL8) )
+{
+  if ( len == 1 )
+    {
+      *out = in[0];
+    }
+  else if ( len >= 2 )
+    {
+
+      // walk through vector in blocks of 2
+      UINT4 i2Max = len - ( len % 2 );
+      if ( i2Max > 0 )
+        {
+          V2SF out2 = {.f = {0,0}};
+          out2.v = _mm_loadu_pd(&in[0]);
+          for ( UINT4 i2 = 1; i2 < i2Max; i2 += 2 )
+            {
+              __m128d in2p = _mm_loadu_pd(&in[i2]);
+              out2.v = (*f)( out2.v, in2p );
+            }
+          *out = (*op)( out2.f[0], out2.f[1] );
+        }
+
+      // deal with the remaining (<=1) terms separately
+      for ( UINT4 i = i2Max, j=0; i < len; i ++, j++ ) {
+        *out = (*op)( *out, in[i] );
+      }
+
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_D2d_SSEx()
 
 // ---------- generic SSEx operator with 1 REAL8 scalar and 1 REAL8 vector inputs to 1 REAL8 vector output (dD2D) ----------
 static inline int
@@ -415,6 +487,12 @@ XLALVectorMath_cC2C_SSEx ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, c
 
 DEFINE_VECTORMATH_S2I(INT4From, local_cast_to_INT4)
 
+// ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 scalar output (S2s) ----------
+#define DEFINE_VECTORMATH_S2s(NAME, SSE_OP, GEN_OP)                     \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2s_SSEx, NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP, GEN_OP ) )
+
+DEFINE_VECTORMATH_S2s(ScalarMax, local_max_ps, fmaxf)
+
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 #define DEFINE_VECTORMATH_S2S(NAME, SSE_OP)                             \
   DEFINE_VECTORMATH_ANY( XLALVectorMath_S2S_SSEx, NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP ) )
@@ -446,6 +524,12 @@ DEFINE_VECTORMATH_SS2S(Max, local_max_ps)
 
 DEFINE_VECTORMATH_sS2S(Shift, local_add_ps)
 DEFINE_VECTORMATH_sS2S(Scale, local_mul_ps)
+
+// ---------- define vector math functions with 1 REAL8 vector input to 1 REAL8 scalar output (D2d) ----------
+#define DEFINE_VECTORMATH_D2d(NAME, SSE_OP, GEN_OP)                     \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_D2d_SSEx, NAME ## REAL8, ( REAL8 *out, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP, GEN_OP ) )
+
+DEFINE_VECTORMATH_D2d(ScalarMax, local_max_pd, fmax)
 
 // ---------- define vector math functions with 1 REAL8 scalar and 1 REAL8 vector inputs to 1 REAL8 vector output (sS2S) ----------
 #define DEFINE_VECTORMATH_dD2D(NAME, SSE_OP)                            \

@@ -127,6 +127,12 @@ DEFINE_ALIGNED_VECT_API(COMPLEX16);
 
 EXPORT_VECTORMATH_S2I(INT4From, SSE2, NONE, NONE, NONE)
 
+// ---------- define exported vector math functions with 1 REAL4 vector input to 1 REAL4 scalar output (S2s) ----------
+#define EXPORT_VECTORMATH_S2s(NAME, ...)                                     \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, const REAL4 *in, const UINT4 len), (out, in, len), __VA_ARGS__ )
+
+EXPORT_VECTORMATH_S2s(ScalarMax, AVX2, AVX, SSE2, NONE)
+
 // ---------- define exported vector math functions with 1 REAL4 vector input to 1 REAL4 vector output (S2S) ----------
 #define EXPORT_VECTORMATH_S2S(NAME, ...)                                     \
   EXPORT_VECTORMATH_ANY( NAME ## REAL4, (REAL4 *out, const REAL4 *in, const UINT4 len), (out, in, len), __VA_ARGS__ )
@@ -201,6 +207,12 @@ EXPORT_VECTORMATH_CC2C(Add, AVX2, AVX, SSE2, NONE)
 
 EXPORT_VECTORMATH_cC2C(Scale, AVX2, AVX, SSE2, NONE)
 EXPORT_VECTORMATH_cC2C(Shift, AVX2, AVX, SSE2, NONE)
+
+// ---------- define exported vector math functions with 1 REAL8 vector input to 1 REAL8 scalar output (D2d) ----------
+#define EXPORT_VECTORMATH_D2d(NAME, ...)                                     \
+  EXPORT_VECTORMATH_ANY( NAME ## REAL8, (REAL8 *out, const REAL8 *in, const UINT4 len), (out, in, len), __VA_ARGS__ )
+
+EXPORT_VECTORMATH_D2d(ScalarMax, AVX2, AVX, SSE2, NONE)
 
 // ---------- define exported vector math functions with 1 REAL8 vector input to 1 REAL8 vector output (D2D) ----------
 #define EXPORT_VECTORMATH_D2D(NAME, ...)                                     \
