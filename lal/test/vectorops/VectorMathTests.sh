@@ -16,14 +16,45 @@ fi
 
 # get instruction sets supported by compiler
 simd_compiler=`${lal_simd_detect} | sed -n 2p`
-echo "$0: compiler supports ${simd_compiler}"
+simd_compiler=`echo ${simd_compiler}`
+echo "$0: compiler supports: ${simd_compiler}"
 
 # get instruction sets supported by machine
 simd_machine=`${lal_simd_detect} | sed -n 4p`
-echo "$0: machine supports ${simd_machine}"
+simd_machine=`echo ${simd_machine}`
+echo "$0: machine supports: ${simd_machine}"
 
-# try to test these instruction sets
-simd_test="SSE AVX"
+# get common instruction sets supported by compiler and machine
+simd_common=
+for simd in ${simd_compiler}; do
+    case " ${simd_machine} " in
+        *" ${simd} "*)
+            simd_common="${simd_common} ${simd}"
+            ;;
+        *)
+            ;;
+    esac
+done
+simd_common=`echo ${simd_common}`
+echo "$0: compiler/machine supports: ${simd_common}"
+
+# find the most advanced SSE/AVX-family instruction sets for testing
+simd_test_sse=
+simd_test_avx=
+for simd in ${simd_common}; do
+    case "${simd}" in
+        SSE*)
+            simd_test_sse="${simd}"
+            ;;
+        AVX*)
+            simd_test_avx="${simd}"
+            ;;
+        *)
+            ;;
+    esac
+done
+simd_test="${simd_test_sse} ${simd_test_avx}"
+echo "$0: testing instruction sets: ${simd_test}"
 
 for simd in ${simd_test}; do
 
