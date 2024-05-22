@@ -11,5 +11,7 @@ lalsimulation/gwsignal/core/parameter_conventions
 lalsimulation/gwsignal/core/utils
 lalsimulation/gwsignal/core/waveform
 lalsimulation/gwsignal/core/waveform_conditioning
+lalsimulation/gwsignal/docs/source/conf
 lalsimulation/gwsignal/models
 lalsimulation/gwsignal/models/pyseobnr_model
+lalsimulation/gwsignal/tests
