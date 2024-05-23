@@ -55,6 +55,12 @@ local_mul_ps ( __m256 in1, __m256 in2 )
 }
 
 UNUSED static inline __m256
+local_fmadd_ps ( __m256 in1, __m256 in2, __m256 in3 )
+{
+  return _mm256_add_ps ( _mm256_mul_ps ( in1, in2 ), in3 );
+}
+
+UNUSED static inline __m256
 local_max_ps ( __m256 in1, __m256 in2 )
 {
   return _mm256_max_ps ( in1, in2 );
@@ -76,6 +82,12 @@ UNUSED static inline __m256d
 local_mul_pd ( __m256d in1, __m256d in2 )
 {
   return _mm256_mul_pd ( in1, in2 );
+}
+
+UNUSED static inline __m256d
+local_fmadd_pd ( __m256d in1, __m256d in2, __m256d in3 )
+{
+  return _mm256_add_pd ( _mm256_mul_pd ( in1, in2 ), in3 );
 }
 
 UNUSED static inline __m256d
@@ -346,6 +358,39 @@ XLALVectorMath_sS2S_AVXx ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT
 
 } // XLALVectorMath_sS2S_AVXx()
 
+// ---------- generic AVXx operator with 1 REAL4 scalar and 2 REAL4 vector inputs to 1 REAL4 vector output (sSS2S) ----------
+static inline int
+XLALVectorMath_sSS2S_AVXx ( REAL4 *out, REAL4 scalar, const REAL4 *in1, const REAL4 *in2, const UINT4 len, __m256 (*op)(__m256, __m256, __m256) )
+{
+  const V8SF scalar8 = {.f={scalar,scalar,scalar,scalar,scalar,scalar,scalar,scalar}};
+
+  // walk through vector in blocks of 8
+  UINT4 i8Max = len - ( len % 8 );
+  for ( UINT4 i8 = 0; i8 < i8Max; i8 += 8 )
+    {
+      __m256 in8p_1 = _mm256_loadu_ps(&in1[i8]);
+      __m256 in8p_2 = _mm256_loadu_ps(&in2[i8]);
+      __m256 out8p = (*op) ( scalar8.v, in8p_1, in8p_2 );
+      _mm256_storeu_ps(&out[i8], out8p);
+    }
+
+  // deal with the remaining (<=7) terms separately
+  V8SF in8_1 = {.f={0,0,0,0,0,0,0,0}};
+  V8SF in8_2 = {.f={0,0,0,0,0,0,0,0}};
+  V8SF out8;
+  for ( UINT4 i = i8Max,j=0; i < len; i ++, j++ ) {
+    in8_1.f[j] = in1[i];
+    in8_2.f[j] = in2[i];
+  }
+  out8.v = (*op) ( scalar8.v, in8_1.v, in8_2.v );
+  for ( UINT4 i = i8Max,j=0; i < len; i ++, j++ ) {
+    out[i] = out8.f[j];
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_sSS2S_AVXx()
+
 // ---------- generic AVXx operator with 1 REAL8 scalar and 1 REAL8 vector inputs to 1 REAL8 vector output (dD2D) ----------
 static inline int
 XLALVectorMath_dD2D_AVXx ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT4 len, __m256d (*op)(__m256d, __m256d) )
@@ -375,6 +420,39 @@ XLALVectorMath_dD2D_AVXx ( REAL8 *out, REAL8 scalar, const REAL8 *in, const UINT
   return XLAL_SUCCESS;
 
 } // XLALVectorMath_dD2D_AVXx()
+
+// ---------- generic AVXx operator with 1 REAL8 scalar and 2 REAL8 vector inputs to 1 REAL8 vector output (dDD2D) ----------
+static inline int
+XLALVectorMath_dDD2D_AVXx ( REAL8 *out, REAL8 scalar, const REAL8 *in1, const REAL8 *in2, const UINT4 len, __m256d (*op)(__m256d, __m256d, __m256d) )
+{
+  const V4SD scalar4 = {.f={scalar,scalar,scalar,scalar}};
+
+  // walk through vector in blocks of 4
+  UINT4 i4Max = len - ( len % 4 );
+  for ( UINT4 i4 = 0; i4 < i4Max; i4 += 4 )
+    {
+      __m256d in4p_1 = _mm256_loadu_pd(&in1[i4]);
+      __m256d in4p_2 = _mm256_loadu_pd(&in2[i4]);
+      __m256d out4p = (*op) ( scalar4.v, in4p_1, in4p_2 );
+      _mm256_storeu_pd(&out[i4], out4p);
+    }
+
+  // deal with the remaining (<=3) terms separately
+  V4SD in4_1 = {.f={0,0,0,0}};
+  V4SD in4_2 = {.f={0,0,0,0}};
+  V4SD out4;
+  for ( UINT4 i = i4Max,j=0; i < len; i ++, j++ ) {
+    in4_1.f[j] = in1[i];
+    in4_2.f[j] = in2[i];
+  }
+  out4.v = (*op) ( scalar4.v, in4_1.v, in4_2.v );
+  for ( UINT4 i = i4Max,j=0; i < len; i ++, j++ ) {
+    out[i] = out4.f[j];
+  }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_dDD2D_AVXx()
 
 // ---------- generic AVXx operator with 2 REAL8 vector inputs to 1 REAL8 vector output (DD2D) ----------
 static inline int
@@ -478,6 +556,44 @@ XLALVectorMath_cC2C_AVXx ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, c
   return XLAL_SUCCESS;
 
 } // XLALVectorMath_cC2C_AVXx()
+
+// ---------- generic AVXx operator with 1 REAL4 scalar and 1 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (sCC2C) ----------
+static inline int
+XLALVectorMath_sCC2C_AVXx ( COMPLEX8 *out, REAL4 scalar, const COMPLEX8 *in1, const COMPLEX8 *in2, const UINT4 len, __m256 (*op)(__m256, __m256, __m256) )
+{
+  const V8SF scalar8 = {.f={scalar,scalar,scalar,scalar,scalar,scalar,scalar,scalar}};
+
+  // walk through vector in blocks of 4
+  UINT4 i4Max = len - ( len % 4 );
+  for ( UINT4 i4 = 0; i4 < i4Max; i4+=4 )
+    {
+      __m256 in8p_1 = _mm256_loadu_ps( (const REAL4*)&in1[i4] );
+      __m256 in8p_2 = _mm256_loadu_ps( (const REAL4*)&in2[i4] );
+      __m256 out8p = (*op) ( scalar8.v, in8p_1, in8p_2 );
+      _mm256_storeu_ps( (REAL4*)&out[i4], out8p );
+    }
+
+  // deal with the remaining (<=3) terms separately
+  V8SF in8_1 = {.f={0,0,0,0,0,0,0,0}};
+  V8SF in8_2 = {.f={0,0,0,0,0,0,0,0}};
+  V8SF out8;
+  for ( UINT4 i = i4Max,j=0; i < len ; i++, j+=2 )
+    {
+      in8_1.f[j]   = crealf ( in1[i] );
+      in8_1.f[j+1] = cimagf ( in1[i] );
+      in8_2.f[j]   = crealf ( in2[i] );
+      in8_2.f[j+1] = cimagf ( in2[i] );
+     }
+
+  out8.v = (*op) ( scalar8.v, in8_1.v, in8_2.v );
+  for ( UINT4 i = i4Max,j=0; i < len; i++,j+=2 )
+    {
+      out[i] = crect( out8.f[j], out8.f[j+1] );
+    }
+
+  return XLAL_SUCCESS;
+
+} // XLALVectorMath_sCC2C_AVXx()
 
 // ---------- generic AVXx operator with 1 REAL8 vector input to 1 REAL8 scalar output (D2d) ----------
 static inline int
@@ -584,6 +700,12 @@ DEFINE_VECTORMATH_SS2S(Max, local_max_ps)
 DEFINE_VECTORMATH_sS2S(Shift, local_add_ps)
 DEFINE_VECTORMATH_sS2S(Scale, local_mul_ps)
 
+// ---------- define vector math functions with 1 REAL4 scalar and 2 REAL4 vector inputs to 1 REAL4 vector output (sSS2S) ----------
+#define DEFINE_VECTORMATH_sSS2S(NAME, AVX_OP)                           \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_sSS2S_AVXx, NAME ## REAL4, ( REAL4 *out, REAL4 scalar, const REAL4 *in1, const REAL4 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, scalar, in1, in2, len, AVX_OP ) )
+
+DEFINE_VECTORMATH_sSS2S(ScaleAdd, local_fmadd_ps)
+
 // ---------- define vector math functions with 1 REAL8 vector input to 1 REAL8 scalar output (D2d) ----------
 #define DEFINE_VECTORMATH_D2d(NAME, AVX_OP, GEN_OP)                     \
   DEFINE_VECTORMATH_ANY( XLALVectorMath_D2d_AVXx, NAME ## REAL8, ( REAL8 *out, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, AVX_OP, GEN_OP ) )
@@ -596,6 +718,12 @@ DEFINE_VECTORMATH_D2d(ScalarMax, local_max_pd, fmax)
 
 DEFINE_VECTORMATH_dD2D(Scale, local_mul_pd)
 DEFINE_VECTORMATH_dD2D(Shift, local_add_pd)
+
+// ---------- define vector math functions with 1 REAL8 scalar and 2 REAL8 vector inputs to 1 REAL8 vector output (dDD2D) ----------
+#define DEFINE_VECTORMATH_dDD2D(NAME, AVX_OP)                           \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_dDD2D_AVXx, NAME ## REAL8, ( REAL8 *out, REAL8 scalar, const REAL8 *in1, const REAL8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, scalar, in1, in2, len, AVX_OP ) )
+
+DEFINE_VECTORMATH_dDD2D(ScaleAdd, local_fmadd_pd)
 
 // ---------- define vector math functions with 2 REAL8 vector inputs to 1 REAL8 vector output (DD2D) ----------
 #define DEFINE_VECTORMATH_DD2D(NAME, AVX_OP)                            \
@@ -619,6 +747,12 @@ DEFINE_VECTORMATH_CC2C(Add, local_add_ps)
 
 DEFINE_VECTORMATH_cC2C(Scale, local_cmul_ps)
 DEFINE_VECTORMATH_cC2C(Shift, local_add_ps)
+
+// ---------- define vector math functions with 1 REAL4 scalar and 2 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (sCC2C) ----------
+#define DEFINE_VECTORMATH_sCC2C(NAME, AVX_OP)                           \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_sCC2C_AVXx, NAME ## COMPLEX8, ( COMPLEX8 *out, REAL4 scalar, const COMPLEX8 *in1, const COMPLEX8 *in2, const UINT4 len ), ( (out != NULL) && (in1 != NULL) && (in2 != NULL) ), ( out, scalar, in1, in2, len, AVX_OP ) )
+
+DEFINE_VECTORMATH_sCC2C(ScaleAdd, local_fmadd_ps)
 
 // ---------- define vector math functions with 1 REAL8 vector input to 1 REAL8 vector output (D2D) ----------
 #define DEFINE_VECTORMATH_D2D(NAME, AVX_OP)                             \
