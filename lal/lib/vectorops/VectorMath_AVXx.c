@@ -316,7 +316,7 @@ XLALVectorMath_SS2S_AVXx ( REAL4 *out, const REAL4 *in1, const REAL4 *in2, const
 
 } // XLALVectorMath_SS2S_AVXx()
 
-// ---------- generic SSEx operator with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
+// ---------- generic AVXx operator with 1 REAL4 scalar and 1 REAL4 vector inputs to 1 REAL4 vector output (sS2S) ----------
 static inline int
 XLALVectorMath_sS2S_AVXx ( REAL4 *out, REAL4 scalar, const REAL4 *in, const UINT4 len, __m256 (*op)(__m256, __m256) )
 {
@@ -556,8 +556,8 @@ DEFINE_VECTORMATH_S2S(Log, log256_ps)
 DEFINE_VECTORMATH_S2S(Round, local_round_ps)
 
 // ---------- define vector math functions with 1 REAL4 vector input to 1 REAL4 scalar output (S2s) ----------
-#define DEFINE_VECTORMATH_S2s(NAME, SSE_OP, GEN_OP)                     \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2s_AVXx, NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP, GEN_OP ) )
+#define DEFINE_VECTORMATH_S2s(NAME, AVX_OP, GEN_OP)                     \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_S2s_AVXx, NAME ## REAL4, ( REAL4 *out, const REAL4 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, AVX_OP, GEN_OP ) )
 
 DEFINE_VECTORMATH_S2s(ScalarMax, local_max_ps, fmaxf)
 
@@ -585,8 +585,8 @@ DEFINE_VECTORMATH_sS2S(Shift, local_add_ps)
 DEFINE_VECTORMATH_sS2S(Scale, local_mul_ps)
 
 // ---------- define vector math functions with 1 REAL8 vector input to 1 REAL8 scalar output (D2d) ----------
-#define DEFINE_VECTORMATH_D2d(NAME, SSE_OP, GEN_OP)                     \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_D2d_AVXx, NAME ## REAL8, ( REAL8 *out, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, SSE_OP, GEN_OP ) )
+#define DEFINE_VECTORMATH_D2d(NAME, AVX_OP, GEN_OP)                     \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_D2d_AVXx, NAME ## REAL8, ( REAL8 *out, const REAL8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, in, len, AVX_OP, GEN_OP ) )
 
 DEFINE_VECTORMATH_D2d(ScalarMax, local_max_pd, fmax)
 

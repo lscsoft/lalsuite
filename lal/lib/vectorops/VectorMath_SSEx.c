@@ -555,8 +555,8 @@ DEFINE_VECTORMATH_CC2C(Multiply, local_cmul_ps)
 DEFINE_VECTORMATH_CC2C(Add, local_add_ps)
 
 // ---------- define vector math functions with 1 COMPLEX8 scalar and 1 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (cC2C) ----------
-#define DEFINE_VECTORMATH_cC2C(NAME, AVX_OP)                            \
-  DEFINE_VECTORMATH_ANY( XLALVectorMath_cC2C_SSEx, NAME ## COMPLEX8, ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, AVX_OP ) )
+#define DEFINE_VECTORMATH_cC2C(NAME, SSE_OP)                            \
+  DEFINE_VECTORMATH_ANY( XLALVectorMath_cC2C_SSEx, NAME ## COMPLEX8, ( COMPLEX8 *out, COMPLEX8 scalar, const COMPLEX8 *in, const UINT4 len ), ( (out != NULL) && (in != NULL) ), ( out, scalar, in, len, SSE_OP ) )
 
 DEFINE_VECTORMATH_cC2C(Scale, local_cmul_ps)
 DEFINE_VECTORMATH_cC2C(Shift, local_add_ps)
