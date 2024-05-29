@@ -4,6 +4,7 @@
  *  Copyright (C) 2016, 2017 Grant David Meadors
  *  Copyright (C) 2020, 2021 Jared Wofford, John Whelan
  *  Copyright (C) 2023 John Whelan
+ *  Copyright (C) 2024 Binod Rajbhandari, John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
