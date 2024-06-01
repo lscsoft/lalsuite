@@ -135,6 +135,9 @@ typedef struct tagAntennaPatternMatrix {
 
 /** Multi-IFO container for antenna-pattern coefficients \f$ a_{X\alpha}, b_{X\alpha} \f$ and atenna-pattern matrix \f$ \mathcal{M}_{\mu\nu} \f$ */
 typedef struct tagMultiAMCoeffs {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( MultiAMCoeffs, AMCoeffs *, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4 length;                 /**< number of IFOs */
   AMCoeffs **data;              /**< noise-weighted AM-coeffs \f$ \widehat{a}_{X\alpha} \f$ , and \f$ \widehat{b}_{X\alpha} \f$ */
   AntennaPatternMatrix Mmunu;   /**< antenna-pattern matrix \f$ \mathcal{M}_{\mu\nu} \f$ */
