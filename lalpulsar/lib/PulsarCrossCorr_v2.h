@@ -90,6 +90,9 @@ typedef struct tagSFTIndex {
 
 /** List of SFT indices */
 typedef struct tagSFTIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( SFTIndexList, SFTIndex, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4    length; /**< number of SFTs */
   SFTIndex *data; /**< array of SFT indices */
 } SFTIndexList;
@@ -105,6 +108,9 @@ typedef struct tagSFTPairIndex {
 
 /** List of SFT pair indices */
 typedef struct tagSFTPairIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( SFTPairIndexList, SFTPairIndex, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4    length; /**< number of SFT Pairs */
   SFTPairIndex *data; /**< array of SFT Pair indices */
 } SFTPairIndexList;
