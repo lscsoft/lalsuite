@@ -1064,9 +1064,9 @@ int main( int argc, char *argv[] )
     XLALDestroyMultiSFTVector( inputSFTs );
 //returns error code if exists
     if ( ( resampForLoopCrossCorr( dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, uvar, multiWeights, ccStatVector, numeEquivAve, numeEquivCirc, evSquaredVector, estSens, GammaAve, resampMultiPairs, thisCandidate, ccToplist, resampTshort, &config )  != XLAL_SUCCESS ) ) {
-     LogPrintf( LOG_CRITICAL, "%s: resampForLoopCrossCorr() failed with errno=%d\n", __func__, xlalErrno );
-     XLAL_ERROR( XLAL_EFUNC );
-   }
+      LogPrintf( LOG_CRITICAL, "%s: resampForLoopCrossCorr() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
     XLALDestroyMultiResampSFTPairMultiIndexList( resampMultiPairs );
   } else {
     // Regular loop
@@ -1075,10 +1075,10 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
-   if ( ( demodLoopCrossCorr( multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist, ndim, dimf, dima, dimT, dimP, g_ij, &numpoints, &numorb, &config )  != XLAL_SUCCESS ) ) {
-     LogPrintf( LOG_CRITICAL, "%s: demodLoopCrossCorr() failed with errno=%d\n", __func__, xlalErrno );
-     XLAL_ERROR( XLAL_EFUNC );
-   }
+    if ( ( demodLoopCrossCorr( multiBinaryTimes, multiSSBTimes, dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, shiftedFreqs, lowestBins, expSignalPhases, sincList, uvar, sftIndices, inputSFTs, badBins, Tsft, multiWeights, ccStat, evSquared, estSens, GammaAve, sftPairs, thisCandidate, ccToplist, ndim, dimf, dima, dimT, dimP, g_ij, &numpoints, &numorb, &config )  != XLAL_SUCCESS ) ) {
+      LogPrintf( LOG_CRITICAL, "%s: demodLoopCrossCorr() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
 
     XLALDestroyMultiSFTVector( inputSFTs );
     XLALDestroyCOMPLEX8Vector( expSignalPhases );
