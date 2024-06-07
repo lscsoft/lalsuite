@@ -43,6 +43,7 @@
 #include <gsl/gsl_interp.h>
 #include <gsl/gsl_fit.h>
 #include <LALSimBlackHoleRingdown.h>
+#include "gsl_bspline_basis.h"
 
 #ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
@@ -446,15 +447,14 @@ static REAL8 Interpolate_Coefficent_Tensor(
   gsl_vector *Bz4 = gsl_vector_alloc(4);
 
   size_t isx, isy, isz; // first non-zero spline
-  size_t iex, iey, iez; // last non-zero spline
   // Evaluate all potentially nonzero cubic B-spline basis functions for
   // positions (eta,chi) and store them in the vectors Bx4, By4, Bz4.
   // Since the B-splines are of compact support we only need to store a small
   // number of basis functions to avoid computing terms that would be zero anyway.
   // https://www.gnu.org/software/gsl/manual/html_node/Overview-of-B_002dsplines.html#Overview-of-B_002dsplines
-  gsl_bspline_eval_nonzero(eta,  Bx4, &isx, &iex, bwx);
-  gsl_bspline_eval_nonzero(chi1, By4, &isy, &iey, bwy);
-  gsl_bspline_eval_nonzero(chi2, Bz4, &isz, &iez, bwz);
+  gsl_bspline_basis(eta,  Bx4, &isx, bwx);
+  gsl_bspline_basis(chi1, By4, &isy, bwy);
+  gsl_bspline_basis(chi2, Bz4, &isz, bwz);
 
   // Now compute coefficient at desired parameters (q,chi1,chi2)
   // from C(eta,chi1,chi2) = c_ijk * Beta_i * Bchi1_j * Bchi2_k
@@ -500,13 +500,12 @@ static REAL8 Interpolate_Coefficent_Matrix(
 
   REAL8 sum = 0;
   size_t isx, isy; // first non-zero spline
-  size_t iex, iey; // last non-zero spline
   // Evaluate all potentially nonzero cubic B-spline basis functions for positions (eta,chi) and stores them in the vectors Bx4, By4.
   // Since the B-splines are of compact support we only need to store a small number of basis functions
   // to avoid computing terms that would be zero anyway.
   // https://www.gnu.org/software/gsl/manual/html_node/Overview-of-B_002dsplines.html#Overview-of-B_002dsplines
-  gsl_bspline_eval_nonzero(eta, Bx4, &isx, &iex, bwx);
-  gsl_bspline_eval_nonzero(chi, By4, &isy, &iey, bwy);
+  gsl_bspline_basis(eta, Bx4, &isx, bwx);
+  gsl_bspline_basis(chi, By4, &isy, bwy);
 
   // Now compute coefficient at desired parameters (eta,chi) from C(eta,chi) = c_ij * Beta_i * Bchi_j
   // summing over indices i,j where the B-splines are nonzero.
