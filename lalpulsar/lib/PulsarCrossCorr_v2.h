@@ -200,6 +200,9 @@ typedef struct tagResampSFTPairMultiIndexList {
 
 /** Resampling Multi List of all paired SFTs L_Y_K_X, top level (multiple pairs, multiple detectors) */
 typedef struct tagMultiResampSFTPairMultiIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( MultiResampSFTPairMultiIndexList, ResampSFTPairMultiIndexList, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4                          allPairCount;     /**< count of all pairs */
   UINT4                          oldPairCount;     /**< count of sft pairs, old-style */
   UINT4                          sftTotalCount;    /**< count of all sfts */
