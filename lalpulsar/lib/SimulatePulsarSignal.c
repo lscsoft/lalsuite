@@ -106,7 +106,7 @@ static LALUnit emptyUnit;
  * \f{equation}{
  * \tau (t) = t + \frac{ \vec{r}(t)\cdot\vec{n}}{c}\,,
  * \f}
- * where \f$ \vec{r}(t) \f$ is the vector from SSB to the detector, and \f$ \vec{n} \f$ 
+ * where \f$ \vec{r}(t) \f$ is the vector from SSB to the detector, and \f$ \vec{n} \f$
  * is the unit-vector pointing <em>to</em> the source.
  *
  * This is a standalone "clean-room" implementation using no other
@@ -126,77 +126,77 @@ static LALUnit emptyUnit;
  *
  */
 REAL4TimeSeries *
-XLALSimulateExactPulsarSignal ( const PulsarSignalParams *params )
+XLALSimulateExactPulsarSignal( const PulsarSignalParams *params )
 {
-  XLAL_CHECK_NULL ( params != NULL, XLAL_EINVAL, "Invalid NULL input 'params'\n");
-  XLAL_CHECK_NULL ( params->samplingRate > 0, XLAL_EDOM, "Sampling rate must be positive, got samplingRate = %g\n", params->samplingRate );
+  XLAL_CHECK_NULL( params != NULL, XLAL_EINVAL, "Invalid NULL input 'params'\n" );
+  XLAL_CHECK_NULL( params->samplingRate > 0, XLAL_EDOM, "Sampling rate must be positive, got samplingRate = %g\n", params->samplingRate );
 
   /* don't accept heterodyning frequency */
-  XLAL_CHECK_NULL ( params->fHeterodyne == 0, XLAL_EINVAL, "Heterodyning frequency must be set to 0, got params->fHeterodyne = %g\n", params->fHeterodyne );
+  XLAL_CHECK_NULL( params->fHeterodyne == 0, XLAL_EINVAL, "Heterodyning frequency must be set to 0, got params->fHeterodyne = %g\n", params->fHeterodyne );
 
   UINT4 numSpins = 3;
 
   /* get timestamps of timeseries plus detector-states */
   REAL8 dt = 1.0 / params->samplingRate;
   LIGOTimeGPSVector *timestamps;
-  XLAL_CHECK_NULL ( (timestamps = XLALMakeTimestamps ( params->startTimeGPS, params->duration, dt, 0 )) != NULL, XLAL_EFUNC );
+  XLAL_CHECK_NULL( ( timestamps = XLALMakeTimestamps( params->startTimeGPS, params->duration, dt, 0 ) ) != NULL, XLAL_EFUNC );
 
   UINT4 numSteps = timestamps->length;
 
-  DetectorStateSeries *detStates = XLALGetDetectorStates ( timestamps, params->site, params->ephemerides, 0 );
-  XLAL_CHECK_NULL ( detStates != NULL, XLAL_EFUNC, "XLALGetDetectorStates() failed.\n");
+  DetectorStateSeries *detStates = XLALGetDetectorStates( timestamps, params->site, params->ephemerides, 0 );
+  XLAL_CHECK_NULL( detStates != NULL, XLAL_EFUNC, "XLALGetDetectorStates() failed.\n" );
 
-  XLALDestroyTimestampVector ( timestamps );
+  XLALDestroyTimestampVector( timestamps );
   timestamps = NULL;
 
-  AMCoeffs *amcoe = XLALComputeAMCoeffs ( detStates, params->pulsar.position );
-  XLAL_CHECK_NULL ( amcoe != NULL, XLAL_EFUNC, "XLALComputeAMCoeffs() failed.\n");
+  AMCoeffs *amcoe = XLALComputeAMCoeffs( detStates, params->pulsar.position );
+  XLAL_CHECK_NULL( amcoe != NULL, XLAL_EFUNC, "XLALComputeAMCoeffs() failed.\n" );
 
   /* create output timeseries (FIXME: should really know *detector* here, not just site!!) */
-  const LALFrDetector *site = &(params->site->frDetector);
-  CHAR *channel = XLALGetChannelPrefix ( site->name );
-  XLAL_CHECK_NULL ( channel != NULL, XLAL_EFUNC, "XLALGetChannelPrefix( %s ) failed.\n", site->name );
+  const LALFrDetector *site = &( params->site->frDetector );
+  CHAR *channel = XLALGetChannelPrefix( site->name );
+  XLAL_CHECK_NULL( channel != NULL, XLAL_EFUNC, "XLALGetChannelPrefix( %s ) failed.\n", site->name );
 
-  REAL4TimeSeries *ts = XLALCreateREAL4TimeSeries ( channel, &(detStates->data[0].tGPS), 0, dt, &emptyUnit, numSteps );
-  XLAL_CHECK_NULL ( ts != NULL, XLAL_EFUNC, "XLALCreateREAL4TimeSeries() failed.\n");
-  XLALFree ( channel );
+  REAL4TimeSeries *ts = XLALCreateREAL4TimeSeries( channel, &( detStates->data[0].tGPS ), 0, dt, &emptyUnit, numSteps );
+  XLAL_CHECK_NULL( ts != NULL, XLAL_EFUNC, "XLALCreateREAL4TimeSeries() failed.\n" );
+  XLALFree( channel );
   channel = NULL;
 
   /* orientation of detector arms */
   REAL8 xAzi = site->xArmAzimuthRadians;
   REAL8 yAzi = site->yArmAzimuthRadians;
   REAL8 Zeta =  xAzi - yAzi;
-  if (Zeta < 0) {
+  if ( Zeta < 0 ) {
     Zeta = -Zeta;
   }
   if ( params->site->type == LALDETECTORTYPE_CYLBAR ) {
     Zeta = LAL_PI_2;
   }
-  REAL8 sinZeta = sin(Zeta);
+  REAL8 sinZeta = sin( Zeta );
 
   /* get source skyposition */
   REAL8 Alpha = params->pulsar.position.longitude;
   REAL8 Delta = params->pulsar.position.latitude;
   REAL8 vn[3];
-  vn[0] = cos(Delta) * cos(Alpha);
-  vn[1] = cos(Delta) * sin(Alpha);
-  vn[2] = sin(Delta);
+  vn[0] = cos( Delta ) * cos( Alpha );
+  vn[1] = cos( Delta ) * sin( Alpha );
+  vn[2] = sin( Delta );
 
   /* get spin-parameters (restricted to maximally 3 spindowns right now) */
   REAL8 phi0 = params->pulsar.phi0;
   REAL8 f0   = params->pulsar.f0;
 
   REAL8 f1dot = 0, f2dot = 0, f3dot = 0;
-  if ( params->pulsar.spindown && (params->pulsar.spindown->length > numSpins) ) {
-    XLAL_ERROR_NULL ( XLAL_EDOM, "Currently only supports up to %d spindowns!\n", numSpins );
+  if ( params->pulsar.spindown && ( params->pulsar.spindown->length > numSpins ) ) {
+    XLAL_ERROR_NULL( XLAL_EDOM, "Currently only supports up to %d spindowns!\n", numSpins );
   }
-  if ( params->pulsar.spindown && (params->pulsar.spindown->length >= 3 ) ) {
+  if ( params->pulsar.spindown && ( params->pulsar.spindown->length >= 3 ) ) {
     f3dot = params->pulsar.spindown->data[2];
   }
-  if ( params->pulsar.spindown && (params->pulsar.spindown->length >= 2 ) ) {
+  if ( params->pulsar.spindown && ( params->pulsar.spindown->length >= 2 ) ) {
     f2dot = params->pulsar.spindown->data[1];
   }
-  if ( params->pulsar.spindown && (params->pulsar.spindown->length >= 1 ) ) {
+  if ( params->pulsar.spindown && ( params->pulsar.spindown->length >= 1 ) ) {
     f1dot = params->pulsar.spindown->data[0];
   }
 
@@ -204,42 +204,41 @@ XLALSimulateExactPulsarSignal ( const PulsarSignalParams *params )
    * we need to translate the pulsar spin-params and initial phase to the
    * startTime
    */
-  REAL8 startTimeSSB = XLALGPSGetREAL8 ( &(detStates->data[0].tGPS) ) + SCALAR ( vn, detStates->data[0].rDetector );
+  REAL8 startTimeSSB = XLALGPSGetREAL8( &( detStates->data[0].tGPS ) ) + SCALAR( vn, detStates->data[0].rDetector );
   REAL8 refTime;
-  if ( params->pulsar.refTime.gpsSeconds != 0 )
-    {
-      REAL8 refTime0 = XLALGPSGetREAL8 ( &(params->pulsar.refTime) );
-      REAL8 deltaRef = startTimeSSB - refTime0;
-      LIGOTimeGPS newEpoch;
-      PulsarSpins fkdotNew;
+  if ( params->pulsar.refTime.gpsSeconds != 0 ) {
+    REAL8 refTime0 = XLALGPSGetREAL8( &( params->pulsar.refTime ) );
+    REAL8 deltaRef = startTimeSSB - refTime0;
+    LIGOTimeGPS newEpoch;
+    PulsarSpins fkdotNew;
 
-      XLALGPSSetREAL8( &newEpoch, startTimeSSB );
+    XLALGPSSetREAL8( &newEpoch, startTimeSSB );
 
-      PulsarSpins XLAL_INIT_DECL(fkdotOld);
-      fkdotOld[0] = f0;
-      fkdotOld[1] = f1dot;
-      fkdotOld[2] = f2dot;
-      fkdotOld[3] = f3dot;
-      REAL8 DeltaTau = XLALGPSDiff ( &newEpoch, &(params->pulsar.refTime) );
+    PulsarSpins XLAL_INIT_DECL( fkdotOld );
+    fkdotOld[0] = f0;
+    fkdotOld[1] = f1dot;
+    fkdotOld[2] = f2dot;
+    fkdotOld[3] = f3dot;
+    REAL8 DeltaTau = XLALGPSDiff( &newEpoch, &( params->pulsar.refTime ) );
 
-      int ret = XLALExtrapolatePulsarSpins ( fkdotNew, fkdotOld, DeltaTau );
-      XLAL_CHECK_NULL ( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALExtrapolatePulsarSpins() failed.\n");
+    int ret = XLALExtrapolatePulsarSpins( fkdotNew, fkdotOld, DeltaTau );
+    XLAL_CHECK_NULL( ret == XLAL_SUCCESS, XLAL_EFUNC, "XLALExtrapolatePulsarSpins() failed.\n" );
 
-      /* Finally, need to propagate phase */
-      phi0 += LAL_TWOPI * (               f0    * deltaRef
-			    + (1.0/2.0) * f1dot * deltaRef * deltaRef
-			    + (1.0/6.0) * f2dot * deltaRef * deltaRef * deltaRef
-			    + (1.0/24.0)* f3dot * deltaRef * deltaRef * deltaRef * deltaRef
-			    );
+    /* Finally, need to propagate phase */
+    phi0 += LAL_TWOPI * ( f0    * deltaRef
+                          + ( 1.0 / 2.0 ) * f1dot * deltaRef * deltaRef
+                          + ( 1.0 / 6.0 ) * f2dot * deltaRef * deltaRef * deltaRef
+                          + ( 1.0 / 24.0 ) * f3dot * deltaRef * deltaRef * deltaRef * deltaRef
+                        );
 
-      f0    = fkdotNew[0];
-      f1dot = fkdotNew[1];
-      f2dot = fkdotNew[2];
-      f3dot = fkdotNew[3];
+    f0    = fkdotNew[0];
+    f1dot = fkdotNew[1];
+    f2dot = fkdotNew[2];
+    f3dot = fkdotNew[3];
 
-      refTime = startTimeSSB;
+    refTime = startTimeSSB;
 
-    } /* if refTime given */
+  } /* if refTime given */
   else  { /* if not given: use startTime -> SSB */
     refTime = startTimeSSB;
   }
@@ -249,44 +248,43 @@ XLALSimulateExactPulsarSignal ( const PulsarSignalParams *params )
   REAL8 aCross = sinZeta * params->pulsar.aCross;
   REAL8 twopsi = 2.0 * params->pulsar.psi;
 
-  REAL8 A1 =  aPlus * cos(phi0) * cos(twopsi) - aCross * sin(phi0) * sin(twopsi);
-  REAL8 A2 =  aPlus * cos(phi0) * sin(twopsi) + aCross * sin(phi0) * cos(twopsi);
-  REAL8 A3 = -aPlus * sin(phi0) * cos(twopsi) - aCross * cos(phi0) * sin(twopsi);
-  REAL8 A4 = -aPlus * sin(phi0) * sin(twopsi) + aCross * cos(phi0) * cos(twopsi);
+  REAL8 A1 =  aPlus * cos( phi0 ) * cos( twopsi ) - aCross * sin( phi0 ) * sin( twopsi );
+  REAL8 A2 =  aPlus * cos( phi0 ) * sin( twopsi ) + aCross * sin( phi0 ) * cos( twopsi );
+  REAL8 A3 = -aPlus * sin( phi0 ) * cos( twopsi ) - aCross * cos( phi0 ) * sin( twopsi );
+  REAL8 A4 = -aPlus * sin( phi0 ) * sin( twopsi ) + aCross * cos( phi0 ) * cos( twopsi );
 
   /* main loop: generate time-series */
-  for ( UINT4 i = 0; i < numSteps; i++)
-    {
-      LIGOTimeGPS *tiGPS = &(detStates->data[i].tGPS);
+  for ( UINT4 i = 0; i < numSteps; i++ ) {
+    LIGOTimeGPS *tiGPS = &( detStates->data[i].tGPS );
 
-      REAL8 ti = XLALGPSGetREAL8 ( tiGPS );
-      REAL8 deltati = ti - refTime;
-      REAL8 dT = SCALAR(vn, detStates->data[i].rDetector );
-      REAL8 taui = deltati + dT;
+    REAL8 ti = XLALGPSGetREAL8( tiGPS );
+    REAL8 deltati = ti - refTime;
+    REAL8 dT = SCALAR( vn, detStates->data[i].rDetector );
+    REAL8 taui = deltati + dT;
 
-      REAL8 phi_i = LAL_TWOPI * ( f0 * taui
-			    + (1.0/2.0) * f1dot * taui*taui
-			    + (1.0/6.0) * f2dot * taui*taui*taui
-			    + (1.0/24.0)* f3dot * taui*taui*taui*taui
-			    );
+    REAL8 phi_i = LAL_TWOPI * ( f0 * taui
+                                + ( 1.0 / 2.0 ) * f1dot * taui * taui
+                                + ( 1.0 / 6.0 ) * f2dot * taui * taui * taui
+                                + ( 1.0 / 24.0 ) * f3dot * taui * taui * taui * taui
+                              );
 
-      REAL8 cosphi_i = cos(phi_i);
-      REAL8 sinphi_i = sin(phi_i);
+    REAL8 cosphi_i = cos( phi_i );
+    REAL8 sinphi_i = sin( phi_i );
 
-      REAL8 ai = amcoe->a->data[i];
-      REAL8 bi = amcoe->b->data[i];
+    REAL8 ai = amcoe->a->data[i];
+    REAL8 bi = amcoe->b->data[i];
 
-      REAL8 hi = A1 * ai * cosphi_i
-	+  A2 * bi * cosphi_i
-	+  A3 * ai * sinphi_i
-	+  A4 * bi * sinphi_i;
+    REAL8 hi = A1 * ai * cosphi_i
+               +  A2 * bi * cosphi_i
+               +  A3 * ai * sinphi_i
+               +  A4 * bi * sinphi_i;
 
-      ts->data->data[i] = (REAL4)hi;
+    ts->data->data[i] = ( REAL4 )hi;
 
-    } /* for i < numSteps */
+  } /* for i < numSteps */
 
   XLALDestroyDetectorStateSeries( detStates );
-  XLALDestroyAMCoeffs ( amcoe );
+  XLALDestroyAMCoeffs( amcoe );
 
   return ts;
 

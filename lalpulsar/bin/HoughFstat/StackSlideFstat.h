@@ -1,4 +1,4 @@
-/*  
+/*
  *  Copyright (C) 2005 Gregory Mendell
  *
  *  This program is free software; you can redistribute it and/or modify
@@ -12,10 +12,10 @@
  *  GNU General Public License for more details.
  *
  *  You should have received a copy of the GNU General Public License
- *  along with with program; see the file COPYING. If not, write to the 
- *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, 
+ *  along with with program; see the file COPYING. If not, write to the
+ *  Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
  *  MA  02110-1301  USA
- * 
+ *
  */
 
 
@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-#include <errno.h> 
+#include <errno.h>
 
 #include <lal/UserInput.h>
 #include <lal/LALStdlib.h>
@@ -53,11 +53,11 @@
 #include <lal/Velocity.h>
 #include <lal/ExtrapolatePulsarSpins.h>
 #include <lal/Date.h>
-#include <lal/LALHough.h> 
+#include <lal/LALHough.h>
 #include <lal/NormalizeSFTRngMed.h>
 #include <lal/ComputeFstat.h>
 #include <lal/Statistics.h>
-#include <lal/GeneratePulsarSignal.h> 
+#include <lal/GeneratePulsarSignal.h>
 #include <lal/LogPrintf.h>
 
 #include "HierarchicalSearch.h"
@@ -74,7 +74,7 @@ extern "C" {
 /******************************************************
  *  Error codes and messages.
  */
- 
+
 #define STACKSLIDEFSTAT_ENORM 0
 #define STACKSLIDEFSTAT_ESUB  1
 #define STACKSLIDEFSTAT_EARG  2
@@ -101,40 +101,40 @@ extern "C" {
 /* prototypes */
 
 /* Function that stackslides a vector of Fstat frequency series or any REAL8FrequencySeriesVector. */
-void StackSlideVecF(LALStatus *status, 
-                    SemiCohCandidateList *out, 
-                    REAL4FrequencySeriesVector *vecF, 
-                    SemiCoherentParams *params);
+void StackSlideVecF( LALStatus *status,
+                     SemiCohCandidateList *out,
+                     REAL4FrequencySeriesVector *vecF,
+                     SemiCoherentParams *params );
 
 
-void StackSlideVecF_HoughMode(LALStatus *status,
-			      SemiCohCandidateList  *out,       
-			      REAL4FrequencySeriesVector *vecF, 
-			      SemiCoherentParams *params);   
+void StackSlideVecF_HoughMode( LALStatus *status,
+                               SemiCohCandidateList  *out,
+                               REAL4FrequencySeriesVector *vecF,
+                               SemiCoherentParams *params );
 
 /* Calculate f(t) using the master equation given by Eq. 6.18 in gr-qc/0407001 */
 /* Returns f(t) in outputPoint.fkdot[0] */
-void FindFreqFromMasterEquation(LALStatus *status,
-                                PulsarDopplerParams *outputPoint,
-                                PulsarDopplerParams *inputPoint,
-                                REAL8 *vel,
-                                REAL8 deltaT,
-                                UINT2 numSpindown);
+void FindFreqFromMasterEquation( LALStatus *status,
+                                 PulsarDopplerParams *outputPoint,
+                                 PulsarDopplerParams *inputPoint,
+                                 REAL8 *vel,
+                                 REAL8 deltaT,
+                                 UINT2 numSpindown );
 
 /* Get StackSlide candidates using a fixed threshold */
-void GetStackSlideCandidates_threshold(LALStatus *status, 
-                                       SemiCohCandidateList *out,
-                                       REAL8FrequencySeries *stackslideSum, 
-                                       PulsarDopplerParams *outputPoint,
-                                       PulsarDopplerParams *outputPointUnc,
-                                       REAL8 threshold);
+void GetStackSlideCandidates_threshold( LALStatus *status,
+                                        SemiCohCandidateList *out,
+                                        REAL8FrequencySeries *stackslideSum,
+                                        PulsarDopplerParams *outputPoint,
+                                        PulsarDopplerParams *outputPointUnc,
+                                        REAL8 threshold );
 
 /* Get StackSlide candidates as a toplist */
-void GetStackSlideCandidates_toplist(LALStatus *status,
-                                     toplist_t *list,
-                                     REAL8FrequencySeries *stackslideSum,
-                                     PulsarDopplerParams *outputPoint,
-                                     PulsarDopplerParams *outputPointUnc);
+void GetStackSlideCandidates_toplist( LALStatus *status,
+                                      toplist_t *list,
+                                      REAL8FrequencySeries *stackslideSum,
+                                      PulsarDopplerParams *outputPoint,
+                                      PulsarDopplerParams *outputPointUnc );
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

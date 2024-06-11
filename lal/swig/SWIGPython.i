@@ -648,15 +648,15 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     // Copy array element.
     if (src != NULL) {
-      memcpy(dst, src, PyArray_DESCR(nparr)->elsize);
+      memcpy(dst, src, PyArray_ITEMSIZE(nparr));
     }
 
     // Byte-swap array element, if required.
     if (swap) {
-      const size_t n = PyArray_DESCR(nparr)->elsize / 2;
+      const size_t n = PyArray_ITEMSIZE(nparr) / 2;
       char *a, *b, c;
       a = (char *)dst;
-      b = a + (PyArray_DESCR(nparr)->elsize-1);
+      b = a + (PyArray_ITEMSIZE(nparr)-1);
       for (size_t i = 0; i < n; i++) {
         c = *a;
         *a++ = *b;
@@ -709,7 +709,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
 
     // Get the Python object wrapping the C array element.
     const bool copyobj = false;
-    const size_t esize = PyArray_DESCR(nparr)->elsize;
+    const size_t esize = PyArray_ITEMSIZE(nparr);
     const int tflags = 0;
     PyObject* parent = PyArray_BASE(nparr);
     return OUTCALL;
@@ -742,7 +742,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     const int tflags = isptr ? SWIG_POINTER_DISOWN : 0;
 
     // Set the C array element to the supplied Python object.
-    const size_t esize = PyArray_DESCR(nparr)->elsize;
+    const size_t esize = PyArray_ITEMSIZE(nparr);
     PyObject* parent = PyArray_BASE(nparr);
     int elemalloc = 0;
     int *pelemalloc = &elemalloc;
@@ -767,7 +767,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     assert(PyArray_DESCR(nptoarr) != NULL);
 
     // 'toarr' should be an array of pointers to PyObjects.
-    assert(PyArray_DESCR(nptoarr)->elsize == sizeof(PyObject*));
+    assert(PyArray_ITEMSIZE(nptoarr) == sizeof(PyObject*));
 
     // Loop over 'n' elements, and assign each element of 'toarr' the Python object wrapping the
     // corresponding element of 'fromarr'.
@@ -775,7 +775,7 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
     PyObject** toelem = (PyObject**)to;
     while (--n >= 0) {
       *toelem = swiglal_py_array_objview_##ACFTYPE##_getitem(fromelem, fromarr);
-      fromelem += PyArray_DESCR(npfromarr)->elsize;
+      fromelem += PyArray_ITEMSIZE(npfromarr);
       ++toelem;
     }
 

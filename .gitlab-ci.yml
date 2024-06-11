@@ -103,6 +103,8 @@ variables:
   CONDARC: "${CI_PROJECT_DIR}/.condarc"
   # tell mamba to not display the huge ascii-art banner
   MAMBA_NO_BANNER: 1
+  # tell Debian-based installers to run non-interactively
+  DEBIAN_FRONTEND: noninteractive
 
 # default parameters for jobs
 default:
@@ -165,7 +167,7 @@ default:
     - .build-job
   variables:
     # default configure flags (can be overridden from dependents)
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-swig --enable-python"
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
     # default C flags (can be overridden from dependents)
     CFLAGS: "-O3"
     # target to actually run (distcheck is the most thorough)
@@ -487,7 +489,7 @@ default:
           LOCAL_CHANNEL="${CI_PROJECT_DIR}/local-builds";
           rm -rf "${LOCAL_CHANNEL}";
           cp -rv "${CONDA_BLD_PATH}" "${LOCAL_CHANNEL}";
-          conda index "${LOCAL_CHANNEL}" --no-progress;
+          conda index "${LOCAL_CHANNEL}";
           conda config --file ${CONDARC} --add channels "${LOCAL_CHANNEL}";
           conda search "*lal*" --channel "${LOCAL_CHANNEL}" --override-channels;
           rm -rf "${CONDA_BLD_PATH}";
@@ -610,7 +612,7 @@ default:
   script:
     - pushd ${CI_JOB_NAME##*:}
     - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --enable-swig
+    - ./configure ${ENABLE_NIGHTLY}
     - make dist
   artifacts:
     expire_in: 18h
@@ -627,7 +629,7 @@ tarballs:
     - .make-dist
   script:
     - ./00boot
-    - ./configure ${ENABLE_NIGHTLY} --enable-swig
+    - ./configure ${ENABLE_NIGHTLY}
     - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalinference lalpulsar lalapps; do
         pushd ${subdir};
         make dist;
@@ -1193,6 +1195,7 @@ lalapps:conda:
     # Enter virtualenv so that we have a controlled version of Numpy
     - ${PYTHON} -m venv env
     - source env/bin/activate
+    - python -m pip install --upgrade pip
     - python -m pip install
           delocate
           oldest-supported-numpy
@@ -1245,9 +1248,6 @@ lalapps:conda:
     - aarch64
 
 # Build wheels for all supported platforms
-wheel:cp38-cp38-manylinux_2_28_x86_64:
-  extends:
-    - .wheel:manylinux_2_28_x86_64
 wheel:cp39-cp39-manylinux_2_28_x86_64:
   extends:
     - .wheel:manylinux_2_28_x86_64
@@ -1265,9 +1265,6 @@ wheel:cp312-cp312-manylinux_2_28_x86_64:
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
-wheel:cp38-cp38-manylinux_2_28_aarch64:
-  extends:
-    - .wheel:manylinux_2_28_aarch64
 wheel:cp39-cp39-manylinux_2_28_aarch64:
   extends:
     - .wheel:manylinux_2_28_aarch64
@@ -1285,10 +1282,6 @@ wheel:cp312-cp312-manylinux_2_28_aarch64:
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
-wheel:cp38-cp38-macos-x86_64:
-  extends:
-    - .wheel:macos
-    - .wheel:macos:x86_64
 wheel:cp39-cp39-macos-x86_64:
   extends:
     - .wheel:macos
@@ -1310,10 +1303,6 @@ wheel:cp312-cp312-macos-x86_64:
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
-wheel:cp38-cp38-macos-arm64:
-  extends:
-    - .wheel:macos
-    - .wheel:macos:arm64
 wheel:cp39-cp39-macos-arm64:
   extends:
     - .wheel:macos
@@ -1447,16 +1436,23 @@ top-level:
     - !reference [.ci-merge-build, rules]
 
 top-level:pulsar:
-  image: igwn/lalsuite-dev:el7-testing
+  image: containers.ligo.org/karl-wette/lalsuite-dev-ubuntu:latest
   variables:
     # test that LALPulsar builds with optional dependencies disabled
     CONFIGURE_FLAGS: |
-      --enable-doxygen --enable-swig --enable-python
+      --disable-doxygen --enable-python --enable-swig
       --disable-all-lal --enable-lalpulsar
   needs: []
   extends:
     - .make-distcheck
     - .integration-tests
+  before_script:
+    # install build dependencies
+    - apt-get -y -q update
+    - cat lal/debian/control.in lalpulsar/debian/control.in
+      | sed -n '/^Build-Depends:/{:top;n;s/^ \([^, ]*\).*/\1/p;t top}'
+      | sed '/lal/d;s/cfitsio3/cfitsio/'
+      | sort | uniq | xargs apt-get -y -q install liboctave-dev
 
 # -- upgrade tests ------------------------------
 #
@@ -1608,11 +1604,6 @@ upgrade:conda:linux:
     - !reference [.ci-platform, rules]
     - !reference [.ci-merge-build, rules]
 
-platform:debian:buster:
-  extends:
-    - .platform-test
-  image: igwn/lalsuite-dev:buster
-
 .platform-test:conda:
   extends:
     - .platform-test
@@ -1683,6 +1674,7 @@ coverage:
   before_script:
     - *init-build-job
     - apt-get -y install --no-install-recommends python3-pip
+    - python3 -m pip install --upgrade pip
     - python3 -m pip install
           coverage
           "gcovr!=5.1"
@@ -1781,6 +1773,7 @@ wheel:pypi:
   image: python
   script:
     # TWINE_USERNAME and TWINE_PASSWORD are provided by CI secret variables
+    - pip install --upgrade pip
     - pip install twine
     - |
       if [ "X${EXECUTE_DEPLOY_ACTIONS}" != "Xyes" ]; then
@@ -1789,22 +1782,18 @@ wheel:pypi:
       fi
     - twine upload wheelhouse/*
   needs:
-    - wheel:cp38-cp38-manylinux_2_28_x86_64
     - wheel:cp39-cp39-manylinux_2_28_x86_64
     - wheel:cp310-cp310-manylinux_2_28_x86_64
     - wheel:cp311-cp311-manylinux_2_28_x86_64
     - wheel:cp312-cp312-manylinux_2_28_x86_64
-    - wheel:cp38-cp38-manylinux_2_28_aarch64
     - wheel:cp39-cp39-manylinux_2_28_aarch64
     - wheel:cp310-cp310-manylinux_2_28_aarch64
     - wheel:cp311-cp311-manylinux_2_28_aarch64
     - wheel:cp312-cp312-manylinux_2_28_aarch64
-    - wheel:cp38-cp38-macos-x86_64
     - wheel:cp39-cp39-macos-x86_64
     - wheel:cp310-cp310-macos-x86_64
     - wheel:cp311-cp311-macos-x86_64
     - wheel:cp312-cp312-macos-x86_64
-    - wheel:cp38-cp38-macos-arm64
     - wheel:cp39-cp39-macos-arm64
     - wheel:cp310-cp310-macos-arm64
     - wheel:cp311-cp311-macos-arm64

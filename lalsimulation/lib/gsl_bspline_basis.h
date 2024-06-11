@@ -1,5 +1,9 @@
 /*
- * Copyright (C) 2013 Reinhard Prix
+ *  Copyright (C) 2024 Leo Singer
+ *
+ *  Provide a workaround for removal of gsl_bspline_eval_nonzero in GSL 2.8.
+ *  The function gsl_bspline_eval_nonzero was replaced with gsl_bspline_basis.
+ *  FIXME: remove this file once we require GSL >= 2.8.
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,38 +21,17 @@
  *  MA  02110-1301  USA
  */
 
-#ifndef _SIMULATEPULSARSIGNAL_H  /* Double-include protection. */
-#define _SIMULATEPULSARSIGNAL_H
+#ifndef _GSL_BPSLINE_BASIS_H
+#define _GSL_BPSLINE_BASIS_H
 
-/* C++ protection. */
-#ifdef  __cplusplus
-extern "C" {
-#endif
+#include <gsl/gsl_bspline.h>
+#include <gsl/gsl_version.h>
 
-/**
- * \defgroup SimulatePulsarSignal_h Header SimulatePulsarSignal.h
- * \ingroup lalpulsar_inject
- * \author Reinhard Prix
- * \date 2004, 2013
- *
- * \brief New pulsar signal-generation routines
- */
-/** @{ */
-
-#include <lal/GeneratePulsarSignal.h>
-
-/*---------- Global variables ----------*/
-
-/*---------- Type definitions ----------*/
-
-/* ---------- Function prototypes ---------- */
-REAL4TimeSeries *XLALSimulateExactPulsarSignal( const PulsarSignalParams *params );
-
-/** @} */
-
-#ifdef  __cplusplus
+#if GSL_MAJOR_VERSION < 2 || (GSL_MAJOR_VERSION == 2 && GSL_MINOR_VERSION < 8)
+static int gsl_bspline_basis(const double x, gsl_vector *Bk, size_t *istart, gsl_bspline_workspace *w) {
+    size_t iend;
+    return gsl_bspline_eval_nonzero(x, Bk, istart, &iend, w);
 }
 #endif
-/* C++ protection. */
 
-#endif  /* Double-include protection. */
+#endif

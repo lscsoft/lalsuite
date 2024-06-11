@@ -33,6 +33,7 @@ from lal import GetDebugLevel, ClobberDebugLevel
 from lalpulsar import git_version
 from lalpulsar import ValidateSFTFile, SFTErrorMessage
 from lalpulsar.public_sft_directory import public_sft_directory
+from lalpulsar.public_sft_directory import public_sft_directory_readme_md
 
 __author__ = "Karl Wette <karl.wette@ligo.org>"
 __version__ = git_version.id
@@ -64,6 +65,12 @@ def parse_command_line():
         dest="validate",
         action="store_false",
         help="do not validate destination SFTs",
+    )
+    parser.add_argument(
+        "--readme-md",
+        dest="readme_md",
+        action="store_true",
+        help="write README.md in the destination directory",
     )
     parser.add_argument("source_directory", type=str, help="SFT source directory")
     parser.add_argument("dest_directory", type=str, help="SFT destination directory")
@@ -183,6 +190,12 @@ def copy_all_SFT_files(src_dest_paths, validate, processes):
     print(f"{__file__}: copying {len(src_dest_paths)} SFTs ... done\n", flush=True)
 
 
+def write_readme_md(dest_directory):
+    # write README.md
+    with open(os.path.join(dest_directory, "README.md"), "w") as f:
+        f.write(public_sft_directory_readme_md())
+
+
 if __name__ == "__main__":
     args = parse_command_line()
 
@@ -193,5 +206,8 @@ if __name__ == "__main__":
     make_dest_dirs(dest_dirs)
 
     copy_all_SFT_files(src_dest_paths, args.validate, args.processes)
+
+    if args.readme_md:
+        write_readme_md(args.dest_directory)
 
     print(f"{__file__}: DONE", flush=True)

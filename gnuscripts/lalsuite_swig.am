@@ -30,6 +30,8 @@ include $(top_srcdir)/gnuscripts/lalsuite_test.am
 header-links: header-links-local
 
 EXTRA_DIST += \
+	SWIGTest$(PACKAGE_NAME)Octave.m \
+	SWIGTest$(PACKAGE_NAME)Python.py \
 	generate_swig_iface.py \
 	$(END_OF_LIST)
 

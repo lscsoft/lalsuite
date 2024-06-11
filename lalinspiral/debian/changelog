@@ -1,3 +1,9 @@
+lalinspiral (5.0.0-1) unstable; urgency=low
+
+  * Update for 5.0.0
+
+ -- Duncan Macleod <duncan.macleod@ligo.org>  Mon, 11 Mar 2024 10:28:00 +0000
+
 lalinspiral (4.0.4-1) unstable; urgency=low
 
   * Update for 4.0.4

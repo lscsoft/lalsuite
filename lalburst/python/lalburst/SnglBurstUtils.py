@@ -330,7 +330,7 @@ floatpattern = re.compile("([+-]?[.0-9]+)[Ee]([+-]?[0-9]+)")
 
 def latexnumber(s):
 	"""
-	Convert a string of the form "d.dddde-dd" to "d.dddd \times
+	Convert a string of the form "d.dddde-dd" to "d.dddd \\times
 	10^{-dd}"
 
 	Example:

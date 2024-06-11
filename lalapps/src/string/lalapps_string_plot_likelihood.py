@@ -226,7 +226,7 @@ def nevents_plot(key, xcoords, denominator_data, numerator_data):
 
 	axes.set_title("Number of Events Found in Coincidence")
 	axes.set_xlabel("Number of Events $N$")
-	axes.set_ylabel("$\ln P(N)$")
+	axes.set_ylabel(r"$\ln P(N)$")
 	axes.xaxis.grid(True, which = "major,minor")
 	axes.yaxis.grid(True, which = "major,minor")
 

@@ -214,7 +214,10 @@ inifile=args[0]
 cp=configparser.SafeConfigParser()
 fp=open(inifile)
 cp.optionxform = str
-cp.readfp(fp)
+try:
+    cp.read_file(fp)
+except AttributeError:
+    cp.readfp(fp)
 fp.close()
 
 # Set the base directory for the run

@@ -25,4 +25,23 @@ pymodule_PYTHON = \
 	metric_utils.py \
 	$(END_OF_LIST)
 
+pymodule_DATA = \
+	public_sft_directory_README.md \
+	$(END_OF_LIST)
+
+endif
+
+if DOXYGEN
+
+BUILT_SOURCES += public_sft_directory_README.dox
+MOSTLYCLEANFILES += public_sft_directory_README.dox
+EXTRA_DIST += public_sft_directory_README.dox
+public_sft_directory_README.dox: public_sft_directory_README.md Makefile
+	$(AM_V_GEN)echo "/**" > $@; \
+	echo "\page public_sft_directory_readme Public SFT Directory README" >>$@; \
+	echo "\$(MARKDOWN2HTML_DOXYBLOCK)" >>$@; \
+	$(MARKDOWN2HTML) $< >>$@; \
+	echo "\end$(MARKDOWN2HTML_DOXYBLOCK)" >>$@; \
+	echo "*/" >>$@
+
 endif

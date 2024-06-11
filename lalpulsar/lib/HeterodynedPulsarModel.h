@@ -53,7 +53,7 @@ extern "C" {
 /** @{ */
 
 
-typedef struct tagDetResponseTimeLookupTable{
+typedef struct tagDetResponseTimeLookupTable {
   LIGOTimeGPS t0;         /**< GPS time epoch for the look-up table */
   UINT4 ntimebins;        /**< number of time bins in the look-up table */
   LALDetector *det;       /**< detector */
@@ -66,90 +66,90 @@ typedef struct tagDetResponseTimeLookupTable{
   REAL8Vector *fy;        /**< vector "y" polarisation response */
   REAL8Vector *fb;        /**< scalar breathing mode polarisation response */
   REAL8Vector *fl;        /**< scalar longitudinal mode polarisation response */
-}DetResponseTimeLookupTable;
+} DetResponseTimeLookupTable;
 
 
 /* ---------- Function prototypes ---------- */
 
 REAL8Vector *XLALHeterodynedPulsarPhaseDifference( PulsarParameters *params,
-                                                   PulsarParameters *origparams,
-                                                   const LIGOTimeGPSVector *datatimes,
-                                                   REAL8 freqfactor,
-                                                   REAL8Vector *ssbdts,
-                                                   UINT4 calcSSBDelay,
-                                                   REAL8Vector *bsbdts,
-                                                   UINT4 calcBSBDelay,
-                                                   REAL8Vector *glphase,
-                                                   UINT4 calcglphase,
-                                                   REAL8Vector *fitwavesphase,
-                                                   UINT4 calcfitwaves,
-                                                   const LALDetector *detector,
-                                                   const EphemerisData *ephem,
-                                                   const TimeCorrectionData *tdat,
-                                                   TimeCorrectionType ttype );
+    PulsarParameters *origparams,
+    const LIGOTimeGPSVector *datatimes,
+    REAL8 freqfactor,
+    REAL8Vector *ssbdts,
+    UINT4 calcSSBDelay,
+    REAL8Vector *bsbdts,
+    UINT4 calcBSBDelay,
+    REAL8Vector *glphase,
+    UINT4 calcglphase,
+    REAL8Vector *fitwavesphase,
+    UINT4 calcfitwaves,
+    const LALDetector *detector,
+    const EphemerisData *ephem,
+    const TimeCorrectionData *tdat,
+    TimeCorrectionType ttype );
 
 REAL8Vector *XLALHeterodynedPulsarGetSSBDelay( PulsarParameters *pars,
-                                               const LIGOTimeGPSVector *datatimes,
-                                               const LALDetector *detector,
-                                               const EphemerisData *ephem,
-                                               const TimeCorrectionData *tdat,
-                                               TimeCorrectionType ttype );
+    const LIGOTimeGPSVector *datatimes,
+    const LALDetector *detector,
+    const EphemerisData *ephem,
+    const TimeCorrectionData *tdat,
+    TimeCorrectionType ttype );
 
 REAL8Vector *XLALHeterodynedPulsarGetBSBDelay( PulsarParameters *pars,
-                                               const LIGOTimeGPSVector *datatimes,
-                                               const REAL8Vector *dts,
-                                               const EphemerisData *edat );
+    const LIGOTimeGPSVector *datatimes,
+    const REAL8Vector *dts,
+    const EphemerisData *edat );
 
 void XLALGetEarthPosVel( EarthState *earth,
                          const EphemerisData *edat,
                          const LIGOTimeGPS *tGPS );
 
 REAL8Vector *XLALHeterodynedPulsarGetGlitchPhase( PulsarParameters *params,
-                                                  const LIGOTimeGPSVector *datatimes,
-                                                  const REAL8Vector *ssbdts,
-                                                  const REAL8Vector *bsbdts );
+    const LIGOTimeGPSVector *datatimes,
+    const REAL8Vector *ssbdts,
+    const REAL8Vector *bsbdts );
 
 REAL8Vector *XLALHeterodynedPulsarGetFITWAVESPhase( PulsarParameters *params,
-                                                    const LIGOTimeGPSVector *datatimes,
-                                                    const REAL8Vector *ssbdts,
-                                                    REAL8 freq );
+    const LIGOTimeGPSVector *datatimes,
+    const REAL8Vector *ssbdts,
+    REAL8 freq );
 
-COMPLEX16TimeSeries* XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *pars,
-                                                             REAL8 freqfactor,
-                                                             UINT4 varyphase,
-                                                             UINT4 useroq,
-                                                             UINT4 nonGR,
-                                                             const LIGOTimeGPSVector *timestamps,
-                                                             const DetResponseTimeLookupTable *resp );
+COMPLEX16TimeSeries *XLALHeterodynedPulsarGetAmplitudeModel( PulsarParameters *pars,
+    REAL8 freqfactor,
+    UINT4 varyphase,
+    UINT4 useroq,
+    UINT4 nonGR,
+    const LIGOTimeGPSVector *timestamps,
+    const DetResponseTimeLookupTable *resp );
 
-COMPLEX16TimeSeries* XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
-                                                    PulsarParameters *origpars,
-                                                    REAL8 freqfactor,
-                                                    UINT4 varyphase,
-                                                    UINT4 useroq,
-                                                    UINT4 nonGR,
-                                                    const LIGOTimeGPSVector *timestamps,
-                                                    REAL8Vector *hetssbdelays,
-                                                    UINT4 calcSSBDelay,
-                                                    REAL8Vector *hetbsbdelays,
-                                                    UINT4 calcBSBDelay,
-                                                    REAL8Vector *glphase,
-                                                    UINT4 calcglphase,
-                                                    REAL8Vector *fitwavesphase,
-                                                    UINT4 calcfitwaves,
-                                                    const DetResponseTimeLookupTable *resp,
-                                                    const EphemerisData *ephem,
-                                                    const TimeCorrectionData *tdat,
-                                                    TimeCorrectionType ttype );
+COMPLEX16TimeSeries *XLALHeterodynedPulsarGetModel( PulsarParameters *pars,
+    PulsarParameters *origpars,
+    REAL8 freqfactor,
+    UINT4 varyphase,
+    UINT4 useroq,
+    UINT4 nonGR,
+    const LIGOTimeGPSVector *timestamps,
+    REAL8Vector *hetssbdelays,
+    UINT4 calcSSBDelay,
+    REAL8Vector *hetbsbdelays,
+    UINT4 calcBSBDelay,
+    REAL8Vector *glphase,
+    UINT4 calcglphase,
+    REAL8Vector *fitwavesphase,
+    UINT4 calcfitwaves,
+    const DetResponseTimeLookupTable *resp,
+    const EphemerisData *ephem,
+    const TimeCorrectionData *tdat,
+    TimeCorrectionType ttype );
 
-DetResponseTimeLookupTable* XLALDetResponseLookupTable( REAL8 t0,
-                                                        const LALDetector *det,
-                                                        REAL8 alpha,
-                                                        REAL8 delta,
-                                                        UINT4 timeSteps,
-                                                        REAL8 avedt );
+DetResponseTimeLookupTable *XLALDetResponseLookupTable( REAL8 t0,
+    const LALDetector *det,
+    REAL8 alpha,
+    REAL8 delta,
+    UINT4 timeSteps,
+    REAL8 avedt );
 
-void XLALDestroyDetResponseTimeLookupTable( DetResponseTimeLookupTable* resp );
+void XLALDestroyDetResponseTimeLookupTable( DetResponseTimeLookupTable *resp );
 
 void XLALPulsarSourceToWaveformParams( PulsarParameters *params );
 

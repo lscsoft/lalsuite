@@ -69,18 +69,6 @@
  */
 
 /**
- * \page lalapps_create_solar_system_ephemeris lalapps_create_solar_system_ephemeris
- * \ingroup lalapps_pulsar_exec_stubs
- * \c lalapps_create_solar_system_ephemeris has been renamed to \c lalpulsar_create_solar_system_ephemeris
- */
-
-/**
- * \page lalapps_create_solar_system_ephemeris_python lalapps_create_solar_system_ephemeris_python
- * \ingroup lalapps_pulsar_exec_stubs
- * \c lalapps_create_solar_system_ephemeris_python has been renamed to \c lalpulsar_create_solar_system_ephemeris_python
- */
-
-/**
  * \page lalapps_create_time_correction_ephemeris lalapps_create_time_correction_ephemeris
  * \ingroup lalapps_pulsar_exec_stubs
  * \c lalapps_create_time_correction_ephemeris has been renamed to \c lalpulsar_create_time_correction_ephemeris

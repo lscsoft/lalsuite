@@ -16,7 +16,7 @@
   image: igwn/lalsuite-dev:el7-testing
   variables:
     # default configure flags (can be overridden from dependents)
-    CONFIGURE_FLAGS: "--enable-swig --enable-python"
+    CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
     # set default python as python3
     # TODO: this can be removed when all packages require python>=3
     #       on their own
@@ -36,6 +36,14 @@
     - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
     - tar -xf ${TARBALL}
     - cd ${PACKAGE}-*/
+    # install build dependencies
+    - |
+      sed -e '
+        /BuildRequires: *lal/d
+        /BuildRequires: *liblal/d
+        /BuildRequires: *python.*-lal/d
+      ' ${PACKAGE}.spec > ${PACKAGE}-nolal.spec
+    - yum-builddep -y ${PACKAGE}-nolal.spec
     # we use xargs here in case CONFIGURE_FLAGS contains
     # variables with spaces, etc etc
     - DEFAULT_CONFIGURE_FLAGS="--prefix=${PWD}/../_inst --enable-strict-defs"

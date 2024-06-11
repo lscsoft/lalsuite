@@ -39,7 +39,7 @@
  * \sum_{\alpha =0}^{M-1}\sum_{k=0}^{N-1}\tilde{x}_{\alpha k}\left[\frac{1}{N}\sum_{j=0}^{N-1}e^{-2\pi i(\Phi_{\alpha jb}(\vec{\lambda})-\frac{jk}{N})}\right]
  * \f}
  * The index \f$ b \f$ defines the DeFT frequency bin, the index \f$ \alpha \f$ loops through
- * the SFTs that build the DeFT, \f$ k \f$ runs on all the SFT frequency bins, and \f$ j \f$ 
+ * the SFTs that build the DeFT, \f$ k \f$ runs on all the SFT frequency bins, and \f$ j \f$
  * is a time index that runs on each SFT.  The next step in the development of the demodulation
  * technique involves Taylor expanding the phase model about the temporal
  * midpoint of each short segment of data, while retaining only first order
@@ -55,12 +55,12 @@
  * \left[t-t_{\alpha,1/2}\right]=\frac{\ T_{obs}}{M}\left(\frac{j}{N}-\frac{1}{2}\right)=\mathcal{T}_{s}\left(\frac{j}{N}-\frac{1}{2}\right),
  * \f}
  * where \f$ \mathcal{T}_{s} \f$ is the short time baseline of the \f$ M \f$ short FTs.  On
- * the other hand, the phase can also be expressed as a function of SSB time \f$ T \f$ 
+ * the other hand, the phase can also be expressed as a function of SSB time \f$ T \f$
  * (i.e. the time at the solar system barycenter).  We will assume the source to
  * be at rest in this reference frame.  Now, if one adopts the notation \f$ \Delta
  * T_{\alpha}\equiv\left[T(t_{\alpha,1/2})-
  * T(t_{0})\right] \f$ and \f$ \dot{T}_{\alpha}\equiv
- * dT/dt(t_{\alpha,1/2}) \f$ 
+ * dT/dt(t_{\alpha,1/2}) \f$
  * the phase terms in the above equation are (neglecting constants)
  * \f{eqnarray}{
  * \label{eq_phi}
@@ -126,28 +126,26 @@ extern "C" {
  * This structure contains the parameters for the LALComputeSky() routine.
  */
 #ifdef SWIG /* SWIG interface directives */
-SWIGLAL(IMMUTABLE_MEMBERS(tagCSParams, edat));
+SWIGLAL( IMMUTABLE_MEMBERS( tagCSParams, edat ) );
 #endif /* SWIG */
-typedef struct
-tagCSParams
-{
-  INT8			spinDwnOrder;	/**< The maximal number of spindown parameters per spindown parameter set */
-  INT8			mObsSFT;	/**< The number of SFTs in the observation time */
-  REAL8			tSFT;		/**< The timescale of one SFT */
-  LIGOTimeGPS		*tGPS;		/**< An array containing the GPS times of the first datum from each SFT */
-  REAL8 		*skyPos; 	/**< The array containing the sky patch coordinates */
-  BarycenterInput 	*baryinput;	/**< A switch which turns modulation on/off */
-  EmissionTime 		*emit;		/**< TO BE DOCUMENTED */
-  EarthState 		*earth;		/**< TO BE DOCUMENTED */
-  const EphemerisData 	*edat;		/**< ephemeris data */
+typedef struct tagCSParams {
+  INT8                  spinDwnOrder;   /**< The maximal number of spindown parameters per spindown parameter set */
+  INT8                  mObsSFT;        /**< The number of SFTs in the observation time */
+  REAL8                 tSFT;           /**< The timescale of one SFT */
+  LIGOTimeGPS           *tGPS;          /**< An array containing the GPS times of the first datum from each SFT */
+  REAL8                 *skyPos;        /**< The array containing the sky patch coordinates */
+  BarycenterInput       *baryinput;     /**< A switch which turns modulation on/off */
+  EmissionTime          *emit;          /**< TO BE DOCUMENTED */
+  EarthState            *earth;         /**< TO BE DOCUMENTED */
+  const EphemerisData   *edat;          /**< ephemeris data */
 }
 CSParams;
 
 
-void LALComputeSky (LALStatus *status,
-			REAL8 		*skyConst,
-			INT8 		iSkyCoh,
-			CSParams 	*params);
+void LALComputeSky( LALStatus *status,
+                    REAL8           *skyConst,
+                    INT8            iSkyCoh,
+                    CSParams        *params );
 
 
 #ifdef __cplusplus

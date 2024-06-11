@@ -45,7 +45,7 @@ extern "C" {
 #include <math.h>
 
 /* additional includes */
-typedef struct tagBSGLSetup BSGLSetup;	///< internal storage for setup and pre-computed BSGL quantities
+typedef struct tagBSGLSetup BSGLSetup;  ///< internal storage for setup and pre-computed BSGL quantities
 
 /*---------- exported DEFINES ----------*/
 
@@ -56,75 +56,75 @@ typedef struct tagBSGLSetup BSGLSetup;	///< internal storage for setup and pre-c
 /*---------- exported prototypes [API] ----------*/
 
 BSGLSetup *
-XLALCreateBSGLSetup ( const UINT4 numDetectors,
-                      const REAL4 Fstar0sc,
-                      const REAL4 oLGX[PULSAR_MAX_DETECTORS],
-                      const BOOLEAN useLogCorrection,
-                      const UINT4 numSegments
-);
+XLALCreateBSGLSetup( const UINT4 numDetectors,
+                     const REAL4 Fstar0sc,
+                     const REAL4 oLGX[PULSAR_MAX_DETECTORS],
+                     const BOOLEAN useLogCorrection,
+                     const UINT4 numSegments
+                   );
 
 void
-XLALDestroyBSGLSetup ( BSGLSetup * setup );
+XLALDestroyBSGLSetup( BSGLSetup *setup );
 
 int
-XLALParseLinePriors ( REAL4 oLGX[PULSAR_MAX_DETECTORS],
-		      const LALStringVector *oLGX_string
-);
+XLALParseLinePriors( REAL4 oLGX[PULSAR_MAX_DETECTORS],
+                     const LALStringVector *oLGX_string
+                   );
 
 // ---------- vector BSGL functions ----------
 int
-XLALVectorComputeBSGL ( REAL4 *outBSGL,
-                        const REAL4 *twoF,
-                        const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
-                        const UINT4 len,
-                        const BSGLSetup *setup
-                        );
+XLALVectorComputeBSGL( REAL4 *outBSGL,
+                       const REAL4 *twoF,
+                       const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
+                       const UINT4 len,
+                       const BSGLSetup *setup
+                     );
 
 int
-XLALVectorComputeBSGLtL ( REAL4 *outBSGLtL,
-                          const REAL4 *twoF,
+XLALVectorComputeBSGLtL( REAL4 *outBSGLtL,
+                         const REAL4 *twoF,
+                         const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
+                         const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],
+                         const UINT4 len,
+                         const BSGLSetup *setup
+                       );
+int
+XLALVectorComputeBtSGLtL( REAL4 *outBtSGLtL,
+                          const REAL4 *maxTwoFSeg,
                           const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
                           const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],
                           const UINT4 len,
                           const BSGLSetup *setup
-                          );
-int
-XLALVectorComputeBtSGLtL ( REAL4 *outBtSGLtL,
-                           const REAL4 *maxTwoFSeg,
-                           const REAL4 *twoFPerDet[PULSAR_MAX_DETECTORS],
-                           const REAL4 *maxTwoFSegPerDet[PULSAR_MAX_DETECTORS],
-                           const UINT4 len,
-                           const BSGLSetup *setup
-                           );
+                        );
 
 // ---------- single-bin BSGL function wrappers ----------
 REAL4
-XLALComputeBSGL ( const REAL4 twoF,
-                  const REAL4 twoFX[PULSAR_MAX_DETECTORS],
-                  const BSGLSetup *setup
-);
+XLALComputeBSGL( const REAL4 twoF,
+                 const REAL4 twoFX[PULSAR_MAX_DETECTORS],
+                 const BSGLSetup *setup
+               );
 
 REAL4
-XLALComputeBSGLtL ( const REAL4 twoF,
+XLALComputeBSGLtL( const REAL4 twoF,
+                   const REAL4 twoFX[PULSAR_MAX_DETECTORS],
+                   const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
+                   const BSGLSetup *setup
+                 );
+
+REAL4
+XLALComputeBtSGLtL( const REAL4 maxtwoFl,
                     const REAL4 twoFX[PULSAR_MAX_DETECTORS],
                     const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
                     const BSGLSetup *setup
-);
+                  );
 
 REAL4
-XLALComputeBtSGLtL ( const REAL4 maxtwoFl,
+XLALComputeBStSGLtL( const REAL4 twoF,
+                     const REAL4 maxtwoFl,
                      const REAL4 twoFX[PULSAR_MAX_DETECTORS],
                      const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
                      const BSGLSetup *setup
-);
-
-REAL4
-XLALComputeBStSGLtL ( const REAL4 twoF,
-                      const REAL4 maxtwoFl,
-                      const REAL4 twoFX[PULSAR_MAX_DETECTORS],
-                      const REAL4 maxtwoFXl[PULSAR_MAX_DETECTORS],
-                      const BSGLSetup *setup
-);
+                   );
 
 
 /** @} */

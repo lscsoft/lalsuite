@@ -66,132 +66,132 @@
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-void COMPLEX8SFT2Periodogram1 (LALStatus  *status,
-                   REAL8Periodogram1     *peri,
-		   COMPLEX8SFTData1      *sft)
-{ 
+void COMPLEX8SFT2Periodogram1( LALStatus  *status,
+                               REAL8Periodogram1     *peri,
+                               COMPLEX8SFTData1      *sft )
+{
 
   INT4       length;
-  
+
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status); 
-  
-  /*   Make sure the arguments are not NULL: */ 
-  ASSERT (sft,   status, SFTBINH_ENULL, SFTBINH_MSGENULL);
-  ASSERT (peri,  status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
+
+  /*   Make sure the arguments are not NULL: */
+  ASSERT( sft,   status, SFTBINH_ENULL, SFTBINH_MSGENULL );
+  ASSERT( peri,  status, SFTBINH_ENULL, SFTBINH_MSGENULL );
 
   peri->epoch.gpsSeconds = sft->epoch.gpsSeconds;
   peri->epoch.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
   peri->timeBase = sft->timeBase;
   peri->fminBinIndex = sft->fminBinIndex;
-  
-  length = sft->length;
-  ASSERT (length==peri->length,  status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
 
-  if (length > 0){
+  length = sft->length;
+  ASSERT( length == peri->length,  status, SFTBINH_EVAL, SFTBINH_MSGEVAL );
+
+  if ( length > 0 ) {
     REAL8      *out;
     COMPLEX8   *in1;
-    REAL8      re,im, factor;
+    REAL8      re, im, factor;
     INT4      n;
 
-    ASSERT (sft->data, status, SFTBINH_ENULL,  SFTBINH_MSGENULL);
-    ASSERT (peri->data, status, SFTBINH_ENULL,  SFTBINH_MSGENULL);
+    ASSERT( sft->data, status, SFTBINH_ENULL,  SFTBINH_MSGENULL );
+    ASSERT( peri->data, status, SFTBINH_ENULL,  SFTBINH_MSGENULL );
     out = peri->data;
     in1 = sft->data;
-    n= length;
+    n = length;
 
     /* if data was properly normalized */
-    factor = 1./peri->timeBase;
-    
+    factor = 1. / peri->timeBase;
+
     /* if data is not normalized... this factor needs to be clarified  */
     /* note inconsistency with the previous function and quantity *factor*  there */
-    
+
     /* if bin zero is included should be treated properly because of factor 2 */
-    
-    while (n-- >0){
-      re = crealf(*in1);
-      im = cimagf(*in1);
-      *out = (re*re + im*im) *factor; /* factor 2 still missing if one-sided*/
+
+    while ( n-- > 0 ) {
+      re = crealf( *in1 );
+      im = cimagf( *in1 );
+      *out = ( re * re + im * im ) * factor; /* factor 2 still missing if one-sided*/
       ++out;
       ++in1;
     }
   }
-  
-  
 
-  DETATCHSTATUSPTR (status);
+
+
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
- 
+
 
 
 
 /* >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< */
 
-void SFT2Periodogram (LALStatus  *status,
-                   REAL8Periodogram1     *peri,
-		   SFTtype      *sft)
-{ 
+void SFT2Periodogram( LALStatus  *status,
+                      REAL8Periodogram1     *peri,
+                      SFTtype      *sft )
+{
 
   INT4       length;
   REAL8      f0, deltaF;
   /* --------------------------------------------- */
-  INITSTATUS(status);
-  ATTATCHSTATUSPTR (status); 
-  
-  /*   Make sure the arguments are not NULL: */ 
-  ASSERT (sft,   status, SFTBINH_ENULL, SFTBINH_MSGENULL);
-  ASSERT (peri,  status, SFTBINH_ENULL, SFTBINH_MSGENULL);
+  INITSTATUS( status );
+  ATTATCHSTATUSPTR( status );
+
+  /*   Make sure the arguments are not NULL: */
+  ASSERT( sft,   status, SFTBINH_ENULL, SFTBINH_MSGENULL );
+  ASSERT( peri,  status, SFTBINH_ENULL, SFTBINH_MSGENULL );
 
   f0 = sft->f0;
-  deltaF = sft->deltaF;  
+  deltaF = sft->deltaF;
   length = sft->data->length;
 
   peri->epoch.gpsSeconds = sft->epoch.gpsSeconds;
   peri->epoch.gpsNanoSeconds = sft->epoch.gpsNanoSeconds;
-  peri->timeBase = 1.0/deltaF;
-  peri->fminBinIndex = floor(f0/deltaF + 0.5);
-  
-  ASSERT (length==peri->length,  status, SFTBINH_EVAL, SFTBINH_MSGEVAL);
+  peri->timeBase = 1.0 / deltaF;
+  peri->fminBinIndex = floor( f0 / deltaF + 0.5 );
 
-  if (length > 0){
+  ASSERT( length == peri->length,  status, SFTBINH_EVAL, SFTBINH_MSGEVAL );
+
+  if ( length > 0 ) {
     REAL8      *out;
     COMPLEX8   *in1;
-    REAL8      re,im, factor;
+    REAL8      re, im, factor;
     INT4      n;
 
-    ASSERT (sft->data, status, SFTBINH_ENULL,  SFTBINH_MSGENULL);
-    ASSERT (peri->data, status, SFTBINH_ENULL,  SFTBINH_MSGENULL);
+    ASSERT( sft->data, status, SFTBINH_ENULL,  SFTBINH_MSGENULL );
+    ASSERT( peri->data, status, SFTBINH_ENULL,  SFTBINH_MSGENULL );
     out = peri->data;
     in1 = sft->data->data;
-    n= length;
+    n = length;
 
     /* if data was properly normalized */
-    factor = 1./peri->timeBase;
-    
+    factor = 1. / peri->timeBase;
+
     /* if data is not normalized... this factor needs to be clarified  */
     /* note inconsistency with the previous function and quantity *factor*  there */
-    
+
     /* if bin zero is included should be treated properly because of factor 2 */
-    
-    while (n-- >0){
-      re = crealf(*in1);
-      im = cimagf(*in1);
-      *out = (re*re + im*im) *factor; /* factor 2 still missing if one-sided*/
+
+    while ( n-- > 0 ) {
+      re = crealf( *in1 );
+      im = cimagf( *in1 );
+      *out = ( re * re + im * im ) * factor; /* factor 2 still missing if one-sided*/
       ++out;
       ++in1;
     }
   }
-  
-  
 
-  DETATCHSTATUSPTR (status);
+
+
+  DETATCHSTATUSPTR( status );
   /* normal exit */
-  RETURN (status);
+  RETURN( status );
 }
- 
+
 
 
 

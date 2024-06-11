@@ -1,3 +1,9 @@
+lalapps (10.0.0-1) unstable; urgency=low
+
+  * Update for 10.0.0
+
+ -- Duncan Macleod <duncan.macleod@ligo.org>  Mon, 11 Mar 2024 10:43:00 +0000
+
 lalapps (9.2.2-1) unstable; urgency=low
 
   * Update for 9.2.2

@@ -83,117 +83,143 @@ extern "C" {
  */
 
 /** Index to refer to an SFT given a set of SFTs from several different detectors */
-  typedef struct tagSFTIndex {
-    UINT4 detInd; /**< index of detector in list */
-    UINT4 sftInd; /**< index of SFT in list for this detector */
-  } SFTIndex;
+typedef struct tagSFTIndex {
+  UINT4 detInd; /**< index of detector in list */
+  UINT4 sftInd; /**< index of SFT in list for this detector */
+} SFTIndex;
 
 /** List of SFT indices */
-  typedef struct tagSFTIndexList {
-    UINT4    length; /**< number of SFTs */
-    SFTIndex *data; /**< array of SFT indices */
-  } SFTIndexList;
+typedef struct tagSFTIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( SFTIndexList, SFTIndex, data, UINT4, length ) );
+#endif /* SWIG */
+  UINT4    length; /**< number of SFTs */
+  SFTIndex *data; /**< array of SFT indices */
+} SFTIndexList;
 
 /** Index to refer to a pair of SFTs */
-  typedef struct tagSFTPairIndex {
+typedef struct tagSFTPairIndex {
 #if 0
-    SFTIndex sftInd1; /**< index of 1st SFT in pair */
-    SFTIndex sftInd2; /**< index of 2nd SFT in pair */
+  SFTIndex sftInd1; /**< index of 1st SFT in pair */
+  SFTIndex sftInd2; /**< index of 2nd SFT in pair */
 #endif
-    UINT4 sftNum[2]; /**< ordinal numbers of first and second SFTs */
-  } SFTPairIndex;
+  UINT4 sftNum[2]; /**< ordinal numbers of first and second SFTs */
+} SFTPairIndex;
 
 /** List of SFT pair indices */
-  typedef struct tagSFTPairIndexList {
-    UINT4    length; /**< number of SFT Pairs */
-    SFTPairIndex *data; /**< array of SFT Pair indices */
-  } SFTPairIndexList;
+typedef struct tagSFTPairIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( SFTPairIndexList, SFTPairIndex, data, UINT4, length ) );
+#endif /* SWIG */
+  UINT4    length; /**< number of SFT Pairs */
+  SFTPairIndex *data; /**< array of SFT Pair indices */
+} SFTPairIndexList;
 
 
 /** Resampling Counter of matching SFTs for a given detector Y_K_X matching SFT K_X */
-  typedef struct tagSFTCount {
-    UINT4 detInd; /**< original vector index of detector Y */
-    UINT4 sftCount; /**< number of matching SFTs */
-  } SFTCount;
+typedef struct tagSFTCount {
+  UINT4 detInd; /**< original vector index of detector Y */
+  UINT4 sftCount; /**< number of matching SFTs */
+} SFTCount;
 
 /* Special multi-types for resampling */
 /* These are MULTI-structs */
 
 
 /** INNER List of SFT indices */
-  typedef struct tagResampSFTMultiCountList {
-    UINT4       length; /**< number of detectors Y */
-    UINT4       sftInd; /**< original vector index of sft K */
-    SFTCount  * data;   /**<  arrays of count of SFTs L_Y, at given detector Y, that match each given SFT K_X */
-  } ResampSFTMultiCountList;
+typedef struct tagResampSFTMultiCountList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTMultiCountList, SFTCount, data, UINT4, length ) );
+#endif /* SWIG */
+  UINT4       length; /**< number of detectors Y */
+  UINT4       sftInd; /**< original vector index of sft K */
+  SFTCount   *data;   /**<  arrays of count of SFTs L_Y, at given detector Y, that match each given SFT K_X */
+} ResampSFTMultiCountList;
 
 /** MIDDLE List of SFT indices */
-  typedef struct tagResampSFTMultiCountListDet {
-    UINT4                      length; /**< number of SFTs K_X */
-    UINT4                      detInd; /**< original vector index of detector X */
-    ResampSFTMultiCountList  * data;   /**< array of SFT L_Y indices for given SFT K_X at detector X */
-  } ResampSFTMultiCountListDet;
+typedef struct tagResampSFTMultiCountListDet {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTMultiCountListDet, ResampSFTMultiCountList, data, UINT4, length ) );
+#endif /* SWIG */
+  UINT4                      length; /**< number of SFTs K_X */
+  UINT4                      detInd; /**< original vector index of detector X */
+  ResampSFTMultiCountList   *data;   /**< array of SFT L_Y indices for given SFT K_X at detector X */
+} ResampSFTMultiCountListDet;
 
 /** OUTER List of SFT indices */
-  typedef struct tagMultiResampSFTMultiCountList {
-    UINT4                         length; /**< number of detectors X */
-    ResampSFTMultiCountListDet  * data;   /**< list per-detectors X */
-  } MultiResampSFTMultiCountList;
+typedef struct tagMultiResampSFTMultiCountList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( MultiResampSFTMultiCountList, ResampSFTMultiCountListDet, data, UINT4, length ) );
+#endif /* SWIG */
+  UINT4                         length; /**< number of detectors X */
+  ResampSFTMultiCountListDet   *data;   /**< list per-detectors X */
+} MultiResampSFTMultiCountList;
 
 
 /** Resampling: Index to refer to fields of an SFT given a specific index L_Y_K_X */
-  typedef struct tagResampSFTIndex {
-    UINT4 detInd;  /**< index of detector in list */
-    UINT4 sftInd;  /**< index of SFT in list for this detector L */
-    UINT4 flatInd; /**< index in the flat SFT list */
-    UINT4 pairInd; /**< index of SFT among overall pairs */
-    REAL4 sciFlag; /**< science-or-not value: 1 is science mode, 0 is in a gap */
-  } ResampSFTIndex;
+typedef struct tagResampSFTIndex {
+  UINT4 detInd;  /**< index of detector in list */
+  UINT4 sftInd;  /**< index of SFT in list for this detector L */
+  UINT4 flatInd; /**< index in the flat SFT list */
+  UINT4 pairInd; /**< index of SFT among overall pairs */
+  REAL4 sciFlag; /**< science-or-not value: 1 is science mode, 0 is in a gap */
+} ResampSFTIndex;
 
 /** Resampling: List of SFT indices L for a given detector Y_K_X: indexing method is nominally original vectors but may be affected by gaps */
-  typedef struct tagResampSFTIndexList {
-    UINT4             length; /**< number of SFTs */
-    UINT4             detInd; /**< original vector index of detector Y */
-    ResampSFTIndex  * data; /**< array of SFT indices */
-  } ResampSFTIndexList;
+typedef struct tagResampSFTIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTIndexList, ResampSFTIndex, data, UINT4, length ) );
+#endif /* SWIG */
+  UINT4             length; /**< number of SFTs */
+  UINT4             detInd; /**< original vector index of detector Y */
+  ResampSFTIndex   *data; /**< array of SFT indices */
+} ResampSFTIndexList;
 
 /** Resampling: Multi List of indices of SFT L_Y, for a given sft K_X  */
-  typedef struct tagResampSFTMultiIndexList {
-    UINT4                 length;  /**< number of detectors Y */
-    UINT4                 sftInd;  /**< original vector index of sft K */
-    UINT4                 flatInd; /**< index in the flat SFT list */
-    REAL4                 sciFlag; /**< science-or-not value: 1 is science mode, 0 is in a gap */
-    ResampSFTIndexList  * data;    /**< array, per detector, of lists of SFT indices */
-  } ResampSFTMultiIndexList;
+typedef struct tagResampSFTMultiIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTMultiIndexList, ResampSFTIndexList, data, UINT4, length ) );
+#endif /* SWIG */
+  UINT4                 length;  /**< number of detectors Y */
+  UINT4                 sftInd;  /**< original vector index of sft K */
+  UINT4                 flatInd; /**< index in the flat SFT list */
+  REAL4                 sciFlag; /**< science-or-not value: 1 is science mode, 0 is in a gap */
+  ResampSFTIndexList   *data;    /**< array, per detector, of lists of SFT indices */
+} ResampSFTMultiIndexList;
 
 /** Resampling Multi List of SFT pair indices (L_Y_K), for a given detector X */
-  typedef struct tagResampSFTPairMultiIndexList {
-    UINT4                      length; /**< number of K SFTs at detector X */
-    UINT4                      detInd; /**< original vector index of detector X */
-    ResampSFTMultiIndexList  * data;  /**< array of SFT L_Y indices for given SFT K_X at detector X */
-  } ResampSFTPairMultiIndexList;
+typedef struct tagResampSFTPairMultiIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTPairMultiIndexList, ResampSFTMultiIndexList, data, UINT4, length ) );
+#endif /* SWIG */
+  UINT4                      length; /**< number of K SFTs at detector X */
+  UINT4                      detInd; /**< original vector index of detector X */
+  ResampSFTMultiIndexList   *data;  /**< array of SFT L_Y indices for given SFT K_X at detector X */
+} ResampSFTPairMultiIndexList;
 
 
 /** Resampling Multi List of all paired SFTs L_Y_K_X, top level (multiple pairs, multiple detectors) */
-  typedef struct tagMultiResampSFTPairIndexMultiList {
-    UINT4                          allPairCount;     /**< count of all pairs */
-    UINT4                          oldPairCount;     /**< count of sft pairs, old-style */
-    UINT4                          sftTotalCount;    /**< count of all sfts */
-    REAL8                          maxLag;           /**< Maximum allowed lag time */
-    BOOLEAN                        inclAutoCorr;     /**< Do we include auto-correlation? */
-    BOOLEAN                        inclSameDetector; /**< Do we include same detectors? */
-    REAL8                          Tsft;             /**< Duration of one SFT */
-    REAL8                          Tshort;           /**< Duration of resamp Tshort */
-    SFTIndexList                 * indexList;        /**< Make an overall flat index list */
-    SFTPairIndexList             * pairIndexList;    /**< Make a classic pair index list */
-    UINT4                          length;           /**< number of detectors X */
-    ResampSFTPairMultiIndexList  * data;             /**< list per-detector X */
-  } MultiResampSFTPairMultiIndexList;
+typedef struct tagMultiResampSFTPairMultiIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( MultiResampSFTPairMultiIndexList, ResampSFTPairMultiIndexList, data, UINT4, length ) );
+#endif /* SWIG */
+  UINT4                          allPairCount;     /**< count of all pairs */
+  UINT4                          oldPairCount;     /**< count of sft pairs, old-style */
+  UINT4                          sftTotalCount;    /**< count of all sfts */
+  REAL8                          maxLag;           /**< Maximum allowed lag time */
+  BOOLEAN                        inclAutoCorr;     /**< Do we include auto-correlation? */
+  BOOLEAN                        inclSameDetector; /**< Do we include same detectors? */
+  REAL8                          Tsft;             /**< Duration of one SFT */
+  REAL8                          Tshort;           /**< Duration of resamp Tshort */
+  SFTIndexList                  *indexList;        /**< Make an overall flat index list */
+  SFTPairIndexList              *pairIndexList;    /**< Make a classic pair index list */
+  UINT4                          length;           /**< number of detectors X */
+  ResampSFTPairMultiIndexList   *data;             /**< list per-detector X */
+} MultiResampSFTPairMultiIndexList;
 
 // ----- local types ----------
 
-typedef struct tagCrossCorrTimings_t
-{
+typedef struct tagCrossCorrTimings_t {
   REAL8 Total;          //!< total time spent in XLALComputeFstatResamp()
   REAL8 Bary;           //!< time spent in barycentric resampling
   REAL8 Spin;           //!< time spent in spindown+frequency correction
@@ -206,8 +232,8 @@ typedef struct tagCrossCorrTimings_t
   REAL8 F1NoBuf;        //!< Resampling timing 'constant': Fstat time per template per detector for an 'unbuffered' usage (different skypos and numFreqBins)
 } CrossCorrTimings_t;
 
-typedef struct tagResampCrossCorrTimingInfo
-{ // NOTE: all times refer to a single-detector timing case
+typedef struct tagResampCrossCorrTimingInfo {
+  // NOTE: all times refer to a single-detector timing case
   BOOLEAN collectTiming;        //!< turn on/off the collection of F-stat-method-specific timing-data (stored in workspace)
 
   UINT4 numFreqBins;            //!< number of frequency bins to compute F-stat for
@@ -220,8 +246,7 @@ typedef struct tagResampCrossCorrTimingInfo
 
 // ----- workspace ----------
 
-typedef struct tagResampCrossCorrWorkspace
-{
+typedef struct tagResampCrossCorrWorkspace {
   // intermediate quantities to interpolate and operate on SRC-frame timeseries
   COMPLEX8Vector *TStmp1_SRC;   //!< can hold a single-detector SRC-frame spindown-corrected timeseries [without zero-padding]
   COMPLEX8Vector *TStmp2_SRC;   //!< can hold a single-detector SRC-frame spindown-corrected timeseries [without zero-padding]
@@ -248,229 +273,229 @@ typedef struct tagResampCrossCorrWorkspace
 /* end Resampling multi-types */
 
 /** A collection of UINT4Vectors -- one for each IFO  */
-  /* Probably belongs in SFTUtils.h */
+/* Probably belongs in SFTUtils.h */
 typedef struct tagMultiUINT4Vector {
 #ifdef SWIG /* SWIG interface directives */
-  SWIGLAL(ARRAY_1D(MultiUINT4Vector, UINT4Vector*, data, UINT4, length));
+  SWIGLAL( ARRAY_1D( MultiUINT4Vector, UINT4Vector *, data, UINT4, length ) );
 #endif /* SWIG */
   UINT4        length;  /**< number of ifos */
-  UINT4Vector  **data; 	/**< unit4vector for each ifo */
+  UINT4Vector  **data;  /**< unit4vector for each ifo */
 } MultiUINT4Vector;
 
-  /*
- *  Functions Declarations (i.e., prototypes).
- */
+/*
+*  Functions Declarations (i.e., prototypes).
+*/
 
 int XLALGetDopplerShiftedFrequencyInfo
 (
-   REAL8Vector            *shiftedFreqs,
-   UINT4Vector              *lowestBins,
-   COMPLEX8Vector      *expSignalPhases,
-   REAL8VectorSequence        *sincList,
-   UINT4                        numBins,
-   PulsarDopplerParams            *dopp,
-   SFTIndexList                   *sfts,
-   MultiSFTVector            *inputSFTs,
-   MultiSSBtimes            *multiTimes,
-   MultiUINT4Vector            *badBins,
-   REAL8                           Tsft
-   )
-  ;
+  REAL8Vector            *shiftedFreqs,
+  UINT4Vector              *lowestBins,
+  COMPLEX8Vector      *expSignalPhases,
+  REAL8VectorSequence        *sincList,
+  UINT4                        numBins,
+  PulsarDopplerParams            *dopp,
+  SFTIndexList                   *sfts,
+  MultiSFTVector            *inputSFTs,
+  MultiSSBtimes            *multiTimes,
+  MultiUINT4Vector            *badBins,
+  REAL8                           Tsft
+)
+;
 
 int XLALCreateSFTIndexListFromMultiSFTVect
 (
-   SFTIndexList        **indexList,
-   MultiSFTVector            *sfts
- )
-  ;
+  SFTIndexList        **indexList,
+  MultiSFTVector            *sfts
+)
+;
 
 int XLALCreateSFTPairIndexList
 (
-   SFTPairIndexList  **pairIndexList,
-   SFTIndexList           *indexList,
-   MultiSFTVector              *sfts,
-   REAL8                      maxLag,
-   BOOLEAN              inclAutoCorr
-   )
-  ;
+  SFTPairIndexList  **pairIndexList,
+  SFTIndexList           *indexList,
+  MultiSFTVector              *sfts,
+  REAL8                      maxLag,
+  BOOLEAN              inclAutoCorr
+)
+;
 
 int XLALCreateSFTPairIndexListResamp
 (
-   MultiResampSFTPairMultiIndexList  ** resampPairIndexList,
-   SFTPairIndexList                  ** pairIndexList,
-   SFTIndexList                       * indexList,
-   MultiSFTVector                     * sfts,
-   REAL8                                maxLag,
-   BOOLEAN                              inclAutoCorr,
-   BOOLEAN                              inclSameDetector,
-   REAL8                                Tsft,
-   REAL8                                Tshort
-   )
-  ;
+  MultiResampSFTPairMultiIndexList   **resampPairIndexList,
+  SFTPairIndexList                   **pairIndexList,
+  SFTIndexList                        *indexList,
+  MultiSFTVector                      *sfts,
+  REAL8                                maxLag,
+  BOOLEAN                              inclAutoCorr,
+  BOOLEAN                              inclSameDetector,
+  REAL8                                Tsft,
+  REAL8                                Tshort
+)
+;
 
 int XLALCreateSFTPairIndexListShortResamp
 (
-   MultiResampSFTPairMultiIndexList  **        resampPairIndexList,
-   const REAL8                                 maxLag,
-   const BOOLEAN                               inclAutoCorr,
-   const BOOLEAN                               inclSameDetector,
-   const REAL8                                 Tsft,
-   const MultiLIGOTimeGPSVector      *_LAL_RESTRICT_ multiTimes
-   )
-  ;
+  MultiResampSFTPairMultiIndexList          **resampPairIndexList,
+  const REAL8                                 maxLag,
+  const BOOLEAN                               inclAutoCorr,
+  const BOOLEAN                               inclSameDetector,
+  const REAL8                                 Tsft,
+  const MultiLIGOTimeGPSVector      *_LAL_RESTRICT_ multiTimes
+)
+;
 
 int XLALTestResampPairIndexList
-  (
-    MultiResampSFTPairMultiIndexList  * resampMultiPairIndexList
-  );
+(
+  MultiResampSFTPairMultiIndexList   *resampMultiPairIndexList
+);
 
 int XLALCalculateCrossCorrGammas
-  (
-   REAL8Vector      ** Gamma_ave,
-   REAL8Vector      ** Gamma_circ,
-   SFTPairIndexList  * pairIndexList,
-   SFTIndexList      * indexList,
-   MultiAMCoeffs     * multiCoeffs
-  )
- ;
+(
+  REAL8Vector       **Gamma_ave,
+  REAL8Vector       **Gamma_circ,
+  SFTPairIndexList   *pairIndexList,
+  SFTIndexList       *indexList,
+  MultiAMCoeffs      *multiCoeffs
+)
+;
 
 int XLALCalculateCrossCorrGammasResamp
-  (
-   REAL8Vector                      ** Gamma_ave,
-   REAL8Vector                      ** Gamma_circ,
-   MultiResampSFTPairMultiIndexList  * resampMultiPairIndexList,
-   MultiAMCoeffs                     * multiCoeffs
-  )
- ;
+(
+  REAL8Vector                       **Gamma_ave,
+  REAL8Vector                       **Gamma_circ,
+  MultiResampSFTPairMultiIndexList   *resampMultiPairIndexList,
+  MultiAMCoeffs                      *multiCoeffs
+)
+;
 
 int XLALCalculateCrossCorrGammasResampShort
-  (
-   REAL8Vector                      ** Gamma_ave,
-   REAL8Vector                      ** Gamma_circ,
-   MultiResampSFTPairMultiIndexList  * resampMultiPairIndexList,
-   MultiAMCoeffs                     * multiCoeffs
-  )
- ;
+(
+  REAL8Vector                       **Gamma_ave,
+  REAL8Vector                       **Gamma_circ,
+  MultiResampSFTPairMultiIndexList   *resampMultiPairIndexList,
+  MultiAMCoeffs                      *multiCoeffs
+)
+;
 
 int XLALCalculatePulsarCrossCorrStatistic
-  (
-   REAL8                         *ccStat,
-   REAL8                      *evSquared,
-   REAL8Vector                *curlyGAmp,
-   COMPLEX8Vector       *expSignalPhases,
-   UINT4Vector               *lowestBins,
-   REAL8VectorSequence         *sincList,
-   SFTPairIndexList            *sftPairs,
-   SFTIndexList              *sftIndices,
-   MultiSFTVector             *inputSFTs,
-   MultiNoiseWeights       *multiWeights,
-   UINT4                         numBins
-   )
-  ;
+(
+  REAL8                         *ccStat,
+  REAL8                      *evSquared,
+  REAL8Vector                *curlyGAmp,
+  COMPLEX8Vector       *expSignalPhases,
+  UINT4Vector               *lowestBins,
+  REAL8VectorSequence         *sincList,
+  SFTPairIndexList            *sftPairs,
+  SFTIndexList              *sftIndices,
+  MultiSFTVector             *inputSFTs,
+  MultiNoiseWeights       *multiWeights,
+  UINT4                         numBins
+)
+;
 
 int XLALCalculatePulsarCrossCorrStatisticResamp
-  (
-   REAL8Vector                             *_LAL_RESTRICT_ ccStatVector,
-   REAL8Vector                             *_LAL_RESTRICT_ evSquaredVector,
-   REAL8Vector                             *_LAL_RESTRICT_ numeEquivAve,
-   REAL8Vector                             *_LAL_RESTRICT_ numeEquivCirc,
-   const REAL8Vector                       *_LAL_RESTRICT_ resampCurlyGAmp,
-   const MultiResampSFTPairMultiIndexList  *_LAL_RESTRICT_ resampPairs,
-   const MultiNoiseWeights                 *_LAL_RESTRICT_ multiWeights,
-   const PulsarDopplerParams               *_LAL_RESTRICT_ binaryTemplateSpacings,
-   const PulsarDopplerParams               *_LAL_RESTRICT_ dopplerpos,
-   const MultiCOMPLEX8TimeSeries           *_LAL_RESTRICT_ multiTimeSeries_SRC_a,
-   const MultiCOMPLEX8TimeSeries           *_LAL_RESTRICT_ multiTimeSeries_SRC_b,
-   ResampCrossCorrWorkspace                *_LAL_RESTRICT_ ws,
-   COMPLEX8                                *_LAL_RESTRICT_ ws1KFaX_k,
-   COMPLEX8                                *_LAL_RESTRICT_ ws1KFbX_k,
-   COMPLEX8                                *_LAL_RESTRICT_ ws2LFaX_k,
-   COMPLEX8                                *_LAL_RESTRICT_ ws2LFbX_k
-   )
-  ;
+(
+  REAL8Vector                             *_LAL_RESTRICT_ ccStatVector,
+  REAL8Vector                             *_LAL_RESTRICT_ evSquaredVector,
+  REAL8Vector                             *_LAL_RESTRICT_ numeEquivAve,
+  REAL8Vector                             *_LAL_RESTRICT_ numeEquivCirc,
+  const REAL8Vector                       *_LAL_RESTRICT_ resampCurlyGAmp,
+  const MultiResampSFTPairMultiIndexList  *_LAL_RESTRICT_ resampPairs,
+  const MultiNoiseWeights                 *_LAL_RESTRICT_ multiWeights,
+  const PulsarDopplerParams               *_LAL_RESTRICT_ binaryTemplateSpacings,
+  const PulsarDopplerParams               *_LAL_RESTRICT_ dopplerpos,
+  const MultiCOMPLEX8TimeSeries           *_LAL_RESTRICT_ multiTimeSeries_SRC_a,
+  const MultiCOMPLEX8TimeSeries           *_LAL_RESTRICT_ multiTimeSeries_SRC_b,
+  ResampCrossCorrWorkspace                *_LAL_RESTRICT_ ws,
+  COMPLEX8                                *_LAL_RESTRICT_ ws1KFaX_k,
+  COMPLEX8                                *_LAL_RESTRICT_ ws1KFbX_k,
+  COMPLEX8                                *_LAL_RESTRICT_ ws2LFaX_k,
+  COMPLEX8                                *_LAL_RESTRICT_ ws2LFbX_k
+)
+;
 
 int XLALCalculateCrossCorrPhaseDerivatives
-  (
-   REAL8VectorSequence           ** phaseDerivs,
-   const PulsarDopplerParams      * dopplerPoint,
-   const EphemerisData            * edat,
-   SFTIndexList                   * indexList,
-   MultiSSBtimes                  * multiTimes,
-   const DopplerCoordinateSystem  * coordSys
-   )
-  ;
+(
+  REAL8VectorSequence            **phaseDerivs,
+  const PulsarDopplerParams       *dopplerPoint,
+  const EphemerisData             *edat,
+  SFTIndexList                    *indexList,
+  MultiSSBtimes                   *multiTimes,
+  const DopplerCoordinateSystem   *coordSys
+)
+;
 
 int XLALCalculateCrossCorrPhaseDerivativesShort
-  (
-   REAL8VectorSequence              ** resampPhaseDerivs,
-   const PulsarDopplerParams         * dopplerPoint,
-   const EphemerisData               * edat,
-   SFTIndexList                      * indexList,
-   MultiResampSFTPairMultiIndexList  * resampMultiPairIndexList,
-   MultiSSBtimes                     * multiTimes,
-   const DopplerCoordinateSystem     * coordSys
-   )
-  ;
+(
+  REAL8VectorSequence               **resampPhaseDerivs,
+  const PulsarDopplerParams          *dopplerPoint,
+  const EphemerisData                *edat,
+  SFTIndexList                       *indexList,
+  MultiResampSFTPairMultiIndexList   *resampMultiPairIndexList,
+  MultiSSBtimes                      *multiTimes,
+  const DopplerCoordinateSystem      *coordSys
+)
+;
 
 int XLALCalculateCrossCorrPhaseMetric
-  (
-   gsl_matrix                        **g_ij,
-   gsl_vector                       **eps_i,
-   REAL8                        *sumGammaSq,
-   const REAL8VectorSequence   *phaseDerivs,
-   const SFTPairIndexList    *pairIndexList,
-   const REAL8Vector             *Gamma_ave,
-   const REAL8Vector            *Gamma_circ,
-   const DopplerCoordinateSystem  *coordSys
-   );
+(
+  gsl_matrix                        **g_ij,
+  gsl_vector                       **eps_i,
+  REAL8                        *sumGammaSq,
+  const REAL8VectorSequence   *phaseDerivs,
+  const SFTPairIndexList    *pairIndexList,
+  const REAL8Vector             *Gamma_ave,
+  const REAL8Vector            *Gamma_circ,
+  const DopplerCoordinateSystem  *coordSys
+);
 
 int XLALCalculateCrossCorrPhaseMetricShort
-  (
-   gsl_matrix                            ** g_ij,
-   gsl_vector                            ** eps_i,
-   REAL8                                  * sumGammaSq,
-   const REAL8VectorSequence              * phaseDerivs,
-   const MultiResampSFTPairMultiIndexList * resampMultiPairs,
-   const REAL8Vector                      * Gamma_ave,
-   const REAL8Vector                      * Gamma_circ,
-   const DopplerCoordinateSystem          * coordSys
-   );
+(
+  gsl_matrix                             **g_ij,
+  gsl_vector                             **eps_i,
+  REAL8                                   *sumGammaSq,
+  const REAL8VectorSequence               *phaseDerivs,
+  const MultiResampSFTPairMultiIndexList *resampMultiPairs,
+  const REAL8Vector                       *Gamma_ave,
+  const REAL8Vector                       *Gamma_circ,
+  const DopplerCoordinateSystem           *coordSys
+);
 
 int XLALCalculateLMXBCrossCorrDiagMetric
-  (
-   REAL8                      *hSens,
-   REAL8                       *g_ff,
-   REAL8                       *g_aa,
-   REAL8                       *g_TT,
-   REAL8                       *g_pp,
-   REAL8             *weightedMuTAve,
-   PulsarDopplerParams DopplerParams,
-   REAL8Vector              *G_alpha,
-   SFTPairIndexList   *pairIndexList,
-   SFTIndexList           *indexList,
-   MultiSFTVector              *sfts,
-   MultiNoiseWeights   *multiWeights
-   )
-  ;
+(
+  REAL8                      *hSens,
+  REAL8                       *g_ff,
+  REAL8                       *g_aa,
+  REAL8                       *g_TT,
+  REAL8                       *g_pp,
+  REAL8             *weightedMuTAve,
+  PulsarDopplerParams DopplerParams,
+  REAL8Vector              *G_alpha,
+  SFTPairIndexList   *pairIndexList,
+  SFTIndexList           *indexList,
+  MultiSFTVector              *sfts,
+  MultiNoiseWeights   *multiWeights
+)
+;
 
 int XLALCalculateLMXBCrossCorrDiagMetricShort
-  (
-   REAL8                                   *         hSens,
-   REAL8                                   *         g_ff,
-   REAL8                                   *         g_aa,
-   REAL8                                   *         g_TT,
-   REAL8                                   *         g_pp,
-   const PulsarDopplerParams                         DopplerParams,
-   const REAL8Vector                       *_LAL_RESTRICT_ G_alpha,
-   const MultiResampSFTPairMultiIndexList  *_LAL_RESTRICT_ resampMultiPairIndexList,
-   const MultiLIGOTimeGPSVector            *_LAL_RESTRICT_ timestamps,
-   const MultiNoiseWeights                 *_LAL_RESTRICT_ multiWeights
-   )
-  ;
+(
+  REAL8                                            *hSens,
+  REAL8                                            *g_ff,
+  REAL8                                            *g_aa,
+  REAL8                                            *g_TT,
+  REAL8                                            *g_pp,
+  const PulsarDopplerParams                         DopplerParams,
+  const REAL8Vector                       *_LAL_RESTRICT_ G_alpha,
+  const MultiResampSFTPairMultiIndexList  *_LAL_RESTRICT_ resampMultiPairIndexList,
+  const MultiLIGOTimeGPSVector            *_LAL_RESTRICT_ timestamps,
+  const MultiNoiseWeights                 *_LAL_RESTRICT_ multiWeights
+)
+;
 
 /* (possible future function) */
 //int
-//XLALBesselCrossCorrOrbitalSpaceStep( 
+//XLALBesselCrossCorrOrbitalSpaceStep(
 //     COMPLEX8             * xTildeOut,
 //     COMPLEX8             * xTildeIn,
 //     PulsarDopplerParams  * dopplerpos,
@@ -482,75 +507,75 @@ int XLALCalculateLMXBCrossCorrDiagMetricShort
 //     UINT4                nTermsMax
 //);
 
-LIGOTimeGPSVector 
-*XLALModifyTimestampsFromSFTsShort ( 
-    REAL8TimeSeries          **        sciFlag,
-    const LIGOTimeGPSVector  *_LAL_RESTRICT_ Times,
-    const REAL8                        tShort,
-    const UINT4                        numShortPerDet
+LIGOTimeGPSVector
+*XLALModifyTimestampsFromSFTsShort(
+  REAL8TimeSeries                  **sciFlag,
+  const LIGOTimeGPSVector  *_LAL_RESTRICT_ Times,
+  const REAL8                        tShort,
+  const UINT4                        numShortPerDet
 );
 
 LIGOTimeGPSVector
-*XLALExtractTimestampsFromSFTsShort (
-    REAL8TimeSeries ** sciFlag,
-    const SFTVector  * sfts,
-    REAL8              tShort,
-    UINT4              numShortPerDet
+*XLALExtractTimestampsFromSFTsShort(
+  REAL8TimeSeries **sciFlag,
+  const SFTVector   *sfts,
+  REAL8              tShort,
+  UINT4              numShortPerDet
 );
 
-MultiLIGOTimeGPSVector 
-*XLALModifyMultiTimestampsFromSFTs ( 
-    MultiREAL8TimeSeries          **        scienceFlagVect,
-    const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes,
-    const REAL8                             tShort,
-    const UINT4                             numShortPerDet
+MultiLIGOTimeGPSVector
+*XLALModifyMultiTimestampsFromSFTs(
+  MultiREAL8TimeSeries                  **scienceFlagVect,
+  const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes,
+  const REAL8                             tShort,
+  const UINT4                             numShortPerDet
 );
 
-MultiLIGOTimeGPSVector 
-*XLALExtractMultiTimestampsFromSFTsShort ( 
-    MultiREAL8TimeSeries  ** scienceFlagVect,
-    const MultiSFTVector  * multiSFTs,
-    REAL8                   tShort,
-    UINT4                   numShortPerDet
+MultiLIGOTimeGPSVector
+*XLALExtractMultiTimestampsFromSFTsShort(
+  MultiREAL8TimeSeries   **scienceFlagVect,
+  const MultiSFTVector   *multiSFTs,
+  REAL8                   tShort,
+  UINT4                   numShortPerDet
 );
 
-int 
-XLALFillDetectorTensorShort (
-    DetectorState      * detState, 
-    const LALDetector  * detector 
+int
+XLALFillDetectorTensorShort(
+  DetectorState       *detState,
+  const LALDetector   *detector
 );
 
-DetectorStateSeries* 
-XLALGetDetectorStatesShort ( 
-    const LIGOTimeGPSVector  * timestamps, 
-    const LALDetector        * detector, 
-    const EphemerisData      * edat, 
-    REAL8                      tOffset,
-    REAL8                      tShort,
-    UINT4                      numShortPerDet
+DetectorStateSeries *
+XLALGetDetectorStatesShort(
+  const LIGOTimeGPSVector   *timestamps,
+  const LALDetector         *detector,
+  const EphemerisData       *edat,
+  REAL8                      tOffset,
+  REAL8                      tShort,
+  UINT4                      numShortPerDet
 );
 
-MultiDetectorStateSeries* 
-XLALGetMultiDetectorStatesShort ( 
-    const MultiLIGOTimeGPSVector  * multiTS, 
-    const MultiLALDetector        * multiIFO, 
-    const EphemerisData           * edat, 
-    REAL8                           tOffset,
-    REAL8                           tShort,
-    UINT4                           numShortPerDet
+MultiDetectorStateSeries *
+XLALGetMultiDetectorStatesShort(
+  const MultiLIGOTimeGPSVector   *multiTS,
+  const MultiLALDetector         *multiIFO,
+  const EphemerisData            *edat,
+  REAL8                           tOffset,
+  REAL8                           tShort,
+  UINT4                           numShortPerDet
 );
 
 
 int
-XLALModifyAMCoeffsWeights (
-    REAL8Vector                   **         resampMultiWeightsX,
-    const MultiNoiseWeights       *_LAL_RESTRICT_  multiWeights,
-    const REAL8                              tShort,
-    const REAL8                              tSFTOld,
-    const UINT4                              numShortPerDet,
-    const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_  multiTimes,
-    const UINT4                              maxNumStepsOldIfGapless,
-    const UINT4                              X
+XLALModifyAMCoeffsWeights(
+  REAL8Vector                            **resampMultiWeightsX,
+  const MultiNoiseWeights       *_LAL_RESTRICT_  multiWeights,
+  const REAL8                              tShort,
+  const REAL8                              tSFTOld,
+  const UINT4                              numShortPerDet,
+  const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_  multiTimes,
+  const UINT4                              maxNumStepsOldIfGapless,
+  const UINT4                              X
 );
 
 #ifdef SWIG // SWIG interface directives
@@ -558,65 +583,65 @@ SWIGLAL( INOUT_STRUCTS( MultiNoiseWeights **, multiWeights ) );
 #endif
 int
 XLALModifyMultiAMCoeffsWeights(
-     MultiNoiseWeights             **        multiWeights,
-     const REAL8                             tShort,
-     const REAL8                             tSFTOld,
-     const UINT4                             numShortPerDet,
-     const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes
+  MultiNoiseWeights                     **multiWeights,
+  const REAL8                             tShort,
+  const REAL8                             tSFTOld,
+  const UINT4                             numShortPerDet,
+  const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes
 );
 
 
-int 
-XLALWeightMultiAMCoeffsShort (  
-     MultiAMCoeffs            * multiAMcoef, 
-     const MultiNoiseWeights  * multiWeights, 
-     REAL8                      tShort,
-     REAL8                      tSFTOld,
-     UINT4                      numShortPerDet,
-     MultiLIGOTimeGPSVector   * multiTimes
+int
+XLALWeightMultiAMCoeffsShort(
+  MultiAMCoeffs             *multiAMcoef,
+  const MultiNoiseWeights   *multiWeights,
+  REAL8                      tShort,
+  REAL8                      tSFTOld,
+  UINT4                      numShortPerDet,
+  MultiLIGOTimeGPSVector    *multiTimes
 );
 
-MultiAMCoeffs 
-*XLALComputeMultiAMCoeffsShort ( 
-     const MultiDetectorStateSeries  * multiDetStates, 
-     const MultiNoiseWeights         * multiWeights, 
-     SkyPosition                       skypos,
-     REAL8                             tShort,
-     REAL8                             tSFTOld,
-     UINT4                             numShortPerDet,
-     MultiLIGOTimeGPSVector          * multiTimes
+MultiAMCoeffs
+*XLALComputeMultiAMCoeffsShort(
+  const MultiDetectorStateSeries   *multiDetStates,
+  const MultiNoiseWeights          *multiWeights,
+  SkyPosition                       skypos,
+  REAL8                             tShort,
+  REAL8                             tSFTOld,
+  UINT4                             numShortPerDet,
+  MultiLIGOTimeGPSVector           *multiTimes
 );
 
-AMCoeffs 
-*XLALComputeAMCoeffsShort ( 
-     const DetectorStateSeries  * DetectorStates, 
-     SkyPosition                  skypos 
+AMCoeffs
+*XLALComputeAMCoeffsShort(
+  const DetectorStateSeries   *DetectorStates,
+  SkyPosition                  skypos
 );
 
 
 UINT4
-XLALCrossCorrNumShortPerDetector( 
-    const REAL8 resampTshort,
-    const INT4  startTime,
-    const INT4  endTime
+XLALCrossCorrNumShortPerDetector(
+  const REAL8 resampTshort,
+  const INT4  startTime,
+  const INT4  endTime
 );
 
 REAL8TimeSeries
 *XLALCrossCorrGapFinderResamp(
-    LIGOTimeGPSVector        *_LAL_RESTRICT_ timestamps,
-    const LIGOTimeGPSVector  *_LAL_RESTRICT_ Times
+  LIGOTimeGPSVector        *_LAL_RESTRICT_ timestamps,
+  const LIGOTimeGPSVector  *_LAL_RESTRICT_ Times
 );
 
 REAL8TimeSeries
 *XLALCrossCorrGapFinderResampAlt(
-    LIGOTimeGPSVector *_LAL_RESTRICT_ timestamps,
-    const SFTVector   *_LAL_RESTRICT_ sfts
+  LIGOTimeGPSVector *_LAL_RESTRICT_ timestamps,
+  const SFTVector   *_LAL_RESTRICT_ sfts
 );
 
 int
 XLALEquipCrossCorrPairsWithScienceFlags(
-    MultiResampSFTPairMultiIndexList  * resampMultiPairs,
-     MultiREAL8TimeSeries             * scienceFlagVect
+  MultiResampSFTPairMultiIndexList   *resampMultiPairs,
+  MultiREAL8TimeSeries              *scienceFlagVect
 );
 
 //(possible future function)
@@ -626,38 +651,38 @@ XLALEquipCrossCorrPairsWithScienceFlags(
 //);
 
 int
-XLALCreateCrossCorrWorkspace( 
-    ResampCrossCorrWorkspace   **        ws,
-    COMPLEX8                   **        ws1KFaX_kOut,
-    COMPLEX8                   **        ws1KFbX_kOut,
-    COMPLEX8                   **        ws2LFaX_kOut,
-    COMPLEX8                   **        ws2LFbX_kOut,
-    MultiCOMPLEX8TimeSeries    **        multiTimeSeries_SRC_a,
-    MultiCOMPLEX8TimeSeries    **        multiTimeSeries_SRC_b,
-    const PulsarDopplerParams            binaryTemplateSpacings,
-    FstatInput                 *         resampFstatInput, 
-    const UINT4                          numFreqBins,
-    const REAL8                          tCoh,
-    const BOOLEAN                        treatWarningsAsErrors
+XLALCreateCrossCorrWorkspace(
+  ResampCrossCorrWorkspace           **ws,
+  COMPLEX8                           **ws1KFaX_kOut,
+  COMPLEX8                           **ws1KFbX_kOut,
+  COMPLEX8                           **ws2LFaX_kOut,
+  COMPLEX8                           **ws2LFbX_kOut,
+  MultiCOMPLEX8TimeSeries            **multiTimeSeries_SRC_a,
+  MultiCOMPLEX8TimeSeries            **multiTimeSeries_SRC_b,
+  const PulsarDopplerParams            binaryTemplateSpacings,
+  FstatInput                          *resampFstatInput,
+  const UINT4                          numFreqBins,
+  const REAL8                          tCoh,
+  const BOOLEAN                        treatWarningsAsErrors
 );
 
 /** @} */
 
-void XLALDestroySFTIndexList ( SFTIndexList *sftIndices );
+void XLALDestroySFTIndexList( SFTIndexList *sftIndices );
 
-void XLALDestroySFTPairIndexList ( SFTPairIndexList *sftPairs );
+void XLALDestroySFTPairIndexList( SFTPairIndexList *sftPairs );
 
 void XLALDestroyResampSFTIndexList( ResampSFTIndexList *sftResampList );
 
 void XLALDestroyResampSFTMultiIndexList( ResampSFTMultiIndexList *sftResampMultiList );
 
-void XLALDestroyResampSFTPairMultiIndexList( ResampSFTPairMultiIndexList *sftResampPairMultiList  );
+void XLALDestroyResampSFTPairMultiIndexList( ResampSFTPairMultiIndexList *sftResampPairMultiList );
 
-void XLALDestroyMultiResampSFTPairMultiIndexList ( MultiResampSFTPairMultiIndexList *sftMultiPairsResamp );
+void XLALDestroyMultiResampSFTPairMultiIndexList( MultiResampSFTPairMultiIndexList *sftMultiPairsResamp );
 
-void XLALDestroyMultiMatchList( MultiResampSFTMultiCountList * localMultiListOfLmatchingGivenMultiK );
+void XLALDestroyMultiMatchList( MultiResampSFTMultiCountList *localMultiListOfLmatchingGivenMultiK );
 
-void XLALDestroyResampCrossCorrWorkspace ( void *workspace );
+void XLALDestroyResampCrossCorrWorkspace( void *workspace );
 
 #ifdef  __cplusplus
 }                /* Close C++ protection */

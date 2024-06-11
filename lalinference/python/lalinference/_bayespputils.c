@@ -9,7 +9,6 @@
 
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include "six.h"
 
 #include <stdlib.h>
 

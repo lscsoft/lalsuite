@@ -195,6 +195,7 @@ pkginclude_HEADERS = \
 	LALSimInspiralFDPrecAngles.h
 
 noinst_HEADERS = \
+	gsl_bspline_basis.h \
 	LALSimIMRSpinEOBHcapExactDerivativePrec_v3opt.c \
 	LALSimIMRSpinPrecEOBEulerAngles.c \
 	LALSimIMRSpinPrecEOBWfGen.c \
