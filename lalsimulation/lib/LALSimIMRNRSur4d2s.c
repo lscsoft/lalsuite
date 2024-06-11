@@ -55,6 +55,7 @@
 #include <lal/LALSimIMR.h>
 
 #include "LALSimIMRSEOBNRROMUtilities.c"
+#include "gsl_bspline_basis.h"
 
 #include <lal/LALConfig.h>
 #ifdef LAL_PTHREAD_LOCK
@@ -459,17 +460,16 @@ static int TP_Spline_interpolation_5d(
   gsl_vector *B4 = gsl_vector_calloc(4);
 
   size_t is0, is1, is2, is3, is4; // First non-zero basis spline
-  size_t ie0, ie1, ie2, ie3, ie4; // Last non-zero basis spline
 
   // Evaluate all potentially nonzero cubic B-spline basis functions and store them in the B vectors.
   // Since the B-splines are of compact support we only need to store a small
   // number of basis functions to avoid computing terms that would be zero anyway.
   // https://www.gnu.org/software/gsl/manual/html_node/Overview-of-B_002dsplines.html#Overview-of-B_002dsplines
-  gsl_bspline_eval_nonzero(x0,  B0, &is0, &ie0, splinedata->bw_x0);
-  gsl_bspline_eval_nonzero(x1,  B1, &is1, &ie1, splinedata->bw_x1);
-  gsl_bspline_eval_nonzero(x2,  B2, &is2, &ie2, splinedata->bw_x2);
-  gsl_bspline_eval_nonzero(x3,  B3, &is3, &ie3, splinedata->bw_x3);
-  gsl_bspline_eval_nonzero(x4,  B4, &is4, &ie4, splinedata->bw_x4);
+  gsl_bspline_basis(x0,  B0, &is0, splinedata->bw_x0);
+  gsl_bspline_basis(x1,  B1, &is1, splinedata->bw_x1);
+  gsl_bspline_basis(x2,  B2, &is2, splinedata->bw_x2);
+  gsl_bspline_basis(x3,  B3, &is3, splinedata->bw_x3);
+  gsl_bspline_basis(x4,  B4, &is4, splinedata->bw_x4);
 
   int N = nc[0]*nc[1]*nc[2]*nc[3]*nc[4];  // Size of the data matrix for one empirical node
 
