@@ -65,6 +65,9 @@ typedef struct tagSSBtimes {
 
 /** Multi-IFO container for SSB timings */
 typedef struct tagMultiSSBtimes {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( MultiSSBtimes, SSBtimes *, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4 length;         /**< number of IFOs */
   SSBtimes **data;      /**< array of SSBtimes (pointers) */
 } MultiSSBtimes;

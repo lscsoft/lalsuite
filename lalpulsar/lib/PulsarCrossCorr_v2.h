@@ -90,6 +90,9 @@ typedef struct tagSFTIndex {
 
 /** List of SFT indices */
 typedef struct tagSFTIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( SFTIndexList, SFTIndex, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4    length; /**< number of SFTs */
   SFTIndex *data; /**< array of SFT indices */
 } SFTIndexList;
@@ -105,6 +108,9 @@ typedef struct tagSFTPairIndex {
 
 /** List of SFT pair indices */
 typedef struct tagSFTPairIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( SFTPairIndexList, SFTPairIndex, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4    length; /**< number of SFT Pairs */
   SFTPairIndex *data; /**< array of SFT Pair indices */
 } SFTPairIndexList;
@@ -122,6 +128,9 @@ typedef struct tagSFTCount {
 
 /** INNER List of SFT indices */
 typedef struct tagResampSFTMultiCountList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTMultiCountList, SFTCount, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4       length; /**< number of detectors Y */
   UINT4       sftInd; /**< original vector index of sft K */
   SFTCount   *data;   /**<  arrays of count of SFTs L_Y, at given detector Y, that match each given SFT K_X */
@@ -129,6 +138,9 @@ typedef struct tagResampSFTMultiCountList {
 
 /** MIDDLE List of SFT indices */
 typedef struct tagResampSFTMultiCountListDet {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTMultiCountListDet, ResampSFTMultiCountList, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4                      length; /**< number of SFTs K_X */
   UINT4                      detInd; /**< original vector index of detector X */
   ResampSFTMultiCountList   *data;   /**< array of SFT L_Y indices for given SFT K_X at detector X */
@@ -136,6 +148,9 @@ typedef struct tagResampSFTMultiCountListDet {
 
 /** OUTER List of SFT indices */
 typedef struct tagMultiResampSFTMultiCountList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( MultiResampSFTMultiCountList, ResampSFTMultiCountListDet, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4                         length; /**< number of detectors X */
   ResampSFTMultiCountListDet   *data;   /**< list per-detectors X */
 } MultiResampSFTMultiCountList;
@@ -152,6 +167,9 @@ typedef struct tagResampSFTIndex {
 
 /** Resampling: List of SFT indices L for a given detector Y_K_X: indexing method is nominally original vectors but may be affected by gaps */
 typedef struct tagResampSFTIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTIndexList, ResampSFTIndex, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4             length; /**< number of SFTs */
   UINT4             detInd; /**< original vector index of detector Y */
   ResampSFTIndex   *data; /**< array of SFT indices */
@@ -159,6 +177,9 @@ typedef struct tagResampSFTIndexList {
 
 /** Resampling: Multi List of indices of SFT L_Y, for a given sft K_X  */
 typedef struct tagResampSFTMultiIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTMultiIndexList, ResampSFTIndexList, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4                 length;  /**< number of detectors Y */
   UINT4                 sftInd;  /**< original vector index of sft K */
   UINT4                 flatInd; /**< index in the flat SFT list */
@@ -168,6 +189,9 @@ typedef struct tagResampSFTMultiIndexList {
 
 /** Resampling Multi List of SFT pair indices (L_Y_K), for a given detector X */
 typedef struct tagResampSFTPairMultiIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( ResampSFTPairMultiIndexList, ResampSFTMultiIndexList, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4                      length; /**< number of K SFTs at detector X */
   UINT4                      detInd; /**< original vector index of detector X */
   ResampSFTMultiIndexList   *data;  /**< array of SFT L_Y indices for given SFT K_X at detector X */
@@ -175,7 +199,10 @@ typedef struct tagResampSFTPairMultiIndexList {
 
 
 /** Resampling Multi List of all paired SFTs L_Y_K_X, top level (multiple pairs, multiple detectors) */
-typedef struct tagMultiResampSFTPairIndexMultiList {
+typedef struct tagMultiResampSFTPairMultiIndexList {
+#ifdef SWIG /* SWIG interface directives */
+  SWIGLAL( ARRAY_1D( MultiResampSFTPairMultiIndexList, ResampSFTPairMultiIndexList, data, UINT4, length ) );
+#endif /* SWIG */
   UINT4                          allPairCount;     /**< count of all pairs */
   UINT4                          oldPairCount;     /**< count of sft pairs, old-style */
   UINT4                          sftTotalCount;    /**< count of all sfts */
