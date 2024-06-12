@@ -273,7 +273,9 @@ class CWSimulator(object):
         self._simulate_coherent_gw(h, noise_sqrt_Sh, noise_seed)
         return (h.epoch, h.data.data)
 
-    def get_strain_blocks(self, fs, Tblock, noise_sqrt_Sh=0, noise_seed=None):
+    def get_strain_blocks(
+        self, fs, Tblock, noise_sqrt_Sh=0, noise_seed=None, prog_bar=None
+    ):
         """
         Generate strain time series of a continuous-wave signal in the detector frame, in contiguous blocks.
 
@@ -283,6 +285,7 @@ class CWSimulator(object):
             spectral density given by this value, in Hz^(-1/2)
         @param noise_seed: use this seed for the random number generator used to create noise;
             if None, generate a random seed using os.urandom()
+        @param prog_bar: use to display a progress bar, e.g. prog_bar=tqdm
 
         @return (@b t, @b h, @b i, @b N), where:
             @b t = start of time strain time series, in GPS seconds;
@@ -312,9 +315,16 @@ class CWSimulator(object):
             while not (0 < noise_seed and noise_seed < lal.LAL_INT4_MAX - Nblock):
                 noise_seed = int.from_bytes(os.urandom(4), sys.byteorder, signed=False)
 
+        # iterate over blocks
+        blocks = range(0, Nblock)
+        if prog_bar is not None:
+
+            # wrap iterator in progress bar
+            blocks = prog_bar(blocks)
+
         # generate strain time series in blocks of length 'Tblock'
         tmin = 0
-        for iblock in range(0, Nblock):
+        for iblock in blocks:
             epoch, hoft = self.get_strain(
                 fs,
                 tmin=tmin,
@@ -326,7 +336,14 @@ class CWSimulator(object):
             tmin += Tblock
 
     def write_frame_files(
-        self, fs, Tframe, comment="simCW", out_dir=".", noise_sqrt_Sh=0, noise_seed=None
+        self,
+        fs,
+        Tframe,
+        comment="simCW",
+        out_dir=".",
+        noise_sqrt_Sh=0,
+        noise_seed=None,
+        prog_bar=None,
     ):
         """
         Write frame files [1] containing strain time series of a continuous-wave signal.
@@ -344,6 +361,7 @@ class CWSimulator(object):
             spectral density given by this value, in Hz^(-1/2)
         @param noise_seed: use this seed for the random number generator used to create noise;
             if None, generate a random seed using os.urandom()
+        @param prog_bar: use to display a progress bar, e.g. prog_bar=tqdm
 
         @return (@b file, @b i, @b N), where:
             @b file = name of frame file just written;
@@ -376,7 +394,11 @@ class CWSimulator(object):
         # generate strain time series in blocks of length 'Tframe'
         frame_h = None
         for t, h, i, N in self.get_strain_blocks(
-            fs, Tframe, noise_sqrt_Sh=noise_sqrt_Sh, noise_seed=noise_seed
+            fs,
+            Tframe,
+            noise_sqrt_Sh=noise_sqrt_Sh,
+            noise_seed=noise_seed,
+            prog_bar=prog_bar,
         ):
             # create and initialise REAL8TimeSeries to write to frame files
             if frame_h is None:
@@ -426,6 +448,7 @@ class CWSimulator(object):
         noise_seed=None,
         window="rectangular",
         window_param=0,
+        prog_bar=None,
     ):
         """
         Generate SFTs [2] containing strain time series of a continuous-wave signal.
@@ -439,6 +462,7 @@ class CWSimulator(object):
         @param window: if not None, window the time series before performing the FFT, using
             the named window function; see XLALCreateNamedREAL8Window()
         @param window_param: parameter for the window function given by @b window, if needed
+        @param prog_bar: use to display a progress bar, e.g. prog_bar=tqdm
 
         @return (@b sft, @b i, @b N), where:
             @b sft = SFT;
@@ -463,7 +487,11 @@ class CWSimulator(object):
         sft_h = None
         sft_fs = 2 * fmax
         for t, h, i, N in self.get_strain_blocks(
-            sft_fs, Tsft, noise_sqrt_Sh=noise_sqrt_Sh, noise_seed=noise_seed
+            sft_fs,
+            Tsft,
+            noise_sqrt_Sh=noise_sqrt_Sh,
+            noise_seed=noise_seed,
+            prog_bar=prog_bar,
         ):
             # create and initialise REAL8TimeSeries to write to SFT files
             if sft_h is None:
@@ -493,6 +521,7 @@ class CWSimulator(object):
         noise_seed=None,
         window="rectangular",
         window_param=0,
+        prog_bar=None,
     ):
         """
         Write SFT files [2] containing strain time series of a continuous-wave signal.
@@ -508,6 +537,7 @@ class CWSimulator(object):
         @param window: if not None, window the time series before performing the FFT, using
             the named window function; see XLALCreateNamedREAL8Window()
         @param window_param: parameter for the window function given by @b window, if needed
+        @param prog_bar: use to display a progress bar, e.g. prog_bar=tqdm
 
         @return (@b file, @b i, @b N), where:
             @b file = name of SFT file just written;
@@ -547,6 +577,7 @@ class CWSimulator(object):
             noise_seed=noise_seed,
             window=window,
             window_param=window_param,
+            prog_bar=prog_bar,
         ):
             # write SFT
             lalpulsar.WriteSFT2StandardFile(sft, spec, self.__origin_str)
