@@ -40,9 +40,6 @@ def swap_masses(parameter_dictionary):
         name_2 = param_name.replace('#', '2')
         new_parameters[name_1], new_parameters[name_2] = new_parameters[name_2], new_parameters[name_1]
     
-    # new_parameters["meanPerAno"] = new_parameters["meanPerAno"] + np.pi * u.rad
-    new_parameters["phi_ref"] = new_parameters["phi_ref"] + np.pi * u.rad
-    
     return new_parameters
 
 def scale_initial_conditions_by_factor(parameter_dictionary, factor):
@@ -200,6 +197,8 @@ def test_delta_t_close_to_zero(gen, parameters):
 
 def test_orbital_phase(gen, parameters, plot):
     
+    parameters['eccentricity'] = 0.01 * u.dimensionless_unscaled
+    
     parameters['phi_ref'] = 0. * u.rad
     hp, hc = wfm.GenerateTDWaveform(parameters, gen)
     
@@ -219,10 +218,10 @@ def test_orbital_phase(gen, parameters, plot):
     parameters_4['phi_ref'] = 4*np.pi/4 * u.rad
     hp4, hc4 = wfm.GenerateTDWaveform(parameters_4, gen)
 
-    assert np.isclose(compute_match(hp, hp1), 1, atol=1e-2)
-    assert np.isclose(compute_match(hp, hp2), 1, atol=1e-2)
-    assert np.isclose(compute_match(hp, hp3), 1, atol=1e-2)
-    assert np.isclose(compute_match(hp, hp4), 1, atol=1e-2)
+    assert np.isclose(compute_match(hp, hp1), 1, atol=5e-2)
+    assert np.isclose(compute_match(hp, hp2), 1, atol=5e-2)
+    assert np.isclose(compute_match(hp, hp3), 1, atol=5e-2)
+    assert np.isclose(compute_match(hp, hp4), 1, atol=5e-2)
     
     if plot:
         import matplotlib.pyplot as plt

@@ -116,7 +116,7 @@ def test_plotting_modes(plot, gen, parameters):
         import matplotlib.pyplot as plt 
 
         plt.plot(hlm[(2, 2)].times, hlm[(2, 2)].real, label="$\\Re(h_{22})$")
-        plt.plot(hlm[(3, 2)].times, hlm[(3, 2)].real, label="$\\Re(h_{32})$")
+        plt.plot(hlm[(3, 3)].times, hlm[(3, 3)].real, label="$\\Re(h_{32})$")
         plt.legend()
         plt.xlabel("$t$ [s]")
         plt.show()
