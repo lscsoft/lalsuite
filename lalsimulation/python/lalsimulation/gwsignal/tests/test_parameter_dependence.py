@@ -233,3 +233,32 @@ def test_orbital_phase(gen, parameters, plot):
         plt.plot(hp4.times, hp4, label='Shift by $4\pi/4$')
         plt.legend()
         plt.show()
+
+def test_modearray_parameter(parameters, gen):
+    
+    from gwsignal.core.gw import SpinWeightedSphericalHarmonicMode
+    
+    # when giving a ModeArray, only those modes should be returned
+    parameters['ModeArray'] = [[2, 2], [3, 3]]
+    
+    modes = wfm.GenerateTDModes(parameters, gen)
+    
+    assert SpinWeightedSphericalHarmonicMode(-2, 2, 2) in modes
+    assert SpinWeightedSphericalHarmonicMode(-2, 2, -2) in modes
+    assert SpinWeightedSphericalHarmonicMode(-2, 3, 3) in modes
+    assert SpinWeightedSphericalHarmonicMode(-2, 3, -3) in modes
+    assert SpinWeightedSphericalHarmonicMode(-2, 2, 1) not in modes
+
+    # the number of modes is doubled, since we have both positive and negative m
+    assert len(modes) == 4
+    
+    # if the user attempts to use a mode that is not available, an error is raised
+    with pytest.raises(ValueError):
+        wfm.GenerateTDModes(parameters | {'ModeArray': [[2, 3]]}, gen)
+        
+def test_modearray_parameter_polarizations(parameters, gen):
+    hp1, hc1 = wfm.GenerateTDWaveform(parameters, gen)
+    hp2, hc2 = wfm.GenerateTDWaveform(parameters | {'ModeArray': [[2, 2]]}, gen)
+    
+    assert not np.allclose(hp1.value, hp2.value, atol=max(hp1.value)/1e3)
+    assert not np.allclose(hc1.value, hc2.value, atol=max(hc1.value)/1e3)
