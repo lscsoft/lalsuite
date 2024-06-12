@@ -37,16 +37,10 @@ def modes_to_k(modes: list[tuple[int, int]]) -> list[int]:
     return [int(x[0] * (x[0] - 1) / 2 + x[1] - 2) for x in modes]
 
 
-#TEOB_DALI_MODES = []
-TEOB_DALI_MODES = [[2,2],[2,1],[3,3],[4,4]]
-#for l in range(2, 6):
-#    for m in range(1, l + 1):
-#        TEOB_DALI_MODES.append((l, m))
+TEOB_DALI_MODES = [(2,2),(2,1),(3,3),(4,4)]
 
 # reversed dictionary to back-reference the modes
 TEOB_DALI_MODES_FROM_K = {modes_to_k([mode])[0]: mode for mode in TEOB_DALI_MODES}
-
-DEFAULT_MODES = [(2, 2), (2, 1), (3, 3), (4, 4)]
 
 class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
@@ -56,15 +50,12 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
     """
 
     def __init__(   self, 
-                    modes_to_use: Optional[list[tuple[int, int]]] = None, 
                     **kwargs
                 ):
 
         super().__init__()
-        if modes_to_use is None:
-            self.available_modes = DEFAULT_MODES
-        else:
-            self.available_modes = modes_to_use
+
+        self.available_modes = TEOB_DALI_MODES
         self._update_domains()
 
     @property
@@ -105,12 +96,11 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
         if 'ModeArray' in fixed_pars:
             for mode in fixed_pars['ModeArray']: 
-                if mode not in TEOB_DALI_MODES:
+                if tuple(mode) not in TEOB_DALI_MODES:
                     raise ValueError(f'Available modes are {TEOB_DALI_MODES}')
             self.available_modes = fixed_pars['ModeArray']
 
         parameters["use_mode_lm"] = self._available_modes_teob_convention
-        print(parameters['use_mode_lm'])
 
         t, hp, hc, htlm, dyn = EOBRun_module.EOBRunPy(parameters)
 
