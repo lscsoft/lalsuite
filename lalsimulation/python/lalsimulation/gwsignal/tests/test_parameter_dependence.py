@@ -32,7 +32,16 @@ def assert_indistinguishable(wf1, wf2):
 
 def swap_masses(parameter_dictionary):
     new_parameters = deepcopy(parameter_dictionary)
-    new_parameters['mass1'], new_parameters['mass2'] = new_parameters['mass2'], new_parameters['mass1']
+    
+    to_swap = ['mass#', 'spin#z']
+    
+    for param_name in to_swap:
+        name_1 = param_name.replace('#', '1')
+        name_2 = param_name.replace('#', '2')
+        new_parameters[name_1], new_parameters[name_2] = new_parameters[name_2], new_parameters[name_1]
+    
+    # new_parameters["meanPerAno"] = new_parameters["meanPerAno"] + np.pi * u.rad
+    new_parameters["phi_ref"] = new_parameters["phi_ref"] + np.pi * u.rad
     
     return new_parameters
 
