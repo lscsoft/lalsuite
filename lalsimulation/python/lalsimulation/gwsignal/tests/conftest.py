@@ -50,6 +50,8 @@ def pytest_generate_tests(metafunc):
 
 @pytest.fixture(scope='module')
 def gen(request):
+    # this is the generator to be used in all tests; 
+    # it is determined by the pytest_generate_tests function
     return request.param()
 
 
