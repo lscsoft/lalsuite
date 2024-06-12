@@ -38,7 +38,7 @@ def modes_to_k(modes: list[tuple[int, int]]) -> list[int]:
 
 
 #TEOB_DALI_MODES = []
-TEOB_DALI_MODES = [(2,2), (2,1), (3,3),(4,4)]
+TEOB_DALI_MODES = [[2,2],[2,1],[3,3],[4,4]]
 #for l in range(2, 6):
 #    for m in range(1, l + 1):
 #        TEOB_DALI_MODES.append((l, m))
@@ -55,7 +55,10 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
     EOB model TEOBResumS-DALI.
     """
 
-    def __init__(self, modes_to_use: Optional[list[tuple[int, int]]] = None, **kwargs):
+    def __init__(   self, 
+                    modes_to_use: Optional[list[tuple[int, int]]] = None, 
+                    **kwargs
+                ):
 
         super().__init__()
         if modes_to_use is None:
@@ -75,8 +78,9 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
             "approximant": "TEOBResumS",
             "implementation": "C",
             "condition": False,
-            "conditioning_routines": 'gwsignal',
-            "extra_parameters": {"true_anomaly": u.rad},
+            "conditioning_routines": "gwsignal",
+            "extra_parameters": {"true_anomaly": u.rad}, # extra physical parameters (e.g., true anomaly, spin-induced multipoles etc)
+            "optional_parameters" : ['ModeArray']        # optional parameters for the generator (ModeArray, ...)
         }
         return metadata
 
@@ -85,12 +89,27 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
         return modes_to_k(self.available_modes)
 
     def generate_td_modes(self, **parameters):
+        
+        # remove fixed and model-dependent pars from parameters
+        fixed_pars = {}
+        for key in self.metadata['optional_parameters']:
+            val = parameters.pop(key, None)
+            if val is not None:
+                fixed_pars[key] = val
+
         self.parameter_check(units_sys="Cosmo", extra_parameters=self.metadata['extra_parameters'], **parameters)
         self.waveform_dict = self._strip_units(self.waveform_dict)
-
+        self.waveform_dict.update(**fixed_pars)
         parameters = convert_parameters_to_teob(self.waveform_dict)
 
+        if 'ModeArray' in fixed_pars:
+            for mode in fixed_pars['ModeArray']: 
+                if mode not in TEOB_DALI_MODES:
+                    raise ValueError(f'Available modes are {TEOB_DALI_MODES}')
+            self.available_modes = fixed_pars['ModeArray']
+
         parameters["use_mode_lm"] = self._available_modes_teob_convention
+        print(parameters['use_mode_lm'])
 
         t, hp, hc, htlm, dyn = EOBRun_module.EOBRunPy(parameters)
 
@@ -108,7 +127,7 @@ class TEOBResumSDALI(CompactBinaryCoalescenceGenerator):
 
     def generate_td_waveform(self, **parameters):
         theta, phi = parameters["inclination"], parameters["phi_ref"]
-        hlm = self.generate_td_modes(**parameters)
+        hlm        = self.generate_td_modes(**parameters)
         hp, hc = hlm(theta, phi)
         
         nu = compute_symmetric_mass_ratio(self.waveform_dict)
@@ -174,7 +193,6 @@ def convert_parameters_to_teob(parameter_dict):
         )
 
     q = m1 / m2
-
     return {
         "M": (m1 + m2),
         "q": q,
