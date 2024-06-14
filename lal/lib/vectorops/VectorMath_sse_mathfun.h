@@ -75,13 +75,13 @@ typedef ALIGN16_BEG union {
 } ALIGN16_END V2SF;
 
 // ---------- Prototypes ----------
-static v4sf sin_ps(v4sf x);
-static v4sf cos_ps(v4sf x);
-static v4sf exp_ps(v4sf x);
-static v4sf log_ps(v4sf x);
-static v4sf log_ps(v4sf x);
-static void sincos_ps(v4sf x, v4sf *s, v4sf *c);
-static void sincos_ps_2pi(v4sf xx, v4sf *s, v4sf *c);
+UNUSED static v4sf sin_ps(v4sf x);
+UNUSED static v4sf cos_ps(v4sf x);
+UNUSED static v4sf exp_ps(v4sf x);
+UNUSED static v4sf log_ps(v4sf x);
+UNUSED static v4sf log_ps(v4sf x);
+UNUSED static void sincos_ps(v4sf x, v4sf *s, v4sf *c);
+UNUSED static void sincos_ps_2pi(v4sf xx, v4sf *s, v4sf *c);
 // --------------------------------
 
 /* declare some SSE constants -- why can't I figure a better way to do that? */

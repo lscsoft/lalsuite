@@ -55,6 +55,24 @@
     XLALPrintInfo ( "%-32s: %4.0f Mops/sec\n", XLALVector##name##REAL4_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6 ); \
   }
 
+// ----- test and benchmark operators with 1 REAL4 vector input and 1 REAL4 scalar output (S2s) ----------
+#define TESTBENCH_VECTORMATH_S2s(name,in)                               \
+  {                                                                     \
+    REAL4 sOutRef, sOut;                                                \
+    XLAL_CHECK ( XLALVector##name##REAL4_GEN( &sOutRef, in, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    tic = XLALGetCPUTime();                                           \
+    for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
+      XLAL_CHECK ( XLALVector##name##REAL4( &sOut, in, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    }                                                                   \
+    toc = XLALGetCPUTime();                                           \
+    maxErr = fabsf( sOut - sOutRef );                                   \
+    maxRelerr = Relerr( maxErr, sOutRef );                                \
+    XLALPrintInfo ( "%-32s: %4.0f Mops/sec [maxErr = %7.2g (tol=%7.2g), maxRelerr = %7.2g (tol=%7.2g)]\n", \
+                    XLALVector##name##REAL4_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol), maxRelerr, (reltol) ); \
+    XLAL_CHECK ( (maxErr <= (abstol)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxErr, abstol ); \
+    XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxRelerr, reltol ); \
+  }
+
 // ----- test and benchmark operators with 1 REAL4 vector input and 1 REAL4 vector output (S2S) ----------
 #define TESTBENCH_VECTORMATH_S2S(name,in)                               \
   {                                                                     \
@@ -78,6 +96,7 @@
     XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxRelerr, reltol ); \
   }
 
+// ----- test and benchmark operators with 1 REAL4 vector input to 2 REAL4 vector outputs (S2SS) ----------
 #define TESTBENCH_VECTORMATH_S2SS(name,in)                              \
   {                                                                     \
     XLAL_CHECK ( XLALVector##name##REAL4_GEN( xOutRef, xOutRef2, xIn, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
@@ -103,7 +122,7 @@
     XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxRelerr, reltol ); \
   }
 
-
+// ----- test and benchmark operators with 2 REAL4 vector inputs to 1 REAL4 vector output (SS2S) ----------
 #define TESTBENCH_VECTORMATH_SS2S(name,in1,in2)                         \
   {                                                                     \
     XLAL_CHECK ( XLALVector##name##REAL4_GEN( xOutRef, in1, in2, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
@@ -126,7 +145,30 @@
     XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxRelerr, reltol ); \
   }
 
+// ----- test and benchmark operators with 3 REAL4 vector inputs to 1 REAL4 vector output (SS2S) ----------
+#define TESTBENCH_VECTORMATH_SSS2S(name,in1,in2,in3)                    \
+  {                                                                     \
+    XLAL_CHECK ( XLALVector##name##REAL4_GEN( xOutRef, in1, in2, in3, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    tic = XLALGetCPUTime();                                             \
+    for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
+      XLAL_CHECK ( XLALVector##name##REAL4( xOut, in1, in2, in3, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    }                                                                   \
+    toc = XLALGetCPUTime();                                             \
+    maxErr = maxRelerr = 0;                                             \
+    for ( UINT4 i = 0; i < Ntrials; i ++ )                              \
+    {                                                                   \
+      REAL4 err = fabsf ( xOut[i] - xOutRef[i] );                      \
+      REAL4 relerr = Relerr ( err, xOutRef[i] );                       \
+      maxErr    = fmaxf ( err, maxErr );                                \
+      maxRelerr = fmaxf ( relerr, maxRelerr );                          \
+    }                                                                   \
+    XLALPrintInfo ( "%-32s: %4.0f Mops/sec [maxErr = %7.2g (tol=%7.2g), maxRelerr = %7.2g (tol=%7.2g)]\n", \
+                    XLALVector##name##REAL4_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol), maxRelerr, (reltol) ); \
+    XLAL_CHECK ( (maxErr <= (abstol)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxErr, abstol ); \
+    XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL4", maxRelerr, reltol ); \
+  }
 
+// ----- test and benchmark operators with 2 REAL4 vector inputs to 1 UINT4 scalar and 1 UINT4 vector output (SS2uU) ----------
 #define TESTBENCH_VECTORMATH_SS2uU(name,in1,in2)                        \
   {                                                                     \
     UINT4 xCount = 0, xCountRef = 0;                                    \
@@ -144,6 +186,25 @@
     XLALPrintInfo ( "%-32s: %4.0f Mops/sec\n", XLALVector##name##REAL4_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6 ); \
   }
 
+// ----- test and benchmark operators with 1 REAL8 vector input and 1 REAL8 scalar output (D2d) ----------
+#define TESTBENCH_VECTORMATH_D2d(name,in)                               \
+  {                                                                     \
+    REAL8 sOutRef, sOut;                                                \
+    XLAL_CHECK ( XLALVector##name##REAL8_GEN( &sOutRef, in, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    tic = XLALGetCPUTime();                                           \
+    for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
+      XLAL_CHECK ( XLALVector##name##REAL8( &sOut, in, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    }                                                                   \
+    toc = XLALGetCPUTime();                                           \
+    maxErr = fabs( sOut - sOutRef );                                   \
+    maxRelerr = Relerrd( maxErr, sOutRef );                                \
+    XLALPrintInfo ( "%-32s: %4.0f Mops/sec [maxErr = %7.2g (tol=%7.2g), maxRelerr = %7.2g (tol=%7.2g)]\n", \
+                    XLALVector##name##REAL8_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol), maxRelerr, (reltol) ); \
+    XLAL_CHECK ( (maxErr <= (abstol)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", #name "REAL8", maxErr, abstol ); \
+    XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL8", maxRelerr, reltol ); \
+  }
+
+// ----- test and benchmark operators with 2 REAL8 vector inputs to 1 REAL8 vector output (DD2D) ----------
 #define TESTBENCH_VECTORMATH_DD2D(name,in1,in2)                         \
   {                                                                     \
     XLAL_CHECK ( XLALVector##name##REAL8_GEN( xOutRefD, in1, in2, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
@@ -166,12 +227,59 @@
     XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL8", maxRelerr, reltol ); \
   }
 
+// ----- test and benchmark operators with 3 REAL8 vector inputs to 1 REAL8 vector output (DD2D) ----------
+#define TESTBENCH_VECTORMATH_DDD2D(name,in1,in2,in3)                    \
+  {                                                                     \
+    XLAL_CHECK ( XLALVector##name##REAL8_GEN( xOutRefD, in1, in2, in3, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    tic = XLALGetCPUTime();                                             \
+    for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
+      XLAL_CHECK ( XLALVector##name##REAL8( xOutD, in1, in2, in3, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    }                                                                   \
+    toc = XLALGetCPUTime();                                             \
+    maxErr = maxRelerr = 0;                                             \
+    for ( UINT4 i = 0; i < Ntrials; i ++ )                              \
+    {                                                                   \
+      REAL8 err = fabs ( xOutD[i] - xOutRefD[i] );                      \
+      REAL8 relerr = Relerrd ( err, xOutRefD[i] );                       \
+      maxErr    = fmax ( err, maxErr );                                \
+      maxRelerr = fmax ( relerr, maxRelerr );                          \
+    }                                                                   \
+    XLALPrintInfo ( "%-32s: %4.0f Mops/sec [maxErr = %7.2g (tol=%7.2g), maxRelerr = %7.2g (tol=%7.2g)]\n", \
+                    XLALVector##name##REAL8_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol), maxRelerr, (reltol) ); \
+    XLAL_CHECK ( (maxErr <= (abstol)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", #name "REAL8", maxErr, abstol ); \
+    XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "REAL8", maxRelerr, reltol ); \
+  }
+
+// ----- test and benchmark operators with 2 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (CC2C) ----------
 #define TESTBENCH_VECTORMATH_CC2C(name,in1,in2)                         \
   {                                                                     \
     XLAL_CHECK ( XLALVector##name##COMPLEX8_GEN( xOutRefC, in1, in2, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     tic = XLALGetCPUTime();                                             \
     for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
       XLAL_CHECK ( XLALVector##name##COMPLEX8( xOutC, in1, in2, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    }                                                                   \
+    toc = XLALGetCPUTime();                                             \
+    maxErr = maxRelerr = 0;                                             \
+    for ( UINT4 i = 0; i < Ntrials; i ++ )                              \
+    {                                                                   \
+      REAL4 err = cabsf ( xOutC[i] - xOutRefC[i] );                      \
+      REAL4 relerr = cRelerr ( err, xOutRefC[i] );                       \
+      maxErr    = fmaxf ( err, maxErr );                                \
+      maxRelerr = fmaxf ( relerr, maxRelerr );                          \
+    }                                                                   \
+    XLALPrintInfo ( "%-32s: %4.0f Mops/sec [maxErr = %7.2g (tol=%7.2g), maxRelerr = %7.2g (tol=%7.2g)]\n", \
+                    XLALVector##name##COMPLEX8_name, (REAL8)Ntrials * Nruns / (toc - tic)/1e6, maxErr, (abstol), maxRelerr, (reltol) ); \
+    XLAL_CHECK ( (maxErr <= (abstol)), XLAL_ETOL, "%s: absolute error (%g) exceeds tolerance (%g)\n", #name "COMPLEX8", maxErr, abstol ); \
+    XLAL_CHECK ( (maxRelerr <= (reltol)), XLAL_ETOL, "%s: relative error (%g) exceeds tolerance (%g)\n", #name "COMPLEX8", maxRelerr, reltol ); \
+  }
+
+// ----- test and benchmark operators with 3 COMPLEX8 vector inputs to 1 COMPLEX8 vector output (CC2C) ----------
+#define TESTBENCH_VECTORMATH_CCC2C(name,in1,in2,in3)                    \
+  {                                                                     \
+    XLAL_CHECK ( XLALVector##name##COMPLEX8_GEN( xOutRefC, in1, in2, in3, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
+    tic = XLALGetCPUTime();                                             \
+    for (UINT4 l=0; l < Nruns; l ++ ) {                                 \
+      XLAL_CHECK ( XLALVector##name##COMPLEX8( xOutC, in1, in2, in3, Ntrials ) == XLAL_SUCCESS, XLAL_EFUNC ); \
     }                                                                   \
     toc = XLALGetCPUTime();                                             \
     maxErr = maxRelerr = 0;                                             \
@@ -306,6 +414,7 @@ main ( int argc, char *argv[] )
 
   for ( UINT4 i = 0; i < Ntrials; i ++ ) {
     xIn[i] = 2000 * ( frand() - 0.5 );
+    xInD[i] = xIn[i];
   }
   abstol = 2e-7, reltol = 1e-5;
 
@@ -313,6 +422,10 @@ main ( int argc, char *argv[] )
   // ==================== (INT4) ====================
   TESTBENCH_VECTORMATH_S2I(INT4From,xIn);
 
+  // ==================== SCALAR MAX ====================
+  XLALPrintInfo ("Testing scalar max for x in [-1000, 1000]\n");
+  TESTBENCH_VECTORMATH_S2s(ScalarMax,xIn);
+  TESTBENCH_VECTORMATH_D2d(ScalarMax,xInD);
 
   XLALPrintInfo ("Testing sin(x), cos(x) for x in [-1000, 1000]\n");
   // ==================== SIN() ====================
@@ -368,6 +481,7 @@ main ( int argc, char *argv[] )
 
   TESTBENCH_VECTORMATH_SS2S(Shift,xIn[0],xIn2);
   TESTBENCH_VECTORMATH_SS2S(Scale,xIn[0],xIn2);
+  TESTBENCH_VECTORMATH_SSS2S(ScaleAdd,xIn[0],xIn,xIn2);
 
   TESTBENCH_VECTORMATH_DD2D(Add,xInD,xIn2D);
   TESTBENCH_VECTORMATH_DD2D(Sub,xInD,xIn2D);
@@ -376,12 +490,14 @@ main ( int argc, char *argv[] )
 
   TESTBENCH_VECTORMATH_DD2D(Shift,xInD[0],xIn2D);
   TESTBENCH_VECTORMATH_DD2D(Scale,xInD[0],xIn2D);
+  TESTBENCH_VECTORMATH_DDD2D(ScaleAdd,xInD[0],xInD,xIn2D);
 
   TESTBENCH_VECTORMATH_CC2C(Multiply,xInC,xIn2C);
   TESTBENCH_VECTORMATH_CC2C(Add,xInC,xIn2C);
 
   TESTBENCH_VECTORMATH_CC2C(Scale,xInC[0],xIn2C);
   TESTBENCH_VECTORMATH_CC2C(Shift,xInC[0],xIn2C);
+  TESTBENCH_VECTORMATH_CCC2C(ScaleAdd,xIn[0],xInC,xIn2C);
 
   // ==================== FIND ====================
   for ( UINT4 i = 0; i < Ntrials; i ++ ) {
