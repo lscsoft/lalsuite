@@ -34,6 +34,7 @@
 #include <lal/LALSimulation.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/H5FileIO.h>
+#include <lal/LALSimInspiralWaveformParams.h>
 #include <lal/LALSimInspiralInjection.h>
 
 #ifdef __GNUC__
@@ -159,12 +160,12 @@ LALDictSequence * XLALSimInspiralInjectionSequenceFromH5File(const char *fname)
                int retval;
                if (!strlen(strvec->data[i]))
                    continue;
-               /* FIXME: Handle ModeArray when new waveform interface has been merged */
-               //if (strcmp(key, "ModeArray") == 0) {
-               //   retval = 0; /* handle mode array as a special case */
-               //} else {
+               if (strcmp(key, "ModeArray") == 0) {
+                   /* handle mode array as a special case */
+                   retval = XLALSimInspiralWaveformParamsInsertModeArrayFromModeString(injseq->data[i], strvec->data[i]);
+               } else {
                    retval = XLALDictInsertStringValue(injseq->data[i], key, strvec->data[i]);
-               //}
+               }
                XLAL_CHECK_FAIL(retval == 0, XLAL_EFUNC);
            }
            XLALDestroyStringVector(strvec);
@@ -268,7 +269,18 @@ int XLALSimInspiralInjectionSequenceToH5File(const LALDictSequence *injseq, cons
         case LAL_CHAR_TYPE_CODE:
             strvec = XLALCreateEmptyStringVector(injseq->length);
             for (size_t i = 0; i < injseq->length; ++i)
-                strvec->data[i] = XLALStringDuplicate(XLALDictContains(injseq->data[i], key) ? XLALDictLookupStringValue(injseq->data[i], key) : "");
+                if (strcmp(key, "ModeArray") == 0) {
+                    /* handle mode array as a special case */
+                    if (XLALDictContains(injseq->data[i], key)) {
+                        LALValue *modes = XLALValueDuplicate(XLALDictEntryGetValue(XLALDictLookup(injseq->data[i], key)));
+                        strvec->data[i] = XLALSimInspiralModeArrayToModeString(modes);
+                        XLALDestroyValue(modes);
+                    } else {
+                        strvec->data[i] = XLALStringDuplicate("");
+                    }
+                } else {
+                    strvec->data[i] = XLALStringDuplicate(XLALDictContains(injseq->data[i], key) ? XLALDictLookupStringValue(injseq->data[i], key) : "");
+                }
             dset = XLALH5DatasetAllocStringVector(group, new, strvec);
             XLAL_CHECK_FAIL(dset, XLAL_EFUNC);
             XLALDestroyStringVector(strvec);
@@ -595,8 +607,6 @@ int XLALSimInspiralInjectionTDWaveform(REAL8TimeSeries **hplus, REAL8TimeSeries 
     /* add conditioning for approximant */
     ret = XLALSimInspiralGeneratorAddConditioningForApproximant(generator, approx);
     XLAL_CHECK_FAIL(!(ret < 0), XLAL_EFUNC);
-
-    /* TODO translate ModeString into ModeArray */
 
     /* generate the waveform */
     ret = XLALSimInspiralGenerateTDWaveform(hplus, hcross, wfmparams, generator);
