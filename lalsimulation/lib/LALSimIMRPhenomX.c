@@ -91,6 +91,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
  * given in https://arxiv.org/abs/1905.06011 ; DCC link: https://dcc.ligo.org/P1900148
  *  * IMRPhenomXAS_NRTidalv2 model for the 22 mode of non-precessing binary neutron stars
  *  * IMRPhenomXP_NRTidalv2 model for the 22 mode (in the coprecessing frame) of precessing binary neutron stars
+ *  * IMRPhenomXAS_NRTidalv3 and IMRPhenomXP_NRTidalv3 based on https://arxiv.org/abs/2311.07456. 
  *
  * @review IMRPhenomXAS & IMRPhenomXHM reviewed by Maria Haney, Patricia Schmidt,
  * Roberto Cotesta, Anuradha Samajdar, Jonathan Thompson, N.V. Krishnendu.
@@ -103,6 +104,7 @@ IMRPhenomX_UsefulPowers powers_of_lalpi;
  * Sarp Akcay, N.V. Krishnendu, Shubhanshu Tiwari.
  * Review wiki: https://git.ligo.org/waveforms/reviews/imrphenomxp_nrtidalv2/-/wikis/home
  *
+ * Review Wiki for IMRPhenomXAS_NRTidalv3 and IMRPhenomXP_NRTidalv3: https://git.ligo.org/waveforms/reviews/nrtidalv3/-/wikis/home
  */
 
  /**
@@ -714,7 +716,18 @@ int IMRPhenomXASGenerateFD(
   // correct for time and phase shifts due to tidal phase
   if(NRTidal_version!=NoNRT_V){
       
-        REAL8 f_merger = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+      REAL8 f_merger; 
+      REAL8 f_merger_tmp;
+      switch (NRTidal_version) {
+          case NRTidalv3_V:
+              f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
+              break;
+          default:
+              f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+              break;
+      }
+      f_merger = f_merger_tmp;
+
         if(f_merger<f_final)
             f_final = f_merger;
         
@@ -723,13 +736,12 @@ int IMRPhenomXASGenerateFD(
         status = IMRPhenomX_Initialize_Powers(&powers_of_ffinal,Mf_final);
         XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for f_final.\n");
         REAL8 dphi_fmerger=1/pWF->eta*IMRPhenomX_dPhase_22(Mf_final, &powers_of_ffinal, pPhase22, pWF)+linb-IMRPhenomX_TidalPhaseDerivative(&powers_of_ffinal, pWF, pPhase22, NRTidal_version);
-        REAL8 tshift = -dphi_fmerger;
+        REAL8 tshift = -dphi_fmerger; //This was adapted from the PhenomPv2 implementation; the resulting BBH limit can then have a time-shift in its phase
         linb+=tshift;
         phiTfRef = -IMRPhenomX_TidalPhase(&powers_of_MfRef, pWF, pPhase22, NRTidal_version);
         
     }
     
-
   /* 1/eta is used to re-scale phase */
   REAL8 inveta    = (1.0 / pWF->eta);
 
@@ -780,7 +792,7 @@ int IMRPhenomXASGenerateFD(
     amp_tidal = XLALCreateREAL8Sequence(L_fCut);
     planck_taper = XLALCreateREAL8Sequence(L_fCut);
     /* Get FD tidal phase correction and amplitude factor */
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, NRTidal_version);
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, pWF->chi1L, pWF->chi2L, NRTidal_version);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
   }
 
@@ -869,8 +881,8 @@ int IMRPhenomXASGenerateFD(
           /* 3PN terms */
           phaseTidal += pfaN * pPhase22->c3PN_tidal* powers_of_lalpi.one_third * powers_of_Mf.one_third;
 
-          /* 3.5PN terms are only in NRTidalv2 */
-          if (NRTidal_version == NRTidalv2_V) {
+          /* 3.5PN terms are only in NRTidalv2 and NRTidalv3 */
+          if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
               phaseTidal += pfaN * pPhase22->c3p5PN_tidal * powers_of_lalpi.two_thirds * powers_of_Mf.two_thirds;
           }
             /* Reconstruct waveform with NRTidal terms included: h(f) = [A(f) + A_tidal(f)] * Exp{I [phi(f) - phi_tidal(f)]} * window(f) */
@@ -882,7 +894,7 @@ int IMRPhenomXASGenerateFD(
   	((*htilde22)->data->data)[jdx] = Amp0 * powers_of_Mf.m_seven_sixths * amp * cexp(I * phi);
         }
         else {
-	XLAL_PRINT_INFO("Warning: Only NRTidal, NRTidalv2, and NoNRT NRTidal_version values allowed and NRTidal is not implemented completely in IMRPhenomX*.");
+	XLAL_PRINT_INFO("Warning: Only NRTidal, NRTidalv2, NRTidalv3, and NoNRT NRTidal_version values allowed and NRTidal is not implemented completely in IMRPhenomX*.");
       }
     }
   }
@@ -2073,7 +2085,18 @@ int IMRPhenomXPGenerateFD(
   REAL8 f_final=freqs->data[freqs->length-1];
     
   if(NRTidal_version!=NoNRT_V){
-      REAL8 f_merger = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+      REAL8 f_merger; 
+      REAL8 f_merger_tmp;
+      switch (NRTidal_version) {
+          case NRTidalv3_V:
+              f_merger_tmp = XLALSimNRTunedTidesMergerFrequency_v3(pWF->Mtot, pWF->lambda1, pWF->lambda2, pWF->q, pWF->chi1L, pWF->chi2L);
+              break;
+          default:
+              f_merger_tmp = XLALSimNRTunedTidesMergerFrequency(pWF->Mtot, pWF->kappa2T, pWF->q);
+              break;
+      }
+      
+      f_merger = f_merger_tmp;
       if(f_merger<f_final)
           f_final = f_merger;
       
@@ -2082,7 +2105,7 @@ int IMRPhenomXPGenerateFD(
       status = IMRPhenomX_Initialize_Powers(&powers_of_ffinal,Mf_final);
       XLAL_CHECK(XLAL_SUCCESS == status, status, "IMRPhenomX_Initialize_Powers failed for f_final.\n");
       REAL8 dphi_fmerger=1/pWF->eta*IMRPhenomX_dPhase_22(Mf_final, &powers_of_ffinal, pPhase22, pWF)+linb-IMRPhenomX_TidalPhaseDerivative(&powers_of_ffinal, pWF, pPhase22, NRTidal_version);
-      REAL8 tshift = -dphi_fmerger;
+      REAL8 tshift = -dphi_fmerger; //This was adapted from the PhenomPv2 implementation; the resulting BBH limit can then have a time-shift in its phase
       linb+=tshift;
       // tidal phase will be subtracted from the BBH phase
       phiTfRef = -IMRPhenomX_TidalPhase(&powers_of_MfRef, pWF, pPhase22, NRTidal_version);
@@ -2208,14 +2231,14 @@ int IMRPhenomXPGenerateFD(
   fclose(fileangle);
   #endif
 
-  if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V) {
+  if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
     int ret = 0;
     UINT4 L_fCut = freqs->length;
     phi_tidal = XLALCreateREAL8Sequence(L_fCut);
     amp_tidal = XLALCreateREAL8Sequence(L_fCut);
     planck_taper = XLALCreateREAL8Sequence(L_fCut);
     /* Get FD tidal phase correction and amplitude factor */
-    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, NRTidal_version);
+    ret = XLALSimNRTunedTidesFDTidalPhaseFrequencySeries(phi_tidal, amp_tidal, planck_taper, freqs, pWF->m1_SI, pWF->m2_SI, lambda1, lambda2, pWF->chi1L, pWF->chi2L, NRTidal_version);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "XLALSimNRTunedTidesFDTidalPhaseFrequencySeries Failed.");
   }
 
@@ -2321,7 +2344,7 @@ int IMRPhenomXPGenerateFD(
 
       /* Add NRTidal phase, if selected, code adapted from LALSimIMRPhenomP.c */
 
-      if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V) {
+      if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
           
           REAL8 phaseTidal = phi_tidal->data[idx];
           double ampTidal = amp_tidal->data[idx];

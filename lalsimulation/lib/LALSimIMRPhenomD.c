@@ -426,7 +426,7 @@ static int IMRPhenomDGenerateFD(
   int ret = XLAL_SUCCESS;
   /* Now generate the waveform */
   if (NRTidal_version == NRTidalv2_V) {
-    /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for IMRPhenomD_NRTidalv2 */
+    /* Generate the tidal amplitude (Eq. 24 of arxiv: 1905.06011) to add to BBH baseline; only for IMRPhenomD_NRTidalv2*/
     amp_tidal = XLALCreateREAL8Sequence(freqs->length);
     ret = XLALSimNRTunedTidesFDTidalAmplitudeFrequencySeries(amp_tidal, freqs, m1, m2, lambda1, lambda2);
     XLAL_CHECK(XLAL_SUCCESS == ret, ret, "Failed to generate tidal amplitude series to construct IMRPhenomD_NRTidalv2 waveform.");
