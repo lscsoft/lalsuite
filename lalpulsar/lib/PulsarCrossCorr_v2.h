@@ -512,7 +512,8 @@ LIGOTimeGPSVector
   REAL8TimeSeries                  **sciFlag,
   const LIGOTimeGPSVector  *_LAL_RESTRICT_ Times,
   const REAL8                        tShort,
-  const UINT4                        numShortPerDet
+  const UINT4                        numShortPerDet,
+  const LIGOTimeGPS                  epoch
 );
 
 LIGOTimeGPSVector
@@ -528,7 +529,8 @@ MultiLIGOTimeGPSVector
   MultiREAL8TimeSeries                  **scienceFlagVect,
   const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes,
   const REAL8                             tShort,
-  const UINT4                             numShortPerDet
+  const UINT4                             numShortPerDet,
+  const BOOLEAN                           alignTShorts
 );
 
 MultiLIGOTimeGPSVector

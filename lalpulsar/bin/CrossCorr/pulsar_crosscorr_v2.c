@@ -103,6 +103,7 @@ typedef struct tagUserInput_t {
   REAL8   tShort;                /**< resampling tShort for time series subdivisions pre-FFT */
   BOOLEAN testShortFunctions;    /**< alternative pathway with tShort using resampMultiPairs and new functions */
   BOOLEAN testResampNoTShort;    /**< use resampling without tShort (for e.g., comparison in gapless Gaussian data) */
+  BOOLEAN alignTShorts;    /**< make sure tShort segments from different detectors are aligned */
   INT4    Dterms;                /**< number of Dirichlet terms to use for resampling sinc interpolation */
   REAL8   allowedMismatchFromSFTLength;  /**< mismatch to tolerate in XLALFstatCheckSFTLengthMismatch() */
   BOOLEAN inclSameDetector;      /**< include cross-correlations of detector with itself */
@@ -272,6 +273,14 @@ int main( int argc, char *argv[] )
   if ( !( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == FALSE ) ) && ( uvar.testShortFunctions == TRUE ) ) {
     printf( "Warning! testShortFunctions should only be used with --resamp TRUE\n" );
     printf( "Proceeding, but unexpected behavior may follow...\n" );
+    if ( uvar.treatWarningsAsErrors ) {
+      printf( "Error! (--treatWarningsAsErrors flag is true).\n" );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+  if ( ( uvar.resamp == FALSE ) && ( uvar.alignTShorts == TRUE ) ) {
+    printf( "Warning! alignTShorts should only be used with --resamp TRUE\n" );
+    printf( "Proceeding without resampling...\n" );
     if ( uvar.treatWarningsAsErrors ) {
       printf( "Error! (--treatWarningsAsErrors flag is true).\n" );
       XLAL_ERROR( XLAL_EFUNC );
@@ -450,7 +459,7 @@ int main( int argc, char *argv[] )
   /* For resampling with tShort, generate appropriate times, states, and coefficients */
   if ( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == FALSE ) ) {
     /* Edit the timestamps to accurately reflect tShort */
-    if ( ( resampMultiTimes = XLALModifyMultiTimestampsFromSFTs( &scienceFlagVect, multiTimes, resampTshort, numShortPerDet ) ) == NULL ) {
+    if ( ( resampMultiTimes = XLALModifyMultiTimestampsFromSFTs( &scienceFlagVect, multiTimes, resampTshort, numShortPerDet, uvar.alignTShorts ) ) == NULL ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALModifyMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
@@ -1352,6 +1361,7 @@ int XLALInitUserVars( UserInput_t *uvar )
   XLALRegisterUvarMember( tShort,    REAL8, 0,  OPTIONAL, "Resampling tShort for time series subdivisions pre-FFT" );
   XLALRegisterUvarMember( testShortFunctions, BOOLEAN, 0,  OPTIONAL, "Use alternative functions for resampMultiPairs with tShort" );
   XLALRegisterUvarMember( testResampNoTShort, BOOLEAN, 0, OPTIONAL, "Use resampling without tShort (for e.g., comparison in gapless Gaussian data)" );
+  XLALRegisterUvarMember( alignTShorts, BOOLEAN, 0, OPTIONAL, "Make sure tShort segments from different detectors are aligned" );
   XLALRegisterUvarMember( Dterms, INT4, 0, OPTIONAL, "Number of Dirichlet terms for resampling sinc interpolation" );
   XLALRegisterUvarMember( allowedMismatchFromSFTLength, REAL8, 0, OPTIONAL, "override default value in XLALFstatCheckSFTLengthMismatch() (only relevant for resamp)" );
   XLALRegisterUvarMember( inclSameDetector, BOOLEAN, 0, OPTIONAL, "Cross-correlate a detector with itself at a different time (if inclAutoCorr, then also same time)" );
