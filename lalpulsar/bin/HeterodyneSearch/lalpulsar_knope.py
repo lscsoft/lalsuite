@@ -27,7 +27,7 @@ from __future__ import print_function, division
 
 from lalpulsar import knope_utils as knope
 import argparse
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 import sys
 import pickle
 

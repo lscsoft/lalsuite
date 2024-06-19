@@ -23,7 +23,6 @@
 #       MA 02110-1301, USA.
 
 import sys
-from six.moves import range
 from functools import reduce
 
 import matplotlib

@@ -45,7 +45,6 @@ from sys import exit, stdout, version_info, float_info
 from time import time
 from numpy import sqrt, array, empty, hstack, min, max, reshape, shape, loadtxt, vstack, append, arange, random, column_stack, concatenate, savetxt, log, exp, size, zeros, argmax, argsort, sort, sum, subtract, array_split
 from re import findall
-from six.moves import range
 
 py_version = version_info[:2]
 if py_version < (2, 7):

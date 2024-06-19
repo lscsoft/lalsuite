@@ -22,7 +22,7 @@ import unittest
 from optparse import OptionParser
 import io
 import sys, os
-from six.moves import configparser
+import configparser
 
 NEW_DATA_STR = '######### NEW DATASET #############\n'
 DEFAULT_FILE = 'reviewed_waveforms.asc'

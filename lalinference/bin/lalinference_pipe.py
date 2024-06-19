@@ -3,7 +3,7 @@
 
 from lalinference import lalinference_pipe_utils as pipe_utils
 import numpy as np
-from six.moves import configparser
+import configparser
 from optparse import OptionParser
 import sys
 import os

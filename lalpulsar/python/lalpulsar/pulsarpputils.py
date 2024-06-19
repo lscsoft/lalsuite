@@ -45,8 +45,6 @@ try:
 except ImportError:  # scipy < 0.19.0
     from scipy.misc import logsumexp
 
-from six import string_types
-
 # some common constants taken from psr_constants.py in PRESTO
 ARCSECTORAD = float("4.8481368110953599358991410235794797595635330237270e-6")
 RADTOARCSEC = float("206264.80624709635515647335733077861319665970087963")
@@ -2342,7 +2340,7 @@ def antenna_response(gpsTime, ra, dec, psi, det):
 
     # check if ra and dec are floats or strings (if strings in hh/dd:mm:ss.s format then convert to rads)
     if not isinstance(ra, float):
-        if isinstance(ra, string_types):
+        if isinstance(ra, str):
             try:
                 ra = ra_to_rad(ra)
             except:
@@ -2355,7 +2353,7 @@ def antenna_response(gpsTime, ra, dec, psi, det):
             )
 
     if not isinstance(dec, float):
-        if isinstance(dec, string_types):
+        if isinstance(dec, str):
             try:
                 dec = dec_to_rad(dec)
             except:
@@ -2417,7 +2415,7 @@ def inject_pulsar_signal(
     snrscale=None,
 ):
     # if detectors is just a string (i.e. one detector) then make it a list
-    if isinstance(detectors, string_types):
+    if isinstance(detectors, str):
         detectors = [detectors]
 
     # if not noise sigma's are given then generate a noise level from the given
@@ -3308,7 +3306,7 @@ def pulsar_posterior_grid(
 
     # if dets is just a single string
     if not isinstance(dets, list):
-        if isinstance(dets, string_types):
+        if isinstance(dets, str):
             dets = [dets]  # make into list
         else:
             print("Detector not, or incorrectly, set", file=sys.stderr)

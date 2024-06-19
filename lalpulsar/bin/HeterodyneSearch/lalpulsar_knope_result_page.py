@@ -25,7 +25,7 @@
 from __future__ import print_function, division
 
 import argparse
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 import sys
 import ast
 import numpy as np

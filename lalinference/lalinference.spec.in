@@ -146,7 +146,6 @@ Requires: python%{python3_pkgversion}-lscsoft-glue >= @MIN_GLUE_VERSION@
 Requires: python%{python3_pkgversion}-matplotlib >= 1.2.0
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
 Requires: python%{python3_pkgversion}-scipy >= 0.8
-Requires: python%{python3_pkgversion}-six
 Obsoletes: python2-%{name} < 3.1.0-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}

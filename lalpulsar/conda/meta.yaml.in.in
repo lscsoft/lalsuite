@@ -196,7 +196,6 @@ outputs:
         - python-lalframe >={{ lalframe_version }}
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
-        - six
     test:
       requires:
         - mock  # [py<33]

@@ -63,7 +63,6 @@ import socket
 from itertools import combinations
 from .lalinference import LALInferenceHDF5PosteriorSamplesDatasetName as posterior_grp_name
 import re
-import six
 
 try:
     import lalsimulation as lalsim
@@ -4352,9 +4351,9 @@ def getRAString(radians,accuracy='auto'):
     if mins>=59.5:
         mins=mins-60
         hours=hours+1
-    if accuracy=='hour': return six.u(r'%ih'%(hours))
-    if accuracy=='min': return six.u(r'%ih%im'%(hours,mins))
-    if accuracy=='sec': return six.u(r'%ih%im%2.0fs'%(hours,mins,secs))
+    if accuracy=='hour': return r'%ih'%(hours)
+    if accuracy=='min': return r'%ih%im'%(hours,mins)
+    if accuracy=='sec': return r'%ih%im%2.0fs'%(hours,mins,secs)
     else:
         if abs(fmod(secs,60.0))>=0.5: return(getRAString(radians,accuracy='sec'))
         if abs(fmod(mins,60.0))>=0.5: return(getRAString(radians,accuracy='min'))
@@ -4367,9 +4366,9 @@ def getDecString(radians,accuracy='auto'):
         minsymb="'"
         secsymb="''"
     else:
-        degsymb=six.unichr(0x0B0)
-        minsymb=six.unichr(0x027)
-        secsymb=six.unichr(0x2033)
+        degsymb=chr(0x0B0)
+        minsymb=chr(0x027)
+        secsymb=chr(0x2033)
     if(radians<0):
         radians=-radians
         sign=-1

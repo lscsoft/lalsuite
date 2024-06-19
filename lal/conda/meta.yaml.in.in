@@ -141,7 +141,6 @@ outputs:
         - numpy
         - pytest  # [build_platform == target_platform]
         - python
-        - six
         - zlib
         # provided to assist the solver, but not actually used
         - mkl-devel {{ mkl }}  # [fft_impl == "mkl"]

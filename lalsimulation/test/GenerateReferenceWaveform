@@ -23,7 +23,7 @@ import copy
 from optparse import OptionParser, OptionGroup
 from lalsimulation import git_version
 import io
-from six.moves import configparser
+import configparser
 
 NEW_DATA_STR = '######### NEW DATASET #############\n'
 

@@ -18,8 +18,6 @@ from itertools import permutations
 import numpy as np
 from glob import glob
 import math
-from six.moves import range
-from six import next
 from functools import reduce
 try:
     from configparser import NoOptionError, NoSectionError
