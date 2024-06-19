@@ -64,11 +64,7 @@ static PyObject* _burnin(PyObject *self, PyObject *args) {
     Py_ssize_t i;
     for(i=0;i<input->nfiles;i++){
     	char* ptemp=NULL;
-#if PY_MAJOR_VERSION >= 3
         if((ptemp=PyUnicode_AsUTF8(PyList_GetItem(py_inputfile_list,i)))!=0){
-#else
-        if((ptemp=PyString_AsString(PyList_GetItem(py_inputfile_list,i)))!=0){
-#endif
         	input->files[i]=ptemp;
         }
         else {
