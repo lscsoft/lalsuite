@@ -1279,7 +1279,8 @@ wheel:cp312-cp312-manylinux_2_28_aarch64:
     - .wheel:manylinux_2_28_aarch64
   rules:  # reference build for this platform
     - !reference [.ci-wheels, rules]
-    - !reference [.ci-merge-build, rules]
+    # Disable building aarch64 for MRs due to low availability of aarch64 runners
+    # - !reference [.ci-merge-build, rules]
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-nightly-deploy, rules]
 wheel:cp39-cp39-macos-x86_64:
