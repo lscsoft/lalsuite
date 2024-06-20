@@ -1,7 +1,7 @@
 """Notes on TEOBResumS installation (TEMPORARY):
 
-- clone it from https://bitbucket.org/eob_ihes/teobresums
-- checkout the branch `dev/DALI-4PNrho22`
+- clone it from https://git.ligo.org/rossella.gamba/teobresums
+- checkout the branch `dev/DALI`
 - within the `Python` folder, run `make`
 - export the `PYTHONPATH` environment variable to the `Python` folder
     inside the TEOBResumS repo
