@@ -4,6 +4,12 @@
 int main(void) { return 77; /* don't do any testing */ }
 #else
 
+#if defined(GENERATE_HDF5_TEST_FILE)
+#define H5_USE_110_API
+#include <hdf5.h>
+#include <hdf5_hl.h>
+#endif
+
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
@@ -346,6 +352,72 @@ DEFINE_FREQUENCY_SERIES_FUNCTIONS(COMPLEX8FrequencySeries)
 DEFINE_FREQUENCY_SERIES_FUNCTIONS(COMPLEX16FrequencySeries)
 #undef GENERATE_DATA
 
+#if defined(GENERATE_HDF5_TEST_FILE)
+/* this small snippet is left as an example on how to regenerate the files
+   used for testing HDF5 attributes reading/writing
+*/
+static void create_hdf5(void) {
+	char const *buf = "La soupe est pr\xc3\xaate.";
+
+	hid_t file_create = H5Fcreate(TEST_DATA_DIR "hdf5_attr_utf8.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	hid_t fspace = H5Screate(H5S_SCALAR);
+	hid_t memtype_id = H5Tcopy(H5T_C_S1);
+	H5Tset_cset(memtype_id, H5T_CSET_UTF8);
+	H5Tset_size(memtype_id, H5T_VARIABLE);
+
+	hid_t attr = H5Acreate2(file_create, "CANONICAL_FILE_BASENAME", memtype_id, fspace, H5P_DEFAULT, H5P_DEFAULT);
+
+	if(!(H5Awrite(attr, memtype_id, &buf) >= 0)){
+		fprintf(stderr, "Attribute write fail\n");
+		exit(1);
+	}
+	if(!(H5Sclose(fspace) >= 0)){
+		fprintf(stderr, "Space close fail\n");
+		exit(1);
+	}
+	if(!(H5Tclose(memtype_id) >= 0)){
+		fprintf(stderr, "Memtype close fail\n");
+		exit(1);
+
+	}
+	if(!(H5Aclose(attr) >= 0)){
+		fprintf(stderr, "Attribute close fail\n");
+		exit(1);
+	}
+
+	H5Fflush(file_create, H5F_SCOPE_GLOBAL);
+	H5Fclose(file_create);
+}
+#endif
+
+static void check_string_reading_from_hdf5_attr(
+	char const* filename,
+	char const* attribute_name,
+	char const* buf,
+	char const* attr_type) {
+
+	fprintf(stderr, "Testing HDF5 attribute reading %s...\n", attr_type);
+	LALH5File *file_read = XLALH5FileOpen(filename, "r");
+	LALH5Generic gfile = {.file = file_read};
+
+	int len = XLALH5AttributeQueryStringValue(NULL, 0, gfile, attribute_name);
+	if(!(len > 0)) {
+		fprintf(stderr, "Attribute length read incorrect\n");
+		exit(1);
+	}
+	char *read_string_back = read_string_back = XLALCalloc(1, len + 1 );
+	XLALH5AttributeQueryStringValue(read_string_back, len+1, gfile, attribute_name);
+
+	if(strcmp(read_string_back, buf) != 0){
+		fprintf(stderr, "Read string incorrect '%s'\n", read_string_back);
+		exit(1);
+	}
+
+	XLALFree(read_string_back);
+	XLALH5FileClose(file_read);
+	fprintf(stderr, "Testing HDF5 attribute reading %s... ok!\n", attr_type);
+}
+
 int main(void)
 {
 	XLALSetErrorHandler(XLALAbortErrorHandler);
@@ -389,6 +461,25 @@ int main(void)
 	test_REAL8FrequencySeries();
 	test_COMPLEX8FrequencySeries();
 	test_COMPLEX16FrequencySeries();
+
+#if defined(GENERATE_HDF5_TEST_FILE)
+	/* define the macro GENERATE_HDF5_TEST_FILE to generate each file */
+	create_hdf5();
+#endif
+
+	check_string_reading_from_hdf5_attr(
+		TEST_DATA_DIR "hdf5_attr_ascii.h5",
+		"CANONICAL_FILE_BASENAME",
+		"test long string ascii",
+		"ascii"
+	);
+
+	check_string_reading_from_hdf5_attr(
+		TEST_DATA_DIR "hdf5_attr_utf8.h5",
+		"CANONICAL_FILE_BASENAME",
+		"La soupe est pr\xc3\xaate.",
+		"utf8"
+	);
 
 	LALCheckMemoryLeaks();
 	return 0;
