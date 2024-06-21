@@ -192,7 +192,7 @@ setup(
         'ligo-segments',
         'lscsoft-glue',
         'matplotlib',
-        'numpy>=1.7, <2',
+        'numpy>=1.19',
         'python-dateutil',
         'scipy',
     ],

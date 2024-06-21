@@ -14,6 +14,12 @@ import pytest
 import numpy
 from numpy.testing import assert_array_equal
 
+try:
+    from numpy.exceptions import ComplexWarning
+except ImportError:
+    # FIXME: Remove this once we require at least Numpy >= 1.25.0.
+    from numpy import ComplexWarning
+
 # return if 'x' has both value 'v' and type 't'
 def is_value_and_type(x, v, t):
     return x == v and type(x) is t
@@ -320,11 +326,11 @@ def test_dynamic_vector_matrix_conversions():
         assert cm.data[2, 3] == complex(0.5, 1.5)
         assert cm.data[3, 2] == complex(0.75, 1.0)
         set_nice_error_handlers()
-        with pytest.warns(numpy.ComplexWarning):
+        with pytest.warns(ComplexWarning):
             iv.data[0] = cm.data[2, 3]
         set_default_error_handlers()
         set_nice_error_handlers()
-        with pytest.warns(numpy.ComplexWarning):
+        with pytest.warns(ComplexWarning):
             rv.data[0] = cm.data[3, 2]
         set_default_error_handlers()
 
@@ -1551,7 +1557,7 @@ def test_conversion_of_numpy_fixed_width_types_uint(inputs, result):
         ((numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)), 20),
         ((numpy.uint8(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)), 100),
         (
-            (numpy.float_(10), numpy.float16(20), numpy.float32(30), numpy.float64(40)),
+            (float(10), numpy.float16(20), numpy.float32(30), numpy.float64(40)),
             100,
         ),
     ],
@@ -1567,12 +1573,12 @@ def test_conversion_of_numpy_fixed_width_types_flt(inputs, result):
         ((numpy.int8(10), numpy.int16(20), numpy.int32(30), numpy.int64(-40)), 20),
         ((numpy.uint8(10), numpy.uint16(20), numpy.uint32(30), numpy.uint64(40)), 100),
         (
-            (numpy.float_(10), numpy.float16(20), numpy.float32(30), numpy.float64(40)),
+            (float(10), numpy.float16(20), numpy.float32(30), numpy.float64(40)),
             100,
         ),
         (
             (
-                numpy.complex_(10),
+                complex(10),
                 numpy.complex64(20),
                 numpy.complex64(30),
                 numpy.complex128(40),

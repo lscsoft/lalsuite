@@ -1065,6 +1065,10 @@ lalapps:conda:
     - .wheel
   script:
     - export PYTHON="/opt/python/$(echo ${CI_JOB_NAME} | sed 's/.*:\(.*\)-manylinux.*/\1/')/bin/python"
+    # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
+    # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
+    - ${PYTHON} -m pip install --upgrade pip
+    - ${PYTHON} -m pip install 'numpy>=2.0.0rc1'
     # Build wheel
     - ./00boot
     - SSE="solar_system_ephemerides/ephemerides"
@@ -1094,13 +1098,15 @@ lalapps:conda:
     - . /opt/local/share/macports/setupenv.bash
     # find python
     - PYTHON=$(which python$(echo ${CI_JOB_NAME} | sed 's/.*:cp\([0-9]\)\([0-9]\{1,\}\).*/\1.\2/'))
-    # Enter virtualenv so that we have a controlled version of Numpy
+    # Enter virtualenv so that we have a controlled version of Numpy.
+    # Build against numpy>=2.0.0rc1 for ABI compatibility with Numpy 1.x and 2.x.
+    # See https://numpy.org/devdocs/dev/depending_on_numpy.html#numpy-2-abi-handling.
     - ${PYTHON} -m venv env
     - source env/bin/activate
     - python -m pip install --upgrade pip
     - python -m pip install
           delocate
-          oldest-supported-numpy
+          'numpy>=2.0.0rc1'
           pip
           setuptools
           wheel
