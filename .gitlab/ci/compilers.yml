@@ -14,22 +14,6 @@
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
 
-clang:12:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-clang:12
-  variables:
-    CC: clang-12
-    CXX: clang++-12
-
-clang:13:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-clang:13
-  variables:
-    CC: clang-13
-    CXX: clang++-13
-
 clang:14:
   extends:
     - .compiler-test
