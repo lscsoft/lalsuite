@@ -17,7 +17,7 @@
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el7-testing
+  image: igwn/lalsuite-dev:el8-testing
   variables:
     CONFIGURE_FLAGS: "--disable-lalapps --disable-doxygen --disable-swig"
   artifacts:
@@ -117,7 +117,7 @@ lint:authors:
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el7
+  image: igwn/lalsuite-dev:el8
   variables:
     # this jobs needs the full Git history to update the authors
     GIT_STRATEGY: fetch
@@ -142,7 +142,7 @@ lint:depends:
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el7
+  image: igwn/lalsuite-dev:el8
   before_script:
     - python3 -m pip install --upgrade pip
     - python3 -m pip install
@@ -160,7 +160,7 @@ lint:gitignore:
   extends:
     - .build-job
     - .lint
-  image: igwn/lalsuite-dev:el7
+  image: igwn/lalsuite-dev:el8
   variables:
     # TODO: this can be removed when all packages require python>=3
     #       on their own
