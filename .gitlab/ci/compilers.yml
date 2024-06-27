@@ -72,6 +72,18 @@ clang:17:
     # disable octave bindings
     CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
+clang:18:
+  extends:
+    - .compiler-test
+  image: igwn/lalsuite-dev-clang:18
+  variables:
+    CC: clang-18
+    CXX: clang++-18
+    # weird bugs when compiling with CFLAGS=-O3
+    CFLAGS: "-O2"
+    # disable octave bindings
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
+
 clang:dev:
   extends:
     - .compiler-test
