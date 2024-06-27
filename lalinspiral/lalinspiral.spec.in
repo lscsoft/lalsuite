@@ -109,7 +109,6 @@ Summary: Python %{python3_version} bindings for LALInspiral
 Requires: lib%{name} = %{version}-%{release}
 Requires: python%{python3_pkgversion}
 Requires: python%{python3_pkgversion}-lal >= @MIN_LAL_VERSION@
-Requires: python%{python3_pkgversion}-lalburst
 Requires: python%{python3_pkgversion}-lalframe >= @MIN_LALFRAME_VERSION@
 Requires: python%{python3_pkgversion}-lalmetaio >= @MIN_LALMETAIO_VERSION@
 Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSION@
