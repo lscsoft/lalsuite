@@ -1338,9 +1338,9 @@ wheel:cp312-cp312-macos-arm64:
     - !reference [.ci-merge-build, rules]
 
 .long-test-job:
-  image: igwn/lalsuite-dev:el7-testing
+  image: igwn/lalsuite-dev:el8-testing
   extends:
-    - .rpmbuild:el7
+    - .rpmbuild:el8
     - .integration-tests
   before_script:
     # init yum stuff from the template
@@ -1375,13 +1375,13 @@ lalinference_testjob:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
   needs:
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
-    - lalinspiral:rpm-el7
-    - lalinference:rpm-el7
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
   artifacts:
     expire_in: 18h
     paths:
@@ -1412,13 +1412,13 @@ lalpulsar_longtests:
     - make -j${CPU_COUNT} check -C bin/longtests/ LONGTESTS=1
   needs:
     - tarballs
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
-    - lalinspiral:rpm-el7
-    - lalinference:rpm-el7
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
   artifacts:
     # upload some files to debug failures
     paths:
@@ -1426,7 +1426,7 @@ lalpulsar_longtests:
     when: on_failure
 
 top-level:
-  image: igwn/lalsuite-dev:el7-testing
+  image: igwn/lalsuite-dev:el8-testing
   needs: []
   extends:
     - .make-distcheck
