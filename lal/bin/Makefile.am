@@ -36,8 +36,8 @@ test_programs += lal_simd_detect
 test_programs += lal_version
 
 # Add shell, Python, etc. test scripts to this variable
-test_scripts += test_cache
-test_scripts += test_tconvert
+test_scripts += test_cache.sh
+test_scripts += test_tconvert.sh
 
 # Add any helper programs required by tests to this variable
 test_helpers +=
@@ -60,7 +60,7 @@ pybin_scripts = \
 	$(END_OF_LIST)
 
 # Add shell, Python, etc. test scripts to this variable
-test_scripts += test_path2cache
+test_scripts += test_path2cache.sh
 
 endif
 

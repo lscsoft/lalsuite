@@ -1,5 +1,3 @@
-#!/bin/bash
-
 set -ex
 
 # doesn't need to be a real frame file, only name is parsed
