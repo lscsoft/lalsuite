@@ -1,4 +1,3 @@
-#
 make ChirpSpace
 make CoarseTest
 make CoarseTest2
