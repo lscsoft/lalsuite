@@ -1,7 +1,7 @@
 BUILT_SOURCES =
 EXTRA_DIST =
 MOSTLYCLEANFILES =
-TESTS =
+include $(top_srcdir)/gnuscripts/lalsuite_test.am
 include $(top_srcdir)/gnuscripts/lalsuite_help2man.am
 include $(top_srcdir)/gnuscripts/lalsuite_python.am
 
@@ -42,13 +42,7 @@ clean-execs-tested-logs:
 		echo '# empty' > "$${file}"; \
 	done
 
-TESTS += check_execs_are_tested
-EXTRA_DIST += check_execs_are_tested
-
-TESTS_ENVIRONMENT = \
-	$(TESTS_ENV_CONFIG_VARS) \
-	export builddir; builddir='$(builddir)';
-	$(END_OF_LIST)
+test_scripts += check_execs_are_tested.sh
 
 # -- C programs -------------
 
@@ -58,9 +52,14 @@ bin_PROGRAMS = \
 
 lalpulsar_version_SOURCES = version.c
 
-TESTS += \
-	lalpulsar_version \
-	$(END_OF_LIST)
+# Add compiled test programs to this variable
+test_programs += lalpulsar_version
+
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
+
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
 # -- Python programs --------
 
@@ -69,8 +68,14 @@ if HAVE_PYTHON
 pybin_scripts = \
 	$(END_OF_LIST)
 
-TESTS += \
-	$(END_OF_LIST)
+# Add compiled test programs to this variable
+test_programs +=
+
+# Add shell, Python, etc. test scripts to this variable
+test_scripts +=
+
+# Add any helper programs required by tests to this variable
+test_helpers +=
 
 endif
 

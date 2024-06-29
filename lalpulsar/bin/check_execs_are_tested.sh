@@ -1,8 +1,6 @@
-#!/bin/bash
-
 set -e
 
-if [ "${HAVE_PYTHON}" = false ]; then
+if test "${HAVE_PYTHON}" = false; then
 
     echo "WARNING: cannot check that all C executables under lalpulsar/bin/ have been tested"
     echo "         without Python, since some tests for C executables are written in Python"
@@ -12,7 +10,7 @@ if [ "${HAVE_PYTHON}" = false ]; then
 
 fi
 
-tested_logfiles=`find ${builddir} -name '.tested_*.log' | sort`
+tested_logfiles=`find ${LAL_TEST_BUILDDIR} -name '.tested_*.log' | sort`
 
 not_tested=`awk '
     BEGIN {
