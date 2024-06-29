@@ -9,7 +9,7 @@ my $check_name = lc($description);
 $check_name =~ s/\W/-/g;
 $check_name =~ s/--+/-/g;
 
-my ($file, $sha1range, $begin, $end);
+my ($file, $sha1range);
 
 my $first = 1;
 
@@ -25,8 +25,15 @@ while (<DIFF>) {
     $sha1range = $1;
   }
 
+  my $begin;
   if (m|^@@ -(\d+)|) {
     $begin = $1;
+  }
+  if (m|^old mode|) {
+    $begin = 1;
+  }
+
+  if (defined($begin)) {
 
     if ($first) {
       $first = 0;
