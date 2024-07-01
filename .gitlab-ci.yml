@@ -327,11 +327,6 @@ default:
     - !reference [.ci-lalsuite-tag-build, rules]
     - !reference [.ci-docker, rules]
 
-.rpmbuild:el7:
-  extends:
-    - .rpmbuild
-  image: igwn/base:el7-testing
-
 .rpmbuild:el8:
   extends:
     - .rpmbuild
@@ -604,7 +599,7 @@ default:
 # a job called `tarball:<subpackage>` that
 # `extends` this one (see `tarball:lal` below)
 .make-dist:
-  image: igwn/lalsuite-dev:el7
+  image: igwn/lalsuite-dev:el8
   stage: tarballs
   needs: []
   extends:
@@ -654,11 +649,6 @@ tarball:lal:
   needs:
     - tarball:lal
 
-lal:rpm-el7:
-  extends:
-     - .rpmbuild:el7
-     - .lal
-
 lal:rpm-el8:
   extends:
      - .rpmbuild:el8
@@ -693,14 +683,6 @@ lal:conda:mkl:
 .lalframe:
   stage: LALFrame
 
-lalframe:rpm-el7:
-  extends:
-    - .rpmbuild:el7
-    - .lalframe
-  needs:
-    - tarballs
-    - lal:rpm-el7
-
 lalframe:rpm-el8:
   extends:
     - .rpmbuild:el8
@@ -733,14 +715,6 @@ lalframe:conda:
 .lalmetaio:
   stage: LALMetaIO
 
-lalmetaio:rpm-el7:
-  extends:
-    - .rpmbuild:el7
-    - .lalmetaio
-  needs:
-    - tarballs
-    - lal:rpm-el7
-
 lalmetaio:rpm-el8:
   extends:
     - .rpmbuild:el8
@@ -772,14 +746,6 @@ lalmetaio:conda:
 
 .lalsimulation:
   stage: LALSimulation
-
-lalsimulation:rpm-el7:
-  extends:
-    - .rpmbuild:el7
-    - .lalsimulation
-  needs:
-    - tarballs
-    - lal:rpm-el7
 
 lalsimulation:rpm-el8:
   extends:
@@ -814,16 +780,6 @@ lalsimulation:conda:
 
 .lalburst:
   stage: LALBurst
-
-lalburst:rpm-el7:
-  extends:
-    - .rpmbuild:el7
-    - .lalburst
-  needs:
-    - tarballs
-    - lal:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
 
 lalburst:rpm-el8:
   extends:
@@ -862,18 +818,6 @@ lalburst:conda:
 
 .lalinspiral:
   stage: LALInspiral
-
-lalinspiral:rpm-el7:
-  extends:
-    - .rpmbuild:el7
-    - .lalinspiral
-  needs:
-    - tarballs
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
 
 lalinspiral:rpm-el8:
   extends:
@@ -918,19 +862,6 @@ lalinspiral:conda:
 
 .lalinference:
   stage: LALInference
-
-lalinference:rpm-el7:
-  extends:
-    - .rpmbuild:el7
-    - .lalinference
-  needs:
-    - tarballs
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
-    - lalinspiral:rpm-el7
 
 lalinference:rpm-el8:
   extends:
@@ -978,20 +909,6 @@ lalinference:conda:
 
 .lalpulsar:
   stage: LALPulsar
-
-lalpulsar:rpm-el7:
-  extends:
-    - .rpmbuild:el7
-    - .lalpulsar
-  needs:
-    - tarballs
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
-    - lalinspiral:rpm-el7
-    - lalinference:rpm-el7
 
 lalpulsar:rpm-el8:
   extends:
@@ -1042,21 +959,6 @@ lalpulsar:conda:
 
 .lalapps:
   stage: LALApps
-
-lalapps:rpm-el7:
-  extends:
-    - .rpmbuild:el7
-    - .lalapps
-  needs:
-    - tarballs
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
-    - lalinspiral:rpm-el7
-    - lalinference:rpm-el7
-    - lalpulsar:rpm-el7
 
 lalapps:rpm-el8:
   extends:
@@ -1338,9 +1240,9 @@ wheel:cp312-cp312-macos-arm64:
     - !reference [.ci-merge-build, rules]
 
 .long-test-job:
-  image: igwn/lalsuite-dev:el7-testing
+  image: igwn/lalsuite-dev:el8-testing
   extends:
-    - .rpmbuild:el7
+    - .rpmbuild:el8
     - .integration-tests
   before_script:
     # init yum stuff from the template
@@ -1375,13 +1277,13 @@ lalinference_testjob:
     - git lfs clone https://git.ligo.org/lscsoft/ROQ_data --include "**/params.dat,*/4s/**"
     - bash lalinference/test/lalinference_nestedSampling_integration_test.sh
   needs:
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
-    - lalinspiral:rpm-el7
-    - lalinference:rpm-el7
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
   artifacts:
     expire_in: 18h
     paths:
@@ -1412,13 +1314,13 @@ lalpulsar_longtests:
     - make -j${CPU_COUNT} check -C bin/longtests/ LONGTESTS=1
   needs:
     - tarballs
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
-    - lalinspiral:rpm-el7
-    - lalinference:rpm-el7
+    - lal:rpm-el8
+    - lalframe:rpm-el8
+    - lalmetaio:rpm-el8
+    - lalsimulation:rpm-el8
+    - lalburst:rpm-el8
+    - lalinspiral:rpm-el8
+    - lalinference:rpm-el8
   artifacts:
     # upload some files to debug failures
     paths:
@@ -1426,7 +1328,7 @@ lalpulsar_longtests:
     when: on_failure
 
 top-level:
-  image: igwn/lalsuite-dev:el7-testing
+  image: igwn/lalsuite-dev:el8-testing
   needs: []
   extends:
     - .make-distcheck
@@ -1486,21 +1388,6 @@ top-level:pulsar:
       EOF
     # install new packages
     - yum -y upgrade
-
-upgrade:rpm-el7:
-  extends:
-    - .rpmbuild:el7
-    - .upgrade:rpm
-  needs:
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
-    - lalinspiral:rpm-el7
-    - lalinference:rpm-el7
-    - lalpulsar:rpm-el7
-    - lalapps:rpm-el7
 
 upgrade:rpm-el8:
   extends:

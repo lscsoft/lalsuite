@@ -65,22 +65,6 @@
   extends:
     - .docker
 
-.docker:el7:
-  variables:
-    DOCKER_FILE: ".gitlab-ci-el7.Dockerfile"
-  extends:
-    - .docker:el
-  needs:
-    - lal:rpm-el7
-    - lalframe:rpm-el7
-    - lalmetaio:rpm-el7
-    - lalsimulation:rpm-el7
-    - lalburst:rpm-el7
-    - lalinspiral:rpm-el7
-    - lalinference:rpm-el7
-    - lalpulsar:rpm-el7
-    - lalapps:rpm-el7
-
 .docker:el8:
   variables:
     DOCKER_FILE: ".gitlab-ci-el8.Dockerfile"
@@ -115,14 +99,6 @@
     - lalapps:deb
 
 # build nightly containers from the RPMs
-docker:nightly:el7:
-  before_script:
-    - !reference [.container_snippets, nightly_image]
-    - !reference [.container_snippets, rhel]
-  extends:
-    - .docker:el7
-    - .docker:nightly
-
 docker:nightly:el8:
   before_script:
     - !reference [.container_snippets, nightly_image]
@@ -132,14 +108,6 @@ docker:nightly:el8:
     - .docker:nightly
 
 # build tagged containers from the rpms
-docker:tags:el7:
-  before_script:
-    - !reference [.container_snippets, tag_image]
-    - !reference [.container_snippets, rhel]
-  extends:
-    - .docker:el7
-    - .docker:tags
-
 docker:tags:el8:
   before_script:
     - !reference [.container_snippets, tag_image]
