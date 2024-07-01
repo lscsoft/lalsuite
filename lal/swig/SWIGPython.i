@@ -882,12 +882,13 @@ SWIGINTERN bool swiglal_release_parent(void *ptr) {
           *pdescr = PyArray_DescrFromType(typenum);
         }
       }
-    } else {
-      // PyArray_NewFromDescr steals a reference to the descriptor passed to it:
-      //   https://numpy.org/devdocs/reference/c-api/array.html#from-scratch
-      // so a reference count increment is needed here.
-      Py_INCREF(*pdescr);
     }
+
+    // PyArray_NewFromDescr steals a reference to the descriptor passed to it:
+    //   https://numpy.org/devdocs/reference/c-api/array.html#from-scratch
+    // so a reference count increment is needed here.
+    Py_XINCREF(*pdescr);
+
     return *pdescr;
   }
 
