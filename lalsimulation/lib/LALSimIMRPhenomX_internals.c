@@ -324,7 +324,7 @@ int IMRPhenomXSetWaveformVariables(
       lambda1_In = XLALSimInspiralWaveformParamsLookupTidalLambda1(LALParams);
       lambda2_In = XLALSimInspiralWaveformParamsLookupTidalLambda2(LALParams);
       if( lambda1_In < 0 || lambda2_In < 0 )
-                XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for NRTidalv2", lambda1_In, lambda2_In);
+                XLAL_ERROR(XLAL_EFUNC, "lambda1 = %f, lambda2 = %f. Both should be greater than zero for NRTidalv2 and NRTidalv3", lambda1_In, lambda2_In);
       
       int retcode;
       
@@ -2877,7 +2877,7 @@ NRTidal_version_type IMRPhenomX_SetTidalVersion(LALDict *lalParams){
 			  break;
           default:
               {
-                  XLAL_ERROR(XLAL_EINVAL, "Error: Tidal version not recognized. Only NRTidal, NRTidalv2, and NoNRT are allowed, and NRTidal is not implemented completely in IMRPhenomX*.\n");
+                  XLAL_ERROR(XLAL_EINVAL, "Error: Tidal version not recognized. Only NRTidal, NRTidalv2, NRTidalv3, and NoNRT are allowed, and NRTidal is not implemented completely in IMRPhenomX*.\n");
               }
     }
     return(version);
@@ -3269,7 +3269,7 @@ REAL8 IMRPhenomX_TidalPhaseDerivative(IMRPhenomX_UsefulPowers *powers_of_Mf, IMR
     }	
     else
     {
-      XLAL_ERROR( XLAL_EINVAL, "Error in IMRPhenomX_TidalPhaseDerivative: Unsupported NRTidal_version. This function currently only supports NRTidalv2.\n");
+      XLAL_ERROR( XLAL_EINVAL, "Error in IMRPhenomX_TidalPhaseDerivative: Unsupported NRTidal_version. This function currently only supports NRTidalv2 and NRTidalv3.\n");
     }
     
       dphase+=NRTuned_dphase;
