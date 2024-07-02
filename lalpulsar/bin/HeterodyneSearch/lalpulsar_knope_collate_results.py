@@ -30,7 +30,7 @@ import datetime
 import os
 import re
 import sys
-from six.moves.configparser import ConfigParser
+from configparser import ConfigParser
 
 # related third party imports
 import numpy as np

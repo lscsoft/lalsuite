@@ -3,7 +3,7 @@
 # 2013 Salvatore Vitale: extended to work with several ini files
 
 from lalinference import lalinference_pipe_utils as pipe_utils
-from six.moves import configparser
+import configparser
 from optparse import OptionParser
 import sys
 

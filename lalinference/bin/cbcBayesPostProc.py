@@ -33,9 +33,7 @@
 import sys
 import os
 import socket
-
-from six.moves import cPickle as pickle
-
+import pickle
 from time import strftime
 
 #related third party imports

@@ -30,7 +30,6 @@
 Populate a sim_inspiral table with random draws from an ASCII table.
 """
 from optparse import Option, OptionParser
-from six.moves import range
 import numpy as np
 from ligo.lw import ligolw
 from ligo.lw import lsctables

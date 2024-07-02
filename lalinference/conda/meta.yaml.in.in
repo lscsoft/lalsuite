@@ -274,7 +274,6 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
         - python-ligo-lw  # [build_platform == target_platform]
         - scipy >=0.9.0,<1.14  # [build_platform == target_platform]
-        - six  # [build_platform == target_platform]
       run:
         - astropy >=1.1.1
         - gsl  # [mpi != 'nompi']
@@ -293,7 +292,6 @@ outputs:
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-ligo-lw >={{ python_ligo_lw_version }}
         - scipy >=0.9.0,<1.14
-        - six
     test:
       requires:
         - cpnest

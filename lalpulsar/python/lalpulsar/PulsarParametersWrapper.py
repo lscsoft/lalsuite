@@ -25,8 +25,6 @@ from __future__ import division, absolute_import, print_function
 import os
 import re
 
-from six import string_types
-
 import numpy as np
 
 from astropy import units as u
@@ -265,9 +263,7 @@ class PulsarParametersPy(object):
             self._pulsarparameters = lalpulsar.PulsarParameters()
         else:
             # check if pp is a pulsar parameters type or a (par file)
-            if not isinstance(pp, lalpulsar.PulsarParameters) and isinstance(
-                pp, string_types
-            ):
+            if not isinstance(pp, lalpulsar.PulsarParameters) and isinstance(pp, str):
                 if os.path.isfile(pp):
                     # try reading in file
                     self.read(pp)
@@ -391,7 +387,7 @@ class PulsarParametersPy(object):
 
         if isinstance(value, float):
             lalpulsar.PulsarAddREAL8Param(self._pulsarparameters, key, value)
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             lalpulsar.PulsarAddStringParam(self._pulsarparameters, key, value)
         elif isinstance(value, int):
             if value < 0.0:  # store negative integers as floats
@@ -422,7 +418,7 @@ class PulsarParametersPy(object):
                 list containing unit classes for a list or :class:`numpy.ndarray`
         """
 
-        if isinstance(value, string_types):
+        if isinstance(value, str):
             # don't make any changes for a string type
             return value
 
@@ -505,7 +501,7 @@ class PulsarParametersPy(object):
                 if abs(value) / 1e-12 > 1e-7:
                     value /= 1e-12
 
-            if isinstance(value, string_types):
+            if isinstance(value, str):
                 return value
             else:
                 return value * u.dimensionless_unscaled
@@ -780,7 +776,7 @@ class PulsarParametersPy(object):
                     for tv, te in zip(uvalue, uevalue):
                         tvalue.append(tv.value)
                         tevalue.append(te.value)
-                elif isinstance(uvalue, string_types):
+                elif isinstance(uvalue, str):
                     tvalue = uvalue
                     tevalue = uevalue.value
                 else:

@@ -21,7 +21,7 @@ import smtplib
 import stat
 
 import argparse
-from six.moves.configparser import RawConfigParser
+from configparser import RawConfigParser
 
 from lalpulsar import git_version
 

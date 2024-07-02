@@ -32,7 +32,6 @@ Build-Depends:
  python3-lalmetaio (>= @MIN_LALMETAIO_VERSION@~),
  python3-lalpulsar (>= @MIN_LALPULSAR_VERSION@~),
  python3-lalsimulation (>= @MIN_LALSIMULATION_VERSION@~),
- python3-six,
 X-Python3-Version: >= 3.5
 Standards-Version: 3.9.8
 
@@ -63,7 +62,6 @@ Depends:
  python3-lalinference (>= @MIN_LALINFERENCE_VERSION@~),
  python3-ligo-segments,
  python3-ligo-lw (>= @MIN_PYTHON_LIGO_LW_VERSION@~),
- python3-six,
  python3-tqdm,
 Breaks: lalinference-python (<< 1.9.4.1-1~)
 Description: LVK Algorithm Library Applications
