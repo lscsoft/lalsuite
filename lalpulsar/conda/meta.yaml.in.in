@@ -202,6 +202,7 @@ outputs:
         - mock  # [py<33]
         - pathlib  # [py<34]
         - pytest >=4.0.0a0
+        - tqdm
       source_files:
         - test/python
         - lib/*.dat.gz
