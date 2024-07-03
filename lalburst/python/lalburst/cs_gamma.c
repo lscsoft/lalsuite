@@ -37,7 +37,17 @@
 #pragma GCC diagnostic pop
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
+
+/* FIXME: see https://github.com/numpy/numpy/pull/26771 */
+#ifdef __GNUC__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#endif
 #include <numpy/arrayobject.h>
+#ifdef __GNUC__
+#pragma GCC diagnostic pop
+#endif
+
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>

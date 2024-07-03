@@ -181,8 +181,8 @@ EOD`]
     # additional preprocessor flags for NumPy
     python_out=[`cat <<EOD | ${PYTHON} - 2>/dev/null
 import sys
-import numpy.lib.utils as npyutil
-sys.stdout.write(' -I' + npyutil.get_include())
+import numpy
+sys.stdout.write(' -I' + numpy.get_include())
 EOD`]
     AS_IF([test $? -ne 0],[
         AC_MSG_ERROR([could not determine NumPy preprocessor flags])
