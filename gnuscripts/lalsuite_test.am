@@ -52,3 +52,18 @@ PY_LOG_COMPILER = $(test_script_compiler) "$(PYTHON)" -u
 
 test-mostlyclean-local:
 	-rm -rf __pycache__ .pytest_cache junit*.xml
+
+internal_scripts_sh =
+.PHONY: $(internal_scripts_sh)
+$(internal_scripts_sh):
+	@$(TESTS_ENVIRONMENT)$(SH_LOG_COMPILER) $(srcdir)/$@
+
+internal_scripts_py =
+.PHONY: $(internal_scripts_py)
+if HAVE_PYTHON
+$(internal_scripts_py):
+	@$(TESTS_ENVIRONMENT)$(PY_LOG_COMPILER) $(srcdir)/$@
+else
+$(internal_scripts_py):
+	@echo "ERROR: cannot run $@, Python unavailable" >&2; exit 1
+endif

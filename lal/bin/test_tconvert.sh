@@ -1,5 +1,3 @@
-#!/bin/bash
-
 set -ex
 
 test "$(./lal_tconvert --rfc-2822 800000000)" == "Fri, 13 May 2005 06:13:07 +0000"

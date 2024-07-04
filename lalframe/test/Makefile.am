@@ -29,10 +29,10 @@ BUILT_SOURCES = \
 	$(END_OF_LIST)
 
 catalog:
-	$(AM_V_GEN)$(srcdir)/mkcatalog.sh $@ $(srcdir) $(pkgdatadir)
+	$(AM_V_GEN)$(SHELL) $(srcdir)/mkcatalog.sh $@ $(srcdir) $(pkgdatadir)
 
 catalog.test:
-	$(AM_V_GEN)$(srcdir)/mkcatalog.sh $@ $(srcdir) $(srcdir); \
+	$(AM_V_GEN)$(SHELL) $(srcdir)/mkcatalog.sh $@ $(srcdir) $(srcdir); \
 	echo "X EMPTY 0 0 file:///dev/null" >> $@
 
 MOSTLYCLEANFILES = \

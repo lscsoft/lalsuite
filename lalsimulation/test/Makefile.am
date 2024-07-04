@@ -59,4 +59,5 @@ EXTRA_DIST += \
 
 if HAVE_PYTHON
 SUBDIRS += python
+internal_scripts_py += GenerateReferenceWaveform.py
 endif
