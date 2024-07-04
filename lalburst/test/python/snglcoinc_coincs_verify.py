@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 from bisect import bisect_left, bisect_right
 import functools
 import itertools
