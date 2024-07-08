@@ -926,7 +926,7 @@ int IMRPhenomXHMMultiBandOneMode(
           phaseTidal += pfaN * pPhase22->c2PN_tidal* powers_of_lalpi.m_one_third * powers_of_f.m_one_third;
           /* 3PN terms */
           phaseTidal += pfaN * pPhase22->c3PN_tidal* powers_of_lalpi.one_third * powers_of_f.one_third;
-          /* 3.5PN terms are only in NRTidalv2 */
+          /* 3.5PN terms are only in NRTidalv2 and NRTidalv3 */
           if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
               phaseTidal += pfaN * pPhase22->c3p5PN_tidal * powers_of_lalpi.two_thirds * powers_of_f.two_thirds;
           }

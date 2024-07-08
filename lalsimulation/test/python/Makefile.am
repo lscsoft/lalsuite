@@ -24,6 +24,9 @@ test_scripts += \
 	test_gwsignal.py \
 	test_SEOBNRv5HM_ROM.py \
 	test_SEOBNRv4HM_PA.py \
+	test_IMRPhenomXAS_NRTidalv3.py \
+	test_IMRPhenomXP_NRTidalv3.py \
+	test_SEOBNRv5_ROM_NRTidalv3.py \
 	$(END_OF_LIST)
 
 EXTRA_DIST += \

@@ -2342,7 +2342,7 @@ int IMRPhenomXPGenerateFD(
         amp = IMRPhenomX_Intermediate_Amp_22_Ansatz(Mf, &powers_of_Mf, pWF, pAmp22);
       }
 
-      /* Add NRTidal phase, if selected, code adapted from LALSimIMRPhenomP.c */
+      /* Add NRTidal phase, if selected, code adapted from LALSimIMRPhenomP.c; the following is unused in generating IMRPhenomXP_NRTidalv2/3 waveforms using GeneratorLegacy.c */
 
       if (NRTidal_version == NRTidal_V || NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
           
@@ -2358,7 +2358,7 @@ int IMRPhenomXPGenerateFD(
           phaseTidal += pfaN * pPhase22->c3PN_tidal* powers_of_lalpi.one_third* powers_of_Mf.one_third;
 
           /* 3.5PN terms are only in NRTidalv2 */
-          if (NRTidal_version == NRTidalv2_V) {
+          if (NRTidal_version == NRTidalv2_V || NRTidal_version == NRTidalv3_V) {
               phaseTidal += pfaN * pPhase22->c3p5PN_tidal * powers_of_lalpi.two_thirds * powers_of_Mf.two_thirds;
           }
           
@@ -2372,7 +2372,7 @@ int IMRPhenomXPGenerateFD(
       }
       
       else {
-            XLAL_PRINT_INFO("Warning: Only NRTidal, NRTidalv2, and NoNRT NRTidal_version values allowed and NRTidal is not implemented completely in IMRPhenomX*.");
+            XLAL_PRINT_INFO("Warning: Only NRTidal, NRTidalv2, NRTidalv3, and NoNRT NRTidal_version values allowed and NRTidal is not implemented completely in IMRPhenomX*.");
             }
 
         /* Transform modes from co-precessing frame to inertial frame */
