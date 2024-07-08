@@ -37,5 +37,7 @@ EXTRA_DIST += \
 	ConfigFileSample2.cfg \
 	ConfigFileSample3.cfg.gz \
 	StreamInput.data \
-	StreamSeriesInput.data
+	StreamSeriesInput.data \
+	hdf5_attr_ascii.h5 \
+	hdf5_attr_utf8.h5 \
 	$(END_OF_LIST)
