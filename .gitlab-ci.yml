@@ -79,6 +79,7 @@ cache:
     - .cache
 
 variables:
+  PIPELINE_NAME: "LALSuite CI/CD"
   # run autoreconf in pedantic and loud mode
   AUTORECONF: "autoreconf --verbose --warnings=error"
   # version of python to use for builds
