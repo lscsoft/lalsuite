@@ -222,7 +222,7 @@ lint:python:
     - .python:flake8
     - .lint
   variables:
-    FLAKE8_PLUGINS: "flake8-executable"
+    REQUIREMENTS: "flake8-executable"
   artifacts:
     paths:
       - flake8*.json
