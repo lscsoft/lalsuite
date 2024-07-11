@@ -32,6 +32,7 @@
 #include <gsl/gsl_matrix.h>
 
 #include <lal/LALSimIMR.h>
+#include <lal/H5FileIO.h>
 
 
 //*************************************************************************/

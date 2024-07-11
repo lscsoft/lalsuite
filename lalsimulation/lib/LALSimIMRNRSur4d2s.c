@@ -53,6 +53,7 @@
 #include <lal/SphericalHarmonics.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
+#include <lal/H5FileIO.h>
 
 #include "LALSimIMRSEOBNRROMUtilities.c"
 #include "gsl_bspline_basis.h"
@@ -61,7 +62,6 @@
 #ifdef LAL_PTHREAD_LOCK
 #include <pthread.h>
 #endif
-
 
 /******* Surrogate model parameter space ********/
 static const double Q_MIN = 1.;
@@ -328,11 +328,11 @@ static bool NRSurrogate_IsSetup(void) {
 // Read binary ROM data for basis functions and coefficients for submodel 1
 static int load_data_sub(
   const int i_mode,
-  LALH5File *file,
-  gsl_vector *cvec_re,
-  gsl_vector *cvec_im,
-  gsl_matrix *EI_re,
-  gsl_matrix *EI_im
+  UNUSED LALH5File *file,
+  UNUSED gsl_vector *cvec_re,
+  UNUSED gsl_vector *cvec_im,
+  UNUSED gsl_matrix *EI_re,
+  UNUSED gsl_matrix *EI_im
 ) {
   // Load H5 data sets for spline coefficients and empirical interpolation matrix
 
@@ -341,6 +341,7 @@ static int load_data_sub(
   if (i_mode > 9) name_length = 23;
   char *dataset_name = malloc(name_length);
 
+#ifdef LAL_HDF5_ENABLED
   snprintf(dataset_name, name_length, "NRSurrogate_cre_%d", i_mode);
   ret |= ReadHDF5RealVectorDataset(file, dataset_name, &cvec_re);
 
@@ -352,6 +353,9 @@ static int load_data_sub(
 
   snprintf(dataset_name, name_length, "NRSurrogate_EIi_%d.dat", i_mode);
   ret |= ReadHDF5RealMatrixDataset(file, dataset_name, &EI_im);
+#else
+  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+#endif
 
   free(dataset_name);
   return(ret);
@@ -673,7 +677,12 @@ int NRSurrogateData_Init(NRSurrogateData *data, const char dir[]) {
 
   /* Load frequency samples */
   data->fEI = gsl_vector_calloc(n_freqs);
-  ret |= ReadHDF5RealVectorDataset(file, "freqs", &(data->fEI));
+
+  #ifdef LAL_HDF5_ENABLED
+    ret |= ReadHDF5RealVectorDataset(file, "freqs", &(data->fEI));
+  #else
+    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+  #endif
 
   XLALH5FileClose(file);
 

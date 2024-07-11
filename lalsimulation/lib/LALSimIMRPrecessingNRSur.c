@@ -219,7 +219,12 @@ static int PrecessingNRSur_Init(
 
     // Get the dynamics time nodes
     gsl_vector *t_ds_with_halves = NULL;
-    ReadHDF5RealVectorDataset(file, "t_ds", &t_ds_with_halves);
+    #ifdef LAL_HDF5_ENABLED
+        ReadHDF5RealVectorDataset(file, "t_ds", &t_ds_with_halves);
+    #else
+        XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+    #endif
+
     gsl_vector *t_ds = gsl_vector_alloc(t_ds_with_halves->size - 3);
     gsl_vector *t_ds_half_times = gsl_vector_alloc(3);
     for (i=0; i < 3; i++) {
@@ -263,7 +268,13 @@ static int PrecessingNRSur_Init(
 
     // Get the coorbital time array
     gsl_vector *t_coorb = NULL;
+
+#ifdef LAL_HDF5_ENABLED
     ReadHDF5RealVectorDataset(file, "t_coorb", &t_coorb);
+#else
+    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+#endif
+
     data->t_coorb = t_coorb;
 
     // Load coorbital waveform surrogate data
@@ -284,7 +295,7 @@ static int PrecessingNRSur_Init(
  */
 static void PrecessingNRSur_LoadFitData(
     FitData **fit_data, /**< Output: Data struct for fit data. Should be NULL; Will malloc space and load data into it. */
-    LALH5File *sub,     /**< Subgroup containing fit data. */
+    UNUSED LALH5File *sub,     /**< Subgroup containing fit data. */
     const char *name    /**< fit name. */
 ) {
     *fit_data = XLALMalloc(sizeof(FitData));
@@ -296,6 +307,8 @@ static void PrecessingNRSur_LoadFitData(
     nwritten = snprintf(tmp_name, str_size, "%s_coefs", name);
     XLAL_CHECK_ABORT(nwritten < str_size);
     (*fit_data)->coefs = NULL;
+    
+#ifdef LAL_HDF5_ENABLED
     ReadHDF5RealVectorDataset(sub, tmp_name, &((*fit_data)->coefs));
 
     nwritten = snprintf(tmp_name, str_size, "%s_bfOrders", name);
@@ -303,6 +316,9 @@ static void PrecessingNRSur_LoadFitData(
     (*fit_data)->basisFunctionOrders = NULL;
     ReadHDF5LongMatrixDataset(sub, tmp_name,
             &((*fit_data)->basisFunctionOrders));
+#else
+    XLAL_CHECK_ABORT(true);
+#endif
 
     (*fit_data)->n_coefs = (*fit_data)->coefs->size;
 }
@@ -355,6 +371,8 @@ static void PrecessingNRSur_LoadDynamicsNode(
 
     // For NRSur7dq2 vector fits are done for omega_orb, chiA_dot and chiB_dot
     if (PrecessingNRSurVersion == 0){
+
+        #if LAL_HDF5_ENABLED
         // omega_copr
         VectorFitData *omega_copr_data = XLALMalloc(sizeof(VectorFitData));
         omega_copr_data->coefs = NULL;
@@ -402,6 +420,10 @@ static void PrecessingNRSur_LoadDynamicsNode(
         }
         chiB_dot_data->vec_dim = 3;
         ds_node_data[i]->chiB_dot_data = chiB_dot_data;
+
+    #else
+        XLAL_CHECK_ABORT(true);
+    #endif
 
     // For NRSur7dq4 the vector fits are done simply as a vector of scalar
     // fits, so we just need to loop over the indices.
@@ -491,12 +513,13 @@ static void PrecessingNRSur_LoadCoorbitalEllModes(
  * This is only called during the initialization of the surrogate data through PrecessingNRSur_Init.
  */
 static void PrecessingNRSur_LoadWaveformDataPiece(
-    LALH5File *sub,             /**< HDF5 group containing data for this waveform data piece */
+    UNUSED LALH5File *sub,             /**< HDF5 group containing data for this waveform data piece */
     WaveformDataPiece **data,   /**< Output - *data should be NULL. Space will be allocated. */
-    bool invert_sign            /**< If true, multiply the empirical interpolation matrix by -1. */
+    UNUSED bool invert_sign            /**< If true, multiply the empirical interpolation matrix by -1. */
 ) {
     *data = XLALMalloc(sizeof(WaveformDataPiece));
 
+#if LAL_HDF5_ENABLED
     gsl_matrix *EI_basis = NULL;
     ReadHDF5RealMatrixDataset(sub, "EIBasis", &EI_basis);
     if (invert_sign) {
@@ -526,6 +549,10 @@ static void PrecessingNRSur_LoadWaveformDataPiece(
         node_data->n_coefs = node_data->coefs->size;
         (*data)->fit_data[i] = node_data;
     }
+
+#else
+    XLAL_CHECK_ABORT(true);
+#endif
 }
 
 

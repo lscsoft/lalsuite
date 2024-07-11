@@ -123,7 +123,7 @@ static int NRHybSur_LoadDataPiece(
     DataPiece **data_piece,   /**< Output: Waveform data piece. *data_piece
                                 should be NULL. Space will be allocated. */
     LALH5File *file,          /**< Opened HDF5 file. */
-    const char *sub_grp_name  /**< H5 group name. */
+    UNUSED const char *sub_grp_name  /**< H5 group name. */
 ) {
 
     if (data_piece == NULL || *data_piece != NULL) {
@@ -133,13 +133,18 @@ static int NRHybSur_LoadDataPiece(
         XLAL_ERROR(XLAL_EFAULT, "file should not be NULL");
     }
 
+#ifdef LAL_HDF5_ENABLED
+
     // Open h5 group
     LALH5File *sub;
     sub = XLALH5GroupOpen(file, sub_grp_name);
     *data_piece = XLALMalloc(sizeof(DataPiece));
 
+
     gsl_matrix *ei_basis = NULL;
+
     int ret = ReadHDF5RealMatrixDataset(sub, "ei_basis", &ei_basis);
+
     if (ret != XLAL_SUCCESS) {
         XLAL_ERROR(XLAL_EFUNC, "Failed to load ei_basis.");
     }
@@ -205,7 +210,6 @@ static int NRHybSur_LoadDataPiece(
             XLAL_ERROR(XLAL_EFUNC, "Failed to load lin_intercept.");
         }
 
-
         // Load arrays needed for fit
         hyperparams->length_scale = NULL;
         ret = ReadHDF5RealVectorDataset(node_function, "length_scale",
@@ -241,12 +245,15 @@ static int NRHybSur_LoadDataPiece(
     XLALH5FileClose(sub);
 
     return ret;
+#else
+    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+#endif
 }
 
 /**
  * Loads all data pieces of a single waveform mode.
  */
-static int NRHybSur_LoadSingleModeData(
+UNUSED static int NRHybSur_LoadSingleModeData(
     ModeDataPieces **mode_data_pieces, /**< Output: Waveform data pieces of a
                                         given mode. Space will be allocated to
                                         **mode_data_pieces. */
@@ -402,7 +409,7 @@ static int NRHybSur_LoadSingleModeData(
  */
 int NRHybSur_Init(
     NRHybSurData *NR_hybsur_data, /**< Output: Struct to save surrogate data. */
-    LALH5File *file               /**< Opened HDF5 file. */
+    UNUSED LALH5File *file               /**< Opened HDF5 file. */
 ) {
 
     if (NR_hybsur_data == NULL) {
@@ -417,6 +424,7 @@ int NRHybSur_Init(
             "Model was already initialized. Ignoring.");
     }
 
+#ifdef LAL_HDF5_ENABLED
     gsl_vector *domain = NULL;
     int ret = ReadHDF5RealVectorDataset(file, "domain", &domain);
     if (ret != XLAL_SUCCESS) {
@@ -489,8 +497,11 @@ int NRHybSur_Init(
     if (ret == XLAL_SUCCESS){
         NR_hybsur_data->setup = 1;
     }
-
+    
     return ret;
+#else
+    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+#endif
 }
 
 
