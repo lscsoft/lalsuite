@@ -32,8 +32,9 @@
 #include <gsl/gsl_matrix.h>
 
 #include <lal/LALSimIMR.h>
+#ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
-
+#endif
 
 //*************************************************************************/
 //************************* struct definitions ****************************/
@@ -145,6 +146,7 @@ typedef struct tagEvaluatedDataPieces {
 } EvaluatedDataPieces;
 
 
+#ifdef LAL_HDF5_ENABLED
 //*************************************************************************/
 //************************* function declarations *************************/
 //*************************************************************************/
@@ -165,6 +167,7 @@ int NRHybSur_Init(
     NRHybSurData *data,
     LALH5File *file
     );
+#endif
 
 REAL8 NRHybSur_eval_fit(
     const NRHybSurFitData *fit_data,

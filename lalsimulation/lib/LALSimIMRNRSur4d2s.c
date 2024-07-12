@@ -62,7 +62,9 @@
 #include <pthread.h>
 #endif
 
+#ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
+#endif
 
 /******* Surrogate model parameter space ********/
 UNUSED static const double Q_MIN = 1.;

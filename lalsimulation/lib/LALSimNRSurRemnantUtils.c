@@ -43,7 +43,10 @@
 
 #include <lal/SeqFactories.h>
 #include <lal/FileIO.h>
+
+#ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
+#endif
 
 #include <lal/XLALError.h>
 #include <lal/LALConstants.h>
@@ -59,6 +62,7 @@
 //********************* Surrogate loading functions ************************/
 // These should only be called once, when initializing the surrogate
 
+#if LAL_HDF5_ENABLED
 /**
  * Loads H5 file for a NRSurRemnant model.
  */
@@ -89,7 +93,6 @@ void NRSurRemnant_LoadH5File(
     XLALFree(file_path);
 }
 
-
 /**
  * Loads a single NRSurRemnant GPR fit, as described in the supplementary
  * materials of arxiv:1809.09125.
@@ -109,11 +112,9 @@ int NRSurRemnant_LoadScalarFit(
     }
 
     // Open h5 group
-    UNUSED LALH5File *sub;
+    LALH5File *sub;
     sub = XLALH5GroupOpen(file, grp_name);
     *fit_data = XLALMalloc(sizeof(ScalarFitData));
-
-#ifdef LAL_HDF5_ENABLED
 
     // Load fit data
     GPRHyperParams *hyperparams = XLALMalloc(sizeof(GPRHyperParams));
@@ -190,13 +191,11 @@ int NRSurRemnant_LoadScalarFit(
 
     XLALH5FileClose(sub);
     return ret;
-#else
-    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
+}
 #endif
 
-}
 
-
+#if LAL_HDF5_ENABLED
 /**
  * Loads a vector of NRSurRemnant GPR fits
  */
@@ -234,7 +233,9 @@ int NRSurRemnant_LoadVectorFit(
 
     return ret;
 }
+#endif
 
+#ifdef LAL_HDF5_ENABLED
 /**
  * Initializes fit data for a precessing NRSurRemnant.
  *
@@ -257,8 +258,6 @@ int PrecessingNRSurRemnant_Init(
         XLAL_ERROR(XLAL_FAILURE,
             "Model was already initialized. Exiting.");
     }
-
-#ifdef LAL_HDF5_ENABLED
 
     // x_train contains the training parameters and are common for all fits
     gsl_matrix *x_train = NULL;
@@ -288,13 +287,10 @@ int PrecessingNRSurRemnant_Init(
     }
 
     return ret;
-
-#else
-    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
-#endif
 }
+#endif
 
-
+#if LAL_HDF5_ENABLED
 /**
  * Initializes fit data for an aligned-spin NRSurRemnant.
  *
@@ -320,7 +316,6 @@ int AlignedSpinNRSurRemnant_Init(
             "Model was already initialized. Exiting.");
     }
 
-#if LAL_HDF5_ENABLED
     // x_train contains the training parameters and are common for all fits
     gsl_matrix *x_train = NULL;
     int ret = ReadHDF5RealMatrixDataset(file, "GPR_X_train", &x_train);
@@ -353,7 +348,5 @@ int AlignedSpinNRSurRemnant_Init(
     }
 
     return ret;
-#else
-    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
-#endif
 }
+#endif

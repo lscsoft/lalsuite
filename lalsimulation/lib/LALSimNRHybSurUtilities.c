@@ -43,7 +43,10 @@
 #include <gsl/gsl_complex_math.h>
 
 #include <lal/SeqFactories.h>
+
+#ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
+#endif
 
 #include <lal/XLALError.h>
 #include <lal/LALConstants.h>
@@ -59,7 +62,7 @@
 
 
 
-
+#ifdef LAL_HDF5_ENABLED
 //********************* H5 wrapper functions ************************/
 
 /**
@@ -85,7 +88,6 @@ int ReadHDF5DoubleDataset(
     return XLAL_SUCCESS;
 }
 
-
 /**
  * Reads an INT8 value from a H5 file/group.
  */
@@ -110,9 +112,6 @@ int ReadHDF5IntDataset(
 }
 
 
-
-
-
 //********************* Surrogate loading functions ************************/
 // These should only be called once, when initializing the surrogate
 
@@ -123,7 +122,7 @@ static int NRHybSur_LoadDataPiece(
     DataPiece **data_piece,   /**< Output: Waveform data piece. *data_piece
                                 should be NULL. Space will be allocated. */
     LALH5File *file,          /**< Opened HDF5 file. */
-    UNUSED const char *sub_grp_name  /**< H5 group name. */
+    const char *sub_grp_name  /**< H5 group name. */
 ) {
 
     if (data_piece == NULL || *data_piece != NULL) {
@@ -132,8 +131,6 @@ static int NRHybSur_LoadDataPiece(
     if (file == NULL) {
         XLAL_ERROR(XLAL_EFAULT, "file should not be NULL");
     }
-
-#ifdef LAL_HDF5_ENABLED
 
     // Open h5 group
     LALH5File *sub;
@@ -245,15 +242,12 @@ static int NRHybSur_LoadDataPiece(
     XLALH5FileClose(sub);
 
     return ret;
-#else
-    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
-#endif
 }
 
 /**
  * Loads all data pieces of a single waveform mode.
  */
-UNUSED static int NRHybSur_LoadSingleModeData(
+static int NRHybSur_LoadSingleModeData(
     ModeDataPieces **mode_data_pieces, /**< Output: Waveform data pieces of a
                                         given mode. Space will be allocated to
                                         **mode_data_pieces. */
@@ -354,7 +348,6 @@ UNUSED static int NRHybSur_LoadSingleModeData(
     return ret;
 }
 
-
 /**
  * Initialize a NRHybSurData structure from an open H5 file.
  * This will typically only be called once.
@@ -409,7 +402,7 @@ UNUSED static int NRHybSur_LoadSingleModeData(
  */
 int NRHybSur_Init(
     NRHybSurData *NR_hybsur_data, /**< Output: Struct to save surrogate data. */
-    UNUSED LALH5File *file               /**< Opened HDF5 file. */
+    LALH5File *file               /**< Opened HDF5 file. */
 ) {
 
     if (NR_hybsur_data == NULL) {
@@ -424,7 +417,6 @@ int NRHybSur_Init(
             "Model was already initialized. Ignoring.");
     }
 
-#ifdef LAL_HDF5_ENABLED
     gsl_vector *domain = NULL;
     int ret = ReadHDF5RealVectorDataset(file, "domain", &domain);
     if (ret != XLAL_SUCCESS) {
@@ -499,11 +491,8 @@ int NRHybSur_Init(
     }
     
     return ret;
-#else
-    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
-#endif
 }
-
+#endif
 
 
 
