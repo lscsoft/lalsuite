@@ -53,7 +53,6 @@
 #include <lal/SphericalHarmonics.h>
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimIMR.h>
-#include <lal/H5FileIO.h>
 
 #include "LALSimIMRSEOBNRROMUtilities.c"
 #include "gsl_bspline_basis.h"
@@ -63,12 +62,14 @@
 #include <pthread.h>
 #endif
 
+#include <lal/H5FileIO.h>
+
 /******* Surrogate model parameter space ********/
-static const double Q_MIN = 1.;
-static const double Q_MAX = 2.;
-static const double CHI1_MAG_MAX = 0.8;
-static const double CHI2_MIN = -0.8;
-static const double CHI2_MAX = 0.8;
+UNUSED static const double Q_MIN = 1.;
+UNUSED static const double Q_MAX = 2.;
+UNUSED static const double CHI1_MAG_MAX = 0.8;
+UNUSED static const double CHI2_MIN = -0.8;
+UNUSED static const double CHI2_MAX = 0.8;
 
 static const char NRSUR4D2S_DATAFILE[] = "NRSur4d2s_FDROM.hdf5";
 
@@ -129,7 +130,7 @@ static NRSurrogateData __lalsim_NRSurrogate_data;
 
 /**************** Internal functions **********************/
 
-static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
+UNUSED static void err_handler(const char *reason, const char *file, int line, int gsl_errno);
 static void NRSurrogate_Init_LALDATA(void);
 static int NRSurrogate_Init(const char dir[]);
 static bool NRSurrogate_IsSetup(void);
@@ -153,6 +154,7 @@ static int TP_Spline_interpolation_5d(
   gsl_vector *nodes_im      // Output: interpolated imag empirical nodes
 );
 
+#ifdef LAL_HDF5_ENABLED
 static int NRSurrogateData_Init_submodel(
   NRSurrogateData_submodel **submodel,
   LALH5File *file,
@@ -161,6 +163,7 @@ static int NRSurrogateData_Init_submodel(
   int n_freqs,
   int *nc
 );
+#endif
 
 static void NRSurrogateData_Cleanup_submodel(NRSurrogateData_submodel *submodel);
 
@@ -226,6 +229,7 @@ static void SplineData5d_Init(
   double *x5
 );
 
+#ifdef LAL_HDF5_ENABLED
 static int load_data_sub(
   const int i_mode,
   LALH5File *file,
@@ -234,6 +238,7 @@ static int load_data_sub(
   gsl_matrix *EI_re,
   gsl_matrix *EI_im
 );
+#endif
 
 // Function which sums over all contributing basis splines
 static REAL8 Interpolate_Coefficent_Tensor_5d(
@@ -325,6 +330,8 @@ static bool NRSurrogate_IsSetup(void) {
     return false;
 }
 
+
+#ifdef LAL_HDF5_ENABLED
 // Read binary ROM data for basis functions and coefficients for submodel 1
 static int load_data_sub(
   const int i_mode,
@@ -341,7 +348,6 @@ static int load_data_sub(
   if (i_mode > 9) name_length = 23;
   char *dataset_name = malloc(name_length);
 
-#ifdef LAL_HDF5_ENABLED
   snprintf(dataset_name, name_length, "NRSurrogate_cre_%d", i_mode);
   ret |= ReadHDF5RealVectorDataset(file, dataset_name, &cvec_re);
 
@@ -353,13 +359,11 @@ static int load_data_sub(
 
   snprintf(dataset_name, name_length, "NRSurrogate_EIi_%d.dat", i_mode);
   ret |= ReadHDF5RealMatrixDataset(file, dataset_name, &EI_im);
-#else
-  XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
-#endif
 
   free(dataset_name);
   return(ret);
 }
+#endif
 
 // Setup B-spline basis functions for given points
 static void SplineData5d_Init(
@@ -503,6 +507,7 @@ static int TP_Spline_interpolation_5d(
   return(0);
 }
 
+#ifdef LAL_HDF5_ENABLED
 /* Set up a new ROM submodel, using data contained in the NRSur4d2s.h5 h5 file */
 static int NRSurrogateData_Init_submodel(
   NRSurrogateData_submodel **submodel,
@@ -543,6 +548,7 @@ static int NRSurrogateData_Init_submodel(
 
   return ret;
 }
+#endif 
 
 /* Deallocate contents of the given NRSurrogateData_submodel structure */
 static void NRSurrogateData_Cleanup_submodel(NRSurrogateData_submodel *submodel) {
@@ -567,6 +573,8 @@ int NRSurrogateData_Init(NRSurrogateData *data, const char dir[]) {
   char *filename = XLALMalloc(size);
   snprintf(filename, size, "%s/%s", dir, NRSUR4D2S_DATAFILE);
 
+
+#ifdef LAL_HDF5_ENABLED
   LALH5File *file = XLALH5FileOpen(filename, "r");
   LALH5Dataset *dset;
 
@@ -677,15 +685,10 @@ int NRSurrogateData_Init(NRSurrogateData *data, const char dir[]) {
 
   /* Load frequency samples */
   data->fEI = gsl_vector_calloc(n_freqs);
-
-  #ifdef LAL_HDF5_ENABLED
-    ret |= ReadHDF5RealVectorDataset(file, "freqs", &(data->fEI));
-  #else
-    XLAL_ERROR(XLAL_EFAILED, "HDF5 support not enabled");
-  #endif
+  ret |= ReadHDF5RealVectorDataset(file, "freqs", &(data->fEI));
 
   XLALH5FileClose(file);
-
+#endif
   /* setup splinedata */
   SplineData5d *splinedata=NULL;
   SplineData5d_Init(&splinedata, data->nc, data->qvec, data->chi1vec, data->chi1thetavec, data->chi1phivec, data->chi2vec);
