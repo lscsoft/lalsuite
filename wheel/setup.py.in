@@ -201,7 +201,7 @@ setup(
             'gwdatafind',
             'gwpy',
             'healpy >= 1.9.1',
-            'scipy < 0.14',  # until healpy 1.17.2 is released
+            'scipy',
         ],
         'lalpulsar': [
             'solar_system_ephemerides',

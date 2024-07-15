@@ -176,7 +176,7 @@ outputs:
         - numpy
       run:
         - astropy >=1.1.1
-        - healpy >=1.9.1
+        - healpy >=1.17.3
         - h5py
         - {{ pin_subpackage('liblalinference', exact=True) }}
         - ligo-segments
@@ -190,7 +190,7 @@ outputs:
         - python-lalburst >={{ lalburst_version }}
         - python-lalinspiral >={{ lalinspiral_version }}
         - python-ligo-lw >={{ python_ligo_lw_version }}
-        - scipy >=0.9.0,<1.14
+        - scipy >=0.9.0
     test:
       requires:
         - pytest >=4.0.0a0
@@ -269,7 +269,7 @@ outputs:
         - python-lal >={{ lal_version }}  # [build_platform == target_platform]
         - python-lalsimulation >={{ lalsimulation_version }}  # [build_platform == target_platform]
         - python-ligo-lw  # [build_platform == target_platform]
-        - scipy >=0.9.0,<1.14  # [build_platform == target_platform]
+        - scipy >=0.9.0  # [build_platform == target_platform]
       run:
         - astropy >=1.1.1
         - gsl  # [mpi != 'nompi']
@@ -287,7 +287,7 @@ outputs:
         - {{ pin_subpackage('python-lalinference', exact=True) }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - python-ligo-lw >={{ python_ligo_lw_version }}
-        - scipy >=0.9.0,<1.14
+        - scipy >=0.9.0
     test:
       requires:
         - cpnest
