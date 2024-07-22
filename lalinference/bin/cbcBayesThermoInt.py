@@ -6,7 +6,11 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as pp
 import numpy as np
-import scipy.integrate as si
+try:
+    from scipy.integrate import trapezoid
+except ImportError:
+    # FIXME: Remove this once we require scipy >=1.6.0.
+    from scipy.integrate import trapz as trapezoid
 
 matplotlib.rcParams['text.usetex'] = True
 
@@ -86,8 +90,8 @@ positional arguments:
     ebetas2 = np.concatenate((betas[::2], [0.0]))
     elogls2 = np.concatenate((logls[::2], [logls[::2][-1]]))
 
-    evidence = -si.trapz(elogls, ebetas)
-    evidence2 = -si.trapz(elogls2, ebetas2)
+    evidence = -trapezoid(elogls, ebetas)
+    evidence2 = -trapezoid(elogls2, ebetas2)
 
     devidence = np.abs(evidence - evidence2)
 

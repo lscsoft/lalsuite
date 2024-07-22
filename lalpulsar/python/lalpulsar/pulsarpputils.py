@@ -38,9 +38,11 @@ import re
 import h5py
 
 try:
-    from scipy.integrate import cumulative_trapezoid
-except ImportError:  # scipy < 1.6.0
-    from scipy.integrate import cumtrapz as cumulative_trapezoid
+    from scipy.integrate import trapezoid, cumulative_trapezoid
+except ImportError:
+    # FIXME: Remove this once we require scipy >=1.6.0.
+    from scipy.integrate import trapz as trapezoid, cumtrapz as cumulative_trapezoid
+
 from scipy.interpolate import interp1d
 
 try:
@@ -1233,18 +1235,18 @@ def plot_2Dhist_from_file(
         # marginalise over y-axes and produce plots
         xmarg = []
         for i in range(len(xbins)):
-            xmarg.append(np.trapz(histarr[:][i], x=ybins))
+            xmarg.append(trapezoid(histarr[:][i], x=ybins))
 
         # normalise
-        xarea = np.trapz(xmarg, x=xbins)
+        xarea = trapezoid(xmarg, x=xbins)
         xmarg = map(lambda x: x / xarea, xmarg)
 
         ymarg = []
         for i in range(len(ybins)):
-            ymarg.append(np.trapz(np.transpose(histarr)[:][i], x=xbins))
+            ymarg.append(trapezoid(np.transpose(histarr)[:][i], x=xbins))
 
         # normalise
-        yarea = np.trapz(ymarg, x=ybins)
+        yarea = trapezoid(ymarg, x=ybins)
         ymarg = map(lambda x: x / yarea, ymarg)
 
         # plot x histogram
@@ -1288,11 +1290,11 @@ def h0ul_from_prior_file(priorfile, ulval=0.95):
     # marginalise over cos(iota)
     h0marg = []
     for i in range(len(h0bins)):
-        h0marg.append(np.trapz(histarr[:][i], x=cibins))
+        h0marg.append(trapezoid(histarr[:][i], x=cibins))
 
     # normalise h0 posterior
     h0bins = h0bins - (h0bins[1] - h0bins[0]) / 2
-    h0area = np.trapz(h0marg, x=h0bins)
+    h0area = trapezoid(h0marg, x=h0bins)
     h0margnorm = map(lambda x: x / h0area, h0marg)
 
     # get cumulative probability
@@ -1517,7 +1519,7 @@ def hist_norm_bounds(samples, nbins, low=float("-inf"), high=float("inf")):
         n = np.append(n, nbound)
 
     # now calculate area and normalise
-    area = np.trapz(n, x=bincentres)
+    area = trapezoid(n, x=bincentres)
 
     ns = np.array([])
     for i in range(0, len(bincentres)):

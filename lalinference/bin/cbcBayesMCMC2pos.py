@@ -30,7 +30,11 @@ matplotlib.use('Agg') #sets backend to not need to open windows
 
 import numpy as np
 import astropy.table as apt
-import scipy.integrate as si
+try:
+	from scipy.integrate import trapezoid
+except ImportError:
+	# FIXME: Remove this once we require scipy >=1.6.0.
+	from scipy.integrate import trapz as trapezoid
 from optparse import OptionParser
 
 from lalinference import git_version
@@ -155,8 +159,8 @@ def downsample_and_evidence(data_hdf5, deltaLogP=None, fixedBurnin=None, nDownsa
 	ebetas2 = np.concatenate((betas[::2], [0.0]))
 	elogls2 = np.concatenate((logls[::2], [logls[::2][-1]]))
 
-	evidence = -si.trapz(elogls, ebetas)
-	evidence2 = -si.trapz(elogls2, ebetas2)
+	evidence = -trapezoid(elogls, ebetas)
+	evidence2 = -trapezoid(elogls2, ebetas2)
 
 	posterior_samples['chain_log_evidence'] = evidence
 	posterior_samples['chain_delta_log_evidence'] = np.absolute(evidence - evidence2)
