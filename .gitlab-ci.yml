@@ -102,8 +102,6 @@ variables:
   CONDA_ENVS_PATH: "${CI_PROJECT_DIR}/envs"
   # what file to use for conda configuration
   CONDARC: "${CI_PROJECT_DIR}/.condarc"
-  # tell mamba to not display the huge ascii-art banner
-  MAMBA_NO_BANNER: 1
   # tell Debian-based installers to run non-interactively
   DEBIAN_FRONTEND: noninteractive
 
@@ -437,17 +435,13 @@ default:
   # see https://github.com/conda-forge/conda-forge-ci-setup-feedstock/pull/168
   - conda config --show aggressive_update_packages >> ${CONDARC}
   - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
-  # pin conda and mamba to stable major/minor versions
-  - conda --version | sed -n '/^conda /p' | sed 's|[0-9]*$|*|' >> ${CONDA_ROOT}/conda-meta/pinned
-  - mamba --version | sed -n '/^mamba /p' | sed 's|[0-9]*$|*|' >> ${CONDA_ROOT}/conda-meta/pinned
-  - grep -H . ${CONDA_ROOT}/conda-meta/pinned
   # install build helpers
-  - retry mamba install -n base
+  - retry conda install -n base
         "conda-build!=3.18.10"
         conda-forge-pinning
         "conda-smithy>=3.7.5"
+        conda-libmamba-solver
         conda-verify
-        "boa>=0.8.0"
   # print info
   - conda activate base
   - conda info --all
@@ -473,8 +467,6 @@ default:
   extends:
     - .conda-job
   variables:
-    # default to mambabuild from boa
-    CONDA_BUILD_CMD: "mambabuild"
     # stub of feedstock configuration file
     CONDA_CONFIG: "linux_64_"
   script:
@@ -530,10 +522,10 @@ default:
       for _CONDA_CONFIG in ${CONDA_CONFIG}; do
       # loop over retry
       for n in 1 2; do
-        echo "===== conda ${CONDA_BUILD_CMD:-build}: attempt $n of 2 ====="
+        echo "===== conda build: attempt $n of 2 ====="
         if ( \
           set -o pipefail; \
-          xargs -t conda ${CONDA_BUILD_CMD:-build} \
+          xargs -t conda build \
             recipe/ \
             --dirty \
             --error-overlinking \
@@ -544,15 +536,15 @@ default:
             <<< ${CONDA_BUILD_ARGS} \
           2>&1 | awk '{print} /appears to be corrupted/ {exit 1}' \
         ); then
-          echo "----- conda ${CONDA_BUILD_CMD:-build}: success -----"
+          echo "----- conda build: success -----"
           break
         else
-          echo "... output from conda ${CONDA_BUILD_CMD:-build} truncated"
+          echo "... output from conda build truncated"
           if [ $n -eq 1 ] && [ "X${CONDA_PKGS_DIRS}" != X ]; then
-            echo "----- conda ${CONDA_BUILD_CMD:-build}: possibly ${CONDA_PKGS_DIRS} is corrupted, deleting and retrying -----"
+            echo "----- conda build: possibly ${CONDA_PKGS_DIRS} is corrupted, deleting and retrying -----"
             rm -rf ${CONDA_PKGS_DIRS}
           else
-            echo "----- conda ${CONDA_BUILD_CMD:-build}: something else is corrupted, failing -----"
+            echo "----- conda build: something else is corrupted, failing -----"
             exit 1
           fi
         fi
@@ -1463,7 +1455,7 @@ upgrade:conda:linux:
     # properly index the newly built packages
     - conda index ${CONDA_BLD_PATH}
     # install latest release
-    - mamba create -n upgrade-test
+    - conda create -n upgrade-test
           python=${LALSUITE_PYTHON_VERSION}
           lal
           lalframe
@@ -1475,7 +1467,7 @@ upgrade:conda:linux:
           lalpulsar
           lalapps
     # install new packages
-    - mamba update -n upgrade-test --use-local
+    - conda update -n upgrade-test --use-local
           lal
           lalframe
           lalmetaio
@@ -1521,7 +1513,7 @@ upgrade:conda:linux:
     - if [[ "${CI_JOB_NAME}" == *"arm64"* ]]; then
           sed -i.tmp "/texlive-core/d" ${ENVIRONMENT_FILE};
       fi
-    - mamba env create
+    - conda env create
           --file ${ENVIRONMENT_FILE}
           --name lalsuite-platform-tests
           --quiet
