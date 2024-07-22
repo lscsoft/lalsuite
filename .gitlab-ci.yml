@@ -1498,6 +1498,11 @@ upgrade:conda:linux:
     - !reference [.ci-platform, rules]
     - !reference [.ci-merge-build, rules]
 
+platform:debian:bookworm:
+  extends:
+    - .platform-test
+  image: igwn/lalsuite-dev:bookworm
+
 .platform-test:conda:
   extends:
     - .platform-test
