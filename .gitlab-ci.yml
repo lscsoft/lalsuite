@@ -1350,7 +1350,8 @@ top-level:pulsar:
   variables:
     # test that LALPulsar builds with optional dependencies disabled
     CONFIGURE_FLAGS: |
-      --disable-doxygen --enable-python --enable-swig
+      --disable-doxygen
+      --enable-python --enable-swig-python --enable-swig-octave
       --disable-all-lal --enable-lalpulsar
   needs: []
   extends:
