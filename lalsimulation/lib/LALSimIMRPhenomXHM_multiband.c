@@ -455,7 +455,7 @@ int XLALSimIMRPhenomXHMMultiBandOneMode(
   INT4 emmIn,                            /**< m index of the mode */
   REAL8 distance,                      /**< Luminosity distance (m) */
   REAL8 f_min,                         /**< Starting GW frequency (Hz) */
-  REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = \ref f_CUT */
+  REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = f_CUT */
   REAL8 deltaF,                        /**< Sampling frequency (Hz) */
   REAL8 phiRef,                        /**< Orbital phase at fRef (rad) */
   REAL8 fRef_In,                       /**< Reference frequency (Hz) */
@@ -1257,7 +1257,7 @@ int XLALSimIMRPhenomXHMMultiBandOneModeMixing(
   INT4 emmIn,                          /**< m index of the mode */
   REAL8 distance,                      /**< Luminosity distance (m) */
   REAL8 f_min,                         /**< Starting GW frequency (Hz) */
-  REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = \ref f_CUT */
+  REAL8 f_max,                         /**< End frequency; 0 defaults to Mf = f_CUT */
   REAL8 deltaF,                        /**< Sampling frequency (Hz) */
   REAL8 phiRef,                        /**< Orbital phase at fRef (rad) */
   REAL8 fRef_In,                       /**< Reference frequency (Hz) */
