@@ -107,7 +107,6 @@ outputs:
       error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
-        - numpy
         - python
       script_env:
         - CI_COMMIT_TAG
@@ -143,7 +142,7 @@ outputs:
         - ligo-segments
         - lscsoft-glue
         - matplotlib-base
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-lal >={{ lal_version }}
         - python-lalmetaio >={{ lalmetaio_version }}
