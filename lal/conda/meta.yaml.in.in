@@ -115,7 +115,6 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - libzlib
-        - numpy
         - python
         # things we declare to help the solver, but don't actually need
         - mkl
@@ -147,7 +146,7 @@ outputs:
       run:
         - {{ pin_subpackage('liblal', exact=True) }}
         - ligo-segments
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-dateutil
         - scipy
@@ -185,7 +184,6 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - libzlib
-        - numpy
         - python
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:
