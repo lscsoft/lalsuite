@@ -117,7 +117,6 @@ outputs:
       ignore_run_exports:
         # liblalburst is required because python-lalburst is used
         - liblalburst
-        - numpy
         - python
       script_env:
         - CI_COMMIT_TAG
@@ -149,7 +148,7 @@ outputs:
       run:
         - {{ pin_subpackage('liblalinspiral', exact=True) }}
         - lscsoft-glue
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-lal >={{ lal_version }}
         - python-lalburst >={{ lalburst_version }}
