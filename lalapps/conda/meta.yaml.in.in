@@ -41,7 +41,6 @@ build:
   error_overdepending: true
   error_overlinking: true
   ignore_run_exports:
-    - numpy
     - python
   number: 9999
   script_env:
