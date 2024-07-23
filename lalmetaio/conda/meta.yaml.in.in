@@ -31,7 +31,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepending: true
   error_overlinking: true
   number: 9999
   script_env:
@@ -55,7 +54,6 @@ outputs:
   - name: liblalmetaio
     script: install-lib.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       run_exports:
         - {{ pin_subpackage("liblalmetaio", max_pin="x") }}
@@ -97,7 +95,6 @@ outputs:
   - name: python-lalmetaio
     script: build-python.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - python
@@ -152,7 +149,6 @@ outputs:
   - name: lalmetaio
     script: install-bin.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - python
