@@ -1069,7 +1069,6 @@ lalapps:conda:
           ${ENABLE_NIGHTLY}
           --with-fallback-data-path="../lalapps/data:../${SSE}/earth:../${SSE}/sun:../${SSE}/time"
           --disable-doxygen
-          --disable-swig-octave
           --enable-mpi
           --enable-python
           --enable-swig-python
@@ -1111,7 +1110,6 @@ lalapps:conda:
           ${ENABLE_NIGHTLY}
           --with-fallback-data-path="../../lalapps/data:../../${SSE}/earth:../../${SSE}/sun:../../${SSE}/time"
           --disable-doxygen
-          --disable-swig-octave
           --enable-mpi
           --enable-python
           --enable-swig-python
@@ -1342,7 +1340,8 @@ top-level:pulsar:
   variables:
     # test that LALPulsar builds with optional dependencies disabled
     CONFIGURE_FLAGS: |
-      --disable-doxygen --enable-python --enable-swig
+      --disable-doxygen
+      --enable-python --enable-swig-python --enable-swig-octave
       --disable-all-lal --enable-lalpulsar
   needs: []
   extends:
@@ -1491,11 +1490,16 @@ upgrade:conda:linux:
     - !reference [.ci-platform, rules]
     - !reference [.ci-merge-build, rules]
 
+platform:debian:bookworm:
+  extends:
+    - .platform-test
+  image: igwn/lalsuite-dev:bookworm
+
 .platform-test:conda:
   extends:
     - .platform-test
   variables:
-    CONFIGURE_FLAGS: "--disable-swig-octave --enable-python --enable-swig-python"
+    CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
     ENVIRONMENT_FILE: "common/conda/environment.yml"
   before_script:
     # configure conda

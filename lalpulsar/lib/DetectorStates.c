@@ -611,13 +611,12 @@ XLALParseMultiNoiseFloor( MultiNoiseFloor *multiNoiseFloor,     /**< [out] parse
  *
  * The detectors corresponding to each noise-floor may be a subset of the input string-vectors,
  * e.g. if parsing noise-floors for a segment where SFTs from some detectors are missing.
- * The vector \p
  */
 int
 XLALParseMultiNoiseFloorMapped( MultiNoiseFloor *multiNoiseFloor,                       /**< [out] parsed multi-IFO noise floor info */
-                                const LALStringVector *multiNoiseFloorDetNames,        /**< [in] detector names for entries in \p multiNoiseFloor */
+                                const LALStringVector *multiNoiseFloorDetNames,        /**< [in] detector names for entries in <tt>multiNoiseFloor</tt> */
                                 const LALStringVector *sqrtSX,                         /**< [in] string-list of \f$ \sqrt{S_X} \f$ for detectors \f$ X \f$ */
-                                const LALStringVector *sqrtSXDetNames                  /**< [in] detector names for entries in \p sqrtSX */
+                                const LALStringVector *sqrtSXDetNames                  /**< [in] detector names for entries in <tt>sqrtSX</tt> */
                               )
 {
   XLAL_CHECK( multiNoiseFloor != NULL, XLAL_EINVAL );

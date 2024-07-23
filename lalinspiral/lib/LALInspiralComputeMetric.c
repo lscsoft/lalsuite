@@ -62,7 +62,7 @@ InspiralComputeMetricGetPsiCoefficients (
 void
 LALInspiralComputeMetric (
     LALStatus          *status,		/**< LAL status pointer */
-    InspiralMetric     *metric,		/**< [out] the metric at the lattice point defined by \c params */
+    InspiralMetric     *metric,		/**< [out] the metric at the lattice point defined by <tt>params</tt> */
     InspiralTemplate   *params,		/**< [in] the parameters where metric must be computed */
     InspiralMomentsEtc *moments		/**< [in] moments \f$J(1), \ldots, J(17),\f$ of the PSD and other constants needed in the computation of the metric */
     )
