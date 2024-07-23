@@ -30,7 +30,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepening: true
   error_overlinking: true
   number: 9999
   script_env:
