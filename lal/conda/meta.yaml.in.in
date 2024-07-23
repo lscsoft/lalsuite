@@ -33,7 +33,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepending: true
   error_overlinking: true
   number: 9999
   script_env:
@@ -111,7 +110,6 @@ outputs:
   - name: python-lal
     script: build-python.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - libzlib
@@ -180,7 +178,6 @@ outputs:
   - name: lal
     script: install-bin.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - libzlib
