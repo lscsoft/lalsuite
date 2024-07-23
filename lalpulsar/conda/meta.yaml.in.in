@@ -155,7 +155,6 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - cfitsio
-        - numpy
         - python
       script_env:
         - CI_COMMIT_TAG
@@ -189,7 +188,7 @@ outputs:
         - astropy
         - h5py
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - lscsoft-glue >=1.54.1
         - python
         - python-lal >={{ lal_version }}
@@ -232,7 +231,6 @@ outputs:
     build:
       ignore_run_exports:
         - python
-        - numpy
     requirements:
       build:
         - {{ compiler('c') }}
@@ -275,7 +273,7 @@ outputs:
         - liblalsimulation >={{ lalsimulation_version }}
         - {{ pin_subpackage('liblalpulsar', exact=True) }}
         - libsistr  # [unix]
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-lal >={{ lal_version }}
         - python-lalframe >={{ lalframe_version }}
