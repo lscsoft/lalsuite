@@ -33,7 +33,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepending: true
   error_overlinking: true
   number: 9999
   script_env:
@@ -93,7 +92,6 @@ outputs:
   - name: liblalpulsar
     script: install-lib.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       run_exports:
         - {{ pin_subpackage("liblalpulsar", max_pin="x") }}
@@ -151,7 +149,6 @@ outputs:
   - name: python-lalpulsar
     script: build-python.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - cfitsio
