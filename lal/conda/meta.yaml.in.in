@@ -33,7 +33,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepending: true
   error_overlinking: true
   number: 9999
   script_env:
@@ -111,11 +110,9 @@ outputs:
   - name: python-lal
     script: build-python.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - libzlib
-        - numpy
         - python
         # things we declare to help the solver, but don't actually need
         - mkl
@@ -147,7 +144,7 @@ outputs:
       run:
         - {{ pin_subpackage('liblal', exact=True) }}
         - ligo-segments
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-dateutil
         - scipy
@@ -181,11 +178,9 @@ outputs:
   - name: lal
     script: install-bin.sh
     build:
-      error_overdepending: true
       error_overlinking: true
       ignore_run_exports:
         - libzlib
-        - numpy
         - python
       string: {{ fft_impl }}_py{{ py }}h{{ PKG_HASH }}_{{ PKG_BUILDNUM }}
     requirements:

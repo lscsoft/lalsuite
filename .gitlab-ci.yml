@@ -529,7 +529,6 @@ default:
             recipe/ \
             --dirty \
             --error-overlinking \
-            --error-overdepending \
             --keep-old-work \
             --no-anaconda-upload \
             --variant-config-files .ci_support/${_CONDA_CONFIG}.yaml \
