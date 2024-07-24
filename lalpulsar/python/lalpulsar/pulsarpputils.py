@@ -37,7 +37,10 @@ import struct
 import re
 import h5py
 
-from scipy.integrate import cumtrapz
+try:
+    from scipy.integrate import cumulative_trapezoid
+except ImportError:  # scipy < 1.6.0
+    from scipy.integrate import cumtrapz as cumulative_trapezoid
 from scipy.interpolate import interp1d
 
 try:
@@ -897,7 +900,7 @@ def plot_posterior_hist(
 
         # if upper limit is needed then integrate posterior using trapezium rule
         if upperlimit != 0:
-            ct = cumtrapz(n, bins)
+            ct = cumulative_trapezoid(n, bins)
 
             # prepend a zero to ct
             ct = np.insert(ct, 0, 0)
@@ -938,7 +941,7 @@ def upper_limit(
 
     # if upper limit is needed then integrate posterior using trapezium rule
     if upperlimit != 0:
-        ct = cumtrapz(n, bins)
+        ct = cumulative_trapezoid(n, bins)
 
         # prepend a zero to ct
         ct = np.insert(ct, 0, 0)
@@ -1293,7 +1296,7 @@ def h0ul_from_prior_file(priorfile, ulval=0.95):
     h0margnorm = map(lambda x: x / h0area, h0marg)
 
     # get cumulative probability
-    ct = cumtrapz(h0margnorm, h0bins)
+    ct = cumulative_trapezoid(h0margnorm, h0bins)
 
     # prepend a zero to ct
     ct = np.insert(ct, 0, 0)
