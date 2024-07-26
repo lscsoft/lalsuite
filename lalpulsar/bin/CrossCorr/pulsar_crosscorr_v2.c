@@ -590,7 +590,7 @@ int main( int argc, char *argv[] )
     }
     fprintf( fp, PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
     for ( j = 0; j < sftIndices->length; j++ ) { /*output the SFT list */
-      fprintf( fp, PCC_SFT_BODY, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].name, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsSeconds, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsNanoSeconds );
+      fprintf( fp, PCC_SFT_BODY, inputSFTs->data[sftIndices->data[j].detInd]->data[0].name, multiTimes->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].gpsSeconds, multiTimes->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].gpsNanoSeconds );
     }
     fclose( fp );
   }
