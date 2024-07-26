@@ -11,6 +11,7 @@ pkginclude_HEADERS = \
 	LALCosmologyCalculator.h \
 	LALDetectors.h \
 	LALDict.h \
+	LALDictSequence.h \
 	LALList.h \
 	LALValue.h \
 	ResampleTimeSeries.h \
@@ -38,6 +39,7 @@ libtools_la_SOURCES = \
 	FrequencySeries.c \
 	LALCosmologyCalculator.c \
 	LALDict.c \
+	LALDictSequence.c \
 	LALList.c \
 	LALValue.c \
 	ResampleTimeSeries.c \

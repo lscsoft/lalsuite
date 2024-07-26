@@ -865,7 +865,8 @@ int XLALSimInspiralChooseFDWaveform(
     const char *remove_keys[12] = {"total_mass", "chirp_mass", "mass_difference", "reduced_mass", "mass_ratio", "sym_mass_ratio", \
        "spin1_norm", "spin1_tilt", "spin1_phi", "spin2_norm", "spin2_tilt", "spin2_phi"};
     for(size_t j = 0; j < sizeof(remove_keys)/sizeof(*remove_keys); ++j){
-      XLALDictRemove(params, remove_keys[j]);
+      if (XLALDictContains(params, remove_keys[j]))
+        XLALDictPop(params, remove_keys[j]);
     }
 
     XLALSimInspiralWaveformParamsInsertMass1(params, m1);
