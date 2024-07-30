@@ -9,15 +9,7 @@
 
 #include <Python.h>
 
-/* FIXME: see https://github.com/numpy/numpy/pull/26771 */
-#ifdef __GNUC__
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wstrict-prototypes"
-#endif
 #include <numpy/arrayobject.h>
-#ifdef __GNUC__
-#pragma GCC diagnostic pop
-#endif
 
 #include <stdlib.h>
 

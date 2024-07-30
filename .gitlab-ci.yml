@@ -1097,7 +1097,7 @@ lalapps:conda:
     - python -m pip install --upgrade pip
     - python -m pip install
           delocate
-          'numpy>=2.0.0rc1'
+          'numpy>=2.0.1'
           pip
           setuptools
           wheel
