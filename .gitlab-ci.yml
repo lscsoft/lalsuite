@@ -338,7 +338,7 @@ default:
   extends:
     - .debian:deb
     - .build-from-tarball
-  image: igwn/base:bullseye
+  image: igwn/base:bookworm
   variables:
     # tell debhelper to parallelise the build
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
@@ -1403,7 +1403,7 @@ upgrade:rpm-el8:
     - lalpulsar:rpm-el8
     - lalapps:rpm-el8
 
-upgrade:debian:bullseye:
+upgrade:debian:bookworm:
   extends:
     - .debuild
     - .upgrade-test

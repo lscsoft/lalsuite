@@ -146,7 +146,7 @@ cuda:
 icc:
   extends:
     - .compiler-test
-  image: igwn/lalsuite-dev-icc:bullseye
+  image: igwn/lalsuite-dev-icc:bookworm
   variables:
     CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python --disable-static --enable-intelfft"
   before_script:
