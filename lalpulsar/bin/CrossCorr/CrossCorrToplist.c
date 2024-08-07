@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -47,18 +48,10 @@ extern int _doserrno;
 #define fsync _commit
 #define fileno _fileno
 
-/* finite */
-#include <float.h>
-#define finite _finite
-
 #else /* WIN32 */
 
 /* errno */
 #include <errno.h>
-
-/* this is defined in C99 and *should* be in math.h. Long term
-   protect this with a HAVE_FINITE */
-int finite( double );
 
 #endif /* WIN32 */
 
@@ -313,13 +306,13 @@ void sort_crossCorrBinary_toplist( toplist_t *l )
 /*      if ( */
 /*          items != 7 || */
 
-/*          !finite(CrossCorrLine.Freq) || */
-/*          !finite(CrossCorrLine.Q1)   || */
-/*          !finite(CrossCorrLine.Q2)   || */
-/*          !finite(CrossCorrLine.BrakingIndex) || */
-/*          !finite(CrossCorrLine.Alpha)        || */
-/*          !finite(CrossCorrLine.Delta)        || */
-/*          !finite(CrossCorrLine.Rho)  || */
+/*          !isfinite(CrossCorrLine.Freq) || */
+/*          !isfinite(CrossCorrLine.Q1)   || */
+/*          !isfinite(CrossCorrLine.Q2)   || */
+/*          !isfinite(CrossCorrLine.BrakingIndex) || */
+/*          !isfinite(CrossCorrLine.Alpha)        || */
+/*          !isfinite(CrossCorrLine.Delta)        || */
+/*          !isfinite(CrossCorrLine.Rho)  || */
 
 /*          CrossCorrLine.Freq  < 0.0                    || */
 /*          CrossCorrLine.Alpha <         0.0 - epsilon  || */
@@ -445,13 +438,13 @@ void sort_crossCorrBinary_toplist( toplist_t *l )
 /*      if ( */
 /*          items != 7 || */
 
-/*          !finite(CrossCorrBinaryLine.freq)   || */
-/*          !finite(CrossCorrBinaryLine.tp)     || */
-/*          !finite(CrossCorrBinaryLine.argp)   || */
-/*          !finite(CrossCorrBinaryLine.asini)  || */
-/*          !finite(CrossCorrBinaryLine.ecc)    || */
-/*          !finite(CrossCorrBinaryLine.period) || */
-/*          !finite(CrossCorrBinaryLine.rho)    || */
+/*          !isfinite(CrossCorrBinaryLine.freq)   || */
+/*          !isfinite(CrossCorrBinaryLine.tp)     || */
+/*          !isfinite(CrossCorrBinaryLine.argp)   || */
+/*          !isfinite(CrossCorrBinaryLine.asini)  || */
+/*          !isfinite(CrossCorrBinaryLine.ecc)    || */
+/*          !isfinite(CrossCorrBinaryLine.period) || */
+/*          !isfinite(CrossCorrBinaryLine.rho)    || */
 
 /*          CrossCorrBinaryLine.Freq  < 0.0                    || */
 

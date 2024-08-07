@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -52,7 +53,7 @@ extern int _doserrno;
 
 /* finite */
 #include <float.h>
-#define finite _finite
+#define finite isfinite
 
 #else /* WIN32 */
 
