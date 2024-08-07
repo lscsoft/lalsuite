@@ -56,8 +56,6 @@ const LALSimInspiralGenerator lalPythonGeneratorTemplate = {
 #ifdef __GNUC__
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-/* FIXME: see https://github.com/numpy/numpy/pull/26771 */
-#pragma GCC diagnostic ignored "-Wstrict-prototypes"
 #endif
 #include <numpy/arrayobject.h>
 #ifdef __GNUC__

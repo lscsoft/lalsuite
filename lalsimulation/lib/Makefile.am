@@ -173,6 +173,7 @@ pkginclude_HEADERS = \
 	LALSimIMRPhenomUtils.h \
 	LALSimIMRPhenomXUtilities.h \
 	LALSimInspiral.h \
+	LALSimInspiralInjection.h \
 	LALSimInspiralPrecess.h \
 	LALSimInspiralTestGRParams.h \
 	LALSimInspiralTestingGRCorrections.h \
@@ -394,6 +395,7 @@ liblalsimulation_la_SOURCES = \
 	LALSimInspiralWaveformParams.c \
 	LALSimInspiralPrecess.c \
 	LALSimInspiral.c \
+	LALSimInspiralInjection.c \
 	LALSimInspiralPNMode.c \
 	LALSimInspiralSpinTaylor.c \
 	LALSimInspiralSpinTaylorF2.c \

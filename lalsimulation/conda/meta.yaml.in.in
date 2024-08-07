@@ -30,7 +30,6 @@ source:
   sha256: @SHA256@
 
 build:
-  error_overdepening: true
   error_overlinking: true
   number: 9999
   script_env:
@@ -155,7 +154,6 @@ outputs:
     build:
       ignore_run_exports:
         - liblalsimulation
-        - numpy
         - python
     requirements:
       build:
@@ -174,7 +172,7 @@ outputs:
         - liblal >={{ lal_version }}
         - {{ pin_subpackage('liblalsimulation', exact=True) }}
         - mpmath >=1.0.0
-        - {{ pin_compatible('numpy') }}
+        - numpy
         - python
         - python-lal >={{ lal_version }}
         - scipy

@@ -483,6 +483,38 @@ static inline hid_t threadsafe_H5Tcreate(H5T_class_t type, size_t size)
 	return retval;
 }
 
+static inline H5T_cset_t threadsafe_H5Tget_cset(hid_t dtype_id)
+{
+	LAL_HDF5_MUTEX_LOCK
+	H5T_cset_t retval = H5Tget_cset(dtype_id);
+	LAL_HDF5_MUTEX_UNLOCK
+	return retval;
+}
+
+static inline herr_t threadsafe_H5Tset_cset(hid_t dtype_id, H5T_cset_t cset)
+{
+	LAL_HDF5_MUTEX_LOCK
+	herr_t retval = H5Tset_cset(dtype_id, cset);
+	LAL_HDF5_MUTEX_UNLOCK
+	return retval;
+}
+
+static inline H5T_str_t threadsafe_H5Tget_strpad(hid_t dtype_id)
+{
+	LAL_HDF5_MUTEX_LOCK
+	H5T_str_t retval = H5Tget_strpad(dtype_id);
+	LAL_HDF5_MUTEX_UNLOCK
+	return retval;
+}
+
+static inline htri_t threadsafe_H5Tis_variable_str(hid_t dtype_id)
+{
+	LAL_HDF5_MUTEX_LOCK
+	htri_t retval = H5Tis_variable_str(dtype_id);
+	LAL_HDF5_MUTEX_UNLOCK
+	return retval;
+}
+
 static inline hid_t threadsafe_H5Tenum_create(hid_t base_id)
 {
 	LAL_HDF5_MUTEX_LOCK
@@ -701,6 +733,10 @@ static inline herr_t threadsafe_H5open(void)
 #define threadsafe_H5Tclose H5Tclose
 #define threadsafe_H5Tcopy H5Tcopy
 #define threadsafe_H5Tcreate H5Tcreate
+#define threadsafe_H5Tget_cset H5Tget_cset
+#define threadsafe_H5Tset_cset H5Tset_cset
+#define threadsafe_H5Tget_strpad H5Tget_strpad
+#define threadsafe_H5Tis_variable_str H5Tis_variable_str
 #define threadsafe_H5Tenum_create H5Tenum_create
 #define threadsafe_H5Tenum_insert H5Tenum_insert
 #define threadsafe_H5Tget_array_dims2 H5Tget_array_dims2

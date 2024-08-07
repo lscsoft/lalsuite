@@ -57,9 +57,12 @@ const char * XLALDictEntryGetKey(const LALDictEntry *entry);
 /* warning: shallow pointer */
 const LALValue * XLALDictEntryGetValue(const LALDictEntry *entry);
 
+void XLALClearDict(LALDict *dict);
 void XLALDestroyDict(LALDict *dict);
 LALDict * XLALCreateDict(void);
-LALDict * XLALDictDuplicate(LALDict *old);
+int XLALDictUpdate(LALDict *dst, const LALDict *src);
+LALDict * XLALDictMerge(const LALDict *dict1, const LALDict *dict2);
+LALDict * XLALDictDuplicate(const LALDict *orig);
 
 void XLALDictForeach(LALDict *dict, void (*func)(char *, LALValue *, void *), void *thunk);
 LALDictEntry * XLALDictFind(LALDict *dict, int (*func)(const char *, const LALValue *, void *), void *thunk);
@@ -89,27 +92,45 @@ int XLALDictInsertREAL8Value(LALDict *dict, const char *key, REAL8 value);
 int XLALDictInsertCOMPLEX8Value(LALDict *dict, const char *key, COMPLEX8 value);
 int XLALDictInsertCOMPLEX16Value(LALDict *dict, const char *key, COMPLEX16 value);
 
-LALDictEntry *XLALDictLookup(LALDict *dict, const char *key);
-void * XLALDictLookupBLOBValue(LALDict *dict, const char *key);
+LALDictEntry *XLALDictLookup(const LALDict *dict, const char *key);
+void * XLALDictLookupBLOBValue(const LALDict *dict, const char *key);
 /* warning: shallow pointer */
-const char * XLALDictLookupStringValue(LALDict *dict, const char *key);
-CHAR XLALDictLookupCHARValue(LALDict *dict, const char *key);
-INT2 XLALDictLookupINT2Value(LALDict *dict, const char *key);
-INT4 XLALDictLookupINT4Value(LALDict *dict, const char *key);
-INT8 XLALDictLookupINT8Value(LALDict *dict, const char *key);
-UCHAR XLALDictLookupUCHARValue(LALDict *dict, const char *key);
-UINT2 XLALDictLookupUINT2Value(LALDict *dict, const char *key);
-UINT4 XLALDictLookupUINT4Value(LALDict *dict, const char *key);
-UINT8 XLALDictLookupUINT8Value(LALDict *dict, const char *key);
-REAL4 XLALDictLookupREAL4Value(LALDict *dict, const char *key);
-REAL8 XLALDictLookupREAL8Value(LALDict *dict, const char *key);
-COMPLEX8 XLALDictLookupCOMPLEX8Value(LALDict *dict, const char *key);
-COMPLEX16 XLALDictLookupCOMPLEX16Value(LALDict *dict, const char *key);
+const char * XLALDictLookupStringValue(const LALDict *dict, const char *key);
+CHAR XLALDictLookupCHARValue(const LALDict *dict, const char *key);
+INT2 XLALDictLookupINT2Value(const LALDict *dict, const char *key);
+INT4 XLALDictLookupINT4Value(const LALDict *dict, const char *key);
+INT8 XLALDictLookupINT8Value(const LALDict *dict, const char *key);
+UCHAR XLALDictLookupUCHARValue(const LALDict *dict, const char *key);
+UINT2 XLALDictLookupUINT2Value(const LALDict *dict, const char *key);
+UINT4 XLALDictLookupUINT4Value(const LALDict *dict, const char *key);
+UINT8 XLALDictLookupUINT8Value(const LALDict *dict, const char *key);
+REAL4 XLALDictLookupREAL4Value(const LALDict *dict, const char *key);
+REAL8 XLALDictLookupREAL8Value(const LALDict *dict, const char *key);
+COMPLEX8 XLALDictLookupCOMPLEX8Value(const LALDict *dict, const char *key);
+COMPLEX16 XLALDictLookupCOMPLEX16Value(const LALDict *dict, const char *key);
+REAL8 XLALDictLookupValueAsREAL8(const LALDict *dict, const char *key);
 
-REAL8 XLALDictLookupValueAsREAL8(LALDict *dict, const char *key);
+LALDictEntry * XLALDictPop(LALDict *dict, const char *key);
+LALValue * XLALDictPopValue(LALDict *dict, const char *key);
+void * XLALDictPopBLOBValue(LALDict *dict, const char *key);
+char * XLALDictPopStringValue(LALDict *dict, const char *key);
+CHAR XLALDictPopCHARValue(LALDict *dict, const char *key);
+INT2 XLALDictPopINT2Value(LALDict *dict, const char *key);
+INT4 XLALDictPopINT4Value(LALDict *dict, const char *key);
+INT8 XLALDictPopINT8Value(LALDict *dict, const char *key);
+UCHAR XLALDictPopUCHARValue(LALDict *dict, const char *key);
+UINT2 XLALDictPopUINT2Value(LALDict *dict, const char *key);
+UINT4 XLALDictPopUINT4Value(LALDict *dict, const char *key);
+UINT8 XLALDictPopUINT8Value(LALDict *dict, const char *key);
+REAL4 XLALDictPopREAL4Value(LALDict *dict, const char *key);
+REAL8 XLALDictPopREAL8Value(LALDict *dict, const char *key);
+COMPLEX8 XLALDictPopCOMPLEX8Value(LALDict *dict, const char *key);
+COMPLEX16 XLALDictPopCOMPLEX16Value(LALDict *dict, const char *key);
+REAL8 XLALDictPopValueAsREAL8(LALDict *dict, const char *key);
 
-char * XLALDictAsStringAppend(char *s, LALDict *dict);
-void XLALDictPrint(LALDict *dict, int fd);
+
+char * XLALDictAsStringAppend(char *s, const LALDict *dict);
+void XLALDictPrint(const LALDict *dict, int fd);
 
 #if 0
 {       /* so that editors will match succeeding brace */

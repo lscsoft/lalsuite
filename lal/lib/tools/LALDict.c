@@ -38,8 +38,8 @@
 #define LAL_DICT_HASHSIZE 101
 
 struct tagLALDictEntry {
-        struct tagLALDictEntry *next;
-        char *key;
+	struct tagLALDictEntry *next;
+	char *key;
 	LALValue value;
 };
 
@@ -124,6 +124,16 @@ const LALValue * XLALDictEntryGetValue(const LALDictEntry *entry)
 
 /* DICT ROUTINES */
 
+void XLALClearDict(LALDict *dict)
+{
+	if (dict) {
+		for (size_t i = 0; i < dict->size; ++i)
+			XLALDictEntryFree(dict->hashes[i]);
+		memset(dict, 0, sizeof(dict) + LAL_DICT_HASHSIZE * sizeof(*dict->hashes));
+		dict->size = LAL_DICT_HASHSIZE;
+	}
+}
+
 void XLALDestroyDict(LALDict *dict)
 {
 	if (dict) {
@@ -195,27 +205,40 @@ LALDictEntry * XLALDictIterNext(LALDictIter *iter)
 	return NULL;
 }
 
-LALDict * XLALDictDuplicate(LALDict *old)
+int XLALDictUpdate(LALDict *dst, const LALDict *src)
 {
-    UINT4 i;
-    int retcode;
-    if(old==NULL) return NULL;
-    LALDict *new = XLALCreateDict();
-    if (!new)
-        XLAL_ERROR_NULL(XLAL_ENOMEM);
-    for (i = 0; i < old->size; ++i) {
-        const LALDictEntry *entry;
-        for (entry = old->hashes[i]; entry != NULL; entry = entry->next) {
-            const char *key = XLALDictEntryGetKey(entry);
-            XLAL_TRY(XLALDictInsertValue(new, key, XLALDictEntryGetValue(entry)), retcode);
-            if(retcode!=XLAL_SUCCESS)
-            {
-                XLALDestroyDict(new);
-                XLAL_ERROR_NULL(retcode & XLAL_EFUNC);
-            }
-        }
-    }
-    return(new);
+	size_t i;
+	XLAL_CHECK(dst, XLAL_EFAULT);
+	XLAL_CHECK(src, XLAL_EFAULT);
+	for (i = 0; i < src->size; ++i) {
+		const LALDictEntry *entry;
+		for (entry = src->hashes[i]; entry != NULL; entry = entry->next) {
+			const char *key = XLALDictEntryGetKey(entry);
+			const LALValue *value = XLALDictEntryGetValue(entry);
+			if (XLALDictInsertValue(dst, key, value) < 0)
+				XLAL_ERROR(XLAL_EFUNC);
+		}
+	}
+	return XLAL_SUCCESS;
+}
+
+LALDict * XLALDictMerge(const LALDict *dict1, const LALDict *dict2)
+{
+	LALDict *new = XLALCreateDict();
+	XLAL_CHECK_NULL(new, XLAL_EFUNC);
+	if (dict1)
+		XLAL_CHECK_FAIL(XLALDictUpdate(new, dict1) == XLAL_SUCCESS, XLAL_EFUNC);
+	if (dict2)
+		XLAL_CHECK_FAIL(XLALDictUpdate(new, dict2) == XLAL_SUCCESS, XLAL_EFUNC);
+	return new;
+XLAL_FAIL:
+	XLALDestroyDict(new);
+	return NULL;
+}
+
+LALDict * XLALDictDuplicate(const LALDict *orig)
+{
+	return XLALDictMerge(orig, NULL);
 }
 
 LALList * XLALDictKeys(const LALDict *dict)
@@ -279,7 +302,7 @@ size_t XLALDictSize(const LALDict *dict)
 	return size;
 }
 
-LALDictEntry *XLALDictLookup(LALDict *dict, const char *key)
+LALDictEntry *XLALDictLookup(const LALDict *dict, const char *key)
 {
 	LALDictEntry *entry;
 	for (entry = dict->hashes[hash(key) % dict->size]; entry != NULL; entry = entry->next)
@@ -288,7 +311,7 @@ LALDictEntry *XLALDictLookup(LALDict *dict, const char *key)
 	return NULL;
 }
 
-int XLALDictRemove(LALDict *dict, const char *key)
+LALDictEntry *XLALDictPop(LALDict *dict, const char *key)
 {
 	size_t hashidx = hash(key) % dict->size;
 	LALDictEntry *this = dict->hashes[hashidx];
@@ -299,15 +322,23 @@ int XLALDictRemove(LALDict *dict, const char *key)
 				dict->hashes[hashidx] = this->next;
 			else
 				prev->next = this->next;
-			if (this->key)
-				LALFree(this->key);
-			LALFree(this);
-			return 0;
+			this->next = NULL;
+			return this;
 		}
 		prev = this;
 		this = this->next;
 	}
-	return -1; /* not found */
+	/* not found */
+	XLAL_ERROR_NULL(XLAL_ENAME, "Key `%s' not found", key);
+}
+
+int XLALDictRemove(LALDict *dict, const char *key)
+{
+	LALDictEntry *entry;
+	entry = XLALDictPop(dict, key);
+	XLAL_CHECK(entry, XLAL_EFUNC); /* not found */
+	XLALDictEntryFree(entry);
+	return XLAL_SUCCESS;
 }
 
 int XLALDictInsert(LALDict *dict, const char *key, const void *data, size_t size, LALTYPECODE type)
@@ -408,7 +439,7 @@ DEFINE_INSERT_FUNC(COMPLEX16, LAL_Z_TYPE_CODE)
 
 #undef DEFINE_INSERT_FUNC
 
-void * XLALDictLookupBLOBValue(LALDict *dict, const char *key)
+void * XLALDictLookupBLOBValue(const LALDict *dict, const char *key)
 {
 	LALDictEntry *entry = XLALDictLookup(dict, key);
 	const LALValue *value;
@@ -417,12 +448,11 @@ void * XLALDictLookupBLOBValue(LALDict *dict, const char *key)
 	value = XLALDictEntryGetValue(entry);
 	if (value == NULL)
 		XLAL_ERROR_NULL(XLAL_EFUNC);
-/* FIXME TODO */
 	return XLALValueGetBLOB(value);
 }
 
 /* warning: shallow pointer */
-const char * XLALDictLookupStringValue(LALDict *dict, const char *key)
+const char * XLALDictLookupStringValue(const LALDict *dict, const char *key)
 {
 	LALDictEntry *entry = XLALDictLookup(dict, key);
 	const LALValue *value;
@@ -435,7 +465,7 @@ const char * XLALDictLookupStringValue(LALDict *dict, const char *key)
 }
 
 #define DEFINE_LOOKUP_FUNC(TYPE, FAILVAL) \
-	TYPE XLALDictLookup ## TYPE ## Value(LALDict *dict, const char *key) \
+	TYPE XLALDictLookup ## TYPE ## Value(const LALDict *dict, const char *key) \
 	{ \
 		LALDictEntry *entry; \
 		const LALValue *value; \
@@ -461,7 +491,7 @@ DEFINE_LOOKUP_FUNC(REAL8, XLAL_REAL8_FAIL_NAN)
 DEFINE_LOOKUP_FUNC(COMPLEX8, XLAL_REAL4_FAIL_NAN)
 DEFINE_LOOKUP_FUNC(COMPLEX16, XLAL_REAL8_FAIL_NAN)
 
-REAL8 XLALDictLookupValueAsREAL8(LALDict *dict, const char *key)
+REAL8 XLALDictLookupValueAsREAL8(const LALDict *dict, const char *key)
 {
 	LALDictEntry *entry;
 	const LALValue *value;
@@ -472,6 +502,76 @@ REAL8 XLALDictLookupValueAsREAL8(LALDict *dict, const char *key)
 	if (value == NULL)
 		XLAL_ERROR_REAL8(XLAL_EFUNC);
 	return XLALValueGetAsREAL8(value);
+}
+
+LALValue * XLALDictPopValue(LALDict *dict, const char *key)
+{
+	LALDictEntry *entry;
+	LALValue *value;
+	entry = XLALDictPop(dict, key);
+	XLAL_CHECK_NULL(entry, XLAL_EFUNC);
+	value = XLALValueDuplicate(XLALDictEntryGetValue(entry));
+	XLALDictEntryFree(entry);
+	return value;
+}
+
+void * XLALDictPopBLOBValue(LALDict *dict, const char *key)
+{
+	LALDictEntry *entry;
+	void *value;
+	entry = XLALDictPop(dict, key);
+	XLAL_CHECK_NULL(entry, XLAL_EFUNC);
+	value = XLALValueGetBLOB(XLALDictEntryGetValue(entry));
+	XLALDictEntryFree(entry);
+	return value;
+}
+
+char * XLALDictPopStringValue(LALDict *dict, const char *key)
+{
+	LALDictEntry *entry;
+	char *value;
+	entry = XLALDictPop(dict, key);
+	XLAL_CHECK_NULL(entry, XLAL_EFUNC);
+	value = XLALStringDuplicate(XLALValueGetString(XLALDictEntryGetValue(entry)));
+	XLALDictEntryFree(entry);
+	XLAL_CHECK_NULL(value, XLAL_EFUNC);
+	return value;
+}
+
+#define DEFINE_POP_FUNC(TYPE, FAILVAL) \
+	TYPE XLALDictPop ## TYPE ## Value(LALDict *dict, const char *key) \
+	{ \
+		LALDictEntry *entry; \
+		TYPE value; \
+		entry = XLALDictPop(dict, key); \
+		XLAL_CHECK_VAL(FAILVAL, entry, XLAL_EFUNC); \
+		value = XLALValueGet ## TYPE(XLALDictEntryGetValue(entry)); \
+		XLALDictEntryFree(entry); \
+		return value; \
+	}
+
+DEFINE_POP_FUNC(CHAR, XLAL_FAILURE)
+DEFINE_POP_FUNC(INT2, XLAL_FAILURE)
+DEFINE_POP_FUNC(INT4, XLAL_FAILURE)
+DEFINE_POP_FUNC(INT8, XLAL_FAILURE)
+DEFINE_POP_FUNC(UCHAR, XLAL_FAILURE)
+DEFINE_POP_FUNC(UINT2, XLAL_FAILURE)
+DEFINE_POP_FUNC(UINT4, XLAL_FAILURE)
+DEFINE_POP_FUNC(UINT8, XLAL_FAILURE)
+DEFINE_POP_FUNC(REAL4, XLAL_REAL4_FAIL_NAN)
+DEFINE_POP_FUNC(REAL8, XLAL_REAL8_FAIL_NAN)
+DEFINE_POP_FUNC(COMPLEX8, XLAL_REAL4_FAIL_NAN)
+DEFINE_POP_FUNC(COMPLEX16, XLAL_REAL8_FAIL_NAN)
+
+REAL8 XLALDictPopValueAsREAL8(LALDict *dict, const char *key)
+{
+	LALDictEntry *entry;
+	REAL8 value;
+	entry = XLALDictPop(dict, key);
+	XLAL_CHECK_REAL8(entry, XLAL_EFUNC);
+	value = XLALValueGetAsREAL8(XLALDictEntryGetValue(entry));
+	XLALDictEntryFree(entry);
+	return value;
 }
 
 struct LALDictAsStringAppendValueFuncParams {char *s; int first;};
@@ -488,16 +588,17 @@ static void XLALDictAsStringAppendValueFunc(char *key, LALValue *value, void *th
 	return;
 }
 
-char * XLALDictAsStringAppend(char *s, LALDict *list)
+char * XLALDictAsStringAppend(char *s, const LALDict *dict)
 {
+	LALDict *d = (LALDict *)(uintptr_t)dict; // discarding const qual is harmless
 	struct LALDictAsStringAppendValueFuncParams p = {s, 1};
-        p.s = XLALStringAppend(p.s, "{");
-	XLALDictForeach(list, XLALDictAsStringAppendValueFunc, &p);
-        p.s = XLALStringAppend(p.s, "}");
+	p.s = XLALStringAppend(p.s, "{");
+	XLALDictForeach(d, XLALDictAsStringAppendValueFunc, &p);
+	p.s = XLALStringAppend(p.s, "}");
 	return p.s;
 }
 
-void XLALDictPrint(LALDict *dict, int fd)
+void XLALDictPrint(const LALDict *dict, int fd)
 {
 	char *s = NULL;
 	s = XLALDictAsStringAppend(s, dict);

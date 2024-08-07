@@ -1268,7 +1268,54 @@ int XLALH5DatasetCheckStringData(LALH5Dataset UNUSED *dset)
 #ifndef HAVE_HDF5
 	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
 #else
-	return threadsafe_H5Tget_class(dset->dtype_id) == H5T_STRING;
+	int retval;
+	retval = threadsafe_H5Tget_class(dset->dtype_id);
+	XLAL_CHECK(retval >= 0, XLAL_EIO);
+	if (retval == H5T_STRING) {
+		retval = threadsafe_H5Tis_variable_str(dset->dtype_id);
+		XLAL_CHECK(retval >= 0, XLAL_EIO);
+		if (retval) {
+			retval = threadsafe_H5Tget_strpad(dset->dtype_id);
+			XLAL_CHECK(retval >= 0, XLAL_EIO);
+			if (retval == H5T_STR_NULLTERM)
+				return 1;
+		}
+	}
+        return 0;
+#endif
+}
+
+/**
+ * @brief Checks if a ::LALH5Dataset contains fixed length string data
+ * @param dset Pointer to a ::LALH5Dataset to be checked.
+ * @retval 1 ::LALH5Dataset is of fixed length string type
+ * @retval 0 ::LALH5Dataset is not of fixed length string type
+ * @retval -1 Failure.
+ */
+int XLALH5DatasetCheckFixedLengthStringData(LALH5Dataset UNUSED *dset)
+{
+#ifndef HAVE_HDF5
+	XLAL_ERROR(XLAL_EFAILED, "HDF5 support not implemented");
+#else
+	int retval;
+	retval = threadsafe_H5Tget_class(dset->dtype_id);
+	XLAL_CHECK(retval >= 0, XLAL_EIO);
+	if (retval == H5T_STRING) {
+		retval = threadsafe_H5Tis_variable_str(dset->dtype_id);
+		XLAL_CHECK(retval >= 0, XLAL_EIO);
+		if (!retval) {
+			retval = threadsafe_H5Tget_strpad(dset->dtype_id);
+			XLAL_CHECK(retval >= 0, XLAL_EIO);
+			switch (retval) {
+			case H5T_STR_NULLTERM:
+			case H5T_STR_NULLPAD:
+				return 1;
+			default:
+				break;
+			}
+		}
+	}
+        return 0;
 #endif
 }
 
@@ -2073,6 +2120,9 @@ int XLALH5AttributeQueryStringValue(char UNUSED *value, size_t UNUSED size, cons
 	hid_t space_id;
 	hid_t dtype_id;
 	hid_t memtype_id;
+	H5T_cset_t cset;
+	size_t dtype_size;
+	int vlen;
 	int n;
 
 	obj_id = object.generic->object_id;
@@ -2083,7 +2133,7 @@ int XLALH5AttributeQueryStringValue(char UNUSED *value, size_t UNUSED size, cons
 	if (attr_id < 0)
 		XLAL_ERROR(XLAL_EIO, "Could not read attribute `%s'", key);
 
-	/* sanity check: make sure this is just one variable-length string */
+	/* sanity check: make sure this is just one string */
 	space_id = threadsafe_H5Aget_space(attr_id);
 	if (space_id < 0) {
 		threadsafe_H5Aclose(attr_id);
@@ -2101,32 +2151,76 @@ int XLALH5AttributeQueryStringValue(char UNUSED *value, size_t UNUSED size, cons
 		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO, "Could not read type of attribute `%s'", key);
 	}
-	
-	H5T_cset_t dtype_cset = H5Tget_cset(dtype_id); /* threadsafe not needed as dtype_id local to this function */
-	threadsafe_H5Tclose(dtype_id);
-	if (dtype_cset == H5T_CSET_ERROR) {
+
+	if (threadsafe_H5Tget_class(dtype_id) != H5T_STRING) {
+		threadsafe_H5Tclose(dtype_id);
 		threadsafe_H5Sclose(space_id);
 		threadsafe_H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read caracter set type of attribute `%s'", key);
+		XLAL_ERROR(XLAL_EIO, "Attribute `%s' is not a string", key);
 	}
 
+	/* FIXME threadsafe */
+        cset = threadsafe_H5Tget_cset(dtype_id); /* encoding: UTF8 or ASCII */
+	if (cset < 0) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Sclose(space_id);
+		threadsafe_H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not determine encoding for attribute `%s'", key);
+	}
+
+	vlen = threadsafe_H5Tis_variable_str(dtype_id);
+	if (vlen < 0) {
+		threadsafe_H5Tclose(dtype_id);
+		threadsafe_H5Sclose(space_id);
+		threadsafe_H5Aclose(attr_id);
+		XLAL_ERROR(XLAL_EIO, "Could not determine if attribute `%s' is a variable length string", key);
+	}
+
+	if (vlen)
+		dtype_size = H5T_VARIABLE;
+	else {
+		dtype_size = H5Tget_size(dtype_id);
+		dtype_size++; /* add 1 for null termination */
+	}
+
+	threadsafe_H5Tclose(dtype_id);
+
 	memtype_id = threadsafe_H5Tcopy(H5T_C_S1);
-	if (memtype_id < 0 || threadsafe_H5Tset_size(memtype_id, H5T_VARIABLE) || H5Tset_cset(memtype_id, dtype_cset)) {
+	if (memtype_id < 0 || threadsafe_H5Tset_size(memtype_id, dtype_size)) {
 		threadsafe_H5Sclose(space_id);
 		threadsafe_H5Aclose(attr_id);
 		XLAL_ERROR(XLAL_EIO);
 	}
 
-	if (threadsafe_H5Aread(attr_id, memtype_id, &str) < 0) {
+	/* set encoding (UTF8 or ASCII) */
+        if (threadsafe_H5Tset_cset(memtype_id, cset) < 0) {
 		threadsafe_H5Tclose(memtype_id);
 		threadsafe_H5Sclose(space_id);
 		threadsafe_H5Aclose(attr_id);
-		XLAL_ERROR(XLAL_EIO, "Could not read data from attribute `%s'", key);
+		XLAL_ERROR(XLAL_EIO);
 	}
-
-	n = snprintf(value, value == NULL ? 0 : size, "%s", str);
-
-	threadsafe_H5Dvlen_reclaim(memtype_id, space_id, H5P_DEFAULT, &str);
+	
+	if (vlen) { /* variable length string */
+		if (threadsafe_H5Aread(attr_id, memtype_id, &str) < 0) {
+			threadsafe_H5Tclose(memtype_id);
+			threadsafe_H5Sclose(space_id);
+			threadsafe_H5Aclose(attr_id);
+			XLAL_ERROR(XLAL_EIO, "Could not read data from attribute `%s'", key);
+		}
+		n = snprintf(value, value == NULL ? 0 : size, "%s", str);
+		threadsafe_H5Dvlen_reclaim(memtype_id, space_id, H5P_DEFAULT, &str);
+        } else {
+		str = XLALMalloc(dtype_size);
+		if (threadsafe_H5Aread(attr_id, memtype_id, str) < 0) {
+			XLALFree(str);
+			threadsafe_H5Tclose(memtype_id);
+			threadsafe_H5Sclose(space_id);
+			threadsafe_H5Aclose(attr_id);
+			XLAL_ERROR(XLAL_EIO, "Could not read data from attribute `%s'", key);
+		}
+		n = snprintf(value, value == NULL ? 0 : size, "%s", str);
+		XLALFree(str);
+        }
 
 	threadsafe_H5Tclose(memtype_id);
 	threadsafe_H5Sclose(space_id);

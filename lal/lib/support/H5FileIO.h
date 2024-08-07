@@ -151,6 +151,7 @@ LIGOTimeGPS * XLALH5FileQueryLIGOTimeGPSAttributeValue(LIGOTimeGPS *value, LALH5
 
 LALH5Dataset * XLALH5DatasetRead(LALH5File *file, const char *name);
 int XLALH5DatasetCheckStringData(LALH5Dataset *dset);
+int XLALH5DatasetCheckFixedLengthStringData(LALH5Dataset *dset);
 size_t XLALH5DatasetQueryNPoints(LALH5Dataset *dset);
 size_t XLALH5DatasetQueryNBytes(LALH5Dataset *dset);
 LALTYPECODE XLALH5DatasetQueryType(LALH5Dataset *dset);

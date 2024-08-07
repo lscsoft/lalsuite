@@ -6,7 +6,7 @@ LALINFERENCE_DIR=$(cd "$(dirname $(readlink -f "${BASH_SOURCE[0]}"))"/.. && pwd)
 export USER=albert.einstein
 export OMP_NUM_THREADS=1
 sed \
-  -e 's|/cvmfs/oasis.opensciencegrid.org/ligo/sw/conda/envs/igwn-py37/| |'\
+  -e 's|/cvmfs/software.igwn.org/conda/envs/igwn/| |'\
   -e "/ligo-skymap-from-samples=/c\ligo-skymap-from-samples=/bin/true" \
   -e "/ligo-skymap-plot=/c\ligo-skymap-plot=/bin/true" \
   -e "/email=/c\email="test" " \
