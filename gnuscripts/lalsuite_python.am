@@ -107,12 +107,12 @@ pybin-install-exec-local:
 		fi; \
 		echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
 		$(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
-		if test "x$(exec_prefix)" != "x$(python_exec_prefix)"; then \
+		if test "x$(exec_prefix)" != "x$(PYTHON_EXEC_PREFIX)"; then \
 			echo " $(MKDIR_P) '$(DESTDIR)$(pkglibexecdir)'"; \
 			$(MKDIR_P) "$(DESTDIR)$(pkglibexecdir)" || exit 1; \
 		fi; \
 		for file in $(pybin_scripts); do \
-			if test "x$(exec_prefix)" = "x$(python_exec_prefix)"; then \
+			if test "x$(exec_prefix)" = "x$(PYTHON_EXEC_PREFIX)"; then \
 				echo "$${shebang}$(PYTHON)" > .libs/$${file}.bin; \
 				$(SED) -e 's|@LALSUITE_BINDIR@|$(bindir)|g' "$(srcdir)/$${file}.py" >> .libs/$${file}.bin || exit 1; \
 			else \
@@ -135,7 +135,7 @@ pybin-install-exec-local:
 pybin-uninstall-local:
 	-for file in $(pybin_scripts); do \
 		rm -f "$(DESTDIR)$(bindir)/$${file}"; \
-		if test "x$(exec_prefix)" != "x$(python_exec_prefix)"; then \
+		if test "x$(exec_prefix)" != "x$(PYTHON_EXEC_PREFIX)"; then \
 			rm -f "$(DESTDIR)$(pkglibexecdir)/$${file}.py"; \
 		fi; \
 	done
