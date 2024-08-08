@@ -196,9 +196,23 @@ lint:gitignore:
     PYTHON: "python3"
   needs: []
   script:
+    # check that .gitignore entries are in the right place
+    - |
+      status=0
+      for file in .gitignore lal*/.gitignore; do
+        basedir=`dirname ${file}`
+        for line in `cat ${file}`; do
+          subdir=`echo ${line} | sed 's|^/||;s|/.*||'`
+          if test -f "${basedir}/${subdir}/.gitignore"; then
+            echo "ERROR: line '${line}' in '${file}' should be in '${basedir}/${subdir}/.gitignore'"
+            status=1
+          fi
+        done
+      done
+      test ${status} -eq 0 || exit ${status}
+    # build in source directory, including tests
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-python --enable-swig-python
-    # build in source directory, including tests
     - make -j${CPU_COUNT} VERBOSE=1 all
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     # check for build files not in .gitignore
