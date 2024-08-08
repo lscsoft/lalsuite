@@ -217,11 +217,18 @@ lint:gitignore:
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     # check for build files not in .gitignore
     - |
-      if git status --short | grep '^?? ' >/dev/null 2>&1; then
-        echo 'ERROR: the following files need to be added to .gitignore:'
-        git status --short
-        exit 1
-      fi
+      status=0
+      for line in `git status --short | sed -n 's|^?? ||p'`; do
+        subdir=`echo ${line} | sed 's|/.*||'`
+        rempath=`echo ${line} | sed "s|^${subdir}/||"`
+        if test -f "${subdir}/.gitignore"; then
+          echo "ERROR: please add '${rempath}' to '${subdir}/.gitignore'"
+        else
+          echo "ERROR: please add '${line}' to '.gitignore'"
+        fi
+        status=1
+      done
+      test ${status} -eq 0 || exit ${status}
   artifacts:
     # upload some files to debug failures
     paths:
