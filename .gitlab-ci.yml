@@ -379,6 +379,7 @@ default:
     - rm -rfv *-build-deps_*
     # build packages
     - debuild
+         --prepend-path=/usr/lib/ccache --set-envvar=CCACHE_DIR=${CCACHE_DIR}
          -us -uc -r
          --lintian-opts --color=always --allow-root
     # print package info
