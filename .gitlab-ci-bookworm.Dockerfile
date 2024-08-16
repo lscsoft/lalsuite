@@ -1,4 +1,4 @@
-FROM igwn/base:bullseye
+FROM igwn/base:bookworm
 
 LABEL name="LALSuite Nightly - Debian Bullseye" \
       maintainer="Adam Mercer <adam.mercer@ligo.org>" \

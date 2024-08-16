@@ -86,7 +86,7 @@
   extends:
     - .docker
   variables:
-    DOCKER_FILE: ".gitlab-ci-bullseye.Dockerfile"
+    DOCKER_FILE: ".gitlab-ci-bookworm.Dockerfile"
   needs:
     - lal:deb
     - lalframe:deb
@@ -116,8 +116,8 @@ docker:tags:el8:
     - .docker:el8
     - .docker:tags
 
-# build a nightly container for Debian bullseye
-docker:nightly:bullseye:
+# build a nightly container for Debian bookworm
+docker:nightly:bookworm:
   before_script:
     - !reference [.container_snippets, nightly_image]
     - !reference [.container_snippets, debian]
@@ -125,8 +125,8 @@ docker:nightly:bullseye:
     - .docker:debian
     - .docker:nightly
 
-# build a tagged container for Debian bullseye
-docker:tags:bullseye:
+# build a tagged container for Debian bookworm
+docker:tags:bookworm:
   before_script:
     - !reference [.container_snippets, tag_image]
     - !reference [.container_snippets, debian]

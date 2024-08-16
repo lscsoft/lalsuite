@@ -338,7 +338,7 @@ default:
   extends:
     - .debian:deb
     - .build-from-tarball
-  image: igwn/base:bullseye
+  image: igwn/base:bookworm
   variables:
     # tell debhelper to parallelise the build
     DEB_BUILD_OPTIONS: "parallel=${CPU_COUNT}"
@@ -379,6 +379,7 @@ default:
     - rm -rfv *-build-deps_*
     # build packages
     - debuild
+         --prepend-path=/usr/lib/ccache --set-envvar=CCACHE_DIR=${CCACHE_DIR}
          -us -uc -r
          --lintian-opts --color=always --allow-root
     # print package info
@@ -593,7 +594,7 @@ default:
 # a job called `tarball:<subpackage>` that
 # `extends` this one (see `tarball:lal` below)
 .make-dist:
-  image: igwn/lalsuite-dev:el8
+  image: igwn/lalsuite-dev:bookworm
   stage: tarballs
   needs: []
   extends:
@@ -1403,7 +1404,7 @@ upgrade:rpm-el8:
     - lalpulsar:rpm-el8
     - lalapps:rpm-el8
 
-upgrade:debian:bullseye:
+upgrade:debian:bookworm:
   extends:
     - .debuild
     - .upgrade-test
