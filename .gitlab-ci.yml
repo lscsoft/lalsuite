@@ -469,6 +469,8 @@ default:
   variables:
     # stub of feedstock configuration file
     CONDA_CONFIG: "linux_64_"
+    # get verbose logging from conda smithy
+    CONDA_SMITHY_LOGLEVEL: "DEBUG"
   script:
     - PACKAGE=${CI_JOB_NAME%%:*}
     - cd ${PACKAGE}/

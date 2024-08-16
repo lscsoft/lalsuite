@@ -7,6 +7,11 @@
 {% set name = "lalinference" %}
 {% set build = 9999 %}
 
+# default MPI implementation
+{% if mpi is not defined %}
+{% set mpi = "nompi" %}
+{% endif %}
+
 # set version based on nightly
 # (we rebuild the nightly version ourselves because the tarball might have
 #  been generate on a different day)
