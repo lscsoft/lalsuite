@@ -195,8 +195,8 @@ int XLALGetDopplerShiftedFrequencyInfo
 /* Allocates memory as well */
 int XLALCreateSFTIndexListFromMultiSFTVect
 (
-  SFTIndexList        **indexList,   /* Output: flat list of indices to locate SFTs */
-  MultiSFTVector            *sfts    /* Input: set of per-detector SFT vectors */
+  SFTIndexList        **indexList,   /**< Output: flat list of indices to locate SFTs */
+  MultiSFTVector            *sfts    /**< Input: set of per-detector SFT vectors */
 )
 {
   SFTIndexList *ret = NULL;
@@ -238,11 +238,11 @@ int XLALCreateSFTIndexListFromMultiSFTVect
 /* Allocates memory as well */
 int XLALCreateSFTPairIndexList
 (
-  SFTPairIndexList  **pairIndexList, /* Output: list of SFT pairs */
-  SFTIndexList           *indexList, /* Input: list of indices to locate SFTs */
-  MultiSFTVector              *sfts, /* Input: set of per-detector SFT vectors */
-  REAL8                      maxLag, /* Maximum allowed lag time */
-  BOOLEAN              inclAutoCorr  /* Flag indicating whether a "pair" of an SFT with itself is allowed */
+  SFTPairIndexList  **pairIndexList, /**< Output: list of SFT pairs */
+  SFTIndexList           *indexList, /**< Input: list of indices to locate SFTs */
+  MultiSFTVector              *sfts, /**< Input: set of per-detector SFT vectors */
+  REAL8                      maxLag, /**< Maximum allowed lag time */
+  BOOLEAN              inclAutoCorr  /**< Flag indicating whether a "pair" of an SFT with itself is allowed */
 )
 {
   SFTPairIndexList *ret = NULL;
@@ -309,11 +309,11 @@ int XLALCreateSFTPairIndexList
 /* Allocates memory as well */
 int XLALCreateSFTPairIndexListAccurateResamp
 (
-  SFTPairIndexList  **pairIndexList, /* Output: list of SFT pairs */
-  SFTIndexList           *indexList, /* Input: list of indices to locate SFTs */
-  MultiSFTVector              *sfts, /* Input: set of per-detector SFT vectors */
-  MultiResampSFTPairMultiIndexList *resampPairs, /* Input: pairs of tShort segments for resampling */
-  const MultiLIGOTimeGPSVector      *restrict resampMultiTimes                /**< [in] timestamps containing Tshort times for each detector */
+  SFTPairIndexList  **pairIndexList, /**< Output: list of SFT pairs */
+  SFTIndexList           *indexList, /**< Input: list of indices to locate SFTs */
+  MultiSFTVector              *sfts, /**< Input: set of per-detector SFT vectors */
+  MultiResampSFTPairMultiIndexList *resampPairs, /**< Input: pairs of tShort segments for resampling */
+  const MultiLIGOTimeGPSVector      *restrict resampMultiTimes                /**< Input: timestamps containing Tshort times for each detector */
 
 )
 {
@@ -959,11 +959,11 @@ int XLALTestResampPairIndexList
 /* Allocates memory as well */
 int XLALCalculateCrossCorrGammas
 (
-  REAL8Vector          **Gamma_ave, /* Output: vector of aa+bb values */
-  REAL8Vector         **Gamma_circ, /* Output: vector of ab-ba values */
-  SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
-  SFTIndexList          *indexList, /* Input: list of SFTs */
-  MultiAMCoeffs       *multiCoeffs  /* Input: AM coefficients */
+  REAL8Vector          **Gamma_ave, /**< Output: vector of aa+bb values */
+  REAL8Vector         **Gamma_circ, /**< Output: vector of ab-ba values */
+  SFTPairIndexList  *pairIndexList, /**< Input: list of SFT pairs */
+  SFTIndexList          *indexList, /**< Input: list of SFTs */
+  MultiAMCoeffs       *multiCoeffs  /**< Input: AM coefficients */
 )
 {
 
@@ -1146,17 +1146,17 @@ int XLALCalculateCrossCorrGammasResampShort
 /* This assumes rectangular or nearly-rectangular windowing */
 int XLALCalculatePulsarCrossCorrStatistic
 (
-  REAL8                         *ccStat, /* Output: cross-correlation statistic rho */
-  REAL8                      *evSquared, /* Output: (E[rho]/h0^2)^2 */
-  REAL8Vector                *curlyGAmp, /* Input: Amplitude of curly G for each pair */
-  COMPLEX8Vector       *expSignalPhases, /* Input: Phase of signal for each SFT */
-  UINT4Vector               *lowestBins, /* Input: Bin index to start with for each SFT */
-  REAL8VectorSequence         *sincList, /* Input: input the sinc factors*/
-  SFTPairIndexList            *sftPairs, /* Input: flat list of SFT pairs */
-  SFTIndexList              *sftIndices, /* Input: flat list of SFTs */
-  MultiSFTVector             *inputSFTs, /* Input: SFT data */
-  MultiNoiseWeights       *multiWeights, /* Input: nomalizeation factor S^-1 & weights for each SFT */
-  UINT4                         numBins  /* Input Number of frequency bins to be taken into calc */
+  REAL8                         *ccStat, /**< Output: cross-correlation statistic rho */
+  REAL8                      *evSquared, /**< Output: (E[rho]/h0^2)^2 */
+  REAL8Vector                *curlyGAmp, /**< Input: Amplitude of curly G for each pair */
+  COMPLEX8Vector       *expSignalPhases, /**< Input: Phase of signal for each SFT */
+  UINT4Vector               *lowestBins, /**< Input: Bin index to start with for each SFT */
+  REAL8VectorSequence         *sincList, /**< Input: input the sinc factors*/
+  SFTPairIndexList            *sftPairs, /**< Input: flat list of SFT pairs */
+  SFTIndexList              *sftIndices, /**< Input: flat list of SFTs */
+  MultiSFTVector             *inputSFTs, /**< Input: SFT data */
+  MultiNoiseWeights       *multiWeights, /**< Input: nomalizeation factor S^-1 & weights for each SFT */
+  UINT4                         numBins  /**< Input Number of frequency bins to be taken into calc */
 )
 {
 
@@ -1655,18 +1655,18 @@ int XLALCalculateCrossCorrPhaseMetricShort
 /*calculate metric diagonal components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
 int XLALCalculateLMXBCrossCorrDiagMetric
 (
-  REAL8                      *hSens, /* Output: sensitivity*/
-  REAL8                       *g_ff, /* Output: Diagonal frequency metric element */
-  REAL8                       *g_aa, /* Output: Diagonal binary projected semimajor axis metric element*/
-  REAL8                       *g_TT, /* Output: Diagonal reference time metric element*/
-  REAL8                       *g_pp, /* Output: Diagonal orbital period metric element */
-  REAL8             *weightedMuTAve, /* output: weighred T mean*/
-  PulsarDopplerParams DopplerParams, /*  Input: pulsar/binary orbit paramaters*/
-  REAL8Vector              *G_alpha, /*  Input: vector of curlyGunshifted values */
-  SFTPairIndexList   *pairIndexList, /*  Input: list of SFT pairs */
-  SFTIndexList           *indexList, /*  Input: list of SFTs */
-  MultiSFTVector              *sfts, /*  Input: set of per-detector SFT vectors */
-  MultiNoiseWeights   *multiWeights  /*  Input: Input: nomalizeation factor S^-1 & weights for each SFT*/
+  REAL8                      *hSens, /**< Output: sensitivity*/
+  REAL8                       *g_ff, /**< Output: Diagonal frequency metric element */
+  REAL8                       *g_aa, /**< Output: Diagonal binary projected semimajor axis metric element*/
+  REAL8                       *g_TT, /**< Output: Diagonal reference time metric element*/
+  REAL8                       *g_pp, /**< Output: Diagonal orbital period metric element */
+  REAL8             *weightedMuTAve, /**< output: weighred T mean*/
+  PulsarDopplerParams DopplerParams, /**<  Input: pulsar/binary orbit paramaters*/
+  REAL8Vector              *G_alpha, /**<  Input: vector of curlyGunshifted values */
+  SFTPairIndexList   *pairIndexList, /**<  Input: list of SFT pairs */
+  SFTIndexList           *indexList, /**<  Input: list of SFTs */
+  MultiSFTVector              *sfts, /**<  Input: set of per-detector SFT vectors */
+  MultiNoiseWeights   *multiWeights  /**<  Input: nomalizeation factor S^-1 & weights for each SFT*/
 )
 
 {
