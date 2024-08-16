@@ -196,18 +196,39 @@ lint:gitignore:
     PYTHON: "python3"
   needs: []
   script:
+    # check that .gitignore entries are in the right place
+    - |
+      status=0
+      for file in .gitignore lal*/.gitignore; do
+        basedir=`dirname ${file}`
+        for line in `cat ${file}`; do
+          subdir=`echo ${line} | sed 's|^/||;s|/.*||'`
+          if test -f "${basedir}/${subdir}/.gitignore"; then
+            echo "ERROR: line '${line}' in '${file}' should be in '${basedir}/${subdir}/.gitignore'"
+            status=1
+          fi
+        done
+      done
+      test ${status} -eq 0 || exit ${status}
+    # build in source directory, including tests
     - ./00boot
     - ./configure ${ENABLE_NIGHTLY} --enable-doxygen --enable-python --enable-swig-python
-    # build in source directory, including tests
     - make -j${CPU_COUNT} VERBOSE=1 all
     - make -j${CPU_COUNT} VERBOSE=1 check TESTS=
     # check for build files not in .gitignore
     - |
-      if git status --short | grep '^?? ' >/dev/null 2>&1; then
-        echo 'ERROR: the following files need to be added to .gitignore:'
-        git status --short
-        exit 1
-      fi
+      status=0
+      for line in `git status --short | sed -n 's|^?? ||p'`; do
+        subdir=`echo ${line} | sed 's|/.*||'`
+        rempath=`echo ${line} | sed "s|^${subdir}/||"`
+        if test -f "${subdir}/.gitignore"; then
+          echo "ERROR: please add '${rempath}' to '${subdir}/.gitignore'"
+        else
+          echo "ERROR: please add '${line}' to '.gitignore'"
+        fi
+        status=1
+      done
+      test ${status} -eq 0 || exit ${status}
   artifacts:
     # upload some files to debug failures
     paths:
