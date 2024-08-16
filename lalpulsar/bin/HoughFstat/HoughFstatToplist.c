@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include <math.h>
 #include <stdio.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -48,22 +49,12 @@ extern int _doserrno;
 #define fsync _commit
 #define fileno _fileno
 
-/* finite */
-#include <float.h>
-#define finite _finite
-
 #else /* WIN32 */
 
 /* errno */
 #include <errno.h>
 
-/* this is defined in C99 and *should* be in math.h. Long term
-   protect this with a HAVE_FINITE */
-int finite( double );
-
 #endif /* WIN32 */
-
-
 
 /* define min macro if not already defined */
 #ifndef min
@@ -235,11 +226,11 @@ int read_houghFstat_toplist_from_fp( toplist_t *l, FILE *fp, UINT4 *checksum, UI
     if (
       items != 6 ||
 
-      !finite( HoughFstatLine.Freq )        ||
-      !finite( HoughFstatLine.f1dot )       ||
-      !finite( HoughFstatLine.Alpha )       ||
-      !finite( HoughFstatLine.Delta )       ||
-      !finite( HoughFstatLine.HoughFstat )  ||
+      !isfinite( HoughFstatLine.Freq )        ||
+      !isfinite( HoughFstatLine.f1dot )       ||
+      !isfinite( HoughFstatLine.Alpha )       ||
+      !isfinite( HoughFstatLine.Delta )       ||
+      !isfinite( HoughFstatLine.HoughFstat )  ||
 
       HoughFstatLine.Freq  < 0.0                    ||
       HoughFstatLine.Alpha <         0.0 - epsilon  ||

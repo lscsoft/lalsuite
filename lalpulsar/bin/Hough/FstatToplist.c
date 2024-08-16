@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include "math.h"
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
@@ -44,10 +45,6 @@ extern int _doserrno;
 /* fsync */
 #define fsync _commit
 #define fileno _fileno
-
-/* finite */
-#include <float.h>
-#define finite _finite
 
 #else /* MSC */
 
