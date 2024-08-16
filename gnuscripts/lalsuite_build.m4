@@ -1,7 +1,7 @@
 # -*- mode: autoconf; -*-
 # lalsuite_build.m4 - top level build macros
 #
-# serial 181
+# serial 182
 
 # restrict which LALSUITE_... patterns can appearing in output (./configure);
 # useful for debugging problems with unexpanded LALSUITE_... Autoconf macros
@@ -519,16 +519,16 @@ AC_DEFUN([LALSUITE_CHECK_PYTHON],[
     ])
   ])
   AS_IF([test "x${python}" != xfalse || test "x${lalsuite_require_pyvers}" != x],[
-    AM_PATH_PYTHON([${lalsuite_pyvers}],[
-      AC_SUBST([python_prefix], [`${PYTHON} -c 'import sys; print(sys.prefix)' 2>/dev/null`])
-      AC_SUBST([python_exec_prefix], [`${PYTHON} -c 'import sys; print(sys.exec_prefix)' 2>/dev/null`])
-    ],[
+    AM_PATH_PYTHON([${lalsuite_pyvers}],[],[
       AS_IF([test "x${python}" = xtrue || test "x${lalsuite_require_pyvers}" != x],[
         AC_MSG_ERROR([Python version ${lalsuite_pyvers} or later is required])
       ],[
         python=false
       ])
     ])
+    # Always install Python files into the same prefix as the rest of LALSuite
+    AC_SUBST([PYTHON_PREFIX], ['${prefix}'])
+    AC_SUBST([PYTHON_EXEC_PREFIX], ['${exec_prefix}'])
   ])
   AS_IF([test "x${python}" = xfalse && test "x${lalsuite_require_pyvers}" = x],[
     AC_SUBST([PYTHON],["${SHELL} -c 'echo ERROR: Python is missing >&2; exit 1' --"])
