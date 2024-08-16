@@ -305,6 +305,103 @@ int XLALCreateSFTPairIndexList
   return XLAL_SUCCESS;
 }
 
+/** Construct list of SFT pairs corresponding to a list of tShort pairs */
+/* Allocates memory as well */
+int XLALCreateSFTPairIndexListAccurateResamp
+(
+  SFTPairIndexList  **pairIndexList, /* Output: list of SFT pairs */
+  SFTIndexList           *indexList, /* Input: list of indices to locate SFTs */
+  MultiSFTVector              *sfts, /* Input: set of per-detector SFT vectors */
+  MultiResampSFTPairMultiIndexList *resampPairs, /* Input: pairs of tShort segments for resampling */
+  const MultiLIGOTimeGPSVector      *restrict resampMultiTimes                /**< [in] timestamps containing Tshort times for each detector */
+
+)
+{
+  SFTPairIndexList *ret = NULL;
+
+  UINT4 numSFTs = indexList->length;
+  REAL8 Tsft = resampPairs->Tsft;
+  REAL8 Tshort = resampPairs->Tshort;
+  UINT4 TsftsPerTshort = ( UINT4 )ceil( Tshort / Tsft );
+  UINT4 numTshorts = resampPairs->indexList->length;
+
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) == NULL ) {
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  /* Assemble list of SFTs corresponding to each Tshort */
+  UINT4VectorSequence *SFTIndsForTshort = NULL;
+  XLAL_CHECK( ( SFTIndsForTshort = XLALCreateUINT4VectorSequence( numTshorts, TsftsPerTshort ) ) != NULL, XLAL_EFUNC, "XLALCreateUINT4VectorSequence ( %"LAL_UINT4_FORMAT", %"LAL_UINT4_FORMAT" ) failed.",  numTshorts, TsftsPerTshort );
+
+  for ( UINT4 reK = 0; reK < numTshorts; reK++ ) {
+    UINT4 ifoK = resampPairs->indexList->data[reK].detInd;
+    UINT4 reIndK = resampPairs->indexList->data[reK].sftInd;
+    LIGOTimeGPS reTimeK = resampMultiTimes->data[ifoK]->data[reIndK];
+    UINT4 kInShort = 0;
+    for ( UINT4 K = 0; K < numSFTs; K++ ) {
+      if ( indexList->data[K].detInd == ifoK ) {
+        UINT4 indK = indexList->data[K].sftInd;
+        LIGOTimeGPS timeK = sfts->data[ifoK]->data[indK].epoch;
+        REAL8 SFTMidOff = XLALGPSDiff( &timeK, &reTimeK ) + ( 0.5 * Tsft );
+        if ( SFTMidOff >= 0 && SFTMidOff < Tshort ) {
+          /* Midpoint of SFT lies within this Tshort */
+          SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort] = K;
+          kInShort++;
+        }
+      }
+      XLAL_CHECK( kInShort <= TsftsPerTshort, XLAL_EINVAL,
+                  "Unexpectedly too many SFTs within Tshort:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
+                  kInShort, TsftsPerTshort );
+      for ( UINT4 k = kInShort; k < TsftsPerTshort; k++ ) {
+        SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort] = LAL_UINT4_MAX;
+      }
+    }
+  }
+
+  /* Allocate maximum possible size of pair list; will reallocate after construction */
+  UINT4 numTshortPairs = resampPairs->pairIndexList->length;
+  UINT4 maxNumSFTPairs = numTshortPairs * SQUARE( TsftsPerTshort );
+
+  ret->length = maxNumSFTPairs;
+  if ( ( ret->data = XLALCalloc( ret->length, sizeof( *ret->data ) ) ) == NULL ) {
+    XLALFree( ret );
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  /* Loop over pairs of Tshorts */
+  UINT4 alpha = 0;
+  for ( UINT4 reAlpha = 0; reAlpha < numTshortPairs; reAlpha++ ) {
+    UINT4 reK = resampPairs->pairIndexList->data[alpha].sftNum[0];
+    UINT4 reL = resampPairs->pairIndexList->data[alpha].sftNum[1];
+    for ( UINT4 kInShort = 0; kInShort < TsftsPerTshort; kInShort++ ) {
+      UINT4 K = SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort];
+      if ( K == LAL_UINT4_MAX ) {
+        break;
+      }
+      for ( UINT4 lInShort = 0; lInShort < TsftsPerTshort; lInShort++ ) {
+        UINT4 L = SFTIndsForTshort->data[reL * TsftsPerTshort + lInShort];
+        if ( L == LAL_UINT4_MAX ) {
+          break;
+        }
+        ret->data[alpha].sftNum[0] = K;
+        ret->data[alpha].sftNum[1] = L;
+        alpha++;
+        XLAL_CHECK( alpha <= maxNumSFTPairs, XLAL_EINVAL,
+                    "Unexpectedly too many SFT pairs:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
+                    alpha, maxNumSFTPairs );
+      }
+    }
+  }
+  ret->length = alpha;
+  if ( ( ret->data = XLALRealloc( ret->data, ( ret->length ) * sizeof( *ret->data ) ) ) == NULL ) {
+    XLALFree( ret );
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  ( *pairIndexList ) = ret;
+
+  return XLAL_SUCCESS;
+}
 
 /** Resampling-modified: construct list of SFT pairs for inclusion in statistic */
 /* Allocates memory as well */

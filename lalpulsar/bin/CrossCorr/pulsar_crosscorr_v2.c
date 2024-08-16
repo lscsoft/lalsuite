@@ -104,6 +104,7 @@ typedef struct tagUserInput_t {
   BOOLEAN testShortFunctions;    /**< alternative pathway with tShort using resampMultiPairs and new functions */
   BOOLEAN testResampNoTShort;    /**< use resampling without tShort (for e.g., comparison in gapless Gaussian data) */
   BOOLEAN alignTShorts;    /**< make sure tShort segments from different detectors are aligned */
+  BOOLEAN accurateResampMetric;    /**< Use more accurate calculation of metric for resampling */
   INT4    Dterms;                /**< number of Dirichlet terms to use for resampling sinc interpolation */
   REAL8   allowedMismatchFromSFTLength;  /**< mismatch to tolerate in XLALFstatCheckSFTLengthMismatch() */
   BOOLEAN inclSameDetector;      /**< include cross-correlations of detector with itself */
@@ -280,6 +281,14 @@ int main( int argc, char *argv[] )
   }
   if ( ( uvar.resamp == FALSE ) && ( uvar.alignTShorts == TRUE ) ) {
     printf( "Warning! alignTShorts should only be used with --resamp TRUE\n" );
+    printf( "Proceeding without resampling...\n" );
+    if ( uvar.treatWarningsAsErrors ) {
+      printf( "Error! (--treatWarningsAsErrors flag is true).\n" );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+  if ( ( uvar.resamp == FALSE ) && ( uvar.accurateResampMetric == TRUE ) ) {
+    printf( "Warning! accurateResampMetric should only be used with --resamp TRUE\n" );
     printf( "Proceeding without resampling...\n" );
     if ( uvar.treatWarningsAsErrors ) {
       printf( "Error! (--treatWarningsAsErrors flag is true).\n" );
@@ -551,11 +560,18 @@ int main( int argc, char *argv[] )
           XLAL_ERROR( XLAL_EFUNC );
         }
         XLALDestroyMultiREAL8TimeSeries( scienceFlagVect );
-        /* Assign old-school structures */
-        XLALDestroySFTPairIndexList( sftPairs );
-        sftPairs = resampMultiPairs->pairIndexList;
-        XLALDestroySFTIndexList( sftIndices );
-        sftIndices = resampMultiPairs->indexList;
+        if ( uvar.accurateResampMetric == TRUE ) {
+          if ( ( XLALCreateSFTPairIndexListAccurateResamp( &sftPairs, sftIndices, inputSFTs, resampMultiPairs, resampMultiTimes ) != XLAL_SUCCESS ) ) {
+            LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexListAccurateResamp() failed with errno=%d\n", __func__, xlalErrno );
+            XLAL_ERROR( XLAL_EFUNC );
+          }
+        } else {
+          /* Assign old-school structures */
+          XLALDestroySFTPairIndexList( sftPairs );
+          sftPairs = resampMultiPairs->pairIndexList;
+          XLALDestroySFTIndexList( sftIndices );
+          sftIndices = resampMultiPairs->indexList;
+        }
       } else {
         XLALDestroySFTPairIndexList( sftPairs );
         if ( ( XLALCreateSFTPairIndexListResamp( &resampMultiPairs, &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr, uvar.inclSameDetector, Tsft, resampTshort ) != XLAL_SUCCESS ) ) {
@@ -1362,6 +1378,7 @@ int XLALInitUserVars( UserInput_t *uvar )
   XLALRegisterUvarMember( testShortFunctions, BOOLEAN, 0,  OPTIONAL, "Use alternative functions for resampMultiPairs with tShort" );
   XLALRegisterUvarMember( testResampNoTShort, BOOLEAN, 0, OPTIONAL, "Use resampling without tShort (for e.g., comparison in gapless Gaussian data)" );
   XLALRegisterUvarMember( alignTShorts, BOOLEAN, 0, OPTIONAL, "Make sure tShort segments from different detectors are aligned" );
+  XLALRegisterUvarMember( accurateResampMetric, BOOLEAN, 0, OPTIONAL, "Use more accurate calculation of metric for resampling" );
   XLALRegisterUvarMember( Dterms, INT4, 0, OPTIONAL, "Number of Dirichlet terms for resampling sinc interpolation" );
   XLALRegisterUvarMember( allowedMismatchFromSFTLength, REAL8, 0, OPTIONAL, "override default value in XLALFstatCheckSFTLengthMismatch() (only relevant for resamp)" );
   XLALRegisterUvarMember( inclSameDetector, BOOLEAN, 0, OPTIONAL, "Cross-correlate a detector with itself at a different time (if inclAutoCorr, then also same time)" );
