@@ -561,6 +561,7 @@ int main( int argc, char *argv[] )
         }
         XLALDestroyMultiREAL8TimeSeries( scienceFlagVect );
         if ( uvar.accurateResampMetric == TRUE ) {
+	  /* printf("About to call XLALCreateSFTPairIndexListAccurateResamp\n"); */
           if ( ( XLALCreateSFTPairIndexListAccurateResamp( &sftPairs, sftIndices, inputSFTs, resampMultiPairs, resampMultiTimes ) != XLAL_SUCCESS ) ) {
             LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexListAccurateResamp() failed with errno=%d\n", __func__, xlalErrno );
             XLAL_ERROR( XLAL_EFUNC );

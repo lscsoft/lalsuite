@@ -317,6 +317,8 @@ int XLALCreateSFTPairIndexListAccurateResamp
 
 )
 {
+  printf("Inside XLALCreateSFTPairIndexListAccurateResamp\n");
+
   SFTPairIndexList *ret = NULL;
 
   UINT4 numSFTs = indexList->length;
@@ -345,16 +347,17 @@ int XLALCreateSFTPairIndexListAccurateResamp
         REAL8 SFTMidOff = XLALGPSDiff( &timeK, &reTimeK ) + ( 0.5 * Tsft );
         if ( SFTMidOff >= 0 && SFTMidOff < Tshort ) {
           /* Midpoint of SFT lies within this Tshort */
+	  XLAL_CHECK( kInShort < TsftsPerTshort, XLAL_EINVAL,
+		      "Unexpectedly too many SFTs within Tshort:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
+		      kInShort, TsftsPerTshort );
           SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort] = K;
           kInShort++;
         }
       }
-      XLAL_CHECK( kInShort <= TsftsPerTshort, XLAL_EINVAL,
-                  "Unexpectedly too many SFTs within Tshort:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
-                  kInShort, TsftsPerTshort );
-      for ( UINT4 k = kInShort; k < TsftsPerTshort; k++ ) {
-        SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort] = LAL_UINT4_MAX;
-      }
+    }
+    printf("reK=%d; kInShort=%d; TsftsPerTshort=%d\n", reK, kInShort, TsftsPerTshort);
+    for ( UINT4 k = kInShort; k < TsftsPerTshort; k++ ) {
+      SFTIndsForTshort->data[reK * TsftsPerTshort + k] = LAL_UINT4_MAX;
     }
   }
 
@@ -363,16 +366,19 @@ int XLALCreateSFTPairIndexListAccurateResamp
   UINT4 maxNumSFTPairs = numTshortPairs * SQUARE( TsftsPerTshort );
 
   ret->length = maxNumSFTPairs;
+  printf("About to calloc\n");
   if ( ( ret->data = XLALCalloc( ret->length, sizeof( *ret->data ) ) ) == NULL ) {
     XLALFree( ret );
     XLAL_ERROR( XLAL_ENOMEM );
   }
+  printf("Calloc worked\n");
 
   /* Loop over pairs of Tshorts */
   UINT4 alpha = 0;
   for ( UINT4 reAlpha = 0; reAlpha < numTshortPairs; reAlpha++ ) {
-    UINT4 reK = resampPairs->pairIndexList->data[alpha].sftNum[0];
-    UINT4 reL = resampPairs->pairIndexList->data[alpha].sftNum[1];
+    UINT4 reK = resampPairs->pairIndexList->data[reAlpha].sftNum[0];
+    UINT4 reL = resampPairs->pairIndexList->data[reAlpha].sftNum[1];
+    printf("alpha=%d, reK=%d, reL=%d\n", reAlpha, reK, reL);
     for ( UINT4 kInShort = 0; kInShort < TsftsPerTshort; kInShort++ ) {
       UINT4 K = SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort];
       if ( K == LAL_UINT4_MAX ) {
@@ -383,20 +389,22 @@ int XLALCreateSFTPairIndexListAccurateResamp
         if ( L == LAL_UINT4_MAX ) {
           break;
         }
+        XLAL_CHECK( alpha < maxNumSFTPairs, XLAL_EINVAL,
+                    "Unexpectedly too many SFT pairs:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
+                    alpha, maxNumSFTPairs );
         ret->data[alpha].sftNum[0] = K;
         ret->data[alpha].sftNum[1] = L;
         alpha++;
-        XLAL_CHECK( alpha <= maxNumSFTPairs, XLAL_EINVAL,
-                    "Unexpectedly too many SFT pairs:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
-                    alpha, maxNumSFTPairs );
       }
     }
   }
   ret->length = alpha;
+  printf("About to realloc\n");
   if ( ( ret->data = XLALRealloc( ret->data, ( ret->length ) * sizeof( *ret->data ) ) ) == NULL ) {
     XLALFree( ret );
     XLAL_ERROR( XLAL_ENOMEM );
   }
+  printf("Realloc worked\n");
 
   ( *pairIndexList ) = ret;
 
