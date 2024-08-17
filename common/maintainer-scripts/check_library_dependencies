@@ -201,7 +201,7 @@ def check_gitlab_depends(lib, depends):
         found = set()
         ci_job_name = f'{lib}:{pkg}'
         for needs in gitlab_ci[ci_job_name]['needs']:
-            if needs.startswith('lal'):
+            if needs is not None and needs.startswith('lal'):
                 dep = ':'.join(needs.split(':')[:2])
                 found.add(dep)
         correct = set([f'{dep}:{pkg}' for dep in depends])
