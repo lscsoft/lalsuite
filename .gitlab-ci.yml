@@ -1,9 +1,8 @@
 # ----------------------------------------------------------------------
 # LALSuite: Gitlab-CI configuration
 #
-# This file is complicated, but hopefully robust. If you have any
-# questions, please email lal-discuss@ligo.org, or open a question
-# ticket at https://git.ligo.org/lscsoft/lalsuite/-/issues/
+# If you have any questions, please email lal-discuss@ligo.org, or open
+# a question ticket at https://git.ligo.org/lscsoft/lalsuite/-/issues/
 # ----------------------------------------------------------------------
 
 # -- setup --------------------------------------
@@ -93,16 +92,22 @@ cache:
 
 variables:
   PIPELINE_NAME: "LALSuite CI/CD"
+
   # run autoreconf in pedantic and loud mode
   AUTORECONF: "autoreconf --verbose --warnings=error"
+
   # version of python to use for builds
   LALSUITE_PYTHON_VERSION: "3.10"
+
   # gitlab runners have 4 cores per job
   CPU_COUNT: 4
+
   # don't need git history
   GIT_DEPTH: 1
+
   # global build helpers
   VERBOSE: "true"
+
   # where to store files, ideally everything that is 'cache'
   # should go under ${CI_PROJECT_DIR}/.cache to match the
   # cache key setting above
@@ -111,10 +116,13 @@ variables:
   CCACHE_DIR: "${CI_PROJECT_DIR}/.cache/ccache"
   CONDA_PKGS_DIRS: "${CI_PROJECT_DIR}/.cache/conda/pkgs"
   PIP_CACHE_DIR: "${CI_PROJECT_DIR}/.cache/pipe"
+
   # where to build conda environments (i.e. not in ~/.conda)
   CONDA_ENVS_PATH: "${CI_PROJECT_DIR}/envs"
+
   # what file to use for conda configuration
   CONDARC: "${CI_PROJECT_DIR}/.condarc"
+
   # tell Debian-based installers to run non-interactively
   DEBIAN_FRONTEND: noninteractive
 
@@ -122,32 +130,19 @@ variables:
 default:
   # retry running jobs on failure
   retry: 1
+
   # cancel job when a newer pipeline starts
   interruptible: true
 
-# -- templates ----------------------------------
+# -- helper fragments ----------------------------------
 
-.print-env: &print-env
-  echo "===== env ====="; env; echo "----- env -----"
-
-.configure-ccache: &configure-ccache
-  export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
-
-.configure-coredump: &configure-coredump
-  ulimit -S -c 0
-
-# basic steps for a job that compiles stuff
-# can be included in the before_script/script sections
-# via `*init-build-job`
-.build-init: &init-build-job
-  - *print-env
-  - *configure-ccache
-  - *configure-coredump
+# to use:
+# - !reference [.name-of-fragment]
 
 # simple bash command to retry a stage up to 3 times
 # with a 15-second delay (mainly to survive transient
 # network issues)
-.retry: &define-retry |
+.retry: |
   retry() {
     local n=1
     local max=3
@@ -166,11 +161,57 @@ default:
     done
   }
 
+# basic steps for a job that compiles stuff
+.build-init:
+  # do not save coredumps
+  - ulimit -S -c 0
+  # set up ccache
+  - export PATH=/usr/lib/ccache:/opt/local/libexec/ccache:$PATH
+  # print environment for debugging
+  - echo "===== env ====="
+  - env
+  - echo "----- env -----"
+
+# -- base templates ----------------------------------
+
 # basic before_script template for a compiling job
 .build-job:
   timeout: 3 hours
   before_script:
-    - *init-build-job
+    - !reference [.build-init]
+
+# helper template for jobs running on macOS
+.macos-job:
+  variables:
+    # use the clone strategy so permissions are correctly reset on any failed jobs
+    # see: https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/3726
+    GIT_STRATEGY: clone
+    # Clang has weird bugs when compiling with CFLAGS=-O3
+    CFLAGS: "-O2"
+
+# tag for macOS x86_64 architecture jobs
+.macos-x86_64:
+  extends:
+    - .macos-job
+  tags:
+    - macos_x86_64
+
+# tag for macOS arm64 architecture jobs
+.macos-arm64:
+  extends:
+    - .macos-job
+  tags:
+    - macos_arm64
+
+# deploy outputs to various locations
+.deploy:
+  stage: deploy
+  variables:
+    GIT_STRATEGY: none
+  retry: 0
+  interruptible: false
+
+# -- CI job templates ----------------------------------
 
 # a top-level build runs the standard boot/configure/make
 # cycle with some sensible defaults
@@ -210,38 +251,3 @@ default:
       - lal*/Makefile
       - lal*/**/test-suite.log
     when: on_failure
-
-# helper template for jobs running on macOS
-.macos-job:
-  variables:
-    # use the clone strategy so permissions are correctly reset on any failed jobs
-    # see: https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/3726
-    GIT_STRATEGY: clone
-    # Clang has weird bugs when compiling with CFLAGS=-O3
-    CFLAGS: "-O2"
-
-# tag for macOS x86_64 architecture jobs
-.macos-x86_64:
-  extends:
-    - .macos-job
-  tags:
-    - macos_x86_64
-
-# tag for macOS arm64 architecture jobs
-.macos-arm64:
-  extends:
-    - .macos-job
-  tags:
-    - macos_arm64
-
-# -- deploy -------------------------------------
-#
-# Deploy outputs to various locations
-#
-
-.deploy:
-  stage: deploy
-  variables:
-    GIT_STRATEGY: none
-  retry: 0
-  interruptible: false
