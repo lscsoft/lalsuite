@@ -90,19 +90,16 @@ gcc:12:
   extends:
     - .compiler-test:gcc
   image: igwn/lalsuite-dev-gcc:12
-  allow_failure: true
 
 gcc:13:
   extends:
     - .compiler-test:gcc
   image: igwn/lalsuite-dev-gcc:13
-  allow_failure: true
 
 gcc:14:
   extends:
     - .compiler-test:gcc
   image: igwn/lalsuite-dev-gcc:14
-  allow_failure: true
 
 cuda:
   extends:
