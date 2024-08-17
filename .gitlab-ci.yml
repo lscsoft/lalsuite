@@ -204,6 +204,8 @@ default:
     # use the clone strategy so permissions are correctly reset on any failed jobs
     # see: https://gitlab.com/gitlab-org/gitlab-runner/-/merge_requests/3726
     GIT_STRATEGY: clone
+    # Clang has weird bugs when compiling with CFLAGS=-O3
+    CFLAGS: "-O2"
 
 # tag for macOS x86_64 architecture jobs
 .macos:
