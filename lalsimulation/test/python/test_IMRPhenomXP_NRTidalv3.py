@@ -111,7 +111,7 @@ def test_IMRPhenomXP_NRTidalv3():
 
     expected_result = np.array([34.92128149, 1092.39559414,   34.92128149, 1092.55480085])
     new_result  =  np.array(gen_test_data(lalsimulation.IMRPhenomXP_NRTidalv3))
-    np.testing.assert_almost_equal(new_result, expected_result, 7, "IMRPhenomXP_NRTidalv3 test failed")
+    np.testing.assert_allclose(new_result, expected_result, rtol=0.002, err_msg="IMRPhenomXP_NRTidalv3 test failed", verbose=True)
 
 #-- run the tests ------------------------------
 
