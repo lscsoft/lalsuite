@@ -225,10 +225,6 @@ default:
     CFLAGS: "-O3"
     # target to actually run (distcheck is the most thorough)
     MAKE_TARGET: "distcheck"
-    # set default python as python3
-    # TODO: this can be removed when all packages require python>=3
-    #       on their own
-    PYTHON: "python3"
   needs: []
   script:
     - ./00boot
