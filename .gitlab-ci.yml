@@ -55,6 +55,7 @@ include:
 
   # build packages for each subpackage
   - local: '/.gitlab/ci/pkg.yml'
+  - local: '/.gitlab/ci/rpm.yml'
   - local: '/.gitlab/ci/wheels.yml'
 
   # end-to-end tests
@@ -235,109 +236,6 @@ default:
 .build-from-tarball:
   variables:
     GIT_STRATEGY: none
-
-# -- rpm
-
-# template for RPM packaging jobs
-.rpmbuild:
-  extends:
-    - .rhel:rpm
-    - .build-from-tarball
-  variables:
-    # disable repos we don't use
-    DISABLE_REPOS: "htcondor osg"
-    # parallelise the build (rpmbuild uses this variable by default)
-    RPM_BUILD_NCPUS: ${CPU_COUNT}
-    # where to build things (not a standard variable name)
-    RPM_BUILD_TOPDIR: "${CI_PROJECT_DIR}/rpmbuild"
-  # before_script comes from .rhel:rpm
-  script:
-    - *init-build-job
-    # build a yum repo from the upstream packages
-    - |
-      if [ -d rpmbuild ]; then
-          yum install -y -q createrepo
-          LOCAL_REPO="${CI_PROJECT_DIR}/local-builds"
-          cp -r rpmbuild/RPMS ${LOCAL_REPO}
-          createrepo --quiet --workers "${CPU_COUNT}" "${LOCAL_REPO}"
-          cat > /etc/yum.repos.d/local-builds.repo <<EOF
-      [local-builds]
-      name=Local builds
-      baseurl=file://${LOCAL_REPO}
-      enabled=1
-      gpgcheck=0
-      EOF
-      fi
-    # install srpm dependencies
-    - yum install -y -q lscsoft-packaging-tools
-    # build src.rpm
-    - PACKAGE=${CI_JOB_NAME%%:*}
-    - cd ${PACKAGE}/
-    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
-    - rpmbuild -ts --define "_topdir ${RPM_BUILD_TOPDIR}" ${TARBALL}
-    - SRPM=${RPM_BUILD_TOPDIR}/SRPMS/${PACKAGE}-*.src.rpm
-    # install build dependencies
-    - yum-builddep -y ${SRPM}
-    # print installed packages
-    - yum list installed --quiet
-    # build binary rpms and print details of what we got
-    - rpmbuild --rebuild --noclean --define "_topdir ${RPM_BUILD_TOPDIR}" ${SRPM}
-    # print package info
-    - set +x
-    - for rpmf in ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm; do
-          echo "===== ${rpmf}" &&
-          rpm -qlp "${rpmf}" &&
-          echo "Files:" &&
-          rpm -qip "${rpmf}" &&
-          echo "Provides:" &&
-          rpm -qp --provides "${rpmf}" &&
-          echo "Requires:" &&
-          rpm -qp --requires "${rpmf}";
-      done
-    # install the packages we built
-    - yum -y -q install ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
-    # lint packages (both installed packages and RPM files)
-    - |
-      cat << EOF > rpmlintrc
-      # don't validate Source0
-      setOption("NetworkEnabled", False)
-      # don't know how to fix this
-      addFilter('binary-or-shlib-defines-rpath')
-      # the regex rpmlint uses to identify 'lib' libraries is crap
-      addFilter('explicit-lib-dependency (.*)?matplotlib')
-      addFilter('explicit-lib-dependency (.*)?ciecplib')
-      EOF
-    - rpmlint
-          -f rpmlintrc
-          "*${PACKAGE}*"
-          ${CI_PROJECT_DIR}/rpmbuild/RPMS/*/*${PACKAGE}-*.rpm
-  artifacts:
-    expire_in: 18h
-    paths:
-      # build packages
-      - "rpmbuild/RPMS/*/${CI_JOB_NAME%%:*}-*.rpm"
-      - "rpmbuild/RPMS/*/lib${CI_JOB_NAME%%:*}-*.rpm"
-      - "rpmbuild/RPMS/*/python*-${CI_JOB_NAME%%:*}-*.rpm"
-      # log files
-      - "rpmbuild/BUILD/**/config.log"
-      - "rpmbuild/BUILD/**/test-suite.log"
-      # generated sources
-      - "rpmbuild/BUILD/**/swiglal_lal*_octave.cpp"
-      - "rpmbuild/BUILD/**/swiglal_lal*_python.c"
-    reports:
-      junit: "rpmbuild/BUILD/**/*junit*.xml"
-    when: always
-  rules:
-    - !reference [.ci-rhel, rules]
-    - !reference [.ci-merge-build, rules]
-    - !reference [.ci-nightly-deploy, rules]
-    - !reference [.ci-lalsuite-tag-build, rules]
-    - !reference [.ci-docker, rules]
-
-.rpmbuild:el8:
-  extends:
-    - .rpmbuild
-  image: igwn/base:el8-testing
 
 # -- debian
 
@@ -652,11 +550,6 @@ tarball:lal:
   needs:
     - tarball:lal
 
-lal:rpm-el8:
-  extends:
-     - .rpmbuild:el8
-     - .lal
-
 lal:deb:
   extends:
     - .debuild
@@ -686,14 +579,6 @@ lal:conda:mkl:
 .lalframe:
   stage: LALFrame
 
-lalframe:rpm-el8:
-  extends:
-    - .rpmbuild:el8
-    - .lalframe
-  needs:
-    - tarballs
-    - lal:rpm-el8
-
 lalframe:deb:
   extends:
     - .debuild
@@ -718,14 +603,6 @@ lalframe:conda:
 .lalmetaio:
   stage: LALMetaIO
 
-lalmetaio:rpm-el8:
-  extends:
-    - .rpmbuild:el8
-    - .lalmetaio
-  needs:
-    - tarballs
-    - lal:rpm-el8
-
 lalmetaio:deb:
   extends:
     - .debuild
@@ -749,14 +626,6 @@ lalmetaio:conda:
 
 .lalsimulation:
   stage: LALSimulation
-
-lalsimulation:rpm-el8:
-  extends:
-    - .rpmbuild:el8
-    - .lalsimulation
-  needs:
-    - tarballs
-    - lal:rpm-el8
 
 lalsimulation:deb:
   extends:
@@ -783,16 +652,6 @@ lalsimulation:conda:
 
 .lalburst:
   stage: LALBurst
-
-lalburst:rpm-el8:
-  extends:
-    - .rpmbuild:el8
-    - .lalburst
-  needs:
-    - tarballs
-    - lal:rpm-el8
-    - lalmetaio:rpm-el8
-    - lalsimulation:rpm-el8
 
 lalburst:deb:
   extends:
@@ -821,18 +680,6 @@ lalburst:conda:
 
 .lalinspiral:
   stage: LALInspiral
-
-lalinspiral:rpm-el8:
-  extends:
-    - .rpmbuild:el8
-    - .lalinspiral
-  needs:
-    - tarballs
-    - lal:rpm-el8
-    - lalframe:rpm-el8
-    - lalmetaio:rpm-el8
-    - lalsimulation:rpm-el8
-    - lalburst:rpm-el8
 
 lalinspiral:deb:
   extends:
@@ -865,19 +712,6 @@ lalinspiral:conda:
 
 .lalinference:
   stage: LALInference
-
-lalinference:rpm-el8:
-  extends:
-    - .rpmbuild:el8
-    - .lalinference
-  needs:
-    - tarballs
-    - lal:rpm-el8
-    - lalframe:rpm-el8
-    - lalmetaio:rpm-el8
-    - lalsimulation:rpm-el8
-    - lalburst:rpm-el8
-    - lalinspiral:rpm-el8
 
 lalinference:deb:
   extends:
@@ -912,20 +746,6 @@ lalinference:conda:
 
 .lalpulsar:
   stage: LALPulsar
-
-lalpulsar:rpm-el8:
-  extends:
-    - .rpmbuild:el8
-    - .lalpulsar
-  needs:
-    - tarballs
-    - lal:rpm-el8
-    - lalframe:rpm-el8
-    - lalmetaio:rpm-el8
-    - lalsimulation:rpm-el8
-    - lalburst:rpm-el8
-    - lalinspiral:rpm-el8
-    - lalinference:rpm-el8
 
 lalpulsar:deb:
   extends:
@@ -962,21 +782,6 @@ lalpulsar:conda:
 
 .lalapps:
   stage: LALApps
-
-lalapps:rpm-el8:
-  extends:
-    - .rpmbuild:el8
-    - .lalapps
-  needs:
-    - tarballs
-    - lal:rpm-el8
-    - lalframe:rpm-el8
-    - lalmetaio:rpm-el8
-    - lalsimulation:rpm-el8
-    - lalburst:rpm-el8
-    - lalinspiral:rpm-el8
-    - lalinference:rpm-el8
-    - lalpulsar:rpm-el8
 
 lalapps:deb:
   extends:
