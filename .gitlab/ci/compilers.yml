@@ -76,11 +76,6 @@ clang:dev:
   variables:
     CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
-gcc:7:
-  extends:
-    - .compiler-test:gcc
-  image: igwn/lalsuite-dev-gcc:7
-
 gcc:10:
   extends:
     - .compiler-test:gcc
