@@ -221,7 +221,7 @@ default:
     CFLAGS: "-O2"
 
 # tag for macOS x86_64 architecture jobs
-.macos:
+.macos-x86_64:
   extends:
     - .macos-job
   tags:
