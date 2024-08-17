@@ -1,0 +1,94 @@
+# ----------------------------------------------------------------------
+# LALSuite: coverage
+#
+# Measure test coverage
+# ----------------------------------------------------------------------
+
+# Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap
+coverage:
+  stage: coverage
+  image: igwn/lalsuite-dev-gcc:8
+  timeout: 2 hours
+  needs: []
+  before_script:
+    - !reference [.build-init]
+    - apt-get -y install --no-install-recommends python3-pip
+    - python3 -m pip install --upgrade pip
+    - python3 -m pip install
+          coverage
+          "gcovr!=5.1"
+          pycobertura
+  script:
+    - ./00boot
+    # Configure for C code coverage measurement with gcc
+    - ./configure
+          ${ENABLE_NIGHTLY}
+          --enable-swig-python
+          CFLAGS="--coverage -fprofile-abs-path"
+          PYTHON=python3
+    # Run unit tests with Python scripts instrumented by coverage.py
+    - make -j${CPU_COUNT} check
+          COVERAGE_FILE="$(pwd)/.coverage"
+          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+  after_script:
+    # Output C coverage data in Cobertura format
+    - gcovr
+         -j ${CPU_COUNT}
+         --exclude '(.+/)?swiglal_[a-z]+\.c$'
+         --exclude-directories 'lal([a-z]+/)?test'
+         --xml c-coverage.xml
+    # Combine and output Python coverage data in Cobertura format
+    - python3 -m coverage combine
+    - python3 -m coverage xml -o py-coverage.xml
+    # Merge coverage reports. They're just XML, after all.
+    - |
+      python3 - <<EOF
+      # read inputs
+      import lxml.etree
+      doc1 = lxml.etree.parse('py-coverage.xml')
+      doc2 = lxml.etree.parse('c-coverage.xml')
+      root1 = doc1.getroot()
+      root2 = doc2.getroot()
+      attrib1 = root1.attrib
+      attrib2 = root1.attrib
+      # combine counts
+      for key in ('lines-covered', 'lines-valid', 'branches-covered', 'branches-valid'):
+          attrib1[key] = str(int(attrib1[key]) + int(attrib2[key]))
+      # recalculate rates
+      for key, covered, valid in (
+              ('line-rate', 'lines-covered', 'lines-valid'),
+              ('branch-rate', 'branches-covered', 'branches-valid'),
+      ):
+          try:
+              attrib1[key] = str(int(attrib1[covered]) / int(attrib1[valid]))
+          except ZeroDivisionError:
+              attrib1[key] = '0'
+      # combine file coverage reports
+      packages = root1.find('./packages')
+      packages.extend(root2.iterfind('./packages/package'))
+      # write new file
+      doc1.write('coverage.xml')
+      EOF
+    # Write HTML coverage report and show coverage summary.
+    - pycobertura show coverage.xml -f html -o coverage.html
+    - pycobertura show coverage.xml | tail -n 1
+  coverage: '/TOTAL\s+.*\s+([\d\.]+)%/'
+  artifacts:
+    expose_as: coverage
+    paths:
+      # report
+      - coverage.html
+      # combined coverage
+      - coverage.xml
+      # C coverage
+      - c-coverage.xml
+      # Python coverage
+      - py-coverage.xml
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: coverage.xml
+  rules:
+    - !reference [.ci-coverage, rules]
+    - !reference [.ci-merge-build, rules]
+    - !reference [.ci-nightly-deploy, rules]
