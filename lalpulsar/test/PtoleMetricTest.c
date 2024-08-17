@@ -405,7 +405,7 @@ int main( int argc, char *argv[] )
       } /* for (ra...) */
     } /* for (dec...) */
     if ( grace ) {
-      fclose( pvc );
+      pclose( pvc );
     }
     if ( nongrace ) {
       fclose( fnongrace );
