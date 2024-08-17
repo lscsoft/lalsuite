@@ -9,6 +9,7 @@
 # -- setup --------------------------------------
 
 stages:
+  # make tarballs for each subpackage
   - tarballs
   # build packages for each subpackage
   - LAL
@@ -52,6 +53,9 @@ include:
 
   # CI rules
   - local: '/.gitlab/ci/rules.yml'
+
+  # make tarballs for each subpackage
+  - local: '/.gitlab/ci/tarballs.yml'
 
   # build packages for each subpackage
   - local: '/.gitlab/ci/conda.yml'
@@ -229,139 +233,6 @@ default:
     - .macos-job
   tags:
     - macos_arm64
-
-# -- build templates ----------------------------
-
-# jobs that build from the tarballs should not need
-# the git repository (this speeds things up and prevents
-# other issues)
-.build-from-tarball:
-  variables:
-    GIT_STRATEGY: none
-
-# -- tarballs -----------------------------------
-#
-# make tarballs for each subpackage
-#
-
-# job template for a subpackage tarball build;
-# to build a tarball for a subpackage just define
-# a job called `tarball:<subpackage>` that
-# `extends` this one (see `tarball:lal` below)
-.make-dist:
-  image: igwn/lalsuite-dev:bookworm
-  stage: tarballs
-  needs: []
-  extends:
-    - .build-job
-  script:
-    - pushd ${CI_JOB_NAME##*:}
-    - ./00boot
-    - ./configure ${ENABLE_NIGHTLY}
-    - make dist
-  artifacts:
-    expire_in: 18h
-    # store the tarballs
-    paths:
-      - "*/*.tar.*"
-    # there are no reports for tarball jobs
-    reports:
-      junit: []
-
-# make tarballs for _all_ packages
-tarballs:
-  extends:
-    - .make-dist
-  script:
-    - ./00boot
-    - ./configure ${ENABLE_NIGHTLY}
-    - for subdir in lal lalframe lalmetaio lalsimulation lalburst lalinspiral lalinference lalpulsar lalapps; do
-        pushd ${subdir};
-        make dist;
-        popd;
-      done
-
-# make the tarball for LAL only
-# (this job will run much faster than the `tarballs` job
-#  so we use it to release the 'LAL' stage jobs as
-#  early as possible)
-tarball:lal:
-  extends:
-    - .make-dist
-
-# -- lal ----------------------------------------
-#
-# build packages for LAL
-#
-
-.lal:
-  stage: LAL
-  needs:
-    - tarball:lal
-
-# -- lalframe------------------------------------
-#
-# build packages for LALFrame
-#
-
-.lalframe:
-  stage: LALFrame
-
-# -- lalmetaio ----------------------------------
-#
-# build packages for LALMetaIO
-#
-
-.lalmetaio:
-  stage: LALMetaIO
-
-# -- lalsimulation ------------------------------
-#
-# build packages for LALSimulation
-#
-
-.lalsimulation:
-  stage: LALSimulation
-
-# -- lalburst -----------------------------------
-#
-# build packages for LALBurst
-#
-
-.lalburst:
-  stage: LALBurst
-
-# -- lalinspiral --------------------------------
-#
-# build packages for LALInspiral
-#
-
-.lalinspiral:
-  stage: LALInspiral
-
-# -- lalinference -------------------------------
-#
-# build packages for LALInference
-#
-
-.lalinference:
-  stage: LALInference
-
-# -- lalpulsar ----------------------------------
-#
-# build packages for LALPulsar
-#
-
-.lalpulsar:
-  stage: LALPulsar
-
-# -- lalapps ------------------------------------
-#
-# build packages for LALApps
-#
-
-.lalapps:
-  stage: LALApps
 
 # -- deploy -------------------------------------
 #

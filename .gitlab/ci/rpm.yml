@@ -110,13 +110,15 @@ lal:rpm-el8:
   extends:
      - .rpmbuild:el8
      - .lal
+  needs:
+    - !reference [.lal, needs]
 
 lalframe:rpm-el8:
   extends:
     - .rpmbuild:el8
     - .lalframe
   needs:
-    - tarballs
+    - !reference [.lalframe, needs]
     - lal:rpm-el8
 
 lalmetaio:rpm-el8:
@@ -124,7 +126,7 @@ lalmetaio:rpm-el8:
     - .rpmbuild:el8
     - .lalmetaio
   needs:
-    - tarballs
+    - !reference [.lalmetaio, needs]
     - lal:rpm-el8
 
 lalsimulation:rpm-el8:
@@ -132,7 +134,7 @@ lalsimulation:rpm-el8:
     - .rpmbuild:el8
     - .lalsimulation
   needs:
-    - tarballs
+    - !reference [.lalsimulation, needs]
     - lal:rpm-el8
 
 lalburst:rpm-el8:
@@ -140,7 +142,7 @@ lalburst:rpm-el8:
     - .rpmbuild:el8
     - .lalburst
   needs:
-    - tarballs
+    - !reference [.lalburst, needs]
     - lal:rpm-el8
     - lalmetaio:rpm-el8
     - lalsimulation:rpm-el8
@@ -150,7 +152,7 @@ lalinspiral:rpm-el8:
     - .rpmbuild:el8
     - .lalinspiral
   needs:
-    - tarballs
+    - !reference [.lalinspiral, needs]
     - lal:rpm-el8
     - lalframe:rpm-el8
     - lalmetaio:rpm-el8
@@ -162,7 +164,7 @@ lalinference:rpm-el8:
     - .rpmbuild:el8
     - .lalinference
   needs:
-    - tarballs
+    - !reference [.lalinference, needs]
     - lal:rpm-el8
     - lalframe:rpm-el8
     - lalmetaio:rpm-el8
@@ -175,7 +177,7 @@ lalpulsar:rpm-el8:
     - .rpmbuild:el8
     - .lalpulsar
   needs:
-    - tarballs
+    - !reference [.lalpulsar, needs]
     - lal:rpm-el8
     - lalframe:rpm-el8
     - lalmetaio:rpm-el8
@@ -189,7 +191,7 @@ lalapps:rpm-el8:
     - .rpmbuild:el8
     - .lalapps
   needs:
-    - tarballs
+    - !reference [.lalapps, needs]
     - lal:rpm-el8
     - lalframe:rpm-el8
     - lalmetaio:rpm-el8

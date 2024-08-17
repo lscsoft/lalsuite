@@ -75,40 +75,40 @@
 lal:pkg:
   extends:
     - .pkgbuild
-  stage: LAL
+    - .lal
   needs:
-    - tarball:lal
+    - !reference [.lal, needs]
 
 lalframe:pkg:
   extends:
     - .pkgbuild
-  stage: LALFrame
+    - .lalframe
   needs:
-    - tarballs
+    - !reference [.lalframe, needs]
     - lal:pkg
 
 lalmetaio:pkg:
   extends:
     - .pkgbuild
-  stage: LALMetaIO
+    - .lalmetaio
   needs:
-    - tarballs
+    - !reference [.lalmetaio, needs]
     - lal:pkg
 
 lalsimulation:pkg:
   extends:
     - .pkgbuild
-  stage: LALSimulation
+    - .lalsimulation
   needs:
-    - tarballs
+    - !reference [.lalsimulation, needs]
     - lal:pkg
 
 lalburst:pkg:
   extends:
     - .pkgbuild
-  stage: LALBurst
+    - .lalburst
   needs:
-    - tarballs
+    - !reference [.lalburst, needs]
     - lal:pkg
     - lalmetaio:pkg
     - lalsimulation:pkg
@@ -116,9 +116,9 @@ lalburst:pkg:
 lalinspiral:pkg:
   extends:
     - .pkgbuild
-  stage: LALInspiral
+    - .lalinspiral
   needs:
-    - tarballs
+    - !reference [.lalinspiral, needs]
     - lal:pkg
     - lalframe:pkg
     - lalmetaio:pkg
@@ -128,9 +128,9 @@ lalinspiral:pkg:
 lalinference:pkg:
   extends:
     - .pkgbuild
-  stage: LALInference
+    - .lalinference
   needs:
-    - tarballs
+    - !reference [.lalinference, needs]
     - lal:pkg
     - lalframe:pkg
     - lalmetaio:pkg
@@ -141,9 +141,9 @@ lalinference:pkg:
 lalpulsar:pkg:
   extends:
     - .pkgbuild
-  stage: LALPulsar
+    - .lalpulsar
   needs:
-    - tarballs
+    - !reference [.lalpulsar, needs]
     - lal:pkg
     - lalframe:pkg
     - lalmetaio:pkg
@@ -155,9 +155,9 @@ lalpulsar:pkg:
 lalapps:pkg:
   extends:
     - .pkgbuild
-  stage: LALApps
+    - .lalapps
   needs:
-    - tarballs
+    - !reference [.lalapps, needs]
     - lal:pkg
     - lalframe:pkg
     - lalmetaio:pkg

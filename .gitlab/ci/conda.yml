@@ -177,6 +177,8 @@ lal:conda:fftw:
   extends:
     - .conda-build
     - .lal
+  needs:
+    - !reference [.lal, needs]
   variables:
     CONDA_CONFIG: "linux_64_fft_implfftw"
 
@@ -185,6 +187,8 @@ lal:conda:mkl:
   extends:
     - .conda-build
     - .lal
+  needs:
+    - !reference [.lal, needs]
   variables:
     CONDA_CONFIG: "linux_64_fft_implmkl"
 
@@ -193,7 +197,7 @@ lalframe:conda:
     - .conda-build
     - .lalframe
   needs:
-    - tarballs
+    - !reference [.lalframe, needs]
     - lal:conda:fftw
 
 lalmetaio:conda:
@@ -201,7 +205,7 @@ lalmetaio:conda:
     - .conda-build
     - .lalmetaio
   needs:
-    - tarballs
+    - !reference [.lalmetaio, needs]
     - lal:conda:fftw
 
 lalsimulation:conda:
@@ -209,7 +213,7 @@ lalsimulation:conda:
     - .conda-build
     - .lalsimulation
   needs:
-    - tarballs
+    - !reference [.lalsimulation, needs]
     - lal:conda:fftw
   variables:
     CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.*cpython"
@@ -219,7 +223,7 @@ lalburst:conda:
     - .conda-build
     - .lalburst
   needs:
-    - tarballs
+    - !reference [.lalburst, needs]
     - lal:conda:fftw
     - lalmetaio:conda
     - lalsimulation:conda
@@ -229,7 +233,7 @@ lalinspiral:conda:
     - .conda-build
     - .lalinspiral
   needs:
-    - tarballs
+    - !reference [.lalinspiral, needs]
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
@@ -241,7 +245,7 @@ lalinference:conda:
     - .conda-build
     - .lalinference
   needs:
-    - tarballs
+    - !reference [.lalinference, needs]
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
@@ -254,7 +258,7 @@ lalpulsar:conda:
     - .conda-build
     - .lalpulsar
   needs:
-    - tarballs
+    - !reference [.lalpulsar, needs]
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
@@ -268,7 +272,7 @@ lalapps:conda:
     - .conda-build
     - .lalapps
   needs:
-    - tarballs
+    - !reference [.lalapps, needs]
     - lal:conda:fftw
     - lalframe:conda
     - lalmetaio:conda
