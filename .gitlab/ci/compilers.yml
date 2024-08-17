@@ -14,9 +14,17 @@
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
 
-clang:14:
+.compiler-test:clang:
   extends:
     - .compiler-test
+  variables:
+    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
+    # Clang has weird bugs when compiling with CFLAGS=-O3
+    CFLAGS: "-O2"
+
+clang:14:
+  extends:
+    - .compiler-test:clang
   image: igwn/lalsuite-dev-clang:14
   variables:
     CC: clang-14
@@ -24,61 +32,43 @@ clang:14:
 
 clang:15:
   extends:
-    - .compiler-test
+    - .compiler-test:clang
   image: igwn/lalsuite-dev-clang:15
   variables:
     CC: clang-15
     CXX: clang++-15
-    # weird bugs when compiling with CFLAGS=-O3
-    CFLAGS: "-O2"
 
 clang:16:
   extends:
-    - .compiler-test
+    - .compiler-test:clang
   image: igwn/lalsuite-dev-clang:16
   variables:
     CC: clang-16
     CXX: clang++-16
-    # weird bugs when compiling with CFLAGS=-O3
-    CFLAGS: "-O2"
-    # disable octave bindings
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
 clang:17:
   extends:
-    - .compiler-test
+    - .compiler-test:clang
   image: igwn/lalsuite-dev-clang:17
   variables:
     CC: clang-17
     CXX: clang++-17
-    # weird bugs when compiling with CFLAGS=-O3
-    CFLAGS: "-O2"
-    # disable octave bindings
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
 clang:18:
   extends:
-    - .compiler-test
+    - .compiler-test:clang
   image: igwn/lalsuite-dev-clang:18
   variables:
     CC: clang-18
     CXX: clang++-18
-    # weird bugs when compiling with CFLAGS=-O3
-    CFLAGS: "-O2"
-    # disable octave bindings
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
 clang:dev:
   extends:
-    - .compiler-test
+    - .compiler-test:clang
   image: igwn/lalsuite-dev-clang:dev
   variables:
     CC: clang
     CXX: clang++
-    # weird bugs when compiling with CFLAGS=-O3
-    CFLAGS: "-O2"
-    # disable octave bindings
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python"
 
 .compiler-test:gcc:
   extends:
