@@ -127,16 +127,3 @@ cuda:
     # we don't run the test suite, so there are no reports
     reports:
       junit: []
-
-icc:
-  extends:
-    - .compiler-test
-  image: igwn/lalsuite-dev-icc:bookworm
-  variables:
-    CONFIGURE_FLAGS: "--enable-doxygen --enable-python --enable-swig-python --disable-static --enable-intelfft"
-  before_script:
-    # initialise intel stuff
-    - . /opt/intel/oneapi/setvars.sh
-    - !reference [".compiler-test", "before_script"]
-  # best effort
-  allow_failure: true
