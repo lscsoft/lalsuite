@@ -54,6 +54,7 @@ include:
   - local: '/.gitlab/ci/rules.yml'
 
   # build packages for each subpackage
+  - local: '/.gitlab/ci/conda.yml'
   - local: '/.gitlab/ci/deb.yml'
   - local: '/.gitlab/ci/pkg.yml'
   - local: '/.gitlab/ci/rpm.yml'
@@ -238,174 +239,6 @@ default:
   variables:
     GIT_STRATEGY: none
 
-# -- conda
-
-# initialise conda for 'conda build jobs'
-# note: this assumes that the base environment is writable,
-#       which is not the case by default for the shared
-#       macos runners at CIT, if you need a writable base env
-#       on those machines, install miniconda/miniforge yourself
-.conda-init: &conda-init
-  - *define-retry
-  # init conda
-  - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
-  - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
-  # configure conda options
-  - rm -fv ${CONDARC}  # start afresh
-  - conda config --file ${CONDARC} --set always_yes yes
-  - conda config --file ${CONDARC} --add channels conda-forge
-  - conda config --file ${CONDARC} --set channel_priority strict
-  # see https://github.com/conda-forge/conda-forge-ci-setup-feedstock/pull/168
-  - conda config --show aggressive_update_packages >> ${CONDARC}
-  - conda config --file ${CONDARC} --remove aggressive_update_packages openssl
-  # install build helpers
-  - retry conda install -n base
-        "conda-build!=3.18.10"
-        conda-forge-pinning
-        "conda-smithy>=3.7.5"
-        conda-libmamba-solver
-        conda-verify
-  # print info
-  - conda activate base
-  - conda info --all
-  - conda config --show-sources
-  - conda config --show
-  - conda list --name base
-
-# template for jobs that use conda (in any context)
-.conda-job:
-  image: igwn/base:conda
-  variables:
-    # where to write conda packages
-    CONDA_BLD_PATH: "${CI_PROJECT_DIR}/conda-bld"
-    # dont clone the git repo
-    GIT_STRATEGY: none
-  before_script:
-    - *init-build-job
-    - *define-retry
-    - *conda-init
-
-# template for `conda build` jobs
-.conda-build:
-  extends:
-    - .conda-job
-  variables:
-    # stub of feedstock configuration file
-    CONDA_CONFIG: "linux_64_"
-    # get verbose logging from conda smithy
-    CONDA_SMITHY_LOGLEVEL: "DEBUG"
-  script:
-    - PACKAGE=${CI_JOB_NAME%%:*}
-    - cd ${PACKAGE}/
-    # copy local packages from conda-bld dir to a new channel
-    - if [ -d "${CONDA_BLD_PATH}" ]; then
-          LOCAL_CHANNEL="${CI_PROJECT_DIR}/local-builds";
-          rm -rf "${LOCAL_CHANNEL}";
-          cp -rv "${CONDA_BLD_PATH}" "${LOCAL_CHANNEL}";
-          conda index "${LOCAL_CHANNEL}";
-          conda config --file ${CONDARC} --add channels "${LOCAL_CHANNEL}";
-          conda search "*lal*" --channel "${LOCAL_CHANNEL}" --override-channels;
-          rm -rf "${CONDA_BLD_PATH}";
-      fi
-    # render YAML file to use our tarball
-    - TARBALL=$(ls -t1 ${PACKAGE}-*.tar.* | head -n1 | xargs readlink -f)
-    - SHA256=$(openssl dgst -r -sha256 $TARBALL | cut -d\  -f1)
-    - tar -xf ${TARBALL} --wildcards ${PACKAGE}-*/conda/ --strip-components=1
-    - sed 's|@TARBALL@|'${TARBALL}'|g' conda/meta.yaml.in > conda/meta.yaml
-    - sed -i 's|@SHA256@|'${SHA256}'|g' conda/meta.yaml
-    # create a feedstock from the conda recipe
-    - git config --global user.name "${GITLAB_USER_NAME}"
-    - git config --global user.email "${GITLAB_USER_EMAIL}"
-    - conda smithy init conda/ --feedstock-directory ${PACKAGE}-feedstock
-    - cd ${PACKAGE}-feedstock
-    # handle migrations that are bundled with the tarball
-    - mkdir -p .ci_support/migrations
-    - find recipe/migrations -type f -name "*.yaml" -exec cp -n -v {} .ci_support/migrations/ \;
-    # regenerate the feedstock
-    - retry conda smithy regenerate --no-check-uptodate
-    - git ls-files
-    # configure CONDA_CONFIG
-    - _CONDA_CONFIG_PYTHON_REGEX="(.*python)${LALSUITE_PYTHON_VERSION}(.*)"
-    - |
-      # if this is a nightly build and CONDA_CONFIG refers to a single python
-      # version, expand it to include all Python versions in the feedstock
-      if [ ! -z "${ENABLE_NIGHTLY}" ] && [[ "${CONDA_CONFIG}" =~ ${_CONDA_CONFIG_PYTHON_REGEX} ]]; then
-        CONDA_CONFIG=$(basename -s .yaml .ci_support/${BASH_REMATCH[1]}*${BASH_REMATCH[2]}.yaml);
-      # otherwise if this is NOT a nightly build and CONDA_CONFIG doesn't
-      # refer to a single python version, specify `--python` to build only
-      # the reference Python version
-      elif [ -z "${ENABLE_NIGHTLY}" ] && [[ ! "${CONDA_CONFIG}" =~ ${_CONDA_CONFIG_PYTHON_REGEX} ]]; then
-        CONDA_BUILD_ARGS="--python \"${LALSUITE_PYTHON_VERSION}.* *_cpython\"";
-      fi
-    # ensure $CI_COMMIT_TAG is set for script_env
-    - export CI_COMMIT_TAG=${CI_COMMIT_TAG:-}
-    # build packages
-    # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
-    # NOTE: retry if conda build fails due to corrupted $CONDA_PKGS_DIRS
-    - |
-      # loop over chosen configurations
-      for _CONDA_CONFIG in ${CONDA_CONFIG}; do
-      # loop over retry
-      for n in 1 2; do
-        echo "===== conda build: attempt $n of 2 ====="
-        if ( \
-          set -o pipefail; \
-          xargs -t conda build \
-            recipe/ \
-            --dirty \
-            --error-overlinking \
-            --keep-old-work \
-            --no-anaconda-upload \
-            --variant-config-files .ci_support/${_CONDA_CONFIG}.yaml \
-            <<< ${CONDA_BUILD_ARGS} \
-          2>&1 | awk '{print} /appears to be corrupted/ {exit 1}' \
-        ); then
-          echo "----- conda build: success -----"
-          break
-        else
-          echo "... output from conda build truncated"
-          if [ $n -eq 1 ] && [ "X${CONDA_PKGS_DIRS}" != X ]; then
-            echo "----- conda build: possibly ${CONDA_PKGS_DIRS} is corrupted, deleting and retrying -----"
-            rm -rf ${CONDA_PKGS_DIRS}
-          else
-            echo "----- conda build: something else is corrupted, failing -----"
-            exit 1
-          fi
-        fi
-      done  # retry
-      done  # configs
-  after_script:
-    # clean cache of old files
-    - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
-    - find ${CONDA_PKGS_DIRS%:*} -type d -empty -delete
-  artifacts:
-    expire_in: 18h
-    paths:
-      # built packages (matching this package only)
-      - "conda-bld/**/${CI_JOB_NAME%%:*}-*.conda"
-      - "conda-bld/**/${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda-bld/**/lib${CI_JOB_NAME%%:*}-*.conda"
-      - "conda-bld/**/lib${CI_JOB_NAME%%:*}-*.tar.bz2"
-      - "conda-bld/**/python-${CI_JOB_NAME%%:*}-*.conda"
-      - "conda-bld/**/python-${CI_JOB_NAME%%:*}-*.tar.bz2"
-      # log files
-      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/config.log"
-      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/test-suite.log"
-      # generated sources
-      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/swiglal_lal*_octave.cpp"
-      - "conda-bld/${CI_JOB_NAME%%:*}-*/work/**/swiglal_lal*_python.c"
-      # the feedstock
-      - "${CI_JOB_NAME%%:*}/${CI_JOB_NAME%%:*}-feedstock/"
-    reports:
-      # conda-build deletes the _test_tmp directory for each
-      # package, so we write them into the project directory
-      junit: "*junit*.xml"
-    when: always
-  rules:
-    - !reference [.ci-conda, rules]
-    - !reference [.ci-merge-build, rules]
-    - !reference [.ci-nightly-deploy, rules]
-
 # -- tarballs -----------------------------------
 #
 # make tarballs for each subpackage
@@ -466,22 +299,6 @@ tarball:lal:
   needs:
     - tarball:lal
 
-# build with conda using FFTW
-lal:conda:fftw:
-  extends:
-    - .conda-build
-    - .lal
-  variables:
-    CONDA_CONFIG: "linux_64_fft_implfftw"
-
-# build with conda using Intel FFT (MKL)
-lal:conda:mkl:
-  extends:
-    - .conda-build
-    - .lal
-  variables:
-    CONDA_CONFIG: "linux_64_fft_implmkl"
-
 # -- lalframe------------------------------------
 #
 # build packages for LALFrame
@@ -489,14 +306,6 @@ lal:conda:mkl:
 
 .lalframe:
   stage: LALFrame
-
-lalframe:conda:
-  extends:
-    - .conda-build
-    - .lalframe
-  needs:
-    - tarballs
-    - lal:conda:fftw
 
 # -- lalmetaio ----------------------------------
 #
@@ -506,14 +315,6 @@ lalframe:conda:
 .lalmetaio:
   stage: LALMetaIO
 
-lalmetaio:conda:
-  extends:
-    - .conda-build
-    - .lalmetaio
-  needs:
-    - tarballs
-    - lal:conda:fftw
-
 # -- lalsimulation ------------------------------
 #
 # build packages for LALSimulation
@@ -521,16 +322,6 @@ lalmetaio:conda:
 
 .lalsimulation:
   stage: LALSimulation
-
-lalsimulation:conda:
-  extends:
-    - .conda-build
-    - .lalsimulation
-  needs:
-    - tarballs
-    - lal:conda:fftw
-  variables:
-    CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.*cpython"
 
 # -- lalburst -----------------------------------
 #
@@ -540,16 +331,6 @@ lalsimulation:conda:
 .lalburst:
   stage: LALBurst
 
-lalburst:conda:
-  extends:
-    - .conda-build
-    - .lalburst
-  needs:
-    - tarballs
-    - lal:conda:fftw
-    - lalmetaio:conda
-    - lalsimulation:conda
-
 # -- lalinspiral --------------------------------
 #
 # build packages for LALInspiral
@@ -557,18 +338,6 @@ lalburst:conda:
 
 .lalinspiral:
   stage: LALInspiral
-
-lalinspiral:conda:
-  extends:
-    - .conda-build
-    - .lalinspiral
-  needs:
-    - tarballs
-    - lal:conda:fftw
-    - lalframe:conda
-    - lalmetaio:conda
-    - lalsimulation:conda
-    - lalburst:conda
 
 # -- lalinference -------------------------------
 #
@@ -578,19 +347,6 @@ lalinspiral:conda:
 .lalinference:
   stage: LALInference
 
-lalinference:conda:
-  extends:
-    - .conda-build
-    - .lalinference
-  needs:
-    - tarballs
-    - lal:conda:fftw
-    - lalframe:conda
-    - lalmetaio:conda
-    - lalsimulation:conda
-    - lalburst:conda
-    - lalinspiral:conda
-
 # -- lalpulsar ----------------------------------
 #
 # build packages for LALPulsar
@@ -599,20 +355,6 @@ lalinference:conda:
 .lalpulsar:
   stage: LALPulsar
 
-lalpulsar:conda:
-  extends:
-    - .conda-build
-    - .lalpulsar
-  needs:
-    - tarballs
-    - lal:conda:fftw
-    - lalframe:conda
-    - lalmetaio:conda
-    - lalsimulation:conda
-    - lalburst:conda
-    - lalinspiral:conda
-    - lalinference:conda
-
 # -- lalapps ------------------------------------
 #
 # build packages for LALApps
@@ -620,23 +362,6 @@ lalpulsar:conda:
 
 .lalapps:
   stage: LALApps
-
-lalapps:conda:
-  extends:
-    - .conda-build
-    - .lalapps
-  needs:
-    - tarballs
-    - lal:conda:fftw
-    - lalframe:conda
-    - lalmetaio:conda
-    - lalsimulation:conda
-    - lalburst:conda
-    - lalinspiral:conda
-    - lalinference:conda
-    - lalpulsar:conda
-  variables:
-    CONDA_CONFIG: "linux_64_*python${LALSUITE_PYTHON_VERSION}.*cpython"
 
 # -- deploy -------------------------------------
 #
