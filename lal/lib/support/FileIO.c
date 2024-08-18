@@ -34,6 +34,9 @@
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
+#ifdef HAVE_GLOB_H
+#include <glob.h>
+#endif
 
 #include <zlib.h>
 #define ZLIB_ENABLED
@@ -196,6 +199,36 @@ XLALFileResolvePathLong ( const char *fname, const char *fallbackpath )
               sprintf ( resolveFname, "%s/%s", subPath_i, fname );
             }
             XLALPrintInfo ( "%s(): trying '%s' -> '%s' ...\n", __func__, fname, resolveFname );
+#ifdef HAVE_GLOB_H
+            glob_t glob_buf;
+            int glob_retn = glob( resolveFname, 0, NULL, &glob_buf );
+            if ( glob_retn == 0 ) {
+              XLAL_CHECK_NULL ( glob_buf.gl_pathc > 0, XLAL_EERR );
+              XLAL_CHECK_NULL ( (resolveFname = XLALRealloc ( resolveFname, strlen( glob_buf.gl_pathv[0] ) + 1 )) != NULL, XLAL_ENOMEM );
+              strcpy( resolveFname, glob_buf.gl_pathv[0] );
+              globfree( &glob_buf );
+              XLALFree ( module_path );
+              XLALDestroyTokenList ( subPaths );
+              XLALPrintInfo ( "%s(): success '%s' -> '%s'\n", __func__, fname, resolveFname );
+              return resolveFname;
+            } // if found
+            char glob_errmsg[256];
+            switch (glob_retn) {
+            case GLOB_NOSPACE:
+              snprintf( glob_errmsg, sizeof( glob_errmsg ), "out of memory" );
+              break;
+            case GLOB_ABORTED:
+              snprintf( glob_errmsg, sizeof( glob_errmsg ), "read error" );
+              break;
+            case GLOB_NOMATCH:
+              snprintf( glob_errmsg, sizeof( glob_errmsg ), "no matches" );
+              break;
+            default:
+              snprintf( glob_errmsg, sizeof( glob_errmsg ), "unknown error %i", glob_retn );
+            }
+            XLALPrintInfo ( "%s(): trying '%s' -> '%s' ... glob failed (%s)\n", __func__, fname, resolveFname, glob_errmsg );
+            globfree( &glob_buf );
+#else
             if ( (tmp = LALFopen ( resolveFname, "rb" )) != NULL ) {
               LALFclose ( tmp );
               XLALFree ( module_path );
@@ -203,6 +236,7 @@ XLALFileResolvePathLong ( const char *fname, const char *fallbackpath )
               XLALPrintInfo ( "%s(): success '%s' -> '%s'\n", __func__, fname, resolveFname );
               return resolveFname;
             } // if found
+#endif
           }
 
         XLALFree ( module_path );
