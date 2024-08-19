@@ -56,7 +56,10 @@
 #include <lal/LALSimInspiral.h>
 #include <lal/LALSimSphHarmMode.h>
 #include <lal/LALSimIMR.h>
+
+#ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
+#endif
 
 #include "LALSimIMRPrecessingNRSur.h"
 #include "LALSimIMRSEOBNRROMUtilities.c"
@@ -68,11 +71,11 @@
 
 
 #ifdef LAL_PTHREAD_LOCK
-static pthread_once_t NRSur7dq2_is_initialized = PTHREAD_ONCE_INIT;
+UNUSED static pthread_once_t NRSur7dq2_is_initialized = PTHREAD_ONCE_INIT;
 #endif
 
 #ifdef LAL_PTHREAD_LOCK
-static pthread_once_t NRSur7dq4_is_initialized = PTHREAD_ONCE_INIT;
+UNUSED static pthread_once_t NRSur7dq4_is_initialized = PTHREAD_ONCE_INIT;
 #endif
 
 
@@ -142,7 +145,7 @@ static PrecessingNRSurData __lalsim_NRSur7dq4_data;
 
 
 
-
+#ifdef LAL_HDF5_ENABLED
 /**
  * This needs to be called once, before __lalsim_NRSur7dq2_data is used.
  * It finds the hdf5 data file with the NRSur7dq2 data and calls PrecessingNRSur_Init.
@@ -169,7 +172,9 @@ static void NRSur7dq2_Init_LALDATA(void) {
     XLALFree(path);
     XLALFree(file_path);
 }
+#endif
 
+#ifdef LAL_HDF5_ENABLED
 /**
  * This needs to be called once, before __lalsim_NRSur7dq4_data is used.
  * It finds the hdf5 data file with the NRSur7dq4 data and calls PrecessingNRSur_Init.
@@ -198,7 +203,6 @@ static void NRSur7dq4_Init_LALDATA(void) {
     XLALFree(file_path);
 }
 
-
 /**
  * Initialize a PrecessingNRSurData structure from an open hdf5 file.
  * This will typically only be called once, from NRSur7dq2_Init_LALDATA or
@@ -220,6 +224,7 @@ static int PrecessingNRSur_Init(
     // Get the dynamics time nodes
     gsl_vector *t_ds_with_halves = NULL;
     ReadHDF5RealVectorDataset(file, "t_ds", &t_ds_with_halves);
+
     gsl_vector *t_ds = gsl_vector_alloc(t_ds_with_halves->size - 3);
     gsl_vector *t_ds_half_times = gsl_vector_alloc(3);
     for (i=0; i < 3; i++) {
@@ -264,6 +269,7 @@ static int PrecessingNRSur_Init(
     // Get the coorbital time array
     gsl_vector *t_coorb = NULL;
     ReadHDF5RealVectorDataset(file, "t_coorb", &t_coorb);
+
     data->t_coorb = t_coorb;
 
     // Load coorbital waveform surrogate data
@@ -296,6 +302,7 @@ static void PrecessingNRSur_LoadFitData(
     nwritten = snprintf(tmp_name, str_size, "%s_coefs", name);
     XLAL_CHECK_ABORT(nwritten < str_size);
     (*fit_data)->coefs = NULL;
+    
     ReadHDF5RealVectorDataset(sub, tmp_name, &((*fit_data)->coefs));
 
     nwritten = snprintf(tmp_name, str_size, "%s_bfOrders", name);
@@ -355,6 +362,7 @@ static void PrecessingNRSur_LoadDynamicsNode(
 
     // For NRSur7dq2 vector fits are done for omega_orb, chiA_dot and chiB_dot
     if (PrecessingNRSurVersion == 0){
+
         // omega_copr
         VectorFitData *omega_copr_data = XLALMalloc(sizeof(VectorFitData));
         omega_copr_data->coefs = NULL;
@@ -422,7 +430,6 @@ static void PrecessingNRSur_LoadDynamicsNode(
         ds_node_data[i]->chiB_dot_data = chiB_dot_data;
     }
 }
-
 
 /**
  * Load the WaveformFixedEllModeData from file for a single value of ell.
@@ -527,12 +534,12 @@ static void PrecessingNRSur_LoadWaveformDataPiece(
         (*data)->fit_data[i] = node_data;
     }
 }
-
+#endif
 
 /**
  * Helper function which returns whether or not the global NRSur7dq2 surrogate data has been initialized.
  */
-static bool NRSur7dq2_IsSetup(void) {
+UNUSED static bool NRSur7dq2_IsSetup(void) {
     if(__lalsim_NRSur7dq2_data.setup)   return true;
     else return false;
 }
@@ -540,7 +547,7 @@ static bool NRSur7dq2_IsSetup(void) {
 /**
  * Helper function which returns whether or not the global NRSur7dq4 surrogate data has been initialized.
  */
-static bool NRSur7dq4_IsSetup(void) {
+UNUSED static bool NRSur7dq4_IsSetup(void) {
     if(__lalsim_NRSur7dq4_data.setup)   return true;
     else return false;
 }
@@ -1770,11 +1777,12 @@ static int PrecessingNRSur_IntegrateDynamics(
  * is already loaded, just returns the loaded data.
  */
 static PrecessingNRSurData* PrecessingNRSur_LoadData(
-        Approximant approximant  /**< approximant (NRSur7dq2 or NRSur7dq4) */
+        UNUSED Approximant approximant  /**< approximant (NRSur7dq2 or NRSur7dq4) */
 ) {
 
     PrecessingNRSurData *__sur_data;
 
+    #if LAL_HDF5_ENABLED
     switch (approximant) {
         case NRSur7dq2:
             #ifdef LAL_PTHREAD_LOCK
@@ -1804,6 +1812,9 @@ static PrecessingNRSurData* PrecessingNRSur_LoadData(
             XLAL_ERROR_NULL(XLAL_EINVAL,  "Invalid approximant, only NRSur7dq2"
                     " and NRSur7dq4 are allowed.\n");
     }
+    #else
+    XLAL_ERROR_NULL(XLAL_EINVAL,  "Cannot load approximant, HDF5 support is required.\n");
+    #endif
 
     return __sur_data;
 }

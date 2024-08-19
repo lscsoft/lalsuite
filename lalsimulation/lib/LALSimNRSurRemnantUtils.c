@@ -43,7 +43,10 @@
 
 #include <lal/SeqFactories.h>
 #include <lal/FileIO.h>
+
+#ifdef LAL_HDF5_ENABLED
 #include <lal/H5FileIO.h>
+#endif
 
 #include <lal/XLALError.h>
 #include <lal/LALConstants.h>
@@ -59,6 +62,7 @@
 //********************* Surrogate loading functions ************************/
 // These should only be called once, when initializing the surrogate
 
+#if LAL_HDF5_ENABLED
 /**
  * Loads H5 file for a NRSurRemnant model.
  */
@@ -88,7 +92,6 @@ void NRSurRemnant_LoadH5File(
     XLALFree(path);
     XLALFree(file_path);
 }
-
 
 /**
  * Loads a single NRSurRemnant GPR fit, as described in the supplementary
@@ -186,12 +189,13 @@ int NRSurRemnant_LoadScalarFit(
 
     (*fit_data)->hyperparams = hyperparams;
 
-
     XLALH5FileClose(sub);
     return ret;
 }
+#endif
 
 
+#if LAL_HDF5_ENABLED
 /**
  * Loads a vector of NRSurRemnant GPR fits
  */
@@ -229,7 +233,9 @@ int NRSurRemnant_LoadVectorFit(
 
     return ret;
 }
+#endif
 
+#ifdef LAL_HDF5_ENABLED
 /**
  * Initializes fit data for a precessing NRSurRemnant.
  *
@@ -282,8 +288,9 @@ int PrecessingNRSurRemnant_Init(
 
     return ret;
 }
+#endif
 
-
+#if LAL_HDF5_ENABLED
 /**
  * Initializes fit data for an aligned-spin NRSurRemnant.
  *
@@ -342,3 +349,4 @@ int AlignedSpinNRSurRemnant_Init(
 
     return ret;
 }
+#endif

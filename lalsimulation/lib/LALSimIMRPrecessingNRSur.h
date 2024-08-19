@@ -162,18 +162,21 @@ typedef struct tagPrecessingNRSurData {
     UINT4 PrecessingNRSurVersion;   /**< 0 for NRSur7dq2, 1 for NRSur7dq4 */
 } PrecessingNRSurData;
 
-
 /***********************************************************************************/
 /****************************** Function declarations*******************************/
 /***********************************************************************************/
-static void NRSur7dq2_Init_LALDATA(void);
-static void NRSur7dq4_Init_LALDATA(void);
+UNUSED static void NRSur7dq2_Init_LALDATA(void);
+UNUSED static void NRSur7dq4_Init_LALDATA(void);
+
+#ifdef LAL_HDF5_ENABLED
 static int PrecessingNRSur_Init(PrecessingNRSurData *data, LALH5File *file, UINT4 PrecessingNRSurVersion);
 static void PrecessingNRSur_LoadFitData(FitData **fit_data, LALH5File *sub, const char *name);
 static void NRSur7dq4_LoadVectorFitData(VectorFitData **vector_fit_data, LALH5File *sub, const char *name, const size_t size);
 static void PrecessingNRSur_LoadDynamicsNode(DynamicsNodeFitData **ds_node_data, LALH5File *sub, int i, UINT4 PrecessingNRSurVersion);
 static void PrecessingNRSur_LoadCoorbitalEllModes(WaveformFixedEllModeData **coorbital_mode_data, LALH5File *file, int i);
 static void PrecessingNRSur_LoadWaveformDataPiece(LALH5File *sub, WaveformDataPiece **data, bool invert_sign);
+#endif
+
 static bool NRSur7dq2_IsSetup(void);
 static bool NRSur7dq4_IsSetup(void);
 static double ipow(double base, int exponent); // integer powers
