@@ -1,4 +1,4 @@
-/*
+s/*
  *  Copyright (C) 2012, 2013 John Whelan, Shane Larson and Badri Krishnan
  *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *  Copyright (C) 2016, 2017 Grant David Meadors
@@ -317,7 +317,7 @@ int XLALCreateSFTPairIndexListAccurateResamp
 
 )
 {
-  printf("Inside XLALCreateSFTPairIndexListAccurateResamp\n");
+  /* printf("Inside XLALCreateSFTPairIndexListAccurateResamp\n"); */
 
   SFTPairIndexList *ret = NULL;
 
@@ -355,7 +355,7 @@ int XLALCreateSFTPairIndexListAccurateResamp
         }
       }
     }
-    printf("reK=%d; kInShort=%d; TsftsPerTshort=%d\n", reK, kInShort, TsftsPerTshort);
+    /* printf("reK=%d; kInShort=%d; TsftsPerTshort=%d\n", reK, kInShort, TsftsPerTshort); */
     for ( UINT4 k = kInShort; k < TsftsPerTshort; k++ ) {
       SFTIndsForTshort->data[reK * TsftsPerTshort + k] = LAL_UINT4_MAX;
     }
@@ -366,19 +366,19 @@ int XLALCreateSFTPairIndexListAccurateResamp
   UINT4 maxNumSFTPairs = numTshortPairs * SQUARE( TsftsPerTshort );
 
   ret->length = maxNumSFTPairs;
-  printf("About to calloc\n");
+  /* printf("About to calloc\n"); */
   if ( ( ret->data = XLALCalloc( ret->length, sizeof( *ret->data ) ) ) == NULL ) {
     XLALFree( ret );
     XLAL_ERROR( XLAL_ENOMEM );
   }
-  printf("Calloc worked\n");
+  /* printf("Calloc worked\n"); */
 
   /* Loop over pairs of Tshorts */
   UINT4 alpha = 0;
   for ( UINT4 reAlpha = 0; reAlpha < numTshortPairs; reAlpha++ ) {
     UINT4 reK = resampPairs->pairIndexList->data[reAlpha].sftNum[0];
     UINT4 reL = resampPairs->pairIndexList->data[reAlpha].sftNum[1];
-    printf("alpha=%d, reK=%d, reL=%d\n", reAlpha, reK, reL);
+    /* printf("alpha=%d, reK=%d, reL=%d\n", reAlpha, reK, reL); */
     for ( UINT4 kInShort = 0; kInShort < TsftsPerTshort; kInShort++ ) {
       UINT4 K = SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort];
       if ( K == LAL_UINT4_MAX ) {
@@ -399,12 +399,12 @@ int XLALCreateSFTPairIndexListAccurateResamp
     }
   }
   ret->length = alpha;
-  printf("About to realloc\n");
+  /* printf("About to realloc\n"); */
   if ( ( ret->data = XLALRealloc( ret->data, ( ret->length ) * sizeof( *ret->data ) ) ) == NULL ) {
     XLALFree( ret );
     XLAL_ERROR( XLAL_ENOMEM );
   }
-  printf("Realloc worked\n");
+  /* printf("Realloc worked\n"); */
 
   ( *pairIndexList ) = ret;
 
