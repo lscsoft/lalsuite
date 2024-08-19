@@ -1,0 +1,75 @@
+# ----------------------------------------------------------------------
+# LALSuite: platform tests
+#
+# Top-level build tests for non-standard platforms
+# ----------------------------------------------------------------------
+
+# -- platform tests -----------------------------
+#
+# Top-level build tests for non-standard platforms
+#
+
+.platform-test:
+  stage: platform tests
+  extends:
+    - .make-distcheck
+  rules:
+    - !reference [.ci-platform, rules]
+    - !reference [.ci-merge-build, rules]
+
+platform:debian:bookworm:
+  extends:
+    - .platform-test
+  image: igwn/lalsuite-dev:bookworm
+
+.platform-test:conda:
+  extends:
+    - .platform-test
+  variables:
+    CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
+    ENVIRONMENT_FILE: "common/conda/environment.yml"
+  before_script:
+    # configure conda
+    - source ${CONDA_ROOT:-/opt/conda}/etc/profile.d/conda.sh
+    - conda config --file ${CONDARC} --set always_yes yes
+    - conda config --file ${CONDARC} --add channels conda-forge
+    - conda info --all
+    # print the manual overrides in the config
+    - conda config --show-sources
+    # then print the whole config
+    - conda config --show
+    # install the dev environment for the default python version
+    - sed -i.tmp "s/- python$/- python=${LALSUITE_PYTHON_VERSION}/g" ${ENVIRONMENT_FILE}
+    # https://github.com/conda-forge/texlive-core-feedstock/issues/59
+    - if [[ "${CI_JOB_NAME}" == *"arm64"* ]]; then
+          sed -i.tmp "/texlive-core/d" ${ENVIRONMENT_FILE};
+      fi
+    - conda env create
+          --file ${ENVIRONMENT_FILE}
+          --name lalsuite-platform-tests
+          --quiet
+    - conda list --name lalsuite-platform-tests
+    - conda activate lalsuite-platform-tests
+    # manually install packages that have circular dependencies upon lal
+    - conda install --yes --quiet --name lalsuite-platform-tests
+          python-ligo-lw
+    # then forcibly remove lalsuite
+    - conda uninstall --yes --quiet --name lalsuite-platform-tests --solver classic --force-remove
+          "liblal*"
+          "lal*"
+          "python-lal*"
+
+platform:conda:linux:
+  image: igwn/base:conda
+  extends:
+    - .platform-test:conda
+
+platform:conda:macos-x86_64:
+  extends:
+    - .platform-test:conda
+    - .macos-x86_64
+
+platform:conda:macos-arm64:
+  extends:
+    - .platform-test:conda
+    - .macos-arm64

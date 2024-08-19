@@ -190,10 +190,6 @@ lint:gitignore:
     - .build-job
     - .lint
   image: igwn/lalsuite-dev:el8
-  variables:
-    # TODO: this can be removed when all packages require python>=3
-    #       on their own
-    PYTHON: "python3"
   needs: []
   script:
     # check that .gitignore entries are in the right place
@@ -320,10 +316,6 @@ lint:pretty:
     - .build-job
     - .lint
   image: igwn/lalsuite-dev:el8
-  variables:
-    # TODO: this can be removed when all packages require python>=3
-    #       on their own
-    PYTHON: "python3"
   needs: []
   script:
     # install required packages

@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 120
+# serial 121
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -488,6 +488,7 @@ EOF
     done
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_octave_cxxflags}
+      -Wno-address
       -Wno-uninitialized
       -Wno-unused-variable
       -Wno-unused-but-set-variable
@@ -626,6 +627,7 @@ EOD`]
     done
     LALSUITE_CHECK_COMPILE_FLAGS([
       ${swig_python_cflags}
+      -Wno-address
       -Wno-uninitialized
       -Wno-unused-variable
       -Wno-unused-but-set-variable
