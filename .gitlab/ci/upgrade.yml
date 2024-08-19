@@ -96,9 +96,14 @@ upgrade:conda:linux:
     - lalapps:conda
   script:
     # properly index the newly built packages
-    - conda index ${CONDA_BLD_PATH}
+    - retry conda index ${CONDA_BLD_PATH}
     # install latest release
-    - conda create -n upgrade-test
+    # - need to remove environment upgrade-test before retrying;
+    #   `conda env remove -n upgrade-test` does not reliably remove
+    #   the environment directory, so need to manually delete
+    - _SAVE_RETRY_CLEANUP="${RETRY_CLEANUP}"
+    - RETRY_CLEANUP="${_SAVE_RETRY_CLEANUP}; rm -rf ${CONDA_ENVS_PATH}/upgrade-test"
+    - retry conda create -n upgrade-test
           python=${LALSUITE_PYTHON_VERSION}
           lal
           lalframe
@@ -109,8 +114,9 @@ upgrade:conda:linux:
           lalinference
           lalpulsar
           lalapps
+    - RETRY_CLEANUP="${_SAVE_RETRY_CLEANUP}"
     # install new packages
-    - conda update -n upgrade-test --use-local
+    - retry conda update -n upgrade-test --use-local
           lal
           lalframe
           lalmetaio

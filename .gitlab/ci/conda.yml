@@ -10,7 +10,13 @@
 #       macos runners at CIT, if you need a writable base env
 #       on those machines, install miniconda/miniforge yourself
 .conda-init:
+  # use retry()
+  # - "appears to be corrupted" error messages are caused by
+  #   corrupted packages in $CONDA_PKGS_DIRS
+  # - need to remove $CONDA_PKGS_DIRS before retrying
   - !reference [.retry]
+  - RETRY_EXIT_PATTERN='/appears to be corrupted/'
+  - RETRY_CLEANUP="rm -rf ${CONDA_PKGS_DIRS}"
   # init conda
   - mkdir -p $(dirname ${CONDA_PKGS_DIRS})
   - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
@@ -46,7 +52,6 @@
     GIT_STRATEGY: none
   before_script:
     - !reference [.build-init]
-    - !reference [.retry]
     - !reference [.conda-init]
 
 # template for `conda build` jobs
@@ -66,9 +71,9 @@
           LOCAL_CHANNEL="${CI_PROJECT_DIR}/local-builds";
           rm -rf "${LOCAL_CHANNEL}";
           cp -rv "${CONDA_BLD_PATH}" "${LOCAL_CHANNEL}";
-          conda index "${LOCAL_CHANNEL}";
+          retry conda index "${LOCAL_CHANNEL}";
           conda config --file ${CONDARC} --add channels "${LOCAL_CHANNEL}";
-          conda search "*lal*" --channel "${LOCAL_CHANNEL}" --override-channels;
+          retry conda search "*lal*" --channel "${LOCAL_CHANNEL}" --override-channels;
           rm -rf "${CONDA_BLD_PATH}";
       fi
     # render YAML file to use our tarball
@@ -80,7 +85,7 @@
     # create a feedstock from the conda recipe
     - git config --global user.name "${GITLAB_USER_NAME}"
     - git config --global user.email "${GITLAB_USER_EMAIL}"
-    - conda smithy init conda/ --feedstock-directory ${PACKAGE}-feedstock
+    - retry conda smithy init conda/ --feedstock-directory ${PACKAGE}-feedstock
     - cd ${PACKAGE}-feedstock
     # handle migrations that are bundled with the tarball
     - mkdir -p .ci_support/migrations
@@ -103,41 +108,19 @@
       fi
     # ensure $CI_COMMIT_TAG is set for script_env
     - export CI_COMMIT_TAG=${CI_COMMIT_TAG:-}
-    # build packages
-    # NOTE: we use xargs here because CONDA_BUILD_ARGS contains multiple spaces
-    # NOTE: retry if conda build fails due to corrupted $CONDA_PKGS_DIRS
+    # loop over chosen configurations and build packages
+    # NOTE: we use eval here because CONDA_BUILD_ARGS contains multiple spaces
     - |
-      # loop over chosen configurations
       for _CONDA_CONFIG in ${CONDA_CONFIG}; do
-      # loop over retry
-      for n in 1 2; do
-        echo "===== conda build: attempt $n of 2 ====="
-        if ( \
-          set -o pipefail; \
-          xargs -t conda build \
-            recipe/ \
-            --dirty \
-            --error-overlinking \
-            --keep-old-work \
-            --no-anaconda-upload \
-            --variant-config-files .ci_support/${_CONDA_CONFIG}.yaml \
-            <<< ${CONDA_BUILD_ARGS} \
-          2>&1 | awk '{print} /appears to be corrupted/ {exit 1}' \
-        ); then
-          echo "----- conda build: success -----"
-          break
-        else
-          echo "... output from conda build truncated"
-          if [ $n -eq 1 ] && [ "X${CONDA_PKGS_DIRS}" != X ]; then
-            echo "----- conda build: possibly ${CONDA_PKGS_DIRS} is corrupted, deleting and retrying -----"
-            rm -rf ${CONDA_PKGS_DIRS}
-          else
-            echo "----- conda build: something else is corrupted, failing -----"
-            exit 1
-          fi
-        fi
-      done  # retry
-      done  # configs
+        eval retry conda build \
+          recipe/ \
+          --dirty \
+          --error-overlinking \
+          --keep-old-work \
+          --no-anaconda-upload \
+          --variant-config-files .ci_support/${_CONDA_CONFIG}.yaml \
+          ${CONDA_BUILD_ARGS}
+      done
   after_script:
     # clean cache of old files
     - find ${CONDA_PKGS_DIRS%:*} -atime +30 -delete
