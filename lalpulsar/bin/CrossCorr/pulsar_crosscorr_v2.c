@@ -92,9 +92,11 @@ typedef struct tagUserInput_t {
   INT4    numCand;            /**< number of candidates to keep in output toplist */
   CHAR    *linesToCleanFilenames; /**< comma-separated list of filenames with known lines for each ifo */
   CHAR    *pairListInputFilename;  /**< input filename containing list of sft index pairs (if not provided, determine list of pairs) */
-  CHAR    *pairListOutputFilename; /**< output filename to write list of sft index pairs */
-  CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts */
-  CHAR    *sftListInputFilename;   /**< input filename to read in the  list of sfts and check the order of SFTs */
+  CHAR    *pairListOutputFilename; /**< output filename to write list of sft (or Tshort) index pairs */
+  CHAR    *finePairListOutputFilename; /**< output filename to write list of sft index pairs implied by Tshort pairs */
+  CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts (or Tshorts) */
+  CHAR    *fineSftListOutputFilename;  /**< output filename to write list of sfts before Tshort construction */
+  CHAR    *sftListInputFilename;   /**< input filename to read in the list of sfts and check the order of SFTs */
   CHAR    *gammaAveOutputFilename; /**< output filename to write Gamma_ave = (aa+bb)/10 */
   CHAR    *gammaCircOutputFilename; /**< output filename to write Gamma_circ = (ab-ba)/10 */
   CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */
@@ -566,6 +568,28 @@ int main( int argc, char *argv[] )
             LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexListAccurateResamp() failed with errno=%d\n", __func__, xlalErrno );
             XLAL_ERROR( XLAL_EFUNC );
           }
+	  if ( XLALUserVarWasSet( &uvar.finePairListOutputFilename ) ) { /* Write the list of pairs to a file, if a name was provided */
+	    if ( ( fp = fopen( uvar.finePairListOutputFilename, "w" ) ) == NULL ) {
+	      LogPrintf( LOG_CRITICAL, "Can't write in SFT-pair list \n" );
+	      XLAL_ERROR( XLAL_EFUNC );
+	    }
+	    fprintf( fp, PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
+	    for ( j = 0; j < sftPairs->length; j++ ) {
+	      fprintf( fp, PCC_SFTPAIR_BODY, sftPairs->data[j].sftNum[0], sftPairs->data[j].sftNum[1] );
+	    }
+	    fclose( fp );
+	  }
+	  if ( XLALUserVarWasSet( &uvar.fineSftListOutputFilename ) ) { /* Write the list of SFTs to a file for sanity-checking purposes */
+	    if ( ( fp = fopen( uvar.fineSftListOutputFilename, "w" ) ) == NULL ) {
+	      LogPrintf( LOG_CRITICAL, "Can't write in flat SFT list \n" );
+	      XLAL_ERROR( XLAL_EFUNC );
+	    }
+	    fprintf( fp, PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
+	    for ( j = 0; j < sftIndices->length; j++ ) { /*output the SFT list */
+	      fprintf( fp, PCC_SFT_BODY, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].name, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsSeconds, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsNanoSeconds );
+	    }
+	    fclose( fp );
+	  }
         } else {
           /* Assign old-school structures */
           XLALDestroySFTPairIndexList( sftPairs );
@@ -1367,8 +1391,10 @@ int XLALInitUserVars( UserInput_t *uvar )
   XLALRegisterUvarMember( numCand,         INT4, 0,  OPTIONAL, "Number of candidates to keep in toplist" );
   XLALRegisterUvarMember( linesToCleanFilenames, STRING, 0,  OPTIONAL, "Comma-separated list of line files" );
   XLALRegisterUvarMember( pairListInputFilename, STRING, 0,  OPTIONAL, "Name of file from which to read list of SFT pairs" );
-  XLALRegisterUvarMember( pairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT pairs" );
-  XLALRegisterUvarMember( sftListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs (for sanity checks)" );
+  XLALRegisterUvarMember( pairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT (or Tshort) pairs" );
+  XLALRegisterUvarMember( finePairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT pairs implied by Tshort pairs" );
+  XLALRegisterUvarMember( sftListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs (or Tshorts) (for sanity checks)" );
+  XLALRegisterUvarMember( fineSftListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs before Tshort cosntruction (for sanity checks)" );
   XLALRegisterUvarMember( sftListInputFilename, STRING, 0,  OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)" );
   XLALRegisterUvarMember( gammaAveOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write aa+bb weights (for e.g., false alarm estimation)" );
   XLALRegisterUvarMember( gammaCircOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write ab-ba weights (for e.g., systematic error)" );
