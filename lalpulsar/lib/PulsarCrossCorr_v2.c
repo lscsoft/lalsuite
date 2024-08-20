@@ -1,4 +1,4 @@
-s/*
+/*
  *  Copyright (C) 2012, 2013 John Whelan, Shane Larson and Badri Krishnan
  *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *  Copyright (C) 2016, 2017 Grant David Meadors
