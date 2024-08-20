@@ -346,6 +346,8 @@ int XLALCreateSFTPairIndexListAccurateResamp
         LIGOTimeGPS timeK = sfts->data[ifoK]->data[indK].epoch;
         REAL8 SFTMidOff = XLALGPSDiff( &timeK, &reTimeK ) + ( 0.5 * Tsft );
         if ( SFTMidOff >= 0 && SFTMidOff < Tshort ) {
+	  /* printf("SFTMidOff=%.0f, Tshort=%.0f; timeK=%d, reTimeK=%d\n", */
+	  /* 	 SFTMidOff, Tshort, timeK.gpsSeconds, reTimeK.gpsSeconds); */
           /* Midpoint of SFT lies within this Tshort */
 	  XLAL_CHECK( kInShort < TsftsPerTshort, XLAL_EINVAL,
 		      "Unexpectedly too many SFTs within Tshort:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",

@@ -95,7 +95,7 @@ typedef struct tagUserInput_t {
   CHAR    *pairListOutputFilename; /**< output filename to write list of sft (or Tshort) index pairs */
   CHAR    *finePairListOutputFilename; /**< output filename to write list of sft index pairs implied by Tshort pairs */
   CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts (or Tshorts) */
-  CHAR    *fineSftListOutputFilename;  /**< output filename to write list of sfts before Tshort construction */
+  CHAR    *fineSFTListOutputFilename;  /**< output filename to write list of sfts before Tshort construction */
   CHAR    *sftListInputFilename;   /**< input filename to read in the list of sfts and check the order of SFTs */
   CHAR    *gammaAveOutputFilename; /**< output filename to write Gamma_ave = (aa+bb)/10 */
   CHAR    *gammaCircOutputFilename; /**< output filename to write Gamma_circ = (ab-ba)/10 */
@@ -191,9 +191,13 @@ int main( int argc, char *argv[] )
   MultiLALDetector multiDetectors;
   MultiDetectorStateSeries *multiStates = NULL;
   MultiDetectorStateSeries *resampMultiStates = NULL;
+  MultiDetectorStateSeries *fineMultiStates = NULL;
   MultiAMCoeffs *multiCoeffs = NULL;
+  MultiAMCoeffs *fineMultiCoeffs = NULL;
   SFTIndexList *sftIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
+  SFTIndexList* fineSFTIndices = NULL;
+  SFTPairIndexList* fineSFTPairs = NULL;
   MultiResampSFTPairMultiIndexList *resampMultiPairs = NULL;
   REAL8Vector *shiftedFreqs = NULL;
   UINT4Vector *lowestBins = NULL;
@@ -467,6 +471,21 @@ int main( int argc, char *argv[] )
     XLAL_ERROR( XLAL_EFUNC );
   }
 
+  /* Note this is specialized to a single sky position */
+  /* This might need to be moved into the config variables */
+  skyPos.system = COORDINATESYSTEM_EQUATORIAL;
+  skyPos.longitude = uvar.alphaRad;
+  skyPos.latitude  = uvar.deltaRad;
+
+  /* If using the more accurate resampling metric, we also need the antenna patterns for the original SFTs */
+  if ( uvar.accurateResampMetric == TRUE ) {
+    /* Calculate the AM coefficients (a,b) for each SFT */
+    if ( ( fineMultiCoeffs = XLALComputeMultiAMCoeffs( multiStates, multiWeights, skyPos ) ) == NULL ) {
+    LogPrintf( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
+    XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+
   /* For resampling with tShort, generate appropriate times, states, and coefficients */
   if ( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == FALSE ) ) {
     /* Edit the timestamps to accurately reflect tShort */
@@ -486,15 +505,13 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
-    XLALDestroyMultiDetectorStateSeries( multiStates );
+    if ( uvar.accurateResampMetric == TRUE ) {
+      fineMultiStates = multiStates;
+    } else {
+      XLALDestroyMultiDetectorStateSeries( multiStates );
+    }
     multiStates = resampMultiStates;
   }
-
-  /* Note this is specialized to a single sky position */
-  /* This might need to be moved into the config variables */
-  skyPos.system = COORDINATESYSTEM_EQUATORIAL;
-  skyPos.longitude = uvar.alphaRad;
-  skyPos.latitude  = uvar.deltaRad;
 
   /* Calculate the AM coefficients (a,b) for each SFT */
   if ( ( multiCoeffs = XLALComputeMultiAMCoeffs( multiStates, multiWeights, skyPos ) ) == NULL ) {
@@ -579,8 +596,8 @@ int main( int argc, char *argv[] )
 	    }
 	    fclose( fp );
 	  }
-	  if ( XLALUserVarWasSet( &uvar.fineSftListOutputFilename ) ) { /* Write the list of SFTs to a file for sanity-checking purposes */
-	    if ( ( fp = fopen( uvar.fineSftListOutputFilename, "w" ) ) == NULL ) {
+	  if ( XLALUserVarWasSet( &uvar.fineSFTListOutputFilename ) ) { /* Write the list of SFTs to a file for sanity-checking purposes */
+	    if ( ( fp = fopen( uvar.fineSFTListOutputFilename, "w" ) ) == NULL ) {
 	      LogPrintf( LOG_CRITICAL, "Can't write in flat SFT list \n" );
 	      XLAL_ERROR( XLAL_EFUNC );
 	    }
@@ -590,13 +607,15 @@ int main( int argc, char *argv[] )
 	    }
 	    fclose( fp );
 	  }
+	  fineSFTIndices = sftIndices;
+	  fineSFTPairs = sftPairs;
         } else {
           /* Assign old-school structures */
           XLALDestroySFTPairIndexList( sftPairs );
-          sftPairs = resampMultiPairs->pairIndexList;
           XLALDestroySFTIndexList( sftIndices );
-          sftIndices = resampMultiPairs->indexList;
         }
+	sftPairs = resampMultiPairs->pairIndexList;
+	sftIndices = resampMultiPairs->indexList;
       } else {
         XLALDestroySFTPairIndexList( sftPairs );
         if ( ( XLALCreateSFTPairIndexListResamp( &resampMultiPairs, &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr, uvar.inclSameDetector, Tsft, resampTshort ) != XLAL_SUCCESS ) ) {
@@ -839,9 +858,19 @@ int main( int argc, char *argv[] )
      because the AM coefficients are noise-weighted. */
   REAL8Vector *GammaAve = NULL;
   REAL8Vector *GammaCirc = NULL;
-  if ( ( XLALCalculateCrossCorrGammas( &GammaAve, &GammaCirc, sftPairs, sftIndices, multiCoeffs )  != XLAL_SUCCESS ) ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
+  REAL8Vector *fineGammaAve = NULL;
+  REAL8Vector *fineGammaCirc = NULL;
+
+  if ( uvar.accurateResampMetric == TRUE ) {
+    if ( ( XLALCalculateCrossCorrGammas( &fineGammaAve, &fineGammaCirc, fineSFTPairs, fineSFTIndices, fineMultiCoeffs )  != XLAL_SUCCESS ) ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  } else {
+    if ( ( XLALCalculateCrossCorrGammas( &GammaAve, &GammaCirc, sftPairs, sftIndices, multiCoeffs )  != XLAL_SUCCESS ) ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
   }
   if ( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == TRUE ) ) {
     /* Cross-check valid only for gapless-Gaussian data */
@@ -918,9 +947,18 @@ int main( int argc, char *argv[] )
 
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
   if ( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == FALSE ) ) {
-    if ( ( XLALCalculateLMXBCrossCorrDiagMetricShort( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, thisBinaryTemplate, GammaAve, resampMultiPairs, multiTimes, multiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
+    if ( uvar.accurateResampMetric == TRUE ) {
+      if ( ( XLALCalculateLMXBCrossCorrDiagMetric( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, &weightedMuTAve, thisBinaryTemplate, fineGammaAve, fineSFTPairs, fineSFTIndices, inputSFTs, multiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
+	LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+      /* We've used the multiWeights modified by resamp, but all it's been used for is the normalization of the output sensitivity, so we can just correct for that */
+      estSens *= SQR((Tsft/resampTshort));
+    } else {
+      if ( ( XLALCalculateLMXBCrossCorrDiagMetricShort( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, thisBinaryTemplate, GammaAve, resampMultiPairs, multiTimes, multiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetricShort() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
+      }
     }
   } else {
     if ( ( XLALCalculateLMXBCrossCorrDiagMetric( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, &weightedMuTAve, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
@@ -957,6 +995,13 @@ int main( int argc, char *argv[] )
     XLAL_ERROR( XLAL_EFUNC );
   }
 
+  if ( uvar.accurateResampMetric == TRUE ) {
+    if ( ( multiSSBTimes = XLALGetMultiSSBtimes( fineMultiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALGetMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  }
+
   UINT8 numSFTs = sftIndices->length;
   if ( ( shiftedFreqs = XLALCreateREAL8Vector( numSFTs ) ) == NULL ) {
     LogPrintf( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
@@ -985,18 +1030,33 @@ int main( int argc, char *argv[] )
   };
 
   REAL8VectorSequence *phaseDerivs = NULL;
-  if ( ( XLALCalculateCrossCorrPhaseDerivatives( &phaseDerivs, &thisBinaryTemplate, config.edat, sftIndices, multiSSBTimes, &coordSys )  != XLAL_SUCCESS ) ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseDerivatives() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
+
+  if ( ( uvar.accurateResampMetric == TRUE ) ) {
+    if ( ( XLALCalculateCrossCorrPhaseDerivatives( &phaseDerivs, &thisBinaryTemplate, config.edat, fineSFTIndices, multiSSBTimes, &coordSys )  != XLAL_SUCCESS ) ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseDerivatives() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  } else {
+    if ( ( XLALCalculateCrossCorrPhaseDerivatives( &phaseDerivs, &thisBinaryTemplate, config.edat, sftIndices, multiSSBTimes, &coordSys )  != XLAL_SUCCESS ) ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseDerivatives() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
   }
 
   /* fill in metric and parameter offsets */
   gsl_matrix *g_ij = NULL;
   gsl_vector *eps_i = NULL;
   REAL8 sumGammaSq = 0;
-  if ( ( XLALCalculateCrossCorrPhaseMetric( &g_ij, &eps_i, &sumGammaSq, phaseDerivs, sftPairs, GammaAve, GammaCirc, &coordSys ) != XLAL_SUCCESS ) ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseMetric() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
+  if ( ( uvar.accurateResampMetric == TRUE ) ) {
+    if ( ( XLALCalculateCrossCorrPhaseMetric( &g_ij, &eps_i, &sumGammaSq, phaseDerivs, fineSFTPairs, fineGammaAve, fineGammaCirc, &coordSys ) != XLAL_SUCCESS ) ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseMetric() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  } else {
+    if ( ( XLALCalculateCrossCorrPhaseMetric( &g_ij, &eps_i, &sumGammaSq, phaseDerivs, sftPairs, GammaAve, GammaCirc, &coordSys ) != XLAL_SUCCESS ) ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseMetric() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
   }
 
   /* Optional: call the test functions */
@@ -1394,7 +1454,7 @@ int XLALInitUserVars( UserInput_t *uvar )
   XLALRegisterUvarMember( pairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT (or Tshort) pairs" );
   XLALRegisterUvarMember( finePairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT pairs implied by Tshort pairs" );
   XLALRegisterUvarMember( sftListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs (or Tshorts) (for sanity checks)" );
-  XLALRegisterUvarMember( fineSftListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs before Tshort cosntruction (for sanity checks)" );
+  XLALRegisterUvarMember( fineSFTListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs before Tshort cosntruction (for sanity checks)" );
   XLALRegisterUvarMember( sftListInputFilename, STRING, 0,  OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)" );
   XLALRegisterUvarMember( gammaAveOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write aa+bb weights (for e.g., false alarm estimation)" );
   XLALRegisterUvarMember( gammaCircOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write ab-ba weights (for e.g., systematic error)" );
