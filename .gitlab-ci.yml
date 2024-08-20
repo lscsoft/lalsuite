@@ -142,22 +142,40 @@ default:
 # simple bash command to retry a stage up to 3 times
 # with a 15-second delay (mainly to survive transient
 # network issues)
+#
+# set RETRY_EXIT_PATTERN to an awk pattern to exit the
+# command if the pattern is detected in its output
+#
+# set RETRY_CLEANUP to a cleanup command to execute
+# before re-attempting the command
 .retry: |
+  RETRY_EXIT_PATTERN=
+  RETRY_CLEANUP=
   retry() {
     local n=1
     local max=3
     local delay=15
+    local awkprog="{print}"
+    if [[ "X${RETRY_EXIT_PATTERN}" != X ]]; then
+      awkprog="${awkprog} ${RETRY_EXIT_PATTERN} {exit 1}"
+    fi
     while true; do
-      "$@" && break || {
-        if [[ $n -lt $max ]]; then
+      if ( set -o pipefail; "$@" 2>&1 | awk "${awkprog}" ); then
+        break
+      else
+        if [[ ${n} -lt ${max} ]]; then
           ((n++))
-          echo "Command failed. Attempt $n/$max:"
-          sleep $delay;
+          echo "retry: command failed: $@"
+          echo "retry: cleaning up: ${RETRY_CLEANUP}"
+          eval ${RETRY_CLEANUP}
+          echo "retry: sleeping for ${delay} seconds..."
+          sleep ${delay};
+          echo "retry: attempt ${n}/${max}: $@"
         else
-          echo "The command has failed after $n attempts." 1>&2
+          echo "retry: command failed after ${n} attempts: $@" >&2
           exit 1
         fi
-    }
+      fi
     done
   }
 
