@@ -489,24 +489,15 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_CRITICAL, "%s: XLALModifyMultiWeights() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
-    /* multiTimes assignment must go here, because the modify function needs the original times */
-    XLALDestroyMultiTimestamps( multiTimes );
-    multiTimes = resampMultiTimes;
     /* Get correct multi-detector states for tShort  */
-    if ( ( resampMultiStates = XLALGetMultiDetectorStates( multiTimes, &multiDetectors, config.edat, 0.5 * resampTshort ) ) == NULL ) {
+    if ( ( resampMultiStates = XLALGetMultiDetectorStates( resampMultiTimes, &multiDetectors, config.edat, 0.5 * resampTshort ) ) == NULL ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
-    if ( uvar.accurateResampMetric == TRUE ) {
-      fineMultiStates = multiStates;
-    } else {
-      XLALDestroyMultiDetectorStateSeries( multiStates );
-    }
-    multiStates = resampMultiStates;
   }
 
   /* Calculate the AM coefficients (a,b) for each SFT */
-  if ( ( resampMultiCoeffs = XLALComputeMultiAMCoeffs( multiStates, resampMultiWeights, skyPos ) ) == NULL ) {
+  if ( ( resampMultiCoeffs = XLALComputeMultiAMCoeffs( resampMultiStates, resampMultiWeights, skyPos ) ) == NULL ) {
     LogPrintf( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -561,7 +552,7 @@ int main( int argc, char *argv[] )
     if ( uvar.resamp == TRUE ) {
       if ( uvar.testResampNoTShort == FALSE ) {
         /* Run modified pair maker for resampling with tShort */
-        if ( ( XLALCreateSFTPairIndexListShortResamp( &resampMultiPairs, uvar.maxLag, uvar.inclAutoCorr, uvar.inclSameDetector, Tsft, multiTimes ) != XLAL_SUCCESS ) ) {
+        if ( ( XLALCreateSFTPairIndexListShortResamp( &resampMultiPairs, uvar.maxLag, uvar.inclAutoCorr, uvar.inclSameDetector, Tsft, resampMultiTimes ) != XLAL_SUCCESS ) ) {
           LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexListShortResamp() failed with errno=%d\n", __func__, xlalErrno );
           XLAL_ERROR( XLAL_EFUNC );
         }
@@ -573,7 +564,7 @@ int main( int argc, char *argv[] )
         XLALDestroyMultiREAL8TimeSeries( scienceFlagVect );
         if ( uvar.accurateResampMetric == TRUE ) {
 	  /* printf("About to call XLALCreateSFTPairIndexListAccurateResamp\n"); */
-          if ( ( XLALCreateSFTPairIndexListAccurateResamp( &sftPairs, sftIndices, inputSFTs, resampMultiPairs, resampMultiTimes ) != XLAL_SUCCESS ) ) {
+          if ( ( XLALCreateSFTPairIndexListAccurateResamp( &sftPairs, sftIndices, resampMultiPairs, multiTimes, resampMultiTimes ) != XLAL_SUCCESS ) ) {
             LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexListAccurateResamp() failed with errno=%d\n", __func__, xlalErrno );
             XLAL_ERROR( XLAL_EFUNC );
           }

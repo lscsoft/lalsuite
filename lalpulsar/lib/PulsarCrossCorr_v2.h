@@ -323,8 +323,8 @@ int XLALCreateSFTPairIndexListAccurateResamp
 (
   SFTPairIndexList                **pairIndexList,
   SFTIndexList                     *indexList,
-  MultiSFTVector                   *sfts,
   MultiResampSFTPairMultiIndexList *resampPairs,
+  const MultiLIGOTimeGPSVector     *_LAL_RESTRICT_ multiTimes,
   const MultiLIGOTimeGPSVector     *_LAL_RESTRICT_ resampMultiTimes
 )
 ;

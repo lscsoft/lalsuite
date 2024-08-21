@@ -311,8 +311,8 @@ int XLALCreateSFTPairIndexListAccurateResamp
 (
   SFTPairIndexList  **pairIndexList, /**< Output: list of SFT pairs */
   SFTIndexList           *indexList, /**< Input: list of indices to locate SFTs */
-  MultiSFTVector              *sfts, /**< Input: set of per-detector SFT vectors */
   MultiResampSFTPairMultiIndexList *resampPairs, /**< Input: pairs of tShort segments for resampling */
+  const MultiLIGOTimeGPSVector      *restrict multiTimes,                /**< Input: timestamps containing SFT times for each detector */
   const MultiLIGOTimeGPSVector      *restrict resampMultiTimes                /**< Input: timestamps containing Tshort times for each detector */
 
 )
@@ -343,7 +343,7 @@ int XLALCreateSFTPairIndexListAccurateResamp
     for ( UINT4 K = 0; K < numSFTs; K++ ) {
       if ( indexList->data[K].detInd == ifoK ) {
         UINT4 indK = indexList->data[K].sftInd;
-        LIGOTimeGPS timeK = sfts->data[ifoK]->data[indK].epoch;
+        LIGOTimeGPS timeK = multiTimes->data[ifoK]->data[indK];
         REAL8 SFTMidOff = XLALGPSDiff( &timeK, &reTimeK ) + ( 0.5 * Tsft );
         if ( SFTMidOff >= 0 && SFTMidOff < Tshort ) {
 	  /* printf("SFTMidOff=%.0f, Tshort=%.0f; timeK=%d, reTimeK=%d\n", */
