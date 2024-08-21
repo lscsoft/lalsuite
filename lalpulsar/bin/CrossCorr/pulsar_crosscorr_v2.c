@@ -185,6 +185,7 @@ int main( int argc, char *argv[] )
   MultiSFTVector *inputSFTs = NULL;
   MultiPSDVector *multiPSDs = NULL;
   MultiNoiseWeights *multiWeights = NULL;
+  MultiNoiseWeights *resampMultiWeights = NULL;
   MultiLIGOTimeGPSVector *multiTimes = NULL;
   MultiLIGOTimeGPSVector *resampMultiTimes = NULL;
   MultiREAL8TimeSeries *scienceFlagVect = NULL;
@@ -193,7 +194,7 @@ int main( int argc, char *argv[] )
   MultiDetectorStateSeries *resampMultiStates = NULL;
   MultiDetectorStateSeries *fineMultiStates = NULL;
   MultiAMCoeffs *multiCoeffs = NULL;
-  MultiAMCoeffs *fineMultiCoeffs = NULL;
+  MultiAMCoeffs *resampMultiCoeffs = NULL;
   SFTIndexList *sftIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
   SFTIndexList* fineSFTIndices = NULL;
@@ -477,15 +478,6 @@ int main( int argc, char *argv[] )
   skyPos.longitude = uvar.alphaRad;
   skyPos.latitude  = uvar.deltaRad;
 
-  /* If using the more accurate resampling metric, we also need the antenna patterns for the original SFTs */
-  if ( uvar.accurateResampMetric == TRUE ) {
-    /* Calculate the AM coefficients (a,b) for each SFT */
-    if ( ( fineMultiCoeffs = XLALComputeMultiAMCoeffs( multiStates, multiWeights, skyPos ) ) == NULL ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-    }
-  }
-
   /* For resampling with tShort, generate appropriate times, states, and coefficients */
   if ( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == FALSE ) ) {
     /* Edit the timestamps to accurately reflect tShort */
@@ -493,8 +485,8 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_CRITICAL, "%s: XLALModifyMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
-    if ( ( XLALModifyMultiAMCoeffsWeights( &multiWeights, resampTshort, Tsft, numShortPerDet, multiTimes ) ) != XLAL_SUCCESS ) {
-      LogPrintf( LOG_CRITICAL, "%s: XLALModifyMultiAMCoeffsWeights() failed with errno=%d\n", __func__, xlalErrno );
+    if ( ( resampMultiWeights = XLALModifyMultiWeights( multiWeights, resampTshort, Tsft, numShortPerDet, multiTimes ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALModifyMultiWeights() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
     /* multiTimes assignment must go here, because the modify function needs the original times */
@@ -514,7 +506,7 @@ int main( int argc, char *argv[] )
   }
 
   /* Calculate the AM coefficients (a,b) for each SFT */
-  if ( ( multiCoeffs = XLALComputeMultiAMCoeffs( multiStates, multiWeights, skyPos ) ) == NULL ) {
+  if ( ( resampMultiCoeffs = XLALComputeMultiAMCoeffs( multiStates, resampMultiWeights, skyPos ) ) == NULL ) {
     LogPrintf( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
@@ -862,7 +854,7 @@ int main( int argc, char *argv[] )
   REAL8Vector *fineGammaCirc = NULL;
 
   if ( uvar.accurateResampMetric == TRUE ) {
-    if ( ( XLALCalculateCrossCorrGammas( &fineGammaAve, &fineGammaCirc, fineSFTPairs, fineSFTIndices, fineMultiCoeffs )  != XLAL_SUCCESS ) ) {
+    if ( ( XLALCalculateCrossCorrGammas( &fineGammaAve, &fineGammaCirc, fineSFTPairs, fineSFTIndices, multiCoeffs )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }

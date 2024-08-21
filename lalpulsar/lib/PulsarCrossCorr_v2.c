@@ -2537,19 +2537,18 @@ XLALModifyAMCoeffsWeights(
 
 
 /** Modify multiple detectors' amplitude weight coefficients for tShort */
-int
-XLALModifyMultiAMCoeffsWeights(
-  MultiNoiseWeights                     **multiWeights,   /**< [in/out] old and new weights */
-  const REAL8                             tShort,         /**< [in] new time baseline, Tshort */
-  const REAL8                             tSFTOld,        /**< [in] old time baseline, tSFTOld */
-  const UINT4                             numShortPerDet, /**< [in] number of tShort segments per detector */
-  const MultiLIGOTimeGPSVector  *restrict multiTimes      /**< [in] multi-times vector to tell us when the SFTs were */
+MultiNoiseWeights *
+XLALModifyMultiWeights(
+  const MultiNoiseWeights       *restrict multiWeights,       /**< [in] old weights */
+  const REAL8                             tShort,             /**< [in] new time baseline, Tshort */
+  const REAL8                             tSFTOld,            /**< [in] old time baseline, tSFTOld */
+  const UINT4                             numShortPerDet,     /**< [in] number of tShort segments per detector */
+  const MultiLIGOTimeGPSVector  *restrict multiTimes          /**< [in] multi-times vector to tell us when the SFTs were */
 )
 {
 
   /* ----- input sanity checks ----- */
-  MultiNoiseWeights *multiWeightsLocal = ( *multiWeights );
-  UINT4 numDetectors = multiWeightsLocal->length;
+  UINT4 numDetectors = multiWeights->length;
   UINT4 numIFOs = numDetectors;
 
   REAL8 ratioSFTs = tShort / tSFTOld;
@@ -2558,14 +2557,23 @@ XLALModifyMultiAMCoeffsWeights(
   /* create multi noise weights for output */
 
   MultiNoiseWeights *ret = NULL;
-  XLAL_CHECK( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) != NULL, XLAL_EFUNC );
-  XLAL_CHECK( ( ret->data = XLALCalloc( numIFOs, sizeof( *ret->data ) ) ) != NULL, XLAL_EFUNC );
+
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc ( 1, %zu ).\n", __func__, sizeof( *ret ) );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+  if ( ( ret->data = XLALCalloc( numIFOs, sizeof( *ret->data ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc ( %d, %zu ).\n", __func__, numIFOs, sizeof( ret->data[0] ) );
+    XLALFree( ret );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
   ret->length = numIFOs;
+
   /* As documented for MultiNoiseWeights, the S inv Tsft field is a
    * normalization factor equal to S^(-1) Tsft. Since we changed the
    * effective Tsft from Tsft to Tshort = ratioSFTs*Tsft, we also
    * need to multiply this normalization factor by ratioSFTs. */
-  ret->Sinv_Tsft = multiWeightsLocal->Sinv_Tsft * ratioSFTs;
+  ret->Sinv_Tsft = multiWeights->Sinv_Tsft * ratioSFTs;
 
   REAL8 Tobs = numShortPerDet * tShort;
   UINT4 maxNumStepsOldIfGapless = lround( Tobs / tSFTOld );
@@ -2574,14 +2582,12 @@ XLALModifyMultiAMCoeffsWeights(
   UINT4 X;
 
   for ( X = 0; X < numDetectors; X ++ ) {
-    XLALModifyAMCoeffsWeights( &ret->data[X], multiWeightsLocal, tShort, tSFTOld, numShortPerDet, multiTimes, maxNumStepsOldIfGapless, X );
+    XLALModifyAMCoeffsWeights( &ret->data[X], multiWeights, tShort, tSFTOld, numShortPerDet, multiTimes, maxNumStepsOldIfGapless, X );
   }
 
-  XLALDestroyMultiNoiseWeights( ( *multiWeights ) );
-  ( *multiWeights ) = ret;
-  return XLAL_SUCCESS;
+  return ret;
 
-} /* XLALModifyMultiAMCoeffsWeights() */
+} /* XLALModifyMultiWeights() */
 
 
 /** (test function) used for weighting multi amplitude modulation coefficients */

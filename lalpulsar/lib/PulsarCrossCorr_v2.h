@@ -590,16 +590,13 @@ XLALModifyAMCoeffsWeights(
   const UINT4                              X
 );
 
-#ifdef SWIG // SWIG interface directives
-SWIGLAL( INOUT_STRUCTS( MultiNoiseWeights **, multiWeights ) );
-#endif
-int
-XLALModifyMultiAMCoeffsWeights(
-  MultiNoiseWeights                     **multiWeights,
-  const REAL8                             tShort,
-  const REAL8                             tSFTOld,
-  const UINT4                             numShortPerDet,
-  const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes
+MultiNoiseWeights
+*XLALModifyMultiWeights(
+  const MultiNoiseWeights      *_LAL_RESTRICT_ multiWeights,
+  const REAL8                                  tShort,
+  const REAL8                                  tSFTOld,
+  const UINT4                                  numShortPerDet,
+  const MultiLIGOTimeGPSVector *_LAL_RESTRICT_ multiTimes
 );
 
 
