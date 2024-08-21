@@ -92,13 +92,15 @@ typedef struct tagUserInput_t {
   INT4    numCand;            /**< number of candidates to keep in output toplist */
   CHAR    *linesToCleanFilenames; /**< comma-separated list of filenames with known lines for each ifo */
   CHAR    *pairListInputFilename;  /**< input filename containing list of sft index pairs (if not provided, determine list of pairs) */
-  CHAR    *pairListOutputFilename; /**< output filename to write list of sft (or Tshort) index pairs */
-  CHAR    *finePairListOutputFilename; /**< output filename to write list of sft index pairs implied by Tshort pairs */
-  CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts (or Tshorts) */
-  CHAR    *fineSFTListOutputFilename;  /**< output filename to write list of sfts before Tshort construction */
+  CHAR    *pairListOutputFilename; /**< output filename to write list of sft index pairs */
+  CHAR    *resampPairListOutputFilename; /**< output filename to write list of Tshort index pairs */
+  CHAR    *sftListOutputFilename;  /**< output filename to write list of sfts */
+  CHAR    *tShortListOutputFilename;  /**< output filename to write list of Tshorts */
   CHAR    *sftListInputFilename;   /**< input filename to read in the list of sfts and check the order of SFTs */
   CHAR    *gammaAveOutputFilename; /**< output filename to write Gamma_ave = (aa+bb)/10 */
+  CHAR    *resampGammaAveOutputFilename; /**< output filename to write Gamma_ave = (aa+bb)/10 for Tshort pairs */
   CHAR    *gammaCircOutputFilename; /**< output filename to write Gamma_circ = (ab-ba)/10 */
+  CHAR    *resampGammaCircOutputFilename; /**< output filename to write Gamma_circ = (ab-ba)/10 for Tshort pairs */
   CHAR    *toplistFilename;   /**< output filename containing candidates in toplist */
   CHAR    *logFilename;       /**< name of log file*/
   BOOLEAN resamp;                /**< use resampling */
@@ -192,13 +194,12 @@ int main( int argc, char *argv[] )
   MultiLALDetector multiDetectors;
   MultiDetectorStateSeries *multiStates = NULL;
   MultiDetectorStateSeries *resampMultiStates = NULL;
-  MultiDetectorStateSeries *fineMultiStates = NULL;
   MultiAMCoeffs *multiCoeffs = NULL;
   MultiAMCoeffs *resampMultiCoeffs = NULL;
   SFTIndexList *sftIndices = NULL;
+  SFTIndexList *tShortIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
-  SFTIndexList* fineSFTIndices = NULL;
-  SFTPairIndexList* fineSFTPairs = NULL;
+  SFTPairIndexList *tShortPairs = NULL;
   MultiResampSFTPairMultiIndexList *resampMultiPairs = NULL;
   REAL8Vector *shiftedFreqs = NULL;
   UINT4Vector *lowestBins = NULL;
@@ -510,6 +511,7 @@ int main( int argc, char *argv[] )
     LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTIndexListFromMultiSFTVect() failed with errno=%d\n", __func__, xlalErrno );
     XLAL_ERROR( XLAL_EFUNC );
   }
+  UINT4 numSFTs = sftIndices->length;
 
   /* Construct the list of SFT pairs */
 #define PCC_SFTPAIR_HEADER "# The length of SFT-pair list is %u #\n"
@@ -547,7 +549,6 @@ int main( int argc, char *argv[] )
       }
     }
     fclose( fp );
-
   } else { /* if not, construct the list of pairs */
     if ( uvar.resamp == TRUE ) {
       if ( uvar.testResampNoTShort == FALSE ) {
@@ -568,37 +569,10 @@ int main( int argc, char *argv[] )
             LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexListAccurateResamp() failed with errno=%d\n", __func__, xlalErrno );
             XLAL_ERROR( XLAL_EFUNC );
           }
-	  if ( XLALUserVarWasSet( &uvar.finePairListOutputFilename ) ) { /* Write the list of pairs to a file, if a name was provided */
-	    if ( ( fp = fopen( uvar.finePairListOutputFilename, "w" ) ) == NULL ) {
-	      LogPrintf( LOG_CRITICAL, "Can't write in SFT-pair list \n" );
-	      XLAL_ERROR( XLAL_EFUNC );
-	    }
-	    fprintf( fp, PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
-	    for ( j = 0; j < sftPairs->length; j++ ) {
-	      fprintf( fp, PCC_SFTPAIR_BODY, sftPairs->data[j].sftNum[0], sftPairs->data[j].sftNum[1] );
-	    }
-	    fclose( fp );
-	  }
-	  if ( XLALUserVarWasSet( &uvar.fineSFTListOutputFilename ) ) { /* Write the list of SFTs to a file for sanity-checking purposes */
-	    if ( ( fp = fopen( uvar.fineSFTListOutputFilename, "w" ) ) == NULL ) {
-	      LogPrintf( LOG_CRITICAL, "Can't write in flat SFT list \n" );
-	      XLAL_ERROR( XLAL_EFUNC );
-	    }
-	    fprintf( fp, PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
-	    for ( j = 0; j < sftIndices->length; j++ ) { /*output the SFT list */
-	      fprintf( fp, PCC_SFT_BODY, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].name, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsSeconds, inputSFTs->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].epoch.gpsNanoSeconds );
-	    }
-	    fclose( fp );
-	  }
-	  fineSFTIndices = sftIndices;
-	  fineSFTPairs = sftPairs;
-        } else {
-          /* Assign old-school structures */
-          XLALDestroySFTPairIndexList( sftPairs );
-          XLALDestroySFTIndexList( sftIndices );
-        }
-	sftPairs = resampMultiPairs->pairIndexList;
-	sftIndices = resampMultiPairs->indexList;
+	}
+	/* Assign old-school structures */
+	tShortPairs = resampMultiPairs->pairIndexList;
+	tShortIndices = resampMultiPairs->indexList;
       } else {
         XLALDestroySFTPairIndexList( sftPairs );
         if ( ( XLALCreateSFTPairIndexListResamp( &resampMultiPairs, &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr, uvar.inclSameDetector, Tsft, resampTshort ) != XLAL_SUCCESS ) ) {
@@ -613,15 +587,39 @@ int main( int argc, char *argv[] )
       }
     }
   }
-
   if ( XLALUserVarWasSet( &uvar.pairListOutputFilename ) ) { /* Write the list of pairs to a file, if a name was provided */
     if ( ( fp = fopen( uvar.pairListOutputFilename, "w" ) ) == NULL ) {
       LogPrintf( LOG_CRITICAL, "Can't write in SFT-pair list \n" );
       XLAL_ERROR( XLAL_EFUNC );
     }
+    if ( ( sftPairs == NULL ) ) {
+      LogPrintf( LOG_CRITICAL, "No pair list available to write (are you using --resamp without --accurateResampMetric?)" );
+      if ( uvar.treatWarningsAsErrors ) {
+        printf( "Error! (--treatWarningsAsErrors flag is true).\n" );
+        XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
     fprintf( fp, PCC_SFTPAIR_HEADER, sftPairs->length ); /*output the length of SFT-pair list to the header*/
     for ( j = 0; j < sftPairs->length; j++ ) {
       fprintf( fp, PCC_SFTPAIR_BODY, sftPairs->data[j].sftNum[0], sftPairs->data[j].sftNum[1] );
+    }
+    fclose( fp );
+  }
+  if ( XLALUserVarWasSet( &uvar.resampPairListOutputFilename ) ) { /* Write the list of pairs to a file, if a name was provided */
+    if ( ( fp = fopen( uvar.resampPairListOutputFilename, "w" ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "Can't write in SFT-pair list \n" );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    if ( ( tShortPairs == NULL ) ) {
+      LogPrintf( LOG_CRITICAL, "No Tshort pair list available to write (are you not using --resamp?)" );
+      if ( uvar.treatWarningsAsErrors ) {
+        printf( "Error! (--treatWarningsAsErrors flag is true).\n" );
+        XLAL_ERROR( XLAL_EFUNC );
+      }
+    }
+    fprintf( fp, PCC_SFTPAIR_HEADER, tShortPairs->length ); /*output the length of SFT-pair list to the header*/
+    for ( j = 0; j < tShortPairs->length; j++ ) {
+      fprintf( fp, PCC_SFTPAIR_BODY, tShortPairs->data[j].sftNum[0], tShortPairs->data[j].sftNum[1] );
     }
     fclose( fp );
   }
@@ -631,14 +629,23 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_CRITICAL, "Can't write in flat SFT list \n" );
       XLAL_ERROR( XLAL_EFUNC );
     }
-    fprintf( fp, PCC_SFT_HEADER, sftIndices->length ); /*output the length of SFT list to the header*/
-    for ( j = 0; j < sftIndices->length; j++ ) { /*output the SFT list */
+    fprintf( fp, PCC_SFT_HEADER, numSFTs ); /*output the length of SFT list to the header*/
+    for ( j = 0; j < numSFTs; j++ ) { /*output the SFT list */
       fprintf( fp, PCC_SFT_BODY, inputSFTs->data[sftIndices->data[j].detInd]->data[0].name, multiTimes->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].gpsSeconds, multiTimes->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].gpsNanoSeconds );
     }
     fclose( fp );
   }
-
-
+  if ( XLALUserVarWasSet( &uvar.tShortListOutputFilename ) ) { /* Write the list of SFTs to a file for sanity-checking purposes */
+    if ( ( fp = fopen( uvar.tShortListOutputFilename, "w" ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "Can't write in flat SFT list \n" );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    fprintf( fp, PCC_SFT_HEADER, tShortIndices->length ); /*output the length of TSHORT list to the header*/
+    for ( j = 0; j < tShortIndices->length; j++ ) { /*output the TSHORT list */
+      fprintf( fp, PCC_SFT_BODY, inputSFTs->data[tShortIndices->data[j].detInd]->data[0].name, multiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsSeconds, multiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsNanoSeconds );
+    }
+    fclose( fp );
+  }
   else if ( XLALUserVarWasSet( &uvar.sftListInputFilename ) ) { /*do a sanity check of the order of SFTs list if the name of input SFT list is given*/
     UINT4 numofsft = 0;
     if ( ( fp = fopen( uvar.sftListInputFilename, "r" ) ) == NULL ) {
@@ -656,7 +663,7 @@ int main( int argc, char *argv[] )
       XLAL_ERROR( XLAL_EFUNC );
     }
     INT4 checkGPS[numofsft], checkGPSns[numofsft];
-    if ( numofsft == sftIndices->length ) {
+    if ( numofsft == numSFTs ) {
       for ( j = 0; j < numofsft; j++ ) {
         if ( fscanf( fp, PCC_SFT_BODY, &checkDet->data[j * LALNameLength], &checkGPS[j], &checkGPSns[j] ) == EOF ) {
           LogPrintf( LOG_CRITICAL, "The length of SFT list doesn't match\n" );
@@ -841,26 +848,26 @@ int main( int argc, char *argv[] )
      because the AM coefficients are noise-weighted. */
   REAL8Vector *GammaAve = NULL;
   REAL8Vector *GammaCirc = NULL;
-  REAL8Vector *fineGammaAve = NULL;
-  REAL8Vector *fineGammaCirc = NULL;
+  REAL8Vector *resampGammaAve = NULL;
+  REAL8Vector *resampGammaCirc = NULL;
 
-  if ( uvar.accurateResampMetric == TRUE ) {
-    if ( ( XLALCalculateCrossCorrGammas( &fineGammaAve, &fineGammaCirc, fineSFTPairs, fineSFTIndices, multiCoeffs )  != XLAL_SUCCESS ) ) {
-      LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
-      XLAL_ERROR( XLAL_EFUNC );
-    }
-  } else {
+  if ( ( uvar.resamp == FALSE ) || ( uvar.accurateResampMetric == TRUE ) ) {
     if ( ( XLALCalculateCrossCorrGammas( &GammaAve, &GammaCirc, sftPairs, sftIndices, multiCoeffs )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
-  }
-  if ( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == TRUE ) ) {
+    if ( uvar.resamp == TRUE ) {
+      /* TODO: Combine Gammas */
+    }
+  } else if ( uvar.testResampNoTShort == TRUE ) {
     /* Cross-check valid only for gapless-Gaussian data */
-    XLALDestroyREAL8Vector( GammaAve );
-    XLALDestroyREAL8Vector( GammaCirc );
-    if ( ( XLALCalculateCrossCorrGammasResamp( &GammaAve, &GammaCirc, resampMultiPairs, multiCoeffs )  != XLAL_SUCCESS ) ) {
+    if ( ( XLALCalculateCrossCorrGammasResamp( &resampGammaAve, &resampGammaCirc, resampMultiPairs, multiCoeffs )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammasResamp() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  } else {
+    if ( ( XLALCalculateCrossCorrGammas( &resampGammaAve, &resampGammaCirc, tShortPairs, tShortIndices, resampMultiCoeffs )  != XLAL_SUCCESS ) ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
   }
@@ -879,6 +886,17 @@ int main( int argc, char *argv[] )
     }
     fclose( fp );
   }
+  if ( XLALUserVarWasSet( &uvar.resampGammaAveOutputFilename ) ) { /* Write the aa+bb weight for each pair to a file, if a name was provided */
+    if ( ( fp = fopen( uvar.resampGammaAveOutputFilename, "w" ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "Can't write in Gamma_ave list \n" );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    fprintf( fp, PCC_GAMMA_HEADER, resampMultiWeights->Sinv_Tsft ); /*output the normalization factor to the header*/
+    for ( j = 0; j < sftPairs->length; j++ ) {
+      fprintf( fp, PCC_GAMMA_BODY, resampGammaAve->data[j] );
+    }
+    fclose( fp );
+  }
   if ( XLALUserVarWasSet( &uvar.gammaCircOutputFilename ) ) { /* Write the ab-ba weight for each pair to a file, if a name was provided */
     if ( ( fp = fopen( uvar.gammaCircOutputFilename, "w" ) ) == NULL ) {
       LogPrintf( LOG_CRITICAL, "Can't write in Gamma_circ list \n" );
@@ -890,7 +908,17 @@ int main( int argc, char *argv[] )
     }
     fclose( fp );
   }
-
+  if ( XLALUserVarWasSet( &uvar.resampGammaCircOutputFilename ) ) { /* Write the ab-ba weight for each pair to a file, if a name was provided */
+    if ( ( fp = fopen( uvar.resampGammaCircOutputFilename, "w" ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "Can't write in Gamma_circ list \n" );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    fprintf( fp, PCC_GAMMA_HEADER, resampMultiWeights->Sinv_Tsft ); /*output the normalization factor to the header*/
+    for ( j = 0; j < sftPairs->length; j++ ) {
+      fprintf( fp, PCC_GAMMA_BODY, resampGammaCirc->data[j] );
+    }
+    fclose( fp );
+  }
 
   /*initialize binary parameters structure*/
   XLAL_INIT_MEM( minBinaryTemplate );
@@ -931,14 +959,14 @@ int main( int argc, char *argv[] )
   /*Get metric diagonal components, also estimate sensitivity i.e. E[rho]/(h0)^2 (4.13)*/
   if ( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == FALSE ) ) {
     if ( uvar.accurateResampMetric == TRUE ) {
-      if ( ( XLALCalculateLMXBCrossCorrDiagMetric( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, &weightedMuTAve, thisBinaryTemplate, fineGammaAve, fineSFTPairs, fineSFTIndices, inputSFTs, multiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
+      if ( ( XLALCalculateLMXBCrossCorrDiagMetric( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, &weightedMuTAve, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
 	LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
       /* We've used the multiWeights modified by resamp, but all it's been used for is the normalization of the output sensitivity, so we can just correct for that */
       estSens *= SQR((Tsft/resampTshort));
     } else {
-      if ( ( XLALCalculateLMXBCrossCorrDiagMetricShort( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, thisBinaryTemplate, GammaAve, resampMultiPairs, multiTimes, multiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
+      if ( ( XLALCalculateLMXBCrossCorrDiagMetricShort( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, thisBinaryTemplate, resampGammaAve, resampMultiPairs, resampMultiTimes, resampMultiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetricShort() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
       }
@@ -967,36 +995,37 @@ int main( int argc, char *argv[] )
 
   /* Calculate SSB times (can do this once since search is currently only for one sky position, and binary doppler shift is added later) */
   MultiSSBtimes *multiSSBTimes = NULL;
-  if ( ( multiSSBTimes = XLALGetMultiSSBtimes( multiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT ) ) == NULL ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALGetMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  /* Allocate structure for binary doppler-shifting information */
-  if ( ( multiBinaryTimes = XLALDuplicateMultiSSBtimes( multiSSBTimes ) ) == NULL ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALDuplicateMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-
-  if ( uvar.accurateResampMetric == TRUE ) {
-    if ( ( multiSSBTimes = XLALGetMultiSSBtimes( fineMultiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT ) ) == NULL ) {
+  if ( ( uvar.resamp == FALSE ) || ( uvar.accurateResampMetric == TRUE ) ) {
+    if ( ( multiSSBTimes = XLALGetMultiSSBtimes( multiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALGetMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+  } else {
+    if ( ( multiSSBTimes = XLALGetMultiSSBtimes( resampMultiStates, skyPos, dopplerpos.refTime, SSBPREC_RELATIVISTICOPT ) ) == NULL ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALGetMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
   }
 
-  UINT8 numSFTs = sftIndices->length;
-  if ( ( shiftedFreqs = XLALCreateREAL8Vector( numSFTs ) ) == NULL ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-  if ( ( lowestBins = XLALCreateUINT4Vector( numSFTs ) ) == NULL ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
-  }
-  if ( ( sincList = XLALCreateREAL8VectorSequence( numSFTs, uvar.numBins ) ) == NULL ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALCreateREAL8VectorSequence() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
+  if ( uvar.resamp == FALSE ) {
+    /* Allocate structure for binary doppler-shifting information */
+    if ( ( multiBinaryTimes = XLALDuplicateMultiSSBtimes( multiSSBTimes ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALDuplicateMultiSSBtimes() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+
+    if ( ( shiftedFreqs = XLALCreateREAL8Vector( numSFTs ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCreateREAL8Vector() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    if ( ( lowestBins = XLALCreateUINT4Vector( numSFTs ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCreateUINT4Vector() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    if ( ( sincList = XLALCreateREAL8VectorSequence( numSFTs, uvar.numBins ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALCreateREAL8VectorSequence() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
   }
 
   /* "New" general metric computation */
@@ -1014,13 +1043,13 @@ int main( int argc, char *argv[] )
 
   REAL8VectorSequence *phaseDerivs = NULL;
 
-  if ( ( uvar.accurateResampMetric == TRUE ) ) {
-    if ( ( XLALCalculateCrossCorrPhaseDerivatives( &phaseDerivs, &thisBinaryTemplate, config.edat, fineSFTIndices, multiSSBTimes, &coordSys )  != XLAL_SUCCESS ) ) {
+  if ( ( uvar.resamp == FALSE ) || ( uvar.accurateResampMetric == TRUE ) ) {
+    if ( ( XLALCalculateCrossCorrPhaseDerivatives( &phaseDerivs, &thisBinaryTemplate, config.edat, sftIndices, multiSSBTimes, &coordSys )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseDerivatives() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
   } else {
-    if ( ( XLALCalculateCrossCorrPhaseDerivatives( &phaseDerivs, &thisBinaryTemplate, config.edat, sftIndices, multiSSBTimes, &coordSys )  != XLAL_SUCCESS ) ) {
+    if ( ( XLALCalculateCrossCorrPhaseDerivatives( &phaseDerivs, &thisBinaryTemplate, config.edat, tShortIndices, multiSSBTimes, &coordSys )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseDerivatives() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
@@ -1030,13 +1059,13 @@ int main( int argc, char *argv[] )
   gsl_matrix *g_ij = NULL;
   gsl_vector *eps_i = NULL;
   REAL8 sumGammaSq = 0;
-  if ( ( uvar.accurateResampMetric == TRUE ) ) {
-    if ( ( XLALCalculateCrossCorrPhaseMetric( &g_ij, &eps_i, &sumGammaSq, phaseDerivs, fineSFTPairs, fineGammaAve, fineGammaCirc, &coordSys ) != XLAL_SUCCESS ) ) {
+  if ( ( uvar.resamp == FALSE ) || ( uvar.accurateResampMetric == TRUE ) ) {
+    if ( ( XLALCalculateCrossCorrPhaseMetric( &g_ij, &eps_i, &sumGammaSq, phaseDerivs, sftPairs, GammaAve, GammaCirc, &coordSys ) != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseMetric() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
   } else {
-    if ( ( XLALCalculateCrossCorrPhaseMetric( &g_ij, &eps_i, &sumGammaSq, phaseDerivs, sftPairs, GammaAve, GammaCirc, &coordSys ) != XLAL_SUCCESS ) ) {
+    if ( ( XLALCalculateCrossCorrPhaseMetric( &g_ij, &eps_i, &sumGammaSq, phaseDerivs, tShortPairs, resampGammaAve, resampGammaCirc, &coordSys ) != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrPhaseMetric() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
@@ -1156,7 +1185,7 @@ int main( int argc, char *argv[] )
     // Resampled loop
     XLALDestroyMultiSFTVector( inputSFTs );
 //returns error code if exists
-    if ( ( resampForLoopCrossCorr( dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, uvar, multiWeights, ccStatVector, numeEquivAve, numeEquivCirc, evSquaredVector, estSens, GammaAve, resampMultiPairs, thisCandidate, ccToplist, resampTshort, &config )  != XLAL_SUCCESS ) ) {
+    if ( ( resampForLoopCrossCorr( dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, uvar, multiWeights, ccStatVector, numeEquivAve, numeEquivCirc, evSquaredVector, estSens, resampGammaAve, resampMultiPairs, thisCandidate, ccToplist, resampTshort, &config )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: resampForLoopCrossCorr() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
@@ -1268,7 +1297,7 @@ int main( int argc, char *argv[] )
     fprintf( fp, "jobStartTime = %" LAL_INT4_FORMAT "\n", computingStartGPSTime.gpsSeconds ); /*job start time in GPS-time*/
     fprintf( fp, "jobEndTime = %" LAL_INT4_FORMAT "\n", computingEndGPSTime.gpsSeconds ); /*job end time in GPS-time*/
     fprintf( fp, "computingTime = %" LAL_UINT4_FORMAT "\n", computingTime ); /*total time in sec*/
-    fprintf( fp, "SFTnum = %" LAL_UINT4_FORMAT "\n", sftIndices->length ); /*total number of SFT*/
+    fprintf( fp, "SFTnum = %" LAL_UINT4_FORMAT "\n", numSFTs ); /*total number of SFT*/
     fprintf( fp, "pairnum = %" LAL_UINT4_FORMAT "\n", sftPairs->length ); /*total number of pair of SFT*/
     fprintf( fp, "Tsft = %.6g\n", Tsft ); /*SFT duration*/
     fprintf( fp, "Tshort = %.6g\n", resampTshort ); /* resampling tShort duration */
@@ -1434,13 +1463,15 @@ int XLALInitUserVars( UserInput_t *uvar )
   XLALRegisterUvarMember( numCand,         INT4, 0,  OPTIONAL, "Number of candidates to keep in toplist" );
   XLALRegisterUvarMember( linesToCleanFilenames, STRING, 0,  OPTIONAL, "Comma-separated list of line files" );
   XLALRegisterUvarMember( pairListInputFilename, STRING, 0,  OPTIONAL, "Name of file from which to read list of SFT pairs" );
-  XLALRegisterUvarMember( pairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT (or Tshort) pairs" );
-  XLALRegisterUvarMember( finePairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT pairs implied by Tshort pairs" );
-  XLALRegisterUvarMember( sftListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs (or Tshorts) (for sanity checks)" );
-  XLALRegisterUvarMember( fineSFTListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs before Tshort cosntruction (for sanity checks)" );
+  XLALRegisterUvarMember( pairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFT pairs" );
+  XLALRegisterUvarMember( resampPairListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of Tshort pairs" );
+  XLALRegisterUvarMember( sftListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of SFTs (for sanity checks)" );
+  XLALRegisterUvarMember( tShortListOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write list of Tshorts (for sanity checks)" );
   XLALRegisterUvarMember( sftListInputFilename, STRING, 0,  OPTIONAL, "Name of file to which to read in list of SFTs (for sanity checks)" );
   XLALRegisterUvarMember( gammaAveOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write aa+bb weights (for e.g., false alarm estimation)" );
+  XLALRegisterUvarMember( resampGammaAveOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write aa+bb weights for Tshort pairs (for e.g., false alarm estimation)" );
   XLALRegisterUvarMember( gammaCircOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write ab-ba weights (for e.g., systematic error)" );
+  XLALRegisterUvarMember( resampGammaCircOutputFilename, STRING, 0,  OPTIONAL, "Name of file to which to write ab-ba weights for Tshort pairs (for e.g., systematic error)" );
   XLALRegisterUvarMember( toplistFilename, STRING, 0,  OPTIONAL, "Output filename containing candidates in toplist" );
   XLALRegisterUvarMember( logFilename, STRING, 0,  OPTIONAL, "Output a meta-data file for the search" );
   XLALRegisterUvarMember( resamp,    BOOLEAN, 0,  OPTIONAL, "Use resampling" );
