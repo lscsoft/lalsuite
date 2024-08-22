@@ -495,12 +495,19 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_CRITICAL, "%s: XLALGetMultiDetectorStates() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
+    /* Calculate the AM coefficients (a,b) for each SFT */
+    if ( ( resampMultiCoeffs = XLALComputeMultiAMCoeffs( resampMultiStates, resampMultiWeights, skyPos ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
   }
 
-  /* Calculate the AM coefficients (a,b) for each SFT */
-  if ( ( resampMultiCoeffs = XLALComputeMultiAMCoeffs( resampMultiStates, resampMultiWeights, skyPos ) ) == NULL ) {
-    LogPrintf( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
-    XLAL_ERROR( XLAL_EFUNC );
+  if ( ( uvar.resamp == FALSE ) || ( uvar.accurateResampMetric == TRUE ) ) {
+    /* Calculate the AM coefficients (a,b) for each SFT */
+    if ( ( multiCoeffs = XLALComputeMultiAMCoeffs( multiStates, multiWeights, skyPos ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "%s: XLALComputeMultiAMCoeffs() failed with errno=%d\n", __func__, xlalErrno );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
   }
 
   /* Construct the flat list of SFTs (this sort of replicates the
@@ -634,19 +641,7 @@ int main( int argc, char *argv[] )
       fprintf( fp, PCC_SFT_BODY, inputSFTs->data[sftIndices->data[j].detInd]->data[0].name, multiTimes->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].gpsSeconds, multiTimes->data[sftIndices->data[j].detInd]->data[sftIndices->data[j].sftInd].gpsNanoSeconds );
     }
     fclose( fp );
-  }
-  if ( XLALUserVarWasSet( &uvar.tShortListOutputFilename ) ) { /* Write the list of SFTs to a file for sanity-checking purposes */
-    if ( ( fp = fopen( uvar.tShortListOutputFilename, "w" ) ) == NULL ) {
-      LogPrintf( LOG_CRITICAL, "Can't write in flat SFT list \n" );
-      XLAL_ERROR( XLAL_EFUNC );
-    }
-    fprintf( fp, PCC_SFT_HEADER, tShortIndices->length ); /*output the length of TSHORT list to the header*/
-    for ( j = 0; j < tShortIndices->length; j++ ) { /*output the TSHORT list */
-      fprintf( fp, PCC_SFT_BODY, inputSFTs->data[tShortIndices->data[j].detInd]->data[0].name, multiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsSeconds, multiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsNanoSeconds );
-    }
-    fclose( fp );
-  }
-  else if ( XLALUserVarWasSet( &uvar.sftListInputFilename ) ) { /*do a sanity check of the order of SFTs list if the name of input SFT list is given*/
+  } else if ( XLALUserVarWasSet( &uvar.sftListInputFilename ) ) { /*do a sanity check of the order of SFTs list if the name of input SFT list is given*/
     UINT4 numofsft = 0;
     if ( ( fp = fopen( uvar.sftListInputFilename, "r" ) ) == NULL ) {
       LogPrintf( LOG_CRITICAL, "Can't read in flat SFT list \n" );
@@ -682,8 +677,18 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_CRITICAL, "Run for your life, the length of SFT list doesn't match" );
       XLAL_ERROR( XLAL_EFUNC );
     }
-  } else {
+  }
 
+  if ( XLALUserVarWasSet( &uvar.tShortListOutputFilename ) ) { /* Write the list of SFTs to a file for sanity-checking purposes */
+    if ( ( fp = fopen( uvar.tShortListOutputFilename, "w" ) ) == NULL ) {
+      LogPrintf( LOG_CRITICAL, "Can't write in flat SFT list \n" );
+      XLAL_ERROR( XLAL_EFUNC );
+    }
+    fprintf( fp, PCC_SFT_HEADER, tShortIndices->length ); /*output the length of TSHORT list to the header*/
+    for ( j = 0; j < tShortIndices->length; j++ ) { /*output the TSHORT list */
+      fprintf( fp, PCC_SFT_BODY, inputSFTs->data[tShortIndices->data[j].detInd]->data[0].name, multiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsSeconds, multiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsNanoSeconds );
+    }
+    fclose( fp );
   }
 
   /* Parse the list of lines to avoid (if given) */
@@ -851,6 +856,7 @@ int main( int argc, char *argv[] )
   REAL8Vector *resampGammaAve = NULL;
   REAL8Vector *resampGammaCirc = NULL;
 
+  /* printf("About to Calculate Gammmas\n"); */
   if ( ( uvar.resamp == FALSE ) || ( uvar.accurateResampMetric == TRUE ) ) {
     if ( ( XLALCalculateCrossCorrGammas( &GammaAve, &GammaCirc, sftPairs, sftIndices, multiCoeffs )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
@@ -871,7 +877,9 @@ int main( int argc, char *argv[] )
       XLAL_ERROR( XLAL_EFUNC );
     }
   }
+  /* printf("Calculated Gammmas\n"); */
   XLALDestroyMultiAMCoeffs( multiCoeffs );
+  /* printf("Destroyed multiCoeffs\n"); */
 
 #define PCC_GAMMA_HEADER "# The normalization Sinv_Tsft is %g #\n"
 #define PCC_GAMMA_BODY "%.10g\n"
@@ -892,7 +900,7 @@ int main( int argc, char *argv[] )
       XLAL_ERROR( XLAL_EFUNC );
     }
     fprintf( fp, PCC_GAMMA_HEADER, resampMultiWeights->Sinv_Tsft ); /*output the normalization factor to the header*/
-    for ( j = 0; j < sftPairs->length; j++ ) {
+    for ( j = 0; j < tShortPairs->length; j++ ) {
       fprintf( fp, PCC_GAMMA_BODY, resampGammaAve->data[j] );
     }
     fclose( fp );
@@ -914,7 +922,7 @@ int main( int argc, char *argv[] )
       XLAL_ERROR( XLAL_EFUNC );
     }
     fprintf( fp, PCC_GAMMA_HEADER, resampMultiWeights->Sinv_Tsft ); /*output the normalization factor to the header*/
-    for ( j = 0; j < sftPairs->length; j++ ) {
+    for ( j = 0; j < tShortPairs->length; j++ ) {
       fprintf( fp, PCC_GAMMA_BODY, resampGammaCirc->data[j] );
     }
     fclose( fp );
@@ -1185,7 +1193,7 @@ int main( int argc, char *argv[] )
     // Resampled loop
     XLALDestroyMultiSFTVector( inputSFTs );
 //returns error code if exists
-    if ( ( resampForLoopCrossCorr( dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, uvar, multiWeights, ccStatVector, numeEquivAve, numeEquivCirc, evSquaredVector, estSens, resampGammaAve, resampMultiPairs, thisCandidate, ccToplist, resampTshort, &config )  != XLAL_SUCCESS ) ) {
+    if ( ( resampForLoopCrossCorr( dopplerpos, dopplerShiftFlag, binaryTemplateSpacings, minBinaryTemplate, maxBinaryTemplate, fCount, aCount, tCount, pCount, fSpacingNum, aSpacingNum, tSpacingNum, pSpacingNum, uvar, resampMultiWeights, ccStatVector, numeEquivAve, numeEquivCirc, evSquaredVector, estSens, resampGammaAve, resampMultiPairs, thisCandidate, ccToplist, resampTshort, &config )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: resampForLoopCrossCorr() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
@@ -1298,7 +1306,15 @@ int main( int argc, char *argv[] )
     fprintf( fp, "jobEndTime = %" LAL_INT4_FORMAT "\n", computingEndGPSTime.gpsSeconds ); /*job end time in GPS-time*/
     fprintf( fp, "computingTime = %" LAL_UINT4_FORMAT "\n", computingTime ); /*total time in sec*/
     fprintf( fp, "SFTnum = %" LAL_UINT4_FORMAT "\n", numSFTs ); /*total number of SFT*/
-    fprintf( fp, "pairnum = %" LAL_UINT4_FORMAT "\n", sftPairs->length ); /*total number of pair of SFT*/
+    if ( tShortIndices ) {
+      fprintf( fp, "Tshortnum = %" LAL_UINT4_FORMAT "\n", tShortIndices->length ); /*total number of SFT*/
+    }
+    if ( sftPairs ) {
+      fprintf( fp, "pairnum = %" LAL_UINT4_FORMAT "\n", sftPairs->length ); /*total number of pair of SFT*/
+    }
+    if ( tShortPairs ) {
+      fprintf( fp, "resamppairnum = %" LAL_UINT4_FORMAT "\n", tShortPairs->length ); /*total number of pair of SFT*/
+    }
     fprintf( fp, "Tsft = %.6g\n", Tsft ); /*SFT duration*/
     fprintf( fp, "Tshort = %.6g\n", resampTshort ); /* resampling tShort duration */
     if ( config.mismatchMaxP != 0.0 ) {
