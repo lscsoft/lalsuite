@@ -322,6 +322,7 @@ int XLALCreateSFTPairIndexList
 int XLALCreateSFTPairIndexListAccurateResamp
 (
   SFTPairIndexList                **pairIndexList,
+  UINT4VectorSequence             **sftPairForResampPair,
   SFTIndexList                     *indexList,
   MultiResampSFTPairMultiIndexList *resampPairs,
   const MultiLIGOTimeGPSVector     *_LAL_RESTRICT_ multiTimes,
@@ -387,7 +388,17 @@ int XLALCalculateCrossCorrGammasResampShort
 )
 ;
 
-int XLALCalculatePulsarCrossCorrStatistic
+int XLALCombineCrossCorrGammas
+(
+  REAL8Vector        **resampGamma,
+  REAL8Vector         *Gamma,
+  UINT4VectorSequence *sftPairForTshortPair,
+  REAL8                Tsft,
+  REAL8                Tshort
+ )
+;
+
+  int XLALCalculatePulsarCrossCorrStatistic
 (
   REAL8                         *ccStat,
   REAL8                      *evSquared,

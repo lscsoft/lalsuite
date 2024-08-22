@@ -200,6 +200,7 @@ int main( int argc, char *argv[] )
   SFTIndexList *tShortIndices = NULL;
   SFTPairIndexList *sftPairs = NULL;
   SFTPairIndexList *tShortPairs = NULL;
+  UINT4VectorSequence *sftPairForTshortPair = NULL;
   MultiResampSFTPairMultiIndexList *resampMultiPairs = NULL;
   REAL8Vector *shiftedFreqs = NULL;
   UINT4Vector *lowestBins = NULL;
@@ -572,7 +573,7 @@ int main( int argc, char *argv[] )
         XLALDestroyMultiREAL8TimeSeries( scienceFlagVect );
         if ( uvar.accurateResampMetric == TRUE ) {
 	  /* printf("About to call XLALCreateSFTPairIndexListAccurateResamp\n"); */
-          if ( ( XLALCreateSFTPairIndexListAccurateResamp( &sftPairs, sftIndices, resampMultiPairs, multiTimes, resampMultiTimes ) != XLAL_SUCCESS ) ) {
+          if ( ( XLALCreateSFTPairIndexListAccurateResamp( &sftPairs, &sftPairForTshortPair, sftIndices, resampMultiPairs, multiTimes, resampMultiTimes ) != XLAL_SUCCESS ) ) {
             LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexListAccurateResamp() failed with errno=%d\n", __func__, xlalErrno );
             XLAL_ERROR( XLAL_EFUNC );
           }
@@ -863,7 +864,14 @@ int main( int argc, char *argv[] )
       XLAL_ERROR( XLAL_EFUNC );
     }
     if ( uvar.resamp == TRUE ) {
-      /* TODO: Combine Gammas */
+      if ( ( XLALCombineCrossCorrGammas( &resampGammaAve, GammaAve, sftPairForTshortPair, Tsft, resampTshort )  != XLAL_SUCCESS ) ) {
+	LogPrintf( LOG_CRITICAL, "%s: XLALCombineCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
+      if ( ( XLALCombineCrossCorrGammas( &resampGammaCirc, GammaCirc, sftPairForTshortPair, Tsft, resampTshort )  != XLAL_SUCCESS ) ) {
+	LogPrintf( LOG_CRITICAL, "%s: XLALCombineCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
+	XLAL_ERROR( XLAL_EFUNC );
+      }
     }
   } else if ( uvar.testResampNoTShort == TRUE ) {
     /* Cross-check valid only for gapless-Gaussian data */
