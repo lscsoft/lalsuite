@@ -687,7 +687,7 @@ int main( int argc, char *argv[] )
     }
     fprintf( fp, PCC_SFT_HEADER, tShortIndices->length ); /*output the length of TSHORT list to the header*/
     for ( j = 0; j < tShortIndices->length; j++ ) { /*output the TSHORT list */
-      fprintf( fp, PCC_SFT_BODY, inputSFTs->data[tShortIndices->data[j].detInd]->data[0].name, multiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsSeconds, multiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsNanoSeconds );
+      fprintf( fp, PCC_SFT_BODY, inputSFTs->data[tShortIndices->data[j].detInd]->data[0].name, resampMultiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsSeconds, resampMultiTimes->data[tShortIndices->data[j].detInd]->data[tShortIndices->data[j].sftInd].gpsNanoSeconds );
     }
     fclose( fp );
   }
