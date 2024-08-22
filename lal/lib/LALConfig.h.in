@@ -28,9 +28,6 @@
 /* Define if using fftw3 aligned memory optimizations */
 #undef LAL_FFTW3_MEMALIGN_ENABLED
 
-/* Define if using qthread library */
-#undef LAL_QTHREAD
-
 /* Disable LAL memory functions */
 #undef LAL_MEMORY_FUNCTIONS_DISABLED
 

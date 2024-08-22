@@ -8,21 +8,16 @@ pkginclude_HEADERS = \
 	TimeFreqFFT.h \
 	$(END_OF_LIST)
 
-if QTHREAD
-QTHREADSRC = qthread.c
-else
-QTHREADSRC =
-endif
-
 if INTELFFT
 FFTSRC = \
 	IntelComplexFFT.c \
 	IntelRealFFT.c \
 	FFTWMutex.c \
-	$(QTHREADSRC)
+	$(END_OF_LIST)
 FFTHDR = \
 	IntelComplexFFT_source.c \
-	IntelRealFFT_source.c
+	IntelRealFFT_source.c \
+	$(END_OF_LIST)
 FFTCXXSRC =
 FFTCXXGENSRC =
 FFTLIBCXX =
@@ -90,5 +85,4 @@ EXTRA_DIST = \
 	RealFFT.c \
 	RealFFT_source.c \
 	TimeFreqFFT.c \
-	qthread.c \
 	$(END_OF_LIST)

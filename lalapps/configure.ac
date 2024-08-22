@@ -244,9 +244,6 @@ LALSUITE_PROG_PRETTY_CODE
 # configure CUDA
 LALSUITE_USE_CUDA
 
-# check for qthread
-LALAPPS_CHECK_QTHREAD
-
 # check for gethostname prototype
 AC_MSG_CHECKING([for gethostname prototype in unistd.h])
 AC_EGREP_HEADER([gethostname],[unistd.h],[AC_MSG_RESULT([yes])]
