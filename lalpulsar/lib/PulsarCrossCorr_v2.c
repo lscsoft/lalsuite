@@ -1195,14 +1195,14 @@ int XLALCombineCrossCorrGammas
   REAL8 normFactor = (Tshort/Tsft);
 
   for ( UINT4 reAlpha = 0; reAlpha < numTshortPairs; reAlpha++ ) {
-    REAL8 thisGamma = 0.;
+    REAL8 thisGammaSq = 0.;
     for ( UINT4 alphaInReAlpha = 0; alphaInReAlpha < maxAlphaInReAlpha; alphaInReAlpha++ ) {
       UINT4 alpha = sftPairForTshortPair->data[reAlpha * maxAlphaInReAlpha + alphaInReAlpha];
       if ( alpha == LAL_UINT4_MAX ) break;
-      thisGamma += Gamma->data[alpha];
+      thisGammaSq += SQUARE((Gamma->data[alpha]));
     }
-    thisGamma *= normFactor;
-    ret->data[reAlpha] = thisGamma;
+    thisGammaSq *= SQUARE(normFactor);
+    ret->data[reAlpha] = sqrt(thisGammaSq);
   }
 
   ( *resampGamma ) = ret;
