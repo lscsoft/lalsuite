@@ -979,8 +979,6 @@ int main( int argc, char *argv[] )
 	LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
 	XLAL_ERROR( XLAL_EFUNC );
       }
-      /* We've used the multiWeights modified by resamp, but all it's been used for is the normalization of the output sensitivity, so we can just correct for that */
-      estSens *= SQR((Tsft/resampTshort));
     } else {
       if ( ( XLALCalculateLMXBCrossCorrDiagMetricShort( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, thisBinaryTemplate, resampGammaAve, resampMultiPairs, resampMultiTimes, resampMultiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetricShort() failed with errno=%d\n", __func__, xlalErrno );
