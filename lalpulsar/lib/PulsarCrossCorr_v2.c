@@ -1192,7 +1192,7 @@ int XLALCombineCrossCorrGammas
 	      Gamma->length, numTshortPairs, maxAlphaInReAlpha );
 
   /* We assume these are Gamma-hats, which include a factor of Tsft or Tshort from the normalized antenna patterns */
-  REAL8 normFactor = (Tshort/Tsft);
+  REAL8 normFactor = (Tsft/Tshort);
 
   for ( UINT4 reAlpha = 0; reAlpha < numTshortPairs; reAlpha++ ) {
     REAL8 thisGammaSq = 0.;
