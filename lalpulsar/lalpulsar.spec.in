@@ -28,6 +28,7 @@ BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: gsl-devel
 BuildRequires: help2man >= 1.37
+BuildRequires: less
 BuildRequires: liblal-devel >= @MIN_LAL_VERSION@
 BuildRequires: liblalframe-devel >= @MIN_LALFRAME_VERSION@
 BuildRequires: liblalsimulation-devel >= @MIN_LALSIMULATION_VERSION@
@@ -87,6 +88,7 @@ rountines that use the LAL Pulsar Library.
 # liblalpulsar
 %package -n lib%{name}
 Summary: LVK Algorithm Simulation Library - library package
+Requires: less
 Requires: liblal >= @MIN_LAL_VERSION@
 Requires: liblalframe >= @MIN_LALFRAME_VERSION@
 Requires: liblalsimulation >= @MIN_LALSIMULATION_VERSION@
