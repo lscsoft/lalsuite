@@ -365,22 +365,20 @@ parser.add_argument("--profile", help="Profile the code", action="store_true")
 parser.add_argument(
     "--noise_path",
     type=str,
-    help="Path to noise data. Default option harded coded in tbank object",
+    help="Path to noise data.",
+    default=None,
+)
+parser.add_argument(
+    "--psd_path",
+    type=str,
+    help="Path to psd data.",
     default=None,
 )
 parser.add_argument(
     "--sft_path",
     type=str,
-    help="Path to sfts. Default option hard coded in tbank object",
+    help="Path to sfts.",
     default=None,
-)
-
-# Hacky way to know the absolute path to the noise curve data by specifying which machine you are on as either 'PC' or 'OzSTAR'
-parser.add_argument(
-    "--machine",
-    type=str,
-    help="Specify the machine you are working on to find the path to noise curves",
-    default="OzSTAR",
 )
 
 # -------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -543,14 +541,8 @@ detector_str_list = lal.CreateStringVector(detectors[0])
 for detector in detectors[1:]:
     lal.AppendString2Vector(detector_str_list, detector)
 
-machine = args.machine
-
-if machine == "PC":
-    noise_path = tbank.pc_noise_path
-    psd_path = tbank.pc_psd_path
-elif machine == "OzSTAR":
-    noise_path = tbank.ozstar_noise_path
-    psd_path = tbank.ozstar_psd_path
+noise_path = tbank.noise_path
+psd_path = tbank.psd_path
 
 noise_curve_data = []
 
@@ -771,17 +763,11 @@ for i in range(iterations + plus_one):
 
         if finputdata.inject_data:
 
-            if machine == "PC":
-                SFTdirectory = tbank.pc_sft_path
-            elif machine == "OzSTAR":
-                SFTdirectory = tbank.ozstar_sft_path
+            SFTdirectory = tbank.sft_path
 
     elif mode == "search" and not args.inject_data:
 
-        if machine == "PC":
-            SFTdirectory = tbank.pc_sft_path
-        elif machine == "OzSTAR":
-            SFTdirectory = tbank.ozstar_sft_path
+        SFTdirectory = tbank.sft_path
 
         signalparams = [-1] * (tbank.s * len(bf.knotslist))
 

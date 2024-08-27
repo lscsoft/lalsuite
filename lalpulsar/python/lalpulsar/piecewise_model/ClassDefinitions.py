@@ -52,14 +52,9 @@ class TBank:
 
     detectors = []
 
-    pc_noise_path = None
-    ozstar_noise_path = None
-
-    pc_sft_path = None
-    ozstar_noise_path = None
-
-    pc_psd_path = None
-    ozstar_psd_path = None
+    noise_path = None
+    sft_path = None
+    psd_path = None
 
     def SetTBankParams(self, args):
 
@@ -122,14 +117,11 @@ class TBank:
             self.detectors = args.detectors
 
         if args.noise_path:
-            self.pc_noise_path = args.noise_path
-        if args.noise_path:
-            self.ozstar_noise_path = args.noise_path
-
+            self.noise_path = args.noise_path
         if args.sft_path:
-            self.pc_sft_path = args.sft_path
-        if args.sft_path:
-            self.ozstar_sft_path = args.sft_path
+            self.sft_path = args.sft_path
+        if args.psd_path:
+            self.psd_path = args.psd_path
 
     def SetDefaultGW170817(self):
         self.name = "GW170817"
@@ -168,19 +160,6 @@ class TBank:
 
         self.detectors = ["H1", "L1"]
 
-        self.pc_noise_path = "/home/ben/PhD/post-merger-signal/manuscript/data_release/"
-        self.ozstar_noise_path = (
-            "/fred/oz162/bgrace/post-merger-signal/manuscript/data_release/"
-        )
-
-        self.pc_sft_path = "/home/ben/PhD/SFT_Data_16kHz_Frame/GW170817_SFTs/"
-        self.ozstar_sft_path = "/fred/oz162/data/GW170817_SFTs/"
-
-        self.pc_psd_path = (
-            "/home/ben/PhD/post-merger-signal/manuscript/data_release/GW170817_PSDs/"
-        )
-        self.ozstar_psd_path = "/fred/oz162/bgrace/GW170817_PSDs/"
-
     def SetDefaultGW190425(self):
         self.name = "GW190425"
 
@@ -217,19 +196,6 @@ class TBank:
         self.Delta = 0.401
 
         self.detectors = ["L1", "V1"]
-
-        self.pc_noise_path = "/home/ben/PhD/post-merger-signal/manuscript/data_release/"
-        self.ozstar_noise_path = (
-            "/fred/oz162/bgrace/post-merger-signal/manuscript/data_release/"
-        )
-
-        self.pc_sft_path = "/home/ben/PhD/SFT_Data_16kHz_Frame/GW190425_SFTs/"
-        self.ozstar_sft_path = "/fred/oz162/data/GW190425_SFTs/"
-
-        self.pc_psd_path = (
-            "/home/ben/PhD/post-merger-signal/manuscript/data_release/GW190425_PSDs/"
-        )
-        self.ozstar_psd_path = "/fred/oz162/bgrace/GW190425_PSDs/"
 
     def SetDefault1987A(self):
         self.name = "1987A"
@@ -313,10 +279,9 @@ class TBank:
             "knots",
             "flags_bbox",
             "flags_intbox",
-            "pc_noise_path",
-            "ozstar_noise_path",
-            "pc_sft_path",
-            "ozstar_noise_path",
+            "noise_path",
+            "sft_path",
+            "psd_path",
         ]
 
         for key, value in original_dict.items():
