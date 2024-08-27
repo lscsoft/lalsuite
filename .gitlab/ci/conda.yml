@@ -153,6 +153,22 @@
     - !reference [.ci-merge-build, rules]
     - !reference [.ci-nightly-deploy, rules]
 
+# activate conda LALSuite development environment
+.conda-lalsuite-dev:
+  - conda env create
+        --file ${ENVIRONMENT_FILE}
+        --quiet
+  - conda list --name lalsuite-dev
+  - conda activate lalsuite-dev
+  # manually install packages that have circular dependencies upon lal
+  - conda install --yes --quiet --name lalsuite-dev
+        python-ligo-lw
+  # then forcibly remove lalsuite
+  - conda uninstall --yes --quiet --name lalsuite-dev --solver classic --force-remove
+        "liblal*"
+        "lal*"
+        "python-lal*"
+
 # -- builds
 
 # build with conda using FFTW

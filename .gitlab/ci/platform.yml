@@ -44,20 +44,8 @@ platform:debian:bookworm:
     - if [[ "${CI_JOB_NAME}" == *"arm64"* ]]; then
           sed -i.tmp "/texlive-core/d" ${ENVIRONMENT_FILE};
       fi
-    - conda env create
-          --file ${ENVIRONMENT_FILE}
-          --name lalsuite-platform-tests
-          --quiet
-    - conda list --name lalsuite-platform-tests
-    - conda activate lalsuite-platform-tests
-    # manually install packages that have circular dependencies upon lal
-    - conda install --yes --quiet --name lalsuite-platform-tests
-          python-ligo-lw
-    # then forcibly remove lalsuite
-    - conda uninstall --yes --quiet --name lalsuite-platform-tests --solver classic --force-remove
-          "liblal*"
-          "lal*"
-          "python-lal*"
+    # activate conda LALSuite development environment
+    - !reference [.conda-lalsuite-dev]
 
 platform:conda:linux:
   image: igwn/base:conda
