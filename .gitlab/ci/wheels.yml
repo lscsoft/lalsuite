@@ -33,7 +33,8 @@
   - python -m pip install wheelhouse/*
   # check metadata
   - python -m pip show lalsuite
-  - python -m pip check lalsuite
+  # Skip pip check for now. See https://github.com/scipy/scipy/issues/21436
+  # - python -m pip check lalsuite
   # test loading Python modules and finding data files
   - |
     env LAL_DEBUG_LEVEL=info python3 - <<EOF
