@@ -8,6 +8,7 @@ Build-Depends:
  debhelper (>= 9),
  dh-python,
  help2man (>= 1.37),
+ less,
  libcfitsio3-dev | libcfitsio-dev,
  libfftw3-dev,
  libgsl-dev | libgsl0-dev (>= 1.9),
@@ -37,6 +38,7 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  lalpulsar-data,
+ less,
 Description: LVK Algorithm Library Pulsar
  The LVK Algorithm Pulsar Library for gravitational wave data analysis.
  This package contains the shared-object libraries needed to run applications

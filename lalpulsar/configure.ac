@@ -164,6 +164,9 @@ AC_PROG_AWK
 AC_PROG_SED
 LALSUITE_CHECK_PYTHON([3.5])
 
+# check for pager programs
+LALSUITE_CHECK_PAGER
+
 # check for supported mac os x version
 LALSUITE_OSX_VERSION_CHECK
 
