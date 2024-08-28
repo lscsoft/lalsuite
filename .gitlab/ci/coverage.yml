@@ -40,6 +40,7 @@ coverage:
           CFLAGS="${CFLAGS}"
           COVERAGE_FILE="$(pwd)/.coverage"
           PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+          PYBIN_SCRIPT_PY_FLAGS="-m coverage run --omit \*/test/\* -p"
   after_script:
     - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
     - conda activate lalsuite-dev
