@@ -19,6 +19,7 @@ dependencies:
   - freezegun
   - c-compiler
   - gsl
+  - gwpy
   - h5py
   - hdf5
   - healpy >=1.17.3
