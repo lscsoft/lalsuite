@@ -37,7 +37,7 @@ lint:api-merge-diff:
     # configure and build LALSuite before changes are merged
     # - allow job to fail if target branch cannot be fetched or built (i.e. due to an unrelated failure)
     - test "x${CI_MERGE_REQUEST_DIFF_BASE_SHA}" != x
-    - git fetch ${CI_REPOSITORY_URL} ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
+    - git fetch --depth=1 ${CI_REPOSITORY_URL} ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
     - git checkout ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
     - ./00boot || exit 100
     - ./configure --prefix=${PWD}/OLD <<< ${CONFIGURE_FLAGS} || exit 100
