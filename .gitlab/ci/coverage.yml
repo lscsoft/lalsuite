@@ -35,12 +35,21 @@ coverage:
     # Configure for C code coverage measurement with gcc
     # - only pass to make to avoid generating coverage for autoconf tests
     - CFLAGS="-O3 --coverage -fprofile-abs-path"
+    # Common configuration for coverage.py
+    - |
+      cat > .coveragerc <<EOF
+      [run]
+      omit =
+          */test/*
+      parallel = True
+      EOF
     # Run unit tests with Python scripts instrumented by coverage.py
     - make -j${CPU_COUNT} check
           CFLAGS="${CFLAGS}"
+          COVERAGE_RCFILE="$(pwd)/.coveragerc"
           COVERAGE_FILE="$(pwd)/.coverage"
-          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
-          PYBIN_SCRIPT_PY_FLAGS="-m coverage run --omit \*/test/\* -p"
+          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\""
+          PYBIN_SCRIPT_PY_FLAGS="-m coverage run"
   after_script:
     - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
     - conda activate lalsuite-dev
