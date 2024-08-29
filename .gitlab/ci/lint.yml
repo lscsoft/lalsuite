@@ -35,11 +35,10 @@ lint:api-merge-diff:
           abi-dumper
           abi-compliance-checker
     # configure and build LALSuite before changes are merged
-    # - double-check CI_MERGE_REQUEST_TARGET_BRANCH_SHA is set; may be missing is some cases (not sure why)
     # - allow job to fail if target branch cannot be fetched or built (i.e. due to an unrelated failure)
-    - test "x${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}" != x || exit 100
-    - git fetch ${CI_REPOSITORY_URL} ${CI_MERGE_REQUEST_TARGET_BRANCH_SHA} || exit 100
-    - git checkout ${CI_MERGE_REQUEST_TARGET_BRANCH_SHA} || exit 100
+    - test "x${CI_MERGE_REQUEST_DIFF_BASE_SHA}" != x
+    - git fetch ${CI_REPOSITORY_URL} ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
+    - git checkout ${CI_MERGE_REQUEST_DIFF_BASE_SHA} || exit 100
     - ./00boot || exit 100
     - ./configure --prefix=${PWD}/OLD <<< ${CONFIGURE_FLAGS} || exit 100
     - make -j${CPU_COUNT} || exit 100
@@ -56,7 +55,7 @@ lint:api-merge-diff:
     - ./common/maintainer-scripts/compare_library_api
           --old-lib-dir=./OLD/lib
           --old-pub-header-dir=./OLD/include/lal
-          --old-sha=${CI_MERGE_REQUEST_TARGET_BRANCH_SHA}
+          --old-sha=${CI_MERGE_REQUEST_DIFF_BASE_SHA}
           --new-lib-dir=./NEW/lib
           --new-pub-header-dir=./NEW/include/lal
           --new-sha=${CI_COMMIT_SHA}
