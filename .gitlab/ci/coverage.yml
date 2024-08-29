@@ -7,30 +7,53 @@
 # Note: adapted from https://git.ligo.org/lscsoft/ligo.skymap
 coverage:
   stage: coverage
-  image: igwn/lalsuite-dev-gcc:8
+  image: igwn/base:conda
   timeout: 2 hours
   needs: []
+  variables:
+    CONFIGURE_FLAGS: "--enable-python --enable-swig-python"
+    ENVIRONMENT_FILE: "common/conda/environment.yml"
   before_script:
     - !reference [.build-init]
-    - apt-get -y install --no-install-recommends python3-pip
-    - python3 -m pip install --upgrade pip
-    - python3 -m pip install
+    - !reference [.conda-init]
+    # activate conda LALSuite development environment
+    - !reference [.conda-lalsuite-dev]
+    # install coverage packages
+    - retry conda install -n lalsuite-dev
           coverage
           "gcovr!=5.1"
           pycobertura
   script:
     - ./00boot
-    # Configure for C code coverage measurement with gcc
-    - ./configure
+    # we use xargs here in case CONFIGURE_FLAGS contains
+    # variables with spaces, etc etc
+    - xargs ./configure
+          --enable-strict-defs
           ${ENABLE_NIGHTLY}
-          --enable-swig-python
-          CFLAGS="--coverage -fprofile-abs-path"
-          PYTHON=python3
+          LALSUITE_LIBTOOL_NO_SUPPRESS=1
+          <<< ${CONFIGURE_FLAGS}
+    # Configure for C code coverage measurement with gcc
+    # - only pass to make to avoid generating coverage for autoconf tests
+    - CFLAGS="-O3 --coverage -fprofile-abs-path"
+    # Common configuration for coverage.py
+    - |
+      cat > .coveragerc <<EOF
+      [run]
+      omit =
+          ${CONDA_ENVS_PATH}/*
+          */test/*
+      parallel = True
+      EOF
     # Run unit tests with Python scripts instrumented by coverage.py
     - make -j${CPU_COUNT} check
+          CFLAGS="${CFLAGS}"
+          COVERAGE_RCFILE="$(pwd)/.coveragerc"
           COVERAGE_FILE="$(pwd)/.coverage"
-          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\" --omit \*/test/\* -p"
+          PY_LOG_FLAGS="-m coverage run --source \"$(pwd)\""
+          PYBIN_SCRIPT_PY_FLAGS="-m coverage run"
   after_script:
+    - source ${CONDA_ROOT:=/opt/conda}/etc/profile.d/conda.sh
+    - conda activate lalsuite-dev
     # Output C coverage data in Cobertura format
     - gcovr
          -j ${CPU_COUNT}

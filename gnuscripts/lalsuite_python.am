@@ -92,7 +92,7 @@ $(pybin_scripts) $(noinst_pybin_scripts): Makefile
 	echo "test -d '$(abs_builddir)/.libs' || mkdir '$(abs_builddir)/.libs' >/dev/null 2>&1" >> .libs/$@.bin; \
 	echo "echo '$${dummy_shebang}' > '$(abs_builddir)/.libs/$@.py'" >> .libs/$@.bin; \
 	echo "$(SED) -e 's|@LALSUITE_BINDIR@|$(abs_builddir)|g' '$(abs_srcdir)/$@.py' >> '$(abs_builddir)/.libs/$@.py' || exit 1" >> .libs/$@.bin; \
-	echo "exec $(uninstalled_compiler) $(PYTHON) '$(abs_builddir)/.libs/$@.py' \"\$$@\"" >> .libs/$@.bin; \
+	echo "exec $(uninstalled_compiler) $(PYTHON) \$${PYBIN_SCRIPT_PY_FLAGS} '$(abs_builddir)/.libs/$@.py' \"\$$@\"" >> .libs/$@.bin; \
 	echo "exit 1" >> .libs/$@.bin; \
 	chmod +x .libs/$@.bin || exit 1; \
 	mv -f .libs/$@.bin $@
