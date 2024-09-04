@@ -572,15 +572,15 @@ int main( int argc, char *argv[] )
         }
         XLALDestroyMultiREAL8TimeSeries( scienceFlagVect );
         if ( uvar.accurateResampMetric == TRUE ) {
-	  /* printf("About to call XLALCreateSFTPairIndexListAccurateResamp\n"); */
+          /* printf("About to call XLALCreateSFTPairIndexListAccurateResamp\n"); */
           if ( ( XLALCreateSFTPairIndexListAccurateResamp( &sftPairs, &sftPairForTshortPair, sftIndices, resampMultiPairs, multiTimes, resampMultiTimes ) != XLAL_SUCCESS ) ) {
             LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexListAccurateResamp() failed with errno=%d\n", __func__, xlalErrno );
             XLAL_ERROR( XLAL_EFUNC );
           }
-	}
-	/* Assign old-school structures */
-	tShortPairs = resampMultiPairs->pairIndexList;
-	tShortIndices = resampMultiPairs->indexList;
+        }
+        /* Assign old-school structures */
+        tShortPairs = resampMultiPairs->pairIndexList;
+        tShortIndices = resampMultiPairs->indexList;
       } else {
         XLALDestroySFTPairIndexList( sftPairs );
         if ( ( XLALCreateSFTPairIndexListResamp( &resampMultiPairs, &sftPairs, sftIndices, inputSFTs, uvar.maxLag, uvar.inclAutoCorr, uvar.inclSameDetector, Tsft, resampTshort ) != XLAL_SUCCESS ) ) {
@@ -865,12 +865,12 @@ int main( int argc, char *argv[] )
     }
     if ( uvar.resamp == TRUE ) {
       if ( ( XLALCombineCrossCorrGammas( &resampGammaAve, GammaAve, sftPairForTshortPair, Tsft, resampTshort )  != XLAL_SUCCESS ) ) {
-	LogPrintf( LOG_CRITICAL, "%s: XLALCombineCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
+        LogPrintf( LOG_CRITICAL, "%s: XLALCombineCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
+        XLAL_ERROR( XLAL_EFUNC );
       }
       if ( ( XLALCombineCrossCorrGammas( &resampGammaCirc, GammaCirc, sftPairForTshortPair, Tsft, resampTshort )  != XLAL_SUCCESS ) ) {
-	LogPrintf( LOG_CRITICAL, "%s: XLALCombineCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
+        LogPrintf( LOG_CRITICAL, "%s: XLALCombineCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
+        XLAL_ERROR( XLAL_EFUNC );
       }
     }
   } else if ( uvar.testResampNoTShort == TRUE ) {
@@ -976,13 +976,13 @@ int main( int argc, char *argv[] )
   if ( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == FALSE ) ) {
     if ( uvar.accurateResampMetric == TRUE ) {
       if ( ( XLALCalculateLMXBCrossCorrDiagMetric( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, &weightedMuTAve, thisBinaryTemplate, GammaAve, sftPairs, sftIndices, inputSFTs, multiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
-	LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
-	XLAL_ERROR( XLAL_EFUNC );
+        LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetric() failed with errno=%d\n", __func__, xlalErrno );
+        XLAL_ERROR( XLAL_EFUNC );
       }
     } else {
       if ( ( XLALCalculateLMXBCrossCorrDiagMetricShort( &estSens, &old_diagff, &old_diagaa, &old_diagTT, &old_diagpp, thisBinaryTemplate, resampGammaAve, resampMultiPairs, resampMultiTimes, resampMultiWeights /*, kappaValues*/ )  != XLAL_SUCCESS ) ) {
-      LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetricShort() failed with errno=%d\n", __func__, xlalErrno );
-      XLAL_ERROR( XLAL_EFUNC );
+        LogPrintf( LOG_CRITICAL, "%s: XLALCalculateLMXBCrossCorrDiagMetricShort() failed with errno=%d\n", __func__, xlalErrno );
+        XLAL_ERROR( XLAL_EFUNC );
       }
     }
   } else {

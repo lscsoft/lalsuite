@@ -395,10 +395,10 @@ int XLALCombineCrossCorrGammas
   UINT4VectorSequence *sftPairForTshortPair,
   REAL8                Tsft,
   REAL8                Tshort
- )
+)
 ;
 
-  int XLALCalculatePulsarCrossCorrStatistic
+int XLALCalculatePulsarCrossCorrStatistic
 (
   REAL8                         *ccStat,
   REAL8                      *evSquared,

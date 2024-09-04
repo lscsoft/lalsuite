@@ -349,12 +349,12 @@ int XLALCreateSFTPairIndexListAccurateResamp
         LIGOTimeGPS timeK = multiTimes->data[ifoK]->data[indK];
         REAL8 SFTMidOff = XLALGPSDiff( &timeK, &reTimeK ) + ( 0.5 * Tsft );
         if ( SFTMidOff >= 0 && SFTMidOff < Tshort ) {
-	  /* printf("SFTMidOff=%.0f, Tshort=%.0f; timeK=%d, reTimeK=%d\n", */
-	  /* 	 SFTMidOff, Tshort, timeK.gpsSeconds, reTimeK.gpsSeconds); */
+          /* printf("SFTMidOff=%.0f, Tshort=%.0f; timeK=%d, reTimeK=%d\n", */
+          /*   SFTMidOff, Tshort, timeK.gpsSeconds, reTimeK.gpsSeconds); */
           /* Midpoint of SFT lies within this Tshort */
-	  XLAL_CHECK( kInShort < TsftsPerTshort, XLAL_EINVAL,
-		      "Unexpectedly too many SFTs within Tshort:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
-		      kInShort, TsftsPerTshort );
+          XLAL_CHECK( kInShort < TsftsPerTshort, XLAL_EINVAL,
+                      "Unexpectedly too many SFTs within Tshort:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
+                      kInShort, TsftsPerTshort );
           SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort] = K;
           kInShort++;
         }
@@ -392,18 +392,22 @@ int XLALCreateSFTPairIndexListAccurateResamp
     /* printf("alpha=%d, reK=%d, reL=%d\n", reAlpha, reK, reL); */
     for ( UINT4 kInShort = 0; kInShort < TsftsPerTshort; kInShort++ ) {
       UINT4 K = SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort];
-      if ( K == LAL_UINT4_MAX ) break;
+      if ( K == LAL_UINT4_MAX ) {
+        break;
+      }
       for ( UINT4 lInShort = 0; lInShort < TsftsPerTshort; lInShort++ ) {
         UINT4 L = SFTIndsForTshort->data[reL * TsftsPerTshort + lInShort];
-        if ( L == LAL_UINT4_MAX ) break;
+        if ( L == LAL_UINT4_MAX ) {
+          break;
+        }
         XLAL_CHECK( alpha < maxNumSFTPairs, XLAL_EINVAL,
                     "Unexpectedly too many SFT pairs:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
                     alpha, maxNumSFTPairs );
         ret->data[alpha].sftNum[0] = K;
         ret->data[alpha].sftNum[1] = L;
-	ret2->data[reAlpha * maxAlphaInReAlpha + alphaInReAlpha] = alpha;
+        ret2->data[reAlpha * maxAlphaInReAlpha + alphaInReAlpha] = alpha;
         alpha++;
-	alphaInReAlpha++;
+        alphaInReAlpha++;
       }
     }
     for ( ; alphaInReAlpha < maxAlphaInReAlpha; alphaInReAlpha++ ) {
@@ -1186,23 +1190,25 @@ int XLALCombineCrossCorrGammas
   UINT4 maxAlphaInReAlpha = sftPairForTshortPair->vectorLength;
   REAL8Vector *ret = NULL;
   XLAL_CHECK( ( ret = XLALCreateREAL8Vector( numTshortPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT4_FORMAT" ) failed.", numTshortPairs ) ;
-  XLAL_CHECK( Gamma->length <= ( numTshortPairs * maxAlphaInReAlpha ) ,
-	      XLAL_EINVAL,
-	      "Too many values in Gamma vector: numGammas=%"LAL_UINT4_FORMAT", numTshortPairs==%"LAL_UINT4_FORMAT", maxAlphaInReAlpha==%"LAL_UINT4_FORMAT"\n",
-	      Gamma->length, numTshortPairs, maxAlphaInReAlpha );
+  XLAL_CHECK( Gamma->length <= ( numTshortPairs * maxAlphaInReAlpha ),
+              XLAL_EINVAL,
+              "Too many values in Gamma vector: numGammas=%"LAL_UINT4_FORMAT", numTshortPairs==%"LAL_UINT4_FORMAT", maxAlphaInReAlpha==%"LAL_UINT4_FORMAT"\n",
+              Gamma->length, numTshortPairs, maxAlphaInReAlpha );
 
   /* We assume these are Gamma-hats, which include a factor of Tsft or Tshort from the normalized antenna patterns */
-  REAL8 normFactor = (Tsft/Tshort);
+  REAL8 normFactor = ( Tsft / Tshort );
 
   for ( UINT4 reAlpha = 0; reAlpha < numTshortPairs; reAlpha++ ) {
     REAL8 thisGammaSq = 0.;
     for ( UINT4 alphaInReAlpha = 0; alphaInReAlpha < maxAlphaInReAlpha; alphaInReAlpha++ ) {
       UINT4 alpha = sftPairForTshortPair->data[reAlpha * maxAlphaInReAlpha + alphaInReAlpha];
-      if ( alpha == LAL_UINT4_MAX ) break;
-      thisGammaSq += SQUARE((Gamma->data[alpha]));
+      if ( alpha == LAL_UINT4_MAX ) {
+        break;
+      }
+      thisGammaSq += SQUARE( ( Gamma->data[alpha] ) );
     }
-    thisGammaSq *= SQUARE(normFactor);
-    ret->data[reAlpha] = sqrt(thisGammaSq);
+    thisGammaSq *= SQUARE( normFactor );
+    ret->data[reAlpha] = sqrt( thisGammaSq );
   }
 
   ( *resampGamma ) = ret;
