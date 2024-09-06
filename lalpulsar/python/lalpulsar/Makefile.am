@@ -29,7 +29,6 @@ pymodule_DATA = \
 	public_sft_directory_README.md \
 	$(END_OF_LIST)
 
-endif
 
 if DOXYGEN
 
@@ -43,5 +42,7 @@ public_sft_directory_README.dox: public_sft_directory_README.md Makefile
 	$(MARKDOWN2HTML) $< >>$@; \
 	echo "\end$(MARKDOWN2HTML_DOXYBLOCK)" >>$@; \
 	echo "*/" >>$@
+
+endif
 
 endif
