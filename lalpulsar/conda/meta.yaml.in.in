@@ -158,6 +158,9 @@ outputs:
         - CI_PIPELINE_SOURCE
         - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
         - GITLAB_CI
+      # no python-lalinference on Python 3.9
+      # (astropy (for python-lalsimulation) is incompatible with numpy 2)
+      skip: true  # [py<310]
     requirements:
       build:
         - {{ compiler('c') }}
@@ -235,6 +238,9 @@ outputs:
     build:
       ignore_run_exports:
         - python
+      # no python-lalinference on Python 3.9
+      # (astropy (for python-lalsimulation) is incompatible with numpy 2)
+      skip: true  # [py<310]
     requirements:
       build:
         - {{ compiler('c') }}
