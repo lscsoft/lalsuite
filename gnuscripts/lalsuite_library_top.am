@@ -44,6 +44,7 @@ pretty-c:
 
 # Pretty format Python code
 pretty: pretty-python
+if HAVE_PYTHON
 pretty-python:
 	$(AM_V_at)if test "X$(PYTHON_BLACK)" = Xfalse; then \
 		echo "ERROR: $(PYTHON) -m black is not available"; \
@@ -75,5 +76,6 @@ pretty-python:
 	if test "X$${files}" != X; then \
 		$(PYTHON_BLACK) --quiet $${files} || exit 1; \
 	fi
+endif
 
 endif # HAVE_GIT_REPO
