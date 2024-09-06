@@ -111,6 +111,8 @@ outputs:
         - CI_PIPELINE_SOURCE
         - ENABLE_NIGHTLY=@NIGHTLY_VERSION@
         - GITLAB_CI
+      # astropy (for python-lalsimulation) is incompatible with numpy 2 on Python < 3.10
+      skip: true  # [py==39]
     requirements:
       build:
         - {{ compiler('c') }}
@@ -189,6 +191,8 @@ outputs:
       error_overlinking: true
       ignore_run_exports:
         - python
+      # astropy (for python-lalsimulation) is incompatible with numpy 2 on Python < 3.10
+      skip: true  # [py==39]
     requirements:
       build:
         - {{ compiler('c') }}
