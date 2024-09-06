@@ -61,9 +61,19 @@ fi
 # set argument variables
 am_v_gen="`expr "X$am_v_gen" : 'X\([ ]*GEN[ ]*\)'`"
 package="${1?"package_name not set"}"
-output="${2?"output_file not set"}"
-source="${3?"input_file not set"}"
-srcdir="`dirname "$source"`"
+if test "X|$2|$3" = "X|-|-"; then
+
+    # read from standard output, write to standard output
+    srcdir="$PWD"
+
+else
+
+    # read from source file, write to output file
+    output="${2?"output_file not set"}"
+    source="${3?"input_file not set"}"
+    srcdir="`dirname "$source"`"
+
+fi
 
 # use git log to get the important fields
 git_log_cmd="${git_path} log -1 --no-show-signature"
@@ -153,16 +163,25 @@ s%@STATUS@%$git_status%;t t
 s%@BUILDER@%$git_builder%;t t
 "
 
-# use sed to perform substitutions; store in a temporary file
-test -f "$output.tmp" && rm -f "$output.tmp"
-sed "$sedcmd" "$source" > "$output.tmp"
+if test "X|$2|$3" = "X|-|-"; then
 
-# determine if output file needs to be modified
-if test -r "$output" && cmp "$output" "$output.tmp" >/dev/null; then
-    rm -f "$output.tmp"
+    # read from standard output, write to standard output
+    sed "$sedcmd" -
+
 else
-    mv -f "$output.tmp" "$output"
-    test -n "$am_v_gen" && echo "$am_v_gen $output"
+
+    # use sed to perform substitutions; store in a temporary file
+    test -f "$output.tmp" && rm -f "$output.tmp"
+    sed "$sedcmd" "$source" > "$output.tmp"
+
+    # determine if output file needs to be modified
+    if test -r "$output" && cmp "$output" "$output.tmp" >/dev/null; then
+        rm -f "$output.tmp"
+    else
+        mv -f "$output.tmp" "$output"
+        test -n "$am_v_gen" && echo "$am_v_gen $output"
+    fi
+
 fi
 
 exit 0
