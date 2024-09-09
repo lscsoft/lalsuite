@@ -872,6 +872,7 @@ int main( int argc, char *argv[] )
         LogPrintf( LOG_CRITICAL, "%s: XLALCombineCrossCorrGammas() failed with errno=%d\n", __func__, xlalErrno );
         XLAL_ERROR( XLAL_EFUNC );
       }
+      XLALDestroyUINT4VectorSequence( sftPairForTshortPair );
     }
   } else if ( uvar.testResampNoTShort == TRUE ) {
     /* Cross-check valid only for gapless-Gaussian data */
@@ -887,6 +888,7 @@ int main( int argc, char *argv[] )
   }
   /* printf("Calculated Gammmas\n"); */
   XLALDestroyMultiAMCoeffs( multiCoeffs );
+  XLALDestroyMultiAMCoeffs( resampMultiCoeffs );
   /* printf("Destroyed multiCoeffs\n"); */
 
 #define PCC_GAMMA_HEADER "# The normalization Sinv_Tsft is %g #\n"
@@ -1091,6 +1093,7 @@ int main( int argc, char *argv[] )
   } /* results should be same as without testShortFunctions */
 
   XLALDestroyREAL8VectorSequence( phaseDerivs );
+  XLALDestroyREAL8Vector( resampGammaCirc );
   XLALDestroyREAL8Vector( GammaCirc );
 
   /*  if ((fp = fopen("gsldata.dat","w"))==NULL){
@@ -1230,6 +1233,7 @@ int main( int argc, char *argv[] )
   XLALDestroyMultiSSBtimes( multiBinaryTimes );
   XLALDestroyMultiSSBtimes( multiSSBTimes );
   XLALDestroyREAL8Vector( GammaAve );
+  XLALDestroyREAL8Vector( resampGammaAve );
 
   /* END section resampled */
 
@@ -1341,10 +1345,15 @@ int main( int argc, char *argv[] )
   /* Destroy output structures */
 
   XLALFree( VCSInfoString );
+  XLALDestroySFTPairIndexList( tShortPairs );
+  XLALDestroySFTIndexList( tShortIndices );
   XLALDestroySFTPairIndexList( sftPairs );
   XLALDestroySFTIndexList( sftIndices );
   XLALDestroyMultiDetectorStateSeries( multiStates );
+  XLALDestroyMultiDetectorStateSeries( resampMultiStates );
   XLALDestroyMultiTimestamps( multiTimes );
+  XLALDestroyMultiTimestamps( resampMultiTimes );
+  XLALDestroyMultiNoiseWeights( resampMultiWeights );
   XLALDestroyMultiNoiseWeights( multiWeights );
   XLALDestroyCHARVector( dimName );
   /* de-allocate memory for configuration variables */
