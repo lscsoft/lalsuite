@@ -3268,8 +3268,8 @@ XLALDestroyResampCrossCorrWorkspace( void *workspace )
   fftw_free( ws->FabX_Raw );
   fftw_free( ws->TS_FFT );
 
-  XLALFree( ws->FaX_k );
-  XLALFree( ws->FbX_k );
+  fftw_free( ws->FaX_k );
+  fftw_free( ws->FbX_k );
   XLALFree( ws->Fa_k );
   XLALFree( ws->Fb_k );
 

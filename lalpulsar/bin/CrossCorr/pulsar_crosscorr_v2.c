@@ -2313,10 +2313,10 @@ int resampForLoopCrossCorr( PulsarDopplerParams dopplerpos, BOOLEAN dopplerShift
   } /* end tCount, and with it, for loop over templates */
 
   XLALDestroyResampCrossCorrWorkspace( ws );
-  XLALFree( ws1KFaX_k );
-  XLALFree( ws1KFbX_k );
-  XLALFree( ws2LFaX_k );
-  XLALFree( ws2LFbX_k );
+  fftw_free( ws1KFaX_k );
+  fftw_free( ws1KFbX_k );
+  fftw_free( ws2LFaX_k );
+  fftw_free( ws2LFbX_k );
 
   /* Destroy Fstat input */
   XLALDestroyFstatInput( resampFstatInput );
