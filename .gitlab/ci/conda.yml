@@ -34,7 +34,6 @@
         conda-forge-pinning
         "conda-smithy>=3.7.5"
         conda-libmamba-solver
-        conda-verify
   # print info
   - conda activate base
   - conda info --all
