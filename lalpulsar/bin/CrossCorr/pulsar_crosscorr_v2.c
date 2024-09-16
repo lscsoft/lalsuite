@@ -1095,6 +1095,10 @@ int main( int argc, char *argv[] )
   XLALDestroyREAL8VectorSequence( phaseDerivs );
   XLALDestroyREAL8Vector( resampGammaCirc );
   XLALDestroyREAL8Vector( GammaCirc );
+  XLALDestroyMultiDetectorStateSeries( multiStates );
+  XLALDestroyMultiDetectorStateSeries( resampMultiStates );
+  XLALDestroyMultiTimestamps( multiTimes );
+  XLALDestroyMultiTimestamps( resampMultiTimes );
 
   /*  if ((fp = fopen("gsldata.dat","w"))==NULL){
     LogPrintf ( LOG_CRITICAL, "Can't write in gsl matrix file");
@@ -1234,6 +1238,8 @@ int main( int argc, char *argv[] )
   XLALDestroyMultiSSBtimes( multiSSBTimes );
   XLALDestroyREAL8Vector( GammaAve );
   XLALDestroyREAL8Vector( resampGammaAve );
+  XLALDestroyMultiNoiseWeights( resampMultiWeights );
+  XLALDestroyMultiNoiseWeights( multiWeights );
 
   /* END section resampled */
 
@@ -1349,12 +1355,6 @@ int main( int argc, char *argv[] )
   XLALDestroySFTIndexList( tShortIndices );
   XLALDestroySFTPairIndexList( sftPairs );
   XLALDestroySFTIndexList( sftIndices );
-  XLALDestroyMultiDetectorStateSeries( multiStates );
-  XLALDestroyMultiDetectorStateSeries( resampMultiStates );
-  XLALDestroyMultiTimestamps( multiTimes );
-  XLALDestroyMultiTimestamps( resampMultiTimes );
-  XLALDestroyMultiNoiseWeights( resampMultiWeights );
-  XLALDestroyMultiNoiseWeights( multiWeights );
   XLALDestroyCHARVector( dimName );
   /* de-allocate memory for configuration variables */
   XLALDestroyConfigVars( &config );
