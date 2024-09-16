@@ -600,7 +600,7 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_CRITICAL, "Can't write in SFT-pair list \n" );
       XLAL_ERROR( XLAL_EFUNC );
     }
-    if ( ( sftPairs == NULL ) ) {
+    if ( sftPairs == NULL ) {
       LogPrintf( LOG_CRITICAL, "No pair list available to write (are you using --resamp without --accurateResampMetric?)" );
       if ( uvar.treatWarningsAsErrors ) {
         printf( "Error! (--treatWarningsAsErrors flag is true).\n" );
@@ -618,7 +618,7 @@ int main( int argc, char *argv[] )
       LogPrintf( LOG_CRITICAL, "Can't write in SFT-pair list \n" );
       XLAL_ERROR( XLAL_EFUNC );
     }
-    if ( ( tShortPairs == NULL ) ) {
+    if ( tShortPairs == NULL ) {
       LogPrintf( LOG_CRITICAL, "No Tshort pair list available to write (are you not using --resamp?)" );
       if ( uvar.treatWarningsAsErrors ) {
         printf( "Error! (--treatWarningsAsErrors flag is true).\n" );
