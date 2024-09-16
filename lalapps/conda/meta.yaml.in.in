@@ -46,7 +46,8 @@ build:
     - CI_COMMIT_TAG
     - CI_PIPELINE_SOURCE
     - GITLAB_CI
-  skip: true  # [win]
+  # python-lalburst is py>=39
+  skip: true  # [win or py==39]
 
 requirements:
   build:

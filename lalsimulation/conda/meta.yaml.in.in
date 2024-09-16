@@ -42,6 +42,8 @@ build:
 requirements:
   build:
     - {{ compiler('c') }}
+    - help2man >=1.37
+    - libgomp  # [linux]
     - llvm-openmp  # [osx]
     - make
     - pkg-config >=0.18.0
@@ -51,22 +53,16 @@ requirements:
     - cross-python_{{ target_platform }}  # [build_platform != target_platform]
     - numpy                               # [build_platform != target_platform]
     - python                              # [build_platform != target_platform]
-    # extras for help2man / make check
-    - astropy  # [build_platform != target_platform]
-    - gwpy  # [build_platform != target_platform]
   host:
     - gsl
     - liblal >={{ lal_version }}
-    - libgomp  # [linux]
-    - llvm-openmp  # [osx]
     - numpy
     - pytest
     - python
     - python-lal >={{ lal_version }}
     # extras for help2man / make check
-    - astropy
-    - gwpy
-
+    - astropy  # [py != 39]
+    - gwpy  # [py != 39]
 
 outputs:
   - name: lalsimulation-data
