@@ -13,6 +13,33 @@
     - !reference [.ci-push-build, rules]
     - !reference [.ci-merge-build, rules]
 
+include:
+  # https://git.ligo.org/explore/catalog/computing/gitlab/components/sast
+  - component: $CI_SERVER_FQDN/computing/gitlab/components/sast/sast@2
+    inputs:
+      stage: lint
+
+  # https://git.ligo.org/explore/catalog/computing/gitlab/components/python
+  - component: $CI_SERVER_FQDN/computing/gitlab/components/python/code-quality@1
+    inputs:
+      stage: lint
+      requirements: "flake8-executable"
+
+# update component jobs with our rules
+
+semgrep-sast:
+  rules: !reference [.lint, rules]
+  needs: []
+  variables:
+    # set XDG_CONFIG_HOME (set in global variables) to something that always exists
+    XDG_CONFIG_HOME: "/tmp"
+
+flake8-code_quality:
+  rules: !reference [.lint, rules]
+  needs: []
+
+# custom Lint jobs
+
 .lint:api:
   extends:
     - .build-job
@@ -233,20 +260,6 @@ lint:gitignore:
       - lal*/Makefile
     when: on_failure
 
-lint:python:
-  extends:
-    - .python:flake8
-    - .lint
-  variables:
-    REQUIREMENTS: "flake8-executable"
-  artifacts:
-    paths:
-      - flake8*.json
-    reports:
-      # don't upload report, see lint:combine-reports
-      codequality: null
-    when: always
-
 lint:coala:
   extends:
     - .lint
@@ -294,21 +307,6 @@ lint:coala:
       # don't upload report, see lint:combine-reports
       codequality: null
     when: always
-
-lint:combine-reports:
-  extends:
-    - .codequality:combine
-    - .lint
-  stage: .post
-  needs:
-    - lint:coala
-    - lint:python
-  before_script:
-    # don't need this file
-    - rm -f coala.json
-  rules:
-    - !reference [.ci-lint, rules]
-    - !reference [.ci-merge-build, rules]
 
 lint:pretty:
   extends:
