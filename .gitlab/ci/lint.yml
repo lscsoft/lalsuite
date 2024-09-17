@@ -10,6 +10,7 @@
   needs: []
   rules:
     - !reference [.ci-lint, rules]
+    - !reference [.ci-nightly-deploy, rules]
     - !reference [.ci-push-build, rules]
     - !reference [.ci-merge-build, rules]
 
