@@ -117,6 +117,7 @@
           --error-overlinking \
           --keep-old-work \
           --no-anaconda-upload \
+          --prefix-length 128 \
           --variant-config-files .ci_support/${_CONDA_CONFIG}.yaml \
           ${CONDA_BUILD_ARGS}
       done
