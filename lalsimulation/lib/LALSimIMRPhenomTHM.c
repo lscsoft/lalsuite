@@ -92,7 +92,7 @@
  */
 
 int XLALSimIMRPhenomT(
-  REAL8TimeSeries **hp, /**< [out] TD waveform for plus polarisation */
+  REAL8TimeSeries **hp, /**< [out]  TD waveform for plus polarisation */
   REAL8TimeSeries **hc, /**< [out] TD waveform for cross polarisation */
   REAL8 m1_SI,      /**< Mass of companion 1 (kg) */
   REAL8 m2_SI,      /**< Mass of companion 2 (kg) */
