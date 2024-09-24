@@ -1,5 +1,5 @@
 AC_PREREQ([2.63])
-AC_INIT([LALInference],[4.1.7],[lal-discuss@ligo.org])
+AC_INIT([LALInference],[4.1.7.1],[lal-discuss@ligo.org])
 AC_CONFIG_HEADERS([lib/config.h lib/LALInferenceConfig.h])
 AC_CONFIG_SRCDIR([lib/LALInference.h])
 AC_CONFIG_AUX_DIR([gnuscripts])
