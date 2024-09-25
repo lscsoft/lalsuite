@@ -47,6 +47,8 @@
     lalsimulation.SimNoisePSDaLIGOAPlusDesignSensitivityT1800042(series, 10)
     lalpulsar.InitBarycenter("earth00-40-DE405.dat.gz", "sun00-40-DE405.dat.gz")
     EOF
+  # test running Python scripts
+  - lal_path2cache --help
   # test running C executables and finding data files
   - lalapps_version
   - env LAL_DEBUG_LEVEL=info lalsim-detector-noise --official --aligo-nsnsopt --duration 1 >/dev/null
