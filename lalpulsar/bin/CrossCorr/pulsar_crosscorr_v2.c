@@ -190,7 +190,6 @@ int main( int argc, char *argv[] )
   MultiNoiseWeights *resampMultiWeights = NULL;
   MultiLIGOTimeGPSVector *multiTimes = NULL;
   MultiLIGOTimeGPSVector *resampMultiTimes = NULL;
-  MultiREAL8TimeSeries *scienceFlagVect = NULL;
   MultiLALDetector multiDetectors;
   MultiDetectorStateSeries *multiStates = NULL;
   MultiDetectorStateSeries *resampMultiStates = NULL;
@@ -483,7 +482,7 @@ int main( int argc, char *argv[] )
   /* For resampling with tShort, generate appropriate times, states, and coefficients */
   if ( ( uvar.resamp == TRUE ) && ( uvar.testResampNoTShort == FALSE ) ) {
     /* Edit the timestamps to accurately reflect tShort */
-    if ( ( resampMultiTimes = XLALModifyMultiTimestampsFromSFTs( &scienceFlagVect, multiTimes, resampTshort, numShortPerDet, uvar.alignTShorts ) ) == NULL ) {
+    if ( ( resampMultiTimes = XLALGenerateMultiTshortTimestamps( multiTimes, resampTshort, numShortPerDet, uvar.alignTShorts ) ) == NULL ) {
       LogPrintf( LOG_CRITICAL, "%s: XLALModifyMultiTimestampsFromSFTs() failed with errno=%d\n", __func__, xlalErrno );
       XLAL_ERROR( XLAL_EFUNC );
     }
@@ -565,12 +564,6 @@ int main( int argc, char *argv[] )
           LogPrintf( LOG_CRITICAL, "%s: XLALCreateSFTPairIndexListShortResamp() failed with errno=%d\n", __func__, xlalErrno );
           XLAL_ERROR( XLAL_EFUNC );
         }
-        /* equip resampMultiPairs with information from science flag vector */
-        if ( ( XLALEquipCrossCorrPairsWithScienceFlags( resampMultiPairs, scienceFlagVect ) != XLAL_SUCCESS ) ) {
-          LogPrintf( LOG_CRITICAL, "%s: XLALEquipCrossCorrPairsWithScienceFlags() failed with errno=%d\n", __func__, xlalErrno );
-          XLAL_ERROR( XLAL_EFUNC );
-        }
-        XLALDestroyMultiREAL8TimeSeries( scienceFlagVect );
         if ( uvar.accurateResampMetric == TRUE ) {
           /* printf("About to call XLALCreateSFTPairIndexListAccurateResamp\n"); */
           if ( ( XLALCreateSFTPairIndexListAccurateResamp( &sftPairs, &sftPairForTshortPair, sftIndices, resampMultiPairs, multiTimes, resampMultiTimes ) != XLAL_SUCCESS ) ) {

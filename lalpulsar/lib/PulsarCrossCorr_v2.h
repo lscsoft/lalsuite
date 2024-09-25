@@ -529,12 +529,20 @@ int XLALCalculateLMXBCrossCorrDiagMetricShort
 //);
 
 LIGOTimeGPSVector
+*XLALGenerateTshortTimestamps(
+  const REAL8                        tShort,
+  const UINT4                        numShortPerDet,
+  const LIGOTimeGPS                  epoch
+);
+
+/* DEPRECATED function; use XLALGenerateTshortTimestamps() instead */
+
+LIGOTimeGPSVector
 *XLALModifyTimestampsFromSFTsShort(
   REAL8TimeSeries                  **sciFlag,
   const LIGOTimeGPSVector  *_LAL_RESTRICT_ Times,
   const REAL8                        tShort,
-  const UINT4                        numShortPerDet,
-  const LIGOTimeGPS                  epoch
+  const UINT4                        numShortPerDet
 );
 
 LIGOTimeGPSVector
@@ -545,13 +553,22 @@ LIGOTimeGPSVector
   UINT4              numShortPerDet
 );
 
+
+MultiLIGOTimeGPSVector
+*XLALGenerateMultiTshortTimestamps(
+  const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes,
+  const REAL8                             tShort,
+  const UINT4                             numShortPerDet,
+  const BOOLEAN                           alignTShorts
+);
+
+/* DEPRECATED function; use XLALGenerateMultiTshortTimestamps() instead */
 MultiLIGOTimeGPSVector
 *XLALModifyMultiTimestampsFromSFTs(
   MultiREAL8TimeSeries                  **scienceFlagVect,
   const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes,
   const REAL8                             tShort,
-  const UINT4                             numShortPerDet,
-  const BOOLEAN                           alignTShorts
+  const UINT4                             numShortPerDet
 );
 
 MultiLIGOTimeGPSVector
@@ -610,6 +627,18 @@ MultiNoiseWeights
   const MultiLIGOTimeGPSVector *_LAL_RESTRICT_ multiTimes
 );
 
+/* DEPRECATED function; use XLALModifyMultiWeights() instead */
+#ifdef SWIG // SWIG interface directives
+SWIGLAL( INOUT_STRUCTS( MultiNoiseWeights **, multiWeights ) );
+#endif
+int
+XLALModifyMultiAMCoeffsWeights(
+  MultiNoiseWeights                     **multiWeights,
+  const REAL8                             tShort,
+  const REAL8                             tSFTOld,
+  const UINT4                             numShortPerDet,
+  const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes
+);
 
 int
 XLALWeightMultiAMCoeffsShort(

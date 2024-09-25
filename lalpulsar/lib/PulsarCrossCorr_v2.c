@@ -2065,25 +2065,14 @@ XLALExtractTimestampsFromSFTsShort(
   return ret;
 
 } /* XLALExtractTimestampsFromSFTsShort() */
-
-
-/** Modify timestamps from one detector with tShort */
+/** Generate timestamps for one detector with tShort */
 LIGOTimeGPSVector *
-XLALModifyTimestampsFromSFTsShort(
-  REAL8TimeSeries                  **sciFlag,        /**< [out] science or not flag */
-  const LIGOTimeGPSVector *restrict  Times,          /**< [in] input SFT-vector */
+XLALGenerateTshortTimestamps(
   const REAL8                        tShort,         /**< [in] new time baseline, Tshort */
   const UINT4                        numShortPerDet, /**< [in] number of Tshort per detector */
   const LIGOTimeGPS                  epoch           /**< [in] start time for first Tshort */
 )
 {
-
-  REAL8TimeSeries *retFlag = NULL;
-  /* check input consistency */
-  if ( !Times ) {
-    XLALPrintError( "%s: invalid NULL input 'Times'\n", __func__ );
-    XLAL_ERROR_NULL( XLAL_EINVAL );
-  }
 
   UINT4 numSFTsNew = numShortPerDet;
   /* create output vector */
@@ -2106,6 +2095,50 @@ XLALModifyTimestampsFromSFTsShort(
     XLALGPSAdd( &( epochHolder ), i * tShort );
     ret->data[i] = epochHolder;
   }
+  return ret;
+
+} /* XLALGenerateTshortTimestamps() */
+
+/* DEPRECATED function; use XLALGenerateTshortTimestamps() instead */
+/** Modify timestamps from one detector with tShort */
+LIGOTimeGPSVector *
+XLALModifyTimestampsFromSFTsShort(
+  REAL8TimeSeries                  **sciFlag,       /**< [out] science or not flag */
+  const LIGOTimeGPSVector *restrict  Times,         /**< [in] input SFT-vector */
+  const REAL8                        tShort,        /**< [in] new time baseline, Tshort */
+  const UINT4                        numShortPerDet /**< [in] number of Tshort per detector */
+)
+{
+
+  REAL8TimeSeries *retFlag = NULL;
+  /* check input consistency */
+  if ( !Times ) {
+    XLALPrintError( "%s: invalid NULL input 'Times'\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
+  }
+
+  UINT4 numSFTsNew = numShortPerDet;
+  /* create output vector */
+  LIGOTimeGPSVector *ret = NULL;
+  if ( ( ret = XLALCreateTimestampVector( numSFTsNew ) ) == NULL ) {
+    XLALPrintError( "%s: XLALCreateTimestampVector(%d) failed.\n", __func__, numSFTsNew );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
+  }
+  ret->deltaT = tShort;
+  ret->length = numSFTsNew;
+
+  UINT4 i;
+  LIGOTimeGPS epochHolder = {0, 0};
+  LIGOTimeGPS naiveEpoch = Times->data[0];
+  REAL8 naiveEpochReal = XLALGPSGetREAL8( &( naiveEpoch ) );
+  /* Wanting a consistent baseline, calculate this externally */
+  for ( i = 0; i < numShortPerDet; i ++ ) {
+    epochHolder.gpsSeconds = 0;
+    epochHolder.gpsNanoSeconds = 0;
+    XLALGPSAdd( &( epochHolder ), naiveEpochReal );
+    XLALGPSAdd( &( epochHolder ), i * tShort );
+    ret->data[i] = epochHolder;
+  }
   retFlag = XLALCrossCorrGapFinderResamp( ret, Times );
   /* done: return Ts-vector */
   ( *sciFlag ) = retFlag;
@@ -2113,7 +2146,70 @@ XLALModifyTimestampsFromSFTsShort(
 
 } /* XLALModifyTimestampsFromSFTsShort() */
 
+/**
+ * Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
+ * modified SFT timestamps (production function using tShort)
+ */
+MultiLIGOTimeGPSVector *
+XLALGenerateMultiTshortTimestamps(
+  const MultiLIGOTimeGPSVector  *restrict multiTimes,      /**< [in] multiTimes, standard */
+  const REAL8                             tShort,          /**< [in] new time baseline, Tshort */
+  const UINT4                             numShortPerDet,  /**< [in] number of Tshort per detector */
+  const BOOLEAN                           alignTShorts     /**< [in] align segments between detectors */
+)
+{
 
+  /* check input consistency */
+  if ( !multiTimes || multiTimes->length == 0 ) {
+    XLALPrintError( "%s: illegal NULL or empty input 'multiTimes'.\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
+  }
+  UINT4 numIFOs = multiTimes->length;
+
+  /* create output vector */
+  MultiLIGOTimeGPSVector *ret = NULL;
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc ( 1, %zu ).\n", __func__, sizeof( *ret ) );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+
+  if ( ( ret->data = XLALCalloc( numIFOs, sizeof( *ret->data ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc ( %d, %zu ).\n", __func__, numIFOs, sizeof( ret->data[0] ) );
+    XLALFree( ret );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+  ret->length = numIFOs;
+
+  /* now extract timestamps vector from each SFT-vector */
+  UINT4 X;
+  LIGOTimeGPS epoch;
+  if ( alignTShorts == TRUE ) {
+    /* Find the earliest starting epoch among the detectors */
+    epoch = multiTimes->data[0]->data[0];
+    for ( X = 1; X < numIFOs; X ++ ) {
+      if ( XLALGPSDiff( &epoch, &( multiTimes->data[X]->data[0] ) ) > 0 ) {
+        epoch = multiTimes->data[X]->data[0];
+      }
+    }
+  }
+  for ( X = 0; X < numIFOs; X ++ ) {
+    if ( alignTShorts == FALSE ) {
+      epoch = multiTimes->data[X]->data[0];
+    }
+    if ( ( ret->data[X] = XLALGenerateTshortTimestamps( tShort, numShortPerDet, epoch ) ) == NULL ) {
+      XLALPrintError( "%s: XLALGenerateTshortTimestamps() failed for X=%d\n", __func__, X );
+      XLALDestroyMultiTimestamps( ret );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
+    }
+
+  } /* for X < numIFOs */
+
+  return ret;
+
+} /* XLALGenerateMultiTshortTimestamps() */
+
+
+/* DEPRECATED function; use XLALGenerateMultiTshortTimestamps() instead */
 /**
  * Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
  * modified SFT timestamps (production function using tShort)
@@ -2123,8 +2219,7 @@ XLALModifyMultiTimestampsFromSFTs(
   MultiREAL8TimeSeries                  **scienceFlagVect, /**< [out] science flag vector */
   const MultiLIGOTimeGPSVector  *restrict multiTimes,      /**< [in] multiTimes, standard */
   const REAL8                             tShort,          /**< [in] new time baseline, Tshort */
-  const UINT4                             numShortPerDet,  /**< [in] number of Tshort per detector */
-  const BOOLEAN                           alignTShorts     /**< [in] align segments between detectors */
+  const UINT4                             numShortPerDet   /**< [in] number of Tshort per detector */
 )
 {
 
@@ -2165,22 +2260,9 @@ XLALModifyMultiTimestampsFromSFTs(
 
   /* now extract timestamps vector from each SFT-vector */
   UINT4 X;
-  LIGOTimeGPS epoch;
-  if ( alignTShorts == TRUE ) {
-    /* Find the earliest starting epoch among the detectors */
-    epoch = multiTimes->data[0]->data[0];
-    for ( X = 1; X < numIFOs; X ++ ) {
-      if ( XLALGPSDiff( &epoch, &( multiTimes->data[X]->data[0] ) ) > 0 ) {
-        epoch = multiTimes->data[X]->data[0];
-      }
-    }
-  }
   for ( X = 0; X < numIFOs; X ++ ) {
-    if ( alignTShorts == FALSE ) {
-      epoch = multiTimes->data[X]->data[0];
-    }
-    if ( ( ret->data[X] = XLALModifyTimestampsFromSFTsShort( &retFlagVect->data[X], multiTimes->data[X], tShort, numShortPerDet, epoch ) ) == NULL ) {
-      XLALPrintError( "%s: XLALExtractTimestampsFromSFTs() failed for X=%d\n", __func__, X );
+    if ( ( ret->data[X] = XLALModifyTimestampsFromSFTsShort( &retFlagVect->data[X], multiTimes->data[X], tShort, numShortPerDet ) ) == NULL ) {
+      XLALPrintError( "%s: XLALModifyTimestampsFromSFTsShort() failed for X=%d\n", __func__, X );
       XLALDestroyMultiTimestamps( ret );
       XLAL_ERROR_NULL( XLAL_EFUNC );
     }
@@ -2191,7 +2273,6 @@ XLALModifyMultiTimestampsFromSFTs(
   return ret;
 
 } /* XLALModifyMultiTimestampsFromSFTs() */
-
 
 /**
  * Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
@@ -2666,6 +2747,54 @@ XLALModifyMultiWeights(
 
 } /* XLALModifyMultiWeights() */
 
+/* DEPRECATED function; use XLALModifyMultiWeights() instead */
+
+/** Modify multiple detectors' amplitude weight coefficients for tShort */
+int
+XLALModifyMultiAMCoeffsWeights(
+  MultiNoiseWeights                     **multiWeights,   /**< [in/out] old and new weights */
+  const REAL8                             tShort,         /**< [in] new time baseline, Tshort */
+  const REAL8                             tSFTOld,        /**< [in] old time baseline, tSFTOld */
+  const UINT4                             numShortPerDet, /**< [in] number of tShort segments per detector */
+  const MultiLIGOTimeGPSVector  *restrict multiTimes      /**< [in] multi-times vector to tell us when the SFTs were */
+)
+{
+
+  /* ----- input sanity checks ----- */
+  MultiNoiseWeights *multiWeightsLocal = ( *multiWeights );
+  UINT4 numDetectors = multiWeightsLocal->length;
+  UINT4 numIFOs = numDetectors;
+
+  REAL8 ratioSFTs = tShort / tSFTOld;
+
+  /* Prepare output values */
+  /* create multi noise weights for output */
+
+  MultiNoiseWeights *ret = NULL;
+  XLAL_CHECK( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) != NULL, XLAL_EFUNC );
+  XLAL_CHECK( ( ret->data = XLALCalloc( numIFOs, sizeof( *ret->data ) ) ) != NULL, XLAL_EFUNC );
+  ret->length = numIFOs;
+  /* As documented for MultiNoiseWeights, the S inv Tsft field is a
+   * normalization factor equal to S^(-1) Tsft. Since we changed the
+   * effective Tsft from Tsft to Tshort = ratioSFTs*Tsft, we also
+   * need to multiply this normalization factor by ratioSFTs. */
+  ret->Sinv_Tsft = multiWeightsLocal->Sinv_Tsft * ratioSFTs;
+
+  REAL8 Tobs = numShortPerDet * tShort;
+  UINT4 maxNumStepsOldIfGapless = lround( Tobs / tSFTOld );
+
+  /* ---------- main loop over detectors X ---------- */
+  UINT4 X;
+
+  for ( X = 0; X < numDetectors; X ++ ) {
+    XLALModifyAMCoeffsWeights( &ret->data[X], multiWeightsLocal, tShort, tSFTOld, numShortPerDet, multiTimes, maxNumStepsOldIfGapless, X );
+  }
+
+  XLALDestroyMultiNoiseWeights( ( *multiWeights ) );
+  ( *multiWeights ) = ret;
+  return XLAL_SUCCESS;
+
+} /* XLALModifyMultiAMCoeffsWeights() */
 
 /** (test function) used for weighting multi amplitude modulation coefficients */
 int
