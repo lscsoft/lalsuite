@@ -1,3 +1,9 @@
+lalapps (10.0.1-1) unstable; urgency=low
+
+  * Update for 10.0.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 05 Aug 2024 08:53:24 -0700
+
 lalapps (10.0.0-1) unstable; urgency=low
 
   * Update for 10.0.0
