@@ -250,6 +250,7 @@ outputs:
         - bc  # [build_platform == target_platform]
         - astropy  # [build_platform == target_platform]
         - cfitsio
+        - fftw
         - gsl
         - jplephem  # [build_platform == target_platform]
         - h5py  # [build_platform == target_platform]
@@ -272,6 +273,7 @@ outputs:
       run:
         - astropy
         - cfitsio
+        - fftw
         - gsl
         - gwdatafind
         - h5py
