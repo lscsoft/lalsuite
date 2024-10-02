@@ -2,7 +2,7 @@
  *  Copyright (C) 2012, 2013 John Whelan, Shane Larson and Badri Krishnan
  *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *  Copyright (C) 2016, 2017 Grant David Meadors
- *  Copyright (C) 2023 John Whelan
+ *  Copyright (C) 2023, 2024 John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -191,12 +191,13 @@ int XLALGetDopplerShiftedFrequencyInfo
 
 }
 
+
 /** Construct flat SFTIndexList out of a MultiSFTVector */
 /* Allocates memory as well */
 int XLALCreateSFTIndexListFromMultiSFTVect
 (
-  SFTIndexList        **indexList,   /* Output: flat list of indices to locate SFTs */
-  MultiSFTVector            *sfts    /* Input: set of per-detector SFT vectors */
+  SFTIndexList        **indexList,   /**< Output: flat list of indices to locate SFTs */
+  MultiSFTVector            *sfts    /**< Input: set of per-detector SFT vectors */
 )
 {
   SFTIndexList *ret = NULL;
@@ -234,15 +235,16 @@ int XLALCreateSFTIndexListFromMultiSFTVect
   return XLAL_SUCCESS;
 }
 
+
 /** Construct list of SFT pairs for inclusion in statistic */
 /* Allocates memory as well */
 int XLALCreateSFTPairIndexList
 (
-  SFTPairIndexList  **pairIndexList, /* Output: list of SFT pairs */
-  SFTIndexList           *indexList, /* Input: list of indices to locate SFTs */
-  MultiSFTVector              *sfts, /* Input: set of per-detector SFT vectors */
-  REAL8                      maxLag, /* Maximum allowed lag time */
-  BOOLEAN              inclAutoCorr  /* Flag indicating whether a "pair" of an SFT with itself is allowed */
+  SFTPairIndexList  **pairIndexList, /**< Output: list of SFT pairs */
+  SFTIndexList           *indexList, /**< Input: list of indices to locate SFTs */
+  MultiSFTVector              *sfts, /**< Input: set of per-detector SFT vectors */
+  REAL8                      maxLag, /**< Maximum allowed lag time */
+  BOOLEAN              inclAutoCorr  /**< Flag indicating whether a "pair" of an SFT with itself is allowed */
 )
 {
   SFTPairIndexList *ret = NULL;
@@ -301,6 +303,129 @@ int XLALCreateSFTPairIndexList
 
 
   ( *pairIndexList ) = ret;
+
+  return XLAL_SUCCESS;
+}
+
+
+/** Construct list of SFT pairs corresponding to a list of tShort pairs */
+/* Allocates memory as well */
+int XLALCreateSFTPairIndexListAccurateResamp
+(
+  SFTPairIndexList  **pairIndexList, /**< Output: list of SFT pairs */
+  UINT4VectorSequence **sftPairForTshortPair, /**< Output: list of SFT pairs corresponding to each Tshort pair */
+  SFTIndexList           *indexList, /**< Input: list of indices to locate SFTs */
+  MultiResampSFTPairMultiIndexList *resampPairs, /**< Input: pairs of tShort segments for resampling */
+  const MultiLIGOTimeGPSVector      *restrict multiTimes,                /**< Input: timestamps containing SFT times for each detector */
+  const MultiLIGOTimeGPSVector      *restrict resampMultiTimes                /**< Input: timestamps containing Tshort times for each detector */
+
+)
+{
+  /* printf("Inside XLALCreateSFTPairIndexListAccurateResamp\n"); */
+
+  UINT4 numSFTs = indexList->length;
+  REAL8 Tsft = resampPairs->Tsft;
+  REAL8 Tshort = resampPairs->Tshort;
+  UINT4 TsftsPerTshort = ( UINT4 )ceil( Tshort / Tsft );
+  UINT4 numTshorts = resampPairs->indexList->length;
+
+  SFTPairIndexList *ret = NULL;
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) == NULL ) {
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+
+  /* Assemble list of SFTs corresponding to each Tshort */
+  UINT4VectorSequence *SFTIndsForTshort = NULL;
+  XLAL_CHECK( ( SFTIndsForTshort = XLALCreateUINT4VectorSequence( numTshorts, TsftsPerTshort ) ) != NULL, XLAL_EFUNC, "XLALCreateUINT4VectorSequence ( %"LAL_UINT4_FORMAT", %"LAL_UINT4_FORMAT" ) failed.",  numTshorts, TsftsPerTshort );
+
+  for ( UINT4 reK = 0; reK < numTshorts; reK++ ) {
+    UINT4 ifoK = resampPairs->indexList->data[reK].detInd;
+    UINT4 reIndK = resampPairs->indexList->data[reK].sftInd;
+    LIGOTimeGPS reTimeK = resampMultiTimes->data[ifoK]->data[reIndK];
+    UINT4 kInShort = 0;
+    for ( UINT4 K = 0; K < numSFTs; K++ ) {
+      if ( indexList->data[K].detInd == ifoK ) {
+        UINT4 indK = indexList->data[K].sftInd;
+        LIGOTimeGPS timeK = multiTimes->data[ifoK]->data[indK];
+        REAL8 SFTMidOff = XLALGPSDiff( &timeK, &reTimeK ) + ( 0.5 * Tsft );
+        if ( SFTMidOff >= 0 && SFTMidOff < Tshort ) {
+          /* printf("SFTMidOff=%.0f, Tshort=%.0f; timeK=%d, reTimeK=%d\n", */
+          /*   SFTMidOff, Tshort, timeK.gpsSeconds, reTimeK.gpsSeconds); */
+          /* Midpoint of SFT lies within this Tshort */
+          XLAL_CHECK( kInShort < TsftsPerTshort, XLAL_EINVAL,
+                      "Unexpectedly too many SFTs within Tshort:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
+                      kInShort, TsftsPerTshort );
+          SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort] = K;
+          kInShort++;
+        }
+      }
+    }
+    /* printf("reK=%d; kInShort=%d; TsftsPerTshort=%d\n", reK, kInShort, TsftsPerTshort); */
+    for ( UINT4 k = kInShort; k < TsftsPerTshort; k++ ) {
+      SFTIndsForTshort->data[reK * TsftsPerTshort + k] = LAL_UINT4_MAX;
+    }
+  }
+
+  /* Allocate maximum possible size of pair list; will reallocate after construction */
+  UINT4 numTshortPairs = resampPairs->pairIndexList->length;
+  UINT4 maxAlphaInReAlpha =  SQUARE( TsftsPerTshort );
+  UINT4 maxNumSFTPairs = numTshortPairs * maxAlphaInReAlpha;
+
+  ret->length = maxNumSFTPairs;
+  /* printf("About to calloc\n"); */
+  if ( ( ret->data = XLALCalloc( ret->length, sizeof( *ret->data ) ) ) == NULL ) {
+    XLALFree( ret );
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+  /* printf("Calloc worked\n"); */
+
+  /* Assemble list of SFT pairs corresponding to each Tshort pair */
+  UINT4VectorSequence *ret2 = NULL;
+  XLAL_CHECK( ( ret2 = XLALCreateUINT4VectorSequence( numTshortPairs, maxAlphaInReAlpha ) ) != NULL, XLAL_EFUNC, "XLALCreateUINT4VectorSequence ( %"LAL_UINT4_FORMAT", %"LAL_UINT4_FORMAT" ) failed.",  numTshortPairs, maxAlphaInReAlpha );
+
+  /* Loop over pairs of Tshorts */
+  UINT4 alpha = 0;
+  for ( UINT4 reAlpha = 0; reAlpha < numTshortPairs; reAlpha++ ) {
+    UINT4 alphaInReAlpha = 0;
+    UINT4 reK = resampPairs->pairIndexList->data[reAlpha].sftNum[0];
+    UINT4 reL = resampPairs->pairIndexList->data[reAlpha].sftNum[1];
+    /* printf("alpha=%d, reK=%d, reL=%d\n", reAlpha, reK, reL); */
+    for ( UINT4 kInShort = 0; kInShort < TsftsPerTshort; kInShort++ ) {
+      UINT4 K = SFTIndsForTshort->data[reK * TsftsPerTshort + kInShort];
+      if ( K == LAL_UINT4_MAX ) {
+        break;
+      }
+      for ( UINT4 lInShort = 0; lInShort < TsftsPerTshort; lInShort++ ) {
+        UINT4 L = SFTIndsForTshort->data[reL * TsftsPerTshort + lInShort];
+        if ( L == LAL_UINT4_MAX ) {
+          break;
+        }
+        XLAL_CHECK( alpha < maxNumSFTPairs, XLAL_EINVAL,
+                    "Unexpectedly too many SFT pairs:\n kInShort=%"LAL_UINT4_FORMAT", TsftsPerTshort=%"LAL_UINT4_FORMAT"\n",
+                    alpha, maxNumSFTPairs );
+        ret->data[alpha].sftNum[0] = K;
+        ret->data[alpha].sftNum[1] = L;
+        ret2->data[reAlpha * maxAlphaInReAlpha + alphaInReAlpha] = alpha;
+        alpha++;
+        alphaInReAlpha++;
+      }
+    }
+    for ( ; alphaInReAlpha < maxAlphaInReAlpha; alphaInReAlpha++ ) {
+      ret2->data[reAlpha * maxAlphaInReAlpha + alphaInReAlpha] = LAL_UINT4_MAX;
+    }
+  }
+  ret->length = alpha;
+  /* printf("About to realloc\n"); */
+  if ( ( ret->data = XLALRealloc( ret->data, ( ret->length ) * sizeof( *ret->data ) ) ) == NULL ) {
+    XLALFree( ret );
+    XLALDestroyUINT4VectorSequence( ret2 );
+    XLAL_ERROR( XLAL_ENOMEM );
+  }
+  /* printf("Realloc worked\n"); */
+
+  ( *pairIndexList ) = ret;
+  ( *sftPairForTshortPair ) = ret2;
+  XLALDestroyUINT4VectorSequence( SFTIndsForTshort );
 
   return XLAL_SUCCESS;
 }
@@ -820,6 +945,7 @@ int XLALCreateSFTPairIndexListShortResamp
   return XLAL_SUCCESS;
 } // end XLALCreateSFTPairIndexListShortResamp
 
+
 /** Check that the contents of a resampling multi-pair index list are sensible by inspection */
 int XLALTestResampPairIndexList
 (
@@ -862,11 +988,11 @@ int XLALTestResampPairIndexList
 /* Allocates memory as well */
 int XLALCalculateCrossCorrGammas
 (
-  REAL8Vector          **Gamma_ave, /* Output: vector of aa+bb values */
-  REAL8Vector         **Gamma_circ, /* Output: vector of ab-ba values */
-  SFTPairIndexList  *pairIndexList, /* Input: list of SFT pairs */
-  SFTIndexList          *indexList, /* Input: list of SFTs */
-  MultiAMCoeffs       *multiCoeffs  /* Input: AM coefficients */
+  REAL8Vector          **Gamma_ave, /**< Output: vector of aa+bb values */
+  REAL8Vector         **Gamma_circ, /**< Output: vector of ab-ba values */
+  SFTPairIndexList  *pairIndexList, /**< Input: list of SFT pairs */
+  SFTIndexList          *indexList, /**< Input: list of SFTs */
+  MultiAMCoeffs       *multiCoeffs  /**< Input: AM coefficients */
 )
 {
 
@@ -899,7 +1025,9 @@ int XLALCalculateCrossCorrGammas
   return XLAL_SUCCESS;
 }
 
+
 /** test function for RESAMPLING */
+
 /** Construct multi-dimensional array of G_L_Y_K_X amplitudes for each SFT pair */
 /* This is averaged over unknwon cosi and psi */
 /* Allocates memory as well */
@@ -956,6 +1084,7 @@ int XLALCalculateCrossCorrGammasResamp
   ( *Gamma_circ ) = ret2;
   return XLAL_SUCCESS;
 } // end XLALCalculateCrossCorrGammasResamp
+
 
 /** test function for RESAMPLING with tShort*/
 /** Construct multi-dimensional array of G_L_Y_K_X amplitudes for each SFT pair */
@@ -1045,21 +1174,63 @@ int XLALCalculateCrossCorrGammasResampShort
 } // end XLALCalculateCrossCorrGammasResampShort
 
 
+/** Combine G_alpha amplitudes for SFT pairs into amplitudes for Tshort pairs */
+/* Allocates memory as well */
+int XLALCombineCrossCorrGammas
+(
+  REAL8Vector                 **resampGamma, /**< Output: vector of combined values, one per Tshort pair */
+  REAL8Vector                        *Gamma, /**< Input: vector of values, on per SFT pair */
+  UINT4VectorSequence *sftPairForTshortPair, /**< Input: list of SFT pair indices for each Tshort pair */
+  REAL8                                Tsft, /**< [in] duration of a single SFT */
+  REAL8                              Tshort /**< [in] resampling Tshort */
+)
+{
+
+  UINT4 numTshortPairs = sftPairForTshortPair->length;
+  UINT4 maxAlphaInReAlpha = sftPairForTshortPair->vectorLength;
+  REAL8Vector *ret = NULL;
+  XLAL_CHECK( ( ret = XLALCreateREAL8Vector( numTshortPairs ) ) != NULL, XLAL_EFUNC, "XLALCreateREAL8Vector ( %"LAL_UINT4_FORMAT" ) failed.", numTshortPairs ) ;
+  XLAL_CHECK( Gamma->length <= ( numTshortPairs * maxAlphaInReAlpha ),
+              XLAL_EINVAL,
+              "Too many values in Gamma vector: numGammas=%"LAL_UINT4_FORMAT", numTshortPairs==%"LAL_UINT4_FORMAT", maxAlphaInReAlpha==%"LAL_UINT4_FORMAT"\n",
+              Gamma->length, numTshortPairs, maxAlphaInReAlpha );
+
+  /* We assume these are Gamma-hats, which include a factor of Tsft or Tshort from the normalized antenna patterns */
+  REAL8 normFactor = ( Tsft / Tshort );
+
+  for ( UINT4 reAlpha = 0; reAlpha < numTshortPairs; reAlpha++ ) {
+    REAL8 thisGammaSq = 0.;
+    for ( UINT4 alphaInReAlpha = 0; alphaInReAlpha < maxAlphaInReAlpha; alphaInReAlpha++ ) {
+      UINT4 alpha = sftPairForTshortPair->data[reAlpha * maxAlphaInReAlpha + alphaInReAlpha];
+      if ( alpha == LAL_UINT4_MAX ) {
+        break;
+      }
+      thisGammaSq += SQUARE( ( Gamma->data[alpha] ) );
+    }
+    thisGammaSq *= SQUARE( normFactor );
+    ret->data[reAlpha] = sqrt( thisGammaSq );
+  }
+
+  ( *resampGamma ) = ret;
+  return XLAL_SUCCESS;
+}
+
+
 /** Calculate multi-bin cross-correlation statistic */
 /* This assumes rectangular or nearly-rectangular windowing */
 int XLALCalculatePulsarCrossCorrStatistic
 (
-  REAL8                         *ccStat, /* Output: cross-correlation statistic rho */
-  REAL8                      *evSquared, /* Output: (E[rho]/h0^2)^2 */
-  REAL8Vector                *curlyGAmp, /* Input: Amplitude of curly G for each pair */
-  COMPLEX8Vector       *expSignalPhases, /* Input: Phase of signal for each SFT */
-  UINT4Vector               *lowestBins, /* Input: Bin index to start with for each SFT */
-  REAL8VectorSequence         *sincList, /* Input: input the sinc factors*/
-  SFTPairIndexList            *sftPairs, /* Input: flat list of SFT pairs */
-  SFTIndexList              *sftIndices, /* Input: flat list of SFTs */
-  MultiSFTVector             *inputSFTs, /* Input: SFT data */
-  MultiNoiseWeights       *multiWeights, /* Input: nomalizeation factor S^-1 & weights for each SFT */
-  UINT4                         numBins  /* Input Number of frequency bins to be taken into calc */
+  REAL8                         *ccStat, /**< Output: cross-correlation statistic rho */
+  REAL8                      *evSquared, /**< Output: (E[rho]/h0^2)^2 */
+  REAL8Vector                *curlyGAmp, /**< Input: Amplitude of curly G for each pair */
+  COMPLEX8Vector       *expSignalPhases, /**< Input: Phase of signal for each SFT */
+  UINT4Vector               *lowestBins, /**< Input: Bin index to start with for each SFT */
+  REAL8VectorSequence         *sincList, /**< Input: input the sinc factors*/
+  SFTPairIndexList            *sftPairs, /**< Input: flat list of SFT pairs */
+  SFTIndexList              *sftIndices, /**< Input: flat list of SFTs */
+  MultiSFTVector             *inputSFTs, /**< Input: SFT data */
+  MultiNoiseWeights       *multiWeights, /**< Input: nomalizeation factor S^-1 & weights for each SFT */
+  UINT4                         numBins  /**< Input Number of frequency bins to be taken into calc */
 )
 {
 
@@ -1161,6 +1332,7 @@ int XLALCalculatePulsarCrossCorrStatistic
   return XLAL_SUCCESS;
 }
 
+
 /** Calculate multi-bin cross-correlation statistic using resampling */
 /* This assumes rectangular or nearly-rectangular windowing */
 int XLALCalculatePulsarCrossCorrStatisticResamp
@@ -1255,6 +1427,7 @@ int XLALCalculatePulsarCrossCorrStatisticResamp
   return XLAL_SUCCESS;
 } // end XLALCalculatePulsarCrossCorrStatisticResamp
 
+
 /** calculate signal phase derivatives wrt Doppler coords, for each SFT */
 /* allocates memory as well */
 int XLALCalculateCrossCorrPhaseDerivatives
@@ -1300,6 +1473,7 @@ int XLALCalculateCrossCorrPhaseDerivatives
   return XLAL_SUCCESS;
 
 }
+
 
 /** (test function) MODIFIED for Tshort */
 /** calculate signal phase derivatives wrt Doppler coords, for each SFT */
@@ -1360,6 +1534,7 @@ int XLALCalculateCrossCorrPhaseDerivativesShort
 
   return XLAL_SUCCESS;
 } /* end XLALCalculateCrossCorrPhaseDerivativesShort */
+
 
 /** calculate phase metric for CW cross-correlation search, as well as vector used for parameter offsets */
 /** This calculates the metric defined in (4.7) of Whelan et al 2015 and the parameter offset epsilon_i */
@@ -1449,6 +1624,7 @@ int XLALCalculateCrossCorrPhaseMetric
   return XLAL_SUCCESS;
 
 }
+
 
 /** (test function) Redesigning to use Tshort instead */
 /** calculate phase metric for CW cross-correlation search, as well as vector used for parameter offsets */
@@ -1558,18 +1734,18 @@ int XLALCalculateCrossCorrPhaseMetricShort
 /*calculate metric diagonal components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
 int XLALCalculateLMXBCrossCorrDiagMetric
 (
-  REAL8                      *hSens, /* Output: sensitivity*/
-  REAL8                       *g_ff, /* Output: Diagonal frequency metric element */
-  REAL8                       *g_aa, /* Output: Diagonal binary projected semimajor axis metric element*/
-  REAL8                       *g_TT, /* Output: Diagonal reference time metric element*/
-  REAL8                       *g_pp, /* Output: Diagonal orbital period metric element */
-  REAL8             *weightedMuTAve, /* output: weighred T mean*/
-  PulsarDopplerParams DopplerParams, /*  Input: pulsar/binary orbit paramaters*/
-  REAL8Vector              *G_alpha, /*  Input: vector of curlyGunshifted values */
-  SFTPairIndexList   *pairIndexList, /*  Input: list of SFT pairs */
-  SFTIndexList           *indexList, /*  Input: list of SFTs */
-  MultiSFTVector              *sfts, /*  Input: set of per-detector SFT vectors */
-  MultiNoiseWeights   *multiWeights  /*  Input: Input: nomalizeation factor S^-1 & weights for each SFT*/
+  REAL8                      *hSens, /**< Output: sensitivity*/
+  REAL8                       *g_ff, /**< Output: Diagonal frequency metric element */
+  REAL8                       *g_aa, /**< Output: Diagonal binary projected semimajor axis metric element*/
+  REAL8                       *g_TT, /**< Output: Diagonal reference time metric element*/
+  REAL8                       *g_pp, /**< Output: Diagonal orbital period metric element */
+  REAL8             *weightedMuTAve, /**< output: weighred T mean*/
+  PulsarDopplerParams DopplerParams, /**<  Input: pulsar/binary orbit paramaters*/
+  REAL8Vector              *G_alpha, /**<  Input: vector of curlyGunshifted values */
+  SFTPairIndexList   *pairIndexList, /**<  Input: list of SFT pairs */
+  SFTIndexList           *indexList, /**<  Input: list of SFTs */
+  MultiSFTVector              *sfts, /**<  Input: set of per-detector SFT vectors */
+  MultiNoiseWeights   *multiWeights  /**<  Input: nomalizeation factor S^-1 & weights for each SFT*/
 )
 
 {
@@ -1629,6 +1805,7 @@ int XLALCalculateLMXBCrossCorrDiagMetric
   return XLAL_SUCCESS;
 
 }
+
 
 /** MODIFIED for Tshort:
  * calculate metric diagonal components, also include the estimation of sensitivity E[rho]/(h_0)^2*/
@@ -1841,6 +2018,7 @@ int XLALCalculateLMXBCrossCorrDiagMetricShort
 //  return XLAL_SUCCESS;
 //} // XLALBesselCrossCorrOrbitalSpaceStep
 
+
 /** Function to extract timestamps with tShort */
 LIGOTimeGPSVector *
 XLALExtractTimestampsFromSFTsShort(
@@ -1887,7 +2065,41 @@ XLALExtractTimestampsFromSFTsShort(
   return ret;
 
 } /* XLALExtractTimestampsFromSFTsShort() */
+/** Generate timestamps for one detector with tShort */
+LIGOTimeGPSVector *
+XLALGenerateTshortTimestamps(
+  const REAL8                        tShort,         /**< [in] new time baseline, Tshort */
+  const UINT4                        numShortPerDet, /**< [in] number of Tshort per detector */
+  const LIGOTimeGPS                  epoch           /**< [in] start time for first Tshort */
+)
+{
 
+  UINT4 numSFTsNew = numShortPerDet;
+  /* create output vector */
+  LIGOTimeGPSVector *ret = NULL;
+  if ( ( ret = XLALCreateTimestampVector( numSFTsNew ) ) == NULL ) {
+    XLALPrintError( "%s: XLALCreateTimestampVector(%d) failed.\n", __func__, numSFTsNew );
+    XLAL_ERROR_NULL( XLAL_EFUNC );
+  }
+  ret->deltaT = tShort;
+  ret->length = numSFTsNew;
+
+  UINT4 i;
+  LIGOTimeGPS epochHolder = {0, 0};
+  REAL8 epochReal = XLALGPSGetREAL8( &( epoch ) );
+  /* Wanting a consistent baseline, calculate this externally */
+  for ( i = 0; i < numShortPerDet; i ++ ) {
+    epochHolder.gpsSeconds = 0;
+    epochHolder.gpsNanoSeconds = 0;
+    XLALGPSAdd( &( epochHolder ), epochReal );
+    XLALGPSAdd( &( epochHolder ), i * tShort );
+    ret->data[i] = epochHolder;
+  }
+  return ret;
+
+} /* XLALGenerateTshortTimestamps() */
+
+/* DEPRECATED function; use XLALGenerateTshortTimestamps() instead */
 /** Modify timestamps from one detector with tShort */
 LIGOTimeGPSVector *
 XLALModifyTimestampsFromSFTsShort(
@@ -1934,6 +2146,70 @@ XLALModifyTimestampsFromSFTsShort(
 
 } /* XLALModifyTimestampsFromSFTsShort() */
 
+/**
+ * Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
+ * modified SFT timestamps (production function using tShort)
+ */
+MultiLIGOTimeGPSVector *
+XLALGenerateMultiTshortTimestamps(
+  const MultiLIGOTimeGPSVector  *restrict multiTimes,      /**< [in] multiTimes, standard */
+  const REAL8                             tShort,          /**< [in] new time baseline, Tshort */
+  const UINT4                             numShortPerDet,  /**< [in] number of Tshort per detector */
+  const BOOLEAN                           alignTShorts     /**< [in] align segments between detectors */
+)
+{
+
+  /* check input consistency */
+  if ( !multiTimes || multiTimes->length == 0 ) {
+    XLALPrintError( "%s: illegal NULL or empty input 'multiTimes'.\n", __func__ );
+    XLAL_ERROR_NULL( XLAL_EINVAL );
+  }
+  UINT4 numIFOs = multiTimes->length;
+
+  /* create output vector */
+  MultiLIGOTimeGPSVector *ret = NULL;
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc ( 1, %zu ).\n", __func__, sizeof( *ret ) );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+
+  if ( ( ret->data = XLALCalloc( numIFOs, sizeof( *ret->data ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc ( %d, %zu ).\n", __func__, numIFOs, sizeof( ret->data[0] ) );
+    XLALFree( ret );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+  ret->length = numIFOs;
+
+  /* now extract timestamps vector from each SFT-vector */
+  UINT4 X;
+  LIGOTimeGPS epoch;
+  if ( alignTShorts == TRUE ) {
+    /* Find the earliest starting epoch among the detectors */
+    epoch = multiTimes->data[0]->data[0];
+    for ( X = 1; X < numIFOs; X ++ ) {
+      if ( XLALGPSDiff( &epoch, &( multiTimes->data[X]->data[0] ) ) > 0 ) {
+        epoch = multiTimes->data[X]->data[0];
+      }
+    }
+  }
+  for ( X = 0; X < numIFOs; X ++ ) {
+    if ( alignTShorts == FALSE ) {
+      epoch = multiTimes->data[X]->data[0];
+    }
+    if ( ( ret->data[X] = XLALGenerateTshortTimestamps( tShort, numShortPerDet, epoch ) ) == NULL ) {
+      XLALPrintError( "%s: XLALGenerateTshortTimestamps() failed for X=%d\n", __func__, X );
+      XLALDestroyMultiTimestamps( ret );
+      XLAL_ERROR_NULL( XLAL_EFUNC );
+    }
+
+  } /* for X < numIFOs */
+
+  return ret;
+
+} /* XLALGenerateMultiTshortTimestamps() */
+
+
+/* DEPRECATED function; use XLALGenerateMultiTshortTimestamps() instead */
 /**
  * Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
  * modified SFT timestamps (production function using tShort)
@@ -1986,7 +2262,7 @@ XLALModifyMultiTimestampsFromSFTs(
   UINT4 X;
   for ( X = 0; X < numIFOs; X ++ ) {
     if ( ( ret->data[X] = XLALModifyTimestampsFromSFTsShort( &retFlagVect->data[X], multiTimes->data[X], tShort, numShortPerDet ) ) == NULL ) {
-      XLALPrintError( "%s: XLALExtractTimestampsFromSFTs() failed for X=%d\n", __func__, X );
+      XLALPrintError( "%s: XLALModifyTimestampsFromSFTsShort() failed for X=%d\n", __func__, X );
       XLALDestroyMultiTimestamps( ret );
       XLAL_ERROR_NULL( XLAL_EFUNC );
     }
@@ -1996,7 +2272,7 @@ XLALModifyMultiTimestampsFromSFTs(
   ( *scienceFlagVect ) = retFlagVect;
   return ret;
 
-} /* XLALModifyMultiTimestampsFromSFTsShort() */
+} /* XLALModifyMultiTimestampsFromSFTs() */
 
 /**
  * Given a multi-SFT vector, return a MultiLIGOTimeGPSVector holding the
@@ -2062,6 +2338,7 @@ XLALExtractMultiTimestampsFromSFTsShort(
   return ret;
 
 } /* XLALExtractMultiTimestampsFromSFTsShort() */
+
 
 /** (test function) fill detector state with tShort, importing various slightly-modified LALPulsar functions for testing */
 int
@@ -2140,6 +2417,7 @@ XLALFillDetectorTensorShort( DetectorState *detState,   /**< [out,in]: detector 
   return 0;
 
 } /* XLALFillDetectorTensorShort() */
+
 
 /** (test function) get detector states for tShort */
 DetectorStateSeries *
@@ -2246,6 +2524,7 @@ XLALGetDetectorStatesShort( const LIGOTimeGPSVector *timestamps,  /**< array of 
   return ret;
 
 } /* XLALGetDetectorStatesShort() */
+
 
 /** (test function) get multi detector states for tShort */
 MultiDetectorStateSeries *
@@ -2416,6 +2695,61 @@ XLALModifyAMCoeffsWeights(
 
 
 /** Modify multiple detectors' amplitude weight coefficients for tShort */
+MultiNoiseWeights *
+XLALModifyMultiWeights(
+  const MultiNoiseWeights       *restrict multiWeights,       /**< [in] old weights */
+  const REAL8                             tShort,             /**< [in] new time baseline, Tshort */
+  const REAL8                             tSFTOld,            /**< [in] old time baseline, tSFTOld */
+  const UINT4                             numShortPerDet,     /**< [in] number of tShort segments per detector */
+  const MultiLIGOTimeGPSVector  *restrict multiTimes          /**< [in] multi-times vector to tell us when the SFTs were */
+)
+{
+
+  /* ----- input sanity checks ----- */
+  UINT4 numDetectors = multiWeights->length;
+  UINT4 numIFOs = numDetectors;
+
+  REAL8 ratioSFTs = tShort / tSFTOld;
+
+  /* Prepare output values */
+  /* create multi noise weights for output */
+
+  MultiNoiseWeights *ret = NULL;
+
+  if ( ( ret = XLALCalloc( 1, sizeof( *ret ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc ( 1, %zu ).\n", __func__, sizeof( *ret ) );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+  if ( ( ret->data = XLALCalloc( numIFOs, sizeof( *ret->data ) ) ) == NULL ) {
+    XLALPrintError( "%s: failed to XLALCalloc ( %d, %zu ).\n", __func__, numIFOs, sizeof( ret->data[0] ) );
+    XLALFree( ret );
+    XLAL_ERROR_NULL( XLAL_ENOMEM );
+  }
+  ret->length = numIFOs;
+
+  /* As documented for MultiNoiseWeights, the S inv Tsft field is a
+   * normalization factor equal to S^(-1) Tsft. Since we changed the
+   * effective Tsft from Tsft to Tshort = ratioSFTs*Tsft, we also
+   * need to multiply this normalization factor by ratioSFTs. */
+  ret->Sinv_Tsft = multiWeights->Sinv_Tsft * ratioSFTs;
+
+  REAL8 Tobs = numShortPerDet * tShort;
+  UINT4 maxNumStepsOldIfGapless = lround( Tobs / tSFTOld );
+
+  /* ---------- main loop over detectors X ---------- */
+  UINT4 X;
+
+  for ( X = 0; X < numDetectors; X ++ ) {
+    XLALModifyAMCoeffsWeights( &ret->data[X], multiWeights, tShort, tSFTOld, numShortPerDet, multiTimes, maxNumStepsOldIfGapless, X );
+  }
+
+  return ret;
+
+} /* XLALModifyMultiWeights() */
+
+/* DEPRECATED function; use XLALModifyMultiWeights() instead */
+
+/** Modify multiple detectors' amplitude weight coefficients for tShort */
 int
 XLALModifyMultiAMCoeffsWeights(
   MultiNoiseWeights                     **multiWeights,   /**< [in/out] old and new weights */
@@ -2461,7 +2795,6 @@ XLALModifyMultiAMCoeffsWeights(
   return XLAL_SUCCESS;
 
 } /* XLALModifyMultiAMCoeffsWeights() */
-
 
 /** (test function) used for weighting multi amplitude modulation coefficients */
 int
@@ -2633,6 +2966,7 @@ XLALWeightMultiAMCoeffsShort(
 
 } /* XLALWeightMultiAMCoeffsShort() */
 
+
 /** (test function) used for computing amplitude modulation weights */
 AMCoeffs *
 XLALComputeAMCoeffsShort( const DetectorStateSeries *DetectorStates,         /**< timeseries of detector states */
@@ -2783,6 +3117,7 @@ XLALCrossCorrNumShortPerDetector(
   return numShortPerDet;
 } /* XLALCrossCorrNumShortPerDetector */
 
+
 /** Find gaps in the data given the SFTs*/
 REAL8TimeSeries *
 XLALCrossCorrGapFinderResamp(
@@ -2836,6 +3171,7 @@ XLALCrossCorrGapFinderResamp(
   }
   return retFlag;
 } /* XLALCrossCorrGapFinderResamp */
+
 
 /** (test function) find gaps in the data given the SFTs */
 //LIGOTimeGPSVector *
@@ -3268,8 +3604,8 @@ XLALDestroyResampCrossCorrWorkspace( void *workspace )
   fftw_free( ws->FabX_Raw );
   fftw_free( ws->TS_FFT );
 
-  XLALFree( ws->FaX_k );
-  XLALFree( ws->FbX_k );
+  fftw_free( ws->FaX_k );
+  fftw_free( ws->FbX_k );
   XLALFree( ws->Fa_k );
   XLALFree( ws->Fb_k );
 

@@ -2,7 +2,7 @@
  *  Copyright (C) 2012, 2013 John Whelan, Shane Larson and Badri Krishnan
  *  Copyright (C) 2013, 2014 Badri Krishnan, John Whelan, Yuanhao Zhang
  *  Copyright (C) 2016, 2017 Grant David Meadors
- *  Copyright (C) 2023 John Whelan
+ *  Copyright (C) 2023, 2024 John Whelan
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -319,6 +319,17 @@ int XLALCreateSFTPairIndexList
 )
 ;
 
+int XLALCreateSFTPairIndexListAccurateResamp
+(
+  SFTPairIndexList                **pairIndexList,
+  UINT4VectorSequence             **sftPairForResampPair,
+  SFTIndexList                     *indexList,
+  MultiResampSFTPairMultiIndexList *resampPairs,
+  const MultiLIGOTimeGPSVector     *_LAL_RESTRICT_ multiTimes,
+  const MultiLIGOTimeGPSVector     *_LAL_RESTRICT_ resampMultiTimes
+)
+;
+
 int XLALCreateSFTPairIndexListResamp
 (
   MultiResampSFTPairMultiIndexList   **resampPairIndexList,
@@ -374,6 +385,16 @@ int XLALCalculateCrossCorrGammasResampShort
   REAL8Vector                       **Gamma_circ,
   MultiResampSFTPairMultiIndexList   *resampMultiPairIndexList,
   MultiAMCoeffs                      *multiCoeffs
+)
+;
+
+int XLALCombineCrossCorrGammas
+(
+  REAL8Vector        **resampGamma,
+  REAL8Vector         *Gamma,
+  UINT4VectorSequence *sftPairForTshortPair,
+  REAL8                Tsft,
+  REAL8                Tshort
 )
 ;
 
@@ -508,6 +529,15 @@ int XLALCalculateLMXBCrossCorrDiagMetricShort
 //);
 
 LIGOTimeGPSVector
+*XLALGenerateTshortTimestamps(
+  const REAL8                        tShort,
+  const UINT4                        numShortPerDet,
+  const LIGOTimeGPS                  epoch
+);
+
+/* DEPRECATED function; use XLALGenerateTshortTimestamps() instead */
+
+LIGOTimeGPSVector
 *XLALModifyTimestampsFromSFTsShort(
   REAL8TimeSeries                  **sciFlag,
   const LIGOTimeGPSVector  *_LAL_RESTRICT_ Times,
@@ -523,6 +553,16 @@ LIGOTimeGPSVector
   UINT4              numShortPerDet
 );
 
+
+MultiLIGOTimeGPSVector
+*XLALGenerateMultiTshortTimestamps(
+  const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes,
+  const REAL8                             tShort,
+  const UINT4                             numShortPerDet,
+  const BOOLEAN                           alignTShorts
+);
+
+/* DEPRECATED function; use XLALGenerateMultiTshortTimestamps() instead */
 MultiLIGOTimeGPSVector
 *XLALModifyMultiTimestampsFromSFTs(
   MultiREAL8TimeSeries                  **scienceFlagVect,
@@ -578,6 +618,16 @@ XLALModifyAMCoeffsWeights(
   const UINT4                              X
 );
 
+MultiNoiseWeights
+*XLALModifyMultiWeights(
+  const MultiNoiseWeights      *_LAL_RESTRICT_ multiWeights,
+  const REAL8                                  tShort,
+  const REAL8                                  tSFTOld,
+  const UINT4                                  numShortPerDet,
+  const MultiLIGOTimeGPSVector *_LAL_RESTRICT_ multiTimes
+);
+
+/* DEPRECATED function; use XLALModifyMultiWeights() instead */
 #ifdef SWIG // SWIG interface directives
 SWIGLAL( INOUT_STRUCTS( MultiNoiseWeights **, multiWeights ) );
 #endif
@@ -589,7 +639,6 @@ XLALModifyMultiAMCoeffsWeights(
   const UINT4                             numShortPerDet,
   const MultiLIGOTimeGPSVector  *_LAL_RESTRICT_ multiTimes
 );
-
 
 int
 XLALWeightMultiAMCoeffsShort(
