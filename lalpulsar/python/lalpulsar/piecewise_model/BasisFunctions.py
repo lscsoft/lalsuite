@@ -29,14 +29,14 @@ import numpy as np
 # functions all that was returned was numerical fuzz, however many months after
 # having written these methods, I cannot recover this behaviour and the
 # conditioning used here seems to increase the condition number of the matrices
-# built here. For now the conditioning methods in this notebook have been
+# built here. For now the conditioning methods in this module have been
 # commented out until a later time, however for now without conditioning the
 # results produced appear to be returned accurately despite the
 # ill-conditionedness of the problem.
 
 knotslist = [0.0]
 
-# Returns the value of the ith knot. If we are using the methods in the EstimatingKnots notebook, this method should
+# Returns the value of the ith knot. If we are using the methods in the EstimatingKnots module, this method should
 # simply extract the ith element from the knotslist variable above.
 def p(i):
 

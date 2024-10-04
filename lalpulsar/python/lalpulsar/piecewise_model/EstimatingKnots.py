@@ -40,7 +40,7 @@ def setknotarchivepath(path):
     knotarchivefile = os.path.join(path, "KnotArchive")
 
 
-# In this notebook, we use the function, max(|f_GTE(t) - F_PP(t)|) - Delta f_i0,
+# In this module, we use the function, max(|f_GTE(t) - F_PP(t)|) - Delta f_i0,
 # to choose the spacing of our knots. The Delta f_i0 is the spacing between the frequency parameter given by the
 # metric, it is equal to sqrt(mu/g_ii). Ideally, we wish for the maximum difference between our piecewise model and
 # the GTE to be minimised and smaller than the spacing of our frequency parameters. When finding the maximum
@@ -52,33 +52,33 @@ def setknotarchivepath(path):
 # before the error becomes greater than our parameter spacing. We start by assuming p_0 = 0 and then inductively
 # calculate all of the following knots.
 
-# Working in this notebook it is important that the knots function, p(i, ints, dur) in the BasisFunctions file is
-# written correctly. See that file for how it should be defined when using this file. As well as this, this notebook
+# Working in this module it is important that the knots function, p(i, ints, dur) in the BasisFunctions file is
+# written correctly. See that file for how it should be defined when using this file. As well as this, this module
 # requires methods written in the MOLSforGTE, BasisFunctions and SemicoherentMetricMethods files, all of which rely
-# on the p(i, ints, dur) method. This can be a problem, as for the methods in this notebook to work, p(i, ints,
-# dur) should simply extract an element from a 'knots list' that we build inductively in this notebook. Hence,
-# using the knots generated in this notebook can at times be tricky. The recommendation for using knots built by this
+# on the p(i, ints, dur) method. This can be a problem, as for the methods in this module to work, p(i, ints,
+# dur) should simply extract an element from a 'knots list' that we build inductively in this module. Hence,
+# using the knots generated in this module can at times be tricky. The recommendation for using knots built by this
 # file is to either run this file for given model parameter and then use the output as the knots by copying and
-# pasting the output into the BasisFunctions file to be used as all knots, or in the notebook you wish to run, run
-# the GlobalVariableDeclarations notebook which initialises our knot list (by importing this notebook and using the
-# methods below) and then import the GlobalVariableDeclarations notebook into the notebook you wish to run. As an
-# example, if you want to run notebook A which requires knots, import the GlobalVariableDeclarations notebook into A,
-# making sure that in the GlobalVariableDecalartions notebook the knots list is initialised with one of the methods
+# pasting the output into the BasisFunctions file to be used as all knots, or in the module you wish to run, run
+# the GlobalVariableDeclarations module which initialises our knot list (by importing this module and using the
+# methods below) and then import the GlobalVariableDeclarations module into the module you wish to run. As an
+# example, if you want to run module A which requires knots, import the GlobalVariableDeclarations module into A,
+# making sure that in the GlobalVariableDecalartions module the knots list is initialised with one of the methods
 # here.
 #
-# Knots generated in this notebook are saved to the KnotArchive text file.
+# Knots generated in this module are saved to the KnotArchive text file.
 
-# Another word of caution, some methods in this notebook are outdated, being replaced by more efficient methods later
-# in the notebook. These methods typically run much slower than those which they are replaced by. Further more, many of
+# Another word of caution, some methods in this module are outdated, being replaced by more efficient methods later
+# in the module. These methods typically run much slower than those which they are replaced by. Further more, many of
 # these methods do not make use of the KnotArchive file which stores all generated values of knots. I have tried to
 # note these outdated methods were appropriate and add an explanation to why they have been rewritten further in the
-# notebook. They are kept in this notebook however for completeness and a reference in case they are needed in the
+# module. They are kept in this module however for completeness and a reference in case they are needed in the
 # future
 
-# When using this notebook be sure to check that the method p and the knotslist parameter in the BasisFunctions notebook
+# When using this module be sure to check that the method p and the knotslist parameter in the BasisFunctions module
 # are defined correctly or are being properly updated.
 
-# List that we append the maximum parameter spacing for each segment we build knots for in this notebook. Kept only for
+# List that we append the maximum parameter spacing for each segment we build knots for in this module. Kept only for
 # inspection, not used in any methods except for printing.
 parameterspacings = []
 
@@ -93,8 +93,8 @@ def metricelementspacingonl(l, coeffs, mu):
     return stepsize
 
 
-# This method is an outdated method, replaced later in this notebook. Chronologiclly this was replaced first by the
-# knotatleff method and then finally by the knotatleffusinggivenknotlist method. No other methods in this notebook use
+# This method is an outdated method, replaced later in this module. Chronologiclly this was replaced first by the
+# knotatleff method and then finally by the knotatleffusinggivenknotlist method. No other methods in this module use
 # this method.
 #
 # Calcualtes the time (and hence knot) at which the function, max(|f_GTE(t) - F_PP(t)| - Delta f_i0 is zero. This is
@@ -192,7 +192,7 @@ def knotatleff(
         basiscoeffsneg = bf.allcoeffs(s)
 
         # Can't remember why but this sometimes throws a TypeError. I suspect it probably happens when negdur is too
-        # large and the sample points in the SamplingMethods notebook are chosen poorly. Corrected for by using a
+        # large and the sample points in the SamplingMethods module are chosen poorly. Corrected for by using a
         # smaller negdur value. Don't ever remember seeing this error for the posdur parameter though
         try:
             # logging.debug("Prev knot: " + str(ps))
@@ -435,7 +435,7 @@ def knotatleffusinggivenknotlist(
         basiscoeffsneg = bf.allcoeffs(s)
 
         # Can't remember why but this sometimes throws a TypeError. I suspect it probably happens when negdur is too
-        # large and the sample points in the SamplingMethods notebook are chosen poorly. Corrected for by using a
+        # large and the sample points in the SamplingMethods module are chosen poorly. Corrected for by using a
         # smaller negdur value. Don't ever remember seeing this error for the posdur parameter though
         try:
             if fullMOLS:
@@ -790,7 +790,7 @@ def addknottodur(s, dur, f0, nmax, kgte, mu, steps=30):
 
 
 # Calculates and returns all knots either up to the time dur or given knot number from the KnotArchive file. By using
-# this method we no longer need to always recalculate our knots, hopefully speeding up some of our other notebooks.
+# this method we no longer need to always recalculate our knots, hopefully speeding up some of our other modules.
 def allidealisedknots(s, dur, steps, f0, nmax, kgte, mu, knotnum=0):
     spindownspecifications = [f0, nmax, kgte, s, mu, fullMOLS]
 

@@ -44,8 +44,8 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 parser = ap.ArgumentParser()
 
-# Thoughts on this notebook
-# It is beginning to get quite convoluted. Is it worth writing a new python module where a lot of this set up is written as functions? It may make this notebook more succinct
+# Thoughts on this module
+# It is beginning to get quite convoluted. Is it worth writing a new python module where a lot of this set up is written as functions? It may make this module more succinct
 # and readable
 
 # Required parameters

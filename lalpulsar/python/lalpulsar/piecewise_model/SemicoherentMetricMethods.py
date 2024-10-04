@@ -28,7 +28,7 @@ from scipy import integrate
 from . import BasisFunctions as bf
 from . import MyErrors
 
-# In this notebook we build the methods that generate the semi-coherent metric for our piecewise model. Each piecewise
+# In this module we build the methods that generate the semi-coherent metric for our piecewise model. Each piecewise
 # segment being a semi-coherent segment.
 
 # This method checks whether an integral on the lth segment (starting from a segment number 0) will have a non-zero
@@ -46,7 +46,7 @@ from . import MyErrors
 #
 #
 # One might also note that if i = l + 1 and borc = 0 then that parameter will also appear on the lth interval and
-# hence lead to a non-zero integral. This is true, however later in this notebook we have by default set borc = 1,
+# hence lead to a non-zero integral. This is true, however later in this module we have by default set borc = 1,
 # thus if i = l + 1 by default borc = 1 and that parameter will not appear on the lth interval. Rather unintuitively,
 # if borc = 1 by default then the first parameter actually appears on the -1th segment (despite this segment not
 # being 'real').
