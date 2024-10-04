@@ -14,6 +14,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+## \file
+## \ingroup lalpulsar_python_piecewise_model
+"""
+Construct a list of knots which gives the maximum allowed spacing between
+them while maintaining the desired accuracy.
+"""
+
 import ast
 import logging
 import os.path
@@ -33,8 +40,7 @@ def setknotarchivepath(path):
     knotarchivefile = os.path.join(path, "KnotArchive")
 
 
-# In this notebook we aim to construct a list of knots which gives the maximum allowed spacing between them while
-# maintining the desired accuracy. In this notebook, we use the function, max(|f_GTE(t) - F_PP(t)|) - Delta f_i0,
+# In this notebook, we use the function, max(|f_GTE(t) - F_PP(t)|) - Delta f_i0,
 # to choose the spacing of our knots. The Delta f_i0 is the spacing between the frequency parameter given by the
 # metric, it is equal to sqrt(mu/g_ii). Ideally, we wish for the maximum difference between our piecewise model and
 # the GTE to be minimised and smaller than the spacing of our frequency parameters. When finding the maximum

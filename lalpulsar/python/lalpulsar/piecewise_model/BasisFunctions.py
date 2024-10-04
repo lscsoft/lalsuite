@@ -14,16 +14,24 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+## \file
+## \ingroup lalpulsar_python_piecewise_model
+"""
+Build the methods required for creating the basis functions of our piecewise model.
+"""
+
 import logging
 
 import numpy as np
 
-# In this notebook we build the methods required for creating the basis functions of our piecewise model. It is worth
-# noting here that initially conditioning of the matrices used here was undertaken. Initially this was necessary as
-# when plotting the basis functions all that was returned was numerical fuzz, however many months after having written
-# these methods, I cannot recover this behaviour and the conditioning used here seems to increase the condition number
-# of the matrices built here. For now the conditioning methods in this notebook have been commented out until a later
-# time, however for now without conditioning the results produced appear to be returned accurately despite the
+# It is worth noting here that initially conditioning of the matrices used here
+# was undertaken. Initially this was necessary as when plotting the basis
+# functions all that was returned was numerical fuzz, however many months after
+# having written these methods, I cannot recover this behaviour and the
+# conditioning used here seems to increase the condition number of the matrices
+# built here. For now the conditioning methods in this notebook have been
+# commented out until a later time, however for now without conditioning the
+# results produced appear to be returned accurately despite the
 # ill-conditionedness of the problem.
 
 knotslist = [0.0]

@@ -14,6 +14,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+## \file
+## \ingroup lalpulsar_python_piecewise_model
+"""
+Method Of Least Squares (MOLS) for matching a piecewise model to the general
+torque equation (GTE).
+"""
+
 import logging
 
 import numpy as np

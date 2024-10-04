@@ -14,6 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+## \file
+## \ingroup lalpulsar_python_piecewise_model
+"""
+Common classes for piecewise model module.
+"""
+
 from . import BasisFunctions as bf
 from . import EstimatingKnots as ek
 from . import GTEandOtherMethods as gom

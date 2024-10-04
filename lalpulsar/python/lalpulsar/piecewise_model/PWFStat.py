@@ -14,6 +14,12 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+## \file
+## \ingroup lalpulsar_python_piecewise_model
+"""
+Compute the F-statistic for a piecewise model template.
+"""
+
 import copy
 import heapq as hq
 import logging
@@ -34,8 +40,6 @@ from . import TBankEstimates as tbe
 # fmax (and fmin) should be chosen with the same reasoning outlined in the pwsim notbook. fmax = f0 + 10^-4 * f0 + 58/TSFT,
 # fmin is the same except fmin = f0 - .... AND fmin should be lower than the minimum value any given template we might use
 # over the time period of the relevant SFTs!
-
-
 def fstatinputfromSFTFiles(
     SFTfmin,
     SFTfmax,
