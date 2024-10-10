@@ -24,9 +24,9 @@ import logging
 
 import numpy as np
 
-from . import BasisFunctions as bf
-from . import GTEandOtherMethods as gom
-from . import MyErrors
+from . import basis_functions as bf
+from . import gte_and_other_methods as gom
+from . import errors
 
 
 # Returns sample points where a 'ppint' number of points are evenly spaced between each knot
@@ -87,7 +87,7 @@ def thisint(point):
             "Sample point value not correctly chosen. Point and knot extrema are: "
             + str([point, bf.knotslist[0], bf.knotslist[-1]])
         )
-        raise MyErrors.PointNotWithinKnotBoundaries
+        raise errors.PointNotWithinKnotBoundaries
 
     ints = len(bf.knotslist) - 1
 
@@ -137,7 +137,7 @@ def samplepoints(ppint, f0, ngte, kgte):
 
     if len(sadints) != 0:
         logging.error("These intervals contain no sample point: " + str(sadints))
-        raise MyErrors.SegmentContainsNoSamplePoints
+        raise errors.SegmentContainsNoSamplePoints
     return points
 
 
@@ -181,6 +181,6 @@ def samplepointswithinknots(knotnuma, knotnumb, ppint, f0, ngte, kgte):
                 logging.error(
                     "These intervals contain no sample point: " + str(sadints)
                 )
-                raise MyErrors.SegmentContainsNoSamplePoints
+                raise errors.SegmentContainsNoSamplePoints
 
     return points

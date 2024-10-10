@@ -25,8 +25,8 @@ import logging
 import numpy as np
 from scipy import integrate
 
-from . import BasisFunctions as bf
-from . import MyErrors
+from . import basis_functions as bf
+from . import errors
 
 # In this module we build the methods that generate the semi-coherent metric for our piecewise model. Each piecewise
 # segment being a semi-coherent segment.
@@ -320,7 +320,7 @@ def PreCompSingleSegMetric(Tdata, s):
             "Given value of S has not yet been accounted for. Value of S given: "
             + str(s)
         )
-        raise MyErrors.ValueOfSNotAccountedFor()
+        raise errors.ValueOfSNotAccountedFor()
 
 
 def PreCompMetric(s):
@@ -329,7 +329,7 @@ def PreCompMetric(s):
             "Given value of S has not yet been accounted for. Value of S given: "
             + str(s)
         )
-        raise MyErrors.ValueOfSNotAccountedFor()
+        raise errors.ValueOfSNotAccountedFor()
 
     segs = len(bf.knotslist) - 1
 

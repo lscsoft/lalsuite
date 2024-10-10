@@ -28,14 +28,14 @@ import numpy as np
 
 import lal
 import lalpulsar as lp
-import lalpulsar.piecewise_model.BasisFunctions as bf
-import lalpulsar.piecewise_model.ClassDefinitions as cd
-import lalpulsar.piecewise_model.EstimatingKnots as ek
-import lalpulsar.piecewise_model.GTEandOtherMethods as gom
-import lalpulsar.piecewise_model.PWFStat as pwf
-import lalpulsar.piecewise_model.PWModelSimulations as pwsim
-import lalpulsar.piecewise_model.SemicoherentMetricMethods as scmm
-import lalpulsar.piecewise_model.TBankEstimates as tbe
+import lalpulsar.piecewise_model.basis_functions as bf
+import lalpulsar.piecewise_model.class_definitions as cd
+import lalpulsar.piecewise_model.estimating_knots as ek
+import lalpulsar.piecewise_model.gte_and_other_methods as gom
+import lalpulsar.piecewise_model.pw_fstat as pwf
+import lalpulsar.piecewise_model.pw_model_simulations as pwsim
+import lalpulsar.piecewise_model.semicoherent_metric_methods as scmm
+import lalpulsar.piecewise_model.tbank_estimates as tbe
 
 start_time = time.time()
 
@@ -845,7 +845,7 @@ for i in range(iterations + plus_one):
     Fstat_mismatch = args.Fstat_mismatch
     logging.info(f"2F mismatch is: {Fstat_mismatch}")
 
-    # Output from the search, which is carried out in PWFStat.py. Output changes depending on run mode. All search results are written to files within this method
+    # Output from the search, which is carried out in pw_fstat.py. Output changes depending on run mode. All search results are written to files within this method
     if mode == "search" and not args.fstat_hist:
         (
             lowest_mismatch_metric,

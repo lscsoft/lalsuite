@@ -27,10 +27,10 @@ import os.path
 
 import numpy as np
 
-from . import BasisFunctions as bf
-from . import MOLSforGTE as mols
-from . import MyErrors
-from . import SemicoherentMetricMethods as scmm
+from . import basis_functions as bf
+from . import mols_for_gte as mols
+from . import errors
+from . import semicoherent_metric_methods as scmm
 
 knotarchivefile = None
 
@@ -52,14 +52,14 @@ def setknotarchivepath(path):
 # before the error becomes greater than our parameter spacing. We start by assuming p_0 = 0 and then inductively
 # calculate all of the following knots.
 
-# Working in this module it is important that the knots function, p(i, ints, dur) in the BasisFunctions file is
+# Working in this module it is important that the knots function, p(i, ints, dur) in the basis_functions file is
 # written correctly. See that file for how it should be defined when using this file. As well as this, this module
-# requires methods written in the MOLSforGTE, BasisFunctions and SemicoherentMetricMethods files, all of which rely
+# requires methods written in the mols_for_gte, basis_functions and semicoherent_metric_methods files, all of which rely
 # on the p(i, ints, dur) method. This can be a problem, as for the methods in this module to work, p(i, ints,
 # dur) should simply extract an element from a 'knots list' that we build inductively in this module. Hence,
 # using the knots generated in this module can at times be tricky. The recommendation for using knots built by this
 # file is to either run this file for given model parameter and then use the output as the knots by copying and
-# pasting the output into the BasisFunctions file to be used as all knots, or in the module you wish to run, run
+# pasting the output into the basis_functions file to be used as all knots, or in the module you wish to run, run
 # the GlobalVariableDeclarations module which initialises our knot list (by importing this module and using the
 # methods below) and then import the GlobalVariableDeclarations module into the module you wish to run. As an
 # example, if you want to run module A which requires knots, import the GlobalVariableDeclarations module into A,
@@ -75,7 +75,7 @@ def setknotarchivepath(path):
 # module. They are kept in this module however for completeness and a reference in case they are needed in the
 # future
 
-# When using this module be sure to check that the method p and the knotslist parameter in the BasisFunctions module
+# When using this module be sure to check that the method p and the knotslist parameter in the basis_functions module
 # are defined correctly or are being properly updated.
 
 # List that we append the maximum parameter spacing for each segment we build knots for in this module. Kept only for
@@ -83,7 +83,7 @@ def setknotarchivepath(path):
 parameterspacings = []
 
 # Returns the parameter spacing associated with the zeroth derivative at the lth knot. Note, if the knotslist variable
-# in the BasisFunctions is never updated, then this method will only work for l = 0
+# in the basis_functions is never updated, then this method will only work for l = 0
 def metricelementspacingonl(l, coeffs, mu):
 
     metvalue = scmm.metricelementonl(l, l, l, 1, 1, 0, 0, coeffs)
@@ -192,7 +192,7 @@ def knotatleff(
         basiscoeffsneg = bf.allcoeffs(s)
 
         # Can't remember why but this sometimes throws a TypeError. I suspect it probably happens when negdur is too
-        # large and the sample points in the SamplingMethods module are chosen poorly. Corrected for by using a
+        # large and the sample points in the sampling_methods module are chosen poorly. Corrected for by using a
         # smaller negdur value. Don't ever remember seeing this error for the posdur parameter though
         try:
             # logging.debug("Prev knot: " + str(ps))
@@ -435,7 +435,7 @@ def knotatleffusinggivenknotlist(
         basiscoeffsneg = bf.allcoeffs(s)
 
         # Can't remember why but this sometimes throws a TypeError. I suspect it probably happens when negdur is too
-        # large and the sample points in the SamplingMethods module are chosen poorly. Corrected for by using a
+        # large and the sample points in the sampling_methods module are chosen poorly. Corrected for by using a
         # smaller negdur value. Don't ever remember seeing this error for the posdur parameter though
         try:
             if fullMOLS:
@@ -561,7 +561,7 @@ def knotatleffusinggivenknotlist(
                 # if negcounter > 5 or (diff/10) < 1:
                 #    logging.debug("Too many negdur reductions")
                 #    logging.debug()
-                #    raise MyErrors.TooManyNegdurReductions
+                #    raise errors.TooManyNegdurReductions
 
                 return knotatleffusinggivenknotlist(
                     l,
@@ -696,7 +696,7 @@ def addnextknottofile(f0, nmax, kgte, s, mu, steps=30):
                         )
 
                         break
-                    except MyErrors.TooManyNegdurReductions:
+                    except errors.TooManyNegdurReductions:
                         negdurincrement *= 10
             else:
                 negdurincrement = 0
@@ -718,7 +718,7 @@ def addnextknottofile(f0, nmax, kgte, s, mu, steps=30):
                             ps=ps,
                         )
                         break
-                    except MyErrors.TooManyNegdurReductions:
+                    except errors.TooManyNegdurReductions:
                         negdurincrement += 0.5
             thisline[1].append(newknot)
             updatedline = str(thisline) + "\n"

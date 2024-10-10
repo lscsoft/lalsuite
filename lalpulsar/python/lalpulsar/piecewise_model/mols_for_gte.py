@@ -26,10 +26,10 @@ import logging
 import numpy as np
 from scipy import integrate
 
-from . import BasisFunctions as bf
-from . import GTEandOtherMethods as gom
-from . import MyErrors
-from . import SamplingMethods as sm
+from . import basis_functions as bf
+from . import gte_and_other_methods as gom
+from . import errors
+from . import sampling_methods as sm
 
 
 # Our b vector for MOLS
@@ -84,7 +84,7 @@ def sols(coeffs, ppint, s, f0, ngte, kgte, conditioning=True):
         try:
             points = sm.samplepoints(ppint, f0, ngte, kgte)
             break
-        except MyErrors.SegmentContainsNoSamplePoints:
+        except errors.SegmentContainsNoSamplePoints:
             logging.debug("Reattempting MOLS fitting with greater sampling")
             ppint *= 2
 
@@ -146,7 +146,7 @@ def solsbetweenknots(
                 knotnuma, knotnumb, ppint, f0, ngte, kgte
             )
             break
-        except MyErrors.SegmentContainsNoSamplePoints:
+        except errors.SegmentContainsNoSamplePoints:
             logging.debug("Reattempting MOLS fitting with greater sampling")
             ppint *= 2
 
@@ -198,7 +198,7 @@ def modelvalueatpoint(point, coeffs, params, ignoreintcheck=False, singleseg=Fal
     if ignoreintcheck:
         try:
             j = sm.thisint(point)
-        except MyErrors.PointNotWithinKnotBoundaries:
+        except errors.PointNotWithinKnotBoundaries:
 
             t = point - bf.knotslist[0]
 

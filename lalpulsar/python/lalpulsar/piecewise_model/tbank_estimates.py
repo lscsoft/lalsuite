@@ -28,8 +28,8 @@ import numpy as np
 import lal
 import lalpulsar as lp
 
-from . import BasisFunctions as bf
-from . import SemicoherentMetricMethods as scmm
+from . import basis_functions as bf
+from . import semicoherent_metric_methods as scmm
 
 
 # Returns tiling statistics from a tiling object

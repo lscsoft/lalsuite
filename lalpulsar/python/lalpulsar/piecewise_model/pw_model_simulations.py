@@ -29,10 +29,10 @@ import lal
 import lalpulsar as lp
 from lalpulsar import simulateCW
 
-from . import BasisFunctions as bf
-from . import MOLSforGTE as mols
-from . import SemicoherentMetricMethods as scmm
-from . import TBankEstimates as tbe
+from . import basis_functions as bf
+from . import mols_for_gte as mols
+from . import semicoherent_metric_methods as scmm
+from . import tbank_estimates as tbe
 
 
 def waveform(h0, params, cosi, tref):

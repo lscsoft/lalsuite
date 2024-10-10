@@ -20,9 +20,9 @@
 Common classes for piecewise model module.
 """
 
-from . import BasisFunctions as bf
-from . import EstimatingKnots as ek
-from . import GTEandOtherMethods as gom
+from . import basis_functions as bf
+from . import estimating_knots as ek
+from . import gte_and_other_methods as gom
 
 HOUR = 3600
 DAY = 24 * HOUR

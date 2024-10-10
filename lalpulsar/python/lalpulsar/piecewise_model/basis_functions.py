@@ -36,7 +36,7 @@ import numpy as np
 
 knotslist = [0.0]
 
-# Returns the value of the ith knot. If we are using the methods in the EstimatingKnots module, this method should
+# Returns the value of the ith knot. If we are using the methods in the estimating_knots module, this method should
 # simply extract the ith element from the knotslist variable above.
 def p(i):
 

@@ -23,11 +23,11 @@ import pstats
 import matplotlib.pyplot as plt
 import numpy as np
 
-import lalpulsar.piecewise_model.BasisFunctions as bf
-import lalpulsar.piecewise_model.ClassDefinitions as cd
-import lalpulsar.piecewise_model.EstimatingKnots as ek
-import lalpulsar.piecewise_model.GTEandOtherMethods as gom
-import lalpulsar.piecewise_model.TBankEstimates as tbe
+import lalpulsar.piecewise_model.basis_functions as bf
+import lalpulsar.piecewise_model.class_definitions as cd
+import lalpulsar.piecewise_model.estimating_knots as ek
+import lalpulsar.piecewise_model.gte_and_other_methods as gom
+import lalpulsar.piecewise_model.tbank_estimates as tbe
 
 # Initialise profiler
 pr = cProfile.Profile()
