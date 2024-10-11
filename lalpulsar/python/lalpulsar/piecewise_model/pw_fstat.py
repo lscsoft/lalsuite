@@ -632,7 +632,8 @@ def semifstatcatalogue(
 
     # Check that end of template bank has been reached
     fin = lp.NextLatticeTilingPoint(iterator, template)
-    assert fin == 0
+    if fin != 0:
+        raise RuntimeError("end of template bank has not been reached")
 
     # General stats
     logging.info(f"Length of tempheap: {len(fstat_res_heap)}")
@@ -790,7 +791,8 @@ def pw_fstat_search_catalogue(
 
     # Check that end of template bank has been reached
     fin = lp.NextLatticeTilingPoint(iterator, template)
-    assert fin == 0
+    if fin != 0:
+        raise RuntimeError("end of template bank has not been reached")
 
     # General stats
     logging.info(f"Length of tempheap: {len(fstat_res_heap)}")
