@@ -163,23 +163,23 @@ int main( int argc, char *argv[] )
   lalUserVarHelpOptionSubsection = "SFT output";
   XLALRegisterUvarMember(
     sft_write_path, STRINGVector, 'p', OPTIONAL,
-    "Path to write SFTs to, same order as channel names. "
+    "Path(s) to write SFTs to, same order as channel name(s). "
   );
   XLALRegisterUvarMember(
     observing_run, UINT4, 'O', REQUIRED,
-    "For public SFTs, observing run SFTs are generated from. "
+    "For >=1, SFTs will be named following the 'public' scheme from T040164-v2, and this number should correspond to the observing run the data comes from (without the leading 'O'). If set to 0, 'private' SFTs will be generated. "
   );
   XLALRegisterUvarMember(
     observing_kind, STRING, 'K', OPTIONAL,
-    "For public SFTs, kind of SFTs being generated: 'RUN', 'AUX', 'SIM', or 'DEV'. "
+    "For public SFTs (" UVAR_STR( observing_run ) ">=1) only, the kind of SFTs being generated: 'RUN', 'AUX', 'SIM', or 'DEV'. "
   );
   XLALRegisterUvarMember(
     observing_revision, UINT4, 'R', OPTIONAL,
-    "For public SFTs, revision number of the SFT production. "
+    "For public SFTs (" UVAR_STR( observing_run ) ">=1) only, the revision number of the SFT production. "
   );
   XLALRegisterUvarMember(
     misc_desc, STRING, 'X', OPTIONAL,
-    "For private SFTs, miscellaneous description field. "
+    "For private SFTs only, a miscellaneous description field that will be included in the filenames. "
   );
   XLALRegisterUvarMember(
     comment_field, STRING, 'c', OPTIONAL,
@@ -290,21 +290,36 @@ int main( int argc, char *argv[] )
   //
   XLALUserVarCheck( &should_exit,
                     uvar->observing_run == 0
-                    || strcmp( uvar->observing_kind, "RUN" ) == 0
-                    || strcmp( uvar->observing_kind, "AUX" ) == 0
-                    || strcmp( uvar->observing_kind, "SIM" ) == 0
-                    || strcmp( uvar->observing_kind, "DEV" ) == 0,
+                    || ( XLALUserVarWasSet( &uvar->observing_kind )
+                         && XLALUserVarWasSet( &uvar->observing_revision ) ),
+                    "Must set " UVAR_STR( observing_kind ) " and " UVAR_STR( observing_revision ) " when using " UVAR_STR( observing_run ) ">0" );
+  XLALUserVarCheck( &should_exit,
+                    uvar->observing_run == 0
+                    || ( XLALUserVarWasSet( &uvar->observing_kind )
+                         && ( strcmp( uvar->observing_kind, "RUN" ) == 0
+                              || strcmp( uvar->observing_kind, "AUX" ) == 0
+                              || strcmp( uvar->observing_kind, "SIM" ) == 0
+                              || strcmp( uvar->observing_kind, "DEV" ) == 0 ) ),
                     UVAR_STR( observing_kind ) " must be one of 'RUN', 'AUX', 'SIM', or 'DEV'" );
   XLALUserVarCheck( &should_exit,
                     uvar->observing_run == 0 || uvar->observing_revision > 0,
                     UVAR_STR( observing_revision ) " must be strictly positive" );
   XLALUserVarCheck( &should_exit,
                     uvar->observing_run == 0 || !XLALUserVarWasSet( &uvar->misc_desc ),
-                    UVAR_STR( observing_revision ) "=0 is mutually exclusive with " UVAR_STR( misc_desc ) );
+                    UVAR_STR( observing_run ) "=0 is mutually exclusive with " UVAR_STR( misc_desc ) );
+  XLALUserVarCheck( &should_exit,
+                    uvar->observing_run > 0
+                    || !( XLALUserVarWasSet( &uvar->observing_kind )
+                          || XLALUserVarWasSet( &uvar->observing_revision ) ),
+                    "Setting " UVAR_STR( observing_kind ) " or " UVAR_STR( observing_revision ) " is not allowed with " UVAR_STR( observing_run ) "=0" );
   XLALUserVarCheck( &should_exit,
                     uvar->channel_name->length == uvar->sft_write_path->length
                     || uvar->sft_write_path->length == 1,
                     "Number of channels in " UVAR_STR( channel_name ) " must be the same as the number of output paths in " UVAR_STR( sft_write_path ) "or a single path" );
+  XLALUserVarCheck( &should_exit,
+                    uvar->observing_run > 0
+                    || uvar->channel_name->length == 1,
+                    "For private SFTs (" UVAR_STR( observing_run ) "=0), can only provide one channel at a time" );
 
   // Exit if required
   if ( should_exit ) {
