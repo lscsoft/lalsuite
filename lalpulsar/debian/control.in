@@ -27,6 +27,7 @@ Build-Depends:
  python3-lscsoft-glue (>= @MIN_GLUE_VERSION@),
  python3-numpy (>= @MIN_NUMPY_VERSION@),
  python3-pytest,
+ python3-sympy,
  rsync,
  swig (>= @MIN_SWIG_VERSION@) | swig3.0 (>= @MIN_SWIG_VERSION@),
 X-Python3-Version: >= 3.5

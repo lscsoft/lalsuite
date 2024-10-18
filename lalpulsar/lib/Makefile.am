@@ -40,6 +40,7 @@ pkginclude_HEADERS = \
 	MetricUtils.h \
 	NormalizeSFTRngMed.h \
 	PHMD.h \
+	PiecewiseModel.h \
 	PSDutils.h \
 	ProbabilityDensity.h \
 	PtoleMetric.h \
@@ -114,6 +115,7 @@ liblalpulsar_la_SOURCES = \
 	ParamPLUT.c \
 	PatchGrid.c \
 	Peak2PHMD.c \
+	PiecewiseModel.c \
 	ProbabilityDensity.c \
 	PtoleMetric.c \
 	PulsarCrossCorr.c \
