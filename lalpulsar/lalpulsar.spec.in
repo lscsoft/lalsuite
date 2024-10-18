@@ -129,6 +129,7 @@ Requires: python%{python3_pkgversion}-lalsimulation >= @MIN_LALSIMULATION_VERSIO
 Requires: python%{python3_pkgversion}-lalinference >= @MIN_LALINFERENCE_VERSION@
 Requires: python%{python3_pkgversion}-lscsoft-glue >= @MIN_GLUE_VERSION@
 Requires: python%{python3_pkgversion}-numpy >= @MIN_NUMPY_VERSION@
+# BuildRequires: python3-sympy - not yet available
 Obsoletes: python2-%{name} < 3.1.0-1
 %{?python_provide:%python_provide python%{python3_pkgversion}-%{name}}
 %description -n python%{python3_pkgversion}-%{name}

@@ -192,6 +192,7 @@ outputs:
         - python-lalframe >={{ lalframe_version }}
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
+        - sympy
     test:
       requires:
         - mock  # [py<33]
@@ -264,6 +265,7 @@ outputs:
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - scipy   # [build_platform == target_platform]
+        - sympy   # [build_platform == target_platform]
       run:
         - astropy
         - cfitsio
@@ -286,6 +288,7 @@ outputs:
         - python-lalinference >={{ lalinference_version }}
         - python-lalsimulation >={{ lalsimulation_version }}
         - {{ pin_subpackage('python-lalpulsar', exact=True) }}
+        - sympy
     test:
       commands:
         - lalpulsar_version --verbose
