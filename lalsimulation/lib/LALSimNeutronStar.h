@@ -66,6 +66,9 @@ char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
+LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
+   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol);
+
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOS4ParameterPiecewisePolytrope(double
@@ -136,6 +139,11 @@ int XLALSimNeutronStarTOVODEIntegrateWithTolerance(double *radius, double *mass,
     LALSimNeutronStarEOS * eos, double epsrel);
 
 int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos);
+
+int XLALSimNeutronStarVirialPTODEIntegrate(double *radius, double *mass,
     double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
     double *love_number_k2, double central_pressure_si,
     LALSimNeutronStarEOS * eos);

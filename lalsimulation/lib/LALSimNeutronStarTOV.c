@@ -450,4 +450,15 @@ int XLALSimNeutronStarVirialODEIntegrate(double *radius, double *mass,
     int1, int2, int3, int4, int5, int6, love_number_k2, central_pressure_si, eos, epsrel);
 }
 
+
+int XLALSimNeutronStarVirialPTODEIntegrate(double *radius, double *mass,
+    double *int1, double *int2, double *int3, double *int4, double *int5, double *int6,
+    double *love_number_k2, double central_pressure_si,
+    LALSimNeutronStarEOS * eos)
+{
+    const double epsrel = 1e-6;
+    return XLALSimNeutronStarVirialODEIntegrateWithTolerance(radius, mass,
+    int1, int2, int3, int4, int5, int6, love_number_k2, central_pressure_si, eos, epsrel);
+}
+
 /** @} */
