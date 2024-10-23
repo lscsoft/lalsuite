@@ -302,7 +302,7 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
 
 // static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
 //    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
-// { //LAMI
+// { //CUTER-dev
 LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
 {

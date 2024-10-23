@@ -66,6 +66,7 @@ char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
+//CUTER-dev
 LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol);
 
