@@ -1650,24 +1650,11 @@ if (strides[I-1] == 0) {
 /// ignored in the wrappings. Functions which fit this criteria but do return a useful <tt>int</tt> can
 /// use <b>SWIGLAL(RETURN_VALUE(int, ...))</b> to disable this behaviour.
 ///
-/// For functions, since <tt>%feature("new")</tt> is set, the <tt>out</tt> typemap will have <tt>$owner=1</tt>,
-/// and the <tt>newfree</tt> typemap is also applied. The <tt>out</tt> typemap ignores the <tt>int</tt> return value
-/// by setting the output argument list to <tt>VOID_Object</tt>; the wrapping function them proceeds to
-/// add other output arguments to the list, if any. After this, the <tt>newfree</tt> typemap is triggered,
-/// which appends the <tt>int</tt> return if the output argument list is empty, using the
-/// scripting-language-specific macro \b swiglal_append_output_if_empty(). For structs,
-/// <tt>$owner=0</tt>, so the int return is set straight away, and the <tt>newfree</tt> typemap is never
-/// applied.
+/// For functions, the <tt>newfree</tt> typemap is applied, which calls the scripting-language-specific macro
+/// \b swiglal_maybe_return_int(). For structs, the <tt>newfree</tt> typemap is never applied.
 ///
-%typemap(out, noblock=1, fragment=SWIG_From_frag(int)) int SWIGLAL_MAYBE_RETURN_INT {
-%#if $owner
-  %set_output(VOID_Object);
-%#else
-  %set_output(SWIG_From(int)($1));
-%#endif
-}
-%typemap(newfree, noblock=1, fragment=SWIG_From_frag(int)) int SWIGLAL_MAYBE_RETURN_INT {
-  swiglal_append_output_if_empty(SWIG_From(int)($1));
+%typemap(newfree, noblock=1) int SWIGLAL_MAYBE_RETURN_INT {
+  swiglal_maybe_return_int();
 }
 
 ///
