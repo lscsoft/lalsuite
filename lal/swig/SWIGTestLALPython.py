@@ -383,7 +383,7 @@ def test_fixed_and_dynamic_arrays_typemaps():
         lal.swig_lal_test_copyin_array1(
             numpy.array([0, 0, 0, 0], dtype=numpy.double), 0
         )
-    with pytest.raises(TypeError):
+    with catch_errors(TypeError):
         lal.swig_lal_test_copyin_array2(
             numpy.array([[1.2, 3.4], [0, 0], [0, 0]], dtype=numpy.double), 0
         )
@@ -1318,9 +1318,9 @@ def test_LIGOTimeGPS_operations():
         "*** below should be error messages from LIGOTimeGPS constructor ***",
         file=sys.stderr,
     )
-    with pytest.raises(RuntimeError):
+    with catch_errors(RuntimeError):
         t5 = LIGOTimeGPS("abc1000")
-    with pytest.raises(RuntimeError):
+    with catch_errors(RuntimeError):
         t5 = LIGOTimeGPS("1000abc")
     print(
         "*** above should be error messages from LIGOTimeGPS constructor ***",
@@ -1333,7 +1333,7 @@ def test_LIGOTimeGPS_operations():
         "*** below should be error messages from LIGOTimeGPS constructor ***",
         file=sys.stderr,
     )
-    with pytest.raises(RuntimeError):
+    with catch_errors(RuntimeError):
         LIGOTimeGPS(None)
     print(
         "*** above should be error messages from LIGOTimeGPS constructor ***",
@@ -1385,7 +1385,7 @@ def test_LALUnit_operations():
     u2 = lal.MeterUnit ** (1, 2) * lal.KiloGramUnit ** (1, 2) * lal.SecondUnit**-1
     assert is_value_and_type(u2, u1 ** (1, 2), lal.Unit)
     set_nice_error_handlers()
-    with pytest.raises((RuntimeError, TypeError)):
+    with catch_errors((RuntimeError, TypeError)):
         lal.SecondUnit ** (1, 0)
     u1 *= lal.MeterUnit
     assert is_value_and_type(u1, lal.JouleUnit, lal.Unit)
@@ -1401,7 +1401,7 @@ def test_LALUnit_operations():
     assert int(u1) == 1000
     u1 /= 10000
     assert u1 == 100 * lal.MilliUnit * lal.WattUnit
-    with pytest.raises(
+    with catch_errors(
         (
             ValueError,  # swig < 4.0.0
             TypeError,  # swig >= 4.0.0
@@ -1422,7 +1422,7 @@ def test_Python_non_dynamic_structs():
     sts.n = 1
     sts.Alpha = 1.234
     set_nice_error_handlers()
-    with pytest.raises(AttributeError):
+    with catch_errors(AttributeError):
         sts.N = 1
         sts.alpha = 1.234
         sts.zzzzz = "does not exist"

@@ -86,10 +86,20 @@ import_array();
 SWIGINTERNINLINE PyObject* swiglal_get_reference(PyObject* v) { Py_XINCREF(v); return v; }
 %}
 
-// Append an argument to the output argument list of an Python SWIG-wrapped function, if the list is
-// empty.
+// Remove the first argument (i.e. the XLAL error code) from the output argument list of a
+// Python SWIG-wrapped function, if the list has more than one output argument.
 %header %{
-#define swiglal_append_output_if_empty(v) if (resultobj == Py_None) resultobj = SWIG_Python_AppendOutput(resultobj, v)
+SWIGINTERN PyObject* swiglal_py_remove_first_output(PyObject *result) {
+  PySequence_DelItem(result, 0);
+  if (PySequence_Size(result) == 1) {
+    PyObject *obj = result;
+    result = PySequence_GetItem(obj, 0);
+    Py_DECREF(obj);
+  }
+  return result;
+}
+#define swiglal_maybe_return_int() \
+  if (PySequence_Check(resultobj) && PySequence_Size(resultobj) > 1) resultobj = swiglal_py_remove_first_output(resultobj)
 %}
 
 // Evaluates true if a PyObject represents a null pointer, false otherwise.

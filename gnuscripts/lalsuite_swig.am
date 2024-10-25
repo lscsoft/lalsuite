@@ -231,7 +231,7 @@ run-octave: swig-octave-all-local
 	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(OCTAVE)
 
 debug-octave-test: swig-octave-all-local
-	$(AM_V_at)$(DEBUG_TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(OCTAVE) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Octave.m}
+	$(AM_V_at)$(DEBUG_TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER-gdb --args} $(OCTAVE) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Octave.m} $${SCRIPTARGS}
 
 endif # SWIG_BUILD_OCTAVE
 
@@ -299,7 +299,7 @@ run-python: swig-python-all-local
 	$(AM_V_at)$(TESTS_ENVIRONMENT)$(test_script_compiler) $(PYTHON)
 
 debug-python-test: swig-python-all-local
-	$(AM_V_at)$(DEBUG_TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER:-gdb --args} $(PYTHON) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Python.py}
+	$(AM_V_at)$(DEBUG_TESTS_ENVIRONMENT)$(test_script_compiler) $${DEBUGGER-gdb --args} $(PYTHON) $${SCRIPT-./SWIGTest$(PACKAGE_NAME)Python.py} $${SCRIPTARGS}
 
 endif # SWIG_BUILD_PYTHON
 
