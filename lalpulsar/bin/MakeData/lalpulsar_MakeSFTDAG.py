@@ -103,12 +103,11 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
     argList.append(f"-B {args.band}")
     if args.comment_field:
         argList.append(f"-c {args.comment_field}")
-    if args.window_type:
-        if ":" in args.window_type:
-            window_type, window_param = args.window_type.split(":")
-            argList.append(f"-w {window_type} -r {window_param}")
-        else:
-            argList.append(f"-w {args.window_type}")
+    if ":" in args.window_type:
+        window_type, window_param = args.window_type.split(":")
+        argList.append(f"-w {window_type} -r {window_param}")
+    else:
+        argList.append(f"-w {args.window_type}")
     if args.overlap_fraction:
         argList.append(f"-P {args.overlap_fraction}")
     if args.allow_skipping:
@@ -308,10 +307,11 @@ parser.add_argument(
     "-w",
     "--window-type",
     type=str,
+    default="tukey:0.001",
     help='type of windowing of time-domain to do \
           before generating SFTs, e.g. "rectangular", \
           "hann", "tukey:<beta in [0,1], required>"; \
-          if unspecified use lalpulsar_MakeSFTs defaults',
+          (default is "tukey:0.001", standard choice for LVK production SFTs)',
 )
 parser.add_argument(
     "-P",
