@@ -520,6 +520,9 @@ XLALComputeFstatResampGeneric( FstatResults *Fstats,
   if ( whatToCompute & FSTATQ_2F_CUDA ) {
     XLAL_ERROR( XLAL_EINVAL, "Not implemented for FSTATQ_2F_CUDA" );
   }
+  if ( whatToCompute & FSTATQ_FAFB_CUDA ) {
+    XLAL_ERROR( XLAL_EINVAL, "Not implemented for FSTATQ_FAFB_CUDA" );
+  }
 
   if ( collectTiming ) {
     toc = XLALGetCPUTime();

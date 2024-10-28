@@ -99,6 +99,7 @@ typedef enum tagFstatQuantities {
   FSTATQ_FAFB_PER_DET   = 0x08,         ///< Compute \f$ F_a \f$ and \f$ F_b \f$ for each detector.
   FSTATQ_ATOMS_PER_DET  = 0x10,         ///< Compute per-SFT \f$ \mathcal{F} \f$ -statistic atoms for each detector (\a Demod only).
   FSTATQ_2F_CUDA        = 0x20,         ///< Compute multi-detector \f$ 2\mathcal{F} \f$ , store results on CUDA GPU (CUDA implementation of \a Resamp only).
+  FSTATQ_FAFB_CUDA      = 0x40,         ///< Compute multi-detector \f$ F_a \f$ and \f$ F_b \f$ , store results on CUDA GPU (CUDA implementation of \a Resamp only).
   FSTATQ_LAST           = 0x80
 } FstatQuantities;
 
@@ -257,6 +258,14 @@ typedef struct tagFstatResults {
 #endif // SWIG
   COMPLEX8 *Fa;
   COMPLEX8 *Fb;
+
+#ifndef SWIG // exclude from SWIG interface
+  /// If #whatWasComputed & FSTAT_FAFB_CUDA is true, the multi-detector \f$ F_a \f$ and \f$ F_b \f$
+  /// computed at #numFreqBins frequencies spaced #dFreq apart, but stored in CUDA device memory. This
+  /// array should not be accessed if #whatWasComputed & FSTAT_FAFB_CUDA is false.
+  COMPLEX8 *Fa_CUDA;
+  COMPLEX8 *Fb_CUDA;
+#endif
 
   /// If #whatWasComputed & FSTATQ_2F_PER_DET is true, the \f$ 2\mathcal{F} \f$ values computed at
   /// #numFreqBins frequencies spaced #dFreq apart, and for #numDetectors detectors.  Only the first
