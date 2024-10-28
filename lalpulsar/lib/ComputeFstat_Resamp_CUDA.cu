@@ -684,18 +684,17 @@ XLALComputeFstatResampCUDA( FstatResults *Fstats,
     XLAL_CHECK_CUDA_CALL( cudaMemcpy( Fstats->Fb, ws->Fb_k, sizeof( cuComplex )*numFreqBins, cudaMemcpyDeviceToHost ) );
   }
 
-  if ( whatToCompute & FSTATQ_FAFB_CUDA )
-  {
-      if ( Fstats->Fa_CUDA == NULL ) {
-          XLAL_CHECK( cudaMalloc((void **)&Fstats->Fa_CUDA, sizeof(cuComplex)*numFreqBins) == cudaSuccess, XLAL_ENOMEM);
-      }
+  if ( whatToCompute & FSTATQ_FAFB_CUDA ) {
+    if ( Fstats->Fa_CUDA == NULL ) {
+      XLAL_CHECK( cudaMalloc( ( void ** )&Fstats->Fa_CUDA, sizeof( cuComplex )*numFreqBins ) == cudaSuccess, XLAL_ENOMEM );
+    }
 
-      if ( Fstats->Fb_CUDA == NULL ) {
-          XLAL_CHECK( cudaMalloc((void **)&Fstats->Fb_CUDA, sizeof(cuComplex)*numFreqBins) == cudaSuccess, XLAL_ENOMEM);
-      }
+    if ( Fstats->Fb_CUDA == NULL ) {
+      XLAL_CHECK( cudaMalloc( ( void ** )&Fstats->Fb_CUDA, sizeof( cuComplex )*numFreqBins ) == cudaSuccess, XLAL_ENOMEM );
+    }
 
-      XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->Fa_CUDA, ws->Fa_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToDevice) );
-      XLAL_CHECK_CUDA_CALL ( cudaMemcpy(Fstats->Fb_CUDA, ws->Fb_k, sizeof(cuComplex)*numFreqBins, cudaMemcpyDeviceToDevice) );
+    XLAL_CHECK_CUDA_CALL( cudaMemcpy( Fstats->Fa_CUDA, ws->Fa_k, sizeof( cuComplex )*numFreqBins, cudaMemcpyDeviceToDevice ) );
+    XLAL_CHECK_CUDA_CALL( cudaMemcpy( Fstats->Fb_CUDA, ws->Fb_k, sizeof( cuComplex )*numFreqBins, cudaMemcpyDeviceToDevice ) );
   }
 
   if ( collectTiming ) {
