@@ -67,8 +67,8 @@ char *XLALSimNeutronStarEOSName(LALSimNeutronStarEOS * eos);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSByName(const char *name);
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname);
 //CUTER-dev
-LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
-   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol);
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
+    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat);
 
 LALSimNeutronStarEOS *XLALSimNeutronStarEOSPolytrope(double Gamma,
     double reference_pressure_si, double reference_density_si);
@@ -94,6 +94,8 @@ double XLALSimNeutronStarEOSMaxPressureGeometerized(LALSimNeutronStarEOS *
 double XLALSimNeutronStarEOSMaxPseudoEnthalpy(LALSimNeutronStarEOS * eos);
 double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(LALSimNeutronStarEOS *
     eos);
+//CUTER-dev
+double *XLALSimNeutronStarEOSPhaseTransition(LALSimNeutronStarEOS * eos);
 
 double XLALSimNeutronStarEOSEnergyDensityOfPressure(double p,
     LALSimNeutronStarEOS * eos);

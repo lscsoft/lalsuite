@@ -300,11 +300,66 @@ static double eos_min_acausal_pseudo_enthalpy_tabular(double hmax,
     return hMinAcausal;
 }
 
-// static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
-//    double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
-// { //CUTER-dev
-LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
-   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol)
+
+// CUTER-dev
+static void find_phase_transition_variables(double pt_val[8], int ndat, double *nbdat, double *edat, double *pdat, double *hdat)
+{
+    double pt_tol = 0.5;
+    double grad, old_grad, delta_grad, step_n;
+    int n_pt = 0;
+    grad = 0.0;
+    old_grad = 0.0;
+    delta_grad = 0.0;
+    step_n = 0.0;
+    for (int i = 1; i < ndat; i++){
+        if (nbdat[i] > 0.1) {
+            // pMev_n = pdat[i] / (LAL_G_C4_SI * 1e-1 * 1.6022e33); /* transform from Gerometrized units to SI and then to CGS and then to nuclear */
+            // pMev_nm1 = pdat[i-1] / (LAL_G_C4_SI * 1e-1 * 1.6022e33);
+            // epsMev_n = edat[i] / (LAL_G_C2_SI * 1e3 * 1.7827e12); /* transform from Gerometrized units to SI and then to CGS and then to nuclear */
+            // epsMev_nm1 = edat[i-1] / (LAL_G_C2_SI * 1e3 * 1.7827e12);
+            // grad = (pMev_n - pMev_nm1)/(epsMev_n - epsMev_nm1); // convert to MeV/fm^3
+
+            grad = (pdat[i] - pdat[i-1])/(edat[i] - edat[i-1])  * 1.7827e12 / 1.6022e33;
+            delta_grad = (grad - old_grad)/grad;
+            if (step_n == 0.0){
+                if ( (delta_grad < 0.0 || grad == 0.0) && fabs(delta_grad) >= pt_tol){
+                    // Append the first point of the PT
+                    step_n = nbdat[i] - nbdat[i-1];
+                    pt_val[0] = nbdat[i-1]; // low bound baryon density for the PT
+                    pt_val[1] = nbdat[i]; // high bound baryon density
+                    pt_val[2] = edat[i-1] ; // low bound energy density for the PT
+                    pt_val[3] = edat[i]; // high bound energy density
+                    pt_val[4] = pdat[i-1] ; // low bound pressure for the PT
+                    pt_val[5] = pdat[i] ; // high bound pressure
+                    pt_val[6] = hdat[i-1]; // low bound enthalpy for the PT
+                    pt_val[7] = hdat[i]; // high bound enthalpy
+                    n_pt += 1 ;
+                }
+            }else{
+                // redefines that upper bound of the PT if it is over several points
+                if (fabs(delta_grad) >= pt_tol || grad == 0. || delta_grad < 0.){
+                    step_n = step_n + (nbdat[i] - nbdat[i-1]);
+                    pt_val[1] = nbdat[i];
+                    pt_val[3] = edat[i];
+                    pt_val[5] = pdat[i];
+                    pt_val[7] = hdat[i];
+                }else{
+                    step_n = 0.0;
+                }
+            }
+            old_grad = grad;
+        }
+    }
+    if (n_pt !=0){
+        printf("\nIn LAL, PT found:\n     nb range [%.3e, %.3e]\n     eps range [%.3e, %.3e]\n     P range [%.3e, %.3e]\n     h range [%.3e, %.3e]\n", pt_val[0], pt_val[1], pt_val[2], pt_val[3], pt_val[4], pt_val[5], pt_val[6], pt_val[7]);
+    }
+    return ;
+}
+
+
+// CUTER-dev
+static LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pdat,
+   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat, size_t ncol) // TODO make it possible without tabulated EoS
 {
     LALSimNeutronStarEOS *eos;
     LALSimNeutronStarEOSDataTabular *data;
@@ -330,7 +385,7 @@ LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pda
 
     data->log_rhodat = XLALMalloc(ndat * sizeof(*data->log_rhodat));
 
-    if(ncol == 2) {
+    if(ncol == 2) { // TODO work with the variables we have if only P and eps
         /* allocate memory for eos data; ignore first points if 0 */
         while (*pdat == 0.0 || *edat == 0.0) {
             ++pdat;
@@ -415,6 +470,9 @@ LALSimNeutronStarEOS *eos_alloc_tabular(double *nbdat, double *edat, double *pda
     // Find rho from e, p, and h: rho = (e+p)/exp(h)
     for (i = 0; i < ndat; i++)
         data->log_rhodat[i] = log(edat[i] + pdat[i]) - exp(data->log_hdat[i]);
+
+    // Find a phase transition CUTER-dev
+    find_phase_transition_variables(eos->pt_var, ndat, nbdat, edat, pdat, hdat);
 
     eos->pmax = exp(data->log_pdat[ndat - 1]);
     eos->hmax = exp(data->log_hdat[ndat - 1]);
@@ -508,8 +566,8 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
     hdat = LALMalloc(ndat * sizeof(*hdat));
     yedat = LALMalloc(ndat * sizeof(*yedat));
     cs2dat = LALMalloc(ndat * sizeof(*cs2dat));
-    
-    
+
+
     if (ncol > 2)
     {
         for (size_t i = 0 ; i < ndat ; i++) {
@@ -541,7 +599,7 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
         fprintf(stderr, "error: equation of state files must have at least 2 columns, ncol >= 2\n");
         exit(1);
     }
-    
+
 
     eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, ncol);
 
@@ -558,6 +616,39 @@ LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromFile(const char *fname)
     snprintf(eos->name, sizeof(eos->name), "%s", fname);
     return eos;
 }
+
+
+
+// CUTER-dev TODO make it so it can handle just the two column format ?
+/**
+ * @brief Reads arrays for the different variables of the equation of state.
+ * @details Reads 9 arrays a data file specified by a path fname that contains two
+ * whitespace separated columns of equation of state data.  The first column
+ * contains the pressure in Pa and the second column contains the energy
+ * density in J/m^3.  Every line beginning with the character '#' then it is
+ * ignored.  If the path is an absolute path then this specific file is opened;
+ * otherwise, search for the file in paths given in the environment variable
+ * LALSIM_DATA_PATH, and finally search in the installed PKG_DATA_DIR path.
+ * @param nbdat array of size ndat containing the baryon density in 1/fm^3
+ * @param edat array of size ndat containing the energy density in g/cm^3
+ * @param pdat array of size ndat containing the pressure in dyn/cm^2
+ * @param mubdat array of size ndat containing the baryon chemical potential in MeV
+ * @param muedat array of size ndat containing the electron chemical potential in MeV
+ * @param hdat array of size ndat containing the log of enthalpy (dimensionless)
+ * @param yedat array of size ndat containing the lepton fration (dimensionless)
+ * @param cs2dat array of size ndat containing the sound speed squared normalized to the speed of light (dimensionless)
+ * @param ndat size of the arrays for equation of state quantities
+ * @return A pointer to neutron star equation of state structure.
+ */
+LALSimNeutronStarEOS *XLALSimNeutronStarEOSFromTabData(double *nbdat, double *edat, double *pdat,
+   double *mubdat, double *muedat, double *hdat, double *yedat, double *cs2dat, size_t ndat)
+{
+    LALSimNeutronStarEOS *eos;
+    eos = eos_alloc_tabular(nbdat, edat, pdat, mubdat, muedat, hdat, yedat, cs2dat, ndat, 9);
+    return eos;
+}
+
+
 
 /**
  * @brief Creates an equation of state structure from tabulated equation

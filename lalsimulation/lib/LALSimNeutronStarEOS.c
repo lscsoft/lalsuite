@@ -57,12 +57,15 @@ typedef union tagLALSimNeutronStarEOSData {
     LALSimNeutronStarEOSDataPiecewisePolytrope *piecewisePolytrope;
 } LALSimNeutronStarEOSData;
 
+
 /* Contents of the equation of state structure. */
 struct tagLALSimNeutronStarEOS {
     char name[LALNameLength];
     double pmax;
     double hmax;
     double hMinAcausal; /* Minimum pseudo-enthalpy at which EOS becomes acausal (speed of sound > 1) */
+    // CUTER-dev
+    double pt_var[8];
     double (*e_of_p) (double p, LALSimNeutronStarEOS * myself);
     double (*h_of_p) (double p, LALSimNeutronStarEOS * myself);
     double (*p_of_h) (double h, LALSimNeutronStarEOS * myself);
@@ -208,6 +211,22 @@ double XLALSimNeutronStarEOSMinAcausalPseudoEnthalpy(LALSimNeutronStarEOS *
 {
     return eos->hMinAcausal;
 }
+
+
+//CUTER-dev
+
+/**
+ * @brief Returns the lower baryon density of a phase transition if it exists,
+ * (speed of sound > speed of light) (dimensionless).
+ * @param eos Pointer to the EOS structure.
+ * @return The low value of the baryon density of the phase transition.
+ */
+double *XLALSimNeutronStarEOSPhaseTransition(LALSimNeutronStarEOS * eos)
+{
+    return eos->pt_var;
+}
+
+
 
 /* FUNCTIONS WITH GEOMETERIZED UNITS */
 
