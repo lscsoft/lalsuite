@@ -436,8 +436,8 @@ int main( int argc, char *argv[] )
           XLAL_ERROR_MAIN( errnum );
         }
 
-        // Shift the frame stream by SFT length minus one nanosecond so that we don't hit the end of the framestream
-        XLAL_CHECK_MAIN( XLALFrStreamSeekO( framestream, uvar->sft_duration - 1e-9, SEEK_CUR ) == 0, XLAL_EFUNC );
+        // Shift the frame stream by SFT length minus one microsecond so that we don't hit the end of the framestream
+        XLAL_CHECK_MAIN( XLALFrStreamSeekO( framestream, uvar->sft_duration - 1e-6, SEEK_CUR ) == 0, XLAL_EFUNC );
 
         // Now check the end
         XLAL_TRY( laltype = XLALFrStreamGetTimeSeriesType( uvar->channel_name->data[n], framestream ), errnum );
