@@ -1,4 +1,4 @@
-# Copyright (C) 2013, 2014, 2020--2022 Evan Goetz
+# Copyright (C) 2013, 2014, 2020--2024 Evan Goetz
 # Copyright (C) 2011, 2021, 2022 Karl Wette
 # Copyright (C) 2005, 2007 Gregory Mendell
 #
@@ -23,8 +23,14 @@ import math
 import argparse
 import os
 import re
+from pathlib import Path
 
-from lalpulsar import git_version
+from lalpulsar import (
+    git_version,
+    SFTFilenameSpec,
+    FillSFTFilenameSpecStrings,
+    BuildSFTFilenameFromSpec,
+)
 
 __author__ = "Evan Goetz <evan.goetz@ligo.org>, Greg Mendell"
 __version__ = git_version.id
@@ -67,6 +73,51 @@ __date__ = git_version.date
 # 11/2022  kww; -R command line option now used for --observing-revision
 #               instead of --output-jobs-per-node, which now uses -r
 # 11/2022  kww; --datafind-path and --makesfts-path accept executable names
+# 03/2023  eag; Allow user to pass a frame cache file --cache-file
+# 04/2023  kww; Improve documentation of --window-type argument
+# 05/2023  eag; Add the --gaps flag to gw_data_find
+# 08/2023  eag; Allow for multiple channel names to be provided
+# 09/2023  eag; Modify use of environment variables
+# 01/2024  eag; Allow skipping of channels if not in frames or too low data
+#               rate
+# 10/2024  eag; Modify workflow for version 3 SFTs and HTCondor file transfer
+#               workflow
+
+
+def sft_name_from_vars(
+    obs,
+    gpsstart,
+    Tsft,
+    channel=None,
+    kind=None,
+    rev=None,
+    window="unknown",
+    par=None,
+    miscstr=None,
+):
+    """Create SFT file name from specification"""
+
+    spec = SFTFilenameSpec()
+
+    FillSFTFilenameSpecStrings(
+        spec=spec,
+        path=None,
+        extn=None,
+        detector=channel[:2],
+        window_type=window,
+        privMisc=miscstr,
+        pubObsKind=kind,
+        pubChannel=channel,
+    )
+    spec.pubObsRun = obs or 0
+    spec.pubRevision = rev or 0
+    spec.window_param = par or 0
+    spec.numSFTs = 1  # MakeSFTDAG will only ever generate 1 SFT per file
+    spec.SFTtimebase = Tsft
+    spec.gpsStart = gpsstart
+    spec.SFTspan = Tsft  # MakeSFTDAG will only ever generate 1 SFT per file
+
+    return BuildSFTFilenameFromSpec(spec)
 
 
 #
@@ -82,7 +133,7 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
         cacheFile = args.cache_file
     else:
         cacheFile = (
-            f"{args.cache_path}/{site}-{startTimeDatafind}-{endTimeDatafind}.cache"
+            args.cache_path / f"{site}-{startTimeDatafind}-{endTimeDatafind}.cache"
         )
 
     argList = []
@@ -94,8 +145,14 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
         argList.append(f"-X {args.misc_desc}")
     argList.append(f"-f {args.filter_knee_freq}")
     argList.append(f"-t {args.time_baseline}")
-    argList.append(f"-p {','.join(args.output_sft_path)}")
-    argList.append(f"-C {cacheFile}")
+    # To work with the condor file transfer protocol, we save everything to the
+    # scratch directory because the files will have unique names. Since
+    # lalpulsar_MakeSFTs wants to have a path to save the file to, we provide .
+    argList.append(f"-p {','.join(['.' for p in args.output_sft_path])}")
+    # To work with the condor file transfer protocol, the cache file is saved
+    # to the scratch directory on transfer so we just need the name, not the
+    # full path
+    argList.append(f"-C {cacheFile.name}")
     argList.append(f"-s {startTimeThisNode}")
     argList.append(f"-e {endTimeThisNode}")
     argList.append(f"-N {','.join(args.channel_name)}")
@@ -107,29 +164,51 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
         window_type, window_param = args.window_type.split(":")
         argList.append(f"-w {window_type} -r {window_param}")
     else:
-        argList.append(f"-w {args.window_type}")
+        window_type = args.window_type
+        window_param = None
+        argList.append(f"-w {window_type}")
     if args.overlap_fraction:
         argList.append(f"-P {args.overlap_fraction}")
     if args.allow_skipping:
         argList.append("--allow-skipping TRUE")
     argStr = " ".join(argList)
 
+    # The files are going to go to specific directories, so we need to map
+    # the files to their output directories
+    outputfiles = []
+    remap = []
+    for idx, c in enumerate(args.channel_name):
+        filename = sft_name_from_vars(
+            args.observing_run,
+            startTimeThisNode,
+            args.time_baseline,
+            c,
+            kind=args.observing_kind,
+            rev=args.observing_revision,
+            window=window_type,
+            par=window_param,
+            miscstr=args.misc_desc,
+        )
+        outputfiles.append(filename)
+        remap.append(f"{filename}={args.output_sft_path[idx]/filename}")
+    outputfiles = ",".join(outputfiles)
+    # condor needs this to be a semi-colon separated list (why?!)
+    remap = ";".join(remap)
+
     # gw_data_find job
     if not args.cache_file:
-        dagFID.write(
-            f"JOB {datafind} {os.path.join(os.path.dirname(dagFID.name), 'datafind.sub')}\n"
-        )
+        dagFID.write(f"JOB {datafind} {Path(dagFID.name).parent / 'datafind.sub'}\n")
         dagFID.write(f"RETRY {datafind} 1\n")
         dagFID.write(
             f'VARS {datafind} gpsstarttime="{startTimeDatafind}" gpsendtime="{endTimeDatafind}" observatory="{site}" inputdatatype="{args.input_data_type}" tagstring="{tagStringOut}"\n'
         )
 
     # MakeSFT job
-    dagFID.write(
-        f"JOB {MakeSFTs} {os.path.join(os.path.dirname(dagFID.name), 'MakeSFTs.sub')}\n"
-    )
+    dagFID.write(f"JOB {MakeSFTs} {Path(dagFID.name).parent / 'MakeSFTs.sub'}\n")
     dagFID.write(f"RETRY {MakeSFTs} 1\n")
-    dagFID.write(f'VARS {MakeSFTs} argList="{argStr}" tagstring="{tagStringOut}"\n')
+    dagFID.write(
+        f'VARS {MakeSFTs} argList="{argStr}" cachefile="{cacheFile}" outputfiles="{outputfiles}" remapfiles="{remap}" tagstring="{tagStringOut}"\n'
+    )
     if not args.cache_file:
         dagFID.write(f"PARENT {datafind} CHILD {MakeSFTs}\n")
 
@@ -197,7 +276,7 @@ parser.add_argument(
     "-f",
     "--dag-file",
     required=True,
-    type=str,
+    type=Path,
     help="filename for .dag file (should end in .dag)",
 )
 parser.add_argument(
@@ -254,12 +333,23 @@ parser.add_argument(
     help="time baseline of SFTs  (e.g., 60 or 1800 seconds)",
 )
 parser.add_argument(
-    "-p", "--output-sft-path", nargs="+", type=str, help="path to output SFTs"
+    "-p",
+    "--output-sft-path",
+    nargs="+",
+    type=Path,
+    help="Path where to save the SFT files. Can specify multiple options, \
+          If specifying multiple options then it is required to specify the \
+          same number of output-sft-path options as the number of channels. \
+          The first listed channel will have the SFTs go into the first \
+          listed output-sft-path. Otherwise specify only one output path. \
+          If one path is specified and more than 1 channels are specified \
+          then --observing-run must be >= 1 and --observing-kind and \
+          --observing-revision must be set",
 )
 parser.add_argument(
     "-C",
     "--cache-path",
-    type=str,
+    type=Path,
     default="cache",
     help="path to cache files that will be produced by \
           gw_data_find (default is $PWD/cache; this directory is \
@@ -269,14 +359,14 @@ parser.add_argument(
 parser.add_argument(
     "-e",
     "--cache-file",
-    type=str,
+    type=Path,
     help="path and filename to frame cache file to use instead \
           of gw_data_find",
 )
 parser.add_argument(
     "-o",
     "--log-path",
-    type=str,
+    type=Path,
     default="logs",
     help="path to log, output, and error files (default \
           is $PWD/logs; this directory is created if it does not \
@@ -287,8 +377,12 @@ parser.add_argument(
     "--channel-name",
     nargs="+",
     type=str,
-    help="name of input time-domain channel to read from \
-          frames",
+    help="Name of input time-domain channel to read from frames. \
+          Can specify multiple options. The number of channels must be \
+          equal to the number of output-sft-path options given. The \
+          first listed channel will have the SFTs go to the first listed \
+          output-sft-path. Can only specify one channel when generating \
+          private SFTs (--observing-run=0)",
 )
 parser.add_argument(
     "--allow-skipping",
@@ -306,6 +400,7 @@ parser.add_argument(
 parser.add_argument(
     "-w",
     "--window-type",
+    required=True,
     type=str,
     default="tukey:0.001",
     help='type of windowing of time-domain to do \
@@ -338,7 +433,7 @@ parser.add_argument(
 parser.add_argument(
     "-g",
     "--segment-file",
-    type=str,
+    type=Path,
     help="alternative file with segments to use, rather than \
           the input times",
 )
@@ -359,7 +454,7 @@ parser.add_argument(
 parser.add_argument(
     "-Q",
     "--node-path",
-    type=str,
+    type=Path,
     help="path to nodes to output SFTs; the node name is \
           appended to this path, followed by path given by the -p \
           option; for example, if -q point to file with the list \
@@ -380,7 +475,7 @@ parser.add_argument(
 parser.add_argument(
     "-j",
     "--datafind-path",
-    type=str,
+    type=Path,
     help="string specifying the gw_data_find executable, \
           or a path to it; if not set, will use \
           LSC_DATAFIND_PATH env variable or system default (in \
@@ -389,7 +484,7 @@ parser.add_argument(
 parser.add_argument(
     "-J",
     "--makesfts-path",
-    type=str,
+    type=Path,
     help="string specifying the lalpulsar_MakeSFTs executable, \
           or a path to it; if not set, will use \
           MAKESFTS_PATH env variable or system default (in that \
@@ -492,89 +587,96 @@ args = parser.parse_args()
 
 # Some basic argument value checking
 if args.observing_run < 0:
-    raise argparse.error("--observing-run must be >= 0")
+    raise parser.error("--observing-run must be >= 0")
 
 if args.observing_run > 0 and not args.observing_kind:
-    raise argparse.error("--observing-run requires --observing-kind")
+    raise parser.error("--observing-run requires --observing-kind")
 
 if args.observing_run > 0 and not args.observing_revision:
-    raise argparse.error("--observing-run requires --observing-revision")
+    raise parser.error("--observing-run requires --observing-revision")
 
 if args.observing_revision and args.observing_revision <= 0:
-    raise argparse.error("--observing-revision must be > 0")
+    raise parser.error("--observing-revision must be > 0")
 
 if args.observing_run > 0 and args.misc_desc:
-    raise argparse.error(
+    raise parser.error(
         f"--observing-run={args.observing_run} incompatible with --misc-desc"
     )
 
 if args.misc_desc and not re.compile(r"^[A-Za-z0-9]+$").match(args.misc_desc):
-    raise argparse.error("--misc-desc may only contain A-Z, a-z, 0-9 characters")
+    raise parser.error("--misc-desc may only contain A-Z, a-z, 0-9 characters")
 
 if args.extra_datafind_time < 0:
-    raise argparse.error("--extra-datafind-time must be >= 0")
+    raise parser.error("--extra-datafind-time must be >= 0")
 
 if args.filter_knee_freq < 0:
-    raise argparse.error("--filter-knee-freq must be >= 0")
+    raise parser.error("--filter-knee-freq must be >= 0")
 
 if args.time_baseline <= 0:
-    raise argparse.error("--time-baseline must be > 0")
+    raise parser.error("--time-baseline must be > 0")
 
 if args.overlap_fraction < 0.0 or args.overlap_fraction >= 1.0:
-    raise argparse.error("--overlap-fraction must be in the range [0,1)")
+    raise parser.error("--overlap-fraction must be in the range [0,1)")
 
 if args.start_freq < 0.0 or args.start_freq >= 7192.0:
-    raise argparse.error("--start-freq must be in the range [0,7192)")
+    raise parser.error("--start-freq must be in the range [0,7192)")
 
 if args.band <= 0 or args.band >= 8192.0:
-    raise argparse.error("--band must be in the range (0,8192)")
+    raise parser.error("--band must be in the range (0,8192)")
 
 if args.start_freq + args.band >= 8192.0:
-    raise argparse.error("--start-freq + --band must be < 8192")
+    raise parser.error("--start-freq + --band must be < 8192")
 
 if args.max_num_per_node <= 0:
-    raise argparse.error("--max-num-per-node must be > 0")
+    raise parser.error("--max-num-per-node must be > 0")
 
 if (
     len(args.channel_name) != len(args.output_sft_path)
     and len(args.output_sft_path) != 1
 ):
-    raise argparse.error(
+    raise parser.error(
         "--channel-name and --output-sft-path must be the "
         "same length or --output-sft-path must be length of 1"
+    )
+
+if len(args.channel_name) > 1 and args.observing_run == 0:
+    raise parser.error(
+        "When creating SFTs from multiple channels, public SFT naming "
+        "convention must be used: --observing-run > 0 and set "
+        "--observing-kind and --observing-revision"
     )
 
 # Set the data find executable and lalpulsar_MakeSFTs executable
 dataFindExe = "gw_data_find"
 if args.datafind_path:
-    if os.path.isfile(args.datafind_path):
+    if args.datafind_path.is_file():
         dataFindExe = args.datafind_path
     else:
-        dataFindExe = os.path.join(args.datafind_path, dataFindExe)
+        dataFindExe = args.datafind_path / dataFindExe
 elif "LSC_DATAFIND_PATH" in os.environ:
-    dataFindExe = os.path.join("$ENV(LSC_DATAFIND_PATH)", dataFindExe)
+    dataFindExe = Path("$ENV(LSC_DATAFIND_PATH)") / dataFindExe
 else:
-    dataFindExe = os.path.join("/usr/bin", dataFindExe)
+    dataFindExe = Path("/usr/bin") / dataFindExe
 
 makeSFTsExe = "lalpulsar_MakeSFTs"
 if args.makesfts_path:
-    if os.path.isfile(args.makesfts_path):
+    if args.makesfts_path.is_file():
         makeSFTsExe = args.makesfts_path
     else:
-        makeSFTsExe = os.path.join(args.makesfts_path, makeSFTsExe)
+        makeSFTsExe = args.makesfts_path / makeSFTsExe
 elif "MAKESFTS_PATH" in os.environ:
-    makeSFTsExe = os.path.join("$ENV(MAKESFTS_PATH)", makeSFTsExe)
+    makeSFTsExe = Path("$ENV(MAKESFTS_PATH)") / makeSFTsExe
 else:
-    makeSFTsExe = os.path.join("@LALSUITE_BINDIR@", makeSFTsExe)
+    makeSFTsExe = Path("@LALSUITE_BINDIR@") / makeSFTsExe
 
 # try and make a directory to store the cache files and job logs
 try:
-    os.mkdir(args.log_path)
+    args.log_path.mkdir()
 except:
     pass
 if not args.cache_file:
     try:
-        os.mkdir(args.cache_path)
+        args.cache_path.mkdir()
     except:
         pass
 
@@ -665,10 +767,10 @@ site = args.channel_name[0][0]
 nodeCount = 0
 
 # Create .sub files
-path_to_dag_file = os.path.dirname(args.dag_file)
-dag_filename = os.path.basename(args.dag_file)
-datafind_sub = os.path.join(path_to_dag_file, "datafind.sub")
-makesfts_sub = os.path.join(path_to_dag_file, "MakeSFTs.sub")
+path_to_dag_file = args.dag_file.parent
+dag_filename = args.dag_file.name
+datafind_sub = path_to_dag_file / "datafind.sub"
+makesfts_sub = path_to_dag_file / "MakeSFTs.sub"
 
 # create datafind.sub
 if not args.cache_file:
@@ -685,9 +787,7 @@ if not args.cache_file:
             datafindFID.write(f" --match {args.datafind_match}\n")
         else:
             datafindFID.write("\n")
-        datafindFID.write(
-            "getenv = *DATAFIND*, KRB5*, X509*, BEARER_TOKEN*, SCITOKEN*\n"
-        )
+        datafindFID.write("getenv = *DATAFIND*\n")
         datafindFID.write("request_disk = 5MB\n")
         datafindFID.write("request_memory = 2000MB\n")
         datafindFID.write(f"accounting_group = {args.accounting_group}\n")
@@ -696,24 +796,32 @@ if not args.cache_file:
         datafindFID.write(f"error = {args.log_path}/datafind_$(tagstring).err\n")
         datafindFID.write(f"output = {args.cache_path}/")
         datafindFID.write("$(observatory)-$(gpsstarttime)-$(gpsendtime).cache\n")
+        datafindFID.write("should_transfer_files = yes\n")
         datafindFID.write("notification = never\n")
         datafindFID.write("queue 1\n")
 
 # create MakeSFTs.sub
 with open(makesfts_sub, "w") as MakeSFTsFID:
-    MakeSFTsLogFile = "{}/MakeSFTs_{}.log".format(args.log_path, dag_filename)
+    MakeSFTsLogFile = f"{args.log_path}/MakeSFTs_{dag_filename}.log"
     MakeSFTsFID.write("universe = vanilla\n")
-    MakeSFTsFID.write("executable = {}\n".format(makeSFTsExe))
+    MakeSFTsFID.write(f"executable = {makeSFTsExe}\n")
     MakeSFTsFID.write("arguments = $(argList)\n")
-    MakeSFTsFID.write("accounting_group = {}\n".format(args.accounting_group))
-    MakeSFTsFID.write("accounting_group_user = {}\n".format(args.accounting_group_user))
-    MakeSFTsFID.write("log = {}\n".format(MakeSFTsLogFile))
-    MakeSFTsFID.write("error = {}/MakeSFTs_$(tagstring).err\n".format(args.log_path))
-    MakeSFTsFID.write("output = {}/MakeSFTs_$(tagstring).out\n".format(args.log_path))
+    MakeSFTsFID.write(f"accounting_group = {args.accounting_group}\n")
+    MakeSFTsFID.write(f"accounting_group_user = {args.accounting_group_user}\n")
+    MakeSFTsFID.write(f"log = {MakeSFTsLogFile}\n")
+    MakeSFTsFID.write(f"error = {args.log_path}/MakeSFTs_$(tagstring).err\n")
+    MakeSFTsFID.write(f"output = {args.log_path}/MakeSFTs_$(tagstring).out\n")
     MakeSFTsFID.write("notification = never\n")
     MakeSFTsFID.write(f"request_memory = {args.request_memory}MB\n")
     MakeSFTsFID.write(f"request_disk = {args.request_disk}MB\n")
     MakeSFTsFID.write("RequestCpus = 1\n")
+    MakeSFTsFID.write("should_transfer_files = yes\n")
+    MakeSFTsFID.write("transfer_input_files = $(cachefile)\n")
+    MakeSFTsFID.write("transfer_output_files = $(outputfiles)\n")
+    # condor needs transfer_output_remaps to be in quotes (why?!)
+    MakeSFTsFID.write('transfer_output_remaps = "$(remapfiles)"\n')
+    if "MAKESFTS_PATH" in os.environ and not args.makesfts_path:
+        MakeSFTsFID.write("getenv = MAKESFTS_PATH\n")
     MakeSFTsFID.write("queue 1\n")
 
 # create the DAG file with the jobs to run
