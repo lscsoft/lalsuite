@@ -17,6 +17,8 @@
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA  02110-1301  USA
 
+## \file
+## \ingroup lalpulsar_bin_SFTTools
 """Creates DAGs to run jobs that generates SFTs"""
 
 import math

@@ -20,8 +20,13 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-# DAG generation code for running the known pulsar search pipeline
-# The KNOwn Pulsar pipelinE - lalpulsar_knope
+## \file
+## \ingroup lalpulsar_bin_HeterodyneSearch
+"""
+The KNOwn Pulsar pipelinE - lalpulsar_knope
+
+DAG generation code for running the known pulsar search pipeline
+"""
 
 from __future__ import print_function, division
 
