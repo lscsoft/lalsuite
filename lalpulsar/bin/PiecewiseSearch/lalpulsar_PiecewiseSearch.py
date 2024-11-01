@@ -14,6 +14,13 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
+## \defgroup lalpulsar_bin_PiecewiseSearch Piecewise Search Applications
+## \ingroup lalpulsar_bin_Apps
+
+## \file
+## \ingroup lalpulsar_bin_PiecewiseSearch
+"""Search for long-transient gravitational waves using a piecewise frequency model"""
+
 import argparse as ap
 import cProfile
 import io

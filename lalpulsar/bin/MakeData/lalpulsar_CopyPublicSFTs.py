@@ -15,6 +15,8 @@
 # Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 # MA  02110-1301  USA
 
+## \file
+## \ingroup lalpulsar_bin_SFTTools
 """Copy SFTs between directories. The destination directory is organised
 following the convention detailed in the SFT spec (T040164)."""
 

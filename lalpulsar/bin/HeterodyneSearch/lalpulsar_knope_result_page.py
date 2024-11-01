@@ -20,7 +20,13 @@
 #       Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
 #       MA 02110-1301, USA.
 
-# Script from creating results pages for pulsars from the known pulsar search
+## \file
+## \ingroup lalpulsar_bin_HeterodyneSearch
+"""
+The KNOwn Pulsar pipelinE - lalpulsar_knope_result_page
+
+Script from creating results pages for pulsars from the known pulsar search
+"""
 
 from __future__ import print_function, division
 
