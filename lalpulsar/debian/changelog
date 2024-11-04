@@ -1,3 +1,9 @@
+lalpulsar (7.0.1-1) unstable; urgency=low
+
+  * Update for 7.0.1
+
+ -- Adam Mercer <adam.mercer@ligo.org>  Mon, 04 Nov 2024 10:06:40 -0700
+
 lalpulsar (7.0.0-1) unstable; urgency=low
 
   * Update for 7.0.0
