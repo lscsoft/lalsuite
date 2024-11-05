@@ -1123,29 +1123,41 @@ print(LAL_DAYSID_SI.quantize(quantize))
 
 print('/** @} */')
 
-h0 = 0.69  # current reasonable guess for the normalized Hubble constant
+
 print(r"""
 /**
  * @name Cosmological parameters
  * The following cosmological parameters are derived from measurements of
  * the Hubble expansion rate and of the cosmic microwave background radiation.
- * In what follows, the normalized Hubble constant \f$h_0\f$ is equal to the
+ * In what follows, the dimensionless Hubble constant \f$h_0\f$ is equal to the
  * actual Hubble constant \f$H_0\f$ divided by
  * \f$\langle H \rangle=100\,\mathrm{km}\,\mathrm{s}^{-1}\mathrm{Mpc}^{-1}\f$.
  * Thus the Hubble constant can be written as:
- * \f$H_0 = \langle H \rangle * h_0\f$.  Similarly, the critical energy density
+ * \f$H_0 = \langle H \rangle h_0\f$.  Similarly, the critical energy density
  * \f$\rho_c\f$ required for spatial flatness is given by:
  * \f$\rho_c = \langle\rho\rangle h_0^2\f$.
- * Current estimates give \f$h_0\f$ a value of around""", end=' ')
-print(h0, end=' ')
-print(r"""
+ *
+ * The current default cosmology is the 2015 Planck TT+lowP+lensing+ext
+ * Flat LambdaCDM cosmology with Hubble constant
+ * \f$H_0 = 67.90\,\mathrm{km}\,\mathrm{s}^{-1}\mathrm{Mpc}^{-1}\f$
+ * and matter density parameter
+ * \f$\Omega_{\mathrm{m}} = 0.3065\f$
  * which is what is assumed below.
  * All values are in the SI units shown.
- * @see http://arxiv.org/abs/1303.5062
- * @see http://dx.doi.org/10.1088/0067-0049/208/2/20
+ * @see Table 4, column TT+lowP+lensing+ext of http://doi.org/10.1051/0004-6361/201525830
  */""")
 print('/** @{ */')
 
+LAL_H0_DIMENSIONLESS = 0.679 # default value of the dimensionless Hubble constant
+LAL_OMEGA_M = 0.3065 # default value of the matter density parameter
+
+print('#define LAL_H0_DIMENSIONLESS', end=' ')
+print(LAL_H0_DIMENSIONLESS, end=' ')
+print('/**< Default dimensionless Hubble constant, dimensionless */')
+
+print('#define LAL_OMEGA_M', end=' ')
+print(LAL_OMEGA_M, end=' ')
+print('/**< Default dimensionless Hubble constant, dimensionless */')
 
 print("""
 /**
@@ -1159,15 +1171,11 @@ print(as_str(LAL_H0FAC_SI))
 
 print("""
 /**
- * @brief Approximate Hubble constant, s^-1
+ * @brief Default Hubble constant, s^-1
  * @details
- * LAL_H0_SI = h0 * LAL_H0FAC_SI
- *
- * where h0 is approximately %g (the value adopted here).
- * @see http://arxiv.org/abs/1303.5062
- * @see http://dx.doi.org/10.1088/0067-0049/208/2/20
- */""" % h0)
-print('#define LAL_H0_SI (%g * LAL_H0FAC_SI)' % h0)
+ * LAL_H0_SI = LAL_H0_DIMENSIONLESS * LAL_H0FAC_SI
+ */""")
+print('#define LAL_H0_SI (LAL_H0_DIMENSIONLESS * LAL_H0FAC_SI)')
 
 print("""
 /**
@@ -1183,13 +1191,9 @@ print("""
 /**
  * @brief Approximate critical energy density, J m^-3
  * @details
- * LAL_RHOC_SI = h0^2 * LAL_RHOCFAC_SI
- *
- * where h0 is approximately %g (the value adopted here).
- * @see http://arxiv.org/abs/1303.5062
- * @see http://dx.doi.org/10.1088/0067-0049/208/2/20
- */""" % h0)
-print('#define LAL_RHOC_SI (%g * %g * LAL_RHOCFAC_SI)' % (h0, h0))
+ * LAL_RHOC_SI = LAL_H0_DIMENSIONLESS^2 * LAL_RHOCFAC_SI
+ */""")
+print('#define LAL_RHOC_SI (LAL_H0_DIMENSIONLESS * LAL_H0_DIMENSIONLESS * LAL_RHOCFAC_SI)')
 
 print("""
 /**

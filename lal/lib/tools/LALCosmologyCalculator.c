@@ -16,7 +16,15 @@
  *  MA  02110-1301  USA
  */
 #include <lal/LALMalloc.h>
+#include <lal/LALConstants.h>
 #include <lal/LALCosmologyCalculator.h>
+
+#include <stdio.h>
+#include <stdlib.h> 
+#include <string.h>
+#include <math.h>
+#include <gsl/gsl_const_mksa.h>
+#include <gsl/gsl_integration.h>
 
 /**
  * The set of functions in this module implements the standard cosmological distance measures
@@ -279,13 +287,14 @@ double XLALIntegrateComovingVolumeDensity(LALCosmologicalParameters *omega, doub
 
     return result;
 }
+
 /**
  * Creates a LALCosmologicalParameters structure from the values of the cosmological parameters.
  * Note that the boundary condition \f$\Omega_m + \Omega_k + \Omega_\Lambda = 1\f$ is imposed here.
  */
 LALCosmologicalParameters *XLALCreateCosmologicalParameters(double h, double om, double ol, double w0, double w1, double w2)
 {
-    LALCosmologicalParameters *p = (LALCosmologicalParameters *)malloc(sizeof(LALCosmologicalParameters));
+    LALCosmologicalParameters *p = (LALCosmologicalParameters *)LALMalloc(sizeof(LALCosmologicalParameters));
     p->h = h;
     p->om=om;
     p->ol=ol;
@@ -295,6 +304,14 @@ LALCosmologicalParameters *XLALCreateCosmologicalParameters(double h, double om,
     p->w2=w2;
     return p;
 }
+
+LALCosmologicalParameters *XLALCreateDefaultCosmologicalParameters(void)
+{
+    LALCosmologicalParameters *p = (LALCosmologicalParameters *)LALMalloc(sizeof(LALCosmologicalParameters));
+    XLALSetCosmologicalParametersDefaultValue(p);
+    return p;
+}
+
 /**
  * Destroys a LALCosmologicalParameters structure.
  */
@@ -336,24 +353,25 @@ double XLALGetW2(LALCosmologicalParameters *omega)
     return omega->w2;
 }
 /**
- * Function to set a LALCosmologicalParameters structure to the default LambdaCDM value (see http://arxiv.org/abs/1303.5076 )
+ * Function to set a LALCosmologicalParameters structure to the default FlatLambdaCDM
  */
 void XLALSetCosmologicalParametersDefaultValue(LALCosmologicalParameters *omega)
 {
-    omega->h = 0.671;
-    omega->om=0.3175;
-    omega->ok=1.0-0.3175-0.68251;
-    omega->ol=0.68251;
-    omega->w0=-1.0;
-    omega->w1=0.0;
-    omega->w2=0.0;
+    /* Flat LambdaCDM */
+    omega->h  = LAL_H0_DIMENSIONLESS;
+    omega->om = LAL_OMEGA_M;
+    omega->ok = 0.0; /* flat */
+    omega->ol = 1.0 - omega->om - omega->ok; /* closed */
+    omega->w0 = -1.0; /* cosmological constant */
+    omega->w1 = 0.0;
+    omega->w2 = 0.0;
 }
 /**
  * Function to create a LALCosmologicalRateParameters structure
  */
 LALCosmologicalRateParameters *XLALCreateCosmologicalRateParameters(double r0, double W, double Q, double R)
 {
-    LALCosmologicalRateParameters *p = (LALCosmologicalRateParameters *)malloc(sizeof(LALCosmologicalRateParameters));
+    LALCosmologicalRateParameters *p = (LALCosmologicalRateParameters *)LALMalloc(sizeof(LALCosmologicalRateParameters));
     p->r0=r0;
     p->Q=Q;
     p->W=W;
@@ -447,7 +465,7 @@ double XLALRateWeightedComovingVolumeDistribution(LALCosmologicalParametersAndRa
  */
 LALCosmologicalParametersAndRate *XLALCreateCosmologicalParametersAndRate(void)
 {
-    LALCosmologicalParametersAndRate *p = (LALCosmologicalParametersAndRate *)malloc(sizeof(LALCosmologicalParametersAndRate));
+    LALCosmologicalParametersAndRate *p = (LALCosmologicalParametersAndRate *)LALMalloc(sizeof(LALCosmologicalParametersAndRate));
     p->omega=XLALCreateCosmologicalParameters(0.0,0.0,0.0,0.0,0.0,0.0);
     p->rate=XLALCreateCosmologicalRateParameters(0.0,0.0,0.0,0.0);
     return p;
