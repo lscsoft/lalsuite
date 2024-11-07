@@ -1,3 +1,4 @@
+##python
 # DAG generation code for running LALInference pipeline
 # (C) 2012 John Veitch
 # 2013 Salvatore Vitale: extended to work with several ini files

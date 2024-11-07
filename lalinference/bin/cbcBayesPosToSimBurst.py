@@ -1,3 +1,4 @@
+##python
 # -*- coding: utf-8 -*-
 #       cbcBayesPosToSimBurst.py
 #       C2014 Salvatore Vitale <salvatore.vitale@ligo.org>

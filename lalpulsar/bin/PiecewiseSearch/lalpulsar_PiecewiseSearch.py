@@ -1,3 +1,4 @@
+##python
 # Copyright (C) 2019--2023 Benjamin Grace
 #
 # This program is free software; you can redistribute it and/or modify it

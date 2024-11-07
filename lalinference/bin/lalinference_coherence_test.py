@@ -1,3 +1,4 @@
+##python
 '''
 This program simply computes the bayes factor between the coherent and incoherent models
 given as input the B files for the run.
