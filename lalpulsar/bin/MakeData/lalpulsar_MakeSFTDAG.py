@@ -164,6 +164,7 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
         argList.append(f"-c {args.comment_field}")
     if ":" in args.window_type:
         window_type, window_param = args.window_type.split(":")
+        window_param = float(window_param)
         argList.append(f"-w {window_type} -r {window_param}")
     else:
         window_type = args.window_type
@@ -402,7 +403,6 @@ parser.add_argument(
 parser.add_argument(
     "-w",
     "--window-type",
-    required=True,
     type=str,
     default="tukey:0.001",
     help='type of windowing of time-domain to do \
