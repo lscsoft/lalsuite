@@ -7,8 +7,10 @@ seg1_tstart=1257741529
 seg1_tend=`echo "${seg1_tstart} + ${Tsft}" | bc`
 seg1_sft1="${seg1_tstart}"
 seg2_tstart=1257743330
-seg2_tend=`echo "${seg2_tstart} + ${Tsft}" | bc`
-seg2_sft1="${seg2_tstart}"
+seg2_tend=`echo "${seg2_tstart} + 1.5*${Tsft}" | bc | xargs printf '%0.0f'`
+seg2_sft1_half_overlap="${seg2_tstart}"
+seg2_sft2_half_overlap=`echo "${seg2_tstart} + 0.5*${Tsft}" | bc | xargs printf '%0.0f'`
+seg2_sft1_no_overlap=`echo "${seg2_tstart} + 0.25*${Tsft}" | bc | xargs printf '%0.0f'`
 fmin=10
 Band=1990
 chan1="H1:GDS-CALIB_STRAIN_CLEAN"
@@ -117,7 +119,8 @@ unittest public_SFTs \
 greptest public_SFTs \
     "-O 4 -K DEV -R 1" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1}-${Tsft}.sft"
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
 
 ## two channels
 unittest two_channels \
@@ -129,9 +132,11 @@ unittest two_channels \
 greptest two_channels \
     "-O 4 -K DEV -R 1" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg2_sft1}-${Tsft}.sft"
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan2sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
 
 ## private SFTs
 unittest private_SFTs \
@@ -143,7 +148,8 @@ unittest private_SFTs \
 greptest private_SFTs \
     "-O 0 -X private" \
     "H-1_H1_${Tsft}SFT_private-${seg1_sft1}-1800.sft" \
-    "H-1_H1_${Tsft}SFT_private-${seg2_sft1}-1800.sft"
+    "H-1_H1_${Tsft}SFT_private-${seg2_sft1_half_overlap}-1800.sft" \
+    "H-1_H1_${Tsft}SFT_private-${seg2_sft2_half_overlap}-1800.sft"
 
 ## frame cache file
 unittest frame_cache_file \
@@ -155,7 +161,8 @@ unittest frame_cache_file \
 greptest frame_cache_file \
     "-O 0 -X private" \
     "H-1_H1_${Tsft}SFT_private-${seg1_sft1}-1800.sft" \
-    "H-1_H1_${Tsft}SFT_private-${seg2_sft1}-1800.sft"
+    "H-1_H1_${Tsft}SFT_private-${seg2_sft1_half_overlap}-1800.sft" \
+    "H-1_H1_${Tsft}SFT_private-${seg2_sft2_half_overlap}-1800.sft"
 
 ## default window
 unittest default_window \
@@ -168,7 +175,7 @@ greptest default_window \
     "-O 4 -K DEV -R 1" \
     "-w tukey -r 0.001" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg2_sft1}-${Tsft}.sft"
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg2_sft1_no_overlap}-${Tsft}.sft"
 
 ## Tukey window with parameter 0.001
 unittest Tukey_window \
@@ -181,7 +188,7 @@ greptest Tukey_window \
     "-O 4 -K DEV -R 1" \
     "-w tukey -r 0.001" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg2_sft1}-${Tsft}.sft"
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY5-${seg2_sft1_no_overlap}-${Tsft}.sft"
 
 ## Tukey window with parameter 0.5
 unittest Tukey_window_2 \
@@ -194,7 +201,7 @@ greptest Tukey_window_2 \
     "-O 4 -K DEV -R 1" \
     "-w tukey -r 0.5" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY2500-${seg1_sft1}-${Tsft}.sft" \
-    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY2500-${seg2_sft1}-${Tsft}.sft"
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WTKEY2500-${seg2_sft1_no_overlap}-${Tsft}.sft"
 
 if test -f testMakeSFTDAG.tar.gz; then
     echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
