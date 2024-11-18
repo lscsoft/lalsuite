@@ -180,20 +180,33 @@ def writeToDag(dagFID, nodeCount, startTimeThisNode, endTimeThisNode, site, args
     # the files to their output directories
     outputfiles = []
     remap = []
-    for idx, c in enumerate(args.channel_name):
-        filename = sft_name_from_vars(
-            args.observing_run,
-            startTimeThisNode,
-            args.time_baseline,
-            c,
-            kind=args.observing_kind,
-            rev=args.observing_revision,
-            window=window_type,
-            par=window_param,
-            miscstr=args.misc_desc,
-        )
-        outputfiles.append(filename)
-        remap.append(f"{filename}={args.output_sft_path[idx]/filename}")
+    sft_start = startTimeThisNode
+    sft_end = sft_start + args.time_baseline
+    # loop over start times
+    while sft_end <= endTimeThisNode:
+        # loop over channels
+        for idx, c in enumerate(args.channel_name):
+            filename = sft_name_from_vars(
+                args.observing_run,
+                sft_start,
+                args.time_baseline,
+                c,
+                kind=args.observing_kind,
+                rev=args.observing_revision,
+                window=window_type,
+                par=window_param,
+                miscstr=args.misc_desc,
+            )
+            outputfiles.append(filename)
+            remap.append(f"{filename}={args.output_sft_path[idx]/filename}")
+
+        # update start and end times
+        if args.overlap_fraction:
+            sft_start += int(round((1 - args.overlap_fraction) * args.time_baseline))
+        else:
+            sft_start += args.time_baseline
+        sft_end = sft_start + args.time_baseline
+    # condor needs this to be a comma separated list
     outputfiles = ",".join(outputfiles)
     # condor needs this to be a semi-colon separated list (why?!)
     remap = ";".join(remap)
