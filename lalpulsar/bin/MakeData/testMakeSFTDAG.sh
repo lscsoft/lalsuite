@@ -122,6 +122,19 @@ greptest public_SFTs \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
 
+## two SFTs per job
+unittest two_SFTs_per_job \
+    -O 4 -K DEV -R 1 \
+    -f test.dag -G TEST -d H1_HOFT_C00 -k 7 -T ${Tsft} -p . \
+    -N ${chan1} -F ${fmin} -B ${Band} -w hann -P 0.5 -m 2 \
+    -A ${acctgtag} -U ${acctgusr} \
+    -g ${segs} -J ${MSFTpath}
+greptest two_SFTs_per_job \
+    "-O 4 -K DEV -R 1" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
+    "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
+
 ## two channels
 unittest two_channels \
     -O 4 -K DEV -R 1 \
