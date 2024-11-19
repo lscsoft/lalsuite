@@ -118,6 +118,7 @@ unittest public_SFTs \
     -g ${segs} -J ${MSFTpath}
 greptest public_SFTs \
     "-O 4 -K DEV -R 1" \
+    "-w hann -P 0.5" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
@@ -131,6 +132,7 @@ unittest two_SFTs_per_job \
     -g ${segs} -J ${MSFTpath}
 greptest two_SFTs_per_job \
     "-O 4 -K DEV -R 1" \
+    "-w hann -P 0.5" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft"
@@ -144,6 +146,7 @@ unittest two_channels \
     -g ${segs} -J ${MSFTpath}
 greptest two_channels \
     "-O 4 -K DEV -R 1" \
+    "-w hann -P 0.5" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg1_sft1}-${Tsft}.sft" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft1_half_overlap}-${Tsft}.sft" \
     "H-1_H1_${Tsft}SFT_O4DEV+R1+C${chan1sft}+WHANN-${seg2_sft2_half_overlap}-${Tsft}.sft" \
@@ -160,6 +163,7 @@ unittest private_SFTs \
     -g ${segs} -J ${MSFTpath}
 greptest private_SFTs \
     "-O 0 -X private" \
+    "-w hann -P 0.5" \
     "H-1_H1_${Tsft}SFT_private-${seg1_sft1}-1800.sft" \
     "H-1_H1_${Tsft}SFT_private-${seg2_sft1_half_overlap}-1800.sft" \
     "H-1_H1_${Tsft}SFT_private-${seg2_sft2_half_overlap}-1800.sft"
@@ -173,6 +177,7 @@ unittest frame_cache_file \
     -g ${segs} -J ${MSFTpath} -e ${cachepath}
 greptest frame_cache_file \
     "-O 0 -X private" \
+    "-w hann -P 0.5" \
     "H-1_H1_${Tsft}SFT_private-${seg1_sft1}-1800.sft" \
     "H-1_H1_${Tsft}SFT_private-${seg2_sft1_half_overlap}-1800.sft" \
     "H-1_H1_${Tsft}SFT_private-${seg2_sft2_half_overlap}-1800.sft"
