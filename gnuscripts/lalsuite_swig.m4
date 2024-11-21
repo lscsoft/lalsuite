@@ -2,7 +2,7 @@
 # lalsuite_swig.m4 - SWIG configuration
 # Author: Karl Wette, 2011--2017
 #
-# serial 121
+# serial 122
 
 AC_DEFUN([_LALSUITE_MIN_SWIG_VERSION],[
   # $0: minimum version of SWIG and other dependencies
@@ -592,17 +592,19 @@ EOD`]
     # determine Python preprocessor flags
     AC_SUBST([SWIG_PYTHON_CPPFLAGS],["-ULAL_STRICT_DEFS_ENABLED"])
     python_out=[`${PYTHON} - 2>/dev/null <<EOD
+# include NumPy flags first, so local installs override system installs
+import numpy
+print(' -I' + numpy.get_include(), end='')
+# system include flags
 try:
     import distutils.sysconfig
 except ImportError:  # python >= 3.11
     import sysconfig
-    print('-I' + sysconfig.get_path('include'), end='')
+    print(' -I' + sysconfig.get_path('include'), end='')
     print(' -I' + sysconfig.get_path('platinclude'), end='')
 else:
-    print( '-I' + distutils.sysconfig.get_python_inc(), end='')
+    print(' -I' + distutils.sysconfig.get_python_inc(), end='')
     print(' -I' + distutils.sysconfig.get_python_inc(plat_specific=1), end='')
-import numpy
-print(' -I' + numpy.get_include(), end='')
 EOD`]
     AS_IF([test $? -ne 0],[
       AC_MSG_ERROR([could not determine Python preprocessor flags])

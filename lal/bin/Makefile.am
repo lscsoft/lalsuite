@@ -62,6 +62,9 @@ pybin_scripts = \
 # Add shell, Python, etc. test scripts to this variable
 test_scripts += test_path2cache.sh
 
+installcheck-local:
+	$(bindir)/lal_path2cache --help
+
 endif
 
 # -- Manuals ----------------

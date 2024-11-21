@@ -47,6 +47,17 @@ from setuptools import (
 )
 from setuptools.command.build_ext import build_ext as _build_ext
 
+
+def is_py_script(script):
+    with open(script, 'rb') as scriptfile:
+        shebang = scriptfile.read(2)
+        if shebang == b"#!":
+            shebang_line = scriptfile.readline()
+            if b"python" in shebang_line:
+                return True
+    return False
+
+
 # These variables come from automake.
 subst = {}
 subst['prefix'] = subst['PYTHON_PREFIX'] = subst['PYTHON_EXEC_PREFIX'] = (
@@ -55,7 +66,6 @@ subst['prefix'] = subst['PYTHON_PREFIX'] = subst['PYTHON_EXEC_PREFIX'] = (
 subst['exec_prefix'] = Template('@exec_prefix@').substitute(**subst)
 BINDIR = Path(Template('@bindir@').substitute(**subst))
 DATADIR = Path(Template('$prefix/share').substitute(**subst))
-LIBEXECDIR = Path(Template('@libexecdir@').substitute(**subst))
 PYTHONDIR = Path(Template('@pythondir@').substitute(**subst))
 BASE_VERSION = '@BASE_VERSION@'
 NIGHTLY_VERSION = '@NIGHTLY_VERSION@'
@@ -67,23 +77,13 @@ else:
 
 SHLIB_SUFFIX = sysconfig.get_config_var("SHLIB_SUFFIX")
 
-# magic bytes to identify compiled executables
-MAGIC_BYTES_EXE = set(map(bytes.fromhex, (
-    # linux
-    "7F 45 4C 46",  # ELF
-    # macOS (note that this doesn't distinguish between executables and
-    #        libraries, let's just hope that we don't get mixed up...)
-    "FE ED FA CE",  # Mach-O 32-bit (big-endian)
-    "FE ED FA CF",  # Mach-O 64-bit (big-endian)
-    "CE FA ED FE",  # Mach-O 32-bit (little-endian)
-    "CF FA ED FE",  # Mach-O 64-bit (little-endian)
-    "CA FE BA BE",  # Mach-O fat (big-endian)
-    "BE BA FE CA",  # Mach-O fat (little-endian)
-)))
+SCRIPTS = list(BINDIR.glob("*"))
 
 
 class build_ext(_build_ext):
-    """Override setuptools build_ext: just copy pre-built modules.
+    """Override setuptools build_ext.
+
+    Just copy pre-built modules.
     """
     def build_extension(self, ext):
         src = PYTHONDIR / (ext.name.replace('.', os.path.sep) + SHLIB_SUFFIX)
@@ -101,28 +101,15 @@ with as_file(files('lalapps') / 'bin' / '{}') as path:
 """
 
 
-def _exe_type(path):
-    """Determine what type of executable this is.
-
-    Returns one of
-
-    - "exe" : for compiled executables
-    - "python" : for python scripts
-    - "other" : for anything that isn't one of the above
-    """
-    with open(path, "rb") as file:
-        magic = file.read(4)
-        if magic in MAGIC_BYTES_EXE:
-            return "exe"
-        head = magic + file.readline()
-        if b"#!" in head and b"python" in head:
-            return "python"
-    return "other"
-
-
 class build_scripts(_build_scripts):
-    """Override setuptools install_scripts: strip the .py extensions and
-    add the shebang lines.
+    """Override setuptools install_scripts.
+
+    Python scripts (with a '#!...python' shebang line) are installed directly.
+    (The shebang will be replaced by the correct Python path upon installation.)
+
+    For non-Python scripts (including C executables), a stub is generated which
+    executes the real script, which is packaged under 'lib/.../lalapps/bin'.
+
     """
     def run(self):
         old_scripts = self.scripts[:]
@@ -131,21 +118,12 @@ class build_scripts(_build_scripts):
         with tempfile.TemporaryDirectory(dir=self.build_dir) as tmpdir:
             tmpdir = Path(tmpdir)
             for old_script in map(Path, old_scripts):
-                ftype = _exe_type(old_script)
-                basename = old_script.name
-                base = old_script.with_suffix("").name
-                if ftype == "exe":
+                if is_py_script(old_script):
+                    new_script = old_script
+                else:
+                    basename = old_script.name
                     new_script = tmpdir / basename
                     new_script.write_text(stub.format(basename))
-                elif ftype == "python":
-                    new_script = tmpdir / base
-                    with open(new_script, 'wb') as outfile:
-                        outfile.write(b'#!python\n')
-                        with open(old_script, 'rb') as infile:
-                            infile.readline()  # dump current shebang
-                            shutil.copyfileobj(infile, outfile)
-                else:
-                    new_script = old_script
                 new_scripts.add(new_script)
             self.scripts = list(new_scripts)
             _build_scripts.run(self)
@@ -199,7 +177,7 @@ setup(
         'lalapps.data': str(DATADIR),
     },
     package_data={
-        'lalapps.bin': ['*'],
+        'lalapps.bin': [script.name for script in SCRIPTS if not is_py_script(script)],
         'lalapps.data': ['*'],
         '': ['*.csv'],
     },
@@ -207,10 +185,7 @@ setup(
         'lalapps.bin',
         'lalapps.data',
     ],
-    scripts=list(map(str, (
-        list(BINDIR.glob("*"))
-        + list(LIBEXECDIR.glob('**/*.py'))
-    ))),
+    scripts=list(map(str, SCRIPTS)),
     ext_modules=[
         Extension(
             str(path.relative_to(PYTHONDIR).with_suffix("")).replace('/', '.'),

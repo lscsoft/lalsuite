@@ -1,3 +1,4 @@
+##python
 
 # resample posteriors (C) John Veitch, 2015
 

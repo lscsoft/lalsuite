@@ -73,15 +73,15 @@ py-mostlyclean-local:
 
 $(pybin_scripts) $(noinst_pybin_scripts): Makefile
 .py:
-	$(AM_V_GEN)shebang='#!'; dummy_shebang='##(in place of shebang, for consistent line numbers)'; \
+	$(AM_V_GEN)shebang='#!'; \
 	$(MKDIR_P) .libs || exit 1; \
 	rm -f $@ || exit 1; \
 	if test -x $(srcdir)/$@.py; then \
 		printf "\nERROR: $(srcdir)/$@.py must not be executable\n\n" >&2; \
 		exit 1; \
 	fi; \
-	if test "x`$(SED) -n -e /^$${shebang}/p $(srcdir)/$@.py`" != x; then \
-		printf "\nERROR: $(srcdir)/$@.py must not contain a $${shebang} command line\n\n" >&2; \
+	if test "x`$(SED) -n -e \"1{\|^##python$$|p;}\" $(srcdir)/$@.py`" = x; then \
+		printf "\nERROR: $(srcdir)/$@.py must start with the line '##python' (which will be replaced with '$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)' upon installation)\n\n" >&2; \
 		exit 1; \
 	fi; \
 	echo "$${shebang}/bin/sh" > .libs/$@.bin; \
@@ -90,40 +90,41 @@ $(pybin_scripts) $(noinst_pybin_scripts): Makefile
 	echo "PYTHONPATH=\"$(abs_builddir):$(abs_srcdir):$(LAL_PYTHON_PATH):\$${PYTHONPATH}\"" | $(SED) 's|:::*|:|g' >> .libs/$@.bin; \
 	echo "export PYTHONPATH" >> .libs/$@.bin; \
 	echo "test -d '$(abs_builddir)/.libs' || mkdir '$(abs_builddir)/.libs' >/dev/null 2>&1" >> .libs/$@.bin; \
-	echo "echo '$${dummy_shebang}' > '$(abs_builddir)/.libs/$@.py'" >> .libs/$@.bin; \
-	echo "$(SED) -e 's|@LALSUITE_BINDIR@|$(abs_builddir)|g' '$(abs_srcdir)/$@.py' >> '$(abs_builddir)/.libs/$@.py' || exit 1" >> .libs/$@.bin; \
-	echo "exec $(uninstalled_compiler) $(PYTHON) \$${PYBIN_SCRIPT_PY_FLAGS} '$(abs_builddir)/.libs/$@.py' \"\$$@\"" >> .libs/$@.bin; \
+	echo "$(SED) -e 's|@LALSUITE_BINDIR@|$(abs_builddir)|g' '$(abs_srcdir)/$@.py' > '$(abs_builddir)/.libs/$@.py' || exit 1" >> .libs/$@.bin; \
+	echo "exec $(uninstalled_compiler) $(LALSUITE_PYTHON_SYS_EXECUTABLE) \$${PYBIN_SCRIPT_PY_FLAGS} '$(abs_builddir)/.libs/$@.py' \"\$$@\"" >> .libs/$@.bin; \
 	echo "exit 1" >> .libs/$@.bin; \
 	chmod +x .libs/$@.bin || exit 1; \
 	mv -f .libs/$@.bin $@
 
 pybin-install-exec-local:
-	$(AM_V_GEN)shebang='#!'; dummy_shebang='##(in place of shebang, for consistent line numbers)'; \
+	$(AM_V_GEN)shebang='#!'; \
 	$(MKDIR_P) .libs || exit 1; \
 	if test "x$(pybin_scripts)" != x; then \
+		relpkglibexecdir=`$(PYTHON) -c 'import os; print(os.path.relpath("$(pkglibexecdir)", "$(bindir)"))'`; \
 		pypath="$(pyexecdir)"; \
 		if test "$(pythondir)" != "$(pyexecdir)"; then \
 			pypath="$${pypath}:$(pythondir)"; \
 		fi; \
 		echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
 		$(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
-		if test "x$(exec_prefix)" != "x$(PYTHON_EXEC_PREFIX)"; then \
+		if test "x$(prefix)" != "x$(LALSUITE_PYTHON_SYS_PREFIX)"; then \
 			echo " $(MKDIR_P) '$(DESTDIR)$(pkglibexecdir)'"; \
 			$(MKDIR_P) "$(DESTDIR)$(pkglibexecdir)" || exit 1; \
 		fi; \
 		for file in $(pybin_scripts); do \
-			if test "x$(exec_prefix)" = "x$(PYTHON_EXEC_PREFIX)"; then \
-				echo "$${shebang}$(PYTHON)" > .libs/$${file}.bin; \
-				$(SED) -e 's|@LALSUITE_BINDIR@|$(bindir)|g' "$(srcdir)/$${file}.py" >> .libs/$${file}.bin || exit 1; \
+			if test "x$(prefix)" = "x$(LALSUITE_PYTHON_SYS_PREFIX)"; then \
+				$(SED) -e "1{s|^##python$$|$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)|;};s|@LALSUITE_BINDIR@|$(bindir)|g" "$(srcdir)/$${file}.py" > .libs/$${file}.bin || exit 1; \
 			else \
-				echo "$${shebang}/bin/sh" > .libs/$${file}.bin; \
-				echo "PYTHONPATH=\"$${pypath}:\$${PYTHONPATH}\"" >> .libs/$${file}.bin; \
-				echo "export PYTHONPATH" >> .libs/$${file}.bin; \
-				echo "exec $(PYTHON) '$(pkglibexecdir)/$${file}.py' \"\$$@\"" >> .libs/$${file}.bin; \
-				echo "exit 1" >> .libs/$${file}.bin; \
+				echo "$${shebang}$(LALSUITE_PYTHON_SYS_EXECUTABLE)" > .libs/$${file}.bin; \
+				echo "import os, sys" >> .libs/$${file}.bin; \
+				echo "if 'PYTHONPATH' in os.environ:" >> .libs/$${file}.bin; \
+				echo "    os.environ['PYTHONPATH'] = '$${pypath}:' + os.environ['PYTHONPATH']" >> .libs/$${file}.bin; \
+				echo "else:" >> .libs/$${file}.bin; \
+				echo "    os.environ['PYTHONPATH'] = '$${pypath}'" >> .libs/$${file}.bin; \
+				echo "os.execv(sys.executable, [sys.executable, os.path.join(os.path.dirname(__file__), '$${relpkglibexecdir}/$${file}.py')] + sys.argv[1:])" >> .libs/$${file}.bin; \
+				echo "sys.exit(1)" >> .libs/$${file}.bin; \
 				$(MKDIR_P) "$(builddir)/.libs" || exit 1; \
-				echo "$${dummy_shebang}" > "$(builddir)/.libs/$${file}.py"; \
-				$(SED) -e 's|@LALSUITE_BINDIR@|$(bindir)|g' "$(srcdir)/$${file}.py" >> "$(builddir)/.libs/$${file}.py" || exit 1; \
+				$(SED) -e 's|@LALSUITE_BINDIR@|$(bindir)|g' "$(srcdir)/$${file}.py" > "$(builddir)/.libs/$${file}.py" || exit 1; \
 				echo " $(INSTALL_DATA) $(builddir)/.libs/$${file}.py '$(DESTDIR)$(pkglibexecdir)/$${file}.py'"; \
 				$(INSTALL_DATA) "$(builddir)/.libs/$${file}.py" "$(DESTDIR)$(pkglibexecdir)/$${file}.py" || exit 1; \
 			fi; \
@@ -135,7 +136,7 @@ pybin-install-exec-local:
 pybin-uninstall-local:
 	-for file in $(pybin_scripts); do \
 		rm -f "$(DESTDIR)$(bindir)/$${file}"; \
-		if test "x$(exec_prefix)" != "x$(PYTHON_EXEC_PREFIX)"; then \
+		if test "x$(prefix)" != "x$(LALSUITE_PYTHON_SYS_PREFIX)"; then \
 			rm -f "$(DESTDIR)$(pkglibexecdir)/$${file}.py"; \
 		fi; \
 	done

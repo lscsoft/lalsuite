@@ -1,3 +1,4 @@
+##python
 # Copyright (C) 2013, 2014, 2020--2024 Evan Goetz
 # Copyright (C) 2011, 2021, 2022 Karl Wette
 # Copyright (C) 2005, 2007 Gregory Mendell
