@@ -16,9 +16,10 @@
 
 include:
   # https://git.ligo.org/explore/catalog/computing/gitlab/components/sast
-  - component: $CI_SERVER_FQDN/computing/gitlab/components/sast/sast@2
+  - component: $CI_SERVER_FQDN/computing/gitlab/components/sast/sast@~latest
     inputs:
       stage: lint
+      run_advanced_sast: true
 
   # https://git.ligo.org/explore/catalog/computing/gitlab/components/python
   - component: $CI_SERVER_FQDN/computing/gitlab/components/python/code-quality@1
@@ -28,7 +29,7 @@ include:
 
 # update component jobs with our rules
 
-semgrep-sast:
+gitlab-advanced-sast:
   rules: !reference [.lint, rules]
   needs: []
   variables:
